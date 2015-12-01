@@ -74,15 +74,15 @@ type Packet struct {
 	Version    byte
 	Token      []byte
 	Identifier byte
-    GatewayId  []byte
+	GatewayId  []byte
 	Payload    *Payload
 }
 
 type Payload struct {
-    Raw       []byte  `json:"-"`
-    RXPK      *[]RXPK `json:"rxpk"`
-    Stat      *Stat   `json:"stat"`
-    TXPK      *TXPK   `json:"txpk"`
+	Raw  []byte  `json:"-"`
+	RXPK *[]RXPK `json:"rxpk"`
+	Stat *Stat   `json:"stat"`
+	TXPK *TXPK   `json:"txpk"`
 }
 
 // Available packet commands
@@ -96,7 +96,7 @@ const (
 
 // Parse a raw response from a server and turn in into a packet
 // Will return an error if the response fields are incorrect
-func Parse (raw []byte) (error, *Packet) {
+func Parse(raw []byte) (error, *Packet) {
 	size := len(raw)
 
 	if size < 3 {
@@ -107,8 +107,8 @@ func Parse (raw []byte) (error, *Packet) {
 		raw[0],
 		raw[1:3],
 		raw[3],
-        nil,
-        nil,
+		nil,
+		nil,
 	}
 
 	if packet.Version != 0x1 {
@@ -119,13 +119,13 @@ func Parse (raw []byte) (error, *Packet) {
 		return errors.New("Unreckognized protocol identifier"), nil
 	}
 
-    if size >= 12 && packet.Identifier == PULL_DATA {
-        packet.GatewayId = raw[4:12]
-    }
+	if size >= 12 && packet.Identifier == PULL_DATA {
+		packet.GatewayId = raw[4:12]
+	}
 
-    var err error
+	var err error
 	if size > 4 && packet.Identifier == PUSH_DATA || packet.Identifier == PULL_RESP {
-        err, packet.Payload = decodePayload(raw[4:])
+		err, packet.Payload = decodePayload(raw[4:])
 	}
 
 	return err, packet
