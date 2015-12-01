@@ -21,33 +21,57 @@ func (t *timeParser) UnmarshalJSON (raw []byte) error {
     return nil
 }
 
+type datrParser struct {
+    Value string
+}
+
+func (d *datrParser) UnmarshalJSON (raw []byte) error {
+    d.Value = strings.Trim(string(raw), `"`)
+
+    if d.Value == "" {
+        return errors.New("Invalid datr format")
+    }
+
+    return nil
+}
+
 func decodePayload (raw []byte) (error, *Payload) {
     payload := &Payload{raw, nil, nil, nil}
-    timeStruct := &struct{
-        Stat *struct{ Time timeParser `json:"time"` } `json:"stat"`
-        RXPK *[]struct{ Time timeParser `json:"time"` } `json:"rxpk"`
-        TXPK *struct{ Time timeParser `json:"time"` } `json:"txpk"`
+    customStruct := &struct{
+        Stat *struct{
+            Time timeParser `json:"time"`
+        } `json:"stat"`
+        RXPK *[]struct{
+            Time timeParser `json:"time"`
+            Datr datrParser `json:"datr"`
+        } `json:"rxpk"`
+        TXPK *struct{
+            Time timeParser `json:"time"`
+            Datr datrParser `json:"datr"`
+        } `json:"txpk"`
     }{}
 
     err := json.Unmarshal(raw, payload)
-    err = json.Unmarshal(raw, timeStruct)
+    err = json.Unmarshal(raw, customStruct)
 
     if err != nil {
         return err, nil
     }
 
-    if timeStruct.Stat != nil {
-        payload.Stat.Time = timeStruct.Stat.Time.Value
+    if customStruct.Stat != nil {
+        payload.Stat.Time = customStruct.Stat.Time.Value
     }
 
-    if timeStruct.RXPK != nil {
-        for i, x := range(*timeStruct.RXPK) {
+    if customStruct.RXPK != nil {
+        for i, x := range(*customStruct.RXPK) {
             (*payload.RXPK)[i].Time = x.Time.Value
+            (*payload.RXPK)[i].Datr = x.Datr.Value
         }
     }
 
-    if timeStruct.TXPK != nil {
-        payload.TXPK.Time = timeStruct.TXPK.Time.Value
+    if customStruct.TXPK != nil {
+        payload.TXPK.Time = customStruct.TXPK.Time.Value
+        payload.TXPK.Datr = customStruct.TXPK.Datr.Value
     }
 
     return nil, payload

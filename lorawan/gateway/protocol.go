@@ -15,7 +15,7 @@ type RXPK struct {
 	Chan uint      `json:"chan"` // Concentrator "IF" channel used for RX (unsigned integer)
 	Codr string    `json:"codr"` // LoRa ECC coding rate identifier
 	Data string    `json:"data"` // Base64 encoded RF packet payload, padded
-	Datr string    `json:"datr"` // FSK datarate (unsigned in bit per second) || LoRa datarate identifier
+	Datr string    `json:"-"`    // FSK datarate (unsigned in bit per second) || LoRa datarate identifier
 	Freq float64   `json:"freq"` // RX Central frequency in MHx (unsigned float, Hz precision)
 	Lsnr float64   `json:"lsnr"` // LoRa SNR ratio in dB (signed float, 0.1 dB precision)
 	Modu string    `json:"modu"` // Modulation identifier "LORA" or "FSK"
@@ -34,7 +34,7 @@ type RXPK struct {
 type TXPK struct {
 	Codr string    `json:"codr"` // LoRa ECC coding rate identifier
 	Data string    `json:"data"` // Base64 encoded RF packet payload, padding optional
-	Datr string    `json:"datr"` // LoRa datarate identifier (eg. SF12BW500) || FSK Datarate (unsigned, in bits per second)
+	Datr string    `json:"-"`    // LoRa datarate identifier (eg. SF12BW500) || FSK Datarate (unsigned, in bits per second)
 	Fdev uint      `json:"fdev"` // FSK frequency deviation (unsigned integer, in Hz)
 	Freq float64   `json:"freq"` // TX central frequency in MHz (unsigned float, Hz precision)
 	Imme bool      `json:"imme"` // Send packet immediately (will ignore tmst & time)
