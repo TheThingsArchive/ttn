@@ -85,3 +85,34 @@ const (
 	PULL_RESP
 	PULL_ACK
 )
+
+// Parse a raw response from a server and turn in into a packet
+// Will return an error if the response fields are incorrect
+func Parse(raw []byte) (error, *Packet) {
+	size := len(raw)
+
+	if size < 3 {
+		return errors.New("Invalid raw data format"), nil
+	}
+
+	packet := &Packet{
+		raw[0],
+		raw[1:3],
+		raw[3],
+        nil,
+	}
+
+	if packet.Version != 0x1 {
+		return errors.New("Unreckognized protocol version"), nil
+	}
+
+	if packet.Identifier > PULL_ACK {
+		return errors.New("Unreckognized protocol identifier"), nil
+	}
+
+	if size > 4 {
+		packet.Payload = raw[4:]
+	}
+
+	return nil, packet
+}
