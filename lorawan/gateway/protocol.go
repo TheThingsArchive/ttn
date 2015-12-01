@@ -23,7 +23,7 @@ type RXPK struct {
 	Rssi int       `json:"rssi"` // RSSI in dBm (signed integer, 1 dB precision)
 	Size uint      `json:"size"` // RF packet payload size in bytes (unsigned integer)
 	Stat int       `json:"stat"` // CRC status: 1 - OK, -1 = fail, 0 = no CRC
-	Time time.Time `json:"time"` // UTC time of pkt RX, us precision, ISO 8601 'compact' format
+	Time time.Time `json:"-"`    // UTC time of pkt RX, us precision, ISO 8601 'compact' format
 	Tmst uint      `json:"tmst"` // Internal timestamp of "RX finished" event (32b unsigned)
 }
 
@@ -45,7 +45,7 @@ type TXPK struct {
 	Prea uint      `json:"prea"` // RF preamble size (unsigned integer)
 	Rfch uint      `json:"rfch"` // Concentrator "RF chain" used for TX (unsigned integer)
 	Size uint      `json:"size"` // RF packet payload size in bytes (unsigned integer)
-	Time time.Time `json:"time"` // Send packet at a certain time (GPS synchronization required)
+	Time time.Time `json:"-"`    // Send packet at a certain time (GPS synchronization required)
 	Tmst uint      `json:"tmst"` // Send packet on a certain timestamp value (will ignore time)
 }
 
@@ -61,7 +61,7 @@ type Stat struct {
 	Rxfw uint      `json:"rxfw"` // Number of radio packets forwarded (unsigned integer)
 	Rxnb uint      `json:"rxnb"` // Number of radio packets received (unsigned integer)
 	Rxok uint      `json:"rxok"` // Number of radio packets received with a valid PHY CRC
-	Time time.Time `json:"time"` // UTC 'system' time of the gateway, ISO 8601 'expanded' format
+	Time time.Time `json:"-"`    // UTC 'system' time of the gateway, ISO 8601 'expanded' format
 	Txnb uint      `json:"txnb"` // Number of packets emitted (unsigned integer)
 }
 
@@ -74,7 +74,14 @@ type Packet struct {
 	Version    byte
 	Token      []byte
 	Identifier byte
-	Payload    []byte
+	Payload    *Payload
+}
+
+type Payload struct {
+    Raw       []byte  `json:"-"`
+    RXPK      *[]RXPK `json:"rxpk"`
+    Stat      *Stat   `json:"stat"`
+    TXPK      *TXPK   `json:"txpk"`
 }
 
 // Available packet commands
@@ -88,7 +95,7 @@ const (
 
 // Parse a raw response from a server and turn in into a packet
 // Will return an error if the response fields are incorrect
-func Parse(raw []byte) (error, *Packet) {
+func Parse (raw []byte) (error, *Packet) {
 	size := len(raw)
 
 	if size < 3 {
@@ -110,9 +117,10 @@ func Parse(raw []byte) (error, *Packet) {
 		return errors.New("Unreckognized protocol identifier"), nil
 	}
 
+    var err error
 	if size > 4 {
-		packet.Payload = raw[4:]
+        err, packet.Payload = decodePayload(raw[4:])
 	}
 
-	return nil, packet
+	return err, packet
 }
