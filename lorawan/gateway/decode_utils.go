@@ -8,7 +8,8 @@ import (
 )
 
 type timeParser struct {
-    Value time.Time
+    Value   time.Time
+    Parsed  bool
 }
 
 func (t *timeParser) UnmarshalJSON (raw []byte) error {
@@ -18,11 +19,14 @@ func (t *timeParser) UnmarshalJSON (raw []byte) error {
     if err != nil { t.Value, err = time.Parse(time.RFC3339, value) }
     if err != nil { t.Value, err = time.Parse(time.RFC3339Nano, value) }
     if err != nil { return errors.New("Unkown date format. Unable to parse time") }
+
+    t.Parsed = true
     return nil
 }
 
 type datrParser struct {
-    Value string
+    Value   string
+    Parsed  bool
 }
 
 func (d *datrParser) UnmarshalJSON (raw []byte) error {
@@ -32,6 +36,7 @@ func (d *datrParser) UnmarshalJSON (raw []byte) error {
         return errors.New("Invalid datr format")
     }
 
+    d.Parsed = true
     return nil
 }
 
@@ -58,20 +63,30 @@ func decodePayload (raw []byte) (error, *Payload) {
         return err, nil
     }
 
-    if customStruct.Stat != nil {
+    if customStruct.Stat != nil && customStruct.Stat.Time.Parsed {
         payload.Stat.Time = customStruct.Stat.Time.Value
     }
 
     if customStruct.RXPK != nil {
         for i, x := range(*customStruct.RXPK) {
-            (*payload.RXPK)[i].Time = x.Time.Value
-            (*payload.RXPK)[i].Datr = x.Datr.Value
+            if x.Time.Parsed {
+                (*payload.RXPK)[i].Time = x.Time.Value
+            }
+
+            if x.Datr.Parsed {
+                (*payload.RXPK)[i].Datr = x.Datr.Value
+            }
         }
     }
 
     if customStruct.TXPK != nil {
-        payload.TXPK.Time = customStruct.TXPK.Time.Value
-        payload.TXPK.Datr = customStruct.TXPK.Datr.Value
+        if customStruct.TXPK.Time.Parsed {
+            payload.TXPK.Time = customStruct.TXPK.Time.Value
+        }
+
+        if customStruct.TXPK.Datr.Parsed {
+            payload.TXPK.Datr = customStruct.TXPK.Datr.Value
+        }
     }
 
     return nil, payload

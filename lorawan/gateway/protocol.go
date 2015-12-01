@@ -74,6 +74,7 @@ type Packet struct {
 	Version    byte
 	Token      []byte
 	Identifier byte
+    GatewayId  []byte
 	Payload    *Payload
 }
 
@@ -107,6 +108,7 @@ func Parse (raw []byte) (error, *Packet) {
 		raw[1:3],
 		raw[3],
         nil,
+        nil,
 	}
 
 	if packet.Version != 0x1 {
@@ -117,8 +119,12 @@ func Parse (raw []byte) (error, *Packet) {
 		return errors.New("Unreckognized protocol identifier"), nil
 	}
 
+    if size >= 12 && packet.Identifier == PULL_DATA {
+        packet.GatewayId = raw[4:12]
+    }
+
     var err error
-	if size > 4 {
+	if size > 4 && packet.Identifier == PUSH_DATA || packet.Identifier == PULL_RESP {
         err, packet.Payload = decodePayload(raw[4:])
 	}
 
