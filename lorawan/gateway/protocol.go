@@ -124,7 +124,7 @@ func Parse(raw []byte) (error, *Packet) {
 	}
 
 	var err error
-	if size > 4 && packet.Identifier == PUSH_DATA || packet.Identifier == PULL_RESP {
+	if size > 4 && (packet.Identifier == PUSH_DATA || packet.Identifier == PULL_RESP) {
 		err, packet.Payload = decodePayload(raw[4:])
 	}
 
