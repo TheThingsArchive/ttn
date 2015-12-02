@@ -88,13 +88,15 @@ const (
 	PULL_ACK                // Sent by the gateway's recipient in response to PULL_DATA
 )
 
+const VERSION = 0x01
+
 // Parse parse a raw response from a server and turn in into a packet.
 // Will return an error if the response fields are incorrect.
-func Parse(raw []byte) (error, *Packet) {
+func Parse(raw []byte) (*Packet, error) {
 	size := len(raw)
 
 	if size < 3 {
-		return errors.New("Invalid raw data format"), nil
+		return nil, errors.New("Invalid raw data format")
 	}
 
 	packet := &Packet{
@@ -105,22 +107,27 @@ func Parse(raw []byte) (error, *Packet) {
         Payload: nil,
 	}
 
-	if packet.Version != 0x1 {
-		return errors.New("Unreckognized protocol version"), nil
+	if packet.Version != VERSION {
+		return nil, errors.New("Unreckognized protocol version")
 	}
 
 	if packet.Identifier > PULL_ACK {
-		return errors.New("Unreckognized protocol identifier"), nil
+		return nil, errors.New("Unreckognized protocol identifier")
 	}
 
-	if size >= 12 && packet.Identifier == PULL_DATA {
-		packet.GatewayId = raw[4:12]
+    cursor := 4
+	if packet.Identifier == PULL_DATA || packet.Identifier == PUSH_DATA {
+        if size < 12 {
+            return nil, errors.New("Invalid gateway identifier")
+        }
+        packet.GatewayId = raw[cursor:12]
+        cursor = 12
 	}
 
 	var err error
-	if size > 4 && (packet.Identifier == PUSH_DATA || packet.Identifier == PULL_RESP) {
-		err, packet.Payload = decodePayload(raw[4:])
+	if size > cursor && (packet.Identifier == PUSH_DATA || packet.Identifier == PULL_RESP) {
+        packet.Payload, err = decodePayload(raw[cursor:])
 	}
 
-	return err, packet
+	return packet, err
 }
