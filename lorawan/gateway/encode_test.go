@@ -342,7 +342,7 @@ func TestMarshalPUSH_DATA6(t *testing.T) {
 }
 
 // ---------- PUSH_ACK
-func checkMarshalPUSH_ACK(packet *Packet) error {
+func checkMarshalACK(packet *Packet) error {
 	raw, err := Marshal(packet)
 
 	if err != nil {
@@ -377,7 +377,7 @@ func TestMarshalPUSH_ACK1(t *testing.T) {
 		GatewayId:  nil,
 		Payload:    nil,
 	}
-	if err := checkMarshalPUSH_ACK(packet); err != nil {
+	if err := checkMarshalACK(packet); err != nil {
 		t.Errorf("Failed to marshal packet: %v", err)
 	}
 }
@@ -391,7 +391,7 @@ func TestMarshalPUSH_ACK2(t *testing.T) {
 		GatewayId:  []byte{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0},
 		Payload:    nil,
 	}
-	if err := checkMarshalPUSH_ACK(packet); err != nil {
+	if err := checkMarshalACK(packet); err != nil {
 		t.Errorf("Failed to marshal packet: %v", err)
 	}
 }
@@ -412,7 +412,7 @@ func TestMarshalPUSH_ACK3(t *testing.T) {
 		GatewayId:  nil,
 		Payload:    payload,
 	}
-	if err := checkMarshalPUSH_ACK(packet); err != nil {
+	if err := checkMarshalACK(packet); err != nil {
 		t.Errorf("Failed to marshal packet: %v", err)
 	}
 }
@@ -433,7 +433,7 @@ func TestMarshalPUSH_ACK4(t *testing.T) {
 		GatewayId:  []byte{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0},
 		Payload:    payload,
 	}
-	if err := checkMarshalPUSH_ACK(packet); err != nil {
+	if err := checkMarshalACK(packet); err != nil {
 		t.Errorf("Failed to marshal packet: %v", err)
 	}
 }
@@ -591,5 +591,105 @@ func TestMarshalPULL_DATA1(t *testing.T) {
 }
 
 // ---------- PULL_ACK
+// Marshal a basic pull_ack packet
+func TestMarshalPULL_ACK1(t *testing.T) {
+	packet := &Packet{
+		Version:    VERSION,
+		Token:      []byte{0xAA, 0x14},
+		Identifier: PULL_ACK,
+		GatewayId:  nil,
+		Payload:    nil,
+	}
+	if err := checkMarshalACK(packet); err != nil {
+		t.Errorf("Failed to marshal packet: %v", err)
+	}
+}
+
+// Marshal a pull_ack packet with extra useless gatewayId
+func TestMarshalPULL_ACK2(t *testing.T) {
+	packet := &Packet{
+		Version:    VERSION,
+		Token:      []byte{0xAA, 0x14},
+		Identifier: PUSH_ACK,
+		GatewayId:  []byte{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0},
+		Payload:    nil,
+	}
+	if err := checkMarshalACK(packet); err != nil {
+		t.Errorf("Failed to marshal packet: %v", err)
+	}
+}
+
+// Marshal a pull_ack packet with extra useless Payload
+func TestMarshalPULL_ACK3(t *testing.T) {
+	payload := &Payload{
+		Stat: &Stat{
+			Rxfw: 14,
+			Rxnb: 14,
+			Rxok: 14,
+		},
+	}
+	packet := &Packet{
+		Version:    VERSION,
+		Token:      []byte{0xAA, 0x14},
+		Identifier: PULL_ACK,
+		GatewayId:  nil,
+		Payload:    payload,
+	}
+	if err := checkMarshalACK(packet); err != nil {
+		t.Errorf("Failed to marshal packet: %v", err)
+	}
+}
+
+// Marshal a pull_ack with extra useless gatewayId and payload
+func TestMarshalPULL_ACK4(t *testing.T) {
+	payload := &Payload{
+		Stat: &Stat{
+			Rxfw: 14,
+			Rxnb: 14,
+			Rxok: 14,
+		},
+	}
+	packet := &Packet{
+		Version:    VERSION,
+		Token:      []byte{0xAA, 0x14},
+		Identifier: PULL_ACK,
+		GatewayId:  []byte{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0},
+		Payload:    payload,
+	}
+	if err := checkMarshalACK(packet); err != nil {
+		t.Errorf("Failed to marshal packet: %v", err)
+	}
+}
+
+// Marshal a pull_ack with an invalid token (too short)
+func TestMarshalPULL_ACK5(t *testing.T) {
+	packet := &Packet{
+		Version:    VERSION,
+		Token:      []byte{0xAA},
+		Identifier: PULL_ACK,
+		GatewayId:  nil,
+		Payload:    nil,
+	}
+	_, err := Marshal(packet)
+	if err == nil {
+		t.Errorf("Successfully marshalled an invalid packet")
+	}
+}
+
+// Marshal a pull_ack with an invalid token (too long)
+func TestMarshalPULL_ACK6(t *testing.T) {
+	packet := &Packet{
+		Version:    VERSION,
+		Token:      []byte{0x9A, 0x7A, 0x7E},
+		Identifier: PULL_ACK,
+		GatewayId:  nil,
+		Payload:    nil,
+	}
+	_, err := Marshal(packet)
+	if err == nil {
+		t.Errorf("Successfully marshalled an invalid packet")
+	}
+}
 
 // ---------- PULL_RESP
+//TODO
