@@ -16,14 +16,14 @@ import (
 
 // Parse() with valid raw data and no payload
 func TestParse1(t *testing.T) {
-	raw := []byte{0x01, 0x14, 0x14, 0x00}
-	err, packet := Parse(raw)
+	raw := []byte{VERSION, 0x14, 0x14, PUSH_ACK}
+	packet, err := Parse(raw)
 
 	if err != nil {
 		t.Errorf("Failed to parse with error: %#v", err)
 	}
 
-	if packet.Version != 0x01 {
+	if packet.Version != VERSION {
 		t.Errorf("Invalid parsed version: %x", packet.Version)
 	}
 
@@ -31,18 +31,23 @@ func TestParse1(t *testing.T) {
 		t.Errorf("Invalid parsed token: %x", packet.Token)
 	}
 
-	if packet.Identifier != 0x00 {
+	if packet.Identifier != PUSH_ACK {
 		t.Errorf("Invalid parsed identifier: %x", packet.Identifier)
 	}
 
 	if packet.Payload != nil {
 		t.Errorf("Invalid parsed payload: % x", packet.Payload)
 	}
+
+    if packet.GatewayId != nil {
+        t.Errorf("Invalid parsed gateway id: % x", packet.GatewayId)
+    }
 }
 
 // Parse() with valid raw data and stat payload
 func TestParse2(t *testing.T) {
-	raw := []byte{0x01, 0x14, 0x14, 0x00}
+	raw := []byte{VERSION, 0x14, 0x14, PUSH_DATA }
+    gatewayId := []byte("qwerty1234")[0:8]
 	payload := []byte(`{
         "stat": {
             "time":"2014-01-12 08:59:28 GMT",
@@ -57,13 +62,13 @@ func TestParse2(t *testing.T) {
             "txnb":2
         }
     }`)
-	err, packet := Parse(append(raw, payload...))
+	packet, err := Parse(append(append(raw, gatewayId...), payload...))
 
 	if err != nil {
 		t.Errorf("Failed to parse with error: %#v", err)
 	}
 
-	if packet.Version != 0x01 {
+	if packet.Version != VERSION {
 		t.Errorf("Invalid parsed version: %x", packet.Version)
 	}
 
@@ -71,7 +76,11 @@ func TestParse2(t *testing.T) {
 		t.Errorf("Invalid parsed token: %x", packet.Token)
 	}
 
-	if packet.Identifier != 0x00 {
+    if !bytes.Equal(gatewayId, packet.GatewayId) {
+        t.Errorf("Invalid parsed gatewayId: % x", packet.GatewayId)
+    }
+
+	if packet.Identifier != PUSH_DATA {
 		t.Errorf("Invalid parsed identifier: %x", packet.Identifier)
 	}
 
@@ -111,8 +120,8 @@ func TestParse2(t *testing.T) {
 
 // Parse() with valid raw data and rxpk payloads
 func TestParse3(t *testing.T) {
-	raw := []byte{0x01, 0x14, 0x14, 0x00}
-
+	raw := []byte{VERSION, 0x14, 0x14, PUSH_DATA}
+    gatewayId := []byte("qwerty1234")[0:8]
 	payload := []byte(`{
         "rxpk":[
             {
@@ -159,13 +168,13 @@ func TestParse3(t *testing.T) {
         ]
     }`)
 
-	err, packet := Parse(append(raw, payload...))
+	packet, err := Parse(append(append(raw, gatewayId...), payload...))
 
 	if err != nil {
 		t.Errorf("Failed to parse with error: %#v", err)
 	}
 
-	if packet.Version != 0x01 {
+	if packet.Version != VERSION {
 		t.Errorf("Invalid parsed version: %x", packet.Version)
 	}
 
@@ -173,9 +182,13 @@ func TestParse3(t *testing.T) {
 		t.Errorf("Invalid parsed token: %x", packet.Token)
 	}
 
-	if packet.Identifier != 0x00 {
+	if packet.Identifier != PUSH_DATA {
 		t.Errorf("Invalid parsed identifier: %x", packet.Identifier)
 	}
+
+    if !bytes.Equal(gatewayId, packet.GatewayId) {
+        t.Errorf("Invalid parsed gatewayId: % x", packet.GatewayId)
+    }
 
 	if packet.Payload == nil {
 		t.Errorf("Invalid parsed payload: % x", packet.Payload)
@@ -213,8 +226,8 @@ func TestParse3(t *testing.T) {
 
 // Parse() with valid raw data and rxpk payloads + stat
 func TestParse4(t *testing.T) {
-	raw := []byte{0x01, 0x14, 0x14, 0x00}
-
+	raw := []byte{VERSION, 0x14, 0x14, PUSH_DATA}
+    gatewayId := []byte("qwerty1234")[0:8]
 	payload := []byte(`{
         "rxpk":[
             {
@@ -273,13 +286,13 @@ func TestParse4(t *testing.T) {
         }
     }`)
 
-	err, packet := Parse(append(raw, payload...))
+	packet, err := Parse(append(append(raw, gatewayId...), payload...))
 
 	if err != nil {
 		t.Errorf("Failed to parse with error: %#v", err)
 	}
 
-	if packet.Version != 0x01 {
+	if packet.Version != VERSION {
 		t.Errorf("Invalid parsed version: %x", packet.Version)
 	}
 
@@ -287,7 +300,7 @@ func TestParse4(t *testing.T) {
 		t.Errorf("Invalid parsed token: %x", packet.Token)
 	}
 
-	if packet.Identifier != 0x00 {
+	if packet.Identifier != PUSH_DATA {
 		t.Errorf("Invalid parsed identifier: %x", packet.Identifier)
 	}
 
@@ -350,7 +363,7 @@ func TestParse4(t *testing.T) {
 
 // Parse() with valid raw data and txpk payload
 func TestParse5(t *testing.T) {
-	raw := []byte{0x01, 0x14, 0x14, 0x03}
+	raw := []byte{VERSION, 0x14, 0x14, PULL_RESP}
 
 	payload := []byte(`{
         "txpk":{
@@ -367,13 +380,13 @@ func TestParse5(t *testing.T) {
         }
     }`)
 
-	err, packet := Parse(append(raw, payload...))
+	packet, err := Parse(append(raw, payload...))
 
 	if err != nil {
 		t.Errorf("Failed to parse with error: %#v", err)
 	}
 
-	if packet.Version != 0x01 {
+	if packet.Version != VERSION {
 		t.Errorf("Invalid parsed version: %x", packet.Version)
 	}
 
@@ -381,7 +394,7 @@ func TestParse5(t *testing.T) {
 		t.Errorf("Invalid parsed token: %x", packet.Token)
 	}
 
-	if packet.Identifier != 0x03 {
+	if packet.Identifier != PULL_RESP {
 		t.Errorf("Invalid parsed identifier: %x", packet.Identifier)
 	}
 
@@ -418,8 +431,8 @@ func TestParse5(t *testing.T) {
 
 // Parse() with an invalid version number
 func TestParse6(t *testing.T) {
-	raw := []byte{0x00, 0x14, 0x14, 0x00, 0x42, 0x14, 0x42, 0x14}
-	err, _ := Parse(raw)
+	raw := []byte{0x00, 0x14, 0x14, PUSH_ACK}
+	_, err := Parse(raw)
 
 	if err == nil {
 		t.Errorf("Successfully parsed an incorrect version number")
@@ -428,10 +441,10 @@ func TestParse6(t *testing.T) {
 
 // Parse() with an invalid raw message
 func TestParse7(t *testing.T) {
-	raw1 := []byte{0x01}
+	raw1 := []byte{VERSION}
 	var raw2 []byte
-	err1, _ := Parse(raw1)
-	err2, _ := Parse(raw2)
+	_, err1 := Parse(raw1)
+	_, err2 := Parse(raw2)
 
 	if err1 == nil {
 		t.Errorf("Successfully parsed an raw message")
@@ -444,8 +457,8 @@ func TestParse7(t *testing.T) {
 
 // Parse() with an invalid identifier
 func TestParse8(t *testing.T) {
-	raw := []byte{0x01, 0x14, 0x14, 0xFF, 0x42, 0x14, 0x42, 0x14}
-	err, _ := Parse(raw)
+	raw := []byte{VERSION, 0x14, 0x14, 0xFF}
+	_, err := Parse(raw)
 
 	if err == nil {
 		t.Errorf("Successfully parsed an incorrect identifier")
@@ -454,9 +467,10 @@ func TestParse8(t *testing.T) {
 
 // Parse() with an invalid payload
 func TestParse9(t *testing.T) {
-	raw := []byte{0x01, 0x14, 0x14, 0x00}
+	raw := []byte{VERSION, 0x14, 0x14, PUSH_DATA}
+    gatewayId := []byte("qwerty1234")[0:8]
 	payload := []byte(`wrong`)
-	err, _ := Parse(append(raw, payload...))
+	_, err := Parse(append(append(raw, gatewayId...), payload...))
 	if err == nil {
 		t.Errorf("Successfully parsed an incorrect payload")
 	}
@@ -464,7 +478,8 @@ func TestParse9(t *testing.T) {
 
 // Parse() with an invalid date
 func TestParse10(t *testing.T) {
-	raw := []byte{0x01, 0x14, 0x14, 0x00}
+	raw := []byte{VERSION, 0x14, 0x14, PUSH_DATA}
+    gatewayId := []byte("qwerty1234")[0:8]
 	payload := []byte(`{
         "stat": {
             "time":"null",
@@ -479,7 +494,7 @@ func TestParse10(t *testing.T) {
             "txnb":2
         }
     }`)
-	err, _ := Parse(append(raw, payload...))
+	_, err := Parse(append(append(raw, gatewayId...), payload...))
 	if err == nil {
 		t.Errorf("Successfully parsed an incorrect payload time")
 	}
