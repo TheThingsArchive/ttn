@@ -73,19 +73,19 @@ type Packet struct {
 
 // Payload refers to the JSON payload sent by a gateway or a server.
 type Payload struct {
-	Raw  []byte  `json:"-"`     // The raw unparsed response
-	RXPK *[]RXPK `json:"rxpk"`  // A list of RXPK messages transmitted if any
-	Stat *Stat   `json:"stat"`  // A Stat message transmitted if any
-	TXPK *TXPK   `json:"txpk"`  // A TXPK message transmitted if any
+	Raw  []byte  `json:"-"`    // The raw unparsed response
+	RXPK *[]RXPK `json:"rxpk"` // A list of RXPK messages transmitted if any
+	Stat *Stat   `json:"stat"` // A Stat message transmitted if any
+	TXPK *TXPK   `json:"txpk"` // A TXPK message transmitted if any
 }
 
 // Available packet commands
 const (
-	PUSH_DATA byte = iota   // Sent by the gateway for an uplink message with data
-	PUSH_ACK                // Sent by the gateway's recipient in response to a PUSH_DATA
-	PULL_DATA               // Sent periodically by the gateway to keep a connection open
-	PULL_RESP               // Sent by the gateway's recipient to transmit back data to the Gateway
-	PULL_ACK                // Sent by the gateway's recipient in response to PULL_DATA
+	PUSH_DATA byte = iota // Sent by the gateway for an uplink message with data
+	PUSH_ACK              // Sent by the gateway's recipient in response to a PUSH_DATA
+	PULL_DATA             // Sent periodically by the gateway to keep a connection open
+	PULL_RESP             // Sent by the gateway's recipient to transmit back data to the Gateway
+	PULL_ACK              // Sent by the gateway's recipient in response to PULL_DATA
 )
 
 const VERSION = 0x01
@@ -100,11 +100,11 @@ func Parse(raw []byte) (*Packet, error) {
 	}
 
 	packet := &Packet{
-        Version: raw[0],
-        Token: raw[1:3],
-        Identifier: raw[3],
-        GatewayId: nil,
-        Payload: nil,
+		Version:    raw[0],
+		Token:      raw[1:3],
+		Identifier: raw[3],
+		GatewayId:  nil,
+		Payload:    nil,
 	}
 
 	if packet.Version != VERSION {
@@ -115,18 +115,18 @@ func Parse(raw []byte) (*Packet, error) {
 		return nil, errors.New("Unreckognized protocol identifier")
 	}
 
-    cursor := 4
+	cursor := 4
 	if packet.Identifier == PULL_DATA || packet.Identifier == PUSH_DATA {
-        if size < 12 {
-            return nil, errors.New("Invalid gateway identifier")
-        }
-        packet.GatewayId = raw[cursor:12]
-        cursor = 12
+		if size < 12 {
+			return nil, errors.New("Invalid gateway identifier")
+		}
+		packet.GatewayId = raw[cursor:12]
+		cursor = 12
 	}
 
 	var err error
 	if size > cursor && (packet.Identifier == PUSH_DATA || packet.Identifier == PULL_RESP) {
-        packet.Payload, err = decodePayload(raw[cursor:])
+		packet.Payload, err = decodePayload(raw[cursor:])
 	}
 
 	return packet, err
