@@ -11,13 +11,13 @@ import (
 )
 
 // ------------------------------------------------------------
-// ------------------------- Parse (raw []byte) (error, Packet)
+// ------------------------- Unmarshal (raw []byte) (Packet, error)
 // ------------------------------------------------------------
 
-// Parse() with valid raw data and no payload (PUSH_ACK)
-func TestParse1(t *testing.T) {
+// Unmarshal() with valid raw data and no payload (PUSH_ACK)
+func TestUnmarshal1(t *testing.T) {
 	raw := []byte{VERSION, 0x14, 0x14, PUSH_ACK}
-	packet, err := Parse(raw)
+	packet, err := Unmarshal(raw)
 
 	if err != nil {
 		t.Errorf("Failed to parse with error: %#v", err)
@@ -44,8 +44,8 @@ func TestParse1(t *testing.T) {
 	}
 }
 
-// Parse() with valid raw data and stat payload
-func TestParse2(t *testing.T) {
+// Unmarshal() with valid raw data and stat payload
+func TestUnmarshal2(t *testing.T) {
 	raw := []byte{VERSION, 0x14, 0x14, PUSH_DATA}
 	gatewayId := []byte("qwerty1234")[0:8]
 	payload := []byte(`{
@@ -62,7 +62,7 @@ func TestParse2(t *testing.T) {
             "txnb":2
         }
     }`)
-	packet, err := Parse(append(append(raw, gatewayId...), payload...))
+	packet, err := Unmarshal(append(append(raw, gatewayId...), payload...))
 
 	if err != nil {
 		t.Errorf("Failed to parse with error: %#v", err)
@@ -118,8 +118,8 @@ func TestParse2(t *testing.T) {
 
 }
 
-// Parse() with valid raw data and rxpk payloads
-func TestParse3(t *testing.T) {
+// Unmarshal() with valid raw data and rxpk payloads
+func TestUnmarshal3(t *testing.T) {
 	raw := []byte{VERSION, 0x14, 0x14, PUSH_DATA}
 	gatewayId := []byte("qwerty1234")[0:8]
 	payload := []byte(`{
@@ -168,7 +168,7 @@ func TestParse3(t *testing.T) {
         ]
     }`)
 
-	packet, err := Parse(append(append(raw, gatewayId...), payload...))
+	packet, err := Unmarshal(append(append(raw, gatewayId...), payload...))
 
 	if err != nil {
 		t.Errorf("Failed to parse with error: %#v", err)
@@ -224,8 +224,8 @@ func TestParse3(t *testing.T) {
 	}
 }
 
-// Parse() with valid raw data and rxpk payloads + stat
-func TestParse4(t *testing.T) {
+// Unmarshal() with valid raw data and rxpk payloads + stat
+func TestUnmarshal4(t *testing.T) {
 	raw := []byte{VERSION, 0x14, 0x14, PUSH_DATA}
 	gatewayId := []byte("qwerty1234")[0:8]
 	payload := []byte(`{
@@ -286,7 +286,7 @@ func TestParse4(t *testing.T) {
         }
     }`)
 
-	packet, err := Parse(append(append(raw, gatewayId...), payload...))
+	packet, err := Unmarshal(append(append(raw, gatewayId...), payload...))
 
 	if err != nil {
 		t.Errorf("Failed to parse with error: %#v", err)
@@ -361,8 +361,8 @@ func TestParse4(t *testing.T) {
 	}
 }
 
-// Parse() with valid raw data and txpk payload
-func TestParse5(t *testing.T) {
+// Unmarshal() with valid raw data and txpk payload
+func TestUnmarshal5(t *testing.T) {
 	raw := []byte{VERSION, 0x14, 0x14, PULL_RESP}
 
 	payload := []byte(`{
@@ -380,7 +380,7 @@ func TestParse5(t *testing.T) {
         }
     }`)
 
-	packet, err := Parse(append(raw, payload...))
+	packet, err := Unmarshal(append(raw, payload...))
 
 	if err != nil {
 		t.Errorf("Failed to parse with error: %#v", err)
@@ -429,22 +429,22 @@ func TestParse5(t *testing.T) {
 	}
 }
 
-// Parse() with an invalid version number
-func TestParse6(t *testing.T) {
+// Unmarshal() with an invalid version number
+func TestUnmarshal6(t *testing.T) {
 	raw := []byte{0x00, 0x14, 0x14, PUSH_ACK}
-	_, err := Parse(raw)
+	_, err := Unmarshal(raw)
 
 	if err == nil {
 		t.Errorf("Successfully parsed an incorrect version number")
 	}
 }
 
-// Parse() with an invalid raw message
-func TestParse7(t *testing.T) {
+// Unmarshal() with an invalid raw message
+func TestUnmarshal7(t *testing.T) {
 	raw1 := []byte{VERSION}
 	var raw2 []byte
-	_, err1 := Parse(raw1)
-	_, err2 := Parse(raw2)
+	_, err1 := Unmarshal(raw1)
+	_, err2 := Unmarshal(raw2)
 
 	if err1 == nil {
 		t.Errorf("Successfully parsed an raw message")
@@ -455,29 +455,29 @@ func TestParse7(t *testing.T) {
 	}
 }
 
-// Parse() with an invalid identifier
-func TestParse8(t *testing.T) {
+// Unmarshal() with an invalid identifier
+func TestUnmarshal8(t *testing.T) {
 	raw := []byte{VERSION, 0x14, 0x14, 0xFF}
-	_, err := Parse(raw)
+	_, err := Unmarshal(raw)
 
 	if err == nil {
 		t.Errorf("Successfully parsed an incorrect identifier")
 	}
 }
 
-// Parse() with an invalid payload
-func TestParse9(t *testing.T) {
+// Unmarshal() with an invalid payload
+func TestUnmarshal9(t *testing.T) {
 	raw := []byte{VERSION, 0x14, 0x14, PUSH_DATA}
 	gatewayId := []byte("qwerty1234")[0:8]
 	payload := []byte(`wrong`)
-	_, err := Parse(append(append(raw, gatewayId...), payload...))
+	_, err := Unmarshal(append(append(raw, gatewayId...), payload...))
 	if err == nil {
 		t.Errorf("Successfully parsed an incorrect payload")
 	}
 }
 
-// Parse() with an invalid date
-func TestParse10(t *testing.T) {
+// Unmarshal() with an invalid date
+func TestUnmarshal10(t *testing.T) {
 	raw := []byte{VERSION, 0x14, 0x14, PUSH_DATA}
 	gatewayId := []byte("qwerty1234")[0:8]
 	payload := []byte(`{
@@ -494,14 +494,14 @@ func TestParse10(t *testing.T) {
             "txnb":2
         }
     }`)
-	_, err := Parse(append(append(raw, gatewayId...), payload...))
+	_, err := Unmarshal(append(append(raw, gatewayId...), payload...))
 	if err == nil {
 		t.Errorf("Successfully parsed an incorrect payload time")
 	}
 }
 
-// Parse() with valid raw data but a useless payload
-func TestParse11(t *testing.T) {
+// Unmarshal() with valid raw data but a useless payload
+func TestUnmarshal11(t *testing.T) {
 	raw := []byte{VERSION, 0x14, 0x14, PUSH_ACK}
 	payload := []byte(`{
         "stat": {
@@ -517,7 +517,7 @@ func TestParse11(t *testing.T) {
             "txnb":2
         }
     }`)
-	packet, err := Parse(append(raw, payload...))
+	packet, err := Unmarshal(append(raw, payload...))
 
 	if err != nil {
 		t.Errorf("Failed to parse a valid PUSH_ACK packet")
@@ -528,8 +528,8 @@ func TestParse11(t *testing.T) {
 	}
 }
 
-// Parse() with valid raw data but a useless payload
-func TestParse12(t *testing.T) {
+// Unmarshal() with valid raw data but a useless payload
+func TestUnmarshal12(t *testing.T) {
 	raw := []byte{VERSION, 0x14, 0x14, PULL_ACK}
 	payload := []byte(`{
         "stat": {
@@ -545,7 +545,7 @@ func TestParse12(t *testing.T) {
             "txnb":2
         }
     }`)
-	packet, err := Parse(append(raw, payload...))
+	packet, err := Unmarshal(append(raw, payload...))
 
 	if err != nil {
 		t.Errorf("Failed to parse a valid PULL_ACK packet")
@@ -556,8 +556,8 @@ func TestParse12(t *testing.T) {
 	}
 }
 
-// Parse() with valid raw data but a useless payload
-func TestParse13(t *testing.T) {
+// Unmarshal() with valid raw data but a useless payload
+func TestUnmarshal13(t *testing.T) {
 	raw := []byte{VERSION, 0x14, 0x14, PULL_DATA}
 	gatewayId := []byte("qwerty1234")[0:8]
 	payload := []byte(`{
@@ -574,7 +574,7 @@ func TestParse13(t *testing.T) {
             "txnb":2
         }
     }`)
-	packet, err := Parse(append(append(raw, gatewayId...), payload...))
+	packet, err := Unmarshal(append(append(raw, gatewayId...), payload...))
 
 	if err != nil {
 		t.Errorf("Failed to parse a valid PULL_DATA packet")
@@ -585,10 +585,10 @@ func TestParse13(t *testing.T) {
 	}
 }
 
-// Parse() with valid raw data and no payload (PULL_ACK)
-func TestParse14(t *testing.T) {
+// Unmarshal() with valid raw data and no payload (PULL_ACK)
+func TestUnmarshal14(t *testing.T) {
 	raw := []byte{VERSION, 0x14, 0x14, PULL_ACK}
-	packet, err := Parse(raw)
+	packet, err := Unmarshal(raw)
 
 	if err != nil {
 		t.Errorf("Failed to parse with error: %#v", err)
@@ -615,11 +615,11 @@ func TestParse14(t *testing.T) {
 	}
 }
 
-// Parse() with valid raw data and no payload (PULL_DATA)
-func TestParse15(t *testing.T) {
+// Unmarshal() with valid raw data and no payload (PULL_DATA)
+func TestUnmarshal15(t *testing.T) {
 	raw := []byte{VERSION, 0x14, 0x14, PULL_DATA}
 	gatewayId := []byte("qwerty1234")[0:8]
-	packet, err := Parse(append(raw, gatewayId...))
+	packet, err := Unmarshal(append(raw, gatewayId...))
 
 	if err != nil {
 		t.Errorf("Failed to parse with error: %#v", err)

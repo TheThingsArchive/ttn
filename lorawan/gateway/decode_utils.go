@@ -49,7 +49,7 @@ func (d *datrParser) UnmarshalJSON(raw []byte) error {
 	return nil
 }
 
-func decodePayload(raw []byte) (*Payload, error) {
+func unmarshalPayload(raw []byte) (*Payload, error) {
 	payload := &Payload{raw, nil, nil, nil}
 	customStruct := &struct {
 		Stat *struct {

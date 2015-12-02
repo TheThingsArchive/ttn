@@ -90,9 +90,9 @@ const (
 
 const VERSION = 0x01
 
-// Parse parse a raw response from a server and turn in into a packet.
+// Unmarshal parse a raw response from a server and turn in into a packet.
 // Will return an error if the response fields are incorrect.
-func Parse(raw []byte) (*Packet, error) {
+func Unmarshal(raw []byte) (*Packet, error) {
 	size := len(raw)
 
 	if size < 3 {
@@ -126,8 +126,13 @@ func Parse(raw []byte) (*Packet, error) {
 
 	var err error
 	if size > cursor && (packet.Identifier == PUSH_DATA || packet.Identifier == PULL_RESP) {
-		packet.Payload, err = decodePayload(raw[cursor:])
+		packet.Payload, err = unmarshalPayload(raw[cursor:])
 	}
 
 	return packet, err
+}
+
+// Marshal transform a packet to a sequence of bytes.
+func Marshal(packet Packet) ([]byte, error) {
+    return []byte{}, nil
 }
