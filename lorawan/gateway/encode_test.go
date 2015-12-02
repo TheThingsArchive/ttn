@@ -469,6 +469,126 @@ func TestMarshalPUSH_ACK6(t *testing.T) {
 }
 
 // ---------- PULL_DATA
+func checkMarshalPULL_ACK(packet *Packet) error {
+	raw, err := Marshal(packet)
+
+	if err != nil {
+		return err
+	}
+
+	if len(raw) != 12 {
+		return errors.New(fmt.Printf("Invalid raw sequence length: %d", len(raw)))
+	}
+
+	if raw[0] != packet.Version {
+		return errors.New(fmt.Printf("Invalid raw version: %x", raw[0]))
+	}
+
+	if !bytes.Equal(raw[1:3], packet.Token) {
+		return errors.New(fmt.Printf("Invalid raw token: %x", raw[1:3]))
+	}
+
+	if raw[3] != packet.Identifier {
+		return errors.New(fmt.Printf("Invalid raw identifier: %x", raw[3]))
+	}
+
+	if !bytes.Equal(raw[4:12], packet.GatewayId) {
+		return errors.New(fmt.Printf("Invalid raw gatewayId: % x", raw[4:12]))
+	}
+
+	return err
+}
+
+// Marshal a basic pull_data packet
+func TestMarshalPULL_DATA1(t *testing.T) {
+	packet := &Packet{
+		Version:    VERSION,
+		Token:      []byte{0xAA, 0x14},
+		Identifier: PUSH_ACK,
+		GatewayId:  []byte{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0},
+		Payload:    nil,
+	}
+	if err := checkMarshalPULL_DATA(packet); err != nil {
+		t.Errorf("Failed to marshal packet: %v", err)
+	}
+}
+
+// Marshal a pull_data packet with an extra useless Payload
+func TestMarshalPULL_DATA2(t *testing.T) {
+	payload := &Payload{
+		Stat: &Stat{
+			Rxfw: 14,
+			Rxnb: 14,
+			Rxok: 14,
+		},
+	}
+	packet := &Packet{
+		Version:    VERSION,
+		Token:      []byte{0xAA, 0x14},
+		Identifier: PUSH_ACK,
+		GatewayId:  []byte{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0},
+		Payload:    payload,
+	}
+	if err := checkMarshalPULL_DATA(packet); err != nil {
+		t.Errorf("Failed to marshal packet: %v", err)
+	}
+}
+
+// Marshal a pull_data packet with an invalid token (too short)
+func TestMarshalPULL_DATA1(t *testing.T) {
+	packet := &Packet{
+		Version:    VERSION,
+		Token:      []byte{0xAA},
+		Identifier: PUSH_ACK,
+		GatewayId:  []byte{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0},
+		Payload:    nil,
+	}
+	if err := checkMarshalPULL_DATA(packet); err == nil {
+		t.Errorf("Successfully marshalled a packet with an invalid token")
+	}
+}
+
+// Marshal a pull_data packet with an invalid token (too long)
+func TestMarshalPULL_DATA1(t *testing.T) {
+	packet := &Packet{
+		Version:    VERSION,
+		Token:      []byte{0xAA, 0x14, 0x42},
+		Identifier: PUSH_ACK,
+		GatewayId:  []byte{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0},
+		Payload:    nil,
+	}
+	if err := checkMarshalPULL_DATA(packet); err == nil {
+		t.Errorf("Successfully marshalled a packet with an invalid token")
+	}
+}
+
+// Marshal a pull_data packet with an invalid gatewayId (too short)
+func TestMarshalPULL_DATA1(t *testing.T) {
+	packet := &Packet{
+		Version:    VERSION,
+		Token:      []byte{0xAA, 0x14},
+		Identifier: PUSH_ACK,
+		GatewayId:  []byte{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0},
+		Payload:    nil,
+	}
+	if err := checkMarshalPULL_DATA(packet); err == nil {
+		t.Errorf("Successfully marshalled a packet with an invalid gatewayId")
+	}
+}
+
+// Marshal a pull_data packet with an invalid gatewayId (too long)
+func TestMarshalPULL_DATA1(t *testing.T) {
+	packet := &Packet{
+		Version:    VERSION,
+		Token:      []byte{0xAA, 0x14},
+		Identifier: PUSH_ACK,
+		GatewayId:  []byte{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0},
+		Payload:    nil,
+	}
+	if err := checkMarshalPULL_DATA(packet); err == nil {
+		t.Errorf("Successfully marshalled a packet with an invalid gatewayId")
+	}
+}
 
 // ---------- PULL_ACK
 
