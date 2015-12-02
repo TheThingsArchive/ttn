@@ -7,7 +7,6 @@
 package protocol
 
 import (
-	"errors"
 	"time"
 )
 
@@ -89,50 +88,3 @@ const (
 )
 
 const VERSION = 0x01
-
-// Unmarshal parse a raw response from a server and turn in into a packet.
-// Will return an error if the response fields are incorrect.
-func Unmarshal(raw []byte) (*Packet, error) {
-	size := len(raw)
-
-	if size < 3 {
-		return nil, errors.New("Invalid raw data format")
-	}
-
-	packet := &Packet{
-		Version:    raw[0],
-		Token:      raw[1:3],
-		Identifier: raw[3],
-		GatewayId:  nil,
-		Payload:    nil,
-	}
-
-	if packet.Version != VERSION {
-		return nil, errors.New("Unreckognized protocol version")
-	}
-
-	if packet.Identifier > PULL_ACK {
-		return nil, errors.New("Unreckognized protocol identifier")
-	}
-
-	cursor := 4
-	if packet.Identifier == PULL_DATA || packet.Identifier == PUSH_DATA {
-		if size < 12 {
-			return nil, errors.New("Invalid gateway identifier")
-		}
-		packet.GatewayId = raw[cursor:12]
-		cursor = 12
-	}
-
-	var err error
-	if size > cursor && (packet.Identifier == PUSH_DATA || packet.Identifier == PULL_RESP) {
-		packet.Payload, err = unmarshalPayload(raw[cursor:])
-	}
-
-	return packet, err
-}
-
-// Marshal transform a packet to a sequence of bytes.
-func Marshal(packet Packet) ([]byte, error) {
-    return []byte{}, nil
-}

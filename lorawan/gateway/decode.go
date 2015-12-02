@@ -10,11 +10,56 @@ import (
 	"time"
 )
 
-type timeParser struct {
-	Value  time.Time
-	Parsed bool
+// Unmarshal parse a raw response from a server and turn in into a packet.
+// Will return an error if the response fields are incorrect.
+func Unmarshal(raw []byte) (*Packet, error) {
+	size := len(raw)
+
+	if size < 3 {
+		return nil, errors.New("Invalid raw data format")
+	}
+
+	packet := &Packet{
+		Version:    raw[0],
+		Token:      raw[1:3],
+		Identifier: raw[3],
+		GatewayId:  nil,
+		Payload:    nil,
+	}
+
+	if packet.Version != VERSION {
+		return nil, errors.New("Unreckognized protocol version")
+	}
+
+	if packet.Identifier > PULL_ACK {
+		return nil, errors.New("Unreckognized protocol identifier")
+	}
+
+	cursor := 4
+	if packet.Identifier == PULL_DATA || packet.Identifier == PUSH_DATA {
+		if size < 12 {
+			return nil, errors.New("Invalid gateway identifier")
+		}
+		packet.GatewayId = raw[cursor:12]
+		cursor = 12
+	}
+
+	var err error
+	if size > cursor && (packet.Identifier == PUSH_DATA || packet.Identifier == PULL_RESP) {
+		packet.Payload, err = unmarshalPayload(raw[cursor:])
+	}
+
+	return packet, err
 }
 
+// timeParser is used as a proxy to Unmarshal JSON objects with different date types as the time
+// module parse RFC3339 by default
+type timeParser struct {
+	Value  time.Time    // The parsed time value
+	Parsed bool         // Set to true if the value has been parsed
+}
+
+// implement the Unmarshaller interface from encoding/json
 func (t *timeParser) UnmarshalJSON(raw []byte) error {
 	var err error
 	value := strings.Trim(string(raw), `"`)
@@ -33,11 +78,15 @@ func (t *timeParser) UnmarshalJSON(raw []byte) error {
 	return nil
 }
 
+// datrParser is used as a proxy to Unmarshal datr field in json payloads.
+// Depending on the modulation type, the datr type could be either a string or a number.
+// We're gonna parse it as a string in any case.
 type datrParser struct {
-	Value  string
-	Parsed bool
+	Value  string   // The parsed value
+	Parsed bool     // Set to true if the value has been parsed
 }
 
+// implement the Unmarshaller interface from encoding/json
 func (d *datrParser) UnmarshalJSON(raw []byte) error {
 	d.Value = strings.Trim(string(raw), `"`)
 
@@ -49,6 +98,7 @@ func (d *datrParser) UnmarshalJSON(raw []byte) error {
 	return nil
 }
 
+// unmarshalPayload is an until used by Unmarshal to parse a Payload from a sequence of bytes.
 func unmarshalPayload(raw []byte) (*Payload, error) {
 	payload := &Payload{raw, nil, nil, nil}
 	customStruct := &struct {
