@@ -14,7 +14,7 @@ import (
 // ------------------------- Parse (raw []byte) (error, Packet)
 // ------------------------------------------------------------
 
-// Parse() with valid raw data and no payload
+// Parse() with valid raw data and no payload (PUSH_ACK)
 func TestParse1(t *testing.T) {
 	raw := []byte{VERSION, 0x14, 0x14, PUSH_ACK}
 	packet, err := Parse(raw)
@@ -498,4 +498,150 @@ func TestParse10(t *testing.T) {
 	if err == nil {
 		t.Errorf("Successfully parsed an incorrect payload time")
 	}
+}
+
+// Parse() with valid raw data but a useless payload
+func TestParse11(t *testing.T) {
+	raw := []byte{VERSION, 0x14, 0x14, PUSH_ACK }
+	payload := []byte(`{
+        "stat": {
+            "time":"2014-01-12 08:59:28 GMT",
+            "lati":46.24000,
+            "long":3.25230,
+            "alti":145,
+            "rxnb":2,
+            "rxok":2,
+            "rxfw":2,
+            "ackr":100.0,
+            "dwnb":2,
+            "txnb":2
+        }
+    }`)
+	packet, err := Parse(append(raw, payload...))
+
+    if err != nil {
+        t.Errorf("Failed to parse a valid PUSH_ACK packet")
+    }
+
+    if packet.Payload != nil {
+        t.Errorf("Parsed payload on a PUSH_ACK packet")
+    }
+}
+
+// Parse() with valid raw data but a useless payload
+func TestParse12(t *testing.T) {
+	raw := []byte{VERSION, 0x14, 0x14, PULL_ACK }
+	payload := []byte(`{
+        "stat": {
+            "time":"2014-01-12 08:59:28 GMT",
+            "lati":46.24000,
+            "long":3.25230,
+            "alti":145,
+            "rxnb":2,
+            "rxok":2,
+            "rxfw":2,
+            "ackr":100.0,
+            "dwnb":2,
+            "txnb":2
+        }
+    }`)
+	packet, err := Parse(append(raw, payload...))
+
+    if err != nil {
+        t.Errorf("Failed to parse a valid PULL_ACK packet")
+    }
+
+    if packet.Payload != nil {
+        t.Errorf("Parsed payload on a PULL_ACK packet")
+    }
+}
+
+// Parse() with valid raw data but a useless payload
+func TestParse13(t *testing.T) {
+	raw := []byte{VERSION, 0x14, 0x14, PULL_DATA }
+    gatewayId := []byte("qwerty1234")[0:8]
+	payload := []byte(`{
+        "stat": {
+            "time":"2014-01-12 08:59:28 GMT",
+            "lati":46.24000,
+            "long":3.25230,
+            "alti":145,
+            "rxnb":2,
+            "rxok":2,
+            "rxfw":2,
+            "ackr":100.0,
+            "dwnb":2,
+            "txnb":2
+        }
+    }`)
+	packet, err := Parse(append(append(raw, gatewayId...), payload...))
+
+    if err != nil {
+        t.Errorf("Failed to parse a valid PULL_DATA packet")
+    }
+
+    if packet.Payload != nil {
+        t.Errorf("Parsed payload on a PULL_DATA packet")
+    }
+}
+
+// Parse() with valid raw data and no payload (PULL_ACK)
+func TestParse14(t *testing.T) {
+	raw := []byte{VERSION, 0x14, 0x14, PULL_ACK}
+	packet, err := Parse(raw)
+
+	if err != nil {
+		t.Errorf("Failed to parse with error: %#v", err)
+	}
+
+	if packet.Version != VERSION {
+		t.Errorf("Invalid parsed version: %x", packet.Version)
+	}
+
+	if !bytes.Equal([]byte{0x14, 0x14}, packet.Token) {
+		t.Errorf("Invalid parsed token: %x", packet.Token)
+	}
+
+	if packet.Identifier != PULL_ACK {
+		t.Errorf("Invalid parsed identifier: %x", packet.Identifier)
+	}
+
+	if packet.Payload != nil {
+		t.Errorf("Invalid parsed payload: % x", packet.Payload)
+	}
+
+    if packet.GatewayId != nil {
+        t.Errorf("Invalid parsed gateway id: % x", packet.GatewayId)
+    }
+}
+
+// Parse() with valid raw data and no payload (PULL_DATA)
+func TestParse15(t *testing.T) {
+	raw := []byte{VERSION, 0x14, 0x14, PULL_DATA}
+    gatewayId := []byte("qwerty1234")[0:8]
+	packet, err := Parse(append(raw, gatewayId...))
+
+	if err != nil {
+		t.Errorf("Failed to parse with error: %#v", err)
+	}
+
+	if packet.Version != VERSION {
+		t.Errorf("Invalid parsed version: %x", packet.Version)
+	}
+
+	if !bytes.Equal([]byte{0x14, 0x14}, packet.Token) {
+		t.Errorf("Invalid parsed token: %x", packet.Token)
+	}
+
+	if packet.Identifier != PULL_DATA {
+		t.Errorf("Invalid parsed identifier: %x", packet.Identifier)
+	}
+
+	if packet.Payload != nil {
+		t.Errorf("Invalid parsed payload: % x", packet.Payload)
+	}
+
+    if !bytes.Equal(gatewayId, packet.GatewayId)  {
+        t.Errorf("Invalid parsed gateway id: % x", packet.GatewayId)
+    }
 }
