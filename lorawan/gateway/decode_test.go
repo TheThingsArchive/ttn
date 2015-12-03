@@ -5,10 +5,10 @@ package gateway
 
 import (
 	"bytes"
+	"github.com/thethingsnetwork/core/utils/pointer"
 	"reflect"
 	"testing"
 	"time"
-	"utils/pointer"
 )
 
 // ------------------------------------------------------------
@@ -355,7 +355,6 @@ func TestUnmarshal4(t *testing.T) {
 		Ackr: pointer.Float64(100.0),
 		Dwnb: pointer.Uint(2),
 		Txnb: pointer.Uint(2),
-		Time: statTime,
 	}
 
 	if !reflect.DeepEqual(stat, *packet.Payload.Stat) {
