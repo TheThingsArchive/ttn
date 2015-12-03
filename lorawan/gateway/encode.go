@@ -38,20 +38,25 @@ func Marshal(packet *Packet) ([]byte, error) {
 	return raw, nil
 }
 
+// timeMarshaler is used as a proxy to marshal times.
+// By default, time.Time is marshalling to RFC3339 format, but we need differents format.
 type timemarshaler struct {
 	layout string
 	value  time.Time
 }
 
+// MarshalJSON implements the Marshaler interface from encoding/json
 func (t *timemarshaler) MarshalJSON() ([]byte, error) {
 	return append(append([]byte(`"`), []byte(t.value.Format(t.layout))...), []byte(`"`)...), nil
 }
 
+// datrmarshaler is used as a proxy to marshal datr field which could be either number or string
 type datrmarshaler struct {
 	kind  string
 	value string
 }
 
+// MarshalJSON implements the Marshaler interface from encoding/json
 func (d *datrmarshaler) MarshalJSON() ([]byte, error) {
 	if d.kind == "uint" {
 		return []byte(d.value), nil
@@ -59,6 +64,7 @@ func (d *datrmarshaler) MarshalJSON() ([]byte, error) {
 	return append(append([]byte(`"`), []byte(d.value)...), []byte(`"`)...), nil
 }
 
+// MarshalJSON implements the Marshaler interface from encoding/json
 func (r *RXPK) MarshalJSON() ([]byte, error) {
 	var rfctime *timemarshaler = nil
 	var datr *datrmarshaler = nil
@@ -109,6 +115,7 @@ func (r *RXPK) MarshalJSON() ([]byte, error) {
 	})
 }
 
+// MarshalJSON implements the Marshaler interface from encoding/json
 func (s *Stat) MarshalJSON() ([]byte, error) {
 	var rfctime *timemarshaler = nil
 	if s.Time != nil {
@@ -140,6 +147,7 @@ func (s *Stat) MarshalJSON() ([]byte, error) {
 	})
 }
 
+// MarshalJSON implements the Marshaler interface from encoding/json
 func (t *TXPK) MarshalJSON() ([]byte, error) {
 	var rfctime *timemarshaler = nil
 	var datr *datrmarshaler = nil
