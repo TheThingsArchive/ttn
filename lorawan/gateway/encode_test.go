@@ -53,7 +53,20 @@ func checkMarshalPUSH_DATA(packet *Packet, payload []byte) error {
 func TestMarshalPUSH_DATA1(t *testing.T) {
 	time1, err := time.Parse(time.RFC3339, "2014-01-12T08:59:28Z")
 
-	// {"stat":{"ackr":100,"alti":145,"dwnb":2,"lati":46.24,"long":3.2523,"rxfw":2,"rxnb":2,"rxok":2,"time":"2014-01-12 08:59:28 GMT","txnb":2}}
+	// {
+	//     "stat": {
+	//         "ackr": 100,
+	//         "alti": 145,
+	//         "dwnb": 2,
+	//         "lati": 46.24,
+	//         "long": 3.2523,
+	//         "rxfw": 2,
+	//         "rxnb": 2,
+	//         "rxok": 2,
+	//         "time": "2014-01-12 08:59:28 GMT",
+	//         "txnb": 2
+	//     }
+	// }
 	payload, err := ioutil.ReadFile("./test_data/marshal_stat")
 
 	packet := &Packet{
@@ -87,7 +100,38 @@ func TestMarshalPUSH_DATA2(t *testing.T) {
 	time1, err := time.Parse(time.RFC3339Nano, "2013-03-31T16:21:17.528002Z")
 	time2, err := time.Parse(time.RFC3339Nano, "2013-03-31T16:21:17.530974Z")
 
-	//{"rxpk":[{"chan":2,"codr":"4/6","data":"-DS4CGaDCdG+48eJNM3Vai-zDpsR71Pn9CPA9uCON84","datr":"SF7BW125","freq":866.349812,"lsnr":5.1,"modu":"LORA","rssi":-35,"size":32,"stat":1,"time":"2013-03-31T16:21:17.528002Z","tmst":3512348611},{"chan":9,"data":"VEVTVF9QQUNLRVRfMTIzNA==","datr":50000,"freq":869.1,"modu":"FSK","rfch":1,"rssi":-75,"size":16,"stat":1,"time":"2013-03-31T16:21:17.530974Z","tmst":3512348514}]}
+	//{
+	//    "rxpk": [
+	//        {
+	//            "chan": 2,
+	//            "codr": "4/6",
+	//            "data": "-DS4CGaDCdG+48eJNM3Vai-zDpsR71Pn9CPA9uCON84",
+	//            "datr": "SF7BW125",
+	//            "freq": 866.349812,
+	//            "lsnr": 5.1,
+	//            "modu": "LORA",
+	//            "rfch": 0,
+	//            "rssi": -35,
+	//            "size": 32,
+	//            "stat": 1,
+	//            "time": "2013-03-31T16:21:17.528002Z",
+	//            "tmst": 3512348611
+	//        },
+	//        {
+	//            "chan": 9,
+	//            "data": "VEVTVF9QQUNLRVRfMTIzNA==",
+	//            "datr": 50000,
+	//            "freq": 869.1,
+	//            "modu": "FSK",
+	//            "rfch": 1,
+	//            "rssi": -75,
+	//            "size": 16,
+	//            "stat": 1,
+	//            "time": "2013-03-31T16:21:17.530974Z",
+	//            "tmst": 3512348514
+	//        }
+	//    ]
+	//}
 	payload, err := ioutil.ReadFile("./test_data/marshal_rxpk")
 
 	if err != nil {
@@ -103,19 +147,19 @@ func TestMarshalPUSH_DATA2(t *testing.T) {
 		Payload: &Payload{
 			RXPK: &[]RXPK{
 				RXPK{
+					Chan: pointer.Uint(2),
+					Codr: pointer.String("4/6"),
+					Data: pointer.String("-DS4CGaDCdG+48eJNM3Vai-zDpsR71Pn9CPA9uCON84"),
+					Datr: pointer.String("SF7BW125"),
+					Freq: pointer.Float64(866.349812),
+					Lsnr: pointer.Float64(5.1),
+					Modu: pointer.String("LORA"),
+					Rfch: pointer.Uint(0),
+					Rssi: pointer.Int(-35),
+					Size: pointer.Uint(32),
+					Stat: pointer.Int(1),
 					Time: &time1,
 					Tmst: pointer.Uint(3512348611),
-					Chan: pointer.Uint(2),
-					Rfch: pointer.Uint(0),
-					Freq: pointer.Float64(866.349812),
-					Stat: pointer.Int(1),
-					Modu: pointer.String("LORA"),
-					Datr: pointer.String("SF7BW125"),
-					Codr: pointer.String("4/6"),
-					Rssi: pointer.Int(-35),
-					Lsnr: pointer.Float64(5.1),
-					Size: pointer.Uint(32),
-					Data: pointer.String("-DS4CGaDCdG+48eJNM3Vai-zDpsR71Pn9CPA9uCON84"),
 				},
 				RXPK{
 					Chan: pointer.Uint(9),
@@ -145,7 +189,50 @@ func TestMarshalPUSH_DATA2(t *testing.T) {
 	time2, err := time.Parse(time.RFC3339Nano, "2013-03-31T16:21:17.528002Z")
 	time3, err := time.Parse(time.RFC3339Nano, "2013-03-31T16:21:17.530974Z")
 
-	//{"rxpk":[{"chan":2,"codr":"4/6","data":"-DS4CGaDCdG+48eJNM3Vai-zDpsR71Pn9CPA9uCON84","datr":"SF7BW125","freq":866.349812,"lsnr":5.1,"modu":"LORA","rssi":-35,"size":32,"stat":1,"time":"2013-03-31T16:21:17.528002Z","tmst":3512348611},{"chan":9,"data":"VEVTVF9QQUNLRVRfMTIzNA==","datr":50000,"freq":869.1,"modu":"FSK","rfch":1,"rssi":-75,"size":16,"stat":1,"time":"2013-03-31T16:21:17.530974Z","tmst":3512348514}],"stat":{"ackr":100,"alti":145,"dwnb":2,"lati":46.24,"long":3.2523,"rxfw":2,"rxnb":2,"rxok":2,"time":"2014-01-12 08:59:28 GMT","txnb":2}}
+	// {
+	//     "rxpk": [
+	//         {
+	//             "chan": 2,
+	//             "codr": "4/6",
+	//             "data": "-DS4CGaDCdG+48eJNM3Vai-zDpsR71Pn9CPA9uCON84",
+	//             "datr": "SF7BW125",
+	//             "freq": 866.349812,
+	//             "lsnr": 5.1,
+	//             "modu": "LORA",
+	//             "rfch": 0,
+	//             "rssi": -35,
+	//             "size": 32,
+	//             "stat": 1,
+	//             "time": "2013-03-31T16:21:17.528002Z",
+	//             "tmst": 3512348611
+	//         },
+	//         {
+	//             "chan": 9,
+	//             "data": "VEVTVF9QQUNLRVRfMTIzNA==",
+	//             "datr": 50000,
+	//             "freq": 869.1,
+	//             "modu": "FSK",
+	//             "rfch": 1,
+	//             "rssi": -75,
+	//             "size": 16,
+	//             "stat": 1,
+	//             "time": "2013-03-31T16:21:17.530974Z",
+	//             "tmst": 3512348514
+	//         }
+	//     ],
+	//     "stat": {
+	//         "ackr": 100,
+	//         "alti": 145,
+	//         "dwnb": 2,
+	//         "lati": 46.24,
+	//         "long": 3.2523,
+	//         "rxfw": 2,
+	//         "rxnb": 2,
+	//         "rxok": 2,
+	//         "time": "2014-01-12 08:59:28 GMT",
+	//         "txnb": 2
+	//     }
+	// }
 	payload, err := ioutil.ReadFile("./test_data/marshal_rxpk_stat")
 
 	if err != nil {
@@ -739,7 +826,21 @@ func TestMarshallPULL_RESP1(t *testing.T) {
 
 // Marshal() for a basic PULL_RESP packet with RXPK payload
 func TestMarshallPULL_RESP2(t *testing.T) {
-	//{"txpk":{"codr":"4/6","data":"H3P3N2i9qc4yt7rK7ldqoeCVJGBybzPY5h1Dd7P7p8v","datr":"SF11BW125","freq":864.123456,"imme":true,"modu":"LORA","powe":14,"size":32}}
+
+	// {
+	//     "txpk": {
+	//         "codr": "4/6",
+	//         "data": "H3P3N2i9qc4yt7rK7ldqoeCVJGBybzPY5h1Dd7P7p8v",
+	//         "datr": "SF11BW125",
+	//         "freq": 864.123456,
+	//         "imme": true,
+	//         "ipol": false,
+	//         "modu": "LORA",
+	//         "powe": 14,
+	//         "rfch": 0,
+	//         "size": 32
+	//     }
+	// }
 	payload, err := ioutil.ReadFile("./test_data/marshal_txpk")
 
 	packet := &Packet{
@@ -770,7 +871,7 @@ func TestMarshallPULL_RESP2(t *testing.T) {
 
 // Marshal() for a basic PULL_RESP packet with RXPK payload and useless gatewayId
 func TestMarshallPULL_RESP3(t *testing.T) {
-	//{"txpk":{"codr":"4/6","data":"H3P3N2i9qc4yt7rK7ldqoeCVJGBybzPY5h1Dd7P7p8v","datr":"SF11BW125","freq":864.123456,"imme":true,"modu":"LORA","powe":14,"size":32}}
+	//{"txpk":{"codr":"4/6","data":"H3P3N2i9qc4yt7rK7ldqoeCVJGBybzPY5h1Dd7P7p8v","datr":"SF11BW125","freq":864.123456,"imme":true,"ipol":false,"modu":"LORA","powe":14,"rfch":0,"size":32}}
 	payload, err := ioutil.ReadFile("./test_data/marshal_txpk")
 
 	packet := &Packet{
@@ -801,7 +902,7 @@ func TestMarshallPULL_RESP3(t *testing.T) {
 
 // Marshal() for a PULL_RESP packet with an invalid token (too short)
 func TestMarshallPULL_RESP4(t *testing.T) {
-	//{"txpk":{"codr":"4/6","data":"H3P3N2i9qc4yt7rK7ldqoeCVJGBybzPY5h1Dd7P7p8v","datr":"SF11BW125","freq":864.123456,"imme":true,"modu":"LORA","powe":14,"size":32}}
+	//{"txpk":{"codr":"4/6","data":"H3P3N2i9qc4yt7rK7ldqoeCVJGBybzPY5h1Dd7P7p8v","datr":"SF11BW125","freq":864.123456,"imme":true,"ipol":false,"modu":"LORA","powe":14,"rfch":0,"size":32}}
 	payload, err := ioutil.ReadFile("./test_data/marshal_txpk")
 
 	packet := &Packet{
@@ -832,7 +933,7 @@ func TestMarshallPULL_RESP4(t *testing.T) {
 
 // Marshal() for a PULL_RESP packet with an invalid token (too long)
 func TestMarshallPULL_RESP5(t *testing.T) {
-	//{"txpk":{"codr":"4/6","data":"H3P3N2i9qc4yt7rK7ldqoeCVJGBybzPY5h1Dd7P7p8v","datr":"SF11BW125","freq":864.123456,"imme":true,"modu":"LORA","powe":14,"size":32}}
+	//{"txpk":{"codr":"4/6","data":"H3P3N2i9qc4yt7rK7ldqoeCVJGBybzPY5h1Dd7P7p8v","datr":"SF11BW125","freq":864.123456,"imme":true,"ipol":false,"modu":"LORA","powe":14,"rfch":0,"size":32}}
 	payload, err := ioutil.ReadFile("./test_data/marshal_txpk")
 
 	packet := &Packet{
