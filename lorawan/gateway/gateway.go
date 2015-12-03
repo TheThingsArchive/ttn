@@ -4,7 +4,7 @@
 // Package gateway/protocol provides useful methods and types to handle communications with a gateway.
 //
 // This package relies on the SemTech Protocol 1.2 accessible on github: https://github.com/TheThingsNetwork/packet_forwarder/blob/master/PROTOCOL.TXT
-package protocol
+package gateway
 
 import (
 	"time"
