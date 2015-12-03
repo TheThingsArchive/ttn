@@ -97,127 +97,59 @@ func (d *datrparser) UnmarshalJSON(raw []byte) error {
 }
 
 // UnmarshalJSON implements the Unmarshaler interface from encoding/json
-func (r *RXPK) UnmarshalJSON(raw []byte) error {
-	proxy := new(struct {
-		Chan *uint       `json:"chan"`
-		Codr *string     `json:"codr"`
-		Data *string     `json:"data"`
-		Datr *datrparser `json:"datr"`
-		Freq *float64    `json:"freq"`
-		Lsnr *float64    `json:"lsnr"`
-		Modu *string     `json:"modu"`
-		Rfch *uint       `json:"rfch"`
-		Rssi *int        `json:"rssi"`
-		Size *uint       `json:"size"`
-		Stat *int        `json:"stat"`
-		Time *timeparser `json:"time"`
-		Tmst *uint       `json:"tmst"`
-	})
-	if err := json.Unmarshal(raw, proxy); err != nil {
-		return err
-	}
+func (p *Payload) UnmarshalJSON(raw []byte) error {
+    proxy := new(struct {
+        Stat struct{
+            *Stat
+            Time *timeparser `json:"time"`
+        }
+        RXPK []struct{
+            *RXPK
+            Time *timeparser `json:"time"`
+            Datr *datrparser `json:"datr"`
+        }
+        TXPK struct{
+            *TXPK
+            Time *timeparser `json:"time"`
+            Datr *datrparser `json:"datr"`
+        }
+    })
 
-	r.Chan = proxy.Chan
-	r.Codr = proxy.Codr
-	r.Data = proxy.Data
-	r.Freq = proxy.Freq
-	r.Lsnr = proxy.Lsnr
-	r.Modu = proxy.Modu
-	r.Rfch = proxy.Rfch
-	r.Rssi = proxy.Rssi
-	r.Size = proxy.Size
-	r.Stat = proxy.Stat
-	r.Tmst = proxy.Tmst
+    stat := new(Stat)
+    txpk := new(TXPK)
+    proxy.Stat.Stat = stat
+    proxy.TXPK.TXPK = txpk
 
-	if proxy.Datr != nil {
-		r.Datr = proxy.Datr.Value
-	}
+    if err := json.Unmarshal(raw, proxy); err != nil {
+        return err
+    }
 
-	if proxy.Time != nil {
-		r.Time = proxy.Time.Value
-	}
-	return nil
-}
+    if proxy.Stat.Stat != nil {
+        if proxy.Stat.Time != nil {
+            stat.Time = proxy.Stat.Time.Value
+        }
+        p.Stat = stat
+    }
 
-// UnmarshalJSON implements the Unmarshaler interface from encoding/json
-func (s *Stat) UnmarshalJSON(raw []byte) error {
-	proxy := new(struct {
-		Ackr *float64    `json:"ackr"`
-		Alti *int        `json:"alti"`
-		Dwnb *uint       `json:"dwnb"`
-		Lati *float64    `json:"lati"`
-		Long *float64    `json:"long"`
-		Rxfw *uint       `json:"rxfw"`
-		Rxnb *uint       `json:"rxnb"`
-		Rxok *uint       `json:"rxok"`
-		Time *timeparser `json:"time"`
-		Txnb *uint       `json:"txnb"`
-	})
+    if proxy.TXPK.TXPK != nil {
+        if proxy.TXPK.Time != nil {
+            txpk.Time = proxy.TXPK.Time.Value
+        }
+        if proxy.TXPK.Datr != nil {
+            txpk.Datr = proxy.TXPK.Datr.Value
+        }
+        p.TXPK = txpk
+    }
 
-	if err := json.Unmarshal(raw, proxy); err != nil {
-		return err
-	}
+    for _, rxpk := range(proxy.RXPK) {
+        if rxpk.Time != nil {
+            rxpk.RXPK.Time = rxpk.Time.Value
+        }
+        if rxpk.Datr != nil {
+            rxpk.RXPK.Datr = rxpk.Datr.Value
+        }
+        p.RXPK = append(p.RXPK, *rxpk.RXPK)
+    }
 
-	s.Ackr = proxy.Ackr
-	s.Alti = proxy.Alti
-	s.Dwnb = proxy.Dwnb
-	s.Lati = proxy.Lati
-	s.Long = proxy.Long
-	s.Rxfw = proxy.Rxfw
-	s.Rxnb = proxy.Rxnb
-	s.Rxok = proxy.Rxok
-	s.Txnb = proxy.Txnb
-
-	if proxy.Time != nil {
-		s.Time = proxy.Time.Value
-	}
-
-	return nil
-}
-
-func (t *TXPK) UnmarshalJSON(raw []byte) error {
-	proxy := new(struct {
-		Codr *string     `json:"codr"`
-		Data *string     `json:"data"`
-		Datr *datrparser `json:"datr"`
-		Fdev *uint       `json:"fdev"`
-		Freq *float64    `json:"freq"`
-		Imme *bool       `json:"imme"`
-		Ipol *bool       `json:"ipol"`
-		Modu *string     `json:"modu"`
-		Ncrc *bool       `json:"ncrc"`
-		Powe *uint       `json:"powe"`
-		Prea *uint       `json:"prea"`
-		Rfch *uint       `json:"rfch"`
-		Size *uint       `json:"size"`
-		Time *timeparser `json:"time"`
-		Tmst *uint       `json:"tmst"`
-	})
-
-	if err := json.Unmarshal(raw, proxy); err != nil {
-		return err
-	}
-
-	t.Codr = proxy.Codr
-	t.Data = proxy.Data
-	t.Fdev = proxy.Fdev
-	t.Freq = proxy.Freq
-	t.Imme = proxy.Imme
-	t.Ipol = proxy.Ipol
-	t.Modu = proxy.Modu
-	t.Ncrc = proxy.Ncrc
-	t.Powe = proxy.Powe
-	t.Prea = proxy.Prea
-	t.Rfch = proxy.Rfch
-	t.Size = proxy.Size
-	t.Tmst = proxy.Tmst
-
-	if proxy.Datr != nil {
-		t.Datr = proxy.Datr.Value
-	}
-
-	if proxy.Time != nil {
-		t.Time = proxy.Time.Value
-	}
-	return nil
+    return nil
 }
