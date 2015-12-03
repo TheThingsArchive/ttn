@@ -55,26 +55,23 @@ func Unmarshal(raw []byte) (*Packet, error) {
 // timeParser is used as a proxy to Unmarshal JSON objects with different date types as the time
 // module parse RFC3339 by default
 type timeParser struct {
-	Value  time.Time    // The parsed time value
-	Parsed bool         // Set to true if the value has been parsed
+	Value *time.Time // The parsed time value
 }
 
 // implement the Unmarshaller interface from encoding/json
 func (t *timeParser) UnmarshalJSON(raw []byte) error {
-	var err error
-	value := strings.Trim(string(raw), `"`)
-	t.Value, err = time.Parse("2006-01-02 15:04:05 GMT", value)
+	str := strings.Trim(string(raw), `"`)
+	v, err := time.Parse("2006-01-02 15:04:05 GMT", str)
 	if err != nil {
-		t.Value, err = time.Parse(time.RFC3339, value)
+		v, err = time.Parse(time.RFC3339, str)
 	}
 	if err != nil {
-		t.Value, err = time.Parse(time.RFC3339Nano, value)
+		v, err = time.Parse(time.RFC3339Nano, str)
 	}
 	if err != nil {
 		return errors.New("Unkown date format. Unable to parse time")
 	}
-
-	t.Parsed = true
+	t.Value = &v
 	return nil
 }
 
@@ -82,19 +79,18 @@ func (t *timeParser) UnmarshalJSON(raw []byte) error {
 // Depending on the modulation type, the datr type could be either a string or a number.
 // We're gonna parse it as a string in any case.
 type datrParser struct {
-	Value  string   // The parsed value
-	Parsed bool     // Set to true if the value has been parsed
+	Value *string // The parsed value
 }
 
 // implement the Unmarshaller interface from encoding/json
 func (d *datrParser) UnmarshalJSON(raw []byte) error {
-	d.Value = strings.Trim(string(raw), `"`)
+	v := strings.Trim(string(raw), `"`)
 
-	if d.Value == "" {
+	if v == "" {
 		return errors.New("Invalid datr format")
 	}
 
-	d.Parsed = true
+	d.Value = &v
 	return nil
 }
 
@@ -122,30 +118,20 @@ func unmarshalPayload(raw []byte) (*Payload, error) {
 		return nil, err
 	}
 
-	if customStruct.Stat != nil && customStruct.Stat.Time.Parsed {
+	if customStruct.Stat != nil {
 		payload.Stat.Time = customStruct.Stat.Time.Value
 	}
 
 	if customStruct.RXPK != nil {
 		for i, x := range *customStruct.RXPK {
-			if x.Time.Parsed {
-				(*payload.RXPK)[i].Time = x.Time.Value
-			}
-
-			if x.Datr.Parsed {
-				(*payload.RXPK)[i].Datr = x.Datr.Value
-			}
+			(*payload.RXPK)[i].Time = x.Time.Value
+			(*payload.RXPK)[i].Datr = x.Datr.Value
 		}
 	}
 
 	if customStruct.TXPK != nil {
-		if customStruct.TXPK.Time.Parsed {
-			payload.TXPK.Time = customStruct.TXPK.Time.Value
-		}
-
-		if customStruct.TXPK.Datr.Parsed {
-			payload.TXPK.Datr = customStruct.TXPK.Datr.Value
-		}
+		payload.TXPK.Time = customStruct.TXPK.Time.Value
+		payload.TXPK.Datr = customStruct.TXPK.Datr.Value
 	}
 
 	return payload, nil
