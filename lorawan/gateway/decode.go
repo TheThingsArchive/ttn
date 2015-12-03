@@ -54,12 +54,6 @@ func Unmarshal(raw []byte) (*Packet, error) {
 	return packet, err
 }
 
-// timeParser is used as a proxy to Unmarshal JSON objects with different date types as the time
-// module parse RFC3339 by default
-type timeparser struct {
-	Value *time.Time // The parsed time value
-}
-
 // UnmarshalJSON implements the Unmarshaler interface from encoding/json
 func (t *timeparser) UnmarshalJSON(raw []byte) error {
 	str := strings.Trim(string(raw), `"`)
@@ -73,15 +67,8 @@ func (t *timeparser) UnmarshalJSON(raw []byte) error {
 	if err != nil {
 		return errors.New("Unkown date format. Unable to parse time")
 	}
-	t.Value = &v
+	t.value = &v
 	return nil
-}
-
-// datrParser is used as a proxy to Unmarshal datr field in json payloads.
-// Depending on the modulation type, the datr type could be either a string or a number.
-// We're gonna parse it as a string in any case.
-type datrparser struct {
-	Value *string // The parsed value
 }
 
 // UnmarshalJSON implements the Unmarshaler interface from encoding/json
@@ -92,61 +79,48 @@ func (d *datrparser) UnmarshalJSON(raw []byte) error {
 		return errors.New("Invalid datr format")
 	}
 
-	d.Value = &v
+	d.value = &v
 	return nil
 }
 
 // UnmarshalJSON implements the Unmarshaler interface from encoding/json
 func (p *Payload) UnmarshalJSON(raw []byte) error {
-    proxy := new(struct {
-        Stat struct{
-            *Stat
-            Time *timeparser `json:"time"`
-        }
-        RXPK []struct{
-            *RXPK
-            Time *timeparser `json:"time"`
-            Datr *datrparser `json:"datr"`
-        }
-        TXPK struct{
-            *TXPK
-            Time *timeparser `json:"time"`
-            Datr *datrparser `json:"datr"`
-        }
-    })
+    proxy := payloadProxy{
+        ProxStat: &statProxy{
+            Stat: new(Stat),
+        },
+        ProxTXPK: &txpkProxy{
+            TXPK: new(TXPK),
+        },
+    }
 
-    stat := new(Stat)
-    txpk := new(TXPK)
-    proxy.Stat.Stat = stat
-    proxy.TXPK.TXPK = txpk
-
-    if err := json.Unmarshal(raw, proxy); err != nil {
+    if err := json.Unmarshal(raw, &proxy); err != nil {
         return err
     }
 
-    if proxy.Stat.Stat != nil {
-        if proxy.Stat.Time != nil {
-            stat.Time = proxy.Stat.Time.Value
+    if proxy.ProxStat.Stat != nil {
+        if proxy.ProxStat.Time != nil {
+            proxy.ProxStat.Stat.Time = proxy.ProxStat.Time.value
         }
-        p.Stat = stat
+        p.Stat = proxy.ProxStat.Stat
     }
 
-    if proxy.TXPK.TXPK != nil {
-        if proxy.TXPK.Time != nil {
-            txpk.Time = proxy.TXPK.Time.Value
+    if proxy.ProxTXPK.TXPK != nil {
+        if proxy.ProxTXPK.Time != nil {
+            proxy.ProxTXPK.TXPK.Time = proxy.ProxTXPK.Time.value
         }
-        if proxy.TXPK.Datr != nil {
-            txpk.Datr = proxy.TXPK.Datr.Value
+        if proxy.ProxTXPK.Datr != nil {
+            proxy.ProxTXPK.TXPK.Datr = proxy.ProxTXPK.Datr.value
         }
-        p.TXPK = txpk
+        p.TXPK = proxy.ProxTXPK.TXPK
     }
 
-    for _, rxpk := range(proxy.RXPK) {
+    for _, rxpk := range(proxy.ProxRXPK) {
         if rxpk.Time != nil {
-            rxpk.RXPK.Time = rxpk.Time.Value
+            rxpk.RXPK.Time = rxpk.Time.value
         }
         if rxpk.Datr != nil {
-            rxpk.RXPK.Datr = rxpk.Datr.Value
+            rxpk.RXPK.Datr = rxpk.Datr.value
         }
         p.RXPK = append(p.RXPK, *rxpk.RXPK)
     }
