@@ -85,45 +85,45 @@ func (d *datrparser) UnmarshalJSON(raw []byte) error {
 
 // UnmarshalJSON implements the Unmarshaler interface from encoding/json
 func (p *Payload) UnmarshalJSON(raw []byte) error {
-    proxy := payloadProxy{
-        ProxStat: &statProxy{
-            Stat: new(Stat),
-        },
-        ProxTXPK: &txpkProxy{
-            TXPK: new(TXPK),
-        },
-    }
+	proxy := payloadProxy{
+		ProxStat: &statProxy{
+			Stat: new(Stat),
+		},
+		ProxTXPK: &txpkProxy{
+			TXPK: new(TXPK),
+		},
+	}
 
-    if err := json.Unmarshal(raw, &proxy); err != nil {
-        return err
-    }
+	if err := json.Unmarshal(raw, &proxy); err != nil {
+		return err
+	}
 
-    if proxy.ProxStat.Stat != nil {
-        if proxy.ProxStat.Time != nil {
-            proxy.ProxStat.Stat.Time = proxy.ProxStat.Time.value
-        }
-        p.Stat = proxy.ProxStat.Stat
-    }
+	if proxy.ProxStat.Stat != nil {
+		if proxy.ProxStat.Time != nil {
+			proxy.ProxStat.Stat.Time = proxy.ProxStat.Time.value
+		}
+		p.Stat = proxy.ProxStat.Stat
+	}
 
-    if proxy.ProxTXPK.TXPK != nil {
-        if proxy.ProxTXPK.Time != nil {
-            proxy.ProxTXPK.TXPK.Time = proxy.ProxTXPK.Time.value
-        }
-        if proxy.ProxTXPK.Datr != nil {
-            proxy.ProxTXPK.TXPK.Datr = proxy.ProxTXPK.Datr.value
-        }
-        p.TXPK = proxy.ProxTXPK.TXPK
-    }
+	if proxy.ProxTXPK.TXPK != nil {
+		if proxy.ProxTXPK.Time != nil {
+			proxy.ProxTXPK.TXPK.Time = proxy.ProxTXPK.Time.value
+		}
+		if proxy.ProxTXPK.Datr != nil {
+			proxy.ProxTXPK.TXPK.Datr = proxy.ProxTXPK.Datr.value
+		}
+		p.TXPK = proxy.ProxTXPK.TXPK
+	}
 
-    for _, rxpk := range(proxy.ProxRXPK) {
-        if rxpk.Time != nil {
-            rxpk.RXPK.Time = rxpk.Time.value
-        }
-        if rxpk.Datr != nil {
-            rxpk.RXPK.Datr = rxpk.Datr.value
-        }
-        p.RXPK = append(p.RXPK, *rxpk.RXPK)
-    }
+	for _, rxpk := range proxy.ProxRXPK {
+		if rxpk.Time != nil {
+			rxpk.RXPK.Time = rxpk.Time.value
+		}
+		if rxpk.Datr != nil {
+			rxpk.RXPK.Datr = rxpk.Datr.value
+		}
+		p.RXPK = append(p.RXPK, *rxpk.RXPK)
+	}
 
-    return nil
+	return nil
 }
