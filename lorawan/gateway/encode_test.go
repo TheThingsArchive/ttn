@@ -1,12 +1,12 @@
 // Copyright © 2015 The Things Network
 // Use of this source code is governed by the MIT license that can be found in the LICENSE file.
 
-package protocol
+package gateway
 
 import (
 	"bytes"
+	"github.com/thethingsnetwork/core/utils/pointer"
 	"io/ioutil"
-	"reflect"
 	"testing"
 	"time"
 )
@@ -51,9 +51,22 @@ func checkMarshalPUSH_DATA(packet *Packet, payload []byte) error {
 
 // Marshal a basic push_data packet with Stat payload
 func TestMarshalPUSH_DATA1(t *testing.T) {
-	time, err := time.Parse(time.RFC3339, "2014-01-12T08:59:28Z")
+	time1, err := time.Parse(time.RFC3339, "2014-01-12T08:59:28Z")
 
-	// {"stat":{"ackr":100,"alti":145,"dwnb":2,"lati":46.24,"long":3.2523,"rxfw":2,"rxnb":2,"rxok":2,"time":"2014-01-12 08:59:28 GMT","txnb":2}}
+	// {
+	//     "stat": {
+	//         "ackr": 100,
+	//         "alti": 145,
+	//         "dwnb": 2,
+	//         "lati": 46.24,
+	//         "long": 3.2523,
+	//         "rxfw": 2,
+	//         "rxnb": 2,
+	//         "rxok": 2,
+	//         "time": "2014-01-12 08:59:28 GMT",
+	//         "txnb": 2
+	//     }
+	// }
 	payload, err := ioutil.ReadFile("./test_data/marshal_stat")
 
 	packet := &Packet{
@@ -63,16 +76,16 @@ func TestMarshalPUSH_DATA1(t *testing.T) {
 		GatewayId:  []byte{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0},
 		Payload: &Payload{
 			Stat: &Stat{
-				Ackr: 100.0,
-				Alti: 145,
-				Long: 3.25230,
-				Rxok: 2,
-				Rxfw: 2,
-				Rxnb: 2,
-				Lati: 46.24,
-				Dwnb: 2,
-				Txnb: 2,
-				Time: time,
+				Ackr: pointer.Float64(100.0),
+				Alti: pointer.Int(145),
+				Long: pointer.Float64(3.25230),
+				Rxok: pointer.Uint(2),
+				Rxfw: pointer.Uint(2),
+				Rxnb: pointer.Uint(2),
+				Lati: pointer.Float64(46.24),
+				Dwnb: pointer.Uint(2),
+				Txnb: pointer.Uint(2),
+				Time: &time1,
 			},
 		},
 	}
@@ -87,7 +100,38 @@ func TestMarshalPUSH_DATA2(t *testing.T) {
 	time1, err := time.Parse(time.RFC3339Nano, "2013-03-31T16:21:17.528002Z")
 	time2, err := time.Parse(time.RFC3339Nano, "2013-03-31T16:21:17.530974Z")
 
-	//{"rxpk":[{"chan":2,"codr":"4/6","data":"-DS4CGaDCdG+48eJNM3Vai-zDpsR71Pn9CPA9uCON84","datr":"SF7BW125","freq":866.349812,"lsnr":5.1,"modu":"LORA","rssi":-35,"size":32,"stat":1,"time":"2013-03-31T16:21:17.528002Z","tmst":3512348611},{"chan":9,"data":"VEVTVF9QQUNLRVRfMTIzNA==","datr":50000,"freq":869.1,"modu":"FSK","rfch":1,"rssi":-75,"size":16,"stat":1,"time":"2013-03-31T16:21:17.530974Z","tmst":3512348514}]}
+	//{
+	//    "rxpk": [
+	//        {
+	//            "chan": 2,
+	//            "codr": "4/6",
+	//            "data": "-DS4CGaDCdG+48eJNM3Vai-zDpsR71Pn9CPA9uCON84",
+	//            "datr": "SF7BW125",
+	//            "freq": 866.349812,
+	//            "lsnr": 5.1,
+	//            "modu": "LORA",
+	//            "rfch": 0,
+	//            "rssi": -35,
+	//            "size": 32,
+	//            "stat": 1,
+	//            "time": "2013-03-31T16:21:17.528002Z",
+	//            "tmst": 3512348611
+	//        },
+	//        {
+	//            "chan": 9,
+	//            "data": "VEVTVF9QQUNLRVRfMTIzNA==",
+	//            "datr": 50000,
+	//            "freq": 869.1,
+	//            "modu": "FSK",
+	//            "rfch": 1,
+	//            "rssi": -75,
+	//            "size": 16,
+	//            "stat": 1,
+	//            "time": "2013-03-31T16:21:17.530974Z",
+	//            "tmst": 3512348514
+	//        }
+	//    ]
+	//}
 	payload, err := ioutil.ReadFile("./test_data/marshal_rxpk")
 
 	if err != nil {
@@ -103,32 +147,32 @@ func TestMarshalPUSH_DATA2(t *testing.T) {
 		Payload: &Payload{
 			RXPK: &[]RXPK{
 				RXPK{
-					Time: time1,
-					Tmst: 3512348611,
-					Chan: 2,
-					Rfch: 0,
-					Freq: 866.349812,
-					Stat: 1,
-					Modu: "LORA",
-					Datr: "SF7BW125",
-					Codr: "4/6",
-					Rssi: -35,
-					Lsnr: 5.1,
-					Size: 32,
-					Data: "-DS4CGaDCdG+48eJNM3Vai-zDpsR71Pn9CPA9uCON84",
+					Chan: pointer.Uint(2),
+					Codr: pointer.String("4/6"),
+					Data: pointer.String("-DS4CGaDCdG+48eJNM3Vai-zDpsR71Pn9CPA9uCON84"),
+					Datr: pointer.String("SF7BW125"),
+					Freq: pointer.Float64(866.349812),
+					Lsnr: pointer.Float64(5.1),
+					Modu: pointer.String("LORA"),
+					Rfch: pointer.Uint(0),
+					Rssi: pointer.Int(-35),
+					Size: pointer.Uint(32),
+					Stat: pointer.Int(1),
+					Time: &time1,
+					Tmst: pointer.Uint(3512348611),
 				},
 				RXPK{
-					Chan: 9,
-					Data: "VEVTVF9QQUNLRVRfMTIzNA==",
-					Datr: "50000",
-					Freq: 869.1,
-					Modu: "FSK",
-					Rfch: 1,
-					Rssi: -75,
-					Size: 16,
-					Stat: 1,
-					Time: time2,
-					Tmst: 3512348514,
+					Chan: pointer.Uint(9),
+					Data: pointer.String("VEVTVF9QQUNLRVRfMTIzNA=="),
+					Datr: pointer.String("50000"),
+					Freq: pointer.Float64(869.1),
+					Modu: pointer.String("FSK"),
+					Rfch: pointer.Uint(1),
+					Rssi: pointer.Int(-75),
+					Size: pointer.Uint(16),
+					Stat: pointer.Int(1),
+					Time: &time2,
+					Tmst: pointer.Uint(3512348514),
 				},
 			},
 		},
@@ -145,7 +189,50 @@ func TestMarshalPUSH_DATA2(t *testing.T) {
 	time2, err := time.Parse(time.RFC3339Nano, "2013-03-31T16:21:17.528002Z")
 	time3, err := time.Parse(time.RFC3339Nano, "2013-03-31T16:21:17.530974Z")
 
-	//{"rxpk":[{"chan":2,"codr":"4/6","data":"-DS4CGaDCdG+48eJNM3Vai-zDpsR71Pn9CPA9uCON84","datr":"SF7BW125","freq":866.349812,"lsnr":5.1,"modu":"LORA","rssi":-35,"size":32,"stat":1,"time":"2013-03-31T16:21:17.528002Z","tmst":3512348611},{"chan":9,"data":"VEVTVF9QQUNLRVRfMTIzNA==","datr":50000,"freq":869.1,"modu":"FSK","rfch":1,"rssi":-75,"size":16,"stat":1,"time":"2013-03-31T16:21:17.530974Z","tmst":3512348514}],"stat":{"ackr":100,"alti":145,"dwnb":2,"lati":46.24,"long":3.2523,"rxfw":2,"rxnb":2,"rxok":2,"time":"2014-01-12 08:59:28 GMT","txnb":2}}
+	// {
+	//     "rxpk": [
+	//         {
+	//             "chan": 2,
+	//             "codr": "4/6",
+	//             "data": "-DS4CGaDCdG+48eJNM3Vai-zDpsR71Pn9CPA9uCON84",
+	//             "datr": "SF7BW125",
+	//             "freq": 866.349812,
+	//             "lsnr": 5.1,
+	//             "modu": "LORA",
+	//             "rfch": 0,
+	//             "rssi": -35,
+	//             "size": 32,
+	//             "stat": 1,
+	//             "time": "2013-03-31T16:21:17.528002Z",
+	//             "tmst": 3512348611
+	//         },
+	//         {
+	//             "chan": 9,
+	//             "data": "VEVTVF9QQUNLRVRfMTIzNA==",
+	//             "datr": 50000,
+	//             "freq": 869.1,
+	//             "modu": "FSK",
+	//             "rfch": 1,
+	//             "rssi": -75,
+	//             "size": 16,
+	//             "stat": 1,
+	//             "time": "2013-03-31T16:21:17.530974Z",
+	//             "tmst": 3512348514
+	//         }
+	//     ],
+	//     "stat": {
+	//         "ackr": 100,
+	//         "alti": 145,
+	//         "dwnb": 2,
+	//         "lati": 46.24,
+	//         "long": 3.2523,
+	//         "rxfw": 2,
+	//         "rxnb": 2,
+	//         "rxok": 2,
+	//         "time": "2014-01-12 08:59:28 GMT",
+	//         "txnb": 2
+	//     }
+	// }
 	payload, err := ioutil.ReadFile("./test_data/marshal_rxpk_stat")
 
 	if err != nil {
@@ -160,45 +247,45 @@ func TestMarshalPUSH_DATA2(t *testing.T) {
 		GatewayId:  []byte{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0},
 		Payload: &Payload{
 			Stat: &Stat{
-				Ackr: 100.0,
-				Alti: 145,
-				Long: 3.25230,
-				Rxok: 2,
-				Rxfw: 2,
-				Rxnb: 2,
-				Lati: 46.24,
-				Dwnb: 2,
-				Txnb: 2,
-				Time: time1,
+				Ackr: pointer.Float64(100.0),
+				Alti: pointer.Int(145),
+				Long: pointer.Float64(3.25230),
+				Rxok: pointer.Uint(2),
+				Rxfw: pointer.Uint(2),
+				Rxnb: pointer.Uint(2),
+				Lati: pointer.Float64(46.24),
+				Dwnb: pointer.Uint(2),
+				Txnb: pointer.Uint(2),
+				Time: &time1,
 			},
 			RXPK: &[]RXPK{
 				RXPK{
-					Time: time2,
-					Tmst: 3512348611,
-					Chan: 2,
-					Rfch: 0,
-					Freq: 866.349812,
-					Stat: 1,
-					Modu: "LORA",
-					Datr: "SF7BW125",
-					Codr: "4/6",
-					Rssi: -35,
-					Lsnr: 5.1,
-					Size: 32,
-					Data: "-DS4CGaDCdG+48eJNM3Vai-zDpsR71Pn9CPA9uCON84",
+					Time: &time2,
+					Tmst: pointer.Uint(3512348611),
+					Chan: pointer.Uint(2),
+					Rfch: pointer.Uint(0),
+					Freq: pointer.Float64(866.349812),
+					Stat: pointer.Int(1),
+					Modu: pointer.String("LORA"),
+					Datr: pointer.String("SF7BW125"),
+					Codr: pointer.String("4/6"),
+					Rssi: pointer.Int(-35),
+					Lsnr: pointer.Float64(5.1),
+					Size: pointer.Uint(32),
+					Data: pointer.String("-DS4CGaDCdG+48eJNM3Vai-zDpsR71Pn9CPA9uCON84"),
 				},
 				RXPK{
-					Chan: 9,
-					Data: "VEVTVF9QQUNLRVRfMTIzNA==",
-					Datr: "50000",
-					Freq: 869.1,
-					Modu: "FSK",
-					Rfch: 1,
-					Rssi: -75,
-					Size: 16,
-					Stat: 1,
-					Time: time3,
-					Tmst: 3512348514,
+					Chan: pointer.Uint(9),
+					Data: pointer.String("VEVTVF9QQUNLRVRfMTIzNA=="),
+					Datr: pointer.String("50000"),
+					Freq: pointer.Float64(869.1),
+					Modu: pointer.String("FSK"),
+					Rfch: pointer.Uint(1),
+					Rssi: pointer.Int(-75),
+					Size: pointer.Uint(16),
+					Stat: pointer.Int(1),
+					Time: &time3,
+					Tmst: pointer.Uint(3512348514),
 				},
 			},
 		},
@@ -211,7 +298,7 @@ func TestMarshalPUSH_DATA2(t *testing.T) {
 
 // Marshal with an invalid GatewayId (too short)
 func TestMarshalPUSH_DATA3(t *testing.T) {
-	time, err := time.Parse(time.RFC3339, "2014-01-12T08:59:28Z")
+	time1, err := time.Parse(time.RFC3339, "2014-01-12T08:59:28Z")
 
 	// {"stat":{"ackr":100,"alti":145,"dwnb":2,"lati":46.24,"long":3.2523,"rxfw":2,"rxnb":2,"rxok":2,"time":"2014-01-12 08:59:28 GMT","txnb":2}}
 	payload, err := ioutil.ReadFile("./test_data/marshal_stat")
@@ -223,16 +310,16 @@ func TestMarshalPUSH_DATA3(t *testing.T) {
 		GatewayId:  []byte{0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, // Invalid
 		Payload: &Payload{
 			Stat: &Stat{
-				Ackr: 100.0,
-				Alti: 145,
-				Long: 3.25230,
-				Rxok: 2,
-				Rxfw: 2,
-				Rxnb: 2,
-				Lati: 46.24,
-				Dwnb: 2,
-				Txnb: 2,
-				Time: time,
+				Ackr: pointer.Float64(100.0),
+				Alti: pointer.Int(145),
+				Long: pointer.Float64(3.25230),
+				Rxok: pointer.Uint(2),
+				Rxfw: pointer.Uint(2),
+				Rxnb: pointer.Uint(2),
+				Lati: pointer.Float64(46.24),
+				Dwnb: pointer.Uint(2),
+				Txnb: pointer.Uint(2),
+				Time: &time1,
 			},
 		},
 	}
@@ -244,7 +331,7 @@ func TestMarshalPUSH_DATA3(t *testing.T) {
 
 // Marshal with an invalid GatewayId (too long)
 func TestMarshalPUSH_DATA4(t *testing.T) {
-	time, err := time.Parse(time.RFC3339, "2014-01-12T08:59:28Z")
+	time1, err := time.Parse(time.RFC3339, "2014-01-12T08:59:28Z")
 
 	// {"stat":{"ackr":100,"alti":145,"dwnb":2,"lati":46.24,"long":3.2523,"rxfw":2,"rxnb":2,"rxok":2,"time":"2014-01-12 08:59:28 GMT","txnb":2}}
 	payload, err := ioutil.ReadFile("./test_data/marshal_stat")
@@ -256,16 +343,16 @@ func TestMarshalPUSH_DATA4(t *testing.T) {
 		GatewayId:  []byte{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, // Invalid
 		Payload: &Payload{
 			Stat: &Stat{
-				Ackr: 100.0,
-				Alti: 145,
-				Long: 3.25230,
-				Rxok: 2,
-				Rxfw: 2,
-				Rxnb: 2,
-				Lati: 46.24,
-				Dwnb: 2,
-				Txnb: 2,
-				Time: time,
+				Ackr: pointer.Float64(100.0),
+				Alti: pointer.Int(145),
+				Long: pointer.Float64(3.25230),
+				Rxok: pointer.Uint(2),
+				Rxfw: pointer.Uint(2),
+				Rxnb: pointer.Uint(2),
+				Lati: pointer.Float64(46.24),
+				Dwnb: pointer.Uint(2),
+				Txnb: pointer.Uint(2),
+				Time: &time1,
 			},
 		},
 	}
@@ -277,7 +364,7 @@ func TestMarshalPUSH_DATA4(t *testing.T) {
 
 // Marshal with an invalid TokenId (too short)
 func TestMarshalPUSH_DATA5(t *testing.T) {
-	time, err := time.Parse(time.RFC3339, "2014-01-12T08:59:28Z")
+	time1, err := time.Parse(time.RFC3339, "2014-01-12T08:59:28Z")
 
 	// {"stat":{"ackr":100,"alti":145,"dwnb":2,"lati":46.24,"long":3.2523,"rxfw":2,"rxnb":2,"rxok":2,"time":"2014-01-12 08:59:28 GMT","txnb":2}}
 	payload, err := ioutil.ReadFile("./test_data/marshal_stat")
@@ -289,16 +376,16 @@ func TestMarshalPUSH_DATA5(t *testing.T) {
 		GatewayId:  []byte{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, // Invalid
 		Payload: &Payload{
 			Stat: &Stat{
-				Ackr: 100.0,
-				Alti: 145,
-				Long: 3.25230,
-				Rxok: 2,
-				Rxfw: 2,
-				Rxnb: 2,
-				Lati: 46.24,
-				Dwnb: 2,
-				Txnb: 2,
-				Time: time,
+				Ackr: pointer.Float64(100.0),
+				Alti: pointer.Int(145),
+				Long: pointer.Float64(3.25230),
+				Rxok: pointer.Uint(2),
+				Rxfw: pointer.Uint(2),
+				Rxnb: pointer.Uint(2),
+				Lati: pointer.Float64(46.24),
+				Dwnb: pointer.Uint(2),
+				Txnb: pointer.Uint(2),
+				Time: &time1, Ackr: 100.0,
 			},
 		},
 	}
@@ -310,7 +397,7 @@ func TestMarshalPUSH_DATA5(t *testing.T) {
 
 // Marshal with an invalid TokenId (too long)
 func TestMarshalPUSH_DATA6(t *testing.T) {
-	time, err := time.Parse(time.RFC3339, "2014-01-12T08:59:28Z")
+	time1, err := time.Parse(time.RFC3339, "2014-01-12T08:59:28Z")
 
 	// {"stat":{"ackr":100,"alti":145,"dwnb":2,"lati":46.24,"long":3.2523,"rxfw":2,"rxnb":2,"rxok":2,"time":"2014-01-12 08:59:28 GMT","txnb":2}}
 	payload, err := ioutil.ReadFile("./test_data/marshal_stat")
@@ -322,16 +409,16 @@ func TestMarshalPUSH_DATA6(t *testing.T) {
 		GatewayId:  []byte{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, // Invalid
 		Payload: &Payload{
 			Stat: &Stat{
-				Ackr: 100.0,
-				Alti: 145,
-				Long: 3.25230,
-				Rxok: 2,
-				Rxfw: 2,
-				Rxnb: 2,
-				Lati: 46.24,
-				Dwnb: 2,
-				Txnb: 2,
-				Time: time,
+				Ackr: pointer.Float64(100.0),
+				Alti: pointer.Int(145),
+				Long: pointer.Float64(3.25230),
+				Rxok: pointer.Uint(2),
+				Rxfw: pointer.Uint(2),
+				Rxnb: pointer.Uint(2),
+				Lati: pointer.Float64(46.24),
+				Dwnb: pointer.Uint(2),
+				Txnb: pointer.Uint(2),
+				Time: &time1, Ackr: 100.0, Ackr: 100.0,
 			},
 		},
 	}
@@ -400,9 +487,9 @@ func TestMarshalPUSH_ACK2(t *testing.T) {
 func TestMarshalPUSH_ACK3(t *testing.T) {
 	payload := &Payload{
 		Stat: &Stat{
-			Rxfw: 14,
-			Rxnb: 14,
-			Rxok: 14,
+			Rxfw: pointer.Uint(14),
+			Rxnb: pointer.Uint(14),
+			Rxok: pointer.Uint(14),
 		},
 	}
 	packet := &Packet{
@@ -421,9 +508,9 @@ func TestMarshalPUSH_ACK3(t *testing.T) {
 func TestMarshalPUSH_ACK4(t *testing.T) {
 	payload := &Payload{
 		Stat: &Stat{
-			Rxfw: 14,
-			Rxnb: 14,
-			Rxok: 14,
+			Rxfw: pointer.Uint(14),
+			Rxnb: pointer.Uint(14),
+			Rxok: pointer.Uint(14),
 		},
 	}
 	packet := &Packet{
@@ -517,9 +604,9 @@ func TestMarshalPULL_DATA1(t *testing.T) {
 func TestMarshalPULL_DATA2(t *testing.T) {
 	payload := &Payload{
 		Stat: &Stat{
-			Rxfw: 14,
-			Rxnb: 14,
-			Rxok: 14,
+			Rxfw: pointer.Uint(14),
+			Rxnb: pointer.Uint(14),
+			Rxok: pointer.Uint(14),
 		},
 	}
 	packet := &Packet{
@@ -623,9 +710,9 @@ func TestMarshalPULL_ACK2(t *testing.T) {
 func TestMarshalPULL_ACK3(t *testing.T) {
 	payload := &Payload{
 		Stat: &Stat{
-			Rxfw: 14,
-			Rxnb: 14,
-			Rxok: 14,
+			Rxfw: pointer.Uint(14),
+			Rxnb: pointer.Uint(14),
+			Rxok: pointer.Uint(14),
 		},
 	}
 	packet := &Packet{
@@ -644,9 +731,9 @@ func TestMarshalPULL_ACK3(t *testing.T) {
 func TestMarshalPULL_ACK4(t *testing.T) {
 	payload := &Payload{
 		Stat: &Stat{
-			Rxfw: 14,
-			Rxnb: 14,
-			Rxok: 14,
+			Rxfw: pointer.Uint(14),
+			Rxnb: pointer.Uint(14),
+			Rxok: pointer.Uint(14),
 		},
 	}
 	packet := &Packet{
@@ -739,7 +826,21 @@ func TestMarshallPULL_RESP1(t *testing.T) {
 
 // Marshal() for a basic PULL_RESP packet with RXPK payload
 func TestMarshallPULL_RESP2(t *testing.T) {
-	//{"txpk":{"codr":"4/6","data":"H3P3N2i9qc4yt7rK7ldqoeCVJGBybzPY5h1Dd7P7p8v","datr":"SF11BW125","freq":864.123456,"imme":true,"modu":"LORA","powe":14,"size":32}}
+
+	// {
+	//     "txpk": {
+	//         "codr": "4/6",
+	//         "data": "H3P3N2i9qc4yt7rK7ldqoeCVJGBybzPY5h1Dd7P7p8v",
+	//         "datr": "SF11BW125",
+	//         "freq": 864.123456,
+	//         "imme": true,
+	//         "ipol": false,
+	//         "modu": "LORA",
+	//         "powe": 14,
+	//         "rfch": 0,
+	//         "size": 32
+	//     }
+	// }
 	payload, err := ioutil.ReadFile("./test_data/marshal_txpk")
 
 	packet := &Packet{
@@ -749,16 +850,16 @@ func TestMarshallPULL_RESP2(t *testing.T) {
 		GatewayId:  nil,
 		Payload: &Payload{
 			TXPK: &TXPK{
-				Imme: true,
-				Freq: 864.123456,
-				Rfch: 0,
-				Powe: 14,
-				Modu: "LORA",
-				Datr: "SF11BW125",
-				Codr: "4/6",
-				Ipol: false,
-				Size: 32,
-				Data: "H3P3N2i9qc4yt7rK7ldqoeCVJGBybzPY5h1Dd7P7p8v",
+				Imme: pointer.Bool(true),
+				Freq: pointer.Float64(864.123456),
+				Rfch: pointer.Uint(0),
+				Powe: pointer.Uint(14),
+				Modu: pointer.String("LORA"),
+				Datr: pointer.String("SF11BW125"),
+				Codr: pointer.String("4/6"),
+				Ipol: pointer.Bool(false),
+				Size: pointer.Uint(32),
+				Data: pointer.String("H3P3N2i9qc4yt7rK7ldqoeCVJGBybzPY5h1Dd7P7p8v"),
 			},
 		},
 	}
@@ -770,7 +871,7 @@ func TestMarshallPULL_RESP2(t *testing.T) {
 
 // Marshal() for a basic PULL_RESP packet with RXPK payload and useless gatewayId
 func TestMarshallPULL_RESP3(t *testing.T) {
-	//{"txpk":{"codr":"4/6","data":"H3P3N2i9qc4yt7rK7ldqoeCVJGBybzPY5h1Dd7P7p8v","datr":"SF11BW125","freq":864.123456,"imme":true,"modu":"LORA","powe":14,"size":32}}
+	//{"txpk":{"codr":"4/6","data":"H3P3N2i9qc4yt7rK7ldqoeCVJGBybzPY5h1Dd7P7p8v","datr":"SF11BW125","freq":864.123456,"imme":true,"ipol":false,"modu":"LORA","powe":14,"rfch":0,"size":32}}
 	payload, err := ioutil.ReadFile("./test_data/marshal_txpk")
 
 	packet := &Packet{
@@ -780,16 +881,16 @@ func TestMarshallPULL_RESP3(t *testing.T) {
 		GatewayId:  []byte{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0},
 		Payload: &Payload{
 			TXPK: &TXPK{
-				Imme: true,
-				Freq: 864.123456,
-				Rfch: 0,
-				Powe: 14,
-				Modu: "LORA",
-				Datr: "SF11BW125",
-				Codr: "4/6",
-				Ipol: false,
-				Size: 32,
-				Data: "H3P3N2i9qc4yt7rK7ldqoeCVJGBybzPY5h1Dd7P7p8v",
+				Imme: pointer.Bool(true),
+				Freq: pointer.Float64(864.123456),
+				Rfch: pointer.Uint(0),
+				Powe: pointer.Uint(14),
+				Modu: pointer.String("LORA"),
+				Datr: pointer.String("SF11BW125"),
+				Codr: pointer.String("4/6"),
+				Ipol: pointer.Bool(false),
+				Size: pointer.Uint(32),
+				Data: pointer.String("H3P3N2i9qc4yt7rK7ldqoeCVJGBybzPY5h1Dd7P7p8v"),
 			},
 		},
 	}
@@ -801,7 +902,7 @@ func TestMarshallPULL_RESP3(t *testing.T) {
 
 // Marshal() for a PULL_RESP packet with an invalid token (too short)
 func TestMarshallPULL_RESP4(t *testing.T) {
-	//{"txpk":{"codr":"4/6","data":"H3P3N2i9qc4yt7rK7ldqoeCVJGBybzPY5h1Dd7P7p8v","datr":"SF11BW125","freq":864.123456,"imme":true,"modu":"LORA","powe":14,"size":32}}
+	//{"txpk":{"codr":"4/6","data":"H3P3N2i9qc4yt7rK7ldqoeCVJGBybzPY5h1Dd7P7p8v","datr":"SF11BW125","freq":864.123456,"imme":true,"ipol":false,"modu":"LORA","powe":14,"rfch":0,"size":32}}
 	payload, err := ioutil.ReadFile("./test_data/marshal_txpk")
 
 	packet := &Packet{
@@ -811,16 +912,16 @@ func TestMarshallPULL_RESP4(t *testing.T) {
 		GatewayId:  nil,
 		Payload: &Payload{
 			TXPK: &TXPK{
-				Imme: true,
-				Freq: 864.123456,
-				Rfch: 0,
-				Powe: 14,
-				Modu: "LORA",
-				Datr: "SF11BW125",
-				Codr: "4/6",
-				Ipol: false,
-				Size: 32,
-				Data: "H3P3N2i9qc4yt7rK7ldqoeCVJGBybzPY5h1Dd7P7p8v",
+				Imme: pointer.Bool(true),
+				Freq: pointer.Float64(864.123456),
+				Rfch: pointer.Uint(0),
+				Powe: pointer.Uint(14),
+				Modu: pointer.String("LORA"),
+				Datr: pointer.String("SF11BW125"),
+				Codr: pointer.String("4/6"),
+				Ipol: pointer.Bool(false),
+				Size: pointer.Uint(32),
+				Data: pointer.String("H3P3N2i9qc4yt7rK7ldqoeCVJGBybzPY5h1Dd7P7p8v"),
 			},
 		},
 	}
@@ -832,7 +933,7 @@ func TestMarshallPULL_RESP4(t *testing.T) {
 
 // Marshal() for a PULL_RESP packet with an invalid token (too long)
 func TestMarshallPULL_RESP5(t *testing.T) {
-	//{"txpk":{"codr":"4/6","data":"H3P3N2i9qc4yt7rK7ldqoeCVJGBybzPY5h1Dd7P7p8v","datr":"SF11BW125","freq":864.123456,"imme":true,"modu":"LORA","powe":14,"size":32}}
+	//{"txpk":{"codr":"4/6","data":"H3P3N2i9qc4yt7rK7ldqoeCVJGBybzPY5h1Dd7P7p8v","datr":"SF11BW125","freq":864.123456,"imme":true,"ipol":false,"modu":"LORA","powe":14,"rfch":0,"size":32}}
 	payload, err := ioutil.ReadFile("./test_data/marshal_txpk")
 
 	packet := &Packet{
@@ -842,16 +943,16 @@ func TestMarshallPULL_RESP5(t *testing.T) {
 		GatewayId:  nil,
 		Payload: &Payload{
 			TXPK: &TXPK{
-				Imme: true,
-				Freq: 864.123456,
-				Rfch: 0,
-				Powe: 14,
-				Modu: "LORA",
-				Datr: "SF11BW125",
-				Codr: "4/6",
-				Ipol: false,
-				Size: 32,
-				Data: "H3P3N2i9qc4yt7rK7ldqoeCVJGBybzPY5h1Dd7P7p8v",
+				Imme: pointer.Bool(true),
+				Freq: pointer.Float64(864.123456),
+				Rfch: pointer.Uint(0),
+				Powe: pointer.Uint(14),
+				Modu: pointer.String("LORA"),
+				Datr: pointer.String("SF11BW125"),
+				Codr: pointer.String("4/6"),
+				Ipol: pointer.Bool(false),
+				Size: pointer.Uint(32),
+				Data: pointer.String("H3P3N2i9qc4yt7rK7ldqoeCVJGBybzPY5h1Dd7P7p8v"),
 			},
 		},
 	}

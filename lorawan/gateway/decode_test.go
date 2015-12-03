@@ -1,10 +1,11 @@
 // Copyright © 2015 The Things Network
 // Use of this source code is governed by the MIT license that can be found in the LICENSE file.
 
-package protocol
+package gateway
 
 import (
 	"bytes"
+	"github.com/thethingsnetwork/core/utils/pointer"
 	"reflect"
 	"testing"
 	"time"
@@ -100,16 +101,16 @@ func TestUnmarshal2(t *testing.T) {
 	statTime, _ := time.Parse(time.RFC3339, "2014-01-12T08:59:28.000Z")
 
 	stat := Stat{
-		Time: statTime,
-		Lati: 46.24000,
-		Long: 3.25230,
-		Alti: 145,
-		Rxnb: 2,
-		Rxok: 2,
-		Rxfw: 2,
-		Ackr: 100.0,
-		Dwnb: 2,
-		Txnb: 2,
+		Time: &statTime,
+		Lati: pointer.Float64(46.24000),
+		Long: pointer.Float64(3.25230),
+		Alti: pointer.Int(145),
+		Rxnb: pointer.Uint(2),
+		Rxok: pointer.Uint(2),
+		Rxfw: pointer.Uint(2),
+		Ackr: pointer.Float64(100.0),
+		Dwnb: pointer.Uint(2),
+		Txnb: pointer.Uint(2),
 	}
 
 	if !reflect.DeepEqual(stat, *packet.Payload.Stat) {
@@ -206,17 +207,17 @@ func TestUnmarshal3(t *testing.T) {
 	rxpkTime, _ := time.Parse(time.RFC3339, "2013-03-31T16:21:17.530974Z")
 
 	rxpk := RXPK{
-		Chan: 9,
-		Data: "VEVTVF9QQUNLRVRfMTIzNA==",
-		Datr: "50000",
-		Freq: 869.1,
-		Modu: "FSK",
-		Rfch: 1,
-		Rssi: -75,
-		Size: 16,
-		Stat: 1,
-		Time: rxpkTime,
-		Tmst: 3512348514,
+		Chan: pointer.Uint(9),
+		Data: pointer.String("VEVTVF9QQUNLRVRfMTIzNA=="),
+		Datr: pointer.String("50000"),
+		Freq: pointer.Float64(869.1),
+		Modu: pointer.String("FSK"),
+		Rfch: pointer.Uint(1),
+		Rssi: pointer.Int(-75),
+		Size: pointer.Uint(16),
+		Stat: pointer.Int(1),
+		Time: &rxpkTime,
+		Tmst: pointer.Uint(3512348514),
 	}
 
 	if !reflect.DeepEqual(rxpk, (*packet.Payload.RXPK)[1]) {
@@ -324,17 +325,17 @@ func TestUnmarshal4(t *testing.T) {
 	rxpkTime, _ := time.Parse(time.RFC3339, "2013-03-31T16:21:17.530974Z")
 
 	rxpk := RXPK{
-		Chan: 9,
-		Data: "VEVTVF9QQUNLRVRfMTIzNA==",
-		Datr: "50000",
-		Freq: 869.1,
-		Modu: "FSK",
-		Rfch: 1,
-		Rssi: -75,
-		Size: 16,
-		Stat: 1,
-		Time: rxpkTime,
-		Tmst: 3512348514,
+		Chan: pointer.Uint(9),
+		Data: pointer.String("VEVTVF9QQUNLRVRfMTIzNA=="),
+		Datr: pointer.String("50000"),
+		Freq: pointer.Float64(869.1),
+		Modu: pointer.String("FSK"),
+		Rfch: pointer.Uint(1),
+		Rssi: pointer.Int(-75),
+		Size: pointer.Uint(16),
+		Stat: pointer.Int(1),
+		Time: &rxpkTime,
+		Tmst: pointer.Uint(3512348514),
 	}
 
 	if !reflect.DeepEqual(rxpk, (*packet.Payload.RXPK)[1]) {
@@ -344,16 +345,16 @@ func TestUnmarshal4(t *testing.T) {
 	statTime, _ := time.Parse(time.RFC3339, "2014-01-12T08:59:28.000Z")
 
 	stat := Stat{
-		Time: statTime,
-		Lati: 46.24000,
-		Long: 3.25230,
-		Alti: 145,
-		Rxnb: 2,
-		Rxok: 2,
-		Rxfw: 2,
-		Ackr: 100.0,
-		Dwnb: 2,
-		Txnb: 2,
+		Time: &statTime,
+		Lati: pointer.Float64(46.24000),
+		Long: pointer.Float64(3.25230),
+		Alti: pointer.Int(145),
+		Rxnb: pointer.Uint(2),
+		Rxok: pointer.Uint(2),
+		Rxfw: pointer.Uint(2),
+		Ackr: pointer.Float64(100.0),
+		Dwnb: pointer.Uint(2),
+		Txnb: pointer.Uint(2),
 	}
 
 	if !reflect.DeepEqual(stat, *packet.Payload.Stat) {
@@ -412,16 +413,16 @@ func TestUnmarshal5(t *testing.T) {
 	}
 
 	txpk := TXPK{
-		Imme: true,
-		Freq: 864.123456,
-		Rfch: 0,
-		Powe: 14,
-		Modu: "LORA",
-		Datr: "SF11BW125",
-		Codr: "4/6",
-		Ipol: false,
-		Size: 32,
-		Data: "H3P3N2i9qc4yt7rK7ldqoeCVJGBybzPY5h1Dd7P7p8v",
+		Imme: pointer.Bool(true),
+		Freq: pointer.Float64(864.123456),
+		Rfch: pointer.Uint(0),
+		Powe: pointer.Uint(14),
+		Modu: pointer.String("LORA"),
+		Datr: pointer.String("SF11BW125"),
+		Codr: pointer.String("4/6"),
+		Ipol: pointer.Bool(false),
+		Size: pointer.Uint(32),
+		Data: pointer.String("H3P3N2i9qc4yt7rK7ldqoeCVJGBybzPY5h1Dd7P7p8v"),
 	}
 
 	if !reflect.DeepEqual(txpk, *packet.Payload.TXPK) {
