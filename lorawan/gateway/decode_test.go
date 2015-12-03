@@ -200,7 +200,7 @@ func TestUnmarshal3(t *testing.T) {
 		t.Errorf("Invalid parsed payload: % x", packet.Payload)
 	}
 
-	if packet.Payload.RXPK == nil || len(*packet.Payload.RXPK) != 3 {
+	if packet.Payload.RXPK == nil || len(packet.Payload.RXPK) != 3 {
 		t.Errorf("Invalid parsed payload RXPK: %#v", packet.Payload.RXPK)
 	}
 
@@ -220,7 +220,7 @@ func TestUnmarshal3(t *testing.T) {
 		Tmst: pointer.Uint(3512348514),
 	}
 
-	if !reflect.DeepEqual(rxpk, (*packet.Payload.RXPK)[1]) {
+	if !reflect.DeepEqual(rxpk, (packet.Payload.RXPK)[1]) {
 		t.Errorf("Invalid parsed payload RXPK: %#v", packet.Payload.RXPK)
 	}
 }
@@ -314,7 +314,7 @@ func TestUnmarshal4(t *testing.T) {
 		t.Errorf("Invalid parsed payload: % x", packet.Payload)
 	}
 
-	if packet.Payload.RXPK == nil || len(*packet.Payload.RXPK) != 3 {
+	if packet.Payload.RXPK == nil || len(packet.Payload.RXPK) != 3 {
 		t.Errorf("Invalid parsed payload RXPK: %#v", packet.Payload.RXPK)
 	}
 
@@ -338,7 +338,7 @@ func TestUnmarshal4(t *testing.T) {
 		Tmst: pointer.Uint(3512348514),
 	}
 
-	if !reflect.DeepEqual(rxpk, (*packet.Payload.RXPK)[1]) {
+	if !reflect.DeepEqual(rxpk, (packet.Payload.RXPK)[1]) {
 		t.Errorf("Invalid parsed payload RXPK: %#v", packet.Payload.RXPK)
 	}
 

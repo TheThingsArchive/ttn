@@ -46,7 +46,9 @@ func Unmarshal(raw []byte) (*Packet, error) {
 
 	var err error
 	if size > cursor && (packet.Identifier == PUSH_DATA || packet.Identifier == PULL_RESP) {
-		packet.Payload, err = unmarshalPayload(raw[cursor:])
+		packet.Payload = new(Payload)
+		packet.Payload.Raw = raw[cursor:]
+		err = json.Unmarshal(raw[cursor:], packet.Payload)
 	}
 
 	return packet, err
@@ -54,12 +56,12 @@ func Unmarshal(raw []byte) (*Packet, error) {
 
 // timeParser is used as a proxy to Unmarshal JSON objects with different date types as the time
 // module parse RFC3339 by default
-type timeParser struct {
+type timeparser struct {
 	Value *time.Time // The parsed time value
 }
 
 // UnmarshalJSON implements the Unmarshaler interface from encoding/json
-func (t *timeParser) UnmarshalJSON(raw []byte) error {
+func (t *timeparser) UnmarshalJSON(raw []byte) error {
 	str := strings.Trim(string(raw), `"`)
 	v, err := time.Parse("2006-01-02 15:04:05 GMT", str)
 	if err != nil {
@@ -78,12 +80,12 @@ func (t *timeParser) UnmarshalJSON(raw []byte) error {
 // datrParser is used as a proxy to Unmarshal datr field in json payloads.
 // Depending on the modulation type, the datr type could be either a string or a number.
 // We're gonna parse it as a string in any case.
-type datrParser struct {
+type datrparser struct {
 	Value *string // The parsed value
 }
 
 // UnmarshalJSON implements the Unmarshaler interface from encoding/json
-func (d *datrParser) UnmarshalJSON(raw []byte) error {
+func (d *datrparser) UnmarshalJSON(raw []byte) error {
 	v := strings.Trim(string(raw), `"`)
 
 	if v == "" {
@@ -94,45 +96,128 @@ func (d *datrParser) UnmarshalJSON(raw []byte) error {
 	return nil
 }
 
-// unmarshalPayload is an until used by Unmarshal to parse a Payload from a sequence of bytes.
-func unmarshalPayload(raw []byte) (*Payload, error) {
-	payload := &Payload{raw, nil, nil, nil}
-	customStruct := &struct {
-		Stat *struct {
-			Time timeParser `json:"time"`
-		} `json:"stat"`
-		RXPK *[]struct {
-			Time timeParser `json:"time"`
-			Datr datrParser `json:"datr"`
-		} `json:"rxpk"`
-		TXPK *struct {
-			Time timeParser `json:"time"`
-			Datr datrParser `json:"datr"`
-		} `json:"txpk"`
-	}{}
-
-	err := json.Unmarshal(raw, payload)
-	err = json.Unmarshal(raw, customStruct)
-
-	if err != nil {
-		return nil, err
+// UnmarshalJSON implements the Unmarshaler interface from encoding/json
+func (r *RXPK) UnmarshalJSON(raw []byte) error {
+	proxy := new(struct {
+		Chan *uint       `json:"chan"`
+		Codr *string     `json:"codr"`
+		Data *string     `json:"data"`
+		Datr *datrparser `json:"datr"`
+		Freq *float64    `json:"freq"`
+		Lsnr *float64    `json:"lsnr"`
+		Modu *string     `json:"modu"`
+		Rfch *uint       `json:"rfch"`
+		Rssi *int        `json:"rssi"`
+		Size *uint       `json:"size"`
+		Stat *int        `json:"stat"`
+		Time *timeparser `json:"time"`
+		Tmst *uint       `json:"tmst"`
+	})
+	if err := json.Unmarshal(raw, proxy); err != nil {
+		return err
 	}
 
-	if customStruct.Stat != nil {
-		payload.Stat.Time = customStruct.Stat.Time.Value
+	r.Chan = proxy.Chan
+	r.Codr = proxy.Codr
+	r.Data = proxy.Data
+	r.Freq = proxy.Freq
+	r.Lsnr = proxy.Lsnr
+	r.Modu = proxy.Modu
+	r.Rfch = proxy.Rfch
+	r.Rssi = proxy.Rssi
+	r.Size = proxy.Size
+	r.Stat = proxy.Stat
+	r.Tmst = proxy.Tmst
+
+	if proxy.Datr != nil {
+		r.Datr = proxy.Datr.Value
 	}
 
-	if customStruct.RXPK != nil {
-		for i, x := range *customStruct.RXPK {
-			(*payload.RXPK)[i].Time = x.Time.Value
-			(*payload.RXPK)[i].Datr = x.Datr.Value
-		}
+	if proxy.Time != nil {
+		r.Time = proxy.Time.Value
+	}
+	return nil
+}
+
+// UnmarshalJSON implements the Unmarshaler interface from encoding/json
+func (s *Stat) UnmarshalJSON(raw []byte) error {
+	proxy := new(struct {
+		Ackr *float64    `json:"ackr"`
+		Alti *int        `json:"alti"`
+		Dwnb *uint       `json:"dwnb"`
+		Lati *float64    `json:"lati"`
+		Long *float64    `json:"long"`
+		Rxfw *uint       `json:"rxfw"`
+		Rxnb *uint       `json:"rxnb"`
+		Rxok *uint       `json:"rxok"`
+		Time *timeparser `json:"time"`
+		Txnb *uint       `json:"txnb"`
+	})
+
+	if err := json.Unmarshal(raw, proxy); err != nil {
+		return err
 	}
 
-	if customStruct.TXPK != nil {
-		payload.TXPK.Time = customStruct.TXPK.Time.Value
-		payload.TXPK.Datr = customStruct.TXPK.Datr.Value
+	s.Ackr = proxy.Ackr
+	s.Alti = proxy.Alti
+	s.Dwnb = proxy.Dwnb
+	s.Lati = proxy.Lati
+	s.Long = proxy.Long
+	s.Rxfw = proxy.Rxfw
+	s.Rxnb = proxy.Rxnb
+	s.Rxok = proxy.Rxok
+	s.Txnb = proxy.Txnb
+
+	if proxy.Time != nil {
+		s.Time = proxy.Time.Value
 	}
 
-	return payload, nil
+	return nil
+}
+
+func (t *TXPK) UnmarshalJSON(raw []byte) error {
+	proxy := new(struct {
+		Codr *string     `json:"codr"`
+		Data *string     `json:"data"`
+		Datr *datrparser `json:"datr"`
+		Fdev *uint       `json:"fdev"`
+		Freq *float64    `json:"freq"`
+		Imme *bool       `json:"imme"`
+		Ipol *bool       `json:"ipol"`
+		Modu *string     `json:"modu"`
+		Ncrc *bool       `json:"ncrc"`
+		Powe *uint       `json:"powe"`
+		Prea *uint       `json:"prea"`
+		Rfch *uint       `json:"rfch"`
+		Size *uint       `json:"size"`
+		Time *timeparser `json:"time"`
+		Tmst *uint       `json:"tmst"`
+	})
+
+	if err := json.Unmarshal(raw, proxy); err != nil {
+		return err
+	}
+
+	t.Codr = proxy.Codr
+	t.Data = proxy.Data
+	t.Fdev = proxy.Fdev
+	t.Freq = proxy.Freq
+	t.Imme = proxy.Imme
+	t.Ipol = proxy.Ipol
+	t.Modu = proxy.Modu
+	t.Ncrc = proxy.Ncrc
+	t.Powe = proxy.Powe
+	t.Prea = proxy.Prea
+	t.Rfch = proxy.Rfch
+	t.Size = proxy.Size
+	t.Tmst = proxy.Tmst
+
+	if proxy.Datr != nil {
+		t.Datr = proxy.Datr.Value
+	}
+
+	if proxy.Time != nil {
+		t.Time = proxy.Time.Value
+	}
+	return nil
 }

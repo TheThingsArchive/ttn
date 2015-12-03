@@ -147,7 +147,7 @@ func TestMarshalPUSH_DATA2(t *testing.T) {
 		Identifier: PUSH_DATA,
 		GatewayId:  []byte{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0},
 		Payload: &Payload{
-			RXPK: &[]RXPK{
+			RXPK: []RXPK{
 				RXPK{
 					Chan: pointer.Uint(2),
 					Codr: pointer.String("4/6"),
@@ -260,7 +260,7 @@ func TestMarshalPUSH_DATA3(t *testing.T) {
 				Txnb: pointer.Uint(2),
 				Time: &time1,
 			},
-			RXPK: &[]RXPK{
+			RXPK: []RXPK{
 				RXPK{
 					Time: &time2,
 					Tmst: pointer.Uint(3512348611),
