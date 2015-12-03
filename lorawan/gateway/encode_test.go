@@ -5,6 +5,8 @@ package gateway
 
 import (
 	"bytes"
+	"errors"
+	"fmt"
 	"github.com/thethingsnetwork/core/utils/pointer"
 	"io/ioutil"
 	"testing"
@@ -23,27 +25,27 @@ func checkMarshalPUSH_DATA(packet *Packet, payload []byte) error {
 	}
 
 	if len(raw) < 12 {
-		return errors.New(fmt.Printf("Invalid raw sequence length: %d", len(raw)))
+		return errors.New(fmt.Sprintf("Invalid raw sequence length: %d", len(raw)))
 	}
 
 	if raw[0] != packet.Version {
-		return errors.New(fmt.Printf("Invalid raw version: %x", raw[0]))
+		return errors.New(fmt.Sprintf("Invalid raw version: %x", raw[0]))
 	}
 
 	if !bytes.Equal(raw[1:3], packet.Token) {
-		return errors.New(fmt.Printf("Invalid raw token: %x", raw[1:3]))
+		return errors.New(fmt.Sprintf("Invalid raw token: %x", raw[1:3]))
 	}
 
 	if raw[3] != packet.Identifier {
-		return errors.New(fmt.Printf("Invalid raw identifier: %x", raw[3]))
+		return errors.New(fmt.Sprintf("Invalid raw identifier: %x", raw[3]))
 	}
 
 	if !bytes.Equal(raw[4:12], packet.GatewayId) {
-		return errors.New(fmt.Printf("Invalid raw gatewayId: % x", raw[4:12]))
+		return errors.New(fmt.Sprintf("Invalid raw gatewayId: % x", raw[4:12]))
 	}
 
 	if packet.Payload != nil && !bytes.Equal(raw[12:], payload) {
-		return errors.New(fmt.Printf("Invalid raw payload: % x", raw[12:]))
+		return errors.New(fmt.Sprintf("Invalid raw payload: % x", raw[12:]))
 	}
 
 	return err
@@ -72,7 +74,7 @@ func TestMarshalPUSH_DATA1(t *testing.T) {
 	packet := &Packet{
 		Version:    VERSION,
 		Token:      []byte{0xAA, 0x14},
-		Identifier: PUSH_ACK,
+		Identifier: PUSH_DATA,
 		GatewayId:  []byte{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0},
 		Payload: &Payload{
 			Stat: &Stat{
@@ -142,7 +144,7 @@ func TestMarshalPUSH_DATA2(t *testing.T) {
 	packet := &Packet{
 		Version:    VERSION,
 		Token:      []byte{0xAA, 0x14},
-		Identifier: PUSH_ACK,
+		Identifier: PUSH_DATA,
 		GatewayId:  []byte{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0},
 		Payload: &Payload{
 			RXPK: &[]RXPK{
@@ -184,7 +186,7 @@ func TestMarshalPUSH_DATA2(t *testing.T) {
 }
 
 // Mashal a push_data packet with RXPK payload and Stat
-func TestMarshalPUSH_DATA2(t *testing.T) {
+func TestMarshalPUSH_DATA3(t *testing.T) {
 	time1, err := time.Parse(time.RFC3339, "2014-01-12T08:59:28Z")
 	time2, err := time.Parse(time.RFC3339Nano, "2013-03-31T16:21:17.528002Z")
 	time3, err := time.Parse(time.RFC3339Nano, "2013-03-31T16:21:17.530974Z")
@@ -243,7 +245,7 @@ func TestMarshalPUSH_DATA2(t *testing.T) {
 	packet := &Packet{
 		Version:    VERSION,
 		Token:      []byte{0xAA, 0x14},
-		Identifier: PUSH_ACK,
+		Identifier: PUSH_DATA,
 		GatewayId:  []byte{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0},
 		Payload: &Payload{
 			Stat: &Stat{
@@ -297,7 +299,7 @@ func TestMarshalPUSH_DATA2(t *testing.T) {
 }
 
 // Marshal with an invalid GatewayId (too short)
-func TestMarshalPUSH_DATA3(t *testing.T) {
+func TestMarshalPUSH_DATA4(t *testing.T) {
 	time1, err := time.Parse(time.RFC3339, "2014-01-12T08:59:28Z")
 
 	// {"stat":{"ackr":100,"alti":145,"dwnb":2,"lati":46.24,"long":3.2523,"rxfw":2,"rxnb":2,"rxok":2,"time":"2014-01-12 08:59:28 GMT","txnb":2}}
@@ -306,7 +308,7 @@ func TestMarshalPUSH_DATA3(t *testing.T) {
 	packet := &Packet{
 		Version:    VERSION,
 		Token:      []byte{0xAA, 0x14},
-		Identifier: PUSH_ACK,
+		Identifier: PUSH_DATA,
 		GatewayId:  []byte{0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, // Invalid
 		Payload: &Payload{
 			Stat: &Stat{
@@ -330,7 +332,7 @@ func TestMarshalPUSH_DATA3(t *testing.T) {
 }
 
 // Marshal with an invalid GatewayId (too long)
-func TestMarshalPUSH_DATA4(t *testing.T) {
+func TestMarshalPUSH_DATA5(t *testing.T) {
 	time1, err := time.Parse(time.RFC3339, "2014-01-12T08:59:28Z")
 
 	// {"stat":{"ackr":100,"alti":145,"dwnb":2,"lati":46.24,"long":3.2523,"rxfw":2,"rxnb":2,"rxok":2,"time":"2014-01-12 08:59:28 GMT","txnb":2}}
@@ -339,7 +341,7 @@ func TestMarshalPUSH_DATA4(t *testing.T) {
 	packet := &Packet{
 		Version:    VERSION,
 		Token:      []byte{0xAA, 0x14},
-		Identifier: PUSH_ACK,
+		Identifier: PUSH_DATA,
 		GatewayId:  []byte{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, // Invalid
 		Payload: &Payload{
 			Stat: &Stat{
@@ -363,7 +365,7 @@ func TestMarshalPUSH_DATA4(t *testing.T) {
 }
 
 // Marshal with an invalid TokenId (too short)
-func TestMarshalPUSH_DATA5(t *testing.T) {
+func TestMarshalPUSH_DATA6(t *testing.T) {
 	time1, err := time.Parse(time.RFC3339, "2014-01-12T08:59:28Z")
 
 	// {"stat":{"ackr":100,"alti":145,"dwnb":2,"lati":46.24,"long":3.2523,"rxfw":2,"rxnb":2,"rxok":2,"time":"2014-01-12 08:59:28 GMT","txnb":2}}
@@ -372,7 +374,7 @@ func TestMarshalPUSH_DATA5(t *testing.T) {
 	packet := &Packet{
 		Version:    VERSION,
 		Token:      []byte{0xAA},
-		Identifier: PUSH_ACK,
+		Identifier: PUSH_DATA,
 		GatewayId:  []byte{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, // Invalid
 		Payload: &Payload{
 			Stat: &Stat{
@@ -385,7 +387,7 @@ func TestMarshalPUSH_DATA5(t *testing.T) {
 				Lati: pointer.Float64(46.24),
 				Dwnb: pointer.Uint(2),
 				Txnb: pointer.Uint(2),
-				Time: &time1, Ackr: 100.0,
+				Time: &time1,
 			},
 		},
 	}
@@ -396,7 +398,7 @@ func TestMarshalPUSH_DATA5(t *testing.T) {
 }
 
 // Marshal with an invalid TokenId (too long)
-func TestMarshalPUSH_DATA6(t *testing.T) {
+func TestMarshalPUSH_DATA7(t *testing.T) {
 	time1, err := time.Parse(time.RFC3339, "2014-01-12T08:59:28Z")
 
 	// {"stat":{"ackr":100,"alti":145,"dwnb":2,"lati":46.24,"long":3.2523,"rxfw":2,"rxnb":2,"rxok":2,"time":"2014-01-12 08:59:28 GMT","txnb":2}}
@@ -405,7 +407,7 @@ func TestMarshalPUSH_DATA6(t *testing.T) {
 	packet := &Packet{
 		Version:    VERSION,
 		Token:      []byte{0xAA, 0x14, 0x28},
-		Identifier: PUSH_ACK,
+		Identifier: PUSH_DATA,
 		GatewayId:  []byte{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, // Invalid
 		Payload: &Payload{
 			Stat: &Stat{
@@ -418,7 +420,7 @@ func TestMarshalPUSH_DATA6(t *testing.T) {
 				Lati: pointer.Float64(46.24),
 				Dwnb: pointer.Uint(2),
 				Txnb: pointer.Uint(2),
-				Time: &time1, Ackr: 100.0, Ackr: 100.0,
+				Time: &time1,
 			},
 		},
 	}
@@ -437,19 +439,19 @@ func checkMarshalACK(packet *Packet) error {
 	}
 
 	if len(raw) != 4 {
-		return errors.New(fmt.Printf("Invalid raw sequence length: %d", len(raw)))
+		return errors.New(fmt.Sprintf("Invalid raw sequence length: %d", len(raw)))
 	}
 
 	if raw[0] != packet.Version {
-		return errors.New(fmt.Printf("Invalid raw version: %x", raw[0]))
+		return errors.New(fmt.Sprintf("Invalid raw version: %x", raw[0]))
 	}
 
 	if !bytes.Equal(raw[1:3], packet.Token) {
-		return errors.New(fmt.Printf("Invalid raw token: %x", raw[1:3]))
+		return errors.New(fmt.Sprintf("Invalid raw token: %x", raw[1:3]))
 	}
 
 	if raw[3] != packet.Identifier {
-		return errors.New(fmt.Printf("Invalid raw identifier: %x", raw[3]))
+		return errors.New(fmt.Sprintf("Invalid raw identifier: %x", raw[3]))
 	}
 
 	return err
@@ -556,7 +558,7 @@ func TestMarshalPUSH_ACK6(t *testing.T) {
 }
 
 // ---------- PULL_DATA
-func checkMarshalPULL_ACK(packet *Packet) error {
+func checkMarshalPULL_DATA(packet *Packet) error {
 	raw, err := Marshal(packet)
 
 	if err != nil {
@@ -564,23 +566,23 @@ func checkMarshalPULL_ACK(packet *Packet) error {
 	}
 
 	if len(raw) != 12 {
-		return errors.New(fmt.Printf("Invalid raw sequence length: %d", len(raw)))
+		return errors.New(fmt.Sprintf("Invalid raw sequence length: %d", len(raw)))
 	}
 
 	if raw[0] != packet.Version {
-		return errors.New(fmt.Printf("Invalid raw version: %x", raw[0]))
+		return errors.New(fmt.Sprintf("Invalid raw version: %x", raw[0]))
 	}
 
 	if !bytes.Equal(raw[1:3], packet.Token) {
-		return errors.New(fmt.Printf("Invalid raw token: %x", raw[1:3]))
+		return errors.New(fmt.Sprintf("Invalid raw token: %x", raw[1:3]))
 	}
 
 	if raw[3] != packet.Identifier {
-		return errors.New(fmt.Printf("Invalid raw identifier: %x", raw[3]))
+		return errors.New(fmt.Sprintf("Invalid raw identifier: %x", raw[3]))
 	}
 
 	if !bytes.Equal(raw[4:12], packet.GatewayId) {
-		return errors.New(fmt.Printf("Invalid raw gatewayId: % x", raw[4:12]))
+		return errors.New(fmt.Sprintf("Invalid raw gatewayId: % x", raw[4:12]))
 	}
 
 	return err
@@ -591,7 +593,7 @@ func TestMarshalPULL_DATA1(t *testing.T) {
 	packet := &Packet{
 		Version:    VERSION,
 		Token:      []byte{0xAA, 0x14},
-		Identifier: PUSH_ACK,
+		Identifier: PULL_DATA,
 		GatewayId:  []byte{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0},
 		Payload:    nil,
 	}
@@ -612,7 +614,7 @@ func TestMarshalPULL_DATA2(t *testing.T) {
 	packet := &Packet{
 		Version:    VERSION,
 		Token:      []byte{0xAA, 0x14},
-		Identifier: PUSH_ACK,
+		Identifier: PULL_DATA,
 		GatewayId:  []byte{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0},
 		Payload:    payload,
 	}
@@ -622,11 +624,11 @@ func TestMarshalPULL_DATA2(t *testing.T) {
 }
 
 // Marshal a pull_data packet with an invalid token (too short)
-func TestMarshalPULL_DATA1(t *testing.T) {
+func TestMarshalPULL_DATA3(t *testing.T) {
 	packet := &Packet{
 		Version:    VERSION,
 		Token:      []byte{0xAA},
-		Identifier: PUSH_ACK,
+		Identifier: PULL_DATA,
 		GatewayId:  []byte{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0},
 		Payload:    nil,
 	}
@@ -636,11 +638,11 @@ func TestMarshalPULL_DATA1(t *testing.T) {
 }
 
 // Marshal a pull_data packet with an invalid token (too long)
-func TestMarshalPULL_DATA1(t *testing.T) {
+func TestMarshalPULL_DATA4(t *testing.T) {
 	packet := &Packet{
 		Version:    VERSION,
 		Token:      []byte{0xAA, 0x14, 0x42},
-		Identifier: PUSH_ACK,
+		Identifier: PULL_DATA,
 		GatewayId:  []byte{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0},
 		Payload:    nil,
 	}
@@ -650,11 +652,11 @@ func TestMarshalPULL_DATA1(t *testing.T) {
 }
 
 // Marshal a pull_data packet with an invalid gatewayId (too short)
-func TestMarshalPULL_DATA1(t *testing.T) {
+func TestMarshalPULL_DATA5(t *testing.T) {
 	packet := &Packet{
 		Version:    VERSION,
 		Token:      []byte{0xAA, 0x14},
-		Identifier: PUSH_ACK,
+		Identifier: PULL_DATA,
 		GatewayId:  []byte{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0},
 		Payload:    nil,
 	}
@@ -664,11 +666,11 @@ func TestMarshalPULL_DATA1(t *testing.T) {
 }
 
 // Marshal a pull_data packet with an invalid gatewayId (too long)
-func TestMarshalPULL_DATA1(t *testing.T) {
+func TestMarshalPULL_DATA6(t *testing.T) {
 	packet := &Packet{
 		Version:    VERSION,
 		Token:      []byte{0xAA, 0x14},
-		Identifier: PUSH_ACK,
+		Identifier: PULL_DATA,
 		GatewayId:  []byte{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0},
 		Payload:    nil,
 	}
@@ -697,7 +699,7 @@ func TestMarshalPULL_ACK2(t *testing.T) {
 	packet := &Packet{
 		Version:    VERSION,
 		Token:      []byte{0xAA, 0x14},
-		Identifier: PUSH_ACK,
+		Identifier: PULL_ACK,
 		GatewayId:  []byte{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0},
 		Payload:    nil,
 	}
@@ -787,23 +789,23 @@ func checkMarshalPULL_RESP(packet *Packet, payload []byte) error {
 	}
 
 	if len(raw) < 4 {
-		return errors.New(fmt.Printf("Invalid raw sequence length: %d", len(raw)))
+		return errors.New(fmt.Sprintf("Invalid raw sequence length: %d", len(raw)))
 	}
 
 	if raw[0] != packet.Version {
-		return errors.New(fmt.Printf("Invalid raw version: %x", raw[0]))
+		return errors.New(fmt.Sprintf("Invalid raw version: %x", raw[0]))
 	}
 
 	if !bytes.Equal(raw[1:3], packet.Token) {
-		return errors.New(fmt.Printf("Invalid raw token: %x", raw[1:3]))
+		return errors.New(fmt.Sprintf("Invalid raw token: %x", raw[1:3]))
 	}
 
 	if raw[3] != packet.Identifier {
-		return errors.New(fmt.Printf("Invalid raw identifier: %x", raw[3]))
+		return errors.New(fmt.Sprintf("Invalid raw identifier: %x", raw[3]))
 	}
 
 	if packet.Payload != nil && !bytes.Equal(raw[4:], payload) {
-		return errors.New(fmt.Printf("Invalid raw payload: % x", raw[4:]))
+		return errors.New(fmt.Sprintf("Invalid raw payload: % x", raw[4:]))
 	}
 
 	return err
@@ -819,7 +821,7 @@ func TestMarshallPULL_RESP1(t *testing.T) {
 		Payload:    nil,
 	}
 
-	if err = checkMarshalPUSH_DATA(packet, Make([]byte)); err != nil {
+	if err := checkMarshalPULL_RESP(packet, make([]byte, 0)); err != nil {
 		t.Errorf("Failed to marshal packet: %v", err)
 	}
 }
@@ -864,7 +866,7 @@ func TestMarshallPULL_RESP2(t *testing.T) {
 		},
 	}
 
-	if err = checkMarshalPUSH_DATA(packet, payload); err != nil {
+	if err = checkMarshalPULL_RESP(packet, payload); err != nil {
 		t.Errorf("Failed to marshal packet: %v", err)
 	}
 }
@@ -895,7 +897,7 @@ func TestMarshallPULL_RESP3(t *testing.T) {
 		},
 	}
 
-	if err = checkMarshalPUSH_DATA(packet, payload); err != nil {
+	if err = checkMarshalPULL_RESP(packet, payload); err != nil {
 		t.Errorf("Failed to marshal packet: %v", err)
 	}
 }
@@ -926,7 +928,7 @@ func TestMarshallPULL_RESP4(t *testing.T) {
 		},
 	}
 
-	if err = checkMarshalPUSH_DATA(packet, payload); err == nil {
+	if err = checkMarshalPULL_RESP(packet, payload); err == nil {
 		t.Errorf("Successfully marshalled a packet with an invalid token")
 	}
 }
@@ -957,7 +959,7 @@ func TestMarshallPULL_RESP5(t *testing.T) {
 		},
 	}
 
-	if err = checkMarshalPUSH_DATA(packet, payload); err == nil {
+	if err = checkMarshalPULL_RESP(packet, payload); err == nil {
 		t.Errorf("Successfully marshalled a packet with an invalid token")
 	}
 }

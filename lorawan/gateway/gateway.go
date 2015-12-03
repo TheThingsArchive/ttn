@@ -72,10 +72,10 @@ type Packet struct {
 
 // Payload refers to the JSON payload sent by a gateway or a server.
 type Payload struct {
-	Raw  []byte  `json:"-"`    // The raw unparsed response
-	RXPK *[]RXPK `json:"rxpk"` // A list of RXPK messages transmitted if any
-	Stat *Stat   `json:"stat"` // A Stat message transmitted if any
-	TXPK *TXPK   `json:"txpk"` // A TXPK message transmitted if any
+	Raw  []byte  `json:"-"`              // The raw unparsed response
+	RXPK *[]RXPK `json:"rxpk,omitempty"` // A list of RXPK messages transmitted if any
+	Stat *Stat   `json:"stat,omitempty"` // A Stat message transmitted if any
+	TXPK *TXPK   `json:"txpk,omitempty"` // A TXPK message transmitted if any
 }
 
 // Available packet commands

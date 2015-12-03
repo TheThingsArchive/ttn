@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-// Unmarshal parse a raw response from a server and turn in into a packet.
+// Unmarshal parses a raw response from a server and turn in into a packet.
 // Will return an error if the response fields are incorrect.
 func Unmarshal(raw []byte) (*Packet, error) {
 	size := len(raw)
@@ -58,7 +58,7 @@ type timeParser struct {
 	Value *time.Time // The parsed time value
 }
 
-// implement the Unmarshaller interface from encoding/json
+// UnmarshalJSON implements the Unmarshaler interface from encoding/json
 func (t *timeParser) UnmarshalJSON(raw []byte) error {
 	str := strings.Trim(string(raw), `"`)
 	v, err := time.Parse("2006-01-02 15:04:05 GMT", str)
@@ -82,7 +82,7 @@ type datrParser struct {
 	Value *string // The parsed value
 }
 
-// implement the Unmarshaller interface from encoding/json
+// UnmarshalJSON implements the Unmarshaler interface from encoding/json
 func (d *datrParser) UnmarshalJSON(raw []byte) error {
 	v := strings.Trim(string(raw), `"`)
 

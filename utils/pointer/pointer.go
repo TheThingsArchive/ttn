@@ -45,7 +45,7 @@ func Bool(v bool) *bool {
 	return p
 }
 
-// DumpStruct print the content of a struct of pointers
+// DumpStruct prints the content of a struct of pointers
 func DumpPStruct(s interface{}) {
     v := reflect.ValueOf(s)
 
