@@ -4,6 +4,12 @@
 // package pointer provides helper method to quickly define pointer from basic go types
 package pointer
 
+import (
+    "fmt"
+    "reflect"
+    "time"
+)
+
 // String creates a pointer to a string from a string value
 func String(v string) *string {
 	p := new(string)
@@ -38,3 +44,60 @@ func Bool(v bool) *bool {
 	*p = v
 	return p
 }
+
+// DumpStruct print the content of a struct of pointers
+func DumpPStruct(s interface{}) {
+    v := reflect.ValueOf(s)
+
+    if v.Kind() != reflect.Struct {
+        fmt.Printf("Unable to dump: Not a struct.")
+        return
+    }
+
+    for k := 0; k < v.NumField(); k += 1 {
+        i := v.Field(k).Interface()
+        fmt.Printf("%v: ", v.Type().Field(k).Name)
+
+        switch t := i.(type) {
+            case *bool:
+                if t == nil {
+                    fmt.Printf("nil\n")
+                } else {
+                    fmt.Printf("%+v\n", *t)
+                }
+            case *int:
+                if t == nil {
+                    fmt.Printf("nil\n")
+                } else {
+                    fmt.Printf("%+v\n", *t)
+                }
+            case *uint:
+                if t == nil {
+                    fmt.Printf("nil\n")
+                } else {
+                    fmt.Printf("%+v\n", *t)
+                }
+            case *string:
+                if t == nil {
+                    fmt.Printf("nil\n")
+                } else {
+                    fmt.Printf("%+v\n", *t)
+                }
+            case *float64:
+                if t == nil {
+                    fmt.Printf("nil\n")
+                } else {
+                    fmt.Printf("%+v\n", *t)
+                }
+            case *time.Time:
+                if t == nil {
+                    fmt.Printf("nil\n")
+                } else {
+                    fmt.Printf("%+v\n", *t)
+                }
+            default:
+                fmt.Printf("unknown\n")
+        }
+    }
+}
+
