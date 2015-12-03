@@ -12,53 +12,53 @@ import (
 
 // RXPK represents an uplink json message format sent by the gateway
 type RXPK struct {
-	Chan *uint      // Concentrator "IF" channel used for RX (unsigned integer)
-	Codr *string    // LoRa ECC coding rate identifier
-	Data *string    // Base64 encoded RF packet payload, padded
-	Datr *string    // FSK datarate (unsigned in bit per second) || LoRa datarate identifier
-	Freq *float64   // RX Central frequency in MHx (unsigned float, Hz precision)
-	Lsnr *float64   // LoRa SNR ratio in dB (signed float, 0.1 dB precision)
-	Modu *string    // Modulation identifier "LORA" or "FSK"
-	Rfch *uint      // Concentrator "RF chain" used for RX (unsigned integer)
-	Rssi *int       // RSSI in dBm (signed integer, 1 dB precision)
-	Size *uint      // RF packet payload size in bytes (unsigned integer)
-	Stat *int       // CRC status: 1 - OK, -1 = fail, 0 = no CRC
-	Time *time.Time // UTC time of pkt RX, us precision, ISO 8601 'compact' format
-	Tmst *uint      // Internal timestamp of "RX finished" event (32b unsigned)
+	Chan *uint      `json:"chan,omitempty"` // Concentrator "IF" channel used for RX (unsigned integer)
+	Codr *string    `json:"codr,omitempty"` // LoRa ECC coding rate identifier
+	Data *string    `json:"data,omitempty"` // Base64 encoded RF packet payload, padded
+	Datr *string    `json:"-"` // FSK datarate (unsigned in bit per second) || LoRa datarate identifier
+	Freq *float64   `json:"freq,omitempty"` // RX Central frequency in MHx (unsigned float, Hz precision)
+	Lsnr *float64   `json:"lsnr,omitempty"` // LoRa SNR ratio in dB (signed float, 0.1 dB precision)
+	Modu *string    `json:"modu,omitempty"` // Modulation identifier "LORA" or "FSK"
+	Rfch *uint      `json:"rfch,omitempty"` // Concentrator "RF chain" used for RX (unsigned integer)
+	Rssi *int       `json:"rssi,omitempty"` // RSSI in dBm (signed integer, 1 dB precision)
+	Size *uint      `json:"size,omitempty"` // RF packet payload size in bytes (unsigned integer)
+	Stat *int       `json:"stat,omitempty"` // CRC status: 1 - OK, -1 = fail, 0 = no CRC
+	Time *time.Time `json:"-"` // UTC time of pkt RX, us precision, ISO 8601 'compact' format
+	Tmst *uint      `json:"tmst,omitempty"` // Internal timestamp of "RX finished" event (32b unsigned)
 }
 
-// TXPK represents a downlink json message format received by the gateway.
+// TXPK represents a downlink j,omitemptyson message format received by the gateway.
 // Most field are optional.
 type TXPK struct {
-	Codr *string     // LoRa ECC coding rate identifier
-	Data *string     // Base64 encoded RF packet payload, padding optional
-	Datr *string     // LoRa datarate identifier (eg. SF12BW500) || FSK Datarate (unsigned, in bits per second)
-	Fdev *uint       // FSK frequency deviation (unsigned integer, in Hz)
-	Freq *float64    // TX central frequency in MHz (unsigned float, Hz precision)
-	Imme *bool       // Send packet immediately (will ignore tmst & time)
-	Ipol *bool       // Lora modulation polarization inversion
-	Modu *string     // Modulation identifier "LORA" or "FSK"
-	Ncrc *bool       // If true, disable the CRC of the physical layer (optional)
-	Powe *uint       // TX output power in dBm (unsigned integer, dBm precision)
-	Prea *uint       // RF preamble size (unsigned integer)
-	Rfch *uint       // Concentrator "RF chain" used for TX (unsigned integer)
-	Size *uint       // RF packet payload size in bytes (unsigned integer)
-	Time *time.Time  // Send packet at a certain time (GPS synchronization required)
-	Tmst *uint       // Send packet on a certain timestamp value (will ignore time)
+	Codr *string     `json:"codr,omitempty"` // LoRa ECC coding rate identifier
+	Data *string     `json:"data,omirtmepty"` // Base64 encoded RF packet payload, padding optional
+	Datr *string     `json:"-"` // LoRa datarate identifier (eg. SF12BW500) || FSK Datarate (unsigned, in bits per second)
+	Fdev *uint       `json:"fdev,omitempty"` // FSK frequency deviation (unsigned integer, in Hz)
+	Freq *float64    `json:"freq,omitempty"` // TX central frequency in MHz (unsigned float, Hz precision)
+	Imme *bool       `json:"imme,omitempty"` // Send packet immediately (will ignore tmst & time)
+	Ipol *bool       `json:"ipol,omitempty"` // Lora modulation polarization inversion
+	Modu *string     `json:"modu,omitempty"` // Modulation identifier "LORA" or "FSK"
+	Ncrc *bool       `json:"ncrc,omitempty"` // If true, disable the CRC of the physical layer (optional)
+	Powe *uint       `json:"powe,omitempty"` // TX output power in dBm (unsigned integer, dBm precision)
+	Prea *uint       `json:"prea,omitempty"` // RF preamble size (unsigned integer)
+	Rfch *uint       `json:"rfch,omitempty"` // Concentrator "RF chain" used for TX (unsigned integer)
+	Size *uint       `json:"size,omitempty"` // RF packet payload size in bytes (unsigned integer)
+	Time *time.Time  `json:"-"` // Send packet at a certain time (GPS synchronization required)
+	Tmst *uint       `json:"tmst,omitempty"` // Send packet on a certain timestamp value (will ignore time)
 }
 
 // Stat represents a status json message format sent by the gateway
 type Stat struct {
-	Ackr *float64    // Percentage of upstream datagrams that were acknowledged
-	Alti *int        // GPS altitude of the gateway in meter RX (integer)
-	Dwnb *uint       // Number of downlink datagrams received (unsigned integer)
-	Lati *float64    // GPS latitude of the gateway in degree (float, N is +)
-	Long *float64    // GPS latitude of the gateway in dgree (float, E is +)
-	Rxfw *uint       // Number of radio packets forwarded (unsigned integer)
-	Rxnb *uint       // Number of radio packets received (unsigned integer)
-	Rxok *uint       // Number of radio packets received with a valid PHY CRC
-	Time *time.Time  // UTC 'system' time of the gateway, ISO 8601 'expanded' format
-	Txnb *uint       // Number of packets emitted (unsigned integer)
+	Ackr *float64    `json:"ackr,omitempty"` // Percentage of upstream datagrams that were acknowledged
+	Alti *int        `json:"alti,omitempty"` // GPS altitude of the gateway in meter RX (integer)
+	Dwnb *uint       `json:"dwnb,omitempty"` // Number of downlink datagrams received (unsigned integer)
+	Lati *float64    `json:"lati,omitempty"` // GPS latitude of the gateway in degree (float, N is +)
+	Long *float64    `json:"long,omitempty"` // GPS latitude of the gateway in dgree (float, E is +)
+	Rxfw *uint       `json:"rxfw,omitempty"` // Number of radio packets forwarded (unsigned integer)
+	Rxnb *uint       `json:"rxnb,omitempty"` // Number of radio packets received (unsigned integer)
+	Rxok *uint       `json:"rxok,omitempty"` // Number of radio packets received with a valid PHY CRC
+	Time *time.Time  `json:"-"` // UTC 'system' time of the gateway, ISO 8601 'expanded' format
+	Txnb *uint       `json:"txnb,omitempty"` // Number of packets emitted (unsigned integer)
 }
 
 // Packet as seen by the gateway.

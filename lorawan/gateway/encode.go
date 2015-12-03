@@ -38,166 +38,88 @@ func Marshal(packet *Packet) ([]byte, error) {
 	return raw, nil
 }
 
-// timeMarshaler is used as a proxy to marshal times.
-// By default, time.Time is marshalling to RFC3339 format, but we need differents format.
-type timemarshaler struct {
-	layout string
-	value  time.Time
-}
-
 // MarshalJSON implements the Marshaler interface from encoding/json
-func (t *timemarshaler) MarshalJSON() ([]byte, error) {
+func (t *timeparser) MarshalJSON() ([]byte, error) {
+    if t.value == nil {
+        return nil, errors.New("Cannot marshal a null time")
+    }
 	return append(append([]byte(`"`), []byte(t.value.Format(t.layout))...), []byte(`"`)...), nil
 }
 
-// datrmarshaler is used as a proxy to marshal datr field which could be either number or string
-type datrmarshaler struct {
-	kind  string
-	value string
-}
-
 // MarshalJSON implements the Marshaler interface from encoding/json
-func (d *datrmarshaler) MarshalJSON() ([]byte, error) {
+func (d *datrparser) MarshalJSON() ([]byte, error) {
+    if d.value == nil {
+        return nil, errors.New("Cannot marshal a null datr")
+    }
+
 	if d.kind == "uint" {
-		return []byte(d.value), nil
+		return []byte(*d.value), nil
 	}
-	return append(append([]byte(`"`), []byte(d.value)...), []byte(`"`)...), nil
+	return append(append([]byte(`"`), []byte(*d.value)...), []byte(`"`)...), nil
 }
 
 // MarshalJSON implements the Marshaler interface from encoding/json
-func (r *RXPK) MarshalJSON() ([]byte, error) {
-	var rfctime *timemarshaler = nil
-	var datr *datrmarshaler = nil
+func (p *Payload) MarshalJSON() ([]byte, error) {
+    // Define Stat Proxy
+    var proxStat *statProxy
+    if p.Stat != nil {
+        proxStat = new(statProxy)
+        proxStat.Stat = p.Stat
+        if p.Stat.Time != nil {
+            proxStat.Time = &timeparser{layout: "2006-01-02 15:04:05 GMT", value: p.Stat.Time}
+        }
+    }
 
-	if r.Time != nil {
-		rfctime = &timemarshaler{time.RFC3339Nano, *r.Time}
-	}
+    // Define RXPK Proxy
+    proxRXPK := make([]rxpkProxy, 0)
+    for _, rxpk := range(p.RXPK) {
+        proxr := new(rxpkProxy)
+        proxr.RXPK = new(RXPK)
+        *proxr.RXPK = rxpk
+        if rxpk.Time != nil {
+            proxr.Time =  &timeparser{time.RFC3339Nano, rxpk.Time}
+        }
 
-	if r.Modu != nil && r.Datr != nil {
-		switch *r.Modu {
-		case "FSK":
-			datr = &datrmarshaler{"uint", *r.Datr}
-		case "LORA":
-			fallthrough
-		default:
-			datr = &datrmarshaler{"string", *r.Datr}
-		}
-	}
+        if rxpk.Modu != nil && rxpk.Datr != nil {
+            switch *rxpk.Modu {
+            case "FSK":
+                proxr.Datr = &datrparser{kind: "uint", value: rxpk.Datr}
+            case "LORA":
+                fallthrough
+            default:
+                proxr.Datr = &datrparser{kind: "string", value: rxpk.Datr}
+            }
+        }
+        proxRXPK = append(proxRXPK,*proxr)
+    }
 
-	return json.Marshal(struct {
-		Chan *uint          `json:"chan,omitempty"`
-		Codr *string        `json:"codr,omitempty"`
-		Data *string        `json:"data,omitempty"`
-		Datr *datrmarshaler `json:"datr,omitempty"`
-		Freq *float64       `json:"freq,omitempty"`
-		Lsnr *float64       `json:"lsnr,omitempty"`
-		Modu *string        `json:"modu,omitempty"`
-		Rfch *uint          `json:"rfch,omitempty"`
-		Rssi *int           `json:"rssi,omitempty"`
-		Size *uint          `json:"size,omitempty"`
-		Stat *int           `json:"stat,omitempty"`
-		Time *timemarshaler `json:"time,omitempty"`
-		Tmst *uint          `json:"tmst,omitempty"`
-	}{
-		r.Chan,
-		r.Codr,
-		r.Data,
-		datr,
-		r.Freq,
-		r.Lsnr,
-		r.Modu,
-		r.Rfch,
-		r.Rssi,
-		r.Size,
-		r.Stat,
-		rfctime,
-		r.Tmst,
-	})
-}
+    // Define TXPK Proxy
+    var proxTXPK *txpkProxy
+    if p.TXPK != nil {
+        proxTXPK = new(txpkProxy)
+        proxTXPK.TXPK = p.TXPK
+        if p.TXPK.Time != nil {
+            proxTXPK.Time = &timeparser{time.RFC3339Nano, p.TXPK.Time}
+        }
+        if p.TXPK.Modu != nil && p.TXPK.Datr != nil {
+            switch *p.TXPK.Modu {
+            case "FSK":
+                proxTXPK.Datr = &datrparser{kind: "uint", value: p.TXPK.Datr}
+            case "LORA":
+                fallthrough
+            default:
+                proxTXPK.Datr = &datrparser{kind: "string", value: p.TXPK.Datr}
+            }
+        }
+    }
 
-// MarshalJSON implements the Marshaler interface from encoding/json
-func (s *Stat) MarshalJSON() ([]byte, error) {
-	var rfctime *timemarshaler = nil
-	if s.Time != nil {
-		rfctime = &timemarshaler{"2006-01-02 15:04:05 GMT", *s.Time}
-	}
+    // Define the whole Proxy
+    proxy := payloadProxy{
+        ProxStat: proxStat,
+        ProxRXPK: proxRXPK,
+        ProxTXPK: proxTXPK,
+    }
 
-	return json.Marshal(struct {
-		Ackr *float64       `json:"ackr,omitempty"`
-		Alti *int           `json:"alti,omitempty"`
-		Dwnb *uint          `json:"dwnb,omitempty"`
-		Lati *float64       `json:"lati,omitempty"`
-		Long *float64       `json:"long,omitempty"`
-		Rxfw *uint          `json:"rxfw,omitempty"`
-		Rxnb *uint          `json:"rxnb,omitempty"`
-		Rxok *uint          `json:"rxok,omitempty"`
-		Time *timemarshaler `json:"time,omitempty"`
-		Txnb *uint          `json:"txnb,omitempty"`
-	}{
-		s.Ackr,
-		s.Alti,
-		s.Dwnb,
-		s.Lati,
-		s.Long,
-		s.Rxfw,
-		s.Rxnb,
-		s.Rxok,
-		rfctime,
-		s.Txnb,
-	})
-}
-
-// MarshalJSON implements the Marshaler interface from encoding/json
-func (t *TXPK) MarshalJSON() ([]byte, error) {
-	var rfctime *timemarshaler = nil
-	var datr *datrmarshaler = nil
-
-	if t.Time != nil {
-		rfctime = &timemarshaler{time.RFC3339Nano, *t.Time}
-	}
-
-	if t.Modu != nil && t.Datr != nil {
-		switch *t.Modu {
-		case "FSK":
-			datr = &datrmarshaler{"uint", *t.Datr}
-		case "LORA":
-			fallthrough
-		default:
-			datr = &datrmarshaler{"string", *t.Datr}
-		}
-	}
-
-	return json.Marshal(struct {
-		Codr *string        `json:"codr,omitempty"`
-		Data *string        `json:"data,omitempty"`
-		Datr *datrmarshaler `json:"datr,omitempty"`
-		Fdev *uint          `json:"fdev,omitempty"`
-		Freq *float64       `json:"freq,omitempty"`
-		Imme *bool          `json:"imme,omitempty"`
-		Ipol *bool          `json:"ipol,omitempty"`
-		Modu *string        `json:"modu,omitempty"`
-		Ncrc *bool          `json:"ncrc,omitempty"`
-		Powe *uint          `json:"powe,omitempty"`
-		Prea *uint          `json:"prea,omitempty"`
-		Rfch *uint          `json:"rfch,omitempty"`
-		Size *uint          `json:"size,omitempty"`
-		Time *timemarshaler `json:"time,omitempty"`
-		Tmst *uint          `json:"tmst,omitempty"`
-	}{
-		t.Codr,
-		t.Data,
-		datr,
-		t.Fdev,
-		t.Freq,
-		t.Imme,
-		t.Ipol,
-		t.Modu,
-		t.Ncrc,
-		t.Powe,
-		t.Prea,
-		t.Rfch,
-		t.Size,
-		rfctime,
-		t.Tmst,
-	})
+    raw, err := json.Marshal(proxy)
+    return raw, err
 }
