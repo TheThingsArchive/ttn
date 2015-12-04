@@ -8,41 +8,50 @@
 package gateway
 
 import (
-    "github.com/thethingsnetwork/core/lorawan/semtech"
+	"encoding/binary"
+	"fmt"
+	"github.com/thethingsnetwork/core/lorawan/semtech"
+	"math/rand"
 )
 
 type Gateway struct {
-    Coord   GPSCoord                 // Gateway's GPS coordinates
-    Routers []string                 // List of routers addresses
+	Coord   GPSCoord // Gateway's GPS coordinates
+	Routers []string // List of routers addresses
 
-    ackr    float64                  // Percentage of upstream datagrams that were acknowledged
-    dwnb    uint                     // Number of downlink datagrams received
-    rxfw    uint                     // Number of radio packets forwarded
-    rxnb    uint                     // Number of radio packets received
-    rxok    uint                     // Number of radio packets received with a valid  PHY CRC
-    txnb    uint                     // Number of packets emitted
+	ackr float64 // Percentage of upstream datagrams that were acknowledged
+	dwnb uint    // Number of downlink datagrams received
+	rxfw uint    // Number of radio packets forwarded
+	rxnb uint    // Number of radio packets received
+	rxok uint    // Number of radio packets received with a valid  PHY CRC
+	txnb uint    // Number of packets emitted
 
-    stderr  <-chan error             // Output error channel
-    stdout  <-chan semtech.Packet    // Output communication channel
+	stderr <-chan error          // Output error channel
+	stdout <-chan semtech.Packet // Output communication channel
 }
 
 type GPSCoord struct {
-    altitude    int     // GPS altitude in RX meters
-    latitude    float64 // GPS latitude, North is +
-    longitude   float64 // GPS longitude, East is +
+	altitude  int     // GPS altitude in RX meters
+	latitude  float64 // GPS latitude, North is +
+	longitude float64 // GPS longitude, East is +
 }
 
-func Create (id string, routers ...string) Gateway, error {
-    return nil, nil
+func Create(id string, routers ...string) (Gateway, error) {
+	fmt.Printf("")
+	return Gateway{}, nil
 }
 
-func genToken () []byte {
-    return nil
+func genToken() []byte {
+	b := make([]byte, 4)
+	binary.BigEndian.PutUint32(b, rand.Uint32())
+	return b[0:2]
 }
 
 type Forwarder interface {
-    Forward(packet semtech.Packet) ()
-    Mimic()
-    Start() (<-chan semtech.Packet, <-chan error)
-    Stat() semtech.Stat
+	Forward(packet semtech.Packet)
+	Start() (<-chan semtech.Packet, <-chan error)
+	Stat() semtech.Stat
+}
+
+type Imitator interface {
+	Mimic()
 }
