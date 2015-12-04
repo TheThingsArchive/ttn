@@ -9,6 +9,7 @@ package gateway
 
 import (
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"github.com/thethingsnetwork/core/lorawan/semtech"
 	"math/rand"
@@ -16,6 +17,7 @@ import (
 
 type Gateway struct {
 	Coord   GPSCoord // Gateway's GPS coordinates
+	Id      string   // Gateway's Identifier
 	Routers []string // List of routers addresses
 
 	ackr float64 // Percentage of upstream datagrams that were acknowledged
@@ -35,9 +37,34 @@ type GPSCoord struct {
 	longitude float64 // GPS longitude, East is +
 }
 
-func Create(id string, routers ...string) (Gateway, error) {
+func New(id string, routers ...string) (*Gateway, error) {
 	fmt.Printf("")
-	return Gateway{}, nil
+	if id == "" {
+		return nil, errors.New("Invalid gateway id provided")
+	}
+
+	if len(routers) == 0 {
+		return nil, errors.New("At least one router address should be provided")
+	}
+
+	wrongAddress := false
+	for _, r := range routers {
+		wrongAddress = wrongAddress || (r == "")
+	}
+
+	if wrongAddress {
+		return nil, errors.New("Invalid router address")
+	}
+
+	return &Gateway{
+		Id: id,
+		Coord: GPSCoord{
+			altitude:  120, // TEMPORARY
+			latitude:  53.3702,
+			longitude: 4.8952,
+		},
+		Routers: routers,
+	}, nil
 }
 
 func genToken() []byte {
