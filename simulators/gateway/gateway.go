@@ -8,17 +8,13 @@
 package gateway
 
 import (
-	"encoding/binary"
 	"errors"
-	"fmt"
 	"github.com/thethingsnetwork/core/lorawan/semtech"
-	"math/rand"
 )
 
 type Gateway struct {
-	Coord   GPSCoord // Gateway's GPS coordinates
-	Id      string   // Gateway's Identifier
-	Routers []string // List of routers addresses
+	Coord GPSCoord // Gateway's GPS coordinates
+	Id    string   // Gateway's Identifier
 
 	ackr float64 // Percentage of upstream datagrams that were acknowledged
 	dwnb uint    // Number of downlink datagrams received
@@ -27,8 +23,9 @@ type Gateway struct {
 	rxok uint    // Number of radio packets received with a valid  PHY CRC
 	txnb uint    // Number of packets emitted
 
-	stderr <-chan error          // Output error channel
-	stdout <-chan semtech.Packet // Output communication channel
+	routers []string            // List of routers addresses
+	cherr   chan error          // Output error channel
+	chout   chan semtech.Packet // Output communication channel
 }
 
 type GPSCoord struct {
@@ -38,7 +35,6 @@ type GPSCoord struct {
 }
 
 func New(id string, routers ...string) (*Gateway, error) {
-	fmt.Printf("")
 	if id == "" {
 		return nil, errors.New("Invalid gateway id provided")
 	}
@@ -63,20 +59,8 @@ func New(id string, routers ...string) (*Gateway, error) {
 			latitude:  53.3702,
 			longitude: 4.8952,
 		},
-		Routers: routers,
+		routers: routers,
 	}, nil
-}
-
-func genToken() []byte {
-	b := make([]byte, 4)
-	binary.BigEndian.PutUint32(b, rand.Uint32())
-	return b[0:2]
-}
-
-type Forwarder interface {
-	Forward(packet semtech.Packet)
-	Start() (<-chan semtech.Packet, <-chan error)
-	Stat() semtech.Stat
 }
 
 type Imitator interface {
