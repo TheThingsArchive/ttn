@@ -10,6 +10,7 @@ package gateway
 import (
 	"errors"
 	"github.com/thethingsnetwork/core/lorawan/semtech"
+	"net"
 )
 
 type Gateway struct {
@@ -23,9 +24,9 @@ type Gateway struct {
 	rxok uint    // Number of radio packets received with a valid  PHY CRC
 	txnb uint    // Number of packets emitted
 
-	routers []string            // List of routers addresses
-	cherr   chan error          // Output error channel
-	chout   chan semtech.Packet // Output communication channel
+	routers map[string]*net.UDPConn // List of routers addresses
+	cherr   chan error              // Output error channel
+	chout   chan semtech.Packet     // Output communication channel
 }
 
 type GPSCoord struct {
@@ -44,8 +45,10 @@ func New(id string, routers ...string) (*Gateway, error) {
 	}
 
 	wrongAddress := false
+	connections := make(map[string]*net.UDPConn)
 	for _, r := range routers {
 		wrongAddress = wrongAddress || (r == "")
+		connections[r] = nil
 	}
 
 	if wrongAddress {
@@ -59,7 +62,7 @@ func New(id string, routers ...string) (*Gateway, error) {
 			latitude:  53.3702,
 			longitude: 4.8952,
 		},
-		routers: routers,
+		routers: connections,
 	}, nil
 }
 

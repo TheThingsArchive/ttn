@@ -5,6 +5,7 @@ package gateway
 
 import (
 	. "github.com/smartystreets/goconvey/convey"
+	"net"
 	"testing"
 )
 
@@ -26,7 +27,9 @@ func TestNew(t *testing.T) {
 			})
 
 			Convey("The list of configured routers should have been set correctly", func() {
-				So(gateway.routers, ShouldResemble, []string{router1})
+				routers := make(map[string]*net.UDPConn)
+				routers[router1] = nil
+				So(gateway.routers, ShouldResemble, routers)
 			})
 		})
 
@@ -42,7 +45,10 @@ func TestNew(t *testing.T) {
 			})
 
 			Convey("The list of configured routers should have been set correctly", func() {
-				So(gateway.routers, ShouldResemble, []string{router1, router2})
+				routers := make(map[string]*net.UDPConn)
+				routers[router1] = nil
+				routers[router2] = nil
+				So(gateway.routers, ShouldResemble, routers)
 			})
 		})
 
