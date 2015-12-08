@@ -14,7 +14,7 @@ import (
 const LISTENER_BUF_SIZE = 1024
 
 type Forwarder interface {
-	Forward(packet semtech.Packet)
+	Forward(packet semtech.Packet) error
 	Start() (<-chan semtech.Packet, <-chan error, error)
 	Stop() error
 	Stat() semtech.Stat
@@ -125,7 +125,32 @@ func (g *Gateway) Stop() error {
 }
 
 // Forward transfer a packet to all known routers.
-// It panics if the gateway hasn't been started beforehand.
-func (g *Gateway) Forward(packet semtech.Packet) {
+// It fails if the gateway hasn't been started beforehand.
+func (g *Gateway) Forward(packet semtech.Packet) error {
+	connections := make([]*net.UDPConn, 0)
+	var err error
+	for _, addr := range g.routers {
+		var conn *net.UDPConn
+		conn, err = net.DialUDP("udp", nil, addr)
+		if err != nil {
+			break
+		}
+		defer conn.Close()
+		connections = append(connections, conn)
+	}
+	raw, err := semtech.Marshal(&packet)
 
+	if err != nil {
+		return errors.New(fmt.Sprintf("Unable to forward the packet. %v\n", err))
+	}
+
+	for _, conn := range connections {
+		_, err = conn.Write(raw)
+	}
+
+	if err != nil {
+		return errors.New(fmt.Sprintf("Something went wrong during forwarding. %v\n", err))
+	}
+
+	return nil
 }
