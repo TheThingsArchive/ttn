@@ -78,6 +78,7 @@ func TestStart(t *testing.T) {
 	})
 
 	gateway.Stop()
+	time.Sleep(250 * time.Millisecond)
 }
 
 func TestStop(t *testing.T) {
@@ -91,15 +92,21 @@ func TestStop(t *testing.T) {
 		})
 
 		Convey("It should stop correctly after having started", func() {
-			gateway.Start()
-			time.Sleep(250 * time.Millisecond)
-			err := gateway.Stop()
+			_, _, err := gateway.Start()
+			if err != nil {
+				t.Errorf("Unexpected error %v\n", err)
+				return
+			}
+			time.Sleep(200 * time.Millisecond)
+			err = gateway.Stop()
 
 			So(err, ShouldBeNil)
 			So(gateway.quit, ShouldBeNil)
 			So(len(gateway.routers), ShouldEqual, 0)
 		})
 	})
+
+	time.Sleep(250 * time.Millisecond)
 }
 
 func TestForward(t *testing.T) {
@@ -108,7 +115,7 @@ func TestForward(t *testing.T) {
 	routerAddr2 := "0.0.0.0:3001"
 
 	gateway, _ := New(gatewayId, routerAddr1, routerAddr2)
-	chout, cherr, e := gateway.Start()
+	chout, _, e := gateway.Start()
 
 	if e != nil {
 		t.Errorf("Unexpected error %v", e)
@@ -144,15 +151,11 @@ func TestForward(t *testing.T) {
 				Version:    semtech.VERSION,
 				Identifier: semtech.PUSH_ACK,
 			}
-			gateway.Forward(packet)
-			Convey("The gateway should trigger an error through the error chan", func() {
-				var err error
-				select {
-				case err = <-cherr:
-				case <-time.After(time.Second):
-				}
+			err := gateway.Forward(packet)
+			Convey("The gateway should return an error", func() {
 				So(err, ShouldNotBeNil)
 			})
 		})
 	})
+	time.Sleep(250 * time.Millisecond)
 }
