@@ -78,7 +78,6 @@ func TestStart(t *testing.T) {
 	})
 
 	gateway.Stop()
-	time.Sleep(250 * time.Millisecond)
 }
 
 func TestStop(t *testing.T) {
@@ -105,8 +104,6 @@ func TestStop(t *testing.T) {
 			So(len(gateway.routers), ShouldEqual, 0)
 		})
 	})
-
-	time.Sleep(250 * time.Millisecond)
 }
 
 func TestForward(t *testing.T) {
@@ -157,5 +154,4 @@ func TestForward(t *testing.T) {
 			})
 		})
 	})
-	time.Sleep(250 * time.Millisecond)
 }
