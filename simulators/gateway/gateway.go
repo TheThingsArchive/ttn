@@ -9,7 +9,7 @@ package gateway
 
 import (
 	"errors"
-	"github.com/thethingsnetwork/core/lorawan/semtech"
+	"fmt"
 	"net"
 )
 
@@ -24,9 +24,8 @@ type Gateway struct {
 	rxok uint    // Number of radio packets received with a valid  PHY CRC
 	txnb uint    // Number of packets emitted
 
-	routers map[string]*net.UDPConn // List of routers addresses
-	cherr   chan error              // Output error channel
-	chout   chan semtech.Packet     // Output communication channel
+	routers []*net.UDPAddr // List of routers addresses
+	quit    chan bool      // Communication channel to stop connections
 }
 
 type GPSCoord struct {
@@ -44,15 +43,19 @@ func New(id string, routers ...string) (*Gateway, error) {
 		return nil, errors.New("At least one router address should be provided")
 	}
 
-	wrongAddress := false
-	connections := make(map[string]*net.UDPConn)
-	for _, r := range routers {
-		wrongAddress = wrongAddress || (r == "")
-		connections[r] = nil
+	addresses := make([]*net.UDPAddr, 0)
+	var err error
+	for _, router := range routers {
+		var addr *net.UDPAddr
+		addr, err = net.ResolveUDPAddr("udp", router)
+		if err != nil {
+			break
+		}
+		addresses = append(addresses, addr)
 	}
 
-	if wrongAddress {
-		return nil, errors.New("Invalid router address")
+	if err != nil {
+		return nil, errors.New(fmt.Sprintf("Invalid router address. %v", err))
 	}
 
 	return &Gateway{
@@ -62,7 +65,7 @@ func New(id string, routers ...string) (*Gateway, error) {
 			latitude:  53.3702,
 			longitude: 4.8952,
 		},
-		routers: connections,
+		routers: addresses,
 	}, nil
 }
 

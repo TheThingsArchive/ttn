@@ -5,95 +5,101 @@ package gateway
 
 import (
 	"errors"
-	"fmt"
 	"github.com/thethingsnetwork/core/lorawan/semtech"
 	"net"
 )
 
+const LISTENER_BUF_SIZE = 1024
+
 type Forwarder interface {
 	Forward(packet semtech.Packet)
-	Start() (<-chan semtech.Packet, <-chan error)
+	Start() (<-chan semtech.Packet, <-chan error, error)
 	Stop() error
 	Stat() semtech.Stat
-}
-
-func handleError(cherr chan error, err error) {
-	fmt.Printf("\n[Gateway.Start()] %+v\n", err)
-	if cherr != nil {
-		cherr <- err
-	}
 }
 
 // Start a Gateway. This will create several udp connections - one per associated router.
 // Then, incoming streams of packets are merged into a single one.
 // Same for errors.
-func (g *Gateway) Start() (<-chan semtech.Packet, <-chan error) {
-	if g.cherr != nil || g.chout != nil {
-		panic("Try to start a started gateway")
+func (g *Gateway) Start() (<-chan semtech.Packet, <-chan error, error) {
+	// Ensure not already started
+	if g.quit != nil {
+		return nil, nil, errors.New("Try to start a started gateway")
 	}
 
-	g.chout = make(chan semtech.Packet)
-	g.cherr = make(chan error)
-
-	for router := range g.routers {
-		addr, err := net.ResolveUDPAddr("udp", router)
+	// Open all UDP connections
+	connections := make([]*net.UDPConn, 0)
+	var err error
+	for _, addr := range g.routers {
+		conn, err := net.ListenUDP("udp", addr)
 		if err != nil {
-			handleError(g.cherr, err)
-			continue
+			break
 		}
-
-		go func() {
-			conn, err := net.ListenUDP("udp", addr)
-			if err != nil {
-				handleError(g.cherr, err)
-				return
-			}
-			g.routers[router] = conn
-			defer conn.Close()
-			buf := make([]byte, 1024)
-			for g.routers[router] != nil {
-				n, _, err := g.routers[router].ReadFromUDP(buf)
-				if err != nil {
-					handleError(g.cherr, err)
-					continue
-				}
-				packet, err := semtech.Unmarshal(buf[:n])
-				if err != nil {
-					handleError(g.cherr, err)
-					continue
-				}
-				if g.chout != nil {
-					g.chout <- *packet
-				}
-			}
-		}()
+		connections = append(connections, conn)
 	}
 
-	return g.chout, g.cherr
+	// On error, close all opened UDP connection and leave
+	if err != nil {
+		for _, conn := range connections {
+			conn.Close()
+		}
+		return nil, nil, err
+	}
+
+	// Create communication channels and launch goroutines to handle connections
+	chout := make(chan semtech.Packet)
+	cherr := make(chan error)
+	quit := make(chan bool, len(g.routers))
+	for _, conn := range connections {
+		go listen(conn, chout, cherr, quit)
+	}
+
+	// Keep a reference to the quit channel, and return the others
+	g.quit = quit
+	return chout, cherr, nil
 }
 
-// Stop remove all previously created connection
-func (g *Gateway) Stop() error {
-	if g.cherr == nil || g.chout == nil {
-		panic("Try to stop a non-started gateway")
-	}
-
-	errs := make([]error, 0)
-	for router, conn := range g.routers {
-		if conn != nil {
-			if err := conn.Close(); err != nil {
-				errs = append(errs, err)
+// listen materialize the goroutine handling incoming packet from routers
+func listen(conn *net.UDPConn, chout chan<- semtech.Packet, cherr chan<- error, quit chan bool) {
+	buf := make([]byte, LISTENER_BUF_SIZE)
+	for {
+		select {
+		case <-quit:
+			conn.Close() // Any chance this would return an error ? :/
+			return
+		default:
+			n, _, err := conn.ReadFromUDP(buf)
+			if err != nil {
+				cherr <- err
 				continue
 			}
-			g.routers[router] = nil
+			packet, err := semtech.Unmarshal(buf[:n])
+			if err != nil {
+				cherr <- err
+				continue
+			}
+			chout <- *packet
 		}
 	}
-	if len(errs) != 0 {
-		return errors.New("Unable to stop the gateway")
+}
+
+// Stop remove all previously created connection.
+func (g *Gateway) Stop() error {
+	if g.quit == nil {
+		return errors.New("Try to stop a non-started gateway")
 	}
-	close(g.cherr)
-	close(g.chout)
-	g.cherr = nil
-	g.chout = nil
+
+	for range g.routers {
+		g.quit <- true
+	}
+	close(g.quit)
+	g.routers = make([]*net.UDPAddr, 0)
+	g.quit = nil
 	return nil
+}
+
+// Forward transfer a packet to all known routers.
+// It panics if the gateway hasn't been started beforehand.
+func (g *Gateway) Forward(packet semtech.Packet) {
+
 }

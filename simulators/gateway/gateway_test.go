@@ -5,15 +5,14 @@ package gateway
 
 import (
 	. "github.com/smartystreets/goconvey/convey"
-	"net"
 	"testing"
 )
 
 func TestNew(t *testing.T) {
 	Convey("The New method should return a valid gateway struct ready to use", t, func() {
 		id := "qwerty"
-		router1 := "router1Addr"
-		router2 := "router2Addr"
+		router1 := "0.0.0.0:3000"
+		router2 := "0.0.0.0:1337"
 
 		Convey("Given an identifier and a router address", func() {
 			gateway, err := New(id, router1)
@@ -21,15 +20,16 @@ func TestNew(t *testing.T) {
 			Convey("No error should have been trown", func() {
 				So(err, ShouldBeNil)
 			})
+			if err != nil {
+				return
+			}
 
 			Convey("The identifier should have been set correctly", func() {
 				So(gateway.Id, ShouldEqual, id)
 			})
 
 			Convey("The list of configured routers should have been set correctly", func() {
-				routers := make(map[string]*net.UDPConn)
-				routers[router1] = nil
-				So(gateway.routers, ShouldResemble, routers)
+				So(len(gateway.routers), ShouldEqual, 1)
 			})
 		})
 
@@ -39,16 +39,16 @@ func TestNew(t *testing.T) {
 			Convey("No error should have been trown", func() {
 				So(err, ShouldBeNil)
 			})
+			if err != nil {
+				return
+			}
 
 			Convey("The identifier should have been set correctly", func() {
 				So(gateway.Id, ShouldEqual, id)
 			})
 
 			Convey("The list of configured routers should have been set correctly", func() {
-				routers := make(map[string]*net.UDPConn)
-				routers[router1] = nil
-				routers[router2] = nil
-				So(gateway.routers, ShouldResemble, routers)
+				So(len(gateway.routers), ShouldEqual, 2)
 			})
 		})
 
@@ -66,7 +66,7 @@ func TestNew(t *testing.T) {
 			})
 
 			Convey("It should return an error for an invalid router address", func() {
-				gateway, err := New(id, "")
+				gateway, err := New(id, "invalid")
 				So(gateway, ShouldBeNil)
 				So(err, ShouldNotBeNil)
 			})

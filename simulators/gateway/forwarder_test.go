@@ -8,34 +8,37 @@ import (
 	"github.com/thethingsnetwork/core/lorawan/semtech"
 	"net"
 	"testing"
+	"time"
 )
 
 func TestStart(t *testing.T) {
 	gatewayId := "MyGateway"
 	routerAddr := "0.0.0.0:3000"
 	gateway, _ := New(gatewayId, routerAddr)
-	chout, cherr := gateway.Start()
+	chout, cherr, err := gateway.Start()
 
-	udpAddr, err := net.ResolveUDPAddr("udp", routerAddr)
-	if err != nil {
-		t.Errorf("Unexpected error %+v\n", err)
+	udpAddr, e := net.ResolveUDPAddr("udp", routerAddr)
+	if e != nil {
+		t.Errorf("Unexpected error %+v\n", e)
 		return
 	}
 
-	conn, err := net.DialUDP("udp", nil, udpAddr)
-	if err != nil {
-		t.Errorf("Unexpected error %+v\n", err)
+	conn, e := net.DialUDP("udp", nil, udpAddr)
+	if e != nil {
+		t.Errorf("Unexpected error %+v\n", e)
 		return
 	}
+	defer conn.Close()
 
 	Convey("Given a valid started gateway instance bound to a router", t, func() {
 		Convey("Both channels should exist", func() {
 			So(cherr, ShouldNotBeNil)
 			So(chout, ShouldNotBeNil)
+			So(err, ShouldBeNil)
 		})
 
 		Convey("A connection should exist", func() {
-			So(gateway.routers[routerAddr], ShouldNotBeNil)
+			So(len(gateway.routers), ShouldEqual, 1)
 		})
 
 		Convey("A valid packet should be forwarded", func() {
@@ -44,9 +47,9 @@ func TestStart(t *testing.T) {
 				Token:      []byte{0x1, 0x2},
 				Identifier: semtech.PUSH_ACK,
 			}
-			raw, err := semtech.Marshal(&packet)
-			if err != nil {
-				t.Errorf("Unexpected error %+v\n", err)
+			raw, e := semtech.Marshal(&packet)
+			if e != nil {
+				t.Errorf("Unexpected error %+v\n", e)
 				return
 			}
 			conn.Write(raw)
@@ -58,13 +61,13 @@ func TestStart(t *testing.T) {
 			So(<-cherr, ShouldNotBeNil)
 		})
 
-		Convey("It should panic if started one more time", func() {
-			So(func() {
-				gateway.Start()
-			}, ShouldPanic)
+		Convey("It should fail if started one more time", func() {
+			_, _, err := gateway.Start()
+			So(err, ShouldNotBeNil)
 		})
 	})
 
+	gateway.Stop()
 }
 
 func TestStop(t *testing.T) {
@@ -72,18 +75,19 @@ func TestStop(t *testing.T) {
 	routerAddr := "0.0.0.0:3000"
 	gateway, _ := New(gatewayId, routerAddr)
 	Convey("Given a gateway instance", t, func() {
-		Convey("It should panic if stopped while not started", func() {
-			So(func() { gateway.Stop() }, ShouldPanic)
+		Convey("It should failed if stopped while not started", func() {
+			err := gateway.Stop()
+			So(err, ShouldNotBeNil)
 		})
 
 		Convey("It should stop correctly after having started", func() {
 			gateway.Start()
+			time.Sleep(time.Second)
 			err := gateway.Stop()
 
 			So(err, ShouldBeNil)
-			So(gateway.cherr, ShouldBeNil)
-			So(gateway.chout, ShouldBeNil)
-			So(gateway.routers[routerAddr], ShouldBeNil)
+			So(gateway.quit, ShouldBeNil)
+			So(len(gateway.routers), ShouldEqual, 0)
 		})
 	})
 }
