@@ -91,3 +91,58 @@ func TestStop(t *testing.T) {
 		})
 	})
 }
+
+func TestForward(t *testing.T) {
+	gatewayId := "MyGateway"
+	routerAddr1 := "0.0.0.0:3000"
+	routerAddr2 := "0.0.0.0:3001"
+
+	gateway, _ := New(gatewayId, routerAddr1, routerAddr2)
+	chout, cherr, e := gateway.Start()
+
+	if e != nil {
+		t.Errorf("Unexpected error %v", e)
+		return
+	}
+
+	Convey("Given a started gateway bound to two routers", t, func() {
+		Convey("When forwarding a valid packet", func() {
+			packet := semtech.Packet{
+				Version:    semtech.VERSION,
+				Token:      []byte{0x1, 0x2},
+				Identifier: semtech.PUSH_ACK,
+			}
+			gateway.Forward(packet)
+
+			Convey("It should be forwarded to both routers", func() {
+				var received semtech.Packet
+				select {
+				case received = <-chout:
+				case <-time.After(time.Second):
+				}
+				So(received, ShouldResemble, packet)
+				select {
+				case received = <-chout:
+				case <-time.After(time.Second):
+				}
+				So(received, ShouldResemble, packet)
+			})
+		})
+
+		Convey("When forwarding an invalid packet", func() {
+			packet := semtech.Packet{
+				Version:    semtech.VERSION,
+				Identifier: semtech.PUSH_ACK,
+			}
+			gateway.Forward(packet)
+			Convey("The gateway should trigger an error through the error chan", func() {
+				var err error
+				select {
+				case err = <-cherr:
+				case <-time.After(time.Second):
+				}
+				So(err, ShouldNotBeNil)
+			})
+		})
+	})
+}
