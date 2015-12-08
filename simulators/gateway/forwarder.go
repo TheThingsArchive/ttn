@@ -85,6 +85,11 @@ func listen(conn *net.UDPConn, chout chan<- semtech.Packet, cherr chan<- error, 
 	}
 }
 
+// as channel is actually a []byte generator that listen to a given udp connection.
+// It is used to prevent the listen() function from blocking on ReadFromUDP() and then,
+// still be available for a quit event that could come at any time.
+// This function is thereby nothing more than a mapping of incoming connection to channels of
+// communication.
 func asChannel(conn *net.UDPConn) (chan []byte, chan error) {
 	cherr := make(chan error)
 	chout := make(chan []byte)
