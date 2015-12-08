@@ -42,7 +42,7 @@ See the [development plan](DEVELOPMENT_PLAN.md)
 
 ## Authors
 
-See the [author's list](AUTHORS.md)
+See the [author's list](AUTHORS)
 
 ## License
 
