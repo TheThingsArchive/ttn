@@ -5,8 +5,10 @@ package gateway
 
 import (
 	"errors"
+	"fmt"
 	"github.com/thethingsnetwork/core/lorawan/semtech"
 	"net"
+	"strings"
 )
 
 const LISTENER_BUF_SIZE = 1024
@@ -31,7 +33,8 @@ func (g *Gateway) Start() (<-chan semtech.Packet, <-chan error, error) {
 	connections := make([]*net.UDPConn, 0)
 	var err error
 	for _, addr := range g.routers {
-		conn, err := net.ListenUDP("udp", addr)
+		var conn *net.UDPConn
+		conn, err = net.ListenUDP("udp", addr)
 		if err != nil {
 			break
 		}
@@ -61,26 +64,49 @@ func (g *Gateway) Start() (<-chan semtech.Packet, <-chan error, error) {
 
 // listen materialize the goroutine handling incoming packet from routers
 func listen(conn *net.UDPConn, chout chan<- semtech.Packet, cherr chan<- error, quit chan bool) {
-	buf := make([]byte, LISTENER_BUF_SIZE)
+	connIn, connErr := asChannel(conn)
 	for {
 		select {
 		case <-quit:
+			close(connIn)
+			close(connErr)
 			conn.Close() // Any chance this would return an error ? :/
 			return
-		default:
-			n, _, err := conn.ReadFromUDP(buf)
-			if err != nil {
-				cherr <- err
-				continue
-			}
-			packet, err := semtech.Unmarshal(buf[:n])
+		case buf := <-connIn:
+			packet, err := semtech.Unmarshal(buf)
 			if err != nil {
 				cherr <- err
 				continue
 			}
 			chout <- *packet
+		case err := <-connErr:
+			cherr <- err
 		}
 	}
+}
+
+func asChannel(conn *net.UDPConn) (chan []byte, chan error) {
+	cherr := make(chan error)
+	chout := make(chan []byte)
+	go func() {
+		defer func() {
+			// The handling could be better here
+			recover() // In case we're writing a close channel.
+		}()
+		buf := make([]byte, LISTENER_BUF_SIZE)
+		for {
+			n, _, err := conn.ReadFromUDP(buf)
+			if err != nil {
+				if strings.Contains(err.Error(), "use of closed network connection") {
+					return
+				}
+				cherr <- err
+				continue
+			}
+			chout <- buf[:n]
+		}
+	}()
+	return chout, cherr
 }
 
 // Stop remove all previously created connection.
