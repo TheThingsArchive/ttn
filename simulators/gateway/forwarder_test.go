@@ -53,12 +53,22 @@ func TestStart(t *testing.T) {
 				return
 			}
 			conn.Write(raw)
-			So(<-chout, ShouldResemble, packet)
+			var received semtech.Packet
+			select {
+			case received = <-chout:
+			case <-time.After(time.Second):
+			}
+			So(received, ShouldResemble, packet)
 		})
 
 		Convey("An invalid packet should raise an error", func() {
 			conn.Write([]byte("Invalid"))
-			So(<-cherr, ShouldNotBeNil)
+			var err error
+			select {
+			case err = <-cherr:
+			case <-time.After(time.Second):
+			}
+			So(err, ShouldNotBeNil)
 		})
 
 		Convey("It should fail if started one more time", func() {
@@ -82,7 +92,7 @@ func TestStop(t *testing.T) {
 
 		Convey("It should stop correctly after having started", func() {
 			gateway.Start()
-			time.Sleep(time.Second)
+			time.Sleep(250 * time.Millisecond)
 			err := gateway.Stop()
 
 			So(err, ShouldBeNil)
