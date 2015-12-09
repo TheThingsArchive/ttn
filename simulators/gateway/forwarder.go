@@ -9,9 +9,13 @@ import (
 	"github.com/thethingsnetwork/core/lorawan/semtech"
 	"net"
 	"strings"
+	"time"
 )
 
-const LISTENER_BUF_SIZE = 1024
+const (
+	LISTENER_BUF_SIZE = 1024
+	LISTENER_TIMEOUT  = 4 * time.Second
+)
 
 type Forwarder interface {
 	Forward(packet semtech.Packet) error
@@ -68,8 +72,6 @@ func listen(conn *net.UDPConn, chout chan<- semtech.Packet, cherr chan<- error, 
 	for {
 		select {
 		case <-quit:
-			close(connIn)
-			close(connErr)
 			conn.Close() // Any chance this would return an error ? :/
 			return
 		case buf := <-connIn:
@@ -90,14 +92,10 @@ func listen(conn *net.UDPConn, chout chan<- semtech.Packet, cherr chan<- error, 
 // still be available for a quit event that could come at any time.
 // This function is thereby nothing more than a mapping of incoming connection to channels of
 // communication.
-func asChannel(conn *net.UDPConn) (chan []byte, chan error) {
+func asChannel(conn *net.UDPConn) (<-chan []byte, <-chan error) {
 	cherr := make(chan error)
 	chout := make(chan []byte)
 	go func() {
-		defer func() {
-			// The handling could be better here
-			recover() // In case we're writing a close channel.
-		}()
 		buf := make([]byte, LISTENER_BUF_SIZE)
 		for {
 			n, _, err := conn.ReadFromUDP(buf)
@@ -105,10 +103,22 @@ func asChannel(conn *net.UDPConn) (chan []byte, chan error) {
 				if strings.Contains(err.Error(), "use of closed network connection") {
 					return
 				}
-				cherr <- err
-				continue
+				select {
+				case cherr <- err:
+					continue
+				case <-time.After(LISTENER_TIMEOUT):
+					close(cherr)
+					close(chout)
+					return
+				}
 			}
-			chout <- buf[:n]
+			select {
+			case chout <- buf[:n]:
+			case <-time.After(LISTENER_TIMEOUT):
+				close(cherr)
+				close(chout)
+				return
+			}
 		}
 	}()
 	return chout, cherr
