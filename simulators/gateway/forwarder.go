@@ -153,7 +153,7 @@ func (g *Gateway) Forward(packet semtech.Packet) error {
 		defer conn.Close()
 		connections = append(connections, conn)
 	}
-	raw, err := semtech.Marshal(&packet)
+	raw, err := semtech.Marshal(packet)
 
 	if err != nil {
 		return errors.New(fmt.Sprintf("Unable to forward the packet. %v\n", err))

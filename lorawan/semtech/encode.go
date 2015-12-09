@@ -10,7 +10,7 @@ import (
 )
 
 // Marshal transforms a packet to a sequence of bytes.
-func Marshal(packet *Packet) ([]byte, error) {
+func Marshal(packet Packet) ([]byte, error) {
 	raw := append(make([]byte, 0), packet.Version)
 
 	if len(packet.Token) != 2 {
