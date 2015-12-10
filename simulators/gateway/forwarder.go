@@ -55,7 +55,7 @@ func (g *Gateway) Start() (<-chan semtech.Packet, <-chan error, error) {
 	// Create communication channels and launch goroutines to handle connections
 	chout := make(chan semtech.Packet)
 	cherr := make(chan error)
-	quit := make(chan bool, len(g.routers))
+	quit := make(chan chan error)
 	for _, conn := range connections {
 		go listen(conn, chout, cherr, quit)
 	}
@@ -66,22 +66,43 @@ func (g *Gateway) Start() (<-chan semtech.Packet, <-chan error, error) {
 }
 
 // listen materialize the goroutine handling incoming packet from routers
-func listen(conn *net.UDPConn, chout chan<- semtech.Packet, cherr chan<- error, quit chan bool) {
+func listen(conn *net.UDPConn, chout chan<- semtech.Packet, cherr chan<- error, quit <-chan chan error) {
 	connIn, connErr := asChannel(conn)
+	errBuf := make([]error, 0)
+	outBuf := make([]semtech.Packet, 0)
 	for {
+		var safeChout chan<- semtech.Packet
+		var packet semtech.Packet
+		if len(outBuf) > 0 {
+			safeChout = chout
+			packet = outBuf[0]
+		}
+
+		var safeCherr chan<- error
+		var err error
+		if len(errBuf) > 0 {
+			safeCherr = cherr
+			err = errBuf[0]
+		}
+
 		select {
-		case <-quit:
-			conn.Close() // Any chance this would return an error ? :/
+		case ack := <-quit: // quit event, the gateway is stoppped
+			e := conn.Close()
+			ack <- e
 			return
-		case buf := <-connIn:
+		case buf := <-connIn: // connIn event, a packet has been received by the listener goroutine
 			packet, err := semtech.Unmarshal(buf)
 			if err != nil {
-				cherr <- err
+				errBuf = append(errBuf, err)
 				continue
 			}
-			chout <- *packet
-		case err := <-connErr:
-			cherr <- err
+			outBuf = append(outBuf, *packet)
+		case safeChout <- packet: // emit an available packet to chout
+			outBuf = outBuf[1:]
+		case err := <-connErr: // connErr event, an error has been triggered by the listener goroutine
+			errBuf = append(errBuf, err)
+		case safeCherr <- err: // emit an existing error to cherr
+			errBuf = errBuf[1:]
 		}
 	}
 }
@@ -130,7 +151,12 @@ func (g *Gateway) Stop() error {
 	}
 
 	for range g.routers {
-		g.quit <- true
+		errc := make(chan error)
+		g.quit <- errc
+		err := <-errc
+		if err != nil {
+			fmt.Printf("%+v\n", err)
+		}
 	}
 	close(g.quit)
 	g.routers = make([]*net.UDPAddr, 0)
