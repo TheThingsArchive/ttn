@@ -17,18 +17,29 @@ import (
 )
 
 type Gateway struct {
-	Id      []byte         // Gateway's Identifier
-	alti    int            // GPS altitude in RX meters
-	ackr    uint           // Number of upstream datagrams that were acknowledged
-	dwnb    uint           // Number of downlink datagrams received
-	lati    float64        // GPS latitude, North is +
-	long    float64        // GPS longitude, East is +
-	rxfw    uint           // Number of radio packets forwarded
-	rxnb    uint           // Number of radio packets received
-	txnb    uint           // Number of packets emitted
-	routers []*net.UDPAddr // List of routers addresses
-	quit    chan bool      // Communication channel to stop connections
+	Id      []byte          // Gateway's Identifier
+	alti    int             // GPS altitude in RX meters
+	ackr    uint            // Number of upstream datagrams that were acknowledged
+	dwnb    uint            // Number of downlink datagrams received
+	lati    float64         // GPS latitude, North is +
+	long    float64         // GPS longitude, East is +
+	rxfw    uint            // Number of radio packets forwarded
+	rxnb    uint            // Number of radio packets received
+	txnb    uint            // Number of packets emitted
+	routers []*net.UDPAddr  // List of routers addresses
+	quit    chan chan error // Communication channel to stop connections
+	cmd     chan command    // Internal channel use to update gateway statistics
 }
+
+type command uint
+
+const (
+	cmd_ACKN_PACKET = iota
+	cmd_EMIT_PACKET
+	cmd_FORW_PACKET
+	cmd_RECU_PACKET
+	cmd_RECD_PACKET
+)
 
 // New create a new gateway from a given id and a list of router addresses
 func New(id []byte, routers ...string) (*Gateway, error) {
@@ -66,8 +77,13 @@ func New(id []byte, routers ...string) (*Gateway, error) {
 
 // Stats return the gateway usage statistics computed along its lifecycle
 func (g Gateway) Stats() semtech.Stat {
+	var ackr float64
+	if g.txnb != 0 {
+		ackr = float64(g.ackr) / float64(g.txnb)
+	}
+
 	return semtech.Stat{
-		Ackr: pointer.Float64(0.0), //pointer.Float64(float64(g.ackr) / float64(g.txnb)),
+		Ackr: &ackr,
 		Alti: pointer.Int(g.alti),
 		Dwnb: pointer.Uint(g.dwnb),
 		Lati: pointer.Float64(g.lati),

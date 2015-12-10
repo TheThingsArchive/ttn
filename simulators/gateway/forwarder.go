@@ -56,17 +56,20 @@ func (g *Gateway) Start() (<-chan semtech.Packet, <-chan error, error) {
 	chout := make(chan semtech.Packet)
 	cherr := make(chan error)
 	quit := make(chan chan error)
+	cmd := make(chan command)
+	go reduceCmd(g, cmd)
 	for _, conn := range connections {
-		go listen(conn, chout, cherr, quit)
+		go listen(conn, chout, cherr, cmd, quit)
 	}
 
 	// Keep a reference to the quit channel, and return the others
 	g.quit = quit
+	g.cmd = cmd
 	return chout, cherr, nil
 }
 
 // listen materialize the goroutine handling incoming packet from routers
-func listen(conn *net.UDPConn, chout chan<- semtech.Packet, cherr chan<- error, quit <-chan chan error) {
+func listen(conn *net.UDPConn, chout chan<- semtech.Packet, cherr chan<- error, cmd chan<- command, quit <-chan chan error) {
 	connIn, connErr := asChannel(conn)
 	errBuf := make([]error, 0)
 	outBuf := make([]semtech.Packet, 0)
@@ -91,6 +94,7 @@ func listen(conn *net.UDPConn, chout chan<- semtech.Packet, cherr chan<- error, 
 			ack <- e
 			return
 		case buf := <-connIn: // connIn event, a packet has been received by the listener goroutine
+			cmd <- cmd_RECD_PACKET
 			packet, err := semtech.Unmarshal(buf)
 			if err != nil {
 				errBuf = append(errBuf, err)
@@ -144,9 +148,27 @@ func asChannel(conn *net.UDPConn) (<-chan []byte, <-chan error) {
 	return chout, cherr
 }
 
+// reduceCmd handle all updates made on the gateway statistics
+func reduceCmd(gateway *Gateway, commands <-chan command) {
+	for command := range commands {
+		switch command {
+		case cmd_ACKN_PACKET:
+			gateway.ackr += 1
+		case cmd_EMIT_PACKET:
+			gateway.txnb += 1
+		case cmd_FORW_PACKET:
+			gateway.rxfw += 1
+		case cmd_RECU_PACKET:
+			gateway.rxnb += 1
+		case cmd_RECD_PACKET:
+			gateway.dwnb += 1
+		}
+	}
+}
+
 // Stop remove all previously created connection.
 func (g *Gateway) Stop() error {
-	if g.quit == nil {
+	if g.quit == nil || g.cmd == nil {
 		return errors.New("Try to stop a non-started gateway")
 	}
 
@@ -159,6 +181,7 @@ func (g *Gateway) Stop() error {
 		}
 	}
 	close(g.quit)
+	close(g.cmd)
 	g.routers = make([]*net.UDPAddr, 0)
 	g.quit = nil
 	return nil
@@ -167,6 +190,12 @@ func (g *Gateway) Stop() error {
 // Forward transfer a packet to all known routers.
 // It fails if the gateway hasn't been started beforehand.
 func (g *Gateway) Forward(packet semtech.Packet) error {
+	if g.quit == nil || g.cmd == nil {
+		return errors.New("Unable to forward on a non-started gateway")
+	}
+
+	g.cmd <- cmd_RECU_PACKET
+
 	connections := make([]*net.UDPConn, 0)
 	var err error
 	for _, addr := range g.routers {
@@ -184,8 +213,11 @@ func (g *Gateway) Forward(packet semtech.Packet) error {
 		return errors.New(fmt.Sprintf("Unable to forward the packet. %v\n", err))
 	}
 
+	g.cmd <- cmd_FORW_PACKET
+
 	for _, conn := range connections {
 		_, err = conn.Write(raw)
+		g.cmd <- cmd_EMIT_PACKET
 	}
 
 	if err != nil {
