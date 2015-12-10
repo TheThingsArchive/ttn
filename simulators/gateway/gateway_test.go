@@ -79,7 +79,8 @@ func TestNew(t *testing.T) {
 func TestStat(t *testing.T) {
 	id := []byte("gatewayId")[:8]
 	routerAddr := "0.0.0.0:3000"
-	gateway, e := New(id, routerAddr)
+	routerAddr2 := "0.0.0.0:3001"
+	gateway, e := New(id, routerAddr, routerAddr2)
 	if e != nil {
 		t.Errorf("Unexpected error %+v\n", e)
 		return
