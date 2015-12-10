@@ -21,7 +21,6 @@ type Forwarder interface {
 	Forward(packet semtech.Packet) error
 	Start() (<-chan semtech.Packet, <-chan error, error)
 	Stop() error
-	Stat() semtech.Stat
 }
 
 // Start a Gateway. This will create several udp connections - one per associated router.

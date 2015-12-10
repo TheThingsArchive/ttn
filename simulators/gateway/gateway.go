@@ -10,7 +10,10 @@ package gateway
 import (
 	"errors"
 	"fmt"
+	"github.com/thethingsnetwork/core/lorawan/semtech"
+	"github.com/thethingsnetwork/core/utils/pointer"
 	"net"
+	"time"
 )
 
 type Gateway struct {
@@ -59,6 +62,22 @@ func New(id []byte, routers ...string) (*Gateway, error) {
 		long:    4.8952,
 		routers: addresses,
 	}, nil
+}
+
+// Stats return the gateway usage statistics computed along its lifecycle
+func (g Gateway) Stats() semtech.Stat {
+	return semtech.Stat{
+		Ackr: pointer.Float64(0.0), //pointer.Float64(float64(g.ackr) / float64(g.txnb)),
+		Alti: pointer.Int(g.alti),
+		Dwnb: pointer.Uint(g.dwnb),
+		Lati: pointer.Float64(g.lati),
+		Long: pointer.Float64(g.long),
+		Rxfw: pointer.Uint(g.rxfw),
+		Rxnb: pointer.Uint(g.rxnb),
+		Rxok: pointer.Uint(g.rxnb),
+		Time: pointer.Time(time.Now()),
+		Txnb: pointer.Uint(g.txnb),
+	}
 }
 
 type Imitator interface {
