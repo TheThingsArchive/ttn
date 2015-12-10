@@ -16,6 +16,7 @@ func TestStart(t *testing.T) {
 	routerAddr := "0.0.0.0:3000"
 	gateway, _ := New(gatewayId, routerAddr)
 	chout, cherr, err := gateway.Start()
+	defer gateway.Stop()
 
 	udpAddr, e := net.ResolveUDPAddr("udp", routerAddr)
 	if e != nil {
@@ -76,8 +77,6 @@ func TestStart(t *testing.T) {
 			So(err, ShouldNotBeNil)
 		})
 	})
-
-	gateway.Stop()
 }
 
 func TestStop(t *testing.T) {
