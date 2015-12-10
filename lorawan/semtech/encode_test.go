@@ -1,7 +1,7 @@
 // Copyright © 2015 The Things Network
 // Use of this source code is governed by the MIT license that can be found in the LICENSE file.
 
-package gateway
+package semtech
 
 import (
 	"bytes"
@@ -14,10 +14,10 @@ import (
 )
 
 // -----------------------------------------------------------------
-// ------------------------- Marshal (packet *Packet) ([]byte, error)
+// ------------------------- Marshal (packet Packet) ([]byte, error)
 // -----------------------------------------------------------------
 // ---------- PUSH_DATA
-func checkMarshalPUSH_DATA(packet *Packet, payload []byte) error {
+func checkMarshalPUSH_DATA(packet Packet, payload []byte) error {
 	raw, err := Marshal(packet)
 
 	if err != nil {
@@ -71,7 +71,7 @@ func TestMarshalPUSH_DATA1(t *testing.T) {
 	// }
 	payload, err := ioutil.ReadFile("./test_data/marshal_stat")
 
-	packet := &Packet{
+	packet := Packet{
 		Version:    VERSION,
 		Token:      []byte{0xAA, 0x14},
 		Identifier: PUSH_DATA,
@@ -141,7 +141,7 @@ func TestMarshalPUSH_DATA2(t *testing.T) {
 		return
 	}
 
-	packet := &Packet{
+	packet := Packet{
 		Version:    VERSION,
 		Token:      []byte{0xAA, 0x14},
 		Identifier: PUSH_DATA,
@@ -242,7 +242,7 @@ func TestMarshalPUSH_DATA3(t *testing.T) {
 		return
 	}
 
-	packet := &Packet{
+	packet := Packet{
 		Version:    VERSION,
 		Token:      []byte{0xAA, 0x14},
 		Identifier: PUSH_DATA,
@@ -305,7 +305,7 @@ func TestMarshalPUSH_DATA4(t *testing.T) {
 	// {"stat":{"ackr":100,"alti":145,"dwnb":2,"lati":46.24,"long":3.2523,"rxfw":2,"rxnb":2,"rxok":2,"time":"2014-01-12 08:59:28 GMT","txnb":2}}
 	payload, err := ioutil.ReadFile("./test_data/marshal_stat")
 
-	packet := &Packet{
+	packet := Packet{
 		Version:    VERSION,
 		Token:      []byte{0xAA, 0x14},
 		Identifier: PUSH_DATA,
@@ -338,7 +338,7 @@ func TestMarshalPUSH_DATA5(t *testing.T) {
 	// {"stat":{"ackr":100,"alti":145,"dwnb":2,"lati":46.24,"long":3.2523,"rxfw":2,"rxnb":2,"rxok":2,"time":"2014-01-12 08:59:28 GMT","txnb":2}}
 	payload, err := ioutil.ReadFile("./test_data/marshal_stat")
 
-	packet := &Packet{
+	packet := Packet{
 		Version:    VERSION,
 		Token:      []byte{0xAA, 0x14},
 		Identifier: PUSH_DATA,
@@ -371,7 +371,7 @@ func TestMarshalPUSH_DATA6(t *testing.T) {
 	// {"stat":{"ackr":100,"alti":145,"dwnb":2,"lati":46.24,"long":3.2523,"rxfw":2,"rxnb":2,"rxok":2,"time":"2014-01-12 08:59:28 GMT","txnb":2}}
 	payload, err := ioutil.ReadFile("./test_data/marshal_stat")
 
-	packet := &Packet{
+	packet := Packet{
 		Version:    VERSION,
 		Token:      []byte{0xAA},
 		Identifier: PUSH_DATA,
@@ -404,7 +404,7 @@ func TestMarshalPUSH_DATA7(t *testing.T) {
 	// {"stat":{"ackr":100,"alti":145,"dwnb":2,"lati":46.24,"long":3.2523,"rxfw":2,"rxnb":2,"rxok":2,"time":"2014-01-12 08:59:28 GMT","txnb":2}}
 	payload, err := ioutil.ReadFile("./test_data/marshal_stat")
 
-	packet := &Packet{
+	packet := Packet{
 		Version:    VERSION,
 		Token:      []byte{0xAA, 0x14, 0x28},
 		Identifier: PUSH_DATA,
@@ -431,7 +431,7 @@ func TestMarshalPUSH_DATA7(t *testing.T) {
 }
 
 // ---------- PUSH_ACK
-func checkMarshalACK(packet *Packet) error {
+func checkMarshalACK(packet Packet) error {
 	raw, err := Marshal(packet)
 
 	if err != nil {
@@ -459,7 +459,7 @@ func checkMarshalACK(packet *Packet) error {
 
 // Marshal a basic push_ack packet
 func TestMarshalPUSH_ACK1(t *testing.T) {
-	packet := &Packet{
+	packet := Packet{
 		Version:    VERSION,
 		Token:      []byte{0xAA, 0x14},
 		Identifier: PUSH_ACK,
@@ -473,7 +473,7 @@ func TestMarshalPUSH_ACK1(t *testing.T) {
 
 // Marshal a push_ack packet with extra useless gatewayId
 func TestMarshalPUSH_ACK2(t *testing.T) {
-	packet := &Packet{
+	packet := Packet{
 		Version:    VERSION,
 		Token:      []byte{0xAA, 0x14},
 		Identifier: PUSH_ACK,
@@ -494,7 +494,7 @@ func TestMarshalPUSH_ACK3(t *testing.T) {
 			Rxok: pointer.Uint(14),
 		},
 	}
-	packet := &Packet{
+	packet := Packet{
 		Version:    VERSION,
 		Token:      []byte{0xAA, 0x14},
 		Identifier: PUSH_ACK,
@@ -515,7 +515,7 @@ func TestMarshalPUSH_ACK4(t *testing.T) {
 			Rxok: pointer.Uint(14),
 		},
 	}
-	packet := &Packet{
+	packet := Packet{
 		Version:    VERSION,
 		Token:      []byte{0xAA, 0x14},
 		Identifier: PUSH_ACK,
@@ -529,7 +529,7 @@ func TestMarshalPUSH_ACK4(t *testing.T) {
 
 // Marshal a push_ack with an invalid token (too short)
 func TestMarshalPUSH_ACK5(t *testing.T) {
-	packet := &Packet{
+	packet := Packet{
 		Version:    VERSION,
 		Token:      []byte{0xAA},
 		Identifier: PUSH_ACK,
@@ -544,7 +544,7 @@ func TestMarshalPUSH_ACK5(t *testing.T) {
 
 // Marshal a push_ack with an invalid token (too long)
 func TestMarshalPUSH_ACK6(t *testing.T) {
-	packet := &Packet{
+	packet := Packet{
 		Version:    VERSION,
 		Token:      []byte{0x9A, 0x7A, 0x7E},
 		Identifier: PUSH_ACK,
@@ -558,7 +558,7 @@ func TestMarshalPUSH_ACK6(t *testing.T) {
 }
 
 // ---------- PULL_DATA
-func checkMarshalPULL_DATA(packet *Packet) error {
+func checkMarshalPULL_DATA(packet Packet) error {
 	raw, err := Marshal(packet)
 
 	if err != nil {
@@ -590,7 +590,7 @@ func checkMarshalPULL_DATA(packet *Packet) error {
 
 // Marshal a basic pull_data packet
 func TestMarshalPULL_DATA1(t *testing.T) {
-	packet := &Packet{
+	packet := Packet{
 		Version:    VERSION,
 		Token:      []byte{0xAA, 0x14},
 		Identifier: PULL_DATA,
@@ -611,7 +611,7 @@ func TestMarshalPULL_DATA2(t *testing.T) {
 			Rxok: pointer.Uint(14),
 		},
 	}
-	packet := &Packet{
+	packet := Packet{
 		Version:    VERSION,
 		Token:      []byte{0xAA, 0x14},
 		Identifier: PULL_DATA,
@@ -625,7 +625,7 @@ func TestMarshalPULL_DATA2(t *testing.T) {
 
 // Marshal a pull_data packet with an invalid token (too short)
 func TestMarshalPULL_DATA3(t *testing.T) {
-	packet := &Packet{
+	packet := Packet{
 		Version:    VERSION,
 		Token:      []byte{0xAA},
 		Identifier: PULL_DATA,
@@ -639,7 +639,7 @@ func TestMarshalPULL_DATA3(t *testing.T) {
 
 // Marshal a pull_data packet with an invalid token (too long)
 func TestMarshalPULL_DATA4(t *testing.T) {
-	packet := &Packet{
+	packet := Packet{
 		Version:    VERSION,
 		Token:      []byte{0xAA, 0x14, 0x42},
 		Identifier: PULL_DATA,
@@ -653,7 +653,7 @@ func TestMarshalPULL_DATA4(t *testing.T) {
 
 // Marshal a pull_data packet with an invalid gatewayId (too short)
 func TestMarshalPULL_DATA5(t *testing.T) {
-	packet := &Packet{
+	packet := Packet{
 		Version:    VERSION,
 		Token:      []byte{0xAA, 0x14},
 		Identifier: PULL_DATA,
@@ -667,7 +667,7 @@ func TestMarshalPULL_DATA5(t *testing.T) {
 
 // Marshal a pull_data packet with an invalid gatewayId (too long)
 func TestMarshalPULL_DATA6(t *testing.T) {
-	packet := &Packet{
+	packet := Packet{
 		Version:    VERSION,
 		Token:      []byte{0xAA, 0x14},
 		Identifier: PULL_DATA,
@@ -682,7 +682,7 @@ func TestMarshalPULL_DATA6(t *testing.T) {
 // ---------- PULL_ACK
 // Marshal a basic pull_ack packet
 func TestMarshalPULL_ACK1(t *testing.T) {
-	packet := &Packet{
+	packet := Packet{
 		Version:    VERSION,
 		Token:      []byte{0xAA, 0x14},
 		Identifier: PULL_ACK,
@@ -696,7 +696,7 @@ func TestMarshalPULL_ACK1(t *testing.T) {
 
 // Marshal a pull_ack packet with extra useless gatewayId
 func TestMarshalPULL_ACK2(t *testing.T) {
-	packet := &Packet{
+	packet := Packet{
 		Version:    VERSION,
 		Token:      []byte{0xAA, 0x14},
 		Identifier: PULL_ACK,
@@ -717,7 +717,7 @@ func TestMarshalPULL_ACK3(t *testing.T) {
 			Rxok: pointer.Uint(14),
 		},
 	}
-	packet := &Packet{
+	packet := Packet{
 		Version:    VERSION,
 		Token:      []byte{0xAA, 0x14},
 		Identifier: PULL_ACK,
@@ -738,7 +738,7 @@ func TestMarshalPULL_ACK4(t *testing.T) {
 			Rxok: pointer.Uint(14),
 		},
 	}
-	packet := &Packet{
+	packet := Packet{
 		Version:    VERSION,
 		Token:      []byte{0xAA, 0x14},
 		Identifier: PULL_ACK,
@@ -752,7 +752,7 @@ func TestMarshalPULL_ACK4(t *testing.T) {
 
 // Marshal a pull_ack with an invalid token (too short)
 func TestMarshalPULL_ACK5(t *testing.T) {
-	packet := &Packet{
+	packet := Packet{
 		Version:    VERSION,
 		Token:      []byte{0xAA},
 		Identifier: PULL_ACK,
@@ -767,7 +767,7 @@ func TestMarshalPULL_ACK5(t *testing.T) {
 
 // Marshal a pull_ack with an invalid token (too long)
 func TestMarshalPULL_ACK6(t *testing.T) {
-	packet := &Packet{
+	packet := Packet{
 		Version:    VERSION,
 		Token:      []byte{0x9A, 0x7A, 0x7E},
 		Identifier: PULL_ACK,
@@ -781,7 +781,7 @@ func TestMarshalPULL_ACK6(t *testing.T) {
 }
 
 // ---------- PULL_RESP
-func checkMarshalPULL_RESP(packet *Packet, payload []byte) error {
+func checkMarshalPULL_RESP(packet Packet, payload []byte) error {
 	raw, err := Marshal(packet)
 
 	if err != nil {
@@ -813,7 +813,7 @@ func checkMarshalPULL_RESP(packet *Packet, payload []byte) error {
 
 // Marshal() for a basic PULL_RESP packet with no payload
 func TestMarshallPULL_RESP1(t *testing.T) {
-	packet := &Packet{
+	packet := Packet{
 		Version:    VERSION,
 		Token:      []byte{0xAA, 0x14},
 		Identifier: PULL_RESP,
@@ -845,7 +845,7 @@ func TestMarshallPULL_RESP2(t *testing.T) {
 	// }
 	payload, err := ioutil.ReadFile("./test_data/marshal_txpk")
 
-	packet := &Packet{
+	packet := Packet{
 		Version:    VERSION,
 		Token:      []byte{0xAA, 0x14},
 		Identifier: PULL_RESP,
@@ -876,7 +876,7 @@ func TestMarshallPULL_RESP3(t *testing.T) {
 	//{"txpk":{"codr":"4/6","data":"H3P3N2i9qc4yt7rK7ldqoeCVJGBybzPY5h1Dd7P7p8v","datr":"SF11BW125","freq":864.123456,"imme":true,"ipol":false,"modu":"LORA","powe":14,"rfch":0,"size":32}}
 	payload, err := ioutil.ReadFile("./test_data/marshal_txpk")
 
-	packet := &Packet{
+	packet := Packet{
 		Version:    VERSION,
 		Token:      []byte{0xAA, 0x14},
 		Identifier: PULL_RESP,
@@ -907,7 +907,7 @@ func TestMarshallPULL_RESP4(t *testing.T) {
 	//{"txpk":{"codr":"4/6","data":"H3P3N2i9qc4yt7rK7ldqoeCVJGBybzPY5h1Dd7P7p8v","datr":"SF11BW125","freq":864.123456,"imme":true,"ipol":false,"modu":"LORA","powe":14,"rfch":0,"size":32}}
 	payload, err := ioutil.ReadFile("./test_data/marshal_txpk")
 
-	packet := &Packet{
+	packet := Packet{
 		Version:    VERSION,
 		Token:      []byte{0xAA},
 		Identifier: PULL_RESP,
@@ -938,7 +938,7 @@ func TestMarshallPULL_RESP5(t *testing.T) {
 	//{"txpk":{"codr":"4/6","data":"H3P3N2i9qc4yt7rK7ldqoeCVJGBybzPY5h1Dd7P7p8v","datr":"SF11BW125","freq":864.123456,"imme":true,"ipol":false,"modu":"LORA","powe":14,"rfch":0,"size":32}}
 	payload, err := ioutil.ReadFile("./test_data/marshal_txpk")
 
-	packet := &Packet{
+	packet := Packet{
 		Version:    VERSION,
 		Token:      []byte{0xAA, 0x14, 0x42},
 		Identifier: PULL_RESP,
