@@ -12,7 +12,7 @@ import (
 )
 
 func TestStart(t *testing.T) {
-	gatewayId := "MyGateway"
+	gatewayId := []byte("MyGateway")[:8]
 	routerAddr := "0.0.0.0:3000"
 	gateway, _ := New(gatewayId, routerAddr)
 	chout, cherr, err := gateway.Start()
@@ -47,7 +47,7 @@ func TestStart(t *testing.T) {
 				Token:      []byte{0x1, 0x2},
 				Identifier: semtech.PUSH_ACK,
 			}
-			raw, e := semtech.Marshal(&packet)
+			raw, e := semtech.Marshal(packet)
 			if e != nil {
 				t.Errorf("Unexpected error %+v\n", e)
 				return
@@ -81,7 +81,7 @@ func TestStart(t *testing.T) {
 }
 
 func TestStop(t *testing.T) {
-	gatewayId := "MyGateway"
+	gatewayId := []byte("MyGateway")[:8]
 	routerAddr := "0.0.0.0:3000"
 	gateway, _ := New(gatewayId, routerAddr)
 	Convey("Given a gateway instance", t, func() {
@@ -107,7 +107,7 @@ func TestStop(t *testing.T) {
 }
 
 func TestForward(t *testing.T) {
-	gatewayId := "MyGateway"
+	gatewayId := []byte("MyGateway")[:8]
 	routerAddr1 := "0.0.0.0:3000"
 	routerAddr2 := "0.0.0.0:3001"
 
@@ -118,6 +118,7 @@ func TestForward(t *testing.T) {
 		t.Errorf("Unexpected error %v", e)
 		return
 	}
+	defer gateway.Stop()
 
 	Convey("Given a started gateway bound to two routers", t, func() {
 		Convey("When forwarding a valid packet", func() {

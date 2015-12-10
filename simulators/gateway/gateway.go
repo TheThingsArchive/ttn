@@ -14,28 +14,22 @@ import (
 )
 
 type Gateway struct {
-	Coord GPSCoord // Gateway's GPS coordinates
-	Id    string   // Gateway's Identifier
-
-	ackr float64 // Percentage of upstream datagrams that were acknowledged
-	dwnb uint    // Number of downlink datagrams received
-	rxfw uint    // Number of radio packets forwarded
-	rxnb uint    // Number of radio packets received
-	rxok uint    // Number of radio packets received with a valid  PHY CRC
-	txnb uint    // Number of packets emitted
-
+	Id      []byte         // Gateway's Identifier
+	alti    int            // GPS altitude in RX meters
+	ackr    uint           // Number of upstream datagrams that were acknowledged
+	dwnb    uint           // Number of downlink datagrams received
+	lati    float64        // GPS latitude, North is +
+	long    float64        // GPS longitude, East is +
+	rxfw    uint           // Number of radio packets forwarded
+	rxnb    uint           // Number of radio packets received
+	txnb    uint           // Number of packets emitted
 	routers []*net.UDPAddr // List of routers addresses
 	quit    chan bool      // Communication channel to stop connections
 }
 
-type GPSCoord struct {
-	altitude  int     // GPS altitude in RX meters
-	latitude  float64 // GPS latitude, North is +
-	longitude float64 // GPS longitude, East is +
-}
-
-func New(id string, routers ...string) (*Gateway, error) {
-	if id == "" {
+// New create a new gateway from a given id and a list of router addresses
+func New(id []byte, routers ...string) (*Gateway, error) {
+	if len(id) != 8 {
 		return nil, errors.New("Invalid gateway id provided")
 	}
 
@@ -59,12 +53,10 @@ func New(id string, routers ...string) (*Gateway, error) {
 	}
 
 	return &Gateway{
-		Id: id,
-		Coord: GPSCoord{
-			altitude:  120, // TEMPORARY
-			latitude:  53.3702,
-			longitude: 4.8952,
-		},
+		Id:      id,
+		alti:    120,
+		lati:    53.3702,
+		long:    4.8952,
 		routers: addresses,
 	}, nil
 }

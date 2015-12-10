@@ -10,7 +10,7 @@ import (
 
 func TestNew(t *testing.T) {
 	Convey("The New method should return a valid gateway struct ready to use", t, func() {
-		id := "qwerty"
+		id := []byte("qwerty")[:8]
 		router1 := "0.0.0.0:3000"
 		router2 := "0.0.0.0:1337"
 
@@ -25,7 +25,7 @@ func TestNew(t *testing.T) {
 			}
 
 			Convey("The identifier should have been set correctly", func() {
-				So(gateway.Id, ShouldEqual, id)
+				So(gateway.Id, ShouldResemble, id)
 			})
 
 			Convey("The list of configured routers should have been set correctly", func() {
@@ -44,7 +44,7 @@ func TestNew(t *testing.T) {
 			}
 
 			Convey("The identifier should have been set correctly", func() {
-				So(gateway.Id, ShouldEqual, id)
+				So(gateway.Id, ShouldResemble, id)
 			})
 
 			Convey("The list of configured routers should have been set correctly", func() {
@@ -54,7 +54,7 @@ func TestNew(t *testing.T) {
 
 		Convey("Given a bad identifier and/or bad router addresses", func() {
 			Convey("It should return an error for an empty id", func() {
-				gateway, err := New("", router1)
+				gateway, err := New(make([]byte, 0), router1)
 				So(gateway, ShouldBeNil)
 				So(err, ShouldNotBeNil)
 			})
