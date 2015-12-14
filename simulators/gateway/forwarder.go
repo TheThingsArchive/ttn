@@ -150,6 +150,7 @@ func asChannel(conn *net.UDPConn) (<-chan []byte, <-chan error) {
 
 // reduceCmd handle all updates made on the gateway statistics
 func reduceCmd(gateway *Gateway, commands <-chan command) {
+	//TODO beware of concurrent access on gateway properties.
 	for command := range commands {
 		switch command {
 		case cmd_ACKN_PACKET:
