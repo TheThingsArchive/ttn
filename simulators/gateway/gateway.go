@@ -95,7 +95,3 @@ func (g Gateway) Stats() semtech.Stat {
 		Txnb: pointer.Uint(g.txnb),
 	}
 }
-
-type Imitator interface {
-	Mimic()
-}
