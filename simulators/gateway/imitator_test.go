@@ -4,7 +4,6 @@
 package gateway
 
 import (
-	"fmt"
 	. "github.com/smartystreets/goconvey/convey"
 	"github.com/thethingsnetwork/core/lorawan/semtech"
 	"testing"
@@ -33,7 +32,7 @@ func TestMimic(t *testing.T) {
 	Convey("Given a started gateway", t, func() {
 		err := gateway.Mimic()
 		Convey("The imitator mode can be started", func() {
-			So(err, ShouldNotBeNil)
+			So(err, ShouldBeNil)
 		})
 
 		Convey("After having started the imitation", func() {
@@ -66,13 +65,12 @@ func TestMimic(t *testing.T) {
 					t.Errorf("Unexpected packet identifier")
 					return
 				}
-				e := gateway.Forward(semtech.Packet{
+
+				gateway.Forward(semtech.Packet{
 					Version:    semtech.VERSION,
 					Token:      packet.Token,
 					Identifier: semtech.PUSH_ACK,
 				})
-
-				fmt.Println(e)
 
 				maxTries := 3
 				for maxTries > 0 {
