@@ -8,6 +8,7 @@ import (
 	"github.com/thethingsnetwork/core/lorawan/semtech"
 	"net"
 	"testing"
+	"time"
 )
 
 func TestNew(t *testing.T) {
@@ -144,6 +145,7 @@ func TestStat(t *testing.T) {
 				return
 			}
 			conn.Write(raw)
+			time.Sleep(100 * time.Millisecond)
 
 			Convey("The downlink packet number should have been incremented", func() {
 				dwnb := *gateway.Stats().Dwnb
@@ -162,6 +164,7 @@ func TestStat(t *testing.T) {
 				return
 			}
 			conn.Write(raw)
+			time.Sleep(100 * time.Millisecond)
 			Convey("The downlink packet number should have been incremented", func() {
 				dwnb := *gateway.Stats().Dwnb
 				So(dwnb, ShouldEqual, *stats.Dwnb+1)
@@ -180,6 +183,7 @@ func TestStat(t *testing.T) {
 				t.Errorf("Unexpected error %+v\n", e)
 				return
 			}
+			time.Sleep(100 * time.Millisecond)
 			Convey("The number of packets forwarded should have been incremented", func() {
 				rxfw := *gateway.Stats().Rxfw
 				So(rxfw, ShouldEqual, *stats.Rxfw+1)
@@ -213,6 +217,7 @@ func TestStat(t *testing.T) {
 				t.Errorf("An error was expected")
 				return
 			}
+			time.Sleep(100 * time.Millisecond)
 			Convey("The number of packets forwarded shouldn't have moved", func() {
 				rxfw := *gateway.Stats().Rxfw
 				So(rxfw, ShouldEqual, *stats.Rxfw)
