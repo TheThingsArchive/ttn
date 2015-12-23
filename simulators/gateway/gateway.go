@@ -75,6 +75,11 @@ func New(id []byte, routers ...string) (*Gateway, error) {
 	}, nil
 }
 
+// IsRunning gives information about the gateway status
+func (g Gateway) IsRunning() bool {
+	return g.quit != nil && g.cmd != nil
+}
+
 // Stats return the gateway usage statistics computed along its lifecycle
 func (g Gateway) Stats() semtech.Stat {
 	var ackr float64

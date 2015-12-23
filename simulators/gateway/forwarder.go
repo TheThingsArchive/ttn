@@ -28,7 +28,7 @@ type Forwarder interface {
 // Same for errors.
 func (g *Gateway) Start() (<-chan semtech.Packet, <-chan error, error) {
 	// Ensure not already started
-	if g.quit != nil {
+	if g.IsRunning() {
 		return nil, nil, errors.New("Try to start a started gateway")
 	}
 
@@ -122,7 +122,8 @@ func asChannel(conn *net.UDPConn) (<-chan []byte, <-chan error) {
 	go func() {
 		buf := make([]byte, LISTENER_BUF_SIZE)
 		for {
-			n, _, err := conn.ReadFromUDP(buf)
+			n, a, err := conn.ReadFromUDP(buf)
+			fmt.Println("Address", a)
 			if err != nil {
 				if strings.Contains(err.Error(), "use of closed network connection") {
 					return
@@ -169,7 +170,7 @@ func reduceCmd(gateway *Gateway, commands <-chan command) {
 
 // Stop remove all previously created connection.
 func (g *Gateway) Stop() error {
-	if g.quit == nil || g.cmd == nil {
+	if !g.IsRunning() {
 		return errors.New("Try to stop a non-started gateway")
 	}
 
@@ -190,31 +191,43 @@ func (g *Gateway) Stop() error {
 
 // Forward transfer a packet to all known routers.
 // It fails if the gateway hasn't been started beforehand.
-func (g *Gateway) Forward(packet semtech.Packet) error {
-	if g.quit == nil || g.cmd == nil {
+func (g *Gateway) Forward(packet semtech.Packet, only ...*net.UDPAddr) error {
+	if !g.IsRunning() {
 		return errors.New("Unable to forward on a non-started gateway")
 	}
 
-	g.cmd <- cmd_RECU_PACKET
+	raddr, err := net.ResolveUDPAddr("udp", "0.0.0.0:33333")
+	if err != nil {
+		return err
+	}
+
+	var recipients []*net.UDPAddr
+	if len(only) == 0 { // len > 0 => packet retransmission
+		g.cmd <- cmd_RECU_PACKET
+		recipients = g.routers
+	} else {
+		recipients = only
+	}
 
 	connections := make([]*net.UDPConn, 0)
-	var err error
-	for _, addr := range g.routers {
-		var conn *net.UDPConn
-		conn, err = net.DialUDP("udp", nil, addr)
+	for _, addr := range recipients {
+
+		conn, err := net.DialUDP("udp", addr, raddr)
 		if err != nil {
-			break
+			return errors.New(fmt.Sprintf("Unable to forward the packet. %v\n", err))
 		}
 		defer conn.Close()
 		connections = append(connections, conn)
 	}
-	raw, err := semtech.Marshal(packet)
 
+	raw, err := semtech.Marshal(packet)
 	if err != nil {
 		return errors.New(fmt.Sprintf("Unable to forward the packet. %v\n", err))
 	}
 
-	g.cmd <- cmd_FORW_PACKET
+	if len(only) == 0 { // len > 0 => packet retransmission
+		g.cmd <- cmd_FORW_PACKET
+	}
 
 	for _, conn := range connections {
 		_, err = conn.Write(raw)
