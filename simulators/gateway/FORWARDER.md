@@ -31,16 +31,19 @@ control of a separated entity.
 
 ```go
 // New create a forwarder instance bound to a set of routers. 
-func New (id string, routers ...io.ReadWriteCloser) (&Forwarder, error)  
-
-// Forward dispatch a packet to all connected routers. 
-func (g *Forwarder) Forward(p semtech.Packet) error
+func NewForwarder (id string, routers ...io.ReadWriteCloser) (*Forwarder, error)  
 
 // Flush spits out all downlink packet received by the forwarder since the last flush.
-func (g *Forwarder) Flush() []semtech.Packet
+func (fwd *Forwarder) Flush() []semtech.Packet
+
+// Forward dispatch a packet to all connected routers. 
+func (fwd *Forwarder) Forward(packet semtech.Packet) error
+
+// Stats computes and return the forwarder statistics since it was created
+func (fwd Forwarder) Stats() semtech.Stat
 
 // Stop terminate the forwarder activity. Closing all routers connections
-func (g *Forwarder) Stop() error
+func (fwd *Forwarder) Stop() error
 ```
 
 ### Stats
