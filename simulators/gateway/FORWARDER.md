@@ -27,6 +27,10 @@ still flush the forwarder to retrieve all stored packet and clear the forwarder 
 This way, the forwarder is nothing more than a forwarder while the handling logic is under the
 control of a separated entity. 
 
+When a downlink datagram is received it is stored unless it does not reflect a valid semtech
+Packet (i.e., a `PUSH_ACK`, `PULL_ACK` or `PULL_RESP` with valid data). Any other data received
+by the forwarder is ignored.
+
 ### Interfaces
 
 ```go
