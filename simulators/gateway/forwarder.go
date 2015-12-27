@@ -14,7 +14,8 @@ import (
 type Forwarder struct {
 	Id       [8]byte              // Gateway's Identifier
 	alti     int                  // GPS altitude in RX meters
-	ackr     uint                 // Number of upstream datagrams that were acknowledged
+	upnb     uint                 // Number of upstream datagrams sent
+	ackn     uint                 // Number of upstream datagrams that were acknowledged
 	dwnb     uint                 // Number of downlink datagrams received
 	lati     float64              // GPS latitude, North is +
 	long     float64              // GPS longitude, East is +
@@ -22,6 +23,7 @@ type Forwarder struct {
 	rxnb     uint                 // Number of radio packets received
 	txnb     uint                 // Number of packets emitted
 	adapters []io.ReadWriteCloser // List of downlink adapters
+	packets  []semtech.Packet     // Downlink packets received
 }
 
 // NewForwarder create a forwarder instance bound to a set of routers.
@@ -40,6 +42,25 @@ func NewForwarder(id [8]byte, adapters ...io.ReadWriteCloser) (*Forwarder, error
 
 // Forward dispatch a packet to all connected routers.
 func (fwd *Forwarder) Forward(packet semtech.Packet) error {
+	if packet.Identifier != semtech.PUSH_DATA {
+		return fmt.Errorf("Unable to forward with identifier %x", packet.Identifier)
+	}
+
+	raw, err := semtech.Marshal(packet)
+	if err != nil {
+		return err
+	}
+
+	for _, adapter := range fwd.adapters {
+		n, err := adapter.Write(raw)
+		if err != nil {
+			return err
+		}
+		if n < len(raw) {
+			return fmt.Errorf("Packet was too long")
+		}
+	}
+
 	return nil
 }
 
@@ -51,8 +72,8 @@ func (fwd *Forwarder) Flush() []semtech.Packet {
 // Stats computes and return the forwarder statistics since it was created
 func (fwd Forwarder) Stats() semtech.Stat {
 	var ackr float64
-	if fwd.txnb != 0 {
-		ackr = float64(fwd.ackr) / float64(fwd.txnb)
+	if fwd.upnb != 0 {
+		ackr = float64(fwd.ackn) / float64(fwd.upnb)
 	}
 
 	return semtech.Stat{
