@@ -74,7 +74,7 @@ func generatePacket(identifier byte, id [8]byte) semtech.Packet {
 
 // initForwarder is a little helper used to instance adapters and forwarder for test purpose
 func initForwarder(id [8]byte) (*Forwarder, *fakeAdapter, *fakeAdapter) {
-	a1, a2 := newFakeAdapter("adaptater1"), newFakeAdapter("adaptater2")
+	a1, a2 := newFakeAdapter("adapter1"), newFakeAdapter("adapter2")
 	fwd, err := NewForwarder(id, a1, a2)
 	if err == nil {
 		panic(err)
@@ -85,7 +85,7 @@ func initForwarder(id [8]byte) (*Forwarder, *fakeAdapter, *fakeAdapter) {
 func TestForwarder(t *testing.T) {
 	id := [8]byte{0x1, 0x3, 0x3, 0x7, 0x5, 0xA, 0xB, 0x1}
 	Convey("NewForwarder", t, func() {
-		Convey("Valid: one adapater", func() {
+		Convey("Valid: one adapter", func() {
 			fwd, err := NewForwarder(id, newFakeAdapter("1"))
 			So(err, ShouldBeNil)
 			defer fwd.Stop()
@@ -134,7 +134,7 @@ func TestForwarder(t *testing.T) {
 		}
 
 		Convey("Valid: PUSH_DATA", checkValid(semtech.PUSH_DATA))
-		Convey("Valid: PULL_DATA", checkValid(semtech.PULL_DATA))
+		Convey("Valid: PULL_DATA", checkInvalid(semtech.PULL_DATA))
 		Convey("Invalid: PUSH_ACK", checkInvalid(semtech.PUSH_ACK))
 		Convey("Invalid: PULL_ACK", checkInvalid(semtech.PULL_ACK))
 		Convey("Invalid: PULL_RESP", checkInvalid(semtech.PULL_RESP))
@@ -228,7 +228,95 @@ func TestForwarder(t *testing.T) {
 	})
 
 	Convey("Stats", t, func() {
-		//TODO
+		fwd, a1, a2 := initForwarder(id)
+		defer fwd.Stop()
+		refStats := fwd.Stats()
+
+		Convey("lati, long, alti, time", func() {
+			So(refStats.Lati, ShouldNotBeNil)
+			So(refStats.Long, ShouldNotBeNil)
+			So(refStats.Alti, ShouldNotBeNil)
+			So(refStats.Time, ShouldNotBeNil)
+			So(refStats.Rxnb, ShouldNotBeNil)
+			So(refStats.Rxok, ShouldNotBeNil)
+			So(refStats.Ackr, ShouldNotBeNil)
+			So(refStats.Rxfw, ShouldNotBeNil)
+			So(refStats.Dwnb, ShouldNotBeNil)
+			So(refStats.Txnb, ShouldNotBeNil)
+
+		})
+
+		Convey("rxnb / rxok", func() {
+			fwd.Forward(generatePacket(semtech.PUSH_DATA, fwd.Id))
+			stats := fwd.Stats()
+			So(stats.Rxnb, ShouldNotBeNil)
+			So(stats.Rxok, ShouldNotBeNil)
+			So(*stats.Rxnb, ShouldEqual, *refStats.Rxnb+1)
+			So(*stats.Rxok, ShouldEqual, *refStats.Rxok+1)
+		})
+
+		Convey("rxfw", func() {
+			fwd.Forward(generatePacket(semtech.PUSH_DATA, fwd.Id))
+			stats := fwd.Stats()
+			So(stats.Rxfw, ShouldNotBeNil)
+			So(*stats.Rxfw, ShouldEqual, *refStats.Rxfw+1)
+		})
+
+		Convey("ackr", func() {
+			Convey("ackr: initial", func() {
+				So(*refStats.Ackr, ShouldEqual, 0)
+			})
+
+			sendAndAck := func(a1Ack, a2Ack bool) {
+				// Send packet + ack
+				pkt := generatePacket(semtech.PUSH_DATA, id)
+				ack := generatePacket(semtech.PUSH_ACK, id)
+				ack.Token = pkt.Token
+				raw, err := semtech.Marshal(ack)
+				if err != nil {
+					panic(err)
+				}
+				fwd.Forward(pkt)
+				time.Sleep(50 * time.Millisecond)
+				if a1Ack {
+					a1.Downlink <- raw
+				}
+
+				if a2Ack {
+					a2.Downlink <- raw
+				}
+			}
+
+			Convey("ackr: valid packet acknowledged", func() {
+				// Send packet + ack
+				sendAndAck(true, true)
+
+				// Check stats
+				stats := fwd.Stats()
+				So(*stats.Ackr, ShouldEqual, 1)
+			})
+
+			Convey("ackr: valid packet partially acknowledged", func() {
+				// Send packet + ack
+				sendAndAck(true, false)
+
+				// Check stats
+				stats := fwd.Stats()
+				So(*stats.Ackr, ShouldEqual, float64(1.0)/float64(2.0))
+			})
+
+			Convey("ackr: valid packet  not ackowledged", func() {
+				// Send packet + ack
+				sendAndAck(false, false)
+
+				// Check stats
+				stats := fwd.Stats()
+				So(*stats.Ackr, ShouldEqual, *refStats.Ackr)
+			})
+		})
+
+		// TODO dwnb
+		// TODO txnb
 	})
 
 	Convey("Stop", t, func() {
