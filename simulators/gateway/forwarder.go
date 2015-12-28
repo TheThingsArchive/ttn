@@ -97,17 +97,20 @@ func (fwd *Forwarder) listen() {
 func asChannel(adapter io.ReadWriteCloser, dwnl chan<- semtech.Packet) {
 	for {
 		buf := make([]byte, 1024)
+		fmt.Printf("Forwarder listens to downlink datagrams\n")
 		n, err := adapter.Read(buf)
 		if err != nil {
 			fmt.Println(err)
 			return // Error on reading, we assume the connection is closed / lost
 		}
+		fmt.Printf("Forwarder unmarshals datagram %x\n", buf[:n])
 		packet, err := semtech.Unmarshal(buf[:n])
 		if err != nil {
 			fmt.Println(err)
 			continue
 		}
 		if packet.Identifier != semtech.PUSH_DATA {
+			fmt.Printf("Forwarder ignores contingent packet %+v\n", packet)
 			continue
 		}
 		dwnl <- *packet // Only valid PUSH_DATA packet are transmitted through the chan
@@ -119,6 +122,7 @@ func asChannel(adapter io.ReadWriteCloser, dwnl chan<- semtech.Packet) {
 // This method consume commands from the channel until it's closed.
 func (fwd *Forwarder) handleCommands() {
 	for cmd := range fwd.commands {
+		fmt.Printf("Fowarder executes command: %v\n", cmd.name)
 		switch cmd.name {
 		case cmd_ACK:
 			fwd.ackn += 1
