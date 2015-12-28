@@ -12,7 +12,8 @@ import (
 )
 
 type Forwarder struct {
-	Id       [8]byte              // Gateway's Identifier
+	Id       [8]byte // Gateway's Identifier
+	debug    bool
 	alti     int                  // GPS altitude in RX meters
 	upnb     uint                 // Number of upstream datagrams sent
 	ackn     uint                 // Number of upstream datagrams that were acknowledged
@@ -51,10 +52,12 @@ func NewForwarder(id [8]byte, adapters ...io.ReadWriteCloser) (*Forwarder, error
 
 	fwd := &Forwarder{
 		Id:       id,
+		debug:    false,
 		alti:     120,
 		lati:     53.3702,
 		long:     4.8952,
 		adapters: adapters,
+		packets:  make([]semtech.Packet, 0),
 		commands: make(chan command),
 		Errors:   make(chan error, len(adapters)),
 	}
@@ -74,17 +77,25 @@ func (fwd Forwarder) listenAdapter(adapter io.ReadWriteCloser) {
 	acks := make(map[[3]byte]uint) // adapterIndex | packet.Identifier | packet.Token
 	for {
 		buf := make([]byte, 1024)
-		fmt.Printf("Forwarder listens to downlink datagrams\n")
+		if fwd.debug {
+			fmt.Printf("Forwarder listens to downlink datagrams\n")
+		}
 		n, err := adapter.Read(buf)
 		if err != nil {
-			fmt.Println(err)
+			if fwd.debug {
+				fmt.Println(err)
+			}
 			fwd.Errors <- err
 			return // Error on reading, we assume the connection is closed / lost
 		}
-		fmt.Printf("Forwarder unmarshals datagram %x\n", buf[:n])
+		if fwd.debug {
+			fmt.Printf("Forwarder unmarshals datagram %x\n", buf[:n])
+		}
 		packet, err := semtech.Unmarshal(buf[:n])
 		if err != nil {
-			fmt.Println(err)
+			if fwd.debug {
+				fmt.Println(err)
+			}
 			continue
 		}
 
@@ -98,7 +109,9 @@ func (fwd Forwarder) listenAdapter(adapter io.ReadWriteCloser) {
 		case semtech.PULL_RESP:
 			fwd.commands <- command{cmd_RECVDWN, packet}
 		default:
-			fmt.Printf("Forwarder ignores contingent packet %+v\n", packet)
+			if fwd.debug {
+				fmt.Printf("Forwarder ignores contingent packet %+v\n", packet)
+			}
 		}
 
 	}
@@ -109,7 +122,10 @@ func (fwd Forwarder) listenAdapter(adapter io.ReadWriteCloser) {
 // This method consume commands from the channel until it's closed.
 func (fwd *Forwarder) handleCommands() {
 	for cmd := range fwd.commands {
-		fmt.Printf("Fowarder executes command: %v\n", cmd.name)
+		if fwd.debug {
+			fmt.Printf("Fowarder executes command: %v\n", cmd.name)
+		}
+
 		switch cmd.name {
 		case cmd_ACK:
 			fwd.ackn += 1
@@ -121,7 +137,7 @@ func (fwd *Forwarder) handleCommands() {
 			fwd.rxnb += 1
 		case cmd_RECVDWN:
 			fwd.dwnb += 1
-			fwd.packets = append(fwd.packets, cmd.data.(semtech.Packet))
+			fwd.packets = append(fwd.packets, *cmd.data.(*semtech.Packet))
 		case cmd_FLUSH:
 			cmd.data.(chan []semtech.Packet) <- fwd.packets
 			fwd.packets = make([]semtech.Packet, 0)
