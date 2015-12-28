@@ -13,36 +13,38 @@ import (
 
 type fakeAdapter struct {
 	id       string
-	wrote    []byte
+	written  []byte
 	Downlink chan []byte
-	closed   bool
 }
 
 func newFakeAdapter(id string) *fakeAdapter {
 	return &fakeAdapter{
 		id:       id,
-		wrote:    []byte{},
+		written:  []byte{},
 		Downlink: make(chan []byte),
-		closed:   false,
 	}
 }
 
 // Write implement io.Writer interface
 func (a *fakeAdapter) Write(p []byte) (int, error) {
 	fmt.Printf("%v wrote %+x\n", a.id, p)
-	a.wrote = p
+	a.written = p
 	return len(p), nil
 }
 
 // Read implement io.Reader interface
 func (a *fakeAdapter) Read(buf []byte) (int, error) {
-	return copy(buf, <-a.Downlink), nil
+	raw, ok := <-a.Downlink
+	if !ok {
+		return 0, fmt.Errorf("Connection has been closed")
+	}
+	return copy(buf, raw), nil
 }
 
 // Close implement io.Closer interface
 func (a *fakeAdapter) Close() error {
 	fmt.Printf("Connection %v closed\n", a.id)
-	a.closed = true
+	close(a.Downlink)
 	return nil
 }
 
@@ -121,8 +123,8 @@ func TestForwarder(t *testing.T) {
 				}
 				err = fwd.Forward(pkt)
 				So(err, ShouldBeNil)
-				So(a1.wrote, ShouldResemble, raw)
-				So(a2.wrote, ShouldResemble, raw)
+				So(a1.written, ShouldResemble, raw)
+				So(a2.written, ShouldResemble, raw)
 			}
 		}
 
