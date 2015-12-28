@@ -23,8 +23,8 @@ type Forwarder struct {
 	rxnb     uint                 // Number of radio packets received
 	adapters []io.ReadWriteCloser // List of downlink adapters
 	packets  []semtech.Packet     // Downlink packets received
-	done     chan chan error      // Done channel
 	commands chan command         // Concurrent access on gateway stats
+	Errors   chan error           // Done channel
 }
 
 type commandName string
@@ -55,52 +55,30 @@ func NewForwarder(id [8]byte, adapters ...io.ReadWriteCloser) (*Forwarder, error
 		lati:     53.3702,
 		long:     4.8952,
 		adapters: adapters,
-		done:     make(chan chan error, len(adapters)),
 		commands: make(chan command),
+		Errors:   make(chan error, len(adapters)),
 	}
 
 	go fwd.handleCommands()
-	go fwd.listen()
+
+	// Star listening to each adapter Read() method
+	for _, adapter := range fwd.adapters {
+		go fwd.listenAdapter(adapter)
+	}
 
 	return fwd, nil
 }
 
-// listen get downlink packets from routers and store them until a flush is requested
-func (fwd *Forwarder) listen() {
-	dwnl := make(chan semtech.Packet, len(fwd.adapters))
-
-	// Star listening to each adapter Read() method
-	for _, adapter := range fwd.adapters {
-		go asChannel(adapter, dwnl)
-	}
-
-	for {
-		select {
-		case fwd.commands <- command{cmd_RECVDWN, <-dwnl}:
-
-		case errc := <-fwd.done:
-			// Empty the buffer first to avoid leaking goroutines
-			nb := len(dwnl)
-			for i := 0; i < nb; i += 1 {
-				fwd.commands <- command{cmd_RECVDWN, <-dwnl}
-			}
-
-			// Then stop
-			errc <- nil
-			return
-		}
-	}
-}
-
-// asChannel listen to incoming connection from an adapter and forward them into a dedicated
-// channel. Non-valid packets are ignored.
-func asChannel(adapter io.ReadWriteCloser, dwnl chan<- semtech.Packet) {
+// listenAdapter listen to incoming datagrams from an adapter. Non-valid packets are ignored.
+func (fwd Forwarder) listenAdapter(adapter io.ReadWriteCloser) {
+	acks := make(map[[3]byte]uint) // adapterIndex | packet.Identifier | packet.Token
 	for {
 		buf := make([]byte, 1024)
 		fmt.Printf("Forwarder listens to downlink datagrams\n")
 		n, err := adapter.Read(buf)
 		if err != nil {
 			fmt.Println(err)
+			fwd.Errors <- err
 			return // Error on reading, we assume the connection is closed / lost
 		}
 		fmt.Printf("Forwarder unmarshals datagram %x\n", buf[:n])
@@ -109,11 +87,20 @@ func asChannel(adapter io.ReadWriteCloser, dwnl chan<- semtech.Packet) {
 			fmt.Println(err)
 			continue
 		}
-		if packet.Identifier != semtech.PUSH_DATA {
+
+		token := [3]byte{packet.Identifier, packet.Token[0], packet.Token[1]}
+		switch packet.Identifier {
+		case semtech.PUSH_ACK, semtech.PULL_ACK:
+			if acks[token] > 0 {
+				acks[token] -= 1
+				fwd.commands <- command{cmd_ACK, nil}
+			}
+		case semtech.PULL_RESP:
+			fwd.commands <- command{cmd_RECVDWN, packet}
+		default:
 			fmt.Printf("Forwarder ignores contingent packet %+v\n", packet)
-			continue
 		}
-		dwnl <- *packet // Only valid PUSH_DATA packet are transmitted through the chan
+
 	}
 }
 
@@ -161,7 +148,7 @@ func (fwd *Forwarder) handleCommands() {
 }
 
 // Forward dispatch a packet to all connected routers.
-func (fwd *Forwarder) Forward(packet semtech.Packet) error {
+func (fwd Forwarder) Forward(packet semtech.Packet) error {
 	fwd.commands <- command{cmd_RECVUP, nil}
 	if packet.Identifier != semtech.PUSH_DATA {
 		return fmt.Errorf("Unable to forward with identifier %x", packet.Identifier)
@@ -188,7 +175,7 @@ func (fwd *Forwarder) Forward(packet semtech.Packet) error {
 }
 
 // Flush spits out all downlink packet received by the forwarder since the last flush.
-func (fwd *Forwarder) Flush() []semtech.Packet {
+func (fwd Forwarder) Flush() []semtech.Packet {
 	chpkt := make(chan []semtech.Packet)
 	fwd.commands <- command{cmd_FLUSH, chpkt}
 	return <-chpkt
@@ -202,7 +189,7 @@ func (fwd Forwarder) Stats() semtech.Stat {
 }
 
 // Stop terminate the forwarder activity. Closing all routers connections
-func (fwd *Forwarder) Stop() error {
+func (fwd Forwarder) Stop() error {
 	var errors []error
 
 	// Close the uplink adapters
@@ -216,16 +203,6 @@ func (fwd *Forwarder) Stop() error {
 	if len(errors) > 0 {
 		return fmt.Errorf("Unable to stop the forwarder: %+v", errors)
 	}
-
-	// Stop listening to downlink packets
-	errc := make(chan error)
-	fwd.done <- errc
-	if err := <-errc; err != nil {
-		return err
-	}
-
-	// Close the commands channel
-	close(fwd.commands)
 
 	return nil
 }
