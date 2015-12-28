@@ -27,7 +27,6 @@ func newFakeAdapter(id string) *fakeAdapter {
 
 // Write implement io.Writer interface
 func (a *fakeAdapter) Write(p []byte) (int, error) {
-	fmt.Printf("%v wrote %+x\n", a.id, p)
 	a.written = p
 	return len(p), nil
 }
@@ -43,7 +42,6 @@ func (a *fakeAdapter) Read(buf []byte) (int, error) {
 
 // Close implement io.Closer interface
 func (a *fakeAdapter) Close() error {
-	fmt.Printf("Connection %v closed\n", a.id)
 	close(a.Downlink)
 	return nil
 }
@@ -51,19 +49,11 @@ func (a *fakeAdapter) Close() error {
 // generatePacket provides quick Packet generation for test purpose
 func generatePacket(identifier byte, id [8]byte) semtech.Packet {
 	switch identifier {
-	case semtech.PUSH_DATA:
+	case semtech.PUSH_DATA, semtech.PULL_DATA:
 		return semtech.Packet{
 			Version:    semtech.VERSION,
 			Token:      genToken(),
-			Identifier: semtech.PULL_DATA,
-			GatewayId:  id[:],
-			Payload:    nil,
-		}
-	case semtech.PULL_DATA:
-		return semtech.Packet{
-			Version:    semtech.VERSION,
-			Token:      genToken(),
-			Identifier: semtech.PULL_DATA,
+			Identifier: identifier,
 			GatewayId:  id[:],
 		}
 	default:
@@ -78,7 +68,7 @@ func generatePacket(identifier byte, id [8]byte) semtech.Packet {
 func initForwarder(id [8]byte) (*Forwarder, *fakeAdapter, *fakeAdapter) {
 	a1, a2 := newFakeAdapter("adapter1"), newFakeAdapter("adapter2")
 	fwd, err := NewForwarder(id, a1, a2)
-	if err == nil {
+	if err != nil {
 		panic(err)
 	}
 	return fwd, a1, a2
@@ -104,12 +94,11 @@ func TestForwarder(t *testing.T) {
 		Convey("Invalid: no adapter", func() {
 			fwd, err := NewForwarder(id)
 			So(err, ShouldNotBeNil)
-			defer fwd.Stop()
 			So(fwd, ShouldBeNil)
 		})
 	})
 
-	Convey("Forwarder", t, func() {
+	Convey("Forward", t, func() {
 		fwd, a1, a2 := initForwarder(id)
 		defer fwd.Stop()
 
@@ -136,7 +125,7 @@ func TestForwarder(t *testing.T) {
 		}
 
 		Convey("Valid: PUSH_DATA", checkValid(semtech.PUSH_DATA))
-		Convey("Valid: PULL_DATA", checkInvalid(semtech.PULL_DATA))
+		Convey("Invalid: PULL_DATA", checkInvalid(semtech.PULL_DATA))
 		Convey("Invalid: PUSH_ACK", checkInvalid(semtech.PUSH_ACK))
 		Convey("Invalid: PULL_ACK", checkInvalid(semtech.PULL_ACK))
 		Convey("Invalid: PULL_RESP", checkInvalid(semtech.PULL_RESP))
@@ -144,90 +133,49 @@ func TestForwarder(t *testing.T) {
 
 	Convey("Flush", t, func() {
 		// Make sure we use a complete new forwarder each time
-		fwd, a1, a2 := initForwarder(id)
+		fwd, a1, _ := initForwarder(id)
 		defer fwd.Stop()
-		packets := fwd.Flush()
-		token := []byte{0x0, 0x0}
 
-		checkBasic := func(upIdentifier byte, downIdentifier byte, nbAdapter uint) func() {
-			return func() {
-				// First forward a packet
-				pktUp := generatePacket(upIdentifier, id)
-				if err := fwd.Forward(pktUp); err != nil {
-					panic(err)
-				}
-				// Then simulate a downlink ack with the same token
-				pktDown := generatePacket(downIdentifier, id)
-				pktDown.Token = pktUp.Token
-				raw, err := semtech.Marshal(pktDown)
-				if err != nil {
-					panic(err)
-				}
-				a1.Downlink <- raw
-				if nbAdapter > 1 {
-					a2.Downlink <- raw
-				}
+		Convey("Init flush", func() {
+			So(fwd.Flush(), ShouldResemble, make([]semtech.Packet, 0))
+		})
 
-				// Check that the above packet has been received, handled and stored
-				time.Sleep(50 * time.Millisecond)
-
-				packets := fwd.Flush()
-				So(len(packets), ShouldEqual, nbAdapter)
-				So(packets[0], ShouldResemble, pktDown)
-				if nbAdapter > 1 {
-					So(packets[1], ShouldResemble, pktDown)
-				}
-				So(len(fwd.Flush()), ShouldEqual, 0)
-			}
-		}
-
-		checkInapropriate := func(identifier byte, token []byte) func() {
-			return func() {
-				pkt := generatePacket(identifier, id)
-				pkt.Token = []byte{token[0] + 0x1, token[1]} // Make sure token are different
-				raw, err := semtech.Marshal(pkt)
-				if err != nil {
-					panic(err)
-				}
-				a1.Downlink <- raw
-				So(fwd.Flush(), ShouldResemble, packets)
-			}
-		}
-
-		checkNonPacket := func() func() {
-			return func() {
-				a1.Downlink <- []byte{0x1, 0x2, 0x3, 0x4}
-				So(fwd.Flush(), ShouldResemble, packets)
-			}
-		}
-
-		Convey("Store valid packet: PUSH_ACK", checkBasic(semtech.PUSH_DATA, semtech.PUSH_ACK, 1))
-		Convey("Store valid packet: PULL_ACK", checkBasic(semtech.PULL_DATA, semtech.PULL_ACK, 1))
-		Convey("Store valid packet: PULL_RESP", checkBasic(semtech.PULL_DATA, semtech.PULL_RESP, 1))
-		Convey("Store several valid packet: PUSH_ACK", checkBasic(semtech.PUSH_DATA, semtech.PUSH_ACK, 2))
-		Convey("Store several valid packet: PULL_ACK", checkBasic(semtech.PULL_DATA, semtech.PULL_ACK, 2))
-		Convey("Store several valid packet: PULL_RESP", checkBasic(semtech.PULL_DATA, semtech.PULL_RESP, 2))
-
-		Convey("Ignore non packet", checkNonPacket())
-		Convey("Ignore inapropriate downlink: PUSH_ACK", checkInapropriate(semtech.PUSH_ACK, token))
-		Convey("Ignore inapropriate downlink: PULL_DATA", checkInapropriate(semtech.PULL_DATA, token))
-		Convey("Ignore inapropriate downlink: PULL_ACK", checkInapropriate(semtech.PULL_ACK, token))
-		Convey("Ignore inapropriate downlink: PUSH_DATA", checkInapropriate(semtech.PUSH_DATA, token))
-		Convey("Ignore inapropriate downlink: PULL_RESP", checkInapropriate(semtech.PULL_RESP, token))
-
-		Convey("When waiting for ack", func() {
-			pktUp := generatePacket(semtech.PUSH_ACK, id)
-			if err := fwd.Forward(pktUp); err != nil {
+		Convey("Store incoming valid packet", func() {
+			// Make sure the connection is established
+			pkt := generatePacket(semtech.PUSH_DATA, id)
+			if err := fwd.Forward(pkt); err != nil {
 				panic(err)
 			}
-			Convey("Ignore non packet", checkNonPacket())
-			Convey("Ignore inapropriate downlink: PUSH_ACK", checkInapropriate(semtech.PUSH_ACK, pktUp.Token))
-			Convey("Ignore inapropriate downlink: PULL_DATA", checkInapropriate(semtech.PULL_DATA, pktUp.Token))
-			Convey("Ignore inapropriate downlink: PULL_ACK", checkInapropriate(semtech.PULL_ACK, pktUp.Token))
-			Convey("Ignore inapropriate downlink: PUSH_DATA", checkInapropriate(semtech.PUSH_DATA, pktUp.Token))
-			Convey("Ignore inapropriate downlink: PULL_RESP", checkInapropriate(semtech.PULL_RESP, pktUp.Token))
+
+			// Simulate an ack and a valid response
+			ack := generatePacket(semtech.PUSH_ACK, id)
+			ack.Token = pkt.Token
+			raw, err := semtech.Marshal(ack)
+			if err != nil {
+				panic(err)
+			}
+			a1.Downlink <- raw
+
+			// Simulate a resp
+			resp := generatePacket(semtech.PULL_RESP, id)
+			resp.Token = []byte{0x0, 0x0}
+			raw, err = semtech.Marshal(resp)
+			if err != nil {
+				panic(err)
+			}
+			a1.Downlink <- raw
+
+			// Flush and check if the response is there
+			time.Sleep(time.Millisecond * 50)
+			packets := fwd.Flush()
+			So(len(packets), ShouldEqual, 1)
+			So(packets[0], ShouldResemble, resp)
 		})
+
 	})
+
+	return
+	time.Sleep(time.Second)
 
 	Convey("Stats", t, func() {
 		fwd, a1, a2 := initForwarder(id)
@@ -320,6 +268,8 @@ func TestForwarder(t *testing.T) {
 		// TODO dwnb
 		// TODO txnb
 	})
+
+	time.Sleep(time.Second)
 
 	Convey("Stop", t, func() {
 		//TODO
