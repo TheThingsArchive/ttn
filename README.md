@@ -29,8 +29,7 @@ So far:
 
 -| lorawan
 -----| mac
------| gateway
----------| protocol
+-----| semtech
 
 -| simulators
 -----| gateway
