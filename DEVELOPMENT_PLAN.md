@@ -8,11 +8,11 @@ mainly for testing and ensuring the correctness of other components.
 - [ ] Fake gateway
     - [x] Types, packages and data structures in use
     - [x] Emit udp packets towards a server
-    - [ ] Handle behavior described by the semtech protocol
+    - [x] Handle behavior described by the semtech protocol
     - [x] Serialize json rxpk/stat object(s) 
     - [x] Generate json rxpl/stat object(s)
+    - [x] Update gateway statistics accordingly
     - [ ] Simulate fake end-devices activity 
-    - [ ] Update gateway statistics accordingly
 
 ## Milestone 2
 Handle an uplink process that can forward packet coming from a gateway to a simple end-server
