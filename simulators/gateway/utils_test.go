@@ -39,3 +39,20 @@ func TestGenToken(t *testing.T) {
 		})
 	})
 }
+
+func TestAckToken(t *testing.T) {
+
+}
+
+func TestGenerateRSSI(t *testing.T) {
+	Convey("The generateRSSI should generate random RSSI values -120 < val < 0", t, func() {
+		values := make(map[int]bool)
+		for i := 0; i < 10; i += 1 {
+			rssi := generateRSSI()
+			So(rssi, ShouldBeGreaterThanOrEqualTo, -120)
+			So(rssi, ShouldBeLessThanOrEqualTo, 0)
+			values[rssi] = true
+		}
+		So(len(values), ShouldBeGreaterThan, 5)
+	})
+}

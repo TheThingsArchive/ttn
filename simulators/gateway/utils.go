@@ -35,3 +35,8 @@ func ackToken(index int, packet semtech.Packet) [4]byte {
 
 	return [4]byte{id, kind, packet.Token[0], packet.Token[1]}
 }
+
+func generateRSSI() int {
+	x := float32(rand.Int31()) / float32(2e8)
+	return -int(x * x)
+}
