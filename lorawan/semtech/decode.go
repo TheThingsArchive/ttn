@@ -15,7 +15,7 @@ import (
 func Unmarshal(raw []byte) (*Packet, error) {
 	size := len(raw)
 
-	if size < 3 {
+	if size < 4 {
 		return nil, errors.New("Invalid raw data format")
 	}
 
