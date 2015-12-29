@@ -24,6 +24,7 @@ type Forwarder struct {
 	rxnb     uint                 // Number of radio packets received
 	adapters []io.ReadWriteCloser // List of downlink adapters
 	packets  []semtech.Packet     // Downlink packets received
+	acks     map[[4]byte]uint     // adapterIndex | packet.Identifier | packet.Token
 	commands chan command         // Concurrent access on gateway stats
 	Errors   chan error           // Done channel
 }
@@ -50,6 +51,10 @@ func NewForwarder(id [8]byte, adapters ...io.ReadWriteCloser) (*Forwarder, error
 		return nil, fmt.Errorf("At least one adapter must be supplied")
 	}
 
+	if len(adapters) > 255 { // cf fwd.acks
+		return nil, fmt.Errorf("Cannot connect more than 255 adapters")
+	}
+
 	fwd := &Forwarder{
 		Id:       id,
 		debug:    false,
@@ -58,6 +63,7 @@ func NewForwarder(id [8]byte, adapters ...io.ReadWriteCloser) (*Forwarder, error
 		long:     4.8952,
 		adapters: adapters,
 		packets:  make([]semtech.Packet, 0),
+		acks:     make(map[[4]byte]uint),
 		commands: make(chan command),
 		Errors:   make(chan error, len(adapters)),
 	}
@@ -65,22 +71,21 @@ func NewForwarder(id [8]byte, adapters ...io.ReadWriteCloser) (*Forwarder, error
 	go fwd.handleCommands()
 
 	// Star listening to each adapter Read() method
-	for _, adapter := range fwd.adapters {
-		go fwd.listenAdapter(adapter)
+	for i, adapter := range fwd.adapters {
+		go fwd.listenAdapter(adapter, i)
 	}
 
 	return fwd, nil
 }
 
 // listenAdapter listen to incoming datagrams from an adapter. Non-valid packets are ignored.
-func (fwd Forwarder) listenAdapter(adapter io.ReadWriteCloser) {
-	acks := make(map[[3]byte]uint) // adapterIndex | packet.Identifier | packet.Token
+func (fwd Forwarder) listenAdapter(adapter io.ReadWriteCloser, index int) {
 	for {
 		buf := make([]byte, 1024)
-		if fwd.debug {
-			fmt.Printf("Forwarder listens to downlink datagrams\n")
-		}
 		n, err := adapter.Read(buf)
+		if fwd.debug {
+			fmt.Printf("%d bytes received by adapter\n", n)
+		}
 		if err != nil {
 			if fwd.debug {
 				fmt.Println(err)
@@ -99,13 +104,9 @@ func (fwd Forwarder) listenAdapter(adapter io.ReadWriteCloser) {
 			continue
 		}
 
-		token := [3]byte{packet.Identifier, packet.Token[0], packet.Token[1]}
 		switch packet.Identifier {
 		case semtech.PUSH_ACK, semtech.PULL_ACK:
-			if acks[token] > 0 {
-				acks[token] -= 1
-				fwd.commands <- command{cmd_ACK, nil}
-			}
+			fwd.commands <- command{cmd_ACK, ackToken(index, *packet)}
 		case semtech.PULL_RESP:
 			fwd.commands <- command{cmd_RECVDWN, packet}
 		default:
@@ -128,10 +129,16 @@ func (fwd *Forwarder) handleCommands() {
 
 		switch cmd.name {
 		case cmd_ACK:
-			fwd.ackn += 1
+			token := cmd.data.([4]byte)
+			if fwd.acks[token] > 0 {
+				fwd.acks[token] -= 1
+				fwd.ackn += 1
+			}
 		case cmd_FWD:
 			fwd.rxfw += 1
 		case cmd_EMIT:
+			token := cmd.data.([4]byte)
+			fwd.acks[token] += 1
 			fwd.upnb += 1
 		case cmd_RECVUP:
 			fwd.rxnb += 1
@@ -143,10 +150,9 @@ func (fwd *Forwarder) handleCommands() {
 			fwd.packets = make([]semtech.Packet, 0)
 		case cmd_STATS:
 			var ackr float64
-			if fwd.upnb != 0 {
+			if fwd.upnb > 0 {
 				ackr = float64(fwd.ackn) / float64(fwd.upnb)
 			}
-
 			cmd.data.(chan semtech.Stat) <- semtech.Stat{
 				Ackr: &ackr,
 				Alti: pointer.Int(fwd.alti),
@@ -175,7 +181,7 @@ func (fwd Forwarder) Forward(packet semtech.Packet) error {
 		return err
 	}
 
-	for _, adapter := range fwd.adapters {
+	for i, adapter := range fwd.adapters {
 		n, err := adapter.Write(raw)
 		if err != nil {
 			return err
@@ -183,7 +189,7 @@ func (fwd Forwarder) Forward(packet semtech.Packet) error {
 		if n < len(raw) {
 			return fmt.Errorf("Packet was too long")
 		}
-		fwd.commands <- command{cmd_EMIT, nil}
+		fwd.commands <- command{cmd_EMIT, ackToken(i, packet)}
 	}
 
 	fwd.commands <- command{cmd_FWD, nil}
