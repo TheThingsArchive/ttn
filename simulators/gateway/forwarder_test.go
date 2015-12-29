@@ -133,7 +133,7 @@ func TestForwarder(t *testing.T) {
 
 	Convey("Flush", t, func() {
 		// Make sure we use a complete new forwarder each time
-		fwd, a1, _ := initForwarder(id)
+		fwd, a1, a2 := initForwarder(id)
 		defer fwd.Stop()
 
 		Convey("Init flush", func() {
@@ -172,10 +172,45 @@ func TestForwarder(t *testing.T) {
 			So(packets[0], ShouldResemble, resp)
 		})
 
-	})
+		Convey("Ignore invalid datagrams", func() {
+			packets := fwd.Flush()
+			a2.Downlink <- []byte{0x6, 0x8, 0x14}
+			time.Sleep(time.Millisecond * 50)
+			So(fwd.Flush(), ShouldResemble, packets)
+		})
 
-	return
-	time.Sleep(time.Second)
+		Convey("Ignore non relevant packets", func() {
+			// Make sure the connection is established
+			pkt := generatePacket(semtech.PUSH_DATA, id)
+			if err := fwd.Forward(pkt); err != nil {
+				panic(err)
+			}
+
+			// Simulate an ack and a valid response
+			ack := generatePacket(semtech.PUSH_ACK, id)
+			ack.Token = []byte{pkt.Token[0] + 0x1, pkt.Token[1]} // Use a different token
+			raw, err := semtech.Marshal(ack)
+			if err != nil {
+				panic(err)
+			}
+			a1.Downlink <- raw
+
+			// Simulate a resp
+			resp := generatePacket(semtech.PULL_RESP, id)
+			resp.Token = []byte{0x0, 0x0}
+			raw, err = semtech.Marshal(resp)
+			if err != nil {
+				panic(err)
+			}
+			a1.Downlink <- raw
+
+			// Flush and check wether or not the response has been stored
+			time.Sleep(time.Millisecond * 50)
+			packets := fwd.Flush()
+			So(len(packets), ShouldEqual, 0)
+		})
+
+	})
 
 	Convey("Stats", t, func() {
 		fwd, a1, a2 := initForwarder(id)
@@ -268,8 +303,6 @@ func TestForwarder(t *testing.T) {
 		// TODO dwnb
 		// TODO txnb
 	})
-
-	time.Sleep(time.Second)
 
 	Convey("Stop", t, func() {
 		//TODO
