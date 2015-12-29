@@ -1,0 +1,5 @@
+- Complete tests set for stats functions
+- Generate valid fake end-device packet
+- Simulate fake end-devices traffic 
+- Generate UDP ReadWriteCloser 
+- Move existing fake ReadWriteCloser to a proper file with handy constructor
