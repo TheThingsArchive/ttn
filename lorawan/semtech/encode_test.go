@@ -796,10 +796,6 @@ func checkMarshalPULL_RESP(packet Packet, payload []byte) error {
 		return errors.New(fmt.Sprintf("Invalid raw version: %x", raw[0]))
 	}
 
-	if !bytes.Equal(raw[1:3], packet.Token) {
-		return errors.New(fmt.Sprintf("Invalid raw token: %x", raw[1:3]))
-	}
-
 	if raw[3] != packet.Identifier {
 		return errors.New(fmt.Sprintf("Invalid raw identifier: %x", raw[3]))
 	}
@@ -899,67 +895,5 @@ func TestMarshallPULL_RESP3(t *testing.T) {
 
 	if err = checkMarshalPULL_RESP(packet, payload); err != nil {
 		t.Errorf("Failed to marshal packet: %v", err)
-	}
-}
-
-// Marshal() for a PULL_RESP packet with an invalid token (too short)
-func TestMarshallPULL_RESP4(t *testing.T) {
-	//{"txpk":{"codr":"4/6","data":"H3P3N2i9qc4yt7rK7ldqoeCVJGBybzPY5h1Dd7P7p8v","datr":"SF11BW125","freq":864.123456,"imme":true,"ipol":false,"modu":"LORA","powe":14,"rfch":0,"size":32}}
-	payload, err := ioutil.ReadFile("./test_data/marshal_txpk")
-
-	packet := Packet{
-		Version:    VERSION,
-		Token:      []byte{0xAA},
-		Identifier: PULL_RESP,
-		GatewayId:  nil,
-		Payload: &Payload{
-			TXPK: &TXPK{
-				Imme: pointer.Bool(true),
-				Freq: pointer.Float64(864.123456),
-				Rfch: pointer.Uint(0),
-				Powe: pointer.Uint(14),
-				Modu: pointer.String("LORA"),
-				Datr: pointer.String("SF11BW125"),
-				Codr: pointer.String("4/6"),
-				Ipol: pointer.Bool(false),
-				Size: pointer.Uint(32),
-				Data: pointer.String("H3P3N2i9qc4yt7rK7ldqoeCVJGBybzPY5h1Dd7P7p8v"),
-			},
-		},
-	}
-
-	if err = checkMarshalPULL_RESP(packet, payload); err == nil {
-		t.Errorf("Successfully marshalled a packet with an invalid token")
-	}
-}
-
-// Marshal() for a PULL_RESP packet with an invalid token (too long)
-func TestMarshallPULL_RESP5(t *testing.T) {
-	//{"txpk":{"codr":"4/6","data":"H3P3N2i9qc4yt7rK7ldqoeCVJGBybzPY5h1Dd7P7p8v","datr":"SF11BW125","freq":864.123456,"imme":true,"ipol":false,"modu":"LORA","powe":14,"rfch":0,"size":32}}
-	payload, err := ioutil.ReadFile("./test_data/marshal_txpk")
-
-	packet := Packet{
-		Version:    VERSION,
-		Token:      []byte{0xAA, 0x14, 0x42},
-		Identifier: PULL_RESP,
-		GatewayId:  nil,
-		Payload: &Payload{
-			TXPK: &TXPK{
-				Imme: pointer.Bool(true),
-				Freq: pointer.Float64(864.123456),
-				Rfch: pointer.Uint(0),
-				Powe: pointer.Uint(14),
-				Modu: pointer.String("LORA"),
-				Datr: pointer.String("SF11BW125"),
-				Codr: pointer.String("4/6"),
-				Ipol: pointer.Bool(false),
-				Size: pointer.Uint(32),
-				Data: pointer.String("H3P3N2i9qc4yt7rK7ldqoeCVJGBybzPY5h1Dd7P7p8v"),
-			},
-		},
-	}
-
-	if err = checkMarshalPULL_RESP(packet, payload); err == nil {
-		t.Errorf("Successfully marshalled a packet with an invalid token")
 	}
 }

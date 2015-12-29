@@ -13,6 +13,10 @@ import (
 func Marshal(packet Packet) ([]byte, error) {
 	raw := append(make([]byte, 0), packet.Version)
 
+	if packet.Identifier == PULL_RESP {
+		packet.Token = []byte{0x0, 0x0}
+	}
+
 	if len(packet.Token) != 2 {
 		return nil, errors.New("Invalid packet token")
 	}

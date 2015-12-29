@@ -4,224 +4,226 @@
 package gateway
 
 import (
-	"errors"
 	"fmt"
 	"github.com/thethingsnetwork/core/lorawan/semtech"
-	"net"
-	"strings"
+	"github.com/thethingsnetwork/core/utils/pointer"
+	"io"
 	"time"
 )
 
+type Forwarder struct {
+	Id       [8]byte // Gateway's Identifier
+	debug    bool
+	alti     int                  // GPS altitude in RX meters
+	upnb     uint                 // Number of upstream datagrams sent
+	ackn     uint                 // Number of upstream datagrams that were acknowledged
+	dwnb     uint                 // Number of downlink datagrams received
+	lati     float64              // GPS latitude, North is +
+	long     float64              // GPS longitude, East is +
+	rxfw     uint                 // Number of radio packets forwarded
+	rxnb     uint                 // Number of radio packets received
+	adapters []io.ReadWriteCloser // List of downlink adapters
+	packets  []semtech.Packet     // Downlink packets received
+	acks     map[[4]byte]uint     // adapterIndex | packet.Identifier | packet.Token
+	commands chan command         // Concurrent access on gateway stats
+	Errors   chan error           // Done channel
+}
+
+type commandName string
+type command struct {
+	name commandName
+	data interface{}
+}
+
 const (
-	LISTENER_BUF_SIZE = 1024
-	LISTENER_TIMEOUT  = 4 * time.Second
+	cmd_ACK     commandName = "Acknowledged"
+	cmd_EMIT    commandName = "Emitted"
+	cmd_RECVUP  commandName = "Radio Packet Received"
+	cmd_RECVDWN commandName = "Dowlink Datagram Received"
+	cmd_FWD     commandName = "Forwarded"
+	cmd_FLUSH   commandName = "Flush"
+	cmd_STATS   commandName = "Stats"
 )
 
-type Forwarder interface {
-	Forward(packet semtech.Packet) error
-	Start() (<-chan semtech.Packet, <-chan error, error)
-	Stop() error
+// NewForwarder create a forwarder instance bound to a set of routers.
+func NewForwarder(id [8]byte, adapters ...io.ReadWriteCloser) (*Forwarder, error) {
+	if len(adapters) == 0 {
+		return nil, fmt.Errorf("At least one adapter must be supplied")
+	}
+
+	if len(adapters) > 255 { // cf fwd.acks
+		return nil, fmt.Errorf("Cannot connect more than 255 adapters")
+	}
+
+	fwd := &Forwarder{
+		Id:       id,
+		debug:    false,
+		alti:     120,
+		lati:     53.3702,
+		long:     4.8952,
+		adapters: adapters,
+		packets:  make([]semtech.Packet, 0),
+		acks:     make(map[[4]byte]uint),
+		commands: make(chan command),
+		Errors:   make(chan error, len(adapters)),
+	}
+
+	go fwd.handleCommands()
+
+	// Star listening to each adapter Read() method
+	for i, adapter := range fwd.adapters {
+		go fwd.listenAdapter(adapter, i)
+	}
+
+	return fwd, nil
 }
 
-// Start a Gateway. This will create several udp connections - one per associated router.
-// Then, incoming streams of packets are merged into a single one.
-// Same for errors.
-func (g *Gateway) Start() (<-chan semtech.Packet, <-chan error, error) {
-	// Ensure not already started
-	if g.quit != nil {
-		return nil, nil, errors.New("Try to start a started gateway")
-	}
-
-	// Open all UDP connections
-	connections := make([]*net.UDPConn, 0)
-	var err error
-	for _, addr := range g.routers {
-		var conn *net.UDPConn
-		conn, err = net.ListenUDP("udp", addr)
-		if err != nil {
-			break
-		}
-		connections = append(connections, conn)
-	}
-
-	// On error, close all opened UDP connection and leave
-	if err != nil {
-		for _, conn := range connections {
-			conn.Close()
-		}
-		return nil, nil, err
-	}
-
-	// Create communication channels and launch goroutines to handle connections
-	chout := make(chan semtech.Packet)
-	cherr := make(chan error)
-	quit := make(chan chan error)
-	cmd := make(chan command)
-	go reduceCmd(g, cmd)
-	for _, conn := range connections {
-		go listen(conn, chout, cherr, cmd, quit)
-	}
-
-	// Keep a reference to the quit channel, and return the others
-	g.quit = quit
-	g.cmd = cmd
-	return chout, cherr, nil
-}
-
-// listen materialize the goroutine handling incoming packet from routers
-func listen(conn *net.UDPConn, chout chan<- semtech.Packet, cherr chan<- error, cmd chan<- command, quit <-chan chan error) {
-	connIn, connErr := asChannel(conn)
-	errBuf := make([]error, 0)
-	outBuf := make([]semtech.Packet, 0)
+// listenAdapter listen to incoming datagrams from an adapter. Non-valid packets are ignored.
+func (fwd Forwarder) listenAdapter(adapter io.ReadWriteCloser, index int) {
 	for {
-		var safeChout chan<- semtech.Packet
-		var packet semtech.Packet
-		if len(outBuf) > 0 {
-			safeChout = chout
-			packet = outBuf[0]
+		buf := make([]byte, 1024)
+		n, err := adapter.Read(buf)
+		if fwd.debug {
+			fmt.Printf("%d bytes received by adapter\n", n)
 		}
-
-		var safeCherr chan<- error
-		var err error
-		if len(errBuf) > 0 {
-			safeCherr = cherr
-			err = errBuf[0]
-		}
-
-		select {
-		case ack := <-quit: // quit event, the gateway is stoppped
-			e := conn.Close()
-			ack <- e
-			return
-		case buf := <-connIn: // connIn event, a packet has been received by the listener goroutine
-			cmd <- cmd_RECD_PACKET
-			packet, err := semtech.Unmarshal(buf)
-			if err != nil {
-				errBuf = append(errBuf, err)
-				continue
-			}
-			outBuf = append(outBuf, *packet)
-		case safeChout <- packet: // emit an available packet to chout
-			outBuf = outBuf[1:]
-		case err := <-connErr: // connErr event, an error has been triggered by the listener goroutine
-			errBuf = append(errBuf, err)
-		case safeCherr <- err: // emit an existing error to cherr
-			errBuf = errBuf[1:]
-		}
-	}
-}
-
-// as channel is actually a []byte generator that listen to a given udp connection.
-// It is used to prevent the listen() function from blocking on ReadFromUDP() and then,
-// still be available for a quit event that could come at any time.
-// This function is thereby nothing more than a mapping of incoming connection to channels of
-// communication.
-func asChannel(conn *net.UDPConn) (<-chan []byte, <-chan error) {
-	cherr := make(chan error)
-	chout := make(chan []byte)
-	go func() {
-		buf := make([]byte, LISTENER_BUF_SIZE)
-		for {
-			n, _, err := conn.ReadFromUDP(buf)
-			if err != nil {
-				if strings.Contains(err.Error(), "use of closed network connection") {
-					return
-				}
-				select {
-				case cherr <- err:
-					continue
-				case <-time.After(LISTENER_TIMEOUT):
-					close(cherr)
-					close(chout)
-					return
-				}
-			}
-			select {
-			case chout <- buf[:n]:
-			case <-time.After(LISTENER_TIMEOUT):
-				close(cherr)
-				close(chout)
-				return
-			}
-		}
-	}()
-	return chout, cherr
-}
-
-// reduceCmd handle all updates made on the gateway statistics
-func reduceCmd(gateway *Gateway, commands <-chan command) {
-	for command := range commands {
-		switch command {
-		case cmd_ACKN_PACKET:
-			gateway.ackr += 1
-		case cmd_EMIT_PACKET:
-			gateway.txnb += 1
-		case cmd_FORW_PACKET:
-			gateway.rxfw += 1
-		case cmd_RECU_PACKET:
-			gateway.rxnb += 1
-		case cmd_RECD_PACKET:
-			gateway.dwnb += 1
-		}
-	}
-}
-
-// Stop remove all previously created connection.
-func (g *Gateway) Stop() error {
-	if g.quit == nil || g.cmd == nil {
-		return errors.New("Try to stop a non-started gateway")
-	}
-
-	for range g.routers {
-		errc := make(chan error)
-		g.quit <- errc
-		err := <-errc
 		if err != nil {
-			fmt.Printf("%+v\n", err)
+			if fwd.debug {
+				fmt.Println(err)
+			}
+			fwd.Errors <- err
+			return // Error on reading, we assume the connection is closed / lost
+		}
+		if fwd.debug {
+			fmt.Printf("Forwarder unmarshals datagram %x\n", buf[:n])
+		}
+		packet, err := semtech.Unmarshal(buf[:n])
+		if err != nil {
+			if fwd.debug {
+				fmt.Println(err)
+			}
+			continue
+		}
+
+		switch packet.Identifier {
+		case semtech.PUSH_ACK, semtech.PULL_ACK:
+			fwd.commands <- command{cmd_ACK, ackToken(index, *packet)}
+		case semtech.PULL_RESP:
+			fwd.commands <- command{cmd_RECVDWN, packet}
+		default:
+			if fwd.debug {
+				fmt.Printf("Forwarder ignores contingent packet %+v\n", packet)
+			}
+		}
+
+	}
+}
+
+// handleCommands acts as a monitor between all goroutines that attempt to modify the forwarder
+// attributes. All sensitive operations are done by commands sent through an appropriate channel.
+// This method consumes commands from the channel until it's closed.
+func (fwd *Forwarder) handleCommands() {
+	for cmd := range fwd.commands {
+		if fwd.debug {
+			fmt.Printf("Fowarder executes command: %v\n", cmd.name)
+		}
+
+		switch cmd.name {
+		case cmd_ACK:
+			token := cmd.data.([4]byte)
+			if fwd.acks[token] > 0 {
+				fwd.acks[token] -= 1
+				fwd.ackn += 1
+			}
+		case cmd_FWD:
+			fwd.rxfw += 1
+		case cmd_EMIT:
+			token := cmd.data.([4]byte)
+			fwd.acks[token] += 1
+			fwd.upnb += 1
+		case cmd_RECVUP:
+			fwd.rxnb += 1
+		case cmd_RECVDWN:
+			fwd.dwnb += 1
+			fwd.packets = append(fwd.packets, *cmd.data.(*semtech.Packet))
+		case cmd_FLUSH:
+			cmd.data.(chan []semtech.Packet) <- fwd.packets
+			fwd.packets = make([]semtech.Packet, 0)
+		case cmd_STATS:
+			var ackr float64
+			if fwd.upnb > 0 {
+				ackr = float64(fwd.ackn) / float64(fwd.upnb)
+			}
+			cmd.data.(chan semtech.Stat) <- semtech.Stat{
+				Ackr: &ackr,
+				Alti: pointer.Int(fwd.alti),
+				Dwnb: pointer.Uint(fwd.dwnb),
+				Lati: pointer.Float64(fwd.lati),
+				Long: pointer.Float64(fwd.long),
+				Rxfw: pointer.Uint(fwd.rxfw),
+				Rxnb: pointer.Uint(fwd.rxnb),
+				Rxok: pointer.Uint(fwd.rxnb),
+				Time: pointer.Time(time.Now()),
+				Txnb: pointer.Uint(0),
+			}
 		}
 	}
-	close(g.quit)
-	close(g.cmd)
-	g.routers = make([]*net.UDPAddr, 0)
-	g.quit = nil
+}
+
+// Forward dispatch a packet to all connected routers.
+func (fwd Forwarder) Forward(packet semtech.Packet) error {
+	fwd.commands <- command{cmd_RECVUP, nil}
+	if packet.Identifier != semtech.PUSH_DATA {
+		return fmt.Errorf("Unable to forward with identifier %x", packet.Identifier)
+	}
+
+	raw, err := semtech.Marshal(packet)
+	if err != nil {
+		return err
+	}
+
+	for i, adapter := range fwd.adapters {
+		n, err := adapter.Write(raw)
+		if err != nil {
+			return err
+		}
+		if n < len(raw) {
+			return fmt.Errorf("Packet was too long")
+		}
+		fwd.commands <- command{cmd_EMIT, ackToken(i, packet)}
+	}
+
+	fwd.commands <- command{cmd_FWD, nil}
 	return nil
 }
 
-// Forward transfer a packet to all known routers.
-// It fails if the gateway hasn't been started beforehand.
-func (g *Gateway) Forward(packet semtech.Packet) error {
-	if g.quit == nil || g.cmd == nil {
-		return errors.New("Unable to forward on a non-started gateway")
-	}
+// Flush spits out all downlink packet received by the forwarder since the last flush.
+func (fwd Forwarder) Flush() []semtech.Packet {
+	chpkt := make(chan []semtech.Packet)
+	fwd.commands <- command{cmd_FLUSH, chpkt}
+	return <-chpkt
+}
 
-	g.cmd <- cmd_RECU_PACKET
+// Stats computes and return the forwarder statistics since it was created
+func (fwd Forwarder) Stats() semtech.Stat {
+	chstats := make(chan semtech.Stat)
+	fwd.commands <- command{cmd_STATS, chstats}
+	return <-chstats
+}
 
-	connections := make([]*net.UDPConn, 0)
-	var err error
-	for _, addr := range g.routers {
-		var conn *net.UDPConn
-		conn, err = net.DialUDP("udp", nil, addr)
+// Stop terminate the forwarder activity. Closing all routers connections
+func (fwd Forwarder) Stop() error {
+	var errors []error
+
+	// Close the uplink adapters
+	for _, adapter := range fwd.adapters {
+		err := adapter.Close()
 		if err != nil {
-			break
+			errors = append(errors, err)
 		}
-		defer conn.Close()
-		connections = append(connections, conn)
-	}
-	raw, err := semtech.Marshal(packet)
-
-	if err != nil {
-		return errors.New(fmt.Sprintf("Unable to forward the packet. %v\n", err))
 	}
 
-	g.cmd <- cmd_FORW_PACKET
-
-	for _, conn := range connections {
-		_, err = conn.Write(raw)
-		g.cmd <- cmd_EMIT_PACKET
-	}
-
-	if err != nil {
-		return errors.New(fmt.Sprintf("Something went wrong during forwarding. %v\n", err))
+	if len(errors) > 0 {
+		return fmt.Errorf("Unable to stop the forwarder: %+v", errors)
 	}
 
 	return nil
