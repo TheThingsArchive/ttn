@@ -180,25 +180,10 @@ func TestForwarder(t *testing.T) {
 		})
 
 		Convey("Ignore non relevant packets", func() {
-			// Make sure the connection is established
-			pkt := generatePacket(semtech.PUSH_DATA, id)
-			if err := fwd.Forward(pkt); err != nil {
-				panic(err)
-			}
-
-			// Simulate an ack and a valid response
-			ack := generatePacket(semtech.PUSH_ACK, id)
-			ack.Token = []byte{pkt.Token[0] + 0x1, pkt.Token[1]} // Use a different token
-			raw, err := semtech.Marshal(ack)
-			if err != nil {
-				panic(err)
-			}
-			a1.Downlink <- raw
-
 			// Simulate a resp
-			resp := generatePacket(semtech.PULL_RESP, id)
+			resp := generatePacket(semtech.PULL_DATA, id)
 			resp.Token = []byte{0x0, 0x0}
-			raw, err = semtech.Marshal(resp)
+			raw, err := semtech.Marshal(resp)
 			if err != nil {
 				panic(err)
 			}
@@ -252,7 +237,7 @@ func TestForwarder(t *testing.T) {
 				So(*refStats.Ackr, ShouldEqual, 0)
 			})
 
-			sendAndAck := func(a1Ack, a2Ack bool) {
+			sendAndAck := func(a1Ack, a2Ack uint) {
 				// Send packet + ack
 				pkt := generatePacket(semtech.PUSH_DATA, id)
 				ack := generatePacket(semtech.PUSH_ACK, id)
@@ -263,18 +248,19 @@ func TestForwarder(t *testing.T) {
 				}
 				fwd.Forward(pkt)
 				time.Sleep(50 * time.Millisecond)
-				if a1Ack {
+				for i := uint(0); i < a1Ack; i += 1 {
 					a1.Downlink <- raw
 				}
 
-				if a2Ack {
+				for i := uint(0); i < a2Ack; i += 1 {
 					a2.Downlink <- raw
 				}
+				time.Sleep(50 * time.Millisecond)
 			}
 
 			Convey("ackr: valid packet acknowledged", func() {
 				// Send packet + ack
-				sendAndAck(true, true)
+				sendAndAck(1, 1)
 
 				// Check stats
 				stats := fwd.Stats()
@@ -283,7 +269,16 @@ func TestForwarder(t *testing.T) {
 
 			Convey("ackr: valid packet partially acknowledged", func() {
 				// Send packet + ack
-				sendAndAck(true, false)
+				sendAndAck(1, 0)
+
+				// Check stats
+				stats := fwd.Stats()
+				So(*stats.Ackr, ShouldEqual, float64(1.0)/float64(2.0))
+			})
+
+			Convey("ackr: valid packet several acks from same", func() {
+				// Send packet + ack
+				sendAndAck(2, 0)
 
 				// Check stats
 				stats := fwd.Stats()
@@ -292,7 +287,7 @@ func TestForwarder(t *testing.T) {
 
 			Convey("ackr: valid packet  not ackowledged", func() {
 				// Send packet + ack
-				sendAndAck(false, false)
+				sendAndAck(0, 0)
 
 				// Check stats
 				stats := fwd.Stats()
