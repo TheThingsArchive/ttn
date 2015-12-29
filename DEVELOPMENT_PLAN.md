@@ -21,7 +21,20 @@ system will just forward messages using pre-configured end-device addresses.
 
 
 - [ ] Basic Router  
-    - [ ] Detail the list of features
+    - [ ] Core
+        - [ ] Lookup for device address
+        - [ ] Invalidate broker periodically
+        - [ ] Acknowledge packet from gateway
+        - [ ] Forward packet to brokers
+        - [ ] Reemit errored packet
+    - [ ] UpAdapter
+        - [ ] Listen and forward incoming packets to Core router
+        - [ ] Keep track of existing UDP connections
+        - [ ] Send ack through existing UDP connection
+    - [ ] DownAdapter
+        - [ ] Listen and forward incoming packet to Core router
+        - [ ] Broadcast a packet to several brokers
+        - [ ] Send packet to given brokers (same as above ?)
 
 
 - [ ] Basic Broker
