@@ -117,9 +117,9 @@ func (fwd Forwarder) listenAdapter(adapter io.ReadWriteCloser) {
 	}
 }
 
-// handleCommands acts as a mediator between all goroutines that attempt to modify the forwarder
-// attributes. All sensitive operations are done by commands send though an appropriate channel.
-// This method consume commands from the channel until it's closed.
+// handleCommands acts as a monitor between all goroutines that attempt to modify the forwarder
+// attributes. All sensitive operations are done by commands sent through an appropriate channel.
+// This method consumes commands from the channel until it's closed.
 func (fwd *Forwarder) handleCommands() {
 	for cmd := range fwd.commands {
 		if fwd.debug {
