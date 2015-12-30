@@ -7,7 +7,7 @@ import (
 	. "github.com/thethingsnetwork/core/lorawan/semtech"
 )
 
-type DeviceAddress string
+type DeviceAddress [4]byte
 type BrokerAddress string
 type GatewayAddress string
 
@@ -50,10 +50,10 @@ type RouterBrokerAdapter interface {
 	//
 	// We assume that broadcast is also registering a device address towards the router depending
 	// on the brokers responses.
-	Broadcast(router Router, payload Packet)
+	Broadcast(router Router, payload Payload)
 
 	// Forward is an explicit forwarding of a packet which is known being handled by a set of
 	// brokers. None of the contacted broker is supposed to reject the incoming payload; They all
 	// ave been queried before and are known as dedicated brokers for the related end-device.
-	Forward(router Router, packet Packet, broAddrs ...BrokerAddress)
+	Forward(router Router, packet Payload, broAddrs ...BrokerAddress)
 }
