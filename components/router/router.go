@@ -6,6 +6,8 @@ package router
 import (
 	"github.com/thethingsnetwork/core"
 	"github.com/thethingsnetwork/core/lorawan/semtech"
+	"github.com/thethingsnetwork/core/utils/log"
+	"net"
 	"time"
 )
 
@@ -51,9 +53,32 @@ func (r *Router) HandleError(err error) {
 
 // --------------- Routers Adapters
 type UpAdapter struct {
+	router   Router
+	logger   log.logger
+	gateways map[core.GatewayId]net.UDPConn
+}
+
+func NewUpAdapter(router Router) *UpAdapter {
+	adapter := UpAdapter{
+		gateways: make(map[core.GatewayId]net.UDPConn),
+		logger:   log.VoidLogger{},
+	}
+	adapter.Connect(router)
+	return &adapter
+}
+
+func (u UpAdapter) log(format string, a ...interface{}) {
+	u.logger.Log(format, a...)
 }
 
 func (u *UpAdapter) Ack(packet semtech.Packet, gid core.GatewayId) {
+	if u.router == nil {
+		u.log("Failed to Ack, not connected to a router")
+	}
+}
+
+func (u *UpAdapter) Connect(router Router) {
+	u.router = router
 }
 
 type DownAdapter struct {
