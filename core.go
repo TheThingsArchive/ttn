@@ -24,8 +24,9 @@ type GatewayRouterAdapter interface {
 	Ack(packet Packet, cid ConnectionId)
 }
 
+type ErrForward error
 type RouterBrokerAdapter interface {
 	Connect(router Router)
-	Broadcast(packet Packet)
+	Broadcast(payload Packet)
 	Forward(packet Packet, broAddrs ...BrokerAddress)
 }

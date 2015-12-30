@@ -7,9 +7,12 @@
 package rtr_brk_http
 
 import (
+	"bytes"
+	"encoding/json"
 	"github.com/thethingsnetwork/core"
 	"github.com/thethingsnetwork/core/lorawan/semtech"
 	"github.com/thethingsnetwork/core/utils/log"
+	"net/http"
 )
 
 type Adapter struct {
@@ -35,7 +38,51 @@ func (a *Adapter) Broadcast(packet semtech.Packet) {
 
 // Forward implements the core.BrokerRouter interface
 func (a *Adapter) Forward(packet semtech.Packet, broAddrs ...core.BrokerAddress) {
+	if packet.Payload == nil || len(packet.Payload.RXPK) == 0 {
+		a.log("Ignores irrelevant packet %+v", packet) // NOTE Should we trigger an error here ?
+		return
+	}
 
+	client := http.Client{}
+	for _, addr := range broAddrs {
+		go func() {
+			data := new(bytes.Buffer)
+			rawJSON, err := json.Marshal(packet.Payload)
+			if err != nil {
+				a.log("Unable to marshal payload %+v", err)
+				a.router.HandleError(core.ErrForward(err))
+				return
+			}
+
+			_, err = data.Write(rawJSON)
+
+			if err != nil {
+				a.log("Unable to write raw JSON in buffer %+v", err)
+				a.router.HandleError(core.ErrForward(err))
+				return
+			}
+
+			resp, err := client.Post(string(addr), "application/json", data)
+
+			if err != nil {
+				a.log("Unable to send POST request %+v", err)
+				a.router.HandleError(core.ErrForward(err))
+				return
+			}
+
+			if resp.StatusCode != http.StatusOK {
+				a.log("Unexpected answer from the broker %+v", err)
+				a.router.HandleError(core.ErrForward(err))
+				return
+			}
+
+			// NOTE Do We Care about the response ? The router is supposed to handle HTTP request
+			// from the broker to handle packets or anything else ? Is it efficient ? Should
+			// downlinks packets be sent back with the HTTP body response ? Its a 2 seconds frame...
+
+			resp.Body.Close()
+		}()
+	}
 }
 
 // log is nothing more than a shortcut / helper to access the logger
