@@ -16,28 +16,25 @@ import (
 )
 
 type Adapter struct {
-	router core.Router
-	logger log.Logger
+	Logger log.Logger
 }
 
 // New constructs a new Router-Broker-HTTP adapter
-func New(router core.Router, broAddrs ...core.BrokerAddress) (*Adapter, error) {
+func New(router core.Router, port uint, broAddrs ...core.BrokerAddress) (*Adapter, error) {
 	return nil, nil
 }
 
 // Connect implements the core.BrokerRouter interface
-func (a *Adapter) Connect(router core.Router) {
+func (a *Adapter) Connect(router core.Router, port uint, broAddrs ...core.BrokerAddress) {
 	a.log("Connects to router %+v", router)
-	a.router = router
 }
 
 // Broadcast implements the core.BrokerRouter interface
 func (a *Adapter) Broadcast(packet semtech.Packet) {
-
 }
 
 // Forward implements the core.BrokerRouter interface
-func (a *Adapter) Forward(packet semtech.Packet, broAddrs ...core.BrokerAddress) {
+func (a *Adapter) Forward(router core.Router, packet semtech.Packet, broAddrs ...core.BrokerAddress) {
 	if packet.Payload == nil || len(packet.Payload.RXPK) == 0 {
 		a.log("Ignores irrelevant packet %+v", packet) // NOTE Should we trigger an error here ?
 		return
@@ -50,7 +47,7 @@ func (a *Adapter) Forward(packet semtech.Packet, broAddrs ...core.BrokerAddress)
 			rawJSON, err := json.Marshal(packet.Payload)
 			if err != nil {
 				a.log("Unable to marshal payload %+v", err)
-				a.router.HandleError(core.ErrForward(err))
+				router.HandleError(core.ErrForward(err))
 				return
 			}
 
@@ -58,7 +55,7 @@ func (a *Adapter) Forward(packet semtech.Packet, broAddrs ...core.BrokerAddress)
 
 			if err != nil {
 				a.log("Unable to write raw JSON in buffer %+v", err)
-				a.router.HandleError(core.ErrForward(err))
+				router.HandleError(core.ErrForward(err))
 				return
 			}
 
@@ -66,13 +63,13 @@ func (a *Adapter) Forward(packet semtech.Packet, broAddrs ...core.BrokerAddress)
 
 			if err != nil {
 				a.log("Unable to send POST request %+v", err)
-				a.router.HandleError(core.ErrForward(err))
+				router.HandleError(core.ErrForward(err))
 				return
 			}
 
 			if resp.StatusCode != http.StatusOK {
 				a.log("Unexpected answer from the broker %+v", err)
-				a.router.HandleError(core.ErrForward(err))
+				router.HandleError(core.ErrForward(err))
 				return
 			}
 
@@ -87,5 +84,8 @@ func (a *Adapter) Forward(packet semtech.Packet, broAddrs ...core.BrokerAddress)
 
 // log is nothing more than a shortcut / helper to access the logger
 func (a Adapter) log(format string, i ...interface{}) {
-	a.logger.Log(format, i...)
+	if a.Logger == nil {
+		return
+	}
+	a.Logger.Log(format, i...)
 }
