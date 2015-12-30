@@ -4,6 +4,7 @@
 package router
 
 import (
+	"fmt"
 	"github.com/thethingsnetwork/core"
 	"github.com/thethingsnetwork/core/lorawan/semtech"
 	"github.com/thethingsnetwork/core/utils/log"
@@ -16,6 +17,8 @@ const (
 )
 
 type Router struct{}
+
+type errAck error
 
 func (r *Router) HandleUplink(packet semtech.Packet, connId core.ConnectionId) {
 	/* PULL_DATA
@@ -48,13 +51,12 @@ func (r *Router) RegisterDevice(devAddr core.DeviceAddress, broAddrs ...core.Bro
 }
 
 func (r *Router) HandleError(err error) {
-
 }
 
 // --------------- Routers Adapters
 type UpAdapter struct {
-	router   Router
-	logger   log.logger
+	router   *Router
+	logger   log.Logger
 	gateways map[core.GatewayId]net.UDPConn
 }
 
@@ -73,12 +75,40 @@ func (u UpAdapter) log(format string, a ...interface{}) {
 
 func (u *UpAdapter) Ack(packet semtech.Packet, gid core.GatewayId) {
 	if u.router == nil {
-		u.log("Failed to Ack, not connected to a router")
+		u.log("Fails to Ack, not connected to a router")
+		return
+	}
+
+	u.log("Acks packet %+v", packet)
+
+	conn, ok := u.gateways[gid]
+
+	if !ok {
+		u.log("Gateway connection not found")
+		u.router.HandleError(errAck(fmt.Errorf("Gateway connection not found")))
+		return
+	}
+
+	raw, err := semtech.Marshal(packet)
+
+	if err != nil {
+		u.log("Unable to marshal given packet")
+		u.router.HandleError(errAck(fmt.Errorf("Unable to marshal given packet %+v", err)))
+		return
+	}
+
+	_, err = conn.Write(raw)
+
+	if err != nil {
+		u.log("Unable to send udp message")
+		u.router.HandleError(errAck(fmt.Errorf("Unable to send udp message %+v", err)))
+		return
 	}
 }
 
 func (u *UpAdapter) Connect(router Router) {
-	u.router = router
+	u.log("Connects to router %+v", router)
+	u.router = &router
 }
 
 type DownAdapter struct {
