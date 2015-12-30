@@ -45,7 +45,7 @@ func (a *Adapter) Connect(router core.Router, port uint, broAddrs ...core.Broker
 // Broadcast implements the core.BrokerRouter interface
 func (a *Adapter) Broadcast(router core.Router, payload semtech.Payload) {
 	// Determine the devAddress associated to that payload
-	if payload.RXPK == nil || payload.TXPK != nil {
+	if payload.RXPK == nil || len(payload.RXPK) == 0 { // NOTE are those conditions significantly different ?
 		router.HandleError(core.ErrBroadcast(fmt.Errorf("Cannot broadcast given payload: %+v", payload)))
 		return
 	}
