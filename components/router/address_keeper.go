@@ -5,20 +5,20 @@ package router
 
 import (
 	"fmt"
-	"github.com/thethingsnetwork/core"
+	"github.com/thethingsnetwork/core/lorawan/semtech"
 	"time"
 )
 
 type addressKeeper interface {
-	lookup(devAddr core.DeviceAddress) ([]core.BrokerAddress, error)
-	store(devAddr core.DeviceAddress, brosAddr ...core.BrokerAddress) error
+	lookup(devAddr semtech.DeviceAddress) ([]core.BrokerAddress, error)
+	store(devAddr semtech.DeviceAddress, brosAddr ...core.BrokerAddress) error
 }
 
 type reddisAddressKeeper struct{} // In a second time
 
 type localDB struct {
 	expiryDelay time.Duration
-	addresses   map[core.DeviceAddress]localEntry
+	addresses   map[semtech.DeviceAddress]localEntry
 }
 
 type localEntry struct {
@@ -34,12 +34,12 @@ func NewLocalDB(expiryDelay time.Duration) (*localDB, error) {
 
 	return &localDB{
 		expiryDelay: expiryDelay,
-		addresses:   make(map[core.DeviceAddress]localEntry),
+		addresses:   make(map[semtech.DeviceAddress]localEntry),
 	}, nil
 }
 
 // lookup implements the addressKeeper interface
-func (a *localDB) lookup(devAddr core.DeviceAddress) ([]core.BrokerAddress, error) {
+func (a *localDB) lookup(devAddr semtech.DeviceAddress) ([]core.BrokerAddress, error) {
 	entry, ok := a.addresses[devAddr]
 	if !ok {
 		return nil, fmt.Errorf("Device address not found")
@@ -54,7 +54,7 @@ func (a *localDB) lookup(devAddr core.DeviceAddress) ([]core.BrokerAddress, erro
 }
 
 // store implements the addressKeeper interface
-func (a *localDB) store(devAddr core.DeviceAddress, brosAddr ...core.BrokerAddress) error {
+func (a *localDB) store(devAddr semtech.DeviceAddress, brosAddr ...core.BrokerAddress) error {
 	_, ok := a.addresses[devAddr]
 	if ok {
 		return fmt.Errorf("An entry already exists for that device")

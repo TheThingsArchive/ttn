@@ -11,26 +11,28 @@ import (
 	"time"
 )
 
+type DeviceAddress [4]byte
+
 // RXPK represents an uplink json message format sent by the gateway
 type RXPK struct {
-	Chan    *uint      `json:"chan,omitempty"` // Concentrator "IF" channel used for RX (unsigned integer)
-	Codr    *string    `json:"codr,omitempty"` // LoRa ECC coding rate identifier
-	Data    *string    `json:"data,omitempty"` // Base64 encoded RF packet payload, padded
-	Datr    *string    `json:"-"`              // FSK datarate (unsigned in bit per second) || LoRa datarate identifier
-	Freq    *float64   `json:"freq,omitempty"` // RX Central frequency in MHx (unsigned float, Hz precision)
-	Lsnr    *float64   `json:"lsnr,omitempty"` // LoRa SNR ratio in dB (signed float, 0.1 dB precision)
-	Modu    *string    `json:"modu,omitempty"` // Modulation identifier "LORA" or "FSK"
-	Rfch    *uint      `json:"rfch,omitempty"` // Concentrator "RF chain" used for RX (unsigned integer)
-	Rssi    *int       `json:"rssi,omitempty"` // RSSI in dBm (signed integer, 1 dB precision)
-	Size    *uint      `json:"size,omitempty"` // RF packet payload size in bytes (unsigned integer)
-	Stat    *int       `json:"stat,omitempty"` // CRC status: 1 - OK, -1 = fail, 0 = no CRC
-	Time    *time.Time `json:"-"`              // UTC time of pkt RX, us precision, ISO 8601 'compact' format
-	Tmst    *uint      `json:"tmst,omitempty"` // Internal timestamp of "RX finished" event (32b unsigned)
-	devAddr *[4]byte   // End-Device address, according to the Data. Memoized here.
+	Chan    *uint          `json:"chan,omitempty"` // Concentrator "IF" channel used for RX (unsigned integer)
+	Codr    *string        `json:"codr,omitempty"` // LoRa ECC coding rate identifier
+	Data    *string        `json:"data,omitempty"` // Base64 encoded RF packet payload, padded
+	Datr    *string        `json:"-"`              // FSK datarate (unsigned in bit per second) || LoRa datarate identifier
+	Freq    *float64       `json:"freq,omitempty"` // RX Central frequency in MHx (unsigned float, Hz precision)
+	Lsnr    *float64       `json:"lsnr,omitempty"` // LoRa SNR ratio in dB (signed float, 0.1 dB precision)
+	Modu    *string        `json:"modu,omitempty"` // Modulation identifier "LORA" or "FSK"
+	Rfch    *uint          `json:"rfch,omitempty"` // Concentrator "RF chain" used for RX (unsigned integer)
+	Rssi    *int           `json:"rssi,omitempty"` // RSSI in dBm (signed integer, 1 dB precision)
+	Size    *uint          `json:"size,omitempty"` // RF packet payload size in bytes (unsigned integer)
+	Stat    *int           `json:"stat,omitempty"` // CRC status: 1 - OK, -1 = fail, 0 = no CRC
+	Time    *time.Time     `json:"-"`              // UTC time of pkt RX, us precision, ISO 8601 'compact' format
+	Tmst    *uint          `json:"tmst,omitempty"` // Internal timestamp of "RX finished" event (32b unsigned)
+	devAddr *DeviceAddress // End-Device address, according to the Data. Memoized here.
 }
 
 // DevAddr returns the end-device address described in the payload
-func (rxpk *RXPK) DevAddr() *[4]byte {
+func (rxpk *RXPK) DevAddr() *DeviceAddress {
 	if rxpk.devAddr != nil {
 		return rxpk.devAddr
 	}
@@ -44,35 +46,34 @@ func (rxpk *RXPK) DevAddr() *[4]byte {
 		return nil
 	}
 
-	rxpk.devAddr = new([4]byte)
+	rxpk.devAddr = new(DeviceAddress)
 	copy((*rxpk.devAddr)[:], buf[1:5]) // Device Address corresponds to the first 4 bytes of the Frame Header, after one byte of MAC_HEADER
 	return rxpk.devAddr
-
 }
 
 // TXPK represents a downlink j,omitemptyson message format received by the gateway.
 // Most field are optional.
 type TXPK struct {
-	Codr    *string    `json:"codr,omitempty"`  // LoRa ECC coding rate identifier
-	Data    *string    `json:"data,omirtmepty"` // Base64 encoded RF packet payload, padding optional
-	Datr    *string    `json:"-"`               // LoRa datarate identifier (eg. SF12BW500) || FSK Datarate (unsigned, in bits per second)
-	Fdev    *uint      `json:"fdev,omitempty"`  // FSK frequency deviation (unsigned integer, in Hz)
-	Freq    *float64   `json:"freq,omitempty"`  // TX central frequency in MHz (unsigned float, Hz precision)
-	Imme    *bool      `json:"imme,omitempty"`  // Send packet immediately (will ignore tmst & time)
-	Ipol    *bool      `json:"ipol,omitempty"`  // Lora modulation polarization inversion
-	Modu    *string    `json:"modu,omitempty"`  // Modulation identifier "LORA" or "FSK"
-	Ncrc    *bool      `json:"ncrc,omitempty"`  // If true, disable the CRC of the physical layer (optional)
-	Powe    *uint      `json:"powe,omitempty"`  // TX output power in dBm (unsigned integer, dBm precision)
-	Prea    *uint      `json:"prea,omitempty"`  // RF preamble size (unsigned integer)
-	Rfch    *uint      `json:"rfch,omitempty"`  // Concentrator "RF chain" used for TX (unsigned integer)
-	Size    *uint      `json:"size,omitempty"`  // RF packet payload size in bytes (unsigned integer)
-	Time    *time.Time `json:"-"`               // Send packet at a certain time (GPS synchronization required)
-	Tmst    *uint      `json:"tmst,omitempty"`  // Send packet on a certain timestamp value (will ignore time)
-	devAddr *[4]byte   // End-Device address, according to the Data. Memoized here.
+	Codr    *string        `json:"codr,omitempty"`  // LoRa ECC coding rate identifier
+	Data    *string        `json:"data,omirtmepty"` // Base64 encoded RF packet payload, padding optional
+	Datr    *string        `json:"-"`               // LoRa datarate identifier (eg. SF12BW500) || FSK Datarate (unsigned, in bits per second)
+	Fdev    *uint          `json:"fdev,omitempty"`  // FSK frequency deviation (unsigned integer, in Hz)
+	Freq    *float64       `json:"freq,omitempty"`  // TX central frequency in MHz (unsigned float, Hz precision)
+	Imme    *bool          `json:"imme,omitempty"`  // Send packet immediately (will ignore tmst & time)
+	Ipol    *bool          `json:"ipol,omitempty"`  // Lora modulation polarization inversion
+	Modu    *string        `json:"modu,omitempty"`  // Modulation identifier "LORA" or "FSK"
+	Ncrc    *bool          `json:"ncrc,omitempty"`  // If true, disable the CRC of the physical layer (optional)
+	Powe    *uint          `json:"powe,omitempty"`  // TX output power in dBm (unsigned integer, dBm precision)
+	Prea    *uint          `json:"prea,omitempty"`  // RF preamble size (unsigned integer)
+	Rfch    *uint          `json:"rfch,omitempty"`  // Concentrator "RF chain" used for TX (unsigned integer)
+	Size    *uint          `json:"size,omitempty"`  // RF packet payload size in bytes (unsigned integer)
+	Time    *time.Time     `json:"-"`               // Send packet at a certain time (GPS synchronization required)
+	Tmst    *uint          `json:"tmst,omitempty"`  // Send packet on a certain timestamp value (will ignore time)
+	devAddr *DeviceAddress // End-Device address, according to the Data. Memoized here.
 }
 
 // DevAddr returns the end-device address described in the payload
-func (txpk *TXPK) DevAddr() *[4]byte {
+func (txpk *TXPK) DevAddr() *DeviceAddress {
 	if txpk.devAddr != nil {
 		return txpk.devAddr
 	}
@@ -86,7 +87,7 @@ func (txpk *TXPK) DevAddr() *[4]byte {
 		return nil
 	}
 
-	txpk.devAddr = new([4]byte)
+	txpk.devAddr = new(DeviceAddress)
 	copy((*txpk.devAddr)[:], buf[1:5]) // Device Address corresponds to the first 4 bytes of the Frame Header, after one byte of MAC_HEADER
 	return txpk.devAddr
 }

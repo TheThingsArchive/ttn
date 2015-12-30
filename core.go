@@ -7,7 +7,6 @@ import (
 	. "github.com/thethingsnetwork/core/lorawan/semtech"
 )
 
-type DeviceAddress [4]byte
 type BrokerAddress string
 type GatewayAddress string
 

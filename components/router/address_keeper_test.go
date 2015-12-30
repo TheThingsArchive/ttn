@@ -7,12 +7,13 @@ import (
 	"fmt"
 	. "github.com/smartystreets/goconvey/convey"
 	"github.com/thethingsnetwork/core"
+	"github.com/thethingsnetwork/core/lorawan/semtech"
 	"testing"
 	"time"
 )
 
-func genDevAddr() core.DeviceAddress {
-	return core.DeviceAddress(fmt.Sprintf("DeviceAddress%d", time.Now()))
+func genDevAddr() semtech.DeviceAddress {
+	return semtech.DeviceAddress(fmt.Sprintf("DeviceAddress%d", time.Now()))
 }
 
 func genBroAddr() core.BrokerAddress {
