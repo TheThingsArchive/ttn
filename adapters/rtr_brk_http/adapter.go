@@ -61,7 +61,7 @@ func (a *Adapter) Broadcast(router core.Router, payload semtech.Payload) {
 	}
 
 	// Prepare ground to store brokers that are in charge
-	brokers := make([]core.BrokerAddress, 0)
+	register := make(chan core.BrokerAddress, len(a.brokers))
 	wg := sync.WaitGroup{}
 	wg.Add(len(a.brokers))
 
@@ -83,7 +83,7 @@ func (a *Adapter) Broadcast(router core.Router, payload semtech.Payload) {
 			switch resp.StatusCode {
 			case http.StatusOK:
 				a.log("Broker %+v handles packets coming from %+v", addr, devAddr)
-				brokers = append(brokers, addr)
+				register <- addr
 			case http.StatusNotFound: //NOTE Convention with the broker
 				a.log("Broker %+v does not handle packets coming from %+v", addr, devAddr)
 			default:
@@ -95,6 +95,11 @@ func (a *Adapter) Broadcast(router core.Router, payload semtech.Payload) {
 
 	go func() {
 		wg.Wait()
+		close(register)
+		brokers := make([]core.BrokerAddress, 0)
+		for addr := range register {
+			brokers = append(brokers, addr)
+		}
 		if len(brokers) > 0 {
 			router.RegisterDevice(core.DeviceAddress(devAddr), brokers...)
 		}
