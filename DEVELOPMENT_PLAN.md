@@ -25,7 +25,11 @@ system will just forward messages using pre-configured end-device addresses.
         - [x] Lookup for device address (only local)
         - [x] Invalidate broker periodically (only local)
         - [x] Acknowledge packet from gateway
-        - [ ] Forward packet to brokers
+        - [x] Forward packet to brokers
+        - [ ] Create Mock router
+        - [ ] Create Mock DownAdapter
+        - [ ] Create Mock UpAdatper
+        - [ ] Test'em all
         - [ ] Reemit errored packet
         - [ ] Switch from local in-memory storage to Reddis
     - [ ] UpAdapter
