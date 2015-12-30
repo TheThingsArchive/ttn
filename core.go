@@ -9,28 +9,20 @@ type BrokerAddress string
 type ConnectionId uint
 type GatewayId [8]byte
 
-type Component interface {
-	HandleError(err error)
-}
-
 type Router interface {
-	Component
+	HandleError(err error)
 	HandleUplink(packet Packet, connId ConnectionId)
 	HandleDownlink(packet Packet, connId ConnectionId)
 	RegisterDevice(devAddr DeviceAddress, broAddrs ...BrokerAddress)
 }
 
-type Adapter interface {
-	Connect(comp Component)
-}
-
 type GatewayRouterAdapter interface {
-	Adapter
+	Connect(router Router)
 	Ack(packet Packet, gid GatewayId)
 }
 
 type RouterBrokerAdapter interface {
-	Adapter
+	Connect(router Router)
 	Broadcast(packet Packet)
 	Forward(packet Packet, broAddrs ...BrokerAddress)
 }
