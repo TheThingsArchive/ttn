@@ -6,6 +6,7 @@ package gateway
 import (
 	"fmt"
 	"github.com/thethingsnetwork/core/lorawan/semtech"
+	"github.com/thethingsnetwork/core/utils/log"
 	"github.com/thethingsnetwork/core/utils/pointer"
 	"io"
 	"time"
@@ -13,7 +14,7 @@ import (
 
 type Forwarder struct {
 	Id       [8]byte // Gateway's Identifier
-	debug    bool
+	Logger   log.Logger
 	alti     int                  // GPS altitude in RX meters
 	upnb     uint                 // Number of upstream datagrams sent
 	ackn     uint                 // Number of upstream datagrams that were acknowledged
@@ -57,7 +58,7 @@ func NewForwarder(id [8]byte, adapters ...io.ReadWriteCloser) (*Forwarder, error
 
 	fwd := &Forwarder{
 		Id:       id,
-		debug:    false,
+		Logger:   log.VoidLogger{},
 		alti:     120,
 		lati:     53.3702,
 		long:     4.8952,
@@ -78,29 +79,26 @@ func NewForwarder(id [8]byte, adapters ...io.ReadWriteCloser) (*Forwarder, error
 	return fwd, nil
 }
 
+// log wraps the Logger.log method, this is nothing more than a shortcut
+func (fwd Forwarder) log(format string, a ...interface{}) {
+	fwd.Logger.Log(format, a...)
+}
+
 // listenAdapter listen to incoming datagrams from an adapter. Non-valid packets are ignored.
 func (fwd Forwarder) listenAdapter(adapter io.ReadWriteCloser, index int) {
 	for {
 		buf := make([]byte, 1024)
 		n, err := adapter.Read(buf)
-		if fwd.debug {
-			fmt.Printf("%d bytes received by adapter\n", n)
-		}
+		fwd.log("%d bytes received by adapter\n", n)
 		if err != nil {
-			if fwd.debug {
-				fmt.Println(err)
-			}
+			fwd.log("Error: %+v", err)
 			fwd.Errors <- err
 			return // Error on reading, we assume the connection is closed / lost
 		}
-		if fwd.debug {
-			fmt.Printf("Forwarder unmarshals datagram %x\n", buf[:n])
-		}
+		fwd.log("Forwarder unmarshals datagram %x\n", buf[:n])
 		packet, err := semtech.Unmarshal(buf[:n])
 		if err != nil {
-			if fwd.debug {
-				fmt.Println(err)
-			}
+			fwd.log("Error: %+v", err)
 			continue
 		}
 
@@ -110,9 +108,7 @@ func (fwd Forwarder) listenAdapter(adapter io.ReadWriteCloser, index int) {
 		case semtech.PULL_RESP:
 			fwd.commands <- command{cmd_RECVDWN, packet}
 		default:
-			if fwd.debug {
-				fmt.Printf("Forwarder ignores contingent packet %+v\n", packet)
-			}
+			fwd.log("Forwarder ignores contingent packet %+v\n", packet)
 		}
 
 	}
@@ -123,9 +119,7 @@ func (fwd Forwarder) listenAdapter(adapter io.ReadWriteCloser, index int) {
 // This method consumes commands from the channel until it's closed.
 func (fwd *Forwarder) handleCommands() {
 	for cmd := range fwd.commands {
-		if fwd.debug {
-			fmt.Printf("Fowarder executes command: %v\n", cmd.name)
-		}
+		fwd.log("Fowarder executes command: %v\n", cmd.name)
 
 		switch cmd.name {
 		case cmd_ACK:
