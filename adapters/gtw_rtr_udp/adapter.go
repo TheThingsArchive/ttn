@@ -31,12 +31,18 @@ func New(router core.Router, port uint) (*Adapter, error) {
 	return &adapter, nil
 }
 
-// log is nothing more than a shortcut / helper to access the logger
-func (a Adapter) log(format string, i ...interface{}) {
-	if a.Logger == nil {
-		return
+// Ack implements the core.GatewayRouterAdapter interface
+func (a *Adapter) Connect(router core.Router, port uint) error {
+	addr, err := net.ResolveUDPAddr("udp", fmt.Sprintf("0.0.0.0:%d", port))
+	if err != nil {
+		return err
 	}
-	a.Logger.Log(format, i...)
+	a.conn, err = net.ListenUDP("udp", addr)
+	if err != nil {
+		return err
+	}
+	go a.listen(router) // NOTE: There is no way to stop properly the adapter and thus this goroutine for now.
+	return nil
 }
 
 // Ack implements the core.GatewayRouterAdapter interface
@@ -74,20 +80,6 @@ func (a *Adapter) Ack(router core.Router, packet semtech.Packet, gateway core.Ga
 	}
 }
 
-// Ack implements the core.GatewayRouterAdapter interface
-func (a *Adapter) Connect(router core.Router, port uint) error {
-	addr, err := net.ResolveUDPAddr("udp", fmt.Sprintf("0.0.0.0:%d", port))
-	if err != nil {
-		return err
-	}
-	a.conn, err = net.ListenUDP("udp", addr)
-	if err != nil {
-		return err
-	}
-	go a.listen(router) // NOTE: There is no way to stop properly the adapter and thus this goroutine for now.
-	return nil
-}
-
 // listen Handle incominng packets and forward them to the router
 func (a *Adapter) listen(router core.Router) {
 	for {
@@ -110,4 +102,12 @@ func (a *Adapter) listen(router core.Router) {
 		// When a packet is received pass it to the router for processing
 		router.HandleUplink(a, *pkt, core.GatewayAddress(addr.String()))
 	}
+}
+
+// log is nothing more than a shortcut / helper to access the logger
+func (a Adapter) log(format string, i ...interface{}) {
+	if a.Logger == nil {
+		return
+	}
+	a.Logger.Log(format, i...)
 }
