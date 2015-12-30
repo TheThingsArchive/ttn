@@ -1,3 +1,6 @@
+// Copyright © 2015 The Things Network
+// Use of this source code is governed by the MIT license that can be found in the LICENSE file.
+
 package core
 
 import (
@@ -6,8 +9,7 @@ import (
 
 type DeviceAddress string
 type BrokerAddress string
-type ConnectionId uint
-type GatewayId [8]byte
+type ConnectionId string
 
 type Router interface {
 	HandleError(err error)
@@ -16,9 +18,10 @@ type Router interface {
 	RegisterDevice(devAddr DeviceAddress, broAddrs ...BrokerAddress)
 }
 
+type ErrAck error
 type GatewayRouterAdapter interface {
 	Connect(router Router)
-	Ack(packet Packet, gid GatewayId)
+	Ack(packet Packet, cid ConnectionId)
 }
 
 type RouterBrokerAdapter interface {
