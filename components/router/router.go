@@ -9,6 +9,10 @@ import (
 	"time"
 )
 
+const (
+	EXPIRY_DELAY = time.Hour * 8
+)
+
 type Router struct{}
 
 func (r *Router) HandleUplink(packet semtech.Packet, connId core.ConnectionId) {
@@ -45,28 +49,7 @@ func (r *Router) HandleError(err error) {
 
 }
 
-// --------------- Address keeper
-type addressKeeper interface {
-	lookup(devAddr core.DeviceAddress) (core.BrokerAddress, error)
-	invalidate(broAddrs ...core.BrokerAddress) error
-}
-
-type reddisAddressKeeper struct{} // In a second time
-
-type localAddressKeeper struct {
-	addresses map[core.DeviceAddress]time.Time
-}
-
-func (a *localAddressKeeper) lookup(devAddr core.DeviceAddress) (*core.BrokerAddress, error) {
-	return nil, nil
-}
-
-func (a *localAddressKeeper) invalidate(broAddrs ...core.BrokerAddress) error {
-	return nil
-}
-
 // --------------- Routers Adapters
-
 type UpAdapter struct {
 }
 
