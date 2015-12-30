@@ -99,13 +99,13 @@ func (r *Router) HandleUplink(upAdapter core.GatewayRouterAdapter, downAdapter c
 }
 
 // HandleDownlink implements the core.Router interface
-func (r *Router) HandleDownlink(downAdapter core.RouterBrokerAdapter, packet semtech.Packet, broker core.BrokerAddress) {
+func (r *Router) HandleDownlink(upAdapter core.GatewayRouterAdapter, downAdapter core.RouterBrokerAdapter, packet semtech.Packet, broker core.BrokerAddress) {
 	// TODO MileStone 4
 }
 
 // RegisterDevice implements the core.Router interface
-func (r *Router) RegisterDevice(devAddr core.DeviceAddress, broAddrs ...core.BrokerAddress) {
-	// TODO MileStone 4
+func (r *Router) RegisterDevice(devAddr semtech.DeviceAddress, broAddrs ...core.BrokerAddress) {
+	r.addressKeeper.store(devAddr, broAddrs) // TODO handle the error
 }
 
 // RegisterDevice implements the core.Router interface

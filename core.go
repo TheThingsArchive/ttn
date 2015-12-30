@@ -15,10 +15,10 @@ type Router interface {
 	HandleError(err interface{})
 
 	// HandleUplink manages uplink packets coming from a gateway
-	HandleUplink(upAdapter GatewayRouterAdapter, packet Packet, gateway GatewayAddress)
+	HandleUplink(upAdapter GatewayRouterAdapter, downAdapter RouterBrokerAdapter, packet Packet, gateway GatewayAddress)
 
 	// HandleDownlink manages downlink packets coming from a broker
-	HandleDownlink(downAdapter RouterBrokerAdapter, packet Packet, broker BrokerAddress)
+	HandleDownlink(upAdapter GatewayRouterAdapter, downAdapter RouterBrokerAdapter, packet Packet, broker BrokerAddress)
 
 	// RegisterDevice associates a device address to a set of brokers for a given period
 	RegisterDevice(devAddr DeviceAddress, broAddrs ...BrokerAddress)
