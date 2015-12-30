@@ -29,41 +29,46 @@ func New(upAdapter core.GatewayRouterAdapter, downAdapter core.RouterBrokerAdapt
 	}, nil
 }
 
+func (r *Router) log(format string, a ...interface{}) {
+	r.logger.Log(format, a...)
+}
+
 // HandleUplink implements the core.Router interface
 func (r *Router) HandleUplink(packet semtech.Packet, connId core.ConnectionId) {
+	switch packet.Identifier {
+	case semtech.PULL_DATA:
+		r.log("PULL_DATA received, sending ack")
+		r.upAdapter.Ack(semtech.Packet{
+			Version:    semtech.VERSION,
+			Identifier: semtech.PULL_ACK,
+			Token:      packet.Token,
+		}, connId)
+	case semtech.PUSH_DATA:
+		r.log("TODO PUSH_DATA")
+		/* PUSH_DATA
+		 *
+		 * Send PUSH_ACK
+		 * Stores the gateway connection id for later response
+		 * Lookup for an existing broker associated to the device address
+		 * Forward data to that broker
+		 */
+	default:
+		r.log("Unexpected packet receive from uplink %+v", packet)
 
-	/* PULL_DATA
-	 *
-	 * Send PULL_ACK
-	 * Store the gateway in known gateway
-	 */
-
-	/* PUSH_DATA
-	 *
-	 * Send PUSH_ACK
-	 * Stores the gateway connection id for later response
-	 * Lookup for an existing broker associated to the device address
-	 * Forward data to that broker
-	 */
-
-	/* Else
-	 *
-	 * Ignore / Raise an error
-	 */
-
+	}
 }
 
 // HandleDownlink implements the core.Router interface
 func (r *Router) HandleDownlink(packet semtech.Packet) {
-	// TODO
+	// TODO MileStone 4
 }
 
 // RegisterDevice implements the core.Router interface
 func (r *Router) RegisterDevice(devAddr core.DeviceAddress, broAddrs ...core.BrokerAddress) {
-	// TODO
+	// TODO MileStone 4
 }
 
 // RegisterDevice implements the core.Router interface
 func (r *Router) HandleError(err error) {
-	fmt.Println(err)
+	fmt.Println(err) // Wow, much handling, very reliable
 }
