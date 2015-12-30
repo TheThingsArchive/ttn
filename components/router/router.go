@@ -16,33 +16,29 @@ const (
 )
 
 type Router struct {
-	Port      uint
-	upAdapter core.GatewayRouterAdapter
-	logger    log.Logger
+	PortUDP  uint
+	PortHTTP uint
+	Logger   log.Logger
 }
 
-func New(upAdapter core.GatewayRouterAdapter, downAdapter core.RouterBrokerAdapter, port uint) (*Router, error) {
+func New(portUDP, portHTTP uint) (*Router, error) {
 	return &Router{
-		Port:      port,
-		logger:    log.VoidLogger{},
-		upAdapter: upAdapter,
+		PortUDP:  portUDP,
+		PortHTTP: portHTTP,
+		Logger:   log.VoidLogger{},
 	}, nil
 }
 
-func (r *Router) log(format string, a ...interface{}) {
-	r.logger.Log(format, a...)
-}
-
 // HandleUplink implements the core.Router interface
-func (r *Router) HandleUplink(packet semtech.Packet, connId core.ConnectionId) {
+func (r *Router) HandleUplink(upAdapter core.GatewayRouterAdapter, packet semtech.Packet, gateway core.GatewayAddress) {
 	switch packet.Identifier {
 	case semtech.PULL_DATA:
 		r.log("PULL_DATA received, sending ack")
-		r.upAdapter.Ack(semtech.Packet{
+		upAdapter.Ack(r, semtech.Packet{
 			Version:    semtech.VERSION,
 			Identifier: semtech.PULL_ACK,
 			Token:      packet.Token,
-		}, connId)
+		}, gateway)
 	case semtech.PUSH_DATA:
 		r.log("TODO PUSH_DATA")
 		/* PUSH_DATA
@@ -59,7 +55,7 @@ func (r *Router) HandleUplink(packet semtech.Packet, connId core.ConnectionId) {
 }
 
 // HandleDownlink implements the core.Router interface
-func (r *Router) HandleDownlink(packet semtech.Packet) {
+func (r *Router) HandleDownlink(downAdapter core.RouterBrokerAdapter, packet semtech.Packet, broker core.BrokerAddress) {
 	// TODO MileStone 4
 }
 
@@ -69,6 +65,21 @@ func (r *Router) RegisterDevice(devAddr core.DeviceAddress, broAddrs ...core.Bro
 }
 
 // RegisterDevice implements the core.Router interface
-func (r *Router) HandleError(err error) {
-	fmt.Println(err) // Wow, much handling, very reliable
+func (r *Router) HandleError(err interface{}) {
+	switch err.(type) {
+	case core.ErrAck:
+	case core.ErrDownlink:
+	case core.ErrForward:
+	case core.ErrBroadcast:
+	case core.ErrUplink:
+	default:
+		fmt.Println(err) // Wow, much handling, very reliable
+	}
+}
+
+func (r *Router) log(format string, a ...interface{}) {
+	if r.Logger == nil {
+		return
+	}
+	r.Logger.Log(format, a...)
 }

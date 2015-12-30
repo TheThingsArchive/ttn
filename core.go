@@ -12,9 +12,9 @@ type BrokerAddress string
 type GatewayAddress string
 
 type Router interface {
-	HandleError(err error)
-	HandleUplink(packet Packet, gateway GatewayAddress)
-	HandleDownlink(packet Packet, broker BrokerAddress)
+	HandleError(err interface{})
+	HandleUplink(upAdapter GatewayRouterAdapter, packet Packet, gateway GatewayAddress)
+	HandleDownlink(downAdapter RouterBrokerAdapter, packet Packet, broker BrokerAddress)
 	RegisterDevice(devAddr DeviceAddress, broAddrs ...BrokerAddress)
 }
 

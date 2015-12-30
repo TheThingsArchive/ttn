@@ -108,6 +108,6 @@ func (a *Adapter) listen(router core.Router) {
 		}
 
 		// When a packet is received pass it to the router for processing
-		router.HandleUplink(*pkt, core.GatewayAddress(addr.String()))
+		router.HandleUplink(a, *pkt, core.GatewayAddress(addr.String()))
 	}
 }
