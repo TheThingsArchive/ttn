@@ -9,10 +9,12 @@ package rtr_brk_http
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"github.com/thethingsnetwork/core"
 	"github.com/thethingsnetwork/core/lorawan/semtech"
 	"github.com/thethingsnetwork/core/utils/log"
 	"net/http"
+	"sync"
 )
 
 type Adapter struct {
@@ -41,42 +43,78 @@ func (a *Adapter) Connect(router core.Router, port uint, broAddrs ...core.Broker
 }
 
 // Broadcast implements the core.BrokerRouter interface
-func (a *Adapter) Broadcast(router core.Router, packet semtech.Packet) {
+func (a *Adapter) Broadcast(router core.Router, payload semtech.Payload) {
+	// Determine the devAddress associated to that payload
+	if payload.RXPK == nil || payload.TXPK != nil {
+		router.HandleError(core.ErrBroadcast(fmt.Errorf("Cannot broadcast given payload: %+v", payload)))
+		return
+	}
+	var devAddr [4]byte
+	// We check them all to be sure, but all RXPK should refer to the same End-Device
+	for _, rxpk := range payload.RXPK {
+		addr := rxpk.DevAddr()
+		if addr == nil || (devAddr != [4]byte{} && devAddr != *addr) {
+			router.HandleError(core.ErrBroadcast(fmt.Errorf("Cannot broadcast given payload: %+v", payload)))
+			return
+		}
+		devAddr = *addr
+	}
+
+	// Prepare ground to store brokers that are in charge
+	brokers := make([]core.BrokerAddress, 0)
+	wg := sync.WaitGroup{}
+	wg.Add(len(a.brokers))
+
+	client := http.Client{}
+	for _, addr := range a.brokers {
+		go func(addr core.BrokerAddress) {
+			defer wg.Done()
+
+			resp, err := post(client, string(addr), payload)
+
+			if err != nil {
+				a.log("Unable to send POST request %+v", err)
+				router.HandleError(core.ErrBroadcast(err))
+				return
+			}
+
+			defer resp.Body.Close()
+
+			switch resp.StatusCode {
+			case http.StatusOK:
+				a.log("Broker %+v handles packets coming from %+v", addr, devAddr)
+				brokers = append(brokers, addr)
+			case http.StatusNotFound: //NOTE Convention with the broker
+				a.log("Broker %+v does not handle packets coming from %+v", addr, devAddr)
+			default:
+				a.log("Unexpected answer from the broker %+v", err)
+				router.HandleError(core.ErrBroadcast(err))
+			}
+		}(addr)
+	}
+
+	go func() {
+		wg.Wait()
+		if len(brokers) > 0 {
+			router.RegisterDevice(core.DeviceAddress(devAddr), brokers...)
+		}
+	}()
 }
 
 // Forward implements the core.BrokerRouter interface
-func (a *Adapter) Forward(router core.Router, packet semtech.Packet, broAddrs ...core.BrokerAddress) {
-	if packet.Payload == nil || len(packet.Payload.RXPK) == 0 {
-		a.log("Ignores irrelevant packet %+v", packet) // NOTE Should we trigger an error here ?
-		return
-	}
-
+func (a *Adapter) Forward(router core.Router, payload semtech.Payload, broAddrs ...core.BrokerAddress) {
 	client := http.Client{}
 	for _, addr := range broAddrs {
-		go func() {
-			data := new(bytes.Buffer)
-			rawJSON, err := json.Marshal(packet.Payload)
-			if err != nil {
-				a.log("Unable to marshal payload %+v", err)
-				router.HandleError(core.ErrForward(err))
-				return
-			}
-
-			_, err = data.Write(rawJSON)
-
-			if err != nil {
-				a.log("Unable to write raw JSON in buffer %+v", err)
-				router.HandleError(core.ErrForward(err))
-				return
-			}
-
-			resp, err := client.Post(string(addr), "application/json", data)
+		go func(url string) {
+			resp, err := post(client, url, payload)
 
 			if err != nil {
 				a.log("Unable to send POST request %+v", err)
 				router.HandleError(core.ErrForward(err))
 				return
 			}
+
+			defer resp.Body.Close()
 
 			if resp.StatusCode != http.StatusOK {
 				a.log("Unexpected answer from the broker %+v", err)
@@ -88,9 +126,22 @@ func (a *Adapter) Forward(router core.Router, packet semtech.Packet, broAddrs ..
 			// from the broker to handle packets or anything else ? Is it efficient ? Should
 			// downlinks packets be sent back with the HTTP body response ? Its a 2 seconds frame...
 
-			resp.Body.Close()
-		}()
+		}(string(addr))
 	}
+}
+
+func post(client http.Client, url string, payload semtech.Payload) (*http.Response, error) {
+	data := new(bytes.Buffer)
+	rawJSON, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+
+	if _, err := data.Write(rawJSON); err != nil {
+		return nil, err
+	}
+
+	return client.Post(url, "application/json", data)
 }
 
 // log is nothing more than a shortcut / helper to access the logger
