@@ -5,6 +5,7 @@ package gateway
 
 import (
 	. "github.com/smartystreets/goconvey/convey"
+	"github.com/thethingsnetwork/core/lorawan/semtech"
 	"testing"
 )
 
@@ -41,7 +42,37 @@ func TestGenToken(t *testing.T) {
 }
 
 func TestAckToken(t *testing.T) {
+	token := []byte{0x1, 0x4}
+	generatePacket := func(id byte) semtech.Packet {
+		return semtech.Packet{
+			Token:      token,
+			Identifier: id,
+			Version:    semtech.VERSION,
+		}
+	}
 
+	Convey("The ackToken() method should generate appropriate ACK token", t, func() {
+		Convey("Valid identifier, PULL", func() {
+			token_data := ackToken(14, generatePacket(semtech.PULL_DATA))
+			token_ack := ackToken(14, generatePacket(semtech.PULL_ACK))
+			token_resp := ackToken(14, generatePacket(semtech.PULL_RESP))
+			So(token_data, ShouldResemble, token_ack)
+			So(token_ack, ShouldResemble, token_resp)
+		})
+
+		Convey("Valid identifier, PUSH", func() {
+			token_data := ackToken(14, generatePacket(semtech.PUSH_DATA))
+			token_ack := ackToken(14, generatePacket(semtech.PUSH_ACK))
+			So(token_data, ShouldResemble, token_ack)
+		})
+
+		Convey("Valid but different ids", func() {
+			token_data := ackToken(14, generatePacket(semtech.PULL_DATA))
+			token_ack := ackToken(42, generatePacket(semtech.PULL_ACK))
+			So(token_data, ShouldNotResemble, token_ack)
+		})
+
+	})
 }
 
 func TestGenerateRssi(t *testing.T) {
