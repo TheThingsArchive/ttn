@@ -8,7 +8,6 @@ import (
 	"github.com/thethingsnetwork/core"
 	"github.com/thethingsnetwork/core/lorawan/semtech"
 	"github.com/thethingsnetwork/core/utils/log"
-	"net"
 	"time"
 )
 
@@ -16,11 +15,23 @@ const (
 	EXPIRY_DELAY = time.Hour * 8
 )
 
-type Router struct{}
+type Router struct {
+	Port      uint
+	upAdapter core.GatewayRouterAdapter
+	logger    log.Logger
+}
 
-type errAck error
+func New(upAdapter core.GatewayRouterAdapter, downAdapter core.RouterBrokerAdapter, port uint) (*Router, error) {
+	return &Router{
+		Port:      port,
+		logger:    log.VoidLogger{},
+		upAdapter: upAdapter,
+	}, nil
+}
 
+// HandleUplink implements the core.Router interface
 func (r *Router) HandleUplink(packet semtech.Packet, connId core.ConnectionId) {
+
 	/* PULL_DATA
 	 *
 	 * Send PULL_ACK
@@ -42,82 +53,17 @@ func (r *Router) HandleUplink(packet semtech.Packet, connId core.ConnectionId) {
 
 }
 
+// HandleDownlink implements the core.Router interface
 func (r *Router) HandleDownlink(packet semtech.Packet) {
-
+	// TODO
 }
 
+// RegisterDevice implements the core.Router interface
 func (r *Router) RegisterDevice(devAddr core.DeviceAddress, broAddrs ...core.BrokerAddress) {
-
+	// TODO
 }
 
+// RegisterDevice implements the core.Router interface
 func (r *Router) HandleError(err error) {
-}
-
-// --------------- Routers Adapters
-type UpAdapter struct {
-	router   *Router
-	logger   log.Logger
-	gateways map[core.GatewayId]net.UDPConn
-}
-
-func NewUpAdapter(router Router) *UpAdapter {
-	adapter := UpAdapter{
-		gateways: make(map[core.GatewayId]net.UDPConn),
-		logger:   log.VoidLogger{},
-	}
-	adapter.Connect(router)
-	return &adapter
-}
-
-func (u UpAdapter) log(format string, a ...interface{}) {
-	u.logger.Log(format, a...)
-}
-
-func (u *UpAdapter) Ack(packet semtech.Packet, gid core.GatewayId) {
-	if u.router == nil {
-		u.log("Fails to Ack, not connected to a router")
-		return
-	}
-
-	u.log("Acks packet %+v", packet)
-
-	conn, ok := u.gateways[gid]
-
-	if !ok {
-		u.log("Gateway connection not found")
-		u.router.HandleError(errAck(fmt.Errorf("Gateway connection not found")))
-		return
-	}
-
-	raw, err := semtech.Marshal(packet)
-
-	if err != nil {
-		u.log("Unable to marshal given packet")
-		u.router.HandleError(errAck(fmt.Errorf("Unable to marshal given packet %+v", err)))
-		return
-	}
-
-	_, err = conn.Write(raw)
-
-	if err != nil {
-		u.log("Unable to send udp message")
-		u.router.HandleError(errAck(fmt.Errorf("Unable to send udp message %+v", err)))
-		return
-	}
-}
-
-func (u *UpAdapter) Connect(router Router) {
-	u.log("Connects to router %+v", router)
-	u.router = &router
-}
-
-type DownAdapter struct {
-}
-
-func (d *DownAdapter) Broadcast(packet semtech.Packet) {
-
-}
-
-func (d *DownAdapter) Forward(packet semtech.Packet, broAddrs ...core.BrokerAddress) {
-
+	fmt.Println(err)
 }
