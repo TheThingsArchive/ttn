@@ -27,7 +27,7 @@ type Forwarder struct {
 	packets  []semtech.Packet     // Downlink packets received
 	acks     map[[4]byte]uint     // adapterIndex | packet.Identifier | packet.Token
 	commands chan command         // Concurrent access on gateway stats
-	Errors   chan error           // Done channel
+	quit     chan error           // Adapter which loses connection spit here
 }
 
 type commandName string
@@ -66,7 +66,7 @@ func NewForwarder(id [8]byte, adapters ...io.ReadWriteCloser) (*Forwarder, error
 		packets:  make([]semtech.Packet, 0),
 		acks:     make(map[[4]byte]uint),
 		commands: make(chan command),
-		Errors:   make(chan error, len(adapters)),
+		quit:     make(chan error, len(adapters)),
 	}
 
 	go fwd.handleCommands()
@@ -81,7 +81,7 @@ func NewForwarder(id [8]byte, adapters ...io.ReadWriteCloser) (*Forwarder, error
 
 // log wraps the Logger.log method, this is nothing more than a shortcut
 func (fwd Forwarder) log(format string, a ...interface{}) {
-	fwd.Logger.Log(format, a...)
+	fwd.Logger.Log(format, a...) // NOTE: concurrent-safe ?
 }
 
 // listenAdapter listen to incoming datagrams from an adapter. Non-valid packets are ignored.
@@ -92,8 +92,8 @@ func (fwd Forwarder) listenAdapter(adapter io.ReadWriteCloser, index int) {
 		fwd.log("%d bytes received by adapter\n", n)
 		if err != nil {
 			fwd.log("Error: %+v", err)
-			fwd.Errors <- err
-			return // Error on reading, we assume the connection is closed / lost
+			fwd.quit <- err
+			return // Connection lost / closed
 		}
 		fwd.log("Forwarder unmarshals datagram %x\n", buf[:n])
 		packet, err := semtech.Unmarshal(buf[:n])
@@ -110,7 +110,6 @@ func (fwd Forwarder) listenAdapter(adapter io.ReadWriteCloser, index int) {
 		default:
 			fwd.log("Forwarder ignores contingent packet %+v\n", packet)
 		}
-
 	}
 }
 
@@ -216,9 +215,15 @@ func (fwd Forwarder) Stop() error {
 		}
 	}
 
+	// Wait for each adapter to terminate
+	for range fwd.adapters {
+		<-fwd.quit
+	}
+
+	close(fwd.commands)
+
 	if len(errors) > 0 {
 		return fmt.Errorf("Unable to stop the forwarder: %+v", errors)
 	}
-
 	return nil
 }
