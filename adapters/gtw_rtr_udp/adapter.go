@@ -9,37 +9,23 @@ import (
 	"github.com/thethingsnetwork/core/lorawan/semtech"
 	"github.com/thethingsnetwork/core/utils/log"
 	"net"
-	"sync"
 )
 
 type Adapter struct {
-	router   core.Router
-	logger   log.Logger
-	gateways map[core.ConnectionId]*net.UDPAddr
-	conn     *net.UDPConn
-	lock     sync.RWMutex
+	Logger log.Logger
+	conn   *net.UDPConn
 }
 
 // New constructs a new Gateway-Router-UDP adapter
 func New(router core.Router, port uint) (*Adapter, error) {
 	adapter := Adapter{
-		gateways: make(map[core.ConnectionId]*net.UDPAddr),
-		lock:     sync.RWMutex{},
-		logger:   log.VoidLogger{},
+		Logger: log.VoidLogger{},
 	}
 
 	// Connect to the router and start listening on the given port of the current machine
-	adapter.Connect(router)
-	addr, err := net.ResolveUDPAddr("udp", fmt.Sprintf("0.0.0.0:%d", port))
-	if err != nil {
+	if err := adapter.Connect(router, port); err != nil {
 		return nil, err
 	}
-	udpConn, err := net.ListenUDP("udp", addr)
-	if err != nil {
-		return nil, err
-	}
-	adapter.conn = udpConn
-	go adapter.listen() // NOTE: There is no way to stop properly the adapter and thus this goroutine for now.
 
 	// Return the adapter for further use
 	return &adapter, nil
@@ -47,25 +33,27 @@ func New(router core.Router, port uint) (*Adapter, error) {
 
 // log is nothing more than a shortcut / helper to access the logger
 func (a Adapter) log(format string, i ...interface{}) {
-	a.logger.Log(format, i...)
+	if a.Logger == nil {
+		return
+	}
+	a.Logger.Log(format, i...)
 }
 
 // Ack implements the core.GatewayRouterAdapter interface
-func (a *Adapter) Ack(packet semtech.Packet, cid core.ConnectionId) {
-	if a.router == nil {
-		a.log("Fails to Ack, not connected to a router")
+func (a *Adapter) Ack(router core.Router, packet semtech.Packet, gateway core.GatewayAddress) {
+	if a.conn == nil {
+		a.log("Connection not established. Connect the adaptor first.")
+		router.HandleError(core.ErrAck(fmt.Errorf("Connection not established. Connect the adaptor first.")))
 		return
 	}
 
 	a.log("Acks packet %+v", packet)
 
-	a.lock.RLock()
-	addr, ok := a.gateways[cid]
-	a.lock.Unlock()
+	addr, err := net.ResolveUDPAddr("udp", string(gateway))
 
-	if !ok {
-		a.log("Gateway connection not found")
-		a.router.HandleError(core.ErrAck(fmt.Errorf("Gateway connection not found")))
+	if err != nil {
+		a.log("Unable to retrieve gateway address")
+		router.HandleError(core.ErrAck(err))
 		return
 	}
 
@@ -73,7 +61,7 @@ func (a *Adapter) Ack(packet semtech.Packet, cid core.ConnectionId) {
 
 	if err != nil {
 		a.log("Unable to marshal given packet")
-		a.router.HandleError(core.ErrAck(fmt.Errorf("Unable to marshal given packet %+v", err)))
+		router.HandleError(core.ErrAck(err))
 		return
 	}
 
@@ -81,38 +69,45 @@ func (a *Adapter) Ack(packet semtech.Packet, cid core.ConnectionId) {
 
 	if err != nil {
 		a.log("Unable to send udp message")
-		a.router.HandleError(core.ErrAck(fmt.Errorf("Unable to send udp message %+v", err)))
+		router.HandleError(core.ErrAck(err))
 		return
 	}
 }
 
 // Ack implements the core.GatewayRouterAdapter interface
-func (a *Adapter) Connect(router core.Router) {
-	a.log("Connects to router %+v", router)
-	a.router = router
+func (a *Adapter) Connect(router core.Router, port uint) error {
+	addr, err := net.ResolveUDPAddr("udp", fmt.Sprintf("0.0.0.0:%d", port))
+	if err != nil {
+		return err
+	}
+	a.conn, err = net.ListenUDP("udp", addr)
+	if err != nil {
+		return err
+	}
+	go a.listen(router) // NOTE: There is no way to stop properly the adapter and thus this goroutine for now.
+	return nil
 }
 
-func (a *Adapter) listen() {
+// listen Handle incominng packets and forward them to the router
+func (a *Adapter) listen(router core.Router) {
 	for {
 		buf := make([]byte, 1024)
 		n, addr, err := a.conn.ReadFromUDP(buf)
 		if err != nil {
-			a.log("Error: %v", err) // NOTE Errors are just ignored for now
+			a.log("Error: %v", err)
+			go router.HandleError(core.ErrUplink(err))
 			continue
 		}
 		a.log("Incoming datagram %x", buf[:n])
 
 		pkt, err := semtech.Unmarshal(buf[:n])
 		if err != nil {
-			a.log("Error: %v", err) // NOTE Errors are just ignored for now
+			a.log("Error: %v", err)
+			go router.HandleError(core.ErrUplink(err))
 			continue
 		}
 
 		// When a packet is received pass it to the router for processing
-		cid := core.ConnectionId(addr.String())
-		a.lock.Lock()
-		a.gateways[cid] = addr
-		a.lock.Unlock()
-		a.router.HandleUplink(*pkt, cid)
+		router.HandleUplink(*pkt, core.GatewayAddress(addr.String()))
 	}
 }

@@ -9,24 +9,27 @@ import (
 
 type DeviceAddress string
 type BrokerAddress string
-type ConnectionId string
+type GatewayAddress string
 
 type Router interface {
 	HandleError(err error)
-	HandleUplink(packet Packet, connId ConnectionId)
-	HandleDownlink(packet Packet, connId ConnectionId)
+	HandleUplink(packet Packet, gateway GatewayAddress)
+	HandleDownlink(packet Packet, broker BrokerAddress)
 	RegisterDevice(devAddr DeviceAddress, broAddrs ...BrokerAddress)
 }
 
+type ErrUplink error
 type ErrAck error
 type GatewayRouterAdapter interface {
-	Connect(router Router)
-	Ack(packet Packet, cid ConnectionId)
+	Connect(router Router, port uint) error
+	Ack(router Router, packet Packet, gateway GatewayAddress)
 }
 
+type ErrDownlink error
 type ErrForward error
+type ErrBroadcast error
 type RouterBrokerAdapter interface {
-	Connect(router Router)
-	Broadcast(payload Packet)
-	Forward(packet Packet, broAddrs ...BrokerAddress)
+	Connect(router Router, broAddrs ...BrokerAddress) error
+	Broadcast(router Router, payload Packet)
+	Forward(router Router, packet Packet, broAddrs ...BrokerAddress)
 }
