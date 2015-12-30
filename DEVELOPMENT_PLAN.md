@@ -21,7 +21,25 @@ system will just forward messages using pre-configured end-device addresses.
 
 
 - [ ] Basic Router  
-    - [ ] Detail the list of features
+    - [ ] Core
+        - [x] Lookup for device address (only local)
+        - [x] Invalidate broker periodically (only local)
+        - [x] Acknowledge packet from gateway
+        - [x] Forward packet to brokers
+        - [ ] Create Mock router
+        - [ ] Create Mock DownAdapter
+        - [ ] Create Mock UpAdatper
+        - [ ] Test'em all
+        - [ ] Reemit errored packet
+        - [ ] Switch from local in-memory storage to Reddis
+    - [ ] UpAdapter
+        - [ ] Listen and forward incoming packets to Core router
+        - [ ] Keep track of existing UDP connections
+        - [ ] Send ack through existing UDP connection
+    - [ ] DownAdapter
+        - [ ] Listen and forward incoming packet to Core router
+        - [ ] Broadcast a packet to several brokers
+        - [ ] Send packet to given brokers (same as above ?)
 
 
 - [ ] Basic Broker
