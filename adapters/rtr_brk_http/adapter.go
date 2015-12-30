@@ -16,21 +16,32 @@ import (
 )
 
 type Adapter struct {
-	Logger log.Logger
+	Logger  log.Logger
+	brokers []core.BrokerAddress
 }
 
 // New constructs a new Router-Broker-HTTP adapter
 func New(router core.Router, port uint, broAddrs ...core.BrokerAddress) (*Adapter, error) {
-	return nil, nil
+	adapter := Adapter{
+		Logger:  log.VoidLogger{},
+		brokers: broAddrs,
+	}
+
+	if err := adapter.Connect(router, port, broAddrs...); err != nil {
+		return nil, err
+	}
+
+	return &adapter, nil
 }
 
 // Connect implements the core.BrokerRouter interface
-func (a *Adapter) Connect(router core.Router, port uint, broAddrs ...core.BrokerAddress) {
+func (a *Adapter) Connect(router core.Router, port uint, broAddrs ...core.BrokerAddress) error {
 	a.log("Connects to router %+v", router)
+	return nil
 }
 
 // Broadcast implements the core.BrokerRouter interface
-func (a *Adapter) Broadcast(packet semtech.Packet) {
+func (a *Adapter) Broadcast(router core.Router, packet semtech.Packet) {
 }
 
 // Forward implements the core.BrokerRouter interface
