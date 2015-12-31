@@ -1,7 +1,7 @@
 // Copyright © 2015 The Things Network
 // Use of this source code is governed by the MIT license that can be found in the LICENSE file.
 
-package router
+package components
 
 import (
 	"fmt"
@@ -39,8 +39,8 @@ type downMsg struct {
 	brokers []core.BrokerAddress // The recipient broker to reach. If nil or empty, assume that all broker should be reached
 }
 
-// New constructs a Router and setup its internal structure
-func New(brokers ...core.BrokerAddress) (*Router, error) {
+// NewRouter constructs a Router and setup its internal structure
+func NewRouter(brokers ...core.BrokerAddress) (*Router, error) {
 	localDB, err := NewLocalDB(EXPIRY_DELAY)
 
 	if err != nil {

@@ -1,8 +1,8 @@
 // Copyright © 2015 The Things Network
 // Use of this source code is governed by the MIT license that can be found in the LICENSE file.
 
-// package mock offers a mock router that can be used to test adapter implementations.
-package mock
+// package mock_components offers a mock router that can be used to test adapter implementations.
+package mock_components
 
 import (
 	"github.com/thethingsnetwork/core"

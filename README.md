@@ -11,28 +11,85 @@ The Things Network Core Architecture
 ## Folder structure
 
 So far: 
+
 ```
+-> Router
+-> GatewayRouterAdapter
+-> RouterBrokerAdapter
+-> BrokerAddress
+-> GatewayAddress
+
 -| components
------| broker
------| handler
------| networkcontroller
------| router
+-----> Router
+-----> Broker
+-----> Networkcontroller
+-----> Handler
 
 -| adapters
------| router-broker-http/brokAdapter
------| router-gateway-udp/gateAdapter
------| broker-ns-local/nsAdapter
------| broker-handler-http/handAdapter
------| broker-router-http/routAdapter
------| ns-broker-local/brokAdapter
------| handler-broker-http/brokAdapter
+-----| rtr-brk-http
+----------> Adapter
+
+-----| gtw-rtr-udp
+----------> Adapter
+
+-----| brk-nwc-local
+----------> Adapter
+
+-----| brk-hdl-http
+----------> Adapter
+
+-----| brk-rtr-http
+----------> Adapter
+
+-----| ns-brk-local
+----------> Adapter
+
+-----| hdl-brk-http
+----------> Adapter
 
 -| lorawan
 -----| mac
 -----| semtech
+----------> Payload
+----------> Packet
+----------> DeviceAddress
+----------> RXPK
+----------> TXPK
+----------> Stat
 
 -| simulators
 -----| gateway
+----------> Forwarder
+----------> Imitator
+
+-| testing
+-----| mock_components
+----------> Router
+----------> Broker
+----------> Networkcontroller
+----------> Handler
+
+-----| mock_adapters
+----------| rtr-brk-mock
+---------------> Adapter
+
+----------| gtw-rtr-mock
+---------------> Adapter
+
+----------| brk-nwc-mock
+---------------> Adapter
+
+----------| brk-hdl-mock
+---------------> Adapter
+
+----------| brk-rtr-mock
+---------------> Adapter
+
+----------| ns-brk-mock
+---------------> Adapter
+
+----------| hdl-brk-mock
+---------------> Adapter
 ```
 
 ## Development Plan
