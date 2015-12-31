@@ -44,7 +44,7 @@ func New(brokers ...core.BrokerAddress) (*Router, error) {
 	localDB, err := NewLocalDB(EXPIRY_DELAY)
 
 	if err != nil {
-		return nil, error
+		return nil, err
 	}
 
 	if len(brokers) == 0 {
@@ -94,7 +94,7 @@ func (r *Router) HandleUplink(packet semtech.Packet, gateway core.GatewayAddress
 			return
 		}
 
-		payloads = make(map[semtech.DeviceAddress]semtech.Payload)
+		payloads := make(map[semtech.DeviceAddress]*semtech.Payload)
 		for _, rxpk := range packet.Payload.RXPK {
 			devAddr := rxpk.DevAddr()
 			if devAddr == nil {
@@ -103,28 +103,29 @@ func (r *Router) HandleUplink(packet semtech.Packet, gateway core.GatewayAddress
 			}
 
 			if _, ok := payloads[*devAddr]; !ok {
-				payloads[*devAddr] = semtech.Payload{
+				payloads[*devAddr] = &semtech.Payload{
 					RXPK: make([]semtech.RXPK, 0),
 				}
 			}
 
-			payloads[*devAddr].RXPK = append(payloads[*devAddr].RXPK, rxpk)
+			payload := payloads[*devAddr]
+			(*payload).RXPK = append(payloads[*devAddr].RXPK, rxpk)
 		}
 
 		// 3. Broadcast or Forward payloads depending wether or not the brokers are known
-		for payload, devAddr := range payloads {
+		for devAddr, payload := range payloads {
 			brokers, err := r.addressKeeper.lookup(devAddr)
 			if err != nil {
 				r.log("Forward payload to known brokers %+v", payload)
 				r.down <- downMsg{
-					payload: payload,
+					payload: *payload,
 					brokers: brokers,
 				}
 				continue
 			}
 
 			r.log("Broadcast payload to all brokers %+v", payload)
-			r.down <- downMsg{payload: payload}
+			r.down <- downMsg{payload: *payload}
 		}
 	default:
 		r.log("Unexpected packet receive from uplink %+v", packet)
@@ -140,7 +141,7 @@ func (r *Router) HandleDownlink(payload semtech.Payload, broker core.BrokerAddre
 // RegisterDevice implements the core.Router interface
 func (r *Router) RegisterDevice(devAddr semtech.DeviceAddress, broAddrs ...core.BrokerAddress) {
 	r.ensure()
-	r.addressKeeper.store(devAddr, broAddrs) // TODO handle the error
+	r.addressKeeper.store(devAddr, broAddrs...) // TODO handle the error
 }
 
 // RegisterDevice implements the core.Router interface
@@ -159,7 +160,7 @@ func (r *Router) HandleError(err interface{}) {
 }
 
 // Connect implements the core.Router interface
-func (r *Router) Connect(upAdapter core.GatewayRouterAdapter, downAdapter core.RouterBrokerAdapter) error {
+func (r *Router) Connect(upAdapter core.GatewayRouterAdapter, downAdapter core.RouterBrokerAdapter) {
 	r.ensure()
 
 	for i := 0; i < UP_POOL_SIZE; i += 1 {
@@ -169,8 +170,6 @@ func (r *Router) Connect(upAdapter core.GatewayRouterAdapter, downAdapter core.R
 	for i := 0; i < DOWN_POOL_SIZE; i += 1 {
 		go r.connectDownAdapter(downAdapter)
 	}
-
-	return nil
 }
 
 // Consume messages sent to r.up channel
@@ -184,15 +183,15 @@ func (r *Router) connectUpAdapter(upAdapter core.GatewayRouterAdapter) {
 func (r *Router) connectDownAdapter(downAdapter core.RouterBrokerAdapter) {
 	for msg := range r.down {
 		if len(msg.brokers) == 0 {
-			downAdapter.Broadcast(r, msg.payload, r.Brokers...)
+			downAdapter.Broadcast(r, msg.payload, r.brokers...)
 			continue
 		}
-		downAdapter.Forward(r, msg.payload, msg.Brokers...)
+		downAdapter.Forward(r, msg.payload, msg.brokers...)
 	}
 }
 
 // ensure checks whether or not the current Router has been created via New(). It panics if not.
-func (r *Router) ensure() bool {
+func (r *Router) ensure() {
 	if r == nil || r.addressKeeper == nil {
 		panic("Call method on non-initialized Router")
 	}
