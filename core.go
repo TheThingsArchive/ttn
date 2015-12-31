@@ -54,7 +54,7 @@ type RouterBrokerAdapter interface {
 	//
 	// We assume that broadcast is also registering a device address towards the router depending
 	// on the brokers responses.
-	Broadcast(router Router, payload Payload)
+	Broadcast(router Router, payload Payload, broAddrs ...BrokerAddress)
 
 	// Forward is an explicit forwarding of a packet which is known being handled by a set of
 	// brokers. None of the contacted broker is supposed to reject the incoming payload; They all
