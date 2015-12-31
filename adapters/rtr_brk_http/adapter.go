@@ -21,8 +21,8 @@ type Adapter struct {
 	Logger log.Logger
 }
 
-// Connect implements the core.Adapter interface
-func (a *Adapter) Connect(router core.Router, options interface{}) error {
+// Listen implements the core.Adapter interface
+func (a *Adapter) Listen(router core.Router, options interface{}) error {
 	a.log("Connects to router %+v", router)
 	return nil
 }

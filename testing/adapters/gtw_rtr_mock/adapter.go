@@ -1,9 +1,9 @@
 // Copyright © 2015 The Things Network
 // Use of this source code is governed by the MIT license that can be found in the LICENSE file.
 
-// package gtw_rtr_moke offers a gateway <-> router moke adapter that can be used to test a router
+// package gtw_rtr_mock offers a gateway <-> router mock adapter that can be used to test a router
 // implementation.
-package gtw_rtr_moke
+package gtw_rtr_mock
 
 import (
 	"fmt"
@@ -46,6 +46,7 @@ func (a *Adapter) Ack(router core.Router, packet semtech.Packet, gateway core.Ga
 	a.acks[gateway] = append(a.acks[gateway], packet)
 }
 
+// GetAcks returns packets that has been pass through the Ack method()
 func (a *Adapter) GetAcks(gateway core.GatewayAddress) []semtech.Packet {
 	return a.acks[gateway]
 }
