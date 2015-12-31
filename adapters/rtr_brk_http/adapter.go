@@ -34,16 +34,11 @@ func (a *Adapter) Broadcast(router core.Router, payload semtech.Payload, broAddr
 		router.HandleError(core.ErrBroadcast(fmt.Errorf("Cannot broadcast given payload: %+v", payload)))
 		return
 	}
-	var devAddr semtech.DeviceAddress
-	var defaultDevAddr semtech.DeviceAddress
-	// We check them all to be sure, but all RXPK should refer to the same End-Device
-	for _, rxpk := range payload.RXPK {
-		addr := rxpk.DevAddr()
-		if addr == nil || (devAddr != defaultDevAddr && devAddr != *addr) {
-			router.HandleError(core.ErrBroadcast(fmt.Errorf("Cannot broadcast given payload: %+v", payload)))
-			return
-		}
-		devAddr = *addr
+
+	devAddr, err := payload.UniformDevAddr()
+	if err != nil {
+		router.HandleError(core.ErrBroadcast(fmt.Errorf("Cannot broadcast given payload: %+v, %+v", payload, err)))
+		return
 	}
 
 	// Prepare ground to store brokers that are in charge
@@ -87,7 +82,7 @@ func (a *Adapter) Broadcast(router core.Router, payload semtech.Payload, broAddr
 			brokers = append(brokers, addr)
 		}
 		if len(brokers) > 0 {
-			router.RegisterDevice(devAddr, brokers...)
+			router.RegisterDevice(*devAddr, brokers...)
 		}
 	}()
 }
