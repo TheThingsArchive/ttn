@@ -26,17 +26,17 @@ system will just forward messages using pre-configured end-device addresses.
         - [x] Invalidate broker periodically (only local)
         - [x] Acknowledge packet from gateway
         - [x] Forward packet to brokers
-        - [ ] Create Mock router
+        - [x] Create Mock router
         - [x] Create Mock DownAdapter
         - [x] Create Mock UpAdatper
         - [ ] Test'em all
         - [ ] Reemit errored packet
         - [ ] Switch from local in-memory storage to Reddis
-    - [ ] UpAdapter
+    - [x] UpAdapter
         - [x] Listen and forward incoming packets to Core router
         - [x] Keep track of existing UDP connections
         - [x] Send ack through existing UDP connection
-    - [ ] DownAdapter
+    - [x] DownAdapter
         - [x] Listen and forward incoming packet to Core router
         - [x] Broadcast a packet to several brokers
         - [x] Send packet to given brokers (same as above ?)
