@@ -12,25 +12,25 @@ import (
 )
 
 type Adapter struct {
-	FailAck     bool
-	FailConnect bool
-	connected   bool
-	acks        map[core.GatewayAddress][]semtech.Packet
+	FailAck    bool                                     // If true, each call to Ack will fail with a core.ErrAck
+	FailListen bool                                     // If true, each call to Listen will return an error
+	connected  bool                                     // Indicate wether or not the Listen method has been called
+	Acks       map[core.GatewayAddress][]semtech.Packet // Stores all packet send through Ack()
 }
 
-// New constructs a new Gateway-Router-Moke adapter
-func New() (*Adapter, error) {
-	return &Adapter{
-		FailAck:     false,
-		FailConnect: false,
-		connected:   false,
-		acks:        make(map[core.GatewayAddress][]semtech.Packet),
-	}, nil
+// New constructs a new Gateway-Router-Mock adapter
+func New() Adapter {
+	return Adapter{
+		FailAck:    false,
+		FailListen: false,
+		connected:  false,
+		Acks:       make(map[core.GatewayAddress][]semtech.Packet),
+	}
 }
 
 // Listen implements the core.Adapter interface
 func (a *Adapter) Listen(router core.Router, options interface{}) error {
-	if a.FailConnect {
+	if a.FailListen {
 		return fmt.Errorf("Unable to establish connection")
 	}
 	a.connected = true
@@ -39,14 +39,13 @@ func (a *Adapter) Listen(router core.Router, options interface{}) error {
 
 // Ack implements the core.GatewayRouterAdapter interface
 func (a *Adapter) Ack(router core.Router, packet semtech.Packet, gateway core.GatewayAddress) {
+	if !a.connected {
+		router.HandleError(core.ErrAck(fmt.Errorf("Try to send ack through non connected adapter")))
+		return
+	}
 	if a.FailAck {
 		router.HandleError(core.ErrAck(fmt.Errorf("Unable to ack the given packet")))
 		return
 	}
-	a.acks[gateway] = append(a.acks[gateway], packet)
-}
-
-// GetAcks returns packets that has been pass through the Ack method()
-func (a *Adapter) GetAcks(gateway core.GatewayAddress) []semtech.Packet {
-	return a.acks[gateway]
+	a.Acks[gateway] = append(a.Acks[gateway], packet)
 }
