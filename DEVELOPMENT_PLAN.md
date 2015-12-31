@@ -12,7 +12,13 @@ mainly for testing and ensuring the correctness of other components.
     - [x] Serialize json rxpk/stat object(s) 
     - [x] Generate json rxpl/stat object(s)
     - [x] Update gateway statistics accordingly
-    - [ ] Simulate fake end-devices activity 
+    - [ ] Load config from file or ENV
+    - [ ] Generate valid fake end-device packet
+    - [ ] Simulate fake end-devices traffic
+    - [ ] Complete tests set for stats functions
+    - [ ] Implements UDP ReadWriteCloser 
+    - [ ] Move existing fake ReadWriteCloser to a proper file with handy constructor
+
 
 ## Milestone 2
 Handle an uplink process that can forward packet coming from a gateway to a simple end-server
