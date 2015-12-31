@@ -38,7 +38,9 @@ func New(portUDP, portHTTP uint) (*Router, error) {
 }
 
 // HandleUplink implements the core.Router interface
-func (r *Router) HandleUplink(upAdapter core.GatewayRouterAdapter, downAdapter core.RouterBrokerAdapter, packet semtech.Packet, gateway core.GatewayAddress) {
+func (r *Router) HandleUplink(packet semtech.Packet, gateway core.GatewayAddress) {
+	r.ensure()
+
 	switch packet.Identifier {
 	case semtech.PULL_DATA:
 		r.log("receives PULL_DATA, sending ack")
@@ -99,17 +101,20 @@ func (r *Router) HandleUplink(upAdapter core.GatewayRouterAdapter, downAdapter c
 }
 
 // HandleDownlink implements the core.Router interface
-func (r *Router) HandleDownlink(upAdapter core.GatewayRouterAdapter, downAdapter core.RouterBrokerAdapter, packet semtech.Packet, broker core.BrokerAddress) {
+func (r *Router) HandleDownlink(payload semtech.Payload, broker core.BrokerAddress) {
 	// TODO MileStone 4
 }
 
 // RegisterDevice implements the core.Router interface
 func (r *Router) RegisterDevice(devAddr semtech.DeviceAddress, broAddrs ...core.BrokerAddress) {
+	r.ensure()
 	r.addressKeeper.store(devAddr, broAddrs) // TODO handle the error
 }
 
 // RegisterDevice implements the core.Router interface
 func (r *Router) HandleError(err interface{}) {
+	r.ensure()
+
 	switch err.(type) {
 	case core.ErrAck:
 	case core.ErrDownlink:
@@ -121,6 +126,14 @@ func (r *Router) HandleError(err interface{}) {
 	}
 }
 
+// ensure checks whether or not the current Router has been created via New(). It panics if not.
+func (r *Router) ensure() bool {
+	if r == nil || r.addressKeeper == nil {
+		panic("Call method on non-initialized Router")
+	}
+}
+
+// log is a shortcut to access the router logger
 func (r *Router) log(format string, a ...interface{}) {
 	if r.Logger == nil {
 		return
