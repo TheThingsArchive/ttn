@@ -18,32 +18,17 @@ import (
 )
 
 type Adapter struct {
-	Logger  log.Logger
-	brokers []core.BrokerAddress
+	Logger log.Logger
 }
 
-// New constructs a new Router-Broker-HTTP adapter
-func New(router core.Router, port uint, broAddrs ...core.BrokerAddress) (*Adapter, error) {
-	adapter := Adapter{
-		Logger:  log.VoidLogger{},
-		brokers: broAddrs,
-	}
-
-	if err := adapter.Connect(router, port, broAddrs...); err != nil {
-		return nil, err
-	}
-
-	return &adapter, nil
-}
-
-// Connect implements the core.BrokerRouter interface
-func (a *Adapter) Connect(router core.Router, port uint, broAddrs ...core.BrokerAddress) error {
+// Connect implements the core.Adapter interface
+func (a *Adapter) Connect(router core.Router, options interface{}) error {
 	a.log("Connects to router %+v", router)
 	return nil
 }
 
 // Broadcast implements the core.BrokerRouter interface
-func (a *Adapter) Broadcast(router core.Router, payload semtech.Payload) {
+func (a *Adapter) Broadcast(router core.Router, payload semtech.Payload, broAddrs ...core.BrokerAddress) {
 	// Determine the devAddress associated to that payload
 	if payload.RXPK == nil || len(payload.RXPK) == 0 { // NOTE are those conditions significantly different ?
 		router.HandleError(core.ErrBroadcast(fmt.Errorf("Cannot broadcast given payload: %+v", payload)))
@@ -62,12 +47,12 @@ func (a *Adapter) Broadcast(router core.Router, payload semtech.Payload) {
 	}
 
 	// Prepare ground to store brokers that are in charge
-	register := make(chan core.BrokerAddress, len(a.brokers))
+	register := make(chan core.BrokerAddress, len(broAddrs))
 	wg := sync.WaitGroup{}
-	wg.Add(len(a.brokers))
+	wg.Add(len(broAddrs))
 
 	client := http.Client{}
-	for _, addr := range a.brokers {
+	for _, addr := range broAddrs {
 		go func(addr core.BrokerAddress) {
 			defer wg.Done()
 
@@ -136,6 +121,7 @@ func (a *Adapter) Forward(router core.Router, payload semtech.Payload, broAddrs 
 	}
 }
 
+// post regroups some logic used in both Forward and Broadcast methods
 func post(client http.Client, url string, payload semtech.Payload) (*http.Response, error) {
 	data := new(bytes.Buffer)
 	rawJSON, err := json.Marshal(payload)
