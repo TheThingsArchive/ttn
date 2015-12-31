@@ -7,6 +7,7 @@ import (
 	"fmt"
 	. "github.com/smartystreets/goconvey/convey"
 	"github.com/thethingsnetwork/core/lorawan/semtech"
+	"io"
 	"testing"
 	"time"
 )
@@ -96,6 +97,16 @@ func TestForwarder(t *testing.T) {
 			So(err, ShouldNotBeNil)
 			So(fwd, ShouldBeNil)
 		})
+
+		Convey("Invalid: too many adapters", func() {
+			var adapters []io.ReadWriteCloser
+			for i := 0; i < 300; i += 1 {
+				adapters = append(adapters, newFakeAdapter(fmt.Sprintf("%d", i)))
+			}
+			fwd, err := NewForwarder(id, adapters...)
+			So(fwd, ShouldBeNil)
+			So(err, ShouldNotBeNil)
+		})
 	})
 
 	Convey("Forward", t, func() {
@@ -129,6 +140,14 @@ func TestForwarder(t *testing.T) {
 		Convey("Invalid: PUSH_ACK", checkInvalid(semtech.PUSH_ACK))
 		Convey("Invalid: PULL_ACK", checkInvalid(semtech.PULL_ACK))
 		Convey("Invalid: PULL_RESP", checkInvalid(semtech.PULL_RESP))
+		Convey("Invalid: wrong PUSH_DATA", func() {
+			pkt := generatePacket(semtech.PUSH_DATA, fwd.Id)
+			pkt.Token = []byte{0x14}
+			err := fwd.Forward(pkt)
+			So(err, ShouldNotBeNil)
+			So(len(a1.written), ShouldEqual, 0)
+			So(len(a2.written), ShouldEqual, 0)
+		})
 	})
 
 	Convey("Flush", t, func() {

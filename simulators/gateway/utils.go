@@ -18,12 +18,8 @@ func genToken() []byte {
 
 func ackToken(index int, packet semtech.Packet) [4]byte {
 	buf := new(bytes.Buffer)
-	var id byte
-	if err := binary.Write(buf, binary.LittleEndian, uint16(index)); err != nil {
-		id = 0xff
-	} else {
-		id = buf.Bytes()[0]
-	}
+	binary.Write(buf, binary.LittleEndian, uint16(index))
+	id := buf.Bytes()[0]
 
 	var kind byte
 	switch packet.Identifier {

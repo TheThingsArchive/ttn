@@ -8,11 +8,17 @@ mainly for testing and ensuring the correctness of other components.
 - [ ] Fake gateway
     - [x] Types, packages and data structures in use
     - [x] Emit udp packets towards a server
-    - [ ] Handle behavior described by the semtech protocol
+    - [x] Handle behavior described by the semtech protocol
     - [x] Serialize json rxpk/stat object(s) 
     - [x] Generate json rxpl/stat object(s)
-    - [ ] Simulate fake end-devices activity 
-    - [ ] Update gateway statistics accordingly
+    - [x] Update gateway statistics accordingly
+    - [ ] Load config from file or ENV
+    - [ ] Generate valid fake end-device packet
+    - [ ] Simulate fake end-devices traffic
+    - [ ] Complete tests set for stats functions
+    - [ ] Implements UDP ReadWriteCloser 
+    - [ ] Move existing fake ReadWriteCloser to a proper file with handy constructor
+
 
 ## Milestone 2
 Handle an uplink process that can forward packet coming from a gateway to a simple end-server
