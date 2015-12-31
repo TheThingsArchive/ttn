@@ -5,7 +5,9 @@ package router
 
 import (
 	"fmt"
+	"github.com/thethingsnetwork/core"
 	"github.com/thethingsnetwork/core/lorawan/semtech"
+	"sync"
 	"time"
 )
 
@@ -19,6 +21,7 @@ type reddisAddressKeeper struct{} // In a second time
 type localDB struct {
 	expiryDelay time.Duration
 	addresses   map[semtech.DeviceAddress]localEntry
+	lock        sync.RWMutex
 }
 
 type localEntry struct {
@@ -35,18 +38,23 @@ func NewLocalDB(expiryDelay time.Duration) (*localDB, error) {
 	return &localDB{
 		expiryDelay: expiryDelay,
 		addresses:   make(map[semtech.DeviceAddress]localEntry),
+		lock:        sync.RWMutex{},
 	}, nil
 }
 
 // lookup implements the addressKeeper interface
 func (a *localDB) lookup(devAddr semtech.DeviceAddress) ([]core.BrokerAddress, error) {
+	a.lock.RLock()
 	entry, ok := a.addresses[devAddr]
+	a.lock.RUnlock()
 	if !ok {
 		return nil, fmt.Errorf("Device address not found")
 	}
 
 	if entry.until.Before(time.Now()) {
+		a.lock.Lock()
 		delete(a.addresses, devAddr)
+		a.lock.Unlock()
 		return nil, fmt.Errorf("Broker address(es) expired")
 	}
 
@@ -55,8 +63,10 @@ func (a *localDB) lookup(devAddr semtech.DeviceAddress) ([]core.BrokerAddress, e
 
 // store implements the addressKeeper interface
 func (a *localDB) store(devAddr semtech.DeviceAddress, brosAddr ...core.BrokerAddress) error {
+	a.lock.Lock()
 	_, ok := a.addresses[devAddr]
 	if ok {
+		a.lock.Unlock()
 		return fmt.Errorf("An entry already exists for that device")
 	}
 
@@ -65,5 +75,6 @@ func (a *localDB) store(devAddr semtech.DeviceAddress, brosAddr ...core.BrokerAd
 		until: time.Now().Add(a.expiryDelay),
 	}
 
+	a.lock.Unlock()
 	return nil
 }

@@ -4,6 +4,8 @@
 package router
 
 import (
+	"bytes"
+	"encoding/binary"
 	"fmt"
 	. "github.com/smartystreets/goconvey/convey"
 	"github.com/thethingsnetwork/core"
@@ -13,7 +15,11 @@ import (
 )
 
 func genDevAddr() semtech.DeviceAddress {
-	return semtech.DeviceAddress(fmt.Sprintf("DeviceAddress%d", time.Now()))
+	devAddr := [4]byte{}
+	token := new(bytes.Buffer)
+	binary.Write(token, binary.LittleEndian, time.Now().UnixNano())
+	copy(devAddr[:], token.Bytes()[:4])
+	return devAddr
 }
 
 func genBroAddr() core.BrokerAddress {

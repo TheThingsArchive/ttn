@@ -8,6 +8,7 @@ package semtech
 
 import (
 	"encoding/base64"
+	"fmt"
 	"time"
 )
 
@@ -121,6 +122,33 @@ type Payload struct {
 	RXPK []RXPK `json:"rxpk,omitempty"` // A list of RXPK messages transmitted if any
 	Stat *Stat  `json:"stat,omitempty"` // A Stat message transmitted if any
 	TXPK *TXPK  `json:"txpk,omitempty"` // A TXPK message transmitted if any
+}
+
+// UniformDevAddr tries to extract a device address from the different part of a payload. If the
+// payload is composed of messages coming from several end-device, the method will fail.
+func (p Payload) UniformDevAddr() (*DeviceAddress, error) {
+	var devAddr *DeviceAddress
+
+	// Determine the devAddress associated to that payload
+	if p.RXPK == nil || len(p.RXPK) == 0 {
+		if p.TXPK == nil {
+			return nil, fmt.Errorf("Unable to determine device address. No RXPK neither TXPK messages")
+		}
+		if devAddr = p.TXPK.DevAddr(); devAddr == nil {
+			return nil, fmt.Errorf("Unable to determine device address from TXPK")
+		}
+
+	} else {
+		// We check them all to be sure, but all RXPK should refer to the same End-Device
+		for _, rxpk := range p.RXPK {
+			addr := rxpk.DevAddr()
+			if addr == nil || (devAddr != nil && *devAddr != *addr) {
+				return nil, fmt.Errorf("Payload is composed of messages from several end-devices")
+			}
+			devAddr = addr
+		}
+	}
+	return devAddr, nil
 }
 
 // Available packet commands

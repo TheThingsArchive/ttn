@@ -16,23 +16,20 @@ type Adapter struct {
 	conn   *net.UDPConn
 }
 
-// New constructs a new Gateway-Router-UDP adapter
-func New(router core.Router, port uint) (*Adapter, error) {
-	adapter := Adapter{
-		Logger: log.VoidLogger{},
+// Ack implements the core.Adapter interface. It expects only one param "port" as a
+// uint
+func (a *Adapter) Listen(router core.Router, options interface{}) error {
+	// Parse options
+	var port uint
+	switch options.(type) {
+	case uint:
+		port = options.(uint)
+	default:
+		return fmt.Errorf("Unreckognized options %+v\n", options)
+
 	}
 
-	// Connect to the router and start listening on the given port of the current machine
-	if err := adapter.Connect(router, port); err != nil {
-		return nil, err
-	}
-
-	// Return the adapter for further use
-	return &adapter, nil
-}
-
-// Ack implements the core.GatewayRouterAdapter interface
-func (a *Adapter) Connect(router core.Router, port uint) error {
+	// Create the udp connection and start listening with a goroutine
 	addr, err := net.ResolveUDPAddr("udp", fmt.Sprintf("0.0.0.0:%d", port))
 	if err != nil {
 		return err
@@ -80,7 +77,7 @@ func (a *Adapter) Ack(router core.Router, packet semtech.Packet, gateway core.Ga
 	}
 }
 
-// listen Handle incominng packets and forward them to the router
+// listen Handle incoming packets and forward them to the router
 func (a *Adapter) listen(router core.Router) {
 	for {
 		buf := make([]byte, 1024)
@@ -100,7 +97,7 @@ func (a *Adapter) listen(router core.Router) {
 		}
 
 		// When a packet is received pass it to the router for processing
-		router.HandleUplink(a, *pkt, core.GatewayAddress(addr.String()))
+		router.HandleUplink(*pkt, core.GatewayAddress(addr.String()))
 	}
 }
 
