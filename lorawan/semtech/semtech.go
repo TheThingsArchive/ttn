@@ -130,7 +130,7 @@ func (p Payload) UniformDevAddr() (*DeviceAddress, error) {
 	var devAddr *DeviceAddress
 
 	// Determine the devAddress associated to that payload
-	if p.RXPK == nil || len(p.RXPK) == 0 { // NOTE are those conditions significantly different ?
+	if p.RXPK == nil || len(p.RXPK) == 0 {
 		if p.TXPK == nil {
 			return nil, fmt.Errorf("Unable to determine device address. No RXPK neither TXPK messages")
 		}
