@@ -12,27 +12,50 @@ import (
 )
 
 const (
-	EXPIRY_DELAY = time.Hour * 8
+	EXPIRY_DELAY   = time.Hour * 8
+	UP_POOL_SIZE   = 1
+	DOWN_POOL_SIZE = 1
 )
 
+// Router represents a concrete router of TTN architecture. Use the New() method to create a new
+// one and then connect it to its adapters.
 type Router struct {
-	PortUDP       uint
-	PortHTTP      uint
-	Logger        log.Logger
-	addressKeeper addressKeeper
+	brokers       []core.BrokerAddress // Brokers known by the router
+	Logger        log.Logger           // Specify a logger for the router. NOTE Having this exported isn't thread-safe.
+	addressKeeper addressKeeper        // Local storage that maps end-device addresses to broker addresses
+	up            chan upMsg           // Internal communication channel which sends data to the up adapter
+	down          chan downMsg         // Internal communication channel which sends data to the down adapter
 }
 
-func New(portUDP, portHTTP uint) (*Router, error) {
+// upMsg materializes messages that flow along the up channel
+type upMsg struct {
+	packet  semtech.Packet      // The packet to transfer
+	gateway core.GatewayAddress // The recipient gateway to reach
+}
+
+// downMsg materializes messages that flow along the down channel
+type downMsg struct {
+	payload semtech.Payload      // The payload to transfer
+	brokers []core.BrokerAddress // The recipient broker to reach. If nil or empty, assume that all broker should be reached
+}
+
+// New constructs a Router and setup its internal structure
+func New(brokers ...core.BrokerAddress) (*Router, error) {
 	localDB, err := NewLocalDB(EXPIRY_DELAY)
 
 	if err != nil {
 		return nil, error
 	}
 
+	if len(brokers) == 0 {
+		return nil, fmt.Errorf("The router should be connected to at least one broker")
+	}
+
 	return &Router{
-		PortUDP:       portUDP,
-		PortHTTP:      portHTTP,
+		brokers:       brokers,
 		addressKeeper: localDB,
+		up:            make(chan upMsg),
+		down:          make(chan downMsg),
 		Logger:        log.VoidLogger{},
 	}, nil
 }
@@ -44,19 +67,25 @@ func (r *Router) HandleUplink(packet semtech.Packet, gateway core.GatewayAddress
 	switch packet.Identifier {
 	case semtech.PULL_DATA:
 		r.log("receives PULL_DATA, sending ack")
-		upAdapter.Ack(r, semtech.Packet{
-			Version:    semtech.VERSION,
-			Identifier: semtech.PULL_ACK,
-			Token:      packet.Token,
-		}, gateway)
+		r.up <- upMsg{
+			packet: semtech.Packet{
+				Version:    semtech.VERSION,
+				Identifier: semtech.PULL_ACK,
+				Token:      packet.Token,
+			},
+			gateway: gateway,
+		}
 	case semtech.PUSH_DATA:
 		// 1. Send an ack
 		r.log("receives PUSH_DATA, sending ack")
-		upAdapter.Ack(r, semtech.Packet{
-			Version:    semtech.VERSION,
-			Identifier: semtech.PUSH_ACK,
-			Token:      packet.Token,
-		}, gateway)
+		r.up <- upMsg{
+			packet: semtech.Packet{
+				Version:    semtech.VERSION,
+				Identifier: semtech.PUSH_ACK,
+				Token:      packet.Token,
+			},
+			gateway: gateway,
+		}
 
 		// 2. Determine payloads related to different end-devices present in the packet
 		// NOTE So far, Stats are ignored.
@@ -87,12 +116,15 @@ func (r *Router) HandleUplink(packet semtech.Packet, gateway core.GatewayAddress
 			brokers, err := r.addressKeeper.lookup(devAddr)
 			if err != nil {
 				r.log("Forward payload to known brokers %+v", payload)
-				downAdapter.Forward(router, payload, brokers...)
+				r.down <- downMsg{
+					payload: payload,
+					brokers: brokers,
+				}
 				continue
 			}
 
 			r.log("Broadcast payload to all brokers %+v", payload)
-			downAdapter.Broadcast(router, payload)
+			r.down <- downMsg{payload: payload}
 		}
 	default:
 		r.log("Unexpected packet receive from uplink %+v", packet)
@@ -123,6 +155,39 @@ func (r *Router) HandleError(err interface{}) {
 	case core.ErrUplink:
 	default:
 		fmt.Println(err) // Wow, much handling, very reliable
+	}
+}
+
+// Connect implements the core.Router interface
+func (r *Router) Connect(upAdapter core.GatewayRouterAdapter, downAdapter core.RouterBrokerAdapter) error {
+	r.ensure()
+
+	for i := 0; i < UP_POOL_SIZE; i += 1 {
+		go r.connectUpAdapter(upAdapter)
+	}
+
+	for i := 0; i < DOWN_POOL_SIZE; i += 1 {
+		go r.connectDownAdapter(downAdapter)
+	}
+
+	return nil
+}
+
+// Consume messages sent to r.up channel
+func (r *Router) connectUpAdapter(upAdapter core.GatewayRouterAdapter) {
+	for msg := range r.up {
+		upAdapter.Ack(r, msg.packet, msg.gateway)
+	}
+}
+
+// Consume messages sent to r.down channel
+func (r *Router) connectDownAdapter(downAdapter core.RouterBrokerAdapter) {
+	for msg := range r.down {
+		if len(msg.brokers) == 0 {
+			downAdapter.Broadcast(r, msg.payload, r.Brokers...)
+			continue
+		}
+		downAdapter.Forward(r, msg.payload, msg.Brokers...)
 	}
 }
 
