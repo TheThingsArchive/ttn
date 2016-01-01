@@ -1,0 +1,27 @@
+// Copyright © 2015 The Things Network
+// Use of this source code is governed by the MIT license that can be found in the LICENSE file.
+
+// package testing offers some handy methods to display check and cross symbols with colors in test
+// logs.
+package testing
+
+import (
+	"fmt"
+	"testing"
+)
+
+// Ok displays a green check symbol
+func Ok(t *testing.T) {
+	t.Log("\033[32;1m\u2714 ok\033[0m")
+}
+
+// Ko fails the test and display a red cross symbol
+func Ko(t *testing.T) {
+	t.Error("\033[31;1m\u2718 ko\033[0m")
+	t.Fail()
+}
+
+// Desc displays the provided description in cyan
+func Desc(t *testing.T, format string, a ...interface{}) {
+	t.Logf("\033[36m%s\033[0m", fmt.Sprintf(format, a...))
+}
