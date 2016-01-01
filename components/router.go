@@ -149,11 +149,6 @@ func (r *Router) HandleError(err interface{}) {
 	r.ensure()
 
 	switch err.(type) {
-	case core.ErrAck:
-	case core.ErrDownlink:
-	case core.ErrForward:
-	case core.ErrBroadcast:
-	case core.ErrUplink:
 	default:
 		fmt.Println(err) // Wow, much handling, very reliable
 	}
