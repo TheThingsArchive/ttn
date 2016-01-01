@@ -34,6 +34,9 @@ var ErrBadOptions error = fmt.Errorf("Unreckonized or invalid options")
 var ErrBadGatewayAddress error = fmt.Errorf("Invalid gateway address")
 var ErrMissingConnection error = fmt.Errorf("Can't proceed without establishing connection")
 var ErrInvalidPacket error = fmt.Errorf("Invalid semtech packet")
+var ErrInvalidPayload error = fmt.Errorf("Invalid semtech payload")
+var ErrBroadcast error = fmt.Errorf("Unable to broadcast the given payload")
+var ErrForward error = fmt.Errorf("Unable to forward the given payload")
 
 type Adapter interface {
 	// Establish the adapter connection, whatever protocol is being used.
@@ -47,9 +50,6 @@ type GatewayRouterAdapter interface {
 	Ack(router Router, packet Packet, gateway GatewayAddress) error
 }
 
-type ErrDownlink error
-type ErrForward error
-type ErrBroadcast error
 type RouterBrokerAdapter interface {
 	Adapter
 
