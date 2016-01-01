@@ -85,6 +85,7 @@ func (a *Adapter) Ack(router core.Router, packet semtech.Packet, gateway core.Ga
 // listen Handle incoming packets and forward them to the router
 func (a *Adapter) listen(router core.Router, conn *net.UDPConn) {
 	defer conn.Close()
+	a.log("Start listening on %s", conn.LocalAddr())
 	for {
 		buf := make([]byte, 1024)
 		n, addr, err := conn.ReadFromUDP(buf)
@@ -112,6 +113,7 @@ func (a *Adapter) monitorConnection(initConn *net.UDPConn) {
 	udpConn := initConn
 	for msg := range a.conn {
 		if msg.conn != nil { // Change the connection
+			a.log("Switch UDP connection")
 			udpConn.Close()
 			udpConn = msg.conn
 		}
