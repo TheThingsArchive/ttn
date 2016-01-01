@@ -74,6 +74,7 @@ func (test packetProcessingTest) run(t *testing.T) {
 	Desc(t, "Simulate incoming datagram: %+v", test.in)
 	adapter, router := generateAdapterAndRouter(t)
 	conn, gateway := createConnection(&adapter, router, test.port)
+	defer conn.Close()
 	sendDatagram(conn, test.in)
 	test.check(t, router, gateway) // Check whether or not packet has been forwarded to core router
 }
