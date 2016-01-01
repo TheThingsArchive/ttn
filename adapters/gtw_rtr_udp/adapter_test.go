@@ -45,8 +45,7 @@ func (test listenOptionsTest) run(t *testing.T) {
 func (test listenOptionsTest) check(t *testing.T, got error) {
 	// 1. Check if errors match
 	if got != test.want {
-		t.Errorf("expected {%v} to be {%v}\n", got, test.want)
-		Ko(t)
+		Ko(t, "expected {%v} to be {%v}", got, test.want)
 		return
 	}
 	Ok(t)
@@ -86,16 +85,14 @@ func (test packetProcessingTest) check(t *testing.T, router core.Router, gateway
 	// 1. Check if we expect a packet
 	packets := mockRouter.Packets[gateway]
 	if nb := len(packets); uint(nb) != test.want {
-		t.Errorf("Received %d packets whereas expected %d", nb, test.want)
-		Ko(t)
+		Ko(t, "Received %d packets whereas expected %d", nb, test.want)
 		return
 	}
 
 	// 2. If a packet was expected, check that it has been forwarded to the router
 	if test.want > 0 {
 		if !reflect.DeepEqual(packets[0], test.in) {
-			t.Errorf("Expected %+v to match %+v", packets[0], test.in)
-			Ko(t)
+			Ko(t, "Expected %+v to match %+v", packets[0], test.in)
 			return
 		}
 	}
@@ -146,8 +143,7 @@ func (test sendAckTest) check(t *testing.T, cmsg chan semtech.Packet, got error)
 	// 1. Check if an error was expected
 	if test.want != nil {
 		if got != test.want {
-			t.Errorf("Expected %+v error but got %+v", test.want, got)
-			Ko(t)
+			Ko(t, "Expected %+v error but got %+v", test.want, got)
 			return
 		}
 		Ok(t)
@@ -157,8 +153,7 @@ func (test sendAckTest) check(t *testing.T, cmsg chan semtech.Packet, got error)
 	// 2. Ensure the ack packet has been sent correctly
 	packet := <-cmsg
 	if !reflect.DeepEqual(test.packet, packet) {
-		t.Errorf("Expected %+v to equal %+v", test.packet, packet)
-		Ko(t)
+		Ko(t, "Expected %+v to equal %+v", test.packet, packet)
 		return
 	}
 	Ok(t)
@@ -173,16 +168,14 @@ func TestConnectionRecovering(t *testing.T) {
 	err := adapter.Listen(router, uint(3005))
 
 	if err != nil {
-		t.Errorf("No error was expected but got: %+v", err)
-		Ko(t)
+		Ko(t, "No error was expected but got: %+v", err)
 		return
 	}
 
 	// Now try to send a packet on a switched connection
 	err = adapter.Ack(router, generatePUSH_ACK(), core.GatewayAddress("0.0.0.0:3005"))
 	if err != nil {
-		t.Errorf("No error was expected but got: %+v", err)
-		Ko(t)
+		Ko(t, "No error was expected but got: %+v", err)
 		return
 	}
 

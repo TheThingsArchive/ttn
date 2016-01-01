@@ -16,8 +16,8 @@ func Ok(t *testing.T) {
 }
 
 // Ko fails the test and display a red cross symbol
-func Ko(t *testing.T) {
-	t.Error("\033[31;1m\u2718 ko\033[0m")
+func Ko(t *testing.T, format string, a ...interface{}) {
+	t.Errorf("\033[31;1m\u2718 ko | \033[0m\033[31m%s\033[0m", fmt.Sprintf(format, a...))
 	t.Fail()
 }
 
