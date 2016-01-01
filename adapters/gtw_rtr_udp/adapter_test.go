@@ -73,7 +73,8 @@ type packetProcessingTest struct {
 func (test packetProcessingTest) run(t *testing.T) {
 	Desc(t, "Simulate incoming datagram: %+v", test.in)
 	adapter, router := generateAdapterAndRouter(t)
-	gateway := listenAndSend(adapter, router, test.port, test.in)
+	conn, gateway := listen(adapter, router, test.port)
+	send(conn, test.in)
 	test.check(t, router, gateway) // Check whether or not packet has been forwarded to core router
 }
 
@@ -121,7 +122,7 @@ func generatePUSH_DATA() semtech.Packet {
 }
 
 // ----- Operate Utilities
-func listenAndSend(adapter Adapter, router core.Router, port uint, data interface{}) core.GatewayAddress {
+func listen(adapter Adapter, router core.Router, port uint) (*net.UDPConn, core.GatewayAddress) {
 	var err error
 
 	// 1. Start the adapter watching procedure
@@ -139,8 +140,14 @@ func listenAndSend(adapter Adapter, router core.Router, port uint, data interfac
 		panic(err)
 	}
 
-	// 3. Send the packet or the raw sequence of bytes passed as argument
+	// 3. Return the UDP connection and the corresponding simulated gateway address
+	return conn, core.GatewayAddress(conn.LocalAddr().String())
+}
+
+func send(conn *net.UDPConn, data interface{}) {
+	// 1. Send the packet or the raw sequence of bytes passed as argument
 	var raw []byte
+	var err error
 	switch data.(type) {
 	case []byte:
 		raw = data.([]byte)
@@ -154,7 +161,4 @@ func listenAndSend(adapter Adapter, router core.Router, port uint, data interfac
 	if _, err = conn.Write(raw); err != nil {
 		panic(err)
 	}
-
-	// 4. Return the connection address which simulates a gateway
-	return core.GatewayAddress(conn.LocalAddr().String())
 }
