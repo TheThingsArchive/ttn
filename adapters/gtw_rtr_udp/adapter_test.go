@@ -20,7 +20,7 @@ import (
 func TestListenOptions(t *testing.T) {
 	tests := []listenOptionsTest{
 		{uint(3000), nil},
-		{uint(3000), core.ErrBadOptions}, // Already used now
+		{uint(3000), core.ErrBadGatewayAddress}, // Already used now
 		{int(14), core.ErrBadOptions},
 		{"somethingElse", core.ErrBadOptions},
 	}

@@ -13,11 +13,17 @@ import (
 
 type Adapter struct {
 	Logger log.Logger
-	conn   *net.UDPConn
+	conn   chan udpMsg
 }
 
-// Ack implements the core.Adapter interface. It expects only one param "port" as a
-// uint
+type udpMsg struct {
+	addr *net.UDPAddr
+	raw  []byte
+	conn *net.UDPConn
+}
+
+// Listen implements the core.Adapter interface. It expects only one param "port" as a
+// uint. Listen can be called several times to re-establish a lost connection.
 func (a *Adapter) Listen(router core.Router, options interface{}) error {
 	// Parse options
 	var port uint
@@ -30,21 +36,30 @@ func (a *Adapter) Listen(router core.Router, options interface{}) error {
 	}
 
 	// Create the udp connection and start listening with a goroutine
+	var udpConn *net.UDPConn
 	addr, err := net.ResolveUDPAddr("udp", fmt.Sprintf("0.0.0.0:%d", port))
-	if a.conn, err = net.ListenUDP("udp", addr); err != nil {
+	if udpConn, err = net.ListenUDP("udp", addr); err != nil {
 		a.log("Unable to establish the connection: %v", err)
-		return core.ErrBadOptions
+		return core.ErrBadGatewayAddress
 	}
-	go a.listen(router) // NOTE: There is no way to stop properly the adapter and thus this goroutine for now.
+	go a.listen(router, udpConn) // Terminates when the connection is closed
+
+	// Create the connection channel
+	if a.conn == nil {
+		a.conn = make(chan udpMsg)
+		go a.monitorConnection(udpConn) // Terminates that goroutine by closing the channel
+	} else {
+		a.conn <- udpMsg{conn: udpConn}
+	}
+
 	return nil
 }
 
 // Ack implements the core.GatewayRouterAdapter interface
-func (a *Adapter) Ack(router core.Router, packet semtech.Packet, gateway core.GatewayAddress) {
+func (a *Adapter) Ack(router core.Router, packet semtech.Packet, gateway core.GatewayAddress) error {
 	if a.conn == nil {
-		a.log("Connection not established. Connect the adaptor first.")
-		router.HandleError(core.ErrAck(fmt.Errorf("Connection not established. Connect the adaptor first.")))
-		return
+		a.log("Trying to Ack on non-established connection")
+		return core.ErrMissingConnection
 	}
 
 	a.log("Acks packet %+v", packet)
@@ -52,51 +67,62 @@ func (a *Adapter) Ack(router core.Router, packet semtech.Packet, gateway core.Ga
 	addr, err := net.ResolveUDPAddr("udp", string(gateway))
 
 	if err != nil {
-		a.log("Unable to retrieve gateway address")
-		router.HandleError(core.ErrAck(err))
-		return
+		a.log("Unable to retrieve gateway address: %+v", err)
+		return core.ErrBadGatewayAddress
 	}
 
 	raw, err := semtech.Marshal(packet)
 
 	if err != nil {
-		a.log("Unable to marshal given packet")
-		router.HandleError(core.ErrAck(err))
-		return
+		a.log("Unable to marshal given packet: %+v", err)
+		return core.ErrInvalidPacket
 	}
 
-	_, err = a.conn.WriteToUDP(raw, addr)
-
-	if err != nil {
-		a.log("Unable to send udp message")
-		router.HandleError(core.ErrAck(err))
-		return
-	}
+	a.conn <- udpMsg{raw: raw, addr: addr}
+	return nil
 }
 
 // listen Handle incoming packets and forward them to the router
-func (a *Adapter) listen(router core.Router) {
-	defer a.conn.Close()
+func (a *Adapter) listen(router core.Router, conn *net.UDPConn) {
+	defer conn.Close()
 	for {
 		buf := make([]byte, 1024)
-		n, addr, err := a.conn.ReadFromUDP(buf)
-		if err != nil {
+		n, addr, err := conn.ReadFromUDP(buf)
+		if err != nil { // Problem with the connection
 			a.log("Error: %v", err)
-			go router.HandleError(core.ErrUplink(err))
-			continue
+			go router.HandleError(core.ErrMissingConnection)
+			return
 		}
 		a.log("Incoming datagram %x", buf[:n])
 
 		pkt, err := semtech.Unmarshal(buf[:n])
 		if err != nil {
 			a.log("Error: %v", err)
-			go router.HandleError(core.ErrUplink(err))
+			go router.HandleError(core.ErrInvalidPacket)
 			continue
 		}
 
 		// When a packet is received pass it to the router for processing
 		router.HandleUplink(*pkt, core.GatewayAddress(addr.String()))
 	}
+}
+
+// monitorConnection manages udpConnection of the adapter and send message through that connection
+func (a *Adapter) monitorConnection(initConn *net.UDPConn) {
+	udpConn := initConn
+	for msg := range a.conn {
+		if msg.conn != nil { // Change the connection
+			udpConn.Close()
+			udpConn = msg.conn
+		}
+
+		if msg.raw != nil { // Send the given udp message
+			if _, err := udpConn.WriteToUDP(msg.raw, msg.addr); err != nil {
+				a.log("Unable to send udp message: %+v", err)
+			}
+		}
+	}
+	udpConn.Close() // Make sure we close the connection before leaving
 }
 
 // log is nothing more than a shortcut / helper to access the logger
