@@ -4,6 +4,7 @@
 package core
 
 import (
+	"fmt"
 	. "github.com/thethingsnetwork/core/lorawan/semtech"
 )
 
@@ -31,6 +32,8 @@ type Router interface {
 // each error type.
 type ErrUplink error
 type ErrAck error
+
+var ErrBadOptions error = fmt.Errorf("Unreckonized or invalid options")
 
 type Adapter interface {
 	// Establish the adapter connection, whatever protocol is being used.
