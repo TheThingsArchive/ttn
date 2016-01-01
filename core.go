@@ -44,7 +44,7 @@ type GatewayRouterAdapter interface {
 	Adapter
 	// Ack allows the router to send back a response to a gateway. The name of the method is quite a
 	// bad call and will probably change soon.
-	Ack(router Router, packet Packet, gateway GatewayAddress)
+	Ack(router Router, packet Packet, gateway GatewayAddress) error
 }
 
 type ErrDownlink error
@@ -57,10 +57,10 @@ type RouterBrokerAdapter interface {
 	//
 	// We assume that broadcast is also registering a device address towards the router depending
 	// on the brokers responses.
-	Broadcast(router Router, payload Payload, broAddrs ...BrokerAddress)
+	Broadcast(router Router, payload Payload, broAddrs ...BrokerAddress) error
 
 	// Forward is an explicit forwarding of a packet which is known being handled by a set of
 	// brokers. None of the contacted broker is supposed to reject the incoming payload; They all
 	// ave been queried before and are known as dedicated brokers for the related end-device.
-	Forward(router Router, payload Payload, broAddrs ...BrokerAddress)
+	Forward(router Router, payload Payload, broAddrs ...BrokerAddress) error
 }
