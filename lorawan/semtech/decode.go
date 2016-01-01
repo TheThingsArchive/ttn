@@ -86,12 +86,8 @@ func (d *datrparser) UnmarshalJSON(raw []byte) error {
 // UnmarshalJSON implements the Unmarshaler interface from encoding/json
 func (p *Payload) UnmarshalJSON(raw []byte) error {
 	proxy := payloadProxy{
-		ProxStat: &statProxy{
-			Stat: new(Stat),
-		},
-		ProxTXPK: &txpkProxy{
-			TXPK: new(TXPK),
-		},
+		ProxStat: &statProxy{},
+		ProxTXPK: &txpkProxy{},
 	}
 
 	if err := json.Unmarshal(raw, &proxy); err != nil {
