@@ -118,7 +118,7 @@ func (a *Adapter) Forward(router core.Router, payload semtech.Payload, broAddrs 
 			// from the broker to handle packets or anything else ? Is it efficient ? Should
 			// downlinks packets be sent back with the HTTP body response ? Its a 2 seconds frame...
 
-		}(string(addr))
+		}(fmt.Sprintf("http://%s", string(addr)))
 	}
 
 	return nil
