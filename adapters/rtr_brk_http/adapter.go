@@ -27,17 +27,17 @@ func (a *Adapter) Listen(router core.Router, options interface{}) error {
 }
 
 // Broadcast implements the core.BrokerRouter interface
-func (a *Adapter) Broadcast(router core.Router, payload semtech.Payload, broAddrs ...core.BrokerAddress) {
+func (a *Adapter) Broadcast(router core.Router, payload semtech.Payload, broAddrs ...core.BrokerAddress) error {
 	// Determine the devAddress associated to that payload
 	if payload.RXPK == nil || len(payload.RXPK) == 0 { // NOTE are those conditions significantly different ?
-		router.HandleError(core.ErrBroadcast(fmt.Errorf("Cannot broadcast given payload: %+v", payload)))
-		return
+		a.log("Cannot broadcast given payload: %+v", payload)
+		return core.ErrInvalidPayload
 	}
 
 	devAddr, err := payload.UniformDevAddr()
 	if err != nil {
-		router.HandleError(core.ErrBroadcast(fmt.Errorf("Cannot broadcast given payload: %+v, %+v", payload, err)))
-		return
+		a.log("Cannot broadcast given payload: %+v", payload)
+		return core.ErrInvalidPayload
 	}
 
 	// Prepare ground to store brokers that are in charge
@@ -54,7 +54,7 @@ func (a *Adapter) Broadcast(router core.Router, payload semtech.Payload, broAddr
 
 			if err != nil {
 				a.log("Unable to send POST request %+v", err)
-				router.HandleError(core.ErrBroadcast(err))
+				router.HandleError(core.ErrBroadcast) // NOTE Mote information should be sent
 				return
 			}
 
@@ -68,7 +68,7 @@ func (a *Adapter) Broadcast(router core.Router, payload semtech.Payload, broAddr
 				a.log("Broker %+v does not handle packets coming from %+v", addr, devAddr)
 			default:
 				a.log("Unexpected answer from the broker %+v", err)
-				router.HandleError(core.ErrBroadcast(err))
+				router.HandleError(core.ErrBroadcast) // NOTE More information should be sent
 			}
 		}(addr)
 	}
@@ -84,18 +84,25 @@ func (a *Adapter) Broadcast(router core.Router, payload semtech.Payload, broAddr
 			router.RegisterDevice(*devAddr, brokers...)
 		}
 	}()
+
+	return nil
 }
 
 // Forward implements the core.BrokerRouter interface
-func (a *Adapter) Forward(router core.Router, payload semtech.Payload, broAddrs ...core.BrokerAddress) {
+func (a *Adapter) Forward(router core.Router, payload semtech.Payload, broAddrs ...core.BrokerAddress) error {
+	if payload.RXPK == nil || len(payload.RXPK) == 0 { // NOTE are those conditions significantly different ?
+		a.log("Cannot broadcast given payload: %+v", payload)
+		return core.ErrInvalidPayload
+	}
 	client := http.Client{}
 	for _, addr := range broAddrs {
 		go func(url string) {
+			a.log("Send payload to %s", url)
 			resp, err := post(client, url, payload)
 
 			if err != nil {
 				a.log("Unable to send POST request %+v", err)
-				router.HandleError(core.ErrForward(err))
+				router.HandleError(core.ErrForward) // NOTE More information should be sent
 				return
 			}
 
@@ -103,7 +110,7 @@ func (a *Adapter) Forward(router core.Router, payload semtech.Payload, broAddrs 
 
 			if resp.StatusCode != http.StatusOK {
 				a.log("Unexpected answer from the broker %+v", err)
-				router.HandleError(core.ErrForward(err))
+				router.HandleError(core.ErrForward) // NOTE More information should be sent
 				return
 			}
 
@@ -113,6 +120,8 @@ func (a *Adapter) Forward(router core.Router, payload semtech.Payload, broAddrs 
 
 		}(string(addr))
 	}
+
+	return nil
 }
 
 // post regroups some logic used in both Forward and Broadcast methods
