@@ -164,6 +164,31 @@ func (test sendAckTest) check(t *testing.T, cmsg chan semtech.Packet, got error)
 	Ok(t)
 }
 
+// ----- In case of issue, the connection can be re-established
+func TestConnectionRecovering(t *testing.T) {
+	adapter, router := generateAdapterAndRouter(t)
+	if err := adapter.Listen(router, uint(3004)); err != nil {
+		panic(err)
+	}
+	err := adapter.Listen(router, uint(3005))
+
+	if err != nil {
+		t.Errorf("No error was expected but got: %+v", err)
+		Ko(t)
+		return
+	}
+
+	// Now try to send a packet on a switched connection
+	err = adapter.Ack(router, generatePUSH_ACK(), core.GatewayAddress("0.0.0.0:3005"))
+	if err != nil {
+		t.Errorf("No error was expected but got: %+v", err)
+		Ko(t)
+		return
+	}
+
+	Ok(t)
+}
+
 // ----- Build Utilities
 func generateAdapterAndRouter(t *testing.T) (Adapter, core.Router) {
 	return Adapter{
