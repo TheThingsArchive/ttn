@@ -56,7 +56,7 @@ func (test listenOptionsTest) check(t *testing.T, got error) {
 func TestPacketProcessing(t *testing.T) {
 	tests := []packetProcessingTest{
 		{generatePUSH_DATA(), 1, 3001},
-		{[]byte{0x14, 0xff}, 0, 3003},
+		{[]byte{0x14, 0xff}, 0, 3002},
 	}
 
 	for _, test := range tests {
@@ -73,8 +73,8 @@ type packetProcessingTest struct {
 func (test packetProcessingTest) run(t *testing.T) {
 	Desc(t, "Simulate incoming datagram: %+v", test.in)
 	adapter, router := generateAdapterAndRouter(t)
-	conn, gateway := listen(adapter, router, test.port)
-	send(conn, test.in)
+	conn, gateway := createConnection(&adapter, router, test.port)
+	sendDatagram(conn, test.in)
 	test.check(t, router, gateway) // Check whether or not packet has been forwarded to core router
 }
 
@@ -102,6 +102,67 @@ func (test packetProcessingTest) check(t *testing.T, router core.Router, gateway
 	Ok(t)
 }
 
+// ----- The adapter should send packet via back to an existing address through an opened connection
+func TestSendAck(t *testing.T) {
+	// 1. Initialize test data
+	adapter, router := generateAdapterAndRouter(t)
+	adapter2, router2 := generateAdapterAndRouter(t)
+	conn, gateway := createConnection(&adapter, router, 3003)
+	defer conn.Close()
+
+	tests := []sendAckTest{
+		{adapter, router, conn, gateway, generatePUSH_ACK(), nil},
+		{adapter, router, conn, core.GatewayAddress("patate"), generatePUSH_ACK(), core.ErrBadGatewayAddress},
+		{adapter, router, conn, gateway, semtech.Packet{}, core.ErrInvalidPacket},
+		{adapter2, router2, nil, gateway, generatePUSH_ACK(), core.ErrMissingConnection},
+	}
+
+	// 2. Run tests
+	for _, test := range tests {
+		test.run(t)
+	}
+}
+
+type sendAckTest struct {
+	adapter Adapter
+	router  core.Router
+	conn    *net.UDPConn
+	gateway core.GatewayAddress
+	packet  semtech.Packet
+	want    error
+}
+
+func (test sendAckTest) run(t *testing.T) {
+	Desc(t, "Send ack packet %v to %v via %v", test.packet, test.conn, test.gateway)
+	// Starts a goroutine that will redirect udp message to a dedicated channel
+	cmsg := listenFromConnection(test.conn)
+	defer close(cmsg)
+	got := test.adapter.Ack(test.router, test.packet, test.gateway)
+	test.check(t, cmsg, got) // Check the error or the packet if no error
+}
+
+func (test sendAckTest) check(t *testing.T, cmsg chan semtech.Packet, got error) {
+	// 1. Check if an error was expected
+	if test.want != nil {
+		if got != test.want {
+			t.Errorf("Expected %+v error but got %+v", test.want, got)
+			Ko(t)
+			return
+		}
+		Ok(t)
+		return
+	}
+
+	// 2. Ensure the ack packet has been sent correctly
+	packet := <-cmsg
+	if !reflect.DeepEqual(test.packet, packet) {
+		t.Errorf("Expected %+v to equal %+v", test.packet, packet)
+		Ko(t)
+		return
+	}
+	Ok(t)
+}
+
 // ----- Build Utilities
 func generateAdapterAndRouter(t *testing.T) (Adapter, core.Router) {
 	return Adapter{
@@ -121,8 +182,16 @@ func generatePUSH_DATA() semtech.Packet {
 	}
 }
 
+func generatePUSH_ACK() semtech.Packet {
+	return semtech.Packet{
+		Version:    semtech.VERSION,
+		Token:      []byte{0x14, 0x42},
+		Identifier: semtech.PUSH_ACK,
+	}
+}
+
 // ----- Operate Utilities
-func listen(adapter Adapter, router core.Router, port uint) (*net.UDPConn, core.GatewayAddress) {
+func createConnection(adapter *Adapter, router core.Router, port uint) (*net.UDPConn, core.GatewayAddress) {
 	var err error
 
 	// 1. Start the adapter watching procedure
@@ -144,7 +213,7 @@ func listen(adapter Adapter, router core.Router, port uint) (*net.UDPConn, core.
 	return conn, core.GatewayAddress(conn.LocalAddr().String())
 }
 
-func send(conn *net.UDPConn, data interface{}) {
+func sendDatagram(conn *net.UDPConn, data interface{}) {
 	// 1. Send the packet or the raw sequence of bytes passed as argument
 	var raw []byte
 	var err error
@@ -161,4 +230,30 @@ func send(conn *net.UDPConn, data interface{}) {
 	if _, err = conn.Write(raw); err != nil {
 		panic(err)
 	}
+}
+
+func listenFromConnection(conn *net.UDPConn) (cmsg chan semtech.Packet) {
+	cmsg = make(chan semtech.Packet)
+
+	// We won't listen on a nil connection
+	if conn == nil {
+		return
+	}
+
+	// Otherwise, wait for a packet
+	go func() {
+		for {
+			buf := make([]byte, 128)
+			n, err := conn.Read(buf)
+			if err != nil {
+				return
+			}
+			packet, err := semtech.Unmarshal(buf[:n])
+			if err == nil {
+				cmsg <- *packet
+			}
+		}
+	}()
+
+	return
 }
