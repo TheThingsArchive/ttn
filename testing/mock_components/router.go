@@ -17,9 +17,9 @@ type Router struct {
 	Devices  map[semtech.DeviceAddress][]core.BrokerAddress
 }
 
-// New constructs a mock Router; This method is a shortcut that creates all the internal maps.
-func New() Router {
-	return Router{
+// NewRouter constructs a mock Router; This method is a shortcut that creates all the internal maps.
+func NewRouter() *Router {
+	return &Router{
 		Packets:  make(map[core.GatewayAddress][]semtech.Packet),
 		Payloads: make(map[core.BrokerAddress][]semtech.Payload),
 		Devices:  make(map[semtech.DeviceAddress][]core.BrokerAddress),
