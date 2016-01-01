@@ -12,14 +12,14 @@ import (
 )
 
 type Adapter struct {
-	Logger log.Logger
-	conn   chan udpMsg
+	Logger log.Logger  // A custom logger used to report errors
+	conn   chan udpMsg // An internal communication channel use to send udp datagram through a valid connection
 }
 
 type udpMsg struct {
-	addr *net.UDPAddr
-	raw  []byte
-	conn *net.UDPConn
+	addr *net.UDPAddr // The target gateway address targetted
+	raw  []byte       // The raw byte sequence that has to be sent
+	conn *net.UDPConn // Provide if you intent to change the current adapter connection
 }
 
 // Listen implements the core.Adapter interface. It expects only one param "port" as a
