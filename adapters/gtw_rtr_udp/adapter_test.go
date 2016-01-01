@@ -11,10 +11,11 @@ import (
 	"testing"
 )
 
-// ----- func (a *Adapter) Listen(router core.Router, options interface{}) error
+// ----- The adapter should be able to create a udp connection given a valid udp port
 func TestListenOptions(t *testing.T) {
 	tests := []listenOptionsTest{
 		{uint(3000), nil},
+		{uint(3000), core.ErrBadOptions}, // Already used now
 		{int(14), core.ErrBadOptions},
 		{"somethingElse", core.ErrBadOptions},
 	}
@@ -33,16 +34,16 @@ func (test listenOptionsTest) run(t *testing.T) {
 	Desc(t, "Run Listen(router, %T %v)", test.options, test.options)
 	adapter, router := generateAdapterAndRouter(t)
 	got := adapter.Listen(router, test.options)
-	test.check(t, got)
+	test.check(t, got) // Check if errors match
 }
 
 func (test listenOptionsTest) check(t *testing.T, got error) {
 	if got != test.want {
 		t.Errorf("expected {%v} to be {%v}\n", got, test.want)
-		KO(t)
+		Ko(t)
 		return
 	}
-	OK(t)
+	Ok(t)
 }
 
 // ----- Build Utilities
