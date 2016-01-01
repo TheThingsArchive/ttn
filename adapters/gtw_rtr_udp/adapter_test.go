@@ -39,10 +39,11 @@ func (test listenOptionsTest) run(t *testing.T) {
 	Desc(t, "Run Listen(router, %T %v)", test.options, test.options)
 	adapter, router := generateAdapterAndRouter(t)
 	got := adapter.Listen(router, test.options)
-	test.check(t, got) // Check if errors match
+	test.check(t, got)
 }
 
 func (test listenOptionsTest) check(t *testing.T, got error) {
+	// 1. Check if errors match
 	if got != test.want {
 		t.Errorf("expected {%v} to be {%v}\n", got, test.want)
 		Ko(t)
