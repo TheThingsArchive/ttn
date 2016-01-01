@@ -7,6 +7,7 @@ package pointer
 import (
 	"fmt"
 	"reflect"
+	"strings"
 	"time"
 )
 
@@ -62,6 +63,10 @@ func DumpPStruct(s interface{}) {
 	}
 
 	for k := 0; k < v.NumField(); k += 1 {
+		name := v.Type().Field(k).Name
+		if name[0] == strings.ToLower(name)[0] { // Unexported field
+			continue
+		}
 		i := v.Field(k).Interface()
 		fmt.Printf("%v: ", v.Type().Field(k).Name)
 
