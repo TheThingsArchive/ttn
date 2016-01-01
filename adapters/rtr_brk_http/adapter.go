@@ -23,7 +23,6 @@ type Adapter struct {
 
 // Listen implements the core.Adapter interface
 func (a *Adapter) Listen(router core.Router, options interface{}) error {
-	a.log("Connects to router %+v", router)
 	return nil
 }
 
