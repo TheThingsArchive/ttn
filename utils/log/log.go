@@ -7,6 +7,7 @@ package log
 
 import (
 	"fmt"
+	"testing"
 )
 
 // Logger is a minimalist interface to represent logger
@@ -21,8 +22,20 @@ type DebugLogger struct {
 
 // Log implements the Logger interface
 func (l DebugLogger) Log(format string, a ...interface{}) {
-	fmt.Printf("[ %v ]  ", l.Tag)
+	fmt.Printf("\033[33m[ %s ]\033[0m ", l.Tag) // Tag printed in yellow
 	fmt.Printf(format, a...)
+	fmt.Print("\n")
+}
+
+// TestLogger can be used in a test environnement to display log only on failure
+type TestLogger struct {
+	Tag string
+	T   *testing.T
+}
+
+// Log implements the Logger interface
+func (l TestLogger) Log(format string, a ...interface{}) {
+	l.T.Logf("\033[33m[ %s ]\033[0m %s", l.Tag, fmt.Sprintf(format, a...)) // Tag printed in yellow
 }
 
 // VoidLogger can be used to deactivate logs by displaying nothing
