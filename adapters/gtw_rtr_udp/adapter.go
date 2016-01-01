@@ -25,18 +25,15 @@ func (a *Adapter) Listen(router core.Router, options interface{}) error {
 	case uint:
 		port = options.(uint)
 	default:
-		return fmt.Errorf("Unreckognized options %+v\n", options)
-
+		a.log("Invalid option provided: %+v", options)
+		return core.ErrBadOptions
 	}
 
 	// Create the udp connection and start listening with a goroutine
 	addr, err := net.ResolveUDPAddr("udp", fmt.Sprintf("0.0.0.0:%d", port))
-	if err != nil {
-		return err
-	}
-	a.conn, err = net.ListenUDP("udp", addr)
-	if err != nil {
-		return err
+	if a.conn, err = net.ListenUDP("udp", addr); err != nil {
+		a.log("Unable to establish the connection: %v", err)
+		return core.ErrBadOptions
 	}
 	go a.listen(router) // NOTE: There is no way to stop properly the adapter and thus this goroutine for now.
 	return nil
@@ -79,6 +76,7 @@ func (a *Adapter) Ack(router core.Router, packet semtech.Packet, gateway core.Ga
 
 // listen Handle incoming packets and forward them to the router
 func (a *Adapter) listen(router core.Router) {
+	defer a.conn.Close()
 	for {
 		buf := make([]byte, 1024)
 		n, addr, err := a.conn.ReadFromUDP(buf)
