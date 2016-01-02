@@ -22,12 +22,14 @@ type udpMsg struct {
 	conn *net.UDPConn // Provide if you intent to change the current adapter connection
 }
 
+// NewAdapter constructs a gateway <-> router udp adapter
 func NewAdapter() Adapter {
 	a := Adapter{conn: make(chan udpMsg)}
 	go a.monitorConnection() // Terminates that goroutine by closing the channel
 	return a
 }
 
+// ok controls whether or not the adapter has been initialized via NewAdapter()
 func (a *Adapter) ok() bool {
 	return a != nil && a.conn != nil
 }
