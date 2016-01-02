@@ -21,7 +21,7 @@ import (
 
 // ----- The adapter can be created and listen straigthforwardly
 func TestListenOptionsTest(t *testing.T) {
-	adapter, router := generateAdapterAndRouter(t)
+	adapter, router := genAdapterAndRouter(t)
 
 	Desc(t, "Listen to adapter")
 	if err := adapter.Listen(router, nil); err != nil {
@@ -34,8 +34,9 @@ func TestListenOptionsTest(t *testing.T) {
 // ----- The adapter should forward a payload to a set of brokers
 func TestForwardPayload(t *testing.T) {
 	tests := []forwardPayloadTest{
-		{generateValidPayload(), generateBrokers([]int{200, 200}), nil},
-		{generateInvalidPayload(), generateBrokers([]int{200}), core.ErrInvalidPayload},
+		{genValidPayload(), genBrokers([]int{200}), nil},
+		{genValidPayload(), genBrokers([]int{200, 200}), nil},
+		{genInvalidPayload(), nil, core.ErrInvalidPayload},
 	}
 
 	for _, test := range tests {
@@ -50,58 +51,68 @@ type forwardPayloadTest struct {
 }
 
 func (test forwardPayloadTest) run(t *testing.T) {
+	//Describe
 	Desc(t, "Forward %v to %v", test.payload, test.brokers)
-	adapter, router := generateAdapterAndRouter(t)
+
+	// Build
+	adapter, router := genAdapterAndRouter(t)
+	adapter.Listen(router, toBrokerAddrs(test.brokers))
 	cmsg := listenHTTP(t, test.brokers)
+
+	// Operate
 	<-time.After(time.Millisecond * 250)
 	got := adapter.Forward(router, test.payload, toBrokerAddrs(test.brokers)...)
-	test.check(t, cmsg, got)
+
+	// Check
+	<-time.After(time.Millisecond * 250)
+	checkErrors(t, test.want, got)
+	checkReception(t, len(test.brokers), test.payload, cmsg)
 }
 
-func (test forwardPayloadTest) check(t *testing.T, cmsg chan semtech.Payload, got error) {
-	<-time.After(time.Millisecond * 500)
-
-	// Check for the error
-	if test.want != nil {
-		if test.want != got {
-			Ko(t, "Expected error %v but got %v", test.want, got)
-			return
-		}
-		Ok(t)
-		return
+// ----- The adapter should broadcast a payload to a set of broker
+func TestBroadcastPayload(t *testing.T) {
+	tests := []broadcastPayloadTest{
+		{genValidPayload(), genBrokers([]int{200, 200}), nil},
+		{genValidPayload(), genBrokers([]int{200, 404}), nil},
+		{genValidPayloadInvalidDevAddr(), nil, core.ErrInvalidPayload},
+		{genInvalidPayload(), nil, core.ErrInvalidPayload},
 	}
 
-	// Check if payload should have been sent
-	if len(test.brokers) == 0 {
-		Ok(t)
-		return
+	for _, test := range tests {
+		test.run(t)
 	}
+}
 
-	// Gather payloads and check one of them
-	var payloads []semtech.Payload
-	select {
-	case payload := <-cmsg:
-		payloads = append(payloads, payload)
-		if len(payloads) == len(test.brokers) {
-			break
-		}
-	case <-time.After(time.Millisecond * 500):
-		Ko(t, "%d payload(s) send to server(s) whereas %d was/were expected", len(payloads), len(test.brokers))
-		return
-	}
+type broadcastPayloadTest struct {
+	payload semtech.Payload
+	brokers map[string]int
+	want    error
+}
 
-	if !reflect.DeepEqual(test.payload, payloads[0]) {
-		Ko(t, "Expected %+v to be sent but server received: %+v", test.payload, payloads[0])
-		return
-	}
+func (test broadcastPayloadTest) run(t *testing.T) {
+	// Describe
+	Desc(t, "Forward %v to %v", test.payload, test.brokers)
 
-	Ok(t)
+	// Build
+	adapter, router := genAdapterAndRouter(t)
+	adapter.Listen(router, toBrokerAddrs(test.brokers))
+	cmsg := listenHTTP(t, test.brokers)
+
+	// Operate
+	<-time.After(time.Millisecond * 250)
+	got := adapter.Broadcast(router, test.payload)
+
+	// Check
+	<-time.After(time.Millisecond * 250)
+	checkErrors(t, test.want, got)
+	checkReception(t, len(test.brokers), test.payload, cmsg)
+	checkRegistration(t, router, test.payload, test.brokers)
 }
 
 // ----- Build Utilities
 
 // Create an instance of an Adapter with a predefined logger + a mock router
-func generateAdapterAndRouter(t *testing.T) (Adapter, core.Router) {
+func genAdapterAndRouter(t *testing.T) (Adapter, core.Router) {
 	return Adapter{
 		Logger: log.TestLogger{
 			Tag: "Adapter",
@@ -110,8 +121,20 @@ func generateAdapterAndRouter(t *testing.T) (Adapter, core.Router) {
 	}, mock_components.NewRouter()
 }
 
-// Generate a very basic payload holding an RXPK packet
-func generateValidPayload() semtech.Payload {
+// gen a very basic payload holding an RXPK packet and identifying a valid device address
+func genValidPayload() semtech.Payload {
+	return semtech.Payload{
+		RXPK: []semtech.RXPK{{
+			Data: pointer.String(""),
+			Freq: pointer.Float64(866.349812),
+			Rssi: pointer.Int(-35),
+		},
+		},
+	}
+}
+
+// gen a very basic payload holding an RXPK packet but with scrap data
+func genValidPayloadInvalidDevAddr() semtech.Payload {
 	return semtech.Payload{
 		RXPK: []semtech.RXPK{{
 			Data: pointer.String("-DS4CGaDCdG+48eJNM3Vai-zDpsR71Pn9CPA9uCON84"),
@@ -122,16 +145,16 @@ func generateValidPayload() semtech.Payload {
 	}
 }
 
-// Generate a payload with no RXPK nor STAT packet
-func generateInvalidPayload() semtech.Payload {
+// gen a payload with no RXPK nor STAT packet
+func genInvalidPayload() semtech.Payload {
 	return semtech.Payload{}
 }
 
 // Keep track of open TCP ports
 var port int = 3000
 
-// Generate a list of brokers given a list of http response status in the form address -> status
-func generateBrokers(status []int) map[string]int {
+// gen a list of brokers given a list of http response status in the form address -> status
+func genBrokers(status []int) map[string]int {
 	brokers := make(map[string]int)
 	for _, s := range status {
 		brokers[fmt.Sprintf("0.0.0.0:%d", port)] = s
@@ -207,4 +230,86 @@ func listenHTTP(t *testing.T, addrs map[string]int) chan semtech.Payload {
 	}
 
 	return cmsg
+}
+
+// ----- Check Utilities
+func checkErrors(t *testing.T, want error, got error) bool {
+	// Check for the error
+	if want != nil {
+		if want != got {
+			Ko(t, "Expected error %v but got %v", want, got)
+			return false
+		}
+		Ok(t)
+		return true
+	}
+	return true
+}
+
+func checkReception(t *testing.T, nbExpected int, want semtech.Payload, cmsg chan semtech.Payload) bool {
+	// Check if payload should have been sent
+	if nbExpected <= 0 {
+		Ok(t)
+		return true
+	}
+
+	// Gather payloads and check one of them
+	var payloads []semtech.Payload
+	select {
+	case payload := <-cmsg:
+		payloads = append(payloads, payload)
+		if len(payloads) == nbExpected {
+			break
+		}
+	case <-time.After(time.Millisecond * 500):
+		Ko(t, "%d payload(s) send to server(s) whereas %d was/were expected", len(payloads), nbExpected)
+		return false
+	}
+
+	if !reflect.DeepEqual(want, payloads[0]) {
+		Ko(t, "Expected %+v to be sent but server received: %+v", want, payloads[0])
+		return false
+	}
+
+	Ok(t)
+	return true
+}
+
+func checkRegistration(t *testing.T, router core.Router, payload semtech.Payload, brokers map[string]int) bool {
+	if len(brokers) == 0 {
+		Ok(t)
+		return true
+	}
+
+	devAddr, err := payload.UniformDevAddr()
+	if err != nil {
+		panic(err)
+	}
+
+	mockRouter := router.(*mock_components.Router) // Need to access to registered devices of mock router
+
+outer:
+	for addr, status := range brokers {
+		if status != 200 { // Not a HTTP 200 OK, broker probably does not handle that device
+			continue
+		}
+
+		addrs, ok := mockRouter.Devices[*devAddr] // Get all registered brokers for that device
+		if !ok {
+			Ko(t, "Broker %s wasn't registered for payload %v", addr, payload)
+			return false
+		}
+
+		for _, broker := range addrs {
+			if string(broker) == addr {
+				continue outer // We are registered, everything's fine for that broker
+			}
+		}
+
+		Ko(t, "Broker %s wasn't registered for payload %v", addr, payload)
+		return false
+	}
+
+	Ok(t)
+	return true
 }
