@@ -20,17 +20,17 @@ import (
 type Adapter struct {
 	Logger  log.Logger
 	brokers []core.BrokerAddress // List of brokers to which broadcast
-	mu      *sync.RWMutex        // Guard brokers
+	mu      sync.RWMutex         // Guard brokers
 }
 
-// NewAdapter constructs a new Router <-> Broker adapter
+// NewAdapter() constructs a new router <-> broker adapter
 func NewAdapter() Adapter {
-	return Adapter{mu: &sync.RWMutex{}}
+	return Adapter{}
 }
 
-// Check whether or not the adapter has been initialized via NewAdapter()
+// Check whether or not the adapter has been initialized
 func (a *Adapter) ok() bool {
-	return a != nil && a.mu != nil
+	return a != nil
 }
 
 // Listen implements the core.Adapter interface
@@ -74,12 +74,18 @@ func (a *Adapter) Broadcast(router core.Router, payload semtech.Payload) error {
 	}
 
 	// Prepare ground to store brokers that are in charge
-	register := make(chan core.BrokerAddress, len(a.brokers))
+	a.mu.RLock()
+	l := len(a.brokers)
+	if l == 0 {
+		a.mu.Unlock()
+		return core.ErrNotInitialized
+	}
+
+	register := make(chan core.BrokerAddress, l)
 	wg := sync.WaitGroup{}
-	wg.Add(len(a.brokers))
+	wg.Add(l)
 
 	client := http.Client{}
-	a.mu.RLock()
 	for _, addr := range a.brokers {
 		go func(addr core.BrokerAddress) {
 			defer wg.Done()
