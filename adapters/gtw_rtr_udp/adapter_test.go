@@ -104,7 +104,6 @@ func (test packetProcessingTest) check(t *testing.T, router core.Router, gateway
 func TestSendAck(t *testing.T) {
 	// 1. Initialize test data
 	adapter, router := generateAdapterAndRouter(t)
-	adapter2, router2 := generateAdapterAndRouter(t)
 	conn, gateway := createConnection(&adapter, router, 3003)
 	defer conn.Close()
 
@@ -112,7 +111,6 @@ func TestSendAck(t *testing.T) {
 		{adapter, router, conn, gateway, generatePUSH_ACK(), nil},
 		{adapter, router, conn, core.GatewayAddress("patate"), generatePUSH_ACK(), core.ErrBadGatewayAddress},
 		{adapter, router, conn, gateway, semtech.Packet{}, core.ErrInvalidPacket},
-		{adapter2, router2, nil, gateway, generatePUSH_ACK(), core.ErrMissingConnection},
 	}
 
 	// 2. Run tests
@@ -184,12 +182,9 @@ func TestConnectionRecovering(t *testing.T) {
 
 // ----- Build Utilities
 func generateAdapterAndRouter(t *testing.T) (Adapter, core.Router) {
-	return Adapter{
-		Logger: log.TestLogger{
-			Tag: "Adapter",
-			T:   t,
-		},
-	}, mock_components.NewRouter()
+	a := NewAdapter()
+	a.Logger = log.TestLogger{Tag: "Adapter", T: t}
+	return a, mock_components.NewRouter()
 }
 
 func generatePUSH_DATA() semtech.Packet {

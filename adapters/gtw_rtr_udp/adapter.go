@@ -22,9 +22,23 @@ type udpMsg struct {
 	conn *net.UDPConn // Provide if you intent to change the current adapter connection
 }
 
+func NewAdapter() Adapter {
+	a := Adapter{conn: make(chan udpMsg)}
+	go a.monitorConnection() // Terminates that goroutine by closing the channel
+	return a
+}
+
+func (a *Adapter) ok() bool {
+	return a != nil && a.conn != nil
+}
+
 // Listen implements the core.Adapter interface. It expects only one param "port" as a
 // uint. Listen can be called several times to re-establish a lost connection.
 func (a *Adapter) Listen(router core.Router, options interface{}) error {
+	if !a.ok() {
+		return core.ErrNotInitialized
+	}
+
 	// Parse options
 	var port uint
 	switch options.(type) {
@@ -43,15 +57,6 @@ func (a *Adapter) Listen(router core.Router, options interface{}) error {
 		return core.ErrBadGatewayAddress
 	}
 
-	// The following statements aren't thread-safe. It assumes that only one goroutine will attempt
-	// to Listen() in a first place, then it does not matter because all access will be read-only
-	// access and we won't have any data race here. However, for the very first call, this has to be
-	// done in a non-concurrent context.
-	if a.conn == nil {
-		a.conn = make(chan udpMsg)
-		go a.monitorConnection() // Terminates that goroutine by closing the channel
-	}
-
 	a.conn <- udpMsg{conn: udpConn}
 	go a.listen(router, udpConn) // Terminates when the connection is closed
 
@@ -60,9 +65,8 @@ func (a *Adapter) Listen(router core.Router, options interface{}) error {
 
 // Ack implements the core.GatewayRouterAdapter interface
 func (a *Adapter) Ack(router core.Router, packet semtech.Packet, gateway core.GatewayAddress) error {
-	if a.conn == nil {
-		a.log("Trying to Ack on non-established connection")
-		return core.ErrMissingConnection
+	if !a.ok() {
+		return core.ErrNotInitialized
 	}
 
 	a.log("Acks packet %+v", packet)
