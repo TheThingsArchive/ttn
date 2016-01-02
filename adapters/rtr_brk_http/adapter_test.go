@@ -99,6 +99,8 @@ func (test forwardPayloadTest) check(t *testing.T, cmsg chan semtech.Payload, go
 }
 
 // ----- Build Utilities
+
+// Create an instance of an Adapter with a predefined logger + a mock router
 func generateAdapterAndRouter(t *testing.T) (Adapter, core.Router) {
 	return Adapter{
 		Logger: log.TestLogger{
@@ -108,6 +110,7 @@ func generateAdapterAndRouter(t *testing.T) (Adapter, core.Router) {
 	}, mock_components.NewRouter()
 }
 
+// Generate a very basic payload holding an RXPK packet
 func generateValidPayload() semtech.Payload {
 	return semtech.Payload{
 		RXPK: []semtech.RXPK{{
@@ -119,8 +122,15 @@ func generateValidPayload() semtech.Payload {
 	}
 }
 
+// Generate a payload with no RXPK nor STAT packet
+func generateInvalidPayload() semtech.Payload {
+	return semtech.Payload{}
+}
+
+// Keep track of open TCP ports
 var port int = 3000
 
+// Generate a list of brokers given a list of http response status in the form address -> status
 func generateBrokers(status []int) map[string]int {
 	brokers := make(map[string]int)
 	for _, s := range status {
@@ -130,10 +140,7 @@ func generateBrokers(status []int) map[string]int {
 	return brokers
 }
 
-func generateInvalidPayload() semtech.Payload {
-	return semtech.Payload{}
-}
-
+// Transform the broker map address -> status to a list a BrokerAddress
 func toBrokerAddrs(addrs map[string]int) []core.BrokerAddress {
 	brokers := make([]core.BrokerAddress, 0)
 	for addr := range addrs {
@@ -142,7 +149,9 @@ func toBrokerAddrs(addrs map[string]int) []core.BrokerAddress {
 	return brokers
 }
 
-func createServeMux(t *testing.T, addr string, status int, cmsg chan semtech.Payload) *http.ServeMux {
+// Create an http handler that will listen to json request on "/" and forward payload into a
+// dedicated channel. A custom response status can be given in param.
+func createServeMux(t *testing.T, status int, cmsg chan semtech.Payload) *http.ServeMux {
 	serveMux := http.NewServeMux()
 	serveMux.HandleFunc("/", func(res http.ResponseWriter, req *http.Request) {
 		defer req.Body.Close()
@@ -183,12 +192,14 @@ func createServeMux(t *testing.T, addr string, status int, cmsg chan semtech.Pay
 }
 
 // ----- Operate Utilities
+
+// Start one http server per address which will forward request to the returned channel of payloads.
 func listenHTTP(t *testing.T, addrs map[string]int) chan semtech.Payload {
 	cmsg := make(chan semtech.Payload)
 
 	for addr, status := range addrs {
 		go func(addr string, status int) {
-			s := &http.Server{Addr: addr, Handler: createServeMux(t, addr, status, cmsg)}
+			s := &http.Server{Addr: addr, Handler: createServeMux(t, status, cmsg)}
 			if err := s.ListenAndServe(); err != nil {
 				panic(err)
 			}
