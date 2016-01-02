@@ -21,17 +21,40 @@ import (
 
 // ----- The adapter can be created and listen straigthforwardly
 func TestListenOptionsTest(t *testing.T) {
-	adapter, router := genAdapterAndRouter(t)
-
-	Desc(t, "Listen to adapter")
-	if err := adapter.Listen(router, nil); err != nil {
-		Ko(t, "No error was expected but got: %+v", err)
-		return
+	tests := []listenOptionsTest{
+		{[]core.BrokerAddress{core.BrokerAddress("0.0.0.0:3000"), core.BrokerAddress("0.0.0.0:3001")}, nil},
+		{"Patate", core.ErrBadOptions},
+		{nil, core.ErrBadOptions},
+		{[]core.BrokerAddress{}, core.ErrBadOptions},
 	}
-	Ok(t)
+
+	for _, test := range tests {
+		test.run(t)
+	}
 }
 
+type listenOptionsTest struct {
+	options interface{}
+	want    error
+}
+
+func (test listenOptionsTest) run(t *testing.T) {
+	// Describe
+	Desc(t, "Listen to adapter with options: %v", test.options)
+
+	// Build
+	adapter, router := genAdapterAndRouter(t)
+
+	// Operate
+	got := adapter.Listen(router, test.options)
+
+	// Check
+	checkErrors(t, test.want, got)
+}
+
+// --------------------------------------------------------------
 // ----- The adapter should forward a payload to a set of brokers
+// --------------------------------------------------------------
 func TestForwardPayload(t *testing.T) {
 	tests := []forwardPayloadTest{
 		{genValidPayload(), genBrokers([]int{200}), nil},
@@ -243,6 +266,7 @@ func checkErrors(t *testing.T, want error, got error) bool {
 		Ok(t)
 		return true
 	}
+	Ok(t)
 	return true
 }
 
