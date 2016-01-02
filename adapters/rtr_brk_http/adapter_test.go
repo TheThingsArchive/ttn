@@ -5,6 +5,7 @@ package rtr_brk_http
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/thethingsnetwork/core"
 	"github.com/thethingsnetwork/core/lorawan/semtech"
 	"github.com/thethingsnetwork/core/testing/mock_components"
@@ -33,8 +34,8 @@ func TestListenOptionsTest(t *testing.T) {
 // ----- The adapter should forward a payload to a set of brokers
 func TestForwardPayload(t *testing.T) {
 	tests := []forwardPayloadTest{
-		{generateValidPayload(), []string{"0.0.0.0:3000", "0.0.0.0:3001"}, nil},
-		{generateInvalidPayload(), []string{"0.0.0.0:3002"}, core.ErrInvalidPayload},
+		{generateValidPayload(), generateBrokers([]int{200, 200}), nil},
+		{generateInvalidPayload(), generateBrokers([]int{200}), core.ErrInvalidPayload},
 	}
 
 	for _, test := range tests {
@@ -44,7 +45,7 @@ func TestForwardPayload(t *testing.T) {
 
 type forwardPayloadTest struct {
 	payload semtech.Payload
-	brokers []string
+	brokers map[string]int
 	want    error
 }
 
@@ -118,22 +119,30 @@ func generateValidPayload() semtech.Payload {
 	}
 }
 
+var port int = 3000
+
+func generateBrokers(status []int) map[string]int {
+	brokers := make(map[string]int)
+	for _, s := range status {
+		brokers[fmt.Sprintf("0.0.0.0:%d", port)] = s
+		port += 1
+	}
+	return brokers
+}
+
 func generateInvalidPayload() semtech.Payload {
 	return semtech.Payload{}
 }
 
-func toBrokerAddrs(addrs []string) []core.BrokerAddress {
+func toBrokerAddrs(addrs map[string]int) []core.BrokerAddress {
 	brokers := make([]core.BrokerAddress, 0)
-	for _, addr := range addrs {
+	for addr := range addrs {
 		brokers = append(brokers, core.BrokerAddress(addr))
 	}
 	return brokers
 }
 
-// ----- Operate Utilities
-func listenHTTP(t *testing.T, addrs []string) chan semtech.Payload {
-	cmsg := make(chan semtech.Payload)
-
+func createServeMux(t *testing.T, addr string, status int, cmsg chan semtech.Payload) *http.ServeMux {
 	serveMux := http.NewServeMux()
 	serveMux.HandleFunc("/", func(res http.ResponseWriter, req *http.Request) {
 		defer req.Body.Close()
@@ -166,18 +175,24 @@ func listenHTTP(t *testing.T, addrs []string) chan semtech.Payload {
 		}
 
 		// Send a fake response
-		res.WriteHeader(http.StatusOK)
+		res.WriteHeader(status)
 		res.Write(nil)
 		cmsg <- payload
 	})
+	return serveMux
+}
 
-	for _, addr := range addrs {
-		go func(addr string) {
-			s := &http.Server{Addr: addr, Handler: serveMux}
+// ----- Operate Utilities
+func listenHTTP(t *testing.T, addrs map[string]int) chan semtech.Payload {
+	cmsg := make(chan semtech.Payload)
+
+	for addr, status := range addrs {
+		go func(addr string, status int) {
+			s := &http.Server{Addr: addr, Handler: createServeMux(t, addr, status, cmsg)}
 			if err := s.ListenAndServe(); err != nil {
 				panic(err)
 			}
-		}(addr)
+		}(addr, status)
 	}
 
 	return cmsg
