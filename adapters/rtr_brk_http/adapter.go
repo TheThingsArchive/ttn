@@ -18,16 +18,30 @@ import (
 )
 
 type Adapter struct {
-	Logger log.Logger
+	Logger  log.Logger
+	brokers []core.BrokerAddress
 }
 
 // Listen implements the core.Adapter interface
 func (a *Adapter) Listen(router core.Router, options interface{}) error {
+	switch options.(type) {
+	case []core.BrokerAddress:
+		a.brokers = options.([]core.BrokerAddress)
+	default:
+		a.log("Invalid options provided: %v", options)
+		return core.ErrBadOptions
+	}
+
 	return nil
 }
 
 // Broadcast implements the core.BrokerRouter interface
-func (a *Adapter) Broadcast(router core.Router, payload semtech.Payload, broAddrs ...core.BrokerAddress) error {
+func (a *Adapter) Broadcast(router core.Router, payload semtech.Payload) error {
+	if a.brokers == nil {
+		a.log("Cannot broadcast to 0 broker")
+		return core.ErrMissingConnection
+	}
+
 	// Determine the devAddress associated to that payload
 	if payload.RXPK == nil || len(payload.RXPK) == 0 { // NOTE are those conditions significantly different ?
 		a.log("Cannot broadcast given payload: %+v", payload)
@@ -41,12 +55,12 @@ func (a *Adapter) Broadcast(router core.Router, payload semtech.Payload, broAddr
 	}
 
 	// Prepare ground to store brokers that are in charge
-	register := make(chan core.BrokerAddress, len(broAddrs))
+	register := make(chan core.BrokerAddress, len(a.brokers))
 	wg := sync.WaitGroup{}
-	wg.Add(len(broAddrs))
+	wg.Add(len(a.brokers))
 
 	client := http.Client{}
-	for _, addr := range broAddrs {
+	for _, addr := range a.brokers {
 		go func(addr core.BrokerAddress) {
 			defer wg.Done()
 
@@ -90,6 +104,11 @@ func (a *Adapter) Broadcast(router core.Router, payload semtech.Payload, broAddr
 
 // Forward implements the core.BrokerRouter interface
 func (a *Adapter) Forward(router core.Router, payload semtech.Payload, broAddrs ...core.BrokerAddress) error {
+	if a.brokers == nil {
+		a.log("Cannot broadcast to 0 broker")
+		return core.ErrMissingConnection
+	}
+
 	if payload.RXPK == nil || len(payload.RXPK) == 0 { // NOTE are those conditions significantly different ?
 		a.log("Cannot broadcast given payload: %+v", payload)
 		return core.ErrInvalidPayload
