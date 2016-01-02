@@ -19,14 +19,16 @@ import (
 
 type Adapter struct {
 	Logger  log.Logger
-	brokers []core.BrokerAddress
-	mu      *sync.RWMutex // Guard brokers
+	brokers []core.BrokerAddress // List of brokers to which broadcast
+	mu      *sync.RWMutex        // Guard brokers
 }
 
+// NewAdapter constructs a new Router <-> Broker adapter
 func NewAdapter() Adapter {
 	return Adapter{mu: &sync.RWMutex{}}
 }
 
+// Check whether or not the adapter has been initialized via NewAdapter()
 func (a *Adapter) ok() bool {
 	return a != nil && a.mu != nil
 }
