@@ -31,6 +31,7 @@ type Router interface {
 // The error types belows are going to be more complex in order to handle custom behavior for
 // each error type.
 var ErrBadOptions error = fmt.Errorf("Unreckonized or invalid options")
+var ErrNotInitialized error = fmt.Errorf("Structure not initialized")
 var ErrBadGatewayAddress error = fmt.Errorf("Invalid gateway address")
 var ErrMissingConnection error = fmt.Errorf("Can't proceed without establishing connection")
 var ErrInvalidPacket error = fmt.Errorf("Invalid semtech packet")

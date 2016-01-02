@@ -20,12 +20,27 @@ import (
 type Adapter struct {
 	Logger  log.Logger
 	brokers []core.BrokerAddress
+	mu      *sync.RWMutex // Guard brokers
+}
+
+func NewAdapter() Adapter {
+	return Adapter{mu: &sync.RWMutex{}}
+}
+
+func (a *Adapter) ok() bool {
+	return a != nil && a.mu != nil
 }
 
 // Listen implements the core.Adapter interface
 func (a *Adapter) Listen(router core.Router, options interface{}) error {
+	if !a.ok() {
+		return core.ErrNotInitialized
+	}
+
 	switch options.(type) {
 	case []core.BrokerAddress:
+		a.mu.Lock()
+		defer a.mu.Unlock()
 		a.brokers = options.([]core.BrokerAddress)
 		if len(a.brokers) == 0 {
 			return core.ErrBadOptions
@@ -40,9 +55,8 @@ func (a *Adapter) Listen(router core.Router, options interface{}) error {
 
 // Broadcast implements the core.BrokerRouter interface
 func (a *Adapter) Broadcast(router core.Router, payload semtech.Payload) error {
-	if a.brokers == nil {
-		a.log("Cannot broadcast to 0 broker")
-		return core.ErrMissingConnection
+	if !a.ok() {
+		return core.ErrNotInitialized
 	}
 
 	// Determine the devAddress associated to that payload
@@ -63,6 +77,7 @@ func (a *Adapter) Broadcast(router core.Router, payload semtech.Payload) error {
 	wg.Add(len(a.brokers))
 
 	client := http.Client{}
+	a.mu.RLock()
 	for _, addr := range a.brokers {
 		go func(addr core.BrokerAddress) {
 			defer wg.Done()
@@ -89,6 +104,7 @@ func (a *Adapter) Broadcast(router core.Router, payload semtech.Payload) error {
 			}
 		}(addr)
 	}
+	a.mu.RUnlock()
 
 	go func() {
 		wg.Wait()
@@ -107,16 +123,17 @@ func (a *Adapter) Broadcast(router core.Router, payload semtech.Payload) error {
 
 // Forward implements the core.BrokerRouter interface
 func (a *Adapter) Forward(router core.Router, payload semtech.Payload, broAddrs ...core.BrokerAddress) error {
-	if a.brokers == nil {
-		a.log("Cannot broadcast to 0 broker")
-		return core.ErrMissingConnection
+	if !a.ok() {
+		return core.ErrNotInitialized
 	}
 
 	if payload.RXPK == nil || len(payload.RXPK) == 0 { // NOTE are those conditions significantly different ?
 		a.log("Cannot broadcast given payload: %+v", payload)
 		return core.ErrInvalidPayload
 	}
+
 	client := http.Client{}
+	a.mu.RLock()
 	for _, addr := range broAddrs {
 		go func(url string) {
 			a.log("Send payload to %s", url)
@@ -142,6 +159,7 @@ func (a *Adapter) Forward(router core.Router, payload semtech.Payload, broAddrs 
 
 		}(string(addr))
 	}
+	a.mu.RUnlock()
 
 	return nil
 }

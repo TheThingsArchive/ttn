@@ -136,12 +136,9 @@ func (test broadcastPayloadTest) run(t *testing.T) {
 
 // Create an instance of an Adapter with a predefined logger + a mock router
 func genAdapterAndRouter(t *testing.T) (Adapter, core.Router) {
-	return Adapter{
-		Logger: log.TestLogger{
-			Tag: "Adapter",
-			T:   t,
-		},
-	}, mock_components.NewRouter()
+	a := NewAdapter()
+	a.Logger = log.TestLogger{Tag: "Adapter", T: t}
+	return a, mock_components.NewRouter()
 }
 
 // gen a very basic payload holding an RXPK packet and identifying a valid device address
@@ -258,13 +255,9 @@ func listenHTTP(t *testing.T, addrs map[string]int) chan semtech.Payload {
 // ----- Check Utilities
 func checkErrors(t *testing.T, want error, got error) bool {
 	// Check for the error
-	if want != nil {
-		if want != got {
-			Ko(t, "Expected error %v but got %v", want, got)
-			return false
-		}
-		Ok(t)
-		return true
+	if want != got {
+		Ko(t, "Expected error %v but got %v", want, got)
+		return false
 	}
 	Ok(t)
 	return true
