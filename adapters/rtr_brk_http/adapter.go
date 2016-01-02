@@ -137,14 +137,14 @@ func (a *Adapter) Forward(router core.Router, payload semtech.Payload, broAddrs 
 			// from the broker to handle packets or anything else ? Is it efficient ? Should
 			// downlinks packets be sent back with the HTTP body response ? Its a 2 seconds frame...
 
-		}(fmt.Sprintf("http://%s", string(addr)))
+		}(string(addr))
 	}
 
 	return nil
 }
 
 // post regroups some logic used in both Forward and Broadcast methods
-func post(client http.Client, url string, payload semtech.Payload) (*http.Response, error) {
+func post(client http.Client, host string, payload semtech.Payload) (*http.Response, error) {
 	data := new(bytes.Buffer)
 	rawJSON, err := json.Marshal(payload)
 	if err != nil {
@@ -155,7 +155,7 @@ func post(client http.Client, url string, payload semtech.Payload) (*http.Respon
 		return nil, err
 	}
 
-	return client.Post(url, "application/json", data)
+	return client.Post(fmt.Sprintf("http://%s", host), "application/json", data)
 }
 
 // log is nothing more than a shortcut / helper to access the logger
