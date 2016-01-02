@@ -142,7 +142,11 @@ func (p Payload) UniformDevAddr() (*DeviceAddress, error) {
 		// We check them all to be sure, but all RXPK should refer to the same End-Device
 		for _, rxpk := range p.RXPK {
 			addr := rxpk.DevAddr()
-			if addr == nil || (devAddr != nil && *devAddr != *addr) {
+			if addr == nil {
+				return nil, fmt.Errorf("Unable to determine uniform address of given payload")
+			}
+
+			if devAddr != nil && *devAddr != *addr {
 				return nil, fmt.Errorf("Payload is composed of messages from several end-devices")
 			}
 			devAddr = addr
