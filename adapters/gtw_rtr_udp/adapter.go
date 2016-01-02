@@ -42,15 +42,18 @@ func (a *Adapter) Listen(router core.Router, options interface{}) error {
 		a.log("Unable to establish the connection: %v", err)
 		return core.ErrBadGatewayAddress
 	}
-	go a.listen(router, udpConn) // Terminates when the connection is closed
 
-	// Create the connection channel
+	// The following statements aren't thread-safe. It assumes that only one goroutine will attempt
+	// to Listen() in a first place, then it does not matter because all access will be read-only
+	// access and we won't have any data race here. However, for the very first call, this has to be
+	// done in a non-concurrent context.
 	if a.conn == nil {
 		a.conn = make(chan udpMsg)
-		go a.monitorConnection(udpConn) // Terminates that goroutine by closing the channel
-	} else {
-		a.conn <- udpMsg{conn: udpConn}
+		go a.monitorConnection() // Terminates that goroutine by closing the channel
 	}
+
+	a.conn <- udpMsg{conn: udpConn}
+	go a.listen(router, udpConn) // Terminates when the connection is closed
 
 	return nil
 }
@@ -109,22 +112,26 @@ func (a *Adapter) listen(router core.Router, conn *net.UDPConn) {
 }
 
 // monitorConnection manages udpConnection of the adapter and send message through that connection
-func (a *Adapter) monitorConnection(initConn *net.UDPConn) {
-	udpConn := initConn
+func (a *Adapter) monitorConnection() {
+	var udpConn *net.UDPConn
 	for msg := range a.conn {
 		if msg.conn != nil { // Change the connection
-			a.log("Switch UDP connection")
-			udpConn.Close()
+			if udpConn != nil {
+				a.log("Switch UDP connection")
+				udpConn.Close()
+			}
 			udpConn = msg.conn
 		}
 
-		if msg.raw != nil { // Send the given udp message
+		if udpConn != nil && msg.raw != nil { // Send the given udp message
 			if _, err := udpConn.WriteToUDP(msg.raw, msg.addr); err != nil {
 				a.log("Unable to send udp message: %+v", err)
 			}
 		}
 	}
-	udpConn.Close() // Make sure we close the connection before leaving
+	if udpConn != nil {
+		udpConn.Close() // Make sure we close the connection before leaving
+	}
 }
 
 // log is nothing more than a shortcut / helper to access the logger
