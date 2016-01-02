@@ -27,6 +27,9 @@ func (a *Adapter) Listen(router core.Router, options interface{}) error {
 	switch options.(type) {
 	case []core.BrokerAddress:
 		a.brokers = options.([]core.BrokerAddress)
+		if len(a.brokers) == 0 {
+			return core.ErrBadOptions
+		}
 	default:
 		a.log("Invalid options provided: %v", options)
 		return core.ErrBadOptions
