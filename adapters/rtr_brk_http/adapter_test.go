@@ -64,7 +64,7 @@ func (test forwardPayloadTest) run(t *testing.T) {
 	got := adapter.Forward(router, test.payload, toBrokerAddrs(test.brokers)...)
 
 	// Check
-	<-time.After(time.Millisecond * 250)
+	<-time.After(time.Millisecond * 100)
 	checkErrors(t, test.want, got)
 	checkReception(t, len(test.brokers), test.payload, cmsg)
 }
@@ -91,7 +91,7 @@ type broadcastPayloadTest struct {
 
 func (test broadcastPayloadTest) run(t *testing.T) {
 	// Describe
-	Desc(t, "Forward %v to %v", test.payload, test.brokers)
+	Desc(t, "Broadcast %v to %v", test.payload, test.brokers)
 
 	// Build
 	adapter, router := genAdapterAndRouter(t)
@@ -103,7 +103,7 @@ func (test broadcastPayloadTest) run(t *testing.T) {
 	got := adapter.Broadcast(router, test.payload)
 
 	// Check
-	<-time.After(time.Millisecond * 250)
+	<-time.After(time.Millisecond * 100)
 	checkErrors(t, test.want, got)
 	checkReception(t, len(test.brokers), test.payload, cmsg)
 	checkRegistration(t, router, test.payload, test.brokers)
@@ -218,7 +218,7 @@ func createServeMux(t *testing.T, status int, cmsg chan semtech.Payload) *http.S
 
 // Start one http server per address which will forward request to the returned channel of payloads.
 func listenHTTP(t *testing.T, addrs map[string]int) chan semtech.Payload {
-	cmsg := make(chan semtech.Payload)
+	cmsg := make(chan semtech.Payload, len(addrs))
 
 	for addr, status := range addrs {
 		go func(addr string, status int) {
