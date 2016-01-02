@@ -125,7 +125,7 @@ func genAdapterAndRouter(t *testing.T) (Adapter, core.Router) {
 func genValidPayload() semtech.Payload {
 	return semtech.Payload{
 		RXPK: []semtech.RXPK{{
-			Data: pointer.String(""),
+			Data: pointer.String("/xRC/zcBAAABqqq7uw=="),
 			Freq: pointer.Float64(866.349812),
 			Rssi: pointer.Int(-35),
 		},
