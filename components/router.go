@@ -115,7 +115,7 @@ func (r *Router) HandleUplink(packet semtech.Packet, gateway core.GatewayAddress
 		// 3. Broadcast or Forward payloads depending wether or not the brokers are known
 		for devAddr, payload := range payloads {
 			brokers, err := r.addressKeeper.lookup(devAddr)
-			if err != nil {
+			if err == nil {
 				r.log("Forward payload to known brokers %+v", payload)
 				r.down <- downMsg{
 					payload: *payload,
@@ -140,6 +140,7 @@ func (r *Router) HandleDownlink(payload semtech.Payload, broker core.BrokerAddre
 // RegisterDevice implements the core.Router interface
 func (r *Router) RegisterDevice(devAddr semtech.DeviceAddress, broAddrs ...core.BrokerAddress) {
 	r.ensure()
+	r.log("Register device %+x to brokers: %v", devAddr, broAddrs)
 	r.addressKeeper.store(devAddr, broAddrs...) // TODO handle the error
 }
 
