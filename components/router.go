@@ -129,7 +129,6 @@ func (r *Router) HandleUplink(packet semtech.Packet, gateway core.GatewayAddress
 		}
 	default:
 		r.log("Unexpected packet receive from uplink %+v", packet)
-
 	}
 }
 
