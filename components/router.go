@@ -48,7 +48,7 @@ func NewRouter(brokers ...core.BrokerAddress) (*Router, error) {
 	}
 
 	if len(brokers) == 0 {
-		return nil, fmt.Errorf("The router should be connected to at least one broker")
+		return nil, core.ErrBadOptions
 	}
 
 	return &Router{
@@ -178,7 +178,7 @@ func (r *Router) connectUpAdapter(upAdapter core.GatewayRouterAdapter) {
 func (r *Router) connectDownAdapter(downAdapter core.RouterBrokerAdapter) {
 	for msg := range r.down {
 		if len(msg.brokers) == 0 {
-			downAdapter.Broadcast(r, msg.payload, r.brokers...)
+			downAdapter.Broadcast(r, msg.payload)
 			continue
 		}
 		downAdapter.Forward(r, msg.payload, msg.brokers...)
