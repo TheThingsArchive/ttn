@@ -35,8 +35,7 @@ system will just forward messages using pre-configured end-device addresses.
         - [x] Create Mock router
         - [x] Create Mock DownAdapter
         - [x] Create Mock UpAdatper
-        - [ ] Test'em all
-        - [ ] Reemit errored packet
+        - [x] Test'em all
         - [ ] Switch from local in-memory storage to Reddis
     - [x] UpAdapter
         - [x] Listen and forward incoming packets to Core router

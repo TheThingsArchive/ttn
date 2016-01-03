@@ -48,7 +48,7 @@ func NewRouter(brokers ...core.BrokerAddress) (*Router, error) {
 	}
 
 	if len(brokers) == 0 {
-		return nil, fmt.Errorf("The router should be connected to at least one broker")
+		return nil, core.ErrBadOptions
 	}
 
 	return &Router{
@@ -115,7 +115,7 @@ func (r *Router) HandleUplink(packet semtech.Packet, gateway core.GatewayAddress
 		// 3. Broadcast or Forward payloads depending wether or not the brokers are known
 		for devAddr, payload := range payloads {
 			brokers, err := r.addressKeeper.lookup(devAddr)
-			if err != nil {
+			if err == nil {
 				r.log("Forward payload to known brokers %+v", payload)
 				r.down <- downMsg{
 					payload: *payload,
@@ -129,7 +129,6 @@ func (r *Router) HandleUplink(packet semtech.Packet, gateway core.GatewayAddress
 		}
 	default:
 		r.log("Unexpected packet receive from uplink %+v", packet)
-
 	}
 }
 
@@ -141,6 +140,7 @@ func (r *Router) HandleDownlink(payload semtech.Payload, broker core.BrokerAddre
 // RegisterDevice implements the core.Router interface
 func (r *Router) RegisterDevice(devAddr semtech.DeviceAddress, broAddrs ...core.BrokerAddress) {
 	r.ensure()
+	r.log("Register device %+x to brokers: %v", devAddr, broAddrs)
 	r.addressKeeper.store(devAddr, broAddrs...) // TODO handle the error
 }
 
@@ -178,7 +178,7 @@ func (r *Router) connectUpAdapter(upAdapter core.GatewayRouterAdapter) {
 func (r *Router) connectDownAdapter(downAdapter core.RouterBrokerAdapter) {
 	for msg := range r.down {
 		if len(msg.brokers) == 0 {
-			downAdapter.Broadcast(r, msg.payload, r.brokers...)
+			downAdapter.Broadcast(r, msg.payload)
 			continue
 		}
 		downAdapter.Forward(r, msg.payload, msg.brokers...)
