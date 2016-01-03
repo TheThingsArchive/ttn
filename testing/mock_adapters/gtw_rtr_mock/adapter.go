@@ -17,8 +17,8 @@ type Adapter struct {
 }
 
 // New constructs a new Gateway-Router-Mock adapter
-func New() Adapter {
-	return Adapter{
+func New() *Adapter {
+	return &Adapter{
 		FailAck:    false,
 		FailListen: false,
 		Acks:       make(map[core.GatewayAddress][]semtech.Packet),

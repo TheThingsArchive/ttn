@@ -21,8 +21,8 @@ type Adapter struct {
 }
 
 // New constructs a new router <-> broker adapter interface
-func New() Adapter {
-	return Adapter{
+func New() *Adapter {
+	return &Adapter{
 		FailListen:    false,
 		FailBroadcast: false,
 		FailForward:   false,
