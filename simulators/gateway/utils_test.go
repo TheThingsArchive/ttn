@@ -83,6 +83,7 @@ func TestGenerateRssi(t *testing.T) {
 			So(rssi, ShouldBeGreaterThanOrEqualTo, -120)
 			So(rssi, ShouldBeLessThanOrEqualTo, 0)
 			values[rssi] = true
+			t.Log(rssi)
 		}
 		So(len(values), ShouldBeGreaterThan, 5)
 	})
@@ -96,6 +97,21 @@ func TestGenerateFreq(t *testing.T) {
 			So(freq, ShouldBeGreaterThanOrEqualTo, 863.0)
 			So(freq, ShouldBeLessThanOrEqualTo, 870.0)
 			values[freq] = true
+			t.Log(freq)
+		}
+		So(len(values), ShouldBeGreaterThan, 5)
+	})
+}
+
+func TestGenerateLsnr(t *testing.T) {
+	Convey("The generateLsnr() function should generate random snr ratio between 5.5 and -2", t, func() {
+		values := make(map[float64]bool)
+		for i := 0; i < 10; i += 1 {
+			lsnr := generateLsnr()
+			So(lsnr, ShouldBeGreaterThanOrEqualTo, -2)
+			So(lsnr, ShouldBeLessThanOrEqualTo, 5.5)
+			values[lsnr] = true
+			t.Log(lsnr)
 		}
 		So(len(values), ShouldBeGreaterThan, 5)
 	})

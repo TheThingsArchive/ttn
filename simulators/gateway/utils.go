@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"github.com/thethingsnetwork/core/lorawan/semtech"
 	"github.com/thethingsnetwork/core/utils/pointer"
+	"math"
 	"math/rand"
 	"time"
 )
@@ -35,16 +36,20 @@ func ackToken(index int, packet semtech.Packet) [4]byte {
 	return [4]byte{id, kind, packet.Token[0], packet.Token[1]}
 }
 
+// Generates RSSI signal between -120 < rssi < 0
 func generateRssi() int {
-	x := float32(rand.Int31()) / float32(2e8)
-	return -int(x * x)
+	// Generate RSSI. Tend towards generating great signal strength.
+	x := float64(rand.Int31()) * float64(2e-9)
+	return int(-1.6 * math.Exp(x))
 }
 
+// Generates a frequency between 863.0 and 870.0 Mhz
 func generateFreq() float64 {
 	// EU 863-870MHz
 	return rand.Float64()*7 + 863.0
 }
 
+// Generates Datr for instance: SF4BW125
 func generateDatr() string {
 	// Spread Factor from 12 to 7
 	sf := 12 - rand.Intn(7)
@@ -59,15 +64,19 @@ func generateDatr() string {
 	return fmt.Sprintf("SF%dBW%d", sf, bw)
 }
 
+// Generates Codr for instance: 4/6
 func generateCodr() string {
 	d := rand.Intn(4) + 5
 	return fmt.Sprintf("4/%d", d)
 }
 
+// Generates LoRa SNR ratio in db. Tend towards generating good ratio with low noise
 func generateLsnr() float64 {
-	return 0.0
+	x := float64(rand.Int31()) * float64(2e-9)
+	return math.Floor((-0.1*math.Exp(x)+5.5)*10) / 10
 }
 
+// Generates fake data from a device
 func generateData() string {
 	return ""
 }
