@@ -23,10 +23,10 @@ type udpMsg struct {
 }
 
 // NewAdapter constructs a gateway <-> router udp adapter
-func NewAdapter() Adapter {
+func NewAdapter() *Adapter {
 	a := Adapter{conn: make(chan udpMsg)}
 	go a.monitorConnection() // Terminates that goroutine by closing the channel
-	return a
+	return &a
 }
 
 // ok controls whether or not the adapter has been initialized via NewAdapter()

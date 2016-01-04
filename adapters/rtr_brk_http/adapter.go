@@ -24,8 +24,8 @@ type Adapter struct {
 }
 
 // NewAdapter() constructs a new router <-> broker adapter
-func NewAdapter() Adapter {
-	return Adapter{}
+func NewAdapter() *Adapter {
+	return &Adapter{}
 }
 
 // Check whether or not the adapter has been initialized
@@ -52,6 +52,7 @@ func (a *Adapter) Listen(router core.Router, options interface{}) error {
 		return core.ErrBadOptions
 	}
 
+	a.log("Start listening to brokers %v", a.brokers)
 	return nil
 }
 

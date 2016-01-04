@@ -135,7 +135,7 @@ func (test broadcastPayloadTest) run(t *testing.T) {
 // ----- Build Utilities
 
 // Create an instance of an Adapter with a predefined logger + a mock router
-func genAdapterAndRouter(t *testing.T) (Adapter, core.Router) {
+func genAdapterAndRouter(t *testing.T) (*Adapter, core.Router) {
 	a := NewAdapter()
 	a.Logger = log.TestLogger{Tag: "Adapter", T: t}
 	return a, mock_components.NewRouter()

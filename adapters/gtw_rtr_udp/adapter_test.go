@@ -72,7 +72,7 @@ type packetProcessingTest struct {
 func (test packetProcessingTest) run(t *testing.T) {
 	Desc(t, "Simulate incoming datagram: %+v", test.in)
 	adapter, router := generateAdapterAndRouter(t)
-	conn, gateway := createConnection(&adapter, router, test.port)
+	conn, gateway := createConnection(adapter, router, test.port)
 	defer conn.Close()
 	sendDatagram(conn, test.in)
 	test.check(t, router, gateway) // Check whether or not packet has been forwarded to core router
@@ -104,7 +104,7 @@ func (test packetProcessingTest) check(t *testing.T, router core.Router, gateway
 func TestSendAck(t *testing.T) {
 	// 1. Initialize test data
 	adapter, router := generateAdapterAndRouter(t)
-	conn, gateway := createConnection(&adapter, router, 3003)
+	conn, gateway := createConnection(adapter, router, 3003)
 	defer conn.Close()
 
 	tests := []sendAckTest{
@@ -120,7 +120,7 @@ func TestSendAck(t *testing.T) {
 }
 
 type sendAckTest struct {
-	adapter Adapter
+	adapter *Adapter
 	router  core.Router
 	conn    *net.UDPConn
 	gateway core.GatewayAddress
@@ -181,7 +181,7 @@ func TestConnectionRecovering(t *testing.T) {
 }
 
 // ----- Build Utilities
-func generateAdapterAndRouter(t *testing.T) (Adapter, core.Router) {
+func generateAdapterAndRouter(t *testing.T) (*Adapter, core.Router) {
 	a := NewAdapter()
 	a.Logger = log.TestLogger{Tag: "Adapter", T: t}
 	return a, mock_components.NewRouter()

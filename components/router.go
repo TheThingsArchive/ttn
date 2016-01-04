@@ -158,10 +158,12 @@ func (r *Router) HandleError(err interface{}) {
 func (r *Router) Connect(upAdapter core.GatewayRouterAdapter, downAdapter core.RouterBrokerAdapter) {
 	r.ensure()
 
+	r.log("Connect router to UpAdapter")
 	for i := 0; i < UP_POOL_SIZE; i += 1 {
 		go r.connectUpAdapter(upAdapter)
 	}
 
+	r.log("Connect router to DownAdapter")
 	for i := 0; i < DOWN_POOL_SIZE; i += 1 {
 		go r.connectDownAdapter(downAdapter)
 	}
