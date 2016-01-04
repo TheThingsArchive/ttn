@@ -1,6 +1,8 @@
 The Things Network Core Architecture
 ====================================
 
+[![Slack Status](https://slack.thethingsnetwork.org/badge.svg)](https://slack.thethingsnetwork.org/)
+
 ## How to Contribute
 
 - Open an issue and explain on what you're working
