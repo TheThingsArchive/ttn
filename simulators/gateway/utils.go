@@ -6,8 +6,11 @@ package gateway
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
 	"github.com/thethingsnetwork/core/lorawan/semtech"
+	"github.com/thethingsnetwork/core/utils/pointer"
 	"math/rand"
+	"time"
 )
 
 func genToken() []byte {
@@ -40,4 +43,31 @@ func generateRssi() int {
 func generateFreq() float64 {
 	// EU 863-870MHz
 	return rand.Float64()*7 + 863.0
+}
+
+func generateDatr() string {
+	// Spread Factor from 12 to 7
+	sf := 12 - rand.Intn(7)
+	var bw int
+	if sf == 6 {
+		// DR6 -> SF7@250Khz
+		sf = 7
+		bw = 250
+	} else {
+		bw = 125
+	}
+	return fmt.Sprintf("SF%dBW%d", sf, bw)
+}
+
+func generateCodr() string {
+	d := rand.Intn(4) + 5
+	return fmt.Sprintf("4/%d", d)
+}
+
+func generateLsnr() float64 {
+	return 0.0
+}
+
+func generateData() string {
+	return ""
 }
