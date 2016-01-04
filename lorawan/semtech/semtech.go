@@ -42,7 +42,17 @@ func (rxpk *RXPK) DevAddr() *DeviceAddress {
 		return nil
 	}
 
-	buf, err := base64.StdEncoding.DecodeString(*rxpk.Data)
+	encoded := *rxpk.Data
+	switch len(encoded) % 4 { // Data does not contain encoding padding
+	case 1:
+		return nil
+	case 2:
+		encoded += "=="
+	case 3:
+		encoded += "="
+	}
+
+	buf, err := base64.StdEncoding.DecodeString(encoded)
 	if err != nil || len(buf) < 5 {
 		return nil
 	}
@@ -83,7 +93,17 @@ func (txpk *TXPK) DevAddr() *DeviceAddress {
 		return nil
 	}
 
-	buf, err := base64.StdEncoding.DecodeString(*txpk.Data)
+	encoded := *txpk.Data
+	switch len(encoded) % 4 { // Data does not contain encoding padding
+	case 1:
+		return nil
+	case 2:
+		encoded += "=="
+	case 3:
+		encoded += "="
+	}
+
+	buf, err := base64.StdEncoding.DecodeString(encoded)
 	if err != nil || len(buf) < 5 {
 		return nil
 	}

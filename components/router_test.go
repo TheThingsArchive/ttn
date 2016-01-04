@@ -129,10 +129,10 @@ func genPUSH_DATA() semtech.Packet {
 		GatewayId:  []byte{0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8},
 		Payload: &semtech.Payload{
 			RXPK: []semtech.RXPK{
-				semtech.RXPK{Data: pointer.String("/xRC/zcBAAABqqq7uw==")}, // Device #1
-				semtech.RXPK{Data: pointer.String("/7zN3u8BAAABqqv3RA==")}, // Device #2
-				semtech.RXPK{Data: pointer.String("/xRC/zcBAAABqmcSRQ==")}, // Device #1
-				semtech.RXPK{Data: pointer.String("/wASo3YBAAAB+qpFeQ==")}, // Device #3
+				semtech.RXPK{Data: pointer.String("/xRC/zcBAAABqqq7uw")}, // Device #1
+				semtech.RXPK{Data: pointer.String("/7zN3u8BAAABqqv3RA")}, // Device #2
+				semtech.RXPK{Data: pointer.String("/xRC/zcBAAABqmcSRQ")}, // Device #1
+				semtech.RXPK{Data: pointer.String("/wASo3YBAAAB+qpFeQ")}, // Device #3
 			},
 		},
 	}
