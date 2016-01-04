@@ -71,3 +71,21 @@ func generateLsnr() float64 {
 func generateData() string {
 	return ""
 }
+
+func generateRXPK() semtech.RXPK {
+	now := time.Now()
+	return semtech.RXPK{
+		Time: &now,
+		Tmst: pointer.Uint(uint(now.UnixNano())),
+		Freq: pointer.Float64(generateFreq()),
+		Chan: pointer.Uint(0),                 // Irrelevant
+		Rfch: pointer.Uint(0),                 // Irrelevant
+		Stat: pointer.Int(1),                  // Assuming CRC was ok
+		Modu: pointer.String("LORA"),          // For now, only consider LORA modulation
+		Datr: pointer.String(generateDatr()),  // Arbitrary
+		Codr: pointer.String("4/5"),           // Arbitrary
+		Rssi: pointer.Int(generateRssi()),     // Arbitrary
+		Lsnr: pointer.Float64(generateLsnr()), // Arbitrary
+		Data: pointer.String(generateData()),  // Arbitrary
+	}
+}
