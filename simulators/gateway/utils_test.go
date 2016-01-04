@@ -116,3 +116,11 @@ func TestGenerateLsnr(t *testing.T) {
 		So(len(values), ShouldBeGreaterThan, 5)
 	})
 }
+
+func TestGenerateRXPK(t *testing.T) {
+	Convey("The generateRXPK() function should generate a valid RXPK holding data from a device", t, func() {
+		rxpk := generateRXPK()
+		devAddr := rxpk.DevAddr()
+		So(devAddr, ShouldNotBeNil)
+	})
+}

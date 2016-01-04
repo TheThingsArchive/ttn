@@ -5,12 +5,16 @@ package gateway
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/binary"
 	"fmt"
+	"github.com/brocaar/lorawan"
+	"github.com/thethingsnetwork/core"
 	"github.com/thethingsnetwork/core/lorawan/semtech"
 	"github.com/thethingsnetwork/core/utils/pointer"
 	"math"
 	"math/rand"
+	"strings"
 	"time"
 )
 
@@ -77,8 +81,40 @@ func generateLsnr() float64 {
 }
 
 // Generates fake data from a device
-func generateData() string {
-	return ""
+func generateData(frmData string) string {
+	macPayload := lorawan.NewMACPayload(true)
+	macPayload.FHDR = lorawan.FHDR{
+		DevAddr: generateDevAddr(),
+		FCtrl:   lorawan.FCtrl{},
+		FCnt:    0,
+	}
+	macPayload.FRMPayload = []lorawan.Payload{&lorawan.DataPayload{
+		Bytes: []byte(frmData),
+	}}
+	macPayload.FPort = 14
+
+	phyPayload := lorawan.NewPHYPayload(true)
+	phyPayload.MHDR = lorawan.MHDR{
+		MType: lorawan.UnconfirmedDataUp,
+		Major: lorawan.LoRaWANR1,
+	}
+	phyPayload.MACPayload = macPayload
+	phyPayload.SetMIC(core.GetNwSKey())
+
+	raw, err := phyPayload.MarshalBinary()
+	if err != nil { // Shouldn't be
+		panic(err)
+	}
+	return strings.Trim(base64.StdEncoding.EncodeToString(raw), "=")
+}
+
+// Generate a random device address
+func generateDevAddr() lorawan.DevAddr {
+	devAddr := [4]byte{}
+	token := new(bytes.Buffer)
+	binary.Write(token, binary.LittleEndian, time.Now().UnixNano())
+	copy(devAddr[:], token.Bytes()[:4])
+	return lorawan.DevAddr(devAddr)
 }
 
 func generateRXPK() semtech.RXPK {
@@ -87,14 +123,14 @@ func generateRXPK() semtech.RXPK {
 		Time: &now,
 		Tmst: pointer.Uint(uint(now.UnixNano())),
 		Freq: pointer.Float64(generateFreq()),
-		Chan: pointer.Uint(0),                 // Irrelevant
-		Rfch: pointer.Uint(0),                 // Irrelevant
-		Stat: pointer.Int(1),                  // Assuming CRC was ok
-		Modu: pointer.String("LORA"),          // For now, only consider LORA modulation
-		Datr: pointer.String(generateDatr()),  // Arbitrary
-		Codr: pointer.String("4/5"),           // Arbitrary
-		Rssi: pointer.Int(generateRssi()),     // Arbitrary
-		Lsnr: pointer.Float64(generateLsnr()), // Arbitrary
-		Data: pointer.String(generateData()),  // Arbitrary
+		Chan: pointer.Uint(0),                          // Irrelevant
+		Rfch: pointer.Uint(0),                          // Irrelevant
+		Stat: pointer.Int(1),                           // Assuming CRC was ok
+		Modu: pointer.String("LORA"),                   // For now, only consider LORA modulation
+		Datr: pointer.String(generateDatr()),           // Arbitrary
+		Codr: pointer.String("4/5"),                    // Arbitrary
+		Rssi: pointer.Int(generateRssi()),              // Arbitrary
+		Lsnr: pointer.Float64(generateLsnr()),          // Arbitrary
+		Data: pointer.String(generateData("RXPKData")), // Arbitrary
 	}
 }
