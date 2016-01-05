@@ -25,8 +25,8 @@ Handle an uplink process that can forward packet coming from a gateway to a simp
 system will just forward messages using pre-configured end-device addresses.
 
 
-- [ ] Basic Router  
-    - [ ] Core
+- [x] Basic Router  
+    - [x] Core
         - [x] Lookup for device address (only local)
         - [x] Invalidate broker periodically (only local)
         - [x] Acknowledge packet from gateway
@@ -35,7 +35,6 @@ system will just forward messages using pre-configured end-device addresses.
         - [x] Create Mock DownAdapter
         - [x] Create Mock UpAdatper
         - [x] Test'em all
-        - [ ] Switch from local in-memory storage to Reddis
     - [x] UpAdapter
         - [x] Listen and forward incoming packets to Core router
         - [x] Keep track of existing UDP connections
@@ -44,14 +43,32 @@ system will just forward messages using pre-configured end-device addresses.
         - [x] Listen and forward incoming packet to Core router
         - [x] Broadcast a packet to several brokers
         - [x] Send packet to given brokers (same as above ?)
+    - [ ] Bonus
+        - [ ] Switch from local in-memory storage to Reddis
 
 
 - [ ] Basic Broker
-    - [ ] Detail the list of features
+    - [ ] Core
+        - [ ] Lookup for associated device from Network Controller
+        - [ ] Send acknowledgement or rejection for given packet
+        - [ ] If necessary, forward packet to right handler
+        - [ ] Associate handlers to static device addresses
+    - [ ] Router adapter
+        - [ ] Listen to http request and forward valid request to core 
+        - [ ] Respond with 200 OK (ack) or 404 Not Found (nack)
+    - [ ] Network Controller adapter
+        - [ ] Lookup for device from a packet
+        - [ ] Send back packet that are indeed handled by a handler
+    - [ ] Handler adapter
+        - [ ] Send packet to handler
+        - [ ] Accept registrations of static devAddr from handlers
+
 
 
 - [ ] Minimalist Dumb Network-Controller
-    - [ ] Detail the list of features
+    - [ ] Retrieve corresponding key (appSKey or nwskey)
+    - [ ] Compute MIC check of received packet
+
 
 ## Milestone 3
 Support application registration for personalization. Applications provide a list of
