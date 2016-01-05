@@ -5,9 +5,17 @@ package gateway
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/binary"
+	"fmt"
+	"github.com/brocaar/lorawan"
+	"github.com/thethingsnetwork/core"
 	"github.com/thethingsnetwork/core/lorawan/semtech"
+	"github.com/thethingsnetwork/core/utils/pointer"
+	"math"
 	"math/rand"
+	"strings"
+	"time"
 )
 
 func genToken() []byte {
@@ -32,12 +40,97 @@ func ackToken(index int, packet semtech.Packet) [4]byte {
 	return [4]byte{id, kind, packet.Token[0], packet.Token[1]}
 }
 
+// Generates RSSI signal between -120 < rssi < 0
 func generateRssi() int {
-	x := float32(rand.Int31()) / float32(2e8)
-	return -int(x * x)
+	// Generate RSSI. Tend towards generating great signal strength.
+	x := float64(rand.Int31()) * float64(2e-9)
+	return int(-1.6 * math.Exp(x))
 }
 
+// Generates a frequency between 863.0 and 870.0 Mhz
 func generateFreq() float64 {
 	// EU 863-870MHz
 	return rand.Float64()*7 + 863.0
+}
+
+// Generates Datr for instance: SF4BW125
+func generateDatr() string {
+	// Spread Factor from 12 to 7
+	sf := 12 - rand.Intn(7)
+	var bw int
+	if sf == 6 {
+		// DR6 -> SF7@250Khz
+		sf = 7
+		bw = 250
+	} else {
+		bw = 125
+	}
+	return fmt.Sprintf("SF%dBW%d", sf, bw)
+}
+
+// Generates Codr for instance: 4/6
+func generateCodr() string {
+	d := rand.Intn(4) + 5
+	return fmt.Sprintf("4/%d", d)
+}
+
+// Generates LoRa SNR ratio in db. Tend towards generating good ratio with low noise
+func generateLsnr() float64 {
+	x := float64(rand.Int31()) * float64(2e-9)
+	return math.Floor((-0.1*math.Exp(x)+5.5)*10) / 10
+}
+
+// Generates fake data from a device
+func generateData(frmData string) string {
+	macPayload := lorawan.NewMACPayload(true)
+	macPayload.FHDR = lorawan.FHDR{
+		DevAddr: generateDevAddr(),
+		FCtrl:   lorawan.FCtrl{},
+		FCnt:    0,
+	}
+	macPayload.FRMPayload = []lorawan.Payload{&lorawan.DataPayload{
+		Bytes: []byte(frmData),
+	}}
+	macPayload.FPort = 14
+
+	phyPayload := lorawan.NewPHYPayload(true)
+	phyPayload.MHDR = lorawan.MHDR{
+		MType: lorawan.UnconfirmedDataUp,
+		Major: lorawan.LoRaWANR1,
+	}
+	phyPayload.MACPayload = macPayload
+	phyPayload.SetMIC(core.GetNwSKey())
+
+	raw, err := phyPayload.MarshalBinary()
+	if err != nil { // Shouldn't be
+		panic(err)
+	}
+	return strings.Trim(base64.StdEncoding.EncodeToString(raw), "=")
+}
+
+// Generate a random device address
+func generateDevAddr() lorawan.DevAddr {
+	devAddr := [4]byte{}
+	token := new(bytes.Buffer)
+	binary.Write(token, binary.LittleEndian, time.Now().UnixNano())
+	copy(devAddr[:], token.Bytes()[:4])
+	return lorawan.DevAddr(devAddr)
+}
+
+func generateRXPK() semtech.RXPK {
+	now := time.Now()
+	return semtech.RXPK{
+		Time: &now,
+		Tmst: pointer.Uint(uint(now.UnixNano())),
+		Freq: pointer.Float64(generateFreq()),
+		Chan: pointer.Uint(0),                          // Irrelevant
+		Rfch: pointer.Uint(0),                          // Irrelevant
+		Stat: pointer.Int(1),                           // Assuming CRC was ok
+		Modu: pointer.String("LORA"),                   // For now, only consider LORA modulation
+		Datr: pointer.String(generateDatr()),           // Arbitrary
+		Codr: pointer.String("4/5"),                    // Arbitrary
+		Rssi: pointer.Int(generateRssi()),              // Arbitrary
+		Lsnr: pointer.Float64(generateLsnr()),          // Arbitrary
+		Data: pointer.String(generateData("RXPKData")), // Arbitrary
+	}
 }
