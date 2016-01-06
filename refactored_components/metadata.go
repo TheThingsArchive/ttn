@@ -5,6 +5,7 @@ package components
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/thethingsnetwork/core/semtech"
 	"time"
 )
@@ -61,6 +62,23 @@ func (m Metadata) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements the json.Unmarshaler interface
 func (m *Metadata) UnmarshalJSON(raw []byte) error {
+	if m == nil {
+		return fmt.Errorf("Cannot unmarshal nil Metadata")
+	}
+
+	proxy := metadataProxy{}
+	if err := json.Unmarshal(raw, &proxy); err != nil {
+		return err
+	}
+	*m = Metadata(proxy.metadata)
+	if proxy.Time != nil {
+		m.Time = proxy.Time.Value
+	}
+
+	if proxy.Datr != nil {
+		m.Datr = &proxy.Datr.Value
+	}
+
 	return nil
 }
 
