@@ -15,7 +15,12 @@ type Adapter struct {
 }
 
 func NewAdapter(port uint) (*Adapter, error) {
-	return nil, nil
+	if port == 0 {
+		return nil, ErrInvalidPort
+	}
+
+	a := Adapter{}
+	return &a, nil
 }
 
 // Send implements the core.Adapter interface
