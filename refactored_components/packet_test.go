@@ -16,14 +16,8 @@ import (
 	"time"
 )
 
-type convertSemtechPacketTest struct {
-	CorePacket core.Packet
-	RXPK       semtech.RXPK
-	WantError  error
-}
-
-func TestComvertSemtechPacket(t *testing.T) {
-	tests := []convertSemtechPacketTest{
+func TestConvertRXPK(t *testing.T) {
+	tests := []convertRXPKTest{
 		genRXPKWithFullMetadata(),
 		genRXPKWithPartialMetadata(),
 		genRXPKWithNoData(),
@@ -37,6 +31,8 @@ func TestComvertSemtechPacket(t *testing.T) {
 	}
 }
 
+// ----- Check Utilities
+
 func checkPackets(t *testing.T, want core.Packet, got core.Packet) {
 	if reflect.DeepEqual(want, got) {
 		Ok(t, "Check packets")
@@ -45,18 +41,28 @@ func checkPackets(t *testing.T, want core.Packet, got core.Packet) {
 	Ko(t, "Converted packet don't match expectations. \nWant: \n%s\nGot:  \n%s", want.String(), got.String())
 }
 
-func genRXPKWithFullMetadata() convertSemtechPacketTest {
+// ---- Build utilities
+
+type convertRXPKTest struct {
+	CorePacket core.Packet
+	RXPK       semtech.RXPK
+	WantError  error
+}
+
+// Generates a test suite where the RXPK is fully complete
+func genRXPKWithFullMetadata() convertRXPKTest {
 	phyPayload := genPHYPayload(true)
 	rxpk := genRXPK(phyPayload)
 	metadata := genMetadata(rxpk)
-	return convertSemtechPacketTest{
+	return convertRXPKTest{
 		CorePacket: core.Packet{Metadata: &metadata, Payload: phyPayload},
 		RXPK:       rxpk,
 		WantError:  nil,
 	}
 }
 
-func genRXPKWithPartialMetadata() convertSemtechPacketTest {
+// Generates a test suite where the RXPK contains partial metadata
+func genRXPKWithPartialMetadata() convertRXPKTest {
 	phyPayload := genPHYPayload(true)
 	rxpk := genRXPK(phyPayload)
 	rxpk.Codr = nil
@@ -65,23 +71,25 @@ func genRXPKWithPartialMetadata() convertSemtechPacketTest {
 	rxpk.Time = nil
 	rxpk.Size = nil
 	metadata := genMetadata(rxpk)
-	return convertSemtechPacketTest{
+	return convertRXPKTest{
 		CorePacket: core.Packet{Metadata: &metadata, Payload: phyPayload},
 		RXPK:       rxpk,
 		WantError:  nil,
 	}
 }
 
-func genRXPKWithNoData() convertSemtechPacketTest {
+// Generates a test suite where the RXPK contains no data
+func genRXPKWithNoData() convertRXPKTest {
 	rxpk := genRXPK(genPHYPayload(true))
 	rxpk.Data = nil
-	return convertSemtechPacketTest{
+	return convertRXPKTest{
 		CorePacket: core.Packet{},
 		RXPK:       rxpk,
 		WantError:  ErrImpossibleConversion,
 	}
 }
 
+// Generate an RXPK packet using the given payload as Data
 func genRXPK(phyPayload lorawan.PHYPayload) semtech.RXPK {
 	raw, err := phyPayload.MarshalBinary()
 	if err != nil {
@@ -110,6 +118,7 @@ func genRXPK(phyPayload lorawan.PHYPayload) semtech.RXPK {
 	}
 }
 
+// Generate a Metadata object that matches RXPK metadata
 func genMetadata(RXPK semtech.RXPK) Metadata {
 	return Metadata{
 		Chan: RXPK.Chan,
@@ -127,6 +136,7 @@ func genMetadata(RXPK semtech.RXPK) Metadata {
 	}
 }
 
+// Generate a Physical payload represting an uplink or downlink message
 func genPHYPayload(uplink bool) lorawan.PHYPayload {
 	nwkSKey := [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
 	appSKey := [16]byte{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1}
