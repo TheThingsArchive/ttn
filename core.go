@@ -3,12 +3,22 @@ package core
 import (
 	"encoding"
 	"encoding/json"
+	"fmt"
 )
 
+var ErrInvalidPacket error = fmt.Errorf("Invalid Packet")
+
 type Packet struct {
-	Addressable
 	Metadata Metadata
 	Payload  PHYPayload
+}
+
+func (p Packet) DevAddr() *[4]byte {
+	addr, err := p.Payload.DevAddr()
+	if err != nil {
+		return nil
+	}
+	return &addr
 }
 
 type Addressable interface {
@@ -34,6 +44,7 @@ type PHYPayload interface {
 	EncryptMACPayload(key [16]byte) error
 	SetMIC(key [16]byte) error
 	ValidateMic(key [16]byte) (bool, error)
+	DevAddr() ([4]byte, error)
 }
 
 type AckNacker interface {
