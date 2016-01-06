@@ -1,0 +1,3 @@
+[submodule "lorawan"]
+	path = lorawan
+	url = git@github.com:TheThingsNetwork/lorawan
