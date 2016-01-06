@@ -1,24 +1,33 @@
 package core
 
 import (
-	"encoding"
 	"encoding/json"
 	"fmt"
+	"github.com/thethingsnetwork/core/lorawan"
 )
 
 var ErrInvalidPacket error = fmt.Errorf("Invalid Packet")
 
 type Packet struct {
 	Metadata Metadata
-	Payload  PHYPayload
+	Payload  lorawan.PHYPayload
 }
 
-func (p Packet) DevAddr() *[4]byte {
+func (p Packet) DevAddr() *lorawan.DevAddr {
 	addr, err := p.Payload.DevAddr()
 	if err != nil {
 		return nil
 	}
 	return &addr
+}
+
+func (p Packet) String() string {
+	str := "Packet {"
+	if p.Metadata != nil {
+		str += fmt.Sprintf("\n\tMetadata %s}", p.Metadata.String())
+	}
+	str += fmt.Sprintf("\n\tPayload%+v\n}", p.Payload)
+	return str
 }
 
 type Addressable interface {
@@ -33,18 +42,7 @@ type Recipient struct {
 type Metadata interface {
 	json.Marshaler
 	json.Unmarshaler
-	encoding.BinaryMarshaler
-	encoding.BinaryUnmarshaler
-}
-
-type PHYPayload interface {
-	encoding.BinaryMarshaler
-	encoding.BinaryUnmarshaler
-	DecryptMACPayload(key [16]byte) error
-	EncryptMACPayload(key [16]byte) error
-	SetMIC(key [16]byte) error
-	ValidateMic(key [16]byte) (bool, error)
-	DevAddr() ([4]byte, error)
+	String() string
 }
 
 type AckNacker interface {

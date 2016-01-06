@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/thethingsnetwork/core/semtech"
+	"github.com/thethingsnetwork/core/utils/pointer"
 	"time"
 )
 
@@ -80,6 +81,11 @@ func (m *Metadata) UnmarshalJSON(raw []byte) error {
 	}
 
 	return nil
+}
+
+// String implement the io.Stringer interface
+func (m Metadata) String() string {
+	return pointer.DumpPStruct(m, false)
 }
 
 // type metadataProxy is used to conveniently marshal and unmarshal Metadata structure.
