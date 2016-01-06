@@ -12,6 +12,6 @@ import (
 
 var ErrImpossibleConversion = fmt.Errorf("The given packet can't be converted")
 
-func ConvertSemtechPacket(p semtech.Packet) (core.Packet, error) {
+func ConvertRXPK(p semtech.RXPK) (core.Packet, error) {
 	return core.Packet{}, nil
 }
