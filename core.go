@@ -30,10 +30,6 @@ func (p Packet) String() string {
 	return str
 }
 
-type Addressable interface {
-	DevAddr() [4]byte
-}
-
 type Recipient struct {
 	Address interface{}
 	Id      interface{}
@@ -61,7 +57,15 @@ type Adapter interface {
 	Next() (*Packet, *AckNacker, error)
 }
 
+type BrkHdlAdapter interface {
+	Adapter
+	NextRegistration() (Recipient, lorawan.DevAddr, lorawan.AES128Key, error)
+}
+
 type Router Component
-type Broker Component
+type Broker interface {
+	Component
+	Register(handler Recipient, devAddr lorawan.DevAddr, nwskey lorawan.AES128Key) error
+}
 type Handler Component
 type NetworkController Component
