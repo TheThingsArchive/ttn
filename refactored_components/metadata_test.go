@@ -103,7 +103,7 @@ func TestUnmarshalJSON(t *testing.T) {
 // Check that errors match
 func checkErrors(t *testing.T, want error, got error) {
 	if got == want {
-		Ok(t)
+		Ok(t, "check Errors")
 		return
 	}
 	Ko(t, "Expected error to be %v but got %v", want, got)
@@ -113,7 +113,7 @@ func checkErrors(t *testing.T, want error, got error) {
 func checkJSON(t *testing.T, want string, got []byte) {
 	str := string(got)
 	if str == want {
-		Ok(t)
+		Ok(t, "check JSON")
 		return
 	}
 	Ko(t, "Marshaled data don't match expectations.\nWant: %s\nGot:  %s", want, str)
@@ -123,7 +123,7 @@ func checkJSON(t *testing.T, want string, got []byte) {
 // Check that obtained metadata matches expected one
 func checkMetadata(t *testing.T, want Metadata, got Metadata) {
 	if reflect.DeepEqual(want, got) {
-		Ok(t)
+		Ok(t, "check Metadata")
 		return
 	}
 	Ko(t, "Unmarshaled json don't match expectations. \nWant: %s\nGot:  %s", pointer.DumpPStruct(want, false), pointer.DumpPStruct(got, false))
