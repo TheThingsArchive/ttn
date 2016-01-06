@@ -95,12 +95,7 @@ func genRXPK(phyPayload lorawan.PHYPayload) semtech.RXPK {
 	if err != nil {
 		panic(err)
 	}
-	dst := make([]byte, 256)
-	base64.StdEncoding.Encode(dst, raw)
-	if err != nil {
-		panic(err)
-	}
-	data := strings.Trim(string(dst), "=")
+	data := strings.Trim(base64.StdEncoding.EncodeToString(raw), "=")
 
 	return semtech.RXPK{
 		Chan: pointer.Uint(2),
@@ -149,8 +144,7 @@ func genPHYPayload(uplink bool) lorawan.PHYPayload {
 			ADRACKReq: false,
 			ACK:       false,
 		},
-		FCnt:  0,
-		FOpts: []lorawan.MACCommand{}, // you can leave this out when there is no MAC command to send
+		FCnt: 0,
 	}
 	macPayload.FPort = 10
 	macPayload.FRMPayload = []lorawan.Payload{&lorawan.DataPayload{Bytes: []byte{1, 2, 3, 4}}}
