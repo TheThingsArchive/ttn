@@ -79,7 +79,7 @@ func (d *Datrparser) UnmarshalJSON(raw []byte) error {
 		return errors.New("Invalid datr format")
 	}
 
-	d.Value = &v
+	d.Value = v
 	return nil
 }
 
@@ -106,7 +106,7 @@ func (p *Payload) UnmarshalJSON(raw []byte) error {
 			proxy.ProxTXPK.TXPK.Time = proxy.ProxTXPK.Time.Value
 		}
 		if proxy.ProxTXPK.Datr != nil {
-			proxy.ProxTXPK.TXPK.Datr = proxy.ProxTXPK.Datr.Value
+			proxy.ProxTXPK.TXPK.Datr = &proxy.ProxTXPK.Datr.Value
 		}
 		p.TXPK = proxy.ProxTXPK.TXPK
 	}
@@ -116,7 +116,7 @@ func (p *Payload) UnmarshalJSON(raw []byte) error {
 			rxpk.RXPK.Time = rxpk.Time.Value
 		}
 		if rxpk.Datr != nil {
-			rxpk.RXPK.Datr = rxpk.Datr.Value
+			rxpk.RXPK.Datr = &rxpk.Datr.Value
 		}
 		p.RXPK = append(p.RXPK, *rxpk.RXPK)
 	}

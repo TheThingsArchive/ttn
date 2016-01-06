@@ -34,7 +34,7 @@ type txpkProxy struct {
 // We're gonna parse it as a string in any case.
 type Datrparser struct {
 	Kind  string
-	Value *string // The parsed value
+	Value string // The parsed value
 }
 
 // timeParser is used as a proxy to Unmarshal JSON objects with different date types as the time
