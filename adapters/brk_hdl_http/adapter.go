@@ -4,14 +4,17 @@
 package brk_hdl_http
 
 import (
+	"fmt"
 	"github.com/thethingsnetwork/core"
 	"github.com/thethingsnetwork/core/lorawan"
 )
 
+var ErrInvalidPort = fmt.Errorf("The given port is invalid")
+
 type Adapter struct {
 }
 
-func NewAdapter(port string) (*Adapter, error) {
+func NewAdapter(port uint) (*Adapter, error) {
 	return nil, nil
 }
 
