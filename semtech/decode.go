@@ -55,7 +55,7 @@ func Unmarshal(raw []byte) (*Packet, error) {
 }
 
 // UnmarshalJSON implements the Unmarshaler interface from encoding/json
-func (t *timeparser) UnmarshalJSON(raw []byte) error {
+func (t *Timeparser) UnmarshalJSON(raw []byte) error {
 	str := strings.Trim(string(raw), `"`)
 	v, err := time.Parse("2006-01-02 15:04:05 GMT", str)
 	if err != nil {
@@ -67,19 +67,19 @@ func (t *timeparser) UnmarshalJSON(raw []byte) error {
 	if err != nil {
 		return errors.New("Unkown date format. Unable to parse time")
 	}
-	t.value = &v
+	t.Value = &v
 	return nil
 }
 
 // UnmarshalJSON implements the Unmarshaler interface from encoding/json
-func (d *datrparser) UnmarshalJSON(raw []byte) error {
+func (d *Datrparser) UnmarshalJSON(raw []byte) error {
 	v := strings.Trim(string(raw), `"`)
 
 	if v == "" {
 		return errors.New("Invalid datr format")
 	}
 
-	d.value = &v
+	d.Value = &v
 	return nil
 }
 
@@ -96,27 +96,27 @@ func (p *Payload) UnmarshalJSON(raw []byte) error {
 
 	if proxy.ProxStat.Stat != nil {
 		if proxy.ProxStat.Time != nil {
-			proxy.ProxStat.Stat.Time = proxy.ProxStat.Time.value
+			proxy.ProxStat.Stat.Time = proxy.ProxStat.Time.Value
 		}
 		p.Stat = proxy.ProxStat.Stat
 	}
 
 	if proxy.ProxTXPK.TXPK != nil {
 		if proxy.ProxTXPK.Time != nil {
-			proxy.ProxTXPK.TXPK.Time = proxy.ProxTXPK.Time.value
+			proxy.ProxTXPK.TXPK.Time = proxy.ProxTXPK.Time.Value
 		}
 		if proxy.ProxTXPK.Datr != nil {
-			proxy.ProxTXPK.TXPK.Datr = proxy.ProxTXPK.Datr.value
+			proxy.ProxTXPK.TXPK.Datr = proxy.ProxTXPK.Datr.Value
 		}
 		p.TXPK = proxy.ProxTXPK.TXPK
 	}
 
 	for _, rxpk := range proxy.ProxRXPK {
 		if rxpk.Time != nil {
-			rxpk.RXPK.Time = rxpk.Time.value
+			rxpk.RXPK.Time = rxpk.Time.Value
 		}
 		if rxpk.Datr != nil {
-			rxpk.RXPK.Datr = rxpk.Datr.value
+			rxpk.RXPK.Datr = rxpk.Datr.Value
 		}
 		p.RXPK = append(p.RXPK, *rxpk.RXPK)
 	}
