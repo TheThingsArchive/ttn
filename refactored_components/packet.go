@@ -12,8 +12,11 @@ import (
 	"reflect"
 )
 
+// return by ConvertRXPK or ConvertTXPK if there's no data in the given packet
 var ErrImpossibleConversion = fmt.Errorf("The given packet can't be converted")
 
+// ConvertRXPK create a core.Packet from a semtech.RXPK. It's an handy way to both decode the
+// frame payload and retrieve associated metadata from that packet
 func ConvertRXPK(p semtech.RXPK) (core.Packet, error) {
 	packet := core.Packet{}
 	if p.Data == nil {
