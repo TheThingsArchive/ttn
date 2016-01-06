@@ -4,6 +4,8 @@
 package components
 
 import (
+	"encoding/json"
+	"github.com/thethingsnetwork/core/semtech"
 	"time"
 )
 
@@ -29,12 +31,47 @@ type Metadata struct {
 	Tmst *uint      `json:"tmst,omitempty"` // Internal timestamp of "RX finished" event (32b unsigned)
 }
 
+type metadata Metadata
+
 // MarshalJSON implements the json.Marshal interface
 func (m Metadata) MarshalJSON() ([]byte, error) {
-	return nil, nil
+	var d *semtech.Datrparser
+	var t *semtech.Timeparser
+
+	if m.Datr != nil {
+		d = new(semtech.Datrparser)
+		if m.Modu != nil && *m.Modu == "FSK" {
+			*d = semtech.Datrparser{Kind: "uint", Value: *m.Datr}
+		} else {
+			*d = semtech.Datrparser{Kind: "string", Value: *m.Datr}
+		}
+	}
+
+	if m.Time != nil {
+		t = new(semtech.Timeparser)
+		*t = semtech.Timeparser{Layout: time.RFC3339Nano, Value: m.Time}
+	}
+
+	return json.Marshal(metadataProxy{
+		metadata: metadata(m),
+		Datr:     d,
+		Time:     t,
+	})
 }
 
 // UnmarshalJSON implements the json.Unmarshaler interface
 func (m *Metadata) UnmarshalJSON(raw []byte) error {
 	return nil
+}
+
+// type metadataProxy is used to conveniently marshal and unmarshal Metadata structure.
+//
+// Datr field could be either string or uint depending on the Modu field.
+// Time field could be parsed in a lot of different way depending of the time format.
+// This proxy make sure that everything is marshaled and unmarshaled to the right thing and allow
+// the Metadata struct to be user-friendly.
+type metadataProxy struct {
+	metadata
+	Datr *semtech.Datrparser `json:"datr,omitempty"`
+	Time *semtech.Timeparser `json:"time,omitempty"`
 }
