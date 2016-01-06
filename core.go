@@ -24,7 +24,7 @@ func (p Packet) DevAddr() *lorawan.DevAddr {
 func (p Packet) String() string {
 	str := "Packet {"
 	if p.Metadata != nil {
-		str += fmt.Sprintf("\n\tMetadata %s}", p.Metadata.String())
+		str += fmt.Sprintf("\n\t%s}", p.Metadata.String())
 	}
 	str += fmt.Sprintf("\n\tPayload%+v\n}", p.Payload)
 	return str

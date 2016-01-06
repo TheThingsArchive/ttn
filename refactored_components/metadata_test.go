@@ -81,7 +81,7 @@ var unmarshalTests = []struct {
 // The broker can handle an uplink packet
 func TestMarshaljson(t *testing.T) {
 	for _, test := range commonTests {
-		Desc(t, "Marshal medatadata: %v", pointer.DumpPStruct(test.Metadata, false))
+		Desc(t, "Marshal medatadata: %s", test.Metadata.String())
 		raw, err := json.Marshal(test.Metadata)
 		checkErrors(t, test.WantError, err)
 		checkJSON(t, test.JSON, raw)
@@ -126,5 +126,5 @@ func checkMetadata(t *testing.T, want Metadata, got Metadata) {
 		Ok(t, "check Metadata")
 		return
 	}
-	Ko(t, "Unmarshaled json don't match expectations. \nWant: %s\nGot:  %s", pointer.DumpPStruct(want, false), pointer.DumpPStruct(got, false))
+	Ko(t, "Unmarshaled json don't match expectations. \nWant: %s\nGot:  %s", want.String(), got.String())
 }

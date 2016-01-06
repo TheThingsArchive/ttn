@@ -61,8 +61,8 @@ func DumpPStruct(s interface{}, multiline bool) string {
 		return "Not a struct"
 	}
 
-	nl := ", "
-	str := "{ "
+	nl := ","
+	str := fmt.Sprintf("%s{", v.Type().Name())
 	if multiline {
 		nl = "\n\t"
 		str += nl
@@ -79,30 +79,30 @@ func DumpPStruct(s interface{}, multiline bool) string {
 		switch t := i.(type) {
 		case *bool:
 			if t != nil {
-				str += fmt.Sprintf("%s: %+v%s", key, *t, nl)
+				str += fmt.Sprintf("%s:%+v%s", key, *t, nl)
 			}
 		case *int:
 			if t != nil {
-				str += fmt.Sprintf("%s: %+v%s", key, *t, nl)
+				str += fmt.Sprintf("%s:%+v%s", key, *t, nl)
 			}
 		case *uint:
 			if t != nil {
-				str += fmt.Sprintf("%s: %+v%s", key, *t, nl)
+				str += fmt.Sprintf("%s:%+v%s", key, *t, nl)
 			}
 		case *string:
 			if t != nil {
-				str += fmt.Sprintf("%s: %+v%s", key, *t, nl)
+				str += fmt.Sprintf("%s:%+v%s", key, *t, nl)
 			}
 		case *float64:
 			if t != nil {
-				str += fmt.Sprintf("%s: %+v%s", key, *t, nl)
+				str += fmt.Sprintf("%s:%+v%s", key, *t, nl)
 			}
 		case *time.Time:
 			if t != nil {
-				str += fmt.Sprintf("%s: %+v%s", key, *t, nl)
+				str += fmt.Sprintf("%s:%+v%s", key, *t, nl)
 			}
 		default:
-			str += fmt.Sprintf("%s: unknown%s", key, nl)
+			str += fmt.Sprintf("%s:unknown%s", key, nl)
 		}
 	}
 
@@ -110,7 +110,7 @@ func DumpPStruct(s interface{}, multiline bool) string {
 	if multiline {
 		str += "\n}"
 	} else {
-		str += " }"
+		str += "}"
 	}
 	return str
 }
