@@ -16,10 +16,11 @@ import (
 )
 
 var ErrInvalidPort = fmt.Errorf("The given port is invalid")
+var ErrInvalidPacket = fmt.Errorf("The given core packet is invalid")
 
 type Adapter struct {
-	logger log.Logger
-	regs   chan regMsg
+	loggers []log.Logger
+	regs    chan regMsg
 }
 
 type regMsg struct {
@@ -49,14 +50,14 @@ func (r regAckNacker) Nack(p core.Packet) error {
 	return nil
 }
 
-func NewAdapter(port uint) (*Adapter, error) {
+func NewAdapter(port uint, loggers ...log.Logger) (*Adapter, error) {
 	if port == 0 {
 		return nil, ErrInvalidPort
 	}
 
 	a := Adapter{
-		regs:   make(chan regMsg),
-		logger: log.DebugLogger{Tag: "BRK_HDL_ADAPTER"},
+		regs:    make(chan regMsg),
+		loggers: loggers,
 	}
 
 	go a.listen(port)
@@ -187,8 +188,7 @@ func (a *Adapter) listen(port uint) {
 }
 
 func (a *Adapter) log(format string, i ...interface{}) {
-	if a == nil || a.logger == nil {
-		return
+	for _, logger := range a.loggers {
+		logger.Log(format, i...)
 	}
-	a.logger.Log(format, i...)
 }
