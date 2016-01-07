@@ -33,7 +33,7 @@ func TestNewAdapter(t *testing.T) {
 
 type nextRegistrationTest struct {
 	AppId      string
-	Handler    string
+	AppUrl     string
 	DevAddr    string
 	NwsKey     string
 	WantResult nextRegistrationResult
@@ -50,7 +50,7 @@ func TestNextRegistration(t *testing.T) {
 		// Valid device address
 		{
 			AppId:   "appid",
-			Handler: "myhandler.com:3000",
+			AppUrl:  "myhandler.com:3000",
 			NwsKey:  "00112233445566778899aabbccddeeff",
 			DevAddr: "14aab0a4",
 			WantResult: nextRegistrationResult{
@@ -65,7 +65,7 @@ func TestNextRegistration(t *testing.T) {
 		// Invalid device address
 		{
 			AppId:   "appid",
-			Handler: "myhandler.com:3000",
+			AppUrl:  "myhandler.com:3000",
 			NwsKey:  "00112233445566778899aabbccddeeff",
 			DevAddr: "INVALID",
 			WantResult: nextRegistrationResult{
@@ -76,7 +76,7 @@ func TestNextRegistration(t *testing.T) {
 		// Invalid nwskey address
 		{
 			AppId:   "appid",
-			Handler: "myhandler.com:3000",
+			AppUrl:  "myhandler.com:3000",
 			NwsKey:  "00112233445566778899af",
 			DevAddr: "14aaab0a4",
 			WantResult: nextRegistrationResult{
@@ -87,17 +87,19 @@ func TestNextRegistration(t *testing.T) {
 	}
 
 	adapter, err := NewAdapter(3001)
+	adapter.logger = log.TestLogger{Tag: "BRK_HDL_ADAPTER", T: t}
 	client := &client{
 		adapter: "0.0.0.0:3001",
 		c:       http.Client{},
 		logger:  log.TestLogger{Tag: "http client", T: t},
 	}
+	<-time.After(time.Millisecond * 200)
 	if err != nil {
 		panic(err)
 	}
 
 	for _, test := range tests {
-		client.send(test.Handler, test.DevAddr, test.NwsKey)
+		client.send(test.AppId, test.AppUrl, test.DevAddr, test.NwsKey)
 		res := make(chan nextRegistrationResult)
 		go func() {
 			config, an, err := adapter.NextRegistration()
@@ -156,13 +158,13 @@ type client struct {
 	adapter string
 }
 
-func (c *client) send(handler, devAddr, nwsKey string) {
+func (c *client) send(appId, appUrl, devAddr, nwsKey string) {
 	c.logger.Log("send request to %s", c.adapter)
 	buf := new(bytes.Buffer)
-	if _, err := buf.WriteString(fmt.Sprintf(`{"app_id":%s,"app_url":%s,"nws_key":%s}`, "TestApp", handler, nwsKey)); err != nil {
+	if _, err := buf.WriteString(fmt.Sprintf(`{"app_id":"%s","app_url":"%s","nws_key":"%s"}`, appId, appUrl, nwsKey)); err != nil {
 		panic(err)
 	}
-	resp, err := c.c.Post(fmt.Sprintf("http://%s/end-device", c.adapter), "application/json", buf)
+	resp, err := c.c.Post(fmt.Sprintf("http://%s/end-device/%s", c.adapter, devAddr), "application/json", buf)
 	if err != nil {
 		panic(err)
 	}
