@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/thethingsnetwork/core"
+	"github.com/thethingsnetwork/core/utils/log"
 	"io"
 	"net/http"
 	"regexp"
@@ -17,7 +18,8 @@ import (
 var ErrInvalidPort = fmt.Errorf("The given port is invalid")
 
 type Adapter struct {
-	regs chan regMsg
+	logger log.Logger
+	regs   chan regMsg
 }
 
 type regMsg struct {
@@ -36,8 +38,12 @@ func NewAdapter(port uint) (*Adapter, error) {
 	}
 
 	a := Adapter{
-		regs: make(chan regMsg),
+		regs:   make(chan regMsg),
+		logger: log.DebugLogger{Tag: "BRK_HDL_ADAPTER"},
 	}
+
+	a.listen(port)
+
 	return &a, nil
 }
 
@@ -59,9 +65,11 @@ func (a *Adapter) NextRegistration() (core.Registration, core.AckNacker, error) 
 func (a *Adapter) listen(port uint) {
 	serveMux := http.NewServeMux()
 	serveMux.HandleFunc("/end-device/", func(w http.ResponseWriter, req *http.Request) {
+		a.log("Receive new registration request")
 		// Check Content-type
 		contentType := req.Header.Get("Content-Type")
 		if contentType != "application/json" {
+			a.log("registration request rejected: not json")
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte("Bad content type"))
 			return
@@ -71,6 +79,7 @@ func (a *Adapter) listen(port uint) {
 		reg := regexp.MustCompile("end-device/([a-fA-F0-9]{10})$")
 		query := reg.FindStringSubmatch(req.RequestURI)
 		if len(query) < 2 {
+			a.log("registration request rejected: devAddr invalid")
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte("Incorrect end-device address format"))
 			return
@@ -81,6 +90,7 @@ func (a *Adapter) listen(port uint) {
 		body := make([]byte, 256)
 		n, err := req.Body.Read(body)
 		if err != nil && err != io.EOF {
+			a.log("registration request rejected: body unreadable")
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte("Incorrect request body"))
 			return
@@ -92,6 +102,7 @@ func (a *Adapter) listen(port uint) {
 			NwsKey string `json:"nws_key"`
 		}{}
 		if err := json.Unmarshal(body, params); err != nil {
+			a.log("registration request rejected: payload invalid or incomplete")
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte("Incorrect body payload"))
 			return
@@ -99,6 +110,7 @@ func (a *Adapter) listen(port uint) {
 
 		nwsKey, err := hex.DecodeString(params.NwsKey)
 		if err != nil || len(nwsKey) != 16 {
+			a.log("registration request rejected: nwsKey invalid")
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte("Incorrect network session nws_key"))
 			return
@@ -107,11 +119,13 @@ func (a *Adapter) listen(port uint) {
 		params.Id = strings.Trim(params.Id, " ")
 		params.Url = strings.Trim(params.Url, " ")
 		if len(params.Id) <= 0 {
+			a.log("registration request rejected: appId invalid")
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte("Incorrect config app_id"))
 			return
 		}
 		if len(params.Url) <= 0 {
+			a.log("registration request rejected: appUrl invalid")
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte("Incorrect config app_url"))
 			return
@@ -129,10 +143,12 @@ func (a *Adapter) listen(port uint) {
 		a.regs <- regMsg{config: config, resp: resp}
 		r, ok := <-resp
 		if !ok {
+			a.log("Unexpected channel closure")
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte("Core server not responding"))
 			return
 		}
+		a.log("sending normal response to registration request")
 		w.WriteHeader(r.statusCode)
 		w.Write(r.content)
 	})
@@ -142,6 +158,14 @@ func (a *Adapter) listen(port uint) {
 			Addr:    fmt.Sprintf("localhost:%d", port),
 			Handler: serveMux,
 		}
-		server.ListenAndServe()
+		err := server.ListenAndServe()
+		a.log("HTTP connection lost: %v", err)
 	}()
+}
+
+func (a *Adapter) log(format string, i ...interface{}) {
+	if a == nil || a.logger == nil {
+		return
+	}
+	a.logger.Log(format, i...)
 }
