@@ -59,7 +59,7 @@ type Adapter interface {
 
 type BrkHdlAdapter interface {
 	Adapter
-	NextRegistration() (Recipient, lorawan.DevAddr, lorawan.AES128Key, error)
+	NextRegistration() (lorawan.DevAddr, interface{}, error)
 }
 
 type Router Component

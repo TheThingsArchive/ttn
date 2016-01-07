@@ -14,6 +14,11 @@ var ErrInvalidPort = fmt.Errorf("The given port is invalid")
 type Adapter struct {
 }
 
+type Config struct {
+	Handler core.Recipient
+	NwsKey  lorawan.AES128Key
+}
+
 func NewAdapter(port uint) (*Adapter, error) {
 	if port == 0 {
 		return nil, ErrInvalidPort
@@ -34,6 +39,6 @@ func (a *Adapter) Next() (core.Packet, core.AckNacker, error) {
 }
 
 // NextRegistration implements the core.BrkHdlAdapter interface
-func (a *Adapter) NextRegistration() (core.Recipient, lorawan.DevAddr, lorawan.AES128Key, error) {
-	return core.Recipient{}, lorawan.DevAddr{}, lorawan.AES128Key{}, nil
+func (a *Adapter) NextRegistration() (lorawan.DevAddr, interface{}, error) {
+	return lorawan.DevAddr{}, Config{}, nil
 }
