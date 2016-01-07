@@ -32,6 +32,23 @@ type httpResponse struct {
 	content    []byte
 }
 
+type regAckNacker struct {
+	resp chan httpResponse
+}
+
+func (r regAckNacker) Ack(p core.Packet) error {
+	r.resp <- httpResponse{statusCode: http.StatusOK}
+	return nil
+}
+
+func (r regAckNacker) Nack(p core.Packet) error {
+	r.resp <- httpResponse{
+		statusCode: http.StatusNotAcceptable,
+		content:    []byte("Unable to register the given device"),
+	}
+	return nil
+}
+
 func NewAdapter(port uint) (*Adapter, error) {
 	if port == 0 {
 		return nil, ErrInvalidPort
@@ -42,7 +59,7 @@ func NewAdapter(port uint) (*Adapter, error) {
 		logger: log.DebugLogger{Tag: "BRK_HDL_ADAPTER"},
 	}
 
-	a.listen(port)
+	go a.listen(port)
 
 	return &a, nil
 }
@@ -59,7 +76,8 @@ func (a *Adapter) Next() (core.Packet, core.AckNacker, error) {
 
 // NextRegistration implements the core.BrkHdlAdapter interface
 func (a *Adapter) NextRegistration() (core.Registration, core.AckNacker, error) {
-	return core.Registration{}, nil, nil
+	reg := <-a.regs
+	return reg.config, regAckNacker{resp: reg.resp}, nil
 }
 
 func (a *Adapter) listen(port uint) {
@@ -84,7 +102,13 @@ func (a *Adapter) listen(port uint) {
 			w.Write([]byte("Incorrect end-device address format"))
 			return
 		}
-		devAddr := query[1]
+		devAddr, err := hex.DecodeString(query[1])
+		if err != nil {
+			a.log("registration request rejected: devAddr invalid")
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("Incorrect end-device address format"))
+			return
+		}
 
 		// Check configuration in body
 		body := make([]byte, 256)
@@ -96,7 +120,6 @@ func (a *Adapter) listen(port uint) {
 			return
 		}
 		body = body[:n]
-		a.log("registration payload: %s", string(body))
 		params := &struct {
 			Id     string `json:"app_id"`
 			Url    string `json:"app_url"`
@@ -154,15 +177,13 @@ func (a *Adapter) listen(port uint) {
 		w.Write(r.content)
 	})
 
-	go func() {
-		server := http.Server{
-			Addr:    fmt.Sprintf("0.0.0.0:%d", port),
-			Handler: serveMux,
-		}
-		a.log("Start listening on %d", port)
-		err := server.ListenAndServe()
-		a.log("HTTP connection lost: %v", err)
-	}()
+	server := http.Server{
+		Addr:    fmt.Sprintf("0.0.0.0:%d", port),
+		Handler: serveMux,
+	}
+	a.log("Start listening on %d", port)
+	err := server.ListenAndServe()
+	a.log("HTTP connection lost: %v", err)
 }
 
 func (a *Adapter) log(format string, i ...interface{}) {
