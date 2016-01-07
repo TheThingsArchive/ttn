@@ -76,7 +76,7 @@ func (a *Adapter) listen(port uint) {
 		}
 
 		// Check the query parameter
-		reg := regexp.MustCompile("end-device/([a-fA-F0-9]{10})$")
+		reg := regexp.MustCompile("end-device/([a-fA-F0-9]{8})$")
 		query := reg.FindStringSubmatch(req.RequestURI)
 		if len(query) < 2 {
 			a.log("registration request rejected: devAddr invalid")
@@ -96,6 +96,7 @@ func (a *Adapter) listen(port uint) {
 			return
 		}
 		body = body[:n]
+		a.log("registration payload: %s", string(body))
 		params := &struct {
 			Id     string `json:"app_id"`
 			Url    string `json:"app_url"`
@@ -155,9 +156,10 @@ func (a *Adapter) listen(port uint) {
 
 	go func() {
 		server := http.Server{
-			Addr:    fmt.Sprintf("localhost:%d", port),
+			Addr:    fmt.Sprintf("0.0.0.0:%d", port),
 			Handler: serveMux,
 		}
+		a.log("Start listening on %d", port)
 		err := server.ListenAndServe()
 		a.log("HTTP connection lost: %v", err)
 	}()
