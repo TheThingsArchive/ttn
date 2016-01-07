@@ -40,8 +40,8 @@ type nextRegistrationTest struct {
 }
 
 type nextRegistrationResult struct {
-	DevAddr lorawan.DevAddr
-	Config  *Config
+	Config  *core.Registration
+	AckNack core.AckNacker
 	Error   error
 }
 
@@ -54,8 +54,8 @@ func TestNextRegistration(t *testing.T) {
 			NwsKey:  "00112233445566778899aabbccddeeff",
 			DevAddr: "14aab0a4",
 			WantResult: nextRegistrationResult{
-				DevAddr: lorawan.DevAddr([4]byte{14, 0xaa, 0xb0, 0xa4}),
-				Config: &Config{
+				Config: &core.Registration{
+					DevAddr: lorawan.DevAddr([4]byte{14, 0xaa, 0xb0, 0xa4}),
 					Handler: core.Recipient{Id: "appid", Address: "myhandler.com:3000"},
 					NwsKey:  lorawan.AES128Key([16]byte{00, 11, 22, 33, 44, 55, 66, 77, 88, 99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff}),
 				},
@@ -100,9 +100,8 @@ func TestNextRegistration(t *testing.T) {
 		client.send(test.Handler, test.DevAddr, test.NwsKey)
 		res := make(chan nextRegistrationResult)
 		go func() {
-			devAddr, itf, err := adapter.NextRegistration()
-			config := itf.(Config)
-			res <- nextRegistrationResult{devAddr, &config, err}
+			config, an, err := adapter.NextRegistration()
+			res <- nextRegistrationResult{&config, an, err}
 		}()
 
 		select {
@@ -129,7 +128,7 @@ func checkRegistrationResult(t *testing.T, want nextRegistrationResult, got next
 	}
 
 	if want.Config == nil {
-		if got.Error == nil {
+		if got.Error == nil || got.AckNack != nil {
 			Ko(t, "Was expecting no result but got %v", got.Config)
 			return false
 		}
@@ -142,8 +141,8 @@ func checkRegistrationResult(t *testing.T, want nextRegistrationResult, got next
 		return false
 	}
 
-	if !reflect.DeepEqual(want.DevAddr, got.DevAddr) {
-		Ko(t, "Expected devAddr to be %+x but got %+x", want.DevAddr, got.DevAddr)
+	if want.AckNack == nil {
+		Ko(t, "Received configuration with a nil AckNacker")
 		return false
 	}
 
@@ -160,10 +159,10 @@ type client struct {
 func (c *client) send(handler, devAddr, nwsKey string) {
 	c.logger.Log("send request to %s", c.adapter)
 	buf := new(bytes.Buffer)
-	if _, err := buf.WriteString(fmt.Sprintf(`{"app_id":%s,"url":%s,"nws_key":%s}`, "TestApp", handler, nwsKey)); err != nil {
+	if _, err := buf.WriteString(fmt.Sprintf(`{"app_id":%s,"app_url":%s,"nws_key":%s}`, "TestApp", handler, nwsKey)); err != nil {
 		panic(err)
 	}
-	resp, err := c.c.Post(fmt.Sprintf("http://%s", c.adapter), "application/json", buf)
+	resp, err := c.c.Post(fmt.Sprintf("http://%s/end-device", c.adapter), "application/json", buf)
 	if err != nil {
 		panic(err)
 	}
