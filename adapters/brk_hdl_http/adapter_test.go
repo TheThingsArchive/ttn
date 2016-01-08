@@ -5,6 +5,7 @@ package brk_hdl_http
 
 import (
 	"bytes"
+	"encoding/base64"
 	"fmt"
 	"github.com/thethingsnetwork/core"
 	"github.com/thethingsnetwork/core/lorawan"
@@ -12,6 +13,7 @@ import (
 	"github.com/thethingsnetwork/core/utils/log"
 	"github.com/thethingsnetwork/core/utils/pointer"
 	. "github.com/thethingsnetwork/core/utils/testing"
+	"io"
 	"net/http"
 	"reflect"
 	"testing"
@@ -120,6 +122,13 @@ func TestNextRegistration(t *testing.T) {
 
 // Send(p core.Packet, r ...core.Recipient) error
 func TestSend(t *testing.T) {
+	payload := genPHYPayload("mData", [4]byte{0x1, 0x2, 0x3, 0x4})
+	raw, err := payload.MarshalBinary()
+	if err != nil {
+		panic(err)
+	}
+	encoded := base64.StdEncoding.EncodeToString(raw)
+
 	tests := []struct {
 		Packet      core.Packet
 		WantPayload string
@@ -127,10 +136,10 @@ func TestSend(t *testing.T) {
 	}{
 		{
 			core.Packet{
-				Payload:  genPHYPayload("myData"),
+				Payload:  payload,
 				Metadata: &components.Metadata{Rssi: pointer.Int(-20), Modu: pointer.String("LORA")},
 			},
-			`{"metadata":{"rssi":-20,"modu":"LORA"},"payload":"myData"}`,
+			fmt.Sprintf(`{"payload":"%s","metadata":{"modu":"LORA","rssi":-20}}`, encoded),
 			nil,
 		},
 		{
@@ -178,7 +187,7 @@ func checkSend(t *testing.T, want string, s MockServer) {
 	select {
 	case got := <-s.Payloads:
 		if want != got {
-			Ko(t, "Expected payload %s to be sent but got %s", want, got)
+			Ko(t, "Received payload does not match expectations.\nWant: %s\nGot:  %s", want, got)
 			return
 		}
 	case <-time.After(time.Millisecond * 100):
@@ -224,17 +233,18 @@ type MockServer struct {
 }
 
 func genMockServer(port uint) MockServer {
-	addr := fmt.Sprintf("0.0.0.0:%s", port)
+	addr := fmt.Sprintf("0.0.0.0:%d", port)
 	payloads := make(chan string)
 
 	serveMux := http.NewServeMux()
 	serveMux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
 		body := make([]byte, 256)
 		n, err := req.Body.Read(body)
-		if err != nil {
+		if err != nil && err != io.EOF {
 			panic(err)
 		}
-		payloads <- string(body[:n])
+		w.Write(nil)
+		go func() { payloads <- string(body[:n]) }()
 	})
 
 	go func() {
@@ -257,13 +267,13 @@ func genMockServer(port uint) MockServer {
 }
 
 // Generate a Physical payload representing an uplink message
-func genPHYPayload(msg string) lorawan.PHYPayload {
+func genPHYPayload(msg string, devAddr [4]byte) lorawan.PHYPayload {
 	nwkSKey := [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
 	appSKey := [16]byte{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1}
 
 	macPayload := lorawan.NewMACPayload(true)
 	macPayload.FHDR = lorawan.FHDR{
-		DevAddr: lorawan.DevAddr([4]byte{1, 2, 3, 4}),
+		DevAddr: lorawan.DevAddr(devAddr),
 		FCtrl: lorawan.FCtrl{
 			ADR:       false,
 			ADRACKReq: false,
