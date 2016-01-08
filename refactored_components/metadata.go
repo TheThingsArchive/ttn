@@ -14,7 +14,6 @@ import (
 type Metadata struct {
 	Chan *uint      `json:"chan,omitempty"` // Concentrator "IF" channel used for RX (unsigned integer)
 	Codr *string    `json:"codr,omitempty"` // LoRa ECC coding rate identifier
-	Data *string    `json:"data,omitempty"` // Base64 encoded RF packet payload, padded
 	Datr *string    `json:"-"`              // FSK datarate (unsigned in bit per second) || LoRa datarate identifier
 	Fdev *uint      `json:"fdev,omitempty"` // FSK frequency deviation (unsigned integer, in Hz)
 	Freq *float64   `json:"freq,omitempty"` // RX Central frequency in MHx (unsigned float, Hz precision)

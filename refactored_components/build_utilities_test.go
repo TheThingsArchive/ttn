@@ -48,7 +48,6 @@ func genMetadata(RXPK semtech.RXPK) Metadata {
 	return Metadata{
 		Chan: RXPK.Chan,
 		Codr: RXPK.Codr,
-		Data: RXPK.Data,
 		Freq: RXPK.Freq,
 		Lsnr: RXPK.Lsnr,
 		Modu: RXPK.Modu,
