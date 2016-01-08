@@ -13,12 +13,8 @@ type Packet struct {
 	Payload  lorawan.PHYPayload
 }
 
-func (p Packet) DevAddr() *lorawan.DevAddr {
-	addr, err := p.Payload.DevAddr()
-	if err != nil {
-		return nil
-	}
-	return &addr
+func (p Packet) DevAddr() (lorawan.DevAddr, error) {
+	return p.Payload.DevAddr()
 }
 
 func (p Packet) String() string {
