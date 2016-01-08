@@ -16,6 +16,7 @@ import (
 	"time"
 )
 
+// NewAdapter(port uint, loggers ...log.Logger) (*Adapter, error)
 func TestNewAdapter(t *testing.T) {
 	tests := []struct {
 		Port      uint
@@ -32,6 +33,7 @@ func TestNewAdapter(t *testing.T) {
 	}
 }
 
+// NextRegistration() (core.Registration, core.AckNacker, error)
 func TestNextRegistration(t *testing.T) {
 	tests := []struct {
 		AppId      string
@@ -112,6 +114,10 @@ func TestNextRegistration(t *testing.T) {
 			checkRegistrationResult(t, test.WantResult, nil)
 		}
 	}
+}
+
+// Send(p core.Packet, r ...core.Recipient) error
+func TestSend(t *testing.T) {
 }
 
 func checkErrors(t *testing.T, want error, got error) {
