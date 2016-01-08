@@ -34,7 +34,7 @@ func NewAdapter(port uint, loggers ...log.Logger) (*Adapter, error) {
 }
 
 // Send implements the core.Adapter interface
-func (a *Adapter) Send(p core.Packet, an core.AckNacker) error {
+func (a *Adapter) Send(p core.Packet, r ...core.Recipient) error {
 	return nil
 }
 
