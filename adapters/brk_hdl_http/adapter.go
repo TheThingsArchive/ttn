@@ -4,15 +4,21 @@
 package brk_hdl_http
 
 import (
+	"bytes"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"github.com/thethingsnetwork/core"
 	"github.com/thethingsnetwork/core/utils/log"
+	"net/http"
 )
 
 var ErrInvalidPort = fmt.Errorf("The given port is invalid")
+var ErrInvalidPacket = fmt.Errorf("The given packet is invalid")
 var ErrConnectionLost = fmt.Errorf("The connection has been lost")
 
 type Adapter struct {
+	client        http.Client
 	loggers       []log.Logger // 0 to several loggers to get feedback from the Adapter.
 	registrations chan regReq  // Communication dedicated to incoming registration from handlers
 }
@@ -35,6 +41,31 @@ func NewAdapter(port uint, loggers ...log.Logger) (*Adapter, error) {
 
 // Send implements the core.Adapter interface
 func (a *Adapter) Send(p core.Packet, r ...core.Recipient) error {
+	metadata, err := json.Marshal(p.Metadata)
+	if err != nil {
+		return ErrInvalidPacket
+	}
+
+	payload, err := p.Payload.MarshalBinary()
+	if err != nil {
+		return ErrInvalidPacket
+	}
+	base64Payload := base64.StdEncoding.EncodeToString(payload)
+
+	var errors []error
+	for _, recipient := range r {
+		buf := new(bytes.Buffer)
+		buf.Write([]byte(fmt.Sprintf(`{"payload":"%s","metadata":%s}`, base64Payload, metadata)))
+		a.log("Post to %v", recipient)
+		resp, err := http.Post(fmt.Sprintf("http://%s", recipient.Address.(string)), "application/json", buf)
+		if err != nil || resp.StatusCode != http.StatusOK {
+			errors = append(errors, err)
+		}
+	}
+
+	if errors != nil {
+		return fmt.Errorf("Errors: %v", errors)
+	}
 	return nil
 }
 
