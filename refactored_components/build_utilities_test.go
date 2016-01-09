@@ -5,19 +5,12 @@ package components
 
 import (
 	"encoding/base64"
-	"github.com/thethingsnetwork/core"
 	"github.com/thethingsnetwork/core/lorawan"
 	"github.com/thethingsnetwork/core/semtech"
 	"github.com/thethingsnetwork/core/utils/pointer"
 	"strings"
 	"time"
 )
-
-type convertRXPKTest struct {
-	CorePacket core.Packet
-	RXPK       semtech.RXPK
-	WantError  error
-}
 
 // Generate an RXPK packet using the given payload as Data
 func genRXPK(phyPayload lorawan.PHYPayload) semtech.RXPK {

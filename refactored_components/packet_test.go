@@ -5,6 +5,7 @@ package components
 
 import (
 	"github.com/thethingsnetwork/core"
+	"github.com/thethingsnetwork/core/semtech"
 	"github.com/thethingsnetwork/core/utils/pointer"
 	. "github.com/thethingsnetwork/core/utils/testing"
 	"testing"
@@ -12,9 +13,9 @@ import (
 
 func TestConvertRXPK(t *testing.T) {
 	tests := []convertRXPKTest{
-		genRXPKWithFullMetadata(),
-		genRXPKWithPartialMetadata(),
-		genRXPKWithNoData(),
+		genRXPKWithFullMetadata(&convertRXPKTest{WantError: nil}),
+		genRXPKWithPartialMetadata(&convertRXPKTest{WantError: nil}),
+		genRXPKWithNoData(&convertRXPKTest{WantError: ErrImpossibleConversion}),
 	}
 
 	for _, test := range tests {
@@ -25,22 +26,27 @@ func TestConvertRXPK(t *testing.T) {
 	}
 }
 
+// ---- Declaration
+type convertRXPKTest struct {
+	CorePacket core.Packet
+	RXPK       semtech.RXPK
+	WantError  error
+}
+
 // ---- Build utilities
 
 // Generates a test suite where the RXPK is fully complete
-func genRXPKWithFullMetadata() convertRXPKTest {
+func genRXPKWithFullMetadata(test *convertRXPKTest) convertRXPKTest {
 	phyPayload := genPHYPayload(true)
 	rxpk := genRXPK(phyPayload)
 	metadata := genMetadata(rxpk)
-	return convertRXPKTest{
-		CorePacket: core.Packet{Metadata: &metadata, Payload: phyPayload},
-		RXPK:       rxpk,
-		WantError:  nil,
-	}
+	test.CorePacket = core.Packet{Metadata: &metadata, Payload: phyPayload}
+	test.RXPK = rxpk
+	return *test
 }
 
 // Generates a test suite where the RXPK contains partial metadata
-func genRXPKWithPartialMetadata() convertRXPKTest {
+func genRXPKWithPartialMetadata(test *convertRXPKTest) convertRXPKTest {
 	phyPayload := genPHYPayload(true)
 	rxpk := genRXPK(phyPayload)
 	rxpk.Codr = nil
@@ -49,20 +55,15 @@ func genRXPKWithPartialMetadata() convertRXPKTest {
 	rxpk.Time = nil
 	rxpk.Size = nil
 	metadata := genMetadata(rxpk)
-	return convertRXPKTest{
-		CorePacket: core.Packet{Metadata: &metadata, Payload: phyPayload},
-		RXPK:       rxpk,
-		WantError:  nil,
-	}
+	test.CorePacket = core.Packet{Metadata: &metadata, Payload: phyPayload}
+	test.RXPK = rxpk
+	return *test
 }
 
 // Generates a test suite where the RXPK contains no data
-func genRXPKWithNoData() convertRXPKTest {
+func genRXPKWithNoData(test *convertRXPKTest) convertRXPKTest {
 	rxpk := genRXPK(genPHYPayload(true))
 	rxpk.Data = nil
-	return convertRXPKTest{
-		CorePacket: core.Packet{},
-		RXPK:       rxpk,
-		WantError:  ErrImpossibleConversion,
-	}
+	test.RXPK = rxpk
+	return *test
 }
