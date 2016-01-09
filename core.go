@@ -43,31 +43,24 @@ type AckNacker interface {
 }
 
 type Component interface {
-	Handle(p Packet, an AckNacker) error
-	NextUp() (Packet, error)
-	NextDown() (Packet, error)
+	Register(reg Registration) error
+	HandleUp(p Packet, an AckNacker) error
+	HandleDown(p Packet, an AckNacker) error
 }
 
 type Adapter interface {
 	Send(p Packet, r ...Recipient) error
 	Next() (Packet, AckNacker, error)
-}
-
-type Registration struct {
-	DevAddr lorawan.DevAddr
-	Handler Recipient
-	NwsKey  lorawan.AES128Key
-}
-
-type BrkHdlAdapter interface {
-	Adapter
 	NextRegistration() (Registration, AckNacker, error)
 }
 
-type Router Component
-type Broker interface {
-	Component
-	Register(reg Registration) error
+type Registration struct {
+	DevAddr   lorawan.DevAddr
+	Recipient Recipient
+	Options   interface{}
 }
+
+type Router Component
+type Broker Component
 type Handler Component
 type NetworkController Component
