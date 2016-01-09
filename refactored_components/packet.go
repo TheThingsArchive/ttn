@@ -9,7 +9,9 @@ import (
 	"github.com/thethingsnetwork/core"
 	"github.com/thethingsnetwork/core/lorawan"
 	"github.com/thethingsnetwork/core/semtech"
+	"github.com/thethingsnetwork/core/utils/pointer"
 	"reflect"
+	"strings"
 )
 
 // return by ConvertRXPK or ConvertTXPK if there's no data in the given packet
@@ -53,4 +55,30 @@ func ConvertRXPK(p semtech.RXPK) (core.Packet, error) {
 	}
 
 	return core.Packet{Metadata: &metadata, Payload: payload}, nil
+}
+
+// ConvertToTXPK converts a core Packet to a semtech TXPK packet using compatible metadata.
+func ConvertToTXPK(p core.Packet) (semtech.TXPK, error) {
+	raw, err := p.Payload.MarshalBinary()
+	if err != nil {
+		return semtech.TXPK{}, ErrImpossibleConversion
+	}
+	data := strings.Trim(base64.StdEncoding.EncodeToString(raw), "=")
+
+	txpk := semtech.TXPK{Data: pointer.String(data)}
+	if p.Metadata == nil {
+		return txpk, nil
+	}
+
+	metadataValue := reflect.ValueOf(p.Metadata).Elem()
+	metadataStruct := metadataValue.Type()
+	txpkStruct := reflect.ValueOf(&txpk).Elem()
+	for i := 0; i < metadataStruct.NumField(); i += 1 {
+		field := metadataStruct.Field(i).Name
+		if txpkStruct.FieldByName(field).CanSet() {
+			txpkStruct.FieldByName(field).Set(metadataValue.Field(i))
+		}
+	}
+
+	return txpk, nil
 }
