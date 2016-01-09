@@ -86,6 +86,11 @@ func (a *Adapter) Next() (core.Packet, core.AckNacker, error) {
 	return core.Packet{}, nil, nil
 }
 
+// NextRegistration implements the core.Adapter interface
+func (a *Adapter) NextRegistration() (core.Packet, core.AckNacker, error) {
+	return core.Packet{}, nil, nil
+}
+
 func (a *Adapter) Log(format string, i ...interface{}) {
 	for _, logger := range a.loggers {
 		logger.Log(format, i...)
