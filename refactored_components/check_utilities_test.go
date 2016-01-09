@@ -5,6 +5,8 @@ package components
 
 import (
 	"github.com/thethingsnetwork/core"
+	"github.com/thethingsnetwork/core/semtech"
+	"github.com/thethingsnetwork/core/utils/pointer"
 	. "github.com/thethingsnetwork/core/utils/testing"
 	"reflect"
 	"testing"
@@ -46,4 +48,13 @@ func checkMetadata(t *testing.T, want Metadata, got Metadata) {
 		return
 	}
 	Ko(t, "Unmarshaled json does not match expectations. \nWant: %s\nGot:  %s", want.String(), got.String())
+}
+
+// Checks that obtained TXPK matches expeceted one
+func checkTXPKs(t *testing.T, want semtech.TXPK, got semtech.TXPK) {
+	if reflect.DeepEqual(want, got) {
+		Ok(t, "check TXPKs")
+		return
+	}
+	Ko(t, "Converted TXPK does not match expectations. \nWant: %s\nGot:  %s", pointer.DumpPStruct(want, false), pointer.DumpPStruct(got, false))
 }

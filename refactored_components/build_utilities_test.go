@@ -36,6 +36,32 @@ func genRXPK(phyPayload lorawan.PHYPayload) semtech.RXPK {
 	}
 }
 
+// Generates a TXPK packet using the given payload and the given metadata
+func genTXPK(phyPayload lorawan.PHYPayload, metadata Metadata) semtech.TXPK {
+	raw, err := phyPayload.MarshalBinary()
+	if err != nil {
+		panic(err)
+	}
+	data := strings.Trim(base64.StdEncoding.EncodeToString(raw), "=")
+	return semtech.TXPK{
+		Codr: metadata.Codr,
+		Data: pointer.String(data),
+		Datr: metadata.Datr,
+		Fdev: metadata.Fdev,
+		Freq: metadata.Freq,
+		Imme: metadata.Imme,
+		Ipol: metadata.Ipol,
+		Modu: metadata.Modu,
+		Ncrc: metadata.Ncrc,
+		Powe: metadata.Powe,
+		Prea: metadata.Prea,
+		Rfch: metadata.Rfch,
+		Size: metadata.Size,
+		Time: metadata.Time,
+		Tmst: metadata.Tmst,
+	}
+}
+
 // Generate a Metadata object that matches RXPK metadata
 func genMetadata(RXPK semtech.RXPK) Metadata {
 	return Metadata{
@@ -53,7 +79,31 @@ func genMetadata(RXPK semtech.RXPK) Metadata {
 	}
 }
 
-// Generate a Physical payload represting an uplink or downlink message
+// Generates a Metadata object with all field completed with relevant values
+func genFullMetadata() Metadata {
+	return Metadata{
+		Chan: pointer.Uint(2),
+		Codr: pointer.String("4/6"),
+		Datr: pointer.String("LORA"),
+		Fdev: pointer.Uint(3),
+		Freq: pointer.Float64(863.125),
+		Imme: pointer.Bool(false),
+		Ipol: pointer.Bool(false),
+		Lsnr: pointer.Float64(5.2),
+		Modu: pointer.String("LORA"),
+		Ncrc: pointer.Bool(true),
+		Powe: pointer.Uint(3),
+		Prea: pointer.Uint(8),
+		Rfch: pointer.Uint(2),
+		Rssi: pointer.Int(-27),
+		Size: pointer.Uint(14),
+		Stat: pointer.Int(0),
+		Time: pointer.Time(time.Now()),
+		Tmst: pointer.Uint(uint(time.Now().UnixNano())),
+	}
+}
+
+// Generate a Physical payload representing an uplink or downlink message
 func genPHYPayload(uplink bool) lorawan.PHYPayload {
 	nwkSKey := [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
 	appSKey := [16]byte{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1}
