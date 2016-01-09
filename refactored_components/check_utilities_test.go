@@ -16,7 +16,7 @@ func checkPackets(t *testing.T, want core.Packet, got core.Packet) {
 		Ok(t, "Check packets")
 		return
 	}
-	Ko(t, "Converted packet don't match expectations. \nWant: \n%s\nGot:  \n%s", want.String(), got.String())
+	Ko(t, "Converted packet does not match expectations. \nWant: \n%s\nGot:  \n%s", want.String(), got.String())
 }
 
 // Checks that errors match
@@ -35,7 +35,7 @@ func checkJSON(t *testing.T, want string, got []byte) {
 		Ok(t, "check JSON")
 		return
 	}
-	Ko(t, "Marshaled data don't match expectations.\nWant: %s\nGot:  %s", want, str)
+	Ko(t, "Marshaled data does not match expectations.\nWant: %s\nGot:  %s", want, str)
 	return
 }
 
@@ -45,5 +45,5 @@ func checkMetadata(t *testing.T, want Metadata, got Metadata) {
 		Ok(t, "check Metadata")
 		return
 	}
-	Ko(t, "Unmarshaled json don't match expectations. \nWant: %s\nGot:  %s", want.String(), got.String())
+	Ko(t, "Unmarshaled json does not match expectations. \nWant: %s\nGot:  %s", want.String(), got.String())
 }
