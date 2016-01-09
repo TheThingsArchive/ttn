@@ -5,6 +5,7 @@ package http
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"github.com/thethingsnetwork/core"
 	"github.com/thethingsnetwork/core/lorawan"
@@ -20,31 +21,18 @@ import (
 
 // Send(p core.Packet, r ...core.Recipient) error
 func TestSend(t *testing.T) {
-	payload := genPHYPayload("mData", [4]byte{0x1, 0x2, 0x3, 0x4})
-	raw, err := payload.MarshalBinary()
-	if err != nil {
-		panic(err)
-	}
-	encoded := base64.StdEncoding.EncodeToString(raw)
-
 	tests := []struct {
 		Packet      core.Packet
 		WantPayload string
 		WantError   error
 	}{
 		{
-			core.Packet{
-				Payload:  payload,
-				Metadata: &components.Metadata{Rssi: pointer.Int(-20), Modu: pointer.String("LORA")},
-			},
-			fmt.Sprintf(`{"payload":"%s","metadata":{"modu":"LORA","rssi":-20}}`, encoded),
+			genCorePacket(),
+			genJSONPayload(genCorePacket()),
 			nil,
 		},
 		{
-			core.Packet{
-				Payload:  lorawan.PHYPayload{},
-				Metadata: &components.Metadata{},
-			},
+			core.Packet{},
 			"",
 			ErrInvalidPacket,
 		},
@@ -163,4 +151,24 @@ func genPHYPayload(msg string, devAddr [4]byte) lorawan.PHYPayload {
 	}
 
 	return payload
+}
+
+func genCorePacket() core.Packet {
+	return core.Packet{
+		Payload:  genPHYPayload("myData", [4]byte{0x1, 0x2, 0x3, 0x4}),
+		Metadata: &components.Metadata{Rssi: pointer.Int(-20), Modu: pointer.String("LORA")},
+	}
+}
+
+func genJSONPayload(p core.Packet) string {
+	raw, err := p.Payload.MarshalBinary()
+	if err != nil {
+		panic(err)
+	}
+	payload := base64.StdEncoding.EncodeToString(raw)
+	metadatas, err := json.Marshal(p.Metadata)
+	if err != nil {
+		panic(err)
+	}
+	return fmt.Sprintf(`{"payload":"%s","metadata":%s}`, payload, string(metadatas))
 }
