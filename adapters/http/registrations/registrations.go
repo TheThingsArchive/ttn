@@ -1,14 +1,25 @@
 // Copyright © 2015 The Things Network
 // Use of this source code is governed by the MIT license that can be found in the LICENSE file.
 
-package httpregister
+package registrations
 
 import (
 	"fmt"
 	"github.com/thethingsnetwork/core"
+	httpadapter "github.com/thethingsnetwork/core/adapters/http"
+	"github.com/thethingsnetwork/core/utils/log"
 	"net/http"
-	"time"
 )
+
+type Adapter struct {
+	*httpadapter.Adapter
+	Parser
+	registrations chan regReq
+}
+
+type Parser interface {
+	Parse(req *http.Request) (core.Registration, error)
+}
 
 type regReq struct {
 	core.Registration             // The actual registration request
@@ -20,31 +31,28 @@ type regRes struct {
 	content    []byte // The response content
 }
 
-type regAckNacker struct {
-	response chan regRes // A channel dedicated to send back a response
+// NewAdapter constructs a new http adapter that also handle registrations via http requests
+func NewAdapter(port uint, parser Parser, loggers ...log.Logger) (*Adapter, error) {
+	adapter, err := httpadapter.NewAdapter(loggers...)
+	if err != nil {
+		return nil, err
+	}
+
+	a := &Adapter{
+		Adapter:       adapter,
+		Parser:        parser,
+		registrations: make(chan regReq),
+	}
+
+	go a.listenRegistration(port)
+
+	return a, nil
 }
 
-// Ack implements the core.Acker interface
-func (r regAckNacker) Ack(p core.Packet) error {
-	select {
-	case r.response <- regRes{statusCode: http.StatusOK}:
-		return nil
-	case <-time.After(time.Millisecond * 50):
-		return ErrConnectionLost
-	}
-}
-
-// Nack implements the core.Nacker interface
-func (r regAckNacker) Nack(p core.Packet) error {
-	select {
-	case r.response <- regRes{
-		statusCode: http.StatusConflict,
-		content:    []byte("Unable to register the given device"),
-	}:
-		return nil
-	case <-time.After(time.Millisecond * 50):
-		return ErrConnectionLost
-	}
+// NextRegistration implements the core.Adapter interface
+func (a *Adapter) NextRegistration() (core.Registration, core.AckNacker, error) {
+	request := <-a.registrations
+	return request.Registration, regAckNacker{response: request.response}, nil
 }
 
 // listenRegistration handles incoming registration request sent through http to the adapter
@@ -59,21 +67,21 @@ func (a *Adapter) listenRegistration(port uint) {
 		Addr:    fmt.Sprintf("0.0.0.0:%d", port),
 		Handler: serveMux,
 	}
-	a.log("Start listening on %d", port)
+	a.Log("Start listening on %d", port)
 	err := server.ListenAndServe()
-	a.log("HTTP connection lost: %v", err)
+	a.Log("HTTP connection lost: %v", err)
 }
 
 // fail logs the given failure and sends an appropriate response to the client
 func (a *Adapter) badRequest(w http.ResponseWriter, msg string) {
-	a.log("registration request rejected: %s", msg)
+	a.Log("registration request rejected: %s", msg)
 	w.WriteHeader(http.StatusBadRequest)
 	w.Write([]byte(msg))
 }
 
 // handle request [PUT] on /end-device/:devAddr
 func (a *Adapter) handlePutEndDevice(w http.ResponseWriter, req *http.Request) {
-	a.log("Receive new registration request")
+	a.Log("Receive new registration request")
 	// Check the http method
 	if req.Method != "PUT" {
 		w.WriteHeader(http.StatusMethodNotAllowed)
