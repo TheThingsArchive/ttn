@@ -118,3 +118,20 @@ func (a *Adapter) broadcast(p core.Packet) error {
 	}
 	return nil
 }
+
+func (a *Adapter) NextRegistration() (core.Registration, core.AckNacker, error) {
+	registration := <-a.registrations
+	return registration, voidAckNacker{}, nil
+}
+
+type voidAckNacker struct{}
+
+// Ack implements the core.AckNacker interface
+func (v voidAckNacker) Ack(p core.Packet) error {
+	return nil
+}
+
+// Nack implements the core.AckNacker interface
+func (v voidAckNacker) Nack(p core.Packet) error {
+	return nil
+}
