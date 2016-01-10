@@ -31,6 +31,7 @@ type rxpkMsg struct {
 
 var ErrInvalidPort error = fmt.Errorf("Invalid port supplied. The connection might be already taken")
 var ErrNotInitialized error = fmt.Errorf("Illegal call on non-initialized adapter")
+var ErrNotSupported error = fmt.Errorf("Unsupported operation")
 
 // New constructs and allocates a new udp_sender adapter
 func NewAdapter(port uint, loggers ...log.Logger) (*Adapter, error) {
@@ -62,7 +63,7 @@ func (a *Adapter) ok() bool {
 
 // Send implements the core.Adapter interface
 func (a *Adapter) Send(p core.Packet, r ...core.Recipient) error {
-	return fmt.Errorf("Unsupported method")
+	return ErrNotSupported
 }
 
 // Next implements the core.Adapter interface
@@ -76,6 +77,11 @@ func (a *Adapter) Next() (core.Packet, core.AckNacker, error) {
 		return core.Packet{}, nil, err
 	}
 	return packet, semtechAckNacker{recipient: msg.recipient, conn: a.conn}, nil
+}
+
+// NextRegistration implements the core.Adapter interface
+func (a *Adapter) NextRegistration() (core.Packet, core.AckNacker, error) {
+	return core.Packet{}, nil, ErrNotSupported
 }
 
 // listen Handle incoming packets and forward them
