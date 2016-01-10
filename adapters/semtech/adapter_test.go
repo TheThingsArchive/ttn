@@ -6,7 +6,6 @@ package semtech
 import (
 	"github.com/thethingsnetwork/core"
 	"github.com/thethingsnetwork/core/semtech"
-	"github.com/thethingsnetwork/core/utils/log"
 	. "github.com/thethingsnetwork/core/utils/testing"
 	"reflect"
 	"testing"
@@ -98,25 +97,6 @@ func TestNext(t *testing.T) {
 		checkCorePackets(t, test.WantNext, packet)
 		checkResponses(t, test.WantAck, ack)
 	}
-}
-
-// ----- build utilities
-func genAdapter(t *testing.T, port uint) (*Adapter, chan interface{}) {
-	adapter, err := NewAdapter(port, log.TestLogger{Tag: "Adapter", T: t})
-	if err != nil {
-		panic(err)
-	}
-	next := make(chan interface{})
-	go func() {
-		for {
-			packet, _, err := adapter.Next()
-			next <- struct {
-				err    error
-				packet core.Packet
-			}{err: err, packet: packet}
-		}
-	}()
-	return adapter, next
 }
 
 // ----- operate utilities
