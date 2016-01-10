@@ -32,6 +32,7 @@ type rxpkMsg struct {
 var ErrInvalidPort error = fmt.Errorf("Invalid port supplied. The connection might be already taken")
 var ErrNotInitialized error = fmt.Errorf("Illegal call on non-initialized adapter")
 var ErrNotSupported error = fmt.Errorf("Unsupported operation")
+var ErrInvalidPacket error = fmt.Errorf("Invalid packet supplied")
 
 // New constructs and allocates a new udp_sender adapter
 func NewAdapter(port uint, loggers ...log.Logger) (*Adapter, error) {
@@ -74,7 +75,8 @@ func (a *Adapter) Next() (core.Packet, core.AckNacker, error) {
 	msg := <-a.next
 	packet, err := components.ConvertRXPK(msg.rxpk)
 	if err != nil {
-		return core.Packet{}, nil, err
+		a.log("Invalid Packet")
+		return core.Packet{}, nil, ErrInvalidPacket
 	}
 	return packet, semtechAckNacker{recipient: msg.recipient, conn: a.conn}, nil
 }
@@ -108,19 +110,31 @@ func (a *Adapter) listen(conn *net.UDPConn) {
 			pullAck, err := semtech.Marshal(semtech.Packet{
 				Version:    semtech.VERSION,
 				Token:      pkt.Token,
-				Identifier: semtech.PUSH_ACK,
+				Identifier: semtech.PULL_ACK,
 			})
 			if err != nil {
 				a.log("Unexpected error while marshaling PULL_ACK: %v", err)
 				continue
 			}
+			a.log("Sending PULL_ACK to %v", addr)
 			a.conn <- udpMsg{addr: addr, raw: pullAck}
 		case semtech.PUSH_DATA: // PUSH_DATA -> Transfer all RXPK to the component
+			pushAck, err := semtech.Marshal(semtech.Packet{
+				Version:    semtech.VERSION,
+				Token:      pkt.Token,
+				Identifier: semtech.PUSH_ACK,
+			})
+			if err != nil {
+				a.log("Unexpected error while marshaling PUSH_ACK: %v", err)
+				continue
+			}
+			a.log("Sending PUSH_ACK to %v", addr)
+			a.conn <- udpMsg{addr: addr, raw: pushAck}
+
 			if pkt.Payload == nil {
 				a.log("Inconsistent PUSH_DATA packet %v", pkt)
 				continue
 			}
-
 			for _, rxpk := range pkt.Payload.RXPK {
 				a.next <- rxpkMsg{
 					rxpk:      rxpk,
