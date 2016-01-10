@@ -50,6 +50,11 @@ func (r *Router) Register(reg core.Registration) error {
 	return r.db.store(reg.DevAddr, reg.Recipient)
 }
 
+// HandleDown implements the core.Component interface
+func (r *Router) HandleDown(p core.Packet, an core.AckNacker) error {
+	return fmt.Errorf("TODO. Not Implemented")
+}
+
 // ok ensure the router has been initialized by NewRouter()
 func (r *Router) ok() bool {
 	return r == nil && r.db != nil
