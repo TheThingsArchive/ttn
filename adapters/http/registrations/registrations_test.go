@@ -59,7 +59,7 @@ func TestNextRegistration(t *testing.T) {
 		},
 	}
 
-	adapter, err := NewAdapter(3001, HandlerParser{}, log.TestLogger{Tag: "BRK_HDL_ADAPTER", T: t})
+	adapter, err := NewAdapter(3001, HandlerParser{}, log.TestLogger{Tag: "Adapter", T: t})
 	client := &client{adapter: "0.0.0.0:3001"}
 	<-time.After(time.Millisecond * 200)
 	if err != nil {

@@ -39,7 +39,7 @@ func TestSend(t *testing.T) {
 	}
 
 	s := genMockServer(3100)
-	adapter, err := NewAdapter(log.TestLogger{Tag: "BRK_HDL_ADAPTER", T: t})
+	adapter, err := NewAdapter(log.TestLogger{Tag: "Adapter", T: t})
 	if err != nil {
 		panic(err)
 	}
