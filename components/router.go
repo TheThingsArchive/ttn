@@ -51,8 +51,30 @@ func (r *Router) Register(reg core.Registration) error {
 }
 
 // HandleDown implements the core.Component interface
-func (r *Router) HandleDown(p core.Packet, an core.AckNacker) error {
+func (r *Router) HandleDown(p core.Packet, an core.AckNacker, downAdapter core.Adapter) error {
 	return fmt.Errorf("TODO. Not Implemented")
+}
+
+// HandleUp implements the core.Component interface
+func (r *Router) HandleUp(p core.Packet, an core.AckNacker, upAdapter core.Adapter) error {
+	if !r.ok() {
+		return ErrNotInitialized
+	}
+
+	// Lookup for an existing broker
+	devAddr, err := p.DevAddr()
+	if err != nil {
+		return err
+	}
+
+	brokers, err := r.db.lookup(devAddr)
+	if err != ErrDeviceNotFound && err != ErrEntryExpired {
+		return err
+	}
+
+	// We don't handle downlink for now, so an is quite useless.
+
+	return upAdapter.Send(p, brokers...)
 }
 
 // ok ensure the router has been initialized by NewRouter()

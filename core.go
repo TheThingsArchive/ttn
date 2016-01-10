@@ -44,8 +44,8 @@ type AckNacker interface {
 
 type Component interface {
 	Register(reg Registration) error
-	HandleUp(p Packet, an AckNacker) error
-	HandleDown(p Packet, an AckNacker) error
+	HandleUp(p Packet, an AckNacker, upAdapter Adapter) error
+	HandleDown(p Packet, an AckNacker, downAdapter Adapter) error
 }
 
 type Adapter interface {

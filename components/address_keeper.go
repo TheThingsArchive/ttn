@@ -29,6 +29,9 @@ type localEntry struct {
 	until      time.Time
 }
 
+var ErrDeviceNotFound = fmt.Errorf("Device not found")
+var ErrEntryExpired = fmt.Errorf("An entry exists but has expired")
+
 // NewLocalDB constructs a new local address keeper
 func NewLocalDB(expiryDelay time.Duration) (*localDB, error) {
 	if expiryDelay == 0 {
@@ -47,14 +50,14 @@ func (a *localDB) lookup(devAddr lorawan.DevAddr) ([]core.Recipient, error) {
 	entry, ok := a.addresses[devAddr]
 	a.RUnlock()
 	if !ok {
-		return nil, fmt.Errorf("Device address not found")
+		return nil, ErrDeviceNotFound
 	}
 
 	if entry.until.Before(time.Now()) {
 		a.Lock()
 		delete(a.addresses, devAddr)
 		a.Unlock()
-		return nil, fmt.Errorf("Broker address(es) expired")
+		return nil, ErrEntryExpired
 	}
 
 	return entry.recipients, nil
