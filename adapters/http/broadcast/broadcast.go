@@ -45,7 +45,11 @@ func (a *Adapter) Send(p core.Packet, r ...core.Recipient) error {
 	if len(r) == 0 {
 		return a.broadcast(p)
 	}
-	return a.Adapter.Send(p, r...)
+	err := a.Adapter.Send(p, r...)
+	if err == httpadapter.ErrInvalidPacket {
+		return ErrInvalidPacket
+	}
+	return err
 }
 
 func (a *Adapter) broadcast(p core.Packet) error {

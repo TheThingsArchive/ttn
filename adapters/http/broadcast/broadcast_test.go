@@ -13,6 +13,7 @@ import (
 	"github.com/thethingsnetwork/core/utils/log"
 	"github.com/thethingsnetwork/core/utils/pointer"
 	. "github.com/thethingsnetwork/core/utils/testing"
+	"io"
 	"net/http"
 	"reflect"
 	"testing"
@@ -42,7 +43,7 @@ func TestSend(t *testing.T) {
 		WantError         error
 	}{
 		{ // Send to two recipients a valid packet
-			Recipients:        recipients[:2],
+			Recipients:        recipients[1:3], // TODO test with a rejection. Need better error handling
 			Packet:            packet,
 			WantRegistrations: []core.Registration{},
 			WantPayload:       payload,
@@ -51,7 +52,7 @@ func TestSend(t *testing.T) {
 		{ // Broadcast a valid packet
 			Recipients:        []core.Recipient{},
 			Packet:            packet,
-			WantRegistrations: registrations[2:4],
+			WantRegistrations: registrations[1:3],
 			WantPayload:       payload,
 			WantError:         nil,
 		},
@@ -145,7 +146,7 @@ func genMockServer(recipient core.Recipient) chan string {
 
 		buf := make([]byte, req.ContentLength)
 		n, err := req.Body.Read(buf)
-		if err != nil {
+		if err != nil && err != io.EOF {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write(nil)
 			return
@@ -156,10 +157,10 @@ func genMockServer(recipient core.Recipient) chan string {
 			w.WriteHeader(http.StatusNotFound)
 			w.Write(nil)
 		case "AlwaysAccept":
-			w.WriteHeader(http.StatusNotFound)
+			w.WriteHeader(http.StatusOK)
 			w.Write(nil)
 		}
-		chresp <- string(buf[:n])
+		go func() { chresp <- string(buf[:n]) }()
 	})
 
 	server := http.Server{
