@@ -34,10 +34,6 @@ var ErrEntryExpired = fmt.Errorf("An entry exists but has expired")
 
 // NewLocalDB constructs a new local address keeper
 func NewLocalDB(expiryDelay time.Duration) (*localDB, error) {
-	if expiryDelay == 0 {
-		return nil, fmt.Errorf("Invalid expiration delay")
-	}
-
 	return &localDB{
 		expiryDelay: expiryDelay,
 		addresses:   make(map[lorawan.DevAddr]localEntry),
@@ -53,7 +49,7 @@ func (a *localDB) lookup(devAddr lorawan.DevAddr) ([]core.Recipient, error) {
 		return nil, ErrDeviceNotFound
 	}
 
-	if entry.until.Before(time.Now()) {
+	if a.expiryDelay != 0 && entry.until.Before(time.Now()) {
 		a.Lock()
 		delete(a.addresses, devAddr)
 		a.Unlock()

@@ -22,7 +22,7 @@ func TestAddressKeeper(t *testing.T) {
 
 			Convey("NewLocalDB: invalid", func() {
 				localDB, err := NewLocalDB(0)
-				So(err, ShouldNotBeNil)
+				So(err, ShouldBeNil)
 				So(localDB, ShouldBeNil)
 			})
 		})
