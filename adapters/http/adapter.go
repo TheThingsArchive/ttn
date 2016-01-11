@@ -18,13 +18,14 @@ var ErrInvalidPort = fmt.Errorf("The given port is invalid")
 var ErrInvalidPacket = fmt.Errorf("The given packet is invalid")
 
 type Adapter struct {
-	client  http.Client
-	loggers []log.Logger // 0 to several loggers to get feedback from the Adapter.
+	log.Logger
 }
 
 // NewAdapter constructs and allocate a new Broker <-> Handler http adapter
 func NewAdapter(loggers ...log.Logger) (*Adapter, error) {
-	return &Adapter{loggers: loggers}, nil
+	return &Adapter{
+		Logger: log.MultiLogger{Loggers: loggers},
+	}, nil
 }
 
 // Send implements the core.Adapter interface
@@ -89,10 +90,4 @@ func (a *Adapter) Next() (core.Packet, core.AckNacker, error) {
 // NextRegistration implements the core.Adapter interface
 func (a *Adapter) NextRegistration() (core.Packet, core.AckNacker, error) {
 	return core.Packet{}, nil, nil
-}
-
-func (a *Adapter) Log(format string, i ...interface{}) {
-	for _, logger := range a.loggers {
-		logger.Log(format, i...)
-	}
 }
