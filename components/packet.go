@@ -5,7 +5,6 @@ package components
 
 import (
 	"encoding/base64"
-	"fmt"
 	"github.com/thethingsnetwork/core"
 	"github.com/thethingsnetwork/core/lorawan"
 	"github.com/thethingsnetwork/core/semtech"
@@ -13,9 +12,6 @@ import (
 	"reflect"
 	"strings"
 )
-
-// return by ConvertRXPK or ConvertTXPK if there's no data in the given packet
-var ErrImpossibleConversion = fmt.Errorf("The given packet can't be converted")
 
 // ConvertRXPK create a core.Packet from a semtech.RXPK. It's an handy way to both decode the
 // frame payload and retrieve associated metadata from that packet

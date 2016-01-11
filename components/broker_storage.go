@@ -4,7 +4,6 @@
 package components
 
 import (
-	"fmt"
 	"github.com/thethingsnetwork/core/lorawan"
 	"sync"
 )
@@ -24,8 +23,6 @@ type brokerDB struct {
 	sync.RWMutex
 	entries map[lorawan.DevAddr][]brokerEntry
 }
-
-var ErrDeviceNotFound = fmt.Errorf("Device not found")
 
 // NewLocalDB constructs a new local brokerStorage
 func NewBrokerStorage() (brokerStorage, error) {

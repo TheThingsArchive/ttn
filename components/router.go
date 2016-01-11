@@ -20,9 +20,6 @@ type Router struct {
 	db      routerStorage // Local storage that maps end-device addresses to broker addresses
 }
 
-var ErrBadOptions = fmt.Errorf("Invalid supplied options")
-var ErrNotInitialized = fmt.Errorf("Illegal operation call on non initialized component")
-
 // NewRouter constructs a Router and setup its internal structure
 func NewRouter(brokers []core.Recipient, loggers ...log.Logger) (*Router, error) {
 	localDB, err := NewRouterStorage(EXPIRY_DELAY)

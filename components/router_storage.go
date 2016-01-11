@@ -4,7 +4,6 @@
 package components
 
 import (
-	"fmt"
 	"github.com/thethingsnetwork/core"
 	"github.com/thethingsnetwork/core/lorawan"
 	"sync"
@@ -26,9 +25,6 @@ type routerEntry struct {
 	recipients []core.Recipient
 	until      time.Time
 }
-
-var ErrEntryExpired = fmt.Errorf("An entry exists but has expired")
-var ErrAlreadyExists = fmt.Errorf("An entry already exists for that device")
 
 // NewLocalDB constructs a new local address keeper
 func NewRouterStorage(expiryDelay time.Duration) (routerStorage, error) {
