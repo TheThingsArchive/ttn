@@ -11,48 +11,46 @@ import (
 	"time"
 )
 
-type addressKeeper interface {
+type routerStorage interface {
 	lookup(devAddr lorawan.DevAddr) ([]core.Recipient, error)
 	store(devAddr lorawan.DevAddr, recipients ...core.Recipient) error
 }
 
-type reddisAddressKeeper struct{} // NOTE In a second time
-
-type localDB struct {
+type routerDB struct {
 	sync.RWMutex
 	expiryDelay time.Duration
-	addresses   map[lorawan.DevAddr]localEntry
+	entries     map[lorawan.DevAddr]routerEntry
 }
 
-type localEntry struct {
+type routerEntry struct {
 	recipients []core.Recipient
 	until      time.Time
 }
 
-var ErrDeviceNotFound = fmt.Errorf("Device not found")
 var ErrEntryExpired = fmt.Errorf("An entry exists but has expired")
+var ErrAlreadyExists = fmt.Errorf("An entry already exists for that device")
 
 // NewLocalDB constructs a new local address keeper
-func NewLocalDB(expiryDelay time.Duration) (*localDB, error) {
-	return &localDB{
+func NewRouterStorage(expiryDelay time.Duration) (routerStorage, error) {
+	return &routerDB{
 		expiryDelay: expiryDelay,
-		addresses:   make(map[lorawan.DevAddr]localEntry),
+		entries:     make(map[lorawan.DevAddr]routerEntry),
 	}, nil
 }
 
 // lookup implements the addressKeeper interface
-func (a *localDB) lookup(devAddr lorawan.DevAddr) ([]core.Recipient, error) {
-	a.RLock()
-	entry, ok := a.addresses[devAddr]
-	a.RUnlock()
+func (db *routerDB) lookup(devAddr lorawan.DevAddr) ([]core.Recipient, error) {
+	db.RLock()
+	entry, ok := db.entries[devAddr]
+	db.RUnlock()
 	if !ok {
 		return nil, ErrDeviceNotFound
 	}
 
-	if a.expiryDelay != 0 && entry.until.Before(time.Now()) {
-		a.Lock()
-		delete(a.addresses, devAddr)
-		a.Unlock()
+	if db.expiryDelay != 0 && entry.until.Before(time.Now()) {
+		db.Lock()
+		delete(db.entries, devAddr)
+		db.Unlock()
 		return nil, ErrEntryExpired
 	}
 
@@ -60,19 +58,19 @@ func (a *localDB) lookup(devAddr lorawan.DevAddr) ([]core.Recipient, error) {
 }
 
 // store implements the addressKeeper interface
-func (a *localDB) store(devAddr lorawan.DevAddr, recipients ...core.Recipient) error {
-	a.Lock()
-	_, ok := a.addresses[devAddr]
+func (db *routerDB) store(devAddr lorawan.DevAddr, recipients ...core.Recipient) error {
+	db.Lock()
+	_, ok := db.entries[devAddr]
 	if ok {
-		a.Unlock()
-		return fmt.Errorf("An entry already exists for that device")
+		db.Unlock()
+		return ErrAlreadyExists
 	}
 
-	a.addresses[devAddr] = localEntry{
+	db.entries[devAddr] = routerEntry{
 		recipients: recipients,
-		until:      time.Now().Add(a.expiryDelay),
+		until:      time.Now().Add(db.expiryDelay),
 	}
 
-	a.Unlock()
+	db.Unlock()
 	return nil
 }
