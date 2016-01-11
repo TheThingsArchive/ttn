@@ -15,7 +15,7 @@ const (
 )
 
 type Router struct {
-	loggers []log.Logger
+	log.Logger
 	brokers []core.Recipient
 	db      routerStorage // Local storage that maps end-device addresses to broker addresses
 }
@@ -33,7 +33,7 @@ func NewRouter(brokers []core.Recipient, loggers ...log.Logger) (*Router, error)
 	}
 
 	return &Router{
-		loggers: loggers,
+		Logger:  log.MultiLogger{Loggers: loggers},
 		brokers: brokers,
 		db:      localDB,
 	}, nil
@@ -79,11 +79,4 @@ func (r *Router) HandleUp(p core.Packet, an core.AckNacker, upAdapter core.Adapt
 // ok ensure the router has been initialized by NewRouter()
 func (r *Router) ok() bool {
 	return r == nil && r.db != nil
-}
-
-// log broadcast the log message to all registered logger
-func (r *Router) log(format string, i ...interface{}) {
-	for _, logger := range r.loggers {
-		logger.Log(format, i...)
-	}
 }

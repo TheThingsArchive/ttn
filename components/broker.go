@@ -11,8 +11,8 @@ import (
 )
 
 type Broker struct {
-	loggers []log.Logger
-	db      brokerStorage
+	log.Logger
+	db brokerStorage
 }
 
 func NewBroker(loggers ...log.Logger) (*Broker, error) {
@@ -23,8 +23,8 @@ func NewBroker(loggers ...log.Logger) (*Broker, error) {
 	}
 
 	return &Broker{
-		loggers: loggers,
-		db:      localDB,
+		Logger: log.MultiLogger{Loggers: loggers},
+		db:     localDB,
 	}, nil
 }
 
@@ -49,7 +49,7 @@ func (b *Broker) HandleUp(p core.Packet, an core.AckNacker, adapter core.Adapter
 	for _, entry := range entries {
 		ok, err := p.Payload.ValidateMIC(entry.NwsKey)
 		if err != nil {
-			b.log("Unexpected error: %v", err)
+			b.Log("Unexpected error: %v", err)
 			continue
 		}
 		if ok {
@@ -88,10 +88,4 @@ func (b *Broker) Register(r core.Registration) error {
 
 	entry := brokerEntry{Id: id, Url: url, NwsKey: nwsKey}
 	return b.db.store(r.DevAddr, entry)
-}
-
-func (b *Broker) log(format string, i ...interface{}) {
-	for _, logger := range b.loggers {
-		logger.Log(format, i...)
-	}
 }
