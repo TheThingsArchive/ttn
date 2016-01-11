@@ -69,9 +69,11 @@ func (r *Router) HandleUp(p core.Packet, an core.AckNacker, upAdapter core.Adapt
 		return err
 	}
 
-	// We don't handle downlink for now, so an is quite useless.
-
-	return upAdapter.Send(p, brokers...)
+	response, err := upAdapter.Send(p, brokers...)
+	if err != nil {
+		return err
+	}
+	return an.Ack(response)
 }
 
 // ok ensure the router has been initialized by NewRouter()
