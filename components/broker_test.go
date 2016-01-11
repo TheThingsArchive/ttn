@@ -8,14 +8,14 @@ import (
 	"testing"
 )
 
-func TestNewRouter(t *testing.T) {
+func TestNewBroker(t *testing.T) {
 	Ko(t, "TODO")
 }
 
-func TestSendRouter(t *testing.T) {
+func TestHandleUpBroker(t *testing.T) {
 	Ko(t, "TODO")
 }
 
-func TestHandleUpRouter(t *testing.T) {
+func TestRegisterBroker(t *testing.T) {
 	Ko(t, "TODO")
 }

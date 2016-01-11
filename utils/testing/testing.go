@@ -11,8 +11,8 @@ import (
 )
 
 // Ok displays a green check symbol
-func Ok(t *testing.T) {
-	t.Log("\033[32;1m\u2714 ok\033[0m")
+func Ok(t *testing.T, tag string) {
+	t.Log(fmt.Sprintf("\033[32;1m\u2714 ok | %s\033[0m", tag))
 }
 
 // Ko fails the test and display a red cross symbol

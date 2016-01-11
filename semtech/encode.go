@@ -43,23 +43,19 @@ func Marshal(packet Packet) ([]byte, error) {
 }
 
 // MarshalJSON implements the Marshaler interface from encoding/json
-func (t *timeparser) MarshalJSON() ([]byte, error) {
-	if t.value == nil {
+func (t *Timeparser) MarshalJSON() ([]byte, error) {
+	if t.Value == nil {
 		return nil, errors.New("Cannot marshal a null time")
 	}
-	return append(append([]byte(`"`), []byte(t.value.Format(t.layout))...), []byte(`"`)...), nil
+	return append(append([]byte(`"`), []byte(t.Value.Format(t.Layout))...), []byte(`"`)...), nil
 }
 
 // MarshalJSON implements the Marshaler interface from encoding/json
-func (d *datrparser) MarshalJSON() ([]byte, error) {
-	if d.value == nil {
-		return nil, errors.New("Cannot marshal a null datr")
+func (d *Datrparser) MarshalJSON() ([]byte, error) {
+	if d.Kind == "uint" {
+		return []byte(d.Value), nil
 	}
-
-	if d.kind == "uint" {
-		return []byte(*d.value), nil
-	}
-	return append(append([]byte(`"`), []byte(*d.value)...), []byte(`"`)...), nil
+	return append(append([]byte(`"`), []byte(d.Value)...), []byte(`"`)...), nil
 }
 
 // MarshalJSON implements the Marshaler interface from encoding/json
@@ -70,7 +66,7 @@ func (p *Payload) MarshalJSON() ([]byte, error) {
 		proxStat = new(statProxy)
 		proxStat.Stat = p.Stat
 		if p.Stat.Time != nil {
-			proxStat.Time = &timeparser{layout: "2006-01-02 15:04:05 GMT", value: p.Stat.Time}
+			proxStat.Time = &Timeparser{Layout: "2006-01-02 15:04:05 GMT", Value: p.Stat.Time}
 		}
 	}
 
@@ -81,17 +77,17 @@ func (p *Payload) MarshalJSON() ([]byte, error) {
 		proxr.RXPK = new(RXPK)
 		*proxr.RXPK = rxpk
 		if rxpk.Time != nil {
-			proxr.Time = &timeparser{time.RFC3339Nano, rxpk.Time}
+			proxr.Time = &Timeparser{time.RFC3339Nano, rxpk.Time}
 		}
 
 		if rxpk.Modu != nil && rxpk.Datr != nil {
 			switch *rxpk.Modu {
 			case "FSK":
-				proxr.Datr = &datrparser{kind: "uint", value: rxpk.Datr}
+				proxr.Datr = &Datrparser{Kind: "uint", Value: *rxpk.Datr}
 			case "LORA":
 				fallthrough
 			default:
-				proxr.Datr = &datrparser{kind: "string", value: rxpk.Datr}
+				proxr.Datr = &Datrparser{Kind: "string", Value: *rxpk.Datr}
 			}
 		}
 		proxRXPK = append(proxRXPK, *proxr)
@@ -103,16 +99,16 @@ func (p *Payload) MarshalJSON() ([]byte, error) {
 		proxTXPK = new(txpkProxy)
 		proxTXPK.TXPK = p.TXPK
 		if p.TXPK.Time != nil {
-			proxTXPK.Time = &timeparser{time.RFC3339Nano, p.TXPK.Time}
+			proxTXPK.Time = &Timeparser{time.RFC3339Nano, p.TXPK.Time}
 		}
 		if p.TXPK.Modu != nil && p.TXPK.Datr != nil {
 			switch *p.TXPK.Modu {
 			case "FSK":
-				proxTXPK.Datr = &datrparser{kind: "uint", value: p.TXPK.Datr}
+				proxTXPK.Datr = &Datrparser{Kind: "uint", Value: *p.TXPK.Datr}
 			case "LORA":
 				fallthrough
 			default:
-				proxTXPK.Datr = &datrparser{kind: "string", value: p.TXPK.Datr}
+				proxTXPK.Datr = &Datrparser{Kind: "string", Value: *p.TXPK.Datr}
 			}
 		}
 	}

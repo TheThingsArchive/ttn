@@ -14,32 +14,32 @@ type payloadProxy struct {
 
 type statProxy struct {
 	*Stat
-	Time *timeparser `json:"time,omitempty"`
+	Time *Timeparser `json:"time,omitempty"`
 }
 
 type rxpkProxy struct {
 	*RXPK
-	Datr *datrparser `json:"datr,omitempty"`
-	Time *timeparser `json:"time,omitempty"`
+	Datr *Datrparser `json:"datr,omitempty"`
+	Time *Timeparser `json:"time,omitempty"`
 }
 
 type txpkProxy struct {
 	*TXPK
-	Datr *datrparser `json:"datr,omitempty"`
-	Time *timeparser `json:"time,omitempty"`
+	Datr *Datrparser `json:"datr,omitempty"`
+	Time *Timeparser `json:"time,omitempty"`
 }
 
 // datrParser is used as a proxy to Unmarshal datr field in json payloads.
 // Depending on the modulation type, the datr type could be either a string or a number.
 // We're gonna parse it as a string in any case.
-type datrparser struct {
-	kind  string
-	value *string // The parsed value
+type Datrparser struct {
+	Kind  string
+	Value string // The parsed value
 }
 
 // timeParser is used as a proxy to Unmarshal JSON objects with different date types as the time
 // module parse RFC3339 by default
-type timeparser struct {
-	layout string
-	value  *time.Time // The parsed time value
+type Timeparser struct {
+	Layout string
+	Value  *time.Time // The parsed time value
 }

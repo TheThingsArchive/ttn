@@ -54,12 +54,18 @@ func Time(v time.Time) *time.Time {
 }
 
 // DumpStruct prints the content of a struct of pointers
-func DumpPStruct(s interface{}) {
+func DumpPStruct(s interface{}, multiline bool) string {
 	v := reflect.ValueOf(s)
 
 	if v.Kind() != reflect.Struct {
-		fmt.Printf("Unable to dump: Not a struct.")
-		return
+		return "Not a struct"
+	}
+
+	nl := ","
+	str := fmt.Sprintf("%s{", v.Type().Name())
+	if multiline {
+		nl = "\n\t"
+		str += nl
 	}
 
 	for k := 0; k < v.NumField(); k += 1 {
@@ -68,47 +74,43 @@ func DumpPStruct(s interface{}) {
 			continue
 		}
 		i := v.Field(k).Interface()
-		fmt.Printf("%v: ", v.Type().Field(k).Name)
+		key := fmt.Sprintf("%v", v.Type().Field(k).Name)
 
 		switch t := i.(type) {
 		case *bool:
-			if t == nil {
-				fmt.Printf("nil\n")
-			} else {
-				fmt.Printf("%+v\n", *t)
+			if t != nil {
+				str += fmt.Sprintf("%s:%+v%s", key, *t, nl)
 			}
 		case *int:
-			if t == nil {
-				fmt.Printf("nil\n")
-			} else {
-				fmt.Printf("%+v\n", *t)
+			if t != nil {
+				str += fmt.Sprintf("%s:%+v%s", key, *t, nl)
 			}
 		case *uint:
-			if t == nil {
-				fmt.Printf("nil\n")
-			} else {
-				fmt.Printf("%+v\n", *t)
+			if t != nil {
+				str += fmt.Sprintf("%s:%+v%s", key, *t, nl)
 			}
 		case *string:
-			if t == nil {
-				fmt.Printf("nil\n")
-			} else {
-				fmt.Printf("%+v\n", *t)
+			if t != nil {
+				str += fmt.Sprintf("%s:%+v%s", key, *t, nl)
 			}
 		case *float64:
-			if t == nil {
-				fmt.Printf("nil\n")
-			} else {
-				fmt.Printf("%+v\n", *t)
+			if t != nil {
+				str += fmt.Sprintf("%s:%+v%s", key, *t, nl)
 			}
 		case *time.Time:
-			if t == nil {
-				fmt.Printf("nil\n")
-			} else {
-				fmt.Printf("%+v\n", *t)
+			if t != nil {
+				str += fmt.Sprintf("%s:%+v%s", key, *t, nl)
 			}
 		default:
-			fmt.Printf("unknown\n")
+			str += fmt.Sprintf("%s:unknown%s", key, nl)
 		}
 	}
+
+	str = str[:len(str)-2]
+	if multiline {
+		str += "\n}"
+	} else {
+		str += "}"
+	}
+	return str
 }

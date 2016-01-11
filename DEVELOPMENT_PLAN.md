@@ -25,8 +25,8 @@ Handle an uplink process that can forward packet coming from a gateway to a simp
 system will just forward messages using pre-configured end-device addresses.
 
 
-- [ ] Basic Router  
-    - [ ] Core
+- [x] Basic Router  
+    - [x] Core
         - [x] Lookup for device address (only local)
         - [x] Invalidate broker periodically (only local)
         - [x] Acknowledge packet from gateway
@@ -46,12 +46,20 @@ system will just forward messages using pre-configured end-device addresses.
         - [x] Send packet to given brokers (same as above ?)
 
 
-- [ ] Basic Broker
-    - [ ] Detail the list of features
+- [x] Basic Broker
+    - [x] Core
+        - [x] Lookup for associated device from Network Controller
+        - [x] Send acknowledgement or rejection for given packet
+        - [x] If necessary, forward packet to right handler
+        - [x] Associate handlers to static device addresses
+        - [ ] Switch from local in-memory storage to Reddis
+    - [x] Router adapter
+        - [x] Listen to http request and forward valid request to core 
+        - [x] Respond with 200 OK (ack) or 404 Not Found (nack)
+    - [ ] Handler adapter
+        - [ ] Send packet to handler
+        - [ ] Accept registrations of static devAddr from handlers
 
-
-- [ ] Minimalist Dumb Network-Controller
-    - [ ] Detail the list of features
 
 ## Milestone 3
 Support application registration for personalization. Applications provide a list of
