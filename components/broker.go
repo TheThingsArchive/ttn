@@ -15,8 +15,6 @@ type Broker struct {
 	db      brokerStorage
 }
 
-var ErrInvalidRegistration = fmt.Errorf("Invalid registration")
-
 func NewBroker(loggers ...log.Logger) (*Broker, error) {
 	localDB, err := NewBrokerStorage()
 
@@ -30,8 +28,49 @@ func NewBroker(loggers ...log.Logger) (*Broker, error) {
 	}, nil
 }
 
-func (b *Broker) HandleUp(p core.Packet, an core.AckNacker, a core.Adapter) error {
-	return nil
+func (b *Broker) HandleUp(p core.Packet, an core.AckNacker, adapter core.Adapter) error {
+	// 1. Lookup for entries for the associated device
+	devAddr, err := p.DevAddr()
+	if err != nil {
+		return ErrInvalidPacket
+	}
+	entries, err := b.db.lookup(devAddr)
+	switch err {
+	case nil:
+	case ErrDeviceNotFound:
+		return an.Nack(p)
+	default:
+		return err
+	}
+
+	// 2. Several handler might be associated to the same device, we distinguish them using MIC
+	// check. Only one should verify the MIC check.
+	var handler *core.Recipient
+	for _, entry := range entries {
+		ok, err := p.Payload.ValidateMIC(entry.NwsKey)
+		if err != nil {
+			b.log("Unexpected error: %v", err)
+			continue
+		}
+		if ok {
+			handler = &core.Recipient{
+				Id:      entry.Id,
+				Address: entry.Url,
+			}
+			break
+		}
+	}
+	if handler == nil {
+		return an.Nack(p)
+	}
+
+	// 3. If one was found, we forward the packet and wait for the response
+	response, err := adapter.Send(p, *handler)
+	if err != nil {
+		an.Nack(p)
+		return err
+	}
+	return an.Ack(response)
 }
 
 func (b *Broker) HandleDown(p core.Packet, an core.AckNacker, a core.Adapter) error {

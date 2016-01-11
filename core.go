@@ -49,7 +49,7 @@ type Component interface {
 }
 
 type Adapter interface {
-	Send(p Packet, r ...Recipient) error
+	Send(p Packet, r ...Recipient) (Packet, error)
 	Next() (Packet, AckNacker, error)
 	NextRegistration() (Registration, AckNacker, error)
 }
