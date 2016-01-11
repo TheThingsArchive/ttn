@@ -40,12 +40,12 @@ func (l TestLogger) Log(format string, a ...interface{}) {
 
 // MultiLogger aggregates several loggers log to each of them
 type MultiLogger struct {
-	loggers []Logger
+	Loggers []Logger
 }
 
 // Log implements the Logger interface
 func (l MultiLogger) Log(format string, a ...interface{}) {
-	for _, logger := range l.loggers {
+	for _, logger := range l.Loggers {
 		logger.Log(format, a...)
 	}
 }
