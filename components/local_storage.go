@@ -16,7 +16,7 @@ type addressKeeper interface {
 	store(devAddr lorawan.DevAddr, recipients ...core.Recipient) error
 }
 
-type reddisAddressKeeper struct{} // In a second time
+type reddisAddressKeeper struct{} // NOTE In a second time
 
 type localDB struct {
 	sync.RWMutex
