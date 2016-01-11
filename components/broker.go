@@ -6,16 +6,19 @@ package components
 import (
 	"fmt"
 	"github.com/thethingsnetwork/core"
+	"github.com/thethingsnetwork/core/lorawan"
 	"github.com/thethingsnetwork/core/utils/log"
 )
 
 type Broker struct {
 	loggers []log.Logger
-	db      addressKeeper
+	db      brokerStorage
 }
 
+var ErrInvalidRegistration = fmt.Errorf("Invalid registration")
+
 func NewBroker(loggers ...log.Logger) (*Broker, error) {
-	localDB, err := NewLocalDB(EXPIRY_DELAY)
+	localDB, err := NewBrokerStorage()
 
 	if err != nil {
 		return nil, err
@@ -36,7 +39,16 @@ func (b *Broker) HandleDown(p core.Packet, an core.AckNacker, a core.Adapter) er
 }
 
 func (b *Broker) Register(r core.Registration) error {
-	return nil
+	id, okId := r.Recipient.Id.(string)
+	url, okUrl := r.Recipient.Address.(string)
+	nwsKey, okNwsKey := r.Options.(lorawan.AES128Key)
+
+	if !(okId && okUrl && okNwsKey) {
+		return ErrInvalidRegistration
+	}
+
+	entry := brokerEntry{Id: id, Url: url, NwsKey: nwsKey}
+	return b.db.store(r.DevAddr, entry)
 }
 
 func (b *Broker) log(format string, i ...interface{}) {

@@ -17,7 +17,7 @@ type brokerStorage interface {
 type brokerEntry struct {
 	Id     string
 	Url    string
-	Nwskey lorawan.AES128Key
+	NwsKey lorawan.AES128Key
 }
 
 type brokerDB struct {
