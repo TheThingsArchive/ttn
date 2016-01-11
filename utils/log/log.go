@@ -38,8 +38,14 @@ func (l TestLogger) Log(format string, a ...interface{}) {
 	l.T.Logf("\033[33m[ %s ]\033[0m %s", l.Tag, fmt.Sprintf(format, a...)) // Tag printed in yellow
 }
 
-// VoidLogger can be used to deactivate logs by displaying nothing
-type VoidLogger struct{}
+// MultiLogger aggregates several loggers log to each of them
+type MultiLogger struct {
+	loggers []Logger
+}
 
 // Log implements the Logger interface
-func (l VoidLogger) Log(format string, a ...interface{}) {}
+func (l MultiLogger) Log(format string, a ...interface{}) {
+	for _, logger := range l.loggers {
+		logger.Log(format, a...)
+	}
+}
