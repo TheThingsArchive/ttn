@@ -28,26 +28,14 @@ So far:
 -----> Handler
 
 -| adapters
------| rtr-brk-http
+-----| http
 ----------> Adapter
-
------| gtw-rtr-udp
-----------> Adapter
-
------| brk-nwc-local
-----------> Adapter
-
------| brk-hdl-http
-----------> Adapter
-
------| brk-rtr-http
-----------> Adapter
-
------| ns-brk-local
-----------> Adapter
-
------| hdl-brk-http
-----------> Adapter
+----------| pubsub
+---------------> Adapter
+----------| broadcast
+---------------> Adapter
+-----| semtech
+---------------> Adapter
 
 -| lorawan
 -----| mac
@@ -63,35 +51,6 @@ So far:
 -----| gateway
 ----------> Forwarder
 ----------> Imitator
-
--| testing
------| mock_components
-----------> Router
-----------> Broker
-----------> Networkcontroller
-----------> Handler
-
------| mock_adapters
-----------| rtr-brk-mock
----------------> Adapter
-
-----------| gtw-rtr-mock
----------------> Adapter
-
-----------| brk-nwc-mock
----------------> Adapter
-
-----------| brk-hdl-mock
----------------> Adapter
-
-----------| brk-rtr-mock
----------------> Adapter
-
-----------| ns-brk-mock
----------------> Adapter
-
-----------| hdl-brk-mock
----------------> Adapter
 ```
 
 ## Development Plan

@@ -35,6 +35,7 @@ system will just forward messages using pre-configured end-device addresses.
         - [x] Create Mock DownAdapter
         - [x] Create Mock UpAdatper
         - [x] Test'em all
+        - [ ] Switch from local in-memory storage to Reddis
     - [x] UpAdapter
         - [x] Listen and forward incoming packets to Core router
         - [x] Keep track of existing UDP connections
@@ -43,31 +44,21 @@ system will just forward messages using pre-configured end-device addresses.
         - [x] Listen and forward incoming packet to Core router
         - [x] Broadcast a packet to several brokers
         - [x] Send packet to given brokers (same as above ?)
-    - [ ] Bonus
+
+
+- [x] Basic Broker
+    - [x] Core
+        - [x] Lookup for associated device from Network Controller
+        - [x] Send acknowledgement or rejection for given packet
+        - [x] If necessary, forward packet to right handler
+        - [x] Associate handlers to static device addresses
         - [ ] Switch from local in-memory storage to Reddis
-
-
-- [ ] Basic Broker
-    - [ ] Core
-        - [ ] Lookup for associated device from Network Controller
-        - [ ] Send acknowledgement or rejection for given packet
-        - [ ] If necessary, forward packet to right handler
-        - [ ] Associate handlers to static device addresses
-    - [ ] Router adapter
-        - [ ] Listen to http request and forward valid request to core 
-        - [ ] Respond with 200 OK (ack) or 404 Not Found (nack)
-    - [ ] Network Controller adapter
-        - [ ] Lookup for device from a packet
-        - [ ] Send back packet that are indeed handled by a handler
+    - [x] Router adapter
+        - [x] Listen to http request and forward valid request to core 
+        - [x] Respond with 200 OK (ack) or 404 Not Found (nack)
     - [ ] Handler adapter
         - [ ] Send packet to handler
         - [ ] Accept registrations of static devAddr from handlers
-
-
-
-- [ ] Minimalist Dumb Network-Controller
-    - [ ] Retrieve corresponding key (appSKey or nwskey)
-    - [ ] Compute MIC check of received packet
 
 
 ## Milestone 3
