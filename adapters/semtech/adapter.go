@@ -6,16 +6,16 @@ package semtech
 import (
 	"fmt"
 	"github.com/thethingsnetwork/core"
-	components "github.com/thethingsnetwork/core/refactored_components"
+	"github.com/thethingsnetwork/core/components"
 	"github.com/thethingsnetwork/core/semtech"
 	"github.com/thethingsnetwork/core/utils/log"
 	"net"
 )
 
 type Adapter struct {
-	loggers []log.Logger // 0 to several loggers to get feedback from the Adapter.
-	conn    chan udpMsg
-	next    chan rxpkMsg
+	log.Logger
+	conn chan udpMsg
+	next chan rxpkMsg
 }
 
 type udpMsg struct {
@@ -37,16 +37,16 @@ var ErrInvalidPacket error = fmt.Errorf("Invalid packet supplied")
 // New constructs and allocates a new udp_sender adapter
 func NewAdapter(port uint, loggers ...log.Logger) (*Adapter, error) {
 	a := Adapter{
-		loggers: loggers,
-		conn:    make(chan udpMsg),
-		next:    make(chan rxpkMsg),
+		Logger: log.MultiLogger{Loggers: loggers},
+		conn:   make(chan udpMsg),
+		next:   make(chan rxpkMsg),
 	}
 
 	// Create the udp connection and start listening with a goroutine
 	var udpConn *net.UDPConn
 	addr, err := net.ResolveUDPAddr("udp", fmt.Sprintf("0.0.0.0:%d", port))
 	if udpConn, err = net.ListenUDP("udp", addr); err != nil {
-		a.log("Unable to establish the connection: %v", err)
+		a.Log("Unable to establish the connection: %v", err)
 		return nil, ErrInvalidPort
 	}
 
@@ -75,7 +75,7 @@ func (a *Adapter) Next() (core.Packet, core.AckNacker, error) {
 	msg := <-a.next
 	packet, err := components.ConvertRXPK(msg.rxpk)
 	if err != nil {
-		a.log("Invalid Packet")
+		a.Log("Invalid Packet")
 		return core.Packet{}, nil, ErrInvalidPacket
 	}
 	return packet, semtechAckNacker{recipient: msg.recipient, conn: a.conn}, nil
@@ -89,19 +89,19 @@ func (a *Adapter) NextRegistration() (core.Packet, core.AckNacker, error) {
 // listen Handle incoming packets and forward them
 func (a *Adapter) listen(conn *net.UDPConn) {
 	defer conn.Close()
-	a.log("Start listening on %s", conn.LocalAddr())
+	a.Log("Start listening on %s", conn.LocalAddr())
 	for {
 		buf := make([]byte, 128)
 		n, addr, err := conn.ReadFromUDP(buf)
 		if err != nil { // Problem with the connection
-			a.log("Error: %v", err)
+			a.Log("Error: %v", err)
 			continue
 		}
-		a.log("Incoming datagram %x", buf[:n])
+		a.Log("Incoming datagram %x", buf[:n])
 
 		pkt, err := semtech.Unmarshal(buf[:n])
 		if err != nil {
-			a.log("Error: %v", err)
+			a.Log("Error: %v", err)
 			continue
 		}
 
@@ -113,10 +113,10 @@ func (a *Adapter) listen(conn *net.UDPConn) {
 				Identifier: semtech.PULL_ACK,
 			})
 			if err != nil {
-				a.log("Unexpected error while marshaling PULL_ACK: %v", err)
+				a.Log("Unexpected error while marshaling PULL_ACK: %v", err)
 				continue
 			}
-			a.log("Sending PULL_ACK to %v", addr)
+			a.Log("Sending PULL_ACK to %v", addr)
 			a.conn <- udpMsg{addr: addr, raw: pullAck}
 		case semtech.PUSH_DATA: // PUSH_DATA -> Transfer all RXPK to the component
 			pushAck, err := semtech.Marshal(semtech.Packet{
@@ -125,14 +125,14 @@ func (a *Adapter) listen(conn *net.UDPConn) {
 				Identifier: semtech.PUSH_ACK,
 			})
 			if err != nil {
-				a.log("Unexpected error while marshaling PUSH_ACK: %v", err)
+				a.Log("Unexpected error while marshaling PUSH_ACK: %v", err)
 				continue
 			}
-			a.log("Sending PUSH_ACK to %v", addr)
+			a.Log("Sending PUSH_ACK to %v", addr)
 			a.conn <- udpMsg{addr: addr, raw: pushAck}
 
 			if pkt.Payload == nil {
-				a.log("Inconsistent PUSH_DATA packet %v", pkt)
+				a.Log("Inconsistent PUSH_DATA packet %v", pkt)
 				continue
 			}
 			for _, rxpk := range pkt.Payload.RXPK {
@@ -142,7 +142,7 @@ func (a *Adapter) listen(conn *net.UDPConn) {
 				}
 			}
 		default:
-			a.log("Unexpected packet received. Ignored: %v", pkt)
+			a.Log("Unexpected packet received. Ignored: %v", pkt)
 			continue
 		}
 	}
@@ -154,7 +154,7 @@ func (a *Adapter) monitorConnection() {
 	for msg := range a.conn {
 		if msg.conn != nil { // Change the connection
 			if udpConn != nil {
-				a.log("Define new UDP connection")
+				a.Log("Define new UDP connection")
 				udpConn.Close()
 			}
 			udpConn = msg.conn
@@ -162,17 +162,11 @@ func (a *Adapter) monitorConnection() {
 
 		if udpConn != nil && msg.raw != nil { // Send the given udp message
 			if _, err := udpConn.WriteToUDP(msg.raw, msg.addr); err != nil {
-				a.log("Unable to send udp message: %+v", err)
+				a.Log("Unable to send udp message: %+v", err)
 			}
 		}
 	}
 	if udpConn != nil {
 		udpConn.Close() // Make sure we close the connection before leaving if we dare ever leave.
-	}
-}
-
-func (a *Adapter) log(format string, i ...interface{}) {
-	for _, logger := range a.loggers {
-		logger.Log(format, i...)
 	}
 }

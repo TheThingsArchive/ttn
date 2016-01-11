@@ -6,7 +6,7 @@ package semtech
 import (
 	"fmt"
 	"github.com/thethingsnetwork/core"
-	components "github.com/thethingsnetwork/core/refactored_components"
+	"github.com/thethingsnetwork/core/components"
 	"github.com/thethingsnetwork/core/semtech"
 	"net"
 )
