@@ -5,7 +5,6 @@ package core
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/thethingsnetwork/core/lorawan"
 	"github.com/thethingsnetwork/core/semtech"
 	"github.com/thethingsnetwork/core/utils/pointer"
@@ -68,12 +67,13 @@ func TestMarshalJSONPacket(t *testing.T) {
 	for _, test := range tests {
 		Desc(t, "Marshal packet to json: %s", test.Packet.String())
 		raw, _ := json.Marshal(test.Packet)
-		fmt.Println(string(raw))
 		checkFields(t, test.WantFields, raw)
 	}
 }
 
 func TestUnmarshalJSONPacket(t *testing.T) {
+	t.Skip("Discussion on github about implementation")
+	return
 	tests := []unmarshalJSONTest{
 		unmarshalJSONTest{
 			JSON:       `{"payload":"gAQDAgEAAAAK4mTU97VqDnU=","metadata":{}}`,

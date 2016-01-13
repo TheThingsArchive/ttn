@@ -5,7 +5,7 @@ package components
 
 import (
 	"fmt"
-	"github.com/thethingsnetwork/core"
+	"github.com/thethingsnetwork/core/core"
 	"github.com/thethingsnetwork/core/lorawan"
 	"github.com/thethingsnetwork/core/utils/log"
 )
