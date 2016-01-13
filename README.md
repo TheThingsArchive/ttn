@@ -33,9 +33,9 @@ For contributing a feature, please open an issue that explains what you're worki
 
 If you want to contribute, but don't know where to start, you could have a look at issues with the label [*help wanted*](https://github.com/TheThingsNetwork/ttn/labels/help%20wanted) or [*difficulty/easy*](https://github.com/TheThingsNetwork/ttn/labels/difficulty%2Feasy).
 
-## Development Plan
+## Roadmap
 
-We have a [development plan](DEVELOPMENT_PLAN.md) document, but this will soon be migrated to Github issues.
+We have a [roadmap](ROADMAP.md) for the coming months. This document will evolve as we further define our long-term vision.
 
 ## License
 
