@@ -10,7 +10,7 @@ import (
 )
 
 // Marshal transforms a packet to a sequence of bytes.
-func Marshal(packet Packet) ([]byte, error) {
+func (packet Packet) MarshalBinary() ([]byte, error) {
 	raw := append(make([]byte, 0), packet.Version)
 
 	if packet.Identifier == PULL_RESP {
@@ -31,12 +31,16 @@ func Marshal(packet Packet) ([]byte, error) {
 		raw = append(raw, packet.GatewayId...)
 	}
 
-	if packet.Payload != nil && (packet.Identifier == PUSH_DATA || packet.Identifier == PULL_RESP) {
-		payload, err := json.Marshal(packet.Payload)
-		if err != nil {
-			return nil, err
+	if packet.Identifier == PUSH_DATA || packet.Identifier == PULL_RESP {
+		if packet.Payload != nil {
+			payload, err := json.Marshal(packet.Payload)
+			if err != nil {
+				return nil, err
+			}
+			raw = append(raw, payload...)
+		} else {
+			raw = append(raw, []byte("{}")...)
 		}
-		raw = append(raw, payload...)
 	}
 
 	return raw, nil
