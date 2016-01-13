@@ -6,8 +6,8 @@ package core
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/thethingsnetwork/core/semtech"
-	"github.com/thethingsnetwork/core/utils/pointer"
+	"github.com/thethingsnetwork/ttn/semtech"
+	"github.com/thethingsnetwork/ttn/utils/pointer"
 	"time"
 )
 

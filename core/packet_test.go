@@ -5,10 +5,10 @@ package core
 
 import (
 	"encoding/json"
-	"github.com/thethingsnetwork/core/lorawan"
-	"github.com/thethingsnetwork/core/semtech"
-	"github.com/thethingsnetwork/core/utils/pointer"
-	. "github.com/thethingsnetwork/core/utils/testing"
+	"github.com/thethingsnetwork/ttn/lorawan"
+	"github.com/thethingsnetwork/ttn/semtech"
+	"github.com/thethingsnetwork/ttn/utils/pointer"
+	. "github.com/thethingsnetwork/ttn/utils/testing"
 	"testing"
 )
 

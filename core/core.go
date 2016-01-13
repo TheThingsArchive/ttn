@@ -1,7 +1,7 @@
 package core
 
 import (
-	"github.com/thethingsnetwork/core/lorawan"
+	"github.com/thethingsnetwork/ttn/lorawan"
 	"time"
 )
 

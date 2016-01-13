@@ -5,9 +5,9 @@ package core
 
 import (
 	"encoding/base64"
-	"github.com/thethingsnetwork/core/lorawan"
-	"github.com/thethingsnetwork/core/semtech"
-	"github.com/thethingsnetwork/core/utils/pointer"
+	"github.com/thethingsnetwork/ttn/lorawan"
+	"github.com/thethingsnetwork/ttn/semtech"
+	"github.com/thethingsnetwork/ttn/utils/pointer"
 	"strings"
 	"time"
 )

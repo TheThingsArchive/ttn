@@ -5,9 +5,9 @@ package pubsub
 
 import (
 	"fmt"
-	"github.com/thethingsnetwork/core/core"
-	httpadapter "github.com/thethingsnetwork/core/core/adapters/http"
-	"github.com/thethingsnetwork/core/utils/log"
+	"github.com/thethingsnetwork/ttn/core"
+	httpadapter "github.com/thethingsnetwork/ttn/core/adapters/http"
+	"github.com/thethingsnetwork/ttn/utils/log"
 	"net/http"
 )
 

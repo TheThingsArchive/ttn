@@ -5,9 +5,9 @@ package semtech
 
 import (
 	"fmt"
-	"github.com/thethingsnetwork/core/core"
-	"github.com/thethingsnetwork/core/semtech"
-	"github.com/thethingsnetwork/core/utils/log"
+	"github.com/thethingsnetwork/ttn/core"
+	"github.com/thethingsnetwork/ttn/semtech"
+	"github.com/thethingsnetwork/ttn/utils/log"
 	"net"
 )
 

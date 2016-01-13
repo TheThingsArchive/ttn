@@ -4,7 +4,7 @@
 package components
 
 import (
-	"github.com/thethingsnetwork/core/lorawan"
+	"github.com/thethingsnetwork/ttn/lorawan"
 	"sync"
 )
 

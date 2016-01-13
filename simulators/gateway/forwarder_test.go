@@ -6,7 +6,7 @@ package gateway
 import (
 	"fmt"
 	. "github.com/smartystreets/goconvey/convey"
-	"github.com/thethingsnetwork/core/semtech"
+	"github.com/thethingsnetwork/ttn/semtech"
 	"io"
 	"testing"
 	"time"

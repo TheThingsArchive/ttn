@@ -5,9 +5,9 @@ package components
 
 import (
 	"fmt"
-	"github.com/thethingsnetwork/core/core"
-	"github.com/thethingsnetwork/core/lorawan"
-	"github.com/thethingsnetwork/core/utils/log"
+	"github.com/thethingsnetwork/ttn/core"
+	"github.com/thethingsnetwork/ttn/lorawan"
+	"github.com/thethingsnetwork/ttn/utils/log"
 )
 
 type Broker struct {

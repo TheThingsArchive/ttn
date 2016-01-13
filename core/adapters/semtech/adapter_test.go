@@ -4,9 +4,9 @@
 package semtech
 
 import (
-	"github.com/thethingsnetwork/core/core"
-	"github.com/thethingsnetwork/core/semtech"
-	. "github.com/thethingsnetwork/core/utils/testing"
+	"github.com/thethingsnetwork/ttn/core"
+	"github.com/thethingsnetwork/ttn/semtech"
+	. "github.com/thethingsnetwork/ttn/utils/testing"
 	"reflect"
 	"testing"
 	"time"

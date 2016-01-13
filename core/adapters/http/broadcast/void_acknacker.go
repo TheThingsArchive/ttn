@@ -4,7 +4,7 @@
 package broadcast
 
 import (
-	"github.com/thethingsnetwork/core/core"
+	"github.com/thethingsnetwork/ttn/core"
 )
 
 type voidAckNacker struct{}
