@@ -116,3 +116,27 @@ func (p Packet) MarshalJSON() ([]byte, error) {
 }
 
 // UnmarshalJSON impements the json.Marshaler interface
+func (p *Packet) UnmarshalJSON(raw []byte) error {
+	if p == nil {
+		return ErrImpossibleConversion
+	}
+	var proxy struct {
+		Payload  string `json:"payload"`
+		Metadata Metadata
+	}
+	err := json.Unmarshal(raw, &proxy)
+	if err != nil {
+		return err
+	}
+	rawPayload, err := base64.StdEncoding.DecodeString(proxy.Payload)
+	if err != nil {
+		return err
+	}
+	payload := new(lorawan.PHYPayload)
+	if err := payload.UnmarshalBinary(rawPayload); err != nil {
+		return err
+	}
+	p.Payload = *payload
+	p.Metadata = proxy.Metadata
+	return nil
+}
