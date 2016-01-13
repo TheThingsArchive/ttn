@@ -46,6 +46,7 @@ func TestSend(t *testing.T) {
 
 	for _, test := range tests {
 		Desc(t, "Sending packet: %v", test.Packet)
+		<-time.After(time.Millisecond * 100)
 		err := adapter.Send(test.Packet, s.Recipient)
 		checkErrors(t, test.WantError, err)
 		checkSend(t, test.WantPayload, s)

@@ -59,9 +59,8 @@ func TestNextRegistration(t *testing.T) {
 		},
 	}
 
-	adapter, err := NewAdapter(3001, HandlerParser{}, log.TestLogger{Tag: "Adapter", T: t})
-	client := &client{adapter: "0.0.0.0:3001"}
-	<-time.After(time.Millisecond * 200)
+	adapter, err := NewAdapter(3021, HandlerParser{}, log.TestLogger{Tag: "Adapter", T: t})
+	client := &client{adapter: "0.0.0.0:3021"}
 	if err != nil {
 		panic(err)
 	}
@@ -69,6 +68,7 @@ func TestNextRegistration(t *testing.T) {
 	for _, test := range tests {
 		// Describe
 		Desc(t, "Trying to register %s -> %s, %s, %s", test.DevAddr, test.AppId, test.AppUrl, test.NwsKey)
+		<-time.After(time.Millisecond * 100)
 
 		// Build
 		gotErr := make(chan error)

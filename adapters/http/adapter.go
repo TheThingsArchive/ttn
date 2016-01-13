@@ -55,12 +55,12 @@ func (a *Adapter) Send(p core.Packet, r ...core.Recipient) error {
 			buf := new(bytes.Buffer)
 			buf.Write([]byte(payload))
 			resp, err := http.Post(fmt.Sprintf("http://%s", recipient.Address.(string)), "application/json", buf)
-			defer resp.Body.Close()
 			if err != nil {
 				// Non-blocking, buffered
 				cherr <- err
 				return
 			}
+			defer resp.Body.Close()
 			if resp.StatusCode != http.StatusOK {
 				// Non-blocking, buffered
 				cherr <- fmt.Errorf("Unexpected response from server: %s (%d)", resp.Status, resp.StatusCode)

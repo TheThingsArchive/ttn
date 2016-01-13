@@ -87,6 +87,7 @@ func TestNext(t *testing.T) {
 	for _, test := range tests {
 		// Describe
 		Desc(t, "Sending packet through adapter: %v", test.Packet)
+		<-time.After(time.Millisecond * 100)
 
 		// Operate
 		ack := server.send(test.Packet)

@@ -23,10 +23,10 @@ import (
 func TestSend(t *testing.T) {
 	packet, devAddr, payload := genSample()
 	recipients := []core.Recipient{
-		core.Recipient{Address: "0.0.0.0:3000", Id: "AlwaysReject"},
-		core.Recipient{Address: "0.0.0.0:3001", Id: "AlwaysAccept"},
-		core.Recipient{Address: "0.0.0.0:3002", Id: "AlwaysAccept"},
-		core.Recipient{Address: "0.0.0.0:3003", Id: "AlwaysReject"},
+		core.Recipient{Address: "0.0.0.0:3010", Id: "AlwaysReject"},
+		core.Recipient{Address: "0.0.0.0:3011", Id: "AlwaysAccept"},
+		core.Recipient{Address: "0.0.0.0:3012", Id: "AlwaysAccept"},
+		core.Recipient{Address: "0.0.0.0:3013", Id: "AlwaysReject"},
 	}
 	registrations := []core.Registration{
 		core.Registration{DevAddr: devAddr, Recipient: recipients[0]},
@@ -85,6 +85,7 @@ func TestSend(t *testing.T) {
 	for _, test := range tests {
 		// Describe
 		Desc(t, "Sending packet %v to %v", test.Packet, test.Recipients)
+		<-time.After(time.Millisecond * 100)
 
 		// Operate
 		err := adapter.Send(test.Packet, test.Recipients...)
