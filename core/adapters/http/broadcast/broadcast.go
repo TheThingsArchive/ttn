@@ -8,9 +8,10 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/thethingsnetwork/core"
-	httpadapter "github.com/thethingsnetwork/core/adapters/http"
+	"github.com/thethingsnetwork/core/core"
+	httpadapter "github.com/thethingsnetwork/core/core/adapters/http"
 	"github.com/thethingsnetwork/core/utils/log"
+	"io"
 	"net/http"
 	"sync"
 )
@@ -23,6 +24,7 @@ type Adapter struct {
 
 var ErrBadOptions = fmt.Errorf("Bad options provided")
 var ErrInvalidPacket = fmt.Errorf("The given packet is invalid")
+var ErrSeveralPositiveAnswers = fmt.Errorf("Several positive response for a given packet")
 
 func NewAdapter(recipients []core.Recipient, loggers ...log.Logger) (*Adapter, error) {
 	if len(recipients) == 0 {
@@ -41,37 +43,38 @@ func NewAdapter(recipients []core.Recipient, loggers ...log.Logger) (*Adapter, e
 	}, nil
 }
 
-func (a *Adapter) Send(p core.Packet, r ...core.Recipient) error {
+func (a *Adapter) Send(p core.Packet, r ...core.Recipient) (core.Packet, error) {
 	if len(r) == 0 {
 		return a.broadcast(p)
 	}
-	err := a.Adapter.Send(p, r...)
+	packet, err := a.Adapter.Send(p, r...)
 	if err == httpadapter.ErrInvalidPacket {
-		return ErrInvalidPacket
+		return core.Packet{}, ErrInvalidPacket
 	}
-	return err
+	return packet, err
 }
 
-func (a *Adapter) broadcast(p core.Packet) error {
+func (a *Adapter) broadcast(p core.Packet) (core.Packet, error) {
 	// Generate payload from core packet
 	m, err := json.Marshal(p.Metadata)
 	if err != nil {
-		return ErrInvalidPacket
+		return core.Packet{}, ErrInvalidPacket
 	}
 	pl, err := p.Payload.MarshalBinary()
 	if err != nil {
-		return ErrInvalidPacket
+		return core.Packet{}, ErrInvalidPacket
 	}
 	payload := fmt.Sprintf(`{"payload":"%s","metadata":%s}`, base64.StdEncoding.EncodeToString(pl), m)
 
 	devAddr, err := p.DevAddr()
 	if err != nil {
-		return ErrInvalidPacket
+		return core.Packet{}, ErrInvalidPacket
 	}
 
 	// Prepare ground for parrallel http request
 	nb := len(a.recipients)
 	cherr := make(chan error, nb)
+	chresp := make(chan core.Packet, nb)
 	register := make(chan core.Recipient, nb)
 	wg := sync.WaitGroup{}
 	wg.Add(nb)
@@ -85,19 +88,32 @@ func (a *Adapter) broadcast(p core.Packet) error {
 			buf := new(bytes.Buffer)
 			buf.Write([]byte(payload))
 			resp, err := http.Post(fmt.Sprintf("http://%s", recipient.Address.(string)), "application/json", buf)
-			defer resp.Body.Close()
 			if err != nil {
-				// Non-blocking, buffered
 				cherr <- err
 				return
 			}
+			defer resp.Body.Close()
 
 			switch resp.StatusCode {
 			case http.StatusOK:
 				a.Log("Recipient %v registered for given packet", recipient)
+
+				raw := make([]byte, resp.ContentLength)
+				n, err := resp.Body.Read(raw)
+				if err != nil && err != io.EOF {
+					cherr <- err
+					return
+				}
+				var packet core.Packet
+				if err := json.Unmarshal(raw[:n], &packet); err != nil {
+					cherr <- err
+					return
+				}
+
 				register <- recipient
+				chresp <- packet
 			case http.StatusNotFound:
-				a.Log("Recipient %v don't care much about packet", recipient)
+				a.Log("Recipient %v doesn't care much about packet", recipient)
 			default:
 				// Non-blocking, buffered
 				cherr <- fmt.Errorf("Unexpected response from server: %s (%d)", resp.Status, resp.StatusCode)
@@ -114,13 +130,23 @@ func (a *Adapter) broadcast(p core.Packet) error {
 		errors = append(errors, err)
 	}
 	if errors != nil {
-		return fmt.Errorf("Errors: %v", errors)
+		return core.Packet{}, fmt.Errorf("Errors: %v", errors)
+	}
+
+	if len(chresp) > 1 { // NOTE We consider several positive responses as an error
+		return core.Packet{}, ErrSeveralPositiveAnswers
 	}
 
 	for recipient := range register {
 		a.registrations <- core.Registration{DevAddr: devAddr, Recipient: recipient}
 	}
-	return nil
+
+	select {
+	case packet := <-chresp:
+		return packet, nil
+	default:
+		return core.Packet{}, fmt.Errorf("Unexpected error. No response packet available")
+	}
 }
 
 func (a *Adapter) NextRegistration() (core.Registration, core.AckNacker, error) {

@@ -30,15 +30,15 @@ func NewAdapter(loggers ...log.Logger) (*Adapter, error) {
 }
 
 // Send implements the core.Adapter interface
-func (a *Adapter) Send(p core.Packet, r ...core.Recipient) ([]core.Packet, error) {
+func (a *Adapter) Send(p core.Packet, r ...core.Recipient) (core.Packet, error) {
 	// Generate payload from core packet
 	m, err := json.Marshal(p.Metadata)
 	if err != nil {
-		return nil, ErrInvalidPacket
+		return core.Packet{}, ErrInvalidPacket
 	}
 	pl, err := p.Payload.MarshalBinary()
 	if err != nil {
-		return nil, ErrInvalidPacket
+		return core.Packet{}, ErrInvalidPacket
 	}
 	payload := fmt.Sprintf(`{"payload":"%s","metadata":%s}`, base64.StdEncoding.EncodeToString(pl), m)
 
@@ -89,13 +89,19 @@ func (a *Adapter) Send(p core.Packet, r ...core.Recipient) ([]core.Packet, error
 		errors = append(errors, <-cherr)
 	}
 	if errors != nil {
-		return nil, fmt.Errorf("Errors: %v", errors)
+		return core.Packet{}, fmt.Errorf("Errors: %v", errors)
 	}
-	var packets []core.Packet
-	for i := 0; i < len(chresp); i += 1 {
-		packets = append(packets, <-chresp)
+
+	if len(chresp) > 1 {
+		return core.Packet{}, fmt.Errorf("Several positive answer from servers")
 	}
-	return packets, nil
+	select {
+	case packet := <-chresp:
+		return packet, nil
+	default:
+		return core.Packet{}, fmt.Errorf("Unexpected error. No response packet available")
+	}
+
 }
 
 // Next implements the core.Adapter interface

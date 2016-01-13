@@ -6,8 +6,7 @@ package semtech
 import (
 	"encoding/base64"
 	"fmt"
-	"github.com/thethingsnetwork/core"
-	"github.com/thethingsnetwork/core/components"
+	"github.com/thethingsnetwork/core/core"
 	"github.com/thethingsnetwork/core/lorawan"
 	"github.com/thethingsnetwork/core/semtech"
 	"github.com/thethingsnetwork/core/utils/log"
@@ -94,7 +93,7 @@ func genCorePacket(p semtech.Packet) core.Packet {
 	if p.Payload == nil || len(p.Payload.RXPK) != 1 {
 		panic("Expected a payload with one rxpk")
 	}
-	packet, err := components.ConvertRXPK(p.Payload.RXPK[0])
+	packet, err := core.ConvertRXPK(p.Payload.RXPK[0])
 	if err != nil {
 		panic(err)
 	}

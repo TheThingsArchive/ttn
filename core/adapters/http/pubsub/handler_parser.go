@@ -7,7 +7,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/thethingsnetwork/core"
+	"github.com/thethingsnetwork/core/core"
 	"github.com/thethingsnetwork/core/lorawan"
 	"io"
 	"net/http"

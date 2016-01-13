@@ -4,11 +4,8 @@
 package broadcast
 
 import (
-	"encoding/base64"
 	"encoding/json"
-	"fmt"
-	"github.com/thethingsnetwork/core"
-	"github.com/thethingsnetwork/core/components"
+	"github.com/thethingsnetwork/core/core"
 	"github.com/thethingsnetwork/core/lorawan"
 	"github.com/thethingsnetwork/core/utils/log"
 	"github.com/thethingsnetwork/core/utils/pointer"
@@ -25,7 +22,7 @@ func TestSend(t *testing.T) {
 	recipients := []core.Recipient{
 		core.Recipient{Address: "0.0.0.0:3010", Id: "AlwaysReject"},
 		core.Recipient{Address: "0.0.0.0:3011", Id: "AlwaysAccept"},
-		core.Recipient{Address: "0.0.0.0:3012", Id: "AlwaysAccept"},
+		core.Recipient{Address: "0.0.0.0:3012", Id: "AlwaysReject"},
 		core.Recipient{Address: "0.0.0.0:3013", Id: "AlwaysReject"},
 	}
 	registrations := []core.Registration{
@@ -42,8 +39,8 @@ func TestSend(t *testing.T) {
 		WantPayload       string
 		WantError         error
 	}{
-		{ // Send to two recipients a valid packet
-			Recipients:        recipients[1:3], // TODO test with a rejection. Need better error handling
+		{ // Send to recipient a valid packet
+			Recipients:        recipients[1:2], // TODO test with a rejection. Need better error handling
 			Packet:            packet,
 			WantRegistrations: []core.Registration{},
 			WantPayload:       payload,
@@ -52,7 +49,7 @@ func TestSend(t *testing.T) {
 		{ // Broadcast a valid packet
 			Recipients:        []core.Recipient{},
 			Packet:            packet,
-			WantRegistrations: registrations[1:3],
+			WantRegistrations: registrations[1:2],
 			WantPayload:       payload,
 			WantError:         nil,
 		},
@@ -88,7 +85,7 @@ func TestSend(t *testing.T) {
 		<-time.After(time.Millisecond * 100)
 
 		// Operate
-		err := adapter.Send(test.Packet, test.Recipients...)
+		_, err := adapter.Send(test.Packet, test.Recipients...)
 		registrations := getRegistrations(adapter, test.WantRegistrations)
 		payloads := getPayloads(servers)
 
@@ -159,7 +156,7 @@ func genMockServer(recipient core.Recipient) chan string {
 			w.Write(nil)
 		case "AlwaysAccept":
 			w.WriteHeader(http.StatusOK)
-			w.Write(nil)
+			w.Write(buf[:n]) // TODO, should respond another packet, not the same
 		}
 		go func() { chresp <- string(buf[:n]) }()
 	})
@@ -209,20 +206,17 @@ func genSample() (core.Packet, lorawan.DevAddr, string) {
 	}
 
 	// 2. Generate a JSON payload received by the server
-	raw, err := payload.MarshalBinary()
+	packet := core.Packet{
+		Payload:  payload,
+		Metadata: core.Metadata{Rssi: pointer.Int(-20), Modu: pointer.String("LORA")},
+	}
+	jsonPayload, err := json.Marshal(packet)
 	if err != nil {
 		panic(err)
 	}
-	encoded := base64.StdEncoding.EncodeToString(raw)
-	metadata := components.Metadata{Rssi: pointer.Int(-20), Modu: pointer.String("LORA")}
-	rawMeta, err := json.Marshal(metadata)
-	if err != nil {
-		panic(err)
-	}
-	jsonPayload := fmt.Sprintf(`{"payload":"%s","metadata":%s}`, encoded, string(rawMeta))
 
 	// 3. Return valuable info for the test
-	return core.Packet{Payload: payload, Metadata: &metadata}, devAddr, jsonPayload
+	return packet, devAddr, string(jsonPayload)
 }
 
 // Check utilities

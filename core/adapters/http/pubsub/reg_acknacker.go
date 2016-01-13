@@ -5,7 +5,7 @@ package pubsub
 
 import (
 	"fmt"
-	"github.com/thethingsnetwork/core"
+	"github.com/thethingsnetwork/core/core"
 	"net/http"
 	"time"
 )

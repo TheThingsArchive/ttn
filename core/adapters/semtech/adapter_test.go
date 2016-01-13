@@ -4,7 +4,7 @@
 package semtech
 
 import (
-	"github.com/thethingsnetwork/core"
+	"github.com/thethingsnetwork/core/core"
 	"github.com/thethingsnetwork/core/semtech"
 	. "github.com/thethingsnetwork/core/utils/testing"
 	"reflect"
@@ -22,7 +22,7 @@ func TestSend(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	err = adapter.Send(core.Packet{})
+	_, err = adapter.Send(core.Packet{})
 	checkErrors(t, ErrNotSupported, err)
 }
 

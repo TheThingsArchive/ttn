@@ -5,8 +5,7 @@ package semtech
 
 import (
 	"fmt"
-	"github.com/thethingsnetwork/core"
-	"github.com/thethingsnetwork/core/components"
+	"github.com/thethingsnetwork/core/core"
 	"github.com/thethingsnetwork/core/semtech"
 	"net"
 )
@@ -17,7 +16,7 @@ type semtechAckNacker struct {
 }
 
 func (an semtechAckNacker) Ack(p core.Packet) error {
-	txpk, err := components.ConvertToTXPK(p)
+	txpk, err := core.ConvertToTXPK(p)
 	if err != nil {
 		return err
 	}

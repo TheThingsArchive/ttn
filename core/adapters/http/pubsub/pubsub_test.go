@@ -6,7 +6,7 @@ package pubsub
 import (
 	"bytes"
 	"fmt"
-	"github.com/thethingsnetwork/core"
+	"github.com/thethingsnetwork/core/core"
 	"github.com/thethingsnetwork/core/lorawan"
 	"github.com/thethingsnetwork/core/utils/log"
 	. "github.com/thethingsnetwork/core/utils/testing"

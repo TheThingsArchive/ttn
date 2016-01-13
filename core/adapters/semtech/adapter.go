@@ -5,8 +5,7 @@ package semtech
 
 import (
 	"fmt"
-	"github.com/thethingsnetwork/core"
-	"github.com/thethingsnetwork/core/components"
+	"github.com/thethingsnetwork/core/core"
 	"github.com/thethingsnetwork/core/semtech"
 	"github.com/thethingsnetwork/core/utils/log"
 	"net"
@@ -73,7 +72,7 @@ func (a *Adapter) Next() (core.Packet, core.AckNacker, error) {
 		return core.Packet{}, nil, ErrNotInitialized
 	}
 	msg := <-a.next
-	packet, err := components.ConvertRXPK(msg.rxpk)
+	packet, err := core.ConvertRXPK(msg.rxpk)
 	if err != nil {
 		a.Log("Invalid Packet")
 		return core.Packet{}, nil, ErrInvalidPacket
