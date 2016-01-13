@@ -4,10 +4,12 @@
 package core
 
 import (
+	"fmt"
 	"github.com/thethingsnetwork/core/semtech"
 	"github.com/thethingsnetwork/core/utils/pointer"
 	. "github.com/thethingsnetwork/core/utils/testing"
 	"reflect"
+	"regexp"
 	"testing"
 )
 
@@ -56,4 +58,16 @@ func checkTXPKs(t *testing.T, want semtech.TXPK, got semtech.TXPK) {
 		return
 	}
 	Ko(t, "Converted TXPK does not match expectations. \nWant: %s\nGot:  %s", pointer.DumpPStruct(want, false), pointer.DumpPStruct(got, false))
+}
+
+// Check that obtained json strings contains the required field
+func checkFields(t *testing.T, want []string, got []byte) {
+	for _, field := range want {
+		ok, err := regexp.Match(fmt.Sprintf("\"%s\":", field), got)
+		if !ok || err != nil {
+			Ko(t, "Expected field %s in %s", field, string(got))
+			return
+		}
+	}
+	Ok(t, "Check fields")
 }

@@ -4,6 +4,7 @@
 package core
 
 import (
+	"encoding/json"
 	"github.com/thethingsnetwork/core/lorawan"
 	"github.com/thethingsnetwork/core/semtech"
 	"github.com/thethingsnetwork/core/utils/pointer"
@@ -32,7 +33,11 @@ func TestConvertTXPK(t *testing.T) {
 		genCorePartialMetadata(&convertToTXPKTest{WantError: nil}),
 		genCoreExtraMetadata(&convertToTXPKTest{WantError: nil}),
 		genCoreNoMetadata(&convertToTXPKTest{WantError: nil}),
-		genCoreNoPayload(&convertToTXPKTest{WantError: ErrImpossibleConversion}),
+		convertToTXPKTest{
+			CorePacket: Packet{Metadata: genFullMetadata(), Payload: lorawan.PHYPayload{}},
+			TXPK:       semtech.TXPK{},
+			WantError:  ErrImpossibleConversion,
+		},
 	}
 
 	for _, test := range tests {
@@ -40,6 +45,29 @@ func TestConvertTXPK(t *testing.T) {
 		txpk, err := ConvertToTXPK(test.CorePacket)
 		checkErrors(t, test.WantError, err)
 		checkTXPKs(t, test.TXPK, txpk)
+	}
+}
+
+func TestMarshalJSON(t *testing.T) {
+	tests := []marshalJSONTest{
+		marshalJSONTest{ // Empty Payload
+			Packet:     Packet{Metadata: genFullMetadata(), Payload: lorawan.PHYPayload{}},
+			WantFields: []string{},
+		},
+		marshalJSONTest{ // Empty Metadata
+			Packet:     Packet{Metadata: Metadata{}, Payload: genPHYPayload(true)},
+			WantFields: []string{"payload", "metadata"},
+		},
+		marshalJSONTest{ // With Metadata and Payload
+			Packet:     Packet{Metadata: genFullMetadata(), Payload: genPHYPayload(true)},
+			WantFields: []string{"payload", "metadata"},
+		},
+	}
+
+	for _, test := range tests {
+		Desc(t, "Marshal packet to json: %s", test.Packet.String())
+		raw, _ := json.Marshal(test.Packet)
+		checkFields(t, test.WantFields, raw)
 	}
 }
 
@@ -54,6 +82,10 @@ type convertToTXPKTest struct {
 	TXPK       semtech.TXPK
 	CorePacket Packet
 	WantError  error
+}
+type marshalJSONTest struct {
+	Packet     Packet
+	WantFields []string
 }
 
 // ---- Build utilities
@@ -135,13 +167,5 @@ func genCoreExtraMetadata(test *convertToTXPKTest) convertToTXPKTest {
 	metadata := genFullMetadata()
 	test.TXPK = genTXPK(phyPayload, metadata)
 	test.CorePacket = Packet{Metadata: metadata, Payload: phyPayload}
-	return *test
-}
-
-// Generates a test suite where the core packet has no payload
-func genCoreNoPayload(test *convertToTXPKTest) convertToTXPKTest {
-	metadata := genFullMetadata()
-	test.TXPK = semtech.TXPK{}
-	test.CorePacket = Packet{Metadata: metadata, Payload: lorawan.PHYPayload{}}
 	return *test
 }
