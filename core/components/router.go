@@ -16,26 +16,20 @@ const (
 
 type Router struct {
 	log.Logger
-	brokers []core.Recipient
-	db      routerStorage // Local storage that maps end-device addresses to broker addresses
+	db routerStorage // Local storage that maps end-device addresses to broker addresses
 }
 
 // NewRouter constructs a Router and setup its internal structure
-func NewRouter(brokers []core.Recipient, loggers ...log.Logger) (*Router, error) {
+func NewRouter(loggers ...log.Logger) (*Router, error) {
 	localDB, err := NewRouterStorage(EXPIRY_DELAY)
 
 	if err != nil {
 		return nil, err
 	}
 
-	if len(brokers) == 0 {
-		return nil, ErrBadOptions
-	}
-
 	return &Router{
-		Logger:  log.MultiLogger{Loggers: loggers},
-		brokers: brokers,
-		db:      localDB,
+		Logger: log.MultiLogger{Loggers: loggers},
+		db:     localDB,
 	}, nil
 }
 

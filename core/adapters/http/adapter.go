@@ -8,8 +8,9 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/thethingsnetwork/core"
+	"github.com/thethingsnetwork/core/core"
 	"github.com/thethingsnetwork/core/utils/log"
+	"io"
 	"net/http"
 	"sync"
 )
@@ -29,21 +30,22 @@ func NewAdapter(loggers ...log.Logger) (*Adapter, error) {
 }
 
 // Send implements the core.Adapter interface
-func (a *Adapter) Send(p core.Packet, r ...core.Recipient) error {
+func (a *Adapter) Send(p core.Packet, r ...core.Recipient) ([]core.Packet, error) {
 	// Generate payload from core packet
 	m, err := json.Marshal(p.Metadata)
 	if err != nil {
-		return ErrInvalidPacket
+		return nil, ErrInvalidPacket
 	}
 	pl, err := p.Payload.MarshalBinary()
 	if err != nil {
-		return ErrInvalidPacket
+		return nil, ErrInvalidPacket
 	}
 	payload := fmt.Sprintf(`{"payload":"%s","metadata":%s}`, base64.StdEncoding.EncodeToString(pl), m)
 
 	// Prepare ground for parrallel http request
 	nb := len(r)
 	cherr := make(chan error, nb)
+	chresp := make(chan core.Packet, nb)
 	wg := sync.WaitGroup{}
 	wg.Add(nb)
 
@@ -56,16 +58,27 @@ func (a *Adapter) Send(p core.Packet, r ...core.Recipient) error {
 			buf.Write([]byte(payload))
 			resp, err := http.Post(fmt.Sprintf("http://%s", recipient.Address.(string)), "application/json", buf)
 			if err != nil {
-				// Non-blocking, buffered
 				cherr <- err
 				return
 			}
 			defer resp.Body.Close()
 			if resp.StatusCode != http.StatusOK {
-				// Non-blocking, buffered
 				cherr <- fmt.Errorf("Unexpected response from server: %s (%d)", resp.Status, resp.StatusCode)
 				return
 			}
+
+			raw := make([]byte, resp.ContentLength)
+			n, err := resp.Body.Read(raw)
+			if err != nil && err != io.EOF {
+				cherr <- err
+				return
+			}
+			var packet core.Packet
+			if err := json.Unmarshal(raw[:n], &packet); err != nil {
+				cherr <- err
+				return
+			}
+			chresp <- packet
 		}(recipient)
 	}
 
@@ -76,9 +89,13 @@ func (a *Adapter) Send(p core.Packet, r ...core.Recipient) error {
 		errors = append(errors, <-cherr)
 	}
 	if errors != nil {
-		return fmt.Errorf("Errors: %v", errors)
+		return nil, fmt.Errorf("Errors: %v", errors)
 	}
-	return nil
+	var packets []core.Packet
+	for i := 0; i < len(chresp); i += 1 {
+		packets = append(packets, <-chresp)
+	}
+	return packets, nil
 }
 
 // Next implements the core.Adapter interface

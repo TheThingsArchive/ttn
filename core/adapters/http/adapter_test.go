@@ -7,8 +7,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/thethingsnetwork/core"
-	"github.com/thethingsnetwork/core/components"
+	"github.com/thethingsnetwork/core/core"
 	"github.com/thethingsnetwork/core/lorawan"
 	"github.com/thethingsnetwork/core/utils/log"
 	"github.com/thethingsnetwork/core/utils/pointer"
@@ -47,7 +46,7 @@ func TestSend(t *testing.T) {
 	for _, test := range tests {
 		Desc(t, "Sending packet: %v", test.Packet)
 		<-time.After(time.Millisecond * 100)
-		err := adapter.Send(test.Packet, s.Recipient)
+		_, err := adapter.Send(test.Packet, s.Recipient)
 		checkErrors(t, test.WantError, err)
 		checkSend(t, test.WantPayload, s)
 	}
@@ -95,7 +94,7 @@ func genMockServer(port uint) MockServer {
 		if err != nil && err != io.EOF {
 			panic(err)
 		}
-		w.Write(nil)
+		w.Write(body[:n]) // NOTE TEMPORARY, the response is supposed to be different
 		go func() { payloads <- string(body[:n]) }()
 	})
 
@@ -157,7 +156,7 @@ func genPHYPayload(msg string, devAddr [4]byte) lorawan.PHYPayload {
 func genCorePacket() core.Packet {
 	return core.Packet{
 		Payload:  genPHYPayload("myData", [4]byte{0x1, 0x2, 0x3, 0x4}),
-		Metadata: &components.Metadata{Rssi: pointer.Int(-20), Modu: pointer.String("LORA")},
+		Metadata: core.Metadata{Rssi: pointer.Int(-20), Modu: pointer.String("LORA")},
 	}
 }
 

@@ -1,10 +1,9 @@
 // Copyright © 2015 The Things Network
 // Use of this source code is governed by the MIT license that can be found in the LICENSE file.
 
-package components
+package core
 
 import (
-	"github.com/thethingsnetwork/core"
 	"github.com/thethingsnetwork/core/semtech"
 	"github.com/thethingsnetwork/core/utils/pointer"
 	. "github.com/thethingsnetwork/core/utils/testing"
@@ -12,8 +11,8 @@ import (
 	"testing"
 )
 
-// Checks that two core packets match
-func checkPackets(t *testing.T, want core.Packet, got core.Packet) {
+// Checks that two packets match
+func checkPackets(t *testing.T, want Packet, got Packet) {
 	if reflect.DeepEqual(want, got) {
 		Ok(t, "Check packets")
 		return

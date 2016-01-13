@@ -63,8 +63,8 @@ func (a *Adapter) ok() bool {
 }
 
 // Send implements the core.Adapter interface
-func (a *Adapter) Send(p core.Packet, r ...core.Recipient) error {
-	return ErrNotSupported
+func (a *Adapter) Send(p core.Packet, r ...core.Recipient) (core.Packet, error) {
+	return core.Packet{}, ErrNotSupported
 }
 
 // Next implements the core.Adapter interface

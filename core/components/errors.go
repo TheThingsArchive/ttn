@@ -12,6 +12,3 @@ var ErrBadOptions = fmt.Errorf("Invalid supplied options")
 var ErrNotInitialized = fmt.Errorf("Illegal operation call on non initialized component")
 var ErrEntryExpired = fmt.Errorf("An entry exists but has expired")
 var ErrAlreadyExists = fmt.Errorf("An entry already exists for that device")
-
-// returned by ConvertRXPK or ConvertTXPK if there's no data in the given packet
-var ErrImpossibleConversion = fmt.Errorf("The given packet can't be converted")

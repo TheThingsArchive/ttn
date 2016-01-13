@@ -1,7 +1,7 @@
 // Copyright © 2015 The Things Network
 // Use of this source code is governed by the MIT license that can be found in the LICENSE file.
 
-package components
+package core
 
 import (
 	"encoding/json"
@@ -77,7 +77,6 @@ var unmarshalTests = []struct {
 	},
 }
 
-// The broker can handle an uplink packet
 func TestMarshaljson(t *testing.T) {
 	for _, test := range commonTests {
 		Desc(t, "Marshal medatadata: %s", test.Metadata.String())
