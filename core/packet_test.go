@@ -73,7 +73,7 @@ func TestMarshalJSONPacket(t *testing.T) {
 
 func TestUnmarshalJSONPacket(t *testing.T) {
 	t.Skip("Discussion on github about implementation")
-	return
+
 	tests := []unmarshalJSONTest{
 		unmarshalJSONTest{
 			JSON:       `{"payload":"gAQDAgEAAAAK4mTU97VqDnU=","metadata":{}}`,
