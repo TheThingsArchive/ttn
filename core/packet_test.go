@@ -5,6 +5,7 @@ package core
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/thethingsnetwork/core/lorawan"
 	"github.com/thethingsnetwork/core/semtech"
 	"github.com/thethingsnetwork/core/utils/pointer"
@@ -12,7 +13,7 @@ import (
 	"testing"
 )
 
-func TestConvertRXPK(t *testing.T) {
+func TestConvertRXPKPacket(t *testing.T) {
 	tests := []convertRXPKTest{
 		genRXPKWithFullMetadata(&convertRXPKTest{WantError: nil}),
 		genRXPKWithPartialMetadata(&convertRXPKTest{WantError: nil}),
@@ -27,7 +28,7 @@ func TestConvertRXPK(t *testing.T) {
 	}
 }
 
-func TestConvertTXPK(t *testing.T) {
+func TestConvertTXPKPacket(t *testing.T) {
 	tests := []convertToTXPKTest{
 		genCoreFullMetadata(&convertToTXPKTest{WantError: nil}),
 		genCorePartialMetadata(&convertToTXPKTest{WantError: nil}),
@@ -48,7 +49,7 @@ func TestConvertTXPK(t *testing.T) {
 	}
 }
 
-func TestMarshalJSON(t *testing.T) {
+func TestMarshalJSONPacket(t *testing.T) {
 	tests := []marshalJSONTest{
 		marshalJSONTest{ // Empty Payload
 			Packet:     Packet{Metadata: genFullMetadata(), Payload: lorawan.PHYPayload{}},
@@ -67,7 +68,36 @@ func TestMarshalJSON(t *testing.T) {
 	for _, test := range tests {
 		Desc(t, "Marshal packet to json: %s", test.Packet.String())
 		raw, _ := json.Marshal(test.Packet)
+		fmt.Println(string(raw))
 		checkFields(t, test.WantFields, raw)
+	}
+}
+
+func TestUnmarshalJSONPacket(t *testing.T) {
+	tests := []unmarshalJSONTest{
+		unmarshalJSONTest{
+			JSON:       `{"payload":"gAQDAgEAAAAK4mTU97VqDnU=","metadata":{}}`,
+			WantPacket: Packet{Metadata: Metadata{}, Payload: genPHYPayload(true)},
+		},
+		unmarshalJSONTest{
+			JSON:       `{"payload":"gAQDAgEAAAAK4mTU97VqDnU=","metadata":{"chan":2,"codr":"4/6","fdev":3,"freq":863.125,"imme":false,"ipol":false,"lsnr":5.2,"modu":"LORA","ncrc":true,"powe":3,"prea":8,"rfch":2,"rssi":-27,"size":14,"stat":0,"tmst":1452690688207288535,"datr":"LORA","time":"2016-01-13T14:11:28.207288421+01:00"}}`,
+			WantPacket: Packet{Metadata: genFullMetadata(), Payload: genPHYPayload(true)},
+		},
+		unmarshalJSONTest{
+			JSON:       `invalid`,
+			WantPacket: Packet{},
+		},
+		unmarshalJSONTest{
+			JSON:       `{"metadata":{}}`,
+			WantPacket: Packet{},
+		},
+	}
+
+	for _, test := range tests {
+		Desc(t, "Unmarshal json to packet: %s", test.JSON)
+		var packet Packet
+		json.Unmarshal([]byte(test.JSON), &packet)
+		checkPackets(t, test.WantPacket, packet)
 	}
 }
 
@@ -83,9 +113,15 @@ type convertToTXPKTest struct {
 	CorePacket Packet
 	WantError  error
 }
+
 type marshalJSONTest struct {
 	Packet     Packet
 	WantFields []string
+}
+
+type unmarshalJSONTest struct {
+	JSON       string
+	WantPacket Packet
 }
 
 // ---- Build utilities
