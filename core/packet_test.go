@@ -1,10 +1,9 @@
 // Copyright © 2015 The Things Network
 // Use of this source code is governed by the MIT license that can be found in the LICENSE file.
 
-package components
+package core
 
 import (
-	"github.com/thethingsnetwork/core"
 	"github.com/thethingsnetwork/core/lorawan"
 	"github.com/thethingsnetwork/core/semtech"
 	"github.com/thethingsnetwork/core/utils/pointer"
@@ -46,14 +45,14 @@ func TestConvertTXPK(t *testing.T) {
 
 // ---- Declaration
 type convertRXPKTest struct {
-	CorePacket core.Packet
+	CorePacket Packet
 	RXPK       semtech.RXPK
 	WantError  error
 }
 
 type convertToTXPKTest struct {
 	TXPK       semtech.TXPK
-	CorePacket core.Packet
+	CorePacket Packet
 	WantError  error
 }
 
@@ -64,7 +63,7 @@ func genRXPKWithFullMetadata(test *convertRXPKTest) convertRXPKTest {
 	phyPayload := genPHYPayload(true)
 	rxpk := genRXPK(phyPayload)
 	metadata := genMetadata(rxpk)
-	test.CorePacket = core.Packet{Metadata: &metadata, Payload: phyPayload}
+	test.CorePacket = Packet{Metadata: metadata, Payload: phyPayload}
 	test.RXPK = rxpk
 	return *test
 }
@@ -79,7 +78,7 @@ func genRXPKWithPartialMetadata(test *convertRXPKTest) convertRXPKTest {
 	rxpk.Time = nil
 	rxpk.Size = nil
 	metadata := genMetadata(rxpk)
-	test.CorePacket = core.Packet{Metadata: &metadata, Payload: phyPayload}
+	test.CorePacket = Packet{Metadata: metadata, Payload: phyPayload}
 	test.RXPK = rxpk
 	return *test
 }
@@ -101,7 +100,7 @@ func genCoreFullMetadata(test *convertToTXPKTest) convertToTXPKTest {
 	metadata.Rssi = nil
 	metadata.Stat = nil
 	test.TXPK = genTXPK(phyPayload, metadata)
-	test.CorePacket = core.Packet{Metadata: &metadata, Payload: phyPayload}
+	test.CorePacket = Packet{Metadata: metadata, Payload: phyPayload}
 	return *test
 }
 
@@ -110,7 +109,7 @@ func genCoreNoMetadata(test *convertToTXPKTest) convertToTXPKTest {
 	phyPayload := genPHYPayload(false)
 	metadata := Metadata{}
 	test.TXPK = genTXPK(phyPayload, metadata)
-	test.CorePacket = core.Packet{Metadata: &metadata, Payload: phyPayload}
+	test.CorePacket = Packet{Metadata: metadata, Payload: phyPayload}
 	return *test
 }
 
@@ -126,7 +125,7 @@ func genCorePartialMetadata(test *convertToTXPKTest) convertToTXPKTest {
 	metadata.Fdev = nil
 	metadata.Time = nil
 	test.TXPK = genTXPK(phyPayload, metadata)
-	test.CorePacket = core.Packet{Metadata: &metadata, Payload: phyPayload}
+	test.CorePacket = Packet{Metadata: metadata, Payload: phyPayload}
 	return *test
 }
 
@@ -135,7 +134,7 @@ func genCoreExtraMetadata(test *convertToTXPKTest) convertToTXPKTest {
 	phyPayload := genPHYPayload(false)
 	metadata := genFullMetadata()
 	test.TXPK = genTXPK(phyPayload, metadata)
-	test.CorePacket = core.Packet{Metadata: &metadata, Payload: phyPayload}
+	test.CorePacket = Packet{Metadata: metadata, Payload: phyPayload}
 	return *test
 }
 
@@ -143,6 +142,6 @@ func genCoreExtraMetadata(test *convertToTXPKTest) convertToTXPKTest {
 func genCoreNoPayload(test *convertToTXPKTest) convertToTXPKTest {
 	metadata := genFullMetadata()
 	test.TXPK = semtech.TXPK{}
-	test.CorePacket = core.Packet{Metadata: &metadata, Payload: lorawan.PHYPayload{}}
+	test.CorePacket = Packet{Metadata: metadata, Payload: lorawan.PHYPayload{}}
 	return *test
 }
