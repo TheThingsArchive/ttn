@@ -1,3 +1,4 @@
 [submodule "lorawan"]
-	path = lorawan
-	url = git@github.com:TheThingsNetwork/lorawan
+    path = lorawan
+	url = https://github.com/brocaar/lorawan.git
+	branch = master
