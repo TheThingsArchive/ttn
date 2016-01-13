@@ -4,18 +4,17 @@
 package components
 
 import (
-	. "github.com/thethingsnetwork/core/utils/testing"
 	"testing"
 )
 
 func TestNewBroker(t *testing.T) {
-	Ko(t, "TODO")
+	t.Skip("TODO")
 }
 
 func TestHandleUpBroker(t *testing.T) {
-	Ko(t, "TODO")
+	t.Skip("TODO")
 }
 
 func TestRegisterBroker(t *testing.T) {
-	Ko(t, "TODO")
+	t.Skip("TODO")
 }
