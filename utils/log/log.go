@@ -12,7 +12,8 @@ import (
 
 // Logger is a minimalist interface to represent logger
 type Logger interface {
-	Log(format string, a ...interface{})
+	Log(format string)
+	Logf(format string, a ...interface{})
 }
 
 // DebugLogger can be used in development to display loglines in the console
@@ -21,7 +22,14 @@ type DebugLogger struct {
 }
 
 // Log implements the Logger interface
-func (l DebugLogger) Log(format string, a ...interface{}) {
+func (l DebugLogger) Log(str string) {
+	fmt.Printf("\033[33m[ %s ]\033[0m ", l.Tag) // Tag printed in yellow
+	fmt.Print(str)
+	fmt.Print("\n")
+}
+
+// Logf implements the Logger interface
+func (l DebugLogger) Logf(format string, a ...interface{}) {
 	fmt.Printf("\033[33m[ %s ]\033[0m ", l.Tag) // Tag printed in yellow
 	fmt.Printf(format, a...)
 	fmt.Print("\n")
@@ -34,7 +42,12 @@ type TestLogger struct {
 }
 
 // Log implements the Logger interface
-func (l TestLogger) Log(format string, a ...interface{}) {
+func (l TestLogger) Log(str string) {
+	l.T.Logf("\033[33m[ %s ]\033[0m %s", l.Tag, str) // Tag printed in yellow
+}
+
+// Logf implements the Logger interface
+func (l TestLogger) Logf(format string, a ...interface{}) {
 	l.T.Logf("\033[33m[ %s ]\033[0m %s", l.Tag, fmt.Sprintf(format, a...)) // Tag printed in yellow
 }
 
@@ -44,8 +57,15 @@ type MultiLogger struct {
 }
 
 // Log implements the Logger interface
-func (l MultiLogger) Log(format string, a ...interface{}) {
+func (l MultiLogger) Log(str string) {
 	for _, logger := range l.Loggers {
-		logger.Log(format, a...)
+		logger.Log(str)
+	}
+}
+
+// Logf implements the Logger interface
+func (l MultiLogger) Logf(format string, a ...interface{}) {
+	for _, logger := range l.Loggers {
+		logger.Logf(format, a...)
 	}
 }

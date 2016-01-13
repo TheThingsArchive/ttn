@@ -67,21 +67,21 @@ func (a *Adapter) listenRegistration(port uint) {
 		Addr:    fmt.Sprintf("0.0.0.0:%d", port),
 		Handler: serveMux,
 	}
-	a.Log("Start listening on %d", port)
+	a.Logf("Start listening on %d", port)
 	err := server.ListenAndServe()
-	a.Log("HTTP connection lost: %v", err)
+	a.Logf("HTTP connection lost: %v", err)
 }
 
 // fail logs the given failure and sends an appropriate response to the client
 func (a *Adapter) badRequest(w http.ResponseWriter, msg string) {
-	a.Log("registration request rejected: %s", msg)
+	a.Logf("registration request rejected: %s", msg)
 	w.WriteHeader(http.StatusBadRequest)
 	w.Write([]byte(msg))
 }
 
 // handle request [PUT] on /end-device/:devAddr
 func (a *Adapter) handlePutEndDevice(w http.ResponseWriter, req *http.Request) {
-	a.Log("Receive new registration request")
+	a.Logf("Receive new registration request")
 	// Check the http method
 	if req.Method != "PUT" {
 		w.WriteHeader(http.StatusMethodNotAllowed)

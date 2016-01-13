@@ -80,8 +80,8 @@ func NewForwarder(id [8]byte, adapters ...io.ReadWriteCloser) (*Forwarder, error
 }
 
 // log wraps the Logger.log method, this is nothing more than a shortcut
-func (fwd Forwarder) log(format string, a ...interface{}) {
-	fwd.Logger.Log(format, a...) // NOTE: concurrent-safe ?
+func (fwd Forwarder) logf(format string, a ...interface{}) {
+	fwd.Logger.Logf(format, a...) // NOTE: concurrent-safe ?
 }
 
 // listenAdapter listen to incoming datagrams from an adapter. Non-valid packets are ignored.
@@ -89,16 +89,16 @@ func (fwd Forwarder) listenAdapter(adapter io.ReadWriteCloser, index int) {
 	for {
 		buf := make([]byte, 1024)
 		n, err := adapter.Read(buf)
-		fwd.log("%d bytes received by adapter\n", n)
+		fwd.logf("%d bytes received by adapter\n", n)
 		if err != nil {
-			fwd.log("Error: %+v", err)
+			fwd.logf("Error: %+v", err)
 			fwd.quit <- err
 			return // Connection lost / closed
 		}
-		fwd.log("Forwarder unmarshals datagram %x\n", buf[:n])
+		fwd.logf("Forwarder unmarshals datagram %x\n", buf[:n])
 		packet, err := semtech.Unmarshal(buf[:n])
 		if err != nil {
-			fwd.log("Error: %+v", err)
+			fwd.logf("Error: %+v", err)
 			continue
 		}
 
@@ -108,7 +108,7 @@ func (fwd Forwarder) listenAdapter(adapter io.ReadWriteCloser, index int) {
 		case semtech.PULL_RESP:
 			fwd.commands <- command{cmd_RECVDWN, packet}
 		default:
-			fwd.log("Forwarder ignores contingent packet %+v\n", packet)
+			fwd.logf("Forwarder ignores contingent packet %+v\n", packet)
 		}
 	}
 }
@@ -118,7 +118,7 @@ func (fwd Forwarder) listenAdapter(adapter io.ReadWriteCloser, index int) {
 // This method consumes commands from the channel until it's closed.
 func (fwd *Forwarder) handleCommands() {
 	for cmd := range fwd.commands {
-		fwd.log("Fowarder executes command: %v\n", cmd.name)
+		fwd.logf("Fowarder executes command: %v\n", cmd.name)
 
 		switch cmd.name {
 		case cmd_ACK:

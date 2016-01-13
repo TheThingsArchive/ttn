@@ -45,7 +45,7 @@ func NewAdapter(port uint, loggers ...log.Logger) (*Adapter, error) {
 	var udpConn *net.UDPConn
 	addr, err := net.ResolveUDPAddr("udp", fmt.Sprintf("0.0.0.0:%d", port))
 	if udpConn, err = net.ListenUDP("udp", addr); err != nil {
-		a.Log("Unable to establish the connection: %v", err)
+		a.Logf("Unable to establish the connection: %v", err)
 		return nil, ErrInvalidPort
 	}
 
@@ -74,7 +74,7 @@ func (a *Adapter) Next() (core.Packet, core.AckNacker, error) {
 	msg := <-a.next
 	packet, err := core.ConvertRXPK(msg.rxpk)
 	if err != nil {
-		a.Log("Invalid Packet")
+		a.Logf("Invalid Packet")
 		return core.Packet{}, nil, ErrInvalidPacket
 	}
 	return packet, semtechAckNacker{recipient: msg.recipient, conn: a.conn}, nil
@@ -88,19 +88,19 @@ func (a *Adapter) NextRegistration() (core.Packet, core.AckNacker, error) {
 // listen Handle incoming packets and forward them
 func (a *Adapter) listen(conn *net.UDPConn) {
 	defer conn.Close()
-	a.Log("Start listening on %s", conn.LocalAddr())
+	a.Logf("Start listening on %s", conn.LocalAddr())
 	for {
 		buf := make([]byte, 128)
 		n, addr, err := conn.ReadFromUDP(buf)
 		if err != nil { // Problem with the connection
-			a.Log("Error: %v", err)
+			a.Logf("Error: %v", err)
 			continue
 		}
-		a.Log("Incoming datagram %x", buf[:n])
+		a.Logf("Incoming datagram %x", buf[:n])
 
 		pkt, err := semtech.Unmarshal(buf[:n])
 		if err != nil {
-			a.Log("Error: %v", err)
+			a.Logf("Error: %v", err)
 			continue
 		}
 
@@ -112,10 +112,10 @@ func (a *Adapter) listen(conn *net.UDPConn) {
 				Identifier: semtech.PULL_ACK,
 			})
 			if err != nil {
-				a.Log("Unexpected error while marshaling PULL_ACK: %v", err)
+				a.Logf("Unexpected error while marshaling PULL_ACK: %v", err)
 				continue
 			}
-			a.Log("Sending PULL_ACK to %v", addr)
+			a.Logf("Sending PULL_ACK to %v", addr)
 			a.conn <- udpMsg{addr: addr, raw: pullAck}
 		case semtech.PUSH_DATA: // PUSH_DATA -> Transfer all RXPK to the component
 			pushAck, err := semtech.Marshal(semtech.Packet{
@@ -124,14 +124,14 @@ func (a *Adapter) listen(conn *net.UDPConn) {
 				Identifier: semtech.PUSH_ACK,
 			})
 			if err != nil {
-				a.Log("Unexpected error while marshaling PUSH_ACK: %v", err)
+				a.Logf("Unexpected error while marshaling PUSH_ACK: %v", err)
 				continue
 			}
-			a.Log("Sending PUSH_ACK to %v", addr)
+			a.Logf("Sending PUSH_ACK to %v", addr)
 			a.conn <- udpMsg{addr: addr, raw: pushAck}
 
 			if pkt.Payload == nil {
-				a.Log("Inconsistent PUSH_DATA packet %v", pkt)
+				a.Logf("Inconsistent PUSH_DATA packet %v", pkt)
 				continue
 			}
 			for _, rxpk := range pkt.Payload.RXPK {
@@ -141,7 +141,7 @@ func (a *Adapter) listen(conn *net.UDPConn) {
 				}
 			}
 		default:
-			a.Log("Unexpected packet received. Ignored: %v", pkt)
+			a.Logf("Unexpected packet received. Ignored: %v", pkt)
 			continue
 		}
 	}
@@ -161,7 +161,7 @@ func (a *Adapter) monitorConnection() {
 
 		if udpConn != nil && msg.raw != nil { // Send the given udp message
 			if _, err := udpConn.WriteToUDP(msg.raw, msg.addr); err != nil {
-				a.Log("Unable to send udp message: %+v", err)
+				a.Logf("Unable to send udp message: %+v", err)
 			}
 		}
 	}

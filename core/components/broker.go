@@ -49,7 +49,7 @@ func (b *Broker) HandleUp(p core.Packet, an core.AckNacker, adapter core.Adapter
 	for _, entry := range entries {
 		ok, err := p.Payload.ValidateMIC(entry.NwsKey)
 		if err != nil {
-			b.Log("Unexpected error: %v", err)
+			b.Logf("Unexpected error: %v", err)
 			continue
 		}
 		if ok {
