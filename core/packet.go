@@ -5,6 +5,7 @@ package core
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"github.com/thethingsnetwork/core/lorawan"
 	"github.com/thethingsnetwork/core/semtech"
@@ -87,7 +88,7 @@ func ConvertToTXPK(p Packet) (semtech.TXPK, error) {
 
 	txpk := semtech.TXPK{Data: pointer.String(data)}
 
-	metadataValue := reflect.ValueOf(p.Metadata).Elem()
+	metadataValue := reflect.ValueOf(p.Metadata)
 	metadataStruct := metadataValue.Type()
 	txpkStruct := reflect.ValueOf(&txpk).Elem()
 	for i := 0; i < metadataStruct.NumField(); i += 1 {
@@ -99,3 +100,19 @@ func ConvertToTXPK(p Packet) (semtech.TXPK, error) {
 
 	return txpk, nil
 }
+
+// MarshalJSON implements the json.Marshaler interface
+func (p Packet) MarshalJSON() ([]byte, error) {
+	rawMetadata, err := json.Marshal(p.Metadata)
+	if err != nil {
+		return nil, err
+	}
+	rawPayload, err := p.Payload.MarshalBinary()
+	if err != nil {
+		return nil, err
+	}
+	strPayload := base64.StdEncoding.EncodeToString(rawPayload)
+	return []byte(fmt.Sprintf(`{"payload":"%s","metadata":%s}`, strPayload, string(rawMetadata))), nil
+}
+
+// UnmarshalJSON impements the json.Marshaler interface
