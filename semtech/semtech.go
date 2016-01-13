@@ -32,21 +32,21 @@ type RXPK struct {
 // TXPK represents a downlink j,omitemptyson message format received by the gateway.
 // Most field are optional.
 type TXPK struct {
-	Codr *string    `json:"codr,omitempty"`  // LoRa ECC coding rate identifier
-	Data *string    `json:"data,omirtmepty"` // Base64 encoded RF packet payload, padding optional
-	Datr *string    `json:"-"`               // LoRa datarate identifier (eg. SF12BW500) || FSK Datarate (unsigned, in bits per second)
-	Fdev *uint      `json:"fdev,omitempty"`  // FSK frequency deviation (unsigned integer, in Hz)
-	Freq *float64   `json:"freq,omitempty"`  // TX central frequency in MHz (unsigned float, Hz precision)
-	Imme *bool      `json:"imme,omitempty"`  // Send packet immediately (will ignore tmst & time)
-	Ipol *bool      `json:"ipol,omitempty"`  // Lora modulation polarization inversion
-	Modu *string    `json:"modu,omitempty"`  // Modulation identifier "LORA" or "FSK"
-	Ncrc *bool      `json:"ncrc,omitempty"`  // If true, disable the CRC of the physical layer (optional)
-	Powe *uint      `json:"powe,omitempty"`  // TX output power in dBm (unsigned integer, dBm precision)
-	Prea *uint      `json:"prea,omitempty"`  // RF preamble size (unsigned integer)
-	Rfch *uint      `json:"rfch,omitempty"`  // Concentrator "RF chain" used for TX (unsigned integer)
-	Size *uint      `json:"size,omitempty"`  // RF packet payload size in bytes (unsigned integer)
-	Time *time.Time `json:"-"`               // Send packet at a certain time (GPS synchronization required)
-	Tmst *uint      `json:"tmst,omitempty"`  // Send packet on a certain timestamp value (will ignore time)
+	Codr *string    `json:"codr,omitempty"` // LoRa ECC coding rate identifier
+	Data *string    `json:"data,omitempty"` // Base64 encoded RF packet payload, padding optional
+	Datr *string    `json:"-"`              // LoRa datarate identifier (eg. SF12BW500) || FSK Datarate (unsigned, in bits per second)
+	Fdev *uint      `json:"fdev,omitempty"` // FSK frequency deviation (unsigned integer, in Hz)
+	Freq *float64   `json:"freq,omitempty"` // TX central frequency in MHz (unsigned float, Hz precision)
+	Imme *bool      `json:"imme,omitempty"` // Send packet immediately (will ignore tmst & time)
+	Ipol *bool      `json:"ipol,omitempty"` // Lora modulation polarization inversion
+	Modu *string    `json:"modu,omitempty"` // Modulation identifier "LORA" or "FSK"
+	Ncrc *bool      `json:"ncrc,omitempty"` // If true, disable the CRC of the physical layer (optional)
+	Powe *uint      `json:"powe,omitempty"` // TX output power in dBm (unsigned integer, dBm precision)
+	Prea *uint      `json:"prea,omitempty"` // RF preamble size (unsigned integer)
+	Rfch *uint      `json:"rfch,omitempty"` // Concentrator "RF chain" used for TX (unsigned integer)
+	Size *uint      `json:"size,omitempty"` // RF packet payload size in bytes (unsigned integer)
+	Time *time.Time `json:"-"`              // Send packet at a certain time (GPS synchronization required)
+	Tmst *uint      `json:"tmst,omitempty"` // Send packet on a certain timestamp value (will ignore time)
 }
 
 // Stat represents a status json message format sent by the gateway
