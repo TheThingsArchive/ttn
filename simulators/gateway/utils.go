@@ -8,9 +8,8 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"fmt"
-	"github.com/brocaar/lorawan"
-	"github.com/thethingsnetwork/core"
-	"github.com/thethingsnetwork/core/lorawan/semtech"
+	"github.com/thethingsnetwork/core/lorawan"
+	"github.com/thethingsnetwork/core/semtech"
 	"github.com/thethingsnetwork/core/utils/pointer"
 	"math"
 	"math/rand"
@@ -99,7 +98,7 @@ func generateData(frmData string) string {
 		Major: lorawan.LoRaWANR1,
 	}
 	phyPayload.MACPayload = macPayload
-	phyPayload.SetMIC(core.GetNwSKey())
+	phyPayload.SetMIC(lorawan.AES128Key([16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}))
 
 	raw, err := phyPayload.MarshalBinary()
 	if err != nil { // Shouldn't be

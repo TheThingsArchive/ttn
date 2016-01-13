@@ -5,7 +5,7 @@ package gateway
 
 import (
 	"fmt"
-	"github.com/thethingsnetwork/core/lorawan/semtech"
+	"github.com/thethingsnetwork/core/semtech"
 	"github.com/thethingsnetwork/core/utils/log"
 	"github.com/thethingsnetwork/core/utils/pointer"
 	"io"
@@ -57,8 +57,8 @@ func NewForwarder(id [8]byte, adapters ...io.ReadWriteCloser) (*Forwarder, error
 	}
 
 	fwd := &Forwarder{
+		Logger:   log.DebugLogger{Tag: "Forwarder"},
 		Id:       id,
-		Logger:   log.VoidLogger{},
 		alti:     120,
 		lati:     53.3702,
 		long:     4.8952,
