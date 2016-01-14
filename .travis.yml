@@ -3,8 +3,10 @@ language: go
 go:
   - 1.5
 
+before_install:
+  - git submodule update --init --recursive
+
 install:
-  - git submodule update --init
   - go get github.com/brocaar/lorawan
   - go get github.com/jacobsa/crypto/cmac
   - go get github.com/smartystreets/goconvey/convey
