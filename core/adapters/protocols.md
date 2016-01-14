@@ -80,17 +80,27 @@ Requests are expected to come along with a `json` payload of the following shape
 
 ```js
     {
-        "app_id": ..., // Application identifier represented by a string
-        "app_url": ..., // Webhook to which forward incoming data
-        "nws_key": ..., // The network session key associated to the device.
+        "app_id": ..., // Application identifier (string)
+        "app_url": ..., // Webhook to which forward incoming data (string)
+        "nws_key": ... // The network session key associated to the device (string, 32 characters)
     }
 ```
 
+The network session key `nws_key` is supposed to be an hexadecimal encoded version of the
+associated network session key.
 
 #### Response
 
+As a response, the emitter might consider three situations:
 
+- `HTTP 202 Accepted.` as a confirmation of the registration
 
+- `HTTP 400 Bad Request.` if the request or the parameters aren't valid
+
+- `HTTP 409 Conflict.` if for some reason, the end-device cannot be registered
+
+All those requests have empty payloads. 
 
 basic+broadcast ~ http
 ======================
+
