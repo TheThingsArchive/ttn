@@ -131,7 +131,7 @@ func (c *client) send(appId, appUrl, devAddr, nwsKey string) http.Response {
 	if _, err := buf.WriteString(fmt.Sprintf(`{"app_id":"%s","app_url":"%s","nws_key":"%s"}`, appId, appUrl, nwsKey)); err != nil {
 		panic(err)
 	}
-	request, err := http.NewRequest("PUT", fmt.Sprintf("http://%s/end-device/%s", c.adapter, devAddr), buf)
+	request, err := http.NewRequest("PUT", fmt.Sprintf("http://%s/end-devices/%s", c.adapter, devAddr), buf)
 	if err != nil {
 		panic(err)
 	}

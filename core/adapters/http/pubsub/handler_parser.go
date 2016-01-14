@@ -20,7 +20,7 @@ type HandlerParser struct{}
 
 func (p HandlerParser) Parse(req *http.Request) (core.Registration, error) {
 	// Check the query parameter
-	reg := regexp.MustCompile("end-device/([a-fA-F0-9]{8})$")
+	reg := regexp.MustCompile("end-devices/([a-fA-F0-9]{8})$")
 	query := reg.FindStringSubmatch(req.RequestURI)
 	if len(query) < 2 {
 		return core.Registration{}, fmt.Errorf("Incorrect end-device address format")

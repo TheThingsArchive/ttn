@@ -20,7 +20,7 @@ type regAckNacker struct {
 // Ack implements the core.Acker interface
 func (r regAckNacker) Ack(p ...core.Packet) error {
 	select {
-	case r.response <- regRes{statusCode: http.StatusOK}:
+	case r.response <- regRes{statusCode: http.StatusAccepted}:
 		return nil
 	case <-time.After(time.Millisecond * 50):
 		return ErrConnectionLost

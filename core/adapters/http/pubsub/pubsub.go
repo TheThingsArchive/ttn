@@ -62,7 +62,7 @@ func (a *Adapter) listenRegistration(port uint) {
 	serveMux := http.NewServeMux()
 
 	// So far we only supports one endpoint [PUT] /end-device/:devAddr
-	serveMux.HandleFunc("/end-device/", a.handlePutEndDevice)
+	serveMux.HandleFunc("/end-devices/", a.handlePutEndDevice)
 
 	server := http.Server{
 		Addr:    fmt.Sprintf("0.0.0.0:%d", port),
