@@ -1,6 +1,7 @@
 build:
   image: golang
   commands:
+    - git submodule update --init --recursive
     - go get github.com/brocaar/lorawan
     - go get github.com/jacobsa/crypto/cmac
     - go get github.com/smartystreets/goconvey/convey
