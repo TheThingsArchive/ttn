@@ -20,11 +20,12 @@ func (an semtechAckNacker) Ack(p core.Packet) error {
 	if err != nil {
 		return err
 	}
-	raw, err := semtech.Marshal(semtech.Packet{
+
+	raw, err := semtech.Packet{
 		Version:    semtech.VERSION,
 		Identifier: semtech.PULL_RESP,
 		Payload:    &semtech.Payload{TXPK: &txpk},
-	})
+	}.MarshalBinary()
 
 	addr, ok := an.recipient.Address.(*net.UDPAddr)
 	if !ok {

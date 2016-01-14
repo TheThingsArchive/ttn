@@ -116,7 +116,7 @@ func TestForwarder(t *testing.T) {
 		checkValid := func(identifier byte) func() {
 			return func() {
 				pkt := generatePacket(identifier, fwd.Id)
-				raw, err := semtech.Marshal(pkt)
+				raw, err := pkt.MarshalBinary()
 				if err != nil {
 					t.Errorf("Unexpected error %+v\n", err)
 					return
@@ -169,7 +169,7 @@ func TestForwarder(t *testing.T) {
 			// Simulate an ack and a valid response
 			ack := generatePacket(semtech.PUSH_ACK, id)
 			ack.Token = pkt.Token
-			raw, err := semtech.Marshal(ack)
+			raw, err := ack.MarshalBinary()
 			if err != nil {
 				panic(err)
 			}
@@ -177,8 +177,8 @@ func TestForwarder(t *testing.T) {
 
 			// Simulate a resp
 			resp := generatePacket(semtech.PULL_RESP, id)
-			resp.Token = []byte{0x0, 0x0}
-			raw, err = semtech.Marshal(resp)
+			resp.Payload = new(semtech.Payload)
+			raw, err = resp.MarshalBinary()
 			if err != nil {
 				panic(err)
 			}
@@ -202,7 +202,7 @@ func TestForwarder(t *testing.T) {
 			// Simulate a resp
 			resp := generatePacket(semtech.PULL_DATA, id)
 			resp.Token = []byte{0x0, 0x0}
-			raw, err := semtech.Marshal(resp)
+			raw, err := resp.MarshalBinary()
 			if err != nil {
 				panic(err)
 			}
@@ -261,7 +261,7 @@ func TestForwarder(t *testing.T) {
 				pkt := generatePacket(semtech.PUSH_DATA, id)
 				ack := generatePacket(semtech.PUSH_ACK, id)
 				ack.Token = pkt.Token
-				raw, err := semtech.Marshal(ack)
+				raw, err := ack.MarshalBinary()
 				if err != nil {
 					panic(err)
 				}

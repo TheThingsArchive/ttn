@@ -96,8 +96,8 @@ func (fwd Forwarder) listenAdapter(adapter io.ReadWriteCloser, index int) {
 			return // Connection lost / closed
 		}
 		fwd.log("Forwarder unmarshals datagram %x\n", buf[:n])
-		packet, err := semtech.Unmarshal(buf[:n])
-		if err != nil {
+		packet := new(semtech.Packet)
+		if err = packet.UnmarshalBinary(buf[:n]); err != nil {
 			fwd.log("Error: %+v", err)
 			continue
 		}
@@ -169,7 +169,7 @@ func (fwd Forwarder) Forward(packet semtech.Packet) error {
 		return fmt.Errorf("Unable to forward with identifier %x", packet.Identifier)
 	}
 
-	raw, err := semtech.Marshal(packet)
+	raw, err := packet.MarshalBinary()
 	if err != nil {
 		return err
 	}
