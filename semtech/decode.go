@@ -12,46 +12,53 @@ import (
 
 // Unmarshal parses a raw response from a server and turn in into a packet.
 // Will return an error if the response fields are incorrect.
-func Unmarshal(raw []byte) (*Packet, error) {
+func (p *Packet) UnmarshalBinary(raw []byte) error {
 	size := len(raw)
 
 	if size < 4 {
-		return nil, errors.New("Invalid raw data format")
+		return errors.New("Invalid raw data format")
 	}
 
-	packet := &Packet{
+	packet := Packet{
 		Version:    raw[0],
 		Token:      raw[1:3],
 		Identifier: raw[3],
-		GatewayId:  nil,
-		Payload:    nil,
 	}
 
 	if packet.Version != VERSION {
-		return nil, errors.New("Unreckognized protocol version")
+		return errors.New("Unreckognized protocol version")
 	}
 
 	if packet.Identifier > PULL_ACK {
-		return nil, errors.New("Unreckognized protocol identifier")
+		return errors.New("Unreckognized protocol identifier")
+	}
+
+	if packet.Identifier == PULL_RESP {
+		packet.Token = nil
 	}
 
 	cursor := 4
 	if packet.Identifier == PULL_DATA || packet.Identifier == PUSH_DATA {
 		if size < 12 {
-			return nil, errors.New("Invalid gateway identifier")
+			return errors.New("Invalid gateway identifier")
 		}
 		packet.GatewayId = raw[cursor:12]
 		cursor = 12
 	}
 
 	var err error
-	if size > cursor && (packet.Identifier == PUSH_DATA || packet.Identifier == PULL_RESP) {
+	if packet.Identifier == PUSH_DATA || packet.Identifier == PULL_RESP {
 		packet.Payload = new(Payload)
-		packet.Payload.Raw = raw[cursor:]
-		err = json.Unmarshal(raw[cursor:], packet.Payload)
+		if size > cursor {
+			err = json.Unmarshal(raw[cursor:], packet.Payload)
+		}
 	}
 
-	return packet, err
+	if err == nil {
+		*p = packet
+	}
+
+	return err
 }
 
 // UnmarshalJSON implements the Unmarshaler interface from encoding/json
@@ -86,32 +93,42 @@ func (d *Datrparser) UnmarshalJSON(raw []byte) error {
 // UnmarshalJSON implements the Unmarshaler interface from encoding/json
 func (p *Payload) UnmarshalJSON(raw []byte) error {
 	proxy := payloadProxy{
-		ProxStat: &statProxy{},
-		ProxTXPK: &txpkProxy{},
+		ProxStat: new(statProxy),
+		ProxTXPK: new(txpkProxy),
 	}
 
 	if err := json.Unmarshal(raw, &proxy); err != nil {
 		return err
 	}
 
-	if proxy.ProxStat.Stat != nil {
-		if proxy.ProxStat.Time != nil {
-			proxy.ProxStat.Stat.Time = proxy.ProxStat.Time.Value
+	if proxy.ProxStat.Time != nil {
+		if proxy.ProxStat.Stat == nil {
+			proxy.ProxStat.Stat = new(Stat)
 		}
-		p.Stat = proxy.ProxStat.Stat
+		proxy.ProxStat.Stat.Time = proxy.ProxStat.Time.Value
+	}
+	p.Stat = proxy.ProxStat.Stat
+
+	if proxy.ProxTXPK.Time != nil {
+		if proxy.ProxTXPK.TXPK == nil {
+			proxy.ProxTXPK.TXPK = new(TXPK)
+		}
+		proxy.ProxTXPK.TXPK.Time = proxy.ProxTXPK.Time.Value
 	}
 
-	if proxy.ProxTXPK.TXPK != nil {
-		if proxy.ProxTXPK.Time != nil {
-			proxy.ProxTXPK.TXPK.Time = proxy.ProxTXPK.Time.Value
+	if proxy.ProxTXPK.Datr != nil {
+		if proxy.ProxTXPK.TXPK == nil {
+			proxy.ProxTXPK.TXPK = new(TXPK)
 		}
-		if proxy.ProxTXPK.Datr != nil {
-			proxy.ProxTXPK.TXPK.Datr = &proxy.ProxTXPK.Datr.Value
-		}
-		p.TXPK = proxy.ProxTXPK.TXPK
+		proxy.ProxTXPK.TXPK.Datr = &proxy.ProxTXPK.Datr.Value
 	}
+
+	p.TXPK = proxy.ProxTXPK.TXPK
 
 	for _, rxpk := range proxy.ProxRXPK {
+		if rxpk.RXPK == nil {
+			rxpk.RXPK = new(RXPK)
+		}
 		if rxpk.Time != nil {
 			rxpk.RXPK.Time = rxpk.Time.Value
 		}
