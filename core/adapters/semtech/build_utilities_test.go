@@ -43,8 +43,8 @@ func genMockServer(port uint) mockServer {
 			if err != nil {
 				panic(err)
 			}
-			packet, err := semtech.Unmarshal(buf[:n])
-			if err != nil {
+			packet := new(semtech.Packet)
+			if err = packet.UnmarshalBinary(buf[:n]); err != nil {
 				panic(err)
 			}
 			response <- *packet
@@ -56,7 +56,7 @@ func genMockServer(port uint) mockServer {
 
 // Send a packet through the udp mock server toward the adapter
 func (s mockServer) send(p semtech.Packet) semtech.Packet {
-	raw, err := semtech.Marshal(p)
+	raw, err := p.MarshalBinary()
 	if err != nil {
 		panic(err)
 	}

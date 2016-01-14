@@ -99,7 +99,8 @@ func (a *Adapter) listen(conn *net.UDPConn) {
 		}
 		a.Logf("Incoming datagram %x", buf[:n])
 
-		pkt, err := semtech.Unmarshal(buf[:n])
+		pkt := new(semtech.Packet)
+		err = pkt.UnmarshalBinary(buf[:n])
 		if err != nil {
 			a.Logf("Error: %v", err)
 			continue
@@ -107,11 +108,11 @@ func (a *Adapter) listen(conn *net.UDPConn) {
 
 		switch pkt.Identifier {
 		case semtech.PULL_DATA: // PULL_DATA -> Respond to the recipient with an ACK
-			pullAck, err := semtech.Marshal(semtech.Packet{
+			pullAck, err := semtech.Packet{
 				Version:    semtech.VERSION,
 				Token:      pkt.Token,
 				Identifier: semtech.PULL_ACK,
-			})
+			}.MarshalBinary()
 			if err != nil {
 				a.Logf("Unexpected error while marshaling PULL_ACK: %v", err)
 				continue
@@ -119,11 +120,11 @@ func (a *Adapter) listen(conn *net.UDPConn) {
 			a.Logf("Sending PULL_ACK to %v", addr)
 			a.conn <- udpMsg{addr: addr, raw: pullAck}
 		case semtech.PUSH_DATA: // PUSH_DATA -> Transfer all RXPK to the component
-			pushAck, err := semtech.Marshal(semtech.Packet{
+			pushAck, err := semtech.Packet{
 				Version:    semtech.VERSION,
 				Token:      pkt.Token,
 				Identifier: semtech.PUSH_ACK,
-			})
+			}.MarshalBinary()
 			if err != nil {
 				a.Logf("Unexpected error while marshaling PUSH_ACK: %v", err)
 				continue

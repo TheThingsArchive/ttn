@@ -106,7 +106,6 @@ func DumpPStruct(s interface{}, multiline bool) string {
 		}
 	}
 
-	str = str[:len(str)-2]
 	if multiline {
 		str += "\n}"
 	} else {

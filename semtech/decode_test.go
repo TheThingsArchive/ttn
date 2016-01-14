@@ -4,646 +4,323 @@
 package semtech
 
 import (
-	"bytes"
-	"reflect"
+	"github.com/TheThingsNetwork/ttn/utils/pointer"
+	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"testing"
 	"time"
-
-	"github.com/TheThingsNetwork/ttn/utils/pointer"
 )
 
-// ------------------------------------------------------------
-// ------------------------- Unmarshal (raw []byte) (Packet, error)
-// ------------------------------------------------------------
-
-// Unmarshal() with valid raw data and no payload (PUSH_ACK)
-func TestUnmarshal1(t *testing.T) {
-	raw := []byte{VERSION, 0x14, 0x14, PUSH_ACK}
-	packet, err := Unmarshal(raw)
-
-	if err != nil {
-		t.Errorf("Failed to parse with error: %#v", err)
-	}
-
-	if packet.Version != VERSION {
-		t.Errorf("Invalid parsed version: %x", packet.Version)
-	}
-
-	if !bytes.Equal([]byte{0x14, 0x14}, packet.Token) {
-		t.Errorf("Invalid parsed token: %x", packet.Token)
-	}
-
-	if packet.Identifier != PUSH_ACK {
-		t.Errorf("Invalid parsed identifier: %x", packet.Identifier)
-	}
-
-	if packet.Payload != nil {
-		t.Errorf("Invalid parsed payload: % x", packet.Payload)
-	}
-
-	if packet.GatewayId != nil {
-		t.Errorf("Invalid parsed gateway id: % x", packet.GatewayId)
-	}
-}
-
-// Unmarshal() with valid raw data and stat payload
-func TestUnmarshal2(t *testing.T) {
-	raw := []byte{VERSION, 0x14, 0x14, PUSH_DATA}
-	gatewayId := []byte("qwerty1234")[0:8]
-	payload := []byte(`{
-        "stat": {
-            "time":"2014-01-12 08:59:28 GMT",
-            "lati":46.24000,
-            "long":3.25230,
-            "alti":145,
-            "rxnb":2,
-            "rxok":2,
-            "rxfw":2,
-            "ackr":100.0,
-            "dwnb":2,
-            "txnb":2
-        }
-    }`)
-	packet, err := Unmarshal(append(append(raw, gatewayId...), payload...))
-
-	if err != nil {
-		t.Errorf("Failed to parse with error: %#v", err)
-	}
-
-	if packet.Version != VERSION {
-		t.Errorf("Invalid parsed version: %x", packet.Version)
-	}
-
-	if !bytes.Equal([]byte{0x14, 0x14}, packet.Token) {
-		t.Errorf("Invalid parsed token: %x", packet.Token)
-	}
-
-	if !bytes.Equal(gatewayId, packet.GatewayId) {
-		t.Errorf("Invalid parsed gatewayId: % x", packet.GatewayId)
-	}
-
-	if packet.Identifier != PUSH_DATA {
-		t.Errorf("Invalid parsed identifier: %x", packet.Identifier)
-	}
-
-	if packet.Payload == nil {
-		t.Errorf("Invalid parsed payload: % x", packet.Payload)
-		return
-	}
-
-	if !bytes.Equal(payload, packet.Payload.Raw) {
-		t.Errorf("Invalid parsed payload: % x", packet.Payload)
-	}
-
-	if packet.Payload.Stat == nil {
-		t.Errorf("Invalid parsed payload Stat: %#v", packet.Payload.Stat)
-	}
-
-	statTime, _ := time.Parse(time.RFC3339, "2014-01-12T08:59:28.000Z")
-
-	stat := Stat{
-		Time: &statTime,
-		Lati: pointer.Float64(46.24000),
-		Long: pointer.Float64(3.25230),
-		Alti: pointer.Int(145),
-		Rxnb: pointer.Uint(2),
-		Rxok: pointer.Uint(2),
-		Rxfw: pointer.Uint(2),
-		Ackr: pointer.Float64(100.0),
-		Dwnb: pointer.Uint(2),
-		Txnb: pointer.Uint(2),
-	}
-
-	if !reflect.DeepEqual(stat, *packet.Payload.Stat) {
-		t.Errorf("Invalid parsed payload Stat: %#v", packet.Payload.Stat)
-	}
-
-}
-
-// Unmarshal() with valid raw data and rxpk payloads
-func TestUnmarshal3(t *testing.T) {
-	raw := []byte{VERSION, 0x14, 0x14, PUSH_DATA}
-	gatewayId := []byte("qwerty1234")[0:8]
-	payload := []byte(`{
-        "rxpk":[
-            {
-                "chan":2,
-                "codr":"4/6",
-                "data":"-DS4CGaDCdG+48eJNM3Vai-zDpsR71Pn9CPA9uCON84",
-                "datr":"SF7BW125",
-                "freq":866.349812,
-                "lsnr":5.1,
-                "modu":"LORA",
-                "rfch":0,
-                "rssi":-35,
-                "size":32,
-                "stat":1,
-                "time":"2013-03-31T16:21:17.528002Z",
-                "tmst":3512348611
-            },{
-                "chan":9,
-                "data":"VEVTVF9QQUNLRVRfMTIzNA==",
-                "datr":50000,
-                "freq":869.1,
-                "modu":"FSK",
-                "rfch":1,
-                "rssi":-75,
-                "size":16,
-                "stat":1,
-                "time":"2013-03-31T16:21:17.530974Z",
-                "tmst":3512348514
-            },{
-                "chan":0,
-                "codr":"4/7",
-                "data":"ysgRl452xNLep9S1NTIg2lomKDxUgn3DJ7DE+b00Ass",
-                "datr":"SF10BW125",
-                "freq":863.00981,
-                "lsnr":5.5,
-                "modu":"LORA",
-                "rfch":0,
-                "rssi":-38,
-                "size":32,
-                "stat":1,
-                "time":"2013-03-31T16:21:17.532038Z",
-                "tmst":3316387610
-            }
-        ]
-    }`)
-
-	packet, err := Unmarshal(append(append(raw, gatewayId...), payload...))
-
-	if err != nil {
-		t.Errorf("Failed to parse with error: %#v", err)
-	}
-
-	if packet.Version != VERSION {
-		t.Errorf("Invalid parsed version: %x", packet.Version)
-	}
-
-	if !bytes.Equal([]byte{0x14, 0x14}, packet.Token) {
-		t.Errorf("Invalid parsed token: %x", packet.Token)
-	}
-
-	if packet.Identifier != PUSH_DATA {
-		t.Errorf("Invalid parsed identifier: %x", packet.Identifier)
-	}
-
-	if !bytes.Equal(gatewayId, packet.GatewayId) {
-		t.Errorf("Invalid parsed gatewayId: % x", packet.GatewayId)
-	}
-
-	if packet.Payload == nil {
-		t.Errorf("Invalid parsed payload: % x", packet.Payload)
-		return
-	}
-
-	if !bytes.Equal(payload, packet.Payload.Raw) {
-		t.Errorf("Invalid parsed payload: % x", packet.Payload)
-	}
-
-	if packet.Payload.RXPK == nil || len(packet.Payload.RXPK) != 3 {
-		t.Errorf("Invalid parsed payload RXPK: %#v", packet.Payload.RXPK)
-	}
-
-	rxpkTime, _ := time.Parse(time.RFC3339, "2013-03-31T16:21:17.530974Z")
-
-	rxpk := RXPK{
-		Chan: pointer.Uint(9),
-		Data: pointer.String("VEVTVF9QQUNLRVRfMTIzNA=="),
-		Datr: pointer.String("50000"),
-		Freq: pointer.Float64(869.1),
-		Modu: pointer.String("FSK"),
-		Rfch: pointer.Uint(1),
-		Rssi: pointer.Int(-75),
-		Size: pointer.Uint(16),
-		Stat: pointer.Int(1),
-		Time: &rxpkTime,
-		Tmst: pointer.Uint(3512348514),
-	}
-
-	if !reflect.DeepEqual(rxpk, (packet.Payload.RXPK)[1]) {
-		t.Errorf("Invalid parsed payload RXPK: %#v", packet.Payload.RXPK)
-	}
-}
-
-// Unmarshal() with valid raw data and rxpk payloads + stat
-func TestUnmarshal4(t *testing.T) {
-	raw := []byte{VERSION, 0x14, 0x14, PUSH_DATA}
-	gatewayId := []byte("qwerty1234")[0:8]
-	payload := []byte(`{
-        "rxpk":[
-            {
-                "chan":2,
-                "codr":"4/6",
-                "data":"-DS4CGaDCdG+48eJNM3Vai-zDpsR71Pn9CPA9uCON84",
-                "datr":"SF7BW125",
-                "freq":866.349812,
-                "lsnr":5.1,
-                "modu":"LORA",
-                "rfch":0,
-                "rssi":-35,
-                "size":32,
-                "stat":1,
-                "time":"2013-03-31T16:21:17.528002Z",
-                "tmst":3512348611
-            },{
-                "chan":9,
-                "data":"VEVTVF9QQUNLRVRfMTIzNA==",
-                "datr":50000,
-                "freq":869.1,
-                "modu":"FSK",
-                "rfch":1,
-                "rssi":-75,
-                "size":16,
-                "stat":1,
-                "time":"2013-03-31T16:21:17.530974Z",
-                "tmst":3512348514
-            },{
-                "chan":0,
-                "codr":"4/7",
-                "data":"ysgRl452xNLep9S1NTIg2lomKDxUgn3DJ7DE+b00Ass",
-                "datr":"SF10BW125",
-                "freq":863.00981,
-                "lsnr":5.5,
-                "modu":"LORA",
-                "rfch":0,
-                "rssi":-38,
-                "size":32,
-                "stat":1,
-                "time":"2013-03-31T16:21:17.532038Z",
-                "tmst":3316387610
-            }
-        ],
-        "stat": {
-            "time":"2014-01-12 08:59:28 GMT",
-            "lati":46.24000,
-            "long":3.25230,
-            "alti":145,
-            "rxnb":2,
-            "rxok":2,
-            "rxfw":2,
-            "ackr":100.0,
-            "dwnb":2,
-            "txnb":2
-        }
-    }`)
-
-	packet, err := Unmarshal(append(append(raw, gatewayId...), payload...))
-
-	if err != nil {
-		t.Errorf("Failed to parse with error: %#v", err)
-	}
-
-	if packet.Version != VERSION {
-		t.Errorf("Invalid parsed version: %x", packet.Version)
-	}
-
-	if !bytes.Equal([]byte{0x14, 0x14}, packet.Token) {
-		t.Errorf("Invalid parsed token: %x", packet.Token)
-	}
-
-	if packet.Identifier != PUSH_DATA {
-		t.Errorf("Invalid parsed identifier: %x", packet.Identifier)
-	}
-
-	if packet.Payload == nil {
-		t.Errorf("Invalid parsed payload: % x", packet.Payload)
-		return
-	}
-
-	if !bytes.Equal(payload, packet.Payload.Raw) {
-		t.Errorf("Invalid parsed payload: % x", packet.Payload)
-	}
-
-	if packet.Payload.RXPK == nil || len(packet.Payload.RXPK) != 3 {
-		t.Errorf("Invalid parsed payload RXPK: %#v", packet.Payload.RXPK)
-	}
-
-	if packet.Payload.Stat == nil {
-		t.Errorf("Invalid parsed payload Stat: %#v", packet.Payload.Stat)
-	}
-
-	rxpkTime, _ := time.Parse(time.RFC3339, "2013-03-31T16:21:17.530974Z")
-
-	rxpk := RXPK{
-		Chan: pointer.Uint(9),
-		Data: pointer.String("VEVTVF9QQUNLRVRfMTIzNA=="),
-		Datr: pointer.String("50000"),
-		Freq: pointer.Float64(869.1),
-		Modu: pointer.String("FSK"),
-		Rfch: pointer.Uint(1),
-		Rssi: pointer.Int(-75),
-		Size: pointer.Uint(16),
-		Stat: pointer.Int(1),
-		Time: &rxpkTime,
-		Tmst: pointer.Uint(3512348514),
-	}
-
-	if !reflect.DeepEqual(rxpk, (packet.Payload.RXPK)[1]) {
-		t.Errorf("Invalid parsed payload RXPK: %#v", packet.Payload.RXPK)
-	}
-
-	statTime, _ := time.Parse(time.RFC3339, "2014-01-12T08:59:28.000Z")
-
-	stat := Stat{
-		Time: &statTime,
-		Lati: pointer.Float64(46.24000),
-		Long: pointer.Float64(3.25230),
-		Alti: pointer.Int(145),
-		Rxnb: pointer.Uint(2),
-		Rxok: pointer.Uint(2),
-		Rxfw: pointer.Uint(2),
-		Ackr: pointer.Float64(100.0),
-		Dwnb: pointer.Uint(2),
-		Txnb: pointer.Uint(2),
-	}
-
-	if !reflect.DeepEqual(stat, *packet.Payload.Stat) {
-		t.Errorf("Invalid parsed payload Stat: %#v", packet.Payload.Stat)
-	}
-}
-
-// Unmarshal() with valid raw data and txpk payload
-func TestUnmarshal5(t *testing.T) {
-	raw := []byte{VERSION, 0x14, 0x14, PULL_RESP}
-
-	payload := []byte(`{
-        "txpk":{
-            "imme":true,
-            "freq":864.123456,
-            "rfch":0,
-            "powe":14,
-            "modu":"LORA",
-            "datr":"SF11BW125",
-            "codr":"4/6",
-            "ipol":false,
-            "size":32,
-            "data":"H3P3N2i9qc4yt7rK7ldqoeCVJGBybzPY5h1Dd7P7p8v"
-        }
-    }`)
-
-	packet, err := Unmarshal(append(raw, payload...))
-
-	if err != nil {
-		t.Errorf("Failed to parse with error: %#v", err)
-	}
-
-	if packet.Version != VERSION {
-		t.Errorf("Invalid parsed version: %x", packet.Version)
-	}
-
-	if !bytes.Equal([]byte{0x14, 0x14}, packet.Token) {
-		t.Errorf("Invalid parsed token: %x", packet.Token)
-	}
-
-	if packet.Identifier != PULL_RESP {
-		t.Errorf("Invalid parsed identifier: %x", packet.Identifier)
-	}
-
-	if packet.Payload == nil {
-		t.Errorf("Invalid parsed payload: % x", packet.Payload)
-		return
-	}
-
-	if !bytes.Equal(payload, packet.Payload.Raw) {
-		t.Errorf("Invalid parsed payload: % x", packet.Payload)
-	}
-
-	if packet.Payload.TXPK == nil {
-		t.Errorf("Invalid parsed payload TXPK: %#v", packet.Payload.TXPK)
-	}
-
-	txpk := TXPK{
-		Imme: pointer.Bool(true),
-		Freq: pointer.Float64(864.123456),
-		Rfch: pointer.Uint(0),
-		Powe: pointer.Uint(14),
-		Modu: pointer.String("LORA"),
-		Datr: pointer.String("SF11BW125"),
-		Codr: pointer.String("4/6"),
-		Ipol: pointer.Bool(false),
-		Size: pointer.Uint(32),
-		Data: pointer.String("H3P3N2i9qc4yt7rK7ldqoeCVJGBybzPY5h1Dd7P7p8v"),
-	}
-
-	if !reflect.DeepEqual(txpk, *packet.Payload.TXPK) {
-		t.Errorf("Invalid parsed payload TXPK: %#v", packet.Payload.TXPK)
-	}
-}
-
-// Unmarshal() with an invalid version number
-func TestUnmarshal6(t *testing.T) {
-	raw := []byte{0x00, 0x14, 0x14, PUSH_ACK}
-	_, err := Unmarshal(raw)
-
-	if err == nil {
-		t.Errorf("Successfully parsed an incorrect version number")
-	}
-}
-
-// Unmarshal() with an invalid raw message
-func TestUnmarshal7(t *testing.T) {
-	raw1 := []byte{VERSION}
-	var raw2 []byte
-	_, err1 := Unmarshal(raw1)
-	_, err2 := Unmarshal(raw2)
-
-	if err1 == nil {
-		t.Errorf("Successfully parsed an raw message")
-	}
-
-	if err2 == nil {
-		t.Errorf("Successfully parsed a nil raw message")
-	}
-}
-
-// Unmarshal() with an invalid identifier
-func TestUnmarshal8(t *testing.T) {
-	raw := []byte{VERSION, 0x14, 0x14, 0xFF}
-	_, err := Unmarshal(raw)
-
-	if err == nil {
-		t.Errorf("Successfully parsed an incorrect identifier")
-	}
-}
-
-// Unmarshal() with an invalid payload
-func TestUnmarshal9(t *testing.T) {
-	raw := []byte{VERSION, 0x14, 0x14, PUSH_DATA}
-	gatewayId := []byte("qwerty1234")[0:8]
-	payload := []byte(`wrong`)
-	_, err := Unmarshal(append(append(raw, gatewayId...), payload...))
-	if err == nil {
-		t.Errorf("Successfully parsed an incorrect payload")
-	}
-}
-
-// Unmarshal() with an invalid date
-func TestUnmarshal10(t *testing.T) {
-	raw := []byte{VERSION, 0x14, 0x14, PUSH_DATA}
-	gatewayId := []byte("qwerty1234")[0:8]
-	payload := []byte(`{
-        "stat": {
-            "time":"null",
-            "lati":46.24000,
-            "long":3.25230,
-            "alti":145,
-            "rxnb":2,
-            "rxok":2,
-            "rxfw":2,
-            "ackr":100.0,
-            "dwnb":2,
-            "txnb":2
-        }
-    }`)
-	_, err := Unmarshal(append(append(raw, gatewayId...), payload...))
-	if err == nil {
-		t.Errorf("Successfully parsed an incorrect payload time")
-	}
-}
-
-// Unmarshal() with valid raw data but a useless payload
-func TestUnmarshal11(t *testing.T) {
-	raw := []byte{VERSION, 0x14, 0x14, PUSH_ACK}
-	payload := []byte(`{
-        "stat": {
-            "time":"2014-01-12 08:59:28 GMT",
-            "lati":46.24000,
-            "long":3.25230,
-            "alti":145,
-            "rxnb":2,
-            "rxok":2,
-            "rxfw":2,
-            "ackr":100.0,
-            "dwnb":2,
-            "txnb":2
-        }
-    }`)
-	packet, err := Unmarshal(append(raw, payload...))
-
-	if err != nil {
-		t.Errorf("Failed to parse a valid PUSH_ACK packet")
-	}
-
-	if packet.Payload != nil {
-		t.Errorf("Parsed payload on a PUSH_ACK packet")
-	}
-}
-
-// Unmarshal() with valid raw data but a useless payload
-func TestUnmarshal12(t *testing.T) {
-	raw := []byte{VERSION, 0x14, 0x14, PULL_ACK}
-	payload := []byte(`{
-        "stat": {
-            "time":"2014-01-12 08:59:28 GMT",
-            "lati":46.24000,
-            "long":3.25230,
-            "alti":145,
-            "rxnb":2,
-            "rxok":2,
-            "rxfw":2,
-            "ackr":100.0,
-            "dwnb":2,
-            "txnb":2
-        }
-    }`)
-	packet, err := Unmarshal(append(raw, payload...))
-
-	if err != nil {
-		t.Errorf("Failed to parse a valid PULL_ACK packet")
-	}
-
-	if packet.Payload != nil {
-		t.Errorf("Parsed payload on a PULL_ACK packet")
-	}
-}
-
-// Unmarshal() with valid raw data but a useless payload
-func TestUnmarshal13(t *testing.T) {
-	raw := []byte{VERSION, 0x14, 0x14, PULL_DATA}
-	gatewayId := []byte("qwerty1234")[0:8]
-	payload := []byte(`{
-        "stat": {
-            "time":"2014-01-12 08:59:28 GMT",
-            "lati":46.24000,
-            "long":3.25230,
-            "alti":145,
-            "rxnb":2,
-            "rxok":2,
-            "rxfw":2,
-            "ackr":100.0,
-            "dwnb":2,
-            "txnb":2
-        }
-    }`)
-	packet, err := Unmarshal(append(append(raw, gatewayId...), payload...))
-
-	if err != nil {
-		t.Errorf("Failed to parse a valid PULL_DATA packet")
-	}
-
-	if packet.Payload != nil {
-		t.Errorf("Parsed payload on a PULL_DATA packet")
-	}
-}
-
-// Unmarshal() with valid raw data and no payload (PULL_ACK)
-func TestUnmarshal14(t *testing.T) {
-	raw := []byte{VERSION, 0x14, 0x14, PULL_ACK}
-	packet, err := Unmarshal(raw)
-
-	if err != nil {
-		t.Errorf("Failed to parse with error: %#v", err)
-	}
-
-	if packet.Version != VERSION {
-		t.Errorf("Invalid parsed version: %x", packet.Version)
-	}
-
-	if !bytes.Equal([]byte{0x14, 0x14}, packet.Token) {
-		t.Errorf("Invalid parsed token: %x", packet.Token)
-	}
-
-	if packet.Identifier != PULL_ACK {
-		t.Errorf("Invalid parsed identifier: %x", packet.Identifier)
-	}
-
-	if packet.Payload != nil {
-		t.Errorf("Invalid parsed payload: % x", packet.Payload)
-	}
-
-	if packet.GatewayId != nil {
-		t.Errorf("Invalid parsed gateway id: % x", packet.GatewayId)
-	}
-}
-
-// Unmarshal() with valid raw data and no payload (PULL_DATA)
-func TestUnmarshal15(t *testing.T) {
-	raw := []byte{VERSION, 0x14, 0x14, PULL_DATA}
-	gatewayId := []byte("qwerty1234")[0:8]
-	packet, err := Unmarshal(append(raw, gatewayId...))
-
-	if err != nil {
-		t.Errorf("Failed to parse with error: %#v", err)
-	}
-
-	if packet.Version != VERSION {
-		t.Errorf("Invalid parsed version: %x", packet.Version)
-	}
-
-	if !bytes.Equal([]byte{0x14, 0x14}, packet.Token) {
-		t.Errorf("Invalid parsed token: %x", packet.Token)
-	}
-
-	if packet.Identifier != PULL_DATA {
-		t.Errorf("Invalid parsed identifier: %x", packet.Identifier)
-	}
-
-	if packet.Payload != nil {
-		t.Errorf("Invalid parsed payload: % x", packet.Payload)
-	}
-
-	if !bytes.Equal(gatewayId, packet.GatewayId) {
-		t.Errorf("Invalid parsed gateway id: % x", packet.GatewayId)
+func TestUnmarshalBinary(t *testing.T) {
+	tests := []struct {
+		Desc       string
+		JSON       string
+		Header     []byte
+		WantPacket Packet
+		WantError  bool
+	}{
+		{
+			Desc:      "Invalid PUSH_DATA, invalid gateway id",
+			Header:    []byte{VERSION, 1, 2, PUSH_DATA, 1, 4, 5, 6},
+			JSON:      `{}`,
+			WantError: true,
+		},
+		{
+			Desc:   "PUSH_DATA with no payload",
+			Header: []byte{VERSION, 0x14, 0x42, PUSH_DATA, 1, 2, 3, 4, 5, 6, 7, 8},
+			JSON:   `{}`,
+			WantPacket: Packet{
+				Version:    VERSION,
+				Token:      []byte{0x14, 0x42},
+				Identifier: PUSH_DATA,
+				GatewayId:  []byte{1, 2, 3, 4, 5, 6, 7, 8},
+				Payload:    &Payload{},
+			},
+			WantError: false,
+		},
+		{
+			Desc:   "PUSH_DATA with only basic typed-attributes  uint, string, float64 and int",
+			Header: []byte{1, 0x14, 0x42, PUSH_DATA, 1, 2, 3, 4, 5, 6, 7, 8},
+			JSON:   `{"rxpk":[{"chan":14,"codr":"4/7","freq":873.14,"rssi":-42}]}`,
+			WantPacket: Packet{
+				Version:    VERSION,
+				Token:      []byte{0x14, 0x42},
+				Identifier: PUSH_DATA,
+				GatewayId:  []byte{1, 2, 3, 4, 5, 6, 7, 8},
+				Payload: &Payload{
+					RXPK: []RXPK{
+						RXPK{
+							Chan: pointer.Uint(14),
+							Codr: pointer.String("4/7"),
+							Freq: pointer.Float64(873.14),
+							Rssi: pointer.Int(-42),
+						},
+					},
+				},
+			},
+			WantError: false,
+		},
+		{
+			Desc:   "PUSH_DATA with datr field and modu -> LORA",
+			Header: []byte{1, 0x14, 0x42, PUSH_DATA, 1, 2, 3, 4, 5, 6, 7, 8},
+			JSON:   `{"rxpk":[{"modu":"LORA","datr":"SF7BW125"}]}`,
+			WantPacket: Packet{
+				Version:    VERSION,
+				Token:      []byte{0x14, 0x42},
+				Identifier: PUSH_DATA,
+				GatewayId:  []byte{1, 2, 3, 4, 5, 6, 7, 8},
+				Payload: &Payload{
+					RXPK: []RXPK{
+						RXPK{
+							Datr: pointer.String("SF7BW125"),
+							Modu: pointer.String("LORA"),
+						},
+					},
+				},
+			},
+			WantError: false,
+		},
+		{
+			Desc:   "PUSH_DATA with datr field and modu -> FSK",
+			Header: []byte{1, 0x14, 0x42, PUSH_DATA, 1, 2, 3, 4, 5, 6, 7, 8},
+			JSON:   `{"rxpk":[{"modu":"FSK","datr":50000}]}`,
+			WantPacket: Packet{
+				Version:    VERSION,
+				Token:      []byte{0x14, 0x42},
+				Identifier: PUSH_DATA,
+				GatewayId:  []byte{1, 2, 3, 4, 5, 6, 7, 8},
+				Payload: &Payload{
+					RXPK: []RXPK{
+						RXPK{
+							Datr: pointer.String("50000"),
+							Modu: pointer.String("FSK"),
+						},
+					},
+				},
+			},
+			WantError: false,
+		},
+		{
+			Desc:   "PUSH_DATA with time field",
+			Header: []byte{1, 0x14, 0x42, PUSH_DATA, 1, 2, 3, 4, 5, 6, 7, 8},
+			JSON:   `{"rxpk":[{"time":"2016-01-13T17:40:57.000000376Z"}]}`,
+			WantPacket: Packet{
+				Version:    VERSION,
+				Token:      []byte{0x14, 0x42},
+				Identifier: PUSH_DATA,
+				GatewayId:  []byte{1, 2, 3, 4, 5, 6, 7, 8},
+				Payload: &Payload{
+					RXPK: []RXPK{
+						RXPK{
+							Time: pointer.Time(time.Date(2016, 1, 13, 17, 40, 57, 376, time.UTC)),
+						},
+					},
+				},
+			},
+			WantError: false,
+		},
+		{
+			Desc:   "PUSH_DATA with several RXPK",
+			Header: []byte{1, 0x14, 0x42, PUSH_DATA, 1, 2, 3, 4, 5, 6, 7, 8},
+			JSON:   `{"rxpk":[{"size":14},{"chan":14}]}`,
+			WantPacket: Packet{
+				Version:    VERSION,
+				Token:      []byte{0x14, 0x42},
+				Identifier: PUSH_DATA,
+				GatewayId:  []byte{1, 2, 3, 4, 5, 6, 7, 8},
+				Payload: &Payload{
+					RXPK: []RXPK{
+						RXPK{
+							Size: pointer.Uint(14),
+						},
+						RXPK{
+							Chan: pointer.Uint(14),
+						},
+					},
+				},
+			},
+			WantError: false,
+		},
+		{
+			Desc:   "PUSH_DATA with several RXPK and Stat(basic fields)",
+			Header: []byte{1, 0x14, 0x42, PUSH_DATA, 1, 2, 3, 4, 5, 6, 7, 8},
+			JSON:   `{"rxpk":[{"size":14}],"stat":{"ackr":0.78,"alti":72,"rxok":42}}`,
+			WantPacket: Packet{
+				Version:    VERSION,
+				Token:      []byte{0x14, 0x42},
+				Identifier: PUSH_DATA,
+				GatewayId:  []byte{1, 2, 3, 4, 5, 6, 7, 8},
+				Payload: &Payload{
+					RXPK: []RXPK{
+						RXPK{
+							Size: pointer.Uint(14),
+						},
+					},
+					Stat: &Stat{
+						Ackr: pointer.Float64(0.78),
+						Alti: pointer.Int(72),
+						Rxok: pointer.Uint(42),
+					},
+				},
+			},
+			WantError: false,
+		},
+		{
+			Desc:   "PUSH_DATA with Stat(time field)",
+			Header: []byte{1, 0x14, 0x42, PUSH_DATA, 1, 2, 3, 4, 5, 6, 7, 8},
+			JSON:   `{"stat":{"time":"2016-01-13 17:40:57 GMT"}}`,
+			WantPacket: Packet{
+				Version:    VERSION,
+				Token:      []byte{0x14, 0x42},
+				Identifier: PUSH_DATA,
+				GatewayId:  []byte{1, 2, 3, 4, 5, 6, 7, 8},
+				Payload: &Payload{
+					Stat: &Stat{
+						Time: pointer.Time(time.Date(2016, 1, 13, 17, 40, 57, 0, time.UTC)),
+					},
+				},
+			},
+			WantError: false,
+		},
+		{
+			Desc:   "PUSH_DATA with rxpk and txpk (?)",
+			Header: []byte{1, 0x14, 0x42, PUSH_DATA, 1, 2, 3, 4, 5, 6, 7, 8},
+			JSON:   `{"rxpk":[{"codr":"4/7","rssi":-42}],"txpk":{"ipol":true,"powe":12}}`,
+			WantPacket: Packet{
+				Version:    VERSION,
+				Token:      []byte{0x14, 0x42},
+				Identifier: PUSH_DATA,
+				GatewayId:  []byte{1, 2, 3, 4, 5, 6, 7, 8},
+				Payload: &Payload{
+					RXPK: []RXPK{
+						RXPK{
+							Codr: pointer.String("4/7"),
+							Rssi: pointer.Int(-42),
+						},
+					},
+					TXPK: &TXPK{
+						Ipol: pointer.Bool(true),
+						Powe: pointer.Uint(12),
+					},
+				},
+			},
+			WantError: false,
+		},
+		{
+			Desc:   "PUSH_ACK valid",
+			Header: []byte{1, 0x14, 0x42, PUSH_ACK},
+			WantPacket: Packet{
+				Version:    VERSION,
+				Token:      []byte{0x14, 0x42},
+				Identifier: PUSH_ACK,
+			},
+			WantError: false,
+		},
+		{
+			Desc:      "PUSH_ACK missing token",
+			Header:    []byte{1, PUSH_ACK},
+			WantError: true,
+		},
+		{
+			Desc:   "PULL_DATA valid",
+			Header: []byte{1, 0x14, 0x42, PULL_DATA, 1, 2, 3, 4, 5, 6, 7, 8},
+			WantPacket: Packet{
+				Version:    VERSION,
+				Token:      []byte{0x14, 0x42},
+				Identifier: PULL_DATA,
+				GatewayId:  []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			},
+			WantError: false,
+		},
+		{
+			Desc:   "PULL_RESP with data",
+			Header: []byte{1, 0, 0, PULL_RESP},
+			JSON:   `{"txpk":{"ipol":true,"powe":12}}`,
+			WantPacket: Packet{
+				Version:    VERSION,
+				Identifier: PULL_RESP,
+				Payload: &Payload{
+					TXPK: &TXPK{
+						Ipol: pointer.Bool(true),
+						Powe: pointer.Uint(12),
+					},
+				},
+			},
+			WantError: false,
+		},
+		{
+			Desc:   "PULL_RESP with data and time",
+			Header: []byte{1, 0, 0, PULL_RESP},
+			JSON:   `{"txpk":{"ipol":true,"powe":12,"time":"2016-01-13T17:40:57.000000376Z"}}`,
+			WantPacket: Packet{
+				Version:    VERSION,
+				Identifier: PULL_RESP,
+				Payload: &Payload{
+					TXPK: &TXPK{
+						Ipol: pointer.Bool(true),
+						Powe: pointer.Uint(12),
+						Time: pointer.Time(time.Date(2016, 1, 13, 17, 40, 57, 376, time.UTC)),
+					},
+				},
+			},
+			WantError: false,
+		},
+		{
+			Desc:   "PULL_RESP with time only",
+			Header: []byte{1, 0, 0, PULL_RESP},
+			JSON:   `{"txpk":{"time":"2016-01-13T17:40:57.000000376Z"}}`,
+			WantPacket: Packet{
+				Version:    VERSION,
+				Identifier: PULL_RESP,
+				Payload: &Payload{
+					TXPK: &TXPK{
+						Time: pointer.Time(time.Date(2016, 1, 13, 17, 40, 57, 376, time.UTC)),
+					},
+				},
+			},
+			WantError: false,
+		},
+		{
+			Desc:   "PULL_RESP empty payload",
+			Header: []byte{1, 0, 0, PULL_RESP},
+			JSON:   `{}`,
+			WantPacket: Packet{
+				Version:    VERSION,
+				Identifier: PULL_RESP,
+				Payload:    &Payload{},
+			},
+			WantError: false,
+		},
+		{
+			Desc:   "PULL_RESP no payload",
+			Header: []byte{1, 0, 0, PULL_RESP},
+			JSON:   ``,
+			WantPacket: Packet{
+				Version:    VERSION,
+				Identifier: PULL_RESP,
+				Payload:    &Payload{},
+			},
+			WantError: false,
+		},
+		{
+			Desc:   "PULL_ACK valid",
+			Header: []byte{1, 0x14, 0x42, PULL_ACK},
+			WantPacket: Packet{
+				Version:    VERSION,
+				Token:      []byte{0x14, 0x42},
+				Identifier: PULL_ACK,
+			},
+			WantError: false,
+		},
+	}
+
+	for _, test := range tests {
+		Desc(t, test.Desc)
+		var packet Packet
+		err := packet.UnmarshalBinary(append(test.Header, []byte(test.JSON)...))
+		checkErrors(t, test.WantError, err)
+		if test.WantError {
+			continue
+		}
+		checkPackets(t, test.WantPacket, packet)
 	}
 }
