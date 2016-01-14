@@ -12,8 +12,9 @@ import (
 
 // Logger is a minimalist interface to represent logger
 type Logger interface {
-	Log(format string)
+	Log(str string)
 	Logf(format string, a ...interface{})
+	LogEntry(level Level, msg string, meta Meta)
 }
 
 // DebugLogger can be used in development to display loglines in the console
@@ -35,6 +36,11 @@ func (l DebugLogger) Logf(format string, a ...interface{}) {
 	fmt.Print("\n")
 }
 
+// LogEntry implements the Logger interface
+func (l DebugLogger) LogEntry(level Level, msg string, meta Meta) {
+	l.Log(Entry(level, msg, meta).String())
+}
+
 // TestLogger can be used in a test environnement to display log only on failure
 type TestLogger struct {
 	Tag string
@@ -49,6 +55,11 @@ func (l TestLogger) Log(str string) {
 // Logf implements the Logger interface
 func (l TestLogger) Logf(format string, a ...interface{}) {
 	l.T.Logf("\033[33m[ %s ]\033[0m %s", l.Tag, fmt.Sprintf(format, a...)) // Tag printed in yellow
+}
+
+// LogEntry implements the Logger interface
+func (l TestLogger) LogEntry(level Level, msg string, meta Meta) {
+	l.Log(Entry(level, msg, meta).String())
 }
 
 // MultiLogger aggregates several loggers log to each of them
@@ -68,4 +79,9 @@ func (l MultiLogger) Logf(format string, a ...interface{}) {
 	for _, logger := range l.Loggers {
 		logger.Logf(format, a...)
 	}
+}
+
+// LogEntry implements the Logger interface
+func (l MultiLogger) LogEntry(level Level, msg string, meta Meta) {
+	l.Log(Entry(level, msg, meta).String())
 }
