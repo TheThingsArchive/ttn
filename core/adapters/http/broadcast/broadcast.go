@@ -85,7 +85,7 @@ func (a *Adapter) broadcast(p core.Packet) (core.Packet, error) {
 		go func(recipient core.Recipient) {
 			defer wg.Done()
 
-			a.Logf("Post to %v", recipient)
+			a.LogEntry(log.DebugLevel, "POST Request", log.Meta{"recipient": recipient})
 			buf := new(bytes.Buffer)
 			buf.Write([]byte(payload))
 			resp, err := http.Post(fmt.Sprintf("http://%s", recipient.Address.(string)), "application/json", buf)
@@ -97,7 +97,7 @@ func (a *Adapter) broadcast(p core.Packet) (core.Packet, error) {
 
 			switch resp.StatusCode {
 			case http.StatusOK:
-				a.Logf("Recipient %v registered for given packet", recipient)
+				a.LogEntry(log.DebugLevel, "Recipient registered for packet", log.Meta{"recipient": recipient, "devAddr": devAddr})
 
 				raw := make([]byte, resp.ContentLength)
 				n, err := resp.Body.Read(raw)
@@ -114,7 +114,7 @@ func (a *Adapter) broadcast(p core.Packet) (core.Packet, error) {
 				register <- recipient
 				chresp <- packet
 			case http.StatusNotFound:
-				a.Logf("Recipient %v doesn't care much about packet", recipient)
+				a.LogEntry(log.DebugLevel, "Recipient not interested in packet", log.Meta{"recipient": recipient, "devAddr": devAddr})
 			default:
 				// Non-blocking, buffered
 				cherr <- fmt.Errorf("Unexpected response from server: %s (%d)", resp.Status, resp.StatusCode)

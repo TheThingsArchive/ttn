@@ -54,7 +54,7 @@ func (a *Adapter) Send(p core.Packet, r ...core.Recipient) (core.Packet, error) 
 	for _, recipient := range r {
 		go func(recipient core.Recipient) {
 			defer wg.Done()
-			a.Logf("Post to %v", recipient)
+			a.LogEntry(log.DebugLevel, "POST Request", log.Meta{"recipient": recipient})
 			buf := new(bytes.Buffer)
 			buf.Write([]byte(payload))
 			resp, err := http.Post(fmt.Sprintf("http://%s", recipient.Address.(string)), "application/json", buf)
