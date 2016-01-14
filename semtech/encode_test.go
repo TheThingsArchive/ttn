@@ -16,7 +16,7 @@ func TestMarshalBinary(t *testing.T) {
 		Desc       string
 		Packet     Packet
 		WantError  bool
-		WantHeader [12]byte
+		WantHeader []byte
 		WantJSON   string
 	}{
 		{
@@ -68,7 +68,7 @@ func TestMarshalBinary(t *testing.T) {
 				GatewayId:  []byte{1, 2, 3, 4, 5, 6, 7, 8},
 			},
 			WantError:  false,
-			WantHeader: [12]byte{1, 0x14, 0x42, 0, 1, 2, 3, 4, 5, 6, 7, 8},
+			WantHeader: []byte{1, 0x14, 0x42, PUSH_DATA, 1, 2, 3, 4, 5, 6, 7, 8},
 			WantJSON:   `{}`,
 		},
 		{
@@ -90,7 +90,7 @@ func TestMarshalBinary(t *testing.T) {
 				},
 			},
 			WantError:  false,
-			WantHeader: [12]byte{1, 0x14, 0x42, 0, 1, 2, 3, 4, 5, 6, 7, 8},
+			WantHeader: []byte{1, 0x14, 0x42, PUSH_DATA, 1, 2, 3, 4, 5, 6, 7, 8},
 			WantJSON:   `{"rxpk":[{"chan":14,"codr":"4/7","freq":873.14,"rssi":-42}]}`,
 		},
 		{
@@ -110,7 +110,7 @@ func TestMarshalBinary(t *testing.T) {
 				},
 			},
 			WantError:  false,
-			WantHeader: [12]byte{1, 0x14, 0x42, 0, 1, 2, 3, 4, 5, 6, 7, 8},
+			WantHeader: []byte{1, 0x14, 0x42, PUSH_DATA, 1, 2, 3, 4, 5, 6, 7, 8},
 			WantJSON:   `{"rxpk":[{"modu":"LORA","datr":"SF7BW125"}]}`,
 		},
 		{
@@ -130,7 +130,7 @@ func TestMarshalBinary(t *testing.T) {
 				},
 			},
 			WantError:  false,
-			WantHeader: [12]byte{1, 0x14, 0x42, 0, 1, 2, 3, 4, 5, 6, 7, 8},
+			WantHeader: []byte{1, 0x14, 0x42, PUSH_DATA, 1, 2, 3, 4, 5, 6, 7, 8},
 			WantJSON:   `{"rxpk":[{"modu":"FSK","datr":50000}]}`,
 		},
 		{
@@ -149,7 +149,7 @@ func TestMarshalBinary(t *testing.T) {
 				},
 			},
 			WantError:  false,
-			WantHeader: [12]byte{1, 0x14, 0x42, 0, 1, 2, 3, 4, 5, 6, 7, 8},
+			WantHeader: []byte{1, 0x14, 0x42, PUSH_DATA, 1, 2, 3, 4, 5, 6, 7, 8},
 			WantJSON:   `{"rxpk":[{"time":"2016-01-13T17:40:57.000000376Z"}]}`,
 		},
 		{
@@ -171,7 +171,7 @@ func TestMarshalBinary(t *testing.T) {
 				},
 			},
 			WantError:  false,
-			WantHeader: [12]byte{1, 0x14, 0x42, 0, 1, 2, 3, 4, 5, 6, 7, 8},
+			WantHeader: []byte{1, 0x14, 0x42, PUSH_DATA, 1, 2, 3, 4, 5, 6, 7, 8},
 			WantJSON:   `{"rxpk":[{"size":14},{"chan":14}]}`,
 		},
 		{
@@ -195,7 +195,7 @@ func TestMarshalBinary(t *testing.T) {
 				},
 			},
 			WantError:  false,
-			WantHeader: [12]byte{1, 0x14, 0x42, 0, 1, 2, 3, 4, 5, 6, 7, 8},
+			WantHeader: []byte{1, 0x14, 0x42, PUSH_DATA, 1, 2, 3, 4, 5, 6, 7, 8},
 			WantJSON:   `{"rxpk":[{"size":14}],"stat":{"ackr":0.78,"alti":72,"rxok":42}}`,
 		},
 		{
@@ -212,7 +212,7 @@ func TestMarshalBinary(t *testing.T) {
 				},
 			},
 			WantError:  false,
-			WantHeader: [12]byte{1, 0x14, 0x42, 0, 1, 2, 3, 4, 5, 6, 7, 8},
+			WantHeader: []byte{1, 0x14, 0x42, PUSH_DATA, 1, 2, 3, 4, 5, 6, 7, 8},
 			WantJSON:   `{"stat":{"time":"2016-01-13 17:40:57 GMT"}}`,
 		},
 		{
@@ -236,8 +236,110 @@ func TestMarshalBinary(t *testing.T) {
 				},
 			},
 			WantError:  false,
-			WantHeader: [12]byte{1, 0x14, 0x42, 0, 1, 2, 3, 4, 5, 6, 7, 8},
+			WantHeader: []byte{1, 0x14, 0x42, PUSH_DATA, 1, 2, 3, 4, 5, 6, 7, 8},
 			WantJSON:   `{"rxpk":[{"codr":"4/7","rssi":-42}],"txpk":{"ipol":true,"powe":12}}`,
+		},
+		{
+			Desc: "PUSH_ACK valid",
+			Packet: Packet{
+				Version:    VERSION,
+				Token:      []byte{0x14, 0x42},
+				Identifier: PUSH_ACK,
+			},
+			WantError:  false,
+			WantHeader: []byte{1, 0x14, 0x42, PUSH_ACK},
+		},
+		{
+			Desc: "PUSH_ACK missing token",
+			Packet: Packet{
+				Version:    VERSION,
+				Identifier: PUSH_ACK,
+			},
+			WantError: true,
+		},
+		{
+			Desc: "PULL_DATA valid",
+			Packet: Packet{
+				Version:    VERSION,
+				Token:      []byte{0x14, 0x42},
+				Identifier: PULL_DATA,
+				GatewayId:  []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			},
+			WantError:  false,
+			WantHeader: []byte{1, 0x14, 0x42, PULL_DATA, 1, 2, 3, 4, 5, 6, 7, 8},
+		},
+		{
+			Desc: "PULL_DATA missing token",
+			Packet: Packet{
+				Version:    VERSION,
+				Identifier: PULL_DATA,
+				GatewayId:  []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			},
+			WantError: true,
+		},
+		{
+			Desc: "PULL_DATA missing gatewayid",
+			Packet: Packet{
+				Version:    VERSION,
+				Token:      []byte{0x14, 0x42},
+				Identifier: PULL_DATA,
+			},
+			WantError: true,
+		},
+		{
+			Desc: "PULL_RESP with data",
+			Packet: Packet{
+				Version:    VERSION,
+				Identifier: PULL_RESP,
+				Payload: &Payload{
+					TXPK: &TXPK{
+						Ipol: pointer.Bool(true),
+						Powe: pointer.Uint(12),
+					},
+				},
+			},
+			WantError:  false,
+			WantHeader: []byte{1, 0, 0, PULL_RESP},
+			WantJSON:   `{"txpk":{"ipol":true,"powe":12}}`,
+		},
+		{
+			Desc: "PULL_RESP empty payload",
+			Packet: Packet{
+				Version:    VERSION,
+				Identifier: PULL_RESP,
+				Payload:    &Payload{},
+			},
+			WantError:  false,
+			WantHeader: []byte{1, 0, 0, PULL_RESP},
+			WantJSON:   `{}`,
+		},
+		{
+			Desc: "PULL_RESP no payload",
+			Packet: Packet{
+				Version:    VERSION,
+				Identifier: PULL_RESP,
+			},
+			WantError:  false,
+			WantHeader: []byte{1, 0, 0, PULL_RESP},
+			WantJSON:   `{}`,
+		},
+		{
+			Desc: "PULL_ACK valid",
+			Packet: Packet{
+				Version:    VERSION,
+				Token:      []byte{0x14, 0x42},
+				Identifier: PULL_ACK,
+			},
+			WantError:  false,
+			WantHeader: []byte{1, 0x14, 0x42, PULL_ACK},
+		},
+		{
+			Desc: "PULL_ACK missing token",
+			Packet: Packet{
+				Version:    VERSION,
+				Identifier: PULL_ACK,
+			},
+			WantError: true,
 		},
 	}
 
@@ -263,13 +365,14 @@ func checkErrors(t *testing.T, want bool, got error) {
 	Ko(t, "Expected no error but got: %v", got)
 }
 
-func checkHeaders(t *testing.T, want [12]byte, got []byte) {
-	if len(got) < 12 {
+func checkHeaders(t *testing.T, want []byte, got []byte) {
+	l := len(want)
+	if len(got) < l {
 		Ko(t, "Received header does not match expectations.\nWant: %+x\nGot:  %+x", want, got)
 		return
 	}
-	if !reflect.DeepEqual(want[:], got[:12]) {
-		Ko(t, "Received header does not match expectations.\nWant: %+x\nGot:  %+x", want, got[:12])
+	if !reflect.DeepEqual(want[:], got[:l]) {
+		Ko(t, "Received header does not match expectations.\nWant: %+x\nGot:  %+x", want, got[:l])
 		return
 	}
 	Ok(t, "Check Headers")
