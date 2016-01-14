@@ -52,7 +52,6 @@ func (b *Broker) HandleUp(p core.Packet, an core.AckNacker, adapter core.Adapter
 	for _, entry := range entries {
 		ok, err := p.Payload.ValidateMIC(entry.NwsKey)
 		if err != nil {
-			b.Logf("Unexpected error: %v", err)
 			continue
 		}
 		if ok {
@@ -60,10 +59,12 @@ func (b *Broker) HandleUp(p core.Packet, an core.AckNacker, adapter core.Adapter
 				Id:      entry.Id,
 				Address: entry.Url,
 			}
+			b.LogEntry(log.DebugLevel, "Associated device with handler", log.Meta{"devAddr": devAddr, "handler": handler})
 			break
 		}
 	}
 	if handler == nil {
+		b.LogEntry(log.WarnLevel, "Could not find handler for device", log.Meta{"devAddr": devAddr})
 		return an.Nack()
 	}
 
