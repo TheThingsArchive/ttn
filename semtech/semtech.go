@@ -7,6 +7,8 @@
 package semtech
 
 import (
+	"fmt"
+	"github.com/thethingsnetwork/ttn/utils/pointer"
 	"time"
 )
 
@@ -70,6 +72,39 @@ type Packet struct {
 	Identifier byte     // Packet's command identifier
 	GatewayId  []byte   // Source gateway's identifier (Only PULL_DATA and PUSH_DATA)
 	Payload    *Payload // JSON payload transmitted if any, nil otherwise
+}
+
+func (p *Packet) String() string {
+	if p == nil {
+		return "nil"
+	}
+	header := fmt.Sprintf("Version:%x,Token:%x,Identifier:%x,GatewayId:%x", p.Version, p.Token, p.Identifier, p.GatewayId)
+	if p.Payload == nil {
+		return fmt.Sprintf("Packet{%s}", header)
+	}
+
+	var payload string
+
+	if p.Payload.Stat != nil {
+		payload = fmt.Sprintf("%s,%s", payload, pointer.DumpPStruct(*p.Payload.Stat, false))
+	}
+
+	if p.Payload.TXPK != nil {
+		payload = fmt.Sprintf("%s,%s", payload, pointer.DumpPStruct(*p.Payload.TXPK, false))
+	}
+
+	var rxpk string
+	for _, r := range p.Payload.RXPK {
+		if rxpk == "" {
+			rxpk = fmt.Sprintf("%s", pointer.DumpPStruct(r, false))
+		} else {
+			rxpk = fmt.Sprintf("%s,%s", rxpk, pointer.DumpPStruct(r, false))
+		}
+	}
+	if rxpk != "" {
+		payload = fmt.Sprintf("%s,Rxpk:[%s]", payload, rxpk)
+	}
+	return fmt.Sprintf("Packet{%s,Payload:{%s}}", header, payload)
 }
 
 // Payload refers to the JSON payload sent by a gateway or a server.
