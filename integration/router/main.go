@@ -6,11 +6,11 @@ package main
 import (
 	"flag"
 	"fmt"
-	. "github.com/thethingsnetwork/core/core"
-	"github.com/thethingsnetwork/core/core/adapters/http/broadcast"
-	"github.com/thethingsnetwork/core/core/adapters/semtech"
-	"github.com/thethingsnetwork/core/core/components"
-	"github.com/thethingsnetwork/core/utils/log"
+	. "github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/core/adapters/http/broadcast"
+	"github.com/TheThingsNetwork/ttn/core/adapters/semtech"
+	"github.com/TheThingsNetwork/ttn/core/components"
+	"github.com/TheThingsNetwork/ttn/utils/log"
 	"strconv"
 	"strings"
 )
