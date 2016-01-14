@@ -16,8 +16,12 @@ type semtechAckNacker struct {
 	recipient core.Recipient
 }
 
-func (an semtechAckNacker) Ack(p core.Packet) error {
-	txpk, err := core.ConvertToTXPK(p)
+func (an semtechAckNacker) Ack(p ...core.Packet) error {
+	if len(p) == 0 {
+		return nil
+	}
+
+	txpk, err := core.ConvertToTXPK(p[0])
 	if err != nil {
 		return err
 	}
@@ -36,6 +40,6 @@ func (an semtechAckNacker) Ack(p core.Packet) error {
 	return nil
 }
 
-func (an semtechAckNacker) Nack(p core.Packet) error {
+func (an semtechAckNacker) Nack() error {
 	return nil
 }

@@ -33,14 +33,16 @@ func (b *Broker) HandleUp(p core.Packet, an core.AckNacker, adapter core.Adapter
 	// 1. Lookup for entries for the associated device
 	devAddr, err := p.DevAddr()
 	if err != nil {
+		an.Nack()
 		return ErrInvalidPacket
 	}
 	entries, err := b.db.lookup(devAddr)
 	switch err {
 	case nil:
 	case ErrDeviceNotFound:
-		return an.Nack(p)
+		return an.Nack()
 	default:
+		an.Nack()
 		return err
 	}
 
@@ -62,13 +64,13 @@ func (b *Broker) HandleUp(p core.Packet, an core.AckNacker, adapter core.Adapter
 		}
 	}
 	if handler == nil {
-		return an.Nack(p)
+		return an.Nack()
 	}
 
 	// 3. If one was found, we forward the packet and wait for the response
 	response, err := adapter.Send(p, *handler)
 	if err != nil {
-		an.Nack(p)
+		an.Nack()
 		return err
 	}
 	return an.Ack(response)
@@ -78,15 +80,20 @@ func (b *Broker) HandleDown(p core.Packet, an core.AckNacker, a core.Adapter) er
 	return fmt.Errorf("Not Implemented")
 }
 
-func (b *Broker) Register(r core.Registration) error {
+func (b *Broker) Register(r core.Registration, an core.AckNacker) error {
 	id, okId := r.Recipient.Id.(string)
 	url, okUrl := r.Recipient.Address.(string)
 	nwsKey, okNwsKey := r.Options.(lorawan.AES128Key)
 
 	if !(okId && okUrl && okNwsKey) {
+		an.Nack()
 		return ErrInvalidRegistration
 	}
 
 	entry := brokerEntry{Id: id, Url: url, NwsKey: nwsKey}
-	return b.db.store(r.DevAddr, entry)
+	if err := b.db.store(r.DevAddr, entry); err != nil {
+		an.Nack()
+		return err
+	}
+	return an.Ack()
 }

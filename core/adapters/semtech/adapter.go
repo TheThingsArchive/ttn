@@ -82,8 +82,8 @@ func (a *Adapter) Next() (core.Packet, core.AckNacker, error) {
 }
 
 // NextRegistration implements the core.Adapter interface
-func (a *Adapter) NextRegistration() (core.Packet, core.AckNacker, error) {
-	return core.Packet{}, nil, ErrNotSupported
+func (a *Adapter) NextRegistration() (core.Registration, core.AckNacker, error) {
+	return core.Registration{}, nil, ErrNotSupported
 }
 
 // listen Handle incoming packets and forward them

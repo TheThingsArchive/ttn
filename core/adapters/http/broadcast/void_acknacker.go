@@ -10,11 +10,11 @@ import (
 type voidAckNacker struct{}
 
 // Ack implements the core.AckNacker interface
-func (v voidAckNacker) Ack(p core.Packet) error {
+func (v voidAckNacker) Ack(p ...core.Packet) error {
 	return nil
 }
 
 // Nack implements the core.AckNacker interface
-func (v voidAckNacker) Nack(p core.Packet) error {
+func (v voidAckNacker) Nack() error {
 	return nil
 }

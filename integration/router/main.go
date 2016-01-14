@@ -36,6 +36,8 @@ func main() {
 	}
 
 	// Bring the service to life
+
+	// Listen uplink
 	go func() {
 		for {
 			packet, an, err := gtwAdapter.Next()
@@ -48,6 +50,38 @@ func main() {
 					fmt.Println(err)
 				}
 			}(packet, an)
+		}
+	}()
+
+	// Listen downlink
+	go func() {
+		for {
+			packet, an, err := brkAdapter.Next()
+			if err != nil {
+				fmt.Println(err)
+				continue
+			}
+			go func(packet Packet, an AckNacker) {
+				if err := router.HandleDown(packet, an, gtwAdapter); err != nil {
+					fmt.Println(err)
+				}
+			}(packet, an)
+		}
+	}()
+
+	// Listen broker registrations
+	go func() {
+		for {
+			reg, an, err := brkAdapter.NextRegistration()
+			if err != nil {
+				fmt.Println(err)
+				continue
+			}
+			go func(reg Registration, an AckNacker) {
+				if err := router.Register(reg, an); err != nil {
+					fmt.Println(err)
+				}
+			}(reg, an)
 		}
 	}()
 }

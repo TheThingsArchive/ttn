@@ -35,11 +35,16 @@ func NewRouter(loggers ...log.Logger) (*Router, error) {
 }
 
 // Register implements the core.Component interface
-func (r *Router) Register(reg core.Registration) error {
+func (r *Router) Register(reg core.Registration, an core.AckNacker) error {
 	if !r.ok() {
+		an.Nack()
 		return ErrNotInitialized
 	}
-	return r.db.store(reg.DevAddr, reg.Recipient)
+	if err := r.db.store(reg.DevAddr, reg.Recipient); err != nil {
+		an.Nack()
+		return err
+	}
+	return an.Ack()
 }
 
 // HandleDown implements the core.Component interface
@@ -50,22 +55,26 @@ func (r *Router) HandleDown(p core.Packet, an core.AckNacker, downAdapter core.A
 // HandleUp implements the core.Component interface
 func (r *Router) HandleUp(p core.Packet, an core.AckNacker, upAdapter core.Adapter) error {
 	if !r.ok() {
+		an.Nack()
 		return ErrNotInitialized
 	}
 
 	// Lookup for an existing broker
 	devAddr, err := p.DevAddr()
 	if err != nil {
+		an.Nack()
 		return err
 	}
 
 	brokers, err := r.db.lookup(devAddr)
 	if err != ErrDeviceNotFound && err != ErrEntryExpired {
+		an.Nack()
 		return err
 	}
 
 	response, err := upAdapter.Send(p, brokers...)
 	if err != nil {
+		an.Nack()
 		return err
 	}
 	return an.Ack(response)
