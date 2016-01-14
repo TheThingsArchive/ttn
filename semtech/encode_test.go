@@ -6,7 +6,6 @@ package semtech
 import (
 	"github.com/thethingsnetwork/ttn/utils/pointer"
 	. "github.com/thethingsnetwork/ttn/utils/testing"
-	"reflect"
 	"testing"
 	"time"
 )
@@ -303,6 +302,38 @@ func TestMarshalBinary(t *testing.T) {
 			WantJSON:   `{"txpk":{"ipol":true,"powe":12}}`,
 		},
 		{
+			Desc: "PULL_RESP with data and time",
+			Packet: Packet{
+				Version:    VERSION,
+				Identifier: PULL_RESP,
+				Payload: &Payload{
+					TXPK: &TXPK{
+						Ipol: pointer.Bool(true),
+						Powe: pointer.Uint(12),
+						Time: pointer.Time(time.Date(2016, 1, 13, 17, 40, 57, 376, time.UTC)),
+					},
+				},
+			},
+			WantError:  false,
+			WantHeader: []byte{1, 0, 0, PULL_RESP},
+			WantJSON:   `{"txpk":{"ipol":true,"powe":12,"time":"2016-01-13T17:40:57.000000376Z"}}`,
+		},
+		{
+			Desc: "PULL_RESP with time only",
+			Packet: Packet{
+				Version:    VERSION,
+				Identifier: PULL_RESP,
+				Payload: &Payload{
+					TXPK: &TXPK{
+						Time: pointer.Time(time.Date(2016, 1, 13, 17, 40, 57, 376, time.UTC)),
+					},
+				},
+			},
+			WantError:  false,
+			WantHeader: []byte{1, 0, 0, PULL_RESP},
+			WantJSON:   `{"txpk":{"time":"2016-01-13T17:40:57.000000376Z"}}`,
+		},
+		{
 			Desc: "PULL_RESP empty payload",
 			Packet: Packet{
 				Version:    VERSION,
@@ -353,41 +384,4 @@ func TestMarshalBinary(t *testing.T) {
 		checkHeaders(t, test.WantHeader, raw)
 		checkJSON(t, test.WantJSON, raw)
 	}
-}
-
-// ----- Check utilities
-
-func checkErrors(t *testing.T, want bool, got error) {
-	if (!want && got == nil) || (want && got != nil) {
-		Ok(t, "Check errors")
-		return
-	}
-	Ko(t, "Expected no error but got: %v", got)
-}
-
-func checkHeaders(t *testing.T, want []byte, got []byte) {
-	l := len(want)
-	if len(got) < l {
-		Ko(t, "Received header does not match expectations.\nWant: %+x\nGot:  %+x", want, got)
-		return
-	}
-	if !reflect.DeepEqual(want[:], got[:l]) {
-		Ko(t, "Received header does not match expectations.\nWant: %+x\nGot:  %+x", want, got[:l])
-		return
-	}
-	Ok(t, "Check Headers")
-}
-
-func checkJSON(t *testing.T, want string, got []byte) {
-	l := len([]byte(want))
-	if len(got) < l {
-		Ko(t, "Received JSON does not match expectations.\nWant: %s\nGot:  %v", want, got)
-		return
-	}
-	str := string(got[len(got)-l:])
-	if want != str {
-		Ko(t, "Received JSON does not match expectations.\nWant: %s\nGot:  %s", want, str)
-		return
-	}
-	Ok(t, "Check JSON")
 }
