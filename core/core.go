@@ -38,12 +38,12 @@ type Metadata struct {
 }
 
 type AckNacker interface {
-	Ack(p Packet) error
-	Nack(p Packet) error
+	Ack(p ...Packet) error
+	Nack() error
 }
 
 type Component interface {
-	Register(reg Registration) error
+	Register(reg Registration, an AckNacker) error
 	HandleUp(p Packet, an AckNacker, upAdapter Adapter) error
 	HandleDown(p Packet, an AckNacker, downAdapter Adapter) error
 }
