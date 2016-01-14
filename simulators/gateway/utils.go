@@ -8,13 +8,14 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"fmt"
-	"github.com/thethingsnetwork/ttn/lorawan"
-	"github.com/thethingsnetwork/ttn/semtech"
-	"github.com/thethingsnetwork/ttn/utils/pointer"
 	"math"
 	"math/rand"
 	"strings"
 	"time"
+
+	"github.com/TheThingsNetwork/ttn/lorawan"
+	"github.com/TheThingsNetwork/ttn/semtech"
+	"github.com/TheThingsNetwork/ttn/utils/pointer"
 )
 
 func genToken() []byte {

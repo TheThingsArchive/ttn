@@ -5,10 +5,11 @@ package semtech
 
 import (
 	"bytes"
-	"github.com/thethingsnetwork/ttn/utils/pointer"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/TheThingsNetwork/ttn/utils/pointer"
 )
 
 // ------------------------------------------------------------

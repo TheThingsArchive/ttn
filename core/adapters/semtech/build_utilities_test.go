@@ -6,14 +6,15 @@ package semtech
 import (
 	"encoding/base64"
 	"fmt"
-	"github.com/thethingsnetwork/ttn/core"
-	"github.com/thethingsnetwork/ttn/lorawan"
-	"github.com/thethingsnetwork/ttn/semtech"
-	"github.com/thethingsnetwork/ttn/utils/log"
-	"github.com/thethingsnetwork/ttn/utils/pointer"
 	"net"
 	"testing"
 	"time"
+
+	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/lorawan"
+	"github.com/TheThingsNetwork/ttn/semtech"
+	"github.com/TheThingsNetwork/ttn/utils/log"
+	"github.com/TheThingsNetwork/ttn/utils/pointer"
 )
 
 // ----- build utilities

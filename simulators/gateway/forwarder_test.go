@@ -5,11 +5,12 @@ package gateway
 
 import (
 	"fmt"
-	. "github.com/smartystreets/goconvey/convey"
-	"github.com/thethingsnetwork/ttn/semtech"
 	"io"
 	"testing"
 	"time"
+
+	"github.com/TheThingsNetwork/ttn/semtech"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 type fakeAdapter struct {

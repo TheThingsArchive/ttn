@@ -4,12 +4,13 @@
 package semtech
 
 import (
-	"github.com/thethingsnetwork/ttn/core"
-	"github.com/thethingsnetwork/ttn/semtech"
-	. "github.com/thethingsnetwork/ttn/utils/testing"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/semtech"
+	. "github.com/TheThingsNetwork/ttn/utils/testing"
 )
 
 func TestNewAdapter(t *testing.T) {

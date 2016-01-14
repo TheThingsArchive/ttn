@@ -4,8 +4,9 @@
 package components
 
 import (
-	"github.com/thethingsnetwork/ttn/lorawan"
 	"sync"
+
+	"github.com/TheThingsNetwork/ttn/lorawan"
 )
 
 type brokerStorage interface {

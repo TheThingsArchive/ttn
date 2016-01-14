@@ -5,12 +5,13 @@ package core
 
 import (
 	"fmt"
-	"github.com/thethingsnetwork/ttn/semtech"
-	"github.com/thethingsnetwork/ttn/utils/pointer"
-	. "github.com/thethingsnetwork/ttn/utils/testing"
 	"reflect"
 	"regexp"
 	"testing"
+
+	"github.com/TheThingsNetwork/ttn/semtech"
+	"github.com/TheThingsNetwork/ttn/utils/pointer"
+	. "github.com/TheThingsNetwork/ttn/utils/testing"
 )
 
 // Checks that two packets match

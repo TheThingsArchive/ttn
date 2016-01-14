@@ -7,10 +7,11 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/thethingsnetwork/ttn/utils/pointer"
 	"io/ioutil"
 	"testing"
 	"time"
+
+	"github.com/TheThingsNetwork/ttn/utils/pointer"
 )
 
 // -----------------------------------------------------------------

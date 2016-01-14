@@ -4,10 +4,11 @@
 package components
 
 import (
-	"github.com/thethingsnetwork/ttn/core"
-	"github.com/thethingsnetwork/ttn/lorawan"
 	"sync"
 	"time"
+
+	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/lorawan"
 )
 
 type routerStorage interface {

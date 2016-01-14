@@ -5,11 +5,12 @@ package gateway
 
 import (
 	"fmt"
-	"github.com/thethingsnetwork/ttn/semtech"
-	"github.com/thethingsnetwork/ttn/utils/log"
-	"github.com/thethingsnetwork/ttn/utils/pointer"
 	"io"
 	"time"
+
+	"github.com/TheThingsNetwork/ttn/semtech"
+	"github.com/TheThingsNetwork/ttn/utils/log"
+	"github.com/TheThingsNetwork/ttn/utils/pointer"
 )
 
 type Forwarder struct {

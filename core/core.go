@@ -1,8 +1,9 @@
 package core
 
 import (
-	"github.com/thethingsnetwork/ttn/lorawan"
 	"time"
+
+	"github.com/TheThingsNetwork/ttn/lorawan"
 )
 
 type Packet struct {

@@ -6,9 +6,10 @@ package core
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/thethingsnetwork/ttn/semtech"
-	"github.com/thethingsnetwork/ttn/utils/pointer"
 	"time"
+
+	"github.com/TheThingsNetwork/ttn/semtech"
+	"github.com/TheThingsNetwork/ttn/utils/pointer"
 )
 
 type metadata Metadata

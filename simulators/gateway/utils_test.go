@@ -4,9 +4,10 @@
 package gateway
 
 import (
-	. "github.com/smartystreets/goconvey/convey"
-	"github.com/thethingsnetwork/ttn/semtech"
 	"testing"
+
+	"github.com/TheThingsNetwork/ttn/semtech"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestGenToken(t *testing.T) {

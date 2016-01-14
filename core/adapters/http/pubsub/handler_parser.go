@@ -7,12 +7,13 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/thethingsnetwork/ttn/core"
-	"github.com/thethingsnetwork/ttn/lorawan"
 	"io"
 	"net/http"
 	"regexp"
 	"strings"
+
+	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/lorawan"
 )
 
 type HandlerParser struct{}

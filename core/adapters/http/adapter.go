@@ -8,11 +8,12 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/thethingsnetwork/ttn/core"
-	"github.com/thethingsnetwork/ttn/utils/log"
 	"io"
 	"net/http"
 	"sync"
+
+	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/utils/log"
 )
 
 var ErrInvalidPort = fmt.Errorf("The given port is invalid")

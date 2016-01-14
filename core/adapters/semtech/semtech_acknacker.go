@@ -5,9 +5,10 @@ package semtech
 
 import (
 	"fmt"
-	"github.com/thethingsnetwork/ttn/core"
-	"github.com/thethingsnetwork/ttn/semtech"
 	"net"
+
+	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/semtech"
 )
 
 type semtechAckNacker struct {

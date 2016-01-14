@@ -5,10 +5,11 @@ package semtech
 
 import (
 	"fmt"
-	"github.com/thethingsnetwork/ttn/core"
-	"github.com/thethingsnetwork/ttn/semtech"
-	"github.com/thethingsnetwork/ttn/utils/log"
 	"net"
+
+	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/semtech"
+	"github.com/TheThingsNetwork/ttn/utils/log"
 )
 
 type Adapter struct {

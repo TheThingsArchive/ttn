@@ -7,15 +7,16 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/thethingsnetwork/ttn/core"
-	"github.com/thethingsnetwork/ttn/lorawan"
-	"github.com/thethingsnetwork/ttn/utils/log"
-	"github.com/thethingsnetwork/ttn/utils/pointer"
-	. "github.com/thethingsnetwork/ttn/utils/testing"
 	"io"
 	"net/http"
 	"testing"
 	"time"
+
+	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/lorawan"
+	"github.com/TheThingsNetwork/ttn/utils/log"
+	"github.com/TheThingsNetwork/ttn/utils/pointer"
+	. "github.com/TheThingsNetwork/ttn/utils/testing"
 )
 
 // Send(p core.Packet, r ...core.Recipient) error

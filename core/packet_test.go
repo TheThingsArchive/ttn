@@ -5,11 +5,12 @@ package core
 
 import (
 	"encoding/json"
-	"github.com/thethingsnetwork/ttn/lorawan"
-	"github.com/thethingsnetwork/ttn/semtech"
-	"github.com/thethingsnetwork/ttn/utils/pointer"
-	. "github.com/thethingsnetwork/ttn/utils/testing"
 	"testing"
+
+	"github.com/TheThingsNetwork/ttn/lorawan"
+	"github.com/TheThingsNetwork/ttn/semtech"
+	"github.com/TheThingsNetwork/ttn/utils/pointer"
+	. "github.com/TheThingsNetwork/ttn/utils/testing"
 )
 
 func TestConvertRXPKPacket(t *testing.T) {

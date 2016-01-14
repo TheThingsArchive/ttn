@@ -5,16 +5,17 @@ package broadcast
 
 import (
 	"encoding/json"
-	"github.com/thethingsnetwork/ttn/core"
-	"github.com/thethingsnetwork/ttn/lorawan"
-	"github.com/thethingsnetwork/ttn/utils/log"
-	"github.com/thethingsnetwork/ttn/utils/pointer"
-	. "github.com/thethingsnetwork/ttn/utils/testing"
 	"io"
 	"net/http"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/lorawan"
+	"github.com/TheThingsNetwork/ttn/utils/log"
+	"github.com/TheThingsNetwork/ttn/utils/pointer"
+	. "github.com/TheThingsNetwork/ttn/utils/testing"
 )
 
 func TestSend(t *testing.T) {

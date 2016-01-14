@@ -8,12 +8,13 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/thethingsnetwork/ttn/core"
-	httpadapter "github.com/thethingsnetwork/ttn/core/adapters/http"
-	"github.com/thethingsnetwork/ttn/utils/log"
 	"io"
 	"net/http"
 	"sync"
+
+	"github.com/TheThingsNetwork/ttn/core"
+	httpadapter "github.com/TheThingsNetwork/ttn/core/adapters/http"
+	"github.com/TheThingsNetwork/ttn/utils/log"
 )
 
 type Adapter struct {

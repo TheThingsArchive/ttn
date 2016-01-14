@@ -5,10 +5,11 @@ package core
 
 import (
 	"encoding/json"
-	"github.com/thethingsnetwork/ttn/utils/pointer"
-	. "github.com/thethingsnetwork/ttn/utils/testing"
 	"testing"
 	"time"
+
+	"github.com/TheThingsNetwork/ttn/utils/pointer"
+	. "github.com/TheThingsNetwork/ttn/utils/testing"
 )
 
 var commonTests = []struct {

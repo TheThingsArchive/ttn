@@ -5,10 +5,11 @@ package pubsub
 
 import (
 	"fmt"
-	"github.com/thethingsnetwork/ttn/core"
-	httpadapter "github.com/thethingsnetwork/ttn/core/adapters/http"
-	"github.com/thethingsnetwork/ttn/utils/log"
 	"net/http"
+
+	"github.com/TheThingsNetwork/ttn/core"
+	httpadapter "github.com/TheThingsNetwork/ttn/core/adapters/http"
+	"github.com/TheThingsNetwork/ttn/utils/log"
 )
 
 type Adapter struct {

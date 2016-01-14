@@ -5,11 +5,12 @@ package core
 
 import (
 	"encoding/base64"
-	"github.com/thethingsnetwork/ttn/lorawan"
-	"github.com/thethingsnetwork/ttn/semtech"
-	"github.com/thethingsnetwork/ttn/utils/pointer"
 	"strings"
 	"time"
+
+	"github.com/TheThingsNetwork/ttn/lorawan"
+	"github.com/TheThingsNetwork/ttn/semtech"
+	"github.com/TheThingsNetwork/ttn/utils/pointer"
 )
 
 // Generate an RXPK packet using the given payload as Data

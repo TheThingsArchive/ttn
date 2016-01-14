@@ -5,9 +5,10 @@ package pubsub
 
 import (
 	"fmt"
-	"github.com/thethingsnetwork/ttn/core"
 	"net/http"
 	"time"
+
+	"github.com/TheThingsNetwork/ttn/core"
 )
 
 var ErrConnectionLost = fmt.Errorf("Connection has been lost")
