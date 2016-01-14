@@ -53,22 +53,6 @@ func main() {
 		}
 	}()
 
-	// Listen downlink
-	go func() {
-		for {
-			packet, an, err := brkAdapter.Next()
-			if err != nil {
-				fmt.Println(err)
-				continue
-			}
-			go func(packet Packet, an AckNacker) {
-				if err := router.HandleDown(packet, an, gtwAdapter); err != nil {
-					fmt.Println(err)
-				}
-			}(packet, an)
-		}
-	}()
-
 	// Listen broker registrations
 	go func() {
 		for {
@@ -84,6 +68,8 @@ func main() {
 			}(reg, an)
 		}
 	}()
+
+	<-make(chan bool)
 }
 
 func parseOptions() (brokers []Recipient, udpPort uint64) {
@@ -92,7 +78,7 @@ func parseOptions() (brokers []Recipient, udpPort uint64) {
 	flag.StringVar(&brokersFlag, "brokers", "", `Broker addresses to which broadcast packets.
  	For instance: 10.10.3.34:8080,thethingsnetwork.broker.com:3000
  	`)
-	flag.StringVar(&udpPortFlag, "udpPort", "", "Udp port on which the router should listen to.")
+	flag.StringVar(&udpPortFlag, "udp-port", "", "Udp port on which the router should listen to.")
 	flag.Parse()
 
 	var err error
