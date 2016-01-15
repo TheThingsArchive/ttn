@@ -18,7 +18,7 @@ const (
 	green  = 32
 	yellow = 33
 	blue   = 34
-	gray   = 37
+	gray   = 90
 )
 
 // Colors mapping.
