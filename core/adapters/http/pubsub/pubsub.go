@@ -9,7 +9,7 @@ import (
 
 	"github.com/TheThingsNetwork/ttn/core"
 	httpadapter "github.com/TheThingsNetwork/ttn/core/adapters/http"
-	"github.com/TheThingsNetwork/ttn/utils/log"
+	"github.com/apex/log"
 )
 
 type Adapter struct {
@@ -33,8 +33,8 @@ type regRes struct {
 }
 
 // NewAdapter constructs a new http adapter that also handle registrations via http requests
-func NewAdapter(port uint, parser Parser, loggers ...log.Logger) (*Adapter, error) {
-	adapter, err := httpadapter.NewAdapter(loggers...)
+func NewAdapter(port uint, parser Parser, ctx log.Interface) (*Adapter, error) {
+	adapter, err := httpadapter.NewAdapter(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -68,9 +68,9 @@ func (a *Adapter) listenRegistration(port uint) {
 		Addr:    fmt.Sprintf("0.0.0.0:%d", port),
 		Handler: serveMux,
 	}
-	a.LogEntry(log.InfoLevel, "Starting server", log.Meta{"port": port})
+	a.Ctx.WithField("port", port).Info("Starting Server")
 	err := server.ListenAndServe()
-	a.LogEntry(log.WarnLevel, "HTTP connection lost", log.Meta{"error": err})
+	a.Ctx.WithError(err).Warn("HTTP connection lost")
 }
 
 // fail logs the given failure and sends an appropriate response to the client
@@ -81,7 +81,9 @@ func (a *Adapter) badRequest(w http.ResponseWriter, msg string) {
 
 // handle request [PUT] on /end-device/:devAddr
 func (a *Adapter) handlePutEndDevice(w http.ResponseWriter, req *http.Request) {
-	a.LogEntry(log.DebugLevel, "Receiving new registration request", log.Meta{"sender": req.RemoteAddr})
+	ctx := a.Ctx.WithField("sender", req.RemoteAddr)
+
+	ctx.Debug("Receiving new registration request")
 	// Check the http method
 	if req.Method != "PUT" {
 		w.WriteHeader(http.StatusMethodNotAllowed)
@@ -91,7 +93,7 @@ func (a *Adapter) handlePutEndDevice(w http.ResponseWriter, req *http.Request) {
 
 	// Check Content-type
 	if req.Header.Get("Content-Type") != "application/json" {
-		a.LogEntry(log.WarnLevel, "Received invalid content-type in request", log.Meta{"sender": req.RemoteAddr})
+		ctx.Warn("Received invalid content-type in request")
 		a.badRequest(w, "Incorrect content type")
 		return
 	}
@@ -99,7 +101,7 @@ func (a *Adapter) handlePutEndDevice(w http.ResponseWriter, req *http.Request) {
 	// Parse body and query params
 	config, err := a.Parse(req)
 	if err != nil {
-		a.LogEntry(log.WarnLevel, "Received invalid body in request", log.Meta{"sender": req.RemoteAddr, "error": err.Error()})
+		ctx.WithError(err).Warn("Received invalid body in request")
 		a.badRequest(w, err.Error())
 		return
 	}
@@ -109,7 +111,7 @@ func (a *Adapter) handlePutEndDevice(w http.ResponseWriter, req *http.Request) {
 	a.registrations <- regReq{Registration: config, response: response}
 	r, ok := <-response
 	if !ok {
-		a.LogEntry(log.ErrorLevel, "Core server not responding", log.Meta{})
+		ctx.Error("Core server not responding")
 		a.badRequest(w, "Core server not responding")
 		return
 	}

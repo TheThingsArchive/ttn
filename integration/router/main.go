@@ -6,31 +6,38 @@ package main
 import (
 	"flag"
 	"fmt"
+	"strconv"
+	"strings"
+
 	. "github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/adapters/http/broadcast"
 	"github.com/TheThingsNetwork/ttn/core/adapters/semtech"
 	"github.com/TheThingsNetwork/ttn/core/components"
-	"github.com/TheThingsNetwork/ttn/utils/log"
-	"strconv"
-	"strings"
+	"github.com/apex/log"
 )
 
 func main() {
 	// Parse options
 	brokers, udpPort := parseOptions()
 
+	// Create Logging Context
+
+	ctx := log.WithFields(log.Fields{
+		"component": "Router",
+	})
+
 	// Instantiate all components
-	gtwAdapter, err := semtech.NewAdapter(uint(udpPort), log.DebugLogger{Tag: "Gateway Adapter"})
+	gtwAdapter, err := semtech.NewAdapter(uint(udpPort), ctx.WithField("tag", "Gateway Adapter"))
 	if err != nil {
 		panic(err)
 	}
 
-	brkAdapter, err := broadcast.NewAdapter(brokers, log.DebugLogger{Tag: "Broker Adapter"})
+	brkAdapter, err := broadcast.NewAdapter(brokers, ctx.WithField("tag", "Broker Adapter"))
 	if err != nil {
 		panic(err)
 	}
 
-	router, err := components.NewRouter(log.DebugLogger{Tag: "Router"})
+	router, err := components.NewRouter(ctx.WithField("tag", "Router"))
 	if err != nil {
 		panic(err)
 	}

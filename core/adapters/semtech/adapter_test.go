@@ -19,21 +19,15 @@ func TestNewAdapter(t *testing.T) {
 
 func TestSend(t *testing.T) {
 	Desc(t, "Send is not supported")
-	adapter, err := NewAdapter(33000)
-	if err != nil {
-		panic(err)
-	}
-	_, err = adapter.Send(core.Packet{})
+	adapter, _ := genAdapter(t, 33000)
+	_, err := adapter.Send(core.Packet{})
 	checkErrors(t, ErrNotSupported, err)
 }
 
 func TestNextRegistration(t *testing.T) {
 	Desc(t, "Next registration is not supported")
-	adapter, err := NewAdapter(33001)
-	if err != nil {
-		panic(err)
-	}
-	_, _, err = adapter.NextRegistration()
+	adapter, _ := genAdapter(t, 33001)
+	_, _, err := adapter.NextRegistration()
 	checkErrors(t, ErrNotSupported, err)
 }
 

@@ -14,9 +14,9 @@ import (
 
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/lorawan"
-	"github.com/TheThingsNetwork/ttn/utils/log"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
+	"github.com/apex/log"
 )
 
 // Send(p core.Packet, r ...core.Recipient) error
@@ -39,7 +39,14 @@ func TestSend(t *testing.T) {
 	}
 
 	s := genMockServer(3100)
-	adapter, err := NewAdapter(log.TestLogger{Tag: "Adapter", T: t})
+
+	// Logging
+	log.SetHandler(NewLogHandler(t))
+	ctx := log.WithFields(log.Fields{
+		"tag": "Adapter",
+	})
+
+	adapter, err := NewAdapter(ctx)
 	if err != nil {
 		panic(err)
 	}

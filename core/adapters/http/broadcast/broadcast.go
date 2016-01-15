@@ -14,7 +14,7 @@ import (
 
 	"github.com/TheThingsNetwork/ttn/core"
 	httpadapter "github.com/TheThingsNetwork/ttn/core/adapters/http"
-	"github.com/TheThingsNetwork/ttn/utils/log"
+	"github.com/apex/log"
 )
 
 type Adapter struct {
@@ -27,12 +27,12 @@ var ErrBadOptions = fmt.Errorf("Bad options provided")
 var ErrInvalidPacket = fmt.Errorf("The given packet is invalid")
 var ErrSeveralPositiveAnswers = fmt.Errorf("Several positive response for a given packet")
 
-func NewAdapter(recipients []core.Recipient, loggers ...log.Logger) (*Adapter, error) {
+func NewAdapter(recipients []core.Recipient, ctx log.Interface) (*Adapter, error) {
 	if len(recipients) == 0 {
 		return nil, ErrBadOptions
 	}
 
-	adapter, err := httpadapter.NewAdapter(loggers...)
+	adapter, err := httpadapter.NewAdapter(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +85,10 @@ func (a *Adapter) broadcast(p core.Packet) (core.Packet, error) {
 		go func(recipient core.Recipient) {
 			defer wg.Done()
 
-			a.LogEntry(log.DebugLevel, "POST Request", log.Meta{"recipient": recipient})
+			ctx := a.Ctx.WithField("recipient", recipient)
+
+			ctx.Debug("POST Request")
+
 			buf := new(bytes.Buffer)
 			buf.Write([]byte(payload))
 			resp, err := http.Post(fmt.Sprintf("http://%s", recipient.Address.(string)), "application/json", buf)
@@ -97,7 +100,7 @@ func (a *Adapter) broadcast(p core.Packet) (core.Packet, error) {
 
 			switch resp.StatusCode {
 			case http.StatusOK:
-				a.LogEntry(log.DebugLevel, "Recipient registered for packet", log.Meta{"recipient": recipient, "devAddr": devAddr})
+				ctx.WithField("devAddr", devAddr).Debug("Recipient registered for packet")
 
 				raw := make([]byte, resp.ContentLength)
 				n, err := resp.Body.Read(raw)
@@ -114,7 +117,7 @@ func (a *Adapter) broadcast(p core.Packet) (core.Packet, error) {
 				register <- recipient
 				chresp <- packet
 			case http.StatusNotFound:
-				a.LogEntry(log.DebugLevel, "Recipient not interested in packet", log.Meta{"recipient": recipient, "devAddr": devAddr})
+				ctx.WithField("devAddr", devAddr).Debug("Recipient not interested in packet")
 			default:
 				// Non-blocking, buffered
 				cherr <- fmt.Errorf("Unexpected response from server: %s (%d)", resp.Status, resp.StatusCode)

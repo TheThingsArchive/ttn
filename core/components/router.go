@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/core"
-	"github.com/TheThingsNetwork/ttn/utils/log"
+	"github.com/apex/log"
 )
 
 const (
@@ -16,12 +16,12 @@ const (
 )
 
 type Router struct {
-	log.Logger
-	db routerStorage // Local storage that maps end-device addresses to broker addresses
+	Ctx log.Interface
+	db  routerStorage // Local storage that maps end-device addresses to broker addresses
 }
 
 // NewRouter constructs a Router and setup its internal structure
-func NewRouter(loggers ...log.Logger) (*Router, error) {
+func NewRouter(ctx log.Interface) (*Router, error) {
 	localDB, err := NewRouterStorage(EXPIRY_DELAY)
 
 	if err != nil {
@@ -29,8 +29,8 @@ func NewRouter(loggers ...log.Logger) (*Router, error) {
 	}
 
 	return &Router{
-		Logger: log.MultiLogger{Loggers: loggers},
-		db:     localDB,
+		Ctx: ctx,
+		db:  localDB,
 	}, nil
 }
 

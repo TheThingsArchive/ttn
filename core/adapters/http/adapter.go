@@ -13,20 +13,20 @@ import (
 	"sync"
 
 	"github.com/TheThingsNetwork/ttn/core"
-	"github.com/TheThingsNetwork/ttn/utils/log"
+	"github.com/apex/log"
 )
 
 var ErrInvalidPort = fmt.Errorf("The given port is invalid")
 var ErrInvalidPacket = fmt.Errorf("The given packet is invalid")
 
 type Adapter struct {
-	log.Logger
+	Ctx log.Interface
 }
 
 // NewAdapter constructs and allocate a new Broker <-> Handler http adapter
-func NewAdapter(loggers ...log.Logger) (*Adapter, error) {
+func NewAdapter(ctx log.Interface) (*Adapter, error) {
 	return &Adapter{
-		Logger: log.MultiLogger{Loggers: loggers},
+		Ctx: ctx,
 	}, nil
 }
 
@@ -54,7 +54,7 @@ func (a *Adapter) Send(p core.Packet, r ...core.Recipient) (core.Packet, error) 
 	for _, recipient := range r {
 		go func(recipient core.Recipient) {
 			defer wg.Done()
-			a.LogEntry(log.DebugLevel, "POST Request", log.Meta{"recipient": recipient})
+			a.Ctx.WithField("recipient", recipient).Debug("POST Request")
 			buf := new(bytes.Buffer)
 			buf.Write([]byte(payload))
 			resp, err := http.Post(fmt.Sprintf("http://%s", recipient.Address.(string)), "application/json", buf)

@@ -8,15 +8,15 @@ import (
 
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/lorawan"
-	"github.com/TheThingsNetwork/ttn/utils/log"
+	"github.com/apex/log"
 )
 
 type Broker struct {
-	log.Logger
-	db brokerStorage
+	Ctx log.Interface
+	db  brokerStorage
 }
 
-func NewBroker(loggers ...log.Logger) (*Broker, error) {
+func NewBroker(ctx log.Interface) (*Broker, error) {
 	localDB, err := NewBrokerStorage()
 
 	if err != nil {
@@ -24,8 +24,8 @@ func NewBroker(loggers ...log.Logger) (*Broker, error) {
 	}
 
 	return &Broker{
-		Logger: log.MultiLogger{Loggers: loggers},
-		db:     localDB,
+		Ctx: ctx,
+		db:  localDB,
 	}, nil
 }
 
@@ -59,12 +59,12 @@ func (b *Broker) HandleUp(p core.Packet, an core.AckNacker, adapter core.Adapter
 				Id:      entry.Id,
 				Address: entry.Url,
 			}
-			b.LogEntry(log.DebugLevel, "Associated device with handler", log.Meta{"devAddr": devAddr, "handler": handler})
+			b.Ctx.WithFields(log.Fields{"devAddr": devAddr, "handler": handler}).Debug("Associated device with handler")
 			break
 		}
 	}
 	if handler == nil {
-		b.LogEntry(log.WarnLevel, "Could not find handler for device", log.Meta{"devAddr": devAddr})
+		b.Ctx.WithField("devAddr", devAddr).Warn("Could not find handler for device")
 		return an.Nack()
 	}
 
