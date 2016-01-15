@@ -57,52 +57,68 @@ func (a *Adapter) Send(p core.Packet, r ...core.Recipient) (core.Packet, error) 
 			a.Ctx.WithField("recipient", recipient).Debug("POST Request")
 			buf := new(bytes.Buffer)
 			buf.Write([]byte(payload))
+
+			// Send request
 			resp, err := http.Post(fmt.Sprintf("http://%s", recipient.Address.(string)), "application/json", buf)
 			if err != nil {
 				cherr <- err
 				return
 			}
-			defer resp.Body.Close()
+
+			// Check response code
 			if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted && resp.StatusCode != http.StatusCreated {
 				cherr <- fmt.Errorf("Unexpected response from server: %s (%d)", resp.Status, resp.StatusCode)
 				return
 			}
 
+			// Process response body
 			raw := make([]byte, resp.ContentLength)
 			n, err := resp.Body.Read(raw)
+			defer resp.Body.Close()
 			if err != nil && err != io.EOF {
 				cherr <- err
 				return
 			}
+
+			// Process packet
 			var packet core.Packet
 			if err := json.Unmarshal(raw[:n], &packet); err != nil {
 				cherr <- err
 				return
 			}
+
 			chresp <- packet
 		}(recipient)
 	}
 
 	// Wait for each request to be done, and return
 	wg.Wait()
+
+	// Collect errors
 	var errors []error
 	for i := 0; i < len(cherr); i += 1 {
 		errors = append(errors, <-cherr)
 	}
-	if errors != nil {
-		return core.Packet{}, fmt.Errorf("Errors: %v", errors)
-	}
 
+	// Check responses
 	if len(chresp) > 1 {
 		return core.Packet{}, fmt.Errorf("Several positive answer from servers")
 	}
+
+	// Get packet
 	select {
 	case packet := <-chresp:
 		return packet, nil
 	default:
-		return core.Packet{}, fmt.Errorf("Unexpected error. No response packet available")
+		return core.Packet{}, fmt.Errorf("No response packet available")
 	}
 
+	// Return Errors
+	if errors != nil {
+		return core.Packet{}, fmt.Errorf("Errors: %v", errors)
+	}
+
+	return core.Packet{}, fmt.Errorf("Unexpected error")
 }
 
 // Next implements the core.Adapter interface
