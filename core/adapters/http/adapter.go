@@ -110,15 +110,11 @@ func (a *Adapter) Send(p core.Packet, r ...core.Recipient) (core.Packet, error) 
 	case packet := <-chresp:
 		return packet, nil
 	default:
+		if errors != nil {
+			return core.Packet{}, fmt.Errorf("Errors: %v", errors)
+		}
 		return core.Packet{}, fmt.Errorf("No response packet available")
 	}
-
-	// Return Errors
-	if errors != nil {
-		return core.Packet{}, fmt.Errorf("Errors: %v", errors)
-	}
-
-	return core.Packet{}, fmt.Errorf("Unexpected error")
 }
 
 // Next implements the core.Adapter interface
