@@ -77,7 +77,7 @@ func TestSend(t *testing.T) {
 	})
 
 	// Build
-	adapter, err := NewAdapter(recipients, ctx)
+	adapter, err := NewAdapter(3015, recipients, ctx)
 	if err != nil {
 		panic(err)
 	}

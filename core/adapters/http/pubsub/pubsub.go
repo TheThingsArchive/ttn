@@ -4,7 +4,6 @@
 package pubsub
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/TheThingsNetwork/ttn/core"
@@ -34,7 +33,7 @@ type regRes struct {
 
 // NewAdapter constructs a new http adapter that also handle registrations via http requests
 func NewAdapter(port uint, parser Parser, ctx log.Interface) (*Adapter, error) {
-	adapter, err := httpadapter.NewAdapter(ctx)
+	adapter, err := httpadapter.NewAdapter(port, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +44,8 @@ func NewAdapter(port uint, parser Parser, ctx log.Interface) (*Adapter, error) {
 		registrations: make(chan regReq),
 	}
 
-	go a.listenRegistration(port)
+	// So far we only supports one endpoint [PUT] /end-device/:devAddr
+	a.RegisterEndpoint("/end-devices/", a.handlePutEndDevice)
 
 	return a, nil
 }
@@ -54,23 +54,6 @@ func NewAdapter(port uint, parser Parser, ctx log.Interface) (*Adapter, error) {
 func (a *Adapter) NextRegistration() (core.Registration, core.AckNacker, error) {
 	request := <-a.registrations
 	return request.Registration, regAckNacker{response: request.response}, nil
-}
-
-// listenRegistration handles incoming registration request sent through http to the adapter
-func (a *Adapter) listenRegistration(port uint) {
-	// Create a server multiplexer to handle request
-	serveMux := http.NewServeMux()
-
-	// So far we only supports one endpoint [PUT] /end-device/:devAddr
-	serveMux.HandleFunc("/end-devices/", a.handlePutEndDevice)
-
-	server := http.Server{
-		Addr:    fmt.Sprintf("0.0.0.0:%d", port),
-		Handler: serveMux,
-	}
-	a.Ctx.WithField("port", port).Info("Starting Server")
-	err := server.ListenAndServe()
-	a.Ctx.WithError(err).Warn("HTTP connection lost")
 }
 
 // fail logs the given failure and sends an appropriate response to the client

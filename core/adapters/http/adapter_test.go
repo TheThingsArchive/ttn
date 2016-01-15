@@ -46,7 +46,7 @@ func TestSend(t *testing.T) {
 		"tag": "Adapter",
 	})
 
-	adapter, err := NewAdapter(ctx)
+	adapter, err := NewAdapter(3101, ctx)
 	if err != nil {
 		panic(err)
 	}
