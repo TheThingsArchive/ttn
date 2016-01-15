@@ -8,7 +8,6 @@ import (
 
 	"github.com/TheThingsNetwork/ttn/core"
 	httpadapter "github.com/TheThingsNetwork/ttn/core/adapters/http"
-	"github.com/apex/log"
 )
 
 type Adapter struct {
@@ -32,12 +31,7 @@ type regRes struct {
 }
 
 // NewAdapter constructs a new http adapter that also handle registrations via http requests
-func NewAdapter(port uint, parser Parser, ctx log.Interface) (*Adapter, error) {
-	adapter, err := httpadapter.NewAdapter(port, ctx)
-	if err != nil {
-		return nil, err
-	}
-
+func NewAdapter(adapter *httpadapter.Adapter, parser Parser) (*Adapter, error) {
 	a := &Adapter{
 		Adapter:       adapter,
 		Parser:        parser,
@@ -56,17 +50,11 @@ func (a *Adapter) NextRegistration() (core.Registration, core.AckNacker, error) 
 	return request.Registration, regAckNacker{response: request.response}, nil
 }
 
-// fail logs the given failure and sends an appropriate response to the client
-func (a *Adapter) badRequest(w http.ResponseWriter, msg string) {
-	w.WriteHeader(http.StatusBadRequest)
-	w.Write([]byte(msg))
-}
-
 // handle request [PUT] on /end-device/:devAddr
 func (a *Adapter) handlePutEndDevice(w http.ResponseWriter, req *http.Request) {
 	ctx := a.Ctx.WithField("sender", req.RemoteAddr)
-
 	ctx.Debug("Receiving new registration request")
+
 	// Check the http method
 	if req.Method != "PUT" {
 		w.WriteHeader(http.StatusMethodNotAllowed)
@@ -74,18 +62,11 @@ func (a *Adapter) handlePutEndDevice(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	// Check Content-type
-	if req.Header.Get("Content-Type") != "application/json" {
-		ctx.Warn("Received invalid content-type in request")
-		a.badRequest(w, "Incorrect content type")
-		return
-	}
-
 	// Parse body and query params
 	config, err := a.Parse(req)
 	if err != nil {
-		ctx.WithError(err).Warn("Received invalid body in request")
-		a.badRequest(w, err.Error())
+		ctx.WithError(err).Warn("Received invalid request")
+		httpadapter.BadRequest(w, err.Error())
 		return
 	}
 
@@ -95,7 +76,7 @@ func (a *Adapter) handlePutEndDevice(w http.ResponseWriter, req *http.Request) {
 	r, ok := <-response
 	if !ok {
 		ctx.Error("Core server not responding")
-		a.badRequest(w, "Core server not responding")
+		httpadapter.BadRequest(w, "Core server not responding")
 		return
 	}
 	w.WriteHeader(r.statusCode)

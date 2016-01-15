@@ -20,14 +20,32 @@ var ErrInvalidPort = fmt.Errorf("The given port is invalid")
 var ErrInvalidPacket = fmt.Errorf("The given packet is invalid")
 
 type Adapter struct {
+	Parser
 	serveMux *http.ServeMux
+	packets  chan pktReq
 	Ctx      log.Interface
 }
 
+type Parser interface {
+	Parse(req *http.Request) (core.Packet, error)
+}
+
+type pktReq struct {
+	core.Packet
+	response chan pktRes
+}
+
+type pktRes struct {
+	statusCode int
+	content    []byte
+}
+
 // NewAdapter constructs and allocate a new Broker <-> Handler http adapter
-func NewAdapter(port uint, ctx log.Interface) (*Adapter, error) {
+func NewAdapter(port uint, parser Parser, ctx log.Interface) (*Adapter, error) {
 	a := Adapter{
+		Parser:   parser,
 		serveMux: http.NewServeMux(),
+		packets:  make(chan pktReq),
 		Ctx:      ctx,
 	}
 
@@ -110,17 +128,6 @@ func (a *Adapter) Send(p core.Packet, r ...core.Recipient) (core.Packet, error) 
 
 }
 
-// listenRequests handles incoming registration request sent through http to the adapter
-func (a *Adapter) listenRequests(port uint) {
-	server := http.Server{
-		Addr:    fmt.Sprintf("0.0.0.0:%d", port),
-		Handler: a.serveMux,
-	}
-	a.Ctx.WithField("port", port).Info("Starting Server")
-	err := server.ListenAndServe()
-	a.Ctx.WithError(err).Warn("HTTP connection lost")
-}
-
 // RegisterEndpoint can be used by an external agent to register a handler to the adapter servemux
 func (a *Adapter) RegisterEndpoint(url string, handler func(w http.ResponseWriter, req *http.Request)) {
 	a.Ctx.WithField("url", url).Info("Register new endpoint")
@@ -136,4 +143,15 @@ func (a *Adapter) Next() (core.Packet, core.AckNacker, error) {
 // NextRegistration implements the core.Adapter interface
 func (a *Adapter) NextRegistration() (core.Packet, core.AckNacker, error) {
 	return core.Packet{}, nil, nil
+}
+
+// listenRequests handles incoming registration request sent through http to the adapter
+func (a *Adapter) listenRequests(port uint) {
+	server := http.Server{
+		Addr:    fmt.Sprintf("0.0.0.0:%d", port),
+		Handler: a.serveMux,
+	}
+	a.Ctx.WithField("port", port).Info("Starting Server")
+	err := server.ListenAndServe()
+	a.Ctx.WithError(err).Warn("HTTP connection lost")
 }

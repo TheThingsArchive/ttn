@@ -14,7 +14,6 @@ import (
 
 	"github.com/TheThingsNetwork/ttn/core"
 	httpadapter "github.com/TheThingsNetwork/ttn/core/adapters/http"
-	"github.com/apex/log"
 )
 
 type Adapter struct {
@@ -27,14 +26,9 @@ var ErrBadOptions = fmt.Errorf("Bad options provided")
 var ErrInvalidPacket = fmt.Errorf("The given packet is invalid")
 var ErrSeveralPositiveAnswers = fmt.Errorf("Several positive response for a given packet")
 
-func NewAdapter(port uint, recipients []core.Recipient, ctx log.Interface) (*Adapter, error) {
+func NewAdapter(adapter *httpadapter.Adapter, recipients []core.Recipient) (*Adapter, error) {
 	if len(recipients) == 0 {
 		return nil, ErrBadOptions
-	}
-
-	adapter, err := httpadapter.NewAdapter(port, ctx)
-	if err != nil {
-		return nil, err
 	}
 
 	return &Adapter{
