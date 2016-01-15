@@ -18,16 +18,42 @@ import (
 
 var ErrInvalidPort = fmt.Errorf("The given port is invalid")
 var ErrInvalidPacket = fmt.Errorf("The given packet is invalid")
+var ErrNotImplemented = fmt.Errorf("Illegal call on non-implemented method")
 
 type Adapter struct {
-	ctx log.Interface
+	Parser
+	serveMux *http.ServeMux
+	packets  chan pktReq
+	ctx      log.Interface
+}
+
+type Parser interface {
+	Parse(req *http.Request) (core.Packet, error)
+}
+
+type pktReq struct {
+	core.Packet
+	response chan pktRes
+}
+
+type pktRes struct {
+	statusCode int
+	content    []byte
 }
 
 // NewAdapter constructs and allocate a new Broker <-> Handler http adapter
-func NewAdapter(ctx log.Interface) (*Adapter, error) {
-	return &Adapter{
-		ctx: ctx,
-	}, nil
+func NewAdapter(port uint, parser Parser, ctx log.Interface) (*Adapter, error) {
+	a := Adapter{
+		Parser:   parser,
+		serveMux: http.NewServeMux(),
+		packets:  make(chan pktReq),
+		ctx:      ctx,
+	}
+
+	a.RegisterEndpoint("/packets", a.handlePostPacket)
+	go a.listenRequests(port)
+
+	return &a, nil
 }
 
 // Send implements the core.Adapter interface
@@ -131,13 +157,30 @@ func (a *Adapter) Send(p core.Packet, r ...core.Recipient) (core.Packet, error) 
 	}
 }
 
+// RegisterEndpoint can be used by an external agent to register a handler to the adapter servemux
+func (a *Adapter) RegisterEndpoint(url string, handler func(w http.ResponseWriter, req *http.Request)) {
+	a.ctx.WithField("url", url).Info("Register new endpoint")
+	a.serveMux.HandleFunc(url, handler)
+}
+
 // Next implements the core.Adapter interface
 func (a *Adapter) Next() (core.Packet, core.AckNacker, error) {
-	// NOTE not implemented
-	return core.Packet{}, nil, nil
+	pktReq := <-a.packets
+	return pktReq.Packet, packetAckNacker{response: pktReq.response}, nil
 }
 
 // NextRegistration implements the core.Adapter interface
 func (a *Adapter) NextRegistration() (core.Packet, core.AckNacker, error) {
-	return core.Packet{}, nil, nil
+	return core.Packet{}, nil, ErrNotImplemented
+}
+
+// listenRequests handles incoming registration request sent through http to the adapter
+func (a *Adapter) listenRequests(port uint) {
+	server := http.Server{
+		Addr:    fmt.Sprintf("0.0.0.0:%d", port),
+		Handler: a.serveMux,
+	}
+	a.ctx.WithField("port", port).Info("Starting Server")
+	err := server.ListenAndServe()
+	a.ctx.WithError(err).Warn("HTTP connection lost")
 }

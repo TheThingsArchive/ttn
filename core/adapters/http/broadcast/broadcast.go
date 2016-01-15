@@ -18,9 +18,8 @@ import (
 )
 
 type Adapter struct {
-	ctx log.Interface
-
 	*httpadapter.Adapter
+	ctx           log.Interface
 	recipients    []core.Recipient
 	registrations chan core.Registration
 }
@@ -29,20 +28,14 @@ var ErrBadOptions = fmt.Errorf("Bad options provided")
 var ErrInvalidPacket = fmt.Errorf("The given packet is invalid")
 var ErrSeveralPositiveAnswers = fmt.Errorf("Several positive response for a given packet")
 
-func NewAdapter(recipients []core.Recipient, ctx log.Interface) (*Adapter, error) {
+func NewAdapter(adapter *httpadapter.Adapter, recipients []core.Recipient, ctx log.Interface) (*Adapter, error) {
 	if len(recipients) == 0 {
 		return nil, ErrBadOptions
 	}
 
-	adapter, err := httpadapter.NewAdapter(ctx)
-	if err != nil {
-		return nil, err
-	}
-
 	return &Adapter{
-		ctx: ctx,
-
 		Adapter:       adapter,
+		ctx:           ctx,
 		recipients:    recipients,
 		registrations: make(chan core.Registration, len(recipients)),
 	}, nil

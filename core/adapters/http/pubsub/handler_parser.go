@@ -19,6 +19,11 @@ import (
 type HandlerParser struct{}
 
 func (p HandlerParser) Parse(req *http.Request) (core.Registration, error) {
+	// Check Content-type
+	if req.Header.Get("Content-Type") != "application/json" {
+		return core.Registration{}, fmt.Errorf("Received invalid content-type in request")
+	}
+
 	// Check the query parameter
 	reg := regexp.MustCompile("end-devices/([a-fA-F0-9]{8})$")
 	query := reg.FindStringSubmatch(req.RequestURI)

@@ -6,22 +6,25 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 
 	. "github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/core/adapters/http"
 	"github.com/TheThingsNetwork/ttn/core/adapters/http/broadcast"
 	"github.com/TheThingsNetwork/ttn/core/adapters/semtech"
 	"github.com/TheThingsNetwork/ttn/core/components"
 	"github.com/apex/log"
+	"github.com/apex/log/handlers/text"
 )
 
 func main() {
 	// Parse options
-	brokers, udpPort := parseOptions()
+	brokers, tcpPort, udpPort := parseOptions()
 
 	// Create Logging Context
-
+	log.SetHandler(text.New(os.Stdout))
 	ctx := log.WithFields(log.Fields{
 		"component": "Router",
 	})
@@ -32,7 +35,12 @@ func main() {
 		panic(err)
 	}
 
-	brkAdapter, err := broadcast.NewAdapter(brokers, ctx.WithField("tag", "Broker Adapter"))
+	pktAdapter, err := http.NewAdapter(uint(tcpPort), http.JSONPacketParser{}, ctx.WithField("tag", "Broker Adapter"))
+	if err != nil {
+		panic(err)
+	}
+
+	brkAdapter, err := broadcast.NewAdapter(pktAdapter, brokers, ctx.WithField("tag", "Broker Adapter"))
 	if err != nil {
 		panic(err)
 	}
@@ -79,16 +87,22 @@ func main() {
 	<-make(chan bool)
 }
 
-func parseOptions() (brokers []Recipient, udpPort uint64) {
+func parseOptions() (brokers []Recipient, tcpPort uint64, udpPort uint64) {
 	var brokersFlag string
 	var udpPortFlag string
+	var tcpPortFlag string
 	flag.StringVar(&brokersFlag, "brokers", "", `Broker addresses to which broadcast packets.
  	For instance: 10.10.3.34:8080,thethingsnetwork.broker.com:3000
  	`)
-	flag.StringVar(&udpPortFlag, "udp-port", "", "Udp port on which the router should listen to.")
+	flag.StringVar(&udpPortFlag, "udp-port", "", "UDP port on which the router should listen to.")
+	flag.StringVar(&tcpPortFlag, "tcp-port", "", "TCP port on which the router should listen to.")
 	flag.Parse()
 
 	var err error
+	tcpPort, err = strconv.ParseUint(tcpPortFlag, 10, 64)
+	if err != nil {
+		panic(err)
+	}
 	udpPort, err = strconv.ParseUint(udpPortFlag, 10, 64)
 	if err != nil {
 		panic(err)

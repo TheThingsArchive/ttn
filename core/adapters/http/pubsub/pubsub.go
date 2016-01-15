@@ -4,7 +4,6 @@
 package pubsub
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/TheThingsNetwork/ttn/core"
@@ -13,10 +12,9 @@ import (
 )
 
 type Adapter struct {
-	ctx log.Interface
-
 	*httpadapter.Adapter
 	Parser
+	ctx           log.Interface
 	registrations chan regReq
 }
 
@@ -35,21 +33,16 @@ type regRes struct {
 }
 
 // NewAdapter constructs a new http adapter that also handle registrations via http requests
-func NewAdapter(port uint, parser Parser, ctx log.Interface) (*Adapter, error) {
-	adapter, err := httpadapter.NewAdapter(ctx)
-	if err != nil {
-		return nil, err
-	}
-
+func NewAdapter(adapter *httpadapter.Adapter, parser Parser, ctx log.Interface) (*Adapter, error) {
 	a := &Adapter{
-		ctx: ctx,
-
 		Adapter:       adapter,
 		Parser:        parser,
+		ctx:           ctx,
 		registrations: make(chan regReq),
 	}
 
-	go a.listenRegistration(port)
+	// So far we only supports one endpoint [PUT] /end-device/:devAddr
+	a.RegisterEndpoint("/end-devices/", a.handlePutEndDevice)
 
 	return a, nil
 }
@@ -60,34 +53,11 @@ func (a *Adapter) NextRegistration() (core.Registration, core.AckNacker, error) 
 	return request.Registration, regAckNacker{response: request.response}, nil
 }
 
-// listenRegistration handles incoming registration request sent through http to the adapter
-func (a *Adapter) listenRegistration(port uint) {
-	// Create a server multiplexer to handle request
-	serveMux := http.NewServeMux()
-
-	// So far we only supports one endpoint [PUT] /end-device/:devAddr
-	serveMux.HandleFunc("/end-devices/", a.handlePutEndDevice)
-
-	server := http.Server{
-		Addr:    fmt.Sprintf("0.0.0.0:%d", port),
-		Handler: serveMux,
-	}
-	a.ctx.WithField("port", port).Info("Starting Server")
-	err := server.ListenAndServe()
-	a.ctx.WithError(err).Warn("HTTP connection lost")
-}
-
-// fail logs the given failure and sends an appropriate response to the client
-func (a *Adapter) badRequest(w http.ResponseWriter, msg string) {
-	w.WriteHeader(http.StatusBadRequest)
-	w.Write([]byte(msg))
-}
-
 // handle request [PUT] on /end-device/:devAddr
 func (a *Adapter) handlePutEndDevice(w http.ResponseWriter, req *http.Request) {
 	ctx := a.ctx.WithField("sender", req.RemoteAddr)
-
 	ctx.Debug("Receiving new registration request")
+
 	// Check the http method
 	if req.Method != "PUT" {
 		w.WriteHeader(http.StatusMethodNotAllowed)
@@ -95,18 +65,11 @@ func (a *Adapter) handlePutEndDevice(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	// Check Content-type
-	if req.Header.Get("Content-Type") != "application/json" {
-		ctx.Warn("Received invalid content-type in request")
-		a.badRequest(w, "Incorrect content type")
-		return
-	}
-
 	// Parse body and query params
 	config, err := a.Parse(req)
 	if err != nil {
-		ctx.WithError(err).Warn("Received invalid body in request")
-		a.badRequest(w, err.Error())
+		ctx.WithError(err).Warn("Received invalid request")
+		httpadapter.BadRequest(w, err.Error())
 		return
 	}
 
@@ -116,7 +79,7 @@ func (a *Adapter) handlePutEndDevice(w http.ResponseWriter, req *http.Request) {
 	r, ok := <-response
 	if !ok {
 		ctx.Error("Core server not responding")
-		a.badRequest(w, "Core server not responding")
+		httpadapter.BadRequest(w, "Core server not responding")
 		return
 	}
 	w.WriteHeader(r.statusCode)

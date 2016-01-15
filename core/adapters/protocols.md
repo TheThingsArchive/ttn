@@ -104,3 +104,11 @@ All those requests have empty payloads.
 basic+broadcast ~ http
 ======================
 
+The `broadcast` http adapter is an extension of the `basic` http adapter. This adapter enables
+network discovery through a simple convention. When no recipient is provided to the adapter for
+a send request, it will seemly broadcast the request to every accessible recipient reachable. 
+
+Thus, because it relies on the basic http protocol, it will ignore `404 Not Found` responses
+from servers but, will generate a new registration demand for a `200 Ok` received. So far, a
+maximum of only one positive anwer among all is expected. Positive acknowledgement for
+different servers will lead to an error. 

@@ -4,7 +4,7 @@
 package http
 
 import (
-	"encoding/base64"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -16,6 +16,8 @@ import (
 	"github.com/TheThingsNetwork/ttn/lorawan"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
+	"github.com/apex/log"
+	"reflect"
 )
 
 // Send(p core.Packet, r ...core.Recipient) error
@@ -42,7 +44,7 @@ func TestSend(t *testing.T) {
 	// Logging
 	ctx := GetLogger(t, "Adapter")
 
-	adapter, err := NewAdapter(ctx)
+	adapter, err := NewAdapter(3101, JSONPacketParser{}, ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -53,6 +55,92 @@ func TestSend(t *testing.T) {
 		_, err := adapter.Send(test.Packet, s.Recipient)
 		checkErrors(t, test.WantError, err)
 		checkSend(t, test.WantPayload, s)
+	}
+}
+
+// Next() (core.Packet, an core.AckNacker, error)
+func TestNext(t *testing.T) {
+	tests := []struct {
+		Payload    string
+		IsNotFound bool
+		WantPacket core.Packet
+		WantStatus int
+		WantError  error
+	}{
+		{
+			Payload:    genJSONPayload(genCorePacket()),
+			IsNotFound: false,
+			WantPacket: genCorePacket(),
+			WantStatus: http.StatusOK,
+			WantError:  nil,
+		},
+		{
+			Payload:    genJSONPayload(genCorePacket()),
+			IsNotFound: true,
+			WantPacket: genCorePacket(),
+			WantStatus: http.StatusNotFound,
+			WantError:  nil,
+		},
+		{
+			Payload:    "Patate",
+			IsNotFound: false,
+			WantPacket: core.Packet{},
+			WantStatus: http.StatusBadRequest,
+			WantError:  nil,
+		},
+	}
+	// Build
+	log.SetHandler(NewLogHandler(t))
+	ctx := log.WithFields(log.Fields{"tag": "Adapter"})
+	adapter, err := NewAdapter(3102, JSONPacketParser{}, ctx)
+	if err != nil {
+		panic(err)
+	}
+
+	c := client{adapter: "0.0.0.0:3102"}
+
+	for _, test := range tests {
+		// Describe
+		Desc(t, "Send payload to the adapter %s. Will send ack ? %v", test.Payload, !test.IsNotFound)
+		<-time.After(time.Millisecond * 100)
+
+		// Operate
+		gotPacket := make(chan core.Packet)
+		gotError := make(chan error)
+		go func() {
+			packet, an, err := adapter.Next()
+			if err == nil {
+				if test.IsNotFound {
+					an.Nack()
+				} else {
+					an.Ack()
+				}
+			}
+			gotError <- err
+			gotPacket <- packet
+		}()
+
+		resp := c.send(test.Payload)
+
+		// Check
+		select {
+		case err := <-gotError:
+			checkErrors(t, test.WantError, err)
+		case <-time.After(time.Millisecond * 250):
+			checkErrors(t, test.WantError, nil)
+		}
+
+		checkStatus(t, test.WantStatus, resp.StatusCode)
+
+		// NOTE: See https://github.com/brocaar/lorawan/issues/3
+		continue
+		select {
+		case packet := <-gotPacket:
+			checkPackets(t, test.WantPacket, packet)
+		case <-time.After(time.Millisecond * 250):
+			checkPackets(t, test.WantPacket, core.Packet{})
+		}
+
 	}
 }
 
@@ -79,6 +167,22 @@ func checkSend(t *testing.T, want string, s MockServer) {
 		}
 	}
 	Ok(t, "Check send result")
+}
+
+func checkPackets(t *testing.T, want core.Packet, got core.Packet) {
+	if reflect.DeepEqual(want, got) {
+		Ok(t, "Check packets")
+		return
+	}
+	Ko(t, "Received packet does not match expectations.\nWant: %s\nGot:  %s", want, got)
+}
+
+func checkStatus(t *testing.T, want int, got int) {
+	if want == got {
+		Ok(t, "Check status")
+		return
+	}
+	Ko(t, "Expected status to be %d but got %d", want, got)
 }
 
 // Build utilities
@@ -165,14 +269,33 @@ func genCorePacket() core.Packet {
 }
 
 func genJSONPayload(p core.Packet) string {
-	raw, err := p.Payload.MarshalBinary()
+	raw, err := json.Marshal(p)
 	if err != nil {
 		panic(err)
 	}
-	payload := base64.StdEncoding.EncodeToString(raw)
-	metadatas, err := json.Marshal(p.Metadata)
+	return string(raw)
+}
+
+type client struct {
+	http.Client
+	adapter string
+}
+
+// Operate utilities
+// send is a convinient helper to send HTTP from a handler to the adapter
+func (c *client) send(payload string) http.Response {
+	buf := new(bytes.Buffer)
+	if _, err := buf.WriteString(payload); err != nil {
+		panic(err)
+	}
+	request, err := http.NewRequest("POST", fmt.Sprintf("http://%s/packets", c.adapter), buf)
 	if err != nil {
 		panic(err)
 	}
-	return fmt.Sprintf(`{"payload":"%s","metadata":%s}`, payload, string(metadatas))
+	request.Header.Set("Content-Type", "application/json")
+	resp, err := c.Do(request)
+	if err != nil {
+		panic(err)
+	}
+	return *resp
 }
