@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/core"
+	httpadapter "github.com/TheThingsNetwork/ttn/core/adapters/http"
 	"github.com/TheThingsNetwork/ttn/lorawan"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
@@ -77,7 +78,11 @@ func TestSend(t *testing.T) {
 	})
 
 	// Build
-	adapter, err := NewAdapter(3015, recipients, ctx)
+	a, err := httpadapter.NewAdapter(3015, httpadapter.JSONPacketParser{}, ctx)
+	if err != nil {
+		panic(err)
+	}
+	adapter, err := NewAdapter(a, recipients, ctx)
 	if err != nil {
 		panic(err)
 	}

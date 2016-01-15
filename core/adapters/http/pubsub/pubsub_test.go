@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/core"
+	httpadapter "github.com/TheThingsNetwork/ttn/core/adapters/http"
 	"github.com/TheThingsNetwork/ttn/lorawan"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"github.com/apex/log"
@@ -65,8 +66,12 @@ func TestNextRegistration(t *testing.T) {
 	ctx := log.WithFields(log.Fields{
 		"tag": "Adapter",
 	})
+	a, err := httpadapter.NewAdapter(3021, httpadapter.JSONPacketParser{}, ctx)
+	if err != nil {
+		panic(err)
+	}
 
-	adapter, err := NewAdapter(3021, HandlerParser{}, ctx)
+	adapter, err := NewAdapter(a, HandlerParser{}, ctx)
 	client := &client{adapter: "0.0.0.0:3021"}
 	if err != nil {
 		panic(err)
