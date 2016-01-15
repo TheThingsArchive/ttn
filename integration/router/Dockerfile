@@ -4,7 +4,7 @@
 FROM golang:latest
 
 # Dependencies, everything on master
-RUN go get "github.com/TheThingsNetwork/core/..."
+RUN go get "github.com/TheThingsNetwork/ttn/..."
 
 # Actual files to build
 RUN mkdir ~/TheThingsNetwork
@@ -13,7 +13,8 @@ WORKDIR ~/TheThingsNetwork
 
 # Expose the port on which the gateway adapter will listen to
 EXPOSE 33000/udp
+EXPOSE 3000/tcp
 
 # Build & Launch
 RUN go build .
-CMD ./router --brokers $BROKERS --udp-port 33000
+CMD ./router --brokers $BROKERS --udp-port 33000 --tcp-port 3000
