@@ -15,7 +15,6 @@ import (
 	"github.com/TheThingsNetwork/ttn/lorawan"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
-	"github.com/apex/log"
 )
 
 func TestSend(t *testing.T) {
@@ -71,10 +70,7 @@ func TestSend(t *testing.T) {
 	}
 
 	// Logging
-	log.SetHandler(NewLogHandler(t))
-	ctx := log.WithFields(log.Fields{
-		"tag": "Adapter",
-	})
+	ctx := GetLogger(t, "Adapter")
 
 	// Build
 	adapter, err := NewAdapter(recipients, ctx)

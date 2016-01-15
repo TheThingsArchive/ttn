@@ -14,7 +14,6 @@ import (
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/lorawan"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
-	"github.com/apex/log"
 )
 
 // NextRegistration() (core.Registration, core.AckNacker, error)
@@ -61,10 +60,7 @@ func TestNextRegistration(t *testing.T) {
 	}
 
 	// Logging
-	log.SetHandler(NewLogHandler(t))
-	ctx := log.WithFields(log.Fields{
-		"tag": "Adapter",
-	})
+	ctx := GetLogger(t, "Adapter")
 
 	adapter, err := NewAdapter(3021, HandlerParser{}, ctx)
 	client := &client{adapter: "0.0.0.0:3021"}

@@ -8,7 +8,17 @@ package testing
 import (
 	"fmt"
 	"testing"
+
+	"github.com/apex/log"
 )
+
+func GetLogger(t *testing.T, tag string) log.Interface {
+	logger := &log.Logger{
+		Handler: NewLogHandler(t),
+		Level:   log.DebugLevel,
+	}
+	return logger.WithField("tag", "Adapter")
+}
 
 // Ok displays a green check symbol
 func Ok(t *testing.T, tag string) {

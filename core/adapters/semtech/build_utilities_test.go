@@ -15,7 +15,6 @@ import (
 	"github.com/TheThingsNetwork/ttn/semtech"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
-	"github.com/apex/log"
 )
 
 // ----- build utilities
@@ -74,10 +73,7 @@ func (s mockServer) send(p semtech.Packet) semtech.Packet {
 // in a select for timeout)
 func genAdapter(t *testing.T, port uint) (*Adapter, chan interface{}) {
 	// Logging
-	log.SetHandler(NewLogHandler(t))
-	ctx := log.WithFields(log.Fields{
-		"tag": "Adapter",
-	})
+	ctx := GetLogger(t, "Adapter")
 
 	adapter, err := NewAdapter(port, ctx)
 	if err != nil {
