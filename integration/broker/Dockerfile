@@ -11,10 +11,10 @@ RUN mkdir ~/TheThingsNetwork
 ADD . ~/TheThingsNetwork
 WORKDIR ~/TheThingsNetwork
 
-# Expose the port on which the gateway adapter will listen to
-EXPOSE 33000/udp
+# Expose the port on which the adapters will listen to
 EXPOSE 3000/tcp
+EXPOSE 4000/tcp
 
 # Build & Launch
 RUN go build .
-CMD ./router --brokers $BROKERS --udp-port 33000 --tcp-port 3000
+CMD ./broker --routers-port 3000 --handlers-port 4000
