@@ -133,13 +133,12 @@ func TestNext(t *testing.T) {
 		checkStatus(t, test.WantStatus, resp.StatusCode)
 
 		// NOTE: See https://github.com/brocaar/lorawan/issues/3
-		continue
-		select {
-		case packet := <-gotPacket:
-			checkPackets(t, test.WantPacket, packet)
-		case <-time.After(time.Millisecond * 250):
-			checkPackets(t, test.WantPacket, core.Packet{})
-		}
+		//select {
+		//case packet := <-gotPacket:
+		//	checkPackets(t, test.WantPacket, packet)
+		//case <-time.After(time.Millisecond * 250):
+		//	checkPackets(t, test.WantPacket, core.Packet{})
+		//}
 
 	}
 }
