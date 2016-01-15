@@ -20,13 +20,13 @@ var ErrInvalidPort = fmt.Errorf("The given port is invalid")
 var ErrInvalidPacket = fmt.Errorf("The given packet is invalid")
 
 type Adapter struct {
-	Ctx log.Interface
+	ctx log.Interface
 }
 
 // NewAdapter constructs and allocate a new Broker <-> Handler http adapter
 func NewAdapter(ctx log.Interface) (*Adapter, error) {
 	return &Adapter{
-		Ctx: ctx,
+		ctx: ctx,
 	}, nil
 }
 
@@ -35,18 +35,18 @@ func (a *Adapter) Send(p core.Packet, r ...core.Recipient) (core.Packet, error) 
 	// Generate payload from core packet
 	m, err := json.Marshal(p.Metadata)
 	if err != nil {
-		a.Ctx.WithError(err).Warn("Invalid Packet")
+		a.ctx.WithError(err).Warn("Invalid Packet")
 		return core.Packet{}, ErrInvalidPacket
 	}
 	pl, err := p.Payload.MarshalBinary()
 	if err != nil {
-		a.Ctx.WithError(err).Warn("Invalid Packet")
+		a.ctx.WithError(err).Warn("Invalid Packet")
 		return core.Packet{}, ErrInvalidPacket
 	}
 	payload := fmt.Sprintf(`{"payload":"%s","metadata":%s}`, base64.StdEncoding.EncodeToString(pl), m)
 
 	devAddr, _ := p.DevAddr()
-	ctx := a.Ctx.WithField("devAddr", devAddr)
+	ctx := a.ctx.WithField("devAddr", devAddr)
 	ctx.Debug("Sending Packet")
 
 	// Prepare ground for parrallel http request

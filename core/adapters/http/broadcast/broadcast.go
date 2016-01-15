@@ -18,6 +18,8 @@ import (
 )
 
 type Adapter struct {
+	ctx log.Interface
+
 	*httpadapter.Adapter
 	recipients    []core.Recipient
 	registrations chan core.Registration
@@ -38,6 +40,8 @@ func NewAdapter(recipients []core.Recipient, ctx log.Interface) (*Adapter, error
 	}
 
 	return &Adapter{
+		ctx: ctx,
+
 		Adapter:       adapter,
 		recipients:    recipients,
 		registrations: make(chan core.Registration, len(recipients)),
@@ -85,7 +89,7 @@ func (a *Adapter) broadcast(p core.Packet) (core.Packet, error) {
 		go func(recipient core.Recipient) {
 			defer wg.Done()
 
-			ctx := a.Ctx.WithField("recipient", recipient)
+			ctx := a.ctx.WithField("recipient", recipient)
 
 			ctx.Debug("POST Request")
 

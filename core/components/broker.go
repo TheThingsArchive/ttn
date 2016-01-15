@@ -12,7 +12,7 @@ import (
 )
 
 type Broker struct {
-	Ctx log.Interface
+	ctx log.Interface
 	db  brokerStorage
 }
 
@@ -24,7 +24,7 @@ func NewBroker(ctx log.Interface) (*Broker, error) {
 	}
 
 	return &Broker{
-		Ctx: ctx,
+		ctx: ctx,
 		db:  localDB,
 	}, nil
 }
@@ -33,11 +33,11 @@ func (b *Broker) HandleUp(p core.Packet, an core.AckNacker, adapter core.Adapter
 	// 1. Lookup for entries for the associated device
 	devAddr, err := p.DevAddr()
 	if err != nil {
-		b.Ctx.Warn("Uplink Invalid")
+		b.ctx.Warn("Uplink Invalid")
 		an.Nack()
 		return ErrInvalidPacket
 	}
-	ctx := b.Ctx.WithField("devAddr", devAddr)
+	ctx := b.ctx.WithField("devAddr", devAddr)
 	entries, err := b.db.lookup(devAddr)
 	switch err {
 	case nil:
@@ -89,7 +89,7 @@ func (b *Broker) Register(r core.Registration, an core.AckNacker) error {
 	url, okUrl := r.Recipient.Address.(string)
 	nwsKey, okNwsKey := r.Options.(lorawan.AES128Key)
 
-	ctx := b.Ctx.WithField("devAddr", r.DevAddr)
+	ctx := b.ctx.WithField("devAddr", r.DevAddr)
 
 	if !(okId && okUrl && okNwsKey) {
 		ctx.Warn("Invalid Registration")

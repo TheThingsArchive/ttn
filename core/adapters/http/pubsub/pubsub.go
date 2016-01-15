@@ -13,6 +13,8 @@ import (
 )
 
 type Adapter struct {
+	ctx log.Interface
+
 	*httpadapter.Adapter
 	Parser
 	registrations chan regReq
@@ -40,6 +42,8 @@ func NewAdapter(port uint, parser Parser, ctx log.Interface) (*Adapter, error) {
 	}
 
 	a := &Adapter{
+		ctx: ctx,
+
 		Adapter:       adapter,
 		Parser:        parser,
 		registrations: make(chan regReq),
@@ -68,9 +72,9 @@ func (a *Adapter) listenRegistration(port uint) {
 		Addr:    fmt.Sprintf("0.0.0.0:%d", port),
 		Handler: serveMux,
 	}
-	a.Ctx.WithField("port", port).Info("Starting Server")
+	a.ctx.WithField("port", port).Info("Starting Server")
 	err := server.ListenAndServe()
-	a.Ctx.WithError(err).Warn("HTTP connection lost")
+	a.ctx.WithError(err).Warn("HTTP connection lost")
 }
 
 // fail logs the given failure and sends an appropriate response to the client
@@ -81,7 +85,7 @@ func (a *Adapter) badRequest(w http.ResponseWriter, msg string) {
 
 // handle request [PUT] on /end-device/:devAddr
 func (a *Adapter) handlePutEndDevice(w http.ResponseWriter, req *http.Request) {
-	ctx := a.Ctx.WithField("sender", req.RemoteAddr)
+	ctx := a.ctx.WithField("sender", req.RemoteAddr)
 
 	ctx.Debug("Receiving new registration request")
 	// Check the http method
