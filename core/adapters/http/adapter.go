@@ -18,6 +18,7 @@ import (
 
 var ErrInvalidPort = fmt.Errorf("The given port is invalid")
 var ErrInvalidPacket = fmt.Errorf("The given packet is invalid")
+var ErrNotImplemented = fmt.Errorf("Illegal call on non-implemented method")
 
 type Adapter struct {
 	Parser
@@ -49,7 +50,9 @@ func NewAdapter(port uint, parser Parser, ctx log.Interface) (*Adapter, error) {
 		Ctx:      ctx,
 	}
 
-	go func() { a.listenRequests(port) }()
+	a.RegisterEndpoint("/packets", a.handlePostPacket)
+	go a.listenRequests(port)
+
 	return &a, nil
 }
 
@@ -136,13 +139,13 @@ func (a *Adapter) RegisterEndpoint(url string, handler func(w http.ResponseWrite
 
 // Next implements the core.Adapter interface
 func (a *Adapter) Next() (core.Packet, core.AckNacker, error) {
-	// NOTE not implemented
-	return core.Packet{}, nil, nil
+	pktReq := <-a.packets
+	return pktReq.Packet, packetAckNacker{response: pktReq.response}, nil
 }
 
 // NextRegistration implements the core.Adapter interface
 func (a *Adapter) NextRegistration() (core.Packet, core.AckNacker, error) {
-	return core.Packet{}, nil, nil
+	return core.Packet{}, nil, ErrNotImplemented
 }
 
 // listenRequests handles incoming registration request sent through http to the adapter

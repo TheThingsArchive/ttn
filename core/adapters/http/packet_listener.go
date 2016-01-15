@@ -4,6 +4,9 @@
 package http
 
 import (
+	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/TheThingsNetwork/ttn/core"
@@ -44,5 +47,21 @@ func (a *Adapter) handlePostPacket(w http.ResponseWriter, req *http.Request) {
 type JSONPacketParser struct{}
 
 func (p JSONPacketParser) Parse(req *http.Request) (core.Packet, error) {
-	return core.Packet{}, nil
+	// Check Content-type
+	if req.Header.Get("Content-Type") != "application/json" {
+		return core.Packet{}, fmt.Errorf("Received invalid content-type in request")
+	}
+
+	// Check configuration in body
+	body := make([]byte, req.ContentLength)
+	n, err := req.Body.Read(body)
+	if err != nil && err != io.EOF {
+		return core.Packet{}, err
+	}
+	packet := new(core.Packet)
+	if err := json.Unmarshal(body[:n], packet); err != nil {
+		return core.Packet{}, err
+	}
+
+	return *packet, nil
 }
