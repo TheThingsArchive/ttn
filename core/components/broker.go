@@ -12,7 +12,7 @@ import (
 )
 
 type Broker struct {
-	Ctx log.Interface
+	ctx log.Interface
 	db  brokerStorage
 }
 
@@ -24,7 +24,7 @@ func NewBroker(ctx log.Interface) (*Broker, error) {
 	}
 
 	return &Broker{
-		Ctx: ctx,
+		ctx: ctx,
 		db:  localDB,
 	}, nil
 }
@@ -33,13 +33,16 @@ func (b *Broker) HandleUp(p core.Packet, an core.AckNacker, adapter core.Adapter
 	// 1. Lookup for entries for the associated device
 	devAddr, err := p.DevAddr()
 	if err != nil {
+		b.ctx.Warn("Uplink Invalid")
 		an.Nack()
 		return ErrInvalidPacket
 	}
+	ctx := b.ctx.WithField("devAddr", devAddr)
 	entries, err := b.db.lookup(devAddr)
 	switch err {
 	case nil:
 	case ErrDeviceNotFound:
+		ctx.Warn("Uplink device not found")
 		return an.Nack()
 	default:
 		an.Nack()
@@ -59,12 +62,12 @@ func (b *Broker) HandleUp(p core.Packet, an core.AckNacker, adapter core.Adapter
 				Id:      entry.Id,
 				Address: entry.Url,
 			}
-			b.Ctx.WithFields(log.Fields{"devAddr": devAddr, "handler": handler}).Debug("Associated device with handler")
+			ctx.WithField("handler", handler).Debug("Associated device with handler")
 			break
 		}
 	}
 	if handler == nil {
-		b.Ctx.WithField("devAddr", devAddr).Warn("Could not find handler for device")
+		ctx.Warn("Could not find handler for device")
 		return an.Nack()
 	}
 
@@ -86,15 +89,21 @@ func (b *Broker) Register(r core.Registration, an core.AckNacker) error {
 	url, okUrl := r.Recipient.Address.(string)
 	nwsKey, okNwsKey := r.Options.(lorawan.AES128Key)
 
+	ctx := b.ctx.WithField("devAddr", r.DevAddr)
+
 	if !(okId && okUrl && okNwsKey) {
+		ctx.Warn("Invalid Registration")
 		an.Nack()
 		return ErrInvalidRegistration
 	}
 
 	entry := brokerEntry{Id: id, Url: url, NwsKey: nwsKey}
 	if err := b.db.store(r.DevAddr, entry); err != nil {
+		ctx.WithError(err).Error("Failed Registration")
 		an.Nack()
 		return err
 	}
+
+	ctx.Debug("Successful Registration")
 	return an.Ack()
 }

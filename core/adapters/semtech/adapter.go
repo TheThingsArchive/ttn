@@ -13,7 +13,7 @@ import (
 )
 
 type Adapter struct {
-	Ctx  log.Interface
+	ctx  log.Interface
 	conn chan udpMsg
 	next chan rxpkMsg
 }
@@ -37,7 +37,7 @@ var ErrInvalidPacket error = fmt.Errorf("Invalid packet supplied")
 // New constructs and allocates a new udp_sender adapter
 func NewAdapter(port uint, ctx log.Interface) (*Adapter, error) {
 	a := Adapter{
-		Ctx:  ctx,
+		ctx:  ctx,
 		conn: make(chan udpMsg),
 		next: make(chan rxpkMsg),
 	}
@@ -45,9 +45,9 @@ func NewAdapter(port uint, ctx log.Interface) (*Adapter, error) {
 	// Create the udp connection and start listening with a goroutine
 	var udpConn *net.UDPConn
 	addr, err := net.ResolveUDPAddr("udp", fmt.Sprintf("0.0.0.0:%d", port))
-	a.Ctx.WithField("port", port).Info("Starting Server")
+	a.ctx.WithField("port", port).Info("Starting Server")
 	if udpConn, err = net.ListenUDP("udp", addr); err != nil {
-		a.Ctx.WithError(err).Error("Unable to start server")
+		a.ctx.WithError(err).Error("Unable to start server")
 		return nil, ErrInvalidPort
 	}
 
@@ -76,7 +76,7 @@ func (a *Adapter) Next() (core.Packet, core.AckNacker, error) {
 	msg := <-a.next
 	packet, err := core.ConvertRXPK(msg.rxpk)
 	if err != nil {
-		a.Ctx.Debug("Received invalid packet")
+		a.ctx.Debug("Received invalid packet")
 		return core.Packet{}, nil, ErrInvalidPacket
 	}
 	return packet, semtechAckNacker{recipient: msg.recipient, conn: a.conn}, nil
@@ -90,20 +90,20 @@ func (a *Adapter) NextRegistration() (core.Registration, core.AckNacker, error) 
 // listen Handle incoming packets and forward them
 func (a *Adapter) listen(conn *net.UDPConn) {
 	defer conn.Close()
-	a.Ctx.WithField("address", conn.LocalAddr()).Debug("Starting accept loop")
+	a.ctx.WithField("address", conn.LocalAddr()).Debug("Starting accept loop")
 	for {
 		buf := make([]byte, 128)
 		n, addr, err := conn.ReadFromUDP(buf)
 		if err != nil { // Problem with the connection
-			a.Ctx.WithError(err).Error("Connection error")
+			a.ctx.WithError(err).Error("Connection error")
 			continue
 		}
-		a.Ctx.WithField("datagram", buf[:n]).Debug("Incoming datagram")
+		a.ctx.WithField("datagram", buf[:n]).Debug("Incoming datagram")
 
 		pkt := new(semtech.Packet)
 		err = pkt.UnmarshalBinary(buf[:n])
 		if err != nil {
-			a.Ctx.WithError(err).Warn("Invalid packet")
+			a.ctx.WithError(err).Warn("Invalid packet")
 			continue
 		}
 
@@ -115,10 +115,10 @@ func (a *Adapter) listen(conn *net.UDPConn) {
 				Identifier: semtech.PULL_ACK,
 			}.MarshalBinary()
 			if err != nil {
-				a.Ctx.WithError(err).Error("Unexpected error while marshaling PULL_ACK")
+				a.ctx.WithError(err).Error("Unexpected error while marshaling PULL_ACK")
 				continue
 			}
-			a.Ctx.WithField("recipient", addr).Debug("Sending PULL_ACK")
+			a.ctx.WithField("recipient", addr).Debug("Sending PULL_ACK")
 			a.conn <- udpMsg{addr: addr, raw: pullAck}
 		case semtech.PUSH_DATA: // PUSH_DATA -> Transfer all RXPK to the component
 			pushAck, err := semtech.Packet{
@@ -127,14 +127,14 @@ func (a *Adapter) listen(conn *net.UDPConn) {
 				Identifier: semtech.PUSH_ACK,
 			}.MarshalBinary()
 			if err != nil {
-				a.Ctx.WithError(err).Error("Unexpected error while marshaling PUSH_ACK")
+				a.ctx.WithError(err).Error("Unexpected error while marshaling PUSH_ACK")
 				continue
 			}
-			a.Ctx.WithField("Recipient", addr).Debug("Sending PUSH_ACK")
+			a.ctx.WithField("Recipient", addr).Debug("Sending PUSH_ACK")
 			a.conn <- udpMsg{addr: addr, raw: pushAck}
 
 			if pkt.Payload == nil {
-				a.Ctx.WithField("packet", pkt).Warn("Invalid PUSH_DATA packet")
+				a.ctx.WithField("packet", pkt).Warn("Invalid PUSH_DATA packet")
 				continue
 			}
 			for _, rxpk := range pkt.Payload.RXPK {
@@ -144,7 +144,7 @@ func (a *Adapter) listen(conn *net.UDPConn) {
 				}
 			}
 		default:
-			a.Ctx.WithField("packet", pkt).Debug("Ignoring unexpected packet")
+			a.ctx.WithField("packet", pkt).Debug("Ignoring unexpected packet")
 			continue
 		}
 	}
@@ -156,7 +156,7 @@ func (a *Adapter) monitorConnection() {
 	for msg := range a.conn {
 		if msg.conn != nil { // Change the connection
 			if udpConn != nil {
-				a.Ctx.Debug("Define new UDP connection")
+				a.ctx.Debug("Define new UDP connection")
 				udpConn.Close()
 			}
 			udpConn = msg.conn
@@ -164,7 +164,7 @@ func (a *Adapter) monitorConnection() {
 
 		if udpConn != nil && msg.raw != nil { // Send the given udp message
 			if _, err := udpConn.WriteToUDP(msg.raw, msg.addr); err != nil {
-				a.Ctx.WithError(err).Error("Error while sending UDP message")
+				a.ctx.WithError(err).Error("Error while sending UDP message")
 			}
 		}
 	}

@@ -20,13 +20,13 @@ var ErrInvalidPort = fmt.Errorf("The given port is invalid")
 var ErrInvalidPacket = fmt.Errorf("The given packet is invalid")
 
 type Adapter struct {
-	Ctx log.Interface
+	ctx log.Interface
 }
 
 // NewAdapter constructs and allocate a new Broker <-> Handler http adapter
 func NewAdapter(ctx log.Interface) (*Adapter, error) {
 	return &Adapter{
-		Ctx: ctx,
+		ctx: ctx,
 	}, nil
 }
 
@@ -35,13 +35,19 @@ func (a *Adapter) Send(p core.Packet, r ...core.Recipient) (core.Packet, error) 
 	// Generate payload from core packet
 	m, err := json.Marshal(p.Metadata)
 	if err != nil {
+		a.ctx.WithError(err).Warn("Invalid Packet")
 		return core.Packet{}, ErrInvalidPacket
 	}
 	pl, err := p.Payload.MarshalBinary()
 	if err != nil {
+		a.ctx.WithError(err).Warn("Invalid Packet")
 		return core.Packet{}, ErrInvalidPacket
 	}
 	payload := fmt.Sprintf(`{"payload":"%s","metadata":%s}`, base64.StdEncoding.EncodeToString(pl), m)
+
+	devAddr, _ := p.DevAddr()
+	ctx := a.ctx.WithField("devAddr", devAddr)
+	ctx.Debug("Sending Packet")
 
 	// Prepare ground for parrallel http request
 	nb := len(r)
@@ -54,7 +60,10 @@ func (a *Adapter) Send(p core.Packet, r ...core.Recipient) (core.Packet, error) 
 	for _, recipient := range r {
 		go func(recipient core.Recipient) {
 			defer wg.Done()
-			a.Ctx.WithField("recipient", recipient).Debug("POST Request")
+
+			ctx := ctx.WithField("recipient", recipient)
+			ctx.Debug("POST Request")
+
 			buf := new(bytes.Buffer)
 			buf.Write([]byte(payload))
 
@@ -67,6 +76,7 @@ func (a *Adapter) Send(p core.Packet, r ...core.Recipient) (core.Packet, error) 
 
 			// Check response code
 			if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted && resp.StatusCode != http.StatusCreated {
+				ctx.WithField("response", resp.StatusCode).Warn("Unexpected response")
 				cherr <- fmt.Errorf("Unexpected response from server: %s (%d)", resp.Status, resp.StatusCode)
 				return
 			}
@@ -97,11 +107,14 @@ func (a *Adapter) Send(p core.Packet, r ...core.Recipient) (core.Packet, error) 
 	// Collect errors
 	var errors []error
 	for i := 0; i < len(cherr); i += 1 {
-		errors = append(errors, <-cherr)
+		err := <-cherr
+		ctx.WithError(err).Error("POST Failed")
+		errors = append(errors, err)
 	}
 
 	// Check responses
 	if len(chresp) > 1 {
+		ctx.WithField("response_count", len(chresp)).Error("Received Too many positive answers")
 		return core.Packet{}, fmt.Errorf("Several positive answer from servers")
 	}
 
@@ -113,6 +126,7 @@ func (a *Adapter) Send(p core.Packet, r ...core.Recipient) (core.Packet, error) 
 		if errors != nil {
 			return core.Packet{}, fmt.Errorf("Errors: %v", errors)
 		}
+		ctx.Error("No response packet available")
 		return core.Packet{}, fmt.Errorf("No response packet available")
 	}
 }
