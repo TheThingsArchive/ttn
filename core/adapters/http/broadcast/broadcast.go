@@ -43,7 +43,7 @@ func NewAdapter(adapter *httpadapter.Adapter, recipients []core.Recipient, ctx l
 
 func (a *Adapter) Send(p core.Packet, r ...core.Recipient) (core.Packet, error) {
 	if len(r) == 0 {
-		a.ctx.Info("No recipient provided. The packet will be broadcast")
+		a.ctx.Debug("No recipient provided. The packet will be broadcast")
 		return a.broadcast(p)
 	}
 
@@ -86,7 +86,7 @@ func (a *Adapter) broadcast(p core.Packet) (core.Packet, error) {
 
 			ctx := a.ctx.WithField("recipient", recipient)
 
-			ctx.Info("POST Request")
+			ctx.Debug("POST Request")
 
 			buf := new(bytes.Buffer)
 			buf.Write([]byte(payload))

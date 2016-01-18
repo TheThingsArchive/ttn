@@ -23,6 +23,7 @@ func main() {
 
 	// Create Logging Context
 	log.SetHandler(text.New(os.Stdout))
+	log.SetLevel(log.DebugLevel)
 	ctx := log.WithFields(log.Fields{
 		"component": "Broker",
 	})

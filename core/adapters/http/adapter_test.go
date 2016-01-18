@@ -17,7 +17,6 @@ import (
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
-	"github.com/apex/log"
 	"github.com/brocaar/lorawan"
 )
 
@@ -91,8 +90,7 @@ func TestNext(t *testing.T) {
 		},
 	}
 	// Build
-	log.SetHandler(NewLogHandler(t))
-	ctx := log.WithFields(log.Fields{"tag": "Adapter"})
+	ctx := GetLogger(t, "Adapter")
 	adapter, err := NewAdapter(3102, JSONPacketParser{}, ctx)
 	if err != nil {
 		panic(err)
