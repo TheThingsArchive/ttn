@@ -73,15 +73,13 @@ func TestMarshalJSONPacket(t *testing.T) {
 }
 
 func TestUnmarshalJSONPacket(t *testing.T) {
-	t.Skip("Discussion on github about implementation")
-
 	tests := []unmarshalJSONTest{
 		unmarshalJSONTest{
 			JSON:       `{"payload":"gAQDAgEAAAAK4mTU97VqDnU=","metadata":{}}`,
 			WantPacket: Packet{Metadata: Metadata{}, Payload: genPHYPayload(true)},
 		},
 		unmarshalJSONTest{
-			JSON:       `{"payload":"gAQDAgEAAAAK4mTU97VqDnU=","metadata":{"chan":2,"codr":"4/6","fdev":3,"freq":863.125,"imme":false,"ipol":false,"lsnr":5.2,"modu":"LORA","ncrc":true,"powe":3,"prea":8,"rfch":2,"rssi":-27,"size":14,"stat":0,"tmst":1452690688207288535,"datr":"LORA","time":"2016-01-13T14:11:28.207288421+01:00"}}`,
+			JSON:       `{"payload":"gAQDAgEAAAAK4mTU97VqDnU=","metadata":{"chan":2,"codr":"4/6","fdev":3,"freq":863.125,"imme":false,"ipol":false,"lsnr":5.2,"modu":"LORA","ncrc":true,"powe":3,"prea":8,"rfch":2,"rssi":-27,"size":14,"stat":0,"tmst":1452694288207288421,"datr":"LORA","time":"2016-01-13T14:11:28.207288421Z"}}`,
 			WantPacket: Packet{Metadata: genFullMetadata(), Payload: genPHYPayload(true)},
 		},
 		unmarshalJSONTest{
