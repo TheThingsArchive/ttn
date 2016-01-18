@@ -82,6 +82,7 @@ func genMetadata(RXPK semtech.RXPK) Metadata {
 
 // Generates a Metadata object with all field completed with relevant values
 func genFullMetadata() Metadata {
+	timeRef := time.Date(2016, 1, 13, 14, 11, 28, 207288421, time.UTC)
 	return Metadata{
 		Chan: pointer.Uint(2),
 		Codr: pointer.String("4/6"),
@@ -99,8 +100,8 @@ func genFullMetadata() Metadata {
 		Rssi: pointer.Int(-27),
 		Size: pointer.Uint(14),
 		Stat: pointer.Int(0),
-		Time: pointer.Time(time.Now()),
-		Tmst: pointer.Uint(uint(time.Now().UnixNano())),
+		Time: pointer.Time(timeRef),
+		Tmst: pointer.Uint(uint(timeRef.UnixNano())),
 	}
 }
 
