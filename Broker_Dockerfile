@@ -1,0 +1,16 @@
+FROM golang:latest
+
+RUN go get github.com/brocaar/lorawan
+RUN go get github.com/apex/log
+RUN go get github.com/jacobsa/crypto/cmac
+RUN mkdir -p /go/src/github.com/TheThingsNetwork/ttn
+ADD . /go/src/github.com/TheThingsNetwork/ttn
+
+ENV HANDLERS_PORT=3000
+ENV ROUTERS_PORT=4000
+
+EXPOSE 3000/tcp
+EXPOSE 4000/tcp
+
+RUN go build github.com/TheThingsNetwork/ttn/integration/broker
+CMD ./broker --handlers-port $HANDLERS_PORT --routers-port $ROUTERS_PORT

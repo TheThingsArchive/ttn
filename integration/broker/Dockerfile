@@ -16,5 +16,5 @@ EXPOSE 3000/tcp
 EXPOSE 4000/tcp
 
 # Build & Launch
-RUN go build .
-CMD ./broker --routers-port 3000 --handlers-port 4000
+RUN go build -o broker .
+CMD ./broker --routers-port 4000 --handlers-port 3000
