@@ -164,10 +164,14 @@ func (fwd *Forwarder) handleCommands() {
 }
 
 // Forward dispatch a packet to all connected routers.
-func (fwd Forwarder) Forward(packet semtech.Packet) error {
+func (fwd Forwarder) Forward(rxpks ...semtech.RXPK) error {
 	fwd.commands <- command{cmd_RECVUP, nil}
-	if packet.Identifier != semtech.PUSH_DATA {
-		return fmt.Errorf("Unable to forward with identifier %x", packet.Identifier)
+
+	packet := semtech.Packet{
+		Version:    semtech.VERSION,
+		Identifier: semtech.PUSH_DATA,
+		GatewayId:  fwd.Id[:],
+		Token:      genToken(),
 	}
 
 	raw, err := packet.MarshalBinary()
