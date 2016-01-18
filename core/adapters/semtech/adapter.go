@@ -92,7 +92,7 @@ func (a *Adapter) listen(conn *net.UDPConn) {
 	defer conn.Close()
 	a.ctx.WithField("address", conn.LocalAddr()).Debug("Starting accept loop")
 	for {
-		buf := make([]byte, 128)
+		buf := make([]byte, 512)
 		n, addr, err := conn.ReadFromUDP(buf)
 		if err != nil { // Problem with the connection
 			a.ctx.WithError(err).Error("Connection error")

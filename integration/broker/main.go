@@ -24,7 +24,7 @@ func main() {
 	// Create Logging Context
 	log.SetHandler(text.New(os.Stdout))
 	ctx := log.WithFields(log.Fields{
-		"component": "Router",
+		"component": "Broker",
 	})
 
 	// Instantiate all components

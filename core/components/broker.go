@@ -30,6 +30,7 @@ func NewBroker(ctx log.Interface) (*Broker, error) {
 }
 
 func (b *Broker) HandleUp(p core.Packet, an core.AckNacker, adapter core.Adapter) error {
+	b.ctx.Info("Handle uplink packet")
 	// 1. Lookup for entries for the associated device
 	devAddr, err := p.DevAddr()
 	if err != nil {

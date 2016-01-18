@@ -82,5 +82,5 @@ func (r *Router) HandleUp(p core.Packet, an core.AckNacker, upAdapter core.Adapt
 
 // ok ensure the router has been initialized by NewRouter()
 func (r *Router) ok() bool {
-	return r == nil && r.db != nil
+	return r != nil && r.db != nil
 }

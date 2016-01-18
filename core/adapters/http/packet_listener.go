@@ -15,7 +15,7 @@ import (
 func (a *Adapter) handlePostPacket(w http.ResponseWriter, req *http.Request) {
 	ctx := a.ctx.WithField("sender", req.RemoteAddr)
 
-	ctx.Debug("Receiving new registration request")
+	ctx.Info("Receiving new packet")
 	// Check the http method
 	if req.Method != "POST" {
 		w.WriteHeader(http.StatusMethodNotAllowed)
