@@ -3,9 +3,6 @@ language: go
 go:
   - 1.5
 
-before_install:
-  - git submodule update --init --recursive
-
 install:
   - go get github.com/apex/log
   - go get github.com/brocaar/lorawan

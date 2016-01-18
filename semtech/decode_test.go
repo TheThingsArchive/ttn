@@ -4,10 +4,11 @@
 package semtech
 
 import (
-	"github.com/TheThingsNetwork/ttn/utils/pointer"
-	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"testing"
 	"time"
+
+	"github.com/TheThingsNetwork/ttn/utils/pointer"
+	. "github.com/TheThingsNetwork/ttn/utils/testing"
 )
 
 func TestUnmarshalBinary(t *testing.T) {

@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/TheThingsNetwork/ttn/lorawan"
 	"github.com/TheThingsNetwork/ttn/semtech"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
+	"github.com/brocaar/lorawan"
 )
 
 // Generate an RXPK packet using the given payload as Data

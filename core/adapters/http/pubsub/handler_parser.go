@@ -13,7 +13,7 @@ import (
 	"strings"
 
 	"github.com/TheThingsNetwork/ttn/core"
-	"github.com/TheThingsNetwork/ttn/lorawan"
+	"github.com/brocaar/lorawan"
 )
 
 type HandlerParser struct{}

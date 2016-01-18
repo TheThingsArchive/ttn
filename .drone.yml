@@ -1,7 +1,6 @@
 build:
   image: golang
   commands:
-    - git submodule update --init --recursive
     - go get github.com/apex/log
     - go get github.com/brocaar/lorawan
     - go get github.com/jacobsa/crypto/cmac

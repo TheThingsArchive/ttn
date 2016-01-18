@@ -7,8 +7,8 @@ import (
 	"fmt"
 
 	"github.com/TheThingsNetwork/ttn/core"
-	"github.com/TheThingsNetwork/ttn/lorawan"
 	"github.com/apex/log"
+	"github.com/brocaar/lorawan"
 )
 
 type Broker struct {

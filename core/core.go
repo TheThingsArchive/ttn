@@ -3,7 +3,7 @@ package core
 import (
 	"time"
 
-	"github.com/TheThingsNetwork/ttn/lorawan"
+	"github.com/brocaar/lorawan"
 )
 
 type Packet struct {

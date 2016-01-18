@@ -1,4 +1,0 @@
-[submodule "lorawan"]
-    path = lorawan
-	url = https://github.com/brocaar/lorawan.git
-	branch = master

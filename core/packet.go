@@ -10,9 +10,9 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/TheThingsNetwork/ttn/lorawan"
 	"github.com/TheThingsNetwork/ttn/semtech"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
+	"github.com/brocaar/lorawan"
 )
 
 var ErrImpossibleConversion error = fmt.Errorf("Illegal attempt to convert a packet")

@@ -8,8 +8,9 @@ package semtech
 
 import (
 	"fmt"
-	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	"time"
+
+	"github.com/TheThingsNetwork/ttn/utils/pointer"
 )
 
 type DeviceAddress [4]byte

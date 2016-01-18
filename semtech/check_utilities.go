@@ -4,9 +4,10 @@
 package semtech
 
 import (
-	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"reflect"
 	"testing"
+
+	. "github.com/TheThingsNetwork/ttn/utils/testing"
 )
 
 func checkErrors(t *testing.T, want bool, got error) {
