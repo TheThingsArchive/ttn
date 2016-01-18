@@ -131,5 +131,5 @@ func checkResponses(t *testing.T, want semtech.Packet, got semtech.Packet) {
 		Ok(t, "Check responses")
 		return
 	}
-	Ko(t, "Received response does not match expecatations.\nWant: %v\nGot:  %v", want, got)
+	Ko(t, "Received response does not match expecatations.\nWant: %v\nGot:  %v", want.String(), got.String())
 }
