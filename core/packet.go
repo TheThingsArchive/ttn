@@ -133,11 +133,35 @@ func (p *Packet) UnmarshalJSON(raw []byte) error {
 	if err != nil {
 		return err
 	}
-	payload := new(lorawan.PHYPayload)
+
+	// Try first to unmarshal as an uplink payload
+	payload := lorawan.NewPHYPayload(true)
 	if err := payload.UnmarshalBinary(rawPayload); err != nil {
 		return err
 	}
-	p.Payload = *payload
+
+	switch payload.MHDR.MType.String() {
+	case "JoinAccept":
+		fallthrough
+	case "UnconfirmedDataDown":
+		fallthrough
+	case "ConfirmedDataDown":
+		payload = lorawan.NewPHYPayload(false)
+		if err := payload.UnmarshalBinary(rawPayload); err != nil {
+			return err
+		}
+	case "JoinRequest":
+		fallthrough
+	case "UnconfirmedDataUp":
+		fallthrough
+	case "ConfirmedDataUp":
+		// Nothing, we handle them by default
+
+	case "Proprietary":
+		return fmt.Errorf("Unsupported MType Proprietary")
+	}
+
+	p.Payload = payload
 	p.Metadata = proxy.Metadata
 	return nil
 }
