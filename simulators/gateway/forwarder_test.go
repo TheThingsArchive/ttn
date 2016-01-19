@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/semtech"
+	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -62,14 +63,16 @@ func generatePacket(identifier byte, id [8]byte) semtech.Packet {
 		return semtech.Packet{
 			Version:    semtech.VERSION,
 			Identifier: identifier,
+			Token:      genToken(),
 		}
 	}
 }
 
 // initForwarder is a little helper used to instance adapters and forwarder for test purpose
-func initForwarder(id [8]byte) (*Forwarder, *fakeAdapter, *fakeAdapter) {
+func initForwarder(t *testing.T, id [8]byte) (*Forwarder, *fakeAdapter, *fakeAdapter) {
 	a1, a2 := newFakeAdapter("adapter1"), newFakeAdapter("adapter2")
-	fwd, err := NewForwarder(id, a1, a2)
+	ctx := GetLogger(t, "Forwarder")
+	fwd, err := NewForwarder(id, ctx, a1, a2)
 	if err != nil {
 		panic(err)
 	}
@@ -77,24 +80,25 @@ func initForwarder(id [8]byte) (*Forwarder, *fakeAdapter, *fakeAdapter) {
 }
 
 func TestForwarder(t *testing.T) {
+	ctx := GetLogger(t, "Forwarder")
 	id := [8]byte{0x1, 0x3, 0x3, 0x7, 0x5, 0xA, 0xB, 0x1}
 	Convey("NewForwarder", t, func() {
 		Convey("Valid: one adapter", func() {
-			fwd, err := NewForwarder(id, newFakeAdapter("1"))
+			fwd, err := NewForwarder(id, ctx, newFakeAdapter("1"))
 			So(err, ShouldBeNil)
 			defer fwd.Stop()
 			So(fwd, ShouldNotBeNil)
 		})
 
 		Convey("Valid: two adapters", func() {
-			fwd, err := NewForwarder(id, newFakeAdapter("1"), newFakeAdapter("2"))
+			fwd, err := NewForwarder(id, ctx, newFakeAdapter("1"), newFakeAdapter("2"))
 			So(err, ShouldBeNil)
 			defer fwd.Stop()
 			So(fwd, ShouldNotBeNil)
 		})
 
 		Convey("Invalid: no adapter", func() {
-			fwd, err := NewForwarder(id)
+			fwd, err := NewForwarder(id, ctx)
 			So(err, ShouldNotBeNil)
 			So(fwd, ShouldBeNil)
 		})
@@ -104,56 +108,32 @@ func TestForwarder(t *testing.T) {
 			for i := 0; i < 300; i += 1 {
 				adapters = append(adapters, newFakeAdapter(fmt.Sprintf("%d", i)))
 			}
-			fwd, err := NewForwarder(id, adapters...)
+			fwd, err := NewForwarder(id, ctx, adapters...)
 			So(fwd, ShouldBeNil)
 			So(err, ShouldNotBeNil)
 		})
 	})
 
 	Convey("Forward", t, func() {
-		fwd, a1, a2 := initForwarder(id)
+		fwd, a1, a2 := initForwarder(t, id)
 		defer fwd.Stop()
 
 		checkValid := func(identifier byte) func() {
 			return func() {
-				pkt := generatePacket(identifier, fwd.Id)
-				raw, err := pkt.MarshalBinary()
-				if err != nil {
-					t.Errorf("Unexpected error %+v\n", err)
-					return
-				}
-				err = fwd.Forward(pkt)
+				rxpk := generateRXPK("MyData", generateDevAddr())
+				err := fwd.Forward(rxpk)
 				So(err, ShouldBeNil)
-				So(a1.written, ShouldResemble, raw)
-				So(a2.written, ShouldResemble, raw)
-			}
-		}
-
-		checkInvalid := func(identifier byte) func() {
-			return func() {
-				err := fwd.Forward(generatePacket(identifier, fwd.Id))
-				So(err, ShouldNotBeNil)
+				So(a1.written, ShouldNotBeNil)
+				So(a2.written, ShouldNotBeNil)
 			}
 		}
 
 		Convey("Valid: PUSH_DATA", checkValid(semtech.PUSH_DATA))
-		Convey("Invalid: PULL_DATA", checkInvalid(semtech.PULL_DATA))
-		Convey("Invalid: PUSH_ACK", checkInvalid(semtech.PUSH_ACK))
-		Convey("Invalid: PULL_ACK", checkInvalid(semtech.PULL_ACK))
-		Convey("Invalid: PULL_RESP", checkInvalid(semtech.PULL_RESP))
-		Convey("Invalid: wrong PUSH_DATA", func() {
-			pkt := generatePacket(semtech.PUSH_DATA, fwd.Id)
-			pkt.Token = []byte{0x14}
-			err := fwd.Forward(pkt)
-			So(err, ShouldNotBeNil)
-			So(len(a1.written), ShouldEqual, 0)
-			So(len(a2.written), ShouldEqual, 0)
-		})
 	})
 
 	Convey("Flush", t, func() {
 		// Make sure we use a complete new forwarder each time
-		fwd, a1, a2 := initForwarder(id)
+		fwd, a1, a2 := initForwarder(t, id)
 		defer fwd.Stop()
 
 		Convey("Init flush", func() {
@@ -162,14 +142,13 @@ func TestForwarder(t *testing.T) {
 
 		Convey("Store incoming valid packet", func() {
 			// Make sure the connection is established
-			pkt := generatePacket(semtech.PUSH_DATA, id)
-			if err := fwd.Forward(pkt); err != nil {
+			rxpk := generateRXPK("MyData", generateDevAddr())
+			if err := fwd.Forward(rxpk); err != nil {
 				panic(err)
 			}
 
 			// Simulate an ack and a valid response
 			ack := generatePacket(semtech.PUSH_ACK, id)
-			ack.Token = pkt.Token
 			raw, err := ack.MarshalBinary()
 			if err != nil {
 				panic(err)
@@ -178,7 +157,8 @@ func TestForwarder(t *testing.T) {
 
 			// Simulate a resp
 			resp := generatePacket(semtech.PULL_RESP, id)
-			resp.Payload = new(semtech.Payload)
+			resp.Token = nil
+			resp.Payload = &semtech.Payload{RXPK: []semtech.RXPK{rxpk}}
 			raw, err = resp.MarshalBinary()
 			if err != nil {
 				panic(err)
@@ -218,7 +198,7 @@ func TestForwarder(t *testing.T) {
 	})
 
 	Convey("Stats", t, func() {
-		fwd, a1, a2 := initForwarder(id)
+		fwd, a1, a2 := initForwarder(t, id)
 		defer fwd.Stop()
 		refStats := fwd.Stats()
 
@@ -237,7 +217,7 @@ func TestForwarder(t *testing.T) {
 		})
 
 		Convey("rxnb / rxok", func() {
-			fwd.Forward(generatePacket(semtech.PUSH_DATA, fwd.Id))
+			fwd.Forward(generateRXPK("MyData", generateDevAddr()))
 			stats := fwd.Stats()
 			So(stats.Rxnb, ShouldNotBeNil)
 			So(stats.Rxok, ShouldNotBeNil)
@@ -246,7 +226,7 @@ func TestForwarder(t *testing.T) {
 		})
 
 		Convey("rxfw", func() {
-			fwd.Forward(generatePacket(semtech.PUSH_DATA, fwd.Id))
+			fwd.Forward(generateRXPK("MyData", generateDevAddr()))
 			stats := fwd.Stats()
 			So(stats.Rxfw, ShouldNotBeNil)
 			So(*stats.Rxfw, ShouldEqual, *refStats.Rxfw+1)
@@ -259,15 +239,19 @@ func TestForwarder(t *testing.T) {
 
 			sendAndAck := func(a1Ack, a2Ack uint) {
 				// Send packet + ack
-				pkt := generatePacket(semtech.PUSH_DATA, id)
+				fwd.Forward(generateRXPK("MyData", generateDevAddr()))
 				ack := generatePacket(semtech.PUSH_ACK, id)
+				time.Sleep(50 * time.Millisecond)
+
+				pkt := new(semtech.Packet)
+				if err := pkt.UnmarshalBinary(a1.written); err != nil {
+					panic(err)
+				}
 				ack.Token = pkt.Token
 				raw, err := ack.MarshalBinary()
 				if err != nil {
 					panic(err)
 				}
-				fwd.Forward(pkt)
-				time.Sleep(50 * time.Millisecond)
 				for i := uint(0); i < a1Ack; i += 1 {
 					a1.Downlink <- raw
 				}

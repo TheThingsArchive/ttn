@@ -1,0 +1,18 @@
+[
+    {
+        "dev_addr": "14abcd42",
+        "payload": "The Things Network - #1",
+        "metadata": {
+            "rssi": -20
+        }
+    },
+    {
+        "dev_addr": "14abcd42",
+        "payload": "The Things Network - #2",
+        "metadata": {
+            "rssi": -20,
+            "datr": "SF7BW125",
+            "modu": "LORA"
+        }
+    }
+]
