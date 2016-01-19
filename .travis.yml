@@ -10,6 +10,6 @@ install:
   - go get github.com/smartystreets/goconvey/convey
 
 script:
-  - go test -v ./...
+  - go list ./... | grep -v integration | xargs go test
   - sh -c 'FMTRES="$(go fmt ./...)"; if [ ! -z "$FMTRES" ]; then echo $FMTRES; exit 255; fi'
   - go vet ./...
