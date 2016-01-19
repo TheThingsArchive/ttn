@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/semtech"
+	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -68,9 +69,10 @@ func generatePacket(identifier byte, id [8]byte) semtech.Packet {
 }
 
 // initForwarder is a little helper used to instance adapters and forwarder for test purpose
-func initForwarder(id [8]byte) (*Forwarder, *fakeAdapter, *fakeAdapter) {
+func initForwarder(t *testing.T, id [8]byte) (*Forwarder, *fakeAdapter, *fakeAdapter) {
 	a1, a2 := newFakeAdapter("adapter1"), newFakeAdapter("adapter2")
-	fwd, err := NewForwarder(id, a1, a2)
+	ctx := GetLogger(t, "Forwarder")
+	fwd, err := NewForwarder(id, ctx, a1, a2)
 	if err != nil {
 		panic(err)
 	}
@@ -78,24 +80,25 @@ func initForwarder(id [8]byte) (*Forwarder, *fakeAdapter, *fakeAdapter) {
 }
 
 func TestForwarder(t *testing.T) {
+	ctx := GetLogger(t, "Forwarder")
 	id := [8]byte{0x1, 0x3, 0x3, 0x7, 0x5, 0xA, 0xB, 0x1}
 	Convey("NewForwarder", t, func() {
 		Convey("Valid: one adapter", func() {
-			fwd, err := NewForwarder(id, newFakeAdapter("1"))
+			fwd, err := NewForwarder(id, ctx, newFakeAdapter("1"))
 			So(err, ShouldBeNil)
 			defer fwd.Stop()
 			So(fwd, ShouldNotBeNil)
 		})
 
 		Convey("Valid: two adapters", func() {
-			fwd, err := NewForwarder(id, newFakeAdapter("1"), newFakeAdapter("2"))
+			fwd, err := NewForwarder(id, ctx, newFakeAdapter("1"), newFakeAdapter("2"))
 			So(err, ShouldBeNil)
 			defer fwd.Stop()
 			So(fwd, ShouldNotBeNil)
 		})
 
 		Convey("Invalid: no adapter", func() {
-			fwd, err := NewForwarder(id)
+			fwd, err := NewForwarder(id, ctx)
 			So(err, ShouldNotBeNil)
 			So(fwd, ShouldBeNil)
 		})
@@ -105,14 +108,14 @@ func TestForwarder(t *testing.T) {
 			for i := 0; i < 300; i += 1 {
 				adapters = append(adapters, newFakeAdapter(fmt.Sprintf("%d", i)))
 			}
-			fwd, err := NewForwarder(id, adapters...)
+			fwd, err := NewForwarder(id, ctx, adapters...)
 			So(fwd, ShouldBeNil)
 			So(err, ShouldNotBeNil)
 		})
 	})
 
 	Convey("Forward", t, func() {
-		fwd, a1, a2 := initForwarder(id)
+		fwd, a1, a2 := initForwarder(t, id)
 		defer fwd.Stop()
 
 		checkValid := func(identifier byte) func() {
@@ -130,7 +133,7 @@ func TestForwarder(t *testing.T) {
 
 	Convey("Flush", t, func() {
 		// Make sure we use a complete new forwarder each time
-		fwd, a1, a2 := initForwarder(id)
+		fwd, a1, a2 := initForwarder(t, id)
 		defer fwd.Stop()
 
 		Convey("Init flush", func() {
@@ -195,7 +198,7 @@ func TestForwarder(t *testing.T) {
 	})
 
 	Convey("Stats", t, func() {
-		fwd, a1, a2 := initForwarder(id)
+		fwd, a1, a2 := initForwarder(t, id)
 		defer fwd.Stop()
 		refStats := fwd.Stats()
 

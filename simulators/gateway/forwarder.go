@@ -9,13 +9,13 @@ import (
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/semtech"
-	"github.com/TheThingsNetwork/ttn/utils/log"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
+	"github.com/apex/log"
 )
 
 type Forwarder struct {
-	Id       [8]byte // Gateway's Identifier
-	Logger   log.Logger
+	ctx      log.Interface
+	Id       [8]byte              // Gateway's Identifier
 	alti     int                  // GPS altitude in RX meters
 	upnb     uint                 // Number of upstream datagrams sent
 	ackn     uint                 // Number of upstream datagrams that were acknowledged
@@ -48,7 +48,7 @@ const (
 )
 
 // NewForwarder create a forwarder instance bound to a set of routers.
-func NewForwarder(id [8]byte, adapters ...io.ReadWriteCloser) (*Forwarder, error) {
+func NewForwarder(id [8]byte, ctx log.Interface, adapters ...io.ReadWriteCloser) (*Forwarder, error) {
 	if len(adapters) == 0 {
 		return nil, fmt.Errorf("At least one adapter must be supplied")
 	}
@@ -58,8 +58,8 @@ func NewForwarder(id [8]byte, adapters ...io.ReadWriteCloser) (*Forwarder, error
 	}
 
 	fwd := &Forwarder{
-		Logger:   log.DebugLogger{Tag: "Forwarder"},
 		Id:       id,
+		ctx:      ctx,
 		alti:     120,
 		lati:     53.3702,
 		long:     4.8952,
@@ -80,26 +80,21 @@ func NewForwarder(id [8]byte, adapters ...io.ReadWriteCloser) (*Forwarder, error
 	return fwd, nil
 }
 
-// log wraps the Logger.log method, this is nothing more than a shortcut
-func (fwd Forwarder) logf(format string, a ...interface{}) {
-	fwd.Logger.Logf(format, a...) // NOTE: concurrent-safe ?
-}
-
 // listenAdapter listen to incoming datagrams from an adapter. Non-valid packets are ignored.
 func (fwd Forwarder) listenAdapter(adapter io.ReadWriteCloser, index int) {
 	for {
 		buf := make([]byte, 1024)
 		n, err := adapter.Read(buf)
-		fwd.logf("%d bytes received by adapter\n", n)
+		fwd.ctx.WithField("nb bytes", n).Debug("bytes received by adapter")
 		if err != nil {
-			fwd.logf("Error: %+v", err)
+			fwd.ctx.WithError(err).Error("Connection lost / closed")
 			fwd.quit <- err
 			return // Connection lost / closed
 		}
-		fwd.logf("Forwarder unmarshals datagram %x\n", buf[:n])
+		fwd.ctx.WithField("datagram", buf[:n]).Debug("unmarshalling datagram")
 		packet := new(semtech.Packet)
 		if err = packet.UnmarshalBinary(buf[:n]); err != nil {
-			fwd.logf("Error: %+v", err)
+			fwd.ctx.WithError(err).Warn("Unable to unmarshal datagram to packet")
 			continue
 		}
 
@@ -109,7 +104,7 @@ func (fwd Forwarder) listenAdapter(adapter io.ReadWriteCloser, index int) {
 		case semtech.PULL_RESP:
 			fwd.commands <- command{cmd_RECVDWN, packet}
 		default:
-			fwd.logf("Forwarder ignores contingent packet %+v\n", packet)
+			fwd.ctx.WithField("packet", packet).Warn("Ignoring contingent packet")
 		}
 	}
 }
@@ -119,7 +114,7 @@ func (fwd Forwarder) listenAdapter(adapter io.ReadWriteCloser, index int) {
 // This method consumes commands from the channel until it's closed.
 func (fwd *Forwarder) handleCommands() {
 	for cmd := range fwd.commands {
-		fwd.logf("Fowarder executes command: %v\n", cmd.name)
+		fwd.ctx.WithField("command", cmd.name).Debug("executing command")
 
 		switch cmd.name {
 		case cmd_ACK:
