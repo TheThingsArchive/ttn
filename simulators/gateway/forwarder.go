@@ -172,6 +172,7 @@ func (fwd Forwarder) Forward(rxpks ...semtech.RXPK) error {
 		Identifier: semtech.PUSH_DATA,
 		GatewayId:  fwd.Id[:],
 		Token:      genToken(),
+		Payload:    &semtech.Payload{RXPK: rxpks},
 	}
 
 	raw, err := packet.MarshalBinary()
