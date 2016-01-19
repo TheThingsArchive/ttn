@@ -118,7 +118,7 @@ func generateDevAddr() lorawan.DevAddr {
 }
 
 func generateRXPK(data string, devAddr lorawan.DevAddr) semtech.RXPK {
-	now := time.Now()
+	now := time.Now().In(time.UTC)
 	return semtech.RXPK{
 		Time: &now,
 		Tmst: pointer.Uint(uint(now.UnixNano())),
