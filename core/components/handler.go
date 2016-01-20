@@ -22,9 +22,6 @@ type Handler struct {
 	set chan<- uplinkBundle
 }
 
-type handlerStorage interface {
-}
-
 type bundleId [20]byte
 
 type uplinkBundle struct {
