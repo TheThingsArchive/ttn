@@ -12,6 +12,8 @@ import (
 	//"github.com/brocaar/lorawan"
 )
 
+const BUFFER_DELAY = time.Millisecond * 300
+
 var ErrNotImplemented = fmt.Errorf("Ilegal call on non implemented method")
 
 type Handler struct {
