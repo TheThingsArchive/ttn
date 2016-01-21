@@ -48,7 +48,7 @@ func (db *handlerDB) store(devAddr lorawan.DevAddr, entry handlerEntry) error {
 // partition implements the handlerStorage interface
 func (db *handlerDB) partition(packets []core.Packet) ([]handlerPartition, error) {
 	// Create a map in order to do the partition
-	partitions := make(map[lorawan.EUI64]handlerPartition)
+	partitions := make(map[[20]byte]handlerPartition)
 
 	db.RLock() // We require lock on the whole block because we don't want the entries to change while building the partition.
 	for _, packet := range packets {
@@ -57,29 +57,24 @@ func (db *handlerDB) partition(packets []core.Packet) ([]handlerPartition, error
 		if err != nil {
 			return nil, ErrInvalidPacket
 		}
-		macPayload, ok := packet.Payload.MACPayload.(*lorawan.MACPayload)
-		if !ok {
-			return nil, ErrInvalidPacket
-		}
 
 		// Now, get all tuples associated to that device address, and choose the right one
 		for _, entry := range db.entries[devAddr] {
-			// Try to decrypt the frame payload with those keys
-			key := entry.AppSKey
-			if macPayload.FPort == 0 {
-				key = entry.NwkSKey
+			// Compute MIC check to find the right keys
+			ok, err := packet.Payload.ValidateMIC(entry.NwkSKey)
+			if err != nil || !ok {
+				continue // These aren't the droid you're looking for
 			}
-			err := macPayload.DecryptFRMPayload(key)
-			if err != nil { // Weren't the good keys
-				continue
-			}
+
 			// #Easy
-			packet.Payload.MACPayload = macPayload
-			partitions[entry.AppEUI] = handlerPartition{
+			var id [20]byte
+			copy(id[:16], entry.AppEUI[:])
+			copy(id[16:], entry.DevAddr[:])
+			partitions[id] = handlerPartition{
 				handlerEntry: entry,
-				Packets:      append(partitions[entry.AppEUI].Packets, packet),
+				Packets:      append(partitions[id].Packets, packet),
 			}
-			break // We don't need to look for other entries, we've found the right one
+			break // We shouldn't look for other entries, we've found the right one
 		}
 	}
 	db.RUnlock()
@@ -90,5 +85,8 @@ func (db *handlerDB) partition(packets []core.Packet) ([]handlerPartition, error
 		res = append(res, p)
 	}
 
+	if len(res) == 0 {
+		return nil, ErrNotFound
+	}
 	return res, nil
 }
