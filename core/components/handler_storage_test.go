@@ -4,13 +4,14 @@
 package components
 
 import (
+	"reflect"
+	"testing"
+	"time"
+
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"github.com/brocaar/lorawan"
-	"reflect"
-	"testing"
-	"time"
 )
 
 func TestStoragePartition(t *testing.T) {
@@ -52,7 +53,7 @@ func TestStoragePartition(t *testing.T) {
 		AppEUI:  lorawan.EUI64([8]byte{0, 0, 0, 0, 0, 0, 0, 1}),
 		NwkSKey: lorawan.AES128Key([16]byte{1, 2, 3, 4, 23, 6, 7, 8, 9, 0x19, 11, 12, 13, 14, 15, 16}),
 		AppSKey: lorawan.AES128Key([16]byte{16, 0xba, 14, 13, 2, 11, 58, 9, 8, 7, 6, 5, 4, 3, 2, 1}),
-		DevAddr: lorawan.DevAddr([4]byte{0, 0, 0, 4}),
+		DevAddr: lorawan.DevAddr([4]byte{1, 0, 0, 4}),
 	}
 
 	tests := []struct {
