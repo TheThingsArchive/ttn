@@ -5,12 +5,15 @@ package components
 
 import (
 	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"github.com/brocaar/lorawan"
 	"testing"
+	"time"
 )
 
 func TestStoragePartition(t *testing.T) {
+	// CONVENTION below -> first DevAddr byte will be used as falue for FPort
 	setup := []handlerEntry{
 		{ // App #1, Dev #1
 			AppEUI:  lorawan.EUI64([8]byte{0, 0, 0, 0, 0, 0, 0, 1}),
@@ -22,13 +25,13 @@ func TestStoragePartition(t *testing.T) {
 			AppEUI:  lorawan.EUI64([8]byte{0, 0, 0, 0, 0, 0, 0, 1}),
 			NwkSKey: lorawan.AES128Key([16]byte{0, 0xa, 0xb, 1, 2, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}),
 			AppSKey: lorawan.AES128Key([16]byte{14, 14, 14, 14, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1}),
-			DevAddr: lorawan.DevAddr([4]byte{0, 0, 0, 2}),
+			DevAddr: lorawan.DevAddr([4]byte{10, 0, 0, 2}),
 		},
 		{ // App #1, Dev #3
 			AppEUI:  lorawan.EUI64([8]byte{0, 0, 0, 0, 0, 0, 0, 1}),
 			NwkSKey: lorawan.AES128Key([16]byte{12, 0xa, 0xb, 1, 2, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}),
 			AppSKey: lorawan.AES128Key([16]byte{0xb, 15, 14, 14, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1}),
-			DevAddr: lorawan.DevAddr([4]byte{0, 0, 0, 3}),
+			DevAddr: lorawan.DevAddr([4]byte{14, 0, 0, 3}),
 		},
 		{ // App #2, Dev #1
 			AppEUI:  lorawan.EUI64([8]byte{0, 0, 0, 0, 0, 0, 0, 2}),
@@ -40,7 +43,7 @@ func TestStoragePartition(t *testing.T) {
 			AppEUI:  lorawan.EUI64([8]byte{0, 0, 0, 0, 0, 0, 0, 2}),
 			NwkSKey: lorawan.AES128Key([16]byte{0, 0xa, 0xb, 5, 12, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}),
 			AppSKey: lorawan.AES128Key([16]byte{14, 14, 14, 14, 1, 11, 10, 0xc, 8, 7, 6, 5, 4, 3, 2, 1}),
-			DevAddr: lorawan.DevAddr([4]byte{0, 0xaf, 0x14, 1}),
+			DevAddr: lorawan.DevAddr([4]byte{23, 0xaf, 0x14, 1}),
 		},
 	}
 
@@ -95,7 +98,45 @@ func genFilledHandlerStorage(setup []handlerEntry) (db handlerStorage) {
 }
 
 func genPacketsFromHandlerEntries(shapes []handlerEntry) []core.Packet {
-	return nil
+	var packets []core.Packet
+	for _, entry := range shapes {
+
+		// Build the macPayload
+		macPayload := lorawan.NewMACPayload(true)
+		macPayload.FHDR = lorawan.FHDR{DevAddr: entry.DevAddr}
+		macPayload.FRMPayload = []lorawan.Payload{&lorawan.DataPayload{
+			Bytes: []byte(time.Now().String()),
+		}}
+		macPayload.FPort = uint8(entry.DevAddr[0])
+		key := entry.AppSKey
+		if macPayload.FPort == 0 {
+			key = entry.NwkSKey
+		}
+		if err := macPayload.EncryptFRMPayload(key); err != nil {
+			panic(err)
+		}
+
+		// Build the physicalPayload
+		phyPayload := lorawan.NewPHYPayload(true)
+		phyPayload.MHDR = lorawan.MHDR{
+			MType: lorawan.ConfirmedDataUp,
+			Major: lorawan.LoRaWANR1,
+		}
+		if err := phyPayload.SetMIC(entry.NwkSKey); err != nil {
+			panic(err)
+		}
+
+		// Finally build the packet
+		packets = append(packets, core.Packet{
+			Metadata: core.Metadata{
+				Rssi: pointer.Int(-20),
+				Datr: pointer.String("SF7BW125"),
+				Modu: pointer.String("Lora"),
+			},
+			Payload: phyPayload,
+		})
+	}
+	return packets
 }
 
 // ----- CHECK utilities
