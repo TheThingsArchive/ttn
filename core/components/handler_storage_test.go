@@ -48,6 +48,13 @@ func TestStoragePartition(t *testing.T) {
 		},
 	}
 
+	unknown := handlerEntry{ // App #1, Dev #4
+		AppEUI:  lorawan.EUI64([8]byte{0, 0, 0, 0, 0, 0, 0, 1}),
+		NwkSKey: lorawan.AES128Key([16]byte{1, 2, 3, 4, 23, 6, 7, 8, 9, 0x19, 11, 12, 13, 14, 15, 16}),
+		AppSKey: lorawan.AES128Key([16]byte{16, 0xba, 14, 13, 2, 11, 58, 9, 8, 7, 6, 5, 4, 3, 2, 1}),
+		DevAddr: lorawan.DevAddr([4]byte{0, 0, 0, 4}),
+	}
+
 	tests := []struct {
 		Desc           string
 		PacketsShape   []handlerEntry
@@ -55,9 +62,45 @@ func TestStoragePartition(t *testing.T) {
 		WantError      error
 	}{
 		{
-			Desc:           "",
+			Desc:           "1 packet -> 1 partition | 1 packet",
 			PacketsShape:   []handlerEntry{setup[0]},
 			WantPartitions: []partitionShape{{setup[0], 1}},
+			WantError:      nil,
+		},
+		{
+			Desc:           "1 unknown packet -> error not found",
+			PacketsShape:   []handlerEntry{unknown},
+			WantPartitions: nil,
+			WantError:      ErrNotFound,
+		},
+		{
+			Desc:           "2 packets | diff DevAddr & diff AppEUI -> 2 partitions | 1 packet",
+			PacketsShape:   []handlerEntry{setup[0], setup[4]},
+			WantPartitions: []partitionShape{{setup[0], 1}, {setup[4], 1}},
+			WantError:      nil,
+		},
+		{
+			Desc:           "2 packets | same DevAddr & diff AppEUI -> 2 partitions | 1 packet",
+			PacketsShape:   []handlerEntry{setup[0], setup[3]},
+			WantPartitions: []partitionShape{{setup[0], 1}, {setup[3], 1}},
+			WantError:      nil,
+		},
+		{
+			Desc:           "3 packets | diff DevAddr & same AppEUI -> 3 partitions | 1 packet",
+			PacketsShape:   []handlerEntry{setup[0], setup[1], setup[2]},
+			WantPartitions: []partitionShape{{setup[0], 1}, {setup[1], 1}, {setup[2], 1}},
+			WantError:      nil,
+		},
+		{
+			Desc:           "3 packets | same DevAddr & same AppEUI -> 1 partitions | 3 packets",
+			PacketsShape:   []handlerEntry{setup[0], setup[0], setup[0]},
+			WantPartitions: []partitionShape{{setup[0], 3}},
+			WantError:      nil,
+		},
+		{
+			Desc:           "5 packets | same DevAddr & various AppEUI -> 2 partitions | 3 packets & 2 packets",
+			PacketsShape:   []handlerEntry{setup[0], setup[0], setup[0], setup[3], setup[3]},
+			WantPartitions: []partitionShape{{setup[0], 3}, {setup[3], 2}},
 			WantError:      nil,
 		},
 	}

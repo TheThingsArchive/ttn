@@ -6,7 +6,8 @@ package components
 import "fmt"
 
 var ErrInvalidRegistration = fmt.Errorf("Invalid registration")
-var ErrDeviceNotFound = fmt.Errorf("Device not found")
+var ErrDeviceNotFound = fmt.Errorf("Device not found") // NOTE duplication with below
+var ErrNotFound = fmt.Errorf("Requested entity not found")
 var ErrInvalidPacket = fmt.Errorf("The given packet is invalid")
 var ErrBadOptions = fmt.Errorf("Invalid supplied options")
 var ErrNotInitialized = fmt.Errorf("Illegal operation call on non initialized component")
