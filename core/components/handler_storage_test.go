@@ -8,6 +8,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"github.com/brocaar/lorawan"
+	"reflect"
 	"testing"
 	"time"
 )
@@ -79,7 +80,7 @@ func TestStoragePartition(t *testing.T) {
 }
 
 type partitionShape struct {
-	Entry    handlerEntry
+	handlerEntry
 	PacketNb int
 }
 
@@ -122,6 +123,7 @@ func genPacketsFromHandlerEntries(shapes []handlerEntry) []core.Packet {
 			MType: lorawan.ConfirmedDataUp,
 			Major: lorawan.LoRaWANR1,
 		}
+		phyPayload.MACPayload = macPayload
 		if err := phyPayload.SetMIC(entry.NwkSKey); err != nil {
 			panic(err)
 		}
@@ -142,9 +144,32 @@ func genPacketsFromHandlerEntries(shapes []handlerEntry) []core.Packet {
 // ----- CHECK utilities
 
 func checkErrors(t *testing.T, want error, got error) {
-
+	if want == got {
+		Ok(t, "Check errors")
+		return
+	}
+	Ko(t, "Expected error to be %v, but got %v", want, got)
 }
 
 func checkPartitions(t *testing.T, want []partitionShape, got []handlerPartition) {
+	if len(want) != len(got) {
+		Ko(t, "Expected %d partitions, but got %d", len(want), len(got))
+		return
+	}
 
+browseGot:
+	for _, gotPartition := range got {
+		for _, wantPartition := range want { // Find right wanted partition
+			if reflect.DeepEqual(wantPartition.handlerEntry, gotPartition.handlerEntry) {
+				if len(gotPartition.Packets) == wantPartition.PacketNb {
+					continue browseGot
+				}
+				Ko(t, "Partition don't match expectations.\nWant: %v\nGot:  %v", wantPartition, gotPartition)
+				return
+			}
+		}
+		Ko(t, "Got a partition that wasn't expected: %v", gotPartition)
+		return
+	}
+	Ok(t, "Check partitions")
 }
