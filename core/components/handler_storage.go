@@ -10,6 +10,8 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
+type partitionId [20]byte
+
 type handlerStorage interface {
 	store(lorawan.DevAddr, handlerEntry) error
 	partition([]core.Packet) ([]handlerPartition, error)
@@ -17,6 +19,7 @@ type handlerStorage interface {
 
 type handlerPartition struct {
 	handlerEntry
+	id      partitionId
 	Packets []core.Packet
 }
 
@@ -48,7 +51,7 @@ func (db *handlerDB) store(devAddr lorawan.DevAddr, entry handlerEntry) error {
 // partition implements the handlerStorage interface
 func (db *handlerDB) partition(packets []core.Packet) ([]handlerPartition, error) {
 	// Create a map in order to do the partition
-	partitions := make(map[[20]byte]handlerPartition)
+	partitions := make(map[partitionId]handlerPartition)
 
 	db.RLock() // We require lock on the whole block because we don't want the entries to change while building the partition.
 	for _, packet := range packets {
@@ -67,11 +70,12 @@ func (db *handlerDB) partition(packets []core.Packet) ([]handlerPartition, error
 			}
 
 			// #Easy
-			var id [20]byte
+			var id partitionId
 			copy(id[:16], entry.AppEUI[:])
 			copy(id[16:], entry.DevAddr[:])
 			partitions[id] = handlerPartition{
 				handlerEntry: entry,
+				id:           id,
 				Packets:      append(partitions[id].Packets, packet),
 			}
 			break // We shouldn't look for other entries, we've found the right one

@@ -4,12 +4,13 @@
 package components
 
 import (
+	"bytes"
+	"encoding/binary"
 	"fmt"
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/apex/log"
-	//"github.com/brocaar/lorawan"
 )
 
 const BUFFER_DELAY = time.Millisecond * 300
@@ -22,12 +23,14 @@ type Handler struct {
 	set chan<- uplinkBundle
 }
 
-type bundleId [20]byte
+type bundleId [22]byte // AppEUI | DevAddr | FCnt
 
 type uplinkBundle struct {
-	id     bundleId
-	an     core.AckNacker
-	packet core.Packet
+	id      bundleId
+	entry   handlerEntry
+	packet  core.Packet
+	adapter core.Adapter
+	chresp  chan interface{} // Error or decrypted packet
 }
 
 func NewHandler(db handlerStorage, ctx log.Interface) (*Handler, error) {
@@ -51,21 +54,88 @@ func (h *Handler) Register(reg core.Registration, an core.AckNacker) error {
 }
 
 func (h *Handler) HandleUp(p core.Packet, an core.AckNacker, upAdapter core.Adapter) error {
-	return nil
+	partition, err := h.db.partition([]core.Packet{p})
+	if err != nil {
+		an.Nack()
+		return err
+	}
+
+	fcnt, err := p.Fcnt()
+	if err != nil {
+		an.Nack()
+		return err
+	}
+
+	chresp := make(chan interface{})
+	var id bundleId
+	buf := new(bytes.Buffer)
+	buf.Write(partition[0].id[:]) // Partition is necessarily of length 1, associated to 1 packet, the same we gave
+	binary.Write(buf, binary.BigEndian, fcnt)
+	copy(id[:], buf.Bytes())
+	h.set <- uplinkBundle{
+		id:      id,
+		packet:  p,
+		entry:   partition[0].handlerEntry,
+		adapter: upAdapter,
+		chresp:  chresp,
+	}
+
+	resp := <-chresp
+	switch resp.(type) {
+	case core.Packet:
+		an.Ack(resp.(core.Packet))
+		return nil
+	case error:
+		an.Nack()
+		return resp.(error)
+	default:
+		an.Ack()
+		return nil
+	}
 }
 
 func (h *Handler) HandleDown(p core.Packet, an core.AckNacker, downAdapter core.Adapter) error {
 	return ErrNotImplemented
 }
 
-func (h *Handler) consumeBundles(bundles <-chan []uplinkBundle) {
-	//for bundle := range bundles {
-	// Deduplicate
-	// DecryptPayload
-	// AddMeta
-	// AckOrNack each packets
-	// Store into mongo
-	//}
+func (h *Handler) consumeBundles(chbundles <-chan []uplinkBundle) {
+	for bundles := range chbundles {
+		var packet *core.Packet
+		var sendToAdapter func(packet core.Packet) error
+		for _, bundle := range bundles {
+			if packet == nil {
+				*packet = core.Packet{
+					Payload: bundle.packet.Payload,
+					Metadata: core.Metadata{
+						Group: []core.Metadata{bundle.packet.Metadata},
+					},
+				}
+				// The handler assumes payload encrypted with AppSKey only !
+				if err := packet.Payload.DecryptMACPayload(bundle.entry.AppSKey); err != nil {
+					for _, bundle := range bundles {
+						bundle.chresp <- err
+					}
+					break
+				}
+
+				sendToAdapter = func(packet core.Packet) error {
+					// NOTE We'll have to look here for the downlink !
+					_, err := bundle.adapter.Send(packet, core.Recipient{
+						Address: bundle.entry.DevAddr,
+						Id:      bundle.entry.AppEUI,
+					})
+					return err
+				}
+				continue
+			}
+			packet.Metadata.Group = append(packet.Metadata.Group, bundle.packet.Metadata)
+		}
+
+		err := sendToAdapter(*packet)
+		for _, bundle := range bundles {
+			bundle.chresp <- err
+		}
+	}
 }
 
 // manageBuffers gather new incoming bundles that possess the same id
