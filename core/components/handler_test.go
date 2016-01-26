@@ -8,40 +8,58 @@ import (
 	"testing"
 	"time"
 
-	//	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/core"
 	//	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"github.com/brocaar/lorawan"
 )
 
 func TestHandleUp(t *testing.T) {
-	applications := make(map[lorawan.EUI64]lorawan.AES128Key)
-	applications[lorawan.EUI64([8]byte{1, 2, 3, 4, 5, 6, 7, 8})] = lorawan.AES128Key([16]byte{1, 2, 3, 4, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15})
-	applications[lorawan.EUI64([8]byte{9, 10, 11, 12, 13, 14, 15, 16})] = lorawan.AES128Key([16]byte{15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1})
-	applications[lorawan.EUI64([8]byte{1, 1, 2, 2, 3, 3, 4, 4})] = lorawan.AES128Key([16]byte{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8})
-
-	packets := []plannedPacket{
+	devices := []device{
 		{
-			AppEUI:  lorawan.EUI64([8]byte{1, 2, 3, 4, 5, 6, 7, 8}),
-			DevAddr: lorawan.DevAddr([4]byte{1, 2, 3, 4}),
-			Data:    "Packet 1 / Dev 1234 / App 12345678",
+			DevAddr: [4]byte{1, 2, 3, 4},
+			AppSKey: [16]byte{1, 2, 3, 4, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
+			NwkSKey: [16]byte{1, 2, 3, 4, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
+		},
+	}
+
+	applications := map[lorawan.EUI64]application{
+		[8]byte{1, 2, 3, 4, 5, 6, 7, 8}: {
+			Devices:    []device{},
+			Registered: true,
+		},
+
+		[8]byte{9, 10, 11, 12, 13, 14, 15, 16}: {
+			Devices:    []device{},
+			Registered: true,
+		},
+
+		[8]byte{1, 1, 2, 2, 3, 3, 4, 4}: {
+			Devices:    []device{},
+			Registered: false,
+		},
+	}
+
+	packets := []packetShape{
+		{
+			Device: devices[0],
+			Data:   "Packet 1 / Dev 1234 / App 12345678",
 		},
 		{
-			AppEUI:  lorawan.EUI64([8]byte{1, 2, 3, 4, 5, 6, 7, 8}),
-			DevAddr: lorawan.DevAddr([4]byte{1, 2, 3, 4}),
-			Data:    "Packet 1 / Dev 1234 / App 12345678",
+			Device: devices[0],
+			Data:   "Packet 1 / Dev 1234 / App 12345678",
 		},
 	}
 
 	tests := []struct {
-		Schedule    []schedule
+		Schedule    schedule
 		WantAck     map[[4]byte]bool
 		WantPackets map[[12]byte]string
 		WantError   error
 	}{
 		{
-			Schedule: []schedule{
-				{time.Millisecond * 25, packets[0]},
+			Schedule: schedule{
+				{time.Millisecond * 25, packets[0], nil},
 			},
 			WantAck: map[[4]byte]bool{
 				[4]byte{1, 2, 3, 4}: true,
@@ -58,28 +76,176 @@ func TestHandleUp(t *testing.T) {
 
 		// Build
 		handler := genNewHandler(t, applications)
+		genPacketsFromSchedule(&test.Schedule)
+		chans := genComChannels("error", "ack", "nack", "packet")
 
 		// Operate
+		go startSchedule(test.Schedule, handler, chans)
 
 		// Check
 	}
 }
 
-type schedule struct {
+type schedule []struct {
 	Delay  time.Duration
-	Packet plannedPacket
+	Shape  packetShape
+	Packet *core.Packet
 }
 
-type plannedPacket struct {
-	AppEUI  lorawan.EUI64
+type device struct {
 	DevAddr lorawan.DevAddr
-	Data    string
+	AppSKey lorawan.AES128Key
+	NwkSKey lorawan.AES128Key
 }
 
-func genNewHandler(t *testing.T, applications map[lorawan.EUI64]lorawan.AES128Key) Handler {
+type packetShape struct {
+	Device device
+	Data   string
+}
+
+type application struct {
+	Devices    []device
+	Registered bool
+}
+
+func genPacketsFromSchedule(s *schedule) {
+	for i, entry := range *s {
+		// Build the macPayload
+		macPayload := lorawan.NewMACPayload(true)
+		macPayload.FHDR = lorawan.FHDR{DevAddr: entry.Shape.Device.DevAddr}
+		macPayload.FRMPayload = []lorawan.Payload{&lorawan.DataPayload{
+			Bytes: []byte(entry.Shape.Data),
+		}}
+		macPayload.FPort = uint8(1)
+		if err := macPayload.EncryptFRMPayload(entry.Shape.Device.AppSKey); err != nil {
+			panic(err)
+		}
+
+		// Build the physicalPayload
+		phyPayload := lorawan.NewPHYPayload(true)
+		phyPayload.MHDR = lorawan.MHDR{
+			MType: lorawan.UnconfirmedDataUp,
+			Major: lorawan.LoRaWANR1,
+		}
+		phyPayload.MACPayload = macPayload
+		if err := phyPayload.SetMIC(entry.Shape.Device.NwkSKey); err != nil {
+			panic(err)
+		}
+		entry.Packet = &core.Packet{
+			Payload:  phyPayload,
+			Metadata: core.Metadata{},
+		}
+		(*s)[i] = entry
+	}
+}
+
+func genNewHandler(t *testing.T, applications map[lorawan.EUI64]application) *Handler {
 	ctx := GetLogger(t, "Handler")
 	handler, err := NewHandler(newHandlerDB(), ctx)
 	if err != nil {
 		panic(err)
 	}
+
+	for appEUI, app := range applications {
+		if !app.Registered {
+			continue
+		}
+		for _, device := range app.Devices {
+			handler.Register(
+				core.Registration{
+					DevAddr: device.DevAddr,
+					Recipient: core.Recipient{
+						Address: device.DevAddr,
+						Id:      appEUI,
+					},
+					Options: struct {
+						AppSKey lorawan.AES128Key
+						NwkSKey lorawan.AES128Key
+					}{
+						AppSKey: device.AppSKey,
+						NwkSKey: device.NwkSKey,
+					},
+				},
+				voidAckNacker{},
+			)
+		}
+	}
+	return handler
+}
+
+type voidAckNacker struct{}
+
+func (v voidAckNacker) Ack(packets ...core.Packet) error {
+	return nil
+}
+func (v voidAckNacker) Nack() error {
+	return nil
+}
+
+func genComChannels(names ...string) map[string]chan interface{} {
+	chans := make(map[string]chan interface{})
+	for _, name := range names {
+		chans[name] = make(chan interface{})
+	}
+	return chans
+}
+
+func startSchedule(s schedule, handler *Handler, chans map[string]chan interface{}) {
+	mockAn := chanAckNacker{AckChan: chans["ack"], NackChan: chans["nack"]}
+	mockAdapter := chanAdapter{PktChan: chans["packet"]}
+
+	for _, event := range s {
+		<-time.After(event.Delay)
+		go func() {
+			err := handler.HandleUp(*event.Packet, mockAn, mockAdapter)
+			if err != nil {
+				chans["error"] <- err
+			}
+		}()
+	}
+}
+
+type chanAckNacker struct {
+	AckChan  chan interface{}
+	NackChan chan interface{}
+}
+
+func (an chanAckNacker) Ack(packets ...core.Packet) error {
+	if len(packets) == 0 {
+		an.AckChan <- true
+		return nil
+	}
+
+	for _, p := range packets {
+		an.AckChan <- p
+	}
+	return nil
+}
+
+func (an chanAckNacker) Nack() error {
+	an.NackChan <- true
+	return nil
+}
+
+type chanAdapter struct {
+	PktChan chan interface{}
+}
+
+func (a chanAdapter) Send(p core.Packet, r ...core.Recipient) (core.Packet, error) {
+	a.PktChan <- struct {
+		Packet    core.Packet
+		Recipient []core.Recipient
+	}{
+		Packet:    p,
+		Recipient: r,
+	}
+	return core.Packet{}, nil
+}
+
+func (a chanAdapter) Next() (core.Packet, core.AckNacker, error) {
+	panic("Not Expected")
+}
+
+func (a chanAdapter) NextRegistration() (core.Registration, core.AckNacker, error) {
+	panic("Not Expected")
 }
