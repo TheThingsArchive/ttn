@@ -83,6 +83,7 @@ func TestHandleUp(t *testing.T) {
 		go startSchedule(test.Schedule, handler, chans)
 
 		// Check
+		<-time.After(time.Second * 2)
 		checkChErrors(t, test.WantError, chans["error"])
 		checkAcks(t, test.WantAck, chans["ack"], chans["nack"])
 		checkPackets(t, test.WantPackets, chans["packet"])
@@ -262,5 +263,54 @@ func checkAcks(t *testing.T, want map[[4]byte]bool, gotAck chan interface{}, got
 }
 
 func checkPackets(t *testing.T, want map[[12]byte]string, got chan interface{}) {
-	Ok(t, "YIPI")
+	nb := 0
+	for x := range got {
+		msg := x.(struct {
+			Packet    core.Packet
+			Recipient []core.Recipient
+		})
+
+		if len(msg.Recipient) != 1 {
+			Ko(t, "Expected exactly one recipient but got %d", len(msg.Recipient))
+			return
+		}
+
+		appEUI := msg.Recipient[0].Id.(lorawan.EUI64)
+		devAddr, err := msg.Packet.DevAddr()
+		if err != nil {
+			Ko(t, "Unexpected error: %v", err)
+			return
+		}
+
+		var id [12]byte
+		copy(id[:8], appEUI[:])
+		copy(id[8:], devAddr[:])
+
+		wantData, ok := want[id]
+		if !ok {
+			Ko(t, "Received unexpected packet for app %x and from node %x", appEUI, devAddr)
+			return
+		}
+
+		macPayload := msg.Packet.Payload.MACPayload.(*lorawan.MACPayload)
+		if len(macPayload.FRMPayload) != 1 {
+			Ko(t, "Invalid macpayload in received packet from node %x", devAddr)
+			return
+		}
+
+		gotData := string(macPayload.FRMPayload[0].(*lorawan.DataPayload).Bytes)
+		if wantData != gotData {
+			Ko(t, "Received data don't match expectation.\nWant: %s\nGot:  %s", wantData, gotData)
+			return
+		}
+
+		nb += 1
+	}
+
+	if nb != len(want) {
+		Ko(t, "Handler sent %d packets whereas %d were/was expected", nb, len(want))
+		return
+	}
+
+	Ok(t, "Check packets")
 }
