@@ -25,26 +25,12 @@ func TestHandleUp(t *testing.T) {
 
 	applications := map[lorawan.EUI64]application{
 		[8]byte{1, 2, 3, 4, 5, 6, 7, 8}: {
-			Devices:    []device{},
+			Devices:    []device{devices[0]},
 			Registered: true,
-		},
-
-		[8]byte{9, 10, 11, 12, 13, 14, 15, 16}: {
-			Devices:    []device{},
-			Registered: true,
-		},
-
-		[8]byte{1, 1, 2, 2, 3, 3, 4, 4}: {
-			Devices:    []device{},
-			Registered: false,
 		},
 	}
 
 	packets := []packetShape{
-		{
-			Device: devices[0],
-			Data:   "Packet 1 / Dev 1234 / App 12345678",
-		},
 		{
 			Device: devices[0],
 			Data:   "Packet 1 / Dev 1234 / App 12345678",
@@ -84,6 +70,12 @@ func TestHandleUp(t *testing.T) {
 
 		// Check
 		<-time.After(time.Second * 2)
+		go func() {
+			<-time.After(time.Millisecond * 250)
+			for _, ch := range chans {
+				close(ch)
+			}
+		}()
 		checkChErrors(t, test.WantError, chans["error"])
 		checkAcks(t, test.WantAck, chans["ack"], chans["nack"])
 		checkPackets(t, test.WantPackets, chans["packet"])
@@ -189,7 +181,7 @@ func (v voidAckNacker) Nack() error {
 func genComChannels(names ...string) map[string]chan interface{} {
 	chans := make(map[string]chan interface{})
 	for _, name := range names {
-		chans[name] = make(chan interface{})
+		chans[name] = make(chan interface{}, 50)
 	}
 	return chans
 }
@@ -308,7 +300,7 @@ func checkPackets(t *testing.T, want map[[12]byte]string, got chan interface{}) 
 	}
 
 	if nb != len(want) {
-		Ko(t, "Handler sent %d packets whereas %d were/was expected", nb, len(want))
+		Ko(t, "Handler sent %d packet(s) whereas %d were/was expected", nb, len(want))
 		return
 	}
 

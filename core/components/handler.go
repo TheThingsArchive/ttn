@@ -51,6 +51,7 @@ func NewHandler(db handlerStorage, ctx log.Interface) (*Handler, error) {
 }
 
 func (h *Handler) Register(reg core.Registration, an core.AckNacker) error {
+	h.ctx.WithField("registration", reg).Debug("New registration request")
 	options, okOpts := reg.Options.(struct {
 		AppSKey lorawan.AES128Key
 		NwkSKey lorawan.AES128Key
@@ -133,6 +134,7 @@ func (h *Handler) HandleDown(p core.Packet, an core.AckNacker, downAdapter core.
 func (h *Handler) consumeBundles(chbundles <-chan []uplinkBundle) {
 	ctx := h.ctx.WithField("goroutine", "consumer")
 	ctx.Debug("Starting bundle consumer")
+browseBundles:
 	for bundles := range chbundles {
 		var packet *core.Packet
 		var sendToAdapter func(packet core.Packet) error
@@ -140,6 +142,7 @@ func (h *Handler) consumeBundles(chbundles <-chan []uplinkBundle) {
 		for _, bundle := range bundles {
 			if packet == nil {
 				ctx.WithField("entry", bundle.entry).Debug("Preparing ground for given entry")
+				packet = new(core.Packet)
 				*packet = core.Packet{
 					Payload: bundle.packet.Payload,
 					Metadata: core.Metadata{
@@ -152,7 +155,7 @@ func (h *Handler) consumeBundles(chbundles <-chan []uplinkBundle) {
 					for _, bundle := range bundles {
 						bundle.chresp <- err
 					}
-					break
+					continue browseBundles
 				}
 
 				sendToAdapter = func(packet core.Packet) error {
