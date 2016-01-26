@@ -8,3 +8,11 @@ build:
     - go test -v ./...
     - sh -c 'FMTRES="$(go fmt ./...)"; if [ ! -z "$FMTRES" ]; then echo $FMTRES; exit 255; fi'
     - go vet ./...
+    - apt-get -qq update && apt-get install -y zip xz-utils
+    - ./build_binaries.sh
+publish:
+  azure_storage:
+    account_key: $$AZURE_STORAGE_KEY
+    storage_account: thethingsnetwork
+    container: release
+    source: release/
