@@ -83,6 +83,9 @@ func TestHandleUp(t *testing.T) {
 		go startSchedule(test.Schedule, handler, chans)
 
 		// Check
+		checkChErrors(t, test.WantError, chans["error"])
+		checkAcks(t, test.WantAck, chans["ack"], chans["nack"])
+		checkPackets(t, test.WantPackets, chans["packet"])
 	}
 }
 
@@ -248,4 +251,16 @@ func (a chanAdapter) Next() (core.Packet, core.AckNacker, error) {
 
 func (a chanAdapter) NextRegistration() (core.Registration, core.AckNacker, error) {
 	panic("Not Expected")
+}
+
+func checkChErrors(t *testing.T, want error, got chan interface{}) {
+	Ok(t, "YIPI")
+}
+
+func checkAcks(t *testing.T, want map[[4]byte]bool, gotAck chan interface{}, gotNack chan interface{}) {
+	Ok(t, "YIPI")
+}
+
+func checkPackets(t *testing.T, want map[[12]byte]string, got chan interface{}) {
+	Ok(t, "YIPI")
 }
