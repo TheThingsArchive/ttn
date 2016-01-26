@@ -11,6 +11,7 @@ import (
 
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/apex/log"
+	"github.com/brocaar/lorawan"
 )
 
 const BUFFER_DELAY = time.Millisecond * 300
@@ -50,6 +51,30 @@ func NewHandler(db handlerStorage, ctx log.Interface) (*Handler, error) {
 }
 
 func (h *Handler) Register(reg core.Registration, an core.AckNacker) error {
+	options, okOpts := reg.Options.(struct {
+		AppSKey lorawan.AES128Key
+		NwkSKey lorawan.AES128Key
+	})
+	appEUI, okId := reg.Recipient.Id.(lorawan.EUI64)
+
+	if !okId || !okOpts {
+		an.Nack()
+		return ErrBadOptions
+	}
+
+	err := h.db.store(reg.DevAddr, handlerEntry{
+		AppEUI:  appEUI,
+		AppSKey: options.AppSKey,
+		NwkSKey: options.NwkSKey,
+		DevAddr: reg.DevAddr,
+	})
+
+	if err != nil {
+		an.Nack()
+		return err
+	}
+
+	an.Ack()
 	return nil
 }
 
@@ -110,7 +135,7 @@ func (h *Handler) consumeBundles(chbundles <-chan []uplinkBundle) {
 						Group: []core.Metadata{bundle.packet.Metadata},
 					},
 				}
-				// The handler assumes payload encrypted with AppSKey only !
+				// The handler assumes payloads encrypted with AppSKey only !
 				if err := packet.Payload.DecryptMACPayload(bundle.entry.AppSKey); err != nil {
 					for _, bundle := range bundles {
 						bundle.chresp <- err
