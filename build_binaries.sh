@@ -63,7 +63,7 @@ cd $RELEASEPATH
 if [ "$CI_COMMIT" != "" ]
 then
   echo "Copying files for commit $CI_COMMIT"
-  mkdir $CI_COMMIT
+  mkdir -p $CI_COMMIT
   cp ./router* $CI_COMMIT/
   cp ./broker* $CI_COMMIT/
 fi
@@ -72,7 +72,7 @@ fi
 if [ "$CI_BRANCH" != "" ]
 then
   echo "Copying files for branch $CI_BRANCH"
-  mkdir $CI_BRANCH
+  mkdir -p $CI_BRANCH
   cp ./router* $CI_BRANCH/
   cp ./broker* $CI_BRANCH/
 fi
@@ -81,7 +81,7 @@ fi
 if [ "$CI_TAG" != "" ]
 then
   echo "Copying files for tag $CI_TAG"
-  mkdir $CI_TAG
+  mkdir -p $CI_TAG
   cp ./router* $CI_TAG/
   cp ./broker* $CI_TAG/
 fi
