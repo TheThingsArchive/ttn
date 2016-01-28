@@ -37,8 +37,8 @@ func TestHandleUp(t *testing.T) {
 		},
 		{
 			DevAddr: [4]byte{1, 2, 3, 4},
-			AppSKey: [16]byte{1, 2, 3, 4, 4, 5, 6, 7, 8, 9, 8, 8, 8, 8, 0xaa, 0xbb},
-			NwkSKey: [16]byte{1, 2, 3, 4, 4, 5, 6, 7, 8, 9, 8, 8, 8, 8, 0xaa, 0xbb},
+			AppSKey: [16]byte{1, 2, 3, 4, 4, 5, 6, 37, 8, 9, 8, 8, 8, 8, 0xaa, 0xbb},
+			NwkSKey: [16]byte{1, 2, 3, 4, 4, 12, 6, 7, 8, 9, 8, 8, 8, 8, 0xaa, 0xbb},
 		},
 	}
 
@@ -123,6 +123,7 @@ func TestHandleUp(t *testing.T) {
 			},
 			WantNbAck:  1,
 			WantNbNack: 1,
+			WantErrors: []error{ErrAlreadyProcessed},
 			WantPackets: map[[12]byte][]string{
 				[12]byte{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4}: []string{
 					packets[0].Data,
@@ -398,7 +399,7 @@ func checkChErrors(t *testing.T, want []error, got chan interface{}) {
 	nb := 0
 outer:
 	for gotErr := range got {
-		for wantErr := range want {
+		for _, wantErr := range want {
 			if wantErr == gotErr {
 				nb += 1
 				continue outer

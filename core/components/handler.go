@@ -191,17 +191,29 @@ func (h *Handler) manageBuffers(bundles chan<- []uplinkBundle, set <-chan uplink
 	ctx := h.ctx.WithField("goroutine", "bufferer")
 	ctx.Debug("Starting uplink packets buffering")
 
-	buffers := make(map[bundleId][]uplinkBundle)
-	alarm := make(chan bundleId)
+	processed := make(map[[20]byte]bundleId)     // AppEUI | DevAddr (without the frame counter)
+	buffers := make(map[bundleId][]uplinkBundle) // Associate bundleId to a list of bufferized bundles
+	alarm := make(chan bundleId)                 // Communication channel with sub-sequent alarm
 
 	for {
 		select {
 		case id := <-alarm:
 			b := buffers[id]
 			delete(buffers, id)
+			var pid [20]byte
+			copy(pid[:], id[:20])
+			processed[pid] = id
 			go func(b []uplinkBundle) { bundles <- b }(b)
 			ctx.WithField("bundleId", id).Debug("Alarm done. Consuming collected bundles")
 		case bundle := <-set:
+			var pid [20]byte
+			copy(pid[:], bundle.id[:20])
+			if processed[pid] == bundle.id {
+				ctx.WithField("bundleId", bundle.id).Debug("Reject already processed bundle")
+				go func(bundle uplinkBundle) { bundle.chresp <- ErrAlreadyProcessed }(bundle)
+				continue
+			}
+
 			b := append(buffers[bundle.id], bundle)
 			if len(b) == 1 {
 				go setAlarm(alarm, bundle.id, time.Millisecond*300)
