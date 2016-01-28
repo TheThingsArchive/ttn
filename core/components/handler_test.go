@@ -4,12 +4,11 @@
 package components
 
 import (
-	//	"reflect"
+	"fmt"
 	"testing"
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/core"
-	//	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"github.com/brocaar/lorawan"
 )
@@ -38,17 +37,30 @@ func TestHandleUp(t *testing.T) {
 	}
 
 	tests := []struct {
+		Desc        string
 		Schedule    []event
 		WantNbAck   int
+		WantNbNack  int
 		WantPackets map[[12]byte]string
 		WantErrors  []error
 	}{
 		{
+			Desc: "Easy - one packet",
 			Schedule: []event{
 				event{time.Millisecond * 25, packets[0], nil},
 			},
-			WantNbAck:  1,
-			WantErrors: []error{},
+			WantNbAck: 1,
+			WantPackets: map[[12]byte]string{
+				[12]byte{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4}: "Packet 1 / Dev 1234 / App 12345678",
+			},
+		},
+		{
+			Desc: "Two packets from the same device within the time frame",
+			Schedule: []event{
+				event{time.Millisecond * 25, packets[0], nil},
+				event{time.Millisecond * 100, packets[0], nil},
+			},
+			WantNbAck: 2,
 			WantPackets: map[[12]byte]string{
 				[12]byte{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4}: "Packet 1 / Dev 1234 / App 12345678",
 			},
@@ -57,6 +69,7 @@ func TestHandleUp(t *testing.T) {
 
 	for _, test := range tests {
 		// Describe
+		Desc(t, test.Desc)
 
 		// Build
 		handler := genNewHandler(t, applications)
@@ -64,18 +77,18 @@ func TestHandleUp(t *testing.T) {
 		chans := genComChannels("error", "ack", "nack", "packet")
 
 		// Operate
-		go startSchedule(test.Schedule, handler, chans)
+		startSchedule(test.Schedule, handler, chans)
 
 		// Check
-		<-time.After(time.Second * 2)
 		go func() {
-			<-time.After(time.Millisecond * 250)
+			<-time.After(time.Second)
 			for _, ch := range chans {
 				close(ch)
 			}
 		}()
 		checkChErrors(t, test.WantErrors, chans["error"])
-		checkAcks(t, test.WantNbAck, chans["ack"], chans["nack"])
+		checkAcks(t, test.WantNbAck, chans["ack"], "ack")
+		checkAcks(t, test.WantNbNack, chans["nack"], "nack")
 		checkPackets(t, test.WantPackets, chans["packet"])
 	}
 }
@@ -257,33 +270,21 @@ outer:
 	Ok(t, "Check errors")
 }
 
-func checkAcks(t *testing.T, want int, gotAck chan interface{}, gotNack chan interface{}) {
-	nbAck := 0
-	nbNack := 0
-outer:
+func checkAcks(t *testing.T, want int, got chan interface{}, kind string) {
+	nb := 0
 	for {
-		select {
-		case _, ok := <-gotAck:
-			if !ok {
-				break outer
-			}
-			nbAck += 1
-
-		case _, ok := <-gotNack:
-			if !ok {
-				break outer
-			}
-			nbNack += 1
-		default:
-			break outer
+		a, ok := <-got
+		if !ok && a == nil {
+			break
 		}
+		nb += 1
 	}
 
-	if nbAck != want {
-		Ko(t, "Expected %d ack(s) but got %d", want, nbAck)
+	if nb != want {
+		Ko(t, "Expected %d %s(s) but got %d", want, kind, nb)
 		return
 	}
-	Ok(t, "Check acks")
+	Ok(t, fmt.Sprintf("Check %s", kind))
 }
 
 func checkPackets(t *testing.T, want map[[12]byte]string, got chan interface{}) {
