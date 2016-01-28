@@ -150,7 +150,16 @@ browseBundles:
 					},
 				}
 				// The handler assumes payloads encrypted with AppSKey only !
-				if err := packet.Payload.DecryptMACPayload(bundle.entry.AppSKey); err != nil {
+				payload, ok := packet.Payload.MACPayload.(*lorawan.MACPayload)
+				if !ok {
+					ctx.WithError(ErrInvalidPacket).Debug("Unable to extract MACPayload")
+					for _, bundle := range bundles {
+						bundle.chresp <- ErrInvalidPacket
+					}
+					continue browseBundles
+				}
+
+				if err := payload.DecryptFRMPayload(bundle.entry.AppSKey); err != nil {
 					ctx.WithError(err).Debug("Unable to decrypt MAC Payload with given AppSKey")
 					for _, bundle := range bundles {
 						bundle.chresp <- err

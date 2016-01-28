@@ -324,7 +324,7 @@ func checkPackets(t *testing.T, want map[[12]byte]string, got chan interface{}) 
 
 		gotData := string(macPayload.FRMPayload[0].(*lorawan.DataPayload).Bytes)
 		if wantData != gotData {
-			Ko(t, "Received data don't match expectation.\nWant: %s\nGot:  %s", wantData, gotData)
+			Ko(t, "Received data don't match expectations.\nWant: %s\nGot:  %s", wantData, gotData)
 			return
 		}
 
