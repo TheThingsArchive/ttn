@@ -20,12 +20,40 @@ func TestHandleUp(t *testing.T) {
 			AppSKey: [16]byte{1, 2, 3, 4, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
 			NwkSKey: [16]byte{1, 2, 3, 4, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
 		},
+		{
+			DevAddr: [4]byte{0, 0, 0, 2},
+			AppSKey: [16]byte{1, 2, 3, 4, 4, 5, 6, 7, 8, 9, 8, 8, 8, 8, 8, 8},
+			NwkSKey: [16]byte{1, 2, 3, 4, 4, 5, 6, 7, 8, 9, 8, 8, 8, 8, 8, 8},
+		},
+		{
+			DevAddr: [4]byte{0, 0, 0, 3},
+			AppSKey: [16]byte{1, 2, 3, 14, 42, 5, 6, 7, 8, 9, 8, 8, 8, 8, 8, 8},
+			NwkSKey: [16]byte{1, 2, 3, 42, 14, 5, 6, 7, 8, 9, 8, 8, 8, 8, 8, 8},
+		},
+		{
+			DevAddr: [4]byte{1, 2, 3, 4},
+			AppSKey: [16]byte{1, 2, 3, 4, 4, 5, 6, 7, 8, 9, 8, 8, 8, 8, 0xaa, 0xbb},
+			NwkSKey: [16]byte{1, 2, 3, 4, 4, 5, 6, 7, 8, 9, 8, 8, 8, 8, 0xaa, 0xbb},
+		},
+		{
+			DevAddr: [4]byte{1, 2, 3, 4},
+			AppSKey: [16]byte{1, 2, 3, 4, 4, 5, 6, 7, 8, 9, 8, 8, 8, 8, 0xaa, 0xbb},
+			NwkSKey: [16]byte{1, 2, 3, 4, 4, 5, 6, 7, 8, 9, 8, 8, 8, 8, 0xaa, 0xbb},
+		},
 	}
 
 	applications := map[lorawan.EUI64]application{
 		[8]byte{1, 2, 3, 4, 5, 6, 7, 8}: {
-			Devices:    []device{devices[0]},
+			Devices:    []device{devices[0], devices[1]},
 			Registered: true,
+		},
+		[8]byte{0, 9, 8, 7, 6, 5, 4, 3}: {
+			Devices:    []device{devices[2], devices[3]},
+			Registered: true,
+		},
+		[8]byte{14, 14, 14, 14, 14, 14, 14, 14}: {
+			Devices:    []device{devices[4]},
+			Registered: false,
 		},
 	}
 
@@ -34,6 +62,26 @@ func TestHandleUp(t *testing.T) {
 			Device: devices[0],
 			Data:   "Packet 1 / Dev 1234 / App 12345678",
 		},
+		{
+			Device: devices[0],
+			Data:   "Packet 2 / Dev 1234 / App 12345678",
+		},
+		{
+			Device: devices[1],
+			Data:   "Packet 1 / Dev 0002 / App 12345678",
+		},
+		{
+			Device: devices[2],
+			Data:   "Packet 1 / Dev 0003 / App 09876543",
+		},
+		{
+			Device: devices[3],
+			Data:   "Packet 1 / Dev 1234 / App 09876543",
+		},
+		{
+			Device: devices[4],
+			Data:   "Packet 1 / Dev 1234 / App 1414141414141414",
+		},
 	}
 
 	tests := []struct {
@@ -41,29 +89,125 @@ func TestHandleUp(t *testing.T) {
 		Schedule    []event
 		WantNbAck   int
 		WantNbNack  int
-		WantPackets map[[12]byte]string
+		WantPackets map[[12]byte][]string
 		WantErrors  []error
 	}{
 		{
-			Desc: "Easy - one packet",
+			Desc: "1 packet",
 			Schedule: []event{
 				event{time.Millisecond * 25, packets[0], nil},
 			},
 			WantNbAck: 1,
-			WantPackets: map[[12]byte]string{
-				[12]byte{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4}: "Packet 1 / Dev 1234 / App 12345678",
+			WantPackets: map[[12]byte][]string{
+				[12]byte{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4}: {"Packet 1 / Dev 1234 / App 12345678"},
 			},
 		},
 		{
-			Desc: "Two packets from the same device within the time frame",
+			Desc: "2 packets | same device | same payload | within time frame",
 			Schedule: []event{
 				event{time.Millisecond * 25, packets[0], nil},
 				event{time.Millisecond * 100, packets[0], nil},
 			},
 			WantNbAck: 2,
-			WantPackets: map[[12]byte]string{
-				[12]byte{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4}: "Packet 1 / Dev 1234 / App 12345678",
+			WantPackets: map[[12]byte][]string{
+				[12]byte{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4}: []string{
+					packets[0].Data,
+				},
 			},
+		},
+		{
+			Desc: "2 packets | same device | same payload | in 2 time frames",
+			Schedule: []event{
+				event{time.Millisecond * 25, packets[0], nil},
+				event{time.Millisecond * 750, packets[0], nil},
+			},
+			WantNbAck:  1,
+			WantNbNack: 1,
+			WantPackets: map[[12]byte][]string{
+				[12]byte{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4}: []string{
+					packets[0].Data,
+				},
+			},
+		},
+		{
+			Desc: "2 packets | same device | different payload | within time frame",
+			Schedule: []event{
+				event{time.Millisecond * 25, packets[0], nil},
+				event{time.Millisecond * 100, packets[1], nil},
+			},
+			WantNbAck: 2,
+			WantPackets: map[[12]byte][]string{
+				[12]byte{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4}: []string{
+					packets[0].Data,
+					packets[1].Data,
+				},
+			},
+		},
+		{
+			Desc: "3 packets | different device | same app | resp same payloads | within time frame",
+			Schedule: []event{
+				event{time.Millisecond * 25, packets[0], nil},
+				event{time.Millisecond * 50, packets[0], nil},
+				event{time.Millisecond * 100, packets[2], nil},
+			},
+			WantNbAck: 3,
+			WantPackets: map[[12]byte][]string{
+				[12]byte{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4}: []string{
+					packets[0].Data,
+				},
+				[12]byte{1, 2, 3, 4, 5, 6, 7, 8, 0, 0, 0, 2}: []string{
+					packets[2].Data,
+				},
+			},
+		},
+		{
+			Desc: "3 packets | different device | different app | resp same payloads | within time frame",
+			Schedule: []event{
+				event{time.Millisecond * 25, packets[0], nil},
+				event{time.Millisecond * 50, packets[2], nil},
+				event{time.Millisecond * 100, packets[3], nil},
+			},
+			WantNbAck: 3,
+			WantPackets: map[[12]byte][]string{
+				[12]byte{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4}: []string{
+					packets[0].Data,
+				},
+				[12]byte{1, 2, 3, 4, 5, 6, 7, 8, 0, 0, 0, 2}: []string{
+					packets[2].Data,
+				},
+				[12]byte{0, 9, 8, 7, 6, 5, 4, 3, 0, 0, 0, 3}: []string{
+					packets[3].Data,
+				},
+			},
+		},
+		{
+			Desc: "3 packets | different device | different app | resp same payloads | within time frame | dev address conflict",
+			Schedule: []event{
+				event{time.Millisecond * 25, packets[0], nil},
+				event{time.Millisecond * 50, packets[2], nil},
+				event{time.Millisecond * 100, packets[4], nil},
+			},
+			WantNbAck: 3,
+			WantPackets: map[[12]byte][]string{
+				[12]byte{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4}: []string{
+					packets[0].Data,
+				},
+				[12]byte{1, 2, 3, 4, 5, 6, 7, 8, 0, 0, 0, 2}: []string{
+					packets[2].Data,
+				},
+				[12]byte{0, 9, 8, 7, 6, 5, 4, 3, 1, 2, 3, 4}: []string{
+					packets[4].Data,
+				},
+			},
+		},
+		{
+			Desc: "1 packet | unknown application",
+			Schedule: []event{
+				event{time.Millisecond * 25, packets[5], nil},
+			},
+			WantErrors:  []error{ErrNotFound},
+			WantNbNack:  1,
+			WantPackets: map[[12]byte][]string{},
 		},
 	}
 
@@ -287,8 +431,9 @@ func checkAcks(t *testing.T, want int, got chan interface{}, kind string) {
 	Ok(t, fmt.Sprintf("Check %s", kind))
 }
 
-func checkPackets(t *testing.T, want map[[12]byte]string, got chan interface{}) {
+func checkPackets(t *testing.T, want map[[12]byte][]string, got chan interface{}) {
 	nb := 0
+outer:
 	for x := range got {
 		msg := x.(struct {
 			Packet    core.Packet
@@ -313,23 +458,27 @@ func checkPackets(t *testing.T, want map[[12]byte]string, got chan interface{}) 
 
 		wantData, ok := want[id]
 		if !ok {
-			Ko(t, "Received unexpected packet for app %x and from node %x", appEUI, devAddr)
+			Ko(t, "Received unexpected packet for app %v and from node %v", appEUI, devAddr)
 			return
 		}
 
 		macPayload := msg.Packet.Payload.MACPayload.(*lorawan.MACPayload)
 		if len(macPayload.FRMPayload) != 1 {
-			Ko(t, "Invalid macpayload in received packet from node %x", devAddr)
+			Ko(t, "Invalid macpayload in received packet from node %v", devAddr)
 			return
 		}
 
 		gotData := string(macPayload.FRMPayload[0].(*lorawan.DataPayload).Bytes)
-		if wantData != gotData {
-			Ko(t, "Received data don't match expectations.\nWant: %s\nGot:  %s", wantData, gotData)
-			return
+
+		for _, want := range wantData {
+			if want == gotData {
+				nb += 1
+				continue outer
+			}
 		}
 
-		nb += 1
+		Ko(t, "Received data don't match expectations.\nWant: %v\nGot:  %s", wantData, gotData)
+		return
 	}
 
 	if nb != len(want) {
