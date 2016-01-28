@@ -38,19 +38,19 @@ func TestHandleUp(t *testing.T) {
 	}
 
 	tests := []struct {
-		Schedule    schedule
+		Schedule    []event
 		WantAck     map[[4]byte]bool
 		WantPackets map[[12]byte]string
-		WantError   error
+		WantError   []error
 	}{
 		{
-			Schedule: schedule{
-				{time.Millisecond * 25, packets[0], nil},
+			Schedule: []event{
+				event{time.Millisecond * 25, packets[0], nil},
 			},
 			WantAck: map[[4]byte]bool{
 				[4]byte{1, 2, 3, 4}: true,
 			},
-			WantError: nil,
+			WantError: []error{},
 			WantPackets: map[[12]byte]string{
 				[12]byte{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4}: "Packet 1 / Dev 1234 / App 12345678",
 			},
@@ -82,7 +82,7 @@ func TestHandleUp(t *testing.T) {
 	}
 }
 
-type schedule []struct {
+type event struct {
 	Delay  time.Duration
 	Shape  packetShape
 	Packet *core.Packet
@@ -104,7 +104,7 @@ type application struct {
 	Registered bool
 }
 
-func genPacketsFromSchedule(s *schedule) {
+func genPacketsFromSchedule(s *[]event) {
 	for i, entry := range *s {
 		// Build the macPayload
 		macPayload := lorawan.NewMACPayload(true)
@@ -186,18 +186,18 @@ func genComChannels(names ...string) map[string]chan interface{} {
 	return chans
 }
 
-func startSchedule(s schedule, handler *Handler, chans map[string]chan interface{}) {
+func startSchedule(s []event, handler *Handler, chans map[string]chan interface{}) {
 	mockAn := chanAckNacker{AckChan: chans["ack"], NackChan: chans["nack"]}
 	mockAdapter := chanAdapter{PktChan: chans["packet"]}
 
-	for _, event := range s {
-		<-time.After(event.Delay)
-		go func() {
-			err := handler.HandleUp(*event.Packet, mockAn, mockAdapter)
+	for _, ev := range s {
+		<-time.After(ev.Delay)
+		go func(ev event) {
+			err := handler.HandleUp(*ev.Packet, mockAn, mockAdapter)
 			if err != nil {
 				chans["error"] <- err
 			}
-		}()
+		}(ev)
 	}
 }
 
@@ -246,8 +246,24 @@ func (a chanAdapter) NextRegistration() (core.Registration, core.AckNacker, erro
 	panic("Not Expected")
 }
 
-func checkChErrors(t *testing.T, want error, got chan interface{}) {
-	Ok(t, "YIPI")
+func checkChErrors(t *testing.T, want []error, got chan interface{}) {
+	nb := 0
+outer:
+	for gotErr := range got {
+		for wantErr := range want {
+			if wantErr == gotErr {
+				nb += 1
+				continue outer
+			}
+		}
+		Ko(t, "Got error [%v] but was only expecting: [%v]", gotErr, want)
+		return
+	}
+	if nb != len(want) {
+		Ko(t, "Expected %d error(s) but got only %d", len(want), nb)
+		return
+	}
+	Ok(t, "Check errors")
 }
 
 func checkAcks(t *testing.T, want map[[4]byte]bool, gotAck chan interface{}, gotNack chan interface{}) {
