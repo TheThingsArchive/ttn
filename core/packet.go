@@ -17,18 +17,32 @@ import (
 
 var ErrImpossibleConversion error = fmt.Errorf("Illegal attempt to convert a packet")
 
-// DevAddr return a lorawan device address associated to the packet if any
+// DevAddr returns a lorawan device address associated to the packet if any
 func (p Packet) DevAddr() (lorawan.DevAddr, error) {
 	if p.Payload.MACPayload == nil {
-		return lorawan.DevAddr{}, fmt.Errorf("lorawan: MACPayload should not be empty")
+		return lorawan.DevAddr{}, fmt.Errorf("MACPayload should not be empty")
 	}
 
 	macpayload, ok := p.Payload.MACPayload.(*lorawan.MACPayload)
 	if !ok {
-		return lorawan.DevAddr{}, fmt.Errorf("lorawan: unable to get address of a join message")
+		return lorawan.DevAddr{}, fmt.Errorf("Packet does not carry a MACPayload")
 	}
 
 	return macpayload.FHDR.DevAddr, nil
+}
+
+// FCnt returns the frame counter of the given packet
+func (p Packet) Fcnt() (uint16, error) {
+	if p.Payload.MACPayload == nil {
+		return 0, fmt.Errorf("MACPayload should not be empty")
+	}
+
+	macpayload, ok := p.Payload.MACPayload.(*lorawan.MACPayload)
+	if !ok {
+		return 0, fmt.Errorf("Packet does not carry a MACPayload")
+	}
+
+	return macpayload.FHDR.FCnt, nil
 }
 
 // String returns a string representation of the packet
