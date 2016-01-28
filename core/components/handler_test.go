@@ -39,18 +39,16 @@ func TestHandleUp(t *testing.T) {
 
 	tests := []struct {
 		Schedule    []event
-		WantAck     map[[4]byte]bool
+		WantNbAck   int
 		WantPackets map[[12]byte]string
-		WantError   []error
+		WantErrors  []error
 	}{
 		{
 			Schedule: []event{
 				event{time.Millisecond * 25, packets[0], nil},
 			},
-			WantAck: map[[4]byte]bool{
-				[4]byte{1, 2, 3, 4}: true,
-			},
-			WantError: []error{},
+			WantNbAck:  1,
+			WantErrors: []error{},
 			WantPackets: map[[12]byte]string{
 				[12]byte{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4}: "Packet 1 / Dev 1234 / App 12345678",
 			},
@@ -76,8 +74,8 @@ func TestHandleUp(t *testing.T) {
 				close(ch)
 			}
 		}()
-		checkChErrors(t, test.WantError, chans["error"])
-		checkAcks(t, test.WantAck, chans["ack"], chans["nack"])
+		checkChErrors(t, test.WantErrors, chans["error"])
+		checkAcks(t, test.WantNbAck, chans["ack"], chans["nack"])
 		checkPackets(t, test.WantPackets, chans["packet"])
 	}
 }
@@ -207,14 +205,7 @@ type chanAckNacker struct {
 }
 
 func (an chanAckNacker) Ack(packets ...core.Packet) error {
-	if len(packets) == 0 {
-		an.AckChan <- true
-		return nil
-	}
-
-	for _, p := range packets {
-		an.AckChan <- p
-	}
+	an.AckChan <- true
 	return nil
 }
 
@@ -266,8 +257,33 @@ outer:
 	Ok(t, "Check errors")
 }
 
-func checkAcks(t *testing.T, want map[[4]byte]bool, gotAck chan interface{}, gotNack chan interface{}) {
-	Ok(t, "YIPI")
+func checkAcks(t *testing.T, want int, gotAck chan interface{}, gotNack chan interface{}) {
+	nbAck := 0
+	nbNack := 0
+outer:
+	for {
+		select {
+		case _, ok := <-gotAck:
+			if !ok {
+				break outer
+			}
+			nbAck += 1
+
+		case _, ok := <-gotNack:
+			if !ok {
+				break outer
+			}
+			nbNack += 1
+		default:
+			break outer
+		}
+	}
+
+	if nbAck != want {
+		Ko(t, "Expected %d ack(s) but got %d", want, nbAck)
+		return
+	}
+	Ok(t, "Check acks")
 }
 
 func checkPackets(t *testing.T, want map[[12]byte]string, got chan interface{}) {
