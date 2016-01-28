@@ -6,7 +6,6 @@ package components
 import (
 	"bytes"
 	"encoding/binary"
-	"fmt"
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/core"
@@ -15,8 +14,6 @@ import (
 )
 
 const BUFFER_DELAY = time.Millisecond * 300
-
-var ErrNotImplemented = fmt.Errorf("Ilegal call on non implemented method")
 
 type Handler struct {
 	ctx log.Interface
