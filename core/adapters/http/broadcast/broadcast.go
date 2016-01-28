@@ -90,7 +90,7 @@ func (a *Adapter) broadcast(p core.Packet) (core.Packet, error) {
 
 			buf := new(bytes.Buffer)
 			buf.Write([]byte(payload))
-			resp, err := http.Post(fmt.Sprintf("http://%s/packets", recipient.Address.(string)), "application/json", buf)
+			resp, err := a.Post(fmt.Sprintf("http://%s/packets", recipient.Address.(string)), "application/json", buf)
 			if err != nil {
 				cherr <- err
 				return

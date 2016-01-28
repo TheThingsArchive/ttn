@@ -22,9 +22,11 @@ var ErrNotImplemented = fmt.Errorf("Illegal call on non-implemented method")
 
 type Adapter struct {
 	Parser
-	serveMux *http.ServeMux
-	packets  chan pktReq
-	ctx      log.Interface
+	http.Client
+	sync.RWMutex // Guards clients
+	serveMux     *http.ServeMux
+	packets      chan pktReq
+	ctx          log.Interface
 }
 
 type Parser interface {
@@ -48,6 +50,7 @@ func NewAdapter(port uint, parser Parser, ctx log.Interface) (*Adapter, error) {
 		serveMux: http.NewServeMux(),
 		packets:  make(chan pktReq),
 		ctx:      ctx,
+		Client:   http.Client{},
 	}
 
 	a.RegisterEndpoint("/packets", a.handlePostPacket)
@@ -94,7 +97,7 @@ func (a *Adapter) Send(p core.Packet, r ...core.Recipient) (core.Packet, error) 
 			buf.Write([]byte(payload))
 
 			// Send request
-			resp, err := http.Post(fmt.Sprintf("http://%s", recipient.Address.(string)), "application/json", buf)
+			resp, err := a.Post(fmt.Sprintf("http://%s", recipient.Address.(string)), "application/json", buf)
 			if err != nil {
 				cherr <- err
 				return
