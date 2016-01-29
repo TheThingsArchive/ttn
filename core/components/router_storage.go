@@ -28,7 +28,7 @@ type routerEntry struct {
 }
 
 // NewLocalDB constructs a new local address keeper
-func NewRouterStorage(expiryDelay time.Duration) (routerStorage, error) {
+func NewRouterLocal(expiryDelay time.Duration) (routerStorage, error) {
 	return &routerDB{
 		expiryDelay: expiryDelay,
 		entries:     make(map[lorawan.DevAddr]routerEntry),
