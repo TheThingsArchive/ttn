@@ -1,20 +1,15 @@
-# The container will assume to have a $BROKER env var defined
+FROM alpine
 
-# Go, because go is life
-FROM golang:latest
+RUN apk --update add ca-certificates && rm -rf /var/cache/apk/*
 
-# Dependencies, everything on master
-RUN go get "github.com/TheThingsNetwork/ttn/..."
+RUN apk --update add curl tar \
+  && mkdir /ttnsrc \
+  && curl -sL -o /ttnsrc/broker-linux-amd64.tar.gz "https://thethingsnetwork.blob.core.windows.net/release/src/github.com/TheThingsNetwork/ttn/release/branch/develop/broker-linux-amd64.tar.gz" \
+  && tar -xf /ttnsrc/broker-linux-amd64.tar.gz -C /ttnsrc \
+  && mv /ttnsrc/broker-linux-amd64 /usr/local/bin/broker \
+  && chmod 755 /usr/local/bin/broker \
+  && rm -rf /ttnsrc \
+  && apk del curl tar \
+  && rm -rf /var/cache/apk/*
 
-# Actual files to build
-RUN mkdir ~/TheThingsNetwork
-ADD . ~/TheThingsNetwork
-WORKDIR ~/TheThingsNetwork
-
-# Expose the port on which the adapters will listen to
-EXPOSE 3000/tcp
-EXPOSE 4000/tcp
-
-# Build & Launch
-RUN go build -o broker .
-CMD ./broker --routers-port 4000 --handlers-port 3000
+ENTRYPOINT ["/usr/local/bin/broker"]
