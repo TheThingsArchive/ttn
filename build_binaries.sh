@@ -66,8 +66,8 @@ if [ "$CI_COMMIT" != "" ]
 then
   echo "Copying files for commit $CI_COMMIT"
   mkdir -p commit/$CI_COMMIT
-  cp ./router* $CI_COMMIT/
-  cp ./broker* $CI_COMMIT/
+  cp ./router* commit/$CI_COMMIT/
+  cp ./broker* commit/$CI_COMMIT/
 fi
 
 # Branch Release
@@ -75,8 +75,8 @@ if [ "$CI_BRANCH" != "" ]
 then
   echo "Copying files for branch $CI_BRANCH"
   mkdir -p branch/$CI_BRANCH
-  cp ./router* $CI_BRANCH/
-  cp ./broker* $CI_BRANCH/
+  cp ./router* branch/$CI_BRANCH/
+  cp ./broker* branch/$CI_BRANCH/
 fi
 
 # Tag Release
@@ -84,8 +84,8 @@ if [ "$CI_TAG" != "" ]
 then
   echo "Copying files for tag $CI_TAG"
   mkdir -p tag/$CI_TAG
-  cp ./router* $CI_TAG/
-  cp ./broker* $CI_TAG/
+  cp ./router* tag/$CI_TAG/
+  cp ./broker* tag/$CI_TAG/
 fi
 
 # Remove Build Files
