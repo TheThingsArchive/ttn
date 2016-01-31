@@ -20,9 +20,6 @@ import (
 )
 
 func main() {
-	// Parse options
-	brokers, tcpPort, udpPort := parseOptions()
-
 	// Create Logging Context
 	log.SetHandler(text.New(os.Stdout))
 	log.SetLevel(log.DebugLevel)
@@ -30,25 +27,28 @@ func main() {
 		"component": "Router",
 	})
 
+	// Parse options
+	brokers, tcpPort, udpPort := parseOptions()
+
 	// Instantiate all components
 	gtwAdapter, err := semtech.NewAdapter(uint(udpPort), ctx.WithField("tag", "Gateway Adapter"))
 	if err != nil {
-		panic(err)
+		ctx.WithError(err).Fatal("Could not start Gateway Adapter")
 	}
 
 	pktAdapter, err := http.NewAdapter(uint(tcpPort), http.JSONPacketParser{}, ctx.WithField("tag", "Broker Adapter"))
 	if err != nil {
-		panic(err)
+		ctx.WithError(err).Fatal("Could not start Broker Adapter")
 	}
 
 	brkAdapter, err := broadcast.NewAdapter(pktAdapter, brokers, ctx.WithField("tag", "Broker Adapter"))
 	if err != nil {
-		panic(err)
+		ctx.WithError(err).Fatal("Could not start Broker Adapter")
 	}
 
 	router, err := components.NewRouter(ctx.WithField("tag", "Router"))
 	if err != nil {
-		panic(err)
+		ctx.WithError(err).Fatal("Could not start Router")
 	}
 
 	// Bring the service to life
@@ -92,26 +92,37 @@ func parseOptions() (brokers []Recipient, tcpPort uint64, udpPort uint64) {
 	var brokersFlag string
 	var udpPortFlag string
 	var tcpPortFlag string
-	flag.StringVar(&brokersFlag, "brokers", "", `Broker addresses to which broadcast packets.
- 	For instance: 10.10.3.34:8080,thethingsnetwork.broker.com:3000
- 	`)
-	flag.StringVar(&udpPortFlag, "udp-port", "", "UDP port on which the router should listen to.")
-	flag.StringVar(&tcpPortFlag, "tcp-port", "", "TCP port on which the router should listen to.")
-	flag.Parse()
+
+	flags := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
+
+	flags.StringVar(&brokersFlag, "brokers", "", `Broker addresses to which broadcast packets.
+ 	For instance: 10.10.3.34:8080,thethingsnetwork.broker.com:3000`)
+	flags.StringVar(&udpPortFlag, "udp-port", "", "UDP port on which the router should listen to.")
+	flags.StringVar(&tcpPortFlag, "tcp-port", "", "TCP port on which the router should listen to.")
+
+	flags.Parse(os.Args[1:])
 
 	var err error
+
+	if tcpPortFlag == "" {
+		log.Fatal("No TCP listen port supplied using the -tcp-port flag")
+	}
 	tcpPort, err = strconv.ParseUint(tcpPortFlag, 10, 64)
 	if err != nil {
-		panic(err)
+		log.Fatal("Could not parse the value for -tcp-port")
+	}
+
+	if udpPortFlag == "" {
+		log.Fatal("No UDP listen port supplied using the -udp-port flag.")
 	}
 	udpPort, err = strconv.ParseUint(udpPortFlag, 10, 64)
 	if err != nil {
-		panic(err)
-	}
-	if brokersFlag == "" {
-		panic("Need to provide at least one broker address")
+		log.Fatal("Could not parse the value for -udp-port")
 	}
 
+	if brokersFlag == "" {
+		log.Fatal("No broker address is supplied using -brokers flag.")
+	}
 	brokersStr := strings.Split(brokersFlag, ",")
 	for i := range brokersStr {
 		brokers = append(brokers, Recipient{
