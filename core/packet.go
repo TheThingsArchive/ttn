@@ -32,7 +32,7 @@ func (p Packet) DevAddr() (lorawan.DevAddr, error) {
 }
 
 // FCnt returns the frame counter of the given packet
-func (p Packet) Fcnt() (uint16, error) {
+func (p Packet) Fcnt() (uint32, error) {
 	if p.Payload.MACPayload == nil {
 		return 0, fmt.Errorf("MACPayload should not be empty")
 	}
