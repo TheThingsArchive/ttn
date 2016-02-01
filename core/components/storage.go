@@ -9,36 +9,14 @@ import (
 	"io"
 	"reflect"
 
-	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/boltdb/bolt"
 	"github.com/brocaar/lorawan"
 )
-
-type handlerStorage interface {
-	Lookup(devAddr lorawan.DevAddr) ([]handlerEntry, error)
-	Store(devAddr lorawan.DevAddr, entry handlerEntry) error
-	Partition(packet ...core.Packet) ([]handlerPartition, error)
-}
 
 type storageEntry interface {
 	MarshalBinary() ([]byte, error)
 	UnmarshalBinary(data []byte) error
 }
-
-type handlerEntry struct {
-	AppEUI  lorawan.EUI64
-	AppSKey lorawan.AES128Key
-	DevAddr lorawan.DevAddr
-	NwkSKey lorawan.AES128Key
-}
-
-type handlerPartition struct {
-	handlerEntry
-	Id      partitionId
-	Packets []core.Packet
-}
-
-type partitionId [20]byte
 
 func store(db *bolt.DB, bucketName []byte, devAddr lorawan.DevAddr, entry storageEntry) error {
 	marshalled, err := entry.MarshalBinary()
