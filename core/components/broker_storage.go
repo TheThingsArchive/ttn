@@ -37,11 +37,8 @@ func (s brokerBoltStorage) Store(devAddr lorawan.DevAddr, entry brokerEntry) err
 
 func (entry brokerEntry) MarshalBinary() ([]byte, error) {
 	w := NewEntryReadWriter(nil)
-	w.Write(uint16(len(entry.Id)))
 	w.Write(entry.Id)
-	w.Write(uint16(len(entry.NwkSKey)))
 	w.Write(entry.NwkSKey)
-	w.Write(uint16(len(entry.Url)))
 	w.Write(entry.Url)
 	return w.Bytes()
 }

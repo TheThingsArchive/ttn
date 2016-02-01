@@ -10,7 +10,7 @@ import (
 
 type entryReadWriter struct {
 	err  error
-	data bytes.Buffer
+	data *bytes.Buffer
 }
 
 func NewEntryReadWriter(buf []byte) *entryReadWriter {
@@ -21,6 +21,15 @@ func NewEntryReadWriter(buf []byte) *entryReadWriter {
 }
 
 func (w *entryReadWriter) Write(data interface{}) {
+	raw, ok := data.([]byte)
+	if !ok {
+		raw = []byte(data.(string))
+	}
+	w.DirectWrite(uint16(len(raw)))
+	w.DirectWrite(raw)
+}
+
+func (w *entryReadWriter) DirectWrite(data interface{}) {
 	if w.err != nil {
 		return
 	}

@@ -98,13 +98,9 @@ func (s handlerBoltStorage) Partition(packets ...core.Packet) ([]handlerPartitio
 
 func (entry handlerEntry) MarshalBinary() ([]byte, error) {
 	w := NewEntryReadWriter(nil)
-	w.Write(uint16(len(entry.AppEUI)))
 	w.Write(entry.AppEUI)
-	w.Write(uint16(len(entry.AppSKey)))
 	w.Write(entry.AppSKey)
-	w.Write(uint16(len(entry.DevAddr)))
 	w.Write(entry.DevAddr)
-	w.Write(uint16(len(entry.NwkSKey)))
 	w.Write(entry.NwkSKey)
 	return w.Bytes()
 }

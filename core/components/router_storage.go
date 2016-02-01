@@ -40,20 +40,17 @@ func (s routerBoltStorage) Store(devAddr lorawan.DevAddr, entry routerEntry) err
 
 func (entry routerEntry) MarshalBinary() ([]byte, error) {
 	w := NewEntryReadWriter(nil)
-	w.Write(uint16(len(entry.Recipients)))
+	w.DirectWrite(uint8(len(entry.Recipients)))
 	for _, r := range entry.Recipients {
 		rawId := []byte(r.Id.(string))
 		rawAddress := []byte(r.Address.(string))
-		w.Write(uint16(len(rawId)))
 		w.Write(rawId)
-		w.Write(uint16(len(rawAddress)))
 		w.Write(rawAddress)
 	}
 	rawTime, err := entry.Until.MarshalBinary()
 	if err != nil {
 		return nil, err
 	}
-	w.Write(uint16(len(rawTime)))
 	w.Write(rawTime)
 	return w.Bytes()
 }

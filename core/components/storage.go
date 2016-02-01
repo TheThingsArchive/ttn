@@ -28,7 +28,6 @@ func store(db *bolt.DB, bucketName []byte, devAddr lorawan.DevAddr, entry storag
 			return ErrStorageUnreachable
 		}
 		w := NewEntryReadWriter(bucket.Get(devAddr[:]))
-		w.Write(uint16(len(marshalled)))
 		w.Write(marshalled)
 		data, err := w.Bytes()
 		if err != nil {
