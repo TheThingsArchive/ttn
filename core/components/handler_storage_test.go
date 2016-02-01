@@ -139,6 +139,10 @@ func genFilledHandlerStorage(setup []handlerEntry) HandlerStorage {
 		panic(err)
 	}
 
+	if err := db.Reset(); err != nil {
+		panic(err)
+	}
+
 	for _, entry := range setup {
 		if err := db.Store(entry.DevAddr, entry); err != nil {
 			panic(err)

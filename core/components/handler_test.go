@@ -303,6 +303,10 @@ func genNewHandler(t *testing.T, applications map[lorawan.EUI64]application) *Ha
 		panic(err)
 	}
 
+	if err := db.Reset(); err != nil {
+		panic(err)
+	}
+
 	handler := NewHandler(db, ctx)
 	if err != nil {
 		panic(err)

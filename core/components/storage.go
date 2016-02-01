@@ -92,3 +92,13 @@ func flush(db *bolt.DB, bucketName string, devAddr lorawan.DevAddr) error {
 		return bucket.Delete(devAddr[:])
 	})
 }
+
+func resetDB(db *bolt.DB, bucketName string) error {
+	return db.Update(func(tx *bolt.Tx) error {
+		if err := tx.DeleteBucket([]byte(bucketName)); err != nil {
+			return err
+		}
+		_, err := tx.CreateBucketIfNotExists([]byte(bucketName))
+		return err
+	})
+}

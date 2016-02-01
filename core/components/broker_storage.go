@@ -11,6 +11,7 @@ import (
 type brokerStorage interface {
 	Close() error
 	Lookup(devAddr lorawan.DevAddr) ([]brokerEntry, error)
+	Reset() error
 	Store(devAddr lorawan.DevAddr, entry brokerEntry) error
 }
 
@@ -38,6 +39,10 @@ func (s brokerBoltStorage) Store(devAddr lorawan.DevAddr, entry brokerEntry) err
 
 func (s brokerBoltStorage) Close() error {
 	return s.DB.Close()
+}
+
+func (s brokerBoltStorage) Reset() error {
+	return resetDB(s.DB, "devices")
 }
 
 func (entry brokerEntry) MarshalBinary() ([]byte, error) {
