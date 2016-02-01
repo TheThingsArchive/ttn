@@ -19,7 +19,7 @@ type entryReadWriter struct {
 func NewEntryReadWriter(buf []byte) *entryReadWriter {
 	return &entryReadWriter{
 		err:  nil,
-		data: bytes.NewBuffer(buf),
+		data: new(bytes.Buffer),
 	}
 }
 
@@ -50,13 +50,17 @@ func (w *entryReadWriter) DirectWrite(data interface{}) {
 	if w.err != nil {
 		return
 	}
+	in := w.data.Next(w.data.Len())
+	binary.Write(w.data, binary.BigEndian, in)
 	w.err = binary.Write(w.data, binary.BigEndian, data)
+	fmt.Println(w.data.Bytes())
 }
 
 func (w *entryReadWriter) Read(to func(data []byte)) {
 	if w.err != nil {
 		return
 	}
+
 	lenTo := new(uint16)
 	if w.err = binary.Read(w.data, binary.BigEndian, lenTo); w.err != nil {
 		return
