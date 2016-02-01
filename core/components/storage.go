@@ -4,8 +4,6 @@
 package components
 
 import (
-	"bytes"
-	"encoding/binary"
 	"io"
 	"reflect"
 
@@ -29,10 +27,14 @@ func store(db *bolt.DB, bucketName []byte, devAddr lorawan.DevAddr, entry storag
 		if bucket == nil {
 			return ErrStorageUnreachable
 		}
-		buf := bytes.NewBuffer(bucket.Get(devAddr[:]))
-		binary.Write(buf, binary.BigEndian, uint16(len(marshalled)))
-		binary.Write(buf, binary.BigEndian, marshalled)
-		return bucket.Put(devAddr[:], buf.Bytes())
+		w := NewEntryReadWriter(bucket.Get(devAddr[:]))
+		w.Write(uint16(len(marshalled)))
+		w.Write(marshalled)
+		data, err := w.Bytes()
+		if err != nil {
+			return err
+		}
+		return bucket.Put(devAddr[:], data)
 	})
 
 	return err
@@ -56,20 +58,21 @@ func lookup(db *bolt.DB, bucketName []byte, devAddr lorawan.DevAddr, shape stora
 		return nil, err
 	}
 
-	buf := bytes.NewBuffer(rawEntry)
+	r := NewEntryReadWriter(rawEntry)
 	entryType := reflect.TypeOf(shape).Elem()
 	entries := reflect.MakeSlice(reflect.SliceOf(entryType), 0, 0)
 	for {
-		lenEntry := new(uint16)
-		if err := binary.Read(buf, binary.BigEndian, lenEntry); err != nil {
+		r.Read(func(data []byte) {
+			entry := reflect.New(entryType).Interface()
+			entry.(storageEntry).UnmarshalBinary(data)
+			entries = reflect.Append(entries, reflect.ValueOf(entry).Elem())
+		})
+		if err = r.Err(); err != nil {
 			if err == io.EOF {
 				break
 			}
-			panic(err)
+			return nil, err
 		}
-		entry := reflect.New(entryType).Interface()
-		entry.(storageEntry).UnmarshalBinary(buf.Next(int(*lenEntry)))
-		entries = reflect.Append(entries, reflect.ValueOf(entry).Elem())
 	}
 	return entries.Interface(), nil
 }
