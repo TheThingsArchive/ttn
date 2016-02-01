@@ -8,17 +8,11 @@ import (
 	"encoding/binary"
 	"io"
 	"reflect"
-	"time"
 
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/boltdb/bolt"
 	"github.com/brocaar/lorawan"
 )
-
-type routerStorage interface {
-	Lookup(devAddr lorawan.DevAddr) (routerEntry, error)
-	Store(devAddr lorawan.DevAddr, entry routerEntry) error
-}
 
 type handlerStorage interface {
 	Lookup(devAddr lorawan.DevAddr) ([]handlerEntry, error)
@@ -29,11 +23,6 @@ type handlerStorage interface {
 type storageEntry interface {
 	MarshalBinary() ([]byte, error)
 	UnmarshalBinary(data []byte) error
-}
-
-type routerEntry struct {
-	Recipients []core.Recipient
-	Until      time.Time
 }
 
 type handlerEntry struct {
