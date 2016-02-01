@@ -6,6 +6,9 @@ package components
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
+
+	"github.com/brocaar/lorawan"
 )
 
 type entryReadWriter struct {
@@ -21,9 +24,23 @@ func NewEntryReadWriter(buf []byte) *entryReadWriter {
 }
 
 func (w *entryReadWriter) Write(data interface{}) {
-	raw, ok := data.([]byte)
-	if !ok {
+	var raw []byte
+	switch data.(type) {
+	case []byte:
+		raw = data.([]byte)
+	case lorawan.AES128Key:
+		data := data.(lorawan.AES128Key)
+		raw = data[:]
+	case lorawan.EUI64:
+		data := data.(lorawan.EUI64)
+		raw = data[:]
+	case lorawan.DevAddr:
+		data := data.(lorawan.DevAddr)
+		raw = data[:]
+	case string:
 		raw = []byte(data.(string))
+	default:
+		panic(fmt.Errorf("Unreckognized data type: %v", data))
 	}
 	w.DirectWrite(uint16(len(raw)))
 	w.DirectWrite(raw)
