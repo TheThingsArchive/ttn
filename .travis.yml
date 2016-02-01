@@ -4,8 +4,7 @@ go:
   - 1.5
 
 install:
-  - go get $(go list -f '{{join .Deps " "}}' ./... | xargs go list -f '{{if not .Standard}}{{.ImportPath}}{{end}}' | grep -v "TheThingsNetwork")
-
+    - go get $(comm -23 <(sort <(go list -f '{{join .Deps "\n"}}' ./...) | uniq) <(go list std) | grep -v TheThingsNetwork)
 script:
   - go list ./... | grep -v integration | xargs go test
   - sh -c 'FMTRES="$(go fmt ./...)"; if [ ! -z "$FMTRES" ]; then echo $FMTRES; exit 255; fi'
