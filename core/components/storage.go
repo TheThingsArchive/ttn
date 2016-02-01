@@ -20,11 +20,6 @@ type routerStorage interface {
 	Store(devAddr lorawan.DevAddr, entry routerEntry) error
 }
 
-type brokerStorage interface {
-	Lookup(devAddr lorawan.DevAddr) ([]brokerEntry, error)
-	Store(devAddr lorawan.DevAddr, entry brokerEntry) error
-}
-
 type handlerStorage interface {
 	Lookup(devAddr lorawan.DevAddr) ([]handlerEntry, error)
 	Store(devAddr lorawan.DevAddr, entry handlerEntry) error
@@ -39,12 +34,6 @@ type storageEntry interface {
 type routerEntry struct {
 	Recipients []core.Recipient
 	Until      time.Time
-}
-
-type brokerEntry struct {
-	Id      string
-	NwkSKey lorawan.AES128Key
-	Url     string
 }
 
 type handlerEntry struct {
