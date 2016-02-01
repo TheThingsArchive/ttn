@@ -16,12 +16,12 @@ const (
 )
 
 type Router struct {
-	db  routerStorage // Local storage that maps end-device addresses to broker addresses
+	db  RouterStorage // Local storage that maps end-device addresses to broker addresses
 	ctx log.Interface
 }
 
 // NewRouter constructs a Router and setup its internal structure
-func NewRouter(db routerStorage, ctx log.Interface) *Router {
+func NewRouter(db RouterStorage, ctx log.Interface) *Router {
 	return &Router{
 		db:  db,
 		ctx: ctx,

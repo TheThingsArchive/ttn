@@ -13,10 +13,10 @@ import (
 
 type Broker struct {
 	ctx log.Interface
-	db  brokerStorage
+	db  BrokerStorage
 }
 
-func NewBroker(db brokerStorage, ctx log.Interface) *Broker {
+func NewBroker(db BrokerStorage, ctx log.Interface) *Broker {
 	return &Broker{
 		ctx: ctx,
 		db:  db,

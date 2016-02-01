@@ -11,7 +11,7 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
-type routerStorage interface {
+type RouterStorage interface {
 	Close() error
 	Lookup(devAddr lorawan.DevAddr) (routerEntry, error)
 	Reset() error
@@ -26,6 +26,19 @@ type routerBoltStorage struct {
 type routerEntry struct {
 	Recipients []core.Recipient
 	until      time.Time
+}
+
+func NewRouterStorage() (RouterStorage, error) {
+	db, err := bolt.Open("router_storage.db", 0600, &bolt.Options{Timeout: time.Second})
+	if err != nil {
+		return nil, err
+	}
+
+	if err := initDB(db, "brokers"); err != nil {
+		return nil, err
+	}
+
+	return &routerBoltStorage{DB: db}, nil
 }
 
 func (s routerBoltStorage) Lookup(devAddr lorawan.DevAddr) (routerEntry, error) {

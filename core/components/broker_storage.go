@@ -4,11 +4,13 @@
 package components
 
 import (
+	"time"
+
 	"github.com/boltdb/bolt"
 	"github.com/brocaar/lorawan"
 )
 
-type brokerStorage interface {
+type BrokerStorage interface {
 	Close() error
 	Lookup(devAddr lorawan.DevAddr) ([]brokerEntry, error)
 	Reset() error
@@ -23,6 +25,19 @@ type brokerEntry struct {
 	Id      string
 	NwkSKey lorawan.AES128Key
 	Url     string
+}
+
+func NewBrokerStorage() (BrokerStorage, error) {
+	db, err := bolt.Open("broker_storage.db", 0600, &bolt.Options{Timeout: time.Second})
+	if err != nil {
+		return nil, err
+	}
+
+	if err := initDB(db, "devices"); err != nil {
+		return nil, err
+	}
+
+	return &brokerBoltStorage{DB: db}, nil
 }
 
 func (s brokerBoltStorage) Lookup(devAddr lorawan.DevAddr) ([]brokerEntry, error) {
