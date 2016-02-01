@@ -16,31 +16,24 @@ const (
 )
 
 type Router struct {
-	Ctx log.Interface
-	db  routerStorage // Local storage that maps end-device addresses to broker addresses
+	db  RouterStorage // Local storage that maps end-device addresses to broker addresses
+	ctx log.Interface
 }
 
 // NewRouter constructs a Router and setup its internal structure
-func NewRouter(ctx log.Interface) (*Router, error) {
-	localDB, err := NewRouterStorage(EXPIRY_DELAY)
-
-	if err != nil {
-		return nil, err
-	}
-
+func NewRouter(db RouterStorage, ctx log.Interface) *Router {
 	return &Router{
-		Ctx: ctx,
-		db:  localDB,
-	}, nil
+		db:  db,
+		ctx: ctx,
+	}
 }
 
 // Register implements the core.Component interface
 func (r *Router) Register(reg core.Registration, an core.AckNacker) error {
-	if !r.ok() {
-		an.Nack()
-		return ErrNotInitialized
+	entry := routerEntry{
+		Recipients: []core.Recipient{reg.Recipient},
 	}
-	if err := r.db.store(reg.DevAddr, reg.Recipient); err != nil {
+	if err := r.db.Store(reg.DevAddr, entry); err != nil {
 		an.Nack()
 		return err
 	}
@@ -54,11 +47,6 @@ func (r *Router) HandleDown(p core.Packet, an core.AckNacker, downAdapter core.A
 
 // HandleUp implements the core.Component interface
 func (r *Router) HandleUp(p core.Packet, an core.AckNacker, upAdapter core.Adapter) error {
-	if !r.ok() {
-		an.Nack()
-		return ErrNotInitialized
-	}
-
 	// Lookup for an existing broker
 	devAddr, err := p.DevAddr()
 	if err != nil {
@@ -66,21 +54,16 @@ func (r *Router) HandleUp(p core.Packet, an core.AckNacker, upAdapter core.Adapt
 		return err
 	}
 
-	brokers, err := r.db.lookup(devAddr)
+	entries, err := r.db.Lookup(devAddr)
 	if err != ErrDeviceNotFound && err != ErrEntryExpired {
 		an.Nack()
 		return err
 	}
 
-	response, err := upAdapter.Send(p, brokers...)
+	response, err := upAdapter.Send(p, entries.Recipients...)
 	if err != nil {
 		an.Nack()
 		return err
 	}
 	return an.Ack(response)
-}
-
-// ok ensure the router has been initialized by NewRouter()
-func (r *Router) ok() bool {
-	return r != nil && r.db != nil
 }

@@ -235,6 +235,10 @@ func TestHandleUp(t *testing.T) {
 		checkAcks(t, test.WantNbAck, chans["ack"], "ack")
 		checkAcks(t, test.WantNbNack, chans["nack"], "nack")
 		checkPackets(t, test.WantPackets, chans["packet"])
+
+		if err := handler.db.Close(); err != nil {
+			panic(err)
+		}
 	}
 }
 
@@ -293,7 +297,17 @@ func genPacketsFromSchedule(s *[]event) {
 
 func genNewHandler(t *testing.T, applications map[lorawan.EUI64]application) *Handler {
 	ctx := GetLogger(t, "Handler")
-	handler, err := NewHandler(newHandlerDB(), ctx)
+
+	db, err := NewHandlerStorage()
+	if err != nil {
+		panic(err)
+	}
+
+	if err := db.Reset(); err != nil {
+		panic(err)
+	}
+
+	handler := NewHandler(db, ctx)
 	if err != nil {
 		panic(err)
 	}

@@ -13,20 +13,14 @@ import (
 
 type Broker struct {
 	ctx log.Interface
-	db  brokerStorage
+	db  BrokerStorage
 }
 
-func NewBroker(ctx log.Interface) (*Broker, error) {
-	localDB, err := NewBrokerStorage()
-
-	if err != nil {
-		return nil, err
-	}
-
+func NewBroker(db BrokerStorage, ctx log.Interface) *Broker {
 	return &Broker{
 		ctx: ctx,
-		db:  localDB,
-	}, nil
+		db:  db,
+	}
 }
 
 func (b *Broker) HandleUp(p core.Packet, an core.AckNacker, adapter core.Adapter) error {
@@ -39,7 +33,7 @@ func (b *Broker) HandleUp(p core.Packet, an core.AckNacker, adapter core.Adapter
 		return ErrInvalidPacket
 	}
 	ctx := b.ctx.WithField("devAddr", devAddr)
-	entries, err := b.db.lookup(devAddr)
+	entries, err := b.db.Lookup(devAddr)
 	switch err {
 	case nil:
 	case ErrDeviceNotFound:
@@ -54,7 +48,7 @@ func (b *Broker) HandleUp(p core.Packet, an core.AckNacker, adapter core.Adapter
 	// check. Only one should verify the MIC check.
 	var handler *core.Recipient
 	for _, entry := range entries {
-		ok, err := p.Payload.ValidateMIC(entry.NwsKey)
+		ok, err := p.Payload.ValidateMIC(entry.NwkSKey)
 		if err != nil {
 			continue
 		}
@@ -88,18 +82,18 @@ func (b *Broker) HandleDown(p core.Packet, an core.AckNacker, a core.Adapter) er
 func (b *Broker) Register(r core.Registration, an core.AckNacker) error {
 	id, okId := r.Recipient.Id.(string)
 	url, okUrl := r.Recipient.Address.(string)
-	nwsKey, okNwsKey := r.Options.(lorawan.AES128Key)
+	nwkSKey, okNwkSKey := r.Options.(lorawan.AES128Key)
 
 	ctx := b.ctx.WithField("devAddr", r.DevAddr)
 
-	if !(okId && okUrl && okNwsKey) {
+	if !(okId && okUrl && okNwkSKey) {
 		ctx.Warn("Invalid Registration")
 		an.Nack()
 		return ErrInvalidRegistration
 	}
 
-	entry := brokerEntry{Id: id, Url: url, NwsKey: nwsKey}
-	if err := b.db.store(r.DevAddr, entry); err != nil {
+	entry := brokerEntry{Id: id, Url: url, NwkSKey: nwkSKey}
+	if err := b.db.Store(r.DevAddr, entry); err != nil {
 		ctx.WithError(err).Error("Failed Registration")
 		an.Nack()
 		return err

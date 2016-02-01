@@ -4,70 +4,118 @@
 package components
 
 import (
-	"sync"
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/boltdb/bolt"
 	"github.com/brocaar/lorawan"
 )
 
-type routerStorage interface {
-	lookup(devAddr lorawan.DevAddr) ([]core.Recipient, error)
-	store(devAddr lorawan.DevAddr, recipients ...core.Recipient) error
+type RouterStorage interface {
+	Close() error
+	Lookup(devAddr lorawan.DevAddr) (routerEntry, error)
+	Reset() error
+	Store(devAddr lorawan.DevAddr, entry routerEntry) error
 }
 
-type routerDB struct {
-	sync.RWMutex
+type routerBoltStorage struct {
+	*bolt.DB
 	expiryDelay time.Duration
-	entries     map[lorawan.DevAddr]routerEntry
 }
 
 type routerEntry struct {
-	recipients []core.Recipient
+	Recipients []core.Recipient
 	until      time.Time
 }
 
-// NewLocalDB constructs a new local address keeper
-func NewRouterStorage(expiryDelay time.Duration) (routerStorage, error) {
-	return &routerDB{
-		expiryDelay: expiryDelay,
-		entries:     make(map[lorawan.DevAddr]routerEntry),
-	}, nil
+func NewRouterStorage() (RouterStorage, error) {
+	db, err := bolt.Open("router_storage.db", 0600, &bolt.Options{Timeout: time.Second})
+	if err != nil {
+		return nil, err
+	}
+
+	if err := initDB(db, "brokers"); err != nil {
+		return nil, err
+	}
+
+	return &routerBoltStorage{DB: db}, nil
 }
 
-// lookup implements the addressKeeper interface
-func (db *routerDB) lookup(devAddr lorawan.DevAddr) ([]core.Recipient, error) {
-	db.RLock()
-	entry, ok := db.entries[devAddr]
-	db.RUnlock()
-	if !ok {
-		return nil, ErrDeviceNotFound
+func (s routerBoltStorage) Lookup(devAddr lorawan.DevAddr) (routerEntry, error) {
+	entries, err := lookup(s.DB, "brokers", devAddr, &routerEntry{})
+	if err != nil {
+		return routerEntry{}, err
+	}
+	routerEntries := entries.([]routerEntry)
+
+	if len(routerEntries) != 1 {
+		if err := flush(s.DB, "brokers", devAddr); err != nil {
+			return routerEntry{}, err
+		}
+		return routerEntry{}, ErrNotFound
 	}
 
-	if db.expiryDelay != 0 && entry.until.Before(time.Now()) {
-		db.Lock()
-		delete(db.entries, devAddr)
-		db.Unlock()
-		return nil, ErrEntryExpired
+	if s.expiryDelay != 0 && routerEntries[0].until.Before(time.Now()) {
+		if err := flush(s.DB, "brokers", devAddr); err != nil {
+			return routerEntry{}, err
+		}
+		return routerEntry{}, ErrEntryExpired
 	}
 
-	return entry.recipients, nil
+	return routerEntries[0], nil
 }
 
-// store implements the addressKeeper interface
-func (db *routerDB) store(devAddr lorawan.DevAddr, recipients ...core.Recipient) error {
-	db.Lock()
-	_, ok := db.entries[devAddr]
-	if ok {
-		db.Unlock()
-		return ErrAlreadyExists
-	}
+func (s routerBoltStorage) Store(devAddr lorawan.DevAddr, entry routerEntry) error {
+	entry.until = time.Now().Add(s.expiryDelay)
+	return store(s.DB, "brokers", devAddr, &entry)
+}
 
-	db.entries[devAddr] = routerEntry{
-		recipients: recipients,
-		until:      time.Now().Add(db.expiryDelay),
-	}
+func (s routerBoltStorage) Close() error {
+	return s.DB.Close()
+}
 
-	db.Unlock()
-	return nil
+func (s routerBoltStorage) Reset() error {
+	return resetDB(s.DB, "brokers")
+}
+
+func (entry routerEntry) MarshalBinary() ([]byte, error) {
+	w := NewEntryReadWriter(nil)
+	w.DirectWrite(uint8(len(entry.Recipients)))
+	for _, r := range entry.Recipients {
+		rawId := []byte(r.Id.(string))
+		rawAddress := []byte(r.Address.(string))
+		w.Write(rawId)
+		w.Write(rawAddress)
+	}
+	rawTime, err := entry.until.MarshalBinary()
+	if err != nil {
+		return nil, err
+	}
+	w.Write(rawTime)
+	return w.Bytes()
+}
+
+func (entry *routerEntry) UnmarshalBinary(data []byte) error {
+	if entry == nil || len(data) < 1 {
+		return ErrNotUnmarshable
+	}
+	r := NewEntryReadWriter(data[0:])
+	for i := 0; i < int(data[0]); i += 1 {
+		var id, address string
+		r.Read(func(data []byte) { id = string(data) })
+		r.Read(func(data []byte) { address = string(address) })
+		entry.Recipients = append(entry.Recipients, core.Recipient{
+			Id:      id,
+			Address: address,
+		})
+	}
+	var err error
+	r.Read(func(data []byte) {
+		entry.until = time.Time{}
+		err = entry.until.UnmarshalBinary(data)
+	})
+	if err != nil {
+		return err
+	}
+	return r.Err()
 }

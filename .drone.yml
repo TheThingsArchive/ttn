@@ -2,11 +2,8 @@ build:
   test:
     image: golang
     commands:
-      - go get github.com/apex/log
-      - go get github.com/brocaar/lorawan
-      - go get github.com/jacobsa/crypto/cmac
-      - go get github.com/smartystreets/goconvey/convey
-      - go test -v ./...
+      - go get $(comm -23 <(sort <(go list -f '{{join .Deps "\n"}}' ./...) | uniq) <(go list std) | grep -v TheThingsNetwork)
+      - go list ./... | grep -v integration | xargs go test
       - sh -c 'FMTRES="$(go fmt ./...)"; if [ ! -z "$FMTRES" ]; then echo $FMTRES; exit 255; fi'
       - go vet ./...
   release:

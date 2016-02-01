@@ -4,52 +4,77 @@
 package components
 
 import (
-	"sync"
+	"time"
 
+	"github.com/boltdb/bolt"
 	"github.com/brocaar/lorawan"
 )
 
-type brokerStorage interface {
-	lookup(devAddr lorawan.DevAddr) ([]brokerEntry, error)
-	store(devAddr lorawan.DevAddr, entry brokerEntry) error
+type BrokerStorage interface {
+	Close() error
+	Lookup(devAddr lorawan.DevAddr) ([]brokerEntry, error)
+	Reset() error
+	Store(devAddr lorawan.DevAddr, entry brokerEntry) error
+}
+
+type brokerBoltStorage struct {
+	*bolt.DB
 }
 
 type brokerEntry struct {
-	Id     string
-	Url    string
-	NwsKey lorawan.AES128Key
+	Id      string
+	NwkSKey lorawan.AES128Key
+	Url     string
 }
 
-type brokerDB struct {
-	sync.RWMutex
-	entries map[lorawan.DevAddr][]brokerEntry
-}
-
-// NewLocalDB constructs a new local brokerStorage
-func NewBrokerStorage() (brokerStorage, error) {
-	return &brokerDB{entries: make(map[lorawan.DevAddr][]brokerEntry)}, nil
-}
-
-// lookup implements the brokerStorage interface
-func (db *brokerDB) lookup(devAddr lorawan.DevAddr) ([]brokerEntry, error) {
-	db.RLock()
-	entries, ok := db.entries[devAddr]
-	db.RUnlock()
-	if !ok {
-		return nil, ErrDeviceNotFound
+func NewBrokerStorage() (BrokerStorage, error) {
+	db, err := bolt.Open("broker_storage.db", 0600, &bolt.Options{Timeout: time.Second})
+	if err != nil {
+		return nil, err
 	}
-	return entries, nil
+
+	if err := initDB(db, "devices"); err != nil {
+		return nil, err
+	}
+
+	return &brokerBoltStorage{DB: db}, nil
 }
 
-// store implements the brokerStorage interface
-func (db *brokerDB) store(devAddr lorawan.DevAddr, entry brokerEntry) error {
-	db.Lock()
-	defer db.Unlock()
-	entries, ok := db.entries[devAddr]
-	if !ok {
-		db.entries[devAddr] = []brokerEntry{entry}
-		return nil
+func (s brokerBoltStorage) Lookup(devAddr lorawan.DevAddr) ([]brokerEntry, error) {
+	entries, err := lookup(s.DB, "devices", devAddr, &brokerEntry{})
+	if err != nil {
+		return nil, err
 	}
-	db.entries[devAddr] = append(entries, entry)
-	return nil
+	return entries.([]brokerEntry), nil
+}
+
+func (s brokerBoltStorage) Store(devAddr lorawan.DevAddr, entry brokerEntry) error {
+	return store(s.DB, "devices", devAddr, &entry)
+}
+
+func (s brokerBoltStorage) Close() error {
+	return s.DB.Close()
+}
+
+func (s brokerBoltStorage) Reset() error {
+	return resetDB(s.DB, "devices")
+}
+
+func (entry brokerEntry) MarshalBinary() ([]byte, error) {
+	w := NewEntryReadWriter(nil)
+	w.Write(entry.Id)
+	w.Write(entry.NwkSKey)
+	w.Write(entry.Url)
+	return w.Bytes()
+}
+
+func (entry *brokerEntry) UnmarshalBinary(data []byte) error {
+	if entry == nil || len(data) < 3 {
+		return ErrNotUnmarshable
+	}
+	r := NewEntryReadWriter(data)
+	r.Read(func(data []byte) { entry.Id = string(data) })
+	r.Read(func(data []byte) { copy(entry.NwkSKey[:], data) })
+	r.Read(func(data []byte) { entry.Url = string(data) })
+	return r.Err()
 }

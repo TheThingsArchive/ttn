@@ -43,10 +43,12 @@ func main() {
 		ctx.WithError(err).Fatal("Could not start Handlers Adapter")
 	}
 
-	broker, err := components.NewBroker(ctx.WithField("tag", "Broker"))
+	db, err := components.NewBrokerStorage()
 	if err != nil {
-		ctx.WithError(err).Fatal("Could not start Broker")
+		ctx.WithError(err).Fatal("Could not create a local storage")
 	}
+
+	broker := components.NewBroker(db, ctx.WithField("tag", "Broker"))
 
 	// Bring the service to life
 

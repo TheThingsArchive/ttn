@@ -4,69 +4,87 @@
 package components
 
 import (
-	"sync"
+	"time"
 
 	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/boltdb/bolt"
 	"github.com/brocaar/lorawan"
 )
 
-type partitionId [20]byte
-
-type handlerStorage interface {
-	store(lorawan.DevAddr, handlerEntry) error
-	partition([]core.Packet) ([]handlerPartition, error)
+type HandlerStorage interface {
+	Close() error
+	Lookup(devAddr lorawan.DevAddr) ([]handlerEntry, error)
+	Reset() error
+	Store(devAddr lorawan.DevAddr, entry handlerEntry) error
+	Partition(packet ...core.Packet) ([]handlerPartition, error)
 }
 
-type handlerPartition struct {
-	handlerEntry
-	id      partitionId
-	Packets []core.Packet
+type handlerBoltStorage struct {
+	*bolt.DB
 }
 
 type handlerEntry struct {
 	AppEUI  lorawan.EUI64
-	NwkSKey lorawan.AES128Key
 	AppSKey lorawan.AES128Key
 	DevAddr lorawan.DevAddr
+	NwkSKey lorawan.AES128Key
 }
 
-type handlerDB struct {
-	sync.RWMutex // Guards entries
-	entries      map[lorawan.DevAddr][]handlerEntry
+type handlerPartition struct {
+	handlerEntry
+	Id      partitionId
+	Packets []core.Packet
 }
 
-// newHandlerDB construct a new local handlerStorage
-func newHandlerDB() handlerStorage {
-	return &handlerDB{entries: make(map[lorawan.DevAddr][]handlerEntry)}
+type partitionId [20]byte
+
+func NewHandlerStorage() (HandlerStorage, error) {
+	db, err := bolt.Open("handler_storage.db", 0600, &bolt.Options{Timeout: time.Second})
+	if err != nil {
+		return nil, err
+	}
+
+	if err := initDB(db, "applications"); err != nil {
+		return nil, err
+	}
+
+	return &handlerBoltStorage{DB: db}, nil
 }
 
-// store implements the handlerStorage interface
-func (db *handlerDB) store(devAddr lorawan.DevAddr, entry handlerEntry) error {
-	db.Lock()
-	db.entries[devAddr] = append(db.entries[devAddr], entry)
-	db.Unlock()
-	return nil
+func (s handlerBoltStorage) Lookup(devAddr lorawan.DevAddr) ([]handlerEntry, error) {
+	entries, err := lookup(s.DB, "applications", devAddr, &handlerEntry{})
+	if err != nil {
+		return nil, err
+	}
+	return entries.([]handlerEntry), nil
 }
 
-// partition implements the handlerStorage interface
-func (db *handlerDB) partition(packets []core.Packet) ([]handlerPartition, error) {
+func (s handlerBoltStorage) Store(devAddr lorawan.DevAddr, entry handlerEntry) error {
+	return store(s.DB, "applications", devAddr, &entry)
+}
+
+func (s handlerBoltStorage) Partition(packets ...core.Packet) ([]handlerPartition, error) {
 	// Create a map in order to do the partition
 	partitions := make(map[partitionId]handlerPartition)
 
-	db.RLock() // We require lock on the whole block because we don't want the entries to change while building the partition.
 	for _, packet := range packets {
-		// First, determine devAddr and get the macPayload. Those are mandatory.
+		// First, determine devAddr, mandatory
 		devAddr, err := packet.DevAddr()
 		if err != nil {
 			return nil, ErrInvalidPacket
 		}
 
-		// Now, get all tuples associated to that device address, and choose the right one
-		for _, entry := range db.entries[devAddr] {
+		entries, err := s.Lookup(devAddr)
+		if err != nil {
+			return nil, err
+		}
+
+		// Now get all tuples associated to that device address, and choose the right one
+		for _, entry := range entries {
 			// Compute MIC check to find the right keys
 			ok, err := packet.Payload.ValidateMIC(entry.NwkSKey)
 			if err != nil || !ok {
-				continue // These aren't the droid you're looking for
+				continue // These aren't the droids you're looking for
 			}
 
 			// #Easy
@@ -75,15 +93,14 @@ func (db *handlerDB) partition(packets []core.Packet) ([]handlerPartition, error
 			copy(id[16:], entry.DevAddr[:])
 			partitions[id] = handlerPartition{
 				handlerEntry: entry,
-				id:           id,
+				Id:           id,
 				Packets:      append(partitions[id].Packets, packet),
 			}
 			break // We shouldn't look for other entries, we've found the right one
 		}
 	}
-	db.RUnlock()
 
-	// Transform the map in a slice
+	// Transform the map to a slice
 	res := make([]handlerPartition, 0, len(partitions))
 	for _, p := range partitions {
 		res = append(res, p)
@@ -92,5 +109,35 @@ func (db *handlerDB) partition(packets []core.Packet) ([]handlerPartition, error
 	if len(res) == 0 {
 		return nil, ErrNotFound
 	}
+
 	return res, nil
+}
+
+func (s handlerBoltStorage) Close() error {
+	return s.DB.Close()
+}
+
+func (s handlerBoltStorage) Reset() error {
+	return resetDB(s.DB, "applications")
+}
+
+func (entry handlerEntry) MarshalBinary() ([]byte, error) {
+	w := NewEntryReadWriter(nil)
+	w.Write(entry.AppEUI)
+	w.Write(entry.AppSKey)
+	w.Write(entry.DevAddr)
+	w.Write(entry.NwkSKey)
+	return w.Bytes()
+}
+
+func (entry *handlerEntry) UnmarshalBinary(data []byte) error {
+	if entry == nil || len(data) < 4 {
+		return ErrNotUnmarshable
+	}
+	r := NewEntryReadWriter(data)
+	r.Read(func(data []byte) { copy(entry.AppEUI[:], data) })
+	r.Read(func(data []byte) { copy(entry.AppSKey[:], data) })
+	r.Read(func(data []byte) { copy(entry.DevAddr[:], data) })
+	r.Read(func(data []byte) { copy(entry.NwkSKey[:], data) })
+	return r.Err()
 }

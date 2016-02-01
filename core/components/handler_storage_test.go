@@ -115,11 +115,14 @@ func TestStoragePartition(t *testing.T) {
 		packets := genPacketsFromHandlerEntries(test.PacketsShape)
 
 		// Operate
-		partitions, err := db.partition(packets)
+		partitions, err := db.Partition(packets...)
 
 		// Check
 		checkErrors(t, test.WantError, err)
 		checkPartitions(t, test.WantPartitions, partitions)
+		if err := db.Close(); err != nil {
+			panic(err)
+		}
 	}
 }
 
@@ -130,11 +133,18 @@ type partitionShape struct {
 
 // ----- BUILD utilities
 
-func genFilledHandlerStorage(setup []handlerEntry) (db handlerStorage) {
-	db = newHandlerDB()
+func genFilledHandlerStorage(setup []handlerEntry) HandlerStorage {
+	db, err := NewHandlerStorage()
+	if err != nil {
+		panic(err)
+	}
+
+	if err := db.Reset(); err != nil {
+		panic(err)
+	}
 
 	for _, entry := range setup {
-		if err := db.store(entry.DevAddr, entry); err != nil {
+		if err := db.Store(entry.DevAddr, entry); err != nil {
 			panic(err)
 		}
 	}
