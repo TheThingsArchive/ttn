@@ -16,14 +16,14 @@ type storageEntry interface {
 	UnmarshalBinary(data []byte) error
 }
 
-func store(db *bolt.DB, bucketName []byte, devAddr lorawan.DevAddr, entry storageEntry) error {
+func store(db *bolt.DB, bucketName string, devAddr lorawan.DevAddr, entry storageEntry) error {
 	marshalled, err := entry.MarshalBinary()
 	if err != nil {
 		return err
 	}
 
 	err = db.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket(bucketName)
+		bucket := tx.Bucket([]byte(bucketName))
 		if bucket == nil {
 			return ErrStorageUnreachable
 		}
@@ -39,10 +39,10 @@ func store(db *bolt.DB, bucketName []byte, devAddr lorawan.DevAddr, entry storag
 	return err
 }
 
-func lookup(db *bolt.DB, bucketName []byte, devAddr lorawan.DevAddr, shape storageEntry) (interface{}, error) {
+func lookup(db *bolt.DB, bucketName string, devAddr lorawan.DevAddr, shape storageEntry) (interface{}, error) {
 	var rawEntry []byte
 	err := db.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket(bucketName)
+		bucket := tx.Bucket([]byte(bucketName))
 		if bucket == nil {
 			return ErrStorageUnreachable
 		}
@@ -76,9 +76,9 @@ func lookup(db *bolt.DB, bucketName []byte, devAddr lorawan.DevAddr, shape stora
 	return entries.Interface(), nil
 }
 
-func flush(db *bolt.DB, bucketName []byte, devAddr lorawan.DevAddr) error {
+func flush(db *bolt.DB, bucketName string, devAddr lorawan.DevAddr) error {
 	return db.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket(bucketName)
+		bucket := tx.Bucket([]byte(bucketName))
 		if bucket == nil {
 			return ErrStorageUnreachable
 		}

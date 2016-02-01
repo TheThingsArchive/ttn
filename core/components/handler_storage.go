@@ -46,7 +46,7 @@ func NewHandlerStorage() (HandlerStorage, error) {
 }
 
 func (s handlerBoltStorage) Lookup(devAddr lorawan.DevAddr) ([]handlerEntry, error) {
-	entries, err := lookup(s.DB, []byte("applications"), devAddr, &handlerEntry{})
+	entries, err := lookup(s.DB, "applications", devAddr, &handlerEntry{})
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +54,7 @@ func (s handlerBoltStorage) Lookup(devAddr lorawan.DevAddr) ([]handlerEntry, err
 }
 
 func (s handlerBoltStorage) Store(devAddr lorawan.DevAddr, entry handlerEntry) error {
-	return store(s.DB, []byte("applications"), devAddr, &entry)
+	return store(s.DB, "applications", devAddr, &entry)
 }
 
 func (s handlerBoltStorage) Partition(packets ...core.Packet) ([]handlerPartition, error) {

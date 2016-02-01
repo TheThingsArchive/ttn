@@ -24,7 +24,7 @@ type brokerEntry struct {
 }
 
 func (s brokerBoltStorage) Lookup(devAddr lorawan.DevAddr) ([]brokerEntry, error) {
-	entries, err := lookup(s.DB, []byte("devices"), devAddr, &brokerEntry{})
+	entries, err := lookup(s.DB, "devices", devAddr, &brokerEntry{})
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +32,7 @@ func (s brokerBoltStorage) Lookup(devAddr lorawan.DevAddr) ([]brokerEntry, error
 }
 
 func (s brokerBoltStorage) Store(devAddr lorawan.DevAddr, entry brokerEntry) error {
-	return store(s.DB, []byte("devices"), devAddr, &entry)
+	return store(s.DB, "devices", devAddr, &entry)
 }
 
 func (entry brokerEntry) MarshalBinary() ([]byte, error) {
