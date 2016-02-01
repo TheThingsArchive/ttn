@@ -149,7 +149,7 @@ func (entry routerEntry) MarshalBinary() ([]byte, error) {
 
 func (entry *routerEntry) UnmarshalBinary(data []byte) error {
 	if entry == nil || len(data) == 0 {
-		return ErrNotMarshable
+		return ErrNotUnmarshable
 	}
 	cursor := 1
 	for i := 0; i < int(data[0]); i += 1 {
