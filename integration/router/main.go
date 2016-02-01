@@ -46,10 +46,12 @@ func main() {
 		ctx.WithError(err).Fatal("Could not start Broker Adapter")
 	}
 
-	router, err := components.NewRouter(ctx.WithField("tag", "Router"))
+	db, err := components.NewRouterStorage()
 	if err != nil {
-		ctx.WithError(err).Fatal("Could not start Router")
+		ctx.WithError(err).Fatal("Could not create a local storage")
 	}
+
+	router := components.NewRouter(db, ctx.WithField("tag", "Router"))
 
 	// Bring the service to life
 
