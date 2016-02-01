@@ -42,6 +42,10 @@ func NewHandlerStorage() (HandlerStorage, error) {
 		return nil, err
 	}
 
+	if err := initDB(db, "applications"); err != nil {
+		return nil, err
+	}
+
 	return &handlerBoltStorage{DB: db}, nil
 }
 

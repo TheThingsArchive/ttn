@@ -16,6 +16,13 @@ type storageEntry interface {
 	UnmarshalBinary(data []byte) error
 }
 
+func initDB(db *bolt.DB, bucketName string) error {
+	return db.Update(func(tx *bolt.Tx) error {
+		_, err := tx.CreateBucketIfNotExists([]byte(bucketName))
+		return err
+	})
+}
+
 func store(db *bolt.DB, bucketName string, devAddr lorawan.DevAddr, entry storageEntry) error {
 	marshalled, err := entry.MarshalBinary()
 	if err != nil {
