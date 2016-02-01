@@ -4,10 +4,7 @@ go:
   - 1.5
 
 install:
-  - go get github.com/apex/log
-  - go get github.com/brocaar/lorawan
-  - go get github.com/jacobsa/crypto/cmac
-  - go get github.com/smartystreets/goconvey/convey
+  - go get $(go list -f '{{join .Deps " "}}' ./... | xargs go list -f '{{if not .Standard}}{{.ImportPath}}{{end}}' | grep -v "TheThingsNetwork")
 
 script:
   - go list ./... | grep -v integration | xargs go test
