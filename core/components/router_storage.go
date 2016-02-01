@@ -23,18 +23,35 @@ type routerBoltStorage struct {
 
 type routerEntry struct {
 	Recipients []core.Recipient
-	Until      time.Time
+	until      time.Time
 }
 
-func (s routerBoltStorage) Lookup(devAddr lorawan.DevAddr) ([]routerEntry, error) {
+func (s routerBoltStorage) Lookup(devAddr lorawan.DevAddr) (routerEntry, error) {
 	entries, err := lookup(s.DB, []byte("brokers"), devAddr, &routerEntry{})
 	if err != nil {
-		return nil, err
+		return routerEntry{}, err
 	}
-	return entries.([]routerEntry), nil
+	routerEntries := entries.([]routerEntry)
+
+	if len(routerEntries) != 1 {
+		if err := flush(s.DB, []byte("brokers"), devAddr); err != nil {
+			return routerEntry{}, err
+		}
+		return routerEntry{}, ErrNotFound
+	}
+
+	if s.expiryDelay != 0 && routerEntries[0].until.Before(time.Now()) {
+		if err := flush(s.DB, []byte("brokers"), devAddr); err != nil {
+			return routerEntry{}, err
+		}
+		return routerEntry{}, ErrEntryExpired
+	}
+
+	return routerEntries[0], nil
 }
 
 func (s routerBoltStorage) Store(devAddr lorawan.DevAddr, entry routerEntry) error {
+	entry.until = time.Now().Add(s.expiryDelay)
 	return store(s.DB, []byte("brokers"), devAddr, &entry)
 }
 
@@ -47,7 +64,7 @@ func (entry routerEntry) MarshalBinary() ([]byte, error) {
 		w.Write(rawId)
 		w.Write(rawAddress)
 	}
-	rawTime, err := entry.Until.MarshalBinary()
+	rawTime, err := entry.until.MarshalBinary()
 	if err != nil {
 		return nil, err
 	}
@@ -71,8 +88,8 @@ func (entry *routerEntry) UnmarshalBinary(data []byte) error {
 	}
 	var err error
 	r.Read(func(data []byte) {
-		entry.Until = time.Time{}
-		err = entry.Until.UnmarshalBinary(data)
+		entry.until = time.Time{}
+		err = entry.until.UnmarshalBinary(data)
 	})
 	if err != nil {
 		return err

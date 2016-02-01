@@ -293,7 +293,13 @@ func genPacketsFromSchedule(s *[]event) {
 
 func genNewHandler(t *testing.T, applications map[lorawan.EUI64]application) *Handler {
 	ctx := GetLogger(t, "Handler")
-	handler, err := NewHandler(newHandlerDB(), ctx)
+
+	db, err := NewHandlerStorage()
+	if err != nil {
+		panic(err)
+	}
+
+	handler := NewHandler(db, ctx)
 	if err != nil {
 		panic(err)
 	}

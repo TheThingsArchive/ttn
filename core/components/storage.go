@@ -75,3 +75,13 @@ func lookup(db *bolt.DB, bucketName []byte, devAddr lorawan.DevAddr, shape stora
 	}
 	return entries.Interface(), nil
 }
+
+func flush(db *bolt.DB, bucketName []byte, devAddr lorawan.DevAddr) error {
+	return db.Update(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(bucketName)
+		if bucket == nil {
+			return ErrStorageUnreachable
+		}
+		return bucket.Delete(devAddr[:])
+	})
+}

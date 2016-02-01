@@ -4,12 +4,14 @@
 package components
 
 import (
+	"time"
+
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/boltdb/bolt"
 	"github.com/brocaar/lorawan"
 )
 
-type handlerStorage interface {
+type HandlerStorage interface {
 	Lookup(devAddr lorawan.DevAddr) ([]handlerEntry, error)
 	Store(devAddr lorawan.DevAddr, entry handlerEntry) error
 	Partition(packet ...core.Packet) ([]handlerPartition, error)
@@ -33,6 +35,15 @@ type handlerPartition struct {
 }
 
 type partitionId [20]byte
+
+func NewHandlerStorage() (HandlerStorage, error) {
+	db, err := bolt.Open("handler_storage.db", 0600, &bolt.Options{Timeout: time.Second})
+	if err != nil {
+		return nil, err
+	}
+
+	return &handlerBoltStorage{DB: db}, nil
+}
 
 func (s handlerBoltStorage) Lookup(devAddr lorawan.DevAddr) ([]handlerEntry, error) {
 	entries, err := lookup(s.DB, []byte("applications"), devAddr, &handlerEntry{})

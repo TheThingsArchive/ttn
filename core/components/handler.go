@@ -17,21 +17,21 @@ const BUFFER_DELAY = time.Millisecond * 300
 
 type Handler struct {
 	ctx log.Interface
-	db  handlerStorage
+	db  HandlerStorage
 	set chan<- uplinkBundle
 }
 
 type bundleId [22]byte // AppEUI | DevAddr | FCnt
 
 type uplinkBundle struct {
-	id      bundleId
-	entry   handlerEntry
-	packet  core.Packet
 	adapter core.Adapter
 	chresp  chan interface{} // Error or decrypted packet
+	entry   handlerEntry
+	id      bundleId
+	packet  core.Packet
 }
 
-func NewHandler(db handlerStorage, ctx log.Interface) (*Handler, error) {
+func NewHandler(db HandlerStorage, ctx log.Interface) *Handler {
 	h := Handler{
 		ctx: ctx,
 		db:  db,
@@ -44,7 +44,7 @@ func NewHandler(db handlerStorage, ctx log.Interface) (*Handler, error) {
 	go h.manageBuffers(bundles, set)
 	h.set = set
 
-	return &h, nil
+	return &h
 }
 
 func (h *Handler) Register(reg core.Registration, an core.AckNacker) error {
@@ -60,7 +60,7 @@ func (h *Handler) Register(reg core.Registration, an core.AckNacker) error {
 		return ErrBadOptions
 	}
 
-	err := h.db.store(reg.DevAddr, handlerEntry{
+	err := h.db.Store(reg.DevAddr, handlerEntry{
 		AppEUI:  appEUI,
 		AppSKey: options.AppSKey,
 		NwkSKey: options.NwkSKey,
@@ -78,7 +78,7 @@ func (h *Handler) Register(reg core.Registration, an core.AckNacker) error {
 
 func (h *Handler) HandleUp(p core.Packet, an core.AckNacker, upAdapter core.Adapter) error {
 	h.ctx.Debug("Handling new uplink packet")
-	partition, err := h.db.partition([]core.Packet{p})
+	partition, err := h.db.Partition(p)
 	if err != nil {
 		h.ctx.WithError(err).Debug("Unable to find entry")
 		an.Nack()
@@ -95,7 +95,7 @@ func (h *Handler) HandleUp(p core.Packet, an core.AckNacker, upAdapter core.Adap
 	chresp := make(chan interface{})
 	var id bundleId
 	buf := new(bytes.Buffer)
-	buf.Write(partition[0].id[:]) // Partition is necessarily of length 1, associated to 1 packet, the same we gave
+	buf.Write(partition[0].Id[:]) // Partition is necessarily of length 1, associated to 1 packet, the same we gave
 	binary.Write(buf, binary.BigEndian, fcnt)
 	copy(id[:], buf.Bytes())
 	h.ctx.WithField("bundleId", id).Debug("Defining new bundle")
