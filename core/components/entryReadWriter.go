@@ -53,7 +53,6 @@ func (w *entryReadWriter) DirectWrite(data interface{}) {
 	in := w.data.Next(w.data.Len())
 	binary.Write(w.data, binary.BigEndian, in)
 	w.err = binary.Write(w.data, binary.BigEndian, data)
-	fmt.Println(w.data.Bytes())
 }
 
 func (w *entryReadWriter) Read(to func(data []byte)) {

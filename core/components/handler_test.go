@@ -235,6 +235,10 @@ func TestHandleUp(t *testing.T) {
 		checkAcks(t, test.WantNbAck, chans["ack"], "ack")
 		checkAcks(t, test.WantNbNack, chans["nack"], "nack")
 		checkPackets(t, test.WantPackets, chans["packet"])
+
+		if err := handler.db.Close(); err != nil {
+			panic(err)
+		}
 	}
 }
 

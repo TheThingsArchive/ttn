@@ -12,6 +12,7 @@ import (
 )
 
 type HandlerStorage interface {
+	Close() error
 	Lookup(devAddr lorawan.DevAddr) ([]handlerEntry, error)
 	Store(devAddr lorawan.DevAddr, entry handlerEntry) error
 	Partition(packet ...core.Packet) ([]handlerPartition, error)
@@ -109,6 +110,10 @@ func (s handlerBoltStorage) Partition(packets ...core.Packet) ([]handlerPartitio
 	}
 
 	return res, nil
+}
+
+func (s handlerBoltStorage) Close() error {
+	return s.DB.Close()
 }
 
 func (entry handlerEntry) MarshalBinary() ([]byte, error) {

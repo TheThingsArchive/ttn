@@ -12,6 +12,7 @@ import (
 )
 
 type routerStorage interface {
+	Close() error
 	Lookup(devAddr lorawan.DevAddr) (routerEntry, error)
 	Store(devAddr lorawan.DevAddr, entry routerEntry) error
 }
@@ -53,6 +54,10 @@ func (s routerBoltStorage) Lookup(devAddr lorawan.DevAddr) (routerEntry, error) 
 func (s routerBoltStorage) Store(devAddr lorawan.DevAddr, entry routerEntry) error {
 	entry.until = time.Now().Add(s.expiryDelay)
 	return store(s.DB, "brokers", devAddr, &entry)
+}
+
+func (s routerBoltStorage) Close() error {
+	return s.DB.Close()
 }
 
 func (entry routerEntry) MarshalBinary() ([]byte, error) {

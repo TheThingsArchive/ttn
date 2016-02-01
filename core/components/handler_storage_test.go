@@ -120,6 +120,9 @@ func TestStoragePartition(t *testing.T) {
 		// Check
 		checkErrors(t, test.WantError, err)
 		checkPartitions(t, test.WantPartitions, partitions)
+		if err := db.Close(); err != nil {
+			panic(err)
+		}
 	}
 }
 
