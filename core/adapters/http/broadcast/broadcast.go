@@ -17,7 +17,7 @@ import (
 	"github.com/apex/log"
 )
 
-// Broadcast matereializes a extended basic http adapter which will also generate registration based
+// Broadcast materializes an extended basic http adapter which will also generate registration based
 // on request responses. Whenever the adapter broadcast a request, it will trigger a registration
 // demand for each new valid recipient.
 type Adapter struct {

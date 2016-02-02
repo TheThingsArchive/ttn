@@ -12,11 +12,15 @@ import (
 	"github.com/apex/log"
 )
 
+// Pubsub adapter materializes an extended basic http adapter which will also generate for each
+// request made on a specific endpoint (here /end-devices).
+// A Put request made on /end-devices with the appropriate parameters (refer to the parser doc for
+// that) will end up in generating a registration event accessible via 'NextRegistration'.
 type Adapter struct {
-	*httpadapter.Adapter
-	parser.RegistrationParser
-	ctx           log.Interface
-	registrations chan regReq
+	*httpadapter.Adapter                    // Composed of an original http adapter
+	parser.RegistrationParser               // A registration parser to transform appropriate request into reg
+	ctx                       log.Interface // Just a logger
+	registrations             chan regReq   // Communication channel responsible for registrations management
 }
 
 type regReq struct {
