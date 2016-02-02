@@ -12,6 +12,9 @@ import (
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
 )
 
+// metadata allows us to inherit Metadata in metadataProxy but only by extending the exported
+// attributes of Metadata such that, they are still parsed by the json.Marshaller /
+// json.Unmarshaller though we do not end up with a recursive hellish error.
 type metadata Metadata
 
 // MarshalJSON implements the json.Marshal interface
@@ -19,6 +22,7 @@ func (m Metadata) MarshalJSON() ([]byte, error) {
 	var d *semtech.Datrparser
 	var t *semtech.Timeparser
 
+	// Handle datr which can be either an uint or string depending of the modulation
 	if m.Datr != nil {
 		d = new(semtech.Datrparser)
 		if m.Modu != nil && *m.Modu == "FSK" {
@@ -28,6 +32,7 @@ func (m Metadata) MarshalJSON() ([]byte, error) {
 		}
 	}
 
+	// Time :'( ... By default, we mashall them as RFC3339Nano and unmarshall them the best we can.
 	if m.Time != nil {
 		t = new(semtech.Timeparser)
 		*t = semtech.Timeparser{Layout: time.RFC3339Nano, Value: m.Time}
@@ -62,7 +67,7 @@ func (m *Metadata) UnmarshalJSON(raw []byte) error {
 	return nil
 }
 
-// String implement the io.Stringer interface
+// String implements the io.Stringer interface
 func (m Metadata) String() string {
 	return pointer.DumpPStruct(m, false)
 }

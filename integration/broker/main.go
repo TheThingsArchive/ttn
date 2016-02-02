@@ -10,6 +10,7 @@ import (
 
 	. "github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/adapters/http"
+	"github.com/TheThingsNetwork/ttn/core/adapters/http/parser"
 	"github.com/TheThingsNetwork/ttn/core/adapters/http/pubsub"
 	"github.com/TheThingsNetwork/ttn/core/components"
 	"github.com/apex/log"
@@ -28,17 +29,17 @@ func main() {
 	routersPort, handlersPort := parseOptions()
 
 	// Instantiate all components
-	rtrAdapter, err := http.NewAdapter(uint(routersPort), http.JSONPacketParser{}, ctx.WithField("tag", "Routers Adapter"))
+	rtrAdapter, err := http.NewAdapter(uint(routersPort), parser.JSON{}, ctx.WithField("tag", "Routers Adapter"))
 	if err != nil {
 		ctx.WithError(err).Fatal("Could not start Routers Adapter")
 	}
 
-	hdlHTTPAdapter, err := http.NewAdapter(uint(handlersPort), http.JSONPacketParser{}, ctx.WithField("tag", "Handlers Adapter"))
+	hdlHTTPAdapter, err := http.NewAdapter(uint(handlersPort), parser.JSON{}, ctx.WithField("tag", "Handlers Adapter"))
 	if err != nil {
 		ctx.WithError(err).Fatal("Could not start Handlers Adapter")
 	}
 
-	hdlAdapter, err := pubsub.NewAdapter(hdlHTTPAdapter, pubsub.HandlerParser{}, ctx.WithField("tag", "Handlers Adapter"))
+	hdlAdapter, err := pubsub.NewAdapter(hdlHTTPAdapter, parser.PubSub{}, ctx.WithField("tag", "Handlers Adapter"))
 	if err != nil {
 		ctx.WithError(err).Fatal("Could not start Handlers Adapter")
 	}

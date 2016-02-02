@@ -11,16 +11,19 @@ import (
 	"github.com/TheThingsNetwork/ttn/semtech"
 )
 
+// semtechAckNacker represents an AckNacker for a semtech request
 type semtechAckNacker struct {
-	conn      chan udpMsg
-	recipient core.Recipient
+	conn      chan udpMsg    // The adapter downlink connection channel
+	recipient core.Recipient // The recipient to reach
 }
 
+// Ack implements the core.Adapter interface
 func (an semtechAckNacker) Ack(p ...core.Packet) error {
 	if len(p) == 0 {
 		return nil
 	}
 
+	// For the downlink, we have to send a PULL_RESP packet which hold a TXPK
 	txpk, err := core.ConvertToTXPK(p[0])
 	if err != nil {
 		return err
@@ -40,6 +43,8 @@ func (an semtechAckNacker) Ack(p ...core.Packet) error {
 	return nil
 }
 
+// Ack implements the core.Adapter interface
 func (an semtechAckNacker) Nack() error {
+	// There's no notion of nack in the semtech protocol. You either reply something or you don't.
 	return nil
 }

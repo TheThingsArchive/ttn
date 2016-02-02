@@ -8,18 +8,19 @@ import (
 
 	"github.com/TheThingsNetwork/ttn/core"
 	httpadapter "github.com/TheThingsNetwork/ttn/core/adapters/http"
+	"github.com/TheThingsNetwork/ttn/core/adapters/http/parser"
 	"github.com/apex/log"
 )
 
+// Pubsub adapter materializes an extended basic http adapter which will also generate for each
+// request made on a specific endpoint (here /end-devices).
+// A Put request made on /end-devices with the appropriate parameters (refer to the parser doc for
+// that) will end up in generating a registration event accessible via 'NextRegistration'.
 type Adapter struct {
-	*httpadapter.Adapter
-	Parser
-	ctx           log.Interface
-	registrations chan regReq
-}
-
-type Parser interface {
-	Parse(req *http.Request) (core.Registration, error)
+	*httpadapter.Adapter                    // Composed of an original http adapter
+	parser.RegistrationParser               // A registration parser to transform appropriate request into reg
+	ctx                       log.Interface // Just a logger
+	registrations             chan regReq   // Communication channel responsible for registrations management
 }
 
 type regReq struct {
@@ -33,12 +34,12 @@ type regRes struct {
 }
 
 // NewAdapter constructs a new http adapter that also handle registrations via http requests
-func NewAdapter(adapter *httpadapter.Adapter, parser Parser, ctx log.Interface) (*Adapter, error) {
+func NewAdapter(adapter *httpadapter.Adapter, parser parser.RegistrationParser, ctx log.Interface) (*Adapter, error) {
 	a := &Adapter{
-		Adapter:       adapter,
-		Parser:        parser,
-		ctx:           ctx,
-		registrations: make(chan regReq),
+		Adapter:            adapter,
+		RegistrationParser: parser,
+		ctx:                ctx,
+		registrations:      make(chan regReq),
 	}
 
 	// So far we only supports one endpoint [PUT] /end-device/:devAddr

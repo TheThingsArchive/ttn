@@ -5,7 +5,7 @@ package http
 
 import "net/http"
 
-// fail logs the given failure and sends an appropriate response to the client
+// BadRequest logs the given failure and sends an appropriate response to the client
 func BadRequest(w http.ResponseWriter, msg string) {
 	w.WriteHeader(http.StatusBadRequest)
 	w.Write([]byte(msg))

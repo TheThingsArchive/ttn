@@ -31,7 +31,7 @@ func (p Packet) DevAddr() (lorawan.DevAddr, error) {
 	return macpayload.FHDR.DevAddr, nil
 }
 
-// FCnt returns the frame counter of the given packet
+// FCnt returns the frame counter of the given packet if any
 func (p Packet) Fcnt() (uint32, error) {
 	if p.Payload.MACPayload == nil {
 		return 0, fmt.Errorf("MACPayload should not be empty")
@@ -45,7 +45,7 @@ func (p Packet) Fcnt() (uint32, error) {
 	return macpayload.FHDR.FCnt, nil
 }
 
-// String returns a string representation of the packet
+// String returns a string representation of the packet. It implements the io.Stringer interface
 func (p Packet) String() string {
 	str := "Packet {"
 	str += fmt.Sprintf("\n\t%s}", p.Metadata.String())
@@ -56,11 +56,13 @@ func (p Packet) String() string {
 // ConvertRXPK create a core.Packet from a semtech.RXPK. It's an handy way to both decode the
 // frame payload and retrieve associated metadata from that packet
 func ConvertRXPK(p semtech.RXPK) (Packet, error) {
+	// First, we have to get the physical payload which is encoded in the Data field
 	packet := Packet{}
 	if p.Data == nil {
 		return packet, ErrImpossibleConversion
 	}
 
+	// RXPK Data are base64 encoded, yet without the trailing "==" if any.....
 	encoded := *p.Data
 	switch len(encoded) % 4 {
 	case 2:
@@ -79,6 +81,8 @@ func ConvertRXPK(p semtech.RXPK) (Packet, error) {
 		return packet, err
 	}
 
+	// Then, we interpret every other known field as a metadata and store them into an appropriate
+	// metadata object.
 	metadata := Metadata{}
 	rxpkValue := reflect.ValueOf(p)
 	rxpkStruct := rxpkValue.Type()
@@ -90,19 +94,23 @@ func ConvertRXPK(p semtech.RXPK) (Packet, error) {
 		}
 	}
 
+	// At the end, our converted packet hold the same metadata than the RXPK packet but the Data
+	// which as been completely transformed into a lorawan Physical Payload.
 	return Packet{Metadata: metadata, Payload: payload}, nil
 }
 
 // ConvertToTXPK converts a core Packet to a semtech TXPK packet using compatible metadata.
 func ConvertToTXPK(p Packet) (semtech.TXPK, error) {
+	// Step 1, convert the physical payload to a base64 string (without the padding)
 	raw, err := p.Payload.MarshalBinary()
 	if err != nil {
 		return semtech.TXPK{}, ErrImpossibleConversion
 	}
 	data := strings.Trim(base64.StdEncoding.EncodeToString(raw), "=")
-
 	txpk := semtech.TXPK{Data: pointer.String(data)}
 
+	// Step 2, copy every compatible metadata from the packet to the TXPK packet.
+	// We are possibly loosing information here.
 	metadataValue := reflect.ValueOf(p.Metadata)
 	metadataStruct := metadataValue.Type()
 	txpkStruct := reflect.ValueOf(&txpk).Elem()
@@ -135,32 +143,40 @@ func (p *Packet) UnmarshalJSON(raw []byte) error {
 	if p == nil {
 		return ErrImpossibleConversion
 	}
+
+	// The payload is a bit tricky to unmarshal as we do not know if its an uplink or downlink
+	// packet. Thus, we'll assume it's an uplink packet (because that's the case most of the time)
+	// and check whether or not the unmarshalling process was okay.
 	var proxy struct {
 		Payload  string `json:"payload"`
 		Metadata Metadata
 	}
+
 	err := json.Unmarshal(raw, &proxy)
 	if err != nil {
 		return err
 	}
+
 	rawPayload, err := base64.StdEncoding.DecodeString(proxy.Payload)
 	if err != nil {
 		return err
 	}
 
-	// Try first to unmarshal as an uplink payload
-	payload := lorawan.NewPHYPayload(true)
+	payload := lorawan.NewPHYPayload(true) // true -> uplink
 	if err := payload.UnmarshalBinary(rawPayload); err != nil {
 		return err
 	}
 
+	// Now, we check the nature of the decoded payload
 	switch payload.MHDR.MType.String() {
 	case "JoinAccept":
 		fallthrough
 	case "UnconfirmedDataDown":
 		fallthrough
 	case "ConfirmedDataDown":
-		payload = lorawan.NewPHYPayload(false)
+		// JoinAccept, UnconfirmedDataDown and ConfirmedDataDown are all downlink messages.
+		// We thus have to unmarshall properly
+		payload = lorawan.NewPHYPayload(false) // false -> downlink
 		if err := payload.UnmarshalBinary(rawPayload); err != nil {
 			return err
 		}
@@ -169,12 +185,16 @@ func (p *Packet) UnmarshalJSON(raw []byte) error {
 	case "UnconfirmedDataUp":
 		fallthrough
 	case "ConfirmedDataUp":
-		// Nothing, we handle them by default
+		// JoinRequest, UnconfirmedDataUp and ConfirmedDataUp are all uplink messages.
+		// There's nothing to do, we've already handled them.
 
 	case "Proprietary":
+		// Proprietary can be either downlink or uplink. Right now, we do not have any message of
+		// that type and thus, we just don't know how to handle them. Let's throw an error.
 		return fmt.Errorf("Unsupported MType Proprietary")
 	}
 
+	// Packet = Payload + Metadata
 	p.Payload = payload
 	p.Metadata = proxy.Metadata
 	return nil

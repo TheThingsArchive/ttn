@@ -13,16 +13,18 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
-const BUFFER_DELAY = time.Millisecond * 300
+const BUFFER_DELAY = time.Millisecond * 300 // Buffering delay. Timeframe to wait from the first received packet.
 
 type Handler struct {
-	ctx log.Interface
-	db  HandlerStorage
-	set chan<- uplinkBundle
+	ctx log.Interface       // Just a logger
+	db  HandlerStorage      // Reference to the handler internal storage
+	set chan<- uplinkBundle // Internal communication channel used to bufferise incoming packets
 }
 
-type bundleId [22]byte // AppEUI | DevAddr | FCnt
+type bundleId [16]byte // AppEUI(8) | DevAddr(4) | FCnt (4)
 
+// Uplink bundles are created for each incoming packet. They help to caracterize a packet more
+// precisely and postpone its processing.
 type uplinkBundle struct {
 	adapter core.Adapter
 	chresp  chan interface{} // Error or decrypted packet
@@ -31,6 +33,7 @@ type uplinkBundle struct {
 	packet  core.Packet
 }
 
+// NewHandler constructs a new handler component.
 func NewHandler(db HandlerStorage, ctx log.Interface) *Handler {
 	h := Handler{
 		ctx: ctx,
@@ -47,6 +50,7 @@ func NewHandler(db HandlerStorage, ctx log.Interface) *Handler {
 	return &h
 }
 
+// Register implements the core.Register interface
 func (h *Handler) Register(reg core.Registration, an core.AckNacker) error {
 	h.ctx.WithField("registration", reg).Debug("New registration request")
 	options, okOpts := reg.Options.(struct {
@@ -76,6 +80,7 @@ func (h *Handler) Register(reg core.Registration, an core.AckNacker) error {
 	return nil
 }
 
+// HandleUp implements the core.Component interface
 func (h *Handler) HandleUp(p core.Packet, an core.AckNacker, upAdapter core.Adapter) error {
 	h.ctx.Debug("Handling new uplink packet")
 	partition, err := h.db.Partition(p)
@@ -124,10 +129,13 @@ func (h *Handler) HandleUp(p core.Packet, an core.AckNacker, upAdapter core.Adap
 	}
 }
 
-func (h *Handler) HandleDown(p core.Packet, an core.AckNacker, downAdapter core.Adapter) error {
-	return ErrNotImplemented
+// HandleDown implements the core.Component interface. Not implemented yet.
+func (h *Handler) HandleDown(p core.Packet, an core.AckNacker, downAdapter core.Adapter) (core.Packet, error) {
+	return core.Packet{}, ErrNotImplemented
 }
 
+// consumeBundles processes list of bundle generated overtime, decrypt the underlying packet,
+// deduplicate them, and send a single enhanced packet to the upadapter for further processing.
 func (h *Handler) consumeBundles(chbundles <-chan []uplinkBundle) {
 	ctx := h.ctx.WithField("goroutine", "consumer")
 	ctx.Debug("Starting bundle consumer")
@@ -191,7 +199,7 @@ func (h *Handler) manageBuffers(bundles chan<- []uplinkBundle, set <-chan uplink
 	ctx := h.ctx.WithField("goroutine", "bufferer")
 	ctx.Debug("Starting uplink packets buffering")
 
-	processed := make(map[[20]byte]bundleId)     // AppEUI | DevAddr (without the frame counter)
+	processed := make(map[[12]byte]bundleId)     // AppEUI | DevAddr (without the frame counter)
 	buffers := make(map[bundleId][]uplinkBundle) // Associate bundleId to a list of bufferized bundles
 	alarm := make(chan bundleId)                 // Communication channel with sub-sequent alarm
 
@@ -200,14 +208,14 @@ func (h *Handler) manageBuffers(bundles chan<- []uplinkBundle, set <-chan uplink
 		case id := <-alarm:
 			b := buffers[id]
 			delete(buffers, id)
-			var pid [20]byte
-			copy(pid[:], id[:20])
+			var pid [12]byte
+			copy(pid[:], id[:12])
 			processed[pid] = id
 			go func(b []uplinkBundle) { bundles <- b }(b)
 			ctx.WithField("bundleId", id).Debug("Alarm done. Consuming collected bundles")
 		case bundle := <-set:
-			var pid [20]byte
-			copy(pid[:], bundle.id[:20])
+			var pid [12]byte
+			copy(pid[:], bundle.id[:12])
 			if processed[pid] == bundle.id {
 				ctx.WithField("bundleId", bundle.id).Debug("Reject already processed bundle")
 				go func(bundle uplinkBundle) { bundle.chresp <- ErrAlreadyProcessed }(bundle)

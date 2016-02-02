@@ -12,21 +12,26 @@ import (
 	"github.com/apex/log"
 )
 
+// Adapter represents a semtech adapter which sends and receives packet via UDP in respect of the
+// semtech forwarder protocol
 type Adapter struct {
-	ctx  log.Interface
-	conn chan udpMsg
-	next chan rxpkMsg
+	ctx  log.Interface // Just a logger
+	conn chan udpMsg   // Channel used to manage response transmissions made by multiple goroutines
+	next chan rxpkMsg  // Incoming valid RXPK packets are pushed to this channel
 }
 
+// udpMsg type materializes response messages transmitted towards existing recipients (commonly,
+// gateways).
 type udpMsg struct {
 	conn *net.UDPConn // Provide if you intent to change the current adapter connection
 	addr *net.UDPAddr // The target recipient address
 	raw  []byte       // The raw byte sequence that has to be sent
 }
 
+// rxpkMsg type materializes valid uplink messages coming from a given recipient
 type rxpkMsg struct {
-	rxpk      semtech.RXPK
-	recipient core.Recipient
+	rxpk      semtech.RXPK   // The actual RXPK message
+	recipient core.Recipient // The address and id of the source emitter
 }
 
 var ErrInvalidPort error = fmt.Errorf("Invalid port supplied. The connection might be already taken")
@@ -34,7 +39,7 @@ var ErrNotInitialized error = fmt.Errorf("Illegal call on non-initialized adapte
 var ErrNotSupported error = fmt.Errorf("Unsupported operation")
 var ErrInvalidPacket error = fmt.Errorf("Invalid packet supplied")
 
-// New constructs and allocates a new udp_sender adapter
+// NewAdapter constructs and allocates a new semtech adapter
 func NewAdapter(port uint, ctx log.Interface) (*Adapter, error) {
 	a := Adapter{
 		ctx:  ctx,
@@ -63,7 +68,7 @@ func (a *Adapter) ok() bool {
 	return a != nil && a.conn != nil && a.next != nil
 }
 
-// Send implements the core.Adapter interface
+// Send implements the core.Adapter interface. Not implemented for the semtech adapter.
 func (a *Adapter) Send(p core.Packet, r ...core.Recipient) (core.Packet, error) {
 	return core.Packet{}, ErrNotSupported
 }
@@ -151,6 +156,11 @@ func (a *Adapter) listen(conn *net.UDPConn) {
 }
 
 // monitorConnection manages udpConnection of the adapter and send message through that connection
+//
+// That function executes into a single goroutine and is the only one allowed to write UDP messages.
+// Doing this makes sure that only 1 goroutine is interacting with the connection. It thereby allows
+// the connection to be replaced at any moment (in case of failure for instance) without disturbing
+// the ongoing process.
 func (a *Adapter) monitorConnection() {
 	var udpConn *net.UDPConn
 	for msg := range a.conn {

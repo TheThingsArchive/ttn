@@ -1,7 +1,7 @@
 // Copyright © 2015 The Things Network
 // Use of this source code is governed by the MIT license that can be found in the LICENSE file.
 
-// package testing offers some handy methods to display check and cross symbols with colors in test
+// Package testing offers some handy methods to display check and cross symbols with colors in test
 // logs.
 package testing
 

@@ -1,9 +1,11 @@
 semtech ~ udp
 =============
-Have a look at [this document](http://iot.semtech.com/resources/Server_Release_2.1.1/files.xml?action=download&file=LoRa%20gateway%20to%20network%20server%20interface%20definition.pdf)
+
+Have a look at [this document](https://github.com/TheThingsNetwork/ttn/blob/develop/documents/protocols/semtech.pdf)
 
 basic ~ http
 ============
+
 The basic http protocol relies seemingly on `http`. 
 
 An adapter which implements this protocol should provide at least one end-point:

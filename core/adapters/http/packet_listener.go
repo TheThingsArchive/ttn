@@ -4,14 +4,10 @@
 package http
 
 import (
-	"encoding/json"
-	"fmt"
-	"io"
 	"net/http"
-
-	"github.com/TheThingsNetwork/ttn/core"
 )
 
+// handlePostPacket defines an http handler over the adapter to handle POST request on /packets
 func (a *Adapter) handlePostPacket(w http.ResponseWriter, req *http.Request) {
 	ctx := a.ctx.WithField("sender", req.RemoteAddr)
 
@@ -42,26 +38,4 @@ func (a *Adapter) handlePostPacket(w http.ResponseWriter, req *http.Request) {
 	}
 	w.WriteHeader(r.statusCode)
 	w.Write(r.content)
-}
-
-type JSONPacketParser struct{}
-
-func (p JSONPacketParser) Parse(req *http.Request) (core.Packet, error) {
-	// Check Content-type
-	if req.Header.Get("Content-Type") != "application/json" {
-		return core.Packet{}, fmt.Errorf("Received invalid content-type in request")
-	}
-
-	// Check configuration in body
-	body := make([]byte, req.ContentLength)
-	n, err := req.Body.Read(body)
-	if err != nil && err != io.EOF {
-		return core.Packet{}, err
-	}
-	packet := new(core.Packet)
-	if err := json.Unmarshal(body[:n], packet); err != nil {
-		return core.Packet{}, err
-	}
-
-	return *packet, nil
 }
