@@ -61,7 +61,7 @@ func (s brokerBoltStorage) Reset() error {
 }
 
 func (entry brokerEntry) MarshalBinary() ([]byte, error) {
-	w := NewEntryReadWriter(nil)
+	w := newEntryReadWriter(nil)
 	w.Write(entry.Id)
 	w.Write(entry.NwkSKey)
 	w.Write(entry.Url)
@@ -72,7 +72,7 @@ func (entry *brokerEntry) UnmarshalBinary(data []byte) error {
 	if entry == nil || len(data) < 3 {
 		return ErrNotUnmarshable
 	}
-	r := NewEntryReadWriter(data)
+	r := newEntryReadWriter(data)
 	r.Read(func(data []byte) { entry.Id = string(data) })
 	r.Read(func(data []byte) { copy(entry.NwkSKey[:], data) })
 	r.Read(func(data []byte) { entry.Url = string(data) })

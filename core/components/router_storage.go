@@ -79,7 +79,7 @@ func (s routerBoltStorage) Reset() error {
 }
 
 func (entry routerEntry) MarshalBinary() ([]byte, error) {
-	w := NewEntryReadWriter(nil)
+	w := newEntryReadWriter(nil)
 	w.DirectWrite(uint8(len(entry.Recipients)))
 	for _, r := range entry.Recipients {
 		rawId := []byte(r.Id.(string))
@@ -99,7 +99,7 @@ func (entry *routerEntry) UnmarshalBinary(data []byte) error {
 	if entry == nil || len(data) < 1 {
 		return ErrNotUnmarshable
 	}
-	r := NewEntryReadWriter(data[0:])
+	r := newEntryReadWriter(data[0:])
 	for i := 0; i < int(data[0]); i += 1 {
 		var id, address string
 		r.Read(func(data []byte) { id = string(data) })

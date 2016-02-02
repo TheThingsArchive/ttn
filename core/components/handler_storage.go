@@ -122,7 +122,7 @@ func (s handlerBoltStorage) Reset() error {
 }
 
 func (entry handlerEntry) MarshalBinary() ([]byte, error) {
-	w := NewEntryReadWriter(nil)
+	w := newEntryReadWriter(nil)
 	w.Write(entry.AppEUI)
 	w.Write(entry.AppSKey)
 	w.Write(entry.DevAddr)
@@ -134,7 +134,7 @@ func (entry *handlerEntry) UnmarshalBinary(data []byte) error {
 	if entry == nil || len(data) < 4 {
 		return ErrNotUnmarshable
 	}
-	r := NewEntryReadWriter(data)
+	r := newEntryReadWriter(data)
 	r.Read(func(data []byte) { copy(entry.AppEUI[:], data) })
 	r.Read(func(data []byte) { copy(entry.AppSKey[:], data) })
 	r.Read(func(data []byte) { copy(entry.DevAddr[:], data) })
