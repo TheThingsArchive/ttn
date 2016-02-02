@@ -12,12 +12,12 @@ import (
 )
 
 const (
-	EXPIRY_DELAY = time.Hour * 8
+	EXPIRY_DELAY = time.Hour * 8 // Life-time of an entry in the storage
 )
 
 type Router struct {
 	db  RouterStorage // Local storage that maps end-device addresses to broker addresses
-	ctx log.Interface
+	ctx log.Interface // Just a logger
 }
 
 // NewRouter constructs a Router and setup its internal structure
