@@ -17,17 +17,21 @@ import (
 	"github.com/apex/log"
 )
 
+// Broadcast matereializes a extended basic http adapter which will also generate registration based
+// on request responses. Whenever the adapter broadcast a request, it will trigger a registration
+// demand for each new valid recipient.
 type Adapter struct {
-	*httpadapter.Adapter
-	ctx           log.Interface
-	recipients    []core.Recipient
-	registrations chan core.Registration
+	*httpadapter.Adapter                        // Composed of an original http adapter
+	ctx                  log.Interface          // Just a logger
+	recipients           []core.Recipient       // A predefined list of recipients towards which broadcast messages
+	registrations        chan core.Registration // Communication channel responsible for registration management
 }
 
 var ErrBadOptions = fmt.Errorf("Bad options provided")
 var ErrInvalidPacket = fmt.Errorf("The given packet is invalid")
 var ErrSeveralPositiveAnswers = fmt.Errorf("Several positive response for a given packet")
 
+// NewAdapter promotes an existing basic adapter to a broadcast adapter using a list a of known recipient
 func NewAdapter(adapter *httpadapter.Adapter, recipients []core.Recipient, ctx log.Interface) (*Adapter, error) {
 	if len(recipients) == 0 {
 		return nil, ErrBadOptions
@@ -41,6 +45,7 @@ func NewAdapter(adapter *httpadapter.Adapter, recipients []core.Recipient, ctx l
 	}, nil
 }
 
+// Send implements the Adapter interfaces
 func (a *Adapter) Send(p core.Packet, r ...core.Recipient) (core.Packet, error) {
 	if len(r) == 0 {
 		a.ctx.Debug("No recipient provided. The packet will be broadcast")
@@ -54,6 +59,8 @@ func (a *Adapter) Send(p core.Packet, r ...core.Recipient) (core.Packet, error) 
 	return packet, err
 }
 
+// broadcast is merely a send where recipients are the predefined list used at instantiation time.
+// Beside, a registration request will be triggered if one of the recipient reponses positively.
 func (a *Adapter) broadcast(p core.Packet) (core.Packet, error) {
 	// Generate payload from core packet
 	m, err := json.Marshal(p.Metadata)
@@ -152,6 +159,7 @@ func (a *Adapter) broadcast(p core.Packet) (core.Packet, error) {
 	}
 }
 
+// NextRegistration implements the Adapter interface
 func (a *Adapter) NextRegistration() (core.Registration, core.AckNacker, error) {
 	registration := <-a.registrations
 	return registration, voidAckNacker{}, nil

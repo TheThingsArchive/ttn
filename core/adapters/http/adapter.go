@@ -171,7 +171,9 @@ func (a *Adapter) Next() (core.Packet, core.AckNacker, error) {
 	return pktReq.Packet, packetAckNacker{response: pktReq.response}, nil
 }
 
-// NextRegistration implements the core.Adapter interface
+// NextRegistration implements the core.Adapter interface. Not implemented for this adapter.
+//
+// See broadcast and pubsub adapters for mechanisms to handle registrations.
 func (a *Adapter) NextRegistration() (core.Packet, core.AckNacker, error) {
 	return core.Packet{}, nil, ErrNotImplemented
 }
