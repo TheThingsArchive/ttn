@@ -9,12 +9,12 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"reflect"
 	"testing"
 	"time"
 
-	"reflect"
-
 	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/core/adapters/http/parser"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"github.com/brocaar/lorawan"
@@ -44,7 +44,7 @@ func TestSend(t *testing.T) {
 	// Logging
 	ctx := GetLogger(t, "Adapter")
 
-	adapter, err := NewAdapter(3101, JSONPacketParser{}, ctx)
+	adapter, err := NewAdapter(3101, parser.JSON{}, ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -91,7 +91,7 @@ func TestNext(t *testing.T) {
 	}
 	// Build
 	ctx := GetLogger(t, "Adapter")
-	adapter, err := NewAdapter(3102, JSONPacketParser{}, ctx)
+	adapter, err := NewAdapter(3102, parser.JSON{}, ctx)
 	if err != nil {
 		panic(err)
 	}

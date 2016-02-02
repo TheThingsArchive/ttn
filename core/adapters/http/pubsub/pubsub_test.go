@@ -13,6 +13,7 @@ import (
 
 	"github.com/TheThingsNetwork/ttn/core"
 	httpadapter "github.com/TheThingsNetwork/ttn/core/adapters/http"
+	"github.com/TheThingsNetwork/ttn/core/adapters/http/parser"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"github.com/brocaar/lorawan"
 )
@@ -23,7 +24,7 @@ func TestNextRegistration(t *testing.T) {
 		AppId      string
 		AppUrl     string
 		DevAddr    string
-		NwsKey     string
+		NwkSKey    string
 		WantResult *core.Registration
 		WantError  error
 	}{
@@ -31,7 +32,7 @@ func TestNextRegistration(t *testing.T) {
 		{
 			AppId:   "appid",
 			AppUrl:  "myhandler.com:3000",
-			NwsKey:  "000102030405060708090a0b0c0d0e0f",
+			NwkSKey: "000102030405060708090a0b0c0d0e0f",
 			DevAddr: "14aab0a4",
 			WantResult: &core.Registration{
 				DevAddr:   lorawan.DevAddr([4]byte{0x14, 0xaa, 0xb0, 0xa4}),
@@ -44,16 +45,16 @@ func TestNextRegistration(t *testing.T) {
 		{
 			AppId:      "appid",
 			AppUrl:     "myhandler.com:3000",
-			NwsKey:     "000102030405060708090a0b0c0d0e0f",
+			NwkSKey:    "000102030405060708090a0b0c0d0e0f",
 			DevAddr:    "INVALID",
 			WantResult: nil,
 			WantError:  nil,
 		},
-		// Invalid nwskey address
+		// Invalid NwkSKey address
 		{
 			AppId:      "appid",
 			AppUrl:     "myhandler.com:3000",
-			NwsKey:     "00112233445566778899af",
+			NwkSKey:    "00112233445566778899af",
 			DevAddr:    "14aab0a4",
 			WantResult: nil,
 			WantError:  nil,
@@ -62,12 +63,12 @@ func TestNextRegistration(t *testing.T) {
 
 	// Logging
 	ctx := GetLogger(t, "Adapter")
-	a, err := httpadapter.NewAdapter(3021, httpadapter.JSONPacketParser{}, ctx)
+	a, err := httpadapter.NewAdapter(3021, parser.JSON{}, ctx)
 	if err != nil {
 		panic(err)
 	}
 
-	adapter, err := NewAdapter(a, HandlerParser{}, ctx)
+	adapter, err := NewAdapter(a, parser.PubSub{}, ctx)
 	client := &client{adapter: "0.0.0.0:3021"}
 	if err != nil {
 		panic(err)
@@ -75,13 +76,13 @@ func TestNextRegistration(t *testing.T) {
 
 	for _, test := range tests {
 		// Describe
-		Desc(t, "Trying to register %s -> %s, %s, %s", test.DevAddr, test.AppId, test.AppUrl, test.NwsKey)
+		Desc(t, "Trying to register %s -> %s, %s, %s", test.DevAddr, test.AppId, test.AppUrl, test.NwkSKey)
 		<-time.After(time.Millisecond * 100)
 
 		// Build
 		gotErr := make(chan error)
 		gotConf := make(chan core.Registration)
-		go client.send(test.AppId, test.AppUrl, test.DevAddr, test.NwsKey)
+		go client.send(test.AppId, test.AppUrl, test.DevAddr, test.NwkSKey)
 
 		// Operate
 		go func() {
@@ -133,9 +134,9 @@ type client struct {
 }
 
 // send is a convinient helper to send HTTP from a handler to the adapter
-func (c *client) send(appId, appUrl, devAddr, nwsKey string) http.Response {
+func (c *client) send(appId, appUrl, devAddr, nwkSKey string) http.Response {
 	buf := new(bytes.Buffer)
-	if _, err := buf.WriteString(fmt.Sprintf(`{"app_id":"%s","app_url":"%s","nws_key":"%s"}`, appId, appUrl, nwsKey)); err != nil {
+	if _, err := buf.WriteString(fmt.Sprintf(`{"app_id":"%s","app_url":"%s","nwks_key":"%s"}`, appId, appUrl, nwkSKey)); err != nil {
 		panic(err)
 	}
 	request, err := http.NewRequest("PUT", fmt.Sprintf("http://%s/end-devices/%s", c.adapter, devAddr), buf)

@@ -15,11 +15,12 @@ import (
 var ErrConnectionLost = fmt.Errorf("Connection has been lost")
 var ErrInvalidArguments = fmt.Errorf("Invalid arguments supplied")
 
+// packetAckNacker implements the AckNacker interface
 type packetAckNacker struct {
 	response chan pktRes // A channel dedicated to send back a response
 }
 
-// Ack implements the core.Acker interface
+// Ack implements the core.AckNacker interface
 func (an packetAckNacker) Ack(p ...core.Packet) error {
 	if len(p) > 1 {
 		return ErrInvalidArguments
@@ -41,7 +42,7 @@ func (an packetAckNacker) Ack(p ...core.Packet) error {
 	}
 }
 
-// Nack implements the core.Nacker interface
+// Nack implements the core.AckNacker interface
 func (an packetAckNacker) Nack() error {
 	select {
 	case an.response <- pktRes{

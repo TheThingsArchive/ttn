@@ -13,6 +13,7 @@ import (
 	"sync"
 
 	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/core/adapters/http/parser"
 	"github.com/apex/log"
 )
 
@@ -20,36 +21,35 @@ var ErrInvalidPort = fmt.Errorf("The given port is invalid")
 var ErrInvalidPacket = fmt.Errorf("The given packet is invalid")
 var ErrNotImplemented = fmt.Errorf("Illegal call on non-implemented method")
 
+// Adapter type materializes an http adapter which implements the basic http protocol
 type Adapter struct {
-	Parser
-	http.Client
-	serveMux *http.ServeMux
-	packets  chan pktReq
-	ctx      log.Interface
+	parser.PacketParser                // The adapter's parser contract
+	http.Client                        // Adapter is also an http client
+	serveMux            *http.ServeMux // Holds a references to the adapter servemux in order to dynamically define endpoints
+	packets             chan pktReq    // Channel used to "transforms" incoming request to something we can handle concurrently
+	ctx                 log.Interface  // Just a logger, no one really cares about him.
 }
 
-type Parser interface {
-	Parse(req *http.Request) (core.Packet, error)
-}
-
+// Message sent through the packets channel when an incoming request arrives
 type pktReq struct {
-	core.Packet
-	response chan pktRes
+	core.Packet             // The actual packet that has been parsed
+	response    chan pktRes // A response channel waiting for an success or reject confirmation
 }
 
+// Message sent through the response channel of a pktReq
 type pktRes struct {
-	statusCode int
-	content    []byte
+	statusCode int    // The http status code to set as an answer
+	content    []byte // The response content.
 }
 
-// NewAdapter constructs and allocate a new Broker <-> Handler http adapter
-func NewAdapter(port uint, parser Parser, ctx log.Interface) (*Adapter, error) {
+// NewAdapter constructs and allocates a new http adapter
+func NewAdapter(port uint, parser parser.PacketParser, ctx log.Interface) (*Adapter, error) {
 	a := Adapter{
-		Parser:   parser,
-		serveMux: http.NewServeMux(),
-		packets:  make(chan pktReq),
-		ctx:      ctx,
-		Client:   http.Client{},
+		PacketParser: parser,
+		serveMux:     http.NewServeMux(),
+		packets:      make(chan pktReq),
+		ctx:          ctx,
+		Client:       http.Client{},
 	}
 
 	a.RegisterEndpoint("/packets", a.handlePostPacket)

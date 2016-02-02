@@ -8,18 +8,15 @@ import (
 
 	"github.com/TheThingsNetwork/ttn/core"
 	httpadapter "github.com/TheThingsNetwork/ttn/core/adapters/http"
+	"github.com/TheThingsNetwork/ttn/core/adapters/http/parser"
 	"github.com/apex/log"
 )
 
 type Adapter struct {
 	*httpadapter.Adapter
-	Parser
+	parser.RegistrationParser
 	ctx           log.Interface
 	registrations chan regReq
-}
-
-type Parser interface {
-	Parse(req *http.Request) (core.Registration, error)
 }
 
 type regReq struct {
@@ -33,12 +30,12 @@ type regRes struct {
 }
 
 // NewAdapter constructs a new http adapter that also handle registrations via http requests
-func NewAdapter(adapter *httpadapter.Adapter, parser Parser, ctx log.Interface) (*Adapter, error) {
+func NewAdapter(adapter *httpadapter.Adapter, parser parser.RegistrationParser, ctx log.Interface) (*Adapter, error) {
 	a := &Adapter{
-		Adapter:       adapter,
-		Parser:        parser,
-		ctx:           ctx,
-		registrations: make(chan regReq),
+		Adapter:            adapter,
+		RegistrationParser: parser,
+		ctx:                ctx,
+		registrations:      make(chan regReq),
 	}
 
 	// So far we only supports one endpoint [PUT] /end-device/:devAddr

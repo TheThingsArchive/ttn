@@ -1,7 +1,7 @@
 // Copyright © 2015 The Things Network
 // Use of this source code is governed by the MIT license that can be found in the LICENSE file.
 
-package pubsub
+package parser
 
 import (
 	"encoding/hex"
@@ -16,9 +16,25 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
-type HandlerParser struct{}
+// Parser gives a flexible way of parsing a request into a registration.
+type RegistrationParser interface {
+	// Parse transforms a given http request into a Registration. The error handling is not under its
+	// responsibility. The parser can expect any query param, http method or header it needs.
+	Parse(req *http.Request) (core.Registration, error)
+}
 
-func (p HandlerParser) Parse(req *http.Request) (core.Registration, error) {
+// PubSub materializes a parser for pubsub requests.
+//
+// It expects requests to be of the following shapes:
+//
+//     Content-Type: application/json
+//     Method: PUT
+//     Path: end-devices/<devAddr> where <devAddr> is 8 bytes hex encoded
+//     Params: app_id (string), app_url (string), nwks_key (16 bytes hex encoded)
+type PubSub struct{}
+
+// Parse implements the RegistrationParser interface
+func (p PubSub) Parse(req *http.Request) (core.Registration, error) {
 	// Check Content-type
 	if req.Header.Get("Content-Type") != "application/json" {
 		return core.Registration{}, fmt.Errorf("Received invalid content-type in request")
@@ -42,16 +58,16 @@ func (p HandlerParser) Parse(req *http.Request) (core.Registration, error) {
 		return core.Registration{}, err
 	}
 	params := &struct {
-		Id     string `json:"app_id"`
-		Url    string `json:"app_url"`
-		NwsKey string `json:"nws_key"`
+		Id      string `json:"app_id"`
+		Url     string `json:"app_url"`
+		NwkSKey string `json:"nwks_key"`
 	}{}
 	if err := json.Unmarshal(body[:n], params); err != nil {
 		return core.Registration{}, err
 	}
 
-	nwsKey, err := hex.DecodeString(params.NwsKey)
-	if err != nil || len(nwsKey) != 16 {
+	nwkSKey, err := hex.DecodeString(params.NwkSKey)
+	if err != nil || len(nwkSKey) != 16 {
 		return core.Registration{}, fmt.Errorf("Incorrect network session key")
 	}
 
@@ -69,7 +85,7 @@ func (p HandlerParser) Parse(req *http.Request) (core.Registration, error) {
 		Recipient: core.Recipient{Id: params.Id, Address: params.Url},
 	}
 	options := lorawan.AES128Key{}
-	copy(options[:], nwsKey)
+	copy(options[:], nwkSKey)
 	config.Options = options
 	copy(config.DevAddr[:], devAddr)
 
