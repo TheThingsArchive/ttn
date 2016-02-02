@@ -11,11 +11,13 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
+// Broker type materializes the logic part handled by a broker
 type Broker struct {
-	ctx log.Interface
-	db  BrokerStorage
+	ctx log.Interface // Just a logger
+	db  BrokerStorage // Reference to the internal broker storage
 }
 
+// NewBroker constructs a new broker from a given storage
 func NewBroker(db BrokerStorage, ctx log.Interface) *Broker {
 	return &Broker{
 		ctx: ctx,
@@ -23,6 +25,7 @@ func NewBroker(db BrokerStorage, ctx log.Interface) *Broker {
 	}
 }
 
+// HandleUp implements the core.Component interface
 func (b *Broker) HandleUp(p core.Packet, an core.AckNacker, adapter core.Adapter) error {
 	b.ctx.Debug("Handle uplink packet")
 	// 1. Lookup for entries for the associated device
@@ -75,10 +78,12 @@ func (b *Broker) HandleUp(p core.Packet, an core.AckNacker, adapter core.Adapter
 	return an.Ack(response)
 }
 
+// HandleDown implements the core.Component interface. Not implemented yet
 func (b *Broker) HandleDown(p core.Packet, an core.AckNacker, a core.Adapter) error {
 	return fmt.Errorf("Not Implemented")
 }
 
+// Register implements the core.Component interface
 func (b *Broker) Register(r core.Registration, an core.AckNacker) error {
 	id, okId := r.Recipient.Id.(string)
 	url, okUrl := r.Recipient.Address.(string)

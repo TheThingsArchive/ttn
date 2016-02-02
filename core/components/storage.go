@@ -11,11 +11,14 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
+// storageEntry offers a friendly interface on which the storage will operate.
+// Basically, a storageEntry is nothing more than a binary marshaller/unmarshaller.
 type storageEntry interface {
-	MarshalBinary() ([]byte, error)
-	UnmarshalBinary(data []byte) error
+	MarshalBinary() ([]byte, error)    // implements binary.Marshaller interface
+	UnmarshalBinary(data []byte) error // implements binary.Unmarshaller interface
 }
 
+// initDB initializes the given bolt database by creating (if not already exists) an empty bucket
 func initDB(db *bolt.DB, bucketName string) error {
 	return db.Update(func(tx *bolt.Tx) error {
 		_, err := tx.CreateBucketIfNotExists([]byte(bucketName))
@@ -23,6 +26,7 @@ func initDB(db *bolt.DB, bucketName string) error {
 	})
 }
 
+// store put a new entry in the given bolt database.
 func store(db *bolt.DB, bucketName string, devAddr lorawan.DevAddr, entry storageEntry) error {
 	marshalled, err := entry.MarshalBinary()
 	if err != nil {
@@ -34,7 +38,7 @@ func store(db *bolt.DB, bucketName string, devAddr lorawan.DevAddr, entry storag
 		if bucket == nil {
 			return ErrStorageUnreachable
 		}
-		w := NewEntryReadWriter(bucket.Get(devAddr[:]))
+		w := newEntryReadWriter(bucket.Get(devAddr[:]))
 		w.Write(marshalled)
 		data, err := w.Bytes()
 		if err != nil {
@@ -46,7 +50,13 @@ func store(db *bolt.DB, bucketName string, devAddr lorawan.DevAddr, entry storag
 	return err
 }
 
+// lookup retrieve a set of entry from a given bolt database.
+//
+// The shape is used as a template for retrieving and creating the data. All entries extracted from
+// the database will be interpreted as instance of shape and the return result will be a slice of
+// the same type of shape.
 func lookup(db *bolt.DB, bucketName string, devAddr lorawan.DevAddr, shape storageEntry) (interface{}, error) {
+	// First, lookup the raw entries
 	var rawEntry []byte
 	err := db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(bucketName))
@@ -64,7 +74,8 @@ func lookup(db *bolt.DB, bucketName string, devAddr lorawan.DevAddr, shape stora
 		return nil, err
 	}
 
-	r := NewEntryReadWriter(rawEntry)
+	// Then, interpret them as instance of 'shape'
+	r := newEntryReadWriter(rawEntry)
 	entryType := reflect.TypeOf(shape).Elem()
 	entries := reflect.MakeSlice(reflect.SliceOf(entryType), 0, 0)
 	for {
@@ -83,6 +94,7 @@ func lookup(db *bolt.DB, bucketName string, devAddr lorawan.DevAddr, shape stora
 	return entries.Interface(), nil
 }
 
+// flush empties each entry of a bucket associated to a given device
 func flush(db *bolt.DB, bucketName string, devAddr lorawan.DevAddr) error {
 	return db.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(bucketName))
@@ -93,6 +105,7 @@ func flush(db *bolt.DB, bucketName string, devAddr lorawan.DevAddr) error {
 	})
 }
 
+// resetDB resets a given bucket from a given bolt database
 func resetDB(db *bolt.DB, bucketName string) error {
 	return db.Update(func(tx *bolt.Tx) error {
 		if err := tx.DeleteBucket([]byte(bucketName)); err != nil {

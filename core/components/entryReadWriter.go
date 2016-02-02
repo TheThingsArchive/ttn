@@ -11,18 +11,31 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
+// entryReadWriter offers convenient method to write and read successively from a bytes buffer.
 type entryReadWriter struct {
 	err  error
 	data *bytes.Buffer
 }
 
-func NewEntryReadWriter(buf []byte) *entryReadWriter {
+// newEntryReadWriter create a new read/writer from an existing buffer.
+//
+// If a nil or empty buffer is supplied, reading from the read/writer will cause an error (io.EOF)
+// Nevertheless, if a valid non-empty buffer is given, the read/writer will start reading from the
+// beginning of that buffer, and will start writting at the end of it.
+func newEntryReadWriter(buf []byte) *entryReadWriter {
 	return &entryReadWriter{
 		err:  nil,
 		data: bytes.NewBuffer(buf),
 	}
 }
 
+// Write appends the given data at the end of the existing buffer.
+//
+// It does nothing if an error was previously noticed and panics if the given data are something
+// different from: []byte, string, AES128Key, EUI64, DevAddr.
+//
+// Also, it writes the length of the given raw data encoded on 2 bytes before writting the data
+// itself. In that way, data can be appended and read easily.
 func (w *entryReadWriter) Write(data interface{}) {
 	var raw []byte
 	switch data.(type) {
@@ -46,6 +59,7 @@ func (w *entryReadWriter) Write(data interface{}) {
 	w.DirectWrite(raw)
 }
 
+// DirectWrite appends the given data at the end of the existing buffer (without the length).
 func (w *entryReadWriter) DirectWrite(data interface{}) {
 	if w.err != nil {
 		return
@@ -56,6 +70,9 @@ func (w *entryReadWriter) DirectWrite(data interface{}) {
 	w.err = binary.Write(w.data, binary.BigEndian, data)
 }
 
+// Read retrieves next data from the given buffer. Implicitely, this implies the data to have been
+// written using the Write method (len | data). Data are sent back through a callback as an array of
+// bytes.
 func (w *entryReadWriter) Read(to func(data []byte)) {
 	if w.err != nil {
 		return
@@ -68,6 +85,8 @@ func (w *entryReadWriter) Read(to func(data []byte)) {
 	to(w.data.Next(int(*lenTo)))
 }
 
+// Bytes might be used to retrieves the raw buffer after successive writes. It will return nil and
+// an error if any issue was encountered during the process.
 func (w entryReadWriter) Bytes() ([]byte, error) {
 	if w.err != nil {
 		return nil, w.err
@@ -75,6 +94,7 @@ func (w entryReadWriter) Bytes() ([]byte, error) {
 	return w.data.Bytes(), nil
 }
 
+// Err just return the err status of the read-writer.
 func (w entryReadWriter) Err() error {
 	return w.err
 }
