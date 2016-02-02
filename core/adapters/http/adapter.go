@@ -23,10 +23,9 @@ var ErrNotImplemented = fmt.Errorf("Illegal call on non-implemented method")
 type Adapter struct {
 	Parser
 	http.Client
-	sync.RWMutex // Guards clients
-	serveMux     *http.ServeMux
-	packets      chan pktReq
-	ctx          log.Interface
+	serveMux *http.ServeMux
+	packets  chan pktReq
+	ctx      log.Interface
 }
 
 type Parser interface {
