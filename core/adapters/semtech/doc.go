@@ -1,7 +1,7 @@
 // Copyright © 2015 The Things Network
 // Use of this source code is governed by the MIT license that can be found in the LICENSE file.
 
-// Package adapters.semtech provides an Adapter which implements the semtech forwarder protocol.
+// Package semtech provides an Adapter which implements the semtech forwarder protocol.
 //
 // The protocol could be found in this document:
 // https://github.com/TheThingsNetwork/ttn/blob/develop/documents/protocols/semtech.pdf
