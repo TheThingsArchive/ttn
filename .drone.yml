@@ -2,14 +2,16 @@ build:
   test:
     image: golang
     commands:
-      - go get $(comm -23 <(sort <(go list -f '{{join .Imports "\n"}}' ./...) | uniq) <(go list std) | grep -v TheThingsNetwork)
-      - go get $(comm -23 <(sort <(go list -f '{{join .TestImports "\n"}}' ./...) | uniq) <(go list std) | grep -v TheThingsNetwork)
-      - go list ./... | grep -v integration | xargs go test
+      - bash -c 'go get $(comm -23 <(sort <(go list -f '"'"'{{join .Imports "\n"}}'"'"' ./...) | uniq) <(go list std) | grep -v TheThingsNetwork)'
+      - bash -c 'go get $(comm -23 <(sort <(go list -f '"'"'{{join .TestImports "\n"}}'"'"' ./...) | uniq) <(go list std) | grep -v TheThingsNetwork)'
+      - go list ./... | grep -v integration | xargs go test -v
       - sh -c 'FMTRES="$(go fmt ./...)"; if [ ! -z "$FMTRES" ]; then echo $FMTRES; exit 255; fi'
       - go vet ./...
   release:
     image: htdvisser/ttnbuild
     commands:
+      - bash -c 'go get $(comm -23 <(sort <(go list -f '"'"'{{join .Imports "\n"}}'"'"' ./...) | uniq) <(go list std) | grep -v TheThingsNetwork)'
+      - bash -c 'go get $(comm -23 <(sort <(go list -f '"'"'{{join .TestImports "\n"}}'"'"' ./...) | uniq) <(go list std) | grep -v TheThingsNetwork)'
       - ./build_binaries.sh
     when:
       branch: [master, develop]
