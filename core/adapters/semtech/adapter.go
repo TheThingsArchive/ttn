@@ -103,7 +103,7 @@ func (a *Adapter) listen(conn *net.UDPConn) {
 			a.ctx.WithError(err).Error("Connection error")
 			continue
 		}
-		a.ctx.WithField("datagram", buf[:n]).Debug("Incoming datagram")
+		a.ctx.Debug("Incoming datagram")
 
 		pkt := new(semtech.Packet)
 		err = pkt.UnmarshalBinary(buf[:n])
