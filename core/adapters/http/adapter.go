@@ -89,7 +89,7 @@ func (a *Adapter) Send(p core.Packet, r ...core.Recipient) (core.Packet, error) 
 		go func(recipient core.Recipient) {
 			defer wg.Done()
 
-			ctx := ctx.WithField("recipient", recipient)
+			ctx := ctx.WithField("recipient", recipient.Address)
 			ctx.Debug("POST Request")
 
 			buf := new(bytes.Buffer)

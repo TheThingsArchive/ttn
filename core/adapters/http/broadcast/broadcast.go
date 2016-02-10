@@ -91,7 +91,7 @@ func (a *Adapter) broadcast(p core.Packet) (core.Packet, error) {
 		go func(recipient core.Recipient) {
 			defer wg.Done()
 
-			ctx := a.ctx.WithField("recipient", recipient)
+			ctx := a.ctx.WithField("recipient", recipient.Address)
 
 			ctx.Debug("POST Request")
 
