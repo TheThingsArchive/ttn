@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"sync"
 
@@ -102,20 +103,26 @@ func (a *Adapter) broadcast(p core.Packet) (core.Packet, error) {
 				cherr <- err
 				return
 			}
-			defer resp.Body.Close()
+
+			defer func() {
+				// This is needed because the default HTTP client's Transport does not
+				// attempt to reuse HTTP/1.0 or HTTP/1.1 TCP connections unless the Body
+				// is read to completion and is closed.
+				io.Copy(ioutil.Discard, resp.Body)
+				resp.Body.Close()
+			}()
 
 			switch resp.StatusCode {
 			case http.StatusOK:
 				ctx.WithField("devAddr", devAddr).Debug("Recipient registered for packet")
 
-				raw := make([]byte, resp.ContentLength)
-				n, err := resp.Body.Read(raw)
+				raw, err := ioutil.ReadAll(resp.Body)
 				if err != nil && err != io.EOF {
 					cherr <- err
 					return
 				}
 				var packet core.Packet
-				if err := json.Unmarshal(raw[:n], &packet); err != nil {
+				if err := json.Unmarshal(raw, &packet); err != nil {
 					cherr <- err
 					return
 				}

@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"sync"
 
@@ -102,6 +103,14 @@ func (a *Adapter) Send(p core.Packet, r ...core.Recipient) (core.Packet, error) 
 				return
 			}
 
+			defer func() {
+				// This is needed because the default HTTP client's Transport does not
+				// attempt to reuse HTTP/1.0 or HTTP/1.1 TCP connections unless the Body
+				// is read to completion and is closed.
+				io.Copy(ioutil.Discard, resp.Body)
+				resp.Body.Close()
+			}()
+
 			// Check response code
 			if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted && resp.StatusCode != http.StatusCreated {
 				ctx.WithField("response", resp.StatusCode).Warn("Unexpected response")
@@ -110,9 +119,7 @@ func (a *Adapter) Send(p core.Packet, r ...core.Recipient) (core.Packet, error) 
 			}
 
 			// Process response body
-			raw := make([]byte, resp.ContentLength)
-			n, err := resp.Body.Read(raw)
-			defer resp.Body.Close()
+			raw, err := ioutil.ReadAll(resp.Body)
 			if err != nil && err != io.EOF {
 				cherr <- err
 				return
@@ -120,7 +127,7 @@ func (a *Adapter) Send(p core.Packet, r ...core.Recipient) (core.Packet, error) 
 
 			// Process packet
 			var packet core.Packet
-			if err := json.Unmarshal(raw[:n], &packet); err != nil {
+			if err := json.Unmarshal(raw, &packet); err != nil {
 				cherr <- err
 				return
 			}
