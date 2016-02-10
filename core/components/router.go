@@ -55,7 +55,7 @@ func (r *Router) HandleUp(p core.Packet, an core.AckNacker, upAdapter core.Adapt
 	}
 
 	entries, err := r.db.Lookup(devAddr)
-	if err != ErrDeviceNotFound && err != ErrEntryExpired {
+	if err != ErrDeviceNotFound && err != ErrNotFound && err != ErrEntryExpired {
 		an.Nack()
 		return err
 	}
