@@ -19,5 +19,5 @@ This image is a pre-1.0 version of The Things Network's Router component. It is 
 ```
 docker pull thethingsnetwork/router
 
-docker run -p 88647:88647/udp -p 88627:88627 thethingsnetwork/router --udp-port 88647 --tcp-port 88627 --brokers "1.2.3.4:88672,broker.host.com:88672"
+docker run -p 8647:8647/udp -p 8627:8627 thethingsnetwork/router --udp-port 8647 --tcp-port 8627 --brokers "1.2.3.4:8672,broker.host.com:8672"
 ```

@@ -19,5 +19,5 @@ This image is a pre-1.0 version of The Things Network's Broker component. It is 
 ```
 docker pull thethingsnetwork/broker
 
-docker run -p 88642:88642 -p 88672:88672 thethingsnetwork/broker --handlers-port 88642 --routers-port 88672
+docker run -p 8642:8642 -p 8672:8672 thethingsnetwork/broker --handlers-port 8642 --routers-port 8672
 ```
