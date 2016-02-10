@@ -5,7 +5,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -61,12 +60,12 @@ func main() {
 		for {
 			packet, an, err := gtwAdapter.Next()
 			if err != nil {
-				fmt.Println(err)
+				ctx.WithError(err).Warn("Could not get next packet from gateway")
 				continue
 			}
 			go func(packet Packet, an AckNacker) {
 				if err := router.HandleUp(packet, an, brkAdapter); err != nil {
-					fmt.Println(err)
+					ctx.WithError(err).Warn("Could not process packet from gateway")
 				}
 			}(packet, an)
 		}
@@ -77,12 +76,12 @@ func main() {
 		for {
 			reg, an, err := brkAdapter.NextRegistration()
 			if err != nil {
-				fmt.Println(err)
+				ctx.WithError(err).Warn("Could not get next registration from broker")
 				continue
 			}
 			go func(reg Registration, an AckNacker) {
 				if err := router.Register(reg, an); err != nil {
-					fmt.Println(err)
+					ctx.WithError(err).Warn("Could not process registration from broker")
 				}
 			}(reg, an)
 		}
