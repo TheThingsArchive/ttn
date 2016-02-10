@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/semtech"
+	"github.com/TheThingsNetwork/ttn/simulators/node"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	"github.com/apex/log"
 	"github.com/apex/log/handlers/text"
@@ -77,8 +78,49 @@ func MockWithSchedule(filename string, delay time.Duration, routers ...string) {
 	}
 }
 
-func MockRandomly() {
-	// TODO
+func MockRandomly(nodes []node.LiveNode, routers ...string) {
+	var adapters []io.ReadWriteCloser
+	for _, router := range routers {
+		addr, err := net.ResolveUDPAddr("udp", router)
+		if err != nil {
+			panic(err)
+		}
+		conn, err := net.DialUDP("udp", nil, addr)
+		if err != nil {
+			panic(err)
+		}
+		adapters = append(adapters, conn)
+	}
+
+	log.SetHandler(text.New(os.Stdout))
+	log.SetLevel(log.DebugLevel)
+	ctx := log.WithFields(log.Fields{"Simulator": "Gateway"})
+
+	fwd, err := NewForwarder([8]byte{1, 2, 3, 4, 5, 6, 7, 8}, ctx, adapters...)
+	if err != nil {
+		panic(err)
+	}
+
+	messages := make(chan string)
+
+	for _, n := range nodes {
+		go n.Start(messages)
+	}
+
+	for {
+		message := <-messages
+
+		rxpk := semtech.RXPK{
+			Rssi: pointer.Int(-20),
+			Datr: pointer.String("SF7BW125"),
+			Modu: pointer.String("LORA"),
+			Data: pointer.String(message),
+		}
+
+		if err := fwd.Forward(rxpk); err != nil {
+			ctx.WithError(err).WithField("rxpk", rxpk).Warn("failed to forward")
+		}
+	}
 }
 
 // rxpkFromConf read an input json file and parse it into a list of RXPK packets
