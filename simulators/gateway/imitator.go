@@ -78,7 +78,7 @@ func MockWithSchedule(filename string, delay time.Duration, routers ...string) {
 	}
 }
 
-func MockRandomly(nodes []node.LiveNode, routers ...string) {
+func MockRandomly(nodes []node.LiveNode, ctx log.Interface, routers ...string) {
 	var adapters []io.ReadWriteCloser
 	for _, router := range routers {
 		addr, err := net.ResolveUDPAddr("udp", router)
@@ -91,10 +91,6 @@ func MockRandomly(nodes []node.LiveNode, routers ...string) {
 		}
 		adapters = append(adapters, conn)
 	}
-
-	log.SetHandler(text.New(os.Stdout))
-	log.SetLevel(log.DebugLevel)
-	ctx := log.WithFields(log.Fields{"Simulator": "Gateway"})
 
 	fwd, err := NewForwarder([8]byte{1, 2, 3, 4, 5, 6, 7, 8}, ctx, adapters...)
 	if err != nil {

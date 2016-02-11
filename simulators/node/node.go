@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/apex/log"
 	"github.com/brocaar/lorawan"
 )
 
@@ -23,14 +24,16 @@ type LiveNode interface {
 }
 
 type Node struct {
-	DevAddr lorawan.DevAddr
-	AppEUI  lorawan.EUI64
-	NwkSKey lorawan.AES128Key
-	AppSKey lorawan.AES128Key
-	FCntUp  uint32
+	DevAddr  lorawan.DevAddr
+	AppEUI   lorawan.EUI64
+	NwkSKey  lorawan.AES128Key
+	AppSKey  lorawan.AES128Key
+	FCntUp   uint32
+	interval int
+	ctx      log.Interface
 }
 
-func New() *Node {
+func New(interval int, ctx log.Interface) *Node {
 	devAddr := [4]byte{}
 	copy(devAddr[:], randBytes(4))
 
@@ -43,18 +46,23 @@ func New() *Node {
 	appSKey := [16]byte{}
 	copy(appSKey[:], randBytes(16))
 
-	return &Node{
-		DevAddr: lorawan.DevAddr(devAddr),
-		AppEUI:  lorawan.EUI64(appEUI),
-		NwkSKey: lorawan.AES128Key(nwkSKey),
-		AppSKey: lorawan.AES128Key(appSKey),
+	node := &Node{
+		DevAddr:  lorawan.DevAddr(devAddr),
+		AppEUI:   lorawan.EUI64(appEUI),
+		NwkSKey:  lorawan.AES128Key(nwkSKey),
+		AppSKey:  lorawan.AES128Key(appSKey),
+		interval: interval,
 	}
+
+	node.ctx = ctx.WithField("devAddr", node.DevAddr)
+
+	return node
 }
 
 func (node *Node) Start(messages chan string) {
 	for {
-		<-time.After(time.Duration(rand.Intn(10)) * time.Second)
-		messages <- node.NextMessage()
+		<-time.After(time.Duration(rand.ExpFloat64()*float64(node.interval)) * time.Millisecond)
+		node.NextMessage(messages)
 	}
 }
 
@@ -62,10 +70,11 @@ func (node *Node) String() string {
 	return fmt.Sprintf("Node %s:\n  AppEUI: %s\n  NwkSKey: %s\n  AppSKey: %s\n  FCntUp: %d", node.DevAddr, node.AppEUI, node.NwkSKey, node.AppSKey, node.FCntUp)
 }
 
-func (node *Node) NextMessage() string {
+func (node *Node) NextMessage(messages chan string) {
 	node.FCntUp++
 	raw := node.BuildMessage([]byte(fmt.Sprintf("This is message %d.", node.FCntUp)))
-	return strings.Trim(base64.StdEncoding.EncodeToString(raw), "=")
+	node.ctx.WithField("FCnt", node.FCntUp).Debug("Publishing message")
+	messages <- strings.Trim(base64.StdEncoding.EncodeToString(raw), "=")
 }
 
 func (node *Node) BuildMessage(data []byte) []byte {

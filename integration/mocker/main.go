@@ -5,31 +5,36 @@ package main
 
 import (
 	"flag"
+	"os"
 	"strings"
 
 	"github.com/TheThingsNetwork/ttn/simulators/gateway"
 	"github.com/TheThingsNetwork/ttn/simulators/node"
+	"github.com/apex/log"
+	"github.com/apex/log/handlers/text"
+)
+
+var (
+	numNodes int
+	interval int
 )
 
 func main() {
 	routers := parseOptions()
 
-	nodes := []node.LiveNode{
-		node.New(),
-		node.New(),
-		node.New(),
-		node.New(),
-		node.New(),
-		node.New(),
-		node.New(),
-		node.New(),
-		node.New(),
-		node.New(),
-		node.New(),
-		node.New(),
+	log.SetHandler(text.New(os.Stdout))
+	log.SetLevel(log.DebugLevel)
+
+	nodeCtx := log.WithFields(log.Fields{"Simulator": "Node"})
+	gatewayCtx := log.WithFields(log.Fields{"Simulator": "Gateway"})
+
+	nodes := []node.LiveNode{}
+
+	for i := 0; i < numNodes; i++ {
+		nodes = append(nodes, node.New(interval, nodeCtx))
 	}
 
-	gateway.MockRandomly(nodes, routers...)
+	gateway.MockRandomly(nodes, gatewayCtx, routers...)
 }
 
 func parseOptions() (routers []string) {
@@ -37,6 +42,10 @@ func parseOptions() (routers []string) {
 	flag.StringVar(&routersFlag, "routers", "", `Router addresses to which send packets.
  	For instance: 10.10.3.34:8080,thethingsnetwork.router.com:3000
  	`)
+
+	flag.IntVar(&interval, "interval", 500, "Average time (in milliseconds) between node messages")
+	flag.IntVar(&numNodes, "nodes", 10, "Number of nodes to simulate")
+
 	flag.Parse()
 
 	if routersFlag == "" {
