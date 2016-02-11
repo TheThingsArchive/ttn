@@ -51,8 +51,8 @@ func TestDecodeDeviceTopic(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			Convey("And appEui is 0101, devEui is AA and type is Uplink", func() {
-				So(tp.AppEui, ShouldEqual, "0101")
-				So(tp.DevEui, ShouldEqual, "AA")
+				So(tp.AppEUI, ShouldEqual, "0101")
+				So(tp.DevEUI, ShouldEqual, "AA")
 				So(tp.Type, ShouldEqual, Uplink)
 			})
 		})
@@ -78,8 +78,8 @@ func TestDecodeDeviceTopic(t *testing.T) {
 func TestEncodeDeviceTopic(t *testing.T) {
 	Convey("Given the appEui 0202, devEui BB and type Downlink", t, func() {
 		tp := &DeviceTopic{
-			AppEui: "0202",
-			DevEui: "BB",
+			AppEUI: "0202",
+			DevEUI: "BB",
 			Type:   Downlink,
 		}
 

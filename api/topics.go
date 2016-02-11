@@ -31,8 +31,8 @@ const (
 
 // DeviceTopic represents a publish/subscribe topic for application devices
 type DeviceTopic struct {
-	AppEui string
-	DevEui string
+	AppEUI string
+	DevEUI string
 	Type   DeviceTopicType
 }
 
@@ -60,5 +60,5 @@ func DecodeDeviceTopic(topic string) (*DeviceTopic, error) {
 
 // Encode encodes the DeviceTopic to a topic
 func (t *DeviceTopic) Encode() (string, error) {
-	return fmt.Sprintf("%s/%s/%s/%s", t.AppEui, Devices, t.DevEui, t.Type), nil
+	return fmt.Sprintf("%s/%s/%s/%s", t.AppEUI, Devices, t.DevEUI, t.Type), nil
 }
