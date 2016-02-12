@@ -11,9 +11,9 @@ The Things Network is a global open crowdsourced Internet of Things data network
 
 This repository **will become** version 1.0 of The Things Network. It is **under heavy development** and currently it's APIs and code are not yet stable (pre 1.0).
 
-## Getting Started
+## Getting Started With The Things Network
 
-For the time being this repository is **development-only**. We are working hard on getting the network components ready and welcome all the help we can get. If you want to participate in our community, you should:
+When you get started with The Things Network, you'll probably have some questions. Here are some things you can do to find the answer to them:
 
 - Register on the [forum](http://forum.thethingsnetwork.org)
 - Join [Slack](https://slack.thethingsnetwork.org)
@@ -21,7 +21,13 @@ For the time being this repository is **development-only**. We are working hard 
 - Read background information on the [wiki](http://thethingsnetwork.org/wiki)
 - Send an email to @johanstokking (johan@thethingsnetwork.org)
 
-To get started with LoRaWAN and The Things Network, you can also have a look at a *demonstration version* of the network, which is documented on the [wiki](http://thethingsnetwork.org/wiki/). Development of the demonstration version is done in the [croft](https://github.com/TheThingsNetwork/croft) and [jolie](https://github.com/TheThingsNetwork/jolie) repositories. The demonstration version will soon be deprecated, but a compatible application will be built on top of the new infrastructure that is being built in this repository.
+## Running the Network
+
+We are working hard on building a working version of the v1.0 backend. Currently, we have the following components working:
+
+- [x] **Router**: [[download](integration/router/DOWNLOADS.md)] [[docker](https://hub.docker.com/r/thethingsnetwork/router/)]
+- [x] **Broker**: [[download](integration/broker/DOWNLOADS.md)] [[docker](https://hub.docker.com/r/thethingsnetwork/broker/)]
+- [ ] **Handler**: *work in progress*
 
 ## Contributing
 
