@@ -4,7 +4,7 @@
 package components
 
 import (
-	"fmt"
+	"sync"
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/core"
@@ -29,6 +29,7 @@ type RouterStorage interface {
 
 type routerBoltStorage struct {
 	*bolt.DB
+	sync.Mutex                // Guards the db storage to make Lookup and Store atomic actions
 	expiryDelay time.Duration // Entry lifetime delay
 }
 
@@ -54,6 +55,17 @@ func NewRouterStorage(delay time.Duration) (RouterStorage, error) {
 
 // Lookup implements the RouterStorage interface
 func (s routerBoltStorage) Lookup(devAddr lorawan.DevAddr) (routerEntry, error) {
+	return s.lookup(devAddr, true)
+}
+
+// lookup offers an indirection in order to avoid taking a lock if not needed
+func (s routerBoltStorage) lookup(devAddr lorawan.DevAddr, lock bool) (routerEntry, error) {
+	// NOTE This works under the assumption that a read or write lock is already hold by the callee (e.g. Store)
+	if lock {
+		s.Lock()
+		defer s.Unlock()
+	}
+
 	entry, err := lookup(s.DB, "brokers", devAddr, &routerEntry{})
 	if err != nil {
 		return routerEntry{}, err
@@ -69,7 +81,6 @@ func (s routerBoltStorage) Lookup(devAddr lorawan.DevAddr) (routerEntry, error) 
 
 	rentry := entries[0]
 
-	fmt.Println(s.expiryDelay, rentry.until.Before(time.Now()), rentry)
 	if s.expiryDelay != 0 && rentry.until.Before(time.Now()) {
 		if err := flush(s.DB, "brokers", devAddr); err != nil {
 			return routerEntry{}, err
@@ -82,7 +93,9 @@ func (s routerBoltStorage) Lookup(devAddr lorawan.DevAddr) (routerEntry, error) 
 
 // Store implements the RouterStorage interface
 func (s routerBoltStorage) Store(devAddr lorawan.DevAddr, entry routerEntry) error {
-	_, err := s.Lookup(devAddr)
+	s.Lock()
+	defer s.Unlock()
+	_, err := s.lookup(devAddr, false)
 	if err != ErrNotFound && err != ErrEntryExpired {
 		return ErrAlreadyExists
 	}
@@ -97,6 +110,8 @@ func (s routerBoltStorage) Close() error {
 
 // Reset implements the RouterStorage interface
 func (s routerBoltStorage) Reset() error {
+	s.Lock()
+	defer s.Unlock()
 	return resetDB(s.DB, "brokers")
 }
 
