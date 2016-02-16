@@ -131,7 +131,7 @@ func checkRouterEntries(t *testing.T, want *routerEntry, got routerEntry) {
 		}
 
 		if addr != want.Recipient.Address.(string) {
-			Ko(t, "The retrieved address [%s] does not match expected [%s]", addr, want.Recipient.Address)
+			Ko(t, `The retrieved address "%s" does not match expected "%s"`, addr, want.Recipient.Address)
 			return
 		}
 	} else {
