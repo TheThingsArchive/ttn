@@ -266,32 +266,37 @@ type application struct {
 
 func genPacketsFromSchedule(s *[]event) {
 	for i, entry := range *s {
-		// Build the macPayload
-		macPayload := lorawan.NewMACPayload(true)
-		macPayload.FHDR = lorawan.FHDR{DevAddr: entry.Shape.Device.DevAddr}
-		macPayload.FRMPayload = []lorawan.Payload{&lorawan.DataPayload{
-			Bytes: []byte(entry.Shape.Data),
-		}}
-		macPayload.FPort = uint8(1)
-		if err := macPayload.EncryptFRMPayload(entry.Shape.Device.AppSKey); err != nil {
-			panic(err)
-		}
-
-		// Build the physicalPayload
-		phyPayload := lorawan.NewPHYPayload(true)
-		phyPayload.MHDR = lorawan.MHDR{
-			MType: lorawan.UnconfirmedDataUp,
-			Major: lorawan.LoRaWANR1,
-		}
-		phyPayload.MACPayload = macPayload
-		if err := phyPayload.SetMIC(entry.Shape.Device.NwkSKey); err != nil {
-			panic(err)
-		}
-		entry.Packet = &core.Packet{
-			Payload:  phyPayload,
-			Metadata: core.Metadata{},
-		}
+		entry.Packet = new(core.Packet)
+		*entry.Packet = genPacketFromShape(entry.Shape)
 		(*s)[i] = entry
+	}
+}
+
+func genPacketFromShape(shape packetShape) core.Packet {
+	// Build the macPayload
+	macPayload := lorawan.NewMACPayload(true)
+	macPayload.FHDR = lorawan.FHDR{DevAddr: shape.Device.DevAddr}
+	macPayload.FRMPayload = []lorawan.Payload{&lorawan.DataPayload{
+		Bytes: []byte(shape.Data),
+	}}
+	macPayload.FPort = uint8(1)
+	if err := macPayload.EncryptFRMPayload(shape.Device.AppSKey); err != nil {
+		panic(err)
+	}
+
+	// Build the physicalPayload
+	phyPayload := lorawan.NewPHYPayload(true)
+	phyPayload.MHDR = lorawan.MHDR{
+		MType: lorawan.UnconfirmedDataUp,
+		Major: lorawan.LoRaWANR1,
+	}
+	phyPayload.MACPayload = macPayload
+	if err := phyPayload.SetMIC(shape.Device.NwkSKey); err != nil {
+		panic(err)
+	}
+	return core.Packet{
+		Payload:  phyPayload,
+		Metadata: core.Metadata{},
 	}
 }
 
