@@ -5,14 +5,9 @@ package components
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/apex/log"
-)
-
-const (
-	EXPIRY_DELAY = time.Hour * 8 // Life-time of an entry in the storage
 )
 
 type Router struct {

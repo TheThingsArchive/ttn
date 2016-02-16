@@ -4,6 +4,7 @@
 package components
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/core"
@@ -38,7 +39,7 @@ type routerEntry struct {
 }
 
 // NewRouterStorage creates a new router bolt in-memory storage
-func NewRouterStorage() (RouterStorage, error) {
+func NewRouterStorage(delay time.Duration) (RouterStorage, error) {
 	db, err := bolt.Open("router_storage.db", 0600, &bolt.Options{Timeout: time.Second})
 	if err != nil {
 		return nil, err
@@ -48,7 +49,7 @@ func NewRouterStorage() (RouterStorage, error) {
 		return nil, err
 	}
 
-	return &routerBoltStorage{DB: db}, nil
+	return &routerBoltStorage{DB: db, expiryDelay: delay}, nil
 }
 
 // Lookup implements the RouterStorage interface
@@ -68,6 +69,7 @@ func (s routerBoltStorage) Lookup(devAddr lorawan.DevAddr) (routerEntry, error) 
 
 	rentry := entries[0]
 
+	fmt.Println(s.expiryDelay, rentry.until.Before(time.Now()), rentry)
 	if s.expiryDelay != 0 && rentry.until.Before(time.Now()) {
 		if err := flush(s.DB, "brokers", devAddr); err != nil {
 			return routerEntry{}, err
