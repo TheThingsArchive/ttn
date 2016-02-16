@@ -57,7 +57,16 @@ func (s routerBoltStorage) Lookup(devAddr lorawan.DevAddr) (routerEntry, error) 
 	if err != nil {
 		return routerEntry{}, err
 	}
-	rentry := entry.(routerEntry)
+	entries := entry.([]routerEntry)
+
+	if len(entries) != 1 {
+		if err := flush(s.DB, "brokers", devAddr); err != nil {
+			return routerEntry{}, err
+		}
+		return routerEntry{}, ErrNotFound
+	}
+
+	rentry := entries[0]
 
 	if s.expiryDelay != 0 && rentry.until.Before(time.Now()) {
 		if err := flush(s.DB, "brokers", devAddr); err != nil {

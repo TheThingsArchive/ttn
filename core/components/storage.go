@@ -26,7 +26,8 @@ func initDB(db *bolt.DB, bucketName string) error {
 	})
 }
 
-// store put a new entry in the given bolt database.
+// store put a new entry in the given bolt database. It adds the entry to an existing set or create
+// a new set containing one element.
 func store(db *bolt.DB, bucketName string, devAddr lorawan.DevAddr, entry storageEntry) error {
 	marshalled, err := entry.MarshalBinary()
 	if err != nil {
