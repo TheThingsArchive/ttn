@@ -14,28 +14,45 @@ import (
 )
 
 type routerEntryShape struct {
+	routerEntry
 	DevAddr lorawan.DevAddr
-	Address string
 }
 
 func TestStorageExpiration(t *testing.T) {
+	devices := []lorawan.DevAddr{
+		lorawan.DevAddr([4]byte{0, 0, 0, 1}),
+	}
+
+	entries := []routerEntry{
+		{Recipient: core.Recipient{Address: "MyAddress1", Id: ""}},
+	}
+
 	tests := []struct {
 		Desc            string
 		ExistingEntries []routerEntryShape
 		ExpiryDelay     time.Duration
 		Store           *routerEntryShape
 		Lookup          lorawan.DevAddr
-		WantEntry       *routerEntryShape
+		WantEntry       *routerEntry
 		WantError       []error
 	}{
 		{
 			Desc:            "No entry, Lookup address",
 			ExistingEntries: nil,
 			ExpiryDelay:     time.Minute,
+			Lookup:          devices[0],
 			Store:           nil,
-			Lookup:          lorawan.DevAddr([4]byte{0, 0, 0, 1}),
 			WantEntry:       nil,
 			WantError:       []error{ErrNotFound},
+		},
+		{
+			Desc:            "No entry, Store and Lookup same",
+			ExistingEntries: nil,
+			ExpiryDelay:     time.Minute,
+			Store:           &routerEntryShape{entries[0], devices[0]},
+			Lookup:          devices[0],
+			WantEntry:       &entries[0],
+			WantError:       nil,
 		},
 	}
 
@@ -75,14 +92,8 @@ func genFilledRouterStorage(setup []routerEntryShape) RouterStorage {
 		panic(err)
 	}
 
-	for i, shape := range setup {
-		entry := routerEntry{
-			Recipient: core.Recipient{
-				Address: shape.Address,
-				Id:      i,
-			},
-		}
-		if err := db.Store(shape.DevAddr, entry); err != nil {
+	for _, shape := range setup {
+		if err := db.Store(shape.DevAddr, shape.routerEntry); err != nil {
 			panic(err)
 		}
 	}
@@ -96,14 +107,7 @@ func storeRouter(db RouterStorage, entry *routerEntryShape, cherr chan interface
 		return
 	}
 
-	err := db.Store(entry.DevAddr, routerEntry{
-		Recipient: core.Recipient{
-			Address: entry.Address,
-			Id:      "LikeICare",
-		},
-	})
-
-	if err != nil {
+	if err := db.Store(entry.DevAddr, entry.routerEntry); err != nil {
 		cherr <- err
 	}
 }
@@ -117,7 +121,7 @@ func lookupRouter(db RouterStorage, devAddr lorawan.DevAddr, cherr chan interfac
 }
 
 // ----- CHECK utilities
-func checkRouterEntries(t *testing.T, want *routerEntryShape, got routerEntry) {
+func checkRouterEntries(t *testing.T, want *routerEntry, got routerEntry) {
 	if want != nil {
 		addr, ok := got.Recipient.Address.(string)
 
@@ -126,8 +130,8 @@ func checkRouterEntries(t *testing.T, want *routerEntryShape, got routerEntry) {
 			return
 		}
 
-		if addr != want.Address {
-			Ko(t, "The retrieved address [%s] does not match expected [%s]", addr, want.Address)
+		if addr != want.Recipient.Address.(string) {
+			Ko(t, "The retrieved address [%s] does not match expected [%s]", addr, want.Recipient.Address)
 			return
 		}
 	} else {
