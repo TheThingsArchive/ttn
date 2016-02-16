@@ -119,11 +119,11 @@ func (entry *routerEntry) UnmarshalBinary(data []byte) error {
 	if entry == nil || len(data) < 1 {
 		return ErrNotUnmarshable
 	}
-	r := newEntryReadWriter(data[0:])
+	r := newEntryReadWriter(data)
 
 	var id, address string
 	r.Read(func(data []byte) { id = string(data) })
-	r.Read(func(data []byte) { address = string(address) })
+	r.Read(func(data []byte) { address = string(data) })
 	entry.Recipient = core.Recipient{
 		Id:      id,
 		Address: address,
