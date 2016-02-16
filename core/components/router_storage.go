@@ -53,31 +53,28 @@ func NewRouterStorage() (RouterStorage, error) {
 
 // Lookup implements the RouterStorage interface
 func (s routerBoltStorage) Lookup(devAddr lorawan.DevAddr) (routerEntry, error) {
-	entries, err := lookup(s.DB, "brokers", devAddr, &routerEntry{})
+	entry, err := lookup(s.DB, "brokers", devAddr, &routerEntry{})
 	if err != nil {
 		return routerEntry{}, err
 	}
-	routerEntries := entries.([]routerEntry)
+	rentry := entry.(routerEntry)
 
-	if len(routerEntries) != 1 {
-		if err := flush(s.DB, "brokers", devAddr); err != nil {
-			return routerEntry{}, err
-		}
-		return routerEntry{}, ErrNotFound
-	}
-
-	if s.expiryDelay != 0 && routerEntries[0].until.Before(time.Now()) {
+	if s.expiryDelay != 0 && rentry.until.Before(time.Now()) {
 		if err := flush(s.DB, "brokers", devAddr); err != nil {
 			return routerEntry{}, err
 		}
 		return routerEntry{}, ErrEntryExpired
 	}
 
-	return routerEntries[0], nil
+	return rentry, nil
 }
 
 // Store implements the RouterStorage interface
 func (s routerBoltStorage) Store(devAddr lorawan.DevAddr, entry routerEntry) error {
+	_, err := s.Lookup(devAddr)
+	if err != ErrNotFound && err != ErrEntryExpired {
+		return ErrAlreadyExists
+	}
 	entry.until = time.Now().Add(s.expiryDelay)
 	return store(s.DB, "brokers", devAddr, &entry)
 }
