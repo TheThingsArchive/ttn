@@ -42,7 +42,7 @@ func NewAdapter(adapter *httpadapter.Adapter, parser parser.RegistrationParser, 
 		registrations:      make(chan regReq),
 	}
 
-	// So far we only supports one endpoint [PUT] /end-device/:devAddr
+	// So far we only supports one endpoint [PUT] /end-devices/:devAddr
 	a.RegisterEndpoint("/end-devices/", a.handlePutEndDevice)
 
 	return a, nil
@@ -54,7 +54,7 @@ func (a *Adapter) NextRegistration() (core.Registration, core.AckNacker, error) 
 	return request.Registration, regAckNacker{response: request.response}, nil
 }
 
-// handle request [PUT] on /end-device/:devAddr
+// handle request [PUT] on /end-devices/:devAddr
 func (a *Adapter) handlePutEndDevice(w http.ResponseWriter, req *http.Request) {
 	ctx := a.ctx.WithField("sender", req.RemoteAddr)
 	ctx.Debug("Receiving new registration request")

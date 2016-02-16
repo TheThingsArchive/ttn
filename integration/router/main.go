@@ -8,6 +8,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	. "github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/adapters/http"
@@ -46,7 +47,7 @@ func main() {
 		ctx.WithError(err).Fatal("Could not start Broker Adapter")
 	}
 
-	db, err := components.NewRouterStorage()
+	db, err := components.NewRouterStorage(time.Hour * 8)
 	if err != nil {
 		ctx.WithError(err).Fatal("Could not create a local storage")
 	}

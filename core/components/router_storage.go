@@ -4,6 +4,7 @@
 package components
 
 import (
+	"sync"
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/core"
@@ -28,17 +29,18 @@ type RouterStorage interface {
 
 type routerBoltStorage struct {
 	*bolt.DB
+	sync.Mutex                // Guards the db storage to make Lookup and Store atomic actions
 	expiryDelay time.Duration // Entry lifetime delay
 }
 
 // routerEntry stores all information that link a device to a broker
 type routerEntry struct {
-	Recipients []core.Recipient // Recipients associated to a device. //NOTE why not only one ?
-	until      time.Time        // The moment until when the entry is still valid
+	Recipient core.Recipient // Recipient associated to a device.
+	until     time.Time      // The moment until when the entry is still valid
 }
 
 // NewRouterStorage creates a new router bolt in-memory storage
-func NewRouterStorage() (RouterStorage, error) {
+func NewRouterStorage(delay time.Duration) (RouterStorage, error) {
 	db, err := bolt.Open("router_storage.db", 0600, &bolt.Options{Timeout: time.Second})
 	if err != nil {
 		return nil, err
@@ -48,36 +50,55 @@ func NewRouterStorage() (RouterStorage, error) {
 		return nil, err
 	}
 
-	return &routerBoltStorage{DB: db}, nil
+	return &routerBoltStorage{DB: db, expiryDelay: delay}, nil
 }
 
 // Lookup implements the RouterStorage interface
 func (s routerBoltStorage) Lookup(devAddr lorawan.DevAddr) (routerEntry, error) {
-	entries, err := lookup(s.DB, "brokers", devAddr, &routerEntry{})
+	return s.lookup(devAddr, true)
+}
+
+// lookup offers an indirection in order to avoid taking a lock if not needed
+func (s routerBoltStorage) lookup(devAddr lorawan.DevAddr, lock bool) (routerEntry, error) {
+	// NOTE This works under the assumption that a read or write lock is already hold by the callee (e.g. Store)
+	if lock {
+		s.Lock()
+		defer s.Unlock()
+	}
+
+	entry, err := lookup(s.DB, "brokers", devAddr, &routerEntry{})
 	if err != nil {
 		return routerEntry{}, err
 	}
-	routerEntries := entries.([]routerEntry)
+	entries := entry.([]routerEntry)
 
-	if len(routerEntries) != 1 {
+	if len(entries) != 1 {
 		if err := flush(s.DB, "brokers", devAddr); err != nil {
 			return routerEntry{}, err
 		}
 		return routerEntry{}, ErrNotFound
 	}
 
-	if s.expiryDelay != 0 && routerEntries[0].until.Before(time.Now()) {
+	rentry := entries[0]
+
+	if s.expiryDelay != 0 && rentry.until.Before(time.Now()) {
 		if err := flush(s.DB, "brokers", devAddr); err != nil {
 			return routerEntry{}, err
 		}
 		return routerEntry{}, ErrEntryExpired
 	}
 
-	return routerEntries[0], nil
+	return rentry, nil
 }
 
 // Store implements the RouterStorage interface
 func (s routerBoltStorage) Store(devAddr lorawan.DevAddr, entry routerEntry) error {
+	s.Lock()
+	defer s.Unlock()
+	_, err := s.lookup(devAddr, false)
+	if err != ErrNotFound && err != ErrEntryExpired {
+		return ErrAlreadyExists
+	}
 	entry.until = time.Now().Add(s.expiryDelay)
 	return store(s.DB, "brokers", devAddr, &entry)
 }
@@ -89,23 +110,23 @@ func (s routerBoltStorage) Close() error {
 
 // Reset implements the RouterStorage interface
 func (s routerBoltStorage) Reset() error {
+	s.Lock()
+	defer s.Unlock()
 	return resetDB(s.DB, "brokers")
 }
 
 // MarshalBinary implements the entryStorage interface
 func (entry routerEntry) MarshalBinary() ([]byte, error) {
-	w := newEntryReadWriter(nil)
-	w.DirectWrite(uint8(len(entry.Recipients)))
-	for _, r := range entry.Recipients {
-		rawId := []byte(r.Id.(string))
-		rawAddress := []byte(r.Address.(string))
-		w.Write(rawId)
-		w.Write(rawAddress)
-	}
 	rawTime, err := entry.until.MarshalBinary()
 	if err != nil {
 		return nil, err
 	}
+	rawId := []byte(entry.Recipient.Id.(string))
+	rawAddress := []byte(entry.Recipient.Address.(string))
+
+	w := newEntryReadWriter(nil)
+	w.Write(rawId)
+	w.Write(rawAddress)
 	w.Write(rawTime)
 	return w.Bytes()
 }
@@ -115,15 +136,14 @@ func (entry *routerEntry) UnmarshalBinary(data []byte) error {
 	if entry == nil || len(data) < 1 {
 		return ErrNotUnmarshable
 	}
-	r := newEntryReadWriter(data[0:])
-	for i := 0; i < int(data[0]); i += 1 {
-		var id, address string
-		r.Read(func(data []byte) { id = string(data) })
-		r.Read(func(data []byte) { address = string(address) })
-		entry.Recipients = append(entry.Recipients, core.Recipient{
-			Id:      id,
-			Address: address,
-		})
+	r := newEntryReadWriter(data)
+
+	var id, address string
+	r.Read(func(data []byte) { id = string(data) })
+	r.Read(func(data []byte) { address = string(data) })
+	entry.Recipient = core.Recipient{
+		Id:      id,
+		Address: address,
 	}
 	var err error
 	r.Read(func(data []byte) {

@@ -5,14 +5,9 @@ package components
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/apex/log"
-)
-
-const (
-	EXPIRY_DELAY = time.Hour * 8 // Life-time of an entry in the storage
 )
 
 type Router struct {
@@ -30,9 +25,7 @@ func NewRouter(db RouterStorage, ctx log.Interface) *Router {
 
 // Register implements the core.Component interface
 func (r *Router) Register(reg core.Registration, an core.AckNacker) error {
-	entry := routerEntry{
-		Recipients: []core.Recipient{reg.Recipient},
-	}
+	entry := routerEntry{Recipient: reg.Recipient}
 	if err := r.db.Store(reg.DevAddr, entry); err != nil {
 		an.Nack()
 		return err
@@ -47,6 +40,7 @@ func (r *Router) HandleDown(p core.Packet, an core.AckNacker, downAdapter core.A
 
 // HandleUp implements the core.Component interface
 func (r *Router) HandleUp(p core.Packet, an core.AckNacker, upAdapter core.Adapter) error {
+	var err error
 	// Lookup for an existing broker
 	devAddr, err := p.DevAddr()
 	if err != nil {
@@ -55,12 +49,18 @@ func (r *Router) HandleUp(p core.Packet, an core.AckNacker, upAdapter core.Adapt
 	}
 
 	entries, err := r.db.Lookup(devAddr)
-	if err != ErrDeviceNotFound && err != ErrNotFound && err != ErrEntryExpired {
+	if err != nil && err != ErrNotFound && err != ErrEntryExpired {
 		an.Nack()
 		return err
 	}
 
-	response, err := upAdapter.Send(p, entries.Recipients...)
+	var response core.Packet
+	if err == nil {
+		response, err = upAdapter.Send(p, entries.Recipient)
+	} else {
+		response, err = upAdapter.Send(p)
+	}
+
 	if err != nil {
 		an.Nack()
 		return err
