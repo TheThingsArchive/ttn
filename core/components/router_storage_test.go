@@ -69,11 +69,9 @@ func genFilledRouterStorage(setup []routerEntryShape) RouterStorage {
 	for i, shape := range setup {
 		entry := routerEntry{
 			until: shape.Until,
-			Recipients: []core.Recipient{
-				{
-					Address: shape.Address,
-					Id:      i,
-				},
+			Recipient: core.Recipient{
+				Address: shape.Address,
+				Id:      i,
 			},
 		}
 		if err := db.Store(shape.DevAddr, entry); err != nil {

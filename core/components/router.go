@@ -30,9 +30,7 @@ func NewRouter(db RouterStorage, ctx log.Interface) *Router {
 
 // Register implements the core.Component interface
 func (r *Router) Register(reg core.Registration, an core.AckNacker) error {
-	entry := routerEntry{
-		Recipients: []core.Recipient{reg.Recipient},
-	}
+	entry := routerEntry{Recipient: reg.Recipient}
 	if err := r.db.Store(reg.DevAddr, entry); err != nil {
 		an.Nack()
 		return err
@@ -60,7 +58,7 @@ func (r *Router) HandleUp(p core.Packet, an core.AckNacker, upAdapter core.Adapt
 		return err
 	}
 
-	response, err := upAdapter.Send(p, entries.Recipients...)
+	response, err := upAdapter.Send(p, entries.Recipient)
 	if err != nil {
 		an.Nack()
 		return err

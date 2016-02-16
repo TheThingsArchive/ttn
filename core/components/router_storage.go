@@ -33,8 +33,8 @@ type routerBoltStorage struct {
 
 // routerEntry stores all information that link a device to a broker
 type routerEntry struct {
-	Recipients []core.Recipient // Recipients associated to a device. //NOTE why not only one ?
-	until      time.Time        // The moment until when the entry is still valid
+	Recipient core.Recipient // Recipient associated to a device.
+	until     time.Time      // The moment until when the entry is still valid
 }
 
 // NewRouterStorage creates a new router bolt in-memory storage
@@ -94,18 +94,16 @@ func (s routerBoltStorage) Reset() error {
 
 // MarshalBinary implements the entryStorage interface
 func (entry routerEntry) MarshalBinary() ([]byte, error) {
-	w := newEntryReadWriter(nil)
-	w.DirectWrite(uint8(len(entry.Recipients)))
-	for _, r := range entry.Recipients {
-		rawId := []byte(r.Id.(string))
-		rawAddress := []byte(r.Address.(string))
-		w.Write(rawId)
-		w.Write(rawAddress)
-	}
 	rawTime, err := entry.until.MarshalBinary()
 	if err != nil {
 		return nil, err
 	}
+	rawId := []byte(entry.Recipient.Id.(string))
+	rawAddress := []byte(entry.Recipient.Address.(string))
+
+	w := newEntryReadWriter(nil)
+	w.Write(rawId)
+	w.Write(rawAddress)
 	w.Write(rawTime)
 	return w.Bytes()
 }
@@ -116,14 +114,13 @@ func (entry *routerEntry) UnmarshalBinary(data []byte) error {
 		return ErrNotUnmarshable
 	}
 	r := newEntryReadWriter(data[0:])
-	for i := 0; i < int(data[0]); i += 1 {
-		var id, address string
-		r.Read(func(data []byte) { id = string(data) })
-		r.Read(func(data []byte) { address = string(address) })
-		entry.Recipients = append(entry.Recipients, core.Recipient{
-			Id:      id,
-			Address: address,
-		})
+
+	var id, address string
+	r.Read(func(data []byte) { id = string(data) })
+	r.Read(func(data []byte) { address = string(address) })
+	entry.Recipient = core.Recipient{
+		Id:      id,
+		Address: address,
 	}
 	var err error
 	r.Read(func(data []byte) {
