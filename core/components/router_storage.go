@@ -54,12 +54,12 @@ func NewRouterStorage(delay time.Duration) (RouterStorage, error) {
 }
 
 // Lookup implements the RouterStorage interface
-func (s routerBoltStorage) Lookup(devAddr lorawan.DevAddr) (routerEntry, error) {
+func (s *routerBoltStorage) Lookup(devAddr lorawan.DevAddr) (routerEntry, error) {
 	return s.lookup(devAddr, true)
 }
 
 // lookup offers an indirection in order to avoid taking a lock if not needed
-func (s routerBoltStorage) lookup(devAddr lorawan.DevAddr, lock bool) (routerEntry, error) {
+func (s *routerBoltStorage) lookup(devAddr lorawan.DevAddr, lock bool) (routerEntry, error) {
 	// NOTE This works under the assumption that a read or write lock is already hold by the callee (e.g. Store)
 	if lock {
 		s.Lock()
@@ -92,7 +92,7 @@ func (s routerBoltStorage) lookup(devAddr lorawan.DevAddr, lock bool) (routerEnt
 }
 
 // Store implements the RouterStorage interface
-func (s routerBoltStorage) Store(devAddr lorawan.DevAddr, entry routerEntry) error {
+func (s *routerBoltStorage) Store(devAddr lorawan.DevAddr, entry routerEntry) error {
 	s.Lock()
 	defer s.Unlock()
 	_, err := s.lookup(devAddr, false)
@@ -104,12 +104,14 @@ func (s routerBoltStorage) Store(devAddr lorawan.DevAddr, entry routerEntry) err
 }
 
 // Close implements the RouterStorage interface
-func (s routerBoltStorage) Close() error {
+func (s *routerBoltStorage) Close() error {
+	s.Lock()
+	defer s.Unlock()
 	return s.DB.Close()
 }
 
 // Reset implements the RouterStorage interface
-func (s routerBoltStorage) Reset() error {
+func (s *routerBoltStorage) Reset() error {
 	s.Lock()
 	defer s.Unlock()
 	return resetDB(s.DB, "brokers")
