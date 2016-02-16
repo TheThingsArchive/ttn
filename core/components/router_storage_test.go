@@ -29,26 +29,29 @@ func TestStorageExpiration(t *testing.T) {
 
 	tests := []struct {
 		Desc            string
-		ExistingEntries []routerEntryShape
 		ExpiryDelay     time.Duration
+		ExistingEntries []routerEntryShape
 		Store           *routerEntryShape
+		WaitDelay       time.Duration
 		Lookup          lorawan.DevAddr
 		WantEntry       *routerEntry
 		WantError       []error
 	}{
 		{
 			Desc:            "No entry, Lookup address",
-			ExistingEntries: nil,
 			ExpiryDelay:     time.Minute,
+			ExistingEntries: nil,
 			Lookup:          devices[0],
+			WaitDelay:       0,
 			Store:           nil,
 			WantEntry:       nil,
 			WantError:       []error{ErrNotFound},
 		},
 		{
 			Desc:            "No entry, Store and Lookup same",
-			ExistingEntries: nil,
 			ExpiryDelay:     time.Minute,
+			ExistingEntries: nil,
+			WaitDelay:       0,
 			Store:           &routerEntryShape{entries[0], devices[0]},
 			Lookup:          devices[0],
 			WantEntry:       &entries[0],
@@ -70,7 +73,7 @@ func TestStorageExpiration(t *testing.T) {
 
 		// Operate
 		storeRouter(db, test.Store, cherr)
-		got := lookupRouter(db, test.Lookup, cherr)
+		got := lookupRouter(db, test.WaitDelay, test.Lookup, cherr)
 
 		// Check
 		checkChErrors(t, test.WantError, cherr)
@@ -112,7 +115,10 @@ func storeRouter(db RouterStorage, entry *routerEntryShape, cherr chan interface
 	}
 }
 
-func lookupRouter(db RouterStorage, devAddr lorawan.DevAddr, cherr chan interface{}) routerEntry {
+func lookupRouter(db RouterStorage, delay time.Duration, devAddr lorawan.DevAddr, cherr chan interface{}) routerEntry {
+	if delay != 0 {
+		<-time.After(delay)
+	}
 	entry, err := db.Lookup(devAddr)
 	if err != nil {
 		cherr <- err
