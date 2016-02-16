@@ -21,18 +21,21 @@ type routerEntryShape struct {
 func TestStorageExpiration(t *testing.T) {
 	devices := []lorawan.DevAddr{
 		lorawan.DevAddr([4]byte{0, 0, 0, 1}),
+		lorawan.DevAddr([4]byte{14, 15, 8, 42}),
 	}
 
 	entries := []routerEntry{
 		{Recipient: core.Recipient{Address: "MyAddress1", Id: ""}},
+		{Recipient: core.Recipient{Address: "AnotherAddress", Id: ""}},
 	}
 
 	tests := []struct {
 		Desc            string
 		ExpiryDelay     time.Duration
 		ExistingEntries []routerEntryShape
+		WaitDelayS      time.Duration
 		Store           *routerEntryShape
-		WaitDelay       time.Duration
+		WaitDelayL      time.Duration
 		Lookup          lorawan.DevAddr
 		WantEntry       *routerEntry
 		WantError       []error
@@ -42,7 +45,6 @@ func TestStorageExpiration(t *testing.T) {
 			ExpiryDelay:     time.Minute,
 			ExistingEntries: nil,
 			Lookup:          devices[0],
-			WaitDelay:       0,
 			Store:           nil,
 			WantEntry:       nil,
 			WantError:       []error{ErrNotFound},
@@ -51,11 +53,76 @@ func TestStorageExpiration(t *testing.T) {
 			Desc:            "No entry, Store and Lookup same",
 			ExpiryDelay:     time.Minute,
 			ExistingEntries: nil,
-			WaitDelay:       0,
 			Store:           &routerEntryShape{entries[0], devices[0]},
 			Lookup:          devices[0],
 			WantEntry:       &entries[0],
 			WantError:       nil,
+		},
+		{
+			Desc:            "No entry, store, wait expiry, and lookup same",
+			ExpiryDelay:     time.Millisecond,
+			ExistingEntries: nil,
+			Store:           &routerEntryShape{entries[0], devices[0]},
+			WaitDelayL:      time.Millisecond * 250,
+			Lookup:          devices[0],
+			WantEntry:       nil,
+			WantError:       []error{ErrEntryExpired},
+		},
+		{
+			Desc:        "One entry, store same, lookup same",
+			ExpiryDelay: time.Minute,
+			ExistingEntries: []routerEntryShape{
+				{entries[0], devices[0]},
+			},
+			Store:     &routerEntryShape{entries[1], devices[0]},
+			Lookup:    devices[0],
+			WantEntry: &entries[0],
+			WantError: []error{ErrAlreadyExists},
+		},
+		{
+			Desc:        "One entry, store different, lookup newly stored",
+			ExpiryDelay: time.Minute,
+			ExistingEntries: []routerEntryShape{
+				{entries[0], devices[0]},
+			},
+			Store:     &routerEntryShape{entries[1], devices[1]},
+			Lookup:    devices[1],
+			WantEntry: &entries[1],
+			WantError: nil,
+		},
+		{
+			Desc:        "One entry, store different, lookup first one",
+			ExpiryDelay: time.Minute,
+			ExistingEntries: []routerEntryShape{
+				{entries[0], devices[0]},
+			},
+			Store:     &routerEntryShape{entries[1], devices[1]},
+			Lookup:    devices[0],
+			WantEntry: &entries[0],
+		},
+		{
+			Desc:        "One entry, store different, wait delay, lookup first one",
+			ExpiryDelay: time.Millisecond,
+			ExistingEntries: []routerEntryShape{
+				{entries[0], devices[0]},
+			},
+			Store:      &routerEntryShape{entries[1], devices[1]},
+			WaitDelayL: time.Millisecond,
+			Lookup:     devices[0],
+			WantEntry:  nil,
+			WantError:  []error{ErrEntryExpired},
+		},
+		{
+			Desc:        "One entry, wait delay, store same, lookup same",
+			ExpiryDelay: time.Millisecond * 100,
+			ExistingEntries: []routerEntryShape{
+				{entries[0], devices[0]},
+			},
+			WaitDelayS: time.Millisecond * 200,
+			Store:      &routerEntryShape{entries[1], devices[0]},
+			Lookup:     devices[0],
+			WantEntry:  &entries[1],
+			WantError:  nil,
 		},
 	}
 
@@ -64,18 +131,17 @@ func TestStorageExpiration(t *testing.T) {
 		Desc(t, test.Desc)
 
 		// Build
-		db := genFilledRouterStorage(test.ExistingEntries)
+		db := genFilledRouterStorage(test.ExistingEntries, test.ExpiryDelay)
 		cherr := make(chan interface{}, 2)
+		// Operate
+		storeRouter(db, test.WaitDelayS, test.Store, cherr)
+		got := lookupRouter(db, test.WaitDelayL, test.Lookup, cherr)
+
+		// Check
 		go func() {
 			time.After(time.Millisecond * 250)
 			close(cherr)
 		}()
-
-		// Operate
-		storeRouter(db, test.Store, cherr)
-		got := lookupRouter(db, test.WaitDelay, test.Lookup, cherr)
-
-		// Check
 		checkChErrors(t, test.WantError, cherr)
 		checkRouterEntries(t, test.WantEntry, got)
 
@@ -85,8 +151,8 @@ func TestStorageExpiration(t *testing.T) {
 }
 
 // ----- BUILD utilities
-func genFilledRouterStorage(setup []routerEntryShape) RouterStorage {
-	db, err := NewRouterStorage()
+func genFilledRouterStorage(setup []routerEntryShape, expiryDelay time.Duration) RouterStorage {
+	db, err := NewRouterStorage(expiryDelay)
 	if err != nil {
 		panic(err)
 	}
@@ -105,7 +171,10 @@ func genFilledRouterStorage(setup []routerEntryShape) RouterStorage {
 }
 
 // ----- OPERATE utilities
-func storeRouter(db RouterStorage, entry *routerEntryShape, cherr chan interface{}) {
+func storeRouter(db RouterStorage, delay time.Duration, entry *routerEntryShape, cherr chan interface{}) {
+	if delay != 0 {
+		<-time.After(delay)
+	}
 	if entry == nil {
 		return
 	}
