@@ -76,7 +76,7 @@ func (h *Handler) Register(reg core.Registration, an core.AckNacker) error {
 		return err
 	}
 
-	an.Ack()
+	an.Ack(nil)
 	return nil
 }
 
@@ -116,7 +116,9 @@ func (h *Handler) HandleUp(p core.Packet, an core.AckNacker, upAdapter core.Adap
 	switch resp.(type) {
 	case core.Packet:
 		h.ctx.WithField("bundleId", id).Debug("Received response with packet. Sending ack")
-		an.Ack(resp.(core.Packet))
+		pkt := new(core.Packet)
+		*pkt = resp.(core.Packet)
+		an.Ack(pkt)
 		return nil
 	case error:
 		h.ctx.WithField("bundleId", id).WithError(resp.(error)).Debug("Received response. Sending Nack")
@@ -124,7 +126,7 @@ func (h *Handler) HandleUp(p core.Packet, an core.AckNacker, upAdapter core.Adap
 		return resp.(error)
 	default:
 		h.ctx.WithField("bundleId", id).Debug("Received response. Sending ack")
-		an.Ack()
+		an.Ack(nil)
 		return nil
 	}
 }

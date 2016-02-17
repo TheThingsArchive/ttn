@@ -76,7 +76,7 @@ func (b *Broker) HandleUp(p core.Packet, an core.AckNacker, adapter core.Adapter
 		an.Nack()
 		return err
 	}
-	return an.Ack(response)
+	return an.Ack(&response)
 }
 
 // HandleDown implements the core.Component interface. Not implemented yet
@@ -106,5 +106,5 @@ func (b *Broker) Register(r core.Registration, an core.AckNacker) error {
 	}
 
 	ctx.Debug("Successful Registration")
-	return an.Ack()
+	return an.Ack(nil)
 }

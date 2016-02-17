@@ -346,7 +346,7 @@ func genNewHandler(t *testing.T, applications map[lorawan.EUI64]application) *Ha
 
 type voidAckNacker struct{}
 
-func (v voidAckNacker) Ack(packets ...core.Packet) error {
+func (v voidAckNacker) Ack(packets *core.Packet) error {
 	return nil
 }
 func (v voidAckNacker) Nack() error {
@@ -381,7 +381,7 @@ type chanAckNacker struct {
 	NackChan chan interface{}
 }
 
-func (an chanAckNacker) Ack(packets ...core.Packet) error {
+func (an chanAckNacker) Ack(packets *core.Packet) error {
 	an.AckChan <- true
 	return nil
 }

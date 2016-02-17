@@ -18,7 +18,7 @@ type regAckNacker struct {
 }
 
 // Ack implements the core.Acker interface
-func (r regAckNacker) Ack(p ...core.Packet) error {
+func (r regAckNacker) Ack(p *core.Packet) error {
 	select {
 	case r.response <- regRes{statusCode: http.StatusAccepted}:
 		return nil

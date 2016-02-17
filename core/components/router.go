@@ -30,7 +30,7 @@ func (r *Router) Register(reg core.Registration, an core.AckNacker) error {
 		an.Nack()
 		return err
 	}
-	return an.Ack()
+	return an.Ack(nil)
 }
 
 // HandleDown implements the core.Component interface
@@ -65,5 +65,5 @@ func (r *Router) HandleUp(p core.Packet, an core.AckNacker, upAdapter core.Adapt
 		an.Nack()
 		return err
 	}
-	return an.Ack(response)
+	return an.Ack(&response)
 }

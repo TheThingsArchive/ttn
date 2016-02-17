@@ -21,17 +21,16 @@ type packetAckNacker struct {
 }
 
 // Ack implements the core.AckNacker interface
-func (an packetAckNacker) Ack(p ...core.Packet) error {
-	if len(p) > 1 {
-		return ErrInvalidArguments
+func (an packetAckNacker) Ack(p *core.Packet) error {
+	defer close(an.response)
+	if p == nil {
+		an.response <- pktRes{statusCode: http.StatusOK}
+		return nil
 	}
-	var raw []byte
-	if len(p) == 1 {
-		var err error
-		raw, err = json.Marshal(p[0])
-		if err != nil {
-			return err
-		}
+
+	raw, err := json.Marshal(*p)
+	if err != nil {
+		return err
 	}
 
 	select {

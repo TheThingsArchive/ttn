@@ -127,7 +127,7 @@ func getRegistrations(adapter *Adapter, want []core.Registration) []core.Registr
 			if err != nil {
 				return
 			}
-			an.Ack(core.Packet{})
+			an.Ack(nil)
 			ch <- r
 		}()
 		select {

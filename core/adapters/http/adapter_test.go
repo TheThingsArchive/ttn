@@ -112,7 +112,7 @@ func TestNext(t *testing.T) {
 				if test.IsNotFound {
 					an.Nack()
 				} else {
-					an.Ack()
+					an.Ack(nil)
 				}
 			}
 			gotError <- err
