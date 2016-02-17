@@ -39,6 +39,7 @@ func (b *Broker) HandleUp(p core.Packet, an core.AckNacker, adapter core.Adapter
 	entries, err := b.db.Lookup(devAddr)
 	switch err {
 	case nil:
+	case ErrNotFound:
 	case ErrDeviceNotFound:
 		ctx.Warn("Uplink device not found")
 		return an.Nack()
