@@ -8,6 +8,7 @@ import (
 
 	"github.com/TheThingsNetwork/ttn/core"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
+	"github.com/brocaar/lorawan"
 )
 
 func TestBrokerHandleup(t *testing.T) {
@@ -34,6 +35,25 @@ func TestBrokerHandleup(t *testing.T) {
 		},
 	}
 
+	recipients := []core.Registration{
+		{
+			Recipient: core.Recipient{
+				Address: "R0<->D0",
+				Id:      "Id0",
+			},
+			DevAddr: lorawan.DevAddr(devices[0].DevAddr),
+			Options: lorawan.AES128Key(devices[0].NwkSKey),
+		},
+		{
+			Recipient: core.Recipient{
+				Address: "R1<->D1",
+				Id:      "Id1",
+			},
+			DevAddr: lorawan.DevAddr(devices[1].DevAddr),
+			Options: lorawan.AES128Key(devices[1].NwkSKey),
+		},
+	}
+
 	tests := []struct {
 		Desc            string
 		KnownRecipients []core.Registration
@@ -46,6 +66,60 @@ func TestBrokerHandleup(t *testing.T) {
 			Desc: "0 known | Send #0",
 			Packet: packetShape{
 				Device: devices[0],
+				Data:   "MyData",
+			},
+			WantRecipients: nil,
+			WantAck:        false,
+			WantError:      nil,
+		},
+		{
+			Desc: "know #0 | Send #0",
+			KnownRecipients: []core.Registration{
+				recipients[0],
+			},
+			Packet: packetShape{
+				Device: devices[0],
+				Data:   "MyData",
+			},
+			WantRecipients: []core.Recipient{recipients[0].Recipient},
+			WantAck:        true,
+			WantError:      nil,
+		},
+		{
+			Desc: "know #1 | Send #0",
+			KnownRecipients: []core.Registration{
+				recipients[1],
+			},
+			Packet: packetShape{
+				Device: devices[0],
+				Data:   "MyData",
+			},
+			WantRecipients: nil,
+			WantAck:        false,
+			WantError:      nil,
+		},
+		{
+			Desc: "know #0, #1 | Send #2",
+			KnownRecipients: []core.Registration{
+				recipients[0],
+				recipients[1],
+			},
+			Packet: packetShape{
+				Device: devices[2],
+				Data:   "MyData",
+			},
+			WantRecipients: nil,
+			WantAck:        false,
+			WantError:      nil,
+		},
+		{
+			Desc: "know #0, #1 | Send #3 (address == #1, nwkskey != #1)",
+			KnownRecipients: []core.Registration{
+				recipients[0],
+				recipients[1],
+			},
+			Packet: packetShape{
+				Device: devices[3],
 				Data:   "MyData",
 			},
 			WantRecipients: nil,
