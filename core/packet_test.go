@@ -17,7 +17,7 @@ func TestConvertRXPKPacket(t *testing.T) {
 	tests := []convertRXPKTest{
 		genRXPKWithFullMetadata(&convertRXPKTest{WantError: nil}),
 		genRXPKWithPartialMetadata(&convertRXPKTest{WantError: nil}),
-		genRXPKWithNoData(&convertRXPKTest{WantError: ErrImpossibleConversion}),
+		genRXPKWithNoData(&convertRXPKTest{WantError: pointer.String(ErrInvalidPacket)}),
 	}
 
 	for _, test := range tests {
@@ -37,7 +37,7 @@ func TestConvertTXPKPacket(t *testing.T) {
 		convertToTXPKTest{
 			CorePacket: Packet{Metadata: genFullMetadata(), Payload: lorawan.PHYPayload{}},
 			TXPK:       semtech.TXPK{},
-			WantError:  ErrImpossibleConversion,
+			WantError:  pointer.String(ErrInvalidPacket),
 		},
 	}
 
@@ -104,13 +104,13 @@ func TestUnmarshalJSONPacket(t *testing.T) {
 type convertRXPKTest struct {
 	CorePacket Packet
 	RXPK       semtech.RXPK
-	WantError  error
+	WantError  *string
 }
 
 type convertToTXPKTest struct {
 	TXPK       semtech.TXPK
 	CorePacket Packet
-	WantError  error
+	WantError  *string
 }
 
 type marshalJSONTest struct {

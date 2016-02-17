@@ -10,7 +10,7 @@ import (
 )
 
 type base struct {
-	Nature    Nature    // Kind of error, used a comparator
+	Nature    string    // Kind of error, used a comparator
 	Timestamp time.Time // The moment the error was created
 }
 
@@ -27,11 +27,8 @@ type Error struct {
 	base
 }
 
-// Nature identify an error type with a simple tag
-type Nature string
-
 // NewFailure creates a new Failure from a source error
-func NewFailure(k Nature, src interface{}) Failure {
+func NewFailure(k string, src interface{}) Failure {
 	var fault error
 	switch src.(type) {
 	case string:
@@ -61,7 +58,7 @@ func NewFailure(k Nature, src interface{}) Failure {
 }
 
 // NewError creates a new Error
-func NewError(k Nature) Error {
+func NewError(k string) Error {
 	return Error{
 		base: base{
 			Nature:    k,

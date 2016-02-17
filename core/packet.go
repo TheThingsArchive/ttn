@@ -11,21 +11,20 @@ import (
 	"strings"
 
 	"github.com/TheThingsNetwork/ttn/semtech"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	"github.com/brocaar/lorawan"
 )
 
-var ErrImpossibleConversion error = fmt.Errorf("Illegal attempt to convert a packet")
-
 // DevAddr returns a lorawan device address associated to the packet if any
 func (p Packet) DevAddr() (lorawan.DevAddr, error) {
 	if p.Payload.MACPayload == nil {
-		return lorawan.DevAddr{}, fmt.Errorf("MACPayload should not be empty")
+		return lorawan.DevAddr{}, errors.NewFailure(ErrInvalidPacket, "MACPAyload should not be empty")
 	}
 
 	macpayload, ok := p.Payload.MACPayload.(*lorawan.MACPayload)
 	if !ok {
-		return lorawan.DevAddr{}, fmt.Errorf("Packet does not carry a MACPayload")
+		return lorawan.DevAddr{}, errors.NewFailure(ErrInvalidPacket, "Packet does not carry a MACPayload")
 	}
 
 	return macpayload.FHDR.DevAddr, nil
@@ -34,12 +33,12 @@ func (p Packet) DevAddr() (lorawan.DevAddr, error) {
 // FCnt returns the frame counter of the given packet if any
 func (p Packet) Fcnt() (uint32, error) {
 	if p.Payload.MACPayload == nil {
-		return 0, fmt.Errorf("MACPayload should not be empty")
+		return 0, errors.NewFailure(ErrInvalidPacket, "MACPayload should not be empty")
 	}
 
 	macpayload, ok := p.Payload.MACPayload.(*lorawan.MACPayload)
 	if !ok {
-		return 0, fmt.Errorf("Packet does not carry a MACPayload")
+		return 0, errors.NewFailure(ErrInvalidPacket, "Packet does not carry a MACPayload")
 	}
 
 	return macpayload.FHDR.FCnt, nil
@@ -59,7 +58,7 @@ func ConvertRXPK(p semtech.RXPK) (Packet, error) {
 	// First, we have to get the physical payload which is encoded in the Data field
 	packet := Packet{}
 	if p.Data == nil {
-		return packet, ErrImpossibleConversion
+		return packet, errors.NewFailure(ErrInvalidPacket, "There's no data in the packet")
 	}
 
 	// RXPK Data are base64 encoded, yet without the trailing "==" if any.....
@@ -73,12 +72,12 @@ func ConvertRXPK(p semtech.RXPK) (Packet, error) {
 
 	raw, err := base64.StdEncoding.DecodeString(encoded)
 	if err != nil {
-		return packet, err
+		return packet, errors.NewFailure(ErrInvalidPacket, err)
 	}
 
 	payload := lorawan.NewPHYPayload(true)
 	if err = payload.UnmarshalBinary(raw); err != nil {
-		return packet, err
+		return packet, errors.NewFailure(ErrInvalidPacket, err)
 	}
 
 	// Then, we interpret every other known field as a metadata and store them into an appropriate
@@ -104,7 +103,7 @@ func ConvertToTXPK(p Packet) (semtech.TXPK, error) {
 	// Step 1, convert the physical payload to a base64 string (without the padding)
 	raw, err := p.Payload.MarshalBinary()
 	if err != nil {
-		return semtech.TXPK{}, ErrImpossibleConversion
+		return semtech.TXPK{}, errors.NewFailure(ErrInvalidPacket, err)
 	}
 	data := strings.Trim(base64.StdEncoding.EncodeToString(raw), "=")
 	txpk := semtech.TXPK{Data: pointer.String(data)}
@@ -128,11 +127,11 @@ func ConvertToTXPK(p Packet) (semtech.TXPK, error) {
 func (p Packet) MarshalJSON() ([]byte, error) {
 	rawMetadata, err := json.Marshal(p.Metadata)
 	if err != nil {
-		return nil, err
+		return nil, errors.NewFailure(ErrInvalidPacket, err)
 	}
 	rawPayload, err := p.Payload.MarshalBinary()
 	if err != nil {
-		return nil, err
+		return nil, errors.NewFailure(ErrInvalidPacket, err)
 	}
 	strPayload := base64.StdEncoding.EncodeToString(rawPayload)
 	return []byte(fmt.Sprintf(`{"payload":"%s","metadata":%s}`, strPayload, string(rawMetadata))), nil
@@ -141,7 +140,7 @@ func (p Packet) MarshalJSON() ([]byte, error) {
 // UnmarshalJSON impements the json.Marshaler interface
 func (p *Packet) UnmarshalJSON(raw []byte) error {
 	if p == nil {
-		return ErrImpossibleConversion
+		return errors.NewFailure(ErrInvalidPacket, "Cannot unmarshal a nil packet")
 	}
 
 	// The payload is a bit tricky to unmarshal as we do not know if its an uplink or downlink
@@ -154,17 +153,17 @@ func (p *Packet) UnmarshalJSON(raw []byte) error {
 
 	err := json.Unmarshal(raw, &proxy)
 	if err != nil {
-		return err
+		return errors.NewFailure(ErrInvalidPacket, err)
 	}
 
 	rawPayload, err := base64.StdEncoding.DecodeString(proxy.Payload)
 	if err != nil {
-		return err
+		return errors.NewFailure(ErrInvalidPacket, err)
 	}
 
 	payload := lorawan.NewPHYPayload(true) // true -> uplink
 	if err := payload.UnmarshalBinary(rawPayload); err != nil {
-		return err
+		return errors.NewFailure(ErrInvalidPacket, err)
 	}
 
 	// Now, we check the nature of the decoded payload
@@ -178,7 +177,7 @@ func (p *Packet) UnmarshalJSON(raw []byte) error {
 		// We thus have to unmarshall properly
 		payload = lorawan.NewPHYPayload(false) // false -> downlink
 		if err := payload.UnmarshalBinary(rawPayload); err != nil {
-			return err
+			return errors.NewFailure(ErrInvalidPacket, err)
 		}
 	case "JoinRequest":
 		fallthrough
@@ -191,7 +190,7 @@ func (p *Packet) UnmarshalJSON(raw []byte) error {
 	case "Proprietary":
 		// Proprietary can be either downlink or uplink. Right now, we do not have any message of
 		// that type and thus, we just don't know how to handle them. Let's throw an error.
-		return fmt.Errorf("Unsupported MType Proprietary")
+		return errors.NewFailure(ErrInvalidPacket, "Unsupported MType 'Proprietary'")
 	}
 
 	// Packet = Payload + Metadata

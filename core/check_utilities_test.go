@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/TheThingsNetwork/ttn/semtech"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 )
@@ -24,12 +25,13 @@ func checkPackets(t *testing.T, want Packet, got Packet) {
 }
 
 // Checks that errors match
-func checkErrors(t *testing.T, want error, got error) {
-	if got == want {
-		Ok(t, "check Errors")
+func checkErrors(t *testing.T, want *string, got error) {
+	if want == nil && got == nil || got.(errors.Failure).Nature == *want {
+		Ok(t, "Check errors")
 		return
 	}
-	Ko(t, "Expected error to be %v but got %v", want, got)
+
+	Ko(t, "Expected error to be %s but got %v", want, got)
 }
 
 // Checks that obtained json matches expected one
