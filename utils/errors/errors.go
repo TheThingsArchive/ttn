@@ -5,6 +5,7 @@ package errors
 
 import (
 	"fmt"
+	"reflect"
 	"time"
 )
 
@@ -31,13 +32,22 @@ type Nature string
 
 // NewFailure creates a new Failure from a source error
 func NewFailure(k Nature, src error) Failure {
-	return Failure{
+	failure := Failure{
 		base: base{
 			Nature:    k,
 			Timestamp: time.Now(),
 		},
 		Fault: src,
 	}
+
+	// Pop one level if we made a failure from a failure
+	t := reflect.TypeOf(src)
+	tf := reflect.TypeOf(failure)
+	if t == tf {
+		failure.Fault = src.(Failure).Fault
+	}
+
+	return failure
 }
 
 // NewError creates a new Error
