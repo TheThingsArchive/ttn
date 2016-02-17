@@ -23,6 +23,19 @@ func TestBrokerStorage(t *testing.T) {
 		lorawan.DevAddr([4]byte{14, 15, 8, 42}),
 	}
 
+	entries := []brokerEntry{
+		{
+			Id:      "MyId1",
+			NwkSKey: lorawan.AES128Key([16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}),
+			Url:     "MyUrlThatWillSoonBerefactored",
+		},
+		{
+			Id:      "SecondId",
+			NwkSKey: lorawan.AES128Key([16]byte{14, 14, 14, 14, 14, 14, 14, 14, 9, 14, 11, 12, 13, 14, 15}),
+			Url:     "Url2",
+		},
+	}
+
 	tests := []struct {
 		Desc            string
 		ExistingEntries []brokerEntryShape
@@ -32,12 +45,42 @@ func TestBrokerStorage(t *testing.T) {
 		WantError       []error
 	}{
 		{
-			Desc:            "Default",
+			Desc:            "No entry | Store #0",
 			ExistingEntries: nil,
-			Store:           nil,
+			Store:           &brokerEntryShape{entries[0], devices[0]},
 			Lookup:          devices[0],
-			WantEntries:     nil,
+			WantEntries:     []brokerEntry{entries[0]},
 			WantError:       nil,
+		},
+		{
+			Desc: "Entry #0 | Store another #0",
+			ExistingEntries: []brokerEntryShape{
+				{entries[0], devices[0]},
+			},
+			Store:       &brokerEntryShape{entries[1], devices[0]},
+			Lookup:      devices[0],
+			WantEntries: []brokerEntry{entries[0], entries[1]},
+			WantError:   nil,
+		},
+		{
+			Desc: "Entry #0 | Store #1 | Lookup #1",
+			ExistingEntries: []brokerEntryShape{
+				{entries[0], devices[0]},
+			},
+			Store:       &brokerEntryShape{entries[1], devices[1]},
+			Lookup:      devices[1],
+			WantEntries: []brokerEntry{entries[1]},
+			WantError:   nil,
+		},
+		{
+			Desc: "Entry #0 | Store #1 | Lookup #0",
+			ExistingEntries: []brokerEntryShape{
+				{entries[0], devices[0]},
+			},
+			Store:       &brokerEntryShape{entries[1], devices[1]},
+			Lookup:      devices[0],
+			WantEntries: []brokerEntry{entries[0]},
+			WantError:   nil,
 		},
 	}
 
