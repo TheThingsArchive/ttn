@@ -63,12 +63,12 @@ func (a *Adapter) Send(p core.Packet, r ...core.Recipient) (core.Packet, error) 
 	m, err := json.Marshal(p.Metadata)
 	if err != nil {
 		a.ctx.WithError(err).Warn("Invalid Packet")
-		return core.Packet{}, errors.NewFailure(ErrInvalidPacket, err)
+		return core.Packet{}, errors.NewFailure(ErrInvalidStructure, err)
 	}
 	pl, err := p.Payload.MarshalBinary()
 	if err != nil {
 		a.ctx.WithError(err).Warn("Invalid Packet")
-		return core.Packet{}, errors.NewFailure(ErrInvalidPacket, err)
+		return core.Packet{}, errors.NewFailure(ErrInvalidStructure, err)
 	}
 	payload := fmt.Sprintf(`{"payload":"%s","metadata":%s}`, base64.StdEncoding.EncodeToString(pl), m)
 
@@ -148,7 +148,7 @@ func (a *Adapter) Send(p core.Packet, r ...core.Recipient) (core.Packet, error) 
 	// Check responses
 	if len(chresp) > 1 {
 		ctx.WithField("response_count", len(chresp)).Error("Received too many positive answers")
-		return core.Packet{}, errors.NewFailure(ErrUnexpectedResponse, "Received too many positive answers")
+		return core.Packet{}, errors.NewFailure(ErrWrongBehavior, "Received too many positive answers")
 	}
 
 	// Get packet
@@ -157,10 +157,10 @@ func (a *Adapter) Send(p core.Packet, r ...core.Recipient) (core.Packet, error) 
 		return packet, nil
 	default:
 		if errs != nil {
-			return core.Packet{}, errors.NewFailure(ErrUnableToSend, fmt.Sprintf("%+v", errs))
+			return core.Packet{}, errors.NewFailure(ErrFailedOperation, fmt.Sprintf("%+v", errs))
 		}
 		ctx.Error("No response packet available")
-		return core.Packet{}, fmt.Errorf("No response packet available")
+		return core.Packet{}, errors.NewFailure(ErrWrongBehavior, "No response packet available")
 	}
 }
 

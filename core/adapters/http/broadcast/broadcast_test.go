@@ -62,14 +62,14 @@ func TestSend(t *testing.T) {
 			Packet:            core.Packet{},
 			WantRegistrations: []core.Registration{},
 			WantPayload:       "",
-			WantError:         pointer.String(ErrInvalidPacket),
+			WantError:         pointer.String(ErrInvalidStructure),
 		},
 		{ // Broadcast an invalid packet
 			Recipients:        []core.Recipient{},
 			Packet:            core.Packet{},
 			WantRegistrations: []core.Registration{},
 			WantPayload:       "",
-			WantError:         pointer.String(ErrInvalidPacket),
+			WantError:         pointer.String(ErrInvalidStructure),
 		},
 	}
 

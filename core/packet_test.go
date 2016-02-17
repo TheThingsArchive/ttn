@@ -18,7 +18,7 @@ func TestConvertRXPKPacket(t *testing.T) {
 	tests := []convertRXPKTest{
 		genRXPKWithFullMetadata(&convertRXPKTest{WantError: nil}),
 		genRXPKWithPartialMetadata(&convertRXPKTest{WantError: nil}),
-		genRXPKWithNoData(&convertRXPKTest{WantError: pointer.String(ErrInvalidPacket)}),
+		genRXPKWithNoData(&convertRXPKTest{WantError: pointer.String(ErrInvalidStructure)}),
 	}
 
 	for _, test := range tests {
@@ -38,7 +38,7 @@ func TestConvertTXPKPacket(t *testing.T) {
 		convertToTXPKTest{
 			CorePacket: Packet{Metadata: genFullMetadata(), Payload: lorawan.PHYPayload{}},
 			TXPK:       semtech.TXPK{},
-			WantError:  pointer.String(ErrInvalidPacket),
+			WantError:  pointer.String(ErrInvalidStructure),
 		},
 	}
 

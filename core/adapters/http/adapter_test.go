@@ -37,7 +37,7 @@ func TestSend(t *testing.T) {
 		{
 			core.Packet{},
 			"",
-			pointer.String(ErrInvalidPacket),
+			pointer.String(ErrInvalidStructure),
 		},
 	}
 

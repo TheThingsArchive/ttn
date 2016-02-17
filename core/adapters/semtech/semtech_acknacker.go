@@ -28,7 +28,7 @@ func (an semtechAckNacker) Ack(p *core.Packet) error {
 	// For the downlink, we have to send a PULL_RESP packet which hold a TXPK
 	txpk, err := core.ConvertToTXPK(*p)
 	if err != nil {
-		return errors.NewFailure(ErrInvalidPacket, err)
+		return errors.NewFailure(ErrInvalidStructure, err)
 	}
 
 	raw, err := semtech.Packet{
@@ -39,7 +39,7 @@ func (an semtechAckNacker) Ack(p *core.Packet) error {
 
 	addr, ok := an.recipient.Address.(*net.UDPAddr)
 	if !ok {
-		return errors.NewFailure(ErrInvalidRecipient, fmt.Sprintf("Expected UDPAddr but got: %v", an.recipient.Address))
+		return errors.NewFailure(ErrInvalidStructure, fmt.Sprintf("Expected UDPAddr but got: %v", an.recipient.Address))
 	}
 	an.conn <- udpMsg{raw: raw, addr: addr}
 	return nil

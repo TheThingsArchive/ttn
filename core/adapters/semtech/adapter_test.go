@@ -74,7 +74,7 @@ func TestNext(t *testing.T) {
 			Packet:    genPUSH_DATANoPayload([]byte{0x22, 0x35}),
 			WantAck:   genPUSH_ACK([]byte{0x22, 0x35}),
 			WantNext:  core.Packet{},
-			WantError: pointer.String(ErrInvalidPacket),
+			WantError: pointer.String(ErrInvalidStructure),
 		},
 	}
 

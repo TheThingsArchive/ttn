@@ -4,13 +4,9 @@
 package core
 
 const (
-	ErrInvalidPacket      = "Invalid Packet"
-	ErrInvalidMetadata    = "Invalid Metadata"
-	ErrInvalidParam       = "Invalid Parameter"
-	ErrInvalidRecipient   = "Invalid Recipient"
-	ErrInvalidRequest     = "Invalid Request"
-	ErrNotSupported       = "Unsupported Operation"
-	ErrUnableToSend       = "Unable to Send"
-	ErrUnexpectedResponse = "Unexpected Response"
-	ErrConnectionLost     = "Connection Lost"
+	ErrInvalidStructure = "Invalid Structure"
+	ErrNotSupported     = "Unsupported Operation"
+	ErrNotFound         = "Entity Not Found"
+	ErrWrongBehavior    = "Unexpected Behavior"
+	ErrFailedOperation  = "Unsuccessful Operation"
 )

@@ -50,7 +50,7 @@ func NewAdapter(port uint, ctx log.Interface) (*Adapter, error) {
 	a.ctx.WithField("port", port).Info("Starting Server")
 	if udpConn, err = net.ListenUDP("udp", addr); err != nil {
 		a.ctx.WithError(err).Error("Unable to start server")
-		return nil, errors.NewFailure(ErrInvalidParam, fmt.Sprintf("Invalid port %v", port))
+		return nil, errors.NewFailure(ErrInvalidStructure, fmt.Sprintf("Invalid port %v", port))
 	}
 
 	go a.monitorConnection()
@@ -71,7 +71,7 @@ func (a *Adapter) Next() (core.Packet, core.AckNacker, error) {
 	packet, err := core.ConvertRXPK(msg.rxpk)
 	if err != nil {
 		a.ctx.Debug("Received invalid packet")
-		return core.Packet{}, nil, errors.NewFailure(ErrInvalidPacket, err)
+		return core.Packet{}, nil, errors.NewFailure(ErrInvalidStructure, err)
 	}
 	return packet, semtechAckNacker{recipient: msg.recipient, conn: a.conn}, nil
 }
