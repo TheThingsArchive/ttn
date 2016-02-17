@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	. "github.com/TheThingsNetwork/ttn/core/errors"
 	"github.com/TheThingsNetwork/ttn/semtech"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
