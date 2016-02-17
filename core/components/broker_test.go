@@ -60,7 +60,7 @@ func TestBrokerHandleup(t *testing.T) {
 		Packet          packetShape
 		WantRecipients  []core.Recipient
 		WantAck         bool
-		WantError       error
+		WantError       *string
 	}{
 		{
 			Desc: "0 known | Send #0",

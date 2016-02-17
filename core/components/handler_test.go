@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/core"
+	. "github.com/TheThingsNetwork/ttn/core/errors"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"github.com/brocaar/lorawan"
 )
@@ -90,7 +92,7 @@ func TestHandleUp(t *testing.T) {
 		WantNbAck   int
 		WantNbNack  int
 		WantPackets map[[12]byte][]string
-		WantErrors  []error
+		WantErrors  []string
 	}{
 		{
 			Desc: "1 packet",
@@ -123,7 +125,7 @@ func TestHandleUp(t *testing.T) {
 			},
 			WantNbAck:  1,
 			WantNbNack: 1,
-			WantErrors: []error{ErrAlreadyProcessed},
+			WantErrors: []string{ErrFailedOperation},
 			WantPackets: map[[12]byte][]string{
 				[12]byte{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4}: []string{
 					packets[0].Data,
@@ -206,7 +208,7 @@ func TestHandleUp(t *testing.T) {
 			Schedule: []event{
 				event{time.Millisecond * 25, packets[5], nil},
 			},
-			WantErrors:  []error{ErrNotFound},
+			WantErrors:  []string{ErrNotFound},
 			WantNbNack:  1,
 			WantPackets: map[[12]byte][]string{},
 		},
@@ -414,12 +416,12 @@ func (a chanAdapter) NextRegistration() (core.Registration, core.AckNacker, erro
 	panic("Not Expected")
 }
 
-func checkChErrors(t *testing.T, want []error, got chan interface{}) {
+func checkChErrors(t *testing.T, want []string, got chan interface{}) {
 	nb := 0
 outer:
 	for gotErr := range got {
 		for _, wantErr := range want {
-			if wantErr == gotErr {
+			if got != nil && wantErr == gotErr.(errors.Failure).Nature {
 				nb += 1
 				continue outer
 			}

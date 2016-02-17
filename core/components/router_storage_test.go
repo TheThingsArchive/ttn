@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/core"
+	. "github.com/TheThingsNetwork/ttn/core/errors"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"github.com/brocaar/lorawan"
 )
@@ -38,7 +39,7 @@ func TestStorageExpiration(t *testing.T) {
 		WaitDelayL      time.Duration
 		Lookup          lorawan.DevAddr
 		WantEntry       *routerEntry
-		WantError       []error
+		WantError       []string
 	}{
 		{
 			Desc:            "No entry, Lookup address",
@@ -47,7 +48,7 @@ func TestStorageExpiration(t *testing.T) {
 			Lookup:          devices[0],
 			Store:           nil,
 			WantEntry:       nil,
-			WantError:       []error{ErrNotFound},
+			WantError:       []string{ErrNotFound},
 		},
 		{
 			Desc:            "No entry, Store and Lookup same",
@@ -66,7 +67,7 @@ func TestStorageExpiration(t *testing.T) {
 			WaitDelayL:      time.Millisecond * 250,
 			Lookup:          devices[0],
 			WantEntry:       nil,
-			WantError:       []error{ErrEntryExpired},
+			WantError:       []string{ErrNotFound},
 		},
 		{
 			Desc:        "One entry, store same, lookup same",
@@ -77,7 +78,7 @@ func TestStorageExpiration(t *testing.T) {
 			Store:     &routerEntryShape{entries[1], devices[0]},
 			Lookup:    devices[0],
 			WantEntry: &entries[0],
-			WantError: []error{ErrAlreadyExists},
+			WantError: []string{ErrFailedOperation},
 		},
 		{
 			Desc:        "One entry, store different, lookup newly stored",
@@ -110,7 +111,7 @@ func TestStorageExpiration(t *testing.T) {
 			WaitDelayL: time.Millisecond,
 			Lookup:     devices[0],
 			WantEntry:  nil,
-			WantError:  []error{ErrEntryExpired},
+			WantError:  []string{ErrNotFound},
 		},
 		{
 			Desc:        "One entry, wait delay, store same, lookup same",

@@ -42,7 +42,7 @@ func TestBrokerStorage(t *testing.T) {
 		Store           *brokerEntryShape
 		Lookup          lorawan.DevAddr
 		WantEntries     []brokerEntry
-		WantError       []error
+		WantError       []string
 	}{
 		{
 			Desc:            "No entry | Store #0",

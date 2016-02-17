@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/core"
+	. "github.com/TheThingsNetwork/ttn/core/errors"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"github.com/brocaar/lorawan"
@@ -60,7 +62,7 @@ func TestStoragePartition(t *testing.T) {
 		Desc           string
 		PacketsShape   []handlerEntry
 		WantPartitions []partitionShape
-		WantError      error
+		WantError      *string
 	}{
 		{
 			Desc:           "1 packet -> 1 partition | 1 packet",
@@ -72,7 +74,7 @@ func TestStoragePartition(t *testing.T) {
 			Desc:           "1 unknown packet -> error not found",
 			PacketsShape:   []handlerEntry{unknown},
 			WantPartitions: nil,
-			WantError:      ErrNotFound,
+			WantError:      pointer.String(ErrNotFound),
 		},
 		{
 			Desc:           "2 packets | diff DevAddr & diff AppEUI -> 2 partitions | 1 packet",
@@ -196,13 +198,13 @@ func genPacketsFromHandlerEntries(shapes []handlerEntry) []core.Packet {
 }
 
 // ----- CHECK utilities
-
-func checkErrors(t *testing.T, want error, got error) {
-	if want == got {
+func checkErrors(t *testing.T, want *string, got error) {
+	if want == nil && got == nil || got.(errors.Failure).Nature == *want {
 		Ok(t, "Check errors")
 		return
 	}
-	Ko(t, "Expected error to be %v, but got %v", want, got)
+
+	Ko(t, "Expected error to be %s but got %v", want, got)
 }
 
 func checkPartitions(t *testing.T, want []partitionShape, got []handlerPartition) {

@@ -4,9 +4,12 @@
 package components
 
 import (
+	"fmt"
 	"io"
 	"reflect"
 
+	. "github.com/TheThingsNetwork/ttn/core/errors"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/boltdb/bolt"
 	"github.com/brocaar/lorawan"
 )
@@ -31,21 +34,24 @@ func initDB(db *bolt.DB, bucketName string) error {
 func store(db *bolt.DB, bucketName string, devAddr lorawan.DevAddr, entry storageEntry) error {
 	marshalled, err := entry.MarshalBinary()
 	if err != nil {
-		return err
+		return errors.NewFailure(ErrInvalidStructure, err)
 	}
 
 	err = db.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(bucketName))
 		if bucket == nil {
-			return ErrStorageUnreachable
+			return errors.NewFailure(ErrFailedOperation, "storage unreachable")
 		}
 		w := newEntryReadWriter(bucket.Get(devAddr[:]))
 		w.Write(marshalled)
 		data, err := w.Bytes()
 		if err != nil {
-			return err
+			return errors.NewFailure(ErrInvalidStructure, err)
 		}
-		return bucket.Put(devAddr[:], data)
+		if err := bucket.Put(devAddr[:], data); err != nil {
+			return errors.NewFailure(ErrFailedOperation, err)
+		}
+		return nil
 	})
 
 	return err
@@ -62,11 +68,11 @@ func lookup(db *bolt.DB, bucketName string, devAddr lorawan.DevAddr, shape stora
 	err := db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(bucketName))
 		if bucket == nil {
-			return ErrStorageUnreachable
+			return errors.NewFailure(ErrFailedOperation, "storage unreachable")
 		}
 		rawEntry = bucket.Get(devAddr[:])
 		if rawEntry == nil {
-			return ErrNotFound
+			return errors.NewFailure(ErrNotFound, fmt.Sprintf("%+v", devAddr))
 		}
 		return nil
 	})
@@ -89,7 +95,7 @@ func lookup(db *bolt.DB, bucketName string, devAddr lorawan.DevAddr, shape stora
 			if err == io.EOF {
 				break
 			}
-			return nil, err
+			return nil, errors.NewFailure(ErrFailedOperation, err)
 		}
 	}
 	return entries.Interface(), nil
@@ -100,9 +106,12 @@ func flush(db *bolt.DB, bucketName string, devAddr lorawan.DevAddr) error {
 	return db.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(bucketName))
 		if bucket == nil {
-			return ErrStorageUnreachable
+			return errors.NewFailure(ErrFailedOperation, "storage unreachable")
 		}
-		return bucket.Delete(devAddr[:])
+		if err := bucket.Delete(devAddr[:]); err != nil {
+			return errors.NewFailure(ErrFailedOperation, err)
+		}
+		return nil
 	})
 }
 
@@ -110,9 +119,11 @@ func flush(db *bolt.DB, bucketName string, devAddr lorawan.DevAddr) error {
 func resetDB(db *bolt.DB, bucketName string) error {
 	return db.Update(func(tx *bolt.Tx) error {
 		if err := tx.DeleteBucket([]byte(bucketName)); err != nil {
-			return err
+			return errors.NewFailure(ErrFailedOperation, err)
 		}
-		_, err := tx.CreateBucketIfNotExists([]byte(bucketName))
-		return err
+		if _, err := tx.CreateBucketIfNotExists([]byte(bucketName)); err != nil {
+			return errors.NewFailure(ErrFailedOperation, err)
+		}
+		return nil
 	})
 }

@@ -7,6 +7,8 @@ import (
 	"fmt"
 
 	"github.com/TheThingsNetwork/ttn/core"
+	. "github.com/TheThingsNetwork/ttn/core/errors"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/apex/log"
 )
 
@@ -49,7 +51,7 @@ func (r *Router) HandleUp(p core.Packet, an core.AckNacker, upAdapter core.Adapt
 	}
 
 	entries, err := r.db.Lookup(devAddr)
-	if err != nil && err != ErrNotFound && err != ErrEntryExpired {
+	if err != nil && err.(errors.Failure).Nature != ErrNotFound {
 		an.Nack()
 		return err
 	}
