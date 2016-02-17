@@ -5,11 +5,12 @@ package parser
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 
 	"github.com/TheThingsNetwork/ttn/core"
+	. "github.com/TheThingsNetwork/ttn/core/errors"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 )
 
 // Parser gives a flexible way of parsing a request into a packet.
@@ -26,18 +27,18 @@ type JSON struct{}
 func (p JSON) Parse(req *http.Request) (core.Packet, error) {
 	// Check Content-type
 	if req.Header.Get("Content-Type") != "application/json" {
-		return core.Packet{}, fmt.Errorf("Received invalid content-type in request")
+		return core.Packet{}, errors.NewFailure(ErrInvalidRequest, "Received invalid content-type in request")
 	}
 
 	// Check configuration in body
 	body := make([]byte, req.ContentLength)
 	n, err := req.Body.Read(body)
 	if err != nil && err != io.EOF {
-		return core.Packet{}, err
+		return core.Packet{}, errors.NewFailure(ErrInvalidRequest, err)
 	}
 	packet := new(core.Packet)
 	if err := json.Unmarshal(body[:n], packet); err != nil {
-		return core.Packet{}, err
+		return core.Packet{}, errors.NewFailure(ErrInvalidRequest, err)
 	}
 
 	return *packet, nil

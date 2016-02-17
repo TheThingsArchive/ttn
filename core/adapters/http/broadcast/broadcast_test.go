@@ -14,6 +14,8 @@ import (
 	"github.com/TheThingsNetwork/ttn/core"
 	httpadapter "github.com/TheThingsNetwork/ttn/core/adapters/http"
 	"github.com/TheThingsNetwork/ttn/core/adapters/http/parser"
+	. "github.com/TheThingsNetwork/ttn/core/errors"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"github.com/brocaar/lorawan"
@@ -39,7 +41,7 @@ func TestSend(t *testing.T) {
 		Packet            core.Packet
 		WantRegistrations []core.Registration
 		WantPayload       string
-		WantError         error
+		WantError         *string
 	}{
 		{ // Send to recipient a valid packet
 			Recipients:        recipients[1:2], // TODO test with a rejection. Need better error handling
@@ -60,14 +62,14 @@ func TestSend(t *testing.T) {
 			Packet:            core.Packet{},
 			WantRegistrations: []core.Registration{},
 			WantPayload:       "",
-			WantError:         ErrInvalidPacket,
+			WantError:         pointer.String(ErrInvalidPacket),
 		},
 		{ // Broadcast an invalid packet
 			Recipients:        []core.Recipient{},
 			Packet:            core.Packet{},
 			WantRegistrations: []core.Registration{},
 			WantPayload:       "",
-			WantError:         ErrInvalidPacket,
+			WantError:         pointer.String(ErrInvalidPacket),
 		},
 	}
 
@@ -229,13 +231,13 @@ func genSample() (core.Packet, lorawan.DevAddr, string) {
 }
 
 // Check utilities
-
-func checkErrors(t *testing.T, want error, got error) {
-	if want == got {
+func checkErrors(t *testing.T, want *string, got error) {
+	if want == nil && got == nil || got.(errors.Failure).Nature == *want {
 		Ok(t, "Check errors")
 		return
 	}
-	Ko(t, "Expected error %v but got %v", want, got)
+
+	Ko(t, "Expected error to be %s but got %v", want, got)
 }
 
 func checkRegistrations(t *testing.T, want []core.Registration, got []core.Registration) {

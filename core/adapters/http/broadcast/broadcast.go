@@ -15,6 +15,8 @@ import (
 
 	"github.com/TheThingsNetwork/ttn/core"
 	httpadapter "github.com/TheThingsNetwork/ttn/core/adapters/http"
+	. "github.com/TheThingsNetwork/ttn/core/errors"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/apex/log"
 )
 
@@ -28,14 +30,10 @@ type Adapter struct {
 	registrations        chan core.Registration // Communication channel responsible for registration management
 }
 
-var ErrBadOptions = fmt.Errorf("Bad options provided")
-var ErrInvalidPacket = fmt.Errorf("The given packet is invalid")
-var ErrSeveralPositiveAnswers = fmt.Errorf("Several positive response for a given packet")
-
 // NewAdapter promotes an existing basic adapter to a broadcast adapter using a list a of known recipient
 func NewAdapter(adapter *httpadapter.Adapter, recipients []core.Recipient, ctx log.Interface) (*Adapter, error) {
 	if len(recipients) == 0 {
-		return nil, ErrBadOptions
+		return nil, errors.NewFailure(ErrInvalidParam, "Must give at least one recipient")
 	}
 
 	return &Adapter{
@@ -52,12 +50,7 @@ func (a *Adapter) Send(p core.Packet, r ...core.Recipient) (core.Packet, error) 
 		a.ctx.Debug("No recipient provided. The packet will be broadcast")
 		return a.broadcast(p)
 	}
-
-	packet, err := a.Adapter.Send(p, r...)
-	if err == httpadapter.ErrInvalidPacket {
-		return core.Packet{}, ErrInvalidPacket
-	}
-	return packet, err
+	return a.Adapter.Send(p, r...)
 }
 
 // broadcast is merely a send where recipients are the predefined list used at instantiation time.
@@ -66,17 +59,17 @@ func (a *Adapter) broadcast(p core.Packet) (core.Packet, error) {
 	// Generate payload from core packet
 	m, err := json.Marshal(p.Metadata)
 	if err != nil {
-		return core.Packet{}, ErrInvalidPacket
+		return core.Packet{}, errors.NewFailure(ErrInvalidPacket, err)
 	}
 	pl, err := p.Payload.MarshalBinary()
 	if err != nil {
-		return core.Packet{}, ErrInvalidPacket
+		return core.Packet{}, errors.NewFailure(ErrInvalidPacket, err)
 	}
 	payload := fmt.Sprintf(`{"payload":"%s","metadata":%s}`, base64.StdEncoding.EncodeToString(pl), m)
 
 	devAddr, err := p.DevAddr()
 	if err != nil {
-		return core.Packet{}, ErrInvalidPacket
+		return core.Packet{}, errors.NewFailure(ErrInvalidPacket, err)
 	}
 
 	// Prepare ground for parrallel http request
@@ -142,16 +135,16 @@ func (a *Adapter) broadcast(p core.Packet) (core.Packet, error) {
 	wg.Wait()
 	close(cherr)
 	close(register)
-	var errors []error
+	var errs []error
 	for err := range cherr {
-		errors = append(errors, err)
+		errs = append(errs, err)
 	}
-	if errors != nil {
-		return core.Packet{}, fmt.Errorf("Errors: %v", errors)
+	if errs != nil {
+		return core.Packet{}, errors.NewFailure(ErrUnableToSend, fmt.Sprintf("%+v", errs))
 	}
 
 	if len(chresp) > 1 { // NOTE We consider several positive responses as an error
-		return core.Packet{}, ErrSeveralPositiveAnswers
+		return core.Packet{}, errors.NewFailure(ErrUnexpectedResponse, "Received too many positive answers")
 	}
 
 	for recipient := range register {
@@ -162,7 +155,7 @@ func (a *Adapter) broadcast(p core.Packet) (core.Packet, error) {
 	case packet := <-chresp:
 		return packet, nil
 	default:
-		return core.Packet{}, fmt.Errorf("Unexpected error. No response packet available")
+		return core.Packet{}, errors.NewFailure(ErrUnexpectedResponse, "No response packet available")
 	}
 }
 
