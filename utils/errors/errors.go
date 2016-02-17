@@ -31,13 +31,23 @@ type Error struct {
 type Nature string
 
 // NewFailure creates a new Failure from a source error
-func NewFailure(k Nature, src error) Failure {
+func NewFailure(k Nature, src interface{}) Failure {
+	var fault error
+	switch src.(type) {
+	case string:
+		fault = fmt.Errorf("%s", src.(string))
+	case error:
+		fault = src.(error)
+	default:
+		panic("Unexpected error source")
+	}
+
 	failure := Failure{
 		base: base{
 			Nature:    k,
 			Timestamp: time.Now(),
 		},
-		Fault: src,
+		Fault: fault,
 	}
 
 	// Pop one level if we made a failure from a failure
