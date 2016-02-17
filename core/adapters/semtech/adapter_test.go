@@ -9,26 +9,25 @@ import (
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/core"
+	. "github.com/TheThingsNetwork/ttn/core/errors"
 	"github.com/TheThingsNetwork/ttn/semtech"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
+	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 )
-
-func TestNewAdapter(t *testing.T) {
-	Ok(t, "pending")
-}
 
 func TestSend(t *testing.T) {
 	Desc(t, "Send is not supported")
 	adapter, _ := genAdapter(t, 33000)
 	_, err := adapter.Send(core.Packet{})
-	checkErrors(t, ErrNotSupported, err)
+	checkErrors(t, pointer.String(ErrNotSupported), err)
 }
 
 func TestNextRegistration(t *testing.T) {
 	Desc(t, "Next registration is not supported")
 	adapter, _ := genAdapter(t, 33001)
 	_, _, err := adapter.NextRegistration()
-	checkErrors(t, ErrNotSupported, err)
+	checkErrors(t, pointer.String(ErrNotSupported), err)
 }
 
 func TestNext(t *testing.T) {
@@ -40,7 +39,7 @@ func TestNext(t *testing.T) {
 		Packet    semtech.Packet
 		WantAck   semtech.Packet
 		WantNext  core.Packet
-		WantError error
+		WantError *string
 	}{
 		{ // Valid uplink PUSH_DATA
 			Adapter:   adapter,
@@ -75,7 +74,7 @@ func TestNext(t *testing.T) {
 			Packet:    genPUSH_DATANoPayload([]byte{0x22, 0x35}),
 			WantAck:   genPUSH_ACK([]byte{0x22, 0x35}),
 			WantNext:  core.Packet{},
-			WantError: ErrInvalidPacket,
+			WantError: pointer.String(ErrInvalidPacket),
 		},
 	}
 
@@ -95,7 +94,7 @@ func TestNext(t *testing.T) {
 	}
 }
 
-// ----- operate utilities
+// ----- OPERATE utilities
 func getNextPacket(next chan interface{}) (core.Packet, error) {
 	select {
 	case i := <-next:
@@ -109,13 +108,14 @@ func getNextPacket(next chan interface{}) (core.Packet, error) {
 	}
 }
 
-// ----- check utilities
-func checkErrors(t *testing.T, want error, got error) {
-	if want == got {
+// ----- CHECK utilities
+func checkErrors(t *testing.T, want *string, got error) {
+	if want == nil && got == nil || got.(errors.Failure).Nature == *want {
 		Ok(t, "Check errors")
 		return
 	}
-	Ko(t, "Expected error to be %v but got %v", want, got)
+
+	Ko(t, "Expected error to be %s but got %v", want, got)
 }
 
 func checkCorePackets(t *testing.T, want core.Packet, got core.Packet) {
