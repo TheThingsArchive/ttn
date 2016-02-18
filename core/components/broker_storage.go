@@ -42,7 +42,7 @@ type brokerEntry struct {
 func NewBrokerStorage() (BrokerStorage, error) {
 	db, err := bolt.Open("broker_storage.db", 0600, &bolt.Options{Timeout: time.Second})
 	if err != nil {
-		return nil, errors.NewFailure(ErrFailedOperation, err)
+		return nil, errors.New(ErrFailedOperation, err)
 	}
 
 	if err := initDB(db, "devices"); err != nil {
@@ -88,7 +88,7 @@ func (entry brokerEntry) MarshalBinary() ([]byte, error) {
 // UnmarshalBinary implements the entryStorage interface
 func (entry *brokerEntry) UnmarshalBinary(data []byte) error {
 	if entry == nil || len(data) < 3 {
-		return errors.NewFailure(ErrInvalidStructure, "invalid broker entry")
+		return errors.New(ErrInvalidStructure, "invalid broker entry")
 	}
 	r := newEntryReadWriter(data)
 	r.Read(func(data []byte) { entry.Id = string(data) })

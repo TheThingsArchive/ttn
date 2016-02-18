@@ -50,7 +50,7 @@ func NewAdapter(port uint, ctx log.Interface) (*Adapter, error) {
 	a.ctx.WithField("port", port).Info("Starting Server")
 	if udpConn, err = net.ListenUDP("udp", addr); err != nil {
 		a.ctx.WithError(err).Error("Unable to start server")
-		return nil, errors.NewFailure(ErrInvalidStructure, fmt.Sprintf("Invalid port %v", port))
+		return nil, errors.New(ErrInvalidStructure, fmt.Sprintf("Invalid port %v", port))
 	}
 
 	go a.monitorConnection()
@@ -62,7 +62,7 @@ func NewAdapter(port uint, ctx log.Interface) (*Adapter, error) {
 
 // Send implements the core.Adapter interface. Not implemented for the semtech adapter.
 func (a *Adapter) Send(p core.Packet, r ...core.Recipient) (core.Packet, error) {
-	return core.Packet{}, errors.NewFailure(ErrNotSupported, "Send not supported on semtech adapter")
+	return core.Packet{}, errors.New(ErrNotSupported, "Send not supported on semtech adapter")
 }
 
 // Next implements the core.Adapter interface
@@ -71,14 +71,14 @@ func (a *Adapter) Next() (core.Packet, core.AckNacker, error) {
 	packet, err := core.ConvertRXPK(msg.rxpk)
 	if err != nil {
 		a.ctx.Debug("Received invalid packet")
-		return core.Packet{}, nil, errors.NewFailure(ErrInvalidStructure, err)
+		return core.Packet{}, nil, errors.New(ErrInvalidStructure, err)
 	}
 	return packet, semtechAckNacker{recipient: msg.recipient, conn: a.conn}, nil
 }
 
 // NextRegistration implements the core.Adapter interface
 func (a *Adapter) NextRegistration() (core.Registration, core.AckNacker, error) {
-	return core.Registration{}, nil, errors.NewFailure(ErrNotSupported, "NextRegistration not supported on semtech adapter")
+	return core.Registration{}, nil, errors.New(ErrNotSupported, "NextRegistration not supported on semtech adapter")
 }
 
 // listen Handle incoming packets and forward them

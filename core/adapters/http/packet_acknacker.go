@@ -28,14 +28,14 @@ func (an packetAckNacker) Ack(p *core.Packet) error {
 
 	raw, err := json.Marshal(*p)
 	if err != nil {
-		return errors.NewFailure(ErrInvalidStructure, err)
+		return errors.New(ErrInvalidStructure, err)
 	}
 
 	select {
 	case an.response <- pktRes{statusCode: http.StatusOK, content: raw}:
 		return nil
 	case <-time.After(time.Millisecond * 50):
-		return errors.NewFailure(ErrWrongBehavior, "No response was given to the acknacker")
+		return errors.New(ErrWrongBehavior, "No response was given to the acknacker")
 	}
 }
 
@@ -47,7 +47,7 @@ func (an packetAckNacker) Nack() error {
 		content:    []byte(`{"message":"Not in charge of the associated device"}`),
 	}:
 	case <-time.After(time.Millisecond * 50):
-		return errors.NewFailure(ErrWrongBehavior, "No response was given to the acknacker")
+		return errors.New(ErrWrongBehavior, "No response was given to the acknacker")
 	}
 	return nil
 }

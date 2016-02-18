@@ -9,26 +9,15 @@ import (
 	"time"
 )
 
-type base struct {
+// Failure states for fault that occurs during a process.
+type Failure struct {
 	Nature    string    // Kind of error, used a comparator
 	Timestamp time.Time // The moment the error was created
-}
-
-// Failure states for fault that aren't recoverable by the system itself.
-// They consist in unexpected behavior
-type Failure struct {
-	base
-	Fault error // The source of the failure
-}
-
-// Error states for fault that are explicitely created by the application in order to be handled
-// elsewhere. They are recoverable and convey valuable pieces of information.
-type Error struct {
-	base
+	Fault     error     // The source of the failure
 }
 
 // NewFailure creates a new Failure from a source error
-func NewFailure(k string, src interface{}) Failure {
+func New(k string, src interface{}) Failure {
 	var fault error
 	switch src.(type) {
 	case string:
@@ -40,11 +29,9 @@ func NewFailure(k string, src interface{}) Failure {
 	}
 
 	failure := Failure{
-		base: base{
-			Nature:    k,
-			Timestamp: time.Now(),
-		},
-		Fault: fault,
+		Nature:    k,
+		Timestamp: time.Now(),
+		Fault:     fault,
 	}
 
 	// Pop one level if we made a failure from a failure
@@ -57,25 +44,10 @@ func NewFailure(k string, src interface{}) Failure {
 	return failure
 }
 
-// NewError creates a new Error
-func NewError(k string) Error {
-	return Error{
-		base: base{
-			Nature:    k,
-			Timestamp: time.Now(),
-		},
-	}
-}
-
 // Error implements the error built-in interface
 func (err Failure) Error() string {
 	if err.Fault == nil {
-		return err.base.Error()
+		return fmt.Sprintf("%s", err.Nature)
 	}
 	return fmt.Sprintf("%s: %s", err.Nature, err.Fault.Error())
-}
-
-// Error implements the error built-in interface
-func (err base) Error() string {
-	return fmt.Sprintf("%s", err.Nature)
 }

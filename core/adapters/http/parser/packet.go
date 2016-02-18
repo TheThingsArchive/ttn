@@ -27,18 +27,18 @@ type JSON struct{}
 func (p JSON) Parse(req *http.Request) (core.Packet, error) {
 	// Check Content-type
 	if req.Header.Get("Content-Type") != "application/json" {
-		return core.Packet{}, errors.NewFailure(ErrInvalidStructure, "Received invalid content-type in request")
+		return core.Packet{}, errors.New(ErrInvalidStructure, "Received invalid content-type in request")
 	}
 
 	// Check configuration in body
 	body := make([]byte, req.ContentLength)
 	n, err := req.Body.Read(body)
 	if err != nil && err != io.EOF {
-		return core.Packet{}, errors.NewFailure(ErrInvalidStructure, err)
+		return core.Packet{}, errors.New(ErrInvalidStructure, err)
 	}
 	packet := new(core.Packet)
 	if err := json.Unmarshal(body[:n], packet); err != nil {
-		return core.Packet{}, errors.NewFailure(ErrInvalidStructure, err)
+		return core.Packet{}, errors.New(ErrInvalidStructure, err)
 	}
 
 	return *packet, nil

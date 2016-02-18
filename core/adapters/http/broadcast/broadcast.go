@@ -33,7 +33,7 @@ type Adapter struct {
 // NewAdapter promotes an existing basic adapter to a broadcast adapter using a list a of known recipient
 func NewAdapter(adapter *httpadapter.Adapter, recipients []core.Recipient, ctx log.Interface) (*Adapter, error) {
 	if len(recipients) == 0 {
-		return nil, errors.NewFailure(ErrInvalidStructure, "Must give at least one recipient")
+		return nil, errors.New(ErrInvalidStructure, "Must give at least one recipient")
 	}
 
 	return &Adapter{
@@ -59,17 +59,17 @@ func (a *Adapter) broadcast(p core.Packet) (core.Packet, error) {
 	// Generate payload from core packet
 	m, err := json.Marshal(p.Metadata)
 	if err != nil {
-		return core.Packet{}, errors.NewFailure(ErrInvalidStructure, err)
+		return core.Packet{}, errors.New(ErrInvalidStructure, err)
 	}
 	pl, err := p.Payload.MarshalBinary()
 	if err != nil {
-		return core.Packet{}, errors.NewFailure(ErrInvalidStructure, err)
+		return core.Packet{}, errors.New(ErrInvalidStructure, err)
 	}
 	payload := fmt.Sprintf(`{"payload":"%s","metadata":%s}`, base64.StdEncoding.EncodeToString(pl), m)
 
 	devAddr, err := p.DevAddr()
 	if err != nil {
-		return core.Packet{}, errors.NewFailure(ErrInvalidStructure, err)
+		return core.Packet{}, errors.New(ErrInvalidStructure, err)
 	}
 
 	// Prepare ground for parrallel http request
@@ -140,11 +140,11 @@ func (a *Adapter) broadcast(p core.Packet) (core.Packet, error) {
 		errs = append(errs, err)
 	}
 	if errs != nil {
-		return core.Packet{}, errors.NewFailure(ErrFailedOperation, fmt.Sprintf("%+v", errs))
+		return core.Packet{}, errors.New(ErrFailedOperation, fmt.Sprintf("%+v", errs))
 	}
 
 	if len(chresp) > 1 { // NOTE We consider several positive responses as an error
-		return core.Packet{}, errors.NewFailure(ErrWrongBehavior, "Received too many positive answers")
+		return core.Packet{}, errors.New(ErrWrongBehavior, "Received too many positive answers")
 	}
 
 	for recipient := range register {
@@ -155,7 +155,7 @@ func (a *Adapter) broadcast(p core.Packet) (core.Packet, error) {
 	case packet := <-chresp:
 		return packet, nil
 	default:
-		return core.Packet{}, errors.NewFailure(ErrWrongBehavior, "No response packet available")
+		return core.Packet{}, errors.New(ErrWrongBehavior, "No response packet available")
 	}
 }
 

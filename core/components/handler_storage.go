@@ -91,7 +91,7 @@ func (s handlerBoltStorage) Partition(packets ...core.Packet) ([]handlerPartitio
 		// First, determine devAddr, mandatory
 		devAddr, err := packet.DevAddr()
 		if err != nil {
-			return nil, errors.NewFailure(ErrInvalidStructure, err)
+			return nil, errors.New(ErrInvalidStructure, err)
 		}
 
 		entries, err := s.Lookup(devAddr)
@@ -127,7 +127,7 @@ func (s handlerBoltStorage) Partition(packets ...core.Packet) ([]handlerPartitio
 	}
 
 	if len(res) == 0 {
-		return nil, errors.NewFailure(ErrNotFound, "")
+		return nil, errors.New(ErrNotFound, "")
 	}
 
 	return res, nil
@@ -156,7 +156,7 @@ func (entry handlerEntry) MarshalBinary() ([]byte, error) {
 // UnmarshalBinary implements the storageEntry interface
 func (entry *handlerEntry) UnmarshalBinary(data []byte) error {
 	if entry == nil || len(data) < 4 {
-		return errors.NewFailure(ErrInvalidStructure, "Invalid handler entry")
+		return errors.New(ErrInvalidStructure, "Invalid handler entry")
 	}
 	r := newEntryReadWriter(data)
 	r.Read(func(data []byte) { copy(entry.AppEUI[:], data) })

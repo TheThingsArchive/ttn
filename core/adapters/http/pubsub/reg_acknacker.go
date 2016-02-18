@@ -22,7 +22,7 @@ func (r regAckNacker) Ack(p *core.Packet) error {
 	case r.response <- regRes{statusCode: http.StatusAccepted}:
 		return nil
 	case <-time.After(time.Millisecond * 50):
-		return errors.NewFailure(ErrWrongBehavior, "No response was given to the acknacker")
+		return errors.New(ErrWrongBehavior, "No response was given to the acknacker")
 	}
 }
 
@@ -35,6 +35,6 @@ func (r regAckNacker) Nack() error {
 	}:
 		return nil
 	case <-time.After(time.Millisecond * 50):
-		return errors.NewFailure(ErrWrongBehavior, "No response was given to the acknacker")
+		return errors.New(ErrWrongBehavior, "No response was given to the acknacker")
 	}
 }

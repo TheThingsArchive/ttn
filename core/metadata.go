@@ -46,7 +46,7 @@ func (m Metadata) MarshalJSON() ([]byte, error) {
 	})
 
 	if err != nil {
-		err = errors.NewFailure(ErrInvalidStructure, err)
+		err = errors.New(ErrInvalidStructure, err)
 	}
 
 	return data, err
@@ -55,12 +55,12 @@ func (m Metadata) MarshalJSON() ([]byte, error) {
 // UnmarshalJSON implements the json.Unmarshaler interface
 func (m *Metadata) UnmarshalJSON(raw []byte) error {
 	if m == nil {
-		return errors.NewFailure(ErrInvalidStructure, "Cannot unmarshal nil Metadata")
+		return errors.New(ErrInvalidStructure, "Cannot unmarshal nil Metadata")
 	}
 
 	proxy := metadataProxy{}
 	if err := json.Unmarshal(raw, &proxy); err != nil {
-		return errors.NewFailure(ErrInvalidStructure, err)
+		return errors.New(ErrInvalidStructure, err)
 	}
 	*m = Metadata(proxy.metadata)
 	if proxy.Time != nil {

@@ -38,25 +38,25 @@ type PubSub struct{}
 func (p PubSub) Parse(req *http.Request) (core.Registration, error) {
 	// Check Content-type
 	if req.Header.Get("Content-Type") != "application/json" {
-		return core.Registration{}, errors.NewFailure(ErrInvalidStructure, "Received invalid content-type in request")
+		return core.Registration{}, errors.New(ErrInvalidStructure, "Received invalid content-type in request")
 	}
 
 	// Check the query parameter
 	reg := regexp.MustCompile("end-devices/([a-fA-F0-9]{8})$")
 	query := reg.FindStringSubmatch(req.RequestURI)
 	if len(query) < 2 {
-		return core.Registration{}, errors.NewFailure(ErrInvalidStructure, "Incorrect end-device address format")
+		return core.Registration{}, errors.New(ErrInvalidStructure, "Incorrect end-device address format")
 	}
 	devAddr, err := hex.DecodeString(query[1])
 	if err != nil {
-		return core.Registration{}, errors.NewFailure(ErrInvalidStructure, err)
+		return core.Registration{}, errors.New(ErrInvalidStructure, err)
 	}
 
 	// Check configuration in body
 	body := make([]byte, req.ContentLength)
 	n, err := req.Body.Read(body)
 	if err != nil && err != io.EOF {
-		return core.Registration{}, errors.NewFailure(ErrInvalidStructure, err)
+		return core.Registration{}, errors.New(ErrInvalidStructure, err)
 	}
 	params := &struct {
 		Id      string `json:"app_id"`
@@ -64,21 +64,21 @@ func (p PubSub) Parse(req *http.Request) (core.Registration, error) {
 		NwkSKey string `json:"nwks_key"`
 	}{}
 	if err := json.Unmarshal(body[:n], params); err != nil {
-		return core.Registration{}, errors.NewFailure(ErrInvalidStructure, err)
+		return core.Registration{}, errors.New(ErrInvalidStructure, err)
 	}
 
 	nwkSKey, err := hex.DecodeString(params.NwkSKey)
 	if err != nil || len(nwkSKey) != 16 {
-		return core.Registration{}, errors.NewFailure(ErrInvalidStructure, "Incorrect network session key")
+		return core.Registration{}, errors.New(ErrInvalidStructure, "Incorrect network session key")
 	}
 
 	params.Id = strings.Trim(params.Id, " ")
 	params.Url = strings.Trim(params.Url, " ")
 	if len(params.Id) <= 0 {
-		return core.Registration{}, errors.NewFailure(ErrInvalidStructure, "Incorrect application id")
+		return core.Registration{}, errors.New(ErrInvalidStructure, "Incorrect application id")
 	}
 	if len(params.Url) <= 0 {
-		return core.Registration{}, errors.NewFailure(ErrInvalidStructure, "Incorrect application url")
+		return core.Registration{}, errors.New(ErrInvalidStructure, "Incorrect application url")
 	}
 
 	// Create registration
