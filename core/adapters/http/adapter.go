@@ -17,6 +17,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/adapters/http/parser"
 	. "github.com/TheThingsNetwork/ttn/core/errors"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
+	"github.com/TheThingsNetwork/ttn/utils/stats"
 	"github.com/apex/log"
 )
 
@@ -59,6 +60,9 @@ func NewAdapter(port uint, parser parser.PacketParser, ctx log.Interface) (*Adap
 
 // Send implements the core.Adapter interface
 func (a *Adapter) Send(p core.Packet, r ...core.Recipient) (core.Packet, error) {
+	stats.MarkMeter("http_adapter.send")
+	stats.UpdateHistogram("http_adapter.send_recipients", int64(len(r)))
+
 	// Generate payload from core packet
 	m, err := json.Marshal(p.Metadata)
 	if err != nil {

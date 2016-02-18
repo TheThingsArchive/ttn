@@ -11,6 +11,7 @@ import (
 	. "github.com/TheThingsNetwork/ttn/core/errors"
 	"github.com/TheThingsNetwork/ttn/semtech"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
+	"github.com/TheThingsNetwork/ttn/utils/stats"
 	"github.com/apex/log"
 )
 
@@ -103,6 +104,7 @@ func (a *Adapter) listen(conn *net.UDPConn) {
 
 		switch pkt.Identifier {
 		case semtech.PULL_DATA: // PULL_DATA -> Respond to the recipient with an ACK
+			stats.MarkMeter("semtech_adapter.pull_data")
 			pullAck, err := semtech.Packet{
 				Version:    semtech.VERSION,
 				Token:      pkt.Token,
@@ -115,6 +117,7 @@ func (a *Adapter) listen(conn *net.UDPConn) {
 			a.ctx.WithField("recipient", addr).Debug("Sending PULL_ACK")
 			a.conn <- udpMsg{addr: addr, raw: pullAck}
 		case semtech.PUSH_DATA: // PUSH_DATA -> Transfer all RXPK to the component
+			stats.MarkMeter("semtech_adapter.push_data")
 			pushAck, err := semtech.Packet{
 				Version:    semtech.VERSION,
 				Token:      pkt.Token,
