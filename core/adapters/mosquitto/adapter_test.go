@@ -12,20 +12,10 @@ import (
 
 	MQTT "git.eclipse.org/gitroot/paho/org.eclipse.paho.mqtt.golang.git"
 	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"github.com/brocaar/lorawan"
 )
-
-/**
-
-- Setup a client
-- Create topic on the client and register to them
-- Publish to the registration topic and see if nextRegistrationIsTriggered
-- Publish to registered topics and see if next() trigger things
-- Publish to unregistered topics and make sure next() isn't triggered
-- Send() to a given topic and see if client received
-
-*/
 
 type publicationShape struct {
 	AppEUI  string
@@ -154,13 +144,45 @@ func genAdapter(t *testing.T, registrations []publicationShape, port int) (*Adap
 	return adapter, mosquitto
 }
 
-// ----- OPERATE utilities
-
 // ----- CHECK utilities
 func checkErrors(t *testing.T, want *string, got error) {
+	if want == nil && got == nil || got.(errors.Failure).Nature == *want {
+		Ok(t, "Check errors")
+		return
+	}
 
+	Ko(t, "Expected error to be %s but got %v", want, got)
 }
 
 func checkPackets(t *testing.T, want packetShape, got core.Packet) {
+	devAddr, err := got.DevAddr()
+	if err != nil {
+		Ko(t, "Received a wrongly formatted packet: %+v", got)
+		return
+	}
 
+	if devAddr != want.DevAddr {
+		Ko(t, "Expected address [%v] but got [%v]", want.DevAddr, devAddr)
+		return
+	}
+
+	data, ok := got.Payload.MACPayload.(*lorawan.MACPayload)
+	if !ok {
+		Ko(t, "Received a wrongly formatted packet: %+v", got)
+		return
+	}
+
+	if len(data.FRMPayload) != 1 {
+		Ko(t, "Received a wrongly formatted packet: %+v", got)
+		return
+	}
+
+	msg := string(data.FRMPayload[0].(*lorawan.DataPayload).Bytes)
+
+	if want.Data != msg {
+		Ko(t, `Expected msg to be "%s" but got "%s"`, want.Data, msg)
+		return
+	}
+
+	Ok(t, "Check packets")
 }
