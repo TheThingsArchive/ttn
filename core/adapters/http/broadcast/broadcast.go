@@ -136,7 +136,9 @@ func (a *Adapter) broadcast(p core.Packet) (core.Packet, error) {
 	}
 
 	// Wait for each request to be done, and return
+	stats.IncCounter("http_adapter.waiting_for_broadcast")
 	wg.Wait()
+	stats.DecCounter("http_adapter.waiting_for_broadcast")
 	close(cherr)
 	close(register)
 	var errs []error

@@ -139,7 +139,9 @@ func (a *Adapter) Send(p core.Packet, r ...core.Recipient) (core.Packet, error) 
 	}
 
 	// Wait for each request to be done, and return
+	stats.IncCounter("http_adapter.waiting_for_send")
 	wg.Wait()
+	stats.DecCounter("http_adapter.waiting_for_send")
 
 	// Collect errors
 	var errs []error

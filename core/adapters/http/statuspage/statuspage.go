@@ -57,6 +57,10 @@ func (a *Adapter) handleStatus(w http.ResponseWriter, req *http.Request) {
 	metrics.Each(func(name string, i interface{}) {
 		switch metric := i.(type) {
 
+		case metrics.Counter:
+			m := metric.Snapshot()
+			allStats[name] = m.Count()
+
 		case metrics.Histogram:
 			h := metric.Snapshot()
 			ps := h.Percentiles([]float64{0.25, 0.5, 0.75})

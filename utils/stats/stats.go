@@ -11,3 +11,11 @@ func MarkMeter(name string) {
 func UpdateHistogram(name string, value int64) {
 	metrics.GetOrRegisterHistogram(name, metrics.DefaultRegistry, metrics.NewUniformSample(1000)).Update(value)
 }
+
+func IncCounter(name string) {
+	metrics.GetOrRegisterCounter(name, metrics.DefaultRegistry).Inc(1)
+}
+
+func DecCounter(name string) {
+	metrics.GetOrRegisterCounter(name, metrics.DefaultRegistry).Dec(1)
+}
