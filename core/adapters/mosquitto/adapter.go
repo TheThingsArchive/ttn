@@ -61,7 +61,7 @@ func (a *Adapter) handleActivation(client *MQTT.Client, message MQTT.Message) {
 	}
 
 	payload := message.Payload()
-	if len(payload) != 20 {
+	if len(payload) != 36 {
 		a.ctx.WithField("Payload", payload).Error("Invalid registration payload")
 		return
 	}
@@ -70,8 +70,8 @@ func (a *Adapter) handleActivation(client *MQTT.Client, message MQTT.Message) {
 	var nwkSKey lorawan.AES128Key
 	var appSKey lorawan.AES128Key
 	copy(devAddr[:], message.Payload()[:4])
-	copy(nwkSKey[:], message.Payload()[4:12])
-	copy(appSKey[:], message.Payload()[12:])
+	copy(nwkSKey[:], message.Payload()[4:20])
+	copy(appSKey[:], message.Payload()[20:])
 
 	a.registrations <- core.Registration{
 		DevAddr: devAddr,

@@ -132,6 +132,9 @@ func TestNext(t *testing.T) {
 		// Check
 		checkErrors(t, test.WantError, err)
 		checkPackets(t, test.WantPacket, packet)
+
+		mosquitto.MQTT.Disconnect(0)
+		<-time.After(100 * time.Millisecond)
 	}
 }
 
