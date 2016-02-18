@@ -14,6 +14,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/adapters/http"
 	"github.com/TheThingsNetwork/ttn/core/adapters/http/broadcast"
 	"github.com/TheThingsNetwork/ttn/core/adapters/http/parser"
+	"github.com/TheThingsNetwork/ttn/core/adapters/http/statuspage"
 	"github.com/TheThingsNetwork/ttn/core/adapters/semtech"
 	"github.com/TheThingsNetwork/ttn/core/components"
 	"github.com/apex/log"
@@ -38,6 +39,11 @@ func main() {
 	}
 
 	pktAdapter, err := http.NewAdapter(uint(tcpPort), parser.JSON{}, ctx.WithField("tag", "Broker Adapter"))
+	if err != nil {
+		ctx.WithError(err).Fatal("Could not start Broker Adapter")
+	}
+
+	_, err = statuspage.NewAdapter(pktAdapter, ctx.WithField("tag", "Broker Adapter"))
 	if err != nil {
 		ctx.WithError(err).Fatal("Could not start Broker Adapter")
 	}
