@@ -50,15 +50,15 @@ func (r *Router) HandleUp(p core.Packet, an core.AckNacker, upAdapter core.Adapt
 		return err
 	}
 
-	entries, err := r.db.Lookup(devAddr)
-	if err != nil && err.(errors.Failure).Nature != ErrNotFound {
+	entry, err := r.db.Lookup(devAddr)
+	if err != nil && err.(errors.Failure).Nature != ErrWrongBehavior {
 		an.Nack()
 		return err
 	}
 
 	var response core.Packet
 	if err == nil {
-		response, err = upAdapter.Send(p, entries.Recipient)
+		response, err = upAdapter.Send(p, entry.Recipient)
 	} else {
 		response, err = upAdapter.Send(p)
 	}

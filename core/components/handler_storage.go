@@ -127,7 +127,7 @@ func (s handlerBoltStorage) Partition(packets ...core.Packet) ([]handlerPartitio
 	}
 
 	if len(res) == 0 {
-		return nil, errors.New(ErrNotFound, "")
+		return nil, errors.New(ErrWrongBehavior, "No partition found")
 	}
 
 	return res, nil

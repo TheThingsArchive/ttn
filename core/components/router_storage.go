@@ -79,7 +79,7 @@ func (s *routerBoltStorage) lookup(devAddr lorawan.DevAddr, lock bool) (routerEn
 		if err := flush(s.DB, "brokers", devAddr); err != nil {
 			return routerEntry{}, err
 		}
-		return routerEntry{}, errors.New(ErrNotFound, fmt.Sprintf("device %v", devAddr))
+		return routerEntry{}, errors.New(ErrWrongBehavior, fmt.Sprintf("Not Found %+v", devAddr))
 	}
 
 	rentry := entries[0]
@@ -88,7 +88,7 @@ func (s *routerBoltStorage) lookup(devAddr lorawan.DevAddr, lock bool) (routerEn
 		if err := flush(s.DB, "brokers", devAddr); err != nil {
 			return routerEntry{}, err
 		}
-		return routerEntry{}, errors.New(ErrNotFound, fmt.Sprintf("device %v [expired]", devAddr))
+		return routerEntry{}, errors.New(ErrWrongBehavior, fmt.Sprintf("Not Found %+v", devAddr))
 	}
 
 	return rentry, nil
@@ -99,7 +99,7 @@ func (s *routerBoltStorage) Store(devAddr lorawan.DevAddr, entry routerEntry) er
 	s.Lock()
 	defer s.Unlock()
 	_, err := s.lookup(devAddr, false)
-	if err == nil || err != nil && err.(errors.Failure).Nature != ErrNotFound {
+	if err == nil || err != nil && err.(errors.Failure).Nature != ErrWrongBehavior {
 		return errors.New(ErrFailedOperation, "Already exists")
 	}
 	entry.until = time.Now().Add(s.expiryDelay)

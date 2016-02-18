@@ -49,7 +49,7 @@ func TestStorageExpiration(t *testing.T) {
 			Lookup:          devices[0],
 			Store:           nil,
 			WantEntry:       nil,
-			WantError:       []string{ErrNotFound},
+			WantError:       []string{ErrWrongBehavior},
 		},
 		{
 			Desc:            "No entry, Store and Lookup same",
@@ -68,7 +68,7 @@ func TestStorageExpiration(t *testing.T) {
 			WaitDelayL:      time.Millisecond * 250,
 			Lookup:          devices[0],
 			WantEntry:       nil,
-			WantError:       []string{ErrNotFound},
+			WantError:       []string{ErrWrongBehavior},
 		},
 		{
 			Desc:        "One entry, store same, lookup same",
@@ -112,7 +112,7 @@ func TestStorageExpiration(t *testing.T) {
 			WaitDelayL: time.Millisecond,
 			Lookup:     devices[0],
 			WantEntry:  nil,
-			WantError:  []string{ErrNotFound},
+			WantError:  []string{ErrWrongBehavior},
 		},
 		{
 			Desc:        "One entry, wait delay, store same, lookup same",

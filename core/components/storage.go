@@ -72,7 +72,7 @@ func lookup(db *bolt.DB, bucketName string, devAddr lorawan.DevAddr, shape stora
 		}
 		rawEntry = bucket.Get(devAddr[:])
 		if rawEntry == nil {
-			return errors.New(ErrNotFound, fmt.Sprintf("%+v", devAddr))
+			return errors.New(ErrWrongBehavior, fmt.Sprintf("Not found %+v", devAddr))
 		}
 		return nil
 	})

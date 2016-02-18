@@ -208,7 +208,7 @@ func TestHandleUp(t *testing.T) {
 			Schedule: []event{
 				event{time.Millisecond * 25, packets[5], nil},
 			},
-			WantErrors:  []string{ErrNotFound},
+			WantErrors:  []string{ErrWrongBehavior},
 			WantNbNack:  1,
 			WantPackets: map[[12]byte][]string{},
 		},

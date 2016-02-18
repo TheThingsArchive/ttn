@@ -74,7 +74,7 @@ func TestStoragePartition(t *testing.T) {
 			Desc:           "1 unknown packet -> error not found",
 			PacketsShape:   []handlerEntry{unknown},
 			WantPartitions: nil,
-			WantError:      pointer.String(ErrNotFound),
+			WantError:      pointer.String(ErrWrongBehavior),
 		},
 		{
 			Desc:           "2 packets | diff DevAddr & diff AppEUI -> 2 partitions | 1 packet",
