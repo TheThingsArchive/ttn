@@ -27,7 +27,7 @@ const (
 )
 
 // NewAdapter constructs a new mqtt adapter
-func NewAdapter() (*Adapter, error) {
+func NewAdapter(mqttBroker string, ctx log.Interface) (*Adapter, error) {
 	return nil, nil
 }
 

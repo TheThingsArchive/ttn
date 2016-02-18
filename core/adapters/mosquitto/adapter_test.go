@@ -4,10 +4,13 @@
 package mosquitto
 
 import (
+	"bytes"
 	"encoding/hex"
 	"fmt"
+	"os/exec"
 	"testing"
 
+	MQTT "git.eclipse.org/gitroot/paho/org.eclipse.paho.mqtt.golang.git"
 	"github.com/TheThingsNetwork/ttn/core"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"github.com/brocaar/lorawan"
@@ -91,7 +94,10 @@ func TestNext(t *testing.T) {
 		Desc(t, test.Desc)
 
 		// Build
-		adapter, mosquitto := genAdapter(t, test.Registrations)
+		if err := exec.Command("sh", "-c", "mosquitto -p 33333").Run(); err != nil {
+			panic(err)
+		}
+		adapter, mosquitto := genAdapter(t, test.Registrations, 33333)
 
 		// Operate
 		mosquitto.Publish(test.Publication)
@@ -105,14 +111,44 @@ func TestNext(t *testing.T) {
 
 // ----- BUILD utilities
 type Mosquitto struct {
+	MQTT *MQTT.Client
 }
 
 func (m *Mosquitto) Publish(p publicationShape) {
 
 }
 
-func genAdapter(t *testing.T, registrations []publicationShape) (*Adapter, *Mosquitto) {
-	return nil, nil
+func genAdapter(t *testing.T, registrations []publicationShape, port int) (*Adapter, *Mosquitto) {
+	mqttBroker := fmt.Sprintf("tcp://localhost:%d", port)
+
+	// Prepare client
+	opts := MQTT.NewClientOptions()
+	opts.AddBroker(mqttBroker)
+	opts.SetClientID("TestClient")
+	client := MQTT.NewClient(opts)
+	if token := client.Connect(); token.Wait() && token.Error() != nil {
+		panic(token.Error())
+	}
+	for _, r := range registrations {
+		topic := fmt.Sprintf("%s/%s/%s/%s", r.AppEUI, RESOURCE, r.DevEUI, TOPIC_ACTIVATIONS)
+		dev := r.Content.(PersonnalizedActivation)
+		buf := new(bytes.Buffer)
+		buf.Write(dev.DevAddr[:])
+		buf.Write(dev.NwkSKey[:])
+		buf.Write(dev.AppSKey[:])
+		client.Publish(topic, 2, true, buf.Bytes())
+	}
+	mosquitto := &Mosquitto{MQTT: client}
+
+	// Prepare adapter
+	ctx := GetLogger(t, "Adapter")
+	adapter, err := NewAdapter(mqttBroker, ctx)
+	if err != nil {
+		panic(err)
+	}
+
+	// Send them all
+	return adapter, mosquitto
 }
 
 // ----- OPERATE utilities
