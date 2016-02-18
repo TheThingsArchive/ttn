@@ -9,6 +9,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/core"
 	. "github.com/TheThingsNetwork/ttn/core/errors"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
+	"github.com/TheThingsNetwork/ttn/utils/stats"
 	"github.com/apex/log"
 )
 
@@ -27,11 +28,16 @@ func NewRouter(db RouterStorage, ctx log.Interface) *Router {
 
 // Register implements the core.Component interface
 func (r *Router) Register(reg core.Registration, an core.AckNacker) error {
+	stats.MarkMeter("router.registration.in")
+	r.ctx.Debug("Handling registration")
+
 	entry := routerEntry{Recipient: reg.Recipient}
 	if err := r.db.Store(reg.DevAddr, entry); err != nil {
+		stats.MarkMeter("router.registration.failed")
 		an.Nack()
 		return err
 	}
+	stats.MarkMeter("router.registration.ok")
 	return an.Ack(nil)
 }
 
@@ -42,16 +48,23 @@ func (r *Router) HandleDown(p core.Packet, an core.AckNacker, downAdapter core.A
 
 // HandleUp implements the core.Component interface
 func (r *Router) HandleUp(p core.Packet, an core.AckNacker, upAdapter core.Adapter) error {
+	stats.MarkMeter("router.uplink.in")
+	r.ctx.Debug("Handling uplink packet")
+
 	var err error
+
 	// Lookup for an existing broker
 	devAddr, err := p.DevAddr()
 	if err != nil {
+		stats.MarkMeter("broker.uplink.invalid_packet")
+		r.ctx.Warn("Invalid uplink packet")
 		an.Nack()
 		return err
 	}
 
 	entry, err := r.db.Lookup(devAddr)
 	if err != nil && err.(errors.Failure).Nature != ErrWrongBehavior {
+		r.ctx.Warn("Database lookup failed")
 		an.Nack()
 		return err
 	}
@@ -64,8 +77,12 @@ func (r *Router) HandleUp(p core.Packet, an core.AckNacker, upAdapter core.Adapt
 	}
 
 	if err != nil {
+		stats.MarkMeter("router.uplink.bad_broker_response")
+		r.ctx.WithError(err).Warn("Invalid response from Broker")
 		an.Nack()
 		return err
 	}
+
+	stats.MarkMeter("router.uplink.ok")
 	return an.Ack(&response)
 }
