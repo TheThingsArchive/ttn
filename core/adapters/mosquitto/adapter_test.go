@@ -115,7 +115,10 @@ type Mosquitto struct {
 }
 
 func (m *Mosquitto) Publish(p publicationShape) {
-
+	topic := fmt.Sprintf("%s/%s/%s/%s", p.AppEUI, RESOURCE, p.DevEUI, TOPIC_ACTIVATIONS)
+	if token := m.MQTT.Publish(topic, 2, true, p.Content); token.Wait() && token.Error() != nil {
+		panic(token.Error())
+	}
 }
 
 func genAdapter(t *testing.T, registrations []publicationShape, port int) (*Adapter, *Mosquitto) {
