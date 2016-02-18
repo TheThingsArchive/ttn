@@ -4,6 +4,7 @@
 package mosquitto
 
 import (
+	"encoding/hex"
 	"fmt"
 	"strings"
 
@@ -41,7 +42,7 @@ func NewAdapter(client *MQTT.Client, ctx log.Interface) (*Adapter, error) {
 		registrations: make(chan core.Registration),
 	}
 
-	token := client.Subscribe(fmt.Sprintf("+/devices/+/activations"), 2, a.handleActivation)
+	token := client.Subscribe(fmt.Sprintf("+/%s/+/%s", RESOURCE, TOPIC_ACTIVATIONS), 2, a.handleActivation)
 	if token.Wait() && token.Error() != nil {
 		ctx.WithError(token.Error()).Error("Unable to instantiate the adapter")
 		return nil, errors.New(ErrFailedOperation, token.Error())
@@ -73,6 +74,13 @@ func (a *Adapter) handleActivation(client *MQTT.Client, message MQTT.Message) {
 	copy(nwkSKey[:], message.Payload()[4:20])
 	copy(appSKey[:], message.Payload()[20:])
 
+	devEUI = fmt.Sprintf("00000000%s", hex.EncodeToString(devAddr[:]))
+	token := client.Subscribe(fmt.Sprintf("%s/%s/%s/%s", appEUI, RESOURCE, devEUI, TOPIC_UPLINK), 2, a.handleReception)
+	if token.Wait() && token.Error() != nil {
+		a.ctx.WithError(token.Error()).Error("Unable to subscribe")
+		//NOTE dedicated channel for errors ? Handled by nextRegistration ?
+	}
+
 	a.registrations <- core.Registration{
 		DevAddr: devAddr,
 		Recipient: core.Recipient{
@@ -86,6 +94,16 @@ func (a *Adapter) handleActivation(client *MQTT.Client, message MQTT.Message) {
 			NwkSKey: nwkSKey,
 			AppSKey: appSKey,
 		},
+	}
+}
+
+func (a *Adapter) handleReception(client *MQTT.Client, message MQTT.Message) {
+	topicInfos := strings.Split(message.Topic(), "/")
+	//appEUI := topicInfos[0]
+	devEUI := topicInfos[2]
+
+	if devEUI == PERSONNALIZED {
+		return
 	}
 }
 
