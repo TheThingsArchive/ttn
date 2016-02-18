@@ -4,10 +4,13 @@
 package components
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/core"
+	. "github.com/TheThingsNetwork/ttn/core/errors"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/boltdb/bolt"
 	"github.com/brocaar/lorawan"
 )
@@ -43,7 +46,7 @@ type routerEntry struct {
 func NewRouterStorage(delay time.Duration) (RouterStorage, error) {
 	db, err := bolt.Open("router_storage.db", 0600, &bolt.Options{Timeout: time.Second})
 	if err != nil {
-		return nil, err
+		return nil, errors.New(ErrFailedOperation, err)
 	}
 
 	if err := initDB(db, "brokers"); err != nil {
@@ -76,7 +79,7 @@ func (s *routerBoltStorage) lookup(devAddr lorawan.DevAddr, lock bool) (routerEn
 		if err := flush(s.DB, "brokers", devAddr); err != nil {
 			return routerEntry{}, err
 		}
-		return routerEntry{}, ErrNotFound
+		return routerEntry{}, errors.New(ErrWrongBehavior, fmt.Sprintf("Not Found %+v", devAddr))
 	}
 
 	rentry := entries[0]
@@ -85,7 +88,7 @@ func (s *routerBoltStorage) lookup(devAddr lorawan.DevAddr, lock bool) (routerEn
 		if err := flush(s.DB, "brokers", devAddr); err != nil {
 			return routerEntry{}, err
 		}
-		return routerEntry{}, ErrEntryExpired
+		return routerEntry{}, errors.New(ErrWrongBehavior, fmt.Sprintf("Not Found %+v", devAddr))
 	}
 
 	return rentry, nil
@@ -96,8 +99,8 @@ func (s *routerBoltStorage) Store(devAddr lorawan.DevAddr, entry routerEntry) er
 	s.Lock()
 	defer s.Unlock()
 	_, err := s.lookup(devAddr, false)
-	if err != ErrNotFound && err != ErrEntryExpired {
-		return ErrAlreadyExists
+	if err == nil || err != nil && err.(errors.Failure).Nature != ErrWrongBehavior {
+		return errors.New(ErrFailedOperation, "Already exists")
 	}
 	entry.until = time.Now().Add(s.expiryDelay)
 	return store(s.DB, "brokers", devAddr, &entry)
@@ -136,7 +139,7 @@ func (entry routerEntry) MarshalBinary() ([]byte, error) {
 // UnmarshalBinary implements the entryStorage interface
 func (entry *routerEntry) UnmarshalBinary(data []byte) error {
 	if entry == nil || len(data) < 1 {
-		return ErrNotUnmarshable
+		return errors.New(ErrInvalidStructure, "invalid router entry")
 	}
 	r := newEntryReadWriter(data)
 
@@ -153,7 +156,7 @@ func (entry *routerEntry) UnmarshalBinary(data []byte) error {
 		err = entry.until.UnmarshalBinary(data)
 	})
 	if err != nil {
-		return err
+		return errors.New(ErrInvalidStructure, err)
 	}
 	return r.Err()
 }

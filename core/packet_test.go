@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	. "github.com/TheThingsNetwork/ttn/core/errors"
 	"github.com/TheThingsNetwork/ttn/semtech"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
@@ -17,7 +18,7 @@ func TestConvertRXPKPacket(t *testing.T) {
 	tests := []convertRXPKTest{
 		genRXPKWithFullMetadata(&convertRXPKTest{WantError: nil}),
 		genRXPKWithPartialMetadata(&convertRXPKTest{WantError: nil}),
-		genRXPKWithNoData(&convertRXPKTest{WantError: ErrImpossibleConversion}),
+		genRXPKWithNoData(&convertRXPKTest{WantError: pointer.String(ErrInvalidStructure)}),
 	}
 
 	for _, test := range tests {
@@ -37,7 +38,7 @@ func TestConvertTXPKPacket(t *testing.T) {
 		convertToTXPKTest{
 			CorePacket: Packet{Metadata: genFullMetadata(), Payload: lorawan.PHYPayload{}},
 			TXPK:       semtech.TXPK{},
-			WantError:  ErrImpossibleConversion,
+			WantError:  pointer.String(ErrInvalidStructure),
 		},
 	}
 
@@ -104,13 +105,13 @@ func TestUnmarshalJSONPacket(t *testing.T) {
 type convertRXPKTest struct {
 	CorePacket Packet
 	RXPK       semtech.RXPK
-	WantError  error
+	WantError  *string
 }
 
 type convertToTXPKTest struct {
 	TXPK       semtech.TXPK
 	CorePacket Packet
-	WantError  error
+	WantError  *string
 }
 
 type marshalJSONTest struct {

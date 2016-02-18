@@ -4,9 +4,9 @@
 package components
 
 import (
-	"fmt"
-
 	"github.com/TheThingsNetwork/ttn/core"
+	. "github.com/TheThingsNetwork/ttn/core/errors"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/apex/log"
 	"github.com/brocaar/lorawan"
 )
@@ -33,19 +33,19 @@ func (b *Broker) HandleUp(p core.Packet, an core.AckNacker, adapter core.Adapter
 	if err != nil {
 		b.ctx.Warn("Uplink Invalid")
 		an.Nack()
-		return ErrInvalidPacket
+		return errors.New(ErrInvalidStructure, err)
 	}
 	ctx := b.ctx.WithField("devAddr", devAddr)
 	entries, err := b.db.Lookup(devAddr)
-	switch err {
-	case nil:
-	case ErrNotFound:
-	case ErrDeviceNotFound:
-		ctx.Warn("Uplink device not found")
-		return an.Nack()
-	default:
-		an.Nack()
-		return err
+	if err != nil {
+		switch err.(errors.Failure).Nature {
+		case ErrWrongBehavior:
+			ctx.Warn("Uplink device not found")
+			return an.Nack()
+		default:
+			an.Nack()
+			return errors.New(ErrFailedOperation, err)
+		}
 	}
 
 	// 2. Several handler might be associated to the same device, we distinguish them using MIC
@@ -74,14 +74,14 @@ func (b *Broker) HandleUp(p core.Packet, an core.AckNacker, adapter core.Adapter
 	response, err := adapter.Send(p, *handler)
 	if err != nil {
 		an.Nack()
-		return err
+		return errors.New(ErrFailedOperation, err)
 	}
-	return an.Ack(response)
+	return an.Ack(&response)
 }
 
 // HandleDown implements the core.Component interface. Not implemented yet
 func (b *Broker) HandleDown(p core.Packet, an core.AckNacker, a core.Adapter) error {
-	return fmt.Errorf("Not Implemented")
+	return errors.New(ErrNotSupported, "HandleDown not supported on broker")
 }
 
 // Register implements the core.Component interface
@@ -95,16 +95,16 @@ func (b *Broker) Register(r core.Registration, an core.AckNacker) error {
 	if !(okId && okUrl && okNwkSKey) {
 		ctx.Warn("Invalid Registration")
 		an.Nack()
-		return ErrInvalidRegistration
+		return errors.New(ErrInvalidStructure, "Invalid registration params")
 	}
 
 	entry := brokerEntry{Id: id, Url: url, NwkSKey: nwkSKey}
 	if err := b.db.Store(r.DevAddr, entry); err != nil {
 		ctx.WithError(err).Error("Failed Registration")
 		an.Nack()
-		return err
+		return errors.New(ErrFailedOperation, err)
 	}
 
 	ctx.Debug("Successful Registration")
-	return an.Ack()
+	return an.Ack(nil)
 }

@@ -5,15 +5,13 @@ package http
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/core"
+	. "github.com/TheThingsNetwork/ttn/core/errors"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 )
-
-var ErrConnectionLost = fmt.Errorf("Connection has been lost")
-var ErrInvalidArguments = fmt.Errorf("Invalid arguments supplied")
 
 // packetAckNacker implements the AckNacker interface
 type packetAckNacker struct {
@@ -21,24 +19,23 @@ type packetAckNacker struct {
 }
 
 // Ack implements the core.AckNacker interface
-func (an packetAckNacker) Ack(p ...core.Packet) error {
-	if len(p) > 1 {
-		return ErrInvalidArguments
+func (an packetAckNacker) Ack(p *core.Packet) error {
+	defer close(an.response)
+	if p == nil {
+		an.response <- pktRes{statusCode: http.StatusOK}
+		return nil
 	}
-	var raw []byte
-	if len(p) == 1 {
-		var err error
-		raw, err = json.Marshal(p[0])
-		if err != nil {
-			return err
-		}
+
+	raw, err := json.Marshal(*p)
+	if err != nil {
+		return errors.New(ErrInvalidStructure, err)
 	}
 
 	select {
 	case an.response <- pktRes{statusCode: http.StatusOK, content: raw}:
 		return nil
 	case <-time.After(time.Millisecond * 50):
-		return ErrConnectionLost
+		return errors.New(ErrWrongBehavior, "No response was given to the acknacker")
 	}
 }
 
@@ -50,7 +47,7 @@ func (an packetAckNacker) Nack() error {
 		content:    []byte(`{"message":"Not in charge of the associated device"}`),
 	}:
 	case <-time.After(time.Millisecond * 50):
-		return ErrConnectionLost
+		return errors.New(ErrWrongBehavior, "No response was given to the acknacker")
 	}
 	return nil
 }

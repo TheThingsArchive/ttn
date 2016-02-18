@@ -4,26 +4,25 @@
 package pubsub
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/core"
+	. "github.com/TheThingsNetwork/ttn/core/errors"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 )
-
-var ErrConnectionLost = fmt.Errorf("Connection has been lost")
 
 type regAckNacker struct {
 	response chan regRes // A channel dedicated to send back a response
 }
 
 // Ack implements the core.Acker interface
-func (r regAckNacker) Ack(p ...core.Packet) error {
+func (r regAckNacker) Ack(p *core.Packet) error {
 	select {
 	case r.response <- regRes{statusCode: http.StatusAccepted}:
 		return nil
 	case <-time.After(time.Millisecond * 50):
-		return ErrConnectionLost
+		return errors.New(ErrWrongBehavior, "No response was given to the acknacker")
 	}
 }
 
@@ -36,6 +35,6 @@ func (r regAckNacker) Nack() error {
 	}:
 		return nil
 	case <-time.After(time.Millisecond * 50):
-		return ErrConnectionLost
+		return errors.New(ErrWrongBehavior, "No response was given to the acknacker")
 	}
 }

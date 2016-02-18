@@ -37,7 +37,7 @@ func TestRouterHandleUp(t *testing.T) {
 		KnownRecipients map[[4]byte]core.Recipient
 		Packet          packetShape
 		WantRecipients  []core.Recipient
-		WantError       error
+		WantError       *string
 	}{
 		{
 			Desc: "0 known | Send #0",

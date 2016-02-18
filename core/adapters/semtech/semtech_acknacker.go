@@ -8,7 +8,9 @@ import (
 	"net"
 
 	"github.com/TheThingsNetwork/ttn/core"
+	. "github.com/TheThingsNetwork/ttn/core/errors"
 	"github.com/TheThingsNetwork/ttn/semtech"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 )
 
 // semtechAckNacker represents an AckNacker for a semtech request
@@ -18,15 +20,15 @@ type semtechAckNacker struct {
 }
 
 // Ack implements the core.Adapter interface
-func (an semtechAckNacker) Ack(p ...core.Packet) error {
-	if len(p) == 0 {
+func (an semtechAckNacker) Ack(p *core.Packet) error {
+	if p == nil {
 		return nil
 	}
 
 	// For the downlink, we have to send a PULL_RESP packet which hold a TXPK
-	txpk, err := core.ConvertToTXPK(p[0])
+	txpk, err := core.ConvertToTXPK(*p)
 	if err != nil {
-		return err
+		return errors.New(ErrInvalidStructure, err)
 	}
 
 	raw, err := semtech.Packet{
@@ -37,7 +39,7 @@ func (an semtechAckNacker) Ack(p ...core.Packet) error {
 
 	addr, ok := an.recipient.Address.(*net.UDPAddr)
 	if !ok {
-		return fmt.Errorf("Recipient address was invalid. Expected UDPAddr but got: %v", an.recipient.Address)
+		return errors.New(ErrInvalidStructure, fmt.Sprintf("Expected UDPAddr but got: %v", an.recipient.Address))
 	}
 	an.conn <- udpMsg{raw: raw, addr: addr}
 	return nil

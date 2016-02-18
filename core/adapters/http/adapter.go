@@ -15,12 +15,10 @@ import (
 
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/adapters/http/parser"
+	. "github.com/TheThingsNetwork/ttn/core/errors"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/apex/log"
 )
-
-var ErrInvalidPort = fmt.Errorf("The given port is invalid")
-var ErrInvalidPacket = fmt.Errorf("The given packet is invalid")
-var ErrNotImplemented = fmt.Errorf("Illegal call on non-implemented method")
 
 // Adapter type materializes an http adapter which implements the basic http protocol
 type Adapter struct {
@@ -65,12 +63,12 @@ func (a *Adapter) Send(p core.Packet, r ...core.Recipient) (core.Packet, error) 
 	m, err := json.Marshal(p.Metadata)
 	if err != nil {
 		a.ctx.WithError(err).Warn("Invalid Packet")
-		return core.Packet{}, ErrInvalidPacket
+		return core.Packet{}, errors.New(ErrInvalidStructure, err)
 	}
 	pl, err := p.Payload.MarshalBinary()
 	if err != nil {
 		a.ctx.WithError(err).Warn("Invalid Packet")
-		return core.Packet{}, ErrInvalidPacket
+		return core.Packet{}, errors.New(ErrInvalidStructure, err)
 	}
 	payload := fmt.Sprintf(`{"payload":"%s","metadata":%s}`, base64.StdEncoding.EncodeToString(pl), m)
 
@@ -140,17 +138,17 @@ func (a *Adapter) Send(p core.Packet, r ...core.Recipient) (core.Packet, error) 
 	wg.Wait()
 
 	// Collect errors
-	var errors []error
+	var errs []error
 	for i := 0; i < len(cherr); i += 1 {
 		err := <-cherr
 		ctx.WithError(err).Error("POST Failed")
-		errors = append(errors, err)
+		errs = append(errs, err)
 	}
 
 	// Check responses
 	if len(chresp) > 1 {
-		ctx.WithField("response_count", len(chresp)).Error("Received Too many positive answers")
-		return core.Packet{}, fmt.Errorf("Several positive answer from servers")
+		ctx.WithField("response_count", len(chresp)).Error("Received too many positive answers")
+		return core.Packet{}, errors.New(ErrWrongBehavior, "Received too many positive answers")
 	}
 
 	// Get packet
@@ -158,11 +156,11 @@ func (a *Adapter) Send(p core.Packet, r ...core.Recipient) (core.Packet, error) 
 	case packet := <-chresp:
 		return packet, nil
 	default:
-		if errors != nil {
-			return core.Packet{}, fmt.Errorf("Errors: %v", errors)
+		if errs != nil {
+			return core.Packet{}, errors.New(ErrFailedOperation, fmt.Sprintf("%+v", errs))
 		}
 		ctx.Error("No response packet available")
-		return core.Packet{}, fmt.Errorf("No response packet available")
+		return core.Packet{}, errors.New(ErrWrongBehavior, "No response packet available")
 	}
 }
 
@@ -182,7 +180,7 @@ func (a *Adapter) Next() (core.Packet, core.AckNacker, error) {
 //
 // See broadcast and pubsub adapters for mechanisms to handle registrations.
 func (a *Adapter) NextRegistration() (core.Packet, core.AckNacker, error) {
-	return core.Packet{}, nil, ErrNotImplemented
+	return core.Packet{}, nil, errors.New(ErrNotSupported, "NextRegistration not supported for http adapter")
 }
 
 // listenRequests handles incoming registration request sent through http to the adapter

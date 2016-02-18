@@ -8,7 +8,9 @@ import (
 	"net"
 
 	"github.com/TheThingsNetwork/ttn/core"
+	. "github.com/TheThingsNetwork/ttn/core/errors"
 	"github.com/TheThingsNetwork/ttn/semtech"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/apex/log"
 )
 
@@ -34,11 +36,6 @@ type rxpkMsg struct {
 	recipient core.Recipient // The address and id of the source emitter
 }
 
-var ErrInvalidPort error = fmt.Errorf("Invalid port supplied. The connection might be already taken")
-var ErrNotInitialized error = fmt.Errorf("Illegal call on non-initialized adapter")
-var ErrNotSupported error = fmt.Errorf("Unsupported operation")
-var ErrInvalidPacket error = fmt.Errorf("Invalid packet supplied")
-
 // NewAdapter constructs and allocates a new semtech adapter
 func NewAdapter(port uint, ctx log.Interface) (*Adapter, error) {
 	a := Adapter{
@@ -53,7 +50,7 @@ func NewAdapter(port uint, ctx log.Interface) (*Adapter, error) {
 	a.ctx.WithField("port", port).Info("Starting Server")
 	if udpConn, err = net.ListenUDP("udp", addr); err != nil {
 		a.ctx.WithError(err).Error("Unable to start server")
-		return nil, ErrInvalidPort
+		return nil, errors.New(ErrInvalidStructure, fmt.Sprintf("Invalid port %v", port))
 	}
 
 	go a.monitorConnection()
@@ -63,33 +60,25 @@ func NewAdapter(port uint, ctx log.Interface) (*Adapter, error) {
 	return &a, nil
 }
 
-// ok controls whether or not the adapter has been initialized via NewAdapter()
-func (a *Adapter) ok() bool {
-	return a != nil && a.conn != nil && a.next != nil
-}
-
 // Send implements the core.Adapter interface. Not implemented for the semtech adapter.
 func (a *Adapter) Send(p core.Packet, r ...core.Recipient) (core.Packet, error) {
-	return core.Packet{}, ErrNotSupported
+	return core.Packet{}, errors.New(ErrNotSupported, "Send not supported on semtech adapter")
 }
 
 // Next implements the core.Adapter interface
 func (a *Adapter) Next() (core.Packet, core.AckNacker, error) {
-	if !a.ok() {
-		return core.Packet{}, nil, ErrNotInitialized
-	}
 	msg := <-a.next
 	packet, err := core.ConvertRXPK(msg.rxpk)
 	if err != nil {
 		a.ctx.Debug("Received invalid packet")
-		return core.Packet{}, nil, ErrInvalidPacket
+		return core.Packet{}, nil, errors.New(ErrInvalidStructure, err)
 	}
 	return packet, semtechAckNacker{recipient: msg.recipient, conn: a.conn}, nil
 }
 
 // NextRegistration implements the core.Adapter interface
 func (a *Adapter) NextRegistration() (core.Registration, core.AckNacker, error) {
-	return core.Registration{}, nil, ErrNotSupported
+	return core.Registration{}, nil, errors.New(ErrNotSupported, "NextRegistration not supported on semtech adapter")
 }
 
 // listen Handle incoming packets and forward them

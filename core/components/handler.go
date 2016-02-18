@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/core"
+	. "github.com/TheThingsNetwork/ttn/core/errors"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/apex/log"
 	"github.com/brocaar/lorawan"
 )
@@ -61,7 +63,7 @@ func (h *Handler) Register(reg core.Registration, an core.AckNacker) error {
 
 	if !okId || !okOpts {
 		an.Nack()
-		return ErrBadOptions
+		return errors.New(ErrInvalidStructure, "Invalid registration options")
 	}
 
 	err := h.db.Store(reg.DevAddr, handlerEntry{
@@ -73,11 +75,10 @@ func (h *Handler) Register(reg core.Registration, an core.AckNacker) error {
 
 	if err != nil {
 		an.Nack()
-		return err
+		return errors.New(ErrFailedOperation, err)
 	}
 
-	an.Ack()
-	return nil
+	return an.Ack(nil)
 }
 
 // HandleUp implements the core.Component interface
@@ -116,22 +117,24 @@ func (h *Handler) HandleUp(p core.Packet, an core.AckNacker, upAdapter core.Adap
 	switch resp.(type) {
 	case core.Packet:
 		h.ctx.WithField("bundleId", id).Debug("Received response with packet. Sending ack")
-		an.Ack(resp.(core.Packet))
+		pkt := new(core.Packet)
+		*pkt = resp.(core.Packet)
+		an.Ack(pkt)
 		return nil
 	case error:
 		h.ctx.WithField("bundleId", id).WithError(resp.(error)).Debug("Received response. Sending Nack")
 		an.Nack()
-		return resp.(error)
+		return errors.New(ErrFailedOperation, resp.(error))
 	default:
 		h.ctx.WithField("bundleId", id).Debug("Received response. Sending ack")
-		an.Ack()
+		an.Ack(nil)
 		return nil
 	}
 }
 
 // HandleDown implements the core.Component interface. Not implemented yet.
 func (h *Handler) HandleDown(p core.Packet, an core.AckNacker, downAdapter core.Adapter) (core.Packet, error) {
-	return core.Packet{}, ErrNotImplemented
+	return core.Packet{}, errors.New(ErrNotSupported, "HandleDown not supported on handler")
 }
 
 // consumeBundles processes list of bundle generated overtime, decrypt the underlying packet,
@@ -157,9 +160,10 @@ browseBundles:
 				// The handler assumes payloads encrypted with AppSKey only !
 				payload, ok := packet.Payload.MACPayload.(*lorawan.MACPayload)
 				if !ok {
-					ctx.WithError(ErrInvalidPacket).Debug("Unable to extract MACPayload")
+					err := errors.New(ErrInvalidStructure, "Unable to extract MACPayload")
+					ctx.WithError(err).Debug("Unable to extract MACPayload")
 					for _, bundle := range bundles {
-						bundle.chresp <- ErrInvalidPacket
+						bundle.chresp <- err
 					}
 					continue browseBundles
 				}
@@ -167,7 +171,7 @@ browseBundles:
 				if err := payload.DecryptFRMPayload(bundle.entry.AppSKey); err != nil {
 					ctx.WithError(err).Debug("Unable to decrypt MAC Payload with given AppSKey")
 					for _, bundle := range bundles {
-						bundle.chresp <- err
+						bundle.chresp <- errors.New(ErrInvalidStructure, err)
 					}
 					continue browseBundles
 				}
@@ -218,7 +222,9 @@ func (h *Handler) manageBuffers(bundles chan<- []uplinkBundle, set <-chan uplink
 			copy(pid[:], bundle.id[:12])
 			if processed[pid] == bundle.id {
 				ctx.WithField("bundleId", bundle.id).Debug("Reject already processed bundle")
-				go func(bundle uplinkBundle) { bundle.chresp <- ErrAlreadyProcessed }(bundle)
+				go func(bundle uplinkBundle) {
+					bundle.chresp <- errors.New(ErrFailedOperation, "Already processed")
+				}(bundle)
 				continue
 			}
 

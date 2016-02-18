@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/core"
+	. "github.com/TheThingsNetwork/ttn/core/errors"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/boltdb/bolt"
 	"github.com/brocaar/lorawan"
 )
@@ -89,7 +91,7 @@ func (s handlerBoltStorage) Partition(packets ...core.Packet) ([]handlerPartitio
 		// First, determine devAddr, mandatory
 		devAddr, err := packet.DevAddr()
 		if err != nil {
-			return nil, ErrInvalidPacket
+			return nil, errors.New(ErrInvalidStructure, err)
 		}
 
 		entries, err := s.Lookup(devAddr)
@@ -125,7 +127,7 @@ func (s handlerBoltStorage) Partition(packets ...core.Packet) ([]handlerPartitio
 	}
 
 	if len(res) == 0 {
-		return nil, ErrNotFound
+		return nil, errors.New(ErrWrongBehavior, "No partition found")
 	}
 
 	return res, nil
@@ -154,7 +156,7 @@ func (entry handlerEntry) MarshalBinary() ([]byte, error) {
 // UnmarshalBinary implements the storageEntry interface
 func (entry *handlerEntry) UnmarshalBinary(data []byte) error {
 	if entry == nil || len(data) < 4 {
-		return ErrNotUnmarshable
+		return errors.New(ErrInvalidStructure, "Invalid handler entry")
 	}
 	r := newEntryReadWriter(data)
 	r.Read(func(data []byte) { copy(entry.AppEUI[:], data) })

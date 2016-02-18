@@ -53,11 +53,11 @@ type Metadata struct {
 // without even knowing about the protocol being used. This is only possible because all messages
 // transmitted between component are relatively isomorph (to what one calls a Packet).
 type AckNacker interface {
-	// Ack acknowledges and terminates a connection by sending 0, 1 or several packets as an answer
+	// Ack acknowledges and terminates a connection by sending 0 or 1 packet as an answer
 	// (depending on the component).
 	//
 	// Incidentally, that acknowledgement would serve as a downlink response for class A devices.
-	Ack(p ...Packet) error
+	Ack(p *Packet) error
 
 	// Nack rejects and terminates a connection. So far, there is no way to give more information
 	// about the reason that led to a rejection.

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/core"
+	. "github.com/TheThingsNetwork/ttn/core/errors"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"github.com/brocaar/lorawan"
 )
@@ -22,6 +23,7 @@ func TestStorageExpiration(t *testing.T) {
 	devices := []lorawan.DevAddr{
 		lorawan.DevAddr([4]byte{0, 0, 0, 1}),
 		lorawan.DevAddr([4]byte{14, 15, 8, 42}),
+		lorawan.DevAddr([4]byte{14, 15, 8, 79}),
 	}
 
 	entries := []routerEntry{
@@ -38,7 +40,7 @@ func TestStorageExpiration(t *testing.T) {
 		WaitDelayL      time.Duration
 		Lookup          lorawan.DevAddr
 		WantEntry       *routerEntry
-		WantError       []error
+		WantError       []string
 	}{
 		{
 			Desc:            "No entry, Lookup address",
@@ -47,7 +49,7 @@ func TestStorageExpiration(t *testing.T) {
 			Lookup:          devices[0],
 			Store:           nil,
 			WantEntry:       nil,
-			WantError:       []error{ErrNotFound},
+			WantError:       []string{ErrWrongBehavior},
 		},
 		{
 			Desc:            "No entry, Store and Lookup same",
@@ -66,18 +68,18 @@ func TestStorageExpiration(t *testing.T) {
 			WaitDelayL:      time.Millisecond * 250,
 			Lookup:          devices[0],
 			WantEntry:       nil,
-			WantError:       []error{ErrEntryExpired},
+			WantError:       []string{ErrWrongBehavior},
 		},
 		{
 			Desc:        "One entry, store same, lookup same",
 			ExpiryDelay: time.Minute,
 			ExistingEntries: []routerEntryShape{
-				{entries[0], devices[0]},
+				{entries[0], devices[2]},
 			},
-			Store:     &routerEntryShape{entries[1], devices[0]},
-			Lookup:    devices[0],
+			Store:     &routerEntryShape{entries[1], devices[2]},
+			Lookup:    devices[2],
 			WantEntry: &entries[0],
-			WantError: []error{ErrAlreadyExists},
+			WantError: []string{ErrFailedOperation},
 		},
 		{
 			Desc:        "One entry, store different, lookup newly stored",
@@ -110,7 +112,7 @@ func TestStorageExpiration(t *testing.T) {
 			WaitDelayL: time.Millisecond,
 			Lookup:     devices[0],
 			WantEntry:  nil,
-			WantError:  []error{ErrEntryExpired},
+			WantError:  []string{ErrWrongBehavior},
 		},
 		{
 			Desc:        "One entry, wait delay, store same, lookup same",

@@ -5,10 +5,11 @@ package core
 
 import (
 	"encoding/json"
-	"fmt"
 	"time"
 
+	. "github.com/TheThingsNetwork/ttn/core/errors"
 	"github.com/TheThingsNetwork/ttn/semtech"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
 )
 
@@ -38,22 +39,28 @@ func (m Metadata) MarshalJSON() ([]byte, error) {
 		*t = semtech.Timeparser{Layout: time.RFC3339Nano, Value: m.Time}
 	}
 
-	return json.Marshal(metadataProxy{
+	data, err := json.Marshal(metadataProxy{
 		metadata: metadata(m),
 		Datr:     d,
 		Time:     t,
 	})
+
+	if err != nil {
+		err = errors.New(ErrInvalidStructure, err)
+	}
+
+	return data, err
 }
 
 // UnmarshalJSON implements the json.Unmarshaler interface
 func (m *Metadata) UnmarshalJSON(raw []byte) error {
 	if m == nil {
-		return fmt.Errorf("Cannot unmarshal nil Metadata")
+		return errors.New(ErrInvalidStructure, "Cannot unmarshal nil Metadata")
 	}
 
 	proxy := metadataProxy{}
 	if err := json.Unmarshal(raw, &proxy); err != nil {
-		return err
+		return errors.New(ErrInvalidStructure, err)
 	}
 	*m = Metadata(proxy.metadata)
 	if proxy.Time != nil {

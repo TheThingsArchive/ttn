@@ -14,6 +14,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/core"
 	httpadapter "github.com/TheThingsNetwork/ttn/core/adapters/http"
 	"github.com/TheThingsNetwork/ttn/core/adapters/http/parser"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"github.com/brocaar/lorawan"
 )
@@ -26,7 +27,7 @@ func TestNextRegistration(t *testing.T) {
 		DevAddr    string
 		NwkSKey    string
 		WantResult *core.Registration
-		WantError  error
+		WantError  *string
 	}{
 		// Valid device address
 		{
@@ -108,12 +109,13 @@ func TestNextRegistration(t *testing.T) {
 	}
 }
 
-func checkErrors(t *testing.T, want error, got error) {
-	if want == got {
+func checkErrors(t *testing.T, want *string, got error) {
+	if want == nil && got == nil || got.(errors.Failure).Nature == *want {
 		Ok(t, "Check errors")
 		return
 	}
-	Ko(t, "Expected error to be {%v} but got {%v}", want, got)
+
+	Ko(t, "Expected error to be %s but got %v", want, got)
 }
 
 func checkRegistrationResult(t *testing.T, want, got *core.Registration) {

@@ -14,7 +14,7 @@ import (
 
 var commonTests = []struct {
 	Metadata  Metadata
-	WantError error
+	WantError *string
 	JSON      string
 }{
 	{ // Basic attributes, uint, string and float64
@@ -62,7 +62,7 @@ var commonTests = []struct {
 
 var unmarshalTests = []struct {
 	Metadata  Metadata
-	WantError error
+	WantError *string
 	JSON      string
 }{
 	{ // Local time

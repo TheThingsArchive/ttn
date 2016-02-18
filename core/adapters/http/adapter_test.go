@@ -15,6 +15,8 @@ import (
 
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/adapters/http/parser"
+	. "github.com/TheThingsNetwork/ttn/core/errors"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"github.com/brocaar/lorawan"
@@ -25,7 +27,7 @@ func TestSend(t *testing.T) {
 	tests := []struct {
 		Packet      core.Packet
 		WantPayload string
-		WantError   error
+		WantError   *string
 	}{
 		{
 			genCorePacket(),
@@ -35,7 +37,7 @@ func TestSend(t *testing.T) {
 		{
 			core.Packet{},
 			"",
-			ErrInvalidPacket,
+			pointer.String(ErrInvalidStructure),
 		},
 	}
 
@@ -65,7 +67,7 @@ func TestNext(t *testing.T) {
 		IsNotFound bool
 		WantPacket core.Packet
 		WantStatus int
-		WantError  error
+		WantError  *string
 	}{
 		{
 			Payload:    genJSONPayload(genCorePacket()),
@@ -112,7 +114,7 @@ func TestNext(t *testing.T) {
 				if test.IsNotFound {
 					an.Nack()
 				} else {
-					an.Ack()
+					an.Ack(nil)
 				}
 			}
 			gotError <- err
@@ -142,12 +144,13 @@ func TestNext(t *testing.T) {
 }
 
 // Check utilities
-func checkErrors(t *testing.T, want error, got error) {
-	if want == got {
+func checkErrors(t *testing.T, want *string, got error) {
+	if want == nil && got == nil || got.(errors.Failure).Nature == *want {
 		Ok(t, "Check errors")
 		return
 	}
-	Ko(t, "Expected error to be {%v} but got {%v}", want, got)
+
+	Ko(t, "Expected error to be %s but got %v", want, got)
 }
 
 func checkSend(t *testing.T, want string, s MockServer) {

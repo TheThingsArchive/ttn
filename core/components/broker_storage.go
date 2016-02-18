@@ -6,6 +6,8 @@ package components
 import (
 	"time"
 
+	. "github.com/TheThingsNetwork/ttn/core/errors"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/boltdb/bolt"
 	"github.com/brocaar/lorawan"
 )
@@ -40,7 +42,7 @@ type brokerEntry struct {
 func NewBrokerStorage() (BrokerStorage, error) {
 	db, err := bolt.Open("broker_storage.db", 0600, &bolt.Options{Timeout: time.Second})
 	if err != nil {
-		return nil, err
+		return nil, errors.New(ErrFailedOperation, err)
 	}
 
 	if err := initDB(db, "devices"); err != nil {
@@ -86,7 +88,7 @@ func (entry brokerEntry) MarshalBinary() ([]byte, error) {
 // UnmarshalBinary implements the entryStorage interface
 func (entry *brokerEntry) UnmarshalBinary(data []byte) error {
 	if entry == nil || len(data) < 3 {
-		return ErrNotUnmarshable
+		return errors.New(ErrInvalidStructure, "invalid broker entry")
 	}
 	r := newEntryReadWriter(data)
 	r.Read(func(data []byte) { entry.Id = string(data) })

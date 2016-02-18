@@ -60,7 +60,7 @@ func TestBrokerHandleup(t *testing.T) {
 		Packet          packetShape
 		WantRecipients  []core.Recipient
 		WantAck         bool
-		WantError       error
+		WantError       *string
 	}{
 		{
 			Desc: "0 known | Send #0",
@@ -190,7 +190,7 @@ type brokerAckNacker struct {
 	HasAck *bool
 }
 
-func (an *brokerAckNacker) Ack(packets ...core.Packet) error {
+func (an *brokerAckNacker) Ack(p *core.Packet) error {
 	an.HasAck = new(bool)
 	*an.HasAck = true
 	return nil
