@@ -99,7 +99,7 @@ func (s *routerBoltStorage) Store(devAddr lorawan.DevAddr, entry routerEntry) er
 	s.Lock()
 	defer s.Unlock()
 	_, err := s.lookup(devAddr, false)
-	if err != nil && err.(errors.Failure).Nature != ErrNotFound {
+	if err == nil || err != nil && err.(errors.Failure).Nature != ErrNotFound {
 		return errors.NewFailure(ErrFailedOperation, "Already exists")
 	}
 	entry.until = time.Now().Add(s.expiryDelay)

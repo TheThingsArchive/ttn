@@ -23,6 +23,7 @@ func TestStorageExpiration(t *testing.T) {
 	devices := []lorawan.DevAddr{
 		lorawan.DevAddr([4]byte{0, 0, 0, 1}),
 		lorawan.DevAddr([4]byte{14, 15, 8, 42}),
+		lorawan.DevAddr([4]byte{14, 15, 8, 79}),
 	}
 
 	entries := []routerEntry{
@@ -73,10 +74,10 @@ func TestStorageExpiration(t *testing.T) {
 			Desc:        "One entry, store same, lookup same",
 			ExpiryDelay: time.Minute,
 			ExistingEntries: []routerEntryShape{
-				{entries[0], devices[0]},
+				{entries[0], devices[2]},
 			},
-			Store:     &routerEntryShape{entries[1], devices[0]},
-			Lookup:    devices[0],
+			Store:     &routerEntryShape{entries[1], devices[2]},
+			Lookup:    devices[2],
 			WantEntry: &entries[0],
 			WantError: []string{ErrFailedOperation},
 		},
