@@ -148,11 +148,9 @@ func (m *Mosquitto) Publish(p publicationShape) {
 }
 
 func genAdapter(t *testing.T, registrations []publicationShape, port int) (*Adapter, *Mosquitto) {
-	mqttBroker := fmt.Sprintf("tcp://localhost:%d", port)
-
 	// Prepare client
 	opts := MQTT.NewClientOptions()
-	opts.AddBroker(mqttBroker)
+	opts.AddBroker(fmt.Sprintf("tcp://localhost:%d", port))
 	opts.SetClientID("TestClient")
 	client := MQTT.NewClient(opts)
 	if token := client.Connect(); token.Wait() && token.Error() != nil {
@@ -171,7 +169,7 @@ func genAdapter(t *testing.T, registrations []publicationShape, port int) (*Adap
 
 	// Prepare adapter
 	ctx := GetLogger(t, "Adapter")
-	adapter, err := NewAdapter(mqttBroker, ctx)
+	adapter, err := NewAdapter(client, ctx)
 	if err != nil {
 		panic(err)
 	}
