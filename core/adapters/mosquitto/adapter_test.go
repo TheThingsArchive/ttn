@@ -7,7 +7,6 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	"os/exec"
 	"testing"
 
 	MQTT "git.eclipse.org/gitroot/paho/org.eclipse.paho.mqtt.golang.git"
@@ -84,9 +83,6 @@ func TestNext(t *testing.T) {
 		Desc(t, test.Desc)
 
 		// Build
-		if err := exec.Command("sh", "-c", "mosquitto -p 33333").Run(); err != nil {
-			panic(err)
-		}
 		adapter, mosquitto := genAdapter(t, test.Registrations, 33333)
 
 		// Operate
