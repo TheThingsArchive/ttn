@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"math/rand"
 	"net"
 	"os"
 	"time"
@@ -104,17 +105,27 @@ func MockRandomly(nodes []node.LiveNode, ctx log.Interface, routers ...string) {
 	}
 
 	for {
-		message := <-messages
+		rxpks := [8]semtech.RXPK{}
+		numPks := rand.Intn(8) + 1
 
-		rxpk := semtech.RXPK{
-			Rssi: pointer.Int(-20),
-			Datr: pointer.String("SF7BW125"),
-			Modu: pointer.String("LORA"),
-			Data: pointer.String(message),
+		for i := 0; i < numPks; i++ {
+			message := <-messages
+
+			rxpk := semtech.RXPK{
+				Rssi: pointer.Int(-20),
+				Datr: pointer.String("SF7BW125"),
+				Modu: pointer.String("LORA"),
+				Data: pointer.String(message),
+			}
+
+			rxpks[i] = rxpk
 		}
 
-		if err := fwd.Forward(rxpk); err != nil {
-			ctx.WithError(err).WithField("rxpk", rxpk).Warn("failed to forward")
+		err := fwd.Forward(rxpks[:numPks]...)
+		if err != nil {
+			ctx.WithError(err).Warn("failed to forward")
+		} else {
+			ctx.Debugf("Forwarded %d packets.", numPks)
 		}
 	}
 }
