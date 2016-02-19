@@ -87,13 +87,20 @@ func (a *Adapter) listen(conn *net.UDPConn) {
 	defer conn.Close()
 	a.ctx.WithField("address", conn.LocalAddr()).Debug("Starting accept loop")
 	for {
-		buf := make([]byte, 512)
+		// The Semtech packet forwarder uses a buffer size of ((540 * NB_PKT_MAX) + 30 + STATUS_SIZE)
+		// Where NB_PKT_MAX = 8 and STATUS_SIZE = 200
+		// We are collecting statistics to see if we can reduce the buffer size (see below).
+		buf := make([]byte, 4550)
+
 		n, addr, err := conn.ReadFromUDP(buf)
 		if err != nil { // Problem with the connection
 			a.ctx.WithError(err).Error("Connection error")
 			continue
 		}
 		a.ctx.Debug("Incoming datagram")
+
+		// Collect statistics for buffer size reduction
+		stats.UpdateHistogram("semtech_adapter.push_data.size", int64(len(buf)))
 
 		pkt := new(semtech.Packet)
 		err = pkt.UnmarshalBinary(buf[:n])
