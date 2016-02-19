@@ -12,6 +12,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/adapters/http"
 	"github.com/TheThingsNetwork/ttn/core/adapters/http/parser"
 	"github.com/TheThingsNetwork/ttn/core/adapters/http/pubsub"
+	"github.com/TheThingsNetwork/ttn/core/adapters/http/statuspage"
 	"github.com/TheThingsNetwork/ttn/core/components"
 	"github.com/apex/log"
 	"github.com/apex/log/handlers/text"
@@ -37,6 +38,11 @@ func main() {
 	hdlHTTPAdapter, err := http.NewAdapter(uint(handlersPort), parser.JSON{}, ctx.WithField("tag", "Handlers Adapter"))
 	if err != nil {
 		ctx.WithError(err).Fatal("Could not start Handlers Adapter")
+	}
+
+	_, err = statuspage.NewAdapter(hdlHTTPAdapter, ctx.WithField("tag", "Broker Adapter"))
+	if err != nil {
+		ctx.WithError(err).Fatal("Could not start Broker Adapter")
 	}
 
 	hdlAdapter, err := pubsub.NewAdapter(hdlHTTPAdapter, parser.PubSub{}, ctx.WithField("tag", "Handlers Adapter"))
