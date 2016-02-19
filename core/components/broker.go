@@ -44,7 +44,7 @@ func (b *Broker) HandleUp(p core.Packet, an core.AckNacker, adapter core.Adapter
 	if err != nil {
 		switch err.(errors.Failure).Nature {
 		case ErrWrongBehavior:
-			stats.MarkMeter("broker.uplink.device_not_registered")
+			stats.MarkMeter("broker.uplink.handler_lookup.device_not_found")
 			ctx.Warn("Uplink device not found")
 			return an.Nack()
 		default:
@@ -53,7 +53,7 @@ func (b *Broker) HandleUp(p core.Packet, an core.AckNacker, adapter core.Adapter
 			return errors.New(ErrFailedOperation, err)
 		}
 	}
-	stats.UpdateHistogram("broker.handlers_per_dev_addr", int64(len(entries)))
+	stats.UpdateHistogram("broker.uplink.handler_lookup.entries", int64(len(entries)))
 
 	// 2. Several handler might be associated to the same device, we distinguish them using MIC
 	// check. Only one should verify the MIC check.
@@ -68,13 +68,13 @@ func (b *Broker) HandleUp(p core.Packet, an core.AckNacker, adapter core.Adapter
 				Id:      entry.Id,
 				Address: entry.Url,
 			}
-			stats.MarkMeter("broker.uplink.match_handler")
+			stats.MarkMeter("broker.uplink.handler_lookup.match")
 			ctx.WithField("handler", handler).Debug("Associated device with handler")
 			break
 		}
 	}
 	if handler == nil {
-		stats.MarkMeter("broker.uplink.no_match_handler")
+		stats.MarkMeter("broker.uplink.handler_lookup.no_match")
 		ctx.Warn("Could not find handler for device")
 		return an.Nack()
 	}

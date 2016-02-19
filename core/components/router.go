@@ -56,7 +56,7 @@ func (r *Router) HandleUp(p core.Packet, an core.AckNacker, upAdapter core.Adapt
 	// Lookup for an existing broker
 	devAddr, err := p.DevAddr()
 	if err != nil {
-		stats.MarkMeter("broker.uplink.invalid_packet")
+		stats.MarkMeter("broker.uplink.invalid")
 		r.ctx.Warn("Invalid uplink packet")
 		an.Nack()
 		return err
