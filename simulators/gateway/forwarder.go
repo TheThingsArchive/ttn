@@ -47,6 +47,8 @@ const (
 	cmd_STATS   commandName = "Stats"
 )
 
+var statTimer <-chan time.Time
+
 // NewForwarder create a forwarder instance bound to a set of routers.
 func NewForwarder(id [8]byte, ctx log.Interface, adapters ...io.ReadWriteCloser) (*Forwarder, error) {
 	if len(adapters) == 0 {
@@ -71,6 +73,8 @@ func NewForwarder(id [8]byte, ctx log.Interface, adapters ...io.ReadWriteCloser)
 	}
 
 	go fwd.handleCommands()
+
+	statTimer = time.Tick(5 * time.Second)
 
 	// Star listening to each adapter Read() method
 	for i, adapter := range fwd.adapters {
@@ -168,6 +172,13 @@ func (fwd Forwarder) Forward(rxpks ...semtech.RXPK) error {
 		GatewayId:  fwd.Id[:],
 		Token:      genToken(),
 		Payload:    &semtech.Payload{RXPK: rxpks},
+	}
+
+	select {
+	case <-statTimer:
+		stats := fwd.Stats()
+		packet.Payload.Stat = &stats
+	default:
 	}
 
 	raw, err := packet.MarshalBinary()
