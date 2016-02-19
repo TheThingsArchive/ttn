@@ -58,7 +58,7 @@ func (a *Adapter) Send(p core.Packet, r ...core.Recipient) (core.Packet, error) 
 // Beside, a registration request will be triggered if one of the recipient reponses positively.
 func (a *Adapter) broadcast(p core.Packet) (core.Packet, error) {
 	stats.MarkMeter("http_adapter.broadcast")
-	stats.UpdateHistogram("http_adapter.broadcast_recipients", int64(len(a.recipients)))
+	stats.UpdateHistogram("http_adapter.broadcast.recipients", int64(len(a.recipients)))
 
 	// Generate payload from core packet
 	m, err := json.Marshal(p.Metadata)
@@ -136,9 +136,9 @@ func (a *Adapter) broadcast(p core.Packet) (core.Packet, error) {
 	}
 
 	// Wait for each request to be done, and return
-	stats.IncCounter("http_adapter.waiting_for_broadcast")
+	stats.IncCounter("http_adapter.broadcast.waiting")
 	wg.Wait()
-	stats.DecCounter("http_adapter.waiting_for_broadcast")
+	stats.DecCounter("http_adapter.broadcast.waiting")
 	close(cherr)
 	close(register)
 	var errs []error

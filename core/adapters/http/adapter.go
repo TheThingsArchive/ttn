@@ -61,7 +61,7 @@ func NewAdapter(port uint, parser parser.PacketParser, ctx log.Interface) (*Adap
 // Send implements the core.Adapter interface
 func (a *Adapter) Send(p core.Packet, r ...core.Recipient) (core.Packet, error) {
 	stats.MarkMeter("http_adapter.send")
-	stats.UpdateHistogram("http_adapter.send_recipients", int64(len(r)))
+	stats.UpdateHistogram("http_adapter.send.recipients", int64(len(r)))
 
 	// Generate payload from core packet
 	m, err := json.Marshal(p.Metadata)
@@ -139,9 +139,9 @@ func (a *Adapter) Send(p core.Packet, r ...core.Recipient) (core.Packet, error) 
 	}
 
 	// Wait for each request to be done, and return
-	stats.IncCounter("http_adapter.waiting_for_send")
+	stats.IncCounter("http_adapter.send.waiting")
 	wg.Wait()
-	stats.DecCounter("http_adapter.waiting_for_send")
+	stats.DecCounter("http_adapter.send.waiting")
 
 	// Collect errors
 	var errs []error

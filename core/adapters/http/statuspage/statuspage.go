@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"strings"
 
 	httpadapter "github.com/TheThingsNetwork/ttn/core/adapters/http"
 	"github.com/apex/log"
@@ -61,36 +62,48 @@ func (a *Adapter) handleStatus(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	allStats := statData{}
+	allStats := make(map[string]interface{})
 
 	metrics.Each(func(name string, i interface{}) {
+		// Make sure we put things in the right place
+		thisStat := allStats
+		for _, path := range strings.Split(name, ".") {
+			if thisStat[path] == nil {
+				thisStat[path] = make(map[string]interface{})
+			}
+			if _, ok := thisStat[path].(map[string]interface{}); ok {
+				thisStat = thisStat[path].(map[string]interface{})
+			} else {
+				ctx.Errorf("Error building %s stat", name)
+				return
+			}
+		}
+
 		switch metric := i.(type) {
 
 		case metrics.Counter:
 			m := metric.Snapshot()
-			allStats[name] = m.Count()
+			thisStat["count"] = m.Count()
 
 		case metrics.Histogram:
 			h := metric.Snapshot()
 			ps := h.Percentiles([]float64{0.25, 0.5, 0.75})
 
-			allStats[name] = histData{
-				Avg: h.Mean(),
-				Min: h.Min(),
-				Max: h.Max(),
-				P25: ps[0],
-				P50: ps[1],
-				P75: ps[2],
-			}
+			thisStat["avg"] = h.Mean()
+			thisStat["min"] = h.Min()
+			thisStat["max"] = h.Max()
+			thisStat["p_25"] = ps[0]
+			thisStat["p_50"] = ps[1]
+			thisStat["p_75"] = ps[2]
 
 		case metrics.Meter:
 			m := metric.Snapshot()
-			allStats[name] = meterData{
-				Rate1:  m.Rate1(),
-				Rate5:  m.Rate5(),
-				Rate15: m.Rate15(),
-				Count:  m.Count(),
-			}
+
+			thisStat["rate_1"] = m.Rate1()
+			thisStat["rate_5"] = m.Rate5()
+			thisStat["rate_15"] = m.Rate15()
+			thisStat["count"] = m.Count()
+
 		}
 	})
 
@@ -102,22 +115,4 @@ func (a *Adapter) handleStatus(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
-}
-
-type statData map[string]interface{}
-
-type meterData struct {
-	Rate1  float64 `json:"rate_1"`
-	Rate5  float64 `json:"rate_5"`
-	Rate15 float64 `json:"rate_15"`
-	Count  int64   `json:"count"`
-}
-
-type histData struct {
-	Avg float64 `json:"avg"`
-	Min int64   `json:"min"`
-	Max int64   `json:"max"`
-	P25 float64 `json:"p_25"`
-	P50 float64 `json:"p_50"`
-	P75 float64 `json:"p_75"`
 }
