@@ -100,7 +100,7 @@ func (a *Adapter) listen(conn *net.UDPConn) {
 		a.ctx.Debug("Incoming datagram")
 
 		// Collect statistics for buffer size reduction
-		stats.UpdateHistogram("semtech_adapter.push_data.size", int64(len(buf)))
+		stats.UpdateHistogram("semtech_adapter.push_data.size", int64(n))
 
 		pkt := new(semtech.Packet)
 		err = pkt.UnmarshalBinary(buf[:n])
