@@ -8,8 +8,9 @@ package statuspage
 
 import (
 	"encoding/json"
+	"fmt"
+	"net"
 	"net/http"
-	"strings"
 
 	httpadapter "github.com/TheThingsNetwork/ttn/core/adapters/http"
 	"github.com/apex/log"
@@ -46,9 +47,17 @@ func (a *Adapter) handleStatus(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if strings.Split(req.RemoteAddr, ":")[0] != "127.0.0.1" {
+	remoteHost, _, err := net.SplitHostPort(req.RemoteAddr)
+	if err != nil {
+		//The HTTP server did not set RemoteAddr to IP:port, which would be very very strange.
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	remoteIP := net.ParseIP(remoteHost)
+	if remoteIP == nil || !remoteIP.IsLoopback() {
 		w.WriteHeader(http.StatusForbidden)
-		w.Write([]byte("Status is only available from the local host"))
+		w.Write([]byte(fmt.Sprintf("Status is only available from the local host, not from %s", remoteIP)))
 		return
 	}
 
