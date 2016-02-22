@@ -5,7 +5,6 @@ package handlers
 
 import (
 	"encoding/base64"
-	"fmt"
 	"reflect"
 	"strings"
 
@@ -160,7 +159,7 @@ func packet2txpk(p core.Packet) (semtech.TXPK, error) {
 	// Step 1, convert the physical payload to a base64 string (without the padding)
 	raw, err := p.Payload().MarshalBinary()
 	if err != nil {
-		return semtech.TXPK{}, err
+		return semtech.TXPK{}, errors.New(ErrInvalidStructure, err)
 	}
 
 	data := strings.Trim(base64.StdEncoding.EncodeToString(raw), "=")
@@ -170,7 +169,7 @@ func packet2txpk(p core.Packet) (semtech.TXPK, error) {
 	// We are possibly loosing information here.
 	m := p.Metadata()
 	if len(m) != 1 {
-		return semtech.TXPK{}, fmt.Errorf("Invalid metadata structure")
+		return semtech.TXPK{}, errors.New(ErrInvalidStructure, "Invalid metadata structure")
 	}
 	metadataValue := reflect.ValueOf(m[0])
 	metadataStruct := metadataValue.Type()

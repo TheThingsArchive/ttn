@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/TheThingsNetwork/ttn/semtech"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"github.com/brocaar/lorawan"
 )
@@ -64,18 +63,6 @@ func TestUnmarshalJSONRPacket(t *testing.T) {
 }
 
 // ---- Declaration
-type convertRXPKTest struct {
-	CorePacket Packet
-	RXPK       semtech.RXPK
-	WantError  *string
-}
-
-type convertToTXPKTest struct {
-	TXPK       semtech.TXPK
-	CorePacket Packet
-	WantError  *string
-}
-
 type marshalJSONTest struct {
 	Packet     Packet
 	WantFields []string
@@ -84,86 +71,4 @@ type marshalJSONTest struct {
 type unmarshalJSONTest struct {
 	JSON       string
 	WantPacket Packet
-}
-
-// ---- Build utilities
-
-// Generates a test suite where the RXPK is fully complete
-func genRXPKWithFullMetadata(test *convertRXPKTest) convertRXPKTest {
-	phyPayload := genPHYPayload(true)
-	rxpk := genRXPK(phyPayload)
-	metadata := genMetadata(rxpk)
-	test.CorePacket = NewRPacket(phyPayload, metadata)
-	test.RXPK = rxpk
-	return *test
-}
-
-// Generates a test suite where the RXPK contains partial metadata
-func genRXPKWithPartialMetadata(test *convertRXPKTest) convertRXPKTest {
-	phyPayload := genPHYPayload(true)
-	rxpk := genRXPK(phyPayload)
-	rxpk.Codr = nil
-	rxpk.Rfch = nil
-	rxpk.Rssi = nil
-	rxpk.Time = nil
-	rxpk.Size = nil
-	metadata := genMetadata(rxpk)
-	test.CorePacket = NewRPacket(phyPayload, metadata)
-	test.RXPK = rxpk
-	return *test
-}
-
-// Generates a test suite where the RXPK contains no data
-func genRXPKWithNoData(test *convertRXPKTest) convertRXPKTest {
-	rxpk := genRXPK(genPHYPayload(true))
-	rxpk.Data = nil
-	test.RXPK = rxpk
-	return *test
-}
-
-// Generates a test suite where the core packet has all txpk metadata
-func genCoreFullMetadata(test *convertToTXPKTest) convertToTXPKTest {
-	phyPayload := genPHYPayload(false)
-	metadata := genFullMetadata()
-	metadata.Chan = nil
-	metadata.Lsnr = nil
-	metadata.Rssi = nil
-	metadata.Stat = nil
-	test.TXPK = genTXPK(phyPayload, metadata)
-	test.CorePacket = NewRPacket(phyPayload, metadata)
-	return *test
-}
-
-// Generates a test suite where the core packet has no metadata
-func genCoreNoMetadata(test *convertToTXPKTest) convertToTXPKTest {
-	phyPayload := genPHYPayload(false)
-	metadata := Metadata{}
-	test.TXPK = genTXPK(phyPayload, metadata)
-	test.CorePacket = NewRPacket(phyPayload, metadata)
-	return *test
-}
-
-// Generates a test suite where the core packet has partial metadata but all supported
-func genCorePartialMetadata(test *convertToTXPKTest) convertToTXPKTest {
-	phyPayload := genPHYPayload(false)
-	metadata := genFullMetadata()
-	metadata.Chan = nil
-	metadata.Lsnr = nil
-	metadata.Rssi = nil
-	metadata.Stat = nil
-	metadata.Modu = nil
-	metadata.Fdev = nil
-	metadata.Time = nil
-	test.TXPK = genTXPK(phyPayload, metadata)
-	test.CorePacket = NewRPacket(phyPayload, metadata)
-	return *test
-}
-
-// Generates a test suite where the core packet has extra metadata not supported by txpk
-func genCoreExtraMetadata(test *convertToTXPKTest) convertToTXPKTest {
-	phyPayload := genPHYPayload(false)
-	metadata := genFullMetadata()
-	test.TXPK = genTXPK(phyPayload, metadata)
-	test.CorePacket = NewRPacket(phyPayload, metadata)
-	return *test
 }
