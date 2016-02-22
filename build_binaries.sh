@@ -50,44 +50,56 @@ build_release()
     zip -q $release_name.zip $binary_name > /dev/null
     echo " Done"
 
-    # Delete Binary
-    rm $binary_name
+    # Delete Binary in CI build
+    if [ "$CI" != "" ]
+    then
+      rm $binary_name
+    fi
 }
 
-build_release darwin 386
-build_release darwin amd64
-build_release linux 386
-build_release linux amd64
-build_release linux arm
-build_release windows 386
-build_release windows amd64
-
-# Prepare Releases
-cd $RELEASEPATH
-
-# Commit Release
-if [ "$CI_COMMIT" != "" ]
+if [[ "$1" != "" ]] && [[ "$2" != "" ]]
 then
-  echo "Copying files for commit $CI_COMMIT"
-  mkdir -p commit/$CI_COMMIT
-  cp ./ttn* commit/$CI_COMMIT/
+  build_release $1 $2
+else
+  build_release darwin 386
+  build_release darwin amd64
+  build_release linux 386
+  build_release linux amd64
+  build_release linux arm
+  build_release windows 386
+  build_release windows amd64
 fi
 
-# Branch Release
-if [ "$CI_BRANCH" != "" ]
+# Prepare Releases in CI build
+if [ "$CI" != "" ]
 then
-  echo "Copying files for branch $CI_BRANCH"
-  mkdir -p branch/$CI_BRANCH
-  cp ./ttn* branch/$CI_BRANCH/
-fi
 
-# Tag Release
-if [ "$CI_TAG" != "" ]
-then
-  echo "Copying files for tag $CI_TAG"
-  mkdir -p tag/$CI_TAG
-  cp ./ttn* tag/$CI_TAG/
-fi
+  cd $RELEASEPATH
 
-# Remove Build Files
-rm -f ./ttn*
+  # Commit Release
+  if [ "$CI_COMMIT" != "" ]
+  then
+    echo "Copying files for commit $CI_COMMIT"
+    mkdir -p commit/$CI_COMMIT
+    cp ./ttn* commit/$CI_COMMIT/
+  fi
+
+  # Branch Release
+  if [ "$CI_BRANCH" != "" ]
+  then
+    echo "Copying files for branch $CI_BRANCH"
+    mkdir -p branch/$CI_BRANCH
+    cp ./ttn* branch/$CI_BRANCH/
+  fi
+
+  # Tag Release
+  if [ "$CI_TAG" != "" ]
+  then
+    echo "Copying files for tag $CI_TAG"
+    mkdir -p tag/$CI_TAG
+    cp ./ttn* tag/$CI_TAG/
+  fi
+
+  # Remove Build Files
+  rm -f ./ttn*
+fi
