@@ -117,7 +117,7 @@ func init() {
 	RootCmd.AddCommand(routerCmd)
 
 	routerCmd.Flags().String("database", "boltdb:/tmp/ttn_router.db", "Database connection")
-	routerCmd.Flags().Int("gateways-port", 1680, "UDP port for connections from gateways")
+	routerCmd.Flags().Int("gateways-port", 1700, "UDP port for connections from gateways")
 	routerCmd.Flags().String("brokers", "localhost:1690", "Comma-separated list of brokers")
 	routerCmd.Flags().Int("brokers-port", 1780, "TCP port for connections from brokers")
 
