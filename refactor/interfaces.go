@@ -29,8 +29,6 @@ type Adapter interface {
 	NextRegistration() (Registration, AckNacker, error)
 }
 
-type Recipient []byte
-
 type Packet interface {
 	encoding.BinaryMarshaler
 	fmt.Stringer
@@ -42,10 +40,15 @@ type Packet interface {
 	DevEUI() (lorawan.EUI64, error)
 }
 
-type Registration struct {
-	Recipient Recipient
-	Options   interface{}
+type Registration interface {
+	Recipient() Recipient
+	AppEUI() (lorawan.EUI64, error)
+	AppSKey() (lorawan.AES128Key, error)
+	DevEUI() (lorawan.EUI64, error)
+	NwkSKey() (lorawan.AES128Key, error)
 }
+
+type Recipient []byte
 
 type Metadata struct {
 	Chan *uint      `json:"chan,omitempty"` // Concentrator "IF" channel used for RX (unsigned integer)

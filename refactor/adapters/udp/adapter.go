@@ -117,7 +117,7 @@ func (a *Adapter) Next() ([]byte, core.AckNacker, error) {
 
 // NextRegistration implements the core.Adapter interface
 func (a *Adapter) NextRegistration() (core.Registration, core.AckNacker, error) {
-	return core.Registration{}, nil, errors.New(ErrNotSupported, "NextRegistration not supported on udp adapter")
+	return udpRegistration{}, nil, errors.New(ErrNotSupported, "NextRegistration not supported on udp adapter")
 }
 
 // listen Handle incoming packets and forward them. Runs in its own goroutine.
