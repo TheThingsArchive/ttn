@@ -27,6 +27,14 @@ func NewRPacket(payload lorawan.PHYPayload, metadata Metadata) RPacket {
 	}
 }
 
+// String implements the Stringer interface
+func (p RPacket) String() string {
+	str := "Packet {"
+	str += fmt.Sprintf("\n\t%s}", p.metadata.String())
+	str += fmt.Sprintf("\n\tPayload%+v\n}", p.payload)
+	return str
+}
+
 // FCnt implements the core.Packet interface
 func (p RPacket) FCnt() (uint32, error) {
 	if p.payload.MACPayload == nil {

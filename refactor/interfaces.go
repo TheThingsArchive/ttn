@@ -5,6 +5,7 @@ package refactor
 
 import (
 	"encoding"
+	"fmt"
 	"time"
 
 	"github.com/brocaar/lorawan"
@@ -32,6 +33,7 @@ type Recipient []byte
 
 type Packet interface {
 	encoding.BinaryMarshaler
+	fmt.Stringer
 	Payload() encoding.BinaryMarshaler
 	Metadata() []Metadata
 
