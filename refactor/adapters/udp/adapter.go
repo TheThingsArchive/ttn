@@ -25,13 +25,13 @@ type Adapter struct {
 // Handler represents a datagram and packet handler used by the adapter to process packets
 type Handler interface {
 	// HandleAck handles a positive response to a transmitter
-	HandleAck(p *core.Packet, resp <-chan HandlerMsg)
+	HandleAck(p *core.Packet, resp chan<- HandlerMsg)
 
 	// HandleNack handles a negative response to a transmitter
-	HandleNack(resp <-chan HandlerMsg)
+	HandleNack(resp chan<- HandlerMsg)
 
 	// HandleDatagram handles incoming datagram from a gateway transmitter to the network
-	HandleDatagram(data []byte, resp <-chan HandlerMsg)
+	HandleDatagram(data []byte, resp chan<- HandlerMsg)
 }
 
 // HandlerMsg type materializes response messages emitted by the UdpHandler
@@ -175,12 +175,12 @@ func (a *Adapter) monitorConnection() {
 func (a *Adapter) handleResp(addr *net.UDPAddr, chresp <-chan HandlerMsg) error {
 	for msg := range chresp {
 		switch msg.Type {
-		case HANDLER_OUT:
+		case HANDLER_RESP:
 			a.conn <- UdpMsg{
 				Data: msg.Data,
 				Addr: addr,
 			}
-		case HANDLER_RESP:
+		case HANDLER_OUT:
 			a.next <- OutMsg{
 				Data: msg.Data,
 				Addr: addr,
