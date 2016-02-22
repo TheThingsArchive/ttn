@@ -25,8 +25,8 @@ When you get started with The Things Network, you'll probably have some question
 
 We are working hard on building a working version of the v1.0 backend. Currently, we have the following components working:
 
-- [x] **Router**: [[download](integration/router/DOWNLOADS.md)] [[docker](https://hub.docker.com/r/thethingsnetwork/router/)]
-- [x] **Broker**: [[download](integration/broker/DOWNLOADS.md)] [[docker](https://hub.docker.com/r/thethingsnetwork/broker/)]
+- [x] **Router**
+- [x] **Broker**
 - [ ] **Handler**: *work in progress*
 
 ## Contributing
