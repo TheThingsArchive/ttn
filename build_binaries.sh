@@ -11,13 +11,11 @@ git_commit=$(git rev-parse HEAD)
 
 build_release()
 {
-    component=$1
-
     export CGO_ENABLED=0
-    export GOOS=$2
-    export GOARCH=$3
+    export GOOS=$1
+    export GOARCH=$2
 
-    release_name=$component-$GOOS-$GOARCH
+    release_name=ttn-$GOOS-$GOARCH
 
     if [ "$GOOS" == "windows" ]
     then
@@ -30,12 +28,12 @@ build_release()
 
     build_date=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
-    echo "$build_date - Building $component for $GOOS/$GOARCH..."
+    echo "$build_date - Building ttn for $GOOS/$GOARCH..."
 
     # Build
     cd $TTNROOT
 
-    go build -a -installsuffix cgo -ldflags "-w -X main.gitCommit=$git_commit -X main.buildDate=$build_date" -o $RELEASEPATH/$binary_name ./integration/$component/main.go
+    go build -a -installsuffix cgo -ldflags "-w -X main.gitCommit=$git_commit -X main.buildDate=$build_date" -o $RELEASEPATH/$binary_name ./main.go
 
     # Compress
     cd $RELEASEPATH
@@ -56,21 +54,13 @@ build_release()
     rm $binary_name
 }
 
-build_release router darwin 386
-build_release router darwin amd64
-build_release router linux 386
-build_release router linux amd64
-build_release router linux arm
-build_release router windows 386
-build_release router windows amd64
-
-build_release broker darwin 386
-build_release broker darwin amd64
-build_release broker linux 386
-build_release broker linux amd64
-build_release broker linux arm
-build_release broker windows 386
-build_release broker windows amd64
+build_release darwin 386
+build_release darwin amd64
+build_release linux 386
+build_release linux amd64
+build_release linux arm
+build_release windows 386
+build_release windows amd64
 
 # Prepare Releases
 cd $RELEASEPATH
@@ -80,8 +70,7 @@ if [ "$CI_COMMIT" != "" ]
 then
   echo "Copying files for commit $CI_COMMIT"
   mkdir -p commit/$CI_COMMIT
-  cp ./router* commit/$CI_COMMIT/
-  cp ./broker* commit/$CI_COMMIT/
+  cp ./ttn* commit/$CI_COMMIT/
 fi
 
 # Branch Release
@@ -89,8 +78,7 @@ if [ "$CI_BRANCH" != "" ]
 then
   echo "Copying files for branch $CI_BRANCH"
   mkdir -p branch/$CI_BRANCH
-  cp ./router* branch/$CI_BRANCH/
-  cp ./broker* branch/$CI_BRANCH/
+  cp ./ttn* branch/$CI_BRANCH/
 fi
 
 # Tag Release
@@ -98,10 +86,8 @@ if [ "$CI_TAG" != "" ]
 then
   echo "Copying files for tag $CI_TAG"
   mkdir -p tag/$CI_TAG
-  cp ./router* tag/$CI_TAG/
-  cp ./broker* tag/$CI_TAG/
+  cp ./ttn* tag/$CI_TAG/
 fi
 
 # Remove Build Files
-rm -f ./router*
-rm -f ./broker*
+rm -f ./ttn*
