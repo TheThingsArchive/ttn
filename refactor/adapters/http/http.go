@@ -50,11 +50,12 @@ type RegReq struct {
 // NewAdapter constructs and allocates a new http adapter
 func NewAdapter(port uint, recipients []core.Recipient, ctx log.Interface) (*Adapter, error) {
 	a := Adapter{
-		Client:     http.Client{},
-		ctx:        ctx,
-		packets:    make(chan PktReq),
-		recipients: recipients,
-		serveMux:   http.NewServeMux(),
+		Client:        http.Client{},
+		ctx:           ctx,
+		packets:       make(chan PktReq),
+		recipients:    recipients,
+		registrations: make(chan RegReq),
+		serveMux:      http.NewServeMux(),
 	}
 
 	go a.listenRequests(port)
@@ -87,10 +88,9 @@ func (a *Adapter) Send(p core.Packet, recipients ...core.Recipient) ([]byte, err
 	}
 	ctx.Debug("Sending Packet")
 
+	// Determine whether it's a broadcast or a direct send
 	nb := len(recipients)
 	isBroadcast := false
-
-	// Determine whether it's a broadcast or a direct send
 	if nb == 0 {
 		// If no recipient was supplied, try with the known one, otherwise quit.
 		recipients = a.recipients
@@ -113,9 +113,9 @@ func (a *Adapter) Send(p core.Packet, recipients ...core.Recipient) ([]byte, err
 			defer wg.Done()
 
 			// Get the actual recipient
-			recipient := new(httpRecipient)
-			if err := recipient.UnmarshalBinary(rawRecipient); err != nil {
-				ctx.WithError(err).Warn("Unable to interpret recipient as httpRecipient")
+			recipient, ok := rawRecipient.(httpRecipient)
+			if !ok {
+				ctx.WithField("recipient", rawRecipient).Warn("Unable to interpret recipient as httpRecipient")
 				return
 			}
 			ctx := ctx.WithField("recipient", recipient.Url)
@@ -148,13 +148,15 @@ func (a *Adapter) Send(p core.Packet, recipients ...core.Recipient) ([]byte, err
 				}
 				chresp <- data
 				if isBroadcast { // Generate registration on broadcast
-					a.registrations <- RegReq{
-						Registration: httpRegistration{
-							recipient: rawRecipient,
-							devEUI:    devEUI,
-						},
-						Chresp: nil,
-					}
+					go func() {
+						a.registrations <- RegReq{
+							Registration: httpRegistration{
+								recipient: rawRecipient,
+								devEUI:    devEUI,
+							},
+							Chresp: nil,
+						}
+					}()
 				}
 			case http.StatusNotFound:
 				ctx.Debug("Recipient not interested in packet")
@@ -188,7 +190,7 @@ func (a *Adapter) Send(p core.Packet, recipients ...core.Recipient) ([]byte, err
 	}
 
 	if len(chresp) == 0 && errored != 0 {
-		return nil, errors.New(ErrFailedOperation, "Unable to send to any recipient")
+		return nil, errors.New(ErrFailedOperation, "No positive response from recipients but got unexpected answer")
 	}
 
 	if len(chresp) == 0 && errored == 0 {

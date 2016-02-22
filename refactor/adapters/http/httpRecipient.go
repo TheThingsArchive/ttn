@@ -14,7 +14,7 @@ type httpRecipient struct {
 }
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface
-func (h *httpRecipient) MarshalBinary() ([]byte, error) {
+func (h httpRecipient) MarshalBinary() ([]byte, error) {
 	w := readwriter.New(nil)
 	w.Write(h.Url)
 	w.Write(h.Method)
@@ -22,7 +22,7 @@ func (h *httpRecipient) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
-func (h httpRecipient) UnmarshalBinary(data []byte) error {
+func (h *httpRecipient) UnmarshalBinary(data []byte) error {
 	r := readwriter.New(data)
 	r.Read(func(data []byte) { h.Url = string(data) })
 	r.Read(func(data []byte) { h.Method = string(data) })
