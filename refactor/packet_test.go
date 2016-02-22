@@ -35,7 +35,7 @@ func TestMarshalJSONRPacket(t *testing.T) {
 	}
 }
 
-func TestUnmarshalJSONPacket(t *testing.T) {
+func TestUnmarshalJSONRPacket(t *testing.T) {
 	tests := []unmarshalJSONTest{
 		unmarshalJSONTest{
 			JSON:       `{"payload":"gAQDAgEAAAAK4mTU97VqDnU=","metadata":{}}`,
@@ -47,17 +47,17 @@ func TestUnmarshalJSONPacket(t *testing.T) {
 		},
 		unmarshalJSONTest{
 			JSON:       `invalid`,
-			WantPacket: nil,
+			WantPacket: RPacket{},
 		},
 		unmarshalJSONTest{
 			JSON:       `{"metadata":{}}`,
-			WantPacket: nil,
+			WantPacket: RPacket{},
 		},
 	}
 
 	for _, test := range tests {
 		Desc(t, "Unmarshal json to packet: %s", test.JSON)
-		var packet Packet
+		packet := RPacket{}
 		json.Unmarshal([]byte(test.JSON), &packet)
 		checkPackets(t, test.WantPacket, packet)
 	}

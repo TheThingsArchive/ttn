@@ -17,22 +17,26 @@ import (
 
 // Checks that two packets match
 func checkPackets(t *testing.T, want Packet, got Packet) {
+	if want == nil {
+		if got == nil {
+			Ok(t, "Check packets")
+			return
+		}
+		Ko(t, "No packet was expected but got %s", got.String())
+		return
+	}
+
+	if got == nil {
+		Ko(t, "Was expecting %s but got nothing", want.String())
+		return
+	}
+
 	if reflect.DeepEqual(want, got) {
 		Ok(t, "Check packets")
 		return
 	}
 
-	wantStr := "{}"
-	if want != nil {
-		wantStr = want.String()
-	}
-
-	gotStr := "{}"
-	if got != nil {
-		gotStr = got.String()
-	}
-
-	Ko(t, "Converted packet does not match expectations. \nWant: \n%s\nGot:  \n%s", wantStr, gotStr)
+	Ko(t, "Converted packet does not match expectations. \nWant: \n%s\nGot:  \n%s", want.String(), got.String())
 }
 
 // Checks that errors match
