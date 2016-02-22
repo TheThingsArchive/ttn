@@ -20,20 +20,20 @@ func (r udpRegistration) Recipient() core.Recipient {
 
 // AppEUI implements the core.Registration interface
 func (r udpRegistration) AppEUI() (lorawan.EUI64, error) {
-	return lorawan.EUI64{}, errors.New(ErrNotSupported, "NextRegistration not supported on udp adapter")
+	return lorawan.EUI64{}, errors.New(ErrNotSupported, "AppEUI not supported on udp registration")
 }
 
 // DevEUI implements the core.Registration interface
 func (r udpRegistration) DevEUI() (lorawan.EUI64, error) {
-	return lorawan.EUI64{}, errors.New(ErrNotSupported, "NextRegistration not supported on udp adapter")
+	return lorawan.EUI64{}, errors.New(ErrNotSupported, "DevEUI not supported on udp registration")
 }
 
 // AppSKey implements the core.Registration interface
 func (r udpRegistration) AppSKey() (lorawan.AES128Key, error) {
-	return lorawan.AES128Key{}, errors.New(ErrNotSupported, "NextRegistration not supported on udp adapter")
+	return lorawan.AES128Key{}, errors.New(ErrNotSupported, "AppSKey not supported on udp registration")
 }
 
 // NwkSKey implements the core.Registration interface
 func (r udpRegistration) NwkSKey() (lorawan.AES128Key, error) {
-	return lorawan.AES128Key{}, errors.New(ErrNotSupported, "NextRegistration not supported on udp adapter")
+	return lorawan.AES128Key{}, errors.New(ErrNotSupported, "NwkSKey not supported on udp registration")
 }
