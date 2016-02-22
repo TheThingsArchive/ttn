@@ -116,16 +116,24 @@ func getNextPacket(next chan interface{}) (core.Packet, error) {
 
 // ----- CHECK utilities
 func checkErrors(t *testing.T, want *string, got error) {
-	if got == nil && want != nil {
+	if got == nil {
+		if want == nil {
+			Ok(t, "Check errors")
+			return
+		}
 		Ko(t, "Expected error to be {%s} but got nothing", *want)
 		return
 	}
 
-	if want == nil && got == nil || got.(errors.Failure).Nature == *want {
-		Ok(t, "Check errors")
+	if want == nil {
+		Ko(t, "Expected no error but got {%v}", got)
 		return
 	}
 
+	if got.(errors.Failure).Nature == *want {
+		Ok(t, "Check errors")
+		return
+	}
 	Ko(t, "Expected error to be {%s} but got {%v}", *want, got)
 }
 

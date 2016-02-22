@@ -15,7 +15,7 @@ type udpRegistration struct{}
 
 // Recipient implements the core.Registration inteface
 func (r udpRegistration) Recipient() core.Recipient {
-	return core.Recipient{}
+	return nil
 }
 
 // AppEUI implements the core.Registration interface
