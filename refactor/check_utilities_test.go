@@ -39,12 +39,25 @@ func checkPackets(t *testing.T, want Packet, got Packet) {
 
 // Checks that errors match
 func checkErrors(t *testing.T, want *string, got error) {
-	if want == nil && got == nil || got.(errors.Failure).Nature == *want {
-		Ok(t, "Check errors")
+	if got == nil {
+		if want == nil {
+			Ok(t, "Check errors")
+			return
+		}
+		Ko(t, "Expected error to be {%s} but got nothing", *want)
 		return
 	}
 
-	Ko(t, "Expected error to be %s but got %v", want, got)
+	if want == nil {
+		Ko(t, "Expected no error but got {%v}", got)
+		return
+	}
+
+	if got.(errors.Failure).Nature == *want {
+		Ok(t, "Check errors")
+		return
+	}
+	Ko(t, "Expected error to be {%s} but got {%v}", *want, got)
 }
 
 // Checks that obtained json matches expected one
