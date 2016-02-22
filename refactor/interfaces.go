@@ -48,7 +48,9 @@ type Registration interface {
 	NwkSKey() (lorawan.AES128Key, error)
 }
 
-type Recipient []byte
+type Recipient interface {
+	encoding.BinaryMarshaler
+}
 
 type Metadata struct {
 	Chan *uint      `json:"chan,omitempty"` // Concentrator "IF" channel used for RX (unsigned integer)
