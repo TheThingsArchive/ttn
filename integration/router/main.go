@@ -21,6 +21,11 @@ import (
 	"github.com/apex/log/handlers/text"
 )
 
+var (
+	gitCommit = "unknown"
+	buildDate = "unknown"
+)
+
 func main() {
 	// Create Logging Context
 	log.SetHandler(text.New(os.Stdout))
@@ -31,6 +36,8 @@ func main() {
 
 	// Parse options
 	brokers, tcpPort, udpPort := parseOptions()
+
+	ctx.WithField("git commit", gitCommit).WithField("build date", buildDate).Info("Starting The Things Network")
 
 	// Instantiate all components
 	gtwAdapter, err := semtech.NewAdapter(uint(udpPort), ctx.WithField("tag", "Gateway Adapter"))

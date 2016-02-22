@@ -7,6 +7,8 @@ RELEASEPATH=${RELEASEPATH:-$TTNROOT/release}
 
 mkdir -p $RELEASEPATH
 
+git_commit=$(git rev-parse HEAD)
+
 build_release()
 {
     component=$1
@@ -26,17 +28,29 @@ build_release()
 
     binary_name=$release_name$ext
 
-    echo "Building $component for $GOOS/$GOARCH"
+    build_date=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+
+    echo "$build_date - Building $component for $GOOS/$GOARCH..."
 
     # Build
     cd $TTNROOT
-    go build -a -installsuffix cgo -ldflags '-w' -o $RELEASEPATH/$binary_name ./integration/$component/main.go
+
+    go build -a -installsuffix cgo -ldflags "-w -X main.gitCommit=$git_commit -X main.buildDate=$build_date" -o $RELEASEPATH/$binary_name ./integration/$component/main.go
 
     # Compress
     cd $RELEASEPATH
-    tar -cvzf $release_name.tar.gz $binary_name
-    tar -cvJf $release_name.tar.xz $binary_name
-    zip $release_name.zip $binary_name
+
+    echo -n "                     - Compressing tar.gz...    "
+    tar -czf $release_name.tar.gz $binary_name
+    echo " Done"
+
+    echo -n "                     - Compressing tar.xz...    "
+    tar -cJf $release_name.tar.xz $binary_name
+    echo " Done"
+
+    echo -n "                     - Compressing zip...       "
+    zip -q $release_name.zip $binary_name > /dev/null
+    echo " Done"
 
     # Delete Binary
     rm $binary_name
