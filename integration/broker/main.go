@@ -18,6 +18,11 @@ import (
 	"github.com/apex/log/handlers/text"
 )
 
+var (
+	gitCommit = "unknown"
+	buildDate = "unknown"
+)
+
 func main() {
 	// Create Logging Context
 	log.SetHandler(text.New(os.Stdout))
@@ -28,6 +33,8 @@ func main() {
 
 	// Parse options
 	routersPort, handlersPort := parseOptions()
+
+	ctx.WithField("git commit", gitCommit).WithField("build date", buildDate).Info("Starting The Things Network")
 
 	// Instantiate all components
 	rtrAdapter, err := http.NewAdapter(uint(routersPort), parser.JSON{}, ctx.WithField("tag", "Routers Adapter"))
