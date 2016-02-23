@@ -4,18 +4,12 @@
 package handlers
 
 import (
-	//"encoding/hex"
-	//"encoding/json"
-	//"io"
+	"io"
 	"net/http"
-	//"regexp"
-	//"strings"
 
-	//. "github.com/TheThingsNetwork/ttn/core/errors"
-	// core "github.com/TheThingsNetwork/ttn/refactor"
+	. "github.com/TheThingsNetwork/ttn/core/errors"
 	. "github.com/TheThingsNetwork/ttn/refactor/adapters/http"
-	//"github.com/TheThingsNetwork/ttn/utils/errors"
-	//"github.com/brocaar/lorawan"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 )
 
 // Collect defines a handler for retrieving raw packets sent by a POST request.
@@ -64,5 +58,16 @@ func (p Collect) Handle(w http.ResponseWriter, chpkt chan<- PktReq, chreg chan<-
 
 // parse extracts params from the request and fails if the request is invalid.
 func (p Collect) parse(req *http.Request) ([]byte, error) {
-	return nil, nil
+	// Check Content-type
+	if req.Header.Get("Content-Type") != "application/octet-stream" {
+		return nil, errors.New(ErrInvalidStructure, "Received invalid content-type in request")
+	}
+
+	// Check configuration in body
+	body := make([]byte, req.ContentLength)
+	n, err := req.Body.Read(body)
+	if err != nil && err != io.EOF {
+		return nil, errors.New(ErrInvalidStructure, err)
+	}
+	return body[:n], nil
 }
