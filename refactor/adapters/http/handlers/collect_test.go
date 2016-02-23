@@ -12,28 +12,27 @@ import (
 	"testing"
 	"time"
 
+	. "github.com/TheThingsNetwork/ttn/core/errors"
 	core "github.com/TheThingsNetwork/ttn/refactor"
-	//. "github.com/TheThingsNetwork/ttn/core/errors"
-	"github.com/TheThingsNetwork/ttn/utils/errors"
-	//	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	. "github.com/TheThingsNetwork/ttn/refactor/adapters/http"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
+	//"github.com/TheThingsNetwork/ttn/utils/pointer"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 )
 
 func TestCollect(t *testing.T) {
 	tests := []struct {
-		Desc    string
-		Payload struct {
-			ContentType string
-			Method      string
-			Content     string
-		}
-		ShouldAck bool
-		AckPacket *core.Packet
+		Desc        string
+		Payload     string
+		ContentType string
+		Method      string
+		ShouldAck   bool
+		AckPacket   *core.Packet
 
-		WantResponse []byte
-		WantPacket   []byte
-		WantError    *string
+		WantContent    []byte
+		WantStatusCode int
+		WantPacket     []byte
+		WantError      *string
 	}{}
 
 	var port uint = 3000
@@ -42,35 +41,58 @@ func TestCollect(t *testing.T) {
 		Desc(t, test.Desc)
 
 		// Build
-
-		// CreateAdapter
-		// Bind Collect Handler
-		// Create Http Client
+		handler := Collect{}
+		adapter := createAdapter(t, port, handler)
+		client := testClient{}
 
 		// Operate
-		// Send Payload + Content-type + Method
-		// Try Next()
-		// If Next Succeed -> Send given response
+		chresp := client.Send(test.Payload, handler.Url(), test.Method, test.ContentType)
+		packet, err := tryNext(adapter, test.ShouldAck, test.AckPacket)
+		var statusCode int
+		var content []byte
+		select {
+		case resp := <-chresp:
+			statusCode = resp.StatusCode
+			content = resp.Content
+		case <-time.After(time.Millisecond * 100):
+		}
 
 		// Check
-		// Get server response from client
-		// Get server statusCode from client
-		// Check Errors
-		// Check StatusCode
-		// Check Content
-		// Check Next packet[]
+		checkErrors(t, test.WantError, err)
+		checkStatusCode(t, test.WantStatusCode, statusCode)
+		checkContent(t, test.WantContent, content)
+		checkPacket(t, test.WantPacket, packet)
 		port += 1
 	}
 
 }
 
+// ----- TYPES utilities
+type testPacket struct {
+	payload string
+}
+
+// MarshalBinary implements the encoding.BinaryMarshaler interface
+func (p testPacket) MarshalBinary() ([]byte, error) {
+	if p.payload == "" {
+		return nil, errors.New(ErrInvalidStructure, "Fake error")
+	}
+
+	return []byte(p.payload), nil
+}
+
+// String implements the core.Packet interface
+func (p testPacket) String() string {
+	return p.payload
+}
+
 // ----- BUILD utilities
-func createAdapter(t *testing.T, port uint) *Adapter {
+func createAdapter(t *testing.T, port uint, handler Handler) *Adapter {
 	adapter, err := NewAdapter(port, nil, GetLogger(t, "Adapter"))
 	if err != nil {
 		panic(err)
 	}
-	adapter.Bind(Collect{})
+	adapter.Bind(handler)
 	return adapter
 }
 
@@ -78,7 +100,7 @@ type testClient struct {
 	http.Client
 }
 
-func (c testClient) Send(payload string, url string, method string, contentType string) (int, []byte) {
+func (c testClient) Send(payload string, url string, method string, contentType string) chan MsgRes {
 	buf := new(bytes.Buffer)
 	if _, err := buf.Write([]byte(payload)); err != nil {
 		panic(err)
@@ -90,10 +112,7 @@ func (c testClient) Send(payload string, url string, method string, contentType 
 	}
 	request.Header.Set("Content-Type", contentType)
 
-	chresp := make(chan struct {
-		StatusCode int
-		Content    []byte
-	})
+	chresp := make(chan MsgRes)
 	go func() {
 		resp, err := c.Do(request)
 		if err != nil {
@@ -106,18 +125,9 @@ func (c testClient) Send(payload string, url string, method string, contentType 
 			panic(err)
 		}
 
-		chresp <- struct {
-			StatusCode int
-			Content    []byte
-		}{resp.StatusCode, data[:n]}
+		chresp <- MsgRes{resp.StatusCode, data[:n]}
 	}()
-
-	select {
-	case resp := <-chresp:
-		return resp.StatusCode, resp.Content
-	case <-time.After(time.Millisecond * 100):
-		return 0, nil
-	}
+	return chresp
 }
 
 // ----- OPERATE utilities
@@ -184,7 +194,7 @@ func checkStatusCode(t *testing.T, want int, got int) {
 	Ko(t, "Expected status code to be %d but got %d", want, got)
 }
 
-func checkContent(t *testing.T, want string, got []byte) {
+func checkContent(t *testing.T, want []byte, got []byte) {
 	if reflect.DeepEqual([]byte(want), got) {
 		Ok(t, "Check content")
 		return
