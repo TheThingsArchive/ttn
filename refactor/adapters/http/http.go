@@ -29,6 +29,9 @@ type Adapter struct {
 	serveMux      *http.ServeMux   // Holds a references to the adapter servemux in order to dynamically define endpoints
 }
 
+// Handler defines endpoint-specific handler.
+type Handler func(w http.ResponseWriter, reg chan<- RegReq, req *http.Request)
+
 // Message sent through the response channel of a pktReq or regReq
 type MsgRes struct {
 	StatusCode int    // The http status code to set as an answer
@@ -213,8 +216,6 @@ func (a *Adapter) NextRegistration() (core.Registration, core.AckNacker, error) 
 	r := <-a.registrations
 	return r.Registration, regAckNacker{Chresp: r.Chresp}, nil
 }
-
-type Handler func(w http.ResponseWriter, reg chan<- RegReq, req *http.Request)
 
 // Bind registers a handler to a specific endpoint
 func (a *Adapter) Bind(url string, handle Handler) {
