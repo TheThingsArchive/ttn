@@ -52,8 +52,9 @@ func (p PubSub) Url() string {
 func (p PubSub) Handle(w http.ResponseWriter, chpkt chan<- PktReq, chreg chan<- RegReq, req *http.Request) {
 	// Check the http method
 	if req.Method != "PUT" {
+		err := errors.New(ErrInvalidStructure, "Unreckognized HTTP method. Please use [PUT] to register a device")
 		w.WriteHeader(http.StatusMethodNotAllowed)
-		w.Write([]byte("Unreckognized HTTP method. Please use [PUT] to register a device"))
+		w.Write([]byte(err.Error()))
 		return
 	}
 
@@ -106,7 +107,7 @@ func (p PubSub) parse(req *http.Request) (core.Registration, error) {
 		NwkSKey string `json:"nwks_key"`
 	}{}
 	if err := json.Unmarshal(body[:n], params); err != nil {
-		return pubSubRegistration{}, errors.New(ErrInvalidStructure, err)
+		return pubSubRegistration{}, errors.New(ErrInvalidStructure, "Unable to unmarshal the request body")
 	}
 
 	// Verify each request parameter
