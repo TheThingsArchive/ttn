@@ -4,10 +4,18 @@
 package handlers
 
 import (
+	"encoding/hex"
+	"encoding/json"
+	"io"
 	"net/http"
+	"regexp"
+	"strings"
 
+	. "github.com/TheThingsNetwork/ttn/core/errors"
 	core "github.com/TheThingsNetwork/ttn/refactor"
 	. "github.com/TheThingsNetwork/ttn/refactor/adapters/http"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
+	"github.com/brocaar/lorawan"
 )
 
 // Pubsub defines an handler to handle application | devEUI registration on a component.
@@ -31,5 +39,64 @@ func PubSub(w http.ResponseWriter, reg chan<- RegReq, req *http.Request) {
 
 // parse extracts params from the request and fails if the request is invalid.
 func parse(req *http.Request) (core.Registration, error) {
-	return nil, nil
+	// Check Content-type
+	if req.Header.Get("Content-Type") != "application/json" {
+		return pubSubRegistration{}, errors.New(ErrInvalidStructure, "Received invalid content-type in request")
+	}
+
+	// Check the query parameter
+	reg := regexp.MustCompile("end-devices/([a-fA-F0-9]{16})$") // 8-bytes, hex-encoded -> 16 chars
+	query := reg.FindStringSubmatch(req.RequestURI)
+	if len(query) < 2 {
+		return pubSubRegistration{}, errors.New(ErrInvalidStructure, "Incorrect end-device address format")
+	}
+	devEUI, err := hex.DecodeString(query[1])
+	if err != nil {
+		return pubSubRegistration{}, errors.New(ErrInvalidStructure, err)
+	}
+
+	// Check configuration in body
+	body := make([]byte, req.ContentLength)
+	n, err := req.Body.Read(body)
+	if err != nil && err != io.EOF {
+		return pubSubRegistration{}, errors.New(ErrInvalidStructure, err)
+	}
+	params := &struct {
+		AppEUI  string `json:"app_eui"`
+		Url     string `json:"app_url"`
+		NwkSKey string `json:"nwks_key"`
+	}{}
+	if err := json.Unmarshal(body[:n], params); err != nil {
+		return pubSubRegistration{}, errors.New(ErrInvalidStructure, err)
+	}
+
+	// Verify each request parameter
+	nwkSKey, err := hex.DecodeString(params.NwkSKey)
+	if err != nil || len(nwkSKey) != 16 {
+		return pubSubRegistration{}, errors.New(ErrInvalidStructure, "Incorrect network session key")
+	}
+
+	appEUI, err := hex.DecodeString(params.AppEUI)
+	if err != nil || len(appEUI) != 8 {
+		return pubSubRegistration{}, errors.New(ErrInvalidStructure, "Incorrect application eui")
+	}
+
+	params.Url = strings.Trim(params.Url, " ")
+	if len(params.Url) <= 0 {
+		return pubSubRegistration{}, errors.New(ErrInvalidStructure, "Incorrect application url")
+	}
+
+	// Create actual registration
+	registration := pubSubRegistration{
+		recipient: NewHttpRecipient(params.Url, "PUT"),
+		appEUI:    lorawan.EUI64{},
+		devEUI:    lorawan.EUI64{},
+		nwkSKey:   lorawan.AES128Key{},
+	}
+
+	copy(registration.appEUI[:], appEUI[:])
+	copy(registration.nwkSKey[:], nwkSKey[:])
+	copy(registration.devEUI[:], devEUI[:])
+
+	return registration, nil
 }
