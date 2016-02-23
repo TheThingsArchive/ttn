@@ -18,7 +18,7 @@ build:
 publish:
   azure_storage:
     account_key: $$AZURE_STORAGE_KEY
-    storage_account: thethingsnetwork
+    storage_account: ttnreleases
     container: release
     source: release/
     when:
