@@ -28,7 +28,6 @@ or more brokers. The router is also responsible for monitoring gateways,
 collecting statistics from gateways and for enforcing TTN's fair use policy when
 the gateway's duty cycle is (almost) full.`,
 	PreRun: func(cmd *cobra.Command, args []string) {
-		ctx = ctx.WithField("cmd", "router")
 		ctx.WithFields(log.Fields{
 			"database":      viper.GetString("router.database"),
 			"gateways-port": viper.GetInt("router.gateways-port"),
@@ -39,17 +38,17 @@ the gateway's duty cycle is (almost) full.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx.Info("Starting")
 
-		gtwAdapter, err := semtech.NewAdapter(uint(viper.GetInt("router.gateways-port")), ctx.WithField("tag", "Gateway Adapter"))
+		gtwAdapter, err := semtech.NewAdapter(uint(viper.GetInt("router.gateways-port")), ctx.WithField("adapter", "gateway-semtech"))
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not start Gateway Adapter")
 		}
 
-		pktAdapter, err := http.NewAdapter(uint(viper.GetInt("router.brokers-port")), parser.JSON{}, ctx.WithField("tag", "Broker Adapter"))
+		pktAdapter, err := http.NewAdapter(uint(viper.GetInt("router.brokers-port")), parser.JSON{}, ctx.WithField("adapter", "broker-http"))
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not start Broker Adapter")
 		}
 
-		_, err = statuspage.NewAdapter(pktAdapter, ctx.WithField("tag", "Broker Adapter"))
+		_, err = statuspage.NewAdapter(pktAdapter, ctx.WithField("adapter", "statuspage-http"))
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not start Broker Adapter")
 		}
@@ -63,7 +62,7 @@ the gateway's duty cycle is (almost) full.`,
 			})
 		}
 
-		brkAdapter, err := broadcast.NewAdapter(pktAdapter, brokers, ctx.WithField("tag", "Broker Adapter"))
+		brkAdapter, err := broadcast.NewAdapter(pktAdapter, brokers, ctx.WithField("adapter", "broker-broadcast"))
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not start Broker Adapter")
 		}
@@ -73,7 +72,7 @@ the gateway's duty cycle is (almost) full.`,
 			ctx.WithError(err).Fatal("Could not create a local storage")
 		}
 
-		router := components.NewRouter(db, ctx.WithField("tag", "Router"))
+		router := components.NewRouter(db, ctx)
 
 		// Bring the service to life
 

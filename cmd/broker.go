@@ -25,7 +25,6 @@ receives from routers. This means that handlers have to register applications
 and personalized devices (with their network session keys) with the router.
 	`,
 	PreRun: func(cmd *cobra.Command, args []string) {
-		ctx = ctx.WithField("cmd", "broker")
 		ctx.WithFields(log.Fields{
 			"database":      viper.GetString("broker.database"),
 			"routers-port":  viper.GetInt("broker.routers-port"),
@@ -36,22 +35,22 @@ and personalized devices (with their network session keys) with the router.
 		ctx.Info("Starting")
 
 		// Instantiate all components
-		rtrAdapter, err := http.NewAdapter(uint(viper.GetInt("broker.routers-port")), parser.JSON{}, ctx.WithField("tag", "Routers Adapter"))
+		rtrAdapter, err := http.NewAdapter(uint(viper.GetInt("broker.routers-port")), parser.JSON{}, ctx.WithField("adapter", "router-http"))
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not start Routers Adapter")
 		}
 
-		hdlHTTPAdapter, err := http.NewAdapter(uint(viper.GetInt("broker.handlers-port")), parser.JSON{}, ctx.WithField("tag", "Handlers Adapter"))
+		hdlHTTPAdapter, err := http.NewAdapter(uint(viper.GetInt("broker.handlers-port")), parser.JSON{}, ctx.WithField("adapter", "handler-http"))
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not start Handlers Adapter")
 		}
 
-		_, err = statuspage.NewAdapter(hdlHTTPAdapter, ctx.WithField("tag", "Broker Adapter"))
+		_, err = statuspage.NewAdapter(hdlHTTPAdapter, ctx.WithField("adapter", "statuspage-http"))
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not start Broker Adapter")
 		}
 
-		hdlAdapter, err := pubsub.NewAdapter(hdlHTTPAdapter, parser.PubSub{}, ctx.WithField("tag", "Handlers Adapter"))
+		hdlAdapter, err := pubsub.NewAdapter(hdlHTTPAdapter, parser.PubSub{}, ctx.WithField("adapter", "handler-pubsub"))
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not start Handlers Adapter")
 		}
@@ -61,7 +60,7 @@ and personalized devices (with their network session keys) with the router.
 			ctx.WithError(err).Fatal("Could not create a local storage")
 		}
 
-		broker := components.NewBroker(db, ctx.WithField("tag", "Broker"))
+		broker := components.NewBroker(db, ctx)
 
 		// Bring the service to life
 
