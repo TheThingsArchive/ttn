@@ -35,33 +35,14 @@ func (p RPacket) String() string {
 	return str
 }
 
-// FCnt implements the core.Packet interface
-func (p RPacket) FCnt() (uint32, error) {
-	if p.payload.MACPayload == nil {
-		return 0, errors.New(ErrInvalidStructure, "MACPayload should not be empty")
-	}
-
-	macpayload, ok := p.payload.MACPayload.(*lorawan.MACPayload)
-	if !ok {
-		return 0, errors.New(ErrInvalidStructure, "Packet does not carry a MACPayload")
-	}
-
-	return macpayload.FHDR.FCnt, nil
-}
-
 // Payload implements the core.Packet interface
 func (p RPacket) Payload() encoding.BinaryMarshaler {
 	return p.payload
 }
 
 // Metadata implements the core.Packet interface
-func (p RPacket) Metadata() []Metadata {
-	return []Metadata{p.metadata}
-}
-
-// AppEUI implements the core.Packet interface
-func (p RPacket) AppEUI() (lorawan.EUI64, error) {
-	return lorawan.EUI64{}, errors.New(ErrNotSupported, "AppEUI not supported for RPacket")
+func (p RPacket) Metadata() Metadata {
+	return p.metadata
 }
 
 // DevEUI implements the core.Packet interface

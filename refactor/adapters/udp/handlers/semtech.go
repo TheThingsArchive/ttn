@@ -156,8 +156,14 @@ func rxpk2packet(p semtech.RXPK) (core.Packet, error) {
 }
 
 func packet2txpk(p core.Packet) (semtech.TXPK, error) {
+	// Interpret the packet as a Router Packet.
+	rPkt, ok := p.(core.RPacket)
+	if !ok {
+		return semtech.TXPK{}, errors.New(ErrInvalidStructure, "Unable to interpret packet as a RPacket")
+	}
+
 	// Step 1, convert the physical payload to a base64 string (without the padding)
-	raw, err := p.Payload().MarshalBinary()
+	raw, err := rPkt.Payload().MarshalBinary()
 	if err != nil {
 		return semtech.TXPK{}, errors.New(ErrInvalidStructure, err)
 	}
@@ -167,11 +173,7 @@ func packet2txpk(p core.Packet) (semtech.TXPK, error) {
 
 	// Step 2, copy every compatible metadata from the packet to the TXPK packet.
 	// We are possibly loosing information here.
-	m := p.Metadata()
-	if len(m) != 1 {
-		return semtech.TXPK{}, errors.New(ErrInvalidStructure, "Invalid metadata structure")
-	}
-	metadataValue := reflect.ValueOf(m[0])
+	metadataValue := reflect.ValueOf(rPkt.Metadata())
 	metadataStruct := metadataValue.Type()
 	txpkStruct := reflect.ValueOf(&txpk).Elem()
 	for i := 0; i < metadataStruct.NumField(); i += 1 {

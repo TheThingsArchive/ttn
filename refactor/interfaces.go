@@ -32,12 +32,6 @@ type Adapter interface {
 type Packet interface {
 	encoding.BinaryMarshaler
 	fmt.Stringer
-	Payload() encoding.BinaryMarshaler
-	Metadata() []Metadata
-
-	FCnt() (uint32, error)
-	AppEUI() (lorawan.EUI64, error)
-	DevEUI() (lorawan.EUI64, error)
 }
 
 type Registration interface {
