@@ -12,6 +12,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/adapters/http/parser"
@@ -49,7 +50,9 @@ func NewAdapter(port uint, parser parser.PacketParser, ctx log.Interface) (*Adap
 		serveMux:     http.NewServeMux(),
 		packets:      make(chan pktReq),
 		ctx:          ctx,
-		Client:       http.Client{},
+		Client: http.Client{
+			Timeout: 6 * time.Second,
+		},
 	}
 
 	a.RegisterEndpoint("/healthz", func(w http.ResponseWriter, req *http.Request) {
