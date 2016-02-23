@@ -26,7 +26,7 @@ func (s Semtech) HandleNack(chresp chan<- udp.HandlerMsg) {
 }
 
 // HandleAck implements the udp.Handler interface
-func (s Semtech) HandleAck(packet *core.Packet, chresp chan<- udp.HandlerMsg) {
+func (s Semtech) HandleAck(packet core.Packet, chresp chan<- udp.HandlerMsg) {
 	defer close(chresp)
 
 	if packet == nil {
@@ -34,7 +34,7 @@ func (s Semtech) HandleAck(packet *core.Packet, chresp chan<- udp.HandlerMsg) {
 	}
 
 	// For the downlink, we have to send a PULL_RESP packet which hold a TXPK.
-	txpk, err := packet2txpk(*packet)
+	txpk, err := packet2txpk(packet)
 	if err != nil {
 		chresp <- udp.HandlerMsg{Type: udp.HANDLER_ERROR, Data: []byte(err.Error())}
 		return

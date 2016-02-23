@@ -18,7 +18,7 @@ type httpAckNacker struct {
 }
 
 // Ack implements the core.AckNacker interface
-func (an httpAckNacker) Ack(p *core.Packet) error {
+func (an httpAckNacker) Ack(p core.Packet) error {
 	if an.Chresp == nil {
 		return nil
 	}
@@ -29,7 +29,7 @@ func (an httpAckNacker) Ack(p *core.Packet) error {
 		return nil
 	}
 
-	data, err := (*p).MarshalBinary()
+	data, err := p.MarshalBinary()
 	if err != nil {
 		return errors.New(ErrInvalidStructure, err)
 	}

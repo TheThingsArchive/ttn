@@ -25,7 +25,7 @@ type Adapter struct {
 // Handler represents a datagram and packet handler used by the adapter to process packets
 type Handler interface {
 	// HandleAck handles a positive response to a transmitter
-	HandleAck(p *core.Packet, resp chan<- HandlerMsg)
+	HandleAck(p core.Packet, resp chan<- HandlerMsg)
 
 	// HandleNack handles a negative response to a transmitter
 	HandleNack(resp chan<- HandlerMsg)
@@ -50,7 +50,7 @@ const (
 
 // AckMsg type materializes ack or nack messages flowing into the Ack channel
 type AckMsg struct {
-	Packet *core.Packet
+	Packet core.Packet
 	Type   AckMsgType
 	Addr   *net.UDPAddr
 	Cherr  chan<- error

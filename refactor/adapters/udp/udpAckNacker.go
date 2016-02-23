@@ -16,7 +16,7 @@ type udpAckNacker struct {
 }
 
 // Ack implements the core.Adapter interface
-func (an udpAckNacker) Ack(p *core.Packet) error {
+func (an udpAckNacker) Ack(p core.Packet) error {
 	cherr := make(chan error)
 	an.Chack <- AckMsg{Type: AN_ACK, Addr: an.Addr, Packet: p, Cherr: cherr}
 	return <-cherr

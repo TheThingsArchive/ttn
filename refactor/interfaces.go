@@ -18,7 +18,7 @@ type Component interface {
 }
 
 type AckNacker interface {
-	Ack(p *Packet) error
+	Ack(p Packet) error
 	Nack() error
 }
 
