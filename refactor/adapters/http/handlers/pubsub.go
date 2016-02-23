@@ -18,10 +18,12 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
-// Pubsub defines an handler to handle application | devEUI registration on a component.
+// Pubsub defines a handler to handle application | devEUI registration on a component.
 //
 // It listens to request of the form: [PUT] /end-devices/:devEUI
 // where devEUI is a 8 bytes hex-encoded address.
+//
+// It expects a Content-Type = application/json
 //
 // It also looks for params:
 //
