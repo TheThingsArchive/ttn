@@ -52,6 +52,11 @@ func NewAdapter(port uint, parser parser.PacketParser, ctx log.Interface) (*Adap
 		Client:       http.Client{},
 	}
 
+	a.RegisterEndpoint("/healthz", func(w http.ResponseWriter, req *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("ok"))
+	})
+
 	a.RegisterEndpoint("/packets", a.handlePostPacket)
 	go a.listenRequests(port)
 
