@@ -5,11 +5,15 @@ package handlers
 
 import (
 	"fmt"
+	"net/http"
 	"testing"
 	"time"
 
+	. "github.com/TheThingsNetwork/ttn/core/errors"
 	core "github.com/TheThingsNetwork/ttn/refactor"
+	. "github.com/TheThingsNetwork/ttn/refactor/adapters/http"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
+	"github.com/brocaar/lorawan"
 )
 
 func TestPubSub(t *testing.T) {
@@ -26,7 +30,96 @@ func TestPubSub(t *testing.T) {
 		WantStatusCode   int
 		WantRegistration core.Registration
 		WantError        *string
-	}{}
+	}{
+		{
+			Desc:        "Invalid Payload. Valid ContentType. Valid Method. Valid DevEUI. Nack",
+			Payload:     "TheThingsNetwork",
+			ContentType: "application/json",
+			Method:      "PUT",
+			DevEUI:      "0000000011223344",
+			ShouldAck:   false,
+
+			WantContent:      ErrInvalidStructure,
+			WantStatusCode:   http.StatusBadRequest,
+			WantRegistration: nil,
+			WantError:        nil,
+		},
+		{
+			Desc:        "Valid Payload. Invalid ContentType. Valid Method. Valid DevEUI. Nack",
+			Payload:     `{"app_eui":"0011223344556677","nwks_key":"00112233445566778899001122334455","app_url":"url"}`,
+			ContentType: "text/plain",
+			Method:      "PUT",
+			DevEUI:      "0000000011223344",
+			ShouldAck:   false,
+
+			WantContent:      ErrInvalidStructure,
+			WantStatusCode:   http.StatusBadRequest,
+			WantRegistration: nil,
+			WantError:        nil,
+		},
+		{
+			Desc:        "Valid Payload. Valid ContentType. Invalid Method. Valid DevEUI. Nack",
+			Payload:     `{"app_eui":"0011223344556677","nwks_key":"00112233445566778899001122334455","app_url":"url"}`,
+			ContentType: "application/json",
+			Method:      "POST",
+			DevEUI:      "0000000011223344",
+			ShouldAck:   false,
+
+			WantContent:      ErrInvalidStructure,
+			WantStatusCode:   http.StatusMethodNotAllowed,
+			WantRegistration: nil,
+			WantError:        nil,
+		},
+		{
+			Desc:        "Valid Payload. Valid ContentType. Valid Method. Invalid DevEUI. Nack",
+			Payload:     `{"app_eui":"0011223344556677","nwks_key":"00112233445566778899001122334455","app_url":"url"}`,
+			ContentType: "application/json",
+			Method:      "PUT",
+			DevEUI:      "12345678",
+			ShouldAck:   false,
+
+			WantContent:      ErrInvalidStructure,
+			WantStatusCode:   http.StatusBadRequest,
+			WantRegistration: nil,
+			WantError:        nil,
+		},
+		{
+			Desc:        "Valid Payload. Valid ContentType. Valid Method. Valid DevEUI. Nack",
+			Payload:     `{"app_eui":"0001020304050607","nwks_key":"00010203040506070809000102030405","app_url":"url"}`,
+			ContentType: "application/json",
+			Method:      "PUT",
+			DevEUI:      "0000000001020304",
+			ShouldAck:   false,
+
+			WantContent:    ErrInvalidStructure,
+			WantStatusCode: http.StatusConflict,
+			WantRegistration: pubSubRegistration{
+				recipient: NewHttpRecipient("url", "PUT"),
+				appEUI:    lorawan.EUI64([8]byte{0, 1, 2, 3, 4, 5, 6, 7}),
+				nwkSKey:   lorawan.AES128Key([16]byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5}),
+				devEUI:    lorawan.EUI64([8]byte{0, 0, 0, 0, 1, 2, 3, 4}),
+			},
+			WantError: nil,
+		},
+		{
+			Desc:        "Valid Payload. Valid ContentType. Valid Method. Valid DevEUI. Ack",
+			Payload:     `{"app_eui":"0001020304050607","nwks_key":"00010203040506070809000102030405","app_url":"url"}`,
+			ContentType: "application/json",
+			Method:      "PUT",
+			DevEUI:      "0000000001020304",
+			ShouldAck:   true,
+
+			WantContent:    "",
+			WantStatusCode: http.StatusAccepted,
+			WantRegistration: pubSubRegistration{
+				recipient: NewHttpRecipient("url", "PUT"),
+				appEUI:    lorawan.EUI64([8]byte{0, 1, 2, 3, 4, 5, 6, 7}),
+				nwkSKey:   lorawan.AES128Key([16]byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5}),
+				devEUI:    lorawan.EUI64([8]byte{0, 0, 0, 0, 1, 2, 3, 4}),
+			},
+			WantError: nil,
+		},
+	}
 
 	var port uint = 4000
 	for _, test := range tests {
@@ -39,7 +132,7 @@ func TestPubSub(t *testing.T) {
 		client := testClient{}
 
 		// Operate
-		url = fmt.Sprintf("%s/%s", url, test.DevEUI)
+		url = fmt.Sprintf("%s%s", url, test.DevEUI)
 		chresp := client.Send(test.Payload, url, test.Method, test.ContentType)
 		registration, err := tryNextRegistration(adapter, test.ShouldAck, test.AckPacket)
 		var statusCode int
