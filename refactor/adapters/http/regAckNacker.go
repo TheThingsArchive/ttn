@@ -28,7 +28,7 @@ func (r regAckNacker) Ack(p *core.Packet) error {
 	case r.Chresp <- MsgRes{StatusCode: http.StatusAccepted}:
 		return nil
 	case <-time.After(time.Millisecond * 50):
-		return errors.New(ErrWrongBehavior, "No response was given to the acknacker")
+		return errors.New(ErrFailedOperation, "No response was given to the acknacker")
 	}
 }
 
@@ -40,10 +40,10 @@ func (r regAckNacker) Nack() error {
 	select {
 	case r.Chresp <- MsgRes{
 		StatusCode: http.StatusConflict,
-		Content:    []byte("Unable to register the given device"),
+		Content:    []byte(ErrInvalidStructure),
 	}:
 		return nil
 	case <-time.After(time.Millisecond * 50):
-		return errors.New(ErrWrongBehavior, "No response was given to the acknacker")
+		return errors.New(ErrFailedOperation, "No response was given to the acknacker")
 	}
 }

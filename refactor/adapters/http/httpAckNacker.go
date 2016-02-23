@@ -41,7 +41,7 @@ func (an httpAckNacker) Ack(p *core.Packet) error {
 	}:
 		return nil
 	case <-time.After(time.Millisecond * 50):
-		return errors.New(ErrWrongBehavior, "No response was given to the acknacker")
+		return errors.New(ErrFailedOperation, "No response was given to the acknacker")
 	}
 }
 
@@ -55,10 +55,10 @@ func (an httpAckNacker) Nack() error {
 	select {
 	case an.Chresp <- MsgRes{
 		StatusCode: http.StatusNotFound,
-		Content:    []byte(`{"message":"Not in charge of the associated device"}`),
+		Content:    []byte(ErrInvalidStructure),
 	}:
 	case <-time.After(time.Millisecond * 50):
-		return errors.New(ErrWrongBehavior, "No response was given to the acknacker")
+		return errors.New(ErrFailedOperation, "No response was given to the acknacker")
 	}
 	return nil
 }
