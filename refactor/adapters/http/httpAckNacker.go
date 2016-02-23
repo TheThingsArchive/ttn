@@ -4,7 +4,6 @@
 package http
 
 import (
-	"encoding/json"
 	"net/http"
 	"time"
 
@@ -30,7 +29,7 @@ func (an httpAckNacker) Ack(p *core.Packet) error {
 		return nil
 	}
 
-	raw, err := json.Marshal(*p)
+	data, err := (*p).MarshalBinary()
 	if err != nil {
 		return errors.New(ErrInvalidStructure, err)
 	}
@@ -38,7 +37,7 @@ func (an httpAckNacker) Ack(p *core.Packet) error {
 	select {
 	case an.Chresp <- MsgRes{
 		StatusCode: http.StatusOK,
-		Content:    raw,
+		Content:    data,
 	}:
 		return nil
 	case <-time.After(time.Millisecond * 50):
