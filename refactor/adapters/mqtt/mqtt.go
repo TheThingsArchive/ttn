@@ -4,18 +4,18 @@
 package mqtt
 
 import (
-	MQTT "git.eclipse.org/gitroot/paho/org.eclipse.paho.mqtt.golang.git"
+	"fmt"
 
-	//. "github.com/TheThingsNetwork/ttn/core/errors"
+	MQTT "git.eclipse.org/gitroot/paho/org.eclipse.paho.mqtt.golang.git"
+	. "github.com/TheThingsNetwork/ttn/core/errors"
 	core "github.com/TheThingsNetwork/ttn/refactor"
-	//"github.com/TheThingsNetwork/ttn/utils/errors"
-	//"github.com/TheThingsNetwork/ttn/utils/stats"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/apex/log"
-	//"github.com/brocaar/lorawan"
 )
 
 // Adapter type materializes an mqtt adapter which implements the basic mqtt protocol
 type Adapter struct {
+	*MQTT.Client
 	ctx           log.Interface
 	packets       chan PktReq // Channel used to "transforms" incoming request to something we can handle concurrently
 	registrations chan RegReq // Incoming registrations
@@ -42,15 +42,41 @@ type RegReq struct {
 	Chresp       chan MsgRes
 }
 
+// MQTT Schemes available
+type Scheme string
+
+const (
+	Tcp       Scheme = "tcp"
+	Tls       Scheme = "tls"
+	WebSocket Scheme = "ws"
+)
+
 // NewAdapter constructs and allocates a new mqtt adapter
-func NewAdapter(ctx log.Interface) (*Adapter, error) {
+func NewAdapter(client *MQTT.Client, ctx log.Interface) *Adapter {
 	adapter := &Adapter{
+		Client:        client,
 		ctx:           ctx,
 		packets:       make(chan PktReq),
 		registrations: make(chan RegReq),
 	}
 
-	return adapter, nil
+	return adapter
+}
+
+// NewClient generates a new paho MQTT client from an id and a broker url
+//
+// The broker url is expected to contain a port if needed such as mybroker.com:87354
+//
+// The scheme has to be the same as the one used by the broker: tcp, tls or web socket
+func NewClient(id string, broker string, scheme Scheme) (*MQTT.Client, error) {
+	opts := MQTT.NewClientOptions()
+	opts.AddBroker(fmt.Sprintf("%s://%s", scheme, broker))
+	opts.SetClientID(id)
+	client := MQTT.NewClient(opts)
+	if token := client.Connect(); token.Wait() && token.Error() != nil {
+		return nil, errors.New(ErrFailedOperation, token.Error())
+	}
+	return client, nil
 }
 
 // Send implements the core.Adapter interface
