@@ -52,6 +52,8 @@ const (
 )
 
 // NewAdapter constructs and allocates a new mqtt adapter
+//
+// The client is expected to be already connected to the right broker and ready to be used.
 func NewAdapter(client *MQTT.Client, ctx log.Interface) *Adapter {
 	adapter := &Adapter{
 		Client:        client,
@@ -95,5 +97,16 @@ func (a *Adapter) NextRegistration() (core.Registration, core.AckNacker, error) 
 }
 
 // Bind registers a handler to a specific endpoint
-func (a *Adapter) Bind(h Handler) {
+func (a *Adapter) Bind(h Handler) error {
+	ctx := a.ctx.WithField("topic", h.Topic())
+	ctx.Info("Subscribe new handler")
+	token := a.Subscribe(h.Topic(), 2, func(client *MQTT.Client, msg MQTT.Message) {
+		ctx.Debug("Handle new mqtt message")
+		h.Handle(client, a.packets, a.registrations, msg)
+	})
+	if token.Wait() && token.Error() != nil {
+		ctx.WithError(token.Error()).Error("Unable to Subscribe")
+		return errors.New(ErrFailedOperation, token.Error())
+	}
+	return nil
 }
