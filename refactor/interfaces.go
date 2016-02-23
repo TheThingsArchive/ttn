@@ -34,6 +34,10 @@ type Packet interface {
 	fmt.Stringer
 }
 
+type Addressable interface {
+	DevEUI() (lorawan.EUI64, error)
+}
+
 type Registration interface {
 	Recipient() Recipient
 	AppEUI() (lorawan.EUI64, error)

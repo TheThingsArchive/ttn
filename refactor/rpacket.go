@@ -45,7 +45,7 @@ func (p RPacket) Metadata() Metadata {
 	return p.metadata
 }
 
-// DevEUI implements the core.Packet interface
+// DevEUI implements the core.Addressable interface
 func (p RPacket) DevEUI() (lorawan.EUI64, error) {
 	if p.payload.MACPayload == nil {
 		return lorawan.EUI64{}, errors.New(ErrInvalidStructure, "MACPAyload should not be empty")

@@ -81,13 +81,16 @@ func (a *Adapter) Send(p core.Packet, recipients ...core.Recipient) ([]byte, err
 	// Try to define a more helpful context
 	var devEUI *lorawan.EUI64
 	var ctx log.Interface
-	d, err := p.DevEUI()
-	if err != nil {
+	addressable, ok := p.(core.Addressable)
+	if ok {
+		if d, err := addressable.DevEUI(); err == nil {
+			ctx = a.ctx.WithField("devEUI", devEUI)
+			devEUI = &d
+		}
+	}
+	if devEUI == nil {
 		a.ctx.WithError(err).Warn("Unable to retrieve devEUI")
 		ctx = a.ctx
-	} else {
-		ctx = a.ctx.WithField("devEUI", devEUI)
-		devEUI = &d
 	}
 	ctx.Debug("Sending Packet")
 
