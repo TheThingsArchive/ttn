@@ -32,8 +32,9 @@ func (p Collect) Url() string {
 func (p Collect) Handle(w http.ResponseWriter, chpkt chan<- PktReq, chreg chan<- RegReq, req *http.Request) {
 	// Check the http method
 	if req.Method != "POST" {
+		err := errors.New(ErrInvalidStructure, "Unreckognized HTTP method. Please use [POST] to transfer a packet")
 		w.WriteHeader(http.StatusMethodNotAllowed)
-		w.Write([]byte("Unreckognized HTTP method. Please use [POST] to transfer a packet"))
+		w.Write([]byte(err.Error()))
 		return
 	}
 
@@ -49,7 +50,8 @@ func (p Collect) Handle(w http.ResponseWriter, chpkt chan<- PktReq, chreg chan<-
 	chpkt <- PktReq{Packet: data, Chresp: chresp}
 	r, ok := <-chresp
 	if !ok {
-		BadRequest(w, "Core server not responding")
+		err := errors.New(ErrFailedOperation, "Core server not responding")
+		BadRequest(w, err.Error())
 		return
 	}
 	w.WriteHeader(r.StatusCode)
