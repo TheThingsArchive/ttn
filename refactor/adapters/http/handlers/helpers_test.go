@@ -40,7 +40,18 @@ func (p testPacket) String() string {
 }
 
 // ----- BUILD utilities
-func createAdapter(t *testing.T, port uint) (*Adapter, string) {
+func createPubSubAdapter(t *testing.T, port uint) (*Adapter, string) {
+	adapter, err := NewAdapter(port, nil, GetLogger(t, "Adapter"))
+	if err != nil {
+		panic(err)
+	}
+	<-time.After(time.Millisecond * 250) // Let the connection starts
+	handler := PubSub{}
+	adapter.Bind(handler)
+	return adapter, fmt.Sprintf("http://0.0.0.0:%d%s", port, handler.Url())
+}
+
+func createCollectAdapter(t *testing.T, port uint) (*Adapter, string) {
 	adapter, err := NewAdapter(port, nil, GetLogger(t, "Adapter"))
 	if err != nil {
 		panic(err)
@@ -118,6 +129,39 @@ func tryNext(adapter core.Adapter, shouldAck bool, packet core.Packet) ([]byte, 
 	}
 }
 
+func tryNextRegistration(adapter core.Adapter, shouldAck bool, packet core.Packet) (core.Registration, error) {
+	chresp := make(chan struct {
+		Registration core.Registration
+		Error        error
+	})
+	go func() {
+		reg, an, err := adapter.NextRegistration()
+		defer func() {
+			chresp <- struct {
+				Registration core.Registration
+				Error        error
+			}{reg, err}
+		}()
+
+		if err != nil {
+			return
+		}
+
+		if shouldAck {
+			an.Ack(packet)
+		} else {
+			an.Nack()
+		}
+	}()
+
+	select {
+	case resp := <-chresp:
+		return resp.Registration, resp.Error
+	case <-time.After(time.Millisecond * 100):
+		return nil, nil
+	}
+}
+
 // ----- CHECK utilities
 func checkErrors(t *testing.T, want *string, got error) {
 	if got == nil {
@@ -163,4 +207,12 @@ func checkPacket(t *testing.T, want []byte, got []byte) {
 		return
 	}
 	Ko(t, "Received packet does not match expectations.\nWant: %v\nGot:  %v", want, got)
+}
+
+func checkRegistration(t *testing.T, want core.Registration, got core.Registration) {
+	if !reflect.DeepEqual(want, got) {
+		Ko(t, "Received registration does not match expectations.\nWant: %v\nGot:  %v", want, got)
+		return
+	}
+	Ok(t, "check Registrations")
 }

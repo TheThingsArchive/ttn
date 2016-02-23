@@ -97,7 +97,7 @@ func TestCollect(t *testing.T) {
 		Desc(t, test.Desc)
 
 		// Build
-		adapter, url := createAdapter(t, port)
+		adapter, url := createCollectAdapter(t, port)
 		client := testClient{}
 
 		// Operate
