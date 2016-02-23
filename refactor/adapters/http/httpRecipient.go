@@ -15,6 +15,11 @@ type HttpRecipient interface {
 	Method() string
 }
 
+// NewHttpRecipient constructs a new HttpRecipient
+func NewHttpRecipient(url string, method string) HttpRecipient {
+	return httpRecipient{url: url, method: method}
+}
+
 // HttpRecipient materializes recipients manipulated by the http adapter
 type httpRecipient struct {
 	url    string

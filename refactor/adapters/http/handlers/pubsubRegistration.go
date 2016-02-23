@@ -14,8 +14,8 @@ import (
 // type pubSubRegistration implements the core.Registration interface
 type pubSubRegistration struct {
 	recipient HttpRecipient
-	appEui    lorawan.EUI64
-	nwksKey   lorawan.AES128Key
+	appEUI    lorawan.EUI64
+	nwkSKey   lorawan.AES128Key
 	devEUI    lorawan.EUI64
 }
 
@@ -26,7 +26,7 @@ func (r pubSubRegistration) Recipient() core.Recipient {
 
 // AppEUI implements the core.Registration interface
 func (r pubSubRegistration) AppEUI() (lorawan.EUI64, error) {
-	return r.appEui, nil
+	return r.appEUI, nil
 }
 
 // AppSKey implements the core.Registration interface
@@ -36,10 +36,10 @@ func (r pubSubRegistration) AppSKey() (lorawan.AES128Key, error) {
 
 // DevEUI implements the core.Registration interface
 func (r pubSubRegistration) DevEUI() (lorawan.EUI64, error) {
-	return r.devEUI.nil
+	return r.devEUI, nil
 }
 
 // NwkSKey implement the core.Registration interface
 func (r pubSubRegistration) NwkSKey() (lorawan.AES128Key, error) {
-	return r.nwksKey, nil
+	return r.nwkSKey, nil
 }
