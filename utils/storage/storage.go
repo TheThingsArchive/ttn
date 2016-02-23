@@ -36,7 +36,7 @@ func New(name string) (Interface, error) {
 	return Interface{db}, nil
 }
 
-// initDB initializes the given bolt bucket by creating (if not already exists) an empty bucket
+// Init initializes the given bolt bucket by creating (if not already exists) an empty bucket
 func (itf Interface) Init(bucketName string) error {
 	return itf.db.Update(func(tx *bolt.Tx) error {
 		_, err := tx.CreateBucketIfNotExists([]byte(bucketName))
@@ -44,8 +44,8 @@ func (itf Interface) Init(bucketName string) error {
 	})
 }
 
-// store put a new entry in the given bolt database. It adds the entry to an existing set or create
-// a new set containing one element.
+// Store put a new set of entries in the given bolt database. It adds the entries to an existing set
+// or create a new set.
 func (itf Interface) Store(bucketName string, key []byte, entries []StorageEntry) error {
 	var marshalled [][]byte
 
@@ -79,7 +79,7 @@ func (itf Interface) Store(bucketName string, key []byte, entries []StorageEntry
 	return err
 }
 
-// lookup retrieve a set of entry from a given bolt database.
+// Lookup retrieves a set of entry from a given bolt database.
 //
 // The shape is used as a template for retrieving and creating the data. All entries extracted from
 // the database will be interpreted as instance of shape and the return result will be a slice of
@@ -123,7 +123,7 @@ func (itf Interface) Lookup(bucketName string, key []byte, shape StorageEntry) (
 	return entries.Interface(), nil
 }
 
-// flush empties each entry of a bucket associated to a given device
+// Flush empties each entry of a bucket associated to a given device
 func (itf Interface) Flush(bucketName string, key []byte) error {
 	return itf.db.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(bucketName))
@@ -137,7 +137,42 @@ func (itf Interface) Flush(bucketName string, key []byte) error {
 	})
 }
 
-// resetDB resets a given bucket from a given bolt database
+// Replace stores entries in the database by replacing them by a new set
+func (itf Interface) Replace(bucketName string, key []byte, entries []StorageEntry) error {
+	var marshalled [][]byte
+
+	for _, entry := range entries {
+		m, err := entry.MarshalBinary()
+		if err != nil {
+			return errors.New(ErrInvalidStructure, err)
+		}
+		marshalled = append(marshalled, m)
+	}
+
+	return itf.db.Update(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte(bucketName))
+		if bucket == nil {
+			return errors.New(ErrFailedOperation, "storage unreachable")
+		}
+		if err := bucket.Delete(key); err != nil {
+			return errors.New(ErrFailedOperation, err)
+		}
+		w := readwriter.New(bucket.Get(key))
+		for _, m := range marshalled {
+			w.Write(m)
+		}
+		data, err := w.Bytes()
+		if err != nil {
+			return errors.New(ErrInvalidStructure, err)
+		}
+		if err := bucket.Put(key, data); err != nil {
+			return errors.New(ErrFailedOperation, err)
+		}
+		return nil
+	})
+}
+
+// Reset resets a given bucket from a given bolt database
 func (itf Interface) Reset(bucketName string) error {
 	return itf.db.Update(func(tx *bolt.Tx) error {
 		if err := tx.DeleteBucket([]byte(bucketName)); err != nil {
