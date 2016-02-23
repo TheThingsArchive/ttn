@@ -49,7 +49,7 @@ func (p PubSub) Url() string {
 }
 
 // Handle implements the http.Handler interface
-func (p PubSub) Handle(w http.ResponseWriter, chreg chan<- RegReq, req *http.Request) {
+func (p PubSub) Handle(w http.ResponseWriter, chpkt chan<- PktReq, chreg chan<- RegReq, req *http.Request) {
 	// Check the http method
 	if req.Method != "PUT" {
 		w.WriteHeader(http.StatusMethodNotAllowed)
