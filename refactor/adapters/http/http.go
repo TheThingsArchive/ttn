@@ -92,7 +92,7 @@ func (a *Adapter) Send(p core.Packet, recipients ...core.Recipient) ([]byte, err
 		}
 	}
 	if devEUI == nil {
-		a.ctx.WithError(err).Warn("Unable to retrieve devEUI")
+		a.ctx.Warn("Unable to retrieve devEUI")
 		ctx = a.ctx
 	}
 	ctx.Debug("Sending Packet")
@@ -135,7 +135,7 @@ func (a *Adapter) Send(p core.Packet, recipients ...core.Recipient) ([]byte, err
 			buf.Write(data)
 			resp, err := a.Post(fmt.Sprintf("http://%s", recipient.Url()), "application/octet-stream", buf)
 			if err != nil {
-				cherr <- err
+				cherr <- errors.New(ErrFailedOperation, err)
 				return
 			}
 			defer func() {
@@ -152,7 +152,7 @@ func (a *Adapter) Send(p core.Packet, recipients ...core.Recipient) ([]byte, err
 				ctx.Debug("Recipient registered for packet")
 				data, err := ioutil.ReadAll(resp.Body)
 				if err != nil && err != io.EOF {
-					cherr <- err
+					cherr <- errors.New(ErrFailedOperation, err)
 					return
 				}
 				chresp <- data

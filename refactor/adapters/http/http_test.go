@@ -28,6 +28,30 @@ type testRegistration struct {
 	DevEUI    lorawan.EUI64
 }
 
+type testPacket struct {
+	devEUI  lorawan.EUI64
+	payload string
+}
+
+// MarshalBinary implements the encoding.BinaryMarshaler interface
+func (p testPacket) MarshalBinary() ([]byte, error) {
+	if p.payload == "" {
+		return nil, errors.New(ErrInvalidStructure, "Fake error")
+	}
+
+	return []byte(p.payload), nil
+}
+
+// DevEUI implements the core.Addressable interface
+func (p testPacket) DevEUI() (lorawan.EUI64, error) {
+	return p.devEUI, nil
+}
+
+// String implements the core.Packet interface
+func (p testPacket) String() string {
+	return p.payload
+}
+
 func TestSend(t *testing.T) {
 	recipients := []testRecipient{
 		testRecipient{
@@ -182,7 +206,6 @@ func getRegistrations(adapter *Adapter, want []testRegistration) []core.Registra
 }
 
 // Build utilities
-
 func genMockServer(recipient core.Recipient) chan string {
 	chresp := make(chan string)
 	serveMux := http.NewServeMux()
