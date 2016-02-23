@@ -17,7 +17,6 @@ var handlerCmd = &cobra.Command{
 The default handler is the bridge between The Things Network and applications.
 `,
 	PreRun: func(cmd *cobra.Command, args []string) {
-		ctx = ctx.WithField("cmd", "handler")
 		ctx.WithFields(log.Fields{
 			"database":     viper.GetString("handler.database"),
 			"brokers-port": viper.GetInt("handler.brokers-port"),
