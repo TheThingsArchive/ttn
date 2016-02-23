@@ -11,6 +11,10 @@ import (
 	db "github.com/TheThingsNetwork/ttn/utils/storage"
 )
 
+// !!!!!!!!!!!!!!!!!!!!!!!!
+// NOTE THIS IS NOT THE ADAPTER ROLE -> SHOULD BE MOVED TO HANDLER
+// !!!!!!!!!!!!!!!!!!!!!!!!
+
 // Storage defines an interface for the mqtt adapter
 type Storage interface {
 	Push(topic string, data []byte) error

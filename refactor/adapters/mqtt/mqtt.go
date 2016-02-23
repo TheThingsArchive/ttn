@@ -6,6 +6,7 @@ package mqtt
 import (
 	"fmt"
 	"sync"
+	"time"
 
 	MQTT "git.eclipse.org/gitroot/paho/org.eclipse.paho.mqtt.golang.git"
 	. "github.com/TheThingsNetwork/ttn/core/errors"
@@ -18,7 +19,6 @@ import (
 // Adapter type materializes an mqtt adapter which implements the basic mqtt protocol
 type Adapter struct {
 	*MQTT.Client
-	db            Storage // Internal storage to store all packets received by the broker
 	ctx           log.Interface
 	packets       chan PktReq // Channel used to "transforms" incoming request to something we can handle concurrently
 	registrations chan RegReq // Incoming registrations
@@ -57,10 +57,9 @@ const (
 // NewAdapter constructs and allocates a new mqtt adapter
 //
 // The client is expected to be already connected to the right broker and ready to be used.
-func NewAdapter(client *MQTT.Client, db Storage, ctx log.Interface) *Adapter {
+func NewAdapter(client *MQTT.Client, ctx log.Interface) *Adapter {
 	adapter := &Adapter{
 		Client:        client,
-		db:            db,
 		ctx:           ctx,
 		packets:       make(chan PktReq),
 		registrations: make(chan RegReq),
@@ -110,7 +109,22 @@ func (a *Adapter) Send(p core.Packet, recipients ...core.Recipient) ([]byte, err
 		// Get the actual recipient
 		recipient, ok := r.(MqttRecipient)
 		if !ok {
-			a.ctx.WithField("recipient", r).Warn("Unable to interpret recipient as mqttRecipient")
+			err := errors.New(ErrInvalidStructure, "Unable to interpret recipient as mqttRecipient")
+			a.ctx.WithField("recipient", r).Warn(err.Error())
+			cherr <- err
+			continue
+		}
+
+		// Subscribe to down channel (before publishing anything)
+		chdown := make(chan []byte)
+		token := a.Subscribe(recipient.TopicDown(), 2, func(client *MQTT.Client, msg MQTT.Message) {
+			chdown <- msg.Payload()
+		})
+		if token.Wait() && token.Error() != nil {
+			err := errors.New(ErrFailedOperation, "Unable to subscribe to down topic")
+			a.ctx.WithField("recipient", recipient).Warn(err.Error())
+			cherr <- err
+			close(chdown)
 			continue
 		}
 
@@ -130,18 +144,26 @@ func (a *Adapter) Send(p core.Packet, recipients ...core.Recipient) ([]byte, err
 		}(recipient)
 
 		// Pull responses from each down topic, expecting only one
-		go func(recipient MqttRecipient) {
+		go func(recipient MqttRecipient, chdown <-chan []byte) {
 			defer wg.Done()
 
 			ctx := a.ctx.WithField("topic", recipient.TopicDown())
 
-			data, err := a.db.Pull(recipient.TopicDown())
-			if err != nil {
-				ctx.WithError(err).Warn("Unable to pull response")
-				return
+			defer func(ctx log.Interface) {
+				if token := a.Unsubscribe(recipient.TopicDown()); token.Wait() && token.Error() != nil {
+					ctx.Warn("Unable to unsubscribe topic")
+				}
+			}(ctx)
+
+			// Forward the downlink response received if any
+			select {
+			case data, ok := <-chdown:
+				if ok {
+					chresp <- data
+				}
+			case <-time.After(2 * time.Second): // Timeout
 			}
-			chresp <- data
-		}(recipient)
+		}(recipient, chdown)
 	}
 
 	// Wait for each request to be done
