@@ -65,8 +65,6 @@ else
   build_release darwin amd64
   build_release linux 386
   build_release linux amd64
-  build_release windows 386
-  build_release windows amd64
 fi
 
 # Prepare Releases in CI build
