@@ -33,12 +33,49 @@ import (
 // It succeeds with an http 2xx if the request is valid (the response status is under the
 // ackNacker responsibility.
 // It can possibly fails with another status depending of the AckNacker response.
-func PubSub(w http.ResponseWriter, reg chan<- RegReq, req *http.Request) {
+//
+// The PubSub handler generates registration where:
+// - AppEUI is available
+// - DevEUI is available
+// - NwkSKey is available
+// - Recipient can be interpreted as an HttpRecipient (Url + Method)
+type PubSub struct{}
 
+// Url implements the http.Handler interface
+func (p PubSub) Url() string {
+	return "/end-devices/"
+}
+
+// Handle implements the http.Handler interface
+func (p PubSub) Handle(w http.ResponseWriter, chreg chan<- RegReq, req *http.Request) {
+	// Check the http method
+	if req.Method != "PUT" {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		w.Write([]byte("Unreckognized HTTP method. Please use [PUT] to register a device"))
+		return
+	}
+
+	// Parse body and query params
+	registration, err := p.parse(req)
+	if err != nil {
+		BadRequest(w, err.Error())
+		return
+	}
+
+	// Send the registration and wait for ack / nack
+	chresp := make(chan MsgRes)
+	chreg <- RegReq{Registration: registration, Chresp: chresp}
+	r, ok := <-chresp
+	if !ok {
+		BadRequest(w, "Core server not responding")
+		return
+	}
+	w.WriteHeader(r.StatusCode)
+	w.Write(r.Content)
 }
 
 // parse extracts params from the request and fails if the request is invalid.
-func parse(req *http.Request) (core.Registration, error) {
+func (p PubSub) parse(req *http.Request) (core.Registration, error) {
 	// Check Content-type
 	if req.Header.Get("Content-Type") != "application/json" {
 		return pubSubRegistration{}, errors.New(ErrInvalidStructure, "Received invalid content-type in request")
