@@ -113,18 +113,18 @@ func (a *Adapter) Send(p core.Packet, recipients ...core.Recipient) ([]byte, err
 			defer wg.Done()
 
 			// Get the actual recipient
-			recipient, ok := rawRecipient.(httpRecipient)
+			recipient, ok := rawRecipient.(HttpRecipient)
 			if !ok {
 				ctx.WithField("recipient", rawRecipient).Warn("Unable to interpret recipient as httpRecipient")
 				return
 			}
-			ctx := ctx.WithField("recipient", recipient.Url)
+			ctx := ctx.WithField("recipient", recipient.Url())
 
 			// Send request
-			ctx.Debugf("%s Request", recipient.Method)
+			ctx.Debugf("%s Request", recipient.Method())
 			buf := new(bytes.Buffer)
 			buf.Write(data)
-			resp, err := a.Post(fmt.Sprintf("http://%s", recipient.Url), "application/octet-stream", buf)
+			resp, err := a.Post(fmt.Sprintf("http://%s", recipient.Url()), "application/octet-stream", buf)
 			if err != nil {
 				cherr <- err
 				return

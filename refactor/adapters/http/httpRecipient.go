@@ -4,27 +4,45 @@
 package http
 
 import (
+	"encoding"
+
 	"github.com/TheThingsNetwork/ttn/utils/readwriter"
 )
 
+type HttpRecipient interface {
+	encoding.BinaryMarshaler
+	Url() string
+	Method() string
+}
+
 // HttpRecipient materializes recipients manipulated by the http adapter
 type httpRecipient struct {
-	Url    string
-	Method string
+	url    string
+	method string
+}
+
+// Url implements the HttpRecipient interface
+func (h httpRecipient) Url() string {
+	return h.url
+}
+
+// Method implements the HttpRecipient interface
+func (h httpRecipient) Method() string {
+	return h.method
 }
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface
 func (h httpRecipient) MarshalBinary() ([]byte, error) {
 	w := readwriter.New(nil)
-	w.Write(h.Url)
-	w.Write(h.Method)
+	w.Write(h.url)
+	w.Write(h.method)
 	return w.Bytes()
 }
 
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
 func (h *httpRecipient) UnmarshalBinary(data []byte) error {
 	r := readwriter.New(data)
-	r.Read(func(data []byte) { h.Url = string(data) })
-	r.Read(func(data []byte) { h.Method = string(data) })
+	r.Read(func(data []byte) { h.url = string(data) })
+	r.Read(func(data []byte) { h.method = string(data) })
 	return r.Err()
 }

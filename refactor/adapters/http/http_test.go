@@ -32,29 +32,29 @@ func TestSend(t *testing.T) {
 	recipients := []testRecipient{
 		testRecipient{
 			httpRecipient: httpRecipient{
-				Url:    "0.0.0.0:3010",
-				Method: "POST",
+				url:    "0.0.0.0:3010",
+				method: "POST",
 			},
 			Behavior: "AlwaysReject",
 		},
 		testRecipient{
 			httpRecipient: httpRecipient{
-				Url:    "0.0.0.0:3011",
-				Method: "POST",
+				url:    "0.0.0.0:3011",
+				method: "POST",
 			},
 			Behavior: "AlwaysAccept",
 		},
 		testRecipient{
 			httpRecipient: httpRecipient{
-				Url:    "0.0.0.0:3012",
-				Method: "POST",
+				url:    "0.0.0.0:3012",
+				method: "POST",
 			},
 			Behavior: "AlwaysReject",
 		},
 		testRecipient{
 			httpRecipient: httpRecipient{
-				Url:    "0.0.0.0:3013",
-				Method: "POST",
+				url:    "0.0.0.0:3013",
+				method: "POST",
 			},
 			Behavior: "AlwaysReject",
 		},
@@ -214,7 +214,7 @@ func genMockServer(recipient core.Recipient) chan string {
 	})
 
 	server := http.Server{
-		Addr:    recipient.(testRecipient).Url,
+		Addr:    recipient.(HttpRecipient).Url(),
 		Handler: serveMux,
 	}
 	go server.ListenAndServe()
