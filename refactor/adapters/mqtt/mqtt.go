@@ -88,7 +88,8 @@ func (a *Adapter) Send(p core.Packet, recipients ...core.Recipient) ([]byte, err
 
 // Next implements the core.Adapter interface
 func (a *Adapter) Next() ([]byte, core.AckNacker, error) {
-	return nil, nil, nil
+	p := <-a.packets
+	return p.Packet, mqttAckNacker{Chresp: p.Chresp}, nil
 }
 
 // NextRegistration implements the core.Adapter interface. Not implemented for this adapters.
