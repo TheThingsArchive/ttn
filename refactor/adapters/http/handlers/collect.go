@@ -12,7 +12,7 @@ import (
 	//"strings"
 
 	//. "github.com/TheThingsNetwork/ttn/core/errors"
-	core "github.com/TheThingsNetwork/ttn/refactor"
+	// core "github.com/TheThingsNetwork/ttn/refactor"
 	. "github.com/TheThingsNetwork/ttn/refactor/adapters/http"
 	//"github.com/TheThingsNetwork/ttn/utils/errors"
 	//"github.com/brocaar/lorawan"
@@ -36,9 +36,33 @@ func (p Collect) Url() string {
 
 // Handle implements the http.Handler interface
 func (p Collect) Handle(w http.ResponseWriter, chpkt chan<- PktReq, chreg chan<- RegReq, req *http.Request) {
+	// Check the http method
+	if req.Method != "POST" {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		w.Write([]byte("Unreckognized HTTP method. Please use [POST] to transfer a packet"))
+		return
+	}
+
+	// Parse body and query params
+	data, err := p.parse(req)
+	if err != nil {
+		BadRequest(w, err.Error())
+		return
+	}
+
+	// Send the packet and wait for ack / nack
+	chresp := make(chan MsgRes)
+	chpkt <- PktReq{Packet: data, Chresp: chresp}
+	r, ok := <-chresp
+	if !ok {
+		BadRequest(w, "Core server not responding")
+		return
+	}
+	w.WriteHeader(r.StatusCode)
+	w.Write(r.Content)
 }
 
 // parse extracts params from the request and fails if the request is invalid.
-func (p Collect) parse(req *http.Request) (core.Registration, error) {
+func (p Collect) parse(req *http.Request) ([]byte, error) {
 	return nil, nil
 }
