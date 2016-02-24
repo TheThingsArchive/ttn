@@ -13,7 +13,6 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/TheThingsNetwork/ttn/core/errors"
 	core "github.com/TheThingsNetwork/ttn/refactor"
 	. "github.com/TheThingsNetwork/ttn/refactor/adapters/http"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
@@ -28,7 +27,7 @@ type testPacket struct {
 // MarshalBinary implements the encoding.BinaryMarshaler interface
 func (p testPacket) MarshalBinary() ([]byte, error) {
 	if p.payload == "" {
-		return nil, errors.New(ErrInvalidStructure, "Fake error")
+		return nil, errors.New(errors.Structural, "Fake error")
 	}
 
 	return []byte(p.payload), nil
@@ -178,7 +177,7 @@ func checkErrors(t *testing.T, want *string, got error) {
 		return
 	}
 
-	if got.(errors.Failure).Nature == *want {
+	if got.(errors.Failure).Nature == errors.Nature(*want) {
 		Ok(t, "Check errors")
 		return
 	}

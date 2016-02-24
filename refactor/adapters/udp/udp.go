@@ -8,7 +8,6 @@ import (
 	"net"
 
 	core "github.com/TheThingsNetwork/ttn/refactor"
-	. "github.com/TheThingsNetwork/ttn/refactor/errors"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/apex/log"
 )
@@ -57,7 +56,7 @@ func NewAdapter(port uint, ctx log.Interface) (*Adapter, error) {
 	a.ctx.WithField("port", port).Info("Starting Server")
 	if udpConn, err = net.ListenUDP("udp", addr); err != nil {
 		a.ctx.WithError(err).Error("Unable to start server")
-		return nil, errors.New(ErrInvalidStructure, fmt.Sprintf("Invalid port %v", port))
+		return nil, errors.New(errors.Structural, fmt.Sprintf("Invalid port %v", port))
 	}
 
 	go a.monitorConnection(udpConn)
@@ -69,12 +68,12 @@ func NewAdapter(port uint, ctx log.Interface) (*Adapter, error) {
 
 // Send implements the core.Adapter interface. Not implemented for the udp adapter.
 func (a *Adapter) Send(p core.Packet, r ...core.Recipient) ([]byte, error) {
-	return nil, errors.New(ErrNotSupported, "Send not supported on udp adapter")
+	return nil, errors.New(errors.Implementation, "Send not supported on udp adapter")
 }
 
 // GetRecipient implements the core.Adapter interface
 func (a *Adapter) GetRecipient(raw []byte) (core.Recipient, error) {
-	return nil, errors.New(ErrNotSupported, "GetRecipient not supported on udp adapter")
+	return nil, errors.New(errors.Implementation, "GetRecipient not supported on udp adapter")
 }
 
 // Next implements the core.Adapter interface
@@ -85,7 +84,7 @@ func (a *Adapter) Next() ([]byte, core.AckNacker, error) {
 
 // NextRegistration implements the core.Adapter interface
 func (a *Adapter) NextRegistration() (core.Registration, core.AckNacker, error) {
-	return udpRegistration{}, nil, errors.New(ErrNotSupported, "NextRegistration not supported on udp adapter")
+	return udpRegistration{}, nil, errors.New(errors.Implementation, "NextRegistration not supported on udp adapter")
 }
 
 func (a *Adapter) Bind(h Handler) {

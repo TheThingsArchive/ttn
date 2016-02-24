@@ -9,7 +9,6 @@ import (
 	"time"
 
 	MQTT "git.eclipse.org/gitroot/paho/org.eclipse.paho.mqtt.golang.git"
-	. "github.com/TheThingsNetwork/ttn/core/errors"
 	core "github.com/TheThingsNetwork/ttn/refactor"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/stats"
@@ -79,7 +78,7 @@ func NewClient(id string, broker string, scheme Scheme) (*MQTT.Client, error) {
 	opts.SetClientID(id)
 	client := MQTT.NewClient(opts)
 	if token := client.Connect(); token.Wait() && token.Error() != nil {
-		return nil, errors.New(ErrFailedOperation, token.Error())
+		return nil, errors.New(errors.Operational, token.Error())
 	}
 	return client, nil
 }
@@ -93,7 +92,7 @@ func (a *Adapter) Send(p core.Packet, recipients ...core.Recipient) ([]byte, err
 	data, err := p.MarshalBinary()
 	if err != nil {
 		a.ctx.WithError(err).Warn("Invalid Packet")
-		return nil, errors.New(ErrInvalidStructure, err)
+		return nil, errors.New(errors.Structural, err)
 	}
 
 	a.ctx.Debug("Sending Packet")
@@ -109,7 +108,7 @@ func (a *Adapter) Send(p core.Packet, recipients ...core.Recipient) ([]byte, err
 		// Get the actual recipient
 		recipient, ok := r.(MqttRecipient)
 		if !ok {
-			err := errors.New(ErrInvalidStructure, "Unable to interpret recipient as mqttRecipient")
+			err := errors.New(errors.Structural, "Unable to interpret recipient as mqttRecipient")
 			a.ctx.WithField("recipient", r).Warn(err.Error())
 			cherr <- err
 			continue
@@ -121,7 +120,7 @@ func (a *Adapter) Send(p core.Packet, recipients ...core.Recipient) ([]byte, err
 			chdown <- msg.Payload()
 		})
 		if token.Wait() && token.Error() != nil {
-			err := errors.New(ErrFailedOperation, "Unable to subscribe to down topic")
+			err := errors.New(errors.Operational, "Unable to subscribe to down topic")
 			a.ctx.WithField("recipient", recipient).Warn(err.Error())
 			cherr <- err
 			close(chdown)
@@ -138,7 +137,7 @@ func (a *Adapter) Send(p core.Packet, recipients ...core.Recipient) ([]byte, err
 			token := a.Publish(recipient.TopicUp(), 2, false, data)
 			if token.Wait() && token.Error() != nil {
 				ctx.WithError(token.Error()).Error("Unable to publish")
-				cherr <- errors.New(ErrFailedOperation, token.Error())
+				cherr <- errors.New(errors.Operational, token.Error())
 				return
 			}
 		}(recipient)
@@ -178,15 +177,15 @@ func (a *Adapter) Send(p core.Packet, recipients ...core.Recipient) ([]byte, err
 
 	// Collect response
 	if len(chresp) > 1 {
-		return nil, errors.New(ErrWrongBehavior, "Received too many positive answers")
+		return nil, errors.New(errors.Behavioural, "Received too many positive answers")
 	}
 
 	if len(chresp) == 0 && errored != 0 {
-		return nil, errors.New(ErrFailedOperation, "No positive response from recipients but got unexpected answers")
+		return nil, errors.New(errors.Operational, "No positive response from recipients but got unexpected answers")
 	}
 
 	if len(chresp) == 0 && errored == 0 {
-		return nil, errors.New(ErrWrongBehavior, "No recipient gave a positive answer")
+		return nil, errors.New(errors.Behavioural, "No recipient gave a positive answer")
 	}
 
 	return <-chresp, nil
@@ -196,7 +195,7 @@ func (a *Adapter) Send(p core.Packet, recipients ...core.Recipient) ([]byte, err
 func (a *Adapter) GetRecipient(raw []byte) (core.Recipient, error) {
 	recipient := new(mqttRecipient)
 	if err := recipient.UnmarshalBinary(raw); err != nil {
-		return nil, errors.New(ErrInvalidStructure, err)
+		return nil, errors.New(errors.Structural, err)
 	}
 	return *recipient, nil
 }
@@ -222,7 +221,7 @@ func (a *Adapter) Bind(h Handler) error {
 	})
 	if token.Wait() && token.Error() != nil {
 		ctx.WithError(token.Error()).Error("Unable to Subscribe")
-		return errors.New(ErrFailedOperation, token.Error())
+		return errors.New(errors.Operational, token.Error())
 	}
 	return nil
 }

@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/TheThingsNetwork/ttn/core/errors"
 	core "github.com/TheThingsNetwork/ttn/refactor"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 )
 
@@ -34,7 +34,7 @@ func TestCollect(t *testing.T) {
 			Method:      "POST",
 			ShouldAck:   false,
 
-			WantContent:    ErrInvalidStructure,
+			WantContent:    string(errors.Structural),
 			WantStatusCode: http.StatusBadRequest,
 			WantPacket:     nil,
 			WantError:      nil,
@@ -46,7 +46,7 @@ func TestCollect(t *testing.T) {
 			Method:      "PUT",
 			ShouldAck:   false,
 
-			WantContent:    ErrInvalidStructure,
+			WantContent:    string(errors.Structural),
 			WantStatusCode: http.StatusMethodNotAllowed,
 			WantPacket:     nil,
 			WantError:      nil,
@@ -58,7 +58,7 @@ func TestCollect(t *testing.T) {
 			Method:      "POST",
 			ShouldAck:   false,
 
-			WantContent:    ErrInvalidStructure,
+			WantContent:    string(errors.Structural),
 			WantStatusCode: http.StatusNotFound,
 			WantPacket:     []byte("Patate"),
 			WantError:      nil,
@@ -71,7 +71,7 @@ func TestCollect(t *testing.T) {
 			ShouldAck:   true,
 			AckPacket:   testPacket{payload: ""},
 
-			WantContent:    ErrFailedOperation,
+			WantContent:    string(errors.Operational),
 			WantStatusCode: http.StatusBadRequest,
 			WantPacket:     []byte("Patate"),
 			WantError:      nil,

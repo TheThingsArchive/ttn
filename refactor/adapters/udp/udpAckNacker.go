@@ -6,7 +6,6 @@ package udp
 import (
 	"time"
 
-	. "github.com/TheThingsNetwork/ttn/core/errors"
 	core "github.com/TheThingsNetwork/ttn/refactor"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 )
@@ -21,13 +20,13 @@ func (an udpAckNacker) Ack(p core.Packet) error {
 	defer close(an.Chresp)
 	data, err := p.MarshalBinary()
 	if err != nil {
-		return errors.New(ErrInvalidStructure, err)
+		return errors.New(errors.Structural, err)
 	}
 	select {
 	case an.Chresp <- MsgRes(data):
 		return nil
 	case <-time.After(time.Millisecond * 50):
-		return errors.New(ErrFailedOperation, "Unable to send ack")
+		return errors.New(errors.Operational, "Unable to send ack")
 	}
 }
 

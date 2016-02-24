@@ -6,7 +6,6 @@ package mqtt
 import (
 	"encoding"
 
-	. "github.com/TheThingsNetwork/ttn/core/errors"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/readwriter"
 )
@@ -46,26 +45,18 @@ func (r mqttRecipient) MarshalBinary() ([]byte, error) {
 	rw.Write(r.up)
 	rw.Write(r.down)
 
-	data, err := rw.Bytes()
-	if err != nil {
-		return nil, errors.New(ErrInvalidStructure, err)
-	}
-	return data, nil
+	return rw.Bytes()
 }
 
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
 func (r *mqttRecipient) UnmarshalBinary(data []byte) error {
 	if r == nil {
-		return errors.New(ErrInvalidStructure, "Cannot unmarshal nil structure")
+		return errors.New(errors.Structural, "Cannot unmarshal nil structure")
 	}
 
 	rw := readwriter.New(data)
 	rw.Read(func(data []byte) { r.up = string(data) })
 	rw.Read(func(data []byte) { r.down = string(data) })
 
-	err := rw.Err()
-	if err != nil {
-		return errors.New(ErrInvalidStructure, err)
-	}
-	return nil
+	return rw.Err()
 }

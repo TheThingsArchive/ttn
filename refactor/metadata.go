@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"time"
 
-	. "github.com/TheThingsNetwork/ttn/core/errors"
 	"github.com/TheThingsNetwork/ttn/semtech"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
@@ -46,7 +45,7 @@ func (m Metadata) MarshalJSON() ([]byte, error) {
 	})
 
 	if err != nil {
-		err = errors.New(ErrInvalidStructure, err)
+		err = errors.New(errors.Structural, err)
 	}
 
 	return data, err
@@ -55,12 +54,12 @@ func (m Metadata) MarshalJSON() ([]byte, error) {
 // UnmarshalJSON implements the json.Unmarshaler interface
 func (m *Metadata) UnmarshalJSON(raw []byte) error {
 	if m == nil {
-		return errors.New(ErrInvalidStructure, "Cannot unmarshal nil Metadata")
+		return errors.New(errors.Structural, "Cannot unmarshal nil Metadata")
 	}
 
 	proxy := metadataProxy{}
 	if err := json.Unmarshal(raw, &proxy); err != nil {
-		return errors.New(ErrInvalidStructure, err)
+		return errors.New(errors.Structural, err)
 	}
 	*m = Metadata(proxy.metadata)
 	if proxy.Time != nil {

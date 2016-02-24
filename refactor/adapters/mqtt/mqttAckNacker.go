@@ -6,7 +6,6 @@ package mqtt
 import (
 	"time"
 
-	. "github.com/TheThingsNetwork/ttn/core/errors"
 	core "github.com/TheThingsNetwork/ttn/refactor"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 )
@@ -29,18 +28,22 @@ func (an mqttAckNacker) Ack(p core.Packet) error {
 
 	data, err := p.MarshalBinary()
 	if err != nil {
-		return errors.New(ErrInvalidStructure, err)
+		return errors.New(errors.Structural, err)
 	}
 
 	select {
 	case an.Chresp <- MsgRes(data):
 		return nil
 	case <-time.After(time.Millisecond * 50):
-		return errors.New(ErrFailedOperation, "No response was given to the acknacker")
+		return errors.New(errors.Operational, "No response was given to the acknacker")
 	}
 }
 
 // Nack implements the core.AckNacker interface
 func (an mqttAckNacker) Nack() error {
+	if an.Chresp == nil {
+		return nil
+	}
+	defer close(an.Chresp)
 	return nil
 }

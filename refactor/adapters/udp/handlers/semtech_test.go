@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/TheThingsNetwork/ttn/core/errors"
 	core "github.com/TheThingsNetwork/ttn/refactor"
 	"github.com/TheThingsNetwork/ttn/refactor/adapters/udp"
 	"github.com/TheThingsNetwork/ttn/semtech"
@@ -21,14 +20,14 @@ func TestSend(t *testing.T) {
 	Desc(t, "Send is not supported")
 	adapter, _ := genAdapter(t, 33000)
 	_, err := adapter.Send(core.RPacket{})
-	checkErrors(t, pointer.String(ErrNotSupported), err)
+	checkErrors(t, pointer.String(string(errors.Implementation)), err)
 }
 
 func TestNextRegistration(t *testing.T) {
 	Desc(t, "Next registration is not supported")
 	adapter, _ := genAdapter(t, 33001)
 	_, _, err := adapter.NextRegistration()
-	checkErrors(t, pointer.String(ErrNotSupported), err)
+	checkErrors(t, pointer.String(string(errors.Implementation)), err)
 }
 
 func TestNext(t *testing.T) {
@@ -130,7 +129,7 @@ func checkErrors(t *testing.T, want *string, got error) {
 		return
 	}
 
-	if got.(errors.Failure).Nature == *want {
+	if got.(errors.Failure).Nature == errors.Nature(*want) {
 		Ok(t, "Check errors")
 		return
 	}

@@ -11,7 +11,6 @@ import (
 	"net/http"
 	"sync"
 
-	. "github.com/TheThingsNetwork/ttn/core/errors"
 	core "github.com/TheThingsNetwork/ttn/refactor"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/stats"
@@ -78,7 +77,7 @@ func (a *Adapter) Send(p core.Packet, recipients ...core.Recipient) ([]byte, err
 	data, err := p.MarshalBinary()
 	if err != nil {
 		a.ctx.WithError(err).Warn("Invalid Packet")
-		return nil, errors.New(ErrInvalidStructure, err)
+		return nil, errors.New(errors.Structural, err)
 	}
 
 	// Try to define a more helpful context
@@ -106,7 +105,7 @@ func (a *Adapter) Send(p core.Packet, recipients ...core.Recipient) ([]byte, err
 		nb = len(recipients)
 		isBroadcast = true
 		if nb == 0 {
-			return nil, errors.New(ErrFailedOperation, "No recipient found")
+			return nil, errors.New(errors.Structural, "No recipient found")
 		}
 	}
 
@@ -135,7 +134,7 @@ func (a *Adapter) Send(p core.Packet, recipients ...core.Recipient) ([]byte, err
 			buf.Write(data)
 			resp, err := a.Post(fmt.Sprintf("http://%s", recipient.Url()), "application/octet-stream", buf)
 			if err != nil {
-				cherr <- errors.New(ErrFailedOperation, err)
+				cherr <- errors.New(errors.Operational, err)
 				return
 			}
 			defer func() {
@@ -152,7 +151,7 @@ func (a *Adapter) Send(p core.Packet, recipients ...core.Recipient) ([]byte, err
 				ctx.Debug("Recipient registered for packet")
 				data, err := ioutil.ReadAll(resp.Body)
 				if err != nil && err != io.EOF {
-					cherr <- errors.New(ErrFailedOperation, err)
+					cherr <- errors.New(errors.Operational, err)
 					return
 				}
 				chresp <- data
@@ -169,9 +168,9 @@ func (a *Adapter) Send(p core.Packet, recipients ...core.Recipient) ([]byte, err
 				}
 			case http.StatusNotFound:
 				ctx.Debug("Recipient not interested in packet")
-				cherr <- errors.New(ErrWrongBehavior, "Recipient not interested")
+				cherr <- errors.New(errors.Behavioural, "Recipient not interested")
 			default:
-				cherr <- errors.New(ErrFailedOperation, fmt.Sprintf("Unexpected response from server: %s (%d)", resp.Status, resp.StatusCode))
+				cherr <- errors.New(errors.Operational, fmt.Sprintf("Unexpected response from server: %s (%d)", resp.Status, resp.StatusCode))
 			}
 		}(recipient)
 	}
@@ -187,7 +186,7 @@ func (a *Adapter) Send(p core.Packet, recipients ...core.Recipient) ([]byte, err
 	var errored uint8
 	for i := 0; i < len(cherr); i += 1 {
 		err := <-cherr
-		if err.(errors.Failure).Nature != ErrWrongBehavior {
+		if err.(errors.Failure).Nature != errors.Behavioural {
 			errored += 1
 			ctx.WithError(err).Error("POST Failed")
 		}
@@ -195,15 +194,15 @@ func (a *Adapter) Send(p core.Packet, recipients ...core.Recipient) ([]byte, err
 
 	// Collect response
 	if len(chresp) > 1 {
-		return nil, errors.New(ErrWrongBehavior, "Received too many positive answers")
+		return nil, errors.New(errors.Behavioural, "Received too many positive answers")
 	}
 
 	if len(chresp) == 0 && errored != 0 {
-		return nil, errors.New(ErrFailedOperation, "No positive response from recipients but got unexpected answer")
+		return nil, errors.New(errors.Operational, "No positive response from recipients but got unexpected answer")
 	}
 
 	if len(chresp) == 0 && errored == 0 {
-		return nil, errors.New(ErrWrongBehavior, "No recipient gave a positive answer")
+		return nil, errors.New(errors.Behavioural, "No recipient gave a positive answer")
 	}
 
 	return <-chresp, nil
@@ -213,7 +212,7 @@ func (a *Adapter) Send(p core.Packet, recipients ...core.Recipient) ([]byte, err
 func (a *Adapter) GetRecipient(raw []byte) (core.Recipient, error) {
 	recipient := new(httpRecipient)
 	if err := recipient.UnmarshalBinary(raw); err != nil {
-		return nil, errors.New(ErrInvalidStructure, err)
+		return nil, errors.New(errors.Structural, err)
 	}
 	return *recipient, nil
 }

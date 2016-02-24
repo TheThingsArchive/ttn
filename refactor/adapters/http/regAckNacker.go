@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"time"
 
-	. "github.com/TheThingsNetwork/ttn/core/errors"
 	core "github.com/TheThingsNetwork/ttn/refactor"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 )
@@ -28,7 +27,7 @@ func (r regAckNacker) Ack(p core.Packet) error {
 	case r.Chresp <- MsgRes{StatusCode: http.StatusAccepted}:
 		return nil
 	case <-time.After(time.Millisecond * 50):
-		return errors.New(ErrFailedOperation, "No response was given to the acknacker")
+		return errors.New(errors.Operational, "No response was given to the acknacker")
 	}
 }
 
@@ -40,10 +39,10 @@ func (r regAckNacker) Nack() error {
 	select {
 	case r.Chresp <- MsgRes{
 		StatusCode: http.StatusConflict,
-		Content:    []byte(errors.New(ErrInvalidStructure, "Unable to register device").Error()),
+		Content:    []byte(errors.New(errors.Structural, "Unable to register device").Error()),
 	}:
 		return nil
 	case <-time.After(time.Millisecond * 50):
-		return errors.New(ErrFailedOperation, "No response was given to the acknacker")
+		return errors.New(errors.Operational, "No response was given to the acknacker")
 	}
 }

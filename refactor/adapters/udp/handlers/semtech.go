@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	. "github.com/TheThingsNetwork/ttn/core/errors"
 	core "github.com/TheThingsNetwork/ttn/refactor"
 	"github.com/TheThingsNetwork/ttn/refactor/adapters/udp"
 	"github.com/TheThingsNetwork/ttn/semtech"
@@ -113,7 +112,7 @@ func (s Semtech) Handle(conn chan<- udp.MsgUdp, packets chan<- udp.MsgReq, msg u
 func rxpk2packet(p semtech.RXPK) (core.Packet, error) {
 	// First, we have to get the physical payload which is encoded in the Data field
 	if p.Data == nil {
-		return nil, errors.New(ErrInvalidStructure, "There's no data in the packet")
+		return nil, errors.New(errors.Structural, "There's no data in the packet")
 	}
 
 	// RXPK Data are base64 encoded, yet without the trailing "==" if any.....
@@ -127,12 +126,12 @@ func rxpk2packet(p semtech.RXPK) (core.Packet, error) {
 
 	raw, err := base64.StdEncoding.DecodeString(encoded)
 	if err != nil {
-		return nil, errors.New(ErrInvalidStructure, err)
+		return nil, errors.New(errors.Structural, err)
 	}
 
 	payload := lorawan.NewPHYPayload(true)
 	if err = payload.UnmarshalBinary(raw); err != nil {
-		return nil, errors.New(ErrInvalidStructure, err)
+		return nil, errors.New(errors.Structural, err)
 	}
 
 	// Then, we interpret every other known field as a metadata and store them into an appropriate
@@ -157,7 +156,7 @@ func packet2txpk(p core.RPacket) (semtech.TXPK, error) {
 	// Step 1, convert the physical payload to a base64 string (without the padding)
 	raw, err := p.Payload().MarshalBinary()
 	if err != nil {
-		return semtech.TXPK{}, errors.New(ErrInvalidStructure, err)
+		return semtech.TXPK{}, errors.New(errors.Structural, err)
 	}
 
 	data := strings.Trim(base64.StdEncoding.EncodeToString(raw), "=")

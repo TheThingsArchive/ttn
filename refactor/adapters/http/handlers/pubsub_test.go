@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/TheThingsNetwork/ttn/core/errors"
 	core "github.com/TheThingsNetwork/ttn/refactor"
 	. "github.com/TheThingsNetwork/ttn/refactor/adapters/http"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"github.com/brocaar/lorawan"
 )
@@ -39,7 +39,7 @@ func TestPubSub(t *testing.T) {
 			DevEUI:      "0000000011223344",
 			ShouldAck:   false,
 
-			WantContent:      ErrInvalidStructure,
+			WantContent:      string(errors.Structural),
 			WantStatusCode:   http.StatusBadRequest,
 			WantRegistration: nil,
 			WantError:        nil,
@@ -52,7 +52,7 @@ func TestPubSub(t *testing.T) {
 			DevEUI:      "0000000011223344",
 			ShouldAck:   false,
 
-			WantContent:      ErrInvalidStructure,
+			WantContent:      string(errors.Structural),
 			WantStatusCode:   http.StatusBadRequest,
 			WantRegistration: nil,
 			WantError:        nil,
@@ -65,7 +65,7 @@ func TestPubSub(t *testing.T) {
 			DevEUI:      "0000000011223344",
 			ShouldAck:   false,
 
-			WantContent:      ErrInvalidStructure,
+			WantContent:      string(errors.Structural),
 			WantStatusCode:   http.StatusMethodNotAllowed,
 			WantRegistration: nil,
 			WantError:        nil,
@@ -78,7 +78,7 @@ func TestPubSub(t *testing.T) {
 			DevEUI:      "12345678",
 			ShouldAck:   false,
 
-			WantContent:      ErrInvalidStructure,
+			WantContent:      string(errors.Structural),
 			WantStatusCode:   http.StatusBadRequest,
 			WantRegistration: nil,
 			WantError:        nil,
@@ -91,7 +91,7 @@ func TestPubSub(t *testing.T) {
 			DevEUI:      "0000000001020304",
 			ShouldAck:   false,
 
-			WantContent:    ErrInvalidStructure,
+			WantContent:    string(errors.Structural),
 			WantStatusCode: http.StatusConflict,
 			WantRegistration: pubSubRegistration{
 				recipient: NewHttpRecipient("url", "PUT"),

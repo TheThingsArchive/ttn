@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	. "github.com/TheThingsNetwork/ttn/core/errors"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/brocaar/lorawan"
 )
@@ -48,12 +47,12 @@ func (p RPacket) Metadata() Metadata {
 // DevEUI implements the core.Addressable interface
 func (p RPacket) DevEUI() (lorawan.EUI64, error) {
 	if p.payload.MACPayload == nil {
-		return lorawan.EUI64{}, errors.New(ErrInvalidStructure, "MACPAyload should not be empty")
+		return lorawan.EUI64{}, errors.New(errors.Structural, "MACPAyload should not be empty")
 	}
 
 	macpayload, ok := p.payload.MACPayload.(*lorawan.MACPayload)
 	if !ok {
-		return lorawan.EUI64{}, errors.New(ErrInvalidStructure, "Packet does not carry a MACPayload")
+		return lorawan.EUI64{}, errors.New(errors.Structural, "Packet does not carry a MACPayload")
 	}
 
 	var devEUI lorawan.EUI64
@@ -75,11 +74,11 @@ func (p *RPacket) UnmarshalBinary(data []byte) error {
 func (p RPacket) MarshalJSON() ([]byte, error) {
 	rawMetadata, err := json.Marshal(p.metadata)
 	if err != nil {
-		return nil, errors.New(ErrInvalidStructure, err)
+		return nil, errors.New(errors.Structural, err)
 	}
 	rawPayload, err := p.payload.MarshalBinary()
 	if err != nil {
-		return nil, errors.New(ErrInvalidStructure, err)
+		return nil, errors.New(errors.Structural, err)
 	}
 	strPayload := base64.StdEncoding.EncodeToString(rawPayload)
 	return []byte(fmt.Sprintf(`{"payload":"%s","metadata":%s}`, strPayload, string(rawMetadata))), nil
@@ -88,7 +87,7 @@ func (p RPacket) MarshalJSON() ([]byte, error) {
 // UnmarshalJSON impements the json.Unmarshaler interface
 func (p *RPacket) UnmarshalJSON(raw []byte) error {
 	if p == nil {
-		return errors.New(ErrInvalidStructure, "Cannot unmarshal a nil packet")
+		return errors.New(errors.Structural, "Cannot unmarshal a nil packet")
 	}
 
 	// The payload is a bit tricky to unmarshal as we do not know if its an uplink or downlink
@@ -101,17 +100,17 @@ func (p *RPacket) UnmarshalJSON(raw []byte) error {
 
 	err := json.Unmarshal(raw, &proxy)
 	if err != nil {
-		return errors.New(ErrInvalidStructure, err)
+		return errors.New(errors.Structural, err)
 	}
 
 	rawPayload, err := base64.StdEncoding.DecodeString(proxy.Payload)
 	if err != nil {
-		return errors.New(ErrInvalidStructure, err)
+		return errors.New(errors.Structural, err)
 	}
 
 	payload := lorawan.NewPHYPayload(true) // true -> uplink
 	if err := payload.UnmarshalBinary(rawPayload); err != nil {
-		return errors.New(ErrInvalidStructure, err)
+		return errors.New(errors.Structural, err)
 	}
 
 	// Now, we check the nature of the decoded payload
@@ -125,7 +124,7 @@ func (p *RPacket) UnmarshalJSON(raw []byte) error {
 		// We thus have to unmarshall properly
 		payload = lorawan.NewPHYPayload(false) // false -> downlink
 		if err := payload.UnmarshalBinary(rawPayload); err != nil {
-			return errors.New(ErrInvalidStructure, err)
+			return errors.New(errors.Structural, err)
 		}
 	case "JoinRequest":
 		fallthrough
@@ -138,7 +137,7 @@ func (p *RPacket) UnmarshalJSON(raw []byte) error {
 	case "Proprietary":
 		// Proprietary can be either downlink or uplink. Right now, we do not have any message of
 		// that type and thus, we just don't know how to handle them. Let's throw an error.
-		return errors.New(ErrInvalidStructure, "Unsupported MType 'Proprietary'")
+		return errors.New(errors.Implementation, "Unsupported MType 'Proprietary'")
 	}
 
 	// Packet = Payload + Metadata

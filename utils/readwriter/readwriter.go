@@ -8,6 +8,7 @@ import (
 	"encoding/binary"
 	"fmt"
 
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/brocaar/lorawan"
 )
 
@@ -89,12 +90,15 @@ func (w *Interface) Read(to func(data []byte)) {
 // an error if any issue was encountered during the process.
 func (w Interface) Bytes() ([]byte, error) {
 	if w.err != nil {
-		return nil, w.err
+		return nil, errors.New(errors.Structural, w.err)
 	}
 	return w.data.Bytes(), nil
 }
 
 // Err just return the err status of the read-writer.
 func (w Interface) Err() error {
-	return w.err
+	if w.err != nil {
+		return errors.New(errors.Structural, w.err)
+	}
+	return nil
 }

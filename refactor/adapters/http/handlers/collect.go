@@ -7,7 +7,6 @@ import (
 	"io"
 	"net/http"
 
-	. "github.com/TheThingsNetwork/ttn/core/errors"
 	. "github.com/TheThingsNetwork/ttn/refactor/adapters/http"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 )
@@ -32,7 +31,7 @@ func (p Collect) Url() string {
 func (p Collect) Handle(w http.ResponseWriter, chpkt chan<- PktReq, chreg chan<- RegReq, req *http.Request) {
 	// Check the http method
 	if req.Method != "POST" {
-		err := errors.New(ErrInvalidStructure, "Unreckognized HTTP method. Please use [POST] to transfer a packet")
+		err := errors.New(errors.Structural, "Unreckognized HTTP method. Please use [POST] to transfer a packet")
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		w.Write([]byte(err.Error()))
 		return
@@ -50,7 +49,7 @@ func (p Collect) Handle(w http.ResponseWriter, chpkt chan<- PktReq, chreg chan<-
 	chpkt <- PktReq{Packet: data, Chresp: chresp}
 	r, ok := <-chresp
 	if !ok {
-		err := errors.New(ErrFailedOperation, "Core server not responding")
+		err := errors.New(errors.Operational, "Core server not responding")
 		BadRequest(w, err.Error())
 		return
 	}
@@ -62,14 +61,14 @@ func (p Collect) Handle(w http.ResponseWriter, chpkt chan<- PktReq, chreg chan<-
 func (p Collect) parse(req *http.Request) ([]byte, error) {
 	// Check Content-type
 	if req.Header.Get("Content-Type") != "application/octet-stream" {
-		return nil, errors.New(ErrInvalidStructure, "Received invalid content-type in request")
+		return nil, errors.New(errors.Structural, "Received invalid content-type in request")
 	}
 
 	// Check configuration in body
 	body := make([]byte, req.ContentLength)
 	n, err := req.Body.Read(body)
 	if err != nil && err != io.EOF {
-		return nil, errors.New(ErrInvalidStructure, err)
+		return nil, errors.New(errors.Structural, err)
 	}
 	return body[:n], nil
 }

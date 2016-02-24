@@ -10,7 +10,6 @@ import (
 	"time"
 
 	MQTT "git.eclipse.org/gitroot/paho/org.eclipse.paho.mqtt.golang.git"
-	. "github.com/TheThingsNetwork/ttn/core/errors"
 	core "github.com/TheThingsNetwork/ttn/refactor"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
@@ -42,7 +41,7 @@ func TestMQTTSend(t *testing.T) {
 
 			WantData:     []byte("TheThingsNetwork"),
 			WantResponse: nil,
-			WantError:    pointer.String(ErrWrongBehavior),
+			WantError:    pointer.String(string(errors.Behavioural)),
 		},
 		{
 			Desc:   "invalid packet | 1 recipient | No response",
@@ -57,7 +56,7 @@ func TestMQTTSend(t *testing.T) {
 
 			WantData:     nil,
 			WantResponse: nil,
-			WantError:    pointer.String(ErrInvalidStructure),
+			WantError:    pointer.String(string(errors.Structural)),
 		},
 		{
 			Desc:   "1 packet | 2 recipient | No response",
@@ -77,7 +76,7 @@ func TestMQTTSend(t *testing.T) {
 
 			WantData:     []byte("TheThingsNetwork"),
 			WantResponse: nil,
-			WantError:    pointer.String(ErrWrongBehavior),
+			WantError:    pointer.String(string(errors.Behavioural)),
 		},
 		{
 			Desc:   "1 packet | 2 recipients | #1 answer ",
@@ -117,7 +116,7 @@ func TestMQTTSend(t *testing.T) {
 
 			WantData:     []byte("TheThingsNetwork"),
 			WantResponse: nil,
-			WantError:    pointer.String(ErrWrongBehavior),
+			WantError:    pointer.String(string(errors.Behavioural)),
 		},
 	}
 
@@ -170,21 +169,21 @@ func TestMQTTRecipient(t *testing.T) {
 		if err == nil {
 			err = ru.UnmarshalBinary(data)
 		}
-		checkErrors(t, pointer.String(ErrInvalidStructure), err)
+		checkErrors(t, pointer.String(string(errors.Structural)), err)
 	}
 
 	{
 		Desc(t, "Unmarshal nil data")
 		ru := new(mqttRecipient)
 		err := ru.UnmarshalBinary(nil)
-		checkErrors(t, pointer.String(ErrInvalidStructure), err)
+		checkErrors(t, pointer.String(string(errors.Structural)), err)
 	}
 
 	{
 		Desc(t, "Unmarshal wrong data")
 		ru := new(mqttRecipient)
 		err := ru.UnmarshalBinary([]byte{1, 2, 3, 4})
-		checkErrors(t, pointer.String(ErrInvalidStructure), err)
+		checkErrors(t, pointer.String(string(errors.Structural)), err)
 	}
 }
 
@@ -202,7 +201,7 @@ type testPacket struct {
 // MarshalBinary implements the encoding.BinaryMarshaler interface
 func (p testPacket) MarshalBinary() ([]byte, error) {
 	if p.payload == nil {
-		return nil, errors.New(ErrInvalidStructure, "Fake error")
+		return nil, errors.New(errors.Structural, "Fake error")
 	}
 
 	return p.payload, nil
@@ -295,7 +294,7 @@ func checkErrors(t *testing.T, want *string, got error) {
 		return
 	}
 
-	if got.(errors.Failure).Nature == *want {
+	if got.(errors.Failure).Nature == errors.Nature(*want) {
 		Ok(t, "Check errors")
 		return
 	}

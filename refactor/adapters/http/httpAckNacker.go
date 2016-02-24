@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"time"
 
-	. "github.com/TheThingsNetwork/ttn/core/errors"
 	core "github.com/TheThingsNetwork/ttn/refactor"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 )
@@ -31,7 +30,7 @@ func (an httpAckNacker) Ack(p core.Packet) error {
 
 	data, err := p.MarshalBinary()
 	if err != nil {
-		return errors.New(ErrInvalidStructure, err)
+		return errors.New(errors.Structural, err)
 	}
 
 	select {
@@ -41,7 +40,7 @@ func (an httpAckNacker) Ack(p core.Packet) error {
 	}:
 		return nil
 	case <-time.After(time.Millisecond * 50):
-		return errors.New(ErrFailedOperation, "No response was given to the acknacker")
+		return errors.New(errors.Operational, "No response was given to the acknacker")
 	}
 }
 
@@ -55,10 +54,10 @@ func (an httpAckNacker) Nack() error {
 	select {
 	case an.Chresp <- MsgRes{
 		StatusCode: http.StatusNotFound,
-		Content:    []byte(ErrInvalidStructure),
+		Content:    []byte(errors.Structural),
 	}:
 	case <-time.After(time.Millisecond * 50):
-		return errors.New(ErrFailedOperation, "No response was given to the acknacker")
+		return errors.New(errors.Operational, "No response was given to the acknacker")
 	}
 	return nil
 }

@@ -4,7 +4,6 @@
 package handlers
 
 import (
-	. "github.com/TheThingsNetwork/ttn/core/errors"
 	core "github.com/TheThingsNetwork/ttn/refactor"
 	. "github.com/TheThingsNetwork/ttn/refactor/adapters/http"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
@@ -31,7 +30,7 @@ func (r pubSubRegistration) AppEUI() (lorawan.EUI64, error) {
 
 // AppSKey implements the core.Registration interface
 func (r pubSubRegistration) AppSKey() (lorawan.AES128Key, error) {
-	return lorawan.AES128Key{}, errors.New(ErrNotSupported, "AppSKey noy supported on pubsub registration")
+	return lorawan.AES128Key{}, errors.New(errors.Implementation, "AppSKey noy supported on pubsub registration")
 }
 
 // DevEUI implements the core.Registration interface

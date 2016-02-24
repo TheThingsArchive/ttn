@@ -53,7 +53,7 @@ func checkErrors(t *testing.T, want *string, got error) {
 		return
 	}
 
-	if got.(errors.Failure).Nature == *want {
+	if got.(errors.Failure).Nature == errors.Nature(*want) {
 		Ok(t, "Check errors")
 		return
 	}

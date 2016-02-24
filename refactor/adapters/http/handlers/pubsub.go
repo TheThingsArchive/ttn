@@ -11,7 +11,6 @@ import (
 	"regexp"
 	"strings"
 
-	. "github.com/TheThingsNetwork/ttn/core/errors"
 	core "github.com/TheThingsNetwork/ttn/refactor"
 	. "github.com/TheThingsNetwork/ttn/refactor/adapters/http"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
@@ -52,7 +51,7 @@ func (p PubSub) Url() string {
 func (p PubSub) Handle(w http.ResponseWriter, chpkt chan<- PktReq, chreg chan<- RegReq, req *http.Request) {
 	// Check the http method
 	if req.Method != "PUT" {
-		err := errors.New(ErrInvalidStructure, "Unreckognized HTTP method. Please use [PUT] to register a device")
+		err := errors.New(errors.Structural, "Unreckognized HTTP method. Please use [PUT] to register a device")
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		w.Write([]byte(err.Error()))
 		return
@@ -81,25 +80,25 @@ func (p PubSub) Handle(w http.ResponseWriter, chpkt chan<- PktReq, chreg chan<- 
 func (p PubSub) parse(req *http.Request) (core.Registration, error) {
 	// Check Content-type
 	if req.Header.Get("Content-Type") != "application/json" {
-		return pubSubRegistration{}, errors.New(ErrInvalidStructure, "Received invalid content-type in request")
+		return pubSubRegistration{}, errors.New(errors.Structural, "Received invalid content-type in request")
 	}
 
 	// Check the query parameter
 	reg := regexp.MustCompile("end-devices/([a-fA-F0-9]{16})$") // 8-bytes, hex-encoded -> 16 chars
 	query := reg.FindStringSubmatch(req.RequestURI)
 	if len(query) < 2 {
-		return pubSubRegistration{}, errors.New(ErrInvalidStructure, "Incorrect end-device address format")
+		return pubSubRegistration{}, errors.New(errors.Structural, "Incorrect end-device address format")
 	}
 	devEUI, err := hex.DecodeString(query[1])
 	if err != nil {
-		return pubSubRegistration{}, errors.New(ErrInvalidStructure, err)
+		return pubSubRegistration{}, errors.New(errors.Structural, err)
 	}
 
 	// Check configuration in body
 	body := make([]byte, req.ContentLength)
 	n, err := req.Body.Read(body)
 	if err != nil && err != io.EOF {
-		return pubSubRegistration{}, errors.New(ErrInvalidStructure, err)
+		return pubSubRegistration{}, errors.New(errors.Structural, err)
 	}
 	params := &struct {
 		AppEUI  string `json:"app_eui"`
@@ -107,23 +106,23 @@ func (p PubSub) parse(req *http.Request) (core.Registration, error) {
 		NwkSKey string `json:"nwks_key"`
 	}{}
 	if err := json.Unmarshal(body[:n], params); err != nil {
-		return pubSubRegistration{}, errors.New(ErrInvalidStructure, "Unable to unmarshal the request body")
+		return pubSubRegistration{}, errors.New(errors.Structural, "Unable to unmarshal the request body")
 	}
 
 	// Verify each request parameter
 	nwkSKey, err := hex.DecodeString(params.NwkSKey)
 	if err != nil || len(nwkSKey) != 16 {
-		return pubSubRegistration{}, errors.New(ErrInvalidStructure, "Incorrect network session key")
+		return pubSubRegistration{}, errors.New(errors.Structural, "Incorrect network session key")
 	}
 
 	appEUI, err := hex.DecodeString(params.AppEUI)
 	if err != nil || len(appEUI) != 8 {
-		return pubSubRegistration{}, errors.New(ErrInvalidStructure, "Incorrect application eui")
+		return pubSubRegistration{}, errors.New(errors.Structural, "Incorrect application eui")
 	}
 
 	params.Url = strings.Trim(params.Url, " ")
 	if len(params.Url) <= 0 {
-		return pubSubRegistration{}, errors.New(ErrInvalidStructure, "Incorrect application url")
+		return pubSubRegistration{}, errors.New(errors.Structural, "Incorrect application url")
 	}
 
 	// Create actual registration

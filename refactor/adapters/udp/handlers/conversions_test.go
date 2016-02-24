@@ -7,9 +7,9 @@ import (
 	"reflect"
 	"testing"
 
-	. "github.com/TheThingsNetwork/ttn/core/errors"
 	core "github.com/TheThingsNetwork/ttn/refactor"
 	"github.com/TheThingsNetwork/ttn/semtech"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"github.com/brocaar/lorawan"
@@ -25,7 +25,7 @@ func TestConvertRXPKPacket(t *testing.T) {
 	tests := []convertRXPKTest{
 		genRXPKWithFullMetadata(&convertRXPKTest{WantError: nil}),
 		genRXPKWithPartialMetadata(&convertRXPKTest{WantError: nil}),
-		genRXPKWithNoData(&convertRXPKTest{WantError: pointer.String(ErrInvalidStructure)}),
+		genRXPKWithNoData(&convertRXPKTest{WantError: pointer.String(string(errors.Structural))}),
 	}
 
 	for _, test := range tests {
@@ -51,7 +51,7 @@ func TestConvertTXPKPacket(t *testing.T) {
 		convertToTXPKTest{
 			CorePacket: core.NewRPacket(lorawan.PHYPayload{}, core.Metadata{}),
 			TXPK:       semtech.TXPK{},
-			WantError:  pointer.String(ErrInvalidStructure),
+			WantError:  pointer.String(string(errors.Structural)),
 		},
 	}
 

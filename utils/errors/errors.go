@@ -9,15 +9,24 @@ import (
 	"time"
 )
 
+type Nature string
+
+const (
+	Structural     Nature = "Invalid structure"           // Requests, parameters or inputs are wrong. Retry won't work.
+	Behavioural           = "Wrong but expected behavior" // No error but the result isn't the one expected
+	Operational           = "Invalid operation"           // An operation failed due to external causes, a retry could work
+	Implementation        = "Illegal call"                // Method not implemented or unsupported for the given structure
+)
+
 // Failure states for fault that occurs during a process.
 type Failure struct {
-	Nature    string    // Kind of error, used a comparator
+	Nature    Nature    // Kind of error, used a comparator
 	Timestamp time.Time // The moment the error was created
 	Fault     error     // The source of the failure
 }
 
 // NewFailure creates a new Failure from a source error
-func New(k string, src interface{}) Failure {
+func New(nat Nature, src interface{}) Failure {
 	var fault error
 	switch src.(type) {
 	case string:
@@ -29,7 +38,7 @@ func New(k string, src interface{}) Failure {
 	}
 
 	failure := Failure{
-		Nature:    k,
+		Nature:    nat,
 		Timestamp: time.Now(),
 		Fault:     fault,
 	}

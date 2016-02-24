@@ -10,7 +10,6 @@ import (
 	"reflect"
 	"time"
 
-	. "github.com/TheThingsNetwork/ttn/core/errors"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/readwriter"
 	"github.com/boltdb/bolt"
@@ -31,7 +30,7 @@ type Interface struct {
 func New(name string) (Interface, error) {
 	db, err := bolt.Open(name, 0600, &bolt.Options{Timeout: time.Second})
 	if err != nil {
-		return Interface{}, errors.New(ErrFailedOperation, err)
+		return Interface{}, errors.New(errors.Operational, err)
 	}
 	return Interface{db}, nil
 }
@@ -52,7 +51,7 @@ func (itf Interface) Store(bucketName string, key []byte, entries []StorageEntry
 	for _, entry := range entries {
 		m, err := entry.MarshalBinary()
 		if err != nil {
-			return errors.New(ErrInvalidStructure, err)
+			return errors.New(errors.Structural, err)
 		}
 		marshalled = append(marshalled, m)
 	}
@@ -60,7 +59,7 @@ func (itf Interface) Store(bucketName string, key []byte, entries []StorageEntry
 	err := itf.db.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(bucketName))
 		if bucket == nil {
-			return errors.New(ErrFailedOperation, "storage unreachable")
+			return errors.New(errors.Operational, "storage unreachable")
 		}
 		w := readwriter.New(bucket.Get(key))
 		for _, m := range marshalled {
@@ -68,10 +67,10 @@ func (itf Interface) Store(bucketName string, key []byte, entries []StorageEntry
 		}
 		data, err := w.Bytes()
 		if err != nil {
-			return errors.New(ErrInvalidStructure, err)
+			return errors.New(errors.Structural, err)
 		}
 		if err := bucket.Put(key, data); err != nil {
-			return errors.New(ErrFailedOperation, err)
+			return errors.New(errors.Operational, err)
 		}
 		return nil
 	})
@@ -90,11 +89,11 @@ func (itf Interface) Lookup(bucketName string, key []byte, shape StorageEntry) (
 	err := itf.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(bucketName))
 		if bucket == nil {
-			return errors.New(ErrFailedOperation, "storage unreachable")
+			return errors.New(errors.Operational, "storage unreachable")
 		}
 		rawEntry = bucket.Get(key)
 		if rawEntry == nil {
-			return errors.New(ErrWrongBehavior, fmt.Sprintf("Not found %+v", key))
+			return errors.New(errors.Behavioural, fmt.Sprintf("Not found %+v", key))
 		}
 		return nil
 	})
@@ -117,7 +116,7 @@ func (itf Interface) Lookup(bucketName string, key []byte, shape StorageEntry) (
 			if err == io.EOF {
 				break
 			}
-			return nil, errors.New(ErrFailedOperation, err)
+			return nil, errors.New(errors.Operational, err)
 		}
 	}
 	return entries.Interface(), nil
@@ -128,10 +127,10 @@ func (itf Interface) Flush(bucketName string, key []byte) error {
 	return itf.db.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(bucketName))
 		if bucket == nil {
-			return errors.New(ErrFailedOperation, "storage unreachable")
+			return errors.New(errors.Operational, "storage unreachable")
 		}
 		if err := bucket.Delete(key); err != nil {
-			return errors.New(ErrFailedOperation, err)
+			return errors.New(errors.Operational, err)
 		}
 		return nil
 	})
@@ -144,7 +143,7 @@ func (itf Interface) Replace(bucketName string, key []byte, entries []StorageEnt
 	for _, entry := range entries {
 		m, err := entry.MarshalBinary()
 		if err != nil {
-			return errors.New(ErrInvalidStructure, err)
+			return errors.New(errors.Structural, err)
 		}
 		marshalled = append(marshalled, m)
 	}
@@ -152,10 +151,10 @@ func (itf Interface) Replace(bucketName string, key []byte, entries []StorageEnt
 	return itf.db.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(bucketName))
 		if bucket == nil {
-			return errors.New(ErrFailedOperation, "storage unreachable")
+			return errors.New(errors.Operational, "storage unreachable")
 		}
 		if err := bucket.Delete(key); err != nil {
-			return errors.New(ErrFailedOperation, err)
+			return errors.New(errors.Operational, err)
 		}
 		w := readwriter.New(bucket.Get(key))
 		for _, m := range marshalled {
@@ -163,10 +162,10 @@ func (itf Interface) Replace(bucketName string, key []byte, entries []StorageEnt
 		}
 		data, err := w.Bytes()
 		if err != nil {
-			return errors.New(ErrInvalidStructure, err)
+			return errors.New(errors.Structural, err)
 		}
 		if err := bucket.Put(key, data); err != nil {
-			return errors.New(ErrFailedOperation, err)
+			return errors.New(errors.Operational, err)
 		}
 		return nil
 	})
@@ -176,10 +175,10 @@ func (itf Interface) Replace(bucketName string, key []byte, entries []StorageEnt
 func (itf Interface) Reset(bucketName string) error {
 	return itf.db.Update(func(tx *bolt.Tx) error {
 		if err := tx.DeleteBucket([]byte(bucketName)); err != nil {
-			return errors.New(ErrFailedOperation, err)
+			return errors.New(errors.Operational, err)
 		}
 		if _, err := tx.CreateBucketIfNotExists([]byte(bucketName)); err != nil {
-			return errors.New(ErrFailedOperation, err)
+			return errors.New(errors.Operational, err)
 		}
 		return nil
 	})
