@@ -45,7 +45,12 @@ func (r mqttRecipient) MarshalBinary() ([]byte, error) {
 	rw := readwriter.New(nil)
 	rw.Write(r.up)
 	rw.Write(r.down)
-	return rw.Bytes()
+
+	data, err := rw.Bytes()
+	if err != nil {
+		return nil, errors.New(ErrInvalidStructure, err)
+	}
+	return data, nil
 }
 
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
@@ -57,5 +62,10 @@ func (r *mqttRecipient) UnmarshalBinary(data []byte) error {
 	rw := readwriter.New(data)
 	rw.Read(func(data []byte) { r.up = string(data) })
 	rw.Read(func(data []byte) { r.down = string(data) })
-	return rw.Err()
+
+	err := rw.Err()
+	if err != nil {
+		return errors.New(ErrInvalidStructure, err)
+	}
+	return nil
 }
