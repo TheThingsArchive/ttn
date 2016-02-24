@@ -43,6 +43,81 @@ func TestMQTTSend(t *testing.T) {
 			WantResponse: nil,
 			WantError:    pointer.String(ErrWrongBehavior),
 		},
+		{
+			Desc:   "invalid packet | 1 recipient | No response",
+			Packet: nil,
+			Recipients: []testRecipient{
+				{
+					Response:  nil,
+					TopicUp:   "up1",
+					TopicDown: "down1",
+				},
+			},
+
+			WantData:     nil,
+			WantResponse: nil,
+			WantError:    pointer.String(ErrInvalidStructure),
+		},
+		{
+			Desc:   "1 packet | 2 recipient | No response",
+			Packet: []byte("TheThingsNetwork"),
+			Recipients: []testRecipient{
+				{
+					Response:  nil,
+					TopicUp:   "up1",
+					TopicDown: "down1",
+				},
+				{
+					Response:  nil,
+					TopicUp:   "up2",
+					TopicDown: "down2",
+				},
+			},
+
+			WantData:     []byte("TheThingsNetwork"),
+			WantResponse: nil,
+			WantError:    pointer.String(ErrWrongBehavior),
+		},
+		{
+			Desc:   "1 packet | 2 recipients | #1 answer ",
+			Packet: []byte("TheThingsNetwork"),
+			Recipients: []testRecipient{
+				{
+					Response:  []byte("IoT Rocks"),
+					TopicUp:   "up1",
+					TopicDown: "down1",
+				},
+				{
+					Response:  nil,
+					TopicUp:   "up2",
+					TopicDown: "down2",
+				},
+			},
+
+			WantData:     []byte("TheThingsNetwork"),
+			WantResponse: []byte("IoT Rocks"),
+			WantError:    nil,
+		},
+		{
+			Desc:   "1 packet | 2 recipients | both answers ",
+			Packet: []byte("TheThingsNetwork"),
+			Recipients: []testRecipient{
+				{
+					Response:  []byte("IoT Rocks"),
+					TopicUp:   "up1",
+					TopicDown: "down1",
+				},
+				{
+					Response:  []byte("IoT Rocks"),
+					TopicUp:   "up2",
+					TopicDown: "down2",
+				},
+			},
+
+			WantData:     []byte("TheThingsNetwork"),
+			WantResponse: nil,
+			WantError:    pointer.String(ErrWrongBehavior),
+		},
 	}
 
 	for _, test := range tests {
