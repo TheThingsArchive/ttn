@@ -4,8 +4,10 @@
 package mqtt
 
 import (
+	"reflect"
 	"testing"
 
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	//"github.com/TheThingsNetwork/ttn/utils/pointer"
 )
@@ -52,3 +54,40 @@ type testRecipient struct {
 // ----- OPERATE utilities
 
 // ----- CHECK utilities
+func checkErrors(t *testing.T, want *string, got error) {
+	if got == nil {
+		if want == nil {
+			Ok(t, "Check errors")
+			return
+		}
+		Ko(t, "Expected error to be {%s} but got nothing", *want)
+		return
+	}
+
+	if want == nil {
+		Ko(t, "Expected no error but got {%v}", got)
+		return
+	}
+
+	if got.(errors.Failure).Nature == *want {
+		Ok(t, "Check errors")
+		return
+	}
+	Ko(t, "Expected error to be {%s} but got {%v}", *want, got)
+}
+
+func checkResponses(t *testing.T, want []byte, got []byte) {
+	if reflect.DeepEqual(want, got) {
+		Ok(t, "Check responses")
+		return
+	}
+	Ko(t, "Received response does not match expectations.\nWant: %s\nGot:  %s", string(want), string(got))
+}
+
+func checkData(t *testing.T, want []byte, got []byte) {
+	if reflect.DeepEqual(want, got) {
+		Ok(t, "Check data")
+		return
+	}
+	Ko(t, "Received data does not match expectations.\nWant: %s\nGot:  %s", string(want), string(got))
+}
