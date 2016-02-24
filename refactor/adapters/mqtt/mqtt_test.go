@@ -16,6 +16,8 @@ import (
 	//"github.com/TheThingsNetwork/ttn/utils/pointer"
 )
 
+const brokerUrl = "0.0.0.0:1683"
+
 func TestMQTTSend(t *testing.T) {
 	tests := []struct {
 		Desc       string          // Test Description
@@ -81,7 +83,7 @@ func (p testPacket) String() string {
 
 // ----- BUILD utilities
 func createAdapter(t *testing.T) (*MQTT.Client, core.Adapter) {
-	client, err := NewClient("testClient", "0.0.0.0", Tcp)
+	client, err := NewClient("testClient", brokerUrl, Tcp)
 	if err != nil {
 		panic(err)
 	}
@@ -91,14 +93,20 @@ func createAdapter(t *testing.T) (*MQTT.Client, core.Adapter) {
 }
 
 func createServers(recipients []testRecipient) (*MQTT.Client, chan []byte) {
-	client, err := NewClient("FakeServerClient", "0.0.0.0", Tcp)
+	client, err := NewClient("FakeServerClient", brokerUrl, Tcp)
 	if err != nil {
 		panic(err)
 	}
 
-	chresp := make(chan []byte)
+	chresp := make(chan []byte, len(recipients))
 	for _, r := range recipients {
 		token := client.Subscribe(r.TopicUp, 2, func(client *MQTT.Client, msg MQTT.Message) {
+			if r.Response != nil {
+				token := client.Publish(r.TopicDown, 2, false, r.Response)
+				if token.Wait() && token.Error() != nil {
+					panic(token.Error())
+				}
+			}
 			chresp <- msg.Payload()
 		})
 		if token.Wait() && token.Error() != nil {
