@@ -38,7 +38,7 @@ func TestConvertRXPKPacket(t *testing.T) {
 
 type convertToTXPKTest struct {
 	TXPK       semtech.TXPK
-	CorePacket core.Packet
+	CorePacket core.RPacket
 	WantError  *string
 }
 

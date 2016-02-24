@@ -4,27 +4,35 @@
 package udp
 
 import (
-	"net"
+	"time"
 
+	. "github.com/TheThingsNetwork/ttn/core/errors"
 	core "github.com/TheThingsNetwork/ttn/refactor"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 )
 
 // udpAckNacker represents an AckNacker for a udp adapter
 type udpAckNacker struct {
-	Chack chan<- AckMsg
-	Addr  *net.UDPAddr // The actual udp address related to that
+	Chresp chan<- MsgRes
 }
 
 // Ack implements the core.Adapter interface
 func (an udpAckNacker) Ack(p core.Packet) error {
-	cherr := make(chan error)
-	an.Chack <- AckMsg{Type: AN_ACK, Addr: an.Addr, Packet: p, Cherr: cherr}
-	return <-cherr
+	defer close(an.Chresp)
+	data, err := p.MarshalBinary()
+	if err != nil {
+		return errors.New(ErrInvalidStructure, err)
+	}
+	select {
+	case an.Chresp <- MsgRes(data):
+		return nil
+	case <-time.After(time.Millisecond * 50):
+		return errors.New(ErrFailedOperation, "Unable to send ack")
+	}
 }
 
 // Ack implements the core.Adapter interface
 func (an udpAckNacker) Nack() error {
-	cherr := make(chan error)
-	an.Chack <- AckMsg{Type: AN_NACK, Addr: an.Addr, Packet: nil}
-	return <-cherr
+	defer close(an.Chresp)
+	return nil
 }

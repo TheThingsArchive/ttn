@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"reflect"
 	"strings"
+	"time"
 
 	. "github.com/TheThingsNetwork/ttn/core/errors"
 	core "github.com/TheThingsNetwork/ttn/refactor"
@@ -20,93 +21,90 @@ import (
 
 type Semtech struct{}
 
-// HandleNack implements the udp.Handler interface
-func (s Semtech) HandleNack(chresp chan<- udp.HandlerMsg) {
-	close(chresp) // There is no notion of nack in the semtech protocol
-}
-
-// HandleAck implements the udp.Handler interface
-func (s Semtech) HandleAck(packet core.Packet, chresp chan<- udp.HandlerMsg) {
-	defer close(chresp)
-
-	if packet == nil {
-		return
-	}
-
-	// For the downlink, we have to send a PULL_RESP packet which hold a TXPK.
-	txpk, err := packet2txpk(packet)
-	if err != nil {
-		chresp <- udp.HandlerMsg{Type: udp.HANDLER_ERROR, Data: []byte(err.Error())}
-		return
-	}
-
-	// Step 3, marshal the packet and send it to the gateway
-	raw, err := semtech.Packet{
-		Version:    semtech.VERSION,
-		Identifier: semtech.PULL_RESP,
-		Payload:    &semtech.Payload{TXPK: &txpk},
-	}.MarshalBinary()
-
-	if err != nil {
-		chresp <- udp.HandlerMsg{Type: udp.HANDLER_ERROR, Data: []byte(err.Error())}
-		return
-	}
-
-	chresp <- udp.HandlerMsg{Type: udp.HANDLER_RESP, Data: raw}
-}
-
 // HandleDatagram implements the udp.Handler interface
-func (s Semtech) HandleDatagram(data []byte, chresp chan<- udp.HandlerMsg) {
-	defer close(chresp)
+func (s Semtech) Handle(conn chan<- udp.MsgUdp, packets chan<- udp.MsgReq, msg udp.MsgUdp) {
 	pkt := new(semtech.Packet)
-	err := pkt.UnmarshalBinary(data)
+	err := pkt.UnmarshalBinary(msg.Data)
 	if err != nil {
-		chresp <- udp.HandlerMsg{Type: udp.HANDLER_ERROR, Data: []byte(err.Error())}
+		// TODO Log error
 		return
 	}
 
 	switch pkt.Identifier {
 	case semtech.PULL_DATA: // PULL_DATA -> Respond to the recipient with an ACK
 		stats.MarkMeter("semtech_adapter.pull_data")
-		pullAck, err := semtech.Packet{
+		data, err := semtech.Packet{
 			Version:    semtech.VERSION,
 			Token:      pkt.Token,
 			Identifier: semtech.PULL_ACK,
 		}.MarshalBinary()
 		if err != nil {
-			chresp <- udp.HandlerMsg{Type: udp.HANDLER_ERROR, Data: []byte(err.Error())}
+			// TODO Log error
 			return
 		}
-		chresp <- udp.HandlerMsg{Type: udp.HANDLER_RESP, Data: pullAck}
+		conn <- udp.MsgUdp{
+			Addr: msg.Addr,
+			Data: data,
+		}
 	case semtech.PUSH_DATA: // PUSH_DATA -> Transfer all RXPK to the component
 		stats.MarkMeter("semtech_adapter.push_data")
-		pushAck, err := semtech.Packet{
+		data, err := semtech.Packet{
 			Version:    semtech.VERSION,
 			Token:      pkt.Token,
 			Identifier: semtech.PUSH_ACK,
 		}.MarshalBinary()
 		if err != nil {
-			chresp <- udp.HandlerMsg{Type: udp.HANDLER_ERROR, Data: []byte(err.Error())}
+			// TODO Log error
 			return
 		}
-		chresp <- udp.HandlerMsg{Type: udp.HANDLER_RESP, Data: pushAck}
+		conn <- udp.MsgUdp{
+			Addr: msg.Addr,
+			Data: data,
+		}
 
 		if pkt.Payload == nil {
 			return
 		}
 
 		for _, rxpk := range pkt.Payload.RXPK {
-			pktOut, err := rxpk2packet(rxpk)
-			if err != nil {
-				chresp <- udp.HandlerMsg{Type: udp.HANDLER_ERROR, Data: []byte(err.Error())}
-				continue
-			}
-			rawPkt, err := pktOut.MarshalBinary()
-			if err != nil {
-				chresp <- udp.HandlerMsg{Type: udp.HANDLER_ERROR, Data: []byte(err.Error())}
-				continue
-			}
-			chresp <- udp.HandlerMsg{Type: udp.HANDLER_OUT, Data: rawPkt}
+			go func(rxpk semtech.RXPK) {
+				pktOut, err := rxpk2packet(rxpk)
+				if err != nil {
+					// TODO Log error
+					return
+				}
+				data, err := pktOut.MarshalBinary()
+				if err != nil {
+					// TODO Log error
+					return
+				}
+				chresp := make(chan udp.MsgRes)
+				packets <- udp.MsgReq{Data: data, Chresp: chresp}
+				select {
+				case resp := <-chresp:
+					pkt := new(core.RPacket)
+					if err := pkt.UnmarshalBinary(resp); err != nil {
+						return
+					}
+					txpk, err := packet2txpk(*pkt)
+					if err != nil {
+						// TODO Log error
+						return
+					}
+
+					data, err := semtech.Packet{
+						Version:    semtech.VERSION,
+						Identifier: semtech.PULL_RESP,
+						Payload:    &semtech.Payload{TXPK: &txpk},
+					}.MarshalBinary()
+					if err != nil {
+						// TODO Log error
+						return
+					}
+					conn <- udp.MsgUdp{Addr: msg.Addr, Data: data}
+				case <-time.After(time.Second * 2):
+				}
+			}(rxpk)
 		}
 	default:
 	}
@@ -155,15 +153,9 @@ func rxpk2packet(p semtech.RXPK) (core.Packet, error) {
 	return core.NewRPacket(payload, metadata), nil
 }
 
-func packet2txpk(p core.Packet) (semtech.TXPK, error) {
-	// Interpret the packet as a Router Packet.
-	rPkt, ok := p.(core.RPacket)
-	if !ok {
-		return semtech.TXPK{}, errors.New(ErrInvalidStructure, "Unable to interpret packet as a RPacket")
-	}
-
+func packet2txpk(p core.RPacket) (semtech.TXPK, error) {
 	// Step 1, convert the physical payload to a base64 string (without the padding)
-	raw, err := rPkt.Payload().MarshalBinary()
+	raw, err := p.Payload().MarshalBinary()
 	if err != nil {
 		return semtech.TXPK{}, errors.New(ErrInvalidStructure, err)
 	}
@@ -173,7 +165,7 @@ func packet2txpk(p core.Packet) (semtech.TXPK, error) {
 
 	// Step 2, copy every compatible metadata from the packet to the TXPK packet.
 	// We are possibly loosing information here.
-	metadataValue := reflect.ValueOf(rPkt.Metadata())
+	metadataValue := reflect.ValueOf(p.Metadata())
 	metadataStruct := metadataValue.Type()
 	txpkStruct := reflect.ValueOf(&txpk).Elem()
 	for i := 0; i < metadataStruct.NumField(); i += 1 {

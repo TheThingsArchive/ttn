@@ -15,74 +15,40 @@ import (
 
 // Adapter represents a udp adapter which sends and receives packet via UDP
 type Adapter struct {
-	Handler
-	ctx  log.Interface // Just a logger
-	conn chan UdpMsg   // Channel used to manage response transmissions made by multiple goroutines
-	next chan OutMsg   // Incoming valid packets are pushed to this channel and consume by an outsider
-	ack  chan AckMsg   // Channel used to consume ack or nack sent to the adapter
+	ctx      log.Interface    // Just a logger
+	conn     chan MsgUdp      // Channel used to manage response transmissions made by multiple goroutines
+	packets  chan MsgReq      // Incoming valid packets are pushed to this channel and consume by an outsider
+	handlers chan interface{} // Manage handlers, could be either a Handler or a []byte (new handler or handling action)
 }
 
 // Handler represents a datagram and packet handler used by the adapter to process packets
 type Handler interface {
-	// HandleAck handles a positive response to a transmitter
-	HandleAck(p core.Packet, resp chan<- HandlerMsg)
-
-	// HandleNack handles a negative response to a transmitter
-	HandleNack(resp chan<- HandlerMsg)
-
-	// HandleDatagram handles incoming datagram from a gateway transmitter to the network
-	HandleDatagram(data []byte, resp chan<- HandlerMsg)
+	// Handle handles incoming datagram from a gateway transmitter to the network
+	Handle(conn chan<- MsgUdp, chresp chan<- MsgReq, msg MsgUdp)
 }
 
-// HandlerMsg type materializes response messages emitted by the UdpHandler
-type HandlerMsg struct {
-	Data []byte
-	Type HandlerMsgType
-}
-
-type HandlerMsgType byte
-
-const (
-	HANDLER_RESP  HandlerMsgType = iota // A response towards the udp transmitter
-	HANDLER_OUT                         // A response towards the network
-	HANDLER_ERROR                       // An error during the process
-)
-
-// AckMsg type materializes ack or nack messages flowing into the Ack channel
-type AckMsg struct {
-	Packet core.Packet
-	Type   AckMsgType
-	Addr   *net.UDPAddr
-	Cherr  chan<- error
-}
-
-type AckMsgType bool
-
-const (
-	AN_ACK  AckMsgType = true
-	AN_NACK AckMsgType = false
-)
-
-// UdpMsg type materializes response messages transmitted towards existing recipients (commonly, gateways).
-type UdpMsg struct {
+// MsgUdp type materializes response messages transmitted towards existing recipients (commonly, gateways).
+type MsgUdp struct {
 	Data []byte       // The raw byte sequence that has to be sent
-	Conn *net.UDPConn // Provide if you intent to change the current adapter connection
 	Addr *net.UDPAddr // The target recipient address
 }
 
 // OutMsg type materializes valid uplink messages coming from a given recipient
-type OutMsg struct {
-	Data []byte       // The actual message
-	Addr *net.UDPAddr // The address of the source emitter
+type MsgReq struct {
+	Data   []byte      // The actual message
+	Chresp chan MsgRes // A dedicated response channel
 }
 
+// Message sent through the response channel of MsgReq
+type MsgRes []byte // The actual message
+
 // NewAdapter constructs and allocates a new udp adapter
-func NewAdapter(port uint, handler Handler, ctx log.Interface) (*Adapter, error) {
+func NewAdapter(port uint, ctx log.Interface) (*Adapter, error) {
 	a := Adapter{
-		Handler: handler,
-		ctx:     ctx,
-		conn:    make(chan UdpMsg),
-		next:    make(chan OutMsg),
+		ctx:      ctx,
+		conn:     make(chan MsgUdp),
+		packets:  make(chan MsgReq),
+		handlers: make(chan interface{}),
 	}
 
 	// Create the udp connection and start listening with a goroutine
@@ -94,10 +60,9 @@ func NewAdapter(port uint, handler Handler, ctx log.Interface) (*Adapter, error)
 		return nil, errors.New(ErrInvalidStructure, fmt.Sprintf("Invalid port %v", port))
 	}
 
-	go a.monitorConnection()
-	go a.consumeAck()
-	a.conn <- UdpMsg{Conn: udpConn}
-	go a.listen(udpConn) // Terminates when the connection is closed
+	go a.monitorConnection(udpConn)
+	go a.monitorHandlers()
+	go a.listen(udpConn)
 
 	return &a, nil
 }
@@ -114,10 +79,8 @@ func (a *Adapter) GetRecipient(raw []byte) (core.Recipient, error) {
 
 // Next implements the core.Adapter interface
 func (a *Adapter) Next() ([]byte, core.AckNacker, error) {
-	msg := <-a.next
-	return msg.Data, udpAckNacker{
-		Addr: msg.Addr,
-	}, nil
+	msg := <-a.packets
+	return msg.Data, udpAckNacker{Chresp: msg.Chresp}, nil
 }
 
 // NextRegistration implements the core.Adapter interface
@@ -125,7 +88,13 @@ func (a *Adapter) NextRegistration() (core.Registration, core.AckNacker, error) 
 	return udpRegistration{}, nil, errors.New(ErrNotSupported, "NextRegistration not supported on udp adapter")
 }
 
-// listen Handle incoming packets and forward them. Runs in its own goroutine.
+func (a *Adapter) Bind(h Handler) {
+	a.handlers <- h
+}
+
+// listen Handle incoming packets and forward them.
+//
+// Runs in its own goroutine.
 func (a *Adapter) listen(conn *net.UDPConn) {
 	defer conn.Close()
 	a.ctx.WithField("address", conn.LocalAddr()).Debug("Starting accept loop")
@@ -138,30 +107,19 @@ func (a *Adapter) listen(conn *net.UDPConn) {
 		}
 
 		a.ctx.Debug("Incoming datagram")
-		chresp := make(chan HandlerMsg)
-		go a.HandleDatagram(buf[:n], chresp)
-		a.handleResp(addr, chresp)
+		a.handlers <- MsgUdp{Addr: addr, Data: buf[:n]}
 	}
 }
 
 // monitorConnection manages udpConnection of the adapter and send message through that connection
 //
 // That function executes into a single goroutine and is the only one allowed to write UDP messages.
-// Doing this makes sure that only 1 goroutine is interacting with the connection. It thereby allows
-// the connection to be replaced at any moment (in case of failure for instance) without disturbing
-// the ongoing process.
-func (a *Adapter) monitorConnection() {
-	var udpConn *net.UDPConn
+// Doing this makes sure that only 1 goroutine is interacting with the connection.
+//
+// Runs in its own goroutine
+func (a *Adapter) monitorConnection(udpConn *net.UDPConn) {
 	for msg := range a.conn {
-		if msg.Conn != nil { // Change the connection
-			if udpConn != nil {
-				a.ctx.Debug("Define new UDP connection")
-				udpConn.Close()
-			}
-			udpConn = msg.Conn
-		}
-
-		if udpConn != nil && msg.Data != nil { // Send the given udp message
+		if msg.Data != nil { // Send the given udp message
 			if _, err := udpConn.WriteToUDP(msg.Data, msg.Addr); err != nil {
 				a.ctx.WithError(err).Error("Error while sending UDP message")
 			}
@@ -172,53 +130,24 @@ func (a *Adapter) monitorConnection() {
 	}
 }
 
-// handleResp consumes message from chresp and forward them to the adapter via the Out or Udp
-// channel.
+// monitorHandlers manages handler registration and execution concurrently. One can pass a new
+// handler through the handlers channel to declare a new one or, send directly data through the
+// channel to ask every defined handler to handle them.
 //
-// The function is called each time a chan HandlerMsg is created (meaning that we need to handle an
-// uplink or a response) to handle the response(s) coming from the message handler.
-func (a *Adapter) handleResp(addr *net.UDPAddr, chresp <-chan HandlerMsg) error {
-	for msg := range chresp {
-		switch msg.Type {
-		case HANDLER_RESP:
-			a.conn <- UdpMsg{
-				Data: msg.Data,
-				Addr: addr,
-			}
-		case HANDLER_OUT:
-			a.next <- OutMsg{
-				Data: msg.Data,
-				Addr: addr,
-			}
-		case HANDLER_ERROR:
-			err := fmt.Errorf(string(msg.Data))
-			a.ctx.WithError(err).Error("Unable to handle response")
-			return errors.New(ErrFailedOperation, err)
-		default:
-			err := errors.New(ErrFailedOperation, "Internal unexpected error while handling response")
-			a.ctx.Error(err.Error())
-			return err
-		}
-	}
-	return nil
-}
+// Runs in its own goroutine
+func (a *Adapter) monitorHandlers() {
+	var handlers []Handler
 
-// consumeAck consumes messages from the Ack channel and forward them to handleResp
-//
-// The function is launched in its own goroutine and run concurrently with other consumers of the
-// adapter. It basically pipes acknowledgement to the right channels after having derouted the
-// processing to the handler.
-func (a *Adapter) consumeAck() {
-	for msg := range a.ack {
-		chresp := make(chan HandlerMsg)
-		switch msg.Type {
-		case AN_ACK:
-			go a.HandleAck(msg.Packet, chresp)
-		case AN_NACK:
-			go a.HandleNack(chresp)
+	for msg := range a.handlers {
+		switch msg.(type) {
+		case Handler:
+			handlers = append(handlers, msg.(Handler))
+		case MsgUdp:
+			for _, h := range handlers {
+				go func(h Handler, msg MsgUdp) {
+					h.Handle(a.conn, a.packets, msg)
+				}(h, msg.(MsgUdp))
+			}
 		}
-		err := a.handleResp(msg.Addr, chresp)
-		msg.Cherr <- err
-		close(msg.Cherr)
 	}
 }

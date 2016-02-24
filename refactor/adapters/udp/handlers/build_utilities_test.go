@@ -78,10 +78,11 @@ func genAdapter(t *testing.T, port uint) (*udp.Adapter, chan interface{}) {
 	// Logging
 	ctx := GetLogger(t, "Adapter")
 
-	adapter, err := udp.NewAdapter(port, Semtech{}, ctx)
+	adapter, err := udp.NewAdapter(port, ctx)
 	if err != nil {
 		panic(err)
 	}
+	adapter.Bind(Semtech{})
 	next := make(chan interface{})
 	go func() {
 		for {
