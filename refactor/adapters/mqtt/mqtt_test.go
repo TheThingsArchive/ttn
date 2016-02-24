@@ -4,6 +4,7 @@
 package mqtt
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 	"time"
@@ -120,9 +121,9 @@ func TestMQTTSend(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
+	for i, test := range tests {
 		// Describe
-		Desc(t, test.Desc)
+		Desc(t, fmt.Sprintf("#%d: %s", i, test.Desc))
 
 		// Build
 		aclient, adapter := createAdapter(t)
@@ -146,6 +147,44 @@ func TestMQTTSend(t *testing.T) {
 		aclient.Disconnect(0)
 		sclient.Disconnect(0)
 		<-time.After(time.Millisecond * 50)
+	}
+}
+
+func TestMQTTRecipient(t *testing.T) {
+	{
+		Desc(t, "Marshal / Unmarshal valid recipient")
+		rm := NewRecipient("topicup", "topicdown")
+		ru := new(mqttRecipient)
+		data, err := rm.MarshalBinary()
+		if err == nil {
+			err = ru.UnmarshalBinary(data)
+		}
+		checkErrors(t, nil, err)
+	}
+
+	{
+		Desc(t, "Unmarshal from nil pointer")
+		rm := NewRecipient("topicup", "topicdown")
+		var ru *mqttRecipient
+		data, err := rm.MarshalBinary()
+		if err == nil {
+			err = ru.UnmarshalBinary(data)
+		}
+		checkErrors(t, pointer.String(ErrInvalidStructure), err)
+	}
+
+	{
+		Desc(t, "Unmarshal nil data")
+		ru := new(mqttRecipient)
+		err := ru.UnmarshalBinary(nil)
+		checkErrors(t, pointer.String(ErrInvalidStructure), err)
+	}
+
+	{
+		Desc(t, "Unmarshal wrong data")
+		ru := new(mqttRecipient)
+		err := ru.UnmarshalBinary([]byte{1, 2, 3, 4})
+		checkErrors(t, pointer.String(ErrInvalidStructure), err)
 	}
 }
 
