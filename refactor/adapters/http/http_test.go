@@ -56,28 +56,28 @@ func TestSend(t *testing.T) {
 	recipients := []testRecipient{
 		testRecipient{
 			httpRecipient: httpRecipient{
-				url:    "0.0.0.0:3010",
+				url:    "0.0.0.0:3110",
 				method: "POST",
 			},
 			Behavior: "AlwaysReject",
 		},
 		testRecipient{
 			httpRecipient: httpRecipient{
-				url:    "0.0.0.0:3011",
+				url:    "0.0.0.0:3111",
 				method: "POST",
 			},
 			Behavior: "AlwaysAccept",
 		},
 		testRecipient{
 			httpRecipient: httpRecipient{
-				url:    "0.0.0.0:3012",
+				url:    "0.0.0.0:3112",
 				method: "POST",
 			},
 			Behavior: "AlwaysReject",
 		},
 		testRecipient{
 			httpRecipient: httpRecipient{
-				url:    "0.0.0.0:3013",
+				url:    "0.0.0.0:3113",
 				method: "POST",
 			},
 			Behavior: "AlwaysReject",
@@ -136,7 +136,7 @@ func TestSend(t *testing.T) {
 	ctx := GetLogger(t, "Adapter")
 
 	// Build
-	adapter, err := NewAdapter(3015, toHttpRecipient(recipients), ctx)
+	adapter, err := NewAdapter(3115, toHttpRecipient(recipients), ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -144,6 +144,7 @@ func TestSend(t *testing.T) {
 	for _, r := range recipients {
 		servers = append(servers, genMockServer(r))
 	}
+	<-time.After(100 * time.Millisecond)
 
 	for _, test := range tests {
 		// Describe
