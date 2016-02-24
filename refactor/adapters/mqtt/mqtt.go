@@ -98,7 +98,7 @@ func (a *Adapter) Send(p core.Packet, recipients ...core.Recipient) ([]byte, err
 
 	a.ctx.Debug("Sending Packet")
 
-	// Prepare gorund for parrallel mqtt publication
+	// Prepare ground for parrallel mqtt publications
 	nb := len(recipients)
 	cherr := make(chan error, nb)
 	chresp := make(chan []byte, nb)
@@ -161,7 +161,7 @@ func (a *Adapter) Send(p core.Packet, recipients ...core.Recipient) ([]byte, err
 				if ok {
 					chresp <- data
 				}
-			case <-time.After(2 * time.Second): // Timeout
+			case <-time.After(time.Second): // Timeout
 			}
 		}(recipient, chdown)
 	}
