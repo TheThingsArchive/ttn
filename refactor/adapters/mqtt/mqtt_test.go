@@ -18,9 +18,9 @@ import (
 
 func TestMQTTSend(t *testing.T) {
 	tests := []struct {
-		Desc      string          // Test Description
-		Packet    []byte          // Handy representation of the packet to send
-		Recipient []testRecipient // List of recipient to send
+		Desc       string          // Test Description
+		Packet     []byte          // Handy representation of the packet to send
+		Recipients []testRecipient // List of recipient to send
 
 		WantData     []byte  // Expected Data on the recipient
 		WantResponse []byte  // Expected Response from the Send method
@@ -32,20 +32,25 @@ func TestMQTTSend(t *testing.T) {
 		Desc(t, test.Desc)
 
 		// Build
-		// Generate new adapter
-		// Generate reception servers
+		aclient, adapter := createAdapter(t)
+		sclient, chresp := createServers(test.Recipients)
 
 		// Operate
-		// Send data to recipients
-		// Retrieve data from servers
+		data, err := trySend(adapter, test.Packet, test.Recipients)
+		var resp []byte
+		select {
+		case resp = <-chresp:
+		case <-time.After(time.Millisecond * 100):
+		}
 
 		// Check
-		// Check if data has been received
-		// Check if response is valid
-		// Check if error is valid
+		checkErrors(t, test.WantError, err)
+		checkData(t, test.WantData, data)
+		checkResponses(t, test.WantResponse, resp)
 
 		// Clean
-		// Disconnect clients
+		aclient.Disconnect(0)
+		sclient.Disconnect(0)
 	}
 }
 
