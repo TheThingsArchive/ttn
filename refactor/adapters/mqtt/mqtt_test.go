@@ -144,8 +144,8 @@ func TestMQTTSend(t *testing.T) {
 		checkResponses(t, test.WantResponse, resp)
 
 		// Clean
-		aclient.Disconnect(0)
-		sclient.Disconnect(0)
+		aclient.Disconnect(250)
+		sclient.Disconnect(250)
 		<-time.After(time.Millisecond * 50)
 	}
 }
