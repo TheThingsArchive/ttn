@@ -107,6 +107,11 @@ func (a *Adapter) Send(p core.Packet, r ...core.Recipient) ([]byte, error) {
 	return nil, errors.New(ErrNotSupported, "Send not supported on udp adapter")
 }
 
+// GetRecipient implements the core.Adapter interface
+func (a *Adapter) GetRecipient(raw []byte) (core.Recipient, error) {
+	return nil, errors.New(ErrNotSupported, "GetRecipient not supported on udp adapter")
+}
+
 // Next implements the core.Adapter interface
 func (a *Adapter) Next() ([]byte, core.AckNacker, error) {
 	msg := <-a.next

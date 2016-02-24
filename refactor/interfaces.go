@@ -24,9 +24,10 @@ type AckNacker interface {
 
 type Adapter interface {
 	Send(p Packet, r ...Recipient) ([]byte, error)
-	//Join(r JoinRequest, r ...Recipient) (JoinResponse, error)
+	GetRecipient(raw []byte) (Recipient, error)
 	Next() ([]byte, AckNacker, error)
 	NextRegistration() (Registration, AckNacker, error)
+	//Join(r JoinRequest, r ...Recipient) (JoinResponse, error)
 }
 
 type Packet interface {

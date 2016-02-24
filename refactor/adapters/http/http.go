@@ -209,6 +209,15 @@ func (a *Adapter) Send(p core.Packet, recipients ...core.Recipient) ([]byte, err
 	return <-chresp, nil
 }
 
+// GetRecipient implements the core.Adapter interface
+func (a *Adapter) GetRecipient(raw []byte) (core.Recipient, error) {
+	recipient := new(httpRecipient)
+	if err := recipient.UnmarshalBinary(raw); err != nil {
+		return nil, errors.New(ErrInvalidStructure, err)
+	}
+	return *recipient, nil
+}
+
 // Next implements the core.Adapter interface
 func (a *Adapter) Next() ([]byte, core.AckNacker, error) {
 	p := <-a.packets
