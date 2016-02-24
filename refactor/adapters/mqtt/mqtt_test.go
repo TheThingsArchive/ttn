@@ -12,8 +12,8 @@ import (
 	. "github.com/TheThingsNetwork/ttn/core/errors"
 	core "github.com/TheThingsNetwork/ttn/refactor"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
+	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
-	//"github.com/TheThingsNetwork/ttn/utils/pointer"
 )
 
 const brokerUrl = "0.0.0.0:1683"
@@ -27,7 +27,23 @@ func TestMQTTSend(t *testing.T) {
 		WantData     []byte  // Expected Data on the recipient
 		WantResponse []byte  // Expected Response from the Send method
 		WantError    *string // Expected error nature returned by the Send method
-	}{}
+	}{
+		{
+			Desc:   "1 packet | 1 recipient | No response",
+			Packet: []byte("TheThingsNetwork"),
+			Recipients: []testRecipient{
+				{
+					Response:  nil,
+					TopicUp:   "up1",
+					TopicDown: "down1",
+				},
+			},
+
+			WantData:     []byte("TheThingsNetwork"),
+			WantResponse: nil,
+			WantError:    pointer.String(ErrWrongBehavior),
+		},
+	}
 
 	for _, test := range tests {
 		// Describe
@@ -36,12 +52,13 @@ func TestMQTTSend(t *testing.T) {
 		// Build
 		aclient, adapter := createAdapter(t)
 		sclient, chresp := createServers(test.Recipients)
+		<-time.After(time.Millisecond * 50)
 
 		// Operate
-		data, err := trySend(adapter, test.Packet, test.Recipients)
-		var resp []byte
+		resp, err := trySend(adapter, test.Packet, test.Recipients)
+		var data []byte
 		select {
-		case resp = <-chresp:
+		case data = <-chresp:
 		case <-time.After(time.Millisecond * 100):
 		}
 
@@ -53,6 +70,7 @@ func TestMQTTSend(t *testing.T) {
 		// Clean
 		aclient.Disconnect(0)
 		sclient.Disconnect(0)
+		<-time.After(time.Millisecond * 50)
 	}
 }
 
@@ -100,18 +118,20 @@ func createServers(recipients []testRecipient) (*MQTT.Client, chan []byte) {
 
 	chresp := make(chan []byte, len(recipients))
 	for _, r := range recipients {
-		token := client.Subscribe(r.TopicUp, 2, func(client *MQTT.Client, msg MQTT.Message) {
-			if r.Response != nil {
-				token := client.Publish(r.TopicDown, 2, false, r.Response)
-				if token.Wait() && token.Error() != nil {
-					panic(token.Error())
+		go func(r testRecipient) {
+			token := client.Subscribe(r.TopicUp, 2, func(client *MQTT.Client, msg MQTT.Message) {
+				if r.Response != nil {
+					token := client.Publish(r.TopicDown, 2, false, r.Response)
+					if token.Wait() && token.Error() != nil {
+						panic(token.Error())
+					}
 				}
+				chresp <- msg.Payload()
+			})
+			if token.Wait() && token.Error() != nil {
+				panic(token.Error())
 			}
-			chresp <- msg.Payload()
-		})
-		if token.Wait() && token.Error() != nil {
-			panic(token.Error())
-		}
+		}(r)
 	}
 	return client, chresp
 }
@@ -140,7 +160,7 @@ func trySend(adapter core.Adapter, packet []byte, recipients []testRecipient) ([
 	select {
 	case resp := <-chresp:
 		return resp.Data, resp.Error
-	case <-time.After(time.Millisecond * 200):
+	case <-time.After(time.Millisecond * 1250):
 		return nil, nil
 	}
 }
