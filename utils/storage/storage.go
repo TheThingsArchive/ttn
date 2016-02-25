@@ -15,14 +15,24 @@ import (
 	"github.com/boltdb/bolt"
 )
 
-// storageEntry offers a friendly interface on which the storage will operate.
-// Basically, a storageEntry is nothing more than a binary marshaller/unmarshaller.
-type StorageEntry interface {
+// Entry offers a friendly interface on which the storage will operate.
+// Basically, a Entry is nothing more than a binary marshaller/unmarshaller.
+type Entry interface {
 	encoding.BinaryMarshaler
 	encoding.BinaryUnmarshaler
 }
 
-type Interface struct {
+type Interface interface {
+	Init(name string) error
+	Store(name string, key []byte, entries []Entry) error
+	Replace(name string, key []byte, entries []Entry) error
+	Lookup(name string, key []byte, shape Entry) (interface{}, error)
+	Flush(name string, key []byte) error
+	Reset(name string) error
+	Close() error
+}
+
+type store struct {
 	db *bolt.DB
 }
 
@@ -30,13 +40,13 @@ type Interface struct {
 func New(name string) (Interface, error) {
 	db, err := bolt.Open(name, 0600, &bolt.Options{Timeout: time.Second})
 	if err != nil {
-		return Interface{}, errors.New(errors.Operational, err)
+		return nil, errors.New(errors.Operational, err)
 	}
-	return Interface{db}, nil
+	return store{db}, nil
 }
 
 // Init initializes the given bolt bucket by creating (if not already exists) an empty bucket
-func (itf Interface) Init(bucketName string) error {
+func (itf store) Init(bucketName string) error {
 	return itf.db.Update(func(tx *bolt.Tx) error {
 		_, err := tx.CreateBucketIfNotExists([]byte(bucketName))
 		return err
@@ -45,7 +55,7 @@ func (itf Interface) Init(bucketName string) error {
 
 // Store put a new set of entries in the given bolt database. It adds the entries to an existing set
 // or create a new set.
-func (itf Interface) Store(bucketName string, key []byte, entries []StorageEntry) error {
+func (itf store) Store(bucketName string, key []byte, entries []Entry) error {
 	var marshalled [][]byte
 
 	for _, entry := range entries {
@@ -83,7 +93,7 @@ func (itf Interface) Store(bucketName string, key []byte, entries []StorageEntry
 // The shape is used as a template for retrieving and creating the data. All entries extracted from
 // the database will be interpreted as instance of shape and the return result will be a slice of
 // the same type of shape.
-func (itf Interface) Lookup(bucketName string, key []byte, shape StorageEntry) (interface{}, error) {
+func (itf store) Lookup(bucketName string, key []byte, shape Entry) (interface{}, error) {
 	// First, lookup the raw entries
 	var rawEntry []byte
 	err := itf.db.View(func(tx *bolt.Tx) error {
@@ -109,7 +119,7 @@ func (itf Interface) Lookup(bucketName string, key []byte, shape StorageEntry) (
 	for {
 		r.Read(func(data []byte) {
 			entry := reflect.New(entryType).Interface()
-			entry.(StorageEntry).UnmarshalBinary(data)
+			entry.(Entry).UnmarshalBinary(data)
 			entries = reflect.Append(entries, reflect.ValueOf(entry).Elem())
 		})
 		if err = r.Err(); err != nil {
@@ -123,7 +133,7 @@ func (itf Interface) Lookup(bucketName string, key []byte, shape StorageEntry) (
 }
 
 // Flush empties each entry of a bucket associated to a given device
-func (itf Interface) Flush(bucketName string, key []byte) error {
+func (itf store) Flush(bucketName string, key []byte) error {
 	return itf.db.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(bucketName))
 		if bucket == nil {
@@ -137,7 +147,7 @@ func (itf Interface) Flush(bucketName string, key []byte) error {
 }
 
 // Replace stores entries in the database by replacing them by a new set
-func (itf Interface) Replace(bucketName string, key []byte, entries []StorageEntry) error {
+func (itf store) Replace(bucketName string, key []byte, entries []Entry) error {
 	var marshalled [][]byte
 
 	for _, entry := range entries {
@@ -172,7 +182,7 @@ func (itf Interface) Replace(bucketName string, key []byte, entries []StorageEnt
 }
 
 // Reset resets a given bucket from a given bolt database
-func (itf Interface) Reset(bucketName string) error {
+func (itf store) Reset(bucketName string) error {
 	return itf.db.Update(func(tx *bolt.Tx) error {
 		if err := tx.DeleteBucket([]byte(bucketName)); err != nil {
 			return errors.New(errors.Operational, err)
@@ -182,4 +192,12 @@ func (itf Interface) Reset(bucketName string) error {
 		}
 		return nil
 	})
+}
+
+// Close terminates the db connection
+func (itf store) Close() error {
+	if err := itf.db.Close(); err != nil {
+		return errors.New(errors.Operational, err)
+	}
+	return nil
 }
