@@ -141,6 +141,7 @@ func (p rpacket) String() string {
 }
 
 type BPacket interface {
+	Packet
 	Commands() []lorawan.MACCommand
 	DevEUI() lorawan.EUI64
 	FCnt() uint32
@@ -193,4 +194,96 @@ func (p bpacket) ValidateMIC(key lorawan.AES128Key) (bool, error) {
 // Commands implements the core.BPacket interface
 func (p bpacket) Commands() []lorawan.MACCommand {
 	return p.rpacket.payload.MACPayload.(*lorawan.MACPayload).FHDR.FOpts
+}
+
+type HPacket interface {
+	Packet
+	AppEUI() lorawan.EUI64
+	DevEUI() lorawan.EUI64
+	Payload() []byte    // FRMPayload
+	Metadata() Metadata // TTL on down, DutyCycle + Rssi on Up
+}
+
+// hpacket implements the HPacket interface
+type hpacket struct {
+	appEUI   lorawan.EUI64
+	devEUI   lorawan.EUI64
+	payload  []byte
+	metadata Metadata
+}
+
+// NewHPacket constructs a new Handler packet
+func NewHPacket(a lorawan.EUI64, d lorawan.EUI64, p []byte, m Metadata) HPacket {
+	if p == nil {
+		p = make([]byte, 0)
+	}
+	return &hpacket{
+		appEUI:   a,
+		devEUI:   d,
+		payload:  p,
+		metadata: m,
+	}
+}
+
+// AppEUI implements the core.HPacket interface
+func (p hpacket) AppEUI() lorawan.EUI64 {
+	return p.appEUI
+}
+
+// DevEUI implements the core.HPacket interface
+func (p hpacket) DevEUI() lorawan.EUI64 {
+	return p.devEUI
+}
+
+// Payload implements the core.HPacket interface
+func (p hpacket) Payload() []byte {
+	return p.payload
+}
+
+// Metadata implements the core.Metadata interface
+func (p hpacket) Metadata() Metadata {
+	return p.metadata
+}
+
+// MarshalBinary implements the encoding.BinaryMarshaler interface
+func (p hpacket) MarshalBinary() ([]byte, error) {
+	dataMetadata, err := p.Metadata().MarshalJSON()
+	if err != nil {
+		return nil, errors.New(errors.Structural, err)
+	}
+
+	rw := readwriter.New(nil)
+	rw.Write(p.appEUI)
+	rw.Write(p.devEUI)
+	rw.Write(p.payload)
+	rw.Write(dataMetadata)
+	return rw.Bytes()
+}
+
+// UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
+func (p *hpacket) UnmarshalBinary(data []byte) error {
+	if p == nil {
+		return errors.New(errors.Structural, "Cannot unmarshal nil hpacket")
+	}
+
+	rw := readwriter.New(data)
+	rw.Read(func(data []byte) { copy(p.appEUI[:], data) })
+	rw.Read(func(data []byte) { copy(p.devEUI[:], data) })
+	rw.Read(func(data []byte) { p.payload = data })
+	var dataMetadata []byte
+	rw.Read(func(data []byte) { dataMetadata = data })
+	if err := p.metadata.UnmarshalJSON(dataMetadata); err != nil {
+		return errors.New(errors.Structural, err)
+	}
+	return nil
+}
+
+// String implements the fmt.Stringer interface
+func (p hpacket) String() string {
+	str := "Packet {"
+	str += fmt.Sprintf("\n\t%s}", p.metadata.String())
+	str += fmt.Sprintf("\n\tAppEUI:%+x\n,", p.appEUI)
+	str += fmt.Sprintf("\n\tDevEUI:%+x\n,", p.devEUI)
+	str += fmt.Sprintf("\n\tPayload:%v\n}", p.Payload)
+	return str
 }
