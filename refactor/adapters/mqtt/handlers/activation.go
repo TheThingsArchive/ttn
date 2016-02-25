@@ -19,7 +19,7 @@ func (a Activation) Topic() string {
 	return "+/devices/+/activations"
 }
 
-func (a Activation) Handle(client *MQTT.Client, chpkt chan<- PktReq, chreg chan<- RegReq, msg MQTT.Message) {
+func (a Activation) Handle(client Client, chpkt chan<- PktReq, chreg chan<- RegReq, msg MQTT.Message) error {
 	topicInfos := strings.Split(msg.Topic(), "/")
 	appEUIStr := topicInfos[0]
 	devEUIStr := topicInfos[2]
@@ -27,14 +27,14 @@ func (a Activation) Handle(client *MQTT.Client, chpkt chan<- PktReq, chreg chan<
 	if devEUIStr != "personalized" {
 		// TODO Log warning
 		//a.ctx.WithField("Device Address", devEUI).Warn("OTAA not yet supported. Unable to register device")
-		return
+		return nil
 	}
 
 	payload := msg.Payload()
 	if len(payload) != 36 {
 		// TODO Log warning
 		//a.ctx.WithField("Payload", payload).Error("Invalid registration payload")
-		return
+		return nil
 	}
 
 	var appEUI lorawan.EUI64
@@ -52,7 +52,7 @@ func (a Activation) Handle(client *MQTT.Client, chpkt chan<- PktReq, chreg chan<
 	if token.Wait() && token.Error() != nil {
 		// TODO Log Error
 		// a.ctx.WithError(token.Error()).Error("Unable to subscribe")
-		return
+		return nil
 	}
 
 	chreg <- RegReq{
@@ -65,10 +65,11 @@ func (a Activation) Handle(client *MQTT.Client, chpkt chan<- PktReq, chreg chan<
 		},
 		Chresp: nil,
 	}
+	return nil
 }
 
-func (a Activation) handleReception(chpkt chan<- PktReq) MQTT.MessageHandler {
-	return func(client *MQTT.Client, msg MQTT.Message) {
+func (a Activation) handleReception(chpkt chan<- PktReq) func(client Client, msg MQTT.Message) {
+	return func(client Client, msg MQTT.Message) {
 		// TODO
 	}
 }

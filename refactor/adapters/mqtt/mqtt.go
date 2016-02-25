@@ -25,7 +25,7 @@ type Adapter struct {
 // Handler defines topic-specific handler.
 type Handler interface {
 	Topic() string
-	Handle(client Client, chpkt chan<- PktReq, chreg chan<- RegReq, msg MQTT.Message)
+	Handle(client Client, chpkt chan<- PktReq, chreg chan<- RegReq, msg MQTT.Message) error
 }
 
 // Message sent through the response channel of a pktReq or regReq
@@ -200,7 +200,9 @@ func (a *Adapter) Bind(h Handler) error {
 	ctx.Info("Subscribe new handler")
 	token := a.Subscribe(h.Topic(), 2, func(client Client, msg MQTT.Message) {
 		ctx.Debug("Handle new mqtt message")
-		h.Handle(client, a.packets, a.registrations, msg)
+		if err := h.Handle(client, a.packets, a.registrations, msg); err != nil {
+			ctx.WithError(err).Warn("Unable to handle mqtt message")
+		}
 	})
 	if token.Wait() && token.Error() != nil {
 		ctx.WithError(token.Error()).Error("Unable to Subscribe")
