@@ -15,12 +15,37 @@ type RPacket interface {
 	Packet
 	Metadata() Metadata
 	Payload() lorawan.PHYPayload
+	DevEUI() lorawan.EUI64
 }
 
 // rpacket implements the core.RPacket interface
 type rpacket struct {
 	metadata Metadata
 	payload  lorawan.PHYPayload
+}
+
+// NewRPacket construct a new router packet given a payload and metadata
+func NewRPacket(payload lorawan.PHYPayload, metadata Metadata) (RPacket, error) {
+	packet := rpacket{payload: payload, metadata: metadata}
+
+	// Check and extract the devEUI
+	if payload.MACPayload == nil {
+		return nil, errors.New(errors.Structural, "MACPAyload should not be empty")
+	}
+
+	_, ok := payload.MACPayload.(*lorawan.MACPayload)
+	if !ok {
+		return nil, errors.New(errors.Structural, "Packet does not carry a MACPayload")
+	}
+
+	return &packet, nil
+}
+
+// DevEUI implements the core.BPacket interface
+func (p rpacket) DevEUI() lorawan.EUI64 {
+	var devEUI lorawan.EUI64
+	copy(devEUI[4:], p.payload.MACPayload.(*lorawan.MACPayload).FHDR.DevAddr[:])
+	return devEUI
 }
 
 // Metadata implements the core.RPacket interface
@@ -113,4 +138,59 @@ func (p rpacket) String() string {
 	str += fmt.Sprintf("\n\t%s}", p.metadata.String())
 	str += fmt.Sprintf("\n\tPayload%+v\n}", p.payload)
 	return str
+}
+
+type BPacket interface {
+	Commands() []lorawan.MACCommand
+	DevEUI() lorawan.EUI64
+	FCnt() uint32
+	Metadata() Metadata
+	Payload() []byte
+	ValidateMIC(key lorawan.AES128Key) (bool, error)
+}
+
+// bpacket implements the core.BPacket interface
+type bpacket struct {
+	rpacket
+}
+
+// NewBPacket constructs a new broker packets given a payload and metadata
+func NewBPacket(payload lorawan.PHYPayload, metadata Metadata) (BPacket, error) {
+	packet, err := NewRPacket(payload, metadata)
+	if err != nil {
+		return nil, errors.New(errors.Structural, err)
+	}
+
+	macPayload := packet.Payload().MACPayload.(*lorawan.MACPayload)
+	if len(macPayload.FRMPayload) != 1 {
+		return nil, errors.New(errors.Structural, "Invalid frame payload. Expected exactly 1")
+	}
+
+	_, ok := macPayload.FRMPayload[0].(*lorawan.DataPayload)
+	if !ok {
+		return nil, errors.New(errors.Structural, "Invalid frame payload. Expected only data")
+	}
+
+	return bpacket{rpacket: packet.(rpacket)}, nil
+}
+
+// FCnt implements the core.BPacket interface
+func (p bpacket) FCnt() uint32 {
+	return p.payload.MACPayload.(*lorawan.MACPayload).FHDR.FCnt
+}
+
+// Payload implements the core.BPacket interface
+func (p bpacket) Payload() []byte {
+	macPayload := p.rpacket.payload.MACPayload.(*lorawan.MACPayload)
+	return macPayload.FRMPayload[0].(*lorawan.DataPayload).Bytes
+}
+
+// ValidateMIC implements the core.BPacket interface
+func (p bpacket) ValidateMIC(key lorawan.AES128Key) (bool, error) {
+	return p.rpacket.payload.ValidateMIC(key)
+}
+
+// Commands implements the core.BPacket interface
+func (p bpacket) Commands() []lorawan.MACCommand {
+	return p.rpacket.payload.MACPayload.(*lorawan.MACPayload).FHDR.FOpts
 }
