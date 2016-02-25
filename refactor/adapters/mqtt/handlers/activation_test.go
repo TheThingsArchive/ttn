@@ -7,7 +7,6 @@ import (
 	"reflect"
 	"testing"
 
-	//MQTT "git.eclipse.org/gitroot/paho/org.eclipse.paho.mqtt.golang.git"
 	core "github.com/TheThingsNetwork/ttn/refactor"
 	. "github.com/TheThingsNetwork/ttn/refactor/adapters/mqtt"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
@@ -50,8 +49,6 @@ func TestActivation(t *testing.T) {
 		// Check Packets
 	}
 }
-
-// ----- TYPE utilities
 
 // ----- BUILD utilities
 
@@ -159,7 +156,6 @@ func checkRegistrations(t *testing.T, want core.Registration, got core.Registrat
 }
 
 func checkSubscriptions(t *testing.T, want *string, got *string) {
-	// Check if interfaces are nil
 	if got == nil {
 		if want == nil {
 			Ok(t, "Check Subscriptions")
