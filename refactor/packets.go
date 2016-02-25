@@ -5,6 +5,7 @@ package refactor
 
 import (
 	"fmt"
+	"io"
 
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/readwriter"
@@ -286,4 +287,99 @@ func (p hpacket) String() string {
 	str += fmt.Sprintf("\n\tDevEUI:%+x\n,", p.devEUI)
 	str += fmt.Sprintf("\n\tPayload:%v\n}", p.Payload)
 	return str
+}
+
+type APacket interface {
+	Packet
+	Payload() []byte
+	Metadata() []Metadata
+}
+
+// apacket implements the core.APacket interface
+type apacket struct {
+	payload  []byte
+	metadata []Metadata
+}
+
+// NewAPacket constructs a new application packet
+func NewAPacket(payload []byte, metadata []Metadata) (APacket, error) {
+	if len(payload) == 0 {
+		return nil, errors.New(errors.Structural, "Application packet must hold a payload")
+	}
+
+	return &apacket{payload: payload, metadata: metadata}, nil
+}
+
+// Payload implements the core.APacket interface
+func (p apacket) Payload() []byte {
+	return p.payload
+}
+
+// Metadata implements the core.Metadata interface
+func (p apacket) Metadata() []Metadata {
+	return p.metadata
+}
+
+// MarshalBinary implements the encoding.BinaryMarshaler interface
+func (p apacket) MarshalBinary() ([]byte, error) {
+	rw := readwriter.New(nil)
+	for _, m := range p.metadata {
+		data, err := m.MarshalJSON()
+		if err != nil {
+			return nil, errors.New(errors.Structural, err)
+		}
+		rw.Write(data)
+	}
+	data, err := rw.Bytes()
+	if err != nil {
+		return nil, errors.New(errors.Structural, err)
+	}
+
+	rw = readwriter.New(nil)
+	rw.Write(p.payload)
+	rw.Write(data)
+
+	return rw.Bytes()
+}
+
+// UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
+func (p *apacket) UnmarshalBinary(data []byte) error {
+	if p == nil {
+		return errors.New(errors.Structural, "Cannot unmarshal nil apacket")
+	}
+
+	var dataMetadata []byte
+	rw := readwriter.New(data)
+	rw.Read(func(data []byte) { p.payload = data })
+	rw.Read(func(data []byte) { dataMetadata = data })
+	if rw.Err() != nil {
+		return errors.New(errors.Structural, rw.Err())
+	}
+
+	p.metadata = make([]Metadata, 0)
+	rw = readwriter.New(dataMetadata)
+	for {
+		var dataMetadata []byte
+		rw.Read(func(data []byte) { dataMetadata = data })
+		if rw.Err() != nil {
+			err, ok := rw.Err().(errors.Failure)
+			if ok && err.Fault == io.EOF {
+				break
+			}
+			return errors.New(errors.Structural, rw.Err())
+		}
+		metadata := new(Metadata)
+		if err := metadata.UnmarshalJSON(dataMetadata); err != nil {
+			return errors.New(errors.Structural, err)
+		}
+
+		p.metadata = append(p.metadata, *metadata)
+	}
+
+	return nil
+}
+
+// String implements the fmt.Stringer interface
+func (p apacket) String() string {
+	return "TODO"
 }
