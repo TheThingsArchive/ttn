@@ -84,22 +84,31 @@ type testClient struct {
 	connected bool
 }
 
-func newTestClient(failConnect bool, failPublish bool, failSubscribe bool, failUnsubscribe bool) Client {
+func newTestClient(failures ...string) *testClient {
 	client := testClient{failures: make(map[string]*string), connected: true}
 
-	if failConnect {
+	isFailure := func(x string) bool {
+		for _, f := range failures {
+			if f == x {
+				return true
+			}
+		}
+		return false
+	}
+
+	if isFailure("Connect") {
 		client.failures["Connect"] = pointer.String("MockError -> Failed to connect")
 	}
 
-	if failPublish {
+	if isFailure("Publish") {
 		client.failures["Publish"] = pointer.String("MockError -> Failed to publish")
 	}
 
-	if failSubscribe {
+	if isFailure("Subscribe") {
 		client.failures["Subscribe"] = pointer.String("MockError -> Failed to subscribe")
 	}
 
-	if failUnsubscribe {
+	if isFailure("Unsubscribe") {
 		client.failures["Unsubscribe"] = pointer.String("MockError -> Failed to unsubscribe")
 	}
 
