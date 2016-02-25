@@ -14,6 +14,22 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
+func TestActionTopic(t *testing.T) {
+	wantTopic := "+/devices/+/activations"
+
+	// Describe
+	Desc(t, "Topic should equal: %s", wantTopic)
+
+	// Build
+	handler := Activation{}
+
+	// Operate
+	topic := handler.Topic()
+
+	// Check
+	checkTopics(t, wantTopic, topic)
+}
+
 func TestActivationHandle(t *testing.T) {
 	tests := []struct {
 		Desc    string      // The test's description

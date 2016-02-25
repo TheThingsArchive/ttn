@@ -193,7 +193,17 @@ func checkErrors(t *testing.T, want *string, got error) {
 		Ok(t, "Check Errors")
 		return
 	}
+
 	Ko(t, "Expected error to be {%s} but got {%v}", *want, got)
+}
+
+func checkTopics(t *testing.T, want string, got string) {
+	if want == got {
+		Ok(t, "Check Topics")
+		return
+	}
+
+	Ko(t, "Topic does not match expectation.\nWant: %s\nGot:  %s", want, got)
 }
 
 func checkRegistrations(t *testing.T, want core.Registration, got core.Registration) {
