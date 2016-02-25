@@ -213,7 +213,7 @@ func (p testPacket) String() string {
 }
 
 // ----- BUILD utilities
-func createAdapter(t *testing.T) (*MQTT.Client, core.Adapter) {
+func createAdapter(t *testing.T) (Client, core.Adapter) {
 	client, err := NewClient("testClient", brokerUrl, Tcp)
 	if err != nil {
 		panic(err)
@@ -223,7 +223,7 @@ func createAdapter(t *testing.T) (*MQTT.Client, core.Adapter) {
 	return client, adapter
 }
 
-func createServers(recipients []testRecipient) (*MQTT.Client, chan []byte) {
+func createServers(recipients []testRecipient) (Client, chan []byte) {
 	client, err := NewClient("FakeServerClient", brokerUrl, Tcp)
 	if err != nil {
 		panic(err)
@@ -232,7 +232,7 @@ func createServers(recipients []testRecipient) (*MQTT.Client, chan []byte) {
 	chresp := make(chan []byte, len(recipients))
 	for _, r := range recipients {
 		go func(r testRecipient) {
-			token := client.Subscribe(r.TopicUp, 2, func(client *MQTT.Client, msg MQTT.Message) {
+			token := client.Subscribe(r.TopicUp, 2, func(client Client, msg MQTT.Message) {
 				if r.Response != nil {
 					token := client.Publish(r.TopicDown, 2, false, r.Response)
 					if token.Wait() && token.Error() != nil {
