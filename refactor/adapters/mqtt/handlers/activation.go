@@ -10,49 +10,57 @@ import (
 
 	MQTT "git.eclipse.org/gitroot/paho/org.eclipse.paho.mqtt.golang.git"
 	. "github.com/TheThingsNetwork/ttn/refactor/adapters/mqtt"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/brocaar/lorawan"
 )
 
 type Activation struct{}
 
+// Topic implements the mqtt.Handler interface
 func (a Activation) Topic() string {
 	return "+/devices/+/activations"
 }
 
+// Handle implements the mqtt.Handler interface
 func (a Activation) Handle(client Client, chpkt chan<- PktReq, chreg chan<- RegReq, msg MQTT.Message) error {
 	topicInfos := strings.Split(msg.Topic(), "/")
+
+	if len(topicInfos) != 4 {
+		return errors.New(errors.Structural, "Invalid given topic")
+	}
+
 	appEUIStr := topicInfos[0]
 	devEUIStr := topicInfos[2]
 
 	if devEUIStr != "personalized" {
-		// TODO Log warning
-		//a.ctx.WithField("Device Address", devEUI).Warn("OTAA not yet supported. Unable to register device")
-		return nil
+		return errors.New(errors.Implementation, "OTAA not yet supported. Unable to register device")
 	}
 
 	payload := msg.Payload()
 	if len(payload) != 36 {
-		// TODO Log warning
-		//a.ctx.WithField("Payload", payload).Error("Invalid registration payload")
-		return nil
+		return errors.New(errors.Structural, "Invalid registration payload")
 	}
 
 	var appEUI lorawan.EUI64
 	var devEUI lorawan.EUI64
 	var nwkSKey lorawan.AES128Key
 	var appSKey lorawan.AES128Key
-	copy(appEUI[:], []byte(appEUIStr))
 	copy(devEUI[4:], msg.Payload()[:4])
 	copy(nwkSKey[:], msg.Payload()[4:20])
 	copy(appSKey[:], msg.Payload()[20:])
+
+	data, err := hex.DecodeString(appEUIStr)
+	if err != nil || len(data) != 8 {
+		return errors.New(errors.Structural, "Invalid application EUI")
+	}
+	copy(appEUI[:], data[:])
 
 	devEUIStr = hex.EncodeToString(devEUI[:])
 	topic := fmt.Sprintf("%s/%s/%s/%s", appEUIStr, "devices", devEUIStr, "up")
 	token := client.Subscribe(topic, 2, a.handleReception(chpkt))
 	if token.Wait() && token.Error() != nil {
 		// TODO Log Error
-		// a.ctx.WithError(token.Error()).Error("Unable to subscribe")
-		return nil
+		return errors.New(errors.Operational, token.Error())
 	}
 
 	chreg <- RegReq{
