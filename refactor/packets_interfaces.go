@@ -11,13 +11,11 @@ type RPacket interface {
 	Packet
 	Metadata() Metadata
 	Payload() lorawan.PHYPayload
-	DevEUI() lorawan.EUI64
 }
 
 type BPacket interface {
 	Packet
 	Commands() []lorawan.MACCommand
-	DevEUI() lorawan.EUI64
 	FCnt() uint32
 	Metadata() Metadata
 	Payload() []byte
@@ -27,7 +25,6 @@ type BPacket interface {
 type HPacket interface {
 	Packet
 	AppEUI() lorawan.EUI64
-	DevEUI() lorawan.EUI64
 	Payload() []byte    // FRMPayload
 	Metadata() Metadata // TTL on down, DutyCycle + Rssi on Up
 }
@@ -41,7 +38,6 @@ type APacket interface {
 type JPacket interface {
 	Packet
 	AppEUI() lorawan.EUI64
-	DevEUI() lorawan.EUI64
 	DevNonce() [2]byte
 	Metadata() Metadata // Rssi + DutyCycle
 }
@@ -49,7 +45,6 @@ type JPacket interface {
 type CPacket interface {
 	Packet
 	AppEUI() lorawan.EUI64
-	DevEUI() lorawan.EUI64
 	Payload() []byte
 	NwkSKey() lorawan.AES128Key
 }

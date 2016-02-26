@@ -30,12 +30,9 @@ type Adapter interface {
 }
 
 type Packet interface {
+	DevEUI() lorawan.EUI64
 	encoding.BinaryMarshaler
 	fmt.Stringer
-}
-
-type Addressable interface {
-	DevEUI() lorawan.EUI64
 }
 
 type Registration interface {

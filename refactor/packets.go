@@ -26,16 +26,38 @@ const (
 // ----- HELPERS -------------------
 //
 // ---------------------------------
-func ensureUnmarshal(p interface{}, data []byte, t byte) error {
-	if p == nil {
-		return errors.New(errors.Structural, "Cannot unmarshal nil packet")
-	}
 
+// marshalBases is used to marshal in chain several bases which compose a bigger Packet struct
+func marshalBases(t byte, bases ...baseMarshaler) ([]byte, error) {
+	data := []byte{t}
+
+	for _, base := range bases {
+		dataBase, err := base.Marshal()
+		if err != nil {
+			return nil, err
+		}
+		data = append(data, dataBase...)
+	}
+	return data, nil
+}
+
+// unmarshalBases do the reverse operation of marshalBases
+func unmarshalBases(t byte, data []byte, bases ...baseUnmarshaler) error {
 	if len(data) < 1 || data[0] != t {
 		return errors.New(errors.Structural, "Not an expected packet")
 	}
 
-	return nil
+	var rest []byte
+	var err error
+
+	rest = data
+	for _, base := range bases {
+		if rest, err = base.Unmarshal(rest); err != nil {
+			return err
+		}
+	}
+
+	return err
 }
 
 // UnmarshalPacket takes raw binary data and try to marshal it into a given packet interface:
@@ -108,31 +130,12 @@ func NewRPacket(payload lorawan.PHYPayload, metadata Metadata) (RPacket, error) 
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface
 func (p rpacket) MarshalBinary() ([]byte, error) {
-	data := []byte{type_rpacket}
-	dataBaseR, err := p.baserpacket.Marshal()
-	if err != nil {
-		return nil, err
-	}
-	dataBaseM, err := p.basempacket.Marshal()
-	if err != nil {
-		return nil, err
-	}
-
-	return append(data, append(dataBaseR, dataBaseM...)...), nil
+	return marshalBases(type_rpacket, p.baserpacket, p.basempacket)
 }
 
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
 func (p *rpacket) UnmarshalBinary(data []byte) error {
-	if err := ensureUnmarshal(p, data, type_rpacket); err != nil {
-		return err
-	}
-
-	rest, err := p.baserpacket.Unmarshal(data[1:])
-	if err != nil {
-		return err
-	}
-	_, err = p.basempacket.Unmarshal(rest)
-	return err
+	return unmarshalBases(type_rpacket, data, &p.baserpacket, &p.basempacket)
 }
 
 // String implements the Stringer interface
@@ -208,31 +211,12 @@ func (p bpacket) String() string {
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface
 func (p bpacket) MarshalBinary() ([]byte, error) {
-	data := []byte{type_bpacket}
-	dataBaseR, err := p.baserpacket.Marshal()
-	if err != nil {
-		return nil, err
-	}
-	dataBaseM, err := p.basempacket.Marshal()
-	if err != nil {
-		return nil, err
-	}
-
-	return append(data, append(dataBaseR, dataBaseM...)...), nil
+	return marshalBases(type_bpacket, p.baserpacket, p.basempacket)
 }
 
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
 func (p *bpacket) UnmarshalBinary(data []byte) error {
-	if err := ensureUnmarshal(p, data, type_bpacket); err != nil {
-		return err
-	}
-
-	rest, err := p.baserpacket.Unmarshal(data[1:])
-	if err != nil {
-		return err
-	}
-	_, err = p.basempacket.Unmarshal(rest)
-	return err
+	return unmarshalBases(type_bpacket, data, &p.baserpacket, &p.basempacket)
 }
 
 // ---------------------------------
@@ -267,40 +251,12 @@ func NewHPacket(appEUI lorawan.EUI64, devEUI lorawan.EUI64, payload []byte, meta
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface
 func (p hpacket) MarshalBinary() ([]byte, error) {
-	data := []byte{type_hpacket}
-	dataBaseH, err := p.basehpacket.Marshal()
-	if err != nil {
-		return nil, err
-	}
-	dataBaseA, err := p.baseapacket.Marshal()
-	if err != nil {
-		return nil, err
-	}
-	dataBaseM, err := p.basempacket.Marshal()
-	if err != nil {
-		return nil, err
-	}
-
-	// data | dataBaseH | dataBaseA | dataBaseM
-	return append(append(data, append(dataBaseH, dataBaseA...)...), dataBaseM...), nil
+	return marshalBases(type_hpacket, p.basehpacket, p.baseapacket, p.basempacket)
 }
 
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
 func (p *hpacket) UnmarshalBinary(data []byte) error {
-	if err := ensureUnmarshal(p, data, type_hpacket); err != nil {
-		return err
-	}
-
-	rest, err := p.basehpacket.Unmarshal(data[1:])
-	if err != nil {
-		return err
-	}
-	rest, err = p.baseapacket.Unmarshal(rest)
-	if err != nil {
-		return err
-	}
-	_, err = p.basempacket.Unmarshal(rest)
-	return err
+	return unmarshalBases(type_hpacket, data, &p.basehpacket, &p.baseapacket, &p.basempacket)
 }
 
 // String implements the fmt.Stringer interface
@@ -322,81 +278,38 @@ func (p hpacket) String() string {
 // apacket implements the core.APacket interface
 type apacket struct {
 	baseapacket
-	metadata []Metadata
+	devEUI baseapacket
+	basegpacket
 }
 
 // NewAPacket constructs a new application packet
-func NewAPacket(payload []byte, metadata []Metadata) (APacket, error) {
+func NewAPacket(payload []byte, devEUI lorawan.EUI64, metadata []Metadata) (APacket, error) {
 	if len(payload) == 0 {
 		return nil, errors.New(errors.Structural, "Application packet must hold a payload")
 	}
 
 	return &apacket{
 		baseapacket: baseapacket{payload: payload},
-		metadata:    metadata,
+		devEUI:      baseapacket{payload: devEUI[:]},
+		basegpacket: basegpacket{metadata: metadata},
 	}, nil
 }
 
-// Metadata implements the core.Metadata interface
-func (p apacket) Metadata() []Metadata {
-	return p.metadata
+// DevEUI implements the core.APacket interface
+func (p apacket) DevEUI() lorawan.EUI64 {
+	var devEUI lorawan.EUI64
+	copy(devEUI[:], p.devEUI.payload)
+	return devEUI
 }
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface
 func (p apacket) MarshalBinary() ([]byte, error) {
-	rw := readwriter.New(nil)
-	for _, m := range p.metadata {
-		data, err := m.MarshalJSON()
-		if err != nil {
-			return nil, errors.New(errors.Structural, err)
-		}
-		rw.Write(data)
-	}
-	dataMetadata, err := rw.Bytes()
-	if err != nil {
-		return nil, errors.New(errors.Structural, err)
-	}
-	dataBaseA, err := p.baseapacket.Marshal()
-	if err != nil {
-		return nil, err
-	}
-
-	data := []byte{type_apacket}
-	return append(append(data, dataBaseA...), dataMetadata...), nil
+	return marshalBases(type_apacket, p.baseapacket, p.devEUI, p.basegpacket)
 }
 
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
 func (p *apacket) UnmarshalBinary(data []byte) error {
-	if err := ensureUnmarshal(p, data, type_apacket); err != nil {
-		return err
-	}
-
-	rest, err := p.baseapacket.Unmarshal(data[1:])
-	if err != nil {
-		return err
-	}
-
-	p.metadata = make([]Metadata, 0)
-	rw := readwriter.New(rest)
-	for {
-		var dataMetadata []byte
-		rw.Read(func(data []byte) { dataMetadata = data })
-		if rw.Err() != nil {
-			err, ok := rw.Err().(errors.Failure)
-			if ok && err.Nature == errors.Behavioural {
-				break
-			}
-			return errors.New(errors.Structural, rw.Err())
-		}
-		metadata := new(Metadata)
-		if err := metadata.UnmarshalJSON(dataMetadata); err != nil {
-			return errors.New(errors.Structural, err)
-		}
-
-		p.metadata = append(p.metadata, *metadata)
-	}
-
-	return nil
+	return unmarshalBases(type_apacket, data, &p.baseapacket, &p.devEUI, &p.basegpacket)
 }
 
 // String implements the fmt.Stringer interface
@@ -436,40 +349,12 @@ func (p jpacket) DevNonce() [2]byte {
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface
 func (p jpacket) MarshalBinary() ([]byte, error) {
-	data := []byte{type_jpacket}
-	dataBaseH, err := p.basehpacket.Marshal()
-	if err != nil {
-		return nil, err
-	}
-	dataBaseA, err := p.baseapacket.Marshal()
-	if err != nil {
-		return nil, err
-	}
-	dataBaseM, err := p.basempacket.Marshal()
-	if err != nil {
-		return nil, err
-	}
-
-	// data | dataBaseH | dataBaseA | dataBaseM
-	return append(append(data, append(dataBaseH, dataBaseA...)...), dataBaseM...), nil
+	return marshalBases(type_jpacket, p.basehpacket, p.baseapacket, p.basempacket)
 }
 
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
 func (p *jpacket) UnmarshalBinary(data []byte) error {
-	if err := ensureUnmarshal(p, data, type_jpacket); err != nil {
-		return err
-	}
-
-	rest, err := p.basehpacket.Unmarshal(data[1:])
-	if err != nil {
-		return err
-	}
-	rest, err = p.baseapacket.Unmarshal(rest)
-	if err != nil {
-		return err
-	}
-	_, err = p.basempacket.Unmarshal(rest)
-	return err
+	return unmarshalBases(type_jpacket, data, &p.basehpacket, &p.baseapacket, &p.basempacket)
 }
 
 // String implements the fmt.Stringer interface
@@ -509,40 +394,12 @@ func (p cpacket) NwkSKey() lorawan.AES128Key {
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface
 func (p cpacket) MarshalBinary() ([]byte, error) {
-	data := []byte{type_cpacket}
-	dataBaseH, err := p.basehpacket.Marshal()
-	if err != nil {
-		return nil, err
-	}
-	dataBaseA, err := p.baseapacket.Marshal()
-	if err != nil {
-		return nil, err
-	}
-	dataBaseN, err := p.nwkSKey.Marshal()
-	if err != nil {
-		return nil, err
-	}
-
-	// data | dataBaseH | dataBaseA | dataBaseN
-	return append(append(data, append(dataBaseH, dataBaseA...)...), dataBaseN...), nil
+	return marshalBases(type_cpacket, p.basehpacket, p.baseapacket, p.nwkSKey)
 }
 
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
 func (p *cpacket) UnmarshalBinary(data []byte) error {
-	if err := ensureUnmarshal(p, data, type_cpacket); err != nil {
-		return err
-	}
-
-	rest, err := p.basehpacket.Unmarshal(data[1:])
-	if err != nil {
-		return err
-	}
-	rest, err = p.baseapacket.Unmarshal(rest)
-	if err != nil {
-		return err
-	}
-	_, err = p.nwkSKey.Unmarshal(rest)
-	return err
+	return unmarshalBases(type_cpacket, data, &p.basehpacket, &p.baseapacket, &p.nwkSKey)
 }
 
 // String implements the fmt.Stringer interface
@@ -563,6 +420,20 @@ func (p cpacket) String() string {
 // --------------------------------------
 // --------------------------------------
 // --------------------------------------
+//
+// basempacket -> metadata Metadata
+// baserpacket -> payload lorawan.PHYPayload
+// baseapacket -> payload []byte
+// basehpacket -> appEUI lorawan.EUI64, devEUI lorawan.EUI64
+// (ALWAYS LAST) basegpacket -> metadata []Metadata
+
+type baseMarshaler interface {
+	Marshal() ([]byte, error)
+}
+
+type baseUnmarshaler interface {
+	Unmarshal(data []byte) ([]byte, error)
+}
 
 // basempacket is used to compose other packets
 type basempacket struct {
@@ -719,4 +590,50 @@ func (p *baseapacket) Unmarshal(data []byte) ([]byte, error) {
 	rw := readwriter.New(data)
 	rw.Read(func(data []byte) { p.payload = data })
 	return rw.Bytes()
+}
+
+// basegpacket is used to compose other packets
+type basegpacket struct {
+	metadata []Metadata
+}
+
+func (p basegpacket) Metadata() []Metadata {
+	return p.metadata
+}
+
+func (p basegpacket) Marshal() ([]byte, error) {
+	rw := readwriter.New(nil)
+	for _, m := range p.metadata {
+		data, err := m.MarshalJSON()
+		if err != nil {
+			return nil, errors.New(errors.Structural, err)
+		}
+		rw.Write(data)
+	}
+	return rw.Bytes()
+}
+
+func (p *basegpacket) Unmarshal(data []byte) ([]byte, error) {
+	p.metadata = make([]Metadata, 0)
+	rw := readwriter.New(data)
+
+	for {
+		var dataMetadata []byte
+		rw.Read(func(data []byte) { dataMetadata = data })
+		if rw.Err() != nil {
+			err, ok := rw.Err().(errors.Failure)
+			if ok && err.Nature == errors.Behavioural {
+				break
+			}
+			return nil, errors.New(errors.Structural, rw.Err())
+		}
+		metadata := new(Metadata)
+		if err := metadata.UnmarshalJSON(dataMetadata); err != nil {
+			return nil, errors.New(errors.Structural, err)
+		}
+
+		p.metadata = append(p.metadata, *metadata)
+	}
+
+	return nil, nil
 }
