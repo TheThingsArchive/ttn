@@ -38,10 +38,10 @@ func TestActivationHandle(t *testing.T) {
 		Topic   string      // The topic to which the message is addressed
 		Payload []byte      // The message's payload
 
-		WantError        *string           // The expected error from the handler
-		WantSubscription *string           // The topic to which a subscription is expected
-		WantRegistration core.Registration // The expected registration towards the adapter
-		WantPacket       []byte            // The expected packet towards the adapter
+		WantError        *string            // The expected error from the handler
+		WantSubscription *string            // The topic to which a subscription is expected
+		WantRegistration core.HRegistration // The expected registration towards the adapter
+		WantPacket       []byte             // The expected packet towards the adapter
 	}{
 		{
 			Desc:   "Ok client | Valid Topic | Valid Payload",

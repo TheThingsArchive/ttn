@@ -20,7 +20,7 @@ import (
 func TestSend(t *testing.T) {
 	Desc(t, "Send is not supported")
 	adapter, _ := genAdapter(t, 33000)
-	_, err := adapter.Send(core.RPacket{})
+	_, err := adapter.Send(nil)
 	CheckErrors(t, pointer.String(string(errors.Implementation)), err)
 }
 
@@ -53,28 +53,28 @@ func TestNext(t *testing.T) {
 			Adapter:   adapter,
 			Packet:    genPUSH_ACK([]byte{0x22, 0x35}),
 			WantAck:   semtech.Packet{},
-			WantNext:  core.RPacket{},
+			WantNext:  nil,
 			WantError: nil,
 		},
 		{ // Uplink PUSH_DATA with no RXPK
 			Adapter:   adapter,
 			Packet:    genPUSH_DATANoRXPK([]byte{0x22, 0x35}),
 			WantAck:   genPUSH_ACK([]byte{0x22, 0x35}),
-			WantNext:  core.RPacket{},
+			WantNext:  nil,
 			WantError: nil,
 		},
 		{ // Uplink PULL_DATA
 			Adapter:   adapter,
 			Packet:    genPULL_DATA([]byte{0x62, 0xfa}),
 			WantAck:   genPULL_ACK([]byte{0x62, 0xfa}),
-			WantNext:  core.RPacket{},
+			WantNext:  nil,
 			WantError: nil,
 		},
 		{ // Uplink PUSH_DATA with no encoded payload
 			Adapter:   adapter,
 			Packet:    genPUSH_DATANoPayload([]byte{0x22, 0x35}),
 			WantAck:   genPUSH_ACK([]byte{0x22, 0x35}),
-			WantNext:  core.RPacket{},
+			WantNext:  nil,
 			WantError: nil,
 		},
 	}
@@ -103,14 +103,17 @@ func getNextPacket(next chan interface{}) (core.Packet, error) {
 			err    error
 			packet []byte
 		})
-		var packet core.RPacket
-		err := packet.UnmarshalBinary(res.packet)
+		itf, err := core.UnmarshalPacket(res.packet)
 		if err != nil {
 			panic(err)
 		}
-		return packet, res.err
+		pkt, ok := itf.(core.RPacket)
+		if !ok {
+			return itf.(core.Packet), res.err
+		}
+		return pkt, res.err
 	case <-time.After(100 * time.Millisecond):
-		return core.RPacket{}, nil
+		return nil, nil
 	}
 }
 

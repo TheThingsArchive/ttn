@@ -6,7 +6,6 @@ package handlers
 import (
 	core "github.com/TheThingsNetwork/ttn/refactor"
 	. "github.com/TheThingsNetwork/ttn/refactor/adapters/http"
-	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/brocaar/lorawan"
 )
 
@@ -18,27 +17,22 @@ type pubSubRegistration struct {
 	devEUI    lorawan.EUI64
 }
 
-// Recipient implements` the core.Registration interface
+// Recipient implements the core.Registration interface
 func (r pubSubRegistration) Recipient() core.Recipient {
 	return r.recipient
 }
 
 // AppEUI implements the core.Registration interface
-func (r pubSubRegistration) AppEUI() (lorawan.EUI64, error) {
-	return r.appEUI, nil
-}
-
-// AppSKey implements the core.Registration interface
-func (r pubSubRegistration) AppSKey() (lorawan.AES128Key, error) {
-	return lorawan.AES128Key{}, errors.New(errors.Implementation, "AppSKey noy supported on pubsub registration")
+func (r pubSubRegistration) AppEUI() lorawan.EUI64 {
+	return r.appEUI
 }
 
 // DevEUI implements the core.Registration interface
-func (r pubSubRegistration) DevEUI() (lorawan.EUI64, error) {
-	return r.devEUI, nil
+func (r pubSubRegistration) DevEUI() lorawan.EUI64 {
+	return r.devEUI
 }
 
-// NwkSKey implement the core.Registration interface
-func (r pubSubRegistration) NwkSKey() (lorawan.AES128Key, error) {
-	return r.nwkSKey, nil
+// NwkSKey implements the core.Registration interface
+func (r pubSubRegistration) NwkSKey() lorawan.AES128Key {
+	return r.nwkSKey
 }

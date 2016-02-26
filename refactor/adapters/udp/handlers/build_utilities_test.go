@@ -306,7 +306,7 @@ func genRXPKWithFullMetadata(test *convertRXPKTest) convertRXPKTest {
 	phyPayload := genPHYPayload(true)
 	rxpk := genRXPK(phyPayload)
 	metadata := genMetadata(rxpk)
-	test.CorePacket = core.NewRPacket(phyPayload, metadata)
+	test.CorePacket, _ = core.NewRPacket(phyPayload, metadata)
 	test.RXPK = rxpk
 	return *test
 }
@@ -321,7 +321,7 @@ func genRXPKWithPartialMetadata(test *convertRXPKTest) convertRXPKTest {
 	rxpk.Time = nil
 	rxpk.Size = nil
 	metadata := genMetadata(rxpk)
-	test.CorePacket = core.NewRPacket(phyPayload, metadata)
+	test.CorePacket, _ = core.NewRPacket(phyPayload, metadata)
 	test.RXPK = rxpk
 	return *test
 }
@@ -343,7 +343,7 @@ func genCoreFullMetadata(test *convertToTXPKTest) convertToTXPKTest {
 	metadata.Rssi = nil
 	metadata.Stat = nil
 	test.TXPK = genTXPK(phyPayload, metadata)
-	test.CorePacket = core.NewRPacket(phyPayload, metadata)
+	test.CorePacket, _ = core.NewRPacket(phyPayload, metadata)
 	return *test
 }
 
@@ -352,7 +352,7 @@ func genCoreNoMetadata(test *convertToTXPKTest) convertToTXPKTest {
 	phyPayload := genPHYPayload(false)
 	metadata := core.Metadata{}
 	test.TXPK = genTXPK(phyPayload, metadata)
-	test.CorePacket = core.NewRPacket(phyPayload, metadata)
+	test.CorePacket, _ = core.NewRPacket(phyPayload, metadata)
 	return *test
 }
 
@@ -368,7 +368,7 @@ func genCorePartialMetadata(test *convertToTXPKTest) convertToTXPKTest {
 	metadata.Fdev = nil
 	metadata.Time = nil
 	test.TXPK = genTXPK(phyPayload, metadata)
-	test.CorePacket = core.NewRPacket(phyPayload, metadata)
+	test.CorePacket, _ = core.NewRPacket(phyPayload, metadata)
 	return *test
 }
 
@@ -377,6 +377,6 @@ func genCoreExtraMetadata(test *convertToTXPKTest) convertToTXPKTest {
 	phyPayload := genPHYPayload(false)
 	metadata := genFullMetadata()
 	test.TXPK = genTXPK(phyPayload, metadata)
-	test.CorePacket = core.NewRPacket(phyPayload, metadata)
+	test.CorePacket, _ = core.NewRPacket(phyPayload, metadata)
 	return *test
 }

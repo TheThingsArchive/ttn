@@ -13,7 +13,6 @@ import (
 	. "github.com/TheThingsNetwork/ttn/utils/errors/checks"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
-	"github.com/brocaar/lorawan"
 )
 
 type convertRXPKTest struct {
@@ -49,11 +48,6 @@ func TestConvertTXPKPacket(t *testing.T) {
 		genCorePartialMetadata(&convertToTXPKTest{WantError: nil}),
 		genCoreExtraMetadata(&convertToTXPKTest{WantError: nil}),
 		genCoreNoMetadata(&convertToTXPKTest{WantError: nil}),
-		convertToTXPKTest{
-			CorePacket: core.NewRPacket(lorawan.PHYPayload{}, core.Metadata{}),
-			TXPK:       semtech.TXPK{},
-			WantError:  pointer.String(string(errors.Structural)),
-		},
 	}
 
 	for _, test := range tests {

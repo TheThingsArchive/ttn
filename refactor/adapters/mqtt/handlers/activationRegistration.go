@@ -16,27 +16,27 @@ type activationRegistration struct {
 	appSKey   lorawan.AES128Key
 }
 
-// Recipient implements the core.Registration interface
+// Recipient implements the core.HRegistration interface
 func (r activationRegistration) Recipient() core.Recipient {
 	return r.recipient
 }
 
-// AppEUI implements the core.Registration interface
-func (r activationRegistration) AppEUI() (lorawan.EUI64, error) {
-	return r.appEUI, nil
+// AppEUI implements the core.HRegistration interface
+func (r activationRegistration) AppEUI() lorawan.EUI64 {
+	return r.appEUI
 }
 
-// DevEUI implements the core.Registration interface
-func (r activationRegistration) DevEUI() (lorawan.EUI64, error) {
-	return r.devEUI, nil
+// DevEUI implements the core.HRegistration interface
+func (r activationRegistration) DevEUI() lorawan.EUI64 {
+	return r.devEUI
 }
 
-// AppSKey implements the core.Registration interface
-func (r activationRegistration) AppSKey() (lorawan.AES128Key, error) {
-	return r.appSKey, nil
+// AppSKey implements the core.HRegistration interface
+func (r activationRegistration) AppSKey() lorawan.AES128Key {
+	return r.appSKey
 }
 
-// NwkSKey implements the core.Registration interface
-func (r activationRegistration) NwkSKey() (lorawan.AES128Key, error) {
-	return r.nwkSKey, nil
+// NwkSKey implements the core.HRegistration interface
+func (r activationRegistration) NwkSKey() lorawan.AES128Key {
+	return r.nwkSKey
 }

@@ -15,7 +15,6 @@ import (
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/stats"
 	"github.com/apex/log"
-	"github.com/brocaar/lorawan"
 )
 
 // Adapter type materializes an http adapter which implements the basic http protocol
@@ -81,19 +80,7 @@ func (a *Adapter) Send(p core.Packet, recipients ...core.Recipient) ([]byte, err
 	}
 
 	// Try to define a more helpful context
-	var devEUI *lorawan.EUI64
-	var ctx log.Interface
-	addressable, ok := p.(core.Addressable)
-	if ok {
-		if d, err := addressable.DevEUI(); err == nil {
-			ctx = a.ctx.WithField("devEUI", devEUI)
-			devEUI = &d
-		}
-	}
-	if devEUI == nil {
-		a.ctx.Warn("Unable to retrieve devEUI")
-		ctx = a.ctx
-	}
+	ctx := a.ctx.WithField("devEUI", p.DevEUI())
 	ctx.Debug("Sending Packet")
 
 	// Determine whether it's a broadcast or a direct send
@@ -160,7 +147,7 @@ func (a *Adapter) Send(p core.Packet, recipients ...core.Recipient) ([]byte, err
 						a.registrations <- RegReq{
 							Registration: httpRegistration{
 								recipient: rawRecipient,
-								devEUI:    devEUI,
+								devEUI:    p.DevEUI(),
 							},
 							Chresp: nil,
 						}

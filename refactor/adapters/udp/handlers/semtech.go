@@ -81,11 +81,15 @@ func (s Semtech) Handle(conn chan<- udp.MsgUdp, packets chan<- udp.MsgReq, msg u
 				packets <- udp.MsgReq{Data: data, Chresp: chresp}
 				select {
 				case resp := <-chresp:
-					pkt := new(core.RPacket)
-					if err := pkt.UnmarshalBinary(resp); err != nil {
+					itf, err := core.UnmarshalPacket(resp)
+					if err != nil {
 						return
 					}
-					txpk, err := packet2txpk(*pkt)
+					pkt, ok := itf.(core.RPacket) // NOTE Here we'll handle join-accept
+					if !ok {
+						return
+					}
+					txpk, err := packet2txpk(pkt)
 					if err != nil {
 						// TODO Log error
 						return
@@ -149,7 +153,7 @@ func rxpk2packet(p semtech.RXPK) (core.Packet, error) {
 
 	// At the end, our converted packet hold the same metadata than the RXPK packet but the Data
 	// which as been completely transformed into a lorawan Physical Payload.
-	return core.NewRPacket(payload, metadata), nil
+	return core.NewRPacket(payload, metadata)
 }
 
 func packet2txpk(p core.RPacket) (semtech.TXPK, error) {

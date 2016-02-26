@@ -15,6 +15,7 @@ import (
 	. "github.com/TheThingsNetwork/ttn/utils/errors/checks"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
+	"github.com/brocaar/lorawan"
 )
 
 const brokerUrl = "0.0.0.0:1683"
@@ -211,6 +212,11 @@ func (p testPacket) MarshalBinary() ([]byte, error) {
 // String implements the core.Packet interface
 func (p testPacket) String() string {
 	return string(p.payload)
+}
+
+// DevEUI implements the core.Packet interface
+func (p testPacket) DevEUI() lorawan.EUI64 {
+	return lorawan.EUI64{}
 }
 
 // ----- BUILD utilities

@@ -182,7 +182,7 @@ func checkTopics(t *testing.T, want string, got string) {
 	Ko(t, "Topic does not match expectation.\nWant: %s\nGot:  %s", want, got)
 }
 
-func checkRegistrations(t *testing.T, want core.Registration, got core.Registration) {
+func checkRegistrations(t *testing.T, want core.HRegistration, got core.Registration) {
 	// Check if interfaces are nil
 	if got == nil {
 		if want == nil {
@@ -213,46 +213,32 @@ func checkRegistrations(t *testing.T, want core.Registration, got core.Registrat
 	}
 
 	// Check DevEUIs
-	deWant, err := want.DevEUI()
-	if err != nil {
-		panic("Expected devEUI to be accessible in test registration")
+	if !reflect.DeepEqual(want.DevEUI(), got.DevEUI()) {
+		Ko(t, "Registrations' DevEUI are different.\nWant: %v\nGot:  %v", want.DevEUI(), got.DevEUI())
+		return
 	}
-	deGot, err := got.DevEUI()
-	if err != nil || !reflect.DeepEqual(deWant, deGot) {
-		Ko(t, "Registrations' DevEUI are different.\nWant: %v\nGot:  %v", deWant, deGot)
+
+	rgot, ok := got.(core.HRegistration)
+	if !ok {
+		Ko(t, "Expected to receive an HRegistration but got %+v", got)
 		return
 	}
 
 	// Check AppEUIs
-	aeWant, err := want.AppEUI()
-	if err != nil {
-		panic("Expected appEUI to be accessible in test registration")
-	}
-	aeGot, err := got.AppEUI()
-	if err != nil || !reflect.DeepEqual(aeWant, aeGot) {
-		Ko(t, "Registrations' appEUI are different.\nWant: %v\nGot:  %v", aeWant, aeGot)
+	if !reflect.DeepEqual(want.AppEUI(), rgot.AppEUI()) {
+		Ko(t, "Registrations' appEUI are different.\nWant: %v\nGot:  %v", want.AppEUI(), rgot.AppEUI())
 		return
 	}
 
 	// Check Network Session Keys
-	nkWant, err := want.NwkSKey()
-	if err != nil {
-		panic("Expected nwkSKey to be accessible in test registration")
-	}
-	nkGot, err := got.NwkSKey()
-	if err != nil || !reflect.DeepEqual(nkWant, nkGot) {
-		Ko(t, "Registrations' nwkSKey are different.\nWant: %v\nGot:  %v", nkWant, nkGot)
+	if !reflect.DeepEqual(want.NwkSKey(), rgot.NwkSKey()) {
+		Ko(t, "Registrations' nwkSKey are different.\nWant: %v\nGot:  %v", want.NwkSKey(), rgot.NwkSKey())
 		return
 	}
 
 	// Check Application Session Keys
-	akWant, err := want.AppSKey()
-	if err != nil {
-		panic("Expected nwkSKey to be accessible in test registration")
-	}
-	akGot, err := got.AppSKey()
-	if err != nil || !reflect.DeepEqual(akWant, akGot) {
-		Ko(t, "Registrations' nwkSKey are different.\nWant: %v\nGot:  %v", akWant, akGot)
+	if !reflect.DeepEqual(want.AppSKey(), rgot.AppSKey()) {
+		Ko(t, "Registrations' appSKey are different.\nWant: %v\nGot:  %v", want.AppSKey(), rgot.AppSKey())
 		return
 	}
 

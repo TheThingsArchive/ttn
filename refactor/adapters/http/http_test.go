@@ -43,8 +43,8 @@ func (p testPacket) MarshalBinary() ([]byte, error) {
 }
 
 // DevEUI implements the core.Addressable interface
-func (p testPacket) DevEUI() (lorawan.EUI64, error) {
-	return p.devEUI, nil
+func (p testPacket) DevEUI() lorawan.EUI64 {
+	return p.devEUI
 }
 
 // String implements the core.Packet interface
@@ -255,13 +255,8 @@ func checkRegistrations(t *testing.T, want []testRegistration, got []core.Regist
 outer:
 	for _, rw := range want {
 		for _, rg := range got {
-			devEUI, err := rg.DevEUI()
-			if err != nil {
-				Ko(t, "Got an invalid registration %+v", rg)
-				return
-			}
-			if devEUI != rw.DevEUI {
-				Ko(t, "Expected registration for %v but got for %v", rw.DevEUI, devEUI)
+			if rg.DevEUI() != rw.DevEUI {
+				Ko(t, "Expected registration for %v but got for %v", rw.DevEUI, rg.DevEUI())
 			}
 			if reflect.DeepEqual(rw.Recipient.httpRecipient, rg.Recipient()) {
 				continue outer

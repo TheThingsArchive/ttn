@@ -37,6 +37,7 @@ type Packet interface {
 
 type Registration interface {
 	Recipient() Recipient
+	DevEUI() lorawan.EUI64
 }
 
 type Recipient interface {
