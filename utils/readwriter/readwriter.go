@@ -46,28 +46,34 @@ func New(buf []byte) Interface {
 // Also, it writes the length of the given raw data encoded on 2 bytes before writting the data
 // itself. In that way, data can be appended and read easily.
 func (w *rw) Write(data interface{}) {
-	var raw []byte
+	var dataLen uint16
 	switch data.(type) {
-	case byte:
-		raw = []byte{data.(byte)}
+	case uint8:
+		dataLen = 1
+	case uint16:
+		dataLen = 2
+	case uint32:
+		dataLen = 4
+	case uint64:
+		dataLen = 8
 	case []byte:
-		raw = data.([]byte)
+		dataLen = uint16(len(data.([]byte)))
 	case lorawan.AES128Key:
-		data := data.(lorawan.AES128Key)
-		raw = data[:]
+		dataLen = uint16(len(data.(lorawan.AES128Key)))
 	case lorawan.EUI64:
-		data := data.(lorawan.EUI64)
-		raw = data[:]
+		dataLen = uint16(len(data.(lorawan.EUI64)))
 	case lorawan.DevAddr:
-		data := data.(lorawan.DevAddr)
-		raw = data[:]
+		dataLen = uint16(len(data.(lorawan.DevAddr)))
 	case string:
-		raw = []byte(data.(string))
+		str := data.(string)
+		w.directWrite(uint16(len(str)))
+		w.directWrite([]byte(str))
+		return
 	default:
 		panic(fmt.Errorf("Unreckognized data type: %v", data))
 	}
-	w.directWrite(uint16(len(raw)))
-	w.directWrite(raw)
+	w.directWrite(dataLen)
+	w.directWrite(data)
 }
 
 // directWrite appends the given data at the end of the existing buffer (without the length).

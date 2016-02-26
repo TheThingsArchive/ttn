@@ -172,6 +172,48 @@ func TestReadWriter(t *testing.T) {
 	// --------------
 
 	{
+		Desc(t, "Write uint16")
+		rw := New(nil)
+		rw.Write(uint16(35))
+		data, err := rw.Bytes()
+		CheckErrors(t, nil, err)
+
+		rw = New(data)
+		rw.Read(func(data []byte) { checkData(t, []byte{0, 35}, data) })
+		CheckErrors(t, nil, rw.Err())
+	}
+
+	// --------------
+
+	{
+		Desc(t, "Write uint32")
+		rw := New(nil)
+		rw.Write(uint32(4567))
+		data, err := rw.Bytes()
+		CheckErrors(t, nil, err)
+
+		rw = New(data)
+		rw.Read(func(data []byte) { checkData(t, []byte{0, 0, 17, 215}, data) })
+		CheckErrors(t, nil, rw.Err())
+	}
+
+	// --------------
+
+	{
+		Desc(t, "Write uint64")
+		rw := New(nil)
+		rw.Write(uint64(324675))
+		data, err := rw.Bytes()
+		CheckErrors(t, nil, err)
+
+		rw = New(data)
+		rw.Read(func(data []byte) { checkData(t, []byte{0, 0, 0, 0, 0, 4, 244, 67}, data) })
+		CheckErrors(t, nil, rw.Err())
+	}
+
+	// --------------
+
+	{
 		Desc(t, "Write invalid data")
 		rw := New(nil)
 		chwait := make(chan bool)
@@ -180,7 +222,7 @@ func TestReadWriter(t *testing.T) {
 				recover()
 				close(chwait)
 			}()
-			rw.Write(14)
+			rw.Write(34.7)
 			checkNotCalled(t)
 		}()
 		<-chwait
