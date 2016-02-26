@@ -5,7 +5,6 @@ package refactor
 
 import (
 	"fmt"
-	"io"
 
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/readwriter"
@@ -21,16 +20,35 @@ const (
 	TYPE_CPACKET
 )
 
-type RPacket interface {
-	Packet
-	Metadata() Metadata
-	Payload() lorawan.PHYPayload
-	DevEUI() lorawan.EUI64
+// ---------------------------------
+//
+// ----- HELPERS -------------------
+//
+// ---------------------------------
+func ensureUnmarshal(p interface{}, data []byte, t byte) error {
+	if p == nil {
+		return errors.New(errors.Structural, "Cannot unmarshal nil packet")
+	}
+
+	if len(data) < 1 || data[0] != t {
+		return errors.New(errors.Structural, "Not an expected packet")
+	}
+
+	return nil
 }
 
+// ---------------------------------
+//
+// ----- RPACKET -------------------
+//
+// ---------------------------------
+//
+//
+//
 // rpacket implements the core.RPacket interface
 type rpacket struct {
-	*baserpacket
+	baserpacket
+	basempacket
 }
 
 // NewRPacket construct a new router packet given a payload and metadata
@@ -45,62 +63,38 @@ func NewRPacket(payload lorawan.PHYPayload, metadata Metadata) (RPacket, error) 
 	}
 
 	return &rpacket{
-		&baserpacket{
-			payload:  payload,
-			metadata: metadata,
-		},
+		baserpacket{payload: payload},
+		basempacket{metadata: metadata},
 	}, nil
 }
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface
 func (p rpacket) MarshalBinary() ([]byte, error) {
-	data, err := p.baserpacket.MarshalBinary()
+	data := []byte{TYPE_RPACKET}
+	dataBaseR, err := p.baserpacket.Marshal()
 	if err != nil {
-		return nil, errors.New(errors.Structural, err)
+		return nil, err
+	}
+	dataBaseM, err := p.basempacket.Marshal()
+	if err != nil {
+		return nil, err
 	}
 
-	return append([]byte{TYPE_RPACKET}, data...), nil
+	return append(data, append(dataBaseR, dataBaseM...)...), nil
 }
 
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
 func (p *rpacket) UnmarshalBinary(data []byte) error {
-	if p == nil {
-		return errors.New(errors.Structural, "Cannot unmarshal nil packet")
+	if err := ensureUnmarshal(p, data, TYPE_RPACKET); err != nil {
+		return err
 	}
 
-	if len(data) < 1 || data[0] != TYPE_RPACKET {
-		return errors.New(errors.Structural, "Not a Router packet")
+	rest, err := p.baserpacket.Unmarshal(data[1:])
+	if err != nil {
+		return err
 	}
-
-	var isUp bool
-	rw := readwriter.New(data[1:])
-	rw.Read(func(data []byte) {
-		if data[0] == 1 {
-			isUp = true
-		}
-	})
-
-	var dataMetadata []byte
-	rw.Read(func(data []byte) { dataMetadata = data })
-
-	var dataPayload []byte
-	rw.Read(func(data []byte) { dataPayload = data })
-
-	if rw.Err() != nil {
-		return errors.New(errors.Structural, rw.Err())
-	}
-
-	p.metadata = Metadata{}
-	if err := p.metadata.UnmarshalJSON(dataMetadata); err != nil {
-		return errors.New(errors.Structural, err)
-	}
-
-	p.payload = lorawan.NewPHYPayload(isUp)
-	if err := p.payload.UnmarshalBinary(dataPayload); err != nil {
-		return errors.New(errors.Structural, err)
-	}
-
-	return nil
+	_, err = p.basempacket.Unmarshal(rest)
+	return err
 }
 
 // String implements the Stringer interface
@@ -111,19 +105,18 @@ func (p rpacket) String() string {
 	return str
 }
 
-type BPacket interface {
-	Packet
-	Commands() []lorawan.MACCommand
-	DevEUI() lorawan.EUI64
-	FCnt() uint32
-	Metadata() Metadata
-	Payload() []byte
-	ValidateMIC(key lorawan.AES128Key) (bool, error)
-}
-
+// ---------------------------------
+//
+// ----- BPACKET -------------------
+//
+// ---------------------------------
+//
+//
+//
 // bpacket implements the core.BPacket interface
 type bpacket struct {
 	baserpacket
+	basempacket
 }
 
 // NewBPacket constructs a new broker packets given a payload and metadata
@@ -146,10 +139,8 @@ func NewBPacket(payload lorawan.PHYPayload, metadata Metadata) (BPacket, error) 
 	}
 
 	return &bpacket{
-		baserpacket: baserpacket{
-			payload:  payload,
-			metadata: metadata,
-		},
+		baserpacket: baserpacket{payload: payload},
+		basempacket: basempacket{metadata: metadata},
 	}, nil
 }
 
@@ -181,67 +172,46 @@ func (p bpacket) String() string {
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface
 func (p bpacket) MarshalBinary() ([]byte, error) {
-	data, err := p.baserpacket.MarshalBinary()
+	data := []byte{TYPE_BPACKET}
+	dataBaseR, err := p.baserpacket.Marshal()
 	if err != nil {
-		return nil, errors.New(errors.Structural, err)
+		return nil, err
+	}
+	dataBaseM, err := p.basempacket.Marshal()
+	if err != nil {
+		return nil, err
 	}
 
-	return append([]byte{TYPE_BPACKET}, data...), nil
+	return append(data, append(dataBaseR, dataBaseM...)...), nil
 }
 
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
 func (p *bpacket) UnmarshalBinary(data []byte) error {
-	if p == nil {
-		return errors.New(errors.Structural, "Cannot unmarshal nil packet")
+	if err := ensureUnmarshal(p, data, TYPE_BPACKET); err != nil {
+		return err
 	}
 
-	if len(data) < 1 || data[0] != TYPE_BPACKET {
-		return errors.New(errors.Structural, "Not a Router packet")
+	rest, err := p.baserpacket.Unmarshal(data[1:])
+	if err != nil {
+		return err
 	}
-
-	var isUp bool
-	rw := readwriter.New(data[1:])
-	rw.Read(func(data []byte) {
-		if data[0] == 1 {
-			isUp = true
-		}
-	})
-
-	var dataMetadata []byte
-	rw.Read(func(data []byte) { dataMetadata = data })
-
-	var dataPayload []byte
-	rw.Read(func(data []byte) { dataPayload = data })
-
-	if rw.Err() != nil {
-		return errors.New(errors.Structural, rw.Err())
-	}
-
-	p.metadata = Metadata{}
-	if err := p.metadata.UnmarshalJSON(dataMetadata); err != nil {
-		return errors.New(errors.Structural, err)
-	}
-
-	p.payload = lorawan.NewPHYPayload(isUp)
-	if err := p.payload.UnmarshalBinary(dataPayload); err != nil {
-		return errors.New(errors.Structural, err)
-	}
-
-	return nil
+	_, err = p.basempacket.Unmarshal(rest)
+	return err
 }
 
-type HPacket interface {
-	Packet
-	AppEUI() lorawan.EUI64
-	DevEUI() lorawan.EUI64
-	Payload() []byte    // FRMPayload
-	Metadata() Metadata // TTL on down, DutyCycle + Rssi on Up
-}
-
+// ---------------------------------
+//
+// ----- HPACKET -------------------
+//
+// ---------------------------------
+//
+//
+//
 // hpacket implements the HPacket interface
 type hpacket struct {
-	*basehpacket
-	metadata Metadata
+	basehpacket
+	baseapacket
+	basempacket
 }
 
 // NewHPacket constructs a new Handler packet
@@ -250,57 +220,53 @@ func NewHPacket(appEUI lorawan.EUI64, devEUI lorawan.EUI64, payload []byte, meta
 		payload = make([]byte, 0)
 	}
 	return &hpacket{
-		basehpacket: &basehpacket{
-			appEUI:  appEUI,
-			devEUI:  devEUI,
+		basehpacket: basehpacket{
+			appEUI: appEUI,
+			devEUI: devEUI,
+		},
+		baseapacket: baseapacket{
 			payload: payload,
 		},
-		metadata: metadata,
+		basempacket: basempacket{metadata: metadata},
 	}
-}
-
-// Metadata implements the core.Metadata interface
-func (p hpacket) Metadata() Metadata {
-	return p.metadata
 }
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface
 func (p hpacket) MarshalBinary() ([]byte, error) {
-	dataMetadata, err := p.Metadata().MarshalJSON()
+	data := []byte{TYPE_HPACKET}
+	dataBaseH, err := p.basehpacket.Marshal()
 	if err != nil {
-		return nil, errors.New(errors.Structural, err)
+		return nil, err
+	}
+	dataBaseA, err := p.baseapacket.Marshal()
+	if err != nil {
+		return nil, err
+	}
+	dataBaseM, err := p.basempacket.Marshal()
+	if err != nil {
+		return nil, err
 	}
 
-	data, err := p.basehpacket.MarshalBinary()
-	if err != nil {
-		return nil, errors.New(errors.Structural, err)
-	}
-
-	rw := readwriter.New(append([]byte{TYPE_HPACKET}, data...))
-	rw.Write(dataMetadata)
-	return rw.Bytes()
+	// data | dataBaseH | dataBaseA | dataBaseM
+	return append(append(data, append(dataBaseH, dataBaseA...)...), dataBaseM...), nil
 }
 
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
 func (p *hpacket) UnmarshalBinary(data []byte) error {
-	if p == nil {
-		return errors.New(errors.Structural, "Cannot unmarshal nil packet")
+	if err := ensureUnmarshal(p, data, TYPE_HPACKET); err != nil {
+		return err
 	}
 
-	if len(data) < 1 || data[0] != TYPE_HPACKET {
-		return errors.New(errors.Structural, "Not a Handler packet")
+	rest, err := p.basehpacket.Unmarshal(data[1:])
+	if err != nil {
+		return err
 	}
-
-	rw := readwriter.New(data[1:])
-	rw.Read(func(data []byte) { copy(p.basehpacket.appEUI[:], data) })
-	rw.Read(func(data []byte) { copy(p.basehpacket.devEUI[:], data) })
-	rw.Read(func(data []byte) { p.basehpacket.payload = data })
-	var dataMetadata []byte
-	rw.Read(func(data []byte) { dataMetadata = data })
-	if err := p.metadata.UnmarshalJSON(dataMetadata); err != nil {
-		return errors.New(errors.Structural, err)
+	rest, err = p.baseapacket.Unmarshal(rest)
+	if err != nil {
+		return err
 	}
-	return nil
+	_, err = p.basempacket.Unmarshal(rest)
+	return err
 }
 
 // String implements the fmt.Stringer interface
@@ -313,15 +279,17 @@ func (p hpacket) String() string {
 	return str
 }
 
-type APacket interface {
-	Packet
-	Payload() []byte
-	Metadata() []Metadata
-}
-
+// ---------------------------------
+//
+// ----- APACKET -------------------
+//
+// ---------------------------------
+//
+//
+//
 // apacket implements the core.APacket interface
 type apacket struct {
-	payload  []byte
+	baseapacket
 	metadata []Metadata
 }
 
@@ -331,12 +299,10 @@ func NewAPacket(payload []byte, metadata []Metadata) (APacket, error) {
 		return nil, errors.New(errors.Structural, "Application packet must hold a payload")
 	}
 
-	return &apacket{payload: payload, metadata: metadata}, nil
-}
-
-// Payload implements the core.APacket interface
-func (p apacket) Payload() []byte {
-	return p.payload
+	return &apacket{
+		baseapacket: baseapacket{payload: payload},
+		metadata:    metadata,
+	}, nil
 }
 
 // Metadata implements the core.Metadata interface
@@ -354,44 +320,38 @@ func (p apacket) MarshalBinary() ([]byte, error) {
 		}
 		rw.Write(data)
 	}
-	data, err := rw.Bytes()
+	dataMetadata, err := rw.Bytes()
 	if err != nil {
 		return nil, errors.New(errors.Structural, err)
 	}
+	dataBaseA, err := p.baseapacket.Marshal()
+	if err != nil {
+		return nil, err
+	}
 
-	rw = readwriter.New([]byte{TYPE_APACKET})
-	rw.Write(p.payload)
-	rw.Write(data)
-
-	return rw.Bytes()
+	data := []byte{TYPE_APACKET}
+	return append(append(data, dataBaseA...), dataMetadata...), nil
 }
 
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
 func (p *apacket) UnmarshalBinary(data []byte) error {
-	if p == nil {
-		return errors.New(errors.Structural, "Cannot unmarshal nil apacket")
+	if err := ensureUnmarshal(p, data, TYPE_APACKET); err != nil {
+		return err
 	}
 
-	if len(data) < 1 || data[0] != TYPE_APACKET {
-		return errors.New(errors.Structural, "Not an Application packet")
-	}
-
-	var dataMetadata []byte
-	rw := readwriter.New(data[1:])
-	rw.Read(func(data []byte) { p.payload = data })
-	rw.Read(func(data []byte) { dataMetadata = data })
-	if rw.Err() != nil {
-		return errors.New(errors.Structural, rw.Err())
+	rest, err := p.baseapacket.Unmarshal(data[1:])
+	if err != nil {
+		return err
 	}
 
 	p.metadata = make([]Metadata, 0)
-	rw = readwriter.New(dataMetadata)
+	rw := readwriter.New(rest)
 	for {
 		var dataMetadata []byte
 		rw.Read(func(data []byte) { dataMetadata = data })
 		if rw.Err() != nil {
 			err, ok := rw.Err().(errors.Failure)
-			if ok && err.Fault == io.EOF {
+			if ok && err.Nature == errors.Behavioural {
 				break
 			}
 			return errors.New(errors.Structural, rw.Err())
@@ -412,79 +372,74 @@ func (p apacket) String() string {
 	return "TODO"
 }
 
-type JPacket interface {
-	Packet
-	AppEUI() lorawan.EUI64
-	DevEUI() lorawan.EUI64
-	DevNonce() [2]byte
-	Metadata() Metadata // Rssi + DutyCycle
-}
-
+// ---------------------------------
+//
+// ----- JPACKET -------------------
+//
+// ---------------------------------
+//
+//
+//
 // joinPacket implements the core.JoinPacket interface
 type jpacket struct {
-	*basehpacket
-	metadata Metadata
+	baseapacket baseapacket
+	basehpacket
+	basempacket
 }
 
 // NewJoinPacket constructs a new JoinPacket
 func NewJPacket(appEUI lorawan.EUI64, devEUI lorawan.EUI64, devNonce [2]byte, metadata Metadata) JPacket {
 	return &jpacket{
-		basehpacket: &basehpacket{
-			appEUI:  appEUI,
-			devEUI:  devEUI,
-			payload: devNonce[:],
+		basehpacket: basehpacket{
+			appEUI: appEUI,
+			devEUI: devEUI,
 		},
-		metadata: metadata,
+		baseapacket: baseapacket{payload: devNonce[:]},
+		basempacket: basempacket{metadata: metadata},
 	}
 }
 
 // DevNonce implements the core.JoinPacket interface
 func (p jpacket) DevNonce() [2]byte {
-	return [2]byte{p.basehpacket.payload[0], p.basehpacket.payload[1]}
-}
-
-// Metadata implements the core.JoinPacket interface
-func (p jpacket) Metadata() Metadata {
-	return p.metadata
+	return [2]byte{p.baseapacket.payload[0], p.baseapacket.payload[1]}
 }
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface
 func (p jpacket) MarshalBinary() ([]byte, error) {
-	dataMetadata, err := p.Metadata().MarshalJSON()
+	data := []byte{TYPE_JPACKET}
+	dataBaseH, err := p.basehpacket.Marshal()
 	if err != nil {
-		return nil, errors.New(errors.Structural, err)
+		return nil, err
+	}
+	dataBaseA, err := p.baseapacket.Marshal()
+	if err != nil {
+		return nil, err
+	}
+	dataBaseM, err := p.basempacket.Marshal()
+	if err != nil {
+		return nil, err
 	}
 
-	data, err := p.basehpacket.MarshalBinary()
-	if err != nil {
-		return nil, errors.New(errors.Structural, err)
-	}
-
-	rw := readwriter.New(append([]byte{TYPE_JPACKET}, data...))
-	rw.Write(dataMetadata)
-	return rw.Bytes()
+	// data | dataBaseH | dataBaseA | dataBaseM
+	return append(append(data, append(dataBaseH, dataBaseA...)...), dataBaseM...), nil
 }
 
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
 func (p *jpacket) UnmarshalBinary(data []byte) error {
-	if p == nil {
-		return errors.New(errors.Structural, "Cannot unmarshal nil packet")
+	if err := ensureUnmarshal(p, data, TYPE_JPACKET); err != nil {
+		return err
 	}
 
-	if len(data) < 1 || data[0] != TYPE_JPACKET {
-		return errors.New(errors.Structural, "Not a JoinRequst packet")
+	rest, err := p.basehpacket.Unmarshal(data[1:])
+	if err != nil {
+		return err
 	}
-
-	rw := readwriter.New(data[1:])
-	rw.Read(func(data []byte) { copy(p.basehpacket.appEUI[:], data) })
-	rw.Read(func(data []byte) { copy(p.basehpacket.devEUI[:], data) })
-	rw.Read(func(data []byte) { p.basehpacket.payload = data })
-	var dataMetadata []byte
-	rw.Read(func(data []byte) { dataMetadata = data })
-	if err := p.metadata.UnmarshalJSON(dataMetadata); err != nil {
-		return errors.New(errors.Structural, err)
+	rest, err = p.baseapacket.Unmarshal(rest)
+	if err != nil {
+		return err
 	}
-	return nil
+	_, err = p.basempacket.Unmarshal(rest)
+	return err
 }
 
 // String implements the fmt.Stringer interface
@@ -492,18 +447,11 @@ func (p jpacket) String() string {
 	return "TODO"
 }
 
-type CPacket interface {
-	Packet
-	AppEUI() lorawan.EUI64
-	DevEUI() lorawan.EUI64
-	Payload() []byte
-	NwkSKey() lorawan.AES128Key
-}
-
 // acceptpacket implements the core.AcceptPacket interface
 type cpacket struct {
-	*basehpacket
-	nwkSKey lorawan.AES128Key
+	basehpacket
+	baseapacket
+	nwkSKey baseapacket
 }
 
 // NewAcceptPacket constructs a new CPacket
@@ -513,47 +461,58 @@ func NewCPacket(appEUI lorawan.EUI64, devEUI lorawan.EUI64, payload []byte, nwkS
 	}
 
 	return &cpacket{
-		basehpacket: &basehpacket{
-			appEUI:  appEUI,
-			devEUI:  devEUI,
-			payload: payload,
+		basehpacket: basehpacket{
+			appEUI: appEUI,
+			devEUI: devEUI,
 		},
-		nwkSKey: nwkSKey,
+		baseapacket: baseapacket{payload: payload},
+		nwkSKey:     baseapacket{payload: nwkSKey[:]},
 	}, nil
 }
 
 // NwkSKey implements the core.AcceptPacket interface
 func (p cpacket) NwkSKey() lorawan.AES128Key {
-	return p.nwkSKey
+	var key lorawan.AES128Key
+	copy(key[:], p.nwkSKey.payload)
+	return key
 }
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface
 func (p cpacket) MarshalBinary() ([]byte, error) {
-	data, err := p.basehpacket.MarshalBinary()
+	data := []byte{TYPE_CPACKET}
+	dataBaseH, err := p.basehpacket.Marshal()
 	if err != nil {
-		return nil, errors.New(errors.Structural, err)
+		return nil, err
 	}
-	rw := readwriter.New(append([]byte{TYPE_CPACKET}, data...))
-	rw.Write(p.nwkSKey)
-	return rw.Bytes()
+	dataBaseA, err := p.baseapacket.Marshal()
+	if err != nil {
+		return nil, err
+	}
+	dataBaseN, err := p.nwkSKey.Marshal()
+	if err != nil {
+		return nil, err
+	}
+
+	// data | dataBaseH | dataBaseA | dataBaseN
+	return append(append(data, append(dataBaseH, dataBaseA...)...), dataBaseN...), nil
 }
 
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
 func (p *cpacket) UnmarshalBinary(data []byte) error {
-	if p == nil {
-		return errors.New(errors.Structural, "Cannot unmarshal nil packet")
+	if err := ensureUnmarshal(p, data, TYPE_CPACKET); err != nil {
+		return err
 	}
 
-	if len(data) < 1 || data[0] != TYPE_CPACKET {
-		return errors.New(errors.Structural, "Not a JoinAccept packet")
+	rest, err := p.basehpacket.Unmarshal(data[1:])
+	if err != nil {
+		return err
 	}
-
-	rw := readwriter.New(data[1:])
-	rw.Read(func(data []byte) { copy(p.basehpacket.appEUI[:], data) })
-	rw.Read(func(data []byte) { copy(p.basehpacket.devEUI[:], data) })
-	rw.Read(func(data []byte) { p.basehpacket.payload = data })
-	rw.Read(func(data []byte) { copy(p.nwkSKey[:], data) })
-	return rw.Err()
+	rest, err = p.baseapacket.Unmarshal(rest)
+	if err != nil {
+		return err
+	}
+	_, err = p.nwkSKey.Unmarshal(rest)
+	return err
 }
 
 // String implements the fmt.Stringer interface
@@ -561,18 +520,59 @@ func (p cpacket) String() string {
 	return "TODO"
 }
 
-// baserpacket is used to compose other packets
-type baserpacket struct {
-	payload  lorawan.PHYPayload
+// --------------------------------------
+// --------------------------------------
+// --------------------------------------
+// ----- BASE PACKETS -------------------
+//
+// All base packet are small components that are used by packets above to define accessors and
+// marshaling / unmarshaling methods on a struct.
+// All Unmarshal methods return the remaining unconsumed bytes from the input data such that one
+// could actually chain calls for different basexxxpacket
+//
+// --------------------------------------
+// --------------------------------------
+// --------------------------------------
+
+// basempacket is used to compose other packets
+type basempacket struct {
 	metadata Metadata
 }
 
-// Metadata implements the core.RPacket interface
-func (p baserpacket) Metadata() Metadata {
+func (p basempacket) Metadata() Metadata {
 	return p.metadata
 }
 
-// Payload implements the core.RPacket interface
+func (p basempacket) Marshal() ([]byte, error) {
+	dataMetadata, err := p.metadata.MarshalJSON()
+	if err != nil {
+		return nil, errors.New(errors.Structural, err)
+	}
+
+	rw := readwriter.New(nil)
+	rw.Write(dataMetadata)
+	return rw.Bytes()
+}
+
+func (p *basempacket) Unmarshal(data []byte) ([]byte, error) {
+	rw := readwriter.New(data)
+
+	var dataMetadata []byte
+	rw.Read(func(data []byte) { dataMetadata = data })
+
+	p.metadata = Metadata{}
+	if err := p.metadata.UnmarshalJSON(dataMetadata); err != nil {
+		return nil, errors.New(errors.Structural, err)
+	}
+
+	return rw.Bytes()
+}
+
+// baserpacket is used to compose other packets
+type baserpacket struct {
+	payload lorawan.PHYPayload
+}
+
 func (p baserpacket) Payload() lorawan.PHYPayload {
 	return p.payload
 }
@@ -584,8 +584,8 @@ func (p baserpacket) DevEUI() lorawan.EUI64 {
 	return devEUI
 }
 
-// MarshalBinary implements the encoding.BinaryMarshaler interface
-func (p baserpacket) MarshalBinary() ([]byte, error) {
+// Marshal transforms the given basepacket to binaries
+func (p baserpacket) Marshal() ([]byte, error) {
 	var mtype byte
 	switch p.payload.MHDR.MType {
 	case lorawan.JoinRequest:
@@ -605,11 +605,6 @@ func (p baserpacket) MarshalBinary() ([]byte, error) {
 		return nil, errors.New(errors.Implementation, msg)
 	}
 
-	dataMetadata, err := p.metadata.MarshalJSON()
-	if err != nil {
-		return nil, errors.New(errors.Structural, err)
-	}
-
 	dataPayload, err := p.payload.MarshalBinary()
 	if err != nil {
 		return nil, errors.New(errors.Structural, err)
@@ -617,16 +612,40 @@ func (p baserpacket) MarshalBinary() ([]byte, error) {
 
 	rw := readwriter.New(nil)
 	rw.Write([]byte{mtype})
-	rw.Write(dataMetadata)
 	rw.Write(dataPayload)
 	return rw.Bytes()
 }
 
+// Unmarshal hydrates the given basepacket from binaries data.
+func (p *baserpacket) Unmarshal(data []byte) ([]byte, error) {
+	var isUp bool
+	rw := readwriter.New(data)
+	rw.Read(func(data []byte) {
+		if data[0] == 1 {
+			isUp = true
+		}
+	})
+
+	var dataPayload []byte
+	rw.Read(func(data []byte) { dataPayload = data })
+
+	data, err := rw.Bytes()
+	if err != nil {
+		return nil, errors.New(errors.Structural, rw.Err())
+	}
+
+	p.payload = lorawan.NewPHYPayload(isUp)
+	if err := p.payload.UnmarshalBinary(dataPayload); err != nil {
+		return nil, errors.New(errors.Structural, err)
+	}
+
+	return data, nil
+}
+
 // basehpacket is used to compose other packets
 type basehpacket struct {
-	appEUI  lorawan.EUI64
-	devEUI  lorawan.EUI64
-	payload []byte
+	appEUI lorawan.EUI64
+	devEUI lorawan.EUI64
 }
 
 func (p basehpacket) AppEUI() lorawan.EUI64 {
@@ -637,14 +656,37 @@ func (p basehpacket) DevEUI() lorawan.EUI64 {
 	return p.devEUI
 }
 
-func (p basehpacket) Payload() []byte {
-	return p.payload
-}
-
-func (p basehpacket) MarshalBinary() ([]byte, error) {
+func (p basehpacket) Marshal() ([]byte, error) {
 	rw := readwriter.New(nil)
 	rw.Write(p.appEUI)
 	rw.Write(p.devEUI)
+	return rw.Bytes()
+}
+
+func (p *basehpacket) Unmarshal(data []byte) ([]byte, error) {
+	rw := readwriter.New(data)
+	rw.Read(func(data []byte) { copy(p.appEUI[:], data) })
+	rw.Read(func(data []byte) { copy(p.devEUI[:], data) })
+	return rw.Bytes()
+}
+
+// baseapacket is used to compose other packets
+type baseapacket struct {
+	payload []byte
+}
+
+func (p baseapacket) Payload() []byte {
+	return p.payload
+}
+
+func (p baseapacket) Marshal() ([]byte, error) {
+	rw := readwriter.New(nil)
 	rw.Write(p.payload)
+	return rw.Bytes()
+}
+
+func (p *baseapacket) Unmarshal(data []byte) ([]byte, error) {
+	rw := readwriter.New(data)
+	rw.Read(func(data []byte) { p.payload = data })
 	return rw.Bytes()
 }
