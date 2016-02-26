@@ -50,7 +50,7 @@ func unmarshalBases(t byte, data []byte, bases ...baseUnmarshaler) error {
 	var rest []byte
 	var err error
 
-	rest = data
+	rest = data[1:]
 	for _, base := range bases {
 		if rest, err = base.Unmarshal(rest); err != nil {
 			return err
@@ -512,13 +512,17 @@ func (p baserpacket) Marshal() ([]byte, error) {
 	}
 
 	rw := readwriter.New(nil)
-	rw.Write([]byte{mtype})
+	rw.Write(mtype)
 	rw.Write(dataPayload)
 	return rw.Bytes()
 }
 
 // Unmarshal hydrates the given basepacket from binaries data.
 func (p *baserpacket) Unmarshal(data []byte) ([]byte, error) {
+	if len(data) < 1 {
+		return nil, errors.New(errors.Structural, "Not a valid packet")
+	}
+
 	var isUp bool
 	rw := readwriter.New(data)
 	rw.Read(func(data []byte) {
