@@ -4,8 +4,19 @@
 package refactor
 
 import (
+	"encoding"
+
 	"github.com/brocaar/lorawan"
 )
+
+type Recipient interface {
+	encoding.BinaryMarshaler
+}
+
+type Registration interface {
+	Recipient() Recipient
+	DevEUI() lorawan.EUI64
+}
 
 type BRegistration interface {
 	Registration

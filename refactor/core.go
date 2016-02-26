@@ -3,13 +3,6 @@
 
 package refactor
 
-import (
-	"encoding"
-	"fmt"
-
-	"github.com/brocaar/lorawan"
-)
-
 type Component interface {
 	Register(reg Registration, an AckNacker) error
 	HandleUp(p []byte, an AckNacker, upAdapter Adapter) error
@@ -27,19 +20,4 @@ type Adapter interface {
 	GetRecipient(raw []byte) (Recipient, error)
 	Next() ([]byte, AckNacker, error)
 	NextRegistration() (Registration, AckNacker, error)
-}
-
-type Packet interface {
-	DevEUI() lorawan.EUI64
-	encoding.BinaryMarshaler
-	fmt.Stringer
-}
-
-type Registration interface {
-	Recipient() Recipient
-	DevEUI() lorawan.EUI64
-}
-
-type Recipient interface {
-	encoding.BinaryMarshaler
 }

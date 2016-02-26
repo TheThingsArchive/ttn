@@ -4,8 +4,17 @@
 package refactor
 
 import (
+	"encoding"
+	"fmt"
+
 	"github.com/brocaar/lorawan"
 )
+
+type Packet interface {
+	DevEUI() lorawan.EUI64
+	encoding.BinaryMarshaler
+	fmt.Stringer
+}
 
 type RPacket interface {
 	Packet
