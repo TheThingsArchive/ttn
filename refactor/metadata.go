@@ -16,8 +16,10 @@ type Metadata struct {
 	Chan *uint      `json:"chan,omitempty"` // Concentrator "IF" channel used for RX (unsigned integer)
 	Codr *string    `json:"codr,omitempty"` // LoRa ECC coding rate identifier
 	Datr *string    `json:"-"`              // FSK datarate (unsigned in bit per second) || LoRa datarate identifier
+	Duty *uint      `json:"duty,omitempty"` // DutyCycle of the gateway (uint between 0 and 100)
 	Fdev *uint      `json:"fdev,omitempty"` // FSK frequency deviation (unsigned integer, in Hz)
 	Freq *float64   `json:"freq,omitempty"` // RX Central frequency in MHx (unsigned float, Hz precision)
+	Gtid *string    `json:"gtid,omitempty"` // Id of the gateway from which the packet come
 	Imme *bool      `json:"imme,omitempty"` // Send packet immediately (will ignore tmst & time)
 	Ipol *bool      `json:"ipol,omitempty"` // Lora modulation polarization inversion
 	Lsnr *float64   `json:"lsnr,omitempty"` // LoRa SNR ratio in dB (signed float, 0.1 dB precision)

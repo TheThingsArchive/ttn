@@ -11,10 +11,10 @@ import (
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/readwriter"
 	"github.com/apex/log"
-	"github.com/brocaar/lorawan"
 )
 
 const buffer_delay time.Duration = time.Millisecond * 300
+const max_duty_cycle = 90 // 90%
 
 // component implements the core.Component interface
 type component struct {
@@ -130,6 +130,18 @@ func (h component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 	}
 }
 
+func computeScore(dutyCycle uint, rssi int) uint {
+	if dutyCycle > max_duty_cycle {
+		return 0
+	}
+
+	if dutyCycle > 2*max_duty_cycle/3 {
+		return uint(1000 - rssi)
+	}
+
+	return uint(10000 - rssi)
+}
+
 // consumeBundles processes list of bundle generated overtime, decrypt the underlying packet,
 // deduplicate them, and send a single enhanced packet to the upadapter for further processing.
 func (h component) consumeBundles(chbundle <-chan []bundle) {
@@ -139,10 +151,9 @@ func (h component) consumeBundles(chbundle <-chan []bundle) {
 browseBundles:
 	for bundles := range chbundle {
 		var metadata []Metadata
-		var devEUI lorawan.EUI64
 		var payload []byte
-		var adapter Adapter
-		var recipient Recipient
+		var bestBundle bundle
+		var bestScore uint
 
 		for i, bundle := range bundles {
 			// We only decrypt the payload of the first bundle's packet.
@@ -155,24 +166,42 @@ browseBundles:
 					go h.abortConsume(err, bundles)
 					continue browseBundles
 				}
-				devEUI = bundle.Packet.DevEUI()
-				adapter = bundle.Adapter
-				recipient = bundle.Entry.Recipient
+				bestBundle = bundle
 			}
 
-			// And append metadata for each of them
+			// Append metadata for each of them
 			metadata = append(metadata, bundle.Packet.Metadata())
+
+			// And try to find the best recipient to which answer
+			duty := bundle.Packet.Metadata().Duty
+			rssi := bundle.Packet.Metadata().Rssi
+			if duty == nil || rssi == nil {
+				continue
+			}
+			score := computeScore(*duty, *rssi)
+			if score > bestScore {
+				bestScore = score
+				bestBundle = bundle
+			}
 		}
 
 		// Then create an application-level packet
-		packet, err := NewAPacket(payload, devEUI, metadata)
+		packet, err := NewAPacket(payload, bestBundle.Packet.DevEUI(), metadata)
 		if err != nil {
 			go h.abortConsume(err, bundles)
 			continue browseBundles
 		}
 
-		// And send it
-		_, err = adapter.Send(packet, recipient)
+		// And send it to the wild open
+		// we don't expect a response from the adapter, end of the chain.
+		_, err = bestBundle.Adapter.Send(packet, bestBundle.Entry.Recipient)
+		if err != nil {
+			go h.abortConsume(err, bundles)
+			continue browseBundles
+		}
+
+		// Now handle the downlink
+		down, err := h.packets.Pull(bestBundle.Packet.AppEUI(), bestBundle.Packet.DevEUI())
 		if err != nil {
 			go h.abortConsume(err, bundles)
 			continue browseBundles
@@ -180,7 +209,11 @@ browseBundles:
 
 		// Then respond to node -> no response for the moment
 		for _, bundle := range bundles {
-			bundle.Chresp <- nil
+			if bundle.Id == bestBundle.Id {
+				bundle.Chresp <- down
+			} else {
+				bundle.Chresp <- nil
+			}
 		}
 	}
 }
