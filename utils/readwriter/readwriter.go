@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"io"
 
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/brocaar/lorawan"
@@ -40,7 +41,7 @@ func New(buf []byte) Interface {
 // Write appends the given data at the end of the existing buffer.
 //
 // It does nothing if an error was previously noticed and panics if the given data are something
-// different from: []byte, string, AES128Key, EUI64, DevAddr.
+// different from: byte, []byte, string, AES128Key, EUI64, DevAddr.
 //
 // Also, it writes the length of the given raw data encoded on 2 bytes before writting the data
 // itself. In that way, data can be appended and read easily.
@@ -99,7 +100,7 @@ func (w *rw) Read(to func(data []byte)) {
 // an error if any issue was encountered during the process.
 func (w rw) Bytes() ([]byte, error) {
 	if w.err != nil {
-		return nil, errors.New(errors.Structural, w.err)
+		return nil, w.Err()
 	}
 	return w.data.Bytes(), nil
 }
@@ -107,6 +108,9 @@ func (w rw) Bytes() ([]byte, error) {
 // Err just return the err status of the read-writer.
 func (w rw) Err() error {
 	if w.err != nil {
+		if w.err == io.EOF {
+			return errors.New(errors.Behavioural, w.err)
+		}
 		return errors.New(errors.Structural, w.err)
 	}
 	return nil
