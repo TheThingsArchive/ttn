@@ -228,35 +228,61 @@ func (p *bpacket) UnmarshalBinary(data []byte) error {
 // hpacket implements the HPacket interface
 type hpacket struct {
 	basehpacket
-	baseapacket
+	payload baserpacket
 	basempacket
 }
 
 // NewHPacket constructs a new Handler packet
-func NewHPacket(appEUI lorawan.EUI64, devEUI lorawan.EUI64, payload []byte, metadata Metadata) HPacket {
-	if payload == nil {
-		payload = make([]byte, 0)
+func NewHPacket(appEUI lorawan.EUI64, devEUI lorawan.EUI64, payload lorawan.PHYPayload, metadata Metadata) (HPacket, error) {
+	if payload.MACPayload == nil {
+		return nil, errors.New(errors.Structural, "MACPAyload should not be empty")
 	}
+
+	macPayload, ok := payload.MACPayload.(*lorawan.MACPayload)
+	if !ok {
+		return nil, errors.New(errors.Structural, "Packet does not carry a MACPayload")
+	}
+
+	if len(macPayload.FRMPayload) != 1 {
+		return nil, errors.New(errors.Structural, "Invalid frame payload. Expected exactly 1")
+	}
+
+	if _, ok := macPayload.FRMPayload[0].(*lorawan.DataPayload); !ok {
+		return nil, errors.New(errors.Structural, "Invalid frame payload. Expected only data")
+	}
+
 	return &hpacket{
 		basehpacket: basehpacket{
 			appEUI: appEUI,
 			devEUI: devEUI,
 		},
-		baseapacket: baseapacket{
+		payload: baserpacket{
 			payload: payload,
 		},
 		basempacket: basempacket{metadata: metadata},
+	}, nil
+}
+
+// Payload implements the core.HPacket interface
+func (p hpacket) Payload(key lorawan.AES128Key) ([]byte, error) {
+	macPayload := p.payload.payload.MACPayload.(*lorawan.MACPayload)
+	if err := macPayload.DecryptFRMPayload(key); err != nil {
+		return nil, errors.New(errors.Structural, err)
 	}
+	if len(macPayload.FRMPayload) != 1 {
+		return nil, errors.New(errors.Structural, "Unexpected Frame payload")
+	}
+	return macPayload.FRMPayload[0].(*lorawan.DataPayload).Bytes, nil
 }
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface
 func (p hpacket) MarshalBinary() ([]byte, error) {
-	return marshalBases(type_hpacket, p.basehpacket, p.baseapacket, p.basempacket)
+	return marshalBases(type_hpacket, p.basehpacket, p.payload, p.basempacket)
 }
 
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
 func (p *hpacket) UnmarshalBinary(data []byte) error {
-	return unmarshalBases(type_hpacket, data, &p.basehpacket, &p.baseapacket, &p.basempacket)
+	return unmarshalBases(type_hpacket, data, &p.basehpacket, &p.payload, &p.basempacket)
 }
 
 // String implements the fmt.Stringer interface

@@ -34,8 +34,8 @@ type BPacket interface {
 type HPacket interface {
 	Packet
 	AppEUI() lorawan.EUI64
-	Payload() []byte    // FRMPayload
-	Metadata() Metadata // TTL on down, DutyCycle + Rssi on Up
+	Payload(appSKey lorawan.AES128Key) ([]byte, error) // Unencrypted FRMPayload
+	Metadata() Metadata                                // TTL on down, DutyCycle + Rssi on Up
 }
 
 type APacket interface {
