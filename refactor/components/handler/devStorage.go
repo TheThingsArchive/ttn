@@ -10,6 +10,7 @@ import (
 
 type devStorage interface {
 	Lookup(appEUI lorawan.EUI64, devEUI lorawan.EUI64) (devEntry, error)
+	Store(r HRegistration) error
 }
 
 type devEntry struct {

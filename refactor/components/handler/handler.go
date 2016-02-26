@@ -37,7 +37,25 @@ func New() (Component, error) {
 }
 
 // Register implements the core.Component interface
-func (h component) Register(reg Registration, an AckNacker) error {
+func (h component) Register(reg Registration, an AckNacker) (err error) {
+	h.ctx.WithField("registration", reg).Debug("New registration request")
+	defer func() {
+		if err != nil {
+			an.Nack()
+		} else {
+			an.Ack(nil)
+		}
+
+	}()
+
+	hreg, ok := reg.(HRegistration)
+	if !ok {
+		return errors.New(errors.Structural, "Not a Handler registration")
+	}
+
+	if err = h.devices.Store(hreg); err != nil {
+		return errors.New(errors.Operational, err)
+	}
 	return nil
 }
 
