@@ -20,6 +20,7 @@ const buffer_delay time.Duration = time.Millisecond * 300
 type component struct {
 	ctx     log.Interface
 	devices devStorage
+	packets pktStorage
 	set     chan<- bundle
 }
 
@@ -39,14 +40,7 @@ func New() (Component, error) {
 // Register implements the core.Component interface
 func (h component) Register(reg Registration, an AckNacker) (err error) {
 	h.ctx.WithField("registration", reg).Debug("New registration request")
-	defer func() {
-		if err != nil {
-			an.Nack()
-		} else {
-			an.Ack(nil)
-		}
-
-	}()
+	defer ensureAckNack(an, nil, &err)
 
 	hreg, ok := reg.(HRegistration)
 	if !ok {
@@ -60,7 +54,11 @@ func (h component) Register(reg Registration, an AckNacker) (err error) {
 }
 
 // HandleUp implements the core.Component interface
-func (h component) HandleUp(data []byte, an AckNacker, up Adapter) error {
+func (h component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
+	// Make sure we don't forget the AckNacker
+	var ack Packet
+	defer ensureAckNack(an, &ack, &err)
+
 	itf, err := UnmarshalPacket(data)
 	if err != nil {
 		return errors.New(errors.Structural, data)
@@ -128,7 +126,7 @@ func (h component) HandleUp(data []byte, an AckNacker, up Adapter) error {
 	case JPacket:
 		return errors.New(errors.Implementation, "Join Request not yet implemented")
 	default:
-		return errors.New(errors.Structural, "Unhandled packet type")
+		return errors.New(errors.Implementation, "Unhandled packet type")
 	}
 }
 
@@ -256,6 +254,34 @@ func setAlarm(alarm chan<- [20]byte, id [20]byte, delay time.Duration) {
 }
 
 // HandleDown implements the core.Component interface
-func (h component) HandleDown(p []byte, an AckNacker, down Adapter) error {
+func (h component) HandleDown(data []byte, an AckNacker, down Adapter) (err error) {
+	// Make sure we don't forget the AckNacker
+	var ack Packet
+	defer ensureAckNack(an, &ack, &err)
+
+	// Unmarshal the given packet and see what gift we get
+	itf, err := UnmarshalPacket(data)
+	if err != nil {
+		return errors.New(errors.Structural, data)
+	}
 	return nil
+
+	switch itf.(type) {
+	case HPacket:
+		return h.packets.Push(itf.(HPacket))
+	default:
+		return errors.New(errors.Implementation, "Unhandled packet type")
+	}
+}
+
+func ensureAckNack(an AckNacker, ack *Packet, err *error) {
+	if err != nil && *err != nil {
+		an.Nack()
+	} else {
+		var p Packet
+		if ack != nil {
+			p = *ack
+		}
+		an.Ack(p)
+	}
 }
