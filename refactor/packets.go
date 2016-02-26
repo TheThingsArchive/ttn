@@ -4,6 +4,7 @@
 package refactor
 
 import (
+	"encoding"
 	"fmt"
 
 	"github.com/TheThingsNetwork/ttn/utils/errors"
@@ -12,12 +13,12 @@ import (
 )
 
 const (
-	TYPE_RPACKET byte = iota
-	TYPE_BPACKET
-	TYPE_HPACKET
-	TYPE_APACKET
-	TYPE_JPACKET
-	TYPE_CPACKET
+	type_rpacket byte = iota
+	type_bpacket
+	type_hpacket
+	type_apacket
+	type_jpacket
+	type_cpacket
 )
 
 // ---------------------------------
@@ -37,14 +38,51 @@ func ensureUnmarshal(p interface{}, data []byte, t byte) error {
 	return nil
 }
 
+// UnmarshalPacket takes raw binary data and try to marshal it into a given packet interface:
+//
+// - RPacket
+// - BPacket
+// - HPacket
+// - APacket
+// - JPacket
+// - CPacket
+//
+// It returns an interface so that its easy and handy to perform a type assertion out of it.
+// If data are wrong or, if the packet is not unmarshalable, it returns an error.
+func UnmarshalPacket(data []byte) (interface{}, error) {
+	if len(data) < 1 {
+		return nil, errors.New(errors.Structural, "Cannot unmarshal, not a packet")
+	}
+
+	var packet interface {
+		encoding.BinaryUnmarshaler
+	}
+
+	switch data[0] {
+	case type_rpacket:
+		packet = new(rpacket)
+	case type_bpacket:
+		packet = new(bpacket)
+	case type_hpacket:
+		packet = new(hpacket)
+	case type_apacket:
+		packet = new(apacket)
+	case type_jpacket:
+		packet = new(jpacket)
+	case type_cpacket:
+		packet = new(cpacket)
+	}
+
+	err := packet.UnmarshalBinary(data)
+	return packet, err
+}
+
 // ---------------------------------
 //
 // ----- RPACKET -------------------
 //
 // ---------------------------------
-//
-//
-//
+
 // rpacket implements the core.RPacket interface
 type rpacket struct {
 	baserpacket
@@ -70,7 +108,7 @@ func NewRPacket(payload lorawan.PHYPayload, metadata Metadata) (RPacket, error) 
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface
 func (p rpacket) MarshalBinary() ([]byte, error) {
-	data := []byte{TYPE_RPACKET}
+	data := []byte{type_rpacket}
 	dataBaseR, err := p.baserpacket.Marshal()
 	if err != nil {
 		return nil, err
@@ -85,7 +123,7 @@ func (p rpacket) MarshalBinary() ([]byte, error) {
 
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
 func (p *rpacket) UnmarshalBinary(data []byte) error {
-	if err := ensureUnmarshal(p, data, TYPE_RPACKET); err != nil {
+	if err := ensureUnmarshal(p, data, type_rpacket); err != nil {
 		return err
 	}
 
@@ -110,9 +148,7 @@ func (p rpacket) String() string {
 // ----- BPACKET -------------------
 //
 // ---------------------------------
-//
-//
-//
+
 // bpacket implements the core.BPacket interface
 type bpacket struct {
 	baserpacket
@@ -172,7 +208,7 @@ func (p bpacket) String() string {
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface
 func (p bpacket) MarshalBinary() ([]byte, error) {
-	data := []byte{TYPE_BPACKET}
+	data := []byte{type_bpacket}
 	dataBaseR, err := p.baserpacket.Marshal()
 	if err != nil {
 		return nil, err
@@ -187,7 +223,7 @@ func (p bpacket) MarshalBinary() ([]byte, error) {
 
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
 func (p *bpacket) UnmarshalBinary(data []byte) error {
-	if err := ensureUnmarshal(p, data, TYPE_BPACKET); err != nil {
+	if err := ensureUnmarshal(p, data, type_bpacket); err != nil {
 		return err
 	}
 
@@ -204,9 +240,7 @@ func (p *bpacket) UnmarshalBinary(data []byte) error {
 // ----- HPACKET -------------------
 //
 // ---------------------------------
-//
-//
-//
+
 // hpacket implements the HPacket interface
 type hpacket struct {
 	basehpacket
@@ -233,7 +267,7 @@ func NewHPacket(appEUI lorawan.EUI64, devEUI lorawan.EUI64, payload []byte, meta
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface
 func (p hpacket) MarshalBinary() ([]byte, error) {
-	data := []byte{TYPE_HPACKET}
+	data := []byte{type_hpacket}
 	dataBaseH, err := p.basehpacket.Marshal()
 	if err != nil {
 		return nil, err
@@ -253,7 +287,7 @@ func (p hpacket) MarshalBinary() ([]byte, error) {
 
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
 func (p *hpacket) UnmarshalBinary(data []byte) error {
-	if err := ensureUnmarshal(p, data, TYPE_HPACKET); err != nil {
+	if err := ensureUnmarshal(p, data, type_hpacket); err != nil {
 		return err
 	}
 
@@ -284,9 +318,7 @@ func (p hpacket) String() string {
 // ----- APACKET -------------------
 //
 // ---------------------------------
-//
-//
-//
+
 // apacket implements the core.APacket interface
 type apacket struct {
 	baseapacket
@@ -329,13 +361,13 @@ func (p apacket) MarshalBinary() ([]byte, error) {
 		return nil, err
 	}
 
-	data := []byte{TYPE_APACKET}
+	data := []byte{type_apacket}
 	return append(append(data, dataBaseA...), dataMetadata...), nil
 }
 
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
 func (p *apacket) UnmarshalBinary(data []byte) error {
-	if err := ensureUnmarshal(p, data, TYPE_APACKET); err != nil {
+	if err := ensureUnmarshal(p, data, type_apacket); err != nil {
 		return err
 	}
 
@@ -377,9 +409,7 @@ func (p apacket) String() string {
 // ----- JPACKET -------------------
 //
 // ---------------------------------
-//
-//
-//
+
 // joinPacket implements the core.JoinPacket interface
 type jpacket struct {
 	baseapacket baseapacket
@@ -406,7 +436,7 @@ func (p jpacket) DevNonce() [2]byte {
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface
 func (p jpacket) MarshalBinary() ([]byte, error) {
-	data := []byte{TYPE_JPACKET}
+	data := []byte{type_jpacket}
 	dataBaseH, err := p.basehpacket.Marshal()
 	if err != nil {
 		return nil, err
@@ -426,7 +456,7 @@ func (p jpacket) MarshalBinary() ([]byte, error) {
 
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
 func (p *jpacket) UnmarshalBinary(data []byte) error {
-	if err := ensureUnmarshal(p, data, TYPE_JPACKET); err != nil {
+	if err := ensureUnmarshal(p, data, type_jpacket); err != nil {
 		return err
 	}
 
@@ -479,7 +509,7 @@ func (p cpacket) NwkSKey() lorawan.AES128Key {
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface
 func (p cpacket) MarshalBinary() ([]byte, error) {
-	data := []byte{TYPE_CPACKET}
+	data := []byte{type_cpacket}
 	dataBaseH, err := p.basehpacket.Marshal()
 	if err != nil {
 		return nil, err
@@ -499,7 +529,7 @@ func (p cpacket) MarshalBinary() ([]byte, error) {
 
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
 func (p *cpacket) UnmarshalBinary(data []byte) error {
-	if err := ensureUnmarshal(p, data, TYPE_CPACKET); err != nil {
+	if err := ensureUnmarshal(p, data, type_cpacket); err != nil {
 		return err
 	}
 
