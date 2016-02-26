@@ -183,11 +183,6 @@ func NewBPacket(payload lorawan.PHYPayload, metadata Metadata) (BPacket, error) 
 	}, nil
 }
 
-// FCnt implements the core.BPacket interface
-func (p bpacket) FCnt() uint32 {
-	return p.payload.MACPayload.(*lorawan.MACPayload).FHDR.FCnt
-}
-
 // Payload implements the core.BPacket interface
 func (p bpacket) Payload() []byte {
 	macPayload := p.baserpacket.payload.MACPayload.(*lorawan.MACPayload)
@@ -273,6 +268,11 @@ func (p hpacket) Payload(key lorawan.AES128Key) ([]byte, error) {
 		return nil, errors.New(errors.Structural, "Unexpected Frame payload")
 	}
 	return macPayload.FRMPayload[0].(*lorawan.DataPayload).Bytes, nil
+}
+
+// FCnt implements the core.HPacket interface
+func (p hpacket) FCnt() uint32 {
+	return p.payload.FCnt()
 }
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface
@@ -509,6 +509,11 @@ func (p baserpacket) DevEUI() lorawan.EUI64 {
 	var devEUI lorawan.EUI64
 	copy(devEUI[4:], p.payload.MACPayload.(*lorawan.MACPayload).FHDR.DevAddr[:])
 	return devEUI
+}
+
+// FCnt implements the core.BPacket interface
+func (p baserpacket) FCnt() uint32 {
+	return p.payload.MACPayload.(*lorawan.MACPayload).FHDR.FCnt
 }
 
 // Marshal transforms the given basepacket to binaries

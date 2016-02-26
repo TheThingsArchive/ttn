@@ -4,11 +4,17 @@
 package handler
 
 import (
+	"reflect"
+	"time"
+
 	. "github.com/TheThingsNetwork/ttn/refactor"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
+	"github.com/TheThingsNetwork/ttn/utils/readwriter"
 	"github.com/apex/log"
 	"github.com/brocaar/lorawan"
 )
+
+const buffer_delay time.Duration = time.Millisecond * 300
 
 // component implements the core.Component interface
 type component struct {
@@ -18,11 +24,11 @@ type component struct {
 }
 
 type bundle struct {
-	adapter Adapter
-	chresp  chan interface{}
-	entry   devEntry
-	id      [16]byte
-	packet  HPacket
+	Adapter Adapter
+	Chresp  chan interface{}
+	Entry   devEntry
+	Id      [20]byte
+	Packet  HPacket
 }
 
 // New construct a new Handler component from ...
@@ -59,19 +65,26 @@ func (h component) HandleUp(data []byte, an AckNacker, up Adapter) error {
 		chresp := make(chan interface{})
 
 		// 3. Create a "bundle" which holds info waiting for other related packets
-		var bundleId [16]byte // AppEUI(8) | DevEUI(8)
-		copy(bundleId[:8], appEUI[:])
-		copy(bundleId[8:], devEUI[:])
+		var bundleId [20]byte // AppEUI(8) | DevEUI(8)
+		rw := readwriter.New(nil)
+		rw.Write(appEUI)
+		rw.Write(devEUI)
+		rw.Write(packet.FCnt())
+		data, err := rw.Bytes()
+		if err != nil {
+			return errors.New(errors.Structural, err)
+		}
+		copy(bundleId[:], data[:])
 
 		// 4. Send the actual bundle to the consumer
 		ctx := h.ctx.WithField("BundleID", bundleId)
 		ctx.Debug("Define new bundle")
 		h.set <- bundle{
-			id:      bundleId,
-			packet:  packet,
-			entry:   entry,
-			adapter: up,
-			chresp:  chresp,
+			Id:      bundleId,
+			Packet:  packet,
+			Entry:   entry,
+			Adapter: up,
+			Chresp:  chresp,
 		}
 
 		// 5. Wait for the response. Could be an error, a packet or nothing.
@@ -104,7 +117,7 @@ func (h component) HandleUp(data []byte, an AckNacker, up Adapter) error {
 // consumeBundles processes list of bundle generated overtime, decrypt the underlying packet,
 // deduplicate them, and send a single enhanced packet to the upadapter for further processing.
 func (h component) consumeBundles(chbundle <-chan []bundle) {
-	ctx := h.ctx.WithField("goroutine", "consumer")
+	ctx := h.ctx.WithField("goroutine", "bundle consumer")
 	ctx.Debug("Starting bundle consumer")
 
 browseBundles:
@@ -121,18 +134,18 @@ browseBundles:
 			// metadata from other bundle.
 			if i == 0 {
 				var err error
-				payload, err = bundle.packet.Payload(bundle.entry.AppSKey)
+				payload, err = bundle.Packet.Payload(bundle.Entry.AppSKey)
 				if err != nil {
 					go h.abortConsume(err, bundles)
 					continue browseBundles
 				}
-				devEUI = bundle.packet.DevEUI()
-				adapter = bundle.adapter
-				recipient = bundle.entry.Recipient
+				devEUI = bundle.Packet.DevEUI()
+				adapter = bundle.Adapter
+				recipient = bundle.Entry.Recipient
 			}
 
 			// And append metadata for each of them
-			metadata = append(metadata, bundle.packet.Metadata())
+			metadata = append(metadata, bundle.Packet.Metadata())
 		}
 
 		// Then create an application-level packet
@@ -151,17 +164,74 @@ browseBundles:
 
 		// Then respond to node -> no response for the moment
 		for _, bundle := range bundles {
-			bundle.chresp <- nil
+			bundle.Chresp <- nil
 		}
 	}
 }
 
+// Abort consume forward the given error to all bundle recipients
 func (h component) abortConsume(fault error, bundles []bundle) {
 	err := errors.New(errors.Structural, fault)
 	h.ctx.WithError(err).Debug("Unable to consume bundle")
 	for _, bundle := range bundles {
-		bundle.chresp <- err
+		bundle.Chresp <- err
 	}
+}
+
+// consumeSet gathers new incoming bundles which possess the same id (i.e. appEUI & devEUI & Fcnt)
+// It then flushes them once a given delay has passed since the reception of the first bundle.
+func (h component) consumeSet(chbundles chan<- []bundle, chset <-chan bundle) {
+	ctx := h.ctx.WithField("goroutine", "set consumer")
+	ctx.Debug("Starting packets buffering")
+
+	processed := make(map[[16]byte][]byte) // AppEUI | DevEUI | FCnt -> hasBeenProcessed ?
+	buffers := make(map[[20]byte][]bundle) // AppEUI | DevEUI | FCnt ->  buffered bundles
+	alarm := make(chan [20]byte)           // Communication channel with subsequent alarms
+
+	for {
+		select {
+		case id := <-alarm:
+			// Get all bundles
+			bundles := buffers[id]
+			delete(buffers, id)
+
+			// Register the last processed entry
+			var pid [16]byte
+			copy(pid[:], id[:16])
+			processed[pid] = id[16:]
+
+			// Actually send the bundle to the be processed
+			go func(bundles []bundle) { chbundles <- bundles }(bundles)
+			ctx.WithField("BundleID", id).Debug("Consuming collected bundles")
+		case b := <-chset:
+			ctx = ctx.WithField("BundleID", b.Id)
+
+			// Check if bundle has already been processed
+			var pid [16]byte
+			copy(pid[:], b.Id[:16])
+			if reflect.DeepEqual(processed[pid], b.Id[16:]) {
+				ctx.Debug("Reject already processed bundle")
+				go func(b bundle) {
+					b.Chresp <- errors.New(errors.Behavioural, "Already processed")
+				}(b)
+				continue
+			}
+
+			// Add the bundle to the stack, and set the alarm if its the first
+			bundles := append(buffers[b.Id], b)
+			if len(bundles) == 1 {
+				go setAlarm(alarm, b.Id, buffer_delay)
+				ctx.Debug("Buffering started -> new alarm set")
+			}
+			buffers[b.Id] = bundles
+		}
+	}
+}
+
+// setAlarm will trigger a message on the given channel after the given delay
+func setAlarm(alarm chan<- [20]byte, id [20]byte, delay time.Duration) {
+	<-time.After(delay)
+	alarm <- id
 }
 
 // HandleDown implements the core.Component interface
