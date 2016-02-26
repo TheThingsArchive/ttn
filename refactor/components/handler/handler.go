@@ -202,6 +202,9 @@ func (h component) consumeSet(chbundles chan<- []bundle, chset <-chan bundle) {
 	ctx := h.ctx.WithField("goroutine", "set consumer")
 	ctx.Debug("Starting packets buffering")
 
+	// NOTE Processed is likely to grow quickly. One has to define a more efficient data stucture
+	// with a ttl for each entry. Processed is merely there to avoid late packets from being
+	// processed again. The TTL could be only of several seconds or minutes.
 	processed := make(map[[16]byte][]byte) // AppEUI | DevEUI | FCnt -> hasBeenProcessed ?
 	buffers := make(map[[20]byte][]bundle) // AppEUI | DevEUI | FCnt ->  buffered bundles
 	alarm := make(chan [20]byte)           // Communication channel with subsequent alarms
