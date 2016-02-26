@@ -13,9 +13,9 @@ type Nature string
 
 const (
 	Structural     Nature = "Invalid structure"           // Requests, parameters or inputs are wrong. Retry won't work.
-	Behavioural           = "Wrong but expected behavior" // No error but the result isn't the one expected
-	Operational           = "Invalid operation"           // An operation failed due to external causes, a retry could work
-	Implementation        = "Illegal call"                // Method not implemented or unsupported for the given structure
+	Behavioural    Nature = "Wrong but expected behavior" // No error but the result isn't the one expected
+	Operational    Nature = "Invalid operation"           // An operation failed due to external causes, a retry could work
+	Implementation Nature = "Illegal call"                // Method not implemented or unsupported for the given structure
 )
 
 // Failure states for fault that occurs during a process.
