@@ -9,6 +9,7 @@ import (
 	core "github.com/TheThingsNetwork/ttn/refactor"
 	. "github.com/TheThingsNetwork/ttn/refactor/adapters/mqtt"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
+	. "github.com/TheThingsNetwork/ttn/utils/errors/checks"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"github.com/brocaar/lorawan"
@@ -171,7 +172,7 @@ func TestActivationHandle(t *testing.T) {
 		})
 
 		// Check
-		checkErrors(t, test.WantError, err)
+		CheckErrors(t, test.WantError, err)
 		checkSubscriptions(t, test.WantSubscription, test.Client.Subscription)
 		checkRegistrations(t, test.WantRegistration, consumer.Registration)
 		checkPackets(t, test.WantPacket, consumer.Packet)

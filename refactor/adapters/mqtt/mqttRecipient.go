@@ -58,5 +58,8 @@ func (r *mqttRecipient) UnmarshalBinary(data []byte) error {
 	rw.Read(func(data []byte) { r.up = string(data) })
 	rw.Read(func(data []byte) { r.down = string(data) })
 
-	return rw.Err()
+	if err := rw.Err(); err != nil {
+		return errors.New(errors.Structural, err)
+	}
+	return nil
 }

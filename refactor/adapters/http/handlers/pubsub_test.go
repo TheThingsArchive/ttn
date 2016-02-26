@@ -12,6 +12,7 @@ import (
 	core "github.com/TheThingsNetwork/ttn/refactor"
 	. "github.com/TheThingsNetwork/ttn/refactor/adapters/http"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
+	. "github.com/TheThingsNetwork/ttn/utils/errors/checks"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"github.com/brocaar/lorawan"
 )
@@ -145,7 +146,7 @@ func TestPubSub(t *testing.T) {
 		}
 
 		// Check
-		checkErrors(t, test.WantError, err)
+		CheckErrors(t, test.WantError, err)
 		checkStatusCode(t, test.WantStatusCode, statusCode)
 		checkContent(t, test.WantContent, content)
 		checkRegistration(t, test.WantRegistration, registration)

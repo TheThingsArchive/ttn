@@ -10,6 +10,7 @@ import (
 
 	core "github.com/TheThingsNetwork/ttn/refactor"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
+	. "github.com/TheThingsNetwork/ttn/utils/errors/checks"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 )
 
@@ -113,7 +114,7 @@ func TestCollect(t *testing.T) {
 		}
 
 		// Check
-		checkErrors(t, test.WantError, err)
+		CheckErrors(t, test.WantError, err)
 		checkStatusCode(t, test.WantStatusCode, statusCode)
 		checkContent(t, test.WantContent, content)
 		checkPacket(t, test.WantPacket, packet)

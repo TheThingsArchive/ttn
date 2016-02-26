@@ -162,28 +162,6 @@ func tryNextRegistration(adapter core.Adapter, shouldAck bool, packet core.Packe
 }
 
 // ----- CHECK utilities
-func checkErrors(t *testing.T, want *string, got error) {
-	if got == nil {
-		if want == nil {
-			Ok(t, "Check errors")
-			return
-		}
-		Ko(t, "Expected error to be {%s} but got nothing", *want)
-		return
-	}
-
-	if want == nil {
-		Ko(t, "Expected no error but got {%v}", got)
-		return
-	}
-
-	if got.(errors.Failure).Nature == errors.Nature(*want) {
-		Ok(t, "Check errors")
-		return
-	}
-	Ko(t, "Expected error to be {%s} but got {%v}", *want, got)
-}
-
 func checkStatusCode(t *testing.T, want int, got int) {
 	if want == got {
 		Ok(t, "Check status code")

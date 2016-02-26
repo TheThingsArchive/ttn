@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	. "github.com/TheThingsNetwork/ttn/utils/errors/checks"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 )
@@ -82,7 +83,7 @@ func TestMarshaljson(t *testing.T) {
 	for _, test := range commonTests {
 		Desc(t, "Marshal medatadata: %s", test.Metadata.String())
 		raw, err := json.Marshal(test.Metadata)
-		checkErrors(t, test.WantError, err)
+		CheckErrors(t, test.WantError, err)
 		checkJSON(t, test.JSON, raw)
 	}
 }
@@ -92,7 +93,7 @@ func TestUnmarshalJSON(t *testing.T) {
 		Desc(t, "Unmarshal json: %s", test.JSON)
 		metadata := Metadata{}
 		err := json.Unmarshal([]byte(test.JSON), &metadata)
-		checkErrors(t, test.WantError, err)
+		CheckErrors(t, test.WantError, err)
 		checkMetadata(t, test.Metadata, metadata)
 	}
 }

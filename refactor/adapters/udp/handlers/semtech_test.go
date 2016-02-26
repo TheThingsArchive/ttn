@@ -12,6 +12,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/refactor/adapters/udp"
 	"github.com/TheThingsNetwork/ttn/semtech"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
+	. "github.com/TheThingsNetwork/ttn/utils/errors/checks"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 )
@@ -20,14 +21,14 @@ func TestSend(t *testing.T) {
 	Desc(t, "Send is not supported")
 	adapter, _ := genAdapter(t, 33000)
 	_, err := adapter.Send(core.RPacket{})
-	checkErrors(t, pointer.String(string(errors.Implementation)), err)
+	CheckErrors(t, pointer.String(string(errors.Implementation)), err)
 }
 
 func TestNextRegistration(t *testing.T) {
 	Desc(t, "Next registration is not supported")
 	adapter, _ := genAdapter(t, 33001)
 	_, _, err := adapter.NextRegistration()
-	checkErrors(t, pointer.String(string(errors.Implementation)), err)
+	CheckErrors(t, pointer.String(string(errors.Implementation)), err)
 }
 
 func TestNext(t *testing.T) {
@@ -88,7 +89,7 @@ func TestNext(t *testing.T) {
 		packet, err := getNextPacket(next)
 
 		// Check
-		checkErrors(t, test.WantError, err)
+		CheckErrors(t, test.WantError, err)
 		checkCorePackets(t, test.WantNext, packet)
 		checkResponses(t, test.WantAck, ack)
 	}
@@ -114,28 +115,6 @@ func getNextPacket(next chan interface{}) (core.Packet, error) {
 }
 
 // ----- CHECK utilities
-func checkErrors(t *testing.T, want *string, got error) {
-	if got == nil {
-		if want == nil {
-			Ok(t, "Check errors")
-			return
-		}
-		Ko(t, "Expected error to be {%s} but got nothing", *want)
-		return
-	}
-
-	if want == nil {
-		Ko(t, "Expected no error but got {%v}", got)
-		return
-	}
-
-	if got.(errors.Failure).Nature == errors.Nature(*want) {
-		Ok(t, "Check errors")
-		return
-	}
-	Ko(t, "Expected error to be {%s} but got {%v}", *want, got)
-}
-
 func checkCorePackets(t *testing.T, want core.Packet, got core.Packet) {
 	if reflect.DeepEqual(want, got) {
 		Ok(t, "Check core packets")

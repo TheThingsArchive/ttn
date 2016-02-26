@@ -12,6 +12,7 @@ import (
 	MQTT "git.eclipse.org/gitroot/paho/org.eclipse.paho.mqtt.golang.git"
 	core "github.com/TheThingsNetwork/ttn/refactor"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
+	. "github.com/TheThingsNetwork/ttn/utils/errors/checks"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 )
@@ -138,7 +139,7 @@ func TestMQTTSend(t *testing.T) {
 		}
 
 		// Check
-		checkErrors(t, test.WantError, err)
+		CheckErrors(t, test.WantError, err)
 		checkData(t, test.WantData, data)
 		checkResponses(t, test.WantResponse, resp)
 
@@ -158,7 +159,7 @@ func TestMQTTRecipient(t *testing.T) {
 		if err == nil {
 			err = ru.UnmarshalBinary(data)
 		}
-		checkErrors(t, nil, err)
+		CheckErrors(t, nil, err)
 	}
 
 	{
@@ -169,21 +170,21 @@ func TestMQTTRecipient(t *testing.T) {
 		if err == nil {
 			err = ru.UnmarshalBinary(data)
 		}
-		checkErrors(t, pointer.String(string(errors.Structural)), err)
+		CheckErrors(t, pointer.String(string(errors.Structural)), err)
 	}
 
 	{
 		Desc(t, "Unmarshal nil data")
 		ru := new(mqttRecipient)
 		err := ru.UnmarshalBinary(nil)
-		checkErrors(t, pointer.String(string(errors.Structural)), err)
+		CheckErrors(t, pointer.String(string(errors.Structural)), err)
 	}
 
 	{
 		Desc(t, "Unmarshal wrong data")
 		ru := new(mqttRecipient)
 		err := ru.UnmarshalBinary([]byte{1, 2, 3, 4})
-		checkErrors(t, pointer.String(string(errors.Structural)), err)
+		CheckErrors(t, pointer.String(string(errors.Structural)), err)
 	}
 }
 
@@ -279,28 +280,6 @@ func trySend(adapter core.Adapter, packet []byte, recipients []testRecipient) ([
 }
 
 // ----- CHECK utilities
-func checkErrors(t *testing.T, want *string, got error) {
-	if got == nil {
-		if want == nil {
-			Ok(t, "Check errors")
-			return
-		}
-		Ko(t, "Expected error to be {%s} but got nothing", *want)
-		return
-	}
-
-	if want == nil {
-		Ko(t, "Expected no error but got {%v}", got)
-		return
-	}
-
-	if got.(errors.Failure).Nature == errors.Nature(*want) {
-		Ok(t, "Check errors")
-		return
-	}
-	Ko(t, "Expected error to be {%s} but got {%v}", *want, got)
-}
-
 func checkResponses(t *testing.T, want []byte, got []byte) {
 	if reflect.DeepEqual(want, got) {
 		Ok(t, "Check responses")

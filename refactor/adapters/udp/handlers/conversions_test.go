@@ -10,6 +10,7 @@ import (
 	core "github.com/TheThingsNetwork/ttn/refactor"
 	"github.com/TheThingsNetwork/ttn/semtech"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
+	. "github.com/TheThingsNetwork/ttn/utils/errors/checks"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"github.com/brocaar/lorawan"
@@ -31,7 +32,7 @@ func TestConvertRXPKPacket(t *testing.T) {
 	for _, test := range tests {
 		Desc(t, "Convert RXPK: %s", pointer.DumpPStruct(test.RXPK, false))
 		packet, err := rxpk2packet(test.RXPK)
-		checkErrors(t, test.WantError, err)
+		CheckErrors(t, test.WantError, err)
 		checkPackets(t, test.CorePacket, packet)
 	}
 }
@@ -58,7 +59,7 @@ func TestConvertTXPKPacket(t *testing.T) {
 	for _, test := range tests {
 		Desc(t, "Convert to TXPK: %s", test.CorePacket.String())
 		txpk, err := packet2txpk(test.CorePacket)
-		checkErrors(t, test.WantError, err)
+		CheckErrors(t, test.WantError, err)
 		checkTXPKs(t, test.TXPK, txpk)
 	}
 }

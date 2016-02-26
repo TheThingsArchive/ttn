@@ -9,7 +9,6 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/TheThingsNetwork/ttn/utils/errors"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 )
 
@@ -35,29 +34,6 @@ func checkPackets(t *testing.T, want Packet, got Packet) {
 	}
 
 	Ko(t, "Converted packet does not match expectations. \nWant: \n%s\nGot:  \n%s", want.String(), got.String())
-}
-
-// Checks that errors match
-func checkErrors(t *testing.T, want *string, got error) {
-	if got == nil {
-		if want == nil {
-			Ok(t, "Check errors")
-			return
-		}
-		Ko(t, "Expected error to be {%s} but got nothing", *want)
-		return
-	}
-
-	if want == nil {
-		Ko(t, "Expected no error but got {%v}", got)
-		return
-	}
-
-	if got.(errors.Failure).Nature == errors.Nature(*want) {
-		Ok(t, "Check errors")
-		return
-	}
-	Ko(t, "Expected error to be {%s} but got {%v}", *want, got)
 }
 
 // Checks that obtained json matches expected one

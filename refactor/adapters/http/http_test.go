@@ -12,6 +12,7 @@ import (
 
 	core "github.com/TheThingsNetwork/ttn/refactor"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
+	. "github.com/TheThingsNetwork/ttn/utils/errors/checks"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"github.com/brocaar/lorawan"
@@ -156,7 +157,7 @@ func TestSend(t *testing.T) {
 
 		// Check
 		<-time.After(time.Second)
-		checkErrors(t, test.WantError, err)
+		CheckErrors(t, test.WantError, err)
 		checkPayloads(t, test.WantPayload, payloads)
 		checkRegistrations(t, test.WantRegistrations, registrations)
 	}
@@ -245,28 +246,6 @@ func genMockServer(recipient core.Recipient) chan string {
 }
 
 // Check utilities
-func checkErrors(t *testing.T, want *string, got error) {
-	if got == nil {
-		if want == nil {
-			Ok(t, "Check errors")
-			return
-		}
-		Ko(t, "Expected error to be {%s} but got nothing", *want)
-		return
-	}
-
-	if want == nil {
-		Ko(t, "Expected no error but got {%v}", got)
-		return
-	}
-
-	if got.(errors.Failure).Nature == errors.Nature(*want) {
-		Ok(t, "Check errors")
-		return
-	}
-	Ko(t, "Expected error to be {%s} but got {%v}", *want, got)
-}
-
 func checkRegistrations(t *testing.T, want []testRegistration, got []core.Registration) {
 	if len(want) != len(got) {
 		Ko(t, "Expected %d registrations but got %d", len(want), len(got))

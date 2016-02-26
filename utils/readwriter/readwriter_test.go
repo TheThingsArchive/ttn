@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/TheThingsNetwork/ttn/utils/errors"
+	. "github.com/TheThingsNetwork/ttn/utils/errors/checks"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"github.com/brocaar/lorawan"
@@ -19,11 +20,11 @@ func TestReadWriter(t *testing.T) {
 		rw := New(nil)
 		rw.Write([]byte{1, 2, 3, 4})
 		data, err := rw.Bytes()
-		checkErrors(t, nil, err)
+		CheckErrors(t, nil, err)
 
 		rw = New(data)
 		rw.Read(func(data []byte) { checkData(t, []byte{1, 2, 3, 4}, data) })
-		checkErrors(t, nil, rw.Err())
+		CheckErrors(t, nil, rw.Err())
 	}
 
 	// -------------
@@ -32,7 +33,7 @@ func TestReadWriter(t *testing.T) {
 		Desc(t, "Write to a non empty buffer")
 		rw := New([]byte{1, 2, 3, 4})
 		rw.Write([]byte{1, 2})
-		checkErrors(t, nil, rw.Err())
+		CheckErrors(t, nil, rw.Err())
 	}
 
 	// -------------
@@ -46,12 +47,12 @@ func TestReadWriter(t *testing.T) {
 		rw = New(data)
 		rw.Write([]byte{5, 6})
 		data, err := rw.Bytes()
-		checkErrors(t, nil, err)
+		CheckErrors(t, nil, err)
 
 		rw = New(data)
 		rw.Read(func(data []byte) { checkData(t, []byte{1, 2, 3, 4}, data) })
 		rw.Read(func(data []byte) { checkData(t, []byte{5, 6}, data) })
-		checkErrors(t, nil, rw.Err())
+		CheckErrors(t, nil, rw.Err())
 	}
 
 	// -------------
@@ -60,7 +61,7 @@ func TestReadWriter(t *testing.T) {
 		Desc(t, "Read from empty buffer")
 		rw := New(nil)
 		rw.Read(func(data []byte) { checkNotCalled(t) })
-		checkErrors(t, pointer.String(string(errors.Behavioural)), rw.Err())
+		CheckErrors(t, pointer.String(string(errors.Behavioural)), rw.Err())
 	}
 
 	// --------------
@@ -76,12 +77,12 @@ func TestReadWriter(t *testing.T) {
 		rw.Read(func(data []byte) {})
 		rw.Write([]byte{5, 6})
 		data, err := rw.Bytes()
-		checkErrors(t, nil, err)
+		CheckErrors(t, nil, err)
 
 		rw = New(data)
 		rw.Read(func(data []byte) { checkData(t, []byte{3, 4}, data) })
 		rw.Read(func(data []byte) { checkData(t, []byte{5, 6}, data) })
-		checkErrors(t, nil, rw.Err())
+		CheckErrors(t, nil, rw.Err())
 	}
 
 	// --------------
@@ -91,11 +92,11 @@ func TestReadWriter(t *testing.T) {
 		rw := New(nil)
 		rw.Write(byte(1))
 		data, err := rw.Bytes()
-		checkErrors(t, nil, err)
+		CheckErrors(t, nil, err)
 
 		rw = New(data)
 		rw.Read(func(data []byte) { checkData(t, []byte{1}, data) })
-		checkErrors(t, nil, rw.Err())
+		CheckErrors(t, nil, rw.Err())
 	}
 
 	// --------------
@@ -105,11 +106,11 @@ func TestReadWriter(t *testing.T) {
 		rw := New(nil)
 		rw.Write("TheThingsNetwork")
 		data, err := rw.Bytes()
-		checkErrors(t, nil, err)
+		CheckErrors(t, nil, err)
 
 		rw = New(data)
 		rw.Read(func(data []byte) { checkData(t, []byte("TheThingsNetwork"), data) })
-		checkErrors(t, nil, rw.Err())
+		CheckErrors(t, nil, rw.Err())
 	}
 
 	// --------------
@@ -119,11 +120,11 @@ func TestReadWriter(t *testing.T) {
 		rw := New(nil)
 		rw.Write(lorawan.AES128Key([16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6}))
 		data, err := rw.Bytes()
-		checkErrors(t, nil, err)
+		CheckErrors(t, nil, err)
 
 		rw = New(data)
 		rw.Read(func(data []byte) { checkData(t, []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6}, data) })
-		checkErrors(t, nil, rw.Err())
+		CheckErrors(t, nil, rw.Err())
 	}
 
 	// --------------
@@ -133,11 +134,11 @@ func TestReadWriter(t *testing.T) {
 		rw := New(nil)
 		rw.Write(lorawan.EUI64([8]byte{1, 2, 3, 4, 5, 6, 7, 8}))
 		data, err := rw.Bytes()
-		checkErrors(t, nil, err)
+		CheckErrors(t, nil, err)
 
 		rw = New(data)
 		rw.Read(func(data []byte) { checkData(t, []byte{1, 2, 3, 4, 5, 6, 7, 8}, data) })
-		checkErrors(t, nil, rw.Err())
+		CheckErrors(t, nil, rw.Err())
 	}
 
 	// --------------
@@ -147,11 +148,11 @@ func TestReadWriter(t *testing.T) {
 		rw := New(nil)
 		rw.Write(lorawan.DevAddr([4]byte{1, 2, 3, 4}))
 		data, err := rw.Bytes()
-		checkErrors(t, nil, err)
+		CheckErrors(t, nil, err)
 
 		rw = New(data)
 		rw.Read(func(data []byte) { checkData(t, []byte{1, 2, 3, 4}, data) })
-		checkErrors(t, nil, rw.Err())
+		CheckErrors(t, nil, rw.Err())
 	}
 
 	// --------------
@@ -161,11 +162,11 @@ func TestReadWriter(t *testing.T) {
 		rw := New(nil)
 		rw.Write([]byte{})
 		data, err := rw.Bytes()
-		checkErrors(t, nil, err)
+		CheckErrors(t, nil, err)
 
 		rw = New(data)
 		rw.Read(func(data []byte) { checkData(t, []byte{}, data) })
-		checkErrors(t, nil, rw.Err())
+		CheckErrors(t, nil, rw.Err())
 	}
 
 	// --------------
@@ -187,28 +188,6 @@ func TestReadWriter(t *testing.T) {
 }
 
 // ----- CHECK utilities
-func checkErrors(t *testing.T, want *string, got error) {
-	if got == nil {
-		if want == nil {
-			Ok(t, "Check errors")
-			return
-		}
-		Ko(t, "Expected error to be {%s} but got nothing", *want)
-		return
-	}
-
-	if want == nil {
-		Ko(t, "Expected no error but got {%v}", got)
-		return
-	}
-
-	if got.(errors.Failure).Nature == errors.Nature(*want) {
-		Ok(t, "Check errors")
-		return
-	}
-	Ko(t, "Expected error to be {%s} but got {%v}", *want, got)
-}
-
 func checkData(t *testing.T, want []byte, got []byte) {
 	if reflect.DeepEqual(want, got) {
 		Ok(t, "Check data")

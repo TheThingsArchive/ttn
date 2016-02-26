@@ -12,7 +12,6 @@ import (
 	MQTT "git.eclipse.org/gitroot/paho/org.eclipse.paho.mqtt.golang.git"
 	core "github.com/TheThingsNetwork/ttn/refactor"
 	. "github.com/TheThingsNetwork/ttn/refactor/adapters/mqtt"
-	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 )
@@ -174,29 +173,6 @@ func newTestConsumer() (*testConsumer, chan PktReq, chan RegReq) {
 }
 
 // ----- CHECK utilities
-func checkErrors(t *testing.T, want *string, got error) {
-	if got == nil {
-		if want == nil {
-			Ok(t, "Check Errors")
-			return
-		}
-		Ko(t, "Expected error to be {%s} but got nothing", *want)
-		return
-	}
-
-	if want == nil {
-		Ko(t, "Expected no error but got {%v}", got)
-		return
-	}
-
-	if got.(errors.Failure).Nature == errors.Nature(*want) {
-		Ok(t, "Check Errors")
-		return
-	}
-
-	Ko(t, "Expected error to be {%s} but got {%v}", *want, got)
-}
-
 func checkTopics(t *testing.T, want string, got string) {
 	if want == got {
 		Ok(t, "Check Topics")
