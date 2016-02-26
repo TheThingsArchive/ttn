@@ -12,8 +12,15 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
+type Interface interface {
+	Write(data interface{})
+	Read(to func(data []byte))
+	Bytes() ([]byte, error)
+	Err() error
+}
+
 // entryReadWriter offers convenient method to write and read successively from a bytes buffer.
-type Interface struct {
+type rw struct {
 	err  error
 	data *bytes.Buffer
 }
@@ -23,8 +30,8 @@ type Interface struct {
 // If a nil or empty buffer is supplied, reading from the read/writer will cause an error (io.EOF)
 // Nevertheless, if a valid non-empty buffer is given, the read/writer will start reading from the
 // beginning of that buffer, and will start writting at the end of it.
-func New(buf []byte) *Interface {
-	return &Interface{
+func New(buf []byte) Interface {
+	return &rw{
 		err:  nil,
 		data: bytes.NewBuffer(buf),
 	}
@@ -37,9 +44,11 @@ func New(buf []byte) *Interface {
 //
 // Also, it writes the length of the given raw data encoded on 2 bytes before writting the data
 // itself. In that way, data can be appended and read easily.
-func (w *Interface) Write(data interface{}) {
+func (w *rw) Write(data interface{}) {
 	var raw []byte
 	switch data.(type) {
+	case byte:
+		raw = []byte{data.(byte)}
 	case []byte:
 		raw = data.([]byte)
 	case lorawan.AES128Key:
@@ -56,12 +65,12 @@ func (w *Interface) Write(data interface{}) {
 	default:
 		panic(fmt.Errorf("Unreckognized data type: %v", data))
 	}
-	w.DirectWrite(uint16(len(raw)))
-	w.DirectWrite(raw)
+	w.directWrite(uint16(len(raw)))
+	w.directWrite(raw)
 }
 
-// DirectWrite appends the given data at the end of the existing buffer (without the length).
-func (w *Interface) DirectWrite(data interface{}) {
+// directWrite appends the given data at the end of the existing buffer (without the length).
+func (w *rw) directWrite(data interface{}) {
 	if w.err != nil {
 		return
 	}
@@ -74,7 +83,7 @@ func (w *Interface) DirectWrite(data interface{}) {
 // Read retrieves next data from the given buffer. Implicitely, this implies the data to have been
 // written using the Write method (len | data). Data are sent back through a callback as an array of
 // bytes.
-func (w *Interface) Read(to func(data []byte)) {
+func (w *rw) Read(to func(data []byte)) {
 	if w.err != nil {
 		return
 	}
@@ -88,7 +97,7 @@ func (w *Interface) Read(to func(data []byte)) {
 
 // Bytes might be used to retrieves the raw buffer after successive writes. It will return nil and
 // an error if any issue was encountered during the process.
-func (w Interface) Bytes() ([]byte, error) {
+func (w rw) Bytes() ([]byte, error) {
 	if w.err != nil {
 		return nil, errors.New(errors.Structural, w.err)
 	}
@@ -96,7 +105,7 @@ func (w Interface) Bytes() ([]byte, error) {
 }
 
 // Err just return the err status of the read-writer.
-func (w Interface) Err() error {
+func (w rw) Err() error {
 	if w.err != nil {
 		return errors.New(errors.Structural, w.err)
 	}
