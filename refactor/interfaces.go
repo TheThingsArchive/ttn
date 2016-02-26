@@ -23,10 +23,10 @@ type AckNacker interface {
 
 type Adapter interface {
 	Send(p Packet, r ...Recipient) ([]byte, error)
+	//Join(r JoinRequest, r ...Recipient) (JoinResponse, error)
 	GetRecipient(raw []byte) (Recipient, error)
 	Next() ([]byte, AckNacker, error)
 	NextRegistration() (Registration, AckNacker, error)
-	//Join(r JoinRequest, r ...Recipient) (JoinResponse, error)
 }
 
 type Packet interface {
@@ -35,15 +35,11 @@ type Packet interface {
 }
 
 type Addressable interface {
-	DevEUI() (lorawan.EUI64, error)
+	DevEUI() lorawan.EUI64
 }
 
 type Registration interface {
 	Recipient() Recipient
-	AppEUI() (lorawan.EUI64, error)
-	AppSKey() (lorawan.AES128Key, error)
-	DevEUI() (lorawan.EUI64, error)
-	NwkSKey() (lorawan.AES128Key, error)
 }
 
 type Recipient interface {
