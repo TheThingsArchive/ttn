@@ -3,10 +3,21 @@
 
 package refactor
 
+import (
+	"github.com/brocaar/lorawan"
+)
+
 type Component interface {
 	Register(reg Registration, an AckNacker) error
 	HandleUp(p []byte, an AckNacker, upAdapter Adapter) error
 	HandleDown(p []byte, an AckNacker, downAdapter Adapter) error
+}
+
+type NetworkController interface {
+	HandleCommands(packet BPacket) error
+	UpdateFCntUp(appEUI lorawan.EUI64, devEUI lorawan.EUI64, fcnt uint32)
+	UpdateFCntDown(appEUI lorawan.EUI64, devEUI lorawan.EUI64, fcnt uint32)
+	MergeCommands(appEUI lorawan.EUI64, devEUI lorawan.EUI64, pkt BPacket) RPacket
 }
 
 type AckNacker interface {

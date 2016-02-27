@@ -27,7 +27,7 @@ type BPacket interface {
 	Commands() []lorawan.MACCommand
 	FCnt() uint32
 	Metadata() Metadata
-	Payload() []byte
+	Payload() lorawan.PHYPayload
 	ValidateMIC(key lorawan.AES128Key) (bool, error)
 }
 

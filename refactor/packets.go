@@ -183,12 +183,6 @@ func NewBPacket(payload lorawan.PHYPayload, metadata Metadata) (BPacket, error) 
 	}, nil
 }
 
-// Payload implements the core.BPacket interface
-func (p bpacket) Payload() []byte {
-	macPayload := p.baserpacket.payload.MACPayload.(*lorawan.MACPayload)
-	return macPayload.FRMPayload[0].(*lorawan.DataPayload).Bytes
-}
-
 // ValidateMIC implements the core.BPacket interface
 func (p bpacket) ValidateMIC(key lorawan.AES128Key) (bool, error) {
 	return p.baserpacket.payload.ValidateMIC(key)
