@@ -9,12 +9,11 @@ import (
 )
 
 type Storage interface {
-	Lookup(devEUI lorawan.EUI64) ([]entry, error)
+	Lookup(devEUI lorawan.EUI64) (entry, error)
 	Store(reg Registration) error
 	Close() error
 }
 
 type entry struct {
 	Recipient Recipient
-	DevEUI    lorawan.EUI64
 }

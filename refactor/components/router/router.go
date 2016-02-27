@@ -28,12 +28,89 @@ func (r component) Register(reg Registration, an AckNacker) (err error) {
 }
 
 // HandleUp implements the core.Component interface
-func (r component) HandleUp(p Packet, an AckNacker, up Adapter) error {
+func (r component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
+	// Make sure we don't forget the AckNacker
+	var ack Packet
+	defer ensureAckNack(an, &ack, &err)
+
+	// Get some logs / analytics
+	stats.MarkMeter("router.uplink.in")
+	r.ctx.Debug("Handling uplink packet")
+
+	// Extract the given packet
+	itf, err := UnmarshalPacket(data)
+	if err != nil {
+		stats.MarkMeter("router.uplink.invalid")
+		r.ctx.Warn("Uplink Invalid")
+		return errors.New(errors.Structural, err)
+	}
+
+	switch itf.(type) {
+	case RPacket:
+		packet := itf.(RPacket)
+
+		// Lookup for an existing broker
+		// NOTE We are still assuming only one broker associated to one device address.
+		// We should find a mechanism to make sure that the broker in database is really
+		// associated to the device to avoid trouble during overlaping.
+		// Keeping track of the last FCnt maybe ? Having an overlap on the frame counter + the
+		// device address might be less likely.
+		entry, err := r.Lookup(packet.DevEUI())
+		if err != nil && err.(errors.Failure).Nature != errors.Behavioural {
+			r.ctx.Warn("Database lookup failed")
+			return errors.New(errors.Operational, err)
+		}
+
+		var recipient Recipient
+		if err == nil {
+			recipient = entry.Recipient
+		}
+
+		// TODO -> Add Gateway Metadata to packet
+
+		bpacket, err := NewBPacket(packet.Payload(), packet.Metadata())
+		if err != nil {
+			r.ctx.WithError(err).Warn("Unable to create router packet")
+			return errors.New(errors.Structural, err)
+		}
+
+		response, err := up.Send(bpacket, recipient)
+
+		if err != nil {
+			stats.MarkMeter("router.uplink.bad_broker_response")
+			r.ctx.WithError(err).Warn("Invalid response from Broker")
+			return errors.New(errors.Operational, err)
+		}
+
+		itf, err := UnmarshalPacket(response)
+		if err != nil {
+			stats.MarkMeter("router.uplink.bad_broker_response")
+			r.ctx.WithError(err).Warn("Invalid response from Broker")
+			return errors.New(errors.Structural, err)
+		}
+
+		switch itf.(type) {
+		case RPacket:
+			ack = itf.(RPacket)
+		case nil:
+		default:
+			return errors.New(errors.Implementation, "Unexpected packet type")
+		}
+
+		stats.MarkMeter("router.uplink.ok")
+	case SPacket:
+		return errors.New(errors.Implementation, "Stats packet not yet implemented")
+	case JPacket:
+		return errors.New(errors.Implementation, "Join Request not yet implemented")
+	default:
+		return errors.New(errors.Implementation, "Unreckognized packet type")
+	}
+
 	return nil
 }
 
 // HandleDown implements the core.Component interface
-func (r component) HandleDown(p Packet, an AckNacker, up Adapter) error {
+func (r component) HandleDown(data []byte, an AckNacker, up Adapter) error {
 	return errors.New(errors.Implementation, "Handle down not implemented on router")
 }
 
