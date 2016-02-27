@@ -46,7 +46,7 @@ func (b component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 	defer ensureAckNack(an, &ack, &err)
 
 	// Get some logs / analytics
-	stats.MarkMeter("boker.uplink.in")
+	stats.MarkMeter("broker.uplink.in")
 	b.ctx.Debug("Handling uplink packet")
 
 	// Extract the given packet
