@@ -19,6 +19,7 @@ const (
 	type_apacket
 	type_jpacket
 	type_cpacket
+	type_spacket
 )
 
 // ---------------------------------
@@ -109,10 +110,11 @@ func UnmarshalPacket(data []byte) (interface{}, error) {
 type rpacket struct {
 	baserpacket
 	basempacket
+	gatewayId baseapacket
 }
 
 // NewRPacket construct a new router packet given a payload and metadata
-func NewRPacket(payload lorawan.PHYPayload, metadata Metadata) (RPacket, error) {
+func NewRPacket(payload lorawan.PHYPayload, gatewayId []byte, metadata Metadata) (RPacket, error) {
 	if payload.MACPayload == nil {
 		return nil, errors.New(errors.Structural, "MACPAyload should not be empty")
 	}
@@ -123,19 +125,25 @@ func NewRPacket(payload lorawan.PHYPayload, metadata Metadata) (RPacket, error) 
 	}
 
 	return &rpacket{
-		baserpacket{payload: payload},
-		basempacket{metadata: metadata},
+		baserpacket: baserpacket{payload: payload},
+		basempacket: basempacket{metadata: metadata},
+		gatewayId:   baseapacket{payload: gatewayId},
 	}, nil
+}
+
+// GatewayId implements the core.RPacket interface
+func (p rpacket) GatewayId() []byte {
+	return p.gatewayId.payload
 }
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface
 func (p rpacket) MarshalBinary() ([]byte, error) {
-	return marshalBases(type_rpacket, p.baserpacket, p.basempacket)
+	return marshalBases(type_rpacket, p.baserpacket, p.basempacket, p.gatewayId)
 }
 
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
 func (p *rpacket) UnmarshalBinary(data []byte) error {
-	return unmarshalBases(type_rpacket, data, &p.baserpacket, &p.basempacket)
+	return unmarshalBases(type_rpacket, data, &p.baserpacket, &p.basempacket, &p.gatewayId)
 }
 
 // String implements the Stringer interface

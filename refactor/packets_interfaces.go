@@ -18,8 +18,15 @@ type Packet interface {
 
 type RPacket interface {
 	Packet
+	GatewayId() []byte
 	Metadata() Metadata
 	Payload() lorawan.PHYPayload
+}
+
+type SPacket interface {
+	Packet
+	GatewayId() []byte
+	Metadata() Metadata
 }
 
 type BPacket interface {

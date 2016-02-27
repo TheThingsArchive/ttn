@@ -30,7 +30,7 @@ func TestConvertRXPKPacket(t *testing.T) {
 
 	for _, test := range tests {
 		Desc(t, "Convert RXPK: %s", pointer.DumpPStruct(test.RXPK, false))
-		packet, err := rxpk2packet(test.RXPK)
+		packet, err := rxpk2packet(test.RXPK, []byte{1, 2, 3, 4, 5, 6, 7, 8})
 		CheckErrors(t, test.WantError, err)
 		checkPackets(t, test.CorePacket, packet)
 	}

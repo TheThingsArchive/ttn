@@ -67,7 +67,7 @@ func (s Semtech) Handle(conn chan<- udp.MsgUdp, packets chan<- udp.MsgReq, msg u
 
 		for _, rxpk := range pkt.Payload.RXPK {
 			go func(rxpk semtech.RXPK) {
-				pktOut, err := rxpk2packet(rxpk)
+				pktOut, err := rxpk2packet(rxpk, pkt.GatewayId)
 				if err != nil {
 					// TODO Log error
 					return
@@ -113,7 +113,7 @@ func (s Semtech) Handle(conn chan<- udp.MsgUdp, packets chan<- udp.MsgReq, msg u
 	}
 }
 
-func rxpk2packet(p semtech.RXPK) (core.Packet, error) {
+func rxpk2packet(p semtech.RXPK, gid []byte) (core.Packet, error) {
 	// First, we have to get the physical payload which is encoded in the Data field
 	if p.Data == nil {
 		return nil, errors.New(errors.Structural, "There's no data in the packet")
@@ -153,7 +153,7 @@ func rxpk2packet(p semtech.RXPK) (core.Packet, error) {
 
 	// At the end, our converted packet hold the same metadata than the RXPK packet but the Data
 	// which as been completely transformed into a lorawan Physical Payload.
-	return core.NewRPacket(payload, metadata)
+	return core.NewRPacket(payload, gid, metadata)
 }
 
 func packet2txpk(p core.RPacket) (semtech.TXPK, error) {
