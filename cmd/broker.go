@@ -6,10 +6,8 @@ package cmd
 import (
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/adapters/http"
-	"github.com/TheThingsNetwork/ttn/core/adapters/http/parser"
-	"github.com/TheThingsNetwork/ttn/core/adapters/http/pubsub"
-	"github.com/TheThingsNetwork/ttn/core/adapters/http/statuspage"
-	"github.com/TheThingsNetwork/ttn/core/components"
+	"github.com/TheThingsNetwork/ttn/core/adapters/http/handlers"
+	"github.com/TheThingsNetwork/ttn/core/components/broker"
 	"github.com/apex/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -35,32 +33,26 @@ and personalized devices (with their network session keys) with the router.
 		ctx.Info("Starting")
 
 		// Instantiate all components
-		rtrAdapter, err := http.NewAdapter(uint(viper.GetInt("broker.routers-port")), parser.JSON{}, ctx.WithField("adapter", "router-http"))
+		rtrAdapter, err := http.NewAdapter(uint(viper.GetInt("broker.routers-port")), nil, ctx.WithField("adapter", "router-http"))
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not start Routers Adapter")
 		}
+		rtrAdapter.Bind(handlers.Collect{})
 
-		hdlHTTPAdapter, err := http.NewAdapter(uint(viper.GetInt("broker.handlers-port")), parser.JSON{}, ctx.WithField("adapter", "handler-http"))
+		hdlAdapter, err := http.NewAdapter(uint(viper.GetInt("broker.handlers-port")), nil, ctx.WithField("adapter", "handler-http"))
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not start Handlers Adapter")
 		}
+		hdlAdapter.Bind(handlers.Collect{})
+		hdlAdapter.Bind(handlers.PubSub{})
+		hdlAdapter.Bind(handlers.StatusPage{})
 
-		_, err = statuspage.NewAdapter(hdlHTTPAdapter, ctx.WithField("adapter", "statuspage-http"))
-		if err != nil {
-			ctx.WithError(err).Fatal("Could not start Broker Adapter")
-		}
-
-		hdlAdapter, err := pubsub.NewAdapter(hdlHTTPAdapter, parser.PubSub{}, ctx.WithField("adapter", "handler-pubsub"))
-		if err != nil {
-			ctx.WithError(err).Fatal("Could not start Handlers Adapter")
-		}
-
-		db, err := components.NewBrokerStorage()
+		db, err := broker.NewStorage("broker_storage.db") // TODO Use a cli flag
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not create a local storage")
 		}
 
-		broker := components.NewBroker(db, ctx)
+		broker := broker.New(db, ctx)
 
 		// Bring the service to life
 
@@ -72,7 +64,7 @@ and personalized devices (with their network session keys) with the router.
 					ctx.WithError(err).Error("Could not retrieve uplink")
 					continue
 				}
-				go func(packet core.Packet, an core.AckNacker) {
+				go func(packet []byte, an core.AckNacker) {
 					if err := broker.HandleUp(packet, an, hdlAdapter); err != nil {
 						ctx.WithError(err).Error("Could not process uplink")
 					}
