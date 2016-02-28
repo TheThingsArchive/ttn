@@ -19,8 +19,8 @@ const max_duty_cycle = 90 // 90%
 // component implements the core.Component interface
 type component struct {
 	ctx     log.Interface
-	devices devStorage
-	packets pktStorage
+	devices DevStorage
+	packets PktStorage
 	set     chan<- bundle
 }
 
@@ -32,9 +32,22 @@ type bundle struct {
 	Packet  HPacket
 }
 
-// New construct a new Handler component from ...
-func New() (Component, error) {
-	return nil, nil
+// New construct a new Handler
+func New(devDb DevStorage, pktDb PktStorage, ctx log.Interface) Component {
+	h := component{
+		ctx:     ctx,
+		devices: devDb,
+		packets: pktDb,
+	}
+
+	set := make(chan bundle)
+	bundles := make(chan []bundle)
+
+	h.set = set
+	go h.consumeBundles(bundles)
+	go h.consumeSet(bundles, set)
+
+	return h
 }
 
 // Register implements the core.Component interface
