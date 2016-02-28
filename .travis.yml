@@ -1,12 +1,25 @@
 language: go
 
+sudo: required
+
 go:
   - 1.5
 
+before_install:
+    - wget http://repo.mosquitto.org/debian/mosquitto-repo.gpg.key
+    - sudo apt-key add mosquitto-repo.gpg.key
+    - wget http://repo.mosquitto.org/debian/mosquitto-wheezy.list
+    - sudo apt-get update
+
 install:
+    - sudo apt-get install mosquitto mosquitto-clients
     - go get $(comm -23 <(sort <(go list -f '{{join .Imports "\n"}}' ./...) | uniq) <(go list std) | grep -v TheThingsNetwork)
     - go get $(comm -23 <(sort <(go list -f '{{join .TestImports "\n"}}' ./...) | uniq) <(go list std) | grep -v TheThingsNetwork)
+
+before_script:
+    - mosquitto -p 1683 1>/dev/null 2>/dev/null &
+
 script:
-  - go list ./... | grep -v integration | xargs go test
-  - sh -c 'FMTRES="$(go fmt ./...)"; if [ ! -z "$FMTRES" ]; then echo $FMTRES; exit 255; fi'
-  - go vet ./...
+    - go list ./... | grep -v integration | xargs go test
+    - sh -c 'FMTRES="$(go fmt ./...)"; if [ ! -z "$FMTRES" ]; then echo $FMTRES; exit 255; fi'
+    - go vet ./...
