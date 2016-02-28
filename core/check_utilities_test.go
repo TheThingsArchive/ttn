@@ -9,29 +9,31 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/TheThingsNetwork/ttn/semtech"
-	"github.com/TheThingsNetwork/ttn/utils/errors"
-	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 )
 
 // Checks that two packets match
 func checkPackets(t *testing.T, want Packet, got Packet) {
+	if want == nil {
+		if got == nil {
+			Ok(t, "Check packets")
+			return
+		}
+		Ko(t, "No packet was expected but got %s", got.String())
+		return
+	}
+
+	if got == nil {
+		Ko(t, "Was expecting %s but got nothing", want.String())
+		return
+	}
+
 	if reflect.DeepEqual(want, got) {
 		Ok(t, "Check packets")
 		return
 	}
+
 	Ko(t, "Converted packet does not match expectations. \nWant: \n%s\nGot:  \n%s", want.String(), got.String())
-}
-
-// Checks that errors match
-func checkErrors(t *testing.T, want *string, got error) {
-	if want == nil && got == nil || got.(errors.Failure).Nature == *want {
-		Ok(t, "Check errors")
-		return
-	}
-
-	Ko(t, "Expected error to be %s but got %v", want, got)
 }
 
 // Checks that obtained json matches expected one
@@ -52,15 +54,6 @@ func checkMetadata(t *testing.T, want Metadata, got Metadata) {
 		return
 	}
 	Ko(t, "Unmarshaled json does not match expectations. \nWant: %s\nGot:  %s", want.String(), got.String())
-}
-
-// Checks that obtained TXPK matches expeceted one
-func checkTXPKs(t *testing.T, want semtech.TXPK, got semtech.TXPK) {
-	if reflect.DeepEqual(want, got) {
-		Ok(t, "check TXPKs")
-		return
-	}
-	Ko(t, "Converted TXPK does not match expectations. \nWant: %s\nGot:  %s", pointer.DumpPStruct(want, false), pointer.DumpPStruct(got, false))
 }
 
 // Check that obtained json strings contains the required field

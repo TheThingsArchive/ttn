@@ -7,11 +7,35 @@ import (
 	"encoding/json"
 	"time"
 
-	. "github.com/TheThingsNetwork/ttn/core/errors"
 	"github.com/TheThingsNetwork/ttn/semtech"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
 )
+
+type Metadata struct {
+	Chan *uint      `json:"chan,omitempty"` // Concentrator "IF" channel used for RX (unsigned integer)
+	Codr *string    `json:"codr,omitempty"` // LoRa ECC coding rate identifier
+	Datr *string    `json:"-"`              // FSK datarate (unsigned in bit per second) || LoRa datarate identifier
+	Duty *uint      `json:"duty,omitempty"` // DutyCycle of the gateway (uint between 0 and 100)
+	Fdev *uint      `json:"fdev,omitempty"` // FSK frequency deviation (unsigned integer, in Hz)
+	Freq *float64   `json:"freq,omitempty"` // RX Central frequency in MHx (unsigned float, Hz precision)
+	Gtid *string    `json:"gtid,omitempty"` // Id of the gateway from which the packet come
+	Imme *bool      `json:"imme,omitempty"` // Send packet immediately (will ignore tmst & time)
+	Ipol *bool      `json:"ipol,omitempty"` // Lora modulation polarization inversion
+	Lsnr *float64   `json:"lsnr,omitempty"` // LoRa SNR ratio in dB (signed float, 0.1 dB precision)
+	Modu *string    `json:"modu,omitempty"` // Modulation identifier "LORA" or "FSK"
+	Ncrc *bool      `json:"ncrc,omitempty"` // If true, disable the CRC of the physical layer (optional)
+	Powe *uint      `json:"powe,omitempty"` // TX output power in dBm (unsigned integer, dBm precision)
+	Prea *uint      `json:"prea,omitempty"` // RF preamble size (unsigned integer)
+	Rfch *uint      `json:"rfch,omitempty"` // Concentrator "RF chain" used for RX (unsigned integer)
+	Rssi *int       `json:"rssi,omitempty"` // RSSI in dBm (signed integer, 1 dB precision)
+	Size *uint      `json:"size,omitempty"` // RF packet payload size in bytes (unsigned integer)
+	Stat *int       `json:"stat,omitempty"` // CRC status: 1 - OK, -1 = fail, 0 = no CRC
+	Time *time.Time `json:"-"`              // UTC time of pkt RX, us precision, ISO 8601 'compact' format
+	Tmst *uint      `json:"tmst,omitempty"` // Internal timestamp of "RX finished" event (32b unsigned)
+}
+
+// TODO -> Metadata should implements a less byte-consuming MarshalBinary method MarshalJSON()
 
 // metadata allows us to inherit Metadata in metadataProxy but only by extending the exported
 // attributes of Metadata such that, they are still parsed by the json.Marshaller /
@@ -46,7 +70,7 @@ func (m Metadata) MarshalJSON() ([]byte, error) {
 	})
 
 	if err != nil {
-		err = errors.New(ErrInvalidStructure, err)
+		err = errors.New(errors.Structural, err)
 	}
 
 	return data, err
@@ -55,12 +79,12 @@ func (m Metadata) MarshalJSON() ([]byte, error) {
 // UnmarshalJSON implements the json.Unmarshaler interface
 func (m *Metadata) UnmarshalJSON(raw []byte) error {
 	if m == nil {
-		return errors.New(ErrInvalidStructure, "Cannot unmarshal nil Metadata")
+		return errors.New(errors.Structural, "Cannot unmarshal nil Metadata")
 	}
 
 	proxy := metadataProxy{}
 	if err := json.Unmarshal(raw, &proxy); err != nil {
-		return errors.New(ErrInvalidStructure, err)
+		return errors.New(errors.Structural, err)
 	}
 	*m = Metadata(proxy.metadata)
 	if proxy.Time != nil {

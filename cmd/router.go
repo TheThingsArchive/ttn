@@ -4,16 +4,16 @@
 package cmd
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/adapters/http"
-	"github.com/TheThingsNetwork/ttn/core/adapters/http/broadcast"
-	"github.com/TheThingsNetwork/ttn/core/adapters/http/parser"
-	"github.com/TheThingsNetwork/ttn/core/adapters/http/statuspage"
-	"github.com/TheThingsNetwork/ttn/core/adapters/semtech"
-	"github.com/TheThingsNetwork/ttn/core/components"
+	httpHandlers "github.com/TheThingsNetwork/ttn/core/adapters/http/handlers"
+	"github.com/TheThingsNetwork/ttn/core/adapters/udp"
+	udpHandlers "github.com/TheThingsNetwork/ttn/core/adapters/udp/handlers"
+	"github.com/TheThingsNetwork/ttn/core/components/router"
 	"github.com/apex/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -38,41 +38,32 @@ the gateway's duty cycle is (almost) full.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx.Info("Starting")
 
-		gtwAdapter, err := semtech.NewAdapter(uint(viper.GetInt("router.gateways-port")), ctx.WithField("adapter", "gateway-semtech"))
+		gtwAdapter, err := udp.NewAdapter(uint(viper.GetInt("router.gateways-port")), ctx.WithField("adapter", "gateway-semtech"))
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not start Gateway Adapter")
 		}
-
-		pktAdapter, err := http.NewAdapter(uint(viper.GetInt("router.brokers-port")), parser.JSON{}, ctx.WithField("adapter", "broker-http"))
-		if err != nil {
-			ctx.WithError(err).Fatal("Could not start Broker Adapter")
-		}
-
-		_, err = statuspage.NewAdapter(pktAdapter, ctx.WithField("adapter", "statuspage-http"))
-		if err != nil {
-			ctx.WithError(err).Fatal("Could not start Broker Adapter")
-		}
+		gtwAdapter.Bind(udpHandlers.Semtech{})
 
 		var brokers []core.Recipient
 		brokersStr := strings.Split(viper.GetString("router.brokers"), ",")
 		for i := range brokersStr {
-			brokers = append(brokers, core.Recipient{
-				Address: strings.Trim(brokersStr[i], " "),
-				Id:      i,
-			})
+			url := fmt.Sprintf("%s/packets", strings.Trim(brokersStr[i], " "))
+			brokers = append(brokers, http.NewHttpRecipient(url, "POST"))
 		}
 
-		brkAdapter, err := broadcast.NewAdapter(pktAdapter, brokers, ctx.WithField("adapter", "broker-broadcast"))
+		brkAdapter, err := http.NewAdapter(uint(viper.GetInt("router.brokers-port")), brokers, ctx.WithField("adapter", "broker-http"))
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not start Broker Adapter")
 		}
+		brkAdapter.Bind(httpHandlers.StatusPage{})
+		brkAdapter.Bind(httpHandlers.Healthz{})
 
-		db, err := components.NewRouterStorage(time.Hour * 8)
+		db, err := router.NewStorage("router_storage.db", time.Hour*8) // TODO use cli flag
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not create a local storage")
 		}
 
-		router := components.NewRouter(db, ctx)
+		router := router.New(db, ctx)
 
 		// Bring the service to life
 
@@ -84,7 +75,7 @@ the gateway's duty cycle is (almost) full.`,
 					ctx.WithError(err).Warn("Could not get next packet from gateway")
 					continue
 				}
-				go func(packet core.Packet, an core.AckNacker) {
+				go func(packet []byte, an core.AckNacker) {
 					if err := router.HandleUp(packet, an, brkAdapter); err != nil {
 						ctx.WithError(err).Warn("Could not process packet from gateway")
 					}
