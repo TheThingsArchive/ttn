@@ -194,7 +194,13 @@ browseBundles:
 
 		// And send it to the wild open
 		// we don't expect a response from the adapter, end of the chain.
-		_, err = bestBundle.Adapter.Send(packet, bestBundle.Entry.Recipient)
+		recipient, err := bestBundle.Adapter.GetRecipient(bestBundle.Entry.Recipient)
+		if err != nil {
+			go h.abortConsume(err, bundles)
+			continue browseBundles
+		}
+
+		_, err = bestBundle.Adapter.Send(packet, recipient)
 		if err != nil {
 			go h.abortConsume(err, bundles)
 			continue browseBundles
