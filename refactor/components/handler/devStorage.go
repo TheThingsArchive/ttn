@@ -4,7 +4,10 @@
 package handler
 
 import (
+	"fmt"
+
 	. "github.com/TheThingsNetwork/ttn/refactor"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/readwriter"
 	dbutil "github.com/TheThingsNetwork/ttn/utils/storage"
 	"github.com/brocaar/lorawan"
@@ -26,22 +29,50 @@ type appEntry struct {
 }
 
 type devStorage struct {
-	db dbutil.Interface
+	db   dbutil.Interface
+	Name string
 }
 
 // NewDevStorage creates a new Device Storage for handler
 func NewDevStorage(name string) (DevStorage, error) {
-	return nil, nil
+	itf, err := dbutil.New(name)
+	if err != nil {
+		return nil, errors.New(errors.Operational, err)
+	}
+
+	return devStorage{db: itf, Name: "entry"}, nil
 }
 
 // Lookup implements the handler.DevStorage interface
 func (s devStorage) Lookup(appEUI lorawan.EUI64, devEUI lorawan.EUI64) (devEntry, error) {
-	return devEntry{}, nil
+	itf, err := s.db.Lookup(fmt.Sprintf("%x.%x", appEUI[:], devEUI[:]), []byte(s.Name), &devEntry{})
+	if err != nil {
+		return devEntry{}, errors.New(errors.Operational, err)
+	}
+	entries, ok := itf.([]devEntry)
+	if !ok || len(entries) != 1 {
+		return devEntry{}, errors.New(errors.Structural, "Invalid stored entry")
+	}
+	return entries[0], nil
 }
 
 // Store implements the handler.DevStorage interface
 func (s devStorage) Store(reg HRegistration) error {
-	return nil
+	appEUI := reg.AppEUI()
+	devEUI := reg.DevEUI()
+	data, err := reg.Recipient().MarshalBinary()
+	if err != nil {
+		return errors.New(errors.Structural, "Cannot marshal recipient")
+	}
+
+	e := []dbutil.Entry{
+		&devEntry{
+			Recipient: data,
+			AppSKey:   reg.AppSKey(),
+			NwkSKey:   reg.NwkSKey(),
+		},
+	}
+	return s.db.Store(fmt.Sprintf("%x.%x", appEUI[:], devEUI[:]), []byte(s.Name), e)
 }
 
 // Close implements the handler.DevStorage interface
