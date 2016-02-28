@@ -31,8 +31,8 @@ type storage struct {
 	ExpiryDelay time.Duration
 }
 
-// newStorage creates a new internal storage for the router
-func newStorage(name string, delay time.Duration) (Storage, error) {
+// NewStorage creates a new internal storage for the router
+func NewStorage(name string, delay time.Duration) (Storage, error) {
 	itf, err := dbutil.New(name)
 	if err != nil {
 		return nil, errors.New(errors.Operational, err)
