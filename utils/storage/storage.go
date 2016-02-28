@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"reflect"
+	"strings"
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/utils/errors"
@@ -22,8 +23,11 @@ type Entry interface {
 	encoding.BinaryUnmarshaler
 }
 
+// The storage Interface provides an abstraction on top of the bolt database to store and access
+// data in a local in-memory database.
+// All "table" or "bucket" in a database can be accessed by their name as a string where the dot
+// "." is use as a level-separator to select or create nested buckets.
 type Interface interface {
-	Init(name string) error
 	Store(name string, key []byte, entries []Entry) error
 	Replace(name string, key []byte, entries []Entry) error
 	Lookup(name string, key []byte, shape Entry) (interface{}, error)
@@ -45,12 +49,27 @@ func New(name string) (Interface, error) {
 	return store{db}, nil
 }
 
-// Init initializes the given bolt bucket by creating (if not already exists) an empty bucket
-func (itf store) Init(bucketName string) error {
-	return itf.db.Update(func(tx *bolt.Tx) error {
-		_, err := tx.CreateBucketIfNotExists([]byte(bucketName))
-		return err
-	})
+func getBucket(tx *bolt.Tx, name string) (*bolt.Bucket, error) {
+	path := strings.Split(name, ".")
+	if len(path) < 1 {
+		return nil, errors.New(errors.Structural, "Invalid bucket name")
+	}
+	var next interface {
+		CreateBucketIfNotExists(b []byte) (*bolt.Bucket, error)
+		Bucket(b []byte) *bolt.Bucket
+	}
+
+	var err error
+	next = tx
+	for _, bname := range path {
+		next = next.Bucket([]byte(bname))
+		if next == nil {
+			if next, err = next.CreateBucketIfNotExists([]byte(bname)); err != nil {
+				return nil, errors.New(errors.Operational, err)
+			}
+		}
+	}
+	return next.(*bolt.Bucket), nil
 }
 
 // Store put a new set of entries in the given bolt database. It adds the entries to an existing set
@@ -67,9 +86,9 @@ func (itf store) Store(bucketName string, key []byte, entries []Entry) error {
 	}
 
 	err := itf.db.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(bucketName))
-		if bucket == nil {
-			return errors.New(errors.Operational, "storage unreachable")
+		bucket, err := getBucket(tx, bucketName)
+		if err != nil {
+			return err
 		}
 		w := readwriter.New(bucket.Get(key))
 		for _, m := range marshalled {
@@ -97,9 +116,9 @@ func (itf store) Lookup(bucketName string, key []byte, shape Entry) (interface{}
 	// First, lookup the raw entries
 	var rawEntry []byte
 	err := itf.db.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(bucketName))
-		if bucket == nil {
-			return errors.New(errors.Operational, "storage unreachable")
+		bucket, err := getBucket(tx, bucketName)
+		if err != nil {
+			return err
 		}
 		rawEntry = bucket.Get(key)
 		if rawEntry == nil {
@@ -135,9 +154,9 @@ func (itf store) Lookup(bucketName string, key []byte, shape Entry) (interface{}
 // Flush empties each entry of a bucket associated to a given device
 func (itf store) Flush(bucketName string, key []byte) error {
 	return itf.db.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(bucketName))
-		if bucket == nil {
-			return errors.New(errors.Operational, "storage unreachable")
+		bucket, err := getBucket(tx, bucketName)
+		if err != nil {
+			return err
 		}
 		if err := bucket.Delete(key); err != nil {
 			return errors.New(errors.Operational, err)
@@ -159,9 +178,9 @@ func (itf store) Replace(bucketName string, key []byte, entries []Entry) error {
 	}
 
 	return itf.db.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(bucketName))
-		if bucket == nil {
-			return errors.New(errors.Operational, "storage unreachable")
+		bucket, err := getBucket(tx, bucketName)
+		if err != nil {
+			return err
 		}
 		if err := bucket.Delete(key); err != nil {
 			return errors.New(errors.Operational, err)
