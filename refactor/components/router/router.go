@@ -63,7 +63,11 @@ func (r component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 
 		var recipient Recipient
 		if err == nil {
-			recipient = entry.Recipient
+			rawRecipient := entry.Recipient
+			if recipient, err = up.GetRecipient(rawRecipient); err != nil {
+				r.ctx.Warn("Unable to retrieve Recipient")
+				return errors.New(errors.Operational, err)
+			}
 		}
 
 		// TODO -> Add Gateway Metadata to packet
