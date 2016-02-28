@@ -38,16 +38,16 @@ func NewStorage(name string, delay time.Duration) (Storage, error) {
 		return nil, errors.New(errors.Operational, err)
 	}
 
-	return storage{db: itf, ExpiryDelay: delay, Name: "broker"}, nil
+	return &storage{db: itf, ExpiryDelay: delay, Name: "broker"}, nil
 }
 
 // Lookup implements the router.Storage interface
-func (s storage) Lookup(devEUI lorawan.EUI64) (entry, error) {
+func (s *storage) Lookup(devEUI lorawan.EUI64) (entry, error) {
 	return s.lookup(devEUI, true)
 }
 
 // lookup offers an indirection in order to avoid taking a lock if not needed
-func (s storage) lookup(devEUI lorawan.EUI64, lock bool) (entry, error) {
+func (s *storage) lookup(devEUI lorawan.EUI64, lock bool) (entry, error) {
 	// NOTE This works under the assumption that a read or write lock is already held by
 	// the callee (e.g. Store()
 	if lock {
@@ -81,7 +81,7 @@ func (s storage) lookup(devEUI lorawan.EUI64, lock bool) (entry, error) {
 }
 
 // Store implements the router.Storage interface
-func (s storage) Store(reg Registration) error {
+func (s *storage) Store(reg Registration) error {
 	devEUI := reg.DevEUI()
 	recipient, err := reg.Recipient().MarshalBinary()
 	if err != nil {
