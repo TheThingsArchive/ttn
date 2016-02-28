@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/semtech"
+	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	"net"
 )
 
@@ -40,12 +40,7 @@ func main() {
 				fmt.Println("Unexpected packet payload")
 				continue
 			}
-			packet, err := core.ConvertRXPK(pkt.Payload.RXPK[0])
-			if err != nil {
-				fmt.Println(err)
-				continue
-			}
-			fmt.Println(packet)
+			fmt.Printf(pointer.DumpPStruct(pkt.Payload.RXPK[0], true))
 		}
 	}()
 
