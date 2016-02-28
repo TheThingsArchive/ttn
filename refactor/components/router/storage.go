@@ -87,7 +87,24 @@ func (s storage) lookup(devEUI lorawan.EUI64, lock bool) (entry, error) {
 
 // Store implements the router.Storage interface
 func (s storage) Store(reg Registration) error {
-	return nil
+	devEUI := reg.DevEUI()
+	recipient, err := reg.Recipient().MarshalBinary()
+	if err != nil {
+		return errors.New(errors.Structural, err)
+	}
+
+	s.Lock()
+	defer s.Unlock()
+
+	_, err = s.lookup(devEUI, false)
+	if err == nil || err != nil && err.(errors.Failure).Nature != errors.Behavioural {
+		return errors.New(errors.Structural, "Already exists")
+	}
+	return s.db.Store(s.Name, devEUI[:], []dbutil.Entry{&entry{
+		Recipient: recipient,
+		until:     time.Now().Add(s.ExpiryDelay),
+	}})
+
 }
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface
