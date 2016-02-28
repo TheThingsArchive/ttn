@@ -17,9 +17,9 @@ type component struct {
 	Controller NetworkController
 }
 
-// New construct a new Broker component from ...
-func New() (Component, error) {
-	return nil, nil
+// New construct a new Broker component
+func New(db Storage, ctx log.Interface) Component {
+	return component{Storage: db, ctx: ctx}
 }
 
 // Register implements the core.Component interface
