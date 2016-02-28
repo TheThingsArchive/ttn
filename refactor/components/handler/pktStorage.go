@@ -27,7 +27,7 @@ type pktEntry struct {
 }
 
 // NewPktStorage creates a new PktStorage
-func NewStorage(name string) (PktStorage, error) {
+func NewPktStorage(name string) (PktStorage, error) {
 	itf, err := dbutil.New(name)
 	if err != nil {
 		return nil, errors.New(errors.Operational, err)
