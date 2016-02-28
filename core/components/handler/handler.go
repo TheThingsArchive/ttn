@@ -316,7 +316,6 @@ func (h component) HandleDown(data []byte, an AckNacker, down Adapter) (err erro
 	if err != nil {
 		return errors.New(errors.Structural, data)
 	}
-	return nil
 
 	switch itf.(type) {
 	case HPacket:
