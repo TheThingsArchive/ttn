@@ -4,6 +4,7 @@
 package readwriter
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -226,6 +227,52 @@ func TestReadWriter(t *testing.T) {
 			checkNotCalled(t)
 		}()
 		<-chwait
+	}
+
+	// --------------
+
+	{
+		Desc(t, "Try read with no error")
+		rw := New(nil)
+		rw.Write("TTN")
+		data, _ := rw.Bytes()
+
+		rw = New(data)
+		rw.TryRead(func(data []byte) error {
+			checkData(t, []byte("TTN"), data)
+			return nil
+		})
+		CheckErrors(t, nil, rw.Err())
+	}
+
+	// --------------
+
+	{
+		Desc(t, "Try read with classic error")
+		rw := New(nil)
+		rw.Write("TTN")
+		data, _ := rw.Bytes()
+
+		rw = New(data)
+		rw.TryRead(func(data []byte) error {
+			return fmt.Errorf("My Error")
+		})
+		CheckErrors(t, pointer.String(string(errors.Operational)), rw.Err())
+	}
+
+	// --------------
+
+	{
+		Desc(t, "Try read with failure")
+		rw := New(nil)
+		rw.Write("TTN")
+		data, _ := rw.Bytes()
+
+		rw = New(data)
+		rw.TryRead(func(data []byte) error {
+			return errors.New(errors.Behavioural, "Don't feel like to read")
+		})
+		CheckErrors(t, pointer.String(string(errors.Behavioural)), rw.Err())
 	}
 }
 

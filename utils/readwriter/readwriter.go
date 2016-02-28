@@ -15,6 +15,7 @@ import (
 
 type Interface interface {
 	Write(data interface{})
+	TryRead(to func(data []byte) error)
 	Read(to func(data []byte))
 	Bytes() ([]byte, error)
 	Err() error
@@ -91,15 +92,25 @@ func (w *rw) directWrite(data interface{}) {
 // written using the Write method (len | data). Data are sent back through a callback as an array of
 // bytes.
 func (w *rw) Read(to func(data []byte)) {
+	w.err = w.read(func(data []byte) error { to(data); return nil })
+}
+
+// TryRead retrieves the next data from the given buffer but differs from Read in the way it listen
+// to the callback returns for a possible error.
+func (w *rw) TryRead(to func(data []byte) error) {
+	w.err = w.read(to)
+}
+
+func (w *rw) read(to func(data []byte) error) error {
 	if w.err != nil {
-		return
+		return w.err
 	}
 
 	lenTo := new(uint16)
-	if w.err = binary.Read(w.data, binary.BigEndian, lenTo); w.err != nil {
-		return
+	if err := binary.Read(w.data, binary.BigEndian, lenTo); err != nil {
+		return err
 	}
-	to(w.data.Next(int(*lenTo)))
+	return to(w.data.Next(int(*lenTo)))
 }
 
 // Bytes might be used to retrieves the raw buffer after successive writes. It will return nil and
@@ -117,7 +128,10 @@ func (w rw) Err() error {
 		if w.err == io.EOF {
 			return errors.New(errors.Behavioural, w.err)
 		}
-		return errors.New(errors.Structural, w.err)
+		if failure, ok := w.err.(errors.Failure); ok {
+			return failure
+		}
+		return errors.New(errors.Operational, w.err)
 	}
 	return nil
 }
