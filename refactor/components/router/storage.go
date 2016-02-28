@@ -38,12 +38,7 @@ func NewStorage(name string, delay time.Duration) (Storage, error) {
 		return nil, errors.New(errors.Operational, err)
 	}
 
-	tableName := "brokers"
-	if err := itf.Init(tableName); err != nil {
-		return nil, errors.New(errors.Operational, err)
-	}
-
-	return storage{db: itf, ExpiryDelay: delay, Name: tableName}, nil
+	return storage{db: itf, ExpiryDelay: delay, Name: "broker"}, nil
 }
 
 // Lookup implements the router.Storage interface

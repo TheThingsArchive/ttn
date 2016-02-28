@@ -32,12 +32,7 @@ func NewPktStorage(name string) (PktStorage, error) {
 	if err != nil {
 		return nil, errors.New(errors.Operational, err)
 	}
-
-	tableName := "pkt_storage"
-	if err := itf.Init(tableName); err != nil {
-		return nil, errors.New(errors.Operational, err)
-	}
-	return pktStorage{db: itf, Name: tableName}, nil
+	return pktStorage{db: itf, Name: "pktStorage"}, nil
 }
 
 func keyFromEUIs(appEUI lorawan.EUI64, devEUI lorawan.EUI64) []byte {

@@ -36,12 +36,7 @@ func NewStorage(name string) (Storage, error) {
 		return nil, errors.New(errors.Operational, err)
 	}
 
-	tableName := "handlers"
-	if err := itf.Init(tableName); err != nil {
-		return nil, errors.New(errors.Operational, err)
-	}
-
-	return storage{db: itf, Name: tableName}, nil
+	return storage{db: itf, Name: "handlers"}, nil
 }
 
 // Lookup implements the broker.Storage interface
