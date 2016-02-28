@@ -18,7 +18,7 @@ type PktStorage interface {
 }
 
 type pktStorage struct {
-	dbutil.Interface
+	db   dbutil.Interface
 	Name string
 }
 
@@ -37,7 +37,7 @@ func NewStorage(name string) (PktStorage, error) {
 	if err := itf.Init(tableName); err != nil {
 		return nil, errors.New(errors.Operational, err)
 	}
-	return pktStorage{Interface: itf, Name: tableName}, nil
+	return pktStorage{db: itf, Name: tableName}, nil
 }
 
 func keyFromEUIs(appEUI lorawan.EUI64, devEUI lorawan.EUI64) []byte {
@@ -46,7 +46,7 @@ func keyFromEUIs(appEUI lorawan.EUI64, devEUI lorawan.EUI64) []byte {
 
 // Push implements the PktStorage interface
 func (s pktStorage) Push(p HPacket) error {
-	err := s.Store(s.Name, keyFromEUIs(p.AppEUI(), p.DevEUI()), []dbutil.Entry{&pktEntry{p}})
+	err := s.db.Store(s.Name, keyFromEUIs(p.AppEUI(), p.DevEUI()), []dbutil.Entry{&pktEntry{p}})
 	if err != nil {
 		return errors.New(errors.Operational, err)
 	}
@@ -57,7 +57,7 @@ func (s pktStorage) Push(p HPacket) error {
 func (s pktStorage) Pull(appEUI lorawan.EUI64, devEUI lorawan.EUI64) (HPacket, error) {
 	key := keyFromEUIs(appEUI, devEUI)
 
-	entries, err := s.Lookup(s.Name, key, &pktEntry{})
+	entries, err := s.db.Lookup(s.Name, key, &pktEntry{})
 	if err != nil {
 		return nil, errors.New(errors.Operational, err)
 	}
@@ -80,7 +80,7 @@ func (s pktStorage) Pull(appEUI lorawan.EUI64, devEUI lorawan.EUI64) (HPacket, e
 		newEntries = append(newEntries, p)
 	}
 
-	if err := s.Replace(s.Name, key, newEntries); err != nil {
+	if err := s.db.Replace(s.Name, key, newEntries); err != nil {
 		// TODO This is critical... we've just lost a packet
 		return nil, errors.New(errors.Operational, "Unable to restore data in db")
 	}
