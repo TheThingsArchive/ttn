@@ -15,6 +15,11 @@ type component struct {
 	ctx log.Interface
 }
 
+// New constructs a new router
+func New(db Storage, ctx log.Interface) Component {
+	return component{Storage: db, ctx: ctx}
+}
+
 // Register implements the core.Component interface
 func (r component) Register(reg Registration, an AckNacker) (err error) {
 	defer ensureAckNack(an, nil, &err)
