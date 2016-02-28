@@ -120,7 +120,11 @@ func (b component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 		if err != nil {
 			return errors.New(errors.Structural, err)
 		}
-		resp, err := up.Send(hpacket, mEntry.Recipient)
+		recipient, err := up.GetRecipient(mEntry.Recipient)
+		if err != nil {
+			return errors.New(errors.Structural, err)
+		}
+		resp, err := up.Send(hpacket, recipient)
 		if err != nil {
 			stats.MarkMeter("broker.uplink.bad_handler_response")
 			return errors.New(errors.Operational, err)
