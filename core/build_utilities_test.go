@@ -4,81 +4,11 @@
 package core
 
 import (
-	"encoding/base64"
-	"strings"
 	"time"
 
-	"github.com/TheThingsNetwork/ttn/semtech"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	"github.com/brocaar/lorawan"
 )
-
-// Generate an RXPK packet using the given payload as Data
-func genRXPK(phyPayload lorawan.PHYPayload) semtech.RXPK {
-	raw, err := phyPayload.MarshalBinary()
-	if err != nil {
-		panic(err)
-	}
-	data := strings.Trim(base64.StdEncoding.EncodeToString(raw), "=")
-
-	return semtech.RXPK{
-		Chan: pointer.Uint(2),
-		Codr: pointer.String("4/6"),
-		Data: pointer.String(data),
-		Freq: pointer.Float64(863.125),
-		Lsnr: pointer.Float64(5.2),
-		Modu: pointer.String("LORA"),
-		Rfch: pointer.Uint(2),
-		Rssi: pointer.Int(-27),
-		Size: pointer.Uint(uint(len([]byte(data)))),
-		Stat: pointer.Int(0),
-		Time: pointer.Time(time.Now()),
-		Tmst: pointer.Uint(uint(time.Now().UnixNano())),
-	}
-}
-
-// Generates a TXPK packet using the given payload and the given metadata
-func genTXPK(phyPayload lorawan.PHYPayload, metadata Metadata) semtech.TXPK {
-	raw, err := phyPayload.MarshalBinary()
-	if err != nil {
-		panic(err)
-	}
-	data := strings.Trim(base64.StdEncoding.EncodeToString(raw), "=")
-	return semtech.TXPK{
-		Codr: metadata.Codr,
-		Data: pointer.String(data),
-		Datr: metadata.Datr,
-		Fdev: metadata.Fdev,
-		Freq: metadata.Freq,
-		Imme: metadata.Imme,
-		Ipol: metadata.Ipol,
-		Modu: metadata.Modu,
-		Ncrc: metadata.Ncrc,
-		Powe: metadata.Powe,
-		Prea: metadata.Prea,
-		Rfch: metadata.Rfch,
-		Size: metadata.Size,
-		Time: metadata.Time,
-		Tmst: metadata.Tmst,
-	}
-}
-
-// Generate a Metadata object that matches RXPK metadata
-func genMetadata(RXPK semtech.RXPK) Metadata {
-	return Metadata{
-		Chan: RXPK.Chan,
-		Codr: RXPK.Codr,
-		Freq: RXPK.Freq,
-		Lsnr: RXPK.Lsnr,
-		Modu: RXPK.Modu,
-		Rfch: RXPK.Rfch,
-		Rssi: RXPK.Rssi,
-		Size: RXPK.Size,
-		Stat: RXPK.Stat,
-		Time: RXPK.Time,
-		Tmst: RXPK.Tmst,
-	}
-}
 
 // Generates a Metadata object with all field completed with relevant values
 func genFullMetadata() Metadata {
