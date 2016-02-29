@@ -10,7 +10,7 @@ import (
 	"github.com/smartystreets/assertions"
 )
 
-func TestURL(t *testing.T) {
+func TestStatusPageURL(t *testing.T) {
 	a := assertions.New(t)
 
 	s := StatusPage{}
@@ -18,7 +18,7 @@ func TestURL(t *testing.T) {
 	a.So(s.Url(), assertions.ShouldEqual, "/status/")
 }
 
-func TestHandler(t *testing.T) {
+func TestStatusPageHandler(t *testing.T) {
 	a := assertions.New(t)
 
 	s := StatusPage{}
