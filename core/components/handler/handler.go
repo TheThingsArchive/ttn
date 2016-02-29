@@ -11,6 +11,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/readwriter"
 	"github.com/apex/log"
+	"github.com/brocaar/lorawan"
 )
 
 const buffer_delay time.Duration = time.Millisecond * 300
@@ -199,7 +200,7 @@ browseBundles:
 		}
 
 		// Then create an application-level packet
-		packet, err := NewAPacket(payload, bestBundle.Packet.DevEUI(), metadata)
+		packet, err := NewAPacket(bestBundle.Packet.AppEUI(), bestBundle.Packet.DevEUI(), payload, metadata)
 		if err != nil {
 			go h.abortConsume(err, bundles)
 			continue browseBundles
@@ -226,10 +227,39 @@ browseBundles:
 			continue browseBundles
 		}
 
-		// Then respond to node -> no response for the moment
+		// Then respond to node
 		for _, bundle := range bundles {
 			if bundle.Id == bestBundle.Id {
-				bundle.Chresp <- down
+				macPayload := lorawan.NewMACPayload(false)
+				macPayload.FHDR = lorawan.FHDR{
+					DevAddr: bestBundle.Entry.DevAddr,
+					// TODO Take care of the Adaptative Rate and other stuff
+					FCnt: bestBundle.Packet.FCnt() + 1,
+				}
+				macPayload.FPort = 1
+				macPayload.FRMPayload = []lorawan.Payload{&lorawan.DataPayload{
+					Bytes: down.Payload(),
+				}}
+
+				if err := macPayload.EncryptFRMPayload(bestBundle.Entry.AppSKey); err != nil {
+					go h.abortConsume(err, bundles)
+					continue browseBundles
+				}
+
+				payload := lorawan.NewPHYPayload(false)
+				payload.MHDR = lorawan.MHDR{
+					MType: lorawan.UnconfirmedDataDown,
+					Major: lorawan.LoRaWANR1,
+				}
+				payload.MACPayload = macPayload
+
+				resp, err := NewHPacket(bestBundle.Packet.AppEUI(), bestBundle.Packet.DevEUI(), payload, Metadata{})
+				if err != nil {
+					go h.abortConsume(err, bundles)
+					continue browseBundles
+				}
+
+				bundle.Chresp <- resp
 			} else {
 				bundle.Chresp <- nil
 			}
@@ -318,8 +348,8 @@ func (h component) HandleDown(data []byte, an AckNacker, down Adapter) (err erro
 	}
 
 	switch itf.(type) {
-	case HPacket:
-		return h.packets.Push(itf.(HPacket))
+	case APacket:
+		return h.packets.Push(itf.(APacket))
 	default:
 		return errors.New(errors.Implementation, "Unhandled packet type")
 	}

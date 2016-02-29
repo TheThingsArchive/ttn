@@ -20,6 +20,7 @@ type DevStorage interface {
 
 type devEntry struct {
 	Recipient []byte
+	DevAddr   lorawan.DevAddr
 	AppSKey   lorawan.AES128Key
 	NwkSKey   lorawan.AES128Key
 }
@@ -84,6 +85,7 @@ func (s devStorage) Close() error {
 func (e devEntry) MarshalBinary() ([]byte, error) {
 	rw := readwriter.New(nil)
 	rw.Write(e.Recipient)
+	rw.Write(e.DevAddr)
 	rw.Write(e.AppSKey)
 	rw.Write(e.NwkSKey)
 	return rw.Bytes()
@@ -93,6 +95,7 @@ func (e devEntry) MarshalBinary() ([]byte, error) {
 func (e *devEntry) UnmarshalBinary(data []byte) error {
 	rw := readwriter.New(data)
 	rw.Read(func(data []byte) { e.Recipient = data })
+	rw.Read(func(data []byte) { copy(e.DevAddr[:], data) })
 	rw.Read(func(data []byte) { copy(e.AppSKey[:], data) })
 	rw.Read(func(data []byte) { copy(e.NwkSKey[:], data) })
 	return rw.Err()
