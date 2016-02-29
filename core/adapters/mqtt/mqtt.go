@@ -191,7 +191,8 @@ func (a *Adapter) Next() ([]byte, core.AckNacker, error) {
 
 // NextRegistration implements the core.Adapter interface. Not implemented for this adapters.
 func (a *Adapter) NextRegistration() (core.Registration, core.AckNacker, error) {
-	return nil, nil, nil
+	r := <-a.registrations
+	return r.Registration, mqttAckNacker{Chresp: r.Chresp}, nil
 }
 
 // Bind registers a handler to a specific endpoint
