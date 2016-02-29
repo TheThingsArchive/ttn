@@ -338,7 +338,13 @@ func (p *apacket) UnmarshalBinary(data []byte) error {
 
 // String implements the fmt.Stringer interface
 func (p apacket) String() string {
-	return "TODO"
+	return fmt.Sprintf(
+		"APacket{AppEUI:%v,DevEUI:%v,Payload:%v,Metadata:%v",
+		p.AppEUI(),
+		p.DevEUI(),
+		p.Payload(),
+		p.Metadata(),
+	)
 }
 
 // ---------------------------------
