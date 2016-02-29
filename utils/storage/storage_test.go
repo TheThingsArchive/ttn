@@ -18,13 +18,6 @@ const database = "TestStoreAndLookup.db"
 
 func TestStoreAndLookup(t *testing.T) {
 	var itf Interface
-
-	{
-		if err := os.Remove(database); err != nil {
-			panic(err)
-		}
-	}
-
 	defer func() {
 		if itf == nil {
 			return
@@ -32,6 +25,7 @@ func TestStoreAndLookup(t *testing.T) {
 		if err := itf.Close(); err != nil {
 			panic(err)
 		}
+		os.Remove(database)
 	}()
 
 	// --------------------
