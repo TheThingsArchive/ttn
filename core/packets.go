@@ -306,38 +306,34 @@ func (p hpacket) String() string {
 // apacket implements the core.APacket interface
 type apacket struct {
 	baseapacket
-	devEUI baseapacket
+	basehpacket
 	basegpacket
 }
 
 // NewAPacket constructs a new application packet
-func NewAPacket(payload []byte, devEUI lorawan.EUI64, metadata []Metadata) (APacket, error) {
+func NewAPacket(appEUI lorawan.EUI64, devEUI lorawan.EUI64, payload []byte, metadata []Metadata) (APacket, error) {
 	if len(payload) == 0 {
 		return nil, errors.New(errors.Structural, "Application packet must hold a payload")
 	}
 
 	return &apacket{
+		basehpacket: basehpacket{
+			devEUI: devEUI,
+			appEUI: appEUI,
+		},
 		baseapacket: baseapacket{payload: payload},
-		devEUI:      baseapacket{payload: devEUI[:]},
 		basegpacket: basegpacket{metadata: metadata},
 	}, nil
 }
 
-// DevEUI implements the core.APacket interface
-func (p apacket) DevEUI() lorawan.EUI64 {
-	var devEUI lorawan.EUI64
-	copy(devEUI[:], p.devEUI.payload)
-	return devEUI
-}
-
 // MarshalBinary implements the encoding.BinaryMarshaler interface
 func (p apacket) MarshalBinary() ([]byte, error) {
-	return marshalBases(type_apacket, p.baseapacket, p.devEUI, p.basegpacket)
+	return marshalBases(type_apacket, p.basehpacket, p.baseapacket, p.basegpacket)
 }
 
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
 func (p *apacket) UnmarshalBinary(data []byte) error {
-	return unmarshalBases(type_apacket, data, &p.baseapacket, &p.devEUI, &p.basegpacket)
+	return unmarshalBases(type_apacket, data, &p.basehpacket, &p.baseapacket, &p.basegpacket)
 }
 
 // String implements the fmt.Stringer interface
