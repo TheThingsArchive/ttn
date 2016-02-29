@@ -5,6 +5,7 @@ package handlers
 
 import (
 	"testing"
+	"time"
 
 	"github.com/TheThingsNetwork/ttn/core"
 	. "github.com/TheThingsNetwork/ttn/core/adapters/mqtt"
@@ -41,7 +42,7 @@ func TestActivationHandle(t *testing.T) {
 		WantError        *string            // The expected error from the handler
 		WantSubscription *string            // The topic to which a subscription is expected
 		WantRegistration core.HRegistration // The expected registration towards the adapter
-		WantPacket       []byte             // The expected packet towards the adapter
+		WantPacket       core.Packet        // The expected packet towards the adapter
 	}{
 		{
 			Desc:   "Ok client | Valid Topic | Valid Payload",
@@ -54,7 +55,7 @@ func TestActivationHandle(t *testing.T) {
 			},
 
 			WantError:        nil,
-			WantSubscription: pointer.String("0101010101010101/devices/0000000002020202/up"),
+			WantSubscription: pointer.String("0101010101010101/devices/0000000002020202/down"),
 			WantRegistration: activationRegistration{
 				recipient: NewRecipient("0101010101010101/devices/0000000002020202/up", "WHATEVER"),
 				devEUI:    lorawan.EUI64([8]byte{0, 0, 0, 0, 2, 2, 2, 2}),
@@ -151,7 +152,7 @@ func TestActivationHandle(t *testing.T) {
 			},
 
 			WantError:        pointer.String(string(errors.Operational)),
-			WantSubscription: pointer.String("0101010101010101/devices/0000000002020202/up"),
+			WantSubscription: pointer.String("0101010101010101/devices/0000000002020202/down"),
 			WantRegistration: nil,
 			WantPacket:       nil,
 		},
@@ -170,11 +171,98 @@ func TestActivationHandle(t *testing.T) {
 			payload: test.Payload,
 			topic:   test.Topic,
 		})
+		<-time.After(time.Millisecond * 100)
 
 		// Check
 		CheckErrors(t, test.WantError, err)
 		checkSubscriptions(t, test.WantSubscription, test.Client.Subscription)
 		checkRegistrations(t, test.WantRegistration, consumer.Registration)
+		checkPackets(t, test.WantPacket, consumer.Packet)
+	}
+}
+
+func TestHandleReception(t *testing.T) {
+	packet, _ := core.NewAPacket(
+		lorawan.EUI64([8]byte{1, 1, 1, 1, 1, 1, 1, 1}),
+		lorawan.EUI64([8]byte{2, 2, 2, 2, 2, 2, 2, 2}),
+		[]byte{1, 2, 3, 4},
+		nil,
+	)
+
+	tests := []struct {
+		Desc    string
+		Client  *testClient
+		Payload []byte
+		Topic   string
+
+		WantPacket core.Packet
+	}{
+		{
+			Desc:    "Valid Payload | Valid Topic",
+			Client:  newTestClient(),
+			Payload: []byte{1, 2, 3, 4},
+			Topic:   "0101010101010101/devices/0202020202020202/down",
+
+			WantPacket: packet,
+		},
+		{
+			Desc:    "Valid Payload | Invalid Topic #2",
+			Client:  newTestClient(),
+			Payload: []byte{1, 2, 3, 4},
+			Topic:   "0101010101010101/devices/0202020202020202/down/again",
+
+			WantPacket: nil,
+		},
+		{
+			Desc:    "Valid Payload | Invalid Topic",
+			Client:  newTestClient(),
+			Payload: []byte{1, 2, 3, 4},
+			Topic:   "0101010101010101/devices/0202020202020202",
+
+			WantPacket: nil,
+		},
+		{
+			Desc:    "Valid Payload | Invalid AppEUI",
+			Client:  newTestClient(),
+			Payload: []byte{1, 2, 3, 4},
+			Topic:   "010101/devices/0202020202020202/down",
+
+			WantPacket: nil,
+		},
+		{
+			Desc:    "Valid Payload | Invalid DevEUI",
+			Client:  newTestClient(),
+			Payload: []byte{1, 2, 3, 4},
+			Topic:   "0101010101010101/devices/020202/down",
+
+			WantPacket: nil,
+		},
+		{
+			Desc:    "Invalid Payload | Valid Topic",
+			Client:  newTestClient(),
+			Payload: []byte{},
+			Topic:   "0101010101010101/devices/0202020202020202/down",
+
+			WantPacket: nil,
+		},
+	}
+	for i, test := range tests {
+		// Describe
+		Desc(t, "#%d: %s", i, test.Desc)
+
+		// Build
+		consumer, chpkt, _ := newTestConsumer()
+		handler := Activation{}
+
+		// Operate
+		f := handler.handleReception(chpkt)
+		f(test.Client, testMessage{
+			test.Payload,
+			test.Topic,
+		})
+		<-time.After(time.Millisecond * 100)
+
+		// Check
 		checkPackets(t, test.WantPacket, consumer.Packet)
 	}
 }

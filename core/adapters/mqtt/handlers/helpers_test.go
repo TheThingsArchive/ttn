@@ -268,10 +268,23 @@ func checkSubscriptions(t *testing.T, want *string, got *string) {
 	Ok(t, "Check Subscriptions")
 }
 
-func checkPackets(t *testing.T, want []byte, got []byte) {
-	if reflect.DeepEqual(want, got) {
+func checkPackets(t *testing.T, want core.Packet, got []byte) {
+	if want == nil {
+		if got == nil {
+			Ok(t, "Check Packets")
+			return
+		}
+		Ko(t, "Expected no packet but got %v", got)
+		return
+	}
+
+	data, err := want.MarshalBinary()
+	if err != nil {
+		panic(err)
+	}
+	if reflect.DeepEqual(data, got) {
 		Ok(t, "Check Packets")
 		return
 	}
-	Ko(t, "Received packet does not match expectations.\nWant: %s\nGot:  %s", string(want), string(got))
+	Ko(t, "Received packet does not match expectations.\nWant: %v\nGot:  %v", data, got)
 }

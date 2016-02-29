@@ -13,8 +13,8 @@ import (
 )
 
 type PktStorage interface {
-	Push(p HPacket) error
-	Pull(appEUI lorawan.EUI64, devEUI lorawan.EUI64) (HPacket, error)
+	Push(p APacket) error
+	Pull(appEUI lorawan.EUI64, devEUI lorawan.EUI64) (APacket, error)
 }
 
 type pktStorage struct {
@@ -23,7 +23,7 @@ type pktStorage struct {
 }
 
 type pktEntry struct {
-	HPacket
+	APacket
 }
 
 // NewPktStorage creates a new PktStorage
@@ -40,7 +40,7 @@ func keyFromEUIs(appEUI lorawan.EUI64, devEUI lorawan.EUI64) []byte {
 }
 
 // Push implements the PktStorage interface
-func (s pktStorage) Push(p HPacket) error {
+func (s pktStorage) Push(p APacket) error {
 	err := s.db.Store(s.Name, keyFromEUIs(p.AppEUI(), p.DevEUI()), []dbutil.Entry{&pktEntry{p}})
 	if err != nil {
 		return errors.New(errors.Operational, err)
@@ -49,7 +49,7 @@ func (s pktStorage) Push(p HPacket) error {
 }
 
 // Pull implements the PktStorage interface
-func (s pktStorage) Pull(appEUI lorawan.EUI64, devEUI lorawan.EUI64) (HPacket, error) {
+func (s pktStorage) Pull(appEUI lorawan.EUI64, devEUI lorawan.EUI64) (APacket, error) {
 	key := keyFromEUIs(appEUI, devEUI)
 
 	entries, err := s.db.Lookup(s.Name, key, &pktEntry{})
@@ -80,12 +80,12 @@ func (s pktStorage) Pull(appEUI lorawan.EUI64, devEUI lorawan.EUI64) (HPacket, e
 		return nil, errors.New(errors.Operational, "Unable to restore data in db")
 	}
 
-	return pkt.HPacket, nil
+	return pkt.APacket, nil
 }
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface
 func (e pktEntry) MarshalBinary() ([]byte, error) {
-	return e.HPacket.MarshalBinary()
+	return e.APacket.MarshalBinary()
 }
 
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
@@ -94,10 +94,10 @@ func (e *pktEntry) UnmarshalBinary(data []byte) error {
 	if err != nil {
 		return errors.New(errors.Structural, err)
 	}
-	packet, ok := itf.(HPacket)
+	packet, ok := itf.(APacket)
 	if !ok {
 		return errors.New(errors.Structural, "Not a Handler packet")
 	}
-	e.HPacket = packet
+	e.APacket = packet
 	return nil
 }

@@ -48,6 +48,7 @@ type HPacket interface {
 
 type APacket interface {
 	Packet
+	AppEUI() lorawan.EUI64
 	Payload() []byte
 	Metadata() []Metadata
 }
