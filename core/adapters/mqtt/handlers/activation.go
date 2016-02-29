@@ -89,7 +89,7 @@ func (a Activation) handleReception(chpkt chan<- PktReq) func(client Client, msg
 
 		appEUIRaw, erra := hex.DecodeString(infos[0])
 		devEUIRaw, errd := hex.DecodeString(infos[2])
-		if erra != nil || errd != nil {
+		if erra != nil || errd != nil || len(appEUIRaw) != 8 || len(devEUIRaw) != 8 {
 			return
 		}
 
