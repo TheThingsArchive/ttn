@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	MQTT "git.eclipse.org/gitroot/paho/org.eclipse.paho.mqtt.golang.git"
+	"github.com/TheThingsNetwork/ttn/core"
 	. "github.com/TheThingsNetwork/ttn/core/adapters/mqtt"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/brocaar/lorawan"
@@ -56,16 +57,17 @@ func (a Activation) Handle(client Client, chpkt chan<- PktReq, chreg chan<- RegR
 	copy(appEUI[:], data[:])
 
 	devEUIStr = hex.EncodeToString(devEUI[:])
-	topic := fmt.Sprintf("%s/%s/%s/%s", appEUIStr, "devices", devEUIStr, "up")
-	token := client.Subscribe(topic, 2, a.handleReception(chpkt))
+	topic := fmt.Sprintf("%s/%s/%s", appEUIStr, "devices", devEUIStr)
+	topicUp := fmt.Sprintf("%s/%s", topic, "up")
+	topicDown := fmt.Sprintf("%s/%s", topic, "down")
+	token := client.Subscribe(topicDown, 2, a.handleReception(chpkt))
 	if token.Wait() && token.Error() != nil {
-		// TODO Log Error
 		return errors.New(errors.Operational, token.Error())
 	}
 
 	chreg <- RegReq{
 		Registration: activationRegistration{
-			recipient: NewRecipient(topic, "DO_NOT_USE_THIS_TOPIC"),
+			recipient: NewRecipient(topicUp, "DO_NOT_USE_THIS_TOPIC"),
 			devEUI:    devEUI,
 			appEUI:    appEUI,
 			nwkSKey:   nwkSKey,
@@ -76,8 +78,39 @@ func (a Activation) Handle(client Client, chpkt chan<- PktReq, chreg chan<- RegR
 	return nil
 }
 
+// Handle an incoming downlink packet on the registered channel
 func (a Activation) handleReception(chpkt chan<- PktReq) func(client Client, msg MQTT.Message) {
 	return func(client Client, msg MQTT.Message) {
-		// TODO
+		infos := strings.Split(msg.Topic(), "/")
+
+		if len(infos) != 4 {
+			return
+		}
+
+		appEUIRaw, erra := hex.DecodeString(infos[0])
+		devEUIRaw, errd := hex.DecodeString(infos[2])
+		if erra != nil || errd != nil {
+			return
+		}
+
+		var appEUI lorawan.EUI64
+		copy(appEUI[:], appEUIRaw)
+		var devEUI lorawan.EUI64
+		copy(devEUI[:], devEUIRaw)
+
+		apacket, err := core.NewAPacket(appEUI, devEUI, msg.Payload(), nil)
+		if err != nil {
+			return
+		}
+
+		data, err := apacket.MarshalBinary()
+		if err != nil {
+			return
+		}
+
+		chpkt <- PktReq{
+			Packet: data,
+			Chresp: nil,
+		}
 	}
 }

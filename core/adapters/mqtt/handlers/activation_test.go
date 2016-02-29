@@ -54,7 +54,7 @@ func TestActivationHandle(t *testing.T) {
 			},
 
 			WantError:        nil,
-			WantSubscription: pointer.String("0101010101010101/devices/0000000002020202/up"),
+			WantSubscription: pointer.String("0101010101010101/devices/0000000002020202/down"),
 			WantRegistration: activationRegistration{
 				recipient: NewRecipient("0101010101010101/devices/0000000002020202/up", "WHATEVER"),
 				devEUI:    lorawan.EUI64([8]byte{0, 0, 0, 0, 2, 2, 2, 2}),
@@ -151,7 +151,7 @@ func TestActivationHandle(t *testing.T) {
 			},
 
 			WantError:        pointer.String(string(errors.Operational)),
-			WantSubscription: pointer.String("0101010101010101/devices/0000000002020202/up"),
+			WantSubscription: pointer.String("0101010101010101/devices/0000000002020202/down"),
 			WantRegistration: nil,
 			WantPacket:       nil,
 		},
