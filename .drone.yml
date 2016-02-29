@@ -1,3 +1,7 @@
+compose:
+  mqtt:
+    image: ansi/mosquitto
+    command: /usr/local/sbin/mosquitto -p 1683
 build:
   test:
     image: golang
