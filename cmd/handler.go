@@ -4,6 +4,10 @@
 package cmd
 
 import (
+	"fmt"
+	"path/filepath"
+	"strings"
+
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/adapters/http"
 	httpHandlers "github.com/TheThingsNetwork/ttn/core/adapters/http/handlers"
@@ -48,15 +52,50 @@ The default handler is the bridge between The Things Network and applications.
 		appAdapter := mqtt.NewAdapter(mqttClient, ctx.WithField("adapter", "app-adapter"))
 		appAdapter.Bind(mqttHandlers.Activation{})
 
-		// Instantiate in-memory storages
-		devicesDB, err := handler.NewDevStorage(viper.GetString("handler.dev-database"))
-		if err != nil {
-			ctx.WithError(err).Fatal("Could not create local devices storage")
+		// Instantiate in-memory devices storage
+
+		var devicesDB handler.DevStorage
+
+		devDBString := viper.GetString("handler.dev-database")
+		switch {
+		case strings.HasPrefix(devDBString, "boltdb:"):
+
+			devDBPath, err := filepath.Abs(devDBString[7:])
+			if err != nil {
+				ctx.WithError(err).Fatal("Invalid devices database path")
+			}
+
+			devicesDB, err = handler.NewDevStorage(devDBPath)
+			if err != nil {
+				ctx.WithError(err).Fatal("Could not create local devices storage")
+			}
+
+			ctx.WithField("database", devDBPath).Info("Using local storage")
+		default:
+			ctx.WithError(fmt.Errorf("Invalid database string. Format: \"boltdb:/path/to.db\".")).Fatal("Could not instantiate local devices storage")
 		}
 
-		packetsDB, err := handler.NewPktStorage(viper.GetString("handler.pkt-database"))
-		if err != nil {
-			ctx.WithError(err).Fatal("Could not create local packets storage")
+		// Instantiate in-memory packets storage
+
+		var packetsDB handler.PktStorage
+
+		pktDBString := viper.GetString("handler.pkt-database")
+		switch {
+		case strings.HasPrefix(pktDBString, "boltdb:"):
+
+			pktDBPath, err := filepath.Abs(pktDBString[7:])
+			if err != nil {
+				ctx.WithError(err).Fatal("Invalid packets database path")
+			}
+
+			packetsDB, err = handler.NewPktStorage(pktDBPath)
+			if err != nil {
+				ctx.WithError(err).Fatal("Could not create local packets storage")
+			}
+
+			ctx.WithField("database", pktDBPath).Info("Using local storage")
+		default:
+			ctx.WithError(fmt.Errorf("Invalid database string. Format: \"boltdb:/path/to.db\".")).Fatal("Could not instantiate local packets storage")
 		}
 
 		// Instantiate the actual handler

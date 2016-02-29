@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -58,9 +59,25 @@ the gateway's duty cycle is (almost) full.`,
 		brkAdapter.Bind(httpHandlers.StatusPage{})
 		brkAdapter.Bind(httpHandlers.Healthz{})
 
-		db, err := router.NewStorage("router_storage.db", time.Hour*8) // TODO use cli flag
-		if err != nil {
-			ctx.WithError(err).Fatal("Could not create a local storage")
+		var db router.Storage
+
+		dbString := viper.GetString("router.database")
+		switch {
+		case strings.HasPrefix(dbString, "boltdb:"):
+
+			dbPath, err := filepath.Abs(dbString[7:])
+			if err != nil {
+				ctx.WithError(err).Fatal("Invalid database path")
+			}
+
+			db, err = router.NewStorage(dbPath, time.Hour*8) // TODO use cli flag
+			if err != nil {
+				ctx.WithError(err).Fatal("Could not create a local storage")
+			}
+
+			ctx.WithField("database", dbPath).Info("Using local storage")
+		default:
+			ctx.WithError(fmt.Errorf("Invalid database string. Format: \"boltdb:/path/to.db\".")).Fatal("Could not instantiate local storage")
 		}
 
 		router := router.New(db, ctx)

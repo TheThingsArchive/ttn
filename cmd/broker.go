@@ -4,6 +4,10 @@
 package cmd
 
 import (
+	"fmt"
+	"path/filepath"
+	"strings"
+
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/adapters/http"
 	"github.com/TheThingsNetwork/ttn/core/adapters/http/handlers"
@@ -48,9 +52,27 @@ and personalized devices (with their network session keys) with the router.
 		hdlAdapter.Bind(handlers.PubSub{})
 		hdlAdapter.Bind(handlers.StatusPage{})
 
-		db, err := broker.NewStorage("broker_storage.db") // TODO Use a cli flag
-		if err != nil {
-			ctx.WithError(err).Fatal("Could not create a local storage")
+		// Instantiate Storage
+
+		var db broker.Storage
+
+		dbString := viper.GetString("broker.database")
+		switch {
+		case strings.HasPrefix(dbString, "boltdb:"):
+
+			dbPath, err := filepath.Abs(dbString[7:])
+			if err != nil {
+				ctx.WithError(err).Fatal("Invalid database path")
+			}
+
+			db, err = broker.NewStorage(dbPath)
+			if err != nil {
+				ctx.WithError(err).Fatal("Could not create local storage")
+			}
+
+			ctx.WithField("database", dbPath).Info("Using local storage")
+		default:
+			ctx.WithError(fmt.Errorf("Invalid database string. Format: \"boltdb:/path/to.db\".")).Fatal("Could not instantiate local storage")
 		}
 
 		broker := broker.New(db, ctx)
