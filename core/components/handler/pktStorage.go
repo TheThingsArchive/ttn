@@ -58,7 +58,7 @@ func (s pktStorage) Pull(appEUI lorawan.EUI64, devEUI lorawan.EUI64) (APacket, e
 		return nil, errors.New(errors.Operational, err)
 	}
 
-	packets, ok := entries.([]*pktEntry)
+	packets, ok := entries.([]pktEntry)
 	if !ok {
 		return nil, errors.New(errors.Operational, "Unable to retrieve data from db")
 	}
@@ -73,7 +73,7 @@ func (s pktStorage) Pull(appEUI lorawan.EUI64, devEUI lorawan.EUI64) (APacket, e
 
 	var newEntries []dbutil.Entry
 	for _, p := range packets[1:] {
-		newEntries = append(newEntries, p)
+		newEntries = append(newEntries, &p)
 	}
 
 	if err := s.db.Replace(s.Name, key, newEntries); err != nil {
