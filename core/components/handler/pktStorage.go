@@ -15,6 +15,7 @@ import (
 type PktStorage interface {
 	Push(p APacket) error
 	Pull(appEUI lorawan.EUI64, devEUI lorawan.EUI64) (APacket, error)
+	Close() error
 }
 
 type pktStorage struct {
@@ -81,6 +82,11 @@ func (s pktStorage) Pull(appEUI lorawan.EUI64, devEUI lorawan.EUI64) (APacket, e
 	}
 
 	return pkt.APacket, nil
+}
+
+// Close implements the PktStorage interface
+func (s pktStorage) Close() error {
+	return s.db.Close()
 }
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface
