@@ -8,7 +8,7 @@ import (
 )
 
 func TestBadRequest(t *testing.T) {
-	rw := ResponseWriter{}
+	rw := NewResponseWriter()
 	BadRequest(&rw, "Test")
 	a := assertions.New(t)
 	a.So(rw.TheStatus, assertions.ShouldEqual, 400)
