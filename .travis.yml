@@ -22,10 +22,10 @@ before_script:
     - mosquitto -p 1683 1>/dev/null 2>/dev/null &
 
 script:
-    - go list ./... | grep -v integration | xargs go test
+    - go list ./... | grep -vE 'cmd|integration|ttn$' | xargs go test
     - sh -c 'FMTRES="$(go fmt ./...)"; if [ ! -z "$FMTRES" ]; then echo $FMTRES; exit 255; fi'
     - go vet ./...
 
 after_success:
-    - go test -v -covermode=count -coverprofile=coverage.out
+    - source ./coverage.sh
     - $HOME/gopath/bin/goveralls -coverprofile=coverage.out -service=travis-ci -repotoken $COVERALLS_TOKEN

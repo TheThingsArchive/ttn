@@ -8,7 +8,7 @@ build:
     commands:
       - bash -c 'go get $(comm -23 <(sort <(go list -f '"'"'{{join .Imports "\n"}}'"'"' ./...) | uniq) <(go list std) | grep -v TheThingsNetwork)'
       - bash -c 'go get $(comm -23 <(sort <(go list -f '"'"'{{join .TestImports "\n"}}'"'"' ./...) | uniq) <(go list std) | grep -v TheThingsNetwork)'
-      - go list ./... | grep -v integration | xargs go test -v
+      - go list ./... | grep -vE 'cmd|integration|ttn$' | xargs go test
       - sh -c 'FMTRES="$(go fmt ./...)"; if [ ! -z "$FMTRES" ]; then echo $FMTRES; exit 255; fi'
       - go vet ./...
   release:
