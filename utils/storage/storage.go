@@ -49,27 +49,31 @@ func New(name string) (Interface, error) {
 	return store{db}, nil
 }
 
+// getBucket retrieve a bucket based on a string. The name might present several levels, all
+// separated by dot "." which indicates nested buckets. If no bucket is found along the path, they
+// are created, otherwise, the existing one is used.
 func getBucket(tx *bolt.Tx, name string) (*bolt.Bucket, error) {
 	path := strings.Split(name, ".")
 	if len(path) < 1 {
 		return nil, errors.New(errors.Structural, "Invalid bucket name")
 	}
-	var next interface {
+	var cursor interface {
 		CreateBucketIfNotExists(b []byte) (*bolt.Bucket, error)
 		Bucket(b []byte) *bolt.Bucket
 	}
 
 	var err error
-	next = tx
+	cursor = tx
 	for _, bname := range path {
-		next = next.Bucket([]byte(bname))
+		next := cursor.Bucket([]byte(bname))
 		if next == nil {
-			if next, err = next.CreateBucketIfNotExists([]byte(bname)); err != nil {
+			if next, err = cursor.CreateBucketIfNotExists([]byte(bname)); err != nil {
 				return nil, errors.New(errors.Operational, err)
 			}
 		}
+		cursor = next
 	}
-	return next.(*bolt.Bucket), nil
+	return cursor.(*bolt.Bucket), nil
 }
 
 // Store put a new set of entries in the given bolt database. It adds the entries to an existing set
@@ -142,7 +146,8 @@ func (itf store) Lookup(bucketName string, key []byte, shape Entry) (interface{}
 			entries = reflect.Append(entries, reflect.ValueOf(entry).Elem())
 		})
 		if err = r.Err(); err != nil {
-			if err == io.EOF {
+			failure, ok := err.(errors.Failure)
+			if ok && failure.Nature == errors.Behavioural && failure.Fault == io.EOF {
 				break
 			}
 			return nil, errors.New(errors.Operational, err)
@@ -151,7 +156,7 @@ func (itf store) Lookup(bucketName string, key []byte, shape Entry) (interface{}
 	return entries.Interface(), nil
 }
 
-// Flush empties each entry of a bucket associated to a given device
+// Flush remove an entry from a bucket
 func (itf store) Flush(bucketName string, key []byte) error {
 	return itf.db.Update(func(tx *bolt.Tx) error {
 		bucket, err := getBucket(tx, bucketName)
@@ -203,10 +208,27 @@ func (itf store) Replace(bucketName string, key []byte, entries []Entry) error {
 // Reset resets a given bucket from a given bolt database
 func (itf store) Reset(bucketName string) error {
 	return itf.db.Update(func(tx *bolt.Tx) error {
-		if err := tx.DeleteBucket([]byte(bucketName)); err != nil {
+		path := strings.Split(bucketName, ".")
+
+		var cursor interface {
+			DeleteBucket(name []byte) error
+			CreateBucketIfNotExists(name []byte) (*bolt.Bucket, error)
+		}
+
+		if len(path) == 1 {
+			cursor = tx
+		} else {
+			var err error
+			cursor, err = getBucket(tx, strings.Join(path[:len(path)-1], "."))
+			if err != nil {
+				return err
+			}
+		}
+
+		if err := cursor.DeleteBucket([]byte(path[len(path)-1])); err != nil {
 			return errors.New(errors.Operational, err)
 		}
-		if _, err := tx.CreateBucketIfNotExists([]byte(bucketName)); err != nil {
+		if _, err := cursor.CreateBucketIfNotExists([]byte(path[len(path)-1])); err != nil {
 			return errors.New(errors.Operational, err)
 		}
 		return nil
