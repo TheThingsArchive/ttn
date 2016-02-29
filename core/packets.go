@@ -293,7 +293,7 @@ func (p hpacket) String() string {
 	str += fmt.Sprintf("\n\t%s}", p.metadata.String())
 	str += fmt.Sprintf("\n\tAppEUI:%+x\n,", p.appEUI)
 	str += fmt.Sprintf("\n\tDevEUI:%+x\n,", p.devEUI)
-	str += fmt.Sprintf("\n\tPayload:%v\n}", p.Payload)
+	str += fmt.Sprintf("\n\tPayload:%v\n}", p.payload)
 	return str
 }
 
