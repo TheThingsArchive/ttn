@@ -51,6 +51,35 @@ func TestPushPullNormal(t *testing.T) {
 	}
 
 	// ------------------
+
+	{
+		Desc(t, "Push two packets")
+		p1, _ := NewAPacket(
+			lorawan.EUI64([8]byte{1, 1, 1, 1, 1, 1, 1, 1}),
+			lorawan.EUI64([8]byte{2, 2, 2, 2, 2, 2, 2, 2}),
+			[]byte("TheThingsNetwork1"),
+			[]Metadata{},
+		)
+		p2, _ := NewAPacket(
+			lorawan.EUI64([8]byte{1, 1, 1, 1, 1, 1, 1, 1}),
+			lorawan.EUI64([8]byte{2, 2, 2, 2, 2, 2, 2, 2}),
+			[]byte("TheThingsNetwork2"),
+			[]Metadata{},
+		)
+		err := db.Push(p1)
+		CheckErrors(t, nil, err)
+		err = db.Push(p2)
+		CheckErrors(t, nil, err)
+
+		a, err := db.Pull(p1.AppEUI(), p1.DevEUI())
+		CheckErrors(t, nil, err)
+		CheckPackets(t, p1, a)
+
+		a, err = db.Pull(p1.AppEUI(), p1.DevEUI())
+		CheckErrors(t, nil, err)
+		CheckPackets(t, p2, a)
+	}
+
 	// ------------------
 	// ------------------
 	// ------------------
@@ -62,19 +91,6 @@ func TestPushPullNormal(t *testing.T) {
 	// ------------------
 	// ------------------
 }
-
-func TestPushPullErrors(t *testing.T) {
-	Ko(t, "TODO")
-}
-
-//type mockStorage struct {
-//	Store(name string, key []byte, entries []Entry) error
-//	Replace(name string, key []byte, entries []Entry) error
-//	Lookup(name string, key []byte, shape Entry) (interface{}, error)
-//	Flush(name string, key []byte) error
-//	Reset(name string) error
-//	Close() error
-//}
 
 // ----- CHECK utilities
 func CheckPackets(t *testing.T, want APacket, got APacket) {
