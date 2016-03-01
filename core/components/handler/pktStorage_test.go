@@ -9,8 +9,9 @@ import (
 	"testing"
 
 	. "github.com/TheThingsNetwork/ttn/core"
-	//"github.com/TheThingsNetwork/ttn/utils/errors"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	. "github.com/TheThingsNetwork/ttn/utils/errors/checks"
+	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"github.com/brocaar/lorawan"
 )
@@ -81,15 +82,43 @@ func TestPushPullNormal(t *testing.T) {
 	}
 
 	// ------------------
+
+	{
+		Desc(t, "Pull a non existing entry")
+		p, err := db.Pull(lorawan.EUI64([8]byte{1, 2, 1, 2, 1, 2, 1, 2}), lorawan.EUI64([8]byte{2, 3, 4, 2, 3, 4, 2, 3}))
+		CheckErrors(t, pointer.String(string(errors.Behavioural)), err)
+		CheckPackets(t, nil, p)
+	}
+
 	// ------------------
+
+	{
+		Desc(t, "Close the storage")
+		err := db.Close()
+		CheckErrors(t, nil, err)
+	}
+
 	// ------------------
+
+	{
+		Desc(t, "Push after close")
+		p, _ := NewAPacket(
+			lorawan.EUI64([8]byte{1, 1, 1, 1, 1, 1, 1, 1}),
+			lorawan.EUI64([8]byte{2, 2, 2, 2, 2, 2, 2, 2}),
+			[]byte("TheThingsNetwork"),
+			[]Metadata{},
+		)
+		err := db.Push(p)
+		CheckErrors(t, pointer.String(string(errors.Operational)), err)
+	}
+
 	// ------------------
-	// ------------------
-	// ------------------
-	// ------------------
-	// ------------------
-	// ------------------
-	// ------------------
+
+	{
+		Desc(t, "Pull after close")
+		_, err := db.Pull(lorawan.EUI64([8]byte{1, 1, 1, 1, 1, 1, 1, 1}), lorawan.EUI64([8]byte{2, 2, 2, 2, 2, 2, 2, 2}))
+		CheckErrors(t, pointer.String(string(errors.Operational)), err)
+	}
 }
 
 // ----- CHECK utilities
