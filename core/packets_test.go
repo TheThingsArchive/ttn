@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
-	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"github.com/brocaar/lorawan"
 	. "github.com/smartystreets/assertions"
 )
@@ -70,38 +69,130 @@ func newPayload(devAddr lorawan.DevAddr, data []byte, appSKey lorawan.AES128Key,
 }
 
 func marshalUnmarshal(t *testing.T, input Packet) interface{} {
+	a := New(t)
+
 	binary, err := input.MarshalBinary()
-	if err != nil {
-		Ko(t, "Unexpected error {%s}.", err)
-	}
+	a.So(err, ShouldBeNil)
 
 	gOutput, err := UnmarshalPacket(binary)
-	if err != nil {
-		Ko(t, "Unexpected error {%s}.", err)
-	}
+	a.So(err, ShouldBeNil)
+
+	a.So(gOutput, ShouldHaveSameTypeAs, input)
 
 	return gOutput
 }
 
+func TestInvalidMarshalBases(t *testing.T) {
+	// Only err when Metadata Marshal returns err
+}
+
+func TestBaseMarshalUnmarshal(t *testing.T) {
+	a := New(t)
+
+	s := uint(123)
+	mpkt := basempacket{metadata: Metadata{Size: &s}}
+
+	payload, _, _ := simplePayload()
+	rpkt := baserpacket{payload: payload}
+	hpkt := basehpacket{
+		appEUI: newEUI(),
+		devEUI: newEUI(),
+	}
+	apkt := baseapacket{
+		payload: []byte{0x01, 0x02, 0x03},
+	}
+	gpkt := basegpacket{metadata: []Metadata{
+		Metadata{Size: &s},
+	}}
+
+	binmpkt, err1 := mpkt.Marshal()
+	a.So(err1, ShouldBeNil)
+	binrpkt, err2 := rpkt.Marshal()
+	a.So(err2, ShouldBeNil)
+	binhpkt, err3 := hpkt.Marshal()
+	a.So(err3, ShouldBeNil)
+	binapkt, err4 := apkt.Marshal()
+	a.So(err4, ShouldBeNil)
+	bingpkt, err5 := gpkt.Marshal()
+	a.So(err5, ShouldBeNil)
+
+	newmpkt := basempacket{}
+	newrpkt := baserpacket{}
+	newhpkt := basehpacket{}
+	newapkt := baseapacket{}
+	newgpkt := basegpacket{}
+
+	_, err6 := newmpkt.Unmarshal(binmpkt)
+	a.So(err6, ShouldBeNil)
+	a.So(*newmpkt.Metadata().Size, ShouldEqual, s)
+
+	_, err7 := newrpkt.Unmarshal(binrpkt)
+	a.So(err7, ShouldBeNil)
+	// a.So()
+
+	_, err8 := newhpkt.Unmarshal(binhpkt)
+	a.So(err8, ShouldBeNil)
+
+	_, err9 := newapkt.Unmarshal(binapkt)
+	a.So(err9, ShouldBeNil)
+
+	_, erra := newgpkt.Unmarshal(bingpkt)
+	a.So(erra, ShouldBeNil)
+	a.So(*newgpkt.Metadata()[0].Size, ShouldEqual, s)
+
+}
+
+func TestInvalidUnmarshalBases(t *testing.T) {
+	a := New(t)
+
+	p := basempacket{}
+
+	err1 := unmarshalBases(0x01, []byte{}, &p)
+	a.So(err1, ShouldNotBeNil)
+
+	err2 := unmarshalBases(0x01, []byte{0x02}, &p)
+	a.So(err2, ShouldNotBeNil)
+
+	err3 := unmarshalBases(0x01, []byte{0x01}, &p)
+	a.So(err3, ShouldNotBeNil)
+}
+
+func TestInvalidUnmarshalPacket(t *testing.T) {
+	a := New(t)
+	_, err := UnmarshalPacket([]byte{})
+	a.So(err, ShouldNotBeNil)
+}
+
 func TestPacket(t *testing.T) {
-	input := basegpacket{
-		metadata: []Metadata{
-			Metadata{
-				Codr: pointer.String("4/6"),
-			},
+	a := New(t)
+	input := basempacket{
+		metadata: Metadata{
+			Codr: pointer.String("4/6"),
 		},
 	}
 
 	binary, _ := input.Marshal()
 
-	output := basegpacket{
-		metadata: []Metadata{},
+	output := basempacket{
+		metadata: Metadata{},
 	}
 
 	_, err := output.Unmarshal(binary)
-	if err != nil {
-		Ko(t, "Unexpected error {%s}.", err)
-	}
+	a.So(err, ShouldBeNil)
+}
+
+func TestInvalidRPacket(t *testing.T) {
+	a := New(t)
+
+	// No MACPayload
+	_, err1 := NewRPacket(lorawan.PHYPayload{}, []byte{}, Metadata{})
+	a.So(err1, ShouldNotBeNil)
+
+	// Not a MACPayload
+	_, err2 := NewRPacket(lorawan.PHYPayload{
+		MACPayload: &lorawan.JoinRequestPayload{},
+	}, []byte{}, Metadata{})
+	a.So(err2, ShouldNotBeNil)
 }
 
 func TestRPacket(t *testing.T) {
@@ -115,20 +206,49 @@ func TestRPacket(t *testing.T) {
 
 	gOutput := marshalUnmarshal(t, input)
 
-	output, ok := gOutput.(RPacket)
-	if !ok {
-		Ko(t, "Didn't get an RPacket back")
-	}
+	output := gOutput.(RPacket)
 
 	a.So(output.Payload(), ShouldResemble, payload)
 	a.So(output.GatewayId(), ShouldResemble, gwEUI)
 	a.So(output.Metadata(), ShouldResemble, Metadata{})
 	outputDevEUI := output.DevEUI()
 	a.So(outputDevEUI[4:], ShouldResemble, devAddr[:])
+
+	// TODO: Different MTypes
 }
 
 func TestSPacket(t *testing.T) {
 	// Nope
+}
+
+func TestInvalidBPacket(t *testing.T) {
+	a := New(t)
+
+	// No MACPayload
+	_, err1 := NewBPacket(lorawan.PHYPayload{}, Metadata{})
+	a.So(err1, ShouldNotBeNil)
+
+	// Not a MACPayload
+	_, err2 := NewBPacket(lorawan.PHYPayload{
+		MACPayload: &lorawan.JoinRequestPayload{},
+	}, Metadata{})
+	a.So(err2, ShouldNotBeNil)
+
+	// Not enough FRMPayloads
+	_, err3 := NewBPacket(lorawan.PHYPayload{
+		MACPayload: &lorawan.MACPayload{},
+	}, Metadata{})
+	a.So(err3, ShouldNotBeNil)
+
+	// FRMPayload is not DataPayload
+	_, err4 := NewBPacket(lorawan.PHYPayload{
+		MACPayload: &lorawan.MACPayload{
+			FRMPayload: []lorawan.Payload{
+				&lorawan.JoinRequestPayload{},
+			},
+		},
+	}, Metadata{})
+	a.So(err4, ShouldNotBeNil)
 }
 
 func TestBPacket(t *testing.T) {
@@ -139,16 +259,46 @@ func TestBPacket(t *testing.T) {
 
 	gOutput := marshalUnmarshal(t, input)
 
-	output, ok := gOutput.(BPacket)
-	if !ok {
-		Ko(t, "Didn't get an BPacket back")
-	}
+	output := gOutput.(BPacket)
 
 	a.So(output.Payload(), ShouldResemble, payload)
 	a.So(output.Metadata(), ShouldResemble, Metadata{})
 	outputValidateMIC, _ := output.ValidateMIC(key)
 	a.So(outputValidateMIC, ShouldBeTrue)
 	a.So(output.Commands(), ShouldBeEmpty)
+}
+
+func TestInvalidHPacket(t *testing.T) {
+	a := New(t)
+
+	appEUI := newEUI()
+	devEUI := newEUI()
+
+	// No MACPayload
+	_, err1 := NewHPacket(appEUI, devEUI, lorawan.PHYPayload{}, Metadata{})
+	a.So(err1, ShouldNotBeNil)
+
+	// Not a MACPayload
+	_, err2 := NewHPacket(appEUI, devEUI, lorawan.PHYPayload{
+		MACPayload: &lorawan.JoinRequestPayload{},
+	}, Metadata{})
+	a.So(err2, ShouldNotBeNil)
+
+	// Not enough FRMPayloads
+	_, err3 := NewHPacket(appEUI, devEUI, lorawan.PHYPayload{
+		MACPayload: &lorawan.MACPayload{},
+	}, Metadata{})
+	a.So(err3, ShouldNotBeNil)
+
+	// FRMPayload is not DataPayload
+	_, err4 := NewHPacket(appEUI, devEUI, lorawan.PHYPayload{
+		MACPayload: &lorawan.MACPayload{
+			FRMPayload: []lorawan.Payload{
+				&lorawan.JoinRequestPayload{},
+			},
+		},
+	}, Metadata{})
+	a.So(err4, ShouldNotBeNil)
 }
 
 func TestHPacket(t *testing.T) {
@@ -162,10 +312,7 @@ func TestHPacket(t *testing.T) {
 
 	gOutput := marshalUnmarshal(t, input)
 
-	output, ok := gOutput.(HPacket)
-	if !ok {
-		Ko(t, "Didn't get an HPacket back")
-	}
+	output := gOutput.(HPacket)
 
 	a.So(output.AppEUI().String(), ShouldEqual, appEUI.String())
 	a.So(output.DevEUI().String(), ShouldEqual, devEUI.String())
@@ -173,6 +320,17 @@ func TestHPacket(t *testing.T) {
 	a.So(string(outPayload), ShouldResemble, "PLD123")
 	a.So(output.Metadata(), ShouldResemble, Metadata{})
 	a.So(output.FCnt(), ShouldEqual, 1)
+}
+
+func TestInvalidAPacket(t *testing.T) {
+	a := New(t)
+
+	appEUI := newEUI()
+	devEUI := newEUI()
+
+	// No Payload
+	_, err1 := NewAPacket(appEUI, devEUI, []byte{}, []Metadata{})
+	a.So(err1, ShouldNotBeNil)
 }
 
 func TestAPacket(t *testing.T) {
@@ -186,10 +344,7 @@ func TestAPacket(t *testing.T) {
 
 	gOutput := marshalUnmarshal(t, input)
 
-	output, ok := gOutput.(APacket)
-	if !ok {
-		Ko(t, "Didn't get an APacket back")
-	}
+	output := gOutput.(APacket)
 
 	a.So(output.Payload(), ShouldResemble, payload)
 	a.So(output.DevEUI().String(), ShouldEqual, devEUI.String())
@@ -209,15 +364,24 @@ func TestJPacket(t *testing.T) {
 
 	gOutput := marshalUnmarshal(t, input)
 
-	output, ok := gOutput.(JPacket)
-	if !ok {
-		Ko(t, "Didn't get an JPacket back")
-	}
+	output := gOutput.(JPacket)
 
 	a.So(output.AppEUI().String(), ShouldEqual, appEUI.String())
 	a.So(output.DevEUI().String(), ShouldEqual, devEUI.String())
 	a.So(output.DevNonce(), ShouldEqual, devNonce)
 	a.So(output.Metadata(), ShouldResemble, Metadata{})
+}
+
+func TestInvalidCPacket(t *testing.T) {
+	a := New(t)
+
+	appEUI := newEUI()
+	devEUI := newEUI()
+	nwkSKey := lorawan.AES128Key{}
+
+	// No Payload
+	_, err1 := NewCPacket(appEUI, devEUI, []byte{}, nwkSKey)
+	a.So(err1, ShouldNotBeNil)
 }
 
 func TestCPacket(t *testing.T) {
@@ -234,10 +398,7 @@ func TestCPacket(t *testing.T) {
 
 	gOutput := marshalUnmarshal(t, input)
 
-	output, ok := gOutput.(CPacket)
-	if !ok {
-		Ko(t, "Didn't get an CPacket back")
-	}
+	output := gOutput.(CPacket)
 
 	a.So(output.AppEUI().String(), ShouldEqual, appEUI.String())
 	a.So(output.DevEUI().String(), ShouldEqual, devEUI.String())
