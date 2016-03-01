@@ -4,6 +4,7 @@
 package handler
 
 import (
+	"fmt"
 	"reflect"
 	"time"
 
@@ -88,7 +89,7 @@ func (h component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 		// 1. Lookup for the associated AppSKey + Recipient
 		entry, err := h.devices.Lookup(appEUI, devEUI)
 		if err != nil {
-			return errors.New(errors.Operational, err)
+			return err
 		}
 
 		// 2. Prepare a channel to receive the response from the consumer
@@ -124,7 +125,7 @@ func (h component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 		// If there's an error, all channels get the error.
 		resp := <-chresp
 		switch resp.(type) {
-		case Packet:
+		case BPacket:
 			ctx.Debug("Received response with packet. Sending Ack")
 			an.Ack(resp.(Packet))
 		case error:
@@ -164,6 +165,7 @@ func (h component) consumeBundles(chbundle <-chan []bundle) {
 
 browseBundles:
 	for bundles := range chbundle {
+		ctx.WithField("BundleID", bundles[0].Id).Debug("Consume new bundle")
 		var metadata []Metadata
 		var payload []byte
 		var bestBundle bundle
@@ -222,7 +224,7 @@ browseBundles:
 
 		// Now handle the downlink
 		down, err := h.packets.Pull(bestBundle.Packet.AppEUI(), bestBundle.Packet.DevEUI())
-		if err != nil {
+		if err != nil && err.(errors.Failure).Nature != errors.Behavioural {
 			go h.abortConsume(err, bundles)
 			continue browseBundles
 		}
@@ -230,33 +232,38 @@ browseBundles:
 		// Then respond to node
 		for _, bundle := range bundles {
 			if bundle.Id == bestBundle.Id {
-				macPayload := lorawan.NewMACPayload(false)
-				macPayload.FHDR = lorawan.FHDR{
-					DevAddr: bestBundle.Entry.DevAddr,
-					// TODO Take care of the Adaptative Rate and other stuff
-					FCnt: bestBundle.Packet.FCnt() + 1,
-				}
-				macPayload.FPort = 1
-				macPayload.FRMPayload = []lorawan.Payload{&lorawan.DataPayload{
-					Bytes: down.Payload(),
-				}}
+				var resp Packet
 
-				if err := macPayload.EncryptFRMPayload(bestBundle.Entry.AppSKey); err != nil {
-					go h.abortConsume(err, bundles)
-					continue browseBundles
-				}
+				if down != nil && err == nil {
+					macPayload := lorawan.NewMACPayload(false)
+					macPayload.FHDR = lorawan.FHDR{
+						DevAddr: bestBundle.Entry.DevAddr,
+						// TODO Take care of the Adaptative Rate and other stuff
+						FCnt: bestBundle.Packet.FCnt() + 1,
+					}
+					macPayload.FPort = 1
+					fmt.Println(down)
+					macPayload.FRMPayload = []lorawan.Payload{&lorawan.DataPayload{
+						Bytes: down.Payload(),
+					}}
 
-				payload := lorawan.NewPHYPayload(false)
-				payload.MHDR = lorawan.MHDR{
-					MType: lorawan.UnconfirmedDataDown,
-					Major: lorawan.LoRaWANR1,
-				}
-				payload.MACPayload = macPayload
+					if err := macPayload.EncryptFRMPayload(bestBundle.Entry.AppSKey); err != nil {
+						go h.abortConsume(err, bundles)
+						continue browseBundles
+					}
 
-				resp, err := NewHPacket(bestBundle.Packet.AppEUI(), bestBundle.Packet.DevEUI(), payload, Metadata{})
-				if err != nil {
-					go h.abortConsume(err, bundles)
-					continue browseBundles
+					payload := lorawan.NewPHYPayload(false)
+					payload.MHDR = lorawan.MHDR{
+						MType: lorawan.UnconfirmedDataDown,
+						Major: lorawan.LoRaWANR1,
+					}
+					payload.MACPayload = macPayload
+
+					resp, err = NewBPacket(payload, Metadata{})
+					if err != nil {
+						go h.abortConsume(err, bundles)
+						continue browseBundles
+					}
 				}
 
 				bundle.Chresp <- resp
