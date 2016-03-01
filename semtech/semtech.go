@@ -1,4 +1,4 @@
-// Copyright © 2015 The Things Network
+// Copyright © 2016 The Things Network
 // Use of this source code is governed by the MIT license that can be found in the LICENSE file.
 
 // Package semtech provides useful methods and types to handle communications with a gateway.
