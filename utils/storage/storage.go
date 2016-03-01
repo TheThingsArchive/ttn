@@ -134,6 +134,9 @@ func (itf store) Lookup(bucketName string, key []byte, shape Entry) (interface{}
 	err := itf.db.View(func(tx *bolt.Tx) error {
 		bucket, err := getBucket(tx, bucketName)
 		if err != nil {
+			if err.(errors.Failure).Fault == bolt.ErrTxNotWritable {
+				return errors.New(errors.Behavioural, fmt.Sprintf("Not found %+v", key))
+			}
 			return err
 		}
 		rawEntry = bucket.Get(key)
