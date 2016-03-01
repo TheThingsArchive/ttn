@@ -4,6 +4,7 @@
 package handler
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 	//	"time"
@@ -98,6 +99,9 @@ func TestHandleDown(t *testing.T) {
 		CheckErrors(t, nil, err)
 		CheckPushed(t, pkt, pktStorage.Pushed)
 		CheckPersonalized(t, nil, devStorage.Personalized)
+		CheckAcks(t, nil, an.Acked)
+		CheckSent(t, nil, adapter.SentPkt)
+		CheckRecipients(t, nil, adapter.SentRecipients)
 	}
 
 	// --------------------
@@ -116,6 +120,9 @@ func TestHandleDown(t *testing.T) {
 		CheckErrors(t, pointer.String(string(errors.Structural)), err)
 		CheckPushed(t, nil, pktStorage.Pushed)
 		CheckPersonalized(t, nil, devStorage.Personalized)
+		CheckAcks(t, nil, an.Acked)
+		CheckSent(t, nil, adapter.SentPkt)
+		CheckRecipients(t, nil, adapter.SentRecipients)
 	}
 
 	// --------------------
@@ -141,6 +148,58 @@ func TestHandleDown(t *testing.T) {
 		CheckErrors(t, pointer.String(string(errors.Implementation)), err)
 		CheckPushed(t, nil, pktStorage.Pushed)
 		CheckPersonalized(t, nil, devStorage.Personalized)
+		CheckAcks(t, nil, an.Acked)
+		CheckSent(t, nil, adapter.SentPkt)
+		CheckRecipients(t, nil, adapter.SentRecipients)
+	}
+}
+
+func TestHandleUp(t *testing.T) {
+	{
+		Desc(t, "Handle uplink with 1 packet | No Associated App")
+
+		devStorage := newMockDevStorage()
+		pktStorage := newMockPktStorage()
+		an := newMockAckNacker()
+		adapter := newMockAdapter()
+		handler := New(devStorage, pktStorage, GetLogger(t, "Handler"))
+		inPkt := newHPacket(
+			[8]byte{1, 1, 1, 1, 1, 1, 1, 1},
+			[8]byte{2, 2, 2, 2, 2, 2, 2, 2},
+			"Payload",
+			Metadata{
+				Duty: pointer.Uint(5),
+				Rssi: pointer.Int(-25),
+			},
+			[16]byte{1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2},
+		)
+		dataIn, _ := inPkt.MarshalBinary()
+
+		devStorage.Failures["Lookup"] = errors.New(errors.Behavioural, "Mock: Not Found")
+		pktStorage.Failures["Pull"] = errors.New(errors.Behavioural, "Mock: Not Found")
+		// adapter.Failures["Send"] =
+		// adapter.Failures["GetRecipient"] =
+		err := handler.HandleUp(dataIn, an, adapter)
+
+		CheckErrors(t, pointer.String(string(errors.Behavioural)), err)
+		CheckPushed(t, nil, pktStorage.Pushed)
+		CheckPersonalized(t, nil, devStorage.Personalized)
+		CheckAcks(t, nil, an.Acked)
+		fmt.Printf("%+v\n", adapter)
+		CheckSent(t, nil, adapter.SentPkt)
+		CheckRecipients(t, nil, adapter.SentRecipients)
+	}
+
+	// --------------------
+
+	{
+
+		//sentPkt, _ := NewAPacket(
+		//	inPkt.AppEUI(),
+		//	inPkt.DevEUI(),
+		//	[]byte("Payload"),
+		//	[]Metadata{inPkt.Metadata()},
+		//)
 	}
 }
 
@@ -217,17 +276,20 @@ func (s *mockPktStorage) Close() error {
 //
 // MOCK ACK/NACKER
 //
-type mockAckNacker struct{}
+type mockAckNacker struct {
+	Acked Packet
+}
 
 func newMockAckNacker() *mockAckNacker {
 	return &mockAckNacker{}
 }
 
-func (an mockAckNacker) Ack(p Packet) error {
+func (an *mockAckNacker) Ack(p Packet) error {
+	an.Acked = p
 	return nil
 }
 
-func (an mockAckNacker) Nack() error {
+func (an *mockAckNacker) Nack() error {
 	return nil
 }
 
@@ -251,7 +313,7 @@ func newMockAdapter() *mockAdapter {
 	}
 }
 
-func (a mockAdapter) Send(p Packet, r ...Recipient) ([]byte, error) {
+func (a *mockAdapter) Send(p Packet, r ...Recipient) ([]byte, error) {
 	a.SentPkt = p
 	a.SentRecipients = r
 	if a.Failures["Send"] != nil {
@@ -260,7 +322,7 @@ func (a mockAdapter) Send(p Packet, r ...Recipient) ([]byte, error) {
 	return a.SendData, nil
 }
 
-func (a mockAdapter) GetRecipient(raw []byte) (Recipient, error) {
+func (a *mockAdapter) GetRecipient(raw []byte) (Recipient, error) {
 	if a.Failures["GetRecipient"] != nil {
 		return nil, a.Failures["Send"]
 	}
@@ -281,17 +343,64 @@ func (a *mockAdapter) NextRegistration() (Registration, AckNacker, error) {
 	return a.NextReg, a.NextAckNacker, nil
 }
 
-// ----- CHECK utilities
-func CheckPushed(t *testing.T, want APacket, got APacket) {
-	if !reflect.DeepEqual(want, got) {
-		Ko(t, "Pushed packet does not match expectations.\nWant: %s\nGot:  %s", want, got)
+// ----- BUILD utilities
+func newHPacket(appEUI [8]byte, devEUI [8]byte, payload string, metadata Metadata, appSKey [16]byte) HPacket {
+	macPayload := lorawan.NewMACPayload(true)
+	macPayload.FHDR = lorawan.FHDR{
+		FCnt: 0,
 	}
-	Ok(t, "Check Pushed")
+	macPayload.FPort = 10
+	macPayload.FRMPayload = []lorawan.Payload{&lorawan.DataPayload{Bytes: []byte(payload)}}
+
+	var key lorawan.AES128Key
+	copy(key[:], appSKey[:])
+	if err := macPayload.EncryptFRMPayload(key); err != nil {
+		panic(err)
+	}
+
+	phyPayload := lorawan.NewPHYPayload(true)
+	phyPayload.MHDR = lorawan.MHDR{
+		MType: lorawan.ConfirmedDataUp,
+		Major: lorawan.LoRaWANR1,
+	}
+	phyPayload.MACPayload = macPayload
+
+	var appEUIp lorawan.EUI64
+	var devEUIp lorawan.EUI64
+	copy(appEUIp[:], appEUI[:])
+	copy(devEUIp[:], devEUI[:])
+
+	packet, err := NewHPacket(appEUIp, devEUIp, phyPayload, metadata)
+	if err != nil {
+		panic(err)
+	}
+	return packet
+}
+
+// ----- CHECK utilities
+func check(t *testing.T, want, got interface{}, name string) {
+	if !reflect.DeepEqual(want, got) {
+		Ko(t, "%s don't match expectations.\nWant: %v\nGot:  %v", name, want, got)
+	}
+	Ok(t, fmt.Sprintf("Check %s", name))
+}
+
+func CheckPushed(t *testing.T, want APacket, got APacket) {
+	check(t, want, got, "Pushed")
 }
 
 func CheckPersonalized(t *testing.T, want HRegistration, got HRegistration) {
-	if !reflect.DeepEqual(want, got) {
-		Ko(t, "Personalized packet does not match expectations.\nWant: %s\nGot:  %s", want, got)
-	}
-	Ok(t, "Check Personalized")
+	check(t, want, got, "Personalized")
+}
+
+func CheckAcks(t *testing.T, want Packet, got Packet) {
+	check(t, want, got, "Acks")
+}
+
+func CheckRecipients(t *testing.T, want []Recipient, got []Recipient) {
+	check(t, want, got, "Recipients")
+}
+
+func CheckSent(t *testing.T, want Packet, got Packet) {
+	check(t, want, got, "Sent")
 }
