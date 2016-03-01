@@ -477,6 +477,191 @@ func TestHandleUp(t *testing.T) {
 		CheckPersonalized(t, nil, devStorage.Personalized)
 	}
 
+	// --------------------
+
+	{
+		Desc(t, "Handle uplink with 1 packet | No downlink ready | No Metadata ")
+
+		devStorage := newMockDevStorage()
+		pktStorage := newMockPktStorage()
+		an := newMockAckNacker()
+		adapter := newMockAdapter()
+		handler := New(devStorage, pktStorage, GetLogger(t, "Handler"))
+		inPkt := newHPacket(
+			[8]byte{1, 1, 1, 1, 1, 1, 1, 1},
+			[8]byte{2, 2, 2, 2, 2, 2, 2, 2},
+			"Payload",
+			Metadata{},
+			10,
+			[16]byte{1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2},
+		)
+		dataIn, _ := inPkt.MarshalBinary()
+		recipient := newMockRecipient("TowardsInfinity")
+		dataRecipient, _ := recipient.MarshalBinary()
+		pktSent, _ := NewAPacket(
+			inPkt.AppEUI(),
+			inPkt.DevEUI(),
+			[]byte("Payload"),
+			[]Metadata{inPkt.Metadata()},
+		)
+
+		adapter.Recipient = recipient
+		devStorage.LookupEntry = devEntry{
+			Recipient: dataRecipient,
+			DevAddr:   lorawan.DevAddr([4]byte{2, 2, 2, 2}),
+			AppSKey:   [16]byte{1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2},
+			NwkSKey:   [16]byte{4, 4, 4, 4, 3, 3, 3, 3, 4, 4, 4, 4, 3, 3, 3, 3},
+		}
+		err := handler.HandleUp(dataIn, an, adapter)
+
+		CheckErrors(t, nil, err)
+		CheckPushed(t, nil, pktStorage.Pushed)
+		CheckPersonalized(t, nil, devStorage.Personalized)
+		CheckAcks(t, true, an.Acked)
+		CheckSent(t, pktSent, adapter.SentPkt)
+		CheckRecipients(t, []Recipient{recipient}, adapter.SentRecipients)
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Handle uplink with 1 packet | No downlink ready | Adapter fail sending ")
+
+		devStorage := newMockDevStorage()
+		pktStorage := newMockPktStorage()
+		an := newMockAckNacker()
+		adapter := newMockAdapter()
+		handler := New(devStorage, pktStorage, GetLogger(t, "Handler"))
+		inPkt := newHPacket(
+			[8]byte{1, 1, 1, 1, 1, 1, 1, 1},
+			[8]byte{2, 2, 2, 2, 2, 2, 2, 2},
+			"Payload",
+			Metadata{
+				Duty: pointer.Uint(5),
+				Rssi: pointer.Int(-25),
+			},
+			10,
+			[16]byte{1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2},
+		)
+		dataIn, _ := inPkt.MarshalBinary()
+		recipient := newMockRecipient("TowardsInfinity")
+		dataRecipient, _ := recipient.MarshalBinary()
+		pktSent, _ := NewAPacket(
+			inPkt.AppEUI(),
+			inPkt.DevEUI(),
+			[]byte("Payload"),
+			[]Metadata{inPkt.Metadata()},
+		)
+
+		adapter.Recipient = recipient
+		adapter.Failures["Send"] = errors.New(errors.Operational, "Mock Error: Unable to send")
+		devStorage.LookupEntry = devEntry{
+			Recipient: dataRecipient,
+			DevAddr:   lorawan.DevAddr([4]byte{2, 2, 2, 2}),
+			AppSKey:   [16]byte{1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2},
+			NwkSKey:   [16]byte{4, 4, 4, 4, 3, 3, 3, 3, 4, 4, 4, 4, 3, 3, 3, 3},
+		}
+		err := handler.HandleUp(dataIn, an, adapter)
+
+		CheckErrors(t, pointer.String(string(errors.Operational)), err)
+		CheckPushed(t, nil, pktStorage.Pushed)
+		CheckPersonalized(t, nil, devStorage.Personalized)
+		CheckAcks(t, false, an.Acked)
+		CheckSent(t, pktSent, adapter.SentPkt)
+		CheckRecipients(t, []Recipient{recipient}, adapter.SentRecipients)
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Handle uplink with 1 packet | No downlink ready | Adapter fail GetRecipient")
+
+		devStorage := newMockDevStorage()
+		pktStorage := newMockPktStorage()
+		an := newMockAckNacker()
+		adapter := newMockAdapter()
+		handler := New(devStorage, pktStorage, GetLogger(t, "Handler"))
+		inPkt := newHPacket(
+			[8]byte{1, 1, 1, 1, 1, 1, 1, 1},
+			[8]byte{2, 2, 2, 2, 2, 2, 2, 2},
+			"Payload",
+			Metadata{
+				Duty: pointer.Uint(5),
+				Rssi: pointer.Int(-25),
+			},
+			10,
+			[16]byte{1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2},
+		)
+		dataIn, _ := inPkt.MarshalBinary()
+		recipient := newMockRecipient("TowardsInfinity")
+		dataRecipient, _ := recipient.MarshalBinary()
+
+		adapter.Recipient = recipient
+		adapter.Failures["GetRecipient"] = errors.New(errors.Operational, "Mock Error: Unable to get recipient")
+		devStorage.LookupEntry = devEntry{
+			Recipient: dataRecipient,
+			DevAddr:   lorawan.DevAddr([4]byte{2, 2, 2, 2}),
+			AppSKey:   [16]byte{1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2},
+			NwkSKey:   [16]byte{4, 4, 4, 4, 3, 3, 3, 3, 4, 4, 4, 4, 3, 3, 3, 3},
+		}
+		err := handler.HandleUp(dataIn, an, adapter)
+
+		CheckErrors(t, pointer.String(string(errors.Operational)), err)
+		CheckPushed(t, nil, pktStorage.Pushed)
+		CheckPersonalized(t, nil, devStorage.Personalized)
+		CheckAcks(t, false, an.Acked)
+		CheckSent(t, nil, adapter.SentPkt)
+		CheckRecipients(t, nil, adapter.SentRecipients)
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Handle uplink with 1 packet | No downlink ready | PktStorage fails to pull")
+
+		devStorage := newMockDevStorage()
+		pktStorage := newMockPktStorage()
+		an := newMockAckNacker()
+		adapter := newMockAdapter()
+		handler := New(devStorage, pktStorage, GetLogger(t, "Handler"))
+		inPkt := newHPacket(
+			[8]byte{1, 1, 1, 1, 1, 1, 1, 1},
+			[8]byte{2, 2, 2, 2, 2, 2, 2, 2},
+			"Payload",
+			Metadata{
+				Duty: pointer.Uint(5),
+				Rssi: pointer.Int(-25),
+			},
+			10,
+			[16]byte{1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2},
+		)
+		dataIn, _ := inPkt.MarshalBinary()
+		recipient := newMockRecipient("TowardsInfinity")
+		dataRecipient, _ := recipient.MarshalBinary()
+		pktSent, _ := NewAPacket(
+			inPkt.AppEUI(),
+			inPkt.DevEUI(),
+			[]byte("Payload"),
+			[]Metadata{inPkt.Metadata()},
+		)
+
+		adapter.Recipient = recipient
+		devStorage.LookupEntry = devEntry{
+			Recipient: dataRecipient,
+			DevAddr:   lorawan.DevAddr([4]byte{2, 2, 2, 2}),
+			AppSKey:   [16]byte{1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2},
+			NwkSKey:   [16]byte{4, 4, 4, 4, 3, 3, 3, 3, 4, 4, 4, 4, 3, 3, 3, 3},
+		}
+		pktStorage.Failures["Pull"] = errors.New(errors.Operational, "Mock Error: Failed to Pull")
+		err := handler.HandleUp(dataIn, an, adapter)
+
+		CheckErrors(t, pointer.String(string(errors.Operational)), err)
+		CheckPushed(t, nil, pktStorage.Pushed)
+		CheckPersonalized(t, nil, devStorage.Personalized)
+		CheckAcks(t, false, an.Acked)
+		CheckSent(t, pktSent, adapter.SentPkt)
+		CheckRecipients(t, []Recipient{recipient}, adapter.SentRecipients)
+	}
 }
 
 // ----- TYPE utilities
@@ -616,7 +801,7 @@ func (a *mockAdapter) Send(p Packet, r ...Recipient) ([]byte, error) {
 
 func (a *mockAdapter) GetRecipient(raw []byte) (Recipient, error) {
 	if a.Failures["GetRecipient"] != nil {
-		return nil, a.Failures["Send"]
+		return nil, a.Failures["GetRecipient"]
 	}
 	return a.Recipient, nil
 }
