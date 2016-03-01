@@ -61,7 +61,7 @@ func (h component) Register(reg Registration, an AckNacker) (err error) {
 		return errors.New(errors.Structural, "Not a Handler registration")
 	}
 
-	if err = h.devices.Store(hreg); err != nil {
+	if err = h.devices.StorePersonalized(hreg); err != nil {
 		return errors.New(errors.Operational, err)
 	}
 	return nil

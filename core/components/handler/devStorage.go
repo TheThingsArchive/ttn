@@ -15,7 +15,9 @@ import (
 
 type DevStorage interface {
 	Lookup(appEUI lorawan.EUI64, devEUI lorawan.EUI64) (devEntry, error)
-	Store(r HRegistration) error
+	StorePersonalized(r HRegistration) error
+	StoreActivated(r HRegistration) error
+	Close() error
 }
 
 type devEntry struct {
@@ -48,7 +50,7 @@ func NewDevStorage(name string) (DevStorage, error) {
 func (s devStorage) Lookup(appEUI lorawan.EUI64, devEUI lorawan.EUI64) (devEntry, error) {
 	itf, err := s.db.Lookup(fmt.Sprintf("%x.%x", appEUI[:], devEUI[:]), []byte(s.Name), &devEntry{})
 	if err != nil {
-		return devEntry{}, errors.New(errors.Operational, err)
+		return devEntry{}, err // Behavioural || Operational
 	}
 	entries, ok := itf.([]devEntry)
 	if !ok || len(entries) != 1 {
@@ -57,10 +59,12 @@ func (s devStorage) Lookup(appEUI lorawan.EUI64, devEUI lorawan.EUI64) (devEntry
 	return entries[0], nil
 }
 
-// Store implements the handler.DevStorage interface
-func (s devStorage) Store(reg HRegistration) error {
+// StorePersonalized implements the handler.DevStorage interface
+func (s devStorage) StorePersonalized(reg HRegistration) error {
 	appEUI := reg.AppEUI()
 	devEUI := reg.DevEUI()
+	devAddr := lorawan.DevAddr{}
+	copy(devAddr[:], devEUI[4:])
 	data, err := reg.Recipient().MarshalBinary()
 	if err != nil {
 		return errors.New(errors.Structural, "Cannot marshal recipient")
@@ -71,9 +75,15 @@ func (s devStorage) Store(reg HRegistration) error {
 			Recipient: data,
 			AppSKey:   reg.AppSKey(),
 			NwkSKey:   reg.NwkSKey(),
+			DevAddr:   devAddr,
 		},
 	}
-	return s.db.Store(fmt.Sprintf("%x.%x", appEUI[:], devEUI[:]), []byte(s.Name), e)
+	return s.db.Replace(fmt.Sprintf("%x.%x", appEUI[:], devEUI[:]), []byte(s.Name), e)
+}
+
+// StoreActivated implements the handler.DevStorage interface
+func (s devStorage) StoreActivated(reg HRegistration) error {
+	return errors.New(errors.Implementation, "Not implemented yet")
 }
 
 // Close implements the handler.DevStorage interface
