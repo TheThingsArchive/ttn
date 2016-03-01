@@ -61,7 +61,7 @@ func (h component) Register(reg Registration, an AckNacker) (err error) {
 		return errors.New(errors.Structural, "Not a Handler registration")
 	}
 
-	if err = h.devices.Store(hreg); err != nil {
+	if err = h.devices.StorePersonalized(hreg); err != nil {
 		return errors.New(errors.Operational, err)
 	}
 	return nil
@@ -75,7 +75,7 @@ func (h component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 
 	itf, err := UnmarshalPacket(data)
 	if err != nil {
-		return errors.New(errors.Structural, data)
+		return errors.New(errors.Structural, err)
 	}
 
 	switch itf.(type) {
@@ -88,7 +88,7 @@ func (h component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 		// 1. Lookup for the associated AppSKey + Recipient
 		entry, err := h.devices.Lookup(appEUI, devEUI)
 		if err != nil {
-			return errors.New(errors.Operational, err)
+			return err
 		}
 
 		// 2. Prepare a channel to receive the response from the consumer
@@ -124,16 +124,14 @@ func (h component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 		// If there's an error, all channels get the error.
 		resp := <-chresp
 		switch resp.(type) {
-		case Packet:
+		case BPacket:
 			ctx.Debug("Received response with packet. Sending Ack")
-			an.Ack(resp.(Packet))
+			ack = resp.(Packet)
 		case error:
 			ctx.WithError(resp.(error)).Warn("Received errored response. Sending Ack")
-			an.Nack()
 			return errors.New(errors.Operational, resp.(error))
 		default:
 			ctx.Debug("Received empty response. Sending empty Ack")
-			an.Ack(nil)
 		}
 
 		return nil
@@ -150,10 +148,10 @@ func computeScore(dutyCycle uint, rssi int) uint {
 	}
 
 	if dutyCycle > 2*max_duty_cycle/3 {
-		return uint(1000 - rssi)
+		return uint(1000 + rssi)
 	}
 
-	return uint(10000 - rssi)
+	return uint(10000 + rssi)
 }
 
 // consumeBundles processes list of bundle generated overtime, decrypt the underlying packet,
@@ -164,9 +162,10 @@ func (h component) consumeBundles(chbundle <-chan []bundle) {
 
 browseBundles:
 	for bundles := range chbundle {
+		ctx.WithField("BundleID", bundles[0].Id).Debug("Consume new bundle")
 		var metadata []Metadata
 		var payload []byte
-		var bestBundle bundle
+		var bestBundle int
 		var bestScore uint
 
 		for i, bundle := range bundles {
@@ -180,7 +179,7 @@ browseBundles:
 					go h.abortConsume(err, bundles)
 					continue browseBundles
 				}
-				bestBundle = bundle
+				bestBundle = i
 			}
 
 			// Append metadata for each of them
@@ -195,12 +194,14 @@ browseBundles:
 			score := computeScore(*duty, *rssi)
 			if score > bestScore {
 				bestScore = score
-				bestBundle = bundle
+				bestBundle = i
 			}
 		}
 
 		// Then create an application-level packet
-		packet, err := NewAPacket(bestBundle.Packet.AppEUI(), bestBundle.Packet.DevEUI(), payload, metadata)
+		appEUI := bundles[bestBundle].Packet.AppEUI()
+		devEUI := bundles[bestBundle].Packet.DevEUI()
+		packet, err := NewAPacket(appEUI, devEUI, payload, metadata)
 		if err != nil {
 			go h.abortConsume(err, bundles)
 			continue browseBundles
@@ -208,55 +209,62 @@ browseBundles:
 
 		// And send it to the wild open
 		// we don't expect a response from the adapter, end of the chain.
-		recipient, err := bestBundle.Adapter.GetRecipient(bestBundle.Entry.Recipient)
+		adapter := bundles[bestBundle].Adapter
+		entry := bundles[bestBundle].Entry
+		recipient, err := adapter.GetRecipient(entry.Recipient)
 		if err != nil {
 			go h.abortConsume(err, bundles)
 			continue browseBundles
 		}
 
-		_, err = bestBundle.Adapter.Send(packet, recipient)
+		_, err = adapter.Send(packet, recipient)
 		if err != nil {
 			go h.abortConsume(err, bundles)
 			continue browseBundles
 		}
 
 		// Now handle the downlink
-		down, err := h.packets.Pull(bestBundle.Packet.AppEUI(), bestBundle.Packet.DevEUI())
-		if err != nil {
+		down, err := h.packets.Pull(appEUI, devEUI)
+		if err != nil && err.(errors.Failure).Nature != errors.Behavioural {
 			go h.abortConsume(err, bundles)
 			continue browseBundles
 		}
 
 		// Then respond to node
-		for _, bundle := range bundles {
-			if bundle.Id == bestBundle.Id {
-				macPayload := lorawan.NewMACPayload(false)
-				macPayload.FHDR = lorawan.FHDR{
-					DevAddr: bestBundle.Entry.DevAddr,
-					// TODO Take care of the Adaptative Rate and other stuff
-					FCnt: bestBundle.Packet.FCnt() + 1,
-				}
-				macPayload.FPort = 1
-				macPayload.FRMPayload = []lorawan.Payload{&lorawan.DataPayload{
-					Bytes: down.Payload(),
-				}}
+		for i, bundle := range bundles {
+			if i == bestBundle {
+				var resp Packet
 
-				if err := macPayload.EncryptFRMPayload(bestBundle.Entry.AppSKey); err != nil {
-					go h.abortConsume(err, bundles)
-					continue browseBundles
-				}
+				if down != nil && err == nil {
+					fcnt := bundles[bestBundle].Packet.FCnt() + 1
+					macPayload := lorawan.NewMACPayload(false)
+					macPayload.FHDR = lorawan.FHDR{
+						DevAddr: entry.DevAddr,
+						// TODO Take care of the Adaptative Rate and other stuff
+						FCnt: fcnt,
+					}
+					macPayload.FPort = 1
+					macPayload.FRMPayload = []lorawan.Payload{&lorawan.DataPayload{
+						Bytes: down.Payload(),
+					}}
 
-				payload := lorawan.NewPHYPayload(false)
-				payload.MHDR = lorawan.MHDR{
-					MType: lorawan.UnconfirmedDataDown,
-					Major: lorawan.LoRaWANR1,
-				}
-				payload.MACPayload = macPayload
+					if err := macPayload.EncryptFRMPayload(entry.AppSKey); err != nil {
+						go h.abortConsume(err, bundles)
+						continue browseBundles
+					}
 
-				resp, err := NewHPacket(bestBundle.Packet.AppEUI(), bestBundle.Packet.DevEUI(), payload, Metadata{})
-				if err != nil {
-					go h.abortConsume(err, bundles)
-					continue browseBundles
+					payload := lorawan.NewPHYPayload(false)
+					payload.MHDR = lorawan.MHDR{
+						MType: lorawan.UnconfirmedDataDown,
+						Major: lorawan.LoRaWANR1,
+					}
+					payload.MACPayload = macPayload
+
+					resp, err = NewBPacket(payload, Metadata{})
+					if err != nil {
+						go h.abortConsume(err, bundles)
+						continue browseBundles
+					}
 				}
 
 				bundle.Chresp <- resp
@@ -344,7 +352,7 @@ func (h component) HandleDown(data []byte, an AckNacker, down Adapter) (err erro
 	// Unmarshal the given packet and see what gift we get
 	itf, err := UnmarshalPacket(data)
 	if err != nil {
-		return errors.New(errors.Structural, data)
+		return errors.New(errors.Structural, err)
 	}
 
 	switch itf.(type) {

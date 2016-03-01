@@ -74,7 +74,7 @@ func TestStoreAndLookup(t *testing.T) {
 	{
 		Desc(t, "Lookup in non-existing bucket")
 		entries, err := itf.Lookup("DoesntExist", []byte{1, 2, 3}, &testEntry{})
-		CheckErrors(t, pointer.String(string(errors.Operational)), err)
+		CheckErrors(t, pointer.String(string(errors.Behavioural)), err)
 		CheckEntries(t, nil, entries)
 	}
 
@@ -143,7 +143,7 @@ func TestStoreAndLookup(t *testing.T) {
 		err := itf.Reset("mybucket")
 		CheckErrors(t, nil, err)
 		entries, err := itf.Lookup("mybucket.nested", []byte{2, 2, 2}, &testEntry{})
-		CheckErrors(t, pointer.String(string(errors.Operational)), err)
+		CheckErrors(t, pointer.String(string(errors.Behavioural)), err)
 		CheckEntries(t, nil, entries)
 	}
 

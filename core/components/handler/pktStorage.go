@@ -15,6 +15,7 @@ import (
 type PktStorage interface {
 	Push(p APacket) error
 	Pull(appEUI lorawan.EUI64, devEUI lorawan.EUI64) (APacket, error)
+	Close() error
 }
 
 type pktStorage struct {
@@ -54,10 +55,10 @@ func (s pktStorage) Pull(appEUI lorawan.EUI64, devEUI lorawan.EUI64) (APacket, e
 
 	entries, err := s.db.Lookup(s.Name, key, &pktEntry{})
 	if err != nil {
-		return nil, errors.New(errors.Operational, err)
+		return nil, err // Operational || Behavioural
 	}
 
-	packets, ok := entries.([]*pktEntry)
+	packets, ok := entries.([]pktEntry)
 	if !ok {
 		return nil, errors.New(errors.Operational, "Unable to retrieve data from db")
 	}
@@ -72,7 +73,7 @@ func (s pktStorage) Pull(appEUI lorawan.EUI64, devEUI lorawan.EUI64) (APacket, e
 
 	var newEntries []dbutil.Entry
 	for _, p := range packets[1:] {
-		newEntries = append(newEntries, p)
+		newEntries = append(newEntries, &p)
 	}
 
 	if err := s.db.Replace(s.Name, key, newEntries); err != nil {
@@ -81,6 +82,11 @@ func (s pktStorage) Pull(appEUI lorawan.EUI64, devEUI lorawan.EUI64) (APacket, e
 	}
 
 	return pkt.APacket, nil
+}
+
+// Close implements the PktStorage interface
+func (s pktStorage) Close() error {
+	return s.db.Close()
 }
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface

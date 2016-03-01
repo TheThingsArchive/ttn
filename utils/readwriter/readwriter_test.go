@@ -274,6 +274,17 @@ func TestReadWriter(t *testing.T) {
 		})
 		CheckErrors(t, pointer.String(string(errors.Behavioural)), rw.Err())
 	}
+
+	// -------------
+
+	{
+		Desc(t, "Not enough data to read")
+		rw := New([]byte{2, 3})
+		rw.Read(func(data []byte) {
+			checkNotCalled(t)
+		})
+		CheckErrors(t, pointer.String(string(errors.Structural)), rw.Err())
+	}
 }
 
 // ----- CHECK utilities

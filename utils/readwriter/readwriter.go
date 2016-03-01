@@ -110,7 +110,11 @@ func (w *rw) read(to func(data []byte) error) error {
 	if err := binary.Read(w.data, binary.BigEndian, lenTo); err != nil {
 		return err
 	}
-	return to(w.data.Next(int(*lenTo)))
+	next := w.data.Next(int(*lenTo))
+	if len(next) != int(*lenTo) {
+		return errors.New(errors.Structural, "Not enough data to read")
+	}
+	return to(next)
 }
 
 // Bytes might be used to retrieves the raw buffer after successive writes. It will return nil and

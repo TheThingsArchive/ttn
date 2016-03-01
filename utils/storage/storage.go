@@ -49,6 +49,18 @@ func New(name string) (Interface, error) {
 	return store{db}, nil
 }
 
+// Make sure we return a failure
+func ensureErr(err error) error {
+	if err == nil {
+		return nil
+	}
+	_, ok := err.(errors.Failure)
+	if !ok {
+		err = errors.New(errors.Operational, err)
+	}
+	return err
+}
+
 // getBucket retrieve a bucket based on a string. The name might present several levels, all
 // separated by dot "." which indicates nested buckets. If no bucket is found along the path, they
 // are created, otherwise, the existing one is used.
@@ -108,7 +120,7 @@ func (itf store) Store(bucketName string, key []byte, entries []Entry) error {
 		return nil
 	})
 
-	return err
+	return ensureErr(err)
 }
 
 // Lookup retrieves a set of entry from a given bolt database.
@@ -122,6 +134,9 @@ func (itf store) Lookup(bucketName string, key []byte, shape Entry) (interface{}
 	err := itf.db.View(func(tx *bolt.Tx) error {
 		bucket, err := getBucket(tx, bucketName)
 		if err != nil {
+			if err.(errors.Failure).Fault == bolt.ErrTxNotWritable {
+				return errors.New(errors.Behavioural, fmt.Sprintf("Not found %+v", key))
+			}
 			return err
 		}
 		rawEntry = bucket.Get(key)
@@ -132,7 +147,7 @@ func (itf store) Lookup(bucketName string, key []byte, shape Entry) (interface{}
 	})
 
 	if err != nil {
-		return nil, err
+		return nil, ensureErr(err)
 	}
 
 	// Then, interpret them as instance of 'shape'
@@ -158,7 +173,7 @@ func (itf store) Lookup(bucketName string, key []byte, shape Entry) (interface{}
 
 // Flush remove an entry from a bucket
 func (itf store) Flush(bucketName string, key []byte) error {
-	return itf.db.Update(func(tx *bolt.Tx) error {
+	return ensureErr(itf.db.Update(func(tx *bolt.Tx) error {
 		bucket, err := getBucket(tx, bucketName)
 		if err != nil {
 			return err
@@ -167,7 +182,7 @@ func (itf store) Flush(bucketName string, key []byte) error {
 			return errors.New(errors.Operational, err)
 		}
 		return nil
-	})
+	}))
 }
 
 // Replace stores entries in the database by replacing them by a new set
@@ -182,7 +197,7 @@ func (itf store) Replace(bucketName string, key []byte, entries []Entry) error {
 		marshalled = append(marshalled, m)
 	}
 
-	return itf.db.Update(func(tx *bolt.Tx) error {
+	return ensureErr(itf.db.Update(func(tx *bolt.Tx) error {
 		bucket, err := getBucket(tx, bucketName)
 		if err != nil {
 			return err
@@ -202,12 +217,12 @@ func (itf store) Replace(bucketName string, key []byte, entries []Entry) error {
 			return errors.New(errors.Operational, err)
 		}
 		return nil
-	})
+	}))
 }
 
 // Reset resets a given bucket from a given bolt database
 func (itf store) Reset(bucketName string) error {
-	return itf.db.Update(func(tx *bolt.Tx) error {
+	return ensureErr(itf.db.Update(func(tx *bolt.Tx) error {
 		path := strings.Split(bucketName, ".")
 
 		var cursor interface {
@@ -232,7 +247,7 @@ func (itf store) Reset(bucketName string) error {
 			return errors.New(errors.Operational, err)
 		}
 		return nil
-	})
+	}))
 }
 
 // Close terminates the db connection
