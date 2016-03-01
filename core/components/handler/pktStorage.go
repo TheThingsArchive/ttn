@@ -55,7 +55,7 @@ func (s pktStorage) Pull(appEUI lorawan.EUI64, devEUI lorawan.EUI64) (APacket, e
 
 	entries, err := s.db.Lookup(s.Name, key, &pktEntry{})
 	if err != nil {
-		return nil, errors.New(errors.Operational, err)
+		return nil, err // Operational || Behavioural
 	}
 
 	packets, ok := entries.([]pktEntry)
