@@ -76,6 +76,74 @@ func TestRegister(t *testing.T) {
 	}
 }
 
+func TestHandleDown(t *testing.T) {
+	{
+		Desc(t, "Handle downlink APacket")
+
+		devStorage := newMockDevStorage()
+		pktStorage := newMockPktStorage()
+		an := newMockAckNacker()
+		adapter := newMockAdapter()
+		handler := New(devStorage, pktStorage, GetLogger(t, "Handler"))
+		pkt, _ := NewAPacket(
+			[8]byte{1, 1, 1, 1, 1, 1, 1, 1},
+			[8]byte{2, 2, 2, 2, 2, 2, 2, 2},
+			[]byte("TheThingsNetwork"),
+			[]Metadata{},
+		)
+
+		data, _ := pkt.MarshalBinary()
+		err := handler.HandleDown(data, an, adapter)
+
+		CheckErrors(t, nil, err)
+		CheckPushed(t, pkt, pktStorage.Pushed)
+		CheckPersonalized(t, nil, devStorage.Personalized)
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Handle downlink wrong data")
+
+		devStorage := newMockDevStorage()
+		pktStorage := newMockPktStorage()
+		an := newMockAckNacker()
+		adapter := newMockAdapter()
+		handler := New(devStorage, pktStorage, GetLogger(t, "Handler"))
+
+		err := handler.HandleDown([]byte{1, 2, 3}, an, adapter)
+
+		CheckErrors(t, pointer.String(string(errors.Structural)), err)
+		CheckPushed(t, nil, pktStorage.Pushed)
+		CheckPersonalized(t, nil, devStorage.Personalized)
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Handle downlink wrong packet type")
+
+		devStorage := newMockDevStorage()
+		pktStorage := newMockPktStorage()
+		an := newMockAckNacker()
+		adapter := newMockAdapter()
+		handler := New(devStorage, pktStorage, GetLogger(t, "Handler"))
+		pkt := NewJPacket(
+			lorawan.EUI64([8]byte{1, 1, 1, 1, 1, 1, 1, 1}),
+			lorawan.EUI64([8]byte{2, 2, 2, 2, 2, 2, 2, 2}),
+			[2]byte{14, 42},
+			Metadata{},
+		)
+		data, _ := pkt.MarshalBinary()
+
+		err := handler.HandleDown(data, an, adapter)
+
+		CheckErrors(t, pointer.String(string(errors.Implementation)), err)
+		CheckPushed(t, nil, pktStorage.Pushed)
+		CheckPersonalized(t, nil, devStorage.Personalized)
+	}
+}
+
 // ----- TYPE utilities
 
 //
