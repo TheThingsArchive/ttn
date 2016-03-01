@@ -344,7 +344,7 @@ func (h component) HandleDown(data []byte, an AckNacker, down Adapter) (err erro
 	// Unmarshal the given packet and see what gift we get
 	itf, err := UnmarshalPacket(data)
 	if err != nil {
-		return errors.New(errors.Structural, data)
+		return errors.New(errors.Structural, err)
 	}
 
 	switch itf.(type) {
