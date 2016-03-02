@@ -33,10 +33,7 @@ func (b component) Register(reg Registration, an AckNacker) (err error) {
 		return errors.New(errors.Structural, "Not a Broker registration")
 	}
 
-	if err := b.Store(breg); err != nil {
-		return errors.New(errors.Operational, err)
-	}
-	return nil
+	return b.Store(breg)
 }
 
 // HandleUp implements the core.Component interface
@@ -159,7 +156,8 @@ func (b component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 }
 
 // HandleDown implements the core.Component interface
-func (b component) HandleDown(data []byte, an AckNacker, down Adapter) error {
+func (b component) HandleDown(data []byte, an AckNacker, down Adapter) (err error) {
+	defer ensureAckNack(an, nil, &err)
 	return errors.New(errors.Implementation, "Handle Down not implemented on broker")
 }
 
