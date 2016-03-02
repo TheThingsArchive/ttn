@@ -25,11 +25,7 @@ func (r component) Register(reg Registration, an AckNacker) (err error) {
 	defer ensureAckNack(an, nil, &err)
 	stats.MarkMeter("router.registration.in")
 	r.ctx.Debug("Handling registration")
-
-	if err := r.Store(reg); err != nil {
-		return errors.New(errors.Operational, err)
-	}
-	return nil
+	return r.Store(reg)
 }
 
 // HandleUp implements the core.Component interface
