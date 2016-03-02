@@ -9,7 +9,7 @@ import (
 	. "github.com/TheThingsNetwork/ttn/core/adapters/http"
 )
 
-// Collect defines a handler to ping adapters via a GET request.
+// Healthz defines a handler to ping adapters via a GET request.
 //
 // It listens to requests of the form: [GET] /healthz/
 //
@@ -18,8 +18,8 @@ import (
 // This handler does not generate any registration.
 type Healthz struct{}
 
-// Url implements the http.Handler interface
-func (p Healthz) Url() string {
+// URL implements the http.Handler interface
+func (p Healthz) URL() string {
 	return "/healthz"
 }
 

@@ -53,7 +53,7 @@ func createPubSubAdapter(t *testing.T, port uint) (*Adapter, string) {
 	<-time.After(time.Millisecond * 250) // Let the connection starts
 	handler := PubSub{}
 	adapter.Bind(handler)
-	return adapter, fmt.Sprintf("http://0.0.0.0:%d%s", port, handler.Url())
+	return adapter, fmt.Sprintf("http://0.0.0.0:%d%s", port, handler.URL())
 }
 
 func createCollectAdapter(t *testing.T, port uint) (*Adapter, string) {
@@ -64,7 +64,7 @@ func createCollectAdapter(t *testing.T, port uint) (*Adapter, string) {
 	<-time.After(time.Millisecond * 250) // Let the connection starts
 	handler := Collect{}
 	adapter.Bind(handler)
-	return adapter, fmt.Sprintf("http://0.0.0.0:%d%s", port, handler.Url())
+	return adapter, fmt.Sprintf("http://0.0.0.0:%d%s", port, handler.URL())
 }
 
 type testClient struct {

@@ -15,6 +15,7 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
+// Activation handles communication between a handler and an application via MQTT
 type Activation struct{}
 
 // Topic implements the mqtt.Handler interface

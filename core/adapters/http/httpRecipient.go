@@ -9,35 +9,36 @@ import (
 	"github.com/TheThingsNetwork/ttn/utils/readwriter"
 )
 
-type HttpRecipient interface {
+// Recipient represents the recipient used by the http adapter
+type Recipient interface {
 	encoding.BinaryMarshaler
-	Url() string
+	URL() string
 	Method() string
 }
 
-// NewHttpRecipient constructs a new HttpRecipient
-func NewHttpRecipient(url string, method string) HttpRecipient {
-	return httpRecipient{url: url, method: method}
+// NewRecipient constructs a new HttpRecipient
+func NewRecipient(url string, method string) Recipient {
+	return recipient{url: url, method: method}
 }
 
-// HttpRecipient materializes recipients manipulated by the http adapter
-type httpRecipient struct {
+// Recipient materializes recipients manipulated by the http adapter
+type recipient struct {
 	url    string
 	method string
 }
 
-// Url implements the HttpRecipient interface
-func (h httpRecipient) Url() string {
+// Url implements the Recipient interface
+func (h recipient) URL() string {
 	return h.url
 }
 
-// Method implements the HttpRecipient interface
-func (h httpRecipient) Method() string {
+// Method implements the Recipient interface
+func (h recipient) Method() string {
 	return h.method
 }
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface
-func (h httpRecipient) MarshalBinary() ([]byte, error) {
+func (h recipient) MarshalBinary() ([]byte, error) {
 	w := readwriter.New(nil)
 	w.Write(h.url)
 	w.Write(h.method)
@@ -45,7 +46,7 @@ func (h httpRecipient) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
-func (h *httpRecipient) UnmarshalBinary(data []byte) error {
+func (h *recipient) UnmarshalBinary(data []byte) error {
 	r := readwriter.New(data)
 	r.Read(func(data []byte) { h.url = string(data) })
 	r.Read(func(data []byte) { h.method = string(data) })

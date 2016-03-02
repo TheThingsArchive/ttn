@@ -95,7 +95,7 @@ func TestPubSub(t *testing.T) {
 			WantContent:    string(errors.Structural),
 			WantStatusCode: http.StatusConflict,
 			WantRegistration: pubSubRegistration{
-				recipient: NewHttpRecipient("url", "PUT"),
+				recipient: NewRecipient("url", "PUT"),
 				appEUI:    lorawan.EUI64([8]byte{0, 1, 2, 3, 4, 5, 6, 7}),
 				nwkSKey:   lorawan.AES128Key([16]byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5}),
 				devEUI:    lorawan.EUI64([8]byte{0, 0, 0, 0, 1, 2, 3, 4}),
@@ -113,7 +113,7 @@ func TestPubSub(t *testing.T) {
 			WantContent:    "",
 			WantStatusCode: http.StatusAccepted,
 			WantRegistration: pubSubRegistration{
-				recipient: NewHttpRecipient("url", "PUT"),
+				recipient: NewRecipient("url", "PUT"),
 				appEUI:    lorawan.EUI64([8]byte{0, 1, 2, 3, 4, 5, 6, 7}),
 				nwkSKey:   lorawan.AES128Key([16]byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5}),
 				devEUI:    lorawan.EUI64([8]byte{0, 0, 0, 0, 1, 2, 3, 4}),
@@ -129,7 +129,7 @@ func TestPubSub(t *testing.T) {
 
 		// Build
 		adapter, url := createPubSubAdapter(t, port)
-		port += 1
+		port++
 		client := testClient{}
 
 		// Operate

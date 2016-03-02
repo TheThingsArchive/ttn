@@ -23,8 +23,8 @@ import (
 // This handler does not generate any registration.
 type StatusPage struct{}
 
-// Url implements the http.Handler interface
-func (p StatusPage) Url() string {
+// URL implements the http.Handler interface
+func (p StatusPage) URL() string {
 	return "/status/"
 }
 

@@ -18,10 +18,11 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
+// Semtech implements the Semtech protocol and make a bridge between gateways and routers
 type Semtech struct{}
 
-// HandleDatagram implements the udp.Handler interface
-func (s Semtech) Handle(conn chan<- udp.MsgUdp, packets chan<- udp.MsgReq, msg udp.MsgUdp) {
+// Handle implements the udp.Handler interface
+func (s Semtech) Handle(conn chan<- udp.MsgUDP, packets chan<- udp.MsgReq, msg udp.MsgUDP) {
 	pkt := new(semtech.Packet)
 	err := pkt.UnmarshalBinary(msg.Data)
 	if err != nil {
@@ -41,7 +42,7 @@ func (s Semtech) Handle(conn chan<- udp.MsgUdp, packets chan<- udp.MsgReq, msg u
 			// TODO Log error
 			return
 		}
-		conn <- udp.MsgUdp{
+		conn <- udp.MsgUDP{
 			Addr: msg.Addr,
 			Data: data,
 		}
@@ -56,7 +57,7 @@ func (s Semtech) Handle(conn chan<- udp.MsgUdp, packets chan<- udp.MsgReq, msg u
 			// TODO Log error
 			return
 		}
-		conn <- udp.MsgUdp{
+		conn <- udp.MsgUDP{
 			Addr: msg.Addr,
 			Data: data,
 		}
@@ -104,7 +105,7 @@ func (s Semtech) Handle(conn chan<- udp.MsgUdp, packets chan<- udp.MsgReq, msg u
 						// TODO Log error
 						return
 					}
-					conn <- udp.MsgUdp{Addr: msg.Addr, Data: data}
+					conn <- udp.MsgUDP{Addr: msg.Addr, Data: data}
 				case <-time.After(time.Second * 2):
 				}
 			}(rxpk)
@@ -144,7 +145,7 @@ func rxpk2packet(p semtech.RXPK, gid []byte) (core.Packet, error) {
 	rxpkValue := reflect.ValueOf(p)
 	rxpkStruct := rxpkValue.Type()
 	metas := reflect.ValueOf(&metadata).Elem()
-	for i := 0; i < rxpkStruct.NumField(); i += 1 {
+	for i := 0; i < rxpkStruct.NumField(); i++ {
 		field := rxpkStruct.Field(i).Name
 		if metas.FieldByName(field).CanSet() {
 			metas.FieldByName(field).Set(rxpkValue.Field(i))
@@ -171,7 +172,7 @@ func packet2txpk(p core.RPacket) (semtech.TXPK, error) {
 	metadataValue := reflect.ValueOf(p.Metadata())
 	metadataStruct := metadataValue.Type()
 	txpkStruct := reflect.ValueOf(&txpk).Elem()
-	for i := 0; i < metadataStruct.NumField(); i += 1 {
+	for i := 0; i < metadataStruct.NumField(); i++ {
 		field := metadataStruct.Field(i).Name
 		if txpkStruct.FieldByName(field).CanSet() {
 			txpkStruct.FieldByName(field).Set(metadataValue.Field(i))

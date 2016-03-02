@@ -11,6 +11,7 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
+// Storage gives a facade for manipulating the broker database
 type Storage interface {
 	Lookup(devEUI lorawan.EUI64) ([]entry, error)
 	Store(reg BRegistration) error

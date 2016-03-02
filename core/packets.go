@@ -13,13 +13,13 @@ import (
 )
 
 const (
-	type_rpacket byte = iota
-	type_bpacket
-	type_hpacket
-	type_apacket
-	type_jpacket
-	type_cpacket
-	type_spacket
+	typeRPacket byte = iota
+	typeBPacket
+	typeHPacket
+	typeAPacket
+	typeJPacket
+	typeCPacket
+	typeSPacket
 )
 
 // ---------------------------------
@@ -82,17 +82,17 @@ func UnmarshalPacket(data []byte) (interface{}, error) {
 	}
 
 	switch data[0] {
-	case type_rpacket:
+	case typeRPacket:
 		packet = new(rpacket)
-	case type_bpacket:
+	case typeBPacket:
 		packet = new(bpacket)
-	case type_hpacket:
+	case typeHPacket:
 		packet = new(hpacket)
-	case type_apacket:
+	case typeAPacket:
 		packet = new(apacket)
-	case type_jpacket:
+	case typeJPacket:
 		packet = new(jpacket)
-	case type_cpacket:
+	case typeCPacket:
 		packet = new(cpacket)
 	}
 
@@ -110,11 +110,11 @@ func UnmarshalPacket(data []byte) (interface{}, error) {
 type rpacket struct {
 	baserpacket
 	basempacket
-	gatewayId baseapacket
+	gatewayID baseapacket
 }
 
 // NewRPacket construct a new router packet given a payload and metadata
-func NewRPacket(payload lorawan.PHYPayload, gatewayId []byte, metadata Metadata) (RPacket, error) {
+func NewRPacket(payload lorawan.PHYPayload, gatewayID []byte, metadata Metadata) (RPacket, error) {
 	if payload.MACPayload == nil {
 		return nil, errors.New(errors.Structural, "MACPAyload should not be empty")
 	}
@@ -127,23 +127,23 @@ func NewRPacket(payload lorawan.PHYPayload, gatewayId []byte, metadata Metadata)
 	return &rpacket{
 		baserpacket: baserpacket{payload: payload},
 		basempacket: basempacket{metadata: metadata},
-		gatewayId:   baseapacket{payload: gatewayId},
+		gatewayID:   baseapacket{payload: gatewayID},
 	}, nil
 }
 
-// GatewayId implements the core.RPacket interface
-func (p rpacket) GatewayId() []byte {
-	return p.gatewayId.payload
+// gatewayID implements the core.RPacket interface
+func (p rpacket) GatewayID() []byte {
+	return p.gatewayID.payload
 }
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface
 func (p rpacket) MarshalBinary() ([]byte, error) {
-	return marshalBases(type_rpacket, p.baserpacket, p.basempacket, p.gatewayId)
+	return marshalBases(typeRPacket, p.baserpacket, p.basempacket, p.gatewayID)
 }
 
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
 func (p *rpacket) UnmarshalBinary(data []byte) error {
-	return unmarshalBases(type_rpacket, data, &p.baserpacket, &p.basempacket, &p.gatewayId)
+	return unmarshalBases(typeRPacket, data, &p.baserpacket, &p.basempacket, &p.gatewayID)
 }
 
 // String implements the Stringer interface
@@ -208,12 +208,12 @@ func (p bpacket) String() string {
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface
 func (p bpacket) MarshalBinary() ([]byte, error) {
-	return marshalBases(type_bpacket, p.baserpacket, p.basempacket)
+	return marshalBases(typeBPacket, p.baserpacket, p.basempacket)
 }
 
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
 func (p *bpacket) UnmarshalBinary(data []byte) error {
-	return unmarshalBases(type_bpacket, data, &p.baserpacket, &p.basempacket)
+	return unmarshalBases(typeBPacket, data, &p.baserpacket, &p.basempacket)
 }
 
 // ---------------------------------
@@ -279,12 +279,12 @@ func (p hpacket) FCnt() uint32 {
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface
 func (p hpacket) MarshalBinary() ([]byte, error) {
-	return marshalBases(type_hpacket, p.basehpacket, p.payload, p.basempacket)
+	return marshalBases(typeHPacket, p.basehpacket, p.payload, p.basempacket)
 }
 
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
 func (p *hpacket) UnmarshalBinary(data []byte) error {
-	return unmarshalBases(type_hpacket, data, &p.basehpacket, &p.payload, &p.basempacket)
+	return unmarshalBases(typeHPacket, data, &p.basehpacket, &p.payload, &p.basempacket)
 }
 
 // String implements the fmt.Stringer interface
@@ -328,12 +328,12 @@ func NewAPacket(appEUI lorawan.EUI64, devEUI lorawan.EUI64, payload []byte, meta
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface
 func (p apacket) MarshalBinary() ([]byte, error) {
-	return marshalBases(type_apacket, p.basehpacket, p.baseapacket, p.basegpacket)
+	return marshalBases(typeAPacket, p.basehpacket, p.baseapacket, p.basegpacket)
 }
 
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
 func (p *apacket) UnmarshalBinary(data []byte) error {
-	return unmarshalBases(type_apacket, data, &p.basehpacket, &p.baseapacket, &p.basegpacket)
+	return unmarshalBases(typeAPacket, data, &p.basehpacket, &p.baseapacket, &p.basegpacket)
 }
 
 // String implements the fmt.Stringer interface
@@ -360,7 +360,7 @@ type jpacket struct {
 	basempacket
 }
 
-// NewJoinPacket constructs a new JoinPacket
+// NewJPacket constructs a new JoinPacket
 func NewJPacket(appEUI lorawan.EUI64, devEUI lorawan.EUI64, devNonce [2]byte, metadata Metadata) JPacket {
 	return &jpacket{
 		basehpacket: basehpacket{
@@ -379,12 +379,12 @@ func (p jpacket) DevNonce() [2]byte {
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface
 func (p jpacket) MarshalBinary() ([]byte, error) {
-	return marshalBases(type_jpacket, p.basehpacket, p.baseapacket, p.basempacket)
+	return marshalBases(typeJPacket, p.basehpacket, p.baseapacket, p.basempacket)
 }
 
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
 func (p *jpacket) UnmarshalBinary(data []byte) error {
-	return unmarshalBases(type_jpacket, data, &p.basehpacket, &p.baseapacket, &p.basempacket)
+	return unmarshalBases(typeJPacket, data, &p.basehpacket, &p.baseapacket, &p.basempacket)
 }
 
 // String implements the fmt.Stringer interface
@@ -399,7 +399,7 @@ type cpacket struct {
 	nwkSKey baseapacket
 }
 
-// NewAcceptPacket constructs a new CPacket
+// NewCPacket constructs a new CPacket
 func NewCPacket(appEUI lorawan.EUI64, devEUI lorawan.EUI64, payload []byte, nwkSKey lorawan.AES128Key) (CPacket, error) {
 	if len(payload) == 0 {
 		return nil, errors.New(errors.Structural, "Payload cannot be empty")
@@ -424,12 +424,12 @@ func (p cpacket) NwkSKey() lorawan.AES128Key {
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface
 func (p cpacket) MarshalBinary() ([]byte, error) {
-	return marshalBases(type_cpacket, p.basehpacket, p.baseapacket, p.nwkSKey)
+	return marshalBases(typeCPacket, p.basehpacket, p.baseapacket, p.nwkSKey)
 }
 
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
 func (p *cpacket) UnmarshalBinary(data []byte) error {
-	return unmarshalBases(type_cpacket, data, &p.basehpacket, &p.baseapacket, &p.nwkSKey)
+	return unmarshalBases(typeCPacket, data, &p.basehpacket, &p.baseapacket, &p.nwkSKey)
 }
 
 // String implements the fmt.Stringer interface

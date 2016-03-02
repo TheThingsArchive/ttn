@@ -118,6 +118,6 @@ func TestCollect(t *testing.T) {
 		checkStatusCode(t, test.WantStatusCode, statusCode)
 		checkContent(t, test.WantContent, content)
 		checkPacket(t, test.WantPacket, packet)
-		port += 1
+		port++
 	}
 }

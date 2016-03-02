@@ -14,8 +14,8 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
-const buffer_delay time.Duration = time.Millisecond * 300
-const max_duty_cycle = 90 // 90%
+const bufferDelay time.Duration = time.Millisecond * 300
+const maxDutyCycle = 90 // 90%
 
 // component implements the core.Component interface
 type component struct {
@@ -29,7 +29,7 @@ type bundle struct {
 	Adapter Adapter
 	Chresp  chan interface{}
 	Entry   devEntry
-	Id      [20]byte
+	ID      [20]byte
 	Packet  HPacket
 }
 
@@ -95,7 +95,7 @@ func (h component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 		chresp := make(chan interface{})
 
 		// 3. Create a "bundle" which holds info waiting for other related packets
-		var bundleId [20]byte // AppEUI(8) | DevEUI(8)
+		var bundleID [20]byte // AppEUI(8) | DevEUI(8)
 		rw := readwriter.New(nil)
 		rw.Write(appEUI)
 		rw.Write(devEUI)
@@ -104,13 +104,13 @@ func (h component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 		if err != nil {
 			return errors.New(errors.Structural, err)
 		}
-		copy(bundleId[:], data[:])
+		copy(bundleID[:], data[:])
 
 		// 4. Send the actual bundle to the consumer
-		ctx := h.ctx.WithField("BundleID", bundleId)
+		ctx := h.ctx.WithField("BundleID", bundleID)
 		ctx.Debug("Define new bundle")
 		h.set <- bundle{
-			Id:      bundleId,
+			ID:      bundleID,
 			Packet:  packet,
 			Entry:   entry,
 			Adapter: up,
@@ -143,11 +143,11 @@ func (h component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 }
 
 func computeScore(dutyCycle uint, rssi int) uint {
-	if dutyCycle > max_duty_cycle {
+	if dutyCycle > maxDutyCycle {
 		return 0
 	}
 
-	if dutyCycle > 2*max_duty_cycle/3 {
+	if dutyCycle > 2*maxDutyCycle/3 {
 		return uint(1000 + rssi)
 	}
 
@@ -162,7 +162,7 @@ func (h component) consumeBundles(chbundle <-chan []bundle) {
 
 browseBundles:
 	for bundles := range chbundle {
-		ctx.WithField("BundleID", bundles[0].Id).Debug("Consume new bundle")
+		ctx.WithField("BundleID", bundles[0].ID).Debug("Consume new bundle")
 		var metadata []Metadata
 		var payload []byte
 		var bestBundle int
@@ -313,12 +313,12 @@ func (h component) consumeSet(chbundles chan<- []bundle, chset <-chan bundle) {
 			go func(bundles []bundle) { chbundles <- bundles }(bundles)
 			ctx.WithField("BundleID", id).Debug("Consuming collected bundles")
 		case b := <-chset:
-			ctx = ctx.WithField("BundleID", b.Id)
+			ctx = ctx.WithField("BundleID", b.ID)
 
 			// Check if bundle has already been processed
 			var pid [16]byte
-			copy(pid[:], b.Id[:16])
-			if reflect.DeepEqual(processed[pid], b.Id[16:]) {
+			copy(pid[:], b.ID[:16])
+			if reflect.DeepEqual(processed[pid], b.ID[16:]) {
 				ctx.Debug("Reject already processed bundle")
 				go func(b bundle) {
 					b.Chresp <- errors.New(errors.Behavioural, "Already processed")
@@ -327,12 +327,12 @@ func (h component) consumeSet(chbundles chan<- []bundle, chset <-chan bundle) {
 			}
 
 			// Add the bundle to the stack, and set the alarm if its the first
-			bundles := append(buffers[b.Id], b)
+			bundles := append(buffers[b.ID], b)
 			if len(bundles) == 1 {
-				go setAlarm(alarm, b.Id, buffer_delay)
+				go setAlarm(alarm, b.ID, bufferDelay)
 				ctx.Debug("Buffering started -> new alarm set")
 			}
-			buffers[b.Id] = bundles
+			buffers[b.ID] = bundles
 		}
 	}
 }

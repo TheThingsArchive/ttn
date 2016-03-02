@@ -14,6 +14,7 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
+// Storage gives a facade to manipulate the router database
 type Storage interface {
 	Lookup(devEUI lorawan.EUI64) (entry, error)
 	Store(reg Registration) error
