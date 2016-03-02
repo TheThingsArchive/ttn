@@ -108,7 +108,7 @@ func genCorePacket(p semtech.Packet) core.Packet {
 	return packet
 }
 
-func genPUSH_DATANoRXPK(token []byte) semtech.Packet {
+func genPUSHDATANoRXPK(token []byte) semtech.Packet {
 	return semtech.Packet{
 		Version:    semtech.VERSION,
 		GatewayId:  []byte{0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8},
@@ -117,14 +117,14 @@ func genPUSH_DATANoRXPK(token []byte) semtech.Packet {
 	}
 }
 
-func genPUSH_DATANoPayload(token []byte) semtech.Packet {
-	packet := genPUSH_DATAWithRXPK(token)
+func genPUSHDATANoPayload(token []byte) semtech.Packet {
+	packet := genPUSHDATAWithRXPK(token)
 	packet.Payload.RXPK[0].Data = nil
 	return packet
 }
 
-func genPUSH_DATAWithRXPK(token []byte) semtech.Packet {
-	packet := genPUSH_DATANoRXPK(token)
+func genPUSHDATAWithRXPK(token []byte) semtech.Packet {
+	packet := genPUSHDATANoRXPK(token)
 	packet.Payload = &semtech.Payload{
 		RXPK: []semtech.RXPK{
 			semtech.RXPK{
@@ -137,7 +137,7 @@ func genPUSH_DATAWithRXPK(token []byte) semtech.Packet {
 	return packet
 }
 
-func genPULL_ACK(token []byte) semtech.Packet {
+func genPULLACK(token []byte) semtech.Packet {
 	return semtech.Packet{
 		Version:    semtech.VERSION,
 		Token:      token,
@@ -145,7 +145,7 @@ func genPULL_ACK(token []byte) semtech.Packet {
 	}
 }
 
-func genPUSH_ACK(token []byte) semtech.Packet {
+func genPUSHACK(token []byte) semtech.Packet {
 	return semtech.Packet{
 		Version:    semtech.VERSION,
 		Token:      token,
@@ -153,7 +153,7 @@ func genPUSH_ACK(token []byte) semtech.Packet {
 	}
 }
 
-func genPULL_DATA(token []byte) semtech.Packet {
+func genPULLDATA(token []byte) semtech.Packet {
 	return semtech.Packet{
 		Version:    semtech.VERSION,
 		Token:      token,

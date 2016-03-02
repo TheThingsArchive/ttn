@@ -15,7 +15,7 @@ import (
 // Adapter represents a udp adapter which sends and receives packet via UDP
 type Adapter struct {
 	ctx      log.Interface    // Just a logger
-	conn     chan MsgUdp      // Channel used to manage response transmissions made by multiple goroutines
+	conn     chan MsgUDP      // Channel used to manage response transmissions made by multiple goroutines
 	packets  chan MsgReq      // Incoming valid packets are pushed to this channel and consume by an outsider
 	handlers chan interface{} // Manage handlers, could be either a Handler or a []byte (new handler or handling action)
 }
@@ -23,29 +23,29 @@ type Adapter struct {
 // Handler represents a datagram and packet handler used by the adapter to process packets
 type Handler interface {
 	// Handle handles incoming datagram from a gateway transmitter to the network
-	Handle(conn chan<- MsgUdp, chresp chan<- MsgReq, msg MsgUdp)
+	Handle(conn chan<- MsgUDP, chresp chan<- MsgReq, msg MsgUDP)
 }
 
-// MsgUdp type materializes response messages transmitted towards existing recipients (commonly, gateways).
-type MsgUdp struct {
+// MsgUDP type materializes response messages transmitted towards existing recipients (commonly, gateways).
+type MsgUDP struct {
 	Data []byte       // The raw byte sequence that has to be sent
 	Addr *net.UDPAddr // The target recipient address
 }
 
-// OutMsg type materializes valid uplink messages coming from a given recipient
+// MsgReq type materializes valid uplink messages coming from a given recipient
 type MsgReq struct {
 	Data   []byte      // The actual message
 	Chresp chan MsgRes // A dedicated response channel
 }
 
-// Message sent through the response channel of MsgReq
+// MsgRes qre sent through the response channel of MsgReq
 type MsgRes []byte // The actual message
 
 // NewAdapter constructs and allocates a new udp adapter
 func NewAdapter(port uint, ctx log.Interface) (*Adapter, error) {
 	a := Adapter{
 		ctx:      ctx,
-		conn:     make(chan MsgUdp),
+		conn:     make(chan MsgUDP),
 		packets:  make(chan MsgReq),
 		handlers: make(chan interface{}),
 	}
@@ -87,6 +87,7 @@ func (a *Adapter) NextRegistration() (core.Registration, core.AckNacker, error) 
 	return udpRegistration{}, nil, errors.New(errors.Implementation, "NextRegistration not supported on udp adapter")
 }
 
+// Bind is used to register a new handler to the adapter
 func (a *Adapter) Bind(h Handler) {
 	a.handlers <- h
 }
@@ -106,7 +107,7 @@ func (a *Adapter) listen(conn *net.UDPConn) {
 		}
 
 		a.ctx.Debug("Incoming datagram")
-		a.handlers <- MsgUdp{Addr: addr, Data: buf[:n]}
+		a.handlers <- MsgUDP{Addr: addr, Data: buf[:n]}
 	}
 }
 
@@ -141,11 +142,11 @@ func (a *Adapter) monitorHandlers() {
 		switch msg.(type) {
 		case Handler:
 			handlers = append(handlers, msg.(Handler))
-		case MsgUdp:
+		case MsgUDP:
 			for _, h := range handlers {
-				go func(h Handler, msg MsgUdp) {
+				go func(h Handler, msg MsgUDP) {
 					h.Handle(a.conn, a.packets, msg)
-				}(h, msg.(MsgUdp))
+				}(h, msg.(MsgUDP))
 			}
 		}
 	}
