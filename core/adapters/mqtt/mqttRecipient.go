@@ -10,37 +10,37 @@ import (
 	"github.com/TheThingsNetwork/ttn/utils/readwriter"
 )
 
-// MqttRecipient describes recipient manipulated by the mqtt adapter
-type MqttRecipient interface {
+// Recipient describes recipient manipulated by the mqtt adapter
+type Recipient interface {
 	encoding.BinaryMarshaler
 	encoding.BinaryUnmarshaler
 	TopicUp() string
 	TopicDown() string
 }
 
-// mqttRecipient implements the MqttRecipient interface
-type mqttRecipient struct {
+// recipient implements the MqttRecipient interface
+type recipient struct {
 	up   string
 	down string
 }
 
 // NewRecipient creates a new MQTT recipient from two topics
-func NewRecipient(up string, down string) MqttRecipient {
-	return &mqttRecipient{up: up, down: down}
+func NewRecipient(up string, down string) Recipient {
+	return &recipient{up: up, down: down}
 }
 
-// TopicUp implements the MqttRecipient interface
-func (r mqttRecipient) TopicUp() string {
+// TopicUp implements the Recipient interface
+func (r recipient) TopicUp() string {
 	return r.up
 }
 
-// TopicDown implements the MqttRecipient interface
-func (r mqttRecipient) TopicDown() string {
+// TopicDown implements the Recipient interface
+func (r recipient) TopicDown() string {
 	return r.down
 }
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface
-func (r mqttRecipient) MarshalBinary() ([]byte, error) {
+func (r recipient) MarshalBinary() ([]byte, error) {
 	rw := readwriter.New(nil)
 	rw.Write(r.up)
 	rw.Write(r.down)
@@ -49,7 +49,7 @@ func (r mqttRecipient) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
-func (r *mqttRecipient) UnmarshalBinary(data []byte) error {
+func (r *recipient) UnmarshalBinary(data []byte) error {
 	if r == nil {
 		return errors.New(errors.Structural, "Cannot unmarshal nil structure")
 	}

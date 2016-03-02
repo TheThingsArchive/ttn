@@ -28,27 +28,28 @@ type Handler interface {
 	Handle(client Client, chpkt chan<- PktReq, chreg chan<- RegReq, msg MQTT.Message) error
 }
 
-// Message sent through the response channel of a pktReq or regReq
+// MsgRes are sent through the response channel of a pktReq or regReq
 type MsgRes []byte // The response content.
 
-// Message sent through the packets channel when an incoming request arrives
+// PktReq are sent through the packets channel when an incoming request arrives
 type PktReq struct {
 	Packet []byte      // The actual packet that has been parsed
 	Chresp chan MsgRes // A response channel waiting for an success or reject confirmation
 }
 
-// Message sent through the registration channel when an incoming registration arrives
+// RegReq are sent through the registration channel when an incoming registration arrives
 type RegReq struct {
 	Registration core.Registration
 	Chresp       chan MsgRes
 }
 
-// MQTT Schemes available
+// Scheme defines all MQTT communication schemes available
 type Scheme string
 
+// The following constants are used as scheme identifers
 const (
-	Tcp       Scheme = "tcp"
-	Tls       Scheme = "tls"
+	TCP       Scheme = "tcp"
+	TLS       Scheme = "tls"
 	WebSocket Scheme = "ws"
 )
 
@@ -89,7 +90,7 @@ func (a *Adapter) Send(p core.Packet, recipients ...core.Recipient) ([]byte, err
 
 	for _, r := range recipients {
 		// Get the actual recipient
-		recipient, ok := r.(MqttRecipient)
+		recipient, ok := r.(Recipient)
 		if !ok {
 			err := errors.New(errors.Structural, "Unable to interpret recipient as mqttRecipient")
 			a.ctx.WithField("recipient", r).Warn(err.Error())
@@ -111,7 +112,7 @@ func (a *Adapter) Send(p core.Packet, recipients ...core.Recipient) ([]byte, err
 		}
 
 		// Publish on each topic
-		go func(recipient MqttRecipient) {
+		go func(recipient Recipient) {
 			defer wg.Done()
 
 			ctx := a.ctx.WithField("topic", recipient.TopicUp())
@@ -126,7 +127,7 @@ func (a *Adapter) Send(p core.Packet, recipients ...core.Recipient) ([]byte, err
 		}(recipient)
 
 		// Pull responses from each down topic, expecting only one
-		go func(recipient MqttRecipient, chdown <-chan []byte) {
+		go func(recipient Recipient, chdown <-chan []byte) {
 			defer wg.Done()
 
 			ctx := a.ctx.WithField("topic", recipient.TopicDown())
@@ -176,7 +177,7 @@ func (a *Adapter) Send(p core.Packet, recipients ...core.Recipient) ([]byte, err
 
 // GetRecipient implements the core.Adapter interface
 func (a *Adapter) GetRecipient(raw []byte) (core.Recipient, error) {
-	recipient := new(mqttRecipient)
+	recipient := new(recipient)
 	if err := recipient.UnmarshalBinary(raw); err != nil {
 		return nil, errors.New(errors.Structural, err)
 	}

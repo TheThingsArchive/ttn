@@ -18,7 +18,7 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
-const brokerUrl = "0.0.0.0:1683"
+const brokerURL = "0.0.0.0:1683"
 
 func TestMQTTSend(t *testing.T) {
 	tests := []struct {
@@ -155,7 +155,7 @@ func TestMQTTRecipient(t *testing.T) {
 	{
 		Desc(t, "Marshal / Unmarshal valid recipient")
 		rm := NewRecipient("topicup", "topicdown")
-		ru := new(mqttRecipient)
+		ru := new(recipient)
 		data, err := rm.MarshalBinary()
 		if err == nil {
 			err = ru.UnmarshalBinary(data)
@@ -166,7 +166,7 @@ func TestMQTTRecipient(t *testing.T) {
 	{
 		Desc(t, "Unmarshal from nil pointer")
 		rm := NewRecipient("topicup", "topicdown")
-		var ru *mqttRecipient
+		var ru *recipient
 		data, err := rm.MarshalBinary()
 		if err == nil {
 			err = ru.UnmarshalBinary(data)
@@ -176,14 +176,14 @@ func TestMQTTRecipient(t *testing.T) {
 
 	{
 		Desc(t, "Unmarshal nil data")
-		ru := new(mqttRecipient)
+		ru := new(recipient)
 		err := ru.UnmarshalBinary(nil)
 		CheckErrors(t, pointer.String(string(errors.Structural)), err)
 	}
 
 	{
 		Desc(t, "Unmarshal wrong data")
-		ru := new(mqttRecipient)
+		ru := new(recipient)
 		err := ru.UnmarshalBinary([]byte{1, 2, 3, 4})
 		CheckErrors(t, pointer.String(string(errors.Structural)), err)
 	}
@@ -221,7 +221,7 @@ func (p testPacket) DevEUI() lorawan.EUI64 {
 
 // ----- BUILD utilities
 func createAdapter(t *testing.T) (Client, core.Adapter) {
-	client, err := NewClient("testClient", brokerUrl, Tcp)
+	client, err := NewClient("testClient", brokerURL, TCP)
 	if err != nil {
 		panic(err)
 	}
@@ -231,7 +231,7 @@ func createAdapter(t *testing.T) (Client, core.Adapter) {
 }
 
 func createServers(recipients []testRecipient) (Client, chan []byte) {
-	client, err := NewClient("FakeServerClient", brokerUrl, Tcp)
+	client, err := NewClient("FakeServerClient", brokerURL, TCP)
 	if err != nil {
 		panic(err)
 	}

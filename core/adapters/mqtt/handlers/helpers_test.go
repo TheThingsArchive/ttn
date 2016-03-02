@@ -198,11 +198,11 @@ func checkRegistrations(t *testing.T, want core.HRegistration, got core.Registra
 	}
 
 	// Check recipient topicUp
-	rWant, ok := want.Recipient().(MqttRecipient)
+	rWant, ok := want.Recipient().(Recipient)
 	if !ok {
 		panic("Expected test to be made with MQTTRecipient")
 	}
-	rGot, ok := got.Recipient().(MqttRecipient)
+	rGot, ok := got.Recipient().(Recipient)
 	if !ok {
 		Ko(t, "Recipient isn't MqttRecipient: %v", got.Recipient())
 		return

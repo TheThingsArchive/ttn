@@ -10,6 +10,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 )
 
+// Client abstracts the interface of the paho client to allow an easier testing
 type Client interface {
 	Connect() MQTT.Token
 	Disconnect(quiesce uint)
