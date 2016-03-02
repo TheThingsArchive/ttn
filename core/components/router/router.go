@@ -79,7 +79,13 @@ func (r component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 			return errors.New(errors.Structural, err)
 		}
 
-		response, err := up.Send(bpacket, recipient)
+		var response []byte
+
+		if recipient == nil {
+			response, err = up.Send(bpacket)
+		} else {
+			response, err = up.Send(bpacket, recipient)
+		}
 
 		if err != nil {
 			stats.MarkMeter("router.uplink.bad_broker_response")
@@ -87,17 +93,21 @@ func (r component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 			return errors.New(errors.Operational, err)
 		}
 
+		// No response, stop there
+		if response == nil {
+			return nil
+		}
+
 		itf, err := UnmarshalPacket(response)
 		if err != nil {
 			stats.MarkMeter("router.uplink.bad_broker_response")
 			r.ctx.WithError(err).Warn("Invalid response from Broker")
-			return errors.New(errors.Structural, err)
+			return errors.New(errors.Operational, err)
 		}
 
 		switch itf.(type) {
 		case RPacket:
 			ack = itf.(RPacket)
-		case nil:
 		default:
 			return errors.New(errors.Implementation, "Unexpected packet type")
 		}
