@@ -5,7 +5,6 @@ package handler
 
 import (
 	"os"
-	"reflect"
 	"testing"
 
 	. "github.com/TheThingsNetwork/ttn/core"
@@ -112,25 +111,4 @@ func TestLookupStore(t *testing.T) {
 		CheckErrors(t, nil, err)
 	}
 
-}
-
-// ----- CHECK utilities
-func CheckEntries(t *testing.T, want *MockRegistration, got devEntry) {
-	// NOTE This only works in the case of Personalized devices
-	var devAddr lorawan.DevAddr
-	devEUI := want.DevEUI()
-	copy(devAddr[:], devEUI[4:])
-
-	wantEntry := devEntry{
-		Recipient: want.RawRecipient(),
-		DevAddr:   devAddr,
-		NwkSKey:   want.NwkSKey(),
-		AppSKey:   want.AppSKey(),
-	}
-
-	if reflect.DeepEqual(wantEntry, got) {
-		Ok(t, "Check Entries")
-		return
-	}
-	Ko(t, "Check Entries")
 }

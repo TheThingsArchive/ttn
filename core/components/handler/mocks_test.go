@@ -87,15 +87,17 @@ func newMockPktStorage() *mockPktStorage {
 }
 
 func (s *mockPktStorage) Push(p APacket) error {
-	s.Pushed = p
+	s.InPush = p
 	return s.Failures["Push"]
 }
 
 func (s *mockPktStorage) Pull(appEUI lorawan.EUI64, devEUI lorawan.EUI64) (APacket, error) {
+	s.InPullAppEUI = appEUI
+	s.InPullDevEUI = devEUI
 	if s.Failures["Pull"] != nil {
 		return nil, s.Failures["Pull"]
 	}
-	return s.PullEntry, nil
+	return s.OutPull, nil
 }
 
 func (s *mockPktStorage) Close() error {

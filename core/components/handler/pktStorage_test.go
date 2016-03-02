@@ -5,7 +5,6 @@ package handler
 
 import (
 	"os"
-	"reflect"
 	"testing"
 
 	. "github.com/TheThingsNetwork/ttn/core"
@@ -150,13 +149,4 @@ func TestPushPullNormal(t *testing.T) {
 		// Check
 		CheckErrors(t, pointer.String(string(errors.Operational)), err)
 	}
-}
-
-// ----- CHECK utilities
-func CheckPackets(t *testing.T, want APacket, got APacket) {
-	if reflect.DeepEqual(want, got) {
-		Ok(t, "Check Packets")
-		return
-	}
-	Ko(t, "Obtained packet doesn't match expectations.\nWant: %s\nGot:  %s", want, got)
 }
