@@ -5,7 +5,6 @@ package handler
 
 import (
 	"os"
-	"reflect"
 	"testing"
 
 	. "github.com/TheThingsNetwork/ttn/core"
@@ -37,16 +36,21 @@ func TestPushPullNormal(t *testing.T) {
 
 	{
 		Desc(t, "Push and Pull a valid APacket")
+
+		// Build
 		p, _ := NewAPacket(
 			lorawan.EUI64([8]byte{1, 1, 1, 1, 1, 1, 1, 1}),
 			lorawan.EUI64([8]byte{2, 2, 2, 2, 2, 2, 2, 2}),
 			[]byte("TheThingsNetwork"),
 			[]Metadata{},
 		)
+
+		// Operate
 		err := db.Push(p)
 		CheckErrors(t, nil, err)
-
 		a, err := db.Pull(p.AppEUI(), p.DevEUI())
+
+		// Check
 		CheckErrors(t, nil, err)
 		CheckPackets(t, p, a)
 	}
@@ -55,6 +59,8 @@ func TestPushPullNormal(t *testing.T) {
 
 	{
 		Desc(t, "Push two packets")
+
+		// Build
 		p1, _ := NewAPacket(
 			lorawan.EUI64([8]byte{1, 1, 1, 1, 1, 1, 1, 1}),
 			lorawan.EUI64([8]byte{2, 2, 2, 2, 2, 2, 2, 2}),
@@ -67,6 +73,8 @@ func TestPushPullNormal(t *testing.T) {
 			[]byte("TheThingsNetwork2"),
 			[]Metadata{},
 		)
+
+		// Operate & Check
 		err := db.Push(p1)
 		CheckErrors(t, nil, err)
 		err = db.Push(p2)
@@ -85,7 +93,15 @@ func TestPushPullNormal(t *testing.T) {
 
 	{
 		Desc(t, "Pull a non existing entry")
-		p, err := db.Pull(lorawan.EUI64([8]byte{1, 2, 1, 2, 1, 2, 1, 2}), lorawan.EUI64([8]byte{2, 3, 4, 2, 3, 4, 2, 3}))
+
+		// Build
+		appEUI := lorawan.EUI64([8]byte{1, 2, 1, 2, 1, 2, 1, 2})
+		devEUI := lorawan.EUI64([8]byte{2, 3, 4, 2, 3, 4, 2, 3})
+
+		// Operate
+		p, err := db.Pull(appEUI, devEUI)
+
+		// Check
 		CheckErrors(t, pointer.String(string(errors.Behavioural)), err)
 		CheckPackets(t, nil, p)
 	}
@@ -102,13 +118,19 @@ func TestPushPullNormal(t *testing.T) {
 
 	{
 		Desc(t, "Push after close")
+
+		// Build
 		p, _ := NewAPacket(
 			lorawan.EUI64([8]byte{1, 1, 1, 1, 1, 1, 1, 1}),
 			lorawan.EUI64([8]byte{2, 2, 2, 2, 2, 2, 2, 2}),
 			[]byte("TheThingsNetwork"),
 			[]Metadata{},
 		)
+
+		// Operate
 		err := db.Push(p)
+
+		// Check
 		CheckErrors(t, pointer.String(string(errors.Operational)), err)
 	}
 
@@ -116,16 +138,15 @@ func TestPushPullNormal(t *testing.T) {
 
 	{
 		Desc(t, "Pull after close")
-		_, err := db.Pull(lorawan.EUI64([8]byte{1, 1, 1, 1, 1, 1, 1, 1}), lorawan.EUI64([8]byte{2, 2, 2, 2, 2, 2, 2, 2}))
+
+		// Build
+		appEUI := lorawan.EUI64([8]byte{1, 2, 1, 2, 1, 2, 1, 2})
+		devEUI := lorawan.EUI64([8]byte{2, 3, 4, 2, 3, 4, 2, 3})
+
+		// Operate
+		_, err := db.Pull(appEUI, devEUI)
+
+		// Check
 		CheckErrors(t, pointer.String(string(errors.Operational)), err)
 	}
-}
-
-// ----- CHECK utilities
-func CheckPackets(t *testing.T, want APacket, got APacket) {
-	if reflect.DeepEqual(want, got) {
-		Ok(t, "Check Packets")
-		return
-	}
-	Ko(t, "Obtained packet doesn't match expectations.\nWant: %s\nGot:  %s", want, got)
 }
