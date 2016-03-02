@@ -17,6 +17,7 @@ import (
 type Storage interface {
 	Lookup(devEUI lorawan.EUI64) (entry, error)
 	Store(reg Registration) error
+	Close() error
 }
 
 type entry struct {
@@ -57,9 +58,9 @@ func (s *storage) lookup(devEUI lorawan.EUI64, lock bool) (entry, error) {
 
 	itf, err := s.db.Lookup(s.Name, devEUI[:], &entry{})
 	if err != nil {
-		return entry{}, errors.New(errors.Operational, err)
+		return entry{}, err
 	}
-	entries := itf.([]*entry)
+	entries := itf.([]entry)
 
 	if len(entries) != 1 {
 		if err := s.db.Flush(s.Name, devEUI[:]); err != nil {
@@ -77,7 +78,7 @@ func (s *storage) lookup(devEUI lorawan.EUI64, lock bool) (entry, error) {
 		return entry{}, errors.New(errors.Behavioural, "Not Found")
 	}
 
-	return *e, nil
+	return e, nil
 }
 
 // Store implements the router.Storage interface
@@ -93,7 +94,10 @@ func (s *storage) Store(reg Registration) error {
 
 	_, err = s.lookup(devEUI, false)
 	if err == nil || err != nil && err.(errors.Failure).Nature != errors.Behavioural {
-		return errors.New(errors.Structural, "Already exists")
+		if err == nil {
+			return errors.New(errors.Structural, "Already exists")
+		}
+		return err
 	}
 	return s.db.Store(s.Name, devEUI[:], []dbutil.Entry{&entry{
 		Recipient: recipient,
@@ -102,11 +106,21 @@ func (s *storage) Store(reg Registration) error {
 
 }
 
+// Close implements the router.Storage interface
+func (s *storage) Close() error {
+	return s.db.Close()
+}
+
 // MarshalBinary implements the encoding.BinaryMarshaler interface
 func (e entry) MarshalBinary() ([]byte, error) {
+	data, err := e.until.MarshalBinary()
+	if err != nil {
+		return nil, errors.New(errors.Structural, err)
+	}
+
 	rw := readwriter.New(nil)
 	rw.Write(e.Recipient)
-	rw.Write(e.until)
+	rw.Write(data)
 	return rw.Bytes()
 }
 
