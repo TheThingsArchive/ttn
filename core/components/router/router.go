@@ -115,7 +115,8 @@ func (r component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 }
 
 // HandleDown implements the core.Component interface
-func (r component) HandleDown(data []byte, an AckNacker, up Adapter) error {
+func (r component) HandleDown(data []byte, an AckNacker, up Adapter) (err error) {
+	defer ensureAckNack(an, nil, &err)
 	return errors.New(errors.Implementation, "Handle down not implemented on router")
 }
 
