@@ -12,6 +12,8 @@ import (
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
 )
 
+// Metadata are carried by any type of packets. They constitute additional informations on the
+// packet itself or, about its context (gateway, duty cycle, etc ...)
 type Metadata struct {
 	Chan *uint      `json:"chan,omitempty"` // Concentrator "IF" channel used for RX (unsigned integer)
 	Codr *string    `json:"codr,omitempty"` // LoRa ECC coding rate identifier

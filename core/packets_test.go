@@ -209,7 +209,7 @@ func TestRPacket(t *testing.T) {
 	output := gOutput.(RPacket)
 
 	a.So(output.Payload(), ShouldResemble, payload)
-	a.So(output.GatewayId(), ShouldResemble, gwEUI)
+	a.So(output.GatewayID(), ShouldResemble, gwEUI)
 	a.So(output.Metadata(), ShouldResemble, Metadata{})
 	outputDevEUI := output.DevEUI()
 	a.So(outputDevEUI[4:], ShouldResemble, devAddr[:])
