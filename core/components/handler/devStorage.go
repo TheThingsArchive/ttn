@@ -13,6 +13,7 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
+// DevStorage gives a facade to manipulate the handler devices database
 type DevStorage interface {
 	Lookup(appEUI lorawan.EUI64, devEUI lorawan.EUI64) (devEntry, error)
 	StorePersonalized(r HRegistration) error

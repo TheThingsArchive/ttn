@@ -486,7 +486,7 @@ func TestHandleUp(t *testing.T) {
 		}()
 		go func() {
 			defer done.Done()
-			<-time.After(2 * buffer_delay)
+			<-time.After(2 * bufferDelay)
 			err := handler.HandleUp(dataIn, an2, adapter2)
 			// Check
 			CheckErrors(t, pointer.String(string(errors.Operational)), err)

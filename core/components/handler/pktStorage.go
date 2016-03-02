@@ -12,6 +12,7 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
+// PktStorage gives a facade to manipulate the handler packets database
 type PktStorage interface {
 	Push(p APacket) error
 	Pull(appEUI lorawan.EUI64, devEUI lorawan.EUI64) (APacket, error)

@@ -14,7 +14,7 @@ import (
 )
 
 // ----- BUILD utilities
-func newRPacket(rawDevAddr [4]byte, payload string, gatewayId []byte) RPacket {
+func newRPacket(rawDevAddr [4]byte, payload string, gatewayID []byte) RPacket {
 	var devAddr lorawan.DevAddr
 	copy(devAddr[:], rawDevAddr[:])
 
@@ -29,7 +29,7 @@ func newRPacket(rawDevAddr [4]byte, payload string, gatewayId []byte) RPacket {
 		Major: lorawan.LoRaWANR1,
 	}
 
-	packet, err := NewRPacket(phyPayload, gatewayId, Metadata{})
+	packet, err := NewRPacket(phyPayload, gatewayID, Metadata{})
 	if err != nil {
 		panic(err)
 	}
