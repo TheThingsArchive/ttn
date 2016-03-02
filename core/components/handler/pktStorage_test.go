@@ -5,6 +5,7 @@ package handler
 
 import (
 	"os"
+	"path"
 	"testing"
 
 	. "github.com/TheThingsNetwork/ttn/core"
@@ -20,7 +21,7 @@ const pktDB = "TestPktStorage.db"
 func TestPushPullNormal(t *testing.T) {
 	var db PktStorage
 	defer func() {
-		os.Remove(pktDB)
+		os.Remove(path.Join(os.TempDir(), pktDB))
 	}()
 
 	// ------------------
@@ -28,7 +29,7 @@ func TestPushPullNormal(t *testing.T) {
 	{
 		Desc(t, "Create a new storage")
 		var err error
-		db, err = NewPktStorage(pktDB)
+		db, err = NewPktStorage(path.Join(os.TempDir(), pktDB))
 		CheckErrors(t, nil, err)
 	}
 

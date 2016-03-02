@@ -5,6 +5,7 @@ package handler
 
 import (
 	"os"
+	"path"
 	"testing"
 
 	. "github.com/TheThingsNetwork/ttn/core"
@@ -21,7 +22,7 @@ const devDB = "TestDevStorage.db"
 func TestLookupStore(t *testing.T) {
 	var db DevStorage
 	defer func() {
-		os.Remove(devDB)
+		os.Remove(path.Join(os.TempDir(), devDB))
 	}()
 
 	// ------------------
@@ -29,7 +30,7 @@ func TestLookupStore(t *testing.T) {
 	{
 		Desc(t, "Create a new storage")
 		var err error
-		db, err = NewDevStorage(devDB)
+		db, err = NewDevStorage(path.Join(os.TempDir(), devDB))
 		CheckErrors(t, nil, err)
 	}
 

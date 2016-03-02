@@ -5,6 +5,7 @@ package storage
 
 import (
 	"os"
+	"path"
 	"reflect"
 	"testing"
 
@@ -25,15 +26,15 @@ func TestStoreAndLookup(t *testing.T) {
 		if err := itf.Close(); err != nil {
 			panic(err)
 		}
-		os.Remove(database)
+		os.Remove(path.Join(os.TempDir(), database))
 	}()
 
 	// --------------------
 
 	{
-		Desc(t, "Open database in the current folder")
+		Desc(t, "Open database in tmp folder")
 		var err error
-		itf, err = New(database)
+		itf, err = New(path.Join(os.TempDir(), database))
 		CheckErrors(t, nil, err)
 	}
 
