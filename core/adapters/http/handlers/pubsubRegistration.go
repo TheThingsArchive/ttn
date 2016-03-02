@@ -11,7 +11,7 @@ import (
 
 // type pubSubRegistration implements the core.Registration interface
 type pubSubRegistration struct {
-	recipient HttpRecipient
+	recipient Recipient
 	appEUI    lorawan.EUI64
 	nwkSKey   lorawan.AES128Key
 	devEUI    lorawan.EUI64

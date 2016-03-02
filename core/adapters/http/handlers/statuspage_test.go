@@ -18,7 +18,7 @@ func TestStatusPageURL(t *testing.T) {
 
 	s := StatusPage{}
 
-	a.So(s.Url(), assertions.ShouldEqual, "/status/")
+	a.So(s.URL(), assertions.ShouldEqual, "/status/")
 }
 
 func TestStatusPageHandler(t *testing.T) {

@@ -17,7 +17,7 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
-// Pubsub defines a handler to handle application | devEUI registration on a component.
+// PubSub defines a handler to handle application | devEUI registration on a component.
 //
 // It listens to request of the form: [PUT] /end-devices/:devEUI
 // where devEUI is a 8 bytes hex-encoded address.
@@ -42,8 +42,8 @@ import (
 // - Recipient can be interpreted as an HttpRecipient (Url + Method)
 type PubSub struct{}
 
-// Url implements the http.Handler interface
-func (p PubSub) Url() string {
+// URL implements the http.Handler interface
+func (p PubSub) URL() string {
 	return "/end-devices/"
 }
 
@@ -102,7 +102,7 @@ func (p PubSub) parse(req *http.Request) (core.Registration, error) {
 	}
 	params := &struct {
 		AppEUI  string `json:"app_eui"`
-		Url     string `json:"app_url"`
+		URL     string `json:"app_url"`
 		NwkSKey string `json:"nwks_key"`
 	}{}
 	if err := json.Unmarshal(body[:n], params); err != nil {
@@ -120,14 +120,14 @@ func (p PubSub) parse(req *http.Request) (core.Registration, error) {
 		return pubSubRegistration{}, errors.New(errors.Structural, "Incorrect application eui")
 	}
 
-	params.Url = strings.Trim(params.Url, " ")
-	if len(params.Url) <= 0 {
+	params.URL = strings.Trim(params.URL, " ")
+	if len(params.URL) <= 0 {
 		return pubSubRegistration{}, errors.New(errors.Structural, "Incorrect application url")
 	}
 
 	// Create actual registration
 	registration := pubSubRegistration{
-		recipient: NewHttpRecipient(params.Url, "PUT"),
+		recipient: NewRecipient(params.URL, "PUT"),
 		appEUI:    lorawan.EUI64{},
 		devEUI:    lorawan.EUI64{},
 		nwkSKey:   lorawan.AES128Key{},

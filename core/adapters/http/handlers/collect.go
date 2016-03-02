@@ -22,8 +22,8 @@ import (
 // This handler does not generate any registration.
 type Collect struct{}
 
-// Url implements the http.Handler interface
-func (p Collect) Url() string {
+// URL implements the http.Handler interface
+func (p Collect) URL() string {
 	return "/packets/"
 }
 

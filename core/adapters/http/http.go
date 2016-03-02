@@ -30,23 +30,23 @@ type Adapter struct {
 
 // Handler defines endpoint-specific handler.
 type Handler interface {
-	Url() string
+	URL() string
 	Handle(w http.ResponseWriter, chpkt chan<- PktReq, chreg chan<- RegReq, req *http.Request)
 }
 
-// Message sent through the response channel of a pktReq or regReq
+// MsgRes are sent through the response channel of a pktReq or regReq
 type MsgRes struct {
 	StatusCode int    // The http status code to set as an answer
 	Content    []byte // The response content.
 }
 
-// Message sent through the packets channel when an incoming request arrives
+// PktReq are sent through the packets channel when an incoming request arrives
 type PktReq struct {
 	Packet []byte      // The actual packet that has been parsed
 	Chresp chan MsgRes // A response channel waiting for an success or reject confirmation
 }
 
-// Message sent through the registration channel when an incoming registration arrives
+// RegReq are sent through the registration channel when an incoming registration arrives
 type RegReq struct {
 	Registration core.Registration
 	Chresp       chan MsgRes
@@ -109,18 +109,18 @@ func (a *Adapter) Send(p core.Packet, recipients ...core.Recipient) ([]byte, err
 			defer wg.Done()
 
 			// Get the actual recipient
-			recipient, ok := rawRecipient.(HttpRecipient)
+			recipient, ok := rawRecipient.(Recipient)
 			if !ok {
-				ctx.WithField("recipient", rawRecipient).Warn("Unable to interpret recipient as httpRecipient")
+				ctx.WithField("recipient", rawRecipient).Warn("Unable to interpret recipient as Recipient")
 				return
 			}
-			ctx := ctx.WithField("recipient", recipient.Url())
+			ctx := ctx.WithField("recipient", recipient.URL())
 
 			// Send request
 			ctx.Debugf("%s Request", recipient.Method())
 			buf := new(bytes.Buffer)
 			buf.Write(data)
-			resp, err := a.Post(fmt.Sprintf("http://%s", recipient.Url()), "application/octet-stream", buf)
+			resp, err := a.Post(fmt.Sprintf("http://%s", recipient.URL()), "application/octet-stream", buf)
 			if err != nil {
 				cherr <- errors.New(errors.Operational, err)
 				return
@@ -172,10 +172,10 @@ func (a *Adapter) Send(p core.Packet, recipients ...core.Recipient) ([]byte, err
 
 	// Collect errors and see if everything went well
 	var errored uint8
-	for i := 0; i < len(cherr); i += 1 {
+	for i := 0; i < len(cherr); i++ {
 		err := <-cherr
 		if err.(errors.Failure).Nature != errors.Behavioural {
-			errored += 1
+			errored++
 			ctx.WithError(err).Error("POST Failed")
 		}
 	}
@@ -198,7 +198,7 @@ func (a *Adapter) Send(p core.Packet, recipients ...core.Recipient) ([]byte, err
 
 // GetRecipient implements the core.Adapter interface
 func (a *Adapter) GetRecipient(raw []byte) (core.Recipient, error) {
-	recipient := new(httpRecipient)
+	recipient := new(recipient)
 	if err := recipient.UnmarshalBinary(raw); err != nil {
 		return nil, errors.New(errors.Structural, err)
 	}
@@ -221,9 +221,9 @@ func (a *Adapter) NextRegistration() (core.Registration, core.AckNacker, error) 
 
 // Bind registers a handler to a specific endpoint
 func (a *Adapter) Bind(h Handler) {
-	a.ctx.WithField("url", h.Url()).Info("Register new endpoint")
-	a.serveMux.HandleFunc(h.Url(), func(w http.ResponseWriter, req *http.Request) {
-		a.ctx.WithField("url", h.Url()).Debug("Handle new request")
+	a.ctx.WithField("url", h.URL()).Info("Register new endpoint")
+	a.serveMux.HandleFunc(h.URL(), func(w http.ResponseWriter, req *http.Request) {
+		a.ctx.WithField("url", h.URL()).Debug("Handle new request")
 		h.Handle(w, a.packets, a.registrations, req)
 	})
 }

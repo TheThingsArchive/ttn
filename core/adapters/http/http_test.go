@@ -19,7 +19,7 @@ import (
 )
 
 type testRecipient struct {
-	httpRecipient
+	Recipient
 	Behavior string
 }
 
@@ -55,28 +55,28 @@ func (p testPacket) String() string {
 func TestSend(t *testing.T) {
 	recipients := []testRecipient{
 		testRecipient{
-			httpRecipient: httpRecipient{
+			Recipient: recipient{
 				url:    "0.0.0.0:3110",
 				method: "POST",
 			},
 			Behavior: "AlwaysReject",
 		},
 		testRecipient{
-			httpRecipient: httpRecipient{
+			Recipient: recipient{
 				url:    "0.0.0.0:3111",
 				method: "POST",
 			},
 			Behavior: "AlwaysAccept",
 		},
 		testRecipient{
-			httpRecipient: httpRecipient{
+			Recipient: recipient{
 				url:    "0.0.0.0:3112",
 				method: "POST",
 			},
 			Behavior: "AlwaysReject",
 		},
 		testRecipient{
-			httpRecipient: httpRecipient{
+			Recipient: recipient{
 				url:    "0.0.0.0:3113",
 				method: "POST",
 			},
@@ -136,7 +136,7 @@ func TestSend(t *testing.T) {
 	ctx := GetLogger(t, "Adapter")
 
 	// Build
-	adapter, err := NewAdapter(3115, toHttpRecipient(recipients), ctx)
+	adapter, err := NewAdapter(3115, toHTTPRecipient(recipients), ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -151,7 +151,7 @@ func TestSend(t *testing.T) {
 		Desc(t, "Sending packet %v to %v", test.Packet, test.Recipients)
 
 		// Operate
-		_, err := adapter.Send(test.Packet, toHttpRecipient(test.Recipients)...)
+		_, err := adapter.Send(test.Packet, toHTTPRecipient(test.Recipients)...)
 		registrations := getRegistrations(adapter, test.WantRegistrations)
 		payloads := getPayloads(servers)
 
@@ -164,10 +164,10 @@ func TestSend(t *testing.T) {
 }
 
 // Convert testRecipient to core.Recipient
-func toHttpRecipient(recipients []testRecipient) []core.Recipient {
+func toHTTPRecipient(recipients []testRecipient) []core.Recipient {
 	var https []core.Recipient
 	for _, r := range recipients {
-		https = append(https, r.httpRecipient)
+		https = append(https, r.Recipient)
 	}
 	return https
 }
@@ -238,7 +238,7 @@ func genMockServer(recipient core.Recipient) chan string {
 	})
 
 	server := http.Server{
-		Addr:    recipient.(HttpRecipient).Url(),
+		Addr:    recipient.(Recipient).URL(),
 		Handler: serveMux,
 	}
 	go server.ListenAndServe()
@@ -258,7 +258,7 @@ outer:
 			if rg.DevEUI() != rw.DevEUI {
 				Ko(t, "Expected registration for %v but got for %v", rw.DevEUI, rg.DevEUI())
 			}
-			if reflect.DeepEqual(rw.Recipient.httpRecipient, rg.Recipient()) {
+			if reflect.DeepEqual(rw.Recipient.Recipient, rg.Recipient()) {
 				continue outer
 			}
 		}
