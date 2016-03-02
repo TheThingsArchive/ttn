@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	. "github.com/TheThingsNetwork/ttn/core"
 	. "github.com/TheThingsNetwork/ttn/core/mocks"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 )
@@ -18,4 +19,8 @@ func CheckEntries(t *testing.T, want entry, got entry) {
 		Ko(t, "Unexpected expiry time.\nWant: %s\nGot:  %s", want.until, got.until)
 	}
 	Check(t, want.Recipient, got.Recipient, "Recipients")
+}
+
+func CheckRegistrations(t *testing.T, want Registration, got Registration) {
+	Check(t, want, got, "Registrations")
 }
