@@ -17,7 +17,7 @@ import (
 
 const storageDB = "TestBrokerStorage.db"
 
-func TestRegister(t *testing.T) {
+func TestStorage(t *testing.T) {
 	defer func() {
 		os.Remove(storageDB)
 	}()
