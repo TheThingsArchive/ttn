@@ -33,10 +33,7 @@ func (b component) Register(reg Registration, an AckNacker) (err error) {
 		return errors.New(errors.Structural, "Not a Broker registration")
 	}
 
-	if err := b.Store(breg); err != nil {
-		return errors.New(errors.Operational, err)
-	}
-	return nil
+	return b.Store(breg)
 }
 
 // HandleUp implements the core.Component interface
@@ -109,11 +106,11 @@ func (b component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 		// to the MIC check
 
 		// 3. If one was found, we notify the network controller
-		if err := b.Controller.HandleCommands(packet); err != nil {
-			ctx.WithError(err).Error("Failed to handle mac commands")
-			// Shall we return ? Sounds quite safe to keep going
-		}
-		b.Controller.UpdateFCntUp(mEntry.AppEUI, mEntry.DevEUI, packet.FCnt())
+		//if err := b.Controller.HandleCommands(packet); err != nil {
+		//	ctx.WithError(err).Error("Failed to handle mac commands")
+		// Shall we return ? Sounds quite safe to keep going
+		//}
+		//b.Controller.UpdateFCntUp(mEntry.AppEUI, mEntry.DevEUI, packet.FCnt())
 
 		// 4. Then we forward the packet to the handler and wait for the response
 		hpacket, err := NewHPacket(mEntry.AppEUI, mEntry.DevEUI, packet.Payload(), packet.Metadata())
@@ -124,7 +121,7 @@ func (b component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 		if err != nil {
 			return errors.New(errors.Structural, err)
 		}
-		resp, err := up.Send(hpacket, recipient)
+		_, err = up.Send(hpacket, recipient)
 		if err != nil {
 			stats.MarkMeter("broker.uplink.bad_handler_response")
 			return errors.New(errors.Operational, err)
@@ -132,22 +129,22 @@ func (b component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 		stats.MarkMeter("broker.uplink.ok")
 
 		// 5. If a response was sent, i.e. a downlink data, we notify the network controller
-		var bpacket BPacket
-		if resp != nil {
-			itf, err := UnmarshalPacket(resp)
-			if err != nil {
-				return errors.New(errors.Operational, err)
-			}
-			var ok bool
-			bpacket, ok = itf.(BPacket)
-			if !ok {
-				return errors.New(errors.Operational, "Received unexpected response")
-			}
-			b.Controller.UpdateFCntDown(mEntry.AppEUI, mEntry.DevEUI, bpacket.FCnt())
-		}
+		//var bpacket BPacket
+		//if resp != nil {
+		//	itf, err := UnmarshalPacket(resp)
+		//	if err != nil {
+		//		return errors.New(errors.Operational, err)
+		//	}
+		//	var ok bool
+		//	bpacket, ok = itf.(BPacket)
+		//	if !ok {
+		//		return errors.New(errors.Operational, "Received unexpected response")
+		//	}
+		//	//b.Controller.UpdateFCntDown(mEntry.AppEUI, mEntry.DevEUI, bpacket.FCnt())
+		//}
 
 		// 6. And finally, we acknowledge the answer
-		ack = b.Controller.MergeCommands(mEntry.AppEUI, mEntry.DevEUI, bpacket)
+		//ack = b.Controller.MergeCommands(mEntry.AppEUI, mEntry.DevEUI, bpacket)
 	case JPacket:
 		// TODO
 		return errors.New(errors.Implementation, "Join Request not yet implemented")
@@ -159,7 +156,8 @@ func (b component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 }
 
 // HandleDown implements the core.Component interface
-func (b component) HandleDown(data []byte, an AckNacker, down Adapter) error {
+func (b component) HandleDown(data []byte, an AckNacker, down Adapter) (err error) {
+	defer ensureAckNack(an, nil, &err)
 	return errors.New(errors.Implementation, "Handle Down not implemented on broker")
 }
 

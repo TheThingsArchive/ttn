@@ -53,7 +53,7 @@ func (r *MockRecipient) UnmarshalBinary(data []byte) error {
 	return nil
 }
 
-// MockRegistration implements the core.Recipient interface
+// MockRegistration implements the core.HRegistration interface
 //
 // It also stores the last arguments of each function call in appropriated
 // attributes. Because there's no computation going on, the expected / wanted
@@ -100,6 +100,37 @@ func (r *MockRegistration) NwkSKey() lorawan.AES128Key {
 
 func (r *MockRegistration) AppSKey() lorawan.AES128Key {
 	return r.OutAppSKey
+}
+
+// MockRRegistration implements the core.Registration interface
+//
+// It also stores the last arguments of each function call in appropriated
+// attributes. Because there's no computation going on, the expected / wanted
+// responses should also be defined. Default values are provided but can be changed
+// if needed.
+type MockRRegistration struct {
+	OutDevEUI    lorawan.EUI64
+	OutRecipient Recipient
+}
+
+func NewMockRRegistration() *MockRRegistration {
+	return &MockRRegistration{
+		OutDevEUI:    lorawan.EUI64([8]byte{2, 2, 2, 2, 2, 2, 2, 2}),
+		OutRecipient: NewMockRecipient(),
+	}
+}
+
+func (r *MockRRegistration) Recipient() Recipient {
+	return r.OutRecipient
+}
+
+func (r *MockRRegistration) RawRecipient() []byte {
+	data, _ := r.Recipient().MarshalBinary()
+	return data
+}
+
+func (r *MockRRegistration) DevEUI() lorawan.EUI64 {
+	return r.OutDevEUI
 }
 
 // MockAckNacker implements the core.AckNacker interface

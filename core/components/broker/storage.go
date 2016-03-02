@@ -43,7 +43,7 @@ func NewStorage(name string) (Storage, error) {
 func (s storage) Lookup(devEUI lorawan.EUI64) ([]entry, error) {
 	entries, err := s.db.Lookup(s.Name, devEUI[:], &entry{})
 	if err != nil {
-		return nil, errors.New(errors.Operational, err)
+		return nil, err
 	}
 	return entries.([]entry), nil
 }
