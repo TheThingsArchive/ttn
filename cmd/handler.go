@@ -42,6 +42,7 @@ The default handler is the bridge between The Things Network and applications.
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not start broker adapter")
 		}
+		brkAdapter.Bind(httpHandlers.Collect{})
 		brkAdapter.Bind(httpHandlers.StatusPage{})
 		brkAdapter.Bind(httpHandlers.Healthz{})
 
