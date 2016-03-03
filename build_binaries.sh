@@ -9,6 +9,13 @@ mkdir -p $RELEASEPATH
 
 git_commit=$(git rev-parse HEAD)
 
+echo "Preparing build..."
+echo "CI_COMMIT:  $CI_COMMIT"
+echo "CI_BRANCH:  $CI_BRANCH"
+echo "CI_TAG:     $CI_TAG"
+echo "git_commit: $git_commit"
+echo ""
+
 build_release()
 {
     export CGO_ENABLED=0

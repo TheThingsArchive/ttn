@@ -1,24 +1,45 @@
+matrix:
+  GO_VERSION:
+    - 1.5
+    - 1.6
+  GOOS:
+    - linux
+    - darwin
+    - windows
+  GOARCH:
+    - "386"
+    - amd64
+
 compose:
   mqtt:
     image: ansi/mosquitto
     command: /usr/local/sbin/mosquitto -p 1683
+
 build:
   test:
-    image: golang
+    image: golang:$$GO_VERSION
     commands:
-      - bash -c 'go get $(comm -23 <(sort <(go list -f '"'"'{{join .Imports "\n"}}'"'"' ./...) | uniq) <(go list std) | grep -v TheThingsNetwork)'
-      - bash -c 'go get $(comm -23 <(sort <(go list -f '"'"'{{join .TestImports "\n"}}'"'"' ./...) | uniq) <(go list std) | grep -v TheThingsNetwork)'
+      - go get -t -d ./...
       - go list ./... | grep -vE 'integration|ttn$' | xargs go test
       - sh -c 'FMTRES="$(go fmt ./...)"; if [ ! -z "$FMTRES" ]; then echo $FMTRES; exit 255; fi'
       - go vet ./...
+    when:
+      matrix:
+        GOOS: linux
+        GOARCH: amd64
   release:
     image: htdvisser/ttnbuild
     commands:
-      - bash -c 'go get $(comm -23 <(sort <(go list -f '"'"'{{join .Imports "\n"}}'"'"' ./...) | uniq) <(go list std) | grep -v TheThingsNetwork)'
-      - bash -c 'go get $(comm -23 <(sort <(go list -f '"'"'{{join .TestImports "\n"}}'"'"' ./...) | uniq) <(go list std) | grep -v TheThingsNetwork)'
-      - ./build_binaries.sh
+      # ttnbuild already contains dependencies, so we copy them:
+      - rsync -a /go/src/ /drone/src/
+      # and get the ones that we missed in ttnbuild
+      - GOOS=$$GOOS GOARCH=$$GOARCH go get -d -v ./...
+      - ./build_binaries.sh $$GOOS $$GOARCH
     when:
-      branch: [master, develop]
+      # branch: [master, develop]
+      matrix:
+        GO_VERSION: 1.6
+
 publish:
   azure_storage:
     account_key: $$AZURE_STORAGE_KEY
@@ -27,3 +48,18 @@ publish:
     source: release/
     when:
       branch: [master, develop]
+      matrix:
+        GO_VERSION: 1.6
+  docker:
+    username: $$DOCKER_USER
+    password: $$DOCKER_PASSWORD
+    email: $$DOCKER_EMAIL
+    repo: thethingsnetwork/ttn
+    tag: $$BRANCH
+    file: Dockerfile.local
+    when:
+      branch: [master, develop]
+      matrix:
+        GO_VERSION: 1.6
+        GOOS: linux
+        GOARCH: amd64
