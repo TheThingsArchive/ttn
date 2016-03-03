@@ -36,7 +36,7 @@ build:
       - GOOS=$$GOOS GOARCH=$$GOARCH go get -d -v ./...
       - ./build_binaries.sh $$GOOS $$GOARCH
     when:
-      # branch: [master, develop]
+      branch: [master, develop]
       matrix:
         GO_VERSION: 1.6
 
