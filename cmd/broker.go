@@ -50,6 +50,7 @@ and personalized devices (with their network session keys) with the router.
 		}
 		hdlAdapter.Bind(handlers.Collect{})
 		hdlAdapter.Bind(handlers.PubSub{})
+		hdlAdapter.Bind(handlers.Applications{})
 		hdlAdapter.Bind(handlers.StatusPage{})
 
 		// Instantiate Storage
