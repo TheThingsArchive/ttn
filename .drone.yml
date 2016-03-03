@@ -42,6 +42,7 @@ build:
 
 publish:
   azure_storage:
+    image: htdvisser/drone-azure-storage
     account_key: $$AZURE_STORAGE_KEY
     storage_account: ttnreleases
     container: release
