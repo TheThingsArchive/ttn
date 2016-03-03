@@ -45,7 +45,7 @@ The default handler is the bridge between The Things Network and applications.
 		brkAdapter.Bind(httpHandlers.StatusPage{})
 		brkAdapter.Bind(httpHandlers.Healthz{})
 
-		mqttClient, err := mqtt.NewClient("handler-client", viper.GetString("handler.apps-client"), mqtt.Tcp)
+		mqttClient, err := mqtt.NewClient("handler-client", viper.GetString("handler.apps-client"), mqtt.TCP)
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not start mqtt client")
 		}

@@ -49,7 +49,7 @@ the gateway's duty cycle is (almost) full.`,
 		brokersStr := strings.Split(viper.GetString("router.brokers"), ",")
 		for i := range brokersStr {
 			url := fmt.Sprintf("%s/packets", strings.Trim(brokersStr[i], " "))
-			brokers = append(brokers, http.NewHttpRecipient(url, "POST"))
+			brokers = append(brokers, http.NewRecipient(url, "POST"))
 		}
 
 		brkAdapter, err := http.NewAdapter(uint(viper.GetInt("router.brokers-port")), brokers, ctx.WithField("adapter", "broker-http"))
