@@ -28,12 +28,16 @@ func (b component) Register(reg Registration, an AckNacker) (err error) {
 	stats.MarkMeter("broker.registration.in")
 	b.ctx.Debug("Handling registration")
 
-	breg, ok := reg.(BRegistration)
-	if !ok {
-		return errors.New(errors.Structural, "Not a Broker registration")
+	switch reg.(type) {
+	case BRegistration:
+		err = b.StoreDevice(reg.(BRegistration))
+	case ARegistration:
+		err = b.StoreApplication(reg.(ARegistration))
+	default:
+		err = errors.New(errors.Structural, "Not a Broker registration")
 	}
 
-	return b.Store(breg)
+	return err
 }
 
 // HandleUp implements the core.Component interface
@@ -65,7 +69,7 @@ func (b component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 		ctx := b.ctx.WithField("DevEUI", packet.DevEUI())
 
 		// 1. Check whether we should handle it
-		entries, err := b.Lookup(packet.DevEUI())
+		entries, err := b.LookupDevices(packet.DevEUI())
 		if err != nil {
 			switch err.(errors.Failure).Nature {
 			case errors.Behavioural:
@@ -81,7 +85,7 @@ func (b component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 		// 2. Several handlers might be associated to the same device, we distinguish them using
 		// MIC check. Only one should verify the MIC check
 
-		var mEntry *entry
+		var mEntry *devEntry
 		for _, entry := range entries {
 			ok, err := packet.ValidateMIC(entry.NwkSKey)
 			if err != nil {

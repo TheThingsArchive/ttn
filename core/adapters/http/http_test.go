@@ -184,17 +184,17 @@ func getPayloads(chpayloads []chan string) []string {
 	return got
 }
 
-func getRegistrations(adapter *Adapter, want []testRegistration) []core.Registration {
-	var got []core.Registration
+func getRegistrations(adapter *Adapter, want []testRegistration) []core.RRegistration {
+	var got []core.RRegistration
 	for range want {
-		ch := make(chan core.Registration)
+		ch := make(chan core.RRegistration)
 		go func() {
 			r, an, err := adapter.NextRegistration()
 			if err != nil {
 				return
 			}
 			an.Ack(nil)
-			ch <- r
+			ch <- r.(core.RRegistration)
 		}()
 		select {
 		case r := <-ch:
@@ -245,7 +245,7 @@ func genMockServer(recipient core.Recipient) chan string {
 }
 
 // Check utilities
-func checkRegistrations(t *testing.T, want []testRegistration, got []core.Registration) {
+func checkRegistrations(t *testing.T, want []testRegistration, got []core.RRegistration) {
 	if len(want) != len(got) {
 		Ko(t, "Expected %d registrations but got %d", len(want), len(got))
 		return

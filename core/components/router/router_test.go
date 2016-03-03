@@ -22,7 +22,7 @@ func TestRegister(t *testing.T) {
 		// Build
 		an := NewMockAckNacker()
 		store := newMockStorage()
-		r := NewMockRegistration()
+		r := NewMockRRegistration()
 
 		// Operate
 		router := New(store, GetLogger(t, "Router"))
@@ -31,7 +31,27 @@ func TestRegister(t *testing.T) {
 		// Check
 		CheckErrors(t, nil, err)
 		CheckAcks(t, true, an.InAck)
-		CheckRegistrations(t, store.InStore, r)
+		CheckRegistrations(t, r, store.InStore)
+	}
+
+	// -------------------
+
+	{
+		Desc(t, "Register an entry, wrong registration type")
+
+		// Build
+		an := NewMockAckNacker()
+		store := newMockStorage()
+		r := NewMockARegistration()
+
+		// Operate
+		router := New(store, GetLogger(t, "Router"))
+		err := router.Register(r, an)
+
+		// Check
+		CheckErrors(t, pointer.String(string(errors.Structural)), err)
+		CheckAcks(t, false, an.InAck)
+		CheckRegistrations(t, nil, store.InStore)
 	}
 
 	// -------------------
@@ -43,7 +63,7 @@ func TestRegister(t *testing.T) {
 		an := NewMockAckNacker()
 		store := newMockStorage()
 		store.Failures["Store"] = errors.New(errors.Structural, "Mock Error: Store Failed")
-		r := NewMockRegistration()
+		r := NewMockRRegistration()
 
 		// Operate
 		router := New(store, GetLogger(t, "Router"))

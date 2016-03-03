@@ -17,7 +17,7 @@ import (
 // Storage gives a facade to manipulate the router database
 type Storage interface {
 	Lookup(devEUI lorawan.EUI64) (entry, error)
-	Store(reg Registration) error
+	Store(reg RRegistration) error
 	Close() error
 }
 
@@ -83,7 +83,7 @@ func (s *storage) lookup(devEUI lorawan.EUI64, lock bool) (entry, error) {
 }
 
 // Store implements the router.Storage interface
-func (s *storage) Store(reg Registration) error {
+func (s *storage) Store(reg RRegistration) error {
 	devEUI := reg.DevEUI()
 	recipient, err := reg.Recipient().MarshalBinary()
 	if err != nil {

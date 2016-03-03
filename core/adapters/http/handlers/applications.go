@@ -17,38 +17,34 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
-// PubSub defines a handler to handle application | devEUI registration on a component.
+// Applications defines a handler to handle application registration on a component.
 //
-// It listens to request of the form: [PUT] /end-devices/:devEUI
-// where devEUI is a 8 bytes hex-encoded address.
+// It listens to request of the form: [PUT] /applications/:appEUI
+// where appEUI is a 8 bytes hex-encoded address.
 //
 // It expects a Content-Type = application/json
 //
 // It also looks for params:
 //
-// - app_eui (8 bytes hex-encoded string)
 // - app_url (http address as string)
-// - nwks_key (16 bytes hex-encoded string)
 //
 // It fails with an http 400 Bad Request. if one of the parameter is missing or invalid
 // It succeeds with an http 2xx if the request is valid (the response status is under the
-// ackNacker responsibility.
+// ackNacker responsibility).
 // It can possibly fails with another status depending of the AckNacker response.
 //
 // The PubSub handler generates registration where:
 // - AppEUI is available
-// - DevEUI is available
-// - NwkSKey is available
 // - Recipient can be interpreted as an HttpRecipient (Url + Method)
-type PubSub struct{}
+type Applications struct{}
 
 // URL implements the http.Handler interface
-func (p PubSub) URL() string {
-	return "/end-devices/"
+func (p Applications) URL() string {
+	return "/applications/"
 }
 
 // Handle implements the http.Handler interface
-func (p PubSub) Handle(w http.ResponseWriter, chpkt chan<- PktReq, chreg chan<- RegReq, req *http.Request) {
+func (p Applications) Handle(w http.ResponseWriter, chpkt chan<- PktReq, chreg chan<- RegReq, req *http.Request) {
 	// Check the http method
 	if req.Method != "PUT" {
 		err := errors.New(errors.Structural, "Unreckognized HTTP method. Please use [PUT] to register a device")
@@ -77,66 +73,48 @@ func (p PubSub) Handle(w http.ResponseWriter, chpkt chan<- PktReq, chreg chan<- 
 }
 
 // parse extracts params from the request and fails if the request is invalid.
-func (p PubSub) parse(req *http.Request) (core.Registration, error) {
+func (p Applications) parse(req *http.Request) (core.Registration, error) {
 	// Check Content-type
 	if req.Header.Get("Content-Type") != "application/json" {
-		return pubSubRegistration{}, errors.New(errors.Structural, "Received invalid content-type in request")
+		return applicationsRegistration{}, errors.New(errors.Structural, "Received invalid content-type in request")
 	}
 
 	// Check the query parameter
-	reg := regexp.MustCompile("end-devices/([a-fA-F0-9]{16})$") // 8-bytes, hex-encoded -> 16 chars
+	reg := regexp.MustCompile("applications/([a-fA-F0-9]{16})$") // 8-bytes, hex-encoded -> 16 chars
 	query := reg.FindStringSubmatch(req.RequestURI)
 	if len(query) < 2 {
-		return pubSubRegistration{}, errors.New(errors.Structural, "Incorrect end-device address format")
+		return applicationsRegistration{}, errors.New(errors.Structural, "Incorrect application identifier format")
 	}
-	devEUI, err := hex.DecodeString(query[1])
+	appEUI, err := hex.DecodeString(query[1])
 	if err != nil {
-		return pubSubRegistration{}, errors.New(errors.Structural, err)
+		return applicationsRegistration{}, errors.New(errors.Structural, err)
 	}
 
 	// Check configuration in body
 	body := make([]byte, req.ContentLength)
 	n, err := req.Body.Read(body)
 	if err != nil && err != io.EOF {
-		return pubSubRegistration{}, errors.New(errors.Structural, err)
+		return applicationsRegistration{}, errors.New(errors.Structural, err)
 	}
 	defer req.Body.Close()
 	params := &struct {
-		AppEUI  string `json:"app_eui"`
-		URL     string `json:"app_url"`
-		NwkSKey string `json:"nwks_key"`
+		URL string `json:"app_url"`
 	}{}
 	if err := json.Unmarshal(body[:n], params); err != nil {
-		return pubSubRegistration{}, errors.New(errors.Structural, "Unable to unmarshal the request body")
+		return applicationsRegistration{}, errors.New(errors.Structural, "Unable to unmarshal the request body")
 	}
 
 	// Verify each request parameter
-	nwkSKey, err := hex.DecodeString(params.NwkSKey)
-	if err != nil || len(nwkSKey) != 16 {
-		return pubSubRegistration{}, errors.New(errors.Structural, "Incorrect network session key")
-	}
-
-	appEUI, err := hex.DecodeString(params.AppEUI)
-	if err != nil || len(appEUI) != 8 {
-		return pubSubRegistration{}, errors.New(errors.Structural, "Incorrect application eui")
-	}
-
 	params.URL = strings.Trim(params.URL, " ")
 	if len(params.URL) <= 0 {
-		return pubSubRegistration{}, errors.New(errors.Structural, "Incorrect application url")
+		return applicationsRegistration{}, errors.New(errors.Structural, "Incorrect application url")
 	}
 
 	// Create actual registration
-	registration := pubSubRegistration{
+	registration := applicationsRegistration{
 		recipient: NewRecipient(params.URL, "PUT"),
 		appEUI:    lorawan.EUI64{},
-		devEUI:    lorawan.EUI64{},
-		nwkSKey:   lorawan.AES128Key{},
 	}
-
 	copy(registration.appEUI[:], appEUI[:])
-	copy(registration.nwkSKey[:], nwkSKey[:])
-	copy(registration.devEUI[:], devEUI[:])
-
 	return registration, nil
 }

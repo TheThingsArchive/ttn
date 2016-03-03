@@ -56,6 +56,17 @@ func createPubSubAdapter(t *testing.T, port uint) (*Adapter, string) {
 	return adapter, fmt.Sprintf("http://0.0.0.0:%d%s", port, handler.URL())
 }
 
+func createApplicationsAdapter(t *testing.T, port uint) (*Adapter, string) {
+	adapter, err := NewAdapter(port, nil, GetLogger(t, "Adapter"))
+	if err != nil {
+		panic(err)
+	}
+	<-time.After(time.Millisecond * 250) // Let the connection starts
+	handler := Applications{}
+	adapter.Bind(handler)
+	return adapter, fmt.Sprintf("http://0.0.0.0:%d%s", port, handler.URL())
+}
+
 func createCollectAdapter(t *testing.T, port uint) (*Adapter, string) {
 	adapter, err := NewAdapter(port, nil, GetLogger(t, "Adapter"))
 	if err != nil {

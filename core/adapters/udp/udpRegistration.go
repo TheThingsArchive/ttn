@@ -8,15 +8,15 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
-// udpRegistration is a blank type which implements the core.Registration interface
+// udpRegistration is a blank type which implements the core.RRegistration interface
 type udpRegistration struct{}
 
-// Recipient implements the core.Registration inteface
+// Recipient implements the core.RRegistration inteface
 func (r udpRegistration) Recipient() core.Recipient {
 	return nil
 }
 
-// DevEUI implements the core.Registration interface
+// DevEUI implements the core.RRegistration interface
 func (r udpRegistration) DevEUI() lorawan.EUI64 {
 	return lorawan.EUI64{}
 }

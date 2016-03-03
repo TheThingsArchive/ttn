@@ -4,7 +4,7 @@
 package broker
 
 import (
-	. "github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/readwriter"
 	dbutil "github.com/TheThingsNetwork/ttn/utils/storage"
@@ -13,21 +13,29 @@ import (
 
 // Storage gives a facade for manipulating the broker database
 type Storage interface {
-	Lookup(devEUI lorawan.EUI64) ([]entry, error)
-	Store(reg BRegistration) error
+	LookupDevices(devEUI lorawan.EUI64) ([]devEntry, error)
+	LookupApplication(appEUI lorawan.EUI64) (appEntry, error)
+	StoreDevice(reg core.BRegistration) error
+	StoreApplication(reg core.ARegistration) error
 	Close() error
 }
 
-type entry struct {
+type devEntry struct {
 	Recipient []byte
 	AppEUI    lorawan.EUI64
 	DevEUI    lorawan.EUI64
 	NwkSKey   lorawan.AES128Key
 }
 
+type appEntry struct {
+	Recipient []byte
+	AppEUI    lorawan.EUI64
+}
+
 type storage struct {
-	db   dbutil.Interface
-	Name string
+	db           dbutil.Interface
+	Devices      string
+	Applications string
 }
 
 // NewStorage constructs a new broker storage
@@ -37,32 +45,64 @@ func NewStorage(name string) (Storage, error) {
 		return nil, errors.New(errors.Operational, err)
 	}
 
-	return storage{db: itf, Name: "handlers"}, nil
+	return storage{db: itf, Devices: "Devices", Applications: "Applications"}, nil
 }
 
-// Lookup implements the broker.Storage interface
-func (s storage) Lookup(devEUI lorawan.EUI64) ([]entry, error) {
-	entries, err := s.db.Lookup(s.Name, devEUI[:], &entry{})
+// LookupDevices implements the broker.Storage interface
+func (s storage) LookupDevices(devEUI lorawan.EUI64) ([]devEntry, error) {
+	entries, err := s.db.Lookup(s.Devices, devEUI[:], &devEntry{})
 	if err != nil {
 		return nil, err
 	}
-	return entries.([]entry), nil
+	return entries.([]devEntry), nil
 }
 
-// Store implements the broker.Storage interface
-func (s storage) Store(reg BRegistration) error {
+// LookupApplication implements the broker.Storage interface
+func (s storage) LookupApplication(appEUI lorawan.EUI64) (appEntry, error) {
+	itf, err := s.db.Lookup(s.Applications, appEUI[:], &appEntry{})
+	if err != nil {
+		return appEntry{}, err
+	}
+
+	entries := itf.([]appEntry)
+	if len(entries) != 1 {
+		// NOTE Shall we reset the entry ?
+		return appEntry{}, errors.New(errors.Structural, "Invalid application entries")
+	}
+
+	return entries[0], nil
+}
+
+// StoreDevice implements the broker.Storage interface
+func (s storage) StoreDevice(reg core.BRegistration) error {
 	data, err := reg.Recipient().MarshalBinary()
 	if err != nil {
 		return errors.New(errors.Structural, err)
 	}
 
-	key := reg.DevEUI()
-	return s.db.Store(s.Name, key[:], []dbutil.Entry{
-		&entry{
+	devEUI := reg.DevEUI()
+	return s.db.Store(s.Devices, devEUI[:], []dbutil.Entry{
+		&devEntry{
 			Recipient: data,
 			AppEUI:    reg.AppEUI(),
-			DevEUI:    key,
+			DevEUI:    devEUI,
 			NwkSKey:   reg.NwkSKey(),
+		},
+	})
+}
+
+// StoreApplication implements the broker.Storage interface
+func (s storage) StoreApplication(reg core.ARegistration) error {
+	data, err := reg.Recipient().MarshalBinary()
+	if err != nil {
+		return errors.New(errors.Structural, err)
+	}
+
+	appEUI := reg.AppEUI()
+	return s.db.Replace(s.Applications, appEUI[:], []dbutil.Entry{
+		&appEntry{
+			Recipient: data,
+			AppEUI:    appEUI,
 		},
 	})
 }
@@ -73,7 +113,7 @@ func (s storage) Close() error {
 }
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface
-func (e entry) MarshalBinary() ([]byte, error) {
+func (e devEntry) MarshalBinary() ([]byte, error) {
 	rw := readwriter.New(nil)
 	rw.Write(e.Recipient)
 	rw.Write(e.AppEUI)
@@ -83,11 +123,27 @@ func (e entry) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
-func (e *entry) UnmarshalBinary(data []byte) error {
+func (e *devEntry) UnmarshalBinary(data []byte) error {
 	rw := readwriter.New(data)
 	rw.Read(func(data []byte) { e.Recipient = data })
 	rw.Read(func(data []byte) { copy(e.AppEUI[:], data) })
 	rw.Read(func(data []byte) { copy(e.DevEUI[:], data) })
 	rw.Read(func(data []byte) { copy(e.NwkSKey[:], data) })
+	return rw.Err()
+}
+
+// MarshalBinary implements the encoding.BinaryMarshaler interface
+func (e appEntry) MarshalBinary() ([]byte, error) {
+	rw := readwriter.New(nil)
+	rw.Write(e.Recipient)
+	rw.Write(e.AppEUI)
+	return rw.Bytes()
+}
+
+// UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
+func (e *appEntry) UnmarshalBinary(data []byte) error {
+	rw := readwriter.New(data)
+	rw.Read(func(data []byte) { e.Recipient = data })
+	rw.Read(func(data []byte) { copy(e.AppEUI[:], data) })
 	return rw.Err()
 }

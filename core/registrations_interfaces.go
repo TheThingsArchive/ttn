@@ -14,18 +14,30 @@ type Recipient interface {
 	encoding.BinaryMarshaler
 }
 
-// Registration represents the first-level of registration, used by router and router adapters
+// Registration gives an elementary base for each other registration levels
 type Registration interface {
 	Recipient() Recipient
+}
+
+// RRegistration represents the first-level of registration, used by router and router adapters
+type RRegistration interface {
+	Registration
 	DevEUI() lorawan.EUI64
 }
 
 // BRegistration represents the second-level of registrations, used by the broker and broker
 // adapters
 type BRegistration interface {
-	Registration
+	RRegistration
 	AppEUI() lorawan.EUI64
 	NwkSKey() lorawan.AES128Key
+}
+
+// ARegistration represents another second-level of registrations, used betwen handler and broker to
+// register application before OTAA
+type ARegistration interface {
+	Registration
+	AppEUI() lorawan.EUI64
 }
 
 // HRegistration represents the third-level of registrations, used bt the handler and handler

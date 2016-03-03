@@ -4,21 +4,28 @@
 package broker
 
 import (
-	. "github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/brocaar/lorawan"
 )
 
 type mockStorage struct {
-	Failures  map[string]error
-	InLookup  lorawan.EUI64
-	OutLookup []entry
-	InStore   BRegistration
+	Failures         map[string]error
+	InLookupDevices  lorawan.EUI64
+	InLookupApp      lorawan.EUI64
+	InStoreDevices   core.BRegistration
+	InStoreApp       core.ARegistration
+	OutLookupDevices []devEntry
+	OutLookupApp     appEntry
 }
 
 func newMockStorage() *mockStorage {
 	return &mockStorage{
 		Failures: make(map[string]error),
-		OutLookup: []entry{
+		OutLookupApp: appEntry{
+			Recipient: []byte("MockStorageRecipient"),
+			AppEUI:    lorawan.EUI64([8]byte{5, 5, 5, 5, 5, 5, 6, 6}),
+		},
+		OutLookupDevices: []devEntry{
 			{
 				Recipient: []byte("MockStorageRecipient"),
 				AppEUI:    lorawan.EUI64([8]byte{1, 1, 2, 2, 3, 3, 1, 1}),
@@ -29,17 +36,30 @@ func newMockStorage() *mockStorage {
 	}
 }
 
-func (s *mockStorage) Lookup(devEUI lorawan.EUI64) ([]entry, error) {
-	s.InLookup = devEUI
-	if s.Failures["Lookup"] != nil {
-		return nil, s.Failures["Lookup"]
+func (s *mockStorage) LookupDevices(devEUI lorawan.EUI64) ([]devEntry, error) {
+	s.InLookupDevices = devEUI
+	if s.Failures["LookupDevices"] != nil {
+		return nil, s.Failures["LookupDevices"]
 	}
-	return s.OutLookup, nil
+	return s.OutLookupDevices, nil
 }
 
-func (s *mockStorage) Store(reg BRegistration) error {
-	s.InStore = reg
-	return s.Failures["Store"]
+func (s *mockStorage) LookupApplication(appEUI lorawan.EUI64) (appEntry, error) {
+	s.InLookupApp = appEUI
+	if s.Failures["LookupApplication"] != nil {
+		return appEntry{}, s.Failures["LookupApplication"]
+	}
+	return s.OutLookupApp, nil
+}
+
+func (s *mockStorage) StoreDevice(reg core.BRegistration) error {
+	s.InStoreDevices = reg
+	return s.Failures["StoreDevice"]
+}
+
+func (s *mockStorage) StoreApplication(reg core.ARegistration) error {
+	s.InStoreApp = reg
+	return s.Failures["StoreApplication"]
 }
 
 func (s *mockStorage) Close() error {

@@ -25,7 +25,7 @@ func TestRegister(t *testing.T) {
 		devStorage := newMockDevStorage()
 		pktStorage := newMockPktStorage()
 		an := NewMockAckNacker()
-		r := NewMockRegistration()
+		r := NewMockHRegistration()
 
 		// Operate
 		handler := New(devStorage, pktStorage, GetLogger(t, "Handler"))
@@ -67,7 +67,7 @@ func TestRegister(t *testing.T) {
 		devStorage.Failures["StorePersonalized"] = errors.New(errors.Operational, "Mock Error")
 		pktStorage := newMockPktStorage()
 		an := NewMockAckNacker()
-		r := NewMockRegistration()
+		r := NewMockHRegistration()
 
 		// Operate
 		handler := New(devStorage, pktStorage, GetLogger(t, "Handler"))

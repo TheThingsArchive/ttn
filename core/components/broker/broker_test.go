@@ -6,107 +6,154 @@ package broker
 import (
 	"testing"
 
-	. "github.com/TheThingsNetwork/ttn/core"
-	. "github.com/TheThingsNetwork/ttn/core/mocks"
+	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/core/mocks"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
-	. "github.com/TheThingsNetwork/ttn/utils/errors/checks"
+	errutil "github.com/TheThingsNetwork/ttn/utils/errors/checks"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
-	. "github.com/TheThingsNetwork/ttn/utils/testing"
+	testutil "github.com/TheThingsNetwork/ttn/utils/testing"
 	"github.com/brocaar/lorawan"
 )
 
 func TestRegister(t *testing.T) {
 	{
-		Desc(t, "Register an entry")
+		testutil.Desc(t, "Register a device")
 
 		// Build
-		an := NewMockAckNacker()
+		an := mocks.NewMockAckNacker()
 		store := newMockStorage()
-		r := NewMockRegistration()
+		r := mocks.NewMockBRegistration()
 
 		// Operate
-		broker := New(store, GetLogger(t, "Router"))
+		broker := New(store, testutil.GetLogger(t, "Broker"))
 		err := broker.Register(r, an)
 
 		// Check
-		CheckErrors(t, nil, err)
-		CheckAcks(t, true, an.InAck)
-		CheckRegistrations(t, r, store.InStore)
+		errutil.CheckErrors(t, nil, err)
+		mocks.CheckAcks(t, true, an.InAck)
+		CheckRegistrations(t, r, store.InStoreDevices)
+		CheckRegistrations(t, nil, store.InStoreApp)
 	}
 
 	// -------------------
 
 	{
-		Desc(t, "Register an entry | store failed")
+		testutil.Desc(t, "Register an application")
 
 		// Build
-		an := NewMockAckNacker()
+		an := mocks.NewMockAckNacker()
 		store := newMockStorage()
-		store.Failures["Store"] = errors.New(errors.Structural, "Mock Error: Store Failed")
-		r := NewMockRegistration()
+		r := mocks.NewMockARegistration()
 
 		// Operate
-		broker := New(store, GetLogger(t, "Router"))
+		broker := New(store, testutil.GetLogger(t, "Broker"))
 		err := broker.Register(r, an)
 
 		// Check
-		CheckErrors(t, pointer.String(string(errors.Structural)), err)
-		CheckAcks(t, false, an.InAck)
-		CheckRegistrations(t, r, store.InStore)
+		errutil.CheckErrors(t, nil, err)
+		mocks.CheckAcks(t, true, an.InAck)
+		CheckRegistrations(t, nil, store.InStoreDevices)
+		CheckRegistrations(t, r, store.InStoreApp)
 	}
 
 	// -------------------
 
 	{
-		Desc(t, "Register an entry | Wrong registration")
+		testutil.Desc(t, "Register a device | store failed")
 
 		// Build
-		an := NewMockAckNacker()
+		an := mocks.NewMockAckNacker()
 		store := newMockStorage()
-		r := NewMockRRegistration()
+		store.Failures["StoreDevice"] = errors.New(errors.Structural, "Mock Error: Store Failed")
+		r := mocks.NewMockBRegistration()
 
 		// Operate
-		broker := New(store, GetLogger(t, "Router"))
+		broker := New(store, testutil.GetLogger(t, "Broker"))
 		err := broker.Register(r, an)
 
 		// Check
-		CheckErrors(t, pointer.String(string(errors.Structural)), err)
-		CheckAcks(t, false, an.InAck)
-		CheckRegistrations(t, nil, store.InStore)
+		errutil.CheckErrors(t, pointer.String(string(errors.Structural)), err)
+		mocks.CheckAcks(t, false, an.InAck)
+		CheckRegistrations(t, r, store.InStoreDevices)
+		CheckRegistrations(t, nil, store.InStoreApp)
+	}
+
+	// -------------------
+
+	{
+		testutil.Desc(t, "Register an application | store failed")
+
+		// Build
+		an := mocks.NewMockAckNacker()
+		store := newMockStorage()
+		store.Failures["StoreApplication"] = errors.New(errors.Structural, "Mock Error: Store Failed")
+		r := mocks.NewMockARegistration()
+
+		// Operate
+		broker := New(store, testutil.GetLogger(t, "Broker"))
+		err := broker.Register(r, an)
+
+		// Check
+		errutil.CheckErrors(t, pointer.String(string(errors.Structural)), err)
+		mocks.CheckAcks(t, false, an.InAck)
+		CheckRegistrations(t, nil, store.InStoreDevices)
+		CheckRegistrations(t, r, store.InStoreApp)
+	}
+
+	// -------------------
+
+	{
+		testutil.Desc(t, "Register an entry | Wrong registration")
+
+		// Build
+		an := mocks.NewMockAckNacker()
+		store := newMockStorage()
+		r := mocks.NewMockRRegistration()
+
+		// Operate
+		broker := New(store, testutil.GetLogger(t, "Broker"))
+		err := broker.Register(r, an)
+
+		// Check
+		errutil.CheckErrors(t, pointer.String(string(errors.Structural)), err)
+		mocks.CheckAcks(t, false, an.InAck)
+		CheckRegistrations(t, nil, store.InStoreDevices)
+		CheckRegistrations(t, nil, store.InStoreApp)
 	}
 }
 
 func TestHandleDown(t *testing.T) {
 	{
-		Desc(t, "Try Handle Down")
+		testutil.Desc(t, "Try Handle Down")
 
 		// Build
-		an := NewMockAckNacker()
-		adapter := NewMockAdapter()
+		an := mocks.NewMockAckNacker()
+		adapter := mocks.NewMockAdapter()
 		store := newMockStorage()
 
 		// Operate
-		broker := New(store, GetLogger(t, "Broker"))
+		broker := New(store, testutil.GetLogger(t, "Broker"))
 		err := broker.HandleDown([]byte{1, 2, 3}, an, adapter)
 
 		// Check
-		CheckErrors(t, pointer.String(string(errors.Implementation)), err)
-		CheckAcks(t, false, an.InAck)
-		CheckRegistrations(t, nil, store.InStore)
-		CheckSent(t, nil, adapter.InSendPacket)
-		CheckRecipients(t, nil, adapter.InSendRecipients)
+		errutil.CheckErrors(t, pointer.String(string(errors.Implementation)), err)
+		mocks.CheckAcks(t, false, an.InAck)
+		CheckRegistrations(t, nil, store.InStoreDevices)
+		CheckRegistrations(t, nil, store.InStoreApp)
+		mocks.CheckSent(t, nil, adapter.InSendPacket)
+		mocks.CheckRecipients(t, nil, adapter.InSendRecipients)
 	}
 }
 
 func TestHandleUp(t *testing.T) {
 	{
-		Desc(t, "Send an unknown packet")
+		testutil.Desc(t, "Send an unknown packet")
 
 		// Build
-		an := NewMockAckNacker()
-		adapter := NewMockAdapter()
+		an := mocks.NewMockAckNacker()
+		adapter := mocks.NewMockAdapter()
 		store := newMockStorage()
-		store.Failures["Lookup"] = errors.New(errors.Behavioural, "Mock Error: Not Found")
+		store.Failures["LookupDevices"] = errors.New(errors.Behavioural, "Mock Error: Not Found")
 		data, _ := newBPacket(
 			[4]byte{2, 3, 2, 3},
 			"Payload",
@@ -115,49 +162,51 @@ func TestHandleUp(t *testing.T) {
 		).MarshalBinary()
 
 		// Operate
-		broker := New(store, GetLogger(t, "Broker"))
+		broker := New(store, testutil.GetLogger(t, "Broker"))
 		err := broker.HandleUp(data, an, adapter)
 
 		// Check
-		CheckErrors(t, pointer.String(string(errors.Behavioural)), err)
-		CheckAcks(t, false, an.InAck)
-		CheckRegistrations(t, nil, store.InStore)
-		CheckSent(t, nil, adapter.InSendPacket)
-		CheckRecipients(t, nil, adapter.InSendRecipients)
+		errutil.CheckErrors(t, pointer.String(string(errors.Behavioural)), err)
+		mocks.CheckAcks(t, false, an.InAck)
+		CheckRegistrations(t, nil, store.InStoreDevices)
+		CheckRegistrations(t, nil, store.InStoreApp)
+		mocks.CheckSent(t, nil, adapter.InSendPacket)
+		mocks.CheckRecipients(t, nil, adapter.InSendRecipients)
 	}
 
 	// -------------------
 
 	{
-		Desc(t, "Send an invalid packet")
+		testutil.Desc(t, "Send an invalid packet")
 
 		// Build
-		an := NewMockAckNacker()
-		adapter := NewMockAdapter()
+		an := mocks.NewMockAckNacker()
+		adapter := mocks.NewMockAdapter()
 		store := newMockStorage()
 
 		// Operate
-		broker := New(store, GetLogger(t, "Broker"))
+		broker := New(store, testutil.GetLogger(t, "Broker"))
 		err := broker.HandleUp([]byte{1, 2, 3}, an, adapter)
 
 		// Check
-		CheckErrors(t, pointer.String(string(errors.Structural)), err)
-		CheckAcks(t, false, an.InAck)
-		CheckRegistrations(t, nil, store.InStore)
-		CheckSent(t, nil, adapter.InSendPacket)
-		CheckRecipients(t, nil, adapter.InSendRecipients)
+		errutil.CheckErrors(t, pointer.String(string(errors.Structural)), err)
+		mocks.CheckAcks(t, false, an.InAck)
+		CheckRegistrations(t, nil, store.InStoreDevices)
+		CheckRegistrations(t, nil, store.InStoreApp)
+		mocks.CheckSent(t, nil, adapter.InSendPacket)
+		mocks.CheckRecipients(t, nil, adapter.InSendRecipients)
 	}
 
 	// -------------------
 
 	{
-		Desc(t, "Send packet, get 2 entries, no valid MIC")
+		testutil.Desc(t, "Send packet, get 2 entries, no valid MIC")
 
 		// Build
-		an := NewMockAckNacker()
-		adapter := NewMockAdapter()
+		an := mocks.NewMockAckNacker()
+		adapter := mocks.NewMockAdapter()
 		store := newMockStorage()
-		store.OutLookup = []entry{
+		store.OutLookupDevices = []devEntry{
 			{
 				Recipient: []byte{1, 2, 3},
 				AppEUI:    lorawan.EUI64([8]byte{1, 2, 3, 4, 5, 6, 7, 8}),
@@ -179,30 +228,31 @@ func TestHandleUp(t *testing.T) {
 		).MarshalBinary()
 
 		// Operate
-		broker := New(store, GetLogger(t, "Broker"))
+		broker := New(store, testutil.GetLogger(t, "Broker"))
 		err := broker.HandleUp(data, an, adapter)
 
 		// Check
-		CheckErrors(t, pointer.String(string(errors.Behavioural)), err)
-		CheckAcks(t, false, an.InAck)
-		CheckRegistrations(t, nil, store.InStore)
-		CheckSent(t, nil, adapter.InSendPacket)
-		CheckRecipients(t, nil, adapter.InSendRecipients)
+		errutil.CheckErrors(t, pointer.String(string(errors.Behavioural)), err)
+		mocks.CheckAcks(t, false, an.InAck)
+		CheckRegistrations(t, nil, store.InStoreDevices)
+		CheckRegistrations(t, nil, store.InStoreApp)
+		mocks.CheckSent(t, nil, adapter.InSendPacket)
+		mocks.CheckRecipients(t, nil, adapter.InSendRecipients)
 	}
 
 	// -------------------
 
 	{
-		Desc(t, "Send packet, get 2 entries, 1 valid MIC | No downlink")
+		testutil.Desc(t, "Send packet, get 2 entries, 1 valid MIC | No downlink")
 
 		// Build
-		an := NewMockAckNacker()
-		recipient := NewMockRecipient()
-		adapter := NewMockAdapter()
+		an := mocks.NewMockAckNacker()
+		recipient := mocks.NewMockRecipient()
+		adapter := mocks.NewMockAdapter()
 		adapter.OutSend = nil
 		adapter.OutGetRecipient = recipient
 		store := newMockStorage()
-		store.OutLookup = []entry{
+		store.OutLookupDevices = []devEntry{
 			{
 				Recipient: []byte{1, 2, 3},
 				AppEUI:    lorawan.EUI64([8]byte{1, 2, 3, 4, 5, 6, 7, 8}),
@@ -223,37 +273,38 @@ func TestHandleUp(t *testing.T) {
 			5,
 		)
 		data, _ := bpacket.MarshalBinary()
-		hpacket, _ := NewHPacket(
-			store.OutLookup[1].AppEUI,
-			store.OutLookup[1].DevEUI,
+		hpacket, _ := core.NewHPacket(
+			store.OutLookupDevices[1].AppEUI,
+			store.OutLookupDevices[1].DevEUI,
 			bpacket.Payload(),
 			bpacket.Metadata(),
 		)
 
 		// Operate
-		broker := New(store, GetLogger(t, "Broker"))
+		broker := New(store, testutil.GetLogger(t, "Broker"))
 		err := broker.HandleUp(data, an, adapter)
 
 		// Check
-		CheckErrors(t, nil, err)
-		CheckAcks(t, true, an.InAck)
-		CheckRegistrations(t, nil, store.InStore)
-		CheckSent(t, hpacket, adapter.InSendPacket)
-		CheckRecipients(t, []Recipient{recipient}, adapter.InSendRecipients)
+		errutil.CheckErrors(t, nil, err)
+		mocks.CheckAcks(t, true, an.InAck)
+		CheckRegistrations(t, nil, store.InStoreDevices)
+		CheckRegistrations(t, nil, store.InStoreApp)
+		mocks.CheckSent(t, hpacket, adapter.InSendPacket)
+		mocks.CheckRecipients(t, []core.Recipient{recipient}, adapter.InSendRecipients)
 	}
 
 	// -------------------
 
 	{
-		Desc(t, "Send packet, get 2 entries, 1 valid MIC | Fails to get recipient")
+		testutil.Desc(t, "Send packet, get 2 entries, 1 valid MIC | Fails to get recipient")
 
 		// Build
-		an := NewMockAckNacker()
-		adapter := NewMockAdapter()
+		an := mocks.NewMockAckNacker()
+		adapter := mocks.NewMockAdapter()
 		adapter.OutSend = nil
 		adapter.Failures["GetRecipient"] = errors.New(errors.Structural, "Mock Error: Unable to get recipient")
 		store := newMockStorage()
-		store.OutLookup = []entry{
+		store.OutLookupDevices = []devEntry{
 			{
 				Recipient: []byte{1, 2, 3},
 				AppEUI:    lorawan.EUI64([8]byte{1, 2, 3, 4, 5, 6, 7, 8}),
@@ -276,30 +327,31 @@ func TestHandleUp(t *testing.T) {
 		data, _ := bpacket.MarshalBinary()
 
 		// Operate
-		broker := New(store, GetLogger(t, "Broker"))
+		broker := New(store, testutil.GetLogger(t, "Broker"))
 		err := broker.HandleUp(data, an, adapter)
 
 		// Check
-		CheckErrors(t, pointer.String(string(errors.Structural)), err)
-		CheckAcks(t, false, an.InAck)
-		CheckRegistrations(t, nil, store.InStore)
-		CheckSent(t, nil, adapter.InSendPacket)
-		CheckRecipients(t, nil, adapter.InSendRecipients)
+		errutil.CheckErrors(t, pointer.String(string(errors.Structural)), err)
+		mocks.CheckAcks(t, false, an.InAck)
+		CheckRegistrations(t, nil, store.InStoreDevices)
+		CheckRegistrations(t, nil, store.InStoreApp)
+		mocks.CheckSent(t, nil, adapter.InSendPacket)
+		mocks.CheckRecipients(t, nil, adapter.InSendRecipients)
 	}
 
 	// -------------------
 
 	{
-		Desc(t, "Send packet, get 2 entries, 1 valid MIC | Fails to send")
+		testutil.Desc(t, "Send packet, get 2 entries, 1 valid MIC | Fails to send")
 
 		// Build
-		an := NewMockAckNacker()
-		recipient := NewMockRecipient()
-		adapter := NewMockAdapter()
+		an := mocks.NewMockAckNacker()
+		recipient := mocks.NewMockRecipient()
+		adapter := mocks.NewMockAdapter()
 		adapter.OutGetRecipient = recipient
 		adapter.Failures["Send"] = errors.New(errors.Operational, "Mock Error: Unable to send")
 		store := newMockStorage()
-		store.OutLookup = []entry{
+		store.OutLookupDevices = []devEntry{
 			{
 				Recipient: []byte{1, 2, 3},
 				AppEUI:    lorawan.EUI64([8]byte{1, 2, 3, 4, 5, 6, 7, 8}),
@@ -320,22 +372,23 @@ func TestHandleUp(t *testing.T) {
 			5,
 		)
 		data, _ := bpacket.MarshalBinary()
-		hpacket, _ := NewHPacket(
-			store.OutLookup[1].AppEUI,
-			store.OutLookup[1].DevEUI,
+		hpacket, _ := core.NewHPacket(
+			store.OutLookupDevices[1].AppEUI,
+			store.OutLookupDevices[1].DevEUI,
 			bpacket.Payload(),
 			bpacket.Metadata(),
 		)
 
 		// Operate
-		broker := New(store, GetLogger(t, "Broker"))
+		broker := New(store, testutil.GetLogger(t, "Broker"))
 		err := broker.HandleUp(data, an, adapter)
 
 		// Check
-		CheckErrors(t, pointer.String(string(errors.Operational)), err)
-		CheckAcks(t, false, an.InAck)
-		CheckRegistrations(t, nil, store.InStore)
-		CheckSent(t, hpacket, adapter.InSendPacket)
-		CheckRecipients(t, []Recipient{recipient}, adapter.InSendRecipients)
+		errutil.CheckErrors(t, pointer.String(string(errors.Operational)), err)
+		mocks.CheckAcks(t, false, an.InAck)
+		CheckRegistrations(t, nil, store.InStoreDevices)
+		CheckRegistrations(t, nil, store.InStoreApp)
+		mocks.CheckSent(t, hpacket, adapter.InSendPacket)
+		mocks.CheckRecipients(t, []core.Recipient{recipient}, adapter.InSendRecipients)
 	}
 }
