@@ -30,16 +30,15 @@ The default handler is the bridge between The Things Network and applications.
 		ctx.WithFields(log.Fields{
 			"devicesDatabase": viper.GetString("handler.dev-database"),
 			"packetsDatabase": viper.GetString("handler.pkt-database"),
-			"brokers-port":    viper.GetInt("handler.brokers-port"),
-			"apps-client":     viper.GetString("handler.apps-client"),
+			"uplink-port":     viper.GetInt("handler.uplink-port"),
+			"mqtt-broker":     viper.GetString("handler.mqtt-broker"),
 		}).Info("Using Configuration")
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx.Info("Starting")
 
 		// ----- Start Adapters
-		brkNet := fmt.Sprintf("0.0.0.0:%d", viper.GetInt("handler.brokers-port"))
-		brkAdapter, err := http.NewAdapter(brkNet, nil, ctx.WithField("adapter", "broker-adapter"))
+		brkAdapter, err := http.NewAdapter(uint(viper.GetInt("handler.uplink-port")), nil, ctx.WithField("adapter", "broker-adapter"))
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not start broker adapter")
 		}
@@ -47,9 +46,9 @@ The default handler is the bridge between The Things Network and applications.
 		brkAdapter.Bind(httpHandlers.StatusPage{})
 		brkAdapter.Bind(httpHandlers.Healthz{})
 
-		mqttClient, err := mqtt.NewClient("handler-client", viper.GetString("handler.apps-client"), mqtt.TCP)
+		mqttClient, err := mqtt.NewClient("handler-client", viper.GetString("handler.mqtt-broker"), mqtt.TCP)
 		if err != nil {
-			ctx.WithError(err).Fatal("Could not start mqtt client")
+			ctx.WithError(err).Fatal("Could not start MQTT client")
 		}
 		appAdapter := mqtt.NewAdapter(mqttClient, ctx.WithField("adapter", "app-adapter"))
 		appAdapter.Bind(mqttHandlers.Activation{})
@@ -166,11 +165,12 @@ func init() {
 
 	handlerCmd.Flags().String("dev-database", "boltdb:/tmp/ttn_handler_devices.db", "Devices Database connection")
 	handlerCmd.Flags().String("pkt-database", "boltdb:/tmp/ttn_handler_packets.db", "Packets Database connection")
-	handlerCmd.Flags().Int("brokers-port", 1691, "TCP port for connections from brokers")
-	handlerCmd.Flags().String("apps-client", "localhost:1883", "Uri of the applications mqtt")
-
 	viper.BindPFlag("handler.dev-database", handlerCmd.Flags().Lookup("dev-database"))
 	viper.BindPFlag("handler.pkt-database", handlerCmd.Flags().Lookup("pkt-database"))
-	viper.BindPFlag("handler.brokers-port", handlerCmd.Flags().Lookup("brokers-port"))
-	viper.BindPFlag("handler.apps-client", handlerCmd.Flags().Lookup("apps-client"))
+
+	handlerCmd.Flags().Int("uplink-port", 1882, "The UDP port for the uplink")
+	viper.BindPFlag("handler.uplink-port", handlerCmd.Flags().Lookup("uplink-port"))
+
+	handlerCmd.Flags().String("mqtt-broker", "localhost:1883", "The address of the MQTT broker")
+	viper.BindPFlag("handler.mqtt-broker", handlerCmd.Flags().Lookup("mqtt-broker"))
 }

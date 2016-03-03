@@ -29,24 +29,22 @@ and personalized devices (with their network session keys) with the router.
 	PreRun: func(cmd *cobra.Command, args []string) {
 		ctx.WithFields(log.Fields{
 			"database":      viper.GetString("broker.database"),
-			"routers-port":  viper.GetInt("broker.routers-port"),
-			"handlers-port": viper.GetInt("broker.handlers-port"),
+			"uplink-port":   viper.GetInt("broker.uplink-port"),
+			"downlink-port": viper.GetInt("broker.downlink-port"),
 		}).Info("Using Configuration")
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx.Info("Starting")
 
 		// Instantiate all components
-		rtrNet := fmt.Sprintf("0.0.0.0:%d", viper.GetInt("broker.routers-port"))
-		rtrAdapter, err := http.NewAdapter(rtrNet, nil, ctx.WithField("adapter", "router-http"))
+		rtrAdapter, err := http.NewAdapter(uint(viper.GetInt("broker.uplink-port")), nil, ctx.WithField("adapter", "router-http"))
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not start Routers Adapter")
 		}
 		rtrAdapter.Bind(handlers.Collect{})
 		rtrAdapter.Bind(handlers.Healthz{})
 
-		hdlNet := fmt.Sprintf("0.0.0.0:%d", viper.GetInt("broker.handlers-port"))
-		hdlAdapter, err := http.NewAdapter(hdlNet, nil, ctx.WithField("adapter", "handler-http"))
+		hdlAdapter, err := http.NewAdapter(uint(viper.GetInt("broker.downlink-port")), nil, ctx.WithField("adapter", "handler-http"))
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not start Handlers Adapter")
 		}
@@ -122,10 +120,11 @@ func init() {
 	RootCmd.AddCommand(brokerCmd)
 
 	brokerCmd.Flags().String("database", "boltdb:/tmp/ttn_broker.db", "Database connection")
-	brokerCmd.Flags().Int("routers-port", 1690, "TCP port for connections from routers")
-	brokerCmd.Flags().Int("handlers-port", 1790, "TCP port for connections from handlers")
-
 	viper.BindPFlag("broker.database", brokerCmd.Flags().Lookup("database"))
-	viper.BindPFlag("broker.routers-port", brokerCmd.Flags().Lookup("routers-port"))
-	viper.BindPFlag("broker.handlers-port", brokerCmd.Flags().Lookup("handlers-port"))
+
+	brokerCmd.Flags().Int("uplink-port", 1881, "The UDP port for the uplink")
+	viper.BindPFlag("broker.uplink-port", brokerCmd.Flags().Lookup("uplink-port"))
+
+	brokerCmd.Flags().Int("downlink-port", 1781, "The port for the downlink")
+	viper.BindPFlag("broker.downlink-port", brokerCmd.Flags().Lookup("downlink-port"))
 }

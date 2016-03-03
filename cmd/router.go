@@ -31,16 +31,15 @@ the gateway's duty cycle is (almost) full.`,
 	PreRun: func(cmd *cobra.Command, args []string) {
 		ctx.WithFields(log.Fields{
 			"database":      viper.GetString("router.database"),
-			"gateways-port": viper.GetInt("router.gateways-port"),
+			"uplink-port":   viper.GetInt("router.uplink-port"),
+			"downlink-port": viper.GetInt("router.downlink-port"),
 			"brokers":       viper.GetString("router.brokers"),
-			"brokers-port":  viper.GetInt("router.brokers-port"),
 		}).Info("Using Configuration")
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx.Info("Starting")
 
-		gtwNet := fmt.Sprintf("0.0.0.0:%d", viper.GetInt("router.gateways-port"))
-		gtwAdapter, err := udp.NewAdapter(gtwNet, ctx.WithField("adapter", "gateway-semtech"))
+		gtwAdapter, err := udp.NewAdapter(uint(viper.GetInt("router.uplink-port")), ctx.WithField("adapter", "gateway-semtech"))
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not start Gateway Adapter")
 		}
@@ -53,8 +52,7 @@ the gateway's duty cycle is (almost) full.`,
 			brokers = append(brokers, http.NewRecipient(url, "POST"))
 		}
 
-		brkNet := fmt.Sprintf("0.0.0.0:%d", viper.GetInt("router.brokers-port"))
-		brkAdapter, err := http.NewAdapter(brkNet, brokers, ctx.WithField("adapter", "broker-http"))
+		brkAdapter, err := http.NewAdapter(uint(viper.GetInt("router.downlink-port")), brokers, ctx.WithField("adapter", "broker-http"))
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not start Broker Adapter")
 		}
@@ -126,12 +124,13 @@ func init() {
 	RootCmd.AddCommand(routerCmd)
 
 	routerCmd.Flags().String("database", "boltdb:/tmp/ttn_router.db", "Database connection")
-	routerCmd.Flags().Int("gateways-port", 1700, "UDP port for connections from gateways")
-	routerCmd.Flags().String("brokers", "localhost:1690", "Comma-separated list of brokers")
-	routerCmd.Flags().Int("brokers-port", 1780, "TCP port for connections from brokers")
-
 	viper.BindPFlag("router.database", routerCmd.Flags().Lookup("database"))
-	viper.BindPFlag("router.gateways-port", routerCmd.Flags().Lookup("gateways-port"))
+
+	routerCmd.Flags().Int("uplink-port", 1700, "The UDP port for the uplink")
+	viper.BindPFlag("router.uplink-port", routerCmd.Flags().Lookup("uplink-port"))
+
+	routerCmd.Flags().Int("downlink-port", 1780, "The port for the downlink")
+	viper.BindPFlag("router.downlink-port", routerCmd.Flags().Lookup("downlink-port"))
+	routerCmd.Flags().String("brokers", ":1881", "Comma-separated list of brokers")
 	viper.BindPFlag("router.brokers", routerCmd.Flags().Lookup("brokers"))
-	viper.BindPFlag("router.brokers-port", routerCmd.Flags().Lookup("brokers-port"))
 }
