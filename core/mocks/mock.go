@@ -133,6 +133,26 @@ func (r *MockRRegistration) DevEUI() lorawan.EUI64 {
 	return r.OutDevEUI
 }
 
+// MockARegistration implements the core.Registration interface
+//
+// It also stores the last arguments of each function call in appropriated
+// attributes. Because there's no computation going on, the expected / wanted
+// responses should also be defined. Default values are provided but can be changed
+// if needed.
+type MockARegistration struct {
+	OutRecipient Recipient
+}
+
+func NewMockARegistration() *MockARegistration {
+	return &MockARegistration{
+		OutRecipient: NewMockRecipient(),
+	}
+}
+
+func (r *MockARegistration) Recipient() Recipient {
+	return r.OutRecipient
+}
+
 // MockAckNacker implements the core.AckNacker interface
 //
 // It declares a `Failures` attributes that can be used to

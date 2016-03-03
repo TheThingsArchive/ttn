@@ -14,7 +14,7 @@ type mockStorage struct {
 	Failures  map[string]error
 	InLookup  lorawan.EUI64
 	OutLookup entry
-	InStore   Registration
+	InStore   RRegistration
 }
 
 func newMockStorage() *mockStorage {
@@ -35,7 +35,7 @@ func (s *mockStorage) Lookup(devEUI lorawan.EUI64) (entry, error) {
 	return s.OutLookup, nil
 }
 
-func (s *mockStorage) Store(reg Registration) error {
+func (s *mockStorage) Store(reg RRegistration) error {
 	s.InStore = reg
 	return s.Failures["Store"]
 }
