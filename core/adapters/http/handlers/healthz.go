@@ -20,7 +20,7 @@ type Healthz struct{}
 
 // URL implements the http.Handler interface
 func (p Healthz) URL() string {
-	return "/healthz"
+	return "/healthz/"
 }
 
 // Handle implements the http.Handler interface
