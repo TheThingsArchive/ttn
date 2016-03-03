@@ -48,7 +48,7 @@ the gateway's duty cycle is (almost) full.`,
 		var brokers []core.Recipient
 		brokersStr := strings.Split(viper.GetString("router.brokers"), ",")
 		for i := range brokersStr {
-			url := fmt.Sprintf("%s/packets", strings.Trim(brokersStr[i], " "))
+			url := fmt.Sprintf("%s/packets/", strings.Trim(brokersStr[i], " "))
 			brokers = append(brokers, http.NewRecipient(url, "POST"))
 		}
 
@@ -70,7 +70,7 @@ the gateway's duty cycle is (almost) full.`,
 				ctx.WithError(err).Fatal("Invalid database path")
 			}
 
-			db, err = router.NewStorage(dbPath, time.Hour*8) // TODO use cli flag
+			db, err = router.NewStorage(dbPath, time.Hour*8)
 			if err != nil {
 				ctx.WithError(err).Fatal("Could not create a local storage")
 			}
