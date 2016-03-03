@@ -1,7 +1,7 @@
 // Copyright © 2016 The Things Network
 // Use of this source code is governed by the MIT license that can be found in the LICENSE file.
 
-package mock
+package mocks
 
 import (
 	"fmt"
@@ -53,104 +53,123 @@ func (r *MockRecipient) UnmarshalBinary(data []byte) error {
 	return nil
 }
 
-// MockRegistration implements the core.HRegistration interface
+// MockRegistration implements the core.Registration interface
 //
 // It also stores the last arguments of each function call in appropriated
 // attributes. Because there's no computation going on, the expected / wanted
 // responses should also be defined. Default values are provided but can be changed
 // if needed.
 type MockRegistration struct {
-	OutAppEUI    lorawan.EUI64
-	OutDevEUI    lorawan.EUI64
-	OutNwkSKey   lorawan.AES128Key
-	OutAppSKey   lorawan.AES128Key
 	OutRecipient Recipient
 }
 
-func NewMockRegistration() *MockRegistration {
-	return &MockRegistration{
-		OutAppEUI:    lorawan.EUI64([8]byte{1, 1, 1, 1, 1, 1, 1, 1}),
-		OutDevEUI:    lorawan.EUI64([8]byte{2, 2, 2, 2, 2, 2, 2, 2}),
-		OutNwkSKey:   lorawan.AES128Key([16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6}),
-		OutAppSKey:   lorawan.AES128Key([16]byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1}),
+func NewMockRegistration() MockRegistration {
+	return MockRegistration{
 		OutRecipient: NewMockRecipient(),
 	}
 }
 
-func (r *MockRegistration) Recipient() Recipient {
-	return r.OutRecipient
-}
-
-func (r *MockRegistration) RawRecipient() []byte {
+func (r MockRegistration) RawRecipient() []byte {
 	data, _ := r.Recipient().MarshalBinary()
 	return data
 }
 
-func (r *MockRegistration) AppEUI() lorawan.EUI64 {
-	return r.OutAppEUI
-}
-
-func (r *MockRegistration) DevEUI() lorawan.EUI64 {
-	return r.OutDevEUI
-}
-
-func (r *MockRegistration) NwkSKey() lorawan.AES128Key {
-	return r.OutNwkSKey
-}
-
-func (r *MockRegistration) AppSKey() lorawan.AES128Key {
-	return r.OutAppSKey
-}
-
-// MockRRegistration implements the core.Registration interface
-//
-// It also stores the last arguments of each function call in appropriated
-// attributes. Because there's no computation going on, the expected / wanted
-// responses should also be defined. Default values are provided but can be changed
-// if needed.
-type MockRRegistration struct {
-	OutDevEUI    lorawan.EUI64
-	OutRecipient Recipient
-}
-
-func NewMockRRegistration() *MockRRegistration {
-	return &MockRRegistration{
-		OutDevEUI:    lorawan.EUI64([8]byte{2, 2, 2, 2, 2, 2, 2, 2}),
-		OutRecipient: NewMockRecipient(),
-	}
-}
-
-func (r *MockRRegistration) Recipient() Recipient {
+func (r MockRegistration) Recipient() Recipient {
 	return r.OutRecipient
 }
 
-func (r *MockRRegistration) RawRecipient() []byte {
-	data, _ := r.Recipient().MarshalBinary()
-	return data
-}
-
-func (r *MockRRegistration) DevEUI() lorawan.EUI64 {
-	return r.OutDevEUI
-}
-
-// MockARegistration implements the core.Registration interface
+// MockARegistration implements the core.ARegistration interface
 //
 // It also stores the last arguments of each function call in appropriated
 // attributes. Because there's no computation going on, the expected / wanted
 // responses should also be defined. Default values are provided but can be changed
 // if needed.
 type MockARegistration struct {
-	OutRecipient Recipient
+	MockRegistration
+	OutAppEUI lorawan.EUI64
 }
 
-func NewMockARegistration() *MockARegistration {
-	return &MockARegistration{
-		OutRecipient: NewMockRecipient(),
+func NewMockARegistration() MockARegistration {
+	return MockARegistration{
+		MockRegistration: NewMockRegistration(),
+		OutAppEUI:        lorawan.EUI64([8]byte{9, 0, 9, 2, 2, 2, 3, 4}),
 	}
 }
 
-func (r *MockARegistration) Recipient() Recipient {
-	return r.OutRecipient
+func (r MockARegistration) AppEUI() lorawan.EUI64 {
+	return r.OutAppEUI
+}
+
+// MockRRegistration implements the core.RRegistration interface
+//
+// It also stores the last arguments of each function call in appropriated
+// attributes. Because there's no computation going on, the expected / wanted
+// responses should also be defined. Default values are provided but can be changed
+// if needed.
+type MockRRegistration struct {
+	MockRegistration
+	OutDevEUI lorawan.EUI64
+}
+
+func NewMockRRegistration() MockRRegistration {
+	return MockRRegistration{
+		MockRegistration: NewMockRegistration(),
+		OutDevEUI:        lorawan.EUI64([8]byte{2, 2, 2, 2, 2, 2, 2, 2}),
+	}
+}
+
+func (r MockRRegistration) DevEUI() lorawan.EUI64 {
+	return r.OutDevEUI
+}
+
+// MockBRegistration implements the core.BRegistration interface
+//
+// It also stores the last arguments of each function call in appropriated
+// attributes. Because there's no computation going on, the expected / wanted
+// responses should also be defined. Default values are provided but can be changed
+// if needed.
+type MockBRegistration struct {
+	MockRRegistration
+	OutAppEUI  lorawan.EUI64
+	OutNwkSKey lorawan.AES128Key
+}
+
+func NewMockBRegistration() MockBRegistration {
+	return MockBRegistration{
+		MockRRegistration: NewMockRRegistration(),
+		OutAppEUI:         lorawan.EUI64([8]byte{1, 1, 1, 1, 1, 1, 1, 1}),
+		OutNwkSKey:        lorawan.AES128Key([16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6}),
+	}
+}
+
+func (r MockBRegistration) AppEUI() lorawan.EUI64 {
+	return r.OutAppEUI
+}
+
+func (r MockBRegistration) NwkSKey() lorawan.AES128Key {
+	return r.OutNwkSKey
+}
+
+// MockHRegistration implements the core.HRegistration interface
+//
+// It also stores the last arguments of each function call in appropriated
+// attributes. Because there's no computation going on, the expected / wanted
+// responses should also be defined. Default values are provided but can be changed
+// if needed.
+type MockHRegistration struct {
+	MockBRegistration
+	OutAppSKey lorawan.AES128Key
+}
+
+func NewMockHRegistration() MockHRegistration {
+	return MockHRegistration{
+		MockBRegistration: NewMockBRegistration(),
+		OutAppSKey:        lorawan.AES128Key([16]byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1}),
+	}
+}
+
+func (r MockHRegistration) AppSKey() lorawan.AES128Key {
+	return r.OutAppSKey
 }
 
 // MockAckNacker implements the core.AckNacker interface
@@ -226,7 +245,7 @@ func NewMockAdapter() *MockAdapter {
 		OutGetRecipient:     NewMockRecipient(),
 		OutNextPacket:       []byte("MockAdapterNextPacket"),
 		OutNextAckNacker:    NewMockAckNacker(),
-		OutNextRegReg:       NewMockRegistration(),
+		OutNextRegReg:       NewMockHRegistration(),
 		OutNextRegAckNacker: NewMockAckNacker(),
 	}
 }
