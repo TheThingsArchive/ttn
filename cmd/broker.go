@@ -42,7 +42,6 @@ and personalized devices (with their network session keys) with the router.
 			ctx.WithError(err).Fatal("Could not start Routers Adapter")
 		}
 		rtrAdapter.Bind(handlers.Collect{})
-		rtrAdapter.Bind(handlers.Healthz{})
 
 		hdlAdapter, err := http.NewAdapter(uint(viper.GetInt("broker.downlink-port")), nil, ctx.WithField("adapter", "handler-http"))
 		if err != nil {
@@ -51,8 +50,15 @@ and personalized devices (with their network session keys) with the router.
 		hdlAdapter.Bind(handlers.Collect{})
 		hdlAdapter.Bind(handlers.PubSub{})
 		hdlAdapter.Bind(handlers.Applications{})
-		hdlAdapter.Bind(handlers.StatusPage{})
 
+		if viper.GetInt("broker.status-port") > 0 {
+			statusAdapter, err := http.NewAdapter(uint(viper.GetInt("broker.status-port")), nil, ctx.WithField("adapter", "status-http"))
+			if err != nil {
+				ctx.WithError(err).Fatal("Could not start Status Adapter")
+			}
+			statusAdapter.Bind(handlers.StatusPage{})
+			statusAdapter.Bind(handlers.Healthz{})
+		}
 		// Instantiate Storage
 
 		var db broker.Storage
@@ -121,6 +127,9 @@ func init() {
 
 	brokerCmd.Flags().String("database", "boltdb:/tmp/ttn_broker.db", "Database connection")
 	viper.BindPFlag("broker.database", brokerCmd.Flags().Lookup("database"))
+
+	brokerCmd.Flags().Int("status-port", 10701, "The port of the status server, use 0 to disable")
+	viper.BindPFlag("broker.status-port", brokerCmd.Flags().Lookup("status-port"))
 
 	brokerCmd.Flags().Int("uplink-port", 1881, "The UDP port for the uplink")
 	viper.BindPFlag("broker.uplink-port", brokerCmd.Flags().Lookup("uplink-port"))

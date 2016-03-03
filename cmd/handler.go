@@ -43,8 +43,6 @@ The default handler is the bridge between The Things Network and applications.
 			ctx.WithError(err).Fatal("Could not start broker adapter")
 		}
 		brkAdapter.Bind(httpHandlers.Collect{})
-		brkAdapter.Bind(httpHandlers.StatusPage{})
-		brkAdapter.Bind(httpHandlers.Healthz{})
 
 		mqttClient, err := mqtt.NewClient("handler-client", viper.GetString("handler.mqtt-broker"), mqtt.TCP)
 		if err != nil {
@@ -53,6 +51,14 @@ The default handler is the bridge between The Things Network and applications.
 		appAdapter := mqtt.NewAdapter(mqttClient, ctx.WithField("adapter", "app-adapter"))
 		appAdapter.Bind(mqttHandlers.Activation{})
 
+		if viper.GetInt("handler.status-port") > 0 {
+			statusAdapter, err := http.NewAdapter(uint(viper.GetInt("handler.status-port")), nil, ctx.WithField("adapter", "status-http"))
+			if err != nil {
+				ctx.WithError(err).Fatal("Could not start Status Adapter")
+			}
+			statusAdapter.Bind(httpHandlers.StatusPage{})
+			statusAdapter.Bind(httpHandlers.Healthz{})
+		}
 		// Instantiate in-memory devices storage
 
 		var devicesDB handler.DevStorage
@@ -167,6 +173,9 @@ func init() {
 	handlerCmd.Flags().String("pkt-database", "boltdb:/tmp/ttn_handler_packets.db", "Packets Database connection")
 	viper.BindPFlag("handler.dev-database", handlerCmd.Flags().Lookup("dev-database"))
 	viper.BindPFlag("handler.pkt-database", handlerCmd.Flags().Lookup("pkt-database"))
+
+	handlerCmd.Flags().Int("status-port", 10702, "The port of the status server, use 0 to disable")
+	viper.BindPFlag("handler.status-port", handlerCmd.Flags().Lookup("status-port"))
 
 	handlerCmd.Flags().Int("uplink-port", 1882, "The UDP port for the uplink")
 	viper.BindPFlag("handler.uplink-port", handlerCmd.Flags().Lookup("uplink-port"))

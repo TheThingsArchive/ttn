@@ -56,8 +56,15 @@ the gateway's duty cycle is (almost) full.`,
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not start Broker Adapter")
 		}
-		brkAdapter.Bind(httpHandlers.StatusPage{})
-		brkAdapter.Bind(httpHandlers.Healthz{})
+
+		if viper.GetInt("router.status-port") > 0 {
+			statusAdapter, err := http.NewAdapter(uint(viper.GetInt("router.status-port")), nil, ctx.WithField("adapter", "status-http"))
+			if err != nil {
+				ctx.WithError(err).Fatal("Could not start Status Adapter")
+			}
+			statusAdapter.Bind(httpHandlers.StatusPage{})
+			statusAdapter.Bind(httpHandlers.Healthz{})
+		}
 
 		var db router.Storage
 
@@ -125,6 +132,9 @@ func init() {
 
 	routerCmd.Flags().String("database", "boltdb:/tmp/ttn_router.db", "Database connection")
 	viper.BindPFlag("router.database", routerCmd.Flags().Lookup("database"))
+
+	routerCmd.Flags().Int("status-port", 10700, "The port of the status server, use 0 to disable")
+	viper.BindPFlag("router.status-port", routerCmd.Flags().Lookup("status-port"))
 
 	routerCmd.Flags().Int("uplink-port", 1700, "The UDP port for the uplink")
 	viper.BindPFlag("router.uplink-port", routerCmd.Flags().Lookup("uplink-port"))
