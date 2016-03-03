@@ -40,7 +40,7 @@ func TestLookupStore(t *testing.T) {
 		Desc(t, "Store and Lookup a registration")
 
 		// Build
-		r := NewMockRegistration()
+		r := NewMockHRegistration()
 
 		// Operate
 		err := db.StorePersonalized(r)
@@ -58,7 +58,7 @@ func TestLookupStore(t *testing.T) {
 		Desc(t, "Lookup a non-existing registration")
 
 		// Build
-		r := NewMockRegistration()
+		r := NewMockHRegistration()
 		r.OutAppEUI = lorawan.EUI64([8]byte{1, 2, 1, 2, 1, 2, 1, 2})
 
 		// Operate
@@ -74,7 +74,7 @@ func TestLookupStore(t *testing.T) {
 		Desc(t, "Store twice the same registration")
 
 		// Build
-		r := NewMockRegistration()
+		r := NewMockHRegistration()
 		r.OutAppEUI = lorawan.EUI64([8]byte{1, 4, 1, 4, 1, 4, 1, 4})
 
 		// Operate
@@ -94,7 +94,7 @@ func TestLookupStore(t *testing.T) {
 		Desc(t, "Store Activated")
 
 		// Build
-		r := NewMockRegistration()
+		r := NewMockHRegistration()
 		r.OutAppEUI = lorawan.EUI64([8]byte{6, 6, 6, 7, 8, 6, 7, 6})
 
 		// Operate

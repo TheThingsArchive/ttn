@@ -13,7 +13,7 @@ type httpRegistration struct {
 	devEUI    lorawan.EUI64
 }
 
-// Recipient implements the core.Registration inteface
+// Recipient implements the core.RRegistration inteface
 func (r httpRegistration) Recipient() core.Recipient {
 	return r.recipient
 }

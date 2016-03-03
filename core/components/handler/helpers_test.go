@@ -91,7 +91,7 @@ func CheckPackets(t *testing.T, want APacket, got APacket) {
 	Check(t, want, got, "Packets")
 }
 
-func CheckEntries(t *testing.T, want *MockRegistration, got devEntry) {
+func CheckEntries(t *testing.T, want MockHRegistration, got devEntry) {
 	// NOTE This only works in the case of Personalized devices
 	var devAddr lorawan.DevAddr
 	devEUI := want.DevEUI()

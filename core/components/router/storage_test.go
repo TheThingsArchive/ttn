@@ -39,7 +39,7 @@ func TestStoreAndLookup(t *testing.T) {
 
 		// Build
 		db, _ := NewStorage(storageDB, time.Hour)
-		r := NewMockRegistration()
+		r := NewMockRRegistration()
 
 		// Operate
 		err := db.Store(r)
@@ -65,7 +65,7 @@ func TestStoreAndLookup(t *testing.T) {
 
 		// Build
 		db, _ := NewStorage(storageDB, time.Hour)
-		r := NewMockRegistration()
+		r := NewMockRRegistration()
 
 		// Operate
 		err := db.Store(r)
@@ -90,7 +90,7 @@ func TestStoreAndLookup(t *testing.T) {
 
 		// Build
 		db, _ := NewStorage(storageDB, time.Hour)
-		devEUI := NewMockRegistration().DevEUI()
+		devEUI := NewMockRRegistration().DevEUI()
 		devEUI[1] = 14
 
 		// Operate
@@ -109,7 +109,7 @@ func TestStoreAndLookup(t *testing.T) {
 
 		// Build
 		db, _ := NewStorage(storageDB, time.Millisecond*100)
-		r := NewMockRegistration()
+		r := NewMockRRegistration()
 		r.OutDevEUI[0] = 12
 
 		// Operate
@@ -130,7 +130,7 @@ func TestStoreAndLookup(t *testing.T) {
 
 		// Build
 		db, _ := NewStorage(storageDB, time.Millisecond*100)
-		r := NewMockRegistration()
+		r := NewMockRRegistration()
 		r.OutDevEUI[4] = 27
 
 		// Operate
@@ -160,7 +160,7 @@ func TestStoreAndLookup(t *testing.T) {
 		// Build
 		db, _ := NewStorage(storageDB, time.Hour)
 		_ = db.Close()
-		r := NewMockRegistration()
+		r := NewMockRRegistration()
 		r.OutDevEUI[5] = 9
 
 		// Operate
@@ -178,7 +178,7 @@ func TestStoreAndLookup(t *testing.T) {
 		// Build
 		db, _ := NewStorage(storageDB, time.Hour)
 		_ = db.Close()
-		devEUI := NewMockRegistration().DevEUI()
+		devEUI := NewMockRRegistration().DevEUI()
 
 		// Operate
 		gotEntry, err := db.Lookup(devEUI)
@@ -195,7 +195,7 @@ func TestStoreAndLookup(t *testing.T) {
 
 		// Build
 		db, _ := NewStorage(storageDB, time.Hour)
-		r := NewMockRegistration()
+		r := NewMockRRegistration()
 		r.OutDevEUI[7] = 99
 		r.OutRecipient.(*MockRecipient).Failures["MarshalBinary"] = errors.New(errors.Structural, "Mock Error: MarshalBinary")
 

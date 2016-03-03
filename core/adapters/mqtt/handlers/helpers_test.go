@@ -212,15 +212,15 @@ func checkRegistrations(t *testing.T, want core.HRegistration, got core.Registra
 		return
 	}
 
-	// Check DevEUIs
-	if !reflect.DeepEqual(want.DevEUI(), got.DevEUI()) {
-		Ko(t, "Registrations' DevEUI are different.\nWant: %v\nGot:  %v", want.DevEUI(), got.DevEUI())
-		return
-	}
-
 	rgot, ok := got.(core.HRegistration)
 	if !ok {
 		Ko(t, "Expected to receive an HRegistration but got %+v", got)
+		return
+	}
+
+	// Check DevEUIs
+	if !reflect.DeepEqual(want.DevEUI(), rgot.DevEUI()) {
+		Ko(t, "Registrations' DevEUI are different.\nWant: %v\nGot:  %v", want.DevEUI(), rgot.DevEUI())
 		return
 	}
 
