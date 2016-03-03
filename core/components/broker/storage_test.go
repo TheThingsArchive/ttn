@@ -17,7 +17,7 @@ import (
 
 const storageDB = "TestBrokerStorage.db"
 
-func TestStorage(t *testing.T) {
+func TestStorageDevice(t *testing.T) {
 	defer func() {
 		os.Remove(storageDB)
 	}()
@@ -39,15 +39,15 @@ func TestStorage(t *testing.T) {
 
 		// Build
 		db, _ := NewStorage(storageDB)
-		r := NewMockRegistration()
+		r := NewMockBRegistration()
 
 		// Operate
-		err := db.Store(r)
+		err := db.StoreDevice(r)
 		CheckErrors(t, nil, err)
-		entries, err := db.Lookup(r.DevEUI())
+		entries, err := db.LookupDevices(r.DevEUI())
 
 		// Expectations
-		want := []entry{
+		want := []devEntry{
 			{
 				AppEUI:    r.AppEUI(),
 				DevEUI:    r.DevEUI(),
@@ -58,7 +58,7 @@ func TestStorage(t *testing.T) {
 
 		// Check
 		CheckErrors(t, nil, err)
-		CheckEntries(t, want, entries)
+		CheckDevEntries(t, want, entries)
 		_ = db.Close()
 	}
 
@@ -69,18 +69,18 @@ func TestStorage(t *testing.T) {
 
 		// Build
 		db, _ := NewStorage(storageDB)
-		r := NewMockRegistration()
+		r := NewMockBRegistration()
 		r.OutDevEUI[0] = 34
 
 		// Operate
-		err := db.Store(r)
+		err := db.StoreDevice(r)
 		CheckErrors(t, nil, err)
-		err = db.Store(r)
+		err = db.StoreDevice(r)
 		CheckErrors(t, nil, err)
-		entries, err := db.Lookup(r.DevEUI())
+		entries, err := db.LookupDevices(r.DevEUI())
 
 		// Expectations
-		want := []entry{
+		want := []devEntry{
 			{
 				AppEUI:    r.AppEUI(),
 				DevEUI:    r.DevEUI(),
@@ -97,7 +97,7 @@ func TestStorage(t *testing.T) {
 
 		// Check
 		CheckErrors(t, nil, err)
-		CheckEntries(t, want, entries)
+		CheckDevEntries(t, want, entries)
 		_ = db.Close()
 	}
 
@@ -108,15 +108,15 @@ func TestStorage(t *testing.T) {
 
 		// Build
 		db, _ := NewStorage(storageDB)
-		devEUI := NewMockRegistration().DevEUI()
+		devEUI := NewMockBRegistration().DevEUI()
 		devEUI[1] = 98
 
 		// Operate
-		entries, err := db.Lookup(devEUI)
+		entries, err := db.LookupDevices(devEUI)
 
 		// Checks
 		CheckErrors(t, pointer.String(string(errors.Behavioural)), err)
-		CheckEntries(t, nil, entries)
+		CheckDevEntries(t, nil, entries)
 		_ = db.Close()
 	}
 
@@ -128,11 +128,11 @@ func TestStorage(t *testing.T) {
 		// Build
 		db, _ := NewStorage(storageDB)
 		_ = db.Close()
-		r := NewMockRegistration()
+		r := NewMockBRegistration()
 		r.OutDevEUI[5] = 9
 
 		// Operate
-		err := db.Store(r)
+		err := db.StoreDevice(r)
 
 		// Checks
 		CheckErrors(t, pointer.String(string(errors.Operational)), err)
@@ -146,14 +146,14 @@ func TestStorage(t *testing.T) {
 		// Build
 		db, _ := NewStorage(storageDB)
 		_ = db.Close()
-		devEUI := NewMockRegistration().DevEUI()
+		devEUI := NewMockBRegistration().DevEUI()
 
 		// Operate
-		entries, err := db.Lookup(devEUI)
+		entries, err := db.LookupDevices(devEUI)
 
 		// Checks
 		CheckErrors(t, pointer.String(string(errors.Operational)), err)
-		CheckEntries(t, nil, entries)
+		CheckDevEntries(t, nil, entries)
 	}
 
 	// -------------------
@@ -163,16 +163,167 @@ func TestStorage(t *testing.T) {
 
 		// Build
 		db, _ := NewStorage(storageDB)
-		r := NewMockRegistration()
+		r := NewMockBRegistration()
 		r.OutDevEUI[7] = 99
 		r.OutRecipient.(*MockRecipient).Failures["MarshalBinary"] = errors.New(errors.Structural, "Mock Error: MarshalBinary")
 
 		// Operate & Check
-		err := db.Store(r)
+		err := db.StoreDevice(r)
 		CheckErrors(t, pointer.String(string(errors.Structural)), err)
-		entries, err := db.Lookup(r.DevEUI())
+		entries, err := db.LookupDevices(r.DevEUI())
 		CheckErrors(t, pointer.String(string(errors.Behavioural)), err)
-		CheckEntries(t, nil, entries)
+		CheckDevEntries(t, nil, entries)
+
+		_ = db.Close()
+	}
+}
+
+func TestStorageApplication(t *testing.T) {
+	defer func() {
+		os.Remove(storageDB)
+	}()
+
+	// -------------------
+
+	{
+		Desc(t, "Create a new storage")
+		db, err := NewStorage(storageDB)
+		CheckErrors(t, nil, err)
+		err = db.Close()
+		CheckErrors(t, nil, err)
+	}
+
+	// -------------------
+
+	{
+		Desc(t, "Store then lookup a registration")
+
+		// Build
+		db, _ := NewStorage(storageDB)
+		r := NewMockARegistration()
+
+		// Operate
+		err := db.StoreApplication(r)
+		CheckErrors(t, nil, err)
+		entry, err := db.LookupApplication(r.AppEUI())
+
+		// Expectations
+		want := appEntry{
+			AppEUI:    r.AppEUI(),
+			Recipient: r.RawRecipient(),
+		}
+
+		// Check
+		CheckErrors(t, nil, err)
+		CheckAppEntries(t, want, entry)
+		_ = db.Close()
+	}
+
+	// -------------------
+
+	{
+		Desc(t, "Store entries with same AppEUI")
+
+		// Build
+		db, _ := NewStorage(storageDB)
+		r1 := NewMockARegistration()
+		r1.OutAppEUI[0] = 34
+		r2 := NewMockARegistration()
+		r2.OutAppEUI[0] = 34
+		r2.OutRecipient = NewMockRecipient()
+		r2.OutRecipient.(*MockRecipient).OutMarshalBinary = []byte{88, 99, 77, 66}
+
+		// Operate
+		err := db.StoreApplication(r1)
+		CheckErrors(t, nil, err)
+		err = db.StoreApplication(r2)
+		CheckErrors(t, nil, err)
+		entry, err := db.LookupApplication(r1.AppEUI())
+
+		// Expectations
+		want := appEntry{
+			AppEUI:    r2.AppEUI(),
+			Recipient: r2.RawRecipient(),
+		}
+
+		// Check
+		CheckErrors(t, nil, err)
+		CheckAppEntries(t, want, entry)
+		_ = db.Close()
+	}
+
+	// -------------------
+
+	{
+		Desc(t, "Lookup non-existing entry")
+
+		// Build
+		db, _ := NewStorage(storageDB)
+		appEUI := NewMockARegistration().AppEUI()
+		appEUI[1] = 98
+
+		// Operate
+		entry, err := db.LookupApplication(appEUI)
+
+		// Checks
+		CheckErrors(t, pointer.String(string(errors.Behavioural)), err)
+		CheckAppEntries(t, appEntry{}, entry)
+		_ = db.Close()
+	}
+
+	// -------------------
+
+	{
+		Desc(t, "Store on a closed database")
+
+		// Build
+		db, _ := NewStorage(storageDB)
+		_ = db.Close()
+		r := NewMockARegistration()
+		r.OutAppEUI[5] = 9
+
+		// Operate
+		err := db.StoreApplication(r)
+
+		// Checks
+		CheckErrors(t, pointer.String(string(errors.Operational)), err)
+	}
+
+	// -------------------
+
+	{
+		Desc(t, "Lookup on a closed database")
+
+		// Build
+		db, _ := NewStorage(storageDB)
+		_ = db.Close()
+		appEUI := NewMockARegistration().AppEUI()
+
+		// Operate
+		entry, err := db.LookupApplication(appEUI)
+
+		// Checks
+		CheckErrors(t, pointer.String(string(errors.Operational)), err)
+		CheckAppEntries(t, appEntry{}, entry)
+	}
+
+	// -------------------
+
+	{
+		Desc(t, "Store an invalid recipient")
+
+		// Build
+		db, _ := NewStorage(storageDB)
+		r := NewMockARegistration()
+		r.OutAppEUI[7] = 99
+		r.OutRecipient.(*MockRecipient).Failures["MarshalBinary"] = errors.New(errors.Structural, "Mock Error: MarshalBinary")
+
+		// Operate & Check
+		err := db.StoreApplication(r)
+		CheckErrors(t, pointer.String(string(errors.Structural)), err)
+		entry, err := db.LookupApplication(r.AppEUI())
+		CheckErrors(t, pointer.String(string(errors.Behavioural)), err)
+		CheckAppEntries(t, appEntry{}, entry)
 
 		_ = db.Close()
 	}
