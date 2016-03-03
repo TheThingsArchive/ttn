@@ -27,48 +27,32 @@ receives from routers. This means that handlers have to register applications
 and personalized devices (with their network session keys) with the router.
 	`,
 	PreRun: func(cmd *cobra.Command, args []string) {
-		var statusServer string
-		if viper.GetInt("broker.status-port") > 0 {
-			statusServer = fmt.Sprintf("%s:%d", viper.GetString("broker.status-bind-address"), viper.GetInt("broker.status-port"))
-		} else {
-			statusServer = "disabled"
-		}
 		ctx.WithFields(log.Fields{
 			"database":      viper.GetString("broker.database"),
-			"status-server": statusServer,
-			"uplink":        fmt.Sprintf("%s:%d", viper.GetString("broker.uplink-bind-address"), viper.GetInt("broker.uplink-port")),
-			"downlink":      fmt.Sprintf("%s:%d", viper.GetString("broker.downlink-bind-address"), viper.GetInt("broker.downlink-port")),
+			"uplink-port":   viper.GetInt("broker.uplink-port"),
+			"downlink-port": viper.GetInt("broker.downlink-port"),
 		}).Info("Using Configuration")
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx.Info("Starting")
 
 		// Instantiate all components
-		rtrNet := fmt.Sprintf("%s:%d", viper.GetString("broker.uplink-bind-address"), viper.GetInt("broker.uplink-port"))
-		rtrAdapter, err := http.NewAdapter(rtrNet, nil, ctx.WithField("adapter", "router-http"))
+		rtrAdapter, err := http.NewAdapter(uint(viper.GetInt("broker.uplink-port")), nil, ctx.WithField("adapter", "router-http"))
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not start Routers Adapter")
 		}
 		rtrAdapter.Bind(handlers.Collect{})
+		rtrAdapter.Bind(handlers.Healthz{})
 
-		hdlNet := fmt.Sprintf("%s:%d", viper.GetString("broker.downlink-bind-address"), viper.GetInt("broker.downlink-port"))
-		hdlAdapter, err := http.NewAdapter(hdlNet, nil, ctx.WithField("adapter", "handler-http"))
+		hdlAdapter, err := http.NewAdapter(uint(viper.GetInt("broker.downlink-port")), nil, ctx.WithField("adapter", "handler-http"))
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not start Handlers Adapter")
 		}
 		hdlAdapter.Bind(handlers.Collect{})
 		hdlAdapter.Bind(handlers.PubSub{})
 		hdlAdapter.Bind(handlers.Applications{})
+		hdlAdapter.Bind(handlers.StatusPage{})
 
-		if viper.GetInt("broker.status-port") > 0 {
-			statusNet := fmt.Sprintf("%s:%d", viper.GetString("broker.status-bind-address"), viper.GetInt("broker.status-port"))
-			statusAdapter, err := http.NewAdapter(statusNet, nil, ctx.WithField("adapter", "status-http"))
-			if err != nil {
-				ctx.WithError(err).Fatal("Could not start Status Adapter")
-			}
-			statusAdapter.Bind(handlers.StatusPage{})
-			statusAdapter.Bind(handlers.Healthz{})
-		}
 		// Instantiate Storage
 
 		var db broker.Storage
@@ -138,18 +122,9 @@ func init() {
 	brokerCmd.Flags().String("database", "boltdb:/tmp/ttn_broker.db", "Database connection")
 	viper.BindPFlag("broker.database", brokerCmd.Flags().Lookup("database"))
 
-	brokerCmd.Flags().String("status-bind-address", "localhost", "The IP address to listen for serving status information")
-	brokerCmd.Flags().Int("status-port", 10701, "The port of the status server, use 0 to disable")
-	viper.BindPFlag("broker.status-bind-address", brokerCmd.Flags().Lookup("status-bind-address"))
-	viper.BindPFlag("broker.status-port", brokerCmd.Flags().Lookup("status-port"))
-
-	brokerCmd.Flags().String("uplink-bind-address", "", "The IP address to listen for uplink messages from routers")
 	brokerCmd.Flags().Int("uplink-port", 1881, "The UDP port for the uplink")
-	viper.BindPFlag("broker.uplink-bind-address", brokerCmd.Flags().Lookup("uplink-bind-address"))
 	viper.BindPFlag("broker.uplink-port", brokerCmd.Flags().Lookup("uplink-port"))
 
-	brokerCmd.Flags().String("downlink-bind-address", "", "The IP address to listen for downlink messages from brokers")
 	brokerCmd.Flags().Int("downlink-port", 1781, "The port for the downlink")
-	viper.BindPFlag("broker.downlink-bind-address", brokerCmd.Flags().Lookup("downlink-bind-address"))
 	viper.BindPFlag("broker.downlink-port", brokerCmd.Flags().Lookup("downlink-port"))
 }

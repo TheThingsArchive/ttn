@@ -27,17 +27,10 @@ var handlerCmd = &cobra.Command{
 The default handler is the bridge between The Things Network and applications.
 `,
 	PreRun: func(cmd *cobra.Command, args []string) {
-		var statusServer string
-		if viper.GetInt("handler.status-port") > 0 {
-			statusServer = fmt.Sprintf("%s:%d", viper.GetString("handler.status-bind-address"), viper.GetInt("handler.status-port"))
-		} else {
-			statusServer = "disabled"
-		}
 		ctx.WithFields(log.Fields{
 			"devicesDatabase": viper.GetString("handler.dev-database"),
 			"packetsDatabase": viper.GetString("handler.pkt-database"),
-			"status-server":   statusServer,
-			"uplink":          fmt.Sprintf("%s:%d", viper.GetString("handler.uplink-bind-address"), viper.GetInt("handler.uplink-port")),
+			"uplink-port":     viper.GetInt("handler.uplink-port"),
 			"mqtt-broker":     viper.GetString("handler.mqtt-broker"),
 		}).Info("Using Configuration")
 	},
@@ -45,12 +38,13 @@ The default handler is the bridge between The Things Network and applications.
 		ctx.Info("Starting")
 
 		// ----- Start Adapters
-		brkNet := fmt.Sprintf("%s:%d", viper.GetString("handler.uplink-bind-address"), viper.GetInt("handler.uplink-port"))
-		brkAdapter, err := http.NewAdapter(brkNet, nil, ctx.WithField("adapter", "broker-adapter"))
+		brkAdapter, err := http.NewAdapter(uint(viper.GetInt("handler.uplink-port")), nil, ctx.WithField("adapter", "broker-adapter"))
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not start broker adapter")
 		}
 		brkAdapter.Bind(httpHandlers.Collect{})
+		brkAdapter.Bind(httpHandlers.StatusPage{})
+		brkAdapter.Bind(httpHandlers.Healthz{})
 
 		mqttClient, err := mqtt.NewClient("handler-client", viper.GetString("handler.mqtt-broker"), mqtt.TCP)
 		if err != nil {
@@ -59,15 +53,6 @@ The default handler is the bridge between The Things Network and applications.
 		appAdapter := mqtt.NewAdapter(mqttClient, ctx.WithField("adapter", "app-adapter"))
 		appAdapter.Bind(mqttHandlers.Activation{})
 
-		if viper.GetInt("handler.status-port") > 0 {
-			statusNet := fmt.Sprintf("%s:%d", viper.GetString("handler.status-bind-address"), viper.GetInt("handler.status-port"))
-			statusAdapter, err := http.NewAdapter(statusNet, nil, ctx.WithField("adapter", "status-http"))
-			if err != nil {
-				ctx.WithError(err).Fatal("Could not start Status Adapter")
-			}
-			statusAdapter.Bind(httpHandlers.StatusPage{})
-			statusAdapter.Bind(httpHandlers.Healthz{})
-		}
 		// Instantiate in-memory devices storage
 
 		var devicesDB handler.DevStorage
@@ -183,14 +168,7 @@ func init() {
 	viper.BindPFlag("handler.dev-database", handlerCmd.Flags().Lookup("dev-database"))
 	viper.BindPFlag("handler.pkt-database", handlerCmd.Flags().Lookup("pkt-database"))
 
-	handlerCmd.Flags().String("status-bind-address", "localhost", "The IP address to listen for serving status information")
-	handlerCmd.Flags().Int("status-port", 10702, "The port of the status server, use 0 to disable")
-	viper.BindPFlag("handler.status-bind-address", handlerCmd.Flags().Lookup("status-bind-address"))
-	viper.BindPFlag("handler.status-port", handlerCmd.Flags().Lookup("status-port"))
-
-	handlerCmd.Flags().String("uplink-bind-address", "", "The IP address to listen for uplink messages from brokers")
 	handlerCmd.Flags().Int("uplink-port", 1882, "The UDP port for the uplink")
-	viper.BindPFlag("handler.uplink-bind-address", handlerCmd.Flags().Lookup("uplink-bind-address"))
 	viper.BindPFlag("handler.uplink-port", handlerCmd.Flags().Lookup("uplink-port"))
 
 	handlerCmd.Flags().String("mqtt-broker", "localhost:1883", "The address of the MQTT broker")
