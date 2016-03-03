@@ -5,8 +5,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
-	"net"
 	"net/http"
 	"strings"
 
@@ -33,21 +31,7 @@ func (p StatusPage) Handle(w http.ResponseWriter, chpkt chan<- PktReq, chreg cha
 	// Check the http method
 	if req.Method != "GET" {
 		w.WriteHeader(http.StatusMethodNotAllowed)
-		w.Write([]byte("Unreckognized HTTP method. Please use [GET] to transfer a packet"))
-		return
-	}
-
-	remoteHost, _, err := net.SplitHostPort(req.RemoteAddr)
-	if err != nil {
-		//The HTTP server did not set RemoteAddr to IP:port, which would be very very strange.
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	remoteIP := net.ParseIP(remoteHost)
-	if remoteIP == nil || !remoteIP.IsLoopback() {
-		w.WriteHeader(http.StatusForbidden)
-		w.Write([]byte(fmt.Sprintf("Status is only available from the local host, not from %s", remoteIP)))
+		w.Write([]byte("Use [GET] to request the status"))
 		return
 	}
 

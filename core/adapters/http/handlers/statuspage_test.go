@@ -33,13 +33,6 @@ func TestStatusPageHandler(t *testing.T) {
 	s.Handle(&rw1, make(chan<- PktReq), make(chan<- RegReq), r1)
 	a.So(rw1.TheStatus, assertions.ShouldEqual, 405)
 
-	// Only Localhost allowed
-	r2, _ := http.NewRequest("GET", "/status/", nil)
-	r2.RemoteAddr = "12.34.56.78:12345"
-	rw2 := NewResponseWriter()
-	s.Handle(&rw2, make(chan<- PktReq), make(chan<- RegReq), r2)
-	a.So(rw2.TheStatus, assertions.ShouldEqual, 403)
-
 	// Initially Empty
 	r3, _ := http.NewRequest("GET", "/status/", nil)
 	r3.RemoteAddr = "127.0.0.1:12345"
