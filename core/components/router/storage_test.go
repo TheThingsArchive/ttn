@@ -5,6 +5,7 @@ package router
 
 import (
 	"os"
+	"path"
 	"testing"
 	"time"
 
@@ -18,6 +19,8 @@ import (
 const storageDB = "TestRouterStorage.db"
 
 func TestStoreAndLookup(t *testing.T) {
+	storageDB := path.Join(os.TempDir(), storageDB)
+
 	defer func() {
 		os.Remove(storageDB)
 	}()

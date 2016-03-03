@@ -5,6 +5,7 @@ package broker
 
 import (
 	"os"
+	"path"
 	"testing"
 
 	. "github.com/TheThingsNetwork/ttn/core"
@@ -18,6 +19,8 @@ import (
 const storageDB = "TestBrokerStorage.db"
 
 func TestStorage(t *testing.T) {
+	storageDB := path.Join(os.TempDir(), storageDB)
+
 	defer func() {
 		os.Remove(storageDB)
 	}()
