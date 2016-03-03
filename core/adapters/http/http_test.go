@@ -144,7 +144,7 @@ func TestSend(t *testing.T) {
 	for _, r := range recipients {
 		servers = append(servers, genMockServer(r))
 	}
-	<-time.After(100 * time.Millisecond)
+	<-time.After(200 * time.Millisecond)
 
 	for _, test := range tests {
 		// Describe
@@ -156,7 +156,6 @@ func TestSend(t *testing.T) {
 		payloads := getPayloads(servers)
 
 		// Check
-		<-time.After(time.Second)
 		CheckErrors(t, test.WantError, err)
 		checkPayloads(t, test.WantPayload, payloads)
 		checkRegistrations(t, test.WantRegistrations, registrations)

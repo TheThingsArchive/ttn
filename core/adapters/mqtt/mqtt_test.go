@@ -21,6 +21,8 @@ import (
 const brokerURL = "0.0.0.0:1683"
 
 func TestMQTTSend(t *testing.T) {
+	timeout = 100 * time.Millisecond
+
 	tests := []struct {
 		Desc       string          // Test Description
 		Packet     []byte          // Handy representation of the packet to send
@@ -280,7 +282,7 @@ func trySend(adapter core.Adapter, packet []byte, recipients []testRecipient) ([
 	select {
 	case resp := <-chresp:
 		return resp.Data, resp.Error
-	case <-time.After(time.Millisecond * 1250):
+	case <-time.After(timeout + time.Millisecond*100):
 		return nil, nil
 	}
 }

@@ -14,6 +14,8 @@ import (
 	"github.com/apex/log"
 )
 
+var timeout = time.Second
+
 // Adapter type materializes an mqtt adapter which implements the basic mqtt protocol
 type Adapter struct {
 	Client
@@ -144,7 +146,7 @@ func (a *Adapter) Send(p core.Packet, recipients ...core.Recipient) ([]byte, err
 				if ok {
 					chresp <- data
 				}
-			case <-time.After(time.Second): // Timeout
+			case <-time.After(timeout): // Timeout
 			}
 		}(recipient, chdown)
 	}
