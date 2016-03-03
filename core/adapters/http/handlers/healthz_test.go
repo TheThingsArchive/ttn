@@ -17,7 +17,7 @@ func TestHealthzURL(t *testing.T) {
 
 	h := Healthz{}
 
-	a.So(h.URL(), assertions.ShouldEqual, "/healthz")
+	a.So(h.URL(), assertions.ShouldEqual, "/healthz/")
 }
 
 func TestHealthzHandle(t *testing.T) {
