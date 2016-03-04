@@ -99,8 +99,11 @@ The default handler is the bridge between The Things Network and applications.
 			ctx.WithError(fmt.Errorf("Invalid database string. Format: \"boltdb:/path/to.db\".")).Fatal("Could not instantiate local packets storage")
 		}
 
+		// Instantiate the broker to which is bound the handler
+		broker := http.NewRecipient(viper.GetString("handler.broker-client"), "PUT")
+
 		// Instantiate the actual handler
-		handler := handler.New(devicesDB, packetsDB, ctx)
+		handler := handler.New(devicesDB, packetsDB, broker, ctx)
 
 		// Bring the service to life
 
@@ -147,11 +150,11 @@ The default handler is the bridge between The Things Network and applications.
 					continue
 				}
 
-				go func(reg core.Registration, an core.AckNacker) {
-					if err := handler.Register(reg, an); err != nil {
+				go func(reg core.Registration, an core.AckNacker, s core.Subscriber) {
+					if err := handler.Register(reg, an, s); err != nil {
 						ctx.WithError(err).Warn("Could not process registration from applications")
 					}
-				}(reg, an)
+				}(reg, an, brkAdapter)
 			}
 		}()
 
