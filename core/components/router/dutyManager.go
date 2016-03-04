@@ -44,7 +44,7 @@ const (
 type region byte
 
 // NewDutyManager constructs a new gateway manager from
-func NewDutyManager(cycleLength time.Duration, r region) (DutyManager, error) {
+func NewDutyManager(filepath string, cycleLength time.Duration, r region) (DutyManager, error) {
 	var maxDuty map[subBand]float64
 	switch r {
 	case Europe:
@@ -56,7 +56,14 @@ func NewDutyManager(cycleLength time.Duration, r region) (DutyManager, error) {
 		return nil, errors.New(errors.Implementation, "Region not supported")
 	}
 
+	// Try to start a database
+	db, err := dbutil.New(filepath)
+	if err != nil {
+		return nil, errors.New(errors.Operational, err)
+	}
+
 	return &dutyManager{
+		db:           db,
 		CycleLength:  cycleLength,
 		MaxDutyCycle: maxDuty,
 	}, nil
