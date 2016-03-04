@@ -4,6 +4,7 @@
 package router
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"regexp"
@@ -191,16 +192,23 @@ func computeTOA(size uint, datr string, codr string) (time.Duration, error) {
 }
 
 type dutyEntry struct {
-	Until time.Time
-	OnAir map[subBand]time.Duration
+	Until time.Time                 `json:"until"`
+	OnAir map[subBand]time.Duration `json:"on_air"`
 }
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface
 func (e dutyEntry) MarshalBinary() ([]byte, error) {
-	return nil, nil
+	data, err := json.Marshal(e)
+	if err != nil {
+		return nil, errors.New(errors.Structural, err)
+	}
+	return data, nil
 }
 
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
 func (e *dutyEntry) UnmarshalBinary(data []byte) error {
+	if err := json.Unmarshal(data, e); err != nil {
+		return errors.New(errors.Structural, err)
+	}
 	return nil
 }
