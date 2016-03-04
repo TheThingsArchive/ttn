@@ -136,7 +136,7 @@ func TestSend(t *testing.T) {
 	ctx := GetLogger(t, "Adapter")
 
 	// Build
-	adapter, err := NewAdapter(3115, toHTTPRecipient(recipients), ctx)
+	adapter, err := NewAdapter("0.0.0.0:3115", toHTTPRecipient(recipients), ctx)
 	if err != nil {
 		panic(err)
 	}

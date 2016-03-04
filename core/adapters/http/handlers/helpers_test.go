@@ -46,7 +46,8 @@ func (p testPacket) DevEUI() lorawan.EUI64 {
 
 // ----- BUILD utilities
 func createPubSubAdapter(t *testing.T, port uint) (*Adapter, string) {
-	adapter, err := NewAdapter(port, nil, GetLogger(t, "Adapter"))
+	net := fmt.Sprintf("0.0.0.0:%d", port)
+	adapter, err := NewAdapter(net, nil, GetLogger(t, "Adapter"))
 	if err != nil {
 		panic(err)
 	}
@@ -57,7 +58,8 @@ func createPubSubAdapter(t *testing.T, port uint) (*Adapter, string) {
 }
 
 func createApplicationsAdapter(t *testing.T, port uint) (*Adapter, string) {
-	adapter, err := NewAdapter(port, nil, GetLogger(t, "Adapter"))
+	net := fmt.Sprintf("0.0.0.0:%d", port)
+	adapter, err := NewAdapter(net, nil, GetLogger(t, "Adapter"))
 	if err != nil {
 		panic(err)
 	}
@@ -68,7 +70,8 @@ func createApplicationsAdapter(t *testing.T, port uint) (*Adapter, string) {
 }
 
 func createCollectAdapter(t *testing.T, port uint) (*Adapter, string) {
-	adapter, err := NewAdapter(port, nil, GetLogger(t, "Adapter"))
+	net := fmt.Sprintf("0.0.0.0:%d", port)
+	adapter, err := NewAdapter(net, nil, GetLogger(t, "Adapter"))
 	if err != nil {
 		panic(err)
 	}

@@ -53,7 +53,7 @@ type RegReq struct {
 }
 
 // NewAdapter constructs and allocates a new http adapter
-func NewAdapter(port uint, recipients []core.Recipient, ctx log.Interface) (*Adapter, error) {
+func NewAdapter(net string, recipients []core.Recipient, ctx log.Interface) (*Adapter, error) {
 	a := Adapter{
 		Client:        http.Client{Timeout: 6 * time.Second},
 		ctx:           ctx,
@@ -63,7 +63,7 @@ func NewAdapter(port uint, recipients []core.Recipient, ctx log.Interface) (*Ada
 		serveMux:      http.NewServeMux(),
 	}
 
-	go a.listenRequests(port)
+	go a.listenRequests(net)
 
 	return &a, nil
 }
@@ -229,12 +229,12 @@ func (a *Adapter) Bind(h Handler) {
 }
 
 // listenRequests handles incoming registration request sent through http to the adapter
-func (a *Adapter) listenRequests(port uint) {
+func (a *Adapter) listenRequests(net string) {
 	server := http.Server{
-		Addr:    fmt.Sprintf("0.0.0.0:%d", port),
+		Addr:    net,
 		Handler: a.serveMux,
 	}
-	a.ctx.WithField("port", port).Info("Starting Server")
+	a.ctx.WithField("bind", net).Info("Starting Server")
 	err := server.ListenAndServe()
 	a.ctx.WithError(err).Warn("HTTP connection lost")
 }

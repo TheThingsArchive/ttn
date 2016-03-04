@@ -37,14 +37,16 @@ and personalized devices (with their network session keys) with the router.
 		ctx.Info("Starting")
 
 		// Instantiate all components
-		rtrAdapter, err := http.NewAdapter(uint(viper.GetInt("broker.routers-port")), nil, ctx.WithField("adapter", "router-http"))
+		rtrNet := fmt.Sprintf("0.0.0.0:%d", viper.GetInt("broker.routers-port"))
+		rtrAdapter, err := http.NewAdapter(rtrNet, nil, ctx.WithField("adapter", "router-http"))
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not start Routers Adapter")
 		}
 		rtrAdapter.Bind(handlers.Collect{})
 		rtrAdapter.Bind(handlers.Healthz{})
 
-		hdlAdapter, err := http.NewAdapter(uint(viper.GetInt("broker.handlers-port")), nil, ctx.WithField("adapter", "handler-http"))
+		hdlNet := fmt.Sprintf("0.0.0.0:%d", viper.GetInt("broker.handlers-port"))
+		hdlAdapter, err := http.NewAdapter(hdlNet, nil, ctx.WithField("adapter", "handler-http"))
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not start Handlers Adapter")
 		}
