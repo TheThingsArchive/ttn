@@ -101,6 +101,7 @@ func MockRandomly(nodes []node.LiveNode, ctx log.Interface, routers ...string) {
 	messages := make(chan string)
 
 	for _, n := range nodes {
+		ctx.Infof("Created node: %s", n.(fmt.Stringer).String())
 		go n.Start(messages)
 	}
 
