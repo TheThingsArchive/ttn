@@ -53,6 +53,34 @@ func (r *MockRecipient) UnmarshalBinary(data []byte) error {
 	return nil
 }
 
+type MockJSONRecipient struct {
+	*MockRecipient
+	InUnmarshalJSON []byte
+	OutMarshalJSON  []byte
+}
+
+func NewMockJSONRecipient() *MockJSONRecipient {
+	return &MockJSONRecipient{
+		MockRecipient:  NewMockRecipient(),
+		OutMarshalJSON: []byte(`{"out":"MockJSONRecipientData"}`),
+	}
+}
+
+func (r *MockJSONRecipient) MarshalJSON() ([]byte, error) {
+	if r.Failures["MarshalJSON"] != nil {
+		return nil, r.Failures["MarshalJSON"]
+	}
+	return r.OutMarshalJSON, nil
+}
+
+func (r *MockJSONRecipient) UnmarshalJSON(data []byte) error {
+	r.InUnmarshalJSON = data
+	if r.Failures["UnmarshalJSON"] != nil {
+		return r.Failures["UnmarshalJSON"]
+	}
+	return nil
+}
+
 // MockRegistration implements the core.Registration interface
 //
 // It also stores the last arguments of each function call in appropriated
@@ -281,11 +309,37 @@ func (a *MockAdapter) NextRegistration() (Registration, AckNacker, error) {
 	return a.OutNextRegReg, a.OutNextRegAckNacker, nil
 }
 
+// MockSubscriber implements the core.Subscriber interface
+//
+// It declares a `Failures` attributes that can be used to
+// simulate failures on demand, associating the name of the method
+// which needs to fail with the actual failure.
+//
+// It also stores the last arguments of each function call in appropriated
+// attributes. Because there's no computation going on, the expected / wanted
+// responses should also be defined. Default values are provided but can be changed
+// if needed.
+type MockSubscriber struct {
+	Failures                map[string]error
+	InSubscribeRegistration Registration
+}
+
+func NewMockSubscriber() *MockSubscriber {
+	return &MockSubscriber{
+		Failures: make(map[string]error),
+	}
+}
+
+func (s *MockSubscriber) Subscribe(reg Registration) error {
+	s.InSubscribeRegistration = reg
+	return s.Failures["Subscribe"]
+}
+
 // ----- CHECK utilities
 
 func Check(t *testing.T, want, got interface{}, name string) {
 	if !reflect.DeepEqual(want, got) {
-		Ko(t, "%s don't match expectations.\nWant: %v\nGot:  %v", name, want, got)
+		Ko(t, "%s don't match expectations.\nWant: %+v\nGot:  %+v", name, want, got)
 	}
 	Ok(t, fmt.Sprintf("Check %s", name))
 }
