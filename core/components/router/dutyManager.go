@@ -56,7 +56,7 @@ func GetSubBand(freq float64) (subBand, error) {
 	}
 
 	// EuropeRX1_B -> 867.1 MHz -> 867.9 MHz
-	if int(freq) == 869 {
+	if int(freq) == 867 {
 		return EuropeRX1_B, nil
 	}
 
