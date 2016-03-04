@@ -106,7 +106,8 @@ and personalized devices (with their network session keys) with the router.
 				}
 				go func(packet []byte, an core.AckNacker) {
 					if err := broker.HandleUp(packet, an, hdlAdapter); err != nil {
-						ctx.WithError(err).Error("Could not process uplink")
+						// We can't do anything with this packet, so we're ignoring it.
+						ctx.WithError(err).Debug("Could not process uplink")
 					}
 				}(packet, an)
 			}
@@ -122,7 +123,8 @@ and personalized devices (with their network session keys) with the router.
 				}
 				go func(reg core.Registration, an core.AckNacker) {
 					if err := broker.Register(reg, an); err != nil {
-						ctx.WithError(err).Error("Could not process registration")
+						// We can't do anything with this registration, so we're ignoring it.
+						ctx.WithError(err).Debug("Could not process registration")
 					}
 				}(reg, an)
 			}

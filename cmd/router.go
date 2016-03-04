@@ -112,7 +112,8 @@ the gateway's duty cycle is (almost) full.`,
 				}
 				go func(packet []byte, an core.AckNacker) {
 					if err := router.HandleUp(packet, an, brkAdapter); err != nil {
-						ctx.WithError(err).Warn("Could not process packet from gateway")
+						// We can't do anything with this packet, so we're ignoring it.
+						ctx.WithError(err).Debug("Could not process packet from gateway")
 					}
 				}(packet, an)
 			}
@@ -128,7 +129,8 @@ the gateway's duty cycle is (almost) full.`,
 				}
 				go func(reg core.Registration, an core.AckNacker) {
 					if err := router.Register(reg, an); err != nil {
-						ctx.WithError(err).Warn("Could not process registration from broker")
+						// We can't do anything with this registration, so we're ignoring it.
+						ctx.WithError(err).Debug("Could not process registration from broker")
 					}
 				}(reg, an)
 			}

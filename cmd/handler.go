@@ -130,7 +130,8 @@ The default handler is the bridge between The Things Network and applications.
 
 				go func(packet []byte, an core.AckNacker) {
 					if err := handler.HandleUp(packet, an, appAdapter); err != nil {
-						ctx.WithError(err).Warn("Could not process packet from brokers")
+						// We can't do anything with this packet, so we're ignoring it.
+						ctx.WithError(err).Debug("Could not process packet from brokers")
 					}
 				}(packet, an)
 			}
@@ -147,7 +148,8 @@ The default handler is the bridge between The Things Network and applications.
 
 				go func(packet []byte, an core.AckNacker) {
 					if err := handler.HandleDown(packet, an, brkAdapter); err != nil {
-						ctx.WithError(err).Warn("Could not process packet from applications")
+						// We can't do anything with this packet, so we're ignoring it.
+						ctx.WithError(err).Debug("Could not process packet from applications")
 					}
 				}(packet, an)
 			}
@@ -164,7 +166,8 @@ The default handler is the bridge between The Things Network and applications.
 
 				go func(reg core.Registration, an core.AckNacker) {
 					if err := handler.Register(reg, an); err != nil {
-						ctx.WithError(err).Warn("Could not process registration from applications")
+						// We can't do anything with this registration, so we're ignoring it.
+						ctx.WithError(err).Debug("Could not process registration from applications")
 					}
 				}(reg, an)
 			}
