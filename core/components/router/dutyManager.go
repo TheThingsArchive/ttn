@@ -28,8 +28,9 @@ type dutyManager struct {
 
 // Available sub-bands
 const (
-	Europe1 subBand = iota
-	Europe2
+	EuropeRX1_A subBand = iota
+	EuropeRX1_B
+	EuropeRX2
 )
 
 type subBand byte
@@ -49,8 +50,9 @@ func NewDutyManager(filepath string, cycleLength time.Duration, r region) (DutyM
 	switch r {
 	case Europe:
 		maxDuty = map[subBand]float64{
-			Europe1: 0.01,
-			Europe2: 0.1,
+			EuropeRX1_A: 0.01, // 1% dutycycle
+			EuropeRX1_B: 0.01, // 1% dutycycle
+			EuropeRX2:   0.1,  // 10% dutycycle
 		}
 	default:
 		return nil, errors.New(errors.Implementation, "Region not supported")
@@ -71,8 +73,19 @@ func NewDutyManager(filepath string, cycleLength time.Duration, r region) (DutyM
 
 // GetSubBand returns the subband associated to a given frequency
 func GetSubBand(freq float64) (subBand, error) {
+	// EuropeRX1_A -> 868.1 MHz -> 868.9 MHz
 	if int(freq) == 868 {
-		return Europe1, nil
+		return EuropeRX1_A, nil
+	}
+
+	// EuropeRX1_B -> 867.1 MHz -> 867.9 MHz
+	if int(freq) == 869 {
+		return EuropeRX1_B, nil
+	}
+
+	// EuropeRX2 -> 869.5 MHz
+	if math.Floor(freq*10.0) == 8695.0 {
+		return EuropeRX2, nil
 	}
 	return 0, errors.New(errors.Structural, "Unknown frequency")
 }
