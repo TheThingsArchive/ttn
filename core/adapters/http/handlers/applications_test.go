@@ -23,7 +23,6 @@ func TestApplications(t *testing.T) {
 		Payload     string
 		ContentType string
 		Method      string
-		AppEUI      string
 		ShouldAck   bool
 		AckPacket   core.Packet
 
@@ -33,11 +32,10 @@ func TestApplications(t *testing.T) {
 		WantError        *string
 	}{
 		{
-			Desc:        "Invalid Payload. Valid ContentType. Valid Method. Valid AppEUI. Nack",
+			Desc:        "Invalid Payload. Valid ContentType. Valid Method. Nack",
 			Payload:     "TheThingsNetwork",
 			ContentType: "application/json",
 			Method:      "PUT",
-			AppEUI:      "0000000011223344",
 			ShouldAck:   false,
 
 			WantContent:      string(errors.Structural),
@@ -46,11 +44,10 @@ func TestApplications(t *testing.T) {
 			WantError:        nil,
 		},
 		{
-			Desc:        "Valid Payload. Invalid ContentType. Valid Method. Valid AppEUI. Nack",
-			Payload:     `{"app_url":"url"}`,
+			Desc:        "Valid Payload. Invalid ContentType. Valid Method. Nack",
+			Payload:     `{"app_eui":"0000000011223344","app_url":"url"}`,
 			ContentType: "text/plain",
 			Method:      "PUT",
-			AppEUI:      "0000000011223344",
 			ShouldAck:   false,
 
 			WantContent:      string(errors.Structural),
@@ -59,11 +56,10 @@ func TestApplications(t *testing.T) {
 			WantError:        nil,
 		},
 		{
-			Desc:        "Valid Payload. Valid ContentType. Invalid Method. Valid AppEUI. Nack",
-			Payload:     `{"app_url":"url"}`,
+			Desc:        "Valid Payload. Valid ContentType. Invalid Method. Nack",
+			Payload:     `{"app_eui":"0000000011223344","app_url":"url"}`,
 			ContentType: "application/json",
 			Method:      "POST",
-			AppEUI:      "0000000011223344",
 			ShouldAck:   false,
 
 			WantContent:      string(errors.Structural),
@@ -72,11 +68,10 @@ func TestApplications(t *testing.T) {
 			WantError:        nil,
 		},
 		{
-			Desc:        "Valid Payload. Valid ContentType. Valid Method. Invalid AppEUI. Nack",
-			Payload:     `{"app_url":"url"}`,
+			Desc:        "Valid Payload. Valid ContentType. Valid Method.  Nack",
+			Payload:     `{"app_eui":"000011223344","app_url":"url"}`,
 			ContentType: "application/json",
 			Method:      "PUT",
-			AppEUI:      "12345678",
 			ShouldAck:   false,
 
 			WantContent:      string(errors.Structural),
@@ -85,11 +80,10 @@ func TestApplications(t *testing.T) {
 			WantError:        nil,
 		},
 		{
-			Desc:        "Valid Payload. Valid ContentType. Valid Method. Valid AppEUI. Nack",
-			Payload:     `{"app_url":"url"}`,
+			Desc:        "Valid Payload. Valid ContentType. Valid Method. Nack",
+			Payload:     `{"app_eui":"0000000001020304","app_url":"url"}`,
 			ContentType: "application/json",
 			Method:      "PUT",
-			AppEUI:      "0000000001020304",
 			ShouldAck:   false,
 
 			WantContent:    string(errors.Structural),
@@ -101,11 +95,10 @@ func TestApplications(t *testing.T) {
 			WantError: nil,
 		},
 		{
-			Desc:        "Valid Payload. Valid ContentType. Valid Method. Valid AppEUI. Ack",
-			Payload:     `{"app_url":"url"}`,
+			Desc:        "Valid Payload. Valid ContentType. Valid Method. Ack",
+			Payload:     `{"app_eui":"0000000001020304","app_url":"url"}`,
 			ContentType: "application/json",
 			Method:      "PUT",
-			AppEUI:      "0000000001020304",
 			ShouldAck:   true,
 
 			WantContent:    "",
@@ -129,7 +122,7 @@ func TestApplications(t *testing.T) {
 		client := testClient{}
 
 		// Operate
-		url = fmt.Sprintf("%s%s", url, test.AppEUI)
+		url = fmt.Sprintf("%s", url)
 		chresp := client.Send(test.Payload, url, test.Method, test.ContentType)
 		registration, err := tryNextRegistration(adapter, test.ShouldAck, test.AckPacket)
 		var statusCode int
