@@ -91,7 +91,7 @@ func (a *Adapter) Subscribe(r core.Registration) error {
 		return errors.New(errors.Operational, err)
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusAccepted || resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != http.StatusAccepted && resp.StatusCode != http.StatusOK {
 		return errors.New(errors.Operational, "Unable to subscribe")
 	}
 	return nil
