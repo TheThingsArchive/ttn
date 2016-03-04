@@ -19,6 +19,7 @@ const maxDutyCycle = 90 // 90%
 
 // component implements the core.Component interface
 type component struct {
+	broker  Recipient
 	ctx     log.Interface
 	devices DevStorage
 	packets PktStorage
@@ -34,11 +35,12 @@ type bundle struct {
 }
 
 // New construct a new Handler
-func New(devDb DevStorage, pktDb PktStorage, ctx log.Interface) Component {
+func New(devDb DevStorage, pktDb PktStorage, broker Recipient, ctx log.Interface) Handler {
 	h := component{
 		ctx:     ctx,
 		devices: devDb,
 		packets: pktDb,
+		broker:  broker,
 	}
 
 	set := make(chan bundle)
@@ -52,7 +54,7 @@ func New(devDb DevStorage, pktDb PktStorage, ctx log.Interface) Component {
 }
 
 // Register implements the core.Component interface
-func (h component) Register(reg Registration, an AckNacker) (err error) {
+func (h component) Register(reg Registration, an AckNacker, sub Subscriber) (err error) {
 	h.ctx.WithField("registration", reg).Debug("New registration request")
 	defer ensureAckNack(an, nil, &err)
 
@@ -64,7 +66,13 @@ func (h component) Register(reg Registration, an AckNacker) (err error) {
 	if err = h.devices.StorePersonalized(hreg); err != nil {
 		return errors.New(errors.Operational, err)
 	}
-	return nil
+
+	return sub.Subscribe(brokerRegistration{
+		recipient: h.broker,
+		appEUI:    hreg.AppEUI(),
+		devEUI:    hreg.DevEUI(),
+		nwkSKey:   hreg.NwkSKey(),
+	})
 }
 
 // HandleUp implements the core.Component interface

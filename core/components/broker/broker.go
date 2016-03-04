@@ -18,11 +18,11 @@ type component struct {
 }
 
 // New construct a new Broker component
-func New(db Storage, ctx log.Interface) Component {
+func New(db Storage, ctx log.Interface) Broker {
 	return component{Storage: db, ctx: ctx}
 }
 
-// Register implements the core.Component interface
+// Register implements the core.Broker interface
 func (b component) Register(reg Registration, an AckNacker) (err error) {
 	defer ensureAckNack(an, nil, &err)
 	stats.MarkMeter("broker.registration.in")
@@ -40,7 +40,7 @@ func (b component) Register(reg Registration, an AckNacker) (err error) {
 	return err
 }
 
-// HandleUp implements the core.Component interface
+// HandleUp implements the core.Broker interface
 func (b component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 	// Make sure we don't forget the AckNacker
 	var ack Packet
@@ -157,12 +157,6 @@ func (b component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 	}
 
 	return nil
-}
-
-// HandleDown implements the core.Component interface
-func (b component) HandleDown(data []byte, an AckNacker, down Adapter) (err error) {
-	defer ensureAckNack(an, nil, &err)
-	return errors.New(errors.Implementation, "Handle Down not implemented on broker")
 }
 
 func ensureAckNack(an AckNacker, ack *Packet, err *error) {
