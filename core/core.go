@@ -59,5 +59,5 @@ type Adapter interface {
 }
 
 type Subscriber interface {
-	Subscribe(reg Registration, recipient Recipient) error
+	Subscribe(reg Registration) error
 }
