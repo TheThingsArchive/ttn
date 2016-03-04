@@ -122,29 +122,6 @@ func TestRegister(t *testing.T) {
 	}
 }
 
-func TestHandleDown(t *testing.T) {
-	{
-		testutil.Desc(t, "Try Handle Down")
-
-		// Build
-		an := mocks.NewMockAckNacker()
-		adapter := mocks.NewMockAdapter()
-		store := newMockStorage()
-
-		// Operate
-		broker := New(store, testutil.GetLogger(t, "Broker"))
-		err := broker.HandleDown([]byte{1, 2, 3}, an, adapter)
-
-		// Check
-		errutil.CheckErrors(t, pointer.String(string(errors.Implementation)), err)
-		mocks.CheckAcks(t, false, an.InAck)
-		CheckRegistrations(t, nil, store.InStoreDevices)
-		CheckRegistrations(t, nil, store.InStoreApp)
-		mocks.CheckSent(t, nil, adapter.InSendPacket)
-		mocks.CheckRecipients(t, nil, adapter.InSendRecipients)
-	}
-}
-
 func TestHandleUp(t *testing.T) {
 	{
 		testutil.Desc(t, "Send an unknown packet")
