@@ -42,7 +42,7 @@ type MsgReq struct {
 type MsgRes []byte // The actual message
 
 // NewAdapter constructs and allocates a new udp adapter
-func NewAdapter(port uint, ctx log.Interface) (*Adapter, error) {
+func NewAdapter(bindNet string, ctx log.Interface) (*Adapter, error) {
 	a := Adapter{
 		ctx:      ctx,
 		conn:     make(chan MsgUDP),
@@ -52,11 +52,11 @@ func NewAdapter(port uint, ctx log.Interface) (*Adapter, error) {
 
 	// Create the udp connection and start listening with a goroutine
 	var udpConn *net.UDPConn
-	addr, err := net.ResolveUDPAddr("udp", fmt.Sprintf("0.0.0.0:%d", port))
-	a.ctx.WithField("port", port).Info("Starting Server")
+	addr, err := net.ResolveUDPAddr("udp", bindNet)
+	a.ctx.WithField("bind", bindNet).Info("Starting Server")
 	if udpConn, err = net.ListenUDP("udp", addr); err != nil {
 		a.ctx.WithError(err).Error("Unable to start server")
-		return nil, errors.New(errors.Structural, fmt.Sprintf("Invalid port %v", port))
+		return nil, errors.New(errors.Structural, fmt.Sprintf("Invalid bind address %v", bindNet))
 	}
 
 	go a.monitorConnection(udpConn)
