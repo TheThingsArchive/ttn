@@ -18,6 +18,9 @@ import (
 
 // DutyManager provides an interface to manipulate and compute gateways duty-cycles.
 type DutyManager interface {
+	Update(id []byte, freq float64, size uint, datr string, codr string) error
+	Lookup(id []byte) (map[subBand]uint, error)
+	Close() error
 }
 
 type dutyManager struct {
@@ -45,6 +48,25 @@ const (
 
 type region byte
 
+// GetSubBand returns the subband associated to a given frequency
+func GetSubBand(freq float64) (subBand, error) {
+	// EuropeRX1_A -> 868.1 MHz -> 868.9 MHz
+	if int(freq) == 868 {
+		return EuropeRX1_A, nil
+	}
+
+	// EuropeRX1_B -> 867.1 MHz -> 867.9 MHz
+	if int(freq) == 869 {
+		return EuropeRX1_B, nil
+	}
+
+	// EuropeRX2 -> 869.5 MHz
+	if math.Floor(freq*10.0) == 8695.0 {
+		return EuropeRX2, nil
+	}
+	return 0, errors.New(errors.Structural, "Unknown frequency")
+}
+
 // NewDutyManager constructs a new gateway manager from
 func NewDutyManager(filepath string, cycleLength time.Duration, r region) (DutyManager, error) {
 	var maxDuty map[subBand]float64
@@ -70,25 +92,6 @@ func NewDutyManager(filepath string, cycleLength time.Duration, r region) (DutyM
 		CycleLength:  cycleLength,
 		MaxDutyCycle: maxDuty,
 	}, nil
-}
-
-// GetSubBand returns the subband associated to a given frequency
-func GetSubBand(freq float64) (subBand, error) {
-	// EuropeRX1_A -> 868.1 MHz -> 868.9 MHz
-	if int(freq) == 868 {
-		return EuropeRX1_A, nil
-	}
-
-	// EuropeRX1_B -> 867.1 MHz -> 867.9 MHz
-	if int(freq) == 869 {
-		return EuropeRX1_B, nil
-	}
-
-	// EuropeRX2 -> 869.5 MHz
-	if math.Floor(freq*10.0) == 8695.0 {
-		return EuropeRX2, nil
-	}
-	return 0, errors.New(errors.Structural, "Unknown frequency")
 }
 
 // Update update an entry with the corresponding time-on-air
@@ -156,6 +159,11 @@ func (m *dutyManager) Lookup(id []byte) (map[subBand]uint, error) {
 	}
 
 	return cycles, nil
+}
+
+// Close releases the database access
+func (m *dutyManager) Close() error {
+	return m.db.Close()
 }
 
 // computeTOA computes the time-on-air given a size in byte, a LoRaWAN datr identifier, an LoRa Codr
