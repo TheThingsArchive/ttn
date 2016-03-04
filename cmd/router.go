@@ -39,7 +39,8 @@ the gateway's duty cycle is (almost) full.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx.Info("Starting")
 
-		gtwAdapter, err := udp.NewAdapter(uint(viper.GetInt("router.gateways-port")), ctx.WithField("adapter", "gateway-semtech"))
+		gtwNet := fmt.Sprintf("0.0.0.0:%d", viper.GetInt("router.gateways-port"))
+		gtwAdapter, err := udp.NewAdapter(gtwNet, ctx.WithField("adapter", "gateway-semtech"))
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not start Gateway Adapter")
 		}
@@ -52,7 +53,8 @@ the gateway's duty cycle is (almost) full.`,
 			brokers = append(brokers, http.NewRecipient(url, "POST"))
 		}
 
-		brkAdapter, err := http.NewAdapter(uint(viper.GetInt("router.brokers-port")), brokers, ctx.WithField("adapter", "broker-http"))
+		brkNet := fmt.Sprintf("0.0.0.0:%d", viper.GetInt("router.brokers-port"))
+		brkAdapter, err := http.NewAdapter(brkNet, brokers, ctx.WithField("adapter", "broker-http"))
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not start Broker Adapter")
 		}

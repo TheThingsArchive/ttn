@@ -78,7 +78,8 @@ func genAdapter(t *testing.T, port uint) (*udp.Adapter, chan interface{}) {
 	// Logging
 	ctx := GetLogger(t, "Adapter")
 
-	adapter, err := udp.NewAdapter(port, ctx)
+	net := fmt.Sprintf("0.0.0.0:%d", port)
+	adapter, err := udp.NewAdapter(net, ctx)
 	if err != nil {
 		panic(err)
 	}
