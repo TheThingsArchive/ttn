@@ -52,7 +52,8 @@ the gateway's duty cycle is (almost) full.`,
 			brokers = append(brokers, http.NewRecipient(url, "POST"))
 		}
 
-		brkAdapter, err := http.NewAdapter(uint(viper.GetInt("router.brokers-port")), brokers, ctx.WithField("adapter", "broker-http"))
+		brkNet := fmt.Sprintf("0.0.0.0:%d", viper.GetInt("router.brokers-port"))
+		brkAdapter, err := http.NewAdapter(brkNet, brokers, ctx.WithField("adapter", "broker-http"))
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not start Broker Adapter")
 		}

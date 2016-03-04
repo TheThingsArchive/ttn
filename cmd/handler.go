@@ -38,7 +38,8 @@ The default handler is the bridge between The Things Network and applications.
 		ctx.Info("Starting")
 
 		// ----- Start Adapters
-		brkAdapter, err := http.NewAdapter(uint(viper.GetInt("handler.brokers-port")), nil, ctx.WithField("adapter", "broker-adapter"))
+		brkNet := fmt.Sprintf("0.0.0.0:%d", viper.GetInt("handler.brokers-port"))
+		brkAdapter, err := http.NewAdapter(brkNet, nil, ctx.WithField("adapter", "broker-adapter"))
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not start broker adapter")
 		}
