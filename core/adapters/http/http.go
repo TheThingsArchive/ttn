@@ -176,7 +176,7 @@ func (a *Adapter) Send(p core.Packet, recipients ...core.Recipient) ([]byte, err
 		err := <-cherr
 		if err.(errors.Failure).Nature != errors.Behavioural {
 			errored++
-			ctx.WithError(err).Error("POST Failed")
+			ctx.WithError(err).Warn("POST Failed")
 		}
 	}
 

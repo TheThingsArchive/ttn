@@ -96,9 +96,15 @@ func (r component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 		}
 
 		if err != nil {
-			stats.MarkMeter("router.uplink.bad_broker_response")
-			r.ctx.WithError(err).Warn("Invalid response from Broker")
-			return errors.New(errors.Operational, err)
+			switch err.(errors.Failure).Nature {
+			case errors.Behavioural:
+				stats.MarkMeter("router.uplink.negative_broker_response")
+				r.ctx.WithError(err).Debug("Negative response from Broker")
+			default:
+				stats.MarkMeter("router.uplink.bad_broker_response")
+				r.ctx.WithError(err).Warn("Invalid response from Broker")
+			}
+			return err
 		}
 
 		// No response, stop there
