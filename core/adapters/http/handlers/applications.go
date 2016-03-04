@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-	"regexp"
 	"strings"
 
 	"github.com/TheThingsNetwork/ttn/core"
@@ -79,17 +78,6 @@ func (p Applications) parse(req *http.Request) (core.Registration, error) {
 		return applicationsRegistration{}, errors.New(errors.Structural, "Received invalid content-type in request")
 	}
 
-	// Check the query parameter
-	reg := regexp.MustCompile("applications/([a-fA-F0-9]{16})$") // 8-bytes, hex-encoded -> 16 chars
-	query := reg.FindStringSubmatch(req.RequestURI)
-	if len(query) < 2 {
-		return applicationsRegistration{}, errors.New(errors.Structural, "Incorrect application identifier format")
-	}
-	appEUI, err := hex.DecodeString(query[1])
-	if err != nil {
-		return applicationsRegistration{}, errors.New(errors.Structural, err)
-	}
-
 	// Check configuration in body
 	body := make([]byte, req.ContentLength)
 	n, err := req.Body.Read(body)
@@ -97,9 +85,10 @@ func (p Applications) parse(req *http.Request) (core.Registration, error) {
 		return applicationsRegistration{}, errors.New(errors.Structural, err)
 	}
 	defer req.Body.Close()
-	params := &struct {
-		URL string `json:"app_url"`
-	}{}
+	params := new(struct {
+		URL    string `json:"app_url"`
+		AppEUI string `json:"app_eui"`
+	})
 	if err := json.Unmarshal(body[:n], params); err != nil {
 		return applicationsRegistration{}, errors.New(errors.Structural, "Unable to unmarshal the request body")
 	}
@@ -108,6 +97,11 @@ func (p Applications) parse(req *http.Request) (core.Registration, error) {
 	params.URL = strings.Trim(params.URL, " ")
 	if len(params.URL) <= 0 {
 		return applicationsRegistration{}, errors.New(errors.Structural, "Incorrect application url")
+	}
+
+	appEUI, err := hex.DecodeString(params.AppEUI)
+	if err != nil || len(appEUI) != 8 {
+		return pubSubRegistration{}, errors.New(errors.Structural, "Incorrect application eui")
 	}
 
 	// Create actual registration

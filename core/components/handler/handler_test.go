@@ -26,15 +26,23 @@ func TestRegister(t *testing.T) {
 		pktStorage := newMockPktStorage()
 		an := NewMockAckNacker()
 		r := NewMockHRegistration()
+		broker := NewMockJSONRecipient()
+		br := NewMockBRegistration()
+		br.OutRecipient = broker
+		br.OutDevEUI = r.DevEUI()
+		br.OutAppEUI = r.AppEUI()
+		br.OutNwkSKey = r.NwkSKey()
+		sub := NewMockSubscriber()
 
 		// Operate
-		handler := New(devStorage, pktStorage, GetLogger(t, "Handler"))
-		err := handler.Register(r, an)
+		handler := New(devStorage, pktStorage, broker, GetLogger(t, "Handler"))
+		err := handler.Register(r, an, sub)
 
 		// Check
 		CheckErrors(t, nil, err)
 		CheckPushed(t, nil, pktStorage.InPush)
 		CheckPersonalized(t, r, devStorage.InStorePersonalized)
+		CheckSubscriptions(t, br, sub.InSubscribeRegistration)
 	}
 
 	// --------------------
@@ -46,15 +54,18 @@ func TestRegister(t *testing.T) {
 		devStorage := newMockDevStorage()
 		pktStorage := newMockPktStorage()
 		an := NewMockAckNacker()
-		handler := New(devStorage, pktStorage, GetLogger(t, "Handler"))
+		broker := NewMockJSONRecipient()
+		sub := NewMockSubscriber()
 
 		// Operate
-		err := handler.Register(nil, an)
+		handler := New(devStorage, pktStorage, broker, GetLogger(t, "Handler"))
+		err := handler.Register(nil, an, sub)
 
 		// Checks
 		CheckErrors(t, pointer.String(string(errors.Structural)), err)
 		CheckPushed(t, nil, pktStorage.InPush)
 		CheckPersonalized(t, nil, devStorage.InStorePersonalized)
+		CheckSubscriptions(t, nil, sub.InSubscribeRegistration)
 	}
 
 	// --------------------
@@ -68,10 +79,12 @@ func TestRegister(t *testing.T) {
 		pktStorage := newMockPktStorage()
 		an := NewMockAckNacker()
 		r := NewMockHRegistration()
+		broker := NewMockJSONRecipient()
+		sub := NewMockSubscriber()
 
 		// Operate
-		handler := New(devStorage, pktStorage, GetLogger(t, "Handler"))
-		err := handler.Register(r, an)
+		handler := New(devStorage, pktStorage, broker, GetLogger(t, "Handler"))
+		err := handler.Register(r, an, sub)
 
 		// Check
 		CheckErrors(t, pointer.String(string(errors.Operational)), err)
@@ -96,9 +109,10 @@ func TestHandleDown(t *testing.T) {
 			[]Metadata{},
 		)
 		data, _ := pkt.MarshalBinary()
+		broker := NewMockJSONRecipient()
 
 		// Operate
-		handler := New(devStorage, pktStorage, GetLogger(t, "Handler"))
+		handler := New(devStorage, pktStorage, broker, GetLogger(t, "Handler"))
 		err := handler.HandleDown(data, an, adapter)
 
 		// Check
@@ -120,9 +134,10 @@ func TestHandleDown(t *testing.T) {
 		pktStorage := newMockPktStorage()
 		an := NewMockAckNacker()
 		adapter := NewMockAdapter()
+		broker := NewMockJSONRecipient()
 
 		// Operate
-		handler := New(devStorage, pktStorage, GetLogger(t, "Handler"))
+		handler := New(devStorage, pktStorage, broker, GetLogger(t, "Handler"))
 		err := handler.HandleDown([]byte{1, 2, 3}, an, adapter)
 
 		// Check
@@ -151,9 +166,10 @@ func TestHandleDown(t *testing.T) {
 			Metadata{},
 		)
 		data, _ := pkt.MarshalBinary()
+		broker := NewMockJSONRecipient()
 
 		// Operate
-		handler := New(devStorage, pktStorage, GetLogger(t, "Handler"))
+		handler := New(devStorage, pktStorage, broker, GetLogger(t, "Handler"))
 		err := handler.HandleDown(data, an, adapter)
 
 		// Check
@@ -189,9 +205,10 @@ func TestHandleUp(t *testing.T) {
 			[16]byte{1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2},
 		)
 		dataIn, _ := inPkt.MarshalBinary()
+		broker := NewMockJSONRecipient()
 
 		// Operate
-		handler := New(devStorage, pktStorage, GetLogger(t, "Handler"))
+		handler := New(devStorage, pktStorage, broker, GetLogger(t, "Handler"))
 		err := handler.HandleUp(dataIn, an, adapter)
 
 		// Check
@@ -211,9 +228,10 @@ func TestHandleUp(t *testing.T) {
 		pktStorage := newMockPktStorage()
 		an := NewMockAckNacker()
 		adapter := NewMockAdapter()
+		broker := NewMockJSONRecipient()
 
 		// Operate
-		handler := New(devStorage, pktStorage, GetLogger(t, "Handler"))
+		handler := New(devStorage, pktStorage, broker, GetLogger(t, "Handler"))
 		err := handler.HandleUp([]byte{1, 2, 3}, an, adapter)
 
 		// Check
@@ -260,9 +278,10 @@ func TestHandleUp(t *testing.T) {
 			NwkSKey:   [16]byte{4, 4, 4, 4, 3, 3, 3, 3, 4, 4, 4, 4, 3, 3, 3, 3},
 		}
 		pktStorage := newMockPktStorage()
+		broker := NewMockJSONRecipient()
 
 		// Operate
-		handler := New(devStorage, pktStorage, GetLogger(t, "Handler"))
+		handler := New(devStorage, pktStorage, broker, GetLogger(t, "Handler"))
 		err := handler.HandleUp(dataIn, an, adapter)
 
 		// Check
@@ -280,7 +299,7 @@ func TestHandleUp(t *testing.T) {
 		Desc(t, "Handle uplink with 2 packets in a row | No downlink ready")
 
 		// Build
-		recipient := NewMockRecipient()
+		recipient := NewMockJSONRecipient()
 		dataRecipient, _ := recipient.MarshalBinary()
 
 		// First Packet
@@ -333,9 +352,10 @@ func TestHandleUp(t *testing.T) {
 			NwkSKey:   [16]byte{4, 4, 4, 4, 3, 3, 3, 3, 4, 4, 4, 4, 3, 3, 3, 3},
 		}
 		pktStorage := newMockPktStorage()
+		broker := NewMockJSONRecipient()
 
 		// Operate
-		handler := New(devStorage, pktStorage, GetLogger(t, "Handler"))
+		handler := New(devStorage, pktStorage, broker, GetLogger(t, "Handler"))
 		done := sync.WaitGroup{}
 		done.Add(2)
 		go func() {
@@ -371,7 +391,7 @@ func TestHandleUp(t *testing.T) {
 		Desc(t, "Handle uplink with 1 packet | One downlink response")
 
 		// Build
-		recipient := NewMockRecipient()
+		recipient := NewMockJSONRecipient()
 		dataRecipient, _ := recipient.MarshalBinary()
 		an := NewMockAckNacker()
 		adapter := NewMockAdapter()
@@ -417,9 +437,10 @@ func TestHandleUp(t *testing.T) {
 		}
 		pktStorage := newMockPktStorage()
 		pktStorage.OutPull = appResp
+		broker := NewMockJSONRecipient()
 
 		// Operate
-		handler := New(devStorage, pktStorage, GetLogger(t, "Handler"))
+		handler := New(devStorage, pktStorage, broker, GetLogger(t, "Handler"))
 		err := handler.HandleUp(dataIn, an, adapter)
 
 		// Check
@@ -437,7 +458,7 @@ func TestHandleUp(t *testing.T) {
 		Desc(t, "Handle a late uplink | No downlink ready")
 
 		// Build
-		recipient := NewMockRecipient()
+		recipient := NewMockJSONRecipient()
 		dataRecipient, _ := recipient.MarshalBinary()
 		an2 := NewMockAckNacker()
 		an1 := NewMockAckNacker()
@@ -471,9 +492,10 @@ func TestHandleUp(t *testing.T) {
 			NwkSKey:   [16]byte{4, 4, 4, 4, 3, 3, 3, 3, 4, 4, 4, 4, 3, 3, 3, 3},
 		}
 		pktStorage := newMockPktStorage()
+		broker := NewMockJSONRecipient()
 
 		// Operate
-		handler := New(devStorage, pktStorage, GetLogger(t, "Handler"))
+		handler := New(devStorage, pktStorage, broker, GetLogger(t, "Handler"))
 		done := sync.WaitGroup{}
 		done.Add(2)
 		go func() {
@@ -506,7 +528,7 @@ func TestHandleUp(t *testing.T) {
 		Desc(t, "Handle uplink with 1 packet | No downlink ready | No Metadata ")
 
 		// Build
-		recipient := NewMockRecipient()
+		recipient := NewMockJSONRecipient()
 		dataRecipient, _ := recipient.MarshalBinary()
 		an := NewMockAckNacker()
 		adapter := NewMockAdapter()
@@ -535,9 +557,10 @@ func TestHandleUp(t *testing.T) {
 			NwkSKey:   [16]byte{4, 4, 4, 4, 3, 3, 3, 3, 4, 4, 4, 4, 3, 3, 3, 3},
 		}
 		pktStorage := newMockPktStorage()
+		broker := NewMockJSONRecipient()
 
 		// Operate
-		handler := New(devStorage, pktStorage, GetLogger(t, "Handler"))
+		handler := New(devStorage, pktStorage, broker, GetLogger(t, "Handler"))
 		err := handler.HandleUp(dataIn, an, adapter)
 
 		// Check
@@ -555,7 +578,7 @@ func TestHandleUp(t *testing.T) {
 		Desc(t, "Handle uplink with 1 packet | No downlink ready | Adapter fail sending ")
 
 		// Build
-		recipient := NewMockRecipient()
+		recipient := NewMockJSONRecipient()
 		dataRecipient, _ := recipient.MarshalBinary()
 		an := NewMockAckNacker()
 		adapter := NewMockAdapter()
@@ -588,9 +611,10 @@ func TestHandleUp(t *testing.T) {
 			NwkSKey:   [16]byte{4, 4, 4, 4, 3, 3, 3, 3, 4, 4, 4, 4, 3, 3, 3, 3},
 		}
 		pktStorage := newMockPktStorage()
+		broker := NewMockJSONRecipient()
 
 		// Operate
-		handler := New(devStorage, pktStorage, GetLogger(t, "Handler"))
+		handler := New(devStorage, pktStorage, broker, GetLogger(t, "Handler"))
 		err := handler.HandleUp(dataIn, an, adapter)
 
 		// Check
@@ -608,7 +632,7 @@ func TestHandleUp(t *testing.T) {
 		Desc(t, "Handle uplink with 1 packet | No downlink ready | Adapter fail GetRecipient")
 
 		// Build
-		recipient := NewMockRecipient()
+		recipient := NewMockJSONRecipient()
 		dataRecipient, _ := recipient.MarshalBinary()
 		an := NewMockAckNacker()
 		adapter := NewMockAdapter()
@@ -635,9 +659,10 @@ func TestHandleUp(t *testing.T) {
 			NwkSKey:   [16]byte{4, 4, 4, 4, 3, 3, 3, 3, 4, 4, 4, 4, 3, 3, 3, 3},
 		}
 		pktStorage := newMockPktStorage()
+		broker := NewMockJSONRecipient()
 
 		// Operate
-		handler := New(devStorage, pktStorage, GetLogger(t, "Handler"))
+		handler := New(devStorage, pktStorage, broker, GetLogger(t, "Handler"))
 		err := handler.HandleUp(dataIn, an, adapter)
 
 		// Check
@@ -655,7 +680,7 @@ func TestHandleUp(t *testing.T) {
 		Desc(t, "Handle uplink with 1 packet | No downlink ready | PktStorage fails to pull")
 
 		// Build
-		recipient := NewMockRecipient()
+		recipient := NewMockJSONRecipient()
 		dataRecipient, _ := recipient.MarshalBinary()
 		an := NewMockAckNacker()
 		adapter := NewMockAdapter()
@@ -688,9 +713,10 @@ func TestHandleUp(t *testing.T) {
 		}
 		pktStorage := newMockPktStorage()
 		pktStorage.Failures["Pull"] = errors.New(errors.Operational, "Mock Error: Failed to Pull")
+		broker := NewMockJSONRecipient()
 
 		// Operate
-		handler := New(devStorage, pktStorage, GetLogger(t, "Handler"))
+		handler := New(devStorage, pktStorage, broker, GetLogger(t, "Handler"))
 		err := handler.HandleUp(dataIn, an, adapter)
 
 		// Check

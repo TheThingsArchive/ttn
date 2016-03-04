@@ -37,7 +37,6 @@ func TestPubSub(t *testing.T) {
 			Payload:     "TheThingsNetwork",
 			ContentType: "application/json",
 			Method:      "PUT",
-			DevEUI:      "0000000011223344",
 			ShouldAck:   false,
 
 			WantContent:      string(errors.Structural),
@@ -46,11 +45,19 @@ func TestPubSub(t *testing.T) {
 			WantError:        nil,
 		},
 		{
-			Desc:        "Valid Payload. Invalid ContentType. Valid Method. Valid DevEUI. Nack",
-			Payload:     `{"app_eui":"0011223344556677","nwks_key":"00112233445566778899001122334455","app_url":"url"}`,
+			Desc: "Valid Payload. Invalid ContentType. Valid Method. Valid DevEUI. Nack",
+			Payload: `{
+				"app_eui":"0001020304050607",
+				"nwks_key":"00010203040506070809000102030405",
+				"dev_eui": "0000000001020304",
+				"recipient": {
+					"url": "url",
+					"method": "PUT"
+				}
+			}`,
 			ContentType: "text/plain",
 			Method:      "PUT",
-			DevEUI:      "0000000011223344",
+			DevEUI:      "",
 			ShouldAck:   false,
 
 			WantContent:      string(errors.Structural),
@@ -59,11 +66,19 @@ func TestPubSub(t *testing.T) {
 			WantError:        nil,
 		},
 		{
-			Desc:        "Valid Payload. Valid ContentType. Invalid Method. Valid DevEUI. Nack",
-			Payload:     `{"app_eui":"0011223344556677","nwks_key":"00112233445566778899001122334455","app_url":"url"}`,
+			Desc: "Valid Payload. Valid ContentType. Invalid Method. Valid DevEUI. Nack",
+			Payload: `{
+				"app_eui":"0001020304050607",
+				"nwks_key":"00010203040506070809000102030405",
+				"dev_eui": "0000000001020304",
+				"recipient": {
+					"url": "url",
+					"method": "PUT"
+				}
+			}`,
 			ContentType: "application/json",
 			Method:      "POST",
-			DevEUI:      "0000000011223344",
+			DevEUI:      "0000000001020304",
 			ShouldAck:   false,
 
 			WantContent:      string(errors.Structural),
@@ -72,8 +87,16 @@ func TestPubSub(t *testing.T) {
 			WantError:        nil,
 		},
 		{
-			Desc:        "Valid Payload. Valid ContentType. Valid Method. Invalid DevEUI. Nack",
-			Payload:     `{"app_eui":"0011223344556677","nwks_key":"00112233445566778899001122334455","app_url":"url"}`,
+			Desc: "Valid Payload. Valid ContentType. Valid Method. Invalid DevEUI. Nack",
+			Payload: `{
+				"app_eui":"0001020304050607",
+				"nwks_key":"00010203040506070809000102030405",
+				"dev_eui": "0000001144",
+				"recipient": {
+					"url": "url",
+					"method": "PUT"
+				}
+			}`,
 			ContentType: "application/json",
 			Method:      "PUT",
 			DevEUI:      "12345678",
@@ -85,8 +108,16 @@ func TestPubSub(t *testing.T) {
 			WantError:        nil,
 		},
 		{
-			Desc:        "Valid Payload. Valid ContentType. Valid Method. Valid DevEUI. Nack",
-			Payload:     `{"app_eui":"0001020304050607","nwks_key":"00010203040506070809000102030405","app_url":"url"}`,
+			Desc: "Valid Payload. Valid ContentType. Valid Method. Valid DevEUI. Nack",
+			Payload: `{
+				"app_eui":"0001020304050607",
+				"nwks_key":"00010203040506070809000102030405",
+				"dev_eui": "0000000001020304",
+				"recipient": {
+					"url": "url",
+					"method": "PUT"
+				}
+			}`,
 			ContentType: "application/json",
 			Method:      "PUT",
 			DevEUI:      "0000000001020304",
@@ -103,8 +134,16 @@ func TestPubSub(t *testing.T) {
 			WantError: nil,
 		},
 		{
-			Desc:        "Valid Payload. Valid ContentType. Valid Method. Valid DevEUI. Ack",
-			Payload:     `{"app_eui":"0001020304050607","nwks_key":"00010203040506070809000102030405","app_url":"url"}`,
+			Desc: "Valid Payload. Valid ContentType. Valid Method. Valid DevEUI. Ack",
+			Payload: `{
+				"app_eui":"0001020304050607",
+				"nwks_key":"00010203040506070809000102030405",
+				"dev_eui": "0000000001020304",
+				"recipient": {
+					"url": "url",
+					"method": "PUT"
+				}
+			}`,
 			ContentType: "application/json",
 			Method:      "PUT",
 			DevEUI:      "0000000001020304",
@@ -133,7 +172,7 @@ func TestPubSub(t *testing.T) {
 		client := testClient{}
 
 		// Operate
-		url = fmt.Sprintf("%s%s", url, test.DevEUI)
+		url = fmt.Sprintf("%s", url)
 		chresp := client.Send(test.Payload, url, test.Method, test.ContentType)
 		registration, err := tryNextRegistration(adapter, test.ShouldAck, test.AckPacket)
 		var statusCode int
@@ -146,6 +185,7 @@ func TestPubSub(t *testing.T) {
 		}
 
 		// Check
+		t.Log(string(content))
 		CheckErrors(t, test.WantError, err)
 		checkStatusCode(t, test.WantStatusCode, statusCode)
 		checkContent(t, test.WantContent, content)

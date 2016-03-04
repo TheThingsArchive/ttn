@@ -5,6 +5,7 @@ package http
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -66,6 +67,34 @@ func NewAdapter(net string, recipients []core.Recipient, ctx log.Interface) (*Ad
 	go a.listenRequests(net)
 
 	return &a, nil
+}
+
+// Register implements the core.Subscriber interface
+func (a *Adapter) Subscribe(r core.Registration) error {
+	jsonMarshaler, ok := r.(json.Marshaler)
+	if !ok {
+		return errors.New(errors.Structural, "Unable to marshal registration")
+	}
+	httpRecipient, ok := r.Recipient().(Recipient)
+	if !ok {
+		return errors.New(errors.Structural, "Invalid recipient")
+	}
+
+	data, err := jsonMarshaler.MarshalJSON()
+	if err != nil {
+		return errors.New(errors.Structural, err)
+	}
+	buf := new(bytes.Buffer)
+	buf.Write(data)
+	resp, err := a.Post(fmt.Sprintf("http://%s", httpRecipient.URL()), "application/json", buf)
+	if err != nil {
+		return errors.New(errors.Operational, err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusAccepted && resp.StatusCode != http.StatusOK {
+		return errors.New(errors.Operational, "Unable to subscribe")
+	}
+	return nil
 }
 
 // Send implements the core.Adapter interface

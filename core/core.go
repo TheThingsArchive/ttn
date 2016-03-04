@@ -14,7 +14,23 @@ import (
 type Component interface {
 	Register(reg Registration, an AckNacker) error
 	HandleUp(p []byte, an AckNacker, upAdapter Adapter) error
-	HandleDown(p []byte, an AckNacker, downAdapter Adapter) error
+	HandleDown(p []byte, an AckNacker) error
+}
+
+type Handler interface {
+	Register(reg Registration, an AckNacker, s Subscriber) error
+	HandleUp(p []byte, an AckNacker, upAdapter Adapter) error
+	HandleDown(p []byte, an AckNacker, down Adapter) error
+}
+
+type Router interface {
+	Register(reg Registration, an AckNacker) error
+	HandleUp(p []byte, an AckNacker, up Adapter) error
+}
+
+type Broker interface {
+	Register(reg Registration, an AckNacker) error
+	HandleUp(p []byte, an AckNacker, up Adapter) error
 }
 
 // NetworkController is directly used by the broker to manage nodes lifecycle.
@@ -40,4 +56,8 @@ type Adapter interface {
 	GetRecipient(raw []byte) (Recipient, error)
 	Next() ([]byte, AckNacker, error)
 	NextRegistration() (Registration, AckNacker, error)
+}
+
+type Subscriber interface {
+	Subscribe(reg Registration) error
 }

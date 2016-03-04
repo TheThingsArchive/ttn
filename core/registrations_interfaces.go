@@ -5,6 +5,7 @@ package core
 
 import (
 	"encoding"
+	"encoding/json"
 
 	"github.com/brocaar/lorawan"
 )
@@ -12,6 +13,12 @@ import (
 // Recipient represents the recipient manipulated by adapters
 type Recipient interface {
 	encoding.BinaryMarshaler
+}
+
+// JSONRecipient extends the actual Recipient to also support json marshalin/unmarshaling
+type JSONRecipient interface {
+	Recipient
+	json.Marshaler
 }
 
 // Registration gives an elementary base for each other registration levels

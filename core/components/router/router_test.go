@@ -76,28 +76,6 @@ func TestRegister(t *testing.T) {
 	}
 }
 
-func TestHandleDown(t *testing.T) {
-	{
-		Desc(t, "Try Handle Down")
-
-		// Build
-		an := NewMockAckNacker()
-		adapter := NewMockAdapter()
-		store := newMockStorage()
-
-		// Operate
-		router := New(store, GetLogger(t, "Router"))
-		err := router.HandleDown([]byte{1, 2, 3}, an, adapter)
-
-		// Check
-		CheckErrors(t, pointer.String(string(errors.Implementation)), err)
-		CheckAcks(t, false, an.InAck)
-		CheckRegistrations(t, nil, store.InStore)
-		CheckSent(t, nil, adapter.InSendPacket)
-		CheckRecipients(t, nil, adapter.InSendRecipients)
-	}
-}
-
 func TestHandleUp(t *testing.T) {
 	{
 		Desc(t, "Send an unknown packet | No downlink")

@@ -5,12 +5,15 @@ package http
 
 import (
 	"encoding"
+	"encoding/json"
 
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/readwriter"
 )
 
 // Recipient represents the recipient used by the http adapter
 type Recipient interface {
+	json.Marshaler
 	encoding.BinaryMarshaler
 	URL() string
 	Method() string
@@ -51,4 +54,19 @@ func (h *recipient) UnmarshalBinary(data []byte) error {
 	r.Read(func(data []byte) { h.url = string(data) })
 	r.Read(func(data []byte) { h.method = string(data) })
 	return r.Err()
+}
+
+// MarshalJSON implements the encoding/json.Marshaler interface
+func (h recipient) MarshalJSON() ([]byte, error) {
+	data, err := json.Marshal(struct {
+		Url    string `json:"url"`
+		Method string `json:"method"`
+	}{
+		Url:    h.url,
+		Method: h.method,
+	})
+	if err != nil {
+		return nil, errors.New(errors.Structural, err)
+	}
+	return data, nil
 }

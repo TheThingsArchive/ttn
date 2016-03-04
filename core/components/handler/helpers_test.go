@@ -106,3 +106,17 @@ func CheckEntries(t *testing.T, want MockHRegistration, got devEntry) {
 
 	Check(t, wantEntry, got, "Entries")
 }
+
+func CheckSubscriptions(t *testing.T, want BRegistration, got Registration) {
+	var mockGot BRegistration
+	bgot, ok := got.(BRegistration)
+	if got != nil && ok {
+		r := NewMockBRegistration()
+		r.OutRecipient = bgot.Recipient()
+		r.OutDevEUI = bgot.DevEUI()
+		r.OutAppEUI = bgot.AppEUI()
+		r.OutNwkSKey = bgot.NwkSKey()
+		mockGot = r
+	}
+	Check(t, want, mockGot, "Subscriptions")
+}
