@@ -29,17 +29,26 @@ or more brokers. The router is also responsible for monitoring gateways,
 collecting statistics from gateways and for enforcing TTN's fair use policy when
 the gateway's duty cycle is (almost) full.`,
 	PreRun: func(cmd *cobra.Command, args []string) {
+		var statusServer string
+		if viper.GetInt("router.status-port") > 0 {
+			statusServer = fmt.Sprintf("%s:%d", viper.GetString("router.status-bind-address"), viper.GetInt("router.status-port"))
+		} else {
+			statusServer = "disabled"
+		}
+
 		ctx.WithFields(log.Fields{
 			"database":      viper.GetString("router.database"),
-			"uplink-port":   viper.GetInt("router.uplink-port"),
-			"downlink-port": viper.GetInt("router.downlink-port"),
+			"status-server": statusServer,
+			"uplink":        fmt.Sprintf("%s:%d", viper.GetString("router.uplink-bind-address"), viper.GetInt("router.uplink-port")),
+			"downlink":      fmt.Sprintf("%s:%d", viper.GetString("router.downlink-bind-address"), viper.GetInt("router.downlink-port")),
 			"brokers":       viper.GetString("router.brokers"),
 		}).Info("Using Configuration")
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx.Info("Starting")
 
-		gtwAdapter, err := udp.NewAdapter(uint(viper.GetInt("router.uplink-port")), ctx.WithField("adapter", "gateway-semtech"))
+		gtwNet := fmt.Sprintf("%s:%d", viper.GetString("router.uplink-bind-address"), viper.GetInt("router.uplink-port"))
+		gtwAdapter, err := udp.NewAdapter(gtwNet, ctx.WithField("adapter", "gateway-semtech"))
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not start Gateway Adapter")
 		}
@@ -52,13 +61,15 @@ the gateway's duty cycle is (almost) full.`,
 			brokers = append(brokers, http.NewRecipient(url, "POST"))
 		}
 
-		brkAdapter, err := http.NewAdapter(uint(viper.GetInt("router.downlink-port")), brokers, ctx.WithField("adapter", "broker-http"))
+		brkNet := fmt.Sprintf("%s:%d", viper.GetString("router.downlink-bind-address"), viper.GetInt("router.downlink-port"))
+		brkAdapter, err := http.NewAdapter(brkNet, brokers, ctx.WithField("adapter", "broker-http"))
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not start Broker Adapter")
 		}
 
 		if viper.GetInt("router.status-port") > 0 {
-			statusAdapter, err := http.NewAdapter(uint(viper.GetInt("router.status-port")), nil, ctx.WithField("adapter", "status-http"))
+			statusNet := fmt.Sprintf("%s:%d", viper.GetString("router.status-bind-address"), viper.GetInt("router.status-port"))
+			statusAdapter, err := http.NewAdapter(statusNet, nil, ctx.WithField("adapter", "status-http"))
 			if err != nil {
 				ctx.WithError(err).Fatal("Could not start Status Adapter")
 			}
@@ -133,14 +144,21 @@ func init() {
 	routerCmd.Flags().String("database", "boltdb:/tmp/ttn_router.db", "Database connection")
 	viper.BindPFlag("router.database", routerCmd.Flags().Lookup("database"))
 
+	routerCmd.Flags().String("status-bind-address", "localhost", "The IP address to listen for serving status information")
 	routerCmd.Flags().Int("status-port", 10700, "The port of the status server, use 0 to disable")
+	viper.BindPFlag("router.status-bind-address", routerCmd.Flags().Lookup("status-bind-address"))
 	viper.BindPFlag("router.status-port", routerCmd.Flags().Lookup("status-port"))
 
+	routerCmd.Flags().String("uplink-bind-address", "", "The IP address to listen for uplink messages from gateways")
 	routerCmd.Flags().Int("uplink-port", 1700, "The UDP port for the uplink")
+	viper.BindPFlag("router.uplink-bind-address", routerCmd.Flags().Lookup("uplink-bind-address"))
 	viper.BindPFlag("router.uplink-port", routerCmd.Flags().Lookup("uplink-port"))
 
+	routerCmd.Flags().String("downlink-bind-address", "", "The IP address to listen for downlink messages from routers")
 	routerCmd.Flags().Int("downlink-port", 1780, "The port for the downlink")
+	viper.BindPFlag("router.downlink-bind-address", routerCmd.Flags().Lookup("downlink-bind-address"))
 	viper.BindPFlag("router.downlink-port", routerCmd.Flags().Lookup("downlink-port"))
+
 	routerCmd.Flags().String("brokers", ":1881", "Comma-separated list of brokers")
 	viper.BindPFlag("router.brokers", routerCmd.Flags().Lookup("brokers"))
 }
