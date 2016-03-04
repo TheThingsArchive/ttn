@@ -8,7 +8,6 @@ import (
 	"path"
 	"testing"
 
-	. "github.com/TheThingsNetwork/ttn/core"
 	. "github.com/TheThingsNetwork/ttn/core/mocks"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	. "github.com/TheThingsNetwork/ttn/utils/errors/checks"

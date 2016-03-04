@@ -19,7 +19,7 @@ const maxDutyCycle = 90 // 90%
 
 // component implements the core.Component interface
 type component struct {
-	broker  Recipient
+	broker  JSONRecipient
 	ctx     log.Interface
 	devices DevStorage
 	packets PktStorage
@@ -35,7 +35,7 @@ type bundle struct {
 }
 
 // New construct a new Handler
-func New(devDb DevStorage, pktDb PktStorage, broker Recipient, ctx log.Interface) Handler {
+func New(devDb DevStorage, pktDb PktStorage, broker JSONRecipient, ctx log.Interface) Handler {
 	h := component{
 		ctx:     ctx,
 		devices: devDb,
