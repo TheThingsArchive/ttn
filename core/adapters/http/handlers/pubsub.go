@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-	"regexp"
 	"strings"
 
 	"github.com/TheThingsNetwork/ttn/core"
@@ -19,15 +18,19 @@ import (
 
 // PubSub defines a handler to handle application | devEUI registration on a component.
 //
-// It listens to request of the form: [PUT] /end-devices/:devEUI
+// It listens to request of the form: [PUT] /end-devices
 // where devEUI is a 8 bytes hex-encoded address.
 //
 // It expects a Content-Type = application/json
 //
 // It also looks for params:
 //
+// - dev_eui (8 bytes hex-encoded string)
 // - app_eui (8 bytes hex-encoded string)
-// - app_url (http address as string)
+// - recipient {
+// -	url (http address as string)
+// -    method (http verb as string)
+// - }
 // - nwks_key (16 bytes hex-encoded string)
 //
 // It fails with an http 400 Bad Request. if one of the parameter is missing or invalid
@@ -83,17 +86,6 @@ func (p PubSub) parse(req *http.Request) (core.Registration, error) {
 		return pubSubRegistration{}, errors.New(errors.Structural, "Received invalid content-type in request")
 	}
 
-	// Check the query parameter
-	reg := regexp.MustCompile("end-devices/([a-fA-F0-9]{16})$") // 8-bytes, hex-encoded -> 16 chars
-	query := reg.FindStringSubmatch(req.RequestURI)
-	if len(query) < 2 {
-		return pubSubRegistration{}, errors.New(errors.Structural, "Incorrect end-device address format")
-	}
-	devEUI, err := hex.DecodeString(query[1])
-	if err != nil {
-		return pubSubRegistration{}, errors.New(errors.Structural, err)
-	}
-
 	// Check configuration in body
 	body := make([]byte, req.ContentLength)
 	n, err := req.Body.Read(body)
@@ -101,11 +93,15 @@ func (p PubSub) parse(req *http.Request) (core.Registration, error) {
 		return pubSubRegistration{}, errors.New(errors.Structural, err)
 	}
 	defer req.Body.Close()
-	params := &struct {
-		AppEUI  string `json:"app_eui"`
-		URL     string `json:"app_url"`
+	params := new(struct {
+		AppEUI    string `json:"app_eui"`
+		DevEUI    string `json:"dev_eui"`
+		Recipient struct {
+			URL    string `json:"url"`
+			Method string `json:"method"`
+		} `json:"recipient"`
 		NwkSKey string `json:"nwks_key"`
-	}{}
+	})
 	if err := json.Unmarshal(body[:n], params); err != nil {
 		return pubSubRegistration{}, errors.New(errors.Structural, "Unable to unmarshal the request body")
 	}
@@ -121,14 +117,24 @@ func (p PubSub) parse(req *http.Request) (core.Registration, error) {
 		return pubSubRegistration{}, errors.New(errors.Structural, "Incorrect application eui")
 	}
 
-	params.URL = strings.Trim(params.URL, " ")
-	if len(params.URL) <= 0 {
+	devEUI, err := hex.DecodeString(params.DevEUI)
+	if err != nil || len(devEUI) != 8 {
+		return pubSubRegistration{}, errors.New(errors.Structural, "Incorrect device eui")
+	}
+
+	params.Recipient.URL = strings.Trim(params.Recipient.URL, " ")
+	if len(params.Recipient.URL) <= 0 {
 		return pubSubRegistration{}, errors.New(errors.Structural, "Incorrect application url")
+	}
+
+	params.Recipient.Method = strings.Trim(params.Recipient.Method, " ")
+	if len(params.Recipient.Method) <= 0 {
+		return pubSubRegistration{}, errors.New(errors.Structural, "Incorrect application method")
 	}
 
 	// Create actual registration
 	registration := pubSubRegistration{
-		recipient: NewRecipient(params.URL, "PUT"),
+		recipient: NewRecipient(params.Recipient.URL, params.Recipient.Method),
 		appEUI:    lorawan.EUI64{},
 		devEUI:    lorawan.EUI64{},
 		nwkSKey:   lorawan.AES128Key{},
