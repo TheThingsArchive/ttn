@@ -68,8 +68,8 @@ func GetSubBand(freq float64) (subBand, error) {
 	return "", errors.New(errors.Structural, "Unknown frequency")
 }
 
-// NewDutyManager constructs a new gateway manager from
-func NewDutyManager(filepath string, cycleLength time.Duration, r region) (DutyManager, error) {
+// NewManager constructs a new gateway manager from
+func NewManager(filepath string, cycleLength time.Duration, r region) (DutyManager, error) {
 	var maxDuty map[subBand]float64
 	switch r {
 	case Europe:
@@ -165,7 +165,6 @@ func (m *dutyManager) Lookup(id []byte) (map[subBand]uint, error) {
 	if entry.Until.After(time.Now()) {
 		for s, toa := range entry.OnAir {
 			// The actual duty cycle
-			fmt.Println(s, toa)
 			dutyCycle := float64(toa.Nanoseconds()) / float64(m.CycleLength.Nanoseconds())
 			// Now, how full are we comparing to the limitation, in percent
 			cycles[s] = uint(100 * dutyCycle / m.MaxDutyCycle[s])

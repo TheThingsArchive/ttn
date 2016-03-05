@@ -53,7 +53,7 @@ func TestNewManager(t *testing.T) {
 	}()
 	{
 		Desc(t, "Europe with valid cycleLength")
-		m, err := NewDutyManager(dutyManagerDB, time.Minute, Europe)
+		m, err := NewManager(dutyManagerDB, time.Minute, Europe)
 		errutil.CheckErrors(t, nil, err)
 		err = m.Close()
 		errutil.CheckErrors(t, nil, err)
@@ -61,13 +61,13 @@ func TestNewManager(t *testing.T) {
 
 	{
 		Desc(t, "Europe with invalid cycleLength")
-		_, err := NewDutyManager(dutyManagerDB, 0, Europe)
+		_, err := NewManager(dutyManagerDB, 0, Europe)
 		errutil.CheckErrors(t, pointer.String(string(errors.Structural)), err)
 	}
 
 	{
 		Desc(t, "Not europe with valid cycleLength")
-		_, err := NewDutyManager(dutyManagerDB, time.Minute, China)
+		_, err := NewManager(dutyManagerDB, time.Minute, China)
 		errutil.CheckErrors(t, pointer.String(string(errors.Implementation)), err)
 	}
 }
@@ -80,7 +80,7 @@ func TestUpdateAndLookup(t *testing.T) {
 		Desc(t, "Update unsupported frequency")
 
 		// Build
-		m, _ := NewDutyManager(dutyManagerDB, time.Minute, Europe)
+		m, _ := NewManager(dutyManagerDB, time.Minute, Europe)
 
 		// Operate
 		err := m.Update([]byte{1, 2, 3}, 433.65, 100, "SF8BW125", "4/5")
@@ -95,7 +95,7 @@ func TestUpdateAndLookup(t *testing.T) {
 		Desc(t, "Update invalid datr")
 
 		// Build
-		m, _ := NewDutyManager(dutyManagerDB, time.Minute, Europe)
+		m, _ := NewManager(dutyManagerDB, time.Minute, Europe)
 
 		// Operate
 		err := m.Update([]byte{1, 2, 3}, 868.1, 100, "SF3BW125", "4/5")
@@ -110,7 +110,7 @@ func TestUpdateAndLookup(t *testing.T) {
 		Desc(t, "Update invalid codr")
 
 		// Build
-		m, _ := NewDutyManager(dutyManagerDB, time.Minute, Europe)
+		m, _ := NewManager(dutyManagerDB, time.Minute, Europe)
 
 		// Operate
 		err := m.Update([]byte{1, 2, 3}, 869.5, 100, "SF8BW125", "14")
@@ -125,7 +125,7 @@ func TestUpdateAndLookup(t *testing.T) {
 		Desc(t, "Update once then lookup")
 
 		// Build
-		m, _ := NewDutyManager(dutyManagerDB, time.Minute, Europe)
+		m, _ := NewManager(dutyManagerDB, time.Minute, Europe)
 
 		// Operate
 		err := m.Update([]byte{1, 2, 3}, 868.5, 14, "SF8BW125", "4/5")
@@ -148,7 +148,7 @@ func TestUpdateAndLookup(t *testing.T) {
 		Desc(t, "Update several then lookup")
 
 		// Build
-		m, _ := NewDutyManager(dutyManagerDB, time.Minute, Europe)
+		m, _ := NewManager(dutyManagerDB, time.Minute, Europe)
 
 		// Operate
 		err := m.Update([]byte{4, 5, 6}, 868.523, 14, "SF8BW125", "4/5")
@@ -176,7 +176,7 @@ func TestUpdateAndLookup(t *testing.T) {
 		Desc(t, "Update out of cycle then lookup")
 
 		// Build
-		m, _ := NewDutyManager(dutyManagerDB, 250*time.Millisecond, Europe)
+		m, _ := NewManager(dutyManagerDB, 250*time.Millisecond, Europe)
 
 		// Operate
 		err := m.Update([]byte{16, 2, 3}, 868.523, 14, "SF8BW125", "4/7")
@@ -202,7 +202,7 @@ func TestUpdateAndLookup(t *testing.T) {
 		Desc(t, "Lookup out of cycle")
 
 		// Build
-		m, _ := NewDutyManager(dutyManagerDB, time.Millisecond, Europe)
+		m, _ := NewManager(dutyManagerDB, time.Millisecond, Europe)
 
 		// Operate
 		err := m.Update([]byte{1, 2, 35}, 868.523, 14, "SF8BW125", "4/8")
