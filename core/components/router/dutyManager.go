@@ -81,6 +81,10 @@ func NewDutyManager(filepath string, cycleLength time.Duration, r region) (DutyM
 		return nil, errors.New(errors.Implementation, "Region not supported")
 	}
 
+	if cycleLength == 0 {
+		return nil, errors.New(errors.Structural, "Invalid cycleLength. Should be > 0")
+	}
+
 	// Try to start a database
 	db, err := dbutil.New(filepath)
 	if err != nil {
