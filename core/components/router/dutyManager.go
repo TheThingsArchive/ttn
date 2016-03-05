@@ -26,18 +26,19 @@ type DutyManager interface {
 type dutyManager struct {
 	sync.RWMutex
 	db           dbutil.Interface
+	bucket       string
 	CycleLength  time.Duration       // Duration upon which the duty-cycle is evaluated
 	MaxDutyCycle map[subBand]float64 // The percentage max duty cycle accepted for each sub-band
 }
 
 // Available sub-bands
 const (
-	EuropeRX1_A subBand = iota
-	EuropeRX1_B
-	EuropeRX2
+	EuropeRX1_A subBand = "EURX1A"
+	EuropeRX1_B subBand = "EURX1B"
+	EuropeRX2   subBand = "EURX2"
 )
 
-type subBand byte
+type subBand string
 
 // Available regions for LoRaWAN
 const (
@@ -64,7 +65,7 @@ func GetSubBand(freq float64) (subBand, error) {
 	if math.Floor(freq*10.0) == 8695.0 {
 		return EuropeRX2, nil
 	}
-	return 0, errors.New(errors.Structural, "Unknown frequency")
+	return "", errors.New(errors.Structural, "Unknown frequency")
 }
 
 // NewDutyManager constructs a new gateway manager from
@@ -93,6 +94,7 @@ func NewDutyManager(filepath string, cycleLength time.Duration, r region) (DutyM
 
 	return &dutyManager{
 		db:           db,
+		bucket:       "cycles",
 		CycleLength:  cycleLength,
 		MaxDutyCycle: maxDuty,
 	}, nil
@@ -108,7 +110,6 @@ func (m *dutyManager) Update(id []byte, freq float64, size uint, datr string, co
 	if err != nil {
 		return err
 	}
-	key := fmt.Sprintf("%+x", id)
 
 	// Compute the ime-on-air
 	timeOnAir, err := computeTOA(size, datr, codr)
@@ -119,21 +120,29 @@ func (m *dutyManager) Update(id []byte, freq float64, size uint, datr string, co
 	// Lookup and update the entry
 	m.Lock()
 	defer m.Unlock()
-	itf, err := m.db.Lookup(key, []byte("entry"), &dutyEntry{})
-	if err != nil {
+	itf, err := m.db.Lookup(m.bucket, id, &dutyEntry{})
+
+	var entry dutyEntry
+	if err == nil {
+		entry = itf.([]dutyEntry)[0]
+	} else if err.(errors.Failure).Nature == errors.Behavioural {
+		entry = dutyEntry{
+			Until: time.Unix(0, 0),
+			OnAir: make(map[subBand]time.Duration),
+		}
+	} else {
 		return err
 	}
-	entry := itf.([]dutyEntry)[0]
 
 	// If the previous cycle is done, we create a new one
 	if entry.Until.Before(time.Now()) {
-		entry.Until = time.Now()
+		entry.Until = time.Now().Add(m.CycleLength)
 		entry.OnAir[sub] = timeOnAir
 	} else {
 		entry.OnAir[sub] += timeOnAir
 	}
 
-	return m.db.Replace(key, []byte("entry"), []dbutil.Entry{&entry})
+	return m.db.Replace(m.bucket, id, []dbutil.Entry{&entry})
 }
 
 // Lookup returns the current bandwidth usages for a set of subband
@@ -145,7 +154,7 @@ func (m *dutyManager) Lookup(id []byte) (map[subBand]uint, error) {
 	defer m.RUnlock()
 
 	// Lookup the entry
-	itf, err := m.db.Lookup(fmt.Sprintf("%+x", id), []byte("entry"), &dutyEntry{})
+	itf, err := m.db.Lookup(m.bucket, id, &dutyEntry{})
 	if err != nil {
 		return nil, err
 	}
@@ -156,6 +165,7 @@ func (m *dutyManager) Lookup(id []byte) (map[subBand]uint, error) {
 	if entry.Until.After(time.Now()) {
 		for s, toa := range entry.OnAir {
 			// The actual duty cycle
+			fmt.Println(s, toa)
 			dutyCycle := float64(toa.Nanoseconds()) / float64(m.CycleLength.Nanoseconds())
 			// Now, how full are we comparing to the limitation, in percent
 			cycles[s] = uint(100 * dutyCycle / m.MaxDutyCycle[s])
@@ -200,7 +210,7 @@ func computeTOA(size uint, datr string, codr string) (time.Duration, error) {
 	bw, _ := strconv.ParseUint(matches[2], 10, 64)
 	bitrate := sf * cr * float64(bw) / math.Pow(2, sf)
 
-	return time.Duration(float64(size*8) / bitrate), nil
+	return time.ParseDuration(fmt.Sprintf("%fms", float64(size*8)/bitrate))
 }
 
 type dutyEntry struct {
