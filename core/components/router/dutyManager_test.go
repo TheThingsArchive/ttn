@@ -43,7 +43,7 @@ func TestGetSubBand(t *testing.T) {
 		Desc(t, "Test Unknown")
 		sb, err := GetSubBand(433.5)
 		errutil.CheckErrors(t, pointer.String(string(errors.Structural)), err)
-		CheckSubBands(t, 0, sb)
+		CheckSubBands(t, "", sb)
 	}
 }
 
@@ -53,7 +53,9 @@ func TestNewManager(t *testing.T) {
 	}()
 	{
 		Desc(t, "Europe with valid cycleLength")
-		_, err := NewDutyManager(dutyManagerDB, time.Minute, Europe)
+		m, err := NewDutyManager(dutyManagerDB, time.Minute, Europe)
+		errutil.CheckErrors(t, nil, err)
+		err = m.Close()
 		errutil.CheckErrors(t, nil, err)
 	}
 
@@ -67,5 +69,155 @@ func TestNewManager(t *testing.T) {
 		Desc(t, "Not europe with valid cycleLength")
 		_, err := NewDutyManager(dutyManagerDB, time.Minute, China)
 		errutil.CheckErrors(t, pointer.String(string(errors.Implementation)), err)
+	}
+}
+
+func TestUpdateAndLookup(t *testing.T) {
+	defer func() {
+		os.Remove(dutyManagerDB)
+	}()
+	{
+		Desc(t, "Update unsupported frequency")
+
+		// Build
+		m, _ := NewDutyManager(dutyManagerDB, time.Minute, Europe)
+
+		// Operate
+		err := m.Update([]byte{1, 2, 3}, 433.65, 100, "SF8BW125", "4/5")
+
+		// Check
+		errutil.CheckErrors(t, pointer.String(string(errors.Structural)), err)
+
+		// Clean
+		m.Close()
+	}
+	{
+		Desc(t, "Update invalid datr")
+
+		// Build
+		m, _ := NewDutyManager(dutyManagerDB, time.Minute, Europe)
+
+		// Operate
+		err := m.Update([]byte{1, 2, 3}, 868.1, 100, "SF3BW125", "4/5")
+
+		// Check
+		errutil.CheckErrors(t, pointer.String(string(errors.Structural)), err)
+
+		// Clean
+		m.Close()
+	}
+	{
+		Desc(t, "Update invalid codr")
+
+		// Build
+		m, _ := NewDutyManager(dutyManagerDB, time.Minute, Europe)
+
+		// Operate
+		err := m.Update([]byte{1, 2, 3}, 869.5, 100, "SF8BW125", "14")
+
+		// Check
+		errutil.CheckErrors(t, pointer.String(string(errors.Structural)), err)
+
+		// Clean
+		m.Close()
+	}
+	{
+		Desc(t, "Update once then lookup")
+
+		// Build
+		m, _ := NewDutyManager(dutyManagerDB, time.Minute, Europe)
+
+		// Operate
+		err := m.Update([]byte{1, 2, 3}, 868.5, 14, "SF8BW125", "4/5")
+		errutil.CheckErrors(t, nil, err)
+		bands, err := m.Lookup([]byte{1, 2, 3})
+
+		// Expectation
+		want := map[subBand]uint{
+			EuropeRX1_A: 5,
+		}
+
+		// Check
+		errutil.CheckErrors(t, nil, err)
+		CheckUsages(t, want, bands)
+
+		// Clean
+		m.Close()
+	}
+	{
+		Desc(t, "Update several then lookup")
+
+		// Build
+		m, _ := NewDutyManager(dutyManagerDB, time.Minute, Europe)
+
+		// Operate
+		err := m.Update([]byte{4, 5, 6}, 868.523, 14, "SF8BW125", "4/5")
+		errutil.CheckErrors(t, nil, err)
+		err = m.Update([]byte{4, 5, 6}, 868.123, 42, "SF9BW125", "4/5")
+		errutil.CheckErrors(t, nil, err)
+		err = m.Update([]byte{4, 5, 6}, 867.785, 42, "SF8BW125", "4/6")
+		errutil.CheckErrors(t, nil, err)
+		bands, err := m.Lookup([]byte{4, 5, 6})
+
+		// Expectation
+		want := map[subBand]uint{
+			EuropeRX1_A: 37,
+			EuropeRX1_B: 21,
+		}
+
+		// Check
+		errutil.CheckErrors(t, nil, err)
+		CheckUsages(t, want, bands)
+
+		// Clean
+		m.Close()
+	}
+	{
+		Desc(t, "Update out of cycle then lookup")
+
+		// Build
+		m, _ := NewDutyManager(dutyManagerDB, 250*time.Millisecond, Europe)
+
+		// Operate
+		err := m.Update([]byte{16, 2, 3}, 868.523, 14, "SF8BW125", "4/7")
+		errutil.CheckErrors(t, nil, err)
+		<-time.After(300 * time.Millisecond)
+		err = m.Update([]byte{16, 2, 3}, 868.123, 42, "SF9BW125", "4/5")
+		errutil.CheckErrors(t, nil, err)
+		bands, err := m.Lookup([]byte{16, 2, 3})
+
+		// Expectation
+		want := map[subBand]uint{
+			EuropeRX1_A: 7645,
+		}
+
+		// Check
+		errutil.CheckErrors(t, nil, err)
+		CheckUsages(t, want, bands)
+
+		// Clean
+		m.Close()
+	}
+	{
+		Desc(t, "Lookup out of cycle")
+
+		// Build
+		m, _ := NewDutyManager(dutyManagerDB, time.Millisecond, Europe)
+
+		// Operate
+		err := m.Update([]byte{1, 2, 35}, 868.523, 14, "SF8BW125", "4/8")
+		errutil.CheckErrors(t, nil, err)
+		<-time.After(300 * time.Millisecond)
+		bands, err := m.Lookup([]byte{1, 2, 35})
+
+		// Expectation
+		want := map[subBand]uint{}
+
+		// Check
+		errutil.CheckErrors(t, nil, err)
+		CheckUsages(t, want, bands)
+
+		// Clean
+		m.Close()
 	}
 }

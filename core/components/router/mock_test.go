@@ -10,6 +10,7 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
+// MockStorage to fake the Storage interface
 type mockStorage struct {
 	Failures  map[string]error
 	InLookup  lorawan.EUI64
