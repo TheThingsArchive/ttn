@@ -71,11 +71,3 @@ func CheckEntries(t *testing.T, want entry, got entry) {
 func CheckRegistrations(t *testing.T, want Registration, got Registration) {
 	Check(t, want, got, "Registrations")
 }
-
-func CheckSubBands(t *testing.T, want subBand, got subBand) {
-	Check(t, want, got, "SubBands")
-}
-
-func CheckUsages(t *testing.T, want map[subBand]uint, got map[subBand]uint) {
-	Check(t, want, got, "Usages")
-}
