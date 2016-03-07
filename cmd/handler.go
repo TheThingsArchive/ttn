@@ -38,6 +38,7 @@ The default handler is the bridge between The Things Network and applications.
 			"packetsDatabase": viper.GetString("handler.pkt-database"),
 			"status-server":   statusServer,
 			"uplink":          fmt.Sprintf("%s:%d", viper.GetString("handler.uplink-bind-address"), viper.GetInt("handler.uplink-port")),
+			"ttn-broker":      viper.GetString("handler.ttn-broker"),
 			"mqtt-broker":     viper.GetString("handler.mqtt-broker"),
 		}).Info("Using Configuration")
 	},
@@ -115,7 +116,7 @@ The default handler is the bridge between The Things Network and applications.
 		}
 
 		// Instantiate the broker to which is bound the handler
-		broker := http.NewRecipient(viper.GetString("handler.broker-client"), "PUT")
+		broker := http.NewRecipient(viper.GetString("handler.ttn-broker"), "PUT")
 
 		// Instantiate the actual handler
 		handler := handler.New(devicesDB, packetsDB, broker, ctx)
@@ -199,6 +200,9 @@ func init() {
 	viper.BindPFlag("handler.uplink-bind-address", handlerCmd.Flags().Lookup("uplink-bind-address"))
 	viper.BindPFlag("handler.uplink-port", handlerCmd.Flags().Lookup("uplink-port"))
 
-	handlerCmd.Flags().String("mqtt-broker", "localhost:1883", "The address of the MQTT broker")
+	handlerCmd.Flags().String("mqtt-broker", "localhost:1883", "The address of the MQTT broker (uplink)")
 	viper.BindPFlag("handler.mqtt-broker", handlerCmd.Flags().Lookup("mqtt-broker"))
+
+	handlerCmd.Flags().String("ttn-broker", "localhost:1781", "The address of the TTN broker (downlink)")
+	viper.BindPFlag("handler.ttn-broker", handlerCmd.Flags().Lookup("ttn-broker"))
 }
