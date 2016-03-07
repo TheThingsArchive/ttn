@@ -18,7 +18,7 @@ func TestStatusPageURL(t *testing.T) {
 
 	s := StatusPage{}
 
-	a.So(s.URL(), assertions.ShouldEqual, "/status/")
+	a.So(s.URL(), assertions.ShouldEqual, "/status")
 }
 
 func TestStatusPageHandler(t *testing.T) {
@@ -27,14 +27,14 @@ func TestStatusPageHandler(t *testing.T) {
 	s := StatusPage{}
 
 	// Only GET allowed
-	r1, _ := http.NewRequest("POST", "/status/", nil)
+	r1, _ := http.NewRequest("POST", "/status", nil)
 	r1.RemoteAddr = "127.0.0.1:12345"
 	rw1 := NewResponseWriter()
 	s.Handle(&rw1, make(chan<- PktReq), make(chan<- RegReq), r1)
 	a.So(rw1.TheStatus, assertions.ShouldEqual, 405)
 
 	// Initially Empty
-	r3, _ := http.NewRequest("GET", "/status/", nil)
+	r3, _ := http.NewRequest("GET", "/status", nil)
 	r3.RemoteAddr = "127.0.0.1:12345"
 	rw3 := NewResponseWriter()
 	s.Handle(&rw3, make(chan<- PktReq), make(chan<- RegReq), r3)
@@ -47,7 +47,7 @@ func TestStatusPageHandler(t *testing.T) {
 	stats.MarkMeter("and.this.is.a-meter")
 
 	// Not Empty anymore
-	r4, _ := http.NewRequest("GET", "/status/", nil)
+	r4, _ := http.NewRequest("GET", "/status", nil)
 	r4.RemoteAddr = "127.0.0.1:12345"
 	rw4 := NewResponseWriter()
 	s.Handle(&rw4, make(chan<- PktReq), make(chan<- RegReq), r4)
