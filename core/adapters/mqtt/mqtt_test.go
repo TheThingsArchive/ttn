@@ -130,7 +130,7 @@ func TestMQTTSend(t *testing.T) {
 
 		// Build
 		aclient, adapter := createAdapter(t)
-		sclient, chresp := createServers(test.Recipients)
+		sclients, chresp := createServers(test.Recipients)
 		<-time.After(time.Millisecond * 50)
 
 		// Operate
@@ -148,8 +148,10 @@ func TestMQTTSend(t *testing.T) {
 
 		// Clean
 		aclient.Disconnect(250)
-		sclient.Disconnect(250)
-		<-time.After(time.Millisecond * 50)
+		for _, sclient := range sclients {
+			sclient.Disconnect(250)
+		}
+		<-time.After(time.Millisecond * 100)
 	}
 }
 
@@ -232,15 +234,17 @@ func createAdapter(t *testing.T) (Client, core.Adapter) {
 	return client, adapter
 }
 
-func createServers(recipients []testRecipient) (Client, chan []byte) {
-	client, err := NewClient("FakeServerClient", brokerURL, TCP)
-	if err != nil {
-		panic(err)
-	}
-
+func createServers(recipients []testRecipient) ([]Client, chan []byte) {
+	var clients []Client
 	chresp := make(chan []byte, len(recipients))
-	for _, r := range recipients {
-		go func(r testRecipient) {
+	for i, r := range recipients {
+		client, err := NewClient(fmt.Sprintf("FakeServerClient%d", i), brokerURL, TCP)
+		if err != nil {
+			panic(err)
+		}
+		clients = append(clients, client)
+
+		go func(r testRecipient, client Client) {
 			token := client.Subscribe(r.TopicUp, 2, func(client Client, msg MQTT.Message) {
 				if r.Response != nil {
 					token := client.Publish(r.TopicDown, 2, false, r.Response)
@@ -253,9 +257,9 @@ func createServers(recipients []testRecipient) (Client, chan []byte) {
 			if token.Wait() && token.Error() != nil {
 				panic(token.Error())
 			}
-		}(r)
+		}(r, client)
 	}
-	return client, chresp
+	return clients, chresp
 }
 
 // ----- OPERATE utilities
