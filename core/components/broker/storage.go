@@ -4,6 +4,8 @@
 package broker
 
 import (
+	"bytes"
+	"encoding/binary"
 	"sync"
 
 	"github.com/TheThingsNetwork/ttn/core"
@@ -95,17 +97,19 @@ func (s controller) UpdateFCnt(appEUI lorawan.EUI64, devEUI lorawan.EUI64, fcnt 
 
 	var newEntries []dbutil.Entry
 	for _, e := range entries {
-		if e.AppEUI == appEUI {
+		entry := new(devEntry)
+		*entry = e
+		if entry.AppEUI == appEUI {
 			switch dir {
 			case "up":
-				e.FCntUp = fcnt
+				entry.FCntUp = fcnt
 			case "down":
-				e.FCntDown = fcnt
+				entry.FCntDown = fcnt
 			default:
 				return errors.New(errors.Implementation, "Unreckognized direction")
 			}
 		}
-		newEntries = append(newEntries, &e)
+		newEntries = append(newEntries, entry)
 	}
 
 	return s.db.Replace(s.Devices, devEUI[:], newEntries)
@@ -161,6 +165,8 @@ func (e devEntry) MarshalBinary() ([]byte, error) {
 	rw.Write(e.AppEUI)
 	rw.Write(e.DevEUI)
 	rw.Write(e.NwkSKey)
+	rw.Write(e.FCntUp)
+	rw.Write(e.FCntDown)
 	return rw.Bytes()
 }
 
@@ -171,6 +177,26 @@ func (e *devEntry) UnmarshalBinary(data []byte) error {
 	rw.Read(func(data []byte) { copy(e.AppEUI[:], data) })
 	rw.Read(func(data []byte) { copy(e.DevEUI[:], data) })
 	rw.Read(func(data []byte) { copy(e.NwkSKey[:], data) })
+	rw.TryRead(func(data []byte) error {
+		buf := new(bytes.Buffer)
+		buf.Write(data)
+		fcnt := new(uint32)
+		if err := binary.Read(buf, binary.BigEndian, fcnt); err != nil {
+			return err
+		}
+		e.FCntUp = *fcnt
+		return nil
+	})
+	rw.TryRead(func(data []byte) error {
+		buf := new(bytes.Buffer)
+		buf.Write(data)
+		fcnt := new(uint32)
+		if err := binary.Read(buf, binary.BigEndian, fcnt); err != nil {
+			return err
+		}
+		e.FCntDown = *fcnt
+		return nil
+	})
 	return rw.Err()
 }
 
