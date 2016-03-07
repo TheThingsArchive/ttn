@@ -6,7 +6,6 @@ package http
 import (
 	"io"
 	"net/http"
-	"reflect"
 	"testing"
 	"time"
 
@@ -242,37 +241,4 @@ func genMockServer(recipient core.Recipient) chan string {
 	}
 	go server.ListenAndServe()
 	return chresp
-}
-
-// Check utilities
-func checkRegistrations(t *testing.T, want []testRegistration, got []core.RRegistration) {
-	if len(want) != len(got) {
-		Ko(t, "Expected %d registrations but got %d", len(want), len(got))
-		return
-	}
-
-outer:
-	for _, rw := range want {
-		for _, rg := range got {
-			if rg.DevEUI() != rw.DevEUI {
-				Ko(t, "Expected registration for %v but got for %v", rw.DevEUI, rg.DevEUI())
-			}
-			if reflect.DeepEqual(rw.Recipient.Recipient, rg.Recipient()) {
-				continue outer
-			}
-		}
-		Ko(t, "Registrations don't match expectation.\nWant: %v\nGot:  %v", want, got)
-		return
-	}
-	Ok(t, "Check registrations")
-}
-
-func checkPayloads(t *testing.T, want string, got []string) {
-	for _, payload := range got {
-		if want != payload {
-			Ko(t, "Paylaod don't match expectation.\nWant: %s\nGot:  %s", want, payload)
-			return
-		}
-	}
-	Ok(t, "Check payloads")
 }
