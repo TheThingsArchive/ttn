@@ -55,6 +55,8 @@ func TestNetworkControllerDevice(t *testing.T) {
 				DevEUI:    r.DevEUI(),
 				NwkSKey:   r.NwkSKey(),
 				Recipient: r.RawRecipient(),
+				FCntUp:    0,
+				FCntDown:  0,
 			},
 		}
 
@@ -88,12 +90,16 @@ func TestNetworkControllerDevice(t *testing.T) {
 				DevEUI:    r.DevEUI(),
 				NwkSKey:   r.NwkSKey(),
 				Recipient: r.RawRecipient(),
+				FCntUp:    0,
+				FCntDown:  0,
 			},
 			{
 				AppEUI:    r.AppEUI(),
 				DevEUI:    r.DevEUI(),
 				NwkSKey:   r.NwkSKey(),
 				Recipient: r.RawRecipient(),
+				FCntUp:    0,
+				FCntDown:  0,
 			},
 		}
 
@@ -176,6 +182,177 @@ func TestNetworkControllerDevice(t *testing.T) {
 		CheckErrors(t, pointer.String(string(errors.Behavioural)), err)
 		CheckDevEntries(t, nil, entries)
 
+		_ = db.Close()
+	}
+
+	// -------------------
+
+	{
+		Desc(t, "Update counter up of an entry -> one device")
+
+		// Build
+		db, _ := NewNetworkController(NetworkControllerDB)
+		r := NewMockBRegistration()
+		r.OutDevEUI[4] = 0xba
+
+		// Operate
+		err := db.StoreDevice(r)
+		CheckErrors(t, nil, err)
+		err1 := db.UpdateFCnt(r.AppEUI(), r.DevEUI(), 14, "up")
+		entries, err2 := db.LookupDevices(r.DevEUI())
+
+		// Expectations
+		want := []devEntry{
+			{
+				AppEUI:    r.AppEUI(),
+				DevEUI:    r.DevEUI(),
+				NwkSKey:   r.NwkSKey(),
+				Recipient: r.RawRecipient(),
+				FCntUp:    14,
+				FCntDown:  0,
+			},
+		}
+
+		// Check
+		CheckErrors(t, nil, err1)
+		CheckErrors(t, nil, err2)
+		CheckDevEntries(t, want, entries)
+		_ = db.Close()
+	}
+
+	// -------------------
+
+	{
+		Desc(t, "Update counter down of an entry -> one device")
+
+		// Build
+		db, _ := NewNetworkController(NetworkControllerDB)
+		r := NewMockBRegistration()
+		r.OutDevEUI[4] = 0xbb
+
+		// Operate
+		err := db.StoreDevice(r)
+		CheckErrors(t, nil, err)
+		err1 := db.UpdateFCnt(r.AppEUI(), r.DevEUI(), 14, "down")
+		entries, err2 := db.LookupDevices(r.DevEUI())
+
+		// Expectations
+		want := []devEntry{
+			{
+				AppEUI:    r.AppEUI(),
+				DevEUI:    r.DevEUI(),
+				NwkSKey:   r.NwkSKey(),
+				Recipient: r.RawRecipient(),
+				FCntUp:    0,
+				FCntDown:  14,
+			},
+		}
+
+		// Check
+		CheckErrors(t, nil, err1)
+		CheckErrors(t, nil, err2)
+		CheckDevEntries(t, want, entries)
+		_ = db.Close()
+	}
+
+	// -------------------
+
+	{
+		Desc(t, "Update counter with wrong direction")
+
+		// Build
+		db, _ := NewNetworkController(NetworkControllerDB)
+		r := NewMockBRegistration()
+		r.OutDevEUI[4] = 0xbd
+
+		// Operate
+		err := db.StoreDevice(r)
+		CheckErrors(t, nil, err)
+		err1 := db.UpdateFCnt(r.AppEUI(), r.DevEUI(), 14, "patate")
+		entries, err2 := db.LookupDevices(r.DevEUI())
+
+		// Expectations
+		want := []devEntry{
+			{
+				AppEUI:    r.AppEUI(),
+				DevEUI:    r.DevEUI(),
+				NwkSKey:   r.NwkSKey(),
+				Recipient: r.RawRecipient(),
+				FCntUp:    0,
+				FCntDown:  0,
+			},
+		}
+
+		// Checks
+		CheckErrors(t, pointer.String(string(errors.Implementation)), err1)
+		CheckErrors(t, nil, err2)
+		CheckDevEntries(t, want, entries)
+		_ = db.Close()
+	}
+
+	// -------------------
+
+	{
+		Desc(t, "Update counter -> fail to lookup")
+
+		// Build
+		db, _ := NewNetworkController(NetworkControllerDB)
+		r := NewMockBRegistration()
+		r.OutDevEUI[4] = 0xde
+
+		// Operate
+		err := db.UpdateFCnt(r.AppEUI(), r.DevEUI(), 14, "up")
+
+		// Checks
+		CheckErrors(t, pointer.String(string(errors.Behavioural)), err)
+		_ = db.Close()
+	}
+
+	// -------------------
+
+	{
+		Desc(t, "Update counter several entries")
+
+		// Build
+		db, _ := NewNetworkController(NetworkControllerDB)
+		r1 := NewMockBRegistration()
+		r1.OutDevEUI[3] = 0xbb
+		r2 := NewMockBRegistration()
+		r2.OutDevEUI[3] = 0xbb
+		r2.OutAppEUI[4] = 14
+
+		// Operate
+		err := db.StoreDevice(r1)
+		CheckErrors(t, nil, err)
+		err = db.StoreDevice(r2)
+		CheckErrors(t, nil, err)
+		err1 := db.UpdateFCnt(r2.AppEUI(), r2.DevEUI(), 14, "up")
+		entries, err2 := db.LookupDevices(r2.DevEUI())
+
+		// Expectations
+		want := []devEntry{
+			{
+				AppEUI:    r1.AppEUI(),
+				DevEUI:    r1.DevEUI(),
+				NwkSKey:   r1.NwkSKey(),
+				Recipient: r1.RawRecipient(),
+				FCntUp:    0,
+				FCntDown:  0,
+			},
+			{
+				AppEUI:    r2.AppEUI(),
+				DevEUI:    r2.DevEUI(),
+				NwkSKey:   r2.NwkSKey(),
+				Recipient: r2.RawRecipient(),
+				FCntUp:    14,
+				FCntDown:  0,
+			},
+		}
+
+		// Check
+		CheckErrors(t, nil, err1)
+		CheckErrors(t, nil, err2)
+		CheckDevEntries(t, want, entries)
 		_ = db.Close()
 	}
 }
