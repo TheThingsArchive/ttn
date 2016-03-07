@@ -101,7 +101,7 @@ func TestHTTPAckNacker(t *testing.T) {
 	// --------------------
 
 	{
-		Desc(t, "Don't consume chresp")
+		Desc(t, "Don't consume chresp on Ack")
 
 		// Build
 		chresp := make(chan MsgRes)
@@ -159,5 +159,180 @@ func TestHTTPAckNacker(t *testing.T) {
 		// Check
 		errutil.CheckErrors(t, nil, err)
 		CheckResps(t, nil, nil)
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Don't consume chresp on Nack")
+
+		// Build
+		chresp := make(chan MsgRes)
+		an := httpAckNacker{Chresp: chresp}
+
+		// Operate
+		cherr := make(chan error)
+		go func() {
+			cherr <- an.Nack()
+		}()
+
+		// Check
+		var err error
+		select {
+		case err = <-cherr:
+		case <-time.After(time.Millisecond * 100):
+		}
+		errutil.CheckErrors(t, pointer.String(string(errors.Operational)), err)
+	}
+}
+
+func TestRegAckNacker(t *testing.T) {
+	{
+		Desc(t, "Ack a nil packet")
+
+		// Build
+		chresp := make(chan MsgRes, 1)
+		an := regAckNacker{Chresp: chresp}
+
+		// Operate
+		err := an.Ack(nil)
+
+		// Expectation
+		want := &MsgRes{
+			StatusCode: http.StatusAccepted,
+			Content:    nil,
+		}
+
+		// Check
+		errutil.CheckErrors(t, nil, err)
+		CheckResps(t, want, chresp)
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Ack on a nil chresp")
+
+		// Build
+		an := regAckNacker{Chresp: nil}
+
+		// Operate
+		err := an.Ack(nil)
+
+		// Check
+		errutil.CheckErrors(t, nil, err)
+		CheckResps(t, nil, nil)
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Ack a valid packet")
+
+		// Build
+		chresp := make(chan MsgRes, 1)
+		an := regAckNacker{Chresp: chresp}
+		p := mocks.NewMockPacket()
+		p.OutMarshalBinary = []byte{14, 14, 14}
+
+		// Operate
+		err := an.Ack(p)
+
+		// Expectation
+		want := &MsgRes{
+			StatusCode: http.StatusAccepted,
+			Content:    nil,
+		}
+
+		// Check
+		errutil.CheckErrors(t, nil, err)
+		CheckResps(t, want, chresp)
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Don't consume chresp on Ack")
+
+		// Build
+		chresp := make(chan MsgRes)
+		an := regAckNacker{Chresp: chresp}
+
+		// Operate
+		cherr := make(chan error)
+		go func() {
+			cherr <- an.Ack(nil)
+		}()
+
+		// Check
+		var err error
+		select {
+		case err = <-cherr:
+		case <-time.After(time.Millisecond * 100):
+		}
+		errutil.CheckErrors(t, pointer.String(string(errors.Operational)), err)
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Nack")
+
+		// Build
+		chresp := make(chan MsgRes, 1)
+		an := regAckNacker{Chresp: chresp}
+
+		// Operate
+		err := an.Nack()
+
+		// Expectation
+		want := &MsgRes{
+			StatusCode: http.StatusConflict,
+			Content:    []byte(errors.Structural),
+		}
+
+		// Check
+		errutil.CheckErrors(t, nil, err)
+		CheckResps(t, want, chresp)
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Nack on a nil chresp")
+
+		// Build
+		an := regAckNacker{Chresp: nil}
+
+		// Operate
+		err := an.Nack()
+
+		// Check
+		errutil.CheckErrors(t, nil, err)
+		CheckResps(t, nil, nil)
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Don't consume chresp on Nack")
+
+		// Build
+		chresp := make(chan MsgRes)
+		an := regAckNacker{Chresp: chresp}
+
+		// Operate
+		cherr := make(chan error)
+		go func() {
+			cherr <- an.Nack()
+		}()
+
+		// Check
+		var err error
+		select {
+		case err = <-cherr:
+		case <-time.After(time.Millisecond * 100):
+		}
+		errutil.CheckErrors(t, pointer.String(string(errors.Operational)), err)
 	}
 }
