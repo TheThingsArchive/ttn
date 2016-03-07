@@ -66,3 +66,11 @@ func CheckRecipients(t *testing.T, want Recipient, got Recipient) {
 func CheckJSONs(t *testing.T, want []byte, got []byte) {
 	mocks.Check(t, want, got, "JSON")
 }
+
+func CheckMethods(t *testing.T, want string, got string) {
+	mocks.Check(t, want, got, "Methods")
+}
+
+func CheckContentTypes(t *testing.T, want string, got string) {
+	mocks.Check(t, want, got, "ContentTypes")
+}
