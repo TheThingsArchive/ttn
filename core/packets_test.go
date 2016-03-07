@@ -26,15 +26,15 @@ func newEUI() lorawan.EUI64 {
 	return devEUI
 }
 
-func simplePayload() (payload lorawan.PHYPayload, devAddr lorawan.DevAddr, key lorawan.AES128Key) {
+func simplePayload(fcnt uint32) (payload lorawan.PHYPayload, devAddr lorawan.DevAddr, key lorawan.AES128Key) {
 	copy(devAddr[:], randBytes(4))
 	copy(key[:], randBytes(16))
 
-	payload = newPayload(devAddr, []byte("PLD123"), key, key)
+	payload = newPayload(devAddr, []byte("PLD123"), key, key, fcnt)
 	return
 }
 
-func newPayload(devAddr lorawan.DevAddr, data []byte, appSKey lorawan.AES128Key, nwkSKey lorawan.AES128Key) lorawan.PHYPayload {
+func newPayload(devAddr lorawan.DevAddr, data []byte, appSKey lorawan.AES128Key, nwkSKey lorawan.AES128Key, fcnt uint32) lorawan.PHYPayload {
 	uplink := true
 
 	macPayload := lorawan.NewMACPayload(uplink)
@@ -45,7 +45,7 @@ func newPayload(devAddr lorawan.DevAddr, data []byte, appSKey lorawan.AES128Key,
 			ADRACKReq: false,
 			ACK:       false,
 		},
-		FCnt: 1,
+		FCnt: fcnt,
 	}
 	macPayload.FPort = 10
 	macPayload.FRMPayload = []lorawan.Payload{&lorawan.DataPayload{Bytes: data}}
@@ -92,7 +92,7 @@ func TestBaseMarshalUnmarshal(t *testing.T) {
 	s := uint(123)
 	mpkt := basempacket{metadata: Metadata{Size: &s}}
 
-	payload, _, _ := simplePayload()
+	payload, _, _ := simplePayload(1)
 	rpkt := baserpacket{payload: payload}
 	hpkt := basehpacket{
 		appEUI: newEUI(),
@@ -198,7 +198,7 @@ func TestInvalidRPacket(t *testing.T) {
 func TestRPacket(t *testing.T) {
 	a := New(t)
 
-	payload, devAddr, _ := simplePayload()
+	payload, devAddr, _ := simplePayload(1)
 	gwEUI := []byte{}
 	copy(gwEUI[:], randBytes(8))
 
@@ -249,20 +249,32 @@ func TestInvalidBPacket(t *testing.T) {
 		},
 	}, Metadata{})
 	a.So(err4, ShouldNotBeNil)
+
+	// FCnt out of bound
+	var wholeCnt uint32 = 78765436
+	payload, _, _ := simplePayload(1)
+	payload.MACPayload.(*lorawan.MACPayload).FHDR.FCnt = wholeCnt%65536 + 65536/2
+	input, _ := NewBPacket(payload, Metadata{})
+	err := input.ComputeFCnt(wholeCnt)
+	a.So(err, ShouldNotBeNil)
 }
 
 func TestBPacket(t *testing.T) {
 	a := New(t)
 
-	payload, _, key := simplePayload()
+	var wholeCnt uint32 = 78765436
+	payload, _, key := simplePayload(wholeCnt + 1)
+	payload.MACPayload.(*lorawan.MACPayload).FHDR.FCnt = wholeCnt%65536 + 1
 	input, _ := NewBPacket(payload, Metadata{})
 
 	gOutput := marshalUnmarshal(t, input)
-
 	output := gOutput.(BPacket)
 
 	a.So(output.Payload(), ShouldResemble, payload)
 	a.So(output.Metadata(), ShouldResemble, Metadata{})
+	err := output.ComputeFCnt(wholeCnt)
+	a.So(err, ShouldBeNil)
+	a.So(output.FCnt(), ShouldEqual, wholeCnt+1)
 	outputValidateMIC, _ := output.ValidateMIC(key)
 	a.So(outputValidateMIC, ShouldBeTrue)
 	a.So(output.Commands(), ShouldBeEmpty)
@@ -306,7 +318,7 @@ func TestHPacket(t *testing.T) {
 
 	appEUI := newEUI()
 	devEUI := newEUI()
-	payload, _, key := simplePayload()
+	payload, _, key := simplePayload(1)
 
 	input, _ := NewHPacket(appEUI, devEUI, payload, Metadata{})
 

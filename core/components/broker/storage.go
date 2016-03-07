@@ -4,6 +4,10 @@
 package broker
 
 import (
+	"bytes"
+	"encoding/binary"
+	"sync"
+
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/readwriter"
@@ -11,8 +15,9 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
-// Storage gives a facade for manipulating the broker database
-type Storage interface {
+// NetworkController gives a facade for manipulating the broker databases and devices
+type NetworkController interface {
+	UpdateFCnt(appEUI lorawan.EUI64, devEUI lorawan.EUI64, fcnt uint32, dir string) error
 	LookupDevices(devEUI lorawan.EUI64) ([]devEntry, error)
 	LookupApplication(appEUI lorawan.EUI64) (appEntry, error)
 	StoreDevice(reg core.BRegistration) error
@@ -25,6 +30,8 @@ type devEntry struct {
 	AppEUI    lorawan.EUI64
 	DevEUI    lorawan.EUI64
 	NwkSKey   lorawan.AES128Key
+	FCntUp    uint32
+	FCntDown  uint32
 }
 
 type appEntry struct {
@@ -32,24 +39,27 @@ type appEntry struct {
 	AppEUI    lorawan.EUI64
 }
 
-type storage struct {
+type controller struct {
+	sync.RWMutex
 	db           dbutil.Interface
 	Devices      string
 	Applications string
 }
 
-// NewStorage constructs a new broker storage
-func NewStorage(name string) (Storage, error) {
+// NewNetworkController constructs a new broker controller
+func NewNetworkController(name string) (NetworkController, error) {
 	itf, err := dbutil.New(name)
 	if err != nil {
 		return nil, errors.New(errors.Operational, err)
 	}
 
-	return storage{db: itf, Devices: "Devices", Applications: "Applications"}, nil
+	return &controller{db: itf, Devices: "Devices", Applications: "Applications"}, nil
 }
 
-// LookupDevices implements the broker.Storage interface
-func (s storage) LookupDevices(devEUI lorawan.EUI64) ([]devEntry, error) {
+// LookupDevices implements the broker.NetworkController interface
+func (s *controller) LookupDevices(devEUI lorawan.EUI64) ([]devEntry, error) {
+	s.RLock()
+	defer s.RUnlock()
 	entries, err := s.db.Lookup(s.Devices, devEUI[:], &devEntry{})
 	if err != nil {
 		return nil, err
@@ -57,8 +67,10 @@ func (s storage) LookupDevices(devEUI lorawan.EUI64) ([]devEntry, error) {
 	return entries.([]devEntry), nil
 }
 
-// LookupApplication implements the broker.Storage interface
-func (s storage) LookupApplication(appEUI lorawan.EUI64) (appEntry, error) {
+// LookupApplication implements the broker.NetworkController interface
+func (s *controller) LookupApplication(appEUI lorawan.EUI64) (appEntry, error) {
+	s.RLock()
+	defer s.RUnlock()
 	itf, err := s.db.Lookup(s.Applications, appEUI[:], &appEntry{})
 	if err != nil {
 		return appEntry{}, err
@@ -73,8 +85,40 @@ func (s storage) LookupApplication(appEUI lorawan.EUI64) (appEntry, error) {
 	return entries[0], nil
 }
 
-// StoreDevice implements the broker.Storage interface
-func (s storage) StoreDevice(reg core.BRegistration) error {
+// UpdateFCnt implements the broker.NetworkController interface
+func (s *controller) UpdateFCnt(appEUI lorawan.EUI64, devEUI lorawan.EUI64, fcnt uint32, dir string) error {
+	s.Lock()
+	defer s.Unlock()
+	itf, err := s.db.Lookup(s.Devices, devEUI[:], &devEntry{})
+	if err != nil {
+		return err
+	}
+	entries := itf.([]devEntry)
+
+	var newEntries []dbutil.Entry
+	for _, e := range entries {
+		entry := new(devEntry)
+		*entry = e
+		if entry.AppEUI == appEUI {
+			switch dir {
+			case "up":
+				entry.FCntUp = fcnt
+			case "down":
+				entry.FCntDown = fcnt
+			default:
+				return errors.New(errors.Implementation, "Unreckognized direction")
+			}
+		}
+		newEntries = append(newEntries, entry)
+	}
+
+	return s.db.Replace(s.Devices, devEUI[:], newEntries)
+}
+
+// StoreDevice implements the broker.NetworkController interface
+func (s *controller) StoreDevice(reg core.BRegistration) error {
+	s.Lock()
+	defer s.Unlock()
 	data, err := reg.Recipient().MarshalBinary()
 	if err != nil {
 		return errors.New(errors.Structural, err)
@@ -91,8 +135,10 @@ func (s storage) StoreDevice(reg core.BRegistration) error {
 	})
 }
 
-// StoreApplication implements the broker.Storage interface
-func (s storage) StoreApplication(reg core.ARegistration) error {
+// StoreApplication implements the broker.NetworkController interface
+func (s *controller) StoreApplication(reg core.ARegistration) error {
+	s.Lock()
+	defer s.Unlock()
 	data, err := reg.Recipient().MarshalBinary()
 	if err != nil {
 		return errors.New(errors.Structural, err)
@@ -107,8 +153,8 @@ func (s storage) StoreApplication(reg core.ARegistration) error {
 	})
 }
 
-// Close implements the broker.Storage interface
-func (s storage) Close() error {
+// Close implements the broker.NetworkController interface
+func (s *controller) Close() error {
 	return s.db.Close()
 }
 
@@ -119,6 +165,8 @@ func (e devEntry) MarshalBinary() ([]byte, error) {
 	rw.Write(e.AppEUI)
 	rw.Write(e.DevEUI)
 	rw.Write(e.NwkSKey)
+	rw.Write(e.FCntUp)
+	rw.Write(e.FCntDown)
 	return rw.Bytes()
 }
 
@@ -129,6 +177,26 @@ func (e *devEntry) UnmarshalBinary(data []byte) error {
 	rw.Read(func(data []byte) { copy(e.AppEUI[:], data) })
 	rw.Read(func(data []byte) { copy(e.DevEUI[:], data) })
 	rw.Read(func(data []byte) { copy(e.NwkSKey[:], data) })
+	rw.TryRead(func(data []byte) error {
+		buf := new(bytes.Buffer)
+		buf.Write(data)
+		fcnt := new(uint32)
+		if err := binary.Read(buf, binary.BigEndian, fcnt); err != nil {
+			return err
+		}
+		e.FCntUp = *fcnt
+		return nil
+	})
+	rw.TryRead(func(data []byte) error {
+		buf := new(bytes.Buffer)
+		buf.Write(data)
+		fcnt := new(uint32)
+		if err := binary.Read(buf, binary.BigEndian, fcnt); err != nil {
+			return err
+		}
+		e.FCntDown = *fcnt
+		return nil
+	})
 	return rw.Err()
 }
 

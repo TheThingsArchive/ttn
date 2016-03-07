@@ -6,6 +6,7 @@ package core
 import (
 	"encoding"
 	"fmt"
+	"math"
 
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/readwriter"
@@ -192,7 +193,7 @@ func NewBPacket(payload lorawan.PHYPayload, metadata Metadata) (BPacket, error) 
 }
 
 // ValidateMIC implements the core.BPacket interface
-func (p bpacket) ValidateMIC(key lorawan.AES128Key) (bool, error) {
+func (p *bpacket) ValidateMIC(key lorawan.AES128Key) (bool, error) {
 	return p.baserpacket.payload.ValidateMIC(key)
 }
 
@@ -274,7 +275,7 @@ func (p hpacket) Payload(key lorawan.AES128Key) ([]byte, error) {
 
 // FCnt implements the core.HPacket interface
 func (p hpacket) FCnt() uint32 {
-	return p.payload.FCnt()
+	return p.payload.payload.MACPayload.(*lorawan.MACPayload).FHDR.FCnt
 }
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface
@@ -513,6 +514,25 @@ func (p baserpacket) DevEUI() lorawan.EUI64 {
 	var devEUI lorawan.EUI64
 	copy(devEUI[4:], p.payload.MACPayload.(*lorawan.MACPayload).FHDR.DevAddr[:])
 	return devEUI
+}
+
+// ComputeFCnt implements the core.BPacket interface
+func (p *baserpacket) ComputeFCnt(wholeCnt uint32) error {
+	upperSup := uint32(math.Pow(2, 16))
+	fcnt := p.payload.MACPayload.(*lorawan.MACPayload).FHDR.FCnt
+	diff := fcnt - (wholeCnt % upperSup)
+	var offset uint32
+	if diff >= 0 {
+		offset = diff
+	} else {
+		offset = upperSup + diff
+	}
+	if offset > upperSup/4 {
+		return errors.New(errors.Structural, "Gap too big, counter is errored")
+	}
+
+	p.payload.MACPayload.(*lorawan.MACPayload).FHDR.FCnt = wholeCnt + offset
+	return nil
 }
 
 // FCnt implements the core.BPacket interface

@@ -36,11 +36,42 @@ func newBPacket(rawDevAddr [4]byte, payload string, nwkSKey [16]byte, fcnt uint3
 		panic(err)
 	}
 
+	phyPayload.MACPayload.(*lorawan.MACPayload).FHDR.FCnt = fcnt % 65536 // only 16-bits
+
 	packet, err := core.NewBPacket(phyPayload, core.Metadata{})
 	if err != nil {
 		panic(err)
 	}
 	return packet
+}
+
+func newBPacketDown(fcnt uint32) core.BPacket {
+	macPayload := lorawan.NewMACPayload(false)
+	macPayload.FHDR = lorawan.FHDR{
+		FCnt:    fcnt,
+		DevAddr: lorawan.DevAddr([4]byte{1, 1, 1, 1}),
+	}
+	macPayload.FRMPayload = []lorawan.Payload{&lorawan.DataPayload{Bytes: []byte("downlink")}}
+	macPayload.FPort = 1
+	phyPayload := lorawan.NewPHYPayload(false)
+	phyPayload.MACPayload = macPayload
+	phyPayload.MHDR = lorawan.MHDR{
+		MType: lorawan.UnconfirmedDataDown,
+		Major: lorawan.LoRaWANR1,
+	}
+
+	if err := phyPayload.SetMIC(lorawan.AES128Key([16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6})); err != nil {
+		panic(err)
+	}
+
+	phyPayload.MACPayload.(*lorawan.MACPayload).FHDR.FCnt = fcnt % 65536 // only 16-bits
+
+	packet, err := core.NewBPacket(phyPayload, core.Metadata{})
+	if err != nil {
+		panic(err)
+	}
+	return packet
+
 }
 
 // ----- CHECK utilities
@@ -54,4 +85,12 @@ func CheckAppEntries(t *testing.T, want appEntry, got appEntry) {
 
 func CheckRegistrations(t *testing.T, want core.Registration, got core.Registration) {
 	mocks.Check(t, want, got, "Registrations")
+}
+
+func CheckCounters(t *testing.T, want uint32, got uint32) {
+	mocks.Check(t, want, got, "Counters")
+}
+
+func CheckDirections(t *testing.T, want string, got string) {
+	mocks.Check(t, want, got, "Directions")
 }

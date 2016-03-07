@@ -71,7 +71,7 @@ and personalized devices (with their network session keys) with the router.
 		}
 		// Instantiate Storage
 
-		var db broker.Storage
+		var db broker.NetworkController
 
 		dbString := viper.GetString("broker.database")
 		switch {
@@ -82,7 +82,7 @@ and personalized devices (with their network session keys) with the router.
 				ctx.WithError(err).Fatal("Invalid database path")
 			}
 
-			db, err = broker.NewStorage(dbPath)
+			db, err = broker.NewNetworkController(dbPath)
 			if err != nil {
 				ctx.WithError(err).Fatal("Could not create local storage")
 			}

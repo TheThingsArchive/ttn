@@ -3,20 +3,6 @@
 
 package core
 
-import (
-	"github.com/brocaar/lorawan"
-)
-
-// Component materializes a core component of the network: Router, Broker or Handler.
-//
-// With two adapters, it can communicates with others components and thus create a distributed
-// network of components.
-type Component interface {
-	Register(reg Registration, an AckNacker) error
-	HandleUp(p []byte, an AckNacker, upAdapter Adapter) error
-	HandleDown(p []byte, an AckNacker) error
-}
-
 type Handler interface {
 	Register(reg Registration, an AckNacker, s Subscriber) error
 	HandleUp(p []byte, an AckNacker, upAdapter Adapter) error
@@ -31,14 +17,6 @@ type Router interface {
 type Broker interface {
 	Register(reg Registration, an AckNacker) error
 	HandleUp(p []byte, an AckNacker, up Adapter) error
-}
-
-// NetworkController is directly used by the broker to manage nodes lifecycle.
-type NetworkController interface {
-	HandleCommands(packet BPacket) error
-	UpdateFCntUp(appEUI lorawan.EUI64, devEUI lorawan.EUI64, fcnt uint32)
-	UpdateFCntDown(appEUI lorawan.EUI64, devEUI lorawan.EUI64, fcnt uint32)
-	MergeCommands(appEUI lorawan.EUI64, devEUI lorawan.EUI64, pkt BPacket) RPacket
 }
 
 // AckNacker represents an interface that allow adapters to decouple their protocol from the
