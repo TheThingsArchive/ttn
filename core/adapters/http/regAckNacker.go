@@ -39,7 +39,7 @@ func (r regAckNacker) Nack() error {
 	select {
 	case r.Chresp <- MsgRes{
 		StatusCode: http.StatusConflict,
-		Content:    []byte(errors.New(errors.Structural, "Unable to register device").Error()),
+		Content:    []byte(errors.Structural),
 	}:
 		return nil
 	case <-time.After(time.Millisecond * 50):
