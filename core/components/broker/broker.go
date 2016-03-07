@@ -139,7 +139,7 @@ func (b component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 				return errors.New(errors.Operational, "Received unexpected response")
 			}
 			if err := bpacket.ComputeFCnt(mEntry.FCntDown); err != nil {
-				return errors.New(errors.Structural, "Received invalid response > frame counter incorrect")
+				return errors.New(errors.Operational, "Received invalid response > frame counter incorrect")
 			}
 			b.UpdateFCnt(mEntry.AppEUI, mEntry.DevEUI, bpacket.FCnt(), "down")
 		}
