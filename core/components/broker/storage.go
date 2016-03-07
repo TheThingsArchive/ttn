@@ -53,11 +53,11 @@ func NewNetworkController(name string) (NetworkController, error) {
 		return nil, errors.New(errors.Operational, err)
 	}
 
-	return controller{db: itf, Devices: "Devices", Applications: "Applications"}, nil
+	return &controller{db: itf, Devices: "Devices", Applications: "Applications"}, nil
 }
 
 // LookupDevices implements the broker.NetworkController interface
-func (s controller) LookupDevices(devEUI lorawan.EUI64) ([]devEntry, error) {
+func (s *controller) LookupDevices(devEUI lorawan.EUI64) ([]devEntry, error) {
 	s.RLock()
 	defer s.RUnlock()
 	entries, err := s.db.Lookup(s.Devices, devEUI[:], &devEntry{})
@@ -68,7 +68,7 @@ func (s controller) LookupDevices(devEUI lorawan.EUI64) ([]devEntry, error) {
 }
 
 // LookupApplication implements the broker.NetworkController interface
-func (s controller) LookupApplication(appEUI lorawan.EUI64) (appEntry, error) {
+func (s *controller) LookupApplication(appEUI lorawan.EUI64) (appEntry, error) {
 	s.RLock()
 	defer s.RUnlock()
 	itf, err := s.db.Lookup(s.Applications, appEUI[:], &appEntry{})
@@ -86,7 +86,7 @@ func (s controller) LookupApplication(appEUI lorawan.EUI64) (appEntry, error) {
 }
 
 // UpdateFCnt implements the broker.NetworkController interface
-func (s controller) UpdateFCnt(appEUI lorawan.EUI64, devEUI lorawan.EUI64, fcnt uint32, dir string) error {
+func (s *controller) UpdateFCnt(appEUI lorawan.EUI64, devEUI lorawan.EUI64, fcnt uint32, dir string) error {
 	s.Lock()
 	defer s.Unlock()
 	itf, err := s.db.Lookup(s.Devices, devEUI[:], &devEntry{})
@@ -116,7 +116,7 @@ func (s controller) UpdateFCnt(appEUI lorawan.EUI64, devEUI lorawan.EUI64, fcnt 
 }
 
 // StoreDevice implements the broker.NetworkController interface
-func (s controller) StoreDevice(reg core.BRegistration) error {
+func (s *controller) StoreDevice(reg core.BRegistration) error {
 	s.Lock()
 	defer s.Unlock()
 	data, err := reg.Recipient().MarshalBinary()
@@ -136,7 +136,7 @@ func (s controller) StoreDevice(reg core.BRegistration) error {
 }
 
 // StoreApplication implements the broker.NetworkController interface
-func (s controller) StoreApplication(reg core.ARegistration) error {
+func (s *controller) StoreApplication(reg core.ARegistration) error {
 	s.Lock()
 	defer s.Unlock()
 	data, err := reg.Recipient().MarshalBinary()
@@ -154,7 +154,7 @@ func (s controller) StoreApplication(reg core.ARegistration) error {
 }
 
 // Close implements the broker.NetworkController interface
-func (s controller) Close() error {
+func (s *controller) Close() error {
 	return s.db.Close()
 }
 
