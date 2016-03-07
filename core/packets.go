@@ -520,7 +520,7 @@ func (p baserpacket) DevEUI() lorawan.EUI64 {
 func (p *baserpacket) ComputeFCnt(wholeCnt uint32) error {
 	upperSup := uint32(math.Pow(2, 16))
 	fcnt := p.payload.MACPayload.(*lorawan.MACPayload).FHDR.FCnt
-	diff := fcnt - (wholeCnt % (upperSup + 1))
+	diff := fcnt - (wholeCnt % upperSup)
 	var offset uint32
 	if diff >= 0 {
 		offset = diff

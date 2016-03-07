@@ -253,7 +253,7 @@ func TestInvalidBPacket(t *testing.T) {
 	// FCnt out of bound
 	var wholeCnt uint32 = 78765436
 	payload, _, _ := simplePayload(1)
-	payload.MACPayload.(*lorawan.MACPayload).FHDR.FCnt = wholeCnt%65537 + 65536/2
+	payload.MACPayload.(*lorawan.MACPayload).FHDR.FCnt = wholeCnt%65536 + 65536/2
 	input, _ := NewBPacket(payload, Metadata{})
 	err := input.ComputeFCnt(wholeCnt)
 	a.So(err, ShouldNotBeNil)
@@ -264,7 +264,7 @@ func TestBPacket(t *testing.T) {
 
 	var wholeCnt uint32 = 78765436
 	payload, _, key := simplePayload(wholeCnt + 1)
-	payload.MACPayload.(*lorawan.MACPayload).FHDR.FCnt = wholeCnt%65537 + 1
+	payload.MACPayload.(*lorawan.MACPayload).FHDR.FCnt = wholeCnt%65536 + 1
 	input, _ := NewBPacket(payload, Metadata{})
 
 	gOutput := marshalUnmarshal(t, input)
