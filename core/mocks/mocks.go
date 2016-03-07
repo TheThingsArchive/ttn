@@ -88,12 +88,16 @@ func (r *MockJSONRecipient) UnmarshalJSON(data []byte) error {
 // responses should also be defined. Default values are provided but can be changed
 // if needed.
 type MockRegistration struct {
-	OutRecipient Recipient
+	Failures       map[string]error
+	OutRecipient   Recipient
+	OutMarshalJSON []byte
 }
 
 func NewMockRegistration() MockRegistration {
 	return MockRegistration{
-		OutRecipient: NewMockRecipient(),
+		Failures:       make(map[string]error),
+		OutRecipient:   NewMockRecipient(),
+		OutMarshalJSON: []byte(`{"out":"MockRegistration"}`),
 	}
 }
 
@@ -104,6 +108,13 @@ func (r MockRegistration) RawRecipient() []byte {
 
 func (r MockRegistration) Recipient() Recipient {
 	return r.OutRecipient
+}
+
+func (r MockRegistration) MarshalJSON() ([]byte, error) {
+	if r.Failures["MarshalJSON"] != nil {
+		return nil, r.Failures["MarshalJSON"]
+	}
+	return r.OutMarshalJSON, nil
 }
 
 // MockARegistration implements the core.ARegistration interface
