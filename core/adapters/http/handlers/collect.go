@@ -13,7 +13,7 @@ import (
 
 // Collect defines a handler for retrieving raw packets sent by a POST request.
 //
-// It listens to requests of the form: [POST] /packets/
+// It listens to requests of the form: [POST] /packets
 //
 // It expects an http header Content-Type = application/octet-stream
 //
@@ -24,7 +24,7 @@ type Collect struct{}
 
 // URL implements the http.Handler interface
 func (p Collect) URL() string {
-	return "/packets/"
+	return "/packets"
 }
 
 // Handle implements the http.Handler interface

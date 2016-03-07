@@ -18,7 +18,7 @@ import (
 
 // Applications defines a handler to handle application registration on a component.
 //
-// It listens to request of the form: [PUT] /applications/:appEUI
+// It listens to request of the form: [PUT] /applications
 // where appEUI is a 8 bytes hex-encoded address.
 //
 // It expects a Content-Type = application/json
@@ -26,6 +26,7 @@ import (
 // It also looks for params:
 //
 // - app_url (http address as string)
+// - app_eui (application identifier as 8-bytes hex-encoded string)
 //
 // It fails with an http 400 Bad Request. if one of the parameter is missing or invalid
 // It succeeds with an http 2xx if the request is valid (the response status is under the
@@ -39,7 +40,7 @@ type Applications struct{}
 
 // URL implements the http.Handler interface
 func (p Applications) URL() string {
-	return "/applications/"
+	return "/applications"
 }
 
 // Handle implements the http.Handler interface

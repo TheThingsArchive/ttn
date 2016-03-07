@@ -11,7 +11,7 @@ import (
 
 // Healthz defines a handler to ping adapters via a GET request.
 //
-// It listens to requests of the form: [GET] /healthz/
+// It listens to requests of the form: [GET] /healthz
 //
 //
 // This handler does not generate any packet.
@@ -20,7 +20,7 @@ type Healthz struct{}
 
 // URL implements the http.Handler interface
 func (p Healthz) URL() string {
-	return "/healthz/"
+	return "/healthz"
 }
 
 // Handle implements the http.Handler interface

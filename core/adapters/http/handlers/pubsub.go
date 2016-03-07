@@ -47,7 +47,7 @@ type PubSub struct{}
 
 // URL implements the http.Handler interface
 func (p PubSub) URL() string {
-	return "/end-devices/"
+	return "/end-devices"
 }
 
 // Handle implements the http.Handler interface

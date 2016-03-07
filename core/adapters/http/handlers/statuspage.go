@@ -14,7 +14,7 @@ import (
 
 // StatusPage shows statistic on GEt request
 //
-// It listens to requests of the form: [GET] /status/
+// It listens to requests of the form: [GET] /status
 //
 // No body or query param are expected
 //
@@ -23,7 +23,7 @@ type StatusPage struct{}
 
 // URL implements the http.Handler interface
 func (p StatusPage) URL() string {
-	return "/status/"
+	return "/status"
 }
 
 // Handle implements the http.Handler interface
