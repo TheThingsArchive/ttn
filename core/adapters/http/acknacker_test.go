@@ -336,3 +336,46 @@ func TestRegAckNacker(t *testing.T) {
 		errutil.CheckErrors(t, pointer.String(string(errors.Operational)), err)
 	}
 }
+
+func TestRecipient(t *testing.T) {
+
+	// --------------------
+
+	{
+		Desc(t, "Test Marshal / Unmarshal binary")
+
+		// Build
+		r := NewRecipient("url", "method")
+
+		// Operate
+		data, err := r.MarshalBinary()
+
+		// Check
+		errutil.CheckErrors(t, nil, err)
+
+		// Build
+		r2 := new(recipient)
+		err = r2.UnmarshalBinary(data)
+
+		// Check
+		errutil.CheckErrors(t, nil, err)
+		CheckRecipients(t, r, *r2)
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Test Marshal JSON")
+
+		// Build
+		r := NewRecipient("localhost", "PUT")
+
+		// Operate
+		data, err := r.MarshalJSON()
+
+		// Check
+		errutil.CheckErrors(t, nil, err)
+		CheckJSONs(t, []byte(`{"url":"localhost","method":"PUT"}`), data)
+	}
+
+}

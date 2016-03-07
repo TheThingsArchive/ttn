@@ -58,3 +58,11 @@ func CheckResps(t *testing.T, want *MsgRes, got chan MsgRes) {
 	msg := <-got
 	mocks.Check(t, *want, msg, "Resps")
 }
+
+func CheckRecipients(t *testing.T, want Recipient, got Recipient) {
+	mocks.Check(t, want, got, "Recipients")
+}
+
+func CheckJSONs(t *testing.T, want []byte, got []byte) {
+	mocks.Check(t, want, got, "JSON")
+}
