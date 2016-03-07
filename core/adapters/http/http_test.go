@@ -6,11 +6,11 @@ package http
 import (
 	"io"
 	"net/http"
-	"reflect"
 	"testing"
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/core/mocks"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	. "github.com/TheThingsNetwork/ttn/utils/errors/checks"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
@@ -162,6 +162,100 @@ func TestSend(t *testing.T) {
 	}
 }
 
+func TestSubscribe(t *testing.T) {
+	{
+		Desc(t, "Subscribe a valid registration")
+
+		// Build
+		r := mocks.NewMockRegistration()
+		r.OutRecipient = NewRecipient("0.0.0.0:4777", "PUT")
+		a, _ := NewAdapter("0.0.0.0:4776", nil, GetLogger(t, "Adapter"))
+		serveMux := http.NewServeMux()
+		serveMux.HandleFunc("/end-devices", func(w http.ResponseWriter, req *http.Request) {
+			// Check
+			CheckContentTypes(t, req.Header.Get("Content-Type"), "application/json")
+			CheckMethods(t, req.Method, r.OutRecipient.(Recipient).Method())
+
+			buf := make([]byte, req.ContentLength)
+			n, err := req.Body.Read(buf)
+			if err == io.EOF {
+				err = nil
+			}
+			CheckErrors(t, nil, err)
+			CheckJSONs(t, r.OutMarshalJSON, buf[:n])
+		})
+		go http.ListenAndServe(r.OutRecipient.(Recipient).URL(), serveMux)
+		<-time.After(time.Millisecond * 100)
+
+		// Operate
+		err := a.Subscribe(r)
+		<-time.After(time.Millisecond * 50)
+
+		// Check
+		CheckErrors(t, nil, err)
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Subscribe an invalid registration -> Invalid recipient")
+
+		// Build
+		r := mocks.NewMockRegistration()
+		r.OutRecipient = NewRecipient("0.0.0.0:4777", "PUT")
+		r.Failures["MarshalJSON"] = errors.New(errors.Structural, "Mock Error")
+		a, _ := NewAdapter("0.0.0.0:4776", nil, GetLogger(t, "Adapter"))
+
+		// Operate
+		err := a.Subscribe(r)
+
+		// Check
+		CheckErrors(t, pointer.String(string(errors.Structural)), err)
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Subscribe an invalid registration -> MarshalJSON fails")
+
+		// Build
+		r := mocks.NewMockRegistration()
+		r.Failures["MarshalJSON"] = errors.New(errors.Structural, "Mock Error")
+		a, _ := NewAdapter("0.0.0.0:4776", nil, GetLogger(t, "Adapter"))
+
+		// Operate
+		err := a.Subscribe(r)
+
+		// Check
+		CheckErrors(t, pointer.String(string(errors.Structural)), err)
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Subscribe a valid registration | Refused by server")
+
+		// Build
+		r := mocks.NewMockRegistration()
+		r.OutRecipient = NewRecipient("0.0.0.0:4778", "PUT")
+		a, _ := NewAdapter("0.0.0.0:4776", nil, GetLogger(t, "Adapter"))
+		serveMux := http.NewServeMux()
+		serveMux.HandleFunc("/end-devices", func(w http.ResponseWriter, req *http.Request) {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write(nil)
+		})
+		go http.ListenAndServe(r.OutRecipient.(Recipient).URL(), serveMux)
+		<-time.After(time.Millisecond * 100)
+
+		// Operate
+		err := a.Subscribe(r)
+		<-time.After(time.Millisecond * 50)
+
+		// Check
+		CheckErrors(t, pointer.String(string(errors.Operational)), err)
+	}
+}
+
 // Convert testRecipient to core.Recipient
 func toHTTPRecipient(recipients []testRecipient) []core.Recipient {
 	var https []core.Recipient
@@ -242,37 +336,4 @@ func genMockServer(recipient core.Recipient) chan string {
 	}
 	go server.ListenAndServe()
 	return chresp
-}
-
-// Check utilities
-func checkRegistrations(t *testing.T, want []testRegistration, got []core.RRegistration) {
-	if len(want) != len(got) {
-		Ko(t, "Expected %d registrations but got %d", len(want), len(got))
-		return
-	}
-
-outer:
-	for _, rw := range want {
-		for _, rg := range got {
-			if rg.DevEUI() != rw.DevEUI {
-				Ko(t, "Expected registration for %v but got for %v", rw.DevEUI, rg.DevEUI())
-			}
-			if reflect.DeepEqual(rw.Recipient.Recipient, rg.Recipient()) {
-				continue outer
-			}
-		}
-		Ko(t, "Registrations don't match expectation.\nWant: %v\nGot:  %v", want, got)
-		return
-	}
-	Ok(t, "Check registrations")
-}
-
-func checkPayloads(t *testing.T, want string, got []string) {
-	for _, payload := range got {
-		if want != payload {
-			Ko(t, "Paylaod don't match expectation.\nWant: %s\nGot:  %s", want, payload)
-			return
-		}
-	}
-	Ok(t, "Check payloads")
 }

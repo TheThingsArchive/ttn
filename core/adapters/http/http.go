@@ -86,7 +86,12 @@ func (a *Adapter) Subscribe(r core.Registration) error {
 	}
 	buf := new(bytes.Buffer)
 	buf.Write(data)
-	resp, err := a.Post(fmt.Sprintf("http://%s/end-devices", httpRecipient.URL()), "application/json", buf)
+	req, err := http.NewRequest(httpRecipient.Method(), fmt.Sprintf("http://%s/end-devices", httpRecipient.URL()), buf)
+	if err != nil {
+		return errors.New(errors.Operational, err)
+	}
+	req.Header.Add("content-type", "application/json")
+	resp, err := a.Do(req)
 	if err != nil {
 		return errors.New(errors.Operational, err)
 	}
@@ -149,7 +154,14 @@ func (a *Adapter) Send(p core.Packet, recipients ...core.Recipient) ([]byte, err
 			ctx.Debugf("%s Request", recipient.Method())
 			buf := new(bytes.Buffer)
 			buf.Write(data)
-			resp, err := a.Post(fmt.Sprintf("http://%s/packets", recipient.URL()), "application/octet-stream", buf)
+			req, err := http.NewRequest(recipient.Method(), fmt.Sprintf("http://%s/packets", recipient.URL()), buf)
+			if err != nil {
+				cherr <- errors.New(errors.Operational, err)
+				return
+			}
+			req.Header.Add("content-type", "application/octet-stream")
+			resp, err := a.Do(req)
+
 			if err != nil {
 				cherr <- errors.New(errors.Operational, err)
 				return

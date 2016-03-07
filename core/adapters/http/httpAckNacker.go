@@ -23,14 +23,13 @@ func (an httpAckNacker) Ack(p core.Packet) error {
 	}
 	defer close(an.Chresp)
 
-	if p == nil {
-		an.Chresp <- MsgRes{StatusCode: http.StatusOK}
-		return nil
-	}
-
-	data, err := p.MarshalBinary()
-	if err != nil {
-		return errors.New(errors.Structural, err)
+	var data []byte
+	if p != nil {
+		var err error
+		data, err = p.MarshalBinary()
+		if err != nil {
+			return errors.New(errors.Structural, err)
+		}
 	}
 
 	select {
@@ -56,8 +55,8 @@ func (an httpAckNacker) Nack() error {
 		StatusCode: http.StatusNotFound,
 		Content:    []byte(errors.Structural),
 	}:
+		return nil
 	case <-time.After(time.Millisecond * 50):
 		return errors.New(errors.Operational, "No response was given to the acknacker")
 	}
-	return nil
 }
