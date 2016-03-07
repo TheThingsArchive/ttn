@@ -4,6 +4,8 @@
 package broker
 
 import (
+	"sync"
+
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/readwriter"
@@ -13,7 +15,7 @@ import (
 
 // NetworkController gives a facade for manipulating the broker databases and devices
 type NetworkController interface {
-	UpdateFCnt(appEUI lorawan.EUI64, devEUI lorawan.EUI64, fcnt uint32, dir string)
+	UpdateFCnt(appEUI lorawan.EUI64, devEUI lorawan.EUI64, fcnt uint32, dir string) error
 	LookupDevices(devEUI lorawan.EUI64) ([]devEntry, error)
 	LookupApplication(appEUI lorawan.EUI64) (appEntry, error)
 	StoreDevice(reg core.BRegistration) error
@@ -36,6 +38,7 @@ type appEntry struct {
 }
 
 type controller struct {
+	sync.RWMutex
 	db           dbutil.Interface
 	Devices      string
 	Applications string
@@ -53,6 +56,8 @@ func NewNetworkController(name string) (NetworkController, error) {
 
 // LookupDevices implements the broker.NetworkController interface
 func (s controller) LookupDevices(devEUI lorawan.EUI64) ([]devEntry, error) {
+	s.RLock()
+	defer s.RUnlock()
 	entries, err := s.db.Lookup(s.Devices, devEUI[:], &devEntry{})
 	if err != nil {
 		return nil, err
@@ -62,6 +67,8 @@ func (s controller) LookupDevices(devEUI lorawan.EUI64) ([]devEntry, error) {
 
 // LookupApplication implements the broker.NetworkController interface
 func (s controller) LookupApplication(appEUI lorawan.EUI64) (appEntry, error) {
+	s.RLock()
+	defer s.RUnlock()
 	itf, err := s.db.Lookup(s.Applications, appEUI[:], &appEntry{})
 	if err != nil {
 		return appEntry{}, err
@@ -76,8 +83,38 @@ func (s controller) LookupApplication(appEUI lorawan.EUI64) (appEntry, error) {
 	return entries[0], nil
 }
 
+// UpdateFCnt implements the broker.NetworkController interface
+func (s controller) UpdateFCnt(appEUI lorawan.EUI64, devEUI lorawan.EUI64, fcnt uint32, dir string) error {
+	s.Lock()
+	defer s.Unlock()
+	itf, err := s.db.Lookup(s.Devices, devEUI[:], &devEntry{})
+	if err != nil {
+		return err
+	}
+	entries := itf.([]devEntry)
+
+	var newEntries []dbutil.Entry
+	for _, e := range entries {
+		if e.AppEUI == appEUI {
+			switch dir {
+			case "up":
+				e.FCntUp = fcnt
+			case "down":
+				e.FCntDown = fcnt
+			default:
+				return errors.New(errors.Implementation, "Unreckognized direction")
+			}
+		}
+		newEntries = append(newEntries, &e)
+	}
+
+	return s.db.Replace(s.Devices, devEUI[:], newEntries)
+}
+
 // StoreDevice implements the broker.NetworkController interface
 func (s controller) StoreDevice(reg core.BRegistration) error {
+	s.Lock()
+	defer s.Unlock()
 	data, err := reg.Recipient().MarshalBinary()
 	if err != nil {
 		return errors.New(errors.Structural, err)
@@ -96,6 +133,8 @@ func (s controller) StoreDevice(reg core.BRegistration) error {
 
 // StoreApplication implements the broker.NetworkController interface
 func (s controller) StoreApplication(reg core.ARegistration) error {
+	s.Lock()
+	defer s.Unlock()
 	data, err := reg.Recipient().MarshalBinary()
 	if err != nil {
 		return errors.New(errors.Structural, err)

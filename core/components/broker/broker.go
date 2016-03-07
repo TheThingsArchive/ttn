@@ -145,11 +145,13 @@ func (b component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 		}
 
 		// 6. And finally, we acknowledge the answer
-		rpacket, err := NewRPacket(bpacket.Payload(), []byte{}, bpacket.Metadata())
-		if err != nil {
-			return errors.New(errors.Structural, "Invalid downlink packet from the handler")
+		if bpacket != nil {
+			rpacket, err := NewRPacket(bpacket.Payload(), []byte{}, bpacket.Metadata())
+			if err != nil {
+				return errors.New(errors.Structural, "Invalid downlink packet from the handler")
+			}
+			ack = rpacket
 		}
-		ack = rpacket
 	case JPacket:
 		// TODO
 		return errors.New(errors.Implementation, "Join Request not yet implemented")

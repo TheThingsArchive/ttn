@@ -21,7 +21,7 @@ func TestRegister(t *testing.T) {
 
 		// Build
 		an := mocks.NewMockAckNacker()
-		store := newMockStorage()
+		store := newMockController()
 		r := mocks.NewMockBRegistration()
 
 		// Operate
@@ -42,7 +42,7 @@ func TestRegister(t *testing.T) {
 
 		// Build
 		an := mocks.NewMockAckNacker()
-		store := newMockStorage()
+		store := newMockController()
 		r := mocks.NewMockARegistration()
 
 		// Operate
@@ -63,7 +63,7 @@ func TestRegister(t *testing.T) {
 
 		// Build
 		an := mocks.NewMockAckNacker()
-		store := newMockStorage()
+		store := newMockController()
 		store.Failures["StoreDevice"] = errors.New(errors.Structural, "Mock Error: Store Failed")
 		r := mocks.NewMockBRegistration()
 
@@ -85,7 +85,7 @@ func TestRegister(t *testing.T) {
 
 		// Build
 		an := mocks.NewMockAckNacker()
-		store := newMockStorage()
+		store := newMockController()
 		store.Failures["StoreApplication"] = errors.New(errors.Structural, "Mock Error: Store Failed")
 		r := mocks.NewMockARegistration()
 
@@ -107,7 +107,7 @@ func TestRegister(t *testing.T) {
 
 		// Build
 		an := mocks.NewMockAckNacker()
-		store := newMockStorage()
+		store := newMockController()
 		r := mocks.NewMockRRegistration()
 
 		// Operate
@@ -129,7 +129,7 @@ func TestHandleUp(t *testing.T) {
 		// Build
 		an := mocks.NewMockAckNacker()
 		adapter := mocks.NewMockAdapter()
-		store := newMockStorage()
+		store := newMockController()
 		store.Failures["LookupDevices"] = errors.New(errors.Behavioural, "Mock Error: Not Found")
 		data, _ := newBPacket(
 			[4]byte{2, 3, 2, 3},
@@ -159,7 +159,7 @@ func TestHandleUp(t *testing.T) {
 		// Build
 		an := mocks.NewMockAckNacker()
 		adapter := mocks.NewMockAdapter()
-		store := newMockStorage()
+		store := newMockController()
 
 		// Operate
 		broker := New(store, testutil.GetLogger(t, "Broker"))
@@ -182,7 +182,7 @@ func TestHandleUp(t *testing.T) {
 		// Build
 		an := mocks.NewMockAckNacker()
 		adapter := mocks.NewMockAdapter()
-		store := newMockStorage()
+		store := newMockController()
 		store.OutLookupDevices = []devEntry{
 			{
 				Recipient: []byte{1, 2, 3},
@@ -228,7 +228,7 @@ func TestHandleUp(t *testing.T) {
 		adapter := mocks.NewMockAdapter()
 		adapter.OutSend = nil
 		adapter.OutGetRecipient = recipient
-		store := newMockStorage()
+		store := newMockController()
 		store.OutLookupDevices = []devEntry{
 			{
 				Recipient: []byte{1, 2, 3},
@@ -280,7 +280,7 @@ func TestHandleUp(t *testing.T) {
 		adapter := mocks.NewMockAdapter()
 		adapter.OutSend = nil
 		adapter.Failures["GetRecipient"] = errors.New(errors.Structural, "Mock Error: Unable to get recipient")
-		store := newMockStorage()
+		store := newMockController()
 		store.OutLookupDevices = []devEntry{
 			{
 				Recipient: []byte{1, 2, 3},
@@ -327,7 +327,7 @@ func TestHandleUp(t *testing.T) {
 		adapter := mocks.NewMockAdapter()
 		adapter.OutGetRecipient = recipient
 		adapter.Failures["Send"] = errors.New(errors.Operational, "Mock Error: Unable to send")
-		store := newMockStorage()
+		store := newMockController()
 		store.OutLookupDevices = []devEntry{
 			{
 				Recipient: []byte{1, 2, 3},
