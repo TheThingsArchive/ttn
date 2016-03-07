@@ -26,7 +26,8 @@ type devEntry struct {
 	AppEUI    lorawan.EUI64
 	DevEUI    lorawan.EUI64
 	NwkSKey   lorawan.AES128Key
-	FCnt      uint32
+	FCntUp    uint32
+	FCntDown  uint32
 }
 
 type appEntry struct {

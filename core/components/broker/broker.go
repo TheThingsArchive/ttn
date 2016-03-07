@@ -83,7 +83,10 @@ func (b component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 		for _, entry := range entries {
 			// The device only stores a 16-bits counter but could reflect a 32-bits one.
 			// We keep track of the real counter in the network controller.
-			ok, err := packet.ValidateMIC(entry.NwkSKey, entry.FCnt)
+			if err := packet.ComputeFCnt(entry.FCntUp); err != nil {
+				continue
+			}
+			ok, err := packet.ValidateMIC(entry.NwkSKey)
 			if err != nil {
 				continue
 			}
@@ -105,9 +108,7 @@ func (b component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 		// The packet actually holds a DevAddr and the real DevEUI has been determined thanks
 		// to the MIC check
 
-		// We can avoid checking the error, this has been done during the MIC check above
-		fcnt, _ := packet.FCnt(mEntry.FCnt)
-		b.UpdateFCnt(mEntry.AppEUI, mEntry.DevEUI, fcnt, "up")
+		b.UpdateFCnt(mEntry.AppEUI, mEntry.DevEUI, packet.FCnt(), "up")
 
 		// 4. Then we forward the packet to the handler and wait for the response
 		hpacket, err := NewHPacket(mEntry.AppEUI, mEntry.DevEUI, packet.Payload(), packet.Metadata())
@@ -137,16 +138,14 @@ func (b component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 			if !ok {
 				return errors.New(errors.Operational, "Received unexpected response")
 			}
-
-			fcnt, err := bpacket.FCnt(mEntry.FcntDown)
-			if err != nil {
-				return errors.New(errors.Structural, "Invalid frame counter for downlink")
+			if err := bpacket.ComputeFCnt(mEntry.FCntDown); err != nil {
+				return errors.New(errors.Structural, "Received invalid response > frame counter incorrect")
 			}
-			b.UpdateFCnt(mEntry.AppEUI, mEntry.DevEUI, fcnt, "down")
+			b.UpdateFCnt(mEntry.AppEUI, mEntry.DevEUI, bpacket.FCnt(), "down")
 		}
 
 		// 6. And finally, we acknowledge the answer
-		rpacket, err := NewRPacket(bpacket.Payload(), bpacket.Metadata())
+		rpacket, err := NewRPacket(bpacket.Payload(), []byte{}, bpacket.Metadata())
 		if err != nil {
 			return errors.New(errors.Structural, "Invalid downlink packet from the handler")
 		}
