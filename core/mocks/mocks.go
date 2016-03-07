@@ -335,6 +335,47 @@ func (s *MockSubscriber) Subscribe(reg Registration) error {
 	return s.Failures["Subscribe"]
 }
 
+// MockPacket implements the core.Packet interface
+//
+// It declares a `Failures` attributes that can be used to
+// simulate failures on demand, associating the name of the method
+// which needs to fail with the actual failure.
+//
+// It also stores the last arguments of each function call in appropriated
+// attributes. Because there's no computation going on, the expected / wanted
+// responses should also be defined. Default values are provided but can be changed
+// if needed.
+type MockPacket struct {
+	Failures         map[string]error
+	OutMarshalBinary []byte
+	OutString        string
+	OutDevEUI        lorawan.EUI64
+}
+
+func NewMockPacket() *MockPacket {
+	return &MockPacket{
+		Failures:         make(map[string]error),
+		OutMarshalBinary: []byte("MockPacketBinary"),
+		OutString:        "MockPacket",
+		OutDevEUI:        lorawan.EUI64([8]byte{1, 2, 1, 2, 4, 4, 5, 5}),
+	}
+}
+
+func (p *MockPacket) DevEUI() lorawan.EUI64 {
+	return p.OutDevEUI
+}
+
+func (p *MockPacket) MarshalBinary() ([]byte, error) {
+	if p.Failures["MarshalBinary"] != nil {
+		return nil, p.Failures["MarshalBinary"]
+	}
+	return p.OutMarshalBinary, nil
+}
+
+func (p *MockPacket) String() string {
+	return p.OutString
+}
+
 // ----- CHECK utilities
 
 func Check(t *testing.T, want, got interface{}, name string) {
