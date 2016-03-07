@@ -12,14 +12,13 @@ import (
 
 // component implements the core.Component interface
 type component struct {
-	Storage
-	ctx        log.Interface
-	Controller NetworkController
+	NetworkController
+	ctx log.Interface
 }
 
 // New construct a new Broker component
-func New(db Storage, ctx log.Interface) Broker {
-	return component{Storage: db, ctx: ctx}
+func New(controller NetworkController, ctx log.Interface) Broker {
+	return component{NetworkController: controller, ctx: ctx}
 }
 
 // Register implements the core.Broker interface
@@ -60,10 +59,6 @@ func (b component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 
 	switch itf.(type) {
 	case BPacket:
-		// NOTE So far, we're not using the Frame Counter. This has to be done to get a correct
-		// behavior. The frame counter needs to be used to ensure we're not processing a wrong or
-		// late packet.
-
 		// 0. Retrieve the packet
 		packet := itf.(BPacket)
 		ctx := b.ctx.WithField("DevEUI", packet.DevEUI())
@@ -84,10 +79,11 @@ func (b component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 
 		// 2. Several handlers might be associated to the same device, we distinguish them using
 		// MIC check. Only one should verify the MIC check
-
 		var mEntry *devEntry
 		for _, entry := range entries {
-			ok, err := packet.ValidateMIC(entry.NwkSKey)
+			// The device only stores a 16-bits counter but could reflect a 32-bits one.
+			// We keep track of the real counter in the network controller.
+			ok, err := packet.ValidateMIC(entry.NwkSKey, entry.FCnt)
 			if err != nil {
 				continue
 			}
@@ -109,12 +105,9 @@ func (b component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 		// The packet actually holds a DevAddr and the real DevEUI has been determined thanks
 		// to the MIC check
 
-		// 3. If one was found, we notify the network controller
-		//if err := b.Controller.HandleCommands(packet); err != nil {
-		//	ctx.WithError(err).Error("Failed to handle mac commands")
-		// Shall we return ? Sounds quite safe to keep going
-		//}
-		//b.Controller.UpdateFCntUp(mEntry.AppEUI, mEntry.DevEUI, packet.FCnt())
+		// We can avoid checking the error, this has been done during the MIC check above
+		fcnt, _ := packet.FCnt(mEntry.FCnt)
+		b.UpdateFCnt(mEntry.AppEUI, mEntry.DevEUI, fcnt, "up")
 
 		// 4. Then we forward the packet to the handler and wait for the response
 		hpacket, err := NewHPacket(mEntry.AppEUI, mEntry.DevEUI, packet.Payload(), packet.Metadata())
@@ -125,7 +118,7 @@ func (b component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 		if err != nil {
 			return errors.New(errors.Structural, err)
 		}
-		_, err = up.Send(hpacket, recipient)
+		resp, err := up.Send(hpacket, recipient)
 		if err != nil {
 			stats.MarkMeter("broker.uplink.bad_handler_response")
 			return errors.New(errors.Operational, err)
@@ -133,22 +126,31 @@ func (b component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 		stats.MarkMeter("broker.uplink.ok")
 
 		// 5. If a response was sent, i.e. a downlink data, we notify the network controller
-		//var bpacket BPacket
-		//if resp != nil {
-		//	itf, err := UnmarshalPacket(resp)
-		//	if err != nil {
-		//		return errors.New(errors.Operational, err)
-		//	}
-		//	var ok bool
-		//	bpacket, ok = itf.(BPacket)
-		//	if !ok {
-		//		return errors.New(errors.Operational, "Received unexpected response")
-		//	}
-		//	//b.Controller.UpdateFCntDown(mEntry.AppEUI, mEntry.DevEUI, bpacket.FCnt())
-		//}
+		var bpacket BPacket
+		if resp != nil {
+			itf, err := UnmarshalPacket(resp)
+			if err != nil {
+				return errors.New(errors.Operational, err)
+			}
+			var ok bool
+			bpacket, ok = itf.(BPacket)
+			if !ok {
+				return errors.New(errors.Operational, "Received unexpected response")
+			}
+
+			fcnt, err := bpacket.FCnt(mEntry.FcntDown)
+			if err != nil {
+				return errors.New(errors.Structural, "Invalid frame counter for downlink")
+			}
+			b.UpdateFCnt(mEntry.AppEUI, mEntry.DevEUI, fcnt, "down")
+		}
 
 		// 6. And finally, we acknowledge the answer
-		//ack = b.Controller.MergeCommands(mEntry.AppEUI, mEntry.DevEUI, bpacket)
+		rpacket, err := NewRPacket(bpacket.Payload(), bpacket.Metadata())
+		if err != nil {
+			return errors.New(errors.Structural, "Invalid downlink packet from the handler")
+		}
+		ack = rpacket
 	case JPacket:
 		// TODO
 		return errors.New(errors.Implementation, "Join Request not yet implemented")

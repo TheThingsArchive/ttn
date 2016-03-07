@@ -36,6 +36,7 @@ type SPacket interface {
 type BPacket interface {
 	Packet
 	Commands() []lorawan.MACCommand
+	ComputeFCnt(wholeCnt uint32) error
 	FCnt() uint32
 	Metadata() Metadata
 	Payload() lorawan.PHYPayload
