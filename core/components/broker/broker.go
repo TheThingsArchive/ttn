@@ -107,7 +107,6 @@ func (b component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 		// It does matter here to use the DevEUI from the entry and not from the packet.
 		// The packet actually holds a DevAddr and the real DevEUI has been determined thanks
 		// to the MIC check
-
 		b.UpdateFCnt(mEntry.AppEUI, mEntry.DevEUI, packet.FCnt(), "up")
 
 		// 4. Then we forward the packet to the handler and wait for the response
@@ -120,7 +119,7 @@ func (b component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 			return errors.New(errors.Structural, err)
 		}
 		resp, err := up.Send(hpacket, recipient)
-		if err != nil {
+		if err != nil && err.(errors.Failure).Nature != errors.Behavioural {
 			stats.MarkMeter("broker.uplink.bad_handler_response")
 			return errors.New(errors.Operational, err)
 		}

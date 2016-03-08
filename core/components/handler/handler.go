@@ -95,6 +95,7 @@ func (h component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 		devEUI := packet.DevEUI()
 
 		// 1. Lookup for the associated AppSKey + Recipient
+		h.ctx.WithField("appEUI", appEUI).WithField("devEUI", devEUI).Debug("Perform lookup")
 		entry, err := h.devices.Lookup(appEUI, devEUI)
 		if err != nil {
 			return err
@@ -227,7 +228,7 @@ browseBundles:
 		}
 
 		_, err = adapter.Send(packet, recipient)
-		if err != nil {
+		if err != nil && err.(errors.Failure).Nature != errors.Behavioural {
 			go h.abortConsume(err, bundles)
 			continue browseBundles
 		}
