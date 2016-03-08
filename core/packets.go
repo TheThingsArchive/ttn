@@ -149,7 +149,7 @@ func (p *rpacket) UnmarshalBinary(data []byte) error {
 
 // String implements the Stringer interface
 func (p rpacket) String() string {
-	str := "Packet {"
+	str := "RPacket {"
 	str += fmt.Sprintf("\n\t%s}", p.metadata.String())
 	str += fmt.Sprintf("\n\tPayload%+v\n}", p.payload)
 	return str
@@ -204,7 +204,10 @@ func (p bpacket) Commands() []lorawan.MACCommand {
 
 // String implements the fmt.Stringer interface
 func (p bpacket) String() string {
-	return "TODO"
+	str := "BPacket {"
+	str += fmt.Sprintf("\n\t%s}", p.metadata.String())
+	str += fmt.Sprintf("\n\tPayload%+v\n}", p.payload)
+	return str
 }
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface
@@ -390,7 +393,13 @@ func (p *jpacket) UnmarshalBinary(data []byte) error {
 
 // String implements the fmt.Stringer interface
 func (p jpacket) String() string {
-	return "TODO"
+	return fmt.Sprintf(
+		"JPacket{AppEUI:%v,DevEUI:%v,DevNonce:%v,Metadata:%v",
+		p.AppEUI(),
+		p.DevEUI(),
+		p.DevNonce(),
+		p.Metadata(),
+	)
 }
 
 // acceptpacket implements the core.AcceptPacket interface
@@ -435,7 +444,13 @@ func (p *cpacket) UnmarshalBinary(data []byte) error {
 
 // String implements the fmt.Stringer interface
 func (p cpacket) String() string {
-	return "TODO"
+	return fmt.Sprintf(
+		"CPacket{AppEUI:%v,DevEUI:%v,Payload:%v,NwkSKey:%v",
+		p.AppEUI(),
+		p.DevEUI(),
+		p.Payload(),
+		p.NwkSKey(),
+	)
 }
 
 // --------------------------------------
@@ -544,14 +559,10 @@ func (p baserpacket) FCnt() uint32 {
 func (p baserpacket) Marshal() ([]byte, error) {
 	var mtype byte
 	switch p.payload.MHDR.MType {
-	case lorawan.JoinRequest:
-		fallthrough
 	case lorawan.UnconfirmedDataUp:
 		fallthrough
 	case lorawan.ConfirmedDataUp:
 		mtype = 1 // Up
-	case lorawan.JoinAccept:
-		fallthrough
 	case lorawan.UnconfirmedDataDown:
 		fallthrough
 	case lorawan.ConfirmedDataDown:
