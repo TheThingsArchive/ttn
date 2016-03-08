@@ -4,12 +4,13 @@
 package handler
 
 import (
+	"bytes"
+	"encoding/binary"
 	"reflect"
 	"time"
 
 	. "github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
-	"github.com/TheThingsNetwork/ttn/utils/readwriter"
 	"github.com/apex/log"
 	"github.com/brocaar/lorawan"
 )
@@ -103,14 +104,14 @@ func (h component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 		chresp := make(chan interface{})
 
 		// 3. Create a "bundle" which holds info waiting for other related packets
-		var bundleID [20]byte // AppEUI(8) | DevEUI(8)
-		rw := readwriter.New(nil)
-		rw.Write(appEUI)
-		rw.Write(devEUI)
-		rw.Write(packet.FCnt())
-		data, err := rw.Bytes()
-		if err != nil {
-			return errors.New(errors.Structural, err)
+		var bundleID [20]byte // AppEUI(8) | DevEUI(8) | FCnt
+		buf := new(bytes.Buffer)
+		binary.Write(buf, binary.BigEndian, appEUI[:])
+		binary.Write(buf, binary.BigEndian, devEUI[:])
+		binary.Write(buf, binary.BigEndian, packet.FCnt())
+		data := buf.Bytes()
+		if len(data) != 20 {
+			return errors.New(errors.Structural, "Unable to generate bundleID")
 		}
 		copy(bundleID[:], data[:])
 
