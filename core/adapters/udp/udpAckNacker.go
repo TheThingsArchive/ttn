@@ -18,6 +18,9 @@ type udpAckNacker struct {
 // Ack implements the core.Adapter interface
 func (an udpAckNacker) Ack(p core.Packet) error {
 	defer close(an.Chresp)
+	if p == nil {
+		return nil
+	}
 	data, err := p.MarshalBinary()
 	if err != nil {
 		return errors.New(errors.Structural, err)
