@@ -727,4 +727,98 @@ func TestHandleUp(t *testing.T) {
 		CheckSent(t, pktSent, adapter.InSendPacket)
 		CheckRecipients(t, []Recipient{recipient}, adapter.InSendRecipients)
 	}
+
+	// --------------------
+
+	{
+		Desc(t, "Handle uplink with 2 different packets from same app | No downlink ready")
+
+		// Build
+		recipient := NewMockJSONRecipient()
+		dataRecipient, _ := recipient.MarshalBinary()
+
+		// First Packet
+		adapter1 := NewMockAdapter()
+		adapter1.OutGetRecipient = recipient
+		an1 := NewMockAckNacker()
+		inPkt1 := newHPacket(
+			[8]byte{1, 1, 1, 1, 1, 1, 1, 1},
+			[8]byte{2, 2, 2, 2, 2, 2, 2, 2},
+			"PayloadPacket1",
+			Metadata{
+				Duty: pointer.Uint(75),
+				Rssi: pointer.Int(-25),
+			},
+			10,
+			[16]byte{1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2},
+		)
+		dataIn1, _ := inPkt1.MarshalBinary()
+
+		// Second Packet
+		adapter2 := NewMockAdapter()
+		adapter2.OutGetRecipient = recipient
+		an2 := NewMockAckNacker()
+		inPkt2 := newHPacket(
+			[8]byte{1, 1, 1, 1, 1, 1, 1, 1},
+			[8]byte{2, 2, 2, 2, 2, 2, 2, 2},
+			"PayloadPacket2",
+			Metadata{
+				Duty: pointer.Uint(5),
+				Rssi: pointer.Int(0),
+			},
+			11,
+			[16]byte{1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2},
+		)
+		dataIn2, _ := inPkt2.MarshalBinary()
+
+		// Expected responses
+		pktSent1, _ := NewAPacket(
+			inPkt1.AppEUI(),
+			inPkt1.DevEUI(),
+			[]byte("PayloadPacket1"),
+			[]Metadata{inPkt1.Metadata()},
+		)
+
+		pktSent2, _ := NewAPacket(
+			inPkt1.AppEUI(),
+			inPkt1.DevEUI(),
+			[]byte("PayloadPacket2"),
+			[]Metadata{inPkt2.Metadata()},
+		)
+
+		devStorage := newMockDevStorage()
+		devStorage.OutLookup = devEntry{
+			Recipient: dataRecipient,
+			DevAddr:   lorawan.DevAddr([4]byte{2, 2, 2, 2}),
+			AppSKey:   [16]byte{1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2},
+			NwkSKey:   [16]byte{4, 4, 4, 4, 3, 3, 3, 3, 4, 4, 4, 4, 3, 3, 3, 3},
+		}
+		pktStorage := newMockPktStorage()
+		broker := NewMockJSONRecipient()
+
+		// Operate #1
+		handler := New(devStorage, pktStorage, broker, GetLogger(t, "Handler"))
+		err := handler.HandleUp(dataIn1, an1, adapter1)
+
+		// Check #1
+		CheckErrors(t, nil, err)
+		CheckAcks(t, true, an1.InAck)
+		CheckSent(t, pktSent1, adapter1.InSendPacket)
+		CheckRecipients(t, []Recipient{recipient}, adapter1.InSendRecipients)
+		CheckPushed(t, nil, pktStorage.InPush)
+		CheckPersonalized(t, nil, devStorage.InStorePersonalized)
+
+		// Operate #2
+		<-time.After(150 * time.Millisecond)
+		err = handler.HandleUp(dataIn2, an2, adapter2)
+
+		// Check
+		CheckErrors(t, nil, err)
+		CheckAcks(t, true, an2.InAck)
+		CheckSent(t, pktSent2, adapter2.InSendPacket)
+		CheckRecipients(t, []Recipient{recipient}, adapter2.InSendRecipients)
+		CheckPushed(t, nil, pktStorage.InPush)
+		CheckPersonalized(t, nil, devStorage.InStorePersonalized)
+	}
+
 }
