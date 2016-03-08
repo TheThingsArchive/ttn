@@ -96,21 +96,25 @@ func (a *Adapter) Send(p core.Packet, recipients ...core.Recipient) ([]byte, err
 		if !ok {
 			err := errors.New(errors.Structural, "Unable to interpret recipient as mqttRecipient")
 			a.ctx.WithField("recipient", r).Warn(err.Error())
+			wg.Done()
+			wg.Done()
 			cherr <- err
 			continue
 		}
 
 		// Subscribe to down channel (before publishing anything)
 		chdown := make(chan []byte)
-		token := a.Subscribe(recipient.TopicDown(), 2, func(client Client, msg MQTT.Message) {
-			chdown <- msg.Payload()
-		})
-		if token.Wait() && token.Error() != nil {
-			err := errors.New(errors.Operational, "Unable to subscribe to down topic")
-			a.ctx.WithField("recipient", recipient).Warn(err.Error())
-			cherr <- err
-			close(chdown)
-			continue
+		if recipient.TopicDown() != "" {
+			token := a.Subscribe(recipient.TopicDown(), 2, func(client Client, msg MQTT.Message) {
+				chdown <- msg.Payload()
+			})
+			if token.Wait() && token.Error() != nil {
+				err := errors.New(errors.Operational, "Unable to subscribe to down topic")
+				a.ctx.WithField("recipient", recipient).Warn(err.Error())
+				cherr <- err
+				close(chdown)
+				continue
+			}
 		}
 
 		// Publish on each topic
@@ -120,6 +124,7 @@ func (a *Adapter) Send(p core.Packet, recipients ...core.Recipient) ([]byte, err
 			ctx := a.ctx.WithField("topic", recipient.TopicUp())
 
 			// Publish packet
+			ctx.WithField("data", data).Debug("Publish data to mqtt")
 			token := a.Publish(recipient.TopicUp(), 2, false, data)
 			if token.Wait() && token.Error() != nil {
 				ctx.WithError(token.Error()).Error("Unable to publish")
@@ -128,12 +133,20 @@ func (a *Adapter) Send(p core.Packet, recipients ...core.Recipient) ([]byte, err
 			}
 		}(recipient)
 
+		// Avoid waiting for response when there's no topic down
+		if recipient.TopicDown() == "" {
+			a.ctx.WithField("recipient", recipient).Debug("No response expected from mqtt recipient")
+			wg.Done()
+			continue
+		}
+
 		// Pull responses from each down topic, expecting only one
 		go func(recipient Recipient, chdown <-chan []byte) {
 			defer wg.Done()
 
 			ctx := a.ctx.WithField("topic", recipient.TopicDown())
 
+			ctx.Debug("Wait for mqtt response")
 			defer func(ctx log.Interface) {
 				if token := a.Unsubscribe(recipient.TopicDown()); token.Wait() && token.Error() != nil {
 					ctx.Warn("Unable to unsubscribe topic")
@@ -183,7 +196,7 @@ func (a *Adapter) GetRecipient(raw []byte) (core.Recipient, error) {
 	if err := recipient.UnmarshalBinary(raw); err != nil {
 		return nil, errors.New(errors.Structural, err)
 	}
-	return *recipient, nil
+	return recipient, nil
 }
 
 // Next implements the core.Adapter interface
