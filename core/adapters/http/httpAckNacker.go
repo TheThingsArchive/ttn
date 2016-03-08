@@ -44,7 +44,7 @@ func (an httpAckNacker) Ack(p core.Packet) error {
 }
 
 // Nack implements the core.AckNacker interface
-func (an httpAckNacker) Nack() error {
+func (an httpAckNacker) Nack(err error) error {
 	if an.Chresp == nil {
 		return nil
 	}

@@ -132,7 +132,7 @@ func TestHTTPAckNacker(t *testing.T) {
 		an := httpAckNacker{Chresp: chresp}
 
 		// Operate
-		err := an.Nack()
+		err := an.Nack(nil)
 
 		// Expectation
 		want := &MsgRes{
@@ -154,7 +154,7 @@ func TestHTTPAckNacker(t *testing.T) {
 		an := httpAckNacker{Chresp: nil}
 
 		// Operate
-		err := an.Nack()
+		err := an.Nack(nil)
 
 		// Check
 		errutil.CheckErrors(t, nil, err)
@@ -173,7 +173,7 @@ func TestHTTPAckNacker(t *testing.T) {
 		// Operate
 		cherr := make(chan error)
 		go func() {
-			cherr <- an.Nack()
+			cherr <- an.Nack(nil)
 		}()
 
 		// Check
@@ -283,7 +283,7 @@ func TestRegAckNacker(t *testing.T) {
 		an := regAckNacker{Chresp: chresp}
 
 		// Operate
-		err := an.Nack()
+		err := an.Nack(nil)
 
 		// Expectation
 		want := &MsgRes{
@@ -305,7 +305,7 @@ func TestRegAckNacker(t *testing.T) {
 		an := regAckNacker{Chresp: nil}
 
 		// Operate
-		err := an.Nack()
+		err := an.Nack(nil)
 
 		// Check
 		errutil.CheckErrors(t, nil, err)
@@ -324,7 +324,7 @@ func TestRegAckNacker(t *testing.T) {
 		// Operate
 		cherr := make(chan error)
 		go func() {
-			cherr <- an.Nack()
+			cherr <- an.Nack(nil)
 		}()
 
 		// Check

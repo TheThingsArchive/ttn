@@ -31,7 +31,7 @@ func (an udpAckNacker) Ack(p core.Packet) error {
 }
 
 // Ack implements the core.Adapter interface
-func (an udpAckNacker) Nack() error {
+func (an udpAckNacker) Nack(err error) error {
 	defer close(an.Chresp)
 	return nil
 }

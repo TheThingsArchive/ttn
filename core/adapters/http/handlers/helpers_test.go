@@ -136,7 +136,7 @@ func tryNext(adapter core.Adapter, shouldAck bool, packet core.Packet) ([]byte, 
 		if shouldAck {
 			an.Ack(packet)
 		} else {
-			an.Nack()
+			an.Nack(nil)
 		}
 	}()
 
@@ -169,7 +169,7 @@ func tryNextRegistration(adapter core.Adapter, shouldAck bool, packet core.Packe
 		if shouldAck {
 			an.Ack(packet)
 		} else {
-			an.Nack()
+			an.Nack(nil)
 		}
 	}()
 

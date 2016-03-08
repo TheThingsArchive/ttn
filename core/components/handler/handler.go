@@ -377,7 +377,7 @@ func (h component) HandleDown(data []byte, an AckNacker, down Adapter) (err erro
 
 func ensureAckNack(an AckNacker, ack *Packet, err *error) {
 	if err != nil && *err != nil {
-		an.Nack()
+		an.Nack(*err)
 	} else {
 		var p Packet
 		if ack != nil {

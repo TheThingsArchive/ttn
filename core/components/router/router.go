@@ -140,7 +140,7 @@ func (r component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 
 func ensureAckNack(an AckNacker, ack *Packet, err *error) {
 	if err != nil && *err != nil {
-		an.Nack()
+		an.Nack(*err)
 	} else {
 		var p Packet
 		if ack != nil {
