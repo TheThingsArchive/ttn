@@ -147,11 +147,11 @@ func TestMQTTSend(t *testing.T) {
 		checkResponses(t, test.WantResponse, resp)
 
 		// Clean
-		aclient.Disconnect(250)
+		go aclient.Disconnect(250)
 		for _, sclient := range sclients {
-			sclient.Disconnect(250)
+			go sclient.Disconnect(250)
 		}
-		<-time.After(time.Millisecond * 100)
+		<-time.After(time.Millisecond * 400)
 	}
 }
 
