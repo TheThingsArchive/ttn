@@ -23,7 +23,7 @@ type Broker interface {
 // behaviour expected by the caller.
 type AckNacker interface {
 	Ack(p Packet) error
-	Nack() error
+	Nack(err error) error
 }
 
 // Adapter handles communications between components. They implement a specific communication

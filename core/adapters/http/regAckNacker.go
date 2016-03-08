@@ -32,7 +32,7 @@ func (r regAckNacker) Ack(p core.Packet) error {
 }
 
 // Nack implements the core.Nacker interface
-func (r regAckNacker) Nack() error {
+func (r regAckNacker) Nack(err error) error {
 	if r.Chresp == nil {
 		return nil
 	}

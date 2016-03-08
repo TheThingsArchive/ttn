@@ -125,19 +125,115 @@ func TestHTTPAckNacker(t *testing.T) {
 	// --------------------
 
 	{
-		Desc(t, "Nack")
+		Desc(t, "Nack no error")
 
 		// Build
 		chresp := make(chan MsgRes, 1)
 		an := httpAckNacker{Chresp: chresp}
 
 		// Operate
-		err := an.Nack()
+		err := an.Nack(nil)
+
+		// Expectation
+		want := &MsgRes{
+			StatusCode: http.StatusInternalServerError,
+			Content:    []byte("Unknown Internal Error"),
+		}
+
+		// Check
+		errutil.CheckErrors(t, nil, err)
+		CheckResps(t, want, chresp)
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Nack NotFound error")
+
+		// Build
+		chresp := make(chan MsgRes, 1)
+		an := httpAckNacker{Chresp: chresp}
+		e := errors.New(errors.NotFound, "Not Found")
+
+		// Operate
+		err := an.Nack(e)
 
 		// Expectation
 		want := &MsgRes{
 			StatusCode: http.StatusNotFound,
-			Content:    []byte(errors.Structural),
+			Content:    []byte(e.Error()),
+		}
+
+		// Check
+		errutil.CheckErrors(t, nil, err)
+		CheckResps(t, want, chresp)
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Nack Behavioural error")
+
+		// Build
+		chresp := make(chan MsgRes, 1)
+		an := httpAckNacker{Chresp: chresp}
+		e := errors.New(errors.Behavioural, "Behavioural")
+
+		// Operate
+		err := an.Nack(e)
+
+		// Expectation
+		want := &MsgRes{
+			StatusCode: http.StatusNotAcceptable,
+			Content:    []byte(e.Error()),
+		}
+
+		// Check
+		errutil.CheckErrors(t, nil, err)
+		CheckResps(t, want, chresp)
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Nack Operational error")
+
+		// Build
+		chresp := make(chan MsgRes, 1)
+		an := httpAckNacker{Chresp: chresp}
+		e := errors.New(errors.Operational, "Operational")
+
+		// Operate
+		err := an.Nack(e)
+
+		// Expectation
+		want := &MsgRes{
+			StatusCode: http.StatusInternalServerError,
+			Content:    []byte(e.Error()),
+		}
+
+		// Check
+		errutil.CheckErrors(t, nil, err)
+		CheckResps(t, want, chresp)
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Nack Implementation error")
+
+		// Build
+		chresp := make(chan MsgRes, 1)
+		an := httpAckNacker{Chresp: chresp}
+		e := errors.New(errors.Implementation, "Implementation")
+
+		// Operate
+		err := an.Nack(e)
+
+		// Expectation
+		want := &MsgRes{
+			StatusCode: http.StatusNotImplemented,
+			Content:    []byte(e.Error()),
 		}
 
 		// Check
@@ -154,7 +250,7 @@ func TestHTTPAckNacker(t *testing.T) {
 		an := httpAckNacker{Chresp: nil}
 
 		// Operate
-		err := an.Nack()
+		err := an.Nack(nil)
 
 		// Check
 		errutil.CheckErrors(t, nil, err)
@@ -173,7 +269,7 @@ func TestHTTPAckNacker(t *testing.T) {
 		// Operate
 		cherr := make(chan error)
 		go func() {
-			cherr <- an.Nack()
+			cherr <- an.Nack(nil)
 		}()
 
 		// Check
@@ -283,7 +379,7 @@ func TestRegAckNacker(t *testing.T) {
 		an := regAckNacker{Chresp: chresp}
 
 		// Operate
-		err := an.Nack()
+		err := an.Nack(nil)
 
 		// Expectation
 		want := &MsgRes{
@@ -305,7 +401,7 @@ func TestRegAckNacker(t *testing.T) {
 		an := regAckNacker{Chresp: nil}
 
 		// Operate
-		err := an.Nack()
+		err := an.Nack(nil)
 
 		// Check
 		errutil.CheckErrors(t, nil, err)
@@ -324,7 +420,7 @@ func TestRegAckNacker(t *testing.T) {
 		// Operate
 		cherr := make(chan error)
 		go func() {
-			cherr <- an.Nack()
+			cherr <- an.Nack(nil)
 		}()
 
 		// Check

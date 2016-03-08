@@ -225,6 +225,7 @@ type MockAckNacker struct {
 	InAck struct {
 		Ack    *bool
 		Packet Packet
+		Error  error
 	}
 }
 
@@ -236,6 +237,7 @@ func (an *MockAckNacker) Ack(p Packet) error {
 	an.InAck = struct {
 		Ack    *bool
 		Packet Packet
+		Error  error
 	}{
 		Ack:    pointer.Bool(true),
 		Packet: p,
@@ -243,13 +245,14 @@ func (an *MockAckNacker) Ack(p Packet) error {
 	return nil
 }
 
-func (an *MockAckNacker) Nack() error {
+func (an *MockAckNacker) Nack(err error) error {
 	an.InAck = struct {
 		Ack    *bool
 		Packet Packet
+		Error  error
 	}{
-		Ack:    pointer.Bool(false),
-		Packet: nil,
+		Ack:   pointer.Bool(false),
+		Error: err,
 	}
 	return nil
 }
@@ -400,6 +403,7 @@ func CheckAcks(t *testing.T, want interface{}, gotItf interface{}) {
 	got := gotItf.(struct {
 		Ack    *bool
 		Packet Packet
+		Error  error
 	})
 
 	if got.Ack == nil {

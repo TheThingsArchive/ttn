@@ -59,8 +59,8 @@ func TestCollect(t *testing.T) {
 			Method:      "POST",
 			ShouldAck:   false,
 
-			WantContent:    string(errors.Structural),
-			WantStatusCode: http.StatusNotFound,
+			WantContent:    "Unknown",
+			WantStatusCode: http.StatusInternalServerError,
 			WantPacket:     []byte("Patate"),
 			WantError:      nil,
 		},
