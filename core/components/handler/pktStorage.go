@@ -56,7 +56,7 @@ func (s pktStorage) Pull(appEUI lorawan.EUI64, devEUI lorawan.EUI64) (APacket, e
 
 	entries, err := s.db.Lookup(s.Name, key, &pktEntry{})
 	if err != nil {
-		return nil, err // Operational || Behavioural
+		return nil, err // Operational || NotFound
 	}
 
 	packets, ok := entries.([]pktEntry)
@@ -67,7 +67,7 @@ func (s pktStorage) Pull(appEUI lorawan.EUI64, devEUI lorawan.EUI64) (APacket, e
 	// NOTE: one day, those entries will be more complicated, with a ttl.
 	// Here's the place where we should check for that. Cheers.
 	if len(packets) == 0 {
-		return nil, errors.New(errors.Behavioural, fmt.Sprintf("Entry not found for %v", key))
+		return nil, errors.New(errors.NotFound, fmt.Sprintf("Entry not found for %v", key))
 	}
 
 	pkt := packets[0]

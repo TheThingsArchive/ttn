@@ -51,7 +51,7 @@ func NewDevStorage(name string) (DevStorage, error) {
 func (s devStorage) Lookup(appEUI lorawan.EUI64, devEUI lorawan.EUI64) (devEntry, error) {
 	itf, err := s.db.Lookup(fmt.Sprintf("%x.%x", appEUI[:], devEUI[:]), []byte(s.Name), &devEntry{})
 	if err != nil {
-		return devEntry{}, err // Behavioural || Operational
+		return devEntry{}, err // Operational || NotFound
 	}
 	entries, ok := itf.([]devEntry)
 	if !ok || len(entries) != 1 {

@@ -123,7 +123,7 @@ func TestNetworkControllerDevice(t *testing.T) {
 		entries, err := db.LookupDevices(devEUI)
 
 		// Checks
-		CheckErrors(t, pointer.String(string(errors.Behavioural)), err)
+		CheckErrors(t, pointer.String(string(errors.NotFound)), err)
 		CheckDevEntries(t, nil, entries)
 		_ = db.Close()
 	}
@@ -179,7 +179,7 @@ func TestNetworkControllerDevice(t *testing.T) {
 		err := db.StoreDevice(r)
 		CheckErrors(t, pointer.String(string(errors.Structural)), err)
 		entries, err := db.LookupDevices(r.DevEUI())
-		CheckErrors(t, pointer.String(string(errors.Behavioural)), err)
+		CheckErrors(t, pointer.String(string(errors.NotFound)), err)
 		CheckDevEntries(t, nil, entries)
 
 		_ = db.Close()
@@ -304,7 +304,7 @@ func TestNetworkControllerDevice(t *testing.T) {
 		err := db.UpdateFCnt(r.AppEUI(), r.DevEUI(), 14, "up")
 
 		// Checks
-		CheckErrors(t, pointer.String(string(errors.Behavioural)), err)
+		CheckErrors(t, pointer.String(string(errors.NotFound)), err)
 		_ = db.Close()
 	}
 
@@ -445,7 +445,7 @@ func TestNetworkControllerApplication(t *testing.T) {
 		entry, err := db.LookupApplication(appEUI)
 
 		// Checks
-		CheckErrors(t, pointer.String(string(errors.Behavioural)), err)
+		CheckErrors(t, pointer.String(string(errors.NotFound)), err)
 		CheckAppEntries(t, appEntry{}, entry)
 		_ = db.Close()
 	}
@@ -501,7 +501,7 @@ func TestNetworkControllerApplication(t *testing.T) {
 		err := db.StoreApplication(r)
 		CheckErrors(t, pointer.String(string(errors.Structural)), err)
 		entry, err := db.LookupApplication(r.AppEUI())
-		CheckErrors(t, pointer.String(string(errors.Behavioural)), err)
+		CheckErrors(t, pointer.String(string(errors.NotFound)), err)
 		CheckAppEntries(t, appEntry{}, entry)
 
 		_ = db.Close()

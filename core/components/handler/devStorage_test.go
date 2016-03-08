@@ -64,7 +64,7 @@ func TestLookupStore(t *testing.T) {
 		_, err := db.Lookup(r.AppEUI(), r.DevEUI())
 
 		// Check
-		CheckErrors(t, pointer.String(string(errors.Behavioural)), err)
+		CheckErrors(t, pointer.String(string(errors.NotFound)), err)
 	}
 
 	// ------------------

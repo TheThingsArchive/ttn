@@ -85,7 +85,7 @@ func TestHandleUp(t *testing.T) {
 		adapter := NewMockAdapter()
 		adapter.OutSend = nil
 		store := newMockStorage()
-		store.Failures["Lookup"] = errors.New(errors.Behavioural, "Mock Error: Not Found")
+		store.Failures["Lookup"] = errors.New(errors.NotFound, "Mock Error: Not Found")
 		data, err := newRPacket(
 			[4]byte{2, 3, 2, 3},
 			"Payload",
@@ -121,7 +121,7 @@ func TestHandleUp(t *testing.T) {
 		adapter := NewMockAdapter()
 		adapter.OutSend = dataResp
 		store := newMockStorage()
-		store.Failures["Lookup"] = errors.New(errors.Behavioural, "Mock Error: Not Found")
+		store.Failures["Lookup"] = errors.New(errors.NotFound, "Mock Error: Not Found")
 		data, err := newRPacket(
 			[4]byte{2, 3, 2, 3},
 			"Payload",
@@ -150,7 +150,7 @@ func TestHandleUp(t *testing.T) {
 		an := NewMockAckNacker()
 		adapter := NewMockAdapter()
 		store := newMockStorage()
-		store.Failures["Lookup"] = errors.New(errors.Behavioural, "Mock Error: Not Found")
+		store.Failures["Lookup"] = errors.New(errors.NotFound, "Mock Error: Not Found")
 
 		// Operate
 		router := New(store, GetLogger(t, "Router"))
@@ -272,7 +272,7 @@ func TestHandleUp(t *testing.T) {
 		adapter := NewMockAdapter()
 		adapter.Failures["Send"] = errors.New(errors.Operational, "Mock Error: Unable to send")
 		store := newMockStorage()
-		store.Failures["Lookup"] = errors.New(errors.Behavioural, "Mock Error: Not found")
+		store.Failures["Lookup"] = errors.New(errors.NotFound, "Mock Error: Not found")
 		data, err := newRPacket(
 			[4]byte{2, 3, 2, 3},
 			"Payload",
@@ -302,7 +302,7 @@ func TestHandleUp(t *testing.T) {
 		adapter := NewMockAdapter()
 		adapter.OutSend = []byte{1, 2, 3}
 		store := newMockStorage()
-		store.Failures["Lookup"] = errors.New(errors.Behavioural, "Mock Error: Not found")
+		store.Failures["Lookup"] = errors.New(errors.NotFound, "Mock Error: Not found")
 		data, err := newRPacket(
 			[4]byte{2, 3, 2, 3},
 			"Payload",

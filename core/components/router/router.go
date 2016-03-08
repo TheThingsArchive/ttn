@@ -65,7 +65,7 @@ func (r component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 		// Keeping track of the last FCnt maybe ? Having an overlap on the frame counter + the
 		// device address might be less likely.
 		entry, err := r.Lookup(packet.DevEUI())
-		if err != nil && err.(errors.Failure).Nature != errors.Behavioural {
+		if err != nil && err.(errors.Failure).Nature != errors.NotFound {
 			r.ctx.Warn("Database lookup failed")
 			return errors.New(errors.Operational, err)
 		}
@@ -97,7 +97,7 @@ func (r component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 
 		if err != nil {
 			switch err.(errors.Failure).Nature {
-			case errors.Behavioural:
+			case errors.NotFound:
 				stats.MarkMeter("router.uplink.negative_broker_response")
 				r.ctx.WithError(err).Debug("Negative response from Broker")
 			default:

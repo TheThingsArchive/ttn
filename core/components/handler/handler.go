@@ -228,14 +228,14 @@ browseBundles:
 		}
 
 		_, err = adapter.Send(packet, recipient)
-		if err != nil && err.(errors.Failure).Nature != errors.Behavioural {
+		if err != nil {
 			go h.abortConsume(err, bundles)
 			continue browseBundles
 		}
 
 		// Now handle the downlink
 		down, err := h.packets.Pull(appEUI, devEUI)
-		if err != nil && err.(errors.Failure).Nature != errors.Behavioural {
+		if err != nil && err.(errors.Failure).Nature != errors.NotFound {
 			go h.abortConsume(err, bundles)
 			continue browseBundles
 		}
@@ -276,6 +276,8 @@ browseBundles:
 						continue browseBundles
 					}
 				}
+
+				// TODO handle confirmed data down
 
 				bundle.Chresp <- resp
 			} else {

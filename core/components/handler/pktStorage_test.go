@@ -103,7 +103,7 @@ func TestPushPullNormal(t *testing.T) {
 		p, err := db.Pull(appEUI, devEUI)
 
 		// Check
-		CheckErrors(t, pointer.String(string(errors.Behavioural)), err)
+		CheckErrors(t, pointer.String(string(errors.NotFound)), err)
 		CheckPackets(t, nil, p)
 	}
 

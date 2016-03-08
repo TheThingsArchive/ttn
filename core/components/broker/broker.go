@@ -67,7 +67,7 @@ func (b component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 		entries, err := b.LookupDevices(packet.DevEUI())
 		if err != nil {
 			switch err.(errors.Failure).Nature {
-			case errors.Behavioural:
+			case errors.NotFound:
 				stats.MarkMeter("broker.uplink.handler_lookup.device_not_found")
 				ctx.Debug("Uplink device not found")
 			default:
@@ -99,7 +99,7 @@ func (b component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 		}
 		if mEntry == nil {
 			stats.MarkMeter("broker.uplink.handler_lookup.no_mic_match")
-			err := errors.New(errors.Behavioural, "MIC check returned no matches")
+			err := errors.New(errors.NotFound, "MIC check returned no matches")
 			ctx.Debug(err.Error())
 			return err
 		}
@@ -119,7 +119,7 @@ func (b component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 			return errors.New(errors.Structural, err)
 		}
 		resp, err := up.Send(hpacket, recipient)
-		if err != nil && err.(errors.Failure).Nature != errors.Behavioural {
+		if err != nil && err.(errors.Failure).Nature != errors.NotFound {
 			stats.MarkMeter("broker.uplink.bad_handler_response")
 			return errors.New(errors.Operational, err)
 		}
