@@ -403,6 +403,7 @@ func CheckAcks(t *testing.T, want interface{}, gotItf interface{}) {
 	got := gotItf.(struct {
 		Ack    *bool
 		Packet Packet
+		Error  error
 	})
 
 	if got.Ack == nil {
