@@ -27,6 +27,7 @@ type Adapter struct {
 	recipients    []core.Recipient // Known recipient used for broadcast if any
 	registrations chan RegReq      // Incoming registrations
 	serveMux      *http.ServeMux   // Holds a references to the adapter servemux in order to dynamically define endpoints
+	net           string           // Address on which is listening the adapter http server
 }
 
 // Handler defines endpoint-specific handler.
@@ -62,6 +63,7 @@ func NewAdapter(net string, recipients []core.Recipient, ctx log.Interface) (*Ad
 		recipients:    recipients,
 		registrations: make(chan RegReq),
 		serveMux:      http.NewServeMux(),
+		net:           net,
 	}
 
 	go a.listenRequests(net)
@@ -71,6 +73,7 @@ func NewAdapter(net string, recipients []core.Recipient, ctx log.Interface) (*Ad
 
 // Register implements the core.Subscriber interface
 func (a *Adapter) Subscribe(r core.Registration) error {
+	// 1. Type assertions and convertions
 	jsonMarshaler, ok := r.(json.Marshaler)
 	if !ok {
 		return errors.New(errors.Structural, "Unable to marshal registration")
@@ -80,12 +83,30 @@ func (a *Adapter) Subscribe(r core.Registration) error {
 		return errors.New(errors.Structural, "Invalid recipient")
 	}
 
-	data, err := jsonMarshaler.MarshalJSON()
+	// 2. Marshaling
+	data, err := json.Marshal(struct {
+		Recipient struct {
+			Method string `json:"method"`
+			URL    string `json:"url"`
+		} `json:"recipient"`
+		json.Marshaler
+	}{
+		Recipient: struct {
+			Method string `json:"method"`
+			URL    string `json:"url"`
+		}{
+			Method: "POST",
+			URL:    a.net,
+		},
+		Marshaler: jsonMarshaler,
+	})
 	if err != nil {
 		return errors.New(errors.Structural, err)
 	}
 	buf := new(bytes.Buffer)
 	buf.Write(data)
+
+	// 3. Send Request
 	req, err := http.NewRequest(httpRecipient.Method(), fmt.Sprintf("http://%s/end-devices", httpRecipient.URL()), buf)
 	if err != nil {
 		return errors.New(errors.Operational, err)
@@ -96,8 +117,12 @@ func (a *Adapter) Subscribe(r core.Registration) error {
 		return errors.New(errors.Operational, err)
 	}
 	defer resp.Body.Close()
+
+	// 4. Handle response -> resp body isn't relevant
 	if resp.StatusCode != http.StatusAccepted && resp.StatusCode != http.StatusOK {
-		return errors.New(errors.Operational, "Unable to subscribe")
+		errData := make([]byte, resp.ContentLength)
+		resp.Body.Read(errData)
+		return errors.New(errors.Operational, string(errData))
 	}
 	return nil
 }

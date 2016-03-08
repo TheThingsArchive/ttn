@@ -94,12 +94,12 @@ func (p PubSub) parse(req *http.Request) (core.Registration, error) {
 	}
 	defer req.Body.Close()
 	params := new(struct {
-		AppEUI    string `json:"app_eui"`
-		DevEUI    string `json:"dev_eui"`
 		Recipient struct {
 			URL    string `json:"url"`
 			Method string `json:"method"`
 		} `json:"recipient"`
+		AppEUI  string `json:"app_eui"`
+		DevEUI  string `json:"dev_eui"`
 		NwkSKey string `json:"nwks_key"`
 	})
 	if err := json.Unmarshal(body[:n], params); err != nil {

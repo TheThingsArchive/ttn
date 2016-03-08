@@ -13,7 +13,7 @@ import (
 
 // type brokerRegistration implements the core.BRegistration interface
 type brokerRegistration struct {
-	recipient core.JSONRecipient
+	recipient core.Recipient
 	appEUI    lorawan.EUI64
 	nwkSKey   lorawan.AES128Key
 	devEUI    lorawan.EUI64
@@ -42,15 +42,13 @@ func (r brokerRegistration) NwkSKey() lorawan.AES128Key {
 // MarshalJSON implements the encoding/json.Marshaler interface
 func (r brokerRegistration) MarshalJSON() ([]byte, error) {
 	data, err := json.Marshal(struct {
-		Recipient core.JSONRecipient `json:"recipient"`
-		AppEUI    lorawan.EUI64      `json:"app_eui"`
-		NwkSKey   lorawan.AES128Key  `json:"nwks_key"`
-		DevEUI    lorawan.EUI64      `json:"dev_eui"`
+		AppEUI  lorawan.EUI64     `json:"app_eui"`
+		NwkSKey lorawan.AES128Key `json:"nwks_key"`
+		DevEUI  lorawan.EUI64     `json:"dev_eui"`
 	}{
-		Recipient: r.recipient,
-		AppEUI:    r.appEUI,
-		NwkSKey:   r.nwkSKey,
-		DevEUI:    r.devEUI,
+		AppEUI:  r.appEUI,
+		NwkSKey: r.nwkSKey,
+		DevEUI:  r.devEUI,
 	})
 	if err != nil {
 		return nil, errors.New(errors.Structural, err)

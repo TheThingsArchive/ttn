@@ -7,14 +7,12 @@ import (
 	"testing"
 
 	mocks "github.com/TheThingsNetwork/ttn/core/mocks"
-	"github.com/TheThingsNetwork/ttn/utils/errors"
 	errutil "github.com/TheThingsNetwork/ttn/utils/errors/checks"
-	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	"github.com/brocaar/lorawan"
 )
 
 func TestRegistration(t *testing.T) {
-	recipient := mocks.NewMockJSONRecipient()
+	recipient := mocks.NewMockRecipient()
 	devEUI := lorawan.EUI64([8]byte{1, 2, 3, 4, 5, 6, 7, 8})
 	appEUI := lorawan.EUI64([8]byte{1, 43, 3, 4, 6, 6, 6, 8})
 	nwkSKey := lorawan.AES128Key([16]byte{0, 0, 1, 1, 0, 0, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4})
@@ -33,29 +31,17 @@ func TestRegistration(t *testing.T) {
 
 }
 
-func TestRegistrationMarshalUnmarshal(t *testing.T) {
+func TestRegistrationMarshal(t *testing.T) {
 	{
 		reg := brokerRegistration{
-			recipient: mocks.NewMockJSONRecipient(),
+			recipient: mocks.NewMockRecipient(),
 			devEUI:    lorawan.EUI64([8]byte{1, 2, 3, 4, 5, 6, 7, 8}),
 			appEUI:    lorawan.EUI64([8]byte{1, 43, 3, 4, 6, 6, 6, 8}),
 			nwkSKey:   lorawan.AES128Key([16]byte{0, 0, 1, 1, 0, 0, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4}),
 		}
 
-		_, err := reg.MarshalJSON()
+		data, err := reg.MarshalJSON()
+		t.Log(string(data))
 		errutil.CheckErrors(t, nil, err)
-	}
-
-	{
-		reg := brokerRegistration{
-			recipient: mocks.NewMockJSONRecipient(),
-			devEUI:    lorawan.EUI64([8]byte{1, 2, 3, 4, 5, 6, 7, 8}),
-			appEUI:    lorawan.EUI64([8]byte{1, 43, 3, 4, 6, 6, 6, 8}),
-			nwkSKey:   lorawan.AES128Key([16]byte{0, 0, 1, 1, 0, 0, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4}),
-		}
-		reg.recipient.(*mocks.MockJSONRecipient).OutMarshalJSON = []byte("InvalidJSON")
-
-		_, err := reg.MarshalJSON()
-		errutil.CheckErrors(t, pointer.String(string(errors.Structural)), err)
 	}
 }
