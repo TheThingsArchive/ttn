@@ -208,7 +208,9 @@ func (a *Adapter) Send(p core.Packet, recipients ...core.Recipient) ([]byte, err
 					cherr <- errors.New(errors.Operational, err)
 					return
 				}
-				chresp <- data
+				if len(data) > 0 {
+					chresp <- data
+				}
 				if isBroadcast { // Generate registration on broadcast
 					go func() {
 						a.registrations <- RegReq{
