@@ -224,7 +224,7 @@ func (a *Adapter) Send(p core.Packet, recipients ...core.Recipient) ([]byte, err
 				}
 			case http.StatusNotFound:
 				ctx.Debug("Recipient not interested in packet")
-				cherr <- errors.New(errors.Behavioural, "Recipient not interested")
+				cherr <- errors.New(errors.NotFound, "Recipient not interested")
 			default:
 				cherr <- errors.New(errors.Operational, fmt.Sprintf("Unexpected response from server: %s (%d)", resp.Status, resp.StatusCode))
 			}
@@ -238,13 +238,16 @@ func (a *Adapter) Send(p core.Packet, recipients ...core.Recipient) ([]byte, err
 	close(cherr)
 	close(chresp)
 
-	// Collect errors and see if everything went well
 	var errored uint8
+	var notFound uint8
 	for i := 0; i < len(cherr); i++ {
 		err := <-cherr
-		if err.(errors.Failure).Nature != errors.Behavioural {
+		if err.(errors.Failure).Nature != errors.NotFound {
 			errored++
 			ctx.WithError(err).Warn("POST Failed")
+		} else {
+			notFound++
+			ctx.WithError(err).Debug("Packet destination not found")
 		}
 	}
 
@@ -253,14 +256,17 @@ func (a *Adapter) Send(p core.Packet, recipients ...core.Recipient) ([]byte, err
 		return nil, errors.New(errors.Behavioural, "Received too many positive answers")
 	}
 
-	if len(chresp) == 0 && errored != 0 {
+	if len(chresp) == 0 && errored > 0 {
 		return nil, errors.New(errors.Operational, "No positive response from recipients but got unexpected answer")
 	}
 
-	if len(chresp) == 0 && errored == 0 {
-		return nil, errors.New(errors.Behavioural, "No recipient gave a positive answer")
+	if len(chresp) == 0 && notFound > 0 {
+		return nil, errors.New(errors.NotFound, "No available recipient found")
 	}
 
+	if len(chresp) == 0 {
+		return nil, nil
+	}
 	return <-chresp, nil
 }
 
