@@ -68,7 +68,7 @@ func (a Activation) Handle(client Client, chpkt chan<- PktReq, chreg chan<- RegR
 
 	chreg <- RegReq{
 		Registration: activationRegistration{
-			recipient: NewRecipient(topicUp, "DO_NOT_USE_THIS_TOPIC"),
+			recipient: NewRecipient(topicUp, ""),
 			devEUI:    devEUI,
 			appEUI:    appEUI,
 			nwkSKey:   nwkSKey,
