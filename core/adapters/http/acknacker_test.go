@@ -125,7 +125,7 @@ func TestHTTPAckNacker(t *testing.T) {
 	// --------------------
 
 	{
-		Desc(t, "Nack")
+		Desc(t, "Nack no error")
 
 		// Build
 		chresp := make(chan MsgRes, 1)
@@ -136,8 +136,104 @@ func TestHTTPAckNacker(t *testing.T) {
 
 		// Expectation
 		want := &MsgRes{
+			StatusCode: http.StatusInternalServerError,
+			Content:    []byte("Unknown Internal Error"),
+		}
+
+		// Check
+		errutil.CheckErrors(t, nil, err)
+		CheckResps(t, want, chresp)
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Nack NotFound error")
+
+		// Build
+		chresp := make(chan MsgRes, 1)
+		an := httpAckNacker{Chresp: chresp}
+		e := errors.New(errors.NotFound, "Not Found")
+
+		// Operate
+		err := an.Nack(e)
+
+		// Expectation
+		want := &MsgRes{
 			StatusCode: http.StatusNotFound,
-			Content:    []byte(errors.Structural),
+			Content:    []byte(e.Error()),
+		}
+
+		// Check
+		errutil.CheckErrors(t, nil, err)
+		CheckResps(t, want, chresp)
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Nack Behavioural error")
+
+		// Build
+		chresp := make(chan MsgRes, 1)
+		an := httpAckNacker{Chresp: chresp}
+		e := errors.New(errors.Behavioural, "Behavioural")
+
+		// Operate
+		err := an.Nack(e)
+
+		// Expectation
+		want := &MsgRes{
+			StatusCode: http.StatusNotAcceptable,
+			Content:    []byte(e.Error()),
+		}
+
+		// Check
+		errutil.CheckErrors(t, nil, err)
+		CheckResps(t, want, chresp)
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Nack Operational error")
+
+		// Build
+		chresp := make(chan MsgRes, 1)
+		an := httpAckNacker{Chresp: chresp}
+		e := errors.New(errors.Operational, "Operational")
+
+		// Operate
+		err := an.Nack(e)
+
+		// Expectation
+		want := &MsgRes{
+			StatusCode: http.StatusInternalServerError,
+			Content:    []byte(e.Error()),
+		}
+
+		// Check
+		errutil.CheckErrors(t, nil, err)
+		CheckResps(t, want, chresp)
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Nack Implementation error")
+
+		// Build
+		chresp := make(chan MsgRes, 1)
+		an := httpAckNacker{Chresp: chresp}
+		e := errors.New(errors.Implementation, "Implementation")
+
+		// Operate
+		err := an.Nack(e)
+
+		// Expectation
+		want := &MsgRes{
+			StatusCode: http.StatusNotImplemented,
+			Content:    []byte(e.Error()),
 		}
 
 		// Check
