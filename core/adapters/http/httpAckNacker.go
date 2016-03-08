@@ -50,11 +50,28 @@ func (an httpAckNacker) Nack(err error) error {
 	}
 	defer close(an.Chresp)
 
+	var code int
+	var content []byte
+
+	if err == nil {
+		code = http.StatusInternalServerError
+		content = []byte("Unknown Internal Error")
+	} else {
+		switch err.(errors.Failure).Nature {
+		case errors.NotFound:
+			code = http.StatusNotFound
+		case errors.Behavioural:
+			code = http.StatusNotAcceptable
+		case errors.Implementation:
+			code = http.StatusNotImplemented
+		default:
+			code = http.StatusInternalServerError
+		}
+		content = []byte(err.Error())
+	}
+
 	select {
-	case an.Chresp <- MsgRes{
-		StatusCode: http.StatusNotFound,
-		Content:    []byte(errors.Structural),
-	}:
+	case an.Chresp <- MsgRes{StatusCode: code, Content: content}:
 		return nil
 	case <-time.After(time.Millisecond * 50):
 		return errors.New(errors.Operational, "No response was given to the acknacker")
