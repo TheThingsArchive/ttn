@@ -179,14 +179,13 @@ func (a *Adapter) Send(p core.Packet, recipients ...core.Recipient) ([]byte, err
 		return nil, errors.New(errors.Behavioural, "Received too many positive answers")
 	}
 
-	if len(chresp) == 0 && errored != 0 {
+	if len(chresp) == 0 && errored > 0 {
 		return nil, errors.New(errors.Operational, "No positive response from recipients but got unexpected answers")
 	}
 
-	if len(chresp) == 0 && errored == 0 {
-		return nil, errors.New(errors.Behavioural, "No recipient gave a positive answer")
+	if len(chresp) == 0 {
+		return nil, nil
 	}
-
 	return <-chresp, nil
 }
 

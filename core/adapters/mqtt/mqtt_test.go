@@ -45,7 +45,7 @@ func TestMQTTSend(t *testing.T) {
 
 			WantData:     []byte("TheThingsNetwork"),
 			WantResponse: nil,
-			WantError:    pointer.String(string(errors.Behavioural)),
+			WantError:    nil,
 		},
 		{
 			Desc:   "invalid packet | 1 recipient | No response",
@@ -80,7 +80,7 @@ func TestMQTTSend(t *testing.T) {
 
 			WantData:     []byte("TheThingsNetwork"),
 			WantResponse: nil,
-			WantError:    pointer.String(string(errors.Behavioural)),
+			WantError:    nil,
 		},
 		{
 			Desc:   "1 packet | 2 recipients | #1 answer ",

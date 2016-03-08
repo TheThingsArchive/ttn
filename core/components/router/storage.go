@@ -67,7 +67,7 @@ func (s *storage) lookup(devEUI lorawan.EUI64, lock bool) (entry, error) {
 		if err := s.db.Flush(s.Name, devEUI[:]); err != nil {
 			return entry{}, errors.New(errors.Operational, err)
 		}
-		return entry{}, errors.New(errors.Behavioural, "Not Found")
+		return entry{}, errors.New(errors.NotFound, "Not Found")
 	}
 
 	e := entries[0]
@@ -76,7 +76,7 @@ func (s *storage) lookup(devEUI lorawan.EUI64, lock bool) (entry, error) {
 		if err := s.db.Flush(s.Name, devEUI[:]); err != nil {
 			return entry{}, errors.New(errors.Operational, err)
 		}
-		return entry{}, errors.New(errors.Behavioural, "Not Found")
+		return entry{}, errors.New(errors.NotFound, "Not Found")
 	}
 
 	return e, nil
@@ -94,12 +94,13 @@ func (s *storage) Store(reg RRegistration) error {
 	defer s.Unlock()
 
 	_, err = s.lookup(devEUI, false)
-	if err == nil || err != nil && err.(errors.Failure).Nature != errors.Behavioural {
-		if err == nil {
-			return errors.New(errors.Structural, "Already exists")
-		}
+	if err == nil {
+		return errors.New(errors.Structural, "Already exists")
+	}
+	if err.(errors.Failure).Nature != errors.NotFound {
 		return err
 	}
+
 	return s.db.Store(s.Name, devEUI[:], []dbutil.Entry{&entry{
 		Recipient: recipient,
 		until:     time.Now().Add(s.ExpiryDelay),

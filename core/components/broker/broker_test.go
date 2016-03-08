@@ -130,7 +130,7 @@ func TestHandleUp(t *testing.T) {
 		an := mocks.NewMockAckNacker()
 		adapter := mocks.NewMockAdapter()
 		store := newMockController()
-		store.Failures["LookupDevices"] = errors.New(errors.Behavioural, "Mock Error: Not Found")
+		store.Failures["LookupDevices"] = errors.New(errors.NotFound, "Mock Error: Not Found")
 		data, _ := newBPacket(
 			[4]byte{2, 3, 2, 3},
 			"Payload",
@@ -143,7 +143,7 @@ func TestHandleUp(t *testing.T) {
 		err := broker.HandleUp(data, an, adapter)
 
 		// Check
-		errutil.CheckErrors(t, pointer.String(string(errors.Behavioural)), err)
+		errutil.CheckErrors(t, pointer.String(string(errors.NotFound)), err)
 		mocks.CheckAcks(t, false, an.InAck)
 		CheckRegistrations(t, nil, store.InStoreDevices)
 		CheckRegistrations(t, nil, store.InStoreApp)
@@ -213,7 +213,7 @@ func TestHandleUp(t *testing.T) {
 		err := broker.HandleUp(data, an, adapter)
 
 		// Check
-		errutil.CheckErrors(t, pointer.String(string(errors.Behavioural)), err)
+		errutil.CheckErrors(t, pointer.String(string(errors.NotFound)), err)
 		mocks.CheckAcks(t, false, an.InAck)
 		CheckRegistrations(t, nil, store.InStoreDevices)
 		CheckRegistrations(t, nil, store.InStoreApp)

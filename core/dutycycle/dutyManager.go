@@ -125,7 +125,7 @@ func (m *dutyManager) Update(id []byte, freq float64, size uint, datr string, co
 	var entry dutyEntry
 	if err == nil {
 		entry = itf.([]dutyEntry)[0]
-	} else if err.(errors.Failure).Nature == errors.Behavioural {
+	} else if err.(errors.Failure).Nature == errors.NotFound {
 		entry = dutyEntry{
 			Until: time.Unix(0, 0),
 			OnAir: make(map[subBand]time.Duration),

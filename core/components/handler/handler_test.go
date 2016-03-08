@@ -188,9 +188,9 @@ func TestHandleUp(t *testing.T) {
 
 		// Build
 		devStorage := newMockDevStorage()
-		devStorage.Failures["Lookup"] = errors.New(errors.Behavioural, "Mock: Not Found")
+		devStorage.Failures["Lookup"] = errors.New(errors.NotFound, "Mock: Not Found")
 		pktStorage := newMockPktStorage()
-		pktStorage.Failures["Pull"] = errors.New(errors.Behavioural, "Mock: Not Found")
+		pktStorage.Failures["Pull"] = errors.New(errors.NotFound, "Mock: Not Found")
 		an := NewMockAckNacker()
 		adapter := NewMockAdapter()
 		inPkt := newHPacket(
@@ -212,7 +212,7 @@ func TestHandleUp(t *testing.T) {
 		err := handler.HandleUp(dataIn, an, adapter)
 
 		// Check
-		CheckErrors(t, pointer.String(string(errors.Behavioural)), err)
+		CheckErrors(t, pointer.String(string(errors.NotFound)), err)
 		CheckPushed(t, nil, pktStorage.InPush)
 		CheckPersonalized(t, nil, devStorage.InStorePersonalized)
 		CheckAcks(t, false, an.InAck)

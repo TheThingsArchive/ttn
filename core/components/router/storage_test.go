@@ -100,7 +100,7 @@ func TestStoreAndLookup(t *testing.T) {
 		gotEntry, err := db.Lookup(devEUI)
 
 		// Checks
-		CheckErrors(t, pointer.String(string(errors.Behavioural)), err)
+		CheckErrors(t, pointer.String(string(errors.NotFound)), err)
 		CheckEntries(t, entry{}, gotEntry)
 		_ = db.Close()
 	}
@@ -121,7 +121,7 @@ func TestStoreAndLookup(t *testing.T) {
 		gotEntry, err := db.Lookup(r.DevEUI())
 
 		// Checks
-		CheckErrors(t, pointer.String(string(errors.Behavioural)), err)
+		CheckErrors(t, pointer.String(string(errors.NotFound)), err)
 		CheckEntries(t, entry{}, gotEntry)
 		_ = db.Close()
 	}
@@ -206,7 +206,7 @@ func TestStoreAndLookup(t *testing.T) {
 		err := db.Store(r)
 		CheckErrors(t, pointer.String(string(errors.Structural)), err)
 		gotEntry, err := db.Lookup(r.DevEUI())
-		CheckErrors(t, pointer.String(string(errors.Behavioural)), err)
+		CheckErrors(t, pointer.String(string(errors.NotFound)), err)
 		CheckEntries(t, entry{}, gotEntry)
 
 		_ = db.Close()
