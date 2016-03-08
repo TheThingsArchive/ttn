@@ -57,7 +57,7 @@ the gateway's duty cycle is (almost) full.`,
 		var brokers []core.Recipient
 		brokersStr := strings.Split(viper.GetString("router.brokers"), ",")
 		for i := range brokersStr {
-			url := fmt.Sprintf("%s/packets/", strings.Trim(brokersStr[i], " "))
+			url := strings.Trim(brokersStr[i], " ")
 			brokers = append(brokers, http.NewRecipient(url, "POST"))
 		}
 
