@@ -26,17 +26,15 @@ func newEUI() lorawan.EUI64 {
 	return devEUI
 }
 
-func simplePayload(fcnt uint32) (payload lorawan.PHYPayload, devAddr lorawan.DevAddr, key lorawan.AES128Key) {
+func simplePayload(fcnt uint32, uplink bool) (payload lorawan.PHYPayload, devAddr lorawan.DevAddr, key lorawan.AES128Key) {
 	copy(devAddr[:], randBytes(4))
 	copy(key[:], randBytes(16))
 
-	payload = newPayload(devAddr, []byte("PLD123"), key, key, fcnt)
+	payload = newPayload(devAddr, []byte("PLD123"), key, key, fcnt, uplink)
 	return
 }
 
-func newPayload(devAddr lorawan.DevAddr, data []byte, appSKey lorawan.AES128Key, nwkSKey lorawan.AES128Key, fcnt uint32) lorawan.PHYPayload {
-	uplink := true
-
+func newPayload(devAddr lorawan.DevAddr, data []byte, appSKey lorawan.AES128Key, nwkSKey lorawan.AES128Key, fcnt uint32, uplink bool) lorawan.PHYPayload {
 	macPayload := lorawan.NewMACPayload(uplink)
 	macPayload.FHDR = lorawan.FHDR{
 		DevAddr: devAddr,
@@ -92,7 +90,7 @@ func TestBaseMarshalUnmarshal(t *testing.T) {
 	s := uint(123)
 	mpkt := basempacket{metadata: Metadata{Size: &s}}
 
-	payload, _, _ := simplePayload(1)
+	payload, _, _ := simplePayload(1, true)
 	rpkt := baserpacket{payload: payload}
 	hpkt := basehpacket{
 		appEUI: newEUI(),
@@ -195,26 +193,93 @@ func TestInvalidRPacket(t *testing.T) {
 	a.So(err2, ShouldNotBeNil)
 }
 
-func TestRPacket(t *testing.T) {
+func checkRPacket(t *testing.T, output RPacket, p lorawan.PHYPayload, gid []byte, m Metadata, d lorawan.DevAddr) {
 	a := New(t)
 
-	payload, devAddr, _ := simplePayload(1)
-	gwEUI := []byte{}
-	copy(gwEUI[:], randBytes(8))
-
-	input, _ := NewRPacket(payload, gwEUI, Metadata{})
-
-	gOutput := marshalUnmarshal(t, input)
-
-	output := gOutput.(RPacket)
-
-	a.So(output.Payload(), ShouldResemble, payload)
-	a.So(output.GatewayID(), ShouldResemble, gwEUI)
-	a.So(output.Metadata(), ShouldResemble, Metadata{})
+	a.So(output.Payload(), ShouldResemble, p)
+	a.So(output.GatewayID(), ShouldResemble, gid)
+	a.So(output.Metadata(), ShouldResemble, m)
 	outputDevEUI := output.DevEUI()
-	a.So(outputDevEUI[4:], ShouldResemble, devAddr[:])
+	a.So(outputDevEUI[4:], ShouldResemble, d[:])
+}
 
-	// TODO: Different MTypes
+func TestRPacket(t *testing.T) {
+	{ // UnconfirmedDataUp
+		payload, devAddr, _ := simplePayload(1, true)
+		payload.MHDR.MType = lorawan.UnconfirmedDataUp
+		gwEUI := []byte{}
+		copy(gwEUI[:], randBytes(8))
+		input, _ := NewRPacket(payload, gwEUI, Metadata{})
+		gOutput := marshalUnmarshal(t, input)
+
+		checkRPacket(t, gOutput.(RPacket), payload, gwEUI, Metadata{}, devAddr)
+	}
+
+	{ // ConfirmedDataUp
+		payload, devAddr, _ := simplePayload(1, true)
+		payload.MHDR.MType = lorawan.ConfirmedDataUp
+		gwEUI := []byte{}
+		copy(gwEUI[:], randBytes(8))
+		input, _ := NewRPacket(payload, gwEUI, Metadata{})
+		gOutput := marshalUnmarshal(t, input)
+
+		checkRPacket(t, gOutput.(RPacket), payload, gwEUI, Metadata{}, devAddr)
+	}
+
+	{ // UnconfirmedDataDown
+		payload, devAddr, _ := simplePayload(1, false)
+		payload.MHDR.MType = lorawan.UnconfirmedDataDown
+		gwEUI := []byte{}
+		copy(gwEUI[:], randBytes(8))
+		input, _ := NewRPacket(payload, gwEUI, Metadata{})
+		gOutput := marshalUnmarshal(t, input)
+
+		checkRPacket(t, gOutput.(RPacket), payload, gwEUI, Metadata{}, devAddr)
+	}
+
+	{ // ConfirmedDataDown
+		payload, devAddr, _ := simplePayload(1, false)
+		payload.MHDR.MType = lorawan.ConfirmedDataDown
+		gwEUI := []byte{}
+		copy(gwEUI[:], randBytes(8))
+		input, _ := NewRPacket(payload, gwEUI, Metadata{})
+		gOutput := marshalUnmarshal(t, input)
+
+		checkRPacket(t, gOutput.(RPacket), payload, gwEUI, Metadata{}, devAddr)
+	}
+
+	{ // JoinRequest
+		payload, _, _ := simplePayload(1, true)
+		payload.MHDR.MType = lorawan.Proprietary
+		gwEUI := []byte{}
+		copy(gwEUI[:], randBytes(8))
+		input, _ := NewRPacket(payload, gwEUI, Metadata{})
+
+		_, err := input.MarshalBinary()
+		New(t).So(err, ShouldNotBeNil)
+	}
+
+	{ // JoinAccept
+		payload, _, _ := simplePayload(1, false)
+		payload.MHDR.MType = lorawan.Proprietary
+		gwEUI := []byte{}
+		copy(gwEUI[:], randBytes(8))
+		input, _ := NewRPacket(payload, gwEUI, Metadata{})
+
+		_, err := input.MarshalBinary()
+		New(t).So(err, ShouldNotBeNil)
+	}
+
+	{ // Proprietary
+		payload, _, _ := simplePayload(1, false)
+		payload.MHDR.MType = lorawan.Proprietary
+		gwEUI := []byte{}
+		copy(gwEUI[:], randBytes(8))
+		input, _ := NewRPacket(payload, gwEUI, Metadata{})
+
+		_, err := input.MarshalBinary()
+		New(t).So(err, ShouldNotBeNil)
+	}
 }
 
 func TestSPacket(t *testing.T) {
@@ -252,7 +317,7 @@ func TestInvalidBPacket(t *testing.T) {
 
 	// FCnt out of bound
 	var wholeCnt uint32 = 78765436
-	payload, _, _ := simplePayload(1)
+	payload, _, _ := simplePayload(1, true)
 	payload.MACPayload.(*lorawan.MACPayload).FHDR.FCnt = wholeCnt%65536 + 65536/2
 	input, _ := NewBPacket(payload, Metadata{})
 	err := input.ComputeFCnt(wholeCnt)
@@ -263,7 +328,7 @@ func TestBPacket(t *testing.T) {
 	a := New(t)
 
 	var wholeCnt uint32 = 78765436
-	payload, _, key := simplePayload(wholeCnt + 1)
+	payload, _, key := simplePayload(wholeCnt+1, true)
 	payload.MACPayload.(*lorawan.MACPayload).FHDR.FCnt = wholeCnt%65536 + 1
 	input, _ := NewBPacket(payload, Metadata{})
 
@@ -318,7 +383,7 @@ func TestHPacket(t *testing.T) {
 
 	appEUI := newEUI()
 	devEUI := newEUI()
-	payload, _, key := simplePayload(1)
+	payload, _, key := simplePayload(1, true)
 
 	input, _ := NewHPacket(appEUI, devEUI, payload, Metadata{})
 
@@ -417,4 +482,75 @@ func TestCPacket(t *testing.T) {
 	a.So(output.Payload(), ShouldResemble, payload)
 	outputNwkSKey := output.NwkSKey()
 	a.So(outputNwkSKey[:], ShouldResemble, nwkSKey[:])
+}
+
+func TestString(t *testing.T) {
+	a := New(t)
+
+	{ // RPacket
+		payload, _, _ := simplePayload(1, true)
+		gwEUI := []byte{}
+		copy(gwEUI[:], randBytes(8))
+
+		input, _ := NewRPacket(payload, gwEUI, Metadata{})
+
+		a.So(input.String(), ShouldNotEqual, "TODO")
+		a.So(input.String(), ShouldNotEqual, "")
+	}
+
+	{ // CPacket
+		appEUI := newEUI()
+		devEUI := newEUI()
+		payload := []byte("PLD123")
+		nwkSKey := [16]byte{}
+		copy(devEUI[:], randBytes(16))
+
+		input, _ := NewCPacket(appEUI, devEUI, payload, nwkSKey)
+
+		a.So(input.String(), ShouldNotEqual, "TODO")
+		a.So(input.String(), ShouldNotEqual, "")
+	}
+
+	{ // JPacket
+		appEUI := newEUI()
+		devEUI := newEUI()
+		devNonce := [2]byte{}
+		copy(devEUI[:], randBytes(2))
+
+		input := NewJPacket(appEUI, devEUI, devNonce, Metadata{})
+
+		a.So(input.String(), ShouldNotEqual, "TODO")
+		a.So(input.String(), ShouldNotEqual, "")
+	}
+	{ // APacket
+		appEUI := newEUI()
+		devEUI := newEUI()
+		payload := []byte("PLD123")
+
+		input, _ := NewAPacket(appEUI, devEUI, payload, []Metadata{})
+
+		a.So(input.String(), ShouldNotEqual, "TODO")
+		a.So(input.String(), ShouldNotEqual, "")
+	}
+
+	{ // HPacket
+
+		appEUI := newEUI()
+		devEUI := newEUI()
+		payload, _, _ := simplePayload(1, true)
+
+		input, _ := NewHPacket(appEUI, devEUI, payload, Metadata{})
+
+		a.So(input.String(), ShouldNotEqual, "TODO")
+		a.So(input.String(), ShouldNotEqual, "")
+	}
+
+	{ // BPacket
+		payload, _, _ := simplePayload(1, true)
+
+		input, _ := NewBPacket(payload, Metadata{})
+
+		a.So(input.String(), ShouldNotEqual, "TODO")
+		a.So(input.String(), ShouldNotEqual, "")
+	}
 }
