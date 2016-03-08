@@ -47,9 +47,11 @@ func TestPubSub(t *testing.T) {
 		{
 			Desc: "Valid Payload. Invalid ContentType. Valid Method. Valid DevEUI. Nack",
 			Payload: `{
-				"app_eui":"0001020304050607",
-				"nwks_key":"00010203040506070809000102030405",
-				"dev_eui": "0000000001020304",
+				"registration":{
+					"app_eui":"0001020304050607",
+					"nwks_key":"00010203040506070809000102030405",
+					"dev_eui": "0000000001020304"
+				},
 				"recipient": {
 					"url": "url",
 					"method": "PUT"
@@ -68,9 +70,11 @@ func TestPubSub(t *testing.T) {
 		{
 			Desc: "Valid Payload. Valid ContentType. Invalid Method. Valid DevEUI. Nack",
 			Payload: `{
-				"app_eui":"0001020304050607",
-				"nwks_key":"00010203040506070809000102030405",
-				"dev_eui": "0000000001020304",
+				"registration":{
+					"app_eui":"0001020304050607",
+					"nwks_key":"00010203040506070809000102030405",
+					"dev_eui": "0000000001020304"
+				},
 				"recipient": {
 					"url": "url",
 					"method": "PUT"
@@ -89,9 +93,11 @@ func TestPubSub(t *testing.T) {
 		{
 			Desc: "Valid Payload. Valid ContentType. Valid Method. Invalid DevEUI. Nack",
 			Payload: `{
-				"app_eui":"0001020304050607",
-				"nwks_key":"00010203040506070809000102030405",
-				"dev_eui": "0000001144",
+				"registration":{
+					"app_eui":"0001020304050607",
+					"nwks_key":"00010203040506070809000102030405",
+					"dev_eui": "0000001144"
+				},
 				"recipient": {
 					"url": "url",
 					"method": "PUT"
@@ -110,9 +116,11 @@ func TestPubSub(t *testing.T) {
 		{
 			Desc: "Valid Payload. Valid ContentType. Valid Method. Valid DevEUI. Nack",
 			Payload: `{
-				"app_eui":"0001020304050607",
-				"nwks_key":"00010203040506070809000102030405",
-				"dev_eui": "0000000001020304",
+				"registration":{
+					"app_eui":"0001020304050607",
+					"nwks_key":"00010203040506070809000102030405",
+					"dev_eui": "0000000001020304"
+				},
 				"recipient": {
 					"url": "url",
 					"method": "PUT"
@@ -136,9 +144,11 @@ func TestPubSub(t *testing.T) {
 		{
 			Desc: "Valid Payload. Valid ContentType. Valid Method. Valid DevEUI. Ack",
 			Payload: `{
-				"app_eui":"0001020304050607",
-				"nwks_key":"00010203040506070809000102030405",
-				"dev_eui": "0000000001020304",
+				"registration":{
+					"app_eui":"0001020304050607",
+					"nwks_key":"00010203040506070809000102030405",
+					"dev_eui": "0000000001020304"
+				},
 				"recipient": {
 					"url": "url",
 					"method": "PUT"

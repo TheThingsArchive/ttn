@@ -98,26 +98,28 @@ func (p PubSub) parse(req *http.Request) (core.Registration, error) {
 			URL    string `json:"url"`
 			Method string `json:"method"`
 		} `json:"recipient"`
-		AppEUI  string `json:"app_eui"`
-		DevEUI  string `json:"dev_eui"`
-		NwkSKey string `json:"nwks_key"`
+		Registration struct {
+			AppEUI  string `json:"app_eui"`
+			DevEUI  string `json:"dev_eui"`
+			NwkSKey string `json:"nwks_key"`
+		} `json:"registration"`
 	})
 	if err := json.Unmarshal(body[:n], params); err != nil {
 		return pubSubRegistration{}, errors.New(errors.Structural, "Unable to unmarshal the request body")
 	}
 
 	// Verify each request parameter
-	nwkSKey, err := hex.DecodeString(params.NwkSKey)
+	nwkSKey, err := hex.DecodeString(params.Registration.NwkSKey)
 	if err != nil || len(nwkSKey) != 16 {
 		return pubSubRegistration{}, errors.New(errors.Structural, "Incorrect network session key")
 	}
 
-	appEUI, err := hex.DecodeString(params.AppEUI)
+	appEUI, err := hex.DecodeString(params.Registration.AppEUI)
 	if err != nil || len(appEUI) != 8 {
 		return pubSubRegistration{}, errors.New(errors.Structural, "Incorrect application eui")
 	}
 
-	devEUI, err := hex.DecodeString(params.DevEUI)
+	devEUI, err := hex.DecodeString(params.Registration.DevEUI)
 	if err != nil || len(devEUI) != 8 {
 		return pubSubRegistration{}, errors.New(errors.Structural, "Incorrect device eui")
 	}

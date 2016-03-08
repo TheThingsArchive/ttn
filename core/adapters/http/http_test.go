@@ -4,6 +4,7 @@
 package http
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"testing"
@@ -182,7 +183,8 @@ func TestSubscribe(t *testing.T) {
 				err = nil
 			}
 			CheckErrors(t, nil, err)
-			CheckJSONs(t, r.OutMarshalJSON, buf[:n])
+			wantJSON := []byte(fmt.Sprintf(`{"recipient":{"method":"POST","url":"0.0.0.0:4776"},"registration":%s}`, r.OutMarshalJSON))
+			CheckJSONs(t, wantJSON, buf[:n])
 		})
 		go http.ListenAndServe(r.OutRecipient.(Recipient).URL(), serveMux)
 		<-time.After(time.Millisecond * 100)

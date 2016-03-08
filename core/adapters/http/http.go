@@ -89,7 +89,7 @@ func (a *Adapter) Subscribe(r core.Registration) error {
 			Method string `json:"method"`
 			URL    string `json:"url"`
 		} `json:"recipient"`
-		json.Marshaler
+		Registration json.Marshaler `json:"registration"`
 	}{
 		Recipient: struct {
 			Method string `json:"method"`
@@ -98,7 +98,7 @@ func (a *Adapter) Subscribe(r core.Registration) error {
 			Method: "POST",
 			URL:    a.net,
 		},
-		Marshaler: jsonMarshaler,
+		Registration: jsonMarshaler,
 	})
 	if err != nil {
 		return errors.New(errors.Structural, err)
