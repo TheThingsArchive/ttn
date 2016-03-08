@@ -6,7 +6,6 @@ package storage
 import (
 	"encoding"
 	"fmt"
-	"io"
 	"reflect"
 	"strings"
 	"time"
@@ -135,13 +134,13 @@ func (itf store) Lookup(bucketName string, key []byte, shape Entry) (interface{}
 		bucket, err := getBucket(tx, bucketName)
 		if err != nil {
 			if err.(errors.Failure).Fault == bolt.ErrTxNotWritable {
-				return errors.New(errors.Behavioural, fmt.Sprintf("Not found %+v", key))
+				return errors.New(errors.NotFound, fmt.Sprintf("Not found %+v", key))
 			}
 			return err
 		}
 		rawEntry = bucket.Get(key)
 		if rawEntry == nil {
-			return errors.New(errors.Behavioural, fmt.Sprintf("Not found %+v", key))
+			return errors.New(errors.NotFound, fmt.Sprintf("Not found %+v", key))
 		}
 		return nil
 	})
@@ -162,7 +161,7 @@ func (itf store) Lookup(bucketName string, key []byte, shape Entry) (interface{}
 		})
 		if err = r.Err(); err != nil {
 			failure, ok := err.(errors.Failure)
-			if ok && failure.Nature == errors.Behavioural && failure.Fault == io.EOF {
+			if ok && failure.Nature == errors.Behavioural {
 				break
 			}
 			return nil, errors.New(errors.Operational, err)
