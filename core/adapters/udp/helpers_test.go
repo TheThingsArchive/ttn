@@ -7,7 +7,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/mocks"
+	"github.com/brocaar/lorawan"
 )
 
 // tryNext attempts to get a next packet from the adapter. It timeouts after a given delay if
@@ -38,6 +40,20 @@ func tryNext(adapter *Adapter) ([]byte, error) {
 	}
 }
 
+// ----- CHECK utilities
+
 func CheckPackets(t *testing.T, want []byte, got []byte) {
 	mocks.Check(t, want, got, "Packets")
+}
+
+func CheckResps(t *testing.T, want MsgRes, got MsgRes) {
+	mocks.Check(t, want, got, "Responses")
+}
+
+func CheckRecipients(t *testing.T, want core.Recipient, got core.Recipient) {
+	mocks.Check(t, want, got, "Recipients")
+}
+
+func CheckDevEUIs(t *testing.T, want lorawan.EUI64, got lorawan.EUI64) {
+	mocks.Check(t, want, got, "DevEUIs")
 }

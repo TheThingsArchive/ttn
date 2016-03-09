@@ -8,10 +8,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/TheThingsNetwork/ttn/core/mocks"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	errutil "github.com/TheThingsNetwork/ttn/utils/errors/checks"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	testutil "github.com/TheThingsNetwork/ttn/utils/testing"
+	"github.com/brocaar/lorawan"
 )
 
 func TestNext(t *testing.T) {
@@ -177,4 +179,121 @@ func TestNotImplemented(t *testing.T) {
 		// Check
 		errutil.CheckErrors(t, pointer.String(string(errors.Implementation)), errGet)
 	}
+}
+
+func TestUDPRegistration(t *testing.T) {
+	reg := udpRegistration{}
+	CheckRecipients(t, nil, reg.Recipient())
+	CheckDevEUIs(t, lorawan.EUI64{}, reg.DevEUI())
+}
+
+func TestUDPAckNacker(t *testing.T) {
+	{
+		testutil.Desc(t, "Ack nil packet")
+
+		// Build
+		chresp := make(chan MsgRes)
+		an := udpAckNacker{Chresp: chresp}
+
+		// Operate
+		var resp MsgRes
+		go func() {
+			select {
+			case resp = <-chresp:
+			case <-time.After(time.Millisecond * 25):
+			}
+		}()
+		err := an.Ack(nil)
+
+		// Check
+		errutil.CheckErrors(t, nil, err)
+		CheckResps(t, nil, resp)
+	}
+
+	// --------------------
+
+	{
+		testutil.Desc(t, "Ack valid packet")
+
+		// Build
+		chresp := make(chan MsgRes)
+		an := udpAckNacker{Chresp: chresp}
+		pkt := mocks.NewMockPacket()
+
+		// Operate
+		var resp MsgRes
+		go func() {
+			select {
+			case resp = <-chresp:
+			case <-time.After(time.Millisecond * 25):
+			}
+		}()
+		err := an.Ack(pkt)
+
+		// Check
+		errutil.CheckErrors(t, nil, err)
+		CheckResps(t, pkt.OutMarshalBinary, resp)
+	}
+
+	// --------------------
+
+	{
+		testutil.Desc(t, "Ack invalid packet")
+
+		// Build
+		chresp := make(chan MsgRes)
+		an := udpAckNacker{Chresp: chresp}
+		pkt := mocks.NewMockPacket()
+		pkt.Failures["MarshalBinary"] = errors.New(errors.Structural, "Mock Error")
+
+		// Operate
+		var resp MsgRes
+		go func() {
+			select {
+			case resp = <-chresp:
+			case <-time.After(time.Millisecond * 25):
+			}
+		}()
+		err := an.Ack(pkt)
+
+		// Check
+		errutil.CheckErrors(t, pointer.String(string(errors.Structural)), err)
+		CheckResps(t, nil, resp)
+	}
+
+	// --------------------
+
+	{
+		testutil.Desc(t, "Ack not consumed")
+
+		// Build
+		chresp := make(chan MsgRes)
+		an := udpAckNacker{Chresp: chresp}
+		pkt := mocks.NewMockPacket()
+
+		// Operate
+		err := an.Ack(pkt)
+		resp, _ := <-chresp
+
+		// Check
+		errutil.CheckErrors(t, pointer.String(string(errors.Operational)), err)
+		CheckResps(t, nil, resp)
+	}
+
+	// --------------------
+
+	{
+		testutil.Desc(t, "Nack nil error")
+
+		// Build
+		chresp := make(chan MsgRes)
+		an := udpAckNacker{Chresp: chresp}
+
+		// Operate
+		err := an.Nack(nil)
+
+		// Check
+		errutil.CheckErrors(t, nil, err)
+	}
+
 }
