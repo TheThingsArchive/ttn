@@ -11,6 +11,7 @@ import (
 
 	. "github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
+	"github.com/TheThingsNetwork/ttn/utils/stats"
 	"github.com/apex/log"
 	"github.com/brocaar/lorawan"
 )
@@ -33,6 +34,7 @@ type bundle struct {
 	Entry   devEntry
 	ID      [20]byte
 	Packet  HPacket
+	Time    time.Time
 }
 
 // New construct a new Handler
@@ -58,9 +60,11 @@ func New(devDb DevStorage, pktDb PktStorage, broker JSONRecipient, ctx log.Inter
 func (h component) Register(reg Registration, an AckNacker, sub Subscriber) (err error) {
 	h.ctx.WithField("registration", reg).Debug("New registration request")
 	defer ensureAckNack(an, nil, &err)
+	stats.MarkMeter("handler.registration.in")
 
 	hreg, ok := reg.(HRegistration)
 	if !ok {
+		stats.MarkMeter("handler.registration.invalid")
 		return errors.New(errors.Structural, "Not a Handler registration")
 	}
 
@@ -81,14 +85,18 @@ func (h component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 	// Make sure we don't forget the AckNacker
 	var ack Packet
 	defer ensureAckNack(an, &ack, &err)
+	stats.MarkMeter("handler.uplink.in")
 
 	itf, err := UnmarshalPacket(data)
 	if err != nil {
+		stats.MarkMeter("handler.uplink.invalid")
 		return errors.New(errors.Structural, err)
 	}
 
 	switch itf.(type) {
 	case HPacket:
+		stats.MarkMeter("handler.uplink.data")
+
 		// 0. Retrieve the handler packet
 		packet := itf.(HPacket)
 		appEUI := packet.AppEUI()
@@ -125,6 +133,7 @@ func (h component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 			Entry:   entry,
 			Adapter: up,
 			Chresp:  chresp,
+			Time:    time.Now(),
 		}
 
 		// 5. Wait for the response. Could be an error, a packet or nothing.
@@ -135,19 +144,25 @@ func (h component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 		resp := <-chresp
 		switch resp.(type) {
 		case BPacket:
+			stats.MarkMeter("handler.uplink.ack.with_response")
+			stats.MarkMeter("handler.downlink.out")
 			ctx.Debug("Received response with packet. Sending Ack")
 			ack = resp.(Packet)
 		case error:
+			stats.MarkMeter("handler.uplink.error")
 			ctx.WithError(resp.(error)).Warn("Received errored response. Sending Ack")
 			return errors.New(errors.Operational, resp.(error))
 		default:
+			stats.MarkMeter("handler.uplink.ack.without_response")
 			ctx.Debug("Received empty response. Sending empty Ack")
 		}
 
 		return nil
 	case JPacket:
+		stats.MarkMeter("handler.uplink.join_request")
 		return errors.New(errors.Implementation, "Join Request not yet implemented")
 	default:
+		stats.MarkMeter("handler.uplink.unknown")
 		return errors.New(errors.Implementation, "Unhandled packet type")
 	}
 }
@@ -177,6 +192,9 @@ browseBundles:
 		var payload []byte
 		var bestBundle int
 		var bestScore uint
+		var firstTime time.Time
+
+		stats.UpdateHistogram("handler.uplink.duplicate.count", int64(len(bundles)))
 
 		for i, bundle := range bundles {
 			// We only decrypt the payload of the first bundle's packet.
@@ -190,6 +208,11 @@ browseBundles:
 					continue browseBundles
 				}
 				bestBundle = i
+				firstTime = bundle.Time
+				stats.MarkMeter("handler.uplink.in.unique")
+			} else {
+				diff := bundle.Time.Sub(firstTime).Nanoseconds()
+				stats.UpdateHistogram("handler.uplink.duplicate.delay", diff/1000)
 			}
 
 			// Append metadata for each of them
@@ -232,6 +255,7 @@ browseBundles:
 			go h.abortConsume(err, bundles)
 			continue browseBundles
 		}
+		stats.MarkMeter("handler.uplink.out")
 
 		// Now handle the downlink
 		down, err := h.packets.Pull(appEUI, devEUI)
@@ -246,6 +270,7 @@ browseBundles:
 				var resp Packet
 
 				if down != nil && err == nil {
+					stats.MarkMeter("handler.downlink.pull")
 					fcnt := bundles[bestBundle].Packet.FCnt() + 1
 					macPayload := lorawan.NewMACPayload(false)
 					macPayload.FHDR = lorawan.FHDR{
@@ -290,6 +315,7 @@ browseBundles:
 // Abort consume forward the given error to all bundle recipients
 func (h component) abortConsume(fault error, bundles []bundle) {
 	err := errors.New(errors.Structural, fault)
+	stats.MarkMeter("handler.uplink.invalid")
 	h.ctx.WithError(err).Debug("Unable to consume bundle")
 	for _, bundle := range bundles {
 		bundle.Chresp <- err
@@ -360,10 +386,12 @@ func (h component) HandleDown(data []byte, an AckNacker, down Adapter) (err erro
 	// Make sure we don't forget the AckNacker
 	var ack Packet
 	defer ensureAckNack(an, &ack, &err)
+	stats.MarkMeter("handler.downlink.in")
 
 	// Unmarshal the given packet and see what gift we get
 	itf, err := UnmarshalPacket(data)
 	if err != nil {
+		stats.MarkMeter("handler.downlink.invalid")
 		return errors.New(errors.Structural, err)
 	}
 
@@ -371,6 +399,7 @@ func (h component) HandleDown(data []byte, an AckNacker, down Adapter) (err erro
 	case APacket:
 		return h.packets.Push(itf.(APacket))
 	default:
+		stats.MarkMeter("handler.downlink.invalid")
 		return errors.New(errors.Implementation, "Unhandled packet type")
 	}
 }
