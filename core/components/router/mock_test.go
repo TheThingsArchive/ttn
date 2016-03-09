@@ -7,6 +7,7 @@ import (
 	"time"
 
 	. "github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/core/dutycycle"
 	. "github.com/TheThingsNetwork/ttn/core/mocks"
 	"github.com/brocaar/lorawan"
 )
@@ -46,6 +47,46 @@ func (s *mockStorage) Store(reg RRegistration) error {
 
 func (s *mockStorage) Close() error {
 	return s.Failures["Close"]
+}
+
+// mockDutyManager implements the dutycycle.DutyManager interface
+type mockDutyManager struct {
+	Failures     map[string]error
+	InUpdateId   []byte
+	InUpdateFreq float64
+	InUpdateSize uint
+	InUpdateDatr string
+	InUpdateCodr string
+	InLookupId   []byte
+	OutLookup    dutycycle.Cycles
+}
+
+func newMockDutyManager() *mockDutyManager {
+	return &mockDutyManager{
+		Failures:  make(map[string]error),
+		OutLookup: make(dutycycle.Cycles),
+	}
+}
+
+func (m *mockDutyManager) Update(id []byte, freq float64, size uint, datr string, codr string) error {
+	m.InUpdateId = id
+	m.InUpdateFreq = freq
+	m.InUpdateSize = size
+	m.InUpdateDatr = datr
+	m.InUpdateCodr = codr
+	return m.Failures["Update"]
+}
+
+func (m *mockDutyManager) Lookup(id []byte) (dutycycle.Cycles, error) {
+	m.InLookupId = id
+	if m.Failures["Lookup"] != nil {
+		return nil, m.Failures["Lookup"]
+	}
+	return m.OutLookup, nil
+}
+
+func (m *mockDutyManager) Close() error {
+	return m.Failures["Close"]
 }
 
 // MockRouterAdapter extends functionality of the mocks.MockAdapter.
