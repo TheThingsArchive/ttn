@@ -7,6 +7,7 @@ import (
 	"time"
 
 	. "github.com/TheThingsNetwork/ttn/core"
+	. "github.com/TheThingsNetwork/ttn/core/mocks"
 	"github.com/brocaar/lorawan"
 )
 
@@ -14,24 +15,26 @@ import (
 type mockStorage struct {
 	Failures  map[string]error
 	InLookup  lorawan.EUI64
-	OutLookup entry
+	OutLookup []entry
 	InStore   RRegistration
 }
 
 func newMockStorage() *mockStorage {
 	return &mockStorage{
 		Failures: make(map[string]error),
-		OutLookup: entry{
-			Recipient: []byte("MockStorageRecipient"),
-			until:     time.Date(2016, 2, 3, 14, 16, 22, 0, time.UTC),
+		OutLookup: []entry{
+			{
+				Recipient: []byte("MockStorageRecipient"),
+				until:     time.Date(2016, 2, 3, 14, 16, 22, 0, time.UTC),
+			},
 		},
 	}
 }
 
-func (s *mockStorage) Lookup(devEUI lorawan.EUI64) (entry, error) {
+func (s *mockStorage) Lookup(devEUI lorawan.EUI64) ([]entry, error) {
 	s.InLookup = devEUI
 	if s.Failures["Lookup"] != nil {
-		return entry{}, s.Failures["Lookup"]
+		return nil, s.Failures["Lookup"]
 	}
 	return s.OutLookup, nil
 }
@@ -43,4 +46,72 @@ func (s *mockStorage) Store(reg RRegistration) error {
 
 func (s *mockStorage) Close() error {
 	return s.Failures["Close"]
+}
+
+// MockRouterAdapter extends functionality of the mocks.MockAdapter.
+//
+// A list of failures can be defined to handle successive call to a method (at each call, an error
+// get out from the list)
+type mockRouterAdapter struct {
+	Failures            map[string][]error
+	InSendPacket        Packet
+	InSendRecipients    []Recipient
+	InGetRecipient      []byte
+	OutSend             []byte
+	OutGetRecipient     Recipient
+	OutNextPacket       []byte
+	OutNextAckNacker    AckNacker
+	OutNextRegReg       Registration
+	OutNextRegAckNacker AckNacker
+}
+
+func newMockRouterAdapter() *mockRouterAdapter {
+	return &mockRouterAdapter{
+		Failures:            make(map[string][]error),
+		OutSend:             []byte("MockAdapterSend"),
+		OutGetRecipient:     NewMockRecipient(),
+		OutNextPacket:       []byte("MockAdapterNextPacket"),
+		OutNextAckNacker:    NewMockAckNacker(),
+		OutNextRegReg:       NewMockHRegistration(),
+		OutNextRegAckNacker: NewMockAckNacker(),
+	}
+}
+
+func (a *mockRouterAdapter) Send(p Packet, r ...Recipient) ([]byte, error) {
+	a.InSendPacket = p
+	a.InSendRecipients = r
+	if len(a.Failures["Send"]) > 0 {
+		err := a.Failures["Send"][0]
+		a.Failures["Send"] = a.Failures["Send"][1:]
+		return nil, err
+	}
+	return a.OutSend, nil
+}
+
+func (a *mockRouterAdapter) GetRecipient(raw []byte) (Recipient, error) {
+	a.InGetRecipient = raw
+	if len(a.Failures["GetRecipient"]) > 0 {
+		err := a.Failures["GetRecipient"][0]
+		a.Failures["GetRecipient"] = a.Failures["GetRecipient"][1:]
+		return nil, err
+	}
+	return a.OutGetRecipient, nil
+}
+
+func (a *mockRouterAdapter) Next() ([]byte, AckNacker, error) {
+	if len(a.Failures["Next"]) > 0 {
+		err := a.Failures["Next"][0]
+		a.Failures["Next"] = a.Failures["Next"][1:]
+		return nil, nil, err
+	}
+	return a.OutNextPacket, a.OutNextAckNacker, nil
+}
+
+func (a *mockRouterAdapter) NextRegistration() (Registration, AckNacker, error) {
+	if len(a.Failures["NextRegistration"]) > 0 {
+		err := a.Failures["NextRegistration"][0]
+		a.Failures["NextRegistration"] = a.Failures["NextRegistration"][1:]
+		return nil, nil, err
+	}
+	return a.OutNextRegReg, a.OutNextRegAckNacker, nil
 }

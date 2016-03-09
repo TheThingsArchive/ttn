@@ -4,6 +4,7 @@
 package router
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
@@ -16,7 +17,7 @@ import (
 
 // Storage gives a facade to manipulate the router database
 type Storage interface {
-	Lookup(devEUI lorawan.EUI64) (entry, error)
+	Lookup(devEUI lorawan.EUI64) ([]entry, error)
 	Store(reg RRegistration) error
 	Close() error
 }
@@ -44,42 +45,36 @@ func NewStorage(name string, delay time.Duration) (Storage, error) {
 }
 
 // Lookup implements the router.Storage interface
-func (s *storage) Lookup(devEUI lorawan.EUI64) (entry, error) {
-	return s.lookup(devEUI, true)
-}
-
-// lookup offers an indirection in order to avoid taking a lock if not needed
-func (s *storage) lookup(devEUI lorawan.EUI64, lock bool) (entry, error) {
-	// NOTE This works under the assumption that a read or write lock is already held by
-	// the callee (e.g. Store()
-	if lock {
-		s.Lock()
-		defer s.Unlock()
-	}
-
+func (s *storage) Lookup(devEUI lorawan.EUI64) ([]entry, error) {
+	s.Lock()
+	defer s.Unlock()
 	itf, err := s.db.Lookup(s.Name, devEUI[:], &entry{})
 	if err != nil {
-		return entry{}, err
+		return nil, err
 	}
 	entries := itf.([]entry)
 
-	if len(entries) != 1 {
-		if err := s.db.Flush(s.Name, devEUI[:]); err != nil {
-			return entry{}, errors.New(errors.Operational, err)
+	if s.ExpiryDelay != 0 {
+		var newEntries []dbutil.Entry
+		var filtered []entry
+		for _, e := range entries {
+			if e.until.After(time.Now()) {
+				newEntry := new(entry)
+				*newEntry = e
+				newEntries = append(newEntries, newEntry)
+				filtered = append(filtered, e)
+			}
 		}
-		return entry{}, errors.New(errors.NotFound, "Not Found")
+		if err := s.db.Replace(s.Name, devEUI[:], newEntries); err != nil {
+			return nil, errors.New(errors.Operational, err)
+		}
+		entries = filtered
 	}
 
-	e := entries[0]
-
-	if s.ExpiryDelay != 0 && e.until.Before(time.Now()) {
-		if err := s.db.Flush(s.Name, devEUI[:]); err != nil {
-			return entry{}, errors.New(errors.Operational, err)
-		}
-		return entry{}, errors.New(errors.NotFound, "Not Found")
+	if len(entries) == 0 {
+		return nil, errors.New(errors.NotFound, fmt.Sprintf("No entry for: %v", devEUI[:]))
 	}
-
-	return e, nil
+	return entries, nil
 }
 
 // Store implements the router.Storage interface
@@ -92,20 +87,10 @@ func (s *storage) Store(reg RRegistration) error {
 
 	s.Lock()
 	defer s.Unlock()
-
-	_, err = s.lookup(devEUI, false)
-	if err == nil {
-		return errors.New(errors.Structural, "Already exists")
-	}
-	if err.(errors.Failure).Nature != errors.NotFound {
-		return err
-	}
-
 	return s.db.Store(s.Name, devEUI[:], []dbutil.Entry{&entry{
 		Recipient: recipient,
 		until:     time.Now().Add(s.ExpiryDelay),
 	}})
-
 }
 
 // Close implements the router.Storage interface

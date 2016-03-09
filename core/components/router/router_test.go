@@ -205,9 +205,11 @@ func TestHandleUp(t *testing.T) {
 		recipient := NewMockRecipient()
 		dataRecipient, _ := recipient.MarshalBinary()
 		store := newMockStorage()
-		store.OutLookup = entry{
-			Recipient: dataRecipient,
-			until:     time.Now().Add(time.Hour),
+		store.OutLookup = []entry{
+			{
+				Recipient: dataRecipient,
+				until:     time.Now().Add(time.Hour),
+			},
 		}
 		data, err := newRPacket(
 			[4]byte{2, 3, 2, 3},
@@ -240,9 +242,11 @@ func TestHandleUp(t *testing.T) {
 		recipient := NewMockRecipient()
 		dataRecipient, _ := recipient.MarshalBinary()
 		store := newMockStorage()
-		store.OutLookup = entry{
-			Recipient: dataRecipient,
-			until:     time.Now().Add(time.Hour),
+		store.OutLookup = []entry{
+			{
+				Recipient: dataRecipient,
+				until:     time.Now().Add(time.Hour),
+			},
 		}
 		data, err := newRPacket(
 			[4]byte{2, 3, 2, 3},
@@ -255,7 +259,7 @@ func TestHandleUp(t *testing.T) {
 		err = router.HandleUp(data, an, adapter)
 
 		// Check
-		CheckErrors(t, pointer.String(string(errors.Operational)), err)
+		CheckErrors(t, pointer.String(string(errors.Structural)), err)
 		CheckAcks(t, false, an.InAck)
 		CheckRegistrations(t, nil, store.InStore)
 		CheckSent(t, nil, adapter.InSendPacket)
@@ -316,6 +320,87 @@ func TestHandleUp(t *testing.T) {
 
 		// Check
 		CheckErrors(t, pointer.String(string(errors.Operational)), err)
+		CheckAcks(t, false, an.InAck)
+		CheckRegistrations(t, nil, store.InStore)
+		CheckSent(t, bpacket, adapter.InSendPacket)
+		CheckRecipients(t, nil, adapter.InSendRecipients)
+	}
+
+	// -------------------
+
+	{
+		Desc(t, "Send a known packet, get not found, and broadcast")
+
+		// Build
+		an := NewMockAckNacker()
+		adapter := newMockRouterAdapter()
+		adapter.OutSend = nil
+		adapter.Failures["Send"] = []error{
+			errors.New(errors.NotFound, "Mock Error"),
+		}
+		recipient := NewMockRecipient()
+		dataRecipient, _ := recipient.MarshalBinary()
+		store := newMockStorage()
+		store.OutLookup = []entry{
+			{
+				Recipient: dataRecipient,
+				until:     time.Now().Add(time.Hour),
+			},
+		}
+		data, err := newRPacket(
+			[4]byte{2, 3, 2, 3},
+			"Payload",
+			[]byte{1, 2, 3, 4, 5, 6, 7, 8},
+		).MarshalBinary()
+		bpacket := newBPacket([4]byte{2, 3, 2, 3}, "Payload")
+
+		// Operate
+		router := New(store, GetLogger(t, "Router"))
+		err = router.HandleUp(data, an, adapter)
+
+		// Check
+		CheckErrors(t, nil, err)
+		CheckAcks(t, true, an.InAck)
+		CheckRegistrations(t, nil, store.InStore)
+		CheckSent(t, bpacket, adapter.InSendPacket)
+		CheckRecipients(t, nil, adapter.InSendRecipients)
+	}
+
+	// -------------------
+
+	{
+		Desc(t, "Send a known packet, get not found, and broadcast, still not found")
+
+		// Build
+		an := NewMockAckNacker()
+		adapter := newMockRouterAdapter()
+		adapter.OutSend = nil
+		adapter.Failures["Send"] = []error{
+			errors.New(errors.NotFound, "Mock Error"),
+			errors.New(errors.NotFound, "Mock Error"),
+		}
+		recipient := NewMockRecipient()
+		dataRecipient, _ := recipient.MarshalBinary()
+		store := newMockStorage()
+		store.OutLookup = []entry{
+			{
+				Recipient: dataRecipient,
+				until:     time.Now().Add(time.Hour),
+			},
+		}
+		data, err := newRPacket(
+			[4]byte{2, 3, 2, 3},
+			"Payload",
+			[]byte{1, 2, 3, 4, 5, 6, 7, 8},
+		).MarshalBinary()
+		bpacket := newBPacket([4]byte{2, 3, 2, 3}, "Payload")
+
+		// Operate
+		router := New(store, GetLogger(t, "Router"))
+		err = router.HandleUp(data, an, adapter)
+
+		// Check
+		CheckErrors(t, pointer.String(string(errors.NotFound)), err)
 		CheckAcks(t, false, an.InAck)
 		CheckRegistrations(t, nil, store.InStore)
 		CheckSent(t, bpacket, adapter.InSendPacket)

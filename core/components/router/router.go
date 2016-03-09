@@ -59,40 +59,44 @@ func (r component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 		packet := itf.(RPacket)
 
 		// Lookup for an existing broker
-		// NOTE We are still assuming only one broker associated to one device address.
-		// We should find a mechanism to make sure that the broker in database is really
-		// associated to the device to avoid trouble during overlaping.
-		// Keeping track of the last FCnt maybe ? Having an overlap on the frame counter + the
-		// device address might be less likely.
-		entry, err := r.Lookup(packet.DevEUI())
+		entries, err := r.Lookup(packet.DevEUI())
 		if err != nil && err.(errors.Failure).Nature != errors.NotFound {
 			r.ctx.Warn("Database lookup failed")
 			return errors.New(errors.Operational, err)
 		}
-
-		var recipient Recipient
-		if err == nil {
-			rawRecipient := entry.Recipient
-			if recipient, err = up.GetRecipient(rawRecipient); err != nil {
-				r.ctx.Warn("Unable to retrieve Recipient")
-				return errors.New(errors.Operational, err)
-			}
-		}
+		shouldBroadcast := err != nil
 
 		// TODO -> Add Gateway Metadata to packet
-
 		bpacket, err := NewBPacket(packet.Payload(), packet.Metadata())
 		if err != nil {
 			r.ctx.WithError(err).Warn("Unable to create router packet")
 			return errors.New(errors.Structural, err)
 		}
 
+		// Send packet to broker(s)
 		var response []byte
-
-		if recipient == nil {
+		if shouldBroadcast {
+			// No Recipient available -> broadcast
 			response, err = up.Send(bpacket)
 		} else {
-			response, err = up.Send(bpacket, recipient)
+			// Recipients are available
+			var recipients []Recipient
+			for _, e := range entries {
+				// Get the actual broker
+				recipient, err := up.GetRecipient(e.Recipient)
+				if err != nil {
+					r.ctx.Warn("Unable to retrieve Recipient")
+					return errors.New(errors.Structural, err)
+				}
+				recipients = append(recipients, recipient)
+			}
+
+			// Send the packet
+			response, err = up.Send(bpacket, recipients...)
+			if err != nil && err.(errors.Failure).Nature == errors.NotFound {
+				// Might be a collision with the dev addr, we better broadcast
+				response, err = up.Send(bpacket)
+			}
 		}
 
 		if err != nil {
@@ -125,8 +129,8 @@ func (r component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 		default:
 			return errors.New(errors.Implementation, "Unexpected packet type")
 		}
-
 		stats.MarkMeter("router.uplink.ok")
+
 	case SPacket:
 		return errors.New(errors.Implementation, "Stats packet not yet implemented")
 	case JPacket:

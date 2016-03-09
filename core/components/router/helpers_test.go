@@ -59,13 +59,18 @@ func newBPacket(rawDevAddr [4]byte, payload string) BPacket {
 }
 
 // ----- CHECK utilities
-func CheckEntries(t *testing.T, want entry, got entry) {
-	tmin := want.until.Add(-time.Second)
-	tmax := want.until.Add(time.Second)
-	if !tmin.Before(got.until) || !got.until.Before(tmax) {
-		Ko(t, "Unexpected expiry time.\nWant: %s\nGot:  %s", want.until, got.until)
+func CheckEntries(t *testing.T, want []entry, got []entry) {
+	for i, w := range want {
+		if i >= len(got) {
+			Ko(t, "Didn't got enough entries: %v", got)
+		}
+		tmin := w.until.Add(-time.Second)
+		tmax := w.until.Add(time.Second)
+		if !tmin.Before(got[i].until) || !got[i].until.Before(tmax) {
+			Ko(t, "Unexpected expiry time.\nWant: %s\nGot:  %s", w.until, got[i].until)
+		}
+		Check(t, w.Recipient, got[i].Recipient, "Recipients")
 	}
-	Check(t, want.Recipient, got.Recipient, "Recipients")
 }
 
 func CheckRegistrations(t *testing.T, want Registration, got Registration) {
