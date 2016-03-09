@@ -6,6 +6,7 @@ package udp
 import (
 	"fmt"
 	"net"
+	"sync"
 
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
@@ -56,12 +57,17 @@ func NewAdapter(bindNet string, ctx log.Interface) (*Adapter, error) {
 	a.ctx.WithField("bind", bindNet).Info("Starting Server")
 	if udpConn, err = net.ListenUDP("udp", addr); err != nil {
 		a.ctx.WithError(err).Error("Unable to start server")
-		return nil, errors.New(errors.Structural, fmt.Sprintf("Invalid bind address %v", bindNet))
+		return nil, errors.New(errors.Operational, fmt.Sprintf("Invalid bind address %v", bindNet))
 	}
 
-	go a.monitorConnection(udpConn)
-	go a.monitorHandlers()
-	go a.listen(udpConn)
+	waitStart := &sync.WaitGroup{}
+	waitStart.Add(3)
+
+	go a.monitorConnection(udpConn, waitStart)
+	go a.monitorHandlers(waitStart)
+	go a.listen(udpConn, waitStart)
+
+	waitStart.Wait()
 
 	return &a, nil
 }
@@ -95,9 +101,10 @@ func (a *Adapter) Bind(h Handler) {
 // listen Handle incoming packets and forward them.
 //
 // Runs in its own goroutine.
-func (a *Adapter) listen(conn *net.UDPConn) {
+func (a *Adapter) listen(conn *net.UDPConn, ready *sync.WaitGroup) {
 	defer conn.Close()
 	a.ctx.WithField("address", conn.LocalAddr()).Debug("Starting accept loop")
+	ready.Done()
 	for {
 		buf := make([]byte, 5000)
 		n, addr, err := conn.ReadFromUDP(buf)
@@ -117,7 +124,8 @@ func (a *Adapter) listen(conn *net.UDPConn) {
 // Doing this makes sure that only 1 goroutine is interacting with the connection.
 //
 // Runs in its own goroutine
-func (a *Adapter) monitorConnection(udpConn *net.UDPConn) {
+func (a *Adapter) monitorConnection(udpConn *net.UDPConn, ready *sync.WaitGroup) {
+	ready.Done()
 	for msg := range a.conn {
 		if msg.Data != nil { // Send the given udp message
 			if _, err := udpConn.WriteToUDP(msg.Data, msg.Addr); err != nil {
@@ -135,9 +143,10 @@ func (a *Adapter) monitorConnection(udpConn *net.UDPConn) {
 // channel to ask every defined handler to handle them.
 //
 // Runs in its own goroutine
-func (a *Adapter) monitorHandlers() {
+func (a *Adapter) monitorHandlers(ready *sync.WaitGroup) {
 	var handlers []Handler
 
+	ready.Done()
 	for msg := range a.handlers {
 		switch msg.(type) {
 		case Handler:
