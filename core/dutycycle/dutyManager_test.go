@@ -134,7 +134,7 @@ func TestUpdateAndLookup(t *testing.T) {
 
 		// Expectation
 		want := map[subBand]uint{
-			EuropeRX1_A: 5,
+			EuropeRX1_A: 10,
 		}
 
 		// Check
@@ -161,8 +161,8 @@ func TestUpdateAndLookup(t *testing.T) {
 
 		// Expectation
 		want := map[subBand]uint{
-			EuropeRX1_A: 37,
-			EuropeRX1_B: 21,
+			EuropeRX1_A: 51,
+			EuropeRX1_B: 25,
 		}
 
 		// Check
@@ -188,7 +188,7 @@ func TestUpdateAndLookup(t *testing.T) {
 
 		// Expectation
 		want := map[subBand]uint{
-			EuropeRX1_A: 7645,
+			EuropeRX1_A: 9871,
 		}
 
 		// Check

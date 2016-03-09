@@ -183,16 +183,16 @@ func (m *dutyManager) Close() error {
 // identifier.
 func computeTOA(size uint, datr string, codr string) (time.Duration, error) {
 	// Ensure the datr and codr are correct
-	var cr float64
+	var rc float64
 	switch codr {
 	case "4/5":
-		cr = 4.0 / 5.0
+		rc = 4.0 / 5.0
 	case "4/6":
-		cr = 4.0 / 6.0
+		rc = 4.0 / 6.0
 	case "4/7":
-		cr = 4.0 / 7.0
+		rc = 4.0 / 7.0
 	case "4/8":
-		cr = 4.0 / 8.0
+		rc = 4.0 / 8.0
 	default:
 		return 0, errors.New(errors.Structural, "Invalid Codr")
 	}
@@ -204,12 +204,20 @@ func computeTOA(size uint, datr string, codr string) (time.Duration, error) {
 		return 0, errors.New(errors.Structural, "Invalid Datr")
 	}
 
-	// Compute bitrate, Page 10: http://www.semtech.com/images/datasheet/an1200.22.pdf
+	// Additional variables needed to compute times on air
+	s := float64(size)
 	sf, _ := strconv.ParseFloat(matches[1], 64)
-	bw, _ := strconv.ParseUint(matches[2], 10, 64)
-	bitrate := sf * cr * float64(bw) / math.Pow(2, sf)
+	bw, _ := strconv.ParseFloat(matches[2], 64)
+	var de float64
+	if bw == 125 && (sf == 11 || sf == 12) {
+		de = 1.0
+	}
 
-	return time.ParseDuration(fmt.Sprintf("%fms", float64(size*8)/bitrate))
+	// Compute toa, Page 7: http://www.semtech.com/images/datasheet/LoraDesignGuide_STD.pdf
+	payloadNb := 8.0 + math.Max(0, 4*math.Ceil((2*s-sf-6)/(sf-2*de))/rc)
+	timeOnAir := (payloadNb + 12.25) * math.Pow(2, sf) / bw // in ms
+
+	return time.ParseDuration(fmt.Sprintf("%fms", timeOnAir))
 }
 
 type dutyEntry struct {
