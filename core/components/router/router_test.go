@@ -23,9 +23,10 @@ func TestRegister(t *testing.T) {
 		an := NewMockAckNacker()
 		store := newMockStorage()
 		r := NewMockRRegistration()
+		m := newMockDutyManager()
 
 		// Operate
-		router := New(store, GetLogger(t, "Router"))
+		router := New(store, m, GetLogger(t, "Router"))
 		err := router.Register(r, an)
 
 		// Check
@@ -43,9 +44,10 @@ func TestRegister(t *testing.T) {
 		an := NewMockAckNacker()
 		store := newMockStorage()
 		r := NewMockARegistration()
+		m := newMockDutyManager()
 
 		// Operate
-		router := New(store, GetLogger(t, "Router"))
+		router := New(store, m, GetLogger(t, "Router"))
 		err := router.Register(r, an)
 
 		// Check
@@ -64,9 +66,10 @@ func TestRegister(t *testing.T) {
 		store := newMockStorage()
 		store.Failures["Store"] = errors.New(errors.Structural, "Mock Error: Store Failed")
 		r := NewMockRRegistration()
+		m := newMockDutyManager()
 
 		// Operate
-		router := New(store, GetLogger(t, "Router"))
+		router := New(store, m, GetLogger(t, "Router"))
 		err := router.Register(r, an)
 
 		// Check
@@ -86,16 +89,19 @@ func TestHandleUp(t *testing.T) {
 		adapter.OutSend = nil
 		store := newMockStorage()
 		store.Failures["Lookup"] = errors.New(errors.NotFound, "Mock Error: Not Found")
-		data, err := newRPacket(
+		inPacket := newRPacket(
 			[4]byte{2, 3, 2, 3},
 			"Payload",
 			[]byte{1, 2, 3, 4, 5, 6, 7, 8},
-		).MarshalBinary()
+			Metadata{},
+		)
+		data, _ := inPacket.MarshalBinary()
 		bpacket := newBPacket([4]byte{2, 3, 2, 3}, "Payload")
+		m := newMockDutyManager()
 
 		// Operate
-		router := New(store, GetLogger(t, "Router"))
-		err = router.HandleUp(data, an, adapter)
+		router := New(store, m, GetLogger(t, "Router"))
+		err := router.HandleUp(data, an, adapter)
 
 		// Check
 		CheckErrors(t, nil, err)
@@ -103,6 +109,8 @@ func TestHandleUp(t *testing.T) {
 		CheckRegistrations(t, nil, store.InStore)
 		CheckSent(t, bpacket, adapter.InSendPacket)
 		CheckRecipients(t, nil, adapter.InSendRecipients)
+		CheckIDs(t, inPacket.GatewayID(), m.InLookupId)
+		CheckIDs(t, nil, m.InUpdateId)
 	}
 
 	// -------------------
@@ -116,22 +124,31 @@ func TestHandleUp(t *testing.T) {
 			[4]byte{2, 3, 2, 3},
 			"Response",
 			[]byte{1, 2, 3, 4, 5, 6, 7, 8},
+			Metadata{
+				Freq: pointer.Float64(868.42),
+				Size: pointer.Uint(14),
+				Codr: pointer.String("4/5"),
+				Datr: pointer.String("SF8BW125"),
+			},
 		)
 		dataResp, _ := resp.MarshalBinary()
 		adapter := NewMockAdapter()
 		adapter.OutSend = dataResp
 		store := newMockStorage()
 		store.Failures["Lookup"] = errors.New(errors.NotFound, "Mock Error: Not Found")
-		data, err := newRPacket(
+		inPacket := newRPacket(
 			[4]byte{2, 3, 2, 3},
 			"Payload",
 			[]byte{1, 2, 3, 4, 5, 6, 7, 8},
-		).MarshalBinary()
+			Metadata{},
+		)
+		data, _ := inPacket.MarshalBinary()
 		bpacket := newBPacket([4]byte{2, 3, 2, 3}, "Payload")
+		m := newMockDutyManager()
 
 		// Operate
-		router := New(store, GetLogger(t, "Router"))
-		err = router.HandleUp(data, an, adapter)
+		router := New(store, m, GetLogger(t, "Router"))
+		err := router.HandleUp(data, an, adapter)
 
 		// Check
 		CheckErrors(t, nil, err)
@@ -139,6 +156,8 @@ func TestHandleUp(t *testing.T) {
 		CheckRegistrations(t, nil, store.InStore)
 		CheckSent(t, bpacket, adapter.InSendPacket)
 		CheckRecipients(t, nil, adapter.InSendRecipients)
+		CheckIDs(t, inPacket.GatewayID(), m.InLookupId)
+		CheckIDs(t, inPacket.GatewayID(), m.InUpdateId)
 	}
 
 	// -------------------
@@ -151,9 +170,10 @@ func TestHandleUp(t *testing.T) {
 		adapter := NewMockAdapter()
 		store := newMockStorage()
 		store.Failures["Lookup"] = errors.New(errors.NotFound, "Mock Error: Not Found")
+		m := newMockDutyManager()
 
 		// Operate
-		router := New(store, GetLogger(t, "Router"))
+		router := New(store, m, GetLogger(t, "Router"))
 		err := router.HandleUp([]byte{1, 2, 3}, an, adapter)
 
 		// Check
@@ -162,6 +182,7 @@ func TestHandleUp(t *testing.T) {
 		CheckRegistrations(t, nil, store.InStore)
 		CheckSent(t, nil, adapter.InSendPacket)
 		CheckRecipients(t, nil, adapter.InSendRecipients)
+		CheckIDs(t, nil, m.InUpdateId)
 	}
 
 	// -------------------
@@ -175,15 +196,18 @@ func TestHandleUp(t *testing.T) {
 		adapter.OutSend = nil
 		store := newMockStorage()
 		store.Failures["Lookup"] = errors.New(errors.Operational, "Mock Error: Lookup failed")
-		data, err := newRPacket(
+		inPacket := newRPacket(
 			[4]byte{2, 3, 2, 3},
 			"Payload",
 			[]byte{1, 2, 3, 4, 5, 6, 7, 8},
-		).MarshalBinary()
+			Metadata{},
+		)
+		data, _ := inPacket.MarshalBinary()
+		m := newMockDutyManager()
 
 		// Operate
-		router := New(store, GetLogger(t, "Router"))
-		err = router.HandleUp(data, an, adapter)
+		router := New(store, m, GetLogger(t, "Router"))
+		err := router.HandleUp(data, an, adapter)
 
 		// Check
 		CheckErrors(t, pointer.String(string(errors.Operational)), err)
@@ -191,6 +215,7 @@ func TestHandleUp(t *testing.T) {
 		CheckRegistrations(t, nil, store.InStore)
 		CheckSent(t, nil, adapter.InSendPacket)
 		CheckRecipients(t, nil, adapter.InSendRecipients)
+		CheckIDs(t, nil, m.InUpdateId)
 	}
 
 	// -------------------
@@ -211,16 +236,19 @@ func TestHandleUp(t *testing.T) {
 				until:     time.Now().Add(time.Hour),
 			},
 		}
-		data, err := newRPacket(
+		inPacket := newRPacket(
 			[4]byte{2, 3, 2, 3},
 			"Payload",
 			[]byte{1, 2, 3, 4, 5, 6, 7, 8},
-		).MarshalBinary()
+			Metadata{},
+		)
+		data, _ := inPacket.MarshalBinary()
 		bpacket := newBPacket([4]byte{2, 3, 2, 3}, "Payload")
+		m := newMockDutyManager()
 
 		// Operate
-		router := New(store, GetLogger(t, "Router"))
-		err = router.HandleUp(data, an, adapter)
+		router := New(store, m, GetLogger(t, "Router"))
+		err := router.HandleUp(data, an, adapter)
 
 		// Check
 		CheckErrors(t, nil, err)
@@ -228,6 +256,8 @@ func TestHandleUp(t *testing.T) {
 		CheckRegistrations(t, nil, store.InStore)
 		CheckSent(t, bpacket, adapter.InSendPacket)
 		CheckRecipients(t, []Recipient{recipient}, adapter.InSendRecipients)
+		CheckIDs(t, inPacket.GatewayID(), m.InLookupId)
+		CheckIDs(t, nil, m.InUpdateId)
 	}
 
 	// -------------------
@@ -248,15 +278,18 @@ func TestHandleUp(t *testing.T) {
 				until:     time.Now().Add(time.Hour),
 			},
 		}
-		data, err := newRPacket(
+		inPacket := newRPacket(
 			[4]byte{2, 3, 2, 3},
 			"Payload",
 			[]byte{1, 2, 3, 4, 5, 6, 7, 8},
-		).MarshalBinary()
+			Metadata{},
+		)
+		data, _ := inPacket.MarshalBinary()
+		m := newMockDutyManager()
 
 		// Operate
-		router := New(store, GetLogger(t, "Router"))
-		err = router.HandleUp(data, an, adapter)
+		router := New(store, m, GetLogger(t, "Router"))
+		err := router.HandleUp(data, an, adapter)
 
 		// Check
 		CheckErrors(t, pointer.String(string(errors.Structural)), err)
@@ -264,6 +297,8 @@ func TestHandleUp(t *testing.T) {
 		CheckRegistrations(t, nil, store.InStore)
 		CheckSent(t, nil, adapter.InSendPacket)
 		CheckRecipients(t, nil, adapter.InSendRecipients)
+		CheckIDs(t, inPacket.GatewayID(), m.InLookupId)
+		CheckIDs(t, nil, m.InUpdateId)
 	}
 
 	// -------------------
@@ -277,16 +312,19 @@ func TestHandleUp(t *testing.T) {
 		adapter.Failures["Send"] = errors.New(errors.Operational, "Mock Error: Unable to send")
 		store := newMockStorage()
 		store.Failures["Lookup"] = errors.New(errors.NotFound, "Mock Error: Not found")
-		data, err := newRPacket(
+		inPacket := newRPacket(
 			[4]byte{2, 3, 2, 3},
 			"Payload",
 			[]byte{1, 2, 3, 4, 5, 6, 7, 8},
-		).MarshalBinary()
+			Metadata{},
+		)
+		data, _ := inPacket.MarshalBinary()
 		bpacket := newBPacket([4]byte{2, 3, 2, 3}, "Payload")
+		m := newMockDutyManager()
 
 		// Operate
-		router := New(store, GetLogger(t, "Router"))
-		err = router.HandleUp(data, an, adapter)
+		router := New(store, m, GetLogger(t, "Router"))
+		err := router.HandleUp(data, an, adapter)
 
 		// Check
 		CheckErrors(t, pointer.String(string(errors.Operational)), err)
@@ -294,6 +332,8 @@ func TestHandleUp(t *testing.T) {
 		CheckRegistrations(t, nil, store.InStore)
 		CheckSent(t, bpacket, adapter.InSendPacket)
 		CheckRecipients(t, nil, adapter.InSendRecipients)
+		CheckIDs(t, inPacket.GatewayID(), m.InLookupId)
+		CheckIDs(t, nil, m.InUpdateId)
 	}
 
 	// -------------------
@@ -307,16 +347,19 @@ func TestHandleUp(t *testing.T) {
 		adapter.OutSend = []byte{1, 2, 3}
 		store := newMockStorage()
 		store.Failures["Lookup"] = errors.New(errors.NotFound, "Mock Error: Not found")
-		data, err := newRPacket(
+		inPacket := newRPacket(
 			[4]byte{2, 3, 2, 3},
 			"Payload",
 			[]byte{1, 2, 3, 4, 5, 6, 7, 8},
-		).MarshalBinary()
+			Metadata{},
+		)
+		data, _ := inPacket.MarshalBinary()
 		bpacket := newBPacket([4]byte{2, 3, 2, 3}, "Payload")
+		m := newMockDutyManager()
 
 		// Operate
-		router := New(store, GetLogger(t, "Router"))
-		err = router.HandleUp(data, an, adapter)
+		router := New(store, m, GetLogger(t, "Router"))
+		err := router.HandleUp(data, an, adapter)
 
 		// Check
 		CheckErrors(t, pointer.String(string(errors.Operational)), err)
@@ -324,6 +367,8 @@ func TestHandleUp(t *testing.T) {
 		CheckRegistrations(t, nil, store.InStore)
 		CheckSent(t, bpacket, adapter.InSendPacket)
 		CheckRecipients(t, nil, adapter.InSendRecipients)
+		CheckIDs(t, inPacket.GatewayID(), m.InLookupId)
+		CheckIDs(t, nil, m.InUpdateId)
 	}
 
 	// -------------------
@@ -347,16 +392,19 @@ func TestHandleUp(t *testing.T) {
 				until:     time.Now().Add(time.Hour),
 			},
 		}
-		data, err := newRPacket(
+		inPacket := newRPacket(
 			[4]byte{2, 3, 2, 3},
 			"Payload",
 			[]byte{1, 2, 3, 4, 5, 6, 7, 8},
-		).MarshalBinary()
+			Metadata{},
+		)
+		data, _ := inPacket.MarshalBinary()
 		bpacket := newBPacket([4]byte{2, 3, 2, 3}, "Payload")
+		m := newMockDutyManager()
 
 		// Operate
-		router := New(store, GetLogger(t, "Router"))
-		err = router.HandleUp(data, an, adapter)
+		router := New(store, m, GetLogger(t, "Router"))
+		err := router.HandleUp(data, an, adapter)
 
 		// Check
 		CheckErrors(t, nil, err)
@@ -388,16 +436,19 @@ func TestHandleUp(t *testing.T) {
 				until:     time.Now().Add(time.Hour),
 			},
 		}
-		data, err := newRPacket(
+		inPacket := newRPacket(
 			[4]byte{2, 3, 2, 3},
 			"Payload",
 			[]byte{1, 2, 3, 4, 5, 6, 7, 8},
-		).MarshalBinary()
+			Metadata{},
+		)
+		data, _ := inPacket.MarshalBinary()
 		bpacket := newBPacket([4]byte{2, 3, 2, 3}, "Payload")
+		m := newMockDutyManager()
 
 		// Operate
-		router := New(store, GetLogger(t, "Router"))
-		err = router.HandleUp(data, an, adapter)
+		router := New(store, m, GetLogger(t, "Router"))
+		err := router.HandleUp(data, an, adapter)
 
 		// Check
 		CheckErrors(t, pointer.String(string(errors.NotFound)), err)
@@ -405,5 +456,7 @@ func TestHandleUp(t *testing.T) {
 		CheckRegistrations(t, nil, store.InStore)
 		CheckSent(t, bpacket, adapter.InSendPacket)
 		CheckRecipients(t, nil, adapter.InSendRecipients)
+		CheckIDs(t, inPacket.GatewayID(), m.InLookupId)
+		CheckIDs(t, nil, m.InUpdateId)
 	}
 }
