@@ -14,24 +14,26 @@ import (
 type mockStorage struct {
 	Failures  map[string]error
 	InLookup  lorawan.EUI64
-	OutLookup entry
+	OutLookup []entry
 	InStore   RRegistration
 }
 
 func newMockStorage() *mockStorage {
 	return &mockStorage{
 		Failures: make(map[string]error),
-		OutLookup: entry{
-			Recipient: []byte("MockStorageRecipient"),
-			until:     time.Date(2016, 2, 3, 14, 16, 22, 0, time.UTC),
+		OutLookup: []entry{
+			{
+				Recipient: []byte("MockStorageRecipient"),
+				until:     time.Date(2016, 2, 3, 14, 16, 22, 0, time.UTC),
+			},
 		},
 	}
 }
 
-func (s *mockStorage) Lookup(devEUI lorawan.EUI64) (entry, error) {
+func (s *mockStorage) Lookup(devEUI lorawan.EUI64) ([]entry, error) {
 	s.InLookup = devEUI
 	if s.Failures["Lookup"] != nil {
-		return entry{}, s.Failures["Lookup"]
+		return nil, s.Failures["Lookup"]
 	}
 	return s.OutLookup, nil
 }

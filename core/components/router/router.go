@@ -85,7 +85,7 @@ func (r component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 				recipient, err := up.GetRecipient(e.Recipient)
 				if err != nil {
 					r.ctx.Warn("Unable to retrieve Recipient")
-					return err
+					return errors.New(errors.Structural, err)
 				}
 				recipients = append(recipients, recipient)
 			}

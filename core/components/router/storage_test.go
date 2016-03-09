@@ -50,38 +50,15 @@ func TestStoreAndLookup(t *testing.T) {
 		gotEntry, err := db.Lookup(r.DevEUI())
 
 		// Expectations
-		wantEntry := entry{
-			Recipient: r.RawRecipient(),
-			until:     time.Now().Add(time.Hour),
+		wantEntry := []entry{
+			{
+				Recipient: r.RawRecipient(),
+				until:     time.Now().Add(time.Hour),
+			},
 		}
 
 		// Check
 		CheckErrors(t, nil, err)
-		CheckEntries(t, wantEntry, gotEntry)
-		_ = db.Close()
-	}
-
-	// ------------------
-
-	{
-		Desc(t, "Store an existing entry")
-
-		// Build
-		db, _ := NewStorage(storageDB, time.Hour)
-		r := NewMockRRegistration()
-
-		// Operate
-		err := db.Store(r)
-		gotEntry, _ := db.Lookup(r.DevEUI())
-
-		// Expectations
-		wantEntry := entry{
-			Recipient: r.RawRecipient(),
-			until:     time.Now().Add(time.Hour),
-		}
-
-		// Checks
-		CheckErrors(t, pointer.String(string(errors.Structural)), err)
 		CheckEntries(t, wantEntry, gotEntry)
 		_ = db.Close()
 	}
@@ -101,7 +78,7 @@ func TestStoreAndLookup(t *testing.T) {
 
 		// Checks
 		CheckErrors(t, pointer.String(string(errors.NotFound)), err)
-		CheckEntries(t, entry{}, gotEntry)
+		CheckEntries(t, nil, gotEntry)
 		_ = db.Close()
 	}
 
@@ -122,7 +99,7 @@ func TestStoreAndLookup(t *testing.T) {
 
 		// Checks
 		CheckErrors(t, pointer.String(string(errors.NotFound)), err)
-		CheckEntries(t, entry{}, gotEntry)
+		CheckEntries(t, nil, gotEntry)
 		_ = db.Close()
 	}
 
@@ -144,9 +121,11 @@ func TestStoreAndLookup(t *testing.T) {
 		gotEntry, err := db.Lookup(r.DevEUI())
 
 		// Expectations
-		wantEntry := entry{
-			Recipient: r.RawRecipient(),
-			until:     time.Now().Add(time.Millisecond * 200),
+		wantEntry := []entry{
+			{
+				Recipient: r.RawRecipient(),
+				until:     time.Now().Add(time.Millisecond * 200),
+			},
 		}
 
 		// Checks
@@ -188,7 +167,7 @@ func TestStoreAndLookup(t *testing.T) {
 
 		// Checks
 		CheckErrors(t, pointer.String(string(errors.Operational)), err)
-		CheckEntries(t, entry{}, gotEntry)
+		CheckEntries(t, nil, gotEntry)
 	}
 
 	// ------------------
@@ -207,7 +186,7 @@ func TestStoreAndLookup(t *testing.T) {
 		CheckErrors(t, pointer.String(string(errors.Structural)), err)
 		gotEntry, err := db.Lookup(r.DevEUI())
 		CheckErrors(t, pointer.String(string(errors.NotFound)), err)
-		CheckEntries(t, entry{}, gotEntry)
+		CheckEntries(t, nil, gotEntry)
 
 		_ = db.Close()
 	}

@@ -205,9 +205,11 @@ func TestHandleUp(t *testing.T) {
 		recipient := NewMockRecipient()
 		dataRecipient, _ := recipient.MarshalBinary()
 		store := newMockStorage()
-		store.OutLookup = entry{
-			Recipient: dataRecipient,
-			until:     time.Now().Add(time.Hour),
+		store.OutLookup = []entry{
+			{
+				Recipient: dataRecipient,
+				until:     time.Now().Add(time.Hour),
+			},
 		}
 		data, err := newRPacket(
 			[4]byte{2, 3, 2, 3},
@@ -240,9 +242,11 @@ func TestHandleUp(t *testing.T) {
 		recipient := NewMockRecipient()
 		dataRecipient, _ := recipient.MarshalBinary()
 		store := newMockStorage()
-		store.OutLookup = entry{
-			Recipient: dataRecipient,
-			until:     time.Now().Add(time.Hour),
+		store.OutLookup = []entry{
+			{
+				Recipient: dataRecipient,
+				until:     time.Now().Add(time.Hour),
+			},
 		}
 		data, err := newRPacket(
 			[4]byte{2, 3, 2, 3},
@@ -255,7 +259,7 @@ func TestHandleUp(t *testing.T) {
 		err = router.HandleUp(data, an, adapter)
 
 		// Check
-		CheckErrors(t, pointer.String(string(errors.Operational)), err)
+		CheckErrors(t, pointer.String(string(errors.Structural)), err)
 		CheckAcks(t, false, an.InAck)
 		CheckRegistrations(t, nil, store.InStore)
 		CheckSent(t, nil, adapter.InSendPacket)
