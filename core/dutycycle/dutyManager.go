@@ -33,9 +33,11 @@ type dutyManager struct {
 
 // Available sub-bands
 const (
-	EuropeRX1_A subBand = "EURX1A"
-	EuropeRX1_B subBand = "EURX1B"
-	EuropeRX2   subBand = "EURX2"
+	EuropeG  subBand = "europe g"
+	EuropeG1         = "europe g1"
+	EuropeG2         = "europe g2"
+	EuropeG3         = "europe g3"
+	EuropeG4         = "europe g4"
 )
 
 type subBand string
@@ -51,20 +53,31 @@ type region byte
 
 // GetSubBand returns the subband associated to a given frequency
 func GetSubBand(freq float64) (subBand, error) {
-	// EuropeRX1_A -> 868.1 MHz -> 868.9 MHz
-	if int(freq) == 868 {
-		return EuropeRX1_A, nil
+	// g 865.0 – 868.0 MHz 1% or LBT+AFA, 25 mW (=14dBm)
+	if freq >= 865.0 && freq < 868.0 {
+		return EuropeG, nil
 	}
 
-	// EuropeRX1_B -> 867.1 MHz -> 867.9 MHz
-	if int(freq) == 867 {
-		return EuropeRX1_B, nil
+	// g1 868.0 – 868.6 MHz 1% or LBT+AFA, 25 mW
+	if freq >= 868.0 && freq < 868.6 {
+		return EuropeG1, nil
 	}
 
-	// EuropeRX2 -> 869.5 MHz
-	if math.Floor(freq*10.0) == 8695.0 {
-		return EuropeRX2, nil
+	// g2 868.7 – 869.2 MHz 0.1% or LBT+AFA, 25 mW
+	if freq >= 868.7 && freq < 869.2 {
+		return EuropeG2, nil
 	}
+
+	// g3 869.4 – 869.65 MHz 10% or LBT+AFA, 500 mW (=27dBm)
+	if freq >= 869.4 && freq < 869.65 {
+		return EuropeG3, nil
+	}
+
+	// g4 869.7 – 870.0 MHz 1% or LBT+AFA, 25 mW
+	if freq >= 869.7 && freq < 870 {
+		return EuropeG4, nil
+	}
+
 	return "", errors.New(errors.Structural, "Unknown frequency")
 }
 
@@ -74,9 +87,11 @@ func NewManager(filepath string, cycleLength time.Duration, r region) (DutyManag
 	switch r {
 	case Europe:
 		maxDuty = map[subBand]float64{
-			EuropeRX1_A: 0.01, // 1% dutycycle
-			EuropeRX1_B: 0.01, // 1% dutycycle
-			EuropeRX2:   0.1,  // 10% dutycycle
+			EuropeG:  0.01,
+			EuropeG1: 0.01,
+			EuropeG2: 0.001,
+			EuropeG3: 0.1,
+			EuropeG4: 0.01,
 		}
 	default:
 		return nil, errors.New(errors.Implementation, "Region not supported")

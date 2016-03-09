@@ -19,24 +19,24 @@ var dutyManagerDB = path.Join(os.TempDir(), "TestDutyCycleStorage.db")
 
 func TestGetSubBand(t *testing.T) {
 	{
-		Desc(t, "Test EuropeRX1_A")
+		Desc(t, "Test EuropeG1")
 		sb, err := GetSubBand(868.38)
 		errutil.CheckErrors(t, nil, err)
-		CheckSubBands(t, EuropeRX1_A, sb)
+		CheckSubBands(t, EuropeG1, sb)
 	}
 
 	{
-		Desc(t, "Test EuropeRX1_B")
+		Desc(t, "Test EuropeG")
 		sb, err := GetSubBand(867.127)
 		errutil.CheckErrors(t, nil, err)
-		CheckSubBands(t, EuropeRX1_B, sb)
+		CheckSubBands(t, EuropeG, sb)
 	}
 
 	{
-		Desc(t, "Test EuropeRX2")
+		Desc(t, "Test EuropeG3")
 		sb, err := GetSubBand(869.567)
 		errutil.CheckErrors(t, nil, err)
-		CheckSubBands(t, EuropeRX2, sb)
+		CheckSubBands(t, EuropeG3, sb)
 	}
 
 	{
@@ -134,7 +134,7 @@ func TestUpdateAndLookup(t *testing.T) {
 
 		// Expectation
 		want := map[subBand]uint{
-			EuropeRX1_A: 10,
+			EuropeG1: 10,
 		}
 
 		// Check
@@ -161,8 +161,8 @@ func TestUpdateAndLookup(t *testing.T) {
 
 		// Expectation
 		want := map[subBand]uint{
-			EuropeRX1_A: 51,
-			EuropeRX1_B: 25,
+			EuropeG1: 51,
+			EuropeG:  25,
 		}
 
 		// Check
@@ -188,7 +188,7 @@ func TestUpdateAndLookup(t *testing.T) {
 
 		// Expectation
 		want := map[subBand]uint{
-			EuropeRX1_A: 9871,
+			EuropeG1: 9871,
 		}
 
 		// Check
