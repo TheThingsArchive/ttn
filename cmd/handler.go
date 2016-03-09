@@ -196,7 +196,7 @@ func init() {
 	viper.BindPFlag("handler.status-port", handlerCmd.Flags().Lookup("status-port"))
 
 	handlerCmd.Flags().String("uplink-bind-address", "", "The IP address to listen for uplink messages from brokers")
-	handlerCmd.Flags().Int("uplink-port", 1882, "The UDP port for the uplink")
+	handlerCmd.Flags().Int("uplink-port", 1882, "The port for the uplink")
 	viper.BindPFlag("handler.uplink-bind-address", handlerCmd.Flags().Lookup("uplink-bind-address"))
 	viper.BindPFlag("handler.uplink-port", handlerCmd.Flags().Lookup("uplink-port"))
 
