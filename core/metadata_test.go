@@ -5,11 +5,9 @@ package core
 
 import (
 	"encoding/json"
-	"fmt"
 	"testing"
 	"time"
 
-	"github.com/TheThingsNetwork/ttn/core/dutycycle"
 	. "github.com/TheThingsNetwork/ttn/utils/errors/checks"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
@@ -61,11 +59,6 @@ var commonTests = []struct {
 		nil,
 		`{"lsnr":5.7,"modu":"FSK","size":14,"datr":50000,"time":"2016-01-06T15:11:12.000000142Z"}`,
 	},
-	{ // Duty
-		Metadata{Duty: genCycles()},
-		nil,
-		fmt.Sprintf(`{"duty":%s}`, genCyclesPayload()),
-	},
 }
 
 var unmarshalTests = []struct {
@@ -103,15 +96,4 @@ func TestUnmarshalJSON(t *testing.T) {
 		CheckErrors(t, test.WantError, err)
 		checkMetadata(t, test.Metadata, metadata)
 	}
-}
-
-func genCycles() *dutycycle.Cycles {
-	cycles := make(dutycycle.Cycles)
-	cycles[dutycycle.EuropeG1] = 44
-	cycles[dutycycle.EuropeG3] = 12
-	return &cycles
-}
-
-func genCyclesPayload() string {
-	return fmt.Sprintf(`{"%s":44,"%s":12}`, dutycycle.EuropeG1, dutycycle.EuropeG3)
 }

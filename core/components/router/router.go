@@ -71,11 +71,21 @@ func (r component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 		// Add Gateway duty metadata
 		// TODO add gateway location
 		metadata := packet.Metadata()
+		if metadata.Freq == nil {
+			return errors.New(errors.Structural, "Missing mandatory frequency in metadata")
+		}
+
 		cycles, err := r.Manager.Lookup(packet.GatewayID())
 		if err != nil {
 			r.ctx.WithError(err).Debug("Unable to get any metadata about duty-cycles")
 		} else {
-			metadata.Duty = &cycles
+			sb1, err := dutycycle.GetSubBand(*metadata.Freq)
+			if err != nil {
+				return errors.New(errors.Structural, "Unhandled uplink signal frequency")
+			}
+
+			rx1, rx2 := uint(dutycycle.StateFromDuty(cycles[sb1])), uint(dutycycle.StateFromDuty(cycles[dutycycle.EuropeG3]))
+			metadata.DutyRX1, metadata.DutyRX2 = &rx1, &rx2
 		}
 
 		bpacket, err := NewBPacket(packet.Payload(), packet.Metadata())
