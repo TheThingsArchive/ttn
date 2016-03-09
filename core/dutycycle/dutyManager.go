@@ -223,7 +223,7 @@ func computeTOA(size uint, datr string, codr string) (time.Duration, error) {
 		return 0, errors.New(errors.Structural, "Invalid Codr")
 	}
 
-	sf, bw, err := parseDatr(datr)
+	sf, bw, err := ParseDatr(datr)
 	if err != nil {
 		return 0, err
 	}
@@ -242,7 +242,7 @@ func computeTOA(size uint, datr string, codr string) (time.Duration, error) {
 	return time.ParseDuration(fmt.Sprintf("%fms", timeOnAir))
 }
 
-func parseDatr(datr string) (float64, float64, error) {
+func ParseDatr(datr string) (float64, float64, error) {
 	re := regexp.MustCompile("^SF(7|8|9|10|11|12)BW(125|250|500)$")
 	matches := re.FindStringSubmatch(datr)
 
