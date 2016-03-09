@@ -190,4 +190,42 @@ func TestStoreAndLookup(t *testing.T) {
 
 		_ = db.Close()
 	}
+
+	// ------------------
+
+	{
+		Desc(t, "Store two entries in a row")
+
+		// Build
+		db, _ := NewStorage(storageDB, time.Hour)
+		r1 := NewMockRRegistration()
+		r1.OutDevEUI[3] = 42
+		r2 := NewMockRRegistration()
+		r2.OutDevEUI[3] = 42
+		r2.OutRecipient.(*MockRecipient).OutMarshalBinary = []byte("Second recipient")
+
+		// Operate
+		err := db.Store(r1)
+		CheckErrors(t, nil, err)
+		err = db.Store(r2)
+		CheckErrors(t, nil, err)
+		gotEntries, err := db.Lookup(r1.DevEUI())
+		CheckErrors(t, nil, err)
+
+		// Expectations
+		wantEntries := []entry{
+			{
+				Recipient: r1.RawRecipient(),
+				until:     time.Now().Add(time.Hour),
+			},
+			{
+				Recipient: r2.RawRecipient(),
+				until:     time.Now().Add(time.Hour),
+			},
+		}
+
+		// Check
+		CheckEntries(t, wantEntries, gotEntries)
+		_ = db.Close()
+	}
 }
