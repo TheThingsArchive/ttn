@@ -64,6 +64,7 @@ func (r component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 			r.ctx.Warn("Database lookup failed")
 			return errors.New(errors.Operational, err)
 		}
+		shouldBroadcast := err != nil
 
 		// TODO -> Add Gateway Metadata to packet
 		bpacket, err := NewBPacket(packet.Payload(), packet.Metadata())
@@ -74,7 +75,7 @@ func (r component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 
 		// Send packet to broker(s)
 		var response []byte
-		if err != nil {
+		if shouldBroadcast {
 			// No Recipient available -> broadcast
 			response, err = up.Send(bpacket)
 		} else {
