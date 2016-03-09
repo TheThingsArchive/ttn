@@ -44,6 +44,15 @@ const (
 
 type subBand string
 
+type State uint
+
+const (
+	StateHighlyAvailable State = iota
+	StateAvailable
+	StateWarning
+	StateBlocked
+)
+
 // Available regions for LoRaWAN
 const (
 	Europe region = iota
@@ -214,17 +223,13 @@ func computeTOA(size uint, datr string, codr string) (time.Duration, error) {
 		return 0, errors.New(errors.Structural, "Invalid Codr")
 	}
 
-	re := regexp.MustCompile("^SF(7|8|9|10|11|12)BW(125|250|500)$")
-	matches := re.FindStringSubmatch(datr)
-
-	if len(matches) != 3 {
-		return 0, errors.New(errors.Structural, "Invalid Datr")
+	sf, bw, err := parseDatr(datr)
+	if err != nil {
+		return 0, err
 	}
 
 	// Additional variables needed to compute times on air
 	s := float64(size)
-	sf, _ := strconv.ParseFloat(matches[1], 64)
-	bw, _ := strconv.ParseFloat(matches[2], 64)
 	var de float64
 	if bw == 125 && (sf == 11 || sf == 12) {
 		de = 1.0
@@ -235,6 +240,37 @@ func computeTOA(size uint, datr string, codr string) (time.Duration, error) {
 	timeOnAir := (payloadNb + 12.25) * math.Pow(2, sf) / bw // in ms
 
 	return time.ParseDuration(fmt.Sprintf("%fms", timeOnAir))
+}
+
+func parseDatr(datr string) (float64, float64, error) {
+	re := regexp.MustCompile("^SF(7|8|9|10|11|12)BW(125|250|500)$")
+	matches := re.FindStringSubmatch(datr)
+
+	if len(matches) != 3 {
+		return 0, 0, errors.New(errors.Structural, "Invalid Datr")
+	}
+
+	sf, _ := strconv.ParseFloat(matches[1], 64)
+	bw, _ := strconv.ParseFloat(matches[2], 64)
+
+	return sf, bw, nil
+}
+
+func StateFromDuty(duty uint) State {
+	if duty >= 100 {
+		return StateBlocked
+	}
+
+	if duty > 85 {
+		return StateWarning
+	}
+
+	if duty > 30 {
+		return StateAvailable
+	}
+
+	return StateHighlyAvailable
+
 }
 
 type dutyEntry struct {
