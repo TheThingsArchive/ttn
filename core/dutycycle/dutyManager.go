@@ -19,9 +19,11 @@ import (
 // DutyManager provides an interface to manipulate and compute gateways duty-cycles.
 type DutyManager interface {
 	Update(id []byte, freq float64, size uint, datr string, codr string) error
-	Lookup(id []byte) (map[subBand]uint, error)
+	Lookup(id []byte) (Cycles, error)
 	Close() error
 }
+
+type Cycles map[subBand]uint
 
 type dutyManager struct {
 	sync.RWMutex
@@ -164,7 +166,7 @@ func (m *dutyManager) Update(id []byte, freq float64, size uint, datr string, co
 //
 // The usage is an integer between 0 and 100 (maybe above 100 if the usage exceed the limitation).
 // The closest to 0, the more usage we have
-func (m *dutyManager) Lookup(id []byte) (map[subBand]uint, error) {
+func (m *dutyManager) Lookup(id []byte) (Cycles, error) {
 	m.RLock()
 	defer m.RUnlock()
 
