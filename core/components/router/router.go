@@ -5,6 +5,7 @@ package router
 
 import (
 	. "github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/core/dutycycle"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/stats"
 	"github.com/apex/log"
@@ -12,12 +13,13 @@ import (
 
 type component struct {
 	Storage
-	ctx log.Interface
+	Manager dutycycle.DutyManager
+	ctx     log.Interface
 }
 
 // New constructs a new router
-func New(db Storage, ctx log.Interface) Router {
-	return component{Storage: db, ctx: ctx}
+func New(db Storage, dm dutycycle.DutyManager, ctx log.Interface) Router {
+	return component{Storage: db, Manager: dm, ctx: ctx}
 }
 
 // Register implements the core.Router interface
@@ -66,7 +68,16 @@ func (r component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 		}
 		shouldBroadcast := err != nil
 
-		// TODO -> Add Gateway Metadata to packet
+		// Add Gateway duty metadata
+		// TODO add gateway location
+		metadata := packet.Metadata()
+		cycles, err := r.Manager.Lookup(packet.GatewayID())
+		if err != nil {
+			r.ctx.WithError(err).Debug("Unable to get any metadata about duty-cycles")
+		} else {
+			metadata.Duty = &cycles
+		}
+
 		bpacket, err := NewBPacket(packet.Payload(), packet.Metadata())
 		if err != nil {
 			r.ctx.WithError(err).Warn("Unable to create router packet")
@@ -125,6 +136,26 @@ func (r component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 
 		switch itf.(type) {
 		case RPacket:
+			// Update downlink metadata for the related gateway
+			metadata := itf.(RPacket).Metadata()
+			freq := metadata.Freq
+			datr := metadata.Datr
+			codr := metadata.Codr
+			size := metadata.Size
+
+			if freq == nil || datr == nil || codr == nil || size == nil {
+				err := errors.New(errors.Operational, "Missing mandatory metadata in response")
+				stats.MarkMeter("router.uplink.bad_broker_response")
+				r.ctx.WithError(err).Warn("Invalid response from Broker")
+				return err
+			}
+
+			if err := r.Manager.Update(packet.GatewayID(), *freq, *size, *datr, *codr); err != nil {
+				r.ctx.WithError(err).Warn("Unable to update duty cycle")
+				return errors.New(errors.Operational, err)
+			}
+
+			// Finally, define the ack to be sent
 			ack = itf.(RPacket)
 		default:
 			return errors.New(errors.Implementation, "Unexpected packet type")
