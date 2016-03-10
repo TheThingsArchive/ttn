@@ -22,12 +22,11 @@ import (
 type Semtech struct{}
 
 // Handle implements the udp.Handler interface
-func (s Semtech) Handle(conn chan<- udp.MsgUDP, packets chan<- udp.MsgReq, msg udp.MsgUDP) {
+func (s Semtech) Handle(conn chan<- udp.MsgUDP, packets chan<- udp.MsgReq, msg udp.MsgUDP) error {
 	pkt := new(semtech.Packet)
 	err := pkt.UnmarshalBinary(msg.Data)
 	if err != nil {
-		// TODO Log error
-		return
+		return errors.New(errors.Structural, err)
 	}
 
 	switch pkt.Identifier {
@@ -39,8 +38,7 @@ func (s Semtech) Handle(conn chan<- udp.MsgUDP, packets chan<- udp.MsgReq, msg u
 			Identifier: semtech.PULL_ACK,
 		}.MarshalBinary()
 		if err != nil {
-			// TODO Log error
-			return
+			return errors.New(errors.Structural, err)
 		}
 		conn <- udp.MsgUDP{
 			Addr: msg.Addr,
@@ -54,8 +52,7 @@ func (s Semtech) Handle(conn chan<- udp.MsgUDP, packets chan<- udp.MsgReq, msg u
 			Identifier: semtech.PUSH_ACK,
 		}.MarshalBinary()
 		if err != nil {
-			// TODO Log error
-			return
+			return errors.New(errors.Structural, err)
 		}
 		conn <- udp.MsgUDP{
 			Addr: msg.Addr,
@@ -63,7 +60,7 @@ func (s Semtech) Handle(conn chan<- udp.MsgUDP, packets chan<- udp.MsgReq, msg u
 		}
 
 		if pkt.Payload == nil {
-			return
+			return errors.New(errors.Structural, "Unable to process empty PUSH_DATA payload")
 		}
 
 		for _, rxpk := range pkt.Payload.RXPK {
@@ -111,7 +108,9 @@ func (s Semtech) Handle(conn chan<- udp.MsgUDP, packets chan<- udp.MsgReq, msg u
 			}(rxpk)
 		}
 	default:
+		return errors.New(errors.Implementation, "Unhandled packet type")
 	}
+	return nil
 }
 
 func rxpk2packet(p semtech.RXPK, gid []byte) (core.Packet, error) {

@@ -12,7 +12,7 @@ type MockHandler struct {
 }
 
 // Handle implements the udp.Handler interface
-func (h *MockHandler) Handle(conn chan<- MsgUDP, next chan<- MsgReq, msg MsgUDP) {
+func (h *MockHandler) Handle(conn chan<- MsgUDP, next chan<- MsgReq, msg MsgUDP) error {
 	h.InMsg = msg
 	if h.OutMsgReq != nil {
 		chresp := make(chan MsgRes)
@@ -29,4 +29,5 @@ func (h *MockHandler) Handle(conn chan<- MsgUDP, next chan<- MsgReq, msg MsgUDP)
 			Addr: msg.Addr,
 		}
 	}
+	return nil
 }

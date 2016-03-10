@@ -24,7 +24,8 @@ func (p Healthz) URL() string {
 }
 
 // Handle implements the http.Handler interface
-func (p Healthz) Handle(w http.ResponseWriter, chpkt chan<- PktReq, chreg chan<- RegReq, req *http.Request) {
+func (p Healthz) Handle(w http.ResponseWriter, chpkt chan<- PktReq, chreg chan<- RegReq, req *http.Request) error {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("ok"))
+	return nil
 }

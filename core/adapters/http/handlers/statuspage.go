@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	. "github.com/TheThingsNetwork/ttn/core/adapters/http"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/rcrowley/go-metrics"
 )
 
@@ -27,12 +28,13 @@ func (p StatusPage) URL() string {
 }
 
 // Handle implements the http.Handler interface
-func (p StatusPage) Handle(w http.ResponseWriter, chpkt chan<- PktReq, chreg chan<- RegReq, req *http.Request) {
+func (p StatusPage) Handle(w http.ResponseWriter, chpkt chan<- PktReq, chreg chan<- RegReq, req *http.Request) error {
 	// Check the http method
 	if req.Method != "GET" {
+		err := errors.New(errors.Structural, "Unreckognized HTTP method. Please use [GET] to request the status")
 		w.WriteHeader(http.StatusMethodNotAllowed)
-		w.Write([]byte("Use [GET] to request the status"))
-		return
+		w.Write([]byte(err.Error()))
+		return err
 	}
 
 	allStats := make(map[string]interface{})
@@ -81,10 +83,11 @@ func (p StatusPage) Handle(w http.ResponseWriter, chpkt chan<- PktReq, chreg cha
 
 	response, err := json.Marshal(allStats)
 	if err != nil {
-		panic(err)
+		return errors.New(errors.Structural, err)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
+	return nil
 }
