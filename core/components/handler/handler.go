@@ -152,7 +152,7 @@ func (h component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 		case error:
 			stats.MarkMeter("handler.uplink.error")
 			ctx.WithError(resp.(error)).Warn("Received errored response. Sending Ack")
-			return errors.New(errors.Operational, resp.(error))
+			return resp.(error)
 		default:
 			stats.MarkMeter("handler.uplink.ack.without_response")
 			ctx.Debug("Received empty response. Sending empty Ack")
@@ -263,8 +263,7 @@ browseBundles:
 }
 
 // Abort consume forward the given error to all bundle recipients
-func (h component) abortConsume(fault error, bundles []bundle) {
-	err := errors.New(errors.Structural, fault)
+func (h component) abortConsume(err error, bundles []bundle) {
 	stats.MarkMeter("handler.uplink.invalid")
 	h.ctx.WithError(err).Debug("Unable to consume bundle")
 	for _, bundle := range bundles {

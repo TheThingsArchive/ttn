@@ -629,4 +629,70 @@ func TestHandleUp(t *testing.T) {
 		CheckIDs(t, inPacket.GatewayID(), m.InLookupId)
 		CheckIDs(t, inPacket.GatewayID(), m.InUpdateId)
 	}
+
+	// -------------------
+
+	{
+		Desc(t, "Send an unknown packet | No Metadata")
+
+		// Build
+		an := NewMockAckNacker()
+		adapter := NewMockAdapter()
+		store := newMockStorage()
+		store.Failures["Lookup"] = errors.New(errors.NotFound, "Mock Error: Not Found")
+		inPacket := newRPacket(
+			[4]byte{2, 3, 2, 3},
+			"Payload",
+			[]byte{1, 2, 3, 4, 5, 6, 7, 8},
+			Metadata{},
+		)
+		data, _ := inPacket.MarshalBinary()
+		m := newMockDutyManager()
+
+		// Operate
+		router := New(store, m, GetLogger(t, "Router"))
+		err := router.HandleUp(data, an, adapter)
+
+		// Check
+		CheckErrors(t, pointer.String(string(errors.Structural)), err)
+		CheckAcks(t, false, an.InAck)
+		CheckRegistrations(t, nil, store.InStore)
+		CheckSent(t, nil, adapter.InSendPacket)
+		CheckRecipients(t, nil, adapter.InSendRecipients)
+		CheckIDs(t, nil, m.InLookupId)
+		CheckIDs(t, nil, m.InUpdateId)
+	}
+
+	// -------------------
+
+	{
+		Desc(t, "Send an unknown packet | Unsupported frequency")
+
+		// Build
+		an := NewMockAckNacker()
+		adapter := NewMockAdapter()
+		store := newMockStorage()
+		store.Failures["Lookup"] = errors.New(errors.NotFound, "Mock Error: Not Found")
+		inPacket := newRPacket(
+			[4]byte{2, 3, 2, 3},
+			"Payload",
+			[]byte{1, 2, 3, 4, 5, 6, 7, 8},
+			Metadata{Freq: pointer.Float64(333.5)},
+		)
+		data, _ := inPacket.MarshalBinary()
+		m := newMockDutyManager()
+
+		// Operate
+		router := New(store, m, GetLogger(t, "Router"))
+		err := router.HandleUp(data, an, adapter)
+
+		// Check
+		CheckErrors(t, pointer.String(string(errors.Structural)), err)
+		CheckAcks(t, false, an.InAck)
+		CheckRegistrations(t, nil, store.InStore)
+		CheckSent(t, nil, adapter.InSendPacket)
+		CheckRecipients(t, nil, adapter.InSendRecipients)
+		CheckIDs(t, inPacket.GatewayID(), m.InLookupId)
+		CheckIDs(t, nil, m.InUpdateId)
+	}
 }

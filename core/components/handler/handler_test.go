@@ -536,7 +536,7 @@ func TestHandleUp(t *testing.T) {
 			<-time.After(2 * bufferDelay)
 			err := handler.HandleUp(dataIn, an2, adapter2)
 			// Check
-			CheckErrors(t, pointer.String(string(errors.Operational)), err)
+			CheckErrors(t, pointer.String(string(errors.Behavioural)), err)
 			CheckAcks(t, false, an2.InAck)
 			CheckSent(t, nil, adapter2.InSendPacket)
 			ok = true
@@ -614,7 +614,7 @@ func TestHandleUp(t *testing.T) {
 		an := NewMockAckNacker()
 		adapter := NewMockAdapter()
 		adapter.OutGetRecipient = recipient
-		adapter.Failures["GetRecipient"] = errors.New(errors.Operational, "Mock Error: Unable to get recipient")
+		adapter.Failures["GetRecipient"] = errors.New(errors.Structural, "Mock Error: Unable to get recipient")
 		inPkt := newHPacket(
 			[8]byte{1, 1, 1, 1, 1, 1, 1, 1},
 			[8]byte{2, 2, 2, 2, 2, 2, 2, 2},
@@ -642,7 +642,7 @@ func TestHandleUp(t *testing.T) {
 		err := handler.HandleUp(dataIn, an, adapter)
 
 		// Check
-		CheckErrors(t, pointer.String(string(errors.Operational)), err)
+		CheckErrors(t, pointer.String(string(errors.Structural)), err)
 		CheckPushed(t, nil, pktStorage.InPush)
 		CheckPersonalized(t, nil, devStorage.InStorePersonalized)
 		CheckAcks(t, false, an.InAck)
@@ -802,4 +802,147 @@ func TestHandleUp(t *testing.T) {
 		CheckPersonalized(t, nil, devStorage.InStorePersonalized)
 	}
 
+	// --------------------
+
+	{
+		Desc(t, "Handle uplink with 1 packet | One downlink response, mising metadata in uplink")
+
+		// Build
+		recipient := NewMockJSONRecipient()
+		dataRecipient, _ := recipient.MarshalBinary()
+		an := NewMockAckNacker()
+		adapter := NewMockAdapter()
+		adapter.OutGetRecipient = recipient
+		inPkt := newHPacket(
+			[8]byte{1, 1, 1, 1, 1, 1, 1, 1},
+			[8]byte{2, 2, 2, 2, 2, 2, 2, 2},
+			"Payload",
+			Metadata{
+				Datr:    pointer.String("SF7BW125"),
+				Freq:    pointer.Float64(865.5),
+				DutyRX1: pointer.Uint(uint(dutycycle.StateAvailable)),
+				DutyRX2: pointer.Uint(uint(dutycycle.StateAvailable)),
+				Rssi:    pointer.Int(-20),
+				Lsnr:    pointer.Float64(5.0),
+			},
+			10,
+			[16]byte{1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2},
+		)
+		dataIn, _ := inPkt.MarshalBinary()
+		pktSent, _ := NewAPacket(
+			inPkt.AppEUI(),
+			inPkt.DevEUI(),
+			[]byte("Payload"),
+			[]Metadata{inPkt.Metadata()},
+		)
+		appResp, _ := NewAPacket(
+			inPkt.AppEUI(),
+			inPkt.DevEUI(),
+			[]byte("Downlink"),
+			[]Metadata{},
+		)
+
+		devStorage := newMockDevStorage()
+		devStorage.OutLookup = devEntry{
+			Recipient: dataRecipient,
+			DevAddr:   lorawan.DevAddr([4]byte{2, 2, 2, 2}),
+			AppSKey:   [16]byte{1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2},
+			NwkSKey:   [16]byte{4, 4, 4, 4, 3, 3, 3, 3, 4, 4, 4, 4, 3, 3, 3, 3},
+		}
+		pktStorage := newMockPktStorage()
+		pktStorage.OutPull = appResp
+		broker := NewMockJSONRecipient()
+
+		// Operate
+		handler := New(devStorage, pktStorage, broker, GetLogger(t, "Handler"))
+		err := handler.HandleUp(dataIn, an, adapter)
+
+		// Check
+		CheckErrors(t, pointer.String(string(errors.Structural)), err)
+		CheckPushed(t, nil, pktStorage.InPush)
+		CheckPersonalized(t, nil, devStorage.InStorePersonalized)
+		CheckAcks(t, false, an.InAck)
+		CheckSent(t, pktSent, adapter.InSendPacket)
+		CheckRecipients(t, []Recipient{recipient}, adapter.InSendRecipients)
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Handle uplink with 1 packet | One downlink response | Only RX2 available")
+
+		// Build
+		recipient := NewMockJSONRecipient()
+		dataRecipient, _ := recipient.MarshalBinary()
+		an := NewMockAckNacker()
+		adapter := NewMockAdapter()
+		adapter.OutGetRecipient = recipient
+		tmst := time.Now()
+		inPkt := newHPacket(
+			[8]byte{1, 1, 1, 1, 1, 1, 1, 1},
+			[8]byte{2, 2, 2, 2, 2, 2, 2, 2},
+			"Payload",
+			Metadata{
+				Datr:    pointer.String("SF7BW125"),
+				Freq:    pointer.Float64(865.5),
+				Tmst:    pointer.Uint(uint(tmst.Unix() * 1000)),
+				Codr:    pointer.String("4/5"),
+				DutyRX1: pointer.Uint(uint(dutycycle.StateBlocked)),
+				DutyRX2: pointer.Uint(uint(dutycycle.StateAvailable)),
+				Rssi:    pointer.Int(-20),
+				Lsnr:    pointer.Float64(5.0),
+			},
+			10,
+			[16]byte{1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2},
+		)
+		dataIn, _ := inPkt.MarshalBinary()
+		pktSent, _ := NewAPacket(
+			inPkt.AppEUI(),
+			inPkt.DevEUI(),
+			[]byte("Payload"),
+			[]Metadata{inPkt.Metadata()},
+		)
+		brkResp := newBPacket(
+			[4]byte{2, 2, 2, 2},
+			"Downlink",
+			Metadata{
+				Datr: pointer.String("SF9BW125"),
+				Freq: pointer.Float64(869.5),
+				Tmst: pointer.Uint(uint(tmst.Add(2*time.Second).Unix() * 1000)),
+				Codr: pointer.String("4/5"),
+				Size: pointer.Uint(21),
+			},
+			11,
+			[16]byte{1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2},
+		)
+		appResp, _ := NewAPacket(
+			inPkt.AppEUI(),
+			inPkt.DevEUI(),
+			[]byte("Downlink"),
+			[]Metadata{},
+		)
+
+		devStorage := newMockDevStorage()
+		devStorage.OutLookup = devEntry{
+			Recipient: dataRecipient,
+			DevAddr:   lorawan.DevAddr([4]byte{2, 2, 2, 2}),
+			AppSKey:   [16]byte{1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2},
+			NwkSKey:   [16]byte{4, 4, 4, 4, 3, 3, 3, 3, 4, 4, 4, 4, 3, 3, 3, 3},
+		}
+		pktStorage := newMockPktStorage()
+		pktStorage.OutPull = appResp
+		broker := NewMockJSONRecipient()
+
+		// Operate
+		handler := New(devStorage, pktStorage, broker, GetLogger(t, "Handler"))
+		err := handler.HandleUp(dataIn, an, adapter)
+
+		// Check
+		CheckErrors(t, nil, err)
+		CheckPushed(t, nil, pktStorage.InPush)
+		CheckPersonalized(t, nil, devStorage.InStorePersonalized)
+		CheckAcks(t, brkResp, an.InAck)
+		CheckSent(t, pktSent, adapter.InSendPacket)
+		CheckRecipients(t, []Recipient{recipient}, adapter.InSendRecipients)
+	}
 }
