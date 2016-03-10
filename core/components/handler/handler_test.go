@@ -666,7 +666,11 @@ func TestHandleUp(t *testing.T) {
 			[8]byte{2, 2, 2, 2, 2, 2, 2, 2},
 			"Payload",
 			Metadata{
-				Datr: pointer.String("SF7BW125"),
+				DutyRX1: pointer.Uint(uint(dutycycle.StateAvailable)),
+				DutyRX2: pointer.Uint(uint(dutycycle.StateAvailable)),
+				Rssi:    pointer.Int(-20),
+				Lsnr:    pointer.Float64(5.0),
+				Datr:    pointer.String("SF7BW125"),
 			},
 			10,
 			[16]byte{1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2},

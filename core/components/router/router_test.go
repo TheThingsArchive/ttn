@@ -509,7 +509,7 @@ func TestHandleUp(t *testing.T) {
 		bpacket := newBPacket(
 			[4]byte{2, 3, 2, 3},
 			"Payload",
-			Metadata{Freq: pointer.Float64(865.5)},
+			Metadata{Freq: pointer.Float64(865.5), DutyRX1: pointer.Uint(0), DutyRX2: pointer.Uint(0)},
 		)
 		m := newMockDutyManager()
 		m.Failures["Lookup"] = errors.New(errors.NotFound, "Mock Error")
