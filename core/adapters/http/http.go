@@ -33,7 +33,7 @@ type Adapter struct {
 // Handler defines endpoint-specific handler.
 type Handler interface {
 	URL() string
-	Handle(w http.ResponseWriter, chpkt chan<- PktReq, chreg chan<- RegReq, req *http.Request)
+	Handle(w http.ResponseWriter, chpkt chan<- PktReq, chreg chan<- RegReq, req *http.Request) error
 }
 
 // MsgRes are sent through the response channel of a pktReq or regReq
@@ -297,8 +297,12 @@ func (a *Adapter) NextRegistration() (core.Registration, core.AckNacker, error) 
 func (a *Adapter) Bind(h Handler) {
 	a.ctx.WithField("url", h.URL()).Info("Register new endpoint")
 	a.serveMux.HandleFunc(h.URL(), func(w http.ResponseWriter, req *http.Request) {
-		a.ctx.WithField("url", h.URL()).Debug("Handle new request")
-		h.Handle(w, a.packets, a.registrations, req)
+		ctx := a.ctx.WithField("url", h.URL())
+		ctx.Debug("Handle new request")
+		err := h.Handle(w, a.packets, a.registrations, req)
+		if err != nil {
+			ctx.WithError(err).Debug("Failed to handle the request")
+		}
 	})
 }
 

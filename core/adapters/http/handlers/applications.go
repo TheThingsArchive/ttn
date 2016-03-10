@@ -44,20 +44,20 @@ func (p Applications) URL() string {
 }
 
 // Handle implements the http.Handler interface
-func (p Applications) Handle(w http.ResponseWriter, chpkt chan<- PktReq, chreg chan<- RegReq, req *http.Request) {
+func (p Applications) Handle(w http.ResponseWriter, chpkt chan<- PktReq, chreg chan<- RegReq, req *http.Request) error {
 	// Check the http method
 	if req.Method != "PUT" {
 		err := errors.New(errors.Structural, "Unreckognized HTTP method. Please use [PUT] to register a device")
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		w.Write([]byte(err.Error()))
-		return
+		return err
 	}
 
 	// Parse body and query params
 	registration, err := p.parse(req)
 	if err != nil {
 		BadRequest(w, err.Error())
-		return
+		return err
 	}
 
 	// Send the registration and wait for ack / nack
@@ -65,11 +65,13 @@ func (p Applications) Handle(w http.ResponseWriter, chpkt chan<- PktReq, chreg c
 	chreg <- RegReq{Registration: registration, Chresp: chresp}
 	r, ok := <-chresp
 	if !ok {
+		err := errors.New(errors.Operational, "Core server not responding")
 		BadRequest(w, "Core server not responding")
-		return
+		return err
 	}
 	w.WriteHeader(r.StatusCode)
 	w.Write(r.Content)
+	return nil
 }
 
 // parse extracts params from the request and fails if the request is invalid.

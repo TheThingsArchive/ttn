@@ -28,20 +28,20 @@ func (p Collect) URL() string {
 }
 
 // Handle implements the http.Handler interface
-func (p Collect) Handle(w http.ResponseWriter, chpkt chan<- PktReq, chreg chan<- RegReq, req *http.Request) {
+func (p Collect) Handle(w http.ResponseWriter, chpkt chan<- PktReq, chreg chan<- RegReq, req *http.Request) error {
 	// Check the http method
 	if req.Method != "POST" {
 		err := errors.New(errors.Structural, "Unreckognized HTTP method. Please use [POST] to transfer a packet")
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		w.Write([]byte(err.Error()))
-		return
+		return err
 	}
 
 	// Parse body and query params
 	data, err := p.parse(req)
 	if err != nil {
 		BadRequest(w, err.Error())
-		return
+		return err
 	}
 
 	// Send the packet and wait for ack / nack
@@ -51,10 +51,11 @@ func (p Collect) Handle(w http.ResponseWriter, chpkt chan<- PktReq, chreg chan<-
 	if !ok {
 		err := errors.New(errors.Operational, "Core server not responding")
 		BadRequest(w, err.Error())
-		return
+		return err
 	}
 	w.WriteHeader(r.StatusCode)
 	w.Write(r.Content)
+	return nil
 }
 
 // parse extracts params from the request and fails if the request is invalid.
