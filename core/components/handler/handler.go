@@ -10,6 +10,7 @@ import (
 	"time"
 
 	. "github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/core/dutycycle"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	"github.com/TheThingsNetwork/ttn/utils/stats"
@@ -185,7 +186,7 @@ browseBundles:
 		}
 		b := bundles[0]
 
-		computer, err := newScoreComputer(b.Packet.Metadata().Datr)
+		computer, scores, err := dutycycle.NewScoreComputer(b.Packet.Metadata().Datr)
 		if err != nil {
 			go h.abortConsume(err, bundles)
 			continue browseBundles
@@ -213,7 +214,7 @@ browseBundles:
 
 			// Append metadata for each of them
 			metadata = append(metadata, bundle.Packet.Metadata())
-			computer.Update(i, bundle.Packet.Metadata())
+			scores = computer.Update(scores, i, bundle.Packet.Metadata())
 		}
 
 		// Then create an application-level packet
@@ -239,7 +240,7 @@ browseBundles:
 		stats.MarkMeter("handler.uplink.out")
 
 		// Now handle the downlink and respond to node
-		best := computer.Get()
+		best := computer.Get(scores)
 		down, err := h.packets.Pull(b.Packet.AppEUI(), b.Packet.DevEUI())
 		if err != nil && err.(errors.Failure).Nature != errors.NotFound {
 			go h.abortConsume(err, bundles)
