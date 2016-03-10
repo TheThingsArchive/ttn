@@ -185,6 +185,7 @@ browseBundles:
 			continue browseBundles
 		}
 		b := bundles[0]
+		h.ctx.WithField("Metadata", b.Packet.Metadata()).Debug("Considering first packet")
 
 		computer, scores, err := dutycycle.NewScoreComputer(b.Packet.Metadata().Datr)
 		if err != nil {
@@ -240,12 +241,18 @@ browseBundles:
 		stats.MarkMeter("handler.uplink.out")
 
 		// Now handle the downlink and respond to node
+		h.ctx.Debug("Looking for downlink response")
 		best := computer.Get(scores)
-		down, err := h.packets.Pull(b.Packet.AppEUI(), b.Packet.DevEUI())
+		h.ctx.WithField("Bundle", best).Debug("Determine best gateway")
+		var down APacket
+		if best != nil { // Avoid pulling when there's no gateway available for an answer
+			down, err = h.packets.Pull(b.Packet.AppEUI(), b.Packet.DevEUI())
+		}
 		if err != nil && err.(errors.Failure).Nature != errors.NotFound {
 			go h.abortConsume(err, bundles)
 			continue browseBundles
 		}
+		h.ctx.WithField("Packet", down).Debug("Pull downlink from storage")
 		for i, bundle := range bundles {
 			if best != nil && best.ID == i && down != nil && err == nil {
 				stats.MarkMeter("handler.downlink.pull")
@@ -390,6 +397,8 @@ func (h component) HandleDown(data []byte, an AckNacker, down Adapter) (err erro
 	defer ensureAckNack(an, &ack, &err)
 	stats.MarkMeter("handler.downlink.in")
 
+	h.ctx.Debug("Handle downlink message")
+
 	// Unmarshal the given packet and see what gift we get
 	itf, err := UnmarshalPacket(data)
 	if err != nil {
@@ -399,7 +408,9 @@ func (h component) HandleDown(data []byte, an AckNacker, down Adapter) (err erro
 
 	switch itf.(type) {
 	case APacket:
-		return h.packets.Push(itf.(APacket))
+		apacket := itf.(APacket)
+		h.ctx.WithField("DevEUI", apacket.DevEUI()).WithField("AppEUI", apacket.AppEUI()).Debug("Save downlink for later")
+		return h.packets.Push(apacket)
 	default:
 		stats.MarkMeter("handler.downlink.invalid")
 		return errors.New(errors.Implementation, "Unhandled packet type")
