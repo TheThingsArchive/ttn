@@ -15,6 +15,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/adapters/udp"
 	udpHandlers "github.com/TheThingsNetwork/ttn/core/adapters/udp/handlers"
 	"github.com/TheThingsNetwork/ttn/core/components/router"
+	"github.com/TheThingsNetwork/ttn/core/dutycycle"
 	"github.com/apex/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -37,7 +38,8 @@ the gateway's duty cycle is (almost) full.`,
 		}
 
 		ctx.WithFields(log.Fields{
-			"database":      viper.GetString("router.database"),
+			"db-brokers":    viper.GetString("router.db_brokers"),
+			"db-gateways":   viper.GetString("router.db_gateways"),
 			"status-server": statusServer,
 			"uplink":        fmt.Sprintf("%s:%d", viper.GetString("router.uplink-bind-address"), viper.GetInt("router.uplink-port")),
 			"downlink":      fmt.Sprintf("%s:%d", viper.GetString("router.downlink-bind-address"), viper.GetInt("router.downlink-port")),
@@ -79,7 +81,7 @@ the gateway's duty cycle is (almost) full.`,
 
 		var db router.Storage
 
-		dbString := viper.GetString("router.database")
+		dbString := viper.GetString("router.db_brokers")
 		switch {
 		case strings.HasPrefix(dbString, "boltdb:"):
 
@@ -98,7 +100,28 @@ the gateway's duty cycle is (almost) full.`,
 			ctx.WithError(fmt.Errorf("Invalid database string. Format: \"boltdb:/path/to.db\".")).Fatal("Could not instantiate local storage")
 		}
 
-		router := router.New(db, ctx)
+		var dm dutycycle.DutyManager
+
+		dmString := viper.GetString("router.db_gateways")
+		switch {
+		case strings.HasPrefix(dmString, "boltdb:"):
+
+			dmPath, err := filepath.Abs(dmString[7:])
+			if err != nil {
+				ctx.WithError(err).Fatal("Invalid database path")
+			}
+
+			dm, err = dutycycle.NewManager(dmPath, time.Hour, dutycycle.Europe)
+			if err != nil {
+				ctx.WithError(err).Fatal("Could not create a local storage")
+			}
+
+			ctx.WithField("database", dmPath).Info("Using local storage")
+		default:
+			ctx.WithError(fmt.Errorf("Invalid database string. Format: \"boltdb:/path/to.db\".")).Fatal("Could not instantiate local storage")
+		}
+
+		router := router.New(db, dm, ctx)
 
 		// Bring the service to life
 
@@ -143,8 +166,11 @@ the gateway's duty cycle is (almost) full.`,
 func init() {
 	RootCmd.AddCommand(routerCmd)
 
-	routerCmd.Flags().String("database", "boltdb:/tmp/ttn_router.db", "Database connection")
-	viper.BindPFlag("router.database", routerCmd.Flags().Lookup("database"))
+	routerCmd.Flags().String("db_brokers", "boltdb:/tmp/ttn_router_brokers.db", "Database connection of known brokers")
+	viper.BindPFlag("router.db_brokers", routerCmd.Flags().Lookup("db_brokers"))
+
+	routerCmd.Flags().String("db_gateways", "boltdb:/tmp/ttn_router_gateways.db", "Database connection of managed gateways")
+	viper.BindPFlag("router.db_gateways", routerCmd.Flags().Lookup("db_gateways"))
 
 	routerCmd.Flags().String("status-bind-address", "localhost", "The IP address to listen for serving status information")
 	routerCmd.Flags().Int("status-port", 10700, "The port of the status server, use 0 to disable")
