@@ -17,3 +17,11 @@ func CheckSubBands(t *testing.T, want subBand, got subBand) {
 func CheckUsages(t *testing.T, want map[subBand]uint, got map[subBand]uint) {
 	Check(t, want, got, "Usages")
 }
+
+func CheckBestTargets(t *testing.T, want *BestTarget, got *BestTarget) {
+	Check(t, want, got, "Targets")
+}
+
+func CheckStates(t *testing.T, want State, got State) {
+	Check(t, want, got, "States")
+}

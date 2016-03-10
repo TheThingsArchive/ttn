@@ -97,7 +97,7 @@ func computeScore(duty State, lsnr float64, rssi int) int {
 	case StateHighlyAvailable:
 		score += 5000
 	case StateAvailable:
-		score += 4000
+		score += 4900
 	case StateWarning:
 		score += 3000
 	case StateBlocked:
