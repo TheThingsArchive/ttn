@@ -16,7 +16,7 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
-func TestActionTopic(t *testing.T) {
+func TestActivationTopic(t *testing.T) {
 	wantTopic := "+/devices/+/activations"
 
 	// Describe
@@ -55,9 +55,9 @@ func TestActivationHandle(t *testing.T) {
 			},
 
 			WantError:        nil,
-			WantSubscription: pointer.String("0101010101010101/devices/0000000002020202/down"),
+			WantSubscription: nil,
 			WantRegistration: activationRegistration{
-				recipient: NewRecipient("0101010101010101/devices/0000000002020202/up", "WHATEVER"),
+				recipient: NewRecipient("0101010101010101/devices/0000000002020202/up", ""),
 				devEUI:    lorawan.EUI64([8]byte{0, 0, 0, 0, 2, 2, 2, 2}),
 				appEUI:    lorawan.EUI64([8]byte{1, 1, 1, 1, 1, 1, 1, 1}),
 				nwkSKey:   lorawan.AES128Key([16]byte{3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3}),
@@ -141,21 +141,6 @@ func TestActivationHandle(t *testing.T) {
 			WantRegistration: nil,
 			WantPacket:       nil,
 		},
-		{
-			Desc:   "Valid inputs | Client -> Fail Subscribe",
-			Client: newTestClient("Subscribe"),
-			Topic:  "0101010101010101/devices/personalized/activations",
-			Payload: []byte{ // DevEUI | NwkSKey | AppSKey
-				02, 02, 02, 02,
-				03, 03, 03, 03, 03, 03, 03, 03, 03, 03, 03, 03, 03, 03, 03, 03,
-				04, 04, 04, 04, 04, 04, 04, 04, 04, 04, 04, 04, 04, 04, 04, 04,
-			},
-
-			WantError:        pointer.String(string(errors.Operational)),
-			WantSubscription: pointer.String("0101010101010101/devices/0000000002020202/down"),
-			WantRegistration: nil,
-			WantPacket:       nil,
-		},
 	}
 
 	for i, test := range tests {
@@ -177,92 +162,6 @@ func TestActivationHandle(t *testing.T) {
 		CheckErrors(t, test.WantError, err)
 		checkSubscriptions(t, test.WantSubscription, test.Client.Subscription)
 		checkRegistrations(t, test.WantRegistration, consumer.Registration)
-		checkPackets(t, test.WantPacket, consumer.Packet)
-	}
-}
-
-func TestHandleReception(t *testing.T) {
-	packet, _ := core.NewAPacket(
-		lorawan.EUI64([8]byte{1, 1, 1, 1, 1, 1, 1, 1}),
-		lorawan.EUI64([8]byte{2, 2, 2, 2, 2, 2, 2, 2}),
-		[]byte{1, 2, 3, 4},
-		nil,
-	)
-
-	tests := []struct {
-		Desc    string
-		Client  *testClient
-		Payload []byte
-		Topic   string
-
-		WantPacket core.Packet
-	}{
-		{
-			Desc:    "Valid Payload | Valid Topic",
-			Client:  newTestClient(),
-			Payload: []byte{1, 2, 3, 4},
-			Topic:   "0101010101010101/devices/0202020202020202/down",
-
-			WantPacket: packet,
-		},
-		{
-			Desc:    "Valid Payload | Invalid Topic #2",
-			Client:  newTestClient(),
-			Payload: []byte{1, 2, 3, 4},
-			Topic:   "0101010101010101/devices/0202020202020202/down/again",
-
-			WantPacket: nil,
-		},
-		{
-			Desc:    "Valid Payload | Invalid Topic",
-			Client:  newTestClient(),
-			Payload: []byte{1, 2, 3, 4},
-			Topic:   "0101010101010101/devices/0202020202020202",
-
-			WantPacket: nil,
-		},
-		{
-			Desc:    "Valid Payload | Invalid AppEUI",
-			Client:  newTestClient(),
-			Payload: []byte{1, 2, 3, 4},
-			Topic:   "010101/devices/0202020202020202/down",
-
-			WantPacket: nil,
-		},
-		{
-			Desc:    "Valid Payload | Invalid DevEUI",
-			Client:  newTestClient(),
-			Payload: []byte{1, 2, 3, 4},
-			Topic:   "0101010101010101/devices/020202/down",
-
-			WantPacket: nil,
-		},
-		{
-			Desc:    "Invalid Payload | Valid Topic",
-			Client:  newTestClient(),
-			Payload: []byte{},
-			Topic:   "0101010101010101/devices/0202020202020202/down",
-
-			WantPacket: nil,
-		},
-	}
-	for i, test := range tests {
-		// Describe
-		Desc(t, "#%d: %s", i, test.Desc)
-
-		// Build
-		consumer, chpkt, _ := newTestConsumer()
-		handler := Activation{}
-
-		// Operate
-		f := handler.handleReception(chpkt)
-		f(test.Client, testMessage{
-			test.Payload,
-			test.Topic,
-		})
-		<-time.After(time.Millisecond * 100)
-
-		// Check
 		checkPackets(t, test.WantPacket, consumer.Packet)
 	}
 }
