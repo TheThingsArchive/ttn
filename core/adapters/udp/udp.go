@@ -24,7 +24,7 @@ type Adapter struct {
 // Handler represents a datagram and packet handler used by the adapter to process packets
 type Handler interface {
 	// Handle handles incoming datagram from a gateway transmitter to the network
-	Handle(conn chan<- MsgUDP, chresp chan<- MsgReq, msg MsgUDP)
+	Handle(conn chan<- MsgUDP, chresp chan<- MsgReq, msg MsgUDP) error
 }
 
 // MsgUDP type materializes response messages transmitted towards existing recipients (commonly, gateways).
@@ -154,7 +154,9 @@ func (a *Adapter) monitorHandlers(ready *sync.WaitGroup) {
 		case MsgUDP:
 			for _, h := range handlers {
 				go func(h Handler, msg MsgUDP) {
-					h.Handle(a.conn, a.packets, msg)
+					if err := h.Handle(a.conn, a.packets, msg); err != nil {
+						a.ctx.WithError(err).Debug("Unable to handle request")
+					}
 				}(h, msg.(MsgUDP))
 			}
 		}
