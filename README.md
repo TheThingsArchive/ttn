@@ -5,6 +5,8 @@ The Things Network
 
 ![The Things Network](http://thethingsnetwork.org/static/ttn/media/The%20Things%20Uitlijning.svg)
 
+[![Coverage Status](https://coveralls.io/repos/github/TheThingsNetwork/ttn/badge.svg?branch=develop)](https://coveralls.io/github/TheThingsNetwork/ttn?branch=develop)
+
 The Things Network is a global open crowdsourced Internet of Things data network.
 
 ## Status
