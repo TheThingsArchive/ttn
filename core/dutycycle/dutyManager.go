@@ -19,9 +19,11 @@ import (
 // DutyManager provides an interface to manipulate and compute gateways duty-cycles.
 type DutyManager interface {
 	Update(id []byte, freq float64, size uint, datr string, codr string) error
-	Lookup(id []byte) (map[subBand]uint, error)
+	Lookup(id []byte) (Cycles, error)
 	Close() error
 }
+
+type Cycles map[subBand]uint
 
 type dutyManager struct {
 	sync.RWMutex
@@ -41,6 +43,15 @@ const (
 )
 
 type subBand string
+
+type State uint
+
+const (
+	StateHighlyAvailable State = iota
+	StateAvailable
+	StateWarning
+	StateBlocked
+)
 
 // Available regions for LoRaWAN
 const (
@@ -164,7 +175,7 @@ func (m *dutyManager) Update(id []byte, freq float64, size uint, datr string, co
 //
 // The usage is an integer between 0 and 100 (maybe above 100 if the usage exceed the limitation).
 // The closest to 0, the more usage we have
-func (m *dutyManager) Lookup(id []byte) (map[subBand]uint, error) {
+func (m *dutyManager) Lookup(id []byte) (Cycles, error) {
 	m.RLock()
 	defer m.RUnlock()
 
@@ -212,17 +223,13 @@ func computeTOA(size uint, datr string, codr string) (time.Duration, error) {
 		return 0, errors.New(errors.Structural, "Invalid Codr")
 	}
 
-	re := regexp.MustCompile("^SF(7|8|9|10|11|12)BW(125|250|500)$")
-	matches := re.FindStringSubmatch(datr)
-
-	if len(matches) != 3 {
-		return 0, errors.New(errors.Structural, "Invalid Datr")
+	sf, bw, err := ParseDatr(datr)
+	if err != nil {
+		return 0, err
 	}
 
 	// Additional variables needed to compute times on air
 	s := float64(size)
-	sf, _ := strconv.ParseFloat(matches[1], 64)
-	bw, _ := strconv.ParseFloat(matches[2], 64)
 	var de float64
 	if bw == 125 && (sf == 11 || sf == 12) {
 		de = 1.0
@@ -233,6 +240,37 @@ func computeTOA(size uint, datr string, codr string) (time.Duration, error) {
 	timeOnAir := (payloadNb + 12.25) * math.Pow(2, sf) / bw // in ms
 
 	return time.ParseDuration(fmt.Sprintf("%fms", timeOnAir))
+}
+
+func ParseDatr(datr string) (float64, float64, error) {
+	re := regexp.MustCompile("^SF(7|8|9|10|11|12)BW(125|250|500)$")
+	matches := re.FindStringSubmatch(datr)
+
+	if len(matches) != 3 {
+		return 0, 0, errors.New(errors.Structural, "Invalid Datr")
+	}
+
+	sf, _ := strconv.ParseFloat(matches[1], 64)
+	bw, _ := strconv.ParseFloat(matches[2], 64)
+
+	return sf, bw, nil
+}
+
+func StateFromDuty(duty uint) State {
+	if duty >= 100 {
+		return StateBlocked
+	}
+
+	if duty > 85 {
+		return StateWarning
+	}
+
+	if duty > 30 {
+		return StateAvailable
+	}
+
+	return StateHighlyAvailable
+
 }
 
 type dutyEntry struct {

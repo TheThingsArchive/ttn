@@ -10,14 +10,15 @@ import (
 	"time"
 
 	. "github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/core/dutycycle"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
+	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	"github.com/TheThingsNetwork/ttn/utils/stats"
 	"github.com/apex/log"
 	"github.com/brocaar/lorawan"
 )
 
 const bufferDelay time.Duration = time.Millisecond * 300
-const maxDutyCycle = 90 // 90%
 
 // component implements the core.Component interface
 type component struct {
@@ -151,7 +152,7 @@ func (h component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 		case error:
 			stats.MarkMeter("handler.uplink.error")
 			ctx.WithError(resp.(error)).Warn("Received errored response. Sending Ack")
-			return errors.New(errors.Operational, resp.(error))
+			return resp.(error)
 		default:
 			stats.MarkMeter("handler.uplink.ack.without_response")
 			ctx.Debug("Received empty response. Sending empty Ack")
@@ -167,18 +168,6 @@ func (h component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 	}
 }
 
-func computeScore(dutyCycle uint, rssi int) uint {
-	if dutyCycle > maxDutyCycle {
-		return 0
-	}
-
-	if dutyCycle > 2*maxDutyCycle/3 {
-		return uint(1000 + rssi)
-	}
-
-	return uint(10000 + rssi)
-}
-
 // consumeBundles processes list of bundle generated overtime, decrypt the underlying packet,
 // deduplicate them, and send a single enhanced packet to the upadapter for further processing.
 func (h component) consumeBundles(chbundle <-chan []bundle) {
@@ -190,9 +179,18 @@ browseBundles:
 		ctx.WithField("BundleID", bundles[0].ID).Debug("Consume new bundle")
 		var metadata []Metadata
 		var payload []byte
-		var bestBundle int
-		var bestScore uint
 		var firstTime time.Time
+
+		if len(bundles) < 1 {
+			continue browseBundles
+		}
+		b := bundles[0]
+
+		computer, scores, err := dutycycle.NewScoreComputer(b.Packet.Metadata().Datr)
+		if err != nil {
+			go h.abortConsume(err, bundles)
+			continue browseBundles
+		}
 
 		stats.UpdateHistogram("handler.uplink.duplicate.count", int64(len(bundles)))
 
@@ -207,7 +205,6 @@ browseBundles:
 					go h.abortConsume(err, bundles)
 					continue browseBundles
 				}
-				bestBundle = i
 				firstTime = bundle.Time
 				stats.MarkMeter("handler.uplink.in.unique")
 			} else {
@@ -217,24 +214,11 @@ browseBundles:
 
 			// Append metadata for each of them
 			metadata = append(metadata, bundle.Packet.Metadata())
-
-			// And try to find the best recipient to which answer
-			duty := bundle.Packet.Metadata().Duty
-			rssi := bundle.Packet.Metadata().Rssi
-			if duty == nil || rssi == nil {
-				continue
-			}
-			score := computeScore(*duty, *rssi)
-			if score > bestScore {
-				bestScore = score
-				bestBundle = i
-			}
+			scores = computer.Update(scores, i, bundle.Packet.Metadata())
 		}
 
 		// Then create an application-level packet
-		appEUI := bundles[bestBundle].Packet.AppEUI()
-		devEUI := bundles[bestBundle].Packet.DevEUI()
-		packet, err := NewAPacket(appEUI, devEUI, payload, metadata)
+		packet, err := NewAPacket(b.Packet.AppEUI(), b.Packet.DevEUI(), payload, metadata)
 		if err != nil {
 			go h.abortConsume(err, bundles)
 			continue browseBundles
@@ -242,69 +226,35 @@ browseBundles:
 
 		// And send it to the wild open
 		// we don't expect a response from the adapter, end of the chain.
-		adapter := bundles[bestBundle].Adapter
-		entry := bundles[bestBundle].Entry
-		recipient, err := adapter.GetRecipient(entry.Recipient)
+		recipient, err := b.Adapter.GetRecipient(b.Entry.Recipient)
 		if err != nil {
 			go h.abortConsume(err, bundles)
 			continue browseBundles
 		}
 
-		_, err = adapter.Send(packet, recipient)
+		_, err = b.Adapter.Send(packet, recipient)
 		if err != nil {
 			go h.abortConsume(err, bundles)
 			continue browseBundles
 		}
 		stats.MarkMeter("handler.uplink.out")
 
-		// Now handle the downlink
-		down, err := h.packets.Pull(appEUI, devEUI)
+		// Now handle the downlink and respond to node
+		best := computer.Get(scores)
+		down, err := h.packets.Pull(b.Packet.AppEUI(), b.Packet.DevEUI())
 		if err != nil && err.(errors.Failure).Nature != errors.NotFound {
 			go h.abortConsume(err, bundles)
 			continue browseBundles
 		}
-
-		// Then respond to node
 		for i, bundle := range bundles {
-			if i == bestBundle {
-				var resp Packet
-
-				if down != nil && err == nil {
-					stats.MarkMeter("handler.downlink.pull")
-					fcnt := bundles[bestBundle].Packet.FCnt() + 1
-					macPayload := lorawan.NewMACPayload(false)
-					macPayload.FHDR = lorawan.FHDR{
-						DevAddr: entry.DevAddr,
-						// TODO Take care of the Adaptative Rate and other stuff
-						FCnt: fcnt,
-					}
-					macPayload.FPort = 1
-					macPayload.FRMPayload = []lorawan.Payload{&lorawan.DataPayload{
-						Bytes: down.Payload(),
-					}}
-
-					if err := macPayload.EncryptFRMPayload(entry.AppSKey); err != nil {
-						go h.abortConsume(err, bundles)
-						continue browseBundles
-					}
-
-					payload := lorawan.NewPHYPayload(false)
-					payload.MHDR = lorawan.MHDR{
-						MType: lorawan.UnconfirmedDataDown,
-						Major: lorawan.LoRaWANR1,
-					}
-					payload.MACPayload = macPayload
-
-					resp, err = NewBPacket(payload, Metadata{})
-					if err != nil {
-						go h.abortConsume(err, bundles)
-						continue browseBundles
-					}
+			if best != nil && best.ID == i && down != nil && err == nil {
+				stats.MarkMeter("handler.downlink.pull")
+				bpacket, err := h.buildDownlink(down, bundle.Packet, bundle.Entry, best.IsRX2)
+				if err != nil {
+					go h.abortConsume(errors.New(errors.Structural, err), bundles)
+					continue browseBundles
 				}
-
-				// TODO handle confirmed data down
-
-				bundle.Chresp <- resp
+				bundle.Chresp <- bpacket
 			} else {
 				bundle.Chresp <- nil
 			}
@@ -313,13 +263,69 @@ browseBundles:
 }
 
 // Abort consume forward the given error to all bundle recipients
-func (h component) abortConsume(fault error, bundles []bundle) {
-	err := errors.New(errors.Structural, fault)
+func (h component) abortConsume(err error, bundles []bundle) {
 	stats.MarkMeter("handler.uplink.invalid")
 	h.ctx.WithError(err).Debug("Unable to consume bundle")
 	for _, bundle := range bundles {
 		bundle.Chresp <- err
 	}
+}
+
+// constructs a downlink packet from something we pulled from the gathered downlink, and, the actual
+// uplink.
+func (h component) buildDownlink(down APacket, up HPacket, entry devEntry, isRX2 bool) (BPacket, error) {
+	fcnt := up.FCnt() + 1
+	macPayload := lorawan.NewMACPayload(false)
+	macPayload.FHDR = lorawan.FHDR{
+		DevAddr: entry.DevAddr,
+		FCnt:    fcnt,
+	}
+	macPayload.FPort = 1
+	macPayload.FRMPayload = []lorawan.Payload{&lorawan.DataPayload{
+		Bytes: down.Payload(),
+	}}
+
+	if err := macPayload.EncryptFRMPayload(entry.AppSKey); err != nil {
+		return nil, err
+	}
+
+	payload := lorawan.NewPHYPayload(false)
+	payload.MHDR = lorawan.MHDR{
+		MType: lorawan.UnconfirmedDataDown, // TODO Handle Confirmed data down
+		Major: lorawan.LoRaWANR1,
+	}
+	payload.MACPayload = macPayload
+
+	data, err := payload.MarshalBinary()
+	if err != nil {
+		return nil, err
+	}
+	pmetadata := up.Metadata()
+
+	if pmetadata.Tmst == nil || pmetadata.Freq == nil || pmetadata.Codr == nil || pmetadata.Datr == nil {
+		return nil, errors.New(errors.Structural, "Missing mandatory metadata in uplink packet")
+	}
+
+	metadata := Metadata{
+		Freq: pmetadata.Freq,
+		Codr: pmetadata.Codr,
+		Datr: pmetadata.Datr,
+		Size: pointer.Uint(uint(len(data))),
+		Tmst: pointer.Uint(*pmetadata.Tmst + 1000),
+	}
+
+	h.ctx.Debugf("IsRX2: %v", isRX2)
+	h.ctx.Debugf("old tmst: %v", *pmetadata.Tmst)
+	h.ctx.Debugf("new tmst: %v", *metadata.Tmst)
+
+	if isRX2 { // Should we reply on RX2, metadata aren't the same
+		// TODO Handle different regions with non hard-coded values
+		metadata.Freq = pointer.Float64(869.5)
+		metadata.Datr = pointer.String("SF9BW125")
+		metadata.Tmst = pointer.Uint(*pmetadata.Tmst + 2000)
+	}
+
+	return NewBPacket(payload, metadata)
 }
 
 // consumeSet gathers new incoming bundles which possess the same id (i.e. appEUI & devEUI & Fcnt)

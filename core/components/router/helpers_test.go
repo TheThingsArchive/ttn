@@ -14,7 +14,7 @@ import (
 )
 
 // ----- BUILD utilities
-func newRPacket(rawDevAddr [4]byte, payload string, gatewayID []byte) RPacket {
+func newRPacket(rawDevAddr [4]byte, payload string, gatewayID []byte, metadata Metadata) RPacket {
 	var devAddr lorawan.DevAddr
 	copy(devAddr[:], rawDevAddr[:])
 
@@ -29,14 +29,14 @@ func newRPacket(rawDevAddr [4]byte, payload string, gatewayID []byte) RPacket {
 		Major: lorawan.LoRaWANR1,
 	}
 
-	packet, err := NewRPacket(phyPayload, gatewayID, Metadata{})
+	packet, err := NewRPacket(phyPayload, gatewayID, metadata)
 	if err != nil {
 		panic(err)
 	}
 	return packet
 }
 
-func newBPacket(rawDevAddr [4]byte, payload string) BPacket {
+func newBPacket(rawDevAddr [4]byte, payload string, metadata Metadata) BPacket {
 	var devAddr lorawan.DevAddr
 	copy(devAddr[:], rawDevAddr[:])
 
@@ -51,7 +51,7 @@ func newBPacket(rawDevAddr [4]byte, payload string) BPacket {
 		Major: lorawan.LoRaWANR1,
 	}
 
-	packet, err := NewBPacket(phyPayload, Metadata{})
+	packet, err := NewBPacket(phyPayload, metadata)
 	if err != nil {
 		panic(err)
 	}
@@ -75,4 +75,8 @@ func CheckEntries(t *testing.T, want []entry, got []entry) {
 
 func CheckRegistrations(t *testing.T, want Registration, got Registration) {
 	Check(t, want, got, "Registrations")
+}
+
+func CheckIDs(t *testing.T, want []byte, got []byte) {
+	Check(t, want, got, "IDs")
 }
