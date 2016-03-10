@@ -315,6 +315,10 @@ func (h component) buildDownlink(down APacket, up HPacket, entry devEntry, isRX2
 		Tmst: pointer.Uint(*pmetadata.Tmst + 1000),
 	}
 
+	h.ctx.Debugf("IsRX2: %v", isRX2)
+	h.ctx.Debugf("old tmst: %v", *pmetadata.Tmst)
+	h.ctx.Debugf("new tmst: %v", *metadata.Tmst)
+
 	if isRX2 { // Should we reply on RX2, metadata aren't the same
 		// TODO Handle different regions with non hard-coded values
 		metadata.Freq = pointer.Float64(869.5)

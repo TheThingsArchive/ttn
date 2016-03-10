@@ -4,11 +4,11 @@
 package handler
 
 import (
-	"sync"
 	"testing"
 	"time"
 
 	. "github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/core/dutycycle"
 	. "github.com/TheThingsNetwork/ttn/core/mocks"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	. "github.com/TheThingsNetwork/ttn/utils/errors/checks"
@@ -198,8 +198,7 @@ func TestHandleUp(t *testing.T) {
 			[8]byte{2, 2, 2, 2, 2, 2, 2, 2},
 			"Payload",
 			Metadata{
-				Duty: pointer.Uint(5),
-				Rssi: pointer.Int(-25),
+				Datr: pointer.String("SF7BW125"),
 			},
 			10,
 			[16]byte{1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2},
@@ -257,8 +256,7 @@ func TestHandleUp(t *testing.T) {
 			[8]byte{2, 2, 2, 2, 2, 2, 2, 2},
 			"Payload",
 			Metadata{
-				Duty: pointer.Uint(5),
-				Rssi: pointer.Int(-25),
+				Datr: pointer.String("SF7BW125"),
 			},
 			10,
 			[16]byte{1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2},
@@ -311,8 +309,11 @@ func TestHandleUp(t *testing.T) {
 			[8]byte{2, 2, 2, 2, 2, 2, 2, 2},
 			"Payload",
 			Metadata{
-				Duty: pointer.Uint(75),
-				Rssi: pointer.Int(-25),
+				Datr:    pointer.String("SF7BW125"),
+				DutyRX1: pointer.Uint(uint(dutycycle.StateWarning)),
+				DutyRX2: pointer.Uint(uint(dutycycle.StateWarning)),
+				Rssi:    pointer.Int(-20),
+				Lsnr:    pointer.Float64(5.0),
 			},
 			10,
 			[16]byte{1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2},
@@ -328,15 +329,18 @@ func TestHandleUp(t *testing.T) {
 			[8]byte{2, 2, 2, 2, 2, 2, 2, 2},
 			"Payload",
 			Metadata{
-				Duty: pointer.Uint(5),
-				Rssi: pointer.Int(0),
+				Datr:    pointer.String("SF7BW125"),
+				DutyRX1: pointer.Uint(uint(dutycycle.StateAvailable)),
+				DutyRX2: pointer.Uint(uint(dutycycle.StateAvailable)),
+				Rssi:    pointer.Int(-20),
+				Lsnr:    pointer.Float64(5.0),
 			},
 			10,
 			[16]byte{1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2},
 		)
 		dataIn2, _ := inPkt2.MarshalBinary()
 
-		// Expected response
+		// Expected Sent
 		pktSent, _ := NewAPacket(
 			inPkt1.AppEUI(),
 			inPkt1.DevEUI(),
@@ -356,31 +360,38 @@ func TestHandleUp(t *testing.T) {
 
 		// Operate
 		handler := New(devStorage, pktStorage, broker, GetLogger(t, "Handler"))
-		done := sync.WaitGroup{}
-		done.Add(2)
+		cherr := make(chan bool)
 		go func() {
-			defer done.Done()
+			var ok bool
+			defer func(ok *bool) { cherr <- *ok }(&ok)
 			err := handler.HandleUp(dataIn1, an1, adapter1)
 			// Check
 			CheckErrors(t, nil, err)
 			CheckAcks(t, true, an1.InAck)
-			CheckSent(t, nil, adapter1.InSendPacket)
-			CheckRecipients(t, nil, adapter1.InSendRecipients)
+			CheckSent(t, pktSent, adapter1.InSendPacket) // We actually transfer to the first bundle
+			CheckRecipients(t, []Recipient{recipient}, adapter1.InSendRecipients)
+			ok = true
 		}()
 
 		go func() {
 			<-time.After(time.Millisecond * 50)
-			defer done.Done()
+			var ok bool
+			defer func(ok *bool) { cherr <- *ok }(&ok)
 			err := handler.HandleUp(dataIn2, an2, adapter2)
 			// Check
 			CheckErrors(t, nil, err)
 			CheckAcks(t, true, an2.InAck)
-			CheckSent(t, pktSent, adapter2.InSendPacket) // Adapter2 because the adapter of the best bundle even if they are supposed to be identical
-			CheckRecipients(t, []Recipient{recipient}, adapter2.InSendRecipients)
+			CheckSent(t, nil, adapter2.InSendPacket)
+			CheckRecipients(t, nil, adapter2.InSendRecipients)
+			ok = true
 		}()
 
 		// Check
-		done.Wait()
+		ok1 := <-cherr
+		ok2 := <-cherr
+		if !(ok1 && ok2) {
+			return
+		}
 		CheckPushed(t, nil, pktStorage.InPush)
 		CheckPersonalized(t, nil, devStorage.InStorePersonalized)
 	}
@@ -396,13 +407,20 @@ func TestHandleUp(t *testing.T) {
 		an := NewMockAckNacker()
 		adapter := NewMockAdapter()
 		adapter.OutGetRecipient = recipient
+		tmst := time.Now()
 		inPkt := newHPacket(
 			[8]byte{1, 1, 1, 1, 1, 1, 1, 1},
 			[8]byte{2, 2, 2, 2, 2, 2, 2, 2},
 			"Payload",
 			Metadata{
-				Duty: pointer.Uint(5),
-				Rssi: pointer.Int(-25),
+				Datr:    pointer.String("SF7BW125"),
+				Freq:    pointer.Float64(865.5),
+				Tmst:    pointer.Uint(uint(tmst.Unix() * 1000)),
+				Codr:    pointer.String("4/5"),
+				DutyRX1: pointer.Uint(uint(dutycycle.StateAvailable)),
+				DutyRX2: pointer.Uint(uint(dutycycle.StateAvailable)),
+				Rssi:    pointer.Int(-20),
+				Lsnr:    pointer.Float64(5.0),
 			},
 			10,
 			[16]byte{1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2},
@@ -417,7 +435,13 @@ func TestHandleUp(t *testing.T) {
 		brkResp := newBPacket(
 			[4]byte{2, 2, 2, 2},
 			"Downlink",
-			Metadata{},
+			Metadata{
+				Datr: pointer.String("SF7BW125"),
+				Freq: pointer.Float64(865.5),
+				Tmst: pointer.Uint(uint(tmst.Add(time.Second).Unix() * 1000)),
+				Codr: pointer.String("4/5"),
+				Size: pointer.Uint(21),
+			},
 			11,
 			[16]byte{1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2},
 		)
@@ -471,8 +495,7 @@ func TestHandleUp(t *testing.T) {
 			[8]byte{2, 2, 2, 2, 2, 2, 2, 2},
 			"Payload",
 			Metadata{
-				Duty: pointer.Uint(5),
-				Rssi: pointer.Int(-25),
+				Datr: pointer.String("SF7BW125"),
 			},
 			10,
 			[16]byte{1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2},
@@ -496,80 +519,35 @@ func TestHandleUp(t *testing.T) {
 
 		// Operate
 		handler := New(devStorage, pktStorage, broker, GetLogger(t, "Handler"))
-		done := sync.WaitGroup{}
-		done.Add(2)
+		cherr := make(chan bool)
 		go func() {
-			defer done.Done()
+			var ok bool
+			defer func(ok *bool) { cherr <- *ok }(&ok)
 			err := handler.HandleUp(dataIn, an1, adapter1)
 			// Check
 			CheckErrors(t, nil, err)
 			CheckAcks(t, true, an1.InAck)
 			CheckSent(t, pktSent, adapter1.InSendPacket)
+			ok = true
 		}()
 		go func() {
-			defer done.Done()
+			var ok bool
+			defer func(ok *bool) { cherr <- *ok }(&ok)
 			<-time.After(2 * bufferDelay)
 			err := handler.HandleUp(dataIn, an2, adapter2)
 			// Check
 			CheckErrors(t, pointer.String(string(errors.Operational)), err)
 			CheckAcks(t, false, an2.InAck)
 			CheckSent(t, nil, adapter2.InSendPacket)
+			ok = true
 		}()
 
 		// Check
-		done.Wait()
-		CheckPushed(t, nil, pktStorage.InPush)
-		CheckPersonalized(t, nil, devStorage.InStorePersonalized)
-	}
-
-	// --------------------
-
-	{
-		Desc(t, "Handle uplink with 1 packet | No downlink ready | No Metadata ")
-
-		// Build
-		recipient := NewMockJSONRecipient()
-		dataRecipient, _ := recipient.MarshalBinary()
-		an := NewMockAckNacker()
-		adapter := NewMockAdapter()
-		inPkt := newHPacket(
-			[8]byte{1, 1, 1, 1, 1, 1, 1, 1},
-			[8]byte{2, 2, 2, 2, 2, 2, 2, 2},
-			"Payload",
-			Metadata{},
-			10,
-			[16]byte{1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2},
-		)
-		dataIn, _ := inPkt.MarshalBinary()
-		pktSent, _ := NewAPacket(
-			inPkt.AppEUI(),
-			inPkt.DevEUI(),
-			[]byte("Payload"),
-			[]Metadata{inPkt.Metadata()},
-		)
-
-		adapter.OutGetRecipient = recipient
-		devStorage := newMockDevStorage()
-		devStorage.OutLookup = devEntry{
-			Recipient: dataRecipient,
-			DevAddr:   lorawan.DevAddr([4]byte{2, 2, 2, 2}),
-			AppSKey:   [16]byte{1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2},
-			NwkSKey:   [16]byte{4, 4, 4, 4, 3, 3, 3, 3, 4, 4, 4, 4, 3, 3, 3, 3},
+		if !(<-cherr && <-cherr) {
+			return
 		}
-		pktStorage := newMockPktStorage()
-		broker := NewMockJSONRecipient()
-
-		// Operate
-		handler := New(devStorage, pktStorage, broker, GetLogger(t, "Handler"))
-		err := handler.HandleUp(dataIn, an, adapter)
-
-		// Check
-		CheckErrors(t, nil, err)
 		CheckPushed(t, nil, pktStorage.InPush)
 		CheckPersonalized(t, nil, devStorage.InStorePersonalized)
-		CheckAcks(t, true, an.InAck)
-		CheckSent(t, pktSent, adapter.InSendPacket)
-		CheckRecipients(t, []Recipient{recipient}, adapter.InSendRecipients)
 	}
 
 	// --------------------
@@ -589,8 +567,7 @@ func TestHandleUp(t *testing.T) {
 			[8]byte{2, 2, 2, 2, 2, 2, 2, 2},
 			"Payload",
 			Metadata{
-				Duty: pointer.Uint(5),
-				Rssi: pointer.Int(-25),
+				Datr: pointer.String("SF7BW125"),
 			},
 			10,
 			[16]byte{1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2},
@@ -643,8 +620,7 @@ func TestHandleUp(t *testing.T) {
 			[8]byte{2, 2, 2, 2, 2, 2, 2, 2},
 			"Payload",
 			Metadata{
-				Duty: pointer.Uint(5),
-				Rssi: pointer.Int(-25),
+				Datr: pointer.String("SF7BW125"),
 			},
 			10,
 			[16]byte{1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2},
@@ -690,8 +666,7 @@ func TestHandleUp(t *testing.T) {
 			[8]byte{2, 2, 2, 2, 2, 2, 2, 2},
 			"Payload",
 			Metadata{
-				Duty: pointer.Uint(5),
-				Rssi: pointer.Int(-25),
+				Datr: pointer.String("SF7BW125"),
 			},
 			10,
 			[16]byte{1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2},
@@ -746,8 +721,11 @@ func TestHandleUp(t *testing.T) {
 			[8]byte{2, 2, 2, 2, 2, 2, 2, 2},
 			"PayloadPacket1",
 			Metadata{
-				Duty: pointer.Uint(75),
-				Rssi: pointer.Int(-25),
+				Datr:    pointer.String("SF7BW125"),
+				DutyRX1: pointer.Uint(uint(dutycycle.StateAvailable)),
+				DutyRX2: pointer.Uint(uint(dutycycle.StateAvailable)),
+				Rssi:    pointer.Int(-20),
+				Lsnr:    pointer.Float64(5.0),
 			},
 			10,
 			[16]byte{1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2},
@@ -763,8 +741,11 @@ func TestHandleUp(t *testing.T) {
 			[8]byte{2, 2, 2, 2, 2, 2, 2, 2},
 			"PayloadPacket2",
 			Metadata{
-				Duty: pointer.Uint(5),
-				Rssi: pointer.Int(0),
+				Datr:    pointer.String("SF7BW125"),
+				DutyRX1: pointer.Uint(uint(dutycycle.StateAvailable)),
+				DutyRX2: pointer.Uint(uint(dutycycle.StateAvailable)),
+				Rssi:    pointer.Int(-20),
+				Lsnr:    pointer.Float64(5.0),
 			},
 			11,
 			[16]byte{1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2},
