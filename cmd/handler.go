@@ -59,6 +59,7 @@ The default handler is the bridge between The Things Network and applications.
 		}
 		appAdapter := mqtt.NewAdapter(mqttClient, ctx.WithField("adapter", "app-adapter"))
 		appAdapter.Bind(mqttHandlers.Activation{})
+		appAdapter.Bind(mqttHandlers.Downlink{})
 
 		if viper.GetInt("handler.status-port") > 0 {
 			statusNet := fmt.Sprintf("%s:%d", viper.GetString("handler.status-bind-address"), viper.GetInt("handler.status-port"))
