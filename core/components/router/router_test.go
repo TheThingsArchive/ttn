@@ -93,10 +93,14 @@ func TestHandleUp(t *testing.T) {
 			[4]byte{2, 3, 2, 3},
 			"Payload",
 			[]byte{1, 2, 3, 4, 5, 6, 7, 8},
-			Metadata{},
+			Metadata{Freq: pointer.Float64(865.5)},
 		)
 		data, _ := inPacket.MarshalBinary()
-		bpacket := newBPacket([4]byte{2, 3, 2, 3}, "Payload")
+		bpacket := newBPacket(
+			[4]byte{2, 3, 2, 3},
+			"Payload",
+			Metadata{Freq: pointer.Float64(865.5), DutyRX1: pointer.Uint(0), DutyRX2: pointer.Uint(0)},
+		)
 		m := newMockDutyManager()
 
 		// Operate
@@ -140,10 +144,14 @@ func TestHandleUp(t *testing.T) {
 			[4]byte{2, 3, 2, 3},
 			"Payload",
 			[]byte{1, 2, 3, 4, 5, 6, 7, 8},
-			Metadata{},
+			Metadata{Freq: pointer.Float64(865.5)},
 		)
 		data, _ := inPacket.MarshalBinary()
-		bpacket := newBPacket([4]byte{2, 3, 2, 3}, "Payload")
+		bpacket := newBPacket(
+			[4]byte{2, 3, 2, 3},
+			"Payload",
+			Metadata{Freq: pointer.Float64(865.5), DutyRX1: pointer.Uint(0), DutyRX2: pointer.Uint(0)},
+		)
 		m := newMockDutyManager()
 
 		// Operate
@@ -200,7 +208,7 @@ func TestHandleUp(t *testing.T) {
 			[4]byte{2, 3, 2, 3},
 			"Payload",
 			[]byte{1, 2, 3, 4, 5, 6, 7, 8},
-			Metadata{},
+			Metadata{Freq: pointer.Float64(865.5)},
 		)
 		data, _ := inPacket.MarshalBinary()
 		m := newMockDutyManager()
@@ -240,10 +248,14 @@ func TestHandleUp(t *testing.T) {
 			[4]byte{2, 3, 2, 3},
 			"Payload",
 			[]byte{1, 2, 3, 4, 5, 6, 7, 8},
-			Metadata{},
+			Metadata{Freq: pointer.Float64(865.5)},
 		)
 		data, _ := inPacket.MarshalBinary()
-		bpacket := newBPacket([4]byte{2, 3, 2, 3}, "Payload")
+		bpacket := newBPacket(
+			[4]byte{2, 3, 2, 3},
+			"Payload",
+			Metadata{Freq: pointer.Float64(865.5), DutyRX1: pointer.Uint(0), DutyRX2: pointer.Uint(0)},
+		)
 		m := newMockDutyManager()
 
 		// Operate
@@ -282,7 +294,7 @@ func TestHandleUp(t *testing.T) {
 			[4]byte{2, 3, 2, 3},
 			"Payload",
 			[]byte{1, 2, 3, 4, 5, 6, 7, 8},
-			Metadata{},
+			Metadata{Freq: pointer.Float64(865.5)},
 		)
 		data, _ := inPacket.MarshalBinary()
 		m := newMockDutyManager()
@@ -316,10 +328,14 @@ func TestHandleUp(t *testing.T) {
 			[4]byte{2, 3, 2, 3},
 			"Payload",
 			[]byte{1, 2, 3, 4, 5, 6, 7, 8},
-			Metadata{},
+			Metadata{Freq: pointer.Float64(865.5)},
 		)
 		data, _ := inPacket.MarshalBinary()
-		bpacket := newBPacket([4]byte{2, 3, 2, 3}, "Payload")
+		bpacket := newBPacket(
+			[4]byte{2, 3, 2, 3},
+			"Payload",
+			Metadata{Freq: pointer.Float64(865.5), DutyRX1: pointer.Uint(0), DutyRX2: pointer.Uint(0)},
+		)
 		m := newMockDutyManager()
 
 		// Operate
@@ -351,10 +367,14 @@ func TestHandleUp(t *testing.T) {
 			[4]byte{2, 3, 2, 3},
 			"Payload",
 			[]byte{1, 2, 3, 4, 5, 6, 7, 8},
-			Metadata{},
+			Metadata{Freq: pointer.Float64(865.5)},
 		)
 		data, _ := inPacket.MarshalBinary()
-		bpacket := newBPacket([4]byte{2, 3, 2, 3}, "Payload")
+		bpacket := newBPacket(
+			[4]byte{2, 3, 2, 3},
+			"Payload",
+			Metadata{Freq: pointer.Float64(865.5), DutyRX1: pointer.Uint(0), DutyRX2: pointer.Uint(0)},
+		)
 		m := newMockDutyManager()
 
 		// Operate
@@ -396,10 +416,14 @@ func TestHandleUp(t *testing.T) {
 			[4]byte{2, 3, 2, 3},
 			"Payload",
 			[]byte{1, 2, 3, 4, 5, 6, 7, 8},
-			Metadata{},
+			Metadata{Freq: pointer.Float64(865.5)},
 		)
 		data, _ := inPacket.MarshalBinary()
-		bpacket := newBPacket([4]byte{2, 3, 2, 3}, "Payload")
+		bpacket := newBPacket(
+			[4]byte{2, 3, 2, 3},
+			"Payload",
+			Metadata{Freq: pointer.Float64(865.5), DutyRX1: pointer.Uint(0), DutyRX2: pointer.Uint(0)},
+		)
 		m := newMockDutyManager()
 
 		// Operate
@@ -440,10 +464,14 @@ func TestHandleUp(t *testing.T) {
 			[4]byte{2, 3, 2, 3},
 			"Payload",
 			[]byte{1, 2, 3, 4, 5, 6, 7, 8},
-			Metadata{},
+			Metadata{Freq: pointer.Float64(865.5)},
 		)
 		data, _ := inPacket.MarshalBinary()
-		bpacket := newBPacket([4]byte{2, 3, 2, 3}, "Payload")
+		bpacket := newBPacket(
+			[4]byte{2, 3, 2, 3},
+			"Payload",
+			Metadata{Freq: pointer.Float64(865.5), DutyRX1: pointer.Uint(0), DutyRX2: pointer.Uint(0)},
+		)
 		m := newMockDutyManager()
 
 		// Operate
@@ -475,10 +503,14 @@ func TestHandleUp(t *testing.T) {
 			[4]byte{2, 3, 2, 3},
 			"Payload",
 			[]byte{1, 2, 3, 4, 5, 6, 7, 8},
-			Metadata{},
+			Metadata{Freq: pointer.Float64(865.5)},
 		)
 		data, _ := inPacket.MarshalBinary()
-		bpacket := newBPacket([4]byte{2, 3, 2, 3}, "Payload")
+		bpacket := newBPacket(
+			[4]byte{2, 3, 2, 3},
+			"Payload",
+			Metadata{Freq: pointer.Float64(865.5)},
+		)
 		m := newMockDutyManager()
 		m.Failures["Lookup"] = errors.New(errors.NotFound, "Mock Error")
 
@@ -522,10 +554,14 @@ func TestHandleUp(t *testing.T) {
 			[4]byte{2, 3, 2, 3},
 			"Payload",
 			[]byte{1, 2, 3, 4, 5, 6, 7, 8},
-			Metadata{},
+			Metadata{Freq: pointer.Float64(865.5)},
 		)
 		data, _ := inPacket.MarshalBinary()
-		bpacket := newBPacket([4]byte{2, 3, 2, 3}, "Payload")
+		bpacket := newBPacket(
+			[4]byte{2, 3, 2, 3},
+			"Payload",
+			Metadata{Freq: pointer.Float64(865.5), DutyRX1: pointer.Uint(0), DutyRX2: pointer.Uint(0)},
+		)
 		m := newMockDutyManager()
 
 		// Operate
@@ -569,10 +605,14 @@ func TestHandleUp(t *testing.T) {
 			[4]byte{2, 3, 2, 3},
 			"Payload",
 			[]byte{1, 2, 3, 4, 5, 6, 7, 8},
-			Metadata{},
+			Metadata{Freq: pointer.Float64(865.5)},
 		)
 		data, _ := inPacket.MarshalBinary()
-		bpacket := newBPacket([4]byte{2, 3, 2, 3}, "Payload")
+		bpacket := newBPacket(
+			[4]byte{2, 3, 2, 3},
+			"Payload",
+			Metadata{Freq: pointer.Float64(865.5), DutyRX1: pointer.Uint(0), DutyRX2: pointer.Uint(0)},
+		)
 		m := newMockDutyManager()
 		m.Failures["Update"] = errors.New(errors.Operational, "Mock Error: Update")
 

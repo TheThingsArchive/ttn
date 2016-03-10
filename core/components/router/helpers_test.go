@@ -36,7 +36,7 @@ func newRPacket(rawDevAddr [4]byte, payload string, gatewayID []byte, metadata M
 	return packet
 }
 
-func newBPacket(rawDevAddr [4]byte, payload string) BPacket {
+func newBPacket(rawDevAddr [4]byte, payload string, metadata Metadata) BPacket {
 	var devAddr lorawan.DevAddr
 	copy(devAddr[:], rawDevAddr[:])
 
@@ -51,7 +51,7 @@ func newBPacket(rawDevAddr [4]byte, payload string) BPacket {
 		Major: lorawan.LoRaWANR1,
 	}
 
-	packet, err := NewBPacket(phyPayload, Metadata{})
+	packet, err := NewBPacket(phyPayload, metadata)
 	if err != nil {
 		panic(err)
 	}

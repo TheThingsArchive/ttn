@@ -88,7 +88,7 @@ func (r component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 			metadata.DutyRX1, metadata.DutyRX2 = &rx1, &rx2
 		}
 
-		bpacket, err := NewBPacket(packet.Payload(), packet.Metadata())
+		bpacket, err := NewBPacket(packet.Payload(), metadata)
 		if err != nil {
 			r.ctx.WithError(err).Warn("Unable to create router packet")
 			return errors.New(errors.Structural, err)
