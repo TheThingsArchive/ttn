@@ -111,6 +111,8 @@ func (a *Adapter) Send(p core.Packet, recipients ...core.Recipient) ([]byte, err
 			if token.Wait() && token.Error() != nil {
 				err := errors.New(errors.Operational, "Unable to subscribe to down topic")
 				a.ctx.WithField("recipient", recipient).Warn(err.Error())
+				wg.Done()
+				wg.Done()
 				cherr <- err
 				close(chdown)
 				continue

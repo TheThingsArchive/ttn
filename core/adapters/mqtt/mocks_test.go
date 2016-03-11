@@ -15,7 +15,30 @@ import (
 
 // ----- TYPE utilities
 
-// testToken gives a fake implementation of MQTT.Token
+// MockHandler provides a fake implementation of a mqtt.Handler
+type MockHandler struct {
+	Failures  map[string]error
+	OutTopic  string
+	InMessage MQTT.Message
+}
+
+func NewMockHandler() *MockHandler {
+	return &MockHandler{
+		Failures: make(map[string]error),
+		OutTopic: "MockTopic",
+	}
+}
+
+func (h *MockHandler) Topic() string {
+	return h.OutTopic
+}
+
+func (h *MockHandler) Handle(client Client, chpkt chan<- PktReq, chreg chan<- RegReq, msg MQTT.Message) error {
+	h.InMessage = msg
+	return h.Failures["Handle"]
+}
+
+// MockToken gives a fake implementation of MQTT.Token
 //
 // Provide a failure if you need to simulate an Error() result.
 type MockToken struct {
@@ -77,9 +100,10 @@ func (m MockMessage) Payload() []byte {
 //
 // It can also fails on demand (use the newMockClient method to define which methods should fail)
 type MockClient struct {
-	InSubscribe   *string
-	InPublish     MQTT.Message
-	InUnsubscribe []string
+	InSubscribe         *string
+	InPublish           MQTT.Message
+	InUnsubscribe       []string
+	InSubscribeCallBack func(c Client, m MQTT.Message)
 
 	Failures  map[string]*string
 	connected bool
@@ -138,6 +162,7 @@ func (c *MockClient) Publish(topic string, qos byte, retained bool, payload inte
 
 func (c *MockClient) Subscribe(topic string, qos byte, callback func(c Client, m MQTT.Message)) MQTT.Token {
 	c.InSubscribe = &topic
+	c.InSubscribeCallBack = callback
 	return MockToken{Failure: c.Failures["Subscribe"]}
 }
 

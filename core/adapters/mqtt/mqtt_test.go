@@ -5,12 +5,12 @@ package mqtt
 
 import (
 	"fmt"
-	"reflect"
 	"testing"
 	"time"
 
 	MQTT "git.eclipse.org/gitroot/paho/org.eclipse.paho.mqtt.golang.git"
 	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/core/mocks"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	. "github.com/TheThingsNetwork/ttn/utils/errors/checks"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
@@ -40,6 +40,21 @@ func TestMQTTSend(t *testing.T) {
 					Response:  nil,
 					TopicUp:   "up1",
 					TopicDown: "down1",
+				},
+			},
+
+			WantData:     []byte("TheThingsNetwork"),
+			WantResponse: nil,
+			WantError:    nil,
+		},
+		{
+			Desc:   "1 packet | 1 recipient | No down topic",
+			Packet: []byte("TheThingsNetwork"),
+			Recipients: []testRecipient{
+				{
+					Response:  nil,
+					TopicUp:   "up1",
+					TopicDown: "",
 				},
 			},
 
@@ -147,11 +162,202 @@ func TestMQTTSend(t *testing.T) {
 		checkResponses(t, test.WantResponse, resp)
 
 		// Clean
-		aclient.Disconnect(200)
+		<-time.After(time.Millisecond * 500)
+		aclient.Disconnect(0)
 		for _, sclient := range sclients {
-			sclient.Disconnect(200)
+			sclient.Disconnect(0)
 		}
-		<-time.After(time.Millisecond * 100)
+	}
+}
+
+func TestSendErrorCases(t *testing.T) {
+	tests := []struct {
+		Desc       string          // Test Description
+		Packet     []byte          // Handy representation of the packet to send
+		Recipients []testRecipient // List of recipient to send
+		Client     *MockClient     // A mocked version of the client
+
+		WantData  []byte  // Expected Data on the recipient
+		WantError *string // Expected error nature returned by the Send method
+	}{
+		{
+			Desc:   "1 packet | 1 Recipient | Error on publish",
+			Packet: []byte("TheThingsNetwork"),
+			Client: NewMockClient("Publish"),
+			Recipients: []testRecipient{
+				{
+					Response:  nil,
+					TopicUp:   "up",
+					TopicDown: "down",
+				},
+			},
+
+			WantData:  []byte("TheThingsNetwork"),
+			WantError: pointer.String(string(errors.Operational)),
+		},
+		{
+			Desc:   "1 packet | 1 Recipient | Error on Subscribe",
+			Packet: []byte("TheThingsNetwork"),
+			Client: NewMockClient("Subscribe"),
+			Recipients: []testRecipient{
+				{
+					Response:  nil,
+					TopicUp:   "up",
+					TopicDown: "down",
+				},
+			},
+
+			WantData:  nil,
+			WantError: pointer.String(string(errors.Operational)),
+		},
+		{
+			Desc:   "1 packet | 1 Recipient | Error on Unsubscribe",
+			Packet: []byte("TheThingsNetwork"),
+			Client: NewMockClient("Unsubscribe"),
+			Recipients: []testRecipient{
+				{
+					Response:  nil,
+					TopicUp:   "up",
+					TopicDown: "down",
+				},
+			},
+
+			WantData:  []byte("TheThingsNetwork"),
+			WantError: nil,
+		},
+	}
+
+	for i, test := range tests {
+		// Describe
+		Desc(t, fmt.Sprintf("#%d: %s", i, test.Desc))
+
+		// Build
+		adapter := NewAdapter(test.Client, GetLogger(t, "Adapter"))
+
+		// Operate
+		_, err := trySend(adapter, test.Packet, test.Recipients)
+
+		// Check
+		CheckErrors(t, test.WantError, err)
+		checkData(t, test.WantData, test.Client.InPublish.Payload())
+	}
+}
+
+func TestOtherMethods(t *testing.T) {
+	{
+		// Describe
+		Desc(t, "Get Recipient | Wrong data")
+
+		// Build
+		adapter := NewAdapter(NewMockClient(), GetLogger(t, "Adapter"))
+
+		// Operate
+		_, err := adapter.GetRecipient([]byte{})
+
+		// Check
+		CheckErrors(t, pointer.String(string(errors.Structural)), err)
+	}
+
+	// --------------------
+
+	{
+		// Describe
+		Desc(t, "Get Recipient | Valid Recipient")
+
+		// Build
+		adapter := NewAdapter(NewMockClient(), GetLogger(t, "Adapter"))
+		data, _ := NewRecipient("up", "down").MarshalBinary()
+
+		// Operate
+		recipient, err := adapter.GetRecipient(data)
+
+		// Check
+		CheckErrors(t, nil, err)
+		checkRecipients(t, NewRecipient("up", "down"), recipient)
+
+	}
+
+	// --------------------
+
+	{
+		// Describe
+		Desc(t, "Send invalid recipients")
+
+		// Build
+		adapter := NewAdapter(NewMockClient(), GetLogger(t, "Adapter"))
+
+		// Operate
+		_, err := adapter.Send(mocks.NewMockPacket(), mocks.NewMockRecipient())
+
+		// Check
+		CheckErrors(t, pointer.String(string(errors.Operational)), err)
+	}
+
+	// --------------------
+
+	{
+		// Describe
+		Desc(t, "Bind a new handler")
+
+		// Build
+		client := NewMockClient()
+		adapter := NewAdapter(client, GetLogger(t, "Adapter"))
+		handler := NewMockHandler()
+		msg := MockMessage{
+			topic:   "MessageTopic",
+			payload: []byte{1, 2, 3, 4},
+		}
+
+		// Operate
+		err := adapter.Bind(handler)
+		client.InSubscribeCallBack(client, msg)
+
+		// Check
+		CheckErrors(t, nil, err)
+		checkMessages(t, msg, handler.InMessage)
+	}
+
+	// --------------------
+
+	{
+		// Describe
+		Desc(t, "Bind a new handler | fails to handle")
+
+		// Build
+		client := NewMockClient()
+		adapter := NewAdapter(client, GetLogger(t, "Adapter"))
+		handler := NewMockHandler()
+		handler.Failures["Handle"] = errors.New(errors.Operational, "Mock Error")
+		msg := MockMessage{
+			topic:   "MessageTopic",
+			payload: []byte{1, 2, 3, 4},
+		}
+
+		// Operate
+		err := adapter.Bind(handler)
+		client.InSubscribeCallBack(client, msg)
+
+		// Check
+		CheckErrors(t, nil, err)
+		checkMessages(t, msg, handler.InMessage)
+	}
+
+	// --------------------
+
+	{
+		// Describe
+		Desc(t, "Bind a new handler | fails to subscribe")
+
+		// Build
+		client := NewMockClient("Subscribe")
+		adapter := NewAdapter(client, GetLogger(t, "Adapter"))
+		handler := NewMockHandler()
+
+		// Operate
+		err := adapter.Bind(handler)
+
+		// Check
+		CheckErrors(t, pointer.String(string(errors.Operational)), err)
 	}
 }
 
@@ -293,17 +499,17 @@ func trySend(adapter core.Adapter, packet []byte, recipients []testRecipient) ([
 
 // ----- CHECK utilities
 func checkResponses(t *testing.T, want []byte, got []byte) {
-	if reflect.DeepEqual(want, got) {
-		Ok(t, "Check responses")
-		return
-	}
-	Ko(t, "Received response does not match expectations.\nWant: %s\nGot:  %s", string(want), string(got))
+	mocks.Check(t, want, got, "Responses")
 }
 
 func checkData(t *testing.T, want []byte, got []byte) {
-	if reflect.DeepEqual(want, got) {
-		Ok(t, "Check data")
-		return
-	}
-	Ko(t, "Received data does not match expectations.\nWant: %s\nGot:  %s", string(want), string(got))
+	mocks.Check(t, want, got, "Data")
+}
+
+func checkRecipients(t *testing.T, want core.Recipient, got core.Recipient) {
+	mocks.Check(t, want, got, "Recipients")
+}
+
+func checkMessages(t *testing.T, want MQTT.Message, got MQTT.Message) {
+	mocks.Check(t, want, got, "Messages")
 }
