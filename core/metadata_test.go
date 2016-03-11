@@ -82,18 +82,27 @@ var unmarshalTests = []struct {
 func TestMarshaljson(t *testing.T) {
 	for _, test := range commonTests {
 		Desc(t, "Marshal medatadata: %s", test.Metadata.String())
-		raw, err := json.Marshal(test.Metadata)
-		CheckErrors(t, test.WantError, err)
-		checkJSON(t, test.JSON, raw)
+		rawJ, errJ := json.Marshal(test.Metadata)
+		rawB, errB := test.Metadata.MarshalBinary()
+
+		CheckErrors(t, test.WantError, errJ)
+		CheckErrors(t, test.WantError, errB)
+		checkJSON(t, test.JSON, rawJ)
+		checkJSON(t, test.JSON, rawB)
 	}
 }
 
 func TestUnmarshalJSON(t *testing.T) {
 	for _, test := range append(commonTests, unmarshalTests...) {
 		Desc(t, "Unmarshal json: %s", test.JSON)
-		metadata := Metadata{}
-		err := json.Unmarshal([]byte(test.JSON), &metadata)
-		CheckErrors(t, test.WantError, err)
-		checkMetadata(t, test.Metadata, metadata)
+		metadataJ := Metadata{}
+		errJ := json.Unmarshal([]byte(test.JSON), &metadataJ)
+		metadataB := Metadata{}
+		errB := metadataB.UnmarshalBinary([]byte(test.JSON))
+
+		CheckErrors(t, test.WantError, errJ)
+		CheckErrors(t, test.WantError, errB)
+		checkMetadata(t, test.Metadata, metadataJ)
+		checkMetadata(t, test.Metadata, metadataB)
 	}
 }

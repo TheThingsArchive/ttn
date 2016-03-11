@@ -15,6 +15,7 @@ import (
 // Metadata are carried by any type of packets. They constitute additional informations on the
 // packet itself or, about its context (gateway, duty cycle, etc ...)
 type Metadata struct {
+	Alti    *int       `json:"alti,omitempty"` // GPS altitude of the gateway in meter RX (integer)
 	Chan    *uint      `json:"chan,omitempty"` // Concentrator "IF" channel used for RX (unsigned integer)
 	Codr    *string    `json:"codr,omitempty"` // LoRa ECC coding rate identifier
 	Datr    *string    `json:"-"`              // FSK datarate (unsigned in bit per second) || LoRa datarate identifier
@@ -25,6 +26,8 @@ type Metadata struct {
 	Gtid    *string    `json:"gtid,omitempty"` // Id of the gateway from which the packet come
 	Imme    *bool      `json:"imme,omitempty"` // Send packet immediately (will ignore tmst & time)
 	Ipol    *bool      `json:"ipol,omitempty"` // Lora modulation polarization inversion
+	Lati    *float64   `json:"lati,omitempty"` // GPS latitude of the gateway in degree (float, N is +)
+	Long    *float64   `json:"long,omitempty"` // GPS longitude of the gateway in degree (float, E is +)
 	Lsnr    *float64   `json:"lsnr,omitempty"` // LoRa SNR ratio in dB (signed float, 0.1 dB precision)
 	Modu    *string    `json:"modu,omitempty"` // Modulation identifier "LORA" or "FSK"
 	Ncrc    *bool      `json:"ncrc,omitempty"` // If true, disable the CRC of the physical layer (optional)
@@ -99,6 +102,16 @@ func (m *Metadata) UnmarshalJSON(raw []byte) error {
 	}
 
 	return nil
+}
+
+// MarshalBinary implements the binary.Marshaler interface
+func (m Metadata) MarshalBinary() ([]byte, error) {
+	return m.MarshalJSON()
+}
+
+// UnmarshalBinary implements the binary.Unmarshaler interface
+func (m *Metadata) UnmarshalBinary(data []byte) error {
+	return m.UnmarshalJSON(data)
 }
 
 // String implements the io.Stringer interface

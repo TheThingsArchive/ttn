@@ -695,4 +695,69 @@ func TestHandleUp(t *testing.T) {
 		CheckIDs(t, inPacket.GatewayID(), m.InLookupId)
 		CheckIDs(t, nil, m.InUpdateId)
 	}
+
+	// -------------------
+
+	{
+		Desc(t, "Send a valid stat packet")
+
+		// Build
+		an := NewMockAckNacker()
+		adapter := NewMockAdapter()
+		store := newMockStorage()
+		inPacket, _ := NewSPacket(
+			[]byte{1, 2, 3, 4, 5, 6, 7, 8},
+			Metadata{Alti: pointer.Int(14)},
+		)
+		data, _ := inPacket.MarshalBinary()
+		m := newMockDutyManager()
+
+		// Operate
+		router := New(store, m, GetLogger(t, "Router"))
+		err := router.HandleUp(data, an, adapter)
+
+		// Check
+		CheckErrors(t, nil, err)
+		CheckAcks(t, true, an.InAck)
+		CheckRegistrations(t, nil, store.InStore)
+		CheckStats(t, inPacket, store.InUpdateStats)
+		CheckSent(t, nil, adapter.InSendPacket)
+		CheckRecipients(t, nil, adapter.InSendRecipients)
+		CheckIDs(t, nil, m.InLookupId)
+		CheckIDs(t, nil, m.InUpdateId)
+		CheckIDs(t, nil, store.InLookupStats)
+	}
+
+	// -------------------
+
+	{
+		Desc(t, "Send a valid stat packet | unable to update")
+
+		// Build
+		an := NewMockAckNacker()
+		adapter := NewMockAdapter()
+		store := newMockStorage()
+		store.Failures["UpdateStats"] = errors.New(errors.Operational, "Mock Error")
+		inPacket, _ := NewSPacket(
+			[]byte{1, 2, 3, 4, 5, 6, 7, 8},
+			Metadata{Alti: pointer.Int(14)},
+		)
+		data, _ := inPacket.MarshalBinary()
+		m := newMockDutyManager()
+
+		// Operate
+		router := New(store, m, GetLogger(t, "Router"))
+		err := router.HandleUp(data, an, adapter)
+
+		// Check
+		CheckErrors(t, pointer.String(string(errors.Operational)), err)
+		CheckAcks(t, false, an.InAck)
+		CheckRegistrations(t, nil, store.InStore)
+		CheckStats(t, inPacket, store.InUpdateStats)
+		CheckSent(t, nil, adapter.InSendPacket)
+		CheckRecipients(t, nil, adapter.InSendRecipients)
+		CheckIDs(t, nil, m.InLookupId)
+		CheckIDs(t, nil, m.InUpdateId)
+		CheckIDs(t, nil, store.InLookupStats)
+	}
 }

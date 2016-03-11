@@ -14,10 +14,13 @@ import (
 
 // MockStorage to fake the Storage interface
 type mockStorage struct {
-	Failures  map[string]error
-	InLookup  lorawan.EUI64
-	OutLookup []entry
-	InStore   RRegistration
+	Failures       map[string]error
+	InLookup       lorawan.EUI64
+	InLookupStats  []byte
+	OutLookupStats Metadata
+	OutLookup      []entry
+	InStore        RRegistration
+	InUpdateStats  SPacket
 }
 
 func newMockStorage() *mockStorage {
@@ -29,6 +32,7 @@ func newMockStorage() *mockStorage {
 				until:     time.Date(2016, 2, 3, 14, 16, 22, 0, time.UTC),
 			},
 		},
+		OutLookupStats: Metadata{},
 	}
 }
 
@@ -40,9 +44,22 @@ func (s *mockStorage) Lookup(devEUI lorawan.EUI64) ([]entry, error) {
 	return s.OutLookup, nil
 }
 
+func (s *mockStorage) LookupStats(id []byte) (Metadata, error) {
+	s.InLookupStats = id
+	if s.Failures["LookupStats"] != nil {
+		return Metadata{}, s.Failures["LookupStats"]
+	}
+	return s.OutLookupStats, nil
+}
+
 func (s *mockStorage) Store(reg RRegistration) error {
 	s.InStore = reg
 	return s.Failures["Store"]
+}
+
+func (s *mockStorage) UpdateStats(stats SPacket) error {
+	s.InUpdateStats = stats
+	return s.Failures["UpdateStats"]
 }
 
 func (s *mockStorage) Close() error {
