@@ -266,6 +266,21 @@ func TestUnmarshalBinary(t *testing.T) {
 			WantError: false,
 		},
 		{
+			Desc:   "PULL_RESP with datr only",
+			Header: []byte{1, 0, 0, PULL_RESP},
+			JSON:   `{"txpk":{"datr":"SF7BW125"}}`,
+			WantPacket: Packet{
+				Version:    VERSION,
+				Identifier: PULL_RESP,
+				Payload: &Payload{
+					TXPK: &TXPK{
+						Datr: pointer.String("SF7BW125"),
+					},
+				},
+			},
+			WantError: false,
+		},
+		{
 			Desc:   "PULL_RESP with time only",
 			Header: []byte{1, 0, 0, PULL_RESP},
 			JSON:   `{"txpk":{"time":"2016-01-13T17:40:57.000000376Z"}}`,
@@ -311,6 +326,18 @@ func TestUnmarshalBinary(t *testing.T) {
 				Identifier: PULL_ACK,
 			},
 			WantError: false,
+		},
+		{
+			Desc:      "Unreckognized version",
+			Header:    []byte{VERSION + 14, 1, 2, PUSH_DATA, 1, 4, 5, 6},
+			JSON:      `{}`,
+			WantError: true,
+		},
+		{
+			Desc:      "Unreckognized Identifier",
+			Header:    []byte{VERSION, 1, 2, 178, 1, 4, 5, 6},
+			JSON:      `{}`,
+			WantError: true,
 		},
 	}
 
