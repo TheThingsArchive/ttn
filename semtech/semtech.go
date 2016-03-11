@@ -79,7 +79,7 @@ func (p *Packet) String() string {
 	if p == nil {
 		return "nil"
 	}
-	header := fmt.Sprintf("Version:%x,Token:%x,Identifier:%x,GatewayId:%x", p.Version, p.Token, p.Identifier, p.GatewayId)
+	header := fmt.Sprintf("Version:%x,Token:%v,Identifier:%x,GatewayId:%v", p.Version, p.Token, p.Identifier, p.GatewayId)
 	if p.Payload == nil {
 		return fmt.Sprintf("Packet{%s}", header)
 	}
@@ -103,7 +103,7 @@ func (p *Packet) String() string {
 		}
 	}
 	if rxpk != "" {
-		payload = fmt.Sprintf("%s,Rxpk:[%s]", payload, rxpk)
+		payload = fmt.Sprintf("%s,RXPK:[%s]", payload, rxpk)
 	}
 	return fmt.Sprintf("Packet{%s,Payload:{%s}}", header, payload)
 }
