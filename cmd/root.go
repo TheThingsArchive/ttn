@@ -59,7 +59,7 @@ func initConfig() {
 	viper.SetConfigName(".ttn")  // name of config file (without extension)
 	viper.AddConfigPath("$HOME") // adding home directory as first search path
 	viper.SetEnvPrefix("ttn")    // set environment prefix
-	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
 	viper.AutomaticEnv() // read in environment variables that match
 
 	viper.BindEnv("debug")
