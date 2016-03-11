@@ -72,6 +72,7 @@ func (r component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 		// TODO add gateway location
 		metadata := packet.Metadata()
 		if metadata.Freq == nil {
+			stats.MarkMeter("router.uplink.not_supported")
 			return errors.New(errors.Structural, "Missing mandatory frequency in metadata")
 		}
 
@@ -83,6 +84,7 @@ func (r component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 
 		sb1, err := dutycycle.GetSubBand(*metadata.Freq)
 		if err != nil {
+			stats.MarkMeter("router.uplink.not_supported")
 			return errors.New(errors.Structural, "Unhandled uplink signal frequency")
 		}
 
@@ -91,6 +93,7 @@ func (r component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 
 		bpacket, err := NewBPacket(packet.Payload(), metadata)
 		if err != nil {
+			stats.MarkMeter("router.uplink.not_supported")
 			r.ctx.WithError(err).Warn("Unable to create router packet")
 			return errors.New(errors.Structural, err)
 		}
@@ -119,6 +122,7 @@ func (r component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 				// Might be a collision with the dev addr, we better broadcast
 				response, err = up.Send(bpacket)
 			}
+			stats.MarkMeter("router.uplink.out")
 		}
 
 		if err != nil {
