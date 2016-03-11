@@ -13,7 +13,11 @@ type Ticker interface {
 	Tick()
 	SetDefaultTTL(uint)
 	SetTTL(string, uint)
+	Renew(string)
 }
+
+// DefaultTTL for the registry
+var DefaultTTL uint = 0
 
 // Registry is the default metrics registry
 var Registry = NewRegistry()
@@ -32,7 +36,7 @@ func NewRegistry() metrics.Registry {
 	return &TTNRegistry{
 		metrics:    make(map[string]interface{}),
 		timeouts:   make(map[string]uint),
-		defaultTTL: 0,
+		defaultTTL: DefaultTTL,
 	}
 }
 
@@ -132,6 +136,11 @@ func (r *TTNRegistry) SetTTL(name string, ticks uint) {
 		}
 		r.timeouts[name] = ticks
 	}
+}
+
+// Renew sets the TTL of a metric to the default value
+func (r *TTNRegistry) Renew(name string) {
+	r.SetTTL(name, r.defaultTTL)
 }
 
 func (r *TTNRegistry) register(name string, i interface{}) error {

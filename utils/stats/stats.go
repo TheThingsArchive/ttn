@@ -27,6 +27,7 @@ func Initialize() {
 func MarkMeter(name string) {
 	if Enabled {
 		metrics.GetOrRegisterMeter(name, Registry).Mark(1)
+		Registry.(Ticker).Renew(name)
 	}
 }
 
@@ -34,6 +35,7 @@ func MarkMeter(name string) {
 func UpdateHistogram(name string, value int64) {
 	if Enabled {
 		metrics.GetOrRegisterHistogram(name, Registry, metrics.NewUniformSample(1000)).Update(value)
+		Registry.(Ticker).Renew(name)
 	}
 }
 
@@ -41,6 +43,7 @@ func UpdateHistogram(name string, value int64) {
 func IncCounter(name string) {
 	if Enabled {
 		metrics.GetOrRegisterCounter(name, Registry).Inc(1)
+		Registry.(Ticker).Renew(name)
 	}
 }
 
@@ -48,6 +51,7 @@ func IncCounter(name string) {
 func DecCounter(name string) {
 	if Enabled {
 		metrics.GetOrRegisterCounter(name, Registry).Dec(1)
+		Registry.(Ticker).Renew(name)
 	}
 }
 
@@ -55,6 +59,7 @@ func DecCounter(name string) {
 func SetString(name, tag, value string) {
 	if Enabled {
 		GetOrRegisterString(name, Registry).Set(tag, value)
+		Registry.(Ticker).Renew(name)
 	}
 }
 
