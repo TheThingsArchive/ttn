@@ -45,15 +45,16 @@ func (r component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 	defer ensureAckNack(an, &ack, &err)
 
 	// Get some logs / analytics
-	stats.MarkMeter("router.uplink.in")
 	r.ctx.Debug("Handling uplink packet")
 
 	// Extract the given packet
 	itf, _ := UnmarshalPacket(data)
 	switch itf.(type) {
 	case RPacket:
+		stats.MarkMeter("router.uplink.in")
 		ack, err = r.handleDataUp(itf.(RPacket), up)
 	case SPacket:
+		stats.MarkMeter("router.stat.in")
 		err = r.UpdateStats(itf.(SPacket))
 	default:
 		stats.MarkMeter("router.uplink.invalid")
