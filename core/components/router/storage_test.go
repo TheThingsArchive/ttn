@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/TheThingsNetwork/ttn/core"
 	. "github.com/TheThingsNetwork/ttn/core/mocks"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	. "github.com/TheThingsNetwork/ttn/utils/errors/checks"
@@ -226,6 +227,56 @@ func TestStoreAndLookup(t *testing.T) {
 
 		// Check
 		CheckEntries(t, wantEntries, gotEntries)
+		_ = db.Close()
+	}
+}
+
+func TestUpdateAndLookup(t *testing.T) {
+	storageDB := path.Join(os.TempDir(), storageDB)
+
+	defer func() {
+		os.Remove(storageDB)
+	}()
+
+	// ------------------
+
+	{
+		Desc(t, "Store then lookup stats")
+
+		// Build
+		db, _ := NewStorage(storageDB, time.Hour)
+		stats, _ := core.NewSPacket(
+			[]byte{1, 2, 3, 4, 5, 6, 7, 8},
+			core.Metadata{
+				Alti: pointer.Int(14),
+			},
+		)
+
+		// Operate
+		errUpdate := db.UpdateStats(stats)
+		got, errLookup := db.LookupStats(stats.GatewayID())
+
+		// Check
+		CheckErrors(t, nil, errUpdate)
+		CheckErrors(t, nil, errLookup)
+		CheckMetadata(t, stats.Metadata(), got)
+		_ = db.Close()
+	}
+
+	// ------------------
+
+	{
+		Desc(t, "Lookup stats from unknown gateway")
+
+		// Build
+		db, _ := NewStorage(storageDB, time.Hour)
+
+		// Operate
+		got, errLookup := db.LookupStats([]byte{1, 2, 2, 3, 3, 4, 4, 1})
+
+		// Check
+		CheckErrors(t, pointer.String(string(errors.NotFound)), errLookup)
+		CheckMetadata(t, core.Metadata{}, got)
 		_ = db.Close()
 	}
 }
