@@ -42,7 +42,7 @@ func TestDownlinkHandle(t *testing.T) {
 
 	tests := []struct {
 		Desc    string      // The test's description
-		Client  *testClient // An mqtt client to mock (or not) the behavior
+		Client  *MockClient // An mqtt client to mock (or not) the behavior
 		Topic   string      // The topic to which the message is addressed
 		Payload []byte      // The message's payload
 
@@ -54,7 +54,7 @@ func TestDownlinkHandle(t *testing.T) {
 
 		{
 			Desc:    "Valid Payload | Valid Topic",
-			Client:  newTestClient(),
+			Client:  NewMockClient(),
 			Payload: []byte{1, 2, 3, 4},
 			Topic:   "0101010101010101/devices/0202020202020202/down",
 
@@ -65,7 +65,7 @@ func TestDownlinkHandle(t *testing.T) {
 		},
 		{
 			Desc:    "Valid Payload | Invalid Topic #2",
-			Client:  newTestClient(),
+			Client:  NewMockClient(),
 			Payload: []byte{1, 2, 3, 4},
 			Topic:   "0101010101010101/devices/0202020202020202/down/again",
 
@@ -76,7 +76,7 @@ func TestDownlinkHandle(t *testing.T) {
 		},
 		{
 			Desc:    "Valid Payload | Invalid Topic",
-			Client:  newTestClient(),
+			Client:  NewMockClient(),
 			Payload: []byte{1, 2, 3, 4},
 			Topic:   "0101010101010101/devices/0202020202020202",
 
@@ -87,7 +87,7 @@ func TestDownlinkHandle(t *testing.T) {
 		},
 		{
 			Desc:    "Valid Payload | Invalid AppEUI",
-			Client:  newTestClient(),
+			Client:  NewMockClient(),
 			Payload: []byte{1, 2, 3, 4},
 			Topic:   "010101/devices/0202020202020202/down",
 
@@ -98,7 +98,7 @@ func TestDownlinkHandle(t *testing.T) {
 		},
 		{
 			Desc:    "Valid Payload | Invalid DevEUI",
-			Client:  newTestClient(),
+			Client:  NewMockClient(),
 			Payload: []byte{1, 2, 3, 4},
 			Topic:   "0101010101010101/devices/020202/down",
 
@@ -109,7 +109,7 @@ func TestDownlinkHandle(t *testing.T) {
 		},
 		{
 			Desc:    "Invalid Payload | Valid Topic",
-			Client:  newTestClient(),
+			Client:  NewMockClient(),
 			Payload: []byte{},
 			Topic:   "0101010101010101/devices/0202020202020202/down",
 
@@ -129,7 +129,7 @@ func TestDownlinkHandle(t *testing.T) {
 		handler := Downlink{}
 
 		// Operate
-		err := handler.Handle(test.Client, chpkt, chreg, testMessage{
+		err := handler.Handle(test.Client, chpkt, chreg, MockMessage{
 			payload: test.Payload,
 			topic:   test.Topic,
 		})
@@ -137,7 +137,7 @@ func TestDownlinkHandle(t *testing.T) {
 
 		// Check
 		CheckErrors(t, test.WantError, err)
-		checkSubscriptions(t, test.WantSubscription, test.Client.Subscription)
+		checkSubscriptions(t, test.WantSubscription, test.Client.InSubscribe)
 		checkRegistrations(t, test.WantRegistration, consumer.Registration)
 		checkPackets(t, test.WantPacket, consumer.Packet)
 	}

@@ -1,4 +1,4 @@
-// Copyright © 2016 The Things Network
+// Copyright © 2016 T//e Things Network
 // Use of this source code is governed by the MIT license that can be found in the LICENSE file.
 
 package handlers
@@ -35,7 +35,7 @@ func TestActivationTopic(t *testing.T) {
 func TestActivationHandle(t *testing.T) {
 	tests := []struct {
 		Desc    string      // The test's description
-		Client  *testClient // An mqtt client to mock (or not) the behavior
+		Client  *MockClient // An mqtt client to mock (or not) the behavior
 		Topic   string      // The topic to which the message is addressed
 		Payload []byte      // The message's payload
 
@@ -46,7 +46,7 @@ func TestActivationHandle(t *testing.T) {
 	}{
 		{
 			Desc:   "Ok client | Valid Topic | Valid Payload",
-			Client: newTestClient(),
+			Client: NewMockClient(),
 			Topic:  "0101010101010101/devices/personalized/activations",
 			Payload: []byte{ // DevEUI | NwkSKey | AppSKey
 				02, 02, 02, 02,
@@ -67,7 +67,7 @@ func TestActivationHandle(t *testing.T) {
 		},
 		{
 			Desc:   "Ok client | Invalid Topic #1 | Valid Payload",
-			Client: newTestClient(),
+			Client: NewMockClient(),
 			Topic:  "PleaseRegisterMyDevice",
 			Payload: []byte{ // DevEUI | NwkSKey | AppSKey
 				02, 02, 02, 02,
@@ -82,7 +82,7 @@ func TestActivationHandle(t *testing.T) {
 		},
 		{
 			Desc:   "Ok client | Invalid Topic #2 | Valid Payload",
-			Client: newTestClient(),
+			Client: NewMockClient(),
 			Topic:  "0101010101010101/devices/0001020304050607/activations",
 			Payload: []byte{ // DevEUI | NwkSKey | AppSKey
 				02, 02, 02, 02,
@@ -97,7 +97,7 @@ func TestActivationHandle(t *testing.T) {
 		},
 		{
 			Desc:   "Ok client | Invalid Topic #3 | Valid Payload",
-			Client: newTestClient(),
+			Client: NewMockClient(),
 			Topic:  "01010101/devices/personalized/activations",
 			Payload: []byte{ // DevEUI | NwkSKey | AppSKey
 				02, 02, 02, 02,
@@ -112,7 +112,7 @@ func TestActivationHandle(t *testing.T) {
 		},
 		{
 			Desc:   "Ok client | Valid Topic | Invalid Payload #1",
-			Client: newTestClient(),
+			Client: NewMockClient(),
 			Topic:  "0101010101010101/devices/personalized/activations",
 			Payload: []byte{ // DevEUI | NwkSKey | AppSKey
 				02, 02, 02, 02,
@@ -128,7 +128,7 @@ func TestActivationHandle(t *testing.T) {
 		},
 		{
 			Desc:   "Ok client | Valid Topic | Invalid Payload #2",
-			Client: newTestClient(),
+			Client: NewMockClient(),
 			Topic:  "0101010101010101/devices/personalized/activations",
 			Payload: []byte{ // DevEUI | NwkSKey | AppSKey
 				02, 02,
@@ -152,7 +152,7 @@ func TestActivationHandle(t *testing.T) {
 		handler := Activation{}
 
 		// Operate
-		err := handler.Handle(test.Client, chpkt, chreg, testMessage{
+		err := handler.Handle(test.Client, chpkt, chreg, MockMessage{
 			payload: test.Payload,
 			topic:   test.Topic,
 		})
@@ -160,7 +160,7 @@ func TestActivationHandle(t *testing.T) {
 
 		// Check
 		CheckErrors(t, test.WantError, err)
-		checkSubscriptions(t, test.WantSubscription, test.Client.Subscription)
+		checkSubscriptions(t, test.WantSubscription, test.Client.InSubscribe)
 		checkRegistrations(t, test.WantRegistration, consumer.Registration)
 		checkPackets(t, test.WantPacket, consumer.Packet)
 	}
