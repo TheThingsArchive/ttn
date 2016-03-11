@@ -1,7 +1,4 @@
 matrix:
-  GO_VERSION:
-    - 1.5
-    - 1.6
   GOOS:
     - linux
     - darwin
@@ -15,29 +12,16 @@ compose:
     image: ansi/mosquitto
 
 build:
-  test:
-    image: golang:$$GO_VERSION
-    commands:
-      - go get -t -d ./...
-      - go list ./... | grep -vE 'integration|ttn$' | xargs go test
-      - sh -c 'FMTRES="$(go fmt ./...)"; if [ ! -z "$FMTRES" ]; then echo $FMTRES; exit 255; fi'
-      - go vet ./...
-    when:
-      matrix:
-        GOOS: linux
-        GOARCH: amd64
-  release:
-    image: htdvisser/ttnbuild
-    commands:
-      # ttnbuild already contains dependencies, so we copy them:
-      - rsync -a /go/src/ /drone/src/
-      # and get the ones that we missed in ttnbuild
-      - GOOS=$$GOOS GOARCH=$$GOARCH go get -d -v ./...
-      - ./build_binaries.sh $$GOOS $$GOARCH
-    when:
-      branch: [master, develop]
-      matrix:
-        GO_VERSION: 1.6
+  image: htdvisser/ttnbuild
+  pull: true
+  commands:
+    # ttnbuild already contains dependencies, so we copy them:
+    - rsync -a /go/src/ /drone/src/
+    # and get the ones that we missed in ttnbuild
+    - GOOS=$$GOOS GOARCH=$$GOARCH go get -d -v ./...
+    - ./build_binaries.sh $$GOOS $$GOARCH
+  when:
+    branch: [master, develop]
 
 publish:
   azure_storage:
@@ -48,14 +32,12 @@ publish:
     source: release/
     when:
       branch: [master, develop]
-      matrix:
-        GO_VERSION: 1.6
+
   dockerhub:
     repo: thethingsnetwork/ttn
     token: $$DOCKER_TOKEN
     when:
-      branch: [master, develop]
+      branch: master
       matrix:
-        GO_VERSION: 1.6
         GOOS: linux
         GOARCH: amd64

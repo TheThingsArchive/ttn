@@ -80,14 +80,6 @@ then
 
   cd $RELEASEPATH
 
-  # Commit Release
-  if [ "$CI_COMMIT" != "" ]
-  then
-    echo "Copying files for commit $CI_COMMIT"
-    mkdir -p commit/$CI_COMMIT
-    cp ./ttn* commit/$CI_COMMIT/
-  fi
-
   # Branch Release
   if [ "$CI_BRANCH" != "" ]
   then
