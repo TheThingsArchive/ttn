@@ -17,11 +17,8 @@ type mqttAckNacker struct {
 
 // Ack implements the core.AckNacker interface
 func (an mqttAckNacker) Ack(p core.Packet) error {
-	if an.Chresp == nil && p == nil {
+	if an.Chresp == nil || p == nil {
 		return nil
-	}
-	if an.Chresp == nil && p != nil {
-		return errors.New(errors.Structural, "Unable to send any packet through this acknacker")
 	}
 	defer close(an.Chresp)
 
