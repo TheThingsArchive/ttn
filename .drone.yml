@@ -51,13 +51,9 @@ publish:
       branch: [master, develop]
       matrix:
         GO_VERSION: 1.6
-  docker:
-    username: $$DOCKER_USER
-    password: $$DOCKER_PASSWORD
-    email: $$DOCKER_EMAIL
+  dockerhub:
     repo: thethingsnetwork/ttn
-    tag: $$BRANCH
-    file: Dockerfile.local
+    token: $$DOCKER_TOKEN
     when:
       branch: [master, develop]
       matrix:
