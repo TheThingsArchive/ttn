@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"reflect"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/core"
@@ -77,16 +78,20 @@ func (s Semtech) Handle(conn chan<- udp.MsgUDP, packets chan<- udp.MsgReq, msg u
 		}
 
 		// Handle rxpks payloads
+		cherr := make(chan error, len(pkt.Payload.RXPK))
+		wait := sync.WaitGroup{}
+		wait.Add(len(pkt.Payload.RXPK))
 		for _, rxpk := range pkt.Payload.RXPK {
 			go func(rxpk semtech.RXPK) {
+				defer wait.Done()
 				pktOut, err := rxpk2packet(rxpk, pkt.GatewayId)
 				if err != nil {
-					// TODO Log error
+					cherr <- errors.New(errors.Structural, err)
 					return
 				}
 				data, err := pktOut.MarshalBinary()
 				if err != nil {
-					// TODO Log error
+					cherr <- errors.New(errors.Structural, err)
 					return
 				}
 				chresp := make(chan udp.MsgRes)
@@ -95,15 +100,17 @@ func (s Semtech) Handle(conn chan<- udp.MsgUDP, packets chan<- udp.MsgReq, msg u
 				case resp := <-chresp:
 					itf, err := core.UnmarshalPacket(resp)
 					if err != nil {
+						cherr <- errors.New(errors.Structural, err)
 						return
 					}
 					pkt, ok := itf.(core.RPacket) // NOTE Here we'll handle join-accept
 					if !ok {
+						cherr <- errors.New(errors.Structural, "Unhandled packet type")
 						return
 					}
 					txpk, err := packet2txpk(pkt)
 					if err != nil {
-						// TODO Log error
+						cherr <- errors.New(errors.Structural, err)
 						return
 					}
 
@@ -113,13 +120,18 @@ func (s Semtech) Handle(conn chan<- udp.MsgUDP, packets chan<- udp.MsgReq, msg u
 						Payload:    &semtech.Payload{TXPK: &txpk},
 					}.MarshalBinary()
 					if err != nil {
-						// TODO Log error
+						cherr <- errors.New(errors.Structural, err)
 						return
 					}
 					conn <- udp.MsgUDP{Addr: msg.Addr, Data: data}
 				case <-time.After(time.Second * 2):
 				}
 			}(rxpk)
+		}
+		wait.Wait()
+		close(cherr)
+		if err := <-cherr; err != nil {
+			return err
 		}
 	default:
 		return errors.New(errors.Implementation, "Unhandled packet type")
