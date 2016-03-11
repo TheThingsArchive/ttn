@@ -95,6 +95,8 @@ func UnmarshalPacket(data []byte) (interface{}, error) {
 		packet = new(jpacket)
 	case typeCPacket:
 		packet = new(cpacket)
+	case typeSPacket:
+		packet = new(spacket)
 	}
 
 	err := packet.UnmarshalBinary(data)
@@ -152,6 +154,56 @@ func (p rpacket) String() string {
 	str := "RPacket {"
 	str += fmt.Sprintf("\n\t%s}", p.metadata.String())
 	str += fmt.Sprintf("\n\tPayload%+v\n}", p.payload)
+	return str
+}
+
+// ---------------------------------
+//
+// ----- SPACKET -------------------
+//
+// ---------------------------------
+type spacket struct {
+	basempacket
+	gatewayID baseapacket
+}
+
+// NewSPacket constructs a new stats packet from a gateway id and metadata
+func NewSPacket(gatewayID []byte, metadata Metadata) (SPacket, error) {
+	if len(gatewayID) != 8 {
+		return nil, errors.New(errors.Structural, "Invalid gatewayId. Should be 8 bytes")
+	}
+	return &spacket{
+		basempacket: basempacket{metadata: metadata},
+		gatewayID:   baseapacket{payload: gatewayID},
+	}, nil
+}
+
+// GatewayID implements the core.SPacket interface
+func (p spacket) GatewayID() []byte {
+	return p.gatewayID.payload
+}
+
+// DevEUI implements the core.SPacket interface
+// TODO THIS IS NOT VIABLE. WE NEED TO PROPERLY DEFINE MESSAGES BETWEEN PROCESSES.
+func (p spacket) DevEUI() lorawan.EUI64 {
+	return lorawan.EUI64{}
+}
+
+// MarshalBinary implements the encoding.BinaryMarshaler interface
+func (p spacket) MarshalBinary() ([]byte, error) {
+	return marshalBases(typeSPacket, p.basempacket, p.gatewayID)
+}
+
+// UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
+func (p *spacket) UnmarshalBinary(data []byte) error {
+	return unmarshalBases(typeSPacket, data, &p.basempacket, &p.gatewayID)
+}
+
+// String implements the fmt.Stringer interface
+func (p spacket) String() string {
+	str := "SPacket {"
+	str += fmt.Sprintf("\n\t%s}", p.metadata.String())
+	str += fmt.Sprintf("\n\tGatewayID%+v\n}", p.gatewayID.payload)
 	return str
 }
 
