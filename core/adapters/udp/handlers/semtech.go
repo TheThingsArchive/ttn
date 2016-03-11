@@ -5,6 +5,7 @@ package handlers
 
 import (
 	"encoding/base64"
+	"fmt"
 	"reflect"
 	"strings"
 	"time"
@@ -32,6 +33,9 @@ func (s Semtech) Handle(conn chan<- udp.MsgUDP, packets chan<- udp.MsgReq, msg u
 	switch pkt.Identifier {
 	case semtech.PULL_DATA: // PULL_DATA -> Respond to the recipient with an ACK
 		stats.MarkMeter("semtech_adapter.pull_data")
+		stats.MarkMeter(fmt.Sprintf("semtech_adapter.gateways.%X.pull_data", pkt.GatewayId))
+		stats.SetString(fmt.Sprintf("semtech_adapter.gateways.%X.last_pull_data", pkt.GatewayId), "date", time.Now().UTC().Format(time.RFC3339))
+
 		data, err := semtech.Packet{
 			Version:    semtech.VERSION,
 			Token:      pkt.Token,
@@ -46,6 +50,9 @@ func (s Semtech) Handle(conn chan<- udp.MsgUDP, packets chan<- udp.MsgReq, msg u
 		}
 	case semtech.PUSH_DATA: // PUSH_DATA -> Transfer all RXPK to the component
 		stats.MarkMeter("semtech_adapter.push_data")
+		stats.MarkMeter(fmt.Sprintf("semtech_adapter.gateways.%X.push_data", pkt.GatewayId))
+		stats.SetString(fmt.Sprintf("semtech_adapter.gateways.%X.last_push_data", pkt.GatewayId), "date", time.Now().UTC().Format(time.RFC3339))
+
 		data, err := semtech.Packet{
 			Version:    semtech.VERSION,
 			Token:      pkt.Token,

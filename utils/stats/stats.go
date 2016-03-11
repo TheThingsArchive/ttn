@@ -6,22 +6,45 @@ package stats
 
 import "github.com/rcrowley/go-metrics"
 
+// Enabled activates stats collection
+var Enabled = true
+
 // MarkMeter registers an event
 func MarkMeter(name string) {
-	metrics.GetOrRegisterMeter(name, metrics.DefaultRegistry).Mark(1)
+	if Enabled {
+		metrics.GetOrRegisterMeter(name, Registry).Mark(1)
+	}
 }
 
 // UpdateHistogram registers a new value for a histogram
 func UpdateHistogram(name string, value int64) {
-	metrics.GetOrRegisterHistogram(name, metrics.DefaultRegistry, metrics.NewUniformSample(1000)).Update(value)
+	if Enabled {
+		metrics.GetOrRegisterHistogram(name, Registry, metrics.NewUniformSample(1000)).Update(value)
+	}
 }
 
 // IncCounter increments a counter by 1
 func IncCounter(name string) {
-	metrics.GetOrRegisterCounter(name, metrics.DefaultRegistry).Inc(1)
+	if Enabled {
+		metrics.GetOrRegisterCounter(name, Registry).Inc(1)
+	}
 }
 
 // DecCounter decrements a counter by 1
 func DecCounter(name string) {
-	metrics.GetOrRegisterCounter(name, metrics.DefaultRegistry).Dec(1)
+	if Enabled {
+		metrics.GetOrRegisterCounter(name, Registry).Dec(1)
+	}
+}
+
+// SetString ...
+func SetString(name, tag, value string) {
+	if Enabled {
+		GetOrRegisterString(name, Registry).Set(tag, value)
+	}
+}
+
+// SetTimeout ...
+func SetTimeout(name string, ttl uint) {
+	Registry.(Ticker).SetTTL(name, ttl)
 }

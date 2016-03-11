@@ -14,6 +14,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/adapters/mqtt"
 	mqttHandlers "github.com/TheThingsNetwork/ttn/core/adapters/mqtt/handlers"
 	"github.com/TheThingsNetwork/ttn/core/components/handler"
+	"github.com/TheThingsNetwork/ttn/utils/stats"
 	"github.com/apex/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -30,8 +31,10 @@ The default handler is the bridge between The Things Network and applications.
 		var statusServer string
 		if viper.GetInt("handler.status-port") > 0 {
 			statusServer = fmt.Sprintf("%s:%d", viper.GetString("handler.status-bind-address"), viper.GetInt("handler.status-port"))
+			initStats()
 		} else {
 			statusServer = "disabled"
+			stats.Enabled = false
 		}
 		ctx.WithFields(log.Fields{
 			"devicesDatabase": viper.GetString("handler.dev-database"),

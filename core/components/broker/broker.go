@@ -137,7 +137,9 @@ func (b component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 			if !ok {
 				return errors.New(errors.Operational, "Received unexpected response")
 			}
+			stats.MarkMeter("broker.downlink.in")
 			if err := bpacket.ComputeFCnt(mEntry.FCntDown); err != nil {
+				stats.MarkMeter("broker.downlink.invalid")
 				return errors.New(errors.Operational, "Received invalid response > frame counter incorrect")
 			}
 			b.UpdateFCnt(mEntry.AppEUI, mEntry.DevEUI, bpacket.FCnt(), "down")
@@ -149,6 +151,7 @@ func (b component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 			if err != nil {
 				return errors.New(errors.Structural, "Invalid downlink packet from the handler")
 			}
+			stats.MarkMeter("broker.downlink.out")
 			ack = rpacket
 		}
 	case JPacket:
