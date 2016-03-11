@@ -5,6 +5,7 @@ package mqtt
 
 import (
 	"fmt"
+	"time"
 
 	MQTT "git.eclipse.org/gitroot/paho/org.eclipse.paho.mqtt.golang.git"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
@@ -48,4 +49,14 @@ func (c client) Subscribe(topic string, qos byte, callback func(c Client, m MQTT
 	return c.Client.Subscribe(topic, qos, func(c *MQTT.Client, m MQTT.Message) {
 		callback(client{c}, m)
 	})
+}
+
+// Disconnect implements the interface and ensure that the disconnection won't panic if already
+// closed
+func (c client) Disconnect(quiesce uint) {
+	go func() {
+		defer func() { recover() }()
+		c.Client.Disconnect(quiesce)
+	}()
+	<-time.After(time.Millisecond * time.Duration(quiesce))
 }

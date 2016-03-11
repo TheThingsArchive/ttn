@@ -18,7 +18,7 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
-const brokerURL = "0.0.0.0:1683"
+const brokerURL = "0.0.0.0:1883"
 
 func TestMQTTSend(t *testing.T) {
 	timeout = 100 * time.Millisecond
@@ -147,11 +147,11 @@ func TestMQTTSend(t *testing.T) {
 		checkResponses(t, test.WantResponse, resp)
 
 		// Clean
-		go aclient.Disconnect(250)
+		aclient.Disconnect(200)
 		for _, sclient := range sclients {
-			go sclient.Disconnect(250)
+			sclient.Disconnect(200)
 		}
-		<-time.After(time.Millisecond * 400)
+		<-time.After(time.Millisecond * 100)
 	}
 }
 

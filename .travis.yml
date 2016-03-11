@@ -19,7 +19,7 @@ install:
     - go get $(comm -23 <(sort <(go list -f '{{join .TestImports "\n"}}' ./...) | uniq) <(go list std) | grep -v TheThingsNetwork)
 
 before_script:
-    - mosquitto -p 1683 1>/dev/null 2>/dev/null &
+    - mosquitto -p 1883 1>/dev/null 2>/dev/null &
 
 script:
     - go list ./... | grep -vE 'integration|ttn$' | xargs go test
