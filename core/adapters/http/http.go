@@ -129,9 +129,6 @@ func (a *Adapter) Subscribe(r core.Registration) error {
 
 // Send implements the core.Adapter interface
 func (a *Adapter) Send(p core.Packet, recipients ...core.Recipient) ([]byte, error) {
-	stats.MarkMeter("http_adapter.send")
-	stats.UpdateHistogram("http_adapter.send_recipients", int64(len(recipients)))
-
 	// Marshal the packet to raw binary data
 	data, err := p.MarshalBinary()
 	if err != nil {
@@ -155,6 +152,13 @@ func (a *Adapter) Send(p core.Packet, recipients ...core.Recipient) ([]byte, err
 			return nil, errors.New(errors.Structural, "No recipient found")
 		}
 	}
+
+	if isBroadcast {
+		stats.MarkMeter("http_adapter.broadcast")
+	} else {
+		stats.MarkMeter("http_adapter.send")
+	}
+	stats.UpdateHistogram("http_adapter.send_recipients", int64(len(recipients)))
 
 	// Prepare ground for parrallel http request
 	cherr := make(chan error, nb)
