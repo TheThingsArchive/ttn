@@ -80,3 +80,7 @@ func CheckRegistrations(t *testing.T, want Registration, got Registration) {
 func CheckIDs(t *testing.T, want []byte, got []byte) {
 	Check(t, want, got, "IDs")
 }
+
+func CheckStats(t *testing.T, want SPacket, got SPacket) {
+	Check(t, want, got, "Stats")
+}
