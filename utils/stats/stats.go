@@ -4,10 +4,24 @@
 // Package stats supports the collection of metrics from a running component.
 package stats
 
-import "github.com/rcrowley/go-metrics"
+import (
+	"time"
+
+	"github.com/rcrowley/go-metrics"
+)
 
 // Enabled activates stats collection
 var Enabled = true
+
+// Initialize the stats
+func Initialize() {
+	go func() {
+		c := time.Tick(1 * time.Minute)
+		for _ = range c {
+			Registry.(Ticker).Tick()
+		}
+	}()
+}
 
 // MarkMeter registers an event
 func MarkMeter(name string) {

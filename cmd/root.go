@@ -7,9 +7,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"time"
 
-	"github.com/TheThingsNetwork/ttn/utils/stats"
 	"github.com/apex/log"
 	"github.com/apex/log/handlers/cli"
 	"github.com/spf13/cobra"
@@ -70,15 +68,4 @@ func initConfig() {
 	if err := viper.ReadInConfig(); err == nil {
 		fmt.Println("Using config file:", viper.ConfigFileUsed())
 	}
-}
-
-func initStats() {
-	statsTicker := stats.Registry.(stats.Ticker)
-	statsTicker.SetDefaultTTL(60)
-	go func() {
-		c := time.Tick(1 * time.Minute)
-		for _ = range c {
-			statsTicker.Tick()
-		}
-	}()
 }

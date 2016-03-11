@@ -34,7 +34,7 @@ the gateway's duty cycle is (almost) full.`,
 		var statusServer string
 		if viper.GetInt("router.status-port") > 0 {
 			statusServer = fmt.Sprintf("%s:%d", viper.GetString("router.status-bind-address"), viper.GetInt("router.status-port"))
-			initStats()
+			stats.Initialize()
 		} else {
 			statusServer = "disabled"
 			stats.Enabled = false

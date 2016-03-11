@@ -31,7 +31,7 @@ The default handler is the bridge between The Things Network and applications.
 		var statusServer string
 		if viper.GetInt("handler.status-port") > 0 {
 			statusServer = fmt.Sprintf("%s:%d", viper.GetString("handler.status-bind-address"), viper.GetInt("handler.status-port"))
-			initStats()
+			stats.Initialize()
 		} else {
 			statusServer = "disabled"
 			stats.Enabled = false

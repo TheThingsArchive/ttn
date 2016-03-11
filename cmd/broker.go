@@ -31,7 +31,7 @@ and personalized devices (with their network session keys) with the router.
 		var statusServer string
 		if viper.GetInt("broker.status-port") > 0 {
 			statusServer = fmt.Sprintf("%s:%d", viper.GetString("broker.status-bind-address"), viper.GetInt("broker.status-port"))
-			initStats()
+			stats.Initialize()
 		} else {
 			statusServer = "disabled"
 			stats.Enabled = false
