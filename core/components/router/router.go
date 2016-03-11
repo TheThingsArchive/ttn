@@ -54,6 +54,7 @@ func (r component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 	case RPacket:
 		ack, err = r.handleDataUp(itf.(RPacket), up)
 	case SPacket:
+		err = r.UpdateStats(itf.(SPacket))
 	default:
 		stats.MarkMeter("router.uplink.invalid")
 		err = errors.New(errors.Structural, "Unreckognized packet type")
@@ -75,13 +76,18 @@ func (r component) handleDataUp(packet RPacket, up Adapter) (Packet, error) {
 	}
 	shouldBroadcast := err != nil
 
-	// Add Gateway duty metadata
-	// TODO add gateway location
 	metadata := packet.Metadata()
 	if metadata.Freq == nil {
 		return nil, errors.New(errors.Structural, "Missing mandatory frequency in metadata")
 	}
 
+	// Add Gateway location metadata
+	gmeta, _ := r.LookupStats(packet.GatewayID())
+	metadata.Lati = gmeta.Lati
+	metadata.Long = gmeta.Long
+	metadata.Alti = gmeta.Alti
+
+	// Add Gateway duty metadata
 	cycles, err := r.Manager.Lookup(packet.GatewayID())
 	if err != nil {
 		r.ctx.WithError(err).Debug("Unable to get any metadata about duty-cycles")
@@ -177,11 +183,6 @@ func (r component) handleDataDown(data []byte, gatewayID []byte) (Packet, error)
 		stats.MarkMeter("router.uplink.bad_broker_response")
 		return nil, errors.New(errors.Implementation, "Unexpected packet type")
 	}
-}
-
-// HandleStat implements the core.Router interface
-func (r component) handleStat(packet SPacket, gatewayID []byte) error {
-	return nil
 }
 
 // ensureAckNack is used to make sure we Ack / Nack correctly in the HandleUp method.

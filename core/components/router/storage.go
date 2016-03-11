@@ -18,6 +18,8 @@ import (
 // Storage gives a facade to manipulate the router database
 type Storage interface {
 	Lookup(devEUI lorawan.EUI64) ([]entry, error)
+	LookupStats(id []byte) (Metadata, error)
+	UpdateStats(stats SPacket) error
 	Store(reg RRegistration) error
 	Close() error
 }
@@ -30,9 +32,13 @@ type entry struct {
 type storage struct {
 	sync.Mutex
 	db          dbutil.Interface
-	Name        string
 	ExpiryDelay time.Duration
 }
+
+const (
+	dbBrokers = "brokers"
+	dbGateway = "gateways"
+)
 
 // NewStorage creates a new internal storage for the router
 func NewStorage(name string, delay time.Duration) (Storage, error) {
@@ -41,14 +47,14 @@ func NewStorage(name string, delay time.Duration) (Storage, error) {
 		return nil, errors.New(errors.Operational, err)
 	}
 
-	return &storage{db: itf, ExpiryDelay: delay, Name: "broker"}, nil
+	return &storage{db: itf, ExpiryDelay: delay}, nil
 }
 
 // Lookup implements the router.Storage interface
 func (s *storage) Lookup(devEUI lorawan.EUI64) ([]entry, error) {
 	s.Lock()
 	defer s.Unlock()
-	itf, err := s.db.Lookup(s.Name, devEUI[:], &entry{})
+	itf, err := s.db.Lookup(dbBrokers, devEUI[:], &entry{})
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +71,7 @@ func (s *storage) Lookup(devEUI lorawan.EUI64) ([]entry, error) {
 				filtered = append(filtered, e)
 			}
 		}
-		if err := s.db.Replace(s.Name, devEUI[:], newEntries); err != nil {
+		if err := s.db.Replace(dbBrokers, devEUI[:], newEntries); err != nil {
 			return nil, errors.New(errors.Operational, err)
 		}
 		entries = filtered
@@ -87,10 +93,29 @@ func (s *storage) Store(reg RRegistration) error {
 
 	s.Lock()
 	defer s.Unlock()
-	return s.db.Store(s.Name, devEUI[:], []dbutil.Entry{&entry{
+	return s.db.Store(dbBrokers, devEUI[:], []dbutil.Entry{&entry{
 		Recipient: recipient,
 		until:     time.Now().Add(s.ExpiryDelay),
 	}})
+}
+
+// UpdateStats implements the router.Storage interface
+func (s *storage) UpdateStats(stats SPacket) error {
+	metadata := stats.Metadata()
+	return s.db.Replace(dbGateway, stats.GatewayID(), []dbutil.Entry{&metadata})
+}
+
+// LookupStats implements the router.Storage interface
+func (s *storage) LookupStats(id []byte) (Metadata, error) {
+	itf, err := s.db.Lookup(dbGateway, id, &Metadata{})
+	if err != nil {
+		return Metadata{}, err
+	}
+	entries := itf.([]Metadata)
+	if len(entries) == 0 {
+		return Metadata{}, errors.New(errors.NotFound, "Not entry found for given gateway")
+	}
+	return entries[0], nil
 }
 
 // Close implements the router.Storage interface
