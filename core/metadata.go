@@ -101,6 +101,16 @@ func (m *Metadata) UnmarshalJSON(raw []byte) error {
 	return nil
 }
 
+// MarshalBinary implements the binary.Marshaler interface
+func (m Metadata) MarshalBinary() ([]byte, error) {
+	return m.MarshalJSON()
+}
+
+// UnmarshalBinary implements the binary.Unmarshaler interface
+func (m *Metadata) UnmarshalBinary(data []byte) error {
+	return m.UnmarshalJSON(data)
+}
+
 // String implements the io.Stringer interface
 func (m Metadata) String() string {
 	return pointer.DumpPStruct(m, false)
