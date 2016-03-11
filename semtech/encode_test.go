@@ -335,6 +335,38 @@ func TestMarshalBinary(t *testing.T) {
 			WantJSON:   `{"txpk":{"time":"2016-01-13T17:40:57.000000376Z"}}`,
 		},
 		{
+			Desc: "PULL_RESP with datr field and modu -> LORA",
+			Packet: Packet{
+				Version:    VERSION,
+				Identifier: PULL_RESP,
+				Payload: &Payload{
+					TXPK: &TXPK{
+						Datr: pointer.String("SF7BW125"),
+						Modu: pointer.String("LORA"),
+					},
+				},
+			},
+			WantError:  false,
+			WantHeader: []byte{1, 0, 0, PULL_RESP},
+			WantJSON:   `{"txpk":{"modu":"LORA","datr":"SF7BW125"}}`,
+		},
+		{
+			Desc: "PULL_RESP with datr field and modu -> FSK",
+			Packet: Packet{
+				Version:    VERSION,
+				Identifier: PULL_RESP,
+				Payload: &Payload{
+					TXPK: &TXPK{
+						Datr: pointer.String("50000"),
+						Modu: pointer.String("FSK"),
+					},
+				},
+			},
+			WantError:  false,
+			WantHeader: []byte{1, 0, 0, PULL_RESP},
+			WantJSON:   `{"txpk":{"modu":"FSK","datr":50000}}`,
+		},
+		{
 			Desc: "PULL_RESP empty payload",
 			Packet: Packet{
 				Version:    VERSION,
