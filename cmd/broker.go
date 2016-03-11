@@ -12,6 +12,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/adapters/http"
 	"github.com/TheThingsNetwork/ttn/core/adapters/http/handlers"
 	"github.com/TheThingsNetwork/ttn/core/components/broker"
+	"github.com/TheThingsNetwork/ttn/utils/stats"
 	"github.com/apex/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -32,6 +33,7 @@ and personalized devices (with their network session keys) with the router.
 			statusServer = fmt.Sprintf("%s:%d", viper.GetString("broker.status-bind-address"), viper.GetInt("broker.status-port"))
 		} else {
 			statusServer = "disabled"
+			stats.Enabled = false
 		}
 		ctx.WithFields(log.Fields{
 			"database":      viper.GetString("broker.database"),

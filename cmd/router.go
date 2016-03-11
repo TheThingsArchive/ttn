@@ -16,6 +16,7 @@ import (
 	udpHandlers "github.com/TheThingsNetwork/ttn/core/adapters/udp/handlers"
 	"github.com/TheThingsNetwork/ttn/core/components/router"
 	"github.com/TheThingsNetwork/ttn/core/dutycycle"
+	"github.com/TheThingsNetwork/ttn/utils/stats"
 	"github.com/apex/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -35,6 +36,7 @@ the gateway's duty cycle is (almost) full.`,
 			statusServer = fmt.Sprintf("%s:%d", viper.GetString("router.status-bind-address"), viper.GetInt("router.status-port"))
 		} else {
 			statusServer = "disabled"
+			stats.Enabled = false
 		}
 
 		ctx.WithFields(log.Fields{
