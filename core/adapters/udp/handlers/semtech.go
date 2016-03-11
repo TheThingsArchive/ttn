@@ -63,6 +63,20 @@ func (s Semtech) Handle(conn chan<- udp.MsgUDP, packets chan<- udp.MsgReq, msg u
 			return errors.New(errors.Structural, "Unable to process empty PUSH_DATA payload")
 		}
 
+		// Handle stat payload
+		if pkt.Payload.Stat != nil {
+			spacket, err := core.NewSPacket(pkt.GatewayId, extractMetadata(*pkt.Payload.Stat))
+			if err == nil {
+				data, err := spacket.MarshalBinary()
+				if err == nil {
+					go func() {
+						packets <- udp.MsgReq{Data: data, Chresp: nil}
+					}()
+				}
+			}
+		}
+
+		// Handle rxpks payloads
 		for _, rxpk := range pkt.Payload.RXPK {
 			go func(rxpk semtech.RXPK) {
 				pktOut, err := rxpk2packet(rxpk, pkt.GatewayId)
@@ -137,23 +151,9 @@ func rxpk2packet(p semtech.RXPK, gid []byte) (core.Packet, error) {
 	if err = payload.UnmarshalBinary(raw); err != nil {
 		return nil, errors.New(errors.Structural, err)
 	}
-
-	// Then, we interpret every other known field as a metadata and store them into an appropriate
-	// metadata object.
-	metadata := core.Metadata{}
-	rxpkValue := reflect.ValueOf(p)
-	rxpkStruct := rxpkValue.Type()
-	metas := reflect.ValueOf(&metadata).Elem()
-	for i := 0; i < rxpkStruct.NumField(); i++ {
-		field := rxpkStruct.Field(i).Name
-		if metas.FieldByName(field).CanSet() {
-			metas.FieldByName(field).Set(rxpkValue.Field(i))
-		}
-	}
-
 	// At the end, our converted packet hold the same metadata than the RXPK packet but the Data
 	// which as been completely transformed into a lorawan Physical Payload.
-	return core.NewRPacket(payload, gid, metadata)
+	return core.NewRPacket(payload, gid, extractMetadata(p))
 }
 
 func packet2txpk(p core.RPacket) (semtech.TXPK, error) {
@@ -168,15 +168,36 @@ func packet2txpk(p core.RPacket) (semtech.TXPK, error) {
 
 	// Step 2, copy every compatible metadata from the packet to the TXPK packet.
 	// We are possibly loosing information here.
-	metadataValue := reflect.ValueOf(p.Metadata())
-	metadataStruct := metadataValue.Type()
-	txpkStruct := reflect.ValueOf(&txpk).Elem()
-	for i := 0; i < metadataStruct.NumField(); i++ {
-		field := metadataStruct.Field(i).Name
-		if txpkStruct.FieldByName(field).CanSet() {
-			txpkStruct.FieldByName(field).Set(metadataValue.Field(i))
+	injectMetadata(&txpk, p.Metadata())
+
+	return txpk, nil
+}
+
+func injectMetadata(ptr interface{}, metadata core.Metadata) {
+	v := reflect.ValueOf(metadata)
+	t := v.Type()
+	d := reflect.ValueOf(ptr).Elem()
+
+	for i := 0; i < t.NumField(); i++ {
+		field := t.Field(i).Name
+		if d.FieldByName(field).CanSet() {
+			d.FieldByName(field).Set(v.Field(i))
+		}
+	}
+}
+
+func extractMetadata(xpk interface{}) core.Metadata {
+	metadata := core.Metadata{}
+	v := reflect.ValueOf(xpk)
+	t := v.Type()
+	m := reflect.ValueOf(&metadata).Elem()
+
+	for i := 0; i < t.NumField(); i++ {
+		field := t.Field(i).Name
+		if m.FieldByName(field).CanSet() {
+			m.FieldByName(field).Set(v.Field(i))
 		}
 	}
 
-	return txpk, nil
+	return metadata
 }
