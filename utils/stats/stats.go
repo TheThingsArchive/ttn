@@ -12,27 +12,39 @@ var Enabled = true
 // MarkMeter registers an event
 func MarkMeter(name string) {
 	if Enabled {
-		metrics.GetOrRegisterMeter(name, metrics.DefaultRegistry).Mark(1)
+		metrics.GetOrRegisterMeter(name, Registry).Mark(1)
 	}
 }
 
 // UpdateHistogram registers a new value for a histogram
 func UpdateHistogram(name string, value int64) {
 	if Enabled {
-		metrics.GetOrRegisterHistogram(name, metrics.DefaultRegistry, metrics.NewUniformSample(1000)).Update(value)
+		metrics.GetOrRegisterHistogram(name, Registry, metrics.NewUniformSample(1000)).Update(value)
 	}
 }
 
 // IncCounter increments a counter by 1
 func IncCounter(name string) {
 	if Enabled {
-		metrics.GetOrRegisterCounter(name, metrics.DefaultRegistry).Inc(1)
+		metrics.GetOrRegisterCounter(name, Registry).Inc(1)
 	}
 }
 
 // DecCounter decrements a counter by 1
 func DecCounter(name string) {
 	if Enabled {
-		metrics.GetOrRegisterCounter(name, metrics.DefaultRegistry).Dec(1)
+		metrics.GetOrRegisterCounter(name, Registry).Dec(1)
 	}
+}
+
+// SetString ...
+func SetString(name, tag, value string) {
+	if Enabled {
+		GetOrRegisterString(name, Registry).Set(tag, value)
+	}
+}
+
+// SetTimeout ...
+func SetTimeout(name string, ttl uint) {
+	Registry.(Ticker).SetTTL(name, ttl)
 }

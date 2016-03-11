@@ -10,6 +10,7 @@ import (
 
 	. "github.com/TheThingsNetwork/ttn/core/adapters/http"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
+	"github.com/TheThingsNetwork/ttn/utils/stats"
 	"github.com/rcrowley/go-metrics"
 )
 
@@ -39,7 +40,7 @@ func (p StatusPage) Handle(w http.ResponseWriter, chpkt chan<- PktReq, chreg cha
 
 	allStats := make(map[string]interface{})
 
-	metrics.Each(func(name string, i interface{}) {
+	stats.Registry.Each(func(name string, i interface{}) {
 		// Make sure we put things in the right place
 		thisStat := allStats
 		for _, path := range strings.Split(name, ".") {
@@ -78,6 +79,11 @@ func (p StatusPage) Handle(w http.ResponseWriter, chpkt chan<- PktReq, chreg cha
 			thisStat["rate_15"] = m.Rate15()
 			thisStat["count"] = m.Count()
 
+		case stats.String:
+			m := metric.Snapshot()
+			for t, v := range m.Get() {
+				thisStat[t] = v
+			}
 		}
 	})
 

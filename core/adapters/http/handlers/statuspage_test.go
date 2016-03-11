@@ -45,6 +45,7 @@ func TestStatusPageHandler(t *testing.T) {
 	stats.IncCounter("this.is-a-counter")
 	stats.UpdateHistogram("and.this.is.a-histogram", 123)
 	stats.MarkMeter("and.this.is.a-meter")
+	stats.SetString("and.this.is.a-string", "with_key", "with_value")
 
 	// Not Empty anymore
 	r4, _ := http.NewRequest("GET", "/status", nil)
@@ -55,4 +56,6 @@ func TestStatusPageHandler(t *testing.T) {
 	a.So(string(rw4.TheBody), assertions.ShouldContainSubstring, "\"is-a-counter\"")
 	a.So(string(rw4.TheBody), assertions.ShouldContainSubstring, "p_50")
 	a.So(string(rw4.TheBody), assertions.ShouldContainSubstring, "rate_15")
+	a.So(string(rw4.TheBody), assertions.ShouldContainSubstring, "with_key")
+	a.So(string(rw4.TheBody), assertions.ShouldContainSubstring, "with_value")
 }
