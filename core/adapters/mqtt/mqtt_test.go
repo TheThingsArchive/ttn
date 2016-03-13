@@ -162,7 +162,6 @@ func TestMQTTSend(t *testing.T) {
 		checkResponses(t, test.WantResponse, resp)
 
 		// Clean
-		<-time.After(time.Millisecond * 500)
 		aclient.Disconnect(0)
 		for _, sclient := range sclients {
 			sclient.Disconnect(0)
@@ -444,7 +443,7 @@ func createServers(recipients []testRecipient) ([]Client, chan []byte) {
 	var clients []Client
 	chresp := make(chan []byte, len(recipients))
 	for i, r := range recipients {
-		client, err := NewClient(fmt.Sprintf("FakeServerClient%d", i), brokerURL, TCP)
+		client, err := NewClient(fmt.Sprintf("Client%d%d", i, time.Now().UnixNano()), brokerURL, TCP)
 		if err != nil {
 			panic(err)
 		}
