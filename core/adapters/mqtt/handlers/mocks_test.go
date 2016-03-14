@@ -7,8 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	MQTT "git.eclipse.org/gitroot/paho/org.eclipse.paho.mqtt.golang.git"
-	. "github.com/TheThingsNetwork/ttn/core/adapters/mqtt"
+	MQTT "github.com/KtorZ/paho.mqtt.golang"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
 )
 
@@ -76,6 +75,7 @@ func (m MockMessage) Payload() []byte {
 //
 // It can also fails on demand (use the newMockClient method to define which methods should fail)
 type MockClient struct {
+	MQTT.Client
 	InSubscribe   *string
 	InPublish     MQTT.Message
 	InUnsubscribe []string
@@ -135,7 +135,7 @@ func (c *MockClient) Publish(topic string, qos byte, retained bool, payload inte
 	return MockToken{Failure: c.Failures["Publish"]}
 }
 
-func (c *MockClient) Subscribe(topic string, qos byte, callback func(c Client, m MQTT.Message)) MQTT.Token {
+func (c *MockClient) Subscribe(topic string, qos byte, callback MQTT.MessageHandler) MQTT.Token {
 	c.InSubscribe = &topic
 	return MockToken{Failure: c.Failures["Subscribe"]}
 }

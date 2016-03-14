@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	MQTT "git.eclipse.org/gitroot/paho/org.eclipse.paho.mqtt.golang.git"
+	MQTT "github.com/KtorZ/paho.mqtt.golang"
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/mocks"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
@@ -162,9 +162,9 @@ func TestMQTTSend(t *testing.T) {
 		checkResponses(t, test.WantResponse, resp)
 
 		// Clean
-		aclient.Disconnect(0)
+		aclient.Disconnect(250)
 		for _, sclient := range sclients {
-			sclient.Disconnect(0)
+			sclient.Disconnect(250)
 		}
 	}
 }
@@ -429,7 +429,7 @@ func (p testPacket) DevEUI() lorawan.EUI64 {
 }
 
 // ----- BUILD utilities
-func createAdapter(t *testing.T) (Client, core.Adapter) {
+func createAdapter(t *testing.T) (MQTT.Client, core.Adapter) {
 	client, err := NewClient("testClient", brokerURL, TCP)
 	if err != nil {
 		panic(err)
@@ -439,8 +439,8 @@ func createAdapter(t *testing.T) (Client, core.Adapter) {
 	return client, adapter
 }
 
-func createServers(recipients []testRecipient) ([]Client, chan []byte) {
-	var clients []Client
+func createServers(recipients []testRecipient) ([]MQTT.Client, chan []byte) {
+	var clients []MQTT.Client
 	chresp := make(chan []byte, len(recipients))
 	for i, r := range recipients {
 		client, err := NewClient(fmt.Sprintf("Client%d%d", i, time.Now().UnixNano()), brokerURL, TCP)
@@ -449,8 +449,8 @@ func createServers(recipients []testRecipient) ([]Client, chan []byte) {
 		}
 		clients = append(clients, client)
 
-		go func(r testRecipient, client Client) {
-			token := client.Subscribe(r.TopicUp, 2, func(client Client, msg MQTT.Message) {
+		go func(r testRecipient, client MQTT.Client) {
+			token := client.Subscribe(r.TopicUp, 2, func(client MQTT.Client, msg MQTT.Message) {
 				if r.Response != nil {
 					token := client.Publish(r.TopicDown, 2, false, r.Response)
 					if token.Wait() && token.Error() != nil {

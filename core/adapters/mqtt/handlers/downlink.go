@@ -7,7 +7,7 @@ import (
 	"encoding/hex"
 	"strings"
 
-	MQTT "git.eclipse.org/gitroot/paho/org.eclipse.paho.mqtt.golang.git"
+	MQTT "github.com/KtorZ/paho.mqtt.golang"
 	"github.com/TheThingsNetwork/ttn/core"
 	. "github.com/TheThingsNetwork/ttn/core/adapters/mqtt"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
@@ -23,7 +23,7 @@ func (a Downlink) Topic() string {
 }
 
 // Handle implements the mqtt.Handler interface
-func (a Downlink) Handle(client Client, chpkt chan<- PktReq, chreg chan<- RegReq, msg MQTT.Message) error {
+func (a Downlink) Handle(client MQTT.Client, chpkt chan<- PktReq, chreg chan<- RegReq, msg MQTT.Message) error {
 	infos := strings.Split(msg.Topic(), "/")
 
 	if len(infos) != 4 {

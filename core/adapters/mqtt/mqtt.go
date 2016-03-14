@@ -4,10 +4,11 @@
 package mqtt
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
-	MQTT "git.eclipse.org/gitroot/paho/org.eclipse.paho.mqtt.golang.git"
+	MQTT "github.com/KtorZ/paho.mqtt.golang"
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/stats"
@@ -18,7 +19,7 @@ var timeout = time.Second
 
 // Adapter type materializes an mqtt adapter which implements the basic mqtt protocol
 type Adapter struct {
-	Client
+	MQTT.Client
 	ctx           log.Interface
 	packets       chan PktReq // Channel used to "transforms" incoming request to something we can handle concurrently
 	registrations chan RegReq // Incoming registrations
@@ -27,7 +28,7 @@ type Adapter struct {
 // Handler defines topic-specific handler.
 type Handler interface {
 	Topic() string
-	Handle(client Client, chpkt chan<- PktReq, chreg chan<- RegReq, msg MQTT.Message) error
+	Handle(client MQTT.Client, chpkt chan<- PktReq, chreg chan<- RegReq, msg MQTT.Message) error
 }
 
 // MsgRes are sent through the response channel of a pktReq or regReq
@@ -58,7 +59,7 @@ const (
 // NewAdapter constructs and allocates a new mqtt adapter
 //
 // The client is expected to be already connected to the right broker and ready to be used.
-func NewAdapter(client Client, ctx log.Interface) *Adapter {
+func NewAdapter(client MQTT.Client, ctx log.Interface) *Adapter {
 	adapter := &Adapter{
 		Client:        client,
 		ctx:           ctx,
@@ -67,6 +68,22 @@ func NewAdapter(client Client, ctx log.Interface) *Adapter {
 	}
 
 	return adapter
+}
+
+// NewClient generates a new paho MQTT client from an id and a broker url
+//
+// The broker url is expected to contain a port if needed such as mybroker.com:87354
+//
+// The scheme has to be the same as the one used by the broker: tcp, tls or web socket
+func NewClient(id string, broker string, scheme Scheme) (MQTT.Client, error) {
+	opts := MQTT.NewClientOptions()
+	opts.AddBroker(fmt.Sprintf("%s://%s", scheme, broker))
+	opts.SetClientID(id)
+	c := MQTT.NewClient(opts)
+	if token := c.Connect(); token.Wait() && token.Error() != nil {
+		return nil, errors.New(errors.Operational, token.Error())
+	}
+	return c, nil
 }
 
 // Send implements the core.Adapter interface
@@ -105,7 +122,7 @@ func (a *Adapter) Send(p core.Packet, recipients ...core.Recipient) ([]byte, err
 		// Subscribe to down channel (before publishing anything)
 		chdown := make(chan []byte)
 		if recipient.TopicDown() != "" {
-			token := a.Subscribe(recipient.TopicDown(), 2, func(client Client, msg MQTT.Message) {
+			token := a.Subscribe(recipient.TopicDown(), 2, func(client MQTT.Client, msg MQTT.Message) {
 				chdown <- msg.Payload()
 			})
 			if token.Wait() && token.Error() != nil {
@@ -216,7 +233,7 @@ func (a *Adapter) NextRegistration() (core.Registration, core.AckNacker, error) 
 func (a *Adapter) Bind(h Handler) error {
 	ctx := a.ctx.WithField("topic", h.Topic())
 	ctx.Info("Subscribe new handler")
-	token := a.Subscribe(h.Topic(), 2, func(client Client, msg MQTT.Message) {
+	token := a.Subscribe(h.Topic(), 2, func(client MQTT.Client, msg MQTT.Message) {
 		ctx.Debug("Handle new mqtt message")
 		if err := h.Handle(client, a.packets, a.registrations, msg); err != nil {
 			ctx.WithError(err).Warn("Unable to handle mqtt message")

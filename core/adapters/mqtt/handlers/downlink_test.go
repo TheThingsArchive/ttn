@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/core"
-	. "github.com/TheThingsNetwork/ttn/core/adapters/mqtt"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	. "github.com/TheThingsNetwork/ttn/utils/errors/checks"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"

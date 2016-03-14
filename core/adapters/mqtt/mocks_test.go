@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	MQTT "git.eclipse.org/gitroot/paho/org.eclipse.paho.mqtt.golang.git"
+	MQTT "github.com/KtorZ/paho.mqtt.golang"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 )
@@ -33,7 +33,7 @@ func (h *MockHandler) Topic() string {
 	return h.OutTopic
 }
 
-func (h *MockHandler) Handle(client Client, chpkt chan<- PktReq, chreg chan<- RegReq, msg MQTT.Message) error {
+func (h *MockHandler) Handle(client MQTT.Client, chpkt chan<- PktReq, chreg chan<- RegReq, msg MQTT.Message) error {
 	h.InMessage = msg
 	return h.Failures["Handle"]
 }
@@ -100,17 +100,22 @@ func (m MockMessage) Payload() []byte {
 //
 // It can also fails on demand (use the newMockClient method to define which methods should fail)
 type MockClient struct {
+	MQTT.Client
 	InSubscribe         *string
 	InPublish           MQTT.Message
 	InUnsubscribe       []string
-	InSubscribeCallBack func(c Client, m MQTT.Message)
+	InSubscribeCallBack func(c MQTT.Client, m MQTT.Message)
 
 	Failures  map[string]*string
 	connected bool
 }
 
 func NewMockClient(failures ...string) *MockClient {
-	client := MockClient{Failures: make(map[string]*string), connected: true, InPublish: MockMessage{}}
+	client := MockClient{
+		Failures:  make(map[string]*string),
+		connected: true,
+		InPublish: MockMessage{},
+	}
 
 	isFailure := func(x string) bool {
 		for _, f := range failures {
@@ -160,7 +165,7 @@ func (c *MockClient) Publish(topic string, qos byte, retained bool, payload inte
 	return MockToken{Failure: c.Failures["Publish"]}
 }
 
-func (c *MockClient) Subscribe(topic string, qos byte, callback func(c Client, m MQTT.Message)) MQTT.Token {
+func (c *MockClient) Subscribe(topic string, qos byte, callback MQTT.MessageHandler) MQTT.Token {
 	c.InSubscribe = &topic
 	c.InSubscribeCallBack = callback
 	return MockToken{Failure: c.Failures["Subscribe"]}
