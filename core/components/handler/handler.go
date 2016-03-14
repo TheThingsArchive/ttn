@@ -281,12 +281,8 @@ func (h component) abortConsume(err error, bundles []bundle) {
 // constructs a downlink packet from something we pulled from the gathered downlink, and, the actual
 // uplink.
 func (h component) buildDownlink(down APacket, up HPacket, entry devEntry, isRX2 bool) (BPacket, error) {
-	fcnt := up.FCnt() + 1
 	macPayload := lorawan.NewMACPayload(false)
-	macPayload.FHDR = lorawan.FHDR{
-		DevAddr: entry.DevAddr,
-		FCnt:    fcnt,
-	}
+	macPayload.FHDR = lorawan.FHDR{DevAddr: entry.DevAddr}
 	macPayload.FPort = 1
 	macPayload.FRMPayload = []lorawan.Payload{&lorawan.DataPayload{
 		Bytes: down.Payload(),
