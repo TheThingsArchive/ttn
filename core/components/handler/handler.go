@@ -256,8 +256,13 @@ browseBundles:
 		for i, bundle := range bundles {
 			if best != nil && best.ID == i && down != nil && err == nil {
 				stats.MarkMeter("handler.downlink.pull")
+
 				bpacket, err := h.buildDownlink(down, bundle.Packet, bundle.Entry, best.IsRX2)
 				if err != nil {
+					go h.abortConsume(errors.New(errors.Structural, err), bundles)
+					continue browseBundles
+				}
+				if err := h.devices.UpdateFCnt(b.Packet.AppEUI(), b.Packet.DevEUI(), bpacket.FCnt()); err != nil {
 					go h.abortConsume(errors.New(errors.Structural, err), bundles)
 					continue browseBundles
 				}
@@ -282,7 +287,10 @@ func (h component) abortConsume(err error, bundles []bundle) {
 // uplink.
 func (h component) buildDownlink(down APacket, up HPacket, entry devEntry, isRX2 bool) (BPacket, error) {
 	macPayload := lorawan.NewMACPayload(false)
-	macPayload.FHDR = lorawan.FHDR{DevAddr: entry.DevAddr}
+	macPayload.FHDR = lorawan.FHDR{
+		FCnt:    entry.FCntDown + 1,
+		DevAddr: entry.DevAddr,
+	}
 	macPayload.FPort = 1
 	macPayload.FRMPayload = []lorawan.Payload{&lorawan.DataPayload{
 		Bytes: down.Payload(),

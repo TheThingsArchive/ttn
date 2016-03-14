@@ -4,7 +4,10 @@
 package handler
 
 import (
+	"bytes"
+	"encoding/binary"
 	"fmt"
+	"sync"
 
 	. "github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
@@ -15,6 +18,7 @@ import (
 
 // DevStorage gives a facade to manipulate the handler devices database
 type DevStorage interface {
+	UpdateFCnt(appEUI lorawan.EUI64, devEUI lorawan.EUI64, fcnt uint32) error
 	Lookup(appEUI lorawan.EUI64, devEUI lorawan.EUI64) (devEntry, error)
 	StorePersonalized(r HRegistration) error
 	StoreActivated(r HRegistration) error
@@ -26,6 +30,7 @@ type devEntry struct {
 	DevAddr   lorawan.DevAddr
 	AppSKey   lorawan.AES128Key
 	NwkSKey   lorawan.AES128Key
+	FCntDown  uint32
 }
 
 type appEntry struct {
@@ -33,6 +38,7 @@ type appEntry struct {
 }
 
 type devStorage struct {
+	sync.RWMutex
 	db   dbutil.Interface
 	Name string
 }
@@ -44,11 +50,20 @@ func NewDevStorage(name string) (DevStorage, error) {
 		return nil, errors.New(errors.Operational, err)
 	}
 
-	return devStorage{db: itf, Name: "entry"}, nil
+	return &devStorage{db: itf, Name: "entry"}, nil
 }
 
 // Lookup implements the handler.DevStorage interface
-func (s devStorage) Lookup(appEUI lorawan.EUI64, devEUI lorawan.EUI64) (devEntry, error) {
+func (s *devStorage) Lookup(appEUI lorawan.EUI64, devEUI lorawan.EUI64) (devEntry, error) {
+	return s.lookup(appEUI, devEUI, true)
+}
+
+// lookup allow other method to re-use lookup while holding the lock
+func (s *devStorage) lookup(appEUI lorawan.EUI64, devEUI lorawan.EUI64, shouldLock bool) (devEntry, error) {
+	if shouldLock {
+		s.RLock()
+		defer s.RUnlock()
+	}
 	itf, err := s.db.Lookup(fmt.Sprintf("%x.%x", appEUI[:], devEUI[:]), []byte(s.Name), &devEntry{})
 	if err != nil {
 		return devEntry{}, err // Operational || NotFound
@@ -61,7 +76,9 @@ func (s devStorage) Lookup(appEUI lorawan.EUI64, devEUI lorawan.EUI64) (devEntry
 }
 
 // StorePersonalized implements the handler.DevStorage interface
-func (s devStorage) StorePersonalized(reg HRegistration) error {
+func (s *devStorage) StorePersonalized(reg HRegistration) error {
+	s.Lock()
+	defer s.Unlock()
 	appEUI := reg.AppEUI()
 	devEUI := reg.DevEUI()
 	devAddr := lorawan.DevAddr{}
@@ -82,13 +99,25 @@ func (s devStorage) StorePersonalized(reg HRegistration) error {
 	return s.db.Replace(fmt.Sprintf("%x.%x", appEUI[:], devEUI[:]), []byte(s.Name), e)
 }
 
+// UpdateFCnt implements the handler.DevStorage interface
+func (s *devStorage) UpdateFCnt(appEUI lorawan.EUI64, devEUI lorawan.EUI64, fcnt uint32) error {
+	s.Lock()
+	defer s.Unlock()
+	devEntry, err := s.lookup(appEUI, devEUI, false)
+	if err != nil {
+		return err
+	}
+	devEntry.FCntDown = fcnt
+	return s.db.Replace(fmt.Sprintf("%x.%x", appEUI[:], devEUI[:]), []byte(s.Name), []dbutil.Entry{&devEntry})
+}
+
 // StoreActivated implements the handler.DevStorage interface
-func (s devStorage) StoreActivated(reg HRegistration) error {
+func (s *devStorage) StoreActivated(reg HRegistration) error {
 	return errors.New(errors.Implementation, "Not implemented yet")
 }
 
 // Close implements the handler.DevStorage interface
-func (s devStorage) Close() error {
+func (s *devStorage) Close() error {
 	return s.db.Close()
 }
 
@@ -99,6 +128,7 @@ func (e devEntry) MarshalBinary() ([]byte, error) {
 	rw.Write(e.DevAddr)
 	rw.Write(e.AppSKey)
 	rw.Write(e.NwkSKey)
+	rw.Write(e.FCntDown)
 	return rw.Bytes()
 }
 
@@ -109,6 +139,16 @@ func (e *devEntry) UnmarshalBinary(data []byte) error {
 	rw.Read(func(data []byte) { copy(e.DevAddr[:], data) })
 	rw.Read(func(data []byte) { copy(e.AppSKey[:], data) })
 	rw.Read(func(data []byte) { copy(e.NwkSKey[:], data) })
+	rw.TryRead(func(data []byte) error {
+		buf := new(bytes.Buffer)
+		buf.Write(data)
+		fcnt := new(uint32)
+		if err := binary.Read(buf, binary.BigEndian, fcnt); err != nil {
+			return err
+		}
+		e.FCntDown = *fcnt
+		return nil
+	})
 	return rw.Err()
 }
 
