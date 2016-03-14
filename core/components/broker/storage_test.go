@@ -56,7 +56,6 @@ func TestNetworkControllerDevice(t *testing.T) {
 				NwkSKey:   r.NwkSKey(),
 				Recipient: r.RawRecipient(),
 				FCntUp:    0,
-				FCntDown:  0,
 			},
 		}
 
@@ -91,7 +90,6 @@ func TestNetworkControllerDevice(t *testing.T) {
 				NwkSKey:   r.NwkSKey(),
 				Recipient: r.RawRecipient(),
 				FCntUp:    0,
-				FCntDown:  0,
 			},
 			{
 				AppEUI:    r.AppEUI(),
@@ -99,7 +97,6 @@ func TestNetworkControllerDevice(t *testing.T) {
 				NwkSKey:   r.NwkSKey(),
 				Recipient: r.RawRecipient(),
 				FCntUp:    0,
-				FCntDown:  0,
 			},
 		}
 
@@ -198,7 +195,7 @@ func TestNetworkControllerDevice(t *testing.T) {
 		// Operate
 		err := db.StoreDevice(r)
 		CheckErrors(t, nil, err)
-		err1 := db.UpdateFCnt(r.AppEUI(), r.DevEUI(), 14, "up")
+		err1 := db.UpdateFCnt(r.AppEUI(), r.DevEUI(), 14)
 		entries, err2 := db.LookupDevices(r.DevEUI())
 
 		// Expectations
@@ -209,82 +206,11 @@ func TestNetworkControllerDevice(t *testing.T) {
 				NwkSKey:   r.NwkSKey(),
 				Recipient: r.RawRecipient(),
 				FCntUp:    14,
-				FCntDown:  0,
 			},
 		}
 
 		// Check
 		CheckErrors(t, nil, err1)
-		CheckErrors(t, nil, err2)
-		CheckDevEntries(t, want, entries)
-		_ = db.Close()
-	}
-
-	// -------------------
-
-	{
-		Desc(t, "Update counter down of an entry -> one device")
-
-		// Build
-		db, _ := NewNetworkController(NetworkControllerDB)
-		r := NewMockBRegistration()
-		r.OutDevEUI[4] = 0xbb
-
-		// Operate
-		err := db.StoreDevice(r)
-		CheckErrors(t, nil, err)
-		err1 := db.UpdateFCnt(r.AppEUI(), r.DevEUI(), 14, "down")
-		entries, err2 := db.LookupDevices(r.DevEUI())
-
-		// Expectations
-		want := []devEntry{
-			{
-				AppEUI:    r.AppEUI(),
-				DevEUI:    r.DevEUI(),
-				NwkSKey:   r.NwkSKey(),
-				Recipient: r.RawRecipient(),
-				FCntUp:    0,
-				FCntDown:  14,
-			},
-		}
-
-		// Check
-		CheckErrors(t, nil, err1)
-		CheckErrors(t, nil, err2)
-		CheckDevEntries(t, want, entries)
-		_ = db.Close()
-	}
-
-	// -------------------
-
-	{
-		Desc(t, "Update counter with wrong direction")
-
-		// Build
-		db, _ := NewNetworkController(NetworkControllerDB)
-		r := NewMockBRegistration()
-		r.OutDevEUI[4] = 0xbd
-
-		// Operate
-		err := db.StoreDevice(r)
-		CheckErrors(t, nil, err)
-		err1 := db.UpdateFCnt(r.AppEUI(), r.DevEUI(), 14, "patate")
-		entries, err2 := db.LookupDevices(r.DevEUI())
-
-		// Expectations
-		want := []devEntry{
-			{
-				AppEUI:    r.AppEUI(),
-				DevEUI:    r.DevEUI(),
-				NwkSKey:   r.NwkSKey(),
-				Recipient: r.RawRecipient(),
-				FCntUp:    0,
-				FCntDown:  0,
-			},
-		}
-
-		// Checks
-		CheckErrors(t, pointer.String(string(errors.Implementation)), err1)
 		CheckErrors(t, nil, err2)
 		CheckDevEntries(t, want, entries)
 		_ = db.Close()
@@ -301,7 +227,7 @@ func TestNetworkControllerDevice(t *testing.T) {
 		r.OutDevEUI[4] = 0xde
 
 		// Operate
-		err := db.UpdateFCnt(r.AppEUI(), r.DevEUI(), 14, "up")
+		err := db.UpdateFCnt(r.AppEUI(), r.DevEUI(), 14)
 
 		// Checks
 		CheckErrors(t, pointer.String(string(errors.NotFound)), err)
@@ -326,7 +252,7 @@ func TestNetworkControllerDevice(t *testing.T) {
 		CheckErrors(t, nil, err)
 		err = db.StoreDevice(r2)
 		CheckErrors(t, nil, err)
-		err1 := db.UpdateFCnt(r2.AppEUI(), r2.DevEUI(), 14, "up")
+		err1 := db.UpdateFCnt(r2.AppEUI(), r2.DevEUI(), 14)
 		entries, err2 := db.LookupDevices(r2.DevEUI())
 
 		// Expectations
@@ -337,7 +263,6 @@ func TestNetworkControllerDevice(t *testing.T) {
 				NwkSKey:   r1.NwkSKey(),
 				Recipient: r1.RawRecipient(),
 				FCntUp:    0,
-				FCntDown:  0,
 			},
 			{
 				AppEUI:    r2.AppEUI(),
@@ -345,7 +270,6 @@ func TestNetworkControllerDevice(t *testing.T) {
 				NwkSKey:   r2.NwkSKey(),
 				Recipient: r2.RawRecipient(),
 				FCntUp:    14,
-				FCntDown:  0,
 			},
 		}
 
