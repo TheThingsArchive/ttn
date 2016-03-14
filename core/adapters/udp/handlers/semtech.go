@@ -104,7 +104,12 @@ func (s Semtech) Handle(conn chan<- udp.MsgUDP, packets chan<- udp.MsgReq, msg u
 				chresp := make(chan udp.MsgRes)
 				packets <- udp.MsgReq{Data: data, Chresp: chresp}
 				select {
-				case resp := <-chresp:
+				case resp, ok := <-chresp:
+					if !ok {
+						// No response
+						return
+					}
+
 					itf, err := core.UnmarshalPacket(resp)
 					if err != nil {
 						cherr <- errors.New(errors.Structural, err)
