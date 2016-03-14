@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/adapters/http"
@@ -56,13 +57,35 @@ The default handler is the bridge between The Things Network and applications.
 		}
 		brkAdapter.Bind(httpHandlers.Collect{})
 
-		mqttClient, err := mqtt.NewClient("handler-client", viper.GetString("handler.mqtt-broker"), mqtt.TCP)
+		mqttClient, cherr, err := mqtt.NewClient("handler-client", viper.GetString("handler.mqtt-broker"), mqtt.TCP)
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not start MQTT client")
 		}
+
 		appAdapter := mqtt.NewAdapter(mqttClient, ctx.WithField("adapter", "app-adapter"))
 		appAdapter.Bind(mqttHandlers.Activation{})
 		appAdapter.Bind(mqttHandlers.Downlink{})
+
+		// Reconnect on failures
+		go func() {
+		monitor:
+			for {
+				ctx.WithError(<-cherr).Debug("Connection lost on mqtt adapter. Trying to reconnect")
+				var delay time.Duration = 25 * time.Millisecond
+				for {
+					if err := appAdapter.Reconnect(); err != nil {
+						ctx.WithError(err).Debug("Unable to reconnect")
+						delay *= 10
+						if delay > 10000*delay {
+							ctx.Fatal("All attempts to reconnect failed")
+						}
+					} else {
+						continue monitor
+					}
+					<-time.After(delay * time.Millisecond)
+				}
+			}
+		}()
 
 		if viper.GetInt("handler.status-port") > 0 {
 			statusNet := fmt.Sprintf("%s:%d", viper.GetString("handler.status-bind-address"), viper.GetInt("handler.status-port"))
