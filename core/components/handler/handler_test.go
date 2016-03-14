@@ -442,7 +442,7 @@ func TestHandleUp(t *testing.T) {
 				Codr: pointer.String("4/5"),
 				Size: pointer.Uint(21),
 			},
-			11,
+			4,
 			[16]byte{1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2},
 		)
 		appResp, _ := NewAPacket(
@@ -458,6 +458,7 @@ func TestHandleUp(t *testing.T) {
 			DevAddr:   lorawan.DevAddr([4]byte{2, 2, 2, 2}),
 			AppSKey:   [16]byte{1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2},
 			NwkSKey:   [16]byte{4, 4, 4, 4, 3, 3, 3, 3, 4, 4, 4, 4, 3, 3, 3, 3},
+			FCntDown:  3,
 		}
 		pktStorage := newMockPktStorage()
 		pktStorage.OutPull = appResp
@@ -852,6 +853,7 @@ func TestHandleUp(t *testing.T) {
 			DevAddr:   lorawan.DevAddr([4]byte{2, 2, 2, 2}),
 			AppSKey:   [16]byte{1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2},
 			NwkSKey:   [16]byte{4, 4, 4, 4, 3, 3, 3, 3, 4, 4, 4, 4, 3, 3, 3, 3},
+			FCntDown:  3,
 		}
 		pktStorage := newMockPktStorage()
 		pktStorage.OutPull = appResp
@@ -916,7 +918,7 @@ func TestHandleUp(t *testing.T) {
 				Codr: pointer.String("4/5"),
 				Size: pointer.Uint(21),
 			},
-			11,
+			15,
 			[16]byte{1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2},
 		)
 		appResp, _ := NewAPacket(
@@ -932,6 +934,7 @@ func TestHandleUp(t *testing.T) {
 			DevAddr:   lorawan.DevAddr([4]byte{2, 2, 2, 2}),
 			AppSKey:   [16]byte{1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2},
 			NwkSKey:   [16]byte{4, 4, 4, 4, 3, 3, 3, 3, 4, 4, 4, 4, 3, 3, 3, 3},
+			FCntDown:  14,
 		}
 		pktStorage := newMockPktStorage()
 		pktStorage.OutPull = appResp
