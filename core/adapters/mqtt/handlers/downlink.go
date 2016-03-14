@@ -23,7 +23,7 @@ func (a Downlink) Topic() string {
 }
 
 // Handle implements the mqtt.Handler interface
-func (a Downlink) Handle(client Client, chpkt chan<- PktReq, chreg chan<- RegReq, msg MQTT.Message) error {
+func (a Downlink) Handle(client MQTT.Client, chpkt chan<- PktReq, chreg chan<- RegReq, msg MQTT.Message) error {
 	infos := strings.Split(msg.Topic(), "/")
 
 	if len(infos) != 4 {

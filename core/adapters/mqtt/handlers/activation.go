@@ -23,7 +23,7 @@ func (a Activation) Topic() string {
 }
 
 // Handle implements the mqtt.Handler interface
-func (a Activation) Handle(client Client, chpkt chan<- PktReq, chreg chan<- RegReq, msg MQTT.Message) error {
+func (a Activation) Handle(client MQTT.Client, chpkt chan<- PktReq, chreg chan<- RegReq, msg MQTT.Message) error {
 	topicInfos := strings.Split(msg.Topic(), "/")
 
 	if len(topicInfos) != 4 {
