@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"strings"
 
-	MQTT "git.eclipse.org/gitroot/paho/org.eclipse.paho.mqtt.golang.git"
+	MQTT "github.com/KtorZ/paho.mqtt.golang"
 	. "github.com/TheThingsNetwork/ttn/core/adapters/mqtt"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/brocaar/lorawan"
