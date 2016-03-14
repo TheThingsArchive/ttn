@@ -430,7 +430,7 @@ func (p testPacket) DevEUI() lorawan.EUI64 {
 
 // ----- BUILD utilities
 func createAdapter(t *testing.T) (MQTT.Client, core.Adapter) {
-	client, err := NewClient("testClient", brokerURL, TCP)
+	client, _, err := NewClient("testClient", brokerURL, TCP)
 	if err != nil {
 		panic(err)
 	}
@@ -443,7 +443,7 @@ func createServers(recipients []testRecipient) ([]MQTT.Client, chan []byte) {
 	var clients []MQTT.Client
 	chresp := make(chan []byte, len(recipients))
 	for i, r := range recipients {
-		client, err := NewClient(fmt.Sprintf("Client%d%d", i, time.Now().UnixNano()), brokerURL, TCP)
+		client, _, err := NewClient(fmt.Sprintf("Client%d%d", i, time.Now().UnixNano()), brokerURL, TCP)
 		if err != nil {
 			panic(err)
 		}

@@ -107,7 +107,7 @@ func (b component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 		// It does matter here to use the DevEUI from the entry and not from the packet.
 		// The packet actually holds a DevAddr and the real DevEUI has been determined thanks
 		// to the MIC check
-		b.UpdateFCnt(mEntry.AppEUI, mEntry.DevEUI, packet.FCnt(), "up")
+		b.UpdateFCnt(mEntry.AppEUI, mEntry.DevEUI, packet.FCnt())
 
 		// 4. Then we forward the packet to the handler and wait for the response
 		hpacket, err := NewHPacket(mEntry.AppEUI, mEntry.DevEUI, packet.Payload(), packet.Metadata())
@@ -137,12 +137,12 @@ func (b component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
 			if !ok {
 				return errors.New(errors.Operational, "Received unexpected response")
 			}
+
+			// TODO Compute mic check
 			stats.MarkMeter("broker.downlink.in")
-			if err := bpacket.ComputeFCnt(mEntry.FCntDown); err != nil {
-				stats.MarkMeter("broker.downlink.invalid")
-				return errors.New(errors.Operational, "Received invalid response > frame counter incorrect")
+			if err := bpacket.SetMIC(mEntry.NwkSKey); err != nil {
+				return errors.New(errors.Structural, "Unable to set response MIC")
 			}
-			b.UpdateFCnt(mEntry.AppEUI, mEntry.DevEUI, bpacket.FCnt(), "down")
 		}
 
 		// 6. And finally, we acknowledge the answer

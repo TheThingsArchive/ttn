@@ -17,7 +17,6 @@ type mockController struct {
 	InUpdateAppEUI   lorawan.EUI64
 	InUpdateDevEUI   lorawan.EUI64
 	InUpdateFCnt     uint32
-	InUpdateDir      string
 	OutLookupDevices []devEntry
 	OutLookupApp     appEntry
 }
@@ -66,11 +65,10 @@ func (s *mockController) StoreApplication(reg core.ARegistration) error {
 	return s.Failures["StoreApplication"]
 }
 
-func (s *mockController) UpdateFCnt(appEUI lorawan.EUI64, devEUI lorawan.EUI64, fcnt uint32, dir string) error {
+func (s *mockController) UpdateFCnt(appEUI lorawan.EUI64, devEUI lorawan.EUI64, fcnt uint32) error {
 	s.InUpdateAppEUI = appEUI
 	s.InUpdateDevEUI = devEUI
 	s.InUpdateFCnt = fcnt
-	s.InUpdateDir = dir
 	return s.Failures["UpdateFCnt"]
 }
 

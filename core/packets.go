@@ -249,6 +249,11 @@ func (p *bpacket) ValidateMIC(key lorawan.AES128Key) (bool, error) {
 	return p.baserpacket.payload.ValidateMIC(key)
 }
 
+// SetMIC implements the core.BPacket interface
+func (p *bpacket) SetMIC(key lorawan.AES128Key) error {
+	return p.payload.SetMIC(key)
+}
+
 // Commands implements the core.BPacket interface
 func (p bpacket) Commands() []lorawan.MACCommand {
 	return p.baserpacket.payload.MACPayload.(*lorawan.MACPayload).FHDR.FOpts

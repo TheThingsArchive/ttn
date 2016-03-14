@@ -25,6 +25,9 @@ type mockDevStorage struct {
 	InLookupDevEUI      lorawan.EUI64
 	InStorePersonalized HRegistration
 	InStoreActivated    HRegistration
+	InUpdateAppEUI      lorawan.EUI64
+	InUpdateDevEUI      lorawan.EUI64
+	InUpdateFcnt        uint32
 }
 
 func newMockDevStorage() *mockDevStorage {
@@ -46,6 +49,13 @@ func (s *mockDevStorage) Lookup(appEUI lorawan.EUI64, devEUI lorawan.EUI64) (dev
 		return devEntry{}, s.Failures["Lookup"]
 	}
 	return s.OutLookup, nil
+}
+
+func (s *mockDevStorage) UpdateFCnt(appEUI lorawan.EUI64, devEUI lorawan.EUI64, fcnt uint32) error {
+	s.InUpdateAppEUI = appEUI
+	s.InUpdateDevEUI = devEUI
+	s.InUpdateFcnt = fcnt
+	return s.Failures["UpdateFCnt"]
 }
 
 func (s *mockDevStorage) StorePersonalized(r HRegistration) error {

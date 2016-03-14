@@ -17,11 +17,11 @@ import (
 
 // NetworkController gives a facade for manipulating the broker databases and devices
 type NetworkController interface {
-	UpdateFCnt(appEUI lorawan.EUI64, devEUI lorawan.EUI64, fcnt uint32, dir string) error
 	LookupDevices(devEUI lorawan.EUI64) ([]devEntry, error)
 	LookupApplication(appEUI lorawan.EUI64) (appEntry, error)
 	StoreDevice(reg core.BRegistration) error
 	StoreApplication(reg core.ARegistration) error
+	UpdateFCnt(appEUI lorawan.EUI64, devEUI lorawan.EUI64, fcnt uint32) error
 	Close() error
 }
 
@@ -31,7 +31,6 @@ type devEntry struct {
 	DevEUI    lorawan.EUI64
 	NwkSKey   lorawan.AES128Key
 	FCntUp    uint32
-	FCntDown  uint32
 }
 
 type appEntry struct {
@@ -86,7 +85,7 @@ func (s *controller) LookupApplication(appEUI lorawan.EUI64) (appEntry, error) {
 }
 
 // UpdateFCnt implements the broker.NetworkController interface
-func (s *controller) UpdateFCnt(appEUI lorawan.EUI64, devEUI lorawan.EUI64, fcnt uint32, dir string) error {
+func (s *controller) UpdateFCnt(appEUI lorawan.EUI64, devEUI lorawan.EUI64, fcnt uint32) error {
 	s.Lock()
 	defer s.Unlock()
 	itf, err := s.db.Lookup(s.Devices, devEUI[:], &devEntry{})
@@ -100,14 +99,7 @@ func (s *controller) UpdateFCnt(appEUI lorawan.EUI64, devEUI lorawan.EUI64, fcnt
 		entry := new(devEntry)
 		*entry = e
 		if entry.AppEUI == appEUI {
-			switch dir {
-			case "up":
-				entry.FCntUp = fcnt
-			case "down":
-				entry.FCntDown = fcnt
-			default:
-				return errors.New(errors.Implementation, "Unreckognized direction")
-			}
+			entry.FCntUp = fcnt
 		}
 		newEntries = append(newEntries, entry)
 	}
@@ -166,7 +158,6 @@ func (e devEntry) MarshalBinary() ([]byte, error) {
 	rw.Write(e.DevEUI)
 	rw.Write(e.NwkSKey)
 	rw.Write(e.FCntUp)
-	rw.Write(e.FCntDown)
 	return rw.Bytes()
 }
 
@@ -185,16 +176,6 @@ func (e *devEntry) UnmarshalBinary(data []byte) error {
 			return err
 		}
 		e.FCntUp = *fcnt
-		return nil
-	})
-	rw.TryRead(func(data []byte) error {
-		buf := new(bytes.Buffer)
-		buf.Write(data)
-		fcnt := new(uint32)
-		if err := binary.Read(buf, binary.BigEndian, fcnt); err != nil {
-			return err
-		}
-		e.FCntDown = *fcnt
 		return nil
 	})
 	return rw.Err()

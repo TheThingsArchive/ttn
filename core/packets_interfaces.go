@@ -40,6 +40,7 @@ type BPacket interface {
 	FCnt() uint32
 	Metadata() Metadata
 	Payload() lorawan.PHYPayload
+	SetMIC(key lorawan.AES128Key) error
 	ValidateMIC(key lorawan.AES128Key) (bool, error)
 }
 
