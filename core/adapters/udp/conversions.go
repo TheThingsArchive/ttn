@@ -91,57 +91,36 @@ func (a adapter) newDataRouterReq(rxpk semtech.RXPK, gid []byte) (*core.DataRout
 
 func (a adapter) newTXPK(resp core.DataRouterRes) (semtech.TXPK, error) {
 	// Step 0: validate the response
-	var p *core.LoRaWANData
-
-	// Validation::0 -> Payload is present
-	if p = resp.Payload; p == nil {
-		return semtech.TXPK{}, errors.New(errors.Structural, "Missing mandatory Payload")
+	mac, mhdr, fhdr, fctrl, err := core.ValidateLoRaWANData(resp.Payload)
+	if err != nil {
+		return semtech.TXPK{}, errors.New(errors.Structural, err)
 	}
-
-	// Validation::1 -> All required fields are there
-	if p.MHDR == nil || p.MACPayload == nil || p.MACPayload.FHDR == nil || p.MACPayload.FHDR.FCtrl == nil {
-		return semtech.TXPK{}, errors.New(errors.Structural, "Invalid Payload Structure")
-	}
-
-	// Validation::2 -> Metadata is present
 	if resp.Metadata == nil {
 		return semtech.TXPK{}, errors.New(errors.Structural, "Missing mandatory Metadata")
 	}
 
-	// Validation::3 -> The MIC is 4-bytes long
-	if len(p.MIC) != 4 {
-		return semtech.TXPK{}, errors.New(errors.Structural, "Invalid MIC")
-	}
-
-	// Validation::4 -> Device address is 4-bytes long
-	if len(p.MACPayload.FHDR.DevAddr) != 4 {
-		return semtech.TXPK{}, errors.New(errors.Structural, "Invalid Device Address")
-	}
-
-	mac, mhdr, fhdr, fctrl := p.MACPayload, p.MHDR, p.MACPayload.FHDR, p.MACPayload.FHDR.FCtrl
-
 	// Step 1: create a new LoRaWAN payload
 	macpayload := lorawan.NewMACPayload(false)
-	macpayload.FPort = uint8(mac.FPort)            // Validation::1
-	copy(macpayload.FHDR.DevAddr[:], fhdr.DevAddr) // Validation::1 && Validation::4
-	macpayload.FHDR.FCnt = fhdr.FCnt               // Validation::1
-	for _, data := range fhdr.FOpts {              // Validation::1
+	macpayload.FPort = uint8(mac.FPort)
+	copy(macpayload.FHDR.DevAddr[:], fhdr.DevAddr)
+	macpayload.FHDR.FCnt = fhdr.FCnt
+	for _, data := range fhdr.FOpts {
 		cmd := new(lorawan.MACCommand)
 		if err := cmd.UnmarshalBinary(data); err == nil { // We ignore invalid commands
 			macpayload.FHDR.FOpts = append(macpayload.FHDR.FOpts, *cmd)
 		}
 	}
-	macpayload.FHDR.FCtrl.ADR = fctrl.ADR                           // Validation::1
-	macpayload.FHDR.FCtrl.ACK = fctrl.Ack                           // Validation::1
-	macpayload.FHDR.FCtrl.ADRACKReq = fctrl.ADRAckReq               // Validation::1
-	macpayload.FHDR.FCtrl.FPending = fctrl.FPending                 // Validation::1
-	macpayload.FRMPayload = []lorawan.Payload{&lorawan.DataPayload{ // Validation::1
+	macpayload.FHDR.FCtrl.ADR = fctrl.ADR
+	macpayload.FHDR.FCtrl.ACK = fctrl.Ack
+	macpayload.FHDR.FCtrl.ADRACKReq = fctrl.ADRAckReq
+	macpayload.FHDR.FCtrl.FPending = fctrl.FPending
+	macpayload.FRMPayload = []lorawan.Payload{&lorawan.DataPayload{
 		Bytes: mac.FRMPayload,
 	}}
 	payload := lorawan.NewPHYPayload(false)
-	payload.MHDR.MType = lorawan.MType(mhdr.MType) // Validation::1
-	payload.MHDR.Major = lorawan.Major(mhdr.Major) // Validation::1
-	copy(payload.MIC[:], resp.Payload.MIC)         // Validation::1 && Validation::3
+	payload.MHDR.MType = lorawan.MType(mhdr.MType)
+	payload.MHDR.Major = lorawan.Major(mhdr.Major)
+	copy(payload.MIC[:], resp.Payload.MIC)
 	payload.MACPayload = macpayload
 
 	// Step2: Convert the physical payload to a base64 string (without the padding)
