@@ -91,37 +91,15 @@ func (a adapter) newDataRouterReq(rxpk semtech.RXPK, gid []byte) (*core.DataRout
 
 func (a adapter) newTXPK(resp core.DataRouterRes) (semtech.TXPK, error) {
 	// Step 0: validate the response
-	mac, mhdr, fhdr, fctrl, err := core.ValidateLoRaWANData(resp.Payload)
-	if err != nil {
-		return semtech.TXPK{}, errors.New(errors.Structural, err)
-	}
 	if resp.Metadata == nil {
 		return semtech.TXPK{}, errors.New(errors.Structural, "Missing mandatory Metadata")
 	}
 
 	// Step 1: create a new LoRaWAN payload
-	macpayload := lorawan.NewMACPayload(false)
-	macpayload.FPort = uint8(mac.FPort)
-	copy(macpayload.FHDR.DevAddr[:], fhdr.DevAddr)
-	macpayload.FHDR.FCnt = fhdr.FCnt
-	for _, data := range fhdr.FOpts {
-		cmd := new(lorawan.MACCommand)
-		if err := cmd.UnmarshalBinary(data); err == nil { // We ignore invalid commands
-			macpayload.FHDR.FOpts = append(macpayload.FHDR.FOpts, *cmd)
-		}
+	payload, err := core.NewLoRaWANData(resp.Payload, false)
+	if err != nil {
+		return semtech.TXPK{}, errors.New(errors.Structural, err)
 	}
-	macpayload.FHDR.FCtrl.ADR = fctrl.ADR
-	macpayload.FHDR.FCtrl.ACK = fctrl.Ack
-	macpayload.FHDR.FCtrl.ADRACKReq = fctrl.ADRAckReq
-	macpayload.FHDR.FCtrl.FPending = fctrl.FPending
-	macpayload.FRMPayload = []lorawan.Payload{&lorawan.DataPayload{
-		Bytes: mac.FRMPayload,
-	}}
-	payload := lorawan.NewPHYPayload(false)
-	payload.MHDR.MType = lorawan.MType(mhdr.MType)
-	payload.MHDR.Major = lorawan.Major(mhdr.Major)
-	copy(payload.MIC[:], resp.Payload.MIC)
-	payload.MACPayload = macpayload
 
 	// Step2: Convert the physical payload to a base64 string (without the padding)
 	raw, err := payload.MarshalBinary()
