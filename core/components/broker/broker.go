@@ -116,7 +116,7 @@ func (b component) HandleData(bctx context.Context, req *core.DataBrokerReq) (*c
 	}
 	defer conn.Close()
 	handler := core.NewHandlerClient(conn)
-	resp, err := handler.HandleData(context.Background(), &core.DataHandlerReq{
+	resp, err := handler.HandleDataUp(context.Background(), &core.DataUpHandlerReq{
 		Payload:  req.Payload.MACPayload.FRMPayload,
 		DevEUI:   mEntry.DevEUI,
 		AppEUI:   mEntry.AppEUI,
@@ -156,7 +156,7 @@ func (b component) HandleData(bctx context.Context, req *core.DataBrokerReq) (*c
 }
 
 // Register implements the core.BrokerServer interface
-func (b component) SubscribePersonalized(bctx context.Context, req *core.SubBrokerReq) (*core.SubBrokerRes, error) {
+func (b component) SubscribePersonalized(bctx context.Context, req *core.SubPersoBrokerReq) (*core.SubPersoBrokerRes, error) {
 	b.ctx.Debug("Handling personalized subscription")
 
 	// Ensure the entry is valid
@@ -164,9 +164,11 @@ func (b component) SubscribePersonalized(bctx context.Context, req *core.SubBrok
 		return nil, errors.New(errors.Structural, "Invalid Application EUI")
 	}
 
-	if len(req.DevEUI) != 8 {
-		return nil, errors.New(errors.Structural, "Invalid Device EUI")
+	if len(req.DevAddr) != 4 {
+		return nil, errors.New(errors.Structural, "Invalid Device Address")
 	}
+	devEUI := make([]byte, 8, 8)
+	copy(devEUI[4:], req.DevAddr)
 
 	var nwkSKey [16]byte
 	if len(req.NwkSKey) != 16 {
@@ -182,7 +184,7 @@ func (b component) SubscribePersonalized(bctx context.Context, req *core.SubBrok
 	return nil, b.StoreDevice(devEntry{
 		HandlerNet: req.HandlerNet,
 		AppEUI:     req.AppEUI,
-		DevEUI:     req.DevEUI,
+		DevEUI:     devEUI,
 		NwkSKey:    nwkSKey,
 		FCntUp:     0,
 	})
