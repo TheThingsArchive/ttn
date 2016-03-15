@@ -6,27 +6,24 @@ package handler
 import (
 	"fmt"
 
-	. "github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	dbutil "github.com/TheThingsNetwork/ttn/utils/storage"
-	"github.com/brocaar/lorawan"
 )
 
 // PktStorage gives a facade to manipulate the handler packets database
 type PktStorage interface {
-	Push(p APacket) error
-	Pull(appEUI lorawan.EUI64, devEUI lorawan.EUI64) (APacket, error)
+	Push(appEUI []byte, devEUI []byte, payload pktEntry) error
+	Pull(appEUI []byte, devEUI []byte) (pktEntry, error)
 	Close() error
 }
 
+const dbPackets = "packets"
+
 type pktStorage struct {
-	db   dbutil.Interface
-	Name string
+	db dbutil.Interface
 }
 
-type pktEntry struct {
-	APacket
-}
+type pktEntry []byte
 
 // NewPktStorage creates a new PktStorage
 func NewPktStorage(name string) (PktStorage, error) {
@@ -34,55 +31,48 @@ func NewPktStorage(name string) (PktStorage, error) {
 	if err != nil {
 		return nil, errors.New(errors.Operational, err)
 	}
-	return pktStorage{db: itf, Name: "pktStorage"}, nil
-}
-
-func keyFromEUIs(appEUI lorawan.EUI64, devEUI lorawan.EUI64) []byte {
-	return append(appEUI[:], devEUI[:]...)
+	return pktStorage{db: itf}, nil
 }
 
 // Push implements the PktStorage interface
-func (s pktStorage) Push(p APacket) error {
-	err := s.db.Store(s.Name, keyFromEUIs(p.AppEUI(), p.DevEUI()), []dbutil.Entry{&pktEntry{p}})
-	if err != nil {
-		return errors.New(errors.Operational, err)
-	}
-	return nil
+func (s pktStorage) Push(appEUI, devEUI []byte, payload pktEntry) error {
+	return s.db.Store(dbPackets, append(appEUI, devEUI...), []dbutil.Entry{&payload})
 }
 
 // Pull implements the PktStorage interface
-func (s pktStorage) Pull(appEUI lorawan.EUI64, devEUI lorawan.EUI64) (APacket, error) {
-	key := keyFromEUIs(appEUI, devEUI)
-
-	entries, err := s.db.Lookup(s.Name, key, &pktEntry{})
+func (s pktStorage) Pull(appEUI, devEUI []byte) (pktEntry, error) {
+	key := append(appEUI, devEUI...)
+	entries, err := s.db.Lookup(dbPackets, key, &pktEntry{})
 	if err != nil {
 		return nil, err // Operational || NotFound
 	}
 
-	packets, ok := entries.([]pktEntry)
+	payloads, ok := entries.([]pktEntry)
 	if !ok {
 		return nil, errors.New(errors.Operational, "Unable to retrieve data from db")
 	}
 
 	// NOTE: one day, those entries will be more complicated, with a ttl.
 	// Here's the place where we should check for that. Cheers.
-	if len(packets) == 0 {
+	if len(payloads) == 0 {
 		return nil, errors.New(errors.NotFound, fmt.Sprintf("Entry not found for %v", key))
 	}
 
-	pkt := packets[0]
+	payload := payloads[0]
 
 	var newEntries []dbutil.Entry
-	for _, p := range packets[1:] {
+	for _, p := range payloads[1:] {
 		newEntries = append(newEntries, &p)
 	}
 
-	if err := s.db.Replace(s.Name, key, newEntries); err != nil {
-		// TODO This is critical... we've just lost a packet
-		return nil, errors.New(errors.Operational, "Unable to restore data in db")
+	if err := s.db.Replace(dbPackets, key, newEntries); err != nil {
+		if err := s.db.Replace(dbPackets, key, newEntries); err != nil {
+			// TODO This is critical... we've just lost a packet
+			return nil, errors.New(errors.Operational, "Unable to restore data in db")
+		}
 	}
 
-	return pkt.APacket, nil
+	return payload, nil
 }
 
 // Close implements the PktStorage interface
@@ -92,19 +82,11 @@ func (s pktStorage) Close() error {
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface
 func (e pktEntry) MarshalBinary() ([]byte, error) {
-	return e.APacket.MarshalBinary()
+	return e, nil
 }
 
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
 func (e *pktEntry) UnmarshalBinary(data []byte) error {
-	itf, err := UnmarshalPacket(data)
-	if err != nil {
-		return errors.New(errors.Structural, err)
-	}
-	packet, ok := itf.(APacket)
-	if !ok {
-		return errors.New(errors.Structural, "Not a Handler packet")
-	}
-	e.APacket = packet
+	*e = data
 	return nil
 }
