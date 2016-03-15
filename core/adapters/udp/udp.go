@@ -24,7 +24,7 @@ type adapter struct {
 type replier func(data []byte) error
 
 // Starts constructs and launches a new udp adapter
-func Start(bindNet string, router core.RouterClient, ctx log.Interface) error {
+func Start(bindNet string, router core.RouterServer, ctx log.Interface) error {
 	// Create the udp connection and start listening with a goroutine
 	var udpConn *net.UDPConn
 	addr, err := net.ResolveUDPAddr("udp", bindNet)
@@ -51,7 +51,7 @@ func makeReply(addr *net.UDPAddr, conn *net.UDPConn) replier {
 // listen Handle incoming packets and forward them.
 //
 // Runs in its own goroutine.
-func (a adapter) listen(conn *net.UDPConn, router core.RouterClient) {
+func (a adapter) listen(conn *net.UDPConn, router core.RouterServer) {
 	defer conn.Close()
 	a.ctx.WithField("address", conn.LocalAddr()).Debug("Starting accept loop")
 
@@ -64,7 +64,7 @@ func (a adapter) listen(conn *net.UDPConn, router core.RouterClient) {
 		}
 
 		a.ctx.Debug("Incoming datagram")
-		go func(data []byte, reply replier, router core.RouterClient) {
+		go func(data []byte, reply replier, router core.RouterServer) {
 			pkt := new(semtech.Packet)
 			if err := pkt.UnmarshalBinary(data); err != nil {
 				a.ctx.WithError(err).Debug("Unable to handle datagram")
@@ -106,7 +106,7 @@ func (a adapter) handlePullData(pkt semtech.Packet, reply replier) error {
 }
 
 // Handle a PUSH_DATA packet coming from a gateway
-func (a adapter) handlePushData(pkt semtech.Packet, reply replier, router core.RouterClient) error {
+func (a adapter) handlePushData(pkt semtech.Packet, reply replier, router core.RouterServer) error {
 	stats.MarkMeter("semtech_adapter.push_data")
 	stats.MarkMeter(fmt.Sprintf("semtech_adapter.gateways.%X.push_data", pkt.GatewayId))
 	stats.SetString(fmt.Sprintf("semtech_adapter.gateways.%X.last_push_data", pkt.GatewayId), "date", time.Now().UTC().Format(time.RFC3339))
@@ -148,7 +148,7 @@ func (a adapter) handlePushData(pkt semtech.Packet, reply replier, router core.R
 	return <-cherr
 }
 
-func (a adapter) handleDataUp(rxpk semtech.RXPK, gid []byte, reply replier, router core.RouterClient) error {
+func (a adapter) handleDataUp(rxpk semtech.RXPK, gid []byte, reply replier, router core.RouterServer) error {
 	dataRouterReq, err := a.newDataRouterReq(rxpk, gid)
 	if err != nil {
 		return errors.New(errors.Structural, err)
