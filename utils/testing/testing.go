@@ -7,6 +7,7 @@ package testing
 
 import (
 	"fmt"
+	"reflect"
 	"testing"
 
 	"github.com/apex/log"
@@ -33,4 +34,12 @@ func Ko(t *testing.T, format string, a ...interface{}) {
 // Desc displays the provided description in cyan
 func Desc(t *testing.T, format string, a ...interface{}) {
 	t.Logf("\033[36m%s\033[0m", fmt.Sprintf(format, a...))
+}
+
+// Check serves a for general comparison between two objects
+func Check(t *testing.T, want, got interface{}, name string) {
+	if !reflect.DeepEqual(want, got) {
+		Ko(t, "%s don't match expectations.\nWant: %+v\nGot:  %+v", name, want, got)
+	}
+	Ok(t, fmt.Sprintf("Check %s", name))
 }

@@ -56,20 +56,14 @@ func NewScoreComputer(datr *string) (*ScoreComputer, scores, error) {
 // accordingly whether it is better than the existing one
 func (c *ScoreComputer) Update(s scores, id int, metadata core.Metadata) scores {
 	dutyRX1, dutyRX2 := metadata.DutyRX1, metadata.DutyRX2
-	lsnr, rssi := metadata.Lsnr, metadata.Rssi
+	lsnr, rssi := float64(metadata.Lsnr), int(metadata.Rssi)
 
-	if dutyRX1 == nil || dutyRX2 == nil || lsnr == nil || rssi == nil {
-		// NOTE We could possibly compute something if we had some of them (but not all).
-		// However, for now, we expect them all
-		return s
-	}
-
-	rx1 := computeScore(State(*dutyRX1), *lsnr, *rssi)
+	rx1 := computeScore(State(dutyRX1), lsnr, rssi)
 	if rx1 > s.rx1.Score {
 		s.rx1.Score, s.rx1.ID = rx1, id
 	}
 
-	rx2 := computeScore(State(*dutyRX2), *lsnr, *rssi)
+	rx2 := computeScore(State(dutyRX2), lsnr, rssi)
 	if rx2 > s.rx2.Score {
 		s.rx2.Score, s.rx2.ID = rx2, id
 	}

@@ -75,10 +75,10 @@ func TestUpdateGet(t *testing.T) {
 
 		// Operate
 		s = c.Update(s, 1, core.Metadata{
-			DutyRX1: pointer.Uint(uint(StateAvailable)),
-			DutyRX2: pointer.Uint(uint(StateBlocked)),
-			Rssi:    pointer.Int(-25),
-			Lsnr:    pointer.Float64(5.0),
+			DutyRX1: uint32(StateAvailable),
+			DutyRX2: uint32(StateBlocked),
+			Rssi:    -25,
+			Lsnr:    5.0,
 		})
 		got := c.Get(s)
 
@@ -97,10 +97,10 @@ func TestUpdateGet(t *testing.T) {
 
 		// Operate
 		s = c.Update(s, 1, core.Metadata{
-			DutyRX1: pointer.Uint(uint(StateBlocked)),
-			DutyRX2: pointer.Uint(uint(StateHighlyAvailable)),
-			Rssi:    pointer.Int(-25),
-			Lsnr:    pointer.Float64(5.0),
+			DutyRX1: uint32(StateBlocked),
+			DutyRX2: uint32(StateHighlyAvailable),
+			Rssi:    -25,
+			Lsnr:    5.0,
 		})
 		got := c.Get(s)
 
@@ -119,10 +119,10 @@ func TestUpdateGet(t *testing.T) {
 
 		// Operate
 		s = c.Update(s, 1, core.Metadata{
-			DutyRX1: pointer.Uint(uint(StateBlocked)),
-			DutyRX2: pointer.Uint(uint(StateBlocked)),
-			Rssi:    pointer.Int(-25),
-			Lsnr:    pointer.Float64(5.0),
+			DutyRX1: uint32(StateBlocked),
+			DutyRX2: uint32(StateBlocked),
+			Rssi:    -25,
+			Lsnr:    5.0,
 		})
 		got := c.Get(s)
 
@@ -141,10 +141,10 @@ func TestUpdateGet(t *testing.T) {
 
 		// Operate
 		s = c.Update(s, 1, core.Metadata{
-			DutyRX1: pointer.Uint(uint(StateAvailable)),
-			DutyRX2: pointer.Uint(uint(StateAvailable)),
-			Rssi:    pointer.Int(-25),
-			Lsnr:    pointer.Float64(5.0),
+			DutyRX1: uint32(StateAvailable),
+			DutyRX2: uint32(StateAvailable),
+			Rssi:    -25,
+			Lsnr:    5.0,
 		})
 		got := c.Get(s)
 
@@ -163,16 +163,16 @@ func TestUpdateGet(t *testing.T) {
 
 		// Operate
 		s = c.Update(s, 1, core.Metadata{
-			DutyRX1: pointer.Uint(uint(StateAvailable)),
-			DutyRX2: pointer.Uint(uint(StateAvailable)),
-			Rssi:    pointer.Int(-25),
-			Lsnr:    pointer.Float64(5.0),
+			DutyRX1: uint32(StateAvailable),
+			DutyRX2: uint32(StateAvailable),
+			Rssi:    -25,
+			Lsnr:    5.0,
 		})
 		s = c.Update(s, 2, core.Metadata{
-			DutyRX1: pointer.Uint(uint(StateAvailable)),
-			DutyRX2: pointer.Uint(uint(StateAvailable)),
-			Rssi:    pointer.Int(-25),
-			Lsnr:    pointer.Float64(3.0),
+			DutyRX1: uint32(StateAvailable),
+			DutyRX2: uint32(StateAvailable),
+			Rssi:    -25,
+			Lsnr:    3.0,
 		})
 		got := c.Get(s)
 
@@ -191,10 +191,10 @@ func TestUpdateGet(t *testing.T) {
 
 		// Operate
 		s = c.Update(s, 1, core.Metadata{
-			DutyRX1: pointer.Uint(uint(StateAvailable)),
-			DutyRX2: pointer.Uint(uint(StateBlocked)),
-			Rssi:    pointer.Int(-25),
-			Lsnr:    pointer.Float64(5.0),
+			DutyRX1: uint32(StateAvailable),
+			DutyRX2: uint32(StateBlocked),
+			Rssi:    -25,
+			Lsnr:    5.0,
 		})
 		got := c.Get(s)
 
@@ -213,16 +213,16 @@ func TestUpdateGet(t *testing.T) {
 
 		// Operate
 		s = c.Update(s, 1, core.Metadata{
-			DutyRX1: pointer.Uint(uint(StateWarning)),
-			DutyRX2: pointer.Uint(uint(StateAvailable)),
-			Rssi:    pointer.Int(-25),
-			Lsnr:    pointer.Float64(5.0),
+			DutyRX1: uint32(StateWarning),
+			DutyRX2: uint32(StateAvailable),
+			Rssi:    -25,
+			Lsnr:    5.0,
 		})
 		s = c.Update(s, 2, core.Metadata{
-			DutyRX1: pointer.Uint(uint(StateAvailable)),
-			DutyRX2: pointer.Uint(uint(StateAvailable)),
-			Rssi:    pointer.Int(-25),
-			Lsnr:    pointer.Float64(5.0),
+			DutyRX1: uint32(StateAvailable),
+			DutyRX2: uint32(StateAvailable),
+			Rssi:    -25,
+			Lsnr:    5.0,
 		})
 		got := c.Get(s)
 
@@ -241,41 +241,20 @@ func TestUpdateGet(t *testing.T) {
 
 		// Operate
 		s = c.Update(s, 1, core.Metadata{
-			DutyRX1: pointer.Uint(uint(StateAvailable)),
-			DutyRX2: pointer.Uint(uint(StateAvailable)),
-			Rssi:    pointer.Int(-25),
-			Lsnr:    pointer.Float64(5.1),
+			DutyRX1: uint32(StateAvailable),
+			DutyRX2: uint32(StateAvailable),
+			Rssi:    -25,
+			Lsnr:    5.1,
 		})
 		s = c.Update(s, 2, core.Metadata{
-			DutyRX1: pointer.Uint(uint(StateHighlyAvailable)),
-			DutyRX2: pointer.Uint(uint(StateHighlyAvailable)),
-			Rssi:    pointer.Int(-25),
-			Lsnr:    pointer.Float64(3.4),
+			DutyRX1: uint32(StateHighlyAvailable),
+			DutyRX2: uint32(StateHighlyAvailable),
+			Rssi:    -25,
+			Lsnr:    3.4,
 		})
 		got := c.Get(s)
 
 		// Check
 		CheckBestTargets(t, &BestTarget{ID: 1, IsRX2: true}, got)
-	}
-
-	// --------------------
-
-	{
-		Desc(t, "Missing metadata in update")
-
-		// Build
-		c, s, err := NewScoreComputer(pointer.String("SF12BW125"))
-		errutil.CheckErrors(t, nil, err)
-
-		// Operate
-		s = c.Update(s, 1, core.Metadata{
-			DutyRX1: pointer.Uint(uint(StateAvailable)),
-			Rssi:    pointer.Int(-25),
-			Lsnr:    pointer.Float64(5.1),
-		})
-		got := c.Get(s)
-
-		// Check
-		CheckBestTargets(t, nil, got)
 	}
 }
