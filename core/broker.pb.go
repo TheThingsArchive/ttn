@@ -8,6 +8,7 @@
 	It is generated from these files:
 		broker.proto
 		core.proto
+		application.proto
 		handler.proto
 		router.proto
 		lorawan.proto
@@ -15,12 +16,18 @@
 	It has these top-level messages:
 		DataBrokerReq
 		DataBrokerRes
-		SubBrokerReq
-		SubBrokerRes
+		SubPersoBrokerReq
+		SubPersoBrokerRes
 		Metadata
 		StatsMetadata
-		DataHandlerReq
-		DataHandlerRes
+		DataAppReq
+		DataAppRes
+		DataUpHandlerReq
+		DataUpHandlerRes
+		DataDownHandlerReq
+		DataDownHandlerRes
+		SubPersoHandlerReq
+		SubPersoHandlerRes
 		DataRouterReq
 		DataRouterRes
 		StatsReq
@@ -104,31 +111,31 @@ func (m *DataBrokerRes) GetMetadata() *Metadata {
 	return nil
 }
 
-type SubBrokerReq struct {
+type SubPersoBrokerReq struct {
 	HandlerNet string `protobuf:"bytes,1,opt,name=HandlerNet,json=handlerNet,proto3" json:"HandlerNet,omitempty"`
 	AppEUI     []byte `protobuf:"bytes,2,opt,name=AppEUI,json=appEUI,proto3" json:"AppEUI,omitempty"`
-	DevEUI     []byte `protobuf:"bytes,3,opt,name=DevEUI,json=devEUI,proto3" json:"DevEUI,omitempty"`
+	DevAddr    []byte `protobuf:"bytes,3,opt,name=DevAddr,json=devAddr,proto3" json:"DevAddr,omitempty"`
 	NwkSKey    []byte `protobuf:"bytes,4,opt,name=NwkSKey,json=nwkSKey,proto3" json:"NwkSKey,omitempty"`
 }
 
-func (m *SubBrokerReq) Reset()                    { *m = SubBrokerReq{} }
-func (m *SubBrokerReq) String() string            { return proto.CompactTextString(m) }
-func (*SubBrokerReq) ProtoMessage()               {}
-func (*SubBrokerReq) Descriptor() ([]byte, []int) { return fileDescriptorBroker, []int{2} }
+func (m *SubPersoBrokerReq) Reset()                    { *m = SubPersoBrokerReq{} }
+func (m *SubPersoBrokerReq) String() string            { return proto.CompactTextString(m) }
+func (*SubPersoBrokerReq) ProtoMessage()               {}
+func (*SubPersoBrokerReq) Descriptor() ([]byte, []int) { return fileDescriptorBroker, []int{2} }
 
-type SubBrokerRes struct {
+type SubPersoBrokerRes struct {
 }
 
-func (m *SubBrokerRes) Reset()                    { *m = SubBrokerRes{} }
-func (m *SubBrokerRes) String() string            { return proto.CompactTextString(m) }
-func (*SubBrokerRes) ProtoMessage()               {}
-func (*SubBrokerRes) Descriptor() ([]byte, []int) { return fileDescriptorBroker, []int{3} }
+func (m *SubPersoBrokerRes) Reset()                    { *m = SubPersoBrokerRes{} }
+func (m *SubPersoBrokerRes) String() string            { return proto.CompactTextString(m) }
+func (*SubPersoBrokerRes) ProtoMessage()               {}
+func (*SubPersoBrokerRes) Descriptor() ([]byte, []int) { return fileDescriptorBroker, []int{3} }
 
 func init() {
 	proto.RegisterType((*DataBrokerReq)(nil), "core.DataBrokerReq")
 	proto.RegisterType((*DataBrokerRes)(nil), "core.DataBrokerRes")
-	proto.RegisterType((*SubBrokerReq)(nil), "core.SubBrokerReq")
-	proto.RegisterType((*SubBrokerRes)(nil), "core.SubBrokerRes")
+	proto.RegisterType((*SubPersoBrokerReq)(nil), "core.SubPersoBrokerReq")
+	proto.RegisterType((*SubPersoBrokerRes)(nil), "core.SubPersoBrokerRes")
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -139,7 +146,7 @@ var _ grpc.ClientConn
 
 type BrokerClient interface {
 	HandleData(ctx context.Context, in *DataBrokerReq, opts ...grpc.CallOption) (*DataBrokerRes, error)
-	SubscribePersonalized(ctx context.Context, in *SubBrokerReq, opts ...grpc.CallOption) (*SubBrokerRes, error)
+	SubscribePersonalized(ctx context.Context, in *SubPersoBrokerReq, opts ...grpc.CallOption) (*SubPersoBrokerRes, error)
 }
 
 type brokerClient struct {
@@ -159,8 +166,8 @@ func (c *brokerClient) HandleData(ctx context.Context, in *DataBrokerReq, opts .
 	return out, nil
 }
 
-func (c *brokerClient) SubscribePersonalized(ctx context.Context, in *SubBrokerReq, opts ...grpc.CallOption) (*SubBrokerRes, error) {
-	out := new(SubBrokerRes)
+func (c *brokerClient) SubscribePersonalized(ctx context.Context, in *SubPersoBrokerReq, opts ...grpc.CallOption) (*SubPersoBrokerRes, error) {
+	out := new(SubPersoBrokerRes)
 	err := grpc.Invoke(ctx, "/core.Broker/SubscribePersonalized", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
@@ -172,7 +179,7 @@ func (c *brokerClient) SubscribePersonalized(ctx context.Context, in *SubBrokerR
 
 type BrokerServer interface {
 	HandleData(context.Context, *DataBrokerReq) (*DataBrokerRes, error)
-	SubscribePersonalized(context.Context, *SubBrokerReq) (*SubBrokerRes, error)
+	SubscribePersonalized(context.Context, *SubPersoBrokerReq) (*SubPersoBrokerRes, error)
 }
 
 func RegisterBrokerServer(s *grpc.Server, srv BrokerServer) {
@@ -192,7 +199,7 @@ func _Broker_HandleData_Handler(srv interface{}, ctx context.Context, dec func(i
 }
 
 func _Broker_SubscribePersonalized_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(SubBrokerReq)
+	in := new(SubPersoBrokerReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -295,7 +302,7 @@ func (m *DataBrokerRes) MarshalTo(data []byte) (int, error) {
 	return i, nil
 }
 
-func (m *SubBrokerReq) Marshal() (data []byte, err error) {
+func (m *SubPersoBrokerReq) Marshal() (data []byte, err error) {
 	size := m.Size()
 	data = make([]byte, size)
 	n, err := m.MarshalTo(data)
@@ -305,7 +312,7 @@ func (m *SubBrokerReq) Marshal() (data []byte, err error) {
 	return data[:n], nil
 }
 
-func (m *SubBrokerReq) MarshalTo(data []byte) (int, error) {
+func (m *SubPersoBrokerReq) MarshalTo(data []byte) (int, error) {
 	var i int
 	_ = i
 	var l int
@@ -324,12 +331,12 @@ func (m *SubBrokerReq) MarshalTo(data []byte) (int, error) {
 			i += copy(data[i:], m.AppEUI)
 		}
 	}
-	if m.DevEUI != nil {
-		if len(m.DevEUI) > 0 {
+	if m.DevAddr != nil {
+		if len(m.DevAddr) > 0 {
 			data[i] = 0x1a
 			i++
-			i = encodeVarintBroker(data, i, uint64(len(m.DevEUI)))
-			i += copy(data[i:], m.DevEUI)
+			i = encodeVarintBroker(data, i, uint64(len(m.DevAddr)))
+			i += copy(data[i:], m.DevAddr)
 		}
 	}
 	if m.NwkSKey != nil {
@@ -343,7 +350,7 @@ func (m *SubBrokerReq) MarshalTo(data []byte) (int, error) {
 	return i, nil
 }
 
-func (m *SubBrokerRes) Marshal() (data []byte, err error) {
+func (m *SubPersoBrokerRes) Marshal() (data []byte, err error) {
 	size := m.Size()
 	data = make([]byte, size)
 	n, err := m.MarshalTo(data)
@@ -353,7 +360,7 @@ func (m *SubBrokerRes) Marshal() (data []byte, err error) {
 	return data[:n], nil
 }
 
-func (m *SubBrokerRes) MarshalTo(data []byte) (int, error) {
+func (m *SubPersoBrokerRes) MarshalTo(data []byte) (int, error) {
 	var i int
 	_ = i
 	var l int
@@ -416,7 +423,7 @@ func (m *DataBrokerRes) Size() (n int) {
 	return n
 }
 
-func (m *SubBrokerReq) Size() (n int) {
+func (m *SubPersoBrokerReq) Size() (n int) {
 	var l int
 	_ = l
 	l = len(m.HandlerNet)
@@ -429,8 +436,8 @@ func (m *SubBrokerReq) Size() (n int) {
 			n += 1 + l + sovBroker(uint64(l))
 		}
 	}
-	if m.DevEUI != nil {
-		l = len(m.DevEUI)
+	if m.DevAddr != nil {
+		l = len(m.DevAddr)
 		if l > 0 {
 			n += 1 + l + sovBroker(uint64(l))
 		}
@@ -444,7 +451,7 @@ func (m *SubBrokerReq) Size() (n int) {
 	return n
 }
 
-func (m *SubBrokerRes) Size() (n int) {
+func (m *SubPersoBrokerRes) Size() (n int) {
 	var l int
 	_ = l
 	return n
@@ -695,7 +702,7 @@ func (m *DataBrokerRes) Unmarshal(data []byte) error {
 	}
 	return nil
 }
-func (m *SubBrokerReq) Unmarshal(data []byte) error {
+func (m *SubPersoBrokerReq) Unmarshal(data []byte) error {
 	l := len(data)
 	iNdEx := 0
 	for iNdEx < l {
@@ -718,10 +725,10 @@ func (m *SubBrokerReq) Unmarshal(data []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: SubBrokerReq: wiretype end group for non-group")
+			return fmt.Errorf("proto: SubPersoBrokerReq: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: SubBrokerReq: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: SubPersoBrokerReq: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -786,7 +793,7 @@ func (m *SubBrokerReq) Unmarshal(data []byte) error {
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field DevEUI", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field DevAddr", wireType)
 			}
 			var byteLen int
 			for shift := uint(0); ; shift += 7 {
@@ -810,9 +817,9 @@ func (m *SubBrokerReq) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.DevEUI = append(m.DevEUI[:0], data[iNdEx:postIndex]...)
-			if m.DevEUI == nil {
-				m.DevEUI = []byte{}
+			m.DevAddr = append(m.DevAddr[:0], data[iNdEx:postIndex]...)
+			if m.DevAddr == nil {
+				m.DevAddr = []byte{}
 			}
 			iNdEx = postIndex
 		case 4:
@@ -867,7 +874,7 @@ func (m *SubBrokerReq) Unmarshal(data []byte) error {
 	}
 	return nil
 }
-func (m *SubBrokerRes) Unmarshal(data []byte) error {
+func (m *SubPersoBrokerRes) Unmarshal(data []byte) error {
 	l := len(data)
 	iNdEx := 0
 	for iNdEx < l {
@@ -890,10 +897,10 @@ func (m *SubBrokerRes) Unmarshal(data []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: SubBrokerRes: wiretype end group for non-group")
+			return fmt.Errorf("proto: SubPersoBrokerRes: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: SubBrokerRes: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: SubPersoBrokerRes: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		default:
@@ -1023,7 +1030,7 @@ var (
 )
 
 var fileDescriptorBroker = []byte{
-	// 304 bytes of a gzipped FileDescriptorProto
+	// 310 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xe2, 0xe2, 0x49, 0x2a, 0xca, 0xcf,
 	0x4e, 0x2d, 0xd2, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x62, 0x49, 0xce, 0x2f, 0x4a, 0x95, 0xe2,
 	0xcd, 0xc9, 0x2f, 0x4a, 0x2c, 0x4f, 0xcc, 0x83, 0x08, 0x4a, 0x71, 0x81, 0x04, 0x21, 0x6c, 0xa5,
@@ -1031,16 +1038,17 @@ var fileDescriptorBroker = []byte{
 	0xf6, 0x80, 0xc4, 0xca, 0x9c, 0xfc, 0xc4, 0x14, 0x09, 0x46, 0x05, 0x46, 0x0d, 0x6e, 0x23, 0x41,
 	0x3d, 0xb0, 0x72, 0x9f, 0xfc, 0xa0, 0xc4, 0x70, 0x47, 0x3f, 0x90, 0xe2, 0x20, 0xf6, 0x02, 0x88,
 	0x0a, 0x21, 0x2d, 0x2e, 0x0e, 0xdf, 0xd4, 0x92, 0xc4, 0x14, 0xa0, 0xa0, 0x04, 0x13, 0x58, 0x35,
-	0x1f, 0x44, 0x35, 0x4c, 0x34, 0x88, 0x23, 0x17, 0xca, 0x42, 0xb7, 0xa9, 0x98, 0x76, 0x36, 0x55,
-	0x70, 0xf1, 0x04, 0x97, 0x26, 0x21, 0xbc, 0x24, 0xc7, 0xc5, 0xe5, 0x91, 0x98, 0x97, 0x92, 0x93,
-	0x5a, 0xe4, 0x97, 0x5a, 0x02, 0xb6, 0x8b, 0x33, 0x88, 0x2b, 0x03, 0x2e, 0x22, 0x24, 0xc6, 0xc5,
-	0xe6, 0x58, 0x50, 0xe0, 0x1a, 0xea, 0x09, 0x36, 0x99, 0x27, 0x88, 0x2d, 0x11, 0xcc, 0x03, 0x89,
-	0xbb, 0xa4, 0x96, 0x81, 0xc4, 0x99, 0x21, 0xe2, 0x29, 0x60, 0x9e, 0x90, 0x04, 0x17, 0xbb, 0x5f,
-	0x79, 0x76, 0xb0, 0x77, 0x6a, 0xa5, 0x04, 0x0b, 0x58, 0x82, 0x3d, 0x0f, 0xc2, 0x55, 0xe2, 0x43,
-	0xb1, 0xb9, 0xd8, 0xa8, 0x91, 0x91, 0x8b, 0x0d, 0xc2, 0x13, 0x32, 0x83, 0x39, 0x02, 0xe4, 0x2f,
-	0x21, 0x61, 0x88, 0xe3, 0x51, 0x82, 0x5e, 0x0a, 0x8b, 0x60, 0xb1, 0x90, 0x3d, 0x97, 0x28, 0xd0,
-	0xc8, 0xe2, 0xe4, 0xa2, 0xcc, 0xa4, 0xd4, 0x80, 0xd4, 0xa2, 0xe2, 0xfc, 0xbc, 0xc4, 0x9c, 0xcc,
-	0xaa, 0xd4, 0x14, 0x21, 0x21, 0x88, 0x6a, 0x64, 0x9f, 0x4a, 0x61, 0x8a, 0x15, 0x3b, 0x09, 0x9c,
-	0x78, 0x24, 0xc7, 0x78, 0x01, 0x88, 0x1f, 0x00, 0xf1, 0x8c, 0xc7, 0x72, 0x0c, 0x49, 0x6c, 0xe0,
-	0xa8, 0x37, 0x06, 0x04, 0x00, 0x00, 0xff, 0xff, 0xba, 0x4b, 0xd2, 0x13, 0x2b, 0x02, 0x00, 0x00,
+	0x1f, 0x44, 0x35, 0x4c, 0x34, 0x88, 0x23, 0x17, 0xca, 0x42, 0xb7, 0xa9, 0x98, 0x76, 0x36, 0xd5,
+	0x73, 0x09, 0x06, 0x97, 0x26, 0x05, 0xa4, 0x16, 0x15, 0xe7, 0x23, 0xfc, 0x25, 0xc7, 0xc5, 0xe5,
+	0x91, 0x98, 0x97, 0x92, 0x93, 0x5a, 0xe4, 0x97, 0x5a, 0x02, 0xb6, 0x90, 0x33, 0x88, 0x2b, 0x03,
+	0x2e, 0x22, 0x24, 0xc6, 0xc5, 0xe6, 0x58, 0x50, 0xe0, 0x1a, 0xea, 0x09, 0x36, 0x9e, 0x27, 0x88,
+	0x2d, 0x11, 0xcc, 0x13, 0x92, 0xe0, 0x62, 0x77, 0x49, 0x2d, 0x73, 0x4c, 0x49, 0x29, 0x92, 0x60,
+	0x06, 0x4b, 0xb0, 0xa7, 0x40, 0xb8, 0x20, 0x19, 0xbf, 0xf2, 0xec, 0x60, 0xef, 0xd4, 0x4a, 0x09,
+	0x16, 0x88, 0x4c, 0x1e, 0x84, 0xab, 0x24, 0x8c, 0xe9, 0x80, 0x62, 0xa3, 0x6e, 0x46, 0x2e, 0x36,
+	0x08, 0x4f, 0xc8, 0x0c, 0xe6, 0x16, 0x90, 0x1f, 0x85, 0x84, 0x21, 0x1e, 0x41, 0x89, 0x06, 0x29,
+	0x2c, 0x82, 0xc5, 0x42, 0x9e, 0x5c, 0xa2, 0x40, 0x73, 0x8b, 0x93, 0x8b, 0x32, 0x93, 0x52, 0xc1,
+	0xa6, 0xe7, 0x25, 0xe6, 0x64, 0x56, 0xa5, 0xa6, 0x08, 0x89, 0x43, 0x54, 0x63, 0xf8, 0x5a, 0x0a,
+	0x87, 0x44, 0xb1, 0x93, 0xc0, 0x89, 0x47, 0x72, 0x8c, 0x17, 0x80, 0xf8, 0x01, 0x10, 0xcf, 0x78,
+	0x2c, 0xc7, 0x90, 0xc4, 0x06, 0x4e, 0x10, 0xc6, 0x80, 0x00, 0x00, 0x00, 0xff, 0xff, 0x9b, 0x59,
+	0x69, 0x59, 0x41, 0x02, 0x00, 0x00,
 }

@@ -20,7 +20,7 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
-type DataHandlerReq struct {
+type DataUpHandlerReq struct {
 	Payload  []byte    `protobuf:"bytes,1,opt,name=Payload,json=payload,proto3" json:"Payload,omitempty"`
 	Metadata *Metadata `protobuf:"bytes,2,opt,name=Metadata,json=metadata" json:"Metadata,omitempty"`
 	AppEUI   []byte    `protobuf:"bytes,3,opt,name=AppEUI,json=appEUI,proto3" json:"AppEUI,omitempty"`
@@ -29,45 +29,88 @@ type DataHandlerReq struct {
 	MType    uint32    `protobuf:"varint,6,opt,name=MType,json=mType,proto3" json:"MType,omitempty"`
 }
 
-func (m *DataHandlerReq) Reset()                    { *m = DataHandlerReq{} }
-func (m *DataHandlerReq) String() string            { return proto.CompactTextString(m) }
-func (*DataHandlerReq) ProtoMessage()               {}
-func (*DataHandlerReq) Descriptor() ([]byte, []int) { return fileDescriptorHandler, []int{0} }
+func (m *DataUpHandlerReq) Reset()                    { *m = DataUpHandlerReq{} }
+func (m *DataUpHandlerReq) String() string            { return proto.CompactTextString(m) }
+func (*DataUpHandlerReq) ProtoMessage()               {}
+func (*DataUpHandlerReq) Descriptor() ([]byte, []int) { return fileDescriptorHandler, []int{0} }
 
-func (m *DataHandlerReq) GetMetadata() *Metadata {
+func (m *DataUpHandlerReq) GetMetadata() *Metadata {
 	if m != nil {
 		return m.Metadata
 	}
 	return nil
 }
 
-type DataHandlerRes struct {
+type DataUpHandlerRes struct {
 	Payload  *LoRaWANData `protobuf:"bytes,1,opt,name=Payload,json=payload" json:"Payload,omitempty"`
 	Metadata *Metadata    `protobuf:"bytes,2,opt,name=Metadata,json=metadata" json:"Metadata,omitempty"`
 }
 
-func (m *DataHandlerRes) Reset()                    { *m = DataHandlerRes{} }
-func (m *DataHandlerRes) String() string            { return proto.CompactTextString(m) }
-func (*DataHandlerRes) ProtoMessage()               {}
-func (*DataHandlerRes) Descriptor() ([]byte, []int) { return fileDescriptorHandler, []int{1} }
+func (m *DataUpHandlerRes) Reset()                    { *m = DataUpHandlerRes{} }
+func (m *DataUpHandlerRes) String() string            { return proto.CompactTextString(m) }
+func (*DataUpHandlerRes) ProtoMessage()               {}
+func (*DataUpHandlerRes) Descriptor() ([]byte, []int) { return fileDescriptorHandler, []int{1} }
 
-func (m *DataHandlerRes) GetPayload() *LoRaWANData {
+func (m *DataUpHandlerRes) GetPayload() *LoRaWANData {
 	if m != nil {
 		return m.Payload
 	}
 	return nil
 }
 
-func (m *DataHandlerRes) GetMetadata() *Metadata {
+func (m *DataUpHandlerRes) GetMetadata() *Metadata {
 	if m != nil {
 		return m.Metadata
 	}
 	return nil
 }
 
+type DataDownHandlerReq struct {
+	Payload []byte `protobuf:"bytes,1,opt,name=Payload,json=payload,proto3" json:"Payload,omitempty"`
+	AppEUI  []byte `protobuf:"bytes,2,opt,name=AppEUI,json=appEUI,proto3" json:"AppEUI,omitempty"`
+	DevEUI  []byte `protobuf:"bytes,3,opt,name=DevEUI,json=devEUI,proto3" json:"DevEUI,omitempty"`
+}
+
+func (m *DataDownHandlerReq) Reset()                    { *m = DataDownHandlerReq{} }
+func (m *DataDownHandlerReq) String() string            { return proto.CompactTextString(m) }
+func (*DataDownHandlerReq) ProtoMessage()               {}
+func (*DataDownHandlerReq) Descriptor() ([]byte, []int) { return fileDescriptorHandler, []int{2} }
+
+type DataDownHandlerRes struct {
+}
+
+func (m *DataDownHandlerRes) Reset()                    { *m = DataDownHandlerRes{} }
+func (m *DataDownHandlerRes) String() string            { return proto.CompactTextString(m) }
+func (*DataDownHandlerRes) ProtoMessage()               {}
+func (*DataDownHandlerRes) Descriptor() ([]byte, []int) { return fileDescriptorHandler, []int{3} }
+
+type SubPersoHandlerReq struct {
+	AppEUI  []byte `protobuf:"bytes,1,opt,name=AppEUI,json=appEUI,proto3" json:"AppEUI,omitempty"`
+	DevAddr []byte `protobuf:"bytes,2,opt,name=DevAddr,json=devAddr,proto3" json:"DevAddr,omitempty"`
+	NwkSKey []byte `protobuf:"bytes,3,opt,name=NwkSKey,json=nwkSKey,proto3" json:"NwkSKey,omitempty"`
+	AppSKey []byte `protobuf:"bytes,4,opt,name=AppSKey,json=appSKey,proto3" json:"AppSKey,omitempty"`
+}
+
+func (m *SubPersoHandlerReq) Reset()                    { *m = SubPersoHandlerReq{} }
+func (m *SubPersoHandlerReq) String() string            { return proto.CompactTextString(m) }
+func (*SubPersoHandlerReq) ProtoMessage()               {}
+func (*SubPersoHandlerReq) Descriptor() ([]byte, []int) { return fileDescriptorHandler, []int{4} }
+
+type SubPersoHandlerRes struct {
+}
+
+func (m *SubPersoHandlerRes) Reset()                    { *m = SubPersoHandlerRes{} }
+func (m *SubPersoHandlerRes) String() string            { return proto.CompactTextString(m) }
+func (*SubPersoHandlerRes) ProtoMessage()               {}
+func (*SubPersoHandlerRes) Descriptor() ([]byte, []int) { return fileDescriptorHandler, []int{5} }
+
 func init() {
-	proto.RegisterType((*DataHandlerReq)(nil), "core.DataHandlerReq")
-	proto.RegisterType((*DataHandlerRes)(nil), "core.DataHandlerRes")
+	proto.RegisterType((*DataUpHandlerReq)(nil), "core.DataUpHandlerReq")
+	proto.RegisterType((*DataUpHandlerRes)(nil), "core.DataUpHandlerRes")
+	proto.RegisterType((*DataDownHandlerReq)(nil), "core.DataDownHandlerReq")
+	proto.RegisterType((*DataDownHandlerRes)(nil), "core.DataDownHandlerRes")
+	proto.RegisterType((*SubPersoHandlerReq)(nil), "core.SubPersoHandlerReq")
+	proto.RegisterType((*SubPersoHandlerRes)(nil), "core.SubPersoHandlerRes")
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -77,7 +120,9 @@ var _ grpc.ClientConn
 // Client API for Handler service
 
 type HandlerClient interface {
-	HandleData(ctx context.Context, in *DataHandlerReq, opts ...grpc.CallOption) (*DataHandlerRes, error)
+	HandleDataUp(ctx context.Context, in *DataUpHandlerReq, opts ...grpc.CallOption) (*DataUpHandlerRes, error)
+	HandleDataDown(ctx context.Context, in *DataDownHandlerReq, opts ...grpc.CallOption) (*DataDownHandlerRes, error)
+	SubscribePersonalized(ctx context.Context, in *SubPersoHandlerReq, opts ...grpc.CallOption) (*SubPersoHandlerRes, error)
 }
 
 type handlerClient struct {
@@ -88,9 +133,27 @@ func NewHandlerClient(cc *grpc.ClientConn) HandlerClient {
 	return &handlerClient{cc}
 }
 
-func (c *handlerClient) HandleData(ctx context.Context, in *DataHandlerReq, opts ...grpc.CallOption) (*DataHandlerRes, error) {
-	out := new(DataHandlerRes)
-	err := grpc.Invoke(ctx, "/core.Handler/HandleData", in, out, c.cc, opts...)
+func (c *handlerClient) HandleDataUp(ctx context.Context, in *DataUpHandlerReq, opts ...grpc.CallOption) (*DataUpHandlerRes, error) {
+	out := new(DataUpHandlerRes)
+	err := grpc.Invoke(ctx, "/core.Handler/HandleDataUp", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *handlerClient) HandleDataDown(ctx context.Context, in *DataDownHandlerReq, opts ...grpc.CallOption) (*DataDownHandlerRes, error) {
+	out := new(DataDownHandlerRes)
+	err := grpc.Invoke(ctx, "/core.Handler/HandleDataDown", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *handlerClient) SubscribePersonalized(ctx context.Context, in *SubPersoHandlerReq, opts ...grpc.CallOption) (*SubPersoHandlerRes, error) {
+	out := new(SubPersoHandlerRes)
+	err := grpc.Invoke(ctx, "/core.Handler/SubscribePersonalized", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -100,19 +163,45 @@ func (c *handlerClient) HandleData(ctx context.Context, in *DataHandlerReq, opts
 // Server API for Handler service
 
 type HandlerServer interface {
-	HandleData(context.Context, *DataHandlerReq) (*DataHandlerRes, error)
+	HandleDataUp(context.Context, *DataUpHandlerReq) (*DataUpHandlerRes, error)
+	HandleDataDown(context.Context, *DataDownHandlerReq) (*DataDownHandlerRes, error)
+	SubscribePersonalized(context.Context, *SubPersoHandlerReq) (*SubPersoHandlerRes, error)
 }
 
 func RegisterHandlerServer(s *grpc.Server, srv HandlerServer) {
 	s.RegisterService(&_Handler_serviceDesc, srv)
 }
 
-func _Handler_HandleData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(DataHandlerReq)
+func _Handler_HandleDataUp_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(DataUpHandlerReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(HandlerServer).HandleData(ctx, in)
+	out, err := srv.(HandlerServer).HandleDataUp(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _Handler_HandleDataDown_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(DataDownHandlerReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(HandlerServer).HandleDataDown(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _Handler_SubscribePersonalized_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(SubPersoHandlerReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(HandlerServer).SubscribePersonalized(ctx, in)
 	if err != nil {
 		return nil, err
 	}
@@ -124,14 +213,22 @@ var _Handler_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*HandlerServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "HandleData",
-			Handler:    _Handler_HandleData_Handler,
+			MethodName: "HandleDataUp",
+			Handler:    _Handler_HandleDataUp_Handler,
+		},
+		{
+			MethodName: "HandleDataDown",
+			Handler:    _Handler_HandleDataDown_Handler,
+		},
+		{
+			MethodName: "SubscribePersonalized",
+			Handler:    _Handler_SubscribePersonalized_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{},
 }
 
-func (m *DataHandlerReq) Marshal() (data []byte, err error) {
+func (m *DataUpHandlerReq) Marshal() (data []byte, err error) {
 	size := m.Size()
 	data = make([]byte, size)
 	n, err := m.MarshalTo(data)
@@ -141,7 +238,7 @@ func (m *DataHandlerReq) Marshal() (data []byte, err error) {
 	return data[:n], nil
 }
 
-func (m *DataHandlerReq) MarshalTo(data []byte) (int, error) {
+func (m *DataUpHandlerReq) MarshalTo(data []byte) (int, error) {
 	var i int
 	_ = i
 	var l int
@@ -193,7 +290,7 @@ func (m *DataHandlerReq) MarshalTo(data []byte) (int, error) {
 	return i, nil
 }
 
-func (m *DataHandlerRes) Marshal() (data []byte, err error) {
+func (m *DataUpHandlerRes) Marshal() (data []byte, err error) {
 	size := m.Size()
 	data = make([]byte, size)
 	n, err := m.MarshalTo(data)
@@ -203,7 +300,7 @@ func (m *DataHandlerRes) Marshal() (data []byte, err error) {
 	return data[:n], nil
 }
 
-func (m *DataHandlerRes) MarshalTo(data []byte) (int, error) {
+func (m *DataUpHandlerRes) MarshalTo(data []byte) (int, error) {
 	var i int
 	_ = i
 	var l int
@@ -228,6 +325,134 @@ func (m *DataHandlerRes) MarshalTo(data []byte) (int, error) {
 		}
 		i += n3
 	}
+	return i, nil
+}
+
+func (m *DataDownHandlerReq) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *DataDownHandlerReq) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if m.Payload != nil {
+		if len(m.Payload) > 0 {
+			data[i] = 0xa
+			i++
+			i = encodeVarintHandler(data, i, uint64(len(m.Payload)))
+			i += copy(data[i:], m.Payload)
+		}
+	}
+	if m.AppEUI != nil {
+		if len(m.AppEUI) > 0 {
+			data[i] = 0x12
+			i++
+			i = encodeVarintHandler(data, i, uint64(len(m.AppEUI)))
+			i += copy(data[i:], m.AppEUI)
+		}
+	}
+	if m.DevEUI != nil {
+		if len(m.DevEUI) > 0 {
+			data[i] = 0x1a
+			i++
+			i = encodeVarintHandler(data, i, uint64(len(m.DevEUI)))
+			i += copy(data[i:], m.DevEUI)
+		}
+	}
+	return i, nil
+}
+
+func (m *DataDownHandlerRes) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *DataDownHandlerRes) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	return i, nil
+}
+
+func (m *SubPersoHandlerReq) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *SubPersoHandlerReq) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if m.AppEUI != nil {
+		if len(m.AppEUI) > 0 {
+			data[i] = 0xa
+			i++
+			i = encodeVarintHandler(data, i, uint64(len(m.AppEUI)))
+			i += copy(data[i:], m.AppEUI)
+		}
+	}
+	if m.DevAddr != nil {
+		if len(m.DevAddr) > 0 {
+			data[i] = 0x12
+			i++
+			i = encodeVarintHandler(data, i, uint64(len(m.DevAddr)))
+			i += copy(data[i:], m.DevAddr)
+		}
+	}
+	if m.NwkSKey != nil {
+		if len(m.NwkSKey) > 0 {
+			data[i] = 0x1a
+			i++
+			i = encodeVarintHandler(data, i, uint64(len(m.NwkSKey)))
+			i += copy(data[i:], m.NwkSKey)
+		}
+	}
+	if m.AppSKey != nil {
+		if len(m.AppSKey) > 0 {
+			data[i] = 0x22
+			i++
+			i = encodeVarintHandler(data, i, uint64(len(m.AppSKey)))
+			i += copy(data[i:], m.AppSKey)
+		}
+	}
+	return i, nil
+}
+
+func (m *SubPersoHandlerRes) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *SubPersoHandlerRes) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
 	return i, nil
 }
 
@@ -258,7 +483,7 @@ func encodeVarintHandler(data []byte, offset int, v uint64) int {
 	data[offset] = uint8(v)
 	return offset + 1
 }
-func (m *DataHandlerReq) Size() (n int) {
+func (m *DataUpHandlerReq) Size() (n int) {
 	var l int
 	_ = l
 	if m.Payload != nil {
@@ -292,7 +517,7 @@ func (m *DataHandlerReq) Size() (n int) {
 	return n
 }
 
-func (m *DataHandlerRes) Size() (n int) {
+func (m *DataUpHandlerRes) Size() (n int) {
 	var l int
 	_ = l
 	if m.Payload != nil {
@@ -303,6 +528,72 @@ func (m *DataHandlerRes) Size() (n int) {
 		l = m.Metadata.Size()
 		n += 1 + l + sovHandler(uint64(l))
 	}
+	return n
+}
+
+func (m *DataDownHandlerReq) Size() (n int) {
+	var l int
+	_ = l
+	if m.Payload != nil {
+		l = len(m.Payload)
+		if l > 0 {
+			n += 1 + l + sovHandler(uint64(l))
+		}
+	}
+	if m.AppEUI != nil {
+		l = len(m.AppEUI)
+		if l > 0 {
+			n += 1 + l + sovHandler(uint64(l))
+		}
+	}
+	if m.DevEUI != nil {
+		l = len(m.DevEUI)
+		if l > 0 {
+			n += 1 + l + sovHandler(uint64(l))
+		}
+	}
+	return n
+}
+
+func (m *DataDownHandlerRes) Size() (n int) {
+	var l int
+	_ = l
+	return n
+}
+
+func (m *SubPersoHandlerReq) Size() (n int) {
+	var l int
+	_ = l
+	if m.AppEUI != nil {
+		l = len(m.AppEUI)
+		if l > 0 {
+			n += 1 + l + sovHandler(uint64(l))
+		}
+	}
+	if m.DevAddr != nil {
+		l = len(m.DevAddr)
+		if l > 0 {
+			n += 1 + l + sovHandler(uint64(l))
+		}
+	}
+	if m.NwkSKey != nil {
+		l = len(m.NwkSKey)
+		if l > 0 {
+			n += 1 + l + sovHandler(uint64(l))
+		}
+	}
+	if m.AppSKey != nil {
+		l = len(m.AppSKey)
+		if l > 0 {
+			n += 1 + l + sovHandler(uint64(l))
+		}
+	}
+	return n
+}
+
+func (m *SubPersoHandlerRes) Size() (n int) {
+	var l int
+	_ = l
 	return n
 }
 
@@ -319,7 +610,7 @@ func sovHandler(x uint64) (n int) {
 func sozHandler(x uint64) (n int) {
 	return sovHandler(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *DataHandlerReq) Unmarshal(data []byte) error {
+func (m *DataUpHandlerReq) Unmarshal(data []byte) error {
 	l := len(data)
 	iNdEx := 0
 	for iNdEx < l {
@@ -342,10 +633,10 @@ func (m *DataHandlerReq) Unmarshal(data []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: DataHandlerReq: wiretype end group for non-group")
+			return fmt.Errorf("proto: DataUpHandlerReq: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: DataHandlerReq: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: DataUpHandlerReq: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -533,7 +824,7 @@ func (m *DataHandlerReq) Unmarshal(data []byte) error {
 	}
 	return nil
 }
-func (m *DataHandlerRes) Unmarshal(data []byte) error {
+func (m *DataUpHandlerRes) Unmarshal(data []byte) error {
 	l := len(data)
 	iNdEx := 0
 	for iNdEx < l {
@@ -556,10 +847,10 @@ func (m *DataHandlerRes) Unmarshal(data []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: DataHandlerRes: wiretype end group for non-group")
+			return fmt.Errorf("proto: DataUpHandlerRes: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: DataHandlerRes: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: DataUpHandlerRes: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -628,6 +919,423 @@ func (m *DataHandlerRes) Unmarshal(data []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipHandler(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthHandler
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *DataDownHandlerReq) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowHandler
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DataDownHandlerReq: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DataDownHandlerReq: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Payload", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandler
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthHandler
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Payload = append(m.Payload[:0], data[iNdEx:postIndex]...)
+			if m.Payload == nil {
+				m.Payload = []byte{}
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AppEUI", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandler
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthHandler
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AppEUI = append(m.AppEUI[:0], data[iNdEx:postIndex]...)
+			if m.AppEUI == nil {
+				m.AppEUI = []byte{}
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DevEUI", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandler
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthHandler
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.DevEUI = append(m.DevEUI[:0], data[iNdEx:postIndex]...)
+			if m.DevEUI == nil {
+				m.DevEUI = []byte{}
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipHandler(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthHandler
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *DataDownHandlerRes) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowHandler
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DataDownHandlerRes: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DataDownHandlerRes: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipHandler(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthHandler
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *SubPersoHandlerReq) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowHandler
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: SubPersoHandlerReq: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: SubPersoHandlerReq: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AppEUI", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandler
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthHandler
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AppEUI = append(m.AppEUI[:0], data[iNdEx:postIndex]...)
+			if m.AppEUI == nil {
+				m.AppEUI = []byte{}
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DevAddr", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandler
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthHandler
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.DevAddr = append(m.DevAddr[:0], data[iNdEx:postIndex]...)
+			if m.DevAddr == nil {
+				m.DevAddr = []byte{}
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NwkSKey", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandler
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthHandler
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.NwkSKey = append(m.NwkSKey[:0], data[iNdEx:postIndex]...)
+			if m.NwkSKey == nil {
+				m.NwkSKey = []byte{}
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AppSKey", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandler
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthHandler
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AppSKey = append(m.AppSKey[:0], data[iNdEx:postIndex]...)
+			if m.AppSKey == nil {
+				m.AppSKey = []byte{}
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipHandler(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthHandler
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *SubPersoHandlerRes) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowHandler
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: SubPersoHandlerRes: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: SubPersoHandlerRes: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
 		default:
 			iNdEx = preIndex
 			skippy, err := skipHandler(data[iNdEx:])
@@ -755,22 +1463,31 @@ var (
 )
 
 var fileDescriptorHandler = []byte{
-	// 263 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xe2, 0xe2, 0xcd, 0x48, 0xcc, 0x4b,
-	0xc9, 0x49, 0x2d, 0xd2, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x62, 0x49, 0xce, 0x2f, 0x4a, 0x95,
-	0xe2, 0xcd, 0xc9, 0x2f, 0x4a, 0x2c, 0x4f, 0xcc, 0x83, 0x08, 0x4a, 0x71, 0x81, 0x04, 0x21, 0x6c,
-	0xa5, 0x0d, 0x8c, 0x5c, 0x7c, 0x2e, 0x89, 0x25, 0x89, 0x1e, 0x10, 0x6d, 0x41, 0xa9, 0x85, 0x42,
-	0x12, 0x5c, 0xec, 0x01, 0x89, 0x95, 0x39, 0xf9, 0x89, 0x29, 0x12, 0x8c, 0x0a, 0x8c, 0x1a, 0x3c,
-	0x41, 0xec, 0x05, 0x10, 0xae, 0x90, 0x16, 0x17, 0x87, 0x6f, 0x6a, 0x49, 0x62, 0x0a, 0x50, 0xbd,
-	0x04, 0x13, 0x50, 0x8a, 0xdb, 0x88, 0x4f, 0x0f, 0x6c, 0x16, 0x4c, 0x34, 0x88, 0x23, 0x17, 0xca,
-	0x12, 0x12, 0xe3, 0x62, 0x73, 0x2c, 0x28, 0x70, 0x0d, 0xf5, 0x94, 0x60, 0x06, 0x1b, 0xc2, 0x96,
-	0x08, 0xe6, 0x81, 0xc4, 0x5d, 0x52, 0xcb, 0x40, 0xe2, 0x2c, 0x10, 0xf1, 0x14, 0x30, 0x4f, 0x48,
-	0x88, 0x8b, 0xc5, 0xcd, 0x39, 0xaf, 0x44, 0x82, 0x15, 0x28, 0xca, 0x1b, 0xc4, 0x92, 0x06, 0x64,
-	0x0b, 0x89, 0x70, 0xb1, 0xfa, 0x86, 0x54, 0x16, 0xa4, 0x4a, 0xb0, 0x81, 0x05, 0x59, 0x73, 0x41,
-	0x1c, 0xa5, 0x4c, 0x34, 0x17, 0x17, 0x0b, 0x69, 0xa3, 0xba, 0x98, 0xdb, 0x48, 0x10, 0xe2, 0x2c,
-	0x9f, 0xfc, 0xa0, 0xc4, 0x70, 0x47, 0x3f, 0x90, 0x6a, 0xb2, 0x3c, 0x61, 0xe4, 0xcc, 0xc5, 0x0e,
-	0xb5, 0x46, 0xc8, 0x82, 0x8b, 0x0b, 0xc2, 0x04, 0x99, 0x26, 0x24, 0x02, 0xd1, 0x82, 0x1a, 0x72,
-	0x52, 0xd8, 0x44, 0x8b, 0x9d, 0x04, 0x4e, 0x3c, 0x92, 0x63, 0xbc, 0x00, 0xc4, 0x0f, 0x80, 0x78,
-	0xc6, 0x63, 0x39, 0x86, 0x24, 0x36, 0x70, 0xd8, 0x1b, 0x03, 0x02, 0x00, 0x00, 0xff, 0xff, 0xe9,
-	0x40, 0x0c, 0x44, 0xad, 0x01, 0x00, 0x00,
+	// 404 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x9c, 0x53, 0xcd, 0x4e, 0xea, 0x40,
+	0x14, 0xbe, 0x85, 0xd2, 0x92, 0xe1, 0x27, 0xdc, 0x09, 0x97, 0x34, 0x5d, 0x90, 0x9b, 0xae, 0x8c,
+	0x26, 0x2c, 0x70, 0x6f, 0x82, 0x56, 0xa3, 0x41, 0x08, 0x29, 0x12, 0x77, 0x26, 0x03, 0x33, 0x46,
+	0x42, 0xe9, 0xd4, 0x4e, 0x95, 0xc0, 0x93, 0xf8, 0x1c, 0x3e, 0x85, 0x4b, 0x1f, 0xc0, 0x85, 0xd1,
+	0x17, 0x71, 0x7e, 0x4a, 0x0a, 0x02, 0x89, 0x71, 0x31, 0xc9, 0xf9, 0xbe, 0x33, 0xe7, 0x3b, 0xdf,
+	0x39, 0xd3, 0x82, 0xd2, 0x1d, 0x0a, 0xb0, 0x4f, 0xa2, 0x46, 0x18, 0xd1, 0x98, 0x42, 0x7d, 0x44,
+	0x23, 0x62, 0x97, 0x7c, 0x1a, 0xa1, 0x19, 0x0a, 0x14, 0x69, 0x03, 0x41, 0xaa, 0xd8, 0x79, 0xd6,
+	0x40, 0xc5, 0x45, 0x31, 0x1a, 0x84, 0xe7, 0xaa, 0xd0, 0x23, 0xf7, 0xd0, 0x02, 0x66, 0x0f, 0xcd,
+	0x7d, 0x8a, 0xb0, 0xa5, 0xfd, 0xd7, 0xf6, 0x8a, 0x9e, 0x19, 0x2a, 0x08, 0xf7, 0x41, 0xbe, 0x43,
+	0x62, 0x84, 0x79, 0x85, 0x95, 0xe1, 0xa9, 0x42, 0xb3, 0xdc, 0x90, 0x6a, 0x4b, 0xd6, 0xcb, 0x4f,
+	0x93, 0x08, 0xd6, 0x80, 0xd1, 0x0a, 0xc3, 0xd3, 0xc1, 0x85, 0x95, 0x95, 0x22, 0x06, 0x92, 0x48,
+	0xf0, 0x2e, 0x79, 0x14, 0xbc, 0xae, 0x78, 0x2c, 0x11, 0x84, 0x40, 0x3f, 0x3b, 0x09, 0x62, 0x2b,
+	0xc7, 0xd9, 0x92, 0xa7, 0xdf, 0xf2, 0x18, 0x56, 0x41, 0xae, 0x73, 0x35, 0x0f, 0x89, 0x65, 0x48,
+	0x32, 0x37, 0x15, 0xc0, 0x99, 0x6c, 0x78, 0x66, 0xf0, 0x60, 0xdd, 0x73, 0xa1, 0xf9, 0x57, 0x19,
+	0xbb, 0xa4, 0x1e, 0xba, 0x6e, 0x75, 0xc5, 0xfd, 0x5f, 0x8d, 0xe1, 0xdc, 0x00, 0x28, 0x8a, 0x5d,
+	0x3a, 0x0b, 0x7e, 0xb4, 0xa2, 0x74, 0xec, 0xcc, 0x8e, 0xb1, 0xb3, 0xab, 0x63, 0x3b, 0xd5, 0x2d,
+	0xfa, 0xcc, 0x59, 0x00, 0xd8, 0x7f, 0x18, 0xf6, 0x48, 0xc4, 0xe8, 0x4a, 0xd7, 0x54, 0x5b, 0x5b,
+	0xd3, 0xe6, 0x6e, 0xb8, 0x76, 0x0b, 0xe3, 0x28, 0x69, 0x6a, 0x62, 0x05, 0x45, 0xa6, 0x3b, 0x9b,
+	0xf4, 0xdb, 0x64, 0x9e, 0xb4, 0x35, 0x03, 0x05, 0x45, 0x86, 0x6b, 0xc9, 0x8c, 0x7a, 0x07, 0x13,
+	0x29, 0x28, 0x1c, 0x6d, 0xf4, 0x66, 0xcd, 0x37, 0x0d, 0x98, 0x09, 0x84, 0x47, 0xa0, 0xa8, 0x42,
+	0xf5, 0x0c, 0xb0, 0xa6, 0xb6, 0xf7, 0xfd, 0x43, 0xb2, 0xb7, 0xf3, 0x0c, 0xba, 0xa0, 0x9c, 0xd6,
+	0x8b, 0xc9, 0xa1, 0x95, 0xde, 0x5c, 0xdf, 0xb4, 0xbd, 0x2b, 0xc3, 0x60, 0x1b, 0xfc, 0xe3, 0x3e,
+	0xd9, 0x28, 0x1a, 0x0f, 0x89, 0x74, 0x1b, 0x20, 0x7f, 0xbc, 0x20, 0x78, 0x29, 0xb6, 0xb9, 0x40,
+	0x7b, 0x57, 0x86, 0x1d, 0x57, 0x5e, 0x3e, 0xea, 0xda, 0x2b, 0x3f, 0xef, 0xfc, 0x3c, 0x7d, 0xd6,
+	0xff, 0x0c, 0x0d, 0xf9, 0x87, 0x1c, 0x7e, 0x05, 0x00, 0x00, 0xff, 0xff, 0xb9, 0xec, 0x22, 0xb9,
+	0x53, 0x03, 0x00, 0x00,
 }
