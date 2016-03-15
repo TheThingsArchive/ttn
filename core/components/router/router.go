@@ -7,7 +7,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/KtorZ/rpc/core"
+	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/dutycycle"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/stats"

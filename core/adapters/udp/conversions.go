@@ -8,7 +8,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/KtorZ/rpc/core"
+	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/semtech"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"

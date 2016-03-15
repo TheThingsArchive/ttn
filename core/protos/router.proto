@@ -1,0 +1,28 @@
+syntax = "proto3";
+import "lorawan.proto";
+import "core.proto";
+
+package core;
+
+message DataRouterReq {
+    LoRaWANData     Payload     = 1;
+    Metadata        Metadata    = 2;
+    bytes           GatewayID   = 3;
+}
+
+message DataRouterRes {
+    LoRaWANData     Payload     = 1;
+    Metadata        Metadata    = 2;
+}
+
+message StatsReq {
+    bytes           GatewayID   = 1;
+    StatsMetadata   Metadata    = 2;
+}
+
+message StatsRes{}
+
+service Router {
+    rpc HandleData  (DataRouterReq) returns (DataRouterRes);
+    rpc HandleStats (StatsReq)      returns (StatsRes);
+}

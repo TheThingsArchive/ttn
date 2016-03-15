@@ -1,0 +1,23 @@
+syntax = "proto3";
+import "lorawan.proto";
+import "core.proto";
+
+package core;
+
+message DataHandlerReq {
+    bytes       Payload     = 1;
+    Metadata    Metadata    = 2;
+    bytes       AppEUI      = 3;
+    bytes       DevEUI      = 4;
+    uint32      FCnt        = 5;
+    uint32      MType       = 6;
+}
+
+message DataHandlerRes {
+    LoRaWANData Payload     = 1;
+    Metadata    Metadata    = 2;
+}
+
+service Handler {
+    rpc HandleData (DataHandlerReq) returns (DataHandlerRes);
+}
