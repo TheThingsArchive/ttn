@@ -7,104 +7,54 @@ import (
 	"fmt"
 	"net"
 	"sync"
+	"time"
 
-	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/KtorZ/rpc/core"
+	"github.com/TheThingsNetwork/ttn/semtech"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
+	"github.com/TheThingsNetwork/ttn/utils/stats"
 	"github.com/apex/log"
+	"golang.org/x/net/context"
 )
 
-// Adapter represents a udp adapter which sends and receives packet via UDP
-type Adapter struct {
-	ctx      log.Interface    // Just a logger
-	conn     chan MsgUDP      // Channel used to manage response transmissions made by multiple goroutines
-	packets  chan MsgReq      // Incoming valid packets are pushed to this channel and consume by an outsider
-	handlers chan interface{} // Manage handlers, could be either a Handler or a []byte (new handler or handling action)
+type adapter struct {
+	ctx log.Interface
 }
 
-// Handler represents a datagram and packet handler used by the adapter to process packets
-type Handler interface {
-	// Handle handles incoming datagram from a gateway transmitter to the network
-	Handle(conn chan<- MsgUDP, chresp chan<- MsgReq, msg MsgUDP) error
-}
+type replier func(data []byte) error
 
-// MsgUDP type materializes response messages transmitted towards existing recipients (commonly, gateways).
-type MsgUDP struct {
-	Data []byte       // The raw byte sequence that has to be sent
-	Addr *net.UDPAddr // The target recipient address
-}
-
-// MsgReq type materializes valid uplink messages coming from a given recipient
-type MsgReq struct {
-	Data   []byte      // The actual message
-	Chresp chan MsgRes // A dedicated response channel
-}
-
-// MsgRes qre sent through the response channel of MsgReq
-type MsgRes []byte // The actual message
-
-// NewAdapter constructs and allocates a new udp adapter
-func NewAdapter(bindNet string, ctx log.Interface) (*Adapter, error) {
-	a := Adapter{
-		ctx:      ctx,
-		conn:     make(chan MsgUDP),
-		packets:  make(chan MsgReq),
-		handlers: make(chan interface{}),
-	}
-
+// Starts constructs and launches a new udp adapter
+func Start(bindNet string, router core.RouterClient, ctx log.Interface) error {
 	// Create the udp connection and start listening with a goroutine
 	var udpConn *net.UDPConn
 	addr, err := net.ResolveUDPAddr("udp", bindNet)
-	a.ctx.WithField("bind", bindNet).Info("Starting Server")
 	if udpConn, err = net.ListenUDP("udp", addr); err != nil {
-		a.ctx.WithError(err).Error("Unable to start server")
-		return nil, errors.New(errors.Operational, fmt.Sprintf("Invalid bind address %v", bindNet))
+		ctx.WithError(err).Error("Unable to start server")
+		return errors.New(errors.Operational, fmt.Sprintf("Invalid bind address %v", bindNet))
 	}
 
-	waitStart := &sync.WaitGroup{}
-	waitStart.Add(3)
+	ctx.WithField("bind", bindNet).Info("Starting Server")
 
-	go a.monitorConnection(udpConn, waitStart)
-	go a.monitorHandlers(waitStart)
-	go a.listen(udpConn, waitStart)
-
-	waitStart.Wait()
-
-	return &a, nil
+	a := adapter{ctx: ctx}
+	go a.listen(udpConn, router)
+	return nil
 }
 
-// Send implements the core.Adapter interface. Not implemented for the udp adapter.
-func (a *Adapter) Send(p core.Packet, r ...core.Recipient) ([]byte, error) {
-	return nil, errors.New(errors.Implementation, "Send not supported on udp adapter")
-}
-
-// GetRecipient implements the core.Adapter interface
-func (a *Adapter) GetRecipient(raw []byte) (core.Recipient, error) {
-	return nil, errors.New(errors.Implementation, "GetRecipient not supported on udp adapter")
-}
-
-// Next implements the core.Adapter interface
-func (a *Adapter) Next() ([]byte, core.AckNacker, error) {
-	msg := <-a.packets
-	return msg.Data, udpAckNacker{Chresp: msg.Chresp}, nil
-}
-
-// NextRegistration implements the core.Adapter interface
-func (a *Adapter) NextRegistration() (core.Registration, core.AckNacker, error) {
-	return udpRegistration{}, nil, errors.New(errors.Implementation, "NextRegistration not supported on udp adapter")
-}
-
-// Bind is used to register a new handler to the adapter
-func (a *Adapter) Bind(h Handler) {
-	a.handlers <- h
+// makeReply curryfies a writing to udp connection by binding the address and connection
+func makeReply(addr *net.UDPAddr, conn *net.UDPConn) replier {
+	return func(data []byte) error {
+		_, err := conn.WriteToUDP(data, addr)
+		return err
+	}
 }
 
 // listen Handle incoming packets and forward them.
 //
 // Runs in its own goroutine.
-func (a *Adapter) listen(conn *net.UDPConn, ready *sync.WaitGroup) {
+func (a adapter) listen(conn *net.UDPConn, router core.RouterClient) {
 	defer conn.Close()
 	a.ctx.WithField("address", conn.LocalAddr()).Debug("Starting accept loop")
-	ready.Done()
+
 	for {
 		buf := make([]byte, 5000)
 		n, addr, err := conn.ReadFromUDP(buf)
@@ -114,51 +64,119 @@ func (a *Adapter) listen(conn *net.UDPConn, ready *sync.WaitGroup) {
 		}
 
 		a.ctx.Debug("Incoming datagram")
-		a.handlers <- MsgUDP{Addr: addr, Data: buf[:n]}
+		go func(data []byte, reply replier, router core.RouterClient) {
+			pkt := new(semtech.Packet)
+			if err := pkt.UnmarshalBinary(data); err != nil {
+				a.ctx.WithError(err).Debug("Unable to handle datagram")
+			}
+
+			switch pkt.Identifier {
+			case semtech.PULL_DATA:
+				err = a.handlePullData(*pkt, reply)
+			case semtech.PUSH_DATA:
+				err = a.handlePushData(*pkt, reply, router)
+			default:
+				err = errors.New(errors.Implementation, "Unhandled packet type")
+			}
+
+			if err != nil {
+				a.ctx.WithError(err).Debug("Unable to handle datagram")
+			}
+		}(buf[:n], makeReply(addr, conn), router)
 	}
 }
 
-// monitorConnection manages udpConnection of the adapter and send message through that connection
-//
-// That function executes into a single goroutine and is the only one allowed to write UDP messages.
-// Doing this makes sure that only 1 goroutine is interacting with the connection.
-//
-// Runs in its own goroutine
-func (a *Adapter) monitorConnection(udpConn *net.UDPConn, ready *sync.WaitGroup) {
-	ready.Done()
-	for msg := range a.conn {
-		if msg.Data != nil { // Send the given udp message
-			if _, err := udpConn.WriteToUDP(msg.Data, msg.Addr); err != nil {
-				a.ctx.WithError(err).Error("Error while sending UDP message")
-			}
-		}
+// Handle a PULL_DATA packet coming from a gateway
+func (a adapter) handlePullData(pkt semtech.Packet, reply replier) error {
+	stats.MarkMeter("semtech_adapter.pull_data")
+	stats.MarkMeter(fmt.Sprintf("semtech_adapter.gateways.%X.pull_data", pkt.GatewayId))
+	stats.SetString(fmt.Sprintf("semtech_adapter.gateways.%X.last_pull_data", pkt.GatewayId), "date", time.Now().UTC().Format(time.RFC3339))
+
+	data, err := semtech.Packet{
+		Version:    semtech.VERSION,
+		Token:      pkt.Token,
+		Identifier: semtech.PULL_ACK,
+	}.MarshalBinary()
+
+	if err != nil {
+		return errors.New(errors.Structural, err)
 	}
-	if udpConn != nil {
-		udpConn.Close() // Make sure we close the connection before leaving if we dare ever leave.
-	}
+
+	return reply(data)
 }
 
-// monitorHandlers manages handler registration and execution concurrently. One can pass a new
-// handler through the handlers channel to declare a new one or, send directly data through the
-// channel to ask every defined handler to handle them.
-//
-// Runs in its own goroutine
-func (a *Adapter) monitorHandlers(ready *sync.WaitGroup) {
-	var handlers []Handler
+// Handle a PUSH_DATA packet coming from a gateway
+func (a adapter) handlePushData(pkt semtech.Packet, reply replier, router core.RouterClient) error {
+	stats.MarkMeter("semtech_adapter.push_data")
+	stats.MarkMeter(fmt.Sprintf("semtech_adapter.gateways.%X.push_data", pkt.GatewayId))
+	stats.SetString(fmt.Sprintf("semtech_adapter.gateways.%X.last_push_data", pkt.GatewayId), "date", time.Now().UTC().Format(time.RFC3339))
 
-	ready.Done()
-	for msg := range a.handlers {
-		switch msg.(type) {
-		case Handler:
-			handlers = append(handlers, msg.(Handler))
-		case MsgUDP:
-			for _, h := range handlers {
-				go func(h Handler, msg MsgUDP) {
-					if err := h.Handle(a.conn, a.packets, msg); err != nil {
-						a.ctx.WithError(err).Debug("Unable to handle request")
-					}
-				}(h, msg.(MsgUDP))
-			}
-		}
+	// AckNowledge with a PUSH_ACK
+	data, err := semtech.Packet{
+		Version:    semtech.VERSION,
+		Token:      pkt.Token,
+		Identifier: semtech.PUSH_ACK,
+	}.MarshalBinary()
+	if err != nil || reply(data) != nil || pkt.Payload == nil {
+		return errors.New(errors.Operational, "Unable to process PUSH_DATA packet")
 	}
+
+	// Process Stat payload
+	if pkt.Payload.Stat != nil {
+		go router.HandleStats(context.Background(), &core.StatsReq{
+			GatewayID: pkt.GatewayId,
+			Metadata:  extractMetadata(*pkt.Payload.Stat, new(core.StatsMetadata)).(*core.StatsMetadata),
+		})
+	}
+
+	// Process rxpks payloads
+	cherr := make(chan error, len(pkt.Payload.RXPK))
+	wait := sync.WaitGroup{}
+	wait.Add(len(pkt.Payload.RXPK))
+	for _, rxpk := range pkt.Payload.RXPK {
+		go func(rxpk semtech.RXPK) {
+			defer wait.Done()
+			if err := a.handleDataUp(rxpk, pkt.GatewayId, reply, router); err != nil {
+				cherr <- err
+			}
+		}(rxpk)
+	}
+
+	// Retrieve any errors
+	wait.Wait()
+	close(cherr)
+	return <-cherr
+}
+
+func (a adapter) handleDataUp(rxpk semtech.RXPK, gid []byte, reply replier, router core.RouterClient) error {
+	dataRouterReq, err := a.newDataRouterReq(rxpk, gid)
+	if err != nil {
+		return errors.New(errors.Structural, err)
+	}
+	resp, err := router.HandleData(context.Background(), dataRouterReq)
+	if err != nil {
+		errors.New(errors.Operational, err)
+	}
+	return a.handleDataDown(resp, reply)
+}
+
+func (a adapter) handleDataDown(resp *core.DataRouterRes, reply replier) error {
+	if resp == nil { // No response
+		return nil
+	}
+
+	txpk, err := a.newTXPK(*resp)
+	if err != nil {
+		return errors.New(errors.Structural, err)
+	}
+
+	data, err := semtech.Packet{
+		Version:    semtech.VERSION,
+		Identifier: semtech.PULL_RESP,
+		Payload:    &semtech.Payload{TXPK: &txpk},
+	}.MarshalBinary()
+	if err != nil {
+		return errors.New(errors.Structural, err)
+	}
+	return reply(data)
 }
