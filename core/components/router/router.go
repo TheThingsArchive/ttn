@@ -4,137 +4,110 @@
 package router
 
 import (
-	. "github.com/TheThingsNetwork/ttn/core"
+	"github.com/KtorZ/rpc/core"
 	"github.com/TheThingsNetwork/ttn/core/dutycycle"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/stats"
 	"github.com/apex/log"
+	"golang.org/x/net/context"
 )
 
 type component struct {
 	Storage
-	Manager dutycycle.DutyManager
+	manager dutycycle.DutyManager
+	brokers []core.BrokerClient
 	ctx     log.Interface
 }
 
 // New constructs a new router
-func New(db Storage, dm dutycycle.DutyManager, ctx log.Interface) Router {
-	return component{Storage: db, Manager: dm, ctx: ctx}
+func New(db Storage, dm dutycycle.DutyManager, brokers []core.BrokerClient, ctx log.Interface) core.RouterServer {
+	return component{Storage: db, manager: dm, brokers: brokers, ctx: ctx}
 }
 
-// Register implements the core.Router interface
-func (r component) Register(reg Registration, an AckNacker) (err error) {
-	defer ensureAckNack(an, nil, &err)
-	stats.MarkMeter("router.registration.in")
-	r.ctx.Debug("Handling registration")
-
-	rreg, ok := reg.(RRegistration)
-	if !ok {
-		err = errors.New(errors.Structural, "Unexpected registration type")
-		r.ctx.WithError(err).Warn("Unable to register")
-		return err
+// HandleStats implements the core.RouterClient interface
+func (r component) HandleStats(ctx context.Context, req *core.StatsReq) (*core.StatsRes, error) {
+	if req == nil {
+		return nil, errors.New(errors.Structural, "Invalid nil stats request")
 	}
 
-	return r.Store(rreg)
+	if len(req.GatewayID) != 8 {
+		return nil, errors.New(errors.Structural, "Invalid gateway identifier")
+	}
+
+	if req.Metadata == nil {
+		return nil, errors.New(errors.Structural, "Missing mandatory Metadata")
+	}
+
+	stats.MarkMeter("router.stat.in")
+	return nil, r.UpdateStats(req.GatewayID, *req.Metadata)
 }
 
-// HandleUp implements the core.Router interface
-func (r component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
-	// Make sure we don't forget the AckNacker
-	var ack Packet
-	defer ensureAckNack(an, &ack, &err)
-
+// HandleData implements the core.RouterClient interface
+func (r component) HandleData(ctx context.Context, req *core.DataRouterReq) (*core.DataRouterRes, error) {
 	// Get some logs / analytics
 	r.ctx.Debug("Handling uplink packet")
+	stats.MarkMeter("router.uplink.in")
 
-	// Extract the given packet
-	itf, _ := UnmarshalPacket(data)
-	switch itf.(type) {
-	case RPacket:
-		stats.MarkMeter("router.uplink.in")
-		ack, err = r.handleDataUp(itf.(RPacket), up)
-	case SPacket:
-		stats.MarkMeter("router.stat.in")
-		err = r.UpdateStats(itf.(SPacket))
-	default:
-		stats.MarkMeter("router.uplink.invalid")
-		err = errors.New(errors.Structural, "Unreckognized packet type")
-	}
-
+	// Validate coming data
+	_, _, fhdr, _, err := core.ValidateLoRaWANData(req.Payload)
 	if err != nil {
-		r.ctx.WithError(err).Debug("Unable to process uplink")
+		return nil, errors.New(errors.Structural, err)
 	}
-	return err
-}
+	if req.Metadata == nil {
+		return nil, errors.New(errors.Structural, "Missing mandatory Metadata")
+	}
+	if len(req.GatewayID) != 8 {
+		return nil, errors.New(errors.Structural, "Invalid gatewayID")
+	}
 
-// handleDataUp handle an upcoming message which carries a data frame payload
-func (r component) handleDataUp(packet RPacket, up Adapter) (Packet, error) {
 	// Lookup for an existing broker
-	entries, err := r.Lookup(packet.DevEUI())
+	entries, err := r.Lookup(fhdr.DevAddr)
 	if err != nil && err.(errors.Failure).Nature != errors.NotFound {
 		r.ctx.Warn("Database lookup failed")
 		return nil, errors.New(errors.Operational, err)
 	}
 	shouldBroadcast := err != nil
 
-	metadata := packet.Metadata()
-	if metadata.Freq == nil {
-		stats.MarkMeter("router.uplink.not_supported")
-		return nil, errors.New(errors.Structural, "Missing mandatory frequency in metadata")
+	// Add Gateway location metadata
+	if gmeta, err := r.LookupStats(req.GatewayID); err == nil {
+		req.Metadata.Latitude = gmeta.Latitude
+		req.Metadata.Longitude = gmeta.Longitude
+		req.Metadata.Altitude = gmeta.Altitude
 	}
 
-	// Add Gateway location metadata
-	gmeta, _ := r.LookupStats(packet.GatewayID())
-	metadata.Lati = gmeta.Lati
-	metadata.Long = gmeta.Long
-	metadata.Alti = gmeta.Alti
-
 	// Add Gateway duty metadata
-	cycles, err := r.Manager.Lookup(packet.GatewayID())
+	cycles, err := r.manager.Lookup(req.GatewayID)
 	if err != nil {
 		r.ctx.WithError(err).Debug("Unable to get any metadata about duty-cycles")
 		cycles = make(dutycycle.Cycles)
 	}
 
-	sb1, err := dutycycle.GetSubBand(*metadata.Freq)
+	sb1, err := dutycycle.GetSubBand(float64(req.Metadata.Frequency))
 	if err != nil {
 		stats.MarkMeter("router.uplink.not_supported")
 		return nil, errors.New(errors.Structural, "Unhandled uplink signal frequency")
 	}
 
 	rx1, rx2 := uint(dutycycle.StateFromDuty(cycles[sb1])), uint(dutycycle.StateFromDuty(cycles[dutycycle.EuropeG3]))
-	metadata.DutyRX1, metadata.DutyRX2 = &rx1, &rx2
+	req.Metadata.DutyRX1, req.Metadata.DutyRX2 = uint32(rx1), uint32(rx2)
 
-	bpacket, err := NewBPacket(packet.Payload(), metadata)
-	if err != nil {
-		stats.MarkMeter("router.uplink.not_supported")
-		r.ctx.WithError(err).Warn("Unable to create router packet")
-		return nil, errors.New(errors.Structural, err)
-	}
+	bpacket := &core.DataBrokerReq{Payload: req.Payload, Metadata: req.Metadata}
 
 	// Send packet to broker(s)
-	var response []byte
+	var response *core.DataBrokerRes
 	if shouldBroadcast {
 		// No Recipient available -> broadcast
-		response, err = up.Send(bpacket)
+		response, err = r.send(bpacket, r.brokers...)
 	} else {
 		// Recipients are available
-		var recipients []Recipient
+		var brokers []core.BrokerClient
 		for _, e := range entries {
-			// Get the actual broker
-			recipient, err := up.GetRecipient(e.Recipient)
-			if err != nil {
-				r.ctx.Warn("Unable to retrieve Recipient")
-				return nil, errors.New(errors.Structural, err)
-			}
-			recipients = append(recipients, recipient)
+			brokers = append(brokers, r.brokers[e.BrokerIndex])
 		}
-
-		// Send the packet
-		response, err = up.Send(bpacket, recipients...)
+		response, err = r.send(bpacket, brokers...)
 		if err != nil && err.(errors.Failure).Nature == errors.NotFound {
 			// Might be a collision with the dev addr, we better broadcast
-			response, err = up.Send(bpacket)
+			response, err = r.send(bpacket, r.brokers...)
 		}
 		stats.MarkMeter("router.uplink.out")
 	}
@@ -149,58 +122,50 @@ func (r component) handleDataUp(packet RPacket, up Adapter) (Packet, error) {
 		return nil, err
 	}
 
-	return r.handleDataDown(response, packet.GatewayID())
+	return r.handleDataDown(response, req.GatewayID)
 }
 
-// handleDataDown controls that data received from an uplink are okay.
-// It also updates metadata about the related gateway
-func (r component) handleDataDown(data []byte, gatewayID []byte) (Packet, error) {
-	if data == nil {
+func (r component) handleDataDown(req *core.DataBrokerRes, gatewayID []byte) (*core.DataRouterRes, error) {
+	if req == nil { // No response
 		return nil, nil
 	}
 
-	itf, err := UnmarshalPacket(data)
-	if err != nil {
+	// Update downlink metadata for the related gateway
+	if req.Metadata == nil {
 		stats.MarkMeter("router.uplink.bad_broker_response")
+		return nil, errors.New(errors.Structural, "Missing mandatory Metadata in response")
+	}
+	freq := float64(req.Metadata.Frequency)
+	datr := req.Metadata.DataRate
+	codr := req.Metadata.CodingRate
+	size := uint(req.Metadata.PayloadSize)
+	if err := r.manager.Update(gatewayID, freq, size, datr, codr); err != nil {
 		return nil, errors.New(errors.Operational, err)
 	}
-	switch itf.(type) {
-	case RPacket:
-		// Update downlink metadata for the related gateway
-		metadata := itf.(RPacket).Metadata()
-		freq := metadata.Freq
-		datr := metadata.Datr
-		codr := metadata.Codr
-		size := metadata.Size
 
-		if freq == nil || datr == nil || codr == nil || size == nil {
-			stats.MarkMeter("router.uplink.bad_broker_response")
-			return nil, errors.New(errors.Operational, "Missing mandatory metadata in response")
-		}
-
-		if err := r.Manager.Update(gatewayID, *freq, *size, *datr, *codr); err != nil {
-			return nil, errors.New(errors.Operational, err)
-		}
-
-		// Finally, define the ack to be sent
-		return itf.(RPacket), nil
-	default:
-		stats.MarkMeter("router.uplink.bad_broker_response")
-		return nil, errors.New(errors.Implementation, "Unexpected packet type")
-	}
+	// Send Back the response
+	return &core.DataRouterRes{Payload: req.Payload, Metadata: req.Metadata}, nil
 }
 
-// ensureAckNack is used to make sure we Ack / Nack correctly in the HandleUp method.
-// The method will probably change or be moved outside the router itself.
-func ensureAckNack(an AckNacker, ack *Packet, err *error) {
-	if err != nil && *err != nil {
-		an.Nack(*err)
-	} else {
-		stats.MarkMeter("router.uplink.ok")
-		var p Packet
-		if ack != nil {
-			p = *ack
-		}
-		an.Ack(p)
-	}
+func (r component) send(req *core.DataBrokerReq, brokers ...core.BrokerClient) (*core.DataBrokerRes, error) {
+
+	return nil, nil
 }
+
+// Register implements the core.Router interface
+//func (r component) Register(reg Registration, an AckNacker) (err error) {
+//	defer ensureAckNack(an, nil, &err)
+//	stats.MarkMeter("router.registration.in")
+//	r.ctx.Debug("Handling registration")
+//
+//	rreg, ok := reg.(RRegistration)
+//	if !ok {
+//		err = errors.New(errors.Structural, "Unexpected registration type")
+//		r.ctx.WithError(err).Warn("Unable to register")
+//		return err
+//	}
+//
+//	return r.Store(rreg)
+//}
+// handleDataDown controls that data received from an uplink are okay.
+// It also updates metadata about the related gateway

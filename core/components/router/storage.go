@@ -4,29 +4,29 @@
 package router
 
 import (
+	"bytes"
+	"encoding/binary"
 	"fmt"
 	"sync"
 	"time"
 
-	. "github.com/TheThingsNetwork/ttn/core"
+	"github.com/KtorZ/rpc/core"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
-	"github.com/TheThingsNetwork/ttn/utils/readwriter"
 	dbutil "github.com/TheThingsNetwork/ttn/utils/storage"
-	"github.com/brocaar/lorawan"
 )
 
 // Storage gives a facade to manipulate the router database
 type Storage interface {
-	Lookup(devEUI lorawan.EUI64) ([]entry, error)
-	LookupStats(id []byte) (Metadata, error)
-	UpdateStats(stats SPacket) error
-	Store(reg RRegistration) error
+	Lookup(devAddr []byte) ([]entry, error)
+	//Store(reg RRegistration) error
+	LookupStats(gid []byte) (core.StatsMetadata, error)
+	UpdateStats(gid []byte, metadata core.StatsMetadata) error
 	Close() error
 }
 
 type entry struct {
-	Recipient []byte
-	until     time.Time
+	BrokerIndex int
+	until       time.Time
 }
 
 type storage struct {
@@ -50,11 +50,29 @@ func NewStorage(name string, delay time.Duration) (Storage, error) {
 	return &storage{db: itf, ExpiryDelay: delay}, nil
 }
 
+// UpdateStats implements the router.Storage interface
+func (s *storage) UpdateStats(gid []byte, metadata core.StatsMetadata) error {
+	return s.db.Replace(dbGateway, gid, []dbutil.Entry{&metadata})
+}
+
+// LookupStats implements the router.Storage interface
+func (s *storage) LookupStats(gid []byte) (core.StatsMetadata, error) {
+	itf, err := s.db.Lookup(dbGateway, gid, &core.StatsMetadata{})
+	if err != nil {
+		return core.StatsMetadata{}, err
+	}
+	entries := itf.([]core.StatsMetadata)
+	if len(entries) == 0 {
+		return core.StatsMetadata{}, errors.New(errors.NotFound, "Not entry found for given gateway")
+	}
+	return entries[0], nil
+}
+
 // Lookup implements the router.Storage interface
-func (s *storage) Lookup(devEUI lorawan.EUI64) ([]entry, error) {
+func (s *storage) Lookup(devAddr []byte) ([]entry, error) {
 	s.Lock()
 	defer s.Unlock()
-	itf, err := s.db.Lookup(dbBrokers, devEUI[:], &entry{})
+	itf, err := s.db.Lookup(dbBrokers, devAddr, &entry{})
 	if err != nil {
 		return nil, err
 	}
@@ -71,77 +89,68 @@ func (s *storage) Lookup(devEUI lorawan.EUI64) ([]entry, error) {
 				filtered = append(filtered, e)
 			}
 		}
-		if err := s.db.Replace(dbBrokers, devEUI[:], newEntries); err != nil {
+		if err := s.db.Replace(dbBrokers, devAddr, newEntries); err != nil {
 			return nil, errors.New(errors.Operational, err)
 		}
 		entries = filtered
 	}
 
 	if len(entries) == 0 {
-		return nil, errors.New(errors.NotFound, fmt.Sprintf("No entry for: %v", devEUI[:]))
+		return nil, errors.New(errors.NotFound, fmt.Sprintf("No entry for: %v", devAddr))
 	}
 	return entries, nil
 }
 
-// Store implements the router.Storage interface
-func (s *storage) Store(reg RRegistration) error {
-	devEUI := reg.DevEUI()
-	recipient, err := reg.Recipient().MarshalBinary()
-	if err != nil {
-		return errors.New(errors.Structural, err)
-	}
-
-	s.Lock()
-	defer s.Unlock()
-	return s.db.Store(dbBrokers, devEUI[:], []dbutil.Entry{&entry{
-		Recipient: recipient,
-		until:     time.Now().Add(s.ExpiryDelay),
-	}})
-}
-
-// UpdateStats implements the router.Storage interface
-func (s *storage) UpdateStats(stats SPacket) error {
-	metadata := stats.Metadata()
-	return s.db.Replace(dbGateway, stats.GatewayID(), []dbutil.Entry{&metadata})
-}
-
-// LookupStats implements the router.Storage interface
-func (s *storage) LookupStats(id []byte) (Metadata, error) {
-	itf, err := s.db.Lookup(dbGateway, id, &Metadata{})
-	if err != nil {
-		return Metadata{}, err
-	}
-	entries := itf.([]Metadata)
-	if len(entries) == 0 {
-		return Metadata{}, errors.New(errors.NotFound, "Not entry found for given gateway")
-	}
-	return entries[0], nil
-}
+//
+//// Store implements the router.Storage interface
+//func (s *storage) Store(reg RRegistration) error {
+//	devEUI := reg.DevEUI()
+//	recipient, err := reg.Recipient().MarshalBinary()
+//	if err != nil {
+//		return errors.New(errors.Structural, err)
+//	}
+//
+//	s.Lock()
+//	defer s.Unlock()
+//	return s.db.Store(dbBrokers, devEUI[:], []dbutil.Entry{&entry{
+//		Recipient: recipient,
+//		until:     time.Now().Add(s.ExpiryDelay),
+//	}})
+//}
 
 // Close implements the router.Storage interface
 func (s *storage) Close() error {
 	return s.db.Close()
 }
 
-// MarshalBinary implements the encoding.BinaryMarshaler interface
-func (e entry) MarshalBinary() ([]byte, error) {
+// Marshal implements the proto.Marshaler interface
+func (e entry) Marshal() ([]byte, error) {
 	data, err := e.until.MarshalBinary()
 	if err != nil {
 		return nil, errors.New(errors.Structural, err)
 	}
 
-	rw := readwriter.New(nil)
-	rw.Write(e.Recipient)
-	rw.Write(data)
-	return rw.Bytes()
+	buf := new(bytes.Buffer)
+	binary.Write(buf, binary.BigEndian, uint16(e.BrokerIndex))
+	binary.Write(buf, binary.BigEndian, data)
+	return buf.Bytes(), nil
 }
 
-// UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
-func (e *entry) UnmarshalBinary(data []byte) error {
-	rw := readwriter.New(data)
-	rw.Read(func(data []byte) { e.Recipient = data })
-	rw.TryRead(func(data []byte) error {
-		return e.until.UnmarshalBinary(data)
-	})
-	return rw.Err()
+// Unmarshal implements the proto.Unmarshaler interface
+func (e *entry) Unmarshal(data []byte) error {
+	buf := bytes.NewBuffer(data)
+
+	// e.until
+	tdata := new([]byte)
+	binary.Read(buf, binary.BigEndian, tdata)
+	if err := e.until.UnmarshalBinary(*tdata); err != nil {
+		return errors.New(errors.Structural, err)
+	}
+
+	// e.Broker
+	index := new(uint16)
+	binary.Read(buf, binary.BigEndian, index)
+	e.BrokerIndex = int(*index)
+
+	return nil
 }
