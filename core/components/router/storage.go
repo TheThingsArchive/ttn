@@ -18,7 +18,7 @@ import (
 // Storage gives a facade to manipulate the router database
 type Storage interface {
 	Lookup(devAddr []byte) ([]entry, error)
-	//Store(reg RRegistration) error
+	Store(devAddr []byte, brokerIndex int) error
 	LookupStats(gid []byte) (core.StatsMetadata, error)
 	UpdateStats(gid []byte, metadata core.StatsMetadata) error
 	Close() error
@@ -101,22 +101,15 @@ func (s *storage) Lookup(devAddr []byte) ([]entry, error) {
 	return entries, nil
 }
 
-//
-//// Store implements the router.Storage interface
-//func (s *storage) Store(reg RRegistration) error {
-//	devEUI := reg.DevEUI()
-//	recipient, err := reg.Recipient().MarshalBinary()
-//	if err != nil {
-//		return errors.New(errors.Structural, err)
-//	}
-//
-//	s.Lock()
-//	defer s.Unlock()
-//	return s.db.Store(dbBrokers, devEUI[:], []dbutil.Entry{&entry{
-//		Recipient: recipient,
-//		until:     time.Now().Add(s.ExpiryDelay),
-//	}})
-//}
+// Store implements the router.Storage interface
+func (s *storage) Store(devAddr []byte, brokerIndex int) error {
+	s.Lock()
+	defer s.Unlock()
+	return s.db.Store(dbBrokers, devAddr, []dbutil.Entry{&entry{
+		BrokerIndex: brokerIndex,
+		until:       time.Now().Add(s.ExpiryDelay),
+	}})
+}
 
 // Close implements the router.Storage interface
 func (s *storage) Close() error {

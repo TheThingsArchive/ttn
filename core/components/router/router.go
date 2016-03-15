@@ -4,6 +4,9 @@
 package router
 
 import (
+	"strings"
+	"sync"
+
 	"github.com/KtorZ/rpc/core"
 	"github.com/TheThingsNetwork/ttn/core/dutycycle"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
@@ -97,17 +100,19 @@ func (r component) HandleData(ctx context.Context, req *core.DataRouterReq) (*co
 	var response *core.DataBrokerRes
 	if shouldBroadcast {
 		// No Recipient available -> broadcast
-		response, err = r.send(bpacket, r.brokers...)
+		stats.MarkMeter("router.broadcast")
+		response, err = r.send(bpacket, true, r.brokers...)
 	} else {
 		// Recipients are available
+		stats.MarkMeter("router.send")
 		var brokers []core.BrokerClient
 		for _, e := range entries {
 			brokers = append(brokers, r.brokers[e.BrokerIndex])
 		}
-		response, err = r.send(bpacket, brokers...)
+		response, err = r.send(bpacket, false, brokers...)
 		if err != nil && err.(errors.Failure).Nature == errors.NotFound {
 			// Might be a collision with the dev addr, we better broadcast
-			response, err = r.send(bpacket, r.brokers...)
+			response, err = r.send(bpacket, true, r.brokers...)
 		}
 		stats.MarkMeter("router.uplink.out")
 	}
@@ -147,25 +152,91 @@ func (r component) handleDataDown(req *core.DataBrokerRes, gatewayID []byte) (*c
 	return &core.DataRouterRes{Payload: req.Payload, Metadata: req.Metadata}, nil
 }
 
-func (r component) send(req *core.DataBrokerReq, brokers ...core.BrokerClient) (*core.DataBrokerRes, error) {
+func (r component) send(req *core.DataBrokerReq, isBroadcast bool, brokers ...core.BrokerClient) (*core.DataBrokerRes, error) {
+	// Define a more helpful context
+	ctx := r.ctx.WithField("devAddr", req.Payload.MACPayload.FHDR.DevAddr)
+	ctx.Debug("Sending Packet")
+	nb := len(brokers)
+	stats.UpdateHistogram("router.send_recipients", int64(nb))
 
-	return nil, nil
+	// Prepare ground for parrallel requests
+	cherr := make(chan error, nb)
+	chresp := make(chan struct {
+		Response    *core.DataBrokerRes
+		BrokerIndex int
+	}, nb)
+	wg := sync.WaitGroup{}
+	wg.Add(nb)
+
+	// Run each request
+	for i, broker := range brokers {
+		go func(index int, broker core.BrokerClient) {
+			defer wg.Done()
+
+			// Send request
+			resp, err := broker.HandleData(context.Background(), req)
+
+			// Handle error
+			if err != nil {
+				if strings.Contains(err.Error(), string(errors.NotFound)) { // FIXME Find a better way to analyze the error
+					cherr <- errors.New(errors.NotFound, "Broker not responsible for the node")
+					return
+				}
+				cherr <- errors.New(errors.Operational, err)
+				return
+			}
+
+			// Transfer the response
+			chresp <- struct {
+				Response    *core.DataBrokerRes
+				BrokerIndex int
+			}{resp, index}
+		}(i, broker)
+	}
+
+	// Wait for each request to be done
+	stats.IncCounter("router.waiting_for_send")
+	wg.Wait()
+	stats.DecCounter("router.waiting_for_send")
+	close(cherr)
+	close(chresp)
+
+	var errored uint8
+	var notFound uint8
+	for i := 0; i < len(cherr); i++ {
+		err := <-cherr
+		if err.(errors.Failure).Nature != errors.NotFound {
+			errored++
+			ctx.WithError(err).Warn("Failed to contact broker")
+		} else {
+			notFound++
+			ctx.WithError(err).Debug("Packet destination not found")
+		}
+	}
+
+	// Collect response
+	if len(chresp) > 1 {
+		return nil, errors.New(errors.Behavioural, "Received too many positive answers")
+	}
+
+	if len(chresp) == 0 && errored > 0 {
+		return nil, errors.New(errors.Operational, "No positive response from recipients but got unexpected answer")
+	}
+
+	if len(chresp) == 0 && notFound > 0 {
+		return nil, errors.New(errors.NotFound, "No available recipient found")
+	}
+
+	if len(chresp) == 0 {
+		return nil, nil
+	}
+
+	resp := <-chresp
+	// Save the broker for later if it was a broadcast
+	if isBroadcast {
+		if err := r.Store(req.Payload.MACPayload.FHDR.DevAddr, resp.BrokerIndex); err != nil {
+			r.ctx.WithError(err).Warn("Failed to store accepted broker")
+		}
+	}
+	return resp.Response, nil
 }
-
-// Register implements the core.Router interface
-//func (r component) Register(reg Registration, an AckNacker) (err error) {
-//	defer ensureAckNack(an, nil, &err)
-//	stats.MarkMeter("router.registration.in")
-//	r.ctx.Debug("Handling registration")
-//
-//	rreg, ok := reg.(RRegistration)
-//	if !ok {
-//		err = errors.New(errors.Structural, "Unexpected registration type")
-//		r.ctx.WithError(err).Warn("Unable to register")
-//		return err
-//	}
-//
-//	return r.Store(rreg)
-//}
-// handleDataDown controls that data received from an uplink are okay.
-// It also updates metadata about the related gateway
