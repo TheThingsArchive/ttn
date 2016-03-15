@@ -40,11 +40,8 @@ type scores struct {
 }
 
 // NewScoreComputer constructs a new ScoreComputer and initiate an empty scores table
-func NewScoreComputer(datr *string) (*ScoreComputer, scores, error) {
-	if datr == nil {
-		return nil, scores{}, errors.New(errors.Structural, "Missing mandatory metadata datr")
-	}
-	sf, _, err := ParseDatr(*datr)
+func NewScoreComputer(datr string) (*ScoreComputer, scores, error) {
+	sf, _, err := ParseDatr(datr)
 	if err != nil {
 		return nil, scores{}, errors.New(errors.Structural, err)
 	}

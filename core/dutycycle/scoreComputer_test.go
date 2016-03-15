@@ -15,16 +15,8 @@ import (
 
 func TestNewScoreComputer(t *testing.T) {
 	{
-		Desc(t, "Nil datr as argument")
-		_, _, err := NewScoreComputer(nil)
-		errutil.CheckErrors(t, pointer.String(string(errors.Structural)), err)
-	}
-
-	// --------------------
-
-	{
 		Desc(t, "Invalid datr as argument")
-		_, _, err := NewScoreComputer(pointer.String("TheThingsNetwork"))
+		_, _, err := NewScoreComputer("TheThingsNetwork")
 		errutil.CheckErrors(t, pointer.String(string(errors.Structural)), err)
 	}
 
@@ -32,7 +24,7 @@ func TestNewScoreComputer(t *testing.T) {
 
 	{
 		Desc(t, "Valid datr")
-		_, _, err := NewScoreComputer(pointer.String("SF8BW250"))
+		_, _, err := NewScoreComputer("SF8BW250")
 		errutil.CheckErrors(t, nil, err)
 	}
 }
@@ -54,7 +46,7 @@ func TestUpdateGet(t *testing.T) {
 		Desc(t, "SF7 | ...")
 
 		// Build
-		c, s, err := NewScoreComputer(pointer.String("SF7BW125"))
+		c, s, err := NewScoreComputer("SF7BW125")
 		errutil.CheckErrors(t, nil, err)
 
 		// Operate
@@ -70,7 +62,7 @@ func TestUpdateGet(t *testing.T) {
 		Desc(t, "SF7 | (1, Av, Bl, -25, 5.0)")
 
 		// Build
-		c, s, err := NewScoreComputer(pointer.String("SF7BW125"))
+		c, s, err := NewScoreComputer("SF7BW125")
 		errutil.CheckErrors(t, nil, err)
 
 		// Operate
@@ -92,7 +84,7 @@ func TestUpdateGet(t *testing.T) {
 		Desc(t, "SF7 | (1, Bl, Ha, -25, 5.0)")
 
 		// Build
-		c, s, err := NewScoreComputer(pointer.String("SF7BW125"))
+		c, s, err := NewScoreComputer("SF7BW125")
 		errutil.CheckErrors(t, nil, err)
 
 		// Operate
@@ -114,7 +106,7 @@ func TestUpdateGet(t *testing.T) {
 		Desc(t, "SF7 | (1, Bl, Bl, -25, 5.0)")
 
 		// Build
-		c, s, err := NewScoreComputer(pointer.String("SF7BW125"))
+		c, s, err := NewScoreComputer("SF7BW125")
 		errutil.CheckErrors(t, nil, err)
 
 		// Operate
@@ -136,7 +128,7 @@ func TestUpdateGet(t *testing.T) {
 		Desc(t, "SF9 | (1, Av, Av, -25, 5.0) ")
 
 		// Build
-		c, s, err := NewScoreComputer(pointer.String("SF9BW125"))
+		c, s, err := NewScoreComputer("SF9BW125")
 		errutil.CheckErrors(t, nil, err)
 
 		// Operate
@@ -158,7 +150,7 @@ func TestUpdateGet(t *testing.T) {
 		Desc(t, "SF10 | (1, Av, Av, -25, 5.0) :: (2, Av, Av, -25, 3.0)")
 
 		// Build
-		c, s, err := NewScoreComputer(pointer.String("SF10BW125"))
+		c, s, err := NewScoreComputer("SF10BW125")
 		errutil.CheckErrors(t, nil, err)
 
 		// Operate
@@ -186,7 +178,7 @@ func TestUpdateGet(t *testing.T) {
 		Desc(t, "SF10 | (1, Av, Bl, -25, 5.0)")
 
 		// Build
-		c, s, err := NewScoreComputer(pointer.String("SF10BW125"))
+		c, s, err := NewScoreComputer("SF10BW125")
 		errutil.CheckErrors(t, nil, err)
 
 		// Operate
@@ -208,7 +200,7 @@ func TestUpdateGet(t *testing.T) {
 		Desc(t, "SF8 | (1, Wa, Av, -25, 5.0) :: (2, Av, Av, -25, 5.0)")
 
 		// Build
-		c, s, err := NewScoreComputer(pointer.String("SF8BW125"))
+		c, s, err := NewScoreComputer("SF8BW125")
 		errutil.CheckErrors(t, nil, err)
 
 		// Operate
@@ -236,7 +228,7 @@ func TestUpdateGet(t *testing.T) {
 		Desc(t, "SF12 | (1, Av, Av, -25, 5.1) :: (2, Ha, Ha, -25, 3.4)")
 
 		// Build
-		c, s, err := NewScoreComputer(pointer.String("SF12BW125"))
+		c, s, err := NewScoreComputer("SF12BW125")
 		errutil.CheckErrors(t, nil, err)
 
 		// Operate
