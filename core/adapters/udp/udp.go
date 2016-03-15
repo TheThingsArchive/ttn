@@ -23,7 +23,7 @@ type adapter struct {
 
 type replier func(data []byte) error
 
-// Starts constructs and launches a new udp adapter
+// Start constructs and launches a new udp adapter
 func Start(bindNet string, router core.RouterServer, ctx log.Interface) error {
 	// Create the udp connection and start listening with a goroutine
 	var udpConn *net.UDPConn

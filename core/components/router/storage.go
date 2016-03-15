@@ -116,8 +116,8 @@ func (s *storage) Close() error {
 	return s.db.Close()
 }
 
-// Marshal implements the proto.Marshaler interface
-func (e entry) Marshal() ([]byte, error) {
+// MarshalBinary implements the encoding.BinaryMarshaler interface
+func (e entry) MarshalBinary() ([]byte, error) {
 	data, err := e.until.MarshalBinary()
 	if err != nil {
 		return nil, errors.New(errors.Structural, err)
@@ -129,8 +129,8 @@ func (e entry) Marshal() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// Unmarshal implements the proto.Unmarshaler interface
-func (e *entry) Unmarshal(data []byte) error {
+// UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
+func (e *entry) UnmarshalBinary(data []byte) error {
 	buf := bytes.NewBuffer(data)
 
 	// e.until
