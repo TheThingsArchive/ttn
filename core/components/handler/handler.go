@@ -351,6 +351,7 @@ browseBundles:
 		// Then create an application-level packet and send it to the wild open
 		// we don't expect a response from the adapter, end of the chain.
 		_, err = h.adapter.HandleData(context.Background(), &core.DataAppReq{
+			AppEUI:   b.Packet.AppEUI,
 			DevEUI:   b.Packet.DevEUI,
 			Payload:  payload,
 			Metadata: metadata,
