@@ -42,34 +42,35 @@ type bundle struct {
 }
 
 // New construct a new Handler
-func New(devDb DevStorage, pktDb PktStorage, broker core.BrokerClient, adapter core.AppClient, ctx log.Interface) core.HandlerServer {
-	return &component{
+func New(devDb DevStorage, pktDb PktStorage, broker core.BrokerClient, adapter core.AppClient, netAddr string, ctx log.Interface) core.HandlerServer {
+	h := &component{
 		ctx:     ctx,
 		devices: devDb,
 		packets: pktDb,
 		broker:  broker,
 		adapter: adapter,
+		netAddr: netAddr,
 	}
+
+	set := make(chan bundle)
+	bundles := make(chan []bundle)
+
+	h.set = set
+	go h.consumeBundles(bundles)
+	go h.consumeSet(bundles, set)
+
+	return h
 }
 
 // Start actually runs the component and starts the rpc server
 func (h *component) Start(netAddr string) error {
-	conn, err := net.Listen("tcp", netAddr)
+	conn, err := net.Listen("tcp", h.netAddr)
 	if err != nil {
 		return errors.New(errors.Operational, err)
 	}
 
 	server := grpc.NewServer()
 	core.RegisterHandlerServer(server, h)
-
-	set := make(chan bundle)
-	h.set = set
-	bundles := make(chan []bundle)
-	go h.consumeBundles(bundles)
-	go h.consumeSet(bundles, set)
-
-	defer close(bundles)
-	defer close(set)
 
 	if err := server.Serve(conn); err != nil {
 		return errors.New(errors.Operational, err)
