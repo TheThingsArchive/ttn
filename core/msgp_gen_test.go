@@ -10,8 +10,8 @@ import (
 	"github.com/tinylib/msgp/msgp"
 )
 
-func TestMarshalUnmarshalAPBSubAppReq(t *testing.T) {
-	v := APBSubAppReq{}
+func TestMarshalUnmarshalABPSubAppReq(t *testing.T) {
+	v := ABPSubAppReq{}
 	bts, err := v.MarshalMsg(nil)
 	if err != nil {
 		t.Fatal(err)
@@ -33,8 +33,8 @@ func TestMarshalUnmarshalAPBSubAppReq(t *testing.T) {
 	}
 }
 
-func BenchmarkMarshalMsgAPBSubAppReq(b *testing.B) {
-	v := APBSubAppReq{}
+func BenchmarkMarshalMsgABPSubAppReq(b *testing.B) {
+	v := ABPSubAppReq{}
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -42,8 +42,8 @@ func BenchmarkMarshalMsgAPBSubAppReq(b *testing.B) {
 	}
 }
 
-func BenchmarkAppendMsgAPBSubAppReq(b *testing.B) {
-	v := APBSubAppReq{}
+func BenchmarkAppendMsgABPSubAppReq(b *testing.B) {
+	v := ABPSubAppReq{}
 	bts := make([]byte, 0, v.Msgsize())
 	bts, _ = v.MarshalMsg(bts[0:0])
 	b.SetBytes(int64(len(bts)))
@@ -54,8 +54,8 @@ func BenchmarkAppendMsgAPBSubAppReq(b *testing.B) {
 	}
 }
 
-func BenchmarkUnmarshalAPBSubAppReq(b *testing.B) {
-	v := APBSubAppReq{}
+func BenchmarkUnmarshalABPSubAppReq(b *testing.B) {
+	v := ABPSubAppReq{}
 	bts, _ := v.MarshalMsg(nil)
 	b.ReportAllocs()
 	b.SetBytes(int64(len(bts)))

@@ -11,33 +11,33 @@ import (
 
 // DataUpAppReq represents the actual payloads sent to application on uplink
 type DataUpAppReq struct {
-	Payload  []byte        `msg:"payload",json:"payload"`
-	Metadata []AppMetadata `msg:"metadata",json:"metadata"`
+	Payload  []byte        `msg:"payload" json:"payload"`
+	Metadata []AppMetadata `msg:"metadata" json:"metadata"`
 }
 
 // AppMetadata represents gathered metadata that are sent to gateways
 type AppMetadata struct {
-	Frequency  float32 `msg:"frequency",json:"frequency"`
-	DataRate   string  `msg:"data_rate",json:"data_rate"`
-	CodingRate string  `msg:"coding_rate",json:"coding_rate"`
-	Timestamp  uint32  `msg:"timestamp",json:timestamp"`
-	Rssi       int32   `msg:"rssi",json:"rssi"`
-	Lsnr       float32 `msg:"lsnr",json:"lsnr"`
-	Altitude   int32   `msg:"altitude",json:"altitude"`
-	Longitude  float32 `msg:"longitude",json:"longitude"`
-	Latitude   float32 `msg:"latitude",json:"latitude"`
+	Frequency  float32 `msg:"frequency" json:"frequency"`
+	DataRate   string  `msg:"data_rate" json:"data_rate"`
+	CodingRate string  `msg:"coding_rate" json:"coding_rate"`
+	Timestamp  uint32  `msg:"timestamp" json:timestamp"`
+	Rssi       int32   `msg:"rssi" json:"rssi"`
+	Lsnr       float32 `msg:"lsnr" json:"lsnr"`
+	Altitude   int32   `msg:"altitude" json:"altitude"`
+	Longitude  float32 `msg:"longitude" json:"longitude"`
+	Latitude   float32 `msg:"latitude" json:"latitude"`
 }
 
 // DataDownAppReq represents downlink messages sent by applications
 type DataDownAppReq struct {
-	Payload []byte `msg:"payload",json:"payload"`
+	Payload []byte `msg:"payload" json:"payload"`
 }
 
-// APBSubAppReq defines the shape of the request made by an application to the handler
-type APBSubAppReq struct {
-	DevAddr [4]byte  `msg:"dev_addr",json:"dev_addr"`
-	NwkSKey [16]byte `msg:"nwks_key",json:"nwks_key"`
-	AppSKey [16]byte `msg:"apps_key",json:"apps_key"`
+// ABPSubAppReq defines the shape of the request made by an application to the handler
+type ABPSubAppReq struct {
+	DevAddr string `msg:"dev_addr" json:"dev_addr"`
+	NwkSKey string `msg:"nwks_key" json:"nwks_key"`
+	AppSKey string `msg:"apps_key" json:"apps_key"`
 }
 
 // ProtoMetaToAppMeta converts a set of Metadata generate with Protobuf to a set of valid

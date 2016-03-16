@@ -10,8 +10,15 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/TheThingsNetwork/ttn/utils/errors"
+	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	"github.com/apex/log"
 )
+
+var ErrStructural = pointer.String(string(errors.Structural))
+var ErrOperational = pointer.String(string(errors.Operational))
+var ErrNotFound = pointer.String(string(errors.NotFound))
+var ErrBehavioural = pointer.String(string(errors.Behavioural))
 
 func GetLogger(t *testing.T, tag string) log.Interface {
 	logger := &log.Logger{
@@ -42,4 +49,27 @@ func Check(t *testing.T, want, got interface{}, name string) {
 		Ko(t, "%s don't match expectations.\nWant: %+v\nGot:  %+v", name, want, got)
 	}
 	Ok(t, fmt.Sprintf("Check %s", name))
+}
+
+// Check errors verify if a given string corresponds to a known error
+func CheckErrors(t *testing.T, want *string, got error) {
+	if got == nil {
+		if want == nil {
+			Ok(t, "Check errors")
+			return
+		}
+		Ko(t, "Expected error to be {%s} but got nothing", *want)
+		return
+	}
+
+	if want == nil {
+		Ko(t, "Expected no error but got {%v}", got)
+		return
+	}
+
+	if got.(errors.Failure).Nature == errors.Nature(*want) {
+		Ok(t, "Check errors")
+		return
+	}
+	Ko(t, "Expected error to be {%s} but got {%v}", *want, got)
 }

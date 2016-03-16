@@ -156,7 +156,7 @@ func (b component) HandleData(bctx context.Context, req *core.DataBrokerReq) (*c
 }
 
 // Register implements the core.BrokerServer interface
-func (b component) SubscribePersonalized(bctx context.Context, req *core.SubPersoBrokerReq) (*core.SubPersoBrokerRes, error) {
+func (b component) SubscribePersonalized(bctx context.Context, req *core.ABPSubBrokerReq) (*core.ABPSubBrokerRes, error) {
 	b.ctx.Debug("Handling personalized subscription")
 
 	// Ensure the entry is valid

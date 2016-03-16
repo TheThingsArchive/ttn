@@ -79,7 +79,7 @@ func (h *component) Start(netAddr string) error {
 }
 
 // RegisterPersonalized implements the core.HandlerServer interface
-func (h component) SubscribePersonalized(bctx context.Context, req *core.SubPersoHandlerReq) (*core.SubPersoHandlerRes, error) {
+func (h component) SubscribePersonalized(bctx context.Context, req *core.ABPSubHandlerReq) (*core.ABPSubHandlerRes, error) {
 	h.ctx.Debug("New personalized subscription request")
 	stats.MarkMeter("handler.registration.in")
 
@@ -117,7 +117,7 @@ func (h component) SubscribePersonalized(bctx context.Context, req *core.SubPers
 		return nil, errors.New(errors.Operational, err)
 	}
 
-	_, err := h.broker.SubscribePersonalized(context.Background(), &core.SubPersoBrokerReq{
+	_, err := h.broker.SubscribePersonalized(context.Background(), &core.ABPSubBrokerReq{
 		HandlerNet: h.netAddr,
 		AppEUI:     req.AppEUI,
 		DevAddr:    req.DevAddr,

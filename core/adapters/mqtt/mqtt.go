@@ -57,7 +57,7 @@ func New(handler core.HandlerClient, client *client.Client, chmsg <-chan Msg, ct
 }
 
 // NewClient creates and connects a mqtt client with predefined options.
-func newClient(id string, netAddr string, ctx log.Interface) (*client.Client, chan Msg, error) {
+func NewClient(id string, netAddr string, ctx log.Interface) (*client.Client, chan Msg, error) {
 	var cli *client.Client
 	delay := 25 * time.Millisecond
 	chmsg := make(chan Msg)
@@ -188,7 +188,7 @@ func (a adapter) consumeMQTTMsg(chmsg <-chan Msg) {
 	for msg := range chmsg {
 		switch msg.Type {
 		case Down:
-			req, err := a.handleDataDown(msg)
+			req, err := handleDataDown(msg)
 			if err == nil {
 				_, err = a.handler.HandleDataDown(context.Background(), req)
 			}
@@ -196,7 +196,7 @@ func (a adapter) consumeMQTTMsg(chmsg <-chan Msg) {
 				a.ctx.WithError(err).Debug("Unable to consume data down")
 			}
 		case ABP:
-			req, err := a.handleABP(msg)
+			req, err := handleABP(msg)
 			if err == nil {
 				_, err = a.handler.SubscribePersonalized(context.Background(), req)
 			}
@@ -210,39 +210,53 @@ func (a adapter) consumeMQTTMsg(chmsg <-chan Msg) {
 }
 
 // handleABP parses and handles Application By Personalization request coming through MQTT
-func (a adapter) handleABP(msg Msg) (*core.ABPSubHandlerReq, error) {
+func handleABP(msg Msg) (*core.ABPSubHandlerReq, error) {
 	// Ensure the query / topic parameters are valid
 	topicInfos := strings.Split(msg.Topic, "/")
 	if len(topicInfos) != 4 {
 		return nil, errors.New(errors.Structural, "Unexpect (and invalid) mqtt topic")
 	}
-	appEUI, err := hex.DecodeString(topicInfos[0])
-	if err != nil || len(appEUI) != 8 {
-		return nil, errors.New(errors.Structural, "Invalid Application EUI")
-	}
-	if topicInfos[2] != "personalized" {
-		return nil, errors.New(errors.Implementation, "OTAA not yet supported. Unable to register device")
-	}
 
 	// Get the actual message, try messagePack then JSON
-	var req core.APBSubAppReq
+	var req core.ABPSubAppReq
 	if _, err := req.UnmarshalMsg(msg.Payload); err != nil {
 		if err = json.Unmarshal(msg.Payload, &req); err != nil {
 			return nil, errors.New(errors.Structural, err)
 		}
 	}
 
+	// Verify each parameter
+	appEUI, err := hex.DecodeString(topicInfos[0])
+	if err != nil || len(appEUI) != 8 {
+		return nil, errors.New(errors.Structural, "Invalid Application EUI")
+	}
+
+	devAddr, err := hex.DecodeString(req.DevAddr)
+	if err != nil || len(devAddr) != 4 {
+		return nil, errors.New(errors.Structural, "Invalid Device Address")
+	}
+
+	nwkSKey, err := hex.DecodeString(req.NwkSKey)
+	if err != nil || len(nwkSKey) != 16 {
+		return nil, errors.New(errors.Structural, "Invalid Network Session Key")
+	}
+
+	appSKey, err := hex.DecodeString(req.AppSKey)
+	if err != nil || len(appSKey) != 16 {
+		return nil, errors.New(errors.Structural, "Invalid Application Session Key")
+	}
+
 	// Convert it to an handler subscription
 	return &core.ABPSubHandlerReq{
 		AppEUI:  appEUI,
-		DevAddr: req.DevAddr[:],
-		NwkSKey: req.NwkSKey[:],
-		AppSKey: req.AppSKey[:],
+		DevAddr: devAddr,
+		NwkSKey: nwkSKey,
+		AppSKey: appSKey,
 	}, nil
 }
 
 // handleDataDown parses and handles Downlink message coming through MQTT
-func (a adapter) handleDataDown(msg Msg) (*core.DataDownHandlerReq, error) {
+func handleDataDown(msg Msg) (*core.DataDownHandlerReq, error) {
 	// Ensure the query / topic parameters are valid
 	topicInfos := strings.Split(msg.Topic, "/")
 	if len(topicInfos) != 4 {
@@ -254,13 +268,20 @@ func (a adapter) handleDataDown(msg Msg) (*core.DataDownHandlerReq, error) {
 		return nil, errors.New(errors.Structural, "Topic constituted of invalid AppEUI or DevEUI")
 	}
 
-	if len(msg.Payload) == 0 {
-		return nil, errors.New(errors.Structural, "There's no data to handle")
+	// Retrieve the message payload
+	var req core.DataDownAppReq
+	if _, err := req.UnmarshalMsg(msg.Payload); err != nil {
+		if err = json.Unmarshal(msg.Payload, &req); err != nil {
+			return nil, errors.New(errors.Structural, err)
+		}
+	}
+	if len(req.Payload) == 0 {
+		return nil, errors.New(errors.Structural, "There's now data to handle")
 	}
 
 	// Convert it to an handler downlink
 	return &core.DataDownHandlerReq{
-		Payload: msg.Payload,
+		Payload: req.Payload,
 		AppEUI:  appEUI,
 		DevEUI:  devEUI,
 	}, nil
