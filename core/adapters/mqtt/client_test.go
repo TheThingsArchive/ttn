@@ -17,13 +17,9 @@ const BrokerAddr = "0.0.0.0:1883"
 
 // MockClient implements the Client interface
 type MockClient struct {
-	Failures      map[string]error
-	InUnsubscribe *client.UnsubscribeOptions
-	InSubscribe   *client.SubscribeOptions
-	InPublish     *client.PublishOptions
-	InConnect     *client.ConnectOptions
-	IsTerminate   bool
-	IsDisconnect  bool
+	Failures    map[string]error
+	InPublish   *client.PublishOptions
+	IsTerminate bool
 }
 
 // NewMockClient constructs a new MockClient
@@ -33,39 +29,15 @@ func NewMockClient() *MockClient {
 	}
 }
 
-// Subscribe implements the Client interface
-func (m *MockClient) Subscribe(o *client.SubscribeOptions) error {
-	m.InSubscribe = o
-	return m.Failures["Subscribe"]
-}
-
-// Unsubscribe implements the Client interface
-func (m *MockClient) Unsubscribe(o *client.UnsubscribeOptions) error {
-	m.InUnsubscribe = o
-	return m.Failures["Unsubscribe"]
-}
-
 // Publish implements the Client interface
 func (m *MockClient) Publish(o *client.PublishOptions) error {
 	m.InPublish = o
 	return m.Failures["Publish"]
 }
 
-// Connect implements the Client interface
-func (m *MockClient) Connect(o *client.ConnectOptions) error {
-	m.InConnect = o
-	return m.Failures["Connect"]
-}
-
 // Terminate implements the Client interface
 func (m *MockClient) Terminate() {
 	m.IsTerminate = true
-}
-
-// Disconnect implements the Client interface
-func (m *MockClient) Disconnect() error {
-	m.IsDisconnect = true
-	return m.Failures["Disconnect"]
 }
 
 // MockTryConnect simulates a tryConnect function
@@ -143,13 +115,11 @@ func TestCreateErrorHandler(t *testing.T) {
 	}
 }
 
-func TestNewClient(t *testing.T) {
-	var id int
-	newID := func() string {
-		id++
-		return fmt.Sprintf("(%d)Client#%d", time.Now().Nanosecond(), id)
-	}
+func newID() string {
+	return fmt.Sprintf("(%d)Client", time.Now().Nanosecond())
+}
 
+func TestNewClient(t *testing.T) {
 	testCli := client.New(nil)
 	if err := testCli.Connect(&client.ConnectOptions{
 		Network:  "tcp",
@@ -380,4 +350,118 @@ func TestNewClient(t *testing.T) {
 
 	_ = testCli.Disconnect()
 	testCli.Terminate()
+}
+
+func TestMonitorClient(t *testing.T) {
+	{
+		Desc(t, "Ensure monitor stops when cmd is closed, without any client")
+
+		// Build
+		chcmd := make(chan interface{})
+		chdone := make(chan bool)
+
+		// Operate
+		go func() {
+			monitorClient(newID(), BrokerAddr, chcmd, GetLogger(t, "Test Client"))
+			chdone <- true
+		}()
+		close(chcmd)
+
+		// Check
+		var done bool
+		select {
+		case done = <-chdone:
+		case <-time.After(time.Millisecond * 50):
+		}
+		Check(t, true, done, "Done signals")
+
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Ensure monitor stops when cmd is closed, with a client")
+
+		// Build
+		cli := client.New(nil)
+		chcmd := make(chan interface{})
+		chdone := make(chan bool)
+		cherr := make(chan error)
+
+		// Operate
+		go func() {
+			monitorClient(newID(), BrokerAddr, chcmd, GetLogger(t, "Test Client"))
+			chdone <- true
+		}()
+		chcmd <- cmdClient{cherr: cherr, options: cli}
+		<-cherr
+		close(chcmd)
+
+		// Check
+		var done bool
+		select {
+		case done = <-chdone:
+		case <-time.After(time.Millisecond * 50):
+		}
+		Check(t, true, done, "Done signals")
+
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Send an invalid command to monitor, no client")
+
+		// Build
+		chcmd := make(chan interface{})
+		chdone := make(chan bool)
+
+		// Operate
+		go func() {
+			monitorClient(newID(), BrokerAddr, chcmd, GetLogger(t, "Test Client"))
+			chdone <- true
+		}()
+		chcmd <- "Patate"
+
+		// Check
+		var done bool
+		select {
+		case done = <-chdone:
+		case <-time.After(time.Millisecond * 50):
+		}
+		Check(t, false, done, "Done signals")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Send an invalid command to monitor, no client")
+
+		// Build
+		cli := client.New(nil)
+		chcmd := make(chan interface{})
+		chdone := make(chan bool)
+		cherr := make(chan error)
+
+		// Operate
+		go func() {
+			monitorClient(newID(), BrokerAddr, chcmd, GetLogger(t, "Test Client"))
+			chdone <- true
+		}()
+		chcmd <- cmdClient{cherr: cherr, options: cli}
+		<-cherr
+		chcmd <- "Patate"
+
+		// Check
+		var done bool
+		select {
+		case done = <-chdone:
+		case <-time.After(time.Millisecond * 50):
+		}
+		Check(t, false, done, "Done signals")
+
+		// Clean
+		_ = cli.Disconnect()
+		cli.Terminate()
+	}
 }
