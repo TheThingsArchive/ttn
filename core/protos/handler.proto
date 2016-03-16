@@ -26,17 +26,17 @@ message DataDownHandlerReq {
 
 message DataDownHandlerRes {}
 
-message SubPersoHandlerReq {
+message ABPSubHandlerReq {
     bytes       AppEUI      = 1;
     bytes       DevAddr     = 2;
     bytes       NwkSKey     = 3;
     bytes       AppSKey     = 4;
 }
 
-message SubPersoHandlerRes {}
+message ABPSubHandlerRes {}
 
 service Handler {
     rpc HandleDataUp            (DataUpHandlerReq)      returns (DataUpHandlerRes);
     rpc HandleDataDown          (DataDownHandlerReq)    returns (DataDownHandlerRes);
-    rpc SubscribePersonalized   (SubPersoHandlerReq)    returns (SubPersoHandlerRes);
+    rpc SubscribePersonalized   (ABPSubHandlerReq)      returns (ABPSubHandlerRes);
 }

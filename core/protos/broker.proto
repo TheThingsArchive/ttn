@@ -14,16 +14,16 @@ message DataBrokerRes {
     Metadata        Metadata    = 2;
 }
 
-message SubPersoBrokerReq {
+message ABPSubBrokerReq {
 	string          HandlerNet  = 1;
 	bytes           AppEUI      = 2;
 	bytes           DevAddr     = 3;
 	bytes           NwkSKey     = 4;
 }
 
-message SubPersoBrokerRes{}
+message ABPSubBrokerRes{}
 
 service Broker {
     rpc HandleData              (DataBrokerReq)         returns (DataBrokerRes);
-    rpc SubscribePersonalized   (SubPersoBrokerReq)     returns (SubPersoBrokerRes);
+    rpc SubscribePersonalized   (ABPSubBrokerReq)       returns (ABPSubBrokerRes);
 }

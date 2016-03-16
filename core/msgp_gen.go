@@ -9,6 +9,69 @@ import (
 )
 
 // MarshalMsg implements msgp.Marshaler
+func (z *APBSubAppReq) MarshalMsg(b []byte) (o []byte, err error) {
+	o = msgp.Require(b, z.Msgsize())
+	// map header, size 3
+	// string "dev_addr"
+	o = append(o, 0x83, 0xa8, 0x64, 0x65, 0x76, 0x5f, 0x61, 0x64, 0x64, 0x72)
+	o = msgp.AppendBytes(o, z.DevAddr[:])
+	// string "nwks_key"
+	o = append(o, 0xa8, 0x6e, 0x77, 0x6b, 0x73, 0x5f, 0x6b, 0x65, 0x79)
+	o = msgp.AppendBytes(o, z.NwkSKey[:])
+	// string "apps_key"
+	o = append(o, 0xa8, 0x61, 0x70, 0x70, 0x73, 0x5f, 0x6b, 0x65, 0x79)
+	o = msgp.AppendBytes(o, z.AppSKey[:])
+	return
+}
+
+// UnmarshalMsg implements msgp.Unmarshaler
+func (z *APBSubAppReq) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	var field []byte
+	_ = field
+	var isz uint32
+	isz, bts, err = msgp.ReadMapHeaderBytes(bts)
+	if err != nil {
+		return
+	}
+	for isz > 0 {
+		isz--
+		field, bts, err = msgp.ReadMapKeyZC(bts)
+		if err != nil {
+			return
+		}
+		switch msgp.UnsafeString(field) {
+		case "dev_addr":
+			bts, err = msgp.ReadExactBytes(bts, z.DevAddr[:])
+			if err != nil {
+				return
+			}
+		case "nwks_key":
+			bts, err = msgp.ReadExactBytes(bts, z.NwkSKey[:])
+			if err != nil {
+				return
+			}
+		case "apps_key":
+			bts, err = msgp.ReadExactBytes(bts, z.AppSKey[:])
+			if err != nil {
+				return
+			}
+		default:
+			bts, err = msgp.Skip(bts)
+			if err != nil {
+				return
+			}
+		}
+	}
+	o = bts
+	return
+}
+
+func (z *APBSubAppReq) Msgsize() (s int) {
+	s = 1 + 9 + msgp.ArrayHeaderSize + (4 * (msgp.ByteSize)) + 9 + msgp.ArrayHeaderSize + (16 * (msgp.ByteSize)) + 9 + msgp.ArrayHeaderSize + (16 * (msgp.ByteSize))
+	return
+}
+
+// MarshalMsg implements msgp.Marshaler
 func (z *AppMetadata) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
 	// map header, size 9
@@ -120,7 +183,54 @@ func (z *AppMetadata) Msgsize() (s int) {
 }
 
 // MarshalMsg implements msgp.Marshaler
-func (z *AppPayload) MarshalMsg(b []byte) (o []byte, err error) {
+func (z *DataDownAppReq) MarshalMsg(b []byte) (o []byte, err error) {
+	o = msgp.Require(b, z.Msgsize())
+	// map header, size 1
+	// string "payload"
+	o = append(o, 0x81, 0xa7, 0x70, 0x61, 0x79, 0x6c, 0x6f, 0x61, 0x64)
+	o = msgp.AppendBytes(o, z.Payload)
+	return
+}
+
+// UnmarshalMsg implements msgp.Unmarshaler
+func (z *DataDownAppReq) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	var field []byte
+	_ = field
+	var isz uint32
+	isz, bts, err = msgp.ReadMapHeaderBytes(bts)
+	if err != nil {
+		return
+	}
+	for isz > 0 {
+		isz--
+		field, bts, err = msgp.ReadMapKeyZC(bts)
+		if err != nil {
+			return
+		}
+		switch msgp.UnsafeString(field) {
+		case "payload":
+			z.Payload, bts, err = msgp.ReadBytesBytes(bts, z.Payload)
+			if err != nil {
+				return
+			}
+		default:
+			bts, err = msgp.Skip(bts)
+			if err != nil {
+				return
+			}
+		}
+	}
+	o = bts
+	return
+}
+
+func (z *DataDownAppReq) Msgsize() (s int) {
+	s = 1 + 8 + msgp.BytesPrefixSize + len(z.Payload)
+	return
+}
+
+// MarshalMsg implements msgp.Marshaler
+func (z *DataUpAppReq) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
 	// map header, size 2
 	// string "payload"
@@ -129,8 +239,8 @@ func (z *AppPayload) MarshalMsg(b []byte) (o []byte, err error) {
 	// string "metadata"
 	o = append(o, 0xa8, 0x6d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61)
 	o = msgp.AppendArrayHeader(o, uint32(len(z.Metadata)))
-	for xvk := range z.Metadata {
-		o, err = z.Metadata[xvk].MarshalMsg(o)
+	for cmr := range z.Metadata {
+		o, err = z.Metadata[cmr].MarshalMsg(o)
 		if err != nil {
 			return
 		}
@@ -139,7 +249,7 @@ func (z *AppPayload) MarshalMsg(b []byte) (o []byte, err error) {
 }
 
 // UnmarshalMsg implements msgp.Unmarshaler
-func (z *AppPayload) UnmarshalMsg(bts []byte) (o []byte, err error) {
+func (z *DataUpAppReq) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	var field []byte
 	_ = field
 	var isz uint32
@@ -170,8 +280,8 @@ func (z *AppPayload) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			} else {
 				z.Metadata = make([]AppMetadata, xsz)
 			}
-			for xvk := range z.Metadata {
-				bts, err = z.Metadata[xvk].UnmarshalMsg(bts)
+			for cmr := range z.Metadata {
+				bts, err = z.Metadata[cmr].UnmarshalMsg(bts)
 				if err != nil {
 					return
 				}
@@ -187,10 +297,10 @@ func (z *AppPayload) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	return
 }
 
-func (z *AppPayload) Msgsize() (s int) {
+func (z *DataUpAppReq) Msgsize() (s int) {
 	s = 1 + 8 + msgp.BytesPrefixSize + len(z.Payload) + 9 + msgp.ArrayHeaderSize
-	for xvk := range z.Metadata {
-		s += z.Metadata[xvk].Msgsize()
+	for cmr := range z.Metadata {
+		s += z.Metadata[cmr].Msgsize()
 	}
 	return
 }

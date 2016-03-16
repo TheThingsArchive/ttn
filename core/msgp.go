@@ -9,8 +9,8 @@ import (
 	"reflect"
 )
 
-// AppPayload represents the actual payloads sent to application
-type AppPayload struct {
+// DataUpAppReq represents the actual payloads sent to application on uplink
+type DataUpAppReq struct {
 	Payload  []byte        `msg:"payload",json:"payload"`
 	Metadata []AppMetadata `msg:"metadata",json:"metadata"`
 }
@@ -26,6 +26,18 @@ type AppMetadata struct {
 	Altitude   int32   `msg:"altitude",json:"altitude"`
 	Longitude  float32 `msg:"longitude",json:"longitude"`
 	Latitude   float32 `msg:"latitude",json:"latitude"`
+}
+
+// DataDownAppReq represents downlink messages sent by applications
+type DataDownAppReq struct {
+	Payload []byte `msg:"payload",json:"payload"`
+}
+
+// APBSubAppReq defines the shape of the request made by an application to the handler
+type APBSubAppReq struct {
+	DevAddr [4]byte  `msg:"dev_addr",json:"dev_addr"`
+	NwkSKey [16]byte `msg:"nwks_key",json:"nwks_key"`
+	AppSKey [16]byte `msg:"apps_key",json:"apps_key"`
 }
 
 // ProtoMetaToAppMeta converts a set of Metadata generate with Protobuf to a set of valid
