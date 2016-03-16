@@ -12,64 +12,28 @@ import (
 	"github.com/yosssi/gmq/mqtt/client"
 )
 
+// InitialReconnectDelay represents the initial delay of reconnection in case of lose. The client
+// will attempt to reconnect several times after a given delay being 10x the previous one.
 const InitialReconnectDelay = 25 * time.Millisecond
 
+// Client provides an interface for an MQTT client
 type Client interface {
-	Subscribe(*client.SubscribeOptions) error
-	Unsubscribe(*client.UnsubscribeOptions) error
+	// Publish pushes a message on a given topic
 	Publish(*client.PublishOptions) error
-	Connect(*client.ConnectOptions) error
-	Disconnect() error
+	// Terminate kills internal client goroutine and processes
 	Terminate()
 }
 
+// connecter is an alias used by methods belows
 type connecter func() error
-
-type recoverableClient struct {
-	chcmd chan<- interface{}
-	cherr <-chan error
-}
-
-type disconnectOptions struct{}
-type terminateOptions struct{}
-
-func (c recoverableClient) Subscribe(o *client.SubscribeOptions) error {
-	c.chcmd <- o
-	return <-c.cherr
-}
-
-func (c recoverableClient) Unsubscribe(o *client.UnsubscribeOptions) error {
-	c.chcmd <- o
-	return <-c.cherr
-}
-
-func (c recoverableClient) Publish(o *client.PublishOptions) error {
-	c.chcmd <- o
-	return <-c.cherr
-}
-
-func (c recoverableClient) Connect(o *client.ConnectOptions) error {
-	c.chcmd <- o
-	return <-c.cherr
-}
-
-func (c recoverableClient) Disconnect() error {
-	c.chcmd <- disconnectOptions{}
-	return <-c.cherr
-}
-
-func (c recoverableClient) Terminate() {
-	c.chcmd <- terminateOptions{}
-}
 
 // NewClient creates and connects a mqtt client with predefined options.
 func NewClient(id string, netAddr string, ctx log.Interface) (Client, chan Msg, error) {
 	ctx = ctx.WithField("id", id).WithField("address", netAddr)
 	chcmd := make(chan interface{})
-	cherr := make(chan error)
 	chmsg := make(chan Msg)
 
-	go monitorClient(id, netAddr, chcmd, cherr, ctx)
+	go monitorClient(id, netAddr, chcmd, ctx)
 
 	tryConnect := createConnecter(id, netAddr, chmsg, chcmd, ctx)
 	if err := tryConnect(); err != nil {
@@ -77,53 +41,52 @@ func NewClient(id string, netAddr string, ctx log.Interface) (Client, chan Msg, 
 		return nil, nil, errors.New(errors.Operational, err)
 	}
 
-	return recoverableClient{
+	return safeClient{
 		chcmd: chcmd,
-		cherr: cherr,
 	}, chmsg, nil
 }
 
-func monitorClient(id string, netAddr string, chcmd <-chan interface{}, cherr chan<- error, ctx log.Interface) {
+// monitorClient is used to keep all accesses to the client completely concurrent-safe. It also
+// allows to replace the current client by a new one in case of error. /
+//
+// When the client loses its connection and isn't able to re-establish it, we need to create a new
+// client. However, because that client is likely to be accessed by several goroutines at "the same
+// time", we cannot just swap two variables somewhere. The hereby monitor enables a safe client
+// swapping and managing. (See safeClient struct as well)
+func monitorClient(id string, netAddr string, chcmd <-chan interface{}, ctx log.Interface) {
 	var cli *client.Client
 	ctx = ctx.WithField("process", "monitorClient")
 	ctx.Debug("Start monitoring MQTT client")
 
 	for cmd := range chcmd {
 		if cli == nil {
-			init, ok := cmd.(*client.Client)
+			init, ok := cmd.(cmdClient)
 			if !ok {
 				ctx.Warn("Received cmd whereas client is nil. Ignored")
 				continue
 			}
 			ctx.Debug("Setup initial MQTT client")
-			cli = init
+			cli = init.options
+			init.cherr <- nil
 			continue
 		}
 		switch cmd.(type) {
-		case *client.SubscribeOptions:
-			ctx.Debug("Client received new subscription order")
-			cherr <- cli.Subscribe(cmd.(*client.SubscribeOptions))
-		case *client.UnsubscribeOptions:
-			ctx.Debug("Client received new unsubscription order")
-			cherr <- cli.Unsubscribe(cmd.(*client.UnsubscribeOptions))
-		case *client.PublishOptions:
+		case cmdPublish:
+			cmd := cmd.(cmdPublish)
 			ctx.Debug("Client received new publication order")
-			cherr <- cli.Publish(cmd.(*client.PublishOptions))
-		case *client.ConnectOptions:
-			ctx.Debug("Client received new connection order")
-			cherr <- cli.Connect(cmd.(*client.ConnectOptions))
-		case disconnectOptions:
-			ctx.Debug("Client received disconnection order")
-			cherr <- cli.Disconnect()
-		case terminateOptions:
+			cmd.cherr <- cli.Publish(cmd.options)
+		case cmdTerminate:
+			cmd := cmd.(cmdTerminate)
 			ctx.Debug("Client received termination order")
 			cli.Terminate()
 			cli = nil
-		case *client.Client:
+			cmd.cherr <- nil
+		case cmdClient:
+			cmd := cmd.(cmdClient)
 			ctx.Debug("Replacing client with another one")
-			_ = cli.Disconnect()
 			cli.Terminate()
-			cli = cmd.(*client.Client)
+			cli = cmd.options
+			cmd.cherr <- nil
 		default:
 			ctx.WithField("cmd", cmd).Warn("Received unreckognized command")
 		}
@@ -136,17 +99,18 @@ func monitorClient(id string, netAddr string, chcmd <-chan interface{}, cherr ch
 	ctx.Debug("Stop monitoring MQTT client")
 }
 
+// createConnecter is used to start and subscribe a new client. It also make sure that if the
+// created client goes down, another one is automatically created such that the client recover
+// itself.
 func createConnecter(id string, netAddr string, chmsg chan<- Msg, chcmd chan<- interface{}, ctx log.Interface) connecter {
 	ctx.Debug("Create new connecter for MQTT client")
 	var cli *client.Client
 	cli = client.New(&client.Options{
-		ErrorHandler: func(err error) {
-			createErrorHandler(
-				createConnecter(id, netAddr, chmsg, chcmd, ctx),
-				10000*InitialReconnectDelay,
-				ctx,
-			)(err)
-		},
+		ErrorHandler: createErrorHandler(
+			func() error { return createConnecter(id, netAddr, chmsg, chcmd, ctx)() },
+			10000*InitialReconnectDelay,
+			ctx,
+		),
 	})
 
 	return func() error {
@@ -192,9 +156,10 @@ func createConnecter(id string, netAddr string, chmsg chan<- Msg, chcmd chan<- i
 			return err
 		}
 
+		cherr := make(chan error)
 		select {
-		case chcmd <- cli:
-			return nil
+		case chcmd <- cmdClient{options: cli, cherr: cherr}:
+			return <-cherr
 		case <-time.After(time.Second):
 			return errors.New(errors.Operational, "Timeout. Unable to set new client")
 		}

@@ -202,7 +202,6 @@ func TestNewClient(t *testing.T) {
 		Check(t, msg, got, "MQTT Messages")
 
 		// Clean
-		_ = cli.Disconnect()
 		cli.Terminate()
 		<-time.After(time.Millisecond * 50)
 	}
@@ -238,7 +237,6 @@ func TestNewClient(t *testing.T) {
 		Check(t, msg, got, "MQTT Messages")
 
 		// Clean
-		_ = cli.Disconnect()
 		cli.Terminate()
 		<-time.After(time.Millisecond * 50)
 	}
@@ -270,7 +268,6 @@ func TestNewClient(t *testing.T) {
 		Check(t, msg, got, "MQTT Messages")
 
 		// Clean
-		_ = cli.Disconnect()
 		cli.Terminate()
 		<-time.After(time.Millisecond * 50)
 	}
@@ -315,7 +312,6 @@ func TestNewClient(t *testing.T) {
 		Check(t, msg, got, "MQTT Messages")
 
 		// Clean
-		_ = cli.Disconnect()
 		cli.Terminate()
 		_ = usurp.Disconnect()
 		usurp.Terminate()
@@ -372,7 +368,6 @@ func TestNewClient(t *testing.T) {
 		Check(t, msg, got, "MQTT Messages")
 
 		// Clean
-		_ = cli.Disconnect()
 		err = testCli.Unsubscribe(&client.UnsubscribeOptions{
 			[][]byte{[]byte(msg.Topic)},
 		})
