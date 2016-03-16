@@ -25,7 +25,7 @@ func GetLogger(t *testing.T, tag string) log.Interface {
 		Handler: NewLogHandler(t),
 		Level:   log.DebugLevel,
 	}
-	return logger.WithField("tag", "Adapter")
+	return logger.WithField("tag", tag)
 }
 
 // Ok displays a green check symbol
@@ -72,4 +72,10 @@ func CheckErrors(t *testing.T, want *string, got error) {
 		return
 	}
 	Ko(t, "Expected error to be {%s} but got {%v}", *want, got)
+}
+
+func FatalUnless(t *testing.T, err error) {
+	if err != nil {
+		Ko(t, "Unexpected error arised: %s", err)
+	}
 }

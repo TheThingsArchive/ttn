@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
@@ -21,7 +20,7 @@ import (
 )
 
 type adapter struct {
-	*client.Client
+	Client
 	handler core.HandlerClient
 	ctx     log.Interface
 }
@@ -44,7 +43,7 @@ const (
 
 // New constructs an mqtt adapter responsible for making the bridge between the handler and
 // application.
-func New(handler core.HandlerClient, client *client.Client, chmsg <-chan Msg, ctx log.Interface) core.AppClient {
+func New(handler core.HandlerClient, client Client, chmsg <-chan Msg, ctx log.Interface) core.AppClient {
 	a := adapter{
 		Client:  client,
 		handler: handler,
@@ -54,80 +53,6 @@ func New(handler core.HandlerClient, client *client.Client, chmsg <-chan Msg, ct
 	go a.consumeMQTTMsg(chmsg)
 
 	return a
-}
-
-// NewClient creates and connects a mqtt client with predefined options.
-func NewClient(id string, netAddr string, ctx log.Interface) (*client.Client, chan Msg, error) {
-	var cli *client.Client
-	delay := 25 * time.Millisecond
-	chmsg := make(chan Msg)
-
-	tryConnect := func() error {
-		ctx.WithField("id", id).WithField("address", netAddr).Debug("(Re)Connecting MQTT Client")
-		err := cli.Connect(&client.ConnectOptions{
-			Network:  "tcp",
-			Address:  netAddr,
-			ClientID: []byte(id),
-		})
-
-		if err != nil {
-			return err
-		}
-
-		return cli.Subscribe(&client.SubscribeOptions{
-			SubReqs: []*client.SubReq{
-				&client.SubReq{
-					TopicFilter: []byte("+/devices/+/down"),
-					QoS:         mqtt.QoS2,
-					Handler: func(topic, msg []byte) {
-						chmsg <- Msg{
-							Topic:   string(topic),
-							Payload: msg,
-							Type:    Down,
-						}
-					},
-				},
-				&client.SubReq{
-					TopicFilter: []byte("+/devices/personalized/activations"),
-					QoS:         mqtt.QoS2,
-					Handler: func(topic, msg []byte) {
-						chmsg <- Msg{
-							Topic:   string(topic),
-							Payload: msg,
-							Type:    ABP,
-						}
-					},
-				},
-			},
-		})
-	}
-
-	var reconnect func(fault error)
-	reconnect = func(fault error) {
-		if cli == nil {
-			ctx.Fatal("Attempt reconnection on non-existing client")
-		}
-		if delay > 10000*delay {
-			cli.Terminate()
-			ctx.WithError(fault).Fatal("Unable to reconnect the mqtt client")
-		}
-		<-time.After(delay)
-		if err := tryConnect(); err != nil {
-			delay *= 10
-			ctx.WithError(err).Debugf("Failed to reconnect MQTT client. Trying again in %s", delay)
-			reconnect(fault)
-			return
-		}
-		delay = 25 * time.Millisecond
-	}
-
-	cli = client.New(&client.Options{ErrorHandler: reconnect})
-
-	if err := tryConnect(); err != nil {
-		cli.Terminate()
-		return nil, nil, errors.New(errors.Operational, err)
-	}
-	return cli, chmsg, nil
 }
 
 // HandleData implements the core.AppClient interface
