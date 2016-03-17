@@ -133,17 +133,15 @@ func (e entry) MarshalBinary() ([]byte, error) {
 func (e *entry) UnmarshalBinary(data []byte) error {
 	buf := bytes.NewBuffer(data)
 
-	// e.until
-	tdata := new([]byte)
-	binary.Read(buf, binary.BigEndian, tdata)
-	if err := e.until.UnmarshalBinary(*tdata); err != nil {
-		return errors.New(errors.Structural, err)
-	}
-
 	// e.Broker
 	index := new(uint16)
 	binary.Read(buf, binary.BigEndian, index)
 	e.BrokerIndex = int(*index)
+
+	// e.until
+	if err := e.until.UnmarshalBinary(buf.Next(buf.Len())); err != nil {
+		return errors.New(errors.Structural, err)
+	}
 
 	return nil
 }
