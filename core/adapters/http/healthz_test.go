@@ -1,13 +1,12 @@
 // Copyright © 2016 The Things Network
 // Use of this source code is governed by the MIT license that can be found in the LICENSE file.
 
-package handlers
+package http
 
 import (
 	"net/http"
 	"testing"
 
-	. "github.com/TheThingsNetwork/ttn/core/adapters/http"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"github.com/smartystreets/assertions"
 )
@@ -29,7 +28,7 @@ func TestHealthzHandle(t *testing.T) {
 	req.RemoteAddr = "127.0.0.1:12345"
 	rw := NewResponseWriter()
 
-	h.Handle(&rw, make(chan<- PktReq), make(chan<- RegReq), req)
+	h.Handle(&rw, req)
 	a.So(rw.TheStatus, assertions.ShouldEqual, 200)
 	a.So(string(rw.TheBody), assertions.ShouldEqual, "ok")
 }

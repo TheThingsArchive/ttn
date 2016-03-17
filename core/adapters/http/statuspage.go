@@ -1,26 +1,23 @@
 // Copyright © 2016 The Things Network
 // Use of this source code is governed by the MIT license that can be found in the LICENSE file.
 
-package handlers
+package http
 
 import (
 	"encoding/json"
 	"net/http"
 	"strings"
 
-	. "github.com/TheThingsNetwork/ttn/core/adapters/http"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/stats"
 	"github.com/rcrowley/go-metrics"
 )
 
-// StatusPage shows statistic on GEt request
+// StatusPage shows statistic on GET request
 //
 // It listens to requests of the form: [GET] /status
 //
 // No body or query param are expected
-//
-// This handler does not generate any registration.
 type StatusPage struct{}
 
 // URL implements the http.Handler interface
@@ -29,7 +26,7 @@ func (p StatusPage) URL() string {
 }
 
 // Handle implements the http.Handler interface
-func (p StatusPage) Handle(w http.ResponseWriter, chpkt chan<- PktReq, chreg chan<- RegReq, req *http.Request) error {
+func (p StatusPage) Handle(w http.ResponseWriter, req *http.Request) error {
 	// Check the http method
 	if req.Method != "GET" {
 		err := errors.New(errors.Structural, "Unreckognized HTTP method. Please use [GET] to request the status")

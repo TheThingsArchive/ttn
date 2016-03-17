@@ -1,13 +1,12 @@
 // Copyright © 2016 The Things Network
 // Use of this source code is governed by the MIT license that can be found in the LICENSE file.
 
-package handlers
+package http
 
 import (
 	"net/http"
 	"testing"
 
-	. "github.com/TheThingsNetwork/ttn/core/adapters/http"
 	"github.com/TheThingsNetwork/ttn/utils/stats"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"github.com/smartystreets/assertions"
@@ -30,14 +29,14 @@ func TestStatusPageHandler(t *testing.T) {
 	r1, _ := http.NewRequest("POST", "/status", nil)
 	r1.RemoteAddr = "127.0.0.1:12345"
 	rw1 := NewResponseWriter()
-	s.Handle(&rw1, make(chan<- PktReq), make(chan<- RegReq), r1)
+	s.Handle(&rw1, r1)
 	a.So(rw1.TheStatus, assertions.ShouldEqual, 405)
 
 	// Initially Empty
 	r3, _ := http.NewRequest("GET", "/status", nil)
 	r3.RemoteAddr = "127.0.0.1:12345"
 	rw3 := NewResponseWriter()
-	s.Handle(&rw3, make(chan<- PktReq), make(chan<- RegReq), r3)
+	s.Handle(&rw3, r3)
 	a.So(rw3.TheStatus, assertions.ShouldEqual, 200)
 	a.So(string(rw3.TheBody), assertions.ShouldEqual, "{}")
 
@@ -51,7 +50,7 @@ func TestStatusPageHandler(t *testing.T) {
 	r4, _ := http.NewRequest("GET", "/status", nil)
 	r4.RemoteAddr = "127.0.0.1:12345"
 	rw4 := NewResponseWriter()
-	s.Handle(&rw4, make(chan<- PktReq), make(chan<- RegReq), r4)
+	s.Handle(&rw4, r4)
 	a.So(rw4.TheStatus, assertions.ShouldEqual, 200)
 	a.So(string(rw4.TheBody), assertions.ShouldContainSubstring, "\"is-a-counter\"")
 	a.So(string(rw4.TheBody), assertions.ShouldContainSubstring, "p_50")
