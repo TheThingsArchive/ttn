@@ -256,7 +256,7 @@ func ParseDatr(datr string) (float64, float64, error) {
 	return sf, bw, nil
 }
 
-func StateFromDuty(duty uint) State {
+func StateFromDuty(duty uint32) State {
 	if duty >= 100 {
 		return StateBlocked
 	}

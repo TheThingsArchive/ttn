@@ -94,13 +94,13 @@ func (r component) HandleData(ctx context.Context, req *core.DataRouterReq) (*co
 		cycles = make(dutycycle.Cycles)
 	}
 
-	sb1, err := dutycycle.GetSubBand(float64(req.Metadata.Frequency))
+	sb1, err := dutycycle.GetSubBand(float32(req.Metadata.Frequency))
 	if err != nil {
 		stats.MarkMeter("router.uplink.not_supported")
 		return nil, errors.New(errors.Structural, "Unhandled uplink signal frequency")
 	}
 
-	rx1, rx2 := uint(dutycycle.StateFromDuty(cycles[sb1])), uint(dutycycle.StateFromDuty(cycles[dutycycle.EuropeG3]))
+	rx1, rx2 := dutycycle.StateFromDuty(cycles[sb1]), dutycycle.StateFromDuty(cycles[dutycycle.EuropeG3])
 	req.Metadata.DutyRX1, req.Metadata.DutyRX2 = uint32(rx1), uint32(rx2)
 
 	bpacket := &core.DataBrokerReq{Payload: req.Payload, Metadata: req.Metadata}
@@ -149,10 +149,10 @@ func (r component) handleDataDown(req *core.DataBrokerRes, gatewayID []byte) (*c
 		stats.MarkMeter("router.uplink.bad_broker_response")
 		return nil, errors.New(errors.Structural, "Missing mandatory Metadata in response")
 	}
-	freq := float64(req.Metadata.Frequency)
+	freq := req.Metadata.Frequency
 	datr := req.Metadata.DataRate
 	codr := req.Metadata.CodingRate
-	size := uint(req.Metadata.PayloadSize)
+	size := req.Metadata.PayloadSize
 	if err := r.DutyManager.Update(gatewayID, freq, size, datr, codr); err != nil {
 		return nil, errors.New(errors.Operational, err)
 	}
