@@ -14,7 +14,10 @@ import (
 	"github.com/spf13/viper"
 )
 
-var cfgFile string
+var (
+	cfgFile string
+	debug   bool
+)
 
 var ctx log.Interface
 
@@ -25,7 +28,7 @@ var RootCmd = &cobra.Command{
 	Long:  `The Things Network's backend server`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		var logLevel = log.InfoLevel
-		if viper.GetBool("debug") {
+		if debug {
 			logLevel = log.DebugLevel
 		}
 		ctx = &log.Logger{
@@ -48,6 +51,7 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default \"$HOME/.ttn.yaml\")")
+	RootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "Set log level to debugging")
 }
 
 // initConfig reads in config file and ENV variables if set.
