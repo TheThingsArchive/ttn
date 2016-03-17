@@ -15,16 +15,25 @@ import (
 	"golang.org/x/net/context"
 )
 
+// Components defines a structure to make the instantiation easier to read
+type Components struct {
+	DutyManager dutycycle.DutyManager
+	Brokers     []core.BrokerClient
+	Ctx         log.Interface
+	Storage     Storage
+}
+
+// Options defines a structure to make the instantiation easier to read
+type Options struct{}
+
+// component implements the core.RouterServer interface
 type component struct {
-	Storage
-	manager dutycycle.DutyManager
-	brokers []core.BrokerClient
-	ctx     log.Interface
+	Components
 }
 
 // New constructs a new router
-func New(db Storage, dm dutycycle.DutyManager, brokers []core.BrokerClient, ctx log.Interface) core.RouterServer {
-	return component{Storage: db, manager: dm, brokers: brokers, ctx: ctx}
+func New(c Components, o Options) core.RouterServer {
+	return component{Components: c}
 }
 
 // HandleStats implements the core.RouterClient interface
@@ -42,13 +51,13 @@ func (r component) HandleStats(ctx context.Context, req *core.StatsReq) (*core.S
 	}
 
 	stats.MarkMeter("router.stat.in")
-	return nil, r.UpdateStats(req.GatewayID, *req.Metadata)
+	return nil, r.Storage.UpdateStats(req.GatewayID, *req.Metadata)
 }
 
 // HandleData implements the core.RouterClient interface
 func (r component) HandleData(ctx context.Context, req *core.DataRouterReq) (*core.DataRouterRes, error) {
 	// Get some logs / analytics
-	r.ctx.Debug("Handling uplink packet")
+	r.Ctx.Debug("Handling uplink packet")
 	stats.MarkMeter("router.uplink.in")
 
 	// Validate coming data
@@ -64,24 +73,24 @@ func (r component) HandleData(ctx context.Context, req *core.DataRouterReq) (*co
 	}
 
 	// Lookup for an existing broker
-	entries, err := r.Lookup(fhdr.DevAddr)
+	entries, err := r.Storage.Lookup(fhdr.DevAddr)
 	if err != nil && err.(errors.Failure).Nature != errors.NotFound {
-		r.ctx.Warn("Database lookup failed")
+		r.Ctx.Warn("Database lookup failed")
 		return nil, errors.New(errors.Operational, err)
 	}
 	shouldBroadcast := err != nil
 
 	// Add Gateway location metadata
-	if gmeta, err := r.LookupStats(req.GatewayID); err == nil {
+	if gmeta, err := r.Storage.LookupStats(req.GatewayID); err == nil {
 		req.Metadata.Latitude = gmeta.Latitude
 		req.Metadata.Longitude = gmeta.Longitude
 		req.Metadata.Altitude = gmeta.Altitude
 	}
 
 	// Add Gateway duty metadata
-	cycles, err := r.manager.Lookup(req.GatewayID)
+	cycles, err := r.DutyManager.Lookup(req.GatewayID)
 	if err != nil {
-		r.ctx.WithError(err).Debug("Unable to get any metadata about duty-cycles")
+		r.Ctx.WithError(err).Debug("Unable to get any metadata about duty-cycles")
 		cycles = make(dutycycle.Cycles)
 	}
 
@@ -101,18 +110,18 @@ func (r component) HandleData(ctx context.Context, req *core.DataRouterReq) (*co
 	if shouldBroadcast {
 		// No Recipient available -> broadcast
 		stats.MarkMeter("router.broadcast")
-		response, err = r.send(bpacket, true, r.brokers...)
+		response, err = r.send(bpacket, true, r.Brokers...)
 	} else {
 		// Recipients are available
 		stats.MarkMeter("router.send")
 		var brokers []core.BrokerClient
 		for _, e := range entries {
-			brokers = append(brokers, r.brokers[e.BrokerIndex])
+			brokers = append(brokers, r.Brokers[e.BrokerIndex])
 		}
 		response, err = r.send(bpacket, false, brokers...)
 		if err != nil && err.(errors.Failure).Nature == errors.NotFound {
 			// Might be a collision with the dev addr, we better broadcast
-			response, err = r.send(bpacket, true, r.brokers...)
+			response, err = r.send(bpacket, true, r.Brokers...)
 		}
 		stats.MarkMeter("router.uplink.out")
 	}
@@ -144,7 +153,7 @@ func (r component) handleDataDown(req *core.DataBrokerRes, gatewayID []byte) (*c
 	datr := req.Metadata.DataRate
 	codr := req.Metadata.CodingRate
 	size := uint(req.Metadata.PayloadSize)
-	if err := r.manager.Update(gatewayID, freq, size, datr, codr); err != nil {
+	if err := r.DutyManager.Update(gatewayID, freq, size, datr, codr); err != nil {
 		return nil, errors.New(errors.Operational, err)
 	}
 
@@ -154,7 +163,7 @@ func (r component) handleDataDown(req *core.DataBrokerRes, gatewayID []byte) (*c
 
 func (r component) send(req *core.DataBrokerReq, isBroadcast bool, brokers ...core.BrokerClient) (*core.DataBrokerRes, error) {
 	// Define a more helpful context
-	ctx := r.ctx.WithField("devAddr", req.Payload.MACPayload.FHDR.DevAddr)
+	ctx := r.Ctx.WithField("devAddr", req.Payload.MACPayload.FHDR.DevAddr)
 	ctx.Debug("Sending Packet")
 	nb := len(brokers)
 	stats.UpdateHistogram("router.send_recipients", int64(nb))
@@ -234,8 +243,8 @@ func (r component) send(req *core.DataBrokerReq, isBroadcast bool, brokers ...co
 	resp := <-chresp
 	// Save the broker for later if it was a broadcast
 	if isBroadcast {
-		if err := r.Store(req.Payload.MACPayload.FHDR.DevAddr, resp.BrokerIndex); err != nil {
-			r.ctx.WithError(err).Warn("Failed to store accepted broker")
+		if err := r.Storage.Store(req.Payload.MACPayload.FHDR.DevAddr, resp.BrokerIndex); err != nil {
+			r.Ctx.WithError(err).Warn("Failed to store accepted broker")
 		}
 	}
 	return resp.Response, nil
