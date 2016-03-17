@@ -127,6 +127,7 @@ func (a adapter) handlePullData(pkt semtech.Packet, reply replier) error {
 	stats.MarkMeter("semtech_adapter.pull_data")
 	stats.MarkMeter(fmt.Sprintf("semtech_adapter.gateways.%X.pull_data", pkt.GatewayId))
 	stats.SetString(fmt.Sprintf("semtech_adapter.gateways.%X.last_pull_data", pkt.GatewayId), "date", time.Now().UTC().Format(time.RFC3339))
+	a.Ctx.Debug("Handle PULL_DATA")
 
 	data, err := semtech.Packet{
 		Version:    semtech.VERSION,
@@ -146,6 +147,8 @@ func (a adapter) handlePushData(pkt semtech.Packet, reply replier) error {
 	stats.MarkMeter("semtech_adapter.push_data")
 	stats.MarkMeter(fmt.Sprintf("semtech_adapter.gateways.%X.push_data", pkt.GatewayId))
 	stats.SetString(fmt.Sprintf("semtech_adapter.gateways.%X.last_push_data", pkt.GatewayId), "date", time.Now().UTC().Format(time.RFC3339))
+	ctx := a.Ctx.WithField("GatewayID", pkt.GatewayId)
+	ctx.Debug("Handle PUSH_DATA")
 
 	// AckNowledge with a PUSH_ACK
 	data, err := semtech.Packet{
@@ -154,11 +157,13 @@ func (a adapter) handlePushData(pkt semtech.Packet, reply replier) error {
 		Identifier: semtech.PUSH_ACK,
 	}.MarshalBinary()
 	if err != nil || reply(data) != nil || pkt.Payload == nil {
-		return errors.New(errors.Operational, "Unable to process PUSH_DATA packet")
+		ctx.Debug("Unable to send ACK")
+		return errors.New(errors.Operational, "Unable to send ACK")
 	}
 
 	// Process Stat payload
 	if pkt.Payload.Stat != nil {
+		ctx.Debug("PUSH_DATA contains a stats payload")
 		go a.Router.HandleStats(context.Background(), &core.StatsReq{
 			GatewayID: pkt.GatewayId,
 			Metadata:  extractMetadata(*pkt.Payload.Stat, new(core.StatsMetadata)).(*core.StatsMetadata),
@@ -169,10 +174,12 @@ func (a adapter) handlePushData(pkt semtech.Packet, reply replier) error {
 	cherr := make(chan error, len(pkt.Payload.RXPK))
 	wait := sync.WaitGroup{}
 	wait.Add(len(pkt.Payload.RXPK))
+	ctx.WithField("Nb RXPK", len(pkt.Payload.RXPK)).Debug("Processing RXPK payloads")
 	for _, rxpk := range pkt.Payload.RXPK {
 		go func(rxpk semtech.RXPK) {
 			defer wait.Done()
 			if err := a.handleDataUp(rxpk, pkt.GatewayId, reply); err != nil {
+				ctx.WithError(err).Debug("Error while processing RXPK")
 				cherr <- err
 			}
 		}(rxpk)
@@ -187,31 +194,38 @@ func (a adapter) handlePushData(pkt semtech.Packet, reply replier) error {
 func (a adapter) handleDataUp(rxpk semtech.RXPK, gid []byte, reply replier) error {
 	dataRouterReq, err := newDataRouterReq(rxpk, gid, a.Ctx)
 	if err != nil {
+		a.Ctx.WithError(err).Debug("Invalid up RXPK packet")
 		return errors.New(errors.Structural, err)
 	}
 	resp, err := a.Router.HandleData(context.Background(), dataRouterReq)
 	if err != nil {
+		a.Ctx.WithError(err).Debug("Router failed to process uplink")
 		errors.New(errors.Operational, err)
 	}
 	return a.handleDataDown(resp, reply)
 }
 
 func (a adapter) handleDataDown(resp *core.DataRouterRes, reply replier) error {
+	a.Ctx.Debug("Handle Downlink from router")
 	if resp == nil { // No response
+		a.Ctx.Debug("No response to send")
 		return nil
 	}
 
 	txpk, err := newTXPK(*resp, a.Ctx)
 	if err != nil {
+		a.Ctx.WithError(err).Debug("Unable to interpret downlink")
 		return errors.New(errors.Structural, err)
 	}
 
+	a.Ctx.Debug("Creating new downlink response")
 	data, err := semtech.Packet{
 		Version:    semtech.VERSION,
 		Identifier: semtech.PULL_RESP,
 		Payload:    &semtech.Payload{TXPK: &txpk},
 	}.MarshalBinary()
 	if err != nil {
+		a.Ctx.WithError(err).Debug("Unable to create semtech packet with TXPK")
 		return errors.New(errors.Structural, err)
 	}
 	return reply(data)

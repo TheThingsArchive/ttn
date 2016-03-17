@@ -80,3 +80,49 @@ func (m *HandlerClient) SubscribePersonalized(ctx context.Context, in *core.ABPS
 	}
 	return m.OutSubscribePersonalized.Res, nil
 }
+
+// RouterServer mocks the core.RouterServer interface
+type RouterServer struct {
+	Failures     map[string]error
+	InHandleData struct {
+		Ctx context.Context
+		Req *core.DataRouterReq
+	}
+	OutHandleData struct {
+		Res *core.DataRouterRes
+	}
+	InHandleStats struct {
+		Ctx context.Context
+		Req *core.StatsReq
+	}
+	OutHandleStats struct {
+		Res *core.StatsRes
+	}
+}
+
+// NewRouterServer creates a new mock RouterServer
+func NewRouterServer() *RouterServer {
+	return &RouterServer{
+		Failures: make(map[string]error),
+	}
+}
+
+// HandleData implements the core.RouterServer interface
+func (m *RouterServer) HandleData(ctx context.Context, in *core.DataRouterReq) (*core.DataRouterRes, error) {
+	m.InHandleData.Ctx = ctx
+	m.InHandleData.Req = in
+	if err := m.Failures["HandleData"]; err != nil {
+		return nil, err
+	}
+	return m.OutHandleData.Res, nil
+}
+
+// HandleStats implements the core.RouterServer interface
+func (m *RouterServer) HandleStats(ctx context.Context, in *core.StatsReq) (*core.StatsRes, error) {
+	m.InHandleStats.Ctx = ctx
+	m.InHandleStats.Req = in
+	if err := m.Failures["HandleStats"]; err != nil {
+		return nil, err
+	}
+	return m.OutHandleStats.Res, nil
+}
