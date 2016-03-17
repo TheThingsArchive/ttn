@@ -17,9 +17,13 @@ const BrokerAddr = "0.0.0.0:1883"
 
 // MockClient implements the Client interface
 type MockClient struct {
-	Failures    map[string]error
-	InPublish   *client.PublishOptions
-	IsTerminate bool
+	Failures  map[string]error
+	InPublish struct {
+		Options *client.PublishOptions
+	}
+	InTerminate struct {
+		Called bool
+	}
 }
 
 // NewMockClient constructs a new MockClient
@@ -31,13 +35,13 @@ func NewMockClient() *MockClient {
 
 // Publish implements the Client interface
 func (m *MockClient) Publish(o *client.PublishOptions) error {
-	m.InPublish = o
+	m.InPublish.Options = o
 	return m.Failures["Publish"]
 }
 
 // Terminate implements the Client interface
 func (m *MockClient) Terminate() {
-	m.IsTerminate = true
+	m.InTerminate.Called = true
 }
 
 // MockTryConnect simulates a tryConnect function

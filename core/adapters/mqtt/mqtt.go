@@ -20,9 +20,19 @@ import (
 )
 
 type adapter struct {
-	Client
-	handler core.HandlerClient
-	ctx     log.Interface
+	Components
+}
+
+// Components defines a structure to make the instantiation easier to read
+type Components struct {
+	Handler core.HandlerClient
+	Client  Client
+	Ctx     log.Interface
+}
+
+// Options defines a structure to make the instantiation easier to read
+type Options struct {
+	InMsg <-chan Msg
 }
 
 // Msg are emitted by an MQTT subscriber towards the adapter
@@ -32,8 +42,6 @@ type Msg struct {
 	Type    msgType
 }
 
-type msgType byte
-
 // msgType constants are used in MQTTMsg to characterise the kind of message processed
 const (
 	Down msgType = iota
@@ -41,17 +49,13 @@ const (
 	OTAA
 )
 
+type msgType byte
+
 // New constructs an mqtt adapter responsible for making the bridge between the handler and
 // application.
-func New(handler core.HandlerClient, client Client, chmsg <-chan Msg, ctx log.Interface) core.AppClient {
-	a := adapter{
-		Client:  client,
-		handler: handler,
-		ctx:     ctx,
-	}
-
-	go a.consumeMQTTMsg(chmsg)
-
+func New(c Components, o Options) core.AppClient {
+	a := adapter{Components: c}
+	go a.consumeMQTTMsg(o.InMsg)
 	return a
 }
 
@@ -60,6 +64,11 @@ func (a adapter) HandleData(bctx context.Context, req *core.DataAppReq, _ ...grp
 	stats.MarkMeter("mqtt_adapter.send")
 
 	// Verify the packet integrity
+	// TODO Move this elsewhere, make it a function call validate() ...
+	if req == nil {
+		stats.MarkMeter("mqtt_adapter.uplink.invalid")
+		return nil, errors.New(errors.Structural, "Received Nil Application Request")
+	}
 	if len(req.Payload) == 0 {
 		stats.MarkMeter("mqtt_adapter.uplink.invalid")
 		return nil, errors.New(errors.Structural, "Invalid Packet Payload")
@@ -76,7 +85,7 @@ func (a adapter) HandleData(bctx context.Context, req *core.DataAppReq, _ ...grp
 		stats.MarkMeter("mqtt_adapter.uplink.invalid")
 		return nil, errors.New(errors.Structural, "Missing Mandatory Metadata")
 	}
-	ctx := a.ctx.WithField("appEUI", req.AppEUI).WithField("devEUI", req.DevEUI)
+	ctx := a.Ctx.WithField("appEUI", req.AppEUI).WithField("devEUI", req.DevEUI)
 
 	// Marshal the packet
 	dataUp := core.DataUpAppReq{
@@ -91,7 +100,7 @@ func (a adapter) HandleData(bctx context.Context, req *core.DataAppReq, _ ...grp
 	// Actually send it
 	ctx.Debug("Sending Packet")
 	deui, aeui := hex.EncodeToString(req.DevEUI), hex.EncodeToString(req.AppEUI)
-	err = a.Publish(&client.PublishOptions{
+	err = a.Client.Publish(&client.PublishOptions{
 		QoS:       mqtt.QoS2,
 		Retain:    true,
 		TopicName: []byte(fmt.Sprintf("%s/devices/%s/up", aeui, deui)),
@@ -101,7 +110,6 @@ func (a adapter) HandleData(bctx context.Context, req *core.DataAppReq, _ ...grp
 	if err != nil {
 		return nil, errors.New(errors.Operational, err)
 	}
-
 	return nil, nil
 }
 
@@ -109,29 +117,30 @@ func (a adapter) HandleData(bctx context.Context, req *core.DataAppReq, _ ...grp
 //
 // It runs in its own goroutine
 func (a adapter) consumeMQTTMsg(chmsg <-chan Msg) {
-	a.ctx.Debug("Start consuming MQTT message")
+	a.Ctx.Debug("Start consuming MQTT messages")
 	for msg := range chmsg {
 		switch msg.Type {
 		case Down:
 			req, err := handleDataDown(msg)
 			if err == nil {
-				_, err = a.handler.HandleDataDown(context.Background(), req)
+				_, err = a.Handler.HandleDataDown(context.Background(), req)
 			}
 			if err != nil {
-				a.ctx.WithError(err).Debug("Unable to consume data down")
+				a.Ctx.WithError(err).Debug("Unable to consume data down")
 			}
 		case ABP:
 			req, err := handleABP(msg)
 			if err == nil {
-				_, err = a.handler.SubscribePersonalized(context.Background(), req)
+				_, err = a.Handler.SubscribePersonalized(context.Background(), req)
 			}
 			if err != nil {
-				a.ctx.WithError(err).Debug("Unable to consume ABP")
+				a.Ctx.WithError(err).Debug("Unable to consume ABP")
 			}
 		default:
-			a.ctx.Debug("Unsupported MQTT message's type")
+			a.Ctx.Debug("Unsupported MQTT message's type")
 		}
 	}
+	a.Ctx.Debug("Stop consuming MQTT messages")
 }
 
 // handleABP parses and handles Application By Personalization request coming through MQTT
