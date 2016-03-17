@@ -43,8 +43,8 @@ func TestString(t *testing.T) {
 			GatewayId:  []byte{1, 2, 3, 4, 5, 6, 7, 8},
 			Payload: &Payload{
 				Stat: &Stat{
-					Ackr: pointer.Float64(3.4),
-					Alti: pointer.Int(14),
+					Ackr: pointer.Float32(3.4),
+					Alti: pointer.Int32(14),
 				},
 			},
 		}
@@ -73,7 +73,7 @@ func TestString(t *testing.T) {
 			GatewayId:  []byte{1, 2, 3, 4, 5, 6, 7, 8},
 			Payload: &Payload{
 				TXPK: &TXPK{
-					Freq: pointer.Float64(883.445),
+					Freq: pointer.Float32(883.445),
 					Codr: pointer.String("4/5"),
 				},
 			},
@@ -104,11 +104,11 @@ func TestString(t *testing.T) {
 			Payload: &Payload{
 				RXPK: []RXPK{
 					{
-						Freq: pointer.Float64(883.445),
+						Freq: pointer.Float32(883.445),
 						Codr: pointer.String("4/5"),
 					},
 					{
-						Freq: pointer.Float64(883.445),
+						Freq: pointer.Float32(883.445),
 						Codr: pointer.String("4/5"),
 					},
 				},

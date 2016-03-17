@@ -29,10 +29,10 @@ func TestMarshalBinary(t *testing.T) {
 				Payload: &Payload{
 					RXPK: []RXPK{
 						RXPK{
-							Chan: pointer.Uint(14),
+							Chan: pointer.Uint32(14),
 							Codr: pointer.String("4/7"),
-							Freq: pointer.Float64(873.14),
-							Rssi: pointer.Int(-42),
+							Freq: pointer.Float32(873.14),
+							Rssi: pointer.Int32(-42),
 						},
 					},
 				},
@@ -49,10 +49,10 @@ func TestMarshalBinary(t *testing.T) {
 				Payload: &Payload{
 					RXPK: []RXPK{
 						RXPK{
-							Chan: pointer.Uint(14),
+							Chan: pointer.Uint32(14),
 							Codr: pointer.String("4/7"),
-							Freq: pointer.Float64(873.14),
-							Rssi: pointer.Int(-42),
+							Freq: pointer.Float32(873.14),
+							Rssi: pointer.Int32(-42),
 						},
 					},
 				},
@@ -81,10 +81,10 @@ func TestMarshalBinary(t *testing.T) {
 				Payload: &Payload{
 					RXPK: []RXPK{
 						RXPK{
-							Chan: pointer.Uint(14),
+							Chan: pointer.Uint32(14),
 							Codr: pointer.String("4/7"),
-							Freq: pointer.Float64(873.14),
-							Rssi: pointer.Int(-42),
+							Freq: pointer.Float32(873.14),
+							Rssi: pointer.Int32(-42),
 						},
 					},
 				},
@@ -162,10 +162,10 @@ func TestMarshalBinary(t *testing.T) {
 				Payload: &Payload{
 					RXPK: []RXPK{
 						RXPK{
-							Size: pointer.Uint(14),
+							Size: pointer.Uint32(14),
 						},
 						RXPK{
-							Chan: pointer.Uint(14),
+							Chan: pointer.Uint32(14),
 						},
 					},
 				},
@@ -184,13 +184,13 @@ func TestMarshalBinary(t *testing.T) {
 				Payload: &Payload{
 					RXPK: []RXPK{
 						RXPK{
-							Size: pointer.Uint(14),
+							Size: pointer.Uint32(14),
 						},
 					},
 					Stat: &Stat{
-						Ackr: pointer.Float64(0.78),
-						Alti: pointer.Int(72),
-						Rxok: pointer.Uint(42),
+						Ackr: pointer.Float32(0.78),
+						Alti: pointer.Int32(72),
+						Rxok: pointer.Uint32(42),
 					},
 				},
 			},
@@ -226,12 +226,12 @@ func TestMarshalBinary(t *testing.T) {
 					RXPK: []RXPK{
 						RXPK{
 							Codr: pointer.String("4/7"),
-							Rssi: pointer.Int(-42),
+							Rssi: pointer.Int32(-42),
 						},
 					},
 					TXPK: &TXPK{
 						Ipol: pointer.Bool(true),
-						Powe: pointer.Uint(12),
+						Powe: pointer.Uint32(12),
 					},
 				},
 			},
@@ -294,7 +294,7 @@ func TestMarshalBinary(t *testing.T) {
 				Payload: &Payload{
 					TXPK: &TXPK{
 						Ipol: pointer.Bool(true),
-						Powe: pointer.Uint(12),
+						Powe: pointer.Uint32(12),
 					},
 				},
 			},
@@ -310,7 +310,7 @@ func TestMarshalBinary(t *testing.T) {
 				Payload: &Payload{
 					TXPK: &TXPK{
 						Ipol: pointer.Bool(true),
-						Powe: pointer.Uint(12),
+						Powe: pointer.Uint32(12),
 						Time: pointer.Time(time.Date(2016, 1, 13, 17, 40, 57, 376, time.UTC)),
 					},
 				},

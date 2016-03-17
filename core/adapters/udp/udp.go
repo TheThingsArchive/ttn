@@ -18,25 +18,39 @@ import (
 )
 
 type adapter struct {
-	ctx log.Interface
+	Components
 }
 
+// Components defines a structure to make the instantiation easier to read
+type Components struct {
+	Ctx    log.Interface
+	Router core.RouterServer
+}
+
+// Options defines a structure to make the instantiation easier to read
+type Options struct {
+	// NetAddr refers to the udp address + port the adapter will have to listen
+	NetAddr string
+	// MaxReconnectionDelay defines the delay of the longest attempt to reconnect a lost connection
+	// before giving up.
+	MaxReconnectionDelay time.Duration
+}
+
+// replier is an alias used by methods herebelow
 type replier func(data []byte) error
 
 // Start constructs and launches a new udp adapter
-func Start(bindNet string, router core.RouterServer, ctx log.Interface) error {
+func Start(c Components, o Options) (err error) {
 	// Create the udp connection and start listening with a goroutine
 	var udpConn *net.UDPConn
-	addr, err := net.ResolveUDPAddr("udp", bindNet)
-	if udpConn, err = net.ListenUDP("udp", addr); err != nil {
-		ctx.WithError(err).Error("Unable to start server")
-		return errors.New(errors.Operational, fmt.Sprintf("Invalid bind address %v", bindNet))
+	if udpConn, err = tryConnect(o.NetAddr); err != nil {
+		c.Ctx.WithError(err).Error("Unable to start server")
+		return errors.New(errors.Operational, fmt.Sprintf("Invalid bind address %v", o.NetAddr))
 	}
 
-	ctx.WithField("bind", bindNet).Info("Starting Server")
-
-	a := adapter{ctx: ctx}
-	go a.listen(udpConn, router)
+	c.Ctx.WithField("bind", o.NetAddr).Info("Starting Server")
+	a := adapter{Components: c}
+	go a.listen(o.NetAddr, udpConn, o.MaxReconnectionDelay)
 	return nil
 }
 
@@ -48,41 +62,63 @@ func makeReply(addr *net.UDPAddr, conn *net.UDPConn) replier {
 	}
 }
 
+// tryConnect attempt to connect to a udp connection
+func tryConnect(netAddr string) (*net.UDPConn, error) {
+	addr, err := net.ResolveUDPAddr("udp", netAddr)
+	if err != nil {
+		return nil, err
+	}
+	return net.ListenUDP("udp", addr)
+}
+
 // listen Handle incoming packets and forward them.
 //
 // Runs in its own goroutine.
-func (a adapter) listen(conn *net.UDPConn, router core.RouterServer) {
-	defer conn.Close()
-	a.ctx.WithField("address", conn.LocalAddr()).Debug("Starting accept loop")
-
+func (a adapter) listen(netAddr string, conn *net.UDPConn, maxReconnectionDelay time.Duration) {
+	var err error
+	a.Ctx.WithField("address", conn.LocalAddr()).Debug("Starting accept loop")
 	for {
+		// Read on the UDP connection
 		buf := make([]byte, 5000)
-		n, addr, err := conn.ReadFromUDP(buf)
-		if err != nil { // Problem with the connection
-			a.ctx.WithError(err).Error("Connection error")
-			continue
+		n, addr, fault := conn.ReadFromUDP(buf)
+		if fault != nil { // Problem with the connection
+			for delay := time.Millisecond * 25; delay < maxReconnectionDelay; delay *= 10 {
+				a.Ctx.Infof("UDP connection lost. Trying to reconnect in %s", delay)
+				<-time.After(delay)
+				conn, err = tryConnect(netAddr)
+				if err == nil {
+					a.Ctx.Info("UDP connection recovered")
+					break
+				}
+			}
+			a.Ctx.WithError(fault).Error("Unable to restore UDP connection")
+			break
 		}
 
-		a.ctx.Debug("Incoming datagram")
-		go func(data []byte, reply replier, router core.RouterServer) {
+		// Handle the incoming datagram
+		a.Ctx.Debug("Incoming datagram")
+		go func(data []byte, reply replier) {
 			pkt := new(semtech.Packet)
 			if err := pkt.UnmarshalBinary(data); err != nil {
-				a.ctx.WithError(err).Debug("Unable to handle datagram")
+				a.Ctx.WithError(err).Debug("Unable to handle datagram")
 			}
 
 			switch pkt.Identifier {
 			case semtech.PULL_DATA:
 				err = a.handlePullData(*pkt, reply)
 			case semtech.PUSH_DATA:
-				err = a.handlePushData(*pkt, reply, router)
+				err = a.handlePushData(*pkt, reply)
 			default:
 				err = errors.New(errors.Implementation, "Unhandled packet type")
 			}
-
 			if err != nil {
-				a.ctx.WithError(err).Debug("Unable to handle datagram")
+				a.Ctx.WithError(err).Debug("Unable to handle datagram")
 			}
-		}(buf[:n], makeReply(addr, conn), router)
+		}(buf[:n], makeReply(addr, conn))
+	}
+
+	if conn != nil {
+		_ = conn.Close()
 	}
 }
 
@@ -106,7 +142,7 @@ func (a adapter) handlePullData(pkt semtech.Packet, reply replier) error {
 }
 
 // Handle a PUSH_DATA packet coming from a gateway
-func (a adapter) handlePushData(pkt semtech.Packet, reply replier, router core.RouterServer) error {
+func (a adapter) handlePushData(pkt semtech.Packet, reply replier) error {
 	stats.MarkMeter("semtech_adapter.push_data")
 	stats.MarkMeter(fmt.Sprintf("semtech_adapter.gateways.%X.push_data", pkt.GatewayId))
 	stats.SetString(fmt.Sprintf("semtech_adapter.gateways.%X.last_push_data", pkt.GatewayId), "date", time.Now().UTC().Format(time.RFC3339))
@@ -123,7 +159,7 @@ func (a adapter) handlePushData(pkt semtech.Packet, reply replier, router core.R
 
 	// Process Stat payload
 	if pkt.Payload.Stat != nil {
-		go router.HandleStats(context.Background(), &core.StatsReq{
+		go a.Router.HandleStats(context.Background(), &core.StatsReq{
 			GatewayID: pkt.GatewayId,
 			Metadata:  extractMetadata(*pkt.Payload.Stat, new(core.StatsMetadata)).(*core.StatsMetadata),
 		})
@@ -136,7 +172,7 @@ func (a adapter) handlePushData(pkt semtech.Packet, reply replier, router core.R
 	for _, rxpk := range pkt.Payload.RXPK {
 		go func(rxpk semtech.RXPK) {
 			defer wait.Done()
-			if err := a.handleDataUp(rxpk, pkt.GatewayId, reply, router); err != nil {
+			if err := a.handleDataUp(rxpk, pkt.GatewayId, reply); err != nil {
 				cherr <- err
 			}
 		}(rxpk)
@@ -148,12 +184,12 @@ func (a adapter) handlePushData(pkt semtech.Packet, reply replier, router core.R
 	return <-cherr
 }
 
-func (a adapter) handleDataUp(rxpk semtech.RXPK, gid []byte, reply replier, router core.RouterServer) error {
-	dataRouterReq, err := a.newDataRouterReq(rxpk, gid)
+func (a adapter) handleDataUp(rxpk semtech.RXPK, gid []byte, reply replier) error {
+	dataRouterReq, err := newDataRouterReq(rxpk, gid, a.Ctx)
 	if err != nil {
 		return errors.New(errors.Structural, err)
 	}
-	resp, err := router.HandleData(context.Background(), dataRouterReq)
+	resp, err := a.Router.HandleData(context.Background(), dataRouterReq)
 	if err != nil {
 		errors.New(errors.Operational, err)
 	}
@@ -165,7 +201,7 @@ func (a adapter) handleDataDown(resp *core.DataRouterRes, reply replier) error {
 		return nil
 	}
 
-	txpk, err := a.newTXPK(*resp)
+	txpk, err := newTXPK(*resp, a.Ctx)
 	if err != nil {
 		return errors.New(errors.Structural, err)
 	}

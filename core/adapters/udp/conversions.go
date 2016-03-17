@@ -12,10 +12,11 @@ import (
 	"github.com/TheThingsNetwork/ttn/semtech"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
+	"github.com/apex/log"
 	"github.com/brocaar/lorawan"
 )
 
-func (a adapter) newDataRouterReq(rxpk semtech.RXPK, gid []byte) (*core.DataRouterReq, error) {
+func newDataRouterReq(rxpk semtech.RXPK, gid []byte, ctx log.Interface) (*core.DataRouterReq, error) {
 	// First, we have to get the physical payload which is encoded in the Data field
 	if rxpk.Data == nil {
 		return nil, errors.New(errors.Structural, "There's no data in the packet")
@@ -89,7 +90,7 @@ func (a adapter) newDataRouterReq(rxpk semtech.RXPK, gid []byte) (*core.DataRout
 	}, nil
 }
 
-func (a adapter) newTXPK(resp core.DataRouterRes) (semtech.TXPK, error) {
+func newTXPK(resp core.DataRouterRes, ctx log.Interface) (semtech.TXPK, error) {
 	// Step 0: validate the response
 	if resp.Metadata == nil {
 		return semtech.TXPK{}, errors.New(errors.Structural, "Missing mandatory Metadata")
@@ -115,29 +116,52 @@ func (a adapter) newTXPK(resp core.DataRouterRes) (semtech.TXPK, error) {
 	return txpk, nil
 }
 
+// injectMetadata takes metadata from a Struct and inject them into an xpk Struct (rxpk or txpk).
+// The xpk is expected to be a pointer to an existing struct. Struct-tag in the rxpk struct are used
+// to indicate with field from the struct is bound to which field on the xpk.
+//
+// All fields in the src struct are expected to be non-pointer values.
+//
+// It eventually returns the initial xpk argument
 func injectMetadata(xpk interface{}, src interface{}) interface{} {
-	v := reflect.ValueOf(src)
-	t := v.Type()
-	d := reflect.ValueOf(xpk).Elem()
+	m := reflect.ValueOf(src)
+	x := reflect.ValueOf(xpk).Elem()
+	tx := x.Type()
 
-	for i := 0; i < t.NumField(); i++ {
-		field := t.Field(i).Name
-		if d.FieldByName(field).CanSet() {
-			d.FieldByName(field).Set(v.Field(i))
+	for i := 0; i < tx.NumField(); i++ {
+		t := tx.Field(i).Tag.Get("full")
+		f := m.FieldByName(t)
+		if f.IsValid() && f.Interface() != reflect.Zero(f.Type()).Interface() {
+			p := reflect.New(f.Type())
+			p.Elem().Set(f)
+			if p.Type().AssignableTo(x.Field(i).Type()) {
+				x.Field(i).Set(p)
+			}
 		}
 	}
+
 	return xpk
 }
 
+// extractMetadata does the reverse operation than injectMetadata. It takes metadata from an xpk
+// structure and inject all compatible field into a given Struct.
+// This time, the xpk is expected to be a plain xpk struct (not a pointer) and the target struct
+// should be a reference to that struct.
+//
+// It eventually returns the completed target element.
 func extractMetadata(xpk interface{}, target interface{}) interface{} {
-	v := reflect.ValueOf(xpk)
-	t := v.Type()
+	x := reflect.ValueOf(xpk)
+	tx := x.Type()
 	m := reflect.ValueOf(target).Elem()
 
-	for i := 0; i < t.NumField(); i++ {
-		field := t.Field(i).Name
-		if m.FieldByName(field).CanSet() {
-			m.FieldByName(field).Set(v.Field(i))
+	for i := 0; i < tx.NumField(); i++ {
+		t := tx.Field(i).Tag.Get("full")
+		f := m.FieldByName(t)
+		if f.IsValid() && !x.Field(i).IsNil() {
+			e := x.Field(i).Elem()
+			if e.Type().AssignableTo(m.FieldByName(t).Type()) {
+				m.FieldByName(t).Set(e)
+			}
 		}
 	}
 	return target
