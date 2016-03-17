@@ -22,15 +22,8 @@ func newDataRouterReq(rxpk semtech.RXPK, gid []byte, ctx log.Interface) (*core.D
 		return nil, errors.New(errors.Structural, "There's no data in the packet")
 	}
 
-	// RXPK Data are base64 encoded, yet without the trailing "==" if any.....
-	encoded := *rxpk.Data
-	switch len(encoded) % 4 {
-	case 2:
-		encoded += "=="
-	case 3:
-		encoded += "="
-	}
-	raw, err := base64.StdEncoding.DecodeString(encoded)
+	// RXPK Data are base64 encoded
+	raw, err := base64.RawStdEncoding.DecodeString(*rxpk.Data)
 	if err != nil {
 		return nil, errors.New(errors.Structural, err)
 	}
@@ -42,7 +35,7 @@ func newDataRouterReq(rxpk semtech.RXPK, gid []byte, ctx log.Interface) (*core.D
 	macpayload, ok := payload.MACPayload.(*lorawan.MACPayload)
 	if !ok {
 		// TODO OTAA join request payloads
-		return nil, errors.New(errors.Implementation, "Unhandled Physical payload. Expected a MACPayload")
+		return nil, errors.New(errors.Structural, "Unhandled Physical payload. Expected a MACPayload")
 	}
 	if len(macpayload.FRMPayload) != 1 {
 		// TODO Handle pure MAC Commands payloads (FType = 0)
