@@ -14,7 +14,7 @@ func CheckSubBands(t *testing.T, want subBand, got subBand) {
 	testutil.Check(t, want, got, "SubBands")
 }
 
-func CheckUsages(t *testing.T, want map[subBand]uint, got map[subBand]uint) {
+func CheckUsages(t *testing.T, want map[subBand]uint32, got map[subBand]uint32) {
 	testutil.Check(t, want, got, "Usages")
 }
 

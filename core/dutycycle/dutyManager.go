@@ -18,19 +18,19 @@ import (
 
 // DutyManager provides an interface to manipulate and compute gateways duty-cycles.
 type DutyManager interface {
-	Update(id []byte, freq float64, size uint, datr string, codr string) error
+	Update(id []byte, freq float32, size uint32, datr string, codr string) error
 	Lookup(id []byte) (Cycles, error)
 	Close() error
 }
 
-type Cycles map[subBand]uint
+type Cycles map[subBand]uint32
 
 type dutyManager struct {
 	sync.RWMutex
 	db           dbutil.Interface
 	bucket       string
 	CycleLength  time.Duration       // Duration upon which the duty-cycle is evaluated
-	MaxDutyCycle map[subBand]float64 // The percentage max duty cycle accepted for each sub-band
+	MaxDutyCycle map[subBand]float32 // The percentage max duty cycle accepted for each sub-band
 }
 
 // Available sub-bands
@@ -63,7 +63,7 @@ const (
 type region byte
 
 // GetSubBand returns the subband associated to a given frequency
-func GetSubBand(freq float64) (subBand, error) {
+func GetSubBand(freq float32) (subBand, error) {
 	// g 865.0 – 868.0 MHz 1% or LBT+AFA, 25 mW (=14dBm)
 	if freq >= 865.0 && freq < 868.0 {
 		return EuropeG, nil
@@ -94,10 +94,10 @@ func GetSubBand(freq float64) (subBand, error) {
 
 // NewManager constructs a new gateway manager from
 func NewManager(filepath string, cycleLength time.Duration, r region) (DutyManager, error) {
-	var maxDuty map[subBand]float64
+	var maxDuty map[subBand]float32
 	switch r {
 	case Europe:
-		maxDuty = map[subBand]float64{
+		maxDuty = map[subBand]float32{
 			EuropeG:  0.01,
 			EuropeG1: 0.01,
 			EuropeG2: 0.001,
@@ -131,7 +131,7 @@ func NewManager(filepath string, cycleLength time.Duration, r region) (DutyManag
 // Datr represents a LoRaWAN data-rate indicator of the form SFxxBWyyy,
 // where xx C [[7;12]] and yyy C { 125, 250, 500 }
 // Codr represents a LoRaWAN code rate  indicator fo the form 4/x with x C [[5;8]]
-func (m *dutyManager) Update(id []byte, freq float64, size uint, datr string, codr string) error {
+func (m *dutyManager) Update(id []byte, freq float32, size uint32, datr string, codr string) error {
 	sub, err := GetSubBand(freq)
 	if err != nil {
 		return err
@@ -187,13 +187,13 @@ func (m *dutyManager) Lookup(id []byte) (Cycles, error) {
 	entry := itf.([]dutyEntry)[0]
 
 	// For each sub-band, compute the remaining time-on-air available
-	cycles := make(map[subBand]uint)
+	cycles := make(map[subBand]uint32)
 	if entry.Until.After(time.Now()) {
 		for s, toa := range entry.OnAir {
 			// The actual duty cycle
-			dutyCycle := float64(toa.Nanoseconds()) / float64(m.CycleLength.Nanoseconds())
+			dutyCycle := float32(toa.Nanoseconds()) / float32(m.CycleLength.Nanoseconds())
 			// Now, how full are we comparing to the limitation, in percent
-			cycles[s] = uint(100 * dutyCycle / m.MaxDutyCycle[s])
+			cycles[s] = uint32(100 * dutyCycle / m.MaxDutyCycle[s])
 		}
 	}
 
@@ -207,7 +207,7 @@ func (m *dutyManager) Close() error {
 
 // computeTOA computes the time-on-air given a size in byte, a LoRaWAN datr identifier, an LoRa Codr
 // identifier.
-func computeTOA(size uint, datr string, codr string) (time.Duration, error) {
+func computeTOA(size uint32, datr string, codr string) (time.Duration, error) {
 	// Ensure the datr and codr are correct
 	var rc float64
 	switch codr {

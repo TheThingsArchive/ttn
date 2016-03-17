@@ -8,7 +8,6 @@ import (
 
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
-	errutil "github.com/TheThingsNetwork/ttn/utils/errors/checks"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 )
@@ -17,7 +16,7 @@ func TestNewScoreComputer(t *testing.T) {
 	{
 		Desc(t, "Invalid datr as argument")
 		_, _, err := NewScoreComputer("TheThingsNetwork")
-		errutil.CheckErrors(t, pointer.String(string(errors.Structural)), err)
+		CheckErrors(t, pointer.String(string(errors.Structural)), err)
 	}
 
 	// --------------------
@@ -25,7 +24,7 @@ func TestNewScoreComputer(t *testing.T) {
 	{
 		Desc(t, "Valid datr")
 		_, _, err := NewScoreComputer("SF8BW250")
-		errutil.CheckErrors(t, nil, err)
+		CheckErrors(t, nil, err)
 	}
 }
 
@@ -47,7 +46,7 @@ func TestUpdateGet(t *testing.T) {
 
 		// Build
 		c, s, err := NewScoreComputer("SF7BW125")
-		errutil.CheckErrors(t, nil, err)
+		CheckErrors(t, nil, err)
 
 		// Operate
 		got := c.Get(s)
@@ -63,7 +62,7 @@ func TestUpdateGet(t *testing.T) {
 
 		// Build
 		c, s, err := NewScoreComputer("SF7BW125")
-		errutil.CheckErrors(t, nil, err)
+		CheckErrors(t, nil, err)
 
 		// Operate
 		s = c.Update(s, 1, core.Metadata{
@@ -85,7 +84,7 @@ func TestUpdateGet(t *testing.T) {
 
 		// Build
 		c, s, err := NewScoreComputer("SF7BW125")
-		errutil.CheckErrors(t, nil, err)
+		CheckErrors(t, nil, err)
 
 		// Operate
 		s = c.Update(s, 1, core.Metadata{
@@ -107,7 +106,7 @@ func TestUpdateGet(t *testing.T) {
 
 		// Build
 		c, s, err := NewScoreComputer("SF7BW125")
-		errutil.CheckErrors(t, nil, err)
+		CheckErrors(t, nil, err)
 
 		// Operate
 		s = c.Update(s, 1, core.Metadata{
@@ -129,7 +128,7 @@ func TestUpdateGet(t *testing.T) {
 
 		// Build
 		c, s, err := NewScoreComputer("SF9BW125")
-		errutil.CheckErrors(t, nil, err)
+		CheckErrors(t, nil, err)
 
 		// Operate
 		s = c.Update(s, 1, core.Metadata{
@@ -151,7 +150,7 @@ func TestUpdateGet(t *testing.T) {
 
 		// Build
 		c, s, err := NewScoreComputer("SF10BW125")
-		errutil.CheckErrors(t, nil, err)
+		CheckErrors(t, nil, err)
 
 		// Operate
 		s = c.Update(s, 1, core.Metadata{
@@ -179,7 +178,7 @@ func TestUpdateGet(t *testing.T) {
 
 		// Build
 		c, s, err := NewScoreComputer("SF10BW125")
-		errutil.CheckErrors(t, nil, err)
+		CheckErrors(t, nil, err)
 
 		// Operate
 		s = c.Update(s, 1, core.Metadata{
@@ -201,7 +200,7 @@ func TestUpdateGet(t *testing.T) {
 
 		// Build
 		c, s, err := NewScoreComputer("SF8BW125")
-		errutil.CheckErrors(t, nil, err)
+		CheckErrors(t, nil, err)
 
 		// Operate
 		s = c.Update(s, 1, core.Metadata{
@@ -229,7 +228,7 @@ func TestUpdateGet(t *testing.T) {
 
 		// Build
 		c, s, err := NewScoreComputer("SF12BW125")
-		errutil.CheckErrors(t, nil, err)
+		CheckErrors(t, nil, err)
 
 		// Operate
 		s = c.Update(s, 1, core.Metadata{
