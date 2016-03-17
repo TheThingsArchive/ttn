@@ -10,8 +10,8 @@ import (
 	"reflect"
 	"sync"
 
+	dbutil "github.com/TheThingsNetwork/ttn/core/storage"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
-	dbutil "github.com/TheThingsNetwork/ttn/utils/storage"
 )
 
 // NetworkController gives a facade for manipulating the broker databases and devices

@@ -12,8 +12,8 @@ import (
 	"sync"
 	"time"
 
+	dbutil "github.com/TheThingsNetwork/ttn/core/storage"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
-	dbutil "github.com/TheThingsNetwork/ttn/utils/storage"
 )
 
 // DutyManager provides an interface to manipulate and compute gateways duty-cycles.

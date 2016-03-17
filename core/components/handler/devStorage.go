@@ -10,8 +10,8 @@ import (
 	"sync"
 	//
 	//	. "github.com/TheThingsNetwork/ttn/core"
+	dbutil "github.com/TheThingsNetwork/ttn/core/storage"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
-	dbutil "github.com/TheThingsNetwork/ttn/utils/storage"
 )
 
 // DevStorage gives a facade to manipulate the handler devices database
