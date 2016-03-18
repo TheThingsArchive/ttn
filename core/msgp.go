@@ -20,7 +20,7 @@ type AppMetadata struct {
 	Frequency  float32 `msg:"frequency" json:"frequency"`
 	DataRate   string  `msg:"data_rate" json:"data_rate"`
 	CodingRate string  `msg:"coding_rate" json:"coding_rate"`
-	Timestamp  uint32  `msg:"timestamp" json:timestamp"`
+	Timestamp  uint32  `msg:"timestamp" json:"timestamp"`
 	Rssi       int32   `msg:"rssi" json:"rssi"`
 	Lsnr       float32 `msg:"lsnr" json:"lsnr"`
 	Altitude   int32   `msg:"altitude" json:"altitude"`

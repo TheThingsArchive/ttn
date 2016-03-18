@@ -65,7 +65,7 @@ func TestBind(t *testing.T) {
 		_, _ = cli.Get(fmt.Sprintf("http://%s%s", options.NetAddr, hdl.URL()))
 
 		// Check
-		Check(t, true, hdl.InUrl.Called, "Url() Calls")
+		Check(t, true, hdl.InURL.Called, "Url() Calls")
 		Check(t, true, hdl.InHandle.Called, "Handle() Calls")
 	}
 
@@ -91,7 +91,7 @@ func TestBind(t *testing.T) {
 		_, _ = cli.Get(fmt.Sprintf("http://%s%s", options.NetAddr, hdl.URL()))
 
 		// Check
-		Check(t, true, hdl.InUrl.Called, "Url() Calls")
+		Check(t, true, hdl.InURL.Called, "Url() Calls")
 		Check(t, true, hdl.InHandle.Called, "Handle() Calls")
 	}
 }

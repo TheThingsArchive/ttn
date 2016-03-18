@@ -23,6 +23,7 @@ type DutyManager interface {
 	Close() error
 }
 
+// Cycles gives a representation of sub-band usages
 type Cycles map[subBand]uint32
 
 type dutyManager struct {
@@ -44,6 +45,7 @@ const (
 
 type subBand string
 
+// State Refers to an actual State of a transmitter
 type State uint
 
 const (
@@ -242,6 +244,7 @@ func computeTOA(size uint32, datr string, codr string) (time.Duration, error) {
 	return time.ParseDuration(fmt.Sprintf("%fms", timeOnAir))
 }
 
+// ParseDatr extract the spread factor and the bandwidth from a DataRate identifier
 func ParseDatr(datr string) (float64, float64, error) {
 	re := regexp.MustCompile("^SF(7|8|9|10|11|12)BW(125|250|500)$")
 	matches := re.FindStringSubmatch(datr)
@@ -256,6 +259,7 @@ func ParseDatr(datr string) (float64, float64, error) {
 	return sf, bw, nil
 }
 
+// StateFromDuty retrieve the associated transmitter state from a duty value
 func StateFromDuty(duty uint32) State {
 	if duty >= 100 {
 		return StateBlocked

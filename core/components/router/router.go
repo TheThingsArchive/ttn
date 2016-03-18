@@ -227,6 +227,7 @@ func (r component) send(req *core.DataBrokerReq, isBroadcast bool, brokers ...co
 
 			// Handle error
 			if err != nil {
+				ctx.WithField("index", index).WithError(err).Debug("Error while contacting broker")
 				if strings.Contains(err.Error(), string(errors.NotFound)) { // FIXME Find a better way to analyze the error
 					cherr <- errors.New(errors.NotFound, "Broker not responsible for the node")
 					return
@@ -252,8 +253,7 @@ func (r component) send(req *core.DataBrokerReq, isBroadcast bool, brokers ...co
 
 	var errored uint8
 	var notFound uint8
-	for i := 0; i < len(cherr); i++ {
-		err := <-cherr
+	for err := range cherr {
 		if err.(errors.Failure).Nature != errors.NotFound {
 			errored++
 			ctx.WithError(err).Warn("Failed to contact broker")
