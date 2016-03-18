@@ -13,6 +13,34 @@ import (
 
 // NOTE: All the code below could be generated
 
+// AppClient mocks the core.AppClient interface
+type AppClient struct {
+	Failures     map[string]error
+	InHandleData struct {
+		Ctx  context.Context
+		Req  *core.DataAppReq
+		Opts []grpc.CallOption
+	}
+	OutHandleData struct {
+		Res *core.DataAppRes
+	}
+}
+
+// NewAppClient creates a new mock AppClient
+func NewAppClient() *AppClient {
+	return &AppClient{
+		Failures: make(map[string]error),
+	}
+}
+
+// HandleData implements the core.AppClient interface
+func (m *AppClient) HandleData(ctx context.Context, in *core.DataAppReq, opts ...grpc.CallOption) (*core.DataAppRes, error) {
+	m.InHandleData.Ctx = ctx
+	m.InHandleData.Req = in
+	m.InHandleData.Opts = opts
+	return m.OutHandleData.Res, m.Failures["HandleData"]
+}
+
 // HandlerClient mocks the core.HandlerClient interface
 type HandlerClient struct {
 	Failures       map[string]error
@@ -54,10 +82,7 @@ func (m *HandlerClient) HandleDataUp(ctx context.Context, in *core.DataUpHandler
 	m.InHandleDataUp.Ctx = ctx
 	m.InHandleDataUp.Req = in
 	m.InHandleDataUp.Opts = opts
-	if err := m.Failures["HandleDataUp"]; err != nil {
-		return nil, err
-	}
-	return m.OutHandleDataUp.Res, nil
+	return m.OutHandleDataUp.Res, m.Failures["HandleDataUp"]
 }
 
 // HandleDataDown implements the core.HandlerClient interface
@@ -65,10 +90,7 @@ func (m *HandlerClient) HandleDataDown(ctx context.Context, in *core.DataDownHan
 	m.InHandleDataDown.Ctx = ctx
 	m.InHandleDataDown.Req = in
 	m.InHandleDataDown.Opts = opts
-	if err := m.Failures["HandleDataDown"]; err != nil {
-		return nil, err
-	}
-	return m.OutHandleDataDown.Res, nil
+	return m.OutHandleDataDown.Res, m.Failures["HandleDataDown"]
 }
 
 // SubscribePersonalized implements the core.HandlerClient interface
@@ -76,10 +98,7 @@ func (m *HandlerClient) SubscribePersonalized(ctx context.Context, in *core.ABPS
 	m.InSubscribePersonalized.Ctx = ctx
 	m.InSubscribePersonalized.Req = in
 	m.InSubscribePersonalized.Opts = opts
-	if err := m.Failures["SubscribePersonalized"]; err != nil {
-		return nil, err
-	}
-	return m.OutSubscribePersonalized.Res, nil
+	return m.OutSubscribePersonalized.Res, m.Failures["SubscribePersonalized"]
 }
 
 // BrokerClient mocks the core.BrokerClient interface
@@ -115,10 +134,7 @@ func (m *BrokerClient) HandleData(ctx context.Context, in *core.DataBrokerReq, o
 	m.InHandleData.Ctx = ctx
 	m.InHandleData.Req = in
 	m.InHandleData.Opts = opts
-	if err := m.Failures["HandleData"]; err != nil {
-		return nil, err
-	}
-	return m.OutHandleData.Res, nil
+	return m.OutHandleData.Res, m.Failures["HandleData"]
 }
 
 // SubscribePersonalized implements the core.BrokerClient interface
@@ -126,10 +142,7 @@ func (m *BrokerClient) SubscribePersonalized(ctx context.Context, in *core.ABPSu
 	m.InSubscribePersonalized.Ctx = ctx
 	m.InSubscribePersonalized.Req = in
 	m.InSubscribePersonalized.Opts = opts
-	if err := m.Failures["SubscribePersonalized"]; err != nil {
-		return nil, err
-	}
-	return m.OutSubscribePersonalized.Res, nil
+	return m.OutSubscribePersonalized.Res, m.Failures["SubscribePersonalized"]
 }
 
 // RouterServer mocks the core.RouterServer interface
@@ -162,20 +175,14 @@ func NewRouterServer() *RouterServer {
 func (m *RouterServer) HandleData(ctx context.Context, in *core.DataRouterReq) (*core.DataRouterRes, error) {
 	m.InHandleData.Ctx = ctx
 	m.InHandleData.Req = in
-	if err := m.Failures["HandleData"]; err != nil {
-		return nil, err
-	}
-	return m.OutHandleData.Res, nil
+	return m.OutHandleData.Res, m.Failures["HandleData"]
 }
 
 // HandleStats implements the core.RouterServer interface
 func (m *RouterServer) HandleStats(ctx context.Context, in *core.StatsReq) (*core.StatsRes, error) {
 	m.InHandleStats.Ctx = ctx
 	m.InHandleStats.Req = in
-	if err := m.Failures["HandleStats"]; err != nil {
-		return nil, err
-	}
-	return m.OutHandleStats.Res, nil
+	return m.OutHandleStats.Res, m.Failures["HandleStats"]
 }
 
 // DutyManager mocks the dutycycle.DutyManager interface

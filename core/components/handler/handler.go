@@ -20,19 +20,31 @@ import (
 	"google.golang.org/grpc"
 )
 
+// bufferDelay defines the timeframe length during which we bufferize packets
 const bufferDelay time.Duration = time.Millisecond * 300
 
 // component implements the core.Component interface
 type component struct {
-	broker  core.BrokerClient
-	ctx     log.Interface
-	devices DevStorage
-	packets PktStorage
-	set     chan<- bundle
-	adapter core.AppClient
-	netAddr string
+	Components
+	Set     chan<- bundle
+	NetAddr string
 }
 
+// Components is used to make handler instantiation easier
+type Components struct {
+	Broker     core.BrokerClient
+	Ctx        log.Interface
+	DevStorage DevStorage
+	PktStorage PktStorage
+	AppAdapter core.AppClient
+}
+
+// Options is used to make handler instantiation easier
+type Options struct {
+	NetAddr string
+}
+
+// bundle are used to materialize an incoming request being bufferized, waiting for the others.
 type bundle struct {
 	Chresp chan interface{}
 	Entry  devEntry
@@ -42,20 +54,16 @@ type bundle struct {
 }
 
 // New construct a new Handler
-func New(devDb DevStorage, pktDb PktStorage, broker core.BrokerClient, adapter core.AppClient, netAddr string, ctx log.Interface) core.HandlerServer {
+func New(c Components, o Options) core.HandlerServer {
 	h := &component{
-		ctx:     ctx,
-		devices: devDb,
-		packets: pktDb,
-		broker:  broker,
-		adapter: adapter,
-		netAddr: netAddr,
+		Components: c,
+		NetAddr:    o.NetAddr,
 	}
 
 	set := make(chan bundle)
 	bundles := make(chan []bundle)
 
-	h.set = set
+	h.Set = set
 	go h.consumeBundles(bundles)
 	go h.consumeSet(bundles, set)
 
@@ -64,7 +72,7 @@ func New(devDb DevStorage, pktDb PktStorage, broker core.BrokerClient, adapter c
 
 // Start actually runs the component and starts the rpc server
 func (h *component) Start(netAddr string) error {
-	conn, err := net.Listen("tcp", h.netAddr)
+	conn, err := net.Listen("tcp", h.NetAddr)
 	if err != nil {
 		return errors.New(errors.Operational, err)
 	}
@@ -80,7 +88,7 @@ func (h *component) Start(netAddr string) error {
 
 // RegisterPersonalized implements the core.HandlerServer interface
 func (h component) SubscribePersonalized(bctx context.Context, req *core.ABPSubHandlerReq) (*core.ABPSubHandlerRes, error) {
-	h.ctx.Debug("New personalized subscription request")
+	h.Ctx.Debug("New personalized subscription request")
 	stats.MarkMeter("handler.registration.in")
 
 	if len(req.AppEUI) != 8 {
@@ -109,16 +117,16 @@ func (h component) SubscribePersonalized(bctx context.Context, req *core.ABPSubH
 	var appSKey [16]byte
 	copy(appSKey[:], req.AppSKey)
 
-	if h.netAddr == "" {
+	if h.NetAddr == "" {
 		return nil, errors.New(errors.Operational, "Illegal call. Start the server first")
 	}
 
-	if err := h.devices.StorePersonalized(req.AppEUI, devAddr, nwkSKey, appSKey); err != nil {
+	if err := h.DevStorage.StorePersonalized(req.AppEUI, devAddr, nwkSKey, appSKey); err != nil {
 		return nil, errors.New(errors.Operational, err)
 	}
 
-	_, err := h.broker.SubscribePersonalized(context.Background(), &core.ABPSubBrokerReq{
-		HandlerNet: h.netAddr,
+	_, err := h.Broker.SubscribePersonalized(context.Background(), &core.ABPSubBrokerReq{
+		HandlerNet: h.NetAddr,
 		AppEUI:     req.AppEUI,
 		DevAddr:    req.DevAddr,
 		NwkSKey:    req.NwkSKey,
@@ -133,7 +141,7 @@ func (h component) SubscribePersonalized(bctx context.Context, req *core.ABPSubH
 // HandleDataDown implements the core.HandlerServer interface
 func (h component) HandleDataDown(bctx context.Context, req *core.DataDownHandlerReq) (*core.DataDownHandlerRes, error) {
 	stats.MarkMeter("handler.downlink.in")
-	h.ctx.Debug("Handle downlink message")
+	h.Ctx.Debug("Handle downlink message")
 
 	// Unmarshal the given packet and see what gift we get
 
@@ -152,8 +160,8 @@ func (h component) HandleDataDown(bctx context.Context, req *core.DataDownHandle
 		return nil, errors.New(errors.Structural, "Invalid payload")
 	}
 
-	h.ctx.WithField("DevEUI", req.DevEUI).WithField("AppEUI", req.AppEUI).Debug("Save downlink for later")
-	return nil, h.packets.Push(req.AppEUI, req.DevEUI, pktEntry{Payload: req.Payload})
+	h.Ctx.WithField("DevEUI", req.DevEUI).WithField("AppEUI", req.AppEUI).Debug("Save downlink for later")
+	return nil, h.PktStorage.Push(req.AppEUI, req.DevEUI, pktEntry{Payload: req.Payload})
 }
 
 // HandleDataUp implements the core.HandlerServer interface
@@ -180,8 +188,8 @@ func (h component) HandleDataUp(bctx context.Context, req *core.DataUpHandlerReq
 	stats.MarkMeter("handler.uplink.data")
 
 	// 1. Lookup for the associated AppSKey + Application
-	h.ctx.WithField("appEUI", req.AppEUI).WithField("devEUI", req.DevEUI).Debug("Perform lookup")
-	entry, err := h.devices.Lookup(req.AppEUI, req.DevEUI)
+	h.Ctx.WithField("appEUI", req.AppEUI).WithField("devEUI", req.DevEUI).Debug("Perform lookup")
+	entry, err := h.DevStorage.Lookup(req.AppEUI, req.DevEUI)
 	if err != nil {
 		return nil, err
 	}
@@ -202,9 +210,9 @@ func (h component) HandleDataUp(bctx context.Context, req *core.DataUpHandlerReq
 	copy(bundleID[:], data[:])
 
 	// 4. Send the actual bundle to the consumer
-	ctx := h.ctx.WithField("BundleID", bundleID)
+	ctx := h.Ctx.WithField("BundleID", bundleID)
 	ctx.Debug("Define new bundle")
-	h.set <- bundle{
+	h.Set <- bundle{
 		ID:     bundleID,
 		Packet: *req,
 		Entry:  entry,
@@ -238,7 +246,7 @@ func (h component) HandleDataUp(bctx context.Context, req *core.DataUpHandlerReq
 // consumeSet gathers new incoming bundles which possess the same id (i.e. appEUI & devEUI & Fcnt)
 // It then flushes them once a given delay has passed since the reception of the first bundle.
 func (h component) consumeSet(chbundles chan<- []bundle, chset <-chan bundle) {
-	ctx := h.ctx.WithField("goroutine", "set consumer")
+	ctx := h.Ctx.WithField("goroutine", "set consumer")
 	ctx.Debug("Starting packets buffering")
 
 	// NOTE Processed is likely to grow quickly. One has to define a more efficient data stucture
@@ -297,7 +305,7 @@ func setAlarm(alarm chan<- [20]byte, id [20]byte, delay time.Duration) {
 // consumeBundles processes list of bundle generated overtime, decrypt the underlying packet,
 // deduplicate them, and send a single enhanced packet to the upadapter for further processing.
 func (h component) consumeBundles(chbundle <-chan []bundle) {
-	ctx := h.ctx.WithField("goroutine", "bundle consumer")
+	ctx := h.Ctx.WithField("goroutine", "bundle consumer")
 	ctx.Debug("Starting bundle consumer")
 
 browseBundles:
@@ -351,7 +359,7 @@ browseBundles:
 
 		// Then create an application-level packet and send it to the wild open
 		// we don't expect a response from the adapter, end of the chain.
-		_, err = h.adapter.HandleData(context.Background(), &core.DataAppReq{
+		_, err = h.AppAdapter.HandleData(context.Background(), &core.DataAppReq{
 			AppEUI:   b.Packet.AppEUI,
 			DevEUI:   b.Packet.DevEUI,
 			Payload:  payload,
@@ -365,12 +373,12 @@ browseBundles:
 		stats.MarkMeter("handler.uplink.out")
 
 		// Now handle the downlink and respond to node
-		h.ctx.Debug("Looking for downlink response")
+		h.Ctx.Debug("Looking for downlink response")
 		best := computer.Get(scores)
-		h.ctx.WithField("Bundle", best).Debug("Determine best gateway")
+		h.Ctx.WithField("Bundle", best).Debug("Determine best gateway")
 		var downlink pktEntry
 		if best != nil { // Avoid pulling when there's no gateway available for an answer
-			downlink, err = h.packets.Pull(b.Packet.AppEUI, b.Packet.DevEUI)
+			downlink, err = h.PktStorage.Pull(b.Packet.AppEUI, b.Packet.DevEUI)
 		}
 		if err != nil && err.(errors.Failure).Nature != errors.NotFound {
 			go h.abortConsume(err, bundles)
@@ -387,7 +395,7 @@ browseBundles:
 					go h.abortConsume(errors.New(errors.Structural, err), bundles)
 					continue browseBundles
 				}
-				err = h.devices.UpdateFCnt(b.Packet.AppEUI, b.Packet.DevEUI, downlink.Payload.MACPayload.FHDR.FCnt)
+				err = h.DevStorage.UpdateFCnt(b.Packet.AppEUI, b.Packet.DevEUI, downlink.Payload.MACPayload.FHDR.FCnt)
 				if err != nil {
 					go h.abortConsume(errors.New(errors.Structural, err), bundles)
 					continue browseBundles
@@ -403,7 +411,7 @@ browseBundles:
 // Abort consume forward the given error to all bundle recipients
 func (h component) abortConsume(err error, bundles []bundle) {
 	stats.MarkMeter("handler.uplink.invalid")
-	h.ctx.WithError(err).Debug("Unable to consume bundle")
+	h.Ctx.WithError(err).Debug("Unable to consume bundle")
 	for _, bundle := range bundles {
 		bundle.Chresp <- err
 	}
