@@ -28,7 +28,7 @@ We are working hard on building a working version of the v1.0 backend. Currently
 
 - [x] **Router**
 - [x] **Broker**
-- [ ] **Handler**: *work in progress*
+- [x] **Handler**
 
 ## Contributing
 
@@ -39,10 +39,6 @@ If you find bugs or documentation mistakes, please check [open issues](https://g
 For contributing a feature, please open an issue that explains what you're working on. Work in your own fork of the repository and submit a pull request when you're done.
 
 If you want to contribute, but don't know where to start, you could have a look at issues with the label [*help wanted*](https://github.com/TheThingsNetwork/ttn/labels/help%20wanted) or [*difficulty/easy*](https://github.com/TheThingsNetwork/ttn/labels/difficulty%2Feasy).
-
-## Roadmap
-
-We have a [roadmap](ROADMAP.md) for the coming months. This document will evolve as we further define our long-term vision.
 
 ## License
 
