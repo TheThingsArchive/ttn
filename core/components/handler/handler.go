@@ -153,7 +153,7 @@ func (h component) HandleDataDown(bctx context.Context, req *core.DataDownHandle
 	}
 
 	h.ctx.WithField("DevEUI", req.DevEUI).WithField("AppEUI", req.AppEUI).Debug("Save downlink for later")
-	return nil, h.packets.Push(req.AppEUI, req.DevEUI, req.Payload)
+	return nil, h.packets.Push(req.AppEUI, req.DevEUI, pktEntry{Payload: req.Payload})
 }
 
 // HandleDataUp implements the core.HandlerServer interface
@@ -368,7 +368,7 @@ browseBundles:
 		h.ctx.Debug("Looking for downlink response")
 		best := computer.Get(scores)
 		h.ctx.WithField("Bundle", best).Debug("Determine best gateway")
-		var downlink []byte
+		var downlink pktEntry
 		if best != nil { // Avoid pulling when there's no gateway available for an answer
 			downlink, err = h.packets.Pull(b.Packet.AppEUI, b.Packet.DevEUI)
 		}
@@ -379,10 +379,10 @@ browseBundles:
 
 		// One of those bundle might be available for a response
 		for i, bundle := range bundles {
-			if best != nil && best.ID == i && downlink != nil && err == nil {
+			if best != nil && best.ID == i && downlink.Payload != nil && err == nil {
 				stats.MarkMeter("handler.downlink.pull")
 
-				downlink, err := h.buildDownlink(downlink, bundle.Packet, bundle.Entry, best.IsRX2)
+				downlink, err := h.buildDownlink(downlink.Payload, bundle.Packet, bundle.Entry, best.IsRX2)
 				if err != nil {
 					go h.abortConsume(errors.New(errors.Structural, err), bundles)
 					continue browseBundles

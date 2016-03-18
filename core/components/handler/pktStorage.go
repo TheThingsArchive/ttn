@@ -23,7 +23,9 @@ type pktStorage struct {
 	db dbutil.Interface
 }
 
-type pktEntry []byte
+type pktEntry struct {
+	Payload []byte
+}
 
 // NewPktStorage creates a new PktStorage
 func NewPktStorage(name string) (PktStorage, error) {
@@ -44,35 +46,38 @@ func (s pktStorage) Pull(appEUI, devEUI []byte) (pktEntry, error) {
 	key := append(appEUI, devEUI...)
 	entries, err := s.db.Lookup(dbPackets, key, &pktEntry{})
 	if err != nil {
-		return nil, err // Operational || NotFound
+		return pktEntry{}, err // Operational || NotFound
 	}
 
 	payloads, ok := entries.([]pktEntry)
 	if !ok {
-		return nil, errors.New(errors.Operational, "Unable to retrieve data from db")
+		return pktEntry{}, errors.New(errors.Operational, "Unable to retrieve data from db")
 	}
 
 	// NOTE: one day, those entries will be more complicated, with a ttl.
 	// Here's the place where we should check for that. Cheers.
 	if len(payloads) == 0 {
-		return nil, errors.New(errors.NotFound, fmt.Sprintf("Entry not found for %v", key))
+		return pktEntry{}, errors.New(errors.NotFound, fmt.Sprintf("Entry not found for %v", key))
 	}
 
-	payload := payloads[0]
+	head := new(pktEntry)
+	_ = head.UnmarshalBinary(payloads[0].Payload)
 
-	var newEntries []dbutil.Entry
+	var tail []dbutil.Entry
 	for _, p := range payloads[1:] {
-		newEntries = append(newEntries, &p)
+		t := new(pktEntry)
+		*t = p
+		tail = append(tail, t)
 	}
 
-	if err := s.db.Replace(dbPackets, key, newEntries); err != nil {
-		if err := s.db.Replace(dbPackets, key, newEntries); err != nil {
+	if err := s.db.Replace(dbPackets, key, tail); err != nil {
+		if err := s.db.Replace(dbPackets, key, tail); err != nil {
 			// TODO This is critical... we've just lost a packet
-			return nil, errors.New(errors.Operational, "Unable to restore data in db")
+			return pktEntry{}, errors.New(errors.Operational, "Unable to restore data in db")
 		}
 	}
 
-	return payload, nil
+	return *head, nil
 }
 
 // Close implements the PktStorage interface
@@ -82,11 +87,12 @@ func (s pktStorage) Close() error {
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface
 func (e pktEntry) MarshalBinary() ([]byte, error) {
-	return e, nil
+	return e.Payload, nil
 }
 
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
 func (e *pktEntry) UnmarshalBinary(data []byte) error {
-	*e = data
+	e.Payload = make([]byte, len(data))
+	copy(e.Payload, data)
 	return nil
 }

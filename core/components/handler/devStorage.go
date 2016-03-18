@@ -8,8 +8,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"sync"
-	//
-	//	. "github.com/TheThingsNetwork/ttn/core"
+
 	dbutil "github.com/TheThingsNetwork/ttn/core/storage"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 )
@@ -30,10 +29,6 @@ type devEntry struct {
 	NwkSKey  [16]byte
 	FCntDown uint32
 }
-
-//type appEntry struct {
-//	AppKey lorawan.AES128Key
-//}
 
 type devStorage struct {
 	sync.RWMutex
@@ -121,22 +116,8 @@ func (e devEntry) MarshalBinary() ([]byte, error) {
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
 func (e *devEntry) UnmarshalBinary(data []byte) error {
 	buf := bytes.NewBuffer(data)
-	binary.Read(buf, binary.BigEndian, e.DevAddr)
-	binary.Read(buf, binary.BigEndian, e.AppSKey)
-	binary.Read(buf, binary.BigEndian, e.NwkSKey)
+	binary.Read(buf, binary.BigEndian, &e.DevAddr)
+	binary.Read(buf, binary.BigEndian, &e.AppSKey)
+	binary.Read(buf, binary.BigEndian, &e.NwkSKey)
 	return binary.Read(buf, binary.BigEndian, &e.FCntDown)
 }
-
-//// MarshalBinary implements the encoding.BinaryMarshaler interface
-//func (e appEntry) MarshalBinary() ([]byte, error) {
-//	rw := readwriter.New(nil)
-//	rw.Write(e.AppKey)
-//	return rw.Bytes()
-//}
-//
-//// UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
-//func (e *appEntry) UnmarshalBinary(data []byte) error {
-//	rw := readwriter.New(data)
-//	rw.Read(func(data []byte) { copy(e.AppKey[:], data) })
-//	return rw.Err()
-//}
