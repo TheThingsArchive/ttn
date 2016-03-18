@@ -158,7 +158,7 @@ func init() {
 	viper.BindPFlag("handler.status-address", handlerCmd.Flags().Lookup("status-address"))
 	viper.BindPFlag("handler.status-port", handlerCmd.Flags().Lookup("status-port"))
 
-	handlerCmd.Flags().String("server-address", "", "The IP address to listen for uplink messages from brokers")
+	handlerCmd.Flags().String("server-address", "localhost", "The IP address to listen for uplink messages from brokers")
 	handlerCmd.Flags().Int("server-port", 1882, "The port for the uplink")
 	viper.BindPFlag("handler.server-address", handlerCmd.Flags().Lookup("server-address"))
 	viper.BindPFlag("handler.server-port", handlerCmd.Flags().Lookup("server-port"))

@@ -109,7 +109,7 @@ func (a adapter) HandleData(bctx context.Context, req *core.DataAppReq, _ ...grp
 	deui, aeui := hex.EncodeToString(req.DevEUI), hex.EncodeToString(req.AppEUI)
 	err = a.Client.Publish(&client.PublishOptions{
 		QoS:       mqtt.QoS2,
-		Retain:    true,
+		Retain:    false,
 		TopicName: []byte(fmt.Sprintf("%s/devices/%s/up", aeui, deui)),
 		Message:   msg,
 	})

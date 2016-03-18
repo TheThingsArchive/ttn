@@ -233,8 +233,9 @@ func (b component) SubscribePersonalized(bctx context.Context, req *core.ABPSubB
 	}
 	copy(nwkSKey[:], req.NwkSKey)
 
-	re := regexp.MustCompile("^[-\\w]+\\.([-\\w]+\\.?)+:\\d+$")
+	re := regexp.MustCompile("^([-\\w]+\\.?)+:\\d+$")
 	if !re.MatchString(req.HandlerNet) {
+		b.Ctx.WithField("addr", req.HandlerNet).Debug("Invalid address")
 		return nil, errors.New(errors.Structural, fmt.Sprintf("Invalid Handler Net Address. Should match: %s", re))
 	}
 

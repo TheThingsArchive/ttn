@@ -793,7 +793,7 @@ func TestHandleData(t *testing.T) {
 		var wantRes *core.DataAppRes
 		var wantPub = &client.PublishOptions{
 			QoS:       mqtt.QoS2,
-			Retain:    true,
+			Retain:    false,
 			TopicName: []byte("0102030405060708/devices/0000000001020304/up"),
 			Message:   data,
 		}
@@ -836,7 +836,7 @@ func TestHandleData(t *testing.T) {
 		var wantRes *core.DataAppRes
 		var wantPub = &client.PublishOptions{
 			QoS:       mqtt.QoS2,
-			Retain:    true,
+			Retain:    false,
 			TopicName: []byte("0102030405060708/devices/0000000001020304/up"),
 			Message:   data,
 		}
