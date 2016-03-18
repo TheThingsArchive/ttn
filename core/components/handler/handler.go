@@ -6,339 +6,253 @@ package handler
 import (
 	"bytes"
 	"encoding/binary"
+	"net"
 	"reflect"
 	"time"
 
-	. "github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/dutycycle"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
-	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	"github.com/TheThingsNetwork/ttn/utils/stats"
 	"github.com/apex/log"
 	"github.com/brocaar/lorawan"
+	"golang.org/x/net/context"
+	"google.golang.org/grpc"
 )
 
+// bufferDelay defines the timeframe length during which we bufferize packets
 const bufferDelay time.Duration = time.Millisecond * 300
 
 // component implements the core.Component interface
 type component struct {
-	broker  JSONRecipient
-	ctx     log.Interface
-	devices DevStorage
-	packets PktStorage
-	set     chan<- bundle
+	Components
+	Set     chan<- bundle
+	NetAddr string
 }
 
+// Interface defines the Handler interface
+type Interface interface {
+	core.HandlerServer
+	Start() error
+}
+
+// Components is used to make handler instantiation easier
+type Components struct {
+	Broker     core.BrokerClient
+	Ctx        log.Interface
+	DevStorage DevStorage
+	PktStorage PktStorage
+	AppAdapter core.AppClient
+}
+
+// Options is used to make handler instantiation easier
+type Options struct {
+	NetAddr string
+}
+
+// bundle are used to materialize an incoming request being bufferized, waiting for the others.
 type bundle struct {
-	Adapter Adapter
-	Chresp  chan interface{}
-	Entry   devEntry
-	ID      [20]byte
-	Packet  HPacket
-	Time    time.Time
+	Chresp chan interface{}
+	Entry  devEntry
+	ID     [20]byte
+	Packet core.DataUpHandlerReq
+	Time   time.Time
 }
 
 // New construct a new Handler
-func New(devDb DevStorage, pktDb PktStorage, broker JSONRecipient, ctx log.Interface) Handler {
-	h := component{
-		ctx:     ctx,
-		devices: devDb,
-		packets: pktDb,
-		broker:  broker,
+func New(c Components, o Options) Interface {
+	h := &component{
+		Components: c,
+		NetAddr:    o.NetAddr,
 	}
 
 	set := make(chan bundle)
 	bundles := make(chan []bundle)
 
-	h.set = set
+	h.Set = set
 	go h.consumeBundles(bundles)
 	go h.consumeSet(bundles, set)
 
 	return h
 }
 
-// Register implements the core.Component interface
-func (h component) Register(reg Registration, an AckNacker, sub Subscriber) (err error) {
-	h.ctx.WithField("registration", reg).Debug("New registration request")
-	defer ensureAckNack(an, nil, &err)
-	stats.MarkMeter("handler.registration.in")
-
-	hreg, ok := reg.(HRegistration)
-	if !ok {
-		stats.MarkMeter("handler.registration.invalid")
-		return errors.New(errors.Structural, "Not a Handler registration")
-	}
-
-	if err = h.devices.StorePersonalized(hreg); err != nil {
+// Start actually runs the component and starts the rpc server
+func (h *component) Start() error {
+	conn, err := net.Listen("tcp", h.NetAddr)
+	if err != nil {
 		return errors.New(errors.Operational, err)
 	}
 
-	return sub.Subscribe(brokerRegistration{
-		recipient: h.broker,
-		appEUI:    hreg.AppEUI(),
-		devEUI:    hreg.DevEUI(),
-		nwkSKey:   hreg.NwkSKey(),
-	})
+	server := grpc.NewServer()
+	core.RegisterHandlerServer(server, h)
+
+	if err := server.Serve(conn); err != nil {
+		return errors.New(errors.Operational, err)
+	}
+	return nil
 }
 
-// HandleUp implements the core.Component interface
-func (h component) HandleUp(data []byte, an AckNacker, up Adapter) (err error) {
-	// Make sure we don't forget the AckNacker
-	var ack Packet
-	defer ensureAckNack(an, &ack, &err)
+// RegisterPersonalized implements the core.HandlerServer interface
+func (h component) SubscribePersonalized(bctx context.Context, req *core.ABPSubHandlerReq) (*core.ABPSubHandlerRes, error) {
+	h.Ctx.Debug("New personalized subscription request")
+	stats.MarkMeter("handler.registration.in")
+
+	if len(req.AppEUI) != 8 {
+		stats.MarkMeter("handler.registration.invalid")
+		return new(core.ABPSubHandlerRes), errors.New(errors.Structural, "Invalid Application EUI")
+	}
+
+	if len(req.DevAddr) != 4 {
+		stats.MarkMeter("handler.registration.invalid")
+		return new(core.ABPSubHandlerRes), errors.New(errors.Structural, "Invalid Device Address")
+	}
+	var devAddr [4]byte
+	copy(devAddr[:], req.DevAddr)
+
+	if len(req.NwkSKey) != 16 {
+		stats.MarkMeter("handler.registration.invalid")
+		return new(core.ABPSubHandlerRes), errors.New(errors.Structural, "Invalid Network Session Key")
+	}
+	var nwkSKey [16]byte
+	copy(nwkSKey[:], req.NwkSKey)
+
+	if len(req.AppSKey) != 16 {
+		stats.MarkMeter("handler.registration.invalid")
+		return new(core.ABPSubHandlerRes), errors.New(errors.Structural, "Invalid Application Session Key")
+	}
+	var appSKey [16]byte
+	copy(appSKey[:], req.AppSKey)
+
+	h.Ctx.Debug("Registration is valid. Saving and forwarding to broker")
+
+	if err := h.DevStorage.StorePersonalized(req.AppEUI, devAddr, nwkSKey, appSKey); err != nil {
+		h.Ctx.WithError(err).Debug("Unable to store registration")
+		return new(core.ABPSubHandlerRes), errors.New(errors.Operational, err)
+	}
+
+	_, err := h.Broker.SubscribePersonalized(context.Background(), &core.ABPSubBrokerReq{
+		HandlerNet: h.NetAddr,
+		AppEUI:     req.AppEUI,
+		DevAddr:    req.DevAddr,
+		NwkSKey:    req.NwkSKey,
+	})
+
+	if err != nil {
+		h.Ctx.WithError(err).Debug("Unable to forward registration")
+		return new(core.ABPSubHandlerRes), errors.New(errors.Operational, err)
+	}
+	return new(core.ABPSubHandlerRes), nil
+}
+
+// HandleDataDown implements the core.HandlerServer interface
+func (h component) HandleDataDown(bctx context.Context, req *core.DataDownHandlerReq) (*core.DataDownHandlerRes, error) {
+	stats.MarkMeter("handler.downlink.in")
+	h.Ctx.Debug("Handle downlink message")
+
+	// Unmarshal the given packet and see what gift we get
+
+	if len(req.AppEUI) != 8 {
+		stats.MarkMeter("handler.downlink.invalid")
+		return new(core.DataDownHandlerRes), errors.New(errors.Structural, "Invalid Application EUI")
+	}
+
+	if len(req.DevEUI) != 8 {
+		stats.MarkMeter("handler.downlink.invalid")
+		return new(core.DataDownHandlerRes), errors.New(errors.Structural, "Invalid Device EUI")
+	}
+
+	if len(req.Payload) == 0 {
+		stats.MarkMeter("handler.downlink.invalid")
+		return new(core.DataDownHandlerRes), errors.New(errors.Structural, "Invalid payload")
+	}
+
+	h.Ctx.WithField("DevEUI", req.DevEUI).WithField("AppEUI", req.AppEUI).Debug("Save downlink for later")
+	return new(core.DataDownHandlerRes), h.PktStorage.Push(req.AppEUI, req.DevEUI, pktEntry{Payload: req.Payload})
+}
+
+// HandleDataUp implements the core.HandlerServer interface
+func (h component) HandleDataUp(bctx context.Context, req *core.DataUpHandlerReq) (*core.DataUpHandlerRes, error) {
 	stats.MarkMeter("handler.uplink.in")
 
-	itf, err := UnmarshalPacket(data)
-	if err != nil {
+	// 0. Check the packet integrity
+	if len(req.Payload) == 0 {
 		stats.MarkMeter("handler.uplink.invalid")
-		return errors.New(errors.Structural, err)
+		return new(core.DataUpHandlerRes), errors.New(errors.Structural, "Invalid Packet Payload")
 	}
-
-	switch itf.(type) {
-	case HPacket:
-		stats.MarkMeter("handler.uplink.data")
-
-		// 0. Retrieve the handler packet
-		packet := itf.(HPacket)
-		appEUI := packet.AppEUI()
-		devEUI := packet.DevEUI()
-
-		// 1. Lookup for the associated AppSKey + Recipient
-		h.ctx.WithField("appEUI", appEUI).WithField("devEUI", devEUI).Debug("Perform lookup")
-		entry, err := h.devices.Lookup(appEUI, devEUI)
-		if err != nil {
-			return err
-		}
-
-		// 2. Prepare a channel to receive the response from the consumer
-		chresp := make(chan interface{})
-
-		// 3. Create a "bundle" which holds info waiting for other related packets
-		var bundleID [20]byte // AppEUI(8) | DevEUI(8) | FCnt
-		buf := new(bytes.Buffer)
-		binary.Write(buf, binary.BigEndian, appEUI[:])
-		binary.Write(buf, binary.BigEndian, devEUI[:])
-		binary.Write(buf, binary.BigEndian, packet.FCnt())
-		data := buf.Bytes()
-		if len(data) != 20 {
-			return errors.New(errors.Structural, "Unable to generate bundleID")
-		}
-		copy(bundleID[:], data[:])
-
-		// 4. Send the actual bundle to the consumer
-		ctx := h.ctx.WithField("BundleID", bundleID)
-		ctx.Debug("Define new bundle")
-		h.set <- bundle{
-			ID:      bundleID,
-			Packet:  packet,
-			Entry:   entry,
-			Adapter: up,
-			Chresp:  chresp,
-			Time:    time.Now(),
-		}
-
-		// 5. Wait for the response. Could be an error, a packet or nothing.
-		// We'll respond to a maximum of one node. The handler will use the
-		// rssi + gateway's duty cycle to select to best fit.
-		// All other channels will get a nil response.
-		// If there's an error, all channels get the error.
-		resp := <-chresp
-		switch resp.(type) {
-		case BPacket:
-			stats.MarkMeter("handler.uplink.ack.with_response")
-			stats.MarkMeter("handler.downlink.out")
-			ctx.Debug("Received response with packet. Sending Ack")
-			ack = resp.(Packet)
-		case error:
-			stats.MarkMeter("handler.uplink.error")
-			ctx.WithError(resp.(error)).Warn("Received errored response. Sending Ack")
-			return resp.(error)
-		default:
-			stats.MarkMeter("handler.uplink.ack.without_response")
-			ctx.Debug("Received empty response. Sending empty Ack")
-		}
-
-		return nil
-	case JPacket:
-		stats.MarkMeter("handler.uplink.join_request")
-		return errors.New(errors.Implementation, "Join Request not yet implemented")
-	default:
-		stats.MarkMeter("handler.uplink.unknown")
-		return errors.New(errors.Implementation, "Unhandled packet type")
+	if len(req.DevEUI) != 8 {
+		stats.MarkMeter("handler.uplink.invalid")
+		return new(core.DataUpHandlerRes), errors.New(errors.Structural, "Invalid Device EUI")
 	}
-}
-
-// consumeBundles processes list of bundle generated overtime, decrypt the underlying packet,
-// deduplicate them, and send a single enhanced packet to the upadapter for further processing.
-func (h component) consumeBundles(chbundle <-chan []bundle) {
-	ctx := h.ctx.WithField("goroutine", "bundle consumer")
-	ctx.Debug("Starting bundle consumer")
-
-browseBundles:
-	for bundles := range chbundle {
-		ctx.WithField("BundleID", bundles[0].ID).Debug("Consume new bundle")
-		var metadata []Metadata
-		var payload []byte
-		var firstTime time.Time
-
-		if len(bundles) < 1 {
-			continue browseBundles
-		}
-		b := bundles[0]
-		h.ctx.WithField("Metadata", b.Packet.Metadata()).Debug("Considering first packet")
-
-		computer, scores, err := dutycycle.NewScoreComputer(b.Packet.Metadata().Datr)
-		if err != nil {
-			go h.abortConsume(err, bundles)
-			continue browseBundles
-		}
-
-		stats.UpdateHistogram("handler.uplink.duplicate.count", int64(len(bundles)))
-
-		for i, bundle := range bundles {
-			// We only decrypt the payload of the first bundle's packet.
-			// We assume all the other to be equal and we'll merely collect
-			// metadata from other bundle.
-			if i == 0 {
-				var err error
-				payload, err = bundle.Packet.Payload(bundle.Entry.AppSKey)
-				if err != nil {
-					go h.abortConsume(err, bundles)
-					continue browseBundles
-				}
-				firstTime = bundle.Time
-				stats.MarkMeter("handler.uplink.in.unique")
-			} else {
-				diff := bundle.Time.Sub(firstTime).Nanoseconds()
-				stats.UpdateHistogram("handler.uplink.duplicate.delay", diff/1000)
-			}
-
-			// Append metadata for each of them
-			metadata = append(metadata, bundle.Packet.Metadata())
-			scores = computer.Update(scores, i, bundle.Packet.Metadata())
-		}
-
-		// Then create an application-level packet
-		packet, err := NewAPacket(b.Packet.AppEUI(), b.Packet.DevEUI(), payload, metadata)
-		if err != nil {
-			go h.abortConsume(err, bundles)
-			continue browseBundles
-		}
-
-		// And send it to the wild open
-		// we don't expect a response from the adapter, end of the chain.
-		recipient, err := b.Adapter.GetRecipient(b.Entry.Recipient)
-		if err != nil {
-			go h.abortConsume(err, bundles)
-			continue browseBundles
-		}
-
-		_, err = b.Adapter.Send(packet, recipient)
-		if err != nil {
-			go h.abortConsume(err, bundles)
-			continue browseBundles
-		}
-		stats.MarkMeter("handler.uplink.out")
-
-		// Now handle the downlink and respond to node
-		h.ctx.Debug("Looking for downlink response")
-		best := computer.Get(scores)
-		h.ctx.WithField("Bundle", best).Debug("Determine best gateway")
-		var down APacket
-		if best != nil { // Avoid pulling when there's no gateway available for an answer
-			down, err = h.packets.Pull(b.Packet.AppEUI(), b.Packet.DevEUI())
-		}
-		if err != nil && err.(errors.Failure).Nature != errors.NotFound {
-			go h.abortConsume(err, bundles)
-			continue browseBundles
-		}
-		h.ctx.WithField("Packet", down).Debug("Pull downlink from storage")
-		for i, bundle := range bundles {
-			if best != nil && best.ID == i && down != nil && err == nil {
-				stats.MarkMeter("handler.downlink.pull")
-
-				bpacket, err := h.buildDownlink(down, bundle.Packet, bundle.Entry, best.IsRX2)
-				if err != nil {
-					go h.abortConsume(errors.New(errors.Structural, err), bundles)
-					continue browseBundles
-				}
-				if err := h.devices.UpdateFCnt(b.Packet.AppEUI(), b.Packet.DevEUI(), bpacket.FCnt()); err != nil {
-					go h.abortConsume(errors.New(errors.Structural, err), bundles)
-					continue browseBundles
-				}
-				bundle.Chresp <- bpacket
-			} else {
-				bundle.Chresp <- nil
-			}
-		}
+	if len(req.AppEUI) != 8 {
+		stats.MarkMeter("handler.uplink.invalid")
+		return new(core.DataUpHandlerRes), errors.New(errors.Structural, "Invalid Application EUI")
 	}
-}
-
-// Abort consume forward the given error to all bundle recipients
-func (h component) abortConsume(err error, bundles []bundle) {
-	stats.MarkMeter("handler.uplink.invalid")
-	h.ctx.WithError(err).Debug("Unable to consume bundle")
-	for _, bundle := range bundles {
-		bundle.Chresp <- err
+	if req.Metadata == nil {
+		stats.MarkMeter("handler.uplink.invalid")
+		return new(core.DataUpHandlerRes), errors.New(errors.Structural, "Missing Mandatory Metadata")
 	}
-}
+	stats.MarkMeter("handler.uplink.data")
 
-// constructs a downlink packet from something we pulled from the gathered downlink, and, the actual
-// uplink.
-func (h component) buildDownlink(down APacket, up HPacket, entry devEntry, isRX2 bool) (BPacket, error) {
-	macPayload := lorawan.NewMACPayload(false)
-	macPayload.FHDR = lorawan.FHDR{
-		FCnt:    entry.FCntDown + 1,
-		DevAddr: entry.DevAddr,
-	}
-	macPayload.FPort = 1
-	macPayload.FRMPayload = []lorawan.Payload{&lorawan.DataPayload{
-		Bytes: down.Payload(),
-	}}
-
-	if err := macPayload.EncryptFRMPayload(entry.AppSKey); err != nil {
-		return nil, err
-	}
-
-	payload := lorawan.NewPHYPayload(false)
-	payload.MHDR = lorawan.MHDR{
-		MType: lorawan.UnconfirmedDataDown, // TODO Handle Confirmed data down
-		Major: lorawan.LoRaWANR1,
-	}
-	payload.MACPayload = macPayload
-
-	data, err := payload.MarshalBinary()
+	// 1. Lookup for the associated AppSKey + Application
+	h.Ctx.WithField("appEUI", req.AppEUI).WithField("devEUI", req.DevEUI).Debug("Perform lookup")
+	entry, err := h.DevStorage.Lookup(req.AppEUI, req.DevEUI)
 	if err != nil {
-		return nil, err
-	}
-	pmetadata := up.Metadata()
-
-	if pmetadata.Tmst == nil || pmetadata.Freq == nil || pmetadata.Codr == nil || pmetadata.Datr == nil {
-		return nil, errors.New(errors.Structural, "Missing mandatory metadata in uplink packet")
+		return new(core.DataUpHandlerRes), err
 	}
 
-	metadata := Metadata{
-		Freq: pmetadata.Freq,
-		Codr: pmetadata.Codr,
-		Datr: pmetadata.Datr,
-		Size: pointer.Uint(uint(len(data))),
-		Tmst: pointer.Uint(*pmetadata.Tmst + 1000),
+	// 2. Prepare a channel to receive the response from the consumer
+	chresp := make(chan interface{})
+
+	// 3. Create a "bundle" which holds info waiting for other related packets
+	var bundleID [20]byte // AppEUI(8) | DevEUI(8) | FCnt
+	buf := new(bytes.Buffer)
+	binary.Write(buf, binary.BigEndian, req.AppEUI)
+	binary.Write(buf, binary.BigEndian, req.DevEUI)
+	binary.Write(buf, binary.BigEndian, req.FCnt)
+	data := buf.Bytes()
+	if len(data) != 20 {
+		return new(core.DataUpHandlerRes), errors.New(errors.Structural, "Unable to generate bundleID")
+	}
+	copy(bundleID[:], data[:])
+
+	// 4. Send the actual bundle to the consumer
+	ctx := h.Ctx.WithField("BundleID", bundleID)
+	ctx.Debug("Define new bundle")
+	h.Set <- bundle{
+		ID:     bundleID,
+		Packet: *req,
+		Entry:  entry,
+		Chresp: chresp,
+		Time:   time.Now(),
 	}
 
-	if isRX2 { // Should we reply on RX2, metadata aren't the same
-		// TODO Handle different regions with non hard-coded values
-		metadata.Freq = pointer.Float64(869.5)
-		metadata.Datr = pointer.String("SF9BW125")
-		metadata.Tmst = pointer.Uint(*pmetadata.Tmst + 2000)
+	// 5. Wait for the response. Could be an error, a packet or nothing.
+	// We'll respond to a maximum of one node. The handler will use the
+	// rssi + gateway's duty cycle to select to best fit.
+	// All other channels will get a nil response.
+	// If there's an error, all channels get the error.
+	resp := <-chresp
+	switch resp.(type) {
+	case *core.DataUpHandlerRes:
+		stats.MarkMeter("handler.uplink.ack.with_response")
+		stats.MarkMeter("handler.downlink.out")
+		ctx.Debug("Sending downlink packet as response.")
+		return resp.(*core.DataUpHandlerRes), nil
+	case error:
+		stats.MarkMeter("handler.uplink.error")
+		ctx.WithError(resp.(error)).Warn("Error while processing dowlink.")
+		return new(core.DataUpHandlerRes), resp.(error)
+	default:
+		stats.MarkMeter("handler.uplink.ack.without_response")
+		ctx.Debug("No response to send.")
+		return new(core.DataUpHandlerRes), nil
 	}
-
-	return NewBPacket(payload, metadata)
 }
 
 // consumeSet gathers new incoming bundles which possess the same id (i.e. appEUI & devEUI & Fcnt)
 // It then flushes them once a given delay has passed since the reception of the first bundle.
 func (h component) consumeSet(chbundles chan<- []bundle, chset <-chan bundle) {
-	ctx := h.ctx.WithField("goroutine", "set consumer")
+	ctx := h.Ctx.WithField("goroutine", "set consumer")
 	ctx.Debug("Starting packets buffering")
 
 	// NOTE Processed is likely to grow quickly. One has to define a more efficient data stucture
@@ -394,41 +308,190 @@ func setAlarm(alarm chan<- [20]byte, id [20]byte, delay time.Duration) {
 	alarm <- id
 }
 
-// HandleDown implements the core.Component interface
-func (h component) HandleDown(data []byte, an AckNacker, down Adapter) (err error) {
-	// Make sure we don't forget the AckNacker
-	var ack Packet
-	defer ensureAckNack(an, &ack, &err)
-	stats.MarkMeter("handler.downlink.in")
+// consumeBundles processes list of bundle generated overtime, decrypt the underlying packet,
+// deduplicate them, and send a single enhanced packet to the upadapter for further processing.
+func (h component) consumeBundles(chbundle <-chan []bundle) {
+	ctx := h.Ctx.WithField("goroutine", "bundle consumer")
+	ctx.Debug("Starting bundle consumer")
 
-	h.ctx.Debug("Handle downlink message")
+browseBundles:
+	for bundles := range chbundle {
+		ctx.WithField("BundleID", bundles[0].ID).Debug("Consume new bundle")
+		var metadata []*core.Metadata
+		var payload []byte
+		var firstTime time.Time
 
-	// Unmarshal the given packet and see what gift we get
-	itf, err := UnmarshalPacket(data)
-	if err != nil {
-		stats.MarkMeter("handler.downlink.invalid")
-		return errors.New(errors.Structural, err)
-	}
+		if len(bundles) < 1 {
+			continue browseBundles
+		}
+		b := bundles[0]
 
-	switch itf.(type) {
-	case APacket:
-		apacket := itf.(APacket)
-		h.ctx.WithField("DevEUI", apacket.DevEUI()).WithField("AppEUI", apacket.AppEUI()).Debug("Save downlink for later")
-		return h.packets.Push(apacket)
-	default:
-		stats.MarkMeter("handler.downlink.invalid")
-		return errors.New(errors.Implementation, "Unhandled packet type")
+		computer, scores, err := dutycycle.NewScoreComputer(b.Packet.Metadata.DataRate) // Nil check already done
+		if err != nil {
+			go h.abortConsume(err, bundles)
+			continue browseBundles
+		}
+
+		stats.UpdateHistogram("handler.uplink.duplicate.count", int64(len(bundles)))
+
+		for i, bundle := range bundles {
+			// We only decrypt the payload of the first bundle's packet.
+			// We assume all the other to be equal and we'll merely collect
+			// metadata from other bundle.
+			if i == 0 {
+				var err error
+				payload, err = lorawan.EncryptFRMPayload(
+					bundle.Entry.AppSKey,
+					true,
+					lorawan.DevAddr(bundle.Entry.DevAddr),
+					bundle.Packet.FCnt,
+					bundle.Packet.Payload,
+				)
+				if err != nil {
+					go h.abortConsume(err, bundles)
+					continue browseBundles
+				}
+				firstTime = bundle.Time
+				stats.MarkMeter("handler.uplink.in.unique")
+			} else {
+				diff := bundle.Time.Sub(firstTime).Nanoseconds()
+				stats.UpdateHistogram("handler.uplink.duplicate.delay", diff/1000)
+			}
+
+			// Append metadata for each of them
+			metadata = append(metadata, bundle.Packet.Metadata)
+			scores = computer.Update(scores, i, *bundle.Packet.Metadata) // Nil check already done
+		}
+
+		// Then create an application-level packet and send it to the wild open
+		// we don't expect a response from the adapter, end of the chain.
+		_, err = h.AppAdapter.HandleData(context.Background(), &core.DataAppReq{
+			AppEUI:   b.Packet.AppEUI,
+			DevEUI:   b.Packet.DevEUI,
+			Payload:  payload,
+			Metadata: metadata,
+		})
+		if err != nil {
+			go h.abortConsume(errors.New(errors.Operational, err), bundles)
+			continue browseBundles
+		}
+
+		stats.MarkMeter("handler.uplink.out")
+
+		// Now handle the downlink and respond to node
+		h.Ctx.Debug("Looking for downlink response")
+		best := computer.Get(scores)
+		h.Ctx.WithField("Bundle", best).Debug("Determine best gateway")
+		var downlink pktEntry
+		if best != nil { // Avoid pulling when there's no gateway available for an answer
+			downlink, err = h.PktStorage.Pull(b.Packet.AppEUI, b.Packet.DevEUI)
+		}
+		if err != nil && err.(errors.Failure).Nature != errors.NotFound {
+			go h.abortConsume(err, bundles)
+			continue browseBundles
+		}
+
+		// One of those bundle might be available for a response
+		for i, bundle := range bundles {
+			if best != nil && best.ID == i && downlink.Payload != nil && err == nil {
+				stats.MarkMeter("handler.downlink.pull")
+
+				downlink, err := h.buildDownlink(downlink.Payload, bundle.Packet, bundle.Entry, best.IsRX2)
+				if err != nil {
+					go h.abortConsume(errors.New(errors.Structural, err), bundles)
+					continue browseBundles
+				}
+				err = h.DevStorage.UpdateFCnt(b.Packet.AppEUI, b.Packet.DevEUI, downlink.Payload.MACPayload.FHDR.FCnt)
+				if err != nil {
+					go h.abortConsume(err, bundles)
+					continue browseBundles
+				}
+				bundle.Chresp <- downlink
+			} else {
+				bundle.Chresp <- nil
+			}
+		}
 	}
 }
 
-func ensureAckNack(an AckNacker, ack *Packet, err *error) {
-	if err != nil && *err != nil {
-		an.Nack(*err)
-	} else {
-		var p Packet
-		if ack != nil {
-			p = *ack
-		}
-		an.Ack(p)
+// Abort consume forward the given error to all bundle recipients
+func (h component) abortConsume(err error, bundles []bundle) {
+	stats.MarkMeter("handler.uplink.invalid")
+	h.Ctx.WithError(err).Debug("Unable to consume bundle")
+	for _, bundle := range bundles {
+		bundle.Chresp <- err
 	}
+}
+
+// constructs a downlink packet from something we pulled from the gathered downlink, and, the actual
+// uplink.
+func (h component) buildDownlink(down []byte, up core.DataUpHandlerReq, entry devEntry, isRX2 bool) (*core.DataUpHandlerRes, error) {
+	macpayload := lorawan.NewMACPayload(false)
+	macpayload.FHDR = lorawan.FHDR{
+		FCnt:    entry.FCntDown + 1,
+		DevAddr: entry.DevAddr,
+	}
+	macpayload.FPort = 1
+	macpayload.FRMPayload = []lorawan.Payload{&lorawan.DataPayload{Bytes: down}}
+
+	if err := macpayload.EncryptFRMPayload(entry.AppSKey); err != nil {
+		return nil, errors.New(errors.Structural, err)
+	}
+
+	frmpayload, err := macpayload.FRMPayload[0].MarshalBinary()
+	if err != nil {
+		return nil, errors.New(errors.Structural, err)
+	}
+
+	payload := lorawan.NewPHYPayload(false)
+	payload.MHDR = lorawan.MHDR{
+		MType: lorawan.UnconfirmedDataDown, // TODO Handle Confirmed data down
+		Major: lorawan.LoRaWANR1,
+	}
+	payload.MACPayload = macpayload
+
+	data, err := payload.MarshalBinary()
+	if err != nil {
+		return nil, errors.New(errors.Structural, err)
+	}
+
+	metadata := core.Metadata{
+		Frequency:   up.Metadata.Frequency,
+		CodingRate:  up.Metadata.CodingRate,
+		DataRate:    up.Metadata.DataRate,
+		PayloadSize: uint32(len(data)),
+		Timestamp:   up.Metadata.Timestamp + 1000,
+	}
+
+	if isRX2 { // Should we reply on RX2, metadata aren't the same
+		// TODO Handle different regions with non hard-coded values
+		metadata.Frequency = 869.50
+		metadata.DataRate = "SF9BW125"
+		metadata.Timestamp = up.Metadata.Timestamp + 2000
+	}
+
+	return &core.DataUpHandlerRes{
+		Payload: &core.LoRaWANData{
+			MHDR: &core.LoRaWANMHDR{
+				MType: uint32(payload.MHDR.MType),
+				Major: uint32(payload.MHDR.Major),
+			},
+			MACPayload: &core.LoRaWANMACPayload{
+				FHDR: &core.LoRaWANFHDR{
+					DevAddr: macpayload.FHDR.DevAddr[:],
+					FCnt:    macpayload.FHDR.FCnt,
+					FCtrl: &core.LoRaWANFCtrl{
+						ADR:       macpayload.FHDR.FCtrl.ADR,
+						ADRAckReq: macpayload.FHDR.FCtrl.ADRACKReq,
+						Ack:       macpayload.FHDR.FCtrl.ACK,
+						FPending:  macpayload.FHDR.FCtrl.FPending,
+					},
+				},
+				FPort:      uint32(macpayload.FPort),
+				FRMPayload: frmpayload,
+			},
+			MIC: payload.MIC[:],
+		},
+		Metadata: &metadata,
+	}, nil
 }

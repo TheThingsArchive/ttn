@@ -7,158 +7,226 @@ import (
 	"fmt"
 	"net"
 	"sync"
+	"time"
 
 	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/semtech"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
+	"github.com/TheThingsNetwork/ttn/utils/stats"
 	"github.com/apex/log"
+	"golang.org/x/net/context"
 )
 
-// Adapter represents a udp adapter which sends and receives packet via UDP
-type Adapter struct {
-	ctx      log.Interface    // Just a logger
-	conn     chan MsgUDP      // Channel used to manage response transmissions made by multiple goroutines
-	packets  chan MsgReq      // Incoming valid packets are pushed to this channel and consume by an outsider
-	handlers chan interface{} // Manage handlers, could be either a Handler or a []byte (new handler or handling action)
+type adapter struct {
+	Components
 }
 
-// Handler represents a datagram and packet handler used by the adapter to process packets
-type Handler interface {
-	// Handle handles incoming datagram from a gateway transmitter to the network
-	Handle(conn chan<- MsgUDP, chresp chan<- MsgReq, msg MsgUDP) error
+// Components defines a structure to make the instantiation easier to read
+type Components struct {
+	Ctx    log.Interface
+	Router core.RouterServer
 }
 
-// MsgUDP type materializes response messages transmitted towards existing recipients (commonly, gateways).
-type MsgUDP struct {
-	Data []byte       // The raw byte sequence that has to be sent
-	Addr *net.UDPAddr // The target recipient address
+// Options defines a structure to make the instantiation easier to read
+type Options struct {
+	// NetAddr refers to the udp address + port the adapter will have to listen
+	NetAddr string
+	// MaxReconnectionDelay defines the delay of the longest attempt to reconnect a lost connection
+	// before giving up.
+	MaxReconnectionDelay time.Duration
 }
 
-// MsgReq type materializes valid uplink messages coming from a given recipient
-type MsgReq struct {
-	Data   []byte      // The actual message
-	Chresp chan MsgRes // A dedicated response channel
-}
+// replier is an alias used by methods herebelow
+type replier func(data []byte) error
 
-// MsgRes qre sent through the response channel of MsgReq
-type MsgRes []byte // The actual message
-
-// NewAdapter constructs and allocates a new udp adapter
-func NewAdapter(bindNet string, ctx log.Interface) (*Adapter, error) {
-	a := Adapter{
-		ctx:      ctx,
-		conn:     make(chan MsgUDP),
-		packets:  make(chan MsgReq),
-		handlers: make(chan interface{}),
-	}
-
+// Start constructs and launches a new udp adapter
+func Start(c Components, o Options) (err error) {
 	// Create the udp connection and start listening with a goroutine
 	var udpConn *net.UDPConn
-	addr, err := net.ResolveUDPAddr("udp", bindNet)
-	a.ctx.WithField("bind", bindNet).Info("Starting Server")
-	if udpConn, err = net.ListenUDP("udp", addr); err != nil {
-		a.ctx.WithError(err).Error("Unable to start server")
-		return nil, errors.New(errors.Operational, fmt.Sprintf("Invalid bind address %v", bindNet))
+	if udpConn, err = tryConnect(o.NetAddr); err != nil {
+		c.Ctx.WithError(err).Error("Unable to start server")
+		return errors.New(errors.Operational, fmt.Sprintf("Invalid bind address %v", o.NetAddr))
 	}
 
-	waitStart := &sync.WaitGroup{}
-	waitStart.Add(3)
-
-	go a.monitorConnection(udpConn, waitStart)
-	go a.monitorHandlers(waitStart)
-	go a.listen(udpConn, waitStart)
-
-	waitStart.Wait()
-
-	return &a, nil
+	c.Ctx.WithField("bind", o.NetAddr).Info("Starting Server")
+	a := adapter{Components: c}
+	go a.listen(o.NetAddr, udpConn, o.MaxReconnectionDelay)
+	return nil
 }
 
-// Send implements the core.Adapter interface. Not implemented for the udp adapter.
-func (a *Adapter) Send(p core.Packet, r ...core.Recipient) ([]byte, error) {
-	return nil, errors.New(errors.Implementation, "Send not supported on udp adapter")
+// makeReply curryfies a writing to udp connection by binding the address and connection
+func makeReply(addr *net.UDPAddr, conn *net.UDPConn) replier {
+	return func(data []byte) error {
+		_, err := conn.WriteToUDP(data, addr)
+		return err
+	}
 }
 
-// GetRecipient implements the core.Adapter interface
-func (a *Adapter) GetRecipient(raw []byte) (core.Recipient, error) {
-	return nil, errors.New(errors.Implementation, "GetRecipient not supported on udp adapter")
-}
-
-// Next implements the core.Adapter interface
-func (a *Adapter) Next() ([]byte, core.AckNacker, error) {
-	msg := <-a.packets
-	return msg.Data, udpAckNacker{Chresp: msg.Chresp}, nil
-}
-
-// NextRegistration implements the core.Adapter interface
-func (a *Adapter) NextRegistration() (core.Registration, core.AckNacker, error) {
-	return udpRegistration{}, nil, errors.New(errors.Implementation, "NextRegistration not supported on udp adapter")
-}
-
-// Bind is used to register a new handler to the adapter
-func (a *Adapter) Bind(h Handler) {
-	a.handlers <- h
+// tryConnect attempt to connect to a udp connection
+func tryConnect(netAddr string) (*net.UDPConn, error) {
+	addr, err := net.ResolveUDPAddr("udp", netAddr)
+	if err != nil {
+		return nil, err
+	}
+	return net.ListenUDP("udp", addr)
 }
 
 // listen Handle incoming packets and forward them.
 //
 // Runs in its own goroutine.
-func (a *Adapter) listen(conn *net.UDPConn, ready *sync.WaitGroup) {
-	defer conn.Close()
-	a.ctx.WithField("address", conn.LocalAddr()).Debug("Starting accept loop")
-	ready.Done()
+func (a adapter) listen(netAddr string, conn *net.UDPConn, maxReconnectionDelay time.Duration) {
+	var err error
+	a.Ctx.WithField("address", conn.LocalAddr()).Debug("Starting accept loop")
 	for {
+		// Read on the UDP connection
 		buf := make([]byte, 5000)
-		n, addr, err := conn.ReadFromUDP(buf)
-		if err != nil { // Problem with the connection
-			a.ctx.WithError(err).Error("Connection error")
-			continue
+		n, addr, fault := conn.ReadFromUDP(buf)
+		if fault != nil { // Problem with the connection
+			for delay := time.Millisecond * 25; delay < maxReconnectionDelay; delay *= 10 {
+				a.Ctx.Infof("UDP connection lost. Trying to reconnect in %s", delay)
+				<-time.After(delay)
+				conn, err = tryConnect(netAddr)
+				if err == nil {
+					a.Ctx.Info("UDP connection recovered")
+					break
+				}
+			}
+			a.Ctx.WithError(fault).Error("Unable to restore UDP connection")
+			break
 		}
 
-		a.ctx.Debug("Incoming datagram")
-		a.handlers <- MsgUDP{Addr: addr, Data: buf[:n]}
+		// Handle the incoming datagram
+		a.Ctx.Debug("Incoming datagram")
+		go func(data []byte, reply replier) {
+			pkt := new(semtech.Packet)
+			if err := pkt.UnmarshalBinary(data); err != nil {
+				a.Ctx.WithError(err).Debug("Unable to handle datagram")
+			}
+
+			switch pkt.Identifier {
+			case semtech.PULL_DATA:
+				err = a.handlePullData(*pkt, reply)
+			case semtech.PUSH_DATA:
+				err = a.handlePushData(*pkt, reply)
+			default:
+				err = errors.New(errors.Implementation, "Unhandled packet type")
+			}
+			if err != nil {
+				a.Ctx.WithError(err).Debug("Unable to handle datagram")
+			}
+		}(buf[:n], makeReply(addr, conn))
+	}
+
+	if conn != nil {
+		_ = conn.Close()
 	}
 }
 
-// monitorConnection manages udpConnection of the adapter and send message through that connection
-//
-// That function executes into a single goroutine and is the only one allowed to write UDP messages.
-// Doing this makes sure that only 1 goroutine is interacting with the connection.
-//
-// Runs in its own goroutine
-func (a *Adapter) monitorConnection(udpConn *net.UDPConn, ready *sync.WaitGroup) {
-	ready.Done()
-	for msg := range a.conn {
-		if msg.Data != nil { // Send the given udp message
-			if _, err := udpConn.WriteToUDP(msg.Data, msg.Addr); err != nil {
-				a.ctx.WithError(err).Error("Error while sending UDP message")
-			}
-		}
+// Handle a PULL_DATA packet coming from a gateway
+func (a adapter) handlePullData(pkt semtech.Packet, reply replier) error {
+	stats.MarkMeter("semtech_adapter.pull_data")
+	stats.MarkMeter(fmt.Sprintf("semtech_adapter.gateways.%X.pull_data", pkt.GatewayId))
+	stats.SetString(fmt.Sprintf("semtech_adapter.gateways.%X.last_pull_data", pkt.GatewayId), "date", time.Now().UTC().Format(time.RFC3339))
+	a.Ctx.Debug("Handle PULL_DATA")
+
+	data, err := semtech.Packet{
+		Version:    semtech.VERSION,
+		Token:      pkt.Token,
+		Identifier: semtech.PULL_ACK,
+	}.MarshalBinary()
+
+	if err != nil {
+		return errors.New(errors.Structural, err)
 	}
-	if udpConn != nil {
-		udpConn.Close() // Make sure we close the connection before leaving if we dare ever leave.
-	}
+
+	return reply(data)
 }
 
-// monitorHandlers manages handler registration and execution concurrently. One can pass a new
-// handler through the handlers channel to declare a new one or, send directly data through the
-// channel to ask every defined handler to handle them.
-//
-// Runs in its own goroutine
-func (a *Adapter) monitorHandlers(ready *sync.WaitGroup) {
-	var handlers []Handler
+// Handle a PUSH_DATA packet coming from a gateway
+func (a adapter) handlePushData(pkt semtech.Packet, reply replier) error {
+	stats.MarkMeter("semtech_adapter.push_data")
+	stats.MarkMeter(fmt.Sprintf("semtech_adapter.gateways.%X.push_data", pkt.GatewayId))
+	stats.SetString(fmt.Sprintf("semtech_adapter.gateways.%X.last_push_data", pkt.GatewayId), "date", time.Now().UTC().Format(time.RFC3339))
+	ctx := a.Ctx.WithField("GatewayID", pkt.GatewayId)
+	ctx.Debug("Handle PUSH_DATA")
 
-	ready.Done()
-	for msg := range a.handlers {
-		switch msg.(type) {
-		case Handler:
-			handlers = append(handlers, msg.(Handler))
-		case MsgUDP:
-			for _, h := range handlers {
-				go func(h Handler, msg MsgUDP) {
-					if err := h.Handle(a.conn, a.packets, msg); err != nil {
-						a.ctx.WithError(err).Debug("Unable to handle request")
-					}
-				}(h, msg.(MsgUDP))
-			}
-		}
+	// AckNowledge with a PUSH_ACK
+	data, err := semtech.Packet{
+		Version:    semtech.VERSION,
+		Token:      pkt.Token,
+		Identifier: semtech.PUSH_ACK,
+	}.MarshalBinary()
+	if err != nil || reply(data) != nil || pkt.Payload == nil {
+		ctx.Debug("Unable to send ACK")
+		return errors.New(errors.Operational, "Unable to send ACK")
 	}
+
+	// Process Stat payload
+	if pkt.Payload.Stat != nil {
+		ctx.Debug("PUSH_DATA contains a stats payload")
+		go a.Router.HandleStats(context.Background(), &core.StatsReq{
+			GatewayID: pkt.GatewayId,
+			Metadata:  extractMetadata(*pkt.Payload.Stat, new(core.StatsMetadata)).(*core.StatsMetadata),
+		})
+	}
+
+	// Process rxpks payloads
+	cherr := make(chan error, len(pkt.Payload.RXPK))
+	wait := sync.WaitGroup{}
+	wait.Add(len(pkt.Payload.RXPK))
+	ctx.WithField("Nb RXPK", len(pkt.Payload.RXPK)).Debug("Processing RXPK payloads")
+	for _, rxpk := range pkt.Payload.RXPK {
+		go func(rxpk semtech.RXPK) {
+			defer wait.Done()
+			if err := a.handleDataUp(rxpk, pkt.GatewayId, reply); err != nil {
+				ctx.WithError(err).Debug("Error while processing RXPK")
+				cherr <- err
+			}
+		}(rxpk)
+	}
+
+	// Retrieve any errors
+	wait.Wait()
+	close(cherr)
+	return <-cherr
+}
+
+func (a adapter) handleDataUp(rxpk semtech.RXPK, gid []byte, reply replier) error {
+	dataRouterReq, err := newDataRouterReq(rxpk, gid, a.Ctx)
+	if err != nil {
+		a.Ctx.WithError(err).Debug("Invalid up RXPK packet")
+		return errors.New(errors.Structural, err)
+	}
+	resp, err := a.Router.HandleData(context.Background(), dataRouterReq)
+	if err != nil {
+		a.Ctx.WithError(err).Debug("Router failed to process uplink")
+		errors.New(errors.Operational, err)
+	}
+	return a.handleDataDown(resp, reply)
+}
+
+func (a adapter) handleDataDown(resp *core.DataRouterRes, reply replier) error {
+	a.Ctx.Debug("Handle Downlink from router")
+	if resp == nil || resp.Payload == nil { // No response
+		a.Ctx.Debug("No response to send")
+		return nil
+	}
+
+	txpk, err := newTXPK(*resp, a.Ctx)
+	if err != nil {
+		a.Ctx.WithError(err).Debug("Unable to interpret downlink")
+		return errors.New(errors.Structural, err)
+	}
+
+	a.Ctx.Debug("Creating new downlink response")
+	data, err := semtech.Packet{
+		Version:    semtech.VERSION,
+		Identifier: semtech.PULL_RESP,
+		Payload:    &semtech.Payload{TXPK: &txpk},
+	}.MarshalBinary()
+	if err != nil {
+		a.Ctx.WithError(err).Debug("Unable to create semtech packet with TXPK")
+		return errors.New(errors.Structural, err)
+	}
+	return reply(data)
 }

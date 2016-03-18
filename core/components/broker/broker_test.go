@@ -4,558 +4,1042 @@
 package broker
 
 import (
+	"fmt"
+	"net"
 	"testing"
+	"time"
 
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/mocks"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
-	errutil "github.com/TheThingsNetwork/ttn/utils/errors/checks"
-	"github.com/TheThingsNetwork/ttn/utils/pointer"
-	testutil "github.com/TheThingsNetwork/ttn/utils/testing"
+	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"github.com/brocaar/lorawan"
+	"golang.org/x/net/context"
 )
 
-func TestRegister(t *testing.T) {
+func TestHandleData(t *testing.T) {
 	{
-		testutil.Desc(t, "Register a device")
+		Desc(t, "Invalid LoRaWAN payload")
 
 		// Build
-		an := mocks.NewMockAckNacker()
-		store := newMockController()
-		r := mocks.NewMockBRegistration()
+		hl := mocks.NewHandlerClient()
+		nc := NewMockNetworkController()
+		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		req := &core.DataBrokerReq{
+			Payload:  nil,
+			Metadata: new(core.Metadata),
+		}
+
+		// Expect
+		var wantErr = ErrStructural
+		var wantDataUp *core.DataUpHandlerReq
+		var wantRes = new(core.DataBrokerRes)
+		var wantFCnt uint32
 
 		// Operate
-		broker := New(store, testutil.GetLogger(t, "Broker"))
-		err := broker.Register(r, an)
+		res, err := br.HandleData(context.Background(), req)
 
-		// Check
-		errutil.CheckErrors(t, nil, err)
-		mocks.CheckAcks(t, true, an.InAck)
-		CheckRegistrations(t, r, store.InStoreDevices)
-		CheckRegistrations(t, nil, store.InStoreApp)
+		// Checks
+		CheckErrors(t, wantErr, err)
+		Check(t, wantDataUp, hl.InHandleDataUp.Req, "Handler Data Requests")
+		Check(t, wantRes, res, "Broker Data Responses")
+		Check(t, wantFCnt, nc.InUpdateFcnt.FCnt, "Frame counters")
 	}
 
-	// -------------------
+	// --------------------
 
 	{
-		testutil.Desc(t, "Register an application")
+		Desc(t, "Fail to lookup device -> Operational")
 
 		// Build
-		an := mocks.NewMockAckNacker()
-		store := newMockController()
-		r := mocks.NewMockARegistration()
+		hl := mocks.NewHandlerClient()
+		nc := NewMockNetworkController()
+		nc.Failures["LookupDevices"] = errors.New(errors.Operational, "Mock Error")
+		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		req := &core.DataBrokerReq{
+			Payload: &core.LoRaWANData{
+				MHDR: &core.LoRaWANMHDR{
+					MType: uint32(lorawan.UnconfirmedDataUp),
+					Major: uint32(lorawan.LoRaWANR1),
+				},
+				MACPayload: &core.LoRaWANMACPayload{
+					FHDR: &core.LoRaWANFHDR{
+						DevAddr: []byte{1, 2, 3, 4},
+						FCnt:    1,
+						FCtrl:   new(core.LoRaWANFCtrl),
+					},
+					FPort:      1,
+					FRMPayload: []byte{14, 14, 42, 42},
+				},
+				MIC: []byte{4, 3, 2, 1},
+			},
+			Metadata: new(core.Metadata),
+		}
+
+		// Expect
+		var wantErr = ErrOperational
+		var wantDataUp *core.DataUpHandlerReq
+		var wantRes = new(core.DataBrokerRes)
+		var wantFCnt uint32
 
 		// Operate
-		broker := New(store, testutil.GetLogger(t, "Broker"))
-		err := broker.Register(r, an)
+		res, err := br.HandleData(context.Background(), req)
 
-		// Check
-		errutil.CheckErrors(t, nil, err)
-		mocks.CheckAcks(t, true, an.InAck)
-		CheckRegistrations(t, nil, store.InStoreDevices)
-		CheckRegistrations(t, r, store.InStoreApp)
+		// Checks
+		CheckErrors(t, wantErr, err)
+		Check(t, wantDataUp, hl.InHandleDataUp.Req, "Handler Data Requests")
+		Check(t, wantRes, res, "Broker Data Responses")
+		Check(t, wantFCnt, nc.InUpdateFcnt.FCnt, "Frame counters")
 	}
 
-	// -------------------
+	// --------------------
 
 	{
-		testutil.Desc(t, "Register a device | store failed")
+		Desc(t, "Fail to lookup device -> Not Found")
 
 		// Build
-		an := mocks.NewMockAckNacker()
-		store := newMockController()
-		store.Failures["StoreDevice"] = errors.New(errors.Structural, "Mock Error: Store Failed")
-		r := mocks.NewMockBRegistration()
+		hl := mocks.NewHandlerClient()
+		nc := NewMockNetworkController()
+		nc.Failures["LookupDevices"] = errors.New(errors.NotFound, "Mock Error")
+		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		req := &core.DataBrokerReq{
+			Payload: &core.LoRaWANData{
+				MHDR: &core.LoRaWANMHDR{
+					MType: uint32(lorawan.UnconfirmedDataUp),
+					Major: uint32(lorawan.LoRaWANR1),
+				},
+				MACPayload: &core.LoRaWANMACPayload{
+					FHDR: &core.LoRaWANFHDR{
+						DevAddr: []byte{1, 2, 3, 4},
+						FCnt:    1,
+						FCtrl:   new(core.LoRaWANFCtrl),
+					},
+					FPort:      1,
+					FRMPayload: []byte{14, 14, 42, 42},
+				},
+				MIC: []byte{4, 3, 2, 1},
+			},
+			Metadata: new(core.Metadata),
+		}
+
+		// Expect
+		var wantErr = ErrNotFound
+		var wantDataUp *core.DataUpHandlerReq
+		var wantRes = new(core.DataBrokerRes)
+		var wantFCnt uint32
 
 		// Operate
-		broker := New(store, testutil.GetLogger(t, "Broker"))
-		err := broker.Register(r, an)
+		res, err := br.HandleData(context.Background(), req)
 
-		// Check
-		errutil.CheckErrors(t, pointer.String(string(errors.Structural)), err)
-		mocks.CheckAcks(t, false, an.InAck)
-		CheckRegistrations(t, r, store.InStoreDevices)
-		CheckRegistrations(t, nil, store.InStoreApp)
+		// Checks
+		CheckErrors(t, wantErr, err)
+		Check(t, wantDataUp, hl.InHandleDataUp.Req, "Handler Data Requests")
+		Check(t, wantRes, res, "Broker Data Responses")
+		Check(t, wantFCnt, nc.InUpdateFcnt.FCnt, "Frame counters")
 	}
 
-	// -------------------
+	// --------------------
 
 	{
-		testutil.Desc(t, "Register an application | store failed")
+		Desc(t, "Valid uplink | Two db entries, second MIC valid")
 
 		// Build
-		an := mocks.NewMockAckNacker()
-		store := newMockController()
-		store.Failures["StoreApplication"] = errors.New(errors.Structural, "Mock Error: Store Failed")
-		r := mocks.NewMockARegistration()
+		hl := mocks.NewHandlerClient()
+		nc := NewMockNetworkController()
+		nc.OutWholeCounter.FCnt = 2
+
+		dl := NewMockDialer()
+		dl.OutDial.Client = hl
+		dl.OutDial.Closer = NewMockCloser()
+
+		dl2 := NewMockDialer()
+		dl2.OutDial.Client = hl
+		dl2.OutDial.Closer = NewMockCloser()
+
+		nc.OutLookupDevices.Entries = []devEntry{
+			{
+				Dialer:  dl2,
+				AppEUI:  []byte{1, 2, 3, 4, 5, 6, 7, 8},
+				DevEUI:  []byte{8, 7, 6, 5, 4, 3, 2, 1},
+				NwkSKey: [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
+				FCntUp:  1,
+			},
+			{
+				Dialer:  dl,
+				AppEUI:  []byte{1, 1, 1, 1, 1, 1, 1, 1},
+				DevEUI:  []byte{2, 2, 2, 2, 2, 2, 2, 2},
+				NwkSKey: [16]byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+				FCntUp:  1,
+			},
+		}
+		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		req := &core.DataBrokerReq{
+			Payload: &core.LoRaWANData{
+				MHDR: &core.LoRaWANMHDR{
+					MType: uint32(lorawan.UnconfirmedDataUp),
+					Major: uint32(lorawan.LoRaWANR1),
+				},
+				MACPayload: &core.LoRaWANMACPayload{
+					FHDR: &core.LoRaWANFHDR{
+						DevAddr: []byte{1, 2, 3, 4},
+						FCnt:    nc.OutWholeCounter.FCnt,
+						FCtrl:   new(core.LoRaWANFCtrl),
+					},
+					FPort:      1,
+					FRMPayload: []byte{14, 14, 42, 42},
+				},
+				MIC: []byte{0, 0, 0, 0}, // Temporary, computed below
+			},
+			Metadata: new(core.Metadata),
+		}
+		payload, err := core.NewLoRaWANData(req.Payload, true)
+		FatalUnless(t, err)
+		err = payload.SetMIC(lorawan.AES128Key(nc.OutLookupDevices.Entries[1].NwkSKey))
+		FatalUnless(t, err)
+		req.Payload.MIC = payload.MIC[:]
+
+		// Expect
+		var wantErr *string
+		var wantDataUp = &core.DataUpHandlerReq{
+			Payload:  req.Payload.MACPayload.FRMPayload,
+			AppEUI:   nc.OutLookupDevices.Entries[1].AppEUI,
+			DevEUI:   nc.OutLookupDevices.Entries[1].DevEUI,
+			FCnt:     req.Payload.MACPayload.FHDR.FCnt,
+			MType:    req.Payload.MHDR.MType,
+			Metadata: req.Metadata,
+		}
+		var wantRes = new(core.DataBrokerRes)
+		var wantFCnt = nc.OutWholeCounter.FCnt
+		var wantDialer = true
 
 		// Operate
-		broker := New(store, testutil.GetLogger(t, "Broker"))
-		err := broker.Register(r, an)
+		res, err := br.HandleData(context.Background(), req)
 
-		// Check
-		errutil.CheckErrors(t, pointer.String(string(errors.Structural)), err)
-		mocks.CheckAcks(t, false, an.InAck)
-		CheckRegistrations(t, nil, store.InStoreDevices)
-		CheckRegistrations(t, r, store.InStoreApp)
+		// Checks
+		CheckErrors(t, wantErr, err)
+		Check(t, wantDataUp, hl.InHandleDataUp.Req, "Handler Data Requests")
+		Check(t, wantRes, res, "Broker Data Responses")
+		Check(t, wantFCnt, nc.InUpdateFcnt.FCnt, "Frame counters")
+		Check(t, wantDialer, dl.InDial.Called, "Dialer calls")
 	}
 
-	// -------------------
+	// --------------------
 
 	{
-		testutil.Desc(t, "Register an entry | Wrong registration")
+		Desc(t, "Valid uplink | One entry, FCnt invalid")
 
 		// Build
-		an := mocks.NewMockAckNacker()
-		store := newMockController()
-		r := mocks.NewMockRRegistration()
+		hl := mocks.NewHandlerClient()
+		nc := NewMockNetworkController()
+		nc.Failures["WholeCounter"] = errors.New(errors.Structural, "Mock Error")
+
+		dl := NewMockDialer()
+		dl.OutDial.Client = hl
+		dl.OutDial.Closer = NewMockCloser()
+
+		nc.OutLookupDevices.Entries = []devEntry{
+			{
+				Dialer:  dl,
+				AppEUI:  []byte{1, 1, 1, 1, 1, 1, 1, 1},
+				DevEUI:  []byte{2, 2, 2, 2, 2, 2, 2, 2},
+				NwkSKey: [16]byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+				FCntUp:  1,
+			},
+		}
+		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		req := &core.DataBrokerReq{
+			Payload: &core.LoRaWANData{
+				MHDR: &core.LoRaWANMHDR{
+					MType: uint32(lorawan.UnconfirmedDataUp),
+					Major: uint32(lorawan.LoRaWANR1),
+				},
+				MACPayload: &core.LoRaWANMACPayload{
+					FHDR: &core.LoRaWANFHDR{
+						DevAddr: []byte{1, 2, 3, 4},
+						FCnt:    44567,
+						FCtrl:   new(core.LoRaWANFCtrl),
+					},
+					FPort:      1,
+					FRMPayload: []byte{14, 14, 42, 42},
+				},
+				MIC: []byte{0, 0, 0, 0}, // Temporary, computed below
+			},
+			Metadata: new(core.Metadata),
+		}
+		payload, err := core.NewLoRaWANData(req.Payload, true)
+		FatalUnless(t, err)
+		err = payload.SetMIC(lorawan.AES128Key(nc.OutLookupDevices.Entries[0].NwkSKey))
+		FatalUnless(t, err)
+		req.Payload.MIC = payload.MIC[:]
+
+		// Expect
+		var wantErr = ErrNotFound
+		var wantDataUp *core.DataUpHandlerReq
+		var wantRes = new(core.DataBrokerRes)
+		var wantFCnt uint32
+		var wantDialer bool
 
 		// Operate
-		broker := New(store, testutil.GetLogger(t, "Broker"))
-		err := broker.Register(r, an)
+		res, err := br.HandleData(context.Background(), req)
 
-		// Check
-		errutil.CheckErrors(t, pointer.String(string(errors.Structural)), err)
-		mocks.CheckAcks(t, false, an.InAck)
-		CheckRegistrations(t, nil, store.InStoreDevices)
-		CheckRegistrations(t, nil, store.InStoreApp)
+		// Checks
+		CheckErrors(t, wantErr, err)
+		Check(t, wantDataUp, hl.InHandleDataUp.Req, "Handler Data Requests")
+		Check(t, wantRes, res, "Broker Data Responses")
+		Check(t, wantFCnt, nc.InUpdateFcnt.FCnt, "Frame counters")
+		Check(t, wantDialer, dl.InDial.Called, "Dialer calls")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Valid uplink | One entry, FCnt above 16-bits")
+
+		// Build
+		hl := mocks.NewHandlerClient()
+		nc := NewMockNetworkController()
+		nc.OutWholeCounter.FCnt = 112534
+
+		dl := NewMockDialer()
+		dl.OutDial.Client = hl
+		dl.OutDial.Closer = NewMockCloser()
+
+		nc.OutLookupDevices.Entries = []devEntry{
+			{
+				Dialer:  dl,
+				AppEUI:  []byte{1, 1, 1, 1, 1, 1, 1, 1},
+				DevEUI:  []byte{2, 2, 2, 2, 2, 2, 2, 2},
+				NwkSKey: [16]byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+				FCntUp:  112500,
+			},
+		}
+		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		req := &core.DataBrokerReq{
+			Payload: &core.LoRaWANData{
+				MHDR: &core.LoRaWANMHDR{
+					MType: uint32(lorawan.UnconfirmedDataUp),
+					Major: uint32(lorawan.LoRaWANR1),
+				},
+				MACPayload: &core.LoRaWANMACPayload{
+					FHDR: &core.LoRaWANFHDR{
+						DevAddr: []byte{1, 2, 3, 4},
+						FCnt:    nc.OutWholeCounter.FCnt,
+						FCtrl:   new(core.LoRaWANFCtrl),
+					},
+					FPort:      1,
+					FRMPayload: []byte{14, 14, 42, 42},
+				},
+				MIC: []byte{0, 0, 0, 0}, // Temporary, computed below
+			},
+			Metadata: new(core.Metadata),
+		}
+		payload, err := core.NewLoRaWANData(req.Payload, true)
+		FatalUnless(t, err)
+		err = payload.SetMIC(lorawan.AES128Key(nc.OutLookupDevices.Entries[0].NwkSKey))
+		FatalUnless(t, err)
+		req.Payload.MIC = payload.MIC[:]
+		req.Payload.MACPayload.FHDR.FCnt %= 65536
+
+		// Expect
+		var wantErr *string
+		var wantDataUp = &core.DataUpHandlerReq{
+			Payload:  req.Payload.MACPayload.FRMPayload,
+			AppEUI:   nc.OutLookupDevices.Entries[0].AppEUI,
+			DevEUI:   nc.OutLookupDevices.Entries[0].DevEUI,
+			FCnt:     nc.OutWholeCounter.FCnt,
+			MType:    req.Payload.MHDR.MType,
+			Metadata: req.Metadata,
+		}
+		var wantRes = new(core.DataBrokerRes)
+		var wantFCnt = nc.OutWholeCounter.FCnt
+		var wantDialer = true
+
+		// Operate
+		res, err := br.HandleData(context.Background(), req)
+
+		// Checks
+		CheckErrors(t, wantErr, err)
+		Check(t, wantDataUp, hl.InHandleDataUp.Req, "Handler Data Requests")
+		Check(t, wantRes, res, "Broker Data Responses")
+		Check(t, wantFCnt, nc.InUpdateFcnt.FCnt, "Frame counters")
+		Check(t, wantDialer, dl.InDial.Called, "Dialer calls")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Valid uplink | One entry, Dial failed")
+
+		// Build
+		hl := mocks.NewHandlerClient()
+		nc := NewMockNetworkController()
+		nc.OutWholeCounter.FCnt = 14
+
+		dl := NewMockDialer()
+		dl.OutDial.Client = hl
+		dl.OutDial.Closer = NewMockCloser()
+		dl.Failures["Dial"] = errors.New(errors.Operational, "Mock Error")
+
+		nc.OutLookupDevices.Entries = []devEntry{
+			{
+				Dialer:  dl,
+				AppEUI:  []byte{1, 1, 1, 1, 1, 1, 1, 1},
+				DevEUI:  []byte{2, 2, 2, 2, 2, 2, 2, 2},
+				NwkSKey: [16]byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+				FCntUp:  10,
+			},
+		}
+		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		req := &core.DataBrokerReq{
+			Payload: &core.LoRaWANData{
+				MHDR: &core.LoRaWANMHDR{
+					MType: uint32(lorawan.UnconfirmedDataUp),
+					Major: uint32(lorawan.LoRaWANR1),
+				},
+				MACPayload: &core.LoRaWANMACPayload{
+					FHDR: &core.LoRaWANFHDR{
+						DevAddr: []byte{1, 2, 3, 4},
+						FCnt:    nc.OutWholeCounter.FCnt,
+						FCtrl:   new(core.LoRaWANFCtrl),
+					},
+					FPort:      1,
+					FRMPayload: []byte{14, 14, 42, 42},
+				},
+				MIC: []byte{0, 0, 0, 0}, // Temporary, computed below
+			},
+			Metadata: new(core.Metadata),
+		}
+		payload, err := core.NewLoRaWANData(req.Payload, true)
+		FatalUnless(t, err)
+		err = payload.SetMIC(lorawan.AES128Key(nc.OutLookupDevices.Entries[0].NwkSKey))
+		FatalUnless(t, err)
+		req.Payload.MIC = payload.MIC[:]
+		req.Payload.MACPayload.FHDR.FCnt %= 65536
+
+		// Expect
+		var wantErr = ErrOperational
+		var wantDataUp *core.DataUpHandlerReq
+		var wantRes = new(core.DataBrokerRes)
+		var wantFCnt = nc.OutWholeCounter.FCnt
+		var wantDialer = true
+
+		// Operate
+		res, err := br.HandleData(context.Background(), req)
+
+		// Checks
+		CheckErrors(t, wantErr, err)
+		Check(t, wantDataUp, hl.InHandleDataUp.Req, "Handler Data Requests")
+		Check(t, wantRes, res, "Broker Data Responses")
+		Check(t, wantFCnt, nc.InUpdateFcnt.FCnt, "Frame counters")
+		Check(t, wantDialer, dl.InDial.Called, "Dialer calls")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Valid uplink | One entry, HandleDataUp failed")
+
+		// Build
+		hl := mocks.NewHandlerClient()
+		hl.Failures["HandleDataUp"] = fmt.Errorf("Mock Error")
+
+		nc := NewMockNetworkController()
+		nc.OutWholeCounter.FCnt = 14
+
+		dl := NewMockDialer()
+		dl.OutDial.Client = hl
+		dl.OutDial.Closer = NewMockCloser()
+
+		nc.OutLookupDevices.Entries = []devEntry{
+			{
+				Dialer:  dl,
+				AppEUI:  []byte{1, 1, 1, 1, 1, 1, 1, 1},
+				DevEUI:  []byte{2, 2, 2, 2, 2, 2, 2, 2},
+				NwkSKey: [16]byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+				FCntUp:  10,
+			},
+		}
+		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		req := &core.DataBrokerReq{
+			Payload: &core.LoRaWANData{
+				MHDR: &core.LoRaWANMHDR{
+					MType: uint32(lorawan.UnconfirmedDataUp),
+					Major: uint32(lorawan.LoRaWANR1),
+				},
+				MACPayload: &core.LoRaWANMACPayload{
+					FHDR: &core.LoRaWANFHDR{
+						DevAddr: []byte{1, 2, 3, 4},
+						FCnt:    nc.OutWholeCounter.FCnt,
+						FCtrl:   new(core.LoRaWANFCtrl),
+					},
+					FPort:      1,
+					FRMPayload: []byte{14, 14, 42, 42},
+				},
+				MIC: []byte{0, 0, 0, 0}, // Temporary, computed below
+			},
+			Metadata: new(core.Metadata),
+		}
+		payload, err := core.NewLoRaWANData(req.Payload, true)
+		FatalUnless(t, err)
+		err = payload.SetMIC(lorawan.AES128Key(nc.OutLookupDevices.Entries[0].NwkSKey))
+		FatalUnless(t, err)
+		req.Payload.MIC = payload.MIC[:]
+		req.Payload.MACPayload.FHDR.FCnt %= 65536
+
+		// Expect
+		var wantErr = ErrOperational
+		var wantDataUp = &core.DataUpHandlerReq{
+			Payload:  req.Payload.MACPayload.FRMPayload,
+			AppEUI:   nc.OutLookupDevices.Entries[0].AppEUI,
+			DevEUI:   nc.OutLookupDevices.Entries[0].DevEUI,
+			FCnt:     nc.OutWholeCounter.FCnt,
+			MType:    req.Payload.MHDR.MType,
+			Metadata: req.Metadata,
+		}
+		var wantRes = new(core.DataBrokerRes)
+		var wantFCnt = nc.OutWholeCounter.FCnt
+		var wantDialer = true
+
+		// Operate
+		res, err := br.HandleData(context.Background(), req)
+
+		// Checks
+		CheckErrors(t, wantErr, err)
+		Check(t, wantDataUp, hl.InHandleDataUp.Req, "Handler Data Requests")
+		Check(t, wantRes, res, "Broker Data Responses")
+		Check(t, wantFCnt, nc.InUpdateFcnt.FCnt, "Frame counters")
+		Check(t, wantDialer, dl.InDial.Called, "Dialer calls")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Valid uplink | One entry | One valid downlink")
+
+		// Build
+		nc := NewMockNetworkController()
+		nc.OutWholeCounter.FCnt = 14
+
+		hl := mocks.NewHandlerClient()
+		hl.OutHandleDataUp.Res = &core.DataUpHandlerRes{
+			Payload: &core.LoRaWANData{
+				MHDR: &core.LoRaWANMHDR{
+					MType: uint32(lorawan.UnconfirmedDataDown),
+					Major: uint32(lorawan.LoRaWANR1),
+				},
+				MACPayload: &core.LoRaWANMACPayload{
+					FHDR: &core.LoRaWANFHDR{
+						DevAddr: []byte{1, 2, 3, 4},
+						FCnt:    nc.OutWholeCounter.FCnt,
+						FCtrl:   new(core.LoRaWANFCtrl),
+					},
+					FPort:      1,
+					FRMPayload: []byte{14, 14, 42, 42},
+				},
+				MIC: []byte{0, 0, 0, 0},
+			},
+			Metadata: new(core.Metadata),
+		}
+
+		dl := NewMockDialer()
+		dl.OutDial.Client = hl
+		dl.OutDial.Closer = NewMockCloser()
+
+		nc.OutLookupDevices.Entries = []devEntry{
+			{
+				Dialer:  dl,
+				AppEUI:  []byte{1, 1, 1, 1, 1, 1, 1, 1},
+				DevEUI:  []byte{2, 2, 2, 2, 2, 2, 2, 2},
+				NwkSKey: [16]byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+				FCntUp:  10,
+			},
+		}
+		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		req := &core.DataBrokerReq{
+			Payload: &core.LoRaWANData{
+				MHDR: &core.LoRaWANMHDR{
+					MType: uint32(lorawan.UnconfirmedDataUp),
+					Major: uint32(lorawan.LoRaWANR1),
+				},
+				MACPayload: &core.LoRaWANMACPayload{
+					FHDR: &core.LoRaWANFHDR{
+						DevAddr: []byte{1, 2, 3, 4},
+						FCnt:    nc.OutWholeCounter.FCnt,
+						FCtrl:   new(core.LoRaWANFCtrl),
+					},
+					FPort:      1,
+					FRMPayload: []byte{14, 14, 42, 42},
+				},
+				MIC: []byte{0, 0, 0, 0}, // Temporary, computed below
+			},
+			Metadata: new(core.Metadata),
+		}
+		payload, err := core.NewLoRaWANData(req.Payload, true)
+		FatalUnless(t, err)
+		err = payload.SetMIC(lorawan.AES128Key(nc.OutLookupDevices.Entries[0].NwkSKey))
+		FatalUnless(t, err)
+		req.Payload.MIC = payload.MIC[:]
+		req.Payload.MACPayload.FHDR.FCnt %= 65536
+
+		// Expect
+		var wantErr *string
+		var wantDataUp = &core.DataUpHandlerReq{
+			Payload:  req.Payload.MACPayload.FRMPayload,
+			AppEUI:   nc.OutLookupDevices.Entries[0].AppEUI,
+			DevEUI:   nc.OutLookupDevices.Entries[0].DevEUI,
+			FCnt:     nc.OutWholeCounter.FCnt,
+			MType:    req.Payload.MHDR.MType,
+			Metadata: req.Metadata,
+		}
+		var wantRes = &core.DataBrokerRes{
+			Payload:  hl.OutHandleDataUp.Res.Payload,
+			Metadata: hl.OutHandleDataUp.Res.Metadata,
+		}
+		payloadDown, err := core.NewLoRaWANData(req.Payload, false)
+		FatalUnless(t, err)
+		err = payloadDown.SetMIC(lorawan.AES128Key(nc.OutLookupDevices.Entries[0].NwkSKey))
+		FatalUnless(t, err)
+		wantRes.Payload.MIC = payloadDown.MIC[:]
+		var wantFCnt = nc.OutWholeCounter.FCnt
+		var wantDialer = true
+
+		// Operate
+		res, err := br.HandleData(context.Background(), req)
+
+		// Checks
+		CheckErrors(t, wantErr, err)
+		Check(t, wantDataUp, hl.InHandleDataUp.Req, "Handler Data Requests")
+		Check(t, wantRes, res, "Broker Data Responses")
+		Check(t, wantFCnt, nc.InUpdateFcnt.FCnt, "Frame counters")
+		Check(t, wantDialer, dl.InDial.Called, "Dialer calls")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Valid uplink | One entry, UpdateFcnt failed")
+
+		// Build
+		hl := mocks.NewHandlerClient()
+		nc := NewMockNetworkController()
+		nc.OutWholeCounter.FCnt = 14
+		nc.Failures["UpdateFCnt"] = errors.New(errors.Operational, "Mock Error")
+
+		dl := NewMockDialer()
+		dl.OutDial.Client = hl
+		dl.OutDial.Closer = NewMockCloser()
+
+		nc.OutLookupDevices.Entries = []devEntry{
+			{
+				Dialer:  dl,
+				AppEUI:  []byte{1, 1, 1, 1, 1, 1, 1, 1},
+				DevEUI:  []byte{2, 2, 2, 2, 2, 2, 2, 2},
+				NwkSKey: [16]byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+				FCntUp:  10,
+			},
+		}
+		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		req := &core.DataBrokerReq{
+			Payload: &core.LoRaWANData{
+				MHDR: &core.LoRaWANMHDR{
+					MType: uint32(lorawan.UnconfirmedDataUp),
+					Major: uint32(lorawan.LoRaWANR1),
+				},
+				MACPayload: &core.LoRaWANMACPayload{
+					FHDR: &core.LoRaWANFHDR{
+						DevAddr: []byte{1, 2, 3, 4},
+						FCnt:    nc.OutWholeCounter.FCnt,
+						FCtrl:   new(core.LoRaWANFCtrl),
+					},
+					FPort:      1,
+					FRMPayload: []byte{14, 14, 42, 42},
+				},
+				MIC: []byte{0, 0, 0, 0}, // Temporary, computed below
+			},
+			Metadata: new(core.Metadata),
+		}
+		payload, err := core.NewLoRaWANData(req.Payload, true)
+		FatalUnless(t, err)
+		err = payload.SetMIC(lorawan.AES128Key(nc.OutLookupDevices.Entries[0].NwkSKey))
+		FatalUnless(t, err)
+		req.Payload.MIC = payload.MIC[:]
+		req.Payload.MACPayload.FHDR.FCnt %= 65536
+
+		// Expect
+		var wantErr = ErrOperational
+		var wantDataUp *core.DataUpHandlerReq
+		var wantRes = new(core.DataBrokerRes)
+		var wantFCnt = nc.OutWholeCounter.FCnt
+		var wantDialer bool
+
+		// Operate
+		res, err := br.HandleData(context.Background(), req)
+
+		// Checks
+		CheckErrors(t, wantErr, err)
+		Check(t, wantDataUp, hl.InHandleDataUp.Req, "Handler Data Requests")
+		Check(t, wantRes, res, "Broker Data Responses")
+		Check(t, wantFCnt, nc.InUpdateFcnt.FCnt, "Frame counters")
+		Check(t, wantDialer, dl.InDial.Called, "Dialer calls")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Valid uplink | One entry | Invalid downlink")
+
+		// Build
+		nc := NewMockNetworkController()
+		nc.OutWholeCounter.FCnt = 14
+
+		hl := mocks.NewHandlerClient()
+		hl.OutHandleDataUp.Res = &core.DataUpHandlerRes{
+			Payload: &core.LoRaWANData{
+				MHDR: &core.LoRaWANMHDR{
+					MType: uint32(lorawan.UnconfirmedDataDown),
+					Major: uint32(lorawan.LoRaWANR1),
+				},
+				MACPayload: nil,
+				MIC:        []byte{0, 0, 0, 0},
+			},
+			Metadata: new(core.Metadata),
+		}
+
+		dl := NewMockDialer()
+		dl.OutDial.Client = hl
+		dl.OutDial.Closer = NewMockCloser()
+
+		nc.OutLookupDevices.Entries = []devEntry{
+			{
+				Dialer:  dl,
+				AppEUI:  []byte{1, 1, 1, 1, 1, 1, 1, 1},
+				DevEUI:  []byte{2, 2, 2, 2, 2, 2, 2, 2},
+				NwkSKey: [16]byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+				FCntUp:  10,
+			},
+		}
+		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		req := &core.DataBrokerReq{
+			Payload: &core.LoRaWANData{
+				MHDR: &core.LoRaWANMHDR{
+					MType: uint32(lorawan.UnconfirmedDataUp),
+					Major: uint32(lorawan.LoRaWANR1),
+				},
+				MACPayload: &core.LoRaWANMACPayload{
+					FHDR: &core.LoRaWANFHDR{
+						DevAddr: []byte{1, 2, 3, 4},
+						FCnt:    nc.OutWholeCounter.FCnt,
+						FCtrl:   new(core.LoRaWANFCtrl),
+					},
+					FPort:      1,
+					FRMPayload: []byte{14, 14, 42, 42},
+				},
+				MIC: []byte{0, 0, 0, 0}, // Temporary, computed below
+			},
+			Metadata: new(core.Metadata),
+		}
+		payload, err := core.NewLoRaWANData(req.Payload, true)
+		FatalUnless(t, err)
+		err = payload.SetMIC(lorawan.AES128Key(nc.OutLookupDevices.Entries[0].NwkSKey))
+		FatalUnless(t, err)
+		req.Payload.MIC = payload.MIC[:]
+		req.Payload.MACPayload.FHDR.FCnt %= 65536
+
+		// Expect
+		var wantErr = ErrStructural
+		var wantDataUp = &core.DataUpHandlerReq{
+			Payload:  req.Payload.MACPayload.FRMPayload,
+			AppEUI:   nc.OutLookupDevices.Entries[0].AppEUI,
+			DevEUI:   nc.OutLookupDevices.Entries[0].DevEUI,
+			FCnt:     nc.OutWholeCounter.FCnt,
+			MType:    req.Payload.MHDR.MType,
+			Metadata: req.Metadata,
+		}
+		var wantRes = new(core.DataBrokerRes)
+		var wantFCnt = nc.OutWholeCounter.FCnt
+		var wantDialer = true
+
+		// Operate
+		res, err := br.HandleData(context.Background(), req)
+
+		// Checks
+		CheckErrors(t, wantErr, err)
+		Check(t, wantDataUp, hl.InHandleDataUp.Req, "Handler Data Requests")
+		Check(t, wantRes, res, "Broker Data Responses")
+		Check(t, wantFCnt, nc.InUpdateFcnt.FCnt, "Frame counters")
+		Check(t, wantDialer, dl.InDial.Called, "Dialer calls")
 	}
 }
 
-func TestHandleUp(t *testing.T) {
+func TestSubscribePerso(t *testing.T) {
 	{
-		testutil.Desc(t, "Send an unknown packet")
+		Desc(t, "Valid Entry #1")
 
 		// Build
-		an := mocks.NewMockAckNacker()
-		adapter := mocks.NewMockAdapter()
-		store := newMockController()
-		store.Failures["LookupDevices"] = errors.New(errors.NotFound, "Mock Error: Not Found")
-		data, _ := newBPacket(
-			[4]byte{2, 3, 2, 3},
-			"Payload",
-			[16]byte{1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8},
-			5,
-		).MarshalBinary()
-
-		// Operate
-		broker := New(store, testutil.GetLogger(t, "Broker"))
-		err := broker.HandleUp(data, an, adapter)
-
-		// Check
-		errutil.CheckErrors(t, pointer.String(string(errors.NotFound)), err)
-		mocks.CheckAcks(t, false, an.InAck)
-		CheckRegistrations(t, nil, store.InStoreDevices)
-		CheckRegistrations(t, nil, store.InStoreApp)
-		mocks.CheckSent(t, nil, adapter.InSendPacket)
-		mocks.CheckRecipients(t, nil, adapter.InSendRecipients)
-		CheckCounters(t, 0, store.InUpdateFCnt)
-	}
-
-	// -------------------
-
-	{
-		testutil.Desc(t, "Send an invalid packet")
-
-		// Build
-		an := mocks.NewMockAckNacker()
-		adapter := mocks.NewMockAdapter()
-		store := newMockController()
-
-		// Operate
-		broker := New(store, testutil.GetLogger(t, "Broker"))
-		err := broker.HandleUp([]byte{1, 2, 3}, an, adapter)
-
-		// Check
-		errutil.CheckErrors(t, pointer.String(string(errors.Structural)), err)
-		mocks.CheckAcks(t, false, an.InAck)
-		CheckRegistrations(t, nil, store.InStoreDevices)
-		CheckRegistrations(t, nil, store.InStoreApp)
-		mocks.CheckSent(t, nil, adapter.InSendPacket)
-		mocks.CheckRecipients(t, nil, adapter.InSendRecipients)
-		CheckCounters(t, 0, store.InUpdateFCnt)
-	}
-
-	// -------------------
-
-	{
-		testutil.Desc(t, "Send packet, get 2 entries, no valid MIC")
-
-		// Build
-		an := mocks.NewMockAckNacker()
-		adapter := mocks.NewMockAdapter()
-		store := newMockController()
-		store.OutLookupDevices = []devEntry{
-			{
-				Recipient: []byte{1, 2, 3},
-				AppEUI:    lorawan.EUI64([8]byte{1, 2, 3, 4, 5, 6, 7, 8}),
-				DevEUI:    lorawan.EUI64([8]byte{1, 2, 3, 4, 5, 6, 7, 8}),
-				NwkSKey:   lorawan.AES128Key([16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}),
-			},
-			{
-				Recipient: []byte{1, 2, 3},
-				AppEUI:    lorawan.EUI64([8]byte{1, 1, 1, 1, 5, 5, 5, 5}),
-				DevEUI:    lorawan.EUI64([8]byte{4, 4, 4, 4, 5, 5, 5, 5}),
-				NwkSKey:   lorawan.AES128Key([16]byte{1, 2, 3, 4, 5, 6, 7, 8, 6, 6, 11, 12, 13, 14, 12, 16}),
-			},
+		nc := NewMockNetworkController()
+		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		req := &core.ABPSubBrokerReq{
+			HandlerNet: "87.4352.3:4333",
+			AppEUI:     []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			DevAddr:    []byte{1, 2, 3, 4},
+			NwkSKey:    []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
 		}
-		data, _ := newBPacket(
-			[4]byte{2, 3, 2, 3},
-			"Payload",
-			[16]byte{1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8},
-			5,
-		).MarshalBinary()
 
-		// Operate
-		broker := New(store, testutil.GetLogger(t, "Broker"))
-		err := broker.HandleUp(data, an, adapter)
-
-		// Check
-		errutil.CheckErrors(t, pointer.String(string(errors.NotFound)), err)
-		mocks.CheckAcks(t, false, an.InAck)
-		CheckRegistrations(t, nil, store.InStoreDevices)
-		CheckRegistrations(t, nil, store.InStoreApp)
-		mocks.CheckSent(t, nil, adapter.InSendPacket)
-		mocks.CheckRecipients(t, nil, adapter.InSendRecipients)
-		CheckCounters(t, 0, store.InUpdateFCnt)
-	}
-
-	// -------------------
-
-	{
-		testutil.Desc(t, "Send packet, get 2 entries, 1 valid MIC | No downlink")
-
-		// Build
-		an := mocks.NewMockAckNacker()
-		recipient := mocks.NewMockRecipient()
-		adapter := mocks.NewMockAdapter()
-		adapter.OutSend = nil
-		adapter.OutGetRecipient = recipient
-		store := newMockController()
-		store.OutLookupDevices = []devEntry{
-			{
-				Recipient: []byte{1, 2, 3},
-				AppEUI:    lorawan.EUI64([8]byte{1, 2, 3, 4, 5, 6, 7, 8}),
-				DevEUI:    lorawan.EUI64([8]byte{1, 2, 3, 4, 5, 6, 7, 8}),
-				NwkSKey:   lorawan.AES128Key([16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}),
-			},
-			{
-				Recipient: []byte{1, 2, 3},
-				AppEUI:    lorawan.EUI64([8]byte{1, 1, 1, 1, 5, 5, 5, 5}),
-				DevEUI:    lorawan.EUI64([8]byte{4, 4, 4, 4, 2, 3, 2, 3}),
-				NwkSKey:   lorawan.AES128Key([16]byte{1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8}),
-			},
+		// Expect
+		var wantErr *string
+		var wantRes = new(core.ABPSubBrokerRes)
+		var wantEntry = devEntry{
+			Dialer:  NewDialer([]byte(req.HandlerNet)),
+			AppEUI:  req.AppEUI,
+			DevEUI:  []byte{0, 0, 0, 0, 1, 2, 3, 4},
+			NwkSKey: [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
 		}
-		bpacket := newBPacket(
-			[4]byte{2, 3, 2, 3},
-			"Payload",
-			[16]byte{1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8},
-			5,
-		)
-		data, _ := bpacket.MarshalBinary()
-		hpacket, _ := core.NewHPacket(
-			store.OutLookupDevices[1].AppEUI,
-			store.OutLookupDevices[1].DevEUI,
-			bpacket.Payload(),
-			bpacket.Metadata(),
-		)
 
 		// Operate
-		broker := New(store, testutil.GetLogger(t, "Broker"))
-		err := broker.HandleUp(data, an, adapter)
+		res, err := br.SubscribePersonalized(context.Background(), req)
 
-		// Check
-		errutil.CheckErrors(t, nil, err)
-		mocks.CheckAcks(t, true, an.InAck)
-		CheckRegistrations(t, nil, store.InStoreDevices)
-		CheckRegistrations(t, nil, store.InStoreApp)
-		mocks.CheckSent(t, hpacket, adapter.InSendPacket)
-		mocks.CheckRecipients(t, []core.Recipient{recipient}, adapter.InSendRecipients)
-		CheckCounters(t, 5, store.InUpdateFCnt)
+		// Checks
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Broker ABP Responses")
+		Check(t, wantEntry, nc.InStoreDevice.Entry, "Device Entries")
 	}
 
-	// -------------------
+	// --------------------
 
 	{
-		testutil.Desc(t, "Send packet, get 2 entries, 1 valid MIC | Fails to get recipient")
+		Desc(t, "Valid Entry #2")
 
 		// Build
-		an := mocks.NewMockAckNacker()
-		adapter := mocks.NewMockAdapter()
-		adapter.OutSend = nil
-		adapter.Failures["GetRecipient"] = errors.New(errors.Structural, "Mock Error: Unable to get recipient")
-		store := newMockController()
-		store.OutLookupDevices = []devEntry{
-			{
-				Recipient: []byte{1, 2, 3},
-				AppEUI:    lorawan.EUI64([8]byte{1, 2, 3, 4, 5, 6, 7, 8}),
-				DevEUI:    lorawan.EUI64([8]byte{1, 2, 3, 4, 5, 6, 7, 8}),
-				NwkSKey:   lorawan.AES128Key([16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}),
-			},
-			{
-				Recipient: []byte{1, 2, 3},
-				AppEUI:    lorawan.EUI64([8]byte{1, 1, 1, 1, 5, 5, 5, 5}),
-				DevEUI:    lorawan.EUI64([8]byte{4, 4, 4, 4, 2, 3, 2, 3}),
-				NwkSKey:   lorawan.AES128Key([16]byte{1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8}),
-			},
+		nc := NewMockNetworkController()
+		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		req := &core.ABPSubBrokerReq{
+			HandlerNet: "ttn.golang.org:4400",
+			AppEUI:     []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			DevAddr:    []byte{1, 2, 3, 4},
+			NwkSKey:    []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
 		}
-		bpacket := newBPacket(
-			[4]byte{2, 3, 2, 3},
-			"Payload",
-			[16]byte{1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8},
-			5,
-		)
-		data, _ := bpacket.MarshalBinary()
 
-		// Operate
-		broker := New(store, testutil.GetLogger(t, "Broker"))
-		err := broker.HandleUp(data, an, adapter)
-
-		// Check
-		errutil.CheckErrors(t, pointer.String(string(errors.Structural)), err)
-		mocks.CheckAcks(t, false, an.InAck)
-		CheckRegistrations(t, nil, store.InStoreDevices)
-		CheckRegistrations(t, nil, store.InStoreApp)
-		mocks.CheckSent(t, nil, adapter.InSendPacket)
-		mocks.CheckRecipients(t, nil, adapter.InSendRecipients)
-		CheckCounters(t, 5, store.InUpdateFCnt)
-	}
-
-	// -------------------
-
-	{
-		testutil.Desc(t, "Send packet, get 2 entries, 1 valid MIC | Fails to send")
-
-		// Build
-		an := mocks.NewMockAckNacker()
-		recipient := mocks.NewMockRecipient()
-		adapter := mocks.NewMockAdapter()
-		adapter.OutGetRecipient = recipient
-		adapter.Failures["Send"] = errors.New(errors.Operational, "Mock Error: Unable to send")
-		store := newMockController()
-		store.OutLookupDevices = []devEntry{
-			{
-				Recipient: []byte{1, 2, 3},
-				AppEUI:    lorawan.EUI64([8]byte{1, 2, 3, 4, 5, 6, 7, 8}),
-				DevEUI:    lorawan.EUI64([8]byte{1, 2, 3, 4, 5, 6, 7, 8}),
-				NwkSKey:   lorawan.AES128Key([16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}),
-			},
-			{
-				Recipient: []byte{1, 2, 3},
-				AppEUI:    lorawan.EUI64([8]byte{1, 1, 1, 1, 5, 5, 5, 5}),
-				DevEUI:    lorawan.EUI64([8]byte{4, 4, 4, 4, 2, 3, 2, 3}),
-				NwkSKey:   lorawan.AES128Key([16]byte{1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8}),
-			},
+		// Expect
+		var wantErr *string
+		var wantRes = new(core.ABPSubBrokerRes)
+		var wantEntry = devEntry{
+			Dialer:  NewDialer([]byte(req.HandlerNet)),
+			AppEUI:  req.AppEUI,
+			DevEUI:  []byte{0, 0, 0, 0, 1, 2, 3, 4},
+			NwkSKey: [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
 		}
-		bpacket := newBPacket(
-			[4]byte{2, 3, 2, 3},
-			"Payload",
-			[16]byte{1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8},
-			5,
-		)
-		data, _ := bpacket.MarshalBinary()
-		hpacket, _ := core.NewHPacket(
-			store.OutLookupDevices[1].AppEUI,
-			store.OutLookupDevices[1].DevEUI,
-			bpacket.Payload(),
-			bpacket.Metadata(),
-		)
 
 		// Operate
-		broker := New(store, testutil.GetLogger(t, "Broker"))
-		err := broker.HandleUp(data, an, adapter)
+		res, err := br.SubscribePersonalized(context.Background(), req)
 
-		// Check
-		errutil.CheckErrors(t, pointer.String(string(errors.Operational)), err)
-		mocks.CheckAcks(t, false, an.InAck)
-		CheckRegistrations(t, nil, store.InStoreDevices)
-		CheckRegistrations(t, nil, store.InStoreApp)
-		mocks.CheckSent(t, hpacket, adapter.InSendPacket)
-		mocks.CheckRecipients(t, []core.Recipient{recipient}, adapter.InSendRecipients)
-		CheckCounters(t, 5, store.InUpdateFCnt)
+		// Checks
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Broker ABP Responses")
+		Check(t, wantEntry, nc.InStoreDevice.Entry, "Device Entries")
 	}
 
-	// -------------------
+	// --------------------
 
 	{
-		testutil.Desc(t, "Send packet, get 1 entry, 1 valid MIC | 1 valid downlink")
+		Desc(t, "Valid Entry #1")
 
 		// Build
-		an := mocks.NewMockAckNacker()
-		recipient := mocks.NewMockRecipient()
-		adapter := mocks.NewMockAdapter()
-		resp := newBPacketDown(1)
-		data, _ := resp.MarshalBinary()
-		adapter.OutSend = data
-		adapter.OutGetRecipient = recipient
-		store := newMockController()
-		store.OutLookupDevices = []devEntry{
-			{
-				Recipient: []byte{1, 2, 3},
-				AppEUI:    lorawan.EUI64([8]byte{1, 1, 1, 1, 5, 5, 5, 5}),
-				DevEUI:    lorawan.EUI64([8]byte{4, 4, 4, 4, 2, 3, 2, 3}),
-				NwkSKey:   lorawan.AES128Key([16]byte{1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8}),
-			},
+		nc := NewMockNetworkController()
+		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		req := &core.ABPSubBrokerReq{
+			HandlerNet: "87.4352.3:4333",
+			AppEUI:     []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			DevAddr:    []byte{1, 2, 3, 4},
+			NwkSKey:    []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
 		}
-		bpacket := newBPacket(
-			[4]byte{2, 3, 2, 3},
-			"Uplink",
-			[16]byte{1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8},
-			5,
-		)
-		data, _ = bpacket.MarshalBinary()
-		hpacket, _ := core.NewHPacket(
-			store.OutLookupDevices[0].AppEUI,
-			store.OutLookupDevices[0].DevEUI,
-			bpacket.Payload(),
-			bpacket.Metadata(),
-		)
 
-		// Operate
-		broker := New(store, testutil.GetLogger(t, "Broker"))
-		err := broker.HandleUp(data, an, adapter)
-
-		// Check
-		errutil.CheckErrors(t, nil, err)
-		mocks.CheckAcks(t, true, an.InAck)
-		CheckRegistrations(t, nil, store.InStoreDevices)
-		CheckRegistrations(t, nil, store.InStoreApp)
-		mocks.CheckSent(t, hpacket, adapter.InSendPacket)
-		mocks.CheckRecipients(t, []core.Recipient{recipient}, adapter.InSendRecipients)
-		CheckCounters(t, 5, store.InUpdateFCnt)
-	}
-
-	// -------------------
-
-	{
-		testutil.Desc(t, "Send packet, get 1 entry, 1 valid MIC | 1 invalid downlink")
-
-		// Build
-		an := mocks.NewMockAckNacker()
-		recipient := mocks.NewMockRecipient()
-		adapter := mocks.NewMockAdapter()
-		adapter.OutSend = []byte{1, 2, 3}
-		adapter.OutGetRecipient = recipient
-		store := newMockController()
-		store.OutLookupDevices = []devEntry{
-			{
-				Recipient: []byte{1, 2, 3},
-				AppEUI:    lorawan.EUI64([8]byte{1, 1, 1, 1, 5, 5, 5, 5}),
-				DevEUI:    lorawan.EUI64([8]byte{4, 4, 4, 4, 2, 3, 2, 3}),
-				NwkSKey:   lorawan.AES128Key([16]byte{1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8}),
-			},
+		// Expect
+		var wantErr *string
+		var wantRes = new(core.ABPSubBrokerRes)
+		var wantEntry = devEntry{
+			Dialer:  NewDialer([]byte(req.HandlerNet)),
+			AppEUI:  req.AppEUI,
+			DevEUI:  []byte{0, 0, 0, 0, 1, 2, 3, 4},
+			NwkSKey: [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
 		}
-		bpacket := newBPacket(
-			[4]byte{2, 3, 2, 3},
-			"Uplink",
-			[16]byte{1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8},
-			5,
-		)
-		data, _ := bpacket.MarshalBinary()
-		hpacket, _ := core.NewHPacket(
-			store.OutLookupDevices[0].AppEUI,
-			store.OutLookupDevices[0].DevEUI,
-			bpacket.Payload(),
-			bpacket.Metadata(),
-		)
 
 		// Operate
-		broker := New(store, testutil.GetLogger(t, "Broker"))
-		err := broker.HandleUp(data, an, adapter)
+		res, err := br.SubscribePersonalized(context.Background(), req)
 
-		// Check
-		errutil.CheckErrors(t, pointer.String(string(errors.Operational)), err)
-		mocks.CheckAcks(t, false, an.InAck)
-		CheckRegistrations(t, nil, store.InStoreDevices)
-		CheckRegistrations(t, nil, store.InStoreApp)
-		mocks.CheckSent(t, hpacket, adapter.InSendPacket)
-		mocks.CheckRecipients(t, []core.Recipient{recipient}, adapter.InSendRecipients)
-		CheckCounters(t, 5, store.InUpdateFCnt)
+		// Checks
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Broker ABP Responses")
+		Check(t, wantEntry, nc.InStoreDevice.Entry, "Device Entries")
 	}
 
-	// -------------------
+	// --------------------
 
 	{
-		testutil.Desc(t, "Send packet, get 1 entry, 1 valid MIC | 1 unhandled downlink ")
+		Desc(t, "Invalid entry -> Bad HandlerNet")
 
 		// Build
-		an := mocks.NewMockAckNacker()
-		recipient := mocks.NewMockRecipient()
-		adapter := mocks.NewMockAdapter()
-		resp, _ := core.NewAPacket(
-			lorawan.EUI64([8]byte{1, 2, 3, 4, 5, 6, 7, 8}),
-			lorawan.EUI64([8]byte{1, 2, 3, 4, 5, 6, 7, 8}),
-			[]byte{1, 2},
-			nil,
-		)
-		data, _ := resp.MarshalBinary()
-		adapter.OutSend = data
-		adapter.OutGetRecipient = recipient
-		store := newMockController()
-		store.OutLookupDevices = []devEntry{
-			{
-				Recipient: []byte{1, 2, 3},
-				AppEUI:    lorawan.EUI64([8]byte{1, 1, 1, 1, 5, 5, 5, 5}),
-				DevEUI:    lorawan.EUI64([8]byte{4, 4, 4, 4, 2, 3, 2, 3}),
-				NwkSKey:   lorawan.AES128Key([16]byte{1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8}),
-			},
+		nc := NewMockNetworkController()
+		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		req := &core.ABPSubBrokerReq{
+			HandlerNet: "localhost",
+			AppEUI:     []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			DevAddr:    []byte{1, 2, 3, 4},
+			NwkSKey:    []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
 		}
-		bpacket := newBPacket(
-			[4]byte{2, 3, 2, 3},
-			"Uplink",
-			[16]byte{1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8},
-			5,
-		)
-		data, _ = bpacket.MarshalBinary()
-		hpacket, _ := core.NewHPacket(
-			store.OutLookupDevices[0].AppEUI,
-			store.OutLookupDevices[0].DevEUI,
-			bpacket.Payload(),
-			bpacket.Metadata(),
-		)
+
+		// Expect
+		var wantErr = ErrStructural
+		var wantRes = new(core.ABPSubBrokerRes)
+		var wantEntry devEntry
 
 		// Operate
-		broker := New(store, testutil.GetLogger(t, "Broker"))
-		err := broker.HandleUp(data, an, adapter)
+		res, err := br.SubscribePersonalized(context.Background(), req)
 
-		// Check
-		errutil.CheckErrors(t, pointer.String(string(errors.Operational)), err)
-		mocks.CheckAcks(t, false, an.InAck)
-		CheckRegistrations(t, nil, store.InStoreDevices)
-		CheckRegistrations(t, nil, store.InStoreApp)
-		mocks.CheckSent(t, hpacket, adapter.InSendPacket)
-		mocks.CheckRecipients(t, []core.Recipient{recipient}, adapter.InSendRecipients)
-		CheckCounters(t, 5, store.InUpdateFCnt)
+		// Checks
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Broker ABP Responses")
+		Check(t, wantEntry, nc.InStoreDevice.Entry, "Device Entries")
 	}
 
-	// -------------------
+	// --------------------
 
 	{
-		testutil.Desc(t, "Send unhandled packet type")
+		Desc(t, "Invalid entry -> Bad AppEUI")
 
 		// Build
-		an := mocks.NewMockAckNacker()
-		adapter := mocks.NewMockAdapter()
-		store := newMockController()
-		apacket, _ := core.NewAPacket(
-			lorawan.EUI64([8]byte{1, 2, 3, 4, 5, 6, 7, 8}),
-			lorawan.EUI64([8]byte{1, 2, 3, 4, 5, 6, 7, 8}),
-			[]byte{1, 2},
-			nil,
-		)
-		data, _ := apacket.MarshalBinary()
+		nc := NewMockNetworkController()
+		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		req := &core.ABPSubBrokerReq{
+			HandlerNet: "87.4352.3:4333",
+			AppEUI:     []byte{1, 2, 3, 4, 8},
+			DevAddr:    []byte{1, 2, 3, 4},
+			NwkSKey:    []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
+		}
+
+		// Expect
+		var wantErr = ErrStructural
+		var wantRes = new(core.ABPSubBrokerRes)
+		var wantEntry devEntry
 
 		// Operate
-		broker := New(store, testutil.GetLogger(t, "Broker"))
-		err := broker.HandleUp(data, an, adapter)
+		res, err := br.SubscribePersonalized(context.Background(), req)
 
-		// Check
-		errutil.CheckErrors(t, pointer.String(string(errors.Implementation)), err)
-		mocks.CheckAcks(t, false, an.InAck)
-		CheckRegistrations(t, nil, store.InStoreDevices)
-		CheckRegistrations(t, nil, store.InStoreApp)
-		mocks.CheckSent(t, nil, adapter.InSendPacket)
-		mocks.CheckRecipients(t, nil, adapter.InSendRecipients)
-		CheckCounters(t, 0, store.InUpdateFCnt)
+		// Checks
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Broker ABP Responses")
+		Check(t, wantEntry, nc.InStoreDevice.Entry, "Device Entries")
 	}
+
+	// --------------------
+
+	{
+		Desc(t, "Invalid entry -> Bad DevAddr")
+
+		// Build
+		nc := NewMockNetworkController()
+		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		req := &core.ABPSubBrokerReq{
+			HandlerNet: "87.4352.3:4333",
+			AppEUI:     []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			DevAddr:    []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			NwkSKey:    []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
+		}
+
+		// Expect
+		var wantErr = ErrStructural
+		var wantRes = new(core.ABPSubBrokerRes)
+		var wantEntry devEntry
+
+		// Operate
+		res, err := br.SubscribePersonalized(context.Background(), req)
+
+		// Checks
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Broker ABP Responses")
+		Check(t, wantEntry, nc.InStoreDevice.Entry, "Device Entries")
+	}
+	// --------------------
+
+	{
+		Desc(t, "Invalid entry -> Bad NwkSKey")
+
+		// Build
+		nc := NewMockNetworkController()
+		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		req := &core.ABPSubBrokerReq{
+			HandlerNet: "87.4352.3:4333",
+			AppEUI:     []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			DevAddr:    []byte{1, 2, 3, 4},
+			NwkSKey:    nil,
+		}
+
+		// Expect
+		var wantErr = ErrStructural
+		var wantRes = new(core.ABPSubBrokerRes)
+		var wantEntry devEntry
+
+		// Operate
+		res, err := br.SubscribePersonalized(context.Background(), req)
+
+		// Checks
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Broker ABP Responses")
+		Check(t, wantEntry, nc.InStoreDevice.Entry, "Device Entries")
+	}
+}
+
+func TestDialerCloser(t *testing.T) {
+	{
+		Desc(t, "Dial on a valid address, server is listening")
+
+		// Build
+		addr := "0.0.0.0:3300"
+		conn, err := net.Listen("tcp", addr)
+		FatalUnless(t, err)
+		defer conn.Close()
+
+		// Operate & Check
+		dl := NewDialer([]byte(addr))
+		_, cl, errDial := dl.Dial()
+		CheckErrors(t, nil, errDial)
+		errClose := cl.Close()
+		CheckErrors(t, nil, errClose)
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Dial an invalid address")
+
+		// Build & Operate & Check
+		dl := NewDialer([]byte(""))
+		_, _, errDial := dl.Dial()
+		CheckErrors(t, ErrOperational, errDial)
+	}
+}
+
+func TestStart(t *testing.T) {
+	broker := New(
+		Components{
+			Ctx:               GetLogger(t, "Broker"),
+			NetworkController: NewMockNetworkController(),
+		},
+		Options{
+			NetAddrUp:   "localhost:8883",
+			NetAddrDown: "localhost:8884",
+		},
+	)
+
+	cherr := make(chan error)
+	go func() {
+		err := broker.Start()
+		cherr <- err
+	}()
+
+	var err error
+	select {
+	case err = <-cherr:
+	case <-time.After(time.Millisecond * 250):
+	}
+	CheckErrors(t, nil, err)
 }

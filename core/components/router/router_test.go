@@ -7,757 +7,1365 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/TheThingsNetwork/ttn/core"
-	. "github.com/TheThingsNetwork/ttn/core/mocks"
+	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/core/mocks"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
-	. "github.com/TheThingsNetwork/ttn/utils/errors/checks"
-	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
+	"github.com/brocaar/lorawan"
+	"golang.org/x/net/context"
 )
 
-func TestRegister(t *testing.T) {
+func TestHandleStats(t *testing.T) {
 	{
-		Desc(t, "Register an entry")
+		Desc(t, "Handle Valid Stats Request")
 
 		// Build
-		an := NewMockAckNacker()
-		store := newMockStorage()
-		r := NewMockRRegistration()
-		m := newMockDutyManager()
+		components := Components{
+			Ctx:     GetLogger(t, "Router"),
+			Storage: NewMockStorage(),
+		}
+		r := New(components, Options{})
+		req := &core.StatsReq{
+			GatewayID: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			Metadata: &core.StatsMetadata{
+				Altitude:  -14,
+				Longitude: 43.333,
+				Latitude:  -2.342,
+			},
+		}
+
+		// Expect
+		var wantErr *string
+		var wantRes = new(core.StatsRes)
+		var wantID = req.GatewayID
+		var wantMeta = *req.Metadata
 
 		// Operate
-		router := New(store, m, GetLogger(t, "Router"))
-		err := router.Register(r, an)
+		res, err := r.HandleStats(context.Background(), req)
 
 		// Check
-		CheckErrors(t, nil, err)
-		CheckAcks(t, true, an.InAck)
-		CheckRegistrations(t, r, store.InStore)
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Stats Responses")
+		Check(t, wantID, components.Storage.(*MockStorage).InUpdateStats.GID, "Gateway IDs")
+		Check(t, wantMeta, components.Storage.(*MockStorage).InUpdateStats.Metadata, "Gateways Metas")
 	}
 
-	// -------------------
+	// --------------------
 
 	{
-		Desc(t, "Register an entry, wrong registration type")
+		Desc(t, "Handle Nil Stats Requests")
 
 		// Build
-		an := NewMockAckNacker()
-		store := newMockStorage()
-		r := NewMockARegistration()
-		m := newMockDutyManager()
+		components := Components{
+			Ctx:     GetLogger(t, "Router"),
+			Storage: NewMockStorage(),
+		}
+		r := New(components, Options{})
+		var req *core.StatsReq
+
+		// Expect
+		var wantErr = ErrStructural
+		var wantRes = new(core.StatsRes)
+		var wantID []byte
+		var wantMeta core.StatsMetadata
 
 		// Operate
-		router := New(store, m, GetLogger(t, "Router"))
-		err := router.Register(r, an)
+		res, err := r.HandleStats(context.Background(), req)
 
 		// Check
-		CheckErrors(t, pointer.String(string(errors.Structural)), err)
-		CheckAcks(t, false, an.InAck)
-		CheckRegistrations(t, nil, store.InStore)
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Stats Responses")
+		Check(t, wantID, components.Storage.(*MockStorage).InUpdateStats.GID, "Gateway IDs")
+		Check(t, wantMeta, components.Storage.(*MockStorage).InUpdateStats.Metadata, "Gateways Metas")
 	}
 
-	// -------------------
+	// --------------------
 
 	{
-		Desc(t, "Register an entry | Store failed")
+		Desc(t, "Handle Stats Request | Invalid GatewayID")
 
 		// Build
-		an := NewMockAckNacker()
-		store := newMockStorage()
-		store.Failures["Store"] = errors.New(errors.Structural, "Mock Error: Store Failed")
-		r := NewMockRRegistration()
-		m := newMockDutyManager()
+		components := Components{
+			Ctx:     GetLogger(t, "Router"),
+			Storage: NewMockStorage(),
+		}
+		r := New(components, Options{})
+		req := &core.StatsReq{
+			GatewayID: []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+			Metadata: &core.StatsMetadata{
+				Altitude:  -14,
+				Longitude: 43.333,
+				Latitude:  -2.342,
+			},
+		}
+
+		// Expect
+		var wantErr = ErrStructural
+		var wantRes = new(core.StatsRes)
+		var wantID []byte
+		var wantMeta core.StatsMetadata
 
 		// Operate
-		router := New(store, m, GetLogger(t, "Router"))
-		err := router.Register(r, an)
+		res, err := r.HandleStats(context.Background(), req)
 
 		// Check
-		CheckErrors(t, pointer.String(string(errors.Structural)), err)
-		CheckAcks(t, false, an.InAck)
-		CheckRegistrations(t, r, store.InStore)
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Stats Responses")
+		Check(t, wantID, components.Storage.(*MockStorage).InUpdateStats.GID, "Gateway IDs")
+		Check(t, wantMeta, components.Storage.(*MockStorage).InUpdateStats.Metadata, "Gateways Metas")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Handle Stats Request | Nil Metadata")
+
+		// Build
+		components := Components{
+			Ctx:     GetLogger(t, "Router"),
+			Storage: NewMockStorage(),
+		}
+		r := New(components, Options{})
+		req := &core.StatsReq{
+			GatewayID: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+		}
+
+		// Expect
+		var wantErr = ErrStructural
+		var wantRes = new(core.StatsRes)
+		var wantID []byte
+		var wantMeta core.StatsMetadata
+
+		// Operate
+		res, err := r.HandleStats(context.Background(), req)
+
+		// Check
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Stats Responses")
+		Check(t, wantID, components.Storage.(*MockStorage).InUpdateStats.GID, "Gateway IDs")
+		Check(t, wantMeta, components.Storage.(*MockStorage).InUpdateStats.Metadata, "Gateways Metas")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Handle Stats Request | Storage fails ")
+
+		// Build
+		components := Components{
+			Ctx:     GetLogger(t, "Router"),
+			Storage: NewMockStorage(),
+		}
+		components.Storage.(*MockStorage).Failures["UpdateStats"] = errors.New(errors.Operational, "")
+		r := New(components, Options{})
+		req := &core.StatsReq{
+			GatewayID: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			Metadata: &core.StatsMetadata{
+				Altitude:  -14,
+				Longitude: 43.333,
+				Latitude:  -2.342,
+			},
+		}
+
+		// Expect
+		var wantErr = ErrOperational
+		var wantRes = new(core.StatsRes)
+		var wantID = req.GatewayID
+		var wantMeta = *req.Metadata
+
+		// Operate
+		res, err := r.HandleStats(context.Background(), req)
+
+		// Check
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Stats Responses")
+		Check(t, wantID, components.Storage.(*MockStorage).InUpdateStats.GID, "Gateway IDs")
+		Check(t, wantMeta, components.Storage.(*MockStorage).InUpdateStats.Metadata, "Gateways Metas")
 	}
 }
 
-func TestHandleUp(t *testing.T) {
+func TestHandleData(t *testing.T) {
 	{
-		Desc(t, "Send an unknown packet | No downlink")
+		Desc(t, "Handle invalid uplink | Invalid DevAddr")
 
 		// Build
-		an := NewMockAckNacker()
-		adapter := NewMockAdapter()
-		adapter.OutSend = nil
-		store := newMockStorage()
-		store.Failures["Lookup"] = errors.New(errors.NotFound, "Mock Error: Not Found")
-		inPacket := newRPacket(
-			[4]byte{2, 3, 2, 3},
-			"Payload",
-			[]byte{1, 2, 3, 4, 5, 6, 7, 8},
-			Metadata{Freq: pointer.Float64(865.5)},
-		)
-		data, _ := inPacket.MarshalBinary()
-		bpacket := newBPacket(
-			[4]byte{2, 3, 2, 3},
-			"Payload",
-			Metadata{Freq: pointer.Float64(865.5), DutyRX1: pointer.Uint(0), DutyRX2: pointer.Uint(0)},
-		)
-		m := newMockDutyManager()
-
-		// Operate
-		router := New(store, m, GetLogger(t, "Router"))
-		err := router.HandleUp(data, an, adapter)
-
-		// Check
-		CheckErrors(t, nil, err)
-		CheckAcks(t, true, an.InAck)
-		CheckRegistrations(t, nil, store.InStore)
-		CheckSent(t, bpacket, adapter.InSendPacket)
-		CheckRecipients(t, nil, adapter.InSendRecipients)
-		CheckIDs(t, inPacket.GatewayID(), m.InLookupId)
-		CheckIDs(t, nil, m.InUpdateId)
-	}
-
-	// -------------------
-
-	{
-		Desc(t, "Send an unknown packet | With Downlink")
-
-		// Build
-		an := NewMockAckNacker()
-		resp := newRPacket(
-			[4]byte{2, 3, 2, 3},
-			"Response",
-			[]byte{1, 2, 3, 4, 5, 6, 7, 8},
-			Metadata{
-				Freq: pointer.Float64(868.42),
-				Size: pointer.Uint(14),
-				Codr: pointer.String("4/5"),
-				Datr: pointer.String("SF8BW125"),
+		dm := mocks.NewDutyManager()
+		br := mocks.NewBrokerClient()
+		st := NewMockStorage()
+		r := New(Components{
+			DutyManager: dm,
+			Brokers:     []core.BrokerClient{br},
+			Ctx:         GetLogger(t, "Router"),
+			Storage:     st,
+		}, Options{})
+		req := &core.DataRouterReq{
+			Payload: &core.LoRaWANData{
+				MHDR: &core.LoRaWANMHDR{
+					MType: uint32(lorawan.UnconfirmedDataUp),
+					Major: uint32(lorawan.LoRaWANR1),
+				},
+				MACPayload: &core.LoRaWANMACPayload{
+					FHDR: &core.LoRaWANFHDR{
+						DevAddr: []byte{1, 2, 3, 4, 5},
+						FCnt:    1,
+						FCtrl:   new(core.LoRaWANFCtrl),
+					},
+					FPort:      1,
+					FRMPayload: []byte{14, 14, 42, 42},
+				},
+				MIC: []byte{4, 3, 2, 1},
 			},
-		)
-		dataResp, _ := resp.MarshalBinary()
-		adapter := NewMockAdapter()
-		adapter.OutSend = dataResp
-		store := newMockStorage()
-		store.Failures["Lookup"] = errors.New(errors.NotFound, "Mock Error: Not Found")
-		inPacket := newRPacket(
-			[4]byte{2, 3, 2, 3},
-			"Payload",
-			[]byte{1, 2, 3, 4, 5, 6, 7, 8},
-			Metadata{Freq: pointer.Float64(865.5)},
-		)
-		data, _ := inPacket.MarshalBinary()
-		bpacket := newBPacket(
-			[4]byte{2, 3, 2, 3},
-			"Payload",
-			Metadata{Freq: pointer.Float64(865.5), DutyRX1: pointer.Uint(0), DutyRX2: pointer.Uint(0)},
-		)
-		m := newMockDutyManager()
+			Metadata:  new(core.Metadata),
+			GatewayID: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+		}
+
+		// Expect
+		var wantErr = ErrStructural
+		var wantRes = new(core.DataRouterRes)
+		var wantBrReq *core.DataBrokerReq
+		var wantStore int
 
 		// Operate
-		router := New(store, m, GetLogger(t, "Router"))
-		err := router.HandleUp(data, an, adapter)
+		res, err := r.HandleData(context.Background(), req)
 
 		// Check
-		CheckErrors(t, nil, err)
-		CheckAcks(t, resp, an.InAck)
-		CheckRegistrations(t, nil, store.InStore)
-		CheckSent(t, bpacket, adapter.InSendPacket)
-		CheckRecipients(t, nil, adapter.InSendRecipients)
-		CheckIDs(t, inPacket.GatewayID(), m.InLookupId)
-		CheckIDs(t, inPacket.GatewayID(), m.InUpdateId)
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Router Data Responses")
+		Check(t, wantBrReq, br.InHandleData.Req, "Broker Data Requests")
+		Check(t, wantStore, st.InStore.BrokerIndex, "Brokers stored")
 	}
 
-	// -------------------
+	// --------------------
 
 	{
-		Desc(t, "Send invalid data")
+		Desc(t, "Handle invalid uplink | Invalid MIC")
 
 		// Build
-		an := NewMockAckNacker()
-		adapter := NewMockAdapter()
-		store := newMockStorage()
-		store.Failures["Lookup"] = errors.New(errors.NotFound, "Mock Error: Not Found")
-		m := newMockDutyManager()
+		dm := mocks.NewDutyManager()
+		br := mocks.NewBrokerClient()
+		st := NewMockStorage()
+		r := New(Components{
+			DutyManager: dm,
+			Brokers:     []core.BrokerClient{br},
+			Ctx:         GetLogger(t, "Router"),
+			Storage:     st,
+		}, Options{})
+		req := &core.DataRouterReq{
+			Payload: &core.LoRaWANData{
+				MHDR: &core.LoRaWANMHDR{
+					MType: uint32(lorawan.UnconfirmedDataUp),
+					Major: uint32(lorawan.LoRaWANR1),
+				},
+				MACPayload: &core.LoRaWANMACPayload{
+					FHDR: &core.LoRaWANFHDR{
+						DevAddr: []byte{1, 2, 3, 4},
+						FCnt:    1,
+						FCtrl:   new(core.LoRaWANFCtrl),
+					},
+					FPort:      1,
+					FRMPayload: []byte{14, 14, 42, 42},
+				},
+				MIC: []byte{4, 3},
+			},
+			Metadata:  new(core.Metadata),
+			GatewayID: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+		}
+
+		// Expect
+		var wantErr = ErrStructural
+		var wantRes = new(core.DataRouterRes)
+		var wantBrReq *core.DataBrokerReq
+		var wantStore int
 
 		// Operate
-		router := New(store, m, GetLogger(t, "Router"))
-		err := router.HandleUp([]byte{1, 2, 3}, an, adapter)
+		res, err := r.HandleData(context.Background(), req)
 
 		// Check
-		CheckErrors(t, pointer.String(string(errors.Structural)), err)
-		CheckAcks(t, false, an.InAck)
-		CheckRegistrations(t, nil, store.InStore)
-		CheckSent(t, nil, adapter.InSendPacket)
-		CheckRecipients(t, nil, adapter.InSendRecipients)
-		CheckIDs(t, nil, m.InUpdateId)
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Router Data Responses")
+		Check(t, wantBrReq, br.InHandleData.Req, "Broker Data Requests")
+		Check(t, wantStore, st.InStore.BrokerIndex, "Brokers stored")
 	}
 
-	// -------------------
+	// --------------------
 
 	{
-		Desc(t, "Send an unknown packet | No downlink | Storage fail lookup ")
+		Desc(t, "Handle invalid uplink | No Metadata")
 
 		// Build
-		an := NewMockAckNacker()
-		adapter := NewMockAdapter()
-		adapter.OutSend = nil
-		store := newMockStorage()
-		store.Failures["Lookup"] = errors.New(errors.Operational, "Mock Error: Lookup failed")
-		inPacket := newRPacket(
-			[4]byte{2, 3, 2, 3},
-			"Payload",
-			[]byte{1, 2, 3, 4, 5, 6, 7, 8},
-			Metadata{Freq: pointer.Float64(865.5)},
-		)
-		data, _ := inPacket.MarshalBinary()
-		m := newMockDutyManager()
+		dm := mocks.NewDutyManager()
+		br := mocks.NewBrokerClient()
+		st := NewMockStorage()
+		r := New(Components{
+			DutyManager: dm,
+			Brokers:     []core.BrokerClient{br},
+			Ctx:         GetLogger(t, "Router"),
+			Storage:     st,
+		}, Options{})
+		req := &core.DataRouterReq{
+			Payload: &core.LoRaWANData{
+				MHDR: &core.LoRaWANMHDR{
+					MType: uint32(lorawan.UnconfirmedDataUp),
+					Major: uint32(lorawan.LoRaWANR1),
+				},
+				MACPayload: &core.LoRaWANMACPayload{
+					FHDR: &core.LoRaWANFHDR{
+						DevAddr: []byte{1, 2, 3, 4},
+						FCnt:    1,
+						FCtrl:   new(core.LoRaWANFCtrl),
+					},
+					FPort:      1,
+					FRMPayload: []byte{14, 14, 42, 42},
+				},
+				MIC: []byte{4, 3, 2, 1},
+			},
+			Metadata:  nil,
+			GatewayID: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+		}
+
+		// Expect
+		var wantErr = ErrStructural
+		var wantRes = new(core.DataRouterRes)
+		var wantBrReq *core.DataBrokerReq
+		var wantStore int
 
 		// Operate
-		router := New(store, m, GetLogger(t, "Router"))
-		err := router.HandleUp(data, an, adapter)
+		res, err := r.HandleData(context.Background(), req)
 
 		// Check
-		CheckErrors(t, pointer.String(string(errors.Operational)), err)
-		CheckAcks(t, false, an.InAck)
-		CheckRegistrations(t, nil, store.InStore)
-		CheckSent(t, nil, adapter.InSendPacket)
-		CheckRecipients(t, nil, adapter.InSendRecipients)
-		CheckIDs(t, nil, m.InUpdateId)
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Router Data Responses")
+		Check(t, wantBrReq, br.InHandleData.Req, "Broker Data Requests")
+		Check(t, wantStore, st.InStore.BrokerIndex, "Brokers stored")
 	}
 
-	// -------------------
+	// --------------------
 
 	{
-		Desc(t, "Send known packet | No downlink")
+		Desc(t, "Handle invalid uplink | No Payload")
 
 		// Build
-		an := NewMockAckNacker()
-		adapter := NewMockAdapter()
-		adapter.OutSend = nil
-		recipient := NewMockRecipient()
-		dataRecipient, _ := recipient.MarshalBinary()
-		store := newMockStorage()
-		store.OutLookup = []entry{
+		dm := mocks.NewDutyManager()
+		br := mocks.NewBrokerClient()
+		st := NewMockStorage()
+		r := New(Components{
+			DutyManager: dm,
+			Brokers:     []core.BrokerClient{br},
+			Ctx:         GetLogger(t, "Router"),
+			Storage:     st,
+		}, Options{})
+		req := &core.DataRouterReq{
+			Payload:   nil,
+			Metadata:  new(core.Metadata),
+			GatewayID: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+		}
+
+		// Expect
+		var wantErr = ErrStructural
+		var wantRes = new(core.DataRouterRes)
+		var wantBrReq *core.DataBrokerReq
+		var wantStore int
+
+		// Operate
+		res, err := r.HandleData(context.Background(), req)
+
+		// Check
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Router Data Responses")
+		Check(t, wantBrReq, br.InHandleData.Req, "Broker Data Requests")
+		Check(t, wantStore, st.InStore.BrokerIndex, "Brokers stored")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Handle invalid uplink | Invalid GatewayID")
+
+		// Build
+		dm := mocks.NewDutyManager()
+		br := mocks.NewBrokerClient()
+		st := NewMockStorage()
+		r := New(Components{
+			DutyManager: dm,
+			Brokers:     []core.BrokerClient{br},
+			Ctx:         GetLogger(t, "Router"),
+			Storage:     st,
+		}, Options{})
+		req := &core.DataRouterReq{
+			Payload: &core.LoRaWANData{
+				MHDR: &core.LoRaWANMHDR{
+					MType: uint32(lorawan.UnconfirmedDataUp),
+					Major: uint32(lorawan.LoRaWANR1),
+				},
+				MACPayload: &core.LoRaWANMACPayload{
+					FHDR: &core.LoRaWANFHDR{
+						DevAddr: []byte{1, 2, 3, 4},
+						FCnt:    1,
+						FCtrl:   new(core.LoRaWANFCtrl),
+					},
+					FPort:      1,
+					FRMPayload: []byte{14, 14, 42, 42},
+				},
+				MIC: []byte{4, 3, 2, 1},
+			},
+			Metadata:  new(core.Metadata),
+			GatewayID: []byte{1, 2, 3, 7, 8},
+		}
+
+		// Expect
+		var wantErr = ErrStructural
+		var wantRes = new(core.DataRouterRes)
+		var wantBrReq *core.DataBrokerReq
+		var wantStore int
+
+		// Operate
+		res, err := r.HandleData(context.Background(), req)
+
+		// Check
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Router Data Responses")
+		Check(t, wantBrReq, br.InHandleData.Req, "Broker Data Requests")
+		Check(t, wantStore, st.InStore.BrokerIndex, "Brokers stored")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Handle valid uplink | 1 broker ok | no downlink")
+
+		// Build
+		dm := mocks.NewDutyManager()
+		br := mocks.NewBrokerClient()
+		st := NewMockStorage()
+		st.OutLookupStats.Metadata = core.StatsMetadata{
+			Altitude:  14,
+			Longitude: 14.0,
+			Latitude:  -14.0,
+		}
+		st.OutLookup.Entries = []entry{
 			{
-				Recipient: dataRecipient,
-				until:     time.Now().Add(time.Hour),
+				BrokerIndex: 1,
+				until:       time.Now().Add(time.Hour),
 			},
 		}
-		inPacket := newRPacket(
-			[4]byte{2, 3, 2, 3},
-			"Payload",
-			[]byte{1, 2, 3, 4, 5, 6, 7, 8},
-			Metadata{Freq: pointer.Float64(865.5)},
-		)
-		data, _ := inPacket.MarshalBinary()
-		bpacket := newBPacket(
-			[4]byte{2, 3, 2, 3},
-			"Payload",
-			Metadata{Freq: pointer.Float64(865.5), DutyRX1: pointer.Uint(0), DutyRX2: pointer.Uint(0)},
-		)
-		m := newMockDutyManager()
+		r := New(Components{
+			DutyManager: dm,
+			Brokers:     []core.BrokerClient{br, br},
+			Ctx:         GetLogger(t, "Router"),
+			Storage:     st,
+		}, Options{})
+		req := &core.DataRouterReq{
+			Payload: &core.LoRaWANData{
+				MHDR: &core.LoRaWANMHDR{
+					MType: uint32(lorawan.UnconfirmedDataUp),
+					Major: uint32(lorawan.LoRaWANR1),
+				},
+				MACPayload: &core.LoRaWANMACPayload{
+					FHDR: &core.LoRaWANFHDR{
+						DevAddr: []byte{1, 2, 3, 4},
+						FCnt:    1,
+						FCtrl:   new(core.LoRaWANFCtrl),
+					},
+					FPort:      1,
+					FRMPayload: []byte{14, 14, 42, 42},
+				},
+				MIC: []byte{4, 3, 2, 1},
+			},
+			Metadata: &core.Metadata{
+				Frequency: 868.5,
+			},
+			GatewayID: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+		}
+
+		// Expect
+		var wantErr *string
+		var wantRes = new(core.DataRouterRes)
+		var wantBrReq = &core.DataBrokerReq{
+			Payload: req.Payload,
+			Metadata: &core.Metadata{
+				Altitude:  st.OutLookupStats.Metadata.Altitude,
+				Longitude: st.OutLookupStats.Metadata.Longitude,
+				Latitude:  st.OutLookupStats.Metadata.Latitude,
+				Frequency: req.Metadata.Frequency,
+			},
+		}
+		var wantStore = 0
 
 		// Operate
-		router := New(store, m, GetLogger(t, "Router"))
-		err := router.HandleUp(data, an, adapter)
+		res, err := r.HandleData(context.Background(), req)
 
 		// Check
-		CheckErrors(t, nil, err)
-		CheckAcks(t, true, an.InAck)
-		CheckRegistrations(t, nil, store.InStore)
-		CheckSent(t, bpacket, adapter.InSendPacket)
-		CheckRecipients(t, []Recipient{recipient}, adapter.InSendRecipients)
-		CheckIDs(t, inPacket.GatewayID(), m.InLookupId)
-		CheckIDs(t, nil, m.InUpdateId)
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Router Data Responses")
+		Check(t, wantBrReq, br.InHandleData.Req, "Broker Data Requests")
+		Check(t, wantStore, st.InStore.BrokerIndex, "Brokers stored")
 	}
 
-	// -------------------
+	// --------------------
 
 	{
-		Desc(t, "Send unknown packet | Get wrong recipient from db")
+		Desc(t, "Handle valid uplink | 2 brokers unknown | no downlink")
 
 		// Build
-		an := NewMockAckNacker()
-		adapter := NewMockAdapter()
-		adapter.Failures["GetRecipient"] = errors.New(errors.Structural, "Mock Error: Invalid recipient")
-		recipient := NewMockRecipient()
-		dataRecipient, _ := recipient.MarshalBinary()
-		store := newMockStorage()
-		store.OutLookup = []entry{
+		dm := mocks.NewDutyManager()
+		br1 := mocks.NewBrokerClient()
+		br1.Failures["HandleData"] = errors.New(errors.NotFound, "Mock Error")
+		br2 := mocks.NewBrokerClient()
+		st := NewMockStorage()
+		st.OutLookupStats.Metadata = core.StatsMetadata{
+			Altitude:  14,
+			Longitude: 14.0,
+			Latitude:  -14.0,
+		}
+		st.Failures["Lookup"] = errors.New(errors.NotFound, "Mock Error")
+		r := New(Components{
+			DutyManager: dm,
+			Brokers:     []core.BrokerClient{br1, br2},
+			Ctx:         GetLogger(t, "Router"),
+			Storage:     st,
+		}, Options{})
+		req := &core.DataRouterReq{
+			Payload: &core.LoRaWANData{
+				MHDR: &core.LoRaWANMHDR{
+					MType: uint32(lorawan.UnconfirmedDataUp),
+					Major: uint32(lorawan.LoRaWANR1),
+				},
+				MACPayload: &core.LoRaWANMACPayload{
+					FHDR: &core.LoRaWANFHDR{
+						DevAddr: []byte{1, 2, 3, 4},
+						FCnt:    1,
+						FCtrl:   new(core.LoRaWANFCtrl),
+					},
+					FPort:      1,
+					FRMPayload: []byte{14, 14, 42, 42},
+				},
+				MIC: []byte{4, 3, 2, 1},
+			},
+			Metadata: &core.Metadata{
+				Frequency: 868.5,
+			},
+			GatewayID: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+		}
+
+		// Expect
+		var wantErr *string
+		var wantRes = new(core.DataRouterRes)
+		var wantBrReq = &core.DataBrokerReq{
+			Payload: req.Payload,
+			Metadata: &core.Metadata{
+				Altitude:  st.OutLookupStats.Metadata.Altitude,
+				Longitude: st.OutLookupStats.Metadata.Longitude,
+				Latitude:  st.OutLookupStats.Metadata.Latitude,
+				Frequency: req.Metadata.Frequency,
+			},
+		}
+		var wantStore = 1
+
+		// Operate
+		res, err := r.HandleData(context.Background(), req)
+
+		// Check
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Router Data Responses")
+		Check(t, wantBrReq, br1.InHandleData.Req, "Broker Data Requests")
+		Check(t, wantBrReq, br2.InHandleData.Req, "Broker Data Requests")
+		Check(t, wantStore, st.InStore.BrokerIndex, "Brokers stored")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Handle valid uplink | 2 brokers unknown | no downlink | Fail to store")
+
+		// Build
+		dm := mocks.NewDutyManager()
+		br1 := mocks.NewBrokerClient()
+		br1.Failures["HandleData"] = errors.New(errors.NotFound, "Mock Error")
+		br2 := mocks.NewBrokerClient()
+		st := NewMockStorage()
+		st.OutLookupStats.Metadata = core.StatsMetadata{
+			Altitude:  14,
+			Longitude: 14.0,
+			Latitude:  -14.0,
+		}
+		st.Failures["Lookup"] = errors.New(errors.NotFound, "Mock Error")
+		st.Failures["Store"] = errors.New(errors.Operational, "Mock Error")
+		r := New(Components{
+			DutyManager: dm,
+			Brokers:     []core.BrokerClient{br1, br2},
+			Ctx:         GetLogger(t, "Router"),
+			Storage:     st,
+		}, Options{})
+		req := &core.DataRouterReq{
+			Payload: &core.LoRaWANData{
+				MHDR: &core.LoRaWANMHDR{
+					MType: uint32(lorawan.UnconfirmedDataUp),
+					Major: uint32(lorawan.LoRaWANR1),
+				},
+				MACPayload: &core.LoRaWANMACPayload{
+					FHDR: &core.LoRaWANFHDR{
+						DevAddr: []byte{1, 2, 3, 4},
+						FCnt:    1,
+						FCtrl:   new(core.LoRaWANFCtrl),
+					},
+					FPort:      1,
+					FRMPayload: []byte{14, 14, 42, 42},
+				},
+				MIC: []byte{4, 3, 2, 1},
+			},
+			Metadata: &core.Metadata{
+				Frequency: 868.5,
+			},
+			GatewayID: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+		}
+
+		// Expect
+		var wantErr *string
+		var wantRes = new(core.DataRouterRes)
+		var wantBrReq = &core.DataBrokerReq{
+			Payload: req.Payload,
+			Metadata: &core.Metadata{
+				Altitude:  st.OutLookupStats.Metadata.Altitude,
+				Longitude: st.OutLookupStats.Metadata.Longitude,
+				Latitude:  st.OutLookupStats.Metadata.Latitude,
+				Frequency: req.Metadata.Frequency,
+			},
+		}
+		var wantStore = 1
+
+		// Operate
+		res, err := r.HandleData(context.Background(), req)
+
+		// Check
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Router Data Responses")
+		Check(t, wantBrReq, br1.InHandleData.Req, "Broker Data Requests")
+		Check(t, wantBrReq, br2.InHandleData.Req, "Broker Data Requests")
+		Check(t, wantStore, st.InStore.BrokerIndex, "Brokers stored")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Handle valid uplink | Fail Storage Lookup")
+
+		// Build
+		dm := mocks.NewDutyManager()
+		br := mocks.NewBrokerClient()
+		st := NewMockStorage()
+		st.OutLookupStats.Metadata = core.StatsMetadata{
+			Altitude:  14,
+			Longitude: 14.0,
+			Latitude:  -14.0,
+		}
+		st.Failures["Lookup"] = errors.New(errors.Operational, "Mock Error")
+
+		r := New(Components{
+			DutyManager: dm,
+			Brokers:     []core.BrokerClient{br, br},
+			Ctx:         GetLogger(t, "Router"),
+			Storage:     st,
+		}, Options{})
+		req := &core.DataRouterReq{
+			Payload: &core.LoRaWANData{
+				MHDR: &core.LoRaWANMHDR{
+					MType: uint32(lorawan.UnconfirmedDataUp),
+					Major: uint32(lorawan.LoRaWANR1),
+				},
+				MACPayload: &core.LoRaWANMACPayload{
+					FHDR: &core.LoRaWANFHDR{
+						DevAddr: []byte{1, 2, 3, 4},
+						FCnt:    1,
+						FCtrl:   new(core.LoRaWANFCtrl),
+					},
+					FPort:      1,
+					FRMPayload: []byte{14, 14, 42, 42},
+				},
+				MIC: []byte{4, 3, 2, 1},
+			},
+			Metadata: &core.Metadata{
+				Frequency: 868.5,
+			},
+			GatewayID: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+		}
+
+		// Expect
+		var wantErr = ErrOperational
+		var wantRes = new(core.DataRouterRes)
+		var wantBrReq *core.DataBrokerReq
+		var wantStore = 0
+
+		// Operate
+		res, err := r.HandleData(context.Background(), req)
+
+		// Check
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Router Data Responses")
+		Check(t, wantBrReq, br.InHandleData.Req, "Broker Data Requests")
+		Check(t, wantStore, st.InStore.BrokerIndex, "Brokers stored")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Handle valid uplink | Fail DutyManager Lookup")
+
+		// Build
+		dm := mocks.NewDutyManager()
+		dm.Failures["Lookup"] = errors.New(errors.NotFound, "Mock Error")
+		br := mocks.NewBrokerClient()
+		st := NewMockStorage()
+		st.OutLookupStats.Metadata = core.StatsMetadata{
+			Altitude:  14,
+			Longitude: 14.0,
+			Latitude:  -14.0,
+		}
+		st.OutLookup.Entries = []entry{
 			{
-				Recipient: dataRecipient,
-				until:     time.Now().Add(time.Hour),
+				BrokerIndex: 1,
+				until:       time.Now().Add(time.Hour),
 			},
 		}
-		inPacket := newRPacket(
-			[4]byte{2, 3, 2, 3},
-			"Payload",
-			[]byte{1, 2, 3, 4, 5, 6, 7, 8},
-			Metadata{Freq: pointer.Float64(865.5)},
-		)
-		data, _ := inPacket.MarshalBinary()
-		m := newMockDutyManager()
-
-		// Operate
-		router := New(store, m, GetLogger(t, "Router"))
-		err := router.HandleUp(data, an, adapter)
-
-		// Check
-		CheckErrors(t, pointer.String(string(errors.Structural)), err)
-		CheckAcks(t, false, an.InAck)
-		CheckRegistrations(t, nil, store.InStore)
-		CheckSent(t, nil, adapter.InSendPacket)
-		CheckRecipients(t, nil, adapter.InSendRecipients)
-		CheckIDs(t, inPacket.GatewayID(), m.InLookupId)
-		CheckIDs(t, nil, m.InUpdateId)
-	}
-
-	// -------------------
-
-	{
-		Desc(t, "Send unknown packet | Sending fails")
-
-		// Build
-		an := NewMockAckNacker()
-		adapter := NewMockAdapter()
-		adapter.Failures["Send"] = errors.New(errors.Operational, "Mock Error: Unable to send")
-		store := newMockStorage()
-		store.Failures["Lookup"] = errors.New(errors.NotFound, "Mock Error: Not found")
-		inPacket := newRPacket(
-			[4]byte{2, 3, 2, 3},
-			"Payload",
-			[]byte{1, 2, 3, 4, 5, 6, 7, 8},
-			Metadata{Freq: pointer.Float64(865.5)},
-		)
-		data, _ := inPacket.MarshalBinary()
-		bpacket := newBPacket(
-			[4]byte{2, 3, 2, 3},
-			"Payload",
-			Metadata{Freq: pointer.Float64(865.5), DutyRX1: pointer.Uint(0), DutyRX2: pointer.Uint(0)},
-		)
-		m := newMockDutyManager()
-
-		// Operate
-		router := New(store, m, GetLogger(t, "Router"))
-		err := router.HandleUp(data, an, adapter)
-
-		// Check
-		CheckErrors(t, pointer.String(string(errors.Operational)), err)
-		CheckAcks(t, false, an.InAck)
-		CheckRegistrations(t, nil, store.InStore)
-		CheckSent(t, bpacket, adapter.InSendPacket)
-		CheckRecipients(t, nil, adapter.InSendRecipients)
-		CheckIDs(t, inPacket.GatewayID(), m.InLookupId)
-		CheckIDs(t, nil, m.InUpdateId)
-	}
-
-	// -------------------
-
-	{
-		Desc(t, "Send unknown packet | Get invalid downlink response")
-
-		// Build
-		an := NewMockAckNacker()
-		adapter := NewMockAdapter()
-		adapter.OutSend = []byte{1, 2, 3}
-		store := newMockStorage()
-		store.Failures["Lookup"] = errors.New(errors.NotFound, "Mock Error: Not found")
-		inPacket := newRPacket(
-			[4]byte{2, 3, 2, 3},
-			"Payload",
-			[]byte{1, 2, 3, 4, 5, 6, 7, 8},
-			Metadata{Freq: pointer.Float64(865.5)},
-		)
-		data, _ := inPacket.MarshalBinary()
-		bpacket := newBPacket(
-			[4]byte{2, 3, 2, 3},
-			"Payload",
-			Metadata{Freq: pointer.Float64(865.5), DutyRX1: pointer.Uint(0), DutyRX2: pointer.Uint(0)},
-		)
-		m := newMockDutyManager()
-
-		// Operate
-		router := New(store, m, GetLogger(t, "Router"))
-		err := router.HandleUp(data, an, adapter)
-
-		// Check
-		CheckErrors(t, pointer.String(string(errors.Operational)), err)
-		CheckAcks(t, false, an.InAck)
-		CheckRegistrations(t, nil, store.InStore)
-		CheckSent(t, bpacket, adapter.InSendPacket)
-		CheckRecipients(t, nil, adapter.InSendRecipients)
-		CheckIDs(t, inPacket.GatewayID(), m.InLookupId)
-		CheckIDs(t, nil, m.InUpdateId)
-	}
-
-	// -------------------
-
-	{
-		Desc(t, "Send a known packet, get not found, and broadcast")
-
-		// Build
-		an := NewMockAckNacker()
-		adapter := newMockRouterAdapter()
-		adapter.OutSend = nil
-		adapter.Failures["Send"] = []error{
-			errors.New(errors.NotFound, "Mock Error"),
+		r := New(Components{
+			DutyManager: dm,
+			Brokers:     []core.BrokerClient{br, br},
+			Ctx:         GetLogger(t, "Router"),
+			Storage:     st,
+		}, Options{})
+		req := &core.DataRouterReq{
+			Payload: &core.LoRaWANData{
+				MHDR: &core.LoRaWANMHDR{
+					MType: uint32(lorawan.UnconfirmedDataUp),
+					Major: uint32(lorawan.LoRaWANR1),
+				},
+				MACPayload: &core.LoRaWANMACPayload{
+					FHDR: &core.LoRaWANFHDR{
+						DevAddr: []byte{1, 2, 3, 4},
+						FCnt:    1,
+						FCtrl:   new(core.LoRaWANFCtrl),
+					},
+					FPort:      1,
+					FRMPayload: []byte{14, 14, 42, 42},
+				},
+				MIC: []byte{4, 3, 2, 1},
+			},
+			Metadata: &core.Metadata{
+				Frequency: 868.5,
+			},
+			GatewayID: []byte{1, 2, 3, 4, 5, 6, 7, 8},
 		}
-		recipient := NewMockRecipient()
-		dataRecipient, _ := recipient.MarshalBinary()
-		store := newMockStorage()
-		store.OutLookup = []entry{
+
+		// Expect
+		var wantErr *string
+		var wantRes = new(core.DataRouterRes)
+		var wantBrReq = &core.DataBrokerReq{
+			Payload: req.Payload,
+			Metadata: &core.Metadata{
+				Altitude:  st.OutLookupStats.Metadata.Altitude,
+				Longitude: st.OutLookupStats.Metadata.Longitude,
+				Latitude:  st.OutLookupStats.Metadata.Latitude,
+				Frequency: req.Metadata.Frequency,
+			},
+		}
+		var wantStore = 0
+
+		// Operate
+		res, err := r.HandleData(context.Background(), req)
+
+		// Check
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Router Data Responses")
+		Check(t, wantBrReq, br.InHandleData.Req, "Broker Data Requests")
+		Check(t, wantStore, st.InStore.BrokerIndex, "Brokers stored")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Handle valid uplink | Unreckognized frequency")
+
+		// Build
+		dm := mocks.NewDutyManager()
+		br := mocks.NewBrokerClient()
+		st := NewMockStorage()
+		st.OutLookupStats.Metadata = core.StatsMetadata{
+			Altitude:  14,
+			Longitude: 14.0,
+			Latitude:  -14.0,
+		}
+		st.OutLookup.Entries = []entry{
 			{
-				Recipient: dataRecipient,
-				until:     time.Now().Add(time.Hour),
+				BrokerIndex: 1,
+				until:       time.Now().Add(time.Hour),
 			},
 		}
-		inPacket := newRPacket(
-			[4]byte{2, 3, 2, 3},
-			"Payload",
-			[]byte{1, 2, 3, 4, 5, 6, 7, 8},
-			Metadata{Freq: pointer.Float64(865.5)},
-		)
-		data, _ := inPacket.MarshalBinary()
-		bpacket := newBPacket(
-			[4]byte{2, 3, 2, 3},
-			"Payload",
-			Metadata{Freq: pointer.Float64(865.5), DutyRX1: pointer.Uint(0), DutyRX2: pointer.Uint(0)},
-		)
-		m := newMockDutyManager()
+		r := New(Components{
+			DutyManager: dm,
+			Brokers:     []core.BrokerClient{br, br},
+			Ctx:         GetLogger(t, "Router"),
+			Storage:     st,
+		}, Options{})
+		req := &core.DataRouterReq{
+			Payload: &core.LoRaWANData{
+				MHDR: &core.LoRaWANMHDR{
+					MType: uint32(lorawan.UnconfirmedDataUp),
+					Major: uint32(lorawan.LoRaWANR1),
+				},
+				MACPayload: &core.LoRaWANMACPayload{
+					FHDR: &core.LoRaWANFHDR{
+						DevAddr: []byte{1, 2, 3, 4},
+						FCnt:    1,
+						FCtrl:   new(core.LoRaWANFCtrl),
+					},
+					FPort:      1,
+					FRMPayload: []byte{14, 14, 42, 42},
+				},
+				MIC: []byte{4, 3, 2, 1},
+			},
+			Metadata: &core.Metadata{
+				Frequency: 12.3,
+			},
+			GatewayID: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+		}
+
+		// Expect
+		var wantErr = ErrStructural
+		var wantRes = new(core.DataRouterRes)
+		var wantBrReq *core.DataBrokerReq
+		var wantStore = 0
 
 		// Operate
-		router := New(store, m, GetLogger(t, "Router"))
-		err := router.HandleUp(data, an, adapter)
+		res, err := r.HandleData(context.Background(), req)
 
 		// Check
-		CheckErrors(t, nil, err)
-		CheckAcks(t, true, an.InAck)
-		CheckRegistrations(t, nil, store.InStore)
-		CheckSent(t, bpacket, adapter.InSendPacket)
-		CheckRecipients(t, nil, adapter.InSendRecipients)
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Router Data Responses")
+		Check(t, wantBrReq, br.InHandleData.Req, "Broker Data Requests")
+		Check(t, wantStore, st.InStore.BrokerIndex, "Brokers stored")
 	}
 
-	// -------------------
+	// --------------------
 
 	{
-		Desc(t, "Send a known packet, get not found, and broadcast, still not found")
+		Desc(t, "Handle valid uplink | 2 brokers unknown | both errored")
 
 		// Build
-		an := NewMockAckNacker()
-		adapter := newMockRouterAdapter()
-		adapter.OutSend = nil
-		adapter.Failures["Send"] = []error{
-			errors.New(errors.NotFound, "Mock Error"),
-			errors.New(errors.NotFound, "Mock Error"),
+		dm := mocks.NewDutyManager()
+		br1 := mocks.NewBrokerClient()
+		br1.Failures["HandleData"] = errors.New(errors.NotFound, "Mock Error")
+		br2 := mocks.NewBrokerClient()
+		br2.Failures["HandleData"] = errors.New(errors.Operational, "Mock Error")
+		st := NewMockStorage()
+		st.OutLookupStats.Metadata = core.StatsMetadata{
+			Altitude:  14,
+			Longitude: 14.0,
+			Latitude:  -14.0,
 		}
-		recipient := NewMockRecipient()
-		dataRecipient, _ := recipient.MarshalBinary()
-		store := newMockStorage()
-		store.OutLookup = []entry{
+		st.Failures["Lookup"] = errors.New(errors.NotFound, "Mock Error")
+		r := New(Components{
+			DutyManager: dm,
+			Brokers:     []core.BrokerClient{br1, br2},
+			Ctx:         GetLogger(t, "Router"),
+			Storage:     st,
+		}, Options{})
+		req := &core.DataRouterReq{
+			Payload: &core.LoRaWANData{
+				MHDR: &core.LoRaWANMHDR{
+					MType: uint32(lorawan.UnconfirmedDataUp),
+					Major: uint32(lorawan.LoRaWANR1),
+				},
+				MACPayload: &core.LoRaWANMACPayload{
+					FHDR: &core.LoRaWANFHDR{
+						DevAddr: []byte{1, 2, 3, 4},
+						FCnt:    1,
+						FCtrl:   new(core.LoRaWANFCtrl),
+					},
+					FPort:      1,
+					FRMPayload: []byte{14, 14, 42, 42},
+				},
+				MIC: []byte{4, 3, 2, 1},
+			},
+			Metadata: &core.Metadata{
+				Frequency: 868.5,
+			},
+			GatewayID: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+		}
+
+		// Expect
+		var wantErr = ErrOperational
+		var wantRes = new(core.DataRouterRes)
+		var wantBrReq = &core.DataBrokerReq{
+			Payload: req.Payload,
+			Metadata: &core.Metadata{
+				Altitude:  st.OutLookupStats.Metadata.Altitude,
+				Longitude: st.OutLookupStats.Metadata.Longitude,
+				Latitude:  st.OutLookupStats.Metadata.Latitude,
+				Frequency: req.Metadata.Frequency,
+			},
+		}
+		var wantStore = 0
+
+		// Operate
+		res, err := r.HandleData(context.Background(), req)
+
+		// Check
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Router Data Responses")
+		Check(t, wantBrReq, br1.InHandleData.Req, "Broker Data Requests")
+		Check(t, wantBrReq, br2.InHandleData.Req, "Broker Data Requests")
+		Check(t, wantStore, st.InStore.BrokerIndex, "Brokers stored")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Handle valid uplink | 2 brokers unknown | both respond positively")
+
+		// Build
+		dm := mocks.NewDutyManager()
+		br1 := mocks.NewBrokerClient()
+		br2 := mocks.NewBrokerClient()
+		st := NewMockStorage()
+		st.OutLookupStats.Metadata = core.StatsMetadata{
+			Altitude:  14,
+			Longitude: 14.0,
+			Latitude:  -14.0,
+		}
+		st.Failures["Lookup"] = errors.New(errors.NotFound, "Mock Error")
+		r := New(Components{
+			DutyManager: dm,
+			Brokers:     []core.BrokerClient{br1, br2},
+			Ctx:         GetLogger(t, "Router"),
+			Storage:     st,
+		}, Options{})
+		req := &core.DataRouterReq{
+			Payload: &core.LoRaWANData{
+				MHDR: &core.LoRaWANMHDR{
+					MType: uint32(lorawan.UnconfirmedDataUp),
+					Major: uint32(lorawan.LoRaWANR1),
+				},
+				MACPayload: &core.LoRaWANMACPayload{
+					FHDR: &core.LoRaWANFHDR{
+						DevAddr: []byte{1, 2, 3, 4},
+						FCnt:    1,
+						FCtrl:   new(core.LoRaWANFCtrl),
+					},
+					FPort:      1,
+					FRMPayload: []byte{14, 14, 42, 42},
+				},
+				MIC: []byte{4, 3, 2, 1},
+			},
+			Metadata: &core.Metadata{
+				Frequency: 868.5,
+			},
+			GatewayID: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+		}
+
+		// Expect
+		var wantErr = ErrBehavioural
+		var wantRes = new(core.DataRouterRes)
+		var wantBrReq = &core.DataBrokerReq{
+			Payload: req.Payload,
+			Metadata: &core.Metadata{
+				Altitude:  st.OutLookupStats.Metadata.Altitude,
+				Longitude: st.OutLookupStats.Metadata.Longitude,
+				Latitude:  st.OutLookupStats.Metadata.Latitude,
+				Frequency: req.Metadata.Frequency,
+			},
+		}
+		var wantStore = 0
+
+		// Operate
+		res, err := r.HandleData(context.Background(), req)
+
+		// Check
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Router Data Responses")
+		Check(t, wantBrReq, br1.InHandleData.Req, "Broker Data Requests")
+		Check(t, wantBrReq, br2.InHandleData.Req, "Broker Data Requests")
+		Check(t, wantStore, st.InStore.BrokerIndex, "Brokers stored")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Handle valid uplink | 1 broker known, not ok | no downlink")
+
+		// Build
+		dm := mocks.NewDutyManager()
+		br := mocks.NewBrokerClient()
+		br.Failures["HandleData"] = errors.New(errors.NotFound, "Mock Error")
+		st := NewMockStorage()
+		st.OutLookupStats.Metadata = core.StatsMetadata{
+			Altitude:  14,
+			Longitude: 14.0,
+			Latitude:  -14.0,
+		}
+		st.OutLookup.Entries = []entry{
 			{
-				Recipient: dataRecipient,
-				until:     time.Now().Add(time.Hour),
+				BrokerIndex: 1,
+				until:       time.Now().Add(time.Hour),
 			},
 		}
-		inPacket := newRPacket(
-			[4]byte{2, 3, 2, 3},
-			"Payload",
-			[]byte{1, 2, 3, 4, 5, 6, 7, 8},
-			Metadata{Freq: pointer.Float64(865.5)},
-		)
-		data, _ := inPacket.MarshalBinary()
-		bpacket := newBPacket(
-			[4]byte{2, 3, 2, 3},
-			"Payload",
-			Metadata{Freq: pointer.Float64(865.5), DutyRX1: pointer.Uint(0), DutyRX2: pointer.Uint(0)},
-		)
-		m := newMockDutyManager()
-
-		// Operate
-		router := New(store, m, GetLogger(t, "Router"))
-		err := router.HandleUp(data, an, adapter)
-
-		// Check
-		CheckErrors(t, pointer.String(string(errors.NotFound)), err)
-		CheckAcks(t, false, an.InAck)
-		CheckRegistrations(t, nil, store.InStore)
-		CheckSent(t, bpacket, adapter.InSendPacket)
-		CheckRecipients(t, nil, adapter.InSendRecipients)
-		CheckIDs(t, inPacket.GatewayID(), m.InLookupId)
-		CheckIDs(t, nil, m.InUpdateId)
-	}
-
-	// -------------------
-
-	{
-		Desc(t, "Send an unknown packet | No Downlink | Fail to lookup gateway")
-
-		// Build
-		an := NewMockAckNacker()
-		adapter := NewMockAdapter()
-		adapter.OutSend = nil
-		store := newMockStorage()
-		store.Failures["Lookup"] = errors.New(errors.NotFound, "Mock Error: Not Found")
-		inPacket := newRPacket(
-			[4]byte{2, 3, 2, 3},
-			"Payload",
-			[]byte{1, 2, 3, 4, 5, 6, 7, 8},
-			Metadata{Freq: pointer.Float64(865.5)},
-		)
-		data, _ := inPacket.MarshalBinary()
-		bpacket := newBPacket(
-			[4]byte{2, 3, 2, 3},
-			"Payload",
-			Metadata{Freq: pointer.Float64(865.5), DutyRX1: pointer.Uint(0), DutyRX2: pointer.Uint(0)},
-		)
-		m := newMockDutyManager()
-		m.Failures["Lookup"] = errors.New(errors.NotFound, "Mock Error")
-
-		// Operate
-		router := New(store, m, GetLogger(t, "Router"))
-		err := router.HandleUp(data, an, adapter)
-
-		// Check
-		CheckErrors(t, nil, err)
-		CheckAcks(t, true, an.InAck)
-		CheckRegistrations(t, nil, store.InStore)
-		CheckSent(t, bpacket, adapter.InSendPacket)
-		CheckRecipients(t, nil, adapter.InSendRecipients)
-		CheckIDs(t, inPacket.GatewayID(), m.InLookupId)
-		CheckIDs(t, nil, m.InUpdateId)
-	}
-
-	// -------------------
-
-	{
-		Desc(t, "Send an unknown packet | Missing Metadata in downlink")
-
-		// Build
-		an := NewMockAckNacker()
-		resp := newRPacket(
-			[4]byte{2, 3, 2, 3},
-			"Response",
-			[]byte{1, 2, 3, 4, 5, 6, 7, 8},
-			Metadata{
-				Size: pointer.Uint(14),
-				Codr: pointer.String("4/5"),
-				Datr: pointer.String("SF8BW125"),
+		r := New(Components{
+			DutyManager: dm,
+			Brokers:     []core.BrokerClient{br, br},
+			Ctx:         GetLogger(t, "Router"),
+			Storage:     st,
+		}, Options{})
+		req := &core.DataRouterReq{
+			Payload: &core.LoRaWANData{
+				MHDR: &core.LoRaWANMHDR{
+					MType: uint32(lorawan.UnconfirmedDataUp),
+					Major: uint32(lorawan.LoRaWANR1),
+				},
+				MACPayload: &core.LoRaWANMACPayload{
+					FHDR: &core.LoRaWANFHDR{
+						DevAddr: []byte{1, 2, 3, 4},
+						FCnt:    1,
+						FCtrl:   new(core.LoRaWANFCtrl),
+					},
+					FPort:      1,
+					FRMPayload: []byte{14, 14, 42, 42},
+				},
+				MIC: []byte{4, 3, 2, 1},
 			},
-		)
-		dataResp, _ := resp.MarshalBinary()
-		adapter := NewMockAdapter()
-		adapter.OutSend = dataResp
-		store := newMockStorage()
-		store.Failures["Lookup"] = errors.New(errors.NotFound, "Mock Error: Not Found")
-		inPacket := newRPacket(
-			[4]byte{2, 3, 2, 3},
-			"Payload",
-			[]byte{1, 2, 3, 4, 5, 6, 7, 8},
-			Metadata{Freq: pointer.Float64(865.5)},
-		)
-		data, _ := inPacket.MarshalBinary()
-		bpacket := newBPacket(
-			[4]byte{2, 3, 2, 3},
-			"Payload",
-			Metadata{Freq: pointer.Float64(865.5), DutyRX1: pointer.Uint(0), DutyRX2: pointer.Uint(0)},
-		)
-		m := newMockDutyManager()
-
-		// Operate
-		router := New(store, m, GetLogger(t, "Router"))
-		err := router.HandleUp(data, an, adapter)
-
-		// Check
-		CheckErrors(t, pointer.String(string(errors.Operational)), err)
-		CheckAcks(t, false, an.InAck)
-		CheckRegistrations(t, nil, store.InStore)
-		CheckSent(t, bpacket, adapter.InSendPacket)
-		CheckRecipients(t, nil, adapter.InSendRecipients)
-		CheckIDs(t, inPacket.GatewayID(), m.InLookupId)
-		CheckIDs(t, nil, m.InUpdateId)
-	}
-
-	// -------------------
-
-	{
-		Desc(t, "Send an unknown packet | Fail to update metadata")
-
-		// Build
-		an := NewMockAckNacker()
-		resp := newRPacket(
-			[4]byte{2, 3, 2, 3},
-			"Response",
-			[]byte{1, 2, 3, 4, 5, 6, 7, 8},
-			Metadata{
-				Freq: pointer.Float64(868.14),
-				Size: pointer.Uint(14),
-				Codr: pointer.String("4/5"),
-				Datr: pointer.String("SF8BW125"),
+			Metadata: &core.Metadata{
+				Frequency: 868.5,
 			},
-		)
-		dataResp, _ := resp.MarshalBinary()
-		adapter := NewMockAdapter()
-		adapter.OutSend = dataResp
-		store := newMockStorage()
-		store.Failures["Lookup"] = errors.New(errors.NotFound, "Mock Error: Not Found")
-		inPacket := newRPacket(
-			[4]byte{2, 3, 2, 3},
-			"Payload",
-			[]byte{1, 2, 3, 4, 5, 6, 7, 8},
-			Metadata{Freq: pointer.Float64(865.5)},
-		)
-		data, _ := inPacket.MarshalBinary()
-		bpacket := newBPacket(
-			[4]byte{2, 3, 2, 3},
-			"Payload",
-			Metadata{Freq: pointer.Float64(865.5), DutyRX1: pointer.Uint(0), DutyRX2: pointer.Uint(0)},
-		)
-		m := newMockDutyManager()
-		m.Failures["Update"] = errors.New(errors.Operational, "Mock Error: Update")
+			GatewayID: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+		}
+
+		// Expect
+		var wantErr = ErrNotFound
+		var wantRes = new(core.DataRouterRes)
+		var wantBrReq = &core.DataBrokerReq{
+			Payload: req.Payload,
+			Metadata: &core.Metadata{
+				Altitude:  st.OutLookupStats.Metadata.Altitude,
+				Longitude: st.OutLookupStats.Metadata.Longitude,
+				Latitude:  st.OutLookupStats.Metadata.Latitude,
+				Frequency: req.Metadata.Frequency,
+			},
+		}
+		var wantStore = 0
 
 		// Operate
-		router := New(store, m, GetLogger(t, "Router"))
-		err := router.HandleUp(data, an, adapter)
+		res, err := r.HandleData(context.Background(), req)
 
 		// Check
-		CheckErrors(t, pointer.String(string(errors.Operational)), err)
-		CheckAcks(t, false, an.InAck)
-		CheckRegistrations(t, nil, store.InStore)
-		CheckSent(t, bpacket, adapter.InSendPacket)
-		CheckRecipients(t, nil, adapter.InSendRecipients)
-		CheckIDs(t, inPacket.GatewayID(), m.InLookupId)
-		CheckIDs(t, inPacket.GatewayID(), m.InUpdateId)
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Router Data Responses")
+		Check(t, wantBrReq, br.InHandleData.Req, "Broker Data Requests")
+		Check(t, wantStore, st.InStore.BrokerIndex, "Brokers stored")
 	}
 
-	// -------------------
+	// --------------------
 
 	{
-		Desc(t, "Send an unknown packet | No Metadata")
+		Desc(t, "Handle valid uplink | 1 broker known ok | valid downlink")
 
 		// Build
-		an := NewMockAckNacker()
-		adapter := NewMockAdapter()
-		store := newMockStorage()
-		store.Failures["Lookup"] = errors.New(errors.NotFound, "Mock Error: Not Found")
-		inPacket := newRPacket(
-			[4]byte{2, 3, 2, 3},
-			"Payload",
-			[]byte{1, 2, 3, 4, 5, 6, 7, 8},
-			Metadata{},
-		)
-		data, _ := inPacket.MarshalBinary()
-		m := newMockDutyManager()
+		dm := mocks.NewDutyManager()
+		br := mocks.NewBrokerClient()
+		br.OutHandleData.Res = &core.DataBrokerRes{
+			Payload: &core.LoRaWANData{
+				MHDR: &core.LoRaWANMHDR{
+					MType: uint32(lorawan.UnconfirmedDataDown),
+					Major: uint32(lorawan.LoRaWANR1),
+				},
+				MACPayload: &core.LoRaWANMACPayload{
+					FHDR: &core.LoRaWANFHDR{
+						DevAddr: []byte{5, 6, 7, 8},
+						FCnt:    2,
+						FCtrl:   new(core.LoRaWANFCtrl),
+					},
+					FPort:      4,
+					FRMPayload: []byte{42, 42, 14, 14},
+				},
+				MIC: []byte{8, 7, 6, 5},
+			},
+			Metadata: new(core.Metadata),
+		}
+		st := NewMockStorage()
+		st.OutLookupStats.Metadata = core.StatsMetadata{
+			Altitude:  14,
+			Longitude: 14.0,
+			Latitude:  -14.0,
+		}
+		st.OutLookup.Entries = []entry{
+			{
+				BrokerIndex: 0,
+				until:       time.Now().Add(time.Hour),
+			},
+		}
+		r := New(Components{
+			DutyManager: dm,
+			Brokers:     []core.BrokerClient{br},
+			Ctx:         GetLogger(t, "Router"),
+			Storage:     st,
+		}, Options{})
+		req := &core.DataRouterReq{
+			Payload: &core.LoRaWANData{
+				MHDR: &core.LoRaWANMHDR{
+					MType: uint32(lorawan.UnconfirmedDataUp),
+					Major: uint32(lorawan.LoRaWANR1),
+				},
+				MACPayload: &core.LoRaWANMACPayload{
+					FHDR: &core.LoRaWANFHDR{
+						DevAddr: []byte{1, 2, 3, 4},
+						FCnt:    1,
+						FCtrl:   new(core.LoRaWANFCtrl),
+					},
+					FPort:      1,
+					FRMPayload: []byte{14, 14, 42, 42},
+				},
+				MIC: []byte{4, 3, 2, 1},
+			},
+			Metadata: &core.Metadata{
+				Frequency: 868.5,
+			},
+			GatewayID: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+		}
+
+		// Expect
+		var wantErr *string
+		var wantRes = &core.DataRouterRes{
+			Payload:  br.OutHandleData.Res.Payload,
+			Metadata: br.OutHandleData.Res.Metadata,
+		}
+		var wantBrReq = &core.DataBrokerReq{
+			Payload: req.Payload,
+			Metadata: &core.Metadata{
+				Altitude:  st.OutLookupStats.Metadata.Altitude,
+				Longitude: st.OutLookupStats.Metadata.Longitude,
+				Latitude:  st.OutLookupStats.Metadata.Latitude,
+				Frequency: req.Metadata.Frequency,
+			},
+		}
+		var wantStore = 0
+		var wantUpdateGtw = req.GatewayID
 
 		// Operate
-		router := New(store, m, GetLogger(t, "Router"))
-		err := router.HandleUp(data, an, adapter)
+		res, err := r.HandleData(context.Background(), req)
 
 		// Check
-		CheckErrors(t, pointer.String(string(errors.Structural)), err)
-		CheckAcks(t, false, an.InAck)
-		CheckRegistrations(t, nil, store.InStore)
-		CheckSent(t, nil, adapter.InSendPacket)
-		CheckRecipients(t, nil, adapter.InSendRecipients)
-		CheckIDs(t, nil, m.InLookupId)
-		CheckIDs(t, nil, m.InUpdateId)
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Router Data Responses")
+		Check(t, wantBrReq, br.InHandleData.Req, "Broker Data Requests")
+		Check(t, wantStore, st.InStore.BrokerIndex, "Brokers stored")
+		Check(t, wantUpdateGtw, dm.InUpdate.ID, "Gateway updated")
 	}
 
-	// -------------------
+	// --------------------
 
 	{
-		Desc(t, "Send an unknown packet | Unsupported frequency")
+		Desc(t, "Handle valid uplink | 1 broker known ok | invalid downlink | no metadata")
 
 		// Build
-		an := NewMockAckNacker()
-		adapter := NewMockAdapter()
-		store := newMockStorage()
-		store.Failures["Lookup"] = errors.New(errors.NotFound, "Mock Error: Not Found")
-		inPacket := newRPacket(
-			[4]byte{2, 3, 2, 3},
-			"Payload",
-			[]byte{1, 2, 3, 4, 5, 6, 7, 8},
-			Metadata{Freq: pointer.Float64(333.5)},
-		)
-		data, _ := inPacket.MarshalBinary()
-		m := newMockDutyManager()
+		dm := mocks.NewDutyManager()
+		br := mocks.NewBrokerClient()
+		br.OutHandleData.Res = &core.DataBrokerRes{
+			Payload: &core.LoRaWANData{
+				MHDR: &core.LoRaWANMHDR{
+					MType: uint32(lorawan.UnconfirmedDataDown),
+					Major: uint32(lorawan.LoRaWANR1),
+				},
+				MACPayload: &core.LoRaWANMACPayload{
+					FHDR: &core.LoRaWANFHDR{
+						DevAddr: []byte{5, 6, 7, 8},
+						FCnt:    2,
+						FCtrl:   new(core.LoRaWANFCtrl),
+					},
+					FPort:      4,
+					FRMPayload: []byte{42, 42, 14, 14},
+				},
+				MIC: []byte{8, 7, 6, 5},
+			},
+			Metadata: nil,
+		}
+		st := NewMockStorage()
+		st.OutLookupStats.Metadata = core.StatsMetadata{
+			Altitude:  14,
+			Longitude: 14.0,
+			Latitude:  -14.0,
+		}
+		st.OutLookup.Entries = []entry{
+			{
+				BrokerIndex: 0,
+				until:       time.Now().Add(time.Hour),
+			},
+		}
+		r := New(Components{
+			DutyManager: dm,
+			Brokers:     []core.BrokerClient{br},
+			Ctx:         GetLogger(t, "Router"),
+			Storage:     st,
+		}, Options{})
+		req := &core.DataRouterReq{
+			Payload: &core.LoRaWANData{
+				MHDR: &core.LoRaWANMHDR{
+					MType: uint32(lorawan.UnconfirmedDataUp),
+					Major: uint32(lorawan.LoRaWANR1),
+				},
+				MACPayload: &core.LoRaWANMACPayload{
+					FHDR: &core.LoRaWANFHDR{
+						DevAddr: []byte{1, 2, 3, 4},
+						FCnt:    1,
+						FCtrl:   new(core.LoRaWANFCtrl),
+					},
+					FPort:      1,
+					FRMPayload: []byte{14, 14, 42, 42},
+				},
+				MIC: []byte{4, 3, 2, 1},
+			},
+			Metadata: &core.Metadata{
+				Frequency: 868.5,
+			},
+			GatewayID: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+		}
+
+		// Expect
+		var wantErr = ErrStructural
+		var wantRes = new(core.DataRouterRes)
+		var wantBrReq = &core.DataBrokerReq{
+			Payload: req.Payload,
+			Metadata: &core.Metadata{
+				Altitude:  st.OutLookupStats.Metadata.Altitude,
+				Longitude: st.OutLookupStats.Metadata.Longitude,
+				Latitude:  st.OutLookupStats.Metadata.Latitude,
+				Frequency: req.Metadata.Frequency,
+			},
+		}
+		var wantStore = 0
+		var wantUpdateGtw []byte
 
 		// Operate
-		router := New(store, m, GetLogger(t, "Router"))
-		err := router.HandleUp(data, an, adapter)
+		res, err := r.HandleData(context.Background(), req)
 
 		// Check
-		CheckErrors(t, pointer.String(string(errors.Structural)), err)
-		CheckAcks(t, false, an.InAck)
-		CheckRegistrations(t, nil, store.InStore)
-		CheckSent(t, nil, adapter.InSendPacket)
-		CheckRecipients(t, nil, adapter.InSendRecipients)
-		CheckIDs(t, inPacket.GatewayID(), m.InLookupId)
-		CheckIDs(t, nil, m.InUpdateId)
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Router Data Responses")
+		Check(t, wantBrReq, br.InHandleData.Req, "Broker Data Requests")
+		Check(t, wantStore, st.InStore.BrokerIndex, "Brokers stored")
+		Check(t, wantUpdateGtw, dm.InUpdate.ID, "Gateway updated")
 	}
 
-	// -------------------
+	// --------------------
 
 	{
-		Desc(t, "Send a valid stat packet")
+		Desc(t, "Handle valid uplink | 1 broker known ok | valid downlink | fail update Duty")
 
 		// Build
-		an := NewMockAckNacker()
-		adapter := NewMockAdapter()
-		store := newMockStorage()
-		inPacket, _ := NewSPacket(
-			[]byte{1, 2, 3, 4, 5, 6, 7, 8},
-			Metadata{Alti: pointer.Int(14)},
-		)
-		data, _ := inPacket.MarshalBinary()
-		m := newMockDutyManager()
+		dm := mocks.NewDutyManager()
+		dm.Failures["Update"] = errors.New(errors.Operational, "Mock Error")
+		br := mocks.NewBrokerClient()
+		br.OutHandleData.Res = &core.DataBrokerRes{
+			Payload: &core.LoRaWANData{
+				MHDR: &core.LoRaWANMHDR{
+					MType: uint32(lorawan.UnconfirmedDataDown),
+					Major: uint32(lorawan.LoRaWANR1),
+				},
+				MACPayload: &core.LoRaWANMACPayload{
+					FHDR: &core.LoRaWANFHDR{
+						DevAddr: []byte{5, 6, 7, 8},
+						FCnt:    2,
+						FCtrl:   new(core.LoRaWANFCtrl),
+					},
+					FPort:      4,
+					FRMPayload: []byte{42, 42, 14, 14},
+				},
+				MIC: []byte{8, 7, 6, 5},
+			},
+			Metadata: new(core.Metadata),
+		}
+		st := NewMockStorage()
+		st.OutLookupStats.Metadata = core.StatsMetadata{
+			Altitude:  14,
+			Longitude: 14.0,
+			Latitude:  -14.0,
+		}
+		st.OutLookup.Entries = []entry{
+			{
+				BrokerIndex: 0,
+				until:       time.Now().Add(time.Hour),
+			},
+		}
+		r := New(Components{
+			DutyManager: dm,
+			Brokers:     []core.BrokerClient{br},
+			Ctx:         GetLogger(t, "Router"),
+			Storage:     st,
+		}, Options{})
+		req := &core.DataRouterReq{
+			Payload: &core.LoRaWANData{
+				MHDR: &core.LoRaWANMHDR{
+					MType: uint32(lorawan.UnconfirmedDataUp),
+					Major: uint32(lorawan.LoRaWANR1),
+				},
+				MACPayload: &core.LoRaWANMACPayload{
+					FHDR: &core.LoRaWANFHDR{
+						DevAddr: []byte{1, 2, 3, 4},
+						FCnt:    1,
+						FCtrl:   new(core.LoRaWANFCtrl),
+					},
+					FPort:      1,
+					FRMPayload: []byte{14, 14, 42, 42},
+				},
+				MIC: []byte{4, 3, 2, 1},
+			},
+			Metadata: &core.Metadata{
+				Frequency: 868.5,
+			},
+			GatewayID: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+		}
+
+		// Expect
+		var wantErr = ErrOperational
+		var wantRes = new(core.DataRouterRes)
+		var wantBrReq = &core.DataBrokerReq{
+			Payload: req.Payload,
+			Metadata: &core.Metadata{
+				Altitude:  st.OutLookupStats.Metadata.Altitude,
+				Longitude: st.OutLookupStats.Metadata.Longitude,
+				Latitude:  st.OutLookupStats.Metadata.Latitude,
+				Frequency: req.Metadata.Frequency,
+			},
+		}
+		var wantStore = 0
+		var wantUpdateGtw = req.GatewayID
 
 		// Operate
-		router := New(store, m, GetLogger(t, "Router"))
-		err := router.HandleUp(data, an, adapter)
+		res, err := r.HandleData(context.Background(), req)
 
 		// Check
-		CheckErrors(t, nil, err)
-		CheckAcks(t, true, an.InAck)
-		CheckRegistrations(t, nil, store.InStore)
-		CheckStats(t, inPacket, store.InUpdateStats)
-		CheckSent(t, nil, adapter.InSendPacket)
-		CheckRecipients(t, nil, adapter.InSendRecipients)
-		CheckIDs(t, nil, m.InLookupId)
-		CheckIDs(t, nil, m.InUpdateId)
-		CheckIDs(t, nil, store.InLookupStats)
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Router Data Responses")
+		Check(t, wantBrReq, br.InHandleData.Req, "Broker Data Requests")
+		Check(t, wantStore, st.InStore.BrokerIndex, "Brokers stored")
+		Check(t, wantUpdateGtw, dm.InUpdate.ID, "Gateway updated")
 	}
 
-	// -------------------
+}
 
-	{
-		Desc(t, "Send a valid stat packet | unable to update")
+func TestStart(t *testing.T) {
+	router := New(Components{
+		Ctx:         GetLogger(t, "Router"),
+		DutyManager: mocks.NewDutyManager(),
+		Brokers:     []core.BrokerClient{mocks.NewBrokerClient()},
+		Storage:     NewMockStorage(),
+	}, Options{NetAddr: "localhost:8886"})
 
-		// Build
-		an := NewMockAckNacker()
-		adapter := NewMockAdapter()
-		store := newMockStorage()
-		store.Failures["UpdateStats"] = errors.New(errors.Operational, "Mock Error")
-		inPacket, _ := NewSPacket(
-			[]byte{1, 2, 3, 4, 5, 6, 7, 8},
-			Metadata{Alti: pointer.Int(14)},
-		)
-		data, _ := inPacket.MarshalBinary()
-		m := newMockDutyManager()
+	cherr := make(chan error)
+	go func() {
+		err := router.Start()
+		cherr <- err
+	}()
 
-		// Operate
-		router := New(store, m, GetLogger(t, "Router"))
-		err := router.HandleUp(data, an, adapter)
-
-		// Check
-		CheckErrors(t, pointer.String(string(errors.Operational)), err)
-		CheckAcks(t, false, an.InAck)
-		CheckRegistrations(t, nil, store.InStore)
-		CheckStats(t, inPacket, store.InUpdateStats)
-		CheckSent(t, nil, adapter.InSendPacket)
-		CheckRecipients(t, nil, adapter.InSendRecipients)
-		CheckIDs(t, nil, m.InLookupId)
-		CheckIDs(t, nil, m.InUpdateId)
-		CheckIDs(t, nil, store.InLookupStats)
+	var err error
+	select {
+	case err = <-cherr:
+	case <-time.After(time.Millisecond * 250):
 	}
+	CheckErrors(t, nil, err)
 }

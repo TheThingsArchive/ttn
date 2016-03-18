@@ -8,12 +8,7 @@ import (
 	"path"
 	"testing"
 
-	. "github.com/TheThingsNetwork/ttn/core"
-	"github.com/TheThingsNetwork/ttn/utils/errors"
-	. "github.com/TheThingsNetwork/ttn/utils/errors/checks"
-	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
-	"github.com/brocaar/lorawan"
 )
 
 const pktDB = "TestPktStorage.db"
@@ -36,58 +31,54 @@ func TestPushPullNormal(t *testing.T) {
 	// ------------------
 
 	{
-		Desc(t, "Push and Pull a valid APacket")
+		Desc(t, "Push and Pull a valid Payload")
 
 		// Build
-		p, _ := NewAPacket(
-			lorawan.EUI64([8]byte{1, 1, 1, 1, 1, 1, 1, 1}),
-			lorawan.EUI64([8]byte{2, 2, 2, 2, 2, 2, 2, 2}),
-			[]byte("TheThingsNetwork"),
-			[]Metadata{},
-		)
+		appEUI := []byte{1, 1, 1, 1, 1, 1, 1, 1}
+		devEUI := []byte{2, 2, 2, 2, 2, 2, 2, 2}
+		payload := pktEntry{[]byte("TheThingsNetwork")}
+
+		// Expects
+		var want = payload
 
 		// Operate
-		err := db.Push(p)
-		CheckErrors(t, nil, err)
-		a, err := db.Pull(p.AppEUI(), p.DevEUI())
+		err := db.Push(appEUI, devEUI, payload)
+		FatalUnless(t, err)
+		p, err := db.Pull(appEUI, devEUI)
 
 		// Check
 		CheckErrors(t, nil, err)
-		CheckPackets(t, p, a)
+		Check(t, want, p, "Payloads")
 	}
 
 	// ------------------
 
 	{
-		Desc(t, "Push two packets")
+		Desc(t, "Push two payloads -> same device")
 
 		// Build
-		p1, _ := NewAPacket(
-			lorawan.EUI64([8]byte{1, 1, 1, 1, 1, 1, 1, 1}),
-			lorawan.EUI64([8]byte{2, 2, 2, 2, 2, 2, 2, 2}),
-			[]byte("TheThingsNetwork1"),
-			[]Metadata{},
-		)
-		p2, _ := NewAPacket(
-			lorawan.EUI64([8]byte{1, 1, 1, 1, 1, 1, 1, 1}),
-			lorawan.EUI64([8]byte{2, 2, 2, 2, 2, 2, 2, 2}),
-			[]byte("TheThingsNetwork2"),
-			[]Metadata{},
-		)
+		appEUI := []byte{1, 1, 1, 1, 1, 1, 1, 2}
+		devEUI := []byte{2, 2, 2, 2, 2, 2, 2, 3}
+		payload1 := pktEntry{[]byte("TheThingsNetwork1")}
+		payload2 := pktEntry{[]byte("TheThingsNetwork2")}
 
-		// Operate & Check
-		err := db.Push(p1)
-		CheckErrors(t, nil, err)
-		err = db.Push(p2)
-		CheckErrors(t, nil, err)
+		// Expects
+		var want1 = payload1
+		var want2 = payload2
 
-		a, err := db.Pull(p1.AppEUI(), p1.DevEUI())
-		CheckErrors(t, nil, err)
-		CheckPackets(t, p1, a)
+		// Operate
+		err := db.Push(appEUI, devEUI, payload1)
+		FatalUnless(t, err)
+		err = db.Push(appEUI, devEUI, payload2)
+		FatalUnless(t, err)
+		p1, err := db.Pull(appEUI, devEUI)
+		FatalUnless(t, err)
+		p2, err := db.Pull(appEUI, devEUI)
+		FatalUnless(t, err)
 
-		a, err = db.Pull(p1.AppEUI(), p1.DevEUI())
-		CheckErrors(t, nil, err)
-		CheckPackets(t, p2, a)
+		// Check
+		Check(t, want1, p1, "Payloads")
+		Check(t, want2, p2, "Payloads")
 	}
 
 	// ------------------
@@ -96,15 +87,14 @@ func TestPushPullNormal(t *testing.T) {
 		Desc(t, "Pull a non existing entry")
 
 		// Build
-		appEUI := lorawan.EUI64([8]byte{1, 2, 1, 2, 1, 2, 1, 2})
-		devEUI := lorawan.EUI64([8]byte{2, 3, 4, 2, 3, 4, 2, 3})
+		appEUI := []byte{1, 1, 1, 1, 1, 1, 1, 3}
+		devEUI := []byte{2, 2, 2, 2, 2, 2, 2, 3}
 
 		// Operate
-		p, err := db.Pull(appEUI, devEUI)
+		_, err := db.Pull(appEUI, devEUI)
 
 		// Check
-		CheckErrors(t, pointer.String(string(errors.NotFound)), err)
-		CheckPackets(t, nil, p)
+		CheckErrors(t, ErrNotFound, err)
 	}
 
 	// ------------------
@@ -121,18 +111,15 @@ func TestPushPullNormal(t *testing.T) {
 		Desc(t, "Push after close")
 
 		// Build
-		p, _ := NewAPacket(
-			lorawan.EUI64([8]byte{1, 1, 1, 1, 1, 1, 1, 1}),
-			lorawan.EUI64([8]byte{2, 2, 2, 2, 2, 2, 2, 2}),
-			[]byte("TheThingsNetwork"),
-			[]Metadata{},
-		)
+		appEUI := []byte{1, 1, 1, 1, 1, 1, 1, 5}
+		devEUI := []byte{2, 2, 2, 2, 2, 2, 2, 6}
+		payload := pktEntry{[]byte("TheThingsNetwork")}
 
 		// Operate
-		err := db.Push(p)
+		err := db.Push(appEUI, devEUI, payload)
 
 		// Check
-		CheckErrors(t, pointer.String(string(errors.Operational)), err)
+		CheckErrors(t, ErrOperational, err)
 	}
 
 	// ------------------
@@ -141,13 +128,13 @@ func TestPushPullNormal(t *testing.T) {
 		Desc(t, "Pull after close")
 
 		// Build
-		appEUI := lorawan.EUI64([8]byte{1, 2, 1, 2, 1, 2, 1, 2})
-		devEUI := lorawan.EUI64([8]byte{2, 3, 4, 2, 3, 4, 2, 3})
+		appEUI := []byte{1, 1, 1, 1, 1, 1, 1, 1}
+		devEUI := []byte{2, 2, 2, 2, 2, 2, 2, 2}
 
 		// Operate
 		_, err := db.Pull(appEUI, devEUI)
 
 		// Check
-		CheckErrors(t, pointer.String(string(errors.Operational)), err)
+		CheckErrors(t, ErrOperational, err)
 	}
 }

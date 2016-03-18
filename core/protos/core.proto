@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package core;
+
+message Metadata {
+    uint32  DutyRX1     = 1;
+    uint32  DutyRX2     = 2;
+
+    float   Frequency   = 3;
+    string  DataRate    = 4;
+    string  CodingRate  = 5;
+    uint32  Timestamp   = 6;
+    int32   Rssi        = 7;
+    float   Lsnr        = 8;
+    uint32  PayloadSize = 9;
+
+    int32   Altitude    = 21;
+    float   Longitude   = 22;
+    float   Latitude    = 23;
+}
+
+message StatsMetadata {
+    int32   Altitude    = 1;
+    float   Longitude   = 2;
+    float   Latitude    = 3;
+}
+

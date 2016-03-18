@@ -1,0 +1,29 @@
+syntax = "proto3";
+import "lorawan.proto";
+import "core.proto";
+
+package core;
+
+message DataBrokerReq {
+    LoRaWANData     Payload     = 1;
+    Metadata        Metadata    = 2;
+}
+
+message DataBrokerRes {
+    LoRaWANData     Payload     = 1;
+    Metadata        Metadata    = 2;
+}
+
+message ABPSubBrokerReq {
+	string          HandlerNet  = 1;
+	bytes           AppEUI      = 2;
+	bytes           DevAddr     = 3;
+	bytes           NwkSKey     = 4;
+}
+
+message ABPSubBrokerRes{}
+
+service Broker {
+    rpc HandleData              (DataBrokerReq)         returns (DataBrokerRes);
+    rpc SubscribePersonalized   (ABPSubBrokerReq)       returns (ABPSubBrokerRes);
+}

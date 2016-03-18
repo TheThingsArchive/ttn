@@ -10,14 +10,24 @@ import (
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/core"
-	. "github.com/TheThingsNetwork/ttn/core/mocks"
-	"github.com/TheThingsNetwork/ttn/utils/errors"
-	. "github.com/TheThingsNetwork/ttn/utils/errors/checks"
-	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 )
 
 const storageDB = "TestRouterStorage.db"
+
+func CheckEntries(t *testing.T, want []entry, got []entry) {
+	for i, w := range want {
+		if i >= len(got) {
+			Ko(t, "Didn't got enough entries: %v", got)
+		}
+		tmin := w.until.Add(-time.Second)
+		tmax := w.until.Add(time.Second)
+		if !tmin.Before(got[i].until) || !got[i].until.Before(tmax) {
+			Ko(t, "Unexpected expiry time.\nWant: %s\nGot:  %s", w.until, got[i].until)
+		}
+		Check(t, w.BrokerIndex, got[i].BrokerIndex, "Brokers")
+	}
+}
 
 func TestStoreAndLookup(t *testing.T) {
 	storageDB := path.Join(os.TempDir(), storageDB)
@@ -39,22 +49,22 @@ func TestStoreAndLookup(t *testing.T) {
 	// ------------------
 
 	{
-		Desc(t, "Store then lookup a registration")
+		Desc(t, "Store then lookup a device")
 
 		// Build
 		db, _ := NewStorage(storageDB, time.Hour)
-		r := NewMockRRegistration()
+		devAddr := []byte{0, 0, 0, 1}
 
 		// Operate
-		err := db.Store(r)
-		CheckErrors(t, nil, err)
-		gotEntry, err := db.Lookup(r.DevEUI())
+		err := db.Store(devAddr, 1)
+		FatalUnless(t, err)
+		gotEntry, err := db.Lookup(devAddr)
 
 		// Expectations
 		wantEntry := []entry{
 			{
-				Recipient: r.RawRecipient(),
-				until:     time.Now().Add(time.Hour),
+				BrokerIndex: 1,
+				until:       time.Now().Add(time.Hour),
 			},
 		}
 
@@ -71,14 +81,13 @@ func TestStoreAndLookup(t *testing.T) {
 
 		// Build
 		db, _ := NewStorage(storageDB, time.Hour)
-		devEUI := NewMockRRegistration().DevEUI()
-		devEUI[1] = 14
+		devAddr := []byte{0, 0, 0, 2}
 
 		// Operate
-		gotEntry, err := db.Lookup(devEUI)
+		gotEntry, err := db.Lookup(devAddr)
 
 		// Checks
-		CheckErrors(t, pointer.String(string(errors.NotFound)), err)
+		CheckErrors(t, ErrNotFound, err)
 		CheckEntries(t, nil, gotEntry)
 		_ = db.Close()
 	}
@@ -90,16 +99,15 @@ func TestStoreAndLookup(t *testing.T) {
 
 		// Build
 		db, _ := NewStorage(storageDB, time.Millisecond*100)
-		r := NewMockRRegistration()
-		r.OutDevEUI[0] = 12
+		devAddr := []byte{0, 0, 0, 3}
 
 		// Operate
-		_ = db.Store(r)
+		_ = db.Store(devAddr, 1)
 		<-time.After(time.Millisecond * 200)
-		gotEntry, err := db.Lookup(r.DevEUI())
+		gotEntry, err := db.Lookup(devAddr)
 
 		// Checks
-		CheckErrors(t, pointer.String(string(errors.NotFound)), err)
+		CheckErrors(t, ErrNotFound, err)
 		CheckEntries(t, nil, gotEntry)
 		_ = db.Close()
 	}
@@ -111,21 +119,20 @@ func TestStoreAndLookup(t *testing.T) {
 
 		// Build
 		db, _ := NewStorage(storageDB, time.Millisecond*100)
-		r := NewMockRRegistration()
-		r.OutDevEUI[4] = 27
+		devAddr := []byte{0, 0, 0, 4}
 
 		// Operate
-		_ = db.Store(r)
+		_ = db.Store(devAddr, 1)
 		<-time.After(time.Millisecond * 200)
-		err := db.Store(r)
-		CheckErrors(t, nil, err)
-		gotEntry, err := db.Lookup(r.DevEUI())
+		err := db.Store(devAddr, 2)
+		FatalUnless(t, err)
+		gotEntry, err := db.Lookup(devAddr)
 
 		// Expectations
 		wantEntry := []entry{
 			{
-				Recipient: r.RawRecipient(),
-				until:     time.Now().Add(time.Millisecond * 200),
+				BrokerIndex: 2,
+				until:       time.Now().Add(time.Millisecond * 100),
 			},
 		}
 
@@ -143,14 +150,13 @@ func TestStoreAndLookup(t *testing.T) {
 		// Build
 		db, _ := NewStorage(storageDB, time.Hour)
 		_ = db.Close()
-		r := NewMockRRegistration()
-		r.OutDevEUI[5] = 9
+		devAddr := []byte{0, 0, 0, 5}
 
 		// Operate
-		err := db.Store(r)
+		err := db.Store(devAddr, 1)
 
 		// Checks
-		CheckErrors(t, pointer.String(string(errors.Operational)), err)
+		CheckErrors(t, ErrOperational, err)
 	}
 
 	// ------------------
@@ -161,35 +167,14 @@ func TestStoreAndLookup(t *testing.T) {
 		// Build
 		db, _ := NewStorage(storageDB, time.Hour)
 		_ = db.Close()
-		devEUI := NewMockRRegistration().DevEUI()
+		devAddr := []byte{0, 0, 0, 1}
 
 		// Operate
-		gotEntry, err := db.Lookup(devEUI)
+		gotEntry, err := db.Lookup(devAddr)
 
 		// Checks
-		CheckErrors(t, pointer.String(string(errors.Operational)), err)
+		CheckErrors(t, ErrOperational, err)
 		CheckEntries(t, nil, gotEntry)
-	}
-
-	// ------------------
-
-	{
-		Desc(t, "Store an invalid recipient")
-
-		// Build
-		db, _ := NewStorage(storageDB, time.Hour)
-		r := NewMockRRegistration()
-		r.OutDevEUI[7] = 99
-		r.OutRecipient.(*MockRecipient).Failures["MarshalBinary"] = errors.New(errors.Structural, "Mock Error: MarshalBinary")
-
-		// Operate & Check
-		err := db.Store(r)
-		CheckErrors(t, pointer.String(string(errors.Structural)), err)
-		gotEntry, err := db.Lookup(r.DevEUI())
-		CheckErrors(t, pointer.String(string(errors.NotFound)), err)
-		CheckEntries(t, nil, gotEntry)
-
-		_ = db.Close()
 	}
 
 	// ------------------
@@ -199,29 +184,25 @@ func TestStoreAndLookup(t *testing.T) {
 
 		// Build
 		db, _ := NewStorage(storageDB, time.Hour)
-		r1 := NewMockRRegistration()
-		r1.OutDevEUI[3] = 42
-		r2 := NewMockRRegistration()
-		r2.OutDevEUI[3] = 42
-		r2.OutRecipient.(*MockRecipient).OutMarshalBinary = []byte("Second recipient")
+		devAddr := []byte{0, 0, 0, 6}
 
 		// Operate
-		err := db.Store(r1)
-		CheckErrors(t, nil, err)
-		err = db.Store(r2)
-		CheckErrors(t, nil, err)
-		gotEntries, err := db.Lookup(r1.DevEUI())
-		CheckErrors(t, nil, err)
+		err := db.Store(devAddr, 1)
+		FatalUnless(t, err)
+		err = db.Store(devAddr, 2)
+		FatalUnless(t, err)
+		gotEntries, err := db.Lookup(devAddr)
+		FatalUnless(t, err)
 
 		// Expectations
 		wantEntries := []entry{
 			{
-				Recipient: r1.RawRecipient(),
-				until:     time.Now().Add(time.Hour),
+				BrokerIndex: 1,
+				until:       time.Now().Add(time.Hour),
 			},
 			{
-				Recipient: r2.RawRecipient(),
-				until:     time.Now().Add(time.Hour),
+				BrokerIndex: 2,
+				until:       time.Now().Add(time.Hour),
 			},
 		}
 
@@ -245,21 +226,21 @@ func TestUpdateAndLookup(t *testing.T) {
 
 		// Build
 		db, _ := NewStorage(storageDB, time.Hour)
-		stats, _ := core.NewSPacket(
-			[]byte{1, 2, 3, 4, 5, 6, 7, 8},
-			core.Metadata{
-				Alti: pointer.Int(14),
-			},
-		)
+		stats := core.StatsMetadata{
+			Altitude:  35,
+			Longitude: -3.4546,
+			Latitude:  35.212,
+		}
+		gid := []byte{0, 0, 0, 0, 0, 0, 0, 1}
 
 		// Operate
-		errUpdate := db.UpdateStats(stats)
-		got, errLookup := db.LookupStats(stats.GatewayID())
+		errUpdate := db.UpdateStats(gid, stats)
+		got, errLookup := db.LookupStats(gid)
 
 		// Check
 		CheckErrors(t, nil, errUpdate)
 		CheckErrors(t, nil, errLookup)
-		CheckMetadata(t, stats.Metadata(), got)
+		Check(t, stats, got, "Metadata")
 		_ = db.Close()
 	}
 
@@ -270,13 +251,14 @@ func TestUpdateAndLookup(t *testing.T) {
 
 		// Build
 		db, _ := NewStorage(storageDB, time.Hour)
+		gid := []byte{0, 0, 0, 0, 0, 0, 0, 2}
 
 		// Operate
-		got, errLookup := db.LookupStats([]byte{1, 2, 2, 3, 3, 4, 4, 1})
+		got, errLookup := db.LookupStats(gid)
 
 		// Check
-		CheckErrors(t, pointer.String(string(errors.NotFound)), errLookup)
-		CheckMetadata(t, core.Metadata{}, got)
+		CheckErrors(t, ErrNotFound, errLookup)
+		Check(t, core.StatsMetadata{}, got, "Metadata")
 		_ = db.Close()
 	}
 }

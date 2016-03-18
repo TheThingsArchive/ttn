@@ -8,32 +8,23 @@ import (
 
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
-	errutil "github.com/TheThingsNetwork/ttn/utils/errors/checks"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 )
 
 func TestNewScoreComputer(t *testing.T) {
 	{
-		Desc(t, "Nil datr as argument")
-		_, _, err := NewScoreComputer(nil)
-		errutil.CheckErrors(t, pointer.String(string(errors.Structural)), err)
-	}
-
-	// --------------------
-
-	{
 		Desc(t, "Invalid datr as argument")
-		_, _, err := NewScoreComputer(pointer.String("TheThingsNetwork"))
-		errutil.CheckErrors(t, pointer.String(string(errors.Structural)), err)
+		_, _, err := NewScoreComputer("TheThingsNetwork")
+		CheckErrors(t, pointer.String(string(errors.Structural)), err)
 	}
 
 	// --------------------
 
 	{
 		Desc(t, "Valid datr")
-		_, _, err := NewScoreComputer(pointer.String("SF8BW250"))
-		errutil.CheckErrors(t, nil, err)
+		_, _, err := NewScoreComputer("SF8BW250")
+		CheckErrors(t, nil, err)
 	}
 }
 
@@ -54,8 +45,8 @@ func TestUpdateGet(t *testing.T) {
 		Desc(t, "SF7 | ...")
 
 		// Build
-		c, s, err := NewScoreComputer(pointer.String("SF7BW125"))
-		errutil.CheckErrors(t, nil, err)
+		c, s, err := NewScoreComputer("SF7BW125")
+		CheckErrors(t, nil, err)
 
 		// Operate
 		got := c.Get(s)
@@ -70,15 +61,15 @@ func TestUpdateGet(t *testing.T) {
 		Desc(t, "SF7 | (1, Av, Bl, -25, 5.0)")
 
 		// Build
-		c, s, err := NewScoreComputer(pointer.String("SF7BW125"))
-		errutil.CheckErrors(t, nil, err)
+		c, s, err := NewScoreComputer("SF7BW125")
+		CheckErrors(t, nil, err)
 
 		// Operate
 		s = c.Update(s, 1, core.Metadata{
-			DutyRX1: pointer.Uint(uint(StateAvailable)),
-			DutyRX2: pointer.Uint(uint(StateBlocked)),
-			Rssi:    pointer.Int(-25),
-			Lsnr:    pointer.Float64(5.0),
+			DutyRX1: uint32(StateAvailable),
+			DutyRX2: uint32(StateBlocked),
+			Rssi:    -25,
+			Lsnr:    5.0,
 		})
 		got := c.Get(s)
 
@@ -92,15 +83,15 @@ func TestUpdateGet(t *testing.T) {
 		Desc(t, "SF7 | (1, Bl, Ha, -25, 5.0)")
 
 		// Build
-		c, s, err := NewScoreComputer(pointer.String("SF7BW125"))
-		errutil.CheckErrors(t, nil, err)
+		c, s, err := NewScoreComputer("SF7BW125")
+		CheckErrors(t, nil, err)
 
 		// Operate
 		s = c.Update(s, 1, core.Metadata{
-			DutyRX1: pointer.Uint(uint(StateBlocked)),
-			DutyRX2: pointer.Uint(uint(StateHighlyAvailable)),
-			Rssi:    pointer.Int(-25),
-			Lsnr:    pointer.Float64(5.0),
+			DutyRX1: uint32(StateBlocked),
+			DutyRX2: uint32(StateHighlyAvailable),
+			Rssi:    -25,
+			Lsnr:    5.0,
 		})
 		got := c.Get(s)
 
@@ -114,15 +105,15 @@ func TestUpdateGet(t *testing.T) {
 		Desc(t, "SF7 | (1, Bl, Bl, -25, 5.0)")
 
 		// Build
-		c, s, err := NewScoreComputer(pointer.String("SF7BW125"))
-		errutil.CheckErrors(t, nil, err)
+		c, s, err := NewScoreComputer("SF7BW125")
+		CheckErrors(t, nil, err)
 
 		// Operate
 		s = c.Update(s, 1, core.Metadata{
-			DutyRX1: pointer.Uint(uint(StateBlocked)),
-			DutyRX2: pointer.Uint(uint(StateBlocked)),
-			Rssi:    pointer.Int(-25),
-			Lsnr:    pointer.Float64(5.0),
+			DutyRX1: uint32(StateBlocked),
+			DutyRX2: uint32(StateBlocked),
+			Rssi:    -25,
+			Lsnr:    5.0,
 		})
 		got := c.Get(s)
 
@@ -136,15 +127,15 @@ func TestUpdateGet(t *testing.T) {
 		Desc(t, "SF9 | (1, Av, Av, -25, 5.0) ")
 
 		// Build
-		c, s, err := NewScoreComputer(pointer.String("SF9BW125"))
-		errutil.CheckErrors(t, nil, err)
+		c, s, err := NewScoreComputer("SF9BW125")
+		CheckErrors(t, nil, err)
 
 		// Operate
 		s = c.Update(s, 1, core.Metadata{
-			DutyRX1: pointer.Uint(uint(StateAvailable)),
-			DutyRX2: pointer.Uint(uint(StateAvailable)),
-			Rssi:    pointer.Int(-25),
-			Lsnr:    pointer.Float64(5.0),
+			DutyRX1: uint32(StateAvailable),
+			DutyRX2: uint32(StateAvailable),
+			Rssi:    -25,
+			Lsnr:    5.0,
 		})
 		got := c.Get(s)
 
@@ -158,21 +149,21 @@ func TestUpdateGet(t *testing.T) {
 		Desc(t, "SF10 | (1, Av, Av, -25, 5.0) :: (2, Av, Av, -25, 3.0)")
 
 		// Build
-		c, s, err := NewScoreComputer(pointer.String("SF10BW125"))
-		errutil.CheckErrors(t, nil, err)
+		c, s, err := NewScoreComputer("SF10BW125")
+		CheckErrors(t, nil, err)
 
 		// Operate
 		s = c.Update(s, 1, core.Metadata{
-			DutyRX1: pointer.Uint(uint(StateAvailable)),
-			DutyRX2: pointer.Uint(uint(StateAvailable)),
-			Rssi:    pointer.Int(-25),
-			Lsnr:    pointer.Float64(5.0),
+			DutyRX1: uint32(StateAvailable),
+			DutyRX2: uint32(StateAvailable),
+			Rssi:    -25,
+			Lsnr:    5.0,
 		})
 		s = c.Update(s, 2, core.Metadata{
-			DutyRX1: pointer.Uint(uint(StateAvailable)),
-			DutyRX2: pointer.Uint(uint(StateAvailable)),
-			Rssi:    pointer.Int(-25),
-			Lsnr:    pointer.Float64(3.0),
+			DutyRX1: uint32(StateAvailable),
+			DutyRX2: uint32(StateAvailable),
+			Rssi:    -25,
+			Lsnr:    3.0,
 		})
 		got := c.Get(s)
 
@@ -186,15 +177,15 @@ func TestUpdateGet(t *testing.T) {
 		Desc(t, "SF10 | (1, Av, Bl, -25, 5.0)")
 
 		// Build
-		c, s, err := NewScoreComputer(pointer.String("SF10BW125"))
-		errutil.CheckErrors(t, nil, err)
+		c, s, err := NewScoreComputer("SF10BW125")
+		CheckErrors(t, nil, err)
 
 		// Operate
 		s = c.Update(s, 1, core.Metadata{
-			DutyRX1: pointer.Uint(uint(StateAvailable)),
-			DutyRX2: pointer.Uint(uint(StateBlocked)),
-			Rssi:    pointer.Int(-25),
-			Lsnr:    pointer.Float64(5.0),
+			DutyRX1: uint32(StateAvailable),
+			DutyRX2: uint32(StateBlocked),
+			Rssi:    -25,
+			Lsnr:    5.0,
 		})
 		got := c.Get(s)
 
@@ -208,21 +199,21 @@ func TestUpdateGet(t *testing.T) {
 		Desc(t, "SF8 | (1, Wa, Av, -25, 5.0) :: (2, Av, Av, -25, 5.0)")
 
 		// Build
-		c, s, err := NewScoreComputer(pointer.String("SF8BW125"))
-		errutil.CheckErrors(t, nil, err)
+		c, s, err := NewScoreComputer("SF8BW125")
+		CheckErrors(t, nil, err)
 
 		// Operate
 		s = c.Update(s, 1, core.Metadata{
-			DutyRX1: pointer.Uint(uint(StateWarning)),
-			DutyRX2: pointer.Uint(uint(StateAvailable)),
-			Rssi:    pointer.Int(-25),
-			Lsnr:    pointer.Float64(5.0),
+			DutyRX1: uint32(StateWarning),
+			DutyRX2: uint32(StateAvailable),
+			Rssi:    -25,
+			Lsnr:    5.0,
 		})
 		s = c.Update(s, 2, core.Metadata{
-			DutyRX1: pointer.Uint(uint(StateAvailable)),
-			DutyRX2: pointer.Uint(uint(StateAvailable)),
-			Rssi:    pointer.Int(-25),
-			Lsnr:    pointer.Float64(5.0),
+			DutyRX1: uint32(StateAvailable),
+			DutyRX2: uint32(StateAvailable),
+			Rssi:    -25,
+			Lsnr:    5.0,
 		})
 		got := c.Get(s)
 
@@ -236,46 +227,25 @@ func TestUpdateGet(t *testing.T) {
 		Desc(t, "SF12 | (1, Av, Av, -25, 5.1) :: (2, Ha, Ha, -25, 3.4)")
 
 		// Build
-		c, s, err := NewScoreComputer(pointer.String("SF12BW125"))
-		errutil.CheckErrors(t, nil, err)
+		c, s, err := NewScoreComputer("SF12BW125")
+		CheckErrors(t, nil, err)
 
 		// Operate
 		s = c.Update(s, 1, core.Metadata{
-			DutyRX1: pointer.Uint(uint(StateAvailable)),
-			DutyRX2: pointer.Uint(uint(StateAvailable)),
-			Rssi:    pointer.Int(-25),
-			Lsnr:    pointer.Float64(5.1),
+			DutyRX1: uint32(StateAvailable),
+			DutyRX2: uint32(StateAvailable),
+			Rssi:    -25,
+			Lsnr:    5.1,
 		})
 		s = c.Update(s, 2, core.Metadata{
-			DutyRX1: pointer.Uint(uint(StateHighlyAvailable)),
-			DutyRX2: pointer.Uint(uint(StateHighlyAvailable)),
-			Rssi:    pointer.Int(-25),
-			Lsnr:    pointer.Float64(3.4),
+			DutyRX1: uint32(StateHighlyAvailable),
+			DutyRX2: uint32(StateHighlyAvailable),
+			Rssi:    -25,
+			Lsnr:    3.4,
 		})
 		got := c.Get(s)
 
 		// Check
 		CheckBestTargets(t, &BestTarget{ID: 1, IsRX2: true}, got)
-	}
-
-	// --------------------
-
-	{
-		Desc(t, "Missing metadata in update")
-
-		// Build
-		c, s, err := NewScoreComputer(pointer.String("SF12BW125"))
-		errutil.CheckErrors(t, nil, err)
-
-		// Operate
-		s = c.Update(s, 1, core.Metadata{
-			DutyRX1: pointer.Uint(uint(StateAvailable)),
-			Rssi:    pointer.Int(-25),
-			Lsnr:    pointer.Float64(5.1),
-		})
-		got := c.Get(s)
-
-		// Check
-		CheckBestTargets(t, nil, got)
 	}
 }

@@ -4,264 +4,226 @@
 package mqtt
 
 import (
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
-	"sync"
-	"time"
+	"strings"
 
-	MQTT "github.com/KtorZ/paho.mqtt.golang"
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/stats"
 	"github.com/apex/log"
+	"github.com/yosssi/gmq/mqtt"
+	"github.com/yosssi/gmq/mqtt/client"
+	"golang.org/x/net/context"
+	"google.golang.org/grpc"
 )
 
-var timeout = time.Second
-
-// Adapter type materializes an mqtt adapter which implements the basic mqtt protocol
-type Adapter struct {
-	sync.RWMutex
-	MQTT.Client
-	ctx           log.Interface
-	packets       chan PktReq // Channel used to "transforms" incoming request to something we can handle concurrently
-	registrations chan RegReq // Incoming registrations
+// Interface defines a public interface for the mqtt adapter
+type Interface interface {
+	core.AppClient
+	Start(inMsg <-chan Msg, handler core.HandlerServer)
 }
 
-// Handler defines topic-specific handler.
-type Handler interface {
-	Topic() string
-	Handle(client MQTT.Client, chpkt chan<- PktReq, chreg chan<- RegReq, msg MQTT.Message) error
+type adapter struct {
+	Components
 }
 
-// MsgRes are sent through the response channel of a pktReq or regReq
-type MsgRes []byte // The response content.
-
-// PktReq are sent through the packets channel when an incoming request arrives
-type PktReq struct {
-	Packet []byte      // The actual packet that has been parsed
-	Chresp chan MsgRes // A response channel waiting for an success or reject confirmation
+// Components defines a structure to make the instantiation easier to read
+type Components struct {
+	Client Client
+	Ctx    log.Interface
 }
 
-// RegReq are sent through the registration channel when an incoming registration arrives
-type RegReq struct {
-	Registration core.Registration
-	Chresp       chan MsgRes
+// Options defines a structure to make the instantiation easier to read
+type Options struct {
 }
 
-// Scheme defines all MQTT communication schemes available
-type Scheme string
+// Msg are emitted by an MQTT subscriber towards the adapter
+type Msg struct {
+	Topic   string
+	Payload []byte
+	Type    msgType
+}
 
-// The following constants are used as scheme identifers
+// msgType constants are used in MQTTMsg to characterise the kind of message processed
 const (
-	TCP       Scheme = "tcp"
-	TLS       Scheme = "tls"
-	WebSocket Scheme = "ws"
+	Down msgType = iota + 1
+	ABP
+	OTAA
 )
 
-// NewAdapter constructs and allocates a new mqtt adapter
-//
-// The client is expected to be already connected to the right broker and ready to be used.
-func NewAdapter(client MQTT.Client, ctx log.Interface) *Adapter {
-	adapter := &Adapter{
-		Client:        client,
-		ctx:           ctx,
-		packets:       make(chan PktReq),
-		registrations: make(chan RegReq),
-	}
+type msgType byte
 
-	return adapter
+// New constructs an mqtt adapter responsible for making the bridge between the handler and
+// application.
+func New(c Components, o Options) Interface {
+	return adapter{Components: c}
 }
 
-// NewClient generates a new paho MQTT client from an id and a broker url
-//
-// The broker url is expected to contain a port if needed such as mybroker.com:87354
-//
-// The scheme has to be the same as the one used by the broker: tcp, tls or web socket
-func NewClient(id string, broker string, scheme Scheme) (MQTT.Client, <-chan error, error) {
-	opts := MQTT.NewClientOptions()
-	cherr := make(chan error)
-	opts.AddBroker(fmt.Sprintf("%s://%s", scheme, broker))
-	opts.SetClientID(id)
-	opts.SetConnectionLostHandler(func(client MQTT.Client, reason error) {
-		cherr <- reason
-	})
-	c := MQTT.NewClient(opts)
-	if token := c.Connect(); token.Wait() && token.Error() != nil {
-		return nil, nil, errors.New(errors.Operational, token.Error())
-	}
-	return c, cherr, nil
+// Start eventually launches the mqtt message internal consumer
+func (a adapter) Start(inMsg <-chan Msg, handler core.HandlerServer) {
+	go a.consumeMQTTMsg(inMsg, handler)
 }
 
-// Send implements the core.Adapter interface
-func (a *Adapter) Send(p core.Packet, recipients ...core.Recipient) ([]byte, error) {
+// HandleData implements the core.AppClient interface
+func (a adapter) HandleData(bctx context.Context, req *core.DataAppReq, _ ...grpc.CallOption) (*core.DataAppRes, error) {
 	stats.MarkMeter("mqtt_adapter.send")
-	stats.UpdateHistogram("mqtt_adapter.send_recipients", int64(len(recipients)))
 
-	// Marshal the packet to raw binary data
-	data, err := p.MarshalBinary()
+	// Verify the packet integrity
+	// TODO Move this elsewhere, make it a function call validate() ...
+	if req == nil {
+		stats.MarkMeter("mqtt_adapter.uplink.invalid")
+		return nil, errors.New(errors.Structural, "Received Nil Application Request")
+	}
+	if len(req.Payload) == 0 {
+		stats.MarkMeter("mqtt_adapter.uplink.invalid")
+		return nil, errors.New(errors.Structural, "Invalid Packet Payload")
+	}
+	if len(req.DevEUI) != 8 {
+		stats.MarkMeter("mqtt_adapter.uplink.invalid")
+		return nil, errors.New(errors.Structural, "Invalid Device EUI")
+	}
+	if len(req.AppEUI) != 8 {
+		stats.MarkMeter("mqtt_adapter.uplink.invalid")
+		return nil, errors.New(errors.Structural, "Invalid Application EUI")
+	}
+	if req.Metadata == nil {
+		stats.MarkMeter("mqtt_adapter.uplink.invalid")
+		return nil, errors.New(errors.Structural, "Missing Mandatory Metadata")
+	}
+	ctx := a.Ctx.WithField("appEUI", req.AppEUI).WithField("devEUI", req.DevEUI)
+
+	// Marshal the packet
+	dataUp := core.DataUpAppReq{
+		Payload:  req.Payload,
+		Metadata: core.ProtoMetaToAppMeta(req.Metadata...),
+	}
+	msg, err := dataUp.MarshalMsg(nil)
 	if err != nil {
-		a.ctx.WithError(err).Warn("Invalid Packet")
-		return nil, errors.New(errors.Structural, err)
+		return nil, errors.New(errors.Structural, "Unable to marshal the application payload")
 	}
 
-	a.ctx.Debug("Sending Packet")
-
-	// Prepare ground for parrallel mqtt publications
-	nb := len(recipients)
-	cherr := make(chan error, nb)
-	chresp := make(chan []byte, nb)
-	wg := sync.WaitGroup{}
-	wg.Add(2 * nb)
-	a.RLock()
-	defer a.RUnlock()
-
-	for _, r := range recipients {
-		// Get the actual recipient
-		recipient, ok := r.(Recipient)
-		if !ok {
-			err := errors.New(errors.Structural, "Unable to interpret recipient as mqttRecipient")
-			a.ctx.WithField("recipient", r).Warn(err.Error())
-			wg.Done()
-			wg.Done()
-			cherr <- err
-			continue
-		}
-
-		// Subscribe to down channel (before publishing anything)
-		chdown := make(chan []byte)
-		if recipient.TopicDown() != "" {
-			token := a.Subscribe(recipient.TopicDown(), 2, func(client MQTT.Client, msg MQTT.Message) {
-				chdown <- msg.Payload()
-			})
-			if token.Wait() && token.Error() != nil {
-				err := errors.New(errors.Operational, "Unable to subscribe to down topic")
-				a.ctx.WithField("recipient", recipient).Warn(err.Error())
-				wg.Done()
-				wg.Done()
-				cherr <- err
-				close(chdown)
-				continue
-			}
-		}
-
-		// Publish on each topic
-		go func(recipient Recipient) {
-			defer wg.Done()
-
-			ctx := a.ctx.WithField("topic", recipient.TopicUp())
-
-			// Publish packet
-			ctx.WithField("data", data).Debug("Publish data to mqtt")
-			token := a.Publish(recipient.TopicUp(), 2, false, data)
-			if token.Wait() && token.Error() != nil {
-				ctx.WithError(token.Error()).Error("Unable to publish")
-				cherr <- errors.New(errors.Operational, token.Error())
-				return
-			}
-		}(recipient)
-
-		// Avoid waiting for response when there's no topic down
-		if recipient.TopicDown() == "" {
-			a.ctx.WithField("recipient", recipient).Debug("No response expected from mqtt recipient")
-			wg.Done()
-			continue
-		}
-
-		// Pull responses from each down topic, expecting only one
-		go func(recipient Recipient, chdown <-chan []byte) {
-			defer wg.Done()
-
-			ctx := a.ctx.WithField("topic", recipient.TopicDown())
-
-			ctx.Debug("Wait for mqtt response")
-			defer func(ctx log.Interface) {
-				if token := a.Unsubscribe(recipient.TopicDown()); token.Wait() && token.Error() != nil {
-					ctx.Warn("Unable to unsubscribe topic")
-				}
-			}(ctx)
-
-			// Forward the downlink response received if any
-			select {
-			case data, ok := <-chdown:
-				if ok {
-					chresp <- data
-				}
-			case <-time.After(timeout): // Timeout
-			}
-		}(recipient, chdown)
-	}
-
-	// Wait for each request to be done
-	stats.IncCounter("mqtt_adapter.waiting_for_send")
-	wg.Wait()
-	stats.DecCounter("mqtt_adapter.waiting_for_send")
-	close(cherr)
-	close(chresp)
-
-	// Collect errors
-	errored := len(cherr)
-
-	// Collect response
-	if len(chresp) > 1 {
-		return nil, errors.New(errors.Behavioural, "Received too many positive answers")
-	}
-
-	if len(chresp) == 0 && errored > 0 {
-		return nil, errors.New(errors.Operational, "No positive response from recipients but got unexpected answers")
-	}
-
-	if len(chresp) == 0 {
-		return nil, nil
-	}
-	return <-chresp, nil
-}
-
-// GetRecipient implements the core.Adapter interface
-func (a *Adapter) GetRecipient(raw []byte) (core.Recipient, error) {
-	recipient := new(recipient)
-	if err := recipient.UnmarshalBinary(raw); err != nil {
-		return nil, errors.New(errors.Structural, err)
-	}
-	return recipient, nil
-}
-
-// Next implements the core.Adapter interface
-func (a *Adapter) Next() ([]byte, core.AckNacker, error) {
-	p := <-a.packets
-	return p.Packet, mqttAckNacker{Chresp: p.Chresp}, nil
-}
-
-// NextRegistration implements the core.Adapter interface. Not implemented for this adapters.
-func (a *Adapter) NextRegistration() (core.Registration, core.AckNacker, error) {
-	r := <-a.registrations
-	return r.Registration, mqttAckNacker{Chresp: r.Chresp}, nil
-}
-
-// Bind registers a handler to a specific endpoint
-func (a *Adapter) Bind(h Handler) error {
-	a.RLock()
-	defer a.RUnlock()
-	ctx := a.ctx.WithField("topic", h.Topic())
-	ctx.Info("Subscribe new handler")
-	token := a.Subscribe(h.Topic(), 2, func(client MQTT.Client, msg MQTT.Message) {
-		ctx.Debug("Handle new mqtt message")
-		if err := h.Handle(client, a.packets, a.registrations, msg); err != nil {
-			ctx.WithError(err).Warn("Unable to handle mqtt message")
-		}
+	// Actually send it
+	ctx.Debug("Sending Packet")
+	deui, aeui := hex.EncodeToString(req.DevEUI), hex.EncodeToString(req.AppEUI)
+	err = a.Client.Publish(&client.PublishOptions{
+		QoS:       mqtt.QoS2,
+		Retain:    false,
+		TopicName: []byte(fmt.Sprintf("%s/devices/%s/up", aeui, deui)),
+		Message:   msg,
 	})
-	if token.Wait() && token.Error() != nil {
-		ctx.WithError(token.Error()).Error("Unable to Subscribe")
-		return errors.New(errors.Operational, token.Error())
+
+	if err != nil {
+		return nil, errors.New(errors.Operational, err)
 	}
-	return nil
+	return nil, nil
 }
 
-// Reconnect allows the adapter to be reconnected with a new client
-func (a *Adapter) Reconnect() error {
-	a.Lock()
-	defer a.Unlock()
-	a.Disconnect(25)
-	if token := a.Connect(); token.Wait() && token.Error() != nil {
-		return errors.New(errors.Operational, token.Error())
+// consumeMQTTMsg processes incoming messages from MQTT broker.
+//
+// It runs in its own goroutine
+func (a adapter) consumeMQTTMsg(chmsg <-chan Msg, handler core.HandlerServer) {
+	a.Ctx.Debug("Start consuming MQTT messages")
+	for msg := range chmsg {
+		switch msg.Type {
+		case Down:
+			req, err := handleDataDown(msg)
+			if err == nil {
+				_, err = handler.HandleDataDown(context.Background(), req)
+			}
+			if err != nil {
+				a.Ctx.WithError(err).Debug("Unable to consume data down")
+			}
+		case ABP:
+			req, err := handleABP(msg)
+			if err == nil {
+				_, err = handler.SubscribePersonalized(context.Background(), req)
+			}
+			if err != nil {
+				a.Ctx.WithError(err).Debug("Unable to consume ABP")
+			}
+		default:
+			a.Ctx.Debug("Unsupported MQTT message's type")
+		}
 	}
-	return nil
+	a.Ctx.Debug("Stop consuming MQTT messages")
+}
+
+// handleABP parses and handles Application By Personalization request coming through MQTT
+func handleABP(msg Msg) (*core.ABPSubHandlerReq, error) {
+	// Ensure the query / topic parameters are valid
+	topicInfos := strings.Split(msg.Topic, "/")
+	if len(topicInfos) != 4 {
+		return nil, errors.New(errors.Structural, "Unexpect (and invalid) mqtt topic")
+	}
+
+	// Get the actual message, try messagePack then JSON
+	var req core.ABPSubAppReq
+	if _, err := req.UnmarshalMsg(msg.Payload); err != nil {
+		if err = json.Unmarshal(msg.Payload, &req); err != nil {
+			return nil, errors.New(errors.Structural, err)
+		}
+	}
+
+	// Verify each parameter
+	appEUI, err := hex.DecodeString(topicInfos[0])
+	if err != nil || len(appEUI) != 8 {
+		return nil, errors.New(errors.Structural, "Invalid Application EUI")
+	}
+
+	devAddr, err := hex.DecodeString(req.DevAddr)
+	if err != nil || len(devAddr) != 4 {
+		return nil, errors.New(errors.Structural, "Invalid Device Address")
+	}
+
+	nwkSKey, err := hex.DecodeString(req.NwkSKey)
+	if err != nil || len(nwkSKey) != 16 {
+		return nil, errors.New(errors.Structural, "Invalid Network Session Key")
+	}
+
+	appSKey, err := hex.DecodeString(req.AppSKey)
+	if err != nil || len(appSKey) != 16 {
+		return nil, errors.New(errors.Structural, "Invalid Application Session Key")
+	}
+
+	// Convert it to an handler subscription
+	return &core.ABPSubHandlerReq{
+		AppEUI:  appEUI,
+		DevAddr: devAddr,
+		NwkSKey: nwkSKey,
+		AppSKey: appSKey,
+	}, nil
+}
+
+// handleDataDown parses and handles Downlink message coming through MQTT
+func handleDataDown(msg Msg) (*core.DataDownHandlerReq, error) {
+	// Ensure the query / topic parameters are valid
+	topicInfos := strings.Split(msg.Topic, "/")
+	if len(topicInfos) != 4 {
+		return nil, errors.New(errors.Structural, "Unexpect (and invalid) mqtt topic")
+	}
+	appEUI, erra := hex.DecodeString(topicInfos[0])
+	devEUI, errd := hex.DecodeString(topicInfos[2])
+	if erra != nil || errd != nil || len(appEUI) != 8 || len(devEUI) != 8 {
+		return nil, errors.New(errors.Structural, "Topic constituted of invalid AppEUI or DevEUI")
+	}
+
+	// Retrieve the message payload
+	var req core.DataDownAppReq
+	if _, err := req.UnmarshalMsg(msg.Payload); err != nil {
+		if err = json.Unmarshal(msg.Payload, &req); err != nil {
+			return nil, errors.New(errors.Structural, err)
+		}
+	}
+	if len(req.Payload) == 0 {
+		return nil, errors.New(errors.Structural, "There's now data to handle")
+	}
+
+	// Convert it to an handler downlink
+	return &core.DataDownHandlerReq{
+		Payload: req.Payload,
+		AppEUI:  appEUI,
+		DevEUI:  devEUI,
+	}, nil
 }

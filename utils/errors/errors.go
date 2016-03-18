@@ -13,7 +13,7 @@ type Nature string
 
 const (
 	Structural     Nature = "Invalid structure"        // Requests, parameters or inputs are wrong. Retry won't work.
-	NotFound       Nature = "Unable to found entity"   // Failed to lookup something, somewhere
+	NotFound       Nature = "Unable to find entity"    // Failed to lookup something, somewhere
 	Behavioural    Nature = "Wrong behavior or result" // No error but the result isn't the one expected
 	Operational    Nature = "Invalid operation"        // An operation failed due to external causes, a retry could work
 	Implementation Nature = "Illegal call"             // Method not implemented or unsupported for the given structure

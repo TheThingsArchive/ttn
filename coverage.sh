@@ -1,7 +1,7 @@
 #!/bin/sh
 
 mkdir .cover
-for pkg in $(go list ./... | grep -vE 'cmd|integration|ttn$')
+for pkg in $(go list ./... | grep -E 'core' | grep -vE 'core$|mocks$')
 do
     profile=".cover/$(echo $pkg | grep -oE 'ttn/.*' | sed 's/\///g').cover"
     go test -cover -coverprofile=$profile $pkg

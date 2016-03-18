@@ -1,4 +1,4 @@
-// Copyright © 2016 The Things Network
+// Copyright © 2016 T//e Things Network
 // Use of this source code is governed by the MIT license that can be found in the LICENSE file.
 
 package mqtt
@@ -6,509 +6,856 @@ package mqtt
 import (
 	"fmt"
 	"testing"
-	"time"
 
-	MQTT "github.com/KtorZ/paho.mqtt.golang"
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/mocks"
-	"github.com/TheThingsNetwork/ttn/utils/errors"
-	. "github.com/TheThingsNetwork/ttn/utils/errors/checks"
-	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
-	"github.com/brocaar/lorawan"
+	"github.com/yosssi/gmq/mqtt"
+	"github.com/yosssi/gmq/mqtt/client"
+	"golang.org/x/net/context"
 )
 
-const brokerURL = "0.0.0.0:1883"
-
-func TestMQTTSend(t *testing.T) {
-	timeout = 100 * time.Millisecond
-
-	tests := []struct {
-		Desc       string          // Test Description
-		Packet     []byte          // Handy representation of the packet to send
-		Recipients []testRecipient // List of recipient to send
-
-		WantData     []byte  // Expected Data on the recipient
-		WantResponse []byte  // Expected Response from the Send method
-		WantError    *string // Expected error nature returned by the Send method
-	}{
-		{
-			Desc:   "1 packet | 1 recipient | No response",
-			Packet: []byte("TheThingsNetwork"),
-			Recipients: []testRecipient{
-				{
-					Response:  nil,
-					TopicUp:   "up1",
-					TopicDown: "down1",
-				},
-			},
-
-			WantData:     []byte("TheThingsNetwork"),
-			WantResponse: nil,
-			WantError:    nil,
-		},
-		{
-			Desc:   "1 packet | 1 recipient | No down topic",
-			Packet: []byte("TheThingsNetwork"),
-			Recipients: []testRecipient{
-				{
-					Response:  nil,
-					TopicUp:   "up1",
-					TopicDown: "",
-				},
-			},
-
-			WantData:     []byte("TheThingsNetwork"),
-			WantResponse: nil,
-			WantError:    nil,
-		},
-		{
-			Desc:   "invalid packet | 1 recipient | No response",
-			Packet: nil,
-			Recipients: []testRecipient{
-				{
-					Response:  nil,
-					TopicUp:   "up1",
-					TopicDown: "down1",
-				},
-			},
-
-			WantData:     nil,
-			WantResponse: nil,
-			WantError:    pointer.String(string(errors.Structural)),
-		},
-		{
-			Desc:   "1 packet | 2 recipient | No response",
-			Packet: []byte("TheThingsNetwork"),
-			Recipients: []testRecipient{
-				{
-					Response:  nil,
-					TopicUp:   "up1",
-					TopicDown: "down1",
-				},
-				{
-					Response:  nil,
-					TopicUp:   "up2",
-					TopicDown: "down2",
-				},
-			},
-
-			WantData:     []byte("TheThingsNetwork"),
-			WantResponse: nil,
-			WantError:    nil,
-		},
-		{
-			Desc:   "1 packet | 2 recipients | #1 answer ",
-			Packet: []byte("TheThingsNetwork"),
-			Recipients: []testRecipient{
-				{
-					Response:  []byte("IoT Rocks"),
-					TopicUp:   "up1",
-					TopicDown: "down1",
-				},
-				{
-					Response:  nil,
-					TopicUp:   "up2",
-					TopicDown: "down2",
-				},
-			},
-
-			WantData:     []byte("TheThingsNetwork"),
-			WantResponse: []byte("IoT Rocks"),
-			WantError:    nil,
-		},
-		{
-			Desc:   "1 packet | 2 recipients | both answers ",
-			Packet: []byte("TheThingsNetwork"),
-			Recipients: []testRecipient{
-				{
-					Response:  []byte("IoT Rocks"),
-					TopicUp:   "up1",
-					TopicDown: "down1",
-				},
-				{
-					Response:  []byte("IoT Rocks"),
-					TopicUp:   "up2",
-					TopicDown: "down2",
-				},
-			},
-
-			WantData:     []byte("TheThingsNetwork"),
-			WantResponse: nil,
-			WantError:    pointer.String(string(errors.Behavioural)),
-		},
-	}
-
-	for i, test := range tests {
-		// Describe
-		Desc(t, fmt.Sprintf("#%d: %s", i, test.Desc))
+func TestHandleDataDown(t *testing.T) {
+	{
+		Desc(t, "Invalid topic :: TTN")
 
 		// Build
-		aclient, adapter := createAdapter(t)
-		sclients, chresp := createServers(test.Recipients)
-		<-time.After(time.Millisecond * 50)
+		msg := Msg{
+			Topic:   "TTN",
+			Payload: []byte(`{"payload":"patate"}`),
+			Type:    Down,
+		}
+		var want *core.DataDownHandlerReq
 
 		// Operate
-		resp, err := trySend(adapter, test.Packet, test.Recipients)
-		var data []byte
-		select {
-		case data = <-chresp:
-		case <-time.After(time.Millisecond * 100):
-		}
+		req, err := handleDataDown(msg)
 
 		// Check
-		CheckErrors(t, test.WantError, err)
-		checkData(t, test.WantData, data)
-		checkResponses(t, test.WantResponse, resp)
+		CheckErrors(t, ErrStructural, err)
+		Check(t, want, req, "DataDown Handler Requests")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Invalid topic :: 01/devices/0102030405060708/down")
+
+		// Build
+		msg := Msg{
+			Topic:   "01/devices/0102030405060708/down",
+			Payload: []byte(`{"payload":"patate"}`),
+			Type:    Down,
+		}
+		var want *core.DataDownHandlerReq
+
+		// Operate
+		req, err := handleDataDown(msg)
+
+		// Check
+		CheckErrors(t, ErrStructural, err)
+		Check(t, want, req, "DataDown Handler Requests")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Invalid topic :: 0102030405060708/devices/010203040506/down")
+
+		// Build
+		msg := Msg{
+			Topic:   "0102030405060708/devices/010203040506/down",
+			Payload: []byte(`{"payload":"patate"}`),
+			Type:    Down,
+		}
+		var want *core.DataDownHandlerReq
+
+		// Operate
+		req, err := handleDataDown(msg)
+
+		// Check
+		CheckErrors(t, ErrStructural, err)
+		Check(t, want, req, "DataDown Handler Requests")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Valid topic, invalid Message Pack payload")
+
+		// Build
+		msg := Msg{
+			Topic:   "0102030405060708/devices/0910111213141516/down",
+			Payload: []byte{129, 167, 112, 97, 121, 108, 111, 97, 100, 150, 112, 97, 116, 97, 116, 101},
+			Type:    Down,
+		}
+		var want *core.DataDownHandlerReq
+
+		// Operate
+		req, err := handleDataDown(msg)
+
+		// Check
+		CheckErrors(t, ErrStructural, err)
+		Check(t, want, req, "DataDown Handler Requests")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Valid topic, invalid json")
+
+		// Build
+		msg := Msg{
+			Topic:   "0102030405060708/devices/0910111213141516/down",
+			Payload: []byte(`{"ttn":14}`),
+			Type:    Down,
+		}
+		var want *core.DataDownHandlerReq
+
+		// Operate
+		req, err := handleDataDown(msg)
+
+		// Check
+		CheckErrors(t, ErrStructural, err)
+		Check(t, want, req, "DataDown Handler Requests")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Valid topic, valid JSON payload")
+
+		// Build
+		msg := Msg{
+			Topic:   "0102030405060708/devices/0910111213141516/down",
+			Payload: []byte(`{"payload":[112,97,116,97,116,101]}`),
+			Type:    Down,
+		}
+		want := &core.DataDownHandlerReq{
+			Payload: []byte("patate"),
+			AppEUI:  []byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08},
+			DevEUI:  []byte{0x09, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16},
+		}
+
+		// Operate
+		req, err := handleDataDown(msg)
+
+		// Check
+		CheckErrors(t, nil, err)
+		Check(t, want, req, "DataDown Handler Requests")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Valid topic, valid Message Pack payload")
+
+		// Build
+		msg := Msg{
+			Topic:   "0102030405060708/devices/0910111213141516/down",
+			Payload: []byte{129, 167, 112, 97, 121, 108, 111, 97, 100, 196, 6, 112, 97, 116, 97, 116, 101},
+			Type:    Down,
+		}
+		want := &core.DataDownHandlerReq{
+			Payload: []byte("patate"),
+			AppEUI:  []byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08},
+			DevEUI:  []byte{0x09, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16},
+		}
+
+		// Operate
+		req, err := handleDataDown(msg)
+
+		// Check
+		CheckErrors(t, nil, err)
+		Check(t, want, req, "DataDown Handler Requests")
+	}
+}
+
+func TestHandleABP(t *testing.T) {
+	{
+		Desc(t, "Invalid topic :: TTN")
+
+		// Build
+		msg := Msg{
+			Topic: "TTN",
+			Payload: []byte(`{
+				"dev_addr":"01020304",
+				"apps_key":"aabbccddeeaabbccddeeaabbccddeeff",
+				"nwks_key":"01020304050607080900010203040506"
+			}`),
+			Type: ABP,
+		}
+		var want *core.ABPSubHandlerReq
+
+		// Operate
+		req, err := handleABP(msg)
+
+		// Check
+		CheckErrors(t, ErrStructural, err)
+		Check(t, want, req, "ABP Subscription Handler Requests")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Invalid topic :: 01/devices/personalized/activations")
+
+		// Build
+		msg := Msg{
+			Topic: "01/devices/personalized/activations",
+			Payload: []byte(`{
+				"dev_addr":"01020304",
+				"apps_key":"aabbccddeeaabbccddeeaabbccddeeff",
+				"nwks_key":"01020304050607080900010203040506"
+			}`),
+			Type: ABP,
+		}
+		var want *core.ABPSubHandlerReq
+
+		// Operate
+		req, err := handleABP(msg)
+
+		// Check
+		CheckErrors(t, ErrStructural, err)
+		Check(t, want, req, "ABP Subscription Handler Requests")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Invalid Device Address")
+
+		// Build
+		msg := Msg{
+			Topic: "0102030405060708/devices/personalized/activations",
+			Payload: []byte(`{
+				"dev_addr":"patate",
+				"apps_key":"aabbccddeeaabbccddeeaabbccddeeff",
+				"nwks_key":"01020304050607080900010203040506"
+			}`),
+			Type: ABP,
+		}
+		var want *core.ABPSubHandlerReq
+
+		// Operate
+		req, err := handleABP(msg)
+
+		// Check
+		CheckErrors(t, ErrStructural, err)
+		Check(t, want, req, "ABP Subscription Handler Requests")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Invalid Application Session Key Address")
+
+		// Build
+		msg := Msg{
+			Topic: "0102030405060708/devices/personalized/activations",
+			Payload: []byte(`{
+				"dev_addr":"01020304",
+				"apps_key":"aabbccdxxxxdeeaabbccddeeaabbccddeeff",
+				"nwks_key":"01020304050607080900010203040506"
+			}`),
+			Type: ABP,
+		}
+		var want *core.ABPSubHandlerReq
+
+		// Operate
+		req, err := handleABP(msg)
+
+		// Check
+		CheckErrors(t, ErrStructural, err)
+		Check(t, want, req, "ABP Subscription Handler Requests")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Invalid Network Session Key Address")
+
+		// Build
+		msg := Msg{
+			Topic: "0102030405060708/devices/personalized/activations",
+			Payload: []byte(`{
+				"dev_addr":"01020304",
+				"apps_key":"aabbccddeeaabbccddeeaabbccddeeff",
+				"nwks_key":"014050607080900010203040506"
+			}`),
+			Type: ABP,
+		}
+		var want *core.ABPSubHandlerReq
+
+		// Operate
+		req, err := handleABP(msg)
+
+		// Check
+		CheckErrors(t, ErrStructural, err)
+		Check(t, want, req, "ABP Subscription Handler Requests")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Invalid JSON Payload")
+
+		// Build
+		msg := Msg{
+			Topic: "0102030405060708/devices/personalized/activations",
+			Payload: []byte(`{
+				"dev_addr "01020304",
+				"nwks_key":"01020304050607080900010203040506"
+			}`),
+			Type: ABP,
+		}
+		var want *core.ABPSubHandlerReq
+
+		// Operate
+		req, err := handleABP(msg)
+
+		// Check
+		CheckErrors(t, ErrStructural, err)
+		Check(t, want, req, "ABP Subscription Handler Requests")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Incomplete JSON Payload")
+
+		// Build
+		msg := Msg{
+			Topic: "0102030405060708/devices/personalized/activations",
+			Payload: []byte(`{
+				"dev_addr":"01020304",
+				"nwks_key":"01020304050607080900010203040506"
+			}`),
+			Type: ABP,
+		}
+		var want *core.ABPSubHandlerReq
+
+		// Operate
+		req, err := handleABP(msg)
+
+		// Check
+		CheckErrors(t, ErrStructural, err)
+		Check(t, want, req, "ABP Subscription Handler Requests")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Invalid MsgPack Payload")
+
+		// Build
+		msg := Msg{
+			Topic:   "0102030405060708/devices/personalized/activations",
+			Payload: []byte{},
+			Type:    ABP,
+		}
+		var want *core.ABPSubHandlerReq
+
+		// Operate
+		req, err := handleABP(msg)
+
+		// Check
+		CheckErrors(t, ErrStructural, err)
+		Check(t, want, req, "ABP Subscription Handler Requests")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Valid JSON Payload")
+
+		// Build
+		msg := Msg{
+			Topic: "0102030405060708/devices/personalized/activations",
+			Payload: []byte(`{
+				"dev_addr":"01020304",
+				"apps_key":"aabbccddeeaabbccddeeaabbccddeeff",
+				"nwks_key":"01020304050607080900010203040506"
+			}`),
+			Type: ABP,
+		}
+		want := &core.ABPSubHandlerReq{
+			AppEUI:  []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			DevAddr: []byte{1, 2, 3, 4},
+			NwkSKey: []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
+			AppSKey: []byte{0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff},
+		}
+
+		// Operate
+		req, err := handleABP(msg)
+
+		// Check
+		CheckErrors(t, nil, err)
+		Check(t, want, req, "ABP Subscription Handler Requests")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Valid MsgPack Payload")
+
+		// Build
+		msg := Msg{
+			Topic:   "0102030405060708/devices/personalized/activations",
+			Payload: []byte{131, 168, 100, 101, 118, 95, 97, 100, 100, 114, 168, 48, 49, 48, 50, 48, 51, 48, 52, 168, 110, 119, 107, 115, 95, 107, 101, 121, 217, 32, 48, 49, 48, 50, 48, 51, 48, 52, 48, 53, 48, 54, 48, 55, 48, 56, 48, 57, 48, 48, 48, 49, 48, 50, 48, 51, 48, 52, 48, 53, 48, 54, 168, 97, 112, 112, 115, 95, 107, 101, 121, 217, 32, 97, 97, 98, 98, 99, 99, 100, 100, 101, 101, 97, 97, 98, 98, 99, 99, 100, 100, 101, 101, 97, 97, 98, 98, 99, 99, 100, 100, 101, 101, 102, 102},
+			Type:    ABP,
+		}
+		want := &core.ABPSubHandlerReq{
+			AppEUI:  []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			DevAddr: []byte{1, 2, 3, 4},
+			NwkSKey: []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
+			AppSKey: []byte{0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff},
+		}
+
+		// Operate
+		req, err := handleABP(msg)
+
+		// Check
+		CheckErrors(t, nil, err)
+		Check(t, want, req, "ABP Subscription Handler Requests")
+	}
+}
+
+func TestConsumeMQTTMsg(t *testing.T) {
+	{
+		Desc(t, "Consume Valid MsgDown")
+
+		// Build
+		options := Options{}
+		components := Components{
+			Client: NewMockClient(),
+			Ctx:    GetLogger(t, "MQTT Adapter"),
+		}
+		adapter := New(components, options)
+		handler := mocks.NewHandlerServer()
+		chmsg := make(chan Msg)
+		adapter.Start(chmsg, handler)
+
+		wantDown := &core.DataDownHandlerReq{
+			Payload: []byte("patate"),
+			DevEUI:  []byte{8, 7, 6, 5, 4, 3, 2, 1},
+			AppEUI:  []byte{1, 2, 3, 4, 5, 6, 7, 8},
+		}
+		var wantABP *core.ABPSubHandlerReq
+
+		// Operate
+		chmsg <- Msg{
+			Type:    Down,
+			Topic:   "0102030405060708/devices/0807060504030201/down",
+			Payload: []byte(`{"payload":[112,97,116,97,116,101]}`),
+		}
+
+		// Checks
+		Check(t, wantDown, handler.InHandleDataDown.Req, "Handler Down Requests")
+		Check(t, wantABP, handler.InSubscribePersonalized.Req, "Handler Subscriptions")
 
 		// Clean
-		aclient.Disconnect(250)
-		for _, sclient := range sclients {
-			sclient.Disconnect(250)
+		close(chmsg)
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Consume invalid MsgDown")
+
+		// Build
+		options := Options{}
+		components := Components{
+			Client: NewMockClient(),
+			Ctx:    GetLogger(t, "MQTT Adapter"),
 		}
+		adapter := New(components, options)
+		handler := mocks.NewHandlerServer()
+		chmsg := make(chan Msg)
+		adapter.Start(chmsg, handler)
+
+		var wantDown *core.DataDownHandlerReq
+		var wantABP *core.ABPSubHandlerReq
+
+		// Operate
+		chmsg <- Msg{
+			Type:    Down,
+			Topic:   "0102030405060708/devices/08070605040/down",
+			Payload: []byte(`{"payload":[112,97,116,97,116,101]}`),
+		}
+
+		// Checks
+		Check(t, wantDown, handler.InHandleDataDown.Req, "Handler Down Requests")
+		Check(t, wantABP, handler.InSubscribePersonalized.Req, "Handler Subscriptions")
+
+		// Clean
+		close(chmsg)
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Consume Valid MsgABP")
+
+		// Build
+		options := Options{}
+		components := Components{
+			Client: NewMockClient(),
+			Ctx:    GetLogger(t, "MQTT Adapter"),
+		}
+		adapter := New(components, options)
+		handler := mocks.NewHandlerServer()
+		chmsg := make(chan Msg)
+		adapter.Start(chmsg, handler)
+
+		var wantDown *core.DataDownHandlerReq
+		wantABP := &core.ABPSubHandlerReq{
+			AppEUI:  []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			DevAddr: []byte{1, 2, 3, 4},
+			AppSKey: []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
+			NwkSKey: []byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+		}
+
+		// Operate
+		chmsg <- Msg{
+			Type:  ABP,
+			Topic: "0102030405060708/devices/personalized/activations",
+			Payload: []byte(`{
+				"dev_addr":"01020304",
+				"apps_key":"01020304050607080900010203040506",
+				"nwks_key":"06050403020100090807060504030201"
+			}`),
+		}
+
+		// Checks
+		Check(t, wantDown, handler.InHandleDataDown.Req, "Handler Down Requests")
+		Check(t, wantABP, handler.InSubscribePersonalized.Req, "Handler Subscriptions")
+
+		// Clean
+		close(chmsg)
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Consume invalid MsgABP")
+
+		// Build
+		options := Options{}
+		components := Components{
+			Client: NewMockClient(),
+			Ctx:    GetLogger(t, "MQTT Adapter"),
+		}
+		adapter := New(components, options)
+		handler := mocks.NewHandlerServer()
+		chmsg := make(chan Msg)
+		adapter.Start(chmsg, handler)
+
+		var wantDown *core.DataDownHandlerReq
+		var wantABP *core.ABPSubHandlerReq
+
+		// Operate
+		chmsg <- Msg{
+			Type:    ABP,
+			Topic:   "0102030405060708/devices/personalized/activations",
+			Payload: []byte(`{"payload":[112,97,116,97,116,101]}`),
+		}
+
+		// Checks
+		Check(t, wantDown, handler.InHandleDataDown.Req, "Handler Down Requests")
+		Check(t, wantABP, handler.InSubscribePersonalized.Req, "Handler Subscriptions")
+
+		// Clean
+		close(chmsg)
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Consume Invalid Message Type")
+
+		// Build
+		options := Options{}
+		components := Components{
+			Client: NewMockClient(),
+			Ctx:    GetLogger(t, "MQTT Adapter"),
+		}
+		adapter := New(components, options)
+		handler := mocks.NewHandlerServer()
+		chmsg := make(chan Msg)
+		adapter.Start(chmsg, handler)
+
+		var wantDown *core.DataDownHandlerReq
+		var wantABP *core.ABPSubHandlerReq
+
+		// Operate
+		chmsg <- Msg{
+			Type:    14,
+			Topic:   "0102030405060708/devices/0807060504030201/down",
+			Payload: []byte(`{"payload":[112,97,116,97,116,101]}`),
+		}
+
+		// Checks
+		Check(t, wantDown, handler.InHandleDataDown.Req, "Handler Down Requests")
+		Check(t, wantABP, handler.InSubscribePersonalized.Req, "Handler Subscriptions")
+
+		// Clean
+		close(chmsg)
 	}
 }
 
-func TestSendErrorCases(t *testing.T) {
-	tests := []struct {
-		Desc       string          // Test Description
-		Packet     []byte          // Handy representation of the packet to send
-		Recipients []testRecipient // List of recipient to send
-		Client     *MockClient     // A mocked version of the client
+func TestHandleData(t *testing.T) {
+	{
+		Desc(t, "Handle Invalid AppReq -> Empty payload")
 
-		WantData  []byte  // Expected Data on the recipient
-		WantError *string // Expected error nature returned by the Send method
-	}{
-		{
-			Desc:   "1 packet | 1 Recipient | Error on publish",
-			Packet: []byte("TheThingsNetwork"),
-			Client: NewMockClient("Publish"),
-			Recipients: []testRecipient{
-				{
-					Response:  nil,
-					TopicUp:   "up",
-					TopicDown: "down",
-				},
+		// Build
+		options := Options{}
+		components := Components{
+			Client: NewMockClient(),
+			Ctx:    GetLogger(t, "MQTT Adapter"),
+		}
+		adapter := New(components, options)
+
+		// Expectations
+		var wantRes *core.DataAppRes
+		var wantPub *client.PublishOptions
+		var wantErr = ErrStructural
+
+		// Operate
+		res, err := adapter.HandleData(
+			context.Background(),
+			&core.DataAppReq{
+				Payload:  nil,
+				AppEUI:   []byte{1, 2, 3, 4, 5, 6, 7, 8},
+				DevEUI:   []byte{0, 0, 0, 0, 1, 2, 3, 4},
+				Metadata: []*core.Metadata{},
 			},
+		)
 
-			WantData:  []byte("TheThingsNetwork"),
-			WantError: pointer.String(string(errors.Operational)),
-		},
-		{
-			Desc:   "1 packet | 1 Recipient | Error on Subscribe",
-			Packet: []byte("TheThingsNetwork"),
-			Client: NewMockClient("Subscribe"),
-			Recipients: []testRecipient{
-				{
-					Response:  nil,
-					TopicUp:   "up",
-					TopicDown: "down",
-				},
+		// Check
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Responses")
+		Check(t, wantPub, components.Client.(*MockClient).InPublish.Options, "Publications")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Handle Invalid AppReq -> Invalid AppEUI")
+
+		// Build
+		options := Options{}
+		components := Components{
+			Client: NewMockClient(),
+			Ctx:    GetLogger(t, "MQTT Adapter"),
+		}
+		adapter := New(components, options)
+
+		// Expectations
+		var wantRes *core.DataAppRes
+		var wantPub *client.PublishOptions
+		var wantErr = ErrStructural
+
+		// Operate
+		res, err := adapter.HandleData(
+			context.Background(),
+			&core.DataAppReq{
+				Payload:  []byte("patate"),
+				AppEUI:   []byte{1, 2, 3, 4, 5, 6},
+				DevEUI:   []byte{0, 0, 0, 0, 1, 2, 3, 4},
+				Metadata: []*core.Metadata{},
 			},
+		)
 
-			WantData:  nil,
-			WantError: pointer.String(string(errors.Operational)),
-		},
-		{
-			Desc:   "1 packet | 1 Recipient | Error on Unsubscribe",
-			Packet: []byte("TheThingsNetwork"),
-			Client: NewMockClient("Unsubscribe"),
-			Recipients: []testRecipient{
-				{
-					Response:  nil,
-					TopicUp:   "up",
-					TopicDown: "down",
-				},
+		// Check
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Responses")
+		Check(t, wantPub, components.Client.(*MockClient).InPublish.Options, "Publications")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Handle Invalid AppReq -> Invalid DevEUI")
+
+		// Build
+		options := Options{}
+		components := Components{
+			Client: NewMockClient(),
+			Ctx:    GetLogger(t, "MQTT Adapter"),
+		}
+		adapter := New(components, options)
+
+		// Expectations
+		var wantRes *core.DataAppRes
+		var wantPub *client.PublishOptions
+		var wantErr = ErrStructural
+
+		// Operate
+		res, err := adapter.HandleData(
+			context.Background(),
+			&core.DataAppReq{
+				Payload:  []byte("patate"),
+				AppEUI:   []byte{1, 2, 3, 4, 5, 6, 7, 8},
+				DevEUI:   []byte{0, 0, 0, 0, 1, 2, 3, 4, 5, 6},
+				Metadata: []*core.Metadata{},
 			},
-
-			WantData:  []byte("TheThingsNetwork"),
-			WantError: nil,
-		},
-	}
-
-	for i, test := range tests {
-		// Describe
-		Desc(t, fmt.Sprintf("#%d: %s", i, test.Desc))
-
-		// Build
-		adapter := NewAdapter(test.Client, GetLogger(t, "Adapter"))
-
-		// Operate
-		_, err := trySend(adapter, test.Packet, test.Recipients)
+		)
 
 		// Check
-		CheckErrors(t, test.WantError, err)
-		checkData(t, test.WantData, test.Client.InPublish.Payload())
-	}
-}
-
-func TestOtherMethods(t *testing.T) {
-	{
-		// Describe
-		Desc(t, "Get Recipient | Wrong data")
-
-		// Build
-		adapter := NewAdapter(NewMockClient(), GetLogger(t, "Adapter"))
-
-		// Operate
-		_, err := adapter.GetRecipient([]byte{})
-
-		// Check
-		CheckErrors(t, pointer.String(string(errors.Structural)), err)
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Responses")
+		Check(t, wantPub, components.Client.(*MockClient).InPublish.Options, "Publications")
 	}
 
 	// --------------------
 
 	{
-		// Describe
-		Desc(t, "Get Recipient | Valid Recipient")
+		Desc(t, "Handle Invalid AppReq -> No Metadata")
 
 		// Build
-		adapter := NewAdapter(NewMockClient(), GetLogger(t, "Adapter"))
-		data, _ := NewRecipient("up", "down").MarshalBinary()
+		options := Options{}
+		components := Components{
+			Client: NewMockClient(),
+			Ctx:    GetLogger(t, "MQTT Adapter"),
+		}
+		adapter := New(components, options)
+
+		// Expectations
+		var wantRes *core.DataAppRes
+		var wantPub *client.PublishOptions
+		var wantErr = ErrStructural
 
 		// Operate
-		recipient, err := adapter.GetRecipient(data)
+		res, err := adapter.HandleData(
+			context.Background(),
+			&core.DataAppReq{
+				Payload:  []byte("patate"),
+				AppEUI:   []byte{1, 2, 3, 4, 5, 6, 7, 8},
+				DevEUI:   []byte{0, 0, 0, 0, 1, 2, 3, 4},
+				Metadata: nil,
+			},
+		)
 
 		// Check
-		CheckErrors(t, nil, err)
-		checkRecipients(t, NewRecipient("up", "down"), recipient)
-
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Responses")
+		Check(t, wantPub, components.Client.(*MockClient).InPublish.Options, "Publications")
 	}
 
 	// --------------------
 
 	{
-		// Describe
-		Desc(t, "Send invalid recipients")
+		Desc(t, "Handle Invalid AppReq -> Nil AppReq")
 
 		// Build
-		adapter := NewAdapter(NewMockClient(), GetLogger(t, "Adapter"))
+		options := Options{}
+		components := Components{
+			Client: NewMockClient(),
+			Ctx:    GetLogger(t, "MQTT Adapter"),
+		}
+		adapter := New(components, options)
+
+		// Expectations
+		var wantRes *core.DataAppRes
+		var wantPub *client.PublishOptions
+		var wantErr = ErrStructural
 
 		// Operate
-		_, err := adapter.Send(mocks.NewMockPacket(), mocks.NewMockRecipient())
+		res, err := adapter.HandleData(
+			context.Background(),
+			nil,
+		)
 
 		// Check
-		CheckErrors(t, pointer.String(string(errors.Operational)), err)
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Responses")
+		Check(t, wantPub, components.Client.(*MockClient).InPublish.Options, "Publications")
 	}
 
 	// --------------------
 
 	{
-		// Describe
-		Desc(t, "Bind a new handler")
+		Desc(t, "Handle Valid AppReq, Fail to Publish")
 
 		// Build
-		client := NewMockClient()
-		adapter := NewAdapter(client, GetLogger(t, "Adapter"))
-		handler := NewMockHandler()
-		msg := MockMessage{
-			topic:   "MessageTopic",
-			payload: []byte{1, 2, 3, 4},
+		options := Options{}
+		components := Components{
+			Client: NewMockClient(),
+			Ctx:    GetLogger(t, "MQTT Adapter"),
 		}
+		components.Client.(*MockClient).Failures["Publish"] = fmt.Errorf("Mock Error")
+		adapter := New(components, options)
+		msg := core.DataUpAppReq{Payload: []byte("patate"), Metadata: []core.AppMetadata{}}
+		data, err := msg.MarshalMsg(nil)
+		FatalUnless(t, err)
+
+		// Expectations
+		var wantRes *core.DataAppRes
+		var wantPub = &client.PublishOptions{
+			QoS:       mqtt.QoS2,
+			Retain:    false,
+			TopicName: []byte("0102030405060708/devices/0000000001020304/up"),
+			Message:   data,
+		}
+		var wantErr = ErrOperational
 
 		// Operate
-		err := adapter.Bind(handler)
-		client.InSubscribeCallBack(client, msg)
+		res, err := adapter.HandleData(
+			context.Background(),
+			&core.DataAppReq{
+				Payload:  []byte("patate"),
+				AppEUI:   []byte{1, 2, 3, 4, 5, 6, 7, 8},
+				DevEUI:   []byte{0, 0, 0, 0, 1, 2, 3, 4},
+				Metadata: []*core.Metadata{},
+			},
+		)
 
 		// Check
-		CheckErrors(t, nil, err)
-		checkMessages(t, msg, handler.InMessage)
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Responses")
+		Check(t, wantPub, components.Client.(*MockClient).InPublish.Options, "Publications")
 	}
 
 	// --------------------
 
 	{
-		// Describe
-		Desc(t, "Bind a new handler | fails to handle")
+		Desc(t, "Handle Valid AppReq, Publish successful")
 
 		// Build
-		client := NewMockClient()
-		adapter := NewAdapter(client, GetLogger(t, "Adapter"))
-		handler := NewMockHandler()
-		handler.Failures["Handle"] = errors.New(errors.Operational, "Mock Error")
-		msg := MockMessage{
-			topic:   "MessageTopic",
-			payload: []byte{1, 2, 3, 4},
+		options := Options{}
+		components := Components{
+			Client: NewMockClient(),
+			Ctx:    GetLogger(t, "MQTT Adapter"),
 		}
+		adapter := New(components, options)
+		msg := core.DataUpAppReq{Payload: []byte("patate"), Metadata: []core.AppMetadata{}}
+		data, err := msg.MarshalMsg(nil)
+		FatalUnless(t, err)
+
+		// Expectations
+		var wantRes *core.DataAppRes
+		var wantPub = &client.PublishOptions{
+			QoS:       mqtt.QoS2,
+			Retain:    false,
+			TopicName: []byte("0102030405060708/devices/0000000001020304/up"),
+			Message:   data,
+		}
+		var wantErr *string
 
 		// Operate
-		err := adapter.Bind(handler)
-		client.InSubscribeCallBack(client, msg)
+		res, err := adapter.HandleData(
+			context.Background(),
+			&core.DataAppReq{
+				Payload:  []byte("patate"),
+				AppEUI:   []byte{1, 2, 3, 4, 5, 6, 7, 8},
+				DevEUI:   []byte{0, 0, 0, 0, 1, 2, 3, 4},
+				Metadata: []*core.Metadata{},
+			},
+		)
 
 		// Check
-		CheckErrors(t, nil, err)
-		checkMessages(t, msg, handler.InMessage)
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Responses")
+		Check(t, wantPub, components.Client.(*MockClient).InPublish.Options, "Publications")
 	}
-
-	// --------------------
-
-	{
-		// Describe
-		Desc(t, "Bind a new handler | fails to subscribe")
-
-		// Build
-		client := NewMockClient("Subscribe")
-		adapter := NewAdapter(client, GetLogger(t, "Adapter"))
-		handler := NewMockHandler()
-
-		// Operate
-		err := adapter.Bind(handler)
-
-		// Check
-		CheckErrors(t, pointer.String(string(errors.Operational)), err)
-	}
-}
-
-func TestMQTTRecipient(t *testing.T) {
-	{
-		Desc(t, "Marshal / Unmarshal valid recipient")
-		rm := NewRecipient("topicup", "topicdown")
-		ru := new(recipient)
-		data, err := rm.MarshalBinary()
-		if err == nil {
-			err = ru.UnmarshalBinary(data)
-		}
-		CheckErrors(t, nil, err)
-	}
-
-	{
-		Desc(t, "Unmarshal from nil pointer")
-		rm := NewRecipient("topicup", "topicdown")
-		var ru *recipient
-		data, err := rm.MarshalBinary()
-		if err == nil {
-			err = ru.UnmarshalBinary(data)
-		}
-		CheckErrors(t, pointer.String(string(errors.Structural)), err)
-	}
-
-	{
-		Desc(t, "Unmarshal nil data")
-		ru := new(recipient)
-		err := ru.UnmarshalBinary(nil)
-		CheckErrors(t, pointer.String(string(errors.Structural)), err)
-	}
-
-	{
-		Desc(t, "Unmarshal wrong data")
-		ru := new(recipient)
-		err := ru.UnmarshalBinary([]byte{1, 2, 3, 4})
-		CheckErrors(t, pointer.String(string(errors.Structural)), err)
-	}
-}
-
-// ----- TYPE utilities
-type testRecipient struct {
-	Response  []byte
-	TopicUp   string
-	TopicDown string
-}
-
-type testPacket struct {
-	payload []byte
-}
-
-// MarshalBinary implements the encoding.BinaryMarshaler interface
-func (p testPacket) MarshalBinary() ([]byte, error) {
-	if p.payload == nil {
-		return nil, errors.New(errors.Structural, "Fake error")
-	}
-
-	return p.payload, nil
-}
-
-// String implements the core.Packet interface
-func (p testPacket) String() string {
-	return string(p.payload)
-}
-
-// DevEUI implements the core.Packet interface
-func (p testPacket) DevEUI() lorawan.EUI64 {
-	return lorawan.EUI64{}
-}
-
-// ----- BUILD utilities
-func createAdapter(t *testing.T) (MQTT.Client, core.Adapter) {
-	client, _, err := NewClient("testClient", brokerURL, TCP)
-	if err != nil {
-		panic(err)
-	}
-
-	adapter := NewAdapter(client, GetLogger(t, "adapter"))
-	return client, adapter
-}
-
-func createServers(recipients []testRecipient) ([]MQTT.Client, chan []byte) {
-	var clients []MQTT.Client
-	chresp := make(chan []byte, len(recipients))
-	for i, r := range recipients {
-		client, _, err := NewClient(fmt.Sprintf("Client%d%d", i, time.Now().UnixNano()), brokerURL, TCP)
-		if err != nil {
-			panic(err)
-		}
-		clients = append(clients, client)
-
-		go func(r testRecipient, client MQTT.Client) {
-			token := client.Subscribe(r.TopicUp, 2, func(client MQTT.Client, msg MQTT.Message) {
-				if r.Response != nil {
-					token := client.Publish(r.TopicDown, 2, false, r.Response)
-					if token.Wait() && token.Error() != nil {
-						panic(token.Error())
-					}
-				}
-				chresp <- msg.Payload()
-			})
-			if token.Wait() && token.Error() != nil {
-				panic(token.Error())
-			}
-		}(r, client)
-	}
-	return clients, chresp
-}
-
-// ----- OPERATE utilities
-func trySend(adapter core.Adapter, packet []byte, recipients []testRecipient) ([]byte, error) {
-	// Convert testRecipient to core.Recipient using the mqtt recipient
-	var coreRecipients []core.Recipient
-	for _, r := range recipients {
-		coreRecipients = append(coreRecipients, NewRecipient(r.TopicUp, r.TopicDown))
-	}
-
-	// Try send the packet
-	chresp := make(chan struct {
-		Data  []byte
-		Error error
-	})
-	go func() {
-		data, err := adapter.Send(testPacket{packet}, coreRecipients...)
-		chresp <- struct {
-			Data  []byte
-			Error error
-		}{data, err}
-	}()
-
-	select {
-	case resp := <-chresp:
-		return resp.Data, resp.Error
-	case <-time.After(timeout + time.Millisecond*100):
-		return nil, nil
-	}
-}
-
-// ----- CHECK utilities
-func checkResponses(t *testing.T, want []byte, got []byte) {
-	mocks.Check(t, want, got, "Responses")
-}
-
-func checkData(t *testing.T, want []byte, got []byte) {
-	mocks.Check(t, want, got, "Data")
-}
-
-func checkRecipients(t *testing.T, want core.Recipient, got core.Recipient) {
-	mocks.Check(t, want, got, "Recipients")
-}
-
-func checkMessages(t *testing.T, want MQTT.Message, got MQTT.Message) {
-	mocks.Check(t, want, got, "Messages")
 }

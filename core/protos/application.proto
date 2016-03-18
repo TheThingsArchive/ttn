@@ -1,0 +1,17 @@
+syntax = "proto3";
+import "core.proto";
+
+package core;
+
+message DataAppReq {
+    bytes               Payload     = 1;
+    bytes               AppEUI      = 2;
+    bytes               DevEUI      = 3;
+    repeated Metadata   Metadata    = 4;
+}
+
+message DataAppRes {}
+
+service App {
+    rpc HandleData (DataAppReq) returns (DataAppRes);
+}

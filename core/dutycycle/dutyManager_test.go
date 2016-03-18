@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/utils/errors"
-	errutil "github.com/TheThingsNetwork/ttn/utils/errors/checks"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 )
@@ -21,7 +20,7 @@ func TestGetSubBand(t *testing.T) {
 	{
 		Desc(t, "Test EuropeG")
 		sb, err := GetSubBand(867.127)
-		errutil.CheckErrors(t, nil, err)
+		CheckErrors(t, nil, err)
 		CheckSubBands(t, EuropeG, sb)
 	}
 
@@ -30,7 +29,7 @@ func TestGetSubBand(t *testing.T) {
 	{
 		Desc(t, "Test EuropeG1")
 		sb, err := GetSubBand(868.38)
-		errutil.CheckErrors(t, nil, err)
+		CheckErrors(t, nil, err)
 		CheckSubBands(t, EuropeG1, sb)
 	}
 
@@ -39,7 +38,7 @@ func TestGetSubBand(t *testing.T) {
 	{
 		Desc(t, "Test EuropeG2")
 		sb, err := GetSubBand(868.865)
-		errutil.CheckErrors(t, nil, err)
+		CheckErrors(t, nil, err)
 		CheckSubBands(t, EuropeG2, sb)
 	}
 
@@ -48,7 +47,7 @@ func TestGetSubBand(t *testing.T) {
 	{
 		Desc(t, "Test EuropeG3")
 		sb, err := GetSubBand(869.567)
-		errutil.CheckErrors(t, nil, err)
+		CheckErrors(t, nil, err)
 		CheckSubBands(t, EuropeG3, sb)
 	}
 
@@ -57,7 +56,7 @@ func TestGetSubBand(t *testing.T) {
 	{
 		Desc(t, "Test EuropeG4")
 		sb, err := GetSubBand(869.856)
-		errutil.CheckErrors(t, nil, err)
+		CheckErrors(t, nil, err)
 		CheckSubBands(t, EuropeG4, sb)
 	}
 
@@ -66,7 +65,7 @@ func TestGetSubBand(t *testing.T) {
 	{
 		Desc(t, "Test Unknown")
 		sb, err := GetSubBand(433.5)
-		errutil.CheckErrors(t, pointer.String(string(errors.Structural)), err)
+		CheckErrors(t, pointer.String(string(errors.Structural)), err)
 		CheckSubBands(t, "", sb)
 	}
 }
@@ -79,9 +78,9 @@ func TestNewManager(t *testing.T) {
 	{
 		Desc(t, "Europe with valid cycleLength")
 		m, err := NewManager(dutyManagerDB, time.Minute, Europe)
-		errutil.CheckErrors(t, nil, err)
+		CheckErrors(t, nil, err)
 		err = m.Close()
-		errutil.CheckErrors(t, nil, err)
+		CheckErrors(t, nil, err)
 	}
 
 	// --------------------
@@ -89,7 +88,7 @@ func TestNewManager(t *testing.T) {
 	{
 		Desc(t, "Europe with invalid cycleLength")
 		_, err := NewManager(dutyManagerDB, 0, Europe)
-		errutil.CheckErrors(t, pointer.String(string(errors.Structural)), err)
+		CheckErrors(t, pointer.String(string(errors.Structural)), err)
 	}
 
 	// --------------------
@@ -97,7 +96,7 @@ func TestNewManager(t *testing.T) {
 	{
 		Desc(t, "Not europe with valid cycleLength")
 		_, err := NewManager(dutyManagerDB, time.Minute, China)
-		errutil.CheckErrors(t, pointer.String(string(errors.Implementation)), err)
+		CheckErrors(t, pointer.String(string(errors.Implementation)), err)
 	}
 }
 
@@ -116,7 +115,7 @@ func TestUpdateAndLookup(t *testing.T) {
 		err := m.Update([]byte{1, 2, 3}, 433.65, 100, "SF8BW125", "4/5")
 
 		// Check
-		errutil.CheckErrors(t, pointer.String(string(errors.Structural)), err)
+		CheckErrors(t, pointer.String(string(errors.Structural)), err)
 
 		// Clean
 		m.Close()
@@ -134,7 +133,7 @@ func TestUpdateAndLookup(t *testing.T) {
 		err := m.Update([]byte{1, 2, 3}, 868.1, 100, "SF3BW125", "4/5")
 
 		// Check
-		errutil.CheckErrors(t, pointer.String(string(errors.Structural)), err)
+		CheckErrors(t, pointer.String(string(errors.Structural)), err)
 
 		// Clean
 		m.Close()
@@ -152,7 +151,7 @@ func TestUpdateAndLookup(t *testing.T) {
 		err := m.Update([]byte{1, 2, 3}, 869.5, 100, "SF8BW125", "14")
 
 		// Check
-		errutil.CheckErrors(t, pointer.String(string(errors.Structural)), err)
+		CheckErrors(t, pointer.String(string(errors.Structural)), err)
 
 		// Clean
 		m.Close()
@@ -168,16 +167,16 @@ func TestUpdateAndLookup(t *testing.T) {
 
 		// Operate
 		err := m.Update([]byte{1, 2, 3}, 868.5, 14, "SF8BW125", "4/5")
-		errutil.CheckErrors(t, nil, err)
+		CheckErrors(t, nil, err)
 		bands, err := m.Lookup([]byte{1, 2, 3})
 
 		// Expectation
-		want := map[subBand]uint{
+		want := map[subBand]uint32{
 			EuropeG1: 10,
 		}
 
 		// Check
-		errutil.CheckErrors(t, nil, err)
+		CheckErrors(t, nil, err)
 		CheckUsages(t, want, bands)
 
 		// Clean
@@ -194,21 +193,21 @@ func TestUpdateAndLookup(t *testing.T) {
 
 		// Operate
 		err := m.Update([]byte{4, 5, 6}, 868.523, 14, "SF8BW125", "4/5")
-		errutil.CheckErrors(t, nil, err)
+		CheckErrors(t, nil, err)
 		err = m.Update([]byte{4, 5, 6}, 868.123, 42, "SF9BW125", "4/5")
-		errutil.CheckErrors(t, nil, err)
+		CheckErrors(t, nil, err)
 		err = m.Update([]byte{4, 5, 6}, 867.785, 42, "SF8BW125", "4/6")
-		errutil.CheckErrors(t, nil, err)
+		CheckErrors(t, nil, err)
 		bands, err := m.Lookup([]byte{4, 5, 6})
 
 		// Expectation
-		want := map[subBand]uint{
+		want := map[subBand]uint32{
 			EuropeG1: 51,
 			EuropeG:  25,
 		}
 
 		// Check
-		errutil.CheckErrors(t, nil, err)
+		CheckErrors(t, nil, err)
 		CheckUsages(t, want, bands)
 
 		// Clean
@@ -225,19 +224,19 @@ func TestUpdateAndLookup(t *testing.T) {
 
 		// Operate
 		err := m.Update([]byte{16, 2, 3}, 868.523, 14, "SF8BW125", "4/7")
-		errutil.CheckErrors(t, nil, err)
+		CheckErrors(t, nil, err)
 		<-time.After(300 * time.Millisecond)
 		err = m.Update([]byte{16, 2, 3}, 868.123, 42, "SF9BW125", "4/5")
-		errutil.CheckErrors(t, nil, err)
+		CheckErrors(t, nil, err)
 		bands, err := m.Lookup([]byte{16, 2, 3})
 
 		// Expectation
-		want := map[subBand]uint{
+		want := map[subBand]uint32{
 			EuropeG1: 9871,
 		}
 
 		// Check
-		errutil.CheckErrors(t, nil, err)
+		CheckErrors(t, nil, err)
 		CheckUsages(t, want, bands)
 
 		// Clean
@@ -254,15 +253,15 @@ func TestUpdateAndLookup(t *testing.T) {
 
 		// Operate
 		err := m.Update([]byte{1, 2, 35}, 868.523, 14, "SF8BW125", "4/8")
-		errutil.CheckErrors(t, nil, err)
+		CheckErrors(t, nil, err)
 		<-time.After(300 * time.Millisecond)
 		bands, err := m.Lookup([]byte{1, 2, 35})
 
 		// Expectation
-		want := map[subBand]uint{}
+		want := map[subBand]uint32{}
 
 		// Check
-		errutil.CheckErrors(t, nil, err)
+		CheckErrors(t, nil, err)
 		CheckUsages(t, want, bands)
 
 		// Clean
@@ -279,18 +278,18 @@ func TestUpdateAndLookup(t *testing.T) {
 
 		// Operate
 		err := m.Update([]byte{4, 12, 6}, 868.523, 14, "SF11BW125", "4/5")
-		errutil.CheckErrors(t, nil, err)
+		CheckErrors(t, nil, err)
 		err = m.Update([]byte{4, 12, 6}, 868.523, 42, "SF12BW125", "4/5")
-		errutil.CheckErrors(t, nil, err)
+		CheckErrors(t, nil, err)
 		bands, err := m.Lookup([]byte{4, 12, 6})
 
 		// Expectation
-		want := map[subBand]uint{
+		want := map[subBand]uint32{
 			EuropeG1: 384,
 		}
 
 		// Check
-		errutil.CheckErrors(t, nil, err)
+		CheckErrors(t, nil, err)
 		CheckUsages(t, want, bands)
 
 		// Clean
