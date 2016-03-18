@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net"
 	"testing"
+	"time"
 
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/mocks"
@@ -14,7 +15,6 @@ import (
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"github.com/brocaar/lorawan"
 	"golang.org/x/net/context"
-	//"google.golang.org/grpc"
 )
 
 func TestHandleData(t *testing.T) {
@@ -209,7 +209,7 @@ func TestHandleData(t *testing.T) {
 			Metadata: req.Metadata,
 		}
 		var wantRes *core.DataBrokerRes
-		var wantFCnt uint32 = nc.OutWholeCounter.FCnt
+		var wantFCnt = nc.OutWholeCounter.FCnt
 		var wantDialer = true
 
 		// Operate
@@ -1016,4 +1016,25 @@ func TestDialerCloser(t *testing.T) {
 		_, _, errDial := dl.Dial()
 		CheckErrors(t, ErrOperational, errDial)
 	}
+}
+
+func TestStart(t *testing.T) {
+
+	broker := New(Components{
+		Ctx:               GetLogger(t, "Broker"),
+		NetworkController: NewMockNetworkController(),
+	}, Options{NetAddr: "localhost:8887"})
+
+	cherr := make(chan error)
+	go func() {
+		err := broker.Start()
+		cherr <- err
+	}()
+
+	var err error
+	select {
+	case err = <-cherr:
+	case <-time.After(time.Millisecond * 250):
+	}
+	CheckErrors(t, nil, err)
 }

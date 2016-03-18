@@ -5,6 +5,7 @@ package broker
 
 import (
 	"fmt"
+	"net"
 	"regexp"
 
 	"github.com/TheThingsNetwork/ttn/core"
@@ -13,11 +14,13 @@ import (
 	"github.com/apex/log"
 	"github.com/brocaar/lorawan"
 	"golang.org/x/net/context"
+	"google.golang.org/grpc"
 )
 
 // component implements the core.BrokerServer interface
 type component struct {
 	Components
+	NetAddr string
 }
 
 // Components defines a structure to make the instantiation easier to read
@@ -27,11 +30,35 @@ type Components struct {
 }
 
 // Options defines a structure to make the instantiation easier to read
-type Options struct{}
+type Options struct {
+	NetAddr string
+}
+
+// Interface defines the Broker interface
+type Interface interface {
+	core.BrokerServer
+	Start() error
+}
 
 // New construct a new Broker component
-func New(c Components, o Options) core.BrokerServer {
-	return component{Components: c}
+func New(c Components, o Options) Interface {
+	return component{Components: c, NetAddr: o.NetAddr}
+}
+
+// Start actually runs the component and starts the rpc server
+func (b component) Start() error {
+	conn, err := net.Listen("tcp", b.NetAddr)
+	if err != nil {
+		return errors.New(errors.Operational, err)
+	}
+
+	server := grpc.NewServer()
+	core.RegisterBrokerServer(server, b)
+
+	if err := server.Serve(conn); err != nil {
+		return errors.New(errors.Operational, err)
+	}
+	return nil
 }
 
 // HandleData implements the core.BrokerServer interface

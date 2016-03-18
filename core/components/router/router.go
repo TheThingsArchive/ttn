@@ -4,6 +4,7 @@
 package router
 
 import (
+	"net"
 	"strings"
 	"sync"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/utils/stats"
 	"github.com/apex/log"
 	"golang.org/x/net/context"
+	"google.golang.org/grpc"
 )
 
 // Components defines a structure to make the instantiation easier to read
@@ -24,16 +26,41 @@ type Components struct {
 }
 
 // Options defines a structure to make the instantiation easier to read
-type Options struct{}
+type Options struct {
+	NetAddr string
+}
 
 // component implements the core.RouterServer interface
 type component struct {
 	Components
+	NetAddr string
+}
+
+// Interface defines the Router interface
+type Interface interface {
+	core.RouterServer
+	Start() error
 }
 
 // New constructs a new router
-func New(c Components, o Options) core.RouterServer {
-	return component{Components: c}
+func New(c Components, o Options) Interface {
+	return component{Components: c, NetAddr: o.NetAddr}
+}
+
+// Start actually runs the component and starts the rpc server
+func (r component) Start() error {
+	conn, err := net.Listen("tcp", r.NetAddr)
+	if err != nil {
+		return errors.New(errors.Operational, err)
+	}
+
+	server := grpc.NewServer()
+	core.RegisterRouterServer(server, r)
+
+	if err := server.Serve(conn); err != nil {
+		return errors.New(errors.Operational, err)
+	}
+	return nil
 }
 
 // HandleStats implements the core.RouterClient interface

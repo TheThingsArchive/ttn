@@ -1347,3 +1347,25 @@ func TestHandleData(t *testing.T) {
 	}
 
 }
+
+func TestStart(t *testing.T) {
+	router := New(Components{
+		Ctx:         GetLogger(t, "Router"),
+		DutyManager: mocks.NewDutyManager(),
+		Brokers:     []core.BrokerClient{mocks.NewBrokerClient()},
+		Storage:     NewMockStorage(),
+	}, Options{NetAddr: "localhost:8886"})
+
+	cherr := make(chan error)
+	go func() {
+		err := router.Start()
+		cherr <- err
+	}()
+
+	var err error
+	select {
+	case err = <-cherr:
+	case <-time.After(time.Millisecond * 250):
+	}
+	CheckErrors(t, nil, err)
+}
