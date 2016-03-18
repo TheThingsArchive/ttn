@@ -105,7 +105,7 @@ func (b component) HandleData(bctx context.Context, req *core.DataBrokerReq) (*c
 	// It does matter here to use the DevEUI from the entry and not from the packet.
 	// The packet actually holds a DevAddr and the real DevEUI has been determined thanks
 	// to the MIC check + persistence
-	if err := b.UpdateFCnt(mEntry.AppEUI, mEntry.DevEUI, fhdr.FCnt); err != nil {
+	if err := b.UpdateFCnt(mEntry.AppEUI, devAddr, fhdr.FCnt); err != nil {
 		return nil, err
 	}
 
@@ -181,7 +181,7 @@ func (b component) SubscribePersonalized(bctx context.Context, req *core.ABPSubB
 		return nil, errors.New(errors.Structural, fmt.Sprintf("Invalid Handler Net Address. Should match: %s", re))
 	}
 
-	return nil, b.StoreDevice(devEntry{
+	return nil, b.StoreDevice(req.DevAddr, devEntry{
 		HandlerNet: req.HandlerNet,
 		AppEUI:     req.AppEUI,
 		DevEUI:     devEUI,

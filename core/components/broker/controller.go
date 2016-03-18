@@ -18,7 +18,7 @@ import (
 type NetworkController interface {
 	LookupDevices(devAddr []byte) ([]devEntry, error)
 	WholeCounter(devCnt uint32, entryCnt uint32) (uint32, error)
-	StoreDevice(entry devEntry) error
+	StoreDevice(devAddr []byte, entry devEntry) error
 	UpdateFCnt(appEUI []byte, devEUI []byte, fcnt uint32) error
 	Close() error
 }
@@ -52,7 +52,7 @@ func NewNetworkController(name string) (NetworkController, error) {
 func (s *controller) LookupDevices(devAddr []byte) ([]devEntry, error) {
 	s.RLock()
 	defer s.RUnlock()
-	entries, err := s.db.Lookup(s.Devices, append([]byte{0, 0, 0, 0}, devAddr...), &devEntry{})
+	entries, err := s.db.Lookup(s.Devices, devAddr, &devEntry{})
 	if err != nil {
 		return nil, err
 	}
@@ -61,9 +61,9 @@ func (s *controller) LookupDevices(devAddr []byte) ([]devEntry, error) {
 
 // WholeCounter implements the broker.NetworkController interface
 func (s *controller) WholeCounter(devCnt uint32, entryCnt uint32) (uint32, error) {
-	upperSup := uint32(math.Pow(2, 16))
-	diff := devCnt - (entryCnt % upperSup)
-	var offset uint32
+	upperSup := int(math.Pow(2, 16))
+	diff := int(devCnt) - (int(entryCnt) % upperSup)
+	var offset int
 	if diff >= 0 {
 		offset = diff
 	} else {
@@ -72,14 +72,14 @@ func (s *controller) WholeCounter(devCnt uint32, entryCnt uint32) (uint32, error
 	if offset > upperSup/4 {
 		return 0, errors.New(errors.Structural, "Gap too big, counter is errored")
 	}
-	return entryCnt + offset, nil
+	return entryCnt + uint32(offset), nil
 }
 
 // UpdateFCnt implements the broker.NetworkController interface
-func (s *controller) UpdateFCnt(appEUI []byte, devEUI []byte, fcnt uint32) error {
+func (s *controller) UpdateFCnt(appEUI []byte, devAddr []byte, fcnt uint32) error {
 	s.Lock()
 	defer s.Unlock()
-	itf, err := s.db.Lookup(s.Devices, devEUI, &devEntry{})
+	itf, err := s.db.Lookup(s.Devices, devAddr, &devEntry{})
 	if err != nil {
 		return err
 	}
@@ -95,14 +95,14 @@ func (s *controller) UpdateFCnt(appEUI []byte, devEUI []byte, fcnt uint32) error
 		newEntries = append(newEntries, entry)
 	}
 
-	return s.db.Replace(s.Devices, devEUI, newEntries)
+	return s.db.Replace(s.Devices, devAddr, newEntries)
 }
 
 // StoreDevice implements the broker.NetworkController interface
-func (s *controller) StoreDevice(entry devEntry) error {
+func (s *controller) StoreDevice(devAddr []byte, entry devEntry) error {
 	s.Lock()
 	defer s.Unlock()
-	return s.db.Store(s.Devices, entry.DevEUI, []dbutil.Entry{&entry})
+	return s.db.Store(s.Devices, devAddr, []dbutil.Entry{&entry})
 }
 
 // Close implements the broker.NetworkController interface
@@ -136,10 +136,6 @@ func (e *devEntry) UnmarshalBinary(data []byte) error {
 		return errors.New(errors.Structural, err)
 	}
 
-	var handler []byte
-	if err := binary.Read(buf, binary.BigEndian, &handler); err != nil {
-		return errors.New(errors.Structural, err)
-	}
-	e.HandlerNet = string(handler)
+	e.HandlerNet = string(buf.Next(buf.Len()))
 	return nil
 }
