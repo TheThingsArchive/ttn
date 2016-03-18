@@ -5,6 +5,7 @@ package broker
 
 import (
 	"fmt"
+	"net"
 	"testing"
 
 	"github.com/TheThingsNetwork/ttn/core"
@@ -13,6 +14,7 @@ import (
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"github.com/brocaar/lorawan"
 	"golang.org/x/net/context"
+	//"google.golang.org/grpc"
 )
 
 func TestHandleData(t *testing.T) {
@@ -767,7 +769,251 @@ func TestHandleData(t *testing.T) {
 		Check(t, wantFCnt, nc.InUpdateFcnt.FCnt, "Frame counters")
 		Check(t, wantDialer, dl.InDial.Called, "Dialer calls")
 	}
-
 }
 
-// SubscribePersonalized(bctx context.Context, req *core.ABPSubBrokerReq) (*core.ABPSubBrokerRes, error)
+func TestSubscribePerso(t *testing.T) {
+	{
+		Desc(t, "Valid Entry #1")
+
+		// Build
+		nc := NewMockNetworkController()
+		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		req := &core.ABPSubBrokerReq{
+			HandlerNet: "87.4352.3:4333",
+			AppEUI:     []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			DevAddr:    []byte{1, 2, 3, 4},
+			NwkSKey:    []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
+		}
+
+		// Expect
+		var wantErr *string
+		var wantRes *core.ABPSubBrokerRes
+		var wantEntry = devEntry{
+			Dialer:  NewDialer([]byte(req.HandlerNet)),
+			AppEUI:  req.AppEUI,
+			DevEUI:  []byte{0, 0, 0, 0, 1, 2, 3, 4},
+			NwkSKey: [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
+		}
+
+		// Operate
+		res, err := br.SubscribePersonalized(context.Background(), req)
+
+		// Checks
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Broker ABP Responses")
+		Check(t, wantEntry, nc.InStoreDevice.Entry, "Device Entries")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Valid Entry #2")
+
+		// Build
+		nc := NewMockNetworkController()
+		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		req := &core.ABPSubBrokerReq{
+			HandlerNet: "ttn.golang.org:4400",
+			AppEUI:     []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			DevAddr:    []byte{1, 2, 3, 4},
+			NwkSKey:    []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
+		}
+
+		// Expect
+		var wantErr *string
+		var wantRes *core.ABPSubBrokerRes
+		var wantEntry = devEntry{
+			Dialer:  NewDialer([]byte(req.HandlerNet)),
+			AppEUI:  req.AppEUI,
+			DevEUI:  []byte{0, 0, 0, 0, 1, 2, 3, 4},
+			NwkSKey: [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
+		}
+
+		// Operate
+		res, err := br.SubscribePersonalized(context.Background(), req)
+
+		// Checks
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Broker ABP Responses")
+		Check(t, wantEntry, nc.InStoreDevice.Entry, "Device Entries")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Valid Entry #1")
+
+		// Build
+		nc := NewMockNetworkController()
+		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		req := &core.ABPSubBrokerReq{
+			HandlerNet: "87.4352.3:4333",
+			AppEUI:     []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			DevAddr:    []byte{1, 2, 3, 4},
+			NwkSKey:    []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
+		}
+
+		// Expect
+		var wantErr *string
+		var wantRes *core.ABPSubBrokerRes
+		var wantEntry = devEntry{
+			Dialer:  NewDialer([]byte(req.HandlerNet)),
+			AppEUI:  req.AppEUI,
+			DevEUI:  []byte{0, 0, 0, 0, 1, 2, 3, 4},
+			NwkSKey: [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
+		}
+
+		// Operate
+		res, err := br.SubscribePersonalized(context.Background(), req)
+
+		// Checks
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Broker ABP Responses")
+		Check(t, wantEntry, nc.InStoreDevice.Entry, "Device Entries")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Invalid entry -> Bad HandlerNet")
+
+		// Build
+		nc := NewMockNetworkController()
+		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		req := &core.ABPSubBrokerReq{
+			HandlerNet: "localhost",
+			AppEUI:     []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			DevAddr:    []byte{1, 2, 3, 4},
+			NwkSKey:    []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
+		}
+
+		// Expect
+		var wantErr = ErrStructural
+		var wantRes *core.ABPSubBrokerRes
+		var wantEntry devEntry
+
+		// Operate
+		res, err := br.SubscribePersonalized(context.Background(), req)
+
+		// Checks
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Broker ABP Responses")
+		Check(t, wantEntry, nc.InStoreDevice.Entry, "Device Entries")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Invalid entry -> Bad AppEUI")
+
+		// Build
+		nc := NewMockNetworkController()
+		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		req := &core.ABPSubBrokerReq{
+			HandlerNet: "87.4352.3:4333",
+			AppEUI:     []byte{1, 2, 3, 4, 8},
+			DevAddr:    []byte{1, 2, 3, 4},
+			NwkSKey:    []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
+		}
+
+		// Expect
+		var wantErr = ErrStructural
+		var wantRes *core.ABPSubBrokerRes
+		var wantEntry devEntry
+
+		// Operate
+		res, err := br.SubscribePersonalized(context.Background(), req)
+
+		// Checks
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Broker ABP Responses")
+		Check(t, wantEntry, nc.InStoreDevice.Entry, "Device Entries")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Invalid entry -> Bad DevAddr")
+
+		// Build
+		nc := NewMockNetworkController()
+		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		req := &core.ABPSubBrokerReq{
+			HandlerNet: "87.4352.3:4333",
+			AppEUI:     []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			DevAddr:    []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			NwkSKey:    []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
+		}
+
+		// Expect
+		var wantErr = ErrStructural
+		var wantRes *core.ABPSubBrokerRes
+		var wantEntry devEntry
+
+		// Operate
+		res, err := br.SubscribePersonalized(context.Background(), req)
+
+		// Checks
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Broker ABP Responses")
+		Check(t, wantEntry, nc.InStoreDevice.Entry, "Device Entries")
+	}
+	// --------------------
+
+	{
+		Desc(t, "Invalid entry -> Bad NwkSKey")
+
+		// Build
+		nc := NewMockNetworkController()
+		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		req := &core.ABPSubBrokerReq{
+			HandlerNet: "87.4352.3:4333",
+			AppEUI:     []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			DevAddr:    []byte{1, 2, 3, 4},
+			NwkSKey:    nil,
+		}
+
+		// Expect
+		var wantErr = ErrStructural
+		var wantRes *core.ABPSubBrokerRes
+		var wantEntry devEntry
+
+		// Operate
+		res, err := br.SubscribePersonalized(context.Background(), req)
+
+		// Checks
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Broker ABP Responses")
+		Check(t, wantEntry, nc.InStoreDevice.Entry, "Device Entries")
+	}
+}
+
+func TestDialerCloser(t *testing.T) {
+	{
+		Desc(t, "Dial on a valid address, server is listening")
+
+		// Build
+		addr := "0.0.0.0:3300"
+		conn, err := net.Listen("tcp", addr)
+		FatalUnless(t, err)
+		defer conn.Close()
+
+		// Operate & Check
+		dl := NewDialer([]byte(addr))
+		_, cl, errDial := dl.Dial()
+		CheckErrors(t, nil, errDial)
+		errClose := cl.Close()
+		CheckErrors(t, nil, errClose)
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Dial an invalid address")
+
+		// Build & Operate & Check
+		dl := NewDialer([]byte(""))
+		_, _, errDial := dl.Dial()
+		CheckErrors(t, ErrOperational, errDial)
+	}
+}
