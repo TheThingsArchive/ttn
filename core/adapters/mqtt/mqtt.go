@@ -19,20 +19,24 @@ import (
 	"google.golang.org/grpc"
 )
 
+// Interface defines a public interface for the mqtt adapter
+type Interface interface {
+	core.AppClient
+	Start(inMsg <-chan Msg, handler core.HandlerServer)
+}
+
 type adapter struct {
 	Components
 }
 
 // Components defines a structure to make the instantiation easier to read
 type Components struct {
-	Handler core.HandlerServer
-	Client  Client
-	Ctx     log.Interface
+	Client Client
+	Ctx    log.Interface
 }
 
 // Options defines a structure to make the instantiation easier to read
 type Options struct {
-	InMsg <-chan Msg
 }
 
 // Msg are emitted by an MQTT subscriber towards the adapter
@@ -53,10 +57,13 @@ type msgType byte
 
 // New constructs an mqtt adapter responsible for making the bridge between the handler and
 // application.
-func New(c Components, o Options) core.AppClient {
-	a := adapter{Components: c}
-	go a.consumeMQTTMsg(o.InMsg)
-	return a
+func New(c Components, o Options) Interface {
+	return adapter{Components: c}
+}
+
+// Start eventually launches the mqtt message internal consumer
+func (a adapter) Start(inMsg <-chan Msg, handler core.HandlerServer) {
+	go a.consumeMQTTMsg(inMsg, handler)
 }
 
 // HandleData implements the core.AppClient interface
@@ -116,14 +123,14 @@ func (a adapter) HandleData(bctx context.Context, req *core.DataAppReq, _ ...grp
 // consumeMQTTMsg processes incoming messages from MQTT broker.
 //
 // It runs in its own goroutine
-func (a adapter) consumeMQTTMsg(chmsg <-chan Msg) {
+func (a adapter) consumeMQTTMsg(chmsg <-chan Msg, handler core.HandlerServer) {
 	a.Ctx.Debug("Start consuming MQTT messages")
 	for msg := range chmsg {
 		switch msg.Type {
 		case Down:
 			req, err := handleDataDown(msg)
 			if err == nil {
-				_, err = a.Handler.HandleDataDown(context.Background(), req)
+				_, err = handler.HandleDataDown(context.Background(), req)
 			}
 			if err != nil {
 				a.Ctx.WithError(err).Debug("Unable to consume data down")
@@ -131,7 +138,7 @@ func (a adapter) consumeMQTTMsg(chmsg <-chan Msg) {
 		case ABP:
 			req, err := handleABP(msg)
 			if err == nil {
-				_, err = a.Handler.SubscribePersonalized(context.Background(), req)
+				_, err = handler.SubscribePersonalized(context.Background(), req)
 			}
 			if err != nil {
 				a.Ctx.WithError(err).Debug("Unable to consume ABP")

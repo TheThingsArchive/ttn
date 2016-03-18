@@ -425,14 +425,15 @@ func TestConsumeMQTTMsg(t *testing.T) {
 		Desc(t, "Consume Valid MsgDown")
 
 		// Build
-		chmsg := make(chan Msg)
-		options := Options{InMsg: chmsg}
+		options := Options{}
 		components := Components{
-			Client:  NewMockClient(),
-			Handler: mocks.NewHandlerServer(),
-			Ctx:     GetLogger(t, "MQTT Adapter"),
+			Client: NewMockClient(),
+			Ctx:    GetLogger(t, "MQTT Adapter"),
 		}
-		_ = New(components, options)
+		adapter := New(components, options)
+		handler := mocks.NewHandlerServer()
+		chmsg := make(chan Msg)
+		adapter.Start(chmsg, handler)
 
 		wantDown := &core.DataDownHandlerReq{
 			Payload: []byte("patate"),
@@ -449,8 +450,8 @@ func TestConsumeMQTTMsg(t *testing.T) {
 		}
 
 		// Checks
-		Check(t, wantDown, components.Handler.(*mocks.HandlerServer).InHandleDataDown.Req, "Handler Down Requests")
-		Check(t, wantABP, components.Handler.(*mocks.HandlerServer).InSubscribePersonalized.Req, "Handler Subscriptions")
+		Check(t, wantDown, handler.InHandleDataDown.Req, "Handler Down Requests")
+		Check(t, wantABP, handler.InSubscribePersonalized.Req, "Handler Subscriptions")
 
 		// Clean
 		close(chmsg)
@@ -462,14 +463,15 @@ func TestConsumeMQTTMsg(t *testing.T) {
 		Desc(t, "Consume invalid MsgDown")
 
 		// Build
-		chmsg := make(chan Msg)
-		options := Options{InMsg: chmsg}
+		options := Options{}
 		components := Components{
-			Client:  NewMockClient(),
-			Handler: mocks.NewHandlerServer(),
-			Ctx:     GetLogger(t, "MQTT Adapter"),
+			Client: NewMockClient(),
+			Ctx:    GetLogger(t, "MQTT Adapter"),
 		}
-		_ = New(components, options)
+		adapter := New(components, options)
+		handler := mocks.NewHandlerServer()
+		chmsg := make(chan Msg)
+		adapter.Start(chmsg, handler)
 
 		var wantDown *core.DataDownHandlerReq
 		var wantABP *core.ABPSubHandlerReq
@@ -482,8 +484,8 @@ func TestConsumeMQTTMsg(t *testing.T) {
 		}
 
 		// Checks
-		Check(t, wantDown, components.Handler.(*mocks.HandlerServer).InHandleDataDown.Req, "Handler Down Requests")
-		Check(t, wantABP, components.Handler.(*mocks.HandlerServer).InSubscribePersonalized.Req, "Handler Subscriptions")
+		Check(t, wantDown, handler.InHandleDataDown.Req, "Handler Down Requests")
+		Check(t, wantABP, handler.InSubscribePersonalized.Req, "Handler Subscriptions")
 
 		// Clean
 		close(chmsg)
@@ -495,14 +497,15 @@ func TestConsumeMQTTMsg(t *testing.T) {
 		Desc(t, "Consume Valid MsgABP")
 
 		// Build
-		chmsg := make(chan Msg)
-		options := Options{InMsg: chmsg}
+		options := Options{}
 		components := Components{
-			Client:  NewMockClient(),
-			Handler: mocks.NewHandlerServer(),
-			Ctx:     GetLogger(t, "MQTT Adapter"),
+			Client: NewMockClient(),
+			Ctx:    GetLogger(t, "MQTT Adapter"),
 		}
-		_ = New(components, options)
+		adapter := New(components, options)
+		handler := mocks.NewHandlerServer()
+		chmsg := make(chan Msg)
+		adapter.Start(chmsg, handler)
 
 		var wantDown *core.DataDownHandlerReq
 		wantABP := &core.ABPSubHandlerReq{
@@ -524,8 +527,8 @@ func TestConsumeMQTTMsg(t *testing.T) {
 		}
 
 		// Checks
-		Check(t, wantDown, components.Handler.(*mocks.HandlerServer).InHandleDataDown.Req, "Handler Down Requests")
-		Check(t, wantABP, components.Handler.(*mocks.HandlerServer).InSubscribePersonalized.Req, "Handler Subscriptions")
+		Check(t, wantDown, handler.InHandleDataDown.Req, "Handler Down Requests")
+		Check(t, wantABP, handler.InSubscribePersonalized.Req, "Handler Subscriptions")
 
 		// Clean
 		close(chmsg)
@@ -537,14 +540,15 @@ func TestConsumeMQTTMsg(t *testing.T) {
 		Desc(t, "Consume invalid MsgABP")
 
 		// Build
-		chmsg := make(chan Msg)
-		options := Options{InMsg: chmsg}
+		options := Options{}
 		components := Components{
-			Client:  NewMockClient(),
-			Handler: mocks.NewHandlerServer(),
-			Ctx:     GetLogger(t, "MQTT Adapter"),
+			Client: NewMockClient(),
+			Ctx:    GetLogger(t, "MQTT Adapter"),
 		}
-		_ = New(components, options)
+		adapter := New(components, options)
+		handler := mocks.NewHandlerServer()
+		chmsg := make(chan Msg)
+		adapter.Start(chmsg, handler)
 
 		var wantDown *core.DataDownHandlerReq
 		var wantABP *core.ABPSubHandlerReq
@@ -557,8 +561,8 @@ func TestConsumeMQTTMsg(t *testing.T) {
 		}
 
 		// Checks
-		Check(t, wantDown, components.Handler.(*mocks.HandlerServer).InHandleDataDown.Req, "Handler Down Requests")
-		Check(t, wantABP, components.Handler.(*mocks.HandlerServer).InSubscribePersonalized.Req, "Handler Subscriptions")
+		Check(t, wantDown, handler.InHandleDataDown.Req, "Handler Down Requests")
+		Check(t, wantABP, handler.InSubscribePersonalized.Req, "Handler Subscriptions")
 
 		// Clean
 		close(chmsg)
@@ -570,14 +574,15 @@ func TestConsumeMQTTMsg(t *testing.T) {
 		Desc(t, "Consume Invalid Message Type")
 
 		// Build
-		chmsg := make(chan Msg)
-		options := Options{InMsg: chmsg}
+		options := Options{}
 		components := Components{
-			Client:  NewMockClient(),
-			Handler: mocks.NewHandlerServer(),
-			Ctx:     GetLogger(t, "MQTT Adapter"),
+			Client: NewMockClient(),
+			Ctx:    GetLogger(t, "MQTT Adapter"),
 		}
-		_ = New(components, options)
+		adapter := New(components, options)
+		handler := mocks.NewHandlerServer()
+		chmsg := make(chan Msg)
+		adapter.Start(chmsg, handler)
 
 		var wantDown *core.DataDownHandlerReq
 		var wantABP *core.ABPSubHandlerReq
@@ -590,8 +595,8 @@ func TestConsumeMQTTMsg(t *testing.T) {
 		}
 
 		// Checks
-		Check(t, wantDown, components.Handler.(*mocks.HandlerServer).InHandleDataDown.Req, "Handler Down Requests")
-		Check(t, wantABP, components.Handler.(*mocks.HandlerServer).InSubscribePersonalized.Req, "Handler Subscriptions")
+		Check(t, wantDown, handler.InHandleDataDown.Req, "Handler Down Requests")
+		Check(t, wantABP, handler.InSubscribePersonalized.Req, "Handler Subscriptions")
 
 		// Clean
 		close(chmsg)
@@ -603,11 +608,10 @@ func TestHandleData(t *testing.T) {
 		Desc(t, "Handle Invalid AppReq -> Empty payload")
 
 		// Build
-		options := Options{InMsg: nil}
+		options := Options{}
 		components := Components{
-			Client:  NewMockClient(),
-			Handler: mocks.NewHandlerServer(),
-			Ctx:     GetLogger(t, "MQTT Adapter"),
+			Client: NewMockClient(),
+			Ctx:    GetLogger(t, "MQTT Adapter"),
 		}
 		adapter := New(components, options)
 
@@ -639,11 +643,10 @@ func TestHandleData(t *testing.T) {
 		Desc(t, "Handle Invalid AppReq -> Invalid AppEUI")
 
 		// Build
-		options := Options{InMsg: nil}
+		options := Options{}
 		components := Components{
-			Client:  NewMockClient(),
-			Handler: mocks.NewHandlerServer(),
-			Ctx:     GetLogger(t, "MQTT Adapter"),
+			Client: NewMockClient(),
+			Ctx:    GetLogger(t, "MQTT Adapter"),
 		}
 		adapter := New(components, options)
 
@@ -675,11 +678,10 @@ func TestHandleData(t *testing.T) {
 		Desc(t, "Handle Invalid AppReq -> Invalid DevEUI")
 
 		// Build
-		options := Options{InMsg: nil}
+		options := Options{}
 		components := Components{
-			Client:  NewMockClient(),
-			Handler: mocks.NewHandlerServer(),
-			Ctx:     GetLogger(t, "MQTT Adapter"),
+			Client: NewMockClient(),
+			Ctx:    GetLogger(t, "MQTT Adapter"),
 		}
 		adapter := New(components, options)
 
@@ -711,11 +713,10 @@ func TestHandleData(t *testing.T) {
 		Desc(t, "Handle Invalid AppReq -> No Metadata")
 
 		// Build
-		options := Options{InMsg: nil}
+		options := Options{}
 		components := Components{
-			Client:  NewMockClient(),
-			Handler: mocks.NewHandlerServer(),
-			Ctx:     GetLogger(t, "MQTT Adapter"),
+			Client: NewMockClient(),
+			Ctx:    GetLogger(t, "MQTT Adapter"),
 		}
 		adapter := New(components, options)
 
@@ -747,11 +748,10 @@ func TestHandleData(t *testing.T) {
 		Desc(t, "Handle Invalid AppReq -> Nil AppReq")
 
 		// Build
-		options := Options{InMsg: nil}
+		options := Options{}
 		components := Components{
-			Client:  NewMockClient(),
-			Handler: mocks.NewHandlerServer(),
-			Ctx:     GetLogger(t, "MQTT Adapter"),
+			Client: NewMockClient(),
+			Ctx:    GetLogger(t, "MQTT Adapter"),
 		}
 		adapter := New(components, options)
 
@@ -778,11 +778,10 @@ func TestHandleData(t *testing.T) {
 		Desc(t, "Handle Valid AppReq, Fail to Publish")
 
 		// Build
-		options := Options{InMsg: nil}
+		options := Options{}
 		components := Components{
-			Client:  NewMockClient(),
-			Handler: mocks.NewHandlerServer(),
-			Ctx:     GetLogger(t, "MQTT Adapter"),
+			Client: NewMockClient(),
+			Ctx:    GetLogger(t, "MQTT Adapter"),
 		}
 		components.Client.(*MockClient).Failures["Publish"] = fmt.Errorf("Mock Error")
 		adapter := New(components, options)
@@ -823,11 +822,10 @@ func TestHandleData(t *testing.T) {
 		Desc(t, "Handle Valid AppReq, Publish successful")
 
 		// Build
-		options := Options{InMsg: nil}
+		options := Options{}
 		components := Components{
-			Client:  NewMockClient(),
-			Handler: mocks.NewHandlerServer(),
-			Ctx:     GetLogger(t, "MQTT Adapter"),
+			Client: NewMockClient(),
+			Ctx:    GetLogger(t, "MQTT Adapter"),
 		}
 		adapter := New(components, options)
 		msg := core.DataUpAppReq{Payload: []byte("patate"), Metadata: []core.AppMetadata{}}
