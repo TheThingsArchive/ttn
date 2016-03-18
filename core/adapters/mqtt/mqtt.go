@@ -25,7 +25,7 @@ type adapter struct {
 
 // Components defines a structure to make the instantiation easier to read
 type Components struct {
-	Handler core.HandlerClient
+	Handler core.HandlerServer
 	Client  Client
 	Ctx     log.Interface
 }

@@ -234,3 +234,57 @@ func (m *DutyManager) Close() error {
 	m.InClose.Called = true
 	return m.Failures["Close"]
 }
+
+// HandlerServer mocks the core.HandlerServer interface
+type HandlerServer struct {
+	Failures       map[string]error
+	InHandleDataUp struct {
+		Ctx context.Context
+		Req *core.DataUpHandlerReq
+	}
+	OutHandleDataUp struct {
+		Res *core.DataUpHandlerRes
+	}
+	InHandleDataDown struct {
+		Ctx context.Context
+		Req *core.DataDownHandlerReq
+	}
+	OutHandleDataDown struct {
+		Res *core.DataDownHandlerRes
+	}
+	InSubscribePersonalized struct {
+		Ctx context.Context
+		Req *core.ABPSubHandlerReq
+	}
+	OutSubscribePersonalized struct {
+		Res *core.ABPSubHandlerRes
+	}
+}
+
+// NewHandlerServer creates a new mock HandlerServer
+func NewHandlerServer() *HandlerServer {
+	return &HandlerServer{
+		Failures: make(map[string]error),
+	}
+}
+
+// HandleDataUp implements the core.HandlerServer interface
+func (m *HandlerServer) HandleDataUp(ctx context.Context, in *core.DataUpHandlerReq) (*core.DataUpHandlerRes, error) {
+	m.InHandleDataUp.Ctx = ctx
+	m.InHandleDataUp.Req = in
+	return m.OutHandleDataUp.Res, m.Failures["HandleDataUp"]
+}
+
+// HandleDataDown implements the core.HandlerServer interface
+func (m *HandlerServer) HandleDataDown(ctx context.Context, in *core.DataDownHandlerReq) (*core.DataDownHandlerRes, error) {
+	m.InHandleDataDown.Ctx = ctx
+	m.InHandleDataDown.Req = in
+	return m.OutHandleDataDown.Res, m.Failures["HandleDataDown"]
+}
+
+// SubscribePersonalized implements the core.HandlerServer interface
+func (m *HandlerServer) SubscribePersonalized(ctx context.Context, in *core.ABPSubHandlerReq) (*core.ABPSubHandlerRes, error) {
+	m.InSubscribePersonalized.Ctx = ctx
+	m.InSubscribePersonalized.Req = in
+	return m.OutSubscribePersonalized.Res, m.Failures["SubscribePersonalized"]
+}

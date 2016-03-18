@@ -429,7 +429,7 @@ func TestConsumeMQTTMsg(t *testing.T) {
 		options := Options{InMsg: chmsg}
 		components := Components{
 			Client:  NewMockClient(),
-			Handler: mocks.NewHandlerClient(),
+			Handler: mocks.NewHandlerServer(),
 			Ctx:     GetLogger(t, "MQTT Adapter"),
 		}
 		_ = New(components, options)
@@ -449,8 +449,8 @@ func TestConsumeMQTTMsg(t *testing.T) {
 		}
 
 		// Checks
-		Check(t, wantDown, components.Handler.(*mocks.HandlerClient).InHandleDataDown.Req, "Handler Down Requests")
-		Check(t, wantABP, components.Handler.(*mocks.HandlerClient).InSubscribePersonalized.Req, "Handler Subscriptions")
+		Check(t, wantDown, components.Handler.(*mocks.HandlerServer).InHandleDataDown.Req, "Handler Down Requests")
+		Check(t, wantABP, components.Handler.(*mocks.HandlerServer).InSubscribePersonalized.Req, "Handler Subscriptions")
 
 		// Clean
 		close(chmsg)
@@ -466,7 +466,7 @@ func TestConsumeMQTTMsg(t *testing.T) {
 		options := Options{InMsg: chmsg}
 		components := Components{
 			Client:  NewMockClient(),
-			Handler: mocks.NewHandlerClient(),
+			Handler: mocks.NewHandlerServer(),
 			Ctx:     GetLogger(t, "MQTT Adapter"),
 		}
 		_ = New(components, options)
@@ -482,8 +482,8 @@ func TestConsumeMQTTMsg(t *testing.T) {
 		}
 
 		// Checks
-		Check(t, wantDown, components.Handler.(*mocks.HandlerClient).InHandleDataDown.Req, "Handler Down Requests")
-		Check(t, wantABP, components.Handler.(*mocks.HandlerClient).InSubscribePersonalized.Req, "Handler Subscriptions")
+		Check(t, wantDown, components.Handler.(*mocks.HandlerServer).InHandleDataDown.Req, "Handler Down Requests")
+		Check(t, wantABP, components.Handler.(*mocks.HandlerServer).InSubscribePersonalized.Req, "Handler Subscriptions")
 
 		// Clean
 		close(chmsg)
@@ -499,7 +499,7 @@ func TestConsumeMQTTMsg(t *testing.T) {
 		options := Options{InMsg: chmsg}
 		components := Components{
 			Client:  NewMockClient(),
-			Handler: mocks.NewHandlerClient(),
+			Handler: mocks.NewHandlerServer(),
 			Ctx:     GetLogger(t, "MQTT Adapter"),
 		}
 		_ = New(components, options)
@@ -524,8 +524,8 @@ func TestConsumeMQTTMsg(t *testing.T) {
 		}
 
 		// Checks
-		Check(t, wantDown, components.Handler.(*mocks.HandlerClient).InHandleDataDown.Req, "Handler Down Requests")
-		Check(t, wantABP, components.Handler.(*mocks.HandlerClient).InSubscribePersonalized.Req, "Handler Subscriptions")
+		Check(t, wantDown, components.Handler.(*mocks.HandlerServer).InHandleDataDown.Req, "Handler Down Requests")
+		Check(t, wantABP, components.Handler.(*mocks.HandlerServer).InSubscribePersonalized.Req, "Handler Subscriptions")
 
 		// Clean
 		close(chmsg)
@@ -541,7 +541,7 @@ func TestConsumeMQTTMsg(t *testing.T) {
 		options := Options{InMsg: chmsg}
 		components := Components{
 			Client:  NewMockClient(),
-			Handler: mocks.NewHandlerClient(),
+			Handler: mocks.NewHandlerServer(),
 			Ctx:     GetLogger(t, "MQTT Adapter"),
 		}
 		_ = New(components, options)
@@ -557,8 +557,8 @@ func TestConsumeMQTTMsg(t *testing.T) {
 		}
 
 		// Checks
-		Check(t, wantDown, components.Handler.(*mocks.HandlerClient).InHandleDataDown.Req, "Handler Down Requests")
-		Check(t, wantABP, components.Handler.(*mocks.HandlerClient).InSubscribePersonalized.Req, "Handler Subscriptions")
+		Check(t, wantDown, components.Handler.(*mocks.HandlerServer).InHandleDataDown.Req, "Handler Down Requests")
+		Check(t, wantABP, components.Handler.(*mocks.HandlerServer).InSubscribePersonalized.Req, "Handler Subscriptions")
 
 		// Clean
 		close(chmsg)
@@ -574,7 +574,7 @@ func TestConsumeMQTTMsg(t *testing.T) {
 		options := Options{InMsg: chmsg}
 		components := Components{
 			Client:  NewMockClient(),
-			Handler: mocks.NewHandlerClient(),
+			Handler: mocks.NewHandlerServer(),
 			Ctx:     GetLogger(t, "MQTT Adapter"),
 		}
 		_ = New(components, options)
@@ -590,8 +590,8 @@ func TestConsumeMQTTMsg(t *testing.T) {
 		}
 
 		// Checks
-		Check(t, wantDown, components.Handler.(*mocks.HandlerClient).InHandleDataDown.Req, "Handler Down Requests")
-		Check(t, wantABP, components.Handler.(*mocks.HandlerClient).InSubscribePersonalized.Req, "Handler Subscriptions")
+		Check(t, wantDown, components.Handler.(*mocks.HandlerServer).InHandleDataDown.Req, "Handler Down Requests")
+		Check(t, wantABP, components.Handler.(*mocks.HandlerServer).InSubscribePersonalized.Req, "Handler Subscriptions")
 
 		// Clean
 		close(chmsg)
@@ -606,7 +606,7 @@ func TestHandleData(t *testing.T) {
 		options := Options{InMsg: nil}
 		components := Components{
 			Client:  NewMockClient(),
-			Handler: mocks.NewHandlerClient(),
+			Handler: mocks.NewHandlerServer(),
 			Ctx:     GetLogger(t, "MQTT Adapter"),
 		}
 		adapter := New(components, options)
@@ -642,7 +642,7 @@ func TestHandleData(t *testing.T) {
 		options := Options{InMsg: nil}
 		components := Components{
 			Client:  NewMockClient(),
-			Handler: mocks.NewHandlerClient(),
+			Handler: mocks.NewHandlerServer(),
 			Ctx:     GetLogger(t, "MQTT Adapter"),
 		}
 		adapter := New(components, options)
@@ -678,7 +678,7 @@ func TestHandleData(t *testing.T) {
 		options := Options{InMsg: nil}
 		components := Components{
 			Client:  NewMockClient(),
-			Handler: mocks.NewHandlerClient(),
+			Handler: mocks.NewHandlerServer(),
 			Ctx:     GetLogger(t, "MQTT Adapter"),
 		}
 		adapter := New(components, options)
@@ -714,7 +714,7 @@ func TestHandleData(t *testing.T) {
 		options := Options{InMsg: nil}
 		components := Components{
 			Client:  NewMockClient(),
-			Handler: mocks.NewHandlerClient(),
+			Handler: mocks.NewHandlerServer(),
 			Ctx:     GetLogger(t, "MQTT Adapter"),
 		}
 		adapter := New(components, options)
@@ -750,7 +750,7 @@ func TestHandleData(t *testing.T) {
 		options := Options{InMsg: nil}
 		components := Components{
 			Client:  NewMockClient(),
-			Handler: mocks.NewHandlerClient(),
+			Handler: mocks.NewHandlerServer(),
 			Ctx:     GetLogger(t, "MQTT Adapter"),
 		}
 		adapter := New(components, options)
@@ -781,7 +781,7 @@ func TestHandleData(t *testing.T) {
 		options := Options{InMsg: nil}
 		components := Components{
 			Client:  NewMockClient(),
-			Handler: mocks.NewHandlerClient(),
+			Handler: mocks.NewHandlerServer(),
 			Ctx:     GetLogger(t, "MQTT Adapter"),
 		}
 		components.Client.(*MockClient).Failures["Publish"] = fmt.Errorf("Mock Error")
@@ -826,7 +826,7 @@ func TestHandleData(t *testing.T) {
 		options := Options{InMsg: nil}
 		components := Components{
 			Client:  NewMockClient(),
-			Handler: mocks.NewHandlerClient(),
+			Handler: mocks.NewHandlerServer(),
 			Ctx:     GetLogger(t, "MQTT Adapter"),
 		}
 		adapter := New(components, options)
