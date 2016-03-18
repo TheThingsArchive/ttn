@@ -10,10 +10,7 @@ import (
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/core"
-	"github.com/TheThingsNetwork/ttn/core/adapters/http"
-	httpHandlers "github.com/TheThingsNetwork/ttn/core/adapters/http/handlers"
 	"github.com/TheThingsNetwork/ttn/core/adapters/udp"
-	udpHandlers "github.com/TheThingsNetwork/ttn/core/adapters/udp/handlers"
 	"github.com/TheThingsNetwork/ttn/core/components/router"
 	"github.com/TheThingsNetwork/ttn/core/dutycycle"
 	"github.com/TheThingsNetwork/ttn/utils/stats"

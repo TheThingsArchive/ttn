@@ -11,12 +11,11 @@ import (
 
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/adapters/http"
-	httpHandlers "github.com/TheThingsNetwork/ttn/core/adapters/http/handlers"
 	"github.com/TheThingsNetwork/ttn/core/adapters/mqtt"
-	mqttHandlers "github.com/TheThingsNetwork/ttn/core/adapters/mqtt/handlers"
 	"github.com/TheThingsNetwork/ttn/core/components/handler"
 	"github.com/TheThingsNetwork/ttn/utils/stats"
 	"github.com/apex/log"
+	"google.golang.org/grpc"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -49,55 +48,16 @@ The default handler is the bridge between The Things Network and applications.
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx.Info("Starting")
 
-		// ----- Start Adapters
-		brkNet := fmt.Sprintf("%s:%d", viper.GetString("handler.uplink-bind-address"), viper.GetInt("handler.uplink-port"))
-		brkAdapter, err := http.NewAdapter(brkNet, nil, ctx.WithField("adapter", "broker-adapter"))
-		if err != nil {
-			ctx.WithError(err).Fatal("Could not start broker adapter")
-		}
-		brkAdapter.Bind(httpHandlers.Collect{})
+		// Status & Health
+		statusAddr := fmt.Sprintf("%s:%d", viper.GetString("handler.status-address"), viper.GetInt("handler.status-port"))
+		statusAdapter := http.New(
+			http.Components{Ctx: ctx.WithField("adapter", "handler-status")},
+			http.Options{NetAddr: statusAddr, Timeout: time.Second * 5},
+		)
+		statusAdapter.Bind(http.Healthz{})
+		statusAdapter.Bind(http.StatusPage{})
 
-		mqttClient, cherr, err := mqtt.NewClient("handler-client", viper.GetString("handler.mqtt-broker"), mqtt.TCP)
-		if err != nil {
-			ctx.WithError(err).Fatal("Could not start MQTT client")
-		}
-
-		appAdapter := mqtt.NewAdapter(mqttClient, ctx.WithField("adapter", "app-adapter"))
-		appAdapter.Bind(mqttHandlers.Activation{})
-		appAdapter.Bind(mqttHandlers.Downlink{})
-
-		// Reconnect on failures
-		go func() {
-		monitor:
-			for {
-				ctx.WithError(<-cherr).Debug("Connection lost on mqtt adapter. Trying to reconnect")
-				var delay time.Duration = 25 * time.Millisecond
-				for {
-					if err := appAdapter.Reconnect(); err != nil {
-						ctx.WithError(err).Debug("Unable to reconnect")
-						delay *= 10
-						if delay > 10000*delay {
-							ctx.Fatal("All attempts to reconnect failed")
-						}
-					} else {
-						continue monitor
-					}
-					<-time.After(delay * time.Millisecond)
-				}
-			}
-		}()
-
-		if viper.GetInt("handler.status-port") > 0 {
-			statusNet := fmt.Sprintf("%s:%d", viper.GetString("handler.status-bind-address"), viper.GetInt("handler.status-port"))
-			statusAdapter, err := http.NewAdapter(statusNet, nil, ctx.WithField("adapter", "status-http"))
-			if err != nil {
-				ctx.WithError(err).Fatal("Could not start Status Adapter")
-			}
-			statusAdapter.Bind(httpHandlers.StatusPage{})
-			statusAdapter.Bind(httpHandlers.Healthz{})
-		}
-		// Instantiate in-memory devices storage
-
+		// In-memory devices storage
 		var devicesDB handler.DevStorage
 
 		devDBString := viper.GetString("handler.dev-database")
@@ -119,8 +79,7 @@ The default handler is the bridge between The Things Network and applications.
 			ctx.WithError(fmt.Errorf("Invalid database string. Format: \"boltdb:/path/to.db\".")).Fatal("Could not instantiate local devices storage")
 		}
 
-		// Instantiate in-memory packets storage
-
+		// In-memory packets storage
 		var packetsDB handler.PktStorage
 
 		pktDBString := viper.GetString("handler.pkt-database")
@@ -142,70 +101,41 @@ The default handler is the bridge between The Things Network and applications.
 			ctx.WithError(fmt.Errorf("Invalid database string. Format: \"boltdb:/path/to.db\".")).Fatal("Could not instantiate local packets storage")
 		}
 
-		// Instantiate the broker to which is bound the handler
-		broker := http.NewRecipient(viper.GetString("handler.ttn-broker"), "PUT")
 
-		// Instantiate the actual handler
-		handler := handler.New(devicesDB, packetsDB, broker, ctx)
+		// BrokerClient
+		brokerConn, err := grpc.Dial(viper.GetString("handler.ttn-broker"), grpc.WithInsecure(), grpc.WithTimeout(time.Second*2))
+		if err != nil {
+			return ctx.WithError(err).Fatal("Could not dial broker")
+		}
+		defer brokerConn.Close()
+		broker := core.NewBrokerClient(brokerConn)
+
+		// Handler
+		handler := handler.New(
+			handler.Components{
+				Ctx: ctx,
+				DevStorage: devicesDB,
+				PktStorage: packetsDB,
+				Broker: broker,
+			},
+			handler.Options{
+				NetAddr: fmt.Sprintf("%s:%d", viper.GetString("handler.server-address"), viper.GetInt("handler.server-port")),
+			},
+		)
+
+		// MQTT Client
+		mqttClient, chmsg, err := mqtt.NewClient(
+			"handler-client",
+			viper.GetString("handler-mqtt-broker"),
+			ctx.WithField("adapter", "app-adapter"),
+		)
+		if err != nil {
+			ctx.WithError(err).Fatal("Could not start MQTT client")
+		}
+		appAdapter := mqtt.New(
 
 		// Bring the service to life
 
-		// Listen uplink
-		go func() {
-			for {
-				packet, an, err := brkAdapter.Next()
-				if err != nil {
-					ctx.WithError(err).Warn("Could not get next packet fom brokers")
-					continue
-				}
-
-				go func(packet []byte, an core.AckNacker) {
-					if err := handler.HandleUp(packet, an, appAdapter); err != nil {
-						// We can't do anything with this packet, so we're ignoring it.
-						ctx.WithError(err).Debug("Could not process packet from brokers")
-					}
-				}(packet, an)
-			}
-		}()
-
-		// Listen downlink
-		go func() {
-			for {
-				packet, an, err := appAdapter.Next()
-				if err != nil {
-					ctx.WithError(err).Warn("Could not get next packet fom applications")
-					continue
-				}
-
-				go func(packet []byte, an core.AckNacker) {
-					if err := handler.HandleDown(packet, an, brkAdapter); err != nil {
-						// We can't do anything with this packet, so we're ignoring it.
-						ctx.WithError(err).Debug("Could not process packet from applications")
-					}
-				}(packet, an)
-			}
-		}()
-
-		// Listen registrations
-		go func() {
-			for {
-				reg, an, err := appAdapter.NextRegistration()
-				if err != nil {
-					ctx.WithError(err).Warn("Could not get next registration from applications")
-					continue
-				}
-
-				go func(reg core.Registration, an core.AckNacker, s core.Subscriber) {
-					if err := handler.Register(reg, an, s); err != nil {
-						// We can't do anything with this registration, so we're ignoring it.
-						ctx.WithError(err).Warn("Could not process registration from applications")
-					}
-				}(reg, an, brkAdapter)
-			}
-		}()
-
-		// Wait
-		<-make(chan bool)
 	},
 }
 
