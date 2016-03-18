@@ -20,7 +20,8 @@ import (
 // component implements the core.BrokerServer interface
 type component struct {
 	Components
-	NetAddr string
+	NetAddrUp   string
+	NetAddrDown string
 }
 
 // Components defines a structure to make the instantiation easier to read
@@ -31,7 +32,8 @@ type Components struct {
 
 // Options defines a structure to make the instantiation easier to read
 type Options struct {
-	NetAddr string
+	NetAddrUp   string
+	NetAddrDown string
 }
 
 // Interface defines the Broker interface
@@ -42,12 +44,17 @@ type Interface interface {
 
 // New construct a new Broker component
 func New(c Components, o Options) Interface {
-	return component{Components: c, NetAddr: o.NetAddr}
+	return component{Components: c, NetAddrUp: o.NetAddrUp, NetAddrDown: o.NetAddrDown}
 }
 
 // Start actually runs the component and starts the rpc server
 func (b component) Start() error {
-	conn, err := net.Listen("tcp", b.NetAddr)
+	connUp, err := net.Listen("tcp", b.NetAddrUp)
+	if err != nil {
+		return errors.New(errors.Operational, err)
+	}
+
+	connDown, err := net.Listen("tcp", b.NetAddrDown)
 	if err != nil {
 		return errors.New(errors.Operational, err)
 	}
@@ -55,7 +62,17 @@ func (b component) Start() error {
 	server := grpc.NewServer()
 	core.RegisterBrokerServer(server, b)
 
-	if err := server.Serve(conn); err != nil {
+	cherr := make(chan error)
+
+	go func() {
+		cherr <- server.Serve(connUp)
+	}()
+
+	go func() {
+		cherr <- server.Serve(connDown)
+	}()
+
+	if err := <-cherr; err != nil {
 		return errors.New(errors.Operational, err)
 	}
 	return nil

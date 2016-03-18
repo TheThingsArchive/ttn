@@ -1019,11 +1019,16 @@ func TestDialerCloser(t *testing.T) {
 }
 
 func TestStart(t *testing.T) {
-
-	broker := New(Components{
-		Ctx:               GetLogger(t, "Broker"),
-		NetworkController: NewMockNetworkController(),
-	}, Options{NetAddr: "localhost:8887"})
+	broker := New(
+		Components{
+			Ctx:               GetLogger(t, "Broker"),
+			NetworkController: NewMockNetworkController(),
+		},
+		Options{
+			NetAddrUp:   "localhost:8883",
+			NetAddrDown: "localhost:8884",
+		},
+	)
 
 	cherr := make(chan error)
 	go func() {
