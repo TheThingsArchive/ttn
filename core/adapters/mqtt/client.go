@@ -131,6 +131,9 @@ func createConnecter(id string, netAddr string, chmsg chan<- Msg, chcmd chan<- i
 					TopicFilter: []byte("+/devices/+/down"),
 					QoS:         mqtt.QoS2,
 					Handler: func(topic, msg []byte) {
+						if len(msg) == 0 {
+							return
+						}
 						chmsg <- Msg{
 							Topic:   string(topic),
 							Payload: msg,
@@ -142,6 +145,9 @@ func createConnecter(id string, netAddr string, chmsg chan<- Msg, chcmd chan<- i
 					TopicFilter: []byte("+/devices/personalized/activations"),
 					QoS:         mqtt.QoS2,
 					Handler: func(topic, msg []byte) {
+						if len(msg) == 0 {
+							return
+						}
 						chmsg <- Msg{
 							Topic:   string(topic),
 							Payload: msg,

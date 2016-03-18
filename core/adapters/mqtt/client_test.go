@@ -307,7 +307,7 @@ func TestNewClient(t *testing.T) {
 		cli, _, err := NewClient(newID(), BrokerAddr, GetLogger(t, "Test Logger"))
 		FatalUnless(t, err)
 		err = testCli.Subscribe(&client.SubscribeOptions{
-			[]*client.SubReq{
+			SubReqs: []*client.SubReq{
 				&client.SubReq{
 					TopicFilter: []byte("topic"),
 					QoS:         mqtt.QoS2,
@@ -343,7 +343,7 @@ func TestNewClient(t *testing.T) {
 
 		// Clean
 		err = testCli.Unsubscribe(&client.UnsubscribeOptions{
-			[][]byte{[]byte(msg.Topic)},
+			TopicFilters: [][]byte{[]byte(msg.Topic)},
 		})
 		FatalUnless(t, err)
 		cli.Terminate()

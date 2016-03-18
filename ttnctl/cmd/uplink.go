@@ -170,12 +170,12 @@ var uplinkCmd = &cobra.Command{
 
 		data, err = payload.MarshalBinary()
 		if err != nil {
-			ctx.Fatalf("Unable to construct framepayload", data)
+			ctx.Fatalf("Unable to construct framepayload: %v", data)
 		}
 
 		_, err = conn.Write(data)
 		if err != nil {
-			ctx.Fatalf("Unable to send payload")
+			ctx.Fatal("Unable to send payload")
 		}
 
 		select {

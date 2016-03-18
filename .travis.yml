@@ -3,12 +3,10 @@ language: go
 sudo: required
 
 go:
-    - tip
+    - 1.6
 
 before_install:
-    - wget http://repo.mosquitto.org/debian/mosquitto-repo.gpg.key
-    - sudo apt-key add mosquitto-repo.gpg.key
-    - wget http://repo.mosquitto.org/debian/mosquitto-wheezy.list
+    - sudo apt-add-repository ppa:mosquitto-dev/mosquitto-ppa -y
     - sudo apt-get update
 
 install:

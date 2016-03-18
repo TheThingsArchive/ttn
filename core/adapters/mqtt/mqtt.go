@@ -48,7 +48,7 @@ type Msg struct {
 
 // msgType constants are used in MQTTMsg to characterise the kind of message processed
 const (
-	Down msgType = iota
+	Down msgType = iota + 1
 	ABP
 	OTAA
 )
