@@ -30,6 +30,12 @@ type component struct {
 	NetAddr string
 }
 
+// Interface defines the Handler interface
+type Interface interface {
+	core.HandlerServer
+	Start() error
+}
+
 // Components is used to make handler instantiation easier
 type Components struct {
 	Broker     core.BrokerClient
@@ -54,7 +60,7 @@ type bundle struct {
 }
 
 // New construct a new Handler
-func New(c Components, o Options) core.HandlerServer {
+func New(c Components, o Options) Interface {
 	h := &component{
 		Components: c,
 		NetAddr:    o.NetAddr,
@@ -71,7 +77,7 @@ func New(c Components, o Options) core.HandlerServer {
 }
 
 // Start actually runs the component and starts the rpc server
-func (h *component) Start(netAddr string) error {
+func (h *component) Start() error {
 	conn, err := net.Listen("tcp", h.NetAddr)
 	if err != nil {
 		return errors.New(errors.Operational, err)
@@ -117,11 +123,10 @@ func (h component) SubscribePersonalized(bctx context.Context, req *core.ABPSubH
 	var appSKey [16]byte
 	copy(appSKey[:], req.AppSKey)
 
-	if h.NetAddr == "" {
-		return nil, errors.New(errors.Operational, "Illegal call. Start the server first")
-	}
+	h.Ctx.Debug("Registration is valid. Saving and forwarding to broker")
 
 	if err := h.DevStorage.StorePersonalized(req.AppEUI, devAddr, nwkSKey, appSKey); err != nil {
+		h.Ctx.WithError(err).Debug("Unable to store registration")
 		return nil, errors.New(errors.Operational, err)
 	}
 
@@ -133,6 +138,7 @@ func (h component) SubscribePersonalized(bctx context.Context, req *core.ABPSubH
 	})
 
 	if err != nil {
+		h.Ctx.WithError(err).Debug("Unable to forward registration")
 		return nil, errors.New(errors.Operational, err)
 	}
 	return nil, nil
@@ -334,12 +340,12 @@ browseBundles:
 			// metadata from other bundle.
 			if i == 0 {
 				var err error
-				payload, err = lorawan.DecryptFRMPayload(
-					bundle.Packet.Payload,
+				payload, err = lorawan.EncryptFRMPayload(
+					bundle.Entry.AppSKey,
+					true,
 					lorawan.DevAddr(bundle.Entry.DevAddr),
 					bundle.Packet.FCnt,
-					true,
-					bundle.Entry.AppSKey,
+					bundle.Packet.Payload,
 				)
 				if err != nil {
 					go h.abortConsume(err, bundles)
@@ -366,7 +372,7 @@ browseBundles:
 			Metadata: metadata,
 		})
 		if err != nil {
-			go h.abortConsume(err, bundles)
+			go h.abortConsume(errors.New(errors.Operational, err), bundles)
 			continue browseBundles
 		}
 
@@ -397,7 +403,7 @@ browseBundles:
 				}
 				err = h.DevStorage.UpdateFCnt(b.Packet.AppEUI, b.Packet.DevEUI, downlink.Payload.MACPayload.FHDR.FCnt)
 				if err != nil {
-					go h.abortConsume(errors.New(errors.Structural, err), bundles)
+					go h.abortConsume(err, bundles)
 					continue browseBundles
 				}
 				bundle.Chresp <- downlink
