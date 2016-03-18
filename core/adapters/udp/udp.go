@@ -207,7 +207,7 @@ func (a adapter) handleDataUp(rxpk semtech.RXPK, gid []byte, reply replier) erro
 
 func (a adapter) handleDataDown(resp *core.DataRouterRes, reply replier) error {
 	a.Ctx.Debug("Handle Downlink from router")
-	if resp == nil { // No response
+	if resp == nil || resp.Payload == nil { // No response
 		a.Ctx.Debug("No response to send")
 		return nil
 	}

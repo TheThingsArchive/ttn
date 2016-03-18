@@ -66,19 +66,19 @@ func (r component) Start() error {
 // HandleStats implements the core.RouterClient interface
 func (r component) HandleStats(ctx context.Context, req *core.StatsReq) (*core.StatsRes, error) {
 	if req == nil {
-		return nil, errors.New(errors.Structural, "Invalid nil stats request")
+		return new(core.StatsRes), errors.New(errors.Structural, "Invalid nil stats request")
 	}
 
 	if len(req.GatewayID) != 8 {
-		return nil, errors.New(errors.Structural, "Invalid gateway identifier")
+		return new(core.StatsRes), errors.New(errors.Structural, "Invalid gateway identifier")
 	}
 
 	if req.Metadata == nil {
-		return nil, errors.New(errors.Structural, "Missing mandatory Metadata")
+		return new(core.StatsRes), errors.New(errors.Structural, "Missing mandatory Metadata")
 	}
 
 	stats.MarkMeter("router.stat.in")
-	return nil, r.Storage.UpdateStats(req.GatewayID, *req.Metadata)
+	return new(core.StatsRes), r.Storage.UpdateStats(req.GatewayID, *req.Metadata)
 }
 
 // HandleData implements the core.RouterClient interface
@@ -91,22 +91,22 @@ func (r component) HandleData(ctx context.Context, req *core.DataRouterReq) (*co
 	_, _, fhdr, _, err := core.ValidateLoRaWANData(req.Payload)
 	if err != nil {
 		r.Ctx.WithError(err).Debug("Invalid request payload")
-		return nil, errors.New(errors.Structural, err)
+		return new(core.DataRouterRes), errors.New(errors.Structural, err)
 	}
 	if req.Metadata == nil {
 		r.Ctx.Debug("Invalid request Metadata")
-		return nil, errors.New(errors.Structural, "Missing mandatory Metadata")
+		return new(core.DataRouterRes), errors.New(errors.Structural, "Missing mandatory Metadata")
 	}
 	if len(req.GatewayID) != 8 {
 		r.Ctx.Debug("Invalid request GatewayID")
-		return nil, errors.New(errors.Structural, "Invalid gatewayID")
+		return new(core.DataRouterRes), errors.New(errors.Structural, "Invalid gatewayID")
 	}
 
 	// Lookup for an existing broker
 	entries, err := r.Storage.Lookup(fhdr.DevAddr)
 	if err != nil && err.(errors.Failure).Nature != errors.NotFound {
 		r.Ctx.Warn("Database lookup failed")
-		return nil, errors.New(errors.Operational, err)
+		return new(core.DataRouterRes), errors.New(errors.Operational, err)
 	}
 	shouldBroadcast := err != nil
 	r.Ctx.WithField("Should Broadcast?", shouldBroadcast).Debug("Storage Lookup done")
@@ -129,7 +129,7 @@ func (r component) HandleData(ctx context.Context, req *core.DataRouterReq) (*co
 	sb1, err := dutycycle.GetSubBand(float32(req.Metadata.Frequency))
 	if err != nil {
 		stats.MarkMeter("router.uplink.not_supported")
-		return nil, errors.New(errors.Structural, "Unhandled uplink signal frequency")
+		return new(core.DataRouterRes), errors.New(errors.Structural, "Unhandled uplink signal frequency")
 	}
 
 	rx1, rx2 := dutycycle.StateFromDuty(cycles[sb1]), dutycycle.StateFromDuty(cycles[dutycycle.EuropeG3])
@@ -169,16 +169,16 @@ func (r component) HandleData(ctx context.Context, req *core.DataRouterReq) (*co
 		default:
 			stats.MarkMeter("router.uplink.bad_broker_response")
 		}
-		return nil, err
+		return new(core.DataRouterRes), err
 	}
 
 	return r.handleDataDown(response, req.GatewayID)
 }
 
 func (r component) handleDataDown(req *core.DataBrokerRes, gatewayID []byte) (*core.DataRouterRes, error) {
-	if req == nil { // No response
+	if req == nil || req.Payload == nil { // No response
 		r.Ctx.Debug("Packet sent. No downlink received.")
-		return nil, nil
+		return new(core.DataRouterRes), nil
 	}
 
 	r.Ctx.Debug("Handling downlink response")
@@ -186,7 +186,7 @@ func (r component) handleDataDown(req *core.DataBrokerRes, gatewayID []byte) (*c
 	if req.Metadata == nil {
 		stats.MarkMeter("router.uplink.bad_broker_response")
 		r.Ctx.Warn("Missing mandatory Metadata in response")
-		return nil, errors.New(errors.Structural, "Missing mandatory Metadata in response")
+		return new(core.DataRouterRes), errors.New(errors.Structural, "Missing mandatory Metadata in response")
 	}
 	freq := req.Metadata.Frequency
 	datr := req.Metadata.DataRate
@@ -194,7 +194,7 @@ func (r component) handleDataDown(req *core.DataBrokerRes, gatewayID []byte) (*c
 	size := req.Metadata.PayloadSize
 	if err := r.DutyManager.Update(gatewayID, freq, size, datr, codr); err != nil {
 		r.Ctx.WithError(err).Debug("Unable to update DutyManager")
-		return nil, errors.New(errors.Operational, err)
+		return new(core.DataRouterRes), errors.New(errors.Operational, err)
 	}
 
 	// Send Back the response

@@ -36,7 +36,7 @@ func TestHandleStats(t *testing.T) {
 
 		// Expect
 		var wantErr *string
-		var wantRes *core.StatsRes
+		var wantRes = new(core.StatsRes)
 		var wantID = req.GatewayID
 		var wantMeta = *req.Metadata
 
@@ -65,7 +65,7 @@ func TestHandleStats(t *testing.T) {
 
 		// Expect
 		var wantErr = ErrStructural
-		var wantRes *core.StatsRes
+		var wantRes = new(core.StatsRes)
 		var wantID []byte
 		var wantMeta core.StatsMetadata
 
@@ -101,7 +101,7 @@ func TestHandleStats(t *testing.T) {
 
 		// Expect
 		var wantErr = ErrStructural
-		var wantRes *core.StatsRes
+		var wantRes = new(core.StatsRes)
 		var wantID []byte
 		var wantMeta core.StatsMetadata
 
@@ -132,7 +132,7 @@ func TestHandleStats(t *testing.T) {
 
 		// Expect
 		var wantErr = ErrStructural
-		var wantRes *core.StatsRes
+		var wantRes = new(core.StatsRes)
 		var wantID []byte
 		var wantMeta core.StatsMetadata
 
@@ -169,7 +169,7 @@ func TestHandleStats(t *testing.T) {
 
 		// Expect
 		var wantErr = ErrOperational
-		var wantRes *core.StatsRes
+		var wantRes = new(core.StatsRes)
 		var wantID = req.GatewayID
 		var wantMeta = *req.Metadata
 
@@ -221,7 +221,7 @@ func TestHandleData(t *testing.T) {
 
 		// Expect
 		var wantErr = ErrStructural
-		var wantRes *core.DataRouterRes
+		var wantRes = new(core.DataRouterRes)
 		var wantBrReq *core.DataBrokerReq
 		var wantStore int
 
@@ -273,7 +273,7 @@ func TestHandleData(t *testing.T) {
 
 		// Expect
 		var wantErr = ErrStructural
-		var wantRes *core.DataRouterRes
+		var wantRes = new(core.DataRouterRes)
 		var wantBrReq *core.DataBrokerReq
 		var wantStore int
 
@@ -325,7 +325,7 @@ func TestHandleData(t *testing.T) {
 
 		// Expect
 		var wantErr = ErrStructural
-		var wantRes *core.DataRouterRes
+		var wantRes = new(core.DataRouterRes)
 		var wantBrReq *core.DataBrokerReq
 		var wantStore int
 
@@ -362,7 +362,7 @@ func TestHandleData(t *testing.T) {
 
 		// Expect
 		var wantErr = ErrStructural
-		var wantRes *core.DataRouterRes
+		var wantRes = new(core.DataRouterRes)
 		var wantBrReq *core.DataBrokerReq
 		var wantStore int
 
@@ -414,7 +414,7 @@ func TestHandleData(t *testing.T) {
 
 		// Expect
 		var wantErr = ErrStructural
-		var wantRes *core.DataRouterRes
+		var wantRes = new(core.DataRouterRes)
 		var wantBrReq *core.DataBrokerReq
 		var wantStore int
 
@@ -479,7 +479,7 @@ func TestHandleData(t *testing.T) {
 
 		// Expect
 		var wantErr *string
-		var wantRes *core.DataRouterRes
+		var wantRes = new(core.DataRouterRes)
 		var wantBrReq = &core.DataBrokerReq{
 			Payload: req.Payload,
 			Metadata: &core.Metadata{
@@ -549,7 +549,7 @@ func TestHandleData(t *testing.T) {
 
 		// Expect
 		var wantErr *string
-		var wantRes *core.DataRouterRes
+		var wantRes = new(core.DataRouterRes)
 		var wantBrReq = &core.DataBrokerReq{
 			Payload: req.Payload,
 			Metadata: &core.Metadata{
@@ -621,7 +621,7 @@ func TestHandleData(t *testing.T) {
 
 		// Expect
 		var wantErr *string
-		var wantRes *core.DataRouterRes
+		var wantRes = new(core.DataRouterRes)
 		var wantBrReq = &core.DataBrokerReq{
 			Payload: req.Payload,
 			Metadata: &core.Metadata{
@@ -691,7 +691,7 @@ func TestHandleData(t *testing.T) {
 
 		// Expect
 		var wantErr = ErrOperational
-		var wantRes *core.DataRouterRes
+		var wantRes = new(core.DataRouterRes)
 		var wantBrReq *core.DataBrokerReq
 		var wantStore = 0
 
@@ -757,7 +757,7 @@ func TestHandleData(t *testing.T) {
 
 		// Expect
 		var wantErr *string
-		var wantRes *core.DataRouterRes
+		var wantRes = new(core.DataRouterRes)
 		var wantBrReq = &core.DataBrokerReq{
 			Payload: req.Payload,
 			Metadata: &core.Metadata{
@@ -830,7 +830,7 @@ func TestHandleData(t *testing.T) {
 
 		// Expect
 		var wantErr = ErrStructural
-		var wantRes *core.DataRouterRes
+		var wantRes = new(core.DataRouterRes)
 		var wantBrReq *core.DataBrokerReq
 		var wantStore = 0
 
@@ -893,7 +893,7 @@ func TestHandleData(t *testing.T) {
 
 		// Expect
 		var wantErr = ErrOperational
-		var wantRes *core.DataRouterRes
+		var wantRes = new(core.DataRouterRes)
 		var wantBrReq = &core.DataBrokerReq{
 			Payload: req.Payload,
 			Metadata: &core.Metadata{
@@ -963,7 +963,7 @@ func TestHandleData(t *testing.T) {
 
 		// Expect
 		var wantErr = ErrBehavioural
-		var wantRes *core.DataRouterRes
+		var wantRes = new(core.DataRouterRes)
 		var wantBrReq = &core.DataBrokerReq{
 			Payload: req.Payload,
 			Metadata: &core.Metadata{
@@ -1038,7 +1038,7 @@ func TestHandleData(t *testing.T) {
 
 		// Expect
 		var wantErr = ErrNotFound
-		var wantRes *core.DataRouterRes
+		var wantRes = new(core.DataRouterRes)
 		var wantBrReq = &core.DataBrokerReq{
 			Payload: req.Payload,
 			Metadata: &core.Metadata{
@@ -1227,7 +1227,7 @@ func TestHandleData(t *testing.T) {
 
 		// Expect
 		var wantErr = ErrStructural
-		var wantRes *core.DataRouterRes
+		var wantRes = new(core.DataRouterRes)
 		var wantBrReq = &core.DataBrokerReq{
 			Payload: req.Payload,
 			Metadata: &core.Metadata{
@@ -1322,7 +1322,7 @@ func TestHandleData(t *testing.T) {
 
 		// Expect
 		var wantErr = ErrOperational
-		var wantRes *core.DataRouterRes
+		var wantRes = new(core.DataRouterRes)
 		var wantBrReq = &core.DataBrokerReq{
 			Payload: req.Payload,
 			Metadata: &core.Metadata{

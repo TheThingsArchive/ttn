@@ -99,26 +99,26 @@ func (h component) SubscribePersonalized(bctx context.Context, req *core.ABPSubH
 
 	if len(req.AppEUI) != 8 {
 		stats.MarkMeter("handler.registration.invalid")
-		return nil, errors.New(errors.Structural, "Invalid Application EUI")
+		return new(core.ABPSubHandlerRes), errors.New(errors.Structural, "Invalid Application EUI")
 	}
 
 	if len(req.DevAddr) != 4 {
 		stats.MarkMeter("handler.registration.invalid")
-		return nil, errors.New(errors.Structural, "Invalid Device Address")
+		return new(core.ABPSubHandlerRes), errors.New(errors.Structural, "Invalid Device Address")
 	}
 	var devAddr [4]byte
 	copy(devAddr[:], req.DevAddr)
 
 	if len(req.NwkSKey) != 16 {
 		stats.MarkMeter("handler.registration.invalid")
-		return nil, errors.New(errors.Structural, "Invalid Network Session Key")
+		return new(core.ABPSubHandlerRes), errors.New(errors.Structural, "Invalid Network Session Key")
 	}
 	var nwkSKey [16]byte
 	copy(nwkSKey[:], req.NwkSKey)
 
 	if len(req.AppSKey) != 16 {
 		stats.MarkMeter("handler.registration.invalid")
-		return nil, errors.New(errors.Structural, "Invalid Application Session Key")
+		return new(core.ABPSubHandlerRes), errors.New(errors.Structural, "Invalid Application Session Key")
 	}
 	var appSKey [16]byte
 	copy(appSKey[:], req.AppSKey)
@@ -127,7 +127,7 @@ func (h component) SubscribePersonalized(bctx context.Context, req *core.ABPSubH
 
 	if err := h.DevStorage.StorePersonalized(req.AppEUI, devAddr, nwkSKey, appSKey); err != nil {
 		h.Ctx.WithError(err).Debug("Unable to store registration")
-		return nil, errors.New(errors.Operational, err)
+		return new(core.ABPSubHandlerRes), errors.New(errors.Operational, err)
 	}
 
 	_, err := h.Broker.SubscribePersonalized(context.Background(), &core.ABPSubBrokerReq{
@@ -139,9 +139,9 @@ func (h component) SubscribePersonalized(bctx context.Context, req *core.ABPSubH
 
 	if err != nil {
 		h.Ctx.WithError(err).Debug("Unable to forward registration")
-		return nil, errors.New(errors.Operational, err)
+		return new(core.ABPSubHandlerRes), errors.New(errors.Operational, err)
 	}
-	return nil, nil
+	return new(core.ABPSubHandlerRes), nil
 }
 
 // HandleDataDown implements the core.HandlerServer interface
@@ -153,21 +153,21 @@ func (h component) HandleDataDown(bctx context.Context, req *core.DataDownHandle
 
 	if len(req.AppEUI) != 8 {
 		stats.MarkMeter("handler.downlink.invalid")
-		return nil, errors.New(errors.Structural, "Invalid Application EUI")
+		return new(core.DataDownHandlerRes), errors.New(errors.Structural, "Invalid Application EUI")
 	}
 
 	if len(req.DevEUI) != 8 {
 		stats.MarkMeter("handler.downlink.invalid")
-		return nil, errors.New(errors.Structural, "Invalid Device EUI")
+		return new(core.DataDownHandlerRes), errors.New(errors.Structural, "Invalid Device EUI")
 	}
 
 	if len(req.Payload) == 0 {
 		stats.MarkMeter("handler.downlink.invalid")
-		return nil, errors.New(errors.Structural, "Invalid payload")
+		return new(core.DataDownHandlerRes), errors.New(errors.Structural, "Invalid payload")
 	}
 
 	h.Ctx.WithField("DevEUI", req.DevEUI).WithField("AppEUI", req.AppEUI).Debug("Save downlink for later")
-	return nil, h.PktStorage.Push(req.AppEUI, req.DevEUI, pktEntry{Payload: req.Payload})
+	return new(core.DataDownHandlerRes), h.PktStorage.Push(req.AppEUI, req.DevEUI, pktEntry{Payload: req.Payload})
 }
 
 // HandleDataUp implements the core.HandlerServer interface
@@ -177,19 +177,19 @@ func (h component) HandleDataUp(bctx context.Context, req *core.DataUpHandlerReq
 	// 0. Check the packet integrity
 	if len(req.Payload) == 0 {
 		stats.MarkMeter("handler.uplink.invalid")
-		return nil, errors.New(errors.Structural, "Invalid Packet Payload")
+		return new(core.DataUpHandlerRes), errors.New(errors.Structural, "Invalid Packet Payload")
 	}
 	if len(req.DevEUI) != 8 {
 		stats.MarkMeter("handler.uplink.invalid")
-		return nil, errors.New(errors.Structural, "Invalid Device EUI")
+		return new(core.DataUpHandlerRes), errors.New(errors.Structural, "Invalid Device EUI")
 	}
 	if len(req.AppEUI) != 8 {
 		stats.MarkMeter("handler.uplink.invalid")
-		return nil, errors.New(errors.Structural, "Invalid Application EUI")
+		return new(core.DataUpHandlerRes), errors.New(errors.Structural, "Invalid Application EUI")
 	}
 	if req.Metadata == nil {
 		stats.MarkMeter("handler.uplink.invalid")
-		return nil, errors.New(errors.Structural, "Missing Mandatory Metadata")
+		return new(core.DataUpHandlerRes), errors.New(errors.Structural, "Missing Mandatory Metadata")
 	}
 	stats.MarkMeter("handler.uplink.data")
 
@@ -197,7 +197,7 @@ func (h component) HandleDataUp(bctx context.Context, req *core.DataUpHandlerReq
 	h.Ctx.WithField("appEUI", req.AppEUI).WithField("devEUI", req.DevEUI).Debug("Perform lookup")
 	entry, err := h.DevStorage.Lookup(req.AppEUI, req.DevEUI)
 	if err != nil {
-		return nil, err
+		return new(core.DataUpHandlerRes), err
 	}
 
 	// 2. Prepare a channel to receive the response from the consumer
@@ -211,7 +211,7 @@ func (h component) HandleDataUp(bctx context.Context, req *core.DataUpHandlerReq
 	binary.Write(buf, binary.BigEndian, req.FCnt)
 	data := buf.Bytes()
 	if len(data) != 20 {
-		return nil, errors.New(errors.Structural, "Unable to generate bundleID")
+		return new(core.DataUpHandlerRes), errors.New(errors.Structural, "Unable to generate bundleID")
 	}
 	copy(bundleID[:], data[:])
 
@@ -241,11 +241,11 @@ func (h component) HandleDataUp(bctx context.Context, req *core.DataUpHandlerReq
 	case error:
 		stats.MarkMeter("handler.uplink.error")
 		ctx.WithError(resp.(error)).Warn("Error while processing dowlink.")
-		return nil, resp.(error)
+		return new(core.DataUpHandlerRes), resp.(error)
 	default:
 		stats.MarkMeter("handler.uplink.ack.without_response")
 		ctx.Debug("No response to send.")
-		return nil, nil
+		return new(core.DataUpHandlerRes), nil
 	}
 }
 

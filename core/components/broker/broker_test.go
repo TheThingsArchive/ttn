@@ -33,7 +33,7 @@ func TestHandleData(t *testing.T) {
 		// Expect
 		var wantErr = ErrStructural
 		var wantDataUp *core.DataUpHandlerReq
-		var wantRes *core.DataBrokerRes
+		var wantRes = new(core.DataBrokerRes)
 		var wantFCnt uint32
 
 		// Operate
@@ -79,7 +79,7 @@ func TestHandleData(t *testing.T) {
 		// Expect
 		var wantErr = ErrOperational
 		var wantDataUp *core.DataUpHandlerReq
-		var wantRes *core.DataBrokerRes
+		var wantRes = new(core.DataBrokerRes)
 		var wantFCnt uint32
 
 		// Operate
@@ -125,7 +125,7 @@ func TestHandleData(t *testing.T) {
 		// Expect
 		var wantErr = ErrNotFound
 		var wantDataUp *core.DataUpHandlerReq
-		var wantRes *core.DataBrokerRes
+		var wantRes = new(core.DataBrokerRes)
 		var wantFCnt uint32
 
 		// Operate
@@ -208,7 +208,7 @@ func TestHandleData(t *testing.T) {
 			MType:    req.Payload.MHDR.MType,
 			Metadata: req.Metadata,
 		}
-		var wantRes *core.DataBrokerRes
+		var wantRes = new(core.DataBrokerRes)
 		var wantFCnt = nc.OutWholeCounter.FCnt
 		var wantDialer = true
 
@@ -275,7 +275,7 @@ func TestHandleData(t *testing.T) {
 		// Expect
 		var wantErr = ErrNotFound
 		var wantDataUp *core.DataUpHandlerReq
-		var wantRes *core.DataBrokerRes
+		var wantRes = new(core.DataBrokerRes)
 		var wantFCnt uint32
 		var wantDialer bool
 
@@ -350,7 +350,7 @@ func TestHandleData(t *testing.T) {
 			MType:    req.Payload.MHDR.MType,
 			Metadata: req.Metadata,
 		}
-		var wantRes *core.DataBrokerRes
+		var wantRes = new(core.DataBrokerRes)
 		var wantFCnt = nc.OutWholeCounter.FCnt
 		var wantDialer = true
 
@@ -419,7 +419,7 @@ func TestHandleData(t *testing.T) {
 		// Expect
 		var wantErr = ErrOperational
 		var wantDataUp *core.DataUpHandlerReq
-		var wantRes *core.DataBrokerRes
+		var wantRes = new(core.DataBrokerRes)
 		var wantFCnt = nc.OutWholeCounter.FCnt
 		var wantDialer = true
 
@@ -496,7 +496,7 @@ func TestHandleData(t *testing.T) {
 			MType:    req.Payload.MHDR.MType,
 			Metadata: req.Metadata,
 		}
-		var wantRes *core.DataBrokerRes
+		var wantRes = new(core.DataBrokerRes)
 		var wantFCnt = nc.OutWholeCounter.FCnt
 		var wantDialer = true
 
@@ -668,7 +668,7 @@ func TestHandleData(t *testing.T) {
 		// Expect
 		var wantErr = ErrOperational
 		var wantDataUp *core.DataUpHandlerReq
-		var wantRes *core.DataBrokerRes
+		var wantRes = new(core.DataBrokerRes)
 		var wantFCnt = nc.OutWholeCounter.FCnt
 		var wantDialer bool
 
@@ -755,7 +755,7 @@ func TestHandleData(t *testing.T) {
 			MType:    req.Payload.MHDR.MType,
 			Metadata: req.Metadata,
 		}
-		var wantRes *core.DataBrokerRes
+		var wantRes = new(core.DataBrokerRes)
 		var wantFCnt = nc.OutWholeCounter.FCnt
 		var wantDialer = true
 
@@ -787,7 +787,7 @@ func TestSubscribePerso(t *testing.T) {
 
 		// Expect
 		var wantErr *string
-		var wantRes *core.ABPSubBrokerRes
+		var wantRes = new(core.ABPSubBrokerRes)
 		var wantEntry = devEntry{
 			Dialer:  NewDialer([]byte(req.HandlerNet)),
 			AppEUI:  req.AppEUI,
@@ -821,7 +821,7 @@ func TestSubscribePerso(t *testing.T) {
 
 		// Expect
 		var wantErr *string
-		var wantRes *core.ABPSubBrokerRes
+		var wantRes = new(core.ABPSubBrokerRes)
 		var wantEntry = devEntry{
 			Dialer:  NewDialer([]byte(req.HandlerNet)),
 			AppEUI:  req.AppEUI,
@@ -855,7 +855,7 @@ func TestSubscribePerso(t *testing.T) {
 
 		// Expect
 		var wantErr *string
-		var wantRes *core.ABPSubBrokerRes
+		var wantRes = new(core.ABPSubBrokerRes)
 		var wantEntry = devEntry{
 			Dialer:  NewDialer([]byte(req.HandlerNet)),
 			AppEUI:  req.AppEUI,
@@ -889,7 +889,7 @@ func TestSubscribePerso(t *testing.T) {
 
 		// Expect
 		var wantErr = ErrStructural
-		var wantRes *core.ABPSubBrokerRes
+		var wantRes = new(core.ABPSubBrokerRes)
 		var wantEntry devEntry
 
 		// Operate
@@ -918,7 +918,7 @@ func TestSubscribePerso(t *testing.T) {
 
 		// Expect
 		var wantErr = ErrStructural
-		var wantRes *core.ABPSubBrokerRes
+		var wantRes = new(core.ABPSubBrokerRes)
 		var wantEntry devEntry
 
 		// Operate
@@ -947,7 +947,7 @@ func TestSubscribePerso(t *testing.T) {
 
 		// Expect
 		var wantErr = ErrStructural
-		var wantRes *core.ABPSubBrokerRes
+		var wantRes = new(core.ABPSubBrokerRes)
 		var wantEntry devEntry
 
 		// Operate
@@ -975,7 +975,7 @@ func TestSubscribePerso(t *testing.T) {
 
 		// Expect
 		var wantErr = ErrStructural
-		var wantRes *core.ABPSubBrokerRes
+		var wantRes = new(core.ABPSubBrokerRes)
 		var wantEntry devEntry
 
 		// Operate

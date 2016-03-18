@@ -34,7 +34,7 @@ func TestHandleDataDown(t *testing.T) {
 
 		// Expect
 		var wantError *string
-		var wantRes *core.DataDownHandlerRes
+		var wantRes = new(core.DataDownHandlerRes)
 		var wantEntry = pktEntry{Payload: req.Payload}
 
 		// Operate
@@ -71,7 +71,7 @@ func TestHandleDataDown(t *testing.T) {
 
 		// Expect
 		var wantError = ErrStructural
-		var wantRes *core.DataDownHandlerRes
+		var wantRes = new(core.DataDownHandlerRes)
 		var wantEntry pktEntry
 
 		// Operate
@@ -108,7 +108,7 @@ func TestHandleDataDown(t *testing.T) {
 
 		// Expect
 		var wantError = ErrStructural
-		var wantRes *core.DataDownHandlerRes
+		var wantRes = new(core.DataDownHandlerRes)
 		var wantEntry pktEntry
 
 		// Operate
@@ -145,7 +145,7 @@ func TestHandleDataDown(t *testing.T) {
 
 		// Expect
 		var wantError = ErrStructural
-		var wantRes *core.DataDownHandlerRes
+		var wantRes = new(core.DataDownHandlerRes)
 		var wantEntry pktEntry
 
 		// Operate
@@ -186,7 +186,7 @@ func TestHandleDataUp(t *testing.T) {
 
 		// Expect
 		var wantErr = ErrNotFound
-		var wantRes *core.DataUpHandlerRes
+		var wantRes = new(core.DataUpHandlerRes)
 		var wantData *core.DataAppReq
 		var wantFCnt uint32
 
@@ -228,7 +228,7 @@ func TestHandleDataUp(t *testing.T) {
 
 		// Expect
 		var wantErr = ErrStructural
-		var wantRes *core.DataUpHandlerRes
+		var wantRes = new(core.DataUpHandlerRes)
 		var wantData *core.DataAppReq
 		var wantFCnt uint32
 
@@ -270,7 +270,7 @@ func TestHandleDataUp(t *testing.T) {
 
 		// Expect
 		var wantErr = ErrStructural
-		var wantRes *core.DataUpHandlerRes
+		var wantRes = new(core.DataUpHandlerRes)
 		var wantData *core.DataAppReq
 		var wantFCnt uint32
 
@@ -312,7 +312,7 @@ func TestHandleDataUp(t *testing.T) {
 
 		// Expect
 		var wantErr = ErrStructural
-		var wantRes *core.DataUpHandlerRes
+		var wantRes = new(core.DataUpHandlerRes)
 		var wantData *core.DataAppReq
 		var wantFCnt uint32
 
@@ -354,7 +354,7 @@ func TestHandleDataUp(t *testing.T) {
 
 		// Expect
 		var wantErr = ErrStructural
-		var wantRes *core.DataUpHandlerRes
+		var wantRes = new(core.DataUpHandlerRes)
 		var wantData *core.DataAppReq
 		var wantFCnt uint32
 
@@ -413,7 +413,7 @@ func TestHandleDataUp(t *testing.T) {
 
 		// Expect
 		var wantErr *string
-		var wantRes *core.DataUpHandlerRes
+		var wantRes = new(core.DataUpHandlerRes)
 		var wantData = &core.DataAppReq{
 			Payload:  payload,
 			Metadata: []*core.Metadata{req.Metadata},
@@ -496,8 +496,8 @@ func TestHandleDataUp(t *testing.T) {
 		// Expect
 		var wantErr1 *string
 		var wantErr2 *string
-		var wantRes1 *core.DataUpHandlerRes
-		var wantRes2 *core.DataUpHandlerRes
+		var wantRes1 = new(core.DataUpHandlerRes)
+		var wantRes2 = new(core.DataUpHandlerRes)
 		var wantData = &core.DataAppReq{
 			Payload:  payload,
 			Metadata: []*core.Metadata{req1.Metadata, req2.Metadata},
@@ -708,8 +708,8 @@ func TestHandleDataUp(t *testing.T) {
 		// Expect
 		var wantErr1 *string
 		var wantErr2 = ErrBehavioural
-		var wantRes1 *core.DataUpHandlerRes
-		var wantRes2 *core.DataUpHandlerRes
+		var wantRes1 = new(core.DataUpHandlerRes)
+		var wantRes2 = new(core.DataUpHandlerRes)
 		var wantData = &core.DataAppReq{
 			Payload:  payload,
 			Metadata: []*core.Metadata{req1.Metadata},
@@ -797,7 +797,7 @@ func TestHandleDataUp(t *testing.T) {
 
 		// Expect
 		var wantErr = ErrOperational
-		var wantRes *core.DataUpHandlerRes
+		var wantRes = new(core.DataUpHandlerRes)
 		var wantData = &core.DataAppReq{
 			Payload:  payload,
 			Metadata: []*core.Metadata{req.Metadata},
@@ -862,7 +862,7 @@ func TestHandleDataUp(t *testing.T) {
 
 		// Expect
 		var wantErr = ErrOperational
-		var wantRes *core.DataUpHandlerRes
+		var wantRes = new(core.DataUpHandlerRes)
 		var wantData = &core.DataAppReq{
 			Payload:  payload,
 			Metadata: []*core.Metadata{req.Metadata},
@@ -950,8 +950,8 @@ func TestHandleDataUp(t *testing.T) {
 		// Expect
 		var wantErr1 *string
 		var wantErr2 *string
-		var wantRes1 *core.DataUpHandlerRes
-		var wantRes2 *core.DataUpHandlerRes
+		var wantRes1 = new(core.DataUpHandlerRes)
+		var wantRes2 = new(core.DataUpHandlerRes)
 		var wantData1 = &core.DataAppReq{
 			Payload:  payload1,
 			Metadata: []*core.Metadata{req1.Metadata},
@@ -1159,7 +1159,7 @@ func TestHandleDataUp(t *testing.T) {
 
 		// Expect
 		var wantErr = ErrOperational
-		var wantRes *core.DataUpHandlerRes
+		var wantRes = new(core.DataUpHandlerRes)
 		var wantData = &core.DataAppReq{
 			Payload:  payload,
 			Metadata: []*core.Metadata{req.Metadata},
@@ -1205,7 +1205,7 @@ func TestSubscribePersonalized(t *testing.T) {
 
 		// Expect
 		var wantError *string
-		var wantRes *core.ABPSubHandlerRes
+		var wantRes = new(core.ABPSubHandlerRes)
 		var wantSub = req.AppEUI
 		var wantReq = &core.ABPSubBrokerReq{
 			HandlerNet: addr,
@@ -1251,7 +1251,7 @@ func TestSubscribePersonalized(t *testing.T) {
 
 		// Expect
 		var wantError = ErrStructural
-		var wantRes *core.ABPSubHandlerRes
+		var wantRes = new(core.ABPSubHandlerRes)
 		var wantSub []byte
 		var wantReq *core.ABPSubBrokerReq
 
@@ -1292,7 +1292,7 @@ func TestSubscribePersonalized(t *testing.T) {
 
 		// Expect
 		var wantError = ErrStructural
-		var wantRes *core.ABPSubHandlerRes
+		var wantRes = new(core.ABPSubHandlerRes)
 		var wantSub []byte
 		var wantReq *core.ABPSubBrokerReq
 
@@ -1333,7 +1333,7 @@ func TestSubscribePersonalized(t *testing.T) {
 
 		// Expect
 		var wantError = ErrStructural
-		var wantRes *core.ABPSubHandlerRes
+		var wantRes = new(core.ABPSubHandlerRes)
 		var wantSub []byte
 		var wantReq *core.ABPSubBrokerReq
 
@@ -1374,7 +1374,7 @@ func TestSubscribePersonalized(t *testing.T) {
 
 		// Expect
 		var wantError = ErrStructural
-		var wantRes *core.ABPSubHandlerRes
+		var wantRes = new(core.ABPSubHandlerRes)
 		var wantSub []byte
 		var wantReq *core.ABPSubBrokerReq
 
@@ -1416,7 +1416,7 @@ func TestSubscribePersonalized(t *testing.T) {
 
 		// Expect
 		var wantError = ErrOperational
-		var wantRes *core.ABPSubHandlerRes
+		var wantRes = new(core.ABPSubHandlerRes)
 		var wantSub = req.AppEUI
 		var wantReq *core.ABPSubBrokerReq
 
@@ -1458,7 +1458,7 @@ func TestSubscribePersonalized(t *testing.T) {
 
 		// Expect
 		var wantError = ErrOperational
-		var wantRes *core.ABPSubHandlerRes
+		var wantRes = new(core.ABPSubHandlerRes)
 		var wantSub = req.AppEUI
 		var wantReq = &core.ABPSubBrokerReq{
 			HandlerNet: addr,
