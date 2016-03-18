@@ -24,11 +24,11 @@ type NetworkController interface {
 }
 
 type devEntry struct {
-	HandlerNet string
-	AppEUI     []byte
-	DevEUI     []byte
-	NwkSKey    [16]byte
-	FCntUp     uint32
+	Dialer  Dialer
+	AppEUI  []byte
+	DevEUI  []byte
+	NwkSKey [16]byte
+	FCntUp  uint32
 }
 
 type controller struct {
@@ -120,7 +120,7 @@ func (e devEntry) MarshalBinary() ([]byte, error) {
 	if len(buf.Bytes()) != 36 {
 		return nil, errors.New(errors.Structural, "Device entry was invalid. Cannot Marshal")
 	}
-	binary.Write(buf, binary.BigEndian, []byte(e.HandlerNet))
+	binary.Write(buf, binary.BigEndian, e.Dialer.MarshalSafely())
 	return buf.Bytes(), nil
 }
 
@@ -135,7 +135,6 @@ func (e *devEntry) UnmarshalBinary(data []byte) error {
 	if err := binary.Read(buf, binary.BigEndian, &e.FCntUp); err != nil {
 		return errors.New(errors.Structural, err)
 	}
-
-	e.HandlerNet = string(buf.Next(buf.Len()))
+	e.Dialer = NewDialer(buf.Next(buf.Len()))
 	return nil
 }

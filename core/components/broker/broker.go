@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
-	"time"
 
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
@@ -15,7 +14,6 @@ import (
 	"github.com/apex/log"
 	"github.com/brocaar/lorawan"
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
 )
 
 // component implements the core.Component interface
@@ -90,7 +88,7 @@ func (b component) HandleData(bctx context.Context, req *core.DataBrokerReq) (*c
 		if ok {
 			mEntry = &entry
 			stats.MarkMeter("broker.uplink.handler_lookup.mic_match")
-			ctx.WithField("handler", entry.HandlerNet).Debug("MIC check succeeded")
+			ctx.WithField("handler", string(entry.Dialer.MarshalSafely())).Debug("MIC check succeeded")
 			break // We stop at the first valid check ...
 		}
 	}
@@ -110,12 +108,11 @@ func (b component) HandleData(bctx context.Context, req *core.DataBrokerReq) (*c
 	}
 
 	// Then we forward the packet to the handler and wait for the response
-	conn, err := grpc.Dial(mEntry.HandlerNet, grpc.WithInsecure(), grpc.WithTimeout(time.Second*2))
+	handler, closer, err := mEntry.Dialer.Dial()
 	if err != nil {
 		return nil, err
 	}
-	defer conn.Close()
-	handler := core.NewHandlerClient(conn)
+	defer closer.Close()
 	resp, err := handler.HandleDataUp(context.Background(), &core.DataUpHandlerReq{
 		Payload:  req.Payload.MACPayload.FRMPayload,
 		DevEUI:   mEntry.DevEUI,
@@ -182,10 +179,10 @@ func (b component) SubscribePersonalized(bctx context.Context, req *core.ABPSubB
 	}
 
 	return nil, b.StoreDevice(req.DevAddr, devEntry{
-		HandlerNet: req.HandlerNet,
-		AppEUI:     req.AppEUI,
-		DevEUI:     devEUI,
-		NwkSKey:    nwkSKey,
-		FCntUp:     0,
+		Dialer:  NewDialer([]byte(req.HandlerNet)),
+		AppEUI:  req.AppEUI,
+		DevEUI:  devEUI,
+		NwkSKey: nwkSKey,
+		FCntUp:  0,
 	})
 }

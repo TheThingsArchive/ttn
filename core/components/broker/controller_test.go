@@ -38,11 +38,11 @@ func TestNetworkControllerDevice(t *testing.T) {
 		db, _ := NewNetworkController(NetworkControllerDB)
 		devAddr := []byte{1, 2, 3, 4}
 		entry := devEntry{
-			HandlerNet: "url",
-			AppEUI:     []byte{1, 2, 3, 4, 5, 6, 7, 8},
-			DevEUI:     []byte{0, 0, 0, 0, 1, 2, 3, 4},
-			NwkSKey:    [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
-			FCntUp:     14,
+			Dialer:  NewDialer([]byte("url")),
+			AppEUI:  []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			DevEUI:  []byte{0, 0, 0, 0, 1, 2, 3, 4},
+			NwkSKey: [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
+			FCntUp:  14,
 		}
 
 		// Operate
@@ -68,18 +68,18 @@ func TestNetworkControllerDevice(t *testing.T) {
 		db, _ := NewNetworkController(NetworkControllerDB)
 		devAddr := []byte{1, 2, 3, 5}
 		entry1 := devEntry{
-			HandlerNet: "url",
-			AppEUI:     []byte{1, 2, 3, 4, 5, 6, 7, 8},
-			DevEUI:     []byte{0, 0, 0, 0, 1, 2, 3, 5},
-			NwkSKey:    [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
-			FCntUp:     14,
+			Dialer:  NewDialer([]byte("url")),
+			AppEUI:  []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			DevEUI:  []byte{0, 0, 0, 0, 1, 2, 3, 5},
+			NwkSKey: [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
+			FCntUp:  14,
 		}
 		entry2 := devEntry{
-			HandlerNet: "url",
-			AppEUI:     []byte{8, 7, 6, 5, 4, 3, 2, 1},
-			DevEUI:     []byte{0, 0, 0, 0, 1, 2, 3, 5},
-			NwkSKey:    [16]byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
-			FCntUp:     42,
+			Dialer:  NewDialer([]byte("url")),
+			AppEUI:  []byte{8, 7, 6, 5, 4, 3, 2, 1},
+			DevEUI:  []byte{0, 0, 0, 0, 1, 2, 3, 5},
+			NwkSKey: [16]byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+			FCntUp:  42,
 		}
 
 		// Operate
@@ -129,11 +129,11 @@ func TestNetworkControllerDevice(t *testing.T) {
 		_ = db.Close()
 		devAddr := []byte{1, 0, 0, 2}
 		entry := devEntry{
-			HandlerNet: "url",
-			AppEUI:     []byte{1, 2, 3, 4, 5, 6, 7, 8},
-			DevEUI:     []byte{0, 0, 0, 0, 1, 2, 3, 4},
-			NwkSKey:    [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
-			FCntUp:     14,
+			Dialer:  NewDialer([]byte("url")),
+			AppEUI:  []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			DevEUI:  []byte{0, 0, 0, 0, 1, 2, 3, 4},
+			NwkSKey: [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
+			FCntUp:  14,
 		}
 
 		// Operate
@@ -173,11 +173,11 @@ func TestNetworkControllerDevice(t *testing.T) {
 		db, _ := NewNetworkController(NetworkControllerDB)
 		devAddr := []byte{1, 0, 0, 4}
 		entry := devEntry{
-			HandlerNet: "url",
-			AppEUI:     []byte{1, 2, 3, 4, 5, 6, 7, 8},
-			DevEUI:     []byte{0, 0, 0, 0, 1, 2, 3, 4},
-			NwkSKey:    [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
-			FCntUp:     14,
+			Dialer:  NewDialer([]byte("url")),
+			AppEUI:  []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			DevEUI:  []byte{0, 0, 0, 0, 1, 2, 3, 4},
+			NwkSKey: [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
+			FCntUp:  14,
 		}
 
 		// Operate
@@ -224,18 +224,18 @@ func TestNetworkControllerDevice(t *testing.T) {
 		db, _ := NewNetworkController(NetworkControllerDB)
 		devAddr := []byte{8, 8, 8, 8}
 		entry1 := devEntry{
-			HandlerNet: "url",
-			AppEUI:     []byte{1, 2, 3, 4, 5, 6, 7, 8},
-			DevEUI:     []byte{0, 0, 0, 0, 1, 2, 3, 5},
-			NwkSKey:    [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
-			FCntUp:     14,
+			Dialer:  NewDialer([]byte("url")),
+			AppEUI:  []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			DevEUI:  []byte{0, 0, 0, 0, 1, 2, 3, 5},
+			NwkSKey: [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
+			FCntUp:  14,
 		}
 		entry2 := devEntry{
-			HandlerNet: "url",
-			AppEUI:     []byte{8, 7, 6, 5, 4, 3, 2, 1},
-			DevEUI:     []byte{0, 0, 0, 0, 1, 2, 3, 5},
-			NwkSKey:    [16]byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
-			FCntUp:     42,
+			Dialer:  NewDialer([]byte("url")),
+			AppEUI:  []byte{8, 7, 6, 5, 4, 3, 2, 1},
+			DevEUI:  []byte{0, 0, 0, 0, 1, 2, 3, 5},
+			NwkSKey: [16]byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+			FCntUp:  42,
 		}
 
 		// Operate
