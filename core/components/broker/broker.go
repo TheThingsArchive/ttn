@@ -6,7 +6,6 @@ package broker
 import (
 	"fmt"
 	"regexp"
-	"strings"
 
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
@@ -16,40 +15,50 @@ import (
 	"golang.org/x/net/context"
 )
 
-// component implements the core.Component interface
+// component implements the core.BrokerServer interface
 type component struct {
-	NetworkController
-	ctx log.Interface
+	Components
 }
+
+// Components defines a structure to make the instantiation easier to read
+type Components struct {
+	NetworkController NetworkController
+	Ctx               log.Interface
+}
+
+// Options defines a structure to make the instantiation easier to read
+type Options struct{}
 
 // New construct a new Broker component
-func New(controller NetworkController, ctx log.Interface) core.BrokerServer {
-	return component{NetworkController: controller, ctx: ctx}
+func New(c Components, o Options) core.BrokerServer {
+	return component{Components: c}
 }
 
-// HandleData implements the core.RouterClient interface
+// HandleData implements the core.BrokerServer interface
 func (b component) HandleData(bctx context.Context, req *core.DataBrokerReq) (*core.DataBrokerRes, error) {
 	// Get some logs / analytics
 	stats.MarkMeter("broker.uplink.in")
-	b.ctx.Debug("Handling uplink packet")
+	b.Ctx.Debug("Handling uplink packet")
 
 	// Validate incoming data
 	uplinkPayload, err := core.NewLoRaWANData(req.Payload, true)
 	if err != nil {
+		b.Ctx.WithError(err).Debug("Unable to interpret LoRaWAN payload")
 		return nil, errors.New(errors.Structural, err)
 	}
 	devAddr := req.Payload.MACPayload.FHDR.DevAddr // No nil ref, ensured by NewLoRaWANData()
-	ctx := b.ctx.WithField("DevAddr", devAddr)
+	ctx := b.Ctx.WithField("DevAddr", devAddr)
 
 	// Check whether we should handle it
-	entries, err := b.LookupDevices(devAddr)
+	entries, err := b.NetworkController.LookupDevices(devAddr)
 	if err != nil {
+		ctx = ctx.WithError(err)
 		switch err.(errors.Failure).Nature {
 		case errors.NotFound:
 			stats.MarkMeter("broker.uplink.handler_lookup.device_not_found")
 			ctx.Debug("Uplink device not found")
 		default:
-			b.ctx.Warn("Database lookup failed")
+			ctx.Warn("Database lookup failed")
 		}
 		return nil, err
 	}
@@ -71,17 +80,17 @@ func (b component) HandleData(bctx context.Context, req *core.DataBrokerReq) (*c
 
 		// Check with 16-bits counters
 		fhdr.FCnt = fcnt16
-		ok, err := uplinkPayload.ValidateMIC(key)
+		fcnt32, err := b.NetworkController.WholeCounter(fcnt16, entry.FCntUp)
 		if err != nil {
 			continue
 		}
 
-		if !ok && entry.FCntUp > 65535 { // Check with 32-bits counter
-			fcnt32, err := b.WholeCounter(fcnt16, entry.FCntUp)
-			if err != nil {
-				continue
-			}
-			fhdr.FCnt = fcnt32
+		ok, err := uplinkPayload.ValidateMIC(key)
+		if err != nil {
+			continue
+		}
+		fhdr.FCnt = fcnt32
+		if !ok { // Check with 32-bits counter
 			ok, err = uplinkPayload.ValidateMIC(key)
 		}
 
@@ -96,20 +105,22 @@ func (b component) HandleData(bctx context.Context, req *core.DataBrokerReq) (*c
 	if mEntry == nil {
 		stats.MarkMeter("broker.uplink.handler_lookup.no_mic_match")
 		err := errors.New(errors.NotFound, "MIC check returned no matches")
-		ctx.Debug(err.Error())
+		ctx.WithError(err).Debug("Unable to handle uplink")
 		return nil, err
 	}
 
 	// It does matter here to use the DevEUI from the entry and not from the packet.
 	// The packet actually holds a DevAddr and the real DevEUI has been determined thanks
 	// to the MIC check + persistence
-	if err := b.UpdateFCnt(mEntry.AppEUI, devAddr, fhdr.FCnt); err != nil {
+	if err := b.NetworkController.UpdateFCnt(mEntry.AppEUI, mEntry.DevEUI, devAddr, fhdr.FCnt); err != nil {
+		ctx.WithError(err).Debug("Unable to update Frame Counter")
 		return nil, err
 	}
 
 	// Then we forward the packet to the handler and wait for the response
 	handler, closer, err := mEntry.Dialer.Dial()
 	if err != nil {
+		ctx.WithError(err).Debug("Unable to dial handler")
 		return nil, err
 	}
 	defer closer.Close()
@@ -122,8 +133,9 @@ func (b component) HandleData(bctx context.Context, req *core.DataBrokerReq) (*c
 		Metadata: req.Metadata,
 	})
 
-	if err != nil && !strings.Contains(err.Error(), string(errors.NotFound)) { // FIXME Find better way to analyze error
+	if err != nil {
 		stats.MarkMeter("broker.uplink.bad_handler_response")
+		ctx.WithError(err).Debug("Unexpected answer from handler")
 		return nil, errors.New(errors.Operational, err)
 	}
 	stats.MarkMeter("broker.uplink.ok")
@@ -131,16 +143,20 @@ func (b component) HandleData(bctx context.Context, req *core.DataBrokerReq) (*c
 	// No response, we stop here and propagate the "no answer".
 	// In case of confirmed data, the handler is in charge of creating the confirmation
 	if resp == nil {
+		ctx.Debug("Packet successfully sent. There's no downlink.")
 		return nil, nil
 	}
 
 	// If a response was sent, i.e. a downlink data, we need to compute the right MIC
+	ctx.Debug("Packet successfully sent. Handling downlink response")
 	downlinkPayload, err := core.NewLoRaWANData(resp.Payload, false)
 	if err != nil {
+		ctx.WithError(err).Debug("Unable to interpret LoRaWAN downlink datagram")
 		return nil, errors.New(errors.Structural, err)
 	}
 	stats.MarkMeter("broker.downlink.in")
 	if err := downlinkPayload.SetMIC(lorawan.AES128Key(mEntry.NwkSKey)); err != nil {
+		ctx.WithError(err).Debug("Unable to set MIC")
 		return nil, errors.New(errors.Structural, "Unable to set response MIC")
 	}
 	resp.Payload.MIC = downlinkPayload.MIC[:]
@@ -154,7 +170,7 @@ func (b component) HandleData(bctx context.Context, req *core.DataBrokerReq) (*c
 
 // Register implements the core.BrokerServer interface
 func (b component) SubscribePersonalized(bctx context.Context, req *core.ABPSubBrokerReq) (*core.ABPSubBrokerRes, error) {
-	b.ctx.Debug("Handling personalized subscription")
+	b.Ctx.Debug("Handling personalized subscription")
 
 	// Ensure the entry is valid
 	if len(req.AppEUI) != 8 {
@@ -178,7 +194,9 @@ func (b component) SubscribePersonalized(bctx context.Context, req *core.ABPSubB
 		return nil, errors.New(errors.Structural, fmt.Sprintf("Invalid Handler Net Address. Should match: %s", re))
 	}
 
-	return nil, b.StoreDevice(req.DevAddr, devEntry{
+	b.Ctx.Debug("Subscription looks valid")
+
+	return nil, b.NetworkController.StoreDevice(req.DevAddr, devEntry{
 		Dialer:  NewDialer([]byte(req.HandlerNet)),
 		AppEUI:  req.AppEUI,
 		DevEUI:  devEUI,

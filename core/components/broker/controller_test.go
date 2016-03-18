@@ -183,7 +183,7 @@ func TestNetworkControllerDevice(t *testing.T) {
 		// Operate
 		err := db.StoreDevice(devAddr, entry)
 		FatalUnless(t, err)
-		err1 := db.UpdateFCnt(entry.AppEUI, devAddr, 42)
+		err1 := db.UpdateFCnt(entry.AppEUI, entry.DevEUI, devAddr, 42)
 		entries, err2 := db.LookupDevices(devAddr)
 
 		// Expectations
@@ -206,9 +206,10 @@ func TestNetworkControllerDevice(t *testing.T) {
 		db, _ := NewNetworkController(NetworkControllerDB)
 		devAddr := []byte{14, 14, 14, 14}
 		appEUI := []byte{1, 2, 3, 4, 5, 6, 7, 8}
+		devEUI := []byte{1, 2, 3, 4, 5, 6, 7, 8}
 
 		// Operate
-		err := db.UpdateFCnt(appEUI, devAddr, 14)
+		err := db.UpdateFCnt(appEUI, devEUI, devAddr, 14)
 
 		// Checks
 		CheckErrors(t, ErrNotFound, err)
@@ -243,7 +244,7 @@ func TestNetworkControllerDevice(t *testing.T) {
 		FatalUnless(t, err)
 		err = db.StoreDevice(devAddr, entry2)
 		FatalUnless(t, err)
-		err1 := db.UpdateFCnt(entry2.AppEUI, devAddr, 8)
+		err1 := db.UpdateFCnt(entry2.AppEUI, entry2.DevEUI, devAddr, 8)
 		entries, err2 := db.LookupDevices(devAddr)
 
 		// Expectations

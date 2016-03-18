@@ -19,7 +19,7 @@ type NetworkController interface {
 	LookupDevices(devAddr []byte) ([]devEntry, error)
 	WholeCounter(devCnt uint32, entryCnt uint32) (uint32, error)
 	StoreDevice(devAddr []byte, entry devEntry) error
-	UpdateFCnt(appEUI []byte, devEUI []byte, fcnt uint32) error
+	UpdateFCnt(appEUI []byte, devEUI []byte, devAddr []byte, fcnt uint32) error
 	Close() error
 }
 
@@ -76,7 +76,7 @@ func (s *controller) WholeCounter(devCnt uint32, entryCnt uint32) (uint32, error
 }
 
 // UpdateFCnt implements the broker.NetworkController interface
-func (s *controller) UpdateFCnt(appEUI []byte, devAddr []byte, fcnt uint32) error {
+func (s *controller) UpdateFCnt(appEUI []byte, devEUI []byte, devAddr []byte, fcnt uint32) error {
 	s.Lock()
 	defer s.Unlock()
 	itf, err := s.db.Lookup(s.Devices, devAddr, &devEntry{})
@@ -89,7 +89,7 @@ func (s *controller) UpdateFCnt(appEUI []byte, devAddr []byte, fcnt uint32) erro
 	for _, e := range entries {
 		entry := new(devEntry)
 		*entry = e
-		if reflect.DeepEqual(entry.AppEUI, appEUI) {
+		if reflect.DeepEqual(entry.AppEUI, appEUI) && reflect.DeepEqual(entry.DevEUI, devEUI) {
 			entry.FCntUp = fcnt
 		}
 		newEntries = append(newEntries, entry)
