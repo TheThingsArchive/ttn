@@ -7,8 +7,8 @@ import (
 	"fmt"
 
 	MQTT "git.eclipse.org/gitroot/paho/org.eclipse.paho.mqtt.golang.git"
+	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/apex/log"
-	"github.com/htdvisser/ttnctl/util"
 )
 
 var (

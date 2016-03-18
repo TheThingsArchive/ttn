@@ -8,9 +8,9 @@ import (
 	"fmt"
 
 	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/ttnctl/mqtt"
+	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/apex/log"
-	"github.com/htdvisser/ttnctl/mqtt"
-	"github.com/htdvisser/ttnctl/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )

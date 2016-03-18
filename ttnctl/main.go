@@ -4,7 +4,7 @@
 package main
 
 import (
-	"github.com/htdvisser/ttnctl/cmd"
+	"github.com/TheThingsNetwork/ttn/ttnctl/cmd"
 	"github.com/spf13/viper"
 )
 

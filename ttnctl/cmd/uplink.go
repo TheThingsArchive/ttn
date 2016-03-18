@@ -11,9 +11,9 @@ import (
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/semtech"
+	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	"github.com/brocaar/lorawan"
-	"github.com/htdvisser/ttnctl/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
