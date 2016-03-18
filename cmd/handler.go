@@ -15,9 +15,9 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/components/handler"
 	"github.com/TheThingsNetwork/ttn/utils/stats"
 	"github.com/apex/log"
-	"google.golang.org/grpc"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"google.golang.org/grpc"
 )
 
 // handlerCmd represents the handler command
@@ -30,7 +30,7 @@ The default handler is the bridge between The Things Network and applications.
 	PreRun: func(cmd *cobra.Command, args []string) {
 		var statusServer string
 		if viper.GetInt("handler.status-port") > 0 {
-			statusServer = fmt.Sprintf("%s:%d", viper.GetString("handler.status-bind-address"), viper.GetInt("handler.status-port"))
+			statusServer = fmt.Sprintf("%s:%d", viper.GetString("handler.status-address"), viper.GetInt("handler.status-port"))
 			stats.Initialize()
 		} else {
 			statusServer = "disabled"
@@ -40,7 +40,7 @@ The default handler is the bridge between The Things Network and applications.
 			"devicesDatabase": viper.GetString("handler.dev-database"),
 			"packetsDatabase": viper.GetString("handler.pkt-database"),
 			"status-server":   statusServer,
-			"uplink":          fmt.Sprintf("%s:%d", viper.GetString("handler.uplink-bind-address"), viper.GetInt("handler.uplink-port")),
+			"server":          fmt.Sprintf("%s:%d", viper.GetString("handler.server-address"), viper.GetInt("handler.server-port")),
 			"ttn-broker":      viper.GetString("handler.ttn-broker"),
 			"mqtt-broker":     viper.GetString("handler.mqtt-broker"),
 		}).Info("Using Configuration")
@@ -101,41 +101,47 @@ The default handler is the bridge between The Things Network and applications.
 			ctx.WithError(fmt.Errorf("Invalid database string. Format: \"boltdb:/path/to.db\".")).Fatal("Could not instantiate local packets storage")
 		}
 
-
 		// BrokerClient
-		brokerConn, err := grpc.Dial(viper.GetString("handler.ttn-broker"), grpc.WithInsecure(), grpc.WithTimeout(time.Second*2))
+		brokerConn, err := grpc.Dial(viper.GetString("handler.ttn-broker"), grpc.WithInsecure(), grpc.WithTimeout(time.Second*15))
 		if err != nil {
-			return ctx.WithError(err).Fatal("Could not dial broker")
+			ctx.WithError(err).Fatal("Could not dial broker")
 		}
 		defer brokerConn.Close()
 		broker := core.NewBrokerClient(brokerConn)
 
-		// Handler
-		handler := handler.New(
-			handler.Components{
-				Ctx: ctx,
-				DevStorage: devicesDB,
-				PktStorage: packetsDB,
-				Broker: broker,
-			},
-			handler.Options{
-				NetAddr: fmt.Sprintf("%s:%d", viper.GetString("handler.server-address"), viper.GetInt("handler.server-port")),
-			},
-		)
-
-		// MQTT Client
+		// MQTT Client & adapter
 		mqttClient, chmsg, err := mqtt.NewClient(
 			"handler-client",
-			viper.GetString("handler-mqtt-broker"),
+			viper.GetString("handler.mqtt-broker"),
 			ctx.WithField("adapter", "app-adapter"),
 		)
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not start MQTT client")
 		}
 		appAdapter := mqtt.New(
+			mqtt.Components{Ctx: ctx.WithField("adapter", "app-adapter"), Client: mqttClient},
+			mqtt.Options{},
+		)
 
-		// Bring the service to life
+		// Handler
+		handler := handler.New(
+			handler.Components{
+				Ctx:        ctx,
+				DevStorage: devicesDB,
+				PktStorage: packetsDB,
+				Broker:     broker,
+				AppAdapter: appAdapter,
+			},
+			handler.Options{
+				NetAddr: fmt.Sprintf("%s:%d", viper.GetString("handler.server-address"), viper.GetInt("handler.server-port")),
+			},
+		)
 
+		// Go
+		appAdapter.Start(chmsg, handler)
+		if err := handler.Start(); err != nil {
+			ctx.WithError(err).Fatal("Handler has fallen...")
+		}
 	},
 }
 
@@ -147,15 +153,15 @@ func init() {
 	viper.BindPFlag("handler.dev-database", handlerCmd.Flags().Lookup("dev-database"))
 	viper.BindPFlag("handler.pkt-database", handlerCmd.Flags().Lookup("pkt-database"))
 
-	handlerCmd.Flags().String("status-bind-address", "localhost", "The IP address to listen for serving status information")
+	handlerCmd.Flags().String("status-address", "localhost", "The IP address to listen for serving status information")
 	handlerCmd.Flags().Int("status-port", 10702, "The port of the status server, use 0 to disable")
-	viper.BindPFlag("handler.status-bind-address", handlerCmd.Flags().Lookup("status-bind-address"))
+	viper.BindPFlag("handler.status-address", handlerCmd.Flags().Lookup("status-address"))
 	viper.BindPFlag("handler.status-port", handlerCmd.Flags().Lookup("status-port"))
 
-	handlerCmd.Flags().String("uplink-bind-address", "", "The IP address to listen for uplink messages from brokers")
-	handlerCmd.Flags().Int("uplink-port", 1882, "The port for the uplink")
-	viper.BindPFlag("handler.uplink-bind-address", handlerCmd.Flags().Lookup("uplink-bind-address"))
-	viper.BindPFlag("handler.uplink-port", handlerCmd.Flags().Lookup("uplink-port"))
+	handlerCmd.Flags().String("server-address", "", "The IP address to listen for uplink messages from brokers")
+	handlerCmd.Flags().Int("server-port", 1882, "The port for the uplink")
+	viper.BindPFlag("handler.server-address", handlerCmd.Flags().Lookup("server-address"))
+	viper.BindPFlag("handler.server-port", handlerCmd.Flags().Lookup("server-port"))
 
 	handlerCmd.Flags().String("mqtt-broker", "localhost:1883", "The address of the MQTT broker (uplink)")
 	viper.BindPFlag("handler.mqtt-broker", handlerCmd.Flags().Lookup("mqtt-broker"))

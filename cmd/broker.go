@@ -76,10 +76,12 @@ and personalized devices (with their network session keys) with the router.
 		}
 
 		// Broker
-		netAddr := fmt.Sprintf("%s:%d", viper.GetString("broker.server-address"), viper.GetInt("broker.server-port"))
 		broker := broker.New(
 			broker.Components{Ctx: ctx, NetworkController: db},
-			broker.Options{NetAddr: netAddr},
+			broker.Options{
+				NetAddrUp:   fmt.Sprintf("%s:%d", viper.GetString("broker.uplink-address"), viper.GetInt("broker.uplink-port")),
+				NetAddrDown: fmt.Sprintf("%s:%d", viper.GetString("broker.downlink-address"), viper.GetInt("broker.downlink-port")),
+			},
 		)
 
 		// Go
@@ -100,8 +102,13 @@ func init() {
 	viper.BindPFlag("broker.status-address", brokerCmd.Flags().Lookup("status-address"))
 	viper.BindPFlag("broker.status-port", brokerCmd.Flags().Lookup("status-port"))
 
-	brokerCmd.Flags().String("server-address", "", "The IP address to listen for uplink and downlink messages")
-	brokerCmd.Flags().Int("server-port", 1881, "The main communication port")
-	viper.BindPFlag("broker.server-address", brokerCmd.Flags().Lookup("server-address"))
-	viper.BindPFlag("broker.server-port", brokerCmd.Flags().Lookup("server-port"))
+	brokerCmd.Flags().String("uplink-address", "", "The IP address to listen for uplink messages from routers")
+	brokerCmd.Flags().Int("uplink-port", 1881, "The main communication port")
+	viper.BindPFlag("broker.uplink-address", brokerCmd.Flags().Lookup("uplink-address"))
+	viper.BindPFlag("broker.uplink-port", brokerCmd.Flags().Lookup("uplink-port"))
+
+	brokerCmd.Flags().String("downlink-address", "", "The IP address to listen for downlink messages from handler")
+	brokerCmd.Flags().Int("downlink-port", 1781, "The main communication port")
+	viper.BindPFlag("broker.downlink-address", brokerCmd.Flags().Lookup("downlink-address"))
+	viper.BindPFlag("broker.downlink-port", brokerCmd.Flags().Lookup("downlink-port"))
 }
