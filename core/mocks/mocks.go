@@ -120,6 +120,14 @@ type BrokerClient struct {
 	OutSubscribePersonalized struct {
 		Res *core.ABPSubBrokerRes
 	}
+	InHandleJoin struct {
+		Ctx  context.Context
+		Req  *core.JoinBrokerReq
+		Opts []grpc.CallOption
+	}
+	OutHandleJoin struct {
+		Res *core.JoinBrokerRes
+	}
 }
 
 // NewBrokerClient creates a new mock BrokerClient
@@ -135,6 +143,14 @@ func (m *BrokerClient) HandleData(ctx context.Context, in *core.DataBrokerReq, o
 	m.InHandleData.Req = in
 	m.InHandleData.Opts = opts
 	return m.OutHandleData.Res, m.Failures["HandleData"]
+}
+
+// HandleJoin implements the core.BrokerClient interface
+func (m *BrokerClient) HandleJoin(ctx context.Context, in *core.JoinBrokerReq, opts ...grpc.CallOption) (*core.JoinBrokerRes, error) {
+	m.InHandleJoin.Ctx = ctx
+	m.InHandleJoin.Req = in
+	m.InHandleJoin.Opts = opts
+	return m.OutHandleJoin.Res, m.Failures["HandleJoin"]
 }
 
 // SubscribePersonalized implements the core.BrokerClient interface

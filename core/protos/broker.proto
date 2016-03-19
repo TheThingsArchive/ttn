@@ -32,7 +32,8 @@ message JoinBrokerReq {
 
 message JoinBrokerRes {
     LoRaWANJoinAccept   Payload     = 1;
-    Metadata            Metadata    = 2;
+    bytes               DevAddr     = 2;
+    Metadata            Metadata    = 3;
 }
 
 service Broker {

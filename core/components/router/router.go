@@ -81,6 +81,35 @@ func (r component) HandleStats(ctx context.Context, req *core.StatsReq) (*core.S
 	return new(core.StatsRes), r.Storage.UpdateStats(req.GatewayID, *req.Metadata)
 }
 
+// HandleJoin implements the core.RouterClient interface
+func (r component) HandleJoin(ctx context.Context, req *core.JoinRouterReq) (*core.JoinRouterRes, error) {
+	if len(req.GatewayID) != 8 || len(req.AppEUI) != 8 || len(req.DevEUI) != 8 || len(req.DevNonce) != 2 || req.Metadata == nil {
+		r.Ctx.Debug("Invalid request. Parameters are incorrects")
+		return new(core.JoinRouterRes), errors.New(errors.Structural, "Invalid Request")
+	}
+
+	// Add Gateway location metadata
+	if gmeta, err := r.Storage.LookupStats(req.GatewayID); err == nil {
+		r.Ctx.Debug("Adding Gateway Metadata to packet")
+		req.Metadata.Latitude = gmeta.Latitude
+		req.Metadata.Longitude = gmeta.Longitude
+		req.Metadata.Altitude = gmeta.Altitude
+	}
+
+	// Broadcast the join request
+	bpacket := &core.JoinBrokerReq{
+		AppEUI:   req.AppEUI,
+		DevEUI:   req.DevEUI,
+		DevNonce: req.DevNonce,
+		Metadata: req.Metadata,
+	}
+	response, err := r.send(bpacket, true, r.Brokers...)
+	if err != nil {
+		return new(core.JoinRouterRes), err
+	}
+	return response.(*core.JoinRouterRes), err
+}
+
 // HandleData implements the core.RouterClient interface
 func (r component) HandleData(ctx context.Context, req *core.DataRouterReq) (*core.DataRouterRes, error) {
 	// Get some logs / analytics
@@ -139,7 +168,7 @@ func (r component) HandleData(ctx context.Context, req *core.DataRouterReq) (*co
 	bpacket := &core.DataBrokerReq{Payload: req.Payload, Metadata: req.Metadata}
 
 	// Send packet to broker(s)
-	var response *core.DataBrokerRes
+	var response interface{}
 	if shouldBroadcast {
 		// No Recipient available -> broadcast
 		stats.MarkMeter("router.broadcast")
@@ -172,7 +201,7 @@ func (r component) HandleData(ctx context.Context, req *core.DataRouterReq) (*co
 		return new(core.DataRouterRes), err
 	}
 
-	return r.handleDataDown(response, req.GatewayID)
+	return r.handleDataDown(response.(*core.DataBrokerRes), req.GatewayID)
 }
 
 func (r component) handleDataDown(req *core.DataBrokerRes, gatewayID []byte) (*core.DataRouterRes, error) {
@@ -201,17 +230,17 @@ func (r component) handleDataDown(req *core.DataBrokerRes, gatewayID []byte) (*c
 	return &core.DataRouterRes{Payload: req.Payload, Metadata: req.Metadata}, nil
 }
 
-func (r component) send(req *core.DataBrokerReq, isBroadcast bool, brokers ...core.BrokerClient) (*core.DataBrokerRes, error) {
+func (r component) send(req interface{}, isBroadcast bool, brokers ...core.BrokerClient) (interface{}, error) {
 	// Define a more helpful context
 	nb := len(brokers)
-	ctx := r.Ctx.WithField("devAddr", req.Payload.MACPayload.FHDR.DevAddr)
-	ctx.WithField("Nb Brokers", nb).Debug("Sending Packet")
+	ctx := r.Ctx.WithField("Nb Brokers", nb)
+	ctx.Debug("Sending Packet")
 	stats.UpdateHistogram("router.send_recipients", int64(nb))
 
 	// Prepare ground for parrallel requests
 	cherr := make(chan error, nb)
 	chresp := make(chan struct {
-		Response    *core.DataBrokerRes
+		Response    interface{}
 		BrokerIndex int
 	}, nb)
 	wg := sync.WaitGroup{}
@@ -223,7 +252,17 @@ func (r component) send(req *core.DataBrokerReq, isBroadcast bool, brokers ...co
 			defer wg.Done()
 
 			// Send request
-			resp, err := broker.HandleData(context.Background(), req)
+			var resp interface{}
+			var err error
+			switch req.(type) {
+			case *core.DataBrokerReq:
+				resp, err = broker.HandleData(context.Background(), req.(*core.DataBrokerReq))
+			case *core.JoinBrokerReq:
+				resp, err = broker.HandleJoin(context.Background(), req.(*core.JoinBrokerReq))
+			default:
+				cherr <- errors.New(errors.Structural, "Unknown request type")
+				return
+			}
 
 			// Handle error
 			if err != nil {
@@ -238,7 +277,7 @@ func (r component) send(req *core.DataBrokerReq, isBroadcast bool, brokers ...co
 
 			// Transfer the response
 			chresp <- struct {
-				Response    *core.DataBrokerRes
+				Response    interface{}
 				BrokerIndex int
 			}{resp, index}
 		}(i, broker)
@@ -286,7 +325,14 @@ func (r component) send(req *core.DataBrokerReq, isBroadcast bool, brokers ...co
 	resp := <-chresp
 	// Save the broker for later if it was a broadcast
 	if isBroadcast {
-		if err := r.Storage.Store(req.Payload.MACPayload.FHDR.DevAddr, resp.BrokerIndex); err != nil {
+		var devAddr []byte
+		switch req.(type) {
+		case *core.DataBrokerReq:
+			devAddr = req.(*core.DataBrokerReq).Payload.MACPayload.FHDR.DevAddr
+		case *core.JoinBrokerReq:
+			devAddr = resp.Response.(*core.JoinBrokerRes).DevAddr
+		}
+		if err := r.Storage.Store(devAddr, resp.BrokerIndex); err != nil {
 			r.Ctx.WithError(err).Warn("Failed to store accepted broker")
 		}
 	}
