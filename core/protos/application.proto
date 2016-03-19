@@ -12,6 +12,15 @@ message DataAppReq {
 
 message DataAppRes {}
 
+message JoinAppReq {
+    bytes               AppEUI      = 1;
+    bytes               DevEUI      = 2;
+    repeated Metadata   Metadata    = 3;
+}
+
+message JoinAppRes {}
+
 service App {
     rpc HandleData (DataAppReq) returns (DataAppRes);
+    rpc HandleJoin (JoinAppReq) returns (JoinAppRes);
 }

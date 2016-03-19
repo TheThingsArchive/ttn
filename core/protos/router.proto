@@ -5,24 +5,38 @@ import "core.proto";
 package core;
 
 message DataRouterReq {
-    LoRaWANData     Payload     = 1;
-    Metadata        Metadata    = 2;
-    bytes           GatewayID   = 3;
+    bytes               GatewayID   = 1;
+    LoRaWANData         Payload     = 2;
+    Metadata            Metadata    = 3;
 }
 
 message DataRouterRes {
-    LoRaWANData     Payload     = 1;
-    Metadata        Metadata    = 2;
+    LoRaWANData         Payload     = 1;
+    Metadata            Metadata    = 2;
 }
 
 message StatsReq {
-    bytes           GatewayID   = 1;
-    StatsMetadata   Metadata    = 2;
+    bytes               GatewayID   = 1;
+    StatsMetadata       Metadata    = 2;
 }
 
 message StatsRes{}
 
+message JoinRouterReq {
+    bytes               GatewayID   = 1;
+    bytes               AppEUI      = 2;
+    bytes               DevEUI      = 3;
+    bytes               DevNonce    = 4;
+    Metadata            Metadata    = 5;
+}
+
+message JoinRouterRes {
+    LoRaWANJoinAccept   Payload     = 1;
+    Metadata            Metadata    = 2;
+}
+
 service Router {
     rpc HandleData  (DataRouterReq) returns (DataRouterRes);
     rpc HandleStats (StatsReq)      returns (StatsRes);
+    rpc HandleJoin  (JoinRouterReq) returns (JoinRouterRes);
 }

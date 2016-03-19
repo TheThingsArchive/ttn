@@ -104,6 +104,51 @@ func (m *ABPSubHandlerRes) String() string            { return proto.CompactText
 func (*ABPSubHandlerRes) ProtoMessage()               {}
 func (*ABPSubHandlerRes) Descriptor() ([]byte, []int) { return fileDescriptorHandler, []int{5} }
 
+type JoinHandlerReq struct {
+	AppEUI   []byte    `protobuf:"bytes,1,opt,name=AppEUI,json=appEUI,proto3" json:"AppEUI,omitempty"`
+	DevEUI   []byte    `protobuf:"bytes,2,opt,name=DevEUI,json=devEUI,proto3" json:"DevEUI,omitempty"`
+	DevNonce []byte    `protobuf:"bytes,3,opt,name=DevNonce,json=devNonce,proto3" json:"DevNonce,omitempty"`
+	Metadata *Metadata `protobuf:"bytes,4,opt,name=Metadata,json=metadata" json:"Metadata,omitempty"`
+}
+
+func (m *JoinHandlerReq) Reset()                    { *m = JoinHandlerReq{} }
+func (m *JoinHandlerReq) String() string            { return proto.CompactTextString(m) }
+func (*JoinHandlerReq) ProtoMessage()               {}
+func (*JoinHandlerReq) Descriptor() ([]byte, []int) { return fileDescriptorHandler, []int{6} }
+
+func (m *JoinHandlerReq) GetMetadata() *Metadata {
+	if m != nil {
+		return m.Metadata
+	}
+	return nil
+}
+
+type JoinHandlerRes struct {
+	Payload  *LoRaWANJoinAccept `protobuf:"bytes,1,opt,name=Payload,json=payload" json:"Payload,omitempty"`
+	DevAddr  []byte             `protobuf:"bytes,2,opt,name=DevAddr,json=devAddr,proto3" json:"DevAddr,omitempty"`
+	NwkSKey  []byte             `protobuf:"bytes,3,opt,name=NwkSKey,json=nwkSKey,proto3" json:"NwkSKey,omitempty"`
+	Metadata *Metadata          `protobuf:"bytes,4,opt,name=Metadata,json=metadata" json:"Metadata,omitempty"`
+}
+
+func (m *JoinHandlerRes) Reset()                    { *m = JoinHandlerRes{} }
+func (m *JoinHandlerRes) String() string            { return proto.CompactTextString(m) }
+func (*JoinHandlerRes) ProtoMessage()               {}
+func (*JoinHandlerRes) Descriptor() ([]byte, []int) { return fileDescriptorHandler, []int{7} }
+
+func (m *JoinHandlerRes) GetPayload() *LoRaWANJoinAccept {
+	if m != nil {
+		return m.Payload
+	}
+	return nil
+}
+
+func (m *JoinHandlerRes) GetMetadata() *Metadata {
+	if m != nil {
+		return m.Metadata
+	}
+	return nil
+}
+
 func init() {
 	proto.RegisterType((*DataUpHandlerReq)(nil), "core.DataUpHandlerReq")
 	proto.RegisterType((*DataUpHandlerRes)(nil), "core.DataUpHandlerRes")
@@ -111,6 +156,8 @@ func init() {
 	proto.RegisterType((*DataDownHandlerRes)(nil), "core.DataDownHandlerRes")
 	proto.RegisterType((*ABPSubHandlerReq)(nil), "core.ABPSubHandlerReq")
 	proto.RegisterType((*ABPSubHandlerRes)(nil), "core.ABPSubHandlerRes")
+	proto.RegisterType((*JoinHandlerReq)(nil), "core.JoinHandlerReq")
+	proto.RegisterType((*JoinHandlerRes)(nil), "core.JoinHandlerRes")
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -122,6 +169,7 @@ var _ grpc.ClientConn
 type HandlerClient interface {
 	HandleDataUp(ctx context.Context, in *DataUpHandlerReq, opts ...grpc.CallOption) (*DataUpHandlerRes, error)
 	HandleDataDown(ctx context.Context, in *DataDownHandlerReq, opts ...grpc.CallOption) (*DataDownHandlerRes, error)
+	HandleJoin(ctx context.Context, in *JoinHandlerReq, opts ...grpc.CallOption) (*JoinHandlerRes, error)
 	SubscribePersonalized(ctx context.Context, in *ABPSubHandlerReq, opts ...grpc.CallOption) (*ABPSubHandlerRes, error)
 }
 
@@ -151,6 +199,15 @@ func (c *handlerClient) HandleDataDown(ctx context.Context, in *DataDownHandlerR
 	return out, nil
 }
 
+func (c *handlerClient) HandleJoin(ctx context.Context, in *JoinHandlerReq, opts ...grpc.CallOption) (*JoinHandlerRes, error) {
+	out := new(JoinHandlerRes)
+	err := grpc.Invoke(ctx, "/core.Handler/HandleJoin", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *handlerClient) SubscribePersonalized(ctx context.Context, in *ABPSubHandlerReq, opts ...grpc.CallOption) (*ABPSubHandlerRes, error) {
 	out := new(ABPSubHandlerRes)
 	err := grpc.Invoke(ctx, "/core.Handler/SubscribePersonalized", in, out, c.cc, opts...)
@@ -165,6 +222,7 @@ func (c *handlerClient) SubscribePersonalized(ctx context.Context, in *ABPSubHan
 type HandlerServer interface {
 	HandleDataUp(context.Context, *DataUpHandlerReq) (*DataUpHandlerRes, error)
 	HandleDataDown(context.Context, *DataDownHandlerReq) (*DataDownHandlerRes, error)
+	HandleJoin(context.Context, *JoinHandlerReq) (*JoinHandlerRes, error)
 	SubscribePersonalized(context.Context, *ABPSubHandlerReq) (*ABPSubHandlerRes, error)
 }
 
@@ -196,6 +254,18 @@ func _Handler_HandleDataDown_Handler(srv interface{}, ctx context.Context, dec f
 	return out, nil
 }
 
+func _Handler_HandleJoin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(JoinHandlerReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(HandlerServer).HandleJoin(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func _Handler_SubscribePersonalized_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
 	in := new(ABPSubHandlerReq)
 	if err := dec(in); err != nil {
@@ -219,6 +289,10 @@ var _Handler_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "HandleDataDown",
 			Handler:    _Handler_HandleDataDown_Handler,
+		},
+		{
+			MethodName: "HandleJoin",
+			Handler:    _Handler_HandleJoin_Handler,
 		},
 		{
 			MethodName: "SubscribePersonalized",
@@ -456,6 +530,112 @@ func (m *ABPSubHandlerRes) MarshalTo(data []byte) (int, error) {
 	return i, nil
 }
 
+func (m *JoinHandlerReq) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *JoinHandlerReq) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if m.AppEUI != nil {
+		if len(m.AppEUI) > 0 {
+			data[i] = 0xa
+			i++
+			i = encodeVarintHandler(data, i, uint64(len(m.AppEUI)))
+			i += copy(data[i:], m.AppEUI)
+		}
+	}
+	if m.DevEUI != nil {
+		if len(m.DevEUI) > 0 {
+			data[i] = 0x12
+			i++
+			i = encodeVarintHandler(data, i, uint64(len(m.DevEUI)))
+			i += copy(data[i:], m.DevEUI)
+		}
+	}
+	if m.DevNonce != nil {
+		if len(m.DevNonce) > 0 {
+			data[i] = 0x1a
+			i++
+			i = encodeVarintHandler(data, i, uint64(len(m.DevNonce)))
+			i += copy(data[i:], m.DevNonce)
+		}
+	}
+	if m.Metadata != nil {
+		data[i] = 0x22
+		i++
+		i = encodeVarintHandler(data, i, uint64(m.Metadata.Size()))
+		n4, err := m.Metadata.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n4
+	}
+	return i, nil
+}
+
+func (m *JoinHandlerRes) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *JoinHandlerRes) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if m.Payload != nil {
+		data[i] = 0xa
+		i++
+		i = encodeVarintHandler(data, i, uint64(m.Payload.Size()))
+		n5, err := m.Payload.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n5
+	}
+	if m.DevAddr != nil {
+		if len(m.DevAddr) > 0 {
+			data[i] = 0x12
+			i++
+			i = encodeVarintHandler(data, i, uint64(len(m.DevAddr)))
+			i += copy(data[i:], m.DevAddr)
+		}
+	}
+	if m.NwkSKey != nil {
+		if len(m.NwkSKey) > 0 {
+			data[i] = 0x1a
+			i++
+			i = encodeVarintHandler(data, i, uint64(len(m.NwkSKey)))
+			i += copy(data[i:], m.NwkSKey)
+		}
+	}
+	if m.Metadata != nil {
+		data[i] = 0x22
+		i++
+		i = encodeVarintHandler(data, i, uint64(m.Metadata.Size()))
+		n6, err := m.Metadata.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n6
+	}
+	return i, nil
+}
+
 func encodeFixed64Handler(data []byte, offset int, v uint64) int {
 	data[offset] = uint8(v)
 	data[offset+1] = uint8(v >> 8)
@@ -594,6 +774,60 @@ func (m *ABPSubHandlerReq) Size() (n int) {
 func (m *ABPSubHandlerRes) Size() (n int) {
 	var l int
 	_ = l
+	return n
+}
+
+func (m *JoinHandlerReq) Size() (n int) {
+	var l int
+	_ = l
+	if m.AppEUI != nil {
+		l = len(m.AppEUI)
+		if l > 0 {
+			n += 1 + l + sovHandler(uint64(l))
+		}
+	}
+	if m.DevEUI != nil {
+		l = len(m.DevEUI)
+		if l > 0 {
+			n += 1 + l + sovHandler(uint64(l))
+		}
+	}
+	if m.DevNonce != nil {
+		l = len(m.DevNonce)
+		if l > 0 {
+			n += 1 + l + sovHandler(uint64(l))
+		}
+	}
+	if m.Metadata != nil {
+		l = m.Metadata.Size()
+		n += 1 + l + sovHandler(uint64(l))
+	}
+	return n
+}
+
+func (m *JoinHandlerRes) Size() (n int) {
+	var l int
+	_ = l
+	if m.Payload != nil {
+		l = m.Payload.Size()
+		n += 1 + l + sovHandler(uint64(l))
+	}
+	if m.DevAddr != nil {
+		l = len(m.DevAddr)
+		if l > 0 {
+			n += 1 + l + sovHandler(uint64(l))
+		}
+	}
+	if m.NwkSKey != nil {
+		l = len(m.NwkSKey)
+		if l > 0 {
+			n += 1 + l + sovHandler(uint64(l))
+		}
+	}
+	if m.Metadata != nil {
+		l = m.Metadata.Size()
+		n += 1 + l + sovHandler(uint64(l))
+	}
 	return n
 }
 
@@ -1357,6 +1591,360 @@ func (m *ABPSubHandlerRes) Unmarshal(data []byte) error {
 	}
 	return nil
 }
+func (m *JoinHandlerReq) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowHandler
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: JoinHandlerReq: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: JoinHandlerReq: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AppEUI", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandler
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthHandler
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AppEUI = append(m.AppEUI[:0], data[iNdEx:postIndex]...)
+			if m.AppEUI == nil {
+				m.AppEUI = []byte{}
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DevEUI", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandler
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthHandler
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.DevEUI = append(m.DevEUI[:0], data[iNdEx:postIndex]...)
+			if m.DevEUI == nil {
+				m.DevEUI = []byte{}
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DevNonce", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandler
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthHandler
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.DevNonce = append(m.DevNonce[:0], data[iNdEx:postIndex]...)
+			if m.DevNonce == nil {
+				m.DevNonce = []byte{}
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Metadata", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandler
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthHandler
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Metadata == nil {
+				m.Metadata = &Metadata{}
+			}
+			if err := m.Metadata.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipHandler(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthHandler
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *JoinHandlerRes) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowHandler
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: JoinHandlerRes: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: JoinHandlerRes: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Payload", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandler
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthHandler
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Payload == nil {
+				m.Payload = &LoRaWANJoinAccept{}
+			}
+			if err := m.Payload.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DevAddr", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandler
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthHandler
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.DevAddr = append(m.DevAddr[:0], data[iNdEx:postIndex]...)
+			if m.DevAddr == nil {
+				m.DevAddr = []byte{}
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NwkSKey", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandler
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthHandler
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.NwkSKey = append(m.NwkSKey[:0], data[iNdEx:postIndex]...)
+			if m.NwkSKey == nil {
+				m.NwkSKey = []byte{}
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Metadata", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandler
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthHandler
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Metadata == nil {
+				m.Metadata = &Metadata{}
+			}
+			if err := m.Metadata.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipHandler(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthHandler
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func skipHandler(data []byte) (n int, err error) {
 	l := len(data)
 	iNdEx := 0
@@ -1463,31 +2051,36 @@ var (
 )
 
 var fileDescriptorHandler = []byte{
-	// 405 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x9c, 0x53, 0xcd, 0x4a, 0xeb, 0x40,
-	0x14, 0xbe, 0x69, 0xd3, 0xa4, 0x4c, 0x7f, 0xe8, 0x1d, 0x7a, 0x4b, 0xc8, 0xa2, 0x5c, 0xb2, 0x12,
-	0x85, 0x2e, 0xea, 0x5e, 0x48, 0x8d, 0x7f, 0x68, 0x4b, 0x49, 0x2d, 0xee, 0x84, 0x69, 0x67, 0xc4,
-	0xd2, 0x34, 0x13, 0x33, 0xd1, 0x5a, 0x9f, 0xc4, 0xe7, 0xf0, 0x29, 0x5c, 0xba, 0x74, 0x29, 0xfa,
-	0x22, 0xce, 0x64, 0x52, 0xd2, 0x5f, 0x10, 0x17, 0x03, 0xe7, 0xfb, 0xce, 0x9c, 0xef, 0x7c, 0xe7,
-	0x4c, 0x02, 0x4a, 0xb7, 0xc8, 0xc7, 0x1e, 0x09, 0x1b, 0x41, 0x48, 0x23, 0x0a, 0xd5, 0x21, 0x0d,
-	0x89, 0x59, 0xf2, 0x68, 0x88, 0xa6, 0xc8, 0x97, 0xa4, 0x09, 0x04, 0x29, 0x63, 0xeb, 0x45, 0x01,
-	0x15, 0x07, 0x45, 0xa8, 0x1f, 0x9c, 0xca, 0x42, 0x97, 0xdc, 0x41, 0x03, 0xe8, 0x5d, 0x34, 0xf3,
-	0x28, 0xc2, 0x86, 0xf2, 0x5f, 0xd9, 0x29, 0xba, 0x7a, 0x20, 0x21, 0xdc, 0x05, 0xf9, 0x36, 0x89,
-	0x10, 0xe6, 0x15, 0x46, 0x86, 0xa7, 0x0a, 0xcd, 0x72, 0x23, 0x56, 0x9b, 0xb3, 0x6e, 0x7e, 0x92,
-	0x44, 0xb0, 0x06, 0x34, 0x3b, 0x08, 0x8e, 0xfa, 0x67, 0x46, 0x36, 0x16, 0xd1, 0x50, 0x8c, 0x04,
-	0xef, 0x90, 0x07, 0xc1, 0xab, 0x92, 0xc7, 0x31, 0x82, 0x10, 0xa8, 0xc7, 0x87, 0x7e, 0x64, 0xe4,
-	0x38, 0x5b, 0x72, 0xd5, 0x1b, 0x1e, 0xc3, 0x2a, 0xc8, 0xb5, 0x2f, 0x67, 0x01, 0x31, 0xb4, 0x98,
-	0xcc, 0x4d, 0x04, 0xb0, 0xc6, 0x6b, 0x9e, 0x19, 0xdc, 0x5b, 0xf6, 0x5c, 0x68, 0xfe, 0x95, 0xc6,
-	0x2e, 0xa8, 0x8b, 0xae, 0xec, 0x8e, 0xb8, 0xff, 0xab, 0x31, 0xac, 0x6b, 0x00, 0x45, 0xb1, 0x43,
-	0xa7, 0xfe, 0x8f, 0x56, 0x94, 0x8e, 0x9d, 0xd9, 0x32, 0x76, 0x76, 0x71, 0x6c, 0xab, 0xba, 0x41,
-	0x9f, 0x59, 0x8f, 0xa0, 0x62, 0xb7, 0xba, 0xbd, 0xfb, 0xc1, 0x42, 0xcf, 0x54, 0x59, 0x59, 0x52,
-	0xe6, 0x5e, 0xb8, 0xb2, 0x8d, 0x71, 0x98, 0xb4, 0xd4, 0xb1, 0x84, 0x22, 0xd3, 0x99, 0x8e, 0x7b,
-	0xe7, 0x64, 0x96, 0x34, 0xd5, 0x7d, 0x09, 0x45, 0x86, 0x6b, 0xc5, 0x19, 0xf9, 0x0a, 0x3a, 0x92,
-	0xd0, 0x82, 0x6b, 0x9d, 0x59, 0xf3, 0x5d, 0x01, 0x7a, 0x02, 0xe1, 0x01, 0x28, 0xca, 0x50, 0x3e,
-	0x01, 0xac, 0xc9, 0xcd, 0xad, 0x7e, 0x44, 0xe6, 0x66, 0x9e, 0x41, 0x07, 0x94, 0xd3, 0x7a, 0x31,
-	0x35, 0x34, 0xd2, 0x9b, 0xcb, 0x5b, 0x36, 0xb7, 0x65, 0x18, 0x3c, 0x01, 0xff, 0xb8, 0x45, 0x36,
-	0x0c, 0x47, 0x03, 0xd2, 0x25, 0x21, 0xa3, 0x3e, 0xf2, 0x46, 0x4f, 0x04, 0xcf, 0xed, 0xac, 0x2e,
-	0xcf, 0xdc, 0xcc, 0xb3, 0x56, 0xe5, 0xf5, 0xb3, 0xae, 0xbc, 0xf1, 0xf3, 0xc1, 0xcf, 0xf3, 0x57,
-	0xfd, 0xcf, 0x40, 0x8b, 0xff, 0x8c, 0xfd, 0xef, 0x00, 0x00, 0x00, 0xff, 0xff, 0x9f, 0xcb, 0xb7,
-	0xb8, 0x4b, 0x03, 0x00, 0x00,
+	// 487 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x9c, 0x54, 0xcd, 0x6e, 0xd3, 0x40,
+	0x10, 0xc6, 0xa9, 0x13, 0x5b, 0xd3, 0x26, 0x0a, 0xa3, 0x50, 0x2c, 0x1f, 0x2a, 0xe4, 0x13, 0x02,
+	0xa9, 0x12, 0xe1, 0xc2, 0x09, 0xc9, 0xc5, 0xfc, 0xd3, 0x28, 0x72, 0xa9, 0xb8, 0x21, 0x6d, 0xbc,
+	0x8b, 0x88, 0xea, 0xee, 0x1a, 0xaf, 0x21, 0x84, 0x27, 0xe0, 0xcc, 0x89, 0x3b, 0x6f, 0xc0, 0x53,
+	0x70, 0xe4, 0x11, 0x10, 0xbc, 0x08, 0xbb, 0x5e, 0x57, 0xae, 0x5d, 0x57, 0x94, 0x1e, 0x2c, 0xed,
+	0xf7, 0xcd, 0xce, 0xcc, 0x37, 0xfb, 0x4d, 0x02, 0xc3, 0xb7, 0x84, 0xd3, 0x94, 0xe5, 0xbb, 0x59,
+	0x2e, 0x0a, 0x81, 0x76, 0x22, 0x72, 0xe6, 0x0f, 0x53, 0x91, 0x93, 0x15, 0xe1, 0x86, 0xf4, 0x41,
+	0x93, 0xe6, 0x1c, 0x7c, 0xb7, 0x60, 0x1c, 0x91, 0x82, 0x1c, 0x66, 0x4f, 0x4c, 0x62, 0xcc, 0xde,
+	0xa1, 0x07, 0xce, 0x9c, 0xac, 0x53, 0x41, 0xa8, 0x67, 0xdd, 0xb0, 0x6e, 0x6e, 0xc5, 0x4e, 0x66,
+	0x20, 0xde, 0x02, 0x77, 0x9f, 0x15, 0x84, 0xaa, 0x0c, 0xaf, 0xa7, 0x42, 0x9b, 0xd3, 0xd1, 0x6e,
+	0x59, 0xed, 0x84, 0x8d, 0xdd, 0xe3, 0xea, 0x84, 0xdb, 0x30, 0x08, 0xb3, 0xec, 0xe1, 0xe1, 0x53,
+	0x6f, 0xa3, 0x2c, 0x32, 0x20, 0x25, 0xd2, 0x7c, 0xc4, 0x3e, 0x68, 0xde, 0x36, 0x3c, 0x2d, 0x11,
+	0x22, 0xd8, 0x8f, 0x1e, 0xf0, 0xc2, 0xeb, 0x2b, 0x76, 0x18, 0xdb, 0x6f, 0xd4, 0x19, 0x27, 0xd0,
+	0xdf, 0x7f, 0xb9, 0xce, 0x98, 0x37, 0x28, 0xc9, 0xfe, 0xb1, 0x06, 0xc1, 0xd1, 0x19, 0xcd, 0x12,
+	0x6f, 0x37, 0x35, 0x6f, 0x4e, 0xaf, 0x1a, 0x61, 0x2f, 0x44, 0x4c, 0x5e, 0x85, 0x33, 0x7d, 0xff,
+	0x52, 0x63, 0x04, 0xaf, 0x01, 0x75, 0x72, 0x24, 0x56, 0xfc, 0x42, 0x4f, 0x54, 0x8f, 0xdd, 0x3b,
+	0x67, 0xec, 0x8d, 0xd3, 0x63, 0x07, 0x93, 0x8e, 0xfa, 0x32, 0xf8, 0x08, 0xe3, 0x70, 0x6f, 0x7e,
+	0xf0, 0x7e, 0x71, 0xaa, 0x67, 0x5d, 0xd9, 0x6a, 0x54, 0x56, 0x5a, 0x54, 0xe5, 0x90, 0xd2, 0xbc,
+	0x6a, 0xe9, 0x50, 0x03, 0x75, 0x64, 0xb6, 0x3a, 0x3a, 0x78, 0xce, 0xd6, 0x55, 0x53, 0x87, 0x1b,
+	0xa8, 0x23, 0xaa, 0x56, 0x19, 0x31, 0x2e, 0x38, 0xc4, 0xc0, 0x00, 0xcf, 0x74, 0x96, 0xc1, 0x67,
+	0x0b, 0x46, 0xcf, 0xc4, 0x92, 0x5f, 0x40, 0x4c, 0x3d, 0x66, 0xaf, 0xe1, 0xae, 0x0f, 0xae, 0xe2,
+	0x67, 0x82, 0x27, 0xac, 0xd2, 0xe2, 0xd2, 0x0a, 0x37, 0xec, 0xb0, 0xff, 0x61, 0xc7, 0xb7, 0xb6,
+	0x14, 0x89, 0x77, 0xda, 0xd6, 0x5f, 0x6f, 0x58, 0xaf, 0x6f, 0x87, 0x49, 0xc2, 0xb2, 0xa2, 0x36,
+	0xe9, 0x32, 0x4f, 0xf6, 0x1f, 0x2a, 0xa7, 0x5f, 0x7a, 0xe0, 0x54, 0x0a, 0xf1, 0x3e, 0x6c, 0x99,
+	0xa3, 0xd9, 0x59, 0xdc, 0x36, 0x59, 0xed, 0x5f, 0x9d, 0xdf, 0xcd, 0x4b, 0x8c, 0x60, 0x54, 0xe7,
+	0xeb, 0x35, 0x41, 0xaf, 0xbe, 0xd9, 0x5c, 0x4b, 0xff, 0xbc, 0x88, 0xc4, 0x7b, 0x00, 0x06, 0xe9,
+	0xe7, 0xc0, 0x89, 0xb9, 0xd7, 0xf4, 0xd4, 0xef, 0x62, 0x25, 0x3e, 0x86, 0x6b, 0x6a, 0x1b, 0x64,
+	0x92, 0x2f, 0x17, 0x6c, 0xce, 0x72, 0x29, 0x38, 0x49, 0x97, 0x9f, 0x18, 0x3d, 0x19, 0xa4, 0xbd,
+	0xa7, 0x7e, 0x37, 0x2f, 0xf7, 0xc6, 0x3f, 0x7e, 0xef, 0x58, 0x3f, 0xd5, 0xf7, 0x4b, 0x7d, 0x5f,
+	0xff, 0xec, 0x5c, 0x59, 0x0c, 0xca, 0x3f, 0xa1, 0xbb, 0x7f, 0x03, 0x00, 0x00, 0xff, 0xff, 0x74,
+	0xc7, 0x08, 0x43, 0xb6, 0x04, 0x00, 0x00,
 }

@@ -47,9 +47,37 @@ func (m *DataAppRes) String() string            { return proto.CompactTextString
 func (*DataAppRes) ProtoMessage()               {}
 func (*DataAppRes) Descriptor() ([]byte, []int) { return fileDescriptorApplication, []int{1} }
 
+type JoinAppReq struct {
+	AppEUI   []byte      `protobuf:"bytes,1,opt,name=AppEUI,json=appEUI,proto3" json:"AppEUI,omitempty"`
+	DevEUI   []byte      `protobuf:"bytes,2,opt,name=DevEUI,json=devEUI,proto3" json:"DevEUI,omitempty"`
+	Metadata []*Metadata `protobuf:"bytes,3,rep,name=Metadata,json=metadata" json:"Metadata,omitempty"`
+}
+
+func (m *JoinAppReq) Reset()                    { *m = JoinAppReq{} }
+func (m *JoinAppReq) String() string            { return proto.CompactTextString(m) }
+func (*JoinAppReq) ProtoMessage()               {}
+func (*JoinAppReq) Descriptor() ([]byte, []int) { return fileDescriptorApplication, []int{2} }
+
+func (m *JoinAppReq) GetMetadata() []*Metadata {
+	if m != nil {
+		return m.Metadata
+	}
+	return nil
+}
+
+type JoinAppRes struct {
+}
+
+func (m *JoinAppRes) Reset()                    { *m = JoinAppRes{} }
+func (m *JoinAppRes) String() string            { return proto.CompactTextString(m) }
+func (*JoinAppRes) ProtoMessage()               {}
+func (*JoinAppRes) Descriptor() ([]byte, []int) { return fileDescriptorApplication, []int{3} }
+
 func init() {
 	proto.RegisterType((*DataAppReq)(nil), "core.DataAppReq")
 	proto.RegisterType((*DataAppRes)(nil), "core.DataAppRes")
+	proto.RegisterType((*JoinAppReq)(nil), "core.JoinAppReq")
+	proto.RegisterType((*JoinAppRes)(nil), "core.JoinAppRes")
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -60,6 +88,7 @@ var _ grpc.ClientConn
 
 type AppClient interface {
 	HandleData(ctx context.Context, in *DataAppReq, opts ...grpc.CallOption) (*DataAppRes, error)
+	HandleJoin(ctx context.Context, in *JoinAppReq, opts ...grpc.CallOption) (*JoinAppRes, error)
 }
 
 type appClient struct {
@@ -79,10 +108,20 @@ func (c *appClient) HandleData(ctx context.Context, in *DataAppReq, opts ...grpc
 	return out, nil
 }
 
+func (c *appClient) HandleJoin(ctx context.Context, in *JoinAppReq, opts ...grpc.CallOption) (*JoinAppRes, error) {
+	out := new(JoinAppRes)
+	err := grpc.Invoke(ctx, "/core.App/HandleJoin", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // Server API for App service
 
 type AppServer interface {
 	HandleData(context.Context, *DataAppReq) (*DataAppRes, error)
+	HandleJoin(context.Context, *JoinAppReq) (*JoinAppRes, error)
 }
 
 func RegisterAppServer(s *grpc.Server, srv AppServer) {
@@ -101,6 +140,18 @@ func _App_HandleData_Handler(srv interface{}, ctx context.Context, dec func(inte
 	return out, nil
 }
 
+func _App_HandleJoin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(JoinAppReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(AppServer).HandleJoin(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 var _App_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "core.App",
 	HandlerType: (*AppServer)(nil),
@@ -108,6 +159,10 @@ var _App_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "HandleData",
 			Handler:    _App_HandleData_Handler,
+		},
+		{
+			MethodName: "HandleJoin",
+			Handler:    _App_HandleJoin_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{},
@@ -185,6 +240,70 @@ func (m *DataAppRes) MarshalTo(data []byte) (int, error) {
 	return i, nil
 }
 
+func (m *JoinAppReq) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *JoinAppReq) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if m.AppEUI != nil {
+		if len(m.AppEUI) > 0 {
+			data[i] = 0xa
+			i++
+			i = encodeVarintApplication(data, i, uint64(len(m.AppEUI)))
+			i += copy(data[i:], m.AppEUI)
+		}
+	}
+	if m.DevEUI != nil {
+		if len(m.DevEUI) > 0 {
+			data[i] = 0x12
+			i++
+			i = encodeVarintApplication(data, i, uint64(len(m.DevEUI)))
+			i += copy(data[i:], m.DevEUI)
+		}
+	}
+	if len(m.Metadata) > 0 {
+		for _, msg := range m.Metadata {
+			data[i] = 0x1a
+			i++
+			i = encodeVarintApplication(data, i, uint64(msg.Size()))
+			n, err := msg.MarshalTo(data[i:])
+			if err != nil {
+				return 0, err
+			}
+			i += n
+		}
+	}
+	return i, nil
+}
+
+func (m *JoinAppRes) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *JoinAppRes) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	return i, nil
+}
+
 func encodeFixed64Application(data []byte, offset int, v uint64) int {
 	data[offset] = uint8(v)
 	data[offset+1] = uint8(v >> 8)
@@ -243,6 +362,36 @@ func (m *DataAppReq) Size() (n int) {
 }
 
 func (m *DataAppRes) Size() (n int) {
+	var l int
+	_ = l
+	return n
+}
+
+func (m *JoinAppReq) Size() (n int) {
+	var l int
+	_ = l
+	if m.AppEUI != nil {
+		l = len(m.AppEUI)
+		if l > 0 {
+			n += 1 + l + sovApplication(uint64(l))
+		}
+	}
+	if m.DevEUI != nil {
+		l = len(m.DevEUI)
+		if l > 0 {
+			n += 1 + l + sovApplication(uint64(l))
+		}
+	}
+	if len(m.Metadata) > 0 {
+		for _, e := range m.Metadata {
+			l = e.Size()
+			n += 1 + l + sovApplication(uint64(l))
+		}
+	}
+	return n
+}
+
+func (m *JoinAppRes) Size() (n int) {
 	var l int
 	_ = l
 	return n
@@ -485,6 +634,199 @@ func (m *DataAppRes) Unmarshal(data []byte) error {
 	}
 	return nil
 }
+func (m *JoinAppReq) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowApplication
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: JoinAppReq: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: JoinAppReq: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AppEUI", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthApplication
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AppEUI = append(m.AppEUI[:0], data[iNdEx:postIndex]...)
+			if m.AppEUI == nil {
+				m.AppEUI = []byte{}
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DevEUI", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthApplication
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.DevEUI = append(m.DevEUI[:0], data[iNdEx:postIndex]...)
+			if m.DevEUI == nil {
+				m.DevEUI = []byte{}
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Metadata", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthApplication
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Metadata = append(m.Metadata, &Metadata{})
+			if err := m.Metadata[len(m.Metadata)-1].Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipApplication(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *JoinAppRes) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowApplication
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: JoinAppRes: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: JoinAppRes: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipApplication(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthApplication
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func skipApplication(data []byte) (n int, err error) {
 	l := len(data)
 	iNdEx := 0
@@ -591,7 +933,7 @@ var (
 )
 
 var fileDescriptorApplication = []byte{
-	// 203 bytes of a gzipped FileDescriptorProto
+	// 242 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xe2, 0x12, 0x4c, 0x2c, 0x28, 0xc8,
 	0xc9, 0x4c, 0x4e, 0x2c, 0xc9, 0xcc, 0xcf, 0xd3, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x62, 0x49,
 	0xce, 0x2f, 0x4a, 0x95, 0xe2, 0x02, 0x91, 0x10, 0x11, 0xa5, 0x26, 0x46, 0x2e, 0x2e, 0x97, 0xc4,
@@ -600,9 +942,12 @@ var fileDescriptorApplication = []byte{
 	0x8b, 0x0d, 0xa8, 0xc6, 0x35, 0xd4, 0x53, 0x82, 0x09, 0x2c, 0xc1, 0x96, 0x08, 0xe6, 0x81, 0xc4,
 	0x5d, 0x52, 0xcb, 0x40, 0xe2, 0xcc, 0x10, 0xf1, 0x14, 0x30, 0x4f, 0x48, 0x8b, 0x8b, 0xc3, 0x37,
 	0xb5, 0x24, 0x31, 0x05, 0x68, 0xb6, 0x04, 0x8b, 0x02, 0xb3, 0x06, 0xb7, 0x11, 0x9f, 0x1e, 0xd8,
-	0x5e, 0x98, 0x68, 0x10, 0x47, 0x2e, 0x94, 0xa5, 0xc4, 0x83, 0xe4, 0x86, 0x62, 0x23, 0x73, 0x2e,
-	0x66, 0x20, 0x4b, 0xc8, 0x80, 0x8b, 0xcb, 0x23, 0x31, 0x2f, 0x25, 0x27, 0x15, 0x24, 0x25, 0x24,
-	0x00, 0xd1, 0x8c, 0x70, 0xaa, 0x14, 0xba, 0x48, 0xb1, 0x93, 0xc0, 0x89, 0x47, 0x72, 0x8c, 0x17,
-	0x80, 0xf8, 0x01, 0x10, 0xcf, 0x78, 0x2c, 0xc7, 0x90, 0xc4, 0x06, 0xf6, 0xa4, 0x31, 0x20, 0x00,
-	0x00, 0xff, 0xff, 0xf1, 0x20, 0xc5, 0xda, 0x0b, 0x01, 0x00, 0x00,
+	0x5e, 0x98, 0x68, 0x10, 0x47, 0x2e, 0x94, 0xa5, 0xc4, 0x83, 0xe4, 0x86, 0x62, 0xa5, 0x0c, 0x2e,
+	0x2e, 0xaf, 0xfc, 0xcc, 0x3c, 0xa8, 0x8b, 0x10, 0xf6, 0x32, 0xe2, 0xb0, 0x97, 0x09, 0xa7, 0xbd,
+	0xcc, 0x84, 0xed, 0x85, 0xdb, 0x54, 0x6c, 0x94, 0xc9, 0xc5, 0x0c, 0x64, 0x09, 0x19, 0x70, 0x71,
+	0x79, 0x24, 0xe6, 0xa5, 0xe4, 0xa4, 0x82, 0x9c, 0x24, 0x24, 0x00, 0xd1, 0x8c, 0x08, 0x22, 0x29,
+	0x74, 0x91, 0x62, 0x84, 0x0e, 0x90, 0x61, 0x30, 0x1d, 0x08, 0x2f, 0x48, 0xa1, 0x8b, 0x14, 0x3b,
+	0x09, 0x9c, 0x78, 0x24, 0xc7, 0x78, 0x01, 0x88, 0x1f, 0x00, 0xf1, 0x8c, 0xc7, 0x72, 0x0c, 0x49,
+	0x6c, 0xe0, 0xe8, 0x30, 0x06, 0x04, 0x00, 0x00, 0xff, 0xff, 0x04, 0x04, 0x27, 0x4e, 0xb5, 0x01,
+	0x00, 0x00,
 }
