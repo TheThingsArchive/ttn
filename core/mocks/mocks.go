@@ -162,6 +162,13 @@ type RouterServer struct {
 	OutHandleStats struct {
 		Res *core.StatsRes
 	}
+	InHandleJoin struct {
+		Ctx context.Context
+		Req *core.JoinRouterReq
+	}
+	OutHandleJoin struct {
+		Res *core.JoinRouterRes
+	}
 }
 
 // NewRouterServer creates a new mock RouterServer
@@ -183,6 +190,13 @@ func (m *RouterServer) HandleStats(ctx context.Context, in *core.StatsReq) (*cor
 	m.InHandleStats.Ctx = ctx
 	m.InHandleStats.Req = in
 	return m.OutHandleStats.Res, m.Failures["HandleStats"]
+}
+
+// HandleJoin implements the core.RouterServer interface
+func (m *RouterServer) HandleJoin(ctx context.Context, in *core.JoinRouterReq) (*core.JoinRouterRes, error) {
+	m.InHandleJoin.Ctx = ctx
+	m.InHandleJoin.Req = in
+	return m.OutHandleJoin.Res, m.Failures["HandleJoin"]
 }
 
 // DutyManager mocks the dutycycle.DutyManager interface
