@@ -379,7 +379,7 @@ func TestNewTXPKAndtoLoRaWANPayloadReq(t *testing.T) {
 		// Build
 		gid := []byte{1, 2, 3, 4, 5, 6, 7, 8}
 		payload := lorawan.NewPHYPayload(false)
-		payload.MHDR.MType = lorawan.UnconfirmedDataUp
+		payload.MHDR.MType = lorawan.ConfirmedDataUp
 		payload.MHDR.Major = lorawan.LoRaWANR1
 		payload.MIC = [4]byte{1, 2, 3, 4}
 		macpayload := lorawan.NewMACPayload(false)
@@ -410,5 +410,84 @@ func TestNewTXPKAndtoLoRaWANPayloadReq(t *testing.T) {
 
 		// Check
 		CheckErrors(t, wantErr, err)
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Test toLoRaWANPayload with unhandled mtype")
+
+		// Build
+		gid := []byte{1, 2, 3, 4, 5, 6, 7, 8}
+		payload := lorawan.NewPHYPayload(false)
+		payload.MHDR.MType = lorawan.UnconfirmedDataDown
+		payload.MHDR.Major = lorawan.LoRaWANR1
+		payload.MIC = [4]byte{1, 2, 3, 4}
+		macpayload := lorawan.NewMACPayload(false)
+		macpayload.FPort = 1
+		macpayload.FRMPayload = []lorawan.Payload{&lorawan.DataPayload{Bytes: []byte{1, 2, 3}}}
+		payload.MACPayload = macpayload
+		data, err := payload.MarshalBinary()
+		FatalUnless(t, err)
+		rxpk := semtech.RXPK{
+			Codr: pointer.String("4/5"),
+			Freq: pointer.Float32(867.345),
+			Data: pointer.String(base64.RawStdEncoding.EncodeToString(data)),
+		}
+
+		// Expectations
+		var wantErr = ErrStructural
+
+		// Operate
+		_, err = toLoRaWANPayload(rxpk, gid, GetLogger(t, "Convert DataRouterReq"))
+
+		// Check
+		CheckErrors(t, wantErr, err)
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Test toLoRaWANPayload with join-request mtype")
+
+		// Build
+		gid := []byte{1, 2, 3, 4, 5, 6, 7, 8}
+		payload := lorawan.NewPHYPayload(false)
+		payload.MHDR.MType = lorawan.JoinRequest
+		payload.MHDR.Major = lorawan.LoRaWANR1
+		payload.MIC = [4]byte{1, 2, 3, 4}
+		joinpayload := &lorawan.JoinRequestPayload{
+			AppEUI:   [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+			DevEUI:   [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
+			DevNonce: [2]byte{1, 2},
+		}
+		payload.MACPayload = joinpayload
+		data, err := payload.MarshalBinary()
+		FatalUnless(t, err)
+		rxpk := semtech.RXPK{
+			Codr: pointer.String("4/5"),
+			Freq: pointer.Float32(867.345),
+			Data: pointer.String(base64.RawStdEncoding.EncodeToString(data)),
+		}
+
+		// Expectations
+		var wantErr *string
+		var wantReq = &core.JoinRouterReq{
+			GatewayID: gid,
+			AppEUI:    joinpayload.AppEUI[:],
+			DevEUI:    joinpayload.DevEUI[:],
+			DevNonce:  joinpayload.DevNonce[:],
+			Metadata: &core.Metadata{
+				CodingRate: *rxpk.Codr,
+				Frequency:  *rxpk.Freq,
+			},
+		}
+
+		// Operate
+		req, err := toLoRaWANPayload(rxpk, gid, GetLogger(t, "Convert DataRouterReq"))
+
+		// Check
+		CheckErrors(t, wantErr, err)
+		Check(t, wantReq, req, "Join Router Requests")
 	}
 }

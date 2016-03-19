@@ -40,7 +40,6 @@ func toLoRaWANPayload(rxpk semtech.RXPK, gid []byte, ctx log.Interface) (interfa
 	case lorawan.UnconfirmedDataUp:
 		macpayload, ok := payload.MACPayload.(*lorawan.MACPayload)
 		if !ok {
-			// TODO OTAA join request payloads
 			return nil, errors.New(errors.Structural, "Unhandled Physical payload. Expected a MACPayload")
 		}
 		if len(macpayload.FRMPayload) != 1 {
