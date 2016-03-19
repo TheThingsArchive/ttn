@@ -125,7 +125,7 @@ func (h component) SubscribePersonalized(bctx context.Context, req *core.ABPSubH
 
 	h.Ctx.Debug("Registration is valid. Saving and forwarding to broker")
 
-	if err := h.DevStorage.StorePersonalized(req.AppEUI, devAddr, nwkSKey, appSKey); err != nil {
+	if err := h.DevStorage.StorePersonalized(req.AppEUI, devAddr, appSKey, nwkSKey); err != nil {
 		h.Ctx.WithError(err).Debug("Unable to store registration")
 		return new(core.ABPSubHandlerRes), errors.New(errors.Operational, err)
 	}
