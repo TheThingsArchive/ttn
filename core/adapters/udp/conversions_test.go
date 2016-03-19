@@ -157,7 +157,7 @@ func TestExtractMetadta(t *testing.T) {
 }
 
 // func newTXPK(resp core.DataRouterRes, ctx log.Interface) (semtech.TXPK, error) {
-func TestNewTXPKAndNewDataRouterReq(t *testing.T) {
+func TestNewTXPKAndtoLoRaWANPayloadReq(t *testing.T) {
 	{
 		Desc(t, "Test Valid marshal / unmarshal")
 
@@ -191,10 +191,12 @@ func TestNewTXPKAndNewDataRouterReq(t *testing.T) {
 				DataRate:   "SF8BW125",
 			},
 		}
+		payload, err := core.NewLoRaWANData(res.Payload, false)
+		FatalUnless(t, err)
 		gid := []byte{1, 2, 3, 4, 5, 6, 7, 8}
 
 		// Expectations
-		var wantReq = core.DataRouterReq{
+		var wantReq = &core.DataRouterReq{
 			Payload:   res.Payload,
 			Metadata:  res.Metadata,
 			GatewayID: gid,
@@ -203,8 +205,8 @@ func TestNewTXPKAndNewDataRouterReq(t *testing.T) {
 		var wantErrReq *string
 
 		// Operate
-		txpk, errTXPK := newTXPK(res, GetLogger(t, "Convert TXPK"))
-		req, errReq := newDataRouterReq(semtech.RXPK{
+		txpk, errTXPK := newTXPK(payload, res.Metadata, GetLogger(t, "Convert TXPK"))
+		req, errReq := toLoRaWANPayload(semtech.RXPK{
 			Codr: txpk.Codr,
 			Datr: txpk.Datr,
 			Data: txpk.Data,
@@ -213,7 +215,7 @@ func TestNewTXPKAndNewDataRouterReq(t *testing.T) {
 		// Check
 		CheckErrors(t, wantErrTXPK, errTXPK)
 		CheckErrors(t, wantErrReq, errReq)
-		Check(t, wantReq, *req, "Data Router Requests")
+		Check(t, wantReq, req, "Data Router Requests")
 	}
 
 	// --------------------
@@ -248,13 +250,15 @@ func TestNewTXPKAndNewDataRouterReq(t *testing.T) {
 			},
 			Metadata: nil,
 		}
+		payload, err := core.NewLoRaWANData(res.Payload, false)
+		FatalUnless(t, err)
 
 		// Expectations
 		var wantTXPK semtech.TXPK
 		var wantErr = ErrStructural
 
 		// Operate
-		txpk, errTXPK := newTXPK(res, GetLogger(t, "Convert TXPK"))
+		txpk, errTXPK := newTXPK(payload, res.Metadata, GetLogger(t, "Convert TXPK"))
 
 		// Check
 		CheckErrors(t, wantErr, errTXPK)
@@ -264,33 +268,7 @@ func TestNewTXPKAndNewDataRouterReq(t *testing.T) {
 	// --------------------
 
 	{
-		Desc(t, "New TXPK with an invalid payload")
-
-		// Build
-		res := core.DataRouterRes{
-			Payload: new(core.LoRaWANData),
-			Metadata: &core.Metadata{
-				CodingRate: "4/5",
-				DataRate:   "SF8BW125",
-			},
-		}
-
-		// Expectations
-		var wantTXPK semtech.TXPK
-		var wantErr = ErrStructural
-
-		// Operate
-		txpk, errTXPK := newTXPK(res, GetLogger(t, "Convert TXPK"))
-
-		// Check
-		CheckErrors(t, wantErr, errTXPK)
-		Check(t, wantTXPK, txpk, "TXPKs")
-	}
-
-	// --------------------
-
-	{
-		Desc(t, "Test newDataRouter with invalid macpayload")
+		Desc(t, "Test toLoRaWANPayload with invalid macpayload")
 
 		// Build
 		gid := []byte{1, 2, 3, 4, 5, 6, 7, 8}
@@ -308,11 +286,11 @@ func TestNewTXPKAndNewDataRouterReq(t *testing.T) {
 		}
 
 		// Expectations
-		var wantReq *core.DataRouterReq
+		var wantReq interface{}
 		var wantErr = ErrStructural
 
 		// Operate
-		req, err := newDataRouterReq(rxpk, gid, GetLogger(t, "Convert DataRouterReq"))
+		req, err := toLoRaWANPayload(rxpk, gid, GetLogger(t, "Convert DataRouterReq"))
 
 		// Check
 		CheckErrors(t, wantErr, err)
@@ -322,7 +300,7 @@ func TestNewTXPKAndNewDataRouterReq(t *testing.T) {
 	// --------------------
 
 	{
-		Desc(t, "Test newDataRouter with no data in rxpk")
+		Desc(t, "Test toLoRaWANPayload with no data in rxpk")
 
 		// Build
 		gid := []byte{1, 2, 3, 4, 5, 6, 7, 8}
@@ -332,11 +310,11 @@ func TestNewTXPKAndNewDataRouterReq(t *testing.T) {
 		}
 
 		// Expectations
-		var wantReq *core.DataRouterReq
+		var wantReq interface{}
 		var wantErr = ErrStructural
 
 		// Operate
-		req, err := newDataRouterReq(rxpk, gid, GetLogger(t, "Convert DataRouterReq"))
+		req, err := toLoRaWANPayload(rxpk, gid, GetLogger(t, "Convert DataRouterReq"))
 
 		// Check
 		CheckErrors(t, wantErr, err)
@@ -346,7 +324,7 @@ func TestNewTXPKAndNewDataRouterReq(t *testing.T) {
 	// --------------------
 
 	{
-		Desc(t, "Test newDataRouter with random encoded data in rxpk")
+		Desc(t, "Test toLoRaWANPayload with random encoded data in rxpk")
 
 		// Build
 		gid := []byte{1, 2, 3, 4, 5, 6, 7, 8}
@@ -357,11 +335,11 @@ func TestNewTXPKAndNewDataRouterReq(t *testing.T) {
 		}
 
 		// Expectations
-		var wantReq *core.DataRouterReq
+		var wantReq interface{}
 		var wantErr = ErrStructural
 
 		// Operate
-		req, err := newDataRouterReq(rxpk, gid, GetLogger(t, "Convert DataRouterReq"))
+		req, err := toLoRaWANPayload(rxpk, gid, GetLogger(t, "Convert DataRouterReq"))
 
 		// Check
 		CheckErrors(t, wantErr, err)
@@ -371,7 +349,7 @@ func TestNewTXPKAndNewDataRouterReq(t *testing.T) {
 	// --------------------
 
 	{
-		Desc(t, "Test newDataRouter with not base64 data")
+		Desc(t, "Test toLoRaWANPayload with not base64 data")
 
 		// Build
 		gid := []byte{1, 2, 3, 4, 5, 6, 7, 8}
@@ -382,11 +360,11 @@ func TestNewTXPKAndNewDataRouterReq(t *testing.T) {
 		}
 
 		// Expectations
-		var wantReq *core.DataRouterReq
+		var wantReq interface{}
 		var wantErr = ErrStructural
 
 		// Operate
-		req, err := newDataRouterReq(rxpk, gid, GetLogger(t, "Convert DataRouterReq"))
+		req, err := toLoRaWANPayload(rxpk, gid, GetLogger(t, "Convert DataRouterReq"))
 
 		// Check
 		CheckErrors(t, wantErr, err)
@@ -396,12 +374,12 @@ func TestNewTXPKAndNewDataRouterReq(t *testing.T) {
 	// --------------------
 
 	{
-		Desc(t, "Test newDataRouter with mac commands in fopts")
+		Desc(t, "Test toLoRaWANPayload with mac commands in fopts")
 
 		// Build
 		gid := []byte{1, 2, 3, 4, 5, 6, 7, 8}
 		payload := lorawan.NewPHYPayload(false)
-		payload.MHDR.MType = lorawan.UnconfirmedDataDown
+		payload.MHDR.MType = lorawan.UnconfirmedDataUp
 		payload.MHDR.Major = lorawan.LoRaWANR1
 		payload.MIC = [4]byte{1, 2, 3, 4}
 		macpayload := lorawan.NewMACPayload(false)
@@ -428,7 +406,7 @@ func TestNewTXPKAndNewDataRouterReq(t *testing.T) {
 		var wantErr *string
 
 		// Operate
-		_, err = newDataRouterReq(rxpk, gid, GetLogger(t, "Convert DataRouterReq"))
+		_, err = toLoRaWANPayload(rxpk, gid, GetLogger(t, "Convert DataRouterReq"))
 
 		// Check
 		CheckErrors(t, wantErr, err)

@@ -39,6 +39,14 @@ type Options struct {
 // replier is an alias used by methods herebelow
 type replier func(data []byte) error
 
+// straightMarshaler can be used to easily obtain a binary marshaler from a sequence of byte
+type straightMarshaler []byte
+
+// MarshalBinary implements the encoding.BinaryMarshaler interface
+func (s straightMarshaler) MarshalBinary() ([]byte, error) {
+	return s, nil
+}
+
 // Start constructs and launches a new udp adapter
 func Start(c Components, o Options) (err error) {
 	// Create the udp connection and start listening with a goroutine
@@ -192,17 +200,31 @@ func (a adapter) handlePushData(pkt semtech.Packet, reply replier) error {
 }
 
 func (a adapter) handleDataUp(rxpk semtech.RXPK, gid []byte, reply replier) error {
-	dataRouterReq, err := newDataRouterReq(rxpk, gid, a.Ctx)
+	itf, err := toLoRaWANPayload(rxpk, gid, a.Ctx)
 	if err != nil {
 		a.Ctx.WithError(err).Debug("Invalid up RXPK packet")
 		return errors.New(errors.Structural, err)
 	}
-	resp, err := a.Router.HandleData(context.Background(), dataRouterReq)
-	if err != nil {
-		a.Ctx.WithError(err).Debug("Router failed to process uplink")
-		errors.New(errors.Operational, err)
+
+	switch itf.(type) {
+	case *core.DataRouterReq:
+		resp, err := a.Router.HandleData(context.Background(), itf.(*core.DataRouterReq))
+		if err != nil {
+			a.Ctx.WithError(err).Debug("Router failed to process uplink")
+			return errors.New(errors.Operational, err)
+		}
+		return a.handleDataDown(resp, reply)
+	case *core.JoinRouterReq:
+		resp, err := a.Router.HandleJoin(context.Background(), itf.(*core.JoinRouterReq))
+		if err != nil {
+			a.Ctx.WithError(err).Debug("Router failed to process join request")
+			return errors.New(errors.Operational, err)
+		}
+		return a.handleJoinAccept(resp, reply)
+	default:
+		a.Ctx.Warn("Unhandled LoRaWAN Payload type")
+		return errors.New(errors.Implementation, "Unhandled LoRaWAN Payload type")
 	}
-	return a.handleDataDown(resp, reply)
 }
 
 func (a adapter) handleDataDown(resp *core.DataRouterRes, reply replier) error {
@@ -212,7 +234,12 @@ func (a adapter) handleDataDown(resp *core.DataRouterRes, reply replier) error {
 		return nil
 	}
 
-	txpk, err := newTXPK(*resp, a.Ctx)
+	payload, err := core.NewLoRaWANData(resp.Payload, false)
+	if err != nil {
+		return errors.New(errors.Structural, err)
+	}
+
+	txpk, err := newTXPK(payload, resp.Metadata, a.Ctx)
 	if err != nil {
 		a.Ctx.WithError(err).Debug("Unable to interpret downlink")
 		return errors.New(errors.Structural, err)
@@ -227,6 +254,31 @@ func (a adapter) handleDataDown(resp *core.DataRouterRes, reply replier) error {
 	if err != nil {
 		a.Ctx.WithError(err).Debug("Unable to create semtech packet with TXPK")
 		return errors.New(errors.Structural, err)
+	}
+	return reply(data)
+}
+
+func (a adapter) handleJoinAccept(resp *core.JoinRouterRes, reply replier) error {
+	a.Ctx.Debug("Handle Join-Accept from router")
+	if resp == nil || resp.Payload == nil {
+		a.Ctx.Debug("Invalid response")
+		return errors.New(errors.Structural, "Invalid Join-Accept response. Expected a payload")
+	}
+
+	txpk, err := newTXPK(straightMarshaler(resp.Payload.Payload), resp.Metadata, a.Ctx)
+	if err != nil {
+		a.Ctx.WithError(err).Debug("Unable to interpret Join-Accept")
+		return errors.New(errors.Structural, err)
+	}
+
+	a.Ctx.Debug("Creating a new join-accept response")
+	data, err := semtech.Packet{
+		Version:    semtech.VERSION,
+		Identifier: semtech.PULL_RESP,
+		Payload:    &semtech.Payload{TXPK: &txpk},
+	}.MarshalBinary()
+	if err != nil {
+		a.Ctx.WithError(err).Debug("Unable to create semtech packet with TXPK")
 	}
 	return reply(data)
 }

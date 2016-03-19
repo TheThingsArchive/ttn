@@ -4,6 +4,7 @@
 package udp
 
 import (
+	"encoding"
 	"encoding/base64"
 	"reflect"
 	"strings"
@@ -16,7 +17,7 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
-func newDataRouterReq(rxpk semtech.RXPK, gid []byte, ctx log.Interface) (*core.DataRouterReq, error) {
+func toLoRaWANPayload(rxpk semtech.RXPK, gid []byte, ctx log.Interface) (interface{}, error) {
 	// First, we have to get the physical payload which is encoded in the Data field
 	if rxpk.Data == nil {
 		return nil, errors.New(errors.Structural, "There's no data in the packet")
@@ -32,67 +33,81 @@ func newDataRouterReq(rxpk semtech.RXPK, gid []byte, ctx log.Interface) (*core.D
 		return nil, errors.New(errors.Structural, err)
 	}
 
-	macpayload, ok := payload.MACPayload.(*lorawan.MACPayload)
-	if !ok {
-		// TODO OTAA join request payloads
-		return nil, errors.New(errors.Structural, "Unhandled Physical payload. Expected a MACPayload")
-	}
-	if len(macpayload.FRMPayload) != 1 {
-		// TODO Handle pure MAC Commands payloads (FType = 0)
-		return nil, errors.New(errors.Implementation, "Unhandled Physical payload. Expected a Data Payload")
-	}
-	frmpayload, err := macpayload.FRMPayload[0].MarshalBinary()
-	if err != nil {
-		return nil, errors.New(errors.Structural, err)
-	}
-
-	var fopts [][]byte
-	for _, cmd := range macpayload.FHDR.FOpts {
-		if data, err := cmd.MarshalBinary(); err == nil { // We just ignore invalid MAC Commands
-			fopts = append(fopts, data)
+	// Switch over MType
+	switch payload.MHDR.MType {
+	case lorawan.ConfirmedDataUp:
+		fallthrough
+	case lorawan.UnconfirmedDataUp:
+		macpayload, ok := payload.MACPayload.(*lorawan.MACPayload)
+		if !ok {
+			// TODO OTAA join request payloads
+			return nil, errors.New(errors.Structural, "Unhandled Physical payload. Expected a MACPayload")
 		}
-	}
+		if len(macpayload.FRMPayload) != 1 {
+			// TODO Handle pure MAC Commands payloads (FType = 0)
+			return nil, errors.New(errors.Implementation, "Unhandled Physical payload. Expected a Data Payload")
+		}
+		frmpayload, err := macpayload.FRMPayload[0].MarshalBinary()
+		if err != nil {
+			return nil, errors.New(errors.Structural, err)
+		}
 
-	// At the end, our converted packet hold the same metadata than the RXPK packet but the Data
-	// which as been completely transformed into a lorawan Physical Payload.
-	return &core.DataRouterReq{
-		Payload: &core.LoRaWANData{
-			MHDR: &core.LoRaWANMHDR{
-				MType: uint32(payload.MHDR.MType),
-				Major: uint32(payload.MHDR.Major),
-			},
-			MACPayload: &core.LoRaWANMACPayload{
-				FHDR: &core.LoRaWANFHDR{
-					DevAddr: macpayload.FHDR.DevAddr[:],
-					FCnt:    macpayload.FHDR.FCnt,
-					FCtrl: &core.LoRaWANFCtrl{
-						ADR:       macpayload.FHDR.FCtrl.ADR,
-						ADRAckReq: macpayload.FHDR.FCtrl.ADRACKReq,
-						Ack:       macpayload.FHDR.FCtrl.ACK,
-						FPending:  macpayload.FHDR.FCtrl.FPending,
-					},
-					FOpts: fopts,
+		var fopts [][]byte
+		for _, cmd := range macpayload.FHDR.FOpts {
+			if data, err := cmd.MarshalBinary(); err == nil { // We just ignore invalid MAC Commands
+				fopts = append(fopts, data)
+			}
+		}
+
+		// At the end, our converted packet hold the same metadata than the RXPK packet but the Data
+		// which as been completely transformed into a lorawan Physical Payload.
+		return &core.DataRouterReq{
+			Payload: &core.LoRaWANData{
+				MHDR: &core.LoRaWANMHDR{
+					MType: uint32(payload.MHDR.MType),
+					Major: uint32(payload.MHDR.Major),
 				},
-				FPort:      uint32(macpayload.FPort),
-				FRMPayload: frmpayload,
+				MACPayload: &core.LoRaWANMACPayload{
+					FHDR: &core.LoRaWANFHDR{
+						DevAddr: macpayload.FHDR.DevAddr[:],
+						FCnt:    macpayload.FHDR.FCnt,
+						FCtrl: &core.LoRaWANFCtrl{
+							ADR:       macpayload.FHDR.FCtrl.ADR,
+							ADRAckReq: macpayload.FHDR.FCtrl.ADRACKReq,
+							Ack:       macpayload.FHDR.FCtrl.ACK,
+							FPending:  macpayload.FHDR.FCtrl.FPending,
+						},
+						FOpts: fopts,
+					},
+					FPort:      uint32(macpayload.FPort),
+					FRMPayload: frmpayload,
+				},
+				MIC: payload.MIC[:],
 			},
-			MIC: payload.MIC[:],
-		},
-		Metadata:  extractMetadata(rxpk, new(core.Metadata)).(*core.Metadata),
-		GatewayID: gid,
-	}, nil
+			Metadata:  extractMetadata(rxpk, new(core.Metadata)).(*core.Metadata),
+			GatewayID: gid,
+		}, nil
+	case lorawan.JoinRequest:
+		joinpayload, ok := payload.MACPayload.(*lorawan.JoinRequestPayload)
+		if !ok {
+			return nil, errors.New(errors.Structural, "Unhandled Physical payload. Expected a JoinRequest Payload")
+		}
+		return &core.JoinRouterReq{
+			GatewayID: gid,
+			AppEUI:    joinpayload.AppEUI[:],
+			DevEUI:    joinpayload.DevEUI[:],
+			DevNonce:  joinpayload.DevNonce[:],
+			Metadata:  extractMetadata(rxpk, new(core.Metadata)).(*core.Metadata),
+		}, nil
+	default:
+		return nil, errors.New(errors.Structural, "Unexpected and unhandled LoRaWAN MHDR Mtype")
+	}
 }
 
-func newTXPK(resp core.DataRouterRes, ctx log.Interface) (semtech.TXPK, error) {
+func newTXPK(payload encoding.BinaryMarshaler, metadata *core.Metadata, ctx log.Interface) (semtech.TXPK, error) {
 	// Step 0: validate the response
-	if resp.Metadata == nil {
+	if metadata == nil {
 		return semtech.TXPK{}, errors.New(errors.Structural, "Missing mandatory Metadata")
-	}
-
-	// Step 1: create a new LoRaWAN payload
-	payload, err := core.NewLoRaWANData(resp.Payload, false)
-	if err != nil {
-		return semtech.TXPK{}, errors.New(errors.Structural, err)
 	}
 
 	// Step2: Convert the physical payload to a base64 string (without the padding)
@@ -105,7 +120,7 @@ func newTXPK(resp core.DataRouterRes, ctx log.Interface) (semtech.TXPK, error) {
 
 	// Step 3, copy every compatible metadata from the packet to the TXPK packet.
 	// We are possibly loosing information here.
-	injectMetadata(&txpk, *resp.Metadata) // Validation::2
+	injectMetadata(&txpk, *metadata)
 	return txpk, nil
 }
 
@@ -157,5 +172,6 @@ func extractMetadata(xpk interface{}, target interface{}) interface{} {
 			}
 		}
 	}
+
 	return target
 }
