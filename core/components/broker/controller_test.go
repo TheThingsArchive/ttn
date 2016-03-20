@@ -355,4 +355,53 @@ func TestNetworkControllerDevice(t *testing.T) {
 
 		_ = db.Close()
 	}
+
+	// -------------------
+
+	{
+		Desc(t, "Test update then read an activation")
+
+		// Build
+		db, _ := NewNetworkController(NetworkControllerDB)
+		entry := appEntry{
+			Dialer:    NewDialer([]byte("Dialer")),
+			AppEUI:    []byte{1, 1, 1, 1, 1, 1, 1, 1},
+			DevEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
+			DevNonces: [][]byte{{1, 2}, {3, 4}},
+		}
+
+		// Operate
+		err := db.UpdateActivation(entry)
+		FatalUnless(t, err)
+		got, err := db.ReadActivation(entry.AppEUI, entry.DevEUI)
+
+		// Chek
+		CheckErrors(t, nil, err)
+		Check(t, entry, got, "Entries")
+
+		_ = db.Close()
+
+	}
+
+	// -------------------
+
+	{
+		Desc(t, "Test ReadActivation -> not found")
+
+		// Build
+		db, _ := NewNetworkController(NetworkControllerDB)
+		appEUI := []byte{1, 1, 1, 1, 1, 1, 1, 2}
+		devEUI := []byte{2, 2, 2, 2, 2, 2, 2, 3}
+		var entry appEntry
+
+		// Operate
+		got, err := db.ReadActivation(appEUI, devEUI)
+
+		// Chek
+		CheckErrors(t, ErrNotFound, err)
+		Check(t, entry, got, "Entries")
+
+		_ = db.Close()
+
+	}
 }

@@ -73,7 +73,7 @@ func (s *controller) LookupDevices(devAddr []byte) ([]devEntry, error) {
 func (s *controller) ReadActivation(appEUI []byte, devEUI []byte) (appEntry, error) {
 	s.RLock()
 	defer s.RUnlock()
-	itf, err := s.db.Lookup(fmt.Sprintf("%x.%x", appEUI, devEUI), []byte{}, &appEntry{})
+	itf, err := s.db.Lookup(fmt.Sprintf("%x.%x", appEUI, devEUI), []byte("entry"), &appEntry{})
 	if err != nil {
 		return appEntry{}, err
 	}
@@ -89,7 +89,7 @@ func (s *controller) ReadActivation(appEUI []byte, devEUI []byte) (appEntry, err
 func (s *controller) UpdateActivation(entry appEntry) error {
 	s.Lock()
 	defer s.Unlock()
-	return s.db.Replace(fmt.Sprintf("%x.%x", entry.AppEUI, entry.DevEUI), []byte{}, []dbutil.Entry{&entry})
+	return s.db.Replace(fmt.Sprintf("%x.%x", entry.AppEUI, entry.DevEUI), []byte("entry"), []dbutil.Entry{&entry})
 }
 
 // WholeCounter implements the broker.NetworkController interface
@@ -179,7 +179,7 @@ func (e appEntry) MarshalBinary() ([]byte, error) {
 	for _, n := range e.DevNonces {
 		binary.Write(buf, binary.BigEndian, n)
 	}
-	if len(buf.Bytes()) != 8+2+2*len(e.DevNonces) {
+	if len(buf.Bytes()) != 16+2+2*len(e.DevNonces) {
 		return nil, errors.New(errors.Structural, "App entry was invalid. Cannot Marshal")
 	}
 	binary.Write(buf, binary.BigEndian, e.Dialer.MarshalSafely())

@@ -83,7 +83,7 @@ func (b component) HandleJoin(bctx context.Context, req *core.JoinBrokerReq) (*c
 	b.Ctx.Debug("Handling join request")
 
 	// Validate incoming data
-	if req == nil || len(req.DevEUI) != 8 || len(req.AppEUI) != 8 || len(req.DevNonce) != 2 {
+	if req == nil || len(req.DevEUI) != 8 || len(req.AppEUI) != 8 || len(req.DevNonce) != 2 || req.Metadata == nil {
 		b.Ctx.Debug("Invalid request. Parameters are incorrect.")
 		return new(core.JoinBrokerRes), errors.New(errors.Structural, "Invalid parameters")
 	}
@@ -128,7 +128,7 @@ func (b component) HandleJoin(bctx context.Context, req *core.JoinBrokerReq) (*c
 	// Handle the response
 	if res == nil || res.Payload == nil || len(res.DevAddr) != 4 || len(res.NwkSKey) != 16 {
 		ctx.Debug("Invalid response from handler")
-		return new(core.JoinBrokerRes), errors.New(errors.Structural, "Invalid response from handler")
+		return new(core.JoinBrokerRes), errors.New(errors.Operational, "Invalid response from handler")
 	}
 
 	// Update the DevNonce
