@@ -52,11 +52,12 @@ type Options struct {
 
 // bundle are used to materialize an incoming request being bufferized, waiting for the others.
 type bundle struct {
-	Chresp chan interface{}
-	Entry  devEntry
-	ID     [20]byte
-	Packet core.DataUpHandlerReq
-	Time   time.Time
+	Chresp   chan interface{}
+	Entry    devEntry
+	ID       [20]byte
+	Packet   interface{}
+	DataRate string
+	Time     time.Time
 }
 
 // New construct a new Handler
@@ -144,6 +145,12 @@ func (h component) SubscribePersonalized(bctx context.Context, req *core.ABPSubH
 	return new(core.ABPSubHandlerRes), nil
 }
 
+// HandleJoin implements the core.HandlerServer interface
+func (h component) HandleJoin(bctx context.Context, req *core.JoinHandlerReq) (*core.JoinHandlerRes, error) {
+	// TODO
+	return nil, nil
+}
+
 // HandleDataDown implements the core.HandlerServer interface
 func (h component) HandleDataDown(bctx context.Context, req *core.DataDownHandlerReq) (*core.DataDownHandlerRes, error) {
 	stats.MarkMeter("handler.downlink.in")
@@ -219,11 +226,12 @@ func (h component) HandleDataUp(bctx context.Context, req *core.DataUpHandlerReq
 	ctx := h.Ctx.WithField("BundleID", bundleID)
 	ctx.Debug("Define new bundle")
 	h.Set <- bundle{
-		ID:     bundleID,
-		Packet: *req,
-		Entry:  entry,
-		Chresp: chresp,
-		Time:   time.Now(),
+		ID:       bundleID,
+		Packet:   req,
+		DataRate: req.Metadata.DataRate,
+		Entry:    entry,
+		Chresp:   chresp,
+		Time:     time.Now(),
 	}
 
 	// 5. Wait for the response. Could be an error, a packet or nothing.
@@ -317,99 +325,115 @@ func (h component) consumeBundles(chbundle <-chan []bundle) {
 browseBundles:
 	for bundles := range chbundle {
 		ctx.WithField("BundleID", bundles[0].ID).Debug("Consume new bundle")
-		var metadata []*core.Metadata
-		var payload []byte
-		var firstTime time.Time
-
 		if len(bundles) < 1 {
 			continue browseBundles
 		}
 		b := bundles[0]
-
-		computer, scores, err := dutycycle.NewScoreComputer(b.Packet.Metadata.DataRate) // Nil check already done
-		if err != nil {
-			go h.abortConsume(err, bundles)
-			continue browseBundles
+		switch b.Packet.(type) {
+		case *core.DataUpHandlerReq:
+			pkt := b.Packet.(*core.DataUpHandlerReq)
+			go h.consumeDown(pkt.AppEUI, pkt.DevEUI, b.DataRate, bundles)
+		case *core.JoinHandlerReq:
+			pkt := b.Packet.(*core.JoinHandlerReq)
+			go h.consumeJoin(pkt.AppEUI, pkt.DevEUI, b.DataRate, bundles)
 		}
+	}
+}
 
-		stats.UpdateHistogram("handler.uplink.duplicate.count", int64(len(bundles)))
+// consume Join actually consumes a set of join-request packets
+func (h component) consumeJoin(appEUI []byte, devEUI []byte, dataRate string, bundles []bundle) {
+	// TODO
+}
 
-		for i, bundle := range bundles {
-			// We only decrypt the payload of the first bundle's packet.
-			// We assume all the other to be equal and we'll merely collect
-			// metadata from other bundle.
-			if i == 0 {
-				var err error
-				payload, err = lorawan.EncryptFRMPayload(
-					bundle.Entry.AppSKey,
-					true,
-					lorawan.DevAddr(bundle.Entry.DevAddr),
-					bundle.Packet.FCnt,
-					bundle.Packet.Payload,
-				)
-				if err != nil {
-					go h.abortConsume(err, bundles)
-					continue browseBundles
-				}
-				firstTime = bundle.Time
-				stats.MarkMeter("handler.uplink.in.unique")
-			} else {
-				diff := bundle.Time.Sub(firstTime).Nanoseconds()
-				stats.UpdateHistogram("handler.uplink.duplicate.delay", diff/1000)
+// consume Down actually consumes a set of downlink packets
+func (h component) consumeDown(appEUI []byte, devEUI []byte, dataRate string, bundles []bundle) {
+	stats.UpdateHistogram("handler.uplink.duplicate.count", int64(len(bundles)))
+	var metadata []*core.Metadata
+	var payload []byte
+	var firstTime time.Time
+
+	computer, scores, err := dutycycle.NewScoreComputer(dataRate)
+	if err != nil {
+		go h.abortConsume(err, bundles)
+		return
+	}
+
+	for i, bundle := range bundles {
+		// We only decrypt the payload of the first bundle's packet.
+		// We assume all the other to be equal and we'll merely collect
+		// metadata from other bundle.
+		packet := bundle.Packet.(*core.DataUpHandlerReq)
+		if i == 0 {
+			var err error
+			payload, err = lorawan.EncryptFRMPayload(
+				bundle.Entry.AppSKey,
+				true,
+				lorawan.DevAddr(bundle.Entry.DevAddr),
+				packet.FCnt,
+				packet.Payload,
+			)
+			if err != nil {
+				go h.abortConsume(err, bundles)
+				return
 			}
-
-			// Append metadata for each of them
-			metadata = append(metadata, bundle.Packet.Metadata)
-			scores = computer.Update(scores, i, *bundle.Packet.Metadata) // Nil check already done
+			firstTime = bundle.Time
+			stats.MarkMeter("handler.uplink.in.unique")
+		} else {
+			diff := bundle.Time.Sub(firstTime).Nanoseconds()
+			stats.UpdateHistogram("handler.uplink.duplicate.delay", diff/1000)
 		}
 
-		// Then create an application-level packet and send it to the wild open
-		// we don't expect a response from the adapter, end of the chain.
-		_, err = h.AppAdapter.HandleData(context.Background(), &core.DataAppReq{
-			AppEUI:   b.Packet.AppEUI,
-			DevEUI:   b.Packet.DevEUI,
-			Payload:  payload,
-			Metadata: metadata,
-		})
-		if err != nil {
-			go h.abortConsume(errors.New(errors.Operational, err), bundles)
-			continue browseBundles
-		}
+		// Append metadata for each of them
+		metadata = append(metadata, packet.Metadata)
+		scores = computer.Update(scores, i, *packet.Metadata) // Nil check already done
+	}
 
-		stats.MarkMeter("handler.uplink.out")
+	// Then create an application-level packet and send it to the wild open
+	// we don't expect a response from the adapter, end of the chain.
+	_, err = h.AppAdapter.HandleData(context.Background(), &core.DataAppReq{
+		AppEUI:   appEUI,
+		DevEUI:   devEUI,
+		Payload:  payload,
+		Metadata: metadata,
+	})
+	if err != nil {
+		go h.abortConsume(errors.New(errors.Operational, err), bundles)
+		return
+	}
 
-		// Now handle the downlink and respond to node
-		h.Ctx.Debug("Looking for downlink response")
-		best := computer.Get(scores)
-		h.Ctx.WithField("Bundle", best).Debug("Determine best gateway")
-		var downlink pktEntry
-		if best != nil { // Avoid pulling when there's no gateway available for an answer
-			downlink, err = h.PktStorage.Pull(b.Packet.AppEUI, b.Packet.DevEUI)
-		}
-		if err != nil && err.(errors.Failure).Nature != errors.NotFound {
-			go h.abortConsume(err, bundles)
-			continue browseBundles
-		}
+	stats.MarkMeter("handler.uplink.out")
 
-		// One of those bundle might be available for a response
-		for i, bundle := range bundles {
-			if best != nil && best.ID == i && downlink.Payload != nil && err == nil {
-				stats.MarkMeter("handler.downlink.pull")
+	// Now handle the downlink and respond to node
+	h.Ctx.Debug("Looking for downlink response")
+	best := computer.Get(scores)
+	h.Ctx.WithField("Bundle", best).Debug("Determine best gateway")
+	var downlink pktEntry
+	if best != nil { // Avoid pulling when there's no gateway available for an answer
+		downlink, err = h.PktStorage.Pull(appEUI, devEUI)
+	}
+	if err != nil && err.(errors.Failure).Nature != errors.NotFound {
+		go h.abortConsume(err, bundles)
+		return
+	}
 
-				downlink, err := h.buildDownlink(downlink.Payload, bundle.Packet, bundle.Entry, best.IsRX2)
-				if err != nil {
-					go h.abortConsume(errors.New(errors.Structural, err), bundles)
-					continue browseBundles
-				}
-				err = h.DevStorage.UpdateFCnt(b.Packet.AppEUI, b.Packet.DevEUI, downlink.Payload.MACPayload.FHDR.FCnt)
-				if err != nil {
-					go h.abortConsume(err, bundles)
-					continue browseBundles
-				}
-				bundle.Chresp <- downlink
-			} else {
-				bundle.Chresp <- nil
+	// One of those bundle might be available for a response
+	for i, bundle := range bundles {
+		if best != nil && best.ID == i && downlink.Payload != nil && err == nil {
+			stats.MarkMeter("handler.downlink.pull")
+
+			downlink, err := h.buildDownlink(downlink.Payload, *bundle.Packet.(*core.DataUpHandlerReq), bundle.Entry, best.IsRX2)
+			if err != nil {
+				go h.abortConsume(errors.New(errors.Structural, err), bundles)
+				return
 			}
+			err = h.DevStorage.UpdateFCnt(appEUI, devEUI, downlink.Payload.MACPayload.FHDR.FCnt)
+			if err != nil {
+				go h.abortConsume(err, bundles)
+				return
+			}
+			bundle.Chresp <- downlink
+		} else {
+			bundle.Chresp <- nil
 		}
 	}
 }
