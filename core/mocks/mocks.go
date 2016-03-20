@@ -43,7 +43,15 @@ func (m *AppClient) HandleData(ctx context.Context, in *core.DataAppReq, opts ..
 
 // HandlerClient mocks the core.HandlerClient interface
 type HandlerClient struct {
-	Failures       map[string]error
+	Failures     map[string]error
+	InHandleJoin struct {
+		Ctx  context.Context
+		Req  *core.JoinHandlerReq
+		Opts []grpc.CallOption
+	}
+	OutHandleJoin struct {
+		Res *core.JoinHandlerRes
+	}
 	InHandleDataUp struct {
 		Ctx  context.Context
 		Req  *core.DataUpHandlerReq
@@ -75,6 +83,14 @@ func NewHandlerClient() *HandlerClient {
 	return &HandlerClient{
 		Failures: make(map[string]error),
 	}
+}
+
+// HandleJoin implements the core.HandlerClient interface
+func (m *HandlerClient) HandleJoin(ctx context.Context, in *core.JoinHandlerReq, opts ...grpc.CallOption) (*core.JoinHandlerRes, error) {
+	m.InHandleJoin.Ctx = ctx
+	m.InHandleJoin.Req = in
+	m.InHandleJoin.Opts = opts
+	return m.OutHandleJoin.Res, m.Failures["HandleJoin"]
 }
 
 // HandleDataUp implements the core.HandlerClient interface
