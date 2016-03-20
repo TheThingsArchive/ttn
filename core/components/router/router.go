@@ -82,18 +82,16 @@ func (r component) HandleStats(ctx context.Context, req *core.StatsReq) (*core.S
 }
 
 // HandleJoin implements the core.RouterClient interface
-func (r component) HandleJoin(ctx context.Context, req *core.JoinRouterReq) (*core.JoinRouterRes, error) {
+func (r component) HandleJoin(ctx context.Context, req *core.JoinRouterReq) (routerRes *core.JoinRouterRes, err error) {
 	if len(req.GatewayID) != 8 || len(req.AppEUI) != 8 || len(req.DevEUI) != 8 || len(req.DevNonce) != 2 || req.Metadata == nil {
 		r.Ctx.Debug("Invalid request. Parameters are incorrects")
 		return new(core.JoinRouterRes), errors.New(errors.Structural, "Invalid Request")
 	}
 
-	// Add Gateway location metadata
-	if gmeta, err := r.Storage.LookupStats(req.GatewayID); err == nil {
-		r.Ctx.Debug("Adding Gateway Metadata to packet")
-		req.Metadata.Latitude = gmeta.Latitude
-		req.Metadata.Longitude = gmeta.Longitude
-		req.Metadata.Altitude = gmeta.Altitude
+	// Update Metadata with Gateway infos
+	req.Metadata, err = r.injectMetadata(req.GatewayID, *req.Metadata)
+	if err != nil {
+		return new(core.JoinRouterRes), err
 	}
 
 	// Broadcast the join request
@@ -107,7 +105,13 @@ func (r component) HandleJoin(ctx context.Context, req *core.JoinRouterReq) (*co
 	if err != nil {
 		return new(core.JoinRouterRes), err
 	}
-	return response.(*core.JoinRouterRes), err
+
+	// Update Gateway Duty cycle with response metadata
+	res := response.(*core.JoinBrokerRes)
+	if err := r.handleDown(req.GatewayID, res.Metadata); err != nil {
+		return new(core.JoinRouterRes), err
+	}
+	return &core.JoinRouterRes{Payload: res.Payload, Metadata: res.Metadata}, nil
 }
 
 // HandleData implements the core.RouterClient interface
@@ -131,6 +135,12 @@ func (r component) HandleData(ctx context.Context, req *core.DataRouterReq) (*co
 		return new(core.DataRouterRes), errors.New(errors.Structural, "Invalid gatewayID")
 	}
 
+	// Update Metadata with Gateway infos
+	req.Metadata, err = r.injectMetadata(req.GatewayID, *req.Metadata)
+	if err != nil {
+		return new(core.DataRouterRes), err
+	}
+
 	// Lookup for an existing broker
 	entries, err := r.Storage.Lookup(fhdr.DevAddr)
 	if err != nil && err.(errors.Failure).Nature != errors.NotFound {
@@ -139,31 +149,6 @@ func (r component) HandleData(ctx context.Context, req *core.DataRouterReq) (*co
 	}
 	shouldBroadcast := err != nil
 	r.Ctx.WithField("Should Broadcast?", shouldBroadcast).Debug("Storage Lookup done")
-
-	// Add Gateway location metadata
-	if gmeta, err := r.Storage.LookupStats(req.GatewayID); err == nil {
-		r.Ctx.Debug("Adding Gateway Metadata to packet")
-		req.Metadata.Latitude = gmeta.Latitude
-		req.Metadata.Longitude = gmeta.Longitude
-		req.Metadata.Altitude = gmeta.Altitude
-	}
-
-	// Add Gateway duty metadata
-	cycles, err := r.DutyManager.Lookup(req.GatewayID)
-	if err != nil {
-		r.Ctx.WithError(err).Debug("Unable to get any metadata about duty-cycles")
-		cycles = make(dutycycle.Cycles)
-	}
-
-	sb1, err := dutycycle.GetSubBand(float32(req.Metadata.Frequency))
-	if err != nil {
-		stats.MarkMeter("router.uplink.not_supported")
-		return new(core.DataRouterRes), errors.New(errors.Structural, "Unhandled uplink signal frequency")
-	}
-
-	rx1, rx2 := dutycycle.StateFromDuty(cycles[sb1]), dutycycle.StateFromDuty(cycles[dutycycle.EuropeG3])
-	req.Metadata.DutyRX1, req.Metadata.DutyRX2 = uint32(rx1), uint32(rx2)
-	r.Ctx.WithField("DutyRX1", rx1).WithField("DutyRX2", rx2).Debug("Adding Duty values for RX1 & RX2")
 
 	bpacket := &core.DataBrokerReq{Payload: req.Payload, Metadata: req.Metadata}
 
@@ -201,33 +186,68 @@ func (r component) HandleData(ctx context.Context, req *core.DataRouterReq) (*co
 		return new(core.DataRouterRes), err
 	}
 
-	return r.handleDataDown(response.(*core.DataBrokerRes), req.GatewayID)
-}
-
-func (r component) handleDataDown(req *core.DataBrokerRes, gatewayID []byte) (*core.DataRouterRes, error) {
-	if req == nil || req.Payload == nil { // No response
+	res := response.(*core.DataBrokerRes)
+	if res == nil || res.Payload == nil { // No response
 		r.Ctx.Debug("Packet sent. No downlink received.")
 		return new(core.DataRouterRes), nil
 	}
 
-	r.Ctx.Debug("Handling downlink response")
-	// Update downlink metadata for the related gateway
-	if req.Metadata == nil {
-		stats.MarkMeter("router.uplink.bad_broker_response")
-		r.Ctx.Warn("Missing mandatory Metadata in response")
-		return new(core.DataRouterRes), errors.New(errors.Structural, "Missing mandatory Metadata in response")
-	}
-	freq := req.Metadata.Frequency
-	datr := req.Metadata.DataRate
-	codr := req.Metadata.CodingRate
-	size := req.Metadata.PayloadSize
-	if err := r.DutyManager.Update(gatewayID, freq, size, datr, codr); err != nil {
-		r.Ctx.WithError(err).Debug("Unable to update DutyManager")
-		return new(core.DataRouterRes), errors.New(errors.Operational, err)
+	// Update Gateway Duty cycle with response metadata
+	if err := r.handleDown(req.GatewayID, res.Metadata); err != nil {
+		return new(core.DataRouterRes), err
 	}
 
 	// Send Back the response
-	return &core.DataRouterRes{Payload: req.Payload, Metadata: req.Metadata}, nil
+	return &core.DataRouterRes{Payload: res.Payload, Metadata: res.Metadata}, nil
+}
+
+func (r component) injectMetadata(gid []byte, metadata core.Metadata) (*core.Metadata, error) {
+	// Add Gateway location metadata
+	if gmeta, err := r.Storage.LookupStats(gid); err == nil {
+		r.Ctx.Debug("Adding Gateway Metadata to packet")
+		metadata.Latitude = gmeta.Latitude
+		metadata.Longitude = gmeta.Longitude
+		metadata.Altitude = gmeta.Altitude
+	}
+
+	// Add Gateway duty metadata
+	cycles, err := r.DutyManager.Lookup(gid)
+	if err != nil {
+		r.Ctx.WithError(err).Debug("Unable to get any metadata about duty-cycles")
+		cycles = make(dutycycle.Cycles)
+	}
+
+	sb1, err := dutycycle.GetSubBand(float32(metadata.Frequency))
+	if err != nil {
+		stats.MarkMeter("router.uplink.not_supported")
+		return nil, errors.New(errors.Structural, "Unhandled uplink signal frequency")
+	}
+
+	rx1, rx2 := dutycycle.StateFromDuty(cycles[sb1]), dutycycle.StateFromDuty(cycles[dutycycle.EuropeG3])
+	metadata.DutyRX1, metadata.DutyRX2 = uint32(rx1), uint32(rx2)
+	r.Ctx.WithField("DutyRX1", rx1).WithField("DutyRX2", rx2).Debug("Adding Duty values for RX1 & RX2")
+	return &metadata, nil
+
+}
+
+func (r component) handleDown(gatewayID []byte, metadata *core.Metadata) error {
+	r.Ctx.Debug("Handling downlink response")
+
+	// Update downlink metadata for the related gateway
+	if metadata == nil {
+		stats.MarkMeter("router.uplink.bad_broker_response")
+		r.Ctx.Warn("Missing mandatory Metadata in response")
+		return errors.New(errors.Structural, "Missing mandatory Metadata in response")
+	}
+	freq := metadata.Frequency
+	datr := metadata.DataRate
+	codr := metadata.CodingRate
+	size := metadata.PayloadSize
+	if err := r.DutyManager.Update(gatewayID, freq, size, datr, codr); err != nil {
+		r.Ctx.WithError(err).Debug("Unable to update DutyManager")
+		return errors.New(errors.Operational, err)
+	}
+	return nil
 }
 
 func (r component) send(req interface{}, isBroadcast bool, brokers ...core.BrokerClient) (interface{}, error) {
