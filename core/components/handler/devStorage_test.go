@@ -41,16 +41,17 @@ func TestLookupStore(t *testing.T) {
 		// Build
 		appEUI := []byte{1, 2, 3, 4, 5, 6, 7, 8}
 		devEUI := []byte{0, 0, 0, 0, 1, 2, 3, 4}
-		devAddr := [4]byte{1, 2, 3, 4}
+		devAddr := []byte{1, 2, 3, 4}
 		appSKey := [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6}
 		nwkSKey := [16]byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1}
 
 		// Expect
 		var want = devEntry{
-			DevAddr:  devAddr,
-			AppSKey:  appSKey,
-			NwkSKey:  nwkSKey,
-			FCntDown: 0,
+			DevAddr: devAddr,
+			AppSKey: appSKey,
+			NwkSKey: nwkSKey,
+			AppEUI:  make([]byte, 0, 0),
+			DevEUI:  make([]byte, 0, 0),
 		}
 
 		// Operate
@@ -87,16 +88,17 @@ func TestLookupStore(t *testing.T) {
 		// Build
 		appEUI := []byte{1, 2, 3, 4, 5, 6, 7, 9}
 		devEUI := []byte{0, 0, 0, 0, 1, 2, 3, 4}
-		devAddr := [4]byte{1, 2, 3, 4}
+		devAddr := []byte{1, 2, 3, 4}
 		appSKey := [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6}
 		nwkSKey := [16]byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1}
 
 		// Expect
 		var want = devEntry{
-			DevAddr:  devAddr,
-			AppSKey:  appSKey,
-			NwkSKey:  nwkSKey,
-			FCntDown: 0,
+			DevAddr: devAddr,
+			AppSKey: appSKey,
+			NwkSKey: nwkSKey,
+			AppEUI:  make([]byte, 0, 0),
+			DevEUI:  make([]byte, 0, 0),
 		}
 
 		// Operate
@@ -119,7 +121,7 @@ func TestLookupStore(t *testing.T) {
 		// Build
 		appEUI := []byte{1, 2, 3, 4, 5, 6, 7, 14}
 		devEUI := []byte{0, 0, 0, 0, 1, 2, 3, 4}
-		devAddr := [4]byte{1, 2, 3, 4}
+		devAddr := []byte{1, 2, 3, 4}
 		appSKey := [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6}
 		nwkSKey := [16]byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1}
 		fcnt := uint32(2)
@@ -130,6 +132,8 @@ func TestLookupStore(t *testing.T) {
 			AppSKey:  appSKey,
 			NwkSKey:  nwkSKey,
 			FCntDown: fcnt,
+			AppEUI:   make([]byte, 0, 0),
+			DevEUI:   make([]byte, 0, 0),
 		}
 
 		// Operate
@@ -167,5 +171,84 @@ func TestLookupStore(t *testing.T) {
 		Desc(t, "Close the storage")
 		err := db.Close()
 		CheckErrors(t, nil, err)
+	}
+}
+
+func TestMarshalUnmarshalEntries(t *testing.T) {
+	{
+		Desc(t, "Complete Entry")
+		entry := devEntry{
+			AppEUI:   []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			AppKey:   [16]byte{1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2},
+			AppSKey:  [16]byte{0, 9, 8, 7, 6, 5, 4, 3, 2, 1, 6, 5, 4, 3, 2, 1},
+			DevAddr:  []byte{4, 4, 4, 4},
+			DevEUI:   []byte{14, 14, 14, 14, 14, 14, 14, 14},
+			FCntDown: 42,
+			NwkSKey:  [16]byte{28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13},
+		}
+
+		data, err := entry.MarshalBinary()
+		CheckErrors(t, nil, err)
+		unmarshaled := new(devEntry)
+		err = unmarshaled.UnmarshalBinary(data)
+		CheckErrors(t, nil, err)
+		Check(t, entry, *unmarshaled, "Entries")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Partial Entry")
+		entry := devEntry{
+			AppEUI:   []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			AppKey:   [16]byte{1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2},
+			DevEUI:   []byte{14, 14, 14, 14, 14, 14, 14, 14},
+			FCntDown: 0,
+		}
+		want := devEntry{
+			AppEUI:   []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			AppKey:   [16]byte{1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2},
+			AppSKey:  [16]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+			DevAddr:  make([]byte, 0, 0),
+			DevEUI:   []byte{14, 14, 14, 14, 14, 14, 14, 14},
+			FCntDown: 0,
+			NwkSKey:  [16]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+		}
+
+		data, err := entry.MarshalBinary()
+		CheckErrors(t, nil, err)
+		unmarshaled := new(devEntry)
+		err = unmarshaled.UnmarshalBinary(data)
+		CheckErrors(t, nil, err)
+		Check(t, want, *unmarshaled, "Entries")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Partial Entry bis")
+		entry := devEntry{
+			AppEUI:   []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			AppKey:   [16]byte{1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2},
+			DevEUI:   []byte{14, 14, 14, 14, 14, 14, 14, 14},
+			DevAddr:  []byte{},
+			FCntDown: 0,
+		}
+		want := devEntry{
+			AppEUI:   []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			AppKey:   [16]byte{1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2},
+			AppSKey:  [16]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+			DevAddr:  make([]byte, 0, 0),
+			DevEUI:   []byte{14, 14, 14, 14, 14, 14, 14, 14},
+			FCntDown: 0,
+			NwkSKey:  [16]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+		}
+
+		data, err := entry.MarshalBinary()
+		CheckErrors(t, nil, err)
+		unmarshaled := new(devEntry)
+		err = unmarshaled.UnmarshalBinary(data)
+		CheckErrors(t, nil, err)
+		Check(t, want, *unmarshaled, "Entries")
 	}
 }

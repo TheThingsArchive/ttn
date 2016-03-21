@@ -22,9 +22,12 @@ type MockDevStorage struct {
 	}
 	InStorePersonalized struct {
 		AppEUI  []byte
-		DevAddr [4]byte
+		DevAddr []byte
 		AppSKey [16]byte
 		NwkSKey [16]byte
+	}
+	InStore struct {
+		Entry devEntry
 	}
 	InClose struct {
 		Called bool
@@ -54,12 +57,18 @@ func (m *MockDevStorage) Lookup(appEUI []byte, devEUI []byte) (devEntry, error) 
 }
 
 // StorePersonalized implements the DevStorage interface
-func (m *MockDevStorage) StorePersonalized(appEUI []byte, devAddr [4]byte, appSKey, nwkSKey [16]byte) error {
+func (m *MockDevStorage) StorePersonalized(appEUI []byte, devAddr []byte, appSKey, nwkSKey [16]byte) error {
 	m.InStorePersonalized.AppEUI = appEUI
 	m.InStorePersonalized.DevAddr = devAddr
 	m.InStorePersonalized.AppSKey = appSKey
 	m.InStorePersonalized.NwkSKey = nwkSKey
 	return m.Failures["StorePersonalized"]
+}
+
+// Store implements the DevStorage interface
+func (m *MockDevStorage) Store(entry devEntry) error {
+	m.InStore.Entry = entry
+	return m.Failures["Store"]
 }
 
 // Close implements the DevStorage Interface

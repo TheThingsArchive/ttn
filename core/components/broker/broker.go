@@ -78,6 +78,95 @@ func (b component) Start() error {
 	return nil
 }
 
+// HandleJoin implements the core.BrokerServer interface
+func (b component) HandleJoin(bctx context.Context, req *core.JoinBrokerReq) (*core.JoinBrokerRes, error) {
+	b.Ctx.Debug("Handling join request")
+
+	// Validate incoming data
+	if req == nil || len(req.DevEUI) != 8 || len(req.AppEUI) != 8 || len(req.DevNonce) != 2 || req.Metadata == nil {
+		b.Ctx.Debug("Invalid request. Parameters are incorrect.")
+		return new(core.JoinBrokerRes), errors.New(errors.Structural, "Invalid parameters")
+	}
+	ctx := b.Ctx.WithField("AppEUI", req.AppEUI).WithField("DevEUI", req.DevEUI)
+
+	// Check if devNonce already referenced
+	activation, err := b.NetworkController.ReadActivation(req.AppEUI, req.DevEUI)
+	if err != nil {
+		ctx.WithError(err).Debug("Unable to lookup activation")
+		return new(core.JoinBrokerRes), err
+	}
+	var found bool
+	for _, n := range activation.DevNonces {
+		if n[0] == req.DevNonce[0] && n[1] == req.DevNonce[1] {
+			found = true
+			break
+		}
+	}
+	if found {
+		ctx.Debug("Unable to proceed join request. DevNonce already used by the past.")
+		return new(core.JoinBrokerRes), errors.New(errors.Structural, "DevNonce used by the past")
+	}
+
+	// Forward the registration to the handler
+	handler, closer, err := activation.Dialer.Dial()
+	if err != nil {
+		ctx.WithError(err).Debug("Unable to dial handler")
+		return new(core.JoinBrokerRes), err
+	}
+	defer closer.Close()
+	res, err := handler.HandleJoin(context.Background(), &core.JoinHandlerReq{
+		DevEUI:   req.DevEUI,
+		AppEUI:   req.AppEUI,
+		DevNonce: req.DevNonce,
+		Metadata: req.Metadata,
+	})
+	if err != nil {
+		ctx.WithError(err).Debug("Error while contacting handler")
+		return new(core.JoinBrokerRes), errors.New(errors.Operational, err)
+	}
+
+	// Handle the response
+	if res == nil || res.Payload == nil {
+		ctx.Debug("No Join-Accept")
+		return new(core.JoinBrokerRes), nil
+	}
+
+	if len(res.DevAddr) != 4 || len(res.NwkSKey) != 16 {
+		ctx.Debug("Invalid response from handler")
+		return new(core.JoinBrokerRes), errors.New(errors.Operational, "Invalid response from handler")
+	}
+
+	// Update the DevNonce
+	err = b.NetworkController.UpdateActivation(appEntry{
+		Dialer:    activation.Dialer,
+		AppEUI:    activation.AppEUI,
+		DevEUI:    activation.DevEUI,
+		DevNonces: append(activation.DevNonces, req.DevNonce),
+	})
+	if err != nil {
+		ctx.WithError(err).Debug("Unable to update activation entry")
+		return new(core.JoinBrokerRes), err
+	}
+
+	var nwkSKey [16]byte
+	copy(nwkSKey[:], res.NwkSKey)
+	err = b.NetworkController.StoreDevice(res.DevAddr, devEntry{ // Should be an update
+		Dialer:  activation.Dialer,
+		AppEUI:  req.AppEUI,
+		DevEUI:  req.DevEUI,
+		NwkSKey: nwkSKey,
+		FCntUp:  0,
+	})
+	if err != nil {
+		ctx.WithError(err).Debug("Unable to store device")
+		return new(core.JoinBrokerRes), err
+	}
+	return &core.JoinBrokerRes{
+		Payload:  res.Payload,
+		Metadata: res.Metadata,
+	}, nil
+}
+
 // HandleData implements the core.BrokerServer interface
 func (b component) HandleData(bctx context.Context, req *core.DataBrokerReq) (*core.DataBrokerRes, error) {
 	// Get some logs / analytics

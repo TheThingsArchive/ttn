@@ -24,6 +24,14 @@ type AppClient struct {
 	OutHandleData struct {
 		Res *core.DataAppRes
 	}
+	InHandleJoin struct {
+		Ctx  context.Context
+		Req  *core.JoinAppReq
+		Opts []grpc.CallOption
+	}
+	OutHandleJoin struct {
+		Res *core.JoinAppRes
+	}
 }
 
 // NewAppClient creates a new mock AppClient
@@ -31,6 +39,14 @@ func NewAppClient() *AppClient {
 	return &AppClient{
 		Failures: make(map[string]error),
 	}
+}
+
+// HandleJoin implements the core.AppClient interface
+func (m *AppClient) HandleJoin(ctx context.Context, in *core.JoinAppReq, opts ...grpc.CallOption) (*core.JoinAppRes, error) {
+	m.InHandleJoin.Ctx = ctx
+	m.InHandleJoin.Req = in
+	m.InHandleJoin.Opts = opts
+	return m.OutHandleJoin.Res, m.Failures["HandleJoin"]
 }
 
 // HandleData implements the core.AppClient interface
@@ -43,7 +59,15 @@ func (m *AppClient) HandleData(ctx context.Context, in *core.DataAppReq, opts ..
 
 // HandlerClient mocks the core.HandlerClient interface
 type HandlerClient struct {
-	Failures       map[string]error
+	Failures     map[string]error
+	InHandleJoin struct {
+		Ctx  context.Context
+		Req  *core.JoinHandlerReq
+		Opts []grpc.CallOption
+	}
+	OutHandleJoin struct {
+		Res *core.JoinHandlerRes
+	}
 	InHandleDataUp struct {
 		Ctx  context.Context
 		Req  *core.DataUpHandlerReq
@@ -75,6 +99,14 @@ func NewHandlerClient() *HandlerClient {
 	return &HandlerClient{
 		Failures: make(map[string]error),
 	}
+}
+
+// HandleJoin implements the core.HandlerClient interface
+func (m *HandlerClient) HandleJoin(ctx context.Context, in *core.JoinHandlerReq, opts ...grpc.CallOption) (*core.JoinHandlerRes, error) {
+	m.InHandleJoin.Ctx = ctx
+	m.InHandleJoin.Req = in
+	m.InHandleJoin.Opts = opts
+	return m.OutHandleJoin.Res, m.Failures["HandleJoin"]
 }
 
 // HandleDataUp implements the core.HandlerClient interface
@@ -120,6 +152,14 @@ type BrokerClient struct {
 	OutSubscribePersonalized struct {
 		Res *core.ABPSubBrokerRes
 	}
+	InHandleJoin struct {
+		Ctx  context.Context
+		Req  *core.JoinBrokerReq
+		Opts []grpc.CallOption
+	}
+	OutHandleJoin struct {
+		Res *core.JoinBrokerRes
+	}
 }
 
 // NewBrokerClient creates a new mock BrokerClient
@@ -135,6 +175,14 @@ func (m *BrokerClient) HandleData(ctx context.Context, in *core.DataBrokerReq, o
 	m.InHandleData.Req = in
 	m.InHandleData.Opts = opts
 	return m.OutHandleData.Res, m.Failures["HandleData"]
+}
+
+// HandleJoin implements the core.BrokerClient interface
+func (m *BrokerClient) HandleJoin(ctx context.Context, in *core.JoinBrokerReq, opts ...grpc.CallOption) (*core.JoinBrokerRes, error) {
+	m.InHandleJoin.Ctx = ctx
+	m.InHandleJoin.Req = in
+	m.InHandleJoin.Opts = opts
+	return m.OutHandleJoin.Res, m.Failures["HandleJoin"]
 }
 
 // SubscribePersonalized implements the core.BrokerClient interface
@@ -162,6 +210,13 @@ type RouterServer struct {
 	OutHandleStats struct {
 		Res *core.StatsRes
 	}
+	InHandleJoin struct {
+		Ctx context.Context
+		Req *core.JoinRouterReq
+	}
+	OutHandleJoin struct {
+		Res *core.JoinRouterRes
+	}
 }
 
 // NewRouterServer creates a new mock RouterServer
@@ -183,6 +238,13 @@ func (m *RouterServer) HandleStats(ctx context.Context, in *core.StatsReq) (*cor
 	m.InHandleStats.Ctx = ctx
 	m.InHandleStats.Req = in
 	return m.OutHandleStats.Res, m.Failures["HandleStats"]
+}
+
+// HandleJoin implements the core.RouterServer interface
+func (m *RouterServer) HandleJoin(ctx context.Context, in *core.JoinRouterReq) (*core.JoinRouterRes, error) {
+	m.InHandleJoin.Ctx = ctx
+	m.InHandleJoin.Req = in
+	return m.OutHandleJoin.Res, m.Failures["HandleJoin"]
 }
 
 // DutyManager mocks the dutycycle.DutyManager interface
@@ -252,6 +314,13 @@ type HandlerServer struct {
 	OutHandleDataDown struct {
 		Res *core.DataDownHandlerRes
 	}
+	InHandleJoin struct {
+		Ctx context.Context
+		Req *core.JoinHandlerReq
+	}
+	OutHandleJoin struct {
+		Res *core.JoinHandlerRes
+	}
 	InSubscribePersonalized struct {
 		Ctx context.Context
 		Req *core.ABPSubHandlerReq
@@ -280,6 +349,13 @@ func (m *HandlerServer) HandleDataDown(ctx context.Context, in *core.DataDownHan
 	m.InHandleDataDown.Ctx = ctx
 	m.InHandleDataDown.Req = in
 	return m.OutHandleDataDown.Res, m.Failures["HandleDataDown"]
+}
+
+// HandleJoin implements the core.HandlerServer interface
+func (m *HandlerServer) HandleJoin(ctx context.Context, in *core.JoinHandlerReq) (*core.JoinHandlerRes, error) {
+	m.InHandleJoin.Ctx = ctx
+	m.InHandleJoin.Req = in
+	return m.OutHandleJoin.Res, m.Failures["HandleJoin"]
 }
 
 // SubscribePersonalized implements the core.HandlerServer interface

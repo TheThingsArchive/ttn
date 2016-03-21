@@ -35,8 +35,23 @@ message ABPSubHandlerReq {
 
 message ABPSubHandlerRes {}
 
+message JoinHandlerReq {
+    bytes               AppEUI      = 1;
+    bytes               DevEUI      = 2;
+    bytes               DevNonce    = 3;
+    Metadata            Metadata    = 4;
+}
+
+message JoinHandlerRes {
+    LoRaWANJoinAccept   Payload     = 1;
+    bytes               DevAddr     = 2;
+    bytes               NwkSKey     = 3;
+    Metadata            Metadata    = 4;
+}
+
 service Handler {
     rpc HandleDataUp            (DataUpHandlerReq)      returns (DataUpHandlerRes);
     rpc HandleDataDown          (DataDownHandlerReq)    returns (DataDownHandlerRes);
+    rpc HandleJoin              (JoinHandlerReq)        returns (JoinHandlerRes);
     rpc SubscribePersonalized   (ABPSubHandlerReq)      returns (ABPSubHandlerRes);
 }

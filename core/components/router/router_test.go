@@ -1345,6 +1345,530 @@ func TestHandleData(t *testing.T) {
 		Check(t, wantStore, st.InStore.BrokerIndex, "Brokers stored")
 		Check(t, wantUpdateGtw, dm.InUpdate.ID, "Gateway updated")
 	}
+}
+
+func TestHandleJoin(t *testing.T) {
+	{
+		Desc(t, "Handle valid join request | valid join response")
+
+		// Build
+		dm := mocks.NewDutyManager()
+		br1 := mocks.NewBrokerClient()
+		br1.Failures["HandleJoin"] = errors.New(errors.NotFound, "Mock Error")
+		br2 := mocks.NewBrokerClient()
+		br2.OutHandleJoin.Res = &core.JoinBrokerRes{
+			Payload: &core.LoRaWANJoinAccept{
+				Payload: []byte{1, 2, 3, 4},
+			},
+			Metadata: &core.Metadata{},
+		}
+		st := NewMockStorage()
+		st.OutLookupStats.Metadata = core.StatsMetadata{
+			Altitude:  14,
+			Longitude: 14.0,
+			Latitude:  -14.0,
+		}
+		r := New(Components{
+			DutyManager: dm,
+			Brokers:     []core.BrokerClient{br1, br2},
+			Ctx:         GetLogger(t, "Router"),
+			Storage:     st,
+		}, Options{})
+		req := &core.JoinRouterReq{
+			GatewayID: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			AppEUI:    []byte{1, 1, 1, 1, 1, 1, 1, 1},
+			DevEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
+			DevNonce:  []byte{3, 3},
+			Metadata: &core.Metadata{
+				Frequency: 868.5,
+			},
+		}
+
+		// Expect
+		var wantErr *string
+		var wantRes = &core.JoinRouterRes{
+			Payload:  br2.OutHandleJoin.Res.Payload,
+			Metadata: br2.OutHandleJoin.Res.Metadata,
+		}
+		var wantBrReq = &core.JoinBrokerReq{
+			AppEUI:   req.AppEUI,
+			DevEUI:   req.DevEUI,
+			DevNonce: req.DevNonce,
+			Metadata: &core.Metadata{
+				Altitude:  st.OutLookupStats.Metadata.Altitude,
+				Longitude: st.OutLookupStats.Metadata.Longitude,
+				Latitude:  st.OutLookupStats.Metadata.Latitude,
+				Frequency: req.Metadata.Frequency,
+			},
+		}
+		var wantStore = 1
+		var wantUpdateGtw = req.GatewayID
+
+		// Operate
+		res, err := r.HandleJoin(context.Background(), req)
+
+		// Check
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Router Join Responses")
+		Check(t, wantBrReq, br1.InHandleJoin.Req, "Broker Join Requests")
+		Check(t, wantBrReq, br2.InHandleJoin.Req, "Broker Join Requests")
+		Check(t, wantStore, st.InStore.BrokerIndex, "Brokers stored")
+		Check(t, wantUpdateGtw, dm.InUpdate.ID, "Gateway updated")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Handle valid join request | invalid join response -> fails to handle down")
+
+		// Build
+		dm := mocks.NewDutyManager()
+		dm.Failures["Update"] = errors.New(errors.Operational, "Mock Error")
+		br1 := mocks.NewBrokerClient()
+		br1.Failures["HandleJoin"] = errors.New(errors.NotFound, "Mock Error")
+		br2 := mocks.NewBrokerClient()
+		br2.OutHandleJoin.Res = &core.JoinBrokerRes{
+			Payload: &core.LoRaWANJoinAccept{
+				Payload: []byte{1, 2, 3, 4},
+			},
+			Metadata: &core.Metadata{},
+		}
+		st := NewMockStorage()
+		st.OutLookupStats.Metadata = core.StatsMetadata{
+			Altitude:  14,
+			Longitude: 14.0,
+			Latitude:  -14.0,
+		}
+		r := New(Components{
+			DutyManager: dm,
+			Brokers:     []core.BrokerClient{br1, br2},
+			Ctx:         GetLogger(t, "Router"),
+			Storage:     st,
+		}, Options{})
+		req := &core.JoinRouterReq{
+			GatewayID: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			AppEUI:    []byte{1, 1, 1, 1, 1, 1, 1, 1},
+			DevEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
+			DevNonce:  []byte{3, 3},
+			Metadata: &core.Metadata{
+				Frequency: 868.5,
+			},
+		}
+
+		// Expect
+		var wantErr = ErrOperational
+		var wantRes = new(core.JoinRouterRes)
+		var wantBrReq = &core.JoinBrokerReq{
+			AppEUI:   req.AppEUI,
+			DevEUI:   req.DevEUI,
+			DevNonce: req.DevNonce,
+			Metadata: &core.Metadata{
+				Altitude:  st.OutLookupStats.Metadata.Altitude,
+				Longitude: st.OutLookupStats.Metadata.Longitude,
+				Latitude:  st.OutLookupStats.Metadata.Latitude,
+				Frequency: req.Metadata.Frequency,
+			},
+		}
+		var wantStore = 1
+		var wantUpdateGtw = req.GatewayID
+
+		// Operate
+		res, err := r.HandleJoin(context.Background(), req)
+
+		// Check
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Router Join Responses")
+		Check(t, wantBrReq, br1.InHandleJoin.Req, "Broker Join Requests")
+		Check(t, wantBrReq, br2.InHandleJoin.Req, "Broker Join Requests")
+		Check(t, wantStore, st.InStore.BrokerIndex, "Brokers stored")
+		Check(t, wantUpdateGtw, dm.InUpdate.ID, "Gateway updated")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Handle invalid join -> No Metadata")
+
+		// Build
+		dm := mocks.NewDutyManager()
+		dm.Failures["Update"] = errors.New(errors.Operational, "Mock Error")
+		br := mocks.NewBrokerClient()
+		br.OutHandleJoin.Res = &core.JoinBrokerRes{
+			Payload: &core.LoRaWANJoinAccept{
+				Payload: []byte{1, 2, 3, 4},
+			},
+			Metadata: new(core.Metadata),
+		}
+		st := NewMockStorage()
+		st.OutLookupStats.Metadata = core.StatsMetadata{
+			Altitude:  14,
+			Longitude: 14.0,
+			Latitude:  -14.0,
+		}
+		r := New(Components{
+			DutyManager: dm,
+			Brokers:     []core.BrokerClient{br},
+			Ctx:         GetLogger(t, "Router"),
+			Storage:     st,
+		}, Options{})
+		req := &core.JoinRouterReq{
+			GatewayID: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			AppEUI:    []byte{1, 1, 1, 1, 1, 1, 1, 1},
+			DevEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
+			DevNonce:  []byte{3, 3},
+			Metadata:  nil,
+		}
+
+		// Expect
+		var wantErr = ErrStructural
+		var wantRes = new(core.JoinRouterRes)
+		var wantBrReq *core.JoinBrokerReq
+		var wantStore int
+		var wantUpdateGtw []byte
+
+		// Operate
+		res, err := r.HandleJoin(context.Background(), req)
+
+		// Check
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Router Join Responses")
+		Check(t, wantBrReq, br.InHandleJoin.Req, "Broker Join Requests")
+		Check(t, wantStore, st.InStore.BrokerIndex, "Brokers stored")
+		Check(t, wantUpdateGtw, dm.InUpdate.ID, "Gateway updated")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Handle invalid Join Request -> Invalid DevEUI")
+
+		// Build
+		dm := mocks.NewDutyManager()
+		dm.Failures["Update"] = errors.New(errors.Operational, "Mock Error")
+		br := mocks.NewBrokerClient()
+		br.OutHandleJoin.Res = &core.JoinBrokerRes{
+			Payload: &core.LoRaWANJoinAccept{
+				Payload: []byte{1, 2, 3, 4},
+			},
+			Metadata: new(core.Metadata),
+		}
+		st := NewMockStorage()
+		st.OutLookupStats.Metadata = core.StatsMetadata{
+			Altitude:  14,
+			Longitude: 14.0,
+			Latitude:  -14.0,
+		}
+		r := New(Components{
+			DutyManager: dm,
+			Brokers:     []core.BrokerClient{br},
+			Ctx:         GetLogger(t, "Router"),
+			Storage:     st,
+		}, Options{})
+		req := &core.JoinRouterReq{
+			GatewayID: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			AppEUI:    []byte{1, 1, 1, 1, 1, 1, 1, 1},
+			DevEUI:    []byte{},
+			DevNonce:  []byte{3, 3},
+			Metadata: &core.Metadata{
+				Frequency: 868.5,
+			},
+		}
+
+		// Expect
+		var wantErr = ErrStructural
+		var wantRes = new(core.JoinRouterRes)
+		var wantBrReq *core.JoinBrokerReq
+		var wantStore int
+		var wantUpdateGtw []byte
+
+		// Operate
+		res, err := r.HandleJoin(context.Background(), req)
+
+		// Check
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Router Join Responses")
+		Check(t, wantBrReq, br.InHandleJoin.Req, "Broker Join Requests")
+		Check(t, wantStore, st.InStore.BrokerIndex, "Brokers stored")
+		Check(t, wantUpdateGtw, dm.InUpdate.ID, "Gateway updated")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Handle invalid Join Request -> Invalid AppEUI")
+
+		// Build
+		dm := mocks.NewDutyManager()
+		dm.Failures["Update"] = errors.New(errors.Operational, "Mock Error")
+		br := mocks.NewBrokerClient()
+		br.OutHandleJoin.Res = &core.JoinBrokerRes{
+			Payload: &core.LoRaWANJoinAccept{
+				Payload: []byte{1, 2, 3, 4},
+			},
+			Metadata: new(core.Metadata),
+		}
+		st := NewMockStorage()
+		st.OutLookupStats.Metadata = core.StatsMetadata{
+			Altitude:  14,
+			Longitude: 14.0,
+			Latitude:  -14.0,
+		}
+		r := New(Components{
+			DutyManager: dm,
+			Brokers:     []core.BrokerClient{br},
+			Ctx:         GetLogger(t, "Router"),
+			Storage:     st,
+		}, Options{})
+		req := &core.JoinRouterReq{
+			GatewayID: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			AppEUI:    []byte{1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+			DevEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
+			DevNonce:  []byte{3, 3},
+			Metadata: &core.Metadata{
+				Frequency: 868.5,
+			},
+		}
+
+		// Expect
+		var wantErr = ErrStructural
+		var wantRes = new(core.JoinRouterRes)
+		var wantBrReq *core.JoinBrokerReq
+		var wantStore int
+		var wantUpdateGtw []byte
+
+		// Operate
+		res, err := r.HandleJoin(context.Background(), req)
+
+		// Check
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Router Join Responses")
+		Check(t, wantBrReq, br.InHandleJoin.Req, "Broker Join Requests")
+		Check(t, wantStore, st.InStore.BrokerIndex, "Brokers stored")
+		Check(t, wantUpdateGtw, dm.InUpdate.ID, "Gateway updated")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Handle invalid Join Request -> Invalid DevNonce")
+
+		// Build
+		dm := mocks.NewDutyManager()
+		dm.Failures["Update"] = errors.New(errors.Operational, "Mock Error")
+		br := mocks.NewBrokerClient()
+		br.OutHandleJoin.Res = &core.JoinBrokerRes{
+			Payload: &core.LoRaWANJoinAccept{
+				Payload: []byte{1, 2, 3, 4},
+			},
+			Metadata: new(core.Metadata),
+		}
+		st := NewMockStorage()
+		st.OutLookupStats.Metadata = core.StatsMetadata{
+			Altitude:  14,
+			Longitude: 14.0,
+			Latitude:  -14.0,
+		}
+		r := New(Components{
+			DutyManager: dm,
+			Brokers:     []core.BrokerClient{br},
+			Ctx:         GetLogger(t, "Router"),
+			Storage:     st,
+		}, Options{})
+		req := &core.JoinRouterReq{
+			GatewayID: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			AppEUI:    []byte{1, 1, 1, 1, 1, 1, 1, 1},
+			DevEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
+			DevNonce:  []byte{3},
+			Metadata: &core.Metadata{
+				Frequency: 868.5,
+			},
+		}
+
+		// Expect
+		var wantErr = ErrStructural
+		var wantRes = new(core.JoinRouterRes)
+		var wantBrReq *core.JoinBrokerReq
+		var wantStore int
+		var wantUpdateGtw []byte
+
+		// Operate
+		res, err := r.HandleJoin(context.Background(), req)
+
+		// Check
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Router Join Responses")
+		Check(t, wantBrReq, br.InHandleJoin.Req, "Broker Join Requests")
+		Check(t, wantStore, st.InStore.BrokerIndex, "Brokers stored")
+		Check(t, wantUpdateGtw, dm.InUpdate.ID, "Gateway updated")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Handle invalid Join Request -> Invalid GatewayID")
+
+		// Build
+		dm := mocks.NewDutyManager()
+		dm.Failures["Update"] = errors.New(errors.Operational, "Mock Error")
+		br := mocks.NewBrokerClient()
+		br.OutHandleJoin.Res = &core.JoinBrokerRes{
+			Payload: &core.LoRaWANJoinAccept{
+				Payload: []byte{1, 2, 3, 4},
+			},
+			Metadata: new(core.Metadata),
+		}
+		st := NewMockStorage()
+		st.OutLookupStats.Metadata = core.StatsMetadata{
+			Altitude:  14,
+			Longitude: 14.0,
+			Latitude:  -14.0,
+		}
+		r := New(Components{
+			DutyManager: dm,
+			Brokers:     []core.BrokerClient{br},
+			Ctx:         GetLogger(t, "Router"),
+			Storage:     st,
+		}, Options{})
+		req := &core.JoinRouterReq{
+			GatewayID: nil,
+			AppEUI:    []byte{1, 1, 1, 1, 1, 1, 1, 1},
+			DevEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
+			DevNonce:  []byte{3, 3},
+			Metadata: &core.Metadata{
+				Frequency: 868.5,
+			},
+		}
+
+		// Expect
+		var wantErr = ErrStructural
+		var wantRes = new(core.JoinRouterRes)
+		var wantBrReq *core.JoinBrokerReq
+		var wantStore int
+		var wantUpdateGtw []byte
+
+		// Operate
+		res, err := r.HandleJoin(context.Background(), req)
+
+		// Check
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Router Join Responses")
+		Check(t, wantBrReq, br.InHandleJoin.Req, "Broker Join Requests")
+		Check(t, wantStore, st.InStore.BrokerIndex, "Brokers stored")
+		Check(t, wantUpdateGtw, dm.InUpdate.ID, "Gateway updated")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Handle valid join request | fails to send, no broker")
+
+		// Build
+		dm := mocks.NewDutyManager()
+		br := mocks.NewBrokerClient()
+		br.Failures["HandleJoin"] = errors.New(errors.NotFound, "Mock Error")
+		st := NewMockStorage()
+		st.OutLookupStats.Metadata = core.StatsMetadata{
+			Altitude:  14,
+			Longitude: 14.0,
+			Latitude:  -14.0,
+		}
+		r := New(Components{
+			DutyManager: dm,
+			Brokers:     []core.BrokerClient{br},
+			Ctx:         GetLogger(t, "Router"),
+			Storage:     st,
+		}, Options{})
+		req := &core.JoinRouterReq{
+			GatewayID: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			AppEUI:    []byte{1, 1, 1, 1, 1, 1, 1, 1},
+			DevEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
+			DevNonce:  []byte{3, 3},
+			Metadata: &core.Metadata{
+				Frequency: 868.5,
+			},
+		}
+
+		// Expect
+		var wantErr = ErrNotFound
+		var wantRes = new(core.JoinRouterRes)
+		var wantBrReq = &core.JoinBrokerReq{
+			AppEUI:   req.AppEUI,
+			DevEUI:   req.DevEUI,
+			DevNonce: req.DevNonce,
+			Metadata: &core.Metadata{
+				Altitude:  st.OutLookupStats.Metadata.Altitude,
+				Longitude: st.OutLookupStats.Metadata.Longitude,
+				Latitude:  st.OutLookupStats.Metadata.Latitude,
+				Frequency: req.Metadata.Frequency,
+			},
+		}
+		var wantStore int
+		var wantUpdateGtw []byte
+
+		// Operate
+		res, err := r.HandleJoin(context.Background(), req)
+
+		// Check
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Router Join Responses")
+		Check(t, wantBrReq, br.InHandleJoin.Req, "Broker Join Requests")
+		Check(t, wantStore, st.InStore.BrokerIndex, "Brokers stored")
+		Check(t, wantUpdateGtw, dm.InUpdate.ID, "Gateway updated")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Handle invalid join request -> bad frequency")
+
+		// Build
+		dm := mocks.NewDutyManager()
+		br := mocks.NewBrokerClient()
+		br.OutHandleJoin.Res = &core.JoinBrokerRes{
+			Payload: &core.LoRaWANJoinAccept{
+				Payload: []byte{1, 2, 3, 4},
+			},
+			Metadata: &core.Metadata{},
+		}
+		st := NewMockStorage()
+		st.OutLookupStats.Metadata = core.StatsMetadata{
+			Altitude:  14,
+			Longitude: 14.0,
+			Latitude:  -14.0,
+		}
+		r := New(Components{
+			DutyManager: dm,
+			Brokers:     []core.BrokerClient{br},
+			Ctx:         GetLogger(t, "Router"),
+			Storage:     st,
+		}, Options{})
+		req := &core.JoinRouterReq{
+			GatewayID: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			AppEUI:    []byte{1, 1, 1, 1, 1, 1, 1, 1},
+			DevEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
+			DevNonce:  []byte{3, 3},
+			Metadata: &core.Metadata{
+				Frequency: 14.42,
+			},
+		}
+
+		// Expect
+		var wantErr = ErrStructural
+		var wantRes = new(core.JoinRouterRes)
+		var wantBrReq *core.JoinBrokerReq
+		var wantStore int
+		var wantUpdateGtw []byte
+
+		// Operate
+		res, err := r.HandleJoin(context.Background(), req)
+
+		// Check
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Router Join Responses")
+		Check(t, wantBrReq, br.InHandleJoin.Req, "Broker Join Requests")
+		Check(t, wantStore, st.InStore.BrokerIndex, "Brokers stored")
+		Check(t, wantUpdateGtw, dm.InUpdate.ID, "Gateway updated")
+	}
 
 }
 

@@ -15,6 +15,11 @@ type DataUpAppReq struct {
 	Metadata []AppMetadata `msg:"metadata" json:"metadata"`
 }
 
+// JoinAppReq are used to notify application of an accepted OTAA
+type OTAAAppReq struct {
+	Metadata []AppMetadata `msg:"metadata" json:"metadata"`
+}
+
 // AppMetadata represents gathered metadata that are sent to gateways
 type AppMetadata struct {
 	Frequency  float32 `msg:"frequency" json:"frequency"`

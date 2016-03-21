@@ -5,25 +5,39 @@ import "core.proto";
 package core;
 
 message DataBrokerReq {
-    LoRaWANData     Payload     = 1;
-    Metadata        Metadata    = 2;
+    LoRaWANData         Payload     = 1;
+    Metadata            Metadata    = 2;
 }
 
 message DataBrokerRes {
-    LoRaWANData     Payload     = 1;
-    Metadata        Metadata    = 2;
+    LoRaWANData         Payload     = 1;
+    Metadata            Metadata    = 2;
 }
 
 message ABPSubBrokerReq {
-	string          HandlerNet  = 1;
-	bytes           AppEUI      = 2;
-	bytes           DevAddr     = 3;
-	bytes           NwkSKey     = 4;
+	string              HandlerNet  = 1;
+	bytes               AppEUI      = 2;
+	bytes               DevAddr     = 3;
+	bytes               NwkSKey     = 4;
 }
 
 message ABPSubBrokerRes{}
 
+message JoinBrokerReq {
+    bytes               AppEUI      = 1;
+    bytes               DevEUI      = 2;
+    bytes               DevNonce    = 3;
+    Metadata            Metadata    = 4;
+}
+
+message JoinBrokerRes {
+    LoRaWANJoinAccept   Payload     = 1;
+    bytes               DevAddr     = 2;
+    Metadata            Metadata    = 3;
+}
+
 service Broker {
     rpc HandleData              (DataBrokerReq)         returns (DataBrokerRes);
+    rpc HandleJoin              (JoinBrokerReq)         returns (JoinBrokerRes);
     rpc SubscribePersonalized   (ABPSubBrokerReq)       returns (ABPSubBrokerRes);
 }

@@ -21,9 +21,9 @@ var _ = fmt.Errorf
 var _ = math.Inf
 
 type DataRouterReq struct {
-	Payload   *LoRaWANData `protobuf:"bytes,1,opt,name=Payload,json=payload" json:"Payload,omitempty"`
-	Metadata  *Metadata    `protobuf:"bytes,2,opt,name=Metadata,json=metadata" json:"Metadata,omitempty"`
-	GatewayID []byte       `protobuf:"bytes,3,opt,name=GatewayID,json=gatewayID,proto3" json:"GatewayID,omitempty"`
+	GatewayID []byte       `protobuf:"bytes,1,opt,name=GatewayID,json=gatewayID,proto3" json:"GatewayID,omitempty"`
+	Payload   *LoRaWANData `protobuf:"bytes,2,opt,name=Payload,json=payload" json:"Payload,omitempty"`
+	Metadata  *Metadata    `protobuf:"bytes,3,opt,name=Metadata,json=metadata" json:"Metadata,omitempty"`
 }
 
 func (m *DataRouterReq) Reset()                    { *m = DataRouterReq{} }
@@ -94,11 +94,57 @@ func (m *StatsRes) String() string            { return proto.CompactTextString(m
 func (*StatsRes) ProtoMessage()               {}
 func (*StatsRes) Descriptor() ([]byte, []int) { return fileDescriptorRouter, []int{3} }
 
+type JoinRouterReq struct {
+	GatewayID []byte    `protobuf:"bytes,1,opt,name=GatewayID,json=gatewayID,proto3" json:"GatewayID,omitempty"`
+	AppEUI    []byte    `protobuf:"bytes,2,opt,name=AppEUI,json=appEUI,proto3" json:"AppEUI,omitempty"`
+	DevEUI    []byte    `protobuf:"bytes,3,opt,name=DevEUI,json=devEUI,proto3" json:"DevEUI,omitempty"`
+	DevNonce  []byte    `protobuf:"bytes,4,opt,name=DevNonce,json=devNonce,proto3" json:"DevNonce,omitempty"`
+	Metadata  *Metadata `protobuf:"bytes,5,opt,name=Metadata,json=metadata" json:"Metadata,omitempty"`
+}
+
+func (m *JoinRouterReq) Reset()                    { *m = JoinRouterReq{} }
+func (m *JoinRouterReq) String() string            { return proto.CompactTextString(m) }
+func (*JoinRouterReq) ProtoMessage()               {}
+func (*JoinRouterReq) Descriptor() ([]byte, []int) { return fileDescriptorRouter, []int{4} }
+
+func (m *JoinRouterReq) GetMetadata() *Metadata {
+	if m != nil {
+		return m.Metadata
+	}
+	return nil
+}
+
+type JoinRouterRes struct {
+	Payload  *LoRaWANJoinAccept `protobuf:"bytes,1,opt,name=Payload,json=payload" json:"Payload,omitempty"`
+	Metadata *Metadata          `protobuf:"bytes,2,opt,name=Metadata,json=metadata" json:"Metadata,omitempty"`
+}
+
+func (m *JoinRouterRes) Reset()                    { *m = JoinRouterRes{} }
+func (m *JoinRouterRes) String() string            { return proto.CompactTextString(m) }
+func (*JoinRouterRes) ProtoMessage()               {}
+func (*JoinRouterRes) Descriptor() ([]byte, []int) { return fileDescriptorRouter, []int{5} }
+
+func (m *JoinRouterRes) GetPayload() *LoRaWANJoinAccept {
+	if m != nil {
+		return m.Payload
+	}
+	return nil
+}
+
+func (m *JoinRouterRes) GetMetadata() *Metadata {
+	if m != nil {
+		return m.Metadata
+	}
+	return nil
+}
+
 func init() {
 	proto.RegisterType((*DataRouterReq)(nil), "core.DataRouterReq")
 	proto.RegisterType((*DataRouterRes)(nil), "core.DataRouterRes")
 	proto.RegisterType((*StatsReq)(nil), "core.StatsReq")
 	proto.RegisterType((*StatsRes)(nil), "core.StatsRes")
+	proto.RegisterType((*JoinRouterReq)(nil), "core.JoinRouterReq")
+	proto.RegisterType((*JoinRouterRes)(nil), "core.JoinRouterRes")
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -110,6 +156,7 @@ var _ grpc.ClientConn
 type RouterClient interface {
 	HandleData(ctx context.Context, in *DataRouterReq, opts ...grpc.CallOption) (*DataRouterRes, error)
 	HandleStats(ctx context.Context, in *StatsReq, opts ...grpc.CallOption) (*StatsRes, error)
+	HandleJoin(ctx context.Context, in *JoinRouterReq, opts ...grpc.CallOption) (*JoinRouterRes, error)
 }
 
 type routerClient struct {
@@ -138,11 +185,21 @@ func (c *routerClient) HandleStats(ctx context.Context, in *StatsReq, opts ...gr
 	return out, nil
 }
 
+func (c *routerClient) HandleJoin(ctx context.Context, in *JoinRouterReq, opts ...grpc.CallOption) (*JoinRouterRes, error) {
+	out := new(JoinRouterRes)
+	err := grpc.Invoke(ctx, "/core.Router/HandleJoin", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // Server API for Router service
 
 type RouterServer interface {
 	HandleData(context.Context, *DataRouterReq) (*DataRouterRes, error)
 	HandleStats(context.Context, *StatsReq) (*StatsRes, error)
+	HandleJoin(context.Context, *JoinRouterReq) (*JoinRouterRes, error)
 }
 
 func RegisterRouterServer(s *grpc.Server, srv RouterServer) {
@@ -173,6 +230,18 @@ func _Router_HandleStats_Handler(srv interface{}, ctx context.Context, dec func(
 	return out, nil
 }
 
+func _Router_HandleJoin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(JoinRouterReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(RouterServer).HandleJoin(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 var _Router_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "core.Router",
 	HandlerType: (*RouterServer)(nil),
@@ -184,6 +253,10 @@ var _Router_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "HandleStats",
 			Handler:    _Router_HandleStats_Handler,
+		},
+		{
+			MethodName: "HandleJoin",
+			Handler:    _Router_HandleJoin_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{},
@@ -204,8 +277,16 @@ func (m *DataRouterReq) MarshalTo(data []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if m.GatewayID != nil {
+		if len(m.GatewayID) > 0 {
+			data[i] = 0xa
+			i++
+			i = encodeVarintRouter(data, i, uint64(len(m.GatewayID)))
+			i += copy(data[i:], m.GatewayID)
+		}
+	}
 	if m.Payload != nil {
-		data[i] = 0xa
+		data[i] = 0x12
 		i++
 		i = encodeVarintRouter(data, i, uint64(m.Payload.Size()))
 		n1, err := m.Payload.MarshalTo(data[i:])
@@ -215,7 +296,7 @@ func (m *DataRouterReq) MarshalTo(data []byte) (int, error) {
 		i += n1
 	}
 	if m.Metadata != nil {
-		data[i] = 0x12
+		data[i] = 0x1a
 		i++
 		i = encodeVarintRouter(data, i, uint64(m.Metadata.Size()))
 		n2, err := m.Metadata.MarshalTo(data[i:])
@@ -223,14 +304,6 @@ func (m *DataRouterReq) MarshalTo(data []byte) (int, error) {
 			return 0, err
 		}
 		i += n2
-	}
-	if m.GatewayID != nil {
-		if len(m.GatewayID) > 0 {
-			data[i] = 0x1a
-			i++
-			i = encodeVarintRouter(data, i, uint64(len(m.GatewayID)))
-			i += copy(data[i:], m.GatewayID)
-		}
 	}
 	return i, nil
 }
@@ -327,6 +400,104 @@ func (m *StatsRes) MarshalTo(data []byte) (int, error) {
 	return i, nil
 }
 
+func (m *JoinRouterReq) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *JoinRouterReq) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if m.GatewayID != nil {
+		if len(m.GatewayID) > 0 {
+			data[i] = 0xa
+			i++
+			i = encodeVarintRouter(data, i, uint64(len(m.GatewayID)))
+			i += copy(data[i:], m.GatewayID)
+		}
+	}
+	if m.AppEUI != nil {
+		if len(m.AppEUI) > 0 {
+			data[i] = 0x12
+			i++
+			i = encodeVarintRouter(data, i, uint64(len(m.AppEUI)))
+			i += copy(data[i:], m.AppEUI)
+		}
+	}
+	if m.DevEUI != nil {
+		if len(m.DevEUI) > 0 {
+			data[i] = 0x1a
+			i++
+			i = encodeVarintRouter(data, i, uint64(len(m.DevEUI)))
+			i += copy(data[i:], m.DevEUI)
+		}
+	}
+	if m.DevNonce != nil {
+		if len(m.DevNonce) > 0 {
+			data[i] = 0x22
+			i++
+			i = encodeVarintRouter(data, i, uint64(len(m.DevNonce)))
+			i += copy(data[i:], m.DevNonce)
+		}
+	}
+	if m.Metadata != nil {
+		data[i] = 0x2a
+		i++
+		i = encodeVarintRouter(data, i, uint64(m.Metadata.Size()))
+		n6, err := m.Metadata.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n6
+	}
+	return i, nil
+}
+
+func (m *JoinRouterRes) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *JoinRouterRes) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if m.Payload != nil {
+		data[i] = 0xa
+		i++
+		i = encodeVarintRouter(data, i, uint64(m.Payload.Size()))
+		n7, err := m.Payload.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n7
+	}
+	if m.Metadata != nil {
+		data[i] = 0x12
+		i++
+		i = encodeVarintRouter(data, i, uint64(m.Metadata.Size()))
+		n8, err := m.Metadata.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n8
+	}
+	return i, nil
+}
+
 func encodeFixed64Router(data []byte, offset int, v uint64) int {
 	data[offset] = uint8(v)
 	data[offset+1] = uint8(v >> 8)
@@ -357,6 +528,12 @@ func encodeVarintRouter(data []byte, offset int, v uint64) int {
 func (m *DataRouterReq) Size() (n int) {
 	var l int
 	_ = l
+	if m.GatewayID != nil {
+		l = len(m.GatewayID)
+		if l > 0 {
+			n += 1 + l + sovRouter(uint64(l))
+		}
+	}
 	if m.Payload != nil {
 		l = m.Payload.Size()
 		n += 1 + l + sovRouter(uint64(l))
@@ -364,12 +541,6 @@ func (m *DataRouterReq) Size() (n int) {
 	if m.Metadata != nil {
 		l = m.Metadata.Size()
 		n += 1 + l + sovRouter(uint64(l))
-	}
-	if m.GatewayID != nil {
-		l = len(m.GatewayID)
-		if l > 0 {
-			n += 1 + l + sovRouter(uint64(l))
-		}
 	}
 	return n
 }
@@ -407,6 +578,54 @@ func (m *StatsReq) Size() (n int) {
 func (m *StatsRes) Size() (n int) {
 	var l int
 	_ = l
+	return n
+}
+
+func (m *JoinRouterReq) Size() (n int) {
+	var l int
+	_ = l
+	if m.GatewayID != nil {
+		l = len(m.GatewayID)
+		if l > 0 {
+			n += 1 + l + sovRouter(uint64(l))
+		}
+	}
+	if m.AppEUI != nil {
+		l = len(m.AppEUI)
+		if l > 0 {
+			n += 1 + l + sovRouter(uint64(l))
+		}
+	}
+	if m.DevEUI != nil {
+		l = len(m.DevEUI)
+		if l > 0 {
+			n += 1 + l + sovRouter(uint64(l))
+		}
+	}
+	if m.DevNonce != nil {
+		l = len(m.DevNonce)
+		if l > 0 {
+			n += 1 + l + sovRouter(uint64(l))
+		}
+	}
+	if m.Metadata != nil {
+		l = m.Metadata.Size()
+		n += 1 + l + sovRouter(uint64(l))
+	}
+	return n
+}
+
+func (m *JoinRouterRes) Size() (n int) {
+	var l int
+	_ = l
+	if m.Payload != nil {
+		l = m.Payload.Size()
+		n += 1 + l + sovRouter(uint64(l))
+	}
+	if m.Metadata != nil {
+		l = m.Metadata.Size()
+		n += 1 + l + sovRouter(uint64(l))
+	}
 	return n
 }
 
@@ -454,6 +673,37 @@ func (m *DataRouterReq) Unmarshal(data []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field GatewayID", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRouter
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthRouter
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.GatewayID = append(m.GatewayID[:0], data[iNdEx:postIndex]...)
+			if m.GatewayID == nil {
+				m.GatewayID = []byte{}
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Payload", wireType)
 			}
 			var msglen int
@@ -485,7 +735,7 @@ func (m *DataRouterReq) Unmarshal(data []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 2:
+		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Metadata", wireType)
 			}
@@ -516,37 +766,6 @@ func (m *DataRouterReq) Unmarshal(data []byte) error {
 			}
 			if err := m.Metadata.Unmarshal(data[iNdEx:postIndex]); err != nil {
 				return err
-			}
-			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field GatewayID", wireType)
-			}
-			var byteLen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowRouter
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				byteLen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if byteLen < 0 {
-				return ErrInvalidLengthRouter
-			}
-			postIndex := iNdEx + byteLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.GatewayID = append(m.GatewayID[:0], data[iNdEx:postIndex]...)
-			if m.GatewayID == nil {
-				m.GatewayID = []byte{}
 			}
 			iNdEx = postIndex
 		default:
@@ -850,6 +1069,329 @@ func (m *StatsRes) Unmarshal(data []byte) error {
 	}
 	return nil
 }
+func (m *JoinRouterReq) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowRouter
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: JoinRouterReq: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: JoinRouterReq: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field GatewayID", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRouter
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthRouter
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.GatewayID = append(m.GatewayID[:0], data[iNdEx:postIndex]...)
+			if m.GatewayID == nil {
+				m.GatewayID = []byte{}
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AppEUI", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRouter
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthRouter
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AppEUI = append(m.AppEUI[:0], data[iNdEx:postIndex]...)
+			if m.AppEUI == nil {
+				m.AppEUI = []byte{}
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DevEUI", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRouter
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthRouter
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.DevEUI = append(m.DevEUI[:0], data[iNdEx:postIndex]...)
+			if m.DevEUI == nil {
+				m.DevEUI = []byte{}
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DevNonce", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRouter
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthRouter
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.DevNonce = append(m.DevNonce[:0], data[iNdEx:postIndex]...)
+			if m.DevNonce == nil {
+				m.DevNonce = []byte{}
+			}
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Metadata", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRouter
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthRouter
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Metadata == nil {
+				m.Metadata = &Metadata{}
+			}
+			if err := m.Metadata.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipRouter(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthRouter
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *JoinRouterRes) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowRouter
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: JoinRouterRes: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: JoinRouterRes: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Payload", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRouter
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthRouter
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Payload == nil {
+				m.Payload = &LoRaWANJoinAccept{}
+			}
+			if err := m.Payload.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Metadata", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRouter
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthRouter
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Metadata == nil {
+				m.Metadata = &Metadata{}
+			}
+			if err := m.Metadata.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipRouter(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthRouter
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func skipRouter(data []byte) (n int, err error) {
 	l := len(data)
 	iNdEx := 0
@@ -956,22 +1498,28 @@ var (
 )
 
 var fileDescriptorRouter = []byte{
-	// 266 bytes of a gzipped FileDescriptorProto
+	// 368 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xe2, 0xe2, 0x29, 0xca, 0x2f, 0x2d,
 	0x49, 0x2d, 0xd2, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x62, 0x49, 0xce, 0x2f, 0x4a, 0x95, 0xe2,
 	0xcd, 0xc9, 0x2f, 0x4a, 0x2c, 0x4f, 0xcc, 0x83, 0x08, 0x4a, 0x71, 0x81, 0x04, 0x21, 0x6c, 0xa5,
-	0x36, 0x46, 0x2e, 0x5e, 0x97, 0xc4, 0x92, 0xc4, 0x20, 0xb0, 0xae, 0xa0, 0xd4, 0x42, 0x21, 0x6d,
-	0x2e, 0xf6, 0x80, 0xc4, 0xca, 0x9c, 0xfc, 0xc4, 0x14, 0x09, 0x46, 0x05, 0x46, 0x0d, 0x6e, 0x23,
-	0x41, 0x3d, 0xb0, 0x7a, 0x9f, 0xfc, 0xa0, 0xc4, 0x70, 0x47, 0x3f, 0xb0, 0x62, 0xf6, 0x02, 0x88,
-	0x0a, 0x21, 0x2d, 0x2e, 0x0e, 0xdf, 0xd4, 0x92, 0xc4, 0x14, 0xa0, 0xa0, 0x04, 0x13, 0x58, 0x35,
-	0x1f, 0x44, 0x35, 0x4c, 0x34, 0x88, 0x23, 0x17, 0xca, 0x12, 0x92, 0xe1, 0xe2, 0x74, 0x4f, 0x2c,
-	0x49, 0x2d, 0x4f, 0xac, 0xf4, 0x74, 0x91, 0x60, 0x06, 0x2a, 0xe6, 0x09, 0xe2, 0x4c, 0x87, 0x09,
-	0x28, 0x65, 0xa0, 0xba, 0xa3, 0x98, 0x66, 0xee, 0x50, 0x8a, 0xe4, 0xe2, 0x08, 0x2e, 0x49, 0x2c,
-	0x29, 0x06, 0x79, 0x16, 0xc5, 0x4d, 0x8c, 0x68, 0x6e, 0x12, 0xd2, 0xc7, 0x30, 0x55, 0x18, 0x62,
-	0x2a, 0x58, 0x3f, 0x16, 0xa3, 0xb9, 0xe0, 0x46, 0x17, 0x1b, 0xe5, 0x73, 0xb1, 0x41, 0x3c, 0x23,
-	0x64, 0xc6, 0xc5, 0xe5, 0x91, 0x98, 0x97, 0x92, 0x93, 0x0a, 0x72, 0xb3, 0x10, 0xd4, 0x08, 0x94,
-	0x40, 0x97, 0xc2, 0x22, 0x58, 0x2c, 0xa4, 0xcb, 0xc5, 0x0d, 0xd1, 0x07, 0x36, 0x53, 0x88, 0x0f,
-	0xc9, 0x6e, 0x90, 0x1e, 0x54, 0x7e, 0xb1, 0x93, 0xc0, 0x89, 0x47, 0x72, 0x8c, 0x17, 0x80, 0xf8,
-	0x01, 0x10, 0xcf, 0x78, 0x2c, 0xc7, 0x90, 0xc4, 0x06, 0x8e, 0x63, 0x63, 0x40, 0x00, 0x00, 0x00,
-	0xff, 0xff, 0xe4, 0x6d, 0x5d, 0xea, 0x14, 0x02, 0x00, 0x00,
+	0x36, 0x46, 0x2e, 0x5e, 0x97, 0xc4, 0x92, 0xc4, 0x20, 0xb0, 0xae, 0xa0, 0xd4, 0x42, 0x21, 0x19,
+	0x2e, 0x4e, 0xf7, 0xc4, 0x92, 0xd4, 0xf2, 0xc4, 0x4a, 0x4f, 0x17, 0x09, 0x46, 0x05, 0x46, 0x0d,
+	0x9e, 0x20, 0xce, 0x74, 0x98, 0x80, 0x90, 0x36, 0x17, 0x7b, 0x40, 0x62, 0x65, 0x4e, 0x7e, 0x62,
+	0x8a, 0x04, 0x13, 0x50, 0x8e, 0xdb, 0x48, 0x50, 0x0f, 0x6c, 0x9a, 0x4f, 0x7e, 0x50, 0x62, 0xb8,
+	0xa3, 0x1f, 0xd8, 0x28, 0xf6, 0x02, 0x88, 0x0a, 0x21, 0x2d, 0x2e, 0x0e, 0xdf, 0xd4, 0x92, 0xc4,
+	0x14, 0xa0, 0xa0, 0x04, 0x33, 0x58, 0x35, 0x1f, 0x44, 0x35, 0x4c, 0x34, 0x88, 0x23, 0x17, 0xca,
+	0x52, 0xca, 0x40, 0x75, 0x47, 0x31, 0xb2, 0x4d, 0x8c, 0x24, 0xd9, 0xc4, 0x44, 0xc0, 0xa6, 0x48,
+	0x2e, 0x8e, 0xe0, 0x92, 0xc4, 0x92, 0x62, 0xc2, 0x9e, 0xd5, 0xc7, 0x30, 0x55, 0x18, 0x62, 0x2a,
+	0x58, 0x3f, 0x16, 0xa3, 0xb9, 0xe0, 0x46, 0x17, 0x2b, 0x2d, 0x05, 0x86, 0xac, 0x57, 0x7e, 0x66,
+	0x1e, 0xb1, 0x21, 0x2b, 0xc6, 0xc5, 0xe6, 0x58, 0x50, 0xe0, 0x1a, 0xea, 0x09, 0xb6, 0x8a, 0x27,
+	0x88, 0x2d, 0x11, 0xcc, 0x03, 0x89, 0xbb, 0xa4, 0x96, 0x81, 0xc4, 0x99, 0x21, 0xe2, 0x29, 0x60,
+	0x9e, 0x90, 0x14, 0x17, 0x07, 0x50, 0xdc, 0x2f, 0x3f, 0x2f, 0x39, 0x55, 0x82, 0x05, 0x2c, 0xc3,
+	0x91, 0x02, 0xe5, 0xa3, 0x04, 0x07, 0x2b, 0x81, 0xe0, 0xc8, 0x43, 0x75, 0x66, 0xb1, 0x90, 0x21,
+	0x7a, 0xc0, 0x8b, 0xa3, 0x04, 0x3c, 0x48, 0xb1, 0x63, 0x72, 0x72, 0x6a, 0x41, 0x09, 0x59, 0xc1,
+	0x6f, 0xb4, 0x9c, 0x91, 0x8b, 0x0d, 0x62, 0x99, 0x90, 0x19, 0x17, 0x97, 0x47, 0x62, 0x5e, 0x4a,
+	0x4e, 0x2a, 0x28, 0x32, 0x85, 0xa0, 0x61, 0x8b, 0x92, 0x1a, 0xa5, 0xb0, 0x08, 0x16, 0x0b, 0xe9,
+	0x72, 0x71, 0x43, 0xf4, 0x81, 0x03, 0x5b, 0x88, 0x0f, 0x29, 0x52, 0x40, 0x7a, 0x50, 0xf9, 0xc5,
+	0x08, 0x6b, 0x40, 0x4e, 0x87, 0x59, 0x83, 0x12, 0x35, 0x52, 0x58, 0x04, 0x8b, 0x9d, 0x04, 0x4e,
+	0x3c, 0x92, 0x63, 0xbc, 0x00, 0xc4, 0x0f, 0x80, 0x78, 0xc6, 0x63, 0x39, 0x86, 0x24, 0x36, 0x70,
+	0xa6, 0x31, 0x06, 0x04, 0x00, 0x00, 0xff, 0xff, 0xed, 0x4d, 0x7e, 0xd8, 0x65, 0x03, 0x00, 0x00,
 }

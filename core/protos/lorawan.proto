@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package core;
 
+// Uplink & Downlink Data (confirmed or unconfirmed)
 message LoRaWANData {
     LoRaWANMHDR         MHDR        = 1;
     LoRaWANMACPayload   MACPayload  = 2;
@@ -43,12 +44,7 @@ message LoRaWANJoinRequest {
 }
 
 message LoRaWANJoinAccept {
-    bytes               AppNonce    = 1;
-    bytes               NetID       = 2;
-    bytes               DevAddr     = 3;
-    LoRaWANDLSettings   DLSettings  = 4;
-    uint32              RXDelay     = 5;
-
+    bytes               Payload     = 1;
 }
 
 message LoRaWANDLSettings {

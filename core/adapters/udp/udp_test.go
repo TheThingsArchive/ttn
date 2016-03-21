@@ -51,7 +51,9 @@ func TestUDPAdapter(t *testing.T) {
 		payload.MHDR.Major = lorawan.LoRaWANR1
 		payload.MIC = [4]byte{1, 2, 3, 4}
 		macpayload := lorawan.NewMACPayload(true)
-		macpayload.FPort = 1
+		macpayload.FPort = new(uint8)
+		*macpayload.FPort = 1
+
 		macpayload.FRMPayload = []lorawan.Payload{&lorawan.DataPayload{Bytes: []byte{1, 2, 3}}}
 		payload.MACPayload = macpayload
 		data, err := payload.MarshalBinary()
@@ -102,7 +104,7 @@ func TestUDPAdapter(t *testing.T) {
 						},
 						FOpts: nil,
 					},
-					FPort:      uint32(macpayload.FPort),
+					FPort:      uint32(*macpayload.FPort),
 					FRMPayload: macpayload.FRMPayload[0].(*lorawan.DataPayload).Bytes,
 				},
 				MIC: payload.MIC[:],
@@ -152,7 +154,9 @@ func TestUDPAdapter(t *testing.T) {
 		payload.MHDR.Major = lorawan.LoRaWANR1
 		payload.MIC = [4]byte{1, 2, 3, 4}
 		macpayload := lorawan.NewMACPayload(true)
-		macpayload.FPort = 1
+		macpayload.FPort = new(uint8)
+		*macpayload.FPort = 1
+
 		macpayload.FRMPayload = []lorawan.Payload{&lorawan.DataPayload{Bytes: []byte{1, 2, 3}}}
 		payload.MACPayload = macpayload
 		data, err := payload.MarshalBinary()
@@ -201,7 +205,8 @@ func TestUDPAdapter(t *testing.T) {
 		payloadDown.MHDR.Major = lorawan.Major(router.OutHandleData.Res.Payload.MHDR.Major)
 		copy(payloadDown.MIC[:], router.OutHandleData.Res.Payload.MIC)
 		macpayloadDown := lorawan.NewMACPayload(false)
-		macpayloadDown.FPort = uint8(router.OutHandleData.Res.Payload.MACPayload.FPort)
+		macpayloadDown.FPort = new(uint8)
+		*macpayloadDown.FPort = uint8(router.OutHandleData.Res.Payload.MACPayload.FPort)
 		macpayloadDown.FHDR.FCnt = router.OutHandleData.Res.Payload.MACPayload.FHDR.FCnt
 		copy(macpayloadDown.FHDR.DevAddr[:], router.OutHandleData.Res.Payload.MACPayload.FHDR.DevAddr)
 		macpayloadDown.FRMPayload = []lorawan.Payload{&lorawan.DataPayload{
@@ -238,7 +243,7 @@ func TestUDPAdapter(t *testing.T) {
 						},
 						FOpts: nil,
 					},
-					FPort:      uint32(macpayload.FPort),
+					FPort:      uint32(*macpayload.FPort),
 					FRMPayload: macpayload.FRMPayload[0].(*lorawan.DataPayload).Bytes,
 				},
 				MIC: payload.MIC[:],
@@ -296,7 +301,9 @@ func TestUDPAdapter(t *testing.T) {
 		payload.MHDR.Major = lorawan.LoRaWANR1
 		payload.MIC = [4]byte{1, 2, 3, 4}
 		macpayload := lorawan.NewMACPayload(true)
-		macpayload.FPort = 1
+		macpayload.FPort = new(uint8)
+		*macpayload.FPort = 1
+
 		macpayload.FRMPayload = []lorawan.Payload{&lorawan.DataPayload{Bytes: []byte{1, 2, 3}}}
 		payload.MACPayload = macpayload
 		data, err := payload.MarshalBinary()
@@ -358,7 +365,7 @@ func TestUDPAdapter(t *testing.T) {
 						},
 						FOpts: nil,
 					},
-					FPort:      uint32(macpayload.FPort),
+					FPort:      uint32(*macpayload.FPort),
 					FRMPayload: macpayload.FRMPayload[0].(*lorawan.DataPayload).Bytes,
 				},
 				MIC: payload.MIC[:],
@@ -524,7 +531,9 @@ func TestUDPAdapter(t *testing.T) {
 		payload.MHDR.Major = lorawan.LoRaWANR1
 		payload.MIC = [4]byte{1, 2, 3, 4}
 		macpayload := lorawan.NewMACPayload(true)
-		macpayload.FPort = 1
+		macpayload.FPort = new(uint8)
+		*macpayload.FPort = 1
+
 		macpayload.FRMPayload = []lorawan.Payload{&lorawan.DataPayload{Bytes: []byte{1, 2, 3}}}
 		payload.MACPayload = macpayload
 		data, err := payload.MarshalBinary()
@@ -576,7 +585,7 @@ func TestUDPAdapter(t *testing.T) {
 						},
 						FOpts: nil,
 					},
-					FPort:      uint32(macpayload.FPort),
+					FPort:      uint32(*macpayload.FPort),
 					FRMPayload: macpayload.FRMPayload[0].(*lorawan.DataPayload).Bytes,
 				},
 				MIC: payload.MIC[:],
@@ -881,6 +890,365 @@ func TestUDPAdapter(t *testing.T) {
 		// Check
 		CheckErrors(t, wantErrStart, errStart)
 		Check(t, wantDataRouterReq, router.InHandleData.Req, "Data Router Requests")
+		Check(t, wantStats, router.InHandleStats.Req, "Data Router Stats")
+		Check(t, wantSemtechResp[0], <-chpkt, "Acknowledgements")
+		Check(t, wantSemtechResp[1], <-chpkt, "Downlinks")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Send a valid join through udp, with valid join-accept")
+
+		// Build
+		payload := lorawan.NewPHYPayload(true)
+		payload.MHDR.MType = lorawan.JoinRequest
+		payload.MHDR.Major = lorawan.LoRaWANR1
+		payload.MIC = [4]byte{1, 2, 3, 4}
+		joinpayload := &lorawan.JoinRequestPayload{
+			AppEUI:   [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+			DevEUI:   [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
+			DevNonce: [2]byte{14, 42},
+		}
+		payload.MACPayload = joinpayload
+		data, err := payload.MarshalBinary()
+		FatalUnless(t, err)
+
+		packet := semtech.Packet{
+			Version:    semtech.VERSION,
+			GatewayId:  []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			Token:      []byte{1, 2},
+			Identifier: semtech.PUSH_DATA,
+			Payload: &semtech.Payload{
+				RXPK: []semtech.RXPK{
+					{
+						Data: pointer.String(base64.RawStdEncoding.EncodeToString(data)),
+					},
+				},
+			},
+		}
+		data, err = packet.MarshalBinary()
+		FatalUnless(t, err)
+
+		dataDown := []byte("accept")
+		router := mocks.NewRouterServer()
+		router.OutHandleJoin.Res = &core.JoinRouterRes{
+			Payload: &core.LoRaWANJoinAccept{
+				Payload: dataDown,
+			},
+			Metadata: new(core.Metadata),
+		}
+
+		netAddr := newAddr()
+		addr, err := net.ResolveUDPAddr("udp", netAddr)
+		FatalUnless(t, err)
+		conn, err := net.DialUDP("udp", nil, addr)
+		FatalUnless(t, err)
+
+		// Expectations
+		var wantErrStart *string
+		var wantJoinRouterReq = &core.JoinRouterReq{
+			GatewayID: packet.GatewayId,
+			DevEUI:    joinpayload.DevEUI[:],
+			AppEUI:    joinpayload.AppEUI[:],
+			DevNonce:  joinpayload.DevNonce[:],
+			Metadata:  new(core.Metadata),
+		}
+		var wantStats *core.StatsReq
+		var wantSemtechResp = []semtech.Packet{
+			{
+				Version:    semtech.VERSION,
+				Token:      packet.Token,
+				Identifier: semtech.PUSH_ACK,
+			},
+			{
+				Version:    semtech.VERSION,
+				Identifier: semtech.PULL_RESP,
+				Payload: &semtech.Payload{
+					TXPK: &semtech.TXPK{
+						Data: pointer.String(base64.RawStdEncoding.EncodeToString(dataDown)),
+					},
+				},
+			},
+		}
+
+		// Operate
+		chpkt := listenPackets(conn)
+		errStart := Start(
+			Components{Router: router, Ctx: GetLogger(t, "Adapter")},
+			Options{NetAddr: netAddr, MaxReconnectionDelay: 25 * time.Millisecond},
+		)
+		FatalUnless(t, err)
+		<-time.After(time.Millisecond * 50)
+		_, err = conn.Write(data)
+		FatalUnless(t, err)
+		<-time.After(time.Millisecond * 50)
+		close(chpkt)
+
+		// Check
+		CheckErrors(t, wantErrStart, errStart)
+		Check(t, wantJoinRouterReq, router.InHandleJoin.Req, "Join Router Requests")
+		Check(t, wantStats, router.InHandleStats.Req, "Data Router Stats")
+		Check(t, wantSemtechResp[0], <-chpkt, "Acknowledgements")
+		Check(t, wantSemtechResp[1], <-chpkt, "Downlinks")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Send a valid join through udp, no payload in accept")
+
+		// Build
+		payload := lorawan.NewPHYPayload(true)
+		payload.MHDR.MType = lorawan.JoinRequest
+		payload.MHDR.Major = lorawan.LoRaWANR1
+		payload.MIC = [4]byte{1, 2, 3, 4}
+		joinpayload := &lorawan.JoinRequestPayload{
+			AppEUI:   [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+			DevEUI:   [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
+			DevNonce: [2]byte{14, 42},
+		}
+		payload.MACPayload = joinpayload
+		data, err := payload.MarshalBinary()
+		FatalUnless(t, err)
+
+		packet := semtech.Packet{
+			Version:    semtech.VERSION,
+			GatewayId:  []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			Token:      []byte{1, 2},
+			Identifier: semtech.PUSH_DATA,
+			Payload: &semtech.Payload{
+				RXPK: []semtech.RXPK{
+					{
+						Data: pointer.String(base64.RawStdEncoding.EncodeToString(data)),
+					},
+				},
+			},
+		}
+		data, err = packet.MarshalBinary()
+		FatalUnless(t, err)
+
+		router := mocks.NewRouterServer()
+		router.OutHandleJoin.Res = &core.JoinRouterRes{
+			Payload:  nil,
+			Metadata: new(core.Metadata),
+		}
+
+		netAddr := newAddr()
+		addr, err := net.ResolveUDPAddr("udp", netAddr)
+		FatalUnless(t, err)
+		conn, err := net.DialUDP("udp", nil, addr)
+		FatalUnless(t, err)
+
+		// Expectations
+		var wantErrStart *string
+		var wantJoinRouterReq = &core.JoinRouterReq{
+			GatewayID: packet.GatewayId,
+			DevEUI:    joinpayload.DevEUI[:],
+			AppEUI:    joinpayload.AppEUI[:],
+			DevNonce:  joinpayload.DevNonce[:],
+			Metadata:  new(core.Metadata),
+		}
+		var wantStats *core.StatsReq
+		var wantSemtechResp = []semtech.Packet{
+			{
+				Version:    semtech.VERSION,
+				Token:      packet.Token,
+				Identifier: semtech.PUSH_ACK,
+			},
+			{},
+		}
+
+		// Operate
+		chpkt := listenPackets(conn)
+		errStart := Start(
+			Components{Router: router, Ctx: GetLogger(t, "Adapter")},
+			Options{NetAddr: netAddr, MaxReconnectionDelay: 25 * time.Millisecond},
+		)
+		FatalUnless(t, err)
+		<-time.After(time.Millisecond * 50)
+		_, err = conn.Write(data)
+		FatalUnless(t, err)
+		<-time.After(time.Millisecond * 50)
+		close(chpkt)
+
+		// Check
+		CheckErrors(t, wantErrStart, errStart)
+		Check(t, wantJoinRouterReq, router.InHandleJoin.Req, "Join Router Requests")
+		Check(t, wantStats, router.InHandleStats.Req, "Data Router Stats")
+		Check(t, wantSemtechResp[0], <-chpkt, "Acknowledgements")
+		Check(t, wantSemtechResp[1], <-chpkt, "Downlinks")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Send a valid join through udp, no metadata in response")
+
+		// Build
+		payload := lorawan.NewPHYPayload(true)
+		payload.MHDR.MType = lorawan.JoinRequest
+		payload.MHDR.Major = lorawan.LoRaWANR1
+		payload.MIC = [4]byte{1, 2, 3, 4}
+		joinpayload := &lorawan.JoinRequestPayload{
+			AppEUI:   [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+			DevEUI:   [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
+			DevNonce: [2]byte{14, 42},
+		}
+		payload.MACPayload = joinpayload
+		data, err := payload.MarshalBinary()
+		FatalUnless(t, err)
+
+		packet := semtech.Packet{
+			Version:    semtech.VERSION,
+			GatewayId:  []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			Token:      []byte{1, 2},
+			Identifier: semtech.PUSH_DATA,
+			Payload: &semtech.Payload{
+				RXPK: []semtech.RXPK{
+					{
+						Data: pointer.String(base64.RawStdEncoding.EncodeToString(data)),
+					},
+				},
+			},
+		}
+		data, err = packet.MarshalBinary()
+		FatalUnless(t, err)
+
+		dataDown := []byte("accept")
+		router := mocks.NewRouterServer()
+		router.OutHandleJoin.Res = &core.JoinRouterRes{
+			Payload: &core.LoRaWANJoinAccept{
+				Payload: dataDown,
+			},
+			Metadata: nil,
+		}
+
+		netAddr := newAddr()
+		addr, err := net.ResolveUDPAddr("udp", netAddr)
+		FatalUnless(t, err)
+		conn, err := net.DialUDP("udp", nil, addr)
+		FatalUnless(t, err)
+
+		// Expectations
+		var wantErrStart *string
+		var wantJoinRouterReq = &core.JoinRouterReq{
+			GatewayID: packet.GatewayId,
+			DevEUI:    joinpayload.DevEUI[:],
+			AppEUI:    joinpayload.AppEUI[:],
+			DevNonce:  joinpayload.DevNonce[:],
+			Metadata:  new(core.Metadata),
+		}
+		var wantStats *core.StatsReq
+		var wantSemtechResp = []semtech.Packet{
+			{
+				Version:    semtech.VERSION,
+				Token:      packet.Token,
+				Identifier: semtech.PUSH_ACK,
+			},
+			{},
+		}
+
+		// Operate
+		chpkt := listenPackets(conn)
+		errStart := Start(
+			Components{Router: router, Ctx: GetLogger(t, "Adapter")},
+			Options{NetAddr: netAddr, MaxReconnectionDelay: 25 * time.Millisecond},
+		)
+		FatalUnless(t, err)
+		<-time.After(time.Millisecond * 50)
+		_, err = conn.Write(data)
+		FatalUnless(t, err)
+		<-time.After(time.Millisecond * 50)
+		close(chpkt)
+
+		// Check
+		CheckErrors(t, wantErrStart, errStart)
+		Check(t, wantJoinRouterReq, router.InHandleJoin.Req, "Join Router Requests")
+		Check(t, wantStats, router.InHandleStats.Req, "Data Router Stats")
+		Check(t, wantSemtechResp[0], <-chpkt, "Acknowledgements")
+		Check(t, wantSemtechResp[1], <-chpkt, "Downlinks")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Send a valid join through udp, router fails to handle")
+
+		// Build
+		payload := lorawan.NewPHYPayload(true)
+		payload.MHDR.MType = lorawan.JoinRequest
+		payload.MHDR.Major = lorawan.LoRaWANR1
+		payload.MIC = [4]byte{1, 2, 3, 4}
+		joinpayload := &lorawan.JoinRequestPayload{
+			AppEUI:   [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+			DevEUI:   [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
+			DevNonce: [2]byte{14, 42},
+		}
+		payload.MACPayload = joinpayload
+		data, err := payload.MarshalBinary()
+		FatalUnless(t, err)
+
+		packet := semtech.Packet{
+			Version:    semtech.VERSION,
+			GatewayId:  []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			Token:      []byte{1, 2},
+			Identifier: semtech.PUSH_DATA,
+			Payload: &semtech.Payload{
+				RXPK: []semtech.RXPK{
+					{
+						Data: pointer.String(base64.RawStdEncoding.EncodeToString(data)),
+					},
+				},
+			},
+		}
+		data, err = packet.MarshalBinary()
+		FatalUnless(t, err)
+
+		router := mocks.NewRouterServer()
+		router.Failures["HandleJoin"] = fmt.Errorf("Mock Error")
+
+		netAddr := newAddr()
+		addr, err := net.ResolveUDPAddr("udp", netAddr)
+		FatalUnless(t, err)
+		conn, err := net.DialUDP("udp", nil, addr)
+		FatalUnless(t, err)
+
+		// Expectations
+		var wantErrStart *string
+		var wantJoinRouterReq = &core.JoinRouterReq{
+			GatewayID: packet.GatewayId,
+			DevEUI:    joinpayload.DevEUI[:],
+			AppEUI:    joinpayload.AppEUI[:],
+			DevNonce:  joinpayload.DevNonce[:],
+			Metadata:  new(core.Metadata),
+		}
+		var wantStats *core.StatsReq
+		var wantSemtechResp = []semtech.Packet{
+			{
+				Version:    semtech.VERSION,
+				Token:      packet.Token,
+				Identifier: semtech.PUSH_ACK,
+			},
+			{},
+		}
+
+		// Operate
+		chpkt := listenPackets(conn)
+		errStart := Start(
+			Components{Router: router, Ctx: GetLogger(t, "Adapter")},
+			Options{NetAddr: netAddr, MaxReconnectionDelay: 25 * time.Millisecond},
+		)
+		FatalUnless(t, err)
+		<-time.After(time.Millisecond * 50)
+		_, err = conn.Write(data)
+		FatalUnless(t, err)
+		<-time.After(time.Millisecond * 50)
+		close(chpkt)
+
+		// Check
+		CheckErrors(t, wantErrStart, errStart)
+		Check(t, wantJoinRouterReq, router.InHandleJoin.Req, "Join Router Requests")
 		Check(t, wantStats, router.InHandleStats.Req, "Data Router Stats")
 		Check(t, wantSemtechResp[0], <-chpkt, "Acknowledgements")
 		Check(t, wantSemtechResp[1], <-chpkt, "Downlinks")

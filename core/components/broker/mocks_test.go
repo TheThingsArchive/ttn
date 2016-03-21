@@ -93,6 +93,16 @@ type MockNetworkController struct {
 		DevAddr []byte
 		FCnt    uint32
 	}
+	InReadActivation struct {
+		AppEUI []byte
+		DevEUI []byte
+	}
+	OutReadActivation struct {
+		Entry appEntry
+	}
+	InUpdateActivation struct {
+		Entry appEntry
+	}
 	InClose struct {
 		Called bool
 	}
@@ -132,6 +142,19 @@ func (m *MockNetworkController) UpdateFCnt(appEUI []byte, devEUI []byte, devAddr
 	m.InUpdateFcnt.DevAddr = devAddr
 	m.InUpdateFcnt.FCnt = fcnt
 	return m.Failures["UpdateFCnt"]
+}
+
+// ReadActivation implements the NetworkController interface
+func (m *MockNetworkController) ReadActivation(appEUI []byte, devEUI []byte) (appEntry, error) {
+	m.InReadActivation.AppEUI = appEUI
+	m.InReadActivation.DevEUI = devEUI
+	return m.OutReadActivation.Entry, m.Failures["ReadActivation"]
+}
+
+// UpdateActivation implements the NetworkController interface
+func (m *MockNetworkController) UpdateActivation(entry appEntry) error {
+	m.InUpdateActivation.Entry = entry
+	return m.Failures["UpdateActivation"]
 }
 
 // Close implements the NetworkController interface

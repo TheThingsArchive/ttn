@@ -1018,6 +1018,694 @@ func TestDialerCloser(t *testing.T) {
 	}
 }
 
+func TestHandleJoin(t *testing.T) {
+	{
+		Desc(t, "Valid Join Request | Valid Join Accept")
+
+		// Build
+		nc := NewMockNetworkController()
+		hl := mocks.NewHandlerClient()
+		hl.OutHandleJoin.Res = &core.JoinHandlerRes{
+			Payload: &core.LoRaWANJoinAccept{
+				Payload: []byte{14, 42},
+			},
+			DevAddr:  []byte{1, 1, 1, 1},
+			NwkSKey:  []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
+			Metadata: new(core.Metadata),
+		}
+
+		dl := NewMockDialer()
+		dl.OutDial.Client = hl
+		dl.OutDial.Closer = NewMockCloser()
+
+		nc.OutReadActivation.Entry = appEntry{
+			Dialer:    dl,
+			AppEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
+			DevEUI:    []byte{3, 3, 3, 3, 3, 3, 3, 3},
+			DevNonces: [][]byte{},
+		}
+
+		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		req := &core.JoinBrokerReq{
+			AppEUI:   nc.OutReadActivation.Entry.AppEUI,
+			DevEUI:   nc.OutReadActivation.Entry.DevEUI,
+			DevNonce: []byte{14, 14},
+			Metadata: new(core.Metadata),
+		}
+
+		// Expect
+		var wantErr *string
+		var wantJoinReq = &core.JoinHandlerReq{
+			AppEUI:   req.AppEUI,
+			DevEUI:   req.DevEUI,
+			DevNonce: req.DevNonce,
+			Metadata: req.Metadata,
+		}
+		var wantRes = &core.JoinBrokerRes{
+			Payload:  hl.OutHandleJoin.Res.Payload,
+			Metadata: hl.OutHandleJoin.Res.Metadata,
+		}
+		var wantActivation = appEntry{
+			Dialer:    dl,
+			AppEUI:    req.AppEUI,
+			DevEUI:    req.DevEUI,
+			DevNonces: [][]byte{req.DevNonce},
+		}
+		var wantDialer = true
+
+		// Operate
+		res, err := br.HandleJoin(context.Background(), req)
+
+		// Checks
+		CheckErrors(t, wantErr, err)
+		Check(t, wantJoinReq, hl.InHandleJoin.Req, "Handler Join Requests")
+		Check(t, wantRes, res, "Broker Join Responses")
+		Check(t, wantActivation, nc.InUpdateActivation.Entry, "Activations")
+		Check(t, wantDialer, dl.InDial.Called, "Dialer calls")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Invalid Join Request -> Invalid AppEUI")
+
+		// Build
+		nc := NewMockNetworkController()
+		hl := mocks.NewHandlerClient()
+		hl.OutHandleJoin.Res = &core.JoinHandlerRes{
+			Payload: &core.LoRaWANJoinAccept{
+				Payload: []byte{14, 42},
+			},
+			DevAddr:  []byte{1, 1, 1, 1},
+			NwkSKey:  []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
+			Metadata: new(core.Metadata),
+		}
+
+		dl := NewMockDialer()
+		dl.OutDial.Client = hl
+		dl.OutDial.Closer = NewMockCloser()
+
+		nc.OutReadActivation.Entry = appEntry{
+			Dialer:    dl,
+			AppEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
+			DevEUI:    []byte{3, 3, 3, 3, 3, 3, 3, 3},
+			DevNonces: [][]byte{},
+		}
+
+		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		req := &core.JoinBrokerReq{
+			AppEUI:   nil,
+			DevEUI:   nc.OutReadActivation.Entry.DevEUI,
+			DevNonce: []byte{14, 14},
+			Metadata: new(core.Metadata),
+		}
+
+		// Expect
+		var wantErr = ErrStructural
+		var wantJoinReq *core.JoinHandlerReq
+		var wantRes = new(core.JoinBrokerRes)
+		var wantActivation appEntry
+		var wantDialer bool
+
+		// Operate
+		res, err := br.HandleJoin(context.Background(), req)
+
+		// Checks
+		CheckErrors(t, wantErr, err)
+		Check(t, wantJoinReq, hl.InHandleJoin.Req, "Handler Join Requests")
+		Check(t, wantRes, res, "Broker Join Responses")
+		Check(t, wantActivation, nc.InUpdateActivation.Entry, "Activations")
+		Check(t, wantDialer, dl.InDial.Called, "Dialer calls")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Invalid Join Request -> Invalid DevEUI")
+
+		// Build
+		nc := NewMockNetworkController()
+		hl := mocks.NewHandlerClient()
+		hl.OutHandleJoin.Res = &core.JoinHandlerRes{
+			Payload: &core.LoRaWANJoinAccept{
+				Payload: []byte{14, 42},
+			},
+			DevAddr:  []byte{1, 1, 1, 1},
+			NwkSKey:  []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
+			Metadata: new(core.Metadata),
+		}
+
+		dl := NewMockDialer()
+		dl.OutDial.Client = hl
+		dl.OutDial.Closer = NewMockCloser()
+
+		nc.OutReadActivation.Entry = appEntry{
+			Dialer:    dl,
+			AppEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
+			DevEUI:    []byte{3, 3, 3, 3, 3, 3, 3, 3},
+			DevNonces: [][]byte{},
+		}
+
+		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		req := &core.JoinBrokerReq{
+			AppEUI:   nc.OutReadActivation.Entry.AppEUI,
+			DevEUI:   []byte{1, 2, 3},
+			DevNonce: []byte{14, 14},
+			Metadata: new(core.Metadata),
+		}
+
+		// Expect
+		var wantErr = ErrStructural
+		var wantJoinReq *core.JoinHandlerReq
+		var wantRes = new(core.JoinBrokerRes)
+		var wantActivation appEntry
+		var wantDialer bool
+
+		// Operate
+		res, err := br.HandleJoin(context.Background(), req)
+
+		// Checks
+		CheckErrors(t, wantErr, err)
+		Check(t, wantJoinReq, hl.InHandleJoin.Req, "Handler Join Requests")
+		Check(t, wantRes, res, "Broker Join Responses")
+		Check(t, wantActivation, nc.InUpdateActivation.Entry, "Activations")
+		Check(t, wantDialer, dl.InDial.Called, "Dialer calls")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Invalid Join Request -> Invalid DevNonce")
+
+		// Build
+		nc := NewMockNetworkController()
+		hl := mocks.NewHandlerClient()
+		hl.OutHandleJoin.Res = &core.JoinHandlerRes{
+			Payload: &core.LoRaWANJoinAccept{
+				Payload: []byte{14, 42},
+			},
+			DevAddr:  []byte{1, 1, 1, 1},
+			NwkSKey:  []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
+			Metadata: new(core.Metadata),
+		}
+
+		dl := NewMockDialer()
+		dl.OutDial.Client = hl
+		dl.OutDial.Closer = NewMockCloser()
+
+		nc.OutReadActivation.Entry = appEntry{
+			Dialer:    dl,
+			AppEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
+			DevEUI:    []byte{3, 3, 3, 3, 3, 3, 3, 3},
+			DevNonces: [][]byte{},
+		}
+
+		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		req := &core.JoinBrokerReq{
+			AppEUI:   nc.OutReadActivation.Entry.AppEUI,
+			DevEUI:   nc.OutReadActivation.Entry.DevEUI,
+			DevNonce: []byte{14, 14, 15, 16},
+			Metadata: new(core.Metadata),
+		}
+
+		// Expect
+		var wantErr = ErrStructural
+		var wantJoinReq *core.JoinHandlerReq
+		var wantRes = new(core.JoinBrokerRes)
+		var wantActivation appEntry
+		var wantDialer bool
+
+		// Operate
+		res, err := br.HandleJoin(context.Background(), req)
+
+		// Checks
+		CheckErrors(t, wantErr, err)
+		Check(t, wantJoinReq, hl.InHandleJoin.Req, "Handler Join Requests")
+		Check(t, wantRes, res, "Broker Join Responses")
+		Check(t, wantActivation, nc.InUpdateActivation.Entry, "Activations")
+		Check(t, wantDialer, dl.InDial.Called, "Dialer calls")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Invalid Join Request -> Invalid Metadata")
+
+		// Build
+		nc := NewMockNetworkController()
+		hl := mocks.NewHandlerClient()
+		hl.OutHandleJoin.Res = &core.JoinHandlerRes{
+			Payload: &core.LoRaWANJoinAccept{
+				Payload: []byte{14, 42},
+			},
+			DevAddr:  []byte{1, 1, 1, 1},
+			NwkSKey:  []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
+			Metadata: new(core.Metadata),
+		}
+
+		dl := NewMockDialer()
+		dl.OutDial.Client = hl
+		dl.OutDial.Closer = NewMockCloser()
+
+		nc.OutReadActivation.Entry = appEntry{
+			Dialer:    dl,
+			AppEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
+			DevEUI:    []byte{3, 3, 3, 3, 3, 3, 3, 3},
+			DevNonces: [][]byte{},
+		}
+
+		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		req := &core.JoinBrokerReq{
+			AppEUI:   nc.OutReadActivation.Entry.AppEUI,
+			DevEUI:   nc.OutReadActivation.Entry.DevEUI,
+			DevNonce: []byte{14, 14},
+			Metadata: nil,
+		}
+
+		// Expect
+		var wantErr = ErrStructural
+		var wantJoinReq *core.JoinHandlerReq
+		var wantRes = new(core.JoinBrokerRes)
+		var wantActivation appEntry
+		var wantDialer bool
+
+		// Operate
+		res, err := br.HandleJoin(context.Background(), req)
+
+		// Checks
+		CheckErrors(t, wantErr, err)
+		Check(t, wantJoinReq, hl.InHandleJoin.Req, "Handler Join Requests")
+		Check(t, wantRes, res, "Broker Join Responses")
+		Check(t, wantActivation, nc.InUpdateActivation.Entry, "Activations")
+		Check(t, wantDialer, dl.InDial.Called, "Dialer calls")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Valid Join Request | ReadActivation failed")
+
+		// Build
+		nc := NewMockNetworkController()
+		nc.Failures["ReadActivation"] = errors.New(errors.Operational, "Mock Error")
+		hl := mocks.NewHandlerClient()
+		hl.OutHandleJoin.Res = &core.JoinHandlerRes{
+			Payload: &core.LoRaWANJoinAccept{
+				Payload: []byte{14, 42},
+			},
+			DevAddr:  []byte{1, 1, 1, 1},
+			NwkSKey:  []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
+			Metadata: new(core.Metadata),
+		}
+
+		dl := NewMockDialer()
+		dl.OutDial.Client = hl
+		dl.OutDial.Closer = NewMockCloser()
+
+		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		req := &core.JoinBrokerReq{
+			AppEUI:   []byte{1, 1, 1, 1, 1, 1, 1, 1},
+			DevEUI:   []byte{2, 2, 2, 2, 2, 2, 2, 2},
+			DevNonce: []byte{14, 14},
+			Metadata: new(core.Metadata),
+		}
+
+		// Expect
+		var wantErr = ErrOperational
+		var wantJoinReq *core.JoinHandlerReq
+		var wantRes = new(core.JoinBrokerRes)
+		var wantActivation appEntry
+		var wantDialer bool
+
+		// Operate
+		res, err := br.HandleJoin(context.Background(), req)
+
+		// Checks
+		CheckErrors(t, wantErr, err)
+		Check(t, wantJoinReq, hl.InHandleJoin.Req, "Handler Join Requests")
+		Check(t, wantRes, res, "Broker Join Responses")
+		Check(t, wantActivation, nc.InUpdateActivation.Entry, "Activations")
+		Check(t, wantDialer, dl.InDial.Called, "Dialer calls")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Valid Join Request | DevNonce already exists")
+
+		// Build
+		nc := NewMockNetworkController()
+		hl := mocks.NewHandlerClient()
+		hl.OutHandleJoin.Res = &core.JoinHandlerRes{
+			Payload: &core.LoRaWANJoinAccept{
+				Payload: []byte{14, 42},
+			},
+			DevAddr:  []byte{1, 1, 1, 1},
+			NwkSKey:  []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
+			Metadata: new(core.Metadata),
+		}
+
+		dl := NewMockDialer()
+		dl.OutDial.Client = hl
+		dl.OutDial.Closer = NewMockCloser()
+
+		nc.OutReadActivation.Entry = appEntry{
+			Dialer:    dl,
+			AppEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
+			DevEUI:    []byte{3, 3, 3, 3, 3, 3, 3, 3},
+			DevNonces: [][]byte{[]byte{14, 14}},
+		}
+
+		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		req := &core.JoinBrokerReq{
+			AppEUI:   nc.OutReadActivation.Entry.AppEUI,
+			DevEUI:   nc.OutReadActivation.Entry.DevEUI,
+			DevNonce: []byte{14, 14},
+			Metadata: new(core.Metadata),
+		}
+
+		// Expect
+		var wantErr = ErrStructural
+		var wantJoinReq *core.JoinHandlerReq
+		var wantRes = new(core.JoinBrokerRes)
+		var wantActivation appEntry
+		var wantDialer bool
+
+		// Operate
+		res, err := br.HandleJoin(context.Background(), req)
+
+		// Checks
+		CheckErrors(t, wantErr, err)
+		Check(t, wantJoinReq, hl.InHandleJoin.Req, "Handler Join Requests")
+		Check(t, wantRes, res, "Broker Join Responses")
+		Check(t, wantActivation, nc.InUpdateActivation.Entry, "Activations")
+		Check(t, wantDialer, dl.InDial.Called, "Dialer calls")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Valid Join Request | Dial fails")
+
+		// Build
+		nc := NewMockNetworkController()
+		hl := mocks.NewHandlerClient()
+		hl.OutHandleJoin.Res = &core.JoinHandlerRes{
+			Payload: &core.LoRaWANJoinAccept{
+				Payload: []byte{14, 42},
+			},
+			DevAddr:  []byte{1, 1, 1, 1},
+			NwkSKey:  []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
+			Metadata: new(core.Metadata),
+		}
+
+		dl := NewMockDialer()
+		dl.OutDial.Client = hl
+		dl.OutDial.Closer = NewMockCloser()
+		dl.Failures["Dial"] = errors.New(errors.Operational, "Mock Error")
+
+		nc.OutReadActivation.Entry = appEntry{
+			Dialer:    dl,
+			AppEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
+			DevEUI:    []byte{3, 3, 3, 3, 3, 3, 3, 3},
+			DevNonces: [][]byte{},
+		}
+
+		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		req := &core.JoinBrokerReq{
+			AppEUI:   nc.OutReadActivation.Entry.AppEUI,
+			DevEUI:   nc.OutReadActivation.Entry.DevEUI,
+			DevNonce: []byte{14, 14},
+			Metadata: new(core.Metadata),
+		}
+
+		// Expect
+		var wantErr = ErrOperational
+		var wantJoinReq *core.JoinHandlerReq
+		var wantRes = new(core.JoinBrokerRes)
+		var wantActivation appEntry
+		var wantDialer = true
+
+		// Operate
+		res, err := br.HandleJoin(context.Background(), req)
+
+		// Checks
+		CheckErrors(t, wantErr, err)
+		Check(t, wantJoinReq, hl.InHandleJoin.Req, "Handler Join Requests")
+		Check(t, wantRes, res, "Broker Join Responses")
+		Check(t, wantActivation, nc.InUpdateActivation.Entry, "Activations")
+		Check(t, wantDialer, dl.InDial.Called, "Dialer calls")
+	}
+	// --------------------
+
+	{
+		Desc(t, "Valid Join Request | Handle join fails")
+
+		// Build
+		nc := NewMockNetworkController()
+		hl := mocks.NewHandlerClient()
+		hl.OutHandleJoin.Res = &core.JoinHandlerRes{
+			Payload: &core.LoRaWANJoinAccept{
+				Payload: []byte{14, 42},
+			},
+			DevAddr:  []byte{1, 1, 1, 1},
+			NwkSKey:  []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
+			Metadata: new(core.Metadata),
+		}
+		hl.Failures["HandleJoin"] = fmt.Errorf("Mock Error")
+
+		dl := NewMockDialer()
+		dl.OutDial.Client = hl
+		dl.OutDial.Closer = NewMockCloser()
+
+		nc.OutReadActivation.Entry = appEntry{
+			Dialer:    dl,
+			AppEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
+			DevEUI:    []byte{3, 3, 3, 3, 3, 3, 3, 3},
+			DevNonces: [][]byte{},
+		}
+
+		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		req := &core.JoinBrokerReq{
+			AppEUI:   nc.OutReadActivation.Entry.AppEUI,
+			DevEUI:   nc.OutReadActivation.Entry.DevEUI,
+			DevNonce: []byte{14, 14},
+			Metadata: new(core.Metadata),
+		}
+
+		// Expect
+		var wantErr = ErrOperational
+		var wantJoinReq = &core.JoinHandlerReq{
+			AppEUI:   req.AppEUI,
+			DevEUI:   req.DevEUI,
+			DevNonce: req.DevNonce,
+			Metadata: req.Metadata,
+		}
+		var wantRes = new(core.JoinBrokerRes)
+		var wantActivation appEntry
+		var wantDialer = true
+
+		// Operate
+		res, err := br.HandleJoin(context.Background(), req)
+
+		// Checks
+		CheckErrors(t, wantErr, err)
+		Check(t, wantJoinReq, hl.InHandleJoin.Req, "Handler Join Requests")
+		Check(t, wantRes, res, "Broker Join Responses")
+		Check(t, wantActivation, nc.InUpdateActivation.Entry, "Activations")
+		Check(t, wantDialer, dl.InDial.Called, "Dialer calls")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Valid Join Request | Invalid response from handler")
+
+		// Build
+		nc := NewMockNetworkController()
+		hl := mocks.NewHandlerClient()
+		hl.OutHandleJoin.Res = &core.JoinHandlerRes{
+			Payload: &core.LoRaWANJoinAccept{
+				Payload: []byte{14, 42},
+			},
+			DevAddr:  nil,
+			NwkSKey:  nil,
+			Metadata: new(core.Metadata),
+		}
+
+		dl := NewMockDialer()
+		dl.OutDial.Client = hl
+		dl.OutDial.Closer = NewMockCloser()
+
+		nc.OutReadActivation.Entry = appEntry{
+			Dialer:    dl,
+			AppEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
+			DevEUI:    []byte{3, 3, 3, 3, 3, 3, 3, 3},
+			DevNonces: [][]byte{},
+		}
+
+		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		req := &core.JoinBrokerReq{
+			AppEUI:   nc.OutReadActivation.Entry.AppEUI,
+			DevEUI:   nc.OutReadActivation.Entry.DevEUI,
+			DevNonce: []byte{14, 14},
+			Metadata: new(core.Metadata),
+		}
+
+		// Expect
+		var wantErr = ErrOperational
+		var wantJoinReq = &core.JoinHandlerReq{
+			AppEUI:   req.AppEUI,
+			DevEUI:   req.DevEUI,
+			DevNonce: req.DevNonce,
+			Metadata: req.Metadata,
+		}
+		var wantRes = new(core.JoinBrokerRes)
+		var wantActivation appEntry
+		var wantDialer = true
+
+		// Operate
+		res, err := br.HandleJoin(context.Background(), req)
+
+		// Checks
+		CheckErrors(t, wantErr, err)
+		Check(t, wantJoinReq, hl.InHandleJoin.Req, "Handler Join Requests")
+		Check(t, wantRes, res, "Broker Join Responses")
+		Check(t, wantActivation, nc.InUpdateActivation.Entry, "Activations")
+		Check(t, wantDialer, dl.InDial.Called, "Dialer calls")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Valid Join Request | Update Activation fails")
+
+		// Build
+		hl := mocks.NewHandlerClient()
+		hl.OutHandleJoin.Res = &core.JoinHandlerRes{
+			Payload: &core.LoRaWANJoinAccept{
+				Payload: []byte{14, 42},
+			},
+			DevAddr:  []byte{1, 1, 1, 1},
+			NwkSKey:  []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
+			Metadata: new(core.Metadata),
+		}
+
+		dl := NewMockDialer()
+		dl.OutDial.Client = hl
+		dl.OutDial.Closer = NewMockCloser()
+
+		nc := NewMockNetworkController()
+		nc.Failures["UpdateActivation"] = errors.New(errors.Operational, "Mock Error")
+		nc.OutReadActivation.Entry = appEntry{
+			Dialer:    dl,
+			AppEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
+			DevEUI:    []byte{3, 3, 3, 3, 3, 3, 3, 3},
+			DevNonces: [][]byte{},
+		}
+
+		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		req := &core.JoinBrokerReq{
+			AppEUI:   nc.OutReadActivation.Entry.AppEUI,
+			DevEUI:   nc.OutReadActivation.Entry.DevEUI,
+			DevNonce: []byte{14, 14},
+			Metadata: new(core.Metadata),
+		}
+
+		// Expect
+		var wantErr = ErrOperational
+		var wantJoinReq = &core.JoinHandlerReq{
+			AppEUI:   req.AppEUI,
+			DevEUI:   req.DevEUI,
+			DevNonce: req.DevNonce,
+			Metadata: req.Metadata,
+		}
+		var wantRes = new(core.JoinBrokerRes)
+		var wantActivation = appEntry{
+			Dialer:    dl,
+			AppEUI:    req.AppEUI,
+			DevEUI:    req.DevEUI,
+			DevNonces: [][]byte{req.DevNonce},
+		}
+		var wantDialer = true
+
+		// Operate
+		res, err := br.HandleJoin(context.Background(), req)
+
+		// Checks
+		CheckErrors(t, wantErr, err)
+		Check(t, wantJoinReq, hl.InHandleJoin.Req, "Handler Join Requests")
+		Check(t, wantRes, res, "Broker Join Responses")
+		Check(t, wantActivation, nc.InUpdateActivation.Entry, "Activations")
+		Check(t, wantDialer, dl.InDial.Called, "Dialer calls")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Valid Join Request | Store device fails")
+
+		// Build
+		hl := mocks.NewHandlerClient()
+		hl.OutHandleJoin.Res = &core.JoinHandlerRes{
+			Payload: &core.LoRaWANJoinAccept{
+				Payload: []byte{14, 42},
+			},
+			DevAddr:  []byte{1, 1, 1, 1},
+			NwkSKey:  []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
+			Metadata: new(core.Metadata),
+		}
+
+		dl := NewMockDialer()
+		dl.OutDial.Client = hl
+		dl.OutDial.Closer = NewMockCloser()
+
+		nc := NewMockNetworkController()
+		nc.Failures["StoreDevice"] = errors.New(errors.Operational, "Mock Error")
+		nc.OutReadActivation.Entry = appEntry{
+			Dialer:    dl,
+			AppEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
+			DevEUI:    []byte{3, 3, 3, 3, 3, 3, 3, 3},
+			DevNonces: [][]byte{},
+		}
+
+		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		req := &core.JoinBrokerReq{
+			AppEUI:   nc.OutReadActivation.Entry.AppEUI,
+			DevEUI:   nc.OutReadActivation.Entry.DevEUI,
+			DevNonce: []byte{14, 14},
+			Metadata: new(core.Metadata),
+		}
+
+		// Expect
+		var wantErr = ErrOperational
+		var wantJoinReq = &core.JoinHandlerReq{
+			AppEUI:   req.AppEUI,
+			DevEUI:   req.DevEUI,
+			DevNonce: req.DevNonce,
+			Metadata: req.Metadata,
+		}
+		var wantRes = new(core.JoinBrokerRes)
+		var wantActivation = appEntry{
+			Dialer:    dl,
+			AppEUI:    req.AppEUI,
+			DevEUI:    req.DevEUI,
+			DevNonces: [][]byte{req.DevNonce},
+		}
+		var wantDialer = true
+
+		// Operate
+		res, err := br.HandleJoin(context.Background(), req)
+
+		// Checks
+		CheckErrors(t, wantErr, err)
+		Check(t, wantJoinReq, hl.InHandleJoin.Req, "Handler Join Requests")
+		Check(t, wantRes, res, "Broker Join Responses")
+		Check(t, wantActivation, nc.InUpdateActivation.Entry, "Activations")
+		Check(t, wantDialer, dl.InDial.Called, "Dialer calls")
+	}
+}
+
 func TestStart(t *testing.T) {
 	broker := New(
 		Components{
