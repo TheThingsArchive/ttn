@@ -20,7 +20,7 @@ before_script:
     - mosquitto -p 1883 1>/dev/null 2>/dev/null &
 
 script:
-    - go list ./... | grep -vE 'integration|ttn$' | xargs go test
+    - go list ./... | grep -vE 'vendor|integration|ttn$' | xargs go test
     - sh -c 'FMTRES="$(go fmt ./...)"; if [ ! -z "$FMTRES" ]; then echo $FMTRES; exit 255; fi'
     - go vet ./...
 
