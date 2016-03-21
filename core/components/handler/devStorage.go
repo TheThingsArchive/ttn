@@ -18,6 +18,7 @@ type DevStorage interface {
 	UpdateFCnt(appEUI []byte, devEUI []byte, fcnt uint32) error
 	Lookup(appEUI []byte, devEUI []byte) (devEntry, error)
 	StorePersonalized(appEUI []byte, devAddr []byte, appSKey, nwkSKey [16]byte) error
+	Store(entry devEntry) error
 	Close() error
 }
 
@@ -84,6 +85,13 @@ func (s *devStorage) StorePersonalized(appEUI []byte, devAddr []byte, appSKey, n
 	s.Lock()
 	defer s.Unlock()
 	return s.db.Replace(fmt.Sprintf("%x.%x", appEUI, devEUI), []byte(dbDevices), e)
+}
+
+// Store implements the handler.DevStorage interface
+func (s *devStorage) Store(entry devEntry) error {
+	s.Lock()
+	defer s.Unlock()
+	return s.db.Replace(fmt.Sprintf("%x.%x", entry.AppEUI, entry.DevEUI), []byte(dbDevices), []dbutil.Entry{&entry})
 }
 
 // UpdateFCnt implements the handler.DevStorage interface

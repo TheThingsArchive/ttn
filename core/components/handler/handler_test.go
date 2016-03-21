@@ -381,9 +381,10 @@ func TestHandleDataUp(t *testing.T) {
 		Desc(t, "Handle uplink, 1 packet | No downlink")
 
 		// Build
+		devAddr := lorawan.DevAddr([4]byte{3, 4, 2, 4})
 		devStorage := NewMockDevStorage()
 		devStorage.OutLookup.Entry = devEntry{
-			DevAddr:  [4]byte{3, 4, 2, 4},
+			DevAddr:  devAddr[:],
 			AppSKey:  [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
 			NwkSKey:  [16]byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
 			FCntDown: 3,
@@ -395,7 +396,7 @@ func TestHandleDataUp(t *testing.T) {
 		encoded, err := lorawan.EncryptFRMPayload(
 			devStorage.OutLookup.Entry.AppSKey,
 			true,
-			devStorage.OutLookup.Entry.DevAddr,
+			devAddr,
 			fcnt,
 			payload,
 		)
@@ -445,9 +446,10 @@ func TestHandleDataUp(t *testing.T) {
 		Desc(t, "2 packets in a row, same device | No Downlink")
 
 		// Build
+		devAddr := lorawan.DevAddr([4]byte{3, 4, 2, 4})
 		devStorage := NewMockDevStorage()
 		devStorage.OutLookup.Entry = devEntry{
-			DevAddr:  [4]byte{3, 4, 2, 4},
+			DevAddr:  devAddr[:],
 			AppSKey:  [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
 			NwkSKey:  [16]byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
 			FCntDown: 3,
@@ -459,7 +461,7 @@ func TestHandleDataUp(t *testing.T) {
 		encoded, err := lorawan.EncryptFRMPayload(
 			devStorage.OutLookup.Entry.AppSKey,
 			true,
-			devStorage.OutLookup.Entry.DevAddr,
+			devAddr,
 			fcnt,
 			payload,
 		)
@@ -553,9 +555,10 @@ func TestHandleDataUp(t *testing.T) {
 
 		// Build
 		tmst := time.Now()
+		devAddr := lorawan.DevAddr([4]byte{3, 4, 2, 4})
 		devStorage := NewMockDevStorage()
 		devStorage.OutLookup.Entry = devEntry{
-			DevAddr:  [4]byte{3, 4, 2, 4},
+			DevAddr:  devAddr[:],
 			AppSKey:  [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
 			NwkSKey:  [16]byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
 			FCntDown: 3,
@@ -568,7 +571,7 @@ func TestHandleDataUp(t *testing.T) {
 		encoded, err := lorawan.EncryptFRMPayload(
 			devStorage.OutLookup.Entry.AppSKey,
 			true,
-			devStorage.OutLookup.Entry.DevAddr,
+			devAddr,
 			fcnt,
 			payload,
 		)
@@ -596,7 +599,7 @@ func TestHandleDataUp(t *testing.T) {
 		encodedDown, err := lorawan.EncryptFRMPayload(
 			devStorage.OutLookup.Entry.AppSKey,
 			false,
-			devStorage.OutLookup.Entry.DevAddr,
+			devAddr,
 			devStorage.OutLookup.Entry.FCntDown+1,
 			pktStorage.OutPull.Entry.Payload,
 		)
@@ -658,8 +661,9 @@ func TestHandleDataUp(t *testing.T) {
 
 		// Build
 		devStorage := NewMockDevStorage()
+		devAddr := lorawan.DevAddr([4]byte{3, 4, 2, 4})
 		devStorage.OutLookup.Entry = devEntry{
-			DevAddr:  [4]byte{3, 4, 2, 4},
+			DevAddr:  devAddr[:],
 			AppSKey:  [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
 			NwkSKey:  [16]byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
 			FCntDown: 3,
@@ -671,7 +675,7 @@ func TestHandleDataUp(t *testing.T) {
 		encoded, err := lorawan.EncryptFRMPayload(
 			devStorage.OutLookup.Entry.AppSKey,
 			true,
-			devStorage.OutLookup.Entry.DevAddr,
+			devAddr,
 			fcnt,
 			payload,
 		)
@@ -764,9 +768,10 @@ func TestHandleDataUp(t *testing.T) {
 		Desc(t, "Handle uplink, 1 packet | AppAdapter fails")
 
 		// Build
+		devAddr := lorawan.DevAddr([4]byte{3, 4, 2, 4})
 		devStorage := NewMockDevStorage()
 		devStorage.OutLookup.Entry = devEntry{
-			DevAddr:  [4]byte{3, 4, 2, 4},
+			DevAddr:  devAddr[:],
 			AppSKey:  [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
 			NwkSKey:  [16]byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
 			FCntDown: 3,
@@ -779,7 +784,7 @@ func TestHandleDataUp(t *testing.T) {
 		encoded, err := lorawan.EncryptFRMPayload(
 			devStorage.OutLookup.Entry.AppSKey,
 			true,
-			devStorage.OutLookup.Entry.DevAddr,
+			devAddr,
 			fcnt,
 			payload,
 		)
@@ -829,9 +834,10 @@ func TestHandleDataUp(t *testing.T) {
 		Desc(t, "Handle uplink, 1 packet | PktStorage fails")
 
 		// Build
+		devAddr := lorawan.DevAddr([4]byte{3, 4, 2, 4})
 		devStorage := NewMockDevStorage()
 		devStorage.OutLookup.Entry = devEntry{
-			DevAddr:  [4]byte{3, 4, 2, 4},
+			DevAddr:  devAddr[:],
 			AppSKey:  [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
 			NwkSKey:  [16]byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
 			FCntDown: 3,
@@ -844,7 +850,7 @@ func TestHandleDataUp(t *testing.T) {
 		encoded, err := lorawan.EncryptFRMPayload(
 			devStorage.OutLookup.Entry.AppSKey,
 			true,
-			devStorage.OutLookup.Entry.DevAddr,
+			devAddr,
 			fcnt,
 			payload,
 		)
@@ -899,9 +905,9 @@ func TestHandleDataUp(t *testing.T) {
 		appAdapter := mocks.NewAppClient()
 		broker := mocks.NewBrokerClient()
 		payload1, fcnt1 := []byte("Payload1"), uint32(14)
-		devAddr1, appSKey1 := [4]byte{1, 2, 3, 4}, [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6}
+		devAddr1, appSKey1 := lorawan.DevAddr([4]byte{1, 2, 3, 4}), [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6}
 		payload2, fcnt2 := []byte("Payload2"), uint32(35346)
-		devAddr2, appSKey2 := [4]byte{4, 3, 2, 1}, [16]byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1}
+		devAddr2, appSKey2 := lorawan.DevAddr([4]byte{4, 3, 2, 1}), [16]byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1}
 		encoded1, err := lorawan.EncryptFRMPayload(
 			appSKey1,
 			true,
@@ -977,7 +983,7 @@ func TestHandleDataUp(t *testing.T) {
 		}, Options{NetAddr: "localhost"})
 
 		devStorage.OutLookup.Entry = devEntry{
-			DevAddr:  devAddr1,
+			DevAddr:  devAddr1[:],
 			AppSKey:  appSKey1,
 			NwkSKey:  [16]byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
 			FCntDown: 3,
@@ -992,7 +998,7 @@ func TestHandleDataUp(t *testing.T) {
 
 		// Operate
 		devStorage.OutLookup.Entry = devEntry{
-			DevAddr:  devAddr2,
+			DevAddr:  devAddr2[:],
 			AppSKey:  appSKey2,
 			NwkSKey:  [16]byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
 			FCntDown: 11,
@@ -1013,9 +1019,10 @@ func TestHandleDataUp(t *testing.T) {
 
 		// Build
 		tmst := time.Now()
+		devAddr := lorawan.DevAddr([4]byte{3, 4, 2, 4})
 		devStorage := NewMockDevStorage()
 		devStorage.OutLookup.Entry = devEntry{
-			DevAddr:  [4]byte{3, 4, 2, 4},
+			DevAddr:  devAddr[:],
 			AppSKey:  [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
 			NwkSKey:  [16]byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
 			FCntDown: 3,
@@ -1028,7 +1035,7 @@ func TestHandleDataUp(t *testing.T) {
 		encoded, err := lorawan.EncryptFRMPayload(
 			devStorage.OutLookup.Entry.AppSKey,
 			true,
-			devStorage.OutLookup.Entry.DevAddr,
+			devAddr,
 			fcnt,
 			payload,
 		)
@@ -1056,7 +1063,7 @@ func TestHandleDataUp(t *testing.T) {
 		encodedDown, err := lorawan.EncryptFRMPayload(
 			devStorage.OutLookup.Entry.AppSKey,
 			false,
-			devStorage.OutLookup.Entry.DevAddr,
+			devAddr,
 			devStorage.OutLookup.Entry.FCntDown+1,
 			pktStorage.OutPull.Entry.Payload,
 		)
@@ -1080,7 +1087,7 @@ func TestHandleDataUp(t *testing.T) {
 			},
 			Metadata: &core.Metadata{
 				DataRate:    "SF9BW125",
-				Frequency:   869.5,
+				Frequency:   869.525,
 				CodingRate:  "4/5",
 				Timestamp:   uint32(tmst.Add(2*time.Second).Unix() * 1000),
 				PayloadSize: 21,
@@ -1118,9 +1125,10 @@ func TestHandleDataUp(t *testing.T) {
 
 		// Build
 		tmst := time.Now()
+		devAddr := lorawan.DevAddr([4]byte{3, 4, 2, 4})
 		devStorage := NewMockDevStorage()
 		devStorage.OutLookup.Entry = devEntry{
-			DevAddr:  [4]byte{3, 4, 2, 4},
+			DevAddr:  devAddr[:],
 			AppSKey:  [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
 			NwkSKey:  [16]byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
 			FCntDown: 3,
@@ -1134,7 +1142,7 @@ func TestHandleDataUp(t *testing.T) {
 		encoded, err := lorawan.EncryptFRMPayload(
 			devStorage.OutLookup.Entry.AppSKey,
 			true,
-			devStorage.OutLookup.Entry.DevAddr,
+			devAddr,
 			fcnt,
 			payload,
 		)
