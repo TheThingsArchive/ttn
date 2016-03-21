@@ -30,6 +30,7 @@ func TestHandleDataDown(t *testing.T) {
 			AppEUI:  []byte{1, 1, 1, 1, 1, 1, 1, 1},
 			DevEUI:  []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			Payload: []byte("TheThingsNetwork"),
+			TTL:     2,
 		}
 
 		// Expect
@@ -50,7 +51,7 @@ func TestHandleDataDown(t *testing.T) {
 		// Check
 		CheckErrors(t, wantError, err)
 		Check(t, wantRes, res, "Data Down Handler Responses")
-		Check(t, wantEntry, pktStorage.InPush.Payload, "Packet Entries")
+		Check(t, wantEntry.Payload, pktStorage.InEnqueue.Entry.Payload, "Packet Entries")
 	}
 
 	// --------------------
@@ -66,6 +67,7 @@ func TestHandleDataDown(t *testing.T) {
 		req := &core.DataDownHandlerReq{
 			AppEUI:  []byte{1, 1, 1, 1, 1, 1, 1, 1},
 			DevEUI:  []byte{2, 2, 2, 2, 2, 2, 2, 2},
+			TTL:     2,
 			Payload: nil,
 		}
 
@@ -87,7 +89,7 @@ func TestHandleDataDown(t *testing.T) {
 		// Check
 		CheckErrors(t, wantError, err)
 		Check(t, wantRes, res, "Data Down Handler Responses")
-		Check(t, wantEntry, pktStorage.InPush.Payload, "Packet Entries")
+		Check(t, wantEntry, pktStorage.InEnqueue.Entry, "Packet Entries")
 	}
 
 	// --------------------
@@ -103,6 +105,7 @@ func TestHandleDataDown(t *testing.T) {
 		req := &core.DataDownHandlerReq{
 			AppEUI:  []byte{1, 1, 1, 1, 1},
 			DevEUI:  []byte{2, 2, 2, 2, 2, 2, 2, 2},
+			TTL:     2,
 			Payload: []byte("TheThingsNetwork"),
 		}
 
@@ -124,7 +127,7 @@ func TestHandleDataDown(t *testing.T) {
 		// Check
 		CheckErrors(t, wantError, err)
 		Check(t, wantRes, res, "Data Down Handler Responses")
-		Check(t, wantEntry, pktStorage.InPush.Payload, "Packet Entries")
+		Check(t, wantEntry, pktStorage.InEnqueue.Entry, "Packet Entries")
 	}
 
 	// --------------------
@@ -140,6 +143,7 @@ func TestHandleDataDown(t *testing.T) {
 		req := &core.DataDownHandlerReq{
 			AppEUI:  []byte{1, 1, 1, 1, 1, 1, 1, 1},
 			DevEUI:  []byte{2, 2, 2, 2, 2, 2, 2, 2, 2},
+			TTL:     2,
 			Payload: []byte("TheThingsNetwork"),
 		}
 
@@ -161,7 +165,45 @@ func TestHandleDataDown(t *testing.T) {
 		// Check
 		CheckErrors(t, wantError, err)
 		Check(t, wantRes, res, "Data Down Handler Responses")
-		Check(t, wantEntry, pktStorage.InPush.Payload, "Packet Entries")
+		Check(t, wantEntry, pktStorage.InEnqueue.Entry, "Packet Entries")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Handle invalid downlink ~> Invalid TTL")
+
+		// Build
+		devStorage := NewMockDevStorage()
+		pktStorage := NewMockPktStorage()
+		appAdapter := mocks.NewAppClient()
+		broker := mocks.NewBrokerClient()
+		req := &core.DataDownHandlerReq{
+			AppEUI:  []byte{1, 1, 1, 1, 1, 1, 1, 1},
+			DevEUI:  []byte{2, 2, 2, 2, 2, 2, 2, 2, 2},
+			TTL:     0,
+			Payload: []byte("TheThingsNetwork"),
+		}
+
+		// Expect
+		var wantError = ErrStructural
+		var wantRes = new(core.DataDownHandlerRes)
+		var wantEntry pktEntry
+
+		// Operate
+		handler := New(Components{
+			Ctx:        GetLogger(t, "Handler"),
+			Broker:     broker,
+			AppAdapter: appAdapter,
+			DevStorage: devStorage,
+			PktStorage: pktStorage,
+		}, Options{NetAddr: "localhost"})
+		res, err := handler.HandleDataDown(context.Background(), req)
+
+		// Check
+		CheckErrors(t, wantError, err)
+		Check(t, wantRes, res, "Data Down Handler Responses")
+		Check(t, wantEntry, pktStorage.InEnqueue.Entry, "Packet Entries")
 	}
 }
 
@@ -171,7 +213,7 @@ func TestHandleDataUp(t *testing.T) {
 
 		// Build
 		devStorage := NewMockDevStorage()
-		devStorage.Failures["Lookup"] = errors.New(errors.NotFound, "Mock Error")
+		devStorage.Failures["read"] = errors.New(errors.NotFound, "Mock Error")
 		pktStorage := NewMockPktStorage()
 		appAdapter := mocks.NewAppClient()
 		broker := mocks.NewBrokerClient()
@@ -204,7 +246,7 @@ func TestHandleDataUp(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantRes, res, "Data Up Handler Responses")
 		Check(t, wantData, appAdapter.InHandleData.Req, "Data Application Requests")
-		Check(t, wantFCnt, devStorage.InUpdateFCnt.FCnt, "Frame counters")
+		Check(t, wantFCnt, devStorage.InUpsert.Entry.FCntDown, "Frame counters")
 	}
 
 	// --------------------
@@ -246,7 +288,7 @@ func TestHandleDataUp(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantRes, res, "Data Up Handler Responses")
 		Check(t, wantData, appAdapter.InHandleData.Req, "Data Application Requests")
-		Check(t, wantFCnt, devStorage.InUpdateFCnt.FCnt, "Frame counters")
+		Check(t, wantFCnt, devStorage.InUpsert.Entry.FCntDown, "Frame counters")
 	}
 
 	// --------------------
@@ -288,7 +330,7 @@ func TestHandleDataUp(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantRes, res, "Data Up Handler Responses")
 		Check(t, wantData, appAdapter.InHandleData.Req, "Data Application Requests")
-		Check(t, wantFCnt, devStorage.InUpdateFCnt.FCnt, "Frame counters")
+		Check(t, wantFCnt, devStorage.InUpsert.Entry.FCntDown, "Frame counters")
 	}
 
 	// --------------------
@@ -330,7 +372,7 @@ func TestHandleDataUp(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantRes, res, "Data Up Handler Responses")
 		Check(t, wantData, appAdapter.InHandleData.Req, "Data Application Requests")
-		Check(t, wantFCnt, devStorage.InUpdateFCnt.FCnt, "Frame counters")
+		Check(t, wantFCnt, devStorage.InUpsert.Entry.FCntDown, "Frame counters")
 	}
 
 	// --------------------
@@ -372,7 +414,7 @@ func TestHandleDataUp(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantRes, res, "Data Up Handler Responses")
 		Check(t, wantData, appAdapter.InHandleData.Req, "Data Application Requests")
-		Check(t, wantFCnt, devStorage.InUpdateFCnt.FCnt, "Frame counters")
+		Check(t, wantFCnt, devStorage.InUpsert.Entry.FCntDown, "Frame counters")
 	}
 
 	// --------------------
@@ -383,7 +425,7 @@ func TestHandleDataUp(t *testing.T) {
 		// Build
 		devAddr := lorawan.DevAddr([4]byte{3, 4, 2, 4})
 		devStorage := NewMockDevStorage()
-		devStorage.OutLookup.Entry = devEntry{
+		devStorage.OutRead.Entry = devEntry{
 			DevAddr:  devAddr[:],
 			AppSKey:  [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
 			NwkSKey:  [16]byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
@@ -394,7 +436,7 @@ func TestHandleDataUp(t *testing.T) {
 		broker := mocks.NewBrokerClient()
 		payload, fcnt := []byte("Payload"), uint32(14)
 		encoded, err := lorawan.EncryptFRMPayload(
-			devStorage.OutLookup.Entry.AppSKey,
+			devStorage.OutRead.Entry.AppSKey,
 			true,
 			devAddr,
 			fcnt,
@@ -437,7 +479,7 @@ func TestHandleDataUp(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantRes, res, "Data Up Handler Responses")
 		Check(t, wantData, appAdapter.InHandleData.Req, "Data Application Requests")
-		Check(t, wantFCnt, devStorage.InUpdateFCnt.FCnt, "Frame counters")
+		Check(t, wantFCnt, devStorage.InUpsert.Entry.FCntDown, "Frame counters")
 	}
 
 	// --------------------
@@ -448,7 +490,7 @@ func TestHandleDataUp(t *testing.T) {
 		// Build
 		devAddr := lorawan.DevAddr([4]byte{3, 4, 2, 4})
 		devStorage := NewMockDevStorage()
-		devStorage.OutLookup.Entry = devEntry{
+		devStorage.OutRead.Entry = devEntry{
 			DevAddr:  devAddr[:],
 			AppSKey:  [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
 			NwkSKey:  [16]byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
@@ -459,7 +501,7 @@ func TestHandleDataUp(t *testing.T) {
 		broker := mocks.NewBrokerClient()
 		payload, fcnt := []byte("Payload"), uint32(14)
 		encoded, err := lorawan.EncryptFRMPayload(
-			devStorage.OutLookup.Entry.AppSKey,
+			devStorage.OutRead.Entry.AppSKey,
 			true,
 			devAddr,
 			fcnt,
@@ -545,7 +587,7 @@ func TestHandleDataUp(t *testing.T) {
 		ok1, ok2 := <-chack, <-chack
 		Check(t, true, ok1 && ok2, "Acknowledgements")
 		Check(t, wantData, appAdapter.InHandleData.Req, "Data Application Requests")
-		Check(t, wantFCnt, devStorage.InUpdateFCnt.FCnt, "Frame counters")
+		Check(t, wantFCnt, devStorage.InUpsert.Entry.FCntDown, "Frame counters")
 	}
 
 	// --------------------
@@ -557,19 +599,19 @@ func TestHandleDataUp(t *testing.T) {
 		tmst := time.Now()
 		devAddr := lorawan.DevAddr([4]byte{3, 4, 2, 4})
 		devStorage := NewMockDevStorage()
-		devStorage.OutLookup.Entry = devEntry{
+		devStorage.OutRead.Entry = devEntry{
 			DevAddr:  devAddr[:],
 			AppSKey:  [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
 			NwkSKey:  [16]byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
 			FCntDown: 3,
 		}
 		pktStorage := NewMockPktStorage()
-		pktStorage.OutPull.Entry.Payload = []byte("Downlink")
+		pktStorage.OutDequeue.Entry.Payload = []byte("Downlink")
 		appAdapter := mocks.NewAppClient()
 		broker := mocks.NewBrokerClient()
 		payload, fcnt := []byte("Payload"), uint32(14)
 		encoded, err := lorawan.EncryptFRMPayload(
-			devStorage.OutLookup.Entry.AppSKey,
+			devStorage.OutRead.Entry.AppSKey,
 			true,
 			devAddr,
 			fcnt,
@@ -597,11 +639,11 @@ func TestHandleDataUp(t *testing.T) {
 		// Expect
 		var wantErr *string
 		encodedDown, err := lorawan.EncryptFRMPayload(
-			devStorage.OutLookup.Entry.AppSKey,
+			devStorage.OutRead.Entry.AppSKey,
 			false,
 			devAddr,
-			devStorage.OutLookup.Entry.FCntDown+1,
-			pktStorage.OutPull.Entry.Payload,
+			devStorage.OutRead.Entry.FCntDown+1,
+			pktStorage.OutDequeue.Entry.Payload,
 		)
 		FatalUnless(t, err)
 		var wantRes = &core.DataUpHandlerRes{
@@ -612,8 +654,8 @@ func TestHandleDataUp(t *testing.T) {
 				},
 				MACPayload: &core.LoRaWANMACPayload{
 					FHDR: &core.LoRaWANFHDR{
-						DevAddr: devStorage.OutLookup.Entry.DevAddr[:],
-						FCnt:    devStorage.OutLookup.Entry.FCntDown + 1,
+						DevAddr: devStorage.OutRead.Entry.DevAddr[:],
+						FCnt:    devStorage.OutRead.Entry.FCntDown + 1,
 						FCtrl:   new(core.LoRaWANFCtrl),
 					},
 					FPort:      uint32(1),
@@ -651,7 +693,7 @@ func TestHandleDataUp(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantRes, res, "Data Up Handler Responses")
 		Check(t, wantData, appAdapter.InHandleData.Req, "Data Application Requests")
-		Check(t, wantFCnt, devStorage.InUpdateFCnt.FCnt, "Frame counters")
+		Check(t, wantFCnt, devStorage.InUpsert.Entry.FCntDown, "Frame counters")
 	}
 
 	// --------------------
@@ -662,7 +704,7 @@ func TestHandleDataUp(t *testing.T) {
 		// Build
 		devStorage := NewMockDevStorage()
 		devAddr := lorawan.DevAddr([4]byte{3, 4, 2, 4})
-		devStorage.OutLookup.Entry = devEntry{
+		devStorage.OutRead.Entry = devEntry{
 			DevAddr:  devAddr[:],
 			AppSKey:  [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
 			NwkSKey:  [16]byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
@@ -673,7 +715,7 @@ func TestHandleDataUp(t *testing.T) {
 		broker := mocks.NewBrokerClient()
 		payload, fcnt := []byte("Payload"), uint32(14)
 		encoded, err := lorawan.EncryptFRMPayload(
-			devStorage.OutLookup.Entry.AppSKey,
+			devStorage.OutRead.Entry.AppSKey,
 			true,
 			devAddr,
 			fcnt,
@@ -759,7 +801,7 @@ func TestHandleDataUp(t *testing.T) {
 		ok1, ok2 := <-chack, <-chack
 		Check(t, true, ok1 && ok2, "Acknowledgements")
 		Check(t, wantData, appAdapter.InHandleData.Req, "Data Application Requests")
-		Check(t, wantFCnt, devStorage.InUpdateFCnt.FCnt, "Frame counters")
+		Check(t, wantFCnt, devStorage.InUpsert.Entry.FCntDown, "Frame counters")
 	}
 
 	// --------------------
@@ -770,7 +812,7 @@ func TestHandleDataUp(t *testing.T) {
 		// Build
 		devAddr := lorawan.DevAddr([4]byte{3, 4, 2, 4})
 		devStorage := NewMockDevStorage()
-		devStorage.OutLookup.Entry = devEntry{
+		devStorage.OutRead.Entry = devEntry{
 			DevAddr:  devAddr[:],
 			AppSKey:  [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
 			NwkSKey:  [16]byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
@@ -782,7 +824,7 @@ func TestHandleDataUp(t *testing.T) {
 		broker := mocks.NewBrokerClient()
 		payload, fcnt := []byte("Payload"), uint32(14)
 		encoded, err := lorawan.EncryptFRMPayload(
-			devStorage.OutLookup.Entry.AppSKey,
+			devStorage.OutRead.Entry.AppSKey,
 			true,
 			devAddr,
 			fcnt,
@@ -825,7 +867,7 @@ func TestHandleDataUp(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantRes, res, "Data Up Handler Responses")
 		Check(t, wantData, appAdapter.InHandleData.Req, "Data Application Requests")
-		Check(t, wantFCnt, devStorage.InUpdateFCnt.FCnt, "Frame counters")
+		Check(t, wantFCnt, devStorage.InUpsert.Entry.FCntDown, "Frame counters")
 	}
 
 	// --------------------
@@ -836,19 +878,19 @@ func TestHandleDataUp(t *testing.T) {
 		// Build
 		devAddr := lorawan.DevAddr([4]byte{3, 4, 2, 4})
 		devStorage := NewMockDevStorage()
-		devStorage.OutLookup.Entry = devEntry{
+		devStorage.OutRead.Entry = devEntry{
 			DevAddr:  devAddr[:],
 			AppSKey:  [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
 			NwkSKey:  [16]byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
 			FCntDown: 3,
 		}
 		pktStorage := NewMockPktStorage()
-		pktStorage.Failures["Pull"] = errors.New(errors.Operational, "Mock Error")
+		pktStorage.Failures["dequeue"] = errors.New(errors.Operational, "Mock Error")
 		appAdapter := mocks.NewAppClient()
 		broker := mocks.NewBrokerClient()
 		payload, fcnt := []byte("Payload"), uint32(14)
 		encoded, err := lorawan.EncryptFRMPayload(
-			devStorage.OutLookup.Entry.AppSKey,
+			devStorage.OutRead.Entry.AppSKey,
 			true,
 			devAddr,
 			fcnt,
@@ -891,7 +933,7 @@ func TestHandleDataUp(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantRes, res, "Data Up Handler Responses")
 		Check(t, wantData, appAdapter.InHandleData.Req, "Data Application Requests")
-		Check(t, wantFCnt, devStorage.InUpdateFCnt.FCnt, "Frame counters")
+		Check(t, wantFCnt, devStorage.InUpsert.Entry.FCntDown, "Frame counters")
 	}
 
 	// --------------------
@@ -982,7 +1024,7 @@ func TestHandleDataUp(t *testing.T) {
 			PktStorage: pktStorage,
 		}, Options{NetAddr: "localhost"})
 
-		devStorage.OutLookup.Entry = devEntry{
+		devStorage.OutRead.Entry = devEntry{
 			DevAddr:  devAddr1[:],
 			AppSKey:  appSKey1,
 			NwkSKey:  [16]byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
@@ -994,10 +1036,10 @@ func TestHandleDataUp(t *testing.T) {
 		CheckErrors(t, wantErr1, err1)
 		Check(t, wantRes1, res1, "Data Up Handler Responses")
 		Check(t, wantData1, appAdapter.InHandleData.Req, "Data Application Requests")
-		Check(t, wantFCnt1, devStorage.InUpdateFCnt.FCnt, "Frame counters")
+		Check(t, wantFCnt1, devStorage.InUpsert.Entry.FCntDown, "Frame counters")
 
 		// Operate
-		devStorage.OutLookup.Entry = devEntry{
+		devStorage.OutRead.Entry = devEntry{
 			DevAddr:  devAddr2[:],
 			AppSKey:  appSKey2,
 			NwkSKey:  [16]byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
@@ -1009,7 +1051,7 @@ func TestHandleDataUp(t *testing.T) {
 		CheckErrors(t, wantErr2, err2)
 		Check(t, wantRes2, res2, "Data Up Handler Responses")
 		Check(t, wantData2, appAdapter.InHandleData.Req, "Data Application Requests")
-		Check(t, wantFCnt2, devStorage.InUpdateFCnt.FCnt, "Frame counters")
+		Check(t, wantFCnt2, devStorage.InUpsert.Entry.FCntDown, "Frame counters")
 	}
 
 	// --------------------
@@ -1021,19 +1063,19 @@ func TestHandleDataUp(t *testing.T) {
 		tmst := time.Now()
 		devAddr := lorawan.DevAddr([4]byte{3, 4, 2, 4})
 		devStorage := NewMockDevStorage()
-		devStorage.OutLookup.Entry = devEntry{
+		devStorage.OutRead.Entry = devEntry{
 			DevAddr:  devAddr[:],
 			AppSKey:  [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
 			NwkSKey:  [16]byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
 			FCntDown: 3,
 		}
 		pktStorage := NewMockPktStorage()
-		pktStorage.OutPull.Entry.Payload = []byte("Downlink")
+		pktStorage.OutDequeue.Entry.Payload = []byte("Downlink")
 		appAdapter := mocks.NewAppClient()
 		broker := mocks.NewBrokerClient()
 		payload, fcnt := []byte("Payload"), uint32(14)
 		encoded, err := lorawan.EncryptFRMPayload(
-			devStorage.OutLookup.Entry.AppSKey,
+			devStorage.OutRead.Entry.AppSKey,
 			true,
 			devAddr,
 			fcnt,
@@ -1061,11 +1103,11 @@ func TestHandleDataUp(t *testing.T) {
 		// Expect
 		var wantErr *string
 		encodedDown, err := lorawan.EncryptFRMPayload(
-			devStorage.OutLookup.Entry.AppSKey,
+			devStorage.OutRead.Entry.AppSKey,
 			false,
 			devAddr,
-			devStorage.OutLookup.Entry.FCntDown+1,
-			pktStorage.OutPull.Entry.Payload,
+			devStorage.OutRead.Entry.FCntDown+1,
+			pktStorage.OutDequeue.Entry.Payload,
 		)
 		FatalUnless(t, err)
 		var wantRes = &core.DataUpHandlerRes{
@@ -1076,8 +1118,8 @@ func TestHandleDataUp(t *testing.T) {
 				},
 				MACPayload: &core.LoRaWANMACPayload{
 					FHDR: &core.LoRaWANFHDR{
-						DevAddr: devStorage.OutLookup.Entry.DevAddr[:],
-						FCnt:    devStorage.OutLookup.Entry.FCntDown + 1,
+						DevAddr: devStorage.OutRead.Entry.DevAddr[:],
+						FCnt:    devStorage.OutRead.Entry.FCntDown + 1,
 						FCtrl:   new(core.LoRaWANFCtrl),
 					},
 					FPort:      uint32(1),
@@ -1115,7 +1157,7 @@ func TestHandleDataUp(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantRes, res, "Data Up Handler Responses")
 		Check(t, wantData, appAdapter.InHandleData.Req, "Data Application Requests")
-		Check(t, wantFCnt, devStorage.InUpdateFCnt.FCnt, "Frame counters")
+		Check(t, wantFCnt, devStorage.InUpsert.Entry.FCntDown, "Frame counters")
 	}
 
 	// --------------------
@@ -1127,20 +1169,20 @@ func TestHandleDataUp(t *testing.T) {
 		tmst := time.Now()
 		devAddr := lorawan.DevAddr([4]byte{3, 4, 2, 4})
 		devStorage := NewMockDevStorage()
-		devStorage.OutLookup.Entry = devEntry{
+		devStorage.OutRead.Entry = devEntry{
 			DevAddr:  devAddr[:],
 			AppSKey:  [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
 			NwkSKey:  [16]byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
 			FCntDown: 3,
 		}
-		devStorage.Failures["UpdateFCnt"] = errors.New(errors.Operational, "Mock Error")
+		devStorage.Failures["upsert"] = errors.New(errors.Operational, "Mock Error")
 		pktStorage := NewMockPktStorage()
-		pktStorage.OutPull.Entry.Payload = []byte("Downlink")
+		pktStorage.OutDequeue.Entry.Payload = []byte("Downlink")
 		appAdapter := mocks.NewAppClient()
 		broker := mocks.NewBrokerClient()
 		payload, fcnt := []byte("Payload"), uint32(14)
 		encoded, err := lorawan.EncryptFRMPayload(
-			devStorage.OutLookup.Entry.AppSKey,
+			devStorage.OutRead.Entry.AppSKey,
 			true,
 			devAddr,
 			fcnt,
@@ -1174,7 +1216,7 @@ func TestHandleDataUp(t *testing.T) {
 			AppEUI:   req.AppEUI,
 			DevEUI:   req.DevEUI,
 		}
-		var wantFCnt = devStorage.OutLookup.Entry.FCntDown + 1
+		var wantFCnt = devStorage.OutRead.Entry.FCntDown + 1
 
 		// Operate
 		handler := New(Components{
@@ -1190,306 +1232,7 @@ func TestHandleDataUp(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantRes, res, "Data Up Handler Responses")
 		Check(t, wantData, appAdapter.InHandleData.Req, "Data Application Requests")
-		Check(t, wantFCnt, devStorage.InUpdateFCnt.FCnt, "Frame counters")
-	}
-}
-
-func TestSubscribePersonalized(t *testing.T) {
-	{
-		Desc(t, "Handle Valid Perso Subscription")
-
-		// Build
-		devStorage := NewMockDevStorage()
-		pktStorage := NewMockPktStorage()
-		appAdapter := mocks.NewAppClient()
-		broker := mocks.NewBrokerClient()
-		req := &core.ABPSubHandlerReq{
-			AppEUI:  []byte{1, 1, 1, 1, 1, 1, 1, 1},
-			DevAddr: []byte{2, 2, 2, 2},
-			NwkSKey: []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
-			AppSKey: []byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
-		}
-		addr := "localhost"
-
-		// Expect
-		var wantError *string
-		var wantRes = new(core.ABPSubHandlerRes)
-		var wantSub = req.AppEUI
-		var wantReq = &core.ABPSubBrokerReq{
-			HandlerNet: addr,
-			AppEUI:     req.AppEUI,
-			DevAddr:    req.DevAddr,
-			NwkSKey:    req.NwkSKey,
-		}
-
-		// Operate
-		handler := New(Components{
-			Ctx:        GetLogger(t, "Handler"),
-			Broker:     broker,
-			AppAdapter: appAdapter,
-			DevStorage: devStorage,
-			PktStorage: pktStorage,
-		}, Options{NetAddr: addr})
-		res, err := handler.SubscribePersonalized(context.Background(), req)
-
-		// Check
-		CheckErrors(t, wantError, err)
-		Check(t, wantRes, res, "Subscribe Handler Responses")
-		Check(t, wantSub, devStorage.InStorePersonalized.AppEUI, "Subscriptions")
-		Check(t, wantReq, broker.InSubscribePersonalized.Req, "Subscribe Broker Requests")
-	}
-
-	// ----------------------
-
-	{
-		Desc(t, "Handle Invalid Perso Subscription -> Invalid AppEUI")
-
-		// Build
-		devStorage := NewMockDevStorage()
-		pktStorage := NewMockPktStorage()
-		appAdapter := mocks.NewAppClient()
-		broker := mocks.NewBrokerClient()
-		req := &core.ABPSubHandlerReq{
-			AppEUI:  []byte{1, 1, 1, 1, 1, 1},
-			DevAddr: []byte{2, 2, 2, 2},
-			NwkSKey: []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
-			AppSKey: []byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
-		}
-		addr := "localhost"
-
-		// Expect
-		var wantError = ErrStructural
-		var wantRes = new(core.ABPSubHandlerRes)
-		var wantSub []byte
-		var wantReq *core.ABPSubBrokerReq
-
-		// Operate
-		handler := New(Components{
-			Ctx:        GetLogger(t, "Handler"),
-			Broker:     broker,
-			AppAdapter: appAdapter,
-			DevStorage: devStorage,
-			PktStorage: pktStorage,
-		}, Options{NetAddr: addr})
-		res, err := handler.SubscribePersonalized(context.Background(), req)
-
-		// Check
-		CheckErrors(t, wantError, err)
-		Check(t, wantRes, res, "Subscribe Handler Responses")
-		Check(t, wantSub, devStorage.InStorePersonalized.AppEUI, "Subscriptions")
-		Check(t, wantReq, broker.InSubscribePersonalized.Req, "Subscribe Broker Requests")
-	}
-
-	// ----------------------
-
-	{
-		Desc(t, "Handle Invalid Perso Subscription -> Invalid DevAddr")
-
-		// Build
-		devStorage := NewMockDevStorage()
-		pktStorage := NewMockPktStorage()
-		appAdapter := mocks.NewAppClient()
-		broker := mocks.NewBrokerClient()
-		req := &core.ABPSubHandlerReq{
-			AppEUI:  []byte{1, 1, 1, 1, 1, 1, 1, 1},
-			DevAddr: nil,
-			NwkSKey: []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
-			AppSKey: []byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
-		}
-		addr := "localhost"
-
-		// Expect
-		var wantError = ErrStructural
-		var wantRes = new(core.ABPSubHandlerRes)
-		var wantSub []byte
-		var wantReq *core.ABPSubBrokerReq
-
-		// Operate
-		handler := New(Components{
-			Ctx:        GetLogger(t, "Handler"),
-			Broker:     broker,
-			AppAdapter: appAdapter,
-			DevStorage: devStorage,
-			PktStorage: pktStorage,
-		}, Options{NetAddr: addr})
-		res, err := handler.SubscribePersonalized(context.Background(), req)
-
-		// Check
-		CheckErrors(t, wantError, err)
-		Check(t, wantRes, res, "Subscribe Handler Responses")
-		Check(t, wantSub, devStorage.InStorePersonalized.AppEUI, "Subscriptions")
-		Check(t, wantReq, broker.InSubscribePersonalized.Req, "Subscribe Broker Requests")
-	}
-
-	// ----------------------
-
-	{
-		Desc(t, "Handle Invalid Perso Subscription -> Invalid NwkSKey")
-
-		// Build
-		devStorage := NewMockDevStorage()
-		pktStorage := NewMockPktStorage()
-		appAdapter := mocks.NewAppClient()
-		broker := mocks.NewBrokerClient()
-		req := &core.ABPSubHandlerReq{
-			AppEUI:  []byte{1, 1, 1, 1, 1, 1, 1, 1},
-			DevAddr: []byte{2, 2, 2, 2},
-			NwkSKey: []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 12, 14, 12},
-			AppSKey: []byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
-		}
-		addr := "localhost"
-
-		// Expect
-		var wantError = ErrStructural
-		var wantRes = new(core.ABPSubHandlerRes)
-		var wantSub []byte
-		var wantReq *core.ABPSubBrokerReq
-
-		// Operate
-		handler := New(Components{
-			Ctx:        GetLogger(t, "Handler"),
-			Broker:     broker,
-			AppAdapter: appAdapter,
-			DevStorage: devStorage,
-			PktStorage: pktStorage,
-		}, Options{NetAddr: addr})
-		res, err := handler.SubscribePersonalized(context.Background(), req)
-
-		// Check
-		CheckErrors(t, wantError, err)
-		Check(t, wantRes, res, "Subscribe Handler Responses")
-		Check(t, wantSub, devStorage.InStorePersonalized.AppEUI, "Subscriptions")
-		Check(t, wantReq, broker.InSubscribePersonalized.Req, "Subscribe Broker Requests")
-	}
-
-	// ----------------------
-
-	{
-		Desc(t, "Handle Invalid Perso Subscription -> Invalid AppSKey")
-
-		// Build
-		devStorage := NewMockDevStorage()
-		pktStorage := NewMockPktStorage()
-		appAdapter := mocks.NewAppClient()
-		broker := mocks.NewBrokerClient()
-		req := &core.ABPSubHandlerReq{
-			AppEUI:  []byte{1, 1, 1, 1, 1, 1, 1, 1},
-			DevAddr: []byte{2, 2, 2, 2},
-			NwkSKey: []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
-			AppSKey: []byte{6, 5, 4, 3, 7, 6, 5, 4, 3, 2, 1},
-		}
-		addr := "localhost"
-
-		// Expect
-		var wantError = ErrStructural
-		var wantRes = new(core.ABPSubHandlerRes)
-		var wantSub []byte
-		var wantReq *core.ABPSubBrokerReq
-
-		// Operate
-		handler := New(Components{
-			Ctx:        GetLogger(t, "Handler"),
-			Broker:     broker,
-			AppAdapter: appAdapter,
-			DevStorage: devStorage,
-			PktStorage: pktStorage,
-		}, Options{NetAddr: addr})
-		res, err := handler.SubscribePersonalized(context.Background(), req)
-
-		// Check
-		CheckErrors(t, wantError, err)
-		Check(t, wantRes, res, "Subscribe Handler Responses")
-		Check(t, wantSub, devStorage.InStorePersonalized.AppEUI, "Subscriptions")
-		Check(t, wantReq, broker.InSubscribePersonalized.Req, "Subscribe Broker Requests")
-	}
-
-	// ----------------------
-
-	{
-		Desc(t, "Handle Invalid Perso Subscription -> Storage fails")
-
-		// Build
-		devStorage := NewMockDevStorage()
-		pktStorage := NewMockPktStorage()
-		devStorage.Failures["StorePersonalized"] = errors.New(errors.Operational, "Mock Error")
-		appAdapter := mocks.NewAppClient()
-		broker := mocks.NewBrokerClient()
-		req := &core.ABPSubHandlerReq{
-			AppEUI:  []byte{1, 1, 1, 1, 1, 1, 1, 1},
-			DevAddr: []byte{2, 2, 2, 2},
-			NwkSKey: []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
-			AppSKey: []byte{6, 5, 4, 3, 7, 6, 5, 4, 3, 2, 1, 0, 1, 1, 1, 1},
-		}
-		addr := "localhost"
-
-		// Expect
-		var wantError = ErrOperational
-		var wantRes = new(core.ABPSubHandlerRes)
-		var wantSub = req.AppEUI
-		var wantReq *core.ABPSubBrokerReq
-
-		// Operate
-		handler := New(Components{
-			Ctx:        GetLogger(t, "Handler"),
-			Broker:     broker,
-			AppAdapter: appAdapter,
-			DevStorage: devStorage,
-			PktStorage: pktStorage,
-		}, Options{NetAddr: addr})
-		res, err := handler.SubscribePersonalized(context.Background(), req)
-
-		// Check
-		CheckErrors(t, wantError, err)
-		Check(t, wantRes, res, "Subscribe Handler Responses")
-		Check(t, wantSub, devStorage.InStorePersonalized.AppEUI, "Subscriptions")
-		Check(t, wantReq, broker.InSubscribePersonalized.Req, "Subscribe Broker Requests")
-	}
-
-	// ----------------------
-
-	{
-		Desc(t, "Handle Invalid Perso Subscription -> Brokers fails")
-
-		// Build
-		devStorage := NewMockDevStorage()
-		pktStorage := NewMockPktStorage()
-		appAdapter := mocks.NewAppClient()
-		broker := mocks.NewBrokerClient()
-		broker.Failures["SubscribePersonalized"] = fmt.Errorf("Mock Error")
-		req := &core.ABPSubHandlerReq{
-			AppEUI:  []byte{1, 1, 1, 1, 1, 1, 1, 1},
-			DevAddr: []byte{2, 2, 2, 2},
-			NwkSKey: []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
-			AppSKey: []byte{6, 5, 4, 3, 7, 6, 5, 4, 3, 2, 1, 0, 1, 1, 1, 1},
-		}
-		addr := "localhost"
-
-		// Expect
-		var wantError = ErrOperational
-		var wantRes = new(core.ABPSubHandlerRes)
-		var wantSub = req.AppEUI
-		var wantReq = &core.ABPSubBrokerReq{
-			HandlerNet: addr,
-			AppEUI:     req.AppEUI,
-			DevAddr:    req.DevAddr,
-			NwkSKey:    req.NwkSKey,
-		}
-
-		// Operate
-		handler := New(Components{
-			Ctx:        GetLogger(t, "Handler"),
-			Broker:     broker,
-			AppAdapter: appAdapter,
-			DevStorage: devStorage,
-			PktStorage: pktStorage,
-		}, Options{NetAddr: addr})
-		res, err := handler.SubscribePersonalized(context.Background(), req)
-
-		// Check
-		CheckErrors(t, wantError, err)
-		Check(t, wantRes, res, "Subscribe Handler Responses")
-		Check(t, wantSub, devStorage.InStorePersonalized.AppEUI, "Subscriptions")
-		Check(t, wantReq, broker.InSubscribePersonalized.Req, "Subscribe Broker Requests")
+		Check(t, wantFCnt, devStorage.InUpsert.Entry.FCntDown, "Frame counters")
 	}
 }
 
@@ -1517,7 +1260,7 @@ func TestHandleJoin(t *testing.T) {
 		}
 
 		devStorage := NewMockDevStorage()
-		devStorage.OutLookup.Entry = devEntry{
+		devStorage.OutRead.Entry = devEntry{
 			AppKey: [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
 			AppEUI: req.AppEUI,
 			DevEUI: req.DevEUI,
@@ -1564,7 +1307,7 @@ func TestHandleJoin(t *testing.T) {
 		joinaccept := lorawan.NewPHYPayload(false)
 		err = joinaccept.UnmarshalBinary(res.Payload.Payload)
 		CheckErrors(t, nil, err)
-		err = joinaccept.DecryptJoinAcceptPayload(lorawan.AES128Key(devStorage.InStore.Entry.AppKey))
+		err = joinaccept.DecryptJoinAcceptPayload(lorawan.AES128Key(devStorage.InUpsert.Entry.AppKey))
 		CheckErrors(t, nil, err)
 		Check(t, handler.(*component).Configuration.NetID, joinaccept.MACPayload.(*lorawan.JoinAcceptPayload).NetID, "Network IDs")
 	}
@@ -1594,7 +1337,7 @@ func TestHandleJoin(t *testing.T) {
 		}
 
 		devStorage := NewMockDevStorage()
-		devStorage.OutLookup.Entry = devEntry{
+		devStorage.OutRead.Entry = devEntry{
 			AppKey: [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
 			AppEUI: req.AppEUI,
 			DevEUI: req.DevEUI,
@@ -1642,7 +1385,7 @@ func TestHandleJoin(t *testing.T) {
 		joinaccept := lorawan.NewPHYPayload(false)
 		err = joinaccept.UnmarshalBinary(res.Payload.Payload)
 		CheckErrors(t, nil, err)
-		err = joinaccept.DecryptJoinAcceptPayload(lorawan.AES128Key(devStorage.InStore.Entry.AppKey))
+		err = joinaccept.DecryptJoinAcceptPayload(lorawan.AES128Key(devStorage.InUpsert.Entry.AppKey))
 		CheckErrors(t, nil, err)
 		Check(t, handler.(*component).Configuration.NetID, joinaccept.MACPayload.(*lorawan.JoinAcceptPayload).NetID, "Network IDs")
 	}
@@ -1672,12 +1415,12 @@ func TestHandleJoin(t *testing.T) {
 		}
 
 		devStorage := NewMockDevStorage()
-		devStorage.OutLookup.Entry = devEntry{
+		devStorage.OutRead.Entry = devEntry{
 			AppKey: [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
 			AppEUI: req.AppEUI,
 			DevEUI: req.DevEUI,
 		}
-		devStorage.Failures["Store"] = errors.New(errors.Operational, "Mock Error")
+		devStorage.Failures["upsert"] = errors.New(errors.Operational, "Mock Error")
 		pktStorage := NewMockPktStorage()
 		appAdapter := mocks.NewAppClient()
 		broker := mocks.NewBrokerClient()
@@ -1728,7 +1471,7 @@ func TestHandleJoin(t *testing.T) {
 		}
 
 		devStorage := NewMockDevStorage()
-		devStorage.OutLookup.Entry = devEntry{
+		devStorage.OutRead.Entry = devEntry{
 			AppKey: [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
 			AppEUI: req.AppEUI,
 			DevEUI: req.DevEUI,
@@ -1783,7 +1526,7 @@ func TestHandleJoin(t *testing.T) {
 		}
 
 		devStorage := NewMockDevStorage()
-		devStorage.OutLookup.Entry = devEntry{
+		devStorage.OutRead.Entry = devEntry{
 			AppKey: [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
 			AppEUI: req.AppEUI,
 			DevEUI: req.DevEUI,
@@ -1838,7 +1581,7 @@ func TestHandleJoin(t *testing.T) {
 		}
 
 		devStorage := NewMockDevStorage()
-		devStorage.Failures["Lookup"] = errors.New(errors.NotFound, "Mock Error")
+		devStorage.Failures["read"] = errors.New(errors.NotFound, "Mock Error")
 		pktStorage := NewMockPktStorage()
 		appAdapter := mocks.NewAppClient()
 		broker := mocks.NewBrokerClient()
@@ -2095,7 +1838,7 @@ func TestHandleJoin(t *testing.T) {
 		}
 
 		devStorage := NewMockDevStorage()
-		devStorage.OutLookup.Entry = devEntry{
+		devStorage.OutRead.Entry = devEntry{
 			AppKey: [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
 			AppEUI: req1.AppEUI,
 			DevEUI: req1.DevEUI,
@@ -2160,7 +1903,7 @@ func TestHandleJoin(t *testing.T) {
 			joinaccept := lorawan.NewPHYPayload(false)
 			err = joinaccept.UnmarshalBinary(res.Payload.Payload)
 			CheckErrors(t, nil, err)
-			err = joinaccept.DecryptJoinAcceptPayload(lorawan.AES128Key(devStorage.InStore.Entry.AppKey))
+			err = joinaccept.DecryptJoinAcceptPayload(lorawan.AES128Key(devStorage.InUpsert.Entry.AppKey))
 			CheckErrors(t, nil, err)
 			Check(t, handler.(*component).Configuration.NetID, joinaccept.MACPayload.(*lorawan.JoinAcceptPayload).NetID, "Network IDs")
 			ok = true
