@@ -31,10 +31,10 @@ func NewMockDevStorage() *MockDevStorage {
 }
 
 // read implements the DevStorage interface
-func (m *MockDevStorage) read(appEUI []byte, devEUI []byte) error {
+func (m *MockDevStorage) read(appEUI []byte, devEUI []byte) (devEntry, error) {
 	m.InRead.AppEUI = appEUI
 	m.InRead.DevEUI = devEUI
-	return m.Failures["read"]
+	return m.OutRead.Entry, m.Failures["read"]
 }
 
 // upsert implements the DevStorage interface
@@ -44,7 +44,7 @@ func (m *MockDevStorage) upsert(entry devEntry) error {
 }
 
 // done implements the DevStorage Interface
-func (m *MockDevStorage) donw() error {
+func (m *MockDevStorage) done() error {
 	m.InDone.Called = true
 	return m.Failures["done"]
 }
@@ -66,10 +66,10 @@ type MockPktStorage struct {
 	OutPeek struct {
 		Entry pktEntry
 	}
-	InPush struct {
+	InEnqueue struct {
 		Entry pktEntry
 	}
-	InClose struct {
+	InDone struct {
 		Called bool
 	}
 }
@@ -83,7 +83,7 @@ func NewMockPktStorage() *MockPktStorage {
 
 // done implements the PktStorage Interface
 func (m *MockPktStorage) done() error {
-	m.InDonee.Called = true
+	m.InDone.Called = true
 	return m.Failures["done"]
 }
 

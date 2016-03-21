@@ -88,8 +88,17 @@ func (e *devEntry) UnmarshalBinary(data []byte) error {
 	rw.Read(func(data []byte) { copy(e.AppSKey[:], data) })
 	rw.Read(func(data []byte) { copy(e.NwkSKey[:], data) })
 	rw.Read(func(data []byte) { e.FCntDown = binary.BigEndian.Uint32(data) })
-	rw.Read(func(data []byte) { e.AppEUI = data })
-	rw.Read(func(data []byte) { e.DevEUI = data })
-	rw.Read(func(data []byte) { e.DevAddr = data })
+	rw.Read(func(data []byte) {
+		e.AppEUI = make([]byte, len(data))
+		copy(e.AppEUI, data)
+	})
+	rw.Read(func(data []byte) {
+		e.DevEUI = make([]byte, len(data))
+		copy(e.DevEUI, data)
+	})
+	rw.Read(func(data []byte) {
+		e.DevAddr = make([]byte, len(data))
+		copy(e.DevAddr, data)
+	})
 	return rw.Err()
 }

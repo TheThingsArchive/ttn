@@ -70,6 +70,18 @@ func TestStoreAndRead(t *testing.T) {
 	// -------------------
 
 	{
+		Desc(t, "Store then lookup in a nested bucket with default key")
+		err := itf.Append(nil, []encoding.BinaryMarshaler{&testEntry{Data: "IoT"}}, []byte("nested"), []byte("buckettt"))
+		FatalUnless(t, err)
+		entries, err := itf.Read(nil, &testEntry{}, []byte("nested"), []byte("buckettt"))
+
+		CheckErrors(t, nil, err)
+		Check(t, []testEntry{testEntry{Data: "IoT"}}, entries.([]testEntry), "Entries")
+	}
+
+	// -------------------
+
+	{
 		Desc(t, "Lookup in non-existing bucket")
 		entries, err := itf.Read([]byte{1, 2, 3}, &testEntry{}, []byte("DoesnExists"))
 

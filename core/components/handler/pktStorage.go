@@ -49,7 +49,7 @@ func filterExpired(entries []pktEntry) []pktEntry {
 	var filtered []pktEntry
 	now := time.Now()
 	for _, e := range entries {
-		if e.TTL.Before(now) {
+		if e.TTL.After(now) {
 			filtered = append(filtered, e)
 		}
 	}
@@ -70,10 +70,13 @@ func (s *pktStorage) enqueue(entry pktEntry) error {
 	s.Lock()
 	defer s.Unlock()
 	itf, err := s.db.Read(nil, &pktEntry{}, entry.AppEUI, entry.DevEUI)
-	if err != nil {
+	if err != nil && err.(errors.Failure).Nature != errors.NotFound {
 		return err
 	}
-	entries := filterExpired(itf.([]pktEntry))
+	var entries []pktEntry
+	if itf != nil {
+		entries = filterExpired(itf.([]pktEntry))
+	}
 	if len(entries) >= int(s.size) {
 		_, tail := pop(entries)
 		return s.db.Update(nil, append(tail, entry), entry.AppEUI, entry.DevEUI)
@@ -150,9 +153,18 @@ func (e pktEntry) MarshalBinary() ([]byte, error) {
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
 func (e *pktEntry) UnmarshalBinary(data []byte) error {
 	rw := readwriter.New(data)
-	rw.Read(func(data []byte) { e.AppEUI = data })
-	rw.Read(func(data []byte) { e.DevEUI = data })
-	rw.Read(func(data []byte) { e.Payload = data })
+	rw.Read(func(data []byte) {
+		e.AppEUI = make([]byte, len(data))
+		copy(e.AppEUI, data)
+	})
+	rw.Read(func(data []byte) {
+		e.DevEUI = make([]byte, len(data))
+		copy(e.DevEUI, data)
+	})
+	rw.Read(func(data []byte) {
+		e.Payload = make([]byte, len(data))
+		copy(e.Payload, data)
+	})
 	rw.TryRead(func(data []byte) error { return e.TTL.UnmarshalBinary(data) })
 	return rw.Err()
 }

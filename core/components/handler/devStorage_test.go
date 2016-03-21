@@ -13,12 +13,7 @@ import (
 
 const devDB = "TestDevStorage.db"
 
-//UpdateFCnt(appEUI []byte, devEUI []byte, fcnt uint32) error
-//Lookup(appEUI []byte, devEUI []byte) (devEntry, error)
-//StorePersonalized(appEUI []byte, devAddr [4]byte, appSKey, nwkSKey [16]byte) error
-//Close() error
-
-func TestLookupStore(t *testing.T) {
+func TestReadStore(t *testing.T) {
 	var db DevStorage
 	defer func() {
 		os.Remove(path.Join(os.TempDir(), devDB))
@@ -36,45 +31,38 @@ func TestLookupStore(t *testing.T) {
 	// ------------------
 
 	{
-		Desc(t, "Store and Lookup a registration")
+		Desc(t, "Store and read a registration")
 
 		// Build
-		appEUI := []byte{1, 2, 3, 4, 5, 6, 7, 8}
-		devEUI := []byte{0, 0, 0, 0, 1, 2, 3, 4}
-		devAddr := []byte{1, 2, 3, 4}
-		appSKey := [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6}
-		nwkSKey := [16]byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1}
-
-		// Expect
-		var want = devEntry{
-			DevAddr: devAddr,
-			AppSKey: appSKey,
-			NwkSKey: nwkSKey,
-			AppEUI:  make([]byte, 0, 0),
-			DevEUI:  make([]byte, 0, 0),
+		entry := devEntry{
+			AppEUI:  []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			DevEUI:  []byte{0, 0, 0, 0, 1, 2, 3, 4},
+			DevAddr: []byte{1, 2, 3, 4},
+			AppSKey: [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
+			NwkSKey: [16]byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
 		}
 
 		// Operate
-		err := db.StorePersonalized(appEUI, devAddr, appSKey, nwkSKey)
+		err := db.upsert(entry)
 		FatalUnless(t, err)
-		entry, err := db.Lookup(appEUI, devEUI)
+		got, err := db.read(entry.AppEUI, entry.DevEUI)
 
 		// Check
 		CheckErrors(t, nil, err)
-		Check(t, want, entry, "Device Entries")
+		Check(t, entry, got, "Device Entries")
 	}
 
 	// ------------------
 
 	{
-		Desc(t, "Lookup a non-existing registration")
+		Desc(t, "read a non-existing registration")
 
 		// Build
 		appEUI := []byte{0, 0, 0, 0, 0, 0, 0, 1}
 		devEUI := []byte{0, 0, 0, 0, 1, 2, 3, 4}
 
 		// Operate
-		_, err := db.Lookup(appEUI, devEUI)
+		_, err := db.read(appEUI, devEUI)
 
 		// Check
 		CheckErrors(t, ErrNotFound, err)
@@ -86,31 +74,24 @@ func TestLookupStore(t *testing.T) {
 		Desc(t, "Store twice the same registration")
 
 		// Build
-		appEUI := []byte{1, 2, 3, 4, 5, 6, 7, 9}
-		devEUI := []byte{0, 0, 0, 0, 1, 2, 3, 4}
-		devAddr := []byte{1, 2, 3, 4}
-		appSKey := [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6}
-		nwkSKey := [16]byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1}
-
-		// Expect
-		var want = devEntry{
-			DevAddr: devAddr,
-			AppSKey: appSKey,
-			NwkSKey: nwkSKey,
-			AppEUI:  make([]byte, 0, 0),
-			DevEUI:  make([]byte, 0, 0),
+		entry := devEntry{
+			AppEUI:  []byte{1, 2, 3, 4, 5, 6, 7, 9},
+			DevEUI:  []byte{0, 0, 0, 0, 1, 2, 3, 4},
+			DevAddr: []byte{1, 2, 3, 4},
+			AppSKey: [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
+			NwkSKey: [16]byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
 		}
 
 		// Operate
-		err := db.StorePersonalized(appEUI, devAddr, appSKey, nwkSKey)
+		err := db.upsert(entry)
 		FatalUnless(t, err)
-		err = db.StorePersonalized(appEUI, devAddr, appSKey, nwkSKey)
+		err = db.upsert(entry)
 		FatalUnless(t, err)
-		entry, err := db.Lookup(appEUI, devEUI)
+		got, err := db.read(entry.AppEUI, entry.DevEUI)
 
 		// Check
 		CheckErrors(t, nil, err)
-		Check(t, want, entry, "Device Entries")
+		Check(t, entry, got, "Device Entries")
 	}
 
 	// ------------------
@@ -119,57 +100,40 @@ func TestLookupStore(t *testing.T) {
 		Desc(t, "Update FCnt")
 
 		// Build
-		appEUI := []byte{1, 2, 3, 4, 5, 6, 7, 14}
-		devEUI := []byte{0, 0, 0, 0, 1, 2, 3, 4}
-		devAddr := []byte{1, 2, 3, 4}
-		appSKey := [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6}
-		nwkSKey := [16]byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1}
-		fcnt := uint32(2)
-
-		// Expect
-		var want = devEntry{
-			DevAddr:  devAddr,
-			AppSKey:  appSKey,
-			NwkSKey:  nwkSKey,
-			FCntDown: fcnt,
-			AppEUI:   make([]byte, 0, 0),
-			DevEUI:   make([]byte, 0, 0),
+		entry := devEntry{
+			AppEUI:   []byte{1, 2, 3, 4, 5, 6, 7, 14},
+			DevEUI:   []byte{0, 0, 0, 0, 1, 2, 3, 4},
+			DevAddr:  []byte{1, 2, 3, 4},
+			AppSKey:  [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
+			NwkSKey:  [16]byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+			FCntDown: 2,
+		}
+		update := devEntry{
+			AppEUI:   entry.AppEUI,
+			DevEUI:   entry.DevEUI,
+			DevAddr:  entry.DevAddr,
+			AppSKey:  entry.AppSKey,
+			NwkSKey:  entry.NwkSKey,
+			FCntDown: 14,
 		}
 
 		// Operate
-		err := db.StorePersonalized(appEUI, devAddr, appSKey, nwkSKey)
+		err := db.upsert(entry)
 		FatalUnless(t, err)
-		err = db.UpdateFCnt(appEUI, devEUI, fcnt)
-		entry, errLookup := db.Lookup(appEUI, devEUI)
-		FatalUnless(t, errLookup)
+		err = db.upsert(update)
+		got, errRead := db.read(entry.AppEUI, entry.DevEUI)
+		FatalUnless(t, errRead)
 
 		// Check
 		CheckErrors(t, nil, err)
-		Check(t, want, entry, "Device Entries")
-	}
-
-	// ------------------
-
-	{
-		Desc(t, "Update FCnt, device not found")
-
-		// Build
-		appEUI := []byte{1, 2, 3, 4, 5, 6, 7, 15}
-		devEUI := []byte{0, 0, 0, 0, 1, 2, 3, 4}
-		fcnt := uint32(2)
-
-		// Operate
-		err := db.UpdateFCnt(appEUI, devEUI, fcnt)
-
-		// Check
-		CheckErrors(t, ErrNotFound, err)
+		Check(t, update, got, "Device Entries")
 	}
 
 	// ------------------
 
 	{
 		Desc(t, "Close the storage")
-		err := db.Close()
+		err := db.done()
 		CheckErrors(t, nil, err)
 	}
 }

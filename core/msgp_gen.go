@@ -309,8 +309,8 @@ func (z *DataUpAppReq) Msgsize() (s int) {
 func (z *OTAAAppReq) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
 	// map header, size 1
-	// string "Metadata"
-	o = append(o, 0x81, 0xa8, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61)
+	// string "metadata"
+	o = append(o, 0x81, 0xa8, 0x6d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61)
 	o = msgp.AppendArrayHeader(o, uint32(len(z.Metadata)))
 	for bzg := range z.Metadata {
 		o, err = z.Metadata[bzg].MarshalMsg(o)
@@ -337,7 +337,7 @@ func (z *OTAAAppReq) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			return
 		}
 		switch msgp.UnsafeString(field) {
-		case "Metadata":
+		case "metadata":
 			var xsz uint32
 			xsz, bts, err = msgp.ReadArrayHeaderBytes(bts)
 			if err != nil {

@@ -30,8 +30,6 @@
 		DataUpHandlerRes
 		DataDownHandlerReq
 		DataDownHandlerRes
-		ABPSubHandlerReq
-		ABPSubHandlerRes
 		JoinHandlerReq
 		JoinHandlerRes
 		DataRouterReq
