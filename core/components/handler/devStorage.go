@@ -17,17 +17,20 @@ import (
 type DevStorage interface {
 	UpdateFCnt(appEUI []byte, devEUI []byte, fcnt uint32) error
 	Lookup(appEUI []byte, devEUI []byte) (devEntry, error)
-	StorePersonalized(appEUI []byte, devAddr [4]byte, appSKey, nwkSKey [16]byte) error
+	StorePersonalized(appEUI []byte, devAddr []byte, appSKey, nwkSKey [16]byte) error
 	Close() error
 }
 
 const dbDevices = "devices"
 
 type devEntry struct {
-	DevAddr  [4]byte
+	AppEUI   []byte
+	AppKey   [16]byte
 	AppSKey  [16]byte
-	NwkSKey  [16]byte
+	DevAddr  []byte
+	DevEUI   []byte
 	FCntDown uint32
+	NwkSKey  [16]byte
 }
 
 type devStorage struct {
@@ -68,9 +71,9 @@ func (s *devStorage) lookup(appEUI []byte, devEUI []byte, shouldLock bool) (devE
 }
 
 // StorePersonalized implements the handler.DevStorage interface
-func (s *devStorage) StorePersonalized(appEUI []byte, devAddr [4]byte, appSKey, nwkSKey [16]byte) error {
+func (s *devStorage) StorePersonalized(appEUI []byte, devAddr []byte, appSKey, nwkSKey [16]byte) error {
 	devEUI := make([]byte, 8, 8)
-	copy(devEUI[4:], devAddr[:])
+	copy(devEUI[4:], devAddr)
 	e := []dbutil.Entry{
 		&devEntry{
 			AppSKey: appSKey,
@@ -102,13 +105,19 @@ func (s *devStorage) Close() error {
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface
 func (e devEntry) MarshalBinary() ([]byte, error) {
-	buf := new(bytes.Buffer)
-	binary.Write(buf, binary.BigEndian, e.DevAddr[:]) // 4
+	buf, cnt := new(bytes.Buffer), 52
+	binary.Write(buf, binary.BigEndian, e.AppKey[:])  // 16
 	binary.Write(buf, binary.BigEndian, e.AppSKey[:]) // 16
 	binary.Write(buf, binary.BigEndian, e.NwkSKey[:]) // 16
 	binary.Write(buf, binary.BigEndian, e.FCntDown)   // 4
-	if len(buf.Bytes()) != 40 {
-		return nil, errors.New(errors.Structural, "Unable to marshal devEntry")
+	in := [][]byte{e.AppEUI, e.DevEUI, e.DevAddr}
+	for _, d := range in {
+		binary.Write(buf, binary.BigEndian, uint16(len(d)))
+		binary.Write(buf, binary.BigEndian, d)
+		cnt += len(d) + 2
+	}
+	if len(buf.Bytes()) != cnt {
+		return nil, errors.New(errors.Structural, "DevEntry was invalid, unable to marshal")
 	}
 	return buf.Bytes(), nil
 }
@@ -116,8 +125,17 @@ func (e devEntry) MarshalBinary() ([]byte, error) {
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
 func (e *devEntry) UnmarshalBinary(data []byte) error {
 	buf := bytes.NewBuffer(data)
-	binary.Read(buf, binary.BigEndian, &e.DevAddr)
+	binary.Read(buf, binary.BigEndian, &e.AppKey)
 	binary.Read(buf, binary.BigEndian, &e.AppSKey)
 	binary.Read(buf, binary.BigEndian, &e.NwkSKey)
-	return binary.Read(buf, binary.BigEndian, &e.FCntDown)
+	binary.Read(buf, binary.BigEndian, &e.FCntDown)
+	var size *uint16
+	in := []*[]byte{&e.AppEUI, &e.DevEUI, &e.DevAddr}
+	for _, p := range in {
+		size = new(uint16)
+		binary.Read(buf, binary.BigEndian, size)
+		*p = make([]byte, *size, *size)
+		binary.Read(buf, binary.BigEndian, p)
+	}
+	return nil
 }
