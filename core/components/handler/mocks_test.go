@@ -22,7 +22,7 @@ type MockDevStorage struct {
 	}
 	InStorePersonalized struct {
 		AppEUI  []byte
-		DevAddr [4]byte
+		DevAddr []byte
 		AppSKey [16]byte
 		NwkSKey [16]byte
 	}
@@ -54,7 +54,7 @@ func (m *MockDevStorage) Lookup(appEUI []byte, devEUI []byte) (devEntry, error) 
 }
 
 // StorePersonalized implements the DevStorage interface
-func (m *MockDevStorage) StorePersonalized(appEUI []byte, devAddr [4]byte, appSKey, nwkSKey [16]byte) error {
+func (m *MockDevStorage) StorePersonalized(appEUI []byte, devAddr []byte, appSKey, nwkSKey [16]byte) error {
 	m.InStorePersonalized.AppEUI = appEUI
 	m.InStorePersonalized.DevAddr = devAddr
 	m.InStorePersonalized.AppSKey = appSKey

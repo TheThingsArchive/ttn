@@ -24,6 +24,14 @@ type AppClient struct {
 	OutHandleData struct {
 		Res *core.DataAppRes
 	}
+	InHandleJoin struct {
+		Ctx  context.Context
+		Req  *core.JoinAppReq
+		Opts []grpc.CallOption
+	}
+	OutHandleJoin struct {
+		Res *core.JoinAppRes
+	}
 }
 
 // NewAppClient creates a new mock AppClient
@@ -31,6 +39,14 @@ func NewAppClient() *AppClient {
 	return &AppClient{
 		Failures: make(map[string]error),
 	}
+}
+
+// HandleJoin implements the core.AppClient interface
+func (m *AppClient) HandleJoin(ctx context.Context, in *core.JoinAppReq, opts ...grpc.CallOption) (*core.JoinAppRes, error) {
+	m.InHandleJoin.Ctx = ctx
+	m.InHandleJoin.Req = in
+	m.InHandleJoin.Opts = opts
+	return m.OutHandleJoin.Res, m.Failures["HandleJoin"]
 }
 
 // HandleData implements the core.AppClient interface
