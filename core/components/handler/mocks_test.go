@@ -7,29 +7,18 @@ package handler
 
 // MockDevStorage mocks the DevStorage interface
 type MockDevStorage struct {
-	Failures     map[string]error
-	InUpdateFCnt struct {
-		AppEUI []byte
-		DevEUI []byte
-		FCnt   uint32
-	}
-	InLookup struct {
+	Failures map[string]error
+	InRead   struct {
 		AppEUI []byte
 		DevEUI []byte
 	}
-	OutLookup struct {
+	OutRead struct {
 		Entry devEntry
 	}
-	InStorePersonalized struct {
-		AppEUI  []byte
-		DevAddr []byte
-		AppSKey [16]byte
-		NwkSKey [16]byte
-	}
-	InStore struct {
+	InUpsert struct {
 		Entry devEntry
 	}
-	InClose struct {
+	InDone struct {
 		Called bool
 	}
 }
@@ -41,56 +30,44 @@ func NewMockDevStorage() *MockDevStorage {
 	}
 }
 
-// UpdateFCnt implements the DevStorage interface
-func (m *MockDevStorage) UpdateFCnt(appEUI []byte, devEUI []byte, fcnt uint32) error {
-	m.InUpdateFCnt.AppEUI = appEUI
-	m.InUpdateFCnt.DevEUI = devEUI
-	m.InUpdateFCnt.FCnt = fcnt
-	return m.Failures["UpdateFCnt"]
+// read implements the DevStorage interface
+func (m *MockDevStorage) read(appEUI []byte, devEUI []byte) error {
+	m.InRead.AppEUI = appEUI
+	m.InRead.DevEUI = devEUI
+	return m.Failures["read"]
 }
 
-// Lookup implements the DevStorage interface
-func (m *MockDevStorage) Lookup(appEUI []byte, devEUI []byte) (devEntry, error) {
-	m.InLookup.AppEUI = appEUI
-	m.InLookup.DevEUI = devEUI
-	return m.OutLookup.Entry, m.Failures["Lookup"]
+// upsert implements the DevStorage interface
+func (m *MockDevStorage) upsert(entry devEntry) error {
+	m.InUpsert.Entry = entry
+	return m.Failures["upsert"]
 }
 
-// StorePersonalized implements the DevStorage interface
-func (m *MockDevStorage) StorePersonalized(appEUI []byte, devAddr []byte, appSKey, nwkSKey [16]byte) error {
-	m.InStorePersonalized.AppEUI = appEUI
-	m.InStorePersonalized.DevAddr = devAddr
-	m.InStorePersonalized.AppSKey = appSKey
-	m.InStorePersonalized.NwkSKey = nwkSKey
-	return m.Failures["StorePersonalized"]
-}
-
-// Store implements the DevStorage interface
-func (m *MockDevStorage) Store(entry devEntry) error {
-	m.InStore.Entry = entry
-	return m.Failures["Store"]
-}
-
-// Close implements the DevStorage Interface
-func (m *MockDevStorage) Close() error {
-	m.InClose.Called = true
-	return m.Failures["Close"]
+// done implements the DevStorage Interface
+func (m *MockDevStorage) donw() error {
+	m.InDone.Called = true
+	return m.Failures["done"]
 }
 
 // MockPktStorage mocks the PktStorage interface
 type MockPktStorage struct {
-	Failures map[string]error
-	InPull   struct {
+	Failures  map[string]error
+	InDequeue struct {
 		AppEUI []byte
 		DevEUI []byte
 	}
-	OutPull struct {
+	OutDequeue struct {
+		Entry pktEntry
+	}
+	InPeek struct {
+		AppEUI []byte
+		DevEUI []byte
+	}
+	OutPeek struct {
 		Entry pktEntry
 	}
 	InPush struct {
-		AppEUI  []byte
-		DevEUI  []byte
-		Payload pktEntry
+		Entry pktEntry
 	}
 	InClose struct {
 		Called bool
@@ -104,23 +81,28 @@ func NewMockPktStorage() *MockPktStorage {
 	}
 }
 
-// Close implements the PktStorage Interface
-func (m *MockPktStorage) Close() error {
-	m.InClose.Called = true
-	return m.Failures["Close"]
+// done implements the PktStorage Interface
+func (m *MockPktStorage) done() error {
+	m.InDonee.Called = true
+	return m.Failures["done"]
 }
 
-// Push implements the PktStorage interface
-func (m *MockPktStorage) Push(appEUI []byte, devEUI []byte, payload pktEntry) error {
-	m.InPush.AppEUI = appEUI
-	m.InPush.DevEUI = devEUI
-	m.InPush.Payload = payload
-	return m.Failures["Push"]
+// enqueue implements the PktStorage interface
+func (m *MockPktStorage) enqueue(entry pktEntry) error {
+	m.InEnqueue.Entry = entry
+	return m.Failures["enqueue"]
 }
 
-// Push implements the PktStorage interface
-func (m *MockPktStorage) Pull(appEUI []byte, devEUI []byte) (pktEntry, error) {
-	m.InPull.AppEUI = appEUI
-	m.InPull.DevEUI = devEUI
-	return m.OutPull.Entry, m.Failures["Pull"]
+// dequeue implements the PktStorage interface
+func (m *MockPktStorage) dequeue(appEUI []byte, devEUI []byte) (pktEntry, error) {
+	m.InDequeue.AppEUI = appEUI
+	m.InDequeue.DevEUI = devEUI
+	return m.OutDequeue.Entry, m.Failures["dequeue"]
+}
+
+// peek implements the PktStorage interface
+func (m *MockPktStorage) peek(appEUI []byte, devEUI []byte) (pktEntry, error) {
+	m.InPeek.AppEUI = appEUI
+	m.InPeek.DevEUI = devEUI
+	return m.OutPeek.Entry, m.Failures["peek"]
 }
