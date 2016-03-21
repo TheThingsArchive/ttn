@@ -7,7 +7,6 @@ import (
 	"encoding"
 	"fmt"
 	"reflect"
-	"strings"
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/utils/errors"
@@ -15,31 +14,35 @@ import (
 	"github.com/boltdb/bolt"
 )
 
-// Entry offers a friendly interface on which the storage will operate.
-// Basically, a Entry is nothing more than a binary marshaller/unmarshaller.
-type Entry interface {
-	encoding.BinaryMarshaler
-	encoding.BinaryUnmarshaler
-}
-
 // The storage Interface provides an abstraction on top of the bolt database to store and access
 // data in a local in-memory database.
-// All "table" or "bucket" in a database can be accessed by their name as a string where the dot
-// "." is use as a level-separator to select or create nested buckets.
+// All methods uses a slice of buckets as bucket selector, each subsequent bucket being nested in
+// the previous one. Each time also, the key can be omitted in which case it will fall back to a
+// default key.
 type Interface interface {
-	Store(name string, key []byte, entries []Entry) error
-	Replace(name string, key []byte, entries []Entry) error
-	Lookup(name string, key []byte, shape Entry) (interface{}, error)
-	Flush(name string, key []byte) error
-	Reset(name string) error
+	// Read retrieves a slice of entries from the storage. The output is a slice of the same type as
+	// of `shape`, possibly of length 0.
+	// The provided type has to implement a binary.Unmarshaler interface
+	Read(key []byte, shape encoding.BinaryUnmarshaler, buckets ...[]byte) (interface{}, error)
+	// Update replaces a set of entries by the new given set
+	Update(key []byte, entries []encoding.BinaryMarshaler, buckets ...[]byte) error
+	// Append adds at the end of an existing set the new given set
+	Append(key []byte, entries []encoding.BinaryMarshaler, buckets ...[]byte) error
+	// Delete complete removes all targeted entries
+	Delete(key []byte, buckets ...[]byte) error
+	// Reset empties a bucket
+	Reset(buckets ...[]byte) error
+	// Close terminates the communication with the storage
 	Close() error
 }
+
+var defaultKey = []byte("entry")
 
 type store struct {
 	db *bolt.DB
 }
 
-// New creates a new storage instance ready-to-use
+// New creates a new storage instance ready-to-be-used
 func New(name string) (Interface, error) {
 	db, err := bolt.Open(name, 0600, &bolt.Options{Timeout: time.Second})
 	if err != nil {
@@ -60,13 +63,12 @@ func ensureErr(err error) error {
 	return err
 }
 
-// getBucket retrieve a bucket based on a string. The name might present several levels, all
-// separated by dot "." which indicates nested buckets. If no bucket is found along the path, they
-// are created, otherwise, the existing one is used.
-func getBucket(tx *bolt.Tx, name string) (*bolt.Bucket, error) {
-	path := strings.Split(name, ".")
-	if len(path) < 1 {
-		return nil, errors.New(errors.Structural, "Invalid bucket name")
+// getBucket retrieves a bucket based on a slice of ordered identifiers. Each following identifier
+// targets a nested bucket in the previous one. If no bucket is found along the path, they are
+// created if the write rights are granted by Tx, otherwise, the existing one is used.
+func getBucket(tx *bolt.Tx, buckets [][]byte) (*bolt.Bucket, error) {
+	if len(buckets) < 1 {
+		return nil, errors.New(errors.Structural, "At least one bucket name is required")
 	}
 	var cursor interface {
 		CreateBucketIfNotExists(b []byte) (*bolt.Bucket, error)
@@ -75,10 +77,10 @@ func getBucket(tx *bolt.Tx, name string) (*bolt.Bucket, error) {
 
 	var err error
 	cursor = tx
-	for _, bname := range path {
-		next := cursor.Bucket([]byte(bname))
+	for _, name := range buckets {
+		next := cursor.Bucket(name)
 		if next == nil {
-			if next, err = cursor.CreateBucketIfNotExists([]byte(bname)); err != nil {
+			if next, err = cursor.CreateBucketIfNotExists(name); err != nil {
 				return nil, errors.New(errors.Operational, err)
 			}
 		}
@@ -87,9 +89,63 @@ func getBucket(tx *bolt.Tx, name string) (*bolt.Bucket, error) {
 	return cursor.(*bolt.Bucket), nil
 }
 
-// Store put a new set of entries in the given bolt database. It adds the entries to an existing set
-// or create a new set.
-func (itf store) Store(bucketName string, key []byte, entries []Entry) error {
+// Read implements the storage.Interface interface
+func (itf store) Read(key []byte, shape encoding.BinaryUnmarshaler, buckets ...[]byte) (interface{}, error) {
+	if key == nil {
+		key = defaultKey
+	}
+
+	entryType := reflect.TypeOf(shape)
+	if entryType.Kind() != reflect.Ptr {
+		return nil, errors.New(errors.Implementation, "Non-pointer shape not supported")
+	}
+
+	// First, lookup the raw entries
+	var rawEntry []byte
+	err := itf.db.View(func(tx *bolt.Tx) error {
+		bucket, err := getBucket(tx, buckets)
+		if err != nil {
+			if err.(errors.Failure).Fault == bolt.ErrTxNotWritable {
+				return errors.New(errors.NotFound, fmt.Sprintf("Not found %+v", key))
+			}
+			return err
+		}
+		rawEntry = bucket.Get(key)
+		if rawEntry == nil {
+			return errors.New(errors.NotFound, fmt.Sprintf("Not found %+v", key))
+		}
+		return nil
+	})
+
+	if err != nil {
+		return nil, ensureErr(err)
+	}
+
+	// Then, interpret them as instance of 'shape'
+	r := readwriter.New(rawEntry)
+	entries := reflect.MakeSlice(reflect.SliceOf(entryType.Elem()), 0, 0)
+	for {
+		r.Read(func(data []byte) {
+			entry := reflect.New(entryType.Elem()).Interface()
+			entry.(encoding.BinaryUnmarshaler).UnmarshalBinary(data)
+			entries = reflect.Append(entries, reflect.ValueOf(entry).Elem())
+		})
+		if err = r.Err(); err != nil {
+			failure, ok := err.(errors.Failure)
+			if ok && failure.Nature == errors.Behavioural {
+				break
+			}
+			return nil, errors.New(errors.Operational, err)
+		}
+	}
+	return entries.Interface(), nil
+}
+
+// Append implements the storage.Interface interface
+func (itf store) Append(key []byte, entries []encoding.BinaryMarshaler, buckets ...[]byte) error {
+	if key == nil {
+		key = defaultKey
+	}
 	var marshalled [][]byte
 
 	for _, entry := range entries {
@@ -101,7 +157,7 @@ func (itf store) Store(bucketName string, key []byte, entries []Entry) error {
 	}
 
 	err := itf.db.Update(func(tx *bolt.Tx) error {
-		bucket, err := getBucket(tx, bucketName)
+		bucket, err := getBucket(tx, buckets)
 		if err != nil {
 			return err
 		}
@@ -122,70 +178,11 @@ func (itf store) Store(bucketName string, key []byte, entries []Entry) error {
 	return ensureErr(err)
 }
 
-// Lookup retrieves a set of entry from a given bolt database.
-//
-// The shape is used as a template for retrieving and creating the data. All entries extracted from
-// the database will be interpreted as instance of shape and the return result will be a slice of
-// the same type of shape.
-func (itf store) Lookup(bucketName string, key []byte, shape Entry) (interface{}, error) {
-	// First, lookup the raw entries
-	var rawEntry []byte
-	err := itf.db.View(func(tx *bolt.Tx) error {
-		bucket, err := getBucket(tx, bucketName)
-		if err != nil {
-			if err.(errors.Failure).Fault == bolt.ErrTxNotWritable {
-				return errors.New(errors.NotFound, fmt.Sprintf("Not found %+v", key))
-			}
-			return err
-		}
-		rawEntry = bucket.Get(key)
-		if rawEntry == nil {
-			return errors.New(errors.NotFound, fmt.Sprintf("Not found %+v", key))
-		}
-		return nil
-	})
-
-	if err != nil {
-		return nil, ensureErr(err)
+// Update implements the storage.Interface interface
+func (itf store) Update(key []byte, entries []encoding.BinaryMarshaler, buckets ...[]byte) error {
+	if key == nil {
+		key = defaultKey
 	}
-
-	// Then, interpret them as instance of 'shape'
-	r := readwriter.New(rawEntry)
-	entryType := reflect.TypeOf(shape).Elem()
-	entries := reflect.MakeSlice(reflect.SliceOf(entryType), 0, 0)
-	for {
-		r.Read(func(data []byte) {
-			entry := reflect.New(entryType).Interface()
-			entry.(Entry).UnmarshalBinary(data)
-			entries = reflect.Append(entries, reflect.ValueOf(entry).Elem())
-		})
-		if err = r.Err(); err != nil {
-			failure, ok := err.(errors.Failure)
-			if ok && failure.Nature == errors.Behavioural {
-				break
-			}
-			return nil, errors.New(errors.Operational, err)
-		}
-	}
-	return entries.Interface(), nil
-}
-
-// Flush remove an entry from a bucket
-func (itf store) Flush(bucketName string, key []byte) error {
-	return ensureErr(itf.db.Update(func(tx *bolt.Tx) error {
-		bucket, err := getBucket(tx, bucketName)
-		if err != nil {
-			return err
-		}
-		if err := bucket.Delete(key); err != nil {
-			return errors.New(errors.Operational, err)
-		}
-		return nil
-	}))
-}
-
-// Replace stores entries in the database by replacing them by a new set
-func (itf store) Replace(bucketName string, key []byte, entries []Entry) error {
 	var marshalled [][]byte
 
 	for _, entry := range entries {
@@ -197,7 +194,7 @@ func (itf store) Replace(bucketName string, key []byte, entries []Entry) error {
 	}
 
 	return ensureErr(itf.db.Update(func(tx *bolt.Tx) error {
-		bucket, err := getBucket(tx, bucketName)
+		bucket, err := getBucket(tx, buckets)
 		if err != nil {
 			return err
 		}
@@ -219,37 +216,54 @@ func (itf store) Replace(bucketName string, key []byte, entries []Entry) error {
 	}))
 }
 
-// Reset resets a given bucket from a given bolt database
-func (itf store) Reset(bucketName string) error {
+// Delete implements the storage.Interface interface
+func (itf store) Delete(key []byte, buckets ...[]byte) error {
 	return ensureErr(itf.db.Update(func(tx *bolt.Tx) error {
-		path := strings.Split(bucketName, ".")
-
-		var cursor interface {
-			DeleteBucket(name []byte) error
-			CreateBucketIfNotExists(name []byte) (*bolt.Bucket, error)
+		bucket, err := getBucket(tx, buckets)
+		if err != nil {
+			return err
 		}
-
-		if len(path) == 1 {
-			cursor = tx
-		} else {
-			var err error
-			cursor, err = getBucket(tx, strings.Join(path[:len(path)-1], "."))
-			if err != nil {
-				return err
-			}
-		}
-
-		if err := cursor.DeleteBucket([]byte(path[len(path)-1])); err != nil {
-			return errors.New(errors.Operational, err)
-		}
-		if _, err := cursor.CreateBucketIfNotExists([]byte(path[len(path)-1])); err != nil {
+		if err := bucket.Delete(key); err != nil {
 			return errors.New(errors.Operational, err)
 		}
 		return nil
 	}))
 }
 
-// Close terminates the db connection
+// Reset implements the storage.Interface interface
+func (itf store) Reset(buckets ...[]byte) (err error) {
+	if len(buckets) == 0 {
+		return errors.New(errors.Structural, "Expected at least one bucket")
+	}
+
+	return ensureErr(itf.db.Update(func(tx *bolt.Tx) error {
+		var cursor interface {
+			DeleteBucket(name []byte) error
+			CreateBucketIfNotExists(name []byte) (*bolt.Bucket, error)
+		}
+
+		init, last := buckets[:len(buckets)-1], buckets[len(buckets)-1]
+
+		if len(init) == 0 {
+			cursor = tx
+		} else {
+			cursor, err = getBucket(tx, init)
+			if err != nil {
+				return err
+			}
+		}
+
+		if err := cursor.DeleteBucket(last); err != nil {
+			return errors.New(errors.Operational, err)
+		}
+		if _, err := cursor.CreateBucketIfNotExists(last); err != nil {
+			return errors.New(errors.Operational, err)
+		}
+		return nil
+	}))
+}
+
+// Close implements the storage.Interface interface
 func (itf store) Close() error {
 	if err := itf.db.Close(); err != nil {
 		return errors.New(errors.Operational, err)
