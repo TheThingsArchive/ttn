@@ -1493,6 +1493,687 @@ func TestSubscribePersonalized(t *testing.T) {
 	}
 }
 
+func TestHandleJoin(t *testing.T) {
+	{
+		Desc(t, "Handle valid join-request | get join-accept")
+
+		// Build
+		tmst := time.Now()
+
+		req := &core.JoinHandlerReq{
+			AppEUI:   []byte{1, 1, 1, 1, 1, 1, 1, 1},
+			DevEUI:   []byte{2, 2, 2, 2, 2, 2, 2, 2},
+			DevNonce: []byte{14, 42},
+			Metadata: &core.Metadata{
+				DataRate:   "SF7BW125",
+				Frequency:  865.5,
+				Timestamp:  uint32(tmst.Unix() * 1000),
+				CodingRate: "4/5",
+				DutyRX1:    uint32(dutycycle.StateAvailable),
+				DutyRX2:    uint32(dutycycle.StateAvailable),
+				Rssi:       -20,
+				Lsnr:       5.0,
+			},
+		}
+
+		devStorage := NewMockDevStorage()
+		devStorage.OutLookup.Entry = devEntry{
+			AppKey: [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
+			AppEUI: req.AppEUI,
+			DevEUI: req.DevEUI,
+		}
+		pktStorage := NewMockPktStorage()
+		appAdapter := mocks.NewAppClient()
+		broker := mocks.NewBrokerClient()
+
+		// Expect
+		var wantErr *string
+		var wantRes = &core.JoinHandlerRes{
+			Payload: &core.LoRaWANJoinAccept{}, // We'll check it by decoding
+			NwkSKey: nil,                       // We'll assume it's correct if payload is okay
+			Metadata: &core.Metadata{
+				DataRate:    "SF7BW125",
+				Frequency:   865.5,
+				CodingRate:  "4/5",
+				Timestamp:   uint32(tmst.Add(5*time.Second).Unix() * 1000),
+				PayloadSize: 33,
+			},
+		}
+		var wantAppReq = &core.JoinAppReq{
+			Metadata: []*core.Metadata{req.Metadata},
+			AppEUI:   req.AppEUI,
+			DevEUI:   req.DevEUI,
+		}
+
+		// Operate
+		handler := New(Components{
+			Ctx:        GetLogger(t, "Handler"),
+			Broker:     broker,
+			AppAdapter: appAdapter,
+			DevStorage: devStorage,
+			PktStorage: pktStorage,
+		}, Options{NetAddr: "localhost"})
+		res, err := handler.HandleJoin(context.Background(), req)
+
+		// Check
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes.Metadata, res.Metadata, "Join Handler Responses")
+		Check(t, 16, len(res.NwkSKey), "Network session keys' length")
+		Check(t, 4, len(res.DevAddr), "Device addresses' length")
+		Check(t, wantAppReq, appAdapter.InHandleJoin.Req, "Join Application Requests")
+		joinaccept := lorawan.NewPHYPayload(false)
+		err = joinaccept.UnmarshalBinary(res.Payload.Payload)
+		CheckErrors(t, nil, err)
+		err = joinaccept.DecryptJoinAcceptPayload(lorawan.AES128Key(devStorage.InStore.Entry.AppKey))
+		CheckErrors(t, nil, err)
+		Check(t, handler.(*component).Configuration.NetID, joinaccept.MACPayload.(*lorawan.JoinAcceptPayload).NetID, "Network IDs")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Handle valid join-request, fails to notify app.")
+
+		// Build
+		tmst := time.Now()
+
+		req := &core.JoinHandlerReq{
+			AppEUI:   []byte{1, 1, 1, 1, 1, 1, 1, 1},
+			DevEUI:   []byte{2, 2, 2, 2, 2, 2, 2, 2},
+			DevNonce: []byte{14, 42},
+			Metadata: &core.Metadata{
+				DataRate:   "SF7BW125",
+				Frequency:  865.5,
+				Timestamp:  uint32(tmst.Unix() * 1000),
+				CodingRate: "4/5",
+				DutyRX1:    uint32(dutycycle.StateAvailable),
+				DutyRX2:    uint32(dutycycle.StateAvailable),
+				Rssi:       -20,
+				Lsnr:       5.0,
+			},
+		}
+
+		devStorage := NewMockDevStorage()
+		devStorage.OutLookup.Entry = devEntry{
+			AppKey: [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
+			AppEUI: req.AppEUI,
+			DevEUI: req.DevEUI,
+		}
+		pktStorage := NewMockPktStorage()
+		appAdapter := mocks.NewAppClient()
+		appAdapter.Failures["HandleJoin"] = errors.New(errors.Operational, "Mock Error")
+		broker := mocks.NewBrokerClient()
+
+		// Expect
+		var wantErr *string
+		var wantRes = &core.JoinHandlerRes{
+			Payload: &core.LoRaWANJoinAccept{}, // We'll check it by decoding
+			NwkSKey: nil,                       // We'll assume it's correct if payload is okay
+			Metadata: &core.Metadata{
+				DataRate:    "SF7BW125",
+				Frequency:   865.5,
+				CodingRate:  "4/5",
+				Timestamp:   uint32(tmst.Add(5*time.Second).Unix() * 1000),
+				PayloadSize: 33,
+			},
+		}
+		var wantAppReq = &core.JoinAppReq{
+			Metadata: []*core.Metadata{req.Metadata},
+			AppEUI:   req.AppEUI,
+			DevEUI:   req.DevEUI,
+		}
+
+		// Operate
+		handler := New(Components{
+			Ctx:        GetLogger(t, "Handler"),
+			Broker:     broker,
+			AppAdapter: appAdapter,
+			DevStorage: devStorage,
+			PktStorage: pktStorage,
+		}, Options{NetAddr: "localhost"})
+		res, err := handler.HandleJoin(context.Background(), req)
+
+		// Check
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes.Metadata, res.Metadata, "Join Handler Responses")
+		Check(t, 16, len(res.NwkSKey), "Network session keys' length")
+		Check(t, 4, len(res.DevAddr), "Device addresses' length")
+		Check(t, wantAppReq, appAdapter.InHandleJoin.Req, "Join Application Requests")
+		joinaccept := lorawan.NewPHYPayload(false)
+		err = joinaccept.UnmarshalBinary(res.Payload.Payload)
+		CheckErrors(t, nil, err)
+		err = joinaccept.DecryptJoinAcceptPayload(lorawan.AES128Key(devStorage.InStore.Entry.AppKey))
+		CheckErrors(t, nil, err)
+		Check(t, handler.(*component).Configuration.NetID, joinaccept.MACPayload.(*lorawan.JoinAcceptPayload).NetID, "Network IDs")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Handle valid join-request, fails to store")
+
+		// Build
+		tmst := time.Now()
+
+		req := &core.JoinHandlerReq{
+			AppEUI:   []byte{1, 1, 1, 1, 1, 1, 1, 1},
+			DevEUI:   []byte{2, 2, 2, 2, 2, 2, 2, 2},
+			DevNonce: []byte{14, 42},
+			Metadata: &core.Metadata{
+				DataRate:   "SF7BW125",
+				Frequency:  865.5,
+				Timestamp:  uint32(tmst.Unix() * 1000),
+				CodingRate: "4/5",
+				DutyRX1:    uint32(dutycycle.StateAvailable),
+				DutyRX2:    uint32(dutycycle.StateAvailable),
+				Rssi:       -20,
+				Lsnr:       5.0,
+			},
+		}
+
+		devStorage := NewMockDevStorage()
+		devStorage.OutLookup.Entry = devEntry{
+			AppKey: [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
+			AppEUI: req.AppEUI,
+			DevEUI: req.DevEUI,
+		}
+		devStorage.Failures["Store"] = errors.New(errors.Operational, "Mock Error")
+		pktStorage := NewMockPktStorage()
+		appAdapter := mocks.NewAppClient()
+		broker := mocks.NewBrokerClient()
+
+		// Expect
+		var wantErr = ErrOperational
+		var wantRes = new(core.JoinHandlerRes)
+		var wantAppReq *core.JoinAppReq
+
+		// Operate
+		handler := New(Components{
+			Ctx:        GetLogger(t, "Handler"),
+			Broker:     broker,
+			AppAdapter: appAdapter,
+			DevStorage: devStorage,
+			PktStorage: pktStorage,
+		}, Options{NetAddr: "localhost"})
+		res, err := handler.HandleJoin(context.Background(), req)
+
+		// Check
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Join Handler Responses")
+		Check(t, wantAppReq, appAdapter.InHandleJoin.Req, "Join Application Requests")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Handle valid join-request, no gateway available")
+
+		// Build
+		tmst := time.Now()
+
+		req := &core.JoinHandlerReq{
+			AppEUI:   []byte{1, 1, 1, 1, 1, 1, 1, 1},
+			DevEUI:   []byte{2, 2, 2, 2, 2, 2, 2, 2},
+			DevNonce: []byte{14, 42},
+			Metadata: &core.Metadata{
+				DataRate:   "SF7BW125",
+				Frequency:  865.5,
+				Timestamp:  uint32(tmst.Unix() * 1000),
+				CodingRate: "4/5",
+				DutyRX1:    uint32(dutycycle.StateBlocked),
+				DutyRX2:    uint32(dutycycle.StateBlocked),
+				Rssi:       -20,
+				Lsnr:       5.0,
+			},
+		}
+
+		devStorage := NewMockDevStorage()
+		devStorage.OutLookup.Entry = devEntry{
+			AppKey: [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
+			AppEUI: req.AppEUI,
+			DevEUI: req.DevEUI,
+		}
+		pktStorage := NewMockPktStorage()
+		appAdapter := mocks.NewAppClient()
+		broker := mocks.NewBrokerClient()
+
+		// Expect
+		var wantErr = ErrOperational
+		var wantRes = new(core.JoinHandlerRes)
+		var wantAppReq *core.JoinAppReq
+
+		// Operate
+		handler := New(Components{
+			Ctx:        GetLogger(t, "Handler"),
+			Broker:     broker,
+			AppAdapter: appAdapter,
+			DevStorage: devStorage,
+			PktStorage: pktStorage,
+		}, Options{NetAddr: "localhost"})
+		res, err := handler.HandleJoin(context.Background(), req)
+
+		// Check
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Join Handler Responses")
+		Check(t, wantAppReq, appAdapter.InHandleJoin.Req, "Join Application Requests")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Handle invalid join request -> Invalid datarate")
+
+		// Build
+		tmst := time.Now()
+
+		req := &core.JoinHandlerReq{
+			AppEUI:   []byte{1, 1, 1, 1, 1, 1, 1, 1},
+			DevEUI:   []byte{2, 2, 2, 2, 2, 2, 2, 2},
+			DevNonce: []byte{14, 42},
+			Metadata: &core.Metadata{
+				DataRate:   "Not A DataRate",
+				Frequency:  865.5,
+				Timestamp:  uint32(tmst.Unix() * 1000),
+				CodingRate: "4/5",
+				DutyRX1:    uint32(dutycycle.StateAvailable),
+				DutyRX2:    uint32(dutycycle.StateAvailable),
+				Rssi:       -20,
+				Lsnr:       5.0,
+			},
+		}
+
+		devStorage := NewMockDevStorage()
+		devStorage.OutLookup.Entry = devEntry{
+			AppKey: [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
+			AppEUI: req.AppEUI,
+			DevEUI: req.DevEUI,
+		}
+		pktStorage := NewMockPktStorage()
+		appAdapter := mocks.NewAppClient()
+		broker := mocks.NewBrokerClient()
+
+		// Expect
+		var wantErr = ErrStructural
+		var wantRes = new(core.JoinHandlerRes)
+		var wantAppReq *core.JoinAppReq
+
+		// Operate
+		handler := New(Components{
+			Ctx:        GetLogger(t, "Handler"),
+			Broker:     broker,
+			AppAdapter: appAdapter,
+			DevStorage: devStorage,
+			PktStorage: pktStorage,
+		}, Options{NetAddr: "localhost"})
+		res, err := handler.HandleJoin(context.Background(), req)
+
+		// Check
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Join Handler Responses")
+		Check(t, wantAppReq, appAdapter.InHandleJoin.Req, "Join Application Requests")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Handle invalid join-request, lookup fails")
+
+		// Build
+		tmst := time.Now()
+
+		req := &core.JoinHandlerReq{
+			AppEUI:   []byte{1, 1, 1, 1, 1, 1, 1, 1},
+			DevEUI:   []byte{2, 2, 2, 2, 2, 2, 2, 2},
+			DevNonce: []byte{14, 42},
+			Metadata: &core.Metadata{
+				DataRate:   "SF7BW125",
+				Frequency:  865.5,
+				Timestamp:  uint32(tmst.Unix() * 1000),
+				CodingRate: "4/5",
+				DutyRX1:    uint32(dutycycle.StateAvailable),
+				DutyRX2:    uint32(dutycycle.StateAvailable),
+				Rssi:       -20,
+				Lsnr:       5.0,
+			},
+		}
+
+		devStorage := NewMockDevStorage()
+		devStorage.Failures["Lookup"] = errors.New(errors.NotFound, "Mock Error")
+		pktStorage := NewMockPktStorage()
+		appAdapter := mocks.NewAppClient()
+		broker := mocks.NewBrokerClient()
+
+		// Expect
+		var wantErr = ErrNotFound
+		var wantRes = new(core.JoinHandlerRes)
+		var wantAppReq *core.JoinAppReq
+
+		// Operate
+		handler := New(Components{
+			Ctx:        GetLogger(t, "Handler"),
+			Broker:     broker,
+			AppAdapter: appAdapter,
+			DevStorage: devStorage,
+			PktStorage: pktStorage,
+		}, Options{NetAddr: "localhost"})
+		res, err := handler.HandleJoin(context.Background(), req)
+
+		// Check
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Join Handler Responses")
+		Check(t, wantAppReq, appAdapter.InHandleJoin.Req, "Join Application Requests")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Handle invalid join-request -> invalid devEUI")
+
+		// Build
+		tmst := time.Now()
+
+		req := &core.JoinHandlerReq{
+			AppEUI:   []byte{1, 1, 1, 1, 1, 1, 1, 1},
+			DevEUI:   []byte{2, 2, 2, 2, 2},
+			DevNonce: []byte{14, 42},
+			Metadata: &core.Metadata{
+				DataRate:   "SF7BW125",
+				Frequency:  865.5,
+				Timestamp:  uint32(tmst.Unix() * 1000),
+				CodingRate: "4/5",
+				DutyRX1:    uint32(dutycycle.StateAvailable),
+				DutyRX2:    uint32(dutycycle.StateAvailable),
+				Rssi:       -20,
+				Lsnr:       5.0,
+			},
+		}
+
+		devStorage := NewMockDevStorage()
+		pktStorage := NewMockPktStorage()
+		appAdapter := mocks.NewAppClient()
+		broker := mocks.NewBrokerClient()
+
+		// Expect
+		var wantErr = ErrStructural
+		var wantRes = new(core.JoinHandlerRes)
+		var wantAppReq *core.JoinAppReq
+
+		// Operate
+		handler := New(Components{
+			Ctx:        GetLogger(t, "Handler"),
+			Broker:     broker,
+			AppAdapter: appAdapter,
+			DevStorage: devStorage,
+			PktStorage: pktStorage,
+		}, Options{NetAddr: "localhost"})
+		res, err := handler.HandleJoin(context.Background(), req)
+
+		// Check
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Join Handler Responses")
+		Check(t, wantAppReq, appAdapter.InHandleJoin.Req, "Join Application Requests")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Handle invalid join-request -> invalid appEUI")
+
+		// Build
+		tmst := time.Now()
+
+		req := &core.JoinHandlerReq{
+			AppEUI:   []byte{1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+			DevEUI:   []byte{2, 2, 2, 2, 2, 2, 2, 2},
+			DevNonce: []byte{14, 42},
+			Metadata: &core.Metadata{
+				DataRate:   "SF7BW125",
+				Frequency:  865.5,
+				Timestamp:  uint32(tmst.Unix() * 1000),
+				CodingRate: "4/5",
+				DutyRX1:    uint32(dutycycle.StateAvailable),
+				DutyRX2:    uint32(dutycycle.StateAvailable),
+				Rssi:       -20,
+				Lsnr:       5.0,
+			},
+		}
+
+		devStorage := NewMockDevStorage()
+		pktStorage := NewMockPktStorage()
+		appAdapter := mocks.NewAppClient()
+		broker := mocks.NewBrokerClient()
+
+		// Expect
+		var wantErr = ErrStructural
+		var wantRes = new(core.JoinHandlerRes)
+		var wantAppReq *core.JoinAppReq
+
+		// Operate
+		handler := New(Components{
+			Ctx:        GetLogger(t, "Handler"),
+			Broker:     broker,
+			AppAdapter: appAdapter,
+			DevStorage: devStorage,
+			PktStorage: pktStorage,
+		}, Options{NetAddr: "localhost"})
+		res, err := handler.HandleJoin(context.Background(), req)
+
+		// Check
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Join Handler Responses")
+		Check(t, wantAppReq, appAdapter.InHandleJoin.Req, "Join Application Requests")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Handle invalid join-request -> invalid devNonce")
+
+		// Build
+		tmst := time.Now()
+
+		req := &core.JoinHandlerReq{
+			AppEUI:   []byte{1, 1, 1, 1, 1, 1, 1, 1},
+			DevEUI:   []byte{2, 2, 2, 2, 2, 2, 2, 2},
+			DevNonce: nil,
+			Metadata: &core.Metadata{
+				DataRate:   "SF7BW125",
+				Frequency:  865.5,
+				Timestamp:  uint32(tmst.Unix() * 1000),
+				CodingRate: "4/5",
+				DutyRX1:    uint32(dutycycle.StateAvailable),
+				DutyRX2:    uint32(dutycycle.StateAvailable),
+				Rssi:       -20,
+				Lsnr:       5.0,
+			},
+		}
+
+		devStorage := NewMockDevStorage()
+		pktStorage := NewMockPktStorage()
+		appAdapter := mocks.NewAppClient()
+		broker := mocks.NewBrokerClient()
+
+		// Expect
+		var wantErr = ErrStructural
+		var wantRes = new(core.JoinHandlerRes)
+		var wantAppReq *core.JoinAppReq
+
+		// Operate
+		handler := New(Components{
+			Ctx:        GetLogger(t, "Handler"),
+			Broker:     broker,
+			AppAdapter: appAdapter,
+			DevStorage: devStorage,
+			PktStorage: pktStorage,
+		}, Options{NetAddr: "localhost"})
+		res, err := handler.HandleJoin(context.Background(), req)
+
+		// Check
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Join Handler Responses")
+		Check(t, wantAppReq, appAdapter.InHandleJoin.Req, "Join Application Requests")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Handle invalid join-request -> invalid Metadata")
+
+		// Build
+		req := &core.JoinHandlerReq{
+			AppEUI:   []byte{1, 1, 1, 1, 1, 1, 1, 1},
+			DevEUI:   []byte{2, 2, 2, 2, 2, 2, 2, 2},
+			DevNonce: []byte{14, 42},
+			Metadata: nil,
+		}
+
+		devStorage := NewMockDevStorage()
+		pktStorage := NewMockPktStorage()
+		appAdapter := mocks.NewAppClient()
+		broker := mocks.NewBrokerClient()
+
+		// Expect
+		var wantErr = ErrStructural
+		var wantRes = new(core.JoinHandlerRes)
+		var wantAppReq *core.JoinAppReq
+
+		// Operate
+		handler := New(Components{
+			Ctx:        GetLogger(t, "Handler"),
+			Broker:     broker,
+			AppAdapter: appAdapter,
+			DevStorage: devStorage,
+			PktStorage: pktStorage,
+		}, Options{NetAddr: "localhost"})
+		res, err := handler.HandleJoin(context.Background(), req)
+
+		// Check
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Join Handler Responses")
+		Check(t, wantAppReq, appAdapter.InHandleJoin.Req, "Join Application Requests")
+	}
+
+	// -------------------
+
+	{
+		Desc(t, "Handle valid join-request (2 packets)")
+
+		// Build
+		tmst1 := time.Now()
+		tmst2 := time.Now().Add(42 * time.Millisecond)
+
+		req1 := &core.JoinHandlerReq{
+			AppEUI:   []byte{1, 1, 1, 1, 1, 1, 1, 1},
+			DevEUI:   []byte{2, 2, 2, 2, 2, 2, 2, 2},
+			DevNonce: []byte{14, 42},
+			Metadata: &core.Metadata{
+				DataRate:   "SF7BW125",
+				Frequency:  865.5,
+				Timestamp:  uint32(tmst1.Unix() * 1000),
+				CodingRate: "4/5",
+				DutyRX1:    uint32(dutycycle.StateWarning),
+				DutyRX2:    uint32(dutycycle.StateWarning),
+				Rssi:       -20,
+				Lsnr:       5.0,
+			},
+		}
+
+		req2 := &core.JoinHandlerReq{
+			AppEUI:   []byte{1, 1, 1, 1, 1, 1, 1, 1},
+			DevEUI:   []byte{2, 2, 2, 2, 2, 2, 2, 2},
+			DevNonce: []byte{14, 42},
+			Metadata: &core.Metadata{
+				DataRate:   "SF8BW125",
+				Frequency:  867.234,
+				Timestamp:  uint32(tmst2.Unix() * 1000),
+				CodingRate: "4/5",
+				DutyRX1:    uint32(dutycycle.StateAvailable),
+				DutyRX2:    uint32(dutycycle.StateAvailable),
+				Rssi:       -20,
+				Lsnr:       5.0,
+			},
+		}
+
+		devStorage := NewMockDevStorage()
+		devStorage.OutLookup.Entry = devEntry{
+			AppKey: [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
+			AppEUI: req1.AppEUI,
+			DevEUI: req1.DevEUI,
+		}
+		pktStorage := NewMockPktStorage()
+		appAdapter := mocks.NewAppClient()
+		broker := mocks.NewBrokerClient()
+
+		// Expect
+		var wantErr1 *string
+		var wantErr2 *string
+		var wantRes1 = new(core.JoinHandlerRes)
+		var wantRes2 = &core.JoinHandlerRes{
+			Payload: &core.LoRaWANJoinAccept{}, // We'll check it by decoding
+			NwkSKey: nil,                       // We'll assume it's correct if payload is okay
+			Metadata: &core.Metadata{
+				DataRate:    "SF8BW125",
+				Frequency:   867.234,
+				CodingRate:  "4/5",
+				Timestamp:   uint32(tmst2.Add(5*time.Second).Unix() * 1000),
+				PayloadSize: 33,
+			},
+		}
+		var wantAppReq = &core.JoinAppReq{
+			Metadata: []*core.Metadata{req1.Metadata, req2.Metadata},
+			AppEUI:   req1.AppEUI,
+			DevEUI:   req1.DevEUI,
+		}
+
+		// Operate
+		handler := New(Components{
+			Ctx:        GetLogger(t, "Handler"),
+			Broker:     broker,
+			AppAdapter: appAdapter,
+			DevStorage: devStorage,
+			PktStorage: pktStorage,
+		}, Options{NetAddr: "localhost"})
+
+		chack := make(chan bool)
+		go func() {
+			var ok bool
+			defer func(ok *bool) { chack <- *ok }(&ok)
+			res, err := handler.HandleJoin(context.Background(), req1)
+
+			// Check
+			CheckErrors(t, wantErr1, err)
+			Check(t, wantRes1, res, "Data Up Handler Responses")
+			ok = true
+		}()
+
+		go func() {
+			<-time.After(bufferDelay / 3)
+			var ok bool
+			defer func(ok *bool) { chack <- *ok }(&ok)
+			res, err := handler.HandleJoin(context.Background(), req2)
+
+			// Check
+			CheckErrors(t, wantErr2, err)
+			Check(t, wantRes2.Metadata, res.Metadata, "Join Handler Responses")
+			Check(t, 16, len(res.NwkSKey), "Network session keys' length")
+			Check(t, 4, len(res.DevAddr), "Device addresses' length")
+			joinaccept := lorawan.NewPHYPayload(false)
+			err = joinaccept.UnmarshalBinary(res.Payload.Payload)
+			CheckErrors(t, nil, err)
+			err = joinaccept.DecryptJoinAcceptPayload(lorawan.AES128Key(devStorage.InStore.Entry.AppKey))
+			CheckErrors(t, nil, err)
+			Check(t, handler.(*component).Configuration.NetID, joinaccept.MACPayload.(*lorawan.JoinAcceptPayload).NetID, "Network IDs")
+			ok = true
+		}()
+
+		// Check
+		ok1, ok2 := <-chack, <-chack
+		Check(t, true, ok1 && ok2, "Acknowledgements")
+		Check(t, wantAppReq, appAdapter.InHandleJoin.Req, "Join Application Requests")
+	}
+
+}
+
 func TestStart(t *testing.T) {
 	handler := New(Components{
 		Ctx:        GetLogger(t, "Handler"),

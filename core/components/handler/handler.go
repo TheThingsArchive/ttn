@@ -196,14 +196,10 @@ func (h component) HandleJoin(bctx context.Context, req *core.JoinHandlerReq) (*
 	// 3. Create a "bundle" which holds info waiting for other related packets
 	var bundleID [20]byte // AppEUI(8) | DevEUI(8) | DevNonce | [ 0 0 ]
 	buf := new(bytes.Buffer)
-	binary.Write(buf, binary.BigEndian, req.AppEUI)
-	binary.Write(buf, binary.BigEndian, req.DevEUI)
-	binary.Write(buf, binary.BigEndian, req.DevNonce)
-	data := buf.Bytes()
-	if len(data) != 18 {
-		return new(core.JoinHandlerRes), errors.New(errors.Structural, "Unable to generate bundleID")
-	}
-	copy(bundleID[:], data[:])
+	_ = binary.Write(buf, binary.BigEndian, req.AppEUI)
+	_ = binary.Write(buf, binary.BigEndian, req.DevEUI)
+	_ = binary.Write(buf, binary.BigEndian, req.DevNonce)
+	copy(bundleID[:], buf.Bytes())
 
 	// 4. Send the actual bundle to the consumer
 	ctx := h.Ctx.WithField("BundleID", bundleID)
@@ -299,14 +295,10 @@ func (h component) HandleDataUp(bctx context.Context, req *core.DataUpHandlerReq
 	// 3. Create a "bundle" which holds info waiting for other related packets
 	var bundleID [20]byte // AppEUI(8) | DevEUI(8) | FCnt
 	buf := new(bytes.Buffer)
-	binary.Write(buf, binary.BigEndian, req.AppEUI)
-	binary.Write(buf, binary.BigEndian, req.DevEUI)
-	binary.Write(buf, binary.BigEndian, req.FCnt)
-	data := buf.Bytes()
-	if len(data) != 20 {
-		return new(core.DataUpHandlerRes), errors.New(errors.Structural, "Unable to generate bundleID")
-	}
-	copy(bundleID[:], data[:])
+	_ = binary.Write(buf, binary.BigEndian, req.AppEUI)
+	_ = binary.Write(buf, binary.BigEndian, req.DevEUI)
+	_ = binary.Write(buf, binary.BigEndian, req.FCnt)
+	copy(bundleID[:], buf.Bytes())
 
 	// 4. Send the actual bundle to the consumer
 	ctx := h.Ctx.WithField("BundleID", bundleID)
@@ -428,14 +420,19 @@ browseBundles:
 
 // consume Join actually consumes a set of join-request packets
 func (h component) consumeJoin(appEUI []byte, devEUI []byte, appKey [16]byte, dataRate string, bundles []bundle) {
+	ctx := h.Ctx.WithField("AppEUI", appEUI).WithField("DevEUI", devEUI)
+	ctx.Debug("Consuming join-request")
+
 	// Compute score while gathering metadata
 	var metadata []*core.Metadata
 	computer, scores, err := dutycycle.NewScoreComputer(dataRate)
 	if err != nil {
+		ctx.WithError(err).Debug("Unable to instantiate score computer")
 		h.abortConsume(err, bundles)
 		return
 	}
 
+	ctx.Debug("Compute scores for each packet")
 	for i, bundle := range bundles {
 		packet := bundle.Packet.(*core.JoinHandlerReq)
 		metadata = append(metadata, packet.Metadata)
@@ -444,6 +441,7 @@ func (h component) consumeJoin(appEUI []byte, devEUI []byte, appKey [16]byte, da
 
 	// Check if at least one is available
 	best := computer.Get(scores)
+	ctx.WithField("Best", best).Debug("Determine best recipient to reply")
 	if best == nil {
 		h.abortConsume(errors.New(errors.Operational, "No gateway is available for an answer"), bundles)
 		return
@@ -451,6 +449,7 @@ func (h component) consumeJoin(appEUI []byte, devEUI []byte, appKey [16]byte, da
 	packet := bundles[best.ID].Packet.(*core.JoinHandlerReq)
 
 	// Generate a DevAddr + NwkSKey + AppSKey
+	ctx.Debug("Generate DevAddr, NwkSKey and AppSKey")
 	rdn := rand.New(rand.NewSource(int64(packet.Metadata.Rssi)))
 	appNonce, devAddr := make([]byte, 4), [4]byte{}
 	binary.BigEndian.PutUint32(appNonce, rdn.Uint32())
@@ -484,6 +483,7 @@ func (h component) consumeJoin(appEUI []byte, devEUI []byte, appKey [16]byte, da
 		NwkSKey:  nwkSKey,
 	})
 	if err != nil {
+		ctx.WithError(err).Debug("Unable to initialize devEntry with activation")
 		h.abortConsume(err, bundles)
 		return
 	}
@@ -491,9 +491,23 @@ func (h component) consumeJoin(appEUI []byte, devEUI []byte, appKey [16]byte, da
 	// Build join-accept and send it
 	joinAccept, err := h.buildJoinAccept(packet, appKey, appNonce[:3], devAddr, best.IsRX2)
 	if err != nil {
+		ctx.WithError(err).Debug("Unable to build join accept")
 		h.abortConsume(err, bundles)
 		return
 	}
+	joinAccept.NwkSKey = nwkSKey[:]
+	joinAccept.DevAddr = devAddr[:]
+
+	// Notify the application
+	_, err = h.AppAdapter.HandleJoin(context.Background(), &core.JoinAppReq{
+		Metadata: metadata,
+		AppEUI:   appEUI,
+		DevEUI:   devEUI,
+	})
+	if err != nil {
+		ctx.WithError(err).Debug("Fails to notify application")
+	}
+
 	for i, bundle := range bundles {
 		if i == best.ID {
 			bundle.Chresp <- joinAccept
