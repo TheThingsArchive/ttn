@@ -4,22 +4,19 @@
 package handler
 
 import (
-	"bytes"
+	"encoding"
 	"encoding/binary"
-	"fmt"
-	"sync"
 
 	dbutil "github.com/TheThingsNetwork/ttn/core/storage"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
+	"github.com/TheThingsNetwork/ttn/utils/readwriter"
 )
 
 // DevStorage gives a facade to manipulate the handler devices database
 type DevStorage interface {
-	UpdateFCnt(appEUI []byte, devEUI []byte, fcnt uint32) error
-	Lookup(appEUI []byte, devEUI []byte) (devEntry, error)
-	StorePersonalized(appEUI []byte, devAddr []byte, appSKey, nwkSKey [16]byte) error
-	Store(entry devEntry) error
-	Close() error
+	read(appEUI []byte, devEUI []byte) (devEntry, error)
+	upsert(entry devEntry) error
+	done() error
 }
 
 const dbDevices = "devices"
@@ -35,7 +32,6 @@ type devEntry struct {
 }
 
 type devStorage struct {
-	sync.RWMutex
 	db dbutil.Interface
 }
 
@@ -49,20 +45,11 @@ func NewDevStorage(name string) (DevStorage, error) {
 	return &devStorage{db: itf}, nil
 }
 
-// Lookup implements the handler.DevStorage interface
-func (s *devStorage) Lookup(appEUI []byte, devEUI []byte) (devEntry, error) {
-	return s.lookup(appEUI, devEUI, true)
-}
-
-// lookup allow other method to re-use lookup while holding the lock
-func (s *devStorage) lookup(appEUI []byte, devEUI []byte, shouldLock bool) (devEntry, error) {
-	if shouldLock {
-		s.RLock()
-		defer s.RUnlock()
-	}
-	itf, err := s.db.Lookup(fmt.Sprintf("%x.%x", appEUI, devEUI), []byte(dbDevices), &devEntry{})
+// read implements the handler.DevStorage interface
+func (s *devStorage) read(appEUI []byte, devEUI []byte) (devEntry, error) {
+	itf, err := s.db.Read(nil, &devEntry{}, appEUI, devEUI)
 	if err != nil {
-		return devEntry{}, err // Operational || NotFound
+		return devEntry{}, err
 	}
 	entries, ok := itf.([]devEntry)
 	if !ok || len(entries) != 1 {
@@ -71,79 +58,38 @@ func (s *devStorage) lookup(appEUI []byte, devEUI []byte, shouldLock bool) (devE
 	return entries[0], nil
 }
 
-// StorePersonalized implements the handler.DevStorage interface
-func (s *devStorage) StorePersonalized(appEUI []byte, devAddr []byte, appSKey, nwkSKey [16]byte) error {
-	devEUI := make([]byte, 8, 8)
-	copy(devEUI[4:], devAddr)
-	e := []dbutil.Entry{
-		&devEntry{
-			AppSKey: appSKey,
-			NwkSKey: nwkSKey,
-			DevAddr: devAddr,
-		},
-	}
-	s.Lock()
-	defer s.Unlock()
-	return s.db.Replace(fmt.Sprintf("%x.%x", appEUI, devEUI), []byte(dbDevices), e)
+// upsert implements the handler.DevStorage interface
+func (s *devStorage) upsert(entry devEntry) error {
+	return s.db.Update(nil, []encoding.BinaryMarshaler{entry}, entry.AppEUI, entry.DevEUI)
 }
 
-// Store implements the handler.DevStorage interface
-func (s *devStorage) Store(entry devEntry) error {
-	s.Lock()
-	defer s.Unlock()
-	return s.db.Replace(fmt.Sprintf("%x.%x", entry.AppEUI, entry.DevEUI), []byte(dbDevices), []dbutil.Entry{&entry})
-}
-
-// UpdateFCnt implements the handler.DevStorage interface
-func (s *devStorage) UpdateFCnt(appEUI []byte, devEUI []byte, fcnt uint32) error {
-	s.Lock()
-	defer s.Unlock()
-	devEntry, err := s.lookup(appEUI, devEUI, false)
-	if err != nil {
-		return err
-	}
-	devEntry.FCntDown = fcnt
-	return s.db.Replace(fmt.Sprintf("%x.%x", appEUI, devEUI), []byte(dbDevices), []dbutil.Entry{&devEntry})
-}
-
-// Close implements the handler.DevStorage interface
-func (s *devStorage) Close() error {
+// done implements the handler.DevStorage interface
+func (s *devStorage) done() error {
 	return s.db.Close()
 }
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface
 func (e devEntry) MarshalBinary() ([]byte, error) {
-	buf, cnt := new(bytes.Buffer), 52
-	binary.Write(buf, binary.BigEndian, e.AppKey[:])  // 16
-	binary.Write(buf, binary.BigEndian, e.AppSKey[:]) // 16
-	binary.Write(buf, binary.BigEndian, e.NwkSKey[:]) // 16
-	binary.Write(buf, binary.BigEndian, e.FCntDown)   // 4
-	in := [][]byte{e.AppEUI, e.DevEUI, e.DevAddr}
-	for _, d := range in {
-		binary.Write(buf, binary.BigEndian, uint16(len(d)))
-		binary.Write(buf, binary.BigEndian, d)
-		cnt += len(d) + 2
-	}
-	if len(buf.Bytes()) != cnt {
-		return nil, errors.New(errors.Structural, "DevEntry was invalid, unable to marshal")
-	}
-	return buf.Bytes(), nil
+	rw := readwriter.New(nil)
+	rw.Write(e.AppKey[:])
+	rw.Write(e.AppSKey[:])
+	rw.Write(e.NwkSKey[:])
+	rw.Write(e.FCntDown)
+	rw.Write(e.AppEUI)
+	rw.Write(e.DevEUI)
+	rw.Write(e.DevAddr)
+	return rw.Bytes()
 }
 
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
 func (e *devEntry) UnmarshalBinary(data []byte) error {
-	buf := bytes.NewBuffer(data)
-	binary.Read(buf, binary.BigEndian, &e.AppKey)
-	binary.Read(buf, binary.BigEndian, &e.AppSKey)
-	binary.Read(buf, binary.BigEndian, &e.NwkSKey)
-	binary.Read(buf, binary.BigEndian, &e.FCntDown)
-	var size *uint16
-	in := []*[]byte{&e.AppEUI, &e.DevEUI, &e.DevAddr}
-	for _, p := range in {
-		size = new(uint16)
-		binary.Read(buf, binary.BigEndian, size)
-		*p = make([]byte, *size, *size)
-		binary.Read(buf, binary.BigEndian, p)
-	}
-	return nil
+	rw := readwriter.New(data)
+	rw.Read(func(data []byte) { copy(e.AppKey[:], data) })
+	rw.Read(func(data []byte) { copy(e.AppSKey[:], data) })
+	rw.Read(func(data []byte) { copy(e.NwkSKey[:], data) })
+	rw.Read(func(data []byte) { e.FCntDown = binary.BigEndian.Uint32(data) })
+	rw.Read(func(data []byte) { e.AppEUI = data })
+	rw.Read(func(data []byte) { e.DevEUI = data })
+	rw.Read(func(data []byte) { e.DevAddr = data })
+	return rw.Err()
 }
