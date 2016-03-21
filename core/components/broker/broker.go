@@ -126,7 +126,12 @@ func (b component) HandleJoin(bctx context.Context, req *core.JoinBrokerReq) (*c
 	}
 
 	// Handle the response
-	if res == nil || res.Payload == nil || len(res.DevAddr) != 4 || len(res.NwkSKey) != 16 {
+	if res == nil || res.Payload == nil {
+		ctx.Debug("No Join-Accept")
+		return new(core.JoinBrokerRes), nil
+	}
+
+	if len(res.DevAddr) != 4 || len(res.NwkSKey) != 16 {
 		ctx.Debug("Invalid response from handler")
 		return new(core.JoinBrokerRes), errors.New(errors.Operational, "Invalid response from handler")
 	}

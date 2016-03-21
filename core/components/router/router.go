@@ -108,6 +108,10 @@ func (r component) HandleJoin(ctx context.Context, req *core.JoinRouterReq) (rou
 
 	// Update Gateway Duty cycle with response metadata
 	res := response.(*core.JoinBrokerRes)
+	if res == nil || res.Payload == nil { // No response
+		r.Ctx.Debug("No Join-Accept received")
+		return new(core.JoinRouterRes), nil
+	}
 	if err := r.handleDown(req.GatewayID, res.Metadata); err != nil {
 		return new(core.JoinRouterRes), err
 	}
