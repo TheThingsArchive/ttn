@@ -26,7 +26,7 @@ import (
 const bufferDelay time.Duration = time.Millisecond * 300
 
 // dataRates makes correspondance between string datarate identifier and lorawan uint descriptors
-var dataRates map[string]uint8 = map[string]uint8{
+var dataRates = map[string]uint8{
 	"SF12BW125": 0,
 	"SF11BW125": 1,
 	"SF10BW125": 2,
@@ -629,7 +629,8 @@ func (h component) buildDownlink(down []byte, up core.DataUpHandlerReq, entry de
 		FCnt: entry.FCntDown + 1,
 	}
 	copy(macpayload.FHDR.DevAddr[:], entry.DevAddr)
-	macpayload.FPort = 1
+	macpayload.FPort = new(uint8)
+	*macpayload.FPort = 1
 	macpayload.FRMPayload = []lorawan.Payload{&lorawan.DataPayload{Bytes: down}}
 
 	if err := macpayload.EncryptFRMPayload(entry.AppSKey); err != nil {
@@ -672,7 +673,7 @@ func (h component) buildDownlink(down []byte, up core.DataUpHandlerReq, entry de
 						FPending:  macpayload.FHDR.FCtrl.FPending,
 					},
 				},
-				FPort:      uint32(macpayload.FPort),
+				FPort:      uint32(*macpayload.FPort),
 				FRMPayload: frmpayload,
 			},
 			MIC: payload.MIC[:],

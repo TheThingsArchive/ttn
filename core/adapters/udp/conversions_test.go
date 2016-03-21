@@ -383,7 +383,9 @@ func TestNewTXPKAndtoLoRaWANPayloadReq(t *testing.T) {
 		payload.MHDR.Major = lorawan.LoRaWANR1
 		payload.MIC = [4]byte{1, 2, 3, 4}
 		macpayload := lorawan.NewMACPayload(false)
-		macpayload.FPort = 1
+		macpayload.FPort = new(uint8)
+		*macpayload.FPort = 1
+
 		macpayload.FHDR.FOpts = []lorawan.MACCommand{
 			lorawan.MACCommand{
 				CID: lorawan.DutyCycleReq,
@@ -424,7 +426,9 @@ func TestNewTXPKAndtoLoRaWANPayloadReq(t *testing.T) {
 		payload.MHDR.Major = lorawan.LoRaWANR1
 		payload.MIC = [4]byte{1, 2, 3, 4}
 		macpayload := lorawan.NewMACPayload(false)
-		macpayload.FPort = 1
+		macpayload.FPort = new(uint8)
+		*macpayload.FPort = 1
+
 		macpayload.FRMPayload = []lorawan.Payload{&lorawan.DataPayload{Bytes: []byte{1, 2, 3}}}
 		payload.MACPayload = macpayload
 		data, err := payload.MarshalBinary()

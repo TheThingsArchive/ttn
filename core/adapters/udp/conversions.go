@@ -78,7 +78,7 @@ func toLoRaWANPayload(rxpk semtech.RXPK, gid []byte, ctx log.Interface) (interfa
 						},
 						FOpts: fopts,
 					},
-					FPort:      uint32(macpayload.FPort),
+					FPort:      uint32(*macpayload.FPort),
 					FRMPayload: frmpayload,
 				},
 				MIC: payload.MIC[:],

@@ -51,7 +51,9 @@ func TestUDPAdapter(t *testing.T) {
 		payload.MHDR.Major = lorawan.LoRaWANR1
 		payload.MIC = [4]byte{1, 2, 3, 4}
 		macpayload := lorawan.NewMACPayload(true)
-		macpayload.FPort = 1
+		macpayload.FPort = new(uint8)
+		*macpayload.FPort = 1
+
 		macpayload.FRMPayload = []lorawan.Payload{&lorawan.DataPayload{Bytes: []byte{1, 2, 3}}}
 		payload.MACPayload = macpayload
 		data, err := payload.MarshalBinary()
@@ -102,7 +104,7 @@ func TestUDPAdapter(t *testing.T) {
 						},
 						FOpts: nil,
 					},
-					FPort:      uint32(macpayload.FPort),
+					FPort:      uint32(*macpayload.FPort),
 					FRMPayload: macpayload.FRMPayload[0].(*lorawan.DataPayload).Bytes,
 				},
 				MIC: payload.MIC[:],
@@ -152,7 +154,9 @@ func TestUDPAdapter(t *testing.T) {
 		payload.MHDR.Major = lorawan.LoRaWANR1
 		payload.MIC = [4]byte{1, 2, 3, 4}
 		macpayload := lorawan.NewMACPayload(true)
-		macpayload.FPort = 1
+		macpayload.FPort = new(uint8)
+		*macpayload.FPort = 1
+
 		macpayload.FRMPayload = []lorawan.Payload{&lorawan.DataPayload{Bytes: []byte{1, 2, 3}}}
 		payload.MACPayload = macpayload
 		data, err := payload.MarshalBinary()
@@ -201,7 +205,8 @@ func TestUDPAdapter(t *testing.T) {
 		payloadDown.MHDR.Major = lorawan.Major(router.OutHandleData.Res.Payload.MHDR.Major)
 		copy(payloadDown.MIC[:], router.OutHandleData.Res.Payload.MIC)
 		macpayloadDown := lorawan.NewMACPayload(false)
-		macpayloadDown.FPort = uint8(router.OutHandleData.Res.Payload.MACPayload.FPort)
+		macpayloadDown.FPort = new(uint8)
+		*macpayloadDown.FPort = uint8(router.OutHandleData.Res.Payload.MACPayload.FPort)
 		macpayloadDown.FHDR.FCnt = router.OutHandleData.Res.Payload.MACPayload.FHDR.FCnt
 		copy(macpayloadDown.FHDR.DevAddr[:], router.OutHandleData.Res.Payload.MACPayload.FHDR.DevAddr)
 		macpayloadDown.FRMPayload = []lorawan.Payload{&lorawan.DataPayload{
@@ -238,7 +243,7 @@ func TestUDPAdapter(t *testing.T) {
 						},
 						FOpts: nil,
 					},
-					FPort:      uint32(macpayload.FPort),
+					FPort:      uint32(*macpayload.FPort),
 					FRMPayload: macpayload.FRMPayload[0].(*lorawan.DataPayload).Bytes,
 				},
 				MIC: payload.MIC[:],
@@ -296,7 +301,9 @@ func TestUDPAdapter(t *testing.T) {
 		payload.MHDR.Major = lorawan.LoRaWANR1
 		payload.MIC = [4]byte{1, 2, 3, 4}
 		macpayload := lorawan.NewMACPayload(true)
-		macpayload.FPort = 1
+		macpayload.FPort = new(uint8)
+		*macpayload.FPort = 1
+
 		macpayload.FRMPayload = []lorawan.Payload{&lorawan.DataPayload{Bytes: []byte{1, 2, 3}}}
 		payload.MACPayload = macpayload
 		data, err := payload.MarshalBinary()
@@ -358,7 +365,7 @@ func TestUDPAdapter(t *testing.T) {
 						},
 						FOpts: nil,
 					},
-					FPort:      uint32(macpayload.FPort),
+					FPort:      uint32(*macpayload.FPort),
 					FRMPayload: macpayload.FRMPayload[0].(*lorawan.DataPayload).Bytes,
 				},
 				MIC: payload.MIC[:],
@@ -524,7 +531,9 @@ func TestUDPAdapter(t *testing.T) {
 		payload.MHDR.Major = lorawan.LoRaWANR1
 		payload.MIC = [4]byte{1, 2, 3, 4}
 		macpayload := lorawan.NewMACPayload(true)
-		macpayload.FPort = 1
+		macpayload.FPort = new(uint8)
+		*macpayload.FPort = 1
+
 		macpayload.FRMPayload = []lorawan.Payload{&lorawan.DataPayload{Bytes: []byte{1, 2, 3}}}
 		payload.MACPayload = macpayload
 		data, err := payload.MarshalBinary()
@@ -576,7 +585,7 @@ func TestUDPAdapter(t *testing.T) {
 						},
 						FOpts: nil,
 					},
-					FPort:      uint32(macpayload.FPort),
+					FPort:      uint32(*macpayload.FPort),
 					FRMPayload: macpayload.FRMPayload[0].(*lorawan.DataPayload).Bytes,
 				},
 				MIC: payload.MIC[:],

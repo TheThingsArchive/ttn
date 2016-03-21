@@ -44,7 +44,8 @@ func NewLoRaWANData(reqPayload *LoRaWANData, uplink bool) (lorawan.PHYPayload, e
 	}
 
 	macpayload := lorawan.NewMACPayload(uplink)
-	macpayload.FPort = uint8(mac.FPort)
+	macpayload.FPort = new(uint8)
+	*macpayload.FPort = uint8(mac.FPort)
 	copy(macpayload.FHDR.DevAddr[:], fhdr.DevAddr)
 	macpayload.FHDR.FCnt = fhdr.FCnt
 	for _, data := range fhdr.FOpts {
