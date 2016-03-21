@@ -183,41 +183,6 @@ func TestNewClient(t *testing.T) {
 	// --------------------
 
 	{
-		Desc(t, "Connect a client and receive a abp msg")
-
-		// Build
-		cli, chmsg, err := NewClient(newID(), BrokerAddr, GetLogger(t, "Test Logger"))
-		FatalUnless(t, err)
-		msg := Msg{
-			Type:    ABP,
-			Topic:   "01020304/devices/personalized/activations",
-			Payload: []byte("message"),
-		}
-
-		// Operate
-		testCli.Publish(&client.PublishOptions{
-			QoS:       mqtt.QoS2,
-			Retain:    false,
-			TopicName: []byte(msg.Topic),
-			Message:   msg.Payload,
-		})
-
-		// Check
-		var got Msg
-		select {
-		case got = <-chmsg:
-		case <-time.After(75 * time.Millisecond):
-		}
-		Check(t, msg, got, "MQTT Messages")
-
-		// Clean
-		cli.Terminate()
-		<-time.After(time.Millisecond * 50)
-	}
-
-	// --------------------
-
-	{
 		Desc(t, "Connect a client and send on a random topic")
 
 		// Build
@@ -256,8 +221,8 @@ func TestNewClient(t *testing.T) {
 		cli, chmsg, err := NewClient(id, BrokerAddr, GetLogger(t, "Test Logger"))
 		FatalUnless(t, err)
 		msg := Msg{
-			Type:    ABP,
-			Topic:   "01020304/devices/personalized/activations",
+			Type:    Down,
+			Topic:   "0102030405060708/devices/0102030401020304/down",
 			Payload: []byte("message"),
 		}
 

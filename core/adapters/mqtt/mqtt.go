@@ -49,8 +49,6 @@ type Msg struct {
 // msgType constants are used in MQTTMsg to characterise the kind of message processed
 const (
 	Down msgType = iota + 1
-	ABP
-	OTAA
 )
 
 type msgType byte
@@ -161,65 +159,11 @@ func (a adapter) consumeMQTTMsg(chmsg <-chan Msg, handler core.HandlerServer) {
 			if err != nil {
 				a.Ctx.WithError(err).Debug("Unable to consume data down")
 			}
-		case ABP:
-			req, err := handleABP(msg)
-			if err == nil {
-				_, err = handler.SubscribePersonalized(context.Background(), req)
-			}
-			if err != nil {
-				a.Ctx.WithError(err).Debug("Unable to consume ABP")
-			}
 		default:
 			a.Ctx.Debug("Unsupported MQTT message's type")
 		}
 	}
 	a.Ctx.Debug("Stop consuming MQTT messages")
-}
-
-// handleABP parses and handles Application By Personalization request coming through MQTT
-func handleABP(msg Msg) (*core.ABPSubHandlerReq, error) {
-	// Ensure the query / topic parameters are valid
-	topicInfos := strings.Split(msg.Topic, "/")
-	if len(topicInfos) != 4 {
-		return nil, errors.New(errors.Structural, "Unexpect (and invalid) mqtt topic")
-	}
-
-	// Get the actual message, try messagePack then JSON
-	var req core.ABPSubAppReq
-	if _, err := req.UnmarshalMsg(msg.Payload); err != nil {
-		if err = json.Unmarshal(msg.Payload, &req); err != nil {
-			return nil, errors.New(errors.Structural, err)
-		}
-	}
-
-	// Verify each parameter
-	appEUI, err := hex.DecodeString(topicInfos[0])
-	if err != nil || len(appEUI) != 8 {
-		return nil, errors.New(errors.Structural, "Invalid Application EUI")
-	}
-
-	devAddr, err := hex.DecodeString(req.DevAddr)
-	if err != nil || len(devAddr) != 4 {
-		return nil, errors.New(errors.Structural, "Invalid Device Address")
-	}
-
-	nwkSKey, err := hex.DecodeString(req.NwkSKey)
-	if err != nil || len(nwkSKey) != 16 {
-		return nil, errors.New(errors.Structural, "Invalid Network Session Key")
-	}
-
-	appSKey, err := hex.DecodeString(req.AppSKey)
-	if err != nil || len(appSKey) != 16 {
-		return nil, errors.New(errors.Structural, "Invalid Application Session Key")
-	}
-
-	// Convert it to an handler subscription
-	return &core.ABPSubHandlerReq{
-		AppEUI:  appEUI,
-		DevAddr: devAddr,
-		NwkSKey: nwkSKey,
-		AppSKey: appSKey,
-	}, nil
 }
 
 // handleDataDown parses and handles Downlink message coming through MQTT
