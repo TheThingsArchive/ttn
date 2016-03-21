@@ -314,6 +314,13 @@ type HandlerServer struct {
 	OutHandleDataDown struct {
 		Res *core.DataDownHandlerRes
 	}
+	InHandleJoin struct {
+		Ctx context.Context
+		Req *core.JoinHandlerReq
+	}
+	OutHandleJoin struct {
+		Res *core.JoinHandlerRes
+	}
 	InSubscribePersonalized struct {
 		Ctx context.Context
 		Req *core.ABPSubHandlerReq
@@ -342,6 +349,13 @@ func (m *HandlerServer) HandleDataDown(ctx context.Context, in *core.DataDownHan
 	m.InHandleDataDown.Ctx = ctx
 	m.InHandleDataDown.Req = in
 	return m.OutHandleDataDown.Res, m.Failures["HandleDataDown"]
+}
+
+// HandleJoin implements the core.HandlerServer interface
+func (m *HandlerServer) HandleJoin(ctx context.Context, in *core.JoinHandlerReq) (*core.JoinHandlerRes, error) {
+	m.InHandleJoin.Ctx = ctx
+	m.InHandleJoin.Req = in
+	return m.OutHandleJoin.Res, m.Failures["HandleJoin"]
 }
 
 // SubscribePersonalized implements the core.HandlerServer interface

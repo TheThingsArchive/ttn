@@ -304,3 +304,71 @@ func (z *DataUpAppReq) Msgsize() (s int) {
 	}
 	return
 }
+
+// MarshalMsg implements msgp.Marshaler
+func (z *OTAAAppReq) MarshalMsg(b []byte) (o []byte, err error) {
+	o = msgp.Require(b, z.Msgsize())
+	// map header, size 1
+	// string "Metadata"
+	o = append(o, 0x81, 0xa8, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61)
+	o = msgp.AppendArrayHeader(o, uint32(len(z.Metadata)))
+	for bzg := range z.Metadata {
+		o, err = z.Metadata[bzg].MarshalMsg(o)
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+
+// UnmarshalMsg implements msgp.Unmarshaler
+func (z *OTAAAppReq) UnmarshalMsg(bts []byte) (o []byte, err error) {
+	var field []byte
+	_ = field
+	var isz uint32
+	isz, bts, err = msgp.ReadMapHeaderBytes(bts)
+	if err != nil {
+		return
+	}
+	for isz > 0 {
+		isz--
+		field, bts, err = msgp.ReadMapKeyZC(bts)
+		if err != nil {
+			return
+		}
+		switch msgp.UnsafeString(field) {
+		case "Metadata":
+			var xsz uint32
+			xsz, bts, err = msgp.ReadArrayHeaderBytes(bts)
+			if err != nil {
+				return
+			}
+			if cap(z.Metadata) >= int(xsz) {
+				z.Metadata = z.Metadata[:xsz]
+			} else {
+				z.Metadata = make([]AppMetadata, xsz)
+			}
+			for bzg := range z.Metadata {
+				bts, err = z.Metadata[bzg].UnmarshalMsg(bts)
+				if err != nil {
+					return
+				}
+			}
+		default:
+			bts, err = msgp.Skip(bts)
+			if err != nil {
+				return
+			}
+		}
+	}
+	o = bts
+	return
+}
+
+func (z *OTAAAppReq) Msgsize() (s int) {
+	s = 1 + 9 + msgp.ArrayHeaderSize
+	for bzg := range z.Metadata {
+		s += z.Metadata[bzg].Msgsize()
+	}
+	return
+}

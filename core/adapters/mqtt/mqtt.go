@@ -120,6 +120,32 @@ func (a adapter) HandleData(bctx context.Context, req *core.DataAppReq, _ ...grp
 	return nil, nil
 }
 
+// HandleJoin implements the core.AppClient interface
+func (a adapter) HandleJoin(bctx context.Context, req *core.JoinAppReq, _ ...grpc.CallOption) (*core.JoinAppRes, error) {
+	if len(req.AppEUI) != 8 || len(req.DevEUI) != 8 || len(req.Metadata) == 0 {
+		a.Ctx.Debug("Received invalid JoinAppReq")
+		return nil, errors.New(errors.Structural, "Invalid request parameters")
+	}
+	otaa := core.OTAAAppReq{
+		Metadata: core.ProtoMetaToAppMeta(req.Metadata...),
+	}
+	data, err := otaa.MarshalMsg(nil)
+	if err != nil {
+		return nil, errors.New(errors.Structural, err)
+	}
+	deui, aeui := hex.EncodeToString(req.DevEUI), hex.EncodeToString(req.AppEUI)
+	err = a.Client.Publish(&client.PublishOptions{
+		QoS:       mqtt.QoS2,
+		Retain:    false,
+		TopicName: []byte(fmt.Sprintf("%s/devices/%s/up", aeui, deui)),
+		Message:   data,
+	})
+	if err != nil {
+		return nil, errors.New(errors.Operational, err)
+	}
+	return nil, nil
+}
+
 // consumeMQTTMsg processes incoming messages from MQTT broker.
 //
 // It runs in its own goroutine
