@@ -300,12 +300,12 @@ func (h component) HandleDataUp(bctx context.Context, req *core.DataUpHandlerReq
 }
 
 // List implements the core.HandlerManagerServer interface
-func (h component) List(context.Context, *core.ListDevicesReq) (*core.ListDevicesRes, error) {
+func (h component) List(context.Context, *core.HandlerListDevicesReq) (*core.HandlerListDevicesRes, error) {
 	return nil, errors.New(errors.Structural, "Not implemented")
 }
 
 // Upsert implements the core.HandlerManagerServer interface
-func (h component) Upsert(context.Context, *core.UpsertDeviceReq) (*core.UpsertDeviceRes, error) {
+func (h component) Upsert(context.Context, *core.HandlerUpsertDeviceReq) (*core.HandlerUpsertDeviceRes, error) {
 	return nil, errors.New(errors.Structural, "Not implemented")
 }
 

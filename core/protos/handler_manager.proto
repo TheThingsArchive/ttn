@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package core;
 
-message Device {
+message HandlerDevice {
   bytes DevEUI = 1;
   message PersonalizedData {
     bytes NwkSKey = 1;
@@ -17,23 +17,23 @@ message Device {
   }
 }
 
-message ListDevicesReq {
+message HandlerListDevicesReq {
   bytes AppEUI = 1;
 }
 
-message ListDevicesRes {
-  repeated Device Devices = 1;
+message HandlerListDevicesRes {
+  repeated HandlerDevice Devices = 1;
 }
 
-message UpsertDeviceReq {
+message HandlerUpsertDeviceReq {
   bytes AppEUI = 1;
-  Device Device = 2;
+  HandlerDevice Device = 2;
 }
 
-message UpsertDeviceRes {
+message HandlerUpsertDeviceRes {
 }
 
 service HandlerManager {
-  rpc List(ListDevicesReq) returns (ListDevicesRes);
-  rpc Upsert(UpsertDeviceReq) returns (UpsertDeviceRes);
+  rpc List(HandlerListDevicesReq) returns (HandlerListDevicesRes);
+  rpc Upsert(HandlerUpsertDeviceReq) returns (HandlerUpsertDeviceRes);
 }
