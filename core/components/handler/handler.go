@@ -416,6 +416,7 @@ func (h component) consumeJoin(appEUI []byte, devEUI []byte, appKey [16]byte, da
 	appNonce, devAddr := make([]byte, 4), [4]byte{}
 	binary.BigEndian.PutUint32(appNonce, rdn.Uint32())
 	binary.BigEndian.PutUint32(devAddr[:], rdn.Uint32())
+	devAddr[0] = (h.Configuration.NetID[2] << 1) | (devAddr[0] & 1) // DevAddr 7 msb are NetID 7 lsb
 
 	buf := make([]byte, 16)
 	copy(buf[1:4], appNonce[:3])
