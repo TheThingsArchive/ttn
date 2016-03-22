@@ -512,7 +512,7 @@ func TestHandleData(t *testing.T) {
 				Frequency: req.Metadata.Frequency,
 			},
 		}
-		var wantStore uint16 = 0
+		var wantStore uint16
 
 		// Operate
 		res, err := r.HandleData(context.Background(), req)
@@ -737,7 +737,7 @@ func TestHandleData(t *testing.T) {
 		var wantErr = ErrOperational
 		var wantRes = new(core.DataRouterRes)
 		var wantBrReq *core.DataBrokerReq
-		var wantStore uint16 = 0
+		var wantStore uint16
 
 		// Operate
 		res, err := r.HandleData(context.Background(), req)
@@ -818,7 +818,7 @@ func TestHandleData(t *testing.T) {
 				Frequency: req.Metadata.Frequency,
 			},
 		}
-		var wantStore uint16 = 0
+		var wantStore uint16
 
 		// Operate
 		res, err := r.HandleData(context.Background(), req)
@@ -890,7 +890,7 @@ func TestHandleData(t *testing.T) {
 		var wantErr = ErrStructural
 		var wantRes = new(core.DataRouterRes)
 		var wantBrReq *core.DataBrokerReq
-		var wantStore uint16 = 0
+		var wantStore uint16
 
 		// Operate
 		res, err := r.HandleData(context.Background(), req)
@@ -968,7 +968,7 @@ func TestHandleData(t *testing.T) {
 				Frequency: req.Metadata.Frequency,
 			},
 		}
-		var wantStore uint16 = 0
+		var wantStore uint16
 
 		// Operate
 		res, err := r.HandleData(context.Background(), req)
@@ -1045,7 +1045,7 @@ func TestHandleData(t *testing.T) {
 				Frequency: req.Metadata.Frequency,
 			},
 		}
-		var wantStore uint16 = 0
+		var wantStore uint16
 
 		// Operate
 		res, err := r.HandleData(context.Background(), req)
@@ -1127,7 +1127,7 @@ func TestHandleData(t *testing.T) {
 				Frequency: req.Metadata.Frequency,
 			},
 		}
-		var wantStore uint16 = 0
+		var wantStore uint16
 
 		// Operate
 		res, err := r.HandleData(context.Background(), req)
@@ -1229,7 +1229,7 @@ func TestHandleData(t *testing.T) {
 				Frequency: req.Metadata.Frequency,
 			},
 		}
-		var wantStore uint16 = 0
+		var wantStore uint16
 		var wantUpdateGtw = req.GatewayID
 
 		// Operate
@@ -1330,7 +1330,7 @@ func TestHandleData(t *testing.T) {
 				Frequency: req.Metadata.Frequency,
 			},
 		}
-		var wantStore uint16 = 0
+		var wantStore uint16
 		var wantUpdateGtw []byte
 
 		// Operate
@@ -1432,7 +1432,7 @@ func TestHandleData(t *testing.T) {
 				Frequency: req.Metadata.Frequency,
 			},
 		}
-		var wantStore uint16 = 0
+		var wantStore uint16
 		var wantUpdateGtw = req.GatewayID
 
 		// Operate
