@@ -3,73 +3,86 @@
 
 package router
 
-import (
-	"github.com/TheThingsNetwork/ttn/core"
-)
-
-// MockStorage mocks the router.Storage interface
-type MockStorage struct {
+// MockBrkStorage mocks the router.BrkStorage interface
+type MockBrkStorage struct {
 	Failures map[string]error
-	InLookup struct {
+	InRead   struct {
 		DevAddr []byte
 	}
-	OutLookup struct {
-		Entries []entry
+	OutRead struct {
+		Entries []brkEntry
 	}
-	InStore struct {
-		DevAddr     []byte
-		BrokerIndex int
+	InCreate struct {
+		Entry brkEntry
 	}
-	InLookupStats struct {
-		GID []byte
-	}
-	OutLookupStats struct {
-		Metadata core.StatsMetadata
-	}
-	InUpdateStats struct {
-		GID      []byte
-		Metadata core.StatsMetadata
-	}
-	InClose struct {
+	InDone struct {
 		Called bool
 	}
 }
 
-// NewMockStorage creates a new mock storage
-func NewMockStorage() *MockStorage {
-	return &MockStorage{
+// NewMockBrkStorage creates a new mock BrkStorage
+func NewMockBrkStorage() *MockBrkStorage {
+	return &MockBrkStorage{
 		Failures: make(map[string]error),
 	}
 }
 
-// Lookup implements the router.Storage interface
-func (m *MockStorage) Lookup(devAddr []byte) ([]entry, error) {
-	m.InLookup.DevAddr = devAddr
-	return m.OutLookup.Entries, m.Failures["Lookup"]
+// read implements the router.BrkStorage interface
+func (m *MockBrkStorage) read(devAddr []byte) ([]brkEntry, error) {
+	m.InRead.DevAddr = devAddr
+	return m.OutRead.Entries, m.Failures["read"]
 }
 
-// Store implements the router.Storage interface
-func (m *MockStorage) Store(devAddr []byte, brokerIndex int) error {
-	m.InStore.DevAddr = devAddr
-	m.InStore.BrokerIndex = brokerIndex
-	return m.Failures["Store"]
+// create implements the router.BrkStorage interface
+func (m *MockBrkStorage) create(entry brkEntry) error {
+	m.InCreate.Entry = entry
+	return m.Failures["create"]
 }
 
-// LookupStats implements the router.Storage interface
-func (m *MockStorage) LookupStats(gid []byte) (core.StatsMetadata, error) {
-	m.InLookupStats.GID = gid
-	return m.OutLookupStats.Metadata, m.Failures["LookupStats"]
+// done implements the router.BrkStorage interface
+func (m *MockBrkStorage) done() error {
+	m.InDone.Called = true
+	return m.Failures["done"]
 }
 
-// UpdateStats implements the router.Storage interface
-func (m *MockStorage) UpdateStats(gid []byte, metadata core.StatsMetadata) error {
-	m.InUpdateStats.GID = gid
-	m.InUpdateStats.Metadata = metadata
-	return m.Failures["UpdateStats"]
+// MockGtwStorage mocks the router.GtwStorage interface
+type MockGtwStorage struct {
+	Failures map[string]error
+	InRead   struct {
+		DevAddr []byte
+	}
+	OutRead struct {
+		Entry gtwEntry
+	}
+	InUpsert struct {
+		Entry gtwEntry
+	}
+	InDone struct {
+		Called bool
+	}
 }
 
-// Close implements the router.Storage interface
-func (m *MockStorage) Close() error {
-	m.InClose.Called = true
-	return m.Failures["Close"]
+// NewMockGtwStorage Upserts a new mock GtwStorage
+func NewMockGtwStorage() *MockGtwStorage {
+	return &MockGtwStorage{
+		Failures: make(map[string]error),
+	}
+}
+
+// read implements the router.GtwStorage interface
+func (m *MockGtwStorage) read(devAddr []byte) (gtwEntry, error) {
+	m.InRead.DevAddr = devAddr
+	return m.OutRead.Entry, m.Failures["read"]
+}
+
+// Upsert implements the router.GtwStorage interface
+func (m *MockGtwStorage) upsert(entry gtwEntry) error {
+	m.InUpsert.Entry = entry
+	return m.Failures["upsert"]
+}
+
+// done implements the router.GtwStorage interface
+func (m *MockGtwStorage) done() error {
+	m.InDone.Called = true
+	return m.Failures["done"]
 }
