@@ -5,6 +5,8 @@ package broker
 
 import (
 	"encoding"
+	"encoding/binary"
+	"fmt"
 	"math"
 	"reflect"
 	"sync"
@@ -13,6 +15,8 @@ import (
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/readwriter"
 )
+
+var _ = fmt.Print
 
 // NetworkController gives a facade for manipulating the broker databases and devices
 type NetworkController interface {
@@ -79,18 +83,27 @@ func (s *controller) upsert(update devEntry) error {
 	defer s.Unlock()
 	itf, err := s.db.Read(update.DevAddr, &devEntry{}, dbDevices)
 	if err != nil {
-		return err
+		if err.(errors.Failure).Nature != errors.NotFound {
+			return err
+		}
+		return s.db.Update(update.DevAddr, []encoding.BinaryMarshaler{update}, dbDevices)
 	}
 	entries := itf.([]devEntry)
 
 	var newEntries []encoding.BinaryMarshaler
+	var replaced bool
 	for _, e := range entries {
 		entry := new(devEntry)
 		*entry = e
 		if reflect.DeepEqual(entry.AppEUI, update.AppEUI) && reflect.DeepEqual(entry.DevEUI, update.DevEUI) {
 			newEntries = append(newEntries, update)
+			replaced = true
+		} else {
+			newEntries = append(newEntries, entry)
 		}
-		newEntries = append(newEntries, entry)
+	}
+	if !replaced {
+		newEntries = append(newEntries, update)
 	}
 	return s.db.Update(update.DevAddr, newEntries, dbDevices)
 }
@@ -107,6 +120,7 @@ func (e devEntry) MarshalBinary() ([]byte, error) {
 	rw.Write(e.DevEUI)
 	rw.Write(e.DevAddr)
 	rw.Write(e.NwkSKey[:])
+	rw.Write(e.FCntUp)
 	rw.Write(e.Dialer.MarshalSafely())
 	return rw.Bytes()
 }
@@ -128,6 +142,7 @@ func (e *devEntry) UnmarshalBinary(data []byte) error {
 	})
 
 	rw.Read(func(data []byte) { copy(e.NwkSKey[:], data) })
+	rw.Read(func(data []byte) { e.FCntUp = binary.BigEndian.Uint32(data) })
 	rw.Read(func(data []byte) {
 		e.Dialer = NewDialer(data)
 	})
