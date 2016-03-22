@@ -4,49 +4,39 @@
 package broker
 
 import (
-	"bytes"
-	"encoding/binary"
-	"fmt"
+	"encoding"
 	"math"
 	"reflect"
 	"sync"
 
 	dbutil "github.com/TheThingsNetwork/ttn/core/storage"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
+	"github.com/TheThingsNetwork/ttn/utils/readwriter"
 )
 
 // NetworkController gives a facade for manipulating the broker databases and devices
 type NetworkController interface {
-	LookupDevices(devAddr []byte) ([]devEntry, error)
-	WholeCounter(devCnt uint32, entryCnt uint32) (uint32, error)
-	StoreDevice(devAddr []byte, entry devEntry) error
-	ReadActivation(appEUI []byte, devEUI []byte) (appEntry, error)
-	UpdateActivation(entry appEntry) error
-	UpdateFCnt(appEUI []byte, devEUI []byte, devAddr []byte, fcnt uint32) error
-	Close() error
+	read(devAddr []byte) ([]devEntry, error)
+	upsert(entry devEntry) error
+	wholeCounter(devCnt uint32, entryCnt uint32) (uint32, error)
+	done() error
 }
 
 type devEntry struct {
-	Dialer  Dialer
 	AppEUI  []byte
+	DevAddr []byte
 	DevEUI  []byte
-	NwkSKey [16]byte
+	Dialer  Dialer
 	FCntUp  uint32
-}
-
-type appEntry struct {
-	Dialer    Dialer
-	AppEUI    []byte
-	DevEUI    []byte
-	DevNonces [][]byte
+	NwkSKey [16]byte
 }
 
 type controller struct {
 	sync.RWMutex
-	db           dbutil.Interface
-	Devices      string
-	Applications string
+	db dbutil.Interface
 }
+
+var dbDevices = []byte("devices")
 
 // NewNetworkController constructs a new broker controller
 func NewNetworkController(name string) (NetworkController, error) {
@@ -55,45 +45,20 @@ func NewNetworkController(name string) (NetworkController, error) {
 		return nil, errors.New(errors.Operational, err)
 	}
 
-	return &controller{db: itf, Devices: "Devices", Applications: "Applications"}, nil
+	return &controller{db: itf}, nil
 }
 
-// LookupDevices implements the broker.NetworkController interface
-func (s *controller) LookupDevices(devAddr []byte) ([]devEntry, error) {
-	s.RLock()
-	defer s.RUnlock()
-	entries, err := s.db.Lookup(s.Devices, devAddr, &devEntry{})
+// read implements the NetworkController interface
+func (s *controller) read(devAddr []byte) ([]devEntry, error) {
+	entries, err := s.db.Read(devAddr, &devEntry{}, dbDevices)
 	if err != nil {
 		return nil, err
 	}
 	return entries.([]devEntry), nil
 }
 
-// ReadActivation implements the broker.NetworkController interface
-func (s *controller) ReadActivation(appEUI []byte, devEUI []byte) (appEntry, error) {
-	s.RLock()
-	defer s.RUnlock()
-	itf, err := s.db.Lookup(fmt.Sprintf("%x.%x", appEUI, devEUI), []byte("entry"), &appEntry{})
-	if err != nil {
-		return appEntry{}, err
-	}
-	entries := itf.([]appEntry)
-	if len(entries) != 1 {
-		// NOTE should clean up the entry ?
-		return appEntry{}, errors.New(errors.Structural, "Invalid stored entry")
-	}
-	return entries[0], nil
-}
-
-// UpdateAction implements the broker.NetworkController interface
-func (s *controller) UpdateActivation(entry appEntry) error {
-	s.Lock()
-	defer s.Unlock()
-	return s.db.Replace(fmt.Sprintf("%x.%x", entry.AppEUI, entry.DevEUI), []byte("entry"), []dbutil.Entry{&entry})
-}
-
-// WholeCounter implements the broker.NetworkController interface
-func (s *controller) WholeCounter(devCnt uint32, entryCnt uint32) (uint32, error) {
+// wholeCounter implements the broker.NetworkController interface
+func (s *controller) wholeCounter(devCnt uint32, entryCnt uint32) (uint32, error) {
 	upperSup := int(math.Pow(2, 16))
 	diff := int(devCnt) - (int(entryCnt) % upperSup)
 	var offset int
@@ -108,98 +73,63 @@ func (s *controller) WholeCounter(devCnt uint32, entryCnt uint32) (uint32, error
 	return entryCnt + uint32(offset), nil
 }
 
-// UpdateFCnt implements the broker.NetworkController interface
-func (s *controller) UpdateFCnt(appEUI []byte, devEUI []byte, devAddr []byte, fcnt uint32) error {
+// upsert implements the broker.NetworkController interface
+func (s *controller) upsert(update devEntry) error {
 	s.Lock()
 	defer s.Unlock()
-	itf, err := s.db.Lookup(s.Devices, devAddr, &devEntry{})
+	itf, err := s.db.Read(update.DevAddr, &devEntry{}, dbDevices)
 	if err != nil {
 		return err
 	}
 	entries := itf.([]devEntry)
 
-	var newEntries []dbutil.Entry
+	var newEntries []encoding.BinaryMarshaler
 	for _, e := range entries {
 		entry := new(devEntry)
 		*entry = e
-		if reflect.DeepEqual(entry.AppEUI, appEUI) && reflect.DeepEqual(entry.DevEUI, devEUI) {
-			entry.FCntUp = fcnt
+		if reflect.DeepEqual(entry.AppEUI, update.AppEUI) && reflect.DeepEqual(entry.DevEUI, update.DevEUI) {
+			newEntries = append(newEntries, update)
 		}
 		newEntries = append(newEntries, entry)
 	}
-
-	return s.db.Replace(s.Devices, devAddr, newEntries)
+	return s.db.Update(update.DevAddr, newEntries, dbDevices)
 }
 
-// StoreDevice implements the broker.NetworkController interface
-func (s *controller) StoreDevice(devAddr []byte, entry devEntry) error {
-	s.Lock()
-	defer s.Unlock()
-	return s.db.Store(s.Devices, devAddr, []dbutil.Entry{&entry})
-}
-
-// Close implements the broker.NetworkController interface
-func (s *controller) Close() error {
+// done implements the broker.NetworkController interface
+func (s *controller) done() error {
 	return s.db.Close()
 }
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface
 func (e devEntry) MarshalBinary() ([]byte, error) {
-	buf := new(bytes.Buffer)
-	binary.Write(buf, binary.BigEndian, e.AppEUI)  // 8
-	binary.Write(buf, binary.BigEndian, e.DevEUI)  // 8
-	binary.Write(buf, binary.BigEndian, e.NwkSKey) // 16
-	binary.Write(buf, binary.BigEndian, e.FCntUp)  // 4
-	if len(buf.Bytes()) != 36 {
-		return nil, errors.New(errors.Structural, "Device entry was invalid. Cannot Marshal")
-	}
-	binary.Write(buf, binary.BigEndian, e.Dialer.MarshalSafely())
-	return buf.Bytes(), nil
+	rw := readwriter.New(nil)
+	rw.Write(e.AppEUI)
+	rw.Write(e.DevEUI)
+	rw.Write(e.DevAddr)
+	rw.Write(e.NwkSKey[:])
+	rw.Write(e.Dialer.MarshalSafely())
+	return rw.Bytes()
 }
 
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
 func (e *devEntry) UnmarshalBinary(data []byte) error {
-	buf := bytes.NewBuffer(data)
-	e.AppEUI = make([]byte, 8, 8)
-	binary.Read(buf, binary.BigEndian, &e.AppEUI)
-	e.DevEUI = make([]byte, 8, 8)
-	binary.Read(buf, binary.BigEndian, &e.DevEUI)
-	binary.Read(buf, binary.BigEndian, &e.NwkSKey) // fixed-length array
-	binary.Read(buf, binary.BigEndian, &e.FCntUp)
-	e.Dialer = NewDialer(buf.Next(buf.Len()))
-	return nil
-}
+	rw := readwriter.New(data)
+	rw.Read(func(data []byte) {
+		e.AppEUI = make([]byte, len(data))
+		copy(e.AppEUI, data)
+	})
+	rw.Read(func(data []byte) {
+		e.DevEUI = make([]byte, len(data))
+		copy(e.DevEUI, data)
+	})
+	rw.Read(func(data []byte) {
+		e.DevAddr = make([]byte, len(data))
+		copy(e.DevAddr, data)
+	})
 
-// MarshalBinary implements the encoding.BinaryMarshaler interface
-func (e appEntry) MarshalBinary() ([]byte, error) {
-	buf := new(bytes.Buffer)
-	binary.Write(buf, binary.BigEndian, e.AppEUI)
-	binary.Write(buf, binary.BigEndian, e.DevEUI)
-	binary.Write(buf, binary.BigEndian, uint16(len(e.DevNonces)))
-	for _, n := range e.DevNonces {
-		binary.Write(buf, binary.BigEndian, n)
-	}
-	if len(buf.Bytes()) != 16+2+2*len(e.DevNonces) {
-		return nil, errors.New(errors.Structural, "App entry was invalid. Cannot Marshal")
-	}
-	binary.Write(buf, binary.BigEndian, e.Dialer.MarshalSafely())
-	return buf.Bytes(), nil
-}
-
-// UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
-func (e *appEntry) UnmarshalBinary(data []byte) error {
-	buf := bytes.NewBuffer(data)
-	e.AppEUI = make([]byte, 8, 8)
-	binary.Read(buf, binary.BigEndian, &e.AppEUI)
-	e.DevEUI = make([]byte, 8, 8)
-	binary.Read(buf, binary.BigEndian, &e.DevEUI)
-	var n uint16
-	binary.Read(buf, binary.BigEndian, &n)
-	for i := 0; i < int(n); i++ {
-		devNonce := make([]byte, 2, 2)
-		binary.Read(buf, binary.BigEndian, &devNonce)
-		e.DevNonces = append(e.DevNonces, devNonce)
-	}
-	e.Dialer = NewDialer(buf.Next(buf.Len()))
-	return nil
+	rw.Read(func(data []byte) { copy(e.NwkSKey[:], data) })
+	rw.Read(func(data []byte) {
+		e.Dialer = NewDialer(data)
+	})
+	return rw.Err()
 }
