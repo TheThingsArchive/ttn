@@ -18,8 +18,11 @@ DEPS = `comm -23 <(sort <($(GOCMD) list -f '{{join .Imports "\n"}}' ./...) | uni
 TEST_DEPS = `comm -23 <(sort <($(GOCMD) list -f '{{join .TestImports "\n"}}' ./...) | uniq) <($(GOCMD) list std) | grep -v TheThingsNetwork`
 
 select_pkgs = $(GOCMD) list ./... | grep -vE 'vendor'
+coverage_pkgs = $(GOCMD) list ./... | grep -E 'core' | grep -vE 'core$$|mocks$$'
 
 RELEASE_DIR ?= release
+COVER_FILE = coverage.out
+TEMP_COVER_DIR ?= .cover
 
 ttnpkg = ttn-$(GOOS)-$(GOARCH)
 ttnctlpkg = ttnctl-$(GOOS)-$(GOARCH)
@@ -37,6 +40,10 @@ deps:
 test-deps:
 	$(GOCMD) get -d -v $(TEST_DEPS)
 
+cover-deps:
+	if ! $(GOCMD) get github.com/golang/tools/cmd/cover; then $(GOCMD) get golang.org/x/tools/cmd/cover; fi
+	$(GOCMD) get github.com/mattn/goveralls
+
 test:
 	$(select_pkgs) | xargs $(GOCMD) test
 
@@ -47,10 +54,18 @@ vet:
 	$(select_pkgs) | xargs $(GOCMD) vet
 
 cover:
-	$(error Still have to add this to Makefile)
+	mkdir $(TEMP_COVER_DIR)
+	for pkg in $$($(coverage_pkgs)); do profile="$(TEMP_COVER_DIR)/$$(echo $$pkg | grep -oE 'ttn/.*' | sed 's/\///g').cover"; $(GOCMD) test -cover -coverprofile=$$profile $$pkg; done
+	echo "mode: set" > $(COVER_FILE) && cat $(TEMP_COVER_DIR)/*.cover | grep -v mode: | sort -r | awk '{if($$1 != last) {print $$0;last=$$1}}' >> $(COVER_FILE)
+	rm -r $(TEMP_COVER_DIR)
+
+coveralls:
+	$$GOPATH/bin/goveralls -coverprofile=$(COVER_FILE) -service=travis-ci -repotoken $$COVERALLS_TOKEN
 
 clean:
-	rm -rf $(RELEASE_DIR)
+	[ -d $(RELEASE_DIR) ] && rm -rf $(RELEASE_DIR) || [ ! -d $(RELEASE_DIR) ]
+	([ -d $(TEMP_COVER_DIR) ] && rm -rf $(TEMP_COVER_DIR)) || [ ! -d $(TEMP_COVER_DIR) ]
+	([ -f $(COVER_FILE) ] && rm $(COVER_FILE)) || [ ! -d $(COVER_FILE) ]
 
 build: $(RELEASE_DIR)/$(ttnbin) $(RELEASE_DIR)/$(ttnctlbin)
 

@@ -11,19 +11,18 @@ before_install:
 
 install:
     - sudo apt-get install mosquitto mosquitto-clients
-    - if ! go get github.com/golang/tools/cmd/cover; then go get golang.org/x/tools/cmd/cover; fi
-    - go get github.com/mattn/goveralls
-    - go get $(comm -23 <(sort <(go list -f '{{join .Imports "\n"}}' ./...) | uniq) <(go list std) | grep -v TheThingsNetwork)
-    - go get $(comm -23 <(sort <(go list -f '{{join .TestImports "\n"}}' ./...) | uniq) <(go list std) | grep -v TheThingsNetwork)
+    - make deps
+    - make test-deps
+    - make cover-deps
 
 before_script:
     - mosquitto -p 1883 1>/dev/null 2>/dev/null &
 
 script:
-    - go list ./... | grep -vE 'vendor|integration|ttn$' | xargs go test
-    - sh -c 'FMTRES="$(go fmt ./...)"; if [ ! -z "$FMTRES" ]; then echo $FMTRES; exit 255; fi'
-    - go vet ./...
+    - make test
+    - make fmt
+    - make vet
 
 after_success:
-    - source ./coverage.sh
-    - $HOME/gopath/bin/goveralls -coverprofile=coverage.out -service=travis-ci -repotoken $COVERALLS_TOKEN
+    - make cover
+    - make coveralls
