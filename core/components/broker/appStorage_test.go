@@ -1,0 +1,141 @@
+// Copyright © 2015 The Things Network
+// Use of this source code is governed by the MIT license that can be found in the LICENSE file.
+
+package broker
+
+import (
+	"os"
+	"path"
+	"testing"
+
+	. "github.com/TheThingsNetwork/ttn/utils/testing"
+)
+
+const devDB = "TestDevStorage.db"
+
+func TestReadStore(t *testing.T) {
+	var db AppStorage
+	defer func() {
+		os.Remove(path.Join(os.TempDir(), devDB))
+	}()
+
+	// ------------------
+
+	{
+		Desc(t, "Create a new storage")
+		var err error
+		db, err = NewAppStorage(path.Join(os.TempDir(), devDB))
+		CheckErrors(t, nil, err)
+	}
+
+	// ------------------
+
+	{
+		Desc(t, "Store and read a registration")
+
+		// Build
+		entry := appEntry{
+			Dialer:    NewDialer([]byte("dialer")),
+			AppEUI:    []byte{0, 2},
+			DevEUI:    []byte{0, 2},
+			DevNonces: [][]byte{[]byte{1, 2}},
+			Password:  []byte{3, 4},
+			Salt:      []byte{5, 6},
+		}
+
+		// Operate
+		err := db.upsert(entry)
+		FatalUnless(t, err)
+		got, err := db.read(entry.AppEUI, entry.DevEUI)
+
+		// Check
+		CheckErrors(t, nil, err)
+		Check(t, entry, got, "Device Entries")
+	}
+
+	// ------------------
+
+	{
+		Desc(t, "read a non-existing registration")
+
+		// Build
+		appEUI := []byte{0, 0, 0, 0, 0, 0, 0, 2}
+		devEUI := []byte{0, 0, 0, 0, 1, 2, 3, 4}
+
+		// Operate
+		_, err := db.read(appEUI, devEUI)
+
+		// Check
+		CheckErrors(t, ErrNotFound, err)
+	}
+
+	// ------------------
+
+	{
+		Desc(t, "Store twice the same registration")
+
+		// Build
+		entry := appEntry{
+			Dialer:    NewDialer([]byte("dialer")),
+			AppEUI:    []byte{0, 1},
+			DevEUI:    []byte{0, 1},
+			DevNonces: [][]byte{[]byte{1, 2}},
+			Password:  []byte{3, 4},
+			Salt:      []byte{5, 6},
+		}
+
+		// Operate
+		err := db.upsert(entry)
+		FatalUnless(t, err)
+		err = db.upsert(entry)
+		FatalUnless(t, err)
+		got, err := db.read(entry.AppEUI, entry.DevEUI)
+
+		// Check
+		CheckErrors(t, nil, err)
+		Check(t, entry, got, "Device Entries")
+	}
+
+	// ------------------
+
+	{
+		Desc(t, "Update an entry")
+
+		// Build
+		entry := appEntry{
+			Dialer:    NewDialer([]byte("dialer")),
+			AppEUI:    []byte{0, 1},
+			DevEUI:    []byte{0, 1},
+			DevNonces: [][]byte{[]byte{1, 2}},
+			Password:  []byte{3, 4},
+			Salt:      []byte{5, 6},
+		}
+		update := appEntry{
+			Dialer:    NewDialer([]byte("dialer")),
+			AppEUI:    []byte{0, 1},
+			DevEUI:    []byte{0, 1},
+			DevNonces: [][]byte{[]byte{1, 2}, []byte{2, 5}},
+			Password:  []byte{3, 4},
+			Salt:      []byte{5, 6},
+		}
+
+		// Operate
+		err := db.upsert(entry)
+		FatalUnless(t, err)
+		err = db.upsert(update)
+		got, errRead := db.read(entry.AppEUI, entry.DevEUI)
+		FatalUnless(t, errRead)
+
+		// Check
+		CheckErrors(t, nil, err)
+		Check(t, update, got, "Device Entries")
+	}
+
+	// ------------------
+
+	{
+		Desc(t, "Close the storage")
+		err := db.done()
+		CheckErrors(t, nil, err)
+	}
+}
