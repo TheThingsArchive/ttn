@@ -185,10 +185,13 @@ func (z *AppMetadata) Msgsize() (s int) {
 // MarshalMsg implements msgp.Marshaler
 func (z *DataDownAppReq) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
-	// map header, size 1
+	// map header, size 2
 	// string "payload"
-	o = append(o, 0x81, 0xa7, 0x70, 0x61, 0x79, 0x6c, 0x6f, 0x61, 0x64)
+	o = append(o, 0x82, 0xa7, 0x70, 0x61, 0x79, 0x6c, 0x6f, 0x61, 0x64)
 	o = msgp.AppendBytes(o, z.Payload)
+	// string "ttl"
+	o = append(o, 0xa3, 0x74, 0x74, 0x6c)
+	o = msgp.AppendString(o, z.TTL)
 	return
 }
 
@@ -213,6 +216,11 @@ func (z *DataDownAppReq) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			if err != nil {
 				return
 			}
+		case "ttl":
+			z.TTL, bts, err = msgp.ReadStringBytes(bts)
+			if err != nil {
+				return
+			}
 		default:
 			bts, err = msgp.Skip(bts)
 			if err != nil {
@@ -225,7 +233,7 @@ func (z *DataDownAppReq) UnmarshalMsg(bts []byte) (o []byte, err error) {
 }
 
 func (z *DataDownAppReq) Msgsize() (s int) {
-	s = 1 + 8 + msgp.BytesPrefixSize + len(z.Payload)
+	s = 1 + 8 + msgp.BytesPrefixSize + len(z.Payload) + 4 + msgp.StringPrefixSize + len(z.TTL)
 	return
 }
 

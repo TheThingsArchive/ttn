@@ -36,6 +36,7 @@ type AppMetadata struct {
 // DataDownAppReq represents downlink messages sent by applications
 type DataDownAppReq struct {
 	Payload []byte `msg:"payload" json:"payload"`
+	TTL     string `msg:"ttl" json:"ttl"`
 }
 
 // ABPSubAppReq defines the shape of the request made by an application to the handler

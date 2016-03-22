@@ -62,6 +62,7 @@ func (b component) Start() error {
 
 	server := grpc.NewServer()
 	core.RegisterBrokerServer(server, b)
+	core.RegisterBrokerManagerServer(server, b)
 
 	cherr := make(chan error)
 

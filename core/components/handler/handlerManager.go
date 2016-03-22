@@ -40,8 +40,10 @@ func (h component) UpsertABP(bctx context.Context, req *core.UpsertABPHandlerReq
 	// 3. Insert the request in our own storage
 	h.Ctx.WithField("AppEUI", req.AppEUI).WithField("DevAddr", req.DevAddr).Debug("Request accepted by broker. Registering Device.")
 	entry := devEntry{
-		AppEUI: req.AppEUI,
-		DevEUI: append([]byte{0, 0, 0, 0}, req.DevAddr...),
+		AppEUI:   req.AppEUI,
+		DevEUI:   append([]byte{0, 0, 0, 0}, req.DevAddr...),
+		DevAddr:  req.DevAddr,
+		FCntDown: 0,
 	}
 	copy(entry.NwkSKey[:], req.NwkSKey)
 	copy(entry.AppSKey[:], req.AppSKey)

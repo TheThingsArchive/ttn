@@ -7,7 +7,6 @@ import (
 	"bytes"
 	"crypto/aes"
 	"encoding/binary"
-	"fmt"
 	"math/rand"
 	"net"
 	"reflect"
@@ -208,8 +207,8 @@ func (h component) HandleDataDown(bctx context.Context, req *core.DataDownHandle
 		return new(core.DataDownHandlerRes), errors.New(errors.Structural, "Invalid payload")
 	}
 
-	ttl, err := time.ParseDuration(fmt.Sprintf("%dh", req.TTL))
-	if req.TTL == 0 || err != nil {
+	ttl, err := time.ParseDuration(req.TTL)
+	if err != nil || ttl == 0 {
 		stats.MarkMeter("handler.downlink.invalid")
 		return new(core.DataDownHandlerRes), errors.New(errors.Structural, "Invalid TTL")
 	}
@@ -252,6 +251,7 @@ func (h component) HandleDataUp(bctx context.Context, req *core.DataUpHandlerReq
 	if err != nil {
 		return new(core.DataUpHandlerRes), err
 	}
+	h.Ctx.Debugf("%+v", entry)
 	if len(entry.DevAddr) != 4 { // Not Activated
 		return new(core.DataUpHandlerRes), errors.New(errors.Structural, "Tried to send uplink on non-activated device")
 	}

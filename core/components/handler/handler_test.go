@@ -30,7 +30,7 @@ func TestHandleDataDown(t *testing.T) {
 			AppEUI:  []byte{1, 1, 1, 1, 1, 1, 1, 1},
 			DevEUI:  []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			Payload: []byte("TheThingsNetwork"),
-			TTL:     2,
+			TTL:     "2h",
 		}
 
 		// Expect
@@ -67,7 +67,7 @@ func TestHandleDataDown(t *testing.T) {
 		req := &core.DataDownHandlerReq{
 			AppEUI:  []byte{1, 1, 1, 1, 1, 1, 1, 1},
 			DevEUI:  []byte{2, 2, 2, 2, 2, 2, 2, 2},
-			TTL:     2,
+			TTL:     "2h",
 			Payload: nil,
 		}
 
@@ -105,7 +105,7 @@ func TestHandleDataDown(t *testing.T) {
 		req := &core.DataDownHandlerReq{
 			AppEUI:  []byte{1, 1, 1, 1, 1},
 			DevEUI:  []byte{2, 2, 2, 2, 2, 2, 2, 2},
-			TTL:     2,
+			TTL:     "2h",
 			Payload: []byte("TheThingsNetwork"),
 		}
 
@@ -143,7 +143,7 @@ func TestHandleDataDown(t *testing.T) {
 		req := &core.DataDownHandlerReq{
 			AppEUI:  []byte{1, 1, 1, 1, 1, 1, 1, 1},
 			DevEUI:  []byte{2, 2, 2, 2, 2, 2, 2, 2, 2},
-			TTL:     2,
+			TTL:     "2h",
 			Payload: []byte("TheThingsNetwork"),
 		}
 
@@ -181,7 +181,7 @@ func TestHandleDataDown(t *testing.T) {
 		req := &core.DataDownHandlerReq{
 			AppEUI:  []byte{1, 1, 1, 1, 1, 1, 1, 1},
 			DevEUI:  []byte{2, 2, 2, 2, 2, 2, 2, 2, 2},
-			TTL:     0,
+			TTL:     "0s",
 			Payload: []byte("TheThingsNetwork"),
 		}
 

@@ -22,7 +22,7 @@ message DataDownHandlerReq {
     bytes       Payload     = 1;
     bytes       AppEUI      = 2;
     bytes       DevEUI      = 3;
-    uint32      TTL         = 4;
+    string      TTL         = 4;
 }
 
 message DataDownHandlerRes {}
