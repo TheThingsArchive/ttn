@@ -4,7 +4,6 @@
 package broker
 
 import (
-	"bytes"
 	"encoding"
 
 	dbutil "github.com/TheThingsNetwork/ttn/core/storage"
@@ -16,18 +15,16 @@ import (
 
 // AppStorage gives a facade for manipulating the broker applications infos
 type AppStorage interface {
-	read(appEUI []byte, devEUI []byte) (appEntry, error)
+	read(appEUI []byte) (appEntry, error)
 	upsert(entry appEntry) error
 	done() error
 }
 
 type appEntry struct {
-	Dialer    Dialer
-	AppEUI    []byte
-	DevEUI    []byte
-	DevNonces [][]byte
-	Password  []byte
-	Salt      []byte
+	Dialer   Dialer
+	AppEUI   []byte
+	Password []byte
+	Salt     []byte
 }
 
 type appStorage struct {
@@ -45,8 +42,8 @@ func NewAppStorage(name string) (AppStorage, error) {
 }
 
 // read implements the AppStorage interface
-func (s *appStorage) read(appEUI []byte, devEUI []byte) (appEntry, error) {
-	itf, err := s.db.Read(nil, &appEntry{}, appEUI, devEUI)
+func (s *appStorage) read(appEUI []byte) (appEntry, error) {
+	itf, err := s.db.Read(nil, &appEntry{}, appEUI)
 	if err != nil {
 		return appEntry{}, err
 	}
@@ -59,7 +56,7 @@ func (s *appStorage) read(appEUI []byte, devEUI []byte) (appEntry, error) {
 
 // upsert implements the AppStorage interface
 func (s *appStorage) upsert(entry appEntry) error {
-	return s.db.Update(nil, []encoding.BinaryMarshaler{entry}, entry.AppEUI, entry.DevEUI)
+	return s.db.Update(nil, []encoding.BinaryMarshaler{entry}, entry.AppEUI)
 }
 
 // done implements the AppStorage interface {
@@ -71,15 +68,9 @@ func (s *appStorage) done() error {
 func (e appEntry) MarshalBinary() ([]byte, error) {
 	rw := readwriter.New(nil)
 	rw.Write(e.AppEUI)
-	rw.Write(e.DevEUI)
 	rw.Write(e.Password)
 	rw.Write(e.Salt)
 	rw.Write(e.Dialer.MarshalSafely())
-	buf := new(bytes.Buffer)
-	for _, n := range e.DevNonces {
-		_, _ = buf.Write(n)
-	}
-	rw.Write(buf.Bytes())
 	return rw.Bytes()
 }
 
@@ -91,10 +82,6 @@ func (e *appEntry) UnmarshalBinary(data []byte) error {
 		copy(e.AppEUI, data)
 	})
 	rw.Read(func(data []byte) {
-		e.DevEUI = make([]byte, len(data))
-		copy(e.DevEUI, data)
-	})
-	rw.Read(func(data []byte) {
 		e.Password = make([]byte, len(data))
 		copy(e.Password, data)
 	})
@@ -104,14 +91,6 @@ func (e *appEntry) UnmarshalBinary(data []byte) error {
 	})
 	rw.Read(func(data []byte) {
 		e.Dialer = NewDialer(data)
-	})
-	rw.Read(func(data []byte) {
-		n := len(data) / 2 // DevNonce -> 2-bytes
-		for i := 0; i < int(n); i++ {
-			devNonce := make([]byte, 2, 2)
-			copy(devNonce, data[2*i:2*i+2])
-			e.DevNonces = append(e.DevNonces, devNonce)
-		}
 	})
 	return rw.Err()
 }

@@ -834,7 +834,10 @@ func TestHandleJoin(t *testing.T) {
 		dl.OutDial.Closer = NewMockCloser()
 
 		as.OutRead.Entry = appEntry{
-			Dialer:    dl,
+			Dialer: dl,
+			AppEUI: []byte{2, 2, 2, 2, 2, 2, 2, 2},
+		}
+		nc.OutReadNonces.Entry = noncesEntry{
 			AppEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			DevEUI:    []byte{3, 3, 3, 3, 3, 3, 3, 3},
 			DevNonces: [][]byte{},
@@ -842,8 +845,8 @@ func TestHandleJoin(t *testing.T) {
 
 		br := New(Components{NetworkController: nc, AppStorage: as, Ctx: GetLogger(t, "Broker")}, Options{})
 		req := &core.JoinBrokerReq{
-			AppEUI:   as.OutRead.Entry.AppEUI,
-			DevEUI:   as.OutRead.Entry.DevEUI,
+			AppEUI:   nc.OutReadNonces.Entry.AppEUI,
+			DevEUI:   nc.OutReadNonces.Entry.DevEUI,
 			DevNonce: []byte{14, 14},
 			Metadata: new(core.Metadata),
 		}
@@ -860,8 +863,7 @@ func TestHandleJoin(t *testing.T) {
 			Payload:  hl.OutHandleJoin.Res.Payload,
 			Metadata: hl.OutHandleJoin.Res.Metadata,
 		}
-		var wantActivation = appEntry{
-			Dialer:    dl,
+		var wantActivation = noncesEntry{
 			AppEUI:    req.AppEUI,
 			DevEUI:    req.DevEUI,
 			DevNonces: [][]byte{req.DevNonce},
@@ -875,7 +877,73 @@ func TestHandleJoin(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantJoinReq, hl.InHandleJoin.Req, "Handler Join Requests")
 		Check(t, wantRes, res, "Broker Join Responses")
-		Check(t, wantActivation, as.InUpsert.Entry, "Activations")
+		Check(t, wantActivation, nc.InUpsertNonces.Entry, "Activations")
+		Check(t, wantDialer, dl.InDial.Called, "Dialer calls")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Valid Join Request - very first time, no devNonces | Valid Join Accept")
+
+		// Build
+		nc := NewMockNetworkController()
+		nc.Failures["readNonces"] = errors.New(errors.NotFound, "Mock Error")
+		as := NewMockAppStorage()
+		hl := mocks.NewHandlerClient()
+		hl.OutHandleJoin.Res = &core.JoinHandlerRes{
+			Payload: &core.LoRaWANJoinAccept{
+				Payload: []byte{14, 42},
+			},
+			DevAddr:  []byte{1, 1, 1, 1},
+			NwkSKey:  []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
+			Metadata: new(core.Metadata),
+		}
+
+		dl := NewMockDialer()
+		dl.OutDial.Client = hl
+		dl.OutDial.Closer = NewMockCloser()
+
+		as.OutRead.Entry = appEntry{
+			Dialer: dl,
+			AppEUI: []byte{2, 2, 2, 2, 2, 2, 2, 2},
+		}
+
+		br := New(Components{NetworkController: nc, AppStorage: as, Ctx: GetLogger(t, "Broker")}, Options{})
+		req := &core.JoinBrokerReq{
+			AppEUI:   []byte{2, 2, 2, 2, 2, 2, 2, 2},
+			DevEUI:   []byte{3, 3, 3, 3, 3, 3, 3, 3},
+			DevNonce: []byte{14, 14},
+			Metadata: new(core.Metadata),
+		}
+
+		// Expect
+		var wantErr *string
+		var wantJoinReq = &core.JoinHandlerReq{
+			AppEUI:   req.AppEUI,
+			DevEUI:   req.DevEUI,
+			DevNonce: req.DevNonce,
+			Metadata: req.Metadata,
+		}
+		var wantRes = &core.JoinBrokerRes{
+			Payload:  hl.OutHandleJoin.Res.Payload,
+			Metadata: hl.OutHandleJoin.Res.Metadata,
+		}
+		var wantActivation = noncesEntry{
+			AppEUI:    req.AppEUI,
+			DevEUI:    req.DevEUI,
+			DevNonces: [][]byte{req.DevNonce},
+		}
+		var wantDialer = true
+
+		// Operate
+		res, err := br.HandleJoin(context.Background(), req)
+
+		// Checks
+		CheckErrors(t, wantErr, err)
+		Check(t, wantJoinReq, hl.InHandleJoin.Req, "Handler Join Requests")
+		Check(t, wantRes, res, "Broker Join Responses")
+		Check(t, wantActivation, nc.InUpsertNonces.Entry, "Activations")
 		Check(t, wantDialer, dl.InDial.Called, "Dialer calls")
 	}
 
@@ -902,7 +970,10 @@ func TestHandleJoin(t *testing.T) {
 		dl.OutDial.Closer = NewMockCloser()
 
 		as.OutRead.Entry = appEntry{
-			Dialer:    dl,
+			Dialer: dl,
+			AppEUI: []byte{2, 2, 2, 2, 2, 2, 2, 2},
+		}
+		nc.OutReadNonces.Entry = noncesEntry{
 			AppEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			DevEUI:    []byte{3, 3, 3, 3, 3, 3, 3, 3},
 			DevNonces: [][]byte{},
@@ -911,7 +982,7 @@ func TestHandleJoin(t *testing.T) {
 		br := New(Components{NetworkController: nc, AppStorage: as, Ctx: GetLogger(t, "Broker")}, Options{})
 		req := &core.JoinBrokerReq{
 			AppEUI:   nil,
-			DevEUI:   as.OutRead.Entry.DevEUI,
+			DevEUI:   nc.OutReadNonces.Entry.DevEUI,
 			DevNonce: []byte{14, 14},
 			Metadata: new(core.Metadata),
 		}
@@ -920,7 +991,7 @@ func TestHandleJoin(t *testing.T) {
 		var wantErr = ErrStructural
 		var wantJoinReq *core.JoinHandlerReq
 		var wantRes = new(core.JoinBrokerRes)
-		var wantActivation appEntry
+		var wantActivation noncesEntry
 		var wantDialer bool
 
 		// Operate
@@ -930,7 +1001,7 @@ func TestHandleJoin(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantJoinReq, hl.InHandleJoin.Req, "Handler Join Requests")
 		Check(t, wantRes, res, "Broker Join Responses")
-		Check(t, wantActivation, as.InUpsert.Entry, "Activations")
+		Check(t, wantActivation, nc.InUpsertNonces.Entry, "Activations")
 		Check(t, wantDialer, dl.InDial.Called, "Dialer calls")
 	}
 
@@ -957,7 +1028,10 @@ func TestHandleJoin(t *testing.T) {
 		dl.OutDial.Closer = NewMockCloser()
 
 		as.OutRead.Entry = appEntry{
-			Dialer:    dl,
+			Dialer: dl,
+			AppEUI: []byte{2, 2, 2, 2, 2, 2, 2, 2},
+		}
+		nc.OutReadNonces.Entry = noncesEntry{
 			AppEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			DevEUI:    []byte{3, 3, 3, 3, 3, 3, 3, 3},
 			DevNonces: [][]byte{},
@@ -975,7 +1049,7 @@ func TestHandleJoin(t *testing.T) {
 		var wantErr = ErrStructural
 		var wantJoinReq *core.JoinHandlerReq
 		var wantRes = new(core.JoinBrokerRes)
-		var wantActivation appEntry
+		var wantActivation noncesEntry
 		var wantDialer bool
 
 		// Operate
@@ -985,7 +1059,7 @@ func TestHandleJoin(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantJoinReq, hl.InHandleJoin.Req, "Handler Join Requests")
 		Check(t, wantRes, res, "Broker Join Responses")
-		Check(t, wantActivation, as.InUpsert.Entry, "Activations")
+		Check(t, wantActivation, nc.InUpsertNonces.Entry, "Activations")
 		Check(t, wantDialer, dl.InDial.Called, "Dialer calls")
 	}
 
@@ -1012,7 +1086,10 @@ func TestHandleJoin(t *testing.T) {
 		dl.OutDial.Closer = NewMockCloser()
 
 		as.OutRead.Entry = appEntry{
-			Dialer:    dl,
+			Dialer: dl,
+			AppEUI: []byte{2, 2, 2, 2, 2, 2, 2, 2},
+		}
+		nc.OutReadNonces.Entry = noncesEntry{
 			AppEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			DevEUI:    []byte{3, 3, 3, 3, 3, 3, 3, 3},
 			DevNonces: [][]byte{},
@@ -1020,8 +1097,8 @@ func TestHandleJoin(t *testing.T) {
 
 		br := New(Components{NetworkController: nc, AppStorage: as, Ctx: GetLogger(t, "Broker")}, Options{})
 		req := &core.JoinBrokerReq{
-			AppEUI:   as.OutRead.Entry.AppEUI,
-			DevEUI:   as.OutRead.Entry.DevEUI,
+			AppEUI:   nc.OutReadNonces.Entry.AppEUI,
+			DevEUI:   nc.OutReadNonces.Entry.DevEUI,
 			DevNonce: []byte{14, 14, 15, 16},
 			Metadata: new(core.Metadata),
 		}
@@ -1030,7 +1107,7 @@ func TestHandleJoin(t *testing.T) {
 		var wantErr = ErrStructural
 		var wantJoinReq *core.JoinHandlerReq
 		var wantRes = new(core.JoinBrokerRes)
-		var wantActivation appEntry
+		var wantActivation noncesEntry
 		var wantDialer bool
 
 		// Operate
@@ -1040,7 +1117,7 @@ func TestHandleJoin(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantJoinReq, hl.InHandleJoin.Req, "Handler Join Requests")
 		Check(t, wantRes, res, "Broker Join Responses")
-		Check(t, wantActivation, as.InUpsert.Entry, "Activations")
+		Check(t, wantActivation, nc.InUpsertNonces.Entry, "Activations")
 		Check(t, wantDialer, dl.InDial.Called, "Dialer calls")
 	}
 
@@ -1067,7 +1144,10 @@ func TestHandleJoin(t *testing.T) {
 		dl.OutDial.Closer = NewMockCloser()
 
 		as.OutRead.Entry = appEntry{
-			Dialer:    dl,
+			Dialer: dl,
+			AppEUI: []byte{2, 2, 2, 2, 2, 2, 2, 2},
+		}
+		nc.OutReadNonces.Entry = noncesEntry{
 			AppEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			DevEUI:    []byte{3, 3, 3, 3, 3, 3, 3, 3},
 			DevNonces: [][]byte{},
@@ -1075,8 +1155,8 @@ func TestHandleJoin(t *testing.T) {
 
 		br := New(Components{NetworkController: nc, AppStorage: as, Ctx: GetLogger(t, "Broker")}, Options{})
 		req := &core.JoinBrokerReq{
-			AppEUI:   as.OutRead.Entry.AppEUI,
-			DevEUI:   as.OutRead.Entry.DevEUI,
+			AppEUI:   nc.OutReadNonces.Entry.AppEUI,
+			DevEUI:   nc.OutReadNonces.Entry.DevEUI,
 			DevNonce: []byte{14, 14},
 			Metadata: nil,
 		}
@@ -1085,7 +1165,7 @@ func TestHandleJoin(t *testing.T) {
 		var wantErr = ErrStructural
 		var wantJoinReq *core.JoinHandlerReq
 		var wantRes = new(core.JoinBrokerRes)
-		var wantActivation appEntry
+		var wantActivation noncesEntry
 		var wantDialer bool
 
 		// Operate
@@ -1095,19 +1175,19 @@ func TestHandleJoin(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantJoinReq, hl.InHandleJoin.Req, "Handler Join Requests")
 		Check(t, wantRes, res, "Broker Join Responses")
-		Check(t, wantActivation, as.InUpsert.Entry, "Activations")
+		Check(t, wantActivation, nc.InUpsertNonces.Entry, "Activations")
 		Check(t, wantDialer, dl.InDial.Called, "Dialer calls")
 	}
 
 	// --------------------
 
 	{
-		Desc(t, "Valid Join Request | ReadActivation failed")
+		Desc(t, "Valid Join Request | ReadNonces failed")
 
 		// Build
 		nc := NewMockNetworkController()
 		as := NewMockAppStorage()
-		as.Failures["read"] = errors.New(errors.Operational, "Mock Error")
+		nc.Failures["readNonces"] = errors.New(errors.Operational, "Mock Error")
 		hl := mocks.NewHandlerClient()
 		hl.OutHandleJoin.Res = &core.JoinHandlerRes{
 			Payload: &core.LoRaWANJoinAccept{
@@ -1134,7 +1214,7 @@ func TestHandleJoin(t *testing.T) {
 		var wantErr = ErrOperational
 		var wantJoinReq *core.JoinHandlerReq
 		var wantRes = new(core.JoinBrokerRes)
-		var wantActivation appEntry
+		var wantActivation noncesEntry
 		var wantDialer bool
 
 		// Operate
@@ -1144,7 +1224,7 @@ func TestHandleJoin(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantJoinReq, hl.InHandleJoin.Req, "Handler Join Requests")
 		Check(t, wantRes, res, "Broker Join Responses")
-		Check(t, wantActivation, as.InUpsert.Entry, "Activations")
+		Check(t, wantActivation, nc.InUpsertNonces.Entry, "Activations")
 		Check(t, wantDialer, dl.InDial.Called, "Dialer calls")
 	}
 
@@ -1171,7 +1251,10 @@ func TestHandleJoin(t *testing.T) {
 		dl.OutDial.Closer = NewMockCloser()
 
 		as.OutRead.Entry = appEntry{
-			Dialer:    dl,
+			Dialer: dl,
+			AppEUI: []byte{2, 2, 2, 2, 2, 2, 2, 2},
+		}
+		nc.OutReadNonces.Entry = noncesEntry{
 			AppEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			DevEUI:    []byte{3, 3, 3, 3, 3, 3, 3, 3},
 			DevNonces: [][]byte{[]byte{14, 14}},
@@ -1179,8 +1262,8 @@ func TestHandleJoin(t *testing.T) {
 
 		br := New(Components{NetworkController: nc, AppStorage: as, Ctx: GetLogger(t, "Broker")}, Options{})
 		req := &core.JoinBrokerReq{
-			AppEUI:   as.OutRead.Entry.AppEUI,
-			DevEUI:   as.OutRead.Entry.DevEUI,
+			AppEUI:   nc.OutReadNonces.Entry.AppEUI,
+			DevEUI:   nc.OutReadNonces.Entry.DevEUI,
 			DevNonce: []byte{14, 14},
 			Metadata: new(core.Metadata),
 		}
@@ -1189,7 +1272,7 @@ func TestHandleJoin(t *testing.T) {
 		var wantErr = ErrStructural
 		var wantJoinReq *core.JoinHandlerReq
 		var wantRes = new(core.JoinBrokerRes)
-		var wantActivation appEntry
+		var wantActivation noncesEntry
 		var wantDialer bool
 
 		// Operate
@@ -1199,7 +1282,7 @@ func TestHandleJoin(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantJoinReq, hl.InHandleJoin.Req, "Handler Join Requests")
 		Check(t, wantRes, res, "Broker Join Responses")
-		Check(t, wantActivation, as.InUpsert.Entry, "Activations")
+		Check(t, wantActivation, nc.InUpsertNonces.Entry, "Activations")
 		Check(t, wantDialer, dl.InDial.Called, "Dialer calls")
 	}
 
@@ -1227,7 +1310,10 @@ func TestHandleJoin(t *testing.T) {
 		dl.Failures["Dial"] = errors.New(errors.Operational, "Mock Error")
 
 		as.OutRead.Entry = appEntry{
-			Dialer:    dl,
+			Dialer: dl,
+			AppEUI: []byte{2, 2, 2, 2, 2, 2, 2, 2},
+		}
+		nc.OutReadNonces.Entry = noncesEntry{
 			AppEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			DevEUI:    []byte{3, 3, 3, 3, 3, 3, 3, 3},
 			DevNonces: [][]byte{},
@@ -1235,8 +1321,8 @@ func TestHandleJoin(t *testing.T) {
 
 		br := New(Components{NetworkController: nc, AppStorage: as, Ctx: GetLogger(t, "Broker")}, Options{})
 		req := &core.JoinBrokerReq{
-			AppEUI:   as.OutRead.Entry.AppEUI,
-			DevEUI:   as.OutRead.Entry.DevEUI,
+			AppEUI:   nc.OutReadNonces.Entry.AppEUI,
+			DevEUI:   nc.OutReadNonces.Entry.DevEUI,
 			DevNonce: []byte{14, 14},
 			Metadata: new(core.Metadata),
 		}
@@ -1245,7 +1331,7 @@ func TestHandleJoin(t *testing.T) {
 		var wantErr = ErrOperational
 		var wantJoinReq *core.JoinHandlerReq
 		var wantRes = new(core.JoinBrokerRes)
-		var wantActivation appEntry
+		var wantActivation noncesEntry
 		var wantDialer = true
 
 		// Operate
@@ -1255,7 +1341,7 @@ func TestHandleJoin(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantJoinReq, hl.InHandleJoin.Req, "Handler Join Requests")
 		Check(t, wantRes, res, "Broker Join Responses")
-		Check(t, wantActivation, as.InUpsert.Entry, "Activations")
+		Check(t, wantActivation, nc.InUpsertNonces.Entry, "Activations")
 		Check(t, wantDialer, dl.InDial.Called, "Dialer calls")
 	}
 	// --------------------
@@ -1282,7 +1368,10 @@ func TestHandleJoin(t *testing.T) {
 		dl.OutDial.Closer = NewMockCloser()
 
 		as.OutRead.Entry = appEntry{
-			Dialer:    dl,
+			Dialer: dl,
+			AppEUI: []byte{2, 2, 2, 2, 2, 2, 2, 2},
+		}
+		nc.OutReadNonces.Entry = noncesEntry{
 			AppEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			DevEUI:    []byte{3, 3, 3, 3, 3, 3, 3, 3},
 			DevNonces: [][]byte{},
@@ -1290,8 +1379,8 @@ func TestHandleJoin(t *testing.T) {
 
 		br := New(Components{NetworkController: nc, AppStorage: as, Ctx: GetLogger(t, "Broker")}, Options{})
 		req := &core.JoinBrokerReq{
-			AppEUI:   as.OutRead.Entry.AppEUI,
-			DevEUI:   as.OutRead.Entry.DevEUI,
+			AppEUI:   nc.OutReadNonces.Entry.AppEUI,
+			DevEUI:   nc.OutReadNonces.Entry.DevEUI,
 			DevNonce: []byte{14, 14},
 			Metadata: new(core.Metadata),
 		}
@@ -1305,7 +1394,7 @@ func TestHandleJoin(t *testing.T) {
 			Metadata: req.Metadata,
 		}
 		var wantRes = new(core.JoinBrokerRes)
-		var wantActivation appEntry
+		var wantActivation noncesEntry
 		var wantDialer = true
 
 		// Operate
@@ -1315,7 +1404,7 @@ func TestHandleJoin(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantJoinReq, hl.InHandleJoin.Req, "Handler Join Requests")
 		Check(t, wantRes, res, "Broker Join Responses")
-		Check(t, wantActivation, as.InUpsert.Entry, "Activations")
+		Check(t, wantActivation, nc.InUpsertNonces.Entry, "Activations")
 		Check(t, wantDialer, dl.InDial.Called, "Dialer calls")
 	}
 
@@ -1342,7 +1431,10 @@ func TestHandleJoin(t *testing.T) {
 		dl.OutDial.Closer = NewMockCloser()
 
 		as.OutRead.Entry = appEntry{
-			Dialer:    dl,
+			Dialer: dl,
+			AppEUI: []byte{2, 2, 2, 2, 2, 2, 2, 2},
+		}
+		nc.OutReadNonces.Entry = noncesEntry{
 			AppEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			DevEUI:    []byte{3, 3, 3, 3, 3, 3, 3, 3},
 			DevNonces: [][]byte{},
@@ -1350,8 +1442,8 @@ func TestHandleJoin(t *testing.T) {
 
 		br := New(Components{NetworkController: nc, AppStorage: as, Ctx: GetLogger(t, "Broker")}, Options{})
 		req := &core.JoinBrokerReq{
-			AppEUI:   as.OutRead.Entry.AppEUI,
-			DevEUI:   as.OutRead.Entry.DevEUI,
+			AppEUI:   nc.OutReadNonces.Entry.AppEUI,
+			DevEUI:   nc.OutReadNonces.Entry.DevEUI,
 			DevNonce: []byte{14, 14},
 			Metadata: new(core.Metadata),
 		}
@@ -1365,7 +1457,7 @@ func TestHandleJoin(t *testing.T) {
 			Metadata: req.Metadata,
 		}
 		var wantRes = new(core.JoinBrokerRes)
-		var wantActivation appEntry
+		var wantActivation noncesEntry
 		var wantDialer = true
 
 		// Operate
@@ -1375,7 +1467,7 @@ func TestHandleJoin(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantJoinReq, hl.InHandleJoin.Req, "Handler Join Requests")
 		Check(t, wantRes, res, "Broker Join Responses")
-		Check(t, wantActivation, as.InUpsert.Entry, "Activations")
+		Check(t, wantActivation, nc.InUpsertNonces.Entry, "Activations")
 		Check(t, wantDialer, dl.InDial.Called, "Dialer calls")
 	}
 
@@ -1401,9 +1493,12 @@ func TestHandleJoin(t *testing.T) {
 
 		nc := NewMockNetworkController()
 		as := NewMockAppStorage()
-		as.Failures["upsert"] = errors.New(errors.Operational, "Mock Error")
+		nc.Failures["upsertNonces"] = errors.New(errors.Operational, "Mock Error")
 		as.OutRead.Entry = appEntry{
-			Dialer:    dl,
+			Dialer: dl,
+			AppEUI: []byte{2, 2, 2, 2, 2, 2, 2, 2},
+		}
+		nc.OutReadNonces.Entry = noncesEntry{
 			AppEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			DevEUI:    []byte{3, 3, 3, 3, 3, 3, 3, 3},
 			DevNonces: [][]byte{},
@@ -1411,8 +1506,8 @@ func TestHandleJoin(t *testing.T) {
 
 		br := New(Components{NetworkController: nc, AppStorage: as, Ctx: GetLogger(t, "Broker")}, Options{})
 		req := &core.JoinBrokerReq{
-			AppEUI:   as.OutRead.Entry.AppEUI,
-			DevEUI:   as.OutRead.Entry.DevEUI,
+			AppEUI:   nc.OutReadNonces.Entry.AppEUI,
+			DevEUI:   nc.OutReadNonces.Entry.DevEUI,
 			DevNonce: []byte{14, 14},
 			Metadata: new(core.Metadata),
 		}
@@ -1426,8 +1521,7 @@ func TestHandleJoin(t *testing.T) {
 			Metadata: req.Metadata,
 		}
 		var wantRes = new(core.JoinBrokerRes)
-		var wantActivation = appEntry{
-			Dialer:    dl,
+		var wantActivation = noncesEntry{
 			AppEUI:    req.AppEUI,
 			DevEUI:    req.DevEUI,
 			DevNonces: [][]byte{req.DevNonce},
@@ -1441,7 +1535,7 @@ func TestHandleJoin(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantJoinReq, hl.InHandleJoin.Req, "Handler Join Requests")
 		Check(t, wantRes, res, "Broker Join Responses")
-		Check(t, wantActivation, as.InUpsert.Entry, "Activations")
+		Check(t, wantActivation, nc.InUpsertNonces.Entry, "Activations")
 		Check(t, wantDialer, dl.InDial.Called, "Dialer calls")
 	}
 
@@ -1469,7 +1563,10 @@ func TestHandleJoin(t *testing.T) {
 		as := NewMockAppStorage()
 		nc.Failures["upsert"] = errors.New(errors.Operational, "Mock Error")
 		as.OutRead.Entry = appEntry{
-			Dialer:    dl,
+			Dialer: dl,
+			AppEUI: []byte{2, 2, 2, 2, 2, 2, 2, 2},
+		}
+		nc.OutReadNonces.Entry = noncesEntry{
 			AppEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			DevEUI:    []byte{3, 3, 3, 3, 3, 3, 3, 3},
 			DevNonces: [][]byte{},
@@ -1477,8 +1574,8 @@ func TestHandleJoin(t *testing.T) {
 
 		br := New(Components{NetworkController: nc, AppStorage: as, Ctx: GetLogger(t, "Broker")}, Options{})
 		req := &core.JoinBrokerReq{
-			AppEUI:   as.OutRead.Entry.AppEUI,
-			DevEUI:   as.OutRead.Entry.DevEUI,
+			AppEUI:   nc.OutReadNonces.Entry.AppEUI,
+			DevEUI:   nc.OutReadNonces.Entry.DevEUI,
 			DevNonce: []byte{14, 14},
 			Metadata: new(core.Metadata),
 		}
@@ -1492,8 +1589,7 @@ func TestHandleJoin(t *testing.T) {
 			Metadata: req.Metadata,
 		}
 		var wantRes = new(core.JoinBrokerRes)
-		var wantActivation = appEntry{
-			Dialer:    dl,
+		var wantActivation = noncesEntry{
 			AppEUI:    req.AppEUI,
 			DevEUI:    req.DevEUI,
 			DevNonces: [][]byte{req.DevNonce},
@@ -1507,7 +1603,7 @@ func TestHandleJoin(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantJoinReq, hl.InHandleJoin.Req, "Handler Join Requests")
 		Check(t, wantRes, res, "Broker Join Responses")
-		Check(t, wantActivation, as.InUpsert.Entry, "Activations")
+		Check(t, wantActivation, nc.InUpsertNonces.Entry, "Activations")
 		Check(t, wantDialer, dl.InDial.Called, "Dialer calls")
 	}
 }

@@ -339,3 +339,84 @@ func TestNetworkControllerDevice(t *testing.T) {
 		_ = db.done()
 	}
 }
+
+func TestNonces(t *testing.T) {
+	NetworkControllerDB := path.Join(os.TempDir(), NetworkControllerDB)
+	defer func() {
+		os.Remove(NetworkControllerDB)
+	}()
+
+	// -------------------
+
+	{
+		Desc(t, "Store then lookup a noncesEntry")
+
+		// Build
+		db, _ := NewNetworkController(NetworkControllerDB)
+		entry := noncesEntry{
+			AppEUI:    []byte{1, 2, 3},
+			DevEUI:    []byte{4, 5, 6},
+			DevNonces: [][]byte{[]byte{14, 42}},
+		}
+
+		// Operate
+		err := db.upsertNonces(entry)
+		FatalUnless(t, err)
+		got, err := db.readNonces(entry.AppEUI, entry.DevEUI)
+		FatalUnless(t, err)
+
+		// Check
+		Check(t, entry, got, "Nonces Entries")
+		_ = db.done()
+	}
+
+	// -------------------
+
+	{
+		Desc(t, "Update an existing nonce")
+
+		// Build
+		db, _ := NewNetworkController(NetworkControllerDB)
+		entry := noncesEntry{
+			AppEUI:    []byte{26, 2, 3},
+			DevEUI:    []byte{4, 26, 26},
+			DevNonces: [][]byte{[]byte{14, 42}},
+		}
+		update := noncesEntry{
+			AppEUI:    entry.AppEUI,
+			DevEUI:    entry.DevEUI,
+			DevNonces: [][]byte{[]byte{58, 27}, []byte{12, 11}},
+		}
+
+		// Operate
+		err := db.upsertNonces(entry)
+		FatalUnless(t, err)
+		err = db.upsertNonces(update)
+		FatalUnless(t, err)
+		got, err := db.readNonces(entry.AppEUI, entry.DevEUI)
+		FatalUnless(t, err)
+
+		// Check
+		Check(t, update, got, "Nonces Entries")
+		_ = db.done()
+	}
+
+	// -------------------
+
+	{
+
+		Desc(t, "Lookup an non-existing nonces entry")
+
+		// Build
+		db, _ := NewNetworkController(NetworkControllerDB)
+		appEUI := []byte{4, 5, 3, 4}
+		devEUI := []byte{1, 2, 2, 2}
+
+		// Operate
+		_, err := db.readNonces(appEUI, devEUI)
+
+		// Check
+		CheckErrors(t, ErrNotFound, err)
+		_ = db.done()
+	}
+}

@@ -35,18 +35,16 @@ func TestReadStore(t *testing.T) {
 
 		// Build
 		entry := appEntry{
-			Dialer:    NewDialer([]byte("dialer")),
-			AppEUI:    []byte{0, 2},
-			DevEUI:    []byte{0, 2},
-			DevNonces: [][]byte{[]byte{1, 2}},
-			Password:  []byte{3, 4},
-			Salt:      []byte{5, 6},
+			Dialer:   NewDialer([]byte("dialer")),
+			AppEUI:   []byte{0, 2},
+			Password: []byte{3, 4},
+			Salt:     []byte{5, 6},
 		}
 
 		// Operate
 		err := db.upsert(entry)
 		FatalUnless(t, err)
-		got, err := db.read(entry.AppEUI, entry.DevEUI)
+		got, err := db.read(entry.AppEUI)
 
 		// Check
 		CheckErrors(t, nil, err)
@@ -60,10 +58,9 @@ func TestReadStore(t *testing.T) {
 
 		// Build
 		appEUI := []byte{0, 0, 0, 0, 0, 0, 0, 2}
-		devEUI := []byte{0, 0, 0, 0, 1, 2, 3, 4}
 
 		// Operate
-		_, err := db.read(appEUI, devEUI)
+		_, err := db.read(appEUI)
 
 		// Check
 		CheckErrors(t, ErrNotFound, err)
@@ -76,12 +73,10 @@ func TestReadStore(t *testing.T) {
 
 		// Build
 		entry := appEntry{
-			Dialer:    NewDialer([]byte("dialer")),
-			AppEUI:    []byte{0, 1},
-			DevEUI:    []byte{0, 1},
-			DevNonces: [][]byte{[]byte{1, 2}},
-			Password:  []byte{3, 4},
-			Salt:      []byte{5, 6},
+			Dialer:   NewDialer([]byte("dialer")),
+			AppEUI:   []byte{0, 1},
+			Password: []byte{3, 4},
+			Salt:     []byte{5, 6},
 		}
 
 		// Operate
@@ -89,7 +84,7 @@ func TestReadStore(t *testing.T) {
 		FatalUnless(t, err)
 		err = db.upsert(entry)
 		FatalUnless(t, err)
-		got, err := db.read(entry.AppEUI, entry.DevEUI)
+		got, err := db.read(entry.AppEUI)
 
 		// Check
 		CheckErrors(t, nil, err)
@@ -103,27 +98,23 @@ func TestReadStore(t *testing.T) {
 
 		// Build
 		entry := appEntry{
-			Dialer:    NewDialer([]byte("dialer")),
-			AppEUI:    []byte{0, 1},
-			DevEUI:    []byte{0, 1},
-			DevNonces: [][]byte{[]byte{1, 2}},
-			Password:  []byte{3, 4},
-			Salt:      []byte{5, 6},
+			Dialer:   NewDialer([]byte("dialer")),
+			AppEUI:   []byte{0, 4},
+			Password: []byte{3, 4},
+			Salt:     []byte{5, 6},
 		}
 		update := appEntry{
-			Dialer:    NewDialer([]byte("dialer")),
-			AppEUI:    []byte{0, 1},
-			DevEUI:    []byte{0, 1},
-			DevNonces: [][]byte{[]byte{1, 2}, []byte{2, 5}},
-			Password:  []byte{3, 4},
-			Salt:      []byte{5, 6},
+			Dialer:   NewDialer([]byte("dialer")),
+			AppEUI:   []byte{0, 4},
+			Password: []byte{3, 4},
+			Salt:     []byte{5, 6},
 		}
 
 		// Operate
 		err := db.upsert(entry)
 		FatalUnless(t, err)
 		err = db.upsert(update)
-		got, errRead := db.read(entry.AppEUI, entry.DevEUI)
+		got, errRead := db.read(entry.AppEUI)
 		FatalUnless(t, errRead)
 
 		// Check

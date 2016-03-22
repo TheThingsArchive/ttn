@@ -4,9 +4,9 @@
 package broker
 
 import (
+	"bytes"
 	"encoding"
 	"encoding/binary"
-	"fmt"
 	"math"
 	"reflect"
 	"sync"
@@ -16,11 +16,11 @@ import (
 	"github.com/TheThingsNetwork/ttn/utils/readwriter"
 )
 
-var _ = fmt.Print
-
 // NetworkController gives a facade for manipulating the broker databases and devices
 type NetworkController interface {
 	read(devAddr []byte) ([]devEntry, error)
+	readNonces(appEUI []byte, devEUI []byte) (noncesEntry, error)
+	upsertNonces(entry noncesEntry) error
 	upsert(entry devEntry) error
 	wholeCounter(devCnt uint32, entryCnt uint32) (uint32, error)
 	done() error
@@ -28,11 +28,17 @@ type NetworkController interface {
 
 type devEntry struct {
 	AppEUI  []byte
-	DevAddr []byte
 	DevEUI  []byte
+	DevAddr []byte
 	Dialer  Dialer
 	FCntUp  uint32
 	NwkSKey [16]byte
+}
+
+type noncesEntry struct {
+	AppEUI    []byte
+	DevEUI    []byte
+	DevNonces [][]byte
 }
 
 type controller struct {
@@ -108,6 +114,20 @@ func (s *controller) upsert(update devEntry) error {
 	return s.db.Update(update.DevAddr, newEntries, dbDevices)
 }
 
+// readNonces implements the broker.NetworkController interface
+func (s *controller) readNonces(appEUI []byte, devEUI []byte) (noncesEntry, error) {
+	itf, err := s.db.Read(nil, &noncesEntry{}, appEUI, devEUI)
+	if err != nil {
+		return noncesEntry{}, err
+	}
+	return itf.([]noncesEntry)[0], nil // Storage guarantee to have one entry
+}
+
+// upsertNonces implements the broker.NetworkController interface
+func (s *controller) upsertNonces(entry noncesEntry) error {
+	return s.db.Update(nil, []encoding.BinaryMarshaler{entry}, entry.AppEUI, entry.DevEUI)
+}
+
 // done implements the broker.NetworkController interface
 func (s *controller) done() error {
 	return s.db.Close()
@@ -140,11 +160,43 @@ func (e *devEntry) UnmarshalBinary(data []byte) error {
 		e.DevAddr = make([]byte, len(data))
 		copy(e.DevAddr, data)
 	})
-
 	rw.Read(func(data []byte) { copy(e.NwkSKey[:], data) })
 	rw.Read(func(data []byte) { e.FCntUp = binary.BigEndian.Uint32(data) })
+	rw.Read(func(data []byte) { e.Dialer = NewDialer(data) })
+	return rw.Err()
+}
+
+// MarshalBinary implements the encoding.BinaryMarshaler interface
+func (e noncesEntry) MarshalBinary() ([]byte, error) {
+	rw := readwriter.New(nil)
+	rw.Write(e.AppEUI)
+	rw.Write(e.DevEUI)
+	buf := new(bytes.Buffer)
+	for _, n := range e.DevNonces {
+		_, _ = buf.Write(n)
+	}
+	rw.Write(buf.Bytes())
+	return rw.Bytes()
+}
+
+// UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
+func (e *noncesEntry) UnmarshalBinary(data []byte) error {
+	rw := readwriter.New(data)
 	rw.Read(func(data []byte) {
-		e.Dialer = NewDialer(data)
+		e.AppEUI = make([]byte, len(data))
+		copy(e.AppEUI, data)
+	})
+	rw.Read(func(data []byte) {
+		e.DevEUI = make([]byte, len(data))
+		copy(e.DevEUI, data)
+	})
+	rw.Read(func(data []byte) {
+		n := len(data) / 2 // DevNonce -> 2-bytes
+		for i := 0; i < int(n); i++ {
+			devNonce := make([]byte, 2, 2)
+			copy(devNonce, data[2*i:2*i+2])
+			e.DevNonces = append(e.DevNonces, devNonce)
+		}
 	})
 	return rw.Err()
 }

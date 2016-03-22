@@ -90,13 +90,25 @@ func (b component) HandleJoin(bctx context.Context, req *core.JoinBrokerReq) (*c
 	ctx := b.Ctx.WithField("AppEUI", req.AppEUI).WithField("DevEUI", req.DevEUI)
 
 	// Check if devNonce already referenced
-	entry, err := b.AppStorage.read(req.AppEUI, req.DevEUI)
+	appEntry, err := b.AppStorage.read(req.AppEUI)
 	if err != nil {
 		ctx.WithError(err).Debug("Unable to lookup activation")
 		return new(core.JoinBrokerRes), err
 	}
+	nonces, err := b.NetworkController.readNonces(req.AppEUI, req.DevEUI)
+	if err != nil {
+		if err.(errors.Failure).Nature != errors.NotFound {
+			ctx.WithError(err).Debug("Unable to retrieve associated devNonces")
+			return new(core.JoinBrokerRes), err
+		}
+		nonces = noncesEntry{
+			AppEUI: req.AppEUI,
+			DevEUI: req.DevEUI,
+		}
+	}
+
 	var found bool
-	for _, n := range entry.DevNonces {
+	for _, n := range nonces.DevNonces {
 		if n[0] == req.DevNonce[0] && n[1] == req.DevNonce[1] {
 			found = true
 			break
@@ -108,7 +120,7 @@ func (b component) HandleJoin(bctx context.Context, req *core.JoinBrokerReq) (*c
 	}
 
 	// Forward the registration to the handler
-	handler, closer, err := entry.Dialer.Dial()
+	handler, closer, err := appEntry.Dialer.Dial()
 	if err != nil {
 		ctx.WithError(err).Debug("Unable to dial handler")
 		return new(core.JoinBrokerRes), err
@@ -137,11 +149,11 @@ func (b component) HandleJoin(bctx context.Context, req *core.JoinBrokerReq) (*c
 	}
 
 	// Update the DevNonce
-	entry.DevNonces = append(entry.DevNonces, req.DevNonce)
-	if uint(len(entry.DevNonces)) > b.MaxDevNonces {
-		entry.DevNonces = entry.DevNonces[1:]
+	nonces.DevNonces = append(nonces.DevNonces, req.DevNonce)
+	if uint(len(nonces.DevNonces)) > b.MaxDevNonces {
+		nonces.DevNonces = nonces.DevNonces[1:]
 	}
-	err = b.AppStorage.upsert(entry)
+	err = b.NetworkController.upsertNonces(nonces)
 	if err != nil {
 		ctx.WithError(err).Debug("Unable to update activation entry")
 		return new(core.JoinBrokerRes), err
@@ -150,7 +162,7 @@ func (b component) HandleJoin(bctx context.Context, req *core.JoinBrokerReq) (*c
 	var nwkSKey [16]byte
 	copy(nwkSKey[:], res.NwkSKey)
 	err = b.NetworkController.upsert(devEntry{
-		Dialer:  entry.Dialer,
+		Dialer:  appEntry.Dialer,
 		DevAddr: res.DevAddr,
 		AppEUI:  req.AppEUI,
 		DevEUI:  req.DevEUI,

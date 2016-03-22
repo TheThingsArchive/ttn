@@ -72,7 +72,6 @@ type MockAppStorage struct {
 	Failures map[string]error
 	InRead   struct {
 		AppEUI []byte
-		DevEUI []byte
 	}
 	OutRead struct {
 		Entry appEntry
@@ -93,9 +92,8 @@ func NewMockAppStorage() *MockAppStorage {
 }
 
 // read implements the AppStorage interface
-func (m *MockAppStorage) read(appEUI []byte, devEUI []byte) (appEntry, error) {
+func (m *MockAppStorage) read(appEUI []byte) (appEntry, error) {
 	m.InRead.AppEUI = appEUI
-	m.InRead.DevEUI = devEUI
 	return m.OutRead.Entry, m.Failures["read"]
 }
 
@@ -122,6 +120,16 @@ type MockNetworkController struct {
 	}
 	InUpsert struct {
 		Entry devEntry
+	}
+	InReadNonces struct {
+		AppEUI []byte
+		DevEUI []byte
+	}
+	OutReadNonces struct {
+		Entry noncesEntry
+	}
+	InUpsertNonces struct {
+		Entry noncesEntry
 	}
 	InWholeCounter struct {
 		DevCnt   uint32
@@ -152,6 +160,19 @@ func (m *MockNetworkController) read(devAddr []byte) ([]devEntry, error) {
 func (m *MockNetworkController) upsert(entry devEntry) error {
 	m.InUpsert.Entry = entry
 	return m.Failures["upsert"]
+}
+
+// readNonces implements the NetworkController interface
+func (m *MockNetworkController) readNonces(appEUI, devEUI []byte) (noncesEntry, error) {
+	m.InReadNonces.AppEUI = appEUI
+	m.InReadNonces.DevEUI = devEUI
+	return m.OutReadNonces.Entry, m.Failures["readNonces"]
+}
+
+// upsertNonces implements the NetworkController interface
+func (m *MockNetworkController) upsertNonces(entry noncesEntry) error {
+	m.InUpsertNonces.Entry = entry
+	return m.Failures["upsertNonces"]
 }
 
 // wholeCnt implements the NetworkController interface
