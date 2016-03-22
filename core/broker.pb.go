@@ -2,49 +2,6 @@
 // source: broker.proto
 // DO NOT EDIT!
 
-/*
-	Package core is a generated protocol buffer package.
-
-	It is generated from these files:
-		broker.proto
-		core.proto
-		application.proto
-		handler.proto
-		router.proto
-		lorawan.proto
-
-	It has these top-level messages:
-		DataBrokerReq
-		DataBrokerRes
-		JoinBrokerReq
-		JoinBrokerRes
-		Metadata
-		StatsMetadata
-		DataAppReq
-		DataAppRes
-		JoinAppReq
-		JoinAppRes
-		DataUpHandlerReq
-		DataUpHandlerRes
-		DataDownHandlerReq
-		DataDownHandlerRes
-		JoinHandlerReq
-		JoinHandlerRes
-		DataRouterReq
-		DataRouterRes
-		StatsReq
-		StatsRes
-		JoinRouterReq
-		JoinRouterRes
-		LoRaWANData
-		LoRaWANMHDR
-		LoRaWANMACPayload
-		LoRaWANFHDR
-		LoRaWANFCtrl
-		LoRaWANJoinRequest
-		LoRaWANJoinAccept
-		LoRaWANDLSettings
-*/
 package core
 
 import proto "github.com/golang/protobuf/proto"
@@ -62,10 +19,6 @@ import io "io"
 var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
-
-// This is a compile-time assertion to ensure that this generated file
-// is compatible with the proto package it is being compiled against.
-const _ = proto.ProtoPackageIsVersion1
 
 type DataBrokerReq struct {
 	Payload  *LoRaWANData `protobuf:"bytes,1,opt,name=Payload,json=payload" json:"Payload,omitempty"`
