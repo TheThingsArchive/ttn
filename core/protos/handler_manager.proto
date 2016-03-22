@@ -2,38 +2,48 @@ syntax = "proto3";
 
 package core;
 
-message HandlerDevice {
-  bytes DevEUI = 1;
-  message PersonalizedData {
-    bytes NwkSKey = 1;
-    bytes AppSKey = 2;
-  }
-  message ActivatedData {
-    bytes AppKey = 1;
-  }
-  oneof Data {
-    PersonalizedData Personalized = 2;
-    ActivatedData Activated = 3;
-  }
+message UpsertOTAAHandlerReq {
+    bytes   AppEUI      = 1;
+    bytes   DevEUI      = 2;
+    bytes   AppKey      = 3;
 }
 
-message HandlerListDevicesReq {
-  bytes AppEUI = 1;
+message UpsertOTAAHandlerRes{}
+
+message UpsertABPHandlerReq {
+    bytes   AppEUI      = 1;
+    bytes   DevAddr     = 2;
+    bytes   NwkSKey     = 3;
+    bytes   AppSKey     = 4;
 }
 
-message HandlerListDevicesRes {
-  repeated HandlerDevice Devices = 1;
+message UpsertABPHandlerRes {}
+
+message ListDevicesHandlerReq {
+    bytes   AppEUI      = 1;
 }
 
-message HandlerUpsertDeviceReq {
-  bytes AppEUI = 1;
-  HandlerDevice Device = 2;
+message ListDevicesHandlerRes {
+    repeated HandlerOTAADevice  OTAA    = 1;
+    repeated HandlerABPDevice   ABP     = 2;
 }
 
-message HandlerUpsertDeviceRes {
+message HandlerABPDevice {
+    bytes   DevAddr     = 2;
+    bytes   NwkSKey     = 3;
+    bytes   AppSKey     = 4;
+}
+
+message HandlerOTAADevice {
+    bytes   DevEUI      = 1;
+    bytes   DevAddr     = 2;
+    bytes   NwkSKey     = 3;
+    bytes   AppSKey     = 4;
+    bytes   AppKey      = 5;
 }
 
 service HandlerManager {
-  rpc List(HandlerListDevicesReq) returns (HandlerListDevicesRes);
-  rpc Upsert(HandlerUpsertDeviceReq) returns (HandlerUpsertDeviceRes);
+    rpc UpsertOTAA      (UpsertOTAAHandlerReq)      returns     (UpsertOTAAHandlerRes);
+    rpc UpsertABP       (UpsertABPHandlerReq)       returns     (UpsertABPHandlerRes);
+    rpc ListDevices     (ListDevicesHandlerReq)     returns     (ListDevicesHandlerRes);
 }

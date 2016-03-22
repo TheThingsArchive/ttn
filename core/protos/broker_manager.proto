@@ -2,51 +2,37 @@ syntax = "proto3";
 
 package core;
 
-message BrokerCreateAppReq {
-  bytes AppEUI = 1;
-  string NetAddress = 2;
-  string Password = 3;
+message RegisterOTAABrokerReq {
+    bytes   AppEUI      = 1;
+    string  NetAddress  = 2;
 }
 
-message BrokerUpdateAppReq {
-  bytes AppEUI = 1;
-  string Token = 2;
-  oneof Update {
-    string NetAddress = 3;
-    string Password = 4;
-  }
+message RegisterOTAABrokerRes{}
+
+message UpsertABPBrokerReq {
+    bytes   AppEUI      = 1;
+    bytes   DevAddr     = 2;
+    bytes   NwkSKey     = 3;
 }
 
-message BrokerUpsertAppRes {
-  string Token = 2;
-}
+message UpsertABPBrokerRes {}
 
 message BrokerDevice {
-  bytes DevAddr = 1;
-  bytes DevEUI = 2; // prepended with zeros if ABP device
-  bytes NwkSKey = 3;
+    bytes   DevEUI      = 1;
+    bytes   DevAddr     = 2;
+    bytes   NwkSKey     = 3;
 }
 
-message BrokerListDevicesReq {
-  bytes AppEUI = 1;
-  string Token = 2;
+message ListDevicesBrokerReq {
+    bytes   AppEUI      = 1;
 }
 
-message BrokerListDevicesRes {
-  repeated BrokerDevice Devices = 1;
-}
-
-message BrokerUpsertDeviceReq {
-  bytes AppEUI = 1;
-  string Token = 2;
-  BrokerDevice Device = 3;
-}
-
-message BrokerUpsertDeviceRes {
+message ListDevicesBrokerRes {
+    repeated BrokerDevice Devices = 1;
 }
 
 service BrokerManager {
-  rpc CreateApp(BrokerCreateAppReq) returns (BrokerUpsertAppRes);
-  rpc UpdateApp(BrokerUpdateAppReq) returns (BrokerUpsertAppRes);
-  rpc UpsertDeviceRegistration(BrokerUpsertDeviceReq) returns (BrokerUpsertDeviceRes);
+    rpc RegisterOTAA    (RegisterOTAABrokerReq)     returns     (RegisterOTAABrokerRes);
+    rpc UpsertABP       (UpsertABPBrokerReq)        returns     (UpsertABPBrokerRes);
+    rpc ListDevices     (ListDevicesBrokerReq)      returns     (ListDevicesBrokerRes);
 }
