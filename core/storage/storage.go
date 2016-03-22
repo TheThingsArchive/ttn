@@ -124,11 +124,13 @@ func (itf store) Read(key []byte, shape encoding.BinaryUnmarshaler, buckets ...[
 	// Then, interpret them as instance of 'shape'
 	r := readwriter.New(rawEntry)
 	entries := reflect.MakeSlice(reflect.SliceOf(entryType.Elem()), 0, 0)
+	var nb uint
 	for {
 		r.Read(func(data []byte) {
 			entry := reflect.New(entryType.Elem()).Interface()
 			entry.(encoding.BinaryUnmarshaler).UnmarshalBinary(data)
 			entries = reflect.Append(entries, reflect.ValueOf(entry).Elem())
+			nb++
 		})
 		if err = r.Err(); err != nil {
 			failure, ok := err.(errors.Failure)
@@ -137,6 +139,9 @@ func (itf store) Read(key []byte, shape encoding.BinaryUnmarshaler, buckets ...[
 			}
 			return nil, errors.New(errors.Operational, err)
 		}
+	}
+	if nb == 0 {
+		return nil, errors.New(errors.NotFound, fmt.Sprintf("Not found %+v", key))
 	}
 	return entries.Interface(), nil
 }
