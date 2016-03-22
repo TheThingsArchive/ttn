@@ -1,7 +1,3 @@
-# USAGE:
-# ./build_binaries.sh linux amd64
-# docker build -t local/ttn -f Dockerfile.local .
-
 FROM alpine
 RUN apk --update add ca-certificates && rm -rf /var/cache/apk/*
 ADD ./release/ttn-linux-amd64 /usr/local/bin/ttn

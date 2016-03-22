@@ -14,12 +14,15 @@ compose:
 build:
   image: htdvisser/ttnbuild
   pull: true
+  environment:
+    - RELEASE_DIR=release/branch/$$BRANCH
   commands:
     # ttnbuild already contains dependencies, so we copy them:
     - rsync -a /go/src/ /drone/src/
-    # and get the ones that we missed in ttnbuild
-    - GOOS=$$GOOS GOARCH=$$GOARCH go get -d -v ./...
-    - ./build_binaries.sh $$GOOS $$GOARCH
+    - make deps
+    - make build package
+    - rm release/branch/$$BRANCH/ttn-$$GOOS-$$GOARCH
+    - rm release/branch/$$BRANCH/ttnctl-$$GOOS-$$GOARCH
   when:
     branch: [master, develop]
 
