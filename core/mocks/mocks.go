@@ -117,8 +117,8 @@ func (m *HandlerClient) HandleDataDown(ctx context.Context, in *core.DataDownHan
 	return m.OutHandleDataDown.Res, m.Failures["HandleDataDown"]
 }
 
-// Broker mocks the core.Broker interface
-type Broker struct {
+// AuthBrokerClient mocks the core.AuthBrokerClient interface
+type AuthBrokerClient struct {
 	Failures     map[string]error
 	InHandleData struct {
 		Ctx  context.Context
@@ -168,15 +168,15 @@ type Broker struct {
 	}
 }
 
-// NewBroker creates a new mock Broker
-func NewBroker() *Broker {
-	return &Broker{
+// NewAuthBrokerClient creates a new mock AuthBrokerClient
+func NewAuthBrokerClient() *AuthBrokerClient {
+	return &AuthBrokerClient{
 		Failures: make(map[string]error),
 	}
 }
 
 // HandleData implements the core.Broker interface
-func (m *Broker) HandleData(ctx context.Context, in *core.DataBrokerReq, opts ...grpc.CallOption) (*core.DataBrokerRes, error) {
+func (m *AuthBrokerClient) HandleData(ctx context.Context, in *core.DataBrokerReq, opts ...grpc.CallOption) (*core.DataBrokerRes, error) {
 	m.InHandleData.Ctx = ctx
 	m.InHandleData.Req = in
 	m.InHandleData.Opts = opts
@@ -184,7 +184,7 @@ func (m *Broker) HandleData(ctx context.Context, in *core.DataBrokerReq, opts ..
 }
 
 // HandleJoin implements the core.Broker interface
-func (m *Broker) HandleJoin(ctx context.Context, in *core.JoinBrokerReq, opts ...grpc.CallOption) (*core.JoinBrokerRes, error) {
+func (m *AuthBrokerClient) HandleJoin(ctx context.Context, in *core.JoinBrokerReq, opts ...grpc.CallOption) (*core.JoinBrokerRes, error) {
 	m.InHandleJoin.Ctx = ctx
 	m.InHandleJoin.Req = in
 	m.InHandleJoin.Opts = opts
@@ -192,7 +192,7 @@ func (m *Broker) HandleJoin(ctx context.Context, in *core.JoinBrokerReq, opts ..
 }
 
 // UpsertABP implements the core.Broker interface
-func (m *Broker) UpsertABP(ctx context.Context, in *core.UpsertABPBrokerReq, opts ...grpc.CallOption) (*core.UpsertABPBrokerRes, error) {
+func (m *AuthBrokerClient) UpsertABP(ctx context.Context, in *core.UpsertABPBrokerReq, opts ...grpc.CallOption) (*core.UpsertABPBrokerRes, error) {
 	m.InUpsertABP.Ctx = ctx
 	m.InUpsertABP.Req = in
 	m.InUpsertABP.Opts = opts
@@ -200,7 +200,7 @@ func (m *Broker) UpsertABP(ctx context.Context, in *core.UpsertABPBrokerReq, opt
 }
 
 // ValidateOTAA implements the core.Broker interface
-func (m *Broker) ValidateOTAA(ctx context.Context, in *core.ValidateOTAABrokerReq, opts ...grpc.CallOption) (*core.ValidateOTAABrokerRes, error) {
+func (m *AuthBrokerClient) ValidateOTAA(ctx context.Context, in *core.ValidateOTAABrokerReq, opts ...grpc.CallOption) (*core.ValidateOTAABrokerRes, error) {
 	m.InValidateOTAA.Ctx = ctx
 	m.InValidateOTAA.Req = in
 	m.InValidateOTAA.Opts = opts
@@ -208,7 +208,7 @@ func (m *Broker) ValidateOTAA(ctx context.Context, in *core.ValidateOTAABrokerRe
 }
 
 // ListDevices implements the core.Broker interface
-func (m *Broker) ListDevices(ctx context.Context, in *core.ListDevicesBrokerReq, opts ...grpc.CallOption) (*core.ListDevicesBrokerRes, error) {
+func (m *AuthBrokerClient) ListDevices(ctx context.Context, in *core.ListDevicesBrokerReq, opts ...grpc.CallOption) (*core.ListDevicesBrokerRes, error) {
 	m.InListDevices.Ctx = ctx
 	m.InListDevices.Req = in
 	m.InListDevices.Opts = opts
@@ -216,13 +216,13 @@ func (m *Broker) ListDevices(ctx context.Context, in *core.ListDevicesBrokerReq,
 }
 
 // BeginToken implements the core.Broker interface
-func (m *Broker) BeginToken(token string) core.Broker {
+func (m *AuthBrokerClient) BeginToken(token string) core.AuthBrokerClient {
 	m.InBeginToken.Token = token
 	return m
 }
 
 // EndToken implements the core.Broker interface
-func (m *Broker) EndToken() {
+func (m *AuthBrokerClient) EndToken() {
 	m.InEndToken.Called = true
 }
 

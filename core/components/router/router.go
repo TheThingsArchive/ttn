@@ -37,14 +37,14 @@ type component struct {
 	NetAddr string
 }
 
-// Interface defines the Router interface
-type Interface interface {
+// Server defines the Router Server interface
+type Server interface {
 	core.RouterServer
 	Start() error
 }
 
 // New constructs a new router
-func New(c Components, o Options) Interface {
+func New(c Components, o Options) Server {
 	return component{Components: c, NetAddr: o.NetAddr}
 }
 

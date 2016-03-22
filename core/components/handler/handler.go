@@ -60,7 +60,7 @@ type Interface interface {
 
 // Components is used to make handler instantiation easier
 type Components struct {
-	Broker     core.Broker
+	Broker     core.AuthBrokerClient
 	Ctx        log.Interface
 	DevStorage DevStorage
 	PktStorage PktStorage

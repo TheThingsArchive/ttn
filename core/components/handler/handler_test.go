@@ -25,7 +25,7 @@ func TestHandleDataDown(t *testing.T) {
 		devStorage := NewMockDevStorage()
 		pktStorage := NewMockPktStorage()
 		appAdapter := mocks.NewAppClient()
-		broker := mocks.NewBroker()
+		broker := mocks.NewAuthBrokerClient()
 		req := &core.DataDownHandlerReq{
 			AppEUI:  []byte{1, 1, 1, 1, 1, 1, 1, 1},
 			DevEUI:  []byte{2, 2, 2, 2, 2, 2, 2, 2},
@@ -63,7 +63,7 @@ func TestHandleDataDown(t *testing.T) {
 		devStorage := NewMockDevStorage()
 		pktStorage := NewMockPktStorage()
 		appAdapter := mocks.NewAppClient()
-		broker := mocks.NewBroker()
+		broker := mocks.NewAuthBrokerClient()
 		req := &core.DataDownHandlerReq{
 			AppEUI:  []byte{1, 1, 1, 1, 1, 1, 1, 1},
 			DevEUI:  []byte{2, 2, 2, 2, 2, 2, 2, 2},
@@ -101,7 +101,7 @@ func TestHandleDataDown(t *testing.T) {
 		devStorage := NewMockDevStorage()
 		pktStorage := NewMockPktStorage()
 		appAdapter := mocks.NewAppClient()
-		broker := mocks.NewBroker()
+		broker := mocks.NewAuthBrokerClient()
 		req := &core.DataDownHandlerReq{
 			AppEUI:  []byte{1, 1, 1, 1, 1},
 			DevEUI:  []byte{2, 2, 2, 2, 2, 2, 2, 2},
@@ -139,7 +139,7 @@ func TestHandleDataDown(t *testing.T) {
 		devStorage := NewMockDevStorage()
 		pktStorage := NewMockPktStorage()
 		appAdapter := mocks.NewAppClient()
-		broker := mocks.NewBroker()
+		broker := mocks.NewAuthBrokerClient()
 		req := &core.DataDownHandlerReq{
 			AppEUI:  []byte{1, 1, 1, 1, 1, 1, 1, 1},
 			DevEUI:  []byte{2, 2, 2, 2, 2, 2, 2, 2, 2},
@@ -177,7 +177,7 @@ func TestHandleDataDown(t *testing.T) {
 		devStorage := NewMockDevStorage()
 		pktStorage := NewMockPktStorage()
 		appAdapter := mocks.NewAppClient()
-		broker := mocks.NewBroker()
+		broker := mocks.NewAuthBrokerClient()
 		req := &core.DataDownHandlerReq{
 			AppEUI:  []byte{1, 1, 1, 1, 1, 1, 1, 1},
 			DevEUI:  []byte{2, 2, 2, 2, 2, 2, 2, 2, 2},
@@ -216,7 +216,7 @@ func TestHandleDataUp(t *testing.T) {
 		devStorage.Failures["read"] = errors.New(errors.NotFound, "Mock Error")
 		pktStorage := NewMockPktStorage()
 		appAdapter := mocks.NewAppClient()
-		broker := mocks.NewBroker()
+		broker := mocks.NewAuthBrokerClient()
 		req := &core.DataUpHandlerReq{
 			Payload:  []byte("Payload"),
 			Metadata: new(core.Metadata),
@@ -258,7 +258,7 @@ func TestHandleDataUp(t *testing.T) {
 		devStorage := NewMockDevStorage()
 		pktStorage := NewMockPktStorage()
 		appAdapter := mocks.NewAppClient()
-		broker := mocks.NewBroker()
+		broker := mocks.NewAuthBrokerClient()
 		req := &core.DataUpHandlerReq{
 			Payload:  nil,
 			Metadata: new(core.Metadata),
@@ -300,7 +300,7 @@ func TestHandleDataUp(t *testing.T) {
 		devStorage := NewMockDevStorage()
 		pktStorage := NewMockPktStorage()
 		appAdapter := mocks.NewAppClient()
-		broker := mocks.NewBroker()
+		broker := mocks.NewAuthBrokerClient()
 		req := &core.DataUpHandlerReq{
 			Payload:  []byte("Payload"),
 			Metadata: nil,
@@ -342,7 +342,7 @@ func TestHandleDataUp(t *testing.T) {
 		devStorage := NewMockDevStorage()
 		pktStorage := NewMockPktStorage()
 		appAdapter := mocks.NewAppClient()
-		broker := mocks.NewBroker()
+		broker := mocks.NewAuthBrokerClient()
 		req := &core.DataUpHandlerReq{
 			Payload:  []byte("Payload"),
 			Metadata: new(core.Metadata),
@@ -384,7 +384,7 @@ func TestHandleDataUp(t *testing.T) {
 		devStorage := NewMockDevStorage()
 		pktStorage := NewMockPktStorage()
 		appAdapter := mocks.NewAppClient()
-		broker := mocks.NewBroker()
+		broker := mocks.NewAuthBrokerClient()
 		req := &core.DataUpHandlerReq{
 			Payload:  []byte("Payload"),
 			Metadata: new(core.Metadata),
@@ -433,7 +433,7 @@ func TestHandleDataUp(t *testing.T) {
 		}
 		pktStorage := NewMockPktStorage()
 		appAdapter := mocks.NewAppClient()
-		broker := mocks.NewBroker()
+		broker := mocks.NewAuthBrokerClient()
 		payload, fcnt := []byte("Payload"), uint32(14)
 		encoded, err := lorawan.EncryptFRMPayload(
 			devStorage.OutRead.Entry.AppSKey,
@@ -498,7 +498,7 @@ func TestHandleDataUp(t *testing.T) {
 		}
 		pktStorage := NewMockPktStorage()
 		appAdapter := mocks.NewAppClient()
-		broker := mocks.NewBroker()
+		broker := mocks.NewAuthBrokerClient()
 		payload, fcnt := []byte("Payload"), uint32(14)
 		encoded, err := lorawan.EncryptFRMPayload(
 			devStorage.OutRead.Entry.AppSKey,
@@ -608,7 +608,7 @@ func TestHandleDataUp(t *testing.T) {
 		pktStorage := NewMockPktStorage()
 		pktStorage.OutDequeue.Entry.Payload = []byte("Downlink")
 		appAdapter := mocks.NewAppClient()
-		broker := mocks.NewBroker()
+		broker := mocks.NewAuthBrokerClient()
 		payload, fcnt := []byte("Payload"), uint32(14)
 		encoded, err := lorawan.EncryptFRMPayload(
 			devStorage.OutRead.Entry.AppSKey,
@@ -712,7 +712,7 @@ func TestHandleDataUp(t *testing.T) {
 		}
 		pktStorage := NewMockPktStorage()
 		appAdapter := mocks.NewAppClient()
-		broker := mocks.NewBroker()
+		broker := mocks.NewAuthBrokerClient()
 		payload, fcnt := []byte("Payload"), uint32(14)
 		encoded, err := lorawan.EncryptFRMPayload(
 			devStorage.OutRead.Entry.AppSKey,
@@ -821,7 +821,7 @@ func TestHandleDataUp(t *testing.T) {
 		pktStorage := NewMockPktStorage()
 		appAdapter := mocks.NewAppClient()
 		appAdapter.Failures["HandleData"] = fmt.Errorf("Mock Error")
-		broker := mocks.NewBroker()
+		broker := mocks.NewAuthBrokerClient()
 		payload, fcnt := []byte("Payload"), uint32(14)
 		encoded, err := lorawan.EncryptFRMPayload(
 			devStorage.OutRead.Entry.AppSKey,
@@ -887,7 +887,7 @@ func TestHandleDataUp(t *testing.T) {
 		pktStorage := NewMockPktStorage()
 		pktStorage.Failures["dequeue"] = errors.New(errors.Operational, "Mock Error")
 		appAdapter := mocks.NewAppClient()
-		broker := mocks.NewBroker()
+		broker := mocks.NewAuthBrokerClient()
 		payload, fcnt := []byte("Payload"), uint32(14)
 		encoded, err := lorawan.EncryptFRMPayload(
 			devStorage.OutRead.Entry.AppSKey,
@@ -945,7 +945,7 @@ func TestHandleDataUp(t *testing.T) {
 		devStorage := NewMockDevStorage()
 		pktStorage := NewMockPktStorage()
 		appAdapter := mocks.NewAppClient()
-		broker := mocks.NewBroker()
+		broker := mocks.NewAuthBrokerClient()
 		payload1, fcnt1 := []byte("Payload1"), uint32(14)
 		devAddr1, appSKey1 := lorawan.DevAddr([4]byte{1, 2, 3, 4}), [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6}
 		payload2, fcnt2 := []byte("Payload2"), uint32(35346)
@@ -1072,7 +1072,7 @@ func TestHandleDataUp(t *testing.T) {
 		pktStorage := NewMockPktStorage()
 		pktStorage.OutDequeue.Entry.Payload = []byte("Downlink")
 		appAdapter := mocks.NewAppClient()
-		broker := mocks.NewBroker()
+		broker := mocks.NewAuthBrokerClient()
 		payload, fcnt := []byte("Payload"), uint32(14)
 		encoded, err := lorawan.EncryptFRMPayload(
 			devStorage.OutRead.Entry.AppSKey,
@@ -1179,7 +1179,7 @@ func TestHandleDataUp(t *testing.T) {
 		pktStorage := NewMockPktStorage()
 		pktStorage.OutDequeue.Entry.Payload = []byte("Downlink")
 		appAdapter := mocks.NewAppClient()
-		broker := mocks.NewBroker()
+		broker := mocks.NewAuthBrokerClient()
 		payload, fcnt := []byte("Payload"), uint32(14)
 		encoded, err := lorawan.EncryptFRMPayload(
 			devStorage.OutRead.Entry.AppSKey,
@@ -1267,7 +1267,7 @@ func TestHandleJoin(t *testing.T) {
 		}
 		pktStorage := NewMockPktStorage()
 		appAdapter := mocks.NewAppClient()
-		broker := mocks.NewBroker()
+		broker := mocks.NewAuthBrokerClient()
 
 		payload := lorawan.NewPHYPayload(true)
 		payload.MHDR = lorawan.MHDR{MType: lorawan.JoinRequest, Major: lorawan.LoRaWANR1}
@@ -1356,7 +1356,7 @@ func TestHandleJoin(t *testing.T) {
 		pktStorage := NewMockPktStorage()
 		appAdapter := mocks.NewAppClient()
 		appAdapter.Failures["HandleJoin"] = errors.New(errors.Operational, "Mock Error")
-		broker := mocks.NewBroker()
+		broker := mocks.NewAuthBrokerClient()
 
 		payload := lorawan.NewPHYPayload(true)
 		payload.MHDR = lorawan.MHDR{MType: lorawan.JoinRequest, Major: lorawan.LoRaWANR1}
@@ -1445,7 +1445,7 @@ func TestHandleJoin(t *testing.T) {
 		devStorage.Failures["upsert"] = errors.New(errors.Operational, "Mock Error")
 		pktStorage := NewMockPktStorage()
 		appAdapter := mocks.NewAppClient()
-		broker := mocks.NewBroker()
+		broker := mocks.NewAuthBrokerClient()
 
 		payload := lorawan.NewPHYPayload(true)
 		payload.MHDR = lorawan.MHDR{MType: lorawan.JoinRequest, Major: lorawan.LoRaWANR1}
@@ -1511,7 +1511,7 @@ func TestHandleJoin(t *testing.T) {
 		}
 		pktStorage := NewMockPktStorage()
 		appAdapter := mocks.NewAppClient()
-		broker := mocks.NewBroker()
+		broker := mocks.NewAuthBrokerClient()
 
 		payload := lorawan.NewPHYPayload(true)
 		payload.MHDR = lorawan.MHDR{MType: lorawan.JoinRequest, Major: lorawan.LoRaWANR1}
@@ -1577,7 +1577,7 @@ func TestHandleJoin(t *testing.T) {
 		}
 		pktStorage := NewMockPktStorage()
 		appAdapter := mocks.NewAppClient()
-		broker := mocks.NewBroker()
+		broker := mocks.NewAuthBrokerClient()
 
 		payload := lorawan.NewPHYPayload(true)
 		payload.MHDR = lorawan.MHDR{MType: lorawan.JoinRequest, Major: lorawan.LoRaWANR1}
@@ -1640,7 +1640,7 @@ func TestHandleJoin(t *testing.T) {
 		devStorage.Failures["read"] = errors.New(errors.NotFound, "Mock Error")
 		pktStorage := NewMockPktStorage()
 		appAdapter := mocks.NewAppClient()
-		broker := mocks.NewBroker()
+		broker := mocks.NewAuthBrokerClient()
 
 		// Expect
 		var wantErr = ErrNotFound
@@ -1690,7 +1690,7 @@ func TestHandleJoin(t *testing.T) {
 		devStorage := NewMockDevStorage()
 		pktStorage := NewMockPktStorage()
 		appAdapter := mocks.NewAppClient()
-		broker := mocks.NewBroker()
+		broker := mocks.NewAuthBrokerClient()
 
 		// Expect
 		var wantErr = ErrStructural
@@ -1740,7 +1740,7 @@ func TestHandleJoin(t *testing.T) {
 		devStorage := NewMockDevStorage()
 		pktStorage := NewMockPktStorage()
 		appAdapter := mocks.NewAppClient()
-		broker := mocks.NewBroker()
+		broker := mocks.NewAuthBrokerClient()
 
 		// Expect
 		var wantErr = ErrStructural
@@ -1790,7 +1790,7 @@ func TestHandleJoin(t *testing.T) {
 		devStorage := NewMockDevStorage()
 		pktStorage := NewMockPktStorage()
 		appAdapter := mocks.NewAppClient()
-		broker := mocks.NewBroker()
+		broker := mocks.NewAuthBrokerClient()
 
 		// Expect
 		var wantErr = ErrStructural
@@ -1829,7 +1829,7 @@ func TestHandleJoin(t *testing.T) {
 		devStorage := NewMockDevStorage()
 		pktStorage := NewMockPktStorage()
 		appAdapter := mocks.NewAppClient()
-		broker := mocks.NewBroker()
+		broker := mocks.NewAuthBrokerClient()
 
 		// Expect
 		var wantErr = ErrStructural
@@ -1901,7 +1901,7 @@ func TestHandleJoin(t *testing.T) {
 		}
 		pktStorage := NewMockPktStorage()
 		appAdapter := mocks.NewAppClient()
-		broker := mocks.NewBroker()
+		broker := mocks.NewAuthBrokerClient()
 
 		payload := lorawan.NewPHYPayload(true)
 		payload.MHDR = lorawan.MHDR{MType: lorawan.JoinRequest, Major: lorawan.LoRaWANR1}

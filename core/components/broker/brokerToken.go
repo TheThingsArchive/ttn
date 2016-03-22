@@ -20,7 +20,7 @@ type brokerClient struct {
 }
 
 // NewClient instantiates a new core.Broker client
-func NewClient(netAddr string) (core.Broker, error) {
+func NewClient(netAddr string) (core.AuthBrokerClient, error) {
 	brokerConn, err := grpc.Dial(netAddr, grpc.WithInsecure(), grpc.WithTimeout(time.Second*15)) // Add Credentials Token
 	if err != nil {
 		return nil, err
@@ -34,7 +34,7 @@ func NewClient(netAddr string) (core.Broker, error) {
 }
 
 // BeginToken implements the core.Broker interface
-func (b *brokerClient) BeginToken(token string) core.Broker {
+func (b *brokerClient) BeginToken(token string) core.AuthBrokerClient {
 	b.Lock()
 	b.token = token
 	return b

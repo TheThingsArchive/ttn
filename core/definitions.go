@@ -5,10 +5,6 @@
 
 package core
 
-import (
-	"reflect"
-)
-
 // DataUpAppReq represents the actual payloads sent to application on uplink
 type DataUpAppReq struct {
 	Payload  []byte        `msg:"payload" json:"payload"`
@@ -46,29 +42,11 @@ type ABPSubAppReq struct {
 	AppSKey string `msg:"apps_key" json:"apps_key"`
 }
 
-// ProtoMetaToAppMeta converts a set of Metadata generate with Protobuf to a set of valid
-// AppMetadata ready to be marshaled to json
-func ProtoMetaToAppMeta(srcs ...*Metadata) []AppMetadata {
-	var dest []AppMetadata
-
-	for _, src := range srcs {
-		if src == nil {
-			continue
-		}
-		to := new(AppMetadata)
-		v := reflect.ValueOf(src).Elem()
-		t := v.Type()
-		d := reflect.ValueOf(to).Elem()
-
-		for i := 0; i < t.NumField(); i++ {
-			field := t.Field(i).Name
-			if d.FieldByName(field).CanSet() {
-				d.FieldByName(field).Set(v.Field(i))
-			}
-		}
-
-		dest = append(dest, *to)
-	}
-
-	return dest
+// AuthBrokerClient gathers both BrokerClient & BrokerManagerClient interfaces with additional
+// method to add a custom token to each rpc requests's metadata
+type AuthBrokerClient interface {
+	BrokerClient
+	BrokerManagerClient
+	BeginToken(token string) AuthBrokerClient
+	EndToken()
 }
