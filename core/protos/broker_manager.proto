@@ -2,12 +2,12 @@ syntax = "proto3";
 
 package core;
 
-message RegisterOTAABrokerReq {
+message ValidateOTAABrokerReq {
     bytes   AppEUI      = 1;
     string  NetAddress  = 2;
 }
 
-message RegisterOTAABrokerRes{}
+message ValidateOTAABrokerRes{}
 
 message UpsertABPBrokerReq {
     bytes   AppEUI      = 1;
@@ -32,7 +32,7 @@ message ListDevicesBrokerRes {
 }
 
 service BrokerManager {
-    rpc RegisterOTAA    (RegisterOTAABrokerReq)     returns     (RegisterOTAABrokerRes);
+    rpc ValidateOTAA    (ValidateOTAABrokerReq)     returns     (ValidateOTAABrokerRes);
     rpc UpsertABP       (UpsertABPBrokerReq)        returns     (UpsertABPBrokerRes);
     rpc ListDevices     (ListDevicesBrokerReq)      returns     (ListDevicesBrokerRes);
 }

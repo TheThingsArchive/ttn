@@ -143,7 +143,7 @@ func TestMarshalUnmarshalEntries(t *testing.T) {
 		Desc(t, "Complete Entry")
 		entry := devEntry{
 			AppEUI:   []byte{1, 2, 3, 4, 5, 6, 7, 8},
-			AppKey:   [16]byte{1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2},
+			AppKey:   &[16]byte{1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2},
 			AppSKey:  [16]byte{0, 9, 8, 7, 6, 5, 4, 3, 2, 1, 6, 5, 4, 3, 2, 1},
 			DevAddr:  []byte{4, 4, 4, 4},
 			DevEUI:   []byte{14, 14, 14, 14, 14, 14, 14, 14},
@@ -165,13 +165,13 @@ func TestMarshalUnmarshalEntries(t *testing.T) {
 		Desc(t, "Partial Entry")
 		entry := devEntry{
 			AppEUI:   []byte{1, 2, 3, 4, 5, 6, 7, 8},
-			AppKey:   [16]byte{1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2},
+			AppKey:   &[16]byte{1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2},
 			DevEUI:   []byte{14, 14, 14, 14, 14, 14, 14, 14},
 			FCntDown: 0,
 		}
 		want := devEntry{
 			AppEUI:   []byte{1, 2, 3, 4, 5, 6, 7, 8},
-			AppKey:   [16]byte{1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2},
+			AppKey:   &[16]byte{1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2},
 			AppSKey:  [16]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 			DevAddr:  make([]byte, 0, 0),
 			DevEUI:   []byte{14, 14, 14, 14, 14, 14, 14, 14},
@@ -193,14 +193,14 @@ func TestMarshalUnmarshalEntries(t *testing.T) {
 		Desc(t, "Partial Entry bis")
 		entry := devEntry{
 			AppEUI:   []byte{1, 2, 3, 4, 5, 6, 7, 8},
-			AppKey:   [16]byte{1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2},
+			AppKey:   &[16]byte{1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2},
 			DevEUI:   []byte{14, 14, 14, 14, 14, 14, 14, 14},
 			DevAddr:  []byte{},
 			FCntDown: 0,
 		}
 		want := devEntry{
 			AppEUI:   []byte{1, 2, 3, 4, 5, 6, 7, 8},
-			AppKey:   [16]byte{1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2},
+			AppKey:   &[16]byte{1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2},
 			AppSKey:  [16]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 			DevAddr:  make([]byte, 0, 0),
 			DevEUI:   []byte{14, 14, 14, 14, 14, 14, 14, 14},

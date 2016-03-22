@@ -61,7 +61,7 @@ type Interface interface {
 
 // Components is used to make handler instantiation easier
 type Components struct {
-	Broker     core.BrokerClient
+	Broker     core.Broker
 	Ctx        log.Interface
 	DevStorage DevStorage
 	PktStorage PktStorage
@@ -141,6 +141,9 @@ func (h component) HandleJoin(bctx context.Context, req *core.JoinHandlerReq) (*
 	entry, err := h.DevStorage.read(req.AppEUI, req.DevEUI)
 	if err != nil {
 		return new(core.JoinHandlerRes), err
+	}
+	if entry.AppKey == nil { // Trying to activate an ABP device
+		return new(core.JoinHandlerRes), errors.New(errors.Behavioural, "Trying to activate a personalized device")
 	}
 
 	// 2. Prepare a channel to receive the response from the consumer
@@ -299,16 +302,6 @@ func (h component) HandleDataUp(bctx context.Context, req *core.DataUpHandlerReq
 	}
 }
 
-// List implements the core.HandlerManagerServer interface
-func (h component) List(context.Context, *core.HandlerListDevicesReq) (*core.HandlerListDevicesRes, error) {
-	return nil, errors.New(errors.Structural, "Not implemented")
-}
-
-// Upsert implements the core.HandlerManagerServer interface
-func (h component) Upsert(context.Context, *core.HandlerUpsertDeviceReq) (*core.HandlerUpsertDeviceRes, error) {
-	return nil, errors.New(errors.Structural, "Not implemented")
-}
-
 // consumeSet gathers new incoming bundles which possess the same id (i.e. appEUI & devEUI & Fcnt)
 // It then flushes them once a given delay has passed since the reception of the first bundle.
 func (h component) consumeSet(chbundles chan<- []bundle, chset <-chan bundle) {
@@ -387,7 +380,8 @@ browseBundles:
 			go h.consumeDown(pkt.AppEUI, pkt.DevEUI, b.DataRate, bundles)
 		case *core.JoinHandlerReq:
 			pkt := b.Packet.(*core.JoinHandlerReq)
-			go h.consumeJoin(pkt.AppEUI, pkt.DevEUI, b.Entry.AppKey, b.DataRate, bundles)
+			// Entry.AppKey not nil, checked before creating any bundles
+			go h.consumeJoin(pkt.AppEUI, pkt.DevEUI, *b.Entry.AppKey, b.DataRate, bundles)
 		}
 	}
 }
@@ -450,7 +444,7 @@ func (h component) consumeJoin(appEUI []byte, devEUI []byte, appKey [16]byte, da
 	// Update the internal storage entry
 	err = h.DevStorage.upsert(devEntry{
 		AppEUI:   appEUI,
-		AppKey:   appKey,
+		AppKey:   &appKey,
 		AppSKey:  appSKey,
 		DevAddr:  devAddr[:],
 		DevEUI:   devEUI,

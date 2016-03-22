@@ -16,8 +16,8 @@
 		lorawan.proto
 
 	It has these top-level messages:
-		RegisterOTAABrokerReq
-		RegisterOTAABrokerRes
+		ValidateOTAABrokerReq
+		ValidateOTAABrokerRes
 		UpsertABPBrokerReq
 		UpsertABPBrokerRes
 		BrokerDevice
@@ -84,25 +84,25 @@ var _ = math.Inf
 // is compatible with the proto package it is being compiled against.
 const _ = proto.ProtoPackageIsVersion1
 
-type RegisterOTAABrokerReq struct {
+type ValidateOTAABrokerReq struct {
 	AppEUI     []byte `protobuf:"bytes,1,opt,name=AppEUI,json=appEUI,proto3" json:"AppEUI,omitempty"`
 	NetAddress string `protobuf:"bytes,2,opt,name=NetAddress,json=netAddress,proto3" json:"NetAddress,omitempty"`
 }
 
-func (m *RegisterOTAABrokerReq) Reset()         { *m = RegisterOTAABrokerReq{} }
-func (m *RegisterOTAABrokerReq) String() string { return proto.CompactTextString(m) }
-func (*RegisterOTAABrokerReq) ProtoMessage()    {}
-func (*RegisterOTAABrokerReq) Descriptor() ([]byte, []int) {
+func (m *ValidateOTAABrokerReq) Reset()         { *m = ValidateOTAABrokerReq{} }
+func (m *ValidateOTAABrokerReq) String() string { return proto.CompactTextString(m) }
+func (*ValidateOTAABrokerReq) ProtoMessage()    {}
+func (*ValidateOTAABrokerReq) Descriptor() ([]byte, []int) {
 	return fileDescriptorBrokerManager, []int{0}
 }
 
-type RegisterOTAABrokerRes struct {
+type ValidateOTAABrokerRes struct {
 }
 
-func (m *RegisterOTAABrokerRes) Reset()         { *m = RegisterOTAABrokerRes{} }
-func (m *RegisterOTAABrokerRes) String() string { return proto.CompactTextString(m) }
-func (*RegisterOTAABrokerRes) ProtoMessage()    {}
-func (*RegisterOTAABrokerRes) Descriptor() ([]byte, []int) {
+func (m *ValidateOTAABrokerRes) Reset()         { *m = ValidateOTAABrokerRes{} }
+func (m *ValidateOTAABrokerRes) String() string { return proto.CompactTextString(m) }
+func (*ValidateOTAABrokerRes) ProtoMessage()    {}
+func (*ValidateOTAABrokerRes) Descriptor() ([]byte, []int) {
 	return fileDescriptorBrokerManager, []int{1}
 }
 
@@ -166,8 +166,8 @@ func (m *ListDevicesBrokerRes) GetDevices() []*BrokerDevice {
 }
 
 func init() {
-	proto.RegisterType((*RegisterOTAABrokerReq)(nil), "core.RegisterOTAABrokerReq")
-	proto.RegisterType((*RegisterOTAABrokerRes)(nil), "core.RegisterOTAABrokerRes")
+	proto.RegisterType((*ValidateOTAABrokerReq)(nil), "core.ValidateOTAABrokerReq")
+	proto.RegisterType((*ValidateOTAABrokerRes)(nil), "core.ValidateOTAABrokerRes")
 	proto.RegisterType((*UpsertABPBrokerReq)(nil), "core.UpsertABPBrokerReq")
 	proto.RegisterType((*UpsertABPBrokerRes)(nil), "core.UpsertABPBrokerRes")
 	proto.RegisterType((*BrokerDevice)(nil), "core.BrokerDevice")
@@ -182,7 +182,7 @@ var _ grpc.ClientConn
 // Client API for BrokerManager service
 
 type BrokerManagerClient interface {
-	RegisterOTAA(ctx context.Context, in *RegisterOTAABrokerReq, opts ...grpc.CallOption) (*RegisterOTAABrokerRes, error)
+	ValidateOTAA(ctx context.Context, in *ValidateOTAABrokerReq, opts ...grpc.CallOption) (*ValidateOTAABrokerRes, error)
 	UpsertABP(ctx context.Context, in *UpsertABPBrokerReq, opts ...grpc.CallOption) (*UpsertABPBrokerRes, error)
 	ListDevices(ctx context.Context, in *ListDevicesBrokerReq, opts ...grpc.CallOption) (*ListDevicesBrokerRes, error)
 }
@@ -195,9 +195,9 @@ func NewBrokerManagerClient(cc *grpc.ClientConn) BrokerManagerClient {
 	return &brokerManagerClient{cc}
 }
 
-func (c *brokerManagerClient) RegisterOTAA(ctx context.Context, in *RegisterOTAABrokerReq, opts ...grpc.CallOption) (*RegisterOTAABrokerRes, error) {
-	out := new(RegisterOTAABrokerRes)
-	err := grpc.Invoke(ctx, "/core.BrokerManager/RegisterOTAA", in, out, c.cc, opts...)
+func (c *brokerManagerClient) ValidateOTAA(ctx context.Context, in *ValidateOTAABrokerReq, opts ...grpc.CallOption) (*ValidateOTAABrokerRes, error) {
+	out := new(ValidateOTAABrokerRes)
+	err := grpc.Invoke(ctx, "/core.BrokerManager/ValidateOTAA", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -225,7 +225,7 @@ func (c *brokerManagerClient) ListDevices(ctx context.Context, in *ListDevicesBr
 // Server API for BrokerManager service
 
 type BrokerManagerServer interface {
-	RegisterOTAA(context.Context, *RegisterOTAABrokerReq) (*RegisterOTAABrokerRes, error)
+	ValidateOTAA(context.Context, *ValidateOTAABrokerReq) (*ValidateOTAABrokerRes, error)
 	UpsertABP(context.Context, *UpsertABPBrokerReq) (*UpsertABPBrokerRes, error)
 	ListDevices(context.Context, *ListDevicesBrokerReq) (*ListDevicesBrokerRes, error)
 }
@@ -234,12 +234,12 @@ func RegisterBrokerManagerServer(s *grpc.Server, srv BrokerManagerServer) {
 	s.RegisterService(&_BrokerManager_serviceDesc, srv)
 }
 
-func _BrokerManager_RegisterOTAA_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(RegisterOTAABrokerReq)
+func _BrokerManager_ValidateOTAA_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(ValidateOTAABrokerReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(BrokerManagerServer).RegisterOTAA(ctx, in)
+	out, err := srv.(BrokerManagerServer).ValidateOTAA(ctx, in)
 	if err != nil {
 		return nil, err
 	}
@@ -275,8 +275,8 @@ var _BrokerManager_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*BrokerManagerServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "RegisterOTAA",
-			Handler:    _BrokerManager_RegisterOTAA_Handler,
+			MethodName: "ValidateOTAA",
+			Handler:    _BrokerManager_ValidateOTAA_Handler,
 		},
 		{
 			MethodName: "UpsertABP",
@@ -290,7 +290,7 @@ var _BrokerManager_serviceDesc = grpc.ServiceDesc{
 	Streams: []grpc.StreamDesc{},
 }
 
-func (m *RegisterOTAABrokerReq) Marshal() (data []byte, err error) {
+func (m *ValidateOTAABrokerReq) Marshal() (data []byte, err error) {
 	size := m.Size()
 	data = make([]byte, size)
 	n, err := m.MarshalTo(data)
@@ -300,7 +300,7 @@ func (m *RegisterOTAABrokerReq) Marshal() (data []byte, err error) {
 	return data[:n], nil
 }
 
-func (m *RegisterOTAABrokerReq) MarshalTo(data []byte) (int, error) {
+func (m *ValidateOTAABrokerReq) MarshalTo(data []byte) (int, error) {
 	var i int
 	_ = i
 	var l int
@@ -322,7 +322,7 @@ func (m *RegisterOTAABrokerReq) MarshalTo(data []byte) (int, error) {
 	return i, nil
 }
 
-func (m *RegisterOTAABrokerRes) Marshal() (data []byte, err error) {
+func (m *ValidateOTAABrokerRes) Marshal() (data []byte, err error) {
 	size := m.Size()
 	data = make([]byte, size)
 	n, err := m.MarshalTo(data)
@@ -332,7 +332,7 @@ func (m *RegisterOTAABrokerRes) Marshal() (data []byte, err error) {
 	return data[:n], nil
 }
 
-func (m *RegisterOTAABrokerRes) MarshalTo(data []byte) (int, error) {
+func (m *ValidateOTAABrokerRes) MarshalTo(data []byte) (int, error) {
 	var i int
 	_ = i
 	var l int
@@ -525,7 +525,7 @@ func encodeVarintBrokerManager(data []byte, offset int, v uint64) int {
 	data[offset] = uint8(v)
 	return offset + 1
 }
-func (m *RegisterOTAABrokerReq) Size() (n int) {
+func (m *ValidateOTAABrokerReq) Size() (n int) {
 	var l int
 	_ = l
 	if m.AppEUI != nil {
@@ -541,7 +541,7 @@ func (m *RegisterOTAABrokerReq) Size() (n int) {
 	return n
 }
 
-func (m *RegisterOTAABrokerRes) Size() (n int) {
+func (m *ValidateOTAABrokerRes) Size() (n int) {
 	var l int
 	_ = l
 	return n
@@ -638,7 +638,7 @@ func sovBrokerManager(x uint64) (n int) {
 func sozBrokerManager(x uint64) (n int) {
 	return sovBrokerManager(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *RegisterOTAABrokerReq) Unmarshal(data []byte) error {
+func (m *ValidateOTAABrokerReq) Unmarshal(data []byte) error {
 	l := len(data)
 	iNdEx := 0
 	for iNdEx < l {
@@ -661,10 +661,10 @@ func (m *RegisterOTAABrokerReq) Unmarshal(data []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: RegisterOTAABrokerReq: wiretype end group for non-group")
+			return fmt.Errorf("proto: ValidateOTAABrokerReq: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: RegisterOTAABrokerReq: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ValidateOTAABrokerReq: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -748,7 +748,7 @@ func (m *RegisterOTAABrokerReq) Unmarshal(data []byte) error {
 	}
 	return nil
 }
-func (m *RegisterOTAABrokerRes) Unmarshal(data []byte) error {
+func (m *ValidateOTAABrokerRes) Unmarshal(data []byte) error {
 	l := len(data)
 	iNdEx := 0
 	for iNdEx < l {
@@ -771,10 +771,10 @@ func (m *RegisterOTAABrokerRes) Unmarshal(data []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: RegisterOTAABrokerRes: wiretype end group for non-group")
+			return fmt.Errorf("proto: ValidateOTAABrokerRes: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: RegisterOTAABrokerRes: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ValidateOTAABrokerRes: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		default:
@@ -1405,8 +1405,8 @@ var fileDescriptorBrokerManager = []byte{
 	// 323 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xe2, 0x12, 0x49, 0x2a, 0xca, 0xcf,
 	0x4e, 0x2d, 0x8a, 0xcf, 0x4d, 0xcc, 0x4b, 0x4c, 0x4f, 0x2d, 0xd2, 0x2b, 0x28, 0xca, 0x2f, 0xc9,
-	0x17, 0x62, 0x49, 0xce, 0x2f, 0x4a, 0x55, 0xf2, 0xe7, 0x12, 0x0d, 0x4a, 0x4d, 0xcf, 0x2c, 0x2e,
-	0x49, 0x2d, 0xf2, 0x0f, 0x71, 0x74, 0x74, 0x02, 0xab, 0x0c, 0x4a, 0x2d, 0x14, 0x12, 0xe3, 0x62,
+	0x17, 0x62, 0x49, 0xce, 0x2f, 0x4a, 0x55, 0xf2, 0xe7, 0x12, 0x0d, 0x4b, 0xcc, 0xc9, 0x4c, 0x49,
+	0x2c, 0x49, 0xf5, 0x0f, 0x71, 0x74, 0x74, 0x02, 0xab, 0x0c, 0x4a, 0x2d, 0x14, 0x12, 0xe3, 0x62,
 	0x73, 0x2c, 0x28, 0x70, 0x0d, 0xf5, 0x94, 0x60, 0x54, 0x60, 0xd4, 0xe0, 0x09, 0x62, 0x4b, 0x04,
 	0xf3, 0x84, 0xe4, 0xb8, 0xb8, 0xfc, 0x52, 0x4b, 0x1c, 0x53, 0x52, 0x8a, 0x52, 0x8b, 0x8b, 0x25,
 	0x98, 0x80, 0x72, 0x9c, 0x41, 0x5c, 0x79, 0x70, 0x11, 0x25, 0x71, 0xec, 0x06, 0x16, 0x2b, 0x25,
@@ -1414,14 +1414,14 @@ var fileDescriptorBrokerManager = []byte{
 	0xdd, 0x25, 0xb5, 0x0c, 0x64, 0x28, 0xd8, 0x0e, 0x9e, 0x20, 0xf6, 0x14, 0x08, 0x17, 0x24, 0xe3,
 	0x57, 0x9e, 0x1d, 0xec, 0x9d, 0x5a, 0x29, 0xc1, 0x0c, 0x91, 0xc9, 0x83, 0x70, 0x95, 0x44, 0xb0,
 	0xd8, 0x50, 0xac, 0x14, 0xc5, 0xc5, 0x03, 0xe1, 0x00, 0xcd, 0xcb, 0x4c, 0x4e, 0x05, 0xd9, 0x08,
-	0x64, 0x21, 0xd9, 0x98, 0x02, 0xe6, 0x91, 0x65, 0xa3, 0x1e, 0x97, 0x88, 0x0f, 0xd0, 0xab, 0x10,
-	0x93, 0x8b, 0x09, 0xfa, 0x4a, 0xc9, 0x05, 0xab, 0xfa, 0x62, 0x21, 0x1d, 0xb0, 0xdd, 0x20, 0x31,
-	0xa0, 0x06, 0x66, 0x0d, 0x6e, 0x23, 0x21, 0x3d, 0x50, 0xec, 0xe8, 0x21, 0x3b, 0x1c, 0xec, 0x1e,
-	0x90, 0x12, 0xa3, 0x87, 0x8c, 0x5c, 0xbc, 0x10, 0x19, 0x5f, 0x48, 0x8c, 0x0a, 0x79, 0x70, 0xf1,
-	0x20, 0x07, 0xba, 0x90, 0x34, 0x44, 0x3b, 0xd6, 0x98, 0x95, 0xc2, 0x23, 0x59, 0x2c, 0x64, 0xcf,
-	0xc5, 0x09, 0x0f, 0x43, 0x21, 0x09, 0x88, 0x4a, 0xcc, 0x68, 0x93, 0xc2, 0x25, 0x53, 0x2c, 0xe4,
-	0xca, 0xc5, 0x8d, 0xe4, 0x45, 0x21, 0x29, 0x88, 0x42, 0x6c, 0xa1, 0x24, 0x85, 0x5b, 0xae, 0xd8,
-	0x49, 0xe0, 0xc4, 0x23, 0x39, 0xc6, 0x0b, 0x40, 0xfc, 0x00, 0x88, 0x67, 0x3c, 0x96, 0x63, 0x48,
-	0x62, 0x03, 0x27, 0x5b, 0x63, 0x40, 0x00, 0x00, 0x00, 0xff, 0xff, 0x51, 0x95, 0x62, 0xd4, 0xce,
+	0x64, 0x21, 0xd9, 0x98, 0x02, 0xe6, 0x91, 0x65, 0xa3, 0x1e, 0x97, 0x88, 0x4f, 0x66, 0x71, 0x09,
+	0xc4, 0xe4, 0x62, 0x82, 0xbe, 0x52, 0x72, 0xc1, 0xaa, 0xbe, 0x58, 0x48, 0x07, 0x6c, 0x37, 0x48,
+	0x0c, 0xa8, 0x81, 0x59, 0x83, 0xdb, 0x48, 0x48, 0x0f, 0x14, 0x3b, 0x7a, 0xc8, 0x0e, 0x07, 0xbb,
+	0x07, 0xa4, 0xc4, 0xe8, 0x21, 0x23, 0x17, 0x2f, 0x44, 0xc6, 0x17, 0x12, 0xa3, 0x42, 0x1e, 0x5c,
+	0x3c, 0xc8, 0x81, 0x2e, 0x24, 0x0d, 0xd1, 0x8e, 0x35, 0x66, 0xa5, 0xf0, 0x48, 0x16, 0x0b, 0xd9,
+	0x73, 0x71, 0xc2, 0xc3, 0x50, 0x48, 0x02, 0xa2, 0x12, 0x33, 0xda, 0xa4, 0x70, 0xc9, 0x14, 0x0b,
+	0xb9, 0x72, 0x71, 0x23, 0x79, 0x51, 0x48, 0x0a, 0xa2, 0x10, 0x5b, 0x28, 0x49, 0xe1, 0x96, 0x2b,
+	0x76, 0x12, 0x38, 0xf1, 0x48, 0x8e, 0xf1, 0x02, 0x10, 0x3f, 0x00, 0xe2, 0x19, 0x8f, 0xe5, 0x18,
+	0x92, 0xd8, 0xc0, 0xc9, 0xd6, 0x18, 0x10, 0x00, 0x00, 0xff, 0xff, 0xa5, 0x46, 0xfb, 0x03, 0xce,
 	0x02, 0x00, 0x00,
 }

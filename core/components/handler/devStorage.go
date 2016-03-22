@@ -23,7 +23,7 @@ const dbDevices = "devices"
 
 type devEntry struct {
 	AppEUI   []byte
-	AppKey   [16]byte
+	AppKey   *[16]byte
 	AppSKey  [16]byte
 	DevAddr  []byte
 	DevEUI   []byte
@@ -71,7 +71,11 @@ func (s *devStorage) done() error {
 // MarshalBinary implements the encoding.BinaryMarshaler interface
 func (e devEntry) MarshalBinary() ([]byte, error) {
 	rw := readwriter.New(nil)
-	rw.Write(e.AppKey[:])
+	if e.AppKey != nil {
+		rw.Write(e.AppKey[:])
+	} else {
+		rw.Write([]byte{})
+	}
 	rw.Write(e.AppSKey[:])
 	rw.Write(e.NwkSKey[:])
 	rw.Write(e.FCntDown)
@@ -84,7 +88,12 @@ func (e devEntry) MarshalBinary() ([]byte, error) {
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
 func (e *devEntry) UnmarshalBinary(data []byte) error {
 	rw := readwriter.New(data)
-	rw.Read(func(data []byte) { copy(e.AppKey[:], data) })
+	rw.Read(func(data []byte) {
+		if len(data) == 16 {
+			e.AppKey = new([16]byte)
+			copy(e.AppKey[:], data)
+		}
+	})
 	rw.Read(func(data []byte) { copy(e.AppSKey[:], data) })
 	rw.Read(func(data []byte) { copy(e.NwkSKey[:], data) })
 	rw.Read(func(data []byte) { e.FCntDown = binary.BigEndian.Uint32(data) })
