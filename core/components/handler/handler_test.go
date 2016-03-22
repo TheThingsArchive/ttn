@@ -1269,6 +1269,17 @@ func TestHandleJoin(t *testing.T) {
 		appAdapter := mocks.NewAppClient()
 		broker := mocks.NewBroker()
 
+		payload := lorawan.NewPHYPayload(true)
+		payload.MHDR = lorawan.MHDR{MType: lorawan.JoinRequest, Major: lorawan.LoRaWANR1}
+		joinPayload := lorawan.JoinRequestPayload{}
+		copy(joinPayload.AppEUI[:], req.AppEUI)
+		copy(joinPayload.DevEUI[:], req.DevEUI)
+		copy(joinPayload.DevNonce[:], req.DevNonce)
+		payload.MACPayload = &joinPayload
+		err := payload.SetMIC(lorawan.AES128Key(*devStorage.OutRead.Entry.AppKey))
+		FatalUnless(t, err)
+		req.MIC = payload.MIC[:]
+
 		// Expect
 		var wantErr *string
 		var wantRes = &core.JoinHandlerRes{
@@ -1346,6 +1357,17 @@ func TestHandleJoin(t *testing.T) {
 		appAdapter := mocks.NewAppClient()
 		appAdapter.Failures["HandleJoin"] = errors.New(errors.Operational, "Mock Error")
 		broker := mocks.NewBroker()
+
+		payload := lorawan.NewPHYPayload(true)
+		payload.MHDR = lorawan.MHDR{MType: lorawan.JoinRequest, Major: lorawan.LoRaWANR1}
+		joinPayload := lorawan.JoinRequestPayload{}
+		copy(joinPayload.AppEUI[:], req.AppEUI)
+		copy(joinPayload.DevEUI[:], req.DevEUI)
+		copy(joinPayload.DevNonce[:], req.DevNonce)
+		payload.MACPayload = &joinPayload
+		err := payload.SetMIC(lorawan.AES128Key(*devStorage.OutRead.Entry.AppKey))
+		FatalUnless(t, err)
+		req.MIC = payload.MIC[:]
 
 		// Expect
 		var wantErr *string
@@ -1425,6 +1447,17 @@ func TestHandleJoin(t *testing.T) {
 		appAdapter := mocks.NewAppClient()
 		broker := mocks.NewBroker()
 
+		payload := lorawan.NewPHYPayload(true)
+		payload.MHDR = lorawan.MHDR{MType: lorawan.JoinRequest, Major: lorawan.LoRaWANR1}
+		joinPayload := lorawan.JoinRequestPayload{}
+		copy(joinPayload.AppEUI[:], req.AppEUI)
+		copy(joinPayload.DevEUI[:], req.DevEUI)
+		copy(joinPayload.DevNonce[:], req.DevNonce)
+		payload.MACPayload = &joinPayload
+		err := payload.SetMIC(lorawan.AES128Key(*devStorage.OutRead.Entry.AppKey))
+		FatalUnless(t, err)
+		req.MIC = payload.MIC[:]
+
 		// Expect
 		var wantErr = ErrOperational
 		var wantRes = new(core.JoinHandlerRes)
@@ -1479,6 +1512,17 @@ func TestHandleJoin(t *testing.T) {
 		pktStorage := NewMockPktStorage()
 		appAdapter := mocks.NewAppClient()
 		broker := mocks.NewBroker()
+
+		payload := lorawan.NewPHYPayload(true)
+		payload.MHDR = lorawan.MHDR{MType: lorawan.JoinRequest, Major: lorawan.LoRaWANR1}
+		joinPayload := lorawan.JoinRequestPayload{}
+		copy(joinPayload.AppEUI[:], req.AppEUI)
+		copy(joinPayload.DevEUI[:], req.DevEUI)
+		copy(joinPayload.DevNonce[:], req.DevNonce)
+		payload.MACPayload = &joinPayload
+		err := payload.SetMIC(lorawan.AES128Key(*devStorage.OutRead.Entry.AppKey))
+		FatalUnless(t, err)
+		req.MIC = payload.MIC[:]
 
 		// Expect
 		var wantErr = ErrOperational
@@ -1535,6 +1579,17 @@ func TestHandleJoin(t *testing.T) {
 		appAdapter := mocks.NewAppClient()
 		broker := mocks.NewBroker()
 
+		payload := lorawan.NewPHYPayload(true)
+		payload.MHDR = lorawan.MHDR{MType: lorawan.JoinRequest, Major: lorawan.LoRaWANR1}
+		joinPayload := lorawan.JoinRequestPayload{}
+		copy(joinPayload.AppEUI[:], req.AppEUI)
+		copy(joinPayload.DevEUI[:], req.DevEUI)
+		copy(joinPayload.DevNonce[:], req.DevNonce)
+		payload.MACPayload = &joinPayload
+		err := payload.SetMIC(lorawan.AES128Key(*devStorage.OutRead.Entry.AppKey))
+		FatalUnless(t, err)
+		req.MIC = payload.MIC[:]
+
 		// Expect
 		var wantErr = ErrStructural
 		var wantRes = new(core.JoinHandlerRes)
@@ -1568,6 +1623,7 @@ func TestHandleJoin(t *testing.T) {
 			AppEUI:   []byte{1, 1, 1, 1, 1, 1, 1, 1},
 			DevEUI:   []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			DevNonce: []byte{14, 42},
+			MIC:      []byte{1, 2, 3, 4},
 			Metadata: &core.Metadata{
 				DataRate:   "SF7BW125",
 				Frequency:  865.5,
@@ -1846,6 +1902,18 @@ func TestHandleJoin(t *testing.T) {
 		pktStorage := NewMockPktStorage()
 		appAdapter := mocks.NewAppClient()
 		broker := mocks.NewBroker()
+
+		payload := lorawan.NewPHYPayload(true)
+		payload.MHDR = lorawan.MHDR{MType: lorawan.JoinRequest, Major: lorawan.LoRaWANR1}
+		joinPayload := lorawan.JoinRequestPayload{}
+		copy(joinPayload.AppEUI[:], req1.AppEUI)
+		copy(joinPayload.DevEUI[:], req1.DevEUI)
+		copy(joinPayload.DevNonce[:], req1.DevNonce)
+		payload.MACPayload = &joinPayload
+		err := payload.SetMIC(lorawan.AES128Key(*devStorage.OutRead.Entry.AppKey))
+		FatalUnless(t, err)
+		req1.MIC = payload.MIC[:]
+		req2.MIC = payload.MIC[:]
 
 		// Expect
 		var wantErr1 *string

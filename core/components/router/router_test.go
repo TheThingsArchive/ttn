@@ -1486,6 +1486,7 @@ func TestHandleJoin(t *testing.T) {
 			AppEUI:    []byte{1, 1, 1, 1, 1, 1, 1, 1},
 			DevEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			DevNonce:  []byte{3, 3},
+			MIC:       []byte{14, 14, 14, 14},
 			Metadata: &core.Metadata{
 				Frequency: 868.5,
 			},
@@ -1501,6 +1502,7 @@ func TestHandleJoin(t *testing.T) {
 			AppEUI:   req.AppEUI,
 			DevEUI:   req.DevEUI,
 			DevNonce: req.DevNonce,
+			MIC:      req.MIC,
 			Metadata: &core.Metadata{
 				Altitude:  gt.OutRead.Entry.Metadata.Altitude,
 				Longitude: gt.OutRead.Entry.Metadata.Longitude,
@@ -1564,6 +1566,7 @@ func TestHandleJoin(t *testing.T) {
 			AppEUI:    []byte{1, 1, 1, 1, 1, 1, 1, 1},
 			DevEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			DevNonce:  []byte{3, 3},
+			MIC:       []byte{14, 14, 14, 14},
 			Metadata: &core.Metadata{
 				Frequency: 868.5,
 			},
@@ -1576,6 +1579,7 @@ func TestHandleJoin(t *testing.T) {
 			AppEUI:   req.AppEUI,
 			DevEUI:   req.DevEUI,
 			DevNonce: req.DevNonce,
+			MIC:      req.MIC,
 			Metadata: &core.Metadata{
 				Altitude:  gt.OutRead.Entry.Metadata.Altitude,
 				Longitude: gt.OutRead.Entry.Metadata.Longitude,
@@ -1637,6 +1641,7 @@ func TestHandleJoin(t *testing.T) {
 			AppEUI:    []byte{1, 1, 1, 1, 1, 1, 1, 1},
 			DevEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			DevNonce:  []byte{3, 3},
+			MIC:       []byte{14, 14, 14, 14},
 			Metadata:  nil,
 		}
 
@@ -1697,6 +1702,7 @@ func TestHandleJoin(t *testing.T) {
 			AppEUI:    []byte{1, 1, 1, 1, 1, 1, 1, 1},
 			DevEUI:    []byte{},
 			DevNonce:  []byte{3, 3},
+			MIC:       []byte{14, 14, 14, 14},
 			Metadata: &core.Metadata{
 				Frequency: 868.5,
 			},
@@ -1759,6 +1765,7 @@ func TestHandleJoin(t *testing.T) {
 			AppEUI:    []byte{1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
 			DevEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			DevNonce:  []byte{3, 3},
+			MIC:       []byte{14, 14, 14, 14},
 			Metadata: &core.Metadata{
 				Frequency: 868.5,
 			},
@@ -1821,6 +1828,7 @@ func TestHandleJoin(t *testing.T) {
 			AppEUI:    []byte{1, 1, 1, 1, 1, 1, 1, 1},
 			DevEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			DevNonce:  []byte{3},
+			MIC:       []byte{14, 14, 14, 14},
 			Metadata: &core.Metadata{
 				Frequency: 868.5,
 			},
@@ -1883,6 +1891,7 @@ func TestHandleJoin(t *testing.T) {
 			AppEUI:    []byte{1, 1, 1, 1, 1, 1, 1, 1},
 			DevEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			DevNonce:  []byte{3, 3},
+			MIC:       []byte{14, 14, 14, 14},
 			Metadata: &core.Metadata{
 				Frequency: 868.5,
 			},
@@ -1939,6 +1948,7 @@ func TestHandleJoin(t *testing.T) {
 			AppEUI:    []byte{1, 1, 1, 1, 1, 1, 1, 1},
 			DevEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			DevNonce:  []byte{3, 3},
+			MIC:       []byte{14, 14, 14, 14},
 			Metadata: &core.Metadata{
 				Frequency: 868.5,
 			},
@@ -1951,6 +1961,7 @@ func TestHandleJoin(t *testing.T) {
 			AppEUI:   req.AppEUI,
 			DevEUI:   req.DevEUI,
 			DevNonce: req.DevNonce,
+			MIC:      req.MIC,
 			Metadata: &core.Metadata{
 				Altitude:  gt.OutRead.Entry.Metadata.Altitude,
 				Longitude: gt.OutRead.Entry.Metadata.Longitude,
@@ -2010,6 +2021,7 @@ func TestHandleJoin(t *testing.T) {
 			AppEUI:    []byte{1, 1, 1, 1, 1, 1, 1, 1},
 			DevEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			DevNonce:  []byte{3, 3},
+			MIC:       []byte{14, 14, 14, 14},
 			Metadata: &core.Metadata{
 				Frequency: 14.42,
 			},

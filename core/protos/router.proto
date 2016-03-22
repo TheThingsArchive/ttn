@@ -27,7 +27,8 @@ message JoinRouterReq {
     bytes               AppEUI      = 2;
     bytes               DevEUI      = 3;
     bytes               DevNonce    = 4;
-    Metadata            Metadata    = 5;
+    bytes               MIC         = 5;
+    Metadata            Metadata    = 6;
 }
 
 message JoinRouterRes {

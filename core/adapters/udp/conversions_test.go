@@ -481,6 +481,7 @@ func TestNewTXPKAndtoLoRaWANPayloadReq(t *testing.T) {
 			AppEUI:    joinpayload.AppEUI[:],
 			DevEUI:    joinpayload.DevEUI[:],
 			DevNonce:  joinpayload.DevNonce[:],
+			MIC:       payload.MIC[:],
 			Metadata: &core.Metadata{
 				CodingRate: *rxpk.Codr,
 				Frequency:  *rxpk.Freq,

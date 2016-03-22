@@ -952,6 +952,7 @@ func TestUDPAdapter(t *testing.T) {
 			DevEUI:    joinpayload.DevEUI[:],
 			AppEUI:    joinpayload.AppEUI[:],
 			DevNonce:  joinpayload.DevNonce[:],
+			MIC:       payload.MIC[:],
 			Metadata:  new(core.Metadata),
 		}
 		var wantStats *core.StatsReq
@@ -1047,6 +1048,7 @@ func TestUDPAdapter(t *testing.T) {
 			DevEUI:    joinpayload.DevEUI[:],
 			AppEUI:    joinpayload.AppEUI[:],
 			DevNonce:  joinpayload.DevNonce[:],
+			MIC:       payload.MIC[:],
 			Metadata:  new(core.Metadata),
 		}
 		var wantStats *core.StatsReq
@@ -1137,6 +1139,7 @@ func TestUDPAdapter(t *testing.T) {
 			DevEUI:    joinpayload.DevEUI[:],
 			AppEUI:    joinpayload.AppEUI[:],
 			DevNonce:  joinpayload.DevNonce[:],
+			MIC:       payload.MIC[:],
 			Metadata:  new(core.Metadata),
 		}
 		var wantStats *core.StatsReq
@@ -1221,6 +1224,7 @@ func TestUDPAdapter(t *testing.T) {
 			DevEUI:    joinpayload.DevEUI[:],
 			AppEUI:    joinpayload.AppEUI[:],
 			DevNonce:  joinpayload.DevNonce[:],
+			MIC:       payload.MIC[:],
 			Metadata:  new(core.Metadata),
 		}
 		var wantStats *core.StatsReq

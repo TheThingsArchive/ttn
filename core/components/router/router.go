@@ -87,7 +87,7 @@ func (r component) HandleStats(ctx context.Context, req *core.StatsReq) (*core.S
 
 // HandleJoin implements the core.RouterClient interface
 func (r component) HandleJoin(ctx context.Context, req *core.JoinRouterReq) (routerRes *core.JoinRouterRes, err error) {
-	if len(req.GatewayID) != 8 || len(req.AppEUI) != 8 || len(req.DevEUI) != 8 || len(req.DevNonce) != 2 || req.Metadata == nil {
+	if len(req.GatewayID) != 8 || len(req.AppEUI) != 8 || len(req.DevEUI) != 8 || len(req.DevNonce) != 2 || len(req.MIC) != 4 || req.Metadata == nil {
 		r.Ctx.Debug("Invalid request. Parameters are incorrects")
 		return new(core.JoinRouterRes), errors.New(errors.Structural, "Invalid Request")
 	}
@@ -103,6 +103,7 @@ func (r component) HandleJoin(ctx context.Context, req *core.JoinRouterReq) (rou
 		AppEUI:   req.AppEUI,
 		DevEUI:   req.DevEUI,
 		DevNonce: req.DevNonce,
+		MIC:      req.MIC,
 		Metadata: req.Metadata,
 	}
 	response, err := r.send(bpacket, true, r.Brokers...)

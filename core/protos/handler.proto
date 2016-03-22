@@ -31,7 +31,8 @@ message JoinHandlerReq {
     bytes               AppEUI      = 1;
     bytes               DevEUI      = 2;
     bytes               DevNonce    = 3;
-    Metadata            Metadata    = 4;
+    bytes               MIC         = 4;
+    Metadata            Metadata    = 5;
 }
 
 message JoinHandlerRes {

@@ -145,6 +145,20 @@ func (h component) HandleJoin(bctx context.Context, req *core.JoinHandlerReq) (*
 		return new(core.JoinHandlerRes), errors.New(errors.Behavioural, "Trying to activate a personalized device")
 	}
 
+	// 1.5. (Yep, indexed comments sucks) Verify MIC
+	payload := lorawan.NewPHYPayload(true)
+	payload.MHDR = lorawan.MHDR{Major: lorawan.LoRaWANR1, MType: lorawan.JoinRequest}
+	joinPayload := lorawan.JoinRequestPayload{}
+	copy(payload.MIC[:], req.MIC)
+	copy(joinPayload.AppEUI[:], req.AppEUI)
+	copy(joinPayload.DevEUI[:], req.DevEUI)
+	copy(joinPayload.DevNonce[:], req.DevNonce)
+	payload.MACPayload = &joinPayload
+	if ok, err := payload.ValidateMIC(lorawan.AES128Key(*entry.AppKey)); err != nil || !ok {
+		h.Ctx.WithError(err).Debug("Unable to validate MIC from incoming join-request")
+		return new(core.JoinHandlerRes), errors.New(errors.Structural, "Unable to validate MIC")
+	}
+
 	// 2. Prepare a channel to receive the response from the consumer
 	chresp := make(chan interface{})
 

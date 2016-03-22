@@ -96,6 +96,7 @@ func toLoRaWANPayload(rxpk semtech.RXPK, gid []byte, ctx log.Interface) (interfa
 			AppEUI:    joinpayload.AppEUI[:],
 			DevEUI:    joinpayload.DevEUI[:],
 			DevNonce:  joinpayload.DevNonce[:],
+			MIC:       payload.MIC[:],
 			Metadata:  extractMetadata(rxpk, new(core.Metadata)).(*core.Metadata),
 		}, nil
 	default:
