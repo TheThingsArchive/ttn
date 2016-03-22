@@ -24,7 +24,8 @@ func TestHandleData(t *testing.T) {
 		// Build
 		hl := mocks.NewHandlerClient()
 		nc := NewMockNetworkController()
-		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		as := NewMockAppStorage()
+		br := New(Components{NetworkController: nc, AppStorage: as, Ctx: GetLogger(t, "Broker")}, Options{})
 		req := &core.DataBrokerReq{
 			Payload:  nil,
 			Metadata: new(core.Metadata),
@@ -43,7 +44,7 @@ func TestHandleData(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantDataUp, hl.InHandleDataUp.Req, "Handler Data Requests")
 		Check(t, wantRes, res, "Broker Data Responses")
-		Check(t, wantFCnt, nc.InUpdateFcnt.FCnt, "Frame counters")
+		Check(t, wantFCnt, nc.InUpsert.Entry.FCntUp, "Frame counters")
 	}
 
 	// --------------------
@@ -54,8 +55,9 @@ func TestHandleData(t *testing.T) {
 		// Build
 		hl := mocks.NewHandlerClient()
 		nc := NewMockNetworkController()
-		nc.Failures["LookupDevices"] = errors.New(errors.Operational, "Mock Error")
-		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		as := NewMockAppStorage()
+		nc.Failures["read"] = errors.New(errors.Operational, "Mock Error")
+		br := New(Components{NetworkController: nc, AppStorage: as, Ctx: GetLogger(t, "Broker")}, Options{})
 		req := &core.DataBrokerReq{
 			Payload: &core.LoRaWANData{
 				MHDR: &core.LoRaWANMHDR{
@@ -89,7 +91,7 @@ func TestHandleData(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantDataUp, hl.InHandleDataUp.Req, "Handler Data Requests")
 		Check(t, wantRes, res, "Broker Data Responses")
-		Check(t, wantFCnt, nc.InUpdateFcnt.FCnt, "Frame counters")
+		Check(t, wantFCnt, nc.InUpsert.Entry.FCntUp, "Frame counters")
 	}
 
 	// --------------------
@@ -100,8 +102,9 @@ func TestHandleData(t *testing.T) {
 		// Build
 		hl := mocks.NewHandlerClient()
 		nc := NewMockNetworkController()
-		nc.Failures["LookupDevices"] = errors.New(errors.NotFound, "Mock Error")
-		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		as := NewMockAppStorage()
+		nc.Failures["read"] = errors.New(errors.NotFound, "Mock Error")
+		br := New(Components{NetworkController: nc, AppStorage: as, Ctx: GetLogger(t, "Broker")}, Options{})
 		req := &core.DataBrokerReq{
 			Payload: &core.LoRaWANData{
 				MHDR: &core.LoRaWANMHDR{
@@ -135,7 +138,7 @@ func TestHandleData(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantDataUp, hl.InHandleDataUp.Req, "Handler Data Requests")
 		Check(t, wantRes, res, "Broker Data Responses")
-		Check(t, wantFCnt, nc.InUpdateFcnt.FCnt, "Frame counters")
+		Check(t, wantFCnt, nc.InUpsert.Entry.FCntUp, "Frame counters")
 	}
 
 	// --------------------
@@ -146,6 +149,7 @@ func TestHandleData(t *testing.T) {
 		// Build
 		hl := mocks.NewHandlerClient()
 		nc := NewMockNetworkController()
+		as := NewMockAppStorage()
 		nc.OutWholeCounter.FCnt = 2
 
 		dl := NewMockDialer()
@@ -156,7 +160,7 @@ func TestHandleData(t *testing.T) {
 		dl2.OutDial.Client = hl
 		dl2.OutDial.Closer = NewMockCloser()
 
-		nc.OutLookupDevices.Entries = []devEntry{
+		nc.OutRead.Entries = []devEntry{
 			{
 				Dialer:  dl2,
 				AppEUI:  []byte{1, 2, 3, 4, 5, 6, 7, 8},
@@ -172,7 +176,7 @@ func TestHandleData(t *testing.T) {
 				FCntUp:  1,
 			},
 		}
-		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		br := New(Components{NetworkController: nc, AppStorage: as, Ctx: GetLogger(t, "Broker")}, Options{})
 		req := &core.DataBrokerReq{
 			Payload: &core.LoRaWANData{
 				MHDR: &core.LoRaWANMHDR{
@@ -194,7 +198,7 @@ func TestHandleData(t *testing.T) {
 		}
 		payload, err := core.NewLoRaWANData(req.Payload, true)
 		FatalUnless(t, err)
-		err = payload.SetMIC(lorawan.AES128Key(nc.OutLookupDevices.Entries[1].NwkSKey))
+		err = payload.SetMIC(lorawan.AES128Key(nc.OutRead.Entries[1].NwkSKey))
 		FatalUnless(t, err)
 		req.Payload.MIC = payload.MIC[:]
 
@@ -202,8 +206,8 @@ func TestHandleData(t *testing.T) {
 		var wantErr *string
 		var wantDataUp = &core.DataUpHandlerReq{
 			Payload:  req.Payload.MACPayload.FRMPayload,
-			AppEUI:   nc.OutLookupDevices.Entries[1].AppEUI,
-			DevEUI:   nc.OutLookupDevices.Entries[1].DevEUI,
+			AppEUI:   nc.OutRead.Entries[1].AppEUI,
+			DevEUI:   nc.OutRead.Entries[1].DevEUI,
 			FCnt:     req.Payload.MACPayload.FHDR.FCnt,
 			MType:    req.Payload.MHDR.MType,
 			Metadata: req.Metadata,
@@ -219,7 +223,7 @@ func TestHandleData(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantDataUp, hl.InHandleDataUp.Req, "Handler Data Requests")
 		Check(t, wantRes, res, "Broker Data Responses")
-		Check(t, wantFCnt, nc.InUpdateFcnt.FCnt, "Frame counters")
+		Check(t, wantFCnt, nc.InUpsert.Entry.FCntUp, "Frame counters")
 		Check(t, wantDialer, dl.InDial.Called, "Dialer calls")
 	}
 
@@ -231,13 +235,14 @@ func TestHandleData(t *testing.T) {
 		// Build
 		hl := mocks.NewHandlerClient()
 		nc := NewMockNetworkController()
-		nc.Failures["WholeCounter"] = errors.New(errors.Structural, "Mock Error")
+		as := NewMockAppStorage()
+		nc.Failures["wholeCounter"] = errors.New(errors.Structural, "Mock Error")
 
 		dl := NewMockDialer()
 		dl.OutDial.Client = hl
 		dl.OutDial.Closer = NewMockCloser()
 
-		nc.OutLookupDevices.Entries = []devEntry{
+		nc.OutRead.Entries = []devEntry{
 			{
 				Dialer:  dl,
 				AppEUI:  []byte{1, 1, 1, 1, 1, 1, 1, 1},
@@ -246,7 +251,7 @@ func TestHandleData(t *testing.T) {
 				FCntUp:  1,
 			},
 		}
-		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		br := New(Components{NetworkController: nc, AppStorage: as, Ctx: GetLogger(t, "Broker")}, Options{})
 		req := &core.DataBrokerReq{
 			Payload: &core.LoRaWANData{
 				MHDR: &core.LoRaWANMHDR{
@@ -268,7 +273,7 @@ func TestHandleData(t *testing.T) {
 		}
 		payload, err := core.NewLoRaWANData(req.Payload, true)
 		FatalUnless(t, err)
-		err = payload.SetMIC(lorawan.AES128Key(nc.OutLookupDevices.Entries[0].NwkSKey))
+		err = payload.SetMIC(lorawan.AES128Key(nc.OutRead.Entries[0].NwkSKey))
 		FatalUnless(t, err)
 		req.Payload.MIC = payload.MIC[:]
 
@@ -286,7 +291,7 @@ func TestHandleData(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantDataUp, hl.InHandleDataUp.Req, "Handler Data Requests")
 		Check(t, wantRes, res, "Broker Data Responses")
-		Check(t, wantFCnt, nc.InUpdateFcnt.FCnt, "Frame counters")
+		Check(t, wantFCnt, nc.InUpsert.Entry.FCntUp, "Frame counters")
 		Check(t, wantDialer, dl.InDial.Called, "Dialer calls")
 	}
 
@@ -298,13 +303,14 @@ func TestHandleData(t *testing.T) {
 		// Build
 		hl := mocks.NewHandlerClient()
 		nc := NewMockNetworkController()
+		as := NewMockAppStorage()
 		nc.OutWholeCounter.FCnt = 112534
 
 		dl := NewMockDialer()
 		dl.OutDial.Client = hl
 		dl.OutDial.Closer = NewMockCloser()
 
-		nc.OutLookupDevices.Entries = []devEntry{
+		nc.OutRead.Entries = []devEntry{
 			{
 				Dialer:  dl,
 				AppEUI:  []byte{1, 1, 1, 1, 1, 1, 1, 1},
@@ -313,7 +319,7 @@ func TestHandleData(t *testing.T) {
 				FCntUp:  112500,
 			},
 		}
-		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		br := New(Components{NetworkController: nc, AppStorage: as, Ctx: GetLogger(t, "Broker")}, Options{})
 		req := &core.DataBrokerReq{
 			Payload: &core.LoRaWANData{
 				MHDR: &core.LoRaWANMHDR{
@@ -335,7 +341,7 @@ func TestHandleData(t *testing.T) {
 		}
 		payload, err := core.NewLoRaWANData(req.Payload, true)
 		FatalUnless(t, err)
-		err = payload.SetMIC(lorawan.AES128Key(nc.OutLookupDevices.Entries[0].NwkSKey))
+		err = payload.SetMIC(lorawan.AES128Key(nc.OutRead.Entries[0].NwkSKey))
 		FatalUnless(t, err)
 		req.Payload.MIC = payload.MIC[:]
 		req.Payload.MACPayload.FHDR.FCnt %= 65536
@@ -344,8 +350,8 @@ func TestHandleData(t *testing.T) {
 		var wantErr *string
 		var wantDataUp = &core.DataUpHandlerReq{
 			Payload:  req.Payload.MACPayload.FRMPayload,
-			AppEUI:   nc.OutLookupDevices.Entries[0].AppEUI,
-			DevEUI:   nc.OutLookupDevices.Entries[0].DevEUI,
+			AppEUI:   nc.OutRead.Entries[0].AppEUI,
+			DevEUI:   nc.OutRead.Entries[0].DevEUI,
 			FCnt:     nc.OutWholeCounter.FCnt,
 			MType:    req.Payload.MHDR.MType,
 			Metadata: req.Metadata,
@@ -361,7 +367,7 @@ func TestHandleData(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantDataUp, hl.InHandleDataUp.Req, "Handler Data Requests")
 		Check(t, wantRes, res, "Broker Data Responses")
-		Check(t, wantFCnt, nc.InUpdateFcnt.FCnt, "Frame counters")
+		Check(t, wantFCnt, nc.InUpsert.Entry.FCntUp, "Frame counters")
 		Check(t, wantDialer, dl.InDial.Called, "Dialer calls")
 	}
 
@@ -373,6 +379,7 @@ func TestHandleData(t *testing.T) {
 		// Build
 		hl := mocks.NewHandlerClient()
 		nc := NewMockNetworkController()
+		as := NewMockAppStorage()
 		nc.OutWholeCounter.FCnt = 14
 
 		dl := NewMockDialer()
@@ -380,7 +387,7 @@ func TestHandleData(t *testing.T) {
 		dl.OutDial.Closer = NewMockCloser()
 		dl.Failures["Dial"] = errors.New(errors.Operational, "Mock Error")
 
-		nc.OutLookupDevices.Entries = []devEntry{
+		nc.OutRead.Entries = []devEntry{
 			{
 				Dialer:  dl,
 				AppEUI:  []byte{1, 1, 1, 1, 1, 1, 1, 1},
@@ -389,7 +396,7 @@ func TestHandleData(t *testing.T) {
 				FCntUp:  10,
 			},
 		}
-		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		br := New(Components{NetworkController: nc, AppStorage: as, Ctx: GetLogger(t, "Broker")}, Options{})
 		req := &core.DataBrokerReq{
 			Payload: &core.LoRaWANData{
 				MHDR: &core.LoRaWANMHDR{
@@ -411,7 +418,7 @@ func TestHandleData(t *testing.T) {
 		}
 		payload, err := core.NewLoRaWANData(req.Payload, true)
 		FatalUnless(t, err)
-		err = payload.SetMIC(lorawan.AES128Key(nc.OutLookupDevices.Entries[0].NwkSKey))
+		err = payload.SetMIC(lorawan.AES128Key(nc.OutRead.Entries[0].NwkSKey))
 		FatalUnless(t, err)
 		req.Payload.MIC = payload.MIC[:]
 		req.Payload.MACPayload.FHDR.FCnt %= 65536
@@ -430,7 +437,7 @@ func TestHandleData(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantDataUp, hl.InHandleDataUp.Req, "Handler Data Requests")
 		Check(t, wantRes, res, "Broker Data Responses")
-		Check(t, wantFCnt, nc.InUpdateFcnt.FCnt, "Frame counters")
+		Check(t, wantFCnt, nc.InUpsert.Entry.FCntUp, "Frame counters")
 		Check(t, wantDialer, dl.InDial.Called, "Dialer calls")
 	}
 
@@ -444,13 +451,14 @@ func TestHandleData(t *testing.T) {
 		hl.Failures["HandleDataUp"] = fmt.Errorf("Mock Error")
 
 		nc := NewMockNetworkController()
+		as := NewMockAppStorage()
 		nc.OutWholeCounter.FCnt = 14
 
 		dl := NewMockDialer()
 		dl.OutDial.Client = hl
 		dl.OutDial.Closer = NewMockCloser()
 
-		nc.OutLookupDevices.Entries = []devEntry{
+		nc.OutRead.Entries = []devEntry{
 			{
 				Dialer:  dl,
 				AppEUI:  []byte{1, 1, 1, 1, 1, 1, 1, 1},
@@ -459,7 +467,7 @@ func TestHandleData(t *testing.T) {
 				FCntUp:  10,
 			},
 		}
-		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		br := New(Components{NetworkController: nc, AppStorage: as, Ctx: GetLogger(t, "Broker")}, Options{})
 		req := &core.DataBrokerReq{
 			Payload: &core.LoRaWANData{
 				MHDR: &core.LoRaWANMHDR{
@@ -481,7 +489,7 @@ func TestHandleData(t *testing.T) {
 		}
 		payload, err := core.NewLoRaWANData(req.Payload, true)
 		FatalUnless(t, err)
-		err = payload.SetMIC(lorawan.AES128Key(nc.OutLookupDevices.Entries[0].NwkSKey))
+		err = payload.SetMIC(lorawan.AES128Key(nc.OutRead.Entries[0].NwkSKey))
 		FatalUnless(t, err)
 		req.Payload.MIC = payload.MIC[:]
 		req.Payload.MACPayload.FHDR.FCnt %= 65536
@@ -490,8 +498,8 @@ func TestHandleData(t *testing.T) {
 		var wantErr = ErrOperational
 		var wantDataUp = &core.DataUpHandlerReq{
 			Payload:  req.Payload.MACPayload.FRMPayload,
-			AppEUI:   nc.OutLookupDevices.Entries[0].AppEUI,
-			DevEUI:   nc.OutLookupDevices.Entries[0].DevEUI,
+			AppEUI:   nc.OutRead.Entries[0].AppEUI,
+			DevEUI:   nc.OutRead.Entries[0].DevEUI,
 			FCnt:     nc.OutWholeCounter.FCnt,
 			MType:    req.Payload.MHDR.MType,
 			Metadata: req.Metadata,
@@ -507,7 +515,7 @@ func TestHandleData(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantDataUp, hl.InHandleDataUp.Req, "Handler Data Requests")
 		Check(t, wantRes, res, "Broker Data Responses")
-		Check(t, wantFCnt, nc.InUpdateFcnt.FCnt, "Frame counters")
+		Check(t, wantFCnt, nc.InUpsert.Entry.FCntUp, "Frame counters")
 		Check(t, wantDialer, dl.InDial.Called, "Dialer calls")
 	}
 
@@ -518,6 +526,7 @@ func TestHandleData(t *testing.T) {
 
 		// Build
 		nc := NewMockNetworkController()
+		as := NewMockAppStorage()
 		nc.OutWholeCounter.FCnt = 14
 
 		hl := mocks.NewHandlerClient()
@@ -545,7 +554,7 @@ func TestHandleData(t *testing.T) {
 		dl.OutDial.Client = hl
 		dl.OutDial.Closer = NewMockCloser()
 
-		nc.OutLookupDevices.Entries = []devEntry{
+		nc.OutRead.Entries = []devEntry{
 			{
 				Dialer:  dl,
 				AppEUI:  []byte{1, 1, 1, 1, 1, 1, 1, 1},
@@ -554,7 +563,7 @@ func TestHandleData(t *testing.T) {
 				FCntUp:  10,
 			},
 		}
-		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		br := New(Components{NetworkController: nc, AppStorage: as, Ctx: GetLogger(t, "Broker")}, Options{})
 		req := &core.DataBrokerReq{
 			Payload: &core.LoRaWANData{
 				MHDR: &core.LoRaWANMHDR{
@@ -576,7 +585,7 @@ func TestHandleData(t *testing.T) {
 		}
 		payload, err := core.NewLoRaWANData(req.Payload, true)
 		FatalUnless(t, err)
-		err = payload.SetMIC(lorawan.AES128Key(nc.OutLookupDevices.Entries[0].NwkSKey))
+		err = payload.SetMIC(lorawan.AES128Key(nc.OutRead.Entries[0].NwkSKey))
 		FatalUnless(t, err)
 		req.Payload.MIC = payload.MIC[:]
 		req.Payload.MACPayload.FHDR.FCnt %= 65536
@@ -585,8 +594,8 @@ func TestHandleData(t *testing.T) {
 		var wantErr *string
 		var wantDataUp = &core.DataUpHandlerReq{
 			Payload:  req.Payload.MACPayload.FRMPayload,
-			AppEUI:   nc.OutLookupDevices.Entries[0].AppEUI,
-			DevEUI:   nc.OutLookupDevices.Entries[0].DevEUI,
+			AppEUI:   nc.OutRead.Entries[0].AppEUI,
+			DevEUI:   nc.OutRead.Entries[0].DevEUI,
 			FCnt:     nc.OutWholeCounter.FCnt,
 			MType:    req.Payload.MHDR.MType,
 			Metadata: req.Metadata,
@@ -597,7 +606,7 @@ func TestHandleData(t *testing.T) {
 		}
 		payloadDown, err := core.NewLoRaWANData(req.Payload, false)
 		FatalUnless(t, err)
-		err = payloadDown.SetMIC(lorawan.AES128Key(nc.OutLookupDevices.Entries[0].NwkSKey))
+		err = payloadDown.SetMIC(lorawan.AES128Key(nc.OutRead.Entries[0].NwkSKey))
 		FatalUnless(t, err)
 		wantRes.Payload.MIC = payloadDown.MIC[:]
 		var wantFCnt = nc.OutWholeCounter.FCnt
@@ -610,7 +619,7 @@ func TestHandleData(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantDataUp, hl.InHandleDataUp.Req, "Handler Data Requests")
 		Check(t, wantRes, res, "Broker Data Responses")
-		Check(t, wantFCnt, nc.InUpdateFcnt.FCnt, "Frame counters")
+		Check(t, wantFCnt, nc.InUpsert.Entry.FCntUp, "Frame counters")
 		Check(t, wantDialer, dl.InDial.Called, "Dialer calls")
 	}
 
@@ -622,14 +631,15 @@ func TestHandleData(t *testing.T) {
 		// Build
 		hl := mocks.NewHandlerClient()
 		nc := NewMockNetworkController()
+		as := NewMockAppStorage()
 		nc.OutWholeCounter.FCnt = 14
-		nc.Failures["UpdateFCnt"] = errors.New(errors.Operational, "Mock Error")
+		nc.Failures["upsert"] = errors.New(errors.Operational, "Mock Error")
 
 		dl := NewMockDialer()
 		dl.OutDial.Client = hl
 		dl.OutDial.Closer = NewMockCloser()
 
-		nc.OutLookupDevices.Entries = []devEntry{
+		nc.OutRead.Entries = []devEntry{
 			{
 				Dialer:  dl,
 				AppEUI:  []byte{1, 1, 1, 1, 1, 1, 1, 1},
@@ -638,7 +648,7 @@ func TestHandleData(t *testing.T) {
 				FCntUp:  10,
 			},
 		}
-		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		br := New(Components{NetworkController: nc, AppStorage: as, Ctx: GetLogger(t, "Broker")}, Options{})
 		req := &core.DataBrokerReq{
 			Payload: &core.LoRaWANData{
 				MHDR: &core.LoRaWANMHDR{
@@ -660,7 +670,7 @@ func TestHandleData(t *testing.T) {
 		}
 		payload, err := core.NewLoRaWANData(req.Payload, true)
 		FatalUnless(t, err)
-		err = payload.SetMIC(lorawan.AES128Key(nc.OutLookupDevices.Entries[0].NwkSKey))
+		err = payload.SetMIC(lorawan.AES128Key(nc.OutRead.Entries[0].NwkSKey))
 		FatalUnless(t, err)
 		req.Payload.MIC = payload.MIC[:]
 		req.Payload.MACPayload.FHDR.FCnt %= 65536
@@ -679,7 +689,7 @@ func TestHandleData(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantDataUp, hl.InHandleDataUp.Req, "Handler Data Requests")
 		Check(t, wantRes, res, "Broker Data Responses")
-		Check(t, wantFCnt, nc.InUpdateFcnt.FCnt, "Frame counters")
+		Check(t, wantFCnt, nc.InUpsert.Entry.FCntUp, "Frame counters")
 		Check(t, wantDialer, dl.InDial.Called, "Dialer calls")
 	}
 
@@ -690,6 +700,7 @@ func TestHandleData(t *testing.T) {
 
 		// Build
 		nc := NewMockNetworkController()
+		as := NewMockAppStorage()
 		nc.OutWholeCounter.FCnt = 14
 
 		hl := mocks.NewHandlerClient()
@@ -709,7 +720,7 @@ func TestHandleData(t *testing.T) {
 		dl.OutDial.Client = hl
 		dl.OutDial.Closer = NewMockCloser()
 
-		nc.OutLookupDevices.Entries = []devEntry{
+		nc.OutRead.Entries = []devEntry{
 			{
 				Dialer:  dl,
 				AppEUI:  []byte{1, 1, 1, 1, 1, 1, 1, 1},
@@ -718,7 +729,7 @@ func TestHandleData(t *testing.T) {
 				FCntUp:  10,
 			},
 		}
-		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		br := New(Components{NetworkController: nc, AppStorage: as, Ctx: GetLogger(t, "Broker")}, Options{})
 		req := &core.DataBrokerReq{
 			Payload: &core.LoRaWANData{
 				MHDR: &core.LoRaWANMHDR{
@@ -740,7 +751,7 @@ func TestHandleData(t *testing.T) {
 		}
 		payload, err := core.NewLoRaWANData(req.Payload, true)
 		FatalUnless(t, err)
-		err = payload.SetMIC(lorawan.AES128Key(nc.OutLookupDevices.Entries[0].NwkSKey))
+		err = payload.SetMIC(lorawan.AES128Key(nc.OutRead.Entries[0].NwkSKey))
 		FatalUnless(t, err)
 		req.Payload.MIC = payload.MIC[:]
 		req.Payload.MACPayload.FHDR.FCnt %= 65536
@@ -749,8 +760,8 @@ func TestHandleData(t *testing.T) {
 		var wantErr = ErrStructural
 		var wantDataUp = &core.DataUpHandlerReq{
 			Payload:  req.Payload.MACPayload.FRMPayload,
-			AppEUI:   nc.OutLookupDevices.Entries[0].AppEUI,
-			DevEUI:   nc.OutLookupDevices.Entries[0].DevEUI,
+			AppEUI:   nc.OutRead.Entries[0].AppEUI,
+			DevEUI:   nc.OutRead.Entries[0].DevEUI,
 			FCnt:     nc.OutWholeCounter.FCnt,
 			MType:    req.Payload.MHDR.MType,
 			Metadata: req.Metadata,
@@ -766,225 +777,8 @@ func TestHandleData(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantDataUp, hl.InHandleDataUp.Req, "Handler Data Requests")
 		Check(t, wantRes, res, "Broker Data Responses")
-		Check(t, wantFCnt, nc.InUpdateFcnt.FCnt, "Frame counters")
+		Check(t, wantFCnt, nc.InUpsert.Entry.FCntUp, "Frame counters")
 		Check(t, wantDialer, dl.InDial.Called, "Dialer calls")
-	}
-}
-
-func TestSubscribePerso(t *testing.T) {
-	{
-		Desc(t, "Valid Entry #1")
-
-		// Build
-		nc := NewMockNetworkController()
-		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
-		req := &core.ABPSubBrokerReq{
-			HandlerNet: "87.4352.3:4333",
-			AppEUI:     []byte{1, 2, 3, 4, 5, 6, 7, 8},
-			DevAddr:    []byte{1, 2, 3, 4},
-			NwkSKey:    []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
-		}
-
-		// Expect
-		var wantErr *string
-		var wantRes = new(core.ABPSubBrokerRes)
-		var wantEntry = devEntry{
-			Dialer:  NewDialer([]byte(req.HandlerNet)),
-			AppEUI:  req.AppEUI,
-			DevEUI:  []byte{0, 0, 0, 0, 1, 2, 3, 4},
-			NwkSKey: [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
-		}
-
-		// Operate
-		res, err := br.SubscribePersonalized(context.Background(), req)
-
-		// Checks
-		CheckErrors(t, wantErr, err)
-		Check(t, wantRes, res, "Broker ABP Responses")
-		Check(t, wantEntry, nc.InStoreDevice.Entry, "Device Entries")
-	}
-
-	// --------------------
-
-	{
-		Desc(t, "Valid Entry #2")
-
-		// Build
-		nc := NewMockNetworkController()
-		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
-		req := &core.ABPSubBrokerReq{
-			HandlerNet: "ttn.golang.org:4400",
-			AppEUI:     []byte{1, 2, 3, 4, 5, 6, 7, 8},
-			DevAddr:    []byte{1, 2, 3, 4},
-			NwkSKey:    []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
-		}
-
-		// Expect
-		var wantErr *string
-		var wantRes = new(core.ABPSubBrokerRes)
-		var wantEntry = devEntry{
-			Dialer:  NewDialer([]byte(req.HandlerNet)),
-			AppEUI:  req.AppEUI,
-			DevEUI:  []byte{0, 0, 0, 0, 1, 2, 3, 4},
-			NwkSKey: [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
-		}
-
-		// Operate
-		res, err := br.SubscribePersonalized(context.Background(), req)
-
-		// Checks
-		CheckErrors(t, wantErr, err)
-		Check(t, wantRes, res, "Broker ABP Responses")
-		Check(t, wantEntry, nc.InStoreDevice.Entry, "Device Entries")
-	}
-
-	// --------------------
-
-	{
-		Desc(t, "Valid Entry #1")
-
-		// Build
-		nc := NewMockNetworkController()
-		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
-		req := &core.ABPSubBrokerReq{
-			HandlerNet: "87.4352.3:4333",
-			AppEUI:     []byte{1, 2, 3, 4, 5, 6, 7, 8},
-			DevAddr:    []byte{1, 2, 3, 4},
-			NwkSKey:    []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
-		}
-
-		// Expect
-		var wantErr *string
-		var wantRes = new(core.ABPSubBrokerRes)
-		var wantEntry = devEntry{
-			Dialer:  NewDialer([]byte(req.HandlerNet)),
-			AppEUI:  req.AppEUI,
-			DevEUI:  []byte{0, 0, 0, 0, 1, 2, 3, 4},
-			NwkSKey: [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
-		}
-
-		// Operate
-		res, err := br.SubscribePersonalized(context.Background(), req)
-
-		// Checks
-		CheckErrors(t, wantErr, err)
-		Check(t, wantRes, res, "Broker ABP Responses")
-		Check(t, wantEntry, nc.InStoreDevice.Entry, "Device Entries")
-	}
-
-	// --------------------
-
-	{
-		Desc(t, "Invalid entry -> Bad HandlerNet")
-
-		// Build
-		nc := NewMockNetworkController()
-		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
-		req := &core.ABPSubBrokerReq{
-			HandlerNet: "localhost",
-			AppEUI:     []byte{1, 2, 3, 4, 5, 6, 7, 8},
-			DevAddr:    []byte{1, 2, 3, 4},
-			NwkSKey:    []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
-		}
-
-		// Expect
-		var wantErr = ErrStructural
-		var wantRes = new(core.ABPSubBrokerRes)
-		var wantEntry devEntry
-
-		// Operate
-		res, err := br.SubscribePersonalized(context.Background(), req)
-
-		// Checks
-		CheckErrors(t, wantErr, err)
-		Check(t, wantRes, res, "Broker ABP Responses")
-		Check(t, wantEntry, nc.InStoreDevice.Entry, "Device Entries")
-	}
-
-	// --------------------
-
-	{
-		Desc(t, "Invalid entry -> Bad AppEUI")
-
-		// Build
-		nc := NewMockNetworkController()
-		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
-		req := &core.ABPSubBrokerReq{
-			HandlerNet: "87.4352.3:4333",
-			AppEUI:     []byte{1, 2, 3, 4, 8},
-			DevAddr:    []byte{1, 2, 3, 4},
-			NwkSKey:    []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
-		}
-
-		// Expect
-		var wantErr = ErrStructural
-		var wantRes = new(core.ABPSubBrokerRes)
-		var wantEntry devEntry
-
-		// Operate
-		res, err := br.SubscribePersonalized(context.Background(), req)
-
-		// Checks
-		CheckErrors(t, wantErr, err)
-		Check(t, wantRes, res, "Broker ABP Responses")
-		Check(t, wantEntry, nc.InStoreDevice.Entry, "Device Entries")
-	}
-
-	// --------------------
-
-	{
-		Desc(t, "Invalid entry -> Bad DevAddr")
-
-		// Build
-		nc := NewMockNetworkController()
-		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
-		req := &core.ABPSubBrokerReq{
-			HandlerNet: "87.4352.3:4333",
-			AppEUI:     []byte{1, 2, 3, 4, 5, 6, 7, 8},
-			DevAddr:    []byte{1, 2, 3, 4, 5, 6, 7, 8},
-			NwkSKey:    []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
-		}
-
-		// Expect
-		var wantErr = ErrStructural
-		var wantRes = new(core.ABPSubBrokerRes)
-		var wantEntry devEntry
-
-		// Operate
-		res, err := br.SubscribePersonalized(context.Background(), req)
-
-		// Checks
-		CheckErrors(t, wantErr, err)
-		Check(t, wantRes, res, "Broker ABP Responses")
-		Check(t, wantEntry, nc.InStoreDevice.Entry, "Device Entries")
-	}
-	// --------------------
-
-	{
-		Desc(t, "Invalid entry -> Bad NwkSKey")
-
-		// Build
-		nc := NewMockNetworkController()
-		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
-		req := &core.ABPSubBrokerReq{
-			HandlerNet: "87.4352.3:4333",
-			AppEUI:     []byte{1, 2, 3, 4, 5, 6, 7, 8},
-			DevAddr:    []byte{1, 2, 3, 4},
-			NwkSKey:    nil,
-		}
-
-		// Expect
-		var wantErr = ErrStructural
-		var wantRes = new(core.ABPSubBrokerRes)
-		var wantEntry devEntry
-
-		// Operate
-		res, err := br.SubscribePersonalized(context.Background(), req)
-
-		// Checks
-		CheckErrors(t, wantErr, err)
-		Check(t, wantRes, res, "Broker ABP Responses")
-		Check(t, wantEntry, nc.InStoreDevice.Entry, "Device Entries")
 	}
 }
 
@@ -1024,6 +818,7 @@ func TestHandleJoin(t *testing.T) {
 
 		// Build
 		nc := NewMockNetworkController()
+		as := NewMockAppStorage()
 		hl := mocks.NewHandlerClient()
 		hl.OutHandleJoin.Res = &core.JoinHandlerRes{
 			Payload: &core.LoRaWANJoinAccept{
@@ -1038,17 +833,17 @@ func TestHandleJoin(t *testing.T) {
 		dl.OutDial.Client = hl
 		dl.OutDial.Closer = NewMockCloser()
 
-		nc.OutReadActivation.Entry = appEntry{
+		as.OutRead.Entry = appEntry{
 			Dialer:    dl,
 			AppEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			DevEUI:    []byte{3, 3, 3, 3, 3, 3, 3, 3},
 			DevNonces: [][]byte{},
 		}
 
-		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		br := New(Components{NetworkController: nc, AppStorage: as, Ctx: GetLogger(t, "Broker")}, Options{})
 		req := &core.JoinBrokerReq{
-			AppEUI:   nc.OutReadActivation.Entry.AppEUI,
-			DevEUI:   nc.OutReadActivation.Entry.DevEUI,
+			AppEUI:   as.OutRead.Entry.AppEUI,
+			DevEUI:   as.OutRead.Entry.DevEUI,
 			DevNonce: []byte{14, 14},
 			Metadata: new(core.Metadata),
 		}
@@ -1080,7 +875,7 @@ func TestHandleJoin(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantJoinReq, hl.InHandleJoin.Req, "Handler Join Requests")
 		Check(t, wantRes, res, "Broker Join Responses")
-		Check(t, wantActivation, nc.InUpdateActivation.Entry, "Activations")
+		Check(t, wantActivation, as.InUpsert.Entry, "Activations")
 		Check(t, wantDialer, dl.InDial.Called, "Dialer calls")
 	}
 
@@ -1091,6 +886,7 @@ func TestHandleJoin(t *testing.T) {
 
 		// Build
 		nc := NewMockNetworkController()
+		as := NewMockAppStorage()
 		hl := mocks.NewHandlerClient()
 		hl.OutHandleJoin.Res = &core.JoinHandlerRes{
 			Payload: &core.LoRaWANJoinAccept{
@@ -1105,17 +901,17 @@ func TestHandleJoin(t *testing.T) {
 		dl.OutDial.Client = hl
 		dl.OutDial.Closer = NewMockCloser()
 
-		nc.OutReadActivation.Entry = appEntry{
+		as.OutRead.Entry = appEntry{
 			Dialer:    dl,
 			AppEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			DevEUI:    []byte{3, 3, 3, 3, 3, 3, 3, 3},
 			DevNonces: [][]byte{},
 		}
 
-		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		br := New(Components{NetworkController: nc, AppStorage: as, Ctx: GetLogger(t, "Broker")}, Options{})
 		req := &core.JoinBrokerReq{
 			AppEUI:   nil,
-			DevEUI:   nc.OutReadActivation.Entry.DevEUI,
+			DevEUI:   as.OutRead.Entry.DevEUI,
 			DevNonce: []byte{14, 14},
 			Metadata: new(core.Metadata),
 		}
@@ -1134,7 +930,7 @@ func TestHandleJoin(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantJoinReq, hl.InHandleJoin.Req, "Handler Join Requests")
 		Check(t, wantRes, res, "Broker Join Responses")
-		Check(t, wantActivation, nc.InUpdateActivation.Entry, "Activations")
+		Check(t, wantActivation, as.InUpsert.Entry, "Activations")
 		Check(t, wantDialer, dl.InDial.Called, "Dialer calls")
 	}
 
@@ -1145,6 +941,7 @@ func TestHandleJoin(t *testing.T) {
 
 		// Build
 		nc := NewMockNetworkController()
+		as := NewMockAppStorage()
 		hl := mocks.NewHandlerClient()
 		hl.OutHandleJoin.Res = &core.JoinHandlerRes{
 			Payload: &core.LoRaWANJoinAccept{
@@ -1159,16 +956,16 @@ func TestHandleJoin(t *testing.T) {
 		dl.OutDial.Client = hl
 		dl.OutDial.Closer = NewMockCloser()
 
-		nc.OutReadActivation.Entry = appEntry{
+		as.OutRead.Entry = appEntry{
 			Dialer:    dl,
 			AppEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			DevEUI:    []byte{3, 3, 3, 3, 3, 3, 3, 3},
 			DevNonces: [][]byte{},
 		}
 
-		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		br := New(Components{NetworkController: nc, AppStorage: as, Ctx: GetLogger(t, "Broker")}, Options{})
 		req := &core.JoinBrokerReq{
-			AppEUI:   nc.OutReadActivation.Entry.AppEUI,
+			AppEUI:   as.OutRead.Entry.AppEUI,
 			DevEUI:   []byte{1, 2, 3},
 			DevNonce: []byte{14, 14},
 			Metadata: new(core.Metadata),
@@ -1188,7 +985,7 @@ func TestHandleJoin(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantJoinReq, hl.InHandleJoin.Req, "Handler Join Requests")
 		Check(t, wantRes, res, "Broker Join Responses")
-		Check(t, wantActivation, nc.InUpdateActivation.Entry, "Activations")
+		Check(t, wantActivation, as.InUpsert.Entry, "Activations")
 		Check(t, wantDialer, dl.InDial.Called, "Dialer calls")
 	}
 
@@ -1199,6 +996,7 @@ func TestHandleJoin(t *testing.T) {
 
 		// Build
 		nc := NewMockNetworkController()
+		as := NewMockAppStorage()
 		hl := mocks.NewHandlerClient()
 		hl.OutHandleJoin.Res = &core.JoinHandlerRes{
 			Payload: &core.LoRaWANJoinAccept{
@@ -1213,17 +1011,17 @@ func TestHandleJoin(t *testing.T) {
 		dl.OutDial.Client = hl
 		dl.OutDial.Closer = NewMockCloser()
 
-		nc.OutReadActivation.Entry = appEntry{
+		as.OutRead.Entry = appEntry{
 			Dialer:    dl,
 			AppEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			DevEUI:    []byte{3, 3, 3, 3, 3, 3, 3, 3},
 			DevNonces: [][]byte{},
 		}
 
-		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		br := New(Components{NetworkController: nc, AppStorage: as, Ctx: GetLogger(t, "Broker")}, Options{})
 		req := &core.JoinBrokerReq{
-			AppEUI:   nc.OutReadActivation.Entry.AppEUI,
-			DevEUI:   nc.OutReadActivation.Entry.DevEUI,
+			AppEUI:   as.OutRead.Entry.AppEUI,
+			DevEUI:   as.OutRead.Entry.DevEUI,
 			DevNonce: []byte{14, 14, 15, 16},
 			Metadata: new(core.Metadata),
 		}
@@ -1242,7 +1040,7 @@ func TestHandleJoin(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantJoinReq, hl.InHandleJoin.Req, "Handler Join Requests")
 		Check(t, wantRes, res, "Broker Join Responses")
-		Check(t, wantActivation, nc.InUpdateActivation.Entry, "Activations")
+		Check(t, wantActivation, as.InUpsert.Entry, "Activations")
 		Check(t, wantDialer, dl.InDial.Called, "Dialer calls")
 	}
 
@@ -1253,6 +1051,7 @@ func TestHandleJoin(t *testing.T) {
 
 		// Build
 		nc := NewMockNetworkController()
+		as := NewMockAppStorage()
 		hl := mocks.NewHandlerClient()
 		hl.OutHandleJoin.Res = &core.JoinHandlerRes{
 			Payload: &core.LoRaWANJoinAccept{
@@ -1267,17 +1066,17 @@ func TestHandleJoin(t *testing.T) {
 		dl.OutDial.Client = hl
 		dl.OutDial.Closer = NewMockCloser()
 
-		nc.OutReadActivation.Entry = appEntry{
+		as.OutRead.Entry = appEntry{
 			Dialer:    dl,
 			AppEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			DevEUI:    []byte{3, 3, 3, 3, 3, 3, 3, 3},
 			DevNonces: [][]byte{},
 		}
 
-		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		br := New(Components{NetworkController: nc, AppStorage: as, Ctx: GetLogger(t, "Broker")}, Options{})
 		req := &core.JoinBrokerReq{
-			AppEUI:   nc.OutReadActivation.Entry.AppEUI,
-			DevEUI:   nc.OutReadActivation.Entry.DevEUI,
+			AppEUI:   as.OutRead.Entry.AppEUI,
+			DevEUI:   as.OutRead.Entry.DevEUI,
 			DevNonce: []byte{14, 14},
 			Metadata: nil,
 		}
@@ -1296,7 +1095,7 @@ func TestHandleJoin(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantJoinReq, hl.InHandleJoin.Req, "Handler Join Requests")
 		Check(t, wantRes, res, "Broker Join Responses")
-		Check(t, wantActivation, nc.InUpdateActivation.Entry, "Activations")
+		Check(t, wantActivation, as.InUpsert.Entry, "Activations")
 		Check(t, wantDialer, dl.InDial.Called, "Dialer calls")
 	}
 
@@ -1307,7 +1106,8 @@ func TestHandleJoin(t *testing.T) {
 
 		// Build
 		nc := NewMockNetworkController()
-		nc.Failures["ReadActivation"] = errors.New(errors.Operational, "Mock Error")
+		as := NewMockAppStorage()
+		as.Failures["read"] = errors.New(errors.Operational, "Mock Error")
 		hl := mocks.NewHandlerClient()
 		hl.OutHandleJoin.Res = &core.JoinHandlerRes{
 			Payload: &core.LoRaWANJoinAccept{
@@ -1322,7 +1122,7 @@ func TestHandleJoin(t *testing.T) {
 		dl.OutDial.Client = hl
 		dl.OutDial.Closer = NewMockCloser()
 
-		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		br := New(Components{NetworkController: nc, AppStorage: as, Ctx: GetLogger(t, "Broker")}, Options{})
 		req := &core.JoinBrokerReq{
 			AppEUI:   []byte{1, 1, 1, 1, 1, 1, 1, 1},
 			DevEUI:   []byte{2, 2, 2, 2, 2, 2, 2, 2},
@@ -1344,7 +1144,7 @@ func TestHandleJoin(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantJoinReq, hl.InHandleJoin.Req, "Handler Join Requests")
 		Check(t, wantRes, res, "Broker Join Responses")
-		Check(t, wantActivation, nc.InUpdateActivation.Entry, "Activations")
+		Check(t, wantActivation, as.InUpsert.Entry, "Activations")
 		Check(t, wantDialer, dl.InDial.Called, "Dialer calls")
 	}
 
@@ -1355,6 +1155,7 @@ func TestHandleJoin(t *testing.T) {
 
 		// Build
 		nc := NewMockNetworkController()
+		as := NewMockAppStorage()
 		hl := mocks.NewHandlerClient()
 		hl.OutHandleJoin.Res = &core.JoinHandlerRes{
 			Payload: &core.LoRaWANJoinAccept{
@@ -1369,17 +1170,17 @@ func TestHandleJoin(t *testing.T) {
 		dl.OutDial.Client = hl
 		dl.OutDial.Closer = NewMockCloser()
 
-		nc.OutReadActivation.Entry = appEntry{
+		as.OutRead.Entry = appEntry{
 			Dialer:    dl,
 			AppEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			DevEUI:    []byte{3, 3, 3, 3, 3, 3, 3, 3},
 			DevNonces: [][]byte{[]byte{14, 14}},
 		}
 
-		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		br := New(Components{NetworkController: nc, AppStorage: as, Ctx: GetLogger(t, "Broker")}, Options{})
 		req := &core.JoinBrokerReq{
-			AppEUI:   nc.OutReadActivation.Entry.AppEUI,
-			DevEUI:   nc.OutReadActivation.Entry.DevEUI,
+			AppEUI:   as.OutRead.Entry.AppEUI,
+			DevEUI:   as.OutRead.Entry.DevEUI,
 			DevNonce: []byte{14, 14},
 			Metadata: new(core.Metadata),
 		}
@@ -1398,7 +1199,7 @@ func TestHandleJoin(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantJoinReq, hl.InHandleJoin.Req, "Handler Join Requests")
 		Check(t, wantRes, res, "Broker Join Responses")
-		Check(t, wantActivation, nc.InUpdateActivation.Entry, "Activations")
+		Check(t, wantActivation, as.InUpsert.Entry, "Activations")
 		Check(t, wantDialer, dl.InDial.Called, "Dialer calls")
 	}
 
@@ -1409,6 +1210,7 @@ func TestHandleJoin(t *testing.T) {
 
 		// Build
 		nc := NewMockNetworkController()
+		as := NewMockAppStorage()
 		hl := mocks.NewHandlerClient()
 		hl.OutHandleJoin.Res = &core.JoinHandlerRes{
 			Payload: &core.LoRaWANJoinAccept{
@@ -1424,17 +1226,17 @@ func TestHandleJoin(t *testing.T) {
 		dl.OutDial.Closer = NewMockCloser()
 		dl.Failures["Dial"] = errors.New(errors.Operational, "Mock Error")
 
-		nc.OutReadActivation.Entry = appEntry{
+		as.OutRead.Entry = appEntry{
 			Dialer:    dl,
 			AppEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			DevEUI:    []byte{3, 3, 3, 3, 3, 3, 3, 3},
 			DevNonces: [][]byte{},
 		}
 
-		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		br := New(Components{NetworkController: nc, AppStorage: as, Ctx: GetLogger(t, "Broker")}, Options{})
 		req := &core.JoinBrokerReq{
-			AppEUI:   nc.OutReadActivation.Entry.AppEUI,
-			DevEUI:   nc.OutReadActivation.Entry.DevEUI,
+			AppEUI:   as.OutRead.Entry.AppEUI,
+			DevEUI:   as.OutRead.Entry.DevEUI,
 			DevNonce: []byte{14, 14},
 			Metadata: new(core.Metadata),
 		}
@@ -1453,7 +1255,7 @@ func TestHandleJoin(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantJoinReq, hl.InHandleJoin.Req, "Handler Join Requests")
 		Check(t, wantRes, res, "Broker Join Responses")
-		Check(t, wantActivation, nc.InUpdateActivation.Entry, "Activations")
+		Check(t, wantActivation, as.InUpsert.Entry, "Activations")
 		Check(t, wantDialer, dl.InDial.Called, "Dialer calls")
 	}
 	// --------------------
@@ -1463,6 +1265,7 @@ func TestHandleJoin(t *testing.T) {
 
 		// Build
 		nc := NewMockNetworkController()
+		as := NewMockAppStorage()
 		hl := mocks.NewHandlerClient()
 		hl.OutHandleJoin.Res = &core.JoinHandlerRes{
 			Payload: &core.LoRaWANJoinAccept{
@@ -1478,17 +1281,17 @@ func TestHandleJoin(t *testing.T) {
 		dl.OutDial.Client = hl
 		dl.OutDial.Closer = NewMockCloser()
 
-		nc.OutReadActivation.Entry = appEntry{
+		as.OutRead.Entry = appEntry{
 			Dialer:    dl,
 			AppEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			DevEUI:    []byte{3, 3, 3, 3, 3, 3, 3, 3},
 			DevNonces: [][]byte{},
 		}
 
-		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		br := New(Components{NetworkController: nc, AppStorage: as, Ctx: GetLogger(t, "Broker")}, Options{})
 		req := &core.JoinBrokerReq{
-			AppEUI:   nc.OutReadActivation.Entry.AppEUI,
-			DevEUI:   nc.OutReadActivation.Entry.DevEUI,
+			AppEUI:   as.OutRead.Entry.AppEUI,
+			DevEUI:   as.OutRead.Entry.DevEUI,
 			DevNonce: []byte{14, 14},
 			Metadata: new(core.Metadata),
 		}
@@ -1512,7 +1315,7 @@ func TestHandleJoin(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantJoinReq, hl.InHandleJoin.Req, "Handler Join Requests")
 		Check(t, wantRes, res, "Broker Join Responses")
-		Check(t, wantActivation, nc.InUpdateActivation.Entry, "Activations")
+		Check(t, wantActivation, as.InUpsert.Entry, "Activations")
 		Check(t, wantDialer, dl.InDial.Called, "Dialer calls")
 	}
 
@@ -1523,6 +1326,7 @@ func TestHandleJoin(t *testing.T) {
 
 		// Build
 		nc := NewMockNetworkController()
+		as := NewMockAppStorage()
 		hl := mocks.NewHandlerClient()
 		hl.OutHandleJoin.Res = &core.JoinHandlerRes{
 			Payload: &core.LoRaWANJoinAccept{
@@ -1537,17 +1341,17 @@ func TestHandleJoin(t *testing.T) {
 		dl.OutDial.Client = hl
 		dl.OutDial.Closer = NewMockCloser()
 
-		nc.OutReadActivation.Entry = appEntry{
+		as.OutRead.Entry = appEntry{
 			Dialer:    dl,
 			AppEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			DevEUI:    []byte{3, 3, 3, 3, 3, 3, 3, 3},
 			DevNonces: [][]byte{},
 		}
 
-		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		br := New(Components{NetworkController: nc, AppStorage: as, Ctx: GetLogger(t, "Broker")}, Options{})
 		req := &core.JoinBrokerReq{
-			AppEUI:   nc.OutReadActivation.Entry.AppEUI,
-			DevEUI:   nc.OutReadActivation.Entry.DevEUI,
+			AppEUI:   as.OutRead.Entry.AppEUI,
+			DevEUI:   as.OutRead.Entry.DevEUI,
 			DevNonce: []byte{14, 14},
 			Metadata: new(core.Metadata),
 		}
@@ -1571,7 +1375,7 @@ func TestHandleJoin(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantJoinReq, hl.InHandleJoin.Req, "Handler Join Requests")
 		Check(t, wantRes, res, "Broker Join Responses")
-		Check(t, wantActivation, nc.InUpdateActivation.Entry, "Activations")
+		Check(t, wantActivation, as.InUpsert.Entry, "Activations")
 		Check(t, wantDialer, dl.InDial.Called, "Dialer calls")
 	}
 
@@ -1596,18 +1400,19 @@ func TestHandleJoin(t *testing.T) {
 		dl.OutDial.Closer = NewMockCloser()
 
 		nc := NewMockNetworkController()
-		nc.Failures["UpdateActivation"] = errors.New(errors.Operational, "Mock Error")
-		nc.OutReadActivation.Entry = appEntry{
+		as := NewMockAppStorage()
+		as.Failures["upsert"] = errors.New(errors.Operational, "Mock Error")
+		as.OutRead.Entry = appEntry{
 			Dialer:    dl,
 			AppEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			DevEUI:    []byte{3, 3, 3, 3, 3, 3, 3, 3},
 			DevNonces: [][]byte{},
 		}
 
-		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		br := New(Components{NetworkController: nc, AppStorage: as, Ctx: GetLogger(t, "Broker")}, Options{})
 		req := &core.JoinBrokerReq{
-			AppEUI:   nc.OutReadActivation.Entry.AppEUI,
-			DevEUI:   nc.OutReadActivation.Entry.DevEUI,
+			AppEUI:   as.OutRead.Entry.AppEUI,
+			DevEUI:   as.OutRead.Entry.DevEUI,
 			DevNonce: []byte{14, 14},
 			Metadata: new(core.Metadata),
 		}
@@ -1636,7 +1441,7 @@ func TestHandleJoin(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantJoinReq, hl.InHandleJoin.Req, "Handler Join Requests")
 		Check(t, wantRes, res, "Broker Join Responses")
-		Check(t, wantActivation, nc.InUpdateActivation.Entry, "Activations")
+		Check(t, wantActivation, as.InUpsert.Entry, "Activations")
 		Check(t, wantDialer, dl.InDial.Called, "Dialer calls")
 	}
 
@@ -1661,18 +1466,19 @@ func TestHandleJoin(t *testing.T) {
 		dl.OutDial.Closer = NewMockCloser()
 
 		nc := NewMockNetworkController()
-		nc.Failures["StoreDevice"] = errors.New(errors.Operational, "Mock Error")
-		nc.OutReadActivation.Entry = appEntry{
+		as := NewMockAppStorage()
+		nc.Failures["upsert"] = errors.New(errors.Operational, "Mock Error")
+		as.OutRead.Entry = appEntry{
 			Dialer:    dl,
 			AppEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			DevEUI:    []byte{3, 3, 3, 3, 3, 3, 3, 3},
 			DevNonces: [][]byte{},
 		}
 
-		br := New(Components{NetworkController: nc, Ctx: GetLogger(t, "Broker")}, Options{})
+		br := New(Components{NetworkController: nc, AppStorage: as, Ctx: GetLogger(t, "Broker")}, Options{})
 		req := &core.JoinBrokerReq{
-			AppEUI:   nc.OutReadActivation.Entry.AppEUI,
-			DevEUI:   nc.OutReadActivation.Entry.DevEUI,
+			AppEUI:   as.OutRead.Entry.AppEUI,
+			DevEUI:   as.OutRead.Entry.DevEUI,
 			DevNonce: []byte{14, 14},
 			Metadata: new(core.Metadata),
 		}
@@ -1701,7 +1507,7 @@ func TestHandleJoin(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantJoinReq, hl.InHandleJoin.Req, "Handler Join Requests")
 		Check(t, wantRes, res, "Broker Join Responses")
-		Check(t, wantActivation, nc.InUpdateActivation.Entry, "Activations")
+		Check(t, wantActivation, as.InUpsert.Entry, "Activations")
 		Check(t, wantDialer, dl.InDial.Called, "Dialer calls")
 	}
 }
