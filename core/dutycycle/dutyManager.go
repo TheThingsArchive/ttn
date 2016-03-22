@@ -4,6 +4,7 @@
 package dutycycle
 
 import (
+	"encoding"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -64,6 +65,8 @@ const (
 
 type region byte
 
+var bucket = []byte("cycles")
+
 // GetSubBand returns the subband associated to a given frequency
 func GetSubBand(freq float32) (subBand, error) {
 	// g 865.0 – 868.0 MHz 1% or LBT+AFA, 25 mW (=14dBm)
@@ -122,7 +125,6 @@ func NewManager(filepath string, cycleLength time.Duration, r region) (DutyManag
 
 	return &dutyManager{
 		db:           db,
-		bucket:       "cycles",
 		CycleLength:  cycleLength,
 		MaxDutyCycle: maxDuty,
 	}, nil
@@ -148,7 +150,7 @@ func (m *dutyManager) Update(id []byte, freq float32, size uint32, datr string, 
 	// Lookup and update the entry
 	m.Lock()
 	defer m.Unlock()
-	itf, err := m.db.Lookup(m.bucket, id, &dutyEntry{})
+	itf, err := m.db.Read(id, &dutyEntry{}, bucket)
 
 	var entry dutyEntry
 	if err == nil {
@@ -170,7 +172,7 @@ func (m *dutyManager) Update(id []byte, freq float32, size uint32, datr string, 
 		entry.OnAir[sub] += timeOnAir
 	}
 
-	return m.db.Replace(m.bucket, id, []dbutil.Entry{&entry})
+	return m.db.Update(id, []encoding.BinaryMarshaler{&entry}, bucket)
 }
 
 // Lookup returns the current bandwidth usages for a set of subband
@@ -182,7 +184,7 @@ func (m *dutyManager) Lookup(id []byte) (Cycles, error) {
 	defer m.RUnlock()
 
 	// Lookup the entry
-	itf, err := m.db.Lookup(m.bucket, id, &dutyEntry{})
+	itf, err := m.db.Read(id, &dutyEntry{}, bucket)
 	if err != nil {
 		return nil, err
 	}

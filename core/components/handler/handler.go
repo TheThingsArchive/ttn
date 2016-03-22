@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"crypto/aes"
 	"encoding/binary"
+	"fmt"
 	"math/rand"
 	"net"
 	"reflect"
@@ -123,56 +124,6 @@ func (h *component) Start() error {
 	return nil
 }
 
-// RegisterPersonalized implements the core.HandlerServer interface
-func (h component) SubscribePersonalized(bctx context.Context, req *core.ABPSubHandlerReq) (*core.ABPSubHandlerRes, error) {
-	h.Ctx.Debug("New personalized subscription request")
-	stats.MarkMeter("handler.registration.in")
-
-	if len(req.AppEUI) != 8 {
-		stats.MarkMeter("handler.registration.invalid")
-		return new(core.ABPSubHandlerRes), errors.New(errors.Structural, "Invalid Application EUI")
-	}
-
-	if len(req.DevAddr) != 4 {
-		stats.MarkMeter("handler.registration.invalid")
-		return new(core.ABPSubHandlerRes), errors.New(errors.Structural, "Invalid Device Address")
-	}
-
-	if len(req.NwkSKey) != 16 {
-		stats.MarkMeter("handler.registration.invalid")
-		return new(core.ABPSubHandlerRes), errors.New(errors.Structural, "Invalid Network Session Key")
-	}
-	var nwkSKey [16]byte
-	copy(nwkSKey[:], req.NwkSKey)
-
-	if len(req.AppSKey) != 16 {
-		stats.MarkMeter("handler.registration.invalid")
-		return new(core.ABPSubHandlerRes), errors.New(errors.Structural, "Invalid Application Session Key")
-	}
-	var appSKey [16]byte
-	copy(appSKey[:], req.AppSKey)
-
-	h.Ctx.Debug("Registration is valid. Saving and forwarding to broker")
-
-	if err := h.DevStorage.StorePersonalized(req.AppEUI, req.DevAddr, appSKey, nwkSKey); err != nil {
-		h.Ctx.WithError(err).Debug("Unable to store registration")
-		return new(core.ABPSubHandlerRes), errors.New(errors.Operational, err)
-	}
-
-	_, err := h.Broker.SubscribePersonalized(context.Background(), &core.ABPSubBrokerReq{
-		HandlerNet: h.NetAddr,
-		AppEUI:     req.AppEUI,
-		DevAddr:    req.DevAddr,
-		NwkSKey:    req.NwkSKey,
-	})
-
-	if err != nil {
-		h.Ctx.WithError(err).Debug("Unable to forward registration")
-		return new(core.ABPSubHandlerRes), errors.New(errors.Operational, err)
-	}
-	return new(core.ABPSubHandlerRes), nil
-}
-
 // HandleJoin implements the core.HandlerServer interface
 func (h component) HandleJoin(bctx context.Context, req *core.JoinHandlerReq) (*core.JoinHandlerRes, error) {
 	stats.MarkMeter("handler.joinrequest.in")
@@ -185,7 +136,7 @@ func (h component) HandleJoin(bctx context.Context, req *core.JoinHandlerReq) (*
 
 	// 1. Lookup for the associated AppKey
 	h.Ctx.WithField("appEUI", req.AppEUI).WithField("devEUI", req.DevEUI).Debug("Perform lookup")
-	entry, err := h.DevStorage.Lookup(req.AppEUI, req.DevEUI)
+	entry, err := h.DevStorage.read(req.AppEUI, req.DevEUI)
 	if err != nil {
 		return new(core.JoinHandlerRes), err
 	}
@@ -252,8 +203,19 @@ func (h component) HandleDataDown(bctx context.Context, req *core.DataDownHandle
 		return new(core.DataDownHandlerRes), errors.New(errors.Structural, "Invalid payload")
 	}
 
+	ttl, err := time.ParseDuration(fmt.Sprintf("%dh", req.TTL))
+	if req.TTL == 0 || err != nil {
+		stats.MarkMeter("handler.downlink.invalid")
+		return new(core.DataDownHandlerRes), errors.New(errors.Structural, "Invalid TTL")
+	}
+
 	h.Ctx.WithField("DevEUI", req.DevEUI).WithField("AppEUI", req.AppEUI).Debug("Save downlink for later")
-	return new(core.DataDownHandlerRes), h.PktStorage.Push(req.AppEUI, req.DevEUI, pktEntry{Payload: req.Payload})
+	return new(core.DataDownHandlerRes), h.PktStorage.enqueue(pktEntry{
+		Payload: req.Payload,
+		AppEUI:  req.AppEUI,
+		DevEUI:  req.DevEUI,
+		TTL:     time.Now().Add(ttl),
+	})
 }
 
 // HandleDataUp implements the core.HandlerServer interface
@@ -281,7 +243,7 @@ func (h component) HandleDataUp(bctx context.Context, req *core.DataUpHandlerReq
 
 	// 1. Lookup for the associated AppSKey + Application
 	h.Ctx.WithField("appEUI", req.AppEUI).WithField("devEUI", req.DevEUI).Debug("Perform lookup")
-	entry, err := h.DevStorage.Lookup(req.AppEUI, req.DevEUI)
+	entry, err := h.DevStorage.read(req.AppEUI, req.DevEUI)
 	if err != nil {
 		return new(core.DataUpHandlerRes), err
 	}
@@ -454,6 +416,7 @@ func (h component) consumeJoin(appEUI []byte, devEUI []byte, appKey [16]byte, da
 	appNonce, devAddr := make([]byte, 4), [4]byte{}
 	binary.BigEndian.PutUint32(appNonce, rdn.Uint32())
 	binary.BigEndian.PutUint32(devAddr[:], rdn.Uint32())
+	devAddr[0] = (h.Configuration.NetID[2] << 1) | (devAddr[0] & 1) // DevAddr 7 msb are NetID 7 lsb
 
 	buf := make([]byte, 16)
 	copy(buf[1:4], appNonce[:3])
@@ -473,7 +436,7 @@ func (h component) consumeJoin(appEUI []byte, devEUI []byte, appKey [16]byte, da
 	block.Encrypt(appSKey[:], buf)
 
 	// Update the internal storage entry
-	err = h.DevStorage.Store(devEntry{
+	err = h.DevStorage.upsert(devEntry{
 		AppEUI:   appEUI,
 		AppKey:   appKey,
 		AppSKey:  appSKey,
@@ -583,7 +546,7 @@ func (h component) consumeDown(appEUI []byte, devEUI []byte, dataRate string, bu
 	h.Ctx.WithField("Bundle", best).Debug("Determine best gateway")
 	var downlink pktEntry
 	if best != nil { // Avoid pulling when there's no gateway available for an answer
-		downlink, err = h.PktStorage.Pull(appEUI, devEUI)
+		downlink, err = h.PktStorage.dequeue(appEUI, devEUI)
 	}
 	if err != nil && err.(errors.Failure).Nature != errors.NotFound {
 		h.abortConsume(err, bundles)
@@ -600,7 +563,9 @@ func (h component) consumeDown(appEUI []byte, devEUI []byte, dataRate string, bu
 				h.abortConsume(errors.New(errors.Structural, err), bundles)
 				return
 			}
-			err = h.DevStorage.UpdateFCnt(appEUI, devEUI, downlink.Payload.MACPayload.FHDR.FCnt)
+
+			bundle.Entry.FCntDown = downlink.Payload.MACPayload.FHDR.FCnt
+			err = h.DevStorage.upsert(bundle.Entry)
 			if err != nil {
 				h.abortConsume(err, bundles)
 				return

@@ -36,9 +36,10 @@ and personalized devices (with their network session keys) with the router.
 			stats.Enabled = false
 		}
 		ctx.WithFields(log.Fields{
-			"database":      viper.GetString("broker.database"),
-			"status-server": statusServer,
-			"main-server":   fmt.Sprintf("%s:%d", viper.GetString("broker.server-address"), viper.GetInt("broker.server-port")),
+			"devices database":      viper.GetString("broker.devices_database"),
+			"applications database": viper.GetString("broker.applications_database"),
+			"status-server":         statusServer,
+			"main-server":           fmt.Sprintf("%s:%d", viper.GetString("broker.server-address"), viper.GetInt("broker.server-port")),
 		}).Info("Using Configuration")
 	},
 	Run: func(cmd *cobra.Command, args []string) {
@@ -54,30 +55,53 @@ and personalized devices (with their network session keys) with the router.
 		statusAdapter.Bind(http.StatusPage{})
 
 		// Storage
-		var db broker.NetworkController
-
-		dbString := viper.GetString("broker.database")
+		var dbDev broker.NetworkController
+		devDBString := viper.GetString("broker.devices_database")
 		switch {
-		case strings.HasPrefix(dbString, "boltdb:"):
+		case strings.HasPrefix(devDBString, "boltdb:"):
 
-			dbPath, err := filepath.Abs(dbString[7:])
+			dbPath, err := filepath.Abs(devDBString[7:])
 			if err != nil {
-				ctx.WithError(err).Fatal("Invalid database path")
+				ctx.WithError(err).Fatal("Invalid devices database path")
 			}
 
-			db, err = broker.NewNetworkController(dbPath)
+			dbDev, err = broker.NewNetworkController(dbPath)
 			if err != nil {
 				ctx.WithError(err).Fatal("Could not create local storage")
 			}
 
-			ctx.WithField("database", dbPath).Info("Using local storage")
+			ctx.WithField("devices database", dbPath).Info("Using local storage")
 		default:
-			ctx.WithError(fmt.Errorf("Invalid database string. Format: \"boltdb:/path/to.db\".")).Fatal("Could not instantiate local storage")
+			ctx.WithError(fmt.Errorf("Invalid devices database string. Format: \"boltdb:/path/to.db\".")).Fatal("Could not instantiate local storage")
+		}
+
+		var dbApp broker.AppStorage
+		appDBString := viper.GetString("broker.applications_database")
+		switch {
+		case strings.HasPrefix(appDBString, "boltdb:"):
+
+			dbPath, err := filepath.Abs(appDBString[7:])
+			if err != nil {
+				ctx.WithError(err).Fatal("Invalid applications database path")
+			}
+
+			dbApp, err = broker.NewAppStorage(dbPath)
+			if err != nil {
+				ctx.WithError(err).Fatal("Could not create local storage")
+			}
+
+			ctx.WithField("applications database", dbPath).Info("Using local storage")
+		default:
+			ctx.WithError(fmt.Errorf("Invalid applications database string. Format: \"boltdb:/path/to.db\".")).Fatal("Could not instantiate local storage")
 		}
 
 		// Broker
 		broker := broker.New(
-			broker.Components{Ctx: ctx, NetworkController: db},
+			broker.Components{
+				Ctx:               ctx,
+				NetworkController: dbDev,
+				AppStorage:        dbApp,
+			},
 			broker.Options{
 				NetAddrUp:   fmt.Sprintf("%s:%d", viper.GetString("broker.uplink-address"), viper.GetInt("broker.uplink-port")),
 				NetAddrDown: fmt.Sprintf("%s:%d", viper.GetString("broker.downlink-address"), viper.GetInt("broker.downlink-port")),
@@ -94,8 +118,11 @@ and personalized devices (with their network session keys) with the router.
 func init() {
 	RootCmd.AddCommand(brokerCmd)
 
-	brokerCmd.Flags().String("database", "boltdb:/tmp/ttn_broker.db", "Database connection")
-	viper.BindPFlag("broker.database", brokerCmd.Flags().Lookup("database"))
+	brokerCmd.Flags().String("applications_database", "boltdb:/tmp/ttn_apps_broker.db", "Applications Database connection")
+	viper.BindPFlag("broker.applications_database", brokerCmd.Flags().Lookup("applications_database"))
+
+	brokerCmd.Flags().String("devices_database", "boltdb:/tmp/ttn_devs_broker.db", "Devices Database connection")
+	viper.BindPFlag("broker.devices_database", brokerCmd.Flags().Lookup("devices_database"))
 
 	brokerCmd.Flags().String("status-address", "localhost", "The IP address to listen for serving status information")
 	brokerCmd.Flags().Int("status-port", 10701, "The port of the status server, use 0 to disable")

@@ -84,14 +84,6 @@ type HandlerClient struct {
 	OutHandleDataDown struct {
 		Res *core.DataDownHandlerRes
 	}
-	InSubscribePersonalized struct {
-		Ctx  context.Context
-		Req  *core.ABPSubHandlerReq
-		Opts []grpc.CallOption
-	}
-	OutSubscribePersonalized struct {
-		Res *core.ABPSubHandlerRes
-	}
 }
 
 // NewHandlerClient creates a new mock HandlerClient
@@ -125,14 +117,6 @@ func (m *HandlerClient) HandleDataDown(ctx context.Context, in *core.DataDownHan
 	return m.OutHandleDataDown.Res, m.Failures["HandleDataDown"]
 }
 
-// SubscribePersonalized implements the core.HandlerClient interface
-func (m *HandlerClient) SubscribePersonalized(ctx context.Context, in *core.ABPSubHandlerReq, opts ...grpc.CallOption) (*core.ABPSubHandlerRes, error) {
-	m.InSubscribePersonalized.Ctx = ctx
-	m.InSubscribePersonalized.Req = in
-	m.InSubscribePersonalized.Opts = opts
-	return m.OutSubscribePersonalized.Res, m.Failures["SubscribePersonalized"]
-}
-
 // BrokerClient mocks the core.BrokerClient interface
 type BrokerClient struct {
 	Failures     map[string]error
@@ -143,14 +127,6 @@ type BrokerClient struct {
 	}
 	OutHandleData struct {
 		Res *core.DataBrokerRes
-	}
-	InSubscribePersonalized struct {
-		Ctx  context.Context
-		Req  *core.ABPSubBrokerReq
-		Opts []grpc.CallOption
-	}
-	OutSubscribePersonalized struct {
-		Res *core.ABPSubBrokerRes
 	}
 	InHandleJoin struct {
 		Ctx  context.Context
@@ -183,14 +159,6 @@ func (m *BrokerClient) HandleJoin(ctx context.Context, in *core.JoinBrokerReq, o
 	m.InHandleJoin.Req = in
 	m.InHandleJoin.Opts = opts
 	return m.OutHandleJoin.Res, m.Failures["HandleJoin"]
-}
-
-// SubscribePersonalized implements the core.BrokerClient interface
-func (m *BrokerClient) SubscribePersonalized(ctx context.Context, in *core.ABPSubBrokerReq, opts ...grpc.CallOption) (*core.ABPSubBrokerRes, error) {
-	m.InSubscribePersonalized.Ctx = ctx
-	m.InSubscribePersonalized.Req = in
-	m.InSubscribePersonalized.Opts = opts
-	return m.OutSubscribePersonalized.Res, m.Failures["SubscribePersonalized"]
 }
 
 // RouterServer mocks the core.RouterServer interface
@@ -321,13 +289,6 @@ type HandlerServer struct {
 	OutHandleJoin struct {
 		Res *core.JoinHandlerRes
 	}
-	InSubscribePersonalized struct {
-		Ctx context.Context
-		Req *core.ABPSubHandlerReq
-	}
-	OutSubscribePersonalized struct {
-		Res *core.ABPSubHandlerRes
-	}
 }
 
 // NewHandlerServer creates a new mock HandlerServer
@@ -356,11 +317,4 @@ func (m *HandlerServer) HandleJoin(ctx context.Context, in *core.JoinHandlerReq)
 	m.InHandleJoin.Ctx = ctx
 	m.InHandleJoin.Req = in
 	return m.OutHandleJoin.Res, m.Failures["HandleJoin"]
-}
-
-// SubscribePersonalized implements the core.HandlerServer interface
-func (m *HandlerServer) SubscribePersonalized(ctx context.Context, in *core.ABPSubHandlerReq) (*core.ABPSubHandlerRes, error) {
-	m.InSubscribePersonalized.Ctx = ctx
-	m.InSubscribePersonalized.Req = in
-	return m.OutSubscribePersonalized.Res, m.Failures["SubscribePersonalized"]
 }

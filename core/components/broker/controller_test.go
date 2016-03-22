@@ -25,7 +25,7 @@ func TestNetworkControllerDevice(t *testing.T) {
 		Desc(t, "Create a new NetworkController")
 		db, err := NewNetworkController(NetworkControllerDB)
 		CheckErrors(t, nil, err)
-		err = db.Close()
+		err = db.done()
 		CheckErrors(t, nil, err)
 	}
 
@@ -36,8 +36,8 @@ func TestNetworkControllerDevice(t *testing.T) {
 
 		// Build
 		db, _ := NewNetworkController(NetworkControllerDB)
-		devAddr := []byte{1, 2, 3, 4}
 		entry := devEntry{
+			DevAddr: []byte{1, 2, 3, 4},
 			Dialer:  NewDialer([]byte("url")),
 			AppEUI:  []byte{1, 2, 3, 4, 5, 6, 7, 8},
 			DevEUI:  []byte{0, 0, 0, 0, 1, 2, 3, 4},
@@ -46,9 +46,9 @@ func TestNetworkControllerDevice(t *testing.T) {
 		}
 
 		// Operate
-		err := db.StoreDevice(devAddr, entry)
+		err := db.upsert(entry)
 		FatalUnless(t, err)
-		entries, err := db.LookupDevices(devAddr)
+		entries, err := db.read(entry.DevAddr)
 
 		// Expect
 		want := []devEntry{entry}
@@ -56,7 +56,7 @@ func TestNetworkControllerDevice(t *testing.T) {
 		// Check
 		CheckErrors(t, nil, err)
 		Check(t, want, entries, "DevEntries")
-		_ = db.Close()
+		_ = db.done()
 	}
 
 	// -------------------
@@ -66,8 +66,8 @@ func TestNetworkControllerDevice(t *testing.T) {
 
 		// Build
 		db, _ := NewNetworkController(NetworkControllerDB)
-		devAddr := []byte{1, 2, 3, 5}
 		entry1 := devEntry{
+			DevAddr: []byte{1, 2, 3, 5},
 			Dialer:  NewDialer([]byte("url")),
 			AppEUI:  []byte{1, 2, 3, 4, 5, 6, 7, 8},
 			DevEUI:  []byte{0, 0, 0, 0, 1, 2, 3, 5},
@@ -75,6 +75,7 @@ func TestNetworkControllerDevice(t *testing.T) {
 			FCntUp:  14,
 		}
 		entry2 := devEntry{
+			DevAddr: []byte{1, 2, 3, 5},
 			Dialer:  NewDialer([]byte("url")),
 			AppEUI:  []byte{8, 7, 6, 5, 4, 3, 2, 1},
 			DevEUI:  []byte{0, 0, 0, 0, 1, 2, 3, 5},
@@ -83,11 +84,11 @@ func TestNetworkControllerDevice(t *testing.T) {
 		}
 
 		// Operate
-		err := db.StoreDevice(devAddr, entry1)
+		err := db.upsert(entry1)
 		FatalUnless(t, err)
-		err = db.StoreDevice(devAddr, entry2)
+		err = db.upsert(entry2)
 		FatalUnless(t, err)
-		entries, err := db.LookupDevices(devAddr)
+		entries, err := db.read(entry1.DevAddr)
 
 		// Expectations
 		want := []devEntry{entry1, entry2}
@@ -95,7 +96,7 @@ func TestNetworkControllerDevice(t *testing.T) {
 		// Check
 		CheckErrors(t, nil, err)
 		Check(t, want, entries, "DevEntries")
-		_ = db.Close()
+		_ = db.done()
 	}
 
 	// -------------------
@@ -108,7 +109,7 @@ func TestNetworkControllerDevice(t *testing.T) {
 		devAddr := []byte{0, 0, 0, 1}
 
 		// Operate
-		entries, err := db.LookupDevices(devAddr)
+		entries, err := db.read(devAddr)
 
 		// Expect
 		var want []devEntry
@@ -116,7 +117,7 @@ func TestNetworkControllerDevice(t *testing.T) {
 		// Checks
 		CheckErrors(t, ErrNotFound, err)
 		Check(t, want, entries, "DevEntries")
-		_ = db.Close()
+		_ = db.done()
 	}
 
 	// -------------------
@@ -126,9 +127,9 @@ func TestNetworkControllerDevice(t *testing.T) {
 
 		// Build
 		db, _ := NewNetworkController(NetworkControllerDB)
-		_ = db.Close()
-		devAddr := []byte{1, 0, 0, 2}
+		_ = db.done()
 		entry := devEntry{
+			DevAddr: []byte{1, 0, 0, 2},
 			Dialer:  NewDialer([]byte("url")),
 			AppEUI:  []byte{1, 2, 3, 4, 5, 6, 7, 8},
 			DevEUI:  []byte{0, 0, 0, 0, 1, 2, 3, 4},
@@ -137,7 +138,7 @@ func TestNetworkControllerDevice(t *testing.T) {
 		}
 
 		// Operate
-		err := db.StoreDevice(devAddr, entry)
+		err := db.upsert(entry)
 
 		// Checks
 		CheckErrors(t, ErrOperational, err)
@@ -150,11 +151,11 @@ func TestNetworkControllerDevice(t *testing.T) {
 
 		// Build
 		db, _ := NewNetworkController(NetworkControllerDB)
-		_ = db.Close()
+		_ = db.done()
 		devAddr := []byte{1, 2, 3, 4}
 
 		// Operate
-		entries, err := db.LookupDevices(devAddr)
+		entries, err := db.read(devAddr)
 
 		// Expect
 		var want []devEntry
@@ -171,8 +172,8 @@ func TestNetworkControllerDevice(t *testing.T) {
 
 		// Build
 		db, _ := NewNetworkController(NetworkControllerDB)
-		devAddr := []byte{1, 0, 0, 4}
 		entry := devEntry{
+			DevAddr: []byte{1, 0, 0, 4},
 			Dialer:  NewDialer([]byte("url")),
 			AppEUI:  []byte{1, 2, 3, 4, 5, 6, 7, 8},
 			DevEUI:  []byte{0, 0, 0, 0, 1, 2, 3, 4},
@@ -181,39 +182,20 @@ func TestNetworkControllerDevice(t *testing.T) {
 		}
 
 		// Operate
-		err := db.StoreDevice(devAddr, entry)
+		err := db.upsert(entry)
 		FatalUnless(t, err)
-		err1 := db.UpdateFCnt(entry.AppEUI, entry.DevEUI, devAddr, 42)
-		entries, err2 := db.LookupDevices(devAddr)
+		entry.FCntUp = 42
+		err = db.upsert(entry)
+		FatalUnless(t, err)
+		entries, err := db.read(entry.DevAddr)
+		FatalUnless(t, err)
 
-		// Expectations
+		// Expectation
 		want := []devEntry{entry}
-		want[0].FCntUp = 42
 
 		// Check
-		CheckErrors(t, nil, err1)
-		CheckErrors(t, nil, err2)
 		Check(t, want, entries, "DevEntries")
-		_ = db.Close()
-	}
-
-	// -------------------
-
-	{
-		Desc(t, "Update counter -> fail to lookup")
-
-		// Build
-		db, _ := NewNetworkController(NetworkControllerDB)
-		devAddr := []byte{14, 14, 14, 14}
-		appEUI := []byte{1, 2, 3, 4, 5, 6, 7, 8}
-		devEUI := []byte{1, 2, 3, 4, 5, 6, 7, 8}
-
-		// Operate
-		err := db.UpdateFCnt(appEUI, devEUI, devAddr, 14)
-
-		// Checks
-		CheckErrors(t, ErrNotFound, err)
-		_ = db.Close()
+		_ = db.done()
 	}
 
 	// -------------------
@@ -223,8 +205,8 @@ func TestNetworkControllerDevice(t *testing.T) {
 
 		// Build
 		db, _ := NewNetworkController(NetworkControllerDB)
-		devAddr := []byte{8, 8, 8, 8}
 		entry1 := devEntry{
+			DevAddr: []byte{8, 8, 8, 8},
 			Dialer:  NewDialer([]byte("url")),
 			AppEUI:  []byte{1, 2, 3, 4, 5, 6, 7, 8},
 			DevEUI:  []byte{0, 0, 0, 0, 1, 2, 3, 5},
@@ -232,6 +214,7 @@ func TestNetworkControllerDevice(t *testing.T) {
 			FCntUp:  14,
 		}
 		entry2 := devEntry{
+			DevAddr: []byte{8, 8, 8, 8},
 			Dialer:  NewDialer([]byte("url")),
 			AppEUI:  []byte{8, 7, 6, 5, 4, 3, 2, 1},
 			DevEUI:  []byte{0, 0, 0, 0, 1, 2, 3, 5},
@@ -240,22 +223,22 @@ func TestNetworkControllerDevice(t *testing.T) {
 		}
 
 		// Operate
-		err := db.StoreDevice(devAddr, entry1)
+		err := db.upsert(entry1)
 		FatalUnless(t, err)
-		err = db.StoreDevice(devAddr, entry2)
+		err = db.upsert(entry2)
 		FatalUnless(t, err)
-		err1 := db.UpdateFCnt(entry2.AppEUI, entry2.DevEUI, devAddr, 8)
-		entries, err2 := db.LookupDevices(devAddr)
+		entry2.FCntUp = 8
+		err = db.upsert(entry2)
+		FatalUnless(t, err)
+		entries, err := db.read(entry1.DevAddr)
+		FatalUnless(t, err)
 
 		// Expectations
 		want := []devEntry{entry1, entry2}
-		want[1].FCntUp = 8
 
 		// Check
-		CheckErrors(t, nil, err1)
-		CheckErrors(t, nil, err2)
 		Check(t, want, entries, "DevEntries")
-		_ = db.Close()
+		_ = db.done()
 	}
 
 	// --------------------
@@ -269,13 +252,13 @@ func TestNetworkControllerDevice(t *testing.T) {
 		cnt16 := wholeCnt + 1
 
 		// Operate
-		cnt32, err := db.WholeCounter(cnt16, wholeCnt)
+		cnt32, err := db.wholeCounter(cnt16, wholeCnt)
 
 		// Check
 		CheckErrors(t, nil, err)
 		Check(t, wholeCnt+1, cnt32, "Counters")
 
-		_ = db.Close()
+		_ = db.done()
 	}
 
 	// --------------------
@@ -289,12 +272,12 @@ func TestNetworkControllerDevice(t *testing.T) {
 		cnt16 := wholeCnt - 1
 
 		// Operate
-		_, err := db.WholeCounter(cnt16, wholeCnt)
+		_, err := db.wholeCounter(cnt16, wholeCnt)
 
 		// Check
 		CheckErrors(t, ErrStructural, err)
 
-		_ = db.Close()
+		_ = db.done()
 	}
 
 	// --------------------
@@ -308,13 +291,13 @@ func TestNetworkControllerDevice(t *testing.T) {
 		cnt16 := uint32(wholeCnt%65536 + 2)
 
 		// Operate
-		cnt32, err := db.WholeCounter(cnt16, wholeCnt)
+		cnt32, err := db.wholeCounter(cnt16, wholeCnt)
 
 		// Check
 		CheckErrors(t, nil, err)
 		Check(t, wholeCnt+2, cnt32, "Counters")
 
-		_ = db.Close()
+		_ = db.done()
 	}
 
 	// --------------------
@@ -328,12 +311,12 @@ func TestNetworkControllerDevice(t *testing.T) {
 		cnt16 := uint32(wholeCnt%65536 + 45000)
 
 		// Operate
-		_, err := db.WholeCounter(cnt16, wholeCnt)
+		_, err := db.wholeCounter(cnt16, wholeCnt)
 
 		// Check
 		CheckErrors(t, ErrStructural, err)
 
-		_ = db.Close()
+		_ = db.done()
 	}
 
 	// --------------------
@@ -347,61 +330,93 @@ func TestNetworkControllerDevice(t *testing.T) {
 		cnt16 := uint32(2)
 
 		// Operate
-		cnt32, err := db.WholeCounter(cnt16, wholeCnt)
+		cnt32, err := db.wholeCounter(cnt16, wholeCnt)
 
 		// Check
 		CheckErrors(t, nil, err)
 		Check(t, wholeCnt+3, cnt32, "Counters")
 
-		_ = db.Close()
+		_ = db.done()
 	}
+}
+
+func TestNonces(t *testing.T) {
+	NetworkControllerDB := path.Join(os.TempDir(), NetworkControllerDB)
+	defer func() {
+		os.Remove(NetworkControllerDB)
+	}()
 
 	// -------------------
 
 	{
-		Desc(t, "Test update then read an activation")
+		Desc(t, "Store then lookup a noncesEntry")
 
 		// Build
 		db, _ := NewNetworkController(NetworkControllerDB)
-		entry := appEntry{
-			Dialer:    NewDialer([]byte("Dialer")),
-			AppEUI:    []byte{1, 1, 1, 1, 1, 1, 1, 1},
-			DevEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
-			DevNonces: [][]byte{{1, 2}, {3, 4}},
+		entry := noncesEntry{
+			AppEUI:    []byte{1, 2, 3},
+			DevEUI:    []byte{4, 5, 6},
+			DevNonces: [][]byte{[]byte{14, 42}},
 		}
 
 		// Operate
-		err := db.UpdateActivation(entry)
+		err := db.upsertNonces(entry)
 		FatalUnless(t, err)
-		got, err := db.ReadActivation(entry.AppEUI, entry.DevEUI)
+		got, err := db.readNonces(entry.AppEUI, entry.DevEUI)
+		FatalUnless(t, err)
 
-		// Chek
-		CheckErrors(t, nil, err)
-		Check(t, entry, got, "Entries")
-
-		_ = db.Close()
-
+		// Check
+		Check(t, entry, got, "Nonces Entries")
+		_ = db.done()
 	}
 
 	// -------------------
 
 	{
-		Desc(t, "Test ReadActivation -> not found")
+		Desc(t, "Update an existing nonce")
 
 		// Build
 		db, _ := NewNetworkController(NetworkControllerDB)
-		appEUI := []byte{1, 1, 1, 1, 1, 1, 1, 2}
-		devEUI := []byte{2, 2, 2, 2, 2, 2, 2, 3}
-		var entry appEntry
+		entry := noncesEntry{
+			AppEUI:    []byte{26, 2, 3},
+			DevEUI:    []byte{4, 26, 26},
+			DevNonces: [][]byte{[]byte{14, 42}},
+		}
+		update := noncesEntry{
+			AppEUI:    entry.AppEUI,
+			DevEUI:    entry.DevEUI,
+			DevNonces: [][]byte{[]byte{58, 27}, []byte{12, 11}},
+		}
 
 		// Operate
-		got, err := db.ReadActivation(appEUI, devEUI)
+		err := db.upsertNonces(entry)
+		FatalUnless(t, err)
+		err = db.upsertNonces(update)
+		FatalUnless(t, err)
+		got, err := db.readNonces(entry.AppEUI, entry.DevEUI)
+		FatalUnless(t, err)
 
-		// Chek
+		// Check
+		Check(t, update, got, "Nonces Entries")
+		_ = db.done()
+	}
+
+	// -------------------
+
+	{
+
+		Desc(t, "Lookup an non-existing nonces entry")
+
+		// Build
+		db, _ := NewNetworkController(NetworkControllerDB)
+		appEUI := []byte{4, 5, 3, 4}
+		devEUI := []byte{1, 2, 2, 2}
+
+		// Operate
+		_, err := db.readNonces(appEUI, devEUI)
+
+		// Check
 		CheckErrors(t, ErrNotFound, err)
-		Check(t, entry, got, "Entries")
-
-		_ = db.Close()
-
+		_ = db.done()
 	}
 }

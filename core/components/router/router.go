@@ -22,7 +22,8 @@ type Components struct {
 	DutyManager dutycycle.DutyManager
 	Brokers     []core.BrokerClient
 	Ctx         log.Interface
-	Storage     Storage
+	BrkStorage  BrkStorage
+	GtwStorage  GtwStorage
 }
 
 // Options defines a structure to make the instantiation easier to read
@@ -78,7 +79,10 @@ func (r component) HandleStats(ctx context.Context, req *core.StatsReq) (*core.S
 	}
 
 	stats.MarkMeter("router.stat.in")
-	return new(core.StatsRes), r.Storage.UpdateStats(req.GatewayID, *req.Metadata)
+	return new(core.StatsRes), r.GtwStorage.upsert(gtwEntry{
+		GatewayID: req.GatewayID,
+		Metadata:  *req.Metadata,
+	})
 }
 
 // HandleJoin implements the core.RouterClient interface
@@ -146,7 +150,7 @@ func (r component) HandleData(ctx context.Context, req *core.DataRouterReq) (*co
 	}
 
 	// Lookup for an existing broker
-	entries, err := r.Storage.Lookup(fhdr.DevAddr)
+	entries, err := r.BrkStorage.read(fhdr.DevAddr)
 	if err != nil && err.(errors.Failure).Nature != errors.NotFound {
 		r.Ctx.Warn("Database lookup failed")
 		return new(core.DataRouterRes), errors.New(errors.Operational, err)
@@ -207,11 +211,11 @@ func (r component) HandleData(ctx context.Context, req *core.DataRouterReq) (*co
 
 func (r component) injectMetadata(gid []byte, metadata core.Metadata) (*core.Metadata, error) {
 	// Add Gateway location metadata
-	if gmeta, err := r.Storage.LookupStats(gid); err == nil {
+	if entry, err := r.GtwStorage.read(gid); err == nil {
 		r.Ctx.Debug("Adding Gateway Metadata to packet")
-		metadata.Latitude = gmeta.Latitude
-		metadata.Longitude = gmeta.Longitude
-		metadata.Altitude = gmeta.Altitude
+		metadata.Latitude = entry.Metadata.Latitude
+		metadata.Longitude = entry.Metadata.Longitude
+		metadata.Altitude = entry.Metadata.Altitude
 	}
 
 	// Add Gateway duty metadata
@@ -265,14 +269,14 @@ func (r component) send(req interface{}, isBroadcast bool, brokers ...core.Broke
 	cherr := make(chan error, nb)
 	chresp := make(chan struct {
 		Response    interface{}
-		BrokerIndex int
+		BrokerIndex uint16
 	}, nb)
 	wg := sync.WaitGroup{}
 	wg.Add(nb)
 
 	// Run each request
 	for i, broker := range brokers {
-		go func(index int, broker core.BrokerClient) {
+		go func(index uint16, broker core.BrokerClient) {
 			defer wg.Done()
 
 			// Send request
@@ -302,9 +306,9 @@ func (r component) send(req interface{}, isBroadcast bool, brokers ...core.Broke
 			// Transfer the response
 			chresp <- struct {
 				Response    interface{}
-				BrokerIndex int
+				BrokerIndex uint16
 			}{resp, index}
-		}(i, broker)
+		}(uint16(i), broker)
 	}
 
 	// Wait for each request to be done
@@ -356,7 +360,11 @@ func (r component) send(req interface{}, isBroadcast bool, brokers ...core.Broke
 		case *core.JoinBrokerReq:
 			devAddr = resp.Response.(*core.JoinBrokerRes).DevAddr
 		}
-		if err := r.Storage.Store(devAddr, resp.BrokerIndex); err != nil {
+		err := r.BrkStorage.create(brkEntry{
+			DevAddr:     devAddr,
+			BrokerIndex: resp.BrokerIndex,
+		})
+		if err != nil {
 			r.Ctx.WithError(err).Warn("Failed to store accepted broker")
 		}
 	}

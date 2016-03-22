@@ -21,8 +21,9 @@ func TestHandleStats(t *testing.T) {
 
 		// Build
 		components := Components{
-			Ctx:     GetLogger(t, "Router"),
-			Storage: NewMockStorage(),
+			Ctx:        GetLogger(t, "Router"),
+			BrkStorage: NewMockBrkStorage(),
+			GtwStorage: NewMockGtwStorage(),
 		}
 		r := New(components, Options{})
 		req := &core.StatsReq{
@@ -37,8 +38,10 @@ func TestHandleStats(t *testing.T) {
 		// Expect
 		var wantErr *string
 		var wantRes = new(core.StatsRes)
-		var wantID = req.GatewayID
-		var wantMeta = *req.Metadata
+		var wantEntry = gtwEntry{
+			GatewayID: req.GatewayID,
+			Metadata:  *req.Metadata,
+		}
 
 		// Operate
 		res, err := r.HandleStats(context.Background(), req)
@@ -46,8 +49,7 @@ func TestHandleStats(t *testing.T) {
 		// Check
 		CheckErrors(t, wantErr, err)
 		Check(t, wantRes, res, "Stats Responses")
-		Check(t, wantID, components.Storage.(*MockStorage).InUpdateStats.GID, "Gateway IDs")
-		Check(t, wantMeta, components.Storage.(*MockStorage).InUpdateStats.Metadata, "Gateways Metas")
+		Check(t, wantEntry, components.GtwStorage.(*MockGtwStorage).InUpsert.Entry, "Gateway Entries")
 	}
 
 	// --------------------
@@ -57,8 +59,9 @@ func TestHandleStats(t *testing.T) {
 
 		// Build
 		components := Components{
-			Ctx:     GetLogger(t, "Router"),
-			Storage: NewMockStorage(),
+			Ctx:        GetLogger(t, "Router"),
+			BrkStorage: NewMockBrkStorage(),
+			GtwStorage: NewMockGtwStorage(),
 		}
 		r := New(components, Options{})
 		var req *core.StatsReq
@@ -66,8 +69,7 @@ func TestHandleStats(t *testing.T) {
 		// Expect
 		var wantErr = ErrStructural
 		var wantRes = new(core.StatsRes)
-		var wantID []byte
-		var wantMeta core.StatsMetadata
+		var wantEntry gtwEntry
 
 		// Operate
 		res, err := r.HandleStats(context.Background(), req)
@@ -75,8 +77,7 @@ func TestHandleStats(t *testing.T) {
 		// Check
 		CheckErrors(t, wantErr, err)
 		Check(t, wantRes, res, "Stats Responses")
-		Check(t, wantID, components.Storage.(*MockStorage).InUpdateStats.GID, "Gateway IDs")
-		Check(t, wantMeta, components.Storage.(*MockStorage).InUpdateStats.Metadata, "Gateways Metas")
+		Check(t, wantEntry, components.GtwStorage.(*MockGtwStorage).InUpsert.Entry, "Gateway Entries")
 	}
 
 	// --------------------
@@ -86,8 +87,9 @@ func TestHandleStats(t *testing.T) {
 
 		// Build
 		components := Components{
-			Ctx:     GetLogger(t, "Router"),
-			Storage: NewMockStorage(),
+			Ctx:        GetLogger(t, "Router"),
+			BrkStorage: NewMockBrkStorage(),
+			GtwStorage: NewMockGtwStorage(),
 		}
 		r := New(components, Options{})
 		req := &core.StatsReq{
@@ -102,8 +104,7 @@ func TestHandleStats(t *testing.T) {
 		// Expect
 		var wantErr = ErrStructural
 		var wantRes = new(core.StatsRes)
-		var wantID []byte
-		var wantMeta core.StatsMetadata
+		var wantEntry gtwEntry
 
 		// Operate
 		res, err := r.HandleStats(context.Background(), req)
@@ -111,8 +112,7 @@ func TestHandleStats(t *testing.T) {
 		// Check
 		CheckErrors(t, wantErr, err)
 		Check(t, wantRes, res, "Stats Responses")
-		Check(t, wantID, components.Storage.(*MockStorage).InUpdateStats.GID, "Gateway IDs")
-		Check(t, wantMeta, components.Storage.(*MockStorage).InUpdateStats.Metadata, "Gateways Metas")
+		Check(t, wantEntry, components.GtwStorage.(*MockGtwStorage).InUpsert.Entry, "Gateway Entries")
 	}
 
 	// --------------------
@@ -122,8 +122,9 @@ func TestHandleStats(t *testing.T) {
 
 		// Build
 		components := Components{
-			Ctx:     GetLogger(t, "Router"),
-			Storage: NewMockStorage(),
+			Ctx:        GetLogger(t, "Router"),
+			BrkStorage: NewMockBrkStorage(),
+			GtwStorage: NewMockGtwStorage(),
 		}
 		r := New(components, Options{})
 		req := &core.StatsReq{
@@ -133,8 +134,7 @@ func TestHandleStats(t *testing.T) {
 		// Expect
 		var wantErr = ErrStructural
 		var wantRes = new(core.StatsRes)
-		var wantID []byte
-		var wantMeta core.StatsMetadata
+		var wantEntry gtwEntry
 
 		// Operate
 		res, err := r.HandleStats(context.Background(), req)
@@ -142,8 +142,7 @@ func TestHandleStats(t *testing.T) {
 		// Check
 		CheckErrors(t, wantErr, err)
 		Check(t, wantRes, res, "Stats Responses")
-		Check(t, wantID, components.Storage.(*MockStorage).InUpdateStats.GID, "Gateway IDs")
-		Check(t, wantMeta, components.Storage.(*MockStorage).InUpdateStats.Metadata, "Gateways Metas")
+		Check(t, wantEntry, components.GtwStorage.(*MockGtwStorage).InUpsert.Entry, "Gateway Entries")
 	}
 
 	// --------------------
@@ -153,10 +152,11 @@ func TestHandleStats(t *testing.T) {
 
 		// Build
 		components := Components{
-			Ctx:     GetLogger(t, "Router"),
-			Storage: NewMockStorage(),
+			Ctx:        GetLogger(t, "Router"),
+			BrkStorage: NewMockBrkStorage(),
+			GtwStorage: NewMockGtwStorage(),
 		}
-		components.Storage.(*MockStorage).Failures["UpdateStats"] = errors.New(errors.Operational, "")
+		components.GtwStorage.(*MockGtwStorage).Failures["upsert"] = errors.New(errors.Operational, "Mock Error")
 		r := New(components, Options{})
 		req := &core.StatsReq{
 			GatewayID: []byte{1, 2, 3, 4, 5, 6, 7, 8},
@@ -170,8 +170,10 @@ func TestHandleStats(t *testing.T) {
 		// Expect
 		var wantErr = ErrOperational
 		var wantRes = new(core.StatsRes)
-		var wantID = req.GatewayID
-		var wantMeta = *req.Metadata
+		var wantEntry = gtwEntry{
+			GatewayID: req.GatewayID,
+			Metadata:  *req.Metadata,
+		}
 
 		// Operate
 		res, err := r.HandleStats(context.Background(), req)
@@ -179,8 +181,7 @@ func TestHandleStats(t *testing.T) {
 		// Check
 		CheckErrors(t, wantErr, err)
 		Check(t, wantRes, res, "Stats Responses")
-		Check(t, wantID, components.Storage.(*MockStorage).InUpdateStats.GID, "Gateway IDs")
-		Check(t, wantMeta, components.Storage.(*MockStorage).InUpdateStats.Metadata, "Gateways Metas")
+		Check(t, wantEntry, components.GtwStorage.(*MockGtwStorage).InUpsert.Entry, "Gateway Entries")
 	}
 }
 
@@ -191,12 +192,15 @@ func TestHandleData(t *testing.T) {
 		// Build
 		dm := mocks.NewDutyManager()
 		br := mocks.NewBrokerClient()
-		st := NewMockStorage()
+		st := NewMockBrkStorage()
+		gt := NewMockGtwStorage()
+
 		r := New(Components{
 			DutyManager: dm,
 			Brokers:     []core.BrokerClient{br},
 			Ctx:         GetLogger(t, "Router"),
-			Storage:     st,
+			BrkStorage:  st,
+			GtwStorage:  gt,
 		}, Options{})
 		req := &core.DataRouterReq{
 			Payload: &core.LoRaWANData{
@@ -223,7 +227,7 @@ func TestHandleData(t *testing.T) {
 		var wantErr = ErrStructural
 		var wantRes = new(core.DataRouterRes)
 		var wantBrReq *core.DataBrokerReq
-		var wantStore int
+		var wantStore uint16
 
 		// Operate
 		res, err := r.HandleData(context.Background(), req)
@@ -232,7 +236,7 @@ func TestHandleData(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantRes, res, "Router Data Responses")
 		Check(t, wantBrReq, br.InHandleData.Req, "Broker Data Requests")
-		Check(t, wantStore, st.InStore.BrokerIndex, "Brokers stored")
+		Check(t, wantStore, st.InCreate.Entry.BrokerIndex, "Brokers stored")
 	}
 
 	// --------------------
@@ -243,12 +247,15 @@ func TestHandleData(t *testing.T) {
 		// Build
 		dm := mocks.NewDutyManager()
 		br := mocks.NewBrokerClient()
-		st := NewMockStorage()
+		st := NewMockBrkStorage()
+		gt := NewMockGtwStorage()
+
 		r := New(Components{
 			DutyManager: dm,
 			Brokers:     []core.BrokerClient{br},
 			Ctx:         GetLogger(t, "Router"),
-			Storage:     st,
+			BrkStorage:  st,
+			GtwStorage:  gt,
 		}, Options{})
 		req := &core.DataRouterReq{
 			Payload: &core.LoRaWANData{
@@ -275,7 +282,7 @@ func TestHandleData(t *testing.T) {
 		var wantErr = ErrStructural
 		var wantRes = new(core.DataRouterRes)
 		var wantBrReq *core.DataBrokerReq
-		var wantStore int
+		var wantStore uint16
 
 		// Operate
 		res, err := r.HandleData(context.Background(), req)
@@ -284,7 +291,7 @@ func TestHandleData(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantRes, res, "Router Data Responses")
 		Check(t, wantBrReq, br.InHandleData.Req, "Broker Data Requests")
-		Check(t, wantStore, st.InStore.BrokerIndex, "Brokers stored")
+		Check(t, wantStore, st.InCreate.Entry.BrokerIndex, "Brokers stored")
 	}
 
 	// --------------------
@@ -295,12 +302,15 @@ func TestHandleData(t *testing.T) {
 		// Build
 		dm := mocks.NewDutyManager()
 		br := mocks.NewBrokerClient()
-		st := NewMockStorage()
+		st := NewMockBrkStorage()
+		gt := NewMockGtwStorage()
+
 		r := New(Components{
 			DutyManager: dm,
 			Brokers:     []core.BrokerClient{br},
 			Ctx:         GetLogger(t, "Router"),
-			Storage:     st,
+			BrkStorage:  st,
+			GtwStorage:  gt,
 		}, Options{})
 		req := &core.DataRouterReq{
 			Payload: &core.LoRaWANData{
@@ -327,7 +337,7 @@ func TestHandleData(t *testing.T) {
 		var wantErr = ErrStructural
 		var wantRes = new(core.DataRouterRes)
 		var wantBrReq *core.DataBrokerReq
-		var wantStore int
+		var wantStore uint16
 
 		// Operate
 		res, err := r.HandleData(context.Background(), req)
@@ -336,7 +346,7 @@ func TestHandleData(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantRes, res, "Router Data Responses")
 		Check(t, wantBrReq, br.InHandleData.Req, "Broker Data Requests")
-		Check(t, wantStore, st.InStore.BrokerIndex, "Brokers stored")
+		Check(t, wantStore, st.InCreate.Entry.BrokerIndex, "Brokers stored")
 	}
 
 	// --------------------
@@ -347,12 +357,15 @@ func TestHandleData(t *testing.T) {
 		// Build
 		dm := mocks.NewDutyManager()
 		br := mocks.NewBrokerClient()
-		st := NewMockStorage()
+		st := NewMockBrkStorage()
+		gt := NewMockGtwStorage()
+
 		r := New(Components{
 			DutyManager: dm,
 			Brokers:     []core.BrokerClient{br},
 			Ctx:         GetLogger(t, "Router"),
-			Storage:     st,
+			BrkStorage:  st,
+			GtwStorage:  gt,
 		}, Options{})
 		req := &core.DataRouterReq{
 			Payload:   nil,
@@ -364,7 +377,7 @@ func TestHandleData(t *testing.T) {
 		var wantErr = ErrStructural
 		var wantRes = new(core.DataRouterRes)
 		var wantBrReq *core.DataBrokerReq
-		var wantStore int
+		var wantStore uint16
 
 		// Operate
 		res, err := r.HandleData(context.Background(), req)
@@ -373,7 +386,7 @@ func TestHandleData(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantRes, res, "Router Data Responses")
 		Check(t, wantBrReq, br.InHandleData.Req, "Broker Data Requests")
-		Check(t, wantStore, st.InStore.BrokerIndex, "Brokers stored")
+		Check(t, wantStore, st.InCreate.Entry.BrokerIndex, "Brokers stored")
 	}
 
 	// --------------------
@@ -384,12 +397,15 @@ func TestHandleData(t *testing.T) {
 		// Build
 		dm := mocks.NewDutyManager()
 		br := mocks.NewBrokerClient()
-		st := NewMockStorage()
+		st := NewMockBrkStorage()
+		gt := NewMockGtwStorage()
+
 		r := New(Components{
 			DutyManager: dm,
 			Brokers:     []core.BrokerClient{br},
 			Ctx:         GetLogger(t, "Router"),
-			Storage:     st,
+			BrkStorage:  st,
+			GtwStorage:  gt,
 		}, Options{})
 		req := &core.DataRouterReq{
 			Payload: &core.LoRaWANData{
@@ -416,7 +432,7 @@ func TestHandleData(t *testing.T) {
 		var wantErr = ErrStructural
 		var wantRes = new(core.DataRouterRes)
 		var wantBrReq *core.DataBrokerReq
-		var wantStore int
+		var wantStore uint16
 
 		// Operate
 		res, err := r.HandleData(context.Background(), req)
@@ -425,7 +441,7 @@ func TestHandleData(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantRes, res, "Router Data Responses")
 		Check(t, wantBrReq, br.InHandleData.Req, "Broker Data Requests")
-		Check(t, wantStore, st.InStore.BrokerIndex, "Brokers stored")
+		Check(t, wantStore, st.InCreate.Entry.BrokerIndex, "Brokers stored")
 	}
 
 	// --------------------
@@ -436,13 +452,19 @@ func TestHandleData(t *testing.T) {
 		// Build
 		dm := mocks.NewDutyManager()
 		br := mocks.NewBrokerClient()
-		st := NewMockStorage()
-		st.OutLookupStats.Metadata = core.StatsMetadata{
-			Altitude:  14,
-			Longitude: 14.0,
-			Latitude:  -14.0,
+		st := NewMockBrkStorage()
+		gt := NewMockGtwStorage()
+
+		gid := []byte{1, 2, 3, 4, 5, 6, 7, 8}
+		gt.OutRead.Entry = gtwEntry{
+			GatewayID: gid,
+			Metadata: core.StatsMetadata{
+				Altitude:  14,
+				Longitude: 14.0,
+				Latitude:  -14.0,
+			},
 		}
-		st.OutLookup.Entries = []entry{
+		st.OutRead.Entries = []brkEntry{
 			{
 				BrokerIndex: 1,
 				until:       time.Now().Add(time.Hour),
@@ -452,7 +474,8 @@ func TestHandleData(t *testing.T) {
 			DutyManager: dm,
 			Brokers:     []core.BrokerClient{br, br},
 			Ctx:         GetLogger(t, "Router"),
-			Storage:     st,
+			BrkStorage:  st,
+			GtwStorage:  gt,
 		}, Options{})
 		req := &core.DataRouterReq{
 			Payload: &core.LoRaWANData{
@@ -483,13 +506,13 @@ func TestHandleData(t *testing.T) {
 		var wantBrReq = &core.DataBrokerReq{
 			Payload: req.Payload,
 			Metadata: &core.Metadata{
-				Altitude:  st.OutLookupStats.Metadata.Altitude,
-				Longitude: st.OutLookupStats.Metadata.Longitude,
-				Latitude:  st.OutLookupStats.Metadata.Latitude,
+				Altitude:  gt.OutRead.Entry.Metadata.Altitude,
+				Longitude: gt.OutRead.Entry.Metadata.Longitude,
+				Latitude:  gt.OutRead.Entry.Metadata.Latitude,
 				Frequency: req.Metadata.Frequency,
 			},
 		}
-		var wantStore = 0
+		var wantStore uint16
 
 		// Operate
 		res, err := r.HandleData(context.Background(), req)
@@ -498,7 +521,7 @@ func TestHandleData(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantRes, res, "Router Data Responses")
 		Check(t, wantBrReq, br.InHandleData.Req, "Broker Data Requests")
-		Check(t, wantStore, st.InStore.BrokerIndex, "Brokers stored")
+		Check(t, wantStore, st.InCreate.Entry.BrokerIndex, "Brokers stored")
 	}
 
 	// --------------------
@@ -511,18 +534,25 @@ func TestHandleData(t *testing.T) {
 		br1 := mocks.NewBrokerClient()
 		br1.Failures["HandleData"] = errors.New(errors.NotFound, "Mock Error")
 		br2 := mocks.NewBrokerClient()
-		st := NewMockStorage()
-		st.OutLookupStats.Metadata = core.StatsMetadata{
-			Altitude:  14,
-			Longitude: 14.0,
-			Latitude:  -14.0,
+		st := NewMockBrkStorage()
+		gt := NewMockGtwStorage()
+
+		gid := []byte{1, 2, 3, 4, 5, 6, 7, 8}
+		gt.OutRead.Entry = gtwEntry{
+			GatewayID: gid,
+			Metadata: core.StatsMetadata{
+				Altitude:  14,
+				Longitude: 14.0,
+				Latitude:  -14.0,
+			},
 		}
-		st.Failures["Lookup"] = errors.New(errors.NotFound, "Mock Error")
+		st.Failures["read"] = errors.New(errors.NotFound, "Mock Error")
 		r := New(Components{
 			DutyManager: dm,
 			Brokers:     []core.BrokerClient{br1, br2},
 			Ctx:         GetLogger(t, "Router"),
-			Storage:     st,
+			BrkStorage:  st,
+			GtwStorage:  gt,
 		}, Options{})
 		req := &core.DataRouterReq{
 			Payload: &core.LoRaWANData{
@@ -553,13 +583,13 @@ func TestHandleData(t *testing.T) {
 		var wantBrReq = &core.DataBrokerReq{
 			Payload: req.Payload,
 			Metadata: &core.Metadata{
-				Altitude:  st.OutLookupStats.Metadata.Altitude,
-				Longitude: st.OutLookupStats.Metadata.Longitude,
-				Latitude:  st.OutLookupStats.Metadata.Latitude,
+				Altitude:  gt.OutRead.Entry.Metadata.Altitude,
+				Longitude: gt.OutRead.Entry.Metadata.Longitude,
+				Latitude:  gt.OutRead.Entry.Metadata.Latitude,
 				Frequency: req.Metadata.Frequency,
 			},
 		}
-		var wantStore = 1
+		var wantStore uint16 = 1
 
 		// Operate
 		res, err := r.HandleData(context.Background(), req)
@@ -569,7 +599,7 @@ func TestHandleData(t *testing.T) {
 		Check(t, wantRes, res, "Router Data Responses")
 		Check(t, wantBrReq, br1.InHandleData.Req, "Broker Data Requests")
 		Check(t, wantBrReq, br2.InHandleData.Req, "Broker Data Requests")
-		Check(t, wantStore, st.InStore.BrokerIndex, "Brokers stored")
+		Check(t, wantStore, st.InCreate.Entry.BrokerIndex, "Brokers stored")
 	}
 
 	// --------------------
@@ -582,19 +612,26 @@ func TestHandleData(t *testing.T) {
 		br1 := mocks.NewBrokerClient()
 		br1.Failures["HandleData"] = errors.New(errors.NotFound, "Mock Error")
 		br2 := mocks.NewBrokerClient()
-		st := NewMockStorage()
-		st.OutLookupStats.Metadata = core.StatsMetadata{
-			Altitude:  14,
-			Longitude: 14.0,
-			Latitude:  -14.0,
+		st := NewMockBrkStorage()
+		gt := NewMockGtwStorage()
+
+		gid := []byte{1, 2, 3, 4, 5, 6, 7, 8}
+		gt.OutRead.Entry = gtwEntry{
+			GatewayID: gid,
+			Metadata: core.StatsMetadata{
+				Altitude:  14,
+				Longitude: 14.0,
+				Latitude:  -14.0,
+			},
 		}
-		st.Failures["Lookup"] = errors.New(errors.NotFound, "Mock Error")
+		st.Failures["read"] = errors.New(errors.NotFound, "Mock Error")
 		st.Failures["Store"] = errors.New(errors.Operational, "Mock Error")
 		r := New(Components{
 			DutyManager: dm,
 			Brokers:     []core.BrokerClient{br1, br2},
 			Ctx:         GetLogger(t, "Router"),
-			Storage:     st,
+			BrkStorage:  st,
+			GtwStorage:  gt,
 		}, Options{})
 		req := &core.DataRouterReq{
 			Payload: &core.LoRaWANData{
@@ -625,13 +662,13 @@ func TestHandleData(t *testing.T) {
 		var wantBrReq = &core.DataBrokerReq{
 			Payload: req.Payload,
 			Metadata: &core.Metadata{
-				Altitude:  st.OutLookupStats.Metadata.Altitude,
-				Longitude: st.OutLookupStats.Metadata.Longitude,
-				Latitude:  st.OutLookupStats.Metadata.Latitude,
+				Altitude:  gt.OutRead.Entry.Metadata.Altitude,
+				Longitude: gt.OutRead.Entry.Metadata.Longitude,
+				Latitude:  gt.OutRead.Entry.Metadata.Latitude,
 				Frequency: req.Metadata.Frequency,
 			},
 		}
-		var wantStore = 1
+		var wantStore uint16 = 1
 
 		// Operate
 		res, err := r.HandleData(context.Background(), req)
@@ -641,7 +678,7 @@ func TestHandleData(t *testing.T) {
 		Check(t, wantRes, res, "Router Data Responses")
 		Check(t, wantBrReq, br1.InHandleData.Req, "Broker Data Requests")
 		Check(t, wantBrReq, br2.InHandleData.Req, "Broker Data Requests")
-		Check(t, wantStore, st.InStore.BrokerIndex, "Brokers stored")
+		Check(t, wantStore, st.InCreate.Entry.BrokerIndex, "Brokers stored")
 	}
 
 	// --------------------
@@ -652,19 +689,26 @@ func TestHandleData(t *testing.T) {
 		// Build
 		dm := mocks.NewDutyManager()
 		br := mocks.NewBrokerClient()
-		st := NewMockStorage()
-		st.OutLookupStats.Metadata = core.StatsMetadata{
-			Altitude:  14,
-			Longitude: 14.0,
-			Latitude:  -14.0,
+		st := NewMockBrkStorage()
+		gt := NewMockGtwStorage()
+
+		gid := []byte{1, 2, 3, 4, 5, 6, 7, 8}
+		gt.OutRead.Entry = gtwEntry{
+			GatewayID: gid,
+			Metadata: core.StatsMetadata{
+				Altitude:  14,
+				Longitude: 14.0,
+				Latitude:  -14.0,
+			},
 		}
-		st.Failures["Lookup"] = errors.New(errors.Operational, "Mock Error")
+		st.Failures["read"] = errors.New(errors.Operational, "Mock Error")
 
 		r := New(Components{
 			DutyManager: dm,
 			Brokers:     []core.BrokerClient{br, br},
 			Ctx:         GetLogger(t, "Router"),
-			Storage:     st,
+			BrkStorage:  st,
+			GtwStorage:  gt,
 		}, Options{})
 		req := &core.DataRouterReq{
 			Payload: &core.LoRaWANData{
@@ -693,7 +737,7 @@ func TestHandleData(t *testing.T) {
 		var wantErr = ErrOperational
 		var wantRes = new(core.DataRouterRes)
 		var wantBrReq *core.DataBrokerReq
-		var wantStore = 0
+		var wantStore uint16
 
 		// Operate
 		res, err := r.HandleData(context.Background(), req)
@@ -702,7 +746,7 @@ func TestHandleData(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantRes, res, "Router Data Responses")
 		Check(t, wantBrReq, br.InHandleData.Req, "Broker Data Requests")
-		Check(t, wantStore, st.InStore.BrokerIndex, "Brokers stored")
+		Check(t, wantStore, st.InCreate.Entry.BrokerIndex, "Brokers stored")
 	}
 
 	// --------------------
@@ -712,15 +756,21 @@ func TestHandleData(t *testing.T) {
 
 		// Build
 		dm := mocks.NewDutyManager()
-		dm.Failures["Lookup"] = errors.New(errors.NotFound, "Mock Error")
+		dm.Failures["read"] = errors.New(errors.NotFound, "Mock Error")
 		br := mocks.NewBrokerClient()
-		st := NewMockStorage()
-		st.OutLookupStats.Metadata = core.StatsMetadata{
-			Altitude:  14,
-			Longitude: 14.0,
-			Latitude:  -14.0,
+		st := NewMockBrkStorage()
+		gt := NewMockGtwStorage()
+
+		gid := []byte{1, 2, 3, 4, 5, 6, 7, 8}
+		gt.OutRead.Entry = gtwEntry{
+			GatewayID: gid,
+			Metadata: core.StatsMetadata{
+				Altitude:  14,
+				Longitude: 14.0,
+				Latitude:  -14.0,
+			},
 		}
-		st.OutLookup.Entries = []entry{
+		st.OutRead.Entries = []brkEntry{
 			{
 				BrokerIndex: 1,
 				until:       time.Now().Add(time.Hour),
@@ -730,7 +780,8 @@ func TestHandleData(t *testing.T) {
 			DutyManager: dm,
 			Brokers:     []core.BrokerClient{br, br},
 			Ctx:         GetLogger(t, "Router"),
-			Storage:     st,
+			BrkStorage:  st,
+			GtwStorage:  gt,
 		}, Options{})
 		req := &core.DataRouterReq{
 			Payload: &core.LoRaWANData{
@@ -761,13 +812,13 @@ func TestHandleData(t *testing.T) {
 		var wantBrReq = &core.DataBrokerReq{
 			Payload: req.Payload,
 			Metadata: &core.Metadata{
-				Altitude:  st.OutLookupStats.Metadata.Altitude,
-				Longitude: st.OutLookupStats.Metadata.Longitude,
-				Latitude:  st.OutLookupStats.Metadata.Latitude,
+				Altitude:  gt.OutRead.Entry.Metadata.Altitude,
+				Longitude: gt.OutRead.Entry.Metadata.Longitude,
+				Latitude:  gt.OutRead.Entry.Metadata.Latitude,
 				Frequency: req.Metadata.Frequency,
 			},
 		}
-		var wantStore = 0
+		var wantStore uint16
 
 		// Operate
 		res, err := r.HandleData(context.Background(), req)
@@ -776,7 +827,7 @@ func TestHandleData(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantRes, res, "Router Data Responses")
 		Check(t, wantBrReq, br.InHandleData.Req, "Broker Data Requests")
-		Check(t, wantStore, st.InStore.BrokerIndex, "Brokers stored")
+		Check(t, wantStore, st.InCreate.Entry.BrokerIndex, "Brokers stored")
 	}
 
 	// --------------------
@@ -787,13 +838,19 @@ func TestHandleData(t *testing.T) {
 		// Build
 		dm := mocks.NewDutyManager()
 		br := mocks.NewBrokerClient()
-		st := NewMockStorage()
-		st.OutLookupStats.Metadata = core.StatsMetadata{
-			Altitude:  14,
-			Longitude: 14.0,
-			Latitude:  -14.0,
+		st := NewMockBrkStorage()
+		gt := NewMockGtwStorage()
+
+		gid := []byte{1, 2, 3, 4, 5, 6, 7, 8}
+		gt.OutRead.Entry = gtwEntry{
+			GatewayID: gid,
+			Metadata: core.StatsMetadata{
+				Altitude:  14,
+				Longitude: 14.0,
+				Latitude:  -14.0,
+			},
 		}
-		st.OutLookup.Entries = []entry{
+		st.OutRead.Entries = []brkEntry{
 			{
 				BrokerIndex: 1,
 				until:       time.Now().Add(time.Hour),
@@ -803,7 +860,8 @@ func TestHandleData(t *testing.T) {
 			DutyManager: dm,
 			Brokers:     []core.BrokerClient{br, br},
 			Ctx:         GetLogger(t, "Router"),
-			Storage:     st,
+			BrkStorage:  st,
+			GtwStorage:  gt,
 		}, Options{})
 		req := &core.DataRouterReq{
 			Payload: &core.LoRaWANData{
@@ -832,7 +890,7 @@ func TestHandleData(t *testing.T) {
 		var wantErr = ErrStructural
 		var wantRes = new(core.DataRouterRes)
 		var wantBrReq *core.DataBrokerReq
-		var wantStore = 0
+		var wantStore uint16
 
 		// Operate
 		res, err := r.HandleData(context.Background(), req)
@@ -841,7 +899,7 @@ func TestHandleData(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantRes, res, "Router Data Responses")
 		Check(t, wantBrReq, br.InHandleData.Req, "Broker Data Requests")
-		Check(t, wantStore, st.InStore.BrokerIndex, "Brokers stored")
+		Check(t, wantStore, st.InCreate.Entry.BrokerIndex, "Brokers stored")
 	}
 
 	// --------------------
@@ -855,18 +913,25 @@ func TestHandleData(t *testing.T) {
 		br1.Failures["HandleData"] = errors.New(errors.NotFound, "Mock Error")
 		br2 := mocks.NewBrokerClient()
 		br2.Failures["HandleData"] = errors.New(errors.Operational, "Mock Error")
-		st := NewMockStorage()
-		st.OutLookupStats.Metadata = core.StatsMetadata{
-			Altitude:  14,
-			Longitude: 14.0,
-			Latitude:  -14.0,
+		st := NewMockBrkStorage()
+		gt := NewMockGtwStorage()
+
+		gid := []byte{1, 2, 3, 4, 5, 6, 7, 8}
+		gt.OutRead.Entry = gtwEntry{
+			GatewayID: gid,
+			Metadata: core.StatsMetadata{
+				Altitude:  14,
+				Longitude: 14.0,
+				Latitude:  -14.0,
+			},
 		}
-		st.Failures["Lookup"] = errors.New(errors.NotFound, "Mock Error")
+		st.Failures["read"] = errors.New(errors.NotFound, "Mock Error")
 		r := New(Components{
 			DutyManager: dm,
 			Brokers:     []core.BrokerClient{br1, br2},
 			Ctx:         GetLogger(t, "Router"),
-			Storage:     st,
+			BrkStorage:  st,
+			GtwStorage:  gt,
 		}, Options{})
 		req := &core.DataRouterReq{
 			Payload: &core.LoRaWANData{
@@ -897,13 +962,13 @@ func TestHandleData(t *testing.T) {
 		var wantBrReq = &core.DataBrokerReq{
 			Payload: req.Payload,
 			Metadata: &core.Metadata{
-				Altitude:  st.OutLookupStats.Metadata.Altitude,
-				Longitude: st.OutLookupStats.Metadata.Longitude,
-				Latitude:  st.OutLookupStats.Metadata.Latitude,
+				Altitude:  gt.OutRead.Entry.Metadata.Altitude,
+				Longitude: gt.OutRead.Entry.Metadata.Longitude,
+				Latitude:  gt.OutRead.Entry.Metadata.Latitude,
 				Frequency: req.Metadata.Frequency,
 			},
 		}
-		var wantStore = 0
+		var wantStore uint16
 
 		// Operate
 		res, err := r.HandleData(context.Background(), req)
@@ -913,7 +978,7 @@ func TestHandleData(t *testing.T) {
 		Check(t, wantRes, res, "Router Data Responses")
 		Check(t, wantBrReq, br1.InHandleData.Req, "Broker Data Requests")
 		Check(t, wantBrReq, br2.InHandleData.Req, "Broker Data Requests")
-		Check(t, wantStore, st.InStore.BrokerIndex, "Brokers stored")
+		Check(t, wantStore, st.InCreate.Entry.BrokerIndex, "Brokers stored")
 	}
 
 	// --------------------
@@ -925,18 +990,25 @@ func TestHandleData(t *testing.T) {
 		dm := mocks.NewDutyManager()
 		br1 := mocks.NewBrokerClient()
 		br2 := mocks.NewBrokerClient()
-		st := NewMockStorage()
-		st.OutLookupStats.Metadata = core.StatsMetadata{
-			Altitude:  14,
-			Longitude: 14.0,
-			Latitude:  -14.0,
+		st := NewMockBrkStorage()
+		gt := NewMockGtwStorage()
+
+		gid := []byte{1, 2, 3, 4, 5, 6, 7, 8}
+		gt.OutRead.Entry = gtwEntry{
+			GatewayID: gid,
+			Metadata: core.StatsMetadata{
+				Altitude:  14,
+				Longitude: 14.0,
+				Latitude:  -14.0,
+			},
 		}
-		st.Failures["Lookup"] = errors.New(errors.NotFound, "Mock Error")
+		st.Failures["read"] = errors.New(errors.NotFound, "Mock Error")
 		r := New(Components{
 			DutyManager: dm,
 			Brokers:     []core.BrokerClient{br1, br2},
 			Ctx:         GetLogger(t, "Router"),
-			Storage:     st,
+			BrkStorage:  st,
+			GtwStorage:  gt,
 		}, Options{})
 		req := &core.DataRouterReq{
 			Payload: &core.LoRaWANData{
@@ -967,13 +1039,13 @@ func TestHandleData(t *testing.T) {
 		var wantBrReq = &core.DataBrokerReq{
 			Payload: req.Payload,
 			Metadata: &core.Metadata{
-				Altitude:  st.OutLookupStats.Metadata.Altitude,
-				Longitude: st.OutLookupStats.Metadata.Longitude,
-				Latitude:  st.OutLookupStats.Metadata.Latitude,
+				Altitude:  gt.OutRead.Entry.Metadata.Altitude,
+				Longitude: gt.OutRead.Entry.Metadata.Longitude,
+				Latitude:  gt.OutRead.Entry.Metadata.Latitude,
 				Frequency: req.Metadata.Frequency,
 			},
 		}
-		var wantStore = 0
+		var wantStore uint16
 
 		// Operate
 		res, err := r.HandleData(context.Background(), req)
@@ -983,7 +1055,7 @@ func TestHandleData(t *testing.T) {
 		Check(t, wantRes, res, "Router Data Responses")
 		Check(t, wantBrReq, br1.InHandleData.Req, "Broker Data Requests")
 		Check(t, wantBrReq, br2.InHandleData.Req, "Broker Data Requests")
-		Check(t, wantStore, st.InStore.BrokerIndex, "Brokers stored")
+		Check(t, wantStore, st.InCreate.Entry.BrokerIndex, "Brokers stored")
 	}
 
 	// --------------------
@@ -995,13 +1067,19 @@ func TestHandleData(t *testing.T) {
 		dm := mocks.NewDutyManager()
 		br := mocks.NewBrokerClient()
 		br.Failures["HandleData"] = errors.New(errors.NotFound, "Mock Error")
-		st := NewMockStorage()
-		st.OutLookupStats.Metadata = core.StatsMetadata{
-			Altitude:  14,
-			Longitude: 14.0,
-			Latitude:  -14.0,
+		st := NewMockBrkStorage()
+		gt := NewMockGtwStorage()
+
+		gid := []byte{1, 2, 3, 4, 5, 6, 7, 8}
+		gt.OutRead.Entry = gtwEntry{
+			GatewayID: gid,
+			Metadata: core.StatsMetadata{
+				Altitude:  14,
+				Longitude: 14.0,
+				Latitude:  -14.0,
+			},
 		}
-		st.OutLookup.Entries = []entry{
+		st.OutRead.Entries = []brkEntry{
 			{
 				BrokerIndex: 1,
 				until:       time.Now().Add(time.Hour),
@@ -1011,7 +1089,8 @@ func TestHandleData(t *testing.T) {
 			DutyManager: dm,
 			Brokers:     []core.BrokerClient{br, br},
 			Ctx:         GetLogger(t, "Router"),
-			Storage:     st,
+			BrkStorage:  st,
+			GtwStorage:  gt,
 		}, Options{})
 		req := &core.DataRouterReq{
 			Payload: &core.LoRaWANData{
@@ -1042,13 +1121,13 @@ func TestHandleData(t *testing.T) {
 		var wantBrReq = &core.DataBrokerReq{
 			Payload: req.Payload,
 			Metadata: &core.Metadata{
-				Altitude:  st.OutLookupStats.Metadata.Altitude,
-				Longitude: st.OutLookupStats.Metadata.Longitude,
-				Latitude:  st.OutLookupStats.Metadata.Latitude,
+				Altitude:  gt.OutRead.Entry.Metadata.Altitude,
+				Longitude: gt.OutRead.Entry.Metadata.Longitude,
+				Latitude:  gt.OutRead.Entry.Metadata.Latitude,
 				Frequency: req.Metadata.Frequency,
 			},
 		}
-		var wantStore = 0
+		var wantStore uint16
 
 		// Operate
 		res, err := r.HandleData(context.Background(), req)
@@ -1057,7 +1136,7 @@ func TestHandleData(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantRes, res, "Router Data Responses")
 		Check(t, wantBrReq, br.InHandleData.Req, "Broker Data Requests")
-		Check(t, wantStore, st.InStore.BrokerIndex, "Brokers stored")
+		Check(t, wantStore, st.InCreate.Entry.BrokerIndex, "Brokers stored")
 	}
 
 	// --------------------
@@ -1087,13 +1166,19 @@ func TestHandleData(t *testing.T) {
 			},
 			Metadata: new(core.Metadata),
 		}
-		st := NewMockStorage()
-		st.OutLookupStats.Metadata = core.StatsMetadata{
-			Altitude:  14,
-			Longitude: 14.0,
-			Latitude:  -14.0,
+		st := NewMockBrkStorage()
+		gt := NewMockGtwStorage()
+
+		gid := []byte{1, 2, 3, 4, 5, 6, 7, 8}
+		gt.OutRead.Entry = gtwEntry{
+			GatewayID: gid,
+			Metadata: core.StatsMetadata{
+				Altitude:  14,
+				Longitude: 14.0,
+				Latitude:  -14.0,
+			},
 		}
-		st.OutLookup.Entries = []entry{
+		st.OutRead.Entries = []brkEntry{
 			{
 				BrokerIndex: 0,
 				until:       time.Now().Add(time.Hour),
@@ -1103,7 +1188,8 @@ func TestHandleData(t *testing.T) {
 			DutyManager: dm,
 			Brokers:     []core.BrokerClient{br},
 			Ctx:         GetLogger(t, "Router"),
-			Storage:     st,
+			BrkStorage:  st,
+			GtwStorage:  gt,
 		}, Options{})
 		req := &core.DataRouterReq{
 			Payload: &core.LoRaWANData{
@@ -1137,13 +1223,13 @@ func TestHandleData(t *testing.T) {
 		var wantBrReq = &core.DataBrokerReq{
 			Payload: req.Payload,
 			Metadata: &core.Metadata{
-				Altitude:  st.OutLookupStats.Metadata.Altitude,
-				Longitude: st.OutLookupStats.Metadata.Longitude,
-				Latitude:  st.OutLookupStats.Metadata.Latitude,
+				Altitude:  gt.OutRead.Entry.Metadata.Altitude,
+				Longitude: gt.OutRead.Entry.Metadata.Longitude,
+				Latitude:  gt.OutRead.Entry.Metadata.Latitude,
 				Frequency: req.Metadata.Frequency,
 			},
 		}
-		var wantStore = 0
+		var wantStore uint16
 		var wantUpdateGtw = req.GatewayID
 
 		// Operate
@@ -1153,7 +1239,7 @@ func TestHandleData(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantRes, res, "Router Data Responses")
 		Check(t, wantBrReq, br.InHandleData.Req, "Broker Data Requests")
-		Check(t, wantStore, st.InStore.BrokerIndex, "Brokers stored")
+		Check(t, wantStore, st.InCreate.Entry.BrokerIndex, "Brokers stored")
 		Check(t, wantUpdateGtw, dm.InUpdate.ID, "Gateway updated")
 	}
 
@@ -1184,13 +1270,19 @@ func TestHandleData(t *testing.T) {
 			},
 			Metadata: nil,
 		}
-		st := NewMockStorage()
-		st.OutLookupStats.Metadata = core.StatsMetadata{
-			Altitude:  14,
-			Longitude: 14.0,
-			Latitude:  -14.0,
+		st := NewMockBrkStorage()
+		gt := NewMockGtwStorage()
+
+		gid := []byte{1, 2, 3, 4, 5, 6, 7, 8}
+		gt.OutRead.Entry = gtwEntry{
+			GatewayID: gid,
+			Metadata: core.StatsMetadata{
+				Altitude:  14,
+				Longitude: 14.0,
+				Latitude:  -14.0,
+			},
 		}
-		st.OutLookup.Entries = []entry{
+		st.OutRead.Entries = []brkEntry{
 			{
 				BrokerIndex: 0,
 				until:       time.Now().Add(time.Hour),
@@ -1200,7 +1292,8 @@ func TestHandleData(t *testing.T) {
 			DutyManager: dm,
 			Brokers:     []core.BrokerClient{br},
 			Ctx:         GetLogger(t, "Router"),
-			Storage:     st,
+			BrkStorage:  st,
+			GtwStorage:  gt,
 		}, Options{})
 		req := &core.DataRouterReq{
 			Payload: &core.LoRaWANData{
@@ -1231,13 +1324,13 @@ func TestHandleData(t *testing.T) {
 		var wantBrReq = &core.DataBrokerReq{
 			Payload: req.Payload,
 			Metadata: &core.Metadata{
-				Altitude:  st.OutLookupStats.Metadata.Altitude,
-				Longitude: st.OutLookupStats.Metadata.Longitude,
-				Latitude:  st.OutLookupStats.Metadata.Latitude,
+				Altitude:  gt.OutRead.Entry.Metadata.Altitude,
+				Longitude: gt.OutRead.Entry.Metadata.Longitude,
+				Latitude:  gt.OutRead.Entry.Metadata.Latitude,
 				Frequency: req.Metadata.Frequency,
 			},
 		}
-		var wantStore = 0
+		var wantStore uint16
 		var wantUpdateGtw []byte
 
 		// Operate
@@ -1247,7 +1340,7 @@ func TestHandleData(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantRes, res, "Router Data Responses")
 		Check(t, wantBrReq, br.InHandleData.Req, "Broker Data Requests")
-		Check(t, wantStore, st.InStore.BrokerIndex, "Brokers stored")
+		Check(t, wantStore, st.InCreate.Entry.BrokerIndex, "Brokers stored")
 		Check(t, wantUpdateGtw, dm.InUpdate.ID, "Gateway updated")
 	}
 
@@ -1279,13 +1372,19 @@ func TestHandleData(t *testing.T) {
 			},
 			Metadata: new(core.Metadata),
 		}
-		st := NewMockStorage()
-		st.OutLookupStats.Metadata = core.StatsMetadata{
-			Altitude:  14,
-			Longitude: 14.0,
-			Latitude:  -14.0,
+		st := NewMockBrkStorage()
+		gt := NewMockGtwStorage()
+
+		gid := []byte{1, 2, 3, 4, 5, 6, 7, 8}
+		gt.OutRead.Entry = gtwEntry{
+			GatewayID: gid,
+			Metadata: core.StatsMetadata{
+				Altitude:  14,
+				Longitude: 14.0,
+				Latitude:  -14.0,
+			},
 		}
-		st.OutLookup.Entries = []entry{
+		st.OutRead.Entries = []brkEntry{
 			{
 				BrokerIndex: 0,
 				until:       time.Now().Add(time.Hour),
@@ -1295,7 +1394,8 @@ func TestHandleData(t *testing.T) {
 			DutyManager: dm,
 			Brokers:     []core.BrokerClient{br},
 			Ctx:         GetLogger(t, "Router"),
-			Storage:     st,
+			BrkStorage:  st,
+			GtwStorage:  gt,
 		}, Options{})
 		req := &core.DataRouterReq{
 			Payload: &core.LoRaWANData{
@@ -1326,13 +1426,13 @@ func TestHandleData(t *testing.T) {
 		var wantBrReq = &core.DataBrokerReq{
 			Payload: req.Payload,
 			Metadata: &core.Metadata{
-				Altitude:  st.OutLookupStats.Metadata.Altitude,
-				Longitude: st.OutLookupStats.Metadata.Longitude,
-				Latitude:  st.OutLookupStats.Metadata.Latitude,
+				Altitude:  gt.OutRead.Entry.Metadata.Altitude,
+				Longitude: gt.OutRead.Entry.Metadata.Longitude,
+				Latitude:  gt.OutRead.Entry.Metadata.Latitude,
 				Frequency: req.Metadata.Frequency,
 			},
 		}
-		var wantStore = 0
+		var wantStore uint16
 		var wantUpdateGtw = req.GatewayID
 
 		// Operate
@@ -1342,7 +1442,7 @@ func TestHandleData(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantRes, res, "Router Data Responses")
 		Check(t, wantBrReq, br.InHandleData.Req, "Broker Data Requests")
-		Check(t, wantStore, st.InStore.BrokerIndex, "Brokers stored")
+		Check(t, wantStore, st.InCreate.Entry.BrokerIndex, "Brokers stored")
 		Check(t, wantUpdateGtw, dm.InUpdate.ID, "Gateway updated")
 	}
 }
@@ -1362,17 +1462,24 @@ func TestHandleJoin(t *testing.T) {
 			},
 			Metadata: &core.Metadata{},
 		}
-		st := NewMockStorage()
-		st.OutLookupStats.Metadata = core.StatsMetadata{
-			Altitude:  14,
-			Longitude: 14.0,
-			Latitude:  -14.0,
+		st := NewMockBrkStorage()
+		gt := NewMockGtwStorage()
+
+		gid := []byte{1, 2, 3, 4, 5, 6, 7, 8}
+		gt.OutRead.Entry = gtwEntry{
+			GatewayID: gid,
+			Metadata: core.StatsMetadata{
+				Altitude:  14,
+				Longitude: 14.0,
+				Latitude:  -14.0,
+			},
 		}
 		r := New(Components{
 			DutyManager: dm,
 			Brokers:     []core.BrokerClient{br1, br2},
 			Ctx:         GetLogger(t, "Router"),
-			Storage:     st,
+			BrkStorage:  st,
+			GtwStorage:  gt,
 		}, Options{})
 		req := &core.JoinRouterReq{
 			GatewayID: []byte{1, 2, 3, 4, 5, 6, 7, 8},
@@ -1395,13 +1502,13 @@ func TestHandleJoin(t *testing.T) {
 			DevEUI:   req.DevEUI,
 			DevNonce: req.DevNonce,
 			Metadata: &core.Metadata{
-				Altitude:  st.OutLookupStats.Metadata.Altitude,
-				Longitude: st.OutLookupStats.Metadata.Longitude,
-				Latitude:  st.OutLookupStats.Metadata.Latitude,
+				Altitude:  gt.OutRead.Entry.Metadata.Altitude,
+				Longitude: gt.OutRead.Entry.Metadata.Longitude,
+				Latitude:  gt.OutRead.Entry.Metadata.Latitude,
 				Frequency: req.Metadata.Frequency,
 			},
 		}
-		var wantStore = 1
+		var wantStore uint16 = 1
 		var wantUpdateGtw = req.GatewayID
 
 		// Operate
@@ -1412,7 +1519,7 @@ func TestHandleJoin(t *testing.T) {
 		Check(t, wantRes, res, "Router Join Responses")
 		Check(t, wantBrReq, br1.InHandleJoin.Req, "Broker Join Requests")
 		Check(t, wantBrReq, br2.InHandleJoin.Req, "Broker Join Requests")
-		Check(t, wantStore, st.InStore.BrokerIndex, "Brokers stored")
+		Check(t, wantStore, st.InCreate.Entry.BrokerIndex, "Brokers stored")
 		Check(t, wantUpdateGtw, dm.InUpdate.ID, "Gateway updated")
 	}
 
@@ -1433,17 +1540,24 @@ func TestHandleJoin(t *testing.T) {
 			},
 			Metadata: &core.Metadata{},
 		}
-		st := NewMockStorage()
-		st.OutLookupStats.Metadata = core.StatsMetadata{
-			Altitude:  14,
-			Longitude: 14.0,
-			Latitude:  -14.0,
+		st := NewMockBrkStorage()
+		gt := NewMockGtwStorage()
+
+		gid := []byte{1, 2, 3, 4, 5, 6, 7, 8}
+		gt.OutRead.Entry = gtwEntry{
+			GatewayID: gid,
+			Metadata: core.StatsMetadata{
+				Altitude:  14,
+				Longitude: 14.0,
+				Latitude:  -14.0,
+			},
 		}
 		r := New(Components{
 			DutyManager: dm,
 			Brokers:     []core.BrokerClient{br1, br2},
 			Ctx:         GetLogger(t, "Router"),
-			Storage:     st,
+			BrkStorage:  st,
+			GtwStorage:  gt,
 		}, Options{})
 		req := &core.JoinRouterReq{
 			GatewayID: []byte{1, 2, 3, 4, 5, 6, 7, 8},
@@ -1463,13 +1577,13 @@ func TestHandleJoin(t *testing.T) {
 			DevEUI:   req.DevEUI,
 			DevNonce: req.DevNonce,
 			Metadata: &core.Metadata{
-				Altitude:  st.OutLookupStats.Metadata.Altitude,
-				Longitude: st.OutLookupStats.Metadata.Longitude,
-				Latitude:  st.OutLookupStats.Metadata.Latitude,
+				Altitude:  gt.OutRead.Entry.Metadata.Altitude,
+				Longitude: gt.OutRead.Entry.Metadata.Longitude,
+				Latitude:  gt.OutRead.Entry.Metadata.Latitude,
 				Frequency: req.Metadata.Frequency,
 			},
 		}
-		var wantStore = 1
+		var wantStore uint16 = 1
 		var wantUpdateGtw = req.GatewayID
 
 		// Operate
@@ -1480,7 +1594,7 @@ func TestHandleJoin(t *testing.T) {
 		Check(t, wantRes, res, "Router Join Responses")
 		Check(t, wantBrReq, br1.InHandleJoin.Req, "Broker Join Requests")
 		Check(t, wantBrReq, br2.InHandleJoin.Req, "Broker Join Requests")
-		Check(t, wantStore, st.InStore.BrokerIndex, "Brokers stored")
+		Check(t, wantStore, st.InCreate.Entry.BrokerIndex, "Brokers stored")
 		Check(t, wantUpdateGtw, dm.InUpdate.ID, "Gateway updated")
 	}
 
@@ -1499,17 +1613,24 @@ func TestHandleJoin(t *testing.T) {
 			},
 			Metadata: new(core.Metadata),
 		}
-		st := NewMockStorage()
-		st.OutLookupStats.Metadata = core.StatsMetadata{
-			Altitude:  14,
-			Longitude: 14.0,
-			Latitude:  -14.0,
+		st := NewMockBrkStorage()
+		gt := NewMockGtwStorage()
+
+		gid := []byte{1, 2, 3, 4, 5, 6, 7, 8}
+		gt.OutRead.Entry = gtwEntry{
+			GatewayID: gid,
+			Metadata: core.StatsMetadata{
+				Altitude:  14,
+				Longitude: 14.0,
+				Latitude:  -14.0,
+			},
 		}
 		r := New(Components{
 			DutyManager: dm,
 			Brokers:     []core.BrokerClient{br},
 			Ctx:         GetLogger(t, "Router"),
-			Storage:     st,
+			BrkStorage:  st,
+			GtwStorage:  gt,
 		}, Options{})
 		req := &core.JoinRouterReq{
 			GatewayID: []byte{1, 2, 3, 4, 5, 6, 7, 8},
@@ -1523,7 +1644,7 @@ func TestHandleJoin(t *testing.T) {
 		var wantErr = ErrStructural
 		var wantRes = new(core.JoinRouterRes)
 		var wantBrReq *core.JoinBrokerReq
-		var wantStore int
+		var wantStore uint16
 		var wantUpdateGtw []byte
 
 		// Operate
@@ -1533,7 +1654,7 @@ func TestHandleJoin(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantRes, res, "Router Join Responses")
 		Check(t, wantBrReq, br.InHandleJoin.Req, "Broker Join Requests")
-		Check(t, wantStore, st.InStore.BrokerIndex, "Brokers stored")
+		Check(t, wantStore, st.InCreate.Entry.BrokerIndex, "Brokers stored")
 		Check(t, wantUpdateGtw, dm.InUpdate.ID, "Gateway updated")
 	}
 
@@ -1552,17 +1673,24 @@ func TestHandleJoin(t *testing.T) {
 			},
 			Metadata: new(core.Metadata),
 		}
-		st := NewMockStorage()
-		st.OutLookupStats.Metadata = core.StatsMetadata{
-			Altitude:  14,
-			Longitude: 14.0,
-			Latitude:  -14.0,
+		st := NewMockBrkStorage()
+		gt := NewMockGtwStorage()
+
+		gid := []byte{1, 2, 3, 4, 5, 6, 7, 8}
+		gt.OutRead.Entry = gtwEntry{
+			GatewayID: gid,
+			Metadata: core.StatsMetadata{
+				Altitude:  14,
+				Longitude: 14.0,
+				Latitude:  -14.0,
+			},
 		}
 		r := New(Components{
 			DutyManager: dm,
 			Brokers:     []core.BrokerClient{br},
 			Ctx:         GetLogger(t, "Router"),
-			Storage:     st,
+			BrkStorage:  st,
+			GtwStorage:  gt,
 		}, Options{})
 		req := &core.JoinRouterReq{
 			GatewayID: []byte{1, 2, 3, 4, 5, 6, 7, 8},
@@ -1578,7 +1706,7 @@ func TestHandleJoin(t *testing.T) {
 		var wantErr = ErrStructural
 		var wantRes = new(core.JoinRouterRes)
 		var wantBrReq *core.JoinBrokerReq
-		var wantStore int
+		var wantStore uint16
 		var wantUpdateGtw []byte
 
 		// Operate
@@ -1588,7 +1716,7 @@ func TestHandleJoin(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantRes, res, "Router Join Responses")
 		Check(t, wantBrReq, br.InHandleJoin.Req, "Broker Join Requests")
-		Check(t, wantStore, st.InStore.BrokerIndex, "Brokers stored")
+		Check(t, wantStore, st.InCreate.Entry.BrokerIndex, "Brokers stored")
 		Check(t, wantUpdateGtw, dm.InUpdate.ID, "Gateway updated")
 	}
 
@@ -1607,17 +1735,24 @@ func TestHandleJoin(t *testing.T) {
 			},
 			Metadata: new(core.Metadata),
 		}
-		st := NewMockStorage()
-		st.OutLookupStats.Metadata = core.StatsMetadata{
-			Altitude:  14,
-			Longitude: 14.0,
-			Latitude:  -14.0,
+		st := NewMockBrkStorage()
+		gt := NewMockGtwStorage()
+
+		gid := []byte{1, 2, 3, 4, 5, 6, 7, 8}
+		gt.OutRead.Entry = gtwEntry{
+			GatewayID: gid,
+			Metadata: core.StatsMetadata{
+				Altitude:  14,
+				Longitude: 14.0,
+				Latitude:  -14.0,
+			},
 		}
 		r := New(Components{
 			DutyManager: dm,
 			Brokers:     []core.BrokerClient{br},
 			Ctx:         GetLogger(t, "Router"),
-			Storage:     st,
+			BrkStorage:  st,
+			GtwStorage:  gt,
 		}, Options{})
 		req := &core.JoinRouterReq{
 			GatewayID: []byte{1, 2, 3, 4, 5, 6, 7, 8},
@@ -1633,7 +1768,7 @@ func TestHandleJoin(t *testing.T) {
 		var wantErr = ErrStructural
 		var wantRes = new(core.JoinRouterRes)
 		var wantBrReq *core.JoinBrokerReq
-		var wantStore int
+		var wantStore uint16
 		var wantUpdateGtw []byte
 
 		// Operate
@@ -1643,7 +1778,7 @@ func TestHandleJoin(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantRes, res, "Router Join Responses")
 		Check(t, wantBrReq, br.InHandleJoin.Req, "Broker Join Requests")
-		Check(t, wantStore, st.InStore.BrokerIndex, "Brokers stored")
+		Check(t, wantStore, st.InCreate.Entry.BrokerIndex, "Brokers stored")
 		Check(t, wantUpdateGtw, dm.InUpdate.ID, "Gateway updated")
 	}
 
@@ -1662,17 +1797,24 @@ func TestHandleJoin(t *testing.T) {
 			},
 			Metadata: new(core.Metadata),
 		}
-		st := NewMockStorage()
-		st.OutLookupStats.Metadata = core.StatsMetadata{
-			Altitude:  14,
-			Longitude: 14.0,
-			Latitude:  -14.0,
+		st := NewMockBrkStorage()
+		gt := NewMockGtwStorage()
+
+		gid := []byte{1, 2, 3, 4, 5, 6, 7, 8}
+		gt.OutRead.Entry = gtwEntry{
+			GatewayID: gid,
+			Metadata: core.StatsMetadata{
+				Altitude:  14,
+				Longitude: 14.0,
+				Latitude:  -14.0,
+			},
 		}
 		r := New(Components{
 			DutyManager: dm,
 			Brokers:     []core.BrokerClient{br},
 			Ctx:         GetLogger(t, "Router"),
-			Storage:     st,
+			BrkStorage:  st,
+			GtwStorage:  gt,
 		}, Options{})
 		req := &core.JoinRouterReq{
 			GatewayID: []byte{1, 2, 3, 4, 5, 6, 7, 8},
@@ -1688,7 +1830,7 @@ func TestHandleJoin(t *testing.T) {
 		var wantErr = ErrStructural
 		var wantRes = new(core.JoinRouterRes)
 		var wantBrReq *core.JoinBrokerReq
-		var wantStore int
+		var wantStore uint16
 		var wantUpdateGtw []byte
 
 		// Operate
@@ -1698,7 +1840,7 @@ func TestHandleJoin(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantRes, res, "Router Join Responses")
 		Check(t, wantBrReq, br.InHandleJoin.Req, "Broker Join Requests")
-		Check(t, wantStore, st.InStore.BrokerIndex, "Brokers stored")
+		Check(t, wantStore, st.InCreate.Entry.BrokerIndex, "Brokers stored")
 		Check(t, wantUpdateGtw, dm.InUpdate.ID, "Gateway updated")
 	}
 
@@ -1717,17 +1859,24 @@ func TestHandleJoin(t *testing.T) {
 			},
 			Metadata: new(core.Metadata),
 		}
-		st := NewMockStorage()
-		st.OutLookupStats.Metadata = core.StatsMetadata{
-			Altitude:  14,
-			Longitude: 14.0,
-			Latitude:  -14.0,
+		st := NewMockBrkStorage()
+		gt := NewMockGtwStorage()
+
+		gid := []byte{1, 2, 3, 4, 5, 6, 7, 8}
+		gt.OutRead.Entry = gtwEntry{
+			GatewayID: gid,
+			Metadata: core.StatsMetadata{
+				Altitude:  14,
+				Longitude: 14.0,
+				Latitude:  -14.0,
+			},
 		}
 		r := New(Components{
 			DutyManager: dm,
 			Brokers:     []core.BrokerClient{br},
 			Ctx:         GetLogger(t, "Router"),
-			Storage:     st,
+			BrkStorage:  st,
+			GtwStorage:  gt,
 		}, Options{})
 		req := &core.JoinRouterReq{
 			GatewayID: nil,
@@ -1743,7 +1892,7 @@ func TestHandleJoin(t *testing.T) {
 		var wantErr = ErrStructural
 		var wantRes = new(core.JoinRouterRes)
 		var wantBrReq *core.JoinBrokerReq
-		var wantStore int
+		var wantStore uint16
 		var wantUpdateGtw []byte
 
 		// Operate
@@ -1753,7 +1902,7 @@ func TestHandleJoin(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantRes, res, "Router Join Responses")
 		Check(t, wantBrReq, br.InHandleJoin.Req, "Broker Join Requests")
-		Check(t, wantStore, st.InStore.BrokerIndex, "Brokers stored")
+		Check(t, wantStore, st.InCreate.Entry.BrokerIndex, "Brokers stored")
 		Check(t, wantUpdateGtw, dm.InUpdate.ID, "Gateway updated")
 	}
 
@@ -1766,17 +1915,24 @@ func TestHandleJoin(t *testing.T) {
 		dm := mocks.NewDutyManager()
 		br := mocks.NewBrokerClient()
 		br.Failures["HandleJoin"] = errors.New(errors.NotFound, "Mock Error")
-		st := NewMockStorage()
-		st.OutLookupStats.Metadata = core.StatsMetadata{
-			Altitude:  14,
-			Longitude: 14.0,
-			Latitude:  -14.0,
+		st := NewMockBrkStorage()
+		gt := NewMockGtwStorage()
+
+		gid := []byte{1, 2, 3, 4, 5, 6, 7, 8}
+		gt.OutRead.Entry = gtwEntry{
+			GatewayID: gid,
+			Metadata: core.StatsMetadata{
+				Altitude:  14,
+				Longitude: 14.0,
+				Latitude:  -14.0,
+			},
 		}
 		r := New(Components{
 			DutyManager: dm,
 			Brokers:     []core.BrokerClient{br},
 			Ctx:         GetLogger(t, "Router"),
-			Storage:     st,
+			BrkStorage:  st,
+			GtwStorage:  gt,
 		}, Options{})
 		req := &core.JoinRouterReq{
 			GatewayID: []byte{1, 2, 3, 4, 5, 6, 7, 8},
@@ -1796,13 +1952,13 @@ func TestHandleJoin(t *testing.T) {
 			DevEUI:   req.DevEUI,
 			DevNonce: req.DevNonce,
 			Metadata: &core.Metadata{
-				Altitude:  st.OutLookupStats.Metadata.Altitude,
-				Longitude: st.OutLookupStats.Metadata.Longitude,
-				Latitude:  st.OutLookupStats.Metadata.Latitude,
+				Altitude:  gt.OutRead.Entry.Metadata.Altitude,
+				Longitude: gt.OutRead.Entry.Metadata.Longitude,
+				Latitude:  gt.OutRead.Entry.Metadata.Latitude,
 				Frequency: req.Metadata.Frequency,
 			},
 		}
-		var wantStore int
+		var wantStore uint16
 		var wantUpdateGtw []byte
 
 		// Operate
@@ -1812,7 +1968,7 @@ func TestHandleJoin(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantRes, res, "Router Join Responses")
 		Check(t, wantBrReq, br.InHandleJoin.Req, "Broker Join Requests")
-		Check(t, wantStore, st.InStore.BrokerIndex, "Brokers stored")
+		Check(t, wantStore, st.InCreate.Entry.BrokerIndex, "Brokers stored")
 		Check(t, wantUpdateGtw, dm.InUpdate.ID, "Gateway updated")
 	}
 
@@ -1830,17 +1986,24 @@ func TestHandleJoin(t *testing.T) {
 			},
 			Metadata: &core.Metadata{},
 		}
-		st := NewMockStorage()
-		st.OutLookupStats.Metadata = core.StatsMetadata{
-			Altitude:  14,
-			Longitude: 14.0,
-			Latitude:  -14.0,
+		st := NewMockBrkStorage()
+		gt := NewMockGtwStorage()
+
+		gid := []byte{1, 2, 3, 4, 5, 6, 7, 8}
+		gt.OutRead.Entry = gtwEntry{
+			GatewayID: gid,
+			Metadata: core.StatsMetadata{
+				Altitude:  14,
+				Longitude: 14.0,
+				Latitude:  -14.0,
+			},
 		}
 		r := New(Components{
 			DutyManager: dm,
 			Brokers:     []core.BrokerClient{br},
 			Ctx:         GetLogger(t, "Router"),
-			Storage:     st,
+			BrkStorage:  st,
+			GtwStorage:  gt,
 		}, Options{})
 		req := &core.JoinRouterReq{
 			GatewayID: []byte{1, 2, 3, 4, 5, 6, 7, 8},
@@ -1856,7 +2019,7 @@ func TestHandleJoin(t *testing.T) {
 		var wantErr = ErrStructural
 		var wantRes = new(core.JoinRouterRes)
 		var wantBrReq *core.JoinBrokerReq
-		var wantStore int
+		var wantStore uint16
 		var wantUpdateGtw []byte
 
 		// Operate
@@ -1866,7 +2029,7 @@ func TestHandleJoin(t *testing.T) {
 		CheckErrors(t, wantErr, err)
 		Check(t, wantRes, res, "Router Join Responses")
 		Check(t, wantBrReq, br.InHandleJoin.Req, "Broker Join Requests")
-		Check(t, wantStore, st.InStore.BrokerIndex, "Brokers stored")
+		Check(t, wantStore, st.InCreate.Entry.BrokerIndex, "Brokers stored")
 		Check(t, wantUpdateGtw, dm.InUpdate.ID, "Gateway updated")
 	}
 
@@ -1877,7 +2040,8 @@ func TestStart(t *testing.T) {
 		Ctx:         GetLogger(t, "Router"),
 		DutyManager: mocks.NewDutyManager(),
 		Brokers:     []core.BrokerClient{mocks.NewBrokerClient()},
-		Storage:     NewMockStorage(),
+		BrkStorage:  NewMockBrkStorage(),
+		GtwStorage:  NewMockGtwStorage(),
 	}, Options{NetAddr: "localhost:8886"})
 
 	cherr := make(chan error)

@@ -4,9 +4,7 @@
 package broker
 
 import (
-	"fmt"
 	"net"
-	"regexp"
 
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
@@ -20,13 +18,15 @@ import (
 // component implements the core.BrokerServer interface
 type component struct {
 	Components
-	NetAddrUp   string
-	NetAddrDown string
+	NetAddrUp    string
+	NetAddrDown  string
+	MaxDevNonces uint
 }
 
 // Components defines a structure to make the instantiation easier to read
 type Components struct {
 	NetworkController NetworkController
+	AppStorage        AppStorage
 	Ctx               log.Interface
 }
 
@@ -44,7 +44,7 @@ type Interface interface {
 
 // New construct a new Broker component
 func New(c Components, o Options) Interface {
-	return component{Components: c, NetAddrUp: o.NetAddrUp, NetAddrDown: o.NetAddrDown}
+	return component{Components: c, NetAddrUp: o.NetAddrUp, NetAddrDown: o.NetAddrDown, MaxDevNonces: 10}
 }
 
 // Start actually runs the component and starts the rpc server
@@ -90,13 +90,25 @@ func (b component) HandleJoin(bctx context.Context, req *core.JoinBrokerReq) (*c
 	ctx := b.Ctx.WithField("AppEUI", req.AppEUI).WithField("DevEUI", req.DevEUI)
 
 	// Check if devNonce already referenced
-	activation, err := b.NetworkController.ReadActivation(req.AppEUI, req.DevEUI)
+	appEntry, err := b.AppStorage.read(req.AppEUI)
 	if err != nil {
 		ctx.WithError(err).Debug("Unable to lookup activation")
 		return new(core.JoinBrokerRes), err
 	}
+	nonces, err := b.NetworkController.readNonces(req.AppEUI, req.DevEUI)
+	if err != nil {
+		if err.(errors.Failure).Nature != errors.NotFound {
+			ctx.WithError(err).Debug("Unable to retrieve associated devNonces")
+			return new(core.JoinBrokerRes), err
+		}
+		nonces = noncesEntry{
+			AppEUI: req.AppEUI,
+			DevEUI: req.DevEUI,
+		}
+	}
+
 	var found bool
-	for _, n := range activation.DevNonces {
+	for _, n := range nonces.DevNonces {
 		if n[0] == req.DevNonce[0] && n[1] == req.DevNonce[1] {
 			found = true
 			break
@@ -108,7 +120,7 @@ func (b component) HandleJoin(bctx context.Context, req *core.JoinBrokerReq) (*c
 	}
 
 	// Forward the registration to the handler
-	handler, closer, err := activation.Dialer.Dial()
+	handler, closer, err := appEntry.Dialer.Dial()
 	if err != nil {
 		ctx.WithError(err).Debug("Unable to dial handler")
 		return new(core.JoinBrokerRes), err
@@ -137,12 +149,11 @@ func (b component) HandleJoin(bctx context.Context, req *core.JoinBrokerReq) (*c
 	}
 
 	// Update the DevNonce
-	err = b.NetworkController.UpdateActivation(appEntry{
-		Dialer:    activation.Dialer,
-		AppEUI:    activation.AppEUI,
-		DevEUI:    activation.DevEUI,
-		DevNonces: append(activation.DevNonces, req.DevNonce),
-	})
+	nonces.DevNonces = append(nonces.DevNonces, req.DevNonce)
+	if uint(len(nonces.DevNonces)) > b.MaxDevNonces {
+		nonces.DevNonces = nonces.DevNonces[1:]
+	}
+	err = b.NetworkController.upsertNonces(nonces)
 	if err != nil {
 		ctx.WithError(err).Debug("Unable to update activation entry")
 		return new(core.JoinBrokerRes), err
@@ -150,8 +161,9 @@ func (b component) HandleJoin(bctx context.Context, req *core.JoinBrokerReq) (*c
 
 	var nwkSKey [16]byte
 	copy(nwkSKey[:], res.NwkSKey)
-	err = b.NetworkController.StoreDevice(res.DevAddr, devEntry{ // Should be an update
-		Dialer:  activation.Dialer,
+	err = b.NetworkController.upsert(devEntry{
+		Dialer:  appEntry.Dialer,
+		DevAddr: res.DevAddr,
 		AppEUI:  req.AppEUI,
 		DevEUI:  req.DevEUI,
 		NwkSKey: nwkSKey,
@@ -183,7 +195,7 @@ func (b component) HandleData(bctx context.Context, req *core.DataBrokerReq) (*c
 	ctx := b.Ctx.WithField("DevAddr", devAddr)
 
 	// Check whether we should handle it
-	entries, err := b.NetworkController.LookupDevices(devAddr)
+	entries, err := b.NetworkController.read(devAddr)
 	if err != nil {
 		ctx = ctx.WithError(err)
 		switch err.(errors.Failure).Nature {
@@ -213,7 +225,7 @@ func (b component) HandleData(bctx context.Context, req *core.DataBrokerReq) (*c
 
 		// Check with 16-bits counters
 		fhdr.FCnt = fcnt16
-		fcnt32, err := b.NetworkController.WholeCounter(fcnt16, entry.FCntUp)
+		fcnt32, err := b.NetworkController.wholeCounter(fcnt16, entry.FCntUp)
 		if err != nil {
 			continue
 		}
@@ -245,7 +257,8 @@ func (b component) HandleData(bctx context.Context, req *core.DataBrokerReq) (*c
 	// It does matter here to use the DevEUI from the entry and not from the packet.
 	// The packet actually holds a DevAddr and the real DevEUI has been determined thanks
 	// to the MIC check + persistence
-	if err := b.NetworkController.UpdateFCnt(mEntry.AppEUI, mEntry.DevEUI, devAddr, fhdr.FCnt); err != nil {
+	mEntry.FCntUp = fhdr.FCnt
+	if err := b.NetworkController.upsert(*mEntry); err != nil {
 		ctx.WithError(err).Debug("Unable to update Frame Counter")
 		return new(core.DataBrokerRes), err
 	}
@@ -299,42 +312,4 @@ func (b component) HandleData(bctx context.Context, req *core.DataBrokerReq) (*c
 		Payload:  resp.Payload,
 		Metadata: resp.Metadata,
 	}, nil
-}
-
-// Register implements the core.BrokerServer interface
-func (b component) SubscribePersonalized(bctx context.Context, req *core.ABPSubBrokerReq) (*core.ABPSubBrokerRes, error) {
-	b.Ctx.Debug("Handling personalized subscription")
-
-	// Ensure the entry is valid
-	if len(req.AppEUI) != 8 {
-		return new(core.ABPSubBrokerRes), errors.New(errors.Structural, "Invalid Application EUI")
-	}
-
-	if len(req.DevAddr) != 4 {
-		return new(core.ABPSubBrokerRes), errors.New(errors.Structural, "Invalid Device Address")
-	}
-	devEUI := make([]byte, 8, 8)
-	copy(devEUI[4:], req.DevAddr)
-
-	var nwkSKey [16]byte
-	if len(req.NwkSKey) != 16 {
-		return new(core.ABPSubBrokerRes), errors.New(errors.Structural, "Invalid Network Session Key")
-	}
-	copy(nwkSKey[:], req.NwkSKey)
-
-	re := regexp.MustCompile("^([-\\w]+\\.?)+:\\d+$")
-	if !re.MatchString(req.HandlerNet) {
-		b.Ctx.WithField("addr", req.HandlerNet).Debug("Invalid address")
-		return new(core.ABPSubBrokerRes), errors.New(errors.Structural, fmt.Sprintf("Invalid Handler Net Address. Should match: %s", re))
-	}
-
-	b.Ctx.Debug("Subscription looks valid")
-
-	return new(core.ABPSubBrokerRes), b.NetworkController.StoreDevice(req.DevAddr, devEntry{
-		Dialer:  NewDialer([]byte(req.HandlerNet)),
-		AppEUI:  req.AppEUI,
-		DevEUI:  devEUI,
-		NwkSKey: nwkSKey,
-		FCntUp:  0,
-	})
 }

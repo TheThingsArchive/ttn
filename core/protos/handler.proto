@@ -22,18 +22,10 @@ message DataDownHandlerReq {
     bytes       Payload     = 1;
     bytes       AppEUI      = 2;
     bytes       DevEUI      = 3;
+    uint32      TTL         = 4;
 }
 
 message DataDownHandlerRes {}
-
-message ABPSubHandlerReq {
-    bytes       AppEUI      = 1;
-    bytes       DevAddr     = 2;
-    bytes       NwkSKey     = 3;
-    bytes       AppSKey     = 4;
-}
-
-message ABPSubHandlerRes {}
 
 message JoinHandlerReq {
     bytes               AppEUI      = 1;
@@ -53,5 +45,4 @@ service Handler {
     rpc HandleDataUp            (DataUpHandlerReq)      returns (DataUpHandlerRes);
     rpc HandleDataDown          (DataDownHandlerReq)    returns (DataDownHandlerRes);
     rpc HandleJoin              (JoinHandlerReq)        returns (JoinHandlerRes);
-    rpc SubscribePersonalized   (ABPSubHandlerReq)      returns (ABPSubHandlerRes);
 }
