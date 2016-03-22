@@ -67,14 +67,61 @@ func (m *MockCloser) Close() error {
 	return m.Failures["Close"]
 }
 
+// MockAppStorage mocks the AppStorage interface
+type MockAppStorage struct {
+	Failures map[string]error
+	InRead   struct {
+		AppEUI []byte
+		DevEUI []byte
+	}
+	OutRead struct {
+		Entry appEntry
+	}
+	InUpsert struct {
+		Entry appEntry
+	}
+	InDone struct {
+		Called bool
+	}
+}
+
+// NewMockAppStorage creates a new MockAppStorage
+func NewMockAppStorage() *MockAppStorage {
+	return &MockAppStorage{
+		Failures: make(map[string]error),
+	}
+}
+
+// read implements the AppStorage interface
+func (m *MockAppStorage) read(appEUI []byte, devEUI []byte) (appEntry, error) {
+	m.InRead.AppEUI = appEUI
+	m.InRead.DevEUI = devEUI
+	return m.OutRead.Entry, m.Failures["read"]
+}
+
+// upsert implements the AppStorage interface
+func (m *MockAppStorage) upsert(entry appEntry) error {
+	m.InUpsert.Entry = entry
+	return m.Failures["upsert"]
+}
+
+// done implements the AppStorage Interface
+func (m *MockAppStorage) done() error {
+	m.InDone.Called = true
+	return m.Failures["done"]
+}
+
 // MockNetworkController mocks the NetworkController interface
 type MockNetworkController struct {
-	Failures        map[string]error
-	InLookupDevices struct {
+	Failures map[string]error
+	InRead   struct {
 		DevAddr []byte
 	}
-	OutLookupDevices struct {
+	OutRead struct {
 		Entries []devEntry
+	}
+	InUpsert struct {
+		Entry devEntry
 	}
 	InWholeCounter struct {
 		DevCnt   uint32
@@ -83,82 +130,39 @@ type MockNetworkController struct {
 	OutWholeCounter struct {
 		FCnt uint32
 	}
-	InStoreDevice struct {
-		DevAddr []byte
-		Entry   devEntry
-	}
-	InUpdateFcnt struct {
-		AppEUI  []byte
-		DevEUI  []byte
-		DevAddr []byte
-		FCnt    uint32
-	}
-	InReadActivation struct {
-		AppEUI []byte
-		DevEUI []byte
-	}
-	OutReadActivation struct {
-		Entry appEntry
-	}
-	InUpdateActivation struct {
-		Entry appEntry
-	}
-	InClose struct {
+	InDone struct {
 		Called bool
 	}
 }
 
-// NewMockNetworkController constructs a new MockNetworkController object
+// NewMockNetworkController creates a new MockNetworkController
 func NewMockNetworkController() *MockNetworkController {
 	return &MockNetworkController{
 		Failures: make(map[string]error),
 	}
 }
 
-// LookupDevices implements the NetworkController interface
-func (m *MockNetworkController) LookupDevices(devAddr []byte) ([]devEntry, error) {
-	m.InLookupDevices.DevAddr = devAddr
-	return m.OutLookupDevices.Entries, m.Failures["LookupDevices"]
+// read implements the NetworkController interface
+func (m *MockNetworkController) read(devAddr []byte) ([]devEntry, error) {
+	m.InRead.DevAddr = devAddr
+	return m.OutRead.Entries, m.Failures["read"]
 }
 
-// WholeCounter implements the NetworkController interface
-func (m *MockNetworkController) WholeCounter(devCnt uint32, entryCnt uint32) (uint32, error) {
+// upsert implements the NetworkController interface
+func (m *MockNetworkController) upsert(entry devEntry) error {
+	m.InUpsert.Entry = entry
+	return m.Failures["upsert"]
+}
+
+// wholeCnt implements the NetworkController interface
+func (m *MockNetworkController) wholeCounter(devCnt, entryCnt uint32) (uint32, error) {
 	m.InWholeCounter.DevCnt = devCnt
 	m.InWholeCounter.EntryCnt = entryCnt
-	return m.OutWholeCounter.FCnt, m.Failures["WholeCounter"]
+	return m.OutWholeCounter.FCnt, m.Failures["wholeCounter"]
 }
 
-// StoreDevice implements the NetworkController interface
-func (m *MockNetworkController) StoreDevice(devAddr []byte, entry devEntry) error {
-	m.InStoreDevice.DevAddr = devAddr
-	m.InStoreDevice.Entry = entry
-	return m.Failures["StoreDevice"]
-}
-
-// UpdateFcnt implements the NetworkController interface
-func (m *MockNetworkController) UpdateFCnt(appEUI []byte, devEUI []byte, devAddr []byte, fcnt uint32) error {
-	m.InUpdateFcnt.AppEUI = appEUI
-	m.InUpdateFcnt.DevEUI = devEUI
-	m.InUpdateFcnt.DevAddr = devAddr
-	m.InUpdateFcnt.FCnt = fcnt
-	return m.Failures["UpdateFCnt"]
-}
-
-// ReadActivation implements the NetworkController interface
-func (m *MockNetworkController) ReadActivation(appEUI []byte, devEUI []byte) (appEntry, error) {
-	m.InReadActivation.AppEUI = appEUI
-	m.InReadActivation.DevEUI = devEUI
-	return m.OutReadActivation.Entry, m.Failures["ReadActivation"]
-}
-
-// UpdateActivation implements the NetworkController interface
-func (m *MockNetworkController) UpdateActivation(entry appEntry) error {
-	m.InUpdateActivation.Entry = entry
-	return m.Failures["UpdateActivation"]
-}
-
-// Close implements the NetworkController interface
-func (m *MockNetworkController) Close() error {
-	m.InClose.Called = true
-	return m.Failures["Close"]
+// done implements the NetworkController Interface
+func (m *MockNetworkController) done() error {
+	m.InDone.Called = true
+	return m.Failures["done"]
 }

@@ -14,15 +14,6 @@ message DataBrokerRes {
     Metadata            Metadata    = 2;
 }
 
-message ABPSubBrokerReq {
-	string              HandlerNet  = 1;
-	bytes               AppEUI      = 2;
-	bytes               DevAddr     = 3;
-	bytes               NwkSKey     = 4;
-}
-
-message ABPSubBrokerRes{}
-
 message JoinBrokerReq {
     bytes               AppEUI      = 1;
     bytes               DevEUI      = 2;
@@ -39,5 +30,4 @@ message JoinBrokerRes {
 service Broker {
     rpc HandleData              (DataBrokerReq)         returns (DataBrokerRes);
     rpc HandleJoin              (JoinBrokerReq)         returns (JoinBrokerRes);
-    rpc SubscribePersonalized   (ABPSubBrokerReq)       returns (ABPSubBrokerRes);
 }
