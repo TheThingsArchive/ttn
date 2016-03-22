@@ -91,7 +91,7 @@ The default handler is the bridge between The Things Network and applications.
 				ctx.WithError(err).Fatal("Invalid packets database path")
 			}
 
-			packetsDB, err = handler.NewPktStorage(pktDBPath)
+			packetsDB, err = handler.NewPktStorage(pktDBPath, 1)
 			if err != nil {
 				ctx.WithError(err).Fatal("Could not create local packets storage")
 			}

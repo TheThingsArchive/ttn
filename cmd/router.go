@@ -42,6 +42,7 @@ the gateway's duty cycle is (almost) full.`,
 		ctx.WithFields(log.Fields{
 			"db-brokers":    viper.GetString("router.db_brokers"),
 			"db-gateways":   viper.GetString("router.db_gateways"),
+			"db-duty":       viper.GetString("router.db_duty"),
 			"status-server": statusServer,
 			"uplink":        fmt.Sprintf("%s:%d", viper.GetString("router.uplink-address"), viper.GetInt("router.uplink-port")),
 			"downlink":      fmt.Sprintf("%s:%d", viper.GetString("router.downlink-address"), viper.GetInt("router.downlink-port")),
@@ -61,7 +62,7 @@ the gateway's duty cycle is (almost) full.`,
 		statusAdapter.Bind(http.StatusPage{})
 
 		// In-memory packet storage
-		var db router.Storage
+		var db router.BrkStorage
 		dbString := viper.GetString("router.db_brokers")
 		switch {
 		case strings.HasPrefix(dbString, "boltdb:"):
@@ -71,7 +72,7 @@ the gateway's duty cycle is (almost) full.`,
 				ctx.WithError(err).Fatal("Invalid database path")
 			}
 
-			db, err = router.NewStorage(dbPath, time.Hour*8)
+			db, err = router.NewBrkStorage(dbPath, time.Hour*8)
 			if err != nil {
 				ctx.WithError(err).Fatal("Could not create a local storage")
 			}
@@ -83,7 +84,7 @@ the gateway's duty cycle is (almost) full.`,
 
 		// Duty Manager
 		var dm dutycycle.DutyManager
-		dmString := viper.GetString("router.db_gateways")
+		dmString := viper.GetString("router.db_duty")
 		switch {
 		case strings.HasPrefix(dmString, "boltdb:"):
 
@@ -98,6 +99,27 @@ the gateway's duty cycle is (almost) full.`,
 			}
 
 			ctx.WithField("database", dmPath).Info("Using local storage")
+		default:
+			ctx.WithError(fmt.Errorf("Invalid database string. Format: \"boltdb:/path/to.db\".")).Fatal("Could not instantiate local storage")
+		}
+
+		// Gateways
+		var dg router.GtwStorage
+		dgString := viper.GetString("router.db_gateways")
+		switch {
+		case strings.HasPrefix(dmString, "boltdb:"):
+
+			dgPath, err := filepath.Abs(dgString[7:])
+			if err != nil {
+				ctx.WithError(err).Fatal("Invalid database path")
+			}
+
+			dg, err = router.NewGtwStorage(dgPath)
+			if err != nil {
+				ctx.WithError(err).Fatal("Could not create a local storage")
+			}
+
+			ctx.WithField("database", dgPath).Info("Using local storage")
 		default:
 			ctx.WithError(fmt.Errorf("Invalid database string. Format: \"boltdb:/path/to.db\".")).Fatal("Could not instantiate local storage")
 		}
@@ -122,7 +144,8 @@ the gateway's duty cycle is (almost) full.`,
 				Ctx:         ctx,
 				DutyManager: dm,
 				Brokers:     brokers,
-				Storage:     db,
+				BrkStorage:  db,
+				GtwStorage:  dg,
 			},
 			router.Options{
 				NetAddr: fmt.Sprintf("%s:%d", viper.GetString("router.downlink-address"), viper.GetInt("router.downlink-port")),
@@ -160,6 +183,9 @@ func init() {
 
 	routerCmd.Flags().String("db_gateways", "boltdb:/tmp/ttn_router_gateways.db", "Database connection of managed gateways")
 	viper.BindPFlag("router.db_gateways", routerCmd.Flags().Lookup("db_gateways"))
+
+	routerCmd.Flags().String("db_duty", "boltdb:/tmp/ttn_router_duty.db", "Database connection of managed dutycycles")
+	viper.BindPFlag("router.db_duty", routerCmd.Flags().Lookup("db_duty"))
 
 	routerCmd.Flags().String("status-address", "localhost", "The IP address to listen for serving status information")
 	routerCmd.Flags().Int("status-port", 10700, "The port of the status server, use 0 to disable")
