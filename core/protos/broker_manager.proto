@@ -11,8 +11,9 @@ message ValidateOTAABrokerRes{}
 
 message UpsertABPBrokerReq {
     bytes   AppEUI      = 1;
-    bytes   DevAddr     = 2;
-    bytes   NwkSKey     = 3;
+    string  NetAddress  = 2;
+    bytes   DevAddr     = 3;
+    bytes   NwkSKey     = 4;
 }
 
 message UpsertABPBrokerRes {}

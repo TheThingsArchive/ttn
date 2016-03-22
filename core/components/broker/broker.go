@@ -314,15 +314,3 @@ func (b component) HandleData(bctx context.Context, req *core.DataBrokerReq) (*c
 		Metadata: resp.Metadata,
 	}, nil
 }
-
-func (b component) CreateApp(context.Context, *core.BrokerCreateAppReq) (*core.BrokerUpsertAppRes, error) {
-	return nil, errors.New(errors.Structural, "Not implemented")
-}
-
-func (b component) UpdateApp(context.Context, *core.BrokerUpdateAppReq) (*core.BrokerUpsertAppRes, error) {
-	return nil, errors.New(errors.Structural, "Not implemented")
-}
-
-func (b component) UpsertDeviceRegistration(context.Context, *core.BrokerUpsertDeviceReq) (*core.BrokerUpsertDeviceRes, error) {
-	return nil, errors.New(errors.Structural, "Not implemented")
-}

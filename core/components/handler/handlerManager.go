@@ -27,9 +27,10 @@ func (h component) UpsertABP(bctx context.Context, req *core.UpsertABPHandlerReq
 
 	// 2. Forward to the broker firt -> The Broker also does the token verification
 	_, err := h.Broker.UpsertABP(context.Background(), &core.UpsertABPBrokerReq{
-		AppEUI:  req.AppEUI,
-		DevAddr: req.DevAddr,
-		NwkSKey: req.NwkSKey,
+		AppEUI:     req.AppEUI,
+		DevAddr:    req.DevAddr,
+		NwkSKey:    req.NwkSKey,
+		NetAddress: h.NetAddr,
 	})
 	if err != nil {
 		h.Ctx.WithError(err).Debug("Broker rejected ABP")
