@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package core;
+
+message Device {
+  bytes DevEUI = 1;
+  message PersonalizedData {
+    bytes NwkSKey = 1;
+    bytes AppSKey = 2;
+  }
+  message ActivatedData {
+    bytes AppKey = 1;
+  }
+  oneof Data {
+    PersonalizedData Personalized = 2;
+    ActivatedData Activated = 3;
+  }
+}
+
+message ListDevicesReq {
+  bytes AppEUI = 1;
+}
+
+message ListDevicesRes {
+  repeated Device Devices = 1;
+}
+
+message UpsertDeviceReq {
+  bytes AppEUI = 1;
+  Device Device = 2;
+}
+
+message UpsertDeviceRes {
+}
+
+service HandlerManager {
+  rpc List(ListDevicesReq) returns (ListDevicesRes);
+  rpc Upsert(UpsertDeviceReq) returns (UpsertDeviceRes);
+}

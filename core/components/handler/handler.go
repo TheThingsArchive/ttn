@@ -55,6 +55,7 @@ type component struct {
 // Interface defines the Handler interface
 type Interface interface {
 	core.HandlerServer
+	core.HandlerManagerServer
 	Start() error
 }
 
@@ -117,6 +118,7 @@ func (h *component) Start() error {
 
 	server := grpc.NewServer()
 	core.RegisterHandlerServer(server, h)
+	core.RegisterHandlerManagerServer(server, h)
 
 	if err := server.Serve(conn); err != nil {
 		return errors.New(errors.Operational, err)
@@ -295,6 +297,16 @@ func (h component) HandleDataUp(bctx context.Context, req *core.DataUpHandlerReq
 		ctx.Debug("No response to send.")
 		return new(core.DataUpHandlerRes), nil
 	}
+}
+
+// List implements the core.HandlerManagerServer interface
+func (h component) List(context.Context, *core.ListDevicesReq) (*core.ListDevicesRes, error) {
+	return nil, errors.New(errors.Structural, "Not implemented")
+}
+
+// Upsert implements the core.HandlerManagerServer interface
+func (h component) Upsert(context.Context, *core.UpsertDeviceReq) (*core.UpsertDeviceRes, error) {
+	return nil, errors.New(errors.Structural, "Not implemented")
 }
 
 // consumeSet gathers new incoming bundles which possess the same id (i.e. appEUI & devEUI & Fcnt)
