@@ -2,6 +2,66 @@
 // source: broker_manager.proto
 // DO NOT EDIT!
 
+/*
+	Package core is a generated protocol buffer package.
+
+	It is generated from these files:
+		broker_manager.proto
+		handler_manager.proto
+		broker.proto
+		core.proto
+		application.proto
+		handler.proto
+		router.proto
+		lorawan.proto
+
+	It has these top-level messages:
+		RegisterOTAABrokerReq
+		RegisterOTAABrokerRes
+		UpsertABPBrokerReq
+		UpsertABPBrokerRes
+		BrokerDevice
+		ListDevicesBrokerReq
+		ListDevicesBrokerRes
+		UpsertOTAAHandlerReq
+		UpsertOTAAHandlerRes
+		UpsertABPHandlerReq
+		UpsertABPHandlerRes
+		ListDevicesHandlerReq
+		ListDevicesHandlerRes
+		HandlerABPDevice
+		HandlerOTAADevice
+		DataBrokerReq
+		DataBrokerRes
+		JoinBrokerReq
+		JoinBrokerRes
+		Metadata
+		StatsMetadata
+		DataAppReq
+		DataAppRes
+		JoinAppReq
+		JoinAppRes
+		DataUpHandlerReq
+		DataUpHandlerRes
+		DataDownHandlerReq
+		DataDownHandlerRes
+		JoinHandlerReq
+		JoinHandlerRes
+		DataRouterReq
+		DataRouterRes
+		StatsReq
+		StatsRes
+		JoinRouterReq
+		JoinRouterRes
+		LoRaWANData
+		LoRaWANMHDR
+		LoRaWANMACPayload
+		LoRaWANFHDR
+		LoRaWANFCtrl
+		LoRaWANJoinRequest
+		LoRaWANJoinAccept
+		LoRaWANDLSettings
+*/
 package core
 
 import proto "github.com/golang/protobuf/proto"
@@ -20,223 +80,99 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
-type BrokerCreateAppReq struct {
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+const _ = proto.ProtoPackageIsVersion1
+
+type RegisterOTAABrokerReq struct {
 	AppEUI     []byte `protobuf:"bytes,1,opt,name=AppEUI,json=appEUI,proto3" json:"AppEUI,omitempty"`
 	NetAddress string `protobuf:"bytes,2,opt,name=NetAddress,json=netAddress,proto3" json:"NetAddress,omitempty"`
-	Password   string `protobuf:"bytes,3,opt,name=Password,json=password,proto3" json:"Password,omitempty"`
 }
 
-func (m *BrokerCreateAppReq) Reset()                    { *m = BrokerCreateAppReq{} }
-func (m *BrokerCreateAppReq) String() string            { return proto.CompactTextString(m) }
-func (*BrokerCreateAppReq) ProtoMessage()               {}
-func (*BrokerCreateAppReq) Descriptor() ([]byte, []int) { return fileDescriptorBrokerManager, []int{0} }
-
-type BrokerUpdateAppReq struct {
-	AppEUI []byte `protobuf:"bytes,1,opt,name=AppEUI,json=appEUI,proto3" json:"AppEUI,omitempty"`
-	Token  string `protobuf:"bytes,2,opt,name=Token,json=token,proto3" json:"Token,omitempty"`
-	// Types that are valid to be assigned to Update:
-	//	*BrokerUpdateAppReq_NetAddress
-	//	*BrokerUpdateAppReq_Password
-	Update isBrokerUpdateAppReq_Update `protobuf_oneof:"Update"`
+func (m *RegisterOTAABrokerReq) Reset()         { *m = RegisterOTAABrokerReq{} }
+func (m *RegisterOTAABrokerReq) String() string { return proto.CompactTextString(m) }
+func (*RegisterOTAABrokerReq) ProtoMessage()    {}
+func (*RegisterOTAABrokerReq) Descriptor() ([]byte, []int) {
+	return fileDescriptorBrokerManager, []int{0}
 }
 
-func (m *BrokerUpdateAppReq) Reset()                    { *m = BrokerUpdateAppReq{} }
-func (m *BrokerUpdateAppReq) String() string            { return proto.CompactTextString(m) }
-func (*BrokerUpdateAppReq) ProtoMessage()               {}
-func (*BrokerUpdateAppReq) Descriptor() ([]byte, []int) { return fileDescriptorBrokerManager, []int{1} }
-
-type isBrokerUpdateAppReq_Update interface {
-	isBrokerUpdateAppReq_Update()
-	MarshalTo([]byte) (int, error)
-	Size() int
+type RegisterOTAABrokerRes struct {
 }
 
-type BrokerUpdateAppReq_NetAddress struct {
-	NetAddress string `protobuf:"bytes,3,opt,name=NetAddress,json=netAddress,proto3,oneof"`
-}
-type BrokerUpdateAppReq_Password struct {
-	Password string `protobuf:"bytes,4,opt,name=Password,json=password,proto3,oneof"`
-}
-
-func (*BrokerUpdateAppReq_NetAddress) isBrokerUpdateAppReq_Update() {}
-func (*BrokerUpdateAppReq_Password) isBrokerUpdateAppReq_Update()   {}
-
-func (m *BrokerUpdateAppReq) GetUpdate() isBrokerUpdateAppReq_Update {
-	if m != nil {
-		return m.Update
-	}
-	return nil
+func (m *RegisterOTAABrokerRes) Reset()         { *m = RegisterOTAABrokerRes{} }
+func (m *RegisterOTAABrokerRes) String() string { return proto.CompactTextString(m) }
+func (*RegisterOTAABrokerRes) ProtoMessage()    {}
+func (*RegisterOTAABrokerRes) Descriptor() ([]byte, []int) {
+	return fileDescriptorBrokerManager, []int{1}
 }
 
-func (m *BrokerUpdateAppReq) GetNetAddress() string {
-	if x, ok := m.GetUpdate().(*BrokerUpdateAppReq_NetAddress); ok {
-		return x.NetAddress
-	}
-	return ""
+type UpsertABPBrokerReq struct {
+	AppEUI  []byte `protobuf:"bytes,1,opt,name=AppEUI,json=appEUI,proto3" json:"AppEUI,omitempty"`
+	DevAddr []byte `protobuf:"bytes,2,opt,name=DevAddr,json=devAddr,proto3" json:"DevAddr,omitempty"`
+	NwkSKey []byte `protobuf:"bytes,3,opt,name=NwkSKey,json=nwkSKey,proto3" json:"NwkSKey,omitempty"`
 }
 
-func (m *BrokerUpdateAppReq) GetPassword() string {
-	if x, ok := m.GetUpdate().(*BrokerUpdateAppReq_Password); ok {
-		return x.Password
-	}
-	return ""
+func (m *UpsertABPBrokerReq) Reset()                    { *m = UpsertABPBrokerReq{} }
+func (m *UpsertABPBrokerReq) String() string            { return proto.CompactTextString(m) }
+func (*UpsertABPBrokerReq) ProtoMessage()               {}
+func (*UpsertABPBrokerReq) Descriptor() ([]byte, []int) { return fileDescriptorBrokerManager, []int{2} }
+
+type UpsertABPBrokerRes struct {
 }
 
-// XXX_OneofFuncs is for the internal use of the proto package.
-func (*BrokerUpdateAppReq) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
-	return _BrokerUpdateAppReq_OneofMarshaler, _BrokerUpdateAppReq_OneofUnmarshaler, _BrokerUpdateAppReq_OneofSizer, []interface{}{
-		(*BrokerUpdateAppReq_NetAddress)(nil),
-		(*BrokerUpdateAppReq_Password)(nil),
-	}
-}
-
-func _BrokerUpdateAppReq_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
-	m := msg.(*BrokerUpdateAppReq)
-	// Update
-	switch x := m.Update.(type) {
-	case *BrokerUpdateAppReq_NetAddress:
-		_ = b.EncodeVarint(3<<3 | proto.WireBytes)
-		_ = b.EncodeStringBytes(x.NetAddress)
-	case *BrokerUpdateAppReq_Password:
-		_ = b.EncodeVarint(4<<3 | proto.WireBytes)
-		_ = b.EncodeStringBytes(x.Password)
-	case nil:
-	default:
-		return fmt.Errorf("BrokerUpdateAppReq.Update has unexpected type %T", x)
-	}
-	return nil
-}
-
-func _BrokerUpdateAppReq_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
-	m := msg.(*BrokerUpdateAppReq)
-	switch tag {
-	case 3: // Update.NetAddress
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		x, err := b.DecodeStringBytes()
-		m.Update = &BrokerUpdateAppReq_NetAddress{x}
-		return true, err
-	case 4: // Update.Password
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		x, err := b.DecodeStringBytes()
-		m.Update = &BrokerUpdateAppReq_Password{x}
-		return true, err
-	default:
-		return false, nil
-	}
-}
-
-func _BrokerUpdateAppReq_OneofSizer(msg proto.Message) (n int) {
-	m := msg.(*BrokerUpdateAppReq)
-	// Update
-	switch x := m.Update.(type) {
-	case *BrokerUpdateAppReq_NetAddress:
-		n += proto.SizeVarint(3<<3 | proto.WireBytes)
-		n += proto.SizeVarint(uint64(len(x.NetAddress)))
-		n += len(x.NetAddress)
-	case *BrokerUpdateAppReq_Password:
-		n += proto.SizeVarint(4<<3 | proto.WireBytes)
-		n += proto.SizeVarint(uint64(len(x.Password)))
-		n += len(x.Password)
-	case nil:
-	default:
-		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
-	}
-	return n
-}
-
-type BrokerUpsertAppRes struct {
-	Token string `protobuf:"bytes,2,opt,name=Token,json=token,proto3" json:"Token,omitempty"`
-}
-
-func (m *BrokerUpsertAppRes) Reset()                    { *m = BrokerUpsertAppRes{} }
-func (m *BrokerUpsertAppRes) String() string            { return proto.CompactTextString(m) }
-func (*BrokerUpsertAppRes) ProtoMessage()               {}
-func (*BrokerUpsertAppRes) Descriptor() ([]byte, []int) { return fileDescriptorBrokerManager, []int{2} }
+func (m *UpsertABPBrokerRes) Reset()                    { *m = UpsertABPBrokerRes{} }
+func (m *UpsertABPBrokerRes) String() string            { return proto.CompactTextString(m) }
+func (*UpsertABPBrokerRes) ProtoMessage()               {}
+func (*UpsertABPBrokerRes) Descriptor() ([]byte, []int) { return fileDescriptorBrokerManager, []int{3} }
 
 type BrokerDevice struct {
-	DevAddr []byte `protobuf:"bytes,1,opt,name=DevAddr,json=devAddr,proto3" json:"DevAddr,omitempty"`
-	DevEUI  []byte `protobuf:"bytes,2,opt,name=DevEUI,json=devEUI,proto3" json:"DevEUI,omitempty"`
+	DevEUI  []byte `protobuf:"bytes,1,opt,name=DevEUI,json=devEUI,proto3" json:"DevEUI,omitempty"`
+	DevAddr []byte `protobuf:"bytes,2,opt,name=DevAddr,json=devAddr,proto3" json:"DevAddr,omitempty"`
 	NwkSKey []byte `protobuf:"bytes,3,opt,name=NwkSKey,json=nwkSKey,proto3" json:"NwkSKey,omitempty"`
 }
 
 func (m *BrokerDevice) Reset()                    { *m = BrokerDevice{} }
 func (m *BrokerDevice) String() string            { return proto.CompactTextString(m) }
 func (*BrokerDevice) ProtoMessage()               {}
-func (*BrokerDevice) Descriptor() ([]byte, []int) { return fileDescriptorBrokerManager, []int{3} }
+func (*BrokerDevice) Descriptor() ([]byte, []int) { return fileDescriptorBrokerManager, []int{4} }
 
-type BrokerListDevicesReq struct {
+type ListDevicesBrokerReq struct {
 	AppEUI []byte `protobuf:"bytes,1,opt,name=AppEUI,json=appEUI,proto3" json:"AppEUI,omitempty"`
-	Token  string `protobuf:"bytes,2,opt,name=Token,json=token,proto3" json:"Token,omitempty"`
 }
 
-func (m *BrokerListDevicesReq) Reset()         { *m = BrokerListDevicesReq{} }
-func (m *BrokerListDevicesReq) String() string { return proto.CompactTextString(m) }
-func (*BrokerListDevicesReq) ProtoMessage()    {}
-func (*BrokerListDevicesReq) Descriptor() ([]byte, []int) {
-	return fileDescriptorBrokerManager, []int{4}
-}
-
-type BrokerListDevicesRes struct {
-	Devices []*BrokerDevice `protobuf:"bytes,1,rep,name=Devices,json=devices" json:"Devices,omitempty"`
-}
-
-func (m *BrokerListDevicesRes) Reset()         { *m = BrokerListDevicesRes{} }
-func (m *BrokerListDevicesRes) String() string { return proto.CompactTextString(m) }
-func (*BrokerListDevicesRes) ProtoMessage()    {}
-func (*BrokerListDevicesRes) Descriptor() ([]byte, []int) {
+func (m *ListDevicesBrokerReq) Reset()         { *m = ListDevicesBrokerReq{} }
+func (m *ListDevicesBrokerReq) String() string { return proto.CompactTextString(m) }
+func (*ListDevicesBrokerReq) ProtoMessage()    {}
+func (*ListDevicesBrokerReq) Descriptor() ([]byte, []int) {
 	return fileDescriptorBrokerManager, []int{5}
 }
 
-func (m *BrokerListDevicesRes) GetDevices() []*BrokerDevice {
+type ListDevicesBrokerRes struct {
+	Devices []*BrokerDevice `protobuf:"bytes,1,rep,name=Devices,json=devices" json:"Devices,omitempty"`
+}
+
+func (m *ListDevicesBrokerRes) Reset()         { *m = ListDevicesBrokerRes{} }
+func (m *ListDevicesBrokerRes) String() string { return proto.CompactTextString(m) }
+func (*ListDevicesBrokerRes) ProtoMessage()    {}
+func (*ListDevicesBrokerRes) Descriptor() ([]byte, []int) {
+	return fileDescriptorBrokerManager, []int{6}
+}
+
+func (m *ListDevicesBrokerRes) GetDevices() []*BrokerDevice {
 	if m != nil {
 		return m.Devices
 	}
 	return nil
 }
 
-type BrokerUpsertDeviceReq struct {
-	AppEUI []byte        `protobuf:"bytes,1,opt,name=AppEUI,json=appEUI,proto3" json:"AppEUI,omitempty"`
-	Token  string        `protobuf:"bytes,2,opt,name=Token,json=token,proto3" json:"Token,omitempty"`
-	Device *BrokerDevice `protobuf:"bytes,3,opt,name=Device,json=device" json:"Device,omitempty"`
-}
-
-func (m *BrokerUpsertDeviceReq) Reset()         { *m = BrokerUpsertDeviceReq{} }
-func (m *BrokerUpsertDeviceReq) String() string { return proto.CompactTextString(m) }
-func (*BrokerUpsertDeviceReq) ProtoMessage()    {}
-func (*BrokerUpsertDeviceReq) Descriptor() ([]byte, []int) {
-	return fileDescriptorBrokerManager, []int{6}
-}
-
-func (m *BrokerUpsertDeviceReq) GetDevice() *BrokerDevice {
-	if m != nil {
-		return m.Device
-	}
-	return nil
-}
-
-type BrokerUpsertDeviceRes struct {
-}
-
-func (m *BrokerUpsertDeviceRes) Reset()         { *m = BrokerUpsertDeviceRes{} }
-func (m *BrokerUpsertDeviceRes) String() string { return proto.CompactTextString(m) }
-func (*BrokerUpsertDeviceRes) ProtoMessage()    {}
-func (*BrokerUpsertDeviceRes) Descriptor() ([]byte, []int) {
-	return fileDescriptorBrokerManager, []int{7}
-}
-
 func init() {
-	proto.RegisterType((*BrokerCreateAppReq)(nil), "core.BrokerCreateAppReq")
-	proto.RegisterType((*BrokerUpdateAppReq)(nil), "core.BrokerUpdateAppReq")
-	proto.RegisterType((*BrokerUpsertAppRes)(nil), "core.BrokerUpsertAppRes")
+	proto.RegisterType((*RegisterOTAABrokerReq)(nil), "core.RegisterOTAABrokerReq")
+	proto.RegisterType((*RegisterOTAABrokerRes)(nil), "core.RegisterOTAABrokerRes")
+	proto.RegisterType((*UpsertABPBrokerReq)(nil), "core.UpsertABPBrokerReq")
+	proto.RegisterType((*UpsertABPBrokerRes)(nil), "core.UpsertABPBrokerRes")
 	proto.RegisterType((*BrokerDevice)(nil), "core.BrokerDevice")
-	proto.RegisterType((*BrokerListDevicesReq)(nil), "core.BrokerListDevicesReq")
-	proto.RegisterType((*BrokerListDevicesRes)(nil), "core.BrokerListDevicesRes")
-	proto.RegisterType((*BrokerUpsertDeviceReq)(nil), "core.BrokerUpsertDeviceReq")
-	proto.RegisterType((*BrokerUpsertDeviceRes)(nil), "core.BrokerUpsertDeviceRes")
+	proto.RegisterType((*ListDevicesBrokerReq)(nil), "core.ListDevicesBrokerReq")
+	proto.RegisterType((*ListDevicesBrokerRes)(nil), "core.ListDevicesBrokerRes")
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -246,9 +182,9 @@ var _ grpc.ClientConn
 // Client API for BrokerManager service
 
 type BrokerManagerClient interface {
-	CreateApp(ctx context.Context, in *BrokerCreateAppReq, opts ...grpc.CallOption) (*BrokerUpsertAppRes, error)
-	UpdateApp(ctx context.Context, in *BrokerUpdateAppReq, opts ...grpc.CallOption) (*BrokerUpsertAppRes, error)
-	UpsertDeviceRegistration(ctx context.Context, in *BrokerUpsertDeviceReq, opts ...grpc.CallOption) (*BrokerUpsertDeviceRes, error)
+	RegisterOTAA(ctx context.Context, in *RegisterOTAABrokerReq, opts ...grpc.CallOption) (*RegisterOTAABrokerRes, error)
+	UpsertABP(ctx context.Context, in *UpsertABPBrokerReq, opts ...grpc.CallOption) (*UpsertABPBrokerRes, error)
+	ListDevices(ctx context.Context, in *ListDevicesBrokerReq, opts ...grpc.CallOption) (*ListDevicesBrokerRes, error)
 }
 
 type brokerManagerClient struct {
@@ -259,27 +195,27 @@ func NewBrokerManagerClient(cc *grpc.ClientConn) BrokerManagerClient {
 	return &brokerManagerClient{cc}
 }
 
-func (c *brokerManagerClient) CreateApp(ctx context.Context, in *BrokerCreateAppReq, opts ...grpc.CallOption) (*BrokerUpsertAppRes, error) {
-	out := new(BrokerUpsertAppRes)
-	err := grpc.Invoke(ctx, "/core.BrokerManager/CreateApp", in, out, c.cc, opts...)
+func (c *brokerManagerClient) RegisterOTAA(ctx context.Context, in *RegisterOTAABrokerReq, opts ...grpc.CallOption) (*RegisterOTAABrokerRes, error) {
+	out := new(RegisterOTAABrokerRes)
+	err := grpc.Invoke(ctx, "/core.BrokerManager/RegisterOTAA", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *brokerManagerClient) UpdateApp(ctx context.Context, in *BrokerUpdateAppReq, opts ...grpc.CallOption) (*BrokerUpsertAppRes, error) {
-	out := new(BrokerUpsertAppRes)
-	err := grpc.Invoke(ctx, "/core.BrokerManager/UpdateApp", in, out, c.cc, opts...)
+func (c *brokerManagerClient) UpsertABP(ctx context.Context, in *UpsertABPBrokerReq, opts ...grpc.CallOption) (*UpsertABPBrokerRes, error) {
+	out := new(UpsertABPBrokerRes)
+	err := grpc.Invoke(ctx, "/core.BrokerManager/UpsertABP", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *brokerManagerClient) UpsertDeviceRegistration(ctx context.Context, in *BrokerUpsertDeviceReq, opts ...grpc.CallOption) (*BrokerUpsertDeviceRes, error) {
-	out := new(BrokerUpsertDeviceRes)
-	err := grpc.Invoke(ctx, "/core.BrokerManager/UpsertDeviceRegistration", in, out, c.cc, opts...)
+func (c *brokerManagerClient) ListDevices(ctx context.Context, in *ListDevicesBrokerReq, opts ...grpc.CallOption) (*ListDevicesBrokerRes, error) {
+	out := new(ListDevicesBrokerRes)
+	err := grpc.Invoke(ctx, "/core.BrokerManager/ListDevices", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -289,45 +225,45 @@ func (c *brokerManagerClient) UpsertDeviceRegistration(ctx context.Context, in *
 // Server API for BrokerManager service
 
 type BrokerManagerServer interface {
-	CreateApp(context.Context, *BrokerCreateAppReq) (*BrokerUpsertAppRes, error)
-	UpdateApp(context.Context, *BrokerUpdateAppReq) (*BrokerUpsertAppRes, error)
-	UpsertDeviceRegistration(context.Context, *BrokerUpsertDeviceReq) (*BrokerUpsertDeviceRes, error)
+	RegisterOTAA(context.Context, *RegisterOTAABrokerReq) (*RegisterOTAABrokerRes, error)
+	UpsertABP(context.Context, *UpsertABPBrokerReq) (*UpsertABPBrokerRes, error)
+	ListDevices(context.Context, *ListDevicesBrokerReq) (*ListDevicesBrokerRes, error)
 }
 
 func RegisterBrokerManagerServer(s *grpc.Server, srv BrokerManagerServer) {
 	s.RegisterService(&_BrokerManager_serviceDesc, srv)
 }
 
-func _BrokerManager_CreateApp_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(BrokerCreateAppReq)
+func _BrokerManager_RegisterOTAA_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(RegisterOTAABrokerReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(BrokerManagerServer).CreateApp(ctx, in)
+	out, err := srv.(BrokerManagerServer).RegisterOTAA(ctx, in)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func _BrokerManager_UpdateApp_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(BrokerUpdateAppReq)
+func _BrokerManager_UpsertABP_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(UpsertABPBrokerReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(BrokerManagerServer).UpdateApp(ctx, in)
+	out, err := srv.(BrokerManagerServer).UpsertABP(ctx, in)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func _BrokerManager_UpsertDeviceRegistration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(BrokerUpsertDeviceReq)
+func _BrokerManager_ListDevices_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(ListDevicesBrokerReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(BrokerManagerServer).UpsertDeviceRegistration(ctx, in)
+	out, err := srv.(BrokerManagerServer).ListDevices(ctx, in)
 	if err != nil {
 		return nil, err
 	}
@@ -339,22 +275,22 @@ var _BrokerManager_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*BrokerManagerServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "CreateApp",
-			Handler:    _BrokerManager_CreateApp_Handler,
+			MethodName: "RegisterOTAA",
+			Handler:    _BrokerManager_RegisterOTAA_Handler,
 		},
 		{
-			MethodName: "UpdateApp",
-			Handler:    _BrokerManager_UpdateApp_Handler,
+			MethodName: "UpsertABP",
+			Handler:    _BrokerManager_UpsertABP_Handler,
 		},
 		{
-			MethodName: "UpsertDeviceRegistration",
-			Handler:    _BrokerManager_UpsertDeviceRegistration_Handler,
+			MethodName: "ListDevices",
+			Handler:    _BrokerManager_ListDevices_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{},
 }
 
-func (m *BrokerCreateAppReq) Marshal() (data []byte, err error) {
+func (m *RegisterOTAABrokerReq) Marshal() (data []byte, err error) {
 	size := m.Size()
 	data = make([]byte, size)
 	n, err := m.MarshalTo(data)
@@ -364,7 +300,7 @@ func (m *BrokerCreateAppReq) Marshal() (data []byte, err error) {
 	return data[:n], nil
 }
 
-func (m *BrokerCreateAppReq) MarshalTo(data []byte) (int, error) {
+func (m *RegisterOTAABrokerReq) MarshalTo(data []byte) (int, error) {
 	var i int
 	_ = i
 	var l int
@@ -383,16 +319,10 @@ func (m *BrokerCreateAppReq) MarshalTo(data []byte) (int, error) {
 		i = encodeVarintBrokerManager(data, i, uint64(len(m.NetAddress)))
 		i += copy(data[i:], m.NetAddress)
 	}
-	if len(m.Password) > 0 {
-		data[i] = 0x1a
-		i++
-		i = encodeVarintBrokerManager(data, i, uint64(len(m.Password)))
-		i += copy(data[i:], m.Password)
-	}
 	return i, nil
 }
 
-func (m *BrokerUpdateAppReq) Marshal() (data []byte, err error) {
+func (m *RegisterOTAABrokerRes) Marshal() (data []byte, err error) {
 	size := m.Size()
 	data = make([]byte, size)
 	n, err := m.MarshalTo(data)
@@ -402,7 +332,25 @@ func (m *BrokerUpdateAppReq) Marshal() (data []byte, err error) {
 	return data[:n], nil
 }
 
-func (m *BrokerUpdateAppReq) MarshalTo(data []byte) (int, error) {
+func (m *RegisterOTAABrokerRes) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	return i, nil
+}
+
+func (m *UpsertABPBrokerReq) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *UpsertABPBrokerReq) MarshalTo(data []byte) (int, error) {
 	var i int
 	_ = i
 	var l int
@@ -415,39 +363,26 @@ func (m *BrokerUpdateAppReq) MarshalTo(data []byte) (int, error) {
 			i += copy(data[i:], m.AppEUI)
 		}
 	}
-	if len(m.Token) > 0 {
-		data[i] = 0x12
-		i++
-		i = encodeVarintBrokerManager(data, i, uint64(len(m.Token)))
-		i += copy(data[i:], m.Token)
-	}
-	if m.Update != nil {
-		nn1, err := m.Update.MarshalTo(data[i:])
-		if err != nil {
-			return 0, err
+	if m.DevAddr != nil {
+		if len(m.DevAddr) > 0 {
+			data[i] = 0x12
+			i++
+			i = encodeVarintBrokerManager(data, i, uint64(len(m.DevAddr)))
+			i += copy(data[i:], m.DevAddr)
 		}
-		i += nn1
+	}
+	if m.NwkSKey != nil {
+		if len(m.NwkSKey) > 0 {
+			data[i] = 0x1a
+			i++
+			i = encodeVarintBrokerManager(data, i, uint64(len(m.NwkSKey)))
+			i += copy(data[i:], m.NwkSKey)
+		}
 	}
 	return i, nil
 }
 
-func (m *BrokerUpdateAppReq_NetAddress) MarshalTo(data []byte) (int, error) {
-	i := 0
-	data[i] = 0x1a
-	i++
-	i = encodeVarintBrokerManager(data, i, uint64(len(m.NetAddress)))
-	i += copy(data[i:], m.NetAddress)
-	return i, nil
-}
-func (m *BrokerUpdateAppReq_Password) MarshalTo(data []byte) (int, error) {
-	i := 0
-	data[i] = 0x22
-	i++
-	i = encodeVarintBrokerManager(data, i, uint64(len(m.Password)))
-	i += copy(data[i:], m.Password)
-	return i, nil
-}
-func (m *BrokerUpsertAppRes) Marshal() (data []byte, err error) {
+func (m *UpsertABPBrokerRes) Marshal() (data []byte, err error) {
 	size := m.Size()
 	data = make([]byte, size)
 	n, err := m.MarshalTo(data)
@@ -457,17 +392,11 @@ func (m *BrokerUpsertAppRes) Marshal() (data []byte, err error) {
 	return data[:n], nil
 }
 
-func (m *BrokerUpsertAppRes) MarshalTo(data []byte) (int, error) {
+func (m *UpsertABPBrokerRes) MarshalTo(data []byte) (int, error) {
 	var i int
 	_ = i
 	var l int
 	_ = l
-	if len(m.Token) > 0 {
-		data[i] = 0x12
-		i++
-		i = encodeVarintBrokerManager(data, i, uint64(len(m.Token)))
-		i += copy(data[i:], m.Token)
-	}
 	return i, nil
 }
 
@@ -486,20 +415,20 @@ func (m *BrokerDevice) MarshalTo(data []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.DevAddr != nil {
-		if len(m.DevAddr) > 0 {
-			data[i] = 0xa
-			i++
-			i = encodeVarintBrokerManager(data, i, uint64(len(m.DevAddr)))
-			i += copy(data[i:], m.DevAddr)
-		}
-	}
 	if m.DevEUI != nil {
 		if len(m.DevEUI) > 0 {
-			data[i] = 0x12
+			data[i] = 0xa
 			i++
 			i = encodeVarintBrokerManager(data, i, uint64(len(m.DevEUI)))
 			i += copy(data[i:], m.DevEUI)
+		}
+	}
+	if m.DevAddr != nil {
+		if len(m.DevAddr) > 0 {
+			data[i] = 0x12
+			i++
+			i = encodeVarintBrokerManager(data, i, uint64(len(m.DevAddr)))
+			i += copy(data[i:], m.DevAddr)
 		}
 	}
 	if m.NwkSKey != nil {
@@ -513,7 +442,7 @@ func (m *BrokerDevice) MarshalTo(data []byte) (int, error) {
 	return i, nil
 }
 
-func (m *BrokerListDevicesReq) Marshal() (data []byte, err error) {
+func (m *ListDevicesBrokerReq) Marshal() (data []byte, err error) {
 	size := m.Size()
 	data = make([]byte, size)
 	n, err := m.MarshalTo(data)
@@ -523,7 +452,7 @@ func (m *BrokerListDevicesReq) Marshal() (data []byte, err error) {
 	return data[:n], nil
 }
 
-func (m *BrokerListDevicesReq) MarshalTo(data []byte) (int, error) {
+func (m *ListDevicesBrokerReq) MarshalTo(data []byte) (int, error) {
 	var i int
 	_ = i
 	var l int
@@ -536,16 +465,10 @@ func (m *BrokerListDevicesReq) MarshalTo(data []byte) (int, error) {
 			i += copy(data[i:], m.AppEUI)
 		}
 	}
-	if len(m.Token) > 0 {
-		data[i] = 0x12
-		i++
-		i = encodeVarintBrokerManager(data, i, uint64(len(m.Token)))
-		i += copy(data[i:], m.Token)
-	}
 	return i, nil
 }
 
-func (m *BrokerListDevicesRes) Marshal() (data []byte, err error) {
+func (m *ListDevicesBrokerRes) Marshal() (data []byte, err error) {
 	size := m.Size()
 	data = make([]byte, size)
 	n, err := m.MarshalTo(data)
@@ -555,7 +478,7 @@ func (m *BrokerListDevicesRes) Marshal() (data []byte, err error) {
 	return data[:n], nil
 }
 
-func (m *BrokerListDevicesRes) MarshalTo(data []byte) (int, error) {
+func (m *ListDevicesBrokerRes) MarshalTo(data []byte) (int, error) {
 	var i int
 	_ = i
 	var l int
@@ -572,66 +495,6 @@ func (m *BrokerListDevicesRes) MarshalTo(data []byte) (int, error) {
 			i += n
 		}
 	}
-	return i, nil
-}
-
-func (m *BrokerUpsertDeviceReq) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *BrokerUpsertDeviceReq) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	if m.AppEUI != nil {
-		if len(m.AppEUI) > 0 {
-			data[i] = 0xa
-			i++
-			i = encodeVarintBrokerManager(data, i, uint64(len(m.AppEUI)))
-			i += copy(data[i:], m.AppEUI)
-		}
-	}
-	if len(m.Token) > 0 {
-		data[i] = 0x12
-		i++
-		i = encodeVarintBrokerManager(data, i, uint64(len(m.Token)))
-		i += copy(data[i:], m.Token)
-	}
-	if m.Device != nil {
-		data[i] = 0x1a
-		i++
-		i = encodeVarintBrokerManager(data, i, uint64(m.Device.Size()))
-		n2, err := m.Device.MarshalTo(data[i:])
-		if err != nil {
-			return 0, err
-		}
-		i += n2
-	}
-	return i, nil
-}
-
-func (m *BrokerUpsertDeviceRes) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *BrokerUpsertDeviceRes) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
 	return i, nil
 }
 
@@ -662,7 +525,7 @@ func encodeVarintBrokerManager(data []byte, offset int, v uint64) int {
 	data[offset] = uint8(v)
 	return offset + 1
 }
-func (m *BrokerCreateAppReq) Size() (n int) {
+func (m *RegisterOTAABrokerReq) Size() (n int) {
 	var l int
 	_ = l
 	if m.AppEUI != nil {
@@ -675,14 +538,16 @@ func (m *BrokerCreateAppReq) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovBrokerManager(uint64(l))
 	}
-	l = len(m.Password)
-	if l > 0 {
-		n += 1 + l + sovBrokerManager(uint64(l))
-	}
 	return n
 }
 
-func (m *BrokerUpdateAppReq) Size() (n int) {
+func (m *RegisterOTAABrokerRes) Size() (n int) {
+	var l int
+	_ = l
+	return n
+}
+
+func (m *UpsertABPBrokerReq) Size() (n int) {
 	var l int
 	_ = l
 	if m.AppEUI != nil {
@@ -691,51 +556,8 @@ func (m *BrokerUpdateAppReq) Size() (n int) {
 			n += 1 + l + sovBrokerManager(uint64(l))
 		}
 	}
-	l = len(m.Token)
-	if l > 0 {
-		n += 1 + l + sovBrokerManager(uint64(l))
-	}
-	if m.Update != nil {
-		n += m.Update.Size()
-	}
-	return n
-}
-
-func (m *BrokerUpdateAppReq_NetAddress) Size() (n int) {
-	var l int
-	_ = l
-	l = len(m.NetAddress)
-	n += 1 + l + sovBrokerManager(uint64(l))
-	return n
-}
-func (m *BrokerUpdateAppReq_Password) Size() (n int) {
-	var l int
-	_ = l
-	l = len(m.Password)
-	n += 1 + l + sovBrokerManager(uint64(l))
-	return n
-}
-func (m *BrokerUpsertAppRes) Size() (n int) {
-	var l int
-	_ = l
-	l = len(m.Token)
-	if l > 0 {
-		n += 1 + l + sovBrokerManager(uint64(l))
-	}
-	return n
-}
-
-func (m *BrokerDevice) Size() (n int) {
-	var l int
-	_ = l
 	if m.DevAddr != nil {
 		l = len(m.DevAddr)
-		if l > 0 {
-			n += 1 + l + sovBrokerManager(uint64(l))
-		}
-	}
-	if m.DevEUI != nil {
-		l = len(m.DevEUI)
 		if l > 0 {
 			n += 1 + l + sovBrokerManager(uint64(l))
 		}
@@ -749,7 +571,37 @@ func (m *BrokerDevice) Size() (n int) {
 	return n
 }
 
-func (m *BrokerListDevicesReq) Size() (n int) {
+func (m *UpsertABPBrokerRes) Size() (n int) {
+	var l int
+	_ = l
+	return n
+}
+
+func (m *BrokerDevice) Size() (n int) {
+	var l int
+	_ = l
+	if m.DevEUI != nil {
+		l = len(m.DevEUI)
+		if l > 0 {
+			n += 1 + l + sovBrokerManager(uint64(l))
+		}
+	}
+	if m.DevAddr != nil {
+		l = len(m.DevAddr)
+		if l > 0 {
+			n += 1 + l + sovBrokerManager(uint64(l))
+		}
+	}
+	if m.NwkSKey != nil {
+		l = len(m.NwkSKey)
+		if l > 0 {
+			n += 1 + l + sovBrokerManager(uint64(l))
+		}
+	}
+	return n
+}
+
+func (m *ListDevicesBrokerReq) Size() (n int) {
 	var l int
 	_ = l
 	if m.AppEUI != nil {
@@ -758,14 +610,10 @@ func (m *BrokerListDevicesReq) Size() (n int) {
 			n += 1 + l + sovBrokerManager(uint64(l))
 		}
 	}
-	l = len(m.Token)
-	if l > 0 {
-		n += 1 + l + sovBrokerManager(uint64(l))
-	}
 	return n
 }
 
-func (m *BrokerListDevicesRes) Size() (n int) {
+func (m *ListDevicesBrokerRes) Size() (n int) {
 	var l int
 	_ = l
 	if len(m.Devices) > 0 {
@@ -774,32 +622,6 @@ func (m *BrokerListDevicesRes) Size() (n int) {
 			n += 1 + l + sovBrokerManager(uint64(l))
 		}
 	}
-	return n
-}
-
-func (m *BrokerUpsertDeviceReq) Size() (n int) {
-	var l int
-	_ = l
-	if m.AppEUI != nil {
-		l = len(m.AppEUI)
-		if l > 0 {
-			n += 1 + l + sovBrokerManager(uint64(l))
-		}
-	}
-	l = len(m.Token)
-	if l > 0 {
-		n += 1 + l + sovBrokerManager(uint64(l))
-	}
-	if m.Device != nil {
-		l = m.Device.Size()
-		n += 1 + l + sovBrokerManager(uint64(l))
-	}
-	return n
-}
-
-func (m *BrokerUpsertDeviceRes) Size() (n int) {
-	var l int
-	_ = l
 	return n
 }
 
@@ -816,7 +638,7 @@ func sovBrokerManager(x uint64) (n int) {
 func sozBrokerManager(x uint64) (n int) {
 	return sovBrokerManager(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *BrokerCreateAppReq) Unmarshal(data []byte) error {
+func (m *RegisterOTAABrokerReq) Unmarshal(data []byte) error {
 	l := len(data)
 	iNdEx := 0
 	for iNdEx < l {
@@ -839,10 +661,10 @@ func (m *BrokerCreateAppReq) Unmarshal(data []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: BrokerCreateAppReq: wiretype end group for non-group")
+			return fmt.Errorf("proto: RegisterOTAABrokerReq: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: BrokerCreateAppReq: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: RegisterOTAABrokerReq: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -905,35 +727,6 @@ func (m *BrokerCreateAppReq) Unmarshal(data []byte) error {
 			}
 			m.NetAddress = string(data[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Password", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowBrokerManager
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthBrokerManager
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Password = string(data[iNdEx:postIndex])
-			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipBrokerManager(data[iNdEx:])
@@ -955,7 +748,7 @@ func (m *BrokerCreateAppReq) Unmarshal(data []byte) error {
 	}
 	return nil
 }
-func (m *BrokerUpdateAppReq) Unmarshal(data []byte) error {
+func (m *RegisterOTAABrokerRes) Unmarshal(data []byte) error {
 	l := len(data)
 	iNdEx := 0
 	for iNdEx < l {
@@ -978,10 +771,60 @@ func (m *BrokerUpdateAppReq) Unmarshal(data []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: BrokerUpdateAppReq: wiretype end group for non-group")
+			return fmt.Errorf("proto: RegisterOTAABrokerRes: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: BrokerUpdateAppReq: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: RegisterOTAABrokerRes: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipBrokerManager(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthBrokerManager
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *UpsertABPBrokerReq) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowBrokerManager
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: UpsertABPBrokerReq: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: UpsertABPBrokerReq: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -1017,222 +860,6 @@ func (m *BrokerUpdateAppReq) Unmarshal(data []byte) error {
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Token", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowBrokerManager
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthBrokerManager
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Token = string(data[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field NetAddress", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowBrokerManager
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthBrokerManager
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Update = &BrokerUpdateAppReq_NetAddress{string(data[iNdEx:postIndex])}
-			iNdEx = postIndex
-		case 4:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Password", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowBrokerManager
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthBrokerManager
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Update = &BrokerUpdateAppReq_Password{string(data[iNdEx:postIndex])}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipBrokerManager(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthBrokerManager
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *BrokerUpsertAppRes) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowBrokerManager
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: BrokerUpsertAppRes: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: BrokerUpsertAppRes: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Token", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowBrokerManager
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthBrokerManager
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Token = string(data[iNdEx:postIndex])
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipBrokerManager(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthBrokerManager
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *BrokerDevice) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowBrokerManager
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: BrokerDevice: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: BrokerDevice: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field DevAddr", wireType)
 			}
 			var byteLen int
@@ -1260,37 +887,6 @@ func (m *BrokerDevice) Unmarshal(data []byte) error {
 			m.DevAddr = append(m.DevAddr[:0], data[iNdEx:postIndex]...)
 			if m.DevAddr == nil {
 				m.DevAddr = []byte{}
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field DevEUI", wireType)
-			}
-			var byteLen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowBrokerManager
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				byteLen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if byteLen < 0 {
-				return ErrInvalidLengthBrokerManager
-			}
-			postIndex := iNdEx + byteLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.DevEUI = append(m.DevEUI[:0], data[iNdEx:postIndex]...)
-			if m.DevEUI == nil {
-				m.DevEUI = []byte{}
 			}
 			iNdEx = postIndex
 		case 3:
@@ -1345,7 +941,7 @@ func (m *BrokerDevice) Unmarshal(data []byte) error {
 	}
 	return nil
 }
-func (m *BrokerListDevicesReq) Unmarshal(data []byte) error {
+func (m *UpsertABPBrokerRes) Unmarshal(data []byte) error {
 	l := len(data)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1368,10 +964,203 @@ func (m *BrokerListDevicesReq) Unmarshal(data []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: BrokerListDevicesReq: wiretype end group for non-group")
+			return fmt.Errorf("proto: UpsertABPBrokerRes: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: BrokerListDevicesReq: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: UpsertABPBrokerRes: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipBrokerManager(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthBrokerManager
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *BrokerDevice) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowBrokerManager
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: BrokerDevice: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: BrokerDevice: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DevEUI", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowBrokerManager
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthBrokerManager
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.DevEUI = append(m.DevEUI[:0], data[iNdEx:postIndex]...)
+			if m.DevEUI == nil {
+				m.DevEUI = []byte{}
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DevAddr", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowBrokerManager
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthBrokerManager
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.DevAddr = append(m.DevAddr[:0], data[iNdEx:postIndex]...)
+			if m.DevAddr == nil {
+				m.DevAddr = []byte{}
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NwkSKey", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowBrokerManager
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthBrokerManager
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.NwkSKey = append(m.NwkSKey[:0], data[iNdEx:postIndex]...)
+			if m.NwkSKey == nil {
+				m.NwkSKey = []byte{}
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipBrokerManager(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthBrokerManager
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ListDevicesBrokerReq) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowBrokerManager
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ListDevicesBrokerReq: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ListDevicesBrokerReq: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -1405,35 +1194,6 @@ func (m *BrokerListDevicesReq) Unmarshal(data []byte) error {
 				m.AppEUI = []byte{}
 			}
 			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Token", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowBrokerManager
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthBrokerManager
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Token = string(data[iNdEx:postIndex])
-			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipBrokerManager(data[iNdEx:])
@@ -1455,7 +1215,7 @@ func (m *BrokerListDevicesReq) Unmarshal(data []byte) error {
 	}
 	return nil
 }
-func (m *BrokerListDevicesRes) Unmarshal(data []byte) error {
+func (m *ListDevicesBrokerRes) Unmarshal(data []byte) error {
 	l := len(data)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1478,10 +1238,10 @@ func (m *BrokerListDevicesRes) Unmarshal(data []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: BrokerListDevicesRes: wiretype end group for non-group")
+			return fmt.Errorf("proto: ListDevicesBrokerRes: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: BrokerListDevicesRes: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ListDevicesBrokerRes: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -1515,199 +1275,6 @@ func (m *BrokerListDevicesRes) Unmarshal(data []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipBrokerManager(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthBrokerManager
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *BrokerUpsertDeviceReq) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowBrokerManager
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: BrokerUpsertDeviceReq: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: BrokerUpsertDeviceReq: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field AppEUI", wireType)
-			}
-			var byteLen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowBrokerManager
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				byteLen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if byteLen < 0 {
-				return ErrInvalidLengthBrokerManager
-			}
-			postIndex := iNdEx + byteLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.AppEUI = append(m.AppEUI[:0], data[iNdEx:postIndex]...)
-			if m.AppEUI == nil {
-				m.AppEUI = []byte{}
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Token", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowBrokerManager
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				stringLen |= (uint64(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthBrokerManager
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Token = string(data[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Device", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowBrokerManager
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthBrokerManager
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Device == nil {
-				m.Device = &BrokerDevice{}
-			}
-			if err := m.Device.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipBrokerManager(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthBrokerManager
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *BrokerUpsertDeviceRes) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowBrokerManager
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: BrokerUpsertDeviceRes: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: BrokerUpsertDeviceRes: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
 		default:
 			iNdEx = preIndex
 			skippy, err := skipBrokerManager(data[iNdEx:])
@@ -1835,31 +1402,26 @@ var (
 )
 
 var fileDescriptorBrokerManager = []byte{
-	// 405 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x94, 0x53, 0xcd, 0x4e, 0xf2, 0x40,
-	0x14, 0xa5, 0xfc, 0x14, 0xb8, 0x1f, 0x5f, 0x62, 0x26, 0xa8, 0x0d, 0x1a, 0x42, 0x66, 0x45, 0x88,
-	0x61, 0x81, 0x0f, 0x60, 0x40, 0x4c, 0x34, 0x2a, 0x31, 0x08, 0x1b, 0x37, 0xa6, 0x30, 0x13, 0x24,
-	0xc4, 0xb6, 0xcc, 0x4c, 0x24, 0xbe, 0x83, 0x0f, 0xe0, 0x23, 0xb9, 0xf4, 0x11, 0x8c, 0x2e, 0x7c,
-	0x0d, 0xe7, 0xa7, 0xd6, 0x56, 0xf1, 0x87, 0xc5, 0x24, 0x73, 0x7b, 0xee, 0x3d, 0xe7, 0xdc, 0x3b,
-	0xb7, 0x50, 0x1e, 0x31, 0x7f, 0x46, 0xd9, 0xe5, 0xb5, 0xeb, 0xb9, 0x13, 0xca, 0x9a, 0x01, 0xf3,
-	0x85, 0x8f, 0xb2, 0x63, 0x9f, 0x51, 0x7c, 0x05, 0xa8, 0xa3, 0xd1, 0x7d, 0x46, 0x5d, 0x41, 0xdb,
-	0x41, 0xd0, 0xa7, 0x73, 0xb4, 0x01, 0xb6, 0xbc, 0x1d, 0x0c, 0x8f, 0x1c, 0xab, 0x66, 0xd5, 0x4b,
-	0x7d, 0xdb, 0xd5, 0x11, 0xaa, 0x02, 0xf4, 0xa8, 0x68, 0x13, 0xc2, 0x28, 0xe7, 0x4e, 0x5a, 0x62,
-	0xc5, 0x3e, 0x78, 0xd1, 0x17, 0x54, 0x81, 0xc2, 0x99, 0xcb, 0xf9, 0xc2, 0x67, 0xc4, 0xc9, 0x68,
-	0xb4, 0x10, 0x84, 0x31, 0xbe, 0xb3, 0xde, 0xa5, 0x86, 0x01, 0xf9, 0x5d, 0xaa, 0x0c, 0xb9, 0x81,
-	0x4c, 0xf6, 0x42, 0x95, 0x9c, 0x50, 0x01, 0xaa, 0x25, 0x0c, 0x68, 0x89, 0xc3, 0x54, 0xc2, 0xc2,
-	0x76, 0xcc, 0x42, 0x36, 0xc4, 0x23, 0x13, 0x9d, 0x02, 0xd8, 0x46, 0x1d, 0x37, 0x3e, 0xdc, 0x70,
-	0xca, 0x84, 0x76, 0xc3, 0x97, 0xab, 0xe2, 0x0b, 0x28, 0x99, 0xdc, 0x2e, 0xbd, 0x99, 0x8e, 0x29,
-	0x72, 0x20, 0x2f, 0x6f, 0x4a, 0x31, 0x34, 0x9d, 0x27, 0x26, 0x54, 0xdd, 0x48, 0x44, 0x75, 0x93,
-	0x36, 0xdd, 0x10, 0x1d, 0xa9, 0x8a, 0xde, 0x62, 0x76, 0x7e, 0x4c, 0x6f, 0xb5, 0x69, 0x59, 0xe1,
-	0x99, 0x10, 0x77, 0xa1, 0x6c, 0xb8, 0x4f, 0xa6, 0x5c, 0x18, 0x7e, 0xbe, 0xf2, 0x5c, 0xbe, 0x61,
-	0xe1, 0x68, 0x47, 0x3b, 0x55, 0x91, 0xa4, 0xc9, 0xd4, 0xff, 0xb5, 0x50, 0x53, 0x3d, 0x7b, 0x33,
-	0xde, 0x8e, 0x76, 0xaf, 0x52, 0xf0, 0x1c, 0xd6, 0xe3, 0x33, 0x09, 0xe1, 0x95, 0x1f, 0xa9, 0xa1,
-	0x87, 0x20, 0x4b, 0x75, 0xaf, 0xcb, 0x35, 0x6d, 0xa3, 0x89, 0x37, 0x97, 0x4b, 0xf2, 0xd6, 0xab,
-	0x05, 0xff, 0x0d, 0x72, 0x6a, 0xd6, 0x16, 0xed, 0x41, 0x31, 0x5a, 0x52, 0xe4, 0xc4, 0x39, 0xe3,
-	0xbb, 0x5b, 0x49, 0x20, 0x89, 0xc7, 0x95, 0x04, 0xd1, 0xea, 0xa1, 0x4f, 0x69, 0xe4, 0x2f, 0x04,
-	0x03, 0x70, 0x92, 0x36, 0x27, 0x72, 0xda, 0xcc, 0x15, 0x53, 0xdf, 0x43, 0x5b, 0x5f, 0xab, 0xa2,
-	0xf9, 0x55, 0x7e, 0x00, 0x79, 0x67, 0xed, 0xe1, 0xb9, 0x6a, 0x3d, 0xca, 0xf3, 0x24, 0xcf, 0xfd,
-	0x4b, 0x35, 0x35, 0xb2, 0xf5, 0x1f, 0xba, 0xfb, 0x16, 0x00, 0x00, 0xff, 0xff, 0xdd, 0xc6, 0x53,
-	0x54, 0xb9, 0x03, 0x00, 0x00,
+	// 323 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xe2, 0x12, 0x49, 0x2a, 0xca, 0xcf,
+	0x4e, 0x2d, 0x8a, 0xcf, 0x4d, 0xcc, 0x4b, 0x4c, 0x4f, 0x2d, 0xd2, 0x2b, 0x28, 0xca, 0x2f, 0xc9,
+	0x17, 0x62, 0x49, 0xce, 0x2f, 0x4a, 0x55, 0xf2, 0xe7, 0x12, 0x0d, 0x4a, 0x4d, 0xcf, 0x2c, 0x2e,
+	0x49, 0x2d, 0xf2, 0x0f, 0x71, 0x74, 0x74, 0x02, 0xab, 0x0c, 0x4a, 0x2d, 0x14, 0x12, 0xe3, 0x62,
+	0x73, 0x2c, 0x28, 0x70, 0x0d, 0xf5, 0x94, 0x60, 0x54, 0x60, 0xd4, 0xe0, 0x09, 0x62, 0x4b, 0x04,
+	0xf3, 0x84, 0xe4, 0xb8, 0xb8, 0xfc, 0x52, 0x4b, 0x1c, 0x53, 0x52, 0x8a, 0x52, 0x8b, 0x8b, 0x25,
+	0x98, 0x80, 0x72, 0x9c, 0x41, 0x5c, 0x79, 0x70, 0x11, 0x25, 0x71, 0xec, 0x06, 0x16, 0x2b, 0x25,
+	0x70, 0x09, 0x85, 0x16, 0x14, 0xa7, 0x16, 0x95, 0x38, 0x3a, 0x05, 0x10, 0xb6, 0x46, 0x82, 0x8b,
+	0xdd, 0x25, 0xb5, 0x0c, 0x64, 0x28, 0xd8, 0x0e, 0x9e, 0x20, 0xf6, 0x14, 0x08, 0x17, 0x24, 0xe3,
+	0x57, 0x9e, 0x1d, 0xec, 0x9d, 0x5a, 0x29, 0xc1, 0x0c, 0x91, 0xc9, 0x83, 0x70, 0x95, 0x44, 0xb0,
+	0xd8, 0x50, 0xac, 0x14, 0xc5, 0xc5, 0x03, 0xe1, 0x00, 0xcd, 0xcb, 0x4c, 0x4e, 0x05, 0xd9, 0x08,
+	0x64, 0x21, 0xd9, 0x98, 0x02, 0xe6, 0x91, 0x65, 0xa3, 0x1e, 0x97, 0x88, 0x0f, 0xd0, 0xab, 0x10,
+	0x93, 0x8b, 0x09, 0xfa, 0x4a, 0xc9, 0x05, 0xab, 0xfa, 0x62, 0x21, 0x1d, 0xb0, 0xdd, 0x20, 0x31,
+	0xa0, 0x06, 0x66, 0x0d, 0x6e, 0x23, 0x21, 0x3d, 0x50, 0xec, 0xe8, 0x21, 0x3b, 0x1c, 0xec, 0x1e,
+	0x90, 0x12, 0xa3, 0x87, 0x8c, 0x5c, 0xbc, 0x10, 0x19, 0x5f, 0x48, 0x8c, 0x0a, 0x79, 0x70, 0xf1,
+	0x20, 0x07, 0xba, 0x90, 0x34, 0x44, 0x3b, 0xd6, 0x98, 0x95, 0xc2, 0x23, 0x59, 0x2c, 0x64, 0xcf,
+	0xc5, 0x09, 0x0f, 0x43, 0x21, 0x09, 0x88, 0x4a, 0xcc, 0x68, 0x93, 0xc2, 0x25, 0x53, 0x2c, 0xe4,
+	0xca, 0xc5, 0x8d, 0xe4, 0x45, 0x21, 0x29, 0x88, 0x42, 0x6c, 0xa1, 0x24, 0x85, 0x5b, 0xae, 0xd8,
+	0x49, 0xe0, 0xc4, 0x23, 0x39, 0xc6, 0x0b, 0x40, 0xfc, 0x00, 0x88, 0x67, 0x3c, 0x96, 0x63, 0x48,
+	0x62, 0x03, 0x27, 0x5b, 0x63, 0x40, 0x00, 0x00, 0x00, 0xff, 0xff, 0x51, 0x95, 0x62, 0xd4, 0xce,
+	0x02, 0x00, 0x00,
 }

@@ -20,219 +20,123 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
-type HandlerDevice struct {
-	DevEUI []byte `protobuf:"bytes,1,opt,name=DevEUI,json=devEUI,proto3" json:"DevEUI,omitempty"`
-	// Types that are valid to be assigned to Data:
-	//	*HandlerDevice_Personalized
-	//	*HandlerDevice_Activated
-	Data isHandlerDevice_Data `protobuf_oneof:"Data"`
-}
-
-func (m *HandlerDevice) Reset()                    { *m = HandlerDevice{} }
-func (m *HandlerDevice) String() string            { return proto.CompactTextString(m) }
-func (*HandlerDevice) ProtoMessage()               {}
-func (*HandlerDevice) Descriptor() ([]byte, []int) { return fileDescriptorHandlerManager, []int{0} }
-
-type isHandlerDevice_Data interface {
-	isHandlerDevice_Data()
-	MarshalTo([]byte) (int, error)
-	Size() int
-}
-
-type HandlerDevice_Personalized struct {
-	Personalized *HandlerDevice_PersonalizedData `protobuf:"bytes,2,opt,name=Personalized,json=personalized,oneof"`
-}
-type HandlerDevice_Activated struct {
-	Activated *HandlerDevice_ActivatedData `protobuf:"bytes,3,opt,name=Activated,json=activated,oneof"`
-}
-
-func (*HandlerDevice_Personalized) isHandlerDevice_Data() {}
-func (*HandlerDevice_Activated) isHandlerDevice_Data()    {}
-
-func (m *HandlerDevice) GetData() isHandlerDevice_Data {
-	if m != nil {
-		return m.Data
-	}
-	return nil
-}
-
-func (m *HandlerDevice) GetPersonalized() *HandlerDevice_PersonalizedData {
-	if x, ok := m.GetData().(*HandlerDevice_Personalized); ok {
-		return x.Personalized
-	}
-	return nil
-}
-
-func (m *HandlerDevice) GetActivated() *HandlerDevice_ActivatedData {
-	if x, ok := m.GetData().(*HandlerDevice_Activated); ok {
-		return x.Activated
-	}
-	return nil
-}
-
-// XXX_OneofFuncs is for the internal use of the proto package.
-func (*HandlerDevice) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
-	return _HandlerDevice_OneofMarshaler, _HandlerDevice_OneofUnmarshaler, _HandlerDevice_OneofSizer, []interface{}{
-		(*HandlerDevice_Personalized)(nil),
-		(*HandlerDevice_Activated)(nil),
-	}
-}
-
-func _HandlerDevice_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
-	m := msg.(*HandlerDevice)
-	// Data
-	switch x := m.Data.(type) {
-	case *HandlerDevice_Personalized:
-		_ = b.EncodeVarint(2<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Personalized); err != nil {
-			return err
-		}
-	case *HandlerDevice_Activated:
-		_ = b.EncodeVarint(3<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Activated); err != nil {
-			return err
-		}
-	case nil:
-	default:
-		return fmt.Errorf("HandlerDevice.Data has unexpected type %T", x)
-	}
-	return nil
-}
-
-func _HandlerDevice_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
-	m := msg.(*HandlerDevice)
-	switch tag {
-	case 2: // Data.Personalized
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(HandlerDevice_PersonalizedData)
-		err := b.DecodeMessage(msg)
-		m.Data = &HandlerDevice_Personalized{msg}
-		return true, err
-	case 3: // Data.Activated
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(HandlerDevice_ActivatedData)
-		err := b.DecodeMessage(msg)
-		m.Data = &HandlerDevice_Activated{msg}
-		return true, err
-	default:
-		return false, nil
-	}
-}
-
-func _HandlerDevice_OneofSizer(msg proto.Message) (n int) {
-	m := msg.(*HandlerDevice)
-	// Data
-	switch x := m.Data.(type) {
-	case *HandlerDevice_Personalized:
-		s := proto.Size(x.Personalized)
-		n += proto.SizeVarint(2<<3 | proto.WireBytes)
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case *HandlerDevice_Activated:
-		s := proto.Size(x.Activated)
-		n += proto.SizeVarint(3<<3 | proto.WireBytes)
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case nil:
-	default:
-		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
-	}
-	return n
-}
-
-type HandlerDevice_PersonalizedData struct {
-	NwkSKey []byte `protobuf:"bytes,1,opt,name=NwkSKey,json=nwkSKey,proto3" json:"NwkSKey,omitempty"`
-	AppSKey []byte `protobuf:"bytes,2,opt,name=AppSKey,json=appSKey,proto3" json:"AppSKey,omitempty"`
-}
-
-func (m *HandlerDevice_PersonalizedData) Reset()         { *m = HandlerDevice_PersonalizedData{} }
-func (m *HandlerDevice_PersonalizedData) String() string { return proto.CompactTextString(m) }
-func (*HandlerDevice_PersonalizedData) ProtoMessage()    {}
-func (*HandlerDevice_PersonalizedData) Descriptor() ([]byte, []int) {
-	return fileDescriptorHandlerManager, []int{0, 0}
-}
-
-type HandlerDevice_ActivatedData struct {
-	AppKey []byte `protobuf:"bytes,1,opt,name=AppKey,json=appKey,proto3" json:"AppKey,omitempty"`
-}
-
-func (m *HandlerDevice_ActivatedData) Reset()         { *m = HandlerDevice_ActivatedData{} }
-func (m *HandlerDevice_ActivatedData) String() string { return proto.CompactTextString(m) }
-func (*HandlerDevice_ActivatedData) ProtoMessage()    {}
-func (*HandlerDevice_ActivatedData) Descriptor() ([]byte, []int) {
-	return fileDescriptorHandlerManager, []int{0, 1}
-}
-
-type HandlerListDevicesReq struct {
+type UpsertOTAAHandlerReq struct {
 	AppEUI []byte `protobuf:"bytes,1,opt,name=AppEUI,json=appEUI,proto3" json:"AppEUI,omitempty"`
+	DevEUI []byte `protobuf:"bytes,2,opt,name=DevEUI,json=devEUI,proto3" json:"DevEUI,omitempty"`
+	AppKey []byte `protobuf:"bytes,3,opt,name=AppKey,json=appKey,proto3" json:"AppKey,omitempty"`
 }
 
-func (m *HandlerListDevicesReq) Reset()         { *m = HandlerListDevicesReq{} }
-func (m *HandlerListDevicesReq) String() string { return proto.CompactTextString(m) }
-func (*HandlerListDevicesReq) ProtoMessage()    {}
-func (*HandlerListDevicesReq) Descriptor() ([]byte, []int) {
+func (m *UpsertOTAAHandlerReq) Reset()         { *m = UpsertOTAAHandlerReq{} }
+func (m *UpsertOTAAHandlerReq) String() string { return proto.CompactTextString(m) }
+func (*UpsertOTAAHandlerReq) ProtoMessage()    {}
+func (*UpsertOTAAHandlerReq) Descriptor() ([]byte, []int) {
+	return fileDescriptorHandlerManager, []int{0}
+}
+
+type UpsertOTAAHandlerRes struct {
+}
+
+func (m *UpsertOTAAHandlerRes) Reset()         { *m = UpsertOTAAHandlerRes{} }
+func (m *UpsertOTAAHandlerRes) String() string { return proto.CompactTextString(m) }
+func (*UpsertOTAAHandlerRes) ProtoMessage()    {}
+func (*UpsertOTAAHandlerRes) Descriptor() ([]byte, []int) {
 	return fileDescriptorHandlerManager, []int{1}
 }
 
-type HandlerListDevicesRes struct {
-	Devices []*HandlerDevice `protobuf:"bytes,1,rep,name=Devices,json=devices" json:"Devices,omitempty"`
+type UpsertABPHandlerReq struct {
+	AppEUI  []byte `protobuf:"bytes,1,opt,name=AppEUI,json=appEUI,proto3" json:"AppEUI,omitempty"`
+	DevAddr []byte `protobuf:"bytes,2,opt,name=DevAddr,json=devAddr,proto3" json:"DevAddr,omitempty"`
+	NwkSKey []byte `protobuf:"bytes,3,opt,name=NwkSKey,json=nwkSKey,proto3" json:"NwkSKey,omitempty"`
+	AppSKey []byte `protobuf:"bytes,4,opt,name=AppSKey,json=appSKey,proto3" json:"AppSKey,omitempty"`
 }
 
-func (m *HandlerListDevicesRes) Reset()         { *m = HandlerListDevicesRes{} }
-func (m *HandlerListDevicesRes) String() string { return proto.CompactTextString(m) }
-func (*HandlerListDevicesRes) ProtoMessage()    {}
-func (*HandlerListDevicesRes) Descriptor() ([]byte, []int) {
+func (m *UpsertABPHandlerReq) Reset()         { *m = UpsertABPHandlerReq{} }
+func (m *UpsertABPHandlerReq) String() string { return proto.CompactTextString(m) }
+func (*UpsertABPHandlerReq) ProtoMessage()    {}
+func (*UpsertABPHandlerReq) Descriptor() ([]byte, []int) {
 	return fileDescriptorHandlerManager, []int{2}
 }
 
-func (m *HandlerListDevicesRes) GetDevices() []*HandlerDevice {
-	if m != nil {
-		return m.Devices
-	}
-	return nil
+type UpsertABPHandlerRes struct {
 }
 
-type HandlerUpsertDeviceReq struct {
-	AppEUI []byte         `protobuf:"bytes,1,opt,name=AppEUI,json=appEUI,proto3" json:"AppEUI,omitempty"`
-	Device *HandlerDevice `protobuf:"bytes,2,opt,name=Device,json=device" json:"Device,omitempty"`
-}
-
-func (m *HandlerUpsertDeviceReq) Reset()         { *m = HandlerUpsertDeviceReq{} }
-func (m *HandlerUpsertDeviceReq) String() string { return proto.CompactTextString(m) }
-func (*HandlerUpsertDeviceReq) ProtoMessage()    {}
-func (*HandlerUpsertDeviceReq) Descriptor() ([]byte, []int) {
+func (m *UpsertABPHandlerRes) Reset()         { *m = UpsertABPHandlerRes{} }
+func (m *UpsertABPHandlerRes) String() string { return proto.CompactTextString(m) }
+func (*UpsertABPHandlerRes) ProtoMessage()    {}
+func (*UpsertABPHandlerRes) Descriptor() ([]byte, []int) {
 	return fileDescriptorHandlerManager, []int{3}
 }
 
-func (m *HandlerUpsertDeviceReq) GetDevice() *HandlerDevice {
+type ListDevicesHandlerReq struct {
+	AppEUI []byte `protobuf:"bytes,1,opt,name=AppEUI,json=appEUI,proto3" json:"AppEUI,omitempty"`
+}
+
+func (m *ListDevicesHandlerReq) Reset()         { *m = ListDevicesHandlerReq{} }
+func (m *ListDevicesHandlerReq) String() string { return proto.CompactTextString(m) }
+func (*ListDevicesHandlerReq) ProtoMessage()    {}
+func (*ListDevicesHandlerReq) Descriptor() ([]byte, []int) {
+	return fileDescriptorHandlerManager, []int{4}
+}
+
+type ListDevicesHandlerRes struct {
+	OTAA []*HandlerOTAADevice `protobuf:"bytes,1,rep,name=OTAA,json=oTAA" json:"OTAA,omitempty"`
+	ABP  []*HandlerABPDevice  `protobuf:"bytes,2,rep,name=ABP,json=aBP" json:"ABP,omitempty"`
+}
+
+func (m *ListDevicesHandlerRes) Reset()         { *m = ListDevicesHandlerRes{} }
+func (m *ListDevicesHandlerRes) String() string { return proto.CompactTextString(m) }
+func (*ListDevicesHandlerRes) ProtoMessage()    {}
+func (*ListDevicesHandlerRes) Descriptor() ([]byte, []int) {
+	return fileDescriptorHandlerManager, []int{5}
+}
+
+func (m *ListDevicesHandlerRes) GetOTAA() []*HandlerOTAADevice {
 	if m != nil {
-		return m.Device
+		return m.OTAA
 	}
 	return nil
 }
 
-type HandlerUpsertDeviceRes struct {
+func (m *ListDevicesHandlerRes) GetABP() []*HandlerABPDevice {
+	if m != nil {
+		return m.ABP
+	}
+	return nil
 }
 
-func (m *HandlerUpsertDeviceRes) Reset()         { *m = HandlerUpsertDeviceRes{} }
-func (m *HandlerUpsertDeviceRes) String() string { return proto.CompactTextString(m) }
-func (*HandlerUpsertDeviceRes) ProtoMessage()    {}
-func (*HandlerUpsertDeviceRes) Descriptor() ([]byte, []int) {
-	return fileDescriptorHandlerManager, []int{4}
+type HandlerABPDevice struct {
+	DevAddr []byte `protobuf:"bytes,2,opt,name=DevAddr,json=devAddr,proto3" json:"DevAddr,omitempty"`
+	NwkSKey []byte `protobuf:"bytes,3,opt,name=NwkSKey,json=nwkSKey,proto3" json:"NwkSKey,omitempty"`
+	AppSKey []byte `protobuf:"bytes,4,opt,name=AppSKey,json=appSKey,proto3" json:"AppSKey,omitempty"`
 }
+
+func (m *HandlerABPDevice) Reset()                    { *m = HandlerABPDevice{} }
+func (m *HandlerABPDevice) String() string            { return proto.CompactTextString(m) }
+func (*HandlerABPDevice) ProtoMessage()               {}
+func (*HandlerABPDevice) Descriptor() ([]byte, []int) { return fileDescriptorHandlerManager, []int{6} }
+
+type HandlerOTAADevice struct {
+	DevEUI  []byte `protobuf:"bytes,1,opt,name=DevEUI,json=devEUI,proto3" json:"DevEUI,omitempty"`
+	DevAddr []byte `protobuf:"bytes,2,opt,name=DevAddr,json=devAddr,proto3" json:"DevAddr,omitempty"`
+	NwkSKey []byte `protobuf:"bytes,3,opt,name=NwkSKey,json=nwkSKey,proto3" json:"NwkSKey,omitempty"`
+	AppSKey []byte `protobuf:"bytes,4,opt,name=AppSKey,json=appSKey,proto3" json:"AppSKey,omitempty"`
+	AppKey  []byte `protobuf:"bytes,5,opt,name=AppKey,json=appKey,proto3" json:"AppKey,omitempty"`
+}
+
+func (m *HandlerOTAADevice) Reset()                    { *m = HandlerOTAADevice{} }
+func (m *HandlerOTAADevice) String() string            { return proto.CompactTextString(m) }
+func (*HandlerOTAADevice) ProtoMessage()               {}
+func (*HandlerOTAADevice) Descriptor() ([]byte, []int) { return fileDescriptorHandlerManager, []int{7} }
 
 func init() {
-	proto.RegisterType((*HandlerDevice)(nil), "core.HandlerDevice")
-	proto.RegisterType((*HandlerDevice_PersonalizedData)(nil), "core.HandlerDevice.PersonalizedData")
-	proto.RegisterType((*HandlerDevice_ActivatedData)(nil), "core.HandlerDevice.ActivatedData")
-	proto.RegisterType((*HandlerListDevicesReq)(nil), "core.HandlerListDevicesReq")
-	proto.RegisterType((*HandlerListDevicesRes)(nil), "core.HandlerListDevicesRes")
-	proto.RegisterType((*HandlerUpsertDeviceReq)(nil), "core.HandlerUpsertDeviceReq")
-	proto.RegisterType((*HandlerUpsertDeviceRes)(nil), "core.HandlerUpsertDeviceRes")
+	proto.RegisterType((*UpsertOTAAHandlerReq)(nil), "core.UpsertOTAAHandlerReq")
+	proto.RegisterType((*UpsertOTAAHandlerRes)(nil), "core.UpsertOTAAHandlerRes")
+	proto.RegisterType((*UpsertABPHandlerReq)(nil), "core.UpsertABPHandlerReq")
+	proto.RegisterType((*UpsertABPHandlerRes)(nil), "core.UpsertABPHandlerRes")
+	proto.RegisterType((*ListDevicesHandlerReq)(nil), "core.ListDevicesHandlerReq")
+	proto.RegisterType((*ListDevicesHandlerRes)(nil), "core.ListDevicesHandlerRes")
+	proto.RegisterType((*HandlerABPDevice)(nil), "core.HandlerABPDevice")
+	proto.RegisterType((*HandlerOTAADevice)(nil), "core.HandlerOTAADevice")
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -242,8 +146,9 @@ var _ grpc.ClientConn
 // Client API for HandlerManager service
 
 type HandlerManagerClient interface {
-	List(ctx context.Context, in *HandlerListDevicesReq, opts ...grpc.CallOption) (*HandlerListDevicesRes, error)
-	Upsert(ctx context.Context, in *HandlerUpsertDeviceReq, opts ...grpc.CallOption) (*HandlerUpsertDeviceRes, error)
+	UpsertOTAA(ctx context.Context, in *UpsertOTAAHandlerReq, opts ...grpc.CallOption) (*UpsertOTAAHandlerRes, error)
+	UpsertABP(ctx context.Context, in *UpsertABPHandlerReq, opts ...grpc.CallOption) (*UpsertABPHandlerRes, error)
+	ListDevices(ctx context.Context, in *ListDevicesHandlerReq, opts ...grpc.CallOption) (*ListDevicesHandlerRes, error)
 }
 
 type handlerManagerClient struct {
@@ -254,18 +159,27 @@ func NewHandlerManagerClient(cc *grpc.ClientConn) HandlerManagerClient {
 	return &handlerManagerClient{cc}
 }
 
-func (c *handlerManagerClient) List(ctx context.Context, in *HandlerListDevicesReq, opts ...grpc.CallOption) (*HandlerListDevicesRes, error) {
-	out := new(HandlerListDevicesRes)
-	err := grpc.Invoke(ctx, "/core.HandlerManager/List", in, out, c.cc, opts...)
+func (c *handlerManagerClient) UpsertOTAA(ctx context.Context, in *UpsertOTAAHandlerReq, opts ...grpc.CallOption) (*UpsertOTAAHandlerRes, error) {
+	out := new(UpsertOTAAHandlerRes)
+	err := grpc.Invoke(ctx, "/core.HandlerManager/UpsertOTAA", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *handlerManagerClient) Upsert(ctx context.Context, in *HandlerUpsertDeviceReq, opts ...grpc.CallOption) (*HandlerUpsertDeviceRes, error) {
-	out := new(HandlerUpsertDeviceRes)
-	err := grpc.Invoke(ctx, "/core.HandlerManager/Upsert", in, out, c.cc, opts...)
+func (c *handlerManagerClient) UpsertABP(ctx context.Context, in *UpsertABPHandlerReq, opts ...grpc.CallOption) (*UpsertABPHandlerRes, error) {
+	out := new(UpsertABPHandlerRes)
+	err := grpc.Invoke(ctx, "/core.HandlerManager/UpsertABP", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *handlerManagerClient) ListDevices(ctx context.Context, in *ListDevicesHandlerReq, opts ...grpc.CallOption) (*ListDevicesHandlerRes, error) {
+	out := new(ListDevicesHandlerRes)
+	err := grpc.Invoke(ctx, "/core.HandlerManager/ListDevices", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -275,32 +189,45 @@ func (c *handlerManagerClient) Upsert(ctx context.Context, in *HandlerUpsertDevi
 // Server API for HandlerManager service
 
 type HandlerManagerServer interface {
-	List(context.Context, *HandlerListDevicesReq) (*HandlerListDevicesRes, error)
-	Upsert(context.Context, *HandlerUpsertDeviceReq) (*HandlerUpsertDeviceRes, error)
+	UpsertOTAA(context.Context, *UpsertOTAAHandlerReq) (*UpsertOTAAHandlerRes, error)
+	UpsertABP(context.Context, *UpsertABPHandlerReq) (*UpsertABPHandlerRes, error)
+	ListDevices(context.Context, *ListDevicesHandlerReq) (*ListDevicesHandlerRes, error)
 }
 
 func RegisterHandlerManagerServer(s *grpc.Server, srv HandlerManagerServer) {
 	s.RegisterService(&_HandlerManager_serviceDesc, srv)
 }
 
-func _HandlerManager_List_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(HandlerListDevicesReq)
+func _HandlerManager_UpsertOTAA_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(UpsertOTAAHandlerReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(HandlerManagerServer).List(ctx, in)
+	out, err := srv.(HandlerManagerServer).UpsertOTAA(ctx, in)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func _HandlerManager_Upsert_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(HandlerUpsertDeviceReq)
+func _HandlerManager_UpsertABP_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(UpsertABPHandlerReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(HandlerManagerServer).Upsert(ctx, in)
+	out, err := srv.(HandlerManagerServer).UpsertABP(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _HandlerManager_ListDevices_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(ListDevicesHandlerReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(HandlerManagerServer).ListDevices(ctx, in)
 	if err != nil {
 		return nil, err
 	}
@@ -312,18 +239,22 @@ var _HandlerManager_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*HandlerManagerServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "List",
-			Handler:    _HandlerManager_List_Handler,
+			MethodName: "UpsertOTAA",
+			Handler:    _HandlerManager_UpsertOTAA_Handler,
 		},
 		{
-			MethodName: "Upsert",
-			Handler:    _HandlerManager_Upsert_Handler,
+			MethodName: "UpsertABP",
+			Handler:    _HandlerManager_UpsertABP_Handler,
+		},
+		{
+			MethodName: "ListDevices",
+			Handler:    _HandlerManager_ListDevices_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{},
 }
 
-func (m *HandlerDevice) Marshal() (data []byte, err error) {
+func (m *UpsertOTAAHandlerReq) Marshal() (data []byte, err error) {
 	size := m.Size()
 	data = make([]byte, size)
 	n, err := m.MarshalTo(data)
@@ -333,109 +264,30 @@ func (m *HandlerDevice) Marshal() (data []byte, err error) {
 	return data[:n], nil
 }
 
-func (m *HandlerDevice) MarshalTo(data []byte) (int, error) {
+func (m *UpsertOTAAHandlerReq) MarshalTo(data []byte) (int, error) {
 	var i int
 	_ = i
 	var l int
 	_ = l
+	if m.AppEUI != nil {
+		if len(m.AppEUI) > 0 {
+			data[i] = 0xa
+			i++
+			i = encodeVarintHandlerManager(data, i, uint64(len(m.AppEUI)))
+			i += copy(data[i:], m.AppEUI)
+		}
+	}
 	if m.DevEUI != nil {
 		if len(m.DevEUI) > 0 {
-			data[i] = 0xa
+			data[i] = 0x12
 			i++
 			i = encodeVarintHandlerManager(data, i, uint64(len(m.DevEUI)))
 			i += copy(data[i:], m.DevEUI)
 		}
 	}
-	if m.Data != nil {
-		nn1, err := m.Data.MarshalTo(data[i:])
-		if err != nil {
-			return 0, err
-		}
-		i += nn1
-	}
-	return i, nil
-}
-
-func (m *HandlerDevice_Personalized) MarshalTo(data []byte) (int, error) {
-	i := 0
-	if m.Personalized != nil {
-		data[i] = 0x12
-		i++
-		i = encodeVarintHandlerManager(data, i, uint64(m.Personalized.Size()))
-		n2, err := m.Personalized.MarshalTo(data[i:])
-		if err != nil {
-			return 0, err
-		}
-		i += n2
-	}
-	return i, nil
-}
-func (m *HandlerDevice_Activated) MarshalTo(data []byte) (int, error) {
-	i := 0
-	if m.Activated != nil {
-		data[i] = 0x1a
-		i++
-		i = encodeVarintHandlerManager(data, i, uint64(m.Activated.Size()))
-		n3, err := m.Activated.MarshalTo(data[i:])
-		if err != nil {
-			return 0, err
-		}
-		i += n3
-	}
-	return i, nil
-}
-func (m *HandlerDevice_PersonalizedData) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *HandlerDevice_PersonalizedData) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	if m.NwkSKey != nil {
-		if len(m.NwkSKey) > 0 {
-			data[i] = 0xa
-			i++
-			i = encodeVarintHandlerManager(data, i, uint64(len(m.NwkSKey)))
-			i += copy(data[i:], m.NwkSKey)
-		}
-	}
-	if m.AppSKey != nil {
-		if len(m.AppSKey) > 0 {
-			data[i] = 0x12
-			i++
-			i = encodeVarintHandlerManager(data, i, uint64(len(m.AppSKey)))
-			i += copy(data[i:], m.AppSKey)
-		}
-	}
-	return i, nil
-}
-
-func (m *HandlerDevice_ActivatedData) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *HandlerDevice_ActivatedData) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
 	if m.AppKey != nil {
 		if len(m.AppKey) > 0 {
-			data[i] = 0xa
+			data[i] = 0x1a
 			i++
 			i = encodeVarintHandlerManager(data, i, uint64(len(m.AppKey)))
 			i += copy(data[i:], m.AppKey)
@@ -444,7 +296,7 @@ func (m *HandlerDevice_ActivatedData) MarshalTo(data []byte) (int, error) {
 	return i, nil
 }
 
-func (m *HandlerListDevicesReq) Marshal() (data []byte, err error) {
+func (m *UpsertOTAAHandlerRes) Marshal() (data []byte, err error) {
 	size := m.Size()
 	data = make([]byte, size)
 	n, err := m.MarshalTo(data)
@@ -454,7 +306,93 @@ func (m *HandlerListDevicesReq) Marshal() (data []byte, err error) {
 	return data[:n], nil
 }
 
-func (m *HandlerListDevicesReq) MarshalTo(data []byte) (int, error) {
+func (m *UpsertOTAAHandlerRes) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	return i, nil
+}
+
+func (m *UpsertABPHandlerReq) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *UpsertABPHandlerReq) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if m.AppEUI != nil {
+		if len(m.AppEUI) > 0 {
+			data[i] = 0xa
+			i++
+			i = encodeVarintHandlerManager(data, i, uint64(len(m.AppEUI)))
+			i += copy(data[i:], m.AppEUI)
+		}
+	}
+	if m.DevAddr != nil {
+		if len(m.DevAddr) > 0 {
+			data[i] = 0x12
+			i++
+			i = encodeVarintHandlerManager(data, i, uint64(len(m.DevAddr)))
+			i += copy(data[i:], m.DevAddr)
+		}
+	}
+	if m.NwkSKey != nil {
+		if len(m.NwkSKey) > 0 {
+			data[i] = 0x1a
+			i++
+			i = encodeVarintHandlerManager(data, i, uint64(len(m.NwkSKey)))
+			i += copy(data[i:], m.NwkSKey)
+		}
+	}
+	if m.AppSKey != nil {
+		if len(m.AppSKey) > 0 {
+			data[i] = 0x22
+			i++
+			i = encodeVarintHandlerManager(data, i, uint64(len(m.AppSKey)))
+			i += copy(data[i:], m.AppSKey)
+		}
+	}
+	return i, nil
+}
+
+func (m *UpsertABPHandlerRes) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *UpsertABPHandlerRes) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	return i, nil
+}
+
+func (m *ListDevicesHandlerReq) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *ListDevicesHandlerReq) MarshalTo(data []byte) (int, error) {
 	var i int
 	_ = i
 	var l int
@@ -470,7 +408,7 @@ func (m *HandlerListDevicesReq) MarshalTo(data []byte) (int, error) {
 	return i, nil
 }
 
-func (m *HandlerListDevicesRes) Marshal() (data []byte, err error) {
+func (m *ListDevicesHandlerRes) Marshal() (data []byte, err error) {
 	size := m.Size()
 	data = make([]byte, size)
 	n, err := m.MarshalTo(data)
@@ -480,14 +418,26 @@ func (m *HandlerListDevicesRes) Marshal() (data []byte, err error) {
 	return data[:n], nil
 }
 
-func (m *HandlerListDevicesRes) MarshalTo(data []byte) (int, error) {
+func (m *ListDevicesHandlerRes) MarshalTo(data []byte) (int, error) {
 	var i int
 	_ = i
 	var l int
 	_ = l
-	if len(m.Devices) > 0 {
-		for _, msg := range m.Devices {
+	if len(m.OTAA) > 0 {
+		for _, msg := range m.OTAA {
 			data[i] = 0xa
+			i++
+			i = encodeVarintHandlerManager(data, i, uint64(msg.Size()))
+			n, err := msg.MarshalTo(data[i:])
+			if err != nil {
+				return 0, err
+			}
+			i += n
+		}
+	}
+	if len(m.ABP) > 0 {
+		for _, msg := range m.ABP {
+			data[i] = 0x12
 			i++
 			i = encodeVarintHandlerManager(data, i, uint64(msg.Size()))
 			n, err := msg.MarshalTo(data[i:])
@@ -500,7 +450,7 @@ func (m *HandlerListDevicesRes) MarshalTo(data []byte) (int, error) {
 	return i, nil
 }
 
-func (m *HandlerUpsertDeviceReq) Marshal() (data []byte, err error) {
+func (m *HandlerABPDevice) Marshal() (data []byte, err error) {
 	size := m.Size()
 	data = make([]byte, size)
 	n, err := m.MarshalTo(data)
@@ -510,33 +460,39 @@ func (m *HandlerUpsertDeviceReq) Marshal() (data []byte, err error) {
 	return data[:n], nil
 }
 
-func (m *HandlerUpsertDeviceReq) MarshalTo(data []byte) (int, error) {
+func (m *HandlerABPDevice) MarshalTo(data []byte) (int, error) {
 	var i int
 	_ = i
 	var l int
 	_ = l
-	if m.AppEUI != nil {
-		if len(m.AppEUI) > 0 {
-			data[i] = 0xa
+	if m.DevAddr != nil {
+		if len(m.DevAddr) > 0 {
+			data[i] = 0x12
 			i++
-			i = encodeVarintHandlerManager(data, i, uint64(len(m.AppEUI)))
-			i += copy(data[i:], m.AppEUI)
+			i = encodeVarintHandlerManager(data, i, uint64(len(m.DevAddr)))
+			i += copy(data[i:], m.DevAddr)
 		}
 	}
-	if m.Device != nil {
-		data[i] = 0x12
-		i++
-		i = encodeVarintHandlerManager(data, i, uint64(m.Device.Size()))
-		n4, err := m.Device.MarshalTo(data[i:])
-		if err != nil {
-			return 0, err
+	if m.NwkSKey != nil {
+		if len(m.NwkSKey) > 0 {
+			data[i] = 0x1a
+			i++
+			i = encodeVarintHandlerManager(data, i, uint64(len(m.NwkSKey)))
+			i += copy(data[i:], m.NwkSKey)
 		}
-		i += n4
+	}
+	if m.AppSKey != nil {
+		if len(m.AppSKey) > 0 {
+			data[i] = 0x22
+			i++
+			i = encodeVarintHandlerManager(data, i, uint64(len(m.AppSKey)))
+			i += copy(data[i:], m.AppSKey)
+		}
 	}
 	return i, nil
 }
 
-func (m *HandlerUpsertDeviceRes) Marshal() (data []byte, err error) {
+func (m *HandlerOTAADevice) Marshal() (data []byte, err error) {
 	size := m.Size()
 	data = make([]byte, size)
 	n, err := m.MarshalTo(data)
@@ -546,11 +502,51 @@ func (m *HandlerUpsertDeviceRes) Marshal() (data []byte, err error) {
 	return data[:n], nil
 }
 
-func (m *HandlerUpsertDeviceRes) MarshalTo(data []byte) (int, error) {
+func (m *HandlerOTAADevice) MarshalTo(data []byte) (int, error) {
 	var i int
 	_ = i
 	var l int
 	_ = l
+	if m.DevEUI != nil {
+		if len(m.DevEUI) > 0 {
+			data[i] = 0xa
+			i++
+			i = encodeVarintHandlerManager(data, i, uint64(len(m.DevEUI)))
+			i += copy(data[i:], m.DevEUI)
+		}
+	}
+	if m.DevAddr != nil {
+		if len(m.DevAddr) > 0 {
+			data[i] = 0x12
+			i++
+			i = encodeVarintHandlerManager(data, i, uint64(len(m.DevAddr)))
+			i += copy(data[i:], m.DevAddr)
+		}
+	}
+	if m.NwkSKey != nil {
+		if len(m.NwkSKey) > 0 {
+			data[i] = 0x1a
+			i++
+			i = encodeVarintHandlerManager(data, i, uint64(len(m.NwkSKey)))
+			i += copy(data[i:], m.NwkSKey)
+		}
+	}
+	if m.AppSKey != nil {
+		if len(m.AppSKey) > 0 {
+			data[i] = 0x22
+			i++
+			i = encodeVarintHandlerManager(data, i, uint64(len(m.AppSKey)))
+			i += copy(data[i:], m.AppSKey)
+		}
+	}
+	if m.AppKey != nil {
+		if len(m.AppKey) > 0 {
+			data[i] = 0x2a
+			i++
+			i = encodeVarintHandlerManager(data, i, uint64(len(m.AppKey)))
+			i += copy(data[i:], m.AppKey)
+		}
+	}
 	return i, nil
 }
 
@@ -581,42 +577,51 @@ func encodeVarintHandlerManager(data []byte, offset int, v uint64) int {
 	data[offset] = uint8(v)
 	return offset + 1
 }
-func (m *HandlerDevice) Size() (n int) {
+func (m *UpsertOTAAHandlerReq) Size() (n int) {
 	var l int
 	_ = l
+	if m.AppEUI != nil {
+		l = len(m.AppEUI)
+		if l > 0 {
+			n += 1 + l + sovHandlerManager(uint64(l))
+		}
+	}
 	if m.DevEUI != nil {
 		l = len(m.DevEUI)
 		if l > 0 {
 			n += 1 + l + sovHandlerManager(uint64(l))
 		}
 	}
-	if m.Data != nil {
-		n += m.Data.Size()
+	if m.AppKey != nil {
+		l = len(m.AppKey)
+		if l > 0 {
+			n += 1 + l + sovHandlerManager(uint64(l))
+		}
 	}
 	return n
 }
 
-func (m *HandlerDevice_Personalized) Size() (n int) {
+func (m *UpsertOTAAHandlerRes) Size() (n int) {
 	var l int
 	_ = l
-	if m.Personalized != nil {
-		l = m.Personalized.Size()
-		n += 1 + l + sovHandlerManager(uint64(l))
-	}
 	return n
 }
-func (m *HandlerDevice_Activated) Size() (n int) {
+
+func (m *UpsertABPHandlerReq) Size() (n int) {
 	var l int
 	_ = l
-	if m.Activated != nil {
-		l = m.Activated.Size()
-		n += 1 + l + sovHandlerManager(uint64(l))
+	if m.AppEUI != nil {
+		l = len(m.AppEUI)
+		if l > 0 {
+			n += 1 + l + sovHandlerManager(uint64(l))
+		}
 	}
-	return n
-}
-func (m *HandlerDevice_PersonalizedData) Size() (n int) {
-	var l int
-	_ = l
+	if m.DevAddr != nil {
+		l = len(m.DevAddr)
+		if l > 0 {
+			n += 1 + l + sovHandlerManager(uint64(l))
+		}
+	}
 	if m.NwkSKey != nil {
 		l = len(m.NwkSKey)
 		if l > 0 {
@@ -632,19 +637,13 @@ func (m *HandlerDevice_PersonalizedData) Size() (n int) {
 	return n
 }
 
-func (m *HandlerDevice_ActivatedData) Size() (n int) {
+func (m *UpsertABPHandlerRes) Size() (n int) {
 	var l int
 	_ = l
-	if m.AppKey != nil {
-		l = len(m.AppKey)
-		if l > 0 {
-			n += 1 + l + sovHandlerManager(uint64(l))
-		}
-	}
 	return n
 }
 
-func (m *HandlerListDevicesReq) Size() (n int) {
+func (m *ListDevicesHandlerReq) Size() (n int) {
 	var l int
 	_ = l
 	if m.AppEUI != nil {
@@ -656,11 +655,17 @@ func (m *HandlerListDevicesReq) Size() (n int) {
 	return n
 }
 
-func (m *HandlerListDevicesRes) Size() (n int) {
+func (m *ListDevicesHandlerRes) Size() (n int) {
 	var l int
 	_ = l
-	if len(m.Devices) > 0 {
-		for _, e := range m.Devices {
+	if len(m.OTAA) > 0 {
+		for _, e := range m.OTAA {
+			l = e.Size()
+			n += 1 + l + sovHandlerManager(uint64(l))
+		}
+	}
+	if len(m.ABP) > 0 {
+		for _, e := range m.ABP {
 			l = e.Size()
 			n += 1 + l + sovHandlerManager(uint64(l))
 		}
@@ -668,25 +673,63 @@ func (m *HandlerListDevicesRes) Size() (n int) {
 	return n
 }
 
-func (m *HandlerUpsertDeviceReq) Size() (n int) {
+func (m *HandlerABPDevice) Size() (n int) {
 	var l int
 	_ = l
-	if m.AppEUI != nil {
-		l = len(m.AppEUI)
+	if m.DevAddr != nil {
+		l = len(m.DevAddr)
 		if l > 0 {
 			n += 1 + l + sovHandlerManager(uint64(l))
 		}
 	}
-	if m.Device != nil {
-		l = m.Device.Size()
-		n += 1 + l + sovHandlerManager(uint64(l))
+	if m.NwkSKey != nil {
+		l = len(m.NwkSKey)
+		if l > 0 {
+			n += 1 + l + sovHandlerManager(uint64(l))
+		}
+	}
+	if m.AppSKey != nil {
+		l = len(m.AppSKey)
+		if l > 0 {
+			n += 1 + l + sovHandlerManager(uint64(l))
+		}
 	}
 	return n
 }
 
-func (m *HandlerUpsertDeviceRes) Size() (n int) {
+func (m *HandlerOTAADevice) Size() (n int) {
 	var l int
 	_ = l
+	if m.DevEUI != nil {
+		l = len(m.DevEUI)
+		if l > 0 {
+			n += 1 + l + sovHandlerManager(uint64(l))
+		}
+	}
+	if m.DevAddr != nil {
+		l = len(m.DevAddr)
+		if l > 0 {
+			n += 1 + l + sovHandlerManager(uint64(l))
+		}
+	}
+	if m.NwkSKey != nil {
+		l = len(m.NwkSKey)
+		if l > 0 {
+			n += 1 + l + sovHandlerManager(uint64(l))
+		}
+	}
+	if m.AppSKey != nil {
+		l = len(m.AppSKey)
+		if l > 0 {
+			n += 1 + l + sovHandlerManager(uint64(l))
+		}
+	}
+	if m.AppKey != nil {
+		l = len(m.AppKey)
+		if l > 0 {
+			n += 1 + l + sovHandlerManager(uint64(l))
+		}
+	}
 	return n
 }
 
@@ -703,7 +746,7 @@ func sovHandlerManager(x uint64) (n int) {
 func sozHandlerManager(x uint64) (n int) {
 	return sovHandlerManager(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *HandlerDevice) Unmarshal(data []byte) error {
+func (m *UpsertOTAAHandlerReq) Unmarshal(data []byte) error {
 	l := len(data)
 	iNdEx := 0
 	for iNdEx < l {
@@ -726,13 +769,44 @@ func (m *HandlerDevice) Unmarshal(data []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: HandlerDevice: wiretype end group for non-group")
+			return fmt.Errorf("proto: UpsertOTAAHandlerReq: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: HandlerDevice: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: UpsertOTAAHandlerReq: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AppEUI", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandlerManager
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthHandlerManager
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AppEUI = append(m.AppEUI[:0], data[iNdEx:postIndex]...)
+			if m.AppEUI == nil {
+				m.AppEUI = []byte{}
+			}
+			iNdEx = postIndex
+		case 2:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field DevEUI", wireType)
 			}
@@ -763,233 +837,7 @@ func (m *HandlerDevice) Unmarshal(data []byte) error {
 				m.DevEUI = []byte{}
 			}
 			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Personalized", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowHandlerManager
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthHandlerManager
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			v := &HandlerDevice_PersonalizedData{}
-			if err := v.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			m.Data = &HandlerDevice_Personalized{v}
-			iNdEx = postIndex
 		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Activated", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowHandlerManager
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthHandlerManager
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			v := &HandlerDevice_ActivatedData{}
-			if err := v.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			m.Data = &HandlerDevice_Activated{v}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipHandlerManager(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthHandlerManager
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *HandlerDevice_PersonalizedData) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowHandlerManager
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: PersonalizedData: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: PersonalizedData: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field NwkSKey", wireType)
-			}
-			var byteLen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowHandlerManager
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				byteLen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if byteLen < 0 {
-				return ErrInvalidLengthHandlerManager
-			}
-			postIndex := iNdEx + byteLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.NwkSKey = append(m.NwkSKey[:0], data[iNdEx:postIndex]...)
-			if m.NwkSKey == nil {
-				m.NwkSKey = []byte{}
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field AppSKey", wireType)
-			}
-			var byteLen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowHandlerManager
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				byteLen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if byteLen < 0 {
-				return ErrInvalidLengthHandlerManager
-			}
-			postIndex := iNdEx + byteLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.AppSKey = append(m.AppSKey[:0], data[iNdEx:postIndex]...)
-			if m.AppSKey == nil {
-				m.AppSKey = []byte{}
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipHandlerManager(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthHandlerManager
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *HandlerDevice_ActivatedData) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowHandlerManager
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: ActivatedData: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ActivatedData: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field AppKey", wireType)
 			}
@@ -1041,7 +889,7 @@ func (m *HandlerDevice_ActivatedData) Unmarshal(data []byte) error {
 	}
 	return nil
 }
-func (m *HandlerListDevicesReq) Unmarshal(data []byte) error {
+func (m *UpsertOTAAHandlerRes) Unmarshal(data []byte) error {
 	l := len(data)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1064,43 +912,12 @@ func (m *HandlerListDevicesReq) Unmarshal(data []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: HandlerListDevicesReq: wiretype end group for non-group")
+			return fmt.Errorf("proto: UpsertOTAAHandlerRes: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: HandlerListDevicesReq: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: UpsertOTAAHandlerRes: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field AppEUI", wireType)
-			}
-			var byteLen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowHandlerManager
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				byteLen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if byteLen < 0 {
-				return ErrInvalidLengthHandlerManager
-			}
-			postIndex := iNdEx + byteLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.AppEUI = append(m.AppEUI[:0], data[iNdEx:postIndex]...)
-			if m.AppEUI == nil {
-				m.AppEUI = []byte{}
-			}
-			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipHandlerManager(data[iNdEx:])
@@ -1122,7 +939,7 @@ func (m *HandlerListDevicesReq) Unmarshal(data []byte) error {
 	}
 	return nil
 }
-func (m *HandlerListDevicesRes) Unmarshal(data []byte) error {
+func (m *UpsertABPHandlerReq) Unmarshal(data []byte) error {
 	l := len(data)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1145,91 +962,10 @@ func (m *HandlerListDevicesRes) Unmarshal(data []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: HandlerListDevicesRes: wiretype end group for non-group")
+			return fmt.Errorf("proto: UpsertABPHandlerReq: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: HandlerListDevicesRes: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Devices", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowHandlerManager
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthHandlerManager
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Devices = append(m.Devices, &HandlerDevice{})
-			if err := m.Devices[len(m.Devices)-1].Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipHandlerManager(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthHandlerManager
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *HandlerUpsertDeviceReq) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowHandlerManager
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: HandlerUpsertDeviceReq: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: HandlerUpsertDeviceReq: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: UpsertABPHandlerReq: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -1265,7 +1001,281 @@ func (m *HandlerUpsertDeviceReq) Unmarshal(data []byte) error {
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Device", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field DevAddr", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandlerManager
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthHandlerManager
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.DevAddr = append(m.DevAddr[:0], data[iNdEx:postIndex]...)
+			if m.DevAddr == nil {
+				m.DevAddr = []byte{}
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NwkSKey", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandlerManager
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthHandlerManager
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.NwkSKey = append(m.NwkSKey[:0], data[iNdEx:postIndex]...)
+			if m.NwkSKey == nil {
+				m.NwkSKey = []byte{}
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AppSKey", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandlerManager
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthHandlerManager
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AppSKey = append(m.AppSKey[:0], data[iNdEx:postIndex]...)
+			if m.AppSKey == nil {
+				m.AppSKey = []byte{}
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipHandlerManager(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthHandlerManager
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *UpsertABPHandlerRes) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowHandlerManager
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: UpsertABPHandlerRes: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: UpsertABPHandlerRes: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipHandlerManager(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthHandlerManager
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ListDevicesHandlerReq) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowHandlerManager
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ListDevicesHandlerReq: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ListDevicesHandlerReq: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AppEUI", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandlerManager
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthHandlerManager
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AppEUI = append(m.AppEUI[:0], data[iNdEx:postIndex]...)
+			if m.AppEUI == nil {
+				m.AppEUI = []byte{}
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipHandlerManager(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthHandlerManager
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ListDevicesHandlerRes) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowHandlerManager
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ListDevicesHandlerRes: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ListDevicesHandlerRes: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field OTAA", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -1289,10 +1299,39 @@ func (m *HandlerUpsertDeviceReq) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.Device == nil {
-				m.Device = &HandlerDevice{}
+			m.OTAA = append(m.OTAA, &HandlerOTAADevice{})
+			if err := m.OTAA[len(m.OTAA)-1].Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
 			}
-			if err := m.Device.Unmarshal(data[iNdEx:postIndex]); err != nil {
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ABP", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandlerManager
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthHandlerManager
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ABP = append(m.ABP, &HandlerABPDevice{})
+			if err := m.ABP[len(m.ABP)-1].Unmarshal(data[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1317,7 +1356,7 @@ func (m *HandlerUpsertDeviceReq) Unmarshal(data []byte) error {
 	}
 	return nil
 }
-func (m *HandlerUpsertDeviceRes) Unmarshal(data []byte) error {
+func (m *HandlerABPDevice) Unmarshal(data []byte) error {
 	l := len(data)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1340,12 +1379,310 @@ func (m *HandlerUpsertDeviceRes) Unmarshal(data []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: HandlerUpsertDeviceRes: wiretype end group for non-group")
+			return fmt.Errorf("proto: HandlerABPDevice: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: HandlerUpsertDeviceRes: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: HandlerABPDevice: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DevAddr", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandlerManager
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthHandlerManager
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.DevAddr = append(m.DevAddr[:0], data[iNdEx:postIndex]...)
+			if m.DevAddr == nil {
+				m.DevAddr = []byte{}
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NwkSKey", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandlerManager
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthHandlerManager
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.NwkSKey = append(m.NwkSKey[:0], data[iNdEx:postIndex]...)
+			if m.NwkSKey == nil {
+				m.NwkSKey = []byte{}
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AppSKey", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandlerManager
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthHandlerManager
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AppSKey = append(m.AppSKey[:0], data[iNdEx:postIndex]...)
+			if m.AppSKey == nil {
+				m.AppSKey = []byte{}
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipHandlerManager(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthHandlerManager
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *HandlerOTAADevice) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowHandlerManager
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: HandlerOTAADevice: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: HandlerOTAADevice: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DevEUI", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandlerManager
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthHandlerManager
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.DevEUI = append(m.DevEUI[:0], data[iNdEx:postIndex]...)
+			if m.DevEUI == nil {
+				m.DevEUI = []byte{}
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DevAddr", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandlerManager
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthHandlerManager
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.DevAddr = append(m.DevAddr[:0], data[iNdEx:postIndex]...)
+			if m.DevAddr == nil {
+				m.DevAddr = []byte{}
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NwkSKey", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandlerManager
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthHandlerManager
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.NwkSKey = append(m.NwkSKey[:0], data[iNdEx:postIndex]...)
+			if m.NwkSKey == nil {
+				m.NwkSKey = []byte{}
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AppSKey", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandlerManager
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthHandlerManager
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AppSKey = append(m.AppSKey[:0], data[iNdEx:postIndex]...)
+			if m.AppSKey == nil {
+				m.AppSKey = []byte{}
+			}
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AppKey", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandlerManager
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthHandlerManager
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AppKey = append(m.AppKey[:0], data[iNdEx:postIndex]...)
+			if m.AppKey == nil {
+				m.AppKey = []byte{}
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipHandlerManager(data[iNdEx:])
@@ -1473,28 +1810,28 @@ var (
 )
 
 var fileDescriptorHandlerManager = []byte{
-	// 362 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x7c, 0x92, 0xdf, 0x4a, 0xc3, 0x30,
-	0x14, 0xc6, 0xd7, 0x6d, 0xa4, 0xec, 0xb8, 0xc9, 0x88, 0x6c, 0x94, 0x2a, 0x43, 0x8b, 0xa0, 0x20,
-	0x56, 0x98, 0x2f, 0xe0, 0xc6, 0x1c, 0xf3, 0x2f, 0x52, 0xd9, 0xa5, 0x48, 0x5c, 0x83, 0x16, 0x67,
-	0x5b, 0x93, 0x32, 0xd1, 0x27, 0xd9, 0x5b, 0xf8, 0x1a, 0x5e, 0xfa, 0x08, 0xa2, 0x2f, 0x62, 0x9a,
-	0x44, 0x5d, 0x47, 0xdd, 0x45, 0xa1, 0x5f, 0xbe, 0x2f, 0xbf, 0x93, 0x73, 0x12, 0x68, 0xdc, 0x91,
-	0xd0, 0x1f, 0x53, 0x76, 0xfd, 0x40, 0x42, 0x72, 0x4b, 0x99, 0x1b, 0xb3, 0x28, 0x89, 0x70, 0x79,
-	0x14, 0x31, 0xea, 0xbc, 0x16, 0xa1, 0x36, 0x50, 0x7e, 0x8f, 0x4e, 0x82, 0x11, 0xc5, 0x4d, 0x40,
-	0xe2, 0xef, 0x70, 0x78, 0x64, 0x19, 0xeb, 0xc6, 0x76, 0xd5, 0x43, 0xbe, 0x54, 0xf8, 0x18, 0xaa,
-	0x17, 0x94, 0xf1, 0x28, 0x24, 0xe3, 0xe0, 0x85, 0xfa, 0x56, 0x51, 0xb8, 0x4b, 0xed, 0x4d, 0x37,
-	0xc5, 0xb8, 0x19, 0x84, 0x3b, 0x9b, 0xeb, 0x91, 0x84, 0x0c, 0x0a, 0x5e, 0x35, 0x9e, 0x59, 0xc3,
-	0x1d, 0xa8, 0x74, 0x46, 0x49, 0x30, 0x21, 0x89, 0x00, 0x95, 0x24, 0x68, 0x23, 0x0f, 0xf4, 0x1b,
-	0xd2, 0x94, 0x0a, 0xf9, 0x59, 0xb0, 0xfb, 0x50, 0x9f, 0x2f, 0x83, 0x2d, 0x30, 0xcf, 0x9f, 0xee,
-	0x2f, 0x4f, 0xe8, 0xb3, 0x3e, 0xbb, 0x19, 0x2a, 0x99, 0x3a, 0x9d, 0x38, 0x96, 0x4e, 0x51, 0x39,
-	0x44, 0x49, 0x7b, 0x0b, 0x6a, 0x99, 0x2a, 0x69, 0xff, 0x22, 0xfa, 0xc7, 0x40, 0x44, 0xaa, 0x2e,
-	0x82, 0x72, 0xea, 0x3b, 0x7b, 0xd0, 0xd0, 0x87, 0x3c, 0x0d, 0x78, 0xa2, 0x0e, 0xca, 0x3d, 0xfa,
-	0xa8, 0x37, 0xce, 0x0c, 0x8e, 0x48, 0xe5, 0xf4, 0xf3, 0x37, 0x70, 0xbc, 0x0b, 0xa6, 0x56, 0x62,
-	0x47, 0x49, 0xcc, 0x60, 0x25, 0x67, 0x06, 0x9e, 0xe9, 0xab, 0x8c, 0x73, 0x05, 0x4d, 0xed, 0x0c,
-	0x63, 0x4e, 0x99, 0x26, 0x2d, 0xa8, 0x8c, 0x77, 0xe4, 0x55, 0x8a, 0x90, 0xbe, 0xac, 0x5c, 0x3e,
-	0x52, 0x7c, 0xc7, 0xfa, 0x07, 0xcf, 0xdb, 0x53, 0x03, 0x96, 0xb5, 0x75, 0xa6, 0x9e, 0x10, 0x3e,
-	0x80, 0x72, 0xda, 0x0c, 0x5e, 0xcd, 0x10, 0xb3, 0x03, 0xb1, 0x17, 0x98, 0x1c, 0xf7, 0x00, 0xa9,
-	0x3a, 0x78, 0x2d, 0x13, 0x9b, 0xeb, 0xcd, 0x5e, 0xe4, 0xf2, 0x6e, 0xfd, 0xed, 0xb3, 0x65, 0xbc,
-	0x8b, 0xef, 0x43, 0x7c, 0xd3, 0xaf, 0x56, 0xe1, 0x06, 0xc9, 0xd7, 0xbd, 0xff, 0x1d, 0x00, 0x00,
-	0xff, 0xff, 0x08, 0x40, 0xae, 0x74, 0xf6, 0x02, 0x00, 0x00,
+	// 364 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xe2, 0x12, 0xcd, 0x48, 0xcc, 0x4b,
+	0xc9, 0x49, 0x2d, 0x8a, 0xcf, 0x4d, 0xcc, 0x4b, 0x4c, 0x4f, 0x2d, 0xd2, 0x2b, 0x28, 0xca, 0x2f,
+	0xc9, 0x17, 0x62, 0x49, 0xce, 0x2f, 0x4a, 0x55, 0x8a, 0xe3, 0x12, 0x09, 0x2d, 0x28, 0x4e, 0x2d,
+	0x2a, 0xf1, 0x0f, 0x71, 0x74, 0xf4, 0x80, 0x28, 0x0c, 0x4a, 0x2d, 0x14, 0x12, 0xe3, 0x62, 0x73,
+	0x2c, 0x28, 0x70, 0x0d, 0xf5, 0x94, 0x60, 0x54, 0x60, 0xd4, 0xe0, 0x09, 0x62, 0x4b, 0x04, 0xf3,
+	0x40, 0xe2, 0x2e, 0xa9, 0x65, 0x20, 0x71, 0x26, 0x88, 0x78, 0x0a, 0x98, 0x07, 0x55, 0xef, 0x9d,
+	0x5a, 0x29, 0xc1, 0x0c, 0x57, 0x0f, 0xe4, 0x29, 0x89, 0x61, 0x35, 0xbf, 0x58, 0xa9, 0x9a, 0x4b,
+	0x18, 0x22, 0xee, 0xe8, 0x14, 0x40, 0x84, 0xb5, 0x12, 0x5c, 0xec, 0x40, 0x6b, 0x1d, 0x53, 0x52,
+	0x8a, 0xa0, 0xf6, 0xb2, 0xa7, 0x40, 0xb8, 0x20, 0x19, 0xbf, 0xf2, 0xec, 0x60, 0x84, 0xcd, 0xec,
+	0x79, 0x10, 0x2e, 0x48, 0x06, 0x68, 0x16, 0x58, 0x86, 0x05, 0x22, 0x93, 0x08, 0xe1, 0x2a, 0x89,
+	0x62, 0xb3, 0xbc, 0x58, 0x49, 0x9f, 0x4b, 0xd4, 0x27, 0xb3, 0xb8, 0x04, 0x68, 0x51, 0x66, 0x72,
+	0x6a, 0x31, 0x61, 0x57, 0x29, 0xe5, 0x61, 0xd7, 0x50, 0x2c, 0xa4, 0xcd, 0xc5, 0x02, 0xf2, 0x2f,
+	0x50, 0x39, 0xb3, 0x06, 0xb7, 0x91, 0xb8, 0x1e, 0x28, 0xa8, 0xf5, 0xa0, 0xf2, 0x20, 0x09, 0x88,
+	0x8e, 0x20, 0x96, 0x7c, 0x20, 0x5b, 0x48, 0x83, 0x8b, 0x19, 0xe8, 0x0e, 0xa0, 0xbf, 0x40, 0x6a,
+	0xc5, 0x50, 0xd4, 0x02, 0xc5, 0xa1, 0x4a, 0x99, 0x13, 0x9d, 0x02, 0x94, 0x12, 0xb8, 0x04, 0xd0,
+	0x25, 0xa8, 0x1c, 0x32, 0x13, 0x19, 0xb9, 0x04, 0x31, 0xdc, 0x89, 0x14, 0xe9, 0x8c, 0x28, 0x91,
+	0x4e, 0x55, 0xbb, 0x91, 0x92, 0x10, 0x2b, 0x72, 0x12, 0x32, 0x7a, 0xc4, 0xc8, 0xc5, 0x07, 0x75,
+	0x93, 0x2f, 0x24, 0x05, 0x0b, 0xb9, 0x70, 0x71, 0x21, 0x52, 0x95, 0x90, 0x14, 0x24, 0xcc, 0xb0,
+	0xa5, 0x63, 0x29, 0xdc, 0x72, 0xc5, 0x42, 0x8e, 0x5c, 0x9c, 0xf0, 0x64, 0x20, 0x24, 0x89, 0xac,
+	0x10, 0x25, 0x51, 0x4a, 0xe1, 0x94, 0x2a, 0x16, 0x72, 0xe7, 0xe2, 0x46, 0x4a, 0x01, 0x42, 0xd2,
+	0x10, 0x95, 0x58, 0x53, 0x91, 0x14, 0x1e, 0xc9, 0x62, 0x27, 0x81, 0x13, 0x8f, 0xe4, 0x18, 0x2f,
+	0x00, 0xf1, 0x03, 0x20, 0x9e, 0xf1, 0x58, 0x8e, 0x21, 0x89, 0x0d, 0x9c, 0x4d, 0x8d, 0x01, 0x01,
+	0x00, 0x00, 0xff, 0xff, 0x2e, 0xd8, 0x9b, 0x23, 0xbf, 0x03, 0x00, 0x00,
 }
