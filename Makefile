@@ -32,10 +32,10 @@ ttnctlbin = $(ttnctlpkg)$(GOEXE)
 all: clean deps build package
 
 deps:
-	$(GOCMD) get -v -u $(DEPS)
+	$(GOCMD) get -d -v $(DEPS)
 
 test-deps:
-	$(GOCMD) get -v -u $(TEST_DEPS)
+	$(GOCMD) get -d -v $(TEST_DEPS)
 
 test:
 	$(select_pkgs) | xargs $(GOCMD) test
