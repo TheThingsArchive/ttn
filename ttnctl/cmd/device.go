@@ -42,7 +42,7 @@ var devicesCmd = &cobra.Command{
 		conn, manager := getHandlerManager()
 		defer conn.Close()
 
-		res, err := manager.List(context.Background(), &core.HandlerListDevicesReq{
+		res, err := manager.ListDevices(context.Background(), &core.ListDevicesHandlerReq{
 			AppEUI: appEUI,
 		})
 
@@ -50,31 +50,31 @@ var devicesCmd = &cobra.Command{
 			ctx.WithError(err).Fatal("Could not get device list")
 		}
 
-		ctx.Infof("Found %d devices", len(res.Devices))
-
+		ctx.Infof("Found %d personalized devices (ABP)", len(res.ABP))
 		table := uitable.New()
-		table.MaxColWidth = 50
-
-		table.AddRow("DevEUI", "AppKey", "NwkSKey", "AppSKey")
-		for _, device := range res.Devices {
-			devEUI := fmt.Sprintf("%X", device.DevEUI)
-
-			appKey := emptyCell
-			if a := device.GetActivated(); a != nil {
-				appKey = fmt.Sprintf("%X", a.AppKey)
-			}
-
-			nwkSKey := emptyCell
-			appSKey := emptyCell
-			if p := device.GetPersonalized(); p != nil {
-				nwkSKey = fmt.Sprintf("%X", p.NwkSKey)
-				appSKey = fmt.Sprintf("%X", p.AppSKey)
-			}
-
-			table.AddRow(devEUI, appKey, nwkSKey, appSKey)
+		table.MaxColWidth = 70
+		table.AddRow("DevAddr", "NwkSKey", "AppSKey")
+		for _, device := range res.ABP {
+			devAddr := fmt.Sprintf("%X", device.DevAddr)
+			nwkSKey := fmt.Sprintf("%X", device.NwkSKey)
+			appSKey := fmt.Sprintf("%X", device.AppSKey)
+			table.AddRow(devAddr, nwkSKey, appSKey)
 		}
 		fmt.Println(table)
 
+		ctx.Infof("Found %d dynamic devices (OTAA)", len(res.OTAA))
+		table = uitable.New()
+		table.MaxColWidth = 40
+		table.AddRow("DevEUI", "DevAddr", "NwkSKey", "AppSKey", "AppKey")
+		for _, device := range res.OTAA {
+			devEUI := fmt.Sprintf("%X", device.DevEUI)
+			devAddr := fmt.Sprintf("%X", device.DevAddr)
+			nwkSKey := fmt.Sprintf("%X", device.NwkSKey)
+			appSKey := fmt.Sprintf("%X", device.AppSKey)
+			appKey := fmt.Sprintf("%X", device.AppKey)
+			table.AddRow(devEUI, devAddr, nwkSKey, appSKey, appKey)
+		}
+		fmt.Println(table)
 	},
 }
 
@@ -106,29 +106,22 @@ var devicesRegisterCmd = &cobra.Command{
 		conn, manager := getHandlerManager()
 		defer conn.Close()
 
-		res, err := manager.Upsert(context.Background(), &core.HandlerUpsertDeviceReq{
+		res, err := manager.UpsertOTAA(context.Background(), &core.UpsertOTAAHandlerReq{
 			AppEUI: appEUI,
-			Device: &core.HandlerDevice{
-				DevEUI: devEUI,
-				Data: &core.HandlerDevice_Activated{
-					Activated: &core.HandlerDevice_ActivatedData{
-						AppKey: appKey,
-					},
-				},
-			},
+			DevEUI: devEUI,
+			AppKey: appKey,
 		})
 
 		if err != nil || res == nil {
 			ctx.WithError(err).Fatal("Could not register device")
 		}
 		ctx.Info("Ok")
-
 	},
 }
 
 // devicesRegisterPersonalizedCmd represents the `device register personalized` command
 var devicesRegisterPersonalizedCmd = &cobra.Command{
-	Use:   "personalized [DevEUI] [NwkSKey] [AppSKey]",
+	Use:   "personalized [DevAddr] [NwkSKey] [AppSKey]",
 	Short: "Create or Update ABP registrations on the Handler",
 	Long:  `Create or Update ABP registrations on the Handler`,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -141,9 +134,9 @@ var devicesRegisterPersonalizedCmd = &cobra.Command{
 			ctx.Fatalf("Invalid AppEUI: %s", err)
 		}
 
-		devEUI, err := util.Parse64(args[0])
+		devAddr, err := util.Parse32(args[0])
 		if err != nil {
-			ctx.Fatalf("Invalid DevEUI: %s", err)
+			ctx.Fatalf("Invalid DevAddr: %s", err)
 		}
 
 		nwkSKey, err := util.Parse128(args[1])
@@ -159,24 +152,17 @@ var devicesRegisterPersonalizedCmd = &cobra.Command{
 		conn, manager := getHandlerManager()
 		defer conn.Close()
 
-		res, err := manager.Upsert(context.Background(), &core.HandlerUpsertDeviceReq{
-			AppEUI: appEUI,
-			Device: &core.HandlerDevice{
-				DevEUI: devEUI,
-				Data: &core.HandlerDevice_Personalized{
-					Personalized: &core.HandlerDevice_PersonalizedData{
-						AppSKey: appSKey,
-						NwkSKey: nwkSKey,
-					},
-				},
-			},
+		res, err := manager.UpsertABP(context.Background(), &core.UpsertABPHandlerReq{
+			AppEUI:  appEUI,
+			DevAddr: devAddr,
+			AppSKey: appSKey,
+			NwkSKey: nwkSKey,
 		})
 
 		if err != nil || res == nil {
 			ctx.WithError(err).Fatal("Could not register device")
 		}
 		ctx.Info("Ok")
-
 	},
 }
 
@@ -195,5 +181,4 @@ func init() {
 
 	devicesCmd.PersistentFlags().String("app-token", "0102030405060708", "The app Token to use")
 	viper.BindPFlag("app-token", devicesCmd.PersistentFlags().Lookup("app-token"))
-
 }
