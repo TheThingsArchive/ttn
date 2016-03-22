@@ -4,7 +4,7 @@ GOOS ?= $(shell echo "`go env GOOS`")
 GOARCH ?= $(shell echo "`go env GOARCH`")
 GOEXE ?= $(shell echo "`go env GOEXE`")
 
-GOCMD = GOOS=$(GOOS) GOARCH=$(GOARCH) go
+GOCMD = go
 
 export CGO_ENABLED=0
 GOBUILD = $(GOCMD) build
