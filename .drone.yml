@@ -21,8 +21,6 @@ build:
     - rsync -a /go/src/ /drone/src/
     - make deps
     - make build package
-    - rm release/branch/$$BRANCH/ttn-$$GOOS-$$GOARCH
-    - rm release/branch/$$BRANCH/ttnctl-$$GOOS-$$GOARCH
   when:
     branch: [master, develop]
 
