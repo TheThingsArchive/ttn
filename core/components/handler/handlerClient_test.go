@@ -49,7 +49,8 @@ func TestListDevices(t *testing.T) {
 				Broker:     br,
 				DevStorage: st,
 			}, Options{
-				NetAddr: "NetAddr",
+				PublicNetAddr:  "NetAddr",
+				PrivateNetAddr: "PrivNetAddr",
 			})
 		req := &core.ListDevicesHandlerReq{
 			Token:  "==OAuth==Token==",
@@ -105,7 +106,8 @@ func TestListDevices(t *testing.T) {
 				Broker:     br,
 				DevStorage: st,
 			}, Options{
-				NetAddr: "NetAddr",
+				PublicNetAddr:  "NetAddr",
+				PrivateNetAddr: "PrivNetAddr",
 			})
 		req := &core.ListDevicesHandlerReq{
 			Token:  "==OAuth==Token==",
@@ -144,7 +146,8 @@ func TestListDevices(t *testing.T) {
 				Broker:     br,
 				DevStorage: st,
 			}, Options{
-				NetAddr: "NetAddr",
+				PublicNetAddr:  "NetAddr",
+				PrivateNetAddr: "PrivNetAddr",
 			})
 		req := &core.ListDevicesHandlerReq{
 			Token:  "==OAuth==Token==",
@@ -182,7 +185,8 @@ func TestListDevices(t *testing.T) {
 				Broker:     br,
 				DevStorage: st,
 			}, Options{
-				NetAddr: "NetAddr",
+				PublicNetAddr:  "NetAddr",
+				PrivateNetAddr: "PrivNetAddr",
 			})
 		req := &core.ListDevicesHandlerReq{
 			Token:  "==OAuth==Token==",
@@ -217,7 +221,8 @@ func TestUpsertABP(t *testing.T) {
 				Broker:     br,
 				DevStorage: st,
 			}, Options{
-				NetAddr: "NetAddr",
+				PublicNetAddr:  "NetAddr",
+				PrivateNetAddr: "PrivNetAddr",
 			})
 		req := &core.UpsertABPHandlerReq{
 			Token:   "==OAuth==Token==",
@@ -234,7 +239,7 @@ func TestUpsertABP(t *testing.T) {
 			AppEUI:     req.AppEUI,
 			DevAddr:    []byte{14, 14, 14, 14},
 			NwkSKey:    []byte{1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4},
-			NetAddress: h.(*component).NetAddr,
+			NetAddress: h.(*component).PrivateNetAddr,
 		}
 		var wantRes = new(core.UpsertABPHandlerRes)
 
@@ -262,7 +267,8 @@ func TestUpsertABP(t *testing.T) {
 				Broker:     br,
 				DevStorage: st,
 			}, Options{
-				NetAddr: "NetAddr",
+				PublicNetAddr:  "NetAddr",
+				PrivateNetAddr: "PrivNetAddr",
 			})
 		req := &core.UpsertABPHandlerReq{
 			Token:   "==OAuth==Token==",
@@ -279,7 +285,7 @@ func TestUpsertABP(t *testing.T) {
 			AppEUI:     req.AppEUI,
 			DevAddr:    []byte{14, 14, 14, 14},
 			NwkSKey:    []byte{1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4},
-			NetAddress: h.(*component).NetAddr,
+			NetAddress: h.(*component).PrivateNetAddr,
 		}
 		var wantRes = new(core.UpsertABPHandlerRes)
 
@@ -307,7 +313,8 @@ func TestUpsertABP(t *testing.T) {
 				Broker:     br,
 				DevStorage: st,
 			}, Options{
-				NetAddr: "NetAddr",
+				PublicNetAddr:  "NetAddr",
+				PrivateNetAddr: "PrivNetAddr",
 			})
 		req := &core.UpsertABPHandlerReq{
 			Token:   "==OAuth==Token==",
@@ -324,7 +331,7 @@ func TestUpsertABP(t *testing.T) {
 			AppEUI:     req.AppEUI,
 			DevAddr:    []byte{14, 14, 14, 14},
 			NwkSKey:    []byte{1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4},
-			NetAddress: h.(*component).NetAddr,
+			NetAddress: h.(*component).PrivateNetAddr,
 		}
 		var wantRes = new(core.UpsertABPHandlerRes)
 
@@ -351,7 +358,8 @@ func TestUpsertABP(t *testing.T) {
 				Broker:     br,
 				DevStorage: st,
 			}, Options{
-				NetAddr: "NetAddr",
+				PublicNetAddr:  "NetAddr",
+				PrivateNetAddr: "PrivNetAddr",
 			})
 		req := &core.UpsertABPHandlerReq{
 			Token:   "==OAuth==Token==",
@@ -389,7 +397,8 @@ func TestUpsertABP(t *testing.T) {
 				Broker:     br,
 				DevStorage: st,
 			}, Options{
-				NetAddr: "NetAddr",
+				PublicNetAddr:  "NetAddr",
+				PrivateNetAddr: "PrivNetAddr",
 			})
 		req := &core.UpsertABPHandlerReq{
 			Token:   "==OAuth==Token==",
@@ -427,7 +436,8 @@ func TestUpsertABP(t *testing.T) {
 				Broker:     br,
 				DevStorage: st,
 			}, Options{
-				NetAddr: "NetAddr",
+				PublicNetAddr:  "NetAddr",
+				PrivateNetAddr: "PrivNetAddr",
 			})
 		req := &core.UpsertABPHandlerReq{
 			Token:   "==OAuth==Token==",
@@ -465,7 +475,8 @@ func TestUpsertABP(t *testing.T) {
 				Broker:     br,
 				DevStorage: st,
 			}, Options{
-				NetAddr: "NetAddr",
+				PublicNetAddr:  "NetAddr",
+				PrivateNetAddr: "PrivNetAddr",
 			})
 		req := &core.UpsertABPHandlerReq{
 			Token:   "==OAuth==Token==",
@@ -503,7 +514,8 @@ func TestUpsertOTAA(t *testing.T) {
 				Broker:     br,
 				DevStorage: st,
 			}, Options{
-				NetAddr: "NetAddr",
+				PublicNetAddr:  "NetAddr",
+				PrivateNetAddr: "PrivNetAddr",
 			})
 		req := &core.UpsertOTAAHandlerReq{
 			Token:  "==OAuth==Token==",
@@ -517,7 +529,7 @@ func TestUpsertOTAA(t *testing.T) {
 		var wantBrkCall = &core.ValidateOTAABrokerReq{
 			Token:      req.Token,
 			AppEUI:     req.AppEUI,
-			NetAddress: h.(*component).NetAddr,
+			NetAddress: h.(*component).PrivateNetAddr,
 		}
 		var wantRes = new(core.UpsertOTAAHandlerRes)
 
@@ -545,7 +557,8 @@ func TestUpsertOTAA(t *testing.T) {
 				Broker:     br,
 				DevStorage: st,
 			}, Options{
-				NetAddr: "NetAddr",
+				PublicNetAddr:  "NetAddr",
+				PrivateNetAddr: "PrivNetAddr",
 			})
 		req := &core.UpsertOTAAHandlerReq{
 			Token:  "==OAuth==Token==",
@@ -559,7 +572,7 @@ func TestUpsertOTAA(t *testing.T) {
 		var wantBrkCall = &core.ValidateOTAABrokerReq{
 			Token:      req.Token,
 			AppEUI:     req.AppEUI,
-			NetAddress: h.(*component).NetAddr,
+			NetAddress: h.(*component).PrivateNetAddr,
 		}
 		var wantRes = new(core.UpsertOTAAHandlerRes)
 
@@ -587,7 +600,8 @@ func TestUpsertOTAA(t *testing.T) {
 				Broker:     br,
 				DevStorage: st,
 			}, Options{
-				NetAddr: "NetAddr",
+				PublicNetAddr:  "NetAddr",
+				PrivateNetAddr: "PrivNetAddr",
 			})
 		req := &core.UpsertOTAAHandlerReq{
 			Token:  "==OAuth==Token==",
@@ -601,7 +615,7 @@ func TestUpsertOTAA(t *testing.T) {
 		var wantBrkCall = &core.ValidateOTAABrokerReq{
 			Token:      req.Token,
 			AppEUI:     req.AppEUI,
-			NetAddress: h.(*component).NetAddr,
+			NetAddress: h.(*component).PrivateNetAddr,
 		}
 		var wantRes = new(core.UpsertOTAAHandlerRes)
 
@@ -628,7 +642,8 @@ func TestUpsertOTAA(t *testing.T) {
 				Broker:     br,
 				DevStorage: st,
 			}, Options{
-				NetAddr: "NetAddr",
+				PublicNetAddr:  "NetAddr",
+				PrivateNetAddr: "PrivNetAddr",
 			})
 		req := &core.UpsertOTAAHandlerReq{
 			Token:  "==OAuth==Token==",
@@ -665,7 +680,8 @@ func TestUpsertOTAA(t *testing.T) {
 				Broker:     br,
 				DevStorage: st,
 			}, Options{
-				NetAddr: "NetAddr",
+				PublicNetAddr:  "NetAddr",
+				PrivateNetAddr: "PrivNetAddr",
 			})
 		req := &core.UpsertOTAAHandlerReq{
 			Token:  "==OAuth==Token==",
@@ -702,7 +718,8 @@ func TestUpsertOTAA(t *testing.T) {
 				Broker:     br,
 				DevStorage: st,
 			}, Options{
-				NetAddr: "NetAddr",
+				PublicNetAddr:  "NetAddr",
+				PrivateNetAddr: "PrivNetAddr",
 			})
 		req := &core.UpsertOTAAHandlerReq{
 			Token:  "==OAuth==Token==",

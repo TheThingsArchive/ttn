@@ -75,7 +75,7 @@ func (h component) UpsertABP(bctx context.Context, req *core.UpsertABPHandlerReq
 		AppEUI:     req.AppEUI,
 		DevAddr:    req.DevAddr,
 		NwkSKey:    req.NwkSKey,
-		NetAddress: h.NetAddr,
+		NetAddress: h.PrivateNetAddr,
 	})
 	if err != nil {
 		h.Ctx.WithError(err).Debug("Broker rejected ABP")
@@ -115,7 +115,7 @@ func (h component) UpsertOTAA(bctx context.Context, req *core.UpsertOTAAHandlerR
 	// 2. Notify the broker -> The Broker also does the token verification
 	_, err := h.Broker.ValidateOTAA(context.Background(), &core.ValidateOTAABrokerReq{
 		Token:      req.Token,
-		NetAddress: h.NetAddr,
+		NetAddress: h.PrivateNetAddr,
 		AppEUI:     req.AppEUI,
 	})
 	if err != nil {

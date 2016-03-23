@@ -45,7 +45,7 @@ func TestHandleDataDown(t *testing.T) {
 			AppAdapter: appAdapter,
 			DevStorage: devStorage,
 			PktStorage: pktStorage,
-		}, Options{NetAddr: "localhost"})
+		}, Options{PublicNetAddr: "localhost", PrivateNetAddr: "localhost"})
 		res, err := handler.HandleDataDown(context.Background(), req)
 
 		// Check
@@ -83,7 +83,7 @@ func TestHandleDataDown(t *testing.T) {
 			AppAdapter: appAdapter,
 			DevStorage: devStorage,
 			PktStorage: pktStorage,
-		}, Options{NetAddr: "localhost"})
+		}, Options{PublicNetAddr: "localhost", PrivateNetAddr: "localhost"})
 		res, err := handler.HandleDataDown(context.Background(), req)
 
 		// Check
@@ -121,7 +121,7 @@ func TestHandleDataDown(t *testing.T) {
 			AppAdapter: appAdapter,
 			DevStorage: devStorage,
 			PktStorage: pktStorage,
-		}, Options{NetAddr: "localhost"})
+		}, Options{PublicNetAddr: "localhost", PrivateNetAddr: "localhost"})
 		res, err := handler.HandleDataDown(context.Background(), req)
 
 		// Check
@@ -159,7 +159,7 @@ func TestHandleDataDown(t *testing.T) {
 			AppAdapter: appAdapter,
 			DevStorage: devStorage,
 			PktStorage: pktStorage,
-		}, Options{NetAddr: "localhost"})
+		}, Options{PublicNetAddr: "localhost", PrivateNetAddr: "localhost"})
 		res, err := handler.HandleDataDown(context.Background(), req)
 
 		// Check
@@ -197,7 +197,7 @@ func TestHandleDataDown(t *testing.T) {
 			AppAdapter: appAdapter,
 			DevStorage: devStorage,
 			PktStorage: pktStorage,
-		}, Options{NetAddr: "localhost"})
+		}, Options{PublicNetAddr: "localhost", PrivateNetAddr: "localhost"})
 		res, err := handler.HandleDataDown(context.Background(), req)
 
 		// Check
@@ -239,7 +239,7 @@ func TestHandleDataUp(t *testing.T) {
 			AppAdapter: appAdapter,
 			DevStorage: devStorage,
 			PktStorage: pktStorage,
-		}, Options{NetAddr: "localhost"})
+		}, Options{PublicNetAddr: "localhost", PrivateNetAddr: "localhost"})
 		res, err := handler.HandleDataUp(context.Background(), req)
 
 		// Check
@@ -281,7 +281,7 @@ func TestHandleDataUp(t *testing.T) {
 			AppAdapter: appAdapter,
 			DevStorage: devStorage,
 			PktStorage: pktStorage,
-		}, Options{NetAddr: "localhost"})
+		}, Options{PublicNetAddr: "localhost", PrivateNetAddr: "localhost"})
 		res, err := handler.HandleDataUp(context.Background(), req)
 
 		// Check
@@ -323,7 +323,7 @@ func TestHandleDataUp(t *testing.T) {
 			AppAdapter: appAdapter,
 			DevStorage: devStorage,
 			PktStorage: pktStorage,
-		}, Options{NetAddr: "localhost"})
+		}, Options{PublicNetAddr: "localhost", PrivateNetAddr: "localhost"})
 		res, err := handler.HandleDataUp(context.Background(), req)
 
 		// Check
@@ -365,7 +365,7 @@ func TestHandleDataUp(t *testing.T) {
 			AppAdapter: appAdapter,
 			DevStorage: devStorage,
 			PktStorage: pktStorage,
-		}, Options{NetAddr: "localhost"})
+		}, Options{PublicNetAddr: "localhost", PrivateNetAddr: "localhost"})
 		res, err := handler.HandleDataUp(context.Background(), req)
 
 		// Check
@@ -407,7 +407,7 @@ func TestHandleDataUp(t *testing.T) {
 			AppAdapter: appAdapter,
 			DevStorage: devStorage,
 			PktStorage: pktStorage,
-		}, Options{NetAddr: "localhost"})
+		}, Options{PublicNetAddr: "localhost", PrivateNetAddr: "localhost"})
 		res, err := handler.HandleDataUp(context.Background(), req)
 
 		// Check
@@ -472,7 +472,7 @@ func TestHandleDataUp(t *testing.T) {
 			AppAdapter: appAdapter,
 			DevStorage: devStorage,
 			PktStorage: pktStorage,
-		}, Options{NetAddr: "localhost"})
+		}, Options{PublicNetAddr: "localhost", PrivateNetAddr: "localhost"})
 		res, err := handler.HandleDataUp(context.Background(), req)
 
 		// Check
@@ -557,7 +557,7 @@ func TestHandleDataUp(t *testing.T) {
 			AppAdapter: appAdapter,
 			DevStorage: devStorage,
 			PktStorage: pktStorage,
-		}, Options{NetAddr: "localhost"})
+		}, Options{PublicNetAddr: "localhost", PrivateNetAddr: "localhost"})
 
 		chack := make(chan bool)
 		go func() {
@@ -686,7 +686,7 @@ func TestHandleDataUp(t *testing.T) {
 			AppAdapter: appAdapter,
 			DevStorage: devStorage,
 			PktStorage: pktStorage,
-		}, Options{NetAddr: "localhost"})
+		}, Options{PublicNetAddr: "localhost", PrivateNetAddr: "localhost"})
 		res, err := handler.HandleDataUp(context.Background(), req)
 
 		// Check
@@ -771,7 +771,7 @@ func TestHandleDataUp(t *testing.T) {
 			AppAdapter: appAdapter,
 			DevStorage: devStorage,
 			PktStorage: pktStorage,
-		}, Options{NetAddr: "localhost"})
+		}, Options{PublicNetAddr: "localhost", PrivateNetAddr: "localhost"})
 
 		chack := make(chan bool)
 		go func() {
@@ -860,7 +860,7 @@ func TestHandleDataUp(t *testing.T) {
 			AppAdapter: appAdapter,
 			DevStorage: devStorage,
 			PktStorage: pktStorage,
-		}, Options{NetAddr: "localhost"})
+		}, Options{PublicNetAddr: "localhost", PrivateNetAddr: "localhost"})
 		res, err := handler.HandleDataUp(context.Background(), req)
 
 		// Check
@@ -926,7 +926,7 @@ func TestHandleDataUp(t *testing.T) {
 			AppAdapter: appAdapter,
 			DevStorage: devStorage,
 			PktStorage: pktStorage,
-		}, Options{NetAddr: "localhost"})
+		}, Options{PublicNetAddr: "localhost", PrivateNetAddr: "localhost"})
 		res, err := handler.HandleDataUp(context.Background(), req)
 
 		// Check
@@ -1022,7 +1022,7 @@ func TestHandleDataUp(t *testing.T) {
 			AppAdapter: appAdapter,
 			DevStorage: devStorage,
 			PktStorage: pktStorage,
-		}, Options{NetAddr: "localhost"})
+		}, Options{PublicNetAddr: "localhost", PrivateNetAddr: "localhost"})
 
 		devStorage.OutRead.Entry = devEntry{
 			DevAddr:  devAddr1[:],
@@ -1150,7 +1150,7 @@ func TestHandleDataUp(t *testing.T) {
 			AppAdapter: appAdapter,
 			DevStorage: devStorage,
 			PktStorage: pktStorage,
-		}, Options{NetAddr: "localhost"})
+		}, Options{PublicNetAddr: "localhost", PrivateNetAddr: "localhost"})
 		res, err := handler.HandleDataUp(context.Background(), req)
 
 		// Check
@@ -1225,7 +1225,7 @@ func TestHandleDataUp(t *testing.T) {
 			AppAdapter: appAdapter,
 			DevStorage: devStorage,
 			PktStorage: pktStorage,
-		}, Options{NetAddr: "localhost"})
+		}, Options{PublicNetAddr: "localhost", PrivateNetAddr: "localhost"})
 		res, err := handler.HandleDataUp(context.Background(), req)
 
 		// Check
@@ -1306,7 +1306,7 @@ func TestHandleJoin(t *testing.T) {
 			AppAdapter: appAdapter,
 			DevStorage: devStorage,
 			PktStorage: pktStorage,
-		}, Options{NetAddr: "localhost"})
+		}, Options{PublicNetAddr: "localhost", PrivateNetAddr: "localhost"})
 		res, err := handler.HandleJoin(context.Background(), req)
 
 		// Check
@@ -1395,7 +1395,7 @@ func TestHandleJoin(t *testing.T) {
 			AppAdapter: appAdapter,
 			DevStorage: devStorage,
 			PktStorage: pktStorage,
-		}, Options{NetAddr: "localhost"})
+		}, Options{PublicNetAddr: "localhost", PrivateNetAddr: "localhost"})
 		res, err := handler.HandleJoin(context.Background(), req)
 
 		// Check
@@ -1470,7 +1470,7 @@ func TestHandleJoin(t *testing.T) {
 			AppAdapter: appAdapter,
 			DevStorage: devStorage,
 			PktStorage: pktStorage,
-		}, Options{NetAddr: "localhost"})
+		}, Options{PublicNetAddr: "localhost", PrivateNetAddr: "localhost"})
 		res, err := handler.HandleJoin(context.Background(), req)
 
 		// Check
@@ -1536,7 +1536,7 @@ func TestHandleJoin(t *testing.T) {
 			AppAdapter: appAdapter,
 			DevStorage: devStorage,
 			PktStorage: pktStorage,
-		}, Options{NetAddr: "localhost"})
+		}, Options{PublicNetAddr: "localhost", PrivateNetAddr: "localhost"})
 		res, err := handler.HandleJoin(context.Background(), req)
 
 		// Check
@@ -1602,7 +1602,7 @@ func TestHandleJoin(t *testing.T) {
 			AppAdapter: appAdapter,
 			DevStorage: devStorage,
 			PktStorage: pktStorage,
-		}, Options{NetAddr: "localhost"})
+		}, Options{PublicNetAddr: "localhost", PrivateNetAddr: "localhost"})
 		res, err := handler.HandleJoin(context.Background(), req)
 
 		// Check
@@ -1654,7 +1654,7 @@ func TestHandleJoin(t *testing.T) {
 			AppAdapter: appAdapter,
 			DevStorage: devStorage,
 			PktStorage: pktStorage,
-		}, Options{NetAddr: "localhost"})
+		}, Options{PublicNetAddr: "localhost", PrivateNetAddr: "localhost"})
 		res, err := handler.HandleJoin(context.Background(), req)
 
 		// Check
@@ -1704,7 +1704,7 @@ func TestHandleJoin(t *testing.T) {
 			AppAdapter: appAdapter,
 			DevStorage: devStorage,
 			PktStorage: pktStorage,
-		}, Options{NetAddr: "localhost"})
+		}, Options{PublicNetAddr: "localhost", PrivateNetAddr: "localhost"})
 		res, err := handler.HandleJoin(context.Background(), req)
 
 		// Check
@@ -1754,7 +1754,7 @@ func TestHandleJoin(t *testing.T) {
 			AppAdapter: appAdapter,
 			DevStorage: devStorage,
 			PktStorage: pktStorage,
-		}, Options{NetAddr: "localhost"})
+		}, Options{PublicNetAddr: "localhost", PrivateNetAddr: "localhost"})
 		res, err := handler.HandleJoin(context.Background(), req)
 
 		// Check
@@ -1804,7 +1804,7 @@ func TestHandleJoin(t *testing.T) {
 			AppAdapter: appAdapter,
 			DevStorage: devStorage,
 			PktStorage: pktStorage,
-		}, Options{NetAddr: "localhost"})
+		}, Options{PublicNetAddr: "localhost", PrivateNetAddr: "localhost"})
 		res, err := handler.HandleJoin(context.Background(), req)
 
 		// Check
@@ -1843,7 +1843,7 @@ func TestHandleJoin(t *testing.T) {
 			AppAdapter: appAdapter,
 			DevStorage: devStorage,
 			PktStorage: pktStorage,
-		}, Options{NetAddr: "localhost"})
+		}, Options{PublicNetAddr: "localhost", PrivateNetAddr: "localhost"})
 		res, err := handler.HandleJoin(context.Background(), req)
 
 		// Check
@@ -1943,7 +1943,7 @@ func TestHandleJoin(t *testing.T) {
 			AppAdapter: appAdapter,
 			DevStorage: devStorage,
 			PktStorage: pktStorage,
-		}, Options{NetAddr: "localhost"})
+		}, Options{PublicNetAddr: "localhost", PrivateNetAddr: "localhost"})
 
 		chack := make(chan bool)
 		go func() {
@@ -1991,7 +1991,7 @@ func TestStart(t *testing.T) {
 		DevStorage: NewMockDevStorage(),
 		PktStorage: NewMockPktStorage(),
 		AppAdapter: mocks.NewAppClient(),
-	}, Options{NetAddr: "localhost:8888"})
+	}, Options{PublicNetAddr: "localhost:8888", PrivateNetAddr: "localhost:8889"})
 
 	cherr := make(chan error)
 	go func() {
