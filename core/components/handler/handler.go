@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"crypto/aes"
 	"encoding/binary"
+	"fmt"
 	"math/rand"
 	"net"
 	"reflect"
@@ -38,9 +39,10 @@ var dataRates = map[string]uint8{
 // component implements the core.Component interface
 type component struct {
 	Components
-	Set           chan<- bundle
-	NetAddr       string
-	Configuration struct {
+	Set            chan<- bundle
+	PublicNetAddr  string
+	PrivateNetAddr string
+	Configuration  struct {
 		CFList      [5]uint32
 		NetID       [3]byte
 		RX1DROffset uint8
@@ -69,7 +71,8 @@ type Components struct {
 
 // Options is used to make handler instantiation easier
 type Options struct {
-	NetAddr string
+	PublicNetAddr  string // Net Address used to communicate with the handler from the outside
+	PrivateNetAddr string // Net Address the handler provides to brokers for internal communications
 }
 
 // bundle are used to materialize an incoming request being bufferized, waiting for the others.
@@ -85,8 +88,9 @@ type bundle struct {
 // New construct a new Handler
 func New(c Components, o Options) Interface {
 	h := &component{
-		Components: c,
-		NetAddr:    o.NetAddr,
+		Components:     c,
+		PublicNetAddr:  o.PublicNetAddr,
+		PrivateNetAddr: o.PrivateNetAddr,
 	}
 
 	// TODO Make it configurable
@@ -110,16 +114,23 @@ func New(c Components, o Options) Interface {
 
 // Start actually runs the component and starts the rpc server
 func (h *component) Start() error {
-	conn, err := net.Listen("tcp", h.NetAddr)
-	if err != nil {
-		return errors.New(errors.Operational, err)
+	pubConn, errPub := net.Listen("tcp", h.PublicNetAddr)
+	priConn, errPri := net.Listen("tcp", h.PrivateNetAddr)
+
+	if errPub != nil || errPri != nil {
+		return errors.New(errors.Operational, fmt.Sprintf("Unable to open connections: %s | %s", errPub, errPri))
 	}
 
 	server := grpc.NewServer()
 	core.RegisterHandlerServer(server, h)
 	core.RegisterHandlerManagerServer(server, h)
 
-	if err := server.Serve(conn); err != nil {
+	cherr := make(chan error)
+
+	go func() { cherr <- server.Serve(pubConn) }()
+	go func() { cherr <- server.Serve(priConn) }()
+
+	if err := <-cherr; err != nil {
 		return errors.New(errors.Operational, err)
 	}
 	return nil

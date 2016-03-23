@@ -40,7 +40,8 @@ The Handler is the bridge between The Things Network and applications.
 			"devicesDatabase": viper.GetString("handler.dev-database"),
 			"packetsDatabase": viper.GetString("handler.pkt-database"),
 			"status-server":   statusServer,
-			"server":          fmt.Sprintf("%s:%d", viper.GetString("handler.server-address"), viper.GetInt("handler.server-port")),
+			"internal server": fmt.Sprintf("%s:%d", viper.GetString("handler.internal-address"), viper.GetInt("handler.internal-port")),
+			"public server":   fmt.Sprintf("%s:%d", viper.GetString("handler.public-address"), viper.GetInt("handler.public-port")),
 			"ttn-broker":      viper.GetString("handler.ttn-broker"),
 			"mqtt-broker":     viper.GetString("handler.mqtt-broker"),
 		}).Info("Using Configuration")
@@ -131,7 +132,8 @@ The Handler is the bridge between The Things Network and applications.
 				AppAdapter: appAdapter,
 			},
 			handler.Options{
-				NetAddr: fmt.Sprintf("%s:%d", viper.GetString("handler.server-address"), viper.GetInt("handler.server-port")),
+				PublicNetAddr:  fmt.Sprintf("%s:%d", viper.GetString("handler.public-address"), viper.GetInt("handler.public-port")),
+				PrivateNetAddr: fmt.Sprintf("%s:%d", viper.GetString("handler.internal-address"), viper.GetInt("handler.internal-port")),
 			},
 		)
 
@@ -156,10 +158,15 @@ func init() {
 	viper.BindPFlag("handler.status-address", handlerCmd.Flags().Lookup("status-address"))
 	viper.BindPFlag("handler.status-port", handlerCmd.Flags().Lookup("status-port"))
 
-	handlerCmd.Flags().String("server-address", "0.0.0.0", "The IP address to listen for communication from other components")
-	handlerCmd.Flags().Int("server-port", 1882, "The port for communication from other components")
-	viper.BindPFlag("handler.server-address", handlerCmd.Flags().Lookup("server-address"))
-	viper.BindPFlag("handler.server-port", handlerCmd.Flags().Lookup("server-port"))
+	handlerCmd.Flags().String("internal-address", "0.0.0.0", "The IP address to listen for communication from other components")
+	handlerCmd.Flags().Int("internal-port", 1882, "The port for communication from other components")
+	viper.BindPFlag("handler.internal-address", handlerCmd.Flags().Lookup("internal-address"))
+	viper.BindPFlag("handler.internal-port", handlerCmd.Flags().Lookup("internal-port"))
+
+	handlerCmd.Flags().String("public-address", "0.0.0.0", "The IP address to listen for communication with the wild open")
+	handlerCmd.Flags().Int("public-port", 1782, "The port for communication with the wild open")
+	viper.BindPFlag("handler.public-address", handlerCmd.Flags().Lookup("public-address"))
+	viper.BindPFlag("handler.public-port", handlerCmd.Flags().Lookup("public-port"))
 
 	handlerCmd.Flags().String("mqtt-broker", "localhost:1883", "The address of the MQTT broker (uplink)")
 	viper.BindPFlag("handler.mqtt-broker", handlerCmd.Flags().Lookup("mqtt-broker"))
