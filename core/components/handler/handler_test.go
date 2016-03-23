@@ -463,7 +463,7 @@ func TestHandleDataUp(t *testing.T) {
 			AppEUI:   req.AppEUI,
 			DevEUI:   req.DevEUI,
 		}
-		var wantFCnt uint32
+		var wantFCnt = devStorage.OutRead.Entry.FCntDown
 
 		// Operate
 		handler := New(Components{
@@ -548,7 +548,7 @@ func TestHandleDataUp(t *testing.T) {
 			AppEUI:   req1.AppEUI,
 			DevEUI:   req1.DevEUI,
 		}
-		var wantFCnt uint32
+		var wantFCnt = devStorage.OutRead.Entry.FCntDown
 
 		// Operate
 		handler := New(Components{
@@ -762,7 +762,7 @@ func TestHandleDataUp(t *testing.T) {
 			AppEUI:   req1.AppEUI,
 			DevEUI:   req1.DevEUI,
 		}
-		var wantFCnt uint32
+		var wantFCnt = devStorage.OutRead.Entry.FCntDown
 
 		// Operate
 		handler := New(Components{
@@ -1012,8 +1012,8 @@ func TestHandleDataUp(t *testing.T) {
 			AppEUI:   req2.AppEUI,
 			DevEUI:   req2.DevEUI,
 		}
-		var wantFCnt1 uint32
-		var wantFCnt2 uint32
+		var wantFCnt1 uint32 = 3
+		var wantFCnt2 uint32 = 11
 
 		// Operate
 		handler := New(Components{
