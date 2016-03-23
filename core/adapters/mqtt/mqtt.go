@@ -135,7 +135,7 @@ func (a adapter) HandleJoin(bctx context.Context, req *core.JoinAppReq, _ ...grp
 	err = a.Client.Publish(&client.PublishOptions{
 		QoS:       mqtt.QoS2,
 		Retain:    false,
-		TopicName: []byte(fmt.Sprintf("%s/devices/%s/up", aeui, deui)),
+		TopicName: []byte(fmt.Sprintf("%s/devices/%s/activations", aeui, deui)),
 		Message:   data,
 	})
 	if err != nil {
