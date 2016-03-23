@@ -39,17 +39,21 @@ func (h component) ListDevices(bctx context.Context, req *core.ListDevicesHandle
 		*d = dev
 		if dev.AppKey == nil {
 			abp = append(abp, &core.HandlerABPDevice{
-				DevAddr: d.DevAddr,
-				NwkSKey: d.NwkSKey[:],
-				AppSKey: d.AppSKey[:],
+				DevAddr:  d.DevAddr,
+				NwkSKey:  d.NwkSKey[:],
+				AppSKey:  d.AppSKey[:],
+				FCntUp:   d.FCntUp,
+				FCntDown: d.FCntDown,
 			})
 		} else {
 			otaa = append(otaa, &core.HandlerOTAADevice{
-				DevEUI:  d.DevEUI,
-				DevAddr: d.DevAddr,
-				NwkSKey: d.NwkSKey[:],
-				AppSKey: d.AppSKey[:],
-				AppKey:  d.AppKey[:],
+				DevEUI:   d.DevEUI,
+				DevAddr:  d.DevAddr,
+				NwkSKey:  d.NwkSKey[:],
+				AppSKey:  d.AppSKey[:],
+				AppKey:   d.AppKey[:],
+				FCntUp:   d.FCntUp,
+				FCntDown: d.FCntDown,
 			})
 		}
 	}
