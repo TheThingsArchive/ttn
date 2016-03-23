@@ -28,7 +28,7 @@ type TTNRegistry struct {
 	metrics    map[string]interface{}
 	timeouts   map[string]uint
 	defaultTTL uint
-	mutex      sync.Mutex
+	mutex      sync.RWMutex
 }
 
 // NewRegistry reates a new registry and starts a goroutine for the TTL.
@@ -49,8 +49,8 @@ func (r *TTNRegistry) Each(f func(string, interface{})) {
 
 // Get the metric by the given name or nil if none is registered.
 func (r *TTNRegistry) Get(name string) interface{} {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
+	r.mutex.RLock()
+	defer r.mutex.RUnlock()
 	return r.metrics[name]
 }
 
@@ -59,14 +59,14 @@ func (r *TTNRegistry) Get(name string) interface{} {
 // The interface can be the metric to register if not found in registry,
 // or a function returning the metric for lazy instantiation.
 func (r *TTNRegistry) GetOrRegister(name string, i interface{}) interface{} {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
+	r.mutex.RLock()
 	if metric, ok := r.metrics[name]; ok {
 		return metric
 	}
 	if v := reflect.ValueOf(i); v.Kind() == reflect.Func {
 		i = v.Call(nil)[0].Interface()
 	}
+	r.mutex.RUnlock()
 	r.register(name, i)
 	return i
 }
@@ -81,8 +81,8 @@ func (r *TTNRegistry) Register(name string, i interface{}) error {
 
 // RunHealthchecks runs all registered healthchecks.
 func (r *TTNRegistry) RunHealthchecks() {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
+	r.mutex.RLock()
+	defer r.mutex.RUnlock()
 	for _, i := range r.metrics {
 		if h, ok := i.(metrics.Healthcheck); ok {
 			h.Check()
@@ -140,7 +140,20 @@ func (r *TTNRegistry) SetTTL(name string, ticks uint) {
 
 // Renew sets the TTL of a metric to the default value
 func (r *TTNRegistry) Renew(name string) {
-	r.SetTTL(name, r.defaultTTL)
+	if r.defaultTTL == 0 {
+		return
+	}
+
+	r.mutex.RLock()
+	_, ok := r.metrics[name]
+	ttl, _ := r.timeouts[name]
+	r.mutex.RUnlock()
+
+	if ok && r.defaultTTL > ttl {
+		r.mutex.Lock()
+		defer r.mutex.Unlock()
+		r.timeouts[name] = r.defaultTTL
+	}
 }
 
 func (r *TTNRegistry) register(name string, i interface{}) error {
@@ -158,8 +171,8 @@ func (r *TTNRegistry) register(name string, i interface{}) error {
 }
 
 func (r *TTNRegistry) registered() map[string]interface{} {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
+	r.mutex.RLock()
+	defer r.mutex.RUnlock()
 	metrics := make(map[string]interface{}, len(r.metrics))
 	for name, i := range r.metrics {
 		metrics[name] = i
