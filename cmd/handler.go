@@ -37,8 +37,8 @@ The Handler is the bridge between The Things Network and applications.
 			stats.Enabled = false
 		}
 		ctx.WithFields(log.Fields{
-			"devicesDatabase": viper.GetString("handler.dev-database"),
-			"packetsDatabase": viper.GetString("handler.pkt-database"),
+			"devicesDatabase": viper.GetString("handler.db-devices"),
+			"packetsDatabase": viper.GetString("handler.db-packets"),
 			"status-server":   statusServer,
 			"internal server": fmt.Sprintf("%s:%d", viper.GetString("handler.internal-address"), viper.GetInt("handler.internal-port")),
 			"public server":   fmt.Sprintf("%s:%d", viper.GetString("handler.public-address"), viper.GetInt("handler.public-port")),
@@ -61,7 +61,7 @@ The Handler is the bridge between The Things Network and applications.
 		// In-memory devices storage
 		var devicesDB handler.DevStorage
 
-		devDBString := viper.GetString("handler.dev-database")
+		devDBString := viper.GetString("handler.db-devices")
 		switch {
 		case strings.HasPrefix(devDBString, "boltdb:"):
 
@@ -83,7 +83,7 @@ The Handler is the bridge between The Things Network and applications.
 		// In-memory packets storage
 		var packetsDB handler.PktStorage
 
-		pktDBString := viper.GetString("handler.pkt-database")
+		pktDBString := viper.GetString("handler.db-packets")
 		switch {
 		case strings.HasPrefix(pktDBString, "boltdb:"):
 
@@ -148,10 +148,10 @@ The Handler is the bridge between The Things Network and applications.
 func init() {
 	RootCmd.AddCommand(handlerCmd)
 
-	handlerCmd.Flags().String("dev-database", "boltdb:/tmp/ttn_handler_devices.db", "Devices Database connection")
-	handlerCmd.Flags().String("pkt-database", "boltdb:/tmp/ttn_handler_packets.db", "Packets Database connection")
-	viper.BindPFlag("handler.dev-database", handlerCmd.Flags().Lookup("dev-database"))
-	viper.BindPFlag("handler.pkt-database", handlerCmd.Flags().Lookup("pkt-database"))
+	handlerCmd.Flags().String("db-devices", "boltdb:/tmp/ttn_handler_devices.db", "Devices Database connection")
+	handlerCmd.Flags().String("db-packets", "boltdb:/tmp/ttn_handler_packets.db", "Packets Database connection")
+	viper.BindPFlag("handler.db-devices", handlerCmd.Flags().Lookup("db-devices"))
+	viper.BindPFlag("handler.db-packets", handlerCmd.Flags().Lookup("db-packets"))
 
 	handlerCmd.Flags().String("status-address", "0.0.0.0", "The IP address to listen for serving status information")
 	handlerCmd.Flags().Int("status-port", 10702, "The port of the status server, use 0 to disable")
