@@ -12,8 +12,8 @@ import (
 // versionCmd represents the version command
 var versionCmd = &cobra.Command{
 	Use:   "version",
-	Short: "Get the version",
-	Long:  `Get the version`,
+	Short: "Get build and version information",
+	Long:  `ttnctl version gets the build and version information of ttnctl`,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx.WithFields(log.Fields{
 			"commit":     viper.GetString("gitCommit"),

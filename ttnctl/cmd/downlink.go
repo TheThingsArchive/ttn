@@ -18,8 +18,8 @@ import (
 // downlinkCmd represents the `downlink` command
 var downlinkCmd = &cobra.Command{
 	Use:   "downlink [DevEUI] [Payload] [TTL]",
-	Short: "Send a downlink message to the network",
-	Long:  `Send a downlink message to the network`,
+	Short: "Send downlink messages to the network",
+	Long:  `ttnctl downlink sends a downlink message to the network`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) < 2 {
 			ctx.Fatal("Insufficient arguments")

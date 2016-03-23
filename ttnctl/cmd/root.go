@@ -20,8 +20,8 @@ var ctx log.Interface
 // RootCmd is the entrypoint for handlerctl
 var RootCmd = &cobra.Command{
 	Use:   "ttnctl",
-	Short: "TTN Control",
-	Long:  `ttnctl is used to control TTN from the command line.`,
+	Short: "Control The Things Network from the command line",
+	Long:  `ttnctl controls The Things Network from the command line.`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		var logLevel = log.InfoLevel
 		if viper.GetBool("debug") {

@@ -21,8 +21,8 @@ var ctx log.Interface
 // RootCmd is executed when ttn is executed without a subcommand
 var RootCmd = &cobra.Command{
 	Use:   "ttn",
-	Short: "The Things Network",
-	Long:  `The Things Network's backend server`,
+	Short: "The Things Network's backend servers",
+	Long:  `ttn launches The Things Network's backend servers`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		var logLevel = log.InfoLevel
 		if viper.GetBool("debug") {

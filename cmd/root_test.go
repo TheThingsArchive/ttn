@@ -6,7 +6,7 @@ import (
 	. "github.com/smartystreets/assertions"
 )
 
-func TestBrokerCmd(t *testing.T) {
+func TestRootCmd(t *testing.T) {
 	a := New(t)
-	a.So(brokerCmd.IsAvailableCommand(), ShouldBeTrue)
+	a.So(RootCmd.IsAvailableCommand(), ShouldBeTrue)
 }

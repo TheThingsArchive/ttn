@@ -14,7 +14,7 @@ var (
 )
 
 func main() {
-	viper.Set("version", "v0")
+	viper.Set("version", "v1-staging")
 	viper.Set("gitCommit", gitCommit)
 	viper.Set("buildDate", buildDate)
 	cmd.Execute()

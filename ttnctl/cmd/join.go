@@ -21,8 +21,8 @@ import (
 // joinCmd represents the `join-request` command
 var joinCmd = &cobra.Command{
 	Use:   "join [DevEUI] [AppKey]",
-	Short: "Send an join request message to the network",
-	Long:  `Send an join request to the network`,
+	Short: "Send a join requests to the network",
+	Long:  `ttnctl join sends a join request to the network`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) < 2 {
 			ctx.Fatalf("Insufficient arguments")

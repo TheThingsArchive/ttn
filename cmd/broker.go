@@ -21,10 +21,11 @@ import (
 var brokerCmd = &cobra.Command{
 	Use:   "broker",
 	Short: "The Things Network broker",
-	Long: `
-The broker is responsible for finding the right handler for uplink packets it
-receives from routers. This means that handlers have to register applications
-and personalized devices (with their network session keys) with the router.
+	Long: `ttn broker starts the Broker component of The Things Network.
+
+The Broker is responsible for finding the right handler for uplink packets it
+receives from Routers. Handlers have register Applications and personalized
+devices (with their network session keys) with the Broker.
 	`,
 	PreRun: func(cmd *cobra.Command, args []string) {
 		var statusServer string
@@ -124,18 +125,18 @@ func init() {
 	brokerCmd.Flags().String("devices_database", "boltdb:/tmp/ttn_devs_broker.db", "Devices Database connection")
 	viper.BindPFlag("broker.devices_database", brokerCmd.Flags().Lookup("devices_database"))
 
-	brokerCmd.Flags().String("status-address", "localhost", "The IP address to listen for serving status information")
+	brokerCmd.Flags().String("status-address", "0.0.0.0", "The IP address to listen for serving status information")
 	brokerCmd.Flags().Int("status-port", 10701, "The port of the status server, use 0 to disable")
 	viper.BindPFlag("broker.status-address", brokerCmd.Flags().Lookup("status-address"))
 	viper.BindPFlag("broker.status-port", brokerCmd.Flags().Lookup("status-port"))
 
-	brokerCmd.Flags().String("uplink-address", "", "The IP address to listen for uplink messages from routers")
-	brokerCmd.Flags().Int("uplink-port", 1881, "The main communication port")
+	brokerCmd.Flags().String("uplink-address", "0.0.0.0", "The IP address to listen for uplink communication")
+	brokerCmd.Flags().Int("uplink-port", 1881, "The port for uplink communication")
 	viper.BindPFlag("broker.uplink-address", brokerCmd.Flags().Lookup("uplink-address"))
 	viper.BindPFlag("broker.uplink-port", brokerCmd.Flags().Lookup("uplink-port"))
 
-	brokerCmd.Flags().String("downlink-address", "", "The IP address to listen for downlink messages from handler")
-	brokerCmd.Flags().Int("downlink-port", 1781, "The main communication port")
+	brokerCmd.Flags().String("downlink-address", "0.0.0.0", "The IP address to listen for downlink communication")
+	brokerCmd.Flags().Int("downlink-port", 1781, "The port for downlink communication")
 	viper.BindPFlag("broker.downlink-address", brokerCmd.Flags().Lookup("downlink-address"))
 	viper.BindPFlag("broker.downlink-port", brokerCmd.Flags().Lookup("downlink-port"))
 }

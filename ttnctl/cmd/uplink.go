@@ -21,8 +21,8 @@ import (
 // uplinkCmd represents the `uplink` command
 var uplinkCmd = &cobra.Command{
 	Use:   "uplink [DevAddr] [NwkSKey] [AppSKey] [Payload] [FCnt]",
-	Short: "Send an uplink message to the network",
-	Long:  `Send an uplink message to the network`,
+	Short: "Send uplink messages to the network",
+	Long:  `ttnctl uplink sends an uplink message to the network`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) < 5 {
 			ctx.Fatalf("Insufficient arguments")

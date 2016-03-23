@@ -28,8 +28,8 @@ func getHandlerManager() core.AuthHandlerClient {
 // devicesCmd represents the `devices` command
 var devicesCmd = &cobra.Command{
 	Use:   "devices",
-	Short: "List registered devices on the Handler",
-	Long:  `List registered devices on the Handler`,
+	Short: "Manage devices on the Handler",
+	Long:  `ttnctl devices retrieves a list of devices that your application registered on the Handler.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		appEUI, err := util.Parse64(viper.GetString("app-eui"))
 		if err != nil {
@@ -77,8 +77,8 @@ var devicesCmd = &cobra.Command{
 // devicesRegisterCmd represents the `device register` command
 var devicesRegisterCmd = &cobra.Command{
 	Use:   "register [DevEUI] [AppKey]",
-	Short: "Create or Update OTAA registrations on the Handler",
-	Long:  `Create or Update OTAA registrations on the Handler`,
+	Short: "Create or Update registrations on the Handler",
+	Long:  `ttnctl device register creates or updates an OTAA registration on the Handler`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) < 2 {
 			ctx.Fatal("Insufficient arguments")
@@ -117,7 +117,7 @@ var devicesRegisterCmd = &cobra.Command{
 var devicesRegisterPersonalizedCmd = &cobra.Command{
 	Use:   "personalized [DevAddr] [NwkSKey] [AppSKey]",
 	Short: "Create or Update ABP registrations on the Handler",
-	Long:  `Create or Update ABP registrations on the Handler`,
+	Long:  `ttnctl device register creates or updates an ABP registration on the Handler`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) < 3 {
 			ctx.Fatal("Insufficient arguments")

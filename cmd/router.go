@@ -25,7 +25,9 @@ import (
 var routerCmd = &cobra.Command{
 	Use:   "router",
 	Short: "The Things Network router",
-	Long: `The router accepts connections from gateways and forwards uplink packets to one
+	Long: `ttn router starts the Router component of The Things Network.
+
+The Router accepts connections from gateways and forwards uplink packets to one
 or more brokers. The router is also responsible for monitoring gateways,
 collecting statistics from gateways and for enforcing TTN's fair use policy when
 the gateway's duty cycle is (almost) full.`,
@@ -187,18 +189,18 @@ func init() {
 	routerCmd.Flags().String("db_duty", "boltdb:/tmp/ttn_router_duty.db", "Database connection of managed dutycycles")
 	viper.BindPFlag("router.db_duty", routerCmd.Flags().Lookup("db_duty"))
 
-	routerCmd.Flags().String("status-address", "localhost", "The IP address to listen for serving status information")
+	routerCmd.Flags().String("status-address", "0.0.0.0", "The IP address to listen for serving status information")
 	routerCmd.Flags().Int("status-port", 10700, "The port of the status server, use 0 to disable")
 	viper.BindPFlag("router.status-address", routerCmd.Flags().Lookup("status-address"))
 	viper.BindPFlag("router.status-port", routerCmd.Flags().Lookup("status-port"))
 
-	routerCmd.Flags().String("uplink-address", "", "The IP address to listen for uplink messages from gateways")
-	routerCmd.Flags().Int("uplink-port", 1700, "The UDP port for the uplink")
+	routerCmd.Flags().String("uplink-address", "0.0.0.0", "The IP address to listen for uplink communication from gateways")
+	routerCmd.Flags().Int("uplink-port", 1700, "The UDP port for uplink communication from gateways")
 	viper.BindPFlag("router.uplink-address", routerCmd.Flags().Lookup("uplink-address"))
 	viper.BindPFlag("router.uplink-port", routerCmd.Flags().Lookup("uplink-port"))
 
-	routerCmd.Flags().String("downlink-address", "", "The IP address to listen for downlink messages from routers")
-	routerCmd.Flags().Int("downlink-port", 1780, "The port for the downlink")
+	routerCmd.Flags().String("downlink-address", "0.0.0.0", "The IP address to listen for downlink communication")
+	routerCmd.Flags().Int("downlink-port", 1780, "The port for downlink communication")
 	viper.BindPFlag("router.downlink-address", routerCmd.Flags().Lookup("downlink-address"))
 	viper.BindPFlag("router.downlink-port", routerCmd.Flags().Lookup("downlink-port"))
 

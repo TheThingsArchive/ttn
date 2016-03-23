@@ -23,8 +23,9 @@ import (
 var handlerCmd = &cobra.Command{
 	Use:   "handler",
 	Short: "The Things Network handler",
-	Long: `
-The default handler is the bridge between The Things Network and applications.
+	Long: `ttn handler starts a default Handler for The Things Network
+
+The Handler is the bridge between The Things Network and applications.
 `,
 	PreRun: func(cmd *cobra.Command, args []string) {
 		var statusServer string
@@ -150,13 +151,13 @@ func init() {
 	viper.BindPFlag("handler.dev-database", handlerCmd.Flags().Lookup("dev-database"))
 	viper.BindPFlag("handler.pkt-database", handlerCmd.Flags().Lookup("pkt-database"))
 
-	handlerCmd.Flags().String("status-address", "localhost", "The IP address to listen for serving status information")
+	handlerCmd.Flags().String("status-address", "0.0.0.0", "The IP address to listen for serving status information")
 	handlerCmd.Flags().Int("status-port", 10702, "The port of the status server, use 0 to disable")
 	viper.BindPFlag("handler.status-address", handlerCmd.Flags().Lookup("status-address"))
 	viper.BindPFlag("handler.status-port", handlerCmd.Flags().Lookup("status-port"))
 
-	handlerCmd.Flags().String("server-address", "localhost", "The IP address to listen for uplink messages from brokers")
-	handlerCmd.Flags().Int("server-port", 1882, "The port for the uplink")
+	handlerCmd.Flags().String("server-address", "0.0.0.0", "The IP address to listen for communication from other components")
+	handlerCmd.Flags().Int("server-port", 1882, "The port for communication from other components")
 	viper.BindPFlag("handler.server-address", handlerCmd.Flags().Lookup("server-address"))
 	viper.BindPFlag("handler.server-port", handlerCmd.Flags().Lookup("server-port"))
 
