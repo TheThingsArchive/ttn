@@ -18,6 +18,7 @@ import (
 // component implements the core.BrokerServer interface
 type component struct {
 	Components
+	SecretKey    [32]byte
 	NetAddrUp    string
 	NetAddrDown  string
 	MaxDevNonces uint
@@ -34,6 +35,7 @@ type Components struct {
 type Options struct {
 	NetAddrUp   string
 	NetAddrDown string
+	SecretKey   [32]byte
 }
 
 // Interface defines the Broker interface
@@ -45,7 +47,13 @@ type Interface interface {
 
 // New construct a new Broker component
 func New(c Components, o Options) Interface {
-	return component{Components: c, NetAddrUp: o.NetAddrUp, NetAddrDown: o.NetAddrDown, MaxDevNonces: 10}
+	return component{
+		Components:   c,
+		NetAddrUp:    o.NetAddrUp,
+		NetAddrDown:  o.NetAddrDown,
+		MaxDevNonces: 10,
+		SecretKey:    [32]byte{14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 42, 42, 42, 42, 42, 42}, // TODO Use options & ENV var
+	}
 }
 
 // Start actually runs the component and starts the rpc server

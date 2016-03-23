@@ -7,6 +7,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"golang.org/x/net/context"
+	"google.golang.org/grpc/metadata"
 )
 
 // ListDevices implements the core.HandlerManagerServer interface
@@ -26,12 +27,17 @@ func (h component) UpsertABP(bctx context.Context, req *core.UpsertABPHandlerReq
 	}
 
 	// 2. Forward to the broker firt -> The Broker also does the token verification
-	_, err := h.Broker.UpsertABP(context.Background(), &core.UpsertABPBrokerReq{
+	var token string
+	if meta, ok := metadata.FromContext(bctx); ok && len(meta["token"]) > 0 {
+		token = meta["token"][0]
+	}
+	_, err := h.Broker.BeginToken(token).UpsertABP(context.Background(), &core.UpsertABPBrokerReq{
 		AppEUI:     req.AppEUI,
 		DevAddr:    req.DevAddr,
 		NwkSKey:    req.NwkSKey,
 		NetAddress: h.NetAddr,
 	})
+	h.Broker.EndToken()
 	if err != nil {
 		h.Ctx.WithError(err).Debug("Broker rejected ABP")
 		return new(core.UpsertABPHandlerRes), errors.New(errors.Operational, err)
@@ -68,12 +74,16 @@ func (h component) UpsertOTAA(bctx context.Context, req *core.UpsertOTAAHandlerR
 	}
 
 	// 2. Notify the broker -> The Broker also does the token verification
-	// TODO Extract token from metadata and add it to request metadata
-	_, err := h.Broker.ValidateOTAA(context.Background(), &core.ValidateOTAABrokerReq{
+	var token string
+	h.Ctx.WithField("meta", bctx).Debug("Trying to get Meta")
+	if meta, ok := metadata.FromContext(bctx); ok && len(meta["token"]) > 0 {
+		token = meta["token"][0]
+	}
+	_, err := h.Broker.BeginToken(token).ValidateOTAA(context.Background(), &core.ValidateOTAABrokerReq{
 		NetAddress: h.NetAddr,
 		AppEUI:     req.AppEUI,
 	})
-
+	h.Broker.EndToken()
 	if err != nil {
 		h.Ctx.WithError(err).Debug("Broker rejected OTAA")
 		return new(core.UpsertOTAAHandlerRes), errors.New(errors.Operational, err)

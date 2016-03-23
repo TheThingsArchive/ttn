@@ -1,7 +1,7 @@
 // Copyright © 2016 The Things Network
 // Use of this source code is governed by the MIT license that can be found in the LICENSE file.
 
-package broker
+package handler
 
 import (
 	"sync"
@@ -12,17 +12,17 @@ import (
 	"google.golang.org/grpc"
 )
 
-type brokerClient struct {
+type handlerClient struct {
 	sync.Mutex
 	*tokenCredentials
-	core.BrokerClient
-	core.BrokerManagerClient
+	core.HandlerClient
+	core.HandlerManagerClient
 }
 
-// NewClient instantiates a new core.Broker client
-func NewClient(netAddr string) (core.AuthBrokerClient, error) {
+// NewClient instantiates a new core.handler client
+func NewClient(netAddr string) (core.AuthHandlerClient, error) {
 	tokener := tokenCredentials{}
-	brokerConn, err := grpc.Dial(
+	handlerConn, err := grpc.Dial(
 		netAddr,
 		grpc.WithInsecure(), // TODO Use of TLS
 		grpc.WithPerRPCCredentials(&tokener),
@@ -31,24 +31,24 @@ func NewClient(netAddr string) (core.AuthBrokerClient, error) {
 	if err != nil {
 		return nil, err
 	}
-	broker := core.NewBrokerClient(brokerConn)
-	brokerManager := core.NewBrokerManagerClient(brokerConn)
-	return &brokerClient{
-		tokenCredentials:    &tokener,
-		BrokerClient:        broker,
-		BrokerManagerClient: brokerManager,
+	handler := core.NewHandlerClient(handlerConn)
+	handlerManager := core.NewHandlerManagerClient(handlerConn)
+	return &handlerClient{
+		tokenCredentials:     &tokener,
+		HandlerClient:        handler,
+		HandlerManagerClient: handlerManager,
 	}, nil
 }
 
-// BeginToken implements the core.Broker interface
-func (b *brokerClient) BeginToken(token string) core.AuthBrokerClient {
+// BeginToken implements the core.handler interface
+func (b *handlerClient) BeginToken(token string) core.AuthHandlerClient {
 	b.Lock()
 	b.token = token
 	return b
 }
 
-// EndToken implements the core.Broker interface
-func (b *brokerClient) EndToken() {
+// EndToken implements the core.handler interface
+func (b *handlerClient) EndToken() {
 	b.Unlock()
 }
 

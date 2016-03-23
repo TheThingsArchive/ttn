@@ -6,26 +6,23 @@ package cmd
 import (
 	"fmt"
 
-	"golang.org/x/net/context"
-
-	"google.golang.org/grpc"
-
 	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/core/components/handler"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/gosuri/uitable"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"golang.org/x/net/context"
 )
 
 const emptyCell = "-"
 
-func getHandlerManager() (*grpc.ClientConn, core.HandlerManagerClient) {
-	conn, err := grpc.Dial(viper.GetString("ttn-handler"), grpc.WithInsecure())
+func getHandlerManager() core.AuthHandlerClient {
+	cli, err := handler.NewClient(viper.GetString("ttn-handler"))
 	if err != nil {
 		ctx.Fatalf("Could not connect: %v", err)
 	}
-
-	return conn, core.NewHandlerManagerClient(conn)
+	return cli
 }
 
 // devicesCmd represents the `devices` command
@@ -39,13 +36,12 @@ var devicesCmd = &cobra.Command{
 			ctx.Fatalf("Invalid AppEUI: %s", err)
 		}
 
-		conn, manager := getHandlerManager()
-		defer conn.Close()
+		manager := getHandlerManager()
 
-		res, err := manager.ListDevices(context.Background(), &core.ListDevicesHandlerReq{
+		res, err := manager.BeginToken(viper.GetString("app-token")).ListDevices(context.Background(), &core.ListDevicesHandlerReq{
 			AppEUI: appEUI,
 		})
-
+		manager.EndToken()
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not get device list")
 		}
@@ -103,15 +99,13 @@ var devicesRegisterCmd = &cobra.Command{
 			ctx.Fatalf("Invalid AppKey: %s", err)
 		}
 
-		conn, manager := getHandlerManager()
-		defer conn.Close()
-
-		res, err := manager.UpsertOTAA(context.Background(), &core.UpsertOTAAHandlerReq{
+		manager := getHandlerManager()
+		res, err := manager.BeginToken(viper.GetString("app-token")).UpsertOTAA(context.Background(), &core.UpsertOTAAHandlerReq{
 			AppEUI: appEUI,
 			DevEUI: devEUI,
 			AppKey: appKey,
 		})
-
+		manager.EndToken()
 		if err != nil || res == nil {
 			ctx.WithError(err).Fatal("Could not register device")
 		}
@@ -149,16 +143,14 @@ var devicesRegisterPersonalizedCmd = &cobra.Command{
 			ctx.Fatalf("Invalid AppSKey: %s", err)
 		}
 
-		conn, manager := getHandlerManager()
-		defer conn.Close()
-
-		res, err := manager.UpsertABP(context.Background(), &core.UpsertABPHandlerReq{
+		manager := getHandlerManager()
+		res, err := manager.BeginToken(viper.GetString("app-token")).UpsertABP(context.Background(), &core.UpsertABPHandlerReq{
 			AppEUI:  appEUI,
 			DevAddr: devAddr,
 			AppSKey: appSKey,
 			NwkSKey: nwkSKey,
 		})
-
+		manager.EndToken()
 		if err != nil || res == nil {
 			ctx.WithError(err).Fatal("Could not register device")
 		}
@@ -179,6 +171,6 @@ func init() {
 	devicesCmd.PersistentFlags().String("app-eui", "0102030405060708", "The app EUI to use")
 	viper.BindPFlag("app-eui", devicesCmd.PersistentFlags().Lookup("app-eui"))
 
-	devicesCmd.PersistentFlags().String("app-token", "0102030405060708", "The app Token to use")
+	devicesCmd.PersistentFlags().String("app-token", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJUVE4tSEFORExFUi0xIiwiaXNzIjoiVGhlVGhpbmdzVGhlTmV0d29yayIsInN1YiI6IjAxMDIwMzA0MDUwNjA3MDgifQ.zMHNXAVgQj672lwwDVmfYshpMvPwm6A8oNWJ7teGS2A", "The app Token to use")
 	viper.BindPFlag("app-token", devicesCmd.PersistentFlags().Lookup("app-token"))
 }

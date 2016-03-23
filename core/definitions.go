@@ -50,3 +50,12 @@ type AuthBrokerClient interface {
 	BeginToken(token string) AuthBrokerClient
 	EndToken()
 }
+
+// AuthHandlerClient gathers both HandlerClient & HandlerManagerClient interfaces with additional
+// method to add a custom token to each rpc requests's metadata
+type AuthHandlerClient interface {
+	HandlerClient
+	HandlerManagerClient
+	BeginToken(token string) AuthHandlerClient
+	EndToken()
+}
