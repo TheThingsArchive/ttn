@@ -74,33 +74,45 @@ func (z ABPSubAppReq) Msgsize() (s int) {
 // MarshalMsg implements msgp.Marshaler
 func (z *AppMetadata) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
-	// map header, size 9
-	// string "frequency"
-	o = append(o, 0x89, 0xa9, 0x66, 0x72, 0x65, 0x71, 0x75, 0x65, 0x6e, 0x63, 0x79)
+	// map header, size 13
+	// string "freq"
+	o = append(o, 0x8d, 0xa4, 0x66, 0x72, 0x65, 0x71)
 	o = msgp.AppendFloat32(o, z.Frequency)
-	// string "data_rate"
-	o = append(o, 0xa9, 0x64, 0x61, 0x74, 0x61, 0x5f, 0x72, 0x61, 0x74, 0x65)
+	// string "datr"
+	o = append(o, 0xa4, 0x64, 0x61, 0x74, 0x72)
 	o = msgp.AppendString(o, z.DataRate)
-	// string "coding_rate"
-	o = append(o, 0xab, 0x63, 0x6f, 0x64, 0x69, 0x6e, 0x67, 0x5f, 0x72, 0x61, 0x74, 0x65)
+	// string "codr"
+	o = append(o, 0xa4, 0x63, 0x6f, 0x64, 0x72)
 	o = msgp.AppendString(o, z.CodingRate)
-	// string "timestamp"
-	o = append(o, 0xa9, 0x74, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70)
+	// string "tmst"
+	o = append(o, 0xa4, 0x74, 0x6d, 0x73, 0x74)
 	o = msgp.AppendUint32(o, z.Timestamp)
+	// string "time"
+	o = append(o, 0xa4, 0x74, 0x69, 0x6d, 0x65)
+	o = msgp.AppendString(o, z.Time)
 	// string "rssi"
 	o = append(o, 0xa4, 0x72, 0x73, 0x73, 0x69)
 	o = msgp.AppendInt32(o, z.Rssi)
 	// string "lsnr"
 	o = append(o, 0xa4, 0x6c, 0x73, 0x6e, 0x72)
 	o = msgp.AppendFloat32(o, z.Lsnr)
-	// string "altitude"
-	o = append(o, 0xa8, 0x61, 0x6c, 0x74, 0x69, 0x74, 0x75, 0x64, 0x65)
+	// string "rfch"
+	o = append(o, 0xa4, 0x72, 0x66, 0x63, 0x68)
+	o = msgp.AppendUint32(o, z.RFChain)
+	// string "stat"
+	o = append(o, 0xa4, 0x73, 0x74, 0x61, 0x74)
+	o = msgp.AppendInt32(o, z.CRCStatus)
+	// string "modu"
+	o = append(o, 0xa4, 0x6d, 0x6f, 0x64, 0x75)
+	o = msgp.AppendString(o, z.Modulation)
+	// string "alti"
+	o = append(o, 0xa4, 0x61, 0x6c, 0x74, 0x69)
 	o = msgp.AppendInt32(o, z.Altitude)
-	// string "longitude"
-	o = append(o, 0xa9, 0x6c, 0x6f, 0x6e, 0x67, 0x69, 0x74, 0x75, 0x64, 0x65)
+	// string "long"
+	o = append(o, 0xa4, 0x6c, 0x6f, 0x6e, 0x67)
 	o = msgp.AppendFloat32(o, z.Longitude)
-	// string "latitude"
-	o = append(o, 0xa8, 0x6c, 0x61, 0x74, 0x69, 0x74, 0x75, 0x64, 0x65)
+	// string "lati"
+	o = append(o, 0xa4, 0x6c, 0x61, 0x74, 0x69)
 	o = msgp.AppendFloat32(o, z.Latitude)
 	return
 }
@@ -121,23 +133,28 @@ func (z *AppMetadata) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			return
 		}
 		switch msgp.UnsafeString(field) {
-		case "frequency":
+		case "freq":
 			z.Frequency, bts, err = msgp.ReadFloat32Bytes(bts)
 			if err != nil {
 				return
 			}
-		case "data_rate":
+		case "datr":
 			z.DataRate, bts, err = msgp.ReadStringBytes(bts)
 			if err != nil {
 				return
 			}
-		case "coding_rate":
+		case "codr":
 			z.CodingRate, bts, err = msgp.ReadStringBytes(bts)
 			if err != nil {
 				return
 			}
-		case "timestamp":
+		case "tmst":
 			z.Timestamp, bts, err = msgp.ReadUint32Bytes(bts)
+			if err != nil {
+				return
+			}
+		case "time":
+			z.Time, bts, err = msgp.ReadStringBytes(bts)
 			if err != nil {
 				return
 			}
@@ -151,17 +168,32 @@ func (z *AppMetadata) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			if err != nil {
 				return
 			}
-		case "altitude":
+		case "rfch":
+			z.RFChain, bts, err = msgp.ReadUint32Bytes(bts)
+			if err != nil {
+				return
+			}
+		case "stat":
+			z.CRCStatus, bts, err = msgp.ReadInt32Bytes(bts)
+			if err != nil {
+				return
+			}
+		case "modu":
+			z.Modulation, bts, err = msgp.ReadStringBytes(bts)
+			if err != nil {
+				return
+			}
+		case "alti":
 			z.Altitude, bts, err = msgp.ReadInt32Bytes(bts)
 			if err != nil {
 				return
 			}
-		case "longitude":
+		case "long":
 			z.Longitude, bts, err = msgp.ReadFloat32Bytes(bts)
 			if err != nil {
 				return
 			}
-		case "latitude":
+		case "lati":
 			z.Latitude, bts, err = msgp.ReadFloat32Bytes(bts)
 			if err != nil {
 				return
@@ -178,7 +210,7 @@ func (z *AppMetadata) UnmarshalMsg(bts []byte) (o []byte, err error) {
 }
 
 func (z *AppMetadata) Msgsize() (s int) {
-	s = 1 + 10 + msgp.Float32Size + 10 + msgp.StringPrefixSize + len(z.DataRate) + 12 + msgp.StringPrefixSize + len(z.CodingRate) + 10 + msgp.Uint32Size + 5 + msgp.Int32Size + 5 + msgp.Float32Size + 9 + msgp.Int32Size + 10 + msgp.Float32Size + 9 + msgp.Float32Size
+	s = 1 + 5 + msgp.Float32Size + 5 + msgp.StringPrefixSize + len(z.DataRate) + 5 + msgp.StringPrefixSize + len(z.CodingRate) + 5 + msgp.Uint32Size + 5 + msgp.StringPrefixSize + len(z.Time) + 5 + msgp.Int32Size + 5 + msgp.Float32Size + 5 + msgp.Uint32Size + 5 + msgp.Int32Size + 5 + msgp.StringPrefixSize + len(z.Modulation) + 5 + msgp.Int32Size + 5 + msgp.Float32Size + 5 + msgp.Float32Size
 	return
 }
 

@@ -18,15 +18,19 @@ type OTAAAppReq struct {
 
 // AppMetadata represents gathered metadata that are sent to gateways
 type AppMetadata struct {
-	Frequency  float32 `msg:"frequency" json:"frequency"`
-	DataRate   string  `msg:"data_rate" json:"data_rate"`
-	CodingRate string  `msg:"coding_rate" json:"coding_rate"`
-	Timestamp  uint32  `msg:"timestamp" json:"timestamp"`
+	Frequency  float32 `msg:"freq" json:"freq"`
+	DataRate   string  `msg:"datr" json:"datr"`
+	CodingRate string  `msg:"codr" json:"codr"`
+	Timestamp  uint32  `msg:"tmst" json:"tmst"`
+	Time       string  `msg:"time" json:"time"`
 	Rssi       int32   `msg:"rssi" json:"rssi"`
 	Lsnr       float32 `msg:"lsnr" json:"lsnr"`
-	Altitude   int32   `msg:"altitude" json:"altitude"`
-	Longitude  float32 `msg:"longitude" json:"longitude"`
-	Latitude   float32 `msg:"latitude" json:"latitude"`
+	RFChain    uint32  `msg:"rfch" json:"rfch"`
+	CRCStatus  int32   `msg:"stat" json:"stat"`
+	Modulation string  `msg:"modu" json:"modu"`
+	Altitude   int32   `msg:"alti" json:"alti"`
+	Longitude  float32 `msg:"long" json:"long"`
+	Latitude   float32 `msg:"lati" json:"lati"`
 }
 
 // DataDownAppReq represents downlink messages sent by applications

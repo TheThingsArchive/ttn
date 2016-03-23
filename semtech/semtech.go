@@ -27,7 +27,7 @@ type RXPK struct {
 	Rfch *uint32    `full:"RFChain" json:"rfch,omitempty"`     // Concentrator "RF chain" used for RX (unsigned integer)
 	Rssi *int32     `full:"Rssi" json:"rssi,omitempty"`        // RSSI in dBm (signed integer, 1 dB precision)
 	Size *uint32    `full:"PayloadSize" json:"size,omitempty"` // RF packet payload size in bytes (unsigned integer)
-	Stat *int32     `full:"Status" json:"stat,omitempty"`      // CRC status: 1 - OK, -1 = fail, 0 = no CRC
+	Stat *int32     `full:"CRCStatus" json:"stat,omitempty"`   // CRC status: 1 - OK, -1 = fail, 0 = no CRC
 	Time *time.Time `full:"Time" json:"-"`                     // UTC time of pkt RX, us precision, ISO 8601 'compact' format
 	Tmst *uint32    `full:"Timestamp" json:"tmst,omitempty"`   // Internal timestamp of "RX finished" event (32b unsigned)
 }
@@ -35,21 +35,21 @@ type RXPK struct {
 // TXPK represents a downlink j,omitemptyson message format received by the gateway.
 // Most field are optional.
 type TXPK struct {
-	Codr *string    `full:"CodingRate" json:"codr,omitempty"`      // LoRa ECC coding rate identifier
-	Data *string    `full:"Data" json:"data,omitempty"`            // Base64 encoded RF packet payload, padding optional
-	Datr *string    `full:"DataRate" json:"-"`                     // LoRa datarate identifier (eg. SF12BW500) || FSK Datarate (unsigned, in bits per second)
-	Fdev *uint32    `full:"FrequencyDev" json:"fdev,omitempty"`    // FSK frequency deviation (unsigned integer, in Hz)
-	Freq *float32   `full:"Frequency" json:"freq,omitempty"`       // TX central frequency in MHz (unsigned float, Hz precision)
-	Imme *bool      `full:"Immediate" json:"imme,omitempty"`       // Send packet immediately (will ignore tmst & time)
-	Ipol *bool      `full:"PolarizationInv" json:"ipol,omitempty"` // Lora modulation polarization inversion
-	Modu *string    `full:"Modulation" json:"modu,omitempty"`      // Modulation identifier "LORA" or "FSK"
-	Ncrc *bool      `full:"NoCRC" json:"ncrc,omitempty"`           // If true, disable the CRC of the physical layer (optional)
-	Powe *uint32    `full:"Power" json:"powe,omitempty"`           // TX output power in dBm (unsigned integer, dBm precision)
-	Prea *uint32    `full:"PreambleSize" json:"prea,omitempty"`    // RF preamble size (unsigned integer)
-	Rfch *uint32    `full:"RFChain" json:"rfch,omitempty"`         // Concentrator "RF chain" used for TX (unsigned integer)
-	Size *uint32    `full:"PayloadSize" json:"size,omitempty"`     // RF packet payload size in bytes (unsigned integer)
-	Time *time.Time `full:"Time" json:"-"`                         // Send packet at a certain time (GPS synchronization required)
-	Tmst *uint32    `full:"Timestamp" json:"tmst,omitempty"`       // Send packet on a certain timestamp value (will ignore time)
+	Codr *string    `full:"CodingRate" json:"codr,omitempty"`   // LoRa ECC coding rate identifier
+	Data *string    `full:"Data" json:"data,omitempty"`         // Base64 encoded RF packet payload, padding optional
+	Datr *string    `full:"DataRate" json:"-"`                  // LoRa datarate identifier (eg. SF12BW500) || FSK Datarate (unsigned, in bits per second)
+	Fdev *uint32    `full:"FrequencyDev" json:"fdev,omitempty"` // FSK frequency deviation (unsigned integer, in Hz)
+	Freq *float32   `full:"Frequency" json:"freq,omitempty"`    // TX central frequency in MHz (unsigned float, Hz precision)
+	Imme *bool      `full:"Immediate" json:"imme,omitempty"`    // Send packet immediately (will ignore tmst & time)
+	Ipol *bool      `full:"InvPolarity" json:"ipol,omitempty"`  // Lora modulation polarization inversion
+	Modu *string    `full:"Modulation" json:"modu,omitempty"`   // Modulation identifier "LORA" or "FSK"
+	Ncrc *bool      `full:"NoCRC" json:"ncrc,omitempty"`        // If true, disable the CRC of the physical layer (optional)
+	Powe *uint32    `full:"Power" json:"powe,omitempty"`        // TX output power in dBm (unsigned integer, dBm precision)
+	Prea *uint32    `full:"PreambleSize" json:"prea,omitempty"` // RF preamble size (unsigned integer)
+	Rfch *uint32    `full:"RFChain" json:"rfch,omitempty"`      // Concentrator "RF chain" used for TX (unsigned integer)
+	Size *uint32    `full:"PayloadSize" json:"size,omitempty"`  // RF packet payload size in bytes (unsigned integer)
+	Time *time.Time `full:"Time" json:"-"`                      // Send packet at a certain time (GPS synchronization required)
+	Tmst *uint32    `full:"Timestamp" json:"tmst,omitempty"`    // Send packet on a certain timestamp value (will ignore time)
 }
 
 // Stat represents a status json message format sent by the gateway
