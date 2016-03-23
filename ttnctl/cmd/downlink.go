@@ -19,9 +19,12 @@ import (
 var downlinkCmd = &cobra.Command{
 	Use:   "downlink [DevEUI] [Payload] [TTL]",
 	Short: "Send downlink messages to the network",
-	Long:  `ttnctl downlink sends a downlink message to the network`,
+	Long: `ttnctl downlink sends a downlink message to the network
+
+The DevEUI should be an 8-byte long hex-encoded string (16 chars), whereas the TTL is
+expected to define a Time To Live in a handy format, for instance: "1h" for one hour.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) < 2 {
+		if len(args) < 3 {
 			ctx.Fatal("Insufficient arguments")
 		}
 
