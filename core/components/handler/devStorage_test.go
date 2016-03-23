@@ -132,6 +132,51 @@ func TestReadStore(t *testing.T) {
 	// ------------------
 
 	{
+		Desc(t, "Store several, then readAll")
+
+		// Build
+		entry1 := devEntry{
+			AppEUI:   []byte{1, 2, 3, 44, 54, 6, 7, 14},
+			DevEUI:   []byte{0, 0, 0, 0, 1, 2, 3, 4},
+			DevAddr:  []byte{1, 2, 3, 4},
+			AppSKey:  [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
+			NwkSKey:  [16]byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+			FCntDown: 2,
+		}
+		entry2 := devEntry{
+			AppEUI:   []byte{1, 2, 3, 44, 54, 6, 7, 14},
+			DevEUI:   []byte{0, 0, 0, 0, 1, 2, 3, 5},
+			DevAddr:  []byte{2, 2, 3, 4},
+			AppSKey:  [16]byte{2, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
+			NwkSKey:  [16]byte{7, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+			FCntDown: 3,
+		}
+		entry3 := devEntry{
+			AppEUI:   []byte{1, 8, 9, 44, 54, 6, 7, 14},
+			DevEUI:   []byte{0, 0, 0, 0, 1, 2, 3, 5},
+			DevAddr:  []byte{2, 2, 3, 4},
+			AppSKey:  [16]byte{2, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
+			NwkSKey:  [16]byte{7, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+			FCntDown: 3,
+		}
+
+		// Operate
+		err := db.upsert(entry1)
+		FatalUnless(t, err)
+		err = db.upsert(entry2)
+		FatalUnless(t, err)
+		err = db.upsert(entry3)
+		FatalUnless(t, err)
+		entries, err := db.readAll(entry1.AppEUI)
+
+		// Check
+		CheckErrors(t, nil, err)
+		Check(t, []devEntry{entry1, entry2}, entries, "Devices Entries")
+	}
+
+	// ------------------
+
+	{
 		Desc(t, "Close the storage")
 		err := db.done()
 		CheckErrors(t, nil, err)
