@@ -164,7 +164,7 @@ func init() {
 	viper.BindPFlag("handler.internal-port", handlerCmd.Flags().Lookup("internal-port"))
 
 	handlerCmd.Flags().String("public-address", "0.0.0.0", "The IP address to listen for communication with the wild open")
-	handlerCmd.Flags().Int("public-port", 1885, "The port for communication with the wild open")
+	handlerCmd.Flags().Int("public-port", 1782, "The port for communication with the wild open")
 	viper.BindPFlag("handler.public-address", handlerCmd.Flags().Lookup("public-address"))
 	viper.BindPFlag("handler.public-port", handlerCmd.Flags().Lookup("public-port"))
 

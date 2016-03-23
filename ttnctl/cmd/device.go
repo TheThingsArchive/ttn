@@ -165,7 +165,7 @@ func init() {
 
 	devicesRegisterCmd.AddCommand(devicesRegisterPersonalizedCmd)
 
-	devicesCmd.Flags().String("ttn-handler", "0.0.0.0:1882", "The net address of the TTN Handler")
+	devicesCmd.Flags().String("ttn-handler", "0.0.0.0:1782", "The net address of the TTN Handler")
 	viper.BindPFlag("ttn-handler", devicesCmd.Flags().Lookup("ttn-handler"))
 
 	devicesCmd.PersistentFlags().String("app-eui", "0102030405060708", "The app EUI to use")
