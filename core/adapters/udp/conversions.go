@@ -7,7 +7,6 @@ import (
 	"encoding"
 	"encoding/base64"
 	"reflect"
-	"strings"
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/core"
@@ -27,7 +26,9 @@ func toLoRaWANPayload(rxpk semtech.RXPK, gid []byte, ctx log.Interface) (interfa
 	// RXPK Data are base64 encoded
 	raw, err := base64.RawStdEncoding.DecodeString(*rxpk.Data)
 	if err != nil {
-		return nil, errors.New(errors.Structural, err)
+		if raw, err = base64.StdEncoding.DecodeString(*rxpk.Data); err != nil {
+			return nil, errors.New(errors.Structural, err)
+		}
 	}
 	payload := lorawan.NewPHYPayload(true)
 	if err = payload.UnmarshalBinary(raw); err != nil {
@@ -116,7 +117,7 @@ func newTXPK(payload encoding.BinaryMarshaler, metadata *core.Metadata, ctx log.
 	if err != nil {
 		return semtech.TXPK{}, errors.New(errors.Structural, err)
 	}
-	data := strings.Trim(base64.StdEncoding.EncodeToString(raw), "=")
+	data := base64.RawStdEncoding.EncodeToString(raw)
 	txpk := semtech.TXPK{Data: pointer.String(data)}
 
 	// Step 3, copy every compatible metadata from the packet to the TXPK packet.

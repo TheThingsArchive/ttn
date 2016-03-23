@@ -35,6 +35,8 @@ message HandlerABPDevice {
     bytes   DevAddr     = 2;
     bytes   NwkSKey     = 3;
     bytes   AppSKey     = 4;
+    uint32  FCntUp      = 5;
+    uint32  FCntDown    = 6;
 }
 
 message HandlerOTAADevice {
@@ -43,6 +45,8 @@ message HandlerOTAADevice {
     bytes   NwkSKey     = 3;
     bytes   AppSKey     = 4;
     bytes   AppKey      = 5;
+    uint32  FCntUp      = 7;
+    uint32  FCntDown    = 8;
 }
 
 service HandlerManager {

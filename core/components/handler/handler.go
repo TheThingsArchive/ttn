@@ -476,6 +476,7 @@ func (h component) consumeJoin(appEUI []byte, devEUI []byte, appKey [16]byte, da
 		DevAddr:  devAddr[:],
 		DevEUI:   devEUI,
 		FCntDown: 0,
+		FCntUp:   0,
 		NwkSKey:  nwkSKey,
 	})
 	if err != nil {
@@ -587,9 +588,9 @@ func (h component) consumeDown(appEUI []byte, devEUI []byte, dataRate string, bu
 	}
 
 	// One of those bundle might be available for a response
+	upType := lorawan.MType(bundles[0].Packet.(*core.DataUpHandlerReq).MType)
 	for i, bundle := range bundles {
-		upType := lorawan.MType(bundle.Packet.(*core.DataUpHandlerReq).MType)
-		if best != nil && best.ID == i && (downlink.Payload != nil && err == nil || upType == lorawan.ConfirmedDataUp) {
+		if best != nil && best.ID == i && (downlink.Payload != nil || upType == lorawan.ConfirmedDataUp) {
 			stats.MarkMeter("handler.downlink.pull")
 			var downType lorawan.MType
 			switch upType {
@@ -598,7 +599,7 @@ func (h component) consumeDown(appEUI []byte, devEUI []byte, dataRate string, bu
 			case lorawan.ConfirmedDataUp:
 				downType = lorawan.ConfirmedDataDown
 			default:
-				h.abortConsume(errors.New(errors.Implementation, "Unreckognized uplink MType"), bundles)
+				h.abortConsume(errors.New(errors.Implementation, "Unrecognized uplink MType"), bundles)
 				return
 			}
 			downlink, err := h.buildDownlink(downlink.Payload, downType, *bundle.Packet.(*core.DataUpHandlerReq), bundle.Entry, best.IsRX2)
@@ -608,6 +609,7 @@ func (h component) consumeDown(appEUI []byte, devEUI []byte, dataRate string, bu
 			}
 
 			bundle.Entry.FCntDown = downlink.Payload.MACPayload.FHDR.FCnt
+			bundle.Entry.FCntUp = bundle.Packet.(*core.DataUpHandlerReq).FCnt
 			err = h.DevStorage.upsert(bundle.Entry)
 			if err != nil {
 				h.abortConsume(err, bundles)
@@ -616,6 +618,14 @@ func (h component) consumeDown(appEUI []byte, devEUI []byte, dataRate string, bu
 			bundle.Chresp <- downlink
 		} else {
 			bundle.Chresp <- nil
+		}
+	}
+
+	// Then, if there was no downlink, we still update the Frame Counter Up in the storage
+	if best == nil || downlink.Payload == nil && upType != lorawan.ConfirmedDataUp {
+		bundles[0].Entry.FCntUp = bundles[0].Packet.(*core.DataUpHandlerReq).FCnt
+		if err := h.DevStorage.upsert(bundles[0].Entry); err != nil {
+			h.Ctx.WithError(err).Debug("Unable to update Frame Counter Up")
 		}
 	}
 }
