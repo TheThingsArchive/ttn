@@ -43,7 +43,7 @@ var joinCmd = &cobra.Command{
 		var appKey lorawan.AES128Key
 		copy(appKey[:], appKeyRaw)
 
-		appEUIRaw, err := util.Parse64(viper.GetString("join.app-eui"))
+		appEUIRaw, err := util.Parse64(viper.GetString("app-eui"))
 		if err != nil {
 			ctx.Fatalf("Invalid appEUI: %s", err)
 		}
@@ -70,7 +70,7 @@ var joinCmd = &cobra.Command{
 			ctx.Fatalf("Unable to set MIC: %s", err)
 		}
 
-		addr, err := net.ResolveUDPAddr("udp", viper.GetString("router.address"))
+		addr, err := net.ResolveUDPAddr("udp", viper.GetString("ttn-router"))
 		if err != nil {
 			ctx.Fatalf("Couldn't resolve UDP address: %s", err)
 		}
@@ -203,8 +203,8 @@ func init() {
 	RootCmd.AddCommand(joinCmd)
 
 	joinCmd.Flags().String("ttn-router", "0.0.0.0:1700", "The net address of the TTN Router")
-	viper.BindPFlag("router.address", joinCmd.Flags().Lookup("ttn-router"))
+	viper.BindPFlag("ttn-router", joinCmd.Flags().Lookup("ttn-router"))
 
 	joinCmd.Flags().String("app-eui", "0102030405060708", "The app EUI to use")
-	viper.BindPFlag("join.app-eui", joinCmd.Flags().Lookup("app-eui"))
+	viper.BindPFlag("app-eui", joinCmd.Flags().Lookup("app-eui"))
 }

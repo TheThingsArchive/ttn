@@ -44,7 +44,7 @@ expected to define a Time To Live in a handy format, for instance: "1h" for one 
 			ctx.WithError(err).Fatal("Unable to create downlink payload")
 		}
 
-		mqtt.Setup(viper.GetString("handler.mqtt-broker"), ctx)
+		mqtt.Setup(viper.GetString("mqtt-broker"), ctx)
 		mqtt.Connect()
 
 		ctx.WithFields(log.Fields{
@@ -52,7 +52,7 @@ expected to define a Time To Live in a handy format, for instance: "1h" for one 
 			"Payload": string(payload),
 		}).Info("Pushing downlink...")
 
-		token := mqtt.Client.Publish(fmt.Sprintf("%s/devices/%x/down", viper.GetString("handler.app-eui"), devEUI), 2, false, payload)
+		token := mqtt.Client.Publish(fmt.Sprintf("%s/devices/%x/down", viper.GetString("app-eui"), devEUI), 2, false, payload)
 		if token.Wait() && token.Error() != nil {
 			ctx.WithError(token.Error()).Fatal("Downlink failed.")
 		} else {
@@ -66,8 +66,8 @@ func init() {
 	RootCmd.AddCommand(downlinkCmd)
 
 	downlinkCmd.Flags().String("mqtt-broker", "localhost:1883", "The address of the MQTT broker")
-	viper.BindPFlag("handler.mqtt-broker", downlinkCmd.Flags().Lookup("mqtt-broker"))
+	viper.BindPFlag("mqtt-broker", downlinkCmd.Flags().Lookup("mqtt-broker"))
 
 	downlinkCmd.Flags().String("app-eui", "0102030405060708", "The app EUI to use")
-	viper.BindPFlag("handler.app-eui", downlinkCmd.Flags().Lookup("app-eui"))
+	viper.BindPFlag("app-eui", downlinkCmd.Flags().Lookup("app-eui"))
 }

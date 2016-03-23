@@ -77,7 +77,7 @@ var uplinkCmd = &cobra.Command{
 			ctx.Fatalf("Unable to set MIC: %s", err)
 		}
 
-		addr, err := net.ResolveUDPAddr("udp", viper.GetString("router.address"))
+		addr, err := net.ResolveUDPAddr("udp", viper.GetString("ttn-router"))
 		if err != nil {
 			ctx.Fatalf("Couldn't resolve UDP address: %s", err)
 		}
@@ -190,5 +190,5 @@ func init() {
 	RootCmd.AddCommand(uplinkCmd)
 
 	uplinkCmd.Flags().String("ttn-router", "0.0.0.0:1700", "The net address of the TTN Router")
-	viper.BindPFlag("router.address", uplinkCmd.Flags().Lookup("ttn-router"))
+	viper.BindPFlag("ttn-router", uplinkCmd.Flags().Lookup("ttn-router"))
 }

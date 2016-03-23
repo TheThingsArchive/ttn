@@ -160,9 +160,7 @@ var devicesRegisterPersonalizedCmd = &cobra.Command{
 
 func init() {
 	RootCmd.AddCommand(devicesCmd)
-
 	devicesCmd.AddCommand(devicesRegisterCmd)
-
 	devicesRegisterCmd.AddCommand(devicesRegisterPersonalizedCmd)
 
 	devicesCmd.Flags().String("ttn-handler", "0.0.0.0:1782", "The net address of the TTN Handler")
@@ -173,4 +171,5 @@ func init() {
 
 	devicesCmd.PersistentFlags().String("app-token", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJUVE4tSEFORExFUi0xIiwiaXNzIjoiVGhlVGhpbmdzVGhlTmV0d29yayIsInN1YiI6IjAxMDIwMzA0MDUwNjA3MDgifQ.zMHNXAVgQj672lwwDVmfYshpMvPwm6A8oNWJ7teGS2A", "The app Token to use")
 	viper.BindPFlag("app-token", devicesCmd.PersistentFlags().Lookup("app-token"))
+
 }
