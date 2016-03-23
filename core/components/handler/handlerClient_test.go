@@ -66,18 +66,22 @@ func TestListDevices(t *testing.T) {
 		var wantRes = &core.ListDevicesHandlerRes{
 			OTAA: []*core.HandlerOTAADevice{
 				&core.HandlerOTAADevice{
-					DevEUI:  st.OutReadAll.Entries[0].DevEUI,
-					DevAddr: st.OutReadAll.Entries[0].DevAddr,
-					NwkSKey: st.OutReadAll.Entries[0].NwkSKey[:],
-					AppSKey: st.OutReadAll.Entries[0].AppSKey[:],
-					AppKey:  st.OutReadAll.Entries[0].AppKey[:],
+					DevEUI:   st.OutReadAll.Entries[0].DevEUI,
+					DevAddr:  st.OutReadAll.Entries[0].DevAddr,
+					NwkSKey:  st.OutReadAll.Entries[0].NwkSKey[:],
+					AppSKey:  st.OutReadAll.Entries[0].AppSKey[:],
+					AppKey:   st.OutReadAll.Entries[0].AppKey[:],
+					FCntDown: 14,
+					FCntUp:   0,
 				},
 			},
 			ABP: []*core.HandlerABPDevice{
 				&core.HandlerABPDevice{
-					DevAddr: st.OutReadAll.Entries[1].DevAddr,
-					NwkSKey: st.OutReadAll.Entries[1].NwkSKey[:],
-					AppSKey: st.OutReadAll.Entries[1].AppSKey[:],
+					DevAddr:  st.OutReadAll.Entries[1].DevAddr,
+					NwkSKey:  st.OutReadAll.Entries[1].NwkSKey[:],
+					AppSKey:  st.OutReadAll.Entries[1].AppSKey[:],
+					FCntDown: 5,
+					FCntUp:   0,
 				},
 			},
 		}
