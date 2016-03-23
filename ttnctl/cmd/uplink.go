@@ -20,37 +20,47 @@ import (
 
 // uplinkCmd represents the `uplink` command
 var uplinkCmd = &cobra.Command{
-	Use:   "uplink [DevAddr] [NwkSKey] [AppSKey] [Payload] [FCnt]",
+	Use:   "uplink [ShouldConfirm] [DevAddr] [NwkSKey] [AppSKey] [Payload] [FCnt]",
 	Short: "Send uplink messages to the network",
 	Long:  `ttnctl uplink sends an uplink message to the network`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) < 5 {
+		if len(args) < 6 {
 			ctx.Fatalf("Insufficient arguments")
 		}
 
 		// Parse parameters
-		devAddrRaw, err := util.Parse32(args[0])
+		var mtype lorawan.MType
+		switch args[0] {
+		case "yes":
+			fallthrough
+		case "true":
+			mtype = lorawan.ConfirmedDataUp
+		default:
+			mtype = lorawan.UnconfirmedDataUp
+		}
+
+		devAddrRaw, err := util.Parse32(args[1])
 		if err != nil {
 			ctx.Fatalf("Invalid DevAddr: %s", err)
 		}
 		var devAddr lorawan.DevAddr
 		copy(devAddr[:], devAddrRaw)
 
-		nwkSKeyRaw, err := util.Parse128(args[1])
+		nwkSKeyRaw, err := util.Parse128(args[2])
 		if err != nil {
 			ctx.Fatalf("Invalid NwkSKey: %s", err)
 		}
 		var nwkSKey lorawan.AES128Key
 		copy(nwkSKey[:], nwkSKeyRaw[:])
 
-		appSKeyRaw, err := util.Parse128(args[2])
+		appSKeyRaw, err := util.Parse128(args[3])
 		if err != nil {
 			ctx.Fatalf("Invalid appSKey: %s", err)
 		}
 		var appSKey lorawan.AES128Key
 		copy(appSKey[:], appSKeyRaw[:])
 
-		fcnt, err := strconv.ParseInt(args[4], 10, 64)
+		fcnt, err := strconv.ParseInt(args[5], 10, 64)
 		if err != nil {
 			ctx.Fatalf("Invalid FCnt: %s", err)
 		}
@@ -63,13 +73,13 @@ var uplinkCmd = &cobra.Command{
 		}
 		macPayload.FPort = new(uint8)
 		*macPayload.FPort = 1
-		macPayload.FRMPayload = []lorawan.Payload{&lorawan.DataPayload{Bytes: []byte(args[3])}}
+		macPayload.FRMPayload = []lorawan.Payload{&lorawan.DataPayload{Bytes: []byte(args[4])}}
 		if err := macPayload.EncryptFRMPayload(appSKey); err != nil {
 			ctx.Fatalf("Unable to encrypt frame payload: %s", err)
 		}
 		phyPayload := lorawan.NewPHYPayload(true)
 		phyPayload.MHDR = lorawan.MHDR{
-			MType: lorawan.UnconfirmedDataUp,
+			MType: mtype,
 			Major: lorawan.LoRaWANR1,
 		}
 		phyPayload.MACPayload = macPayload
@@ -129,15 +139,18 @@ var uplinkCmd = &cobra.Command{
 			}
 
 			macPayload, ok := payload.MACPayload.(*lorawan.MACPayload)
-			if !ok || len(macPayload.FRMPayload) != 1 {
+			if !ok || len(macPayload.FRMPayload) > 1 {
 				ctx.Fatalf("Unable to retrieve LoRaWAN MACPayload")
 			}
-			if err := macPayload.DecryptFRMPayload(appSKey); err != nil {
-				ctx.Fatalf("Unable to decrypt MACPayload: %s", err)
-			}
-
 			ctx.Infof("Frame counter: %d", macPayload.FHDR.FCnt)
-			ctx.Infof("Decrypted Payload: %s", string(macPayload.FRMPayload[0].(*lorawan.DataPayload).Bytes))
+			if len(macPayload.FRMPayload) > 0 {
+				if err := macPayload.DecryptFRMPayload(appSKey); err != nil {
+					ctx.Fatalf("Unable to decrypt MACPayload: %s", err)
+				}
+				ctx.Infof("Decrypted Payload: %s", string(macPayload.FRMPayload[0].(*lorawan.DataPayload).Bytes))
+			} else {
+				ctx.Infof("The frame payload was empty.")
+			}
 		}()
 
 		// Router Packet
