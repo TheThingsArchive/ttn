@@ -7,7 +7,6 @@ import (
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"golang.org/x/net/context"
-	"google.golang.org/grpc/metadata"
 )
 
 // ListDevices implements the core.HandlerManagerServer interface
@@ -22,6 +21,10 @@ func (h component) ListDevices(bctx context.Context, req *core.ListDevicesHandle
 	}
 
 	// 2. Validate token & retrieve devices from db
+	if _, err := h.Broker.ValidateToken(context.Background(), &core.ValidateTokenBrokerReq{AppEUI: req.AppEUI, Token: req.Token}); err != nil {
+		h.Ctx.WithError(err).Debug("Unable to handle ListDevices request")
+		return new(core.ListDevicesHandlerRes), errors.New(errors.Operational, err)
+	}
 	entries, err := h.DevStorage.readAll(req.AppEUI)
 	if err != nil {
 		h.Ctx.WithError(err).Debug("Unable to handle ListDevices request")
@@ -67,17 +70,13 @@ func (h component) UpsertABP(bctx context.Context, req *core.UpsertABPHandlerReq
 	}
 
 	// 2. Forward to the broker firt -> The Broker also does the token verification
-	var token string
-	if meta, ok := metadata.FromContext(bctx); ok && len(meta["token"]) > 0 {
-		token = meta["token"][0]
-	}
-	_, err := h.Broker.BeginToken(token).UpsertABP(context.Background(), &core.UpsertABPBrokerReq{
+	_, err := h.Broker.UpsertABP(context.Background(), &core.UpsertABPBrokerReq{
+		Token:      req.Token,
 		AppEUI:     req.AppEUI,
 		DevAddr:    req.DevAddr,
 		NwkSKey:    req.NwkSKey,
 		NetAddress: h.NetAddr,
 	})
-	h.Broker.EndToken()
 	if err != nil {
 		h.Ctx.WithError(err).Debug("Broker rejected ABP")
 		return new(core.UpsertABPHandlerRes), errors.New(errors.Operational, err)
@@ -114,15 +113,11 @@ func (h component) UpsertOTAA(bctx context.Context, req *core.UpsertOTAAHandlerR
 	}
 
 	// 2. Notify the broker -> The Broker also does the token verification
-	var token string
-	if meta, ok := metadata.FromContext(bctx); ok && len(meta["token"]) > 0 {
-		token = meta["token"][0]
-	}
-	_, err := h.Broker.BeginToken(token).ValidateOTAA(context.Background(), &core.ValidateOTAABrokerReq{
+	_, err := h.Broker.ValidateOTAA(context.Background(), &core.ValidateOTAABrokerReq{
+		Token:      req.Token,
 		NetAddress: h.NetAddr,
 		AppEUI:     req.AppEUI,
 	})
-	h.Broker.EndToken()
 	if err != nil {
 		h.Ctx.WithError(err).Debug("Broker rejected OTAA")
 		return new(core.UpsertOTAAHandlerRes), errors.New(errors.Operational, err)

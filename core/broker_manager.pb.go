@@ -21,8 +21,8 @@
 		UpsertABPBrokerReq
 		UpsertABPBrokerRes
 		BrokerDevice
-		ListDevicesBrokerReq
-		ListDevicesBrokerRes
+		ValidateTokenBrokerReq
+		ValidateTokenBrokerRes
 		UpsertOTAAHandlerReq
 		UpsertOTAAHandlerRes
 		UpsertABPHandlerReq
@@ -85,8 +85,9 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion1
 
 type ValidateOTAABrokerReq struct {
-	AppEUI     []byte `protobuf:"bytes,1,opt,name=AppEUI,json=appEUI,proto3" json:"AppEUI,omitempty"`
-	NetAddress string `protobuf:"bytes,2,opt,name=NetAddress,json=netAddress,proto3" json:"NetAddress,omitempty"`
+	Token      string `protobuf:"bytes,1,opt,name=Token,json=token,proto3" json:"Token,omitempty"`
+	AppEUI     []byte `protobuf:"bytes,2,opt,name=AppEUI,json=appEUI,proto3" json:"AppEUI,omitempty"`
+	NetAddress string `protobuf:"bytes,3,opt,name=NetAddress,json=netAddress,proto3" json:"NetAddress,omitempty"`
 }
 
 func (m *ValidateOTAABrokerReq) Reset()         { *m = ValidateOTAABrokerReq{} }
@@ -107,10 +108,11 @@ func (*ValidateOTAABrokerRes) Descriptor() ([]byte, []int) {
 }
 
 type UpsertABPBrokerReq struct {
-	AppEUI     []byte `protobuf:"bytes,1,opt,name=AppEUI,json=appEUI,proto3" json:"AppEUI,omitempty"`
-	NetAddress string `protobuf:"bytes,2,opt,name=NetAddress,json=netAddress,proto3" json:"NetAddress,omitempty"`
-	DevAddr    []byte `protobuf:"bytes,3,opt,name=DevAddr,json=devAddr,proto3" json:"DevAddr,omitempty"`
-	NwkSKey    []byte `protobuf:"bytes,4,opt,name=NwkSKey,json=nwkSKey,proto3" json:"NwkSKey,omitempty"`
+	Token      string `protobuf:"bytes,1,opt,name=Token,json=token,proto3" json:"Token,omitempty"`
+	AppEUI     []byte `protobuf:"bytes,2,opt,name=AppEUI,json=appEUI,proto3" json:"AppEUI,omitempty"`
+	NetAddress string `protobuf:"bytes,3,opt,name=NetAddress,json=netAddress,proto3" json:"NetAddress,omitempty"`
+	DevAddr    []byte `protobuf:"bytes,4,opt,name=DevAddr,json=devAddr,proto3" json:"DevAddr,omitempty"`
+	NwkSKey    []byte `protobuf:"bytes,5,opt,name=NwkSKey,json=nwkSKey,proto3" json:"NwkSKey,omitempty"`
 }
 
 func (m *UpsertABPBrokerReq) Reset()                    { *m = UpsertABPBrokerReq{} }
@@ -137,33 +139,26 @@ func (m *BrokerDevice) String() string            { return proto.CompactTextStri
 func (*BrokerDevice) ProtoMessage()               {}
 func (*BrokerDevice) Descriptor() ([]byte, []int) { return fileDescriptorBrokerManager, []int{4} }
 
-type ListDevicesBrokerReq struct {
-	AppEUI []byte `protobuf:"bytes,1,opt,name=AppEUI,json=appEUI,proto3" json:"AppEUI,omitempty"`
+type ValidateTokenBrokerReq struct {
+	Token  string `protobuf:"bytes,1,opt,name=Token,json=token,proto3" json:"Token,omitempty"`
+	AppEUI []byte `protobuf:"bytes,2,opt,name=AppEUI,json=appEUI,proto3" json:"AppEUI,omitempty"`
 }
 
-func (m *ListDevicesBrokerReq) Reset()         { *m = ListDevicesBrokerReq{} }
-func (m *ListDevicesBrokerReq) String() string { return proto.CompactTextString(m) }
-func (*ListDevicesBrokerReq) ProtoMessage()    {}
-func (*ListDevicesBrokerReq) Descriptor() ([]byte, []int) {
+func (m *ValidateTokenBrokerReq) Reset()         { *m = ValidateTokenBrokerReq{} }
+func (m *ValidateTokenBrokerReq) String() string { return proto.CompactTextString(m) }
+func (*ValidateTokenBrokerReq) ProtoMessage()    {}
+func (*ValidateTokenBrokerReq) Descriptor() ([]byte, []int) {
 	return fileDescriptorBrokerManager, []int{5}
 }
 
-type ListDevicesBrokerRes struct {
-	Devices []*BrokerDevice `protobuf:"bytes,1,rep,name=Devices,json=devices" json:"Devices,omitempty"`
+type ValidateTokenBrokerRes struct {
 }
 
-func (m *ListDevicesBrokerRes) Reset()         { *m = ListDevicesBrokerRes{} }
-func (m *ListDevicesBrokerRes) String() string { return proto.CompactTextString(m) }
-func (*ListDevicesBrokerRes) ProtoMessage()    {}
-func (*ListDevicesBrokerRes) Descriptor() ([]byte, []int) {
+func (m *ValidateTokenBrokerRes) Reset()         { *m = ValidateTokenBrokerRes{} }
+func (m *ValidateTokenBrokerRes) String() string { return proto.CompactTextString(m) }
+func (*ValidateTokenBrokerRes) ProtoMessage()    {}
+func (*ValidateTokenBrokerRes) Descriptor() ([]byte, []int) {
 	return fileDescriptorBrokerManager, []int{6}
-}
-
-func (m *ListDevicesBrokerRes) GetDevices() []*BrokerDevice {
-	if m != nil {
-		return m.Devices
-	}
-	return nil
 }
 
 func init() {
@@ -172,8 +167,8 @@ func init() {
 	proto.RegisterType((*UpsertABPBrokerReq)(nil), "core.UpsertABPBrokerReq")
 	proto.RegisterType((*UpsertABPBrokerRes)(nil), "core.UpsertABPBrokerRes")
 	proto.RegisterType((*BrokerDevice)(nil), "core.BrokerDevice")
-	proto.RegisterType((*ListDevicesBrokerReq)(nil), "core.ListDevicesBrokerReq")
-	proto.RegisterType((*ListDevicesBrokerRes)(nil), "core.ListDevicesBrokerRes")
+	proto.RegisterType((*ValidateTokenBrokerReq)(nil), "core.ValidateTokenBrokerReq")
+	proto.RegisterType((*ValidateTokenBrokerRes)(nil), "core.ValidateTokenBrokerRes")
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -185,7 +180,7 @@ var _ grpc.ClientConn
 type BrokerManagerClient interface {
 	ValidateOTAA(ctx context.Context, in *ValidateOTAABrokerReq, opts ...grpc.CallOption) (*ValidateOTAABrokerRes, error)
 	UpsertABP(ctx context.Context, in *UpsertABPBrokerReq, opts ...grpc.CallOption) (*UpsertABPBrokerRes, error)
-	ListDevices(ctx context.Context, in *ListDevicesBrokerReq, opts ...grpc.CallOption) (*ListDevicesBrokerRes, error)
+	ValidateToken(ctx context.Context, in *ValidateTokenBrokerReq, opts ...grpc.CallOption) (*ValidateTokenBrokerRes, error)
 }
 
 type brokerManagerClient struct {
@@ -214,9 +209,9 @@ func (c *brokerManagerClient) UpsertABP(ctx context.Context, in *UpsertABPBroker
 	return out, nil
 }
 
-func (c *brokerManagerClient) ListDevices(ctx context.Context, in *ListDevicesBrokerReq, opts ...grpc.CallOption) (*ListDevicesBrokerRes, error) {
-	out := new(ListDevicesBrokerRes)
-	err := grpc.Invoke(ctx, "/core.BrokerManager/ListDevices", in, out, c.cc, opts...)
+func (c *brokerManagerClient) ValidateToken(ctx context.Context, in *ValidateTokenBrokerReq, opts ...grpc.CallOption) (*ValidateTokenBrokerRes, error) {
+	out := new(ValidateTokenBrokerRes)
+	err := grpc.Invoke(ctx, "/core.BrokerManager/ValidateToken", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -228,7 +223,7 @@ func (c *brokerManagerClient) ListDevices(ctx context.Context, in *ListDevicesBr
 type BrokerManagerServer interface {
 	ValidateOTAA(context.Context, *ValidateOTAABrokerReq) (*ValidateOTAABrokerRes, error)
 	UpsertABP(context.Context, *UpsertABPBrokerReq) (*UpsertABPBrokerRes, error)
-	ListDevices(context.Context, *ListDevicesBrokerReq) (*ListDevicesBrokerRes, error)
+	ValidateToken(context.Context, *ValidateTokenBrokerReq) (*ValidateTokenBrokerRes, error)
 }
 
 func RegisterBrokerManagerServer(s *grpc.Server, srv BrokerManagerServer) {
@@ -259,12 +254,12 @@ func _BrokerManager_UpsertABP_Handler(srv interface{}, ctx context.Context, dec 
 	return out, nil
 }
 
-func _BrokerManager_ListDevices_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(ListDevicesBrokerReq)
+func _BrokerManager_ValidateToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(ValidateTokenBrokerReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(BrokerManagerServer).ListDevices(ctx, in)
+	out, err := srv.(BrokerManagerServer).ValidateToken(ctx, in)
 	if err != nil {
 		return nil, err
 	}
@@ -284,8 +279,8 @@ var _BrokerManager_serviceDesc = grpc.ServiceDesc{
 			Handler:    _BrokerManager_UpsertABP_Handler,
 		},
 		{
-			MethodName: "ListDevices",
-			Handler:    _BrokerManager_ListDevices_Handler,
+			MethodName: "ValidateToken",
+			Handler:    _BrokerManager_ValidateToken_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{},
@@ -306,16 +301,22 @@ func (m *ValidateOTAABrokerReq) MarshalTo(data []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if len(m.Token) > 0 {
+		data[i] = 0xa
+		i++
+		i = encodeVarintBrokerManager(data, i, uint64(len(m.Token)))
+		i += copy(data[i:], m.Token)
+	}
 	if m.AppEUI != nil {
 		if len(m.AppEUI) > 0 {
-			data[i] = 0xa
+			data[i] = 0x12
 			i++
 			i = encodeVarintBrokerManager(data, i, uint64(len(m.AppEUI)))
 			i += copy(data[i:], m.AppEUI)
 		}
 	}
 	if len(m.NetAddress) > 0 {
-		data[i] = 0x12
+		data[i] = 0x1a
 		i++
 		i = encodeVarintBrokerManager(data, i, uint64(len(m.NetAddress)))
 		i += copy(data[i:], m.NetAddress)
@@ -356,23 +357,29 @@ func (m *UpsertABPBrokerReq) MarshalTo(data []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if len(m.Token) > 0 {
+		data[i] = 0xa
+		i++
+		i = encodeVarintBrokerManager(data, i, uint64(len(m.Token)))
+		i += copy(data[i:], m.Token)
+	}
 	if m.AppEUI != nil {
 		if len(m.AppEUI) > 0 {
-			data[i] = 0xa
+			data[i] = 0x12
 			i++
 			i = encodeVarintBrokerManager(data, i, uint64(len(m.AppEUI)))
 			i += copy(data[i:], m.AppEUI)
 		}
 	}
 	if len(m.NetAddress) > 0 {
-		data[i] = 0x12
+		data[i] = 0x1a
 		i++
 		i = encodeVarintBrokerManager(data, i, uint64(len(m.NetAddress)))
 		i += copy(data[i:], m.NetAddress)
 	}
 	if m.DevAddr != nil {
 		if len(m.DevAddr) > 0 {
-			data[i] = 0x1a
+			data[i] = 0x22
 			i++
 			i = encodeVarintBrokerManager(data, i, uint64(len(m.DevAddr)))
 			i += copy(data[i:], m.DevAddr)
@@ -380,7 +387,7 @@ func (m *UpsertABPBrokerReq) MarshalTo(data []byte) (int, error) {
 	}
 	if m.NwkSKey != nil {
 		if len(m.NwkSKey) > 0 {
-			data[i] = 0x22
+			data[i] = 0x2a
 			i++
 			i = encodeVarintBrokerManager(data, i, uint64(len(m.NwkSKey)))
 			i += copy(data[i:], m.NwkSKey)
@@ -449,7 +456,7 @@ func (m *BrokerDevice) MarshalTo(data []byte) (int, error) {
 	return i, nil
 }
 
-func (m *ListDevicesBrokerReq) Marshal() (data []byte, err error) {
+func (m *ValidateTokenBrokerReq) Marshal() (data []byte, err error) {
 	size := m.Size()
 	data = make([]byte, size)
 	n, err := m.MarshalTo(data)
@@ -459,14 +466,20 @@ func (m *ListDevicesBrokerReq) Marshal() (data []byte, err error) {
 	return data[:n], nil
 }
 
-func (m *ListDevicesBrokerReq) MarshalTo(data []byte) (int, error) {
+func (m *ValidateTokenBrokerReq) MarshalTo(data []byte) (int, error) {
 	var i int
 	_ = i
 	var l int
 	_ = l
+	if len(m.Token) > 0 {
+		data[i] = 0xa
+		i++
+		i = encodeVarintBrokerManager(data, i, uint64(len(m.Token)))
+		i += copy(data[i:], m.Token)
+	}
 	if m.AppEUI != nil {
 		if len(m.AppEUI) > 0 {
-			data[i] = 0xa
+			data[i] = 0x12
 			i++
 			i = encodeVarintBrokerManager(data, i, uint64(len(m.AppEUI)))
 			i += copy(data[i:], m.AppEUI)
@@ -475,7 +488,7 @@ func (m *ListDevicesBrokerReq) MarshalTo(data []byte) (int, error) {
 	return i, nil
 }
 
-func (m *ListDevicesBrokerRes) Marshal() (data []byte, err error) {
+func (m *ValidateTokenBrokerRes) Marshal() (data []byte, err error) {
 	size := m.Size()
 	data = make([]byte, size)
 	n, err := m.MarshalTo(data)
@@ -485,23 +498,11 @@ func (m *ListDevicesBrokerRes) Marshal() (data []byte, err error) {
 	return data[:n], nil
 }
 
-func (m *ListDevicesBrokerRes) MarshalTo(data []byte) (int, error) {
+func (m *ValidateTokenBrokerRes) MarshalTo(data []byte) (int, error) {
 	var i int
 	_ = i
 	var l int
 	_ = l
-	if len(m.Devices) > 0 {
-		for _, msg := range m.Devices {
-			data[i] = 0xa
-			i++
-			i = encodeVarintBrokerManager(data, i, uint64(msg.Size()))
-			n, err := msg.MarshalTo(data[i:])
-			if err != nil {
-				return 0, err
-			}
-			i += n
-		}
-	}
 	return i, nil
 }
 
@@ -535,6 +536,10 @@ func encodeVarintBrokerManager(data []byte, offset int, v uint64) int {
 func (m *ValidateOTAABrokerReq) Size() (n int) {
 	var l int
 	_ = l
+	l = len(m.Token)
+	if l > 0 {
+		n += 1 + l + sovBrokerManager(uint64(l))
+	}
 	if m.AppEUI != nil {
 		l = len(m.AppEUI)
 		if l > 0 {
@@ -557,6 +562,10 @@ func (m *ValidateOTAABrokerRes) Size() (n int) {
 func (m *UpsertABPBrokerReq) Size() (n int) {
 	var l int
 	_ = l
+	l = len(m.Token)
+	if l > 0 {
+		n += 1 + l + sovBrokerManager(uint64(l))
+	}
 	if m.AppEUI != nil {
 		l = len(m.AppEUI)
 		if l > 0 {
@@ -612,9 +621,13 @@ func (m *BrokerDevice) Size() (n int) {
 	return n
 }
 
-func (m *ListDevicesBrokerReq) Size() (n int) {
+func (m *ValidateTokenBrokerReq) Size() (n int) {
 	var l int
 	_ = l
+	l = len(m.Token)
+	if l > 0 {
+		n += 1 + l + sovBrokerManager(uint64(l))
+	}
 	if m.AppEUI != nil {
 		l = len(m.AppEUI)
 		if l > 0 {
@@ -624,15 +637,9 @@ func (m *ListDevicesBrokerReq) Size() (n int) {
 	return n
 }
 
-func (m *ListDevicesBrokerRes) Size() (n int) {
+func (m *ValidateTokenBrokerRes) Size() (n int) {
 	var l int
 	_ = l
-	if len(m.Devices) > 0 {
-		for _, e := range m.Devices {
-			l = e.Size()
-			n += 1 + l + sovBrokerManager(uint64(l))
-		}
-	}
 	return n
 }
 
@@ -680,6 +687,35 @@ func (m *ValidateOTAABrokerReq) Unmarshal(data []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Token", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowBrokerManager
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthBrokerManager
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Token = string(data[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field AppEUI", wireType)
 			}
 			var byteLen int
@@ -709,7 +745,7 @@ func (m *ValidateOTAABrokerReq) Unmarshal(data []byte) error {
 				m.AppEUI = []byte{}
 			}
 			iNdEx = postIndex
-		case 2:
+		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field NetAddress", wireType)
 			}
@@ -840,6 +876,35 @@ func (m *UpsertABPBrokerReq) Unmarshal(data []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Token", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowBrokerManager
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthBrokerManager
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Token = string(data[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field AppEUI", wireType)
 			}
 			var byteLen int
@@ -869,7 +934,7 @@ func (m *UpsertABPBrokerReq) Unmarshal(data []byte) error {
 				m.AppEUI = []byte{}
 			}
 			iNdEx = postIndex
-		case 2:
+		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field NetAddress", wireType)
 			}
@@ -898,7 +963,7 @@ func (m *UpsertABPBrokerReq) Unmarshal(data []byte) error {
 			}
 			m.NetAddress = string(data[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 3:
+		case 4:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field DevAddr", wireType)
 			}
@@ -929,7 +994,7 @@ func (m *UpsertABPBrokerReq) Unmarshal(data []byte) error {
 				m.DevAddr = []byte{}
 			}
 			iNdEx = postIndex
-		case 4:
+		case 5:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field NwkSKey", wireType)
 			}
@@ -1174,7 +1239,7 @@ func (m *BrokerDevice) Unmarshal(data []byte) error {
 	}
 	return nil
 }
-func (m *ListDevicesBrokerReq) Unmarshal(data []byte) error {
+func (m *ValidateTokenBrokerReq) Unmarshal(data []byte) error {
 	l := len(data)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1197,13 +1262,42 @@ func (m *ListDevicesBrokerReq) Unmarshal(data []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: ListDevicesBrokerReq: wiretype end group for non-group")
+			return fmt.Errorf("proto: ValidateTokenBrokerReq: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ListDevicesBrokerReq: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ValidateTokenBrokerReq: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Token", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowBrokerManager
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthBrokerManager
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Token = string(data[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field AppEUI", wireType)
 			}
@@ -1255,7 +1349,7 @@ func (m *ListDevicesBrokerReq) Unmarshal(data []byte) error {
 	}
 	return nil
 }
-func (m *ListDevicesBrokerRes) Unmarshal(data []byte) error {
+func (m *ValidateTokenBrokerRes) Unmarshal(data []byte) error {
 	l := len(data)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1278,43 +1372,12 @@ func (m *ListDevicesBrokerRes) Unmarshal(data []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: ListDevicesBrokerRes: wiretype end group for non-group")
+			return fmt.Errorf("proto: ValidateTokenBrokerRes: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ListDevicesBrokerRes: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ValidateTokenBrokerRes: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Devices", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowBrokerManager
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthBrokerManager
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Devices = append(m.Devices, &BrokerDevice{})
-			if err := m.Devices[len(m.Devices)-1].Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipBrokerManager(data[iNdEx:])
@@ -1442,26 +1505,26 @@ var (
 )
 
 var fileDescriptorBrokerManager = []byte{
-	// 332 bytes of a gzipped FileDescriptorProto
+	// 327 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xe2, 0x12, 0x49, 0x2a, 0xca, 0xcf,
 	0x4e, 0x2d, 0x8a, 0xcf, 0x4d, 0xcc, 0x4b, 0x4c, 0x4f, 0x2d, 0xd2, 0x2b, 0x28, 0xca, 0x2f, 0xc9,
-	0x17, 0x62, 0x49, 0xce, 0x2f, 0x4a, 0x55, 0xf2, 0xe7, 0x12, 0x0d, 0x4b, 0xcc, 0xc9, 0x4c, 0x49,
-	0x2c, 0x49, 0xf5, 0x0f, 0x71, 0x74, 0x74, 0x02, 0xab, 0x0c, 0x4a, 0x2d, 0x14, 0x12, 0xe3, 0x62,
-	0x73, 0x2c, 0x28, 0x70, 0x0d, 0xf5, 0x94, 0x60, 0x54, 0x60, 0xd4, 0xe0, 0x09, 0x62, 0x4b, 0x04,
-	0xf3, 0x84, 0xe4, 0xb8, 0xb8, 0xfc, 0x52, 0x4b, 0x1c, 0x53, 0x52, 0x8a, 0x52, 0x8b, 0x8b, 0x25,
-	0x98, 0x80, 0x72, 0x9c, 0x41, 0x5c, 0x79, 0x70, 0x11, 0x25, 0x71, 0xec, 0x06, 0x16, 0x2b, 0x35,
-	0x30, 0x72, 0x09, 0x85, 0x16, 0x14, 0xa7, 0x16, 0x95, 0x38, 0x3a, 0x05, 0x50, 0x6c, 0x8f, 0x90,
-	0x04, 0x17, 0xbb, 0x4b, 0x6a, 0x19, 0x88, 0x27, 0xc1, 0x0c, 0xd6, 0xc8, 0x9e, 0x02, 0xe1, 0x82,
-	0x64, 0xfc, 0xca, 0xb3, 0x83, 0xbd, 0x53, 0x2b, 0x25, 0x58, 0x20, 0x32, 0x79, 0x10, 0xae, 0x92,
-	0x08, 0x16, 0x17, 0x14, 0x2b, 0x45, 0x71, 0xf1, 0x40, 0x38, 0x40, 0xf3, 0x32, 0x93, 0x53, 0x41,
-	0x2e, 0x02, 0xb2, 0x90, 0x5c, 0x94, 0x02, 0xe6, 0x21, 0xdb, 0xc8, 0x84, 0xd3, 0x46, 0x66, 0x54,
-	0x1b, 0xf5, 0xb8, 0x44, 0x7c, 0x32, 0x8b, 0x4b, 0x20, 0x26, 0x17, 0x13, 0xf4, 0xb5, 0x92, 0x0b,
-	0x56, 0xf5, 0xc5, 0x42, 0x3a, 0x60, 0xbb, 0x41, 0x62, 0x40, 0x0d, 0xcc, 0x1a, 0xdc, 0x46, 0x42,
-	0x7a, 0xa0, 0xe8, 0xd3, 0x43, 0x76, 0x38, 0xd8, 0x3d, 0x20, 0x25, 0x46, 0x0f, 0x19, 0xb9, 0x78,
-	0x21, 0x32, 0xbe, 0x90, 0x28, 0x17, 0xf2, 0xe0, 0xe2, 0x41, 0x8e, 0x15, 0x21, 0x69, 0x88, 0x76,
-	0xac, 0x51, 0x2f, 0x85, 0x47, 0xb2, 0x58, 0xc8, 0x9e, 0x8b, 0x13, 0x1e, 0x86, 0x42, 0x12, 0x10,
-	0x95, 0x98, 0xd1, 0x2a, 0x85, 0x4b, 0xa6, 0x58, 0xc8, 0x95, 0x8b, 0x1b, 0xc9, 0x8b, 0x42, 0x52,
-	0x10, 0x85, 0xd8, 0x42, 0x49, 0x0a, 0xb7, 0x5c, 0xb1, 0x93, 0xc0, 0x89, 0x47, 0x72, 0x8c, 0x17,
-	0x80, 0xf8, 0x01, 0x10, 0xcf, 0x78, 0x2c, 0xc7, 0x90, 0xc4, 0x06, 0x4e, 0xd7, 0xc6, 0x80, 0x00,
-	0x00, 0x00, 0xff, 0xff, 0x39, 0x26, 0x0a, 0x66, 0xef, 0x02, 0x00, 0x00,
+	0x17, 0x62, 0x49, 0xce, 0x2f, 0x4a, 0x55, 0x4a, 0xe5, 0x12, 0x0d, 0x4b, 0xcc, 0xc9, 0x4c, 0x49,
+	0x2c, 0x49, 0xf5, 0x0f, 0x71, 0x74, 0x74, 0x02, 0xab, 0x0c, 0x4a, 0x2d, 0x14, 0x12, 0xe1, 0x62,
+	0x0d, 0x01, 0xb2, 0xf3, 0x24, 0x18, 0x15, 0x18, 0x35, 0x38, 0x83, 0x58, 0x4b, 0x40, 0x1c, 0x21,
+	0x31, 0x2e, 0x36, 0xc7, 0x82, 0x02, 0xd7, 0x50, 0x4f, 0x09, 0x26, 0xa0, 0x30, 0x4f, 0x10, 0x5b,
+	0x22, 0x98, 0x27, 0x24, 0xc7, 0xc5, 0xe5, 0x97, 0x5a, 0xe2, 0x98, 0x92, 0x52, 0x94, 0x5a, 0x5c,
+	0x2c, 0xc1, 0x0c, 0xd6, 0xc2, 0x95, 0x07, 0x17, 0x51, 0x12, 0xc7, 0x6e, 0x4d, 0xb1, 0xd2, 0x34,
+	0x46, 0x2e, 0xa1, 0xd0, 0x82, 0xe2, 0xd4, 0xa2, 0x12, 0x47, 0xa7, 0x00, 0x1a, 0xd9, 0x2e, 0x24,
+	0xc1, 0xc5, 0xee, 0x92, 0x5a, 0x06, 0xe2, 0x49, 0xb0, 0x80, 0x35, 0xb2, 0xa7, 0x40, 0xb8, 0x20,
+	0x19, 0xbf, 0xf2, 0xec, 0x60, 0xef, 0xd4, 0x4a, 0x09, 0x56, 0x88, 0x4c, 0x1e, 0x84, 0xab, 0x24,
+	0x82, 0xc5, 0x5d, 0xc5, 0x4a, 0x51, 0x5c, 0x3c, 0x10, 0x0e, 0xd0, 0xbc, 0xcc, 0xe4, 0x54, 0x90,
+	0x8b, 0x80, 0x2c, 0x90, 0x8b, 0x18, 0x21, 0x2e, 0x4a, 0x01, 0xf3, 0x90, 0x6d, 0x64, 0xc2, 0x69,
+	0x23, 0x33, 0xaa, 0x8d, 0x6e, 0x5c, 0x62, 0xb0, 0x30, 0x02, 0xfb, 0x9d, 0xcc, 0xd0, 0x50, 0x92,
+	0xc0, 0x61, 0x4e, 0xb1, 0xd1, 0x73, 0x46, 0x2e, 0x5e, 0x08, 0xcf, 0x17, 0x92, 0x14, 0x84, 0x3c,
+	0xb8, 0x78, 0x90, 0xe3, 0x45, 0x48, 0x5a, 0x0f, 0x94, 0x2a, 0xf4, 0xb0, 0x26, 0x09, 0x29, 0x3c,
+	0x92, 0xc5, 0x42, 0xf6, 0x5c, 0x9c, 0xf0, 0xf0, 0x12, 0x92, 0x80, 0xa8, 0xc4, 0x8c, 0x58, 0x29,
+	0x5c, 0x32, 0xc5, 0x42, 0xde, 0x5c, 0xbc, 0x28, 0xce, 0x16, 0x92, 0x41, 0xb5, 0x0e, 0x35, 0x4c,
+	0xa4, 0xf0, 0xc9, 0x16, 0x3b, 0x09, 0x9c, 0x78, 0x24, 0xc7, 0x78, 0x01, 0x88, 0x1f, 0x00, 0xf1,
+	0x8c, 0xc7, 0x72, 0x0c, 0x49, 0x6c, 0xe0, 0x54, 0x6f, 0x0c, 0x08, 0x00, 0x00, 0xff, 0xff, 0x06,
+	0x4b, 0xeb, 0xf5, 0x0d, 0x03, 0x00, 0x00,
 }

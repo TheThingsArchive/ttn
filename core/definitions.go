@@ -42,20 +42,14 @@ type ABPSubAppReq struct {
 	AppSKey string `msg:"apps_key" json:"apps_key"`
 }
 
-// AuthBrokerClient gathers both BrokerClient & BrokerManagerClient interfaces with additional
-// method to add a custom token to each rpc requests's metadata
+// AuthBrokerClient gathers both BrokerClient & BrokerManagerClient interfaces
 type AuthBrokerClient interface {
 	BrokerClient
 	BrokerManagerClient
-	BeginToken(token string) AuthBrokerClient
-	EndToken()
 }
 
-// AuthHandlerClient gathers both HandlerClient & HandlerManagerClient interfaces with additional
-// method to add a custom token to each rpc requests's metadata
+// AuthHandlerClient gathers both HandlerClient & HandlerManagerClient interfaces
 type AuthHandlerClient interface {
 	HandlerClient
 	HandlerManagerClient
-	BeginToken(token string) AuthHandlerClient
-	EndToken()
 }

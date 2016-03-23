@@ -38,10 +38,10 @@ var devicesCmd = &cobra.Command{
 
 		manager := getHandlerManager()
 
-		res, err := manager.BeginToken(viper.GetString("app-token")).ListDevices(context.Background(), &core.ListDevicesHandlerReq{
+		res, err := manager.ListDevices(context.Background(), &core.ListDevicesHandlerReq{
+			Token:  viper.GetString("app-token"),
 			AppEUI: appEUI,
 		})
-		manager.EndToken()
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not get device list")
 		}
@@ -100,12 +100,12 @@ var devicesRegisterCmd = &cobra.Command{
 		}
 
 		manager := getHandlerManager()
-		res, err := manager.BeginToken(viper.GetString("app-token")).UpsertOTAA(context.Background(), &core.UpsertOTAAHandlerReq{
+		res, err := manager.UpsertOTAA(context.Background(), &core.UpsertOTAAHandlerReq{
+			Token:  viper.GetString("app-token"),
 			AppEUI: appEUI,
 			DevEUI: devEUI,
 			AppKey: appKey,
 		})
-		manager.EndToken()
 		if err != nil || res == nil {
 			ctx.WithError(err).Fatal("Could not register device")
 		}
@@ -144,13 +144,13 @@ var devicesRegisterPersonalizedCmd = &cobra.Command{
 		}
 
 		manager := getHandlerManager()
-		res, err := manager.BeginToken(viper.GetString("app-token")).UpsertABP(context.Background(), &core.UpsertABPHandlerReq{
+		res, err := manager.UpsertABP(context.Background(), &core.UpsertABPHandlerReq{
+			Token:   viper.GetString("app-token"),
 			AppEUI:  appEUI,
 			DevAddr: devAddr,
 			AppSKey: appSKey,
 			NwkSKey: nwkSKey,
 		})
-		manager.EndToken()
 		if err != nil || res == nil {
 			ctx.WithError(err).Fatal("Could not register device")
 		}

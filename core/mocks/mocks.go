@@ -152,19 +152,13 @@ type AuthBrokerClient struct {
 	OutValidateOTAA struct {
 		Res *core.ValidateOTAABrokerRes
 	}
-	InListDevices struct {
+	InValidateToken struct {
 		Ctx  context.Context
-		Req  *core.ListDevicesBrokerReq
+		Req  *core.ValidateTokenBrokerReq
 		Opts []grpc.CallOption
 	}
-	OutListDevices struct {
-		Res *core.ListDevicesBrokerRes
-	}
-	InBeginToken struct {
-		Token string
-	}
-	InEndToken struct {
-		Called bool
+	OutValidateToken struct {
+		Res *core.ValidateTokenBrokerRes
 	}
 }
 
@@ -207,23 +201,12 @@ func (m *AuthBrokerClient) ValidateOTAA(ctx context.Context, in *core.ValidateOT
 	return m.OutValidateOTAA.Res, m.Failures["ValidateOTAA"]
 }
 
-// ListDevices implements the core.Broker interface
-func (m *AuthBrokerClient) ListDevices(ctx context.Context, in *core.ListDevicesBrokerReq, opts ...grpc.CallOption) (*core.ListDevicesBrokerRes, error) {
-	m.InListDevices.Ctx = ctx
-	m.InListDevices.Req = in
-	m.InListDevices.Opts = opts
-	return m.OutListDevices.Res, m.Failures["ListDevices"]
-}
-
-// BeginToken implements the core.Broker interface
-func (m *AuthBrokerClient) BeginToken(token string) core.AuthBrokerClient {
-	m.InBeginToken.Token = token
-	return m
-}
-
-// EndToken implements the core.Broker interface
-func (m *AuthBrokerClient) EndToken() {
-	m.InEndToken.Called = true
+// ValidateToken implements the core.Broker interface
+func (m *AuthBrokerClient) ValidateToken(ctx context.Context, in *core.ValidateTokenBrokerReq, opts ...grpc.CallOption) (*core.ValidateTokenBrokerRes, error) {
+	m.InValidateToken.Ctx = ctx
+	m.InValidateToken.Req = in
+	m.InValidateToken.Opts = opts
+	return m.OutValidateToken.Res, m.Failures["ValidateToken"]
 }
 
 // RouterServer mocks the core.RouterServer interface

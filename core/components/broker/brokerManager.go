@@ -11,12 +11,21 @@ import (
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	jwt "github.com/dgrijalva/jwt-go"
 	"golang.org/x/net/context"
-	"google.golang.org/grpc/metadata"
 )
 
-// ListDevices implements the core.BrokerManagerServer interface
-func (b component) ListDevices(bctx context.Context, req *core.ListDevicesBrokerReq) (*core.ListDevicesBrokerRes, error) {
-	return new(core.ListDevicesBrokerRes), errors.New(errors.Implementation, "Not implemented")
+// ValidateToken implements the core.BrokerManagerServer interface
+func (b component) ValidateToken(bctx context.Context, req *core.ValidateTokenBrokerReq) (*core.ValidateTokenBrokerRes, error) {
+	b.Ctx.Debug("Handle ValidateToken request")
+	if len(req.AppEUI) != 8 {
+		err := errors.New(errors.Structural, "Invalid request parameters")
+		b.Ctx.WithError(err).Debug("Unable to handle ValidateToken request")
+		return new(core.ValidateTokenBrokerRes), err
+	}
+	if err := b.validateToken(bctx, req.Token, req.AppEUI); err != nil {
+		b.Ctx.WithError(err).Debug("Unable to handle ValidateToken request")
+		return new(core.ValidateTokenBrokerRes), err
+	}
+	return new(core.ValidateTokenBrokerRes), nil
 }
 
 // ValidateOTAA implements the core.BrokerManager interface
@@ -32,7 +41,7 @@ func (b component) ValidateOTAA(bctx context.Context, req *core.ValidateOTAABrok
 	}
 
 	// 2. Verify and validate the token
-	if err := b.validateToken(bctx, req.AppEUI); err != nil {
+	if err := b.validateToken(bctx, req.Token, req.AppEUI); err != nil {
 		return new(core.ValidateOTAABrokerRes), err
 	}
 
@@ -64,7 +73,7 @@ func (b component) UpsertABP(bctx context.Context, req *core.UpsertABPBrokerReq)
 	}
 
 	// 2. Verify and validate the token
-	if err := b.validateToken(bctx, req.AppEUI); err != nil {
+	if err := b.validateToken(bctx, req.Token, req.AppEUI); err != nil {
 		return new(core.UpsertABPBrokerRes), err
 	}
 
@@ -90,19 +99,14 @@ func (b component) UpsertABP(bctx context.Context, req *core.UpsertABPBrokerReq)
 }
 
 // validateToken verify an OAuth Bearer token pass through metadata during RPC
-func (b component) validateToken(ctx context.Context, appEUI []byte) error {
-	re := regexp.MustCompile("[[:alnum:]=/+]+\\.[[:alnum:]=/+]+\\.[[:alnum:]=/+]+")
-	meta, ok := metadata.FromContext(ctx)
-	if !ok || len(meta["token"]) < 1 || !re.MatchString(meta["token"][0]) {
-		return errors.New(errors.Structural, "Unable to retrieve token from metadata")
-	}
-	token, err := jwt.Parse(meta["token"][0], func(token *jwt.Token) (interface{}, error) {
+func (b component) validateToken(ctx context.Context, token string, appEUI []byte) error {
+	parsed, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
 		return b.SecretKey[:], nil
 	})
 	if err != nil {
 		return errors.New(errors.Structural, "Unable to parse token")
 	}
-	if !token.Valid || token.Claims["sub"] != fmt.Sprintf("%X", appEUI) {
+	if !parsed.Valid || parsed.Claims["sub"] != fmt.Sprintf("%X", appEUI) {
 		return errors.New(errors.Structural, "Invalid token.")
 	}
 	return nil

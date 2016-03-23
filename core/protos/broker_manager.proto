@@ -3,17 +3,19 @@ syntax = "proto3";
 package core;
 
 message ValidateOTAABrokerReq {
-    bytes   AppEUI      = 1;
-    string  NetAddress  = 2;
+    string  Token       = 1;
+    bytes   AppEUI      = 2;
+    string  NetAddress  = 3;
 }
 
 message ValidateOTAABrokerRes{}
 
 message UpsertABPBrokerReq {
-    bytes   AppEUI      = 1;
-    string  NetAddress  = 2;
-    bytes   DevAddr     = 3;
-    bytes   NwkSKey     = 4;
+    string  Token       = 1;
+    bytes   AppEUI      = 2;
+    string  NetAddress  = 3;
+    bytes   DevAddr     = 4;
+    bytes   NwkSKey     = 5;
 }
 
 message UpsertABPBrokerRes {}
@@ -24,16 +26,15 @@ message BrokerDevice {
     bytes   NwkSKey     = 3;
 }
 
-message ListDevicesBrokerReq {
-    bytes   AppEUI      = 1;
+message ValidateTokenBrokerReq {
+    string  Token       = 1;
+    bytes   AppEUI      = 2;
 }
 
-message ListDevicesBrokerRes {
-    repeated BrokerDevice Devices = 1;
-}
+message ValidateTokenBrokerRes {}
 
 service BrokerManager {
     rpc ValidateOTAA    (ValidateOTAABrokerReq)     returns     (ValidateOTAABrokerRes);
     rpc UpsertABP       (UpsertABPBrokerReq)        returns     (UpsertABPBrokerRes);
-    rpc ListDevices     (ListDevicesBrokerReq)      returns     (ListDevicesBrokerRes);
+    rpc ValidateToken   (ValidateTokenBrokerReq)    returns     (ValidateTokenBrokerRes);
 }

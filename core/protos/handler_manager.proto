@@ -3,24 +3,27 @@ syntax = "proto3";
 package core;
 
 message UpsertOTAAHandlerReq {
-    bytes   AppEUI      = 1;
-    bytes   DevEUI      = 2;
-    bytes   AppKey      = 3;
+    string  Token       = 1;
+    bytes   AppEUI      = 2;
+    bytes   DevEUI      = 3;
+    bytes   AppKey      = 4;
 }
 
 message UpsertOTAAHandlerRes{}
 
 message UpsertABPHandlerReq {
-    bytes   AppEUI      = 1;
-    bytes   DevAddr     = 2;
-    bytes   NwkSKey     = 3;
-    bytes   AppSKey     = 4;
+    string  Token       = 1;
+    bytes   AppEUI      = 2;
+    bytes   DevAddr     = 3;
+    bytes   NwkSKey     = 4;
+    bytes   AppSKey     = 5;
 }
 
 message UpsertABPHandlerRes {}
 
 message ListDevicesHandlerReq {
-    bytes   AppEUI      = 1;
+    string  Token       = 1;
+    bytes   AppEUI      = 2;
 }
 
 message ListDevicesHandlerRes {
