@@ -42,9 +42,9 @@ the gateway's duty cycle is (almost) full.`,
 		}
 
 		ctx.WithFields(log.Fields{
-			"db-brokers":    viper.GetString("router.db_brokers"),
-			"db-gateways":   viper.GetString("router.db_gateways"),
-			"db-duty":       viper.GetString("router.db_duty"),
+			"db-brokers":    viper.GetString("router.db-brokers"),
+			"db-gateways":   viper.GetString("router.db-gateways"),
+			"db-duty":       viper.GetString("router.db-duty"),
 			"status-server": statusServer,
 			"uplink":        fmt.Sprintf("%s:%d", viper.GetString("router.uplink-address"), viper.GetInt("router.uplink-port")),
 			"downlink":      fmt.Sprintf("%s:%d", viper.GetString("router.downlink-address"), viper.GetInt("router.downlink-port")),
@@ -65,7 +65,7 @@ the gateway's duty cycle is (almost) full.`,
 
 		// In-memory packet storage
 		var db router.BrkStorage
-		dbString := viper.GetString("router.db_brokers")
+		dbString := viper.GetString("router.db-brokers")
 		switch {
 		case strings.HasPrefix(dbString, "boltdb:"):
 
@@ -86,7 +86,7 @@ the gateway's duty cycle is (almost) full.`,
 
 		// Duty Manager
 		var dm dutycycle.DutyManager
-		dmString := viper.GetString("router.db_duty")
+		dmString := viper.GetString("router.db-duty")
 		switch {
 		case strings.HasPrefix(dmString, "boltdb:"):
 
@@ -107,7 +107,7 @@ the gateway's duty cycle is (almost) full.`,
 
 		// Gateways
 		var dg router.GtwStorage
-		dgString := viper.GetString("router.db_gateways")
+		dgString := viper.GetString("router.db-gateways")
 		switch {
 		case strings.HasPrefix(dmString, "boltdb:"):
 
@@ -180,14 +180,14 @@ the gateway's duty cycle is (almost) full.`,
 func init() {
 	RootCmd.AddCommand(routerCmd)
 
-	routerCmd.Flags().String("db_brokers", "boltdb:/tmp/ttn_router_brokers.db", "Database connection of known brokers")
-	viper.BindPFlag("router.db_brokers", routerCmd.Flags().Lookup("db_brokers"))
+	routerCmd.Flags().String("db-brokers", "boltdb:/tmp/ttn_router_brokers.db", "Database connection of known brokers")
+	viper.BindPFlag("router.db-brokers", routerCmd.Flags().Lookup("db-brokers"))
 
-	routerCmd.Flags().String("db_gateways", "boltdb:/tmp/ttn_router_gateways.db", "Database connection of managed gateways")
-	viper.BindPFlag("router.db_gateways", routerCmd.Flags().Lookup("db_gateways"))
+	routerCmd.Flags().String("db-gateways", "boltdb:/tmp/ttn_router_gateways.db", "Database connection of managed gateways")
+	viper.BindPFlag("router.db-gateways", routerCmd.Flags().Lookup("db-gateways"))
 
-	routerCmd.Flags().String("db_duty", "boltdb:/tmp/ttn_router_duty.db", "Database connection of managed dutycycles")
-	viper.BindPFlag("router.db_duty", routerCmd.Flags().Lookup("db_duty"))
+	routerCmd.Flags().String("db-duty", "boltdb:/tmp/ttn_router_duty.db", "Database connection of managed dutycycles")
+	viper.BindPFlag("router.db-duty", routerCmd.Flags().Lookup("db-duty"))
 
 	routerCmd.Flags().String("status-address", "0.0.0.0", "The IP address to listen for serving status information")
 	routerCmd.Flags().Int("status-port", 10700, "The port of the status server, use 0 to disable")

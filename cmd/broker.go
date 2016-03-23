@@ -37,8 +37,8 @@ devices (with their network session keys) with the Broker.
 			stats.Enabled = false
 		}
 		ctx.WithFields(log.Fields{
-			"devices database":      viper.GetString("broker.devices_database"),
-			"applications database": viper.GetString("broker.applications_database"),
+			"devices database":      viper.GetString("broker.db-devices"),
+			"applications database": viper.GetString("broker.db-apps"),
 			"status-server":         statusServer,
 			"main-server":           fmt.Sprintf("%s:%d", viper.GetString("broker.server-address"), viper.GetInt("broker.server-port")),
 		}).Info("Using Configuration")
@@ -57,7 +57,7 @@ devices (with their network session keys) with the Broker.
 
 		// Storage
 		var dbDev broker.NetworkController
-		devDBString := viper.GetString("broker.devices_database")
+		devDBString := viper.GetString("broker.db-devices")
 		switch {
 		case strings.HasPrefix(devDBString, "boltdb:"):
 
@@ -77,7 +77,7 @@ devices (with their network session keys) with the Broker.
 		}
 
 		var dbApp broker.AppStorage
-		appDBString := viper.GetString("broker.applications_database")
+		appDBString := viper.GetString("broker.db-apps")
 		switch {
 		case strings.HasPrefix(appDBString, "boltdb:"):
 
@@ -119,11 +119,11 @@ devices (with their network session keys) with the Broker.
 func init() {
 	RootCmd.AddCommand(brokerCmd)
 
-	brokerCmd.Flags().String("applications_database", "boltdb:/tmp/ttn_apps_broker.db", "Applications Database connection")
-	viper.BindPFlag("broker.applications_database", brokerCmd.Flags().Lookup("applications_database"))
+	brokerCmd.Flags().String("db-apps", "boltdb:/tmp/ttn_broker_apps.db", "Applications Database connection")
+	viper.BindPFlag("broker.db-apps", brokerCmd.Flags().Lookup("db-apps"))
 
-	brokerCmd.Flags().String("devices_database", "boltdb:/tmp/ttn_devs_broker.db", "Devices Database connection")
-	viper.BindPFlag("broker.devices_database", brokerCmd.Flags().Lookup("devices_database"))
+	brokerCmd.Flags().String("db-devices", "boltdb:/tmp/ttn_broker_devices.db", "Devices Database connection")
+	viper.BindPFlag("broker.db-devices", brokerCmd.Flags().Lookup("db-devices"))
 
 	brokerCmd.Flags().String("status-address", "0.0.0.0", "The IP address to listen for serving status information")
 	brokerCmd.Flags().Int("status-port", 10701, "The port of the status server, use 0 to disable")
