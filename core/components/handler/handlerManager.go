@@ -12,7 +12,47 @@ import (
 
 // ListDevices implements the core.HandlerManagerServer interface
 func (h component) ListDevices(bctx context.Context, req *core.ListDevicesHandlerReq) (*core.ListDevicesHandlerRes, error) {
-	return new(core.ListDevicesHandlerRes), errors.New(errors.Implementation, "Not implemented")
+	h.Ctx.Debug("Handle ListDevices Request")
+
+	// 1. Validate the request
+	if len(req.AppEUI) != 8 {
+		err := errors.New(errors.Structural, "Invalid request parameters")
+		h.Ctx.WithError(err).Debug("Unable to handle ListDevices request")
+		return new(core.ListDevicesHandlerRes), err
+	}
+
+	// 2. Validate token & retrieve devices from db
+	entries, err := h.DevStorage.readAll(req.AppEUI)
+	if err != nil {
+		h.Ctx.WithError(err).Debug("Unable to handle ListDevices request")
+		return new(core.ListDevicesHandlerRes), errors.New(errors.Operational, err)
+	}
+
+	// 3. Build the reply, separate OTAA from ABP
+	var abp []*core.HandlerABPDevice
+	var otaa []*core.HandlerOTAADevice
+	for _, dev := range entries {
+		d := new(devEntry)
+		*d = dev
+		if dev.AppKey == nil {
+			abp = append(abp, &core.HandlerABPDevice{
+				DevAddr: d.DevAddr,
+				NwkSKey: d.NwkSKey[:],
+				AppSKey: d.AppSKey[:],
+			})
+		} else {
+			otaa = append(otaa, &core.HandlerOTAADevice{
+				DevEUI:  d.DevEUI,
+				DevAddr: d.DevAddr,
+				NwkSKey: d.NwkSKey[:],
+				AppSKey: d.AppSKey[:],
+				AppKey:  d.AppKey[:],
+			})
+		}
+	}
+
+	// 4. Done
+	return &core.ListDevicesHandlerRes{ABP: abp, OTAA: otaa}, nil
 }
 
 // UpsertABP implements the core.HandlerManager interface
@@ -75,7 +115,6 @@ func (h component) UpsertOTAA(bctx context.Context, req *core.UpsertOTAAHandlerR
 
 	// 2. Notify the broker -> The Broker also does the token verification
 	var token string
-	h.Ctx.WithField("meta", bctx).Debug("Trying to get Meta")
 	if meta, ok := metadata.FromContext(bctx); ok && len(meta["token"]) > 0 {
 		token = meta["token"][0]
 	}

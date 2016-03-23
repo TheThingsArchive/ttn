@@ -69,7 +69,7 @@ func pop(entries []pktEntry) (pktEntry, []encoding.BinaryMarshaler) {
 func (s *pktStorage) enqueue(entry pktEntry) error {
 	s.Lock()
 	defer s.Unlock()
-	itf, err := s.db.Read(nil, &pktEntry{}, entry.AppEUI, entry.DevEUI)
+	itf, err := s.db.Read(entry.DevEUI, &pktEntry{}, entry.AppEUI)
 	if err != nil && err.(errors.Failure).Nature != errors.NotFound {
 		return err
 	}
@@ -79,18 +79,18 @@ func (s *pktStorage) enqueue(entry pktEntry) error {
 	}
 	if len(entries) >= int(s.size) {
 		_, tail := pop(entries)
-		return s.db.Update(nil, append(tail, entry), entry.AppEUI, entry.DevEUI)
+		return s.db.Update(entry.DevEUI, append(tail, entry), entry.AppEUI)
 	}
 	// NOTE: We append, even if there're still expired entries, we'll filter them
 	// during dequeuing
-	return s.db.Append(nil, []encoding.BinaryMarshaler{entry}, entry.AppEUI, entry.DevEUI)
+	return s.db.Append(entry.DevEUI, []encoding.BinaryMarshaler{entry}, entry.AppEUI)
 }
 
 // dequeue implements the PktStorage interface
 func (s *pktStorage) dequeue(appEUI []byte, devEUI []byte) (pktEntry, error) {
 	s.Lock()
 	defer s.Unlock()
-	itf, err := s.db.Read(nil, &pktEntry{}, appEUI, devEUI)
+	itf, err := s.db.Read(devEUI, &pktEntry{}, appEUI)
 	if err != nil {
 		return pktEntry{}, err
 	}
@@ -103,14 +103,14 @@ func (s *pktStorage) dequeue(appEUI []byte, devEUI []byte) (pktEntry, error) {
 			for _, e := range filtered {
 				replaces = append(replaces, e)
 			}
-			_ = s.db.Update(nil, replaces, appEUI, devEUI)
+			_ = s.db.Update(devEUI, replaces, appEUI)
 		}
 		return pktEntry{}, errors.New(errors.NotFound, "There's no available entry")
 	}
 
 	// Otherwise dequeue the first one and send it
 	head, tail := pop(filtered)
-	if err := s.db.Update(nil, tail, appEUI, devEUI); err != nil {
+	if err := s.db.Update(devEUI, tail, appEUI); err != nil {
 		return pktEntry{}, err
 	}
 	return head, nil
@@ -120,7 +120,7 @@ func (s *pktStorage) dequeue(appEUI []byte, devEUI []byte) (pktEntry, error) {
 func (s *pktStorage) peek(appEUI []byte, devEUI []byte) (pktEntry, error) {
 	s.RLock()
 	defer s.RUnlock()
-	itf, err := s.db.Read(nil, &pktEntry{}, appEUI, devEUI)
+	itf, err := s.db.Read(devEUI, &pktEntry{}, appEUI)
 	if err != nil {
 		return pktEntry{}, err
 	}

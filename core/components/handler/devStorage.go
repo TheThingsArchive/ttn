@@ -15,6 +15,7 @@ import (
 // DevStorage gives a facade to manipulate the handler devices database
 type DevStorage interface {
 	read(appEUI []byte, devEUI []byte) (devEntry, error)
+	readAll(appEUI []byte) ([]devEntry, error)
 	upsert(entry devEntry) error
 	done() error
 }
@@ -47,20 +48,25 @@ func NewDevStorage(name string) (DevStorage, error) {
 
 // read implements the handler.DevStorage interface
 func (s *devStorage) read(appEUI []byte, devEUI []byte) (devEntry, error) {
-	itf, err := s.db.Read(nil, &devEntry{}, appEUI, devEUI)
+	itf, err := s.db.Read(devEUI, &devEntry{}, appEUI)
 	if err != nil {
 		return devEntry{}, err
 	}
-	entries, ok := itf.([]devEntry)
-	if !ok || len(entries) != 1 {
-		return devEntry{}, errors.New(errors.Structural, "Invalid stored entry")
+	return itf.([]devEntry)[0], nil // Type and dimensio guaranteed by db.Read()
+}
+
+// readAll implements the handler.DevStorage interface
+func (s *devStorage) readAll(appEUI []byte) ([]devEntry, error) {
+	itf, err := s.db.ReadAll(&devEntry{}, appEUI)
+	if err != nil {
+		return nil, err
 	}
-	return entries[0], nil
+	return itf.([]devEntry), nil
 }
 
 // upsert implements the handler.DevStorage interface
 func (s *devStorage) upsert(entry devEntry) error {
-	return s.db.Update(nil, []encoding.BinaryMarshaler{entry}, entry.AppEUI, entry.DevEUI)
+	return s.db.Update(entry.DevEUI, []encoding.BinaryMarshaler{entry}, entry.AppEUI)
 }
 
 // done implements the handler.DevStorage interface
