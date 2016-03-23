@@ -113,6 +113,9 @@ func TestExtractMetadta(t *testing.T) {
 			DataRate:   *txpk.Datr,
 			Frequency:  *txpk.Freq,
 			Timestamp:  *txpk.Tmst,
+			Modulation: *txpk.Modu,
+			RFChain:    *txpk.Rfch,
+			Time:       txpk.Time.Format(time.RFC3339Nano),
 		}
 
 		// Operate

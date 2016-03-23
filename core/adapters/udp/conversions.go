@@ -8,6 +8,7 @@ import (
 	"encoding/base64"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/semtech"
@@ -169,6 +170,8 @@ func extractMetadata(xpk interface{}, target interface{}) interface{} {
 			e := x.Field(i).Elem()
 			if e.Type().AssignableTo(m.FieldByName(t).Type()) {
 				m.FieldByName(t).Set(e)
+			} else if e.Type().AssignableTo(reflect.TypeOf(time.Time{})) {
+				m.FieldByName(t).Set(reflect.ValueOf(e.Interface().(time.Time).Format(time.RFC3339Nano)))
 			}
 		}
 	}
