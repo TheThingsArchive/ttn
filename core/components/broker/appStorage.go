@@ -21,10 +21,8 @@ type AppStorage interface {
 }
 
 type appEntry struct {
-	Dialer   Dialer
-	AppEUI   []byte
-	Password []byte
-	Salt     []byte
+	Dialer Dialer
+	AppEUI []byte
 }
 
 type appStorage struct {
@@ -68,8 +66,6 @@ func (s *appStorage) done() error {
 func (e appEntry) MarshalBinary() ([]byte, error) {
 	rw := readwriter.New(nil)
 	rw.Write(e.AppEUI)
-	rw.Write(e.Password)
-	rw.Write(e.Salt)
 	rw.Write(e.Dialer.MarshalSafely())
 	return rw.Bytes()
 }
@@ -80,14 +76,6 @@ func (e *appEntry) UnmarshalBinary(data []byte) error {
 	rw.Read(func(data []byte) {
 		e.AppEUI = make([]byte, len(data))
 		copy(e.AppEUI, data)
-	})
-	rw.Read(func(data []byte) {
-		e.Password = make([]byte, len(data))
-		copy(e.Password, data)
-	})
-	rw.Read(func(data []byte) {
-		e.Salt = make([]byte, len(data))
-		copy(e.Salt, data)
 	})
 	rw.Read(func(data []byte) {
 		e.Dialer = NewDialer(data)

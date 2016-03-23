@@ -222,11 +222,29 @@ func TestStoreAndRead(t *testing.T) {
 	// ---------------------
 
 	{
+		Desc(t, "Read All entry of a bucket")
+		err := itf.Update([]byte{0, 0, 1}, []encoding.BinaryMarshaler{&testEntry{Data: "The"}}, []byte("level1"))
+		FatalUnless(t, err)
+		err = itf.Update([]byte{0, 0, 2}, []encoding.BinaryMarshaler{&testEntry{Data: "Things"}}, []byte("level1"))
+		FatalUnless(t, err)
+		err = itf.Update([]byte{0, 0, 3}, []encoding.BinaryMarshaler{&testEntry{Data: "Network"}}, []byte("level1"))
+		FatalUnless(t, err)
+		entries, err := itf.ReadAll(&testEntry{}, []byte("level1"))
+		want := []testEntry{{Data: "The"}, {Data: "Things"}, {Data: "Network"}}
+		CheckErrors(t, nil, err)
+		Check(t, want, entries, "Entries")
+	}
+
+	// ---------------------
+
+	{
 		Desc(t, "Store, Read, Update, Delete & Reset on closed storage")
 		_ = itf.Close()
 		err := itf.Append([]byte{1, 2, 3}, []encoding.BinaryMarshaler{&testEntry{Data: "Patate"}}, []byte("closeddb"))
 		CheckErrors(t, ErrOperational, err)
 		_, err = itf.Read([]byte{1, 2, 3}, &testEntry{}, []byte("closeddb"))
+		CheckErrors(t, ErrOperational, err)
+		_, err = itf.ReadAll(&testEntry{}, []byte("closeddb"))
 		CheckErrors(t, ErrOperational, err)
 		err = itf.Update([]byte{1, 2, 3}, []encoding.BinaryMarshaler{&testEntry{Data: "TTN"}}, []byte("closeddb"))
 		CheckErrors(t, ErrOperational, err)
@@ -235,6 +253,7 @@ func TestStoreAndRead(t *testing.T) {
 		err = itf.Reset([]byte("closeddb"))
 		CheckErrors(t, ErrOperational, err)
 	}
+
 }
 
 // ----- Type Utilities

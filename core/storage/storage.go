@@ -24,6 +24,9 @@ type Interface interface {
 	// of `shape`, possibly of length 0.
 	// The provided type has to implement a binary.Unmarshaler interface
 	Read(key []byte, shape encoding.BinaryUnmarshaler, buckets ...[]byte) (interface{}, error)
+	// ReadAll goes through each key of a bucket and return a slice of all values. This implies
+	// therefore that all values in each key are of the same type (the shape provided)
+	ReadAll(shape encoding.BinaryUnmarshaler, buckets ...[]byte) (interface{}, error)
 	// Update replaces a set of entries by the new given set
 	Update(key []byte, entries []encoding.BinaryMarshaler, buckets ...[]byte) error
 	// Append adds at the end of an existing set the new given set
@@ -87,6 +90,41 @@ func getBucket(tx *bolt.Tx, buckets [][]byte) (*bolt.Bucket, error) {
 		cursor = next
 	}
 	return cursor.(*bolt.Bucket), nil
+}
+
+// ReadAll implements the storage.Interface interface
+func (itf store) ReadAll(shape encoding.BinaryUnmarshaler, buckets ...[]byte) (interface{}, error) {
+	entryType := reflect.TypeOf(shape)
+	if entryType.Kind() != reflect.Ptr {
+		return nil, errors.New(errors.Implementation, "Non-pointer shape not supported")
+	}
+
+	entries := reflect.MakeSlice(reflect.SliceOf(entryType.Elem()), 0, 0)
+	err := itf.db.View(func(tx *bolt.Tx) error {
+		bucket, err := getBucket(tx, buckets)
+		if err != nil {
+			if err.(errors.Failure).Fault == bolt.ErrTxNotWritable {
+				return errors.New(errors.NotFound, fmt.Sprintf("Not found %+v", buckets))
+			}
+			return err
+		}
+		return bucket.ForEach(func(_ []byte, v []byte) error {
+			r := readwriter.New(v)
+			r.Read(func(data []byte) {
+				entry := reflect.New(entryType.Elem()).Interface()
+				entry.(encoding.BinaryUnmarshaler).UnmarshalBinary(data)
+				entries = reflect.Append(entries, reflect.ValueOf(entry).Elem())
+			})
+			return r.Err()
+		})
+	})
+	if err != nil {
+		return nil, ensureErr(err)
+	}
+	if entries.Len() == 0 {
+		return nil, errors.New(errors.NotFound, fmt.Sprintf("Not found %+v", buckets))
+	}
+	return entries.Interface(), nil
 }
 
 // Read implements the storage.Interface interface

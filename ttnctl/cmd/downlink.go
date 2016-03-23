@@ -17,7 +17,7 @@ import (
 
 // downlinkCmd represents the `downlink` command
 var downlinkCmd = &cobra.Command{
-	Use:   "downlink [DevEUI] [Payload]",
+	Use:   "downlink [DevEUI] [Payload] [TTL]",
 	Short: "Send a downlink message to the network",
 	Long:  `Send a downlink message to the network`,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -32,6 +32,7 @@ var downlinkCmd = &cobra.Command{
 
 		req := core.DataDownAppReq{
 			Payload: []byte(args[1]),
+			TTL:     args[2],
 		}
 
 		payload, err := req.MarshalMsg(nil)

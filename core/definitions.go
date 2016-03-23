@@ -5,10 +5,6 @@
 
 package core
 
-import (
-	"reflect"
-)
-
 // DataUpAppReq represents the actual payloads sent to application on uplink
 type DataUpAppReq struct {
 	Payload  []byte        `msg:"payload" json:"payload"`
@@ -36,6 +32,7 @@ type AppMetadata struct {
 // DataDownAppReq represents downlink messages sent by applications
 type DataDownAppReq struct {
 	Payload []byte `msg:"payload" json:"payload"`
+	TTL     string `msg:"ttl" json:"ttl"`
 }
 
 // ABPSubAppReq defines the shape of the request made by an application to the handler
@@ -45,29 +42,14 @@ type ABPSubAppReq struct {
 	AppSKey string `msg:"apps_key" json:"apps_key"`
 }
 
-// ProtoMetaToAppMeta converts a set of Metadata generate with Protobuf to a set of valid
-// AppMetadata ready to be marshaled to json
-func ProtoMetaToAppMeta(srcs ...*Metadata) []AppMetadata {
-	var dest []AppMetadata
+// AuthBrokerClient gathers both BrokerClient & BrokerManagerClient interfaces
+type AuthBrokerClient interface {
+	BrokerClient
+	BrokerManagerClient
+}
 
-	for _, src := range srcs {
-		if src == nil {
-			continue
-		}
-		to := new(AppMetadata)
-		v := reflect.ValueOf(src).Elem()
-		t := v.Type()
-		d := reflect.ValueOf(to).Elem()
-
-		for i := 0; i < t.NumField(); i++ {
-			field := t.Field(i).Name
-			if d.FieldByName(field).CanSet() {
-				d.FieldByName(field).Set(v.Field(i))
-			}
-		}
-
-		dest = append(dest, *to)
-	}
-
-	return dest
+// AuthHandlerClient gathers both HandlerClient & HandlerManagerClient interfaces
+type AuthHandlerClient interface {
+	HandlerClient
+	HandlerManagerClient
 }

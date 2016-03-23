@@ -35,10 +35,8 @@ func TestReadStore(t *testing.T) {
 
 		// Build
 		entry := appEntry{
-			Dialer:   NewDialer([]byte("dialer")),
-			AppEUI:   []byte{0, 2},
-			Password: []byte{3, 4},
-			Salt:     []byte{5, 6},
+			Dialer: NewDialer([]byte("dialer")),
+			AppEUI: []byte{0, 2},
 		}
 
 		// Operate
@@ -73,10 +71,8 @@ func TestReadStore(t *testing.T) {
 
 		// Build
 		entry := appEntry{
-			Dialer:   NewDialer([]byte("dialer")),
-			AppEUI:   []byte{0, 1},
-			Password: []byte{3, 4},
-			Salt:     []byte{5, 6},
+			Dialer: NewDialer([]byte("dialer")),
+			AppEUI: []byte{0, 1},
 		}
 
 		// Operate
@@ -98,16 +94,12 @@ func TestReadStore(t *testing.T) {
 
 		// Build
 		entry := appEntry{
-			Dialer:   NewDialer([]byte("dialer")),
-			AppEUI:   []byte{0, 4},
-			Password: []byte{3, 4},
-			Salt:     []byte{5, 6},
+			Dialer: NewDialer([]byte("dialer")),
+			AppEUI: []byte{0, 4},
 		}
 		update := appEntry{
-			Dialer:   NewDialer([]byte("dialer")),
-			AppEUI:   []byte{0, 4},
-			Password: []byte{3, 4},
-			Salt:     []byte{5, 6},
+			Dialer: NewDialer([]byte("dialer")),
+			AppEUI: []byte{0, 4},
 		}
 
 		// Operate

@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package core;
+
+message UpsertOTAAHandlerReq {
+    string  Token       = 1;
+    bytes   AppEUI      = 2;
+    bytes   DevEUI      = 3;
+    bytes   AppKey      = 4;
+}
+
+message UpsertOTAAHandlerRes{}
+
+message UpsertABPHandlerReq {
+    string  Token       = 1;
+    bytes   AppEUI      = 2;
+    bytes   DevAddr     = 3;
+    bytes   NwkSKey     = 4;
+    bytes   AppSKey     = 5;
+}
+
+message UpsertABPHandlerRes {}
+
+message ListDevicesHandlerReq {
+    string  Token       = 1;
+    bytes   AppEUI      = 2;
+}
+
+message ListDevicesHandlerRes {
+    repeated HandlerOTAADevice  OTAA    = 1;
+    repeated HandlerABPDevice   ABP     = 2;
+}
+
+message HandlerABPDevice {
+    bytes   DevAddr     = 2;
+    bytes   NwkSKey     = 3;
+    bytes   AppSKey     = 4;
+}
+
+message HandlerOTAADevice {
+    bytes   DevEUI      = 1;
+    bytes   DevAddr     = 2;
+    bytes   NwkSKey     = 3;
+    bytes   AppSKey     = 4;
+    bytes   AppKey      = 5;
+}
+
+service HandlerManager {
+    rpc UpsertOTAA      (UpsertOTAAHandlerReq)      returns     (UpsertOTAAHandlerRes);
+    rpc UpsertABP       (UpsertABPHandlerReq)       returns     (UpsertABPHandlerRes);
+    rpc ListDevices     (ListDevicesHandlerReq)     returns     (ListDevicesHandlerRes);
+}

@@ -9,15 +9,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/adapters/http"
 	"github.com/TheThingsNetwork/ttn/core/adapters/mqtt"
+	"github.com/TheThingsNetwork/ttn/core/components/broker"
 	"github.com/TheThingsNetwork/ttn/core/components/handler"
 	"github.com/TheThingsNetwork/ttn/utils/stats"
 	"github.com/apex/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"google.golang.org/grpc"
 )
 
 // handlerCmd represents the handler command
@@ -102,12 +101,10 @@ The default handler is the bridge between The Things Network and applications.
 		}
 
 		// BrokerClient
-		brokerConn, err := grpc.Dial(viper.GetString("handler.ttn-broker"), grpc.WithInsecure(), grpc.WithTimeout(time.Second*15))
+		brokerClient, err := broker.NewClient(viper.GetString("handler.ttn-broker"))
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not dial broker")
 		}
-		defer brokerConn.Close()
-		broker := core.NewBrokerClient(brokerConn)
 
 		// MQTT Client & adapter
 		mqttClient, chmsg, err := mqtt.NewClient(
@@ -129,7 +126,7 @@ The default handler is the bridge between The Things Network and applications.
 				Ctx:        ctx,
 				DevStorage: devicesDB,
 				PktStorage: packetsDB,
-				Broker:     broker,
+				Broker:     brokerClient,
 				AppAdapter: appAdapter,
 			},
 			handler.Options{

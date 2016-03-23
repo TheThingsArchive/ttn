@@ -193,6 +193,7 @@ func handleDataDown(msg Msg) (*core.DataDownHandlerReq, error) {
 	// Convert it to an handler downlink
 	return &core.DataDownHandlerReq{
 		Payload: req.Payload,
+		TTL:     req.TTL,
 		AppEUI:  appEUI,
 		DevEUI:  devEUI,
 	}, nil

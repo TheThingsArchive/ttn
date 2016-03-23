@@ -15,6 +15,12 @@ type MockDevStorage struct {
 	OutRead struct {
 		Entry devEntry
 	}
+	InReadAll struct {
+		AppEUI []byte
+	}
+	OutReadAll struct {
+		Entries []devEntry
+	}
 	InUpsert struct {
 		Entry devEntry
 	}
@@ -35,6 +41,12 @@ func (m *MockDevStorage) read(appEUI []byte, devEUI []byte) (devEntry, error) {
 	m.InRead.AppEUI = appEUI
 	m.InRead.DevEUI = devEUI
 	return m.OutRead.Entry, m.Failures["read"]
+}
+
+// readAll implements the DevStorage interface
+func (m *MockDevStorage) readAll(appEUI []byte) ([]devEntry, error) {
+	m.InReadAll.AppEUI = appEUI
+	return m.OutReadAll.Entries, m.Failures["readAll"]
 }
 
 // upsert implements the DevStorage interface

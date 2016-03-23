@@ -191,7 +191,7 @@ func TestHandleData(t *testing.T) {
 
 		// Build
 		dm := mocks.NewDutyManager()
-		br := mocks.NewBrokerClient()
+		br := mocks.NewAuthBrokerClient()
 		st := NewMockBrkStorage()
 		gt := NewMockGtwStorage()
 
@@ -246,7 +246,7 @@ func TestHandleData(t *testing.T) {
 
 		// Build
 		dm := mocks.NewDutyManager()
-		br := mocks.NewBrokerClient()
+		br := mocks.NewAuthBrokerClient()
 		st := NewMockBrkStorage()
 		gt := NewMockGtwStorage()
 
@@ -301,7 +301,7 @@ func TestHandleData(t *testing.T) {
 
 		// Build
 		dm := mocks.NewDutyManager()
-		br := mocks.NewBrokerClient()
+		br := mocks.NewAuthBrokerClient()
 		st := NewMockBrkStorage()
 		gt := NewMockGtwStorage()
 
@@ -356,7 +356,7 @@ func TestHandleData(t *testing.T) {
 
 		// Build
 		dm := mocks.NewDutyManager()
-		br := mocks.NewBrokerClient()
+		br := mocks.NewAuthBrokerClient()
 		st := NewMockBrkStorage()
 		gt := NewMockGtwStorage()
 
@@ -396,7 +396,7 @@ func TestHandleData(t *testing.T) {
 
 		// Build
 		dm := mocks.NewDutyManager()
-		br := mocks.NewBrokerClient()
+		br := mocks.NewAuthBrokerClient()
 		st := NewMockBrkStorage()
 		gt := NewMockGtwStorage()
 
@@ -451,7 +451,7 @@ func TestHandleData(t *testing.T) {
 
 		// Build
 		dm := mocks.NewDutyManager()
-		br := mocks.NewBrokerClient()
+		br := mocks.NewAuthBrokerClient()
 		st := NewMockBrkStorage()
 		gt := NewMockGtwStorage()
 
@@ -531,9 +531,9 @@ func TestHandleData(t *testing.T) {
 
 		// Build
 		dm := mocks.NewDutyManager()
-		br1 := mocks.NewBrokerClient()
+		br1 := mocks.NewAuthBrokerClient()
 		br1.Failures["HandleData"] = errors.New(errors.NotFound, "Mock Error")
-		br2 := mocks.NewBrokerClient()
+		br2 := mocks.NewAuthBrokerClient()
 		st := NewMockBrkStorage()
 		gt := NewMockGtwStorage()
 
@@ -609,9 +609,9 @@ func TestHandleData(t *testing.T) {
 
 		// Build
 		dm := mocks.NewDutyManager()
-		br1 := mocks.NewBrokerClient()
+		br1 := mocks.NewAuthBrokerClient()
 		br1.Failures["HandleData"] = errors.New(errors.NotFound, "Mock Error")
-		br2 := mocks.NewBrokerClient()
+		br2 := mocks.NewAuthBrokerClient()
 		st := NewMockBrkStorage()
 		gt := NewMockGtwStorage()
 
@@ -688,7 +688,7 @@ func TestHandleData(t *testing.T) {
 
 		// Build
 		dm := mocks.NewDutyManager()
-		br := mocks.NewBrokerClient()
+		br := mocks.NewAuthBrokerClient()
 		st := NewMockBrkStorage()
 		gt := NewMockGtwStorage()
 
@@ -757,7 +757,7 @@ func TestHandleData(t *testing.T) {
 		// Build
 		dm := mocks.NewDutyManager()
 		dm.Failures["read"] = errors.New(errors.NotFound, "Mock Error")
-		br := mocks.NewBrokerClient()
+		br := mocks.NewAuthBrokerClient()
 		st := NewMockBrkStorage()
 		gt := NewMockGtwStorage()
 
@@ -837,7 +837,7 @@ func TestHandleData(t *testing.T) {
 
 		// Build
 		dm := mocks.NewDutyManager()
-		br := mocks.NewBrokerClient()
+		br := mocks.NewAuthBrokerClient()
 		st := NewMockBrkStorage()
 		gt := NewMockGtwStorage()
 
@@ -909,9 +909,9 @@ func TestHandleData(t *testing.T) {
 
 		// Build
 		dm := mocks.NewDutyManager()
-		br1 := mocks.NewBrokerClient()
+		br1 := mocks.NewAuthBrokerClient()
 		br1.Failures["HandleData"] = errors.New(errors.NotFound, "Mock Error")
-		br2 := mocks.NewBrokerClient()
+		br2 := mocks.NewAuthBrokerClient()
 		br2.Failures["HandleData"] = errors.New(errors.Operational, "Mock Error")
 		st := NewMockBrkStorage()
 		gt := NewMockGtwStorage()
@@ -988,8 +988,8 @@ func TestHandleData(t *testing.T) {
 
 		// Build
 		dm := mocks.NewDutyManager()
-		br1 := mocks.NewBrokerClient()
-		br2 := mocks.NewBrokerClient()
+		br1 := mocks.NewAuthBrokerClient()
+		br2 := mocks.NewAuthBrokerClient()
 		st := NewMockBrkStorage()
 		gt := NewMockGtwStorage()
 
@@ -1065,7 +1065,7 @@ func TestHandleData(t *testing.T) {
 
 		// Build
 		dm := mocks.NewDutyManager()
-		br := mocks.NewBrokerClient()
+		br := mocks.NewAuthBrokerClient()
 		br.Failures["HandleData"] = errors.New(errors.NotFound, "Mock Error")
 		st := NewMockBrkStorage()
 		gt := NewMockGtwStorage()
@@ -1146,7 +1146,7 @@ func TestHandleData(t *testing.T) {
 
 		// Build
 		dm := mocks.NewDutyManager()
-		br := mocks.NewBrokerClient()
+		br := mocks.NewAuthBrokerClient()
 		br.OutHandleData.Res = &core.DataBrokerRes{
 			Payload: &core.LoRaWANData{
 				MHDR: &core.LoRaWANMHDR{
@@ -1250,7 +1250,7 @@ func TestHandleData(t *testing.T) {
 
 		// Build
 		dm := mocks.NewDutyManager()
-		br := mocks.NewBrokerClient()
+		br := mocks.NewAuthBrokerClient()
 		br.OutHandleData.Res = &core.DataBrokerRes{
 			Payload: &core.LoRaWANData{
 				MHDR: &core.LoRaWANMHDR{
@@ -1352,7 +1352,7 @@ func TestHandleData(t *testing.T) {
 		// Build
 		dm := mocks.NewDutyManager()
 		dm.Failures["Update"] = errors.New(errors.Operational, "Mock Error")
-		br := mocks.NewBrokerClient()
+		br := mocks.NewAuthBrokerClient()
 		br.OutHandleData.Res = &core.DataBrokerRes{
 			Payload: &core.LoRaWANData{
 				MHDR: &core.LoRaWANMHDR{
@@ -1453,9 +1453,9 @@ func TestHandleJoin(t *testing.T) {
 
 		// Build
 		dm := mocks.NewDutyManager()
-		br1 := mocks.NewBrokerClient()
+		br1 := mocks.NewAuthBrokerClient()
 		br1.Failures["HandleJoin"] = errors.New(errors.NotFound, "Mock Error")
-		br2 := mocks.NewBrokerClient()
+		br2 := mocks.NewAuthBrokerClient()
 		br2.OutHandleJoin.Res = &core.JoinBrokerRes{
 			Payload: &core.LoRaWANJoinAccept{
 				Payload: []byte{1, 2, 3, 4},
@@ -1486,6 +1486,7 @@ func TestHandleJoin(t *testing.T) {
 			AppEUI:    []byte{1, 1, 1, 1, 1, 1, 1, 1},
 			DevEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			DevNonce:  []byte{3, 3},
+			MIC:       []byte{14, 14, 14, 14},
 			Metadata: &core.Metadata{
 				Frequency: 868.5,
 			},
@@ -1501,6 +1502,7 @@ func TestHandleJoin(t *testing.T) {
 			AppEUI:   req.AppEUI,
 			DevEUI:   req.DevEUI,
 			DevNonce: req.DevNonce,
+			MIC:      req.MIC,
 			Metadata: &core.Metadata{
 				Altitude:  gt.OutRead.Entry.Metadata.Altitude,
 				Longitude: gt.OutRead.Entry.Metadata.Longitude,
@@ -1531,9 +1533,9 @@ func TestHandleJoin(t *testing.T) {
 		// Build
 		dm := mocks.NewDutyManager()
 		dm.Failures["Update"] = errors.New(errors.Operational, "Mock Error")
-		br1 := mocks.NewBrokerClient()
+		br1 := mocks.NewAuthBrokerClient()
 		br1.Failures["HandleJoin"] = errors.New(errors.NotFound, "Mock Error")
-		br2 := mocks.NewBrokerClient()
+		br2 := mocks.NewAuthBrokerClient()
 		br2.OutHandleJoin.Res = &core.JoinBrokerRes{
 			Payload: &core.LoRaWANJoinAccept{
 				Payload: []byte{1, 2, 3, 4},
@@ -1564,6 +1566,7 @@ func TestHandleJoin(t *testing.T) {
 			AppEUI:    []byte{1, 1, 1, 1, 1, 1, 1, 1},
 			DevEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			DevNonce:  []byte{3, 3},
+			MIC:       []byte{14, 14, 14, 14},
 			Metadata: &core.Metadata{
 				Frequency: 868.5,
 			},
@@ -1576,6 +1579,7 @@ func TestHandleJoin(t *testing.T) {
 			AppEUI:   req.AppEUI,
 			DevEUI:   req.DevEUI,
 			DevNonce: req.DevNonce,
+			MIC:      req.MIC,
 			Metadata: &core.Metadata{
 				Altitude:  gt.OutRead.Entry.Metadata.Altitude,
 				Longitude: gt.OutRead.Entry.Metadata.Longitude,
@@ -1606,7 +1610,7 @@ func TestHandleJoin(t *testing.T) {
 		// Build
 		dm := mocks.NewDutyManager()
 		dm.Failures["Update"] = errors.New(errors.Operational, "Mock Error")
-		br := mocks.NewBrokerClient()
+		br := mocks.NewAuthBrokerClient()
 		br.OutHandleJoin.Res = &core.JoinBrokerRes{
 			Payload: &core.LoRaWANJoinAccept{
 				Payload: []byte{1, 2, 3, 4},
@@ -1637,6 +1641,7 @@ func TestHandleJoin(t *testing.T) {
 			AppEUI:    []byte{1, 1, 1, 1, 1, 1, 1, 1},
 			DevEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			DevNonce:  []byte{3, 3},
+			MIC:       []byte{14, 14, 14, 14},
 			Metadata:  nil,
 		}
 
@@ -1666,7 +1671,7 @@ func TestHandleJoin(t *testing.T) {
 		// Build
 		dm := mocks.NewDutyManager()
 		dm.Failures["Update"] = errors.New(errors.Operational, "Mock Error")
-		br := mocks.NewBrokerClient()
+		br := mocks.NewAuthBrokerClient()
 		br.OutHandleJoin.Res = &core.JoinBrokerRes{
 			Payload: &core.LoRaWANJoinAccept{
 				Payload: []byte{1, 2, 3, 4},
@@ -1697,6 +1702,7 @@ func TestHandleJoin(t *testing.T) {
 			AppEUI:    []byte{1, 1, 1, 1, 1, 1, 1, 1},
 			DevEUI:    []byte{},
 			DevNonce:  []byte{3, 3},
+			MIC:       []byte{14, 14, 14, 14},
 			Metadata: &core.Metadata{
 				Frequency: 868.5,
 			},
@@ -1728,7 +1734,7 @@ func TestHandleJoin(t *testing.T) {
 		// Build
 		dm := mocks.NewDutyManager()
 		dm.Failures["Update"] = errors.New(errors.Operational, "Mock Error")
-		br := mocks.NewBrokerClient()
+		br := mocks.NewAuthBrokerClient()
 		br.OutHandleJoin.Res = &core.JoinBrokerRes{
 			Payload: &core.LoRaWANJoinAccept{
 				Payload: []byte{1, 2, 3, 4},
@@ -1759,6 +1765,7 @@ func TestHandleJoin(t *testing.T) {
 			AppEUI:    []byte{1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
 			DevEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			DevNonce:  []byte{3, 3},
+			MIC:       []byte{14, 14, 14, 14},
 			Metadata: &core.Metadata{
 				Frequency: 868.5,
 			},
@@ -1790,7 +1797,7 @@ func TestHandleJoin(t *testing.T) {
 		// Build
 		dm := mocks.NewDutyManager()
 		dm.Failures["Update"] = errors.New(errors.Operational, "Mock Error")
-		br := mocks.NewBrokerClient()
+		br := mocks.NewAuthBrokerClient()
 		br.OutHandleJoin.Res = &core.JoinBrokerRes{
 			Payload: &core.LoRaWANJoinAccept{
 				Payload: []byte{1, 2, 3, 4},
@@ -1821,6 +1828,7 @@ func TestHandleJoin(t *testing.T) {
 			AppEUI:    []byte{1, 1, 1, 1, 1, 1, 1, 1},
 			DevEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			DevNonce:  []byte{3},
+			MIC:       []byte{14, 14, 14, 14},
 			Metadata: &core.Metadata{
 				Frequency: 868.5,
 			},
@@ -1852,7 +1860,7 @@ func TestHandleJoin(t *testing.T) {
 		// Build
 		dm := mocks.NewDutyManager()
 		dm.Failures["Update"] = errors.New(errors.Operational, "Mock Error")
-		br := mocks.NewBrokerClient()
+		br := mocks.NewAuthBrokerClient()
 		br.OutHandleJoin.Res = &core.JoinBrokerRes{
 			Payload: &core.LoRaWANJoinAccept{
 				Payload: []byte{1, 2, 3, 4},
@@ -1883,6 +1891,7 @@ func TestHandleJoin(t *testing.T) {
 			AppEUI:    []byte{1, 1, 1, 1, 1, 1, 1, 1},
 			DevEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			DevNonce:  []byte{3, 3},
+			MIC:       []byte{14, 14, 14, 14},
 			Metadata: &core.Metadata{
 				Frequency: 868.5,
 			},
@@ -1913,7 +1922,7 @@ func TestHandleJoin(t *testing.T) {
 
 		// Build
 		dm := mocks.NewDutyManager()
-		br := mocks.NewBrokerClient()
+		br := mocks.NewAuthBrokerClient()
 		br.Failures["HandleJoin"] = errors.New(errors.NotFound, "Mock Error")
 		st := NewMockBrkStorage()
 		gt := NewMockGtwStorage()
@@ -1939,6 +1948,7 @@ func TestHandleJoin(t *testing.T) {
 			AppEUI:    []byte{1, 1, 1, 1, 1, 1, 1, 1},
 			DevEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			DevNonce:  []byte{3, 3},
+			MIC:       []byte{14, 14, 14, 14},
 			Metadata: &core.Metadata{
 				Frequency: 868.5,
 			},
@@ -1951,6 +1961,7 @@ func TestHandleJoin(t *testing.T) {
 			AppEUI:   req.AppEUI,
 			DevEUI:   req.DevEUI,
 			DevNonce: req.DevNonce,
+			MIC:      req.MIC,
 			Metadata: &core.Metadata{
 				Altitude:  gt.OutRead.Entry.Metadata.Altitude,
 				Longitude: gt.OutRead.Entry.Metadata.Longitude,
@@ -1979,7 +1990,7 @@ func TestHandleJoin(t *testing.T) {
 
 		// Build
 		dm := mocks.NewDutyManager()
-		br := mocks.NewBrokerClient()
+		br := mocks.NewAuthBrokerClient()
 		br.OutHandleJoin.Res = &core.JoinBrokerRes{
 			Payload: &core.LoRaWANJoinAccept{
 				Payload: []byte{1, 2, 3, 4},
@@ -2010,6 +2021,7 @@ func TestHandleJoin(t *testing.T) {
 			AppEUI:    []byte{1, 1, 1, 1, 1, 1, 1, 1},
 			DevEUI:    []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			DevNonce:  []byte{3, 3},
+			MIC:       []byte{14, 14, 14, 14},
 			Metadata: &core.Metadata{
 				Frequency: 14.42,
 			},
@@ -2039,7 +2051,7 @@ func TestStart(t *testing.T) {
 	router := New(Components{
 		Ctx:         GetLogger(t, "Router"),
 		DutyManager: mocks.NewDutyManager(),
-		Brokers:     []core.BrokerClient{mocks.NewBrokerClient()},
+		Brokers:     []core.BrokerClient{mocks.NewAuthBrokerClient()},
 		BrkStorage:  NewMockBrkStorage(),
 		GtwStorage:  NewMockGtwStorage(),
 	}, Options{NetAddr: "localhost:8886"})

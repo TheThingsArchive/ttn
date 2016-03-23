@@ -848,6 +848,8 @@ func TestHandleJoin(t *testing.T) {
 			AppEUI:   nc.OutReadNonces.Entry.AppEUI,
 			DevEUI:   nc.OutReadNonces.Entry.DevEUI,
 			DevNonce: []byte{14, 14},
+			MIC:      []byte{14, 14, 14, 14},
+
 			Metadata: new(core.Metadata),
 		}
 
@@ -857,6 +859,7 @@ func TestHandleJoin(t *testing.T) {
 			AppEUI:   req.AppEUI,
 			DevEUI:   req.DevEUI,
 			DevNonce: req.DevNonce,
+			MIC:      req.MIC,
 			Metadata: req.Metadata,
 		}
 		var wantRes = &core.JoinBrokerRes{
@@ -914,6 +917,8 @@ func TestHandleJoin(t *testing.T) {
 			AppEUI:   []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			DevEUI:   []byte{3, 3, 3, 3, 3, 3, 3, 3},
 			DevNonce: []byte{14, 14},
+			MIC:      []byte{14, 14, 14, 14},
+
 			Metadata: new(core.Metadata),
 		}
 
@@ -923,6 +928,7 @@ func TestHandleJoin(t *testing.T) {
 			AppEUI:   req.AppEUI,
 			DevEUI:   req.DevEUI,
 			DevNonce: req.DevNonce,
+			MIC:      req.MIC,
 			Metadata: req.Metadata,
 		}
 		var wantRes = &core.JoinBrokerRes{
@@ -984,6 +990,8 @@ func TestHandleJoin(t *testing.T) {
 			AppEUI:   nil,
 			DevEUI:   nc.OutReadNonces.Entry.DevEUI,
 			DevNonce: []byte{14, 14},
+			MIC:      []byte{14, 14, 14, 14},
+
 			Metadata: new(core.Metadata),
 		}
 
@@ -1042,6 +1050,8 @@ func TestHandleJoin(t *testing.T) {
 			AppEUI:   as.OutRead.Entry.AppEUI,
 			DevEUI:   []byte{1, 2, 3},
 			DevNonce: []byte{14, 14},
+			MIC:      []byte{14, 14, 14, 14},
+
 			Metadata: new(core.Metadata),
 		}
 
@@ -1158,6 +1168,8 @@ func TestHandleJoin(t *testing.T) {
 			AppEUI:   nc.OutReadNonces.Entry.AppEUI,
 			DevEUI:   nc.OutReadNonces.Entry.DevEUI,
 			DevNonce: []byte{14, 14},
+			MIC:      []byte{14, 14, 14, 14},
+
 			Metadata: nil,
 		}
 
@@ -1207,6 +1219,8 @@ func TestHandleJoin(t *testing.T) {
 			AppEUI:   []byte{1, 1, 1, 1, 1, 1, 1, 1},
 			DevEUI:   []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			DevNonce: []byte{14, 14},
+			MIC:      []byte{14, 14, 14, 14},
+
 			Metadata: new(core.Metadata),
 		}
 
@@ -1265,6 +1279,8 @@ func TestHandleJoin(t *testing.T) {
 			AppEUI:   nc.OutReadNonces.Entry.AppEUI,
 			DevEUI:   nc.OutReadNonces.Entry.DevEUI,
 			DevNonce: []byte{14, 14},
+			MIC:      []byte{14, 14, 14, 14},
+
 			Metadata: new(core.Metadata),
 		}
 
@@ -1324,6 +1340,8 @@ func TestHandleJoin(t *testing.T) {
 			AppEUI:   nc.OutReadNonces.Entry.AppEUI,
 			DevEUI:   nc.OutReadNonces.Entry.DevEUI,
 			DevNonce: []byte{14, 14},
+			MIC:      []byte{14, 14, 14, 14},
+
 			Metadata: new(core.Metadata),
 		}
 
@@ -1382,6 +1400,8 @@ func TestHandleJoin(t *testing.T) {
 			AppEUI:   nc.OutReadNonces.Entry.AppEUI,
 			DevEUI:   nc.OutReadNonces.Entry.DevEUI,
 			DevNonce: []byte{14, 14},
+			MIC:      []byte{14, 14, 14, 14},
+
 			Metadata: new(core.Metadata),
 		}
 
@@ -1391,6 +1411,7 @@ func TestHandleJoin(t *testing.T) {
 			AppEUI:   req.AppEUI,
 			DevEUI:   req.DevEUI,
 			DevNonce: req.DevNonce,
+			MIC:      req.MIC,
 			Metadata: req.Metadata,
 		}
 		var wantRes = new(core.JoinBrokerRes)
@@ -1445,6 +1466,8 @@ func TestHandleJoin(t *testing.T) {
 			AppEUI:   nc.OutReadNonces.Entry.AppEUI,
 			DevEUI:   nc.OutReadNonces.Entry.DevEUI,
 			DevNonce: []byte{14, 14},
+			MIC:      []byte{14, 14, 14, 14},
+
 			Metadata: new(core.Metadata),
 		}
 
@@ -1454,6 +1477,7 @@ func TestHandleJoin(t *testing.T) {
 			AppEUI:   req.AppEUI,
 			DevEUI:   req.DevEUI,
 			DevNonce: req.DevNonce,
+			MIC:      req.MIC,
 			Metadata: req.Metadata,
 		}
 		var wantRes = new(core.JoinBrokerRes)
@@ -1509,6 +1533,8 @@ func TestHandleJoin(t *testing.T) {
 			AppEUI:   nc.OutReadNonces.Entry.AppEUI,
 			DevEUI:   nc.OutReadNonces.Entry.DevEUI,
 			DevNonce: []byte{14, 14},
+			MIC:      []byte{14, 14, 14, 14},
+
 			Metadata: new(core.Metadata),
 		}
 
@@ -1518,6 +1544,7 @@ func TestHandleJoin(t *testing.T) {
 			AppEUI:   req.AppEUI,
 			DevEUI:   req.DevEUI,
 			DevNonce: req.DevNonce,
+			MIC:      req.MIC,
 			Metadata: req.Metadata,
 		}
 		var wantRes = new(core.JoinBrokerRes)
@@ -1577,6 +1604,8 @@ func TestHandleJoin(t *testing.T) {
 			AppEUI:   nc.OutReadNonces.Entry.AppEUI,
 			DevEUI:   nc.OutReadNonces.Entry.DevEUI,
 			DevNonce: []byte{14, 14},
+			MIC:      []byte{14, 14, 14, 14},
+
 			Metadata: new(core.Metadata),
 		}
 
@@ -1586,6 +1615,7 @@ func TestHandleJoin(t *testing.T) {
 			AppEUI:   req.AppEUI,
 			DevEUI:   req.DevEUI,
 			DevNonce: req.DevNonce,
+			MIC:      req.MIC,
 			Metadata: req.Metadata,
 		}
 		var wantRes = new(core.JoinBrokerRes)

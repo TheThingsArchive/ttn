@@ -18,6 +18,7 @@ import (
 // component implements the core.BrokerServer interface
 type component struct {
 	Components
+	SecretKey    [32]byte
 	NetAddrUp    string
 	NetAddrDown  string
 	MaxDevNonces uint
@@ -34,17 +35,25 @@ type Components struct {
 type Options struct {
 	NetAddrUp   string
 	NetAddrDown string
+	SecretKey   [32]byte
 }
 
 // Interface defines the Broker interface
 type Interface interface {
 	core.BrokerServer
+	core.BrokerManagerServer
 	Start() error
 }
 
 // New construct a new Broker component
 func New(c Components, o Options) Interface {
-	return component{Components: c, NetAddrUp: o.NetAddrUp, NetAddrDown: o.NetAddrDown, MaxDevNonces: 10}
+	return component{
+		Components:   c,
+		NetAddrUp:    o.NetAddrUp,
+		NetAddrDown:  o.NetAddrDown,
+		MaxDevNonces: 10,
+		SecretKey:    [32]byte{14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 42, 42, 42, 42, 42, 42}, // TODO Use options & ENV var
+	}
 }
 
 // Start actually runs the component and starts the rpc server
@@ -61,6 +70,7 @@ func (b component) Start() error {
 
 	server := grpc.NewServer()
 	core.RegisterBrokerServer(server, b)
+	core.RegisterBrokerManagerServer(server, b)
 
 	cherr := make(chan error)
 
@@ -83,7 +93,7 @@ func (b component) HandleJoin(bctx context.Context, req *core.JoinBrokerReq) (*c
 	b.Ctx.Debug("Handling join request")
 
 	// Validate incoming data
-	if req == nil || len(req.DevEUI) != 8 || len(req.AppEUI) != 8 || len(req.DevNonce) != 2 || req.Metadata == nil {
+	if req == nil || len(req.DevEUI) != 8 || len(req.AppEUI) != 8 || len(req.DevNonce) != 2 || len(req.MIC) != 4 || req.Metadata == nil {
 		b.Ctx.Debug("Invalid request. Parameters are incorrect.")
 		return new(core.JoinBrokerRes), errors.New(errors.Structural, "Invalid parameters")
 	}
@@ -130,6 +140,7 @@ func (b component) HandleJoin(bctx context.Context, req *core.JoinBrokerReq) (*c
 		DevEUI:   req.DevEUI,
 		AppEUI:   req.AppEUI,
 		DevNonce: req.DevNonce,
+		MIC:      req.MIC,
 		Metadata: req.Metadata,
 	})
 	if err != nil {

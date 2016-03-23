@@ -117,8 +117,8 @@ func (m *HandlerClient) HandleDataDown(ctx context.Context, in *core.DataDownHan
 	return m.OutHandleDataDown.Res, m.Failures["HandleDataDown"]
 }
 
-// BrokerClient mocks the core.BrokerClient interface
-type BrokerClient struct {
+// AuthBrokerClient mocks the core.AuthBrokerClient interface
+type AuthBrokerClient struct {
 	Failures     map[string]error
 	InHandleData struct {
 		Ctx  context.Context
@@ -136,29 +136,77 @@ type BrokerClient struct {
 	OutHandleJoin struct {
 		Res *core.JoinBrokerRes
 	}
+	InUpsertABP struct {
+		Ctx  context.Context
+		Req  *core.UpsertABPBrokerReq
+		Opts []grpc.CallOption
+	}
+	OutUpsertABP struct {
+		Res *core.UpsertABPBrokerRes
+	}
+	InValidateOTAA struct {
+		Ctx  context.Context
+		Req  *core.ValidateOTAABrokerReq
+		Opts []grpc.CallOption
+	}
+	OutValidateOTAA struct {
+		Res *core.ValidateOTAABrokerRes
+	}
+	InValidateToken struct {
+		Ctx  context.Context
+		Req  *core.ValidateTokenBrokerReq
+		Opts []grpc.CallOption
+	}
+	OutValidateToken struct {
+		Res *core.ValidateTokenBrokerRes
+	}
 }
 
-// NewBrokerClient creates a new mock BrokerClient
-func NewBrokerClient() *BrokerClient {
-	return &BrokerClient{
+// NewAuthBrokerClient creates a new mock AuthBrokerClient
+func NewAuthBrokerClient() *AuthBrokerClient {
+	return &AuthBrokerClient{
 		Failures: make(map[string]error),
 	}
 }
 
-// HandleData implements the core.BrokerClient interface
-func (m *BrokerClient) HandleData(ctx context.Context, in *core.DataBrokerReq, opts ...grpc.CallOption) (*core.DataBrokerRes, error) {
+// HandleData implements the core.Broker interface
+func (m *AuthBrokerClient) HandleData(ctx context.Context, in *core.DataBrokerReq, opts ...grpc.CallOption) (*core.DataBrokerRes, error) {
 	m.InHandleData.Ctx = ctx
 	m.InHandleData.Req = in
 	m.InHandleData.Opts = opts
 	return m.OutHandleData.Res, m.Failures["HandleData"]
 }
 
-// HandleJoin implements the core.BrokerClient interface
-func (m *BrokerClient) HandleJoin(ctx context.Context, in *core.JoinBrokerReq, opts ...grpc.CallOption) (*core.JoinBrokerRes, error) {
+// HandleJoin implements the core.Broker interface
+func (m *AuthBrokerClient) HandleJoin(ctx context.Context, in *core.JoinBrokerReq, opts ...grpc.CallOption) (*core.JoinBrokerRes, error) {
 	m.InHandleJoin.Ctx = ctx
 	m.InHandleJoin.Req = in
 	m.InHandleJoin.Opts = opts
 	return m.OutHandleJoin.Res, m.Failures["HandleJoin"]
+}
+
+// UpsertABP implements the core.Broker interface
+func (m *AuthBrokerClient) UpsertABP(ctx context.Context, in *core.UpsertABPBrokerReq, opts ...grpc.CallOption) (*core.UpsertABPBrokerRes, error) {
+	m.InUpsertABP.Ctx = ctx
+	m.InUpsertABP.Req = in
+	m.InUpsertABP.Opts = opts
+	return m.OutUpsertABP.Res, m.Failures["UpsertABP"]
+}
+
+// ValidateOTAA implements the core.Broker interface
+func (m *AuthBrokerClient) ValidateOTAA(ctx context.Context, in *core.ValidateOTAABrokerReq, opts ...grpc.CallOption) (*core.ValidateOTAABrokerRes, error) {
+	m.InValidateOTAA.Ctx = ctx
+	m.InValidateOTAA.Req = in
+	m.InValidateOTAA.Opts = opts
+	return m.OutValidateOTAA.Res, m.Failures["ValidateOTAA"]
+}
+
+// ValidateToken implements the core.Broker interface
+func (m *AuthBrokerClient) ValidateToken(ctx context.Context, in *core.ValidateTokenBrokerReq, opts ...grpc.CallOption) (*core.ValidateTokenBrokerRes, error) {
+	m.InValidateToken.Ctx = ctx
+	m.InValidateToken.Req = in
+	m.InValidateToken.Opts = opts
+	return m.OutValidateToken.Res, m.Failures["ValidateToken"]
 }
 
 // RouterServer mocks the core.RouterServer interface

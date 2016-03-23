@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package core;
+
+message ValidateOTAABrokerReq {
+    string  Token       = 1;
+    bytes   AppEUI      = 2;
+    string  NetAddress  = 3;
+}
+
+message ValidateOTAABrokerRes{}
+
+message UpsertABPBrokerReq {
+    string  Token       = 1;
+    bytes   AppEUI      = 2;
+    string  NetAddress  = 3;
+    bytes   DevAddr     = 4;
+    bytes   NwkSKey     = 5;
+}
+
+message UpsertABPBrokerRes {}
+
+message BrokerDevice {
+    bytes   DevEUI      = 1;
+    bytes   DevAddr     = 2;
+    bytes   NwkSKey     = 3;
+}
+
+message ValidateTokenBrokerReq {
+    string  Token       = 1;
+    bytes   AppEUI      = 2;
+}
+
+message ValidateTokenBrokerRes {}
+
+service BrokerManager {
+    rpc ValidateOTAA    (ValidateOTAABrokerReq)     returns     (ValidateOTAABrokerRes);
+    rpc UpsertABP       (UpsertABPBrokerReq)        returns     (UpsertABPBrokerRes);
+    rpc ValidateToken   (ValidateTokenBrokerReq)    returns     (ValidateTokenBrokerRes);
+}

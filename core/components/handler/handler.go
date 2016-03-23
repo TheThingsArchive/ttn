@@ -7,7 +7,6 @@ import (
 	"bytes"
 	"crypto/aes"
 	"encoding/binary"
-	"fmt"
 	"math/rand"
 	"net"
 	"reflect"
@@ -55,12 +54,13 @@ type component struct {
 // Interface defines the Handler interface
 type Interface interface {
 	core.HandlerServer
+	core.HandlerManagerServer
 	Start() error
 }
 
 // Components is used to make handler instantiation easier
 type Components struct {
-	Broker     core.BrokerClient
+	Broker     core.AuthBrokerClient
 	Ctx        log.Interface
 	DevStorage DevStorage
 	PktStorage PktStorage
@@ -117,6 +117,7 @@ func (h *component) Start() error {
 
 	server := grpc.NewServer()
 	core.RegisterHandlerServer(server, h)
+	core.RegisterHandlerManagerServer(server, h)
 
 	if err := server.Serve(conn); err != nil {
 		return errors.New(errors.Operational, err)
@@ -139,6 +140,23 @@ func (h component) HandleJoin(bctx context.Context, req *core.JoinHandlerReq) (*
 	entry, err := h.DevStorage.read(req.AppEUI, req.DevEUI)
 	if err != nil {
 		return new(core.JoinHandlerRes), err
+	}
+	if entry.AppKey == nil { // Trying to activate an ABP device
+		return new(core.JoinHandlerRes), errors.New(errors.Behavioural, "Trying to activate a personalized device")
+	}
+
+	// 1.5. (Yep, indexed comments sucks) Verify MIC
+	payload := lorawan.NewPHYPayload(true)
+	payload.MHDR = lorawan.MHDR{Major: lorawan.LoRaWANR1, MType: lorawan.JoinRequest}
+	joinPayload := lorawan.JoinRequestPayload{}
+	copy(payload.MIC[:], req.MIC)
+	copy(joinPayload.AppEUI[:], req.AppEUI)
+	copy(joinPayload.DevEUI[:], req.DevEUI)
+	copy(joinPayload.DevNonce[:], req.DevNonce)
+	payload.MACPayload = &joinPayload
+	if ok, err := payload.ValidateMIC(lorawan.AES128Key(*entry.AppKey)); err != nil || !ok {
+		h.Ctx.WithError(err).Debug("Unable to validate MIC from incoming join-request")
+		return new(core.JoinHandlerRes), errors.New(errors.Structural, "Unable to validate MIC")
 	}
 
 	// 2. Prepare a channel to receive the response from the consumer
@@ -203,8 +221,8 @@ func (h component) HandleDataDown(bctx context.Context, req *core.DataDownHandle
 		return new(core.DataDownHandlerRes), errors.New(errors.Structural, "Invalid payload")
 	}
 
-	ttl, err := time.ParseDuration(fmt.Sprintf("%dh", req.TTL))
-	if req.TTL == 0 || err != nil {
+	ttl, err := time.ParseDuration(req.TTL)
+	if err != nil || ttl == 0 {
 		stats.MarkMeter("handler.downlink.invalid")
 		return new(core.DataDownHandlerRes), errors.New(errors.Structural, "Invalid TTL")
 	}
@@ -247,6 +265,7 @@ func (h component) HandleDataUp(bctx context.Context, req *core.DataUpHandlerReq
 	if err != nil {
 		return new(core.DataUpHandlerRes), err
 	}
+	h.Ctx.Debugf("%+v", entry)
 	if len(entry.DevAddr) != 4 { // Not Activated
 		return new(core.DataUpHandlerRes), errors.New(errors.Structural, "Tried to send uplink on non-activated device")
 	}
@@ -375,7 +394,8 @@ browseBundles:
 			go h.consumeDown(pkt.AppEUI, pkt.DevEUI, b.DataRate, bundles)
 		case *core.JoinHandlerReq:
 			pkt := b.Packet.(*core.JoinHandlerReq)
-			go h.consumeJoin(pkt.AppEUI, pkt.DevEUI, b.Entry.AppKey, b.DataRate, bundles)
+			// Entry.AppKey not nil, checked before creating any bundles
+			go h.consumeJoin(pkt.AppEUI, pkt.DevEUI, *b.Entry.AppKey, b.DataRate, bundles)
 		}
 	}
 }
@@ -438,7 +458,7 @@ func (h component) consumeJoin(appEUI []byte, devEUI []byte, appKey [16]byte, da
 	// Update the internal storage entry
 	err = h.DevStorage.upsert(devEntry{
 		AppEUI:   appEUI,
-		AppKey:   appKey,
+		AppKey:   &appKey,
 		AppSKey:  appSKey,
 		DevAddr:  devAddr[:],
 		DevEUI:   devEUI,

@@ -6,6 +6,8 @@
 package core
 
 import (
+	"reflect"
+
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/brocaar/lorawan"
 )
@@ -68,6 +70,33 @@ func NewLoRaWANData(reqPayload *LoRaWANData, uplink bool) (lorawan.PHYPayload, e
 	payload.MACPayload = macpayload
 
 	return payload, nil
+}
+
+// ProtoMetaToAppMeta converts a set of Metadata generate with Protobuf to a set of valid
+// AppMetadata ready to be marshaled to json
+func ProtoMetaToAppMeta(srcs ...*Metadata) []AppMetadata {
+	var dest []AppMetadata
+
+	for _, src := range srcs {
+		if src == nil {
+			continue
+		}
+		to := new(AppMetadata)
+		v := reflect.ValueOf(src).Elem()
+		t := v.Type()
+		d := reflect.ValueOf(to).Elem()
+
+		for i := 0; i < t.NumField(); i++ {
+			field := t.Field(i).Name
+			if d.FieldByName(field).CanSet() {
+				d.FieldByName(field).Set(v.Field(i))
+			}
+		}
+
+		dest = append(dest, *to)
+	}
+
+	return dest
 }
 
 // MarshalBinary implements the encoding.BinaryMarshaler interface

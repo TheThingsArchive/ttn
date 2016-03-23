@@ -22,7 +22,7 @@ message DataDownHandlerReq {
     bytes       Payload     = 1;
     bytes       AppEUI      = 2;
     bytes       DevEUI      = 3;
-    uint32      TTL         = 4;
+    string      TTL         = 4;
 }
 
 message DataDownHandlerRes {}
@@ -31,7 +31,8 @@ message JoinHandlerReq {
     bytes               AppEUI      = 1;
     bytes               DevEUI      = 2;
     bytes               DevNonce    = 3;
-    Metadata            Metadata    = 4;
+    bytes               MIC         = 4;
+    Metadata            Metadata    = 5;
 }
 
 message JoinHandlerRes {
