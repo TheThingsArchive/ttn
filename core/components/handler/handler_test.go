@@ -1234,6 +1234,215 @@ func TestHandleDataUp(t *testing.T) {
 		Check(t, wantData, appAdapter.InHandleData.Req, "Data Application Requests")
 		Check(t, wantFCnt, devStorage.InUpsert.Entry.FCntDown, "Frame counters")
 	}
+
+	// --------------------
+
+	{
+		Desc(t, "Handle confirmed uplink, 1 packet | one downlink ready")
+
+		// Build
+		tmst := time.Now()
+		devAddr := lorawan.DevAddr([4]byte{3, 4, 2, 4})
+		devStorage := NewMockDevStorage()
+		devStorage.OutRead.Entry = devEntry{
+			DevAddr:  devAddr[:],
+			AppSKey:  [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
+			NwkSKey:  [16]byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+			FCntDown: 3,
+		}
+		pktStorage := NewMockPktStorage()
+		pktStorage.OutDequeue.Entry.Payload = []byte("Downlink")
+		appAdapter := mocks.NewAppClient()
+		broker := mocks.NewAuthBrokerClient()
+		payload, fcnt := []byte("Payload"), uint32(14)
+		encoded, err := lorawan.EncryptFRMPayload(
+			devStorage.OutRead.Entry.AppSKey,
+			true,
+			devAddr,
+			fcnt,
+			payload,
+		)
+		FatalUnless(t, err)
+		req := &core.DataUpHandlerReq{
+			Payload: encoded,
+			Metadata: &core.Metadata{
+				DataRate:   "SF7BW125",
+				Frequency:  865.5,
+				Timestamp:  uint32(tmst.Unix() * 1000),
+				CodingRate: "4/5",
+				DutyRX1:    uint32(dutycycle.StateAvailable),
+				DutyRX2:    uint32(dutycycle.StateAvailable),
+				Rssi:       -20,
+				Lsnr:       5.0,
+			},
+			AppEUI: []byte{1, 1, 1, 1, 1, 1, 1, 1},
+			DevEUI: []byte{2, 2, 2, 2, 2, 2, 2, 2},
+			FCnt:   fcnt,
+			MType:  uint32(lorawan.ConfirmedDataUp),
+		}
+
+		// Expect
+		var wantErr *string
+		encodedDown, err := lorawan.EncryptFRMPayload(
+			devStorage.OutRead.Entry.AppSKey,
+			false,
+			devAddr,
+			devStorage.OutRead.Entry.FCntDown+1,
+			pktStorage.OutDequeue.Entry.Payload,
+		)
+		FatalUnless(t, err)
+		var wantRes = &core.DataUpHandlerRes{
+			Payload: &core.LoRaWANData{
+				MHDR: &core.LoRaWANMHDR{
+					MType: uint32(lorawan.ConfirmedDataDown),
+					Major: uint32(lorawan.LoRaWANR1),
+				},
+				MACPayload: &core.LoRaWANMACPayload{
+					FHDR: &core.LoRaWANFHDR{
+						DevAddr: devStorage.OutRead.Entry.DevAddr[:],
+						FCnt:    devStorage.OutRead.Entry.FCntDown + 1,
+						FCtrl: &core.LoRaWANFCtrl{
+							Ack: true,
+						},
+					},
+					FPort:      uint32(1),
+					FRMPayload: encodedDown,
+				},
+				MIC: []byte{0, 0, 0, 0},
+			},
+			Metadata: &core.Metadata{
+				DataRate:    "SF7BW125",
+				Frequency:   865.5,
+				CodingRate:  "4/5",
+				Timestamp:   uint32(tmst.Add(time.Second).Unix() * 1000),
+				PayloadSize: 21,
+			},
+		}
+		var wantData = &core.DataAppReq{
+			Payload:  payload,
+			Metadata: []*core.Metadata{req.Metadata},
+			AppEUI:   req.AppEUI,
+			DevEUI:   req.DevEUI,
+		}
+		var wantFCnt = wantRes.Payload.MACPayload.FHDR.FCnt
+
+		// Operate
+		handler := New(Components{
+			Ctx:        GetLogger(t, "Handler"),
+			Broker:     broker,
+			AppAdapter: appAdapter,
+			DevStorage: devStorage,
+			PktStorage: pktStorage,
+		}, Options{PublicNetAddr: "localhost", PrivateNetAddr: "localhost"})
+		res, err := handler.HandleDataUp(context.Background(), req)
+
+		// Check
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Data Up Handler Responses")
+		Check(t, wantData, appAdapter.InHandleData.Req, "Data Application Requests")
+		Check(t, wantFCnt, devStorage.InUpsert.Entry.FCntDown, "Frame counters")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Handle confirmed uplink, 1 packet | no downlink")
+
+		// Build
+		tmst := time.Now()
+		devAddr := lorawan.DevAddr([4]byte{3, 4, 2, 4})
+		devStorage := NewMockDevStorage()
+		devStorage.OutRead.Entry = devEntry{
+			DevAddr:  devAddr[:],
+			AppSKey:  [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
+			NwkSKey:  [16]byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+			FCntDown: 3,
+		}
+		pktStorage := NewMockPktStorage()
+		pktStorage.Failures["dequeue"] = errors.New(errors.NotFound, "Mock Error")
+		appAdapter := mocks.NewAppClient()
+		broker := mocks.NewAuthBrokerClient()
+		payload, fcnt := []byte("Payload"), uint32(14)
+		encoded, err := lorawan.EncryptFRMPayload(
+			devStorage.OutRead.Entry.AppSKey,
+			true,
+			devAddr,
+			fcnt,
+			payload,
+		)
+		FatalUnless(t, err)
+		req := &core.DataUpHandlerReq{
+			Payload: encoded,
+			Metadata: &core.Metadata{
+				DataRate:   "SF7BW125",
+				Frequency:  865.5,
+				Timestamp:  uint32(tmst.Unix() * 1000),
+				CodingRate: "4/5",
+				DutyRX1:    uint32(dutycycle.StateAvailable),
+				DutyRX2:    uint32(dutycycle.StateAvailable),
+				Rssi:       -20,
+				Lsnr:       5.0,
+			},
+			AppEUI: []byte{1, 1, 1, 1, 1, 1, 1, 1},
+			DevEUI: []byte{2, 2, 2, 2, 2, 2, 2, 2},
+			FCnt:   fcnt,
+			MType:  uint32(lorawan.ConfirmedDataUp),
+		}
+
+		// Expect
+		var wantErr *string
+		var wantRes = &core.DataUpHandlerRes{
+			Payload: &core.LoRaWANData{
+				MHDR: &core.LoRaWANMHDR{
+					MType: uint32(lorawan.ConfirmedDataDown),
+					Major: uint32(lorawan.LoRaWANR1),
+				},
+				MACPayload: &core.LoRaWANMACPayload{
+					FHDR: &core.LoRaWANFHDR{
+						DevAddr: devStorage.OutRead.Entry.DevAddr[:],
+						FCnt:    devStorage.OutRead.Entry.FCntDown + 1,
+						FCtrl: &core.LoRaWANFCtrl{
+							Ack: true,
+						},
+					},
+					FPort:      uint32(1),
+					FRMPayload: nil,
+				},
+				MIC: []byte{0, 0, 0, 0},
+			},
+			Metadata: &core.Metadata{
+				DataRate:    "SF7BW125",
+				Frequency:   865.5,
+				CodingRate:  "4/5",
+				Timestamp:   uint32(tmst.Add(time.Second).Unix() * 1000),
+				PayloadSize: 13,
+			},
+		}
+		var wantData = &core.DataAppReq{
+			Payload:  payload,
+			Metadata: []*core.Metadata{req.Metadata},
+			AppEUI:   req.AppEUI,
+			DevEUI:   req.DevEUI,
+		}
+		var wantFCnt = wantRes.Payload.MACPayload.FHDR.FCnt
+
+		// Operate
+		handler := New(Components{
+			Ctx:        GetLogger(t, "Handler"),
+			Broker:     broker,
+			AppAdapter: appAdapter,
+			DevStorage: devStorage,
+			PktStorage: pktStorage,
+		}, Options{PublicNetAddr: "localhost", PrivateNetAddr: "localhost"})
+		res, err := handler.HandleDataUp(context.Background(), req)
+
+		// Check
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes, res, "Data Up Handler Responses")
+		Check(t, wantData, appAdapter.InHandleData.Req, "Data Application Requests")
+		Check(t, wantFCnt, devStorage.InUpsert.Entry.FCntDown, "Frame counters")
+	}
+
 }
 
 func TestHandleJoin(t *testing.T) {
