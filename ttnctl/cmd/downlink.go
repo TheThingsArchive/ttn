@@ -64,10 +64,4 @@ expected to define a Time To Live in a handy format, for instance: "1h" for one 
 
 func init() {
 	RootCmd.AddCommand(downlinkCmd)
-
-	downlinkCmd.Flags().String("mqtt-broker", "localhost:1883", "The address of the MQTT broker")
-	viper.BindPFlag("mqtt-broker", downlinkCmd.Flags().Lookup("mqtt-broker"))
-
-	downlinkCmd.Flags().String("app-eui", "0102030405060708", "The app EUI to use")
-	viper.BindPFlag("app-eui", downlinkCmd.Flags().Lookup("app-eui"))
 }

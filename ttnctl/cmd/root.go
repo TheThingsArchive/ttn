@@ -50,6 +50,22 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.ttnctl.yaml)")
+
+	RootCmd.Flags().String("ttn-router", "0.0.0.0:1700", "The net address of the TTN Router")
+	viper.BindPFlag("ttn-router", RootCmd.Flags().Lookup("ttn-router"))
+
+	RootCmd.PersistentFlags().String("ttn-handler", "0.0.0.0:1782", "The net address of the TTN Handler")
+	viper.BindPFlag("ttn-handler", RootCmd.PersistentFlags().Lookup("ttn-handler"))
+
+	RootCmd.Flags().String("mqtt-broker", "localhost:1883", "The address of the MQTT broker")
+	viper.BindPFlag("mqtt-broker", RootCmd.Flags().Lookup("mqtt-broker"))
+
+	RootCmd.PersistentFlags().String("app-eui", "0102030405060708", "The app EUI to use")
+	viper.BindPFlag("app-eui", RootCmd.PersistentFlags().Lookup("app-eui"))
+
+	RootCmd.PersistentFlags().String("app-token", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJUVE4tSEFORExFUi0xIiwiaXNzIjoiVGhlVGhpbmdzVGhlTmV0d29yayIsInN1YiI6IjAxMDIwMzA0MDUwNjA3MDgifQ.zMHNXAVgQj672lwwDVmfYshpMvPwm6A8oNWJ7teGS2A", "The app Token to use")
+	viper.BindPFlag("app-token", RootCmd.PersistentFlags().Lookup("app-token"))
+
 }
 
 // initConfig reads in config file and ENV variables if set.

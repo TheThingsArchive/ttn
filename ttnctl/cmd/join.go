@@ -201,10 +201,4 @@ var joinCmd = &cobra.Command{
 
 func init() {
 	RootCmd.AddCommand(joinCmd)
-
-	joinCmd.Flags().String("ttn-router", "0.0.0.0:1700", "The net address of the TTN Router")
-	viper.BindPFlag("ttn-router", joinCmd.Flags().Lookup("ttn-router"))
-
-	joinCmd.Flags().String("app-eui", "0102030405060708", "The app EUI to use")
-	viper.BindPFlag("app-eui", joinCmd.Flags().Lookup("app-eui"))
 }

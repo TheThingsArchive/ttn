@@ -201,7 +201,4 @@ var uplinkCmd = &cobra.Command{
 
 func init() {
 	RootCmd.AddCommand(uplinkCmd)
-
-	uplinkCmd.Flags().String("ttn-router", "0.0.0.0:1700", "The net address of the TTN Router")
-	viper.BindPFlag("ttn-router", uplinkCmd.Flags().Lookup("ttn-router"))
 }
