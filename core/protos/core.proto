@@ -14,10 +14,11 @@ message Metadata {
     float   Lsnr            = 8;
     uint32  PayloadSize     = 9;
     string  Time            = 10;
-    uint32  RadioFreqChan   = 11;
+    uint32  RFChain         = 11;
     int32   CRCStatus       = 12;
     string  Modulation      = 13;
     bool    InvPolarity     = 14;
+    uint32  Power           = 15;
 
     int32   Altitude        = 21;
     float   Longitude       = 22;

@@ -623,7 +623,7 @@ func TestHandleDataUp(t *testing.T) {
 			Metadata: &core.Metadata{
 				DataRate:   "SF7BW125",
 				Frequency:  865.5,
-				Timestamp:  uint32(tmst.Unix() * 1000),
+				Timestamp:  uint32(tmst.Unix() * 1000000),
 				CodingRate: "4/5",
 				DutyRX1:    uint32(dutycycle.StateAvailable),
 				DutyRX2:    uint32(dutycycle.StateAvailable),
@@ -667,8 +667,10 @@ func TestHandleDataUp(t *testing.T) {
 				DataRate:    "SF7BW125",
 				Frequency:   865.5,
 				CodingRate:  "4/5",
-				Timestamp:   uint32(tmst.Add(time.Second).Unix() * 1000),
+				Timestamp:   uint32(tmst.Add(time.Second).Unix() * 1000000),
 				PayloadSize: 21,
+				Power:       14,
+				InvPolarity: true,
 			},
 		}
 		var wantData = &core.DataAppReq{
@@ -1087,7 +1089,7 @@ func TestHandleDataUp(t *testing.T) {
 			Metadata: &core.Metadata{
 				DataRate:   "SF7BW125",
 				Frequency:  865.5,
-				Timestamp:  uint32(tmst.Unix() * 1000),
+				Timestamp:  uint32(tmst.Unix() * 1000000),
 				CodingRate: "4/5",
 				DutyRX1:    uint32(dutycycle.StateBlocked),
 				DutyRX2:    uint32(dutycycle.StateAvailable),
@@ -1131,8 +1133,10 @@ func TestHandleDataUp(t *testing.T) {
 				DataRate:    "SF9BW125",
 				Frequency:   869.525,
 				CodingRate:  "4/5",
-				Timestamp:   uint32(tmst.Add(2*time.Second).Unix() * 1000),
+				Timestamp:   uint32(tmst.Add(2*time.Second).Unix() * 1000000),
 				PayloadSize: 21,
+				Power:       27,
+				InvPolarity: true,
 			},
 		}
 		var wantData = &core.DataAppReq{
@@ -1194,7 +1198,7 @@ func TestHandleDataUp(t *testing.T) {
 			Metadata: &core.Metadata{
 				DataRate:   "SF7BW125",
 				Frequency:  865.5,
-				Timestamp:  uint32(tmst.Unix() * 1000),
+				Timestamp:  uint32(tmst.Unix() * 1000000),
 				CodingRate: "4/5",
 				DutyRX1:    uint32(dutycycle.StateBlocked),
 				DutyRX2:    uint32(dutycycle.StateAvailable),
@@ -1268,7 +1272,7 @@ func TestHandleDataUp(t *testing.T) {
 			Metadata: &core.Metadata{
 				DataRate:   "SF7BW125",
 				Frequency:  865.5,
-				Timestamp:  uint32(tmst.Unix() * 1000),
+				Timestamp:  uint32(tmst.Unix() * 1000000),
 				CodingRate: "4/5",
 				DutyRX1:    uint32(dutycycle.StateAvailable),
 				DutyRX2:    uint32(dutycycle.StateAvailable),
@@ -1314,8 +1318,10 @@ func TestHandleDataUp(t *testing.T) {
 				DataRate:    "SF7BW125",
 				Frequency:   865.5,
 				CodingRate:  "4/5",
-				Timestamp:   uint32(tmst.Add(time.Second).Unix() * 1000),
+				Timestamp:   uint32(tmst.Add(time.Second).Unix() * 1000000),
 				PayloadSize: 21,
+				Power:       14,
+				InvPolarity: true,
 			},
 		}
 		var wantData = &core.DataAppReq{
@@ -1376,7 +1382,7 @@ func TestHandleDataUp(t *testing.T) {
 			Metadata: &core.Metadata{
 				DataRate:   "SF7BW125",
 				Frequency:  865.5,
-				Timestamp:  uint32(tmst.Unix() * 1000),
+				Timestamp:  uint32(tmst.Unix() * 1000000),
 				CodingRate: "4/5",
 				DutyRX1:    uint32(dutycycle.StateAvailable),
 				DutyRX2:    uint32(dutycycle.StateAvailable),
@@ -1414,8 +1420,10 @@ func TestHandleDataUp(t *testing.T) {
 				DataRate:    "SF7BW125",
 				Frequency:   865.5,
 				CodingRate:  "4/5",
-				Timestamp:   uint32(tmst.Add(time.Second).Unix() * 1000),
+				Timestamp:   uint32(tmst.Add(time.Second).Unix() * 1000000),
 				PayloadSize: 13,
+				Power:       14,
+				InvPolarity: true,
 			},
 		}
 		var wantData = &core.DataAppReq{
@@ -1459,7 +1467,7 @@ func TestHandleJoin(t *testing.T) {
 			Metadata: &core.Metadata{
 				DataRate:   "SF7BW125",
 				Frequency:  865.5,
-				Timestamp:  uint32(tmst.Unix() * 1000),
+				Timestamp:  uint32(tmst.Unix() * 1000000),
 				CodingRate: "4/5",
 				DutyRX1:    uint32(dutycycle.StateAvailable),
 				DutyRX2:    uint32(dutycycle.StateAvailable),
@@ -1498,8 +1506,10 @@ func TestHandleJoin(t *testing.T) {
 				DataRate:    "SF7BW125",
 				Frequency:   865.5,
 				CodingRate:  "4/5",
-				Timestamp:   uint32(tmst.Add(5*time.Second).Unix() * 1000),
+				Timestamp:   uint32(tmst.Add(5*time.Second).Unix() * 1000000),
 				PayloadSize: 33,
+				Power:       14,
+				InvPolarity: true,
 			},
 		}
 		var wantAppReq = &core.JoinAppReq{
@@ -1547,7 +1557,7 @@ func TestHandleJoin(t *testing.T) {
 			Metadata: &core.Metadata{
 				DataRate:   "SF7BW125",
 				Frequency:  865.5,
-				Timestamp:  uint32(tmst.Unix() * 1000),
+				Timestamp:  uint32(tmst.Unix() * 1000000),
 				CodingRate: "4/5",
 				DutyRX1:    uint32(dutycycle.StateAvailable),
 				DutyRX2:    uint32(dutycycle.StateAvailable),
@@ -1587,8 +1597,10 @@ func TestHandleJoin(t *testing.T) {
 				DataRate:    "SF7BW125",
 				Frequency:   865.5,
 				CodingRate:  "4/5",
-				Timestamp:   uint32(tmst.Add(5*time.Second).Unix() * 1000),
+				Timestamp:   uint32(tmst.Add(5*time.Second).Unix() * 1000000),
 				PayloadSize: 33,
+				Power:       14,
+				InvPolarity: true,
 			},
 		}
 		var wantAppReq = &core.JoinAppReq{
@@ -1636,7 +1648,7 @@ func TestHandleJoin(t *testing.T) {
 			Metadata: &core.Metadata{
 				DataRate:   "SF7BW125",
 				Frequency:  865.5,
-				Timestamp:  uint32(tmst.Unix() * 1000),
+				Timestamp:  uint32(tmst.Unix() * 1000000),
 				CodingRate: "4/5",
 				DutyRX1:    uint32(dutycycle.StateAvailable),
 				DutyRX2:    uint32(dutycycle.StateAvailable),
@@ -1703,7 +1715,7 @@ func TestHandleJoin(t *testing.T) {
 			Metadata: &core.Metadata{
 				DataRate:   "SF7BW125",
 				Frequency:  865.5,
-				Timestamp:  uint32(tmst.Unix() * 1000),
+				Timestamp:  uint32(tmst.Unix() * 1000000),
 				CodingRate: "4/5",
 				DutyRX1:    uint32(dutycycle.StateBlocked),
 				DutyRX2:    uint32(dutycycle.StateBlocked),
@@ -1769,7 +1781,7 @@ func TestHandleJoin(t *testing.T) {
 			Metadata: &core.Metadata{
 				DataRate:   "Not A DataRate",
 				Frequency:  865.5,
-				Timestamp:  uint32(tmst.Unix() * 1000),
+				Timestamp:  uint32(tmst.Unix() * 1000000),
 				CodingRate: "4/5",
 				DutyRX1:    uint32(dutycycle.StateAvailable),
 				DutyRX2:    uint32(dutycycle.StateAvailable),
@@ -1836,7 +1848,7 @@ func TestHandleJoin(t *testing.T) {
 			Metadata: &core.Metadata{
 				DataRate:   "SF7BW125",
 				Frequency:  865.5,
-				Timestamp:  uint32(tmst.Unix() * 1000),
+				Timestamp:  uint32(tmst.Unix() * 1000000),
 				CodingRate: "4/5",
 				DutyRX1:    uint32(dutycycle.StateAvailable),
 				DutyRX2:    uint32(dutycycle.StateAvailable),
@@ -1887,7 +1899,7 @@ func TestHandleJoin(t *testing.T) {
 			Metadata: &core.Metadata{
 				DataRate:   "SF7BW125",
 				Frequency:  865.5,
-				Timestamp:  uint32(tmst.Unix() * 1000),
+				Timestamp:  uint32(tmst.Unix() * 1000000),
 				CodingRate: "4/5",
 				DutyRX1:    uint32(dutycycle.StateAvailable),
 				DutyRX2:    uint32(dutycycle.StateAvailable),
@@ -1937,7 +1949,7 @@ func TestHandleJoin(t *testing.T) {
 			Metadata: &core.Metadata{
 				DataRate:   "SF7BW125",
 				Frequency:  865.5,
-				Timestamp:  uint32(tmst.Unix() * 1000),
+				Timestamp:  uint32(tmst.Unix() * 1000000),
 				CodingRate: "4/5",
 				DutyRX1:    uint32(dutycycle.StateAvailable),
 				DutyRX2:    uint32(dutycycle.StateAvailable),
@@ -1987,7 +1999,7 @@ func TestHandleJoin(t *testing.T) {
 			Metadata: &core.Metadata{
 				DataRate:   "SF7BW125",
 				Frequency:  865.5,
-				Timestamp:  uint32(tmst.Unix() * 1000),
+				Timestamp:  uint32(tmst.Unix() * 1000000),
 				CodingRate: "4/5",
 				DutyRX1:    uint32(dutycycle.StateAvailable),
 				DutyRX2:    uint32(dutycycle.StateAvailable),
@@ -2077,7 +2089,7 @@ func TestHandleJoin(t *testing.T) {
 			Metadata: &core.Metadata{
 				DataRate:   "SF7BW125",
 				Frequency:  865.5,
-				Timestamp:  uint32(tmst1.Unix() * 1000),
+				Timestamp:  uint32(tmst1.Unix() * 1000000),
 				CodingRate: "4/5",
 				DutyRX1:    uint32(dutycycle.StateWarning),
 				DutyRX2:    uint32(dutycycle.StateWarning),
@@ -2093,7 +2105,7 @@ func TestHandleJoin(t *testing.T) {
 			Metadata: &core.Metadata{
 				DataRate:   "SF8BW125",
 				Frequency:  867.234,
-				Timestamp:  uint32(tmst2.Unix() * 1000),
+				Timestamp:  uint32(tmst2.Unix() * 1000000),
 				CodingRate: "4/5",
 				DutyRX1:    uint32(dutycycle.StateAvailable),
 				DutyRX2:    uint32(dutycycle.StateAvailable),
@@ -2135,8 +2147,10 @@ func TestHandleJoin(t *testing.T) {
 				DataRate:    "SF8BW125",
 				Frequency:   867.234,
 				CodingRate:  "4/5",
-				Timestamp:   uint32(tmst2.Add(5*time.Second).Unix() * 1000),
+				Timestamp:   uint32(tmst2.Add(5*time.Second).Unix() * 1000000),
 				PayloadSize: 33,
+				Power:       14,
+				InvPolarity: true,
 			},
 		}
 		var wantAppReq = &core.JoinAppReq{
