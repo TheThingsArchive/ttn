@@ -6,6 +6,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/apex/log"
 	"github.com/apex/log/handlers/cli"
@@ -59,6 +60,7 @@ func initConfig() {
 
 	viper.SetConfigName(".ttnctl")
 	viper.AddConfigPath("$HOME")
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
 	viper.AutomaticEnv()
 
 	// If a config file is found, read it in.
