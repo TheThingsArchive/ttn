@@ -132,8 +132,9 @@ The Handler is the bridge between The Things Network and applications.
 				AppAdapter: appAdapter,
 			},
 			handler.Options{
-				PublicNetAddr:  fmt.Sprintf("%s:%d", viper.GetString("handler.public-address"), viper.GetInt("handler.public-port")),
-				PrivateNetAddr: fmt.Sprintf("%s:%d", viper.GetString("handler.internal-address"), viper.GetInt("handler.internal-port")),
+				PublicNetAddr:          fmt.Sprintf("%s:%d", viper.GetString("handler.public-address"), viper.GetInt("handler.public-port")),
+				PrivateNetAddr:         fmt.Sprintf("%s:%d", viper.GetString("handler.internal-address"), viper.GetInt("handler.internal-port")),
+				PrivateNetAddrAnnounce: fmt.Sprintf("%s:%d", viper.GetString("handler.internal-address-announce"), viper.GetInt("handler.internal-port")),
 			},
 		)
 
@@ -159,8 +160,10 @@ func init() {
 	viper.BindPFlag("handler.status-port", handlerCmd.Flags().Lookup("status-port"))
 
 	handlerCmd.Flags().String("internal-address", "0.0.0.0", "The IP address to listen for communication from other components")
+	handlerCmd.Flags().String("internal-address-announce", "localhost", "The hostname to announce for communication from other components")
 	handlerCmd.Flags().Int("internal-port", 1882, "The port for communication from other components")
 	viper.BindPFlag("handler.internal-address", handlerCmd.Flags().Lookup("internal-address"))
+	viper.BindPFlag("handler.internal-address-announce", handlerCmd.Flags().Lookup("internal-address-announce"))
 	viper.BindPFlag("handler.internal-port", handlerCmd.Flags().Lookup("internal-port"))
 
 	handlerCmd.Flags().String("public-address", "0.0.0.0", "The IP address to listen for communication with the wild open")

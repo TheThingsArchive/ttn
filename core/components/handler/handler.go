@@ -39,10 +39,11 @@ var dataRates = map[string]uint8{
 // component implements the core.Component interface
 type component struct {
 	Components
-	Set            chan<- bundle
-	PublicNetAddr  string
-	PrivateNetAddr string
-	Configuration  struct {
+	Set                    chan<- bundle
+	PublicNetAddr          string
+	PrivateNetAddr         string
+	PrivateNetAddrAnnounce string
+	Configuration          struct {
 		CFList      [5]uint32
 		NetID       [3]byte
 		RX1DROffset uint8
@@ -71,8 +72,9 @@ type Components struct {
 
 // Options is used to make handler instantiation easier
 type Options struct {
-	PublicNetAddr  string // Net Address used to communicate with the handler from the outside
-	PrivateNetAddr string // Net Address the handler provides to brokers for internal communications
+	PublicNetAddr          string // Net Address used to communicate with the handler from the outside
+	PrivateNetAddr         string // Net Address the handler listens on for internal communications
+	PrivateNetAddrAnnounce string // Net Address the handler announces to brokers for internal communications
 }
 
 // bundle are used to materialize an incoming request being bufferized, waiting for the others.
@@ -88,9 +90,10 @@ type bundle struct {
 // New construct a new Handler
 func New(c Components, o Options) Interface {
 	h := &component{
-		Components:     c,
-		PublicNetAddr:  o.PublicNetAddr,
-		PrivateNetAddr: o.PrivateNetAddr,
+		Components:             c,
+		PublicNetAddr:          o.PublicNetAddr,
+		PrivateNetAddr:         o.PrivateNetAddr,
+		PrivateNetAddrAnnounce: o.PrivateNetAddrAnnounce,
 	}
 
 	// TODO Make it configurable
