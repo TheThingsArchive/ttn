@@ -517,6 +517,8 @@ func (h component) consumeJoin(appEUI []byte, devEUI []byte, appKey [16]byte, da
 
 	for i, bundle := range bundles {
 		if i == best.ID {
+			// Reset processed packets for that appEUI + devEUi
+			h.Processed.Remove(append([]byte{1}, bundle.ID[1:]...))
 			bundle.Chresp <- joinAccept
 		} else {
 			bundle.Chresp <- nil
