@@ -42,6 +42,63 @@ func TestUDPAdapter(t *testing.T) {
 		return fmt.Sprintf("0.0.0.0:%d", port)
 	}
 
+	// -------------------
+
+	{
+		Desc(t, "Send a PULL_DATA through udp")
+
+		// Build
+		packet := semtech.Packet{
+			Version:    semtech.VERSION,
+			GatewayId:  []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			Token:      []byte{1, 2},
+			Identifier: semtech.PULL_DATA,
+		}
+		data, err := packet.MarshalBinary()
+		FatalUnless(t, err)
+
+		router := mocks.NewRouterServer()
+
+		netAddr := newAddr()
+		addr, err := net.ResolveUDPAddr("udp", netAddr)
+		FatalUnless(t, err)
+		conn, err := net.DialUDP("udp", nil, addr)
+		FatalUnless(t, err)
+
+		// Expectations
+		var wantErrStart *string
+		var wantDataRouterReq *core.DataRouterReq
+		var wantStats *core.StatsReq
+		var wantSemtechResp = []semtech.Packet{
+			{
+				Version:    semtech.VERSION,
+				Token:      packet.Token,
+				Identifier: semtech.PULL_ACK,
+			},
+			{},
+		}
+
+		// Operate
+		chpkt := listenPackets(conn)
+		errStart := Start(
+			Components{Router: router, Ctx: GetLogger(t, "Adapter")},
+			Options{NetAddr: netAddr, MaxReconnectionDelay: 25 * time.Millisecond},
+		)
+		FatalUnless(t, err)
+		<-time.After(time.Millisecond * 50)
+		_, err = conn.Write(data)
+		FatalUnless(t, err)
+		<-time.After(time.Millisecond * 50)
+		close(chpkt)
+
+		// Check
+		CheckErrors(t, wantErrStart, errStart)
+		Check(t, wantDataRouterReq, router.InHandleData.Req, "Data Router Requests")
+		Check(t, wantStats, router.InHandleStats.Req, "Data Router Stats")
+		Check(t, wantSemtechResp[0], <-chpkt, "Acknowledgements")
+		Check(t, wantSemtechResp[1], <-chpkt, "Downlinks")
+	}
+
 	{
 		Desc(t, "Send a valid packet through udp, no downlink")
 
@@ -148,6 +205,16 @@ func TestUDPAdapter(t *testing.T) {
 	{
 		Desc(t, "Send a valid packet through udp, with valid downlink")
 
+		// Build pull packet
+		pullPacket := semtech.Packet{
+			Version:    semtech.VERSION,
+			GatewayId:  []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			Token:      []byte{1, 2},
+			Identifier: semtech.PULL_DATA,
+		}
+		pullData, err := pullPacket.MarshalBinary()
+		FatalUnless(t, err)
+
 		// Build
 		payload := lorawan.NewPHYPayload(true)
 		payload.MHDR.MType = lorawan.UnconfirmedDataUp
@@ -219,7 +286,9 @@ func TestUDPAdapter(t *testing.T) {
 		netAddr := newAddr()
 		addr, err := net.ResolveUDPAddr("udp", netAddr)
 		FatalUnless(t, err)
-		conn, err := net.DialUDP("udp", nil, addr)
+		conn1, err := net.DialUDP("udp", nil, addr)
+		FatalUnless(t, err)
+		conn2, err := net.DialUDP("udp", nil, addr)
 		FatalUnless(t, err)
 
 		// Expectations
@@ -271,24 +340,30 @@ func TestUDPAdapter(t *testing.T) {
 		}
 
 		// Operate
-		chpkt := listenPackets(conn)
+		chpkt1 := listenPackets(conn1)
+		chpkt2 := listenPackets(conn2)
 		errStart := Start(
 			Components{Router: router, Ctx: GetLogger(t, "Adapter")},
 			Options{NetAddr: netAddr, MaxReconnectionDelay: 25 * time.Millisecond},
 		)
 		FatalUnless(t, err)
+
 		<-time.After(time.Millisecond * 50)
-		_, err = conn.Write(data)
+		_, err = conn1.Write(pullData)
+		<-time.After(time.Millisecond * 50)
+		_, err = conn2.Write(data)
 		FatalUnless(t, err)
 		<-time.After(time.Millisecond * 50)
-		close(chpkt)
+		close(chpkt1)
+		close(chpkt2)
 
 		// Check
 		CheckErrors(t, wantErrStart, errStart)
 		Check(t, wantDataRouterReq, router.InHandleData.Req, "Data Router Requests")
 		Check(t, wantStats, router.InHandleStats.Req, "Data Router Stats")
-		Check(t, wantSemtechResp[0], <-chpkt, "Acknowledgements")
-		Check(t, wantSemtechResp[1], <-chpkt, "Downlinks")
+		Check(t, wantSemtechResp[0], <-chpkt2, "Acknowledgements")
+		<-chpkt1
+		Check(t, wantSemtechResp[1], <-chpkt1, "Downlinks")
 	}
 
 	// --------------------
@@ -765,63 +840,6 @@ func TestUDPAdapter(t *testing.T) {
 	// -------------------
 
 	{
-		Desc(t, "Send a PULL_DATA through udp")
-
-		// Build
-		packet := semtech.Packet{
-			Version:    semtech.VERSION,
-			GatewayId:  []byte{1, 2, 3, 4, 5, 6, 7, 8},
-			Token:      []byte{1, 2},
-			Identifier: semtech.PULL_DATA,
-		}
-		data, err := packet.MarshalBinary()
-		FatalUnless(t, err)
-
-		router := mocks.NewRouterServer()
-
-		netAddr := newAddr()
-		addr, err := net.ResolveUDPAddr("udp", netAddr)
-		FatalUnless(t, err)
-		conn, err := net.DialUDP("udp", nil, addr)
-		FatalUnless(t, err)
-
-		// Expectations
-		var wantErrStart *string
-		var wantDataRouterReq *core.DataRouterReq
-		var wantStats *core.StatsReq
-		var wantSemtechResp = []semtech.Packet{
-			{
-				Version:    semtech.VERSION,
-				Token:      packet.Token,
-				Identifier: semtech.PULL_ACK,
-			},
-			{},
-		}
-
-		// Operate
-		chpkt := listenPackets(conn)
-		errStart := Start(
-			Components{Router: router, Ctx: GetLogger(t, "Adapter")},
-			Options{NetAddr: netAddr, MaxReconnectionDelay: 25 * time.Millisecond},
-		)
-		FatalUnless(t, err)
-		<-time.After(time.Millisecond * 50)
-		_, err = conn.Write(data)
-		FatalUnless(t, err)
-		<-time.After(time.Millisecond * 50)
-		close(chpkt)
-
-		// Check
-		CheckErrors(t, wantErrStart, errStart)
-		Check(t, wantDataRouterReq, router.InHandleData.Req, "Data Router Requests")
-		Check(t, wantStats, router.InHandleStats.Req, "Data Router Stats")
-		Check(t, wantSemtechResp[0], <-chpkt, "Acknowledgements")
-		Check(t, wantSemtechResp[1], <-chpkt, "Downlinks")
-	}
-
-	// -------------------
-
-	{
 		Desc(t, "Invalid options NetAddr")
 
 		// Build
@@ -901,6 +919,16 @@ func TestUDPAdapter(t *testing.T) {
 	{
 		Desc(t, "Send a valid join through udp, with valid join-accept")
 
+		// Build pull packet
+		pullPacket := semtech.Packet{
+			Version:    semtech.VERSION,
+			GatewayId:  []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			Token:      []byte{1, 2},
+			Identifier: semtech.PULL_DATA,
+		}
+		pullData, err := pullPacket.MarshalBinary()
+		FatalUnless(t, err)
+
 		// Build
 		payload := lorawan.NewPHYPayload(true)
 		payload.MHDR.MType = lorawan.JoinRequest
@@ -943,7 +971,9 @@ func TestUDPAdapter(t *testing.T) {
 		netAddr := newAddr()
 		addr, err := net.ResolveUDPAddr("udp", netAddr)
 		FatalUnless(t, err)
-		conn, err := net.DialUDP("udp", nil, addr)
+		conn1, err := net.DialUDP("udp", nil, addr)
+		FatalUnless(t, err)
+		conn2, err := net.DialUDP("udp", nil, addr)
 		FatalUnless(t, err)
 
 		// Expectations
@@ -976,24 +1006,29 @@ func TestUDPAdapter(t *testing.T) {
 		}
 
 		// Operate
-		chpkt := listenPackets(conn)
+		chpkt1 := listenPackets(conn1)
+		chpkt2 := listenPackets(conn2)
 		errStart := Start(
 			Components{Router: router, Ctx: GetLogger(t, "Adapter")},
 			Options{NetAddr: netAddr, MaxReconnectionDelay: 25 * time.Millisecond},
 		)
 		FatalUnless(t, err)
 		<-time.After(time.Millisecond * 50)
-		_, err = conn.Write(data)
+		_, err = conn1.Write(pullData)
+		<-time.After(time.Millisecond * 50)
+		_, err = conn2.Write(data)
 		FatalUnless(t, err)
 		<-time.After(time.Millisecond * 50)
-		close(chpkt)
+		close(chpkt1)
+		close(chpkt2)
 
 		// Check
 		CheckErrors(t, wantErrStart, errStart)
 		Check(t, wantJoinRouterReq, router.InHandleJoin.Req, "Join Router Requests")
 		Check(t, wantStats, router.InHandleStats.Req, "Data Router Stats")
-		Check(t, wantSemtechResp[0], <-chpkt, "Acknowledgements")
-		Check(t, wantSemtechResp[1], <-chpkt, "Downlinks")
+		<-chpkt1 // get the PULL_RESP
+		Check(t, wantSemtechResp[0], <-chpkt2, "Acknowledgements")
+		Check(t, wantSemtechResp[1], <-chpkt1, "Downlinks")
 	}
 
 	// --------------------

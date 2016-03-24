@@ -19,6 +19,7 @@ import (
 
 type adapter struct {
 	Components
+	pool *gatewayPool
 }
 
 // Components defines a structure to make the instantiation easier to read
@@ -35,9 +36,6 @@ type Options struct {
 	// before giving up.
 	MaxReconnectionDelay time.Duration
 }
-
-// replier is an alias used by methods herebelow
-type replier func(data []byte) error
 
 // straightMarshaler can be used to easily obtain a binary marshaler from a sequence of byte
 type straightMarshaler []byte
@@ -57,17 +55,9 @@ func Start(c Components, o Options) (err error) {
 	}
 
 	c.Ctx.WithField("bind", o.NetAddr).Info("Starting Server")
-	a := adapter{Components: c}
+	a := adapter{Components: c, pool: newPool()}
 	go a.listen(o.NetAddr, udpConn, o.MaxReconnectionDelay)
 	return nil
-}
-
-// makeReply curryfies a writing to udp connection by binding the address and connection
-func makeReply(addr *net.UDPAddr, conn *net.UDPConn) replier {
-	return func(data []byte) error {
-		_, err := conn.WriteToUDP(data, addr)
-		return err
-	}
 }
 
 // tryConnect attempt to connect to a udp connection
@@ -105,24 +95,29 @@ func (a adapter) listen(netAddr string, conn *net.UDPConn, maxReconnectionDelay 
 
 		// Handle the incoming datagram
 		a.Ctx.Debug("Incoming datagram")
-		go func(data []byte, reply replier) {
+		go func(data []byte, conn *net.UDPConn) {
 			pkt := new(semtech.Packet)
 			if err := pkt.UnmarshalBinary(data); err != nil {
 				a.Ctx.WithError(err).Debug("Unable to handle datagram")
 			}
 
+			gtwConn := a.pool.GetOrCreate(pkt.GatewayId)
+			gtwConn.SetConn(conn)
+
 			switch pkt.Identifier {
 			case semtech.PULL_DATA:
-				err = a.handlePullData(*pkt, reply)
+				gtwConn.SetDownlinkAddr(addr)
+				err = a.handlePullData(*pkt, gtwConn)
 			case semtech.PUSH_DATA:
-				err = a.handlePushData(*pkt, reply)
+				gtwConn.SetUplinkAddr(addr)
+				err = a.handlePushData(*pkt, gtwConn)
 			default:
 				err = errors.New(errors.Implementation, "Unhandled packet type")
 			}
 			if err != nil {
 				a.Ctx.WithError(err).Debug("Unable to handle datagram")
 			}
-		}(buf[:n], makeReply(addr, conn))
+		}(buf[:n], conn)
 	}
 
 	if conn != nil {
@@ -147,7 +142,7 @@ func (a adapter) handlePullData(pkt semtech.Packet, reply replier) error {
 		return errors.New(errors.Structural, err)
 	}
 
-	return reply(data)
+	return reply.WriteToDownlink(data)
 }
 
 // Handle a PUSH_DATA packet coming from a gateway
@@ -164,7 +159,7 @@ func (a adapter) handlePushData(pkt semtech.Packet, reply replier) error {
 		Token:      pkt.Token,
 		Identifier: semtech.PUSH_ACK,
 	}.MarshalBinary()
-	if err != nil || reply(data) != nil || pkt.Payload == nil {
+	if err != nil || reply.WriteToUplink(data) != nil || pkt.Payload == nil {
 		ctx.Debug("Unable to send ACK")
 		return errors.New(errors.Operational, "Unable to send ACK")
 	}
@@ -255,7 +250,7 @@ func (a adapter) handleDataDown(resp *core.DataRouterRes, reply replier) error {
 		a.Ctx.WithError(err).Debug("Unable to create semtech packet with TXPK")
 		return errors.New(errors.Structural, err)
 	}
-	return reply(data)
+	return reply.WriteToDownlink(data)
 }
 
 func (a adapter) handleJoinAccept(resp *core.JoinRouterRes, reply replier) error {
@@ -280,5 +275,5 @@ func (a adapter) handleJoinAccept(resp *core.JoinRouterRes, reply replier) error
 	if err != nil {
 		a.Ctx.WithError(err).Debug("Unable to create semtech packet with TXPK")
 	}
-	return reply(data)
+	return reply.WriteToDownlink(data)
 }

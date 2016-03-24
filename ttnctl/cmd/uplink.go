@@ -99,13 +99,25 @@ var uplinkCmd = &cobra.Command{
 		// Handle downlink
 		chdown := make(chan bool)
 		go func() {
-			// Get Ack
+			// Get PullAck
 			buf := make([]byte, 1024)
 			n, err := conn.Read(buf)
 			if err != nil {
 				ctx.Fatalf("Error receiving udp datagram: %s", err)
 			}
 			pkt := new(semtech.Packet)
+			if err := pkt.UnmarshalBinary(buf[:n]); err != nil {
+				ctx.Fatalf("Invalid udp response: %s", err)
+			}
+			ctx.Infof("Received PullAck: %s", pkt)
+
+			// Get Ack
+			buf = make([]byte, 1024)
+			n, err = conn.Read(buf)
+			if err != nil {
+				ctx.Fatalf("Error receiving udp datagram: %s", err)
+			}
+			pkt = new(semtech.Packet)
 			if err := pkt.UnmarshalBinary(buf[:n]); err != nil {
 				ctx.Fatalf("Invalid udp response: %s", err)
 			}
@@ -153,6 +165,19 @@ var uplinkCmd = &cobra.Command{
 			}
 		}()
 
+		// PULL_DATA Packet
+
+		pullPacket := semtech.Packet{
+			Version:    semtech.VERSION,
+			GatewayId:  []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			Token:      []byte{1, 2},
+			Identifier: semtech.PULL_DATA,
+		}
+		pullData, err := pullPacket.MarshalBinary()
+		if err != nil {
+			ctx.Fatal("Unable to construct pull_data")
+		}
+
 		// Router Packet
 		data, err := phyPayload.MarshalBinary()
 		if err != nil {
@@ -185,6 +210,11 @@ var uplinkCmd = &cobra.Command{
 		data, err = payload.MarshalBinary()
 		if err != nil {
 			ctx.Fatalf("Unable to construct framepayload: %v", data)
+		}
+
+		_, err = conn.Write(pullData)
+		if err != nil {
+			ctx.Fatal("Unable to send pull_data")
 		}
 
 		_, err = conn.Write(data)
