@@ -51,6 +51,7 @@ type component struct {
 		RXDelay     uint8
 		PowerRX1    uint32
 		PowerRX2    uint32
+		RFChain     uint32
 		InvPolarity bool
 		JoinDelay   uint8
 	}
@@ -108,6 +109,7 @@ func New(c Components, o Options) Interface {
 	h.Configuration.JoinDelay = 5
 	h.Configuration.PowerRX1 = 14
 	h.Configuration.PowerRX2 = 27
+	h.Configuration.RFChain = 0
 	h.Configuration.InvPolarity = true
 
 	set := make(chan bundle)
@@ -763,7 +765,7 @@ func (h component) buildMetadata(metadata core.Metadata, size uint32, baseDelay 
 		CodingRate:  metadata.CodingRate,
 		DataRate:    metadata.DataRate,
 		Modulation:  metadata.Modulation,
-		RFChain:     metadata.RFChain,
+		RFChain:     h.Configuration.RFChain,
 		InvPolarity: h.Configuration.InvPolarity,
 		Power:       h.Configuration.PowerRX1,
 		PayloadSize: size,
