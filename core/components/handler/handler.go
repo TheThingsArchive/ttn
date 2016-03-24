@@ -50,6 +50,9 @@ type component struct {
 		RX2DataRate string
 		RX2Freq     float32
 		RXDelay     uint8
+		PowerRX1    uint32
+		PowerRX2    uint32
+		InvPolarity bool
 		JoinDelay   uint8
 	}
 }
@@ -104,6 +107,9 @@ func New(c Components, o Options) Interface {
 	h.Configuration.RX2Freq = 869.525
 	h.Configuration.RXDelay = 1
 	h.Configuration.JoinDelay = 5
+	h.Configuration.PowerRX1 = 14
+	h.Configuration.PowerRX2 = 27
+	h.Configuration.InvPolarity = true
 
 	set := make(chan bundle)
 	bundles := make(chan []bundle)
@@ -680,7 +686,7 @@ func (h component) buildDownlink(down []byte, mtype lorawan.MType, up core.DataU
 		return nil, errors.New(errors.Structural, err)
 	}
 
-	metadata := h.buildMetadata(*up.Metadata, uint32(len(data)), 1000*uint32(h.Configuration.RXDelay), isRX2)
+	metadata := h.buildMetadata(*up.Metadata, uint32(len(data)), 1000000*uint32(h.Configuration.RXDelay), isRX2)
 
 	return &core.DataUpHandlerRes{
 		Payload: &core.LoRaWANData{
@@ -738,7 +744,7 @@ func (h component) buildJoinAccept(joinReq *core.JoinHandlerReq, appKey [16]byte
 		return nil, errors.New(errors.Structural, err)
 	}
 
-	m := h.buildMetadata(*joinReq.Metadata, uint32(len(data)), 1000*uint32(h.Configuration.JoinDelay), isRX2)
+	m := h.buildMetadata(*joinReq.Metadata, uint32(len(data)), 1000000*uint32(h.Configuration.JoinDelay), isRX2)
 	return &core.JoinHandlerRes{
 		Payload: &core.LoRaWANJoinAccept{
 			Payload: data,
@@ -753,6 +759,10 @@ func (h component) buildMetadata(metadata core.Metadata, size uint32, baseDelay 
 		Frequency:   metadata.Frequency,
 		CodingRate:  metadata.CodingRate,
 		DataRate:    metadata.DataRate,
+		Modulation:  metadata.Modulation,
+		RFChain:     metadata.RFChain,
+		InvPolarity: h.Configuration.InvPolarity,
+		Power:       h.Configuration.PowerRX1,
 		PayloadSize: size,
 		Timestamp:   metadata.Timestamp + baseDelay,
 	}
@@ -761,7 +771,8 @@ func (h component) buildMetadata(metadata core.Metadata, size uint32, baseDelay 
 		// TODO Handle different regions with non hard-coded values
 		m.Frequency = h.Configuration.RX2Freq
 		m.DataRate = h.Configuration.RX2DataRate
-		m.Timestamp = metadata.Timestamp + baseDelay + 1000
+		m.Power = h.Configuration.PowerRX2
+		m.Timestamp = metadata.Timestamp + baseDelay + 1000000
 	}
 	return m
 }
