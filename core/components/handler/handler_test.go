@@ -700,111 +700,112 @@ func TestHandleDataUp(t *testing.T) {
 
 	// --------------------
 
-	{
-		Desc(t, "Handle late uplink | No Downlink")
-
-		// Build
-		devStorage := NewMockDevStorage()
-		devAddr := lorawan.DevAddr([4]byte{3, 4, 2, 4})
-		devStorage.OutRead.Entry = devEntry{
-			DevAddr:  devAddr[:],
-			AppSKey:  [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
-			NwkSKey:  [16]byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
-			FCntDown: 3,
-		}
-		pktStorage := NewMockPktStorage()
-		appAdapter := mocks.NewAppClient()
-		broker := mocks.NewAuthBrokerClient()
-		payload, fcnt := []byte("Payload"), uint32(14)
-		encoded, err := lorawan.EncryptFRMPayload(
-			devStorage.OutRead.Entry.AppSKey,
-			true,
-			devAddr,
-			fcnt,
-			payload,
-		)
-		FatalUnless(t, err)
-		req1 := &core.DataUpHandlerReq{
-			Payload: encoded,
-			Metadata: &core.Metadata{
-				DataRate: "SF7BW125",
-				DutyRX1:  uint32(dutycycle.StateWarning),
-				DutyRX2:  uint32(dutycycle.StateWarning),
-				Rssi:     -20,
-				Lsnr:     5.0,
-			},
-			AppEUI: []byte{1, 1, 1, 1, 1, 1, 1, 1},
-			DevEUI: []byte{2, 2, 2, 2, 2, 2, 2, 2},
-			FCnt:   fcnt,
-			MType:  uint32(lorawan.UnconfirmedDataUp),
-		}
-		req2 := &core.DataUpHandlerReq{
-			Payload: req1.Payload,
-			Metadata: &core.Metadata{
-				DataRate: "SF7BW125",
-				DutyRX1:  uint32(dutycycle.StateAvailable),
-				DutyRX2:  uint32(dutycycle.StateAvailable),
-				Rssi:     -20,
-				Lsnr:     5.0,
-			},
-			AppEUI: req1.AppEUI,
-			DevEUI: req1.DevEUI,
-			FCnt:   req1.FCnt,
-			MType:  req1.MType,
-		}
-
-		// Expect
-		var wantErr1 *string
-		var wantErr2 = ErrBehavioural
-		var wantRes1 = new(core.DataUpHandlerRes)
-		var wantRes2 = new(core.DataUpHandlerRes)
-		var wantData = &core.DataAppReq{
-			Payload:  payload,
-			Metadata: []*core.Metadata{req1.Metadata},
-			AppEUI:   req1.AppEUI,
-			DevEUI:   req1.DevEUI,
-		}
-		var wantFCnt = devStorage.OutRead.Entry.FCntDown
-
-		// Operate
-		handler := New(Components{
-			Ctx:        GetLogger(t, "Handler"),
-			Broker:     broker,
-			AppAdapter: appAdapter,
-			DevStorage: devStorage,
-			PktStorage: pktStorage,
-		}, Options{PublicNetAddr: "localhost", PrivateNetAddr: "localhost"})
-
-		chack := make(chan bool)
-		go func() {
-			var ok bool
-			defer func(ok *bool) { chack <- *ok }(&ok)
-			res, err := handler.HandleDataUp(context.Background(), req1)
-
-			// Check
-			CheckErrors(t, wantErr1, err)
-			Check(t, wantRes1, res, "Data Up Handler Responses")
-			ok = true
-		}()
-
-		go func() {
-			<-time.After(2 * bufferDelay)
-			var ok bool
-			defer func(ok *bool) { chack <- *ok }(&ok)
-			res, err := handler.HandleDataUp(context.Background(), req2)
-
-			// Check
-			CheckErrors(t, wantErr2, err)
-			Check(t, wantRes2, res, "Data Up Handler Responses")
-			ok = true
-		}()
-
-		// Check
-		ok1, ok2 := <-chack, <-chack
-		Check(t, true, ok1 && ok2, "Acknowledgements")
-		Check(t, wantData, appAdapter.InHandleData.Req, "Data Application Requests")
-		Check(t, wantFCnt, devStorage.InUpsert.Entry.FCntDown, "Frame counters")
-	}
+	// See Issue #87
+	// {
+	// 	Desc(t, "Handle late uplink | No Downlink")
+	//
+	// 	// Build
+	// 	devStorage := NewMockDevStorage()
+	// 	devAddr := lorawan.DevAddr([4]byte{3, 4, 2, 4})
+	// 	devStorage.OutRead.Entry = devEntry{
+	// 		DevAddr:  devAddr[:],
+	// 		AppSKey:  [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
+	// 		NwkSKey:  [16]byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+	// 		FCntDown: 3,
+	// 	}
+	// 	pktStorage := NewMockPktStorage()
+	// 	appAdapter := mocks.NewAppClient()
+	// 	broker := mocks.NewAuthBrokerClient()
+	// 	payload, fcnt := []byte("Payload"), uint32(14)
+	// 	encoded, err := lorawan.EncryptFRMPayload(
+	// 		devStorage.OutRead.Entry.AppSKey,
+	// 		true,
+	// 		devAddr,
+	// 		fcnt,
+	// 		payload,
+	// 	)
+	// 	FatalUnless(t, err)
+	// 	req1 := &core.DataUpHandlerReq{
+	// 		Payload: encoded,
+	// 		Metadata: &core.Metadata{
+	// 			DataRate: "SF7BW125",
+	// 			DutyRX1:  uint32(dutycycle.StateWarning),
+	// 			DutyRX2:  uint32(dutycycle.StateWarning),
+	// 			Rssi:     -20,
+	// 			Lsnr:     5.0,
+	// 		},
+	// 		AppEUI: []byte{1, 1, 1, 1, 1, 1, 1, 1},
+	// 		DevEUI: []byte{2, 2, 2, 2, 2, 2, 2, 2},
+	// 		FCnt:   fcnt,
+	// 		MType:  uint32(lorawan.UnconfirmedDataUp),
+	// 	}
+	// 	req2 := &core.DataUpHandlerReq{
+	// 		Payload: req1.Payload,
+	// 		Metadata: &core.Metadata{
+	// 			DataRate: "SF7BW125",
+	// 			DutyRX1:  uint32(dutycycle.StateAvailable),
+	// 			DutyRX2:  uint32(dutycycle.StateAvailable),
+	// 			Rssi:     -20,
+	// 			Lsnr:     5.0,
+	// 		},
+	// 		AppEUI: req1.AppEUI,
+	// 		DevEUI: req1.DevEUI,
+	// 		FCnt:   req1.FCnt,
+	// 		MType:  req1.MType,
+	// 	}
+	//
+	// 	// Expect
+	// 	var wantErr1 *string
+	// 	var wantErr2 = ErrBehavioural
+	// 	var wantRes1 = new(core.DataUpHandlerRes)
+	// 	var wantRes2 = new(core.DataUpHandlerRes)
+	// 	var wantData = &core.DataAppReq{
+	// 		Payload:  payload,
+	// 		Metadata: []*core.Metadata{req1.Metadata},
+	// 		AppEUI:   req1.AppEUI,
+	// 		DevEUI:   req1.DevEUI,
+	// 	}
+	// 	var wantFCnt = devStorage.OutRead.Entry.FCntDown
+	//
+	// 	// Operate
+	// 	handler := New(Components{
+	// 		Ctx:        GetLogger(t, "Handler"),
+	// 		Broker:     broker,
+	// 		AppAdapter: appAdapter,
+	// 		DevStorage: devStorage,
+	// 		PktStorage: pktStorage,
+	// 	}, Options{PublicNetAddr: "localhost", PrivateNetAddr: "localhost"})
+	//
+	// 	chack := make(chan bool)
+	// 	go func() {
+	// 		var ok bool
+	// 		defer func(ok *bool) { chack <- *ok }(&ok)
+	// 		res, err := handler.HandleDataUp(context.Background(), req1)
+	//
+	// 		// Check
+	// 		CheckErrors(t, wantErr1, err)
+	// 		Check(t, wantRes1, res, "Data Up Handler Responses")
+	// 		ok = true
+	// 	}()
+	//
+	// 	go func() {
+	// 		<-time.After(2 * bufferDelay)
+	// 		var ok bool
+	// 		defer func(ok *bool) { chack <- *ok }(&ok)
+	// 		res, err := handler.HandleDataUp(context.Background(), req2)
+	//
+	// 		// Check
+	// 		CheckErrors(t, wantErr2, err)
+	// 		Check(t, wantRes2, res, "Data Up Handler Responses")
+	// 		ok = true
+	// 	}()
+	//
+	// 	// Check
+	// 	ok1, ok2 := <-chack, <-chack
+	// 	Check(t, true, ok1 && ok2, "Acknowledgements")
+	// 	Check(t, wantData, appAdapter.InHandleData.Req, "Data Application Requests")
+	// 	Check(t, wantFCnt, devStorage.InUpsert.Entry.FCntDown, "Frame counters")
+	// }
 
 	// --------------------
 

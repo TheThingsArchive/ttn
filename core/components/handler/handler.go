@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"math/rand"
 	"net"
-	"reflect"
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/core"
@@ -347,7 +346,9 @@ func (h component) consumeSet(chbundles chan<- []bundle, chset <-chan bundle) {
 	// NOTE Processed is likely to grow quickly. One has to define a more efficient data stucture
 	// with a ttl for each entry. Processed is merely there to avoid late packets from being
 	// processed again. The TTL could be only of several seconds or minutes.
-	processed := make(map[[16]byte][]byte) // AppEUI | DevEUI | FCnt -> hasBeenProcessed ?
+	// processed := make(map[[16]byte][]byte) // AppEUI | DevEUI | FCnt -> hasBeenProcessed ?
+	// See Issue #87
+
 	buffers := make(map[[20]byte][]bundle) // AppEUI | DevEUI | FCnt ->  buffered bundles
 	alarm := make(chan [20]byte)           // Communication channel with subsequent alarms
 
@@ -361,7 +362,7 @@ func (h component) consumeSet(chbundles chan<- []bundle, chset <-chan bundle) {
 			// Register the last processed entry
 			var pid [16]byte
 			copy(pid[:], id[:16])
-			processed[pid] = id[16:]
+			// processed[pid] = id[16:] // See Issue #87
 
 			// Actually send the bundle to the be processed
 			go func(bundles []bundle) { chbundles <- bundles }(bundles)
@@ -372,13 +373,15 @@ func (h component) consumeSet(chbundles chan<- []bundle, chset <-chan bundle) {
 			// Check if bundle has already been processed
 			var pid [16]byte
 			copy(pid[:], b.ID[:16])
-			if reflect.DeepEqual(processed[pid], b.ID[16:]) {
-				ctx.Debug("Reject already processed bundle")
-				go func(b bundle) {
-					b.Chresp <- errors.New(errors.Behavioural, "Already processed")
-				}(b)
-				continue
-			}
+
+			// See Issue #87
+			// if reflect.DeepEqual(processed[pid], b.ID[16:]) {
+			// 	ctx.Debug("Reject already processed bundle")
+			// 	go func(b bundle) {
+			// 		b.Chresp <- errors.New(errors.Behavioural, "Already processed")
+			// 	}(b)
+			// 	continue
+			// }
 
 			// Add the bundle to the stack, and set the alarm if its the first
 			bundles := append(buffers[b.ID], b)
