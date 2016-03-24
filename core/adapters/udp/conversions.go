@@ -125,6 +125,12 @@ func newTXPK(payload encoding.BinaryMarshaler, metadata *core.Metadata, ctx log.
 	// Step 3, copy every compatible metadata from the packet to the TXPK packet.
 	// We are possibly loosing information here.
 	injectMetadata(&txpk, *metadata)
+
+	// Step 4, set required Rfch to its default value. // See issue #
+	if txpk.Rfch == nil {
+		txpk.Rfch = pointer.Uint32(0)
+	}
+
 	return txpk, nil
 }
 

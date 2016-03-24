@@ -264,6 +264,7 @@ func TestUDPAdapter(t *testing.T) {
 				Payload: &semtech.Payload{
 					TXPK: &semtech.TXPK{
 						Data: pointer.String(base64.RawStdEncoding.EncodeToString(dataDown)),
+						Rfch: pointer.Uint32(0),
 					},
 				},
 			},
@@ -968,6 +969,7 @@ func TestUDPAdapter(t *testing.T) {
 				Payload: &semtech.Payload{
 					TXPK: &semtech.TXPK{
 						Data: pointer.String(base64.RawStdEncoding.EncodeToString(dataDown)),
+						Rfch: pointer.Uint32(0),
 					},
 				},
 			},
