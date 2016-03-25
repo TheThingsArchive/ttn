@@ -62,7 +62,7 @@ func (b component) ValidateOTAA(bctx context.Context, req *core.ValidateOTAABrok
 
 // UpsertABP implements the core.BrokerManager interface
 func (b component) UpsertABP(bctx context.Context, req *core.UpsertABPBrokerReq) (*core.UpsertABPBrokerRes, error) {
-	b.Ctx.Debug("Handle ValidateOTAA request")
+	b.Ctx.Debug("Handle UpsertABP request")
 
 	// 1. Validate the request
 	re := regexp.MustCompile("^([-\\w]+\\.?)+:\\d+$")
