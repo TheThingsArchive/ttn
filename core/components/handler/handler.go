@@ -38,7 +38,8 @@ var dataRates = map[string]uint8{
 // component implements the core.Component interface
 type component struct {
 	Components
-	Set                    chan<- bundle
+	ChBundles              chan<- bundle
+	Processed              pQueue
 	PublicNetAddr          string
 	PrivateNetAddr         string
 	PrivateNetAddrAnnounce string
@@ -78,13 +79,14 @@ type Options struct {
 	PublicNetAddr          string // Net Address used to communicate with the handler from the outside
 	PrivateNetAddr         string // Net Address the handler listens on for internal communications
 	PrivateNetAddrAnnounce string // Net Address the handler announces to brokers for internal communications
+	ProcessedQueueSize     uint   // The maximum number of appEUI + devEUI the handler can process at the same time
 }
 
 // bundle are used to materialize an incoming request being bufferized, waiting for the others.
 type bundle struct {
 	Chresp   chan interface{}
 	Entry    devEntry
-	ID       [20]byte
+	ID       [21]byte
 	Packet   interface{}
 	DataRate string
 	Time     time.Time
@@ -92,11 +94,16 @@ type bundle struct {
 
 // New construct a new Handler
 func New(c Components, o Options) Interface {
+	if o.ProcessedQueueSize == 0 {
+		o.ProcessedQueueSize = 5000
+	}
+
 	h := &component{
 		Components:             c,
 		PublicNetAddr:          o.PublicNetAddr,
 		PrivateNetAddr:         o.PrivateNetAddr,
 		PrivateNetAddrAnnounce: o.PrivateNetAddrAnnounce,
+		Processed:              newPQueue(o.ProcessedQueueSize),
 	}
 
 	// TODO Make it configurable
@@ -115,7 +122,7 @@ func New(c Components, o Options) Interface {
 	set := make(chan bundle)
 	bundles := make(chan []bundle)
 
-	h.Set = set
+	h.ChBundles = set
 	go h.consumeBundles(bundles)
 	go h.consumeSet(bundles, set)
 
@@ -184,8 +191,8 @@ func (h component) HandleJoin(bctx context.Context, req *core.JoinHandlerReq) (*
 	chresp := make(chan interface{})
 
 	// 3. Create a "bundle" which holds info waiting for other related packets
-	var bundleID [20]byte // AppEUI(8) | DevEUI(8) | DevNonce | [ 0 0 ]
-	buf := new(bytes.Buffer)
+	var bundleID [21]byte             // Type | AppEUI(8) | DevEUI(8) | DevNonce | [ 0 0 ]
+	buf := bytes.NewBuffer([]byte{0}) // 0 for join
 	_ = binary.Write(buf, binary.BigEndian, req.AppEUI)
 	_ = binary.Write(buf, binary.BigEndian, req.DevEUI)
 	_ = binary.Write(buf, binary.BigEndian, req.DevNonce)
@@ -195,7 +202,7 @@ func (h component) HandleJoin(bctx context.Context, req *core.JoinHandlerReq) (*
 	ctx := h.Ctx.WithField("BundleID", bundleID)
 	ctx.Debug("Define new bundle")
 	req.Metadata.Time = time.Now().Format(time.RFC3339Nano)
-	h.Set <- bundle{
+	h.ChBundles <- bundle{
 		ID:       bundleID,
 		Packet:   req,
 		DataRate: req.Metadata.DataRate,
@@ -296,8 +303,8 @@ func (h component) HandleDataUp(bctx context.Context, req *core.DataUpHandlerReq
 	chresp := make(chan interface{})
 
 	// 3. Create a "bundle" which holds info waiting for other related packets
-	var bundleID [20]byte // AppEUI(8) | DevEUI(8) | FCnt
-	buf := new(bytes.Buffer)
+	var bundleID [21]byte             // Type | AppEUI(8) | DevEUI(8) | FCnt
+	buf := bytes.NewBuffer([]byte{1}) // 1 for uplink
 	_ = binary.Write(buf, binary.BigEndian, req.AppEUI)
 	_ = binary.Write(buf, binary.BigEndian, req.DevEUI)
 	_ = binary.Write(buf, binary.BigEndian, req.FCnt)
@@ -307,7 +314,7 @@ func (h component) HandleDataUp(bctx context.Context, req *core.DataUpHandlerReq
 	ctx := h.Ctx.WithField("BundleID", bundleID)
 	ctx.Debug("Define new bundle")
 	req.Metadata.Time = time.Now().Format(time.RFC3339Nano)
-	h.Set <- bundle{
+	h.ChBundles <- bundle{
 		ID:       bundleID,
 		Packet:   req,
 		DataRate: req.Metadata.DataRate,
@@ -348,11 +355,8 @@ func (h component) consumeSet(chbundles chan<- []bundle, chset <-chan bundle) {
 	// NOTE Processed is likely to grow quickly. One has to define a more efficient data stucture
 	// with a ttl for each entry. Processed is merely there to avoid late packets from being
 	// processed again. The TTL could be only of several seconds or minutes.
-	// processed := make(map[[16]byte][]byte) // AppEUI | DevEUI | FCnt -> hasBeenProcessed ?
-	// See Issue #87
-
-	buffers := make(map[[20]byte][]bundle) // AppEUI | DevEUI | FCnt ->  buffered bundles
-	alarm := make(chan [20]byte)           // Communication channel with subsequent alarms
+	buffers := make(map[[21]byte][]bundle) // AppEUI | DevEUI | FCnt ->  buffered bundles
+	alarm := make(chan [21]byte)           // Communication channel with subsequent alarms
 
 	for {
 		select {
@@ -360,11 +364,7 @@ func (h component) consumeSet(chbundles chan<- []bundle, chset <-chan bundle) {
 			// Get all bundles
 			bundles := buffers[id]
 			delete(buffers, id)
-
-			// Register the last processed entry
-			var pid [16]byte
-			copy(pid[:], id[:16])
-			// processed[pid] = id[16:] // See Issue #87
+			h.Processed.Put(id[:]) // Register the last processed entry
 
 			// Actually send the bundle to the be processed
 			go func(bundles []bundle) { chbundles <- bundles }(bundles)
@@ -373,17 +373,13 @@ func (h component) consumeSet(chbundles chan<- []bundle, chset <-chan bundle) {
 			ctx = ctx.WithField("BundleID", b.ID)
 
 			// Check if bundle has already been processed
-			var pid [16]byte
-			copy(pid[:], b.ID[:16])
-
-			// See Issue #87
-			// if reflect.DeepEqual(processed[pid], b.ID[16:]) {
-			// 	ctx.Debug("Reject already processed bundle")
-			// 	go func(b bundle) {
-			// 		b.Chresp <- errors.New(errors.Behavioural, "Already processed")
-			// 	}(b)
-			// 	continue
-			// }
+			if h.Processed.Contains(b.ID[:]) {
+				ctx.Debug("Reject already processed bundle")
+				go func(b bundle) {
+					b.Chresp <- errors.New(errors.Behavioural, "Already processed")
+				}(b)
+				continue
+			}
 
 			// Add the bundle to the stack, and set the alarm if its the first
 			bundles := append(buffers[b.ID], b)
@@ -397,7 +393,7 @@ func (h component) consumeSet(chbundles chan<- []bundle, chset <-chan bundle) {
 }
 
 // setAlarm will trigger a message on the given channel after the given delay
-func setAlarm(alarm chan<- [20]byte, id [20]byte, delay time.Duration) {
+func setAlarm(alarm chan<- [21]byte, id [21]byte, delay time.Duration) {
 	<-time.After(delay)
 	alarm <- id
 }
@@ -521,6 +517,8 @@ func (h component) consumeJoin(appEUI []byte, devEUI []byte, appKey [16]byte, da
 
 	for i, bundle := range bundles {
 		if i == best.ID {
+			// Reset processed packets for that appEUI + devEUi
+			h.Processed.Remove(append([]byte{1}, bundle.ID[1:]...))
 			bundle.Chresp <- joinAccept
 		} else {
 			bundle.Chresp <- nil

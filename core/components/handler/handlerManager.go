@@ -93,6 +93,7 @@ func (h component) UpsertABP(bctx context.Context, req *core.UpsertABPHandlerReq
 		DevEUI:   append([]byte{0, 0, 0, 0}, req.DevAddr...),
 		DevAddr:  req.DevAddr,
 		FCntDown: 0,
+		FCntUp:   0,
 	}
 	copy(entry.NwkSKey[:], req.NwkSKey)
 	copy(entry.AppSKey[:], req.AppSKey)
@@ -100,6 +101,7 @@ func (h component) UpsertABP(bctx context.Context, req *core.UpsertABPHandlerReq
 		h.Ctx.WithError(err).Debug("Error while trying to save valid request")
 		return new(core.UpsertABPHandlerRes), errors.New(errors.Operational, err)
 	}
+	h.Processed.Remove(append([]byte{1}, append(entry.AppEUI, entry.DevEUI...)...))
 
 	// Done.
 	return new(core.UpsertABPHandlerRes), nil
