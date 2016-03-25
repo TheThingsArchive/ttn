@@ -90,14 +90,18 @@ func (b component) Start() error {
 
 // HandleJoin implements the core.BrokerServer interface
 func (b component) HandleJoin(bctx context.Context, req *core.JoinBrokerReq) (*core.JoinBrokerRes, error) {
-	b.Ctx.Debug("Handling join request")
-
 	// Validate incoming data
 	if req == nil || len(req.DevEUI) != 8 || len(req.AppEUI) != 8 || len(req.DevNonce) != 2 || len(req.MIC) != 4 || req.Metadata == nil {
-		b.Ctx.Debug("Invalid request. Parameters are incorrect.")
+		b.Ctx.Debug("Invalid join request. Parameters are incorrect.")
 		return new(core.JoinBrokerRes), errors.New(errors.Structural, "Invalid parameters")
 	}
-	ctx := b.Ctx.WithField("AppEUI", req.AppEUI).WithField("DevEUI", req.DevEUI)
+
+	ctx := b.Ctx.WithFields(log.Fields{
+		"AppEUI": req.AppEUI,
+		"DevEUI": req.DevEUI,
+	})
+
+	ctx.Debug("Handle join request")
 
 	// Check if devNonce already referenced
 	appEntry, err := b.AppStorage.read(req.AppEUI)
@@ -125,7 +129,7 @@ func (b component) HandleJoin(bctx context.Context, req *core.JoinBrokerReq) (*c
 		}
 	}
 	if found {
-		ctx.Debug("Unable to proceed join request. DevNonce already used by the past.")
+		ctx.Debug("DevNonce already used in the past")
 		return new(core.JoinBrokerRes), errors.New(errors.Structural, "DevNonce used by the past")
 	}
 
@@ -150,7 +154,7 @@ func (b component) HandleJoin(bctx context.Context, req *core.JoinBrokerReq) (*c
 
 	// Handle the response
 	if res == nil || res.Payload == nil {
-		ctx.Debug("No Join-Accept")
+		ctx.Debug("No join-accept received")
 		return new(core.JoinBrokerRes), nil
 	}
 
@@ -158,6 +162,8 @@ func (b component) HandleJoin(bctx context.Context, req *core.JoinBrokerReq) (*c
 		ctx.Debug("Invalid response from handler")
 		return new(core.JoinBrokerRes), errors.New(errors.Operational, "Invalid response from handler")
 	}
+
+	ctx.WithField("DevAddr", res.DevAddr).Debug("Handle join-accept")
 
 	// Update the DevNonce
 	nonces.DevNonces = append(nonces.DevNonces, req.DevNonce)
@@ -194,7 +200,6 @@ func (b component) HandleJoin(bctx context.Context, req *core.JoinBrokerReq) (*c
 func (b component) HandleData(bctx context.Context, req *core.DataBrokerReq) (*core.DataBrokerRes, error) {
 	// Get some logs / analytics
 	stats.MarkMeter("broker.uplink.in")
-	b.Ctx.Debug("Handling uplink packet")
 
 	// Validate incoming data
 	uplinkPayload, err := core.NewLoRaWANData(req.Payload, true)
@@ -203,7 +208,9 @@ func (b component) HandleData(bctx context.Context, req *core.DataBrokerReq) (*c
 		return new(core.DataBrokerRes), errors.New(errors.Structural, err)
 	}
 	devAddr := req.Payload.MACPayload.FHDR.DevAddr // No nil ref, ensured by NewLoRaWANData()
+
 	ctx := b.Ctx.WithField("DevAddr", devAddr)
+	ctx.Debug("Handle uplink")
 
 	// Check whether we should handle it
 	entries, err := b.NetworkController.read(devAddr)
@@ -256,7 +263,11 @@ func (b component) HandleData(bctx context.Context, req *core.DataBrokerReq) (*c
 		if ok {
 			mEntry = &entry
 			stats.MarkMeter("broker.uplink.handler_lookup.mic_match")
-			ctx.WithField("handler", string(entry.Dialer.MarshalSafely())).Debug("MIC check succeeded")
+			ctx = ctx.WithFields(log.Fields{
+				"DevEUI":  mEntry.DevEUI,
+				"Handler": string(entry.Dialer.MarshalSafely()),
+			})
+			ctx.Debug("MIC check succeeded")
 			break // We stop at the first valid check ...
 		}
 	}
@@ -303,12 +314,12 @@ func (b component) HandleData(bctx context.Context, req *core.DataBrokerReq) (*c
 	// No response, we stop here and propagate the "no answer".
 	// In case of confirmed data, the handler is in charge of creating the confirmation
 	if resp == nil || resp.Payload == nil {
-		ctx.Debug("Packet successfully sent. There's no downlink.")
+		ctx.Debug("No downlink response")
 		return new(core.DataBrokerRes), nil
 	}
+	ctx.Debug("Handle downlink response")
 
 	// If a response was sent, i.e. a downlink data, we need to compute the right MIC
-	ctx.Debug("Packet successfully sent. Handling downlink response")
 	downlinkPayload, err := core.NewLoRaWANData(resp.Payload, false)
 	if err != nil {
 		ctx.WithError(err).Debug("Unable to interpret LoRaWAN downlink datagram")

@@ -79,7 +79,7 @@ func (h *Handler) HandleLog(e *log.Entry) error {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
-	fmt.Fprintf(h.Writer, "\033[%dm%6s\033[0m %-25s", color, level, e.Message)
+	fmt.Fprintf(h.Writer, "\033[%dm%6s\033[0m %-40s", color, level, e.Message)
 
 	for _, f := range fields {
 		var value interface{}
