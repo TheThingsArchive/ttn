@@ -8,8 +8,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/TheThingsNetwork/ttn/utils/cli"
 	"github.com/apex/log"
-	"github.com/apex/log/handlers/cli"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
