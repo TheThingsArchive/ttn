@@ -68,7 +68,7 @@ func (q *pq) Remove(pid []byte) {
 }
 
 // Contains check whether a value exist for the given id
-func (q pq) Contains(pid []byte) bool {
+func (q *pq) Contains(pid []byte) bool {
 	q.RLock()
 	defer q.RUnlock()
 	id, v := q.fromPid(pid)
@@ -78,7 +78,7 @@ func (q pq) Contains(pid []byte) bool {
 	return false
 }
 
-func (q pq) fromPid(pid []byte) ([17]byte, []byte) {
+func (q *pq) fromPid(pid []byte) ([17]byte, []byte) {
 	var id [17]byte
 	copy(id[:], pid[:17])
 	return id, pid[17:]
