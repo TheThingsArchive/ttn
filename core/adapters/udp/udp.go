@@ -142,10 +142,10 @@ func (a adapter) handlePullData(pkt semtech.Packet, reply replier) error {
 
 	if err != nil || reply.WriteToDownlink(data) != nil {
 		ctx.Debug("Unable to send PULL_ACK")
-		return errors.New(errors.Operational, "Unable to send PUSH_ACK")
+		return errors.New(errors.Operational, "Unable to send PULL_ACK")
 	}
 
-	return reply.WriteToDownlink(data)
+	return nil
 }
 
 // Handle a PUSH_DATA packet coming from a gateway
