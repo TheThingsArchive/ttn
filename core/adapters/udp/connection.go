@@ -10,12 +10,14 @@ import (
 )
 
 type replier interface {
+	DestinationID() []byte
 	WriteToUplink(data []byte) error
 	WriteToDownlink(data []byte) error
 }
 
 type gatewayConn struct {
 	sync.RWMutex
+	gatewayID    []byte
 	conn         *net.UDPConn
 	uplinkAddr   *net.UDPAddr
 	downlinkAddr *net.UDPAddr
@@ -37,6 +39,10 @@ func (c *gatewayConn) SetDownlinkAddr(addr *net.UDPAddr) {
 	c.Lock()
 	defer c.Unlock()
 	c.downlinkAddr = addr
+}
+
+func (c *gatewayConn) DestinationID() []byte {
+	return c.gatewayID
 }
 
 func (c *gatewayConn) WriteToUplink(data []byte) error {
@@ -78,7 +84,7 @@ func (p *gatewayPool) GetOrCreate(gatewayID []byte) *gatewayConn {
 	var id [8]byte
 	copy(id[:], gatewayID)
 	if _, ok := p.connections[id]; !ok {
-		p.connections[id] = &gatewayConn{}
+		p.connections[id] = &gatewayConn{gatewayID: gatewayID}
 	}
 	return p.connections[id]
 }
