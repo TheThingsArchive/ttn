@@ -86,9 +86,12 @@ func (r component) HandleStats(ctx context.Context, req *core.StatsReq) (*core.S
 }
 
 // HandleJoin implements the core.RouterClient interface
-func (r component) HandleJoin(ctx context.Context, req *core.JoinRouterReq) (routerRes *core.JoinRouterRes, err error) {
+func (r component) HandleJoin(_ context.Context, req *core.JoinRouterReq) (routerRes *core.JoinRouterRes, err error) {
+	ctx := r.Ctx.WithField("GatewayID", req.GatewayID)
+	stats.MarkMeter("router.join.in")
+
 	if len(req.GatewayID) != 8 || len(req.AppEUI) != 8 || len(req.DevEUI) != 8 || len(req.DevNonce) != 2 || len(req.MIC) != 4 || req.Metadata == nil {
-		r.Ctx.Debug("Invalid request. Parameters are incorrects")
+		ctx.Debug("Invalid request. Parameters are incorrects")
 		return new(core.JoinRouterRes), errors.New(errors.Structural, "Invalid Request")
 	}
 
@@ -97,6 +100,13 @@ func (r component) HandleJoin(ctx context.Context, req *core.JoinRouterReq) (rou
 	if err != nil {
 		return new(core.JoinRouterRes), err
 	}
+
+	ctx = ctx.WithFields(log.Fields{
+		"AppEUI": req.AppEUI,
+		"DevEUI": req.DevEUI,
+	})
+
+	ctx.WithField("Metadata", req.Metadata).Debug("Inject Metadata")
 
 	// Broadcast the join request
 	bpacket := &core.JoinBrokerReq{
@@ -114,9 +124,11 @@ func (r component) HandleJoin(ctx context.Context, req *core.JoinRouterReq) (rou
 	// Update Gateway Duty cycle with response metadata
 	res := response.(*core.JoinBrokerRes)
 	if res == nil || res.Payload == nil { // No response
-		r.Ctx.Debug("No Join-Accept received")
+		ctx.Debug("No join-accept received")
 		return new(core.JoinRouterRes), nil
 	}
+	ctx.Debug("Handle join-accept")
+
 	if err := r.handleDown(req.GatewayID, res.Metadata); err != nil {
 		return new(core.JoinRouterRes), err
 	}
@@ -124,23 +136,23 @@ func (r component) HandleJoin(ctx context.Context, req *core.JoinRouterReq) (rou
 }
 
 // HandleData implements the core.RouterClient interface
-func (r component) HandleData(ctx context.Context, req *core.DataRouterReq) (*core.DataRouterRes, error) {
+func (r component) HandleData(_ context.Context, req *core.DataRouterReq) (*core.DataRouterRes, error) {
 	// Get some logs / analytics
-	r.Ctx.Debug("Handling uplink packet")
+	ctx := r.Ctx.WithField("GatewayID", req.GatewayID)
 	stats.MarkMeter("router.uplink.in")
 
 	// Validate coming data
 	_, _, fhdr, _, err := core.ValidateLoRaWANData(req.Payload)
 	if err != nil {
-		r.Ctx.WithError(err).Debug("Invalid request payload")
+		ctx.WithError(err).Debug("Invalid request payload")
 		return new(core.DataRouterRes), errors.New(errors.Structural, err)
 	}
 	if req.Metadata == nil {
-		r.Ctx.Debug("Invalid request Metadata")
+		ctx.Debug("Invalid request Metadata")
 		return new(core.DataRouterRes), errors.New(errors.Structural, "Missing mandatory Metadata")
 	}
 	if len(req.GatewayID) != 8 {
-		r.Ctx.Debug("Invalid request GatewayID")
+		ctx.Debug("Invalid request GatewayID")
 		return new(core.DataRouterRes), errors.New(errors.Structural, "Invalid gatewayID")
 	}
 
@@ -149,15 +161,20 @@ func (r component) HandleData(ctx context.Context, req *core.DataRouterReq) (*co
 	if err != nil {
 		return new(core.DataRouterRes), err
 	}
+	ctx.WithFields(log.Fields{
+		"DevAddr":  fhdr.DevAddr,
+		"Metadata": req.Metadata,
+	}).Debug("Inject Metadata")
+
+	ctx = r.Ctx.WithField("DevAddr", fhdr.DevAddr)
 
 	// Lookup for an existing broker
 	entries, err := r.BrkStorage.read(fhdr.DevAddr)
 	if err != nil && err.(errors.Failure).Nature != errors.NotFound {
-		r.Ctx.Warn("Database lookup failed")
+		ctx.Warn("Database lookup failed")
 		return new(core.DataRouterRes), errors.New(errors.Operational, err)
 	}
 	shouldBroadcast := err != nil
-	r.Ctx.WithField("Should Broadcast?", shouldBroadcast).Debug("Storage Lookup done")
 
 	bpacket := &core.DataBrokerReq{Payload: req.Payload, Metadata: req.Metadata}
 
@@ -166,19 +183,19 @@ func (r component) HandleData(ctx context.Context, req *core.DataRouterReq) (*co
 	if shouldBroadcast {
 		// No Recipient available -> broadcast
 		stats.MarkMeter("router.broadcast")
-		r.Ctx.Debug("Broadcasting packet to all known brokers")
+		ctx.Debug("Broadcast to brokers")
 		response, err = r.send(bpacket, true, r.Brokers...)
 	} else {
 		// Recipients are available
 		stats.MarkMeter("router.send")
 		var brokers []core.BrokerClient
-		r.Ctx.Debug("Forwarding packet to known broker(s)")
+		ctx.Debug("Send to known brokers")
 		for _, e := range entries {
 			brokers = append(brokers, r.Brokers[e.BrokerIndex])
 		}
 		response, err = r.send(bpacket, false, brokers...)
 		if err != nil && err.(errors.Failure).Nature == errors.NotFound {
-			r.Ctx.Debug("No response from known broker(s). Trying again with broadcast")
+			ctx.Debug("Retry with broadcast")
 			// Might be a collision with the dev addr, we better broadcast
 			response, err = r.send(bpacket, true, r.Brokers...)
 		}
@@ -188,8 +205,10 @@ func (r component) HandleData(ctx context.Context, req *core.DataRouterReq) (*co
 	if err != nil {
 		switch err.(errors.Failure).Nature {
 		case errors.NotFound:
+			ctx.Debug("All brokers rejected")
 			stats.MarkMeter("router.uplink.negative_broker_response")
 		default:
+			ctx.WithError(err).Warn("Failed forward to broker")
 			stats.MarkMeter("router.uplink.bad_broker_response")
 		}
 		return new(core.DataRouterRes), err
@@ -197,9 +216,10 @@ func (r component) HandleData(ctx context.Context, req *core.DataRouterReq) (*co
 
 	res := response.(*core.DataBrokerRes)
 	if res == nil || res.Payload == nil { // No response
-		r.Ctx.Debug("Packet sent. No downlink received.")
+		ctx.Debug("No downlink response")
 		return new(core.DataRouterRes), nil
 	}
+	ctx.WithField("GatewayID", req.GatewayID).Debug("Handle downlink response")
 
 	// Update Gateway Duty cycle with response metadata
 	if err := r.handleDown(req.GatewayID, res.Metadata); err != nil {
@@ -211,9 +231,10 @@ func (r component) HandleData(ctx context.Context, req *core.DataRouterReq) (*co
 }
 
 func (r component) injectMetadata(gid []byte, metadata core.Metadata) (*core.Metadata, error) {
+	ctx := r.Ctx.WithField("GatewayID", gid)
+
 	// Add Gateway location metadata
 	if entry, err := r.GtwStorage.read(gid); err == nil {
-		r.Ctx.Debug("Adding Gateway Metadata to packet")
 		metadata.Latitude = entry.Metadata.Latitude
 		metadata.Longitude = entry.Metadata.Longitude
 		metadata.Altitude = entry.Metadata.Altitude
@@ -222,30 +243,31 @@ func (r component) injectMetadata(gid []byte, metadata core.Metadata) (*core.Met
 	// Add Gateway duty metadata
 	cycles, err := r.DutyManager.Lookup(gid)
 	if err != nil {
-		r.Ctx.WithError(err).Debug("Unable to get any metadata about duty-cycles")
+		ctx.WithError(err).Debug("No duty-cycle metadata available")
 		cycles = make(dutycycle.Cycles)
 	}
 
 	sb1, err := dutycycle.GetSubBand(float32(metadata.Frequency))
 	if err != nil {
 		stats.MarkMeter("router.uplink.not_supported")
-		return nil, errors.New(errors.Structural, "Unhandled uplink signal frequency")
+		ctx.WithField("Frequency", metadata.Frequency).Debug("Unsupported frequency")
+		return nil, errors.New(errors.Structural, "Unsupported frequency")
 	}
 
 	rx1, rx2 := dutycycle.StateFromDuty(cycles[sb1]), dutycycle.StateFromDuty(cycles[dutycycle.EuropeG3])
 	metadata.DutyRX1, metadata.DutyRX2 = uint32(rx1), uint32(rx2)
-	r.Ctx.WithField("DutyRX1", rx1).WithField("DutyRX2", rx2).Debug("Adding Duty values for RX1 & RX2")
+	ctx.WithField("Frequency", metadata.Frequency).WithField("Rx1", rx1).WithField("Rx2", rx2).Debug("Set duty cycles")
 	return &metadata, nil
 
 }
 
 func (r component) handleDown(gatewayID []byte, metadata *core.Metadata) error {
-	r.Ctx.Debug("Handling downlink response")
+	ctx := r.Ctx.WithField("GatewayID", gatewayID)
 
 	// Update downlink metadata for the related gateway
 	if metadata == nil {
 		stats.MarkMeter("router.uplink.bad_broker_response")
-		r.Ctx.Warn("Missing mandatory Metadata in response")
+		ctx.Warn("Missing mandatory Metadata in response")
 		return errors.New(errors.Structural, "Missing mandatory Metadata in response")
 	}
 	freq := metadata.Frequency
@@ -253,7 +275,7 @@ func (r component) handleDown(gatewayID []byte, metadata *core.Metadata) error {
 	codr := metadata.CodingRate
 	size := metadata.PayloadSize
 	if err := r.DutyManager.Update(gatewayID, freq, size, datr, codr); err != nil {
-		r.Ctx.WithError(err).Debug("Unable to update DutyManager")
+		ctx.WithError(err).Debug("Unable to update DutyManager")
 		return errors.New(errors.Operational, err)
 	}
 	return nil
@@ -262,8 +284,6 @@ func (r component) handleDown(gatewayID []byte, metadata *core.Metadata) error {
 func (r component) send(req interface{}, isBroadcast bool, brokers ...core.BrokerClient) (interface{}, error) {
 	// Define a more helpful context
 	nb := len(brokers)
-	ctx := r.Ctx.WithField("Nb Brokers", nb)
-	ctx.Debug("Sending Packet")
 	stats.UpdateHistogram("router.send_recipients", int64(nb))
 
 	// Prepare ground for parrallel requests
@@ -295,7 +315,6 @@ func (r component) send(req interface{}, isBroadcast bool, brokers ...core.Broke
 
 			// Handle error
 			if err != nil {
-				ctx.WithField("index", index).WithError(err).Debug("Error while contacting broker")
 				if strings.Contains(err.Error(), string(errors.NotFound)) { // FIXME Find a better way to analyze the error
 					cherr <- errors.New(errors.NotFound, "Broker not responsible for the node")
 					return
@@ -324,26 +343,22 @@ func (r component) send(req interface{}, isBroadcast bool, brokers ...core.Broke
 	for err := range cherr {
 		if err.(errors.Failure).Nature != errors.NotFound {
 			errored++
-			ctx.WithError(err).Warn("Failed to contact broker")
+			r.Ctx.WithError(err).Warn("Unexpected response")
 		} else {
 			notFound++
-			ctx.WithError(err).Debug("Packet destination not found")
 		}
 	}
 
 	// Collect response
 	if len(chresp) > 1 {
-		r.Ctx.Warn("Received too many positive answers")
-		return nil, errors.New(errors.Behavioural, "Received too many positive answers")
+		return nil, errors.New(errors.Behavioural, "Too many positive answers")
 	}
 
 	if len(chresp) == 0 && errored > 0 {
-		r.Ctx.Debug("No positive response but got errored response(s)")
-		return nil, errors.New(errors.Operational, "No positive response from recipients but got unexpected answer")
+		return nil, errors.New(errors.Operational, "Unexpected response")
 	}
 
 	if len(chresp) == 0 && notFound > 0 {
-		r.Ctx.Debug("No available recipient found")
 		return nil, errors.New(errors.NotFound, "No available recipient found")
 	}
 
