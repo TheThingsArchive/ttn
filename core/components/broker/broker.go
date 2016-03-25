@@ -248,6 +248,9 @@ func (b component) HandleData(bctx context.Context, req *core.DataBrokerReq) (*c
 		fhdr.FCnt = fcnt32
 		if !ok { // Check with 32-bits counter
 			ok, err = uplinkPayload.ValidateMIC(key)
+			if err != nil {
+				continue
+			}
 		}
 
 		if ok {
@@ -260,7 +263,7 @@ func (b component) HandleData(bctx context.Context, req *core.DataBrokerReq) (*c
 
 	if mEntry == nil {
 		stats.MarkMeter("broker.uplink.handler_lookup.no_mic_match")
-		err := errors.New(errors.NotFound, "MIC check returned no matches")
+		err := errors.New(errors.NotFound, "FCntUp or MIC check did not match")
 		ctx.WithError(err).Debug("Unable to handle uplink")
 		return new(core.DataBrokerRes), err
 	}
