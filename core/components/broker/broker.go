@@ -215,13 +215,12 @@ func (b component) HandleData(bctx context.Context, req *core.DataBrokerReq) (*c
 	// Check whether we should handle it
 	entries, err := b.NetworkController.read(devAddr)
 	if err != nil {
-		ctx = ctx.WithError(err)
 		switch err.(errors.Failure).Nature {
 		case errors.NotFound:
 			stats.MarkMeter("broker.uplink.handler_lookup.device_not_found")
 			ctx.Debug("Uplink device not found")
 		default:
-			ctx.Warn("Database lookup failed")
+			ctx.WithError(err).Warn("Database lookup failed")
 		}
 		return new(core.DataBrokerRes), err
 	}
