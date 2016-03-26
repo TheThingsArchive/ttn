@@ -63,7 +63,7 @@ func init() {
 	RootCmd.PersistentFlags().String("app-eui", "0102030405060708", "The app EUI to use")
 	viper.BindPFlag("app-eui", RootCmd.PersistentFlags().Lookup("app-eui"))
 
-	RootCmd.PersistentFlags().String("ttn-account-server", "https://account.thethings.network", "The address of the OAuth 2.0 server")
+	RootCmd.PersistentFlags().String("ttn-account-server", "https://account.thethingsnetwork.org", "The address of the OAuth 2.0 server")
 	viper.BindPFlag("ttn-account-server", RootCmd.PersistentFlags().Lookup("ttn-account-server"))
 }
 
