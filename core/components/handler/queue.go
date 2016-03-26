@@ -4,7 +4,6 @@
 package handler
 
 import (
-	"fmt"
 	"reflect"
 	"sync"
 )
@@ -61,7 +60,6 @@ func (q *pq) Put(pid []byte) {
 // Remove discard an entry from the map
 func (q *pq) Remove(pid []byte) {
 	q.Lock()
-	fmt.Println(pid)
 	id, _ := q.fromPid(pid)
 	delete(q.values, id)
 	q.Unlock()

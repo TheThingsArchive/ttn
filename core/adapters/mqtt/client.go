@@ -73,17 +73,14 @@ func monitorClient(id string, netAddr string, chcmd <-chan interface{}, ctx log.
 		switch cmd.(type) {
 		case cmdPublish:
 			cmd := cmd.(cmdPublish)
-			ctx.Debug("Client received new publication order")
 			cmd.cherr <- cli.Publish(cmd.options)
 		case cmdTerminate:
 			cmd := cmd.(cmdTerminate)
-			ctx.Debug("Client received termination order")
 			cli.Terminate()
 			cli = nil
 			cmd.cherr <- nil
 		case cmdClient:
 			cmd := cmd.(cmdClient)
-			ctx.Debug("Replacing client with another one")
 			cli.Terminate()
 			cli = cmd.options
 			cmd.cherr <- nil
