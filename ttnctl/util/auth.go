@@ -9,21 +9,33 @@ import (
 	"os"
 	"os/user"
 	"path"
+	"time"
 )
 
-const (
-	authsFileName = ".ttnctl/auths.json"
-	authsFilePerm = 0600
-)
+const authsFilePerm = 0600
+
+// AuthsFileName is where the authentication tokens are stored. Defaults to
+// $HOME/.ttnctl/auths.json
+var AuthsFileName string
 
 // Auth represents an authentication token
 type Auth struct {
-	Token string `json:"token"`
-	Email string `json:"email"`
+	Token   string    `json:"token"`
+	Email   string    `json:"email"`
+	Expires time.Time `json:"expires"`
 }
 
 type auths struct {
 	Auths map[string]*Auth `json:"auths"`
+}
+
+func init() {
+	u, err := user.Current()
+	if err != nil {
+		// TODO: Should we support an alternative?
+		panic(err)
+	}
+	AuthsFileName = path.Join(u.HomeDir, ".ttnctl/auths.json")
 }
 
 // LoadAuth loads the authentication token for the specified server
@@ -32,11 +44,15 @@ func LoadAuth(server string) (*Auth, error) {
 	if err != nil {
 		return nil, err
 	}
-	return a.Auths[server], nil
+	t, ok := a.Auths[server]
+	if !ok || time.Now().After(t.Expires) {
+		return nil, nil
+	}
+	return t, nil
 }
 
 // SaveAuth saves the authentication token for the specified server and e-mail
-func SaveAuth(server, email, token string) error {
+func SaveAuth(server, email, token string, expires time.Time) error {
 	a, err := loadAuths()
 	// Ignore error - just create new structure
 	if err != nil || a == nil {
@@ -47,21 +63,17 @@ func SaveAuth(server, email, token string) error {
 	if a.Auths == nil {
 		a.Auths = make(map[string]*Auth)
 	}
-	a.Auths[server] = &Auth{token, email}
+	a.Auths[server] = &Auth{token, email, expires}
 
 	// Marshal and write to disk
 	buff, err := json.Marshal(&a)
 	if err != nil {
 		return err
 	}
-	filename, err := getAuthsFilename()
-	if err != nil {
+	if err := os.MkdirAll(path.Dir(AuthsFileName), 0755); err != nil {
 		return err
 	}
-	if err := os.MkdirAll(path.Dir(filename), 0755); err != nil {
-		return err
-	}
-	if err := ioutil.WriteFile(filename, buff, authsFilePerm); err != nil {
+	if err := ioutil.WriteFile(AuthsFileName, buff, authsFilePerm); err != nil {
 		return err
 	}
 	return nil
@@ -70,14 +82,10 @@ func SaveAuth(server, email, token string) error {
 // loadAuths loads the authentication tokens. This function always returns an
 // empty structure if the file does not exist.
 func loadAuths() (*auths, error) {
-	filename, err := getAuthsFilename()
-	if err != nil {
-		return nil, err
-	}
-	if _, err := os.Stat(filename); os.IsNotExist(err) {
+	if _, err := os.Stat(AuthsFileName); os.IsNotExist(err) {
 		return &auths{}, nil
 	}
-	buff, err := ioutil.ReadFile(filename)
+	buff, err := ioutil.ReadFile(AuthsFileName)
 	if err != nil {
 		return nil, err
 	}
@@ -86,12 +94,4 @@ func loadAuths() (*auths, error) {
 		return nil, err
 	}
 	return &a, nil
-}
-
-func getAuthsFilename() (string, error) {
-	u, err := user.Current()
-	if err != nil {
-		return "", err
-	}
-	return path.Join(u.HomeDir, authsFileName), nil
 }

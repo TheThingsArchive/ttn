@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/howeyc/gopass"
@@ -20,6 +21,7 @@ type token struct {
 	AccessToken      string `json:"access_token"`
 	Error            string `json:"error"`
 	ErrorDescription string `json:"error_description"`
+	ExpiresIn        int    `json:"expires_in"`
 }
 
 // userCmd represents the users command
@@ -30,15 +32,15 @@ var userCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		t, err := util.LoadAuth(viper.GetString("ttn-account-server"))
 		if err != nil {
-			ctx.WithError(err).Fatal("Failed to load authentication")
+			ctx.WithError(err).Fatal("Failed to load authentication token")
 		}
 
 		if t == nil {
-			ctx.Warn("No login found")
+			ctx.Warn("No login found or token expired")
 			return
 		}
 
-		// TODO: Validate token
+		// TODO: Validate token online
 
 		ctx.Infof("Logged on as %s", t.Email)
 	},
@@ -129,11 +131,12 @@ var userLoginCmd = &cobra.Command{
 			}
 		}
 
-		if err := util.SaveAuth(server, email, t.AccessToken); err != nil {
+		expires := time.Now().Add(time.Duration(t.ExpiresIn) * time.Second)
+		if err := util.SaveAuth(server, email, t.AccessToken, expires); err != nil {
 			ctx.WithError(err).Fatal("Failed to save login")
 		}
 
-		ctx.Infof("Logged in as %s and persisted token in $HOME/.ttnctl/auths.json", email)
+		ctx.Infof("Logged in as %s and persisted token in %s", email, util.AuthsFileName)
 	},
 }
 
