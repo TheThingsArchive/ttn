@@ -93,12 +93,13 @@ func (a adapter) listen(netAddr string, conn *net.UDPConn, maxReconnectionDelay 
 			break
 		}
 
+		ctx := a.Ctx.WithField("Source", addr.IP.String())
+
 		// Handle the incoming datagram
-		a.Ctx.Debug("Incoming datagram")
 		go func(data []byte, conn *net.UDPConn) {
 			pkt := new(semtech.Packet)
 			if err := pkt.UnmarshalBinary(data); err != nil {
-				a.Ctx.WithError(err).Debug("Unable to handle datagram")
+				ctx.WithError(err).Debug("Invalid datagram")
 			}
 
 			gtwConn := a.pool.GetOrCreate(pkt.GatewayId)
@@ -115,7 +116,7 @@ func (a adapter) listen(netAddr string, conn *net.UDPConn, maxReconnectionDelay 
 				err = errors.New(errors.Implementation, "Unhandled packet type")
 			}
 			if err != nil {
-				a.Ctx.WithError(err).Debug("Unable to handle datagram")
+				ctx.WithError(err).Debug("Unable to handle datagram")
 			}
 		}(buf[:n], conn)
 	}
@@ -130,7 +131,8 @@ func (a adapter) handlePullData(pkt semtech.Packet, reply replier) error {
 	stats.MarkMeter("semtech_adapter.pull_data")
 	stats.MarkMeter(fmt.Sprintf("semtech_adapter.gateways.%X.pull_data", pkt.GatewayId))
 	stats.SetString(fmt.Sprintf("semtech_adapter.gateways.%X.last_pull_data", pkt.GatewayId), "date", time.Now().UTC().Format(time.RFC3339))
-	a.Ctx.Debug("Handle PULL_DATA")
+	ctx := a.Ctx.WithField("GatewayID", pkt.GatewayId)
+	ctx.Debug("Handle PULL_DATA")
 
 	data, err := semtech.Packet{
 		Version:    semtech.VERSION,
@@ -138,11 +140,12 @@ func (a adapter) handlePullData(pkt semtech.Packet, reply replier) error {
 		Identifier: semtech.PULL_ACK,
 	}.MarshalBinary()
 
-	if err != nil {
-		return errors.New(errors.Structural, err)
+	if err != nil || reply.WriteToDownlink(data) != nil {
+		ctx.Debug("Unable to send PULL_ACK")
+		return errors.New(errors.Operational, "Unable to send PULL_ACK")
 	}
 
-	return reply.WriteToDownlink(data)
+	return nil
 }
 
 // Handle a PUSH_DATA packet coming from a gateway
@@ -159,14 +162,15 @@ func (a adapter) handlePushData(pkt semtech.Packet, reply replier) error {
 		Token:      pkt.Token,
 		Identifier: semtech.PUSH_ACK,
 	}.MarshalBinary()
+
 	if err != nil || reply.WriteToUplink(data) != nil || pkt.Payload == nil {
-		ctx.Debug("Unable to send ACK")
-		return errors.New(errors.Operational, "Unable to send ACK")
+		ctx.Debug("Unable to send PUSH_ACK")
+		return errors.New(errors.Operational, "Unable to send PUSH_ACK")
 	}
 
 	// Process Stat payload
 	if pkt.Payload.Stat != nil {
-		ctx.Debug("PUSH_DATA contains a stats payload")
+		ctx.Debug("Handle stat")
 		go a.Router.HandleStats(context.Background(), &core.StatsReq{
 			GatewayID: pkt.GatewayId,
 			Metadata:  extractMetadata(*pkt.Payload.Stat, new(core.StatsMetadata)).(*core.StatsMetadata),
@@ -174,58 +178,61 @@ func (a adapter) handlePushData(pkt semtech.Packet, reply replier) error {
 	}
 
 	// Process rxpks payloads
-	cherr := make(chan error, len(pkt.Payload.RXPK))
 	wait := sync.WaitGroup{}
-	wait.Add(len(pkt.Payload.RXPK))
-	ctx.WithField("Nb RXPK", len(pkt.Payload.RXPK)).Debug("Processing RXPK payloads")
-	for _, rxpk := range pkt.Payload.RXPK {
-		go func(rxpk semtech.RXPK) {
-			defer wait.Done()
-			if err := a.handleDataUp(rxpk, pkt.GatewayId, reply); err != nil {
-				ctx.WithError(err).Debug("Error while processing RXPK")
-				cherr <- err
-			}
-		}(rxpk)
+
+	if len(pkt.Payload.RXPK) > 0 {
+		wait.Add(len(pkt.Payload.RXPK))
+		ctx.Debug("Handle rxpk")
+		for _, rxpk := range pkt.Payload.RXPK {
+			go func(rxpk semtech.RXPK) {
+				defer wait.Done()
+				if err := a.handleDataUp(rxpk, pkt.GatewayId, reply); err != nil {
+					ctx.WithError(err).Debug("rxpk not processed")
+				}
+			}(rxpk)
+		}
 	}
 
 	// Retrieve any errors
 	wait.Wait()
-	close(cherr)
-	return <-cherr
+	return nil
 }
 
 func (a adapter) handleDataUp(rxpk semtech.RXPK, gid []byte, reply replier) error {
-	itf, err := toLoRaWANPayload(rxpk, gid, a.Ctx)
+	ctx := a.Ctx.WithField("GatewayID", gid)
+
+	itf, err := toLoRaWANPayload(rxpk, gid, ctx)
 	if err != nil {
-		a.Ctx.WithError(err).Debug("Invalid up RXPK packet")
+		ctx.WithError(err).Debug("Invalid up RXPK packet")
 		return errors.New(errors.Structural, err)
 	}
 
 	switch itf.(type) {
 	case *core.DataRouterReq:
+		ctx.Debug("Handle uplink data")
 		resp, err := a.Router.HandleData(context.Background(), itf.(*core.DataRouterReq))
 		if err != nil {
-			a.Ctx.WithError(err).Debug("Router failed to process uplink")
 			return errors.New(errors.Operational, err)
 		}
 		return a.handleDataDown(resp, reply)
 	case *core.JoinRouterReq:
+		ctx.Debug("Handle join request")
 		resp, err := a.Router.HandleJoin(context.Background(), itf.(*core.JoinRouterReq))
 		if err != nil {
-			a.Ctx.WithError(err).Debug("Router failed to process join request")
 			return errors.New(errors.Operational, err)
 		}
 		return a.handleJoinAccept(resp, reply)
 	default:
-		a.Ctx.Warn("Unhandled LoRaWAN Payload type")
+		ctx.Warn("Unhandled LoRaWAN Payload type")
 		return errors.New(errors.Implementation, "Unhandled LoRaWAN Payload type")
 	}
 }
 
 func (a adapter) handleDataDown(resp *core.DataRouterRes, reply replier) error {
-	a.Ctx.Debug("Handle Downlink from router")
+	ctx := a.Ctx.WithField("GatewayID", reply.DestinationID())
+
 	if resp == nil || resp.Payload == nil { // No response
-		a.Ctx.Debug("No response to send")
+		ctx.Debug("No response to send")
 		return nil
 	}
 
@@ -234,46 +241,49 @@ func (a adapter) handleDataDown(resp *core.DataRouterRes, reply replier) error {
 		return errors.New(errors.Structural, err)
 	}
 
-	txpk, err := newTXPK(payload, resp.Metadata, a.Ctx)
+	txpk, err := newTXPK(payload, resp.Metadata, ctx)
 	if err != nil {
-		a.Ctx.WithError(err).Debug("Unable to interpret downlink")
 		return errors.New(errors.Structural, err)
 	}
 
-	a.Ctx.Debug("Creating new downlink response")
+	ctx.WithFields(log.Fields{
+		"Metadata": resp.Metadata,
+		"DevAddr":  resp.Payload.MACPayload.FHDR.DevAddr,
+	}).Debug("Send txpk")
+
 	data, err := semtech.Packet{
 		Version:    semtech.VERSION,
 		Identifier: semtech.PULL_RESP,
 		Payload:    &semtech.Payload{TXPK: &txpk},
 	}.MarshalBinary()
 	if err != nil {
-		a.Ctx.WithError(err).Debug("Unable to create semtech packet with TXPK")
 		return errors.New(errors.Structural, err)
 	}
+
 	return reply.WriteToDownlink(data)
 }
 
 func (a adapter) handleJoinAccept(resp *core.JoinRouterRes, reply replier) error {
-	a.Ctx.Debug("Handle Join-Accept from router")
+	ctx := a.Ctx.WithField("GatewayID", reply.DestinationID())
+
 	if resp == nil || resp.Payload == nil {
-		a.Ctx.Debug("Invalid response")
 		return errors.New(errors.Structural, "Invalid Join-Accept response. Expected a payload")
 	}
 
 	txpk, err := newTXPK(straightMarshaler(resp.Payload.Payload), resp.Metadata, a.Ctx)
 	if err != nil {
-		a.Ctx.WithError(err).Debug("Unable to interpret Join-Accept")
 		return errors.New(errors.Structural, err)
 	}
 
-	a.Ctx.Debug("Creating a new join-accept response")
+	ctx.WithField("Metadata", resp.Metadata).Debug("Send join-accept")
+
 	data, err := semtech.Packet{
 		Version:    semtech.VERSION,
 		Identifier: semtech.PULL_RESP,
 		Payload:    &semtech.Payload{TXPK: &txpk},
 	}.MarshalBinary()
 	if err != nil {
-		a.Ctx.WithError(err).Debug("Unable to create semtech packet with TXPK")
+		return errors.New(errors.Structural, err)
 	}
 	return reply.WriteToDownlink(data)
 }

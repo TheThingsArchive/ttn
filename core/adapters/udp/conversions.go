@@ -120,8 +120,6 @@ func newTXPK(payload encoding.BinaryMarshaler, metadata *core.Metadata, ctx log.
 	data := base64.RawStdEncoding.EncodeToString(raw)
 	txpk := semtech.TXPK{Data: pointer.String(data)}
 
-	ctx.WithField("Metadata", *metadata).Debug("Injecting metadata")
-
 	// Step 3, copy every compatible metadata from the packet to the TXPK packet.
 	// We are possibly loosing information here.
 	injectMetadata(&txpk, *metadata)
