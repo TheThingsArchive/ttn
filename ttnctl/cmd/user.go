@@ -22,8 +22,8 @@ type token struct {
 	ErrorDescription string `json:"error_description"`
 }
 
-// usersCmd represents the users command
-var usersCmd = &cobra.Command{
+// userCmd represents the users command
+var userCmd = &cobra.Command{
 	Use:   "user",
 	Short: "Show the current user",
 	Long:  `ttnctl user shows the current logged on user`,
@@ -44,7 +44,7 @@ var usersCmd = &cobra.Command{
 	},
 }
 
-var usersCreateCmd = &cobra.Command{
+var userCreateCmd = &cobra.Command{
 	Use:   "create [e-mail]",
 	Short: "Create a new user",
 	Long:  `ttnctl user create allows you to create a new user`,
@@ -57,7 +57,7 @@ var usersCreateCmd = &cobra.Command{
 		fmt.Print("Password: ")
 		password, err := gopass.GetPasswd()
 		if err != nil {
-			ctx.Fatal("Invalid password")
+			ctx.Fatal(err.Error())
 		}
 
 		uri := fmt.Sprintf("%s/register", viper.GetString("ttn-account-server"))
@@ -69,7 +69,6 @@ var usersCreateCmd = &cobra.Command{
 		if err != nil {
 			ctx.WithError(err).Fatal("Registration failed")
 		}
-		defer res.Body.Close()
 
 		if res.StatusCode != http.StatusCreated {
 			ctx.Fatalf("Registration failed: %d %s", res.StatusCode, res.Status)
@@ -79,7 +78,7 @@ var usersCreateCmd = &cobra.Command{
 	},
 }
 
-var usersLoginCmd = &cobra.Command{
+var userLoginCmd = &cobra.Command{
 	Use:   "login [e-mail]",
 	Short: "Login",
 	Long:  `ttnctl user login allows you to login`,
@@ -92,7 +91,7 @@ var usersLoginCmd = &cobra.Command{
 		fmt.Print("Password: ")
 		password, err := gopass.GetPasswd()
 		if err != nil {
-			ctx.Fatal("Invalid password")
+			ctx.Fatal(err.Error())
 		}
 
 		server := viper.GetString("ttn-account-server")
@@ -114,8 +113,8 @@ var usersLoginCmd = &cobra.Command{
 		if err != nil {
 			ctx.WithError(err).Fatal("Request failed")
 		}
-		defer resp.Body.Close()
 
+		defer resp.Body.Close()
 		decoder := json.NewDecoder(resp.Body)
 		var t token
 		if err := decoder.Decode(&t); err != nil {
@@ -130,16 +129,16 @@ var usersLoginCmd = &cobra.Command{
 			}
 		}
 
-		ctx.Infof("Logged in as %s", email)
-
 		if err := util.SaveAuth(server, email, t.AccessToken); err != nil {
-			ctx.WithError(err).Error("Failed to save login")
+			ctx.WithError(err).Fatal("Failed to save login")
 		}
+
+		ctx.Infof("Logged in as %s and persisted token in $HOME/.ttnctl/auths.json", email)
 	},
 }
 
 func init() {
-	RootCmd.AddCommand(usersCmd)
-	usersCmd.AddCommand(usersCreateCmd)
-	usersCmd.AddCommand(usersLoginCmd)
+	RootCmd.AddCommand(userCmd)
+	userCmd.AddCommand(userCreateCmd)
+	userCmd.AddCommand(userLoginCmd)
 }
