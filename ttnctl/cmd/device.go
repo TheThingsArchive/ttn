@@ -78,7 +78,7 @@ var devicesCmd = &cobra.Command{
 var devicesRegisterCmd = &cobra.Command{
 	Use:   "register [DevEUI] [AppKey]",
 	Short: "Create or Update registrations on the Handler",
-	Long:  `ttnctl device register creates or updates an OTAA registration on the Handler`,
+	Long:  `ttnctl devices register creates or updates an OTAA registration on the Handler`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) < 2 {
 			ctx.Fatal("Insufficient arguments")
@@ -117,7 +117,7 @@ var devicesRegisterCmd = &cobra.Command{
 var devicesRegisterPersonalizedCmd = &cobra.Command{
 	Use:   "personalized [DevAddr] [NwkSKey] [AppSKey]",
 	Short: "Create or Update ABP registrations on the Handler",
-	Long:  `ttnctl device register creates or updates an ABP registration on the Handler`,
+	Long:  `ttnctl devices register creates or updates an ABP registration on the Handler`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) < 3 {
 			ctx.Fatal("Insufficient arguments")
