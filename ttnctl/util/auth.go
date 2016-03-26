@@ -7,9 +7,10 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"os"
-	"os/user"
 	"path"
 	"time"
+
+	homedir "github.com/mitchellh/go-homedir"
 )
 
 const authsFilePerm = 0600
@@ -30,12 +31,15 @@ type auths struct {
 }
 
 func init() {
-	u, err := user.Current()
+	dir, err := homedir.Dir()
 	if err != nil {
-		// TODO: Should we support an alternative?
 		panic(err)
 	}
-	AuthsFileName = path.Join(u.HomeDir, ".ttnctl/auths.json")
+	expanded, err := homedir.Expand(dir)
+	if err != nil {
+		panic(err)
+	}
+	AuthsFileName = path.Join(expanded, ".ttnctl/auths.json")
 }
 
 // LoadAuth loads the authentication token for the specified server
