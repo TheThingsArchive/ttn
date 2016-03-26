@@ -142,7 +142,4 @@ func init() {
 	RootCmd.AddCommand(usersCmd)
 	usersCmd.AddCommand(usersCreateCmd)
 	usersCmd.AddCommand(usersLoginCmd)
-
-	usersCmd.PersistentFlags().String("ttn-account-server", "https://account.thethings.network", "The Things Network OAuth 2.0 account server")
-	viper.BindPFlag("ttn-account-server", usersCmd.PersistentFlags().Lookup("ttn-account-server"))
 }
