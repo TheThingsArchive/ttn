@@ -30,8 +30,6 @@ var userCmd = &cobra.Command{
 			return
 		}
 
-		// TODO: Validate token online
-
 		ctx.Infof("Logged on as %s", t.Email)
 	},
 }
