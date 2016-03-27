@@ -5,9 +5,14 @@ package util
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"io/ioutil"
+	"net/http"
+	"net/url"
 	"os"
 	"path"
+	"strings"
 	"time"
 
 	homedir "github.com/mitchellh/go-homedir"
@@ -31,6 +36,14 @@ type auths struct {
 	Auths map[string]*Auth `json:"auths"`
 }
 
+type token struct {
+	AccessToken      string `json:"access_token"`
+	RefreshToken     string `json:"refresh_token"`
+	Error            string `json:"error"`
+	ErrorDescription string `json:"error_description"`
+	ExpiresIn        int    `json:"expires_in"`
+}
+
 func init() {
 	dir, err := homedir.Dir()
 	if err != nil {
@@ -43,6 +56,50 @@ func init() {
 	AuthsFileName = path.Join(expanded, ".ttnctl/auths.json")
 }
 
+// Login attemps to login using the specified credentials on the server
+func Login(server, email, password string) (*Auth, error) {
+	uri := fmt.Sprintf("%s/token", server)
+	values := url.Values{
+		"grant_type": {"password"},
+		"username":   {email},
+		"password":   {password},
+	}
+	req, err := http.NewRequest("POST", uri, strings.NewReader(values.Encode()))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.SetBasicAuth("ttnctl", "")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+	decoder := json.NewDecoder(resp.Body)
+	var t token
+	if err := decoder.Decode(&t); err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		if t.Error != "" {
+			return nil, errors.New(t.ErrorDescription)
+		}
+		return nil, errors.New(resp.Status)
+	}
+
+	expires := time.Now().Add(time.Duration(t.ExpiresIn) * time.Second)
+	auth, err := saveAuth(server, email, t.AccessToken, t.RefreshToken, expires)
+	if err != nil {
+		return nil, err
+	}
+
+	return auth, nil
+}
+
 // LoadAuth loads the authentication token for the specified server
 func LoadAuth(server string) (*Auth, error) {
 	a, err := loadAuths()
@@ -51,13 +108,14 @@ func LoadAuth(server string) (*Auth, error) {
 	}
 	t, ok := a.Auths[server]
 	if !ok || time.Now().After(t.Expires) {
+		// TODO: Refresh the token
 		return nil, nil
 	}
 	return t, nil
 }
 
-// SaveAuth saves the authentication token for the specified server and e-mail
-func SaveAuth(server, email, accessToken, refreshToken string, expires time.Time) error {
+// saveAuth saves the authentication token for the specified server and e-mail
+func saveAuth(server, email, accessToken, refreshToken string, expires time.Time) (*Auth, error) {
 	a, err := loadAuths()
 	// Ignore error - just create new structure
 	if err != nil || a == nil {
@@ -68,20 +126,21 @@ func SaveAuth(server, email, accessToken, refreshToken string, expires time.Time
 	if a.Auths == nil {
 		a.Auths = make(map[string]*Auth)
 	}
-	a.Auths[server] = &Auth{accessToken, refreshToken, email, expires}
+	auth := &Auth{accessToken, refreshToken, email, expires}
+	a.Auths[server] = auth
 
 	// Marshal and write to disk
 	buff, err := json.Marshal(&a)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if err := os.MkdirAll(path.Dir(AuthsFileName), 0755); err != nil {
-		return err
+		return nil, err
 	}
 	if err := ioutil.WriteFile(AuthsFileName, buff, authsFilePerm); err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return auth, nil
 }
 
 // loadAuths loads the authentication tokens. This function always returns an

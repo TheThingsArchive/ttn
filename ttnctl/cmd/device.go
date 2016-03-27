@@ -46,7 +46,7 @@ var devicesCmd = &cobra.Command{
 
 		manager := getHandlerManager()
 		res, err := manager.ListDevices(context.Background(), &core.ListDevicesHandlerReq{
-			Token:  auth.Token,
+			Token:  auth.AccessToken,
 			AppEUI: appEUI,
 		})
 		if err != nil {
@@ -116,7 +116,7 @@ var devicesRegisterCmd = &cobra.Command{
 
 		manager := getHandlerManager()
 		res, err := manager.UpsertOTAA(context.Background(), &core.UpsertOTAAHandlerReq{
-			Token:  auth.Token,
+			Token:  auth.AccessToken,
 			AppEUI: appEUI,
 			DevEUI: devEUI,
 			AppKey: appKey,
@@ -168,7 +168,7 @@ var devicesRegisterPersonalizedCmd = &cobra.Command{
 
 		manager := getHandlerManager()
 		res, err := manager.UpsertABP(context.Background(), &core.UpsertABPHandlerReq{
-			Token:   auth.Token,
+			Token:   auth.AccessToken,
 			AppEUI:  appEUI,
 			DevAddr: devAddr,
 			AppSKey: appSKey,

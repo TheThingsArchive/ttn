@@ -4,25 +4,15 @@
 package cmd
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
-	"strings"
-	"time"
 
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/howeyc/gopass"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
-
-type token struct {
-	AccessToken      string `json:"access_token"`
-	Error            string `json:"error"`
-	ErrorDescription string `json:"error_description"`
-	ExpiresIn        int    `json:"expires_in"`
-}
 
 // userCmd represents the users command
 var userCmd = &cobra.Command{
@@ -96,44 +86,9 @@ var userLoginCmd = &cobra.Command{
 			ctx.Fatal(err.Error())
 		}
 
-		server := viper.GetString("ttn-account-server")
-		uri := fmt.Sprintf("%s/token", server)
-		values := url.Values{
-			"grant_type": {"password"},
-			"username":   {email},
-			"password":   {string(password)},
-		}
-		req, err := http.NewRequest("POST", uri, strings.NewReader(values.Encode()))
+		_, err = util.Login(viper.GetString("ttn-account-server"), email, string(password))
 		if err != nil {
-			ctx.WithError(err).Fatal("Create request failed")
-		}
-		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-		req.SetBasicAuth("ttnctl", "")
-
-		client := &http.Client{}
-		resp, err := client.Do(req)
-		if err != nil {
-			ctx.WithError(err).Fatal("Request failed")
-		}
-
-		defer resp.Body.Close()
-		decoder := json.NewDecoder(resp.Body)
-		var t token
-		if err := decoder.Decode(&t); err != nil {
-			ctx.WithError(err).Fatal("Failed to parse response")
-		}
-
-		if resp.StatusCode != http.StatusOK {
-			if t.Error != "" {
-				ctx.Fatalf("Request failed: %s", t.ErrorDescription)
-			} else {
-				ctx.Fatalf("Request failed: %s", resp.Status)
-			}
-		}
-
-		expires := time.Now().Add(time.Duration(t.ExpiresIn) * time.Second)
-		if err := util.SaveAuth(server, email, t.AccessToken, expires); err != nil {
-			ctx.WithError(err).Fatal("Failed to save login")
+			ctx.WithError(err).Fatal("Failed to login")
 		}
 
 		ctx.Infof("Logged in as %s and persisted token in %s", email, util.AuthsFileName)
