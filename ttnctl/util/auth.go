@@ -21,9 +21,10 @@ var AuthsFileName string
 
 // Auth represents an authentication token
 type Auth struct {
-	Token   string    `json:"token"`
-	Email   string    `json:"email"`
-	Expires time.Time `json:"expires"`
+	AccessToken  string    `json:"access_token"`
+	RefreshToken string    `json:"refresh_token"`
+	Email        string    `json:"email"`
+	Expires      time.Time `json:"expires"`
 }
 
 type auths struct {
@@ -56,7 +57,7 @@ func LoadAuth(server string) (*Auth, error) {
 }
 
 // SaveAuth saves the authentication token for the specified server and e-mail
-func SaveAuth(server, email, token string, expires time.Time) error {
+func SaveAuth(server, email, accessToken, refreshToken string, expires time.Time) error {
 	a, err := loadAuths()
 	// Ignore error - just create new structure
 	if err != nil || a == nil {
@@ -67,7 +68,7 @@ func SaveAuth(server, email, token string, expires time.Time) error {
 	if a.Auths == nil {
 		a.Auths = make(map[string]*Auth)
 	}
-	a.Auths[server] = &Auth{token, email, expires}
+	a.Auths[server] = &Auth{accessToken, refreshToken, email, expires}
 
 	// Marshal and write to disk
 	buff, err := json.Marshal(&a)
