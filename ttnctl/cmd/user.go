@@ -26,7 +26,7 @@ var userCmd = &cobra.Command{
 		}
 
 		if t == nil {
-			ctx.Warn("No login found or token expired")
+			ctx.Warn("No login found. Please login with ttnctl user login [e-mail]")
 			return
 		}
 
@@ -93,8 +93,22 @@ var userLoginCmd = &cobra.Command{
 	},
 }
 
+var userLogoutCmd = &cobra.Command{
+	Use:   "logout",
+	Short: "Logout the current user",
+	Long:  `ttnctl user logout logs out the current user`,
+	Run: func(cmd *cobra.Command, args []string) {
+		if err := util.Logout(viper.GetString("ttn-account-server")); err != nil {
+			ctx.WithError(err).Fatal("Failed to log out")
+		}
+
+		ctx.Info("Logged out")
+	},
+}
+
 func init() {
 	RootCmd.AddCommand(userCmd)
 	userCmd.AddCommand(userCreateCmd)
 	userCmd.AddCommand(userLoginCmd)
+	userCmd.AddCommand(userLogoutCmd)
 }

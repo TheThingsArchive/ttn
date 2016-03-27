@@ -66,6 +66,19 @@ func Login(server, email, password string) (*Auth, error) {
 	return newToken(server, email, values)
 }
 
+// Logout deletes the token for the specified server
+func Logout(server string) error {
+	a, err := loadAuths()
+	if err != nil {
+		return err
+	}
+	delete(a.Auths, server)
+	if err := saveAuths(a); err != nil {
+		return err
+	}
+	return nil
+}
+
 // LoadAuth loads the authentication token for the specified server and attempts
 // to refresh the token if it has been expired
 func LoadAuth(server string) (*Auth, error) {
@@ -138,23 +151,12 @@ func saveAuth(server, email, accessToken, refreshToken string, expires time.Time
 	}
 
 	// Initialize the map if not exists and add the token
-	if a.Auths == nil {
-		a.Auths = make(map[string]*Auth)
-	}
 	auth := &Auth{accessToken, refreshToken, email, expires}
 	a.Auths[server] = auth
+	if err := saveAuths(a); err != nil {
+		return nil, err
+	}
 
-	// Marshal and write to disk
-	buff, err := json.Marshal(&a)
-	if err != nil {
-		return nil, err
-	}
-	if err := os.MkdirAll(path.Dir(AuthsFileName), 0755); err != nil {
-		return nil, err
-	}
-	if err := ioutil.WriteFile(AuthsFileName, buff, authsFilePerm); err != nil {
-		return nil, err
-	}
 	return auth, nil
 }
 
@@ -162,7 +164,7 @@ func saveAuth(server, email, accessToken, refreshToken string, expires time.Time
 // empty structure if the file does not exist.
 func loadAuths() (*auths, error) {
 	if _, err := os.Stat(AuthsFileName); os.IsNotExist(err) {
-		return &auths{}, nil
+		return &auths{make(map[string]*Auth)}, nil
 	}
 	buff, err := ioutil.ReadFile(AuthsFileName)
 	if err != nil {
@@ -172,5 +174,23 @@ func loadAuths() (*auths, error) {
 	if err := json.Unmarshal(buff, &a); err != nil {
 		return nil, err
 	}
+	if a.Auths == nil {
+		a.Auths = make(map[string]*Auth)
+	}
 	return &a, nil
+}
+
+func saveAuths(a *auths) error {
+	// Marshal and write to disk
+	buff, err := json.Marshal(&a)
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(path.Dir(AuthsFileName), 0755); err != nil {
+		return err
+	}
+	if err := ioutil.WriteFile(AuthsFileName, buff, authsFilePerm); err != nil {
+		return err
+	}
+	return nil
 }
