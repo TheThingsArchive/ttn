@@ -24,7 +24,6 @@ var userCmd = &cobra.Command{
 		if err != nil {
 			ctx.WithError(err).Fatal("Failed to load authentication token")
 		}
-
 		if t == nil {
 			ctx.Warn("No login found. Please login with ttnctl user login [e-mail]")
 			return
