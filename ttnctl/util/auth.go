@@ -58,12 +58,41 @@ func init() {
 
 // Login attemps to login using the specified credentials on the server
 func Login(server, email, password string) (*Auth, error) {
-	uri := fmt.Sprintf("%s/token", server)
 	values := url.Values{
 		"grant_type": {"password"},
 		"username":   {email},
 		"password":   {password},
 	}
+	return newToken(server, email, values)
+}
+
+// LoadAuth loads the authentication token for the specified server and attempts
+// to refresh the token if it has been expired
+func LoadAuth(server string) (*Auth, error) {
+	a, err := loadAuths()
+	if err != nil {
+		return nil, err
+	}
+	auth, ok := a.Auths[server]
+	if !ok {
+		return nil, nil
+	}
+	if time.Now().After(auth.Expires) {
+		return refreshToken(server, auth)
+	}
+	return auth, nil
+}
+
+func refreshToken(server string, auth *Auth) (*Auth, error) {
+	values := url.Values{
+		"grant_type":    {"refresh_token"},
+		"refresh_token": {auth.RefreshToken},
+	}
+	return newToken(server, auth.Email, values)
+}
+
+func newToken(server, email string, values url.Values) (*Auth, error) {
+	uri := fmt.Sprintf("%s/token", server)
 	req, err := http.NewRequest("POST", uri, strings.NewReader(values.Encode()))
 	if err != nil {
 		return nil, err
@@ -98,20 +127,6 @@ func Login(server, email, password string) (*Auth, error) {
 	}
 
 	return auth, nil
-}
-
-// LoadAuth loads the authentication token for the specified server
-func LoadAuth(server string) (*Auth, error) {
-	a, err := loadAuths()
-	if err != nil {
-		return nil, err
-	}
-	t, ok := a.Auths[server]
-	if !ok || time.Now().After(t.Expires) {
-		// TODO: Refresh the token
-		return nil, nil
-	}
-	return t, nil
 }
 
 // saveAuth saves the authentication token for the specified server and e-mail
