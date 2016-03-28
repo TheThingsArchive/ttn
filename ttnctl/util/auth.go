@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -94,6 +95,21 @@ func LoadAuth(server string) (*Auth, error) {
 		return refreshToken(server, auth)
 	}
 	return auth, nil
+}
+
+// NewRequestWithAuth creates a new HTTP request and adds the access token of
+// the authenticated user as bearer token
+func NewRequestWithAuth(server, method, urlStr string, body io.Reader) (*http.Request, error) {
+	auth, err := LoadAuth(server)
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequest(method, urlStr, body)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Authorization", fmt.Sprintf("bearer %s", auth.AccessToken))
+	return req, nil
 }
 
 func refreshToken(server string, auth *Auth) (*Auth, error) {

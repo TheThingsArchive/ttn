@@ -2,6 +2,7 @@ package util
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -95,6 +96,11 @@ func TestLogin(t *testing.T) {
 	a.So(err, ShouldBeNil)
 	a.So(loadedAuth, ShouldNotBeNil)
 	a.So(loginAuth, ShouldResemble, loadedAuth)
+
+	req, err := NewRequestWithAuth(server.URL, "GET", "http://external", nil)
+	a.So(err, ShouldBeNil)
+	a.So(req, ShouldNotBeNil)
+	a.So(req.Header.Get("Authorization"), ShouldEqual, fmt.Sprintf("bearer %s", loadedAuth.AccessToken))
 
 	Logout(server.URL)
 }
