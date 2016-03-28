@@ -4,6 +4,8 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -15,14 +17,11 @@ var applicationsCmd = &cobra.Command{
 	Short: "Show applications",
 	Long:  `ttnctl applications retrieves the applications of the logged on user.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		auth, err := util.LoadAuth(viper.GetString("ttn-account-server"))
+		server := viper.GetString("ttn-account-server")
+		_, err := util.NewRequestWithAuth(server, "GET", fmt.Sprintf("%s/applications", server), nil)
 		if err != nil {
-			ctx.WithError(err).Fatal("Failed to load authentication")
+			ctx.WithError(err).Fatal("Create request failed")
 		}
-		if auth == nil {
-			ctx.Fatal("No authentication found. Please login")
-		}
-
 	},
 }
 
