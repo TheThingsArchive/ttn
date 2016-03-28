@@ -97,6 +97,7 @@ func TestLogin(t *testing.T) {
 	a.So(loadedAuth, ShouldNotBeNil)
 	a.So(loginAuth, ShouldResemble, loadedAuth)
 
+	// Check if we get this token on the HTTP request
 	req, err := NewRequestWithAuth(server.URL, "GET", "http://external", nil)
 	a.So(err, ShouldBeNil)
 	a.So(req, ShouldNotBeNil)
@@ -128,6 +129,10 @@ func TestLogout(t *testing.T) {
 	loadedAuth, err = LoadAuth(server.URL)
 	a.So(err, ShouldBeNil)
 	a.So(loadedAuth, ShouldBeNil)
+
+	// Make sure that we can't make an HTTP request
+	_, err = NewRequestWithAuth(server.URL, "GET", "http://external", nil)
+	a.So(err, ShouldNotBeNil)
 }
 
 func TestLoadWithRefresh(t *testing.T) {

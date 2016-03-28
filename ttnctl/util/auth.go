@@ -104,6 +104,9 @@ func NewRequestWithAuth(server, method, urlStr string, body io.Reader) (*http.Re
 	if err != nil {
 		return nil, err
 	}
+	if auth == nil {
+		return nil, errors.New("No authentication token found. Please login")
+	}
 	req, err := http.NewRequest(method, urlStr, body)
 	if err != nil {
 		return nil, err
