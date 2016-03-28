@@ -95,6 +95,8 @@ func TestLogin(t *testing.T) {
 	a.So(err, ShouldBeNil)
 	a.So(loadedAuth, ShouldNotBeNil)
 	a.So(loginAuth, ShouldResemble, loadedAuth)
+
+	Logout(server.URL)
 }
 
 func TestLogout(t *testing.T) {
@@ -144,6 +146,8 @@ func TestLoadWithRefresh(t *testing.T) {
 	a.So(loadedAuth.AccessToken, ShouldEqual, "456")
 	a.So(loadedAuth.RefreshToken, ShouldEqual, "DEF")
 	a.So(loadedAuth.Email, ShouldEqual, "jantje@test.org")
+
+	Logout(server.URL)
 }
 
 func TestLoadWithInvalidRefresh(t *testing.T) {
@@ -165,4 +169,6 @@ func TestLoadWithInvalidRefresh(t *testing.T) {
 	a.So(err, ShouldNotBeNil)
 	a.So(err.Error(), ShouldEqual, "Refresh token not found")
 	a.So(loadedAuth, ShouldBeNil)
+
+	Logout(server.URL)
 }
