@@ -15,7 +15,7 @@ import (
 	"strings"
 	"time"
 
-	homedir "github.com/mitchellh/go-homedir"
+	"github.com/mitchellh/go-homedir"
 )
 
 const authsFilePerm = 0600
@@ -37,11 +37,11 @@ type auths struct {
 }
 
 type token struct {
-	AccessToken      string `json:"access_token"`
-	RefreshToken     string `json:"refresh_token"`
-	Error            string `json:"error"`
-	ErrorDescription string `json:"error_description"`
-	ExpiresIn        int    `json:"expires_in"`
+	AccessToken      string `json:"access_token,omitempty"`
+	RefreshToken     string `json:"refresh_token,omitempty"`
+	Error            string `json:"error,omitempty"`
+	ErrorDescription string `json:"error_description,omitempty"`
+	ExpiresIn        int    `json:"expires_in,omitempty"`
 }
 
 func init() {
@@ -160,8 +160,8 @@ func saveAuth(server, email, accessToken, refreshToken string, expires time.Time
 	return auth, nil
 }
 
-// loadAuths loads the authentication tokens. This function always returns an
-// empty structure if the file does not exist.
+// loadAuths loads the authentication tokens. This function returns an empty
+// structure if the file does not exist.
 func loadAuths() (*auths, error) {
 	if _, err := os.Stat(AuthsFileName); os.IsNotExist(err) {
 		return &auths{make(map[string]*Auth)}, nil
