@@ -145,3 +145,24 @@ func TestLoadWithRefresh(t *testing.T) {
 	a.So(loadedAuth.RefreshToken, ShouldEqual, "DEF")
 	a.So(loadedAuth.Email, ShouldEqual, "jantje@test.org")
 }
+
+func TestLoadWithInvalidRefresh(t *testing.T) {
+	a := New(t)
+	server := newTokenServer(a)
+	defer server.Close()
+
+	// Make sure we're not logged on
+	err := Logout(server.URL)
+	a.So(err, ShouldBeNil)
+
+	// Save an expired token
+	expires := time.Now().Add(time.Duration(-1) * time.Hour)
+	_, err = saveAuth(server.URL, "pietje@test.org", "987", "ZYX", expires)
+	a.So(err, ShouldBeNil)
+
+	// Refresh the token
+	loadedAuth, err := LoadAuth(server.URL)
+	a.So(err, ShouldNotBeNil)
+	a.So(err.Error(), ShouldEqual, "Refresh token not found")
+	a.So(loadedAuth, ShouldBeNil)
+}
