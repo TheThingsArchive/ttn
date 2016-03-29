@@ -5,6 +5,8 @@ package cmd
 
 import (
 	"fmt"
+	"io/ioutil"
+	"path"
 	"path/filepath"
 	"strings"
 	"time"
@@ -13,6 +15,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/components/broker"
 	"github.com/TheThingsNetwork/ttn/utils/stats"
 	"github.com/apex/log"
+	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -96,6 +99,12 @@ devices (with their network session keys) with the Broker.
 			ctx.WithError(fmt.Errorf("Invalid applications database string. Format: \"boltdb:/path/to.db\".")).Fatal("Could not instantiate local storage")
 		}
 
+		// Security
+		tokenKey, err := ioutil.ReadFile(viper.GetString("broker.oauth2-keyfile"))
+		if err != nil {
+			ctx.WithError(err).Fatal("Unable to load OAuth 2.0 key")
+		}
+
 		// Broker
 		broker := broker.New(
 			broker.Components{
@@ -106,6 +115,7 @@ devices (with their network session keys) with the Broker.
 			broker.Options{
 				NetAddrUp:   fmt.Sprintf("%s:%d", viper.GetString("broker.uplink-address"), viper.GetInt("broker.uplink-port")),
 				NetAddrDown: fmt.Sprintf("%s:%d", viper.GetString("broker.downlink-address"), viper.GetInt("broker.downlink-port")),
+				TokenKey:    tokenKey,
 			},
 		)
 
@@ -139,4 +149,16 @@ func init() {
 	brokerCmd.Flags().Int("downlink-port", 1781, "The port for downlink communication")
 	viper.BindPFlag("broker.downlink-address", brokerCmd.Flags().Lookup("downlink-address"))
 	viper.BindPFlag("broker.downlink-port", brokerCmd.Flags().Lookup("downlink-port"))
+
+	defaultOAuth2KeyFile := ""
+	dir, err := homedir.Dir()
+	if err == nil {
+		expanded, err := homedir.Expand(dir)
+		if err == nil {
+			defaultOAuth2KeyFile = path.Join(expanded, ".ttn/oauth2-token.pub")
+		}
+	}
+
+	brokerCmd.Flags().String("oauth2-keyfile", defaultOAuth2KeyFile, "The OAuth 2.0 public key")
+	viper.BindPFlag("broker.oauth2-keyfile", brokerCmd.Flags().Lookup("oauth2-keyfile"))
 }

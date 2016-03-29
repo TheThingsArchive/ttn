@@ -18,7 +18,7 @@ import (
 // component implements the core.BrokerServer interface
 type component struct {
 	Components
-	SecretKey    [32]byte
+	TokenKey     []byte
 	NetAddrUp    string
 	NetAddrDown  string
 	MaxDevNonces uint
@@ -35,7 +35,7 @@ type Components struct {
 type Options struct {
 	NetAddrUp   string
 	NetAddrDown string
-	SecretKey   [32]byte
+	TokenKey    []byte
 }
 
 // Interface defines the Broker interface
@@ -52,7 +52,7 @@ func New(c Components, o Options) Interface {
 		NetAddrUp:    o.NetAddrUp,
 		NetAddrDown:  o.NetAddrDown,
 		MaxDevNonces: 10,
-		SecretKey:    [32]byte{14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 42, 42, 42, 42, 42, 42}, // TODO Use options & ENV var
+		TokenKey:     o.TokenKey,
 	}
 }
 
