@@ -91,7 +91,7 @@ func LoadAuth(server string) (*Auth, error) {
 	if !ok {
 		return nil, nil
 	}
-	if time.Now().After(auth.Expires) {
+	if time.Now().UTC().After(auth.Expires) {
 		return refreshToken(server, auth)
 	}
 	return auth, nil
@@ -152,7 +152,7 @@ func newToken(server, email string, values url.Values) (*Auth, error) {
 		return nil, errors.New(resp.Status)
 	}
 
-	expires := time.Now().Add(time.Duration(t.ExpiresIn) * time.Second)
+	expires := time.Now().UTC().Add(time.Duration(t.ExpiresIn) * time.Second)
 	auth, err := saveAuth(server, email, t.AccessToken, t.RefreshToken, expires)
 	if err != nil {
 		return nil, err
