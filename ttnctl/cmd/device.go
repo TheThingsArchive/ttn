@@ -88,7 +88,8 @@ var devicesRegisterCmd = &cobra.Command{
 	Long:  `ttnctl devices register creates or updates an OTAA registration on the Handler`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) < 2 {
-			ctx.Fatal("Insufficient arguments")
+			cmd.Help()
+			return
 		}
 
 		appEUI, err := util.Parse64(viper.GetString("app-eui"))
@@ -135,7 +136,8 @@ var devicesRegisterPersonalizedCmd = &cobra.Command{
 	Long:  `ttnctl devices register creates or updates an ABP registration on the Handler`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) < 3 {
-			ctx.Fatal("Insufficient arguments")
+			cmd.Help()
+			return
 		}
 
 		appEUI, err := util.Parse64(viper.GetString("app-eui"))

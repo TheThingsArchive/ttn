@@ -39,7 +39,8 @@ var userCreateCmd = &cobra.Command{
 	Long:  `ttnctl user create allows you to create a new user`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) < 1 {
-			ctx.Fatal("Insufficient arguments")
+			cmd.Help()
+			return
 		}
 
 		email := args[0]
@@ -73,7 +74,8 @@ var userLoginCmd = &cobra.Command{
 	Long:  `ttnctl user login allows you to login`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) < 1 {
-			ctx.Fatal("Insufficient arguments")
+			cmd.Help()
+			return
 		}
 
 		email := args[0]
