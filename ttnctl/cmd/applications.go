@@ -7,8 +7,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
+	"strings"
 
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
+	"github.com/apex/log"
 	"github.com/gosuri/uitable"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -29,7 +32,7 @@ var applicationsCmd = &cobra.Command{
 		server := viper.GetString("ttn-account-server")
 		req, err := util.NewRequestWithAuth(server, "GET", fmt.Sprintf("%s/applications", server), nil)
 		if err != nil {
-			ctx.WithError(err).Fatal("Failed to created authenticated request")
+			ctx.WithError(err).Fatal("Failed to create authenticated request")
 		}
 
 		client := &http.Client{}
@@ -60,6 +63,49 @@ var applicationsCmd = &cobra.Command{
 	},
 }
 
+var applicationsCreateCmd = &cobra.Command{
+	Use:   "create [eui] [name]",
+	Short: "Create a new application",
+	Long:  `ttnctl applications create creates a new application.`,
+	Run: func(cmd *cobra.Command, args []string) {
+		if len(args) < 2 {
+			cmd.Help()
+			return
+		}
+
+		server := viper.GetString("ttn-account-server")
+		values := url.Values{
+			"eui":  {args[0]},
+			"name": {args[1]},
+		}
+		req, err := util.NewRequestWithAuth(server, "POST", fmt.Sprintf("%s/applications", server), strings.NewReader(values.Encode()))
+		if err != nil {
+			ctx.WithError(err).Fatal("Failed to create authenticated request")
+		}
+
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			ctx.WithError(err).Fatal("Failed to create application")
+		}
+		if resp.StatusCode != http.StatusCreated {
+			ctx.Fatalf("Failed to create application: %s", resp.Status)
+		}
+
+		ctx.Info("Application created successfully")
+
+		// We need to refresh the token to add the new application to the set of
+		// claims
+		_, err = util.RefreshToken(server)
+		if err != nil {
+			log.WithError(err).Warn("Failed to refresh token. Please login")
+		}
+	},
+}
+
 func init() {
 	RootCmd.AddCommand(applicationsCmd)
+	applicationsCmd.AddCommand(applicationsCreateCmd)
 }

@@ -115,6 +115,15 @@ func NewRequestWithAuth(server, method, urlStr string, body io.Reader) (*http.Re
 	return req, nil
 }
 
+// RefreshToken refreshes the current token
+func RefreshToken(server string) (*Auth, error) {
+	auth, err := LoadAuth(server)
+	if err != nil {
+		return nil, err
+	}
+	return refreshToken(server, auth)
+}
+
 func refreshToken(server string, auth *Auth) (*Auth, error) {
 	values := url.Values{
 		"grant_type":    {"refresh_token"},
