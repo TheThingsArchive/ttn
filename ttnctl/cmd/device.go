@@ -36,10 +36,17 @@ var devicesCmd = &cobra.Command{
 			ctx.Fatalf("Invalid AppEUI: %s", err)
 		}
 
-		manager := getHandlerManager()
+		auth, err := util.LoadAuth(viper.GetString("ttn-account-server"))
+		if err != nil {
+			ctx.WithError(err).Fatal("Failed to load authentication")
+		}
+		if auth == nil {
+			ctx.Fatal("No authentication found. Please login")
+		}
 
+		manager := getHandlerManager()
 		res, err := manager.ListDevices(context.Background(), &core.ListDevicesHandlerReq{
-			Token:  viper.GetString("app-token"),
+			Token:  auth.AccessToken,
 			AppEUI: appEUI,
 		})
 		if err != nil {
@@ -99,9 +106,17 @@ var devicesRegisterCmd = &cobra.Command{
 			ctx.Fatalf("Invalid AppKey: %s", err)
 		}
 
+		auth, err := util.LoadAuth(viper.GetString("ttn-account-server"))
+		if err != nil {
+			ctx.WithError(err).Fatal("Failed to load authentication")
+		}
+		if auth == nil {
+			ctx.Fatal("No authentication found. Please login")
+		}
+
 		manager := getHandlerManager()
 		res, err := manager.UpsertOTAA(context.Background(), &core.UpsertOTAAHandlerReq{
-			Token:  viper.GetString("app-token"),
+			Token:  auth.AccessToken,
 			AppEUI: appEUI,
 			DevEUI: devEUI,
 			AppKey: appKey,
@@ -143,9 +158,17 @@ var devicesRegisterPersonalizedCmd = &cobra.Command{
 			ctx.Fatalf("Invalid AppSKey: %s", err)
 		}
 
+		auth, err := util.LoadAuth(viper.GetString("ttn-account-server"))
+		if err != nil {
+			ctx.WithError(err).Fatal("Failed to load authentication")
+		}
+		if auth == nil {
+			ctx.Fatal("No authentication found. Please login")
+		}
+
 		manager := getHandlerManager()
 		res, err := manager.UpsertABP(context.Background(), &core.UpsertABPHandlerReq{
-			Token:   viper.GetString("app-token"),
+			Token:   auth.AccessToken,
 			AppEUI:  appEUI,
 			DevAddr: devAddr,
 			AppSKey: appSKey,

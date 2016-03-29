@@ -63,9 +63,8 @@ func init() {
 	RootCmd.PersistentFlags().String("app-eui", "0102030405060708", "The app EUI to use")
 	viper.BindPFlag("app-eui", RootCmd.PersistentFlags().Lookup("app-eui"))
 
-	RootCmd.PersistentFlags().String("app-token", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJUVE4tSEFORExFUi0xIiwiaXNzIjoiVGhlVGhpbmdzVGhlTmV0d29yayIsInN1YiI6IjAxMDIwMzA0MDUwNjA3MDgifQ.zMHNXAVgQj672lwwDVmfYshpMvPwm6A8oNWJ7teGS2A", "The app Token to use")
-	viper.BindPFlag("app-token", RootCmd.PersistentFlags().Lookup("app-token"))
-
+	RootCmd.PersistentFlags().String("ttn-account-server", "https://account.thethingsnetwork.org", "The address of the OAuth 2.0 server")
+	viper.BindPFlag("ttn-account-server", RootCmd.PersistentFlags().Lookup("ttn-account-server"))
 }
 
 // initConfig reads in config file and ENV variables if set.
