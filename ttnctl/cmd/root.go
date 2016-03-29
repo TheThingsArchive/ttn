@@ -76,6 +76,7 @@ func initConfig() {
 
 	viper.SetConfigName(".ttnctl")
 	viper.AddConfigPath("$HOME")
+	viper.SetEnvPrefix("ttnctl") // set environment prefix
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
 	viper.AutomaticEnv()
 
