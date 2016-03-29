@@ -73,9 +73,14 @@ var applicationsCreateCmd = &cobra.Command{
 			return
 		}
 
+		appEUI, err := util.Parse64(args[0])
+		if err != nil {
+			ctx.Fatalf("Invalid AppEUI: %s", err)
+		}
+
 		server := viper.GetString("ttn-account-server")
 		values := url.Values{
-			"eui":  {args[0]},
+			"eui":  {fmt.Sprintf("%X", appEUI)},
 			"name": {args[1]},
 		}
 		req, err := util.NewRequestWithAuth(server, "POST", fmt.Sprintf("%s/applications", server), strings.NewReader(values.Encode()))
