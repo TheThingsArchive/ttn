@@ -109,6 +109,10 @@ The Handler is the bridge between The Things Network and applications.
 			ctx.WithError(err).Fatal("Could not dial broker")
 		}
 
+		if viper.GetString("handler.mqtt-username") == "" || viper.GetString("handler.mqtt-password") == "" {
+			ctx.WithError(fmt.Errorf("MQTT username or password not set")).Fatal("Could not connect to MQTT")
+		}
+
 		// MQTT Client & adapter
 		mqttClient, chmsg, err := mqtt.NewClient(
 			fmt.Sprintf("handler-%s", random.String(15)),
@@ -118,7 +122,7 @@ The Handler is the bridge between The Things Network and applications.
 			ctx.WithField("adapter", "app-adapter"),
 		)
 		if err != nil {
-			ctx.WithError(err).Fatal("Could not start MQTT client")
+			ctx.WithError(err).Fatal("Could not connect to MQTT")
 		}
 		appAdapter := mqtt.New(
 			mqtt.Components{Ctx: ctx.WithField("adapter", "app-adapter"), Client: mqttClient},
