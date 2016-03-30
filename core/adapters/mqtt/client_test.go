@@ -139,7 +139,7 @@ func TestNewClient(t *testing.T) {
 		Desc(t, "Create client with invalid address")
 
 		// Build
-		_, _, err := NewClient(newID(), "invalidAddress", GetLogger(t, "Test Logger"))
+		_, _, err := NewClient(newID(), "invalidAddress", "", "", GetLogger(t, "Test Logger"))
 
 		// Check
 		CheckErrors(t, ErrOperational, err)
@@ -151,7 +151,7 @@ func TestNewClient(t *testing.T) {
 		Desc(t, "Connect a client and receive a down msg")
 
 		// Build
-		cli, chmsg, err := NewClient(newID(), BrokerAddr, GetLogger(t, "Test Logger"))
+		cli, chmsg, err := NewClient(newID(), BrokerAddr, "", "", GetLogger(t, "Test Logger"))
 		FatalUnless(t, err)
 		msg := Msg{
 			Type:    Down,
@@ -186,7 +186,7 @@ func TestNewClient(t *testing.T) {
 		Desc(t, "Connect a client and send on a random topic")
 
 		// Build
-		cli, chmsg, err := NewClient(newID(), BrokerAddr, GetLogger(t, "Test Logger"))
+		cli, chmsg, err := NewClient(newID(), BrokerAddr, "", "", GetLogger(t, "Test Logger"))
 		FatalUnless(t, err)
 		var msg Msg
 
@@ -218,7 +218,7 @@ func TestNewClient(t *testing.T) {
 
 		// Build
 		id := newID()
-		cli, chmsg, err := NewClient(id, BrokerAddr, GetLogger(t, "Test Logger"))
+		cli, chmsg, err := NewClient(id, BrokerAddr, "", "", GetLogger(t, "Test Logger"))
 		FatalUnless(t, err)
 		msg := Msg{
 			Type:    Down,
@@ -269,7 +269,7 @@ func TestNewClient(t *testing.T) {
 			Topic:   "topic",
 			Payload: []byte{14, 42},
 		}
-		cli, _, err := NewClient(newID(), BrokerAddr, GetLogger(t, "Test Logger"))
+		cli, _, err := NewClient(newID(), BrokerAddr, "", "", GetLogger(t, "Test Logger"))
 		FatalUnless(t, err)
 		err = testCli.Subscribe(&client.SubscribeOptions{
 			SubReqs: []*client.SubReq{

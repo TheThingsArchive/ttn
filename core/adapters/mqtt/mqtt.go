@@ -103,7 +103,7 @@ func (a adapter) HandleData(bctx context.Context, req *core.DataAppReq, _ ...grp
 	}
 
 	// Actually send it
-	ctx.Debug("Sending Packet")
+	ctx.Debug("Sending packet")
 	deui, aeui := hex.EncodeToString(req.DevEUI), hex.EncodeToString(req.AppEUI)
 	err = a.Client.Publish(&client.PublishOptions{
 		QoS:       mqtt.QoS2,

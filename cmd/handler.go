@@ -112,6 +112,8 @@ The Handler is the bridge between The Things Network and applications.
 		mqttClient, chmsg, err := mqtt.NewClient(
 			"handler-client",
 			viper.GetString("handler.mqtt-broker"),
+			viper.GetString("handler.mqtt-username"),
+			viper.GetString("handler.mqtt-password"),
 			ctx.WithField("adapter", "app-adapter"),
 		)
 		if err != nil {
@@ -172,7 +174,11 @@ func init() {
 	viper.BindPFlag("handler.public-port", handlerCmd.Flags().Lookup("public-port"))
 
 	handlerCmd.Flags().String("mqtt-broker", "localhost:1883", "The address of the MQTT broker (uplink)")
+	handlerCmd.Flags().String("mqtt-username", "", "The username for the MQTT broker (uplink)")
+	handlerCmd.Flags().String("mqtt-password", "", "The password for the MQTT broker (uplink)")
 	viper.BindPFlag("handler.mqtt-broker", handlerCmd.Flags().Lookup("mqtt-broker"))
+	viper.BindPFlag("handler.mqtt-username", handlerCmd.Flags().Lookup("mqtt-username"))
+	viper.BindPFlag("handler.mqtt-password", handlerCmd.Flags().Lookup("mqtt-password"))
 
 	handlerCmd.Flags().String("ttn-broker", "localhost:1781", "The address of the TTN broker (downlink)")
 	viper.BindPFlag("handler.ttn-broker", handlerCmd.Flags().Lookup("ttn-broker"))
