@@ -1,7 +1,7 @@
 // Copyright © 2016 The Things Network
 // Use of this source code is governed by the MIT license that can be found in the LICENSE file.
 
-package util
+package random
 
 import (
 	"encoding/binary"
@@ -22,8 +22,8 @@ const (
 
 var src = rand.New(rand.NewSource(time.Now().UnixNano()))
 
-// RandString returns random string of length n
-func RandString(n int) string {
+// String returns random string of length n
+func String(n int) string {
 	b := make([]byte, n)
 	// A src.Int63() generates 63 random bits, enough for letterIdxMax characters!
 	for i, cache, remain := n-1, src.Int63(), letterIdxMax; i >= 0; {
@@ -41,28 +41,28 @@ func RandString(n int) string {
 	return string(b)
 }
 
-// RandToken generate a random 2-bytes token
-func RandToken() []byte {
+// Token generate a random 2-bytes token
+func Token() []byte {
 	b := make([]byte, 4)
 	binary.BigEndian.PutUint32(b, src.Uint32())
 	return b[0:2]
 }
 
-// RandRssi generates RSSI signal between -120 < rssi < 0
-func RandRssi() int32 {
+// Rssi generates RSSI signal between -120 < rssi < 0
+func Rssi() int32 {
 	// Generate RSSI. Tend towards generating great signal strength.
 	x := float64(src.Int31()) * float64(2e-9)
 	return int32(-1.6 * math.Exp(x))
 }
 
-// RandFreq generates a frequency between 865.0 and 870.0 Mhz
-func RandFreq() float32 {
+// Freq generates a frequency between 865.0 and 870.0 Mhz
+func Freq() float32 {
 	// EU 865-870MHz
 	return float32(src.Float64()*5 + 865.0)
 }
 
-// RandDatr generates Datr for instance: SF4BW125
-func RandDatr() string {
+// Datr generates Datr for instance: SF4BW125
+func Datr() string {
 	// Spread Factor from 12 to 7
 	sf := 12 - src.Intn(7)
 	var bw int
@@ -76,14 +76,14 @@ func RandDatr() string {
 	return fmt.Sprintf("SF%dBW%d", sf, bw)
 }
 
-// RandCodr generates Codr for instance: 4/6
-func RandCodr() string {
+// Codr generates Codr for instance: 4/6
+func Codr() string {
 	d := src.Intn(4) + 5
 	return fmt.Sprintf("4/%d", d)
 }
 
-// RandLsnr generates LoRa SNR ratio in db. Tend towards generating good ratio with low noise
-func RandLsnr() float32 {
+// Lsnr generates LoRa SNR ratio in db. Tend towards generating good ratio with low noise
+func Lsnr() float32 {
 	x := float64(src.Int31()) * float64(2e-9)
 	return float32(math.Floor((-0.1*math.Exp(x)+5.5)*10) / 10)
 }
