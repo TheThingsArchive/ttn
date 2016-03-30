@@ -13,6 +13,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/adapters/mqtt"
 	"github.com/TheThingsNetwork/ttn/core/components/broker"
 	"github.com/TheThingsNetwork/ttn/core/components/handler"
+	"github.com/TheThingsNetwork/ttn/utils/random"
 	"github.com/TheThingsNetwork/ttn/utils/stats"
 	"github.com/apex/log"
 	"github.com/spf13/cobra"
@@ -110,7 +111,7 @@ The Handler is the bridge between The Things Network and applications.
 
 		// MQTT Client & adapter
 		mqttClient, chmsg, err := mqtt.NewClient(
-			"handler-client",
+			fmt.Sprintf("handler-%s", random.String(15)),
 			viper.GetString("handler.mqtt-broker"),
 			viper.GetString("handler.mqtt-username"),
 			viper.GetString("handler.mqtt-password"),
