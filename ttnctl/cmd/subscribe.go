@@ -11,6 +11,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/api"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
+	"github.com/TheThingsNetwork/ttn/utils/random"
 	"github.com/howeyc/gopass"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -60,7 +61,7 @@ application.`,
 		broker := fmt.Sprintf("tcp://%s", viper.GetString("mqtt-broker"))
 		opts := MQTT.NewClientOptions().AddBroker(broker)
 
-		clientID := fmt.Sprintf("ttntool-%s", util.RandString(15))
+		clientID := fmt.Sprintf("ttntool-%s", random.String(15))
 		opts.SetClientID(clientID)
 
 		opts.SetUsername(t.Email)
