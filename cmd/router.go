@@ -204,6 +204,6 @@ func init() {
 	viper.BindPFlag("router.downlink-address", routerCmd.Flags().Lookup("downlink-address"))
 	viper.BindPFlag("router.downlink-port", routerCmd.Flags().Lookup("downlink-port"))
 
-	routerCmd.Flags().String("brokers", ":1881", "Comma-separated list of brokers")
+	routerCmd.Flags().String("brokers", "localhost:1881", "Comma-separated list of brokers")
 	viper.BindPFlag("router.brokers", routerCmd.Flags().Lookup("brokers"))
 }

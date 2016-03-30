@@ -8,8 +8,8 @@ import (
 	"os"
 	"strings"
 
+	cliHandler "github.com/TheThingsNetwork/ttn/utils/cli/handler"
 	"github.com/apex/log"
-	"github.com/apex/log/handlers/cli"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -28,11 +28,9 @@ var RootCmd = &cobra.Command{
 		if viper.GetBool("debug") {
 			logLevel = log.DebugLevel
 		}
-		cli.Colors[log.DebugLevel] = 90
-		cli.Colors[log.InfoLevel] = 32
 		ctx = &log.Logger{
 			Level:   logLevel,
-			Handler: cli.New(os.Stdout),
+			Handler: cliHandler.New(os.Stdout),
 		}
 	},
 }

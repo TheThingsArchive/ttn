@@ -8,7 +8,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/TheThingsNetwork/ttn/utils/cli"
+	cliHandler "github.com/TheThingsNetwork/ttn/utils/cli/handler"
 	"github.com/apex/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -30,7 +30,7 @@ var RootCmd = &cobra.Command{
 		}
 		ctx = &log.Logger{
 			Level:   logLevel,
-			Handler: cli.New(os.Stdout),
+			Handler: cliHandler.New(os.Stdout),
 		}
 	},
 }
