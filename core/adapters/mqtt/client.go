@@ -28,14 +28,14 @@ type Client interface {
 type connecter func() error
 
 // NewClient creates and connects a mqtt client with predefined options.
-func NewClient(id string, netAddr string, ctx log.Interface) (Client, chan Msg, error) {
+func NewClient(id, netAddr, username, password string, ctx log.Interface) (Client, chan Msg, error) {
 	ctx = ctx.WithField("id", id).WithField("address", netAddr)
 	chcmd := make(chan interface{})
 	chmsg := make(chan Msg)
 
 	go monitorClient(id, netAddr, chcmd, ctx)
 
-	tryConnect := createConnecter(id, netAddr, chmsg, chcmd, ctx)
+	tryConnect := createConnecter(id, netAddr, username, password, chmsg, chcmd, ctx)
 	if err := tryConnect(); err != nil {
 		close(chcmd)
 		return nil, nil, errors.New(errors.Operational, err)
@@ -85,7 +85,7 @@ func monitorClient(id string, netAddr string, chcmd <-chan interface{}, ctx log.
 			cli = cmd.options
 			cmd.cherr <- nil
 		default:
-			ctx.WithField("cmd", cmd).Warn("Received unreckognized command")
+			ctx.WithField("cmd", cmd).Warn("Received unrecognized command")
 		}
 	}
 
@@ -99,12 +99,12 @@ func monitorClient(id string, netAddr string, chcmd <-chan interface{}, ctx log.
 // createConnecter is used to start and subscribe a new client. It also make sure that if the
 // created client goes down, another one is automatically created such that the client recover
 // itself.
-func createConnecter(id string, netAddr string, chmsg chan<- Msg, chcmd chan<- interface{}, ctx log.Interface) connecter {
+func createConnecter(id, netAddr, username, password string, chmsg chan<- Msg, chcmd chan<- interface{}, ctx log.Interface) connecter {
 	ctx.Debug("Create new connecter for MQTT client")
 	var cli *client.Client
 	cli = client.New(&client.Options{
 		ErrorHandler: createErrorHandler(
-			func() error { return createConnecter(id, netAddr, chmsg, chcmd, ctx)() },
+			func() error { return createConnecter(id, netAddr, username, password, chmsg, chcmd, ctx)() },
 			10000*InitialReconnectDelay,
 			ctx,
 		),
@@ -116,6 +116,8 @@ func createConnecter(id string, netAddr string, chmsg chan<- Msg, chcmd chan<- i
 			Network:  "tcp",
 			Address:  netAddr,
 			ClientID: []byte(id),
+			UserName: []byte(username),
+			Password: []byte(password),
 		})
 
 		if err != nil {
