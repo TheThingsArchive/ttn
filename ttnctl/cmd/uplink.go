@@ -13,6 +13,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/semtech"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
+	"github.com/TheThingsNetwork/ttn/utils/random"
 	"github.com/brocaar/lorawan"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -186,17 +187,17 @@ var uplinkCmd = &cobra.Command{
 		encoded := strings.Trim(base64.StdEncoding.EncodeToString(data), "=")
 		payload := semtech.Packet{
 			Identifier: semtech.PUSH_DATA,
-			Token:      util.RandToken(),
+			Token:      random.Token(),
 			GatewayId:  []byte{1, 2, 3, 4, 5, 6, 7, 8},
 			Version:    semtech.VERSION,
 			Payload: &semtech.Payload{
 				RXPK: []semtech.RXPK{
 					{
-						Rssi: pointer.Int32(util.RandRssi()),
-						Lsnr: pointer.Float32(util.RandLsnr()),
-						Freq: pointer.Float32(util.RandFreq()),
-						Datr: pointer.String(util.RandDatr()),
-						Codr: pointer.String(util.RandCodr()),
+						Rssi: pointer.Int32(random.Rssi()),
+						Lsnr: pointer.Float32(random.Lsnr()),
+						Freq: pointer.Float32(random.Freq()),
+						Datr: pointer.String(random.Datr()),
+						Codr: pointer.String(random.Codr()),
 						Modu: pointer.String("LoRa"),
 						Tmst: pointer.Uint32(1),
 						Data: &encoded,

@@ -7,7 +7,7 @@ import (
 	"fmt"
 
 	MQTT "git.eclipse.org/gitroot/paho/org.eclipse.paho.mqtt.golang.git"
-	"github.com/TheThingsNetwork/ttn/ttnctl/util"
+	"github.com/TheThingsNetwork/ttn/utils/random"
 	"github.com/apex/log"
 )
 
@@ -23,7 +23,7 @@ func Setup(broker string, _ctx log.Interface) {
 	ctx = _ctx
 
 	mqttOpts := MQTT.NewClientOptions().AddBroker(fmt.Sprintf("tcp://%s", broker))
-	clientID := fmt.Sprintf("ttnctl-%s", util.RandString(16))
+	clientID := fmt.Sprintf("ttnctl-%s", random.String(16))
 	mqttOpts.SetClientID(clientID)
 
 	mqttOpts.SetKeepAlive(20)
