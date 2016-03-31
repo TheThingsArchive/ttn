@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
 )
 
 // K is the data returned by the token key provider
@@ -18,8 +17,7 @@ type K struct {
 // Provider represents a provider of the token key
 type Provider interface {
 	fmt.Stringer
-	Get() (*K, error)
-	Refresh() (*K, error)
+	Get(renew bool) (*K, error)
 }
 
 type httpProvider struct {
@@ -37,29 +35,25 @@ func (p *httpProvider) String() string {
 	return p.url
 }
 
-func (p *httpProvider) Get() (*K, error) {
+func (p *httpProvider) Get(renew bool) (*K, error) {
 	var data []byte
 
-	// Try to read the data from cache
-	d, err := ioutil.ReadFile(p.cacheFile)
+	// Try to read from cache
+	cached, err := ioutil.ReadFile(p.cacheFile)
 	if err == nil {
-		data = d
+		data = cached
 	}
 
-	// If the file doesn't exist or if there's a read error, get it from the
-	// server
-	if data == nil {
-		resp, err := http.Get(p.url)
-		if err != nil {
-			return nil, err
-		}
-		if resp.StatusCode != http.StatusOK {
-			return nil, errors.New(resp.Status)
-		}
-		defer resp.Body.Close()
-		data, err = ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return nil, err
+	// Fetch token if there's a renew or if there's no key cached
+	if renew || data == nil {
+		fetched, err := p.fetch()
+		if err == nil {
+			data = fetched
+			// Don't care about errors here. It's better to retrieve keys all the time
+			// because they can't be cached than not to be able to verify a token
+			ioutil.WriteFile(p.cacheFile, data, 0644)
+		} else if data == nil {
+			return nil, err // We don't have a key here
 		}
 	}
 
@@ -68,19 +62,21 @@ func (p *httpProvider) Get() (*K, error) {
 		return nil, err
 	}
 
-	// Don't care about errors here. It's better to retrieve keys all the time
-	// because they can't be cached than not to be able to verify a token
-	ioutil.WriteFile(p.cacheFile, data, 0644)
-
 	return &key, nil
 }
 
-func (p *httpProvider) Refresh() (*K, error) {
-	// Just delete the cached file...
-	if err := os.Remove(p.cacheFile); err != nil && !os.IsNotExist(err) {
+func (p *httpProvider) fetch() ([]byte, error) {
+	resp, err := http.Get(p.url)
+	if err != nil {
 		return nil, err
 	}
-
-	// ...so that Get always gets a new file
-	return p.Get()
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.New(resp.Status)
+	}
+	defer resp.Body.Close()
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
 }

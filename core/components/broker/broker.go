@@ -71,7 +71,7 @@ func (b component) Start() error {
 	}
 
 	if b.TokenKeyProvider != nil {
-		tokenKey, err := b.TokenKeyProvider.Refresh()
+		tokenKey, err := b.TokenKeyProvider.Get(true)
 		if err != nil {
 			return errors.New(errors.Operational, fmt.Sprintf("Failed to refresh token key: %s", err.Error()))
 		}

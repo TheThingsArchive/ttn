@@ -104,14 +104,14 @@ func (b component) validateToken(ctx context.Context, token string, appEUI []byt
 		if b.TokenKeyProvider == nil {
 			return nil, errors.New(errors.Structural, "No token provider configured")
 		}
-		t, err := b.TokenKeyProvider.Get()
+		k, err := b.TokenKeyProvider.Get(false)
 		if err != nil {
 			return nil, err
 		}
-		if t.Algorithm != token.Header["alg"] {
-			return nil, errors.New(errors.Structural, fmt.Sprintf("Expected algorithm %v but got %v", t.Algorithm, token.Header["alg"]))
+		if k.Algorithm != token.Header["alg"] {
+			return nil, errors.New(errors.Structural, fmt.Sprintf("Expected algorithm %v but got %v", k.Algorithm, token.Header["alg"]))
 		}
-		return []byte(t.Key), nil
+		return []byte(k.Key), nil
 	})
 	if err != nil {
 		return errors.New(errors.Structural, fmt.Sprintf("Unable to parse token: %s", err.Error()))
