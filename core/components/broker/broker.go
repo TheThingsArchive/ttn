@@ -70,11 +70,13 @@ func (b component) Start() error {
 		return errors.New(errors.Operational, err)
 	}
 
-	tokenKey, err := b.TokenKeyProvider.Refresh()
-	if err != nil {
-		return errors.New(errors.Operational, fmt.Sprintf("Failed to refresh token key: %s", err.Error()))
+	if b.TokenKeyProvider != nil {
+		tokenKey, err := b.TokenKeyProvider.Refresh()
+		if err != nil {
+			return errors.New(errors.Operational, fmt.Sprintf("Failed to refresh token key: %s", err.Error()))
+		}
+		b.Ctx.WithField("provider", b.TokenKeyProvider).Infof("Got token key for algorithm %v", tokenKey.Algorithm)
 	}
-	b.Ctx.WithField("provider", b.TokenKeyProvider).Infof("Got token key for algorithm %v", tokenKey.Algorithm)
 
 	server := grpc.NewServer()
 	core.RegisterBrokerServer(server, b)
