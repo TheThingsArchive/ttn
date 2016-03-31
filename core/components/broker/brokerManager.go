@@ -101,16 +101,23 @@ func (b component) UpsertABP(bctx context.Context, req *core.UpsertABPBrokerReq)
 // validateToken verify an OAuth Bearer token pass through metadata during RPC
 func (b component) validateToken(ctx context.Context, token string, appEUI []byte) error {
 	parsed, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
-			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+		if b.TokenKeyProvider == nil {
+			return nil, errors.New(errors.Structural, "No token provider configured")
 		}
-		return b.TokenKey, nil
+		k, err := b.TokenKeyProvider.Get(false)
+		if err != nil {
+			return nil, err
+		}
+		if k.Algorithm != token.Header["alg"] {
+			return nil, errors.New(errors.Structural, fmt.Sprintf("Expected algorithm %v but got %v", k.Algorithm, token.Header["alg"]))
+		}
+		return []byte(k.Key), nil
 	})
 	if err != nil {
-		return errors.New(errors.Structural, "Unable to parse token")
+		return errors.New(errors.Structural, fmt.Sprintf("Unable to parse token: %s", err.Error()))
 	}
 	if !parsed.Valid {
-		return errors.New(errors.Operational, "The token is not valid or is expired.")
+		return errors.New(errors.Operational, "The token is not valid or is expired")
 	}
 
 	apps, ok := parsed.Claims["apps"].([]interface{})

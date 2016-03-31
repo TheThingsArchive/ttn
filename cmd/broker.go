@@ -5,7 +5,6 @@ package cmd
 
 import (
 	"fmt"
-	"io/ioutil"
 	"path"
 	"path/filepath"
 	"strings"
@@ -14,6 +13,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/adapters/http"
 	"github.com/TheThingsNetwork/ttn/core/components/broker"
 	"github.com/TheThingsNetwork/ttn/utils/stats"
+	"github.com/TheThingsNetwork/ttn/utils/tokenkey"
 	"github.com/apex/log"
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
@@ -99,12 +99,6 @@ devices (with their network session keys) with the Broker.
 			ctx.WithError(fmt.Errorf("Invalid applications database string. Format: \"boltdb:/path/to.db\".")).Fatal("Could not instantiate local storage")
 		}
 
-		// Security
-		tokenKey, err := ioutil.ReadFile(viper.GetString("broker.oauth2-keyfile"))
-		if err != nil {
-			ctx.WithError(err).Fatal("Unable to load OAuth 2.0 key")
-		}
-
 		// Broker
 		broker := broker.New(
 			broker.Components{
@@ -113,9 +107,9 @@ devices (with their network session keys) with the Broker.
 				AppStorage:        dbApp,
 			},
 			broker.Options{
-				NetAddrUp:   fmt.Sprintf("%s:%d", viper.GetString("broker.uplink-address"), viper.GetInt("broker.uplink-port")),
-				NetAddrDown: fmt.Sprintf("%s:%d", viper.GetString("broker.downlink-address"), viper.GetInt("broker.downlink-port")),
-				TokenKey:    tokenKey,
+				NetAddrUp:        fmt.Sprintf("%s:%d", viper.GetString("broker.uplink-address"), viper.GetInt("broker.uplink-port")),
+				NetAddrDown:      fmt.Sprintf("%s:%d", viper.GetString("broker.downlink-address"), viper.GetInt("broker.downlink-port")),
+				TokenKeyProvider: tokenkey.NewHTTPProvider(fmt.Sprintf("%s/key", viper.GetString("broker.account-server")), viper.GetString("broker.oauth2-keyfile")),
 			},
 		)
 
@@ -149,6 +143,9 @@ func init() {
 	brokerCmd.Flags().Int("downlink-port", 1781, "The port for downlink communication")
 	viper.BindPFlag("broker.downlink-address", brokerCmd.Flags().Lookup("downlink-address"))
 	viper.BindPFlag("broker.downlink-port", brokerCmd.Flags().Lookup("downlink-port"))
+
+	brokerCmd.Flags().String("account-server", "https://account.thethingsnetwork.org", "The address of the OAuth 2.0 server")
+	viper.BindPFlag("broker.account-server", brokerCmd.Flags().Lookup("account-server"))
 
 	defaultOAuth2KeyFile := ""
 	dir, err := homedir.Dir()
