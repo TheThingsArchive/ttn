@@ -4,12 +4,12 @@
 package cmd
 
 import (
-	"crypto/aes"
 	"encoding/base64"
 	"net"
 	"strings"
 	"time"
 
+	"github.com/TheThingsNetwork/ttn/core/otaa"
 	"github.com/TheThingsNetwork/ttn/semtech"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
@@ -143,21 +143,11 @@ var joinCmd = &cobra.Command{
 				ctx.Fatalf("Unable to retrieve LoRaWAN Join-Accept Payload")
 			}
 
-			buf = make([]byte, 16)
-			copy(buf[1:4], joinAccept.AppNonce[:])
-			copy(buf[4:7], joinAccept.NetID[:])
-			copy(buf[7:9], devNonce[:])
-
-			block, err := aes.NewCipher(appKey[:])
-			if err != nil || block.BlockSize() != 16 {
-				ctx.Fatalf("Unable to create cipher to generate keys: %s", err)
+			// Generate Session keys
+			appSKey, nwkSKey, err := otaa.CalculateSessionKeys(appKey, joinAccept.AppNonce, joinAccept.NetID, devNonce)
+			if err != nil {
+				ctx.Fatal("Unable to compute session keys")
 			}
-
-			var nwkSKey, appSKey [16]byte
-			buf[0] = 0x1
-			block.Encrypt(nwkSKey[:], buf)
-			buf[0] = 0x2
-			block.Encrypt(appSKey[:], buf)
 
 			ctx.Info("Network Joined.")
 			ctx.Infof("Device Address: %X", joinAccept.DevAddr[:])
