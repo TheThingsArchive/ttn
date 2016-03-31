@@ -1299,7 +1299,7 @@ func TestHandleDataUp(t *testing.T) {
 		var wantRes = &core.DataUpHandlerRes{
 			Payload: &core.LoRaWANData{
 				MHDR: &core.LoRaWANMHDR{
-					MType: uint32(lorawan.ConfirmedDataDown),
+					MType: uint32(lorawan.UnconfirmedDataDown),
 					Major: uint32(lorawan.LoRaWANR1),
 				},
 				MACPayload: &core.LoRaWANMACPayload{
@@ -1401,7 +1401,7 @@ func TestHandleDataUp(t *testing.T) {
 		var wantRes = &core.DataUpHandlerRes{
 			Payload: &core.LoRaWANData{
 				MHDR: &core.LoRaWANMHDR{
-					MType: uint32(lorawan.ConfirmedDataDown),
+					MType: uint32(lorawan.UnconfirmedDataDown),
 					Major: uint32(lorawan.LoRaWANR1),
 				},
 				MACPayload: &core.LoRaWANMACPayload{

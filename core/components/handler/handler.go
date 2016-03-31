@@ -607,17 +607,9 @@ func (h component) consumeDown(appEUI []byte, devEUI []byte, dataRate string, bu
 	for i, bundle := range bundles {
 		if best != nil && best.ID == i && (downlink.Payload != nil || upType == lorawan.ConfirmedDataUp) {
 			stats.MarkMeter("handler.downlink.pull")
-			var downType lorawan.MType
-			switch upType {
-			case lorawan.UnconfirmedDataUp:
-				downType = lorawan.UnconfirmedDataDown
-			case lorawan.ConfirmedDataUp:
-				downType = lorawan.ConfirmedDataDown
-			default:
-				h.abortConsume(errors.New(errors.Implementation, "Unrecognized uplink MType"), bundles)
-				return
-			}
-			downlink, err := h.buildDownlink(downlink.Payload, downType, *bundle.Packet.(*core.DataUpHandlerReq), bundle.Entry, best.IsRX2)
+			downType := lorawan.UnconfirmedDataDown
+			ack := (upType == lorawan.ConfirmedDataUp)
+			downlink, err := h.buildDownlink(downlink.Payload, downType, ack, *bundle.Packet.(*core.DataUpHandlerReq), bundle.Entry, best.IsRX2)
 			if err != nil {
 				h.abortConsume(errors.New(errors.Structural, err), bundles)
 				return
@@ -656,7 +648,7 @@ func (h component) abortConsume(err error, bundles []bundle) {
 
 // constructs a downlink packet from something we pulled from the gathered downlink, and, the actual
 // uplink.
-func (h component) buildDownlink(down []byte, mtype lorawan.MType, up core.DataUpHandlerReq, entry devEntry, isRX2 bool) (*core.DataUpHandlerRes, error) {
+func (h component) buildDownlink(down []byte, mtype lorawan.MType, ack bool, up core.DataUpHandlerReq, entry devEntry, isRX2 bool) (*core.DataUpHandlerRes, error) {
 	macpayload := lorawan.NewMACPayload(false)
 	macpayload.FHDR = lorawan.FHDR{
 		FCnt: entry.FCntDown + 1,
@@ -664,7 +656,7 @@ func (h component) buildDownlink(down []byte, mtype lorawan.MType, up core.DataU
 	copy(macpayload.FHDR.DevAddr[:], entry.DevAddr)
 	macpayload.FPort = new(uint8)
 	*macpayload.FPort = 1
-	if mtype == lorawan.ConfirmedDataDown {
+	if ack {
 		macpayload.FHDR.FCtrl.ACK = true
 	}
 	var frmpayload []byte
