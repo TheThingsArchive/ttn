@@ -5,7 +5,6 @@ package handler
 
 import (
 	"bytes"
-	"crypto/aes"
 	"encoding/binary"
 	"fmt"
 	"math/rand"
@@ -14,6 +13,7 @@ import (
 
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/dutycycle"
+	"github.com/TheThingsNetwork/ttn/core/otaa"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/stats"
 	"github.com/apex/log"
@@ -461,30 +461,27 @@ func (h component) consumeJoin(appEUI []byte, devEUI []byte, appKey [16]byte, da
 	}
 	packet := bundles[best.ID].Packet.(*core.JoinHandlerReq)
 
-	// Generate a DevAddr + NwkSKey + AppSKey
-	ctx.Debug("Generate DevAddr, NwkSKey and AppSKey")
+	// Generate a DevAddr - Note: this should be done by the Broker (issue #90). Random generation should be moved to the random package
 	rdn := rand.New(rand.NewSource(int64(packet.Metadata.Rssi)))
-	appNonce, devAddr := make([]byte, 4), [4]byte{}
-	binary.BigEndian.PutUint32(appNonce, rdn.Uint32())
+	var devAddr [4]byte
 	binary.BigEndian.PutUint32(devAddr[:], rdn.Uint32())
 	devAddr[0] = (h.Configuration.NetID[2] << 1) | (devAddr[0] & 1) // DevAddr 7 msb are NetID 7 lsb
 
-	buf := make([]byte, 16)
-	copy(buf[1:4], appNonce[:3])
-	copy(buf[4:7], h.Configuration.NetID[:])
-	copy(buf[7:9], packet.DevNonce)
+	// Generate appNonce - Note: this should be moved to the random package
+	b := make([]byte, 4)
+	binary.BigEndian.PutUint32(b, rdn.Uint32())
+	var appNonce [3]byte
+	copy(appNonce[:], b[:3])
 
-	block, err := aes.NewCipher(appKey[:])
-	if err != nil || block.BlockSize() != 16 {
-		h.abortConsume(errors.New(errors.Structural, "Unable to create cipher to generate keys"), bundles)
+	var devNonce [2]byte
+	copy(devNonce[:], packet.DevNonce)
+
+	// Generate Session keys
+	appSKey, nwkSKey, err := otaa.CalculateSessionKeys(appKey, appNonce, h.Configuration.NetID, devNonce)
+	if err != nil {
+		h.abortConsume(errors.New(errors.Structural, "Unable to generate session keys"), bundles)
 		return
 	}
-
-	var nwkSKey, appSKey [16]byte
-	buf[0] = 0x1
-	block.Encrypt(nwkSKey[:], buf)
-	buf[0] = 0x2
-	block.Encrypt(appSKey[:], buf)
 
 	// Update the internal storage entry
 	err = h.DevStorage.upsert(devEntry{
