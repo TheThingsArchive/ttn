@@ -9,8 +9,8 @@ import (
 	"os"
 )
 
-// T is the data returned by the token key provider
-type T struct {
+// K is the data returned by the token key provider
+type K struct {
 	Algorithm string `json:"algorithm"`
 	Key       string `json:"key"`
 }
@@ -18,8 +18,8 @@ type T struct {
 // Provider represents a provider of the token key
 type Provider interface {
 	fmt.Stringer
-	Get() (*T, error)
-	Refresh() (*T, error)
+	Get() (*K, error)
+	Refresh() (*K, error)
 }
 
 type httpProvider struct {
@@ -37,7 +37,7 @@ func (p *httpProvider) String() string {
 	return p.url
 }
 
-func (p *httpProvider) Get() (*T, error) {
+func (p *httpProvider) Get() (*K, error) {
 	var data []byte
 
 	// Try to read the data from cache
@@ -63,8 +63,8 @@ func (p *httpProvider) Get() (*T, error) {
 		}
 	}
 
-	var token T
-	if err := json.Unmarshal(data, &token); err != nil {
+	var key K
+	if err := json.Unmarshal(data, &key); err != nil {
 		return nil, err
 	}
 
@@ -72,10 +72,10 @@ func (p *httpProvider) Get() (*T, error) {
 	// because they can't be cached than not to be able to verify a token
 	ioutil.WriteFile(p.cacheFile, data, 0644)
 
-	return &token, nil
+	return &key, nil
 }
 
-func (p *httpProvider) Refresh() (*T, error) {
+func (p *httpProvider) Refresh() (*K, error) {
 	// Just delete the cached file...
 	if err := os.Remove(p.cacheFile); err != nil && !os.IsNotExist(err) {
 		return nil, err
