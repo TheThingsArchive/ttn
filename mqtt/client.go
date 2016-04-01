@@ -24,17 +24,17 @@ type Client interface {
 
 	// Uplink pub/sub
 	PublishUplink(appEUI []byte, devEUI []byte, payload core.DataUpAppReq) Token
-	SubscribeUplink(appEUI []byte, devEUI []byte, handler UplinkHandler) Token
+	SubscribeDeviceUplink(appEUI []byte, devEUI []byte, handler UplinkHandler) Token
 	SubscribeAppUplink(appEUI []byte, handler UplinkHandler) Token
 
 	// Downlink pub/sub
 	PublishDownlink(appEUI []byte, devEUI []byte, payload core.DataDownAppReq) Token
-	SubscribeDownlink(appEUI []byte, devEUI []byte, handler DownlinkHandler) Token
+	SubscribeDeviceDownlink(appEUI []byte, devEUI []byte, handler DownlinkHandler) Token
 	SubscribeAppDownlink(appEUI []byte, handler DownlinkHandler) Token
 
 	// Activation pub/sub
 	PublishActivation(appEUI []byte, devEUI []byte, payload core.OTAAAppReq) Token
-	SubscribeActivations(appEUI []byte, devEUI []byte, handler ActivationHandler) Token
+	SubscribeDeviceActivations(appEUI []byte, devEUI []byte, handler ActivationHandler) Token
 	SubscribeAppActivations(appEUI []byte, handler ActivationHandler) Token
 }
 
@@ -133,7 +133,7 @@ func (c *defaultClient) PublishUplink(appEUI []byte, devEUI []byte, dataUp core.
 	return c.mqtt.Publish(topic.String(), QoS, false, msg)
 }
 
-func (c *defaultClient) SubscribeUplink(appEUI []byte, devEUI []byte, handler UplinkHandler) Token {
+func (c *defaultClient) SubscribeDeviceUplink(appEUI []byte, devEUI []byte, handler UplinkHandler) Token {
 	topic := Topic{appEUI, devEUI, Uplink}
 	return c.mqtt.Subscribe(topic.String(), QoS, func(mqtt *MQTT.Client, msg MQTT.Message) {
 		// Determine the actual topic
@@ -157,7 +157,7 @@ func (c *defaultClient) SubscribeUplink(appEUI []byte, devEUI []byte, handler Up
 }
 
 func (c *defaultClient) SubscribeAppUplink(appEUI []byte, handler UplinkHandler) Token {
-	return c.SubscribeUplink(appEUI, []byte{}, handler)
+	return c.SubscribeDeviceUplink(appEUI, []byte{}, handler)
 }
 
 func (c *defaultClient) PublishDownlink(appEUI []byte, devEUI []byte, dataDown core.DataDownAppReq) Token {
@@ -169,7 +169,7 @@ func (c *defaultClient) PublishDownlink(appEUI []byte, devEUI []byte, dataDown c
 	return c.mqtt.Publish(topic.String(), QoS, false, msg)
 }
 
-func (c *defaultClient) SubscribeDownlink(appEUI []byte, devEUI []byte, handler DownlinkHandler) Token {
+func (c *defaultClient) SubscribeDeviceDownlink(appEUI []byte, devEUI []byte, handler DownlinkHandler) Token {
 	topic := Topic{appEUI, devEUI, Downlink}
 	return c.mqtt.Subscribe(topic.String(), QoS, func(mqtt *MQTT.Client, msg MQTT.Message) {
 		// Determine the actual topic
@@ -193,7 +193,7 @@ func (c *defaultClient) SubscribeDownlink(appEUI []byte, devEUI []byte, handler 
 }
 
 func (c *defaultClient) SubscribeAppDownlink(appEUI []byte, handler DownlinkHandler) Token {
-	return c.SubscribeDownlink(appEUI, []byte{}, handler)
+	return c.SubscribeDeviceDownlink(appEUI, []byte{}, handler)
 }
 
 func (c *defaultClient) PublishActivation(appEUI []byte, devEUI []byte, activation core.OTAAAppReq) Token {
@@ -205,7 +205,7 @@ func (c *defaultClient) PublishActivation(appEUI []byte, devEUI []byte, activati
 	return c.mqtt.Publish(topic.String(), QoS, false, msg)
 }
 
-func (c *defaultClient) SubscribeActivations(appEUI []byte, devEUI []byte, handler ActivationHandler) Token {
+func (c *defaultClient) SubscribeDeviceActivations(appEUI []byte, devEUI []byte, handler ActivationHandler) Token {
 	topic := Topic{appEUI, devEUI, Activations}
 	return c.mqtt.Subscribe(topic.String(), QoS, func(mqtt *MQTT.Client, msg MQTT.Message) {
 		// Determine the actual topic
@@ -229,5 +229,5 @@ func (c *defaultClient) SubscribeActivations(appEUI []byte, devEUI []byte, handl
 }
 
 func (c *defaultClient) SubscribeAppActivations(appEUI []byte, handler ActivationHandler) Token {
-	return c.SubscribeActivations(appEUI, []byte{}, handler)
+	return c.SubscribeDeviceActivations(appEUI, []byte{}, handler)
 }
