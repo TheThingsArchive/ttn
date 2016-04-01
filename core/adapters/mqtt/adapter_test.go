@@ -187,7 +187,7 @@ func TestHandleInvalidJoin(t *testing.T) {
 
 func TestSubscribeDownlink(t *testing.T) {
 	a := New(t)
-	ctx := GetLogger(t, "TestHandleJoin")
+	ctx := GetLogger(t, "TestSubscribeDownlink")
 	client := ttnMQTT.NewClient(ctx, "test", "", "", "tcp://localhost:1883")
 	client.Connect()
 
@@ -213,7 +213,7 @@ func TestSubscribeDownlink(t *testing.T) {
 
 func TestSubscribeInvalidDownlink(t *testing.T) {
 	a := New(t)
-	ctx := GetLogger(t, "TestHandleJoin")
+	ctx := GetLogger(t, "TestSubscribeInvalidDownlink")
 	client := ttnMQTT.NewClient(ctx, "test", "", "", "tcp://localhost:1883")
 	client.Connect()
 
