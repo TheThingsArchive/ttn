@@ -200,7 +200,7 @@ func TestSubscribeDownlink(t *testing.T) {
 	devEUI := []byte{0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01}
 	client.PublishDownlink(appEUI, devEUI, core.DataDownAppReq{Payload: []byte{0x01, 0x02, 0x03, 0x04}}).Wait()
 
-	<-time.After(20 * time.Millisecond)
+	<-time.After(25 * time.Millisecond)
 
 	expected := &core.DataDownHandlerReq{
 		AppEUI:  appEUI,
@@ -226,7 +226,7 @@ func TestSubscribeInvalidDownlink(t *testing.T) {
 	devEUI := []byte{0x08, 0x07, 0x06, 0x09, 0x04, 0x03, 0x02, 0x01}
 	client.PublishDownlink(appEUI, devEUI, core.DataDownAppReq{Payload: []byte{}}).Wait()
 
-	<-time.After(20 * time.Millisecond)
+	<-time.After(25 * time.Millisecond)
 
 	a.So(handler.InHandleDataDown.Req, ShouldBeNil)
 }

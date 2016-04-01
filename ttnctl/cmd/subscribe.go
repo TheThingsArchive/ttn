@@ -64,6 +64,7 @@ application.`,
 		if ok := token.Wait(); !ok {
 			ctx.WithError(token.Error()).Fatal("Could not subscribe")
 		}
+		ctx.Info("Subscribed. Waiting for messages...")
 
 		<-make(chan bool)
 

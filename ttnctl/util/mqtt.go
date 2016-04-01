@@ -22,7 +22,7 @@ func GetMQTTClient(ctx log.Interface) mqtt.Client {
 	}
 
 	// NOTE: until the MQTT server supports access tokens, we'll have to ask for a password.
-	fmt.Print("Password: ")
+	fmt.Printf("Password for account %s: ", user.Email)
 	password, err := gopass.GetPasswd()
 	if err != nil {
 		ctx.Fatal(err.Error())
