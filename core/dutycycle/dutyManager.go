@@ -42,6 +42,7 @@ const (
 	EuropeG2         = "europe g2"
 	EuropeG3         = "europe g3"
 	EuropeG4         = "europe g4"
+	USG              = "united states"
 )
 
 type subBand string
@@ -61,6 +62,7 @@ const (
 	Europe region = iota
 	US
 	China
+	World
 )
 
 type region byte
@@ -94,6 +96,11 @@ func GetSubBand(freq float32) (subBand, error) {
 		return EuropeG4, nil
 	}
 
+	// US 902 - 928 MHz, 10% duty-cycle
+	if freq >= 902 && freq < 928 {
+		return USG, nil
+	}
+
 	return "", errors.New(errors.Structural, "Unknown frequency")
 }
 
@@ -108,6 +115,19 @@ func NewManager(filepath string, cycleLength time.Duration, r region) (DutyManag
 			EuropeG2: 0.001,
 			EuropeG3: 0.1,
 			EuropeG4: 0.01,
+		}
+	case US:
+		maxDuty = map[subBand]float32{
+			USG: 0.1,
+		}
+	case World:
+		maxDuty = map[subBand]float32{
+			EuropeG:  0.01,
+			EuropeG1: 0.01,
+			EuropeG2: 0.001,
+			EuropeG3: 0.1,
+			EuropeG4: 0.01,
+			USG:      0.1,
 		}
 	default:
 		return nil, errors.New(errors.Implementation, "Region not supported")
