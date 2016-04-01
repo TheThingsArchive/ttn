@@ -138,16 +138,20 @@ func (c *defaultClient) SubscribeDeviceUplink(appEUI []byte, devEUI []byte, hand
 	return c.mqtt.Subscribe(topic.String(), QoS, func(mqtt *MQTT.Client, msg MQTT.Message) {
 		// Determine the actual topic
 		topic, err := ParseTopic(msg.Topic())
-		if err != nil && c.ctx != nil {
-			c.ctx.WithField("topic", msg.Topic()).WithError(err).Warn("Received message on invalid uplink topic")
+		if err != nil {
+			if c.ctx != nil {
+				c.ctx.WithField("topic", msg.Topic()).WithError(err).Warn("Received message on invalid uplink topic")
+			}
 			return
 		}
 
 		// Unmarshal the payload
 		dataUp := &core.DataUpAppReq{}
 		_, err = dataUp.UnmarshalMsg(msg.Payload())
-		if err != nil && c.ctx != nil {
-			c.ctx.WithError(err).Warn("Could not unmarshal uplink")
+		if err != nil {
+			if c.ctx != nil {
+				c.ctx.WithError(err).Warn("Could not unmarshal uplink")
+			}
 			return
 		}
 
@@ -174,16 +178,20 @@ func (c *defaultClient) SubscribeDeviceDownlink(appEUI []byte, devEUI []byte, ha
 	return c.mqtt.Subscribe(topic.String(), QoS, func(mqtt *MQTT.Client, msg MQTT.Message) {
 		// Determine the actual topic
 		topic, err := ParseTopic(msg.Topic())
-		if err != nil && c.ctx != nil {
-			c.ctx.WithField("topic", msg.Topic()).WithError(err).Warn("Received message on invalid Downlink topic")
+		if err != nil {
+			if c.ctx != nil {
+				c.ctx.WithField("topic", msg.Topic()).WithError(err).Warn("Received message on invalid Downlink topic")
+			}
 			return
 		}
 
 		// Unmarshal the payload
 		dataDown := &core.DataDownAppReq{}
 		_, err = dataDown.UnmarshalMsg(msg.Payload())
-		if err != nil && c.ctx != nil {
-			c.ctx.WithError(err).Warn("Could not unmarshal Downlink")
+		if err != nil {
+			if c.ctx != nil {
+				c.ctx.WithError(err).Warn("Could not unmarshal Downlink")
+			}
 			return
 		}
 
@@ -210,16 +218,20 @@ func (c *defaultClient) SubscribeDeviceActivations(appEUI []byte, devEUI []byte,
 	return c.mqtt.Subscribe(topic.String(), QoS, func(mqtt *MQTT.Client, msg MQTT.Message) {
 		// Determine the actual topic
 		topic, err := ParseTopic(msg.Topic())
-		if err != nil && c.ctx != nil {
-			c.ctx.WithField("topic", msg.Topic()).WithError(err).Warn("Received message on invalid Activations topic")
+		if err != nil {
+			if c.ctx != nil {
+				c.ctx.WithField("topic", msg.Topic()).WithError(err).Warn("Received message on invalid Activations topic")
+			}
 			return
 		}
 
 		// Unmarshal the payload
 		activation := &core.OTAAAppReq{}
 		_, err = activation.UnmarshalMsg(msg.Payload())
-		if err != nil && c.ctx != nil {
-			c.ctx.WithError(err).Warn("Could not unmarshal Activation")
+		if err != nil {
+			if c.ctx != nil {
+				c.ctx.WithError(err).Warn("Could not unmarshal Activation")
+			}
 			return
 		}
 
