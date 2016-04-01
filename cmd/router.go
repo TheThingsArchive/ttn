@@ -95,7 +95,7 @@ the gateway's duty cycle is (almost) full.`,
 				ctx.WithError(err).Fatal("Invalid database path")
 			}
 
-			dm, err = dutycycle.NewManager(dmPath, time.Hour, dutycycle.Europe)
+			dm, err = dutycycle.NewManager(dmPath, time.Hour, dutycycle.World)
 			if err != nil {
 				ctx.WithError(err).Fatal("Could not create a local storage")
 			}
