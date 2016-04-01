@@ -26,16 +26,19 @@ type Client interface {
 	PublishUplink(appEUI []byte, devEUI []byte, payload core.DataUpAppReq) Token
 	SubscribeDeviceUplink(appEUI []byte, devEUI []byte, handler UplinkHandler) Token
 	SubscribeAppUplink(appEUI []byte, handler UplinkHandler) Token
+	SubscribeUplink(handler UplinkHandler) Token
 
 	// Downlink pub/sub
 	PublishDownlink(appEUI []byte, devEUI []byte, payload core.DataDownAppReq) Token
 	SubscribeDeviceDownlink(appEUI []byte, devEUI []byte, handler DownlinkHandler) Token
 	SubscribeAppDownlink(appEUI []byte, handler DownlinkHandler) Token
+	SubscribeDownlink(handler DownlinkHandler) Token
 
 	// Activation pub/sub
 	PublishActivation(appEUI []byte, devEUI []byte, payload core.OTAAAppReq) Token
 	SubscribeDeviceActivations(appEUI []byte, devEUI []byte, handler ActivationHandler) Token
 	SubscribeAppActivations(appEUI []byte, handler ActivationHandler) Token
+	SubscribeActivations(handler ActivationHandler) Token
 }
 
 type Token interface {
@@ -164,6 +167,10 @@ func (c *defaultClient) SubscribeAppUplink(appEUI []byte, handler UplinkHandler)
 	return c.SubscribeDeviceUplink(appEUI, []byte{}, handler)
 }
 
+func (c *defaultClient) SubscribeUplink(handler UplinkHandler) Token {
+	return c.SubscribeDeviceUplink([]byte{}, []byte{}, handler)
+}
+
 func (c *defaultClient) PublishDownlink(appEUI []byte, devEUI []byte, dataDown core.DataDownAppReq) Token {
 	topic := Topic{appEUI, devEUI, Downlink}
 	msg, err := dataDown.MarshalMsg(nil)
@@ -204,6 +211,10 @@ func (c *defaultClient) SubscribeAppDownlink(appEUI []byte, handler DownlinkHand
 	return c.SubscribeDeviceDownlink(appEUI, []byte{}, handler)
 }
 
+func (c *defaultClient) SubscribeDownlink(handler DownlinkHandler) Token {
+	return c.SubscribeDeviceDownlink([]byte{}, []byte{}, handler)
+}
+
 func (c *defaultClient) PublishActivation(appEUI []byte, devEUI []byte, activation core.OTAAAppReq) Token {
 	topic := Topic{appEUI, devEUI, Activations}
 	msg, err := activation.MarshalMsg(nil)
@@ -242,4 +253,8 @@ func (c *defaultClient) SubscribeDeviceActivations(appEUI []byte, devEUI []byte,
 
 func (c *defaultClient) SubscribeAppActivations(appEUI []byte, handler ActivationHandler) Token {
 	return c.SubscribeDeviceActivations(appEUI, []byte{}, handler)
+}
+
+func (c *defaultClient) SubscribeActivations(handler ActivationHandler) Token {
+	return c.SubscribeDeviceActivations([]byte{}, []byte{}, handler)
 }

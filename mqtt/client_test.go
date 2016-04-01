@@ -144,6 +144,20 @@ func TestSubscribeAppUplink(t *testing.T) {
 	a.So(token.Error(), ShouldBeNil)
 }
 
+func TestSubscribeUplink(t *testing.T) {
+	a := New(t)
+	c := NewClient(nil, "test", "", "", "tcp://localhost:1883")
+	c.Connect()
+
+	token := c.SubscribeUplink(func(client Client, appEUI []byte, devEUI []byte, req core.DataUpAppReq) {
+
+	})
+	ok := token.Wait()
+
+	a.So(ok, ShouldBeTrue)
+	a.So(token.Error(), ShouldBeNil)
+}
+
 func TestPubSubUplink(t *testing.T) {
 	a := New(t)
 	c := NewClient(nil, "test", "", "", "tcp://localhost:1883")
@@ -267,6 +281,20 @@ func TestSubscribeAppDownlink(t *testing.T) {
 	a.So(token.Error(), ShouldBeNil)
 }
 
+func TestSubscribeDownlink(t *testing.T) {
+	a := New(t)
+	c := NewClient(nil, "test", "", "", "tcp://localhost:1883")
+	c.Connect()
+
+	token := c.SubscribeDownlink(func(client Client, appEUI []byte, devEUI []byte, req core.DataDownAppReq) {
+
+	})
+	ok := token.Wait()
+
+	a.So(ok, ShouldBeTrue)
+	a.So(token.Error(), ShouldBeNil)
+}
+
 func TestPubSubDownlink(t *testing.T) {
 	a := New(t)
 	c := NewClient(nil, "test", "", "", "tcp://localhost:1883")
@@ -380,6 +408,20 @@ func TestSubscribeAppActivations(t *testing.T) {
 	eui := []byte{0x03, 0x04, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}
 
 	token := c.SubscribeAppActivations(eui, func(client Client, appEUI []byte, devEUI []byte, req core.OTAAAppReq) {
+
+	})
+	ok := token.Wait()
+
+	a.So(ok, ShouldBeTrue)
+	a.So(token.Error(), ShouldBeNil)
+}
+
+func TestSubscribeActivations(t *testing.T) {
+	a := New(t)
+	c := NewClient(nil, "test", "", "", "tcp://localhost:1883")
+	c.Connect()
+
+	token := c.SubscribeActivations(func(client Client, appEUI []byte, devEUI []byte, req core.OTAAAppReq) {
 
 	})
 	ok := token.Wait()
