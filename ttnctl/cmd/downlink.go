@@ -4,13 +4,8 @@
 package cmd
 
 import (
-	"encoding/hex"
-	"fmt"
-
 	"github.com/TheThingsNetwork/ttn/core"
-	"github.com/TheThingsNetwork/ttn/ttnctl/mqtt"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
-	"github.com/apex/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -28,37 +23,33 @@ expected to define a Time To Live in a handy format, for instance: "1h" for one 
 			ctx.Fatal("Insufficient arguments")
 		}
 
+		appEUI, err := util.Parse64(viper.GetString("app-eui"))
+		if err != nil {
+			ctx.Fatalf("Invalid AppEUI: %s", err)
+		}
+
 		devEUI, err := util.Parse64(args[0])
 		if err != nil {
 			ctx.Fatalf("Invalid DevEUI: %s", err)
 		}
 
-		req := core.DataDownAppReq{
+		dataDown := core.DataDownAppReq{
 			Payload: []byte(args[1]),
 			TTL:     args[2],
 		}
-
-		payload, err := req.MarshalMsg(nil)
 
 		if err != nil {
 			ctx.WithError(err).Fatal("Unable to create downlink payload")
 		}
 
-		mqtt.Setup(viper.GetString("mqtt-broker"), ctx)
-		mqtt.Connect()
+		client := util.GetMQTTClient(ctx)
 
-		ctx.WithFields(log.Fields{
-			"DevEUI":  hex.EncodeToString(devEUI),
-			"Payload": string(payload),
-		}).Info("Pushing downlink...")
+		token := client.PublishDownlink(appEUI, devEUI, dataDown)
 
-		token := mqtt.Client.Publish(fmt.Sprintf("%s/devices/%x/down", viper.GetString("app-eui"), devEUI), 2, false, payload)
-		if token.Wait() && token.Error() != nil {
-			ctx.WithError(token.Error()).Fatal("Downlink failed.")
-		} else {
-			// Although we can't be sure whether it actually succeeded, we can know when the command is published to the MQTT.
-			ctx.Info("Downlink sent.")
+		if ok := token.Wait(); !ok {
+			ctx.WithError(token.Error()).Fatal("Could not subscribe")
 		}
+
 	},
 }
 
