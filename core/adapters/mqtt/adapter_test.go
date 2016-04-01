@@ -194,13 +194,14 @@ func TestSubscribeDownlink(t *testing.T) {
 	adapter := NewAdapter(ctx, client)
 	handler := mocks.NewHandlerServer()
 
-	adapter.SubscribeDownlink(handler)
+	err := adapter.SubscribeDownlink(handler)
+	a.So(err, ShouldBeNil)
 
 	appEUI := []byte{0x04, 0x03, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}
 	devEUI := []byte{0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01}
 	client.PublishDownlink(appEUI, devEUI, core.DataDownAppReq{Payload: []byte{0x01, 0x02, 0x03, 0x04}}).Wait()
 
-	<-time.After(25 * time.Millisecond)
+	<-time.After(50 * time.Millisecond)
 
 	expected := &core.DataDownHandlerReq{
 		AppEUI:  appEUI,
@@ -220,13 +221,14 @@ func TestSubscribeInvalidDownlink(t *testing.T) {
 	adapter := NewAdapter(ctx, client)
 	handler := mocks.NewHandlerServer()
 
-	adapter.SubscribeDownlink(handler)
+	err := adapter.SubscribeDownlink(handler)
+	a.So(err, ShouldBeNil)
 
 	appEUI := []byte{0x04, 0x03, 0x03, 0x09, 0x05, 0x06, 0x07, 0x08}
 	devEUI := []byte{0x08, 0x07, 0x06, 0x09, 0x04, 0x03, 0x02, 0x01}
 	client.PublishDownlink(appEUI, devEUI, core.DataDownAppReq{Payload: []byte{}}).Wait()
 
-	<-time.After(25 * time.Millisecond)
+	<-time.After(50 * time.Millisecond)
 
 	a.So(handler.InHandleDataDown.Req, ShouldBeNil)
 }

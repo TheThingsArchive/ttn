@@ -88,7 +88,7 @@ func TestRandomTopicPublish(t *testing.T) {
 	c.(*defaultClient).mqtt.Subscribe("randomtopic", QoS, nil).Wait()
 	c.(*defaultClient).mqtt.Publish("randomtopic", QoS, false, []byte{0x00}).Wait()
 
-	<-time.After(25 * time.Millisecond)
+	<-time.After(50 * time.Millisecond)
 
 	ctx.Info("This test should have printed one message.")
 }
@@ -221,7 +221,7 @@ func TestInvalidUplink(t *testing.T) {
 	// Invalid Payload
 	c.(*defaultClient).mqtt.Publish("0602030405060708/devices/0602030405060708/up", QoS, false, []byte{0x00}).Wait()
 
-	<-time.After(25 * time.Millisecond)
+	<-time.After(50 * time.Millisecond)
 
 	ctx.Info("This test should have printed two warnings.")
 }
@@ -354,7 +354,7 @@ func TestInvalidDownlink(t *testing.T) {
 	// Invalid Payload
 	c.(*defaultClient).mqtt.Publish("0603030405060708/devices/0602030405060708/down", QoS, false, []byte{0x00}).Wait()
 
-	<-time.After(25 * time.Millisecond)
+	<-time.After(50 * time.Millisecond)
 
 	ctx.Info("This test should have printed two warnings.")
 }
@@ -485,7 +485,7 @@ func TestInvalidActivations(t *testing.T) {
 	// Invalid Payload
 	c.(*defaultClient).mqtt.Publish("0604030405060708/devices/0602030405060708/activations", QoS, false, []byte{0x00}).Wait()
 
-	<-time.After(25 * time.Millisecond)
+	<-time.After(50 * time.Millisecond)
 
 	ctx.Info("This test should have printed two warnings.")
 }
