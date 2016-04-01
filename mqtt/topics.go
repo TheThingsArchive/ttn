@@ -31,14 +31,17 @@ type Topic struct {
 
 // ParseTopic parses an MQTT topic string to a Topic struct
 func ParseTopic(topic string) (*Topic, error) {
-	pattern := regexp.MustCompile("([0-9A-F]{16})/(devices)/([0-9A-F]{16}|\\+)/(activations|up|down)")
+	pattern := regexp.MustCompile("([0-9A-F]{16}|\\+)/(devices)/([0-9A-F]{16}|\\+)/(activations|up|down)")
 	matches := pattern.FindStringSubmatch(topic)
 
 	if len(matches) < 4 {
 		return nil, fmt.Errorf("Invalid topic format")
 	}
 
-	appEUI, _ := hex.DecodeString(matches[1]) // validity asserted by our regex pattern
+	appEUI := []byte{}
+	if matches[3] != "+" {
+		appEUI, _ = hex.DecodeString(matches[1]) // validity asserted by our regex pattern
+	}
 
 	devEUI := []byte{}
 	if matches[3] != "+" {
@@ -52,9 +55,14 @@ func ParseTopic(topic string) (*Topic, error) {
 
 // String implements the Stringer interface
 func (t Topic) String() string {
+	appEUI := "+"
+	if len(t.AppEUI) > 0 {
+		appEUI = fmt.Sprintf("%X", t.AppEUI)
+	}
+
 	devEUI := "+"
 	if len(t.DevEUI) > 0 {
 		devEUI = fmt.Sprintf("%X", t.DevEUI)
 	}
-	return fmt.Sprintf("%X/%s/%s/%s", t.AppEUI, "devices", devEUI, t.Type)
+	return fmt.Sprintf("%s/%s/%s/%s", appEUI, "devices", devEUI, t.Type)
 }

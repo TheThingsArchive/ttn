@@ -82,10 +82,10 @@ func TestTopicParseAndString(t *testing.T) {
 		"0102030405060708/devices/0000000012345678/up",
 		"0102030405060708/devices/0000000012345678/down",
 		"0102030405060708/devices/0000000012345678/activations",
-		// Wildcard
-		"0102030405060708/devices/+/up",
-		"0102030405060708/devices/+/down",
-		"0102030405060708/devices/+/activations",
+		// Wildcards
+		"+/devices/+/up",
+		"+/devices/+/down",
+		"+/devices/+/activations",
 		// Not Wildcard
 		"0102030405060708/devices/0000000000000000/up",
 		"0102030405060708/devices/0000000000000000/down",
