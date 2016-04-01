@@ -18,11 +18,11 @@ func TestToken(t *testing.T) {
 	a := New(t)
 
 	okToken := simpleToken{}
-	a.So(okToken.Wait(), ShouldBeTrue)
+	okToken.Wait()
 	a.So(okToken.Error(), ShouldBeNil)
 
 	failToken := simpleToken{fmt.Errorf("Err")}
-	a.So(failToken.Wait(), ShouldBeFalse)
+	failToken.Wait()
 	a.So(failToken.Error(), ShouldNotBeNil)
 }
 
@@ -80,7 +80,7 @@ func TestDisconnect(t *testing.T) {
 }
 
 func TestRandomTopicPublish(t *testing.T) {
-	ctx := GetLogger(t, "TestInvalidUplink")
+	ctx := GetLogger(t, "TestRandomTopicPublish")
 
 	c := NewClient(ctx, "test", "", "", "tcp://localhost:1883")
 	c.Connect()
@@ -106,9 +106,8 @@ func TestPublishUplink(t *testing.T) {
 	}
 
 	token := c.PublishUplink(eui, eui, dataUp)
-	ok := token.Wait()
+	token.Wait()
 
-	a.So(ok, ShouldBeTrue)
 	a.So(token.Error(), ShouldBeNil)
 }
 
@@ -122,9 +121,8 @@ func TestSubscribeDeviceUplink(t *testing.T) {
 	token := c.SubscribeDeviceUplink(eui, eui, func(client Client, appEUI []byte, devEUI []byte, req core.DataUpAppReq) {
 
 	})
-	ok := token.Wait()
+	token.Wait()
 
-	a.So(ok, ShouldBeTrue)
 	a.So(token.Error(), ShouldBeNil)
 }
 
@@ -138,9 +136,8 @@ func TestSubscribeAppUplink(t *testing.T) {
 	token := c.SubscribeAppUplink(eui, func(client Client, appEUI []byte, devEUI []byte, req core.DataUpAppReq) {
 
 	})
-	ok := token.Wait()
+	token.Wait()
 
-	a.So(ok, ShouldBeTrue)
 	a.So(token.Error(), ShouldBeNil)
 }
 
@@ -152,9 +149,8 @@ func TestSubscribeUplink(t *testing.T) {
 	token := c.SubscribeUplink(func(client Client, appEUI []byte, devEUI []byte, req core.DataUpAppReq) {
 
 	})
-	ok := token.Wait()
+	token.Wait()
 
-	a.So(ok, ShouldBeTrue)
 	a.So(token.Error(), ShouldBeNil)
 }
 
@@ -243,9 +239,8 @@ func TestPublishDownlink(t *testing.T) {
 	}
 
 	token := c.PublishDownlink(eui, eui, dataDown)
-	ok := token.Wait()
+	token.Wait()
 
-	a.So(ok, ShouldBeTrue)
 	a.So(token.Error(), ShouldBeNil)
 }
 
@@ -259,9 +254,8 @@ func TestSubscribeDeviceDownlink(t *testing.T) {
 	token := c.SubscribeDeviceDownlink(eui, eui, func(client Client, appEUI []byte, devEUI []byte, req core.DataDownAppReq) {
 
 	})
-	ok := token.Wait()
+	token.Wait()
 
-	a.So(ok, ShouldBeTrue)
 	a.So(token.Error(), ShouldBeNil)
 }
 
@@ -275,9 +269,8 @@ func TestSubscribeAppDownlink(t *testing.T) {
 	token := c.SubscribeAppDownlink(eui, func(client Client, appEUI []byte, devEUI []byte, req core.DataDownAppReq) {
 
 	})
-	ok := token.Wait()
+	token.Wait()
 
-	a.So(ok, ShouldBeTrue)
 	a.So(token.Error(), ShouldBeNil)
 }
 
@@ -289,9 +282,8 @@ func TestSubscribeDownlink(t *testing.T) {
 	token := c.SubscribeDownlink(func(client Client, appEUI []byte, devEUI []byte, req core.DataDownAppReq) {
 
 	})
-	ok := token.Wait()
+	token.Wait()
 
-	a.So(ok, ShouldBeTrue)
 	a.So(token.Error(), ShouldBeNil)
 }
 
@@ -378,9 +370,8 @@ func TestPublishActivations(t *testing.T) {
 	dataActivations := core.OTAAAppReq{Metadata: []core.AppMetadata{core.AppMetadata{DataRate: "SF7BW125"}}}
 
 	token := c.PublishActivation(eui, eui, dataActivations)
-	ok := token.Wait()
+	token.Wait()
 
-	a.So(ok, ShouldBeTrue)
 	a.So(token.Error(), ShouldBeNil)
 }
 
@@ -394,9 +385,8 @@ func TestSubscribeDeviceActivations(t *testing.T) {
 	token := c.SubscribeDeviceActivations(eui, eui, func(client Client, appEUI []byte, devEUI []byte, req core.OTAAAppReq) {
 
 	})
-	ok := token.Wait()
+	token.Wait()
 
-	a.So(ok, ShouldBeTrue)
 	a.So(token.Error(), ShouldBeNil)
 }
 
@@ -410,9 +400,8 @@ func TestSubscribeAppActivations(t *testing.T) {
 	token := c.SubscribeAppActivations(eui, func(client Client, appEUI []byte, devEUI []byte, req core.OTAAAppReq) {
 
 	})
-	ok := token.Wait()
+	token.Wait()
 
-	a.So(ok, ShouldBeTrue)
 	a.So(token.Error(), ShouldBeNil)
 }
 
@@ -424,9 +413,8 @@ func TestSubscribeActivations(t *testing.T) {
 	token := c.SubscribeActivations(func(client Client, appEUI []byte, devEUI []byte, req core.OTAAAppReq) {
 
 	})
-	ok := token.Wait()
+	token.Wait()
 
-	a.So(ok, ShouldBeTrue)
 	a.So(token.Error(), ShouldBeNil)
 }
 

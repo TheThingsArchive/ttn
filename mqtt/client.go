@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"time"
 
-	MQTT "git.eclipse.org/gitroot/paho/org.eclipse.paho.mqtt.golang.git"
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/utils/random"
 	"github.com/apex/log"
+	MQTT "github.com/eclipse/paho.mqtt.golang"
 )
 
 const QoS = 0x02
@@ -50,10 +50,12 @@ type simpleToken struct {
 	err error
 }
 
+// Wait always returns true
 func (t *simpleToken) Wait() bool {
-	return (t.err == nil)
+	return true
 }
 
+// Error contains the error if present
 func (t *simpleToken) Error() error {
 	return t.err
 }
@@ -63,7 +65,7 @@ type DownlinkHandler func(client Client, appEUI []byte, devEUI []byte, req core.
 type ActivationHandler func(client Client, appEUI []byte, devEUI []byte, req core.OTAAAppReq)
 
 type defaultClient struct {
-	mqtt *MQTT.Client
+	mqtt MQTT.Client
 	ctx  log.Interface
 }
 
@@ -82,19 +84,19 @@ func NewClient(ctx log.Interface, id, username, password string, brokers ...stri
 	mqttOpts.SetKeepAlive(30 * time.Second)
 	mqttOpts.SetPingTimeout(10 * time.Second)
 
-	mqttOpts.SetDefaultPublishHandler(func(client *MQTT.Client, msg MQTT.Message) {
+	mqttOpts.SetDefaultPublishHandler(func(client MQTT.Client, msg MQTT.Message) {
 		if ctx != nil {
 			ctx.WithField("message", msg).Debug("Received unhandled message")
 		}
 	})
 
-	mqttOpts.SetConnectionLostHandler(func(client *MQTT.Client, err error) {
+	mqttOpts.SetConnectionLostHandler(func(client MQTT.Client, err error) {
 		if ctx != nil {
 			ctx.WithError(err).Debug("Disconnected, reconnecting...")
 		}
 	})
 
-	mqttOpts.SetOnConnectHandler(func(client *MQTT.Client) {
+	mqttOpts.SetOnConnectHandler(func(client MQTT.Client) {
 		if ctx != nil {
 			ctx.Debug("Connected")
 		}
@@ -138,7 +140,7 @@ func (c *defaultClient) PublishUplink(appEUI []byte, devEUI []byte, dataUp core.
 
 func (c *defaultClient) SubscribeDeviceUplink(appEUI []byte, devEUI []byte, handler UplinkHandler) Token {
 	topic := Topic{appEUI, devEUI, Uplink}
-	return c.mqtt.Subscribe(topic.String(), QoS, func(mqtt *MQTT.Client, msg MQTT.Message) {
+	return c.mqtt.Subscribe(topic.String(), QoS, func(mqtt MQTT.Client, msg MQTT.Message) {
 		// Determine the actual topic
 		topic, err := ParseTopic(msg.Topic())
 		if err != nil {
@@ -182,7 +184,7 @@ func (c *defaultClient) PublishDownlink(appEUI []byte, devEUI []byte, dataDown c
 
 func (c *defaultClient) SubscribeDeviceDownlink(appEUI []byte, devEUI []byte, handler DownlinkHandler) Token {
 	topic := Topic{appEUI, devEUI, Downlink}
-	return c.mqtt.Subscribe(topic.String(), QoS, func(mqtt *MQTT.Client, msg MQTT.Message) {
+	return c.mqtt.Subscribe(topic.String(), QoS, func(mqtt MQTT.Client, msg MQTT.Message) {
 		// Determine the actual topic
 		topic, err := ParseTopic(msg.Topic())
 		if err != nil {
@@ -226,7 +228,7 @@ func (c *defaultClient) PublishActivation(appEUI []byte, devEUI []byte, activati
 
 func (c *defaultClient) SubscribeDeviceActivations(appEUI []byte, devEUI []byte, handler ActivationHandler) Token {
 	topic := Topic{appEUI, devEUI, Activations}
-	return c.mqtt.Subscribe(topic.String(), QoS, func(mqtt *MQTT.Client, msg MQTT.Message) {
+	return c.mqtt.Subscribe(topic.String(), QoS, func(mqtt MQTT.Client, msg MQTT.Message) {
 		// Determine the actual topic
 		topic, err := ParseTopic(msg.Topic())
 		if err != nil {
