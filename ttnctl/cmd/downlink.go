@@ -46,9 +46,11 @@ expected to define a Time To Live in a handy format, for instance: "1h" for one 
 
 		token := client.PublishDownlink(appEUI, devEUI, dataDown)
 
-		if ok := token.Wait(); !ok {
-			ctx.WithError(token.Error()).Fatal("Could not subscribe")
+		if token.Wait(); token.Error() != nil {
+			ctx.WithError(token.Error()).Fatal("Could not publish downlink")
 		}
+
+		client.Disconnect()
 
 	},
 }

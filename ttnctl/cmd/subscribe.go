@@ -4,6 +4,8 @@
 package cmd
 
 import (
+	"os"
+	"os/signal"
 	"regexp"
 
 	"github.com/TheThingsNetwork/ttn/core"
@@ -61,12 +63,18 @@ application.`,
 
 		})
 
-		if ok := token.Wait(); !ok {
+		if token.Wait(); token.Error() != nil {
 			ctx.WithError(token.Error()).Fatal("Could not subscribe")
 		}
 		ctx.Info("Subscribed. Waiting for messages...")
 
-		<-make(chan bool)
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, os.Interrupt)
+
+		// Block until a signal is received.
+		<-c
+
+		client.Disconnect()
 
 	},
 }
