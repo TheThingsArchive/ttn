@@ -27,7 +27,7 @@ type defaultAdapter struct {
 // HandleData implements the core.AppClient interface
 func (a *defaultAdapter) HandleData(_ context.Context, req *core.DataAppReq, _ ...grpc.CallOption) (*core.DataAppRes, error) {
 	if err := validateData(req); err != nil {
-		return nil, errors.New(errors.Structural, err)
+		return new(core.DataAppRes), errors.New(errors.Structural, err)
 	}
 
 	dataUp := core.DataUpAppReq{
@@ -44,9 +44,9 @@ func (a *defaultAdapter) HandleData(_ context.Context, req *core.DataAppReq, _ .
 
 	token := a.client.PublishUplink(req.AppEUI, req.DevEUI, dataUp)
 	if token.Wait(); token.Error() != nil {
-		return nil, errors.New(errors.Structural, token.Error())
+		return new(core.DataAppRes), errors.New(errors.Structural, token.Error())
 	}
-	return nil, nil
+	return new(core.DataAppRes), nil
 }
 
 func validateData(req *core.DataAppReq) error {
@@ -75,7 +75,7 @@ func validateData(req *core.DataAppReq) error {
 // HandleJoin implements the core.AppClient interface
 func (a *defaultAdapter) HandleJoin(_ context.Context, req *core.JoinAppReq, _ ...grpc.CallOption) (*core.JoinAppRes, error) {
 	if err := validateJoin(req); err != nil {
-		return nil, errors.New(errors.Structural, err)
+		return new(core.JoinAppRes), errors.New(errors.Structural, err)
 	}
 
 	otaa := core.OTAAAppReq{
@@ -91,9 +91,9 @@ func (a *defaultAdapter) HandleJoin(_ context.Context, req *core.JoinAppReq, _ .
 
 	token := a.client.PublishActivation(req.AppEUI, req.DevEUI, otaa)
 	if token.Wait(); token.Error() != nil {
-		return nil, errors.New(errors.Structural, token.Error())
+		return new(core.JoinAppRes), errors.New(errors.Structural, token.Error())
 	}
-	return nil, nil
+	return new(core.JoinAppRes), nil
 }
 
 func validateJoin(req *core.JoinAppReq) error {
