@@ -63,10 +63,19 @@ func TestGetSubBand(t *testing.T) {
 	// --------------------
 
 	{
-		Desc(t, "Test USG")
+		Desc(t, "Test USIsm")
 		sb, err := GetSubBand(913.56)
 		CheckErrors(t, nil, err)
-		CheckSubBands(t, USG, sb)
+		CheckSubBands(t, UsISM, sb)
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Test AuISM")
+		sb, err := GetSubBand(922.98)
+		CheckErrors(t, nil, err)
+		CheckSubBands(t, AuISM, sb)
 	}
 
 	// --------------------
@@ -105,6 +114,16 @@ func TestNewManager(t *testing.T) {
 	{
 		Desc(t, "US with valid cycleLength")
 		m, err := NewManager(dutyManagerDB, time.Minute, US)
+		CheckErrors(t, nil, err)
+		err = m.Close()
+		CheckErrors(t, nil, err)
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Australia with valid cycleLength")
+		m, err := NewManager(dutyManagerDB, time.Minute, Australia)
 		CheckErrors(t, nil, err)
 		err = m.Close()
 		CheckErrors(t, nil, err)
