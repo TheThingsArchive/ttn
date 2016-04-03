@@ -18,9 +18,11 @@ import (
 )
 
 type app struct {
-	EUI   string `json:"eui"`
-	Name  string `json:"name"`
-	Owner string `json:"owner"`
+	EUI        string   `json:"eui"`
+	Name       string   `json:"name"`
+	Owner      string   `json:"owner"`
+	AccessKeys []string `json:"accessKeys"`
+	Valid      bool     `json:"valid"`
 }
 
 // applicationsCmd represents the applications command
@@ -55,10 +57,11 @@ var applicationsCmd = &cobra.Command{
 		ctx.Infof("Found %d application(s)", len(apps))
 		table := uitable.New()
 		table.MaxColWidth = 70
-		table.AddRow("EUI", "Name", "Owner")
+		table.AddRow("EUI", "Name", "Owner", "Access Keys", "Valid")
 		for _, app := range apps {
-			table.AddRow(app.EUI, app.Name, app.Owner)
+			table.AddRow(app.EUI, app.Name, app.Owner, strings.Join(app.AccessKeys, ", "), app.Valid)
 		}
+
 		fmt.Println(table)
 	},
 }
@@ -110,7 +113,49 @@ var applicationsCreateCmd = &cobra.Command{
 	},
 }
 
+var applicationsDeleteCmd = &cobra.Command{
+	Use:   "delete [eui]",
+	Short: "Delete an application",
+	Long:  `ttnctl application delete deletes an existing application.`,
+	Run: func(cmd *cobra.Command, args []string) {
+		if len(args) < 1 {
+			cmd.Help()
+			return
+		}
+
+		appEUI, err := util.Parse64(args[0])
+		if err != nil {
+			ctx.Fatalf("Invalid AppEUI: %s", err)
+		}
+
+		server := viper.GetString("ttn-account-server")
+		req, err := util.NewRequestWithAuth(server, "DELETE", fmt.Sprintf("%s/applications/%s", server, fmt.Sprintf("%X", appEUI)), nil)
+		if err != nil {
+			ctx.WithError(err).Fatal("Failed to create authenticated request")
+		}
+
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			ctx.WithError(err).Fatal("Failed to delete application")
+		}
+		if resp.StatusCode != http.StatusOK {
+			ctx.Fatalf("Failed to delete application: %s", resp.Status)
+		}
+
+		ctx.Info("Application deleted successfully")
+
+		// We need to refresh the token to remove the application from the set of
+		// claims
+		_, err = util.RefreshToken(server)
+		if err != nil {
+			log.WithError(err).Warn("Failed to refresh token. Please login")
+		}
+	},
+}
+
 func init() {
 	RootCmd.AddCommand(applicationsCmd)
 	applicationsCmd.AddCommand(applicationsCreateCmd)
+	applicationsCmd.AddCommand(applicationsDeleteCmd)
 }
