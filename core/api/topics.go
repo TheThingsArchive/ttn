@@ -55,7 +55,7 @@ func DecodeDeviceTopic(topic string) (*DeviceTopic, error) {
 		return nil, errors.New("Not a device topic")
 	}
 
-	return &DeviceTopic{parts[0], parts[2], DeviceTopicType(parts[3])}, nil
+	return &DeviceTopic{strings.ToUpper(parts[0]), strings.ToUpper(parts[2]), DeviceTopicType(parts[3])}, nil
 }
 
 // Encode encodes the DeviceTopic to a topic
