@@ -19,34 +19,40 @@ import (
 // Within RX1 or RX2, the SNR is considered first (the higher the better), then the RSSI on a lower
 // plan.
 type ScoreComputer struct {
-	sf uint
+	sf     uint
+	region region
 }
 
-// BestTarget represents the best result that has been computed after all updates.
-type BestTarget struct {
-	ID    int  // The ID provided during updates
-	IsRX2 bool // Whether it should use RX2
+// Configuration represents the best result that has been computed after all updates.
+type Configuration struct {
+	ID        int // The ID provided during updates
+	Frequency float32
+	DataRate  string
+	RXDelay   uint32
+	Power     uint32
+	CFList    [5]uint32
+}
+
+type candidate struct {
+	ID        int
+	Score     int
+	Frequency float32
+	DataRate  string
 }
 
 type scores struct {
-	rx1 struct {
-		ID    int
-		Score int
-	}
-	rx2 struct {
-		ID    int
-		Score int
-	}
+	rx1 candidate
+	rx2 candidate
 }
 
 // NewScoreComputer constructs a new ScoreComputer and initiate an empty scores table
-func NewScoreComputer(datr string) (*ScoreComputer, scores, error) {
+func NewScoreComputer(r region, datr string) (*ScoreComputer, scores, error) {
 	sf, _, err := ParseDatr(datr)
 	if err != nil {
 		return nil, scores{}, errors.New(errors.Structural, err)
 	}
 
-	return &ScoreComputer{sf: uint(sf)}, scores{}, nil
+	return &ScoreComputer{sf: uint(sf), region: r}, scores{}, nil
 }
 
 // Update computes the score associated to the given target and update the internal score
@@ -54,15 +60,16 @@ func NewScoreComputer(datr string) (*ScoreComputer, scores, error) {
 func (c *ScoreComputer) Update(s scores, id int, metadata core.Metadata) scores {
 	dutyRX1, dutyRX2 := metadata.DutyRX1, metadata.DutyRX2
 	lsnr, rssi := float64(metadata.Lsnr), int(metadata.Rssi)
+	freq, datr := metadata.Frequency, metadata.DataRate
 
 	rx1 := computeScore(State(dutyRX1), lsnr, rssi)
 	if rx1 > s.rx1.Score {
-		s.rx1.Score, s.rx1.ID = rx1, id
+		s.rx1.Score, s.rx1.ID, s.rx1.Frequency, s.rx1.DataRate = rx1, id, freq, datr
 	}
 
 	rx2 := computeScore(State(dutyRX2), lsnr, rssi)
 	if rx2 > s.rx2.Score {
-		s.rx2.Score, s.rx2.ID = rx2, id
+		s.rx2.Score, s.rx2.ID, s.rx2.Frequency, s.rx2.DataRate = rx2, id, freq, datr
 	}
 
 	return s
@@ -70,12 +77,34 @@ func (c *ScoreComputer) Update(s scores, id int, metadata core.Metadata) scores 
 
 // Get returns the best score according to the configured spread factor and all updates.
 // It returns nil if none of the target is available for a response
-func (c *ScoreComputer) Get(s scores) *BestTarget {
-	if s.rx1.Score > 0 && (c.sf == 7 || c.sf == 8) { // Favor RX1 on SF7 & SF8
-		return &BestTarget{ID: s.rx1.ID, IsRX2: false}
-	}
-	if s.rx2.Score > 0 {
-		return &BestTarget{ID: s.rx2.ID, IsRX2: true}
+func (c *ScoreComputer) Get(s scores) *Configuration {
+	switch c.region {
+	case Europe:
+		if s.rx1.Score > 0 && (c.sf == 7 || c.sf == 8) { // Favor RX1 on SF7 & SF8
+			return &Configuration{
+				ID:        s.rx1.ID,
+				Frequency: s.rx1.Frequency,
+				DataRate:  s.rx1.DataRate,
+				Power:     14,
+				RXDelay:   10000,
+				CFList:    [5]uint32{867100000, 867300000, 867500000, 867700000, 867900000},
+			}
+		}
+		if s.rx2.Score > 0 {
+			return &Configuration{
+				ID:        s.rx2.ID,
+				Frequency: 869.525,
+				DataRate:  "SF9BW125",
+				Power:     27,
+				RXDelay:   20000,
+				CFList:    [5]uint32{867100000, 867300000, 867500000, 867700000, 867900000},
+			}
+		}
+	case US:
+		// Logic to handle downstream in US goes here.
+		// we have access to the frequency and datarate used for the upstream,
+		// thus, we can compute downChan and see whether we should use RX1 or RX2
+	default:
 	}
 	return nil
 }
