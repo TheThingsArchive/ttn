@@ -32,7 +32,8 @@ var applicationsCmd = &cobra.Command{
 	Long:  `ttnctl applications retrieves the applications of the logged on user.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		server := viper.GetString("ttn-account-server")
-		req, err := util.NewRequestWithAuth(server, "GET", fmt.Sprintf("%s/applications", server), nil)
+		uri := fmt.Sprintf("%s/applications", server)
+		req, err := util.NewRequestWithAuth(server, "GET", uri, nil)
 		if err != nil {
 			ctx.WithError(err).Fatal("Failed to create authenticated request")
 		}
@@ -82,11 +83,12 @@ var applicationsCreateCmd = &cobra.Command{
 		}
 
 		server := viper.GetString("ttn-account-server")
+		uri := fmt.Sprintf("%s/applications", server)
 		values := url.Values{
 			"eui":  {fmt.Sprintf("%X", appEUI)},
 			"name": {args[1]},
 		}
-		req, err := util.NewRequestWithAuth(server, "POST", fmt.Sprintf("%s/applications", server), strings.NewReader(values.Encode()))
+		req, err := util.NewRequestWithAuth(server, "POST", uri, strings.NewReader(values.Encode()))
 		if err != nil {
 			ctx.WithError(err).Fatal("Failed to create authenticated request")
 		}
@@ -129,7 +131,8 @@ var applicationsDeleteCmd = &cobra.Command{
 		}
 
 		server := viper.GetString("ttn-account-server")
-		req, err := util.NewRequestWithAuth(server, "DELETE", fmt.Sprintf("%s/applications/%s", server, fmt.Sprintf("%X", appEUI)), nil)
+		uri := fmt.Sprintf("%s/applications/%s", server, fmt.Sprintf("%X", appEUI))
+		req, err := util.NewRequestWithAuth(server, "DELETE", uri, nil)
 		if err != nil {
 			ctx.WithError(err).Fatal("Failed to create authenticated request")
 		}
@@ -154,8 +157,49 @@ var applicationsDeleteCmd = &cobra.Command{
 	},
 }
 
+var applicationsAuthorizeCmd = &cobra.Command{
+	Use:   "authorize [eui] [e-mail]",
+	Short: "Authorize a user for the application",
+	Long:  `ttnctl applications authorize lets you authorize a user for an application.`,
+	Run: func(cmd *cobra.Command, args []string) {
+		if len(args) < 2 {
+			cmd.Help()
+			return
+		}
+
+		appEUI, err := util.Parse64(args[0])
+		if err != nil {
+			ctx.Fatalf("Invalid AppEUI: %s", err)
+		}
+
+		server := viper.GetString("ttn-account-server")
+		uri := fmt.Sprintf("%s/applications/%s/authorize", server, fmt.Sprintf("%X", appEUI))
+		values := url.Values{
+			"email": {args[1]},
+		}
+		req, err := util.NewRequestWithAuth(server, "PUT", uri, strings.NewReader(values.Encode()))
+		if err != nil {
+			ctx.WithError(err).Fatal("Failed to create authenticated request")
+		}
+
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			ctx.WithError(err).Fatal("Failed to authorize user")
+		}
+		if resp.StatusCode != http.StatusOK {
+			ctx.Fatalf("Failed to authorize user: %s", resp.Status)
+		}
+
+		ctx.Info("User authorized successfully")
+	},
+}
+
 func init() {
 	RootCmd.AddCommand(applicationsCmd)
 	applicationsCmd.AddCommand(applicationsCreateCmd)
 	applicationsCmd.AddCommand(applicationsDeleteCmd)
+	applicationsCmd.AddCommand(applicationsAuthorizeCmd)
 }
