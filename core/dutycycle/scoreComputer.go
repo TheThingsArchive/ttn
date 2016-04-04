@@ -20,7 +20,7 @@ import (
 // plan.
 type ScoreComputer struct {
 	sf     uint
-	region region
+	region Region
 }
 
 // Configuration represents the best result that has been computed after all updates.
@@ -46,7 +46,7 @@ type scores struct {
 }
 
 // NewScoreComputer constructs a new ScoreComputer and initiate an empty scores table
-func NewScoreComputer(r region, datr string) (*ScoreComputer, scores, error) {
+func NewScoreComputer(r Region, datr string) (*ScoreComputer, scores, error) {
 	sf, _, err := ParseDatr(datr)
 	if err != nil {
 		return nil, scores{}, errors.New(errors.Structural, err)

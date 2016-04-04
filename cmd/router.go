@@ -84,18 +84,9 @@ the gateway's duty cycle is (almost) full.`,
 			ctx.WithError(fmt.Errorf("Invalid database string. Format: \"boltdb:/path/to.db\".")).Fatal("Could not instantiate local storage")
 		}
 
-		var region string
-		switch regionCode := strings.ToLower(viper.GetString("router.region")); regionCode {
-		case "eu", "europe":
-			region = dutycycle.Europe
-		case "us", "united states":
-			region = dutycycle.US
-		case "cn", "china":
-			region = dutycycle.China
-		case "au", "australia":
-			region = dutycycle.Australia
-		default:
-			ctx.Fatalf("Region %s not supported", regionCode)
+		region, err := dutycycle.GetRegion(strings.ToLower(viper.GetString("router.region")))
+		if err != nil {
+			ctx.Fatalf(err.Error())
 		}
 
 		// Duty Manager
@@ -165,13 +156,13 @@ the gateway's duty cycle is (almost) full.`,
 			},
 			router.Options{
 				NetAddr: fmt.Sprintf("%s:%d", viper.GetString("router.downlink-address"), viper.GetInt("router.downlink-port")),
-				Region:  region,
+				Region:  string(region),
 			},
 		)
 
 		// Gateway Adapter
 		gtwNet := fmt.Sprintf("%s:%d", viper.GetString("router.uplink-address"), viper.GetInt("router.uplink-port"))
-		err := udp.Start(
+		err = udp.Start(
 			udp.Components{
 				Ctx:    ctx.WithField("adapter", "gateway-semtech"),
 				Router: router,

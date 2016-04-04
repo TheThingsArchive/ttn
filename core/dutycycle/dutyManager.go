@@ -60,13 +60,29 @@ const (
 
 // Available regions for LoRaWAN
 const (
-	Europe    region = "eu"
+	Europe    Region = "eu"
 	US               = "us"
 	China            = "cn"
 	Australia        = "au"
 )
 
-type region string
+type Region string
+
+// GetRegion converts a string to a dutycycle.Region
+func GetRegion(region string) (Region, error) {
+	switch region {
+	case "eu", "europe":
+		return Europe, nil
+	case "us", "united states":
+		return US, nil
+	case "cn", "china":
+		return China, nil
+	case "au", "australia":
+		return Australia, nil
+	default:
+		return "", fmt.Errorf("Region %s not supported", region)
+	}
+}
 
 var bucket = []byte("cycles")
 
@@ -111,7 +127,7 @@ func GetSubBand(freq float32) (subBand, error) {
 }
 
 // NewManager constructs a new gateway manager from
-func NewManager(filepath string, cycleLength time.Duration, r region) (DutyManager, error) {
+func NewManager(filepath string, cycleLength time.Duration, r Region) (DutyManager, error) {
 	var maxDuty map[subBand]float32
 	switch r {
 	case Europe:
