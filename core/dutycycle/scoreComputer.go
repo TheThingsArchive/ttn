@@ -104,9 +104,14 @@ func (c *ScoreComputer) Get(s scores) *Configuration {
 			}
 		}
 	case US:
-		// Logic to handle downstream in US goes here.
-		// we have access to the frequency and datarate used for the upstream,
-		// thus, we can compute downChan and see whether we should use RX1 or RX2
+		return &Configuration{
+			ID:        s.rx2.ID,
+			Frequency: 923.3,
+			DataRate:  "SF12BW500",
+			Power:     26,
+			RXDelay:   2000000,
+			JoinDelay: 6000000,
+		}
 	default:
 	}
 	return nil
