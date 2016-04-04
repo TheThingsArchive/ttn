@@ -15,7 +15,7 @@ import (
 func TestNewScoreComputer(t *testing.T) {
 	{
 		Desc(t, "Invalid datr as argument")
-		_, _, err := NewScoreComputer(World, "TheThingsNetwork")
+		_, _, err := NewScoreComputer(Europe, "TheThingsNetwork")
 		CheckErrors(t, pointer.String(string(errors.Structural)), err)
 	}
 
@@ -23,7 +23,7 @@ func TestNewScoreComputer(t *testing.T) {
 
 	{
 		Desc(t, "Valid datr")
-		_, _, err := NewScoreComputer(World, "SF8BW250")
+		_, _, err := NewScoreComputer(Europe, "SF8BW250")
 		CheckErrors(t, nil, err)
 	}
 }
@@ -45,7 +45,7 @@ func TestUpdateGet(t *testing.T) {
 		Desc(t, "SF7 | ...")
 
 		// Build
-		c, s, err := NewScoreComputer(World, "SF7BW125")
+		c, s, err := NewScoreComputer(Europe, "SF7BW125")
 		CheckErrors(t, nil, err)
 
 		// Operate

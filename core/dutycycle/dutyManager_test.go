@@ -132,16 +132,6 @@ func TestNewManager(t *testing.T) {
 	// --------------------
 
 	{
-		Desc(t, "World with valid cycleLength")
-		m, err := NewManager(dutyManagerDB, time.Minute, World)
-		CheckErrors(t, nil, err)
-		err = m.Close()
-		CheckErrors(t, nil, err)
-	}
-
-	// --------------------
-
-	{
 		Desc(t, "Not europe with valid cycleLength")
 		_, err := NewManager(dutyManagerDB, time.Minute, China)
 		CheckErrors(t, pointer.String(string(errors.Implementation)), err)
