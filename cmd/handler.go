@@ -177,7 +177,7 @@ func init() {
 	viper.BindPFlag("handler.public-port", handlerCmd.Flags().Lookup("public-port"))
 
 	handlerCmd.Flags().String("mqtt-broker", "localhost:1883", "The address of the MQTT broker (uplink)")
-	handlerCmd.Flags().String("mqtt-username", "", "The username for the MQTT broker (uplink)")
+	handlerCmd.Flags().String("mqtt-username", "handler", "The username for the MQTT broker (uplink)")
 	handlerCmd.Flags().String("mqtt-password", "", "The password for the MQTT broker (uplink)")
 	viper.BindPFlag("handler.mqtt-broker", handlerCmd.Flags().Lookup("mqtt-broker"))
 	viper.BindPFlag("handler.mqtt-username", handlerCmd.Flags().Lookup("mqtt-username"))
