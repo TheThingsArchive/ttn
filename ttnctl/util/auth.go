@@ -133,7 +133,7 @@ func refreshToken(server string, auth *Auth) (*Auth, error) {
 }
 
 func newToken(server, email string, values url.Values) (*Auth, error) {
-	uri := fmt.Sprintf("%s/token", server)
+	uri := fmt.Sprintf("%s/users/token", server)
 	req, err := http.NewRequest("POST", uri, strings.NewReader(values.Encode()))
 	if err != nil {
 		return nil, err
