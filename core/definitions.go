@@ -20,7 +20,7 @@ type OTAAAppReq struct {
 type AppMetadata struct {
 	Frequency  float32 `msg:"frequency" json:"frequency"`
 	DataRate   string  `msg:"datarate" json:"datarate"`
-	CodingRate string  `msg:"coderate" json:"coderate"`
+	CodingRate string  `msg:"codingrate" json:"codingrate"`
 	Timestamp  uint32  `msg:"timestamp" json:"timestamp"`
 	Time       string  `msg:"time" json:"time"`
 	Rssi       int32   `msg:"rssi" json:"rssi"`
