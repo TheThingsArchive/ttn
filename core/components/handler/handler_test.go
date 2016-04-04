@@ -390,13 +390,15 @@ func TestHandleDataUp(t *testing.T) {
 		appAdapter := mocks.NewAppClient()
 		broker := mocks.NewAuthBrokerClient()
 		req := &core.DataUpHandlerReq{
-			Payload:  []byte("Payload"),
-			Metadata: new(core.Metadata),
-			AppEUI:   []byte{1, 1, 1, 1, 1},
-			DevEUI:   []byte{2, 2, 2, 2, 2, 2, 2, 2},
-			FCnt:     14,
-			FPort:    1,
-			MType:    uint32(lorawan.UnconfirmedDataUp),
+			Payload: []byte("Payload"),
+			Metadata: &core.Metadata{
+				Region: "eu",
+			},
+			AppEUI: []byte{1, 1, 1, 1, 1},
+			DevEUI: []byte{2, 2, 2, 2, 2, 2, 2, 2},
+			FCnt:   14,
+			FPort:  1,
+			MType:  uint32(lorawan.UnconfirmedDataUp),
 		}
 
 		// Expect
@@ -452,6 +454,7 @@ func TestHandleDataUp(t *testing.T) {
 			Payload: encoded,
 			Metadata: &core.Metadata{
 				DataRate: "SF7BW125",
+				Region:   "eu",
 			},
 			AppEUI: []byte{1, 1, 1, 1, 1, 1, 1, 1},
 			DevEUI: []byte{2, 2, 2, 2, 2, 2, 2, 2},
@@ -520,6 +523,7 @@ func TestHandleDataUp(t *testing.T) {
 			Payload: encoded,
 			Metadata: &core.Metadata{
 				DataRate: "SF7BW125",
+				Region:   "eu",
 				DutyRX1:  uint32(dutycycle.StateWarning),
 				DutyRX2:  uint32(dutycycle.StateWarning),
 				Rssi:     -20,
@@ -535,6 +539,7 @@ func TestHandleDataUp(t *testing.T) {
 			Payload: req1.Payload,
 			Metadata: &core.Metadata{
 				DataRate: "SF7BW125",
+				Region:   "eu",
 				DutyRX1:  uint32(dutycycle.StateAvailable),
 				DutyRX2:  uint32(dutycycle.StateAvailable),
 				Rssi:     -20,
@@ -634,6 +639,7 @@ func TestHandleDataUp(t *testing.T) {
 			Payload: encoded,
 			Metadata: &core.Metadata{
 				DataRate:   "SF7BW125",
+				Region:     "eu",
 				Frequency:  865.5,
 				Timestamp:  uint32(tmst.Unix() * 1000000),
 				CodingRate: "4/5",
@@ -853,6 +859,7 @@ func TestHandleDataUp(t *testing.T) {
 			Payload: encoded,
 			Metadata: &core.Metadata{
 				DataRate: "SF7BW125",
+				Region:   "eu",
 			},
 			AppEUI: []byte{1, 1, 1, 1, 1, 1, 1, 1},
 			DevEUI: []byte{2, 2, 2, 2, 2, 2, 2, 2},
@@ -922,6 +929,7 @@ func TestHandleDataUp(t *testing.T) {
 			Payload: encoded,
 			Metadata: &core.Metadata{
 				DataRate: "SF7BW125",
+				Region:   "eu",
 			},
 			AppEUI: []byte{1, 1, 1, 1, 1, 1, 1, 1},
 			DevEUI: []byte{2, 2, 2, 2, 2, 2, 2, 2},
@@ -994,6 +1002,7 @@ func TestHandleDataUp(t *testing.T) {
 			Payload: encoded1,
 			Metadata: &core.Metadata{
 				DataRate: "SF7BW125",
+				Region:   "eu",
 				DutyRX1:  uint32(dutycycle.StateWarning),
 				DutyRX2:  uint32(dutycycle.StateWarning),
 				Rssi:     -20,
@@ -1009,6 +1018,7 @@ func TestHandleDataUp(t *testing.T) {
 			Payload: encoded2,
 			Metadata: &core.Metadata{
 				DataRate: "SF7BW125",
+				Region:   "eu",
 				DutyRX1:  uint32(dutycycle.StateAvailable),
 				DutyRX2:  uint32(dutycycle.StateAvailable),
 				Rssi:     -20,
@@ -1116,6 +1126,7 @@ func TestHandleDataUp(t *testing.T) {
 			Payload: encoded,
 			Metadata: &core.Metadata{
 				DataRate:   "SF7BW125",
+				Region:     "eu",
 				Frequency:  865.5,
 				Timestamp:  uint32(tmst.Unix() * 1000000),
 				CodingRate: "4/5",
@@ -1228,6 +1239,7 @@ func TestHandleDataUp(t *testing.T) {
 			Payload: encoded,
 			Metadata: &core.Metadata{
 				DataRate:   "SF7BW125",
+				Region:     "eu",
 				Frequency:  865.5,
 				Timestamp:  uint32(tmst.Unix() * 1000000),
 				CodingRate: "4/5",
@@ -1305,6 +1317,7 @@ func TestHandleDataUp(t *testing.T) {
 			Payload: encoded,
 			Metadata: &core.Metadata{
 				DataRate:   "SF7BW125",
+				Region:     "eu",
 				Frequency:  865.5,
 				Timestamp:  uint32(tmst.Unix() * 1000000),
 				CodingRate: "4/5",
@@ -1418,6 +1431,7 @@ func TestHandleDataUp(t *testing.T) {
 			Payload: encoded,
 			Metadata: &core.Metadata{
 				DataRate:   "SF7BW125",
+				Region:     "eu",
 				Frequency:  865.5,
 				Timestamp:  uint32(tmst.Unix() * 1000000),
 				CodingRate: "4/5",
@@ -1506,6 +1520,7 @@ func TestHandleJoin(t *testing.T) {
 			DevNonce: []byte{14, 42},
 			Metadata: &core.Metadata{
 				DataRate:   "SF7BW125",
+				Region:     "eu",
 				Frequency:  865.5,
 				Timestamp:  uint32(tmst.Unix() * 1000000),
 				CodingRate: "4/5",
@@ -1596,6 +1611,7 @@ func TestHandleJoin(t *testing.T) {
 			DevNonce: []byte{14, 42},
 			Metadata: &core.Metadata{
 				DataRate:   "SF7BW125",
+				Region:     "eu",
 				Frequency:  865.5,
 				Timestamp:  uint32(tmst.Unix() * 1000000),
 				CodingRate: "4/5",
@@ -1687,6 +1703,7 @@ func TestHandleJoin(t *testing.T) {
 			DevNonce: []byte{14, 42},
 			Metadata: &core.Metadata{
 				DataRate:   "SF7BW125",
+				Region:     "eu",
 				Frequency:  865.5,
 				Timestamp:  uint32(tmst.Unix() * 1000000),
 				CodingRate: "4/5",
@@ -1754,6 +1771,7 @@ func TestHandleJoin(t *testing.T) {
 			DevNonce: []byte{14, 42},
 			Metadata: &core.Metadata{
 				DataRate:   "SF7BW125",
+				Region:     "eu",
 				Frequency:  865.5,
 				Timestamp:  uint32(tmst.Unix() * 1000000),
 				CodingRate: "4/5",
@@ -1820,6 +1838,7 @@ func TestHandleJoin(t *testing.T) {
 			DevNonce: []byte{14, 42},
 			Metadata: &core.Metadata{
 				DataRate:   "Not A DataRate",
+				Region:     "eu",
 				Frequency:  865.5,
 				Timestamp:  uint32(tmst.Unix() * 1000000),
 				CodingRate: "4/5",
@@ -1887,6 +1906,7 @@ func TestHandleJoin(t *testing.T) {
 			MIC:      []byte{1, 2, 3, 4},
 			Metadata: &core.Metadata{
 				DataRate:   "SF7BW125",
+				Region:     "eu",
 				Frequency:  865.5,
 				Timestamp:  uint32(tmst.Unix() * 1000000),
 				CodingRate: "4/5",
@@ -2031,6 +2051,7 @@ func TestHandleJoin(t *testing.T) {
 			DevNonce: []byte{14, 42},
 			Metadata: &core.Metadata{
 				DataRate:   "SF7BW125",
+				Region:     "eu",
 				Frequency:  865.5,
 				Timestamp:  uint32(tmst.Unix() * 1000000),
 				CodingRate: "4/5",
@@ -2081,6 +2102,7 @@ func TestHandleJoin(t *testing.T) {
 			DevNonce: []byte{14, 42},
 			Metadata: &core.Metadata{
 				DataRate:   "SF7BW125",
+				Region:     "eu",
 				Frequency:  865.5,
 				Timestamp:  uint32(tmst.Unix() * 1000000),
 				CodingRate: "4/5",
@@ -2131,6 +2153,7 @@ func TestHandleJoin(t *testing.T) {
 			DevNonce: nil,
 			Metadata: &core.Metadata{
 				DataRate:   "SF7BW125",
+				Region:     "eu",
 				Frequency:  865.5,
 				Timestamp:  uint32(tmst.Unix() * 1000000),
 				CodingRate: "4/5",
@@ -2221,6 +2244,7 @@ func TestHandleJoin(t *testing.T) {
 			DevNonce: []byte{14, 42},
 			Metadata: &core.Metadata{
 				DataRate:   "SF7BW125",
+				Region:     "eu",
 				Frequency:  865.5,
 				Timestamp:  uint32(tmst1.Unix() * 1000000),
 				CodingRate: "4/5",
@@ -2237,6 +2261,7 @@ func TestHandleJoin(t *testing.T) {
 			DevNonce: []byte{14, 42},
 			Metadata: &core.Metadata{
 				DataRate:   "SF8BW125",
+				Region:     "eu",
 				Frequency:  867.234,
 				Timestamp:  uint32(tmst2.Unix() * 1000000),
 				CodingRate: "4/5",
