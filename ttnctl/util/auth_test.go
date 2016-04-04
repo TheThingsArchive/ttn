@@ -13,7 +13,7 @@ import (
 
 func newTokenServer(a *Assertion) *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		a.So(r.RequestURI, ShouldEqual, "/token")
+		a.So(r.RequestURI, ShouldEqual, "/users/token")
 		a.So(r.Method, ShouldEqual, "POST")
 
 		username, password, ok := r.BasicAuth()
