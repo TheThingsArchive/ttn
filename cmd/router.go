@@ -84,6 +84,20 @@ the gateway's duty cycle is (almost) full.`,
 			ctx.WithError(fmt.Errorf("Invalid database string. Format: \"boltdb:/path/to.db\".")).Fatal("Could not instantiate local storage")
 		}
 
+		var region string
+		switch regionCode := strings.ToLower(viper.GetString("router.region")); regionCode {
+		case "eu", "europe":
+			region = dutycycle.Europe
+		case "us", "united states":
+			region = dutycycle.US
+		case "cn", "china":
+			region = dutycycle.China
+		case "au", "australia":
+			region = dutycycle.Australia
+		default:
+			ctx.Fatalf("Region %s not supported", regionCode)
+		}
+
 		// Duty Manager
 		var dm dutycycle.DutyManager
 		dmString := viper.GetString("router.db-duty")
@@ -95,7 +109,7 @@ the gateway's duty cycle is (almost) full.`,
 				ctx.WithError(err).Fatal("Invalid database path")
 			}
 
-			dm, err = dutycycle.NewManager(dmPath, time.Hour, dutycycle.Europe)
+			dm, err = dutycycle.NewManager(dmPath, time.Hour, region)
 			if err != nil {
 				ctx.WithError(err).Fatal("Could not create a local storage")
 			}
@@ -151,6 +165,7 @@ the gateway's duty cycle is (almost) full.`,
 			},
 			router.Options{
 				NetAddr: fmt.Sprintf("%s:%d", viper.GetString("router.downlink-address"), viper.GetInt("router.downlink-port")),
+				Region:  region,
 			},
 		)
 
@@ -188,6 +203,9 @@ func init() {
 
 	routerCmd.Flags().String("db-duty", "boltdb:/tmp/ttn_router_duty.db", "Database connection of managed dutycycles")
 	viper.BindPFlag("router.db-duty", routerCmd.Flags().Lookup("db-duty"))
+
+	routerCmd.Flags().String("region", "eu", "Region of the router (eu/us/cn)")
+	viper.BindPFlag("router.region", routerCmd.Flags().Lookup("region"))
 
 	routerCmd.Flags().String("status-address", "0.0.0.0", "The IP address to listen for serving status information")
 	routerCmd.Flags().Int("status-port", 10700, "The port of the status server, use 0 to disable")

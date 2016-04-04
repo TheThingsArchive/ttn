@@ -31,12 +31,14 @@ type Components struct {
 // Options defines a structure to make the instantiation easier to read
 type Options struct {
 	NetAddr string
+	Region  string
 }
 
 // component implements the core.RouterServer interface
 type component struct {
 	Components
 	NetAddr string
+	Region  string
 }
 
 // Server defines the Router Server interface
@@ -47,7 +49,7 @@ type Server interface {
 
 // New constructs a new router
 func New(c Components, o Options) Server {
-	return component{Components: c, NetAddr: o.NetAddr}
+	return component{Components: c, NetAddr: o.NetAddr, Region: o.Region}
 }
 
 // Start actually runs the component and starts the rpc server
@@ -251,6 +253,8 @@ func (r component) injectMetadata(gid []byte, metadata core.Metadata) (*core.Met
 		ctx.WithError(err).Debug("No duty-cycle metadata available")
 		cycles = make(dutycycle.Cycles)
 	}
+
+	metadata.Region = r.Region
 
 	sb1, err := dutycycle.GetSubBand(float32(metadata.Frequency))
 	if err != nil {
