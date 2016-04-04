@@ -38,13 +38,13 @@ The Handler is the bridge between The Things Network and applications.
 			stats.Enabled = false
 		}
 		ctx.WithFields(log.Fields{
-			"devicesDatabase": viper.GetString("handler.db-devices"),
-			"packetsDatabase": viper.GetString("handler.db-packets"),
-			"status-server":   statusServer,
-			"internal server": fmt.Sprintf("%s:%d", viper.GetString("handler.internal-address"), viper.GetInt("handler.internal-port")),
-			"public server":   fmt.Sprintf("%s:%d", viper.GetString("handler.public-address"), viper.GetInt("handler.public-port")),
-			"ttn-broker":      viper.GetString("handler.ttn-broker"),
-			"mqtt-broker":     viper.GetString("handler.mqtt-broker"),
+			"devices-database": viper.GetString("handler.db-devices"),
+			"packets-database": viper.GetString("handler.db-packets"),
+			"status-server":    statusServer,
+			"internal-server":  fmt.Sprintf("%s:%d", viper.GetString("handler.internal-address"), viper.GetInt("handler.internal-port")),
+			"public-server":    fmt.Sprintf("%s:%d", viper.GetString("handler.public-address"), viper.GetInt("handler.public-port")),
+			"ttn-broker":       viper.GetString("handler.ttn-broker"),
+			"mqtt-broker":      viper.GetString("handler.mqtt-broker"),
 		}).Info("Using Configuration")
 	},
 	Run: func(cmd *cobra.Command, args []string) {

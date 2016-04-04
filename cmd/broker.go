@@ -40,8 +40,8 @@ devices (with their network session keys) with the Broker.
 			stats.Enabled = false
 		}
 		ctx.WithFields(log.Fields{
-			"devices database":      viper.GetString("broker.db-devices"),
-			"applications database": viper.GetString("broker.db-apps"),
+			"devices-database":      viper.GetString("broker.db-devices"),
+			"applications-database": viper.GetString("broker.db-apps"),
 			"status-server":         statusServer,
 			"main-server":           fmt.Sprintf("%s:%d", viper.GetString("broker.server-address"), viper.GetInt("broker.server-port")),
 		}).Info("Using Configuration")
