@@ -25,16 +25,6 @@ import (
 // bufferDelay defines the timeframe length during which we bufferize packets
 const bufferDelay time.Duration = time.Millisecond * 300
 
-// dataRates makes correspondance between string datarate identifier and lorawan uint descriptors
-var dataRates = map[string]uint8{
-	"SF12BW125": 0,
-	"SF11BW125": 1,
-	"SF10BW125": 2,
-	"SF9BW125":  3,
-	"SF8BW125":  4,
-	"SF7BW125":  5,
-}
-
 // component implements the core.Component interface
 type component struct {
 	Components
@@ -47,14 +37,8 @@ type component struct {
 		CFList      [5]uint32
 		NetID       [3]byte
 		RX1DROffset uint8
-		RX2DataRate string
-		RX2Freq     float32
-		RXDelay     uint8
-		PowerRX1    uint32
-		PowerRX2    uint32
 		RFChain     uint32
 		InvPolarity bool
-		JoinDelay   uint8
 	}
 }
 
@@ -111,12 +95,6 @@ func New(c Components, o Options) Interface {
 	h.Configuration.CFList = [5]uint32{867100000, 867300000, 867500000, 867700000, 867900000}
 	h.Configuration.NetID = [3]byte{14, 14, 14}
 	h.Configuration.RX1DROffset = 0
-	h.Configuration.RX2DataRate = "SF9BW125"
-	h.Configuration.RX2Freq = 869.525
-	h.Configuration.RXDelay = 1
-	h.Configuration.JoinDelay = 5
-	h.Configuration.PowerRX1 = 14
-	h.Configuration.PowerRX2 = 27
 	h.Configuration.RFChain = 0
 	h.Configuration.InvPolarity = true
 
@@ -769,17 +747,31 @@ func (h component) buildJoinAccept(joinReq *core.JoinHandlerReq, appKey [16]byte
 		MType: lorawan.JoinAccept,
 		Major: lorawan.LoRaWANR1,
 	}
+
+	// TODO: Move this somewhere else
+	var rx2dr uint8
+	switch region, _ := dutycycle.GetRegion(joinReq.Metadata.Region); region {
+	case dutycycle.Europe:
+		rx2dr = 3
+	case dutycycle.US:
+		rx2dr = 8
+	}
+
 	joinAcceptPayload := &lorawan.JoinAcceptPayload{
 		NetID:   lorawan.NetID(h.Configuration.NetID),
 		DevAddr: lorawan.DevAddr(devAddr),
 		DLSettings: lorawan.DLsettings{
-			RX1DRoffset: h.Configuration.RX1DROffset,
-			RX2DataRate: dataRates[h.Configuration.RX2DataRate],
+			RX1DRoffset: 0, // TODO: Configure this per region
+			RX2DataRate: rx2dr,
 		},
-		RXDelay: h.Configuration.RXDelay,
+		RXDelay: 1, // TODO: Configure this per region
 	}
-	cflist := lorawan.CFList(h.Configuration.CFList)
-	joinAcceptPayload.CFList = &cflist
+
+	if joinReq.Metadata.Region != dutycycle.US {
+		cflist := lorawan.CFList(h.Configuration.CFList)
+		joinAcceptPayload.CFList = &cflist
+	}
+
 	copy(joinAcceptPayload.AppNonce[:], appNonce)
 	payload.MACPayload = joinAcceptPayload
 	if err := payload.SetMIC(lorawan.AES128Key(appKey)); err != nil {
