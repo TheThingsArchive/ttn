@@ -18,8 +18,8 @@ func CheckUsages(t *testing.T, want map[subBand]uint32, got map[subBand]uint32) 
 	testutil.Check(t, want, got, "Usages")
 }
 
-func CheckBestTargets(t *testing.T, want *BestTarget, got *BestTarget) {
-	testutil.Check(t, want, got, "Targets")
+func CheckConfiguration(t *testing.T, want *Configuration, got *Configuration) {
+	testutil.Check(t, want, got, "Configurations")
 }
 
 func CheckStates(t *testing.T, want State, got State) {

@@ -86,7 +86,7 @@ func (c *ScoreComputer) Get(s scores) *Configuration {
 				Frequency: s.rx1.Frequency,
 				DataRate:  s.rx1.DataRate,
 				Power:     14,
-				RXDelay:   10000,
+				RXDelay:   1000000,
 				CFList:    [5]uint32{867100000, 867300000, 867500000, 867700000, 867900000},
 			}
 		}
@@ -96,7 +96,7 @@ func (c *ScoreComputer) Get(s scores) *Configuration {
 				Frequency: 869.525,
 				DataRate:  "SF9BW125",
 				Power:     27,
-				RXDelay:   20000,
+				RXDelay:   2000000,
 				CFList:    [5]uint32{867100000, 867300000, 867500000, 867700000, 867900000},
 			}
 		}
