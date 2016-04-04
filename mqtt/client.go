@@ -130,7 +130,7 @@ func (c *defaultClient) IsConnected() bool {
 }
 
 func (c *defaultClient) PublishUplink(appEUI []byte, devEUI []byte, dataUp core.DataUpAppReq) Token {
-	topic := Topic{appEUI, devEUI, Uplink}
+	topic := DeviceTopic{appEUI, devEUI, Uplink}
 	msg, err := dataUp.MarshalMsg(nil)
 	if err != nil {
 		return &simpleToken{fmt.Errorf("Unable to marshal the message payload")}
@@ -139,10 +139,10 @@ func (c *defaultClient) PublishUplink(appEUI []byte, devEUI []byte, dataUp core.
 }
 
 func (c *defaultClient) SubscribeDeviceUplink(appEUI []byte, devEUI []byte, handler UplinkHandler) Token {
-	topic := Topic{appEUI, devEUI, Uplink}
+	topic := DeviceTopic{appEUI, devEUI, Uplink}
 	return c.mqtt.Subscribe(topic.String(), QoS, func(mqtt MQTT.Client, msg MQTT.Message) {
 		// Determine the actual topic
-		topic, err := ParseTopic(msg.Topic())
+		topic, err := ParseDeviceTopic(msg.Topic())
 		if err != nil {
 			if c.ctx != nil {
 				c.ctx.WithField("topic", msg.Topic()).WithError(err).Warn("Received message on invalid uplink topic")
@@ -174,7 +174,7 @@ func (c *defaultClient) SubscribeUplink(handler UplinkHandler) Token {
 }
 
 func (c *defaultClient) PublishDownlink(appEUI []byte, devEUI []byte, dataDown core.DataDownAppReq) Token {
-	topic := Topic{appEUI, devEUI, Downlink}
+	topic := DeviceTopic{appEUI, devEUI, Downlink}
 	msg, err := dataDown.MarshalMsg(nil)
 	if err != nil {
 		return &simpleToken{fmt.Errorf("Unable to marshal the message payload")}
@@ -183,10 +183,10 @@ func (c *defaultClient) PublishDownlink(appEUI []byte, devEUI []byte, dataDown c
 }
 
 func (c *defaultClient) SubscribeDeviceDownlink(appEUI []byte, devEUI []byte, handler DownlinkHandler) Token {
-	topic := Topic{appEUI, devEUI, Downlink}
+	topic := DeviceTopic{appEUI, devEUI, Downlink}
 	return c.mqtt.Subscribe(topic.String(), QoS, func(mqtt MQTT.Client, msg MQTT.Message) {
 		// Determine the actual topic
-		topic, err := ParseTopic(msg.Topic())
+		topic, err := ParseDeviceTopic(msg.Topic())
 		if err != nil {
 			if c.ctx != nil {
 				c.ctx.WithField("topic", msg.Topic()).WithError(err).Warn("Received message on invalid Downlink topic")
@@ -218,7 +218,7 @@ func (c *defaultClient) SubscribeDownlink(handler DownlinkHandler) Token {
 }
 
 func (c *defaultClient) PublishActivation(appEUI []byte, devEUI []byte, activation core.OTAAAppReq) Token {
-	topic := Topic{appEUI, devEUI, Activations}
+	topic := DeviceTopic{appEUI, devEUI, Activations}
 	msg, err := activation.MarshalMsg(nil)
 	if err != nil {
 		return &simpleToken{fmt.Errorf("Unable to marshal the message payload")}
@@ -227,10 +227,10 @@ func (c *defaultClient) PublishActivation(appEUI []byte, devEUI []byte, activati
 }
 
 func (c *defaultClient) SubscribeDeviceActivations(appEUI []byte, devEUI []byte, handler ActivationHandler) Token {
-	topic := Topic{appEUI, devEUI, Activations}
+	topic := DeviceTopic{appEUI, devEUI, Activations}
 	return c.mqtt.Subscribe(topic.String(), QoS, func(mqtt MQTT.Client, msg MQTT.Message) {
 		// Determine the actual topic
-		topic, err := ParseTopic(msg.Topic())
+		topic, err := ParseDeviceTopic(msg.Topic())
 		if err != nil {
 			if c.ctx != nil {
 				c.ctx.WithField("topic", msg.Topic()).WithError(err).Warn("Received message on invalid Activations topic")
