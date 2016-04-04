@@ -58,7 +58,7 @@ func TestHandleData(t *testing.T) {
 
 	res, err := adapter.HandleData(context.Background(), &req)
 	a.So(err, ShouldBeNil)
-	a.So(res, ShouldBeNil)
+	a.So(res, ShouldResemble, new(core.DataAppRes))
 
 	wg.Wait()
 
@@ -142,7 +142,7 @@ func TestHandleJoin(t *testing.T) {
 
 	res, err := adapter.HandleJoin(context.Background(), &req)
 	a.So(err, ShouldBeNil)
-	a.So(res, ShouldBeNil)
+	a.So(res, ShouldResemble, new(core.JoinAppRes))
 
 	wg.Wait()
 }
