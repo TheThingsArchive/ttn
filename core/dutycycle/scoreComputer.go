@@ -29,6 +29,7 @@ type Configuration struct {
 	Frequency float32
 	DataRate  string
 	RXDelay   uint32
+	JoinDelay uint32
 	Power     uint32
 	CFList    [5]uint32
 }
@@ -87,6 +88,7 @@ func (c *ScoreComputer) Get(s scores) *Configuration {
 				DataRate:  s.rx1.DataRate,
 				Power:     14,
 				RXDelay:   1000000,
+				JoinDelay: 5000000,
 				CFList:    [5]uint32{867100000, 867300000, 867500000, 867700000, 867900000},
 			}
 		}
@@ -97,6 +99,7 @@ func (c *ScoreComputer) Get(s scores) *Configuration {
 				DataRate:  "SF9BW125",
 				Power:     27,
 				RXDelay:   2000000,
+				JoinDelay: 6000000,
 				CFList:    [5]uint32{867100000, 867300000, 867500000, 867700000, 867900000},
 			}
 		}
