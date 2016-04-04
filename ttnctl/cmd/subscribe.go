@@ -4,15 +4,13 @@
 package cmd
 
 import (
-	"fmt"
+	"os"
+	"os/signal"
 	"regexp"
 
-	MQTT "git.eclipse.org/gitroot/paho/org.eclipse.paho.mqtt.golang.git"
 	"github.com/TheThingsNetwork/ttn/core"
-	"github.com/TheThingsNetwork/ttn/core/api"
+	"github.com/TheThingsNetwork/ttn/mqtt"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
-	"github.com/TheThingsNetwork/ttn/utils/random"
-	"github.com/howeyc/gopass"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -31,61 +29,21 @@ application.`,
 			ctx.Fatalf("Invalid AppEUI: %s", err)
 		}
 
-		var devEUI = "+"
+		var devEUI []byte
 		if len(args) > 0 {
-			eui, err := util.Parse64(args[0])
+			devEUI, err = util.Parse64(args[0])
 			if err != nil {
 				ctx.Fatalf("Invalid DevEUI: %s", err)
 			}
-			devEUI = fmt.Sprintf("%X", eui)
 			ctx.Infof("Subscribing uplink messages from device %s", devEUI)
 		} else {
 			ctx.Infof("Subscribing to uplink messages from all devices in application %x", appEUI)
 		}
 
-		t, err := util.LoadAuth(viper.GetString("ttn-account-server"))
-		if err != nil {
-			ctx.WithError(err).Fatal("Failed to load authentication token")
-		}
-		if t == nil {
-			ctx.Fatal("No login found. Please login with ttnctl user login [e-mail]")
-		}
+		client := util.GetMQTTClient(ctx)
 
-		// NOTE: until the MQTT server supports access tokens, we'll have to ask for a password.
-		fmt.Print("Password: ")
-		password, err := gopass.GetPasswd()
-		if err != nil {
-			ctx.Fatal(err.Error())
-		}
-
-		broker := fmt.Sprintf("tcp://%s", viper.GetString("mqtt-broker"))
-		opts := MQTT.NewClientOptions().AddBroker(broker)
-
-		clientID := fmt.Sprintf("ttntool-%s", random.String(15))
-		opts.SetClientID(clientID)
-
-		opts.SetUsername(t.Email)
-		opts.SetPassword(string(password))
-
-		opts.SetKeepAlive(20)
-
-		opts.SetOnConnectHandler(func(client *MQTT.Client) {
-			ctx.Info("Connected to The Things Network.")
-		})
-
-		opts.SetDefaultPublishHandler(func(client *MQTT.Client, msg MQTT.Message) {
-			t, err := api.DecodeDeviceTopic(msg.Topic())
-			if err != nil {
-				ctx.WithError(err).Warn("There's something wrong with the MQTT topic.")
-			}
-
-			ctx := ctx.WithField("DevEUI", t.DevEUI)
-
-			dataUp := &core.DataUpAppReq{}
-			_, err = dataUp.UnmarshalMsg(msg.Payload())
-			if err != nil {
-				ctx.WithError(err).Warn("Could not unmarshal uplink.")
-			}
+		token := client.SubscribeDeviceUplink(appEUI, devEUI, func(client mqtt.Client, appEUI []byte, devEUI []byte, dataUp core.DataUpAppReq) {
+			ctx := ctx.WithField("DevEUI", devEUI)
 
 			// TODO: Find out what Metadata people want to see here
 
@@ -105,27 +63,18 @@ application.`,
 
 		})
 
-		opts.SetConnectionLostHandler(func(client *MQTT.Client, err error) {
-			ctx.WithError(err).Error("Connection Lost. Reconnecting...")
-		})
-
-		mqttClient := MQTT.NewClient(opts)
-
-		ctx.WithField("mqtt-broker", broker).Info("Connecting to The Things Network...")
-		if token := mqttClient.Connect(); token.Wait() && token.Error() != nil {
-			panic(token.Error())
+		if token.Wait(); token.Error() != nil {
+			ctx.WithError(token.Error()).Fatal("Could not subscribe")
 		}
+		ctx.Info("Subscribed. Waiting for messages...")
 
-		topic := fmt.Sprintf("%X/devices/%s/up", appEUI, devEUI)
-		ctx.WithField("topic", topic).Debug("Subscribing...")
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, os.Interrupt)
 
-		if token := mqttClient.Subscribe(topic, 2, nil); token.Wait() && token.Error() != nil {
-			ctx.WithField("topic", topic).WithError(token.Error()).Fatal("Could not subscribe.")
-		}
+		// Block until a signal is received.
+		<-c
 
-		ctx.WithField("topic", topic).Debug("Subscribed.")
-
-		<-make(chan bool)
+		client.Disconnect()
 
 	},
 }

@@ -10,10 +10,10 @@ import (
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/core/adapters/http"
-	"github.com/TheThingsNetwork/ttn/core/adapters/mqtt"
+	handlerMQTT "github.com/TheThingsNetwork/ttn/core/adapters/mqtt"
 	"github.com/TheThingsNetwork/ttn/core/components/broker"
 	"github.com/TheThingsNetwork/ttn/core/components/handler"
-	"github.com/TheThingsNetwork/ttn/utils/random"
+	ttnMQTT "github.com/TheThingsNetwork/ttn/mqtt"
 	"github.com/TheThingsNetwork/ttn/utils/stats"
 	"github.com/apex/log"
 	"github.com/spf13/cobra"
@@ -109,24 +109,22 @@ The Handler is the bridge between The Things Network and applications.
 			ctx.WithError(err).Fatal("Could not dial broker")
 		}
 
-		if viper.GetString("handler.mqtt-username") == "" || viper.GetString("handler.mqtt-password") == "" {
-			ctx.WithError(fmt.Errorf("MQTT username or password not set")).Fatal("Could not connect to MQTT")
-		}
-
 		// MQTT Client & adapter
-		mqttClient, chmsg, err := mqtt.NewClient(
-			fmt.Sprintf("handler-%s", random.String(15)),
-			viper.GetString("handler.mqtt-broker"),
+		mqttClient := ttnMQTT.NewClient(
+			ctx.WithField("adapter", "handler-mqtt"),
+			"ttnhdl",
 			viper.GetString("handler.mqtt-username"),
 			viper.GetString("handler.mqtt-password"),
-			ctx.WithField("adapter", "app-adapter"),
+			fmt.Sprintf("tcp://%s", viper.GetString("handler.mqtt-broker")),
 		)
+		err = mqttClient.Connect()
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not connect to MQTT")
 		}
-		appAdapter := mqtt.New(
-			mqtt.Components{Ctx: ctx.WithField("adapter", "app-adapter"), Client: mqttClient},
-			mqtt.Options{},
+
+		appAdapter := handlerMQTT.NewAdapter(
+			ctx.WithField("adapter", "app-adapter"),
+			mqttClient,
 		)
 
 		// Handler
@@ -145,8 +143,8 @@ The Handler is the bridge between The Things Network and applications.
 			},
 		)
 
-		// Go
-		appAdapter.Start(chmsg, handler)
+		appAdapter.SubscribeDownlink(handler)
+
 		if err := handler.Start(); err != nil {
 			ctx.WithError(err).Fatal("Handler has fallen...")
 		}
