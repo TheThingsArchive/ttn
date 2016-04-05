@@ -4,6 +4,7 @@
 package mqtt
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -131,7 +132,7 @@ func (c *defaultClient) IsConnected() bool {
 
 func (c *defaultClient) PublishUplink(appEUI []byte, devEUI []byte, dataUp core.DataUpAppReq) Token {
 	topic := DeviceTopic{appEUI, devEUI, Uplink}
-	msg, err := dataUp.MarshalMsg(nil)
+	msg, err := json.Marshal(dataUp)
 	if err != nil {
 		return &simpleToken{fmt.Errorf("Unable to marshal the message payload")}
 	}
@@ -152,7 +153,8 @@ func (c *defaultClient) SubscribeDeviceUplink(appEUI []byte, devEUI []byte, hand
 
 		// Unmarshal the payload
 		dataUp := &core.DataUpAppReq{}
-		_, err = dataUp.UnmarshalMsg(msg.Payload())
+		err = json.Unmarshal(msg.Payload(), dataUp)
+
 		if err != nil {
 			if c.ctx != nil {
 				c.ctx.WithError(err).Warn("Could not unmarshal uplink")
@@ -175,7 +177,7 @@ func (c *defaultClient) SubscribeUplink(handler UplinkHandler) Token {
 
 func (c *defaultClient) PublishDownlink(appEUI []byte, devEUI []byte, dataDown core.DataDownAppReq) Token {
 	topic := DeviceTopic{appEUI, devEUI, Downlink}
-	msg, err := dataDown.MarshalMsg(nil)
+	msg, err := json.Marshal(dataDown)
 	if err != nil {
 		return &simpleToken{fmt.Errorf("Unable to marshal the message payload")}
 	}
@@ -196,7 +198,7 @@ func (c *defaultClient) SubscribeDeviceDownlink(appEUI []byte, devEUI []byte, ha
 
 		// Unmarshal the payload
 		dataDown := &core.DataDownAppReq{}
-		_, err = dataDown.UnmarshalMsg(msg.Payload())
+		err = json.Unmarshal(msg.Payload(), dataDown)
 		if err != nil {
 			if c.ctx != nil {
 				c.ctx.WithError(err).Warn("Could not unmarshal Downlink")
@@ -219,7 +221,7 @@ func (c *defaultClient) SubscribeDownlink(handler DownlinkHandler) Token {
 
 func (c *defaultClient) PublishActivation(appEUI []byte, devEUI []byte, activation core.OTAAAppReq) Token {
 	topic := DeviceTopic{appEUI, devEUI, Activations}
-	msg, err := activation.MarshalMsg(nil)
+	msg, err := json.Marshal(activation)
 	if err != nil {
 		return &simpleToken{fmt.Errorf("Unable to marshal the message payload")}
 	}
@@ -240,7 +242,7 @@ func (c *defaultClient) SubscribeDeviceActivations(appEUI []byte, devEUI []byte,
 
 		// Unmarshal the payload
 		activation := &core.OTAAAppReq{}
-		_, err = activation.UnmarshalMsg(msg.Payload())
+		err = json.Unmarshal(msg.Payload(), activation)
 		if err != nil {
 			if c.ctx != nil {
 				c.ctx.WithError(err).Warn("Could not unmarshal Activation")
