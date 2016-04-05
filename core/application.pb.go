@@ -2,6 +2,66 @@
 // source: application.proto
 // DO NOT EDIT!
 
+/*
+	Package core is a generated protocol buffer package.
+
+	It is generated from these files:
+		application.proto
+		broker.proto
+		broker_manager.proto
+		core.proto
+		handler.proto
+		handler_manager.proto
+		lorawan.proto
+		router.proto
+
+	It has these top-level messages:
+		DataAppReq
+		DataAppRes
+		JoinAppReq
+		JoinAppRes
+		DataBrokerReq
+		DataBrokerRes
+		JoinBrokerReq
+		JoinBrokerRes
+		ValidateOTAABrokerReq
+		ValidateOTAABrokerRes
+		UpsertABPBrokerReq
+		UpsertABPBrokerRes
+		BrokerDevice
+		ValidateTokenBrokerReq
+		ValidateTokenBrokerRes
+		Metadata
+		StatsMetadata
+		DataUpHandlerReq
+		DataUpHandlerRes
+		DataDownHandlerReq
+		DataDownHandlerRes
+		JoinHandlerReq
+		JoinHandlerRes
+		UpsertOTAAHandlerReq
+		UpsertOTAAHandlerRes
+		UpsertABPHandlerReq
+		UpsertABPHandlerRes
+		ListDevicesHandlerReq
+		ListDevicesHandlerRes
+		HandlerABPDevice
+		HandlerOTAADevice
+		LoRaWANData
+		LoRaWANMHDR
+		LoRaWANMACPayload
+		LoRaWANFHDR
+		LoRaWANFCtrl
+		LoRaWANJoinRequest
+		LoRaWANJoinAccept
+		LoRaWANDLSettings
+		DataRouterReq
+		DataRouterRes
+		StatsReq
+		StatsRes
+		JoinRouterReq
+		JoinRouterRes
+*/
 package core
 
 import proto "github.com/golang/protobuf/proto"
@@ -19,6 +79,10 @@ import io "io"
 var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+const _ = proto.ProtoPackageIsVersion1
 
 type DataAppReq struct {
 	Payload  []byte      `protobuf:"bytes,1,opt,name=Payload,json=payload,proto3" json:"Payload,omitempty"`

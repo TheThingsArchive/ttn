@@ -12,14 +12,14 @@ import (
 func (z ABPSubAppReq) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
 	// map header, size 3
-	// string "dev_addr"
-	o = append(o, 0x83, 0xa8, 0x64, 0x65, 0x76, 0x5f, 0x61, 0x64, 0x64, 0x72)
+	// string "devaddr"
+	o = append(o, 0x83, 0xa7, 0x64, 0x65, 0x76, 0x61, 0x64, 0x64, 0x72)
 	o = msgp.AppendString(o, z.DevAddr)
-	// string "nwks_key"
-	o = append(o, 0xa8, 0x6e, 0x77, 0x6b, 0x73, 0x5f, 0x6b, 0x65, 0x79)
+	// string "nwkskey"
+	o = append(o, 0xa7, 0x6e, 0x77, 0x6b, 0x73, 0x6b, 0x65, 0x79)
 	o = msgp.AppendString(o, z.NwkSKey)
-	// string "apps_key"
-	o = append(o, 0xa8, 0x61, 0x70, 0x70, 0x73, 0x5f, 0x6b, 0x65, 0x79)
+	// string "appskey"
+	o = append(o, 0xa7, 0x61, 0x70, 0x70, 0x73, 0x6b, 0x65, 0x79)
 	o = msgp.AppendString(o, z.AppSKey)
 	return
 }
@@ -40,17 +40,17 @@ func (z *ABPSubAppReq) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			return
 		}
 		switch msgp.UnsafeString(field) {
-		case "dev_addr":
+		case "devaddr":
 			z.DevAddr, bts, err = msgp.ReadStringBytes(bts)
 			if err != nil {
 				return
 			}
-		case "nwks_key":
+		case "nwkskey":
 			z.NwkSKey, bts, err = msgp.ReadStringBytes(bts)
 			if err != nil {
 				return
 			}
-		case "apps_key":
+		case "appskey":
 			z.AppSKey, bts, err = msgp.ReadStringBytes(bts)
 			if err != nil {
 				return
@@ -67,7 +67,7 @@ func (z *ABPSubAppReq) UnmarshalMsg(bts []byte) (o []byte, err error) {
 }
 
 func (z ABPSubAppReq) Msgsize() (s int) {
-	s = 1 + 9 + msgp.StringPrefixSize + len(z.DevAddr) + 9 + msgp.StringPrefixSize + len(z.NwkSKey) + 9 + msgp.StringPrefixSize + len(z.AppSKey)
+	s = 1 + 8 + msgp.StringPrefixSize + len(z.DevAddr) + 8 + msgp.StringPrefixSize + len(z.NwkSKey) + 8 + msgp.StringPrefixSize + len(z.AppSKey)
 	return
 }
 
@@ -75,17 +75,17 @@ func (z ABPSubAppReq) Msgsize() (s int) {
 func (z *AppMetadata) MarshalMsg(b []byte) (o []byte, err error) {
 	o = msgp.Require(b, z.Msgsize())
 	// map header, size 13
-	// string "freq"
-	o = append(o, 0x8d, 0xa4, 0x66, 0x72, 0x65, 0x71)
+	// string "frequency"
+	o = append(o, 0x8d, 0xa9, 0x66, 0x72, 0x65, 0x71, 0x75, 0x65, 0x6e, 0x63, 0x79)
 	o = msgp.AppendFloat32(o, z.Frequency)
-	// string "datr"
-	o = append(o, 0xa4, 0x64, 0x61, 0x74, 0x72)
+	// string "datarate"
+	o = append(o, 0xa8, 0x64, 0x61, 0x74, 0x61, 0x72, 0x61, 0x74, 0x65)
 	o = msgp.AppendString(o, z.DataRate)
-	// string "codr"
-	o = append(o, 0xa4, 0x63, 0x6f, 0x64, 0x72)
+	// string "coderate"
+	o = append(o, 0xa8, 0x63, 0x6f, 0x64, 0x65, 0x72, 0x61, 0x74, 0x65)
 	o = msgp.AppendString(o, z.CodingRate)
-	// string "tmst"
-	o = append(o, 0xa4, 0x74, 0x6d, 0x73, 0x74)
+	// string "timestamp"
+	o = append(o, 0xa9, 0x74, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70)
 	o = msgp.AppendUint32(o, z.Timestamp)
 	// string "time"
 	o = append(o, 0xa4, 0x74, 0x69, 0x6d, 0x65)
@@ -96,23 +96,23 @@ func (z *AppMetadata) MarshalMsg(b []byte) (o []byte, err error) {
 	// string "lsnr"
 	o = append(o, 0xa4, 0x6c, 0x73, 0x6e, 0x72)
 	o = msgp.AppendFloat32(o, z.Lsnr)
-	// string "rfch"
-	o = append(o, 0xa4, 0x72, 0x66, 0x63, 0x68)
+	// string "rfchain"
+	o = append(o, 0xa7, 0x72, 0x66, 0x63, 0x68, 0x61, 0x69, 0x6e)
 	o = msgp.AppendUint32(o, z.RFChain)
-	// string "stat"
-	o = append(o, 0xa4, 0x73, 0x74, 0x61, 0x74)
+	// string "crc"
+	o = append(o, 0xa3, 0x63, 0x72, 0x63)
 	o = msgp.AppendInt32(o, z.CRCStatus)
-	// string "modu"
-	o = append(o, 0xa4, 0x6d, 0x6f, 0x64, 0x75)
+	// string "modulation"
+	o = append(o, 0xaa, 0x6d, 0x6f, 0x64, 0x75, 0x6c, 0x61, 0x74, 0x69, 0x6f, 0x6e)
 	o = msgp.AppendString(o, z.Modulation)
-	// string "alti"
-	o = append(o, 0xa4, 0x61, 0x6c, 0x74, 0x69)
+	// string "altitude"
+	o = append(o, 0xa8, 0x61, 0x6c, 0x74, 0x69, 0x74, 0x75, 0x64, 0x65)
 	o = msgp.AppendInt32(o, z.Altitude)
-	// string "long"
-	o = append(o, 0xa4, 0x6c, 0x6f, 0x6e, 0x67)
+	// string "longitude"
+	o = append(o, 0xa9, 0x6c, 0x6f, 0x6e, 0x67, 0x69, 0x74, 0x75, 0x64, 0x65)
 	o = msgp.AppendFloat32(o, z.Longitude)
-	// string "lati"
-	o = append(o, 0xa4, 0x6c, 0x61, 0x74, 0x69)
+	// string "latitude"
+	o = append(o, 0xa8, 0x6c, 0x61, 0x74, 0x69, 0x74, 0x75, 0x64, 0x65)
 	o = msgp.AppendFloat32(o, z.Latitude)
 	return
 }
@@ -133,22 +133,22 @@ func (z *AppMetadata) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			return
 		}
 		switch msgp.UnsafeString(field) {
-		case "freq":
+		case "frequency":
 			z.Frequency, bts, err = msgp.ReadFloat32Bytes(bts)
 			if err != nil {
 				return
 			}
-		case "datr":
+		case "datarate":
 			z.DataRate, bts, err = msgp.ReadStringBytes(bts)
 			if err != nil {
 				return
 			}
-		case "codr":
+		case "coderate":
 			z.CodingRate, bts, err = msgp.ReadStringBytes(bts)
 			if err != nil {
 				return
 			}
-		case "tmst":
+		case "timestamp":
 			z.Timestamp, bts, err = msgp.ReadUint32Bytes(bts)
 			if err != nil {
 				return
@@ -168,32 +168,32 @@ func (z *AppMetadata) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			if err != nil {
 				return
 			}
-		case "rfch":
+		case "rfchain":
 			z.RFChain, bts, err = msgp.ReadUint32Bytes(bts)
 			if err != nil {
 				return
 			}
-		case "stat":
+		case "crc":
 			z.CRCStatus, bts, err = msgp.ReadInt32Bytes(bts)
 			if err != nil {
 				return
 			}
-		case "modu":
+		case "modulation":
 			z.Modulation, bts, err = msgp.ReadStringBytes(bts)
 			if err != nil {
 				return
 			}
-		case "alti":
+		case "altitude":
 			z.Altitude, bts, err = msgp.ReadInt32Bytes(bts)
 			if err != nil {
 				return
 			}
-		case "long":
+		case "longitude":
 			z.Longitude, bts, err = msgp.ReadFloat32Bytes(bts)
 			if err != nil {
 				return
 			}
-		case "lati":
+		case "latitude":
 			z.Latitude, bts, err = msgp.ReadFloat32Bytes(bts)
 			if err != nil {
 				return
@@ -210,7 +210,7 @@ func (z *AppMetadata) UnmarshalMsg(bts []byte) (o []byte, err error) {
 }
 
 func (z *AppMetadata) Msgsize() (s int) {
-	s = 1 + 5 + msgp.Float32Size + 5 + msgp.StringPrefixSize + len(z.DataRate) + 5 + msgp.StringPrefixSize + len(z.CodingRate) + 5 + msgp.Uint32Size + 5 + msgp.StringPrefixSize + len(z.Time) + 5 + msgp.Int32Size + 5 + msgp.Float32Size + 5 + msgp.Uint32Size + 5 + msgp.Int32Size + 5 + msgp.StringPrefixSize + len(z.Modulation) + 5 + msgp.Int32Size + 5 + msgp.Float32Size + 5 + msgp.Float32Size
+	s = 1 + 10 + msgp.Float32Size + 9 + msgp.StringPrefixSize + len(z.DataRate) + 9 + msgp.StringPrefixSize + len(z.CodingRate) + 10 + msgp.Uint32Size + 5 + msgp.StringPrefixSize + len(z.Time) + 5 + msgp.Int32Size + 5 + msgp.Float32Size + 8 + msgp.Uint32Size + 4 + msgp.Int32Size + 11 + msgp.StringPrefixSize + len(z.Modulation) + 9 + msgp.Int32Size + 10 + msgp.Float32Size + 9 + msgp.Float32Size
 	return
 }
 

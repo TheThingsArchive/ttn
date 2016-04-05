@@ -11,26 +11,26 @@ type DataUpAppReq struct {
 	Metadata []AppMetadata `msg:"metadata" json:"metadata"`
 }
 
-// JoinAppReq are used to notify application of an accepted OTAA
+// OTAAAppReq are used to notify application of an accepted OTAA
 type OTAAAppReq struct {
 	Metadata []AppMetadata `msg:"metadata" json:"metadata"`
 }
 
 // AppMetadata represents gathered metadata that are sent to gateways
 type AppMetadata struct {
-	Frequency  float32 `msg:"freq" json:"freq"`
-	DataRate   string  `msg:"datr" json:"datr"`
-	CodingRate string  `msg:"codr" json:"codr"`
-	Timestamp  uint32  `msg:"tmst" json:"tmst"`
+	Frequency  float32 `msg:"frequency" json:"frequency"`
+	DataRate   string  `msg:"datarate" json:"datarate"`
+	CodingRate string  `msg:"codingrate" json:"codingrate"`
+	Timestamp  uint32  `msg:"timestamp" json:"timestamp"`
 	Time       string  `msg:"time" json:"time"`
 	Rssi       int32   `msg:"rssi" json:"rssi"`
 	Lsnr       float32 `msg:"lsnr" json:"lsnr"`
-	RFChain    uint32  `msg:"rfch" json:"rfch"`
-	CRCStatus  int32   `msg:"stat" json:"stat"`
-	Modulation string  `msg:"modu" json:"modu"`
-	Altitude   int32   `msg:"alti" json:"alti"`
-	Longitude  float32 `msg:"long" json:"long"`
-	Latitude   float32 `msg:"lati" json:"lati"`
+	RFChain    uint32  `msg:"rfchain" json:"rfchain"`
+	CRCStatus  int32   `msg:"crc" json:"crc"`
+	Modulation string  `msg:"modulation" json:"modulation"`
+	Altitude   int32   `msg:"altitude" json:"altitude"`
+	Longitude  float32 `msg:"longitude" json:"longitude"`
+	Latitude   float32 `msg:"latitude" json:"latitude"`
 }
 
 // DataDownAppReq represents downlink messages sent by applications
@@ -41,9 +41,9 @@ type DataDownAppReq struct {
 
 // ABPSubAppReq defines the shape of the request made by an application to the handler
 type ABPSubAppReq struct {
-	DevAddr string `msg:"dev_addr" json:"dev_addr"`
-	NwkSKey string `msg:"nwks_key" json:"nwks_key"`
-	AppSKey string `msg:"apps_key" json:"apps_key"`
+	DevAddr string `msg:"devaddr" json:"devaddr"`
+	NwkSKey string `msg:"nwkskey" json:"nwkskey"`
+	AppSKey string `msg:"appskey" json:"appskey"`
 }
 
 // AuthBrokerClient gathers both BrokerClient & BrokerManagerClient interfaces
