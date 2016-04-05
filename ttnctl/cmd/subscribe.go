@@ -48,6 +48,7 @@ application.`,
 
 			// TODO: Find out what Metadata people want to see here
 
+			// NOTE: This is a race condition; binary values may be printable
 			unprintable, _ := regexp.Compile(`[^[:print:]]`)
 			if unprintable.Match(dataUp.Payload) {
 				ctx.Infof("%X", dataUp.Payload)
@@ -56,8 +57,8 @@ application.`,
 				ctx.Warn("Sending data as plain text is bad practice. We recommend to transmit data in a binary format.")
 			}
 
-			if l := len(dataUp.Payload); l > 12 {
-				ctx.Warnf("Your payload has a size of %d bytes. We recommend to send no more than 12 bytes.", l)
+			if l := len(dataUp.Payload); l > 20 {
+				ctx.Warnf("Your payload has a size of %d bytes. We recommend to send no more than 20 bytes.", l)
 			}
 
 			// TODO: Add warnings for airtime / duty-cycle / fair-use
