@@ -42,7 +42,7 @@ expected to define a Time To Live in a handy format, for instance: "1h" for one 
 			ctx.WithError(err).Fatal("Unable to create downlink payload")
 		}
 
-		client := util.GetMQTTClient(ctx)
+		client := util.ConnectMQTTClient(ctx)
 
 		token := client.PublishDownlink(appEUI, devEUI, dataDown)
 

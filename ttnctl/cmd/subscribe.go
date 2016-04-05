@@ -24,6 +24,7 @@ The optional DevEUI argument can be used to only receive messages from a
 specific device. By default you will receive messages from all devices of your
 application.`,
 	Run: func(cmd *cobra.Command, args []string) {
+
 		appEUI, err := util.Parse64(viper.GetString("app-eui"))
 		if err != nil {
 			ctx.Fatalf("Invalid AppEUI: %s", err)
@@ -40,13 +41,14 @@ application.`,
 			ctx.Infof("Subscribing to uplink messages from all devices in application %x", appEUI)
 		}
 
-		client := util.GetMQTTClient(ctx)
+		client := util.ConnectMQTTClient(ctx)
 
 		token := client.SubscribeDeviceUplink(appEUI, devEUI, func(client mqtt.Client, appEUI []byte, devEUI []byte, dataUp core.DataUpAppReq) {
 			ctx := ctx.WithField("DevEUI", devEUI)
 
 			// TODO: Find out what Metadata people want to see here
 
+			// NOTE: This is a race condition; binary values may be printable
 			unprintable, _ := regexp.Compile(`[^[:print:]]`)
 			if unprintable.Match(dataUp.Payload) {
 				ctx.Infof("%X", dataUp.Payload)
@@ -55,12 +57,11 @@ application.`,
 				ctx.Warn("Sending data as plain text is bad practice. We recommend to transmit data in a binary format.")
 			}
 
-			if l := len(dataUp.Payload); l > 12 {
-				ctx.Warnf("Your payload has a size of %d bytes. We recommend to send no more than 12 bytes.", l)
+			if l := len(dataUp.Payload); l > 20 {
+				ctx.Warnf("Your payload has a size of %d bytes. We recommend to send no more than 20 bytes.", l)
 			}
 
 			// TODO: Add warnings for airtime / duty-cycle / fair-use
-
 		})
 
 		if token.Wait(); token.Error() != nil {
