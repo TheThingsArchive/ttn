@@ -8,30 +8,18 @@ import (
 
 	"github.com/TheThingsNetwork/ttn/mqtt"
 	"github.com/apex/log"
-	"github.com/howeyc/gopass"
 	"github.com/spf13/viper"
 )
 
-func GetMQTTClient(ctx log.Interface) mqtt.Client {
-	user, err := LoadAuth(viper.GetString("ttn-account-server"))
-	if err != nil {
-		ctx.WithError(err).Fatal("Failed to load authentication token")
-	}
-	if user == nil {
-		ctx.Fatal("No login found. Please login with ttnctl user login [e-mail]")
-	}
-
-	// NOTE: until the MQTT server supports access tokens, we'll have to ask for a password.
-	fmt.Printf("Password for account %s: ", user.Email)
-	password, err := gopass.GetPasswd()
-	if err != nil {
-		ctx.Fatal(err.Error())
-	}
+// ConnectMQTTClient connects a new MQTT clients with the specified credentials
+func ConnectMQTTClient(ctx log.Interface, appEui []byte, accessKey string) mqtt.Client {
+	username := fmt.Sprintf("%X", appEui)
+	password := accessKey
 
 	broker := fmt.Sprintf("tcp://%s", viper.GetString("mqtt-broker"))
-	client := mqtt.NewClient(ctx, "ttnctl", user.Email, string(password), broker)
+	client := mqtt.NewClient(ctx, "ttnctl", username, password, broker)
 
-	err = client.Connect()
+	err := client.Connect()
 	if err != nil {
 		ctx.WithError(err).Fatal("Could not connect")
 	}

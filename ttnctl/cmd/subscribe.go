@@ -4,6 +4,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"os/signal"
 	"regexp"
@@ -29,6 +30,22 @@ application.`,
 			ctx.Fatalf("Invalid AppEUI: %s", err)
 		}
 
+		apps, err := util.GetApplications(ctx)
+		if err != nil {
+			ctx.WithError(err).Fatal("Failed to get applications")
+		}
+
+		var appAccessKey string
+		for _, a := range apps {
+			if a.EUI == fmt.Sprintf("%X", appEUI) {
+				// Don't care about which access key in this cli
+				appAccessKey = a.AccessKeys[0]
+			}
+		}
+		if appAccessKey == "" {
+			ctx.Fatal("Application not found")
+		}
+
 		var devEUI []byte
 		if len(args) > 0 {
 			devEUI, err = util.Parse64(args[0])
@@ -40,7 +57,7 @@ application.`,
 			ctx.Infof("Subscribing to uplink messages from all devices in application %x", appEUI)
 		}
 
-		client := util.GetMQTTClient(ctx)
+		client := util.ConnectMQTTClient(ctx, appEUI, appAccessKey)
 
 		token := client.SubscribeDeviceUplink(appEUI, devEUI, func(client mqtt.Client, appEUI []byte, devEUI []byte, dataUp core.DataUpAppReq) {
 			ctx := ctx.WithField("DevEUI", devEUI)

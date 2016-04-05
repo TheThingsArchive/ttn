@@ -4,7 +4,6 @@
 package cmd
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -17,42 +16,15 @@ import (
 	"github.com/spf13/viper"
 )
 
-type app struct {
-	EUI        string   `json:"eui"`
-	Name       string   `json:"name"`
-	Owner      string   `json:"owner"`
-	AccessKeys []string `json:"accessKeys"`
-	Valid      bool     `json:"valid"`
-}
-
 // applicationsCmd represents the applications command
 var applicationsCmd = &cobra.Command{
 	Use:   "applications",
 	Short: "Show applications",
 	Long:  `ttnctl applications retrieves the applications of the logged on user.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		server := viper.GetString("ttn-account-server")
-		uri := fmt.Sprintf("%s/applications", server)
-		req, err := util.NewRequestWithAuth(server, "GET", uri, nil)
-		if err != nil {
-			ctx.WithError(err).Fatal("Failed to create authenticated request")
-		}
-
-		client := &http.Client{}
-		resp, err := client.Do(req)
+		apps, err := util.GetApplications(ctx)
 		if err != nil {
 			ctx.WithError(err).Fatal("Failed to get applications")
-		}
-		if resp.StatusCode != http.StatusOK {
-			ctx.Fatalf("Failed to get applications: %s", resp.Status)
-		}
-
-		defer resp.Body.Close()
-		decoder := json.NewDecoder(resp.Body)
-		var apps []*app
-		err = decoder.Decode(&apps)
-		if err != nil {
-			ctx.WithError(err).Fatal("Failed to read applications")
 		}
 
 		ctx.Infof("Found %d application(s)", len(apps))
