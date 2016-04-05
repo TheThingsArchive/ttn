@@ -4,7 +4,6 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 	"os/signal"
 	"regexp"
@@ -25,25 +24,10 @@ The optional DevEUI argument can be used to only receive messages from a
 specific device. By default you will receive messages from all devices of your
 application.`,
 	Run: func(cmd *cobra.Command, args []string) {
+
 		appEUI, err := util.Parse64(viper.GetString("app-eui"))
 		if err != nil {
 			ctx.Fatalf("Invalid AppEUI: %s", err)
-		}
-
-		apps, err := util.GetApplications(ctx)
-		if err != nil {
-			ctx.WithError(err).Fatal("Failed to get applications")
-		}
-
-		var appAccessKey string
-		for _, a := range apps {
-			if a.EUI == fmt.Sprintf("%X", appEUI) {
-				// Don't care about which access key in this cli
-				appAccessKey = a.AccessKeys[0]
-			}
-		}
-		if appAccessKey == "" {
-			ctx.Fatal("Application not found")
 		}
 
 		var devEUI []byte
@@ -57,7 +41,7 @@ application.`,
 			ctx.Infof("Subscribing to uplink messages from all devices in application %x", appEUI)
 		}
 
-		client := util.ConnectMQTTClient(ctx, appEUI, appAccessKey)
+		client := util.ConnectMQTTClient(ctx)
 
 		token := client.SubscribeDeviceUplink(appEUI, devEUI, func(client mqtt.Client, appEUI []byte, devEUI []byte, dataUp core.DataUpAppReq) {
 			ctx := ctx.WithField("DevEUI", devEUI)
@@ -77,7 +61,6 @@ application.`,
 			}
 
 			// TODO: Add warnings for airtime / duty-cycle / fair-use
-
 		})
 
 		if token.Wait(); token.Error() != nil {

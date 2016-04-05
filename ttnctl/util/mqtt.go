@@ -12,15 +12,32 @@ import (
 )
 
 // ConnectMQTTClient connects a new MQTT clients with the specified credentials
-func ConnectMQTTClient(ctx log.Interface, appEui []byte, accessKey string) mqtt.Client {
-	username := fmt.Sprintf("%X", appEui)
-	password := accessKey
+func ConnectMQTTClient(ctx log.Interface) mqtt.Client {
+	appEUI, err := Parse64(viper.GetString("app-eui"))
+	if err != nil {
+		ctx.Fatalf("Invalid AppEUI: %s", err)
+	}
+
+	apps, err := GetApplications(ctx)
+	if err != nil {
+		ctx.WithError(err).Fatal("Failed to get applications")
+	}
+
+	var app *App
+	for _, a := range apps {
+		if a.EUI == fmt.Sprintf("%X", appEUI) {
+			app = a
+		}
+	}
+	if app == nil {
+		ctx.Fatal("Application not found")
+	}
 
 	broker := fmt.Sprintf("tcp://%s", viper.GetString("mqtt-broker"))
-	client := mqtt.NewClient(ctx, "ttnctl", username, password, broker)
+	// Don't care about which access key here
+	client := mqtt.NewClient(ctx, "ttnctl", app.EUI, app.AccessKeys[0], broker)
 
-	err := client.Connect()
-	if err != nil {
+	if err := client.Connect(); err != nil {
 		ctx.WithError(err).Fatal("Could not connect")
 	}
 
