@@ -191,7 +191,7 @@ func (h component) HandleJoin(bctx context.Context, req *core.JoinHandlerReq) (*
 	copy(joinPayload.DevNonce[:], req.DevNonce)
 	payload.MACPayload = &joinPayload
 	if ok, err := payload.ValidateMIC(lorawan.AES128Key(*entry.AppKey)); err != nil || !ok {
-		ctx.WithError(err).Debug("Invalid join-request MIC")
+		ctx.Debug("Invalid join-request MIC")
 		return new(core.JoinHandlerRes), errors.New(errors.Structural, "Unable to validate MIC")
 	}
 
