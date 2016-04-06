@@ -7,7 +7,6 @@ import (
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 // downlinkCmd represents the `downlink` command
@@ -23,10 +22,7 @@ expected to define a Time To Live in a handy format, for instance: "1h" for one 
 			ctx.Fatal("Insufficient arguments")
 		}
 
-		appEUI, err := util.Parse64(viper.GetString("app-eui"))
-		if err != nil {
-			ctx.Fatalf("Invalid AppEUI: %s", err)
-		}
+		appEUI := util.GetAppEUI(ctx)
 
 		devEUI, err := util.Parse64(args[0])
 		if err != nil {

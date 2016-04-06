@@ -44,10 +44,7 @@ var joinCmd = &cobra.Command{
 		var appKey lorawan.AES128Key
 		copy(appKey[:], appKeyRaw)
 
-		appEUIRaw, err := util.Parse64(viper.GetString("app-eui"))
-		if err != nil {
-			ctx.Fatalf("Invalid appEUI: %s", err)
-		}
+		appEUIRaw := util.GetAppEUI(ctx)
 		var appEUI lorawan.EUI64
 		copy(appEUI[:], appEUIRaw)
 

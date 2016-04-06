@@ -32,10 +32,8 @@ var devicesCmd = &cobra.Command{
 	Short: "Manage devices on the Handler",
 	Long:  `ttnctl devices retrieves a list of devices that your application registered on the Handler.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		appEUI, err := util.Parse64(viper.GetString("app-eui"))
-		if err != nil {
-			ctx.Fatalf("Invalid AppEUI: %s", err)
-		}
+
+		appEUI := util.GetAppEUI(ctx)
 
 		auth, err := util.LoadAuth(viper.GetString("ttn-account-server"))
 		if err != nil {
@@ -93,10 +91,7 @@ var devicesInfoCmd = &cobra.Command{
 	Short: "Show device information",
 	Long:  `ttnctl devices info shows information about a specific device.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		appEUI, err := util.Parse64(viper.GetString("app-eui"))
-		if err != nil {
-			ctx.Fatalf("Invalid AppEUI: %s", err)
-		}
+		appEUI := util.GetAppEUI(ctx)
 
 		if len(args) != 1 {
 			ctx.Fatal("Missing DevAddr or DevEUI")
@@ -212,10 +207,7 @@ var devicesRegisterCmd = &cobra.Command{
 			return
 		}
 
-		appEUI, err := util.Parse64(viper.GetString("app-eui"))
-		if err != nil {
-			ctx.Fatalf("Invalid AppEUI: %s", err)
-		}
+		appEUI := util.GetAppEUI(ctx)
 
 		devEUI, err := util.Parse64(args[0])
 		if err != nil {
@@ -260,10 +252,7 @@ var devicesRegisterPersonalizedCmd = &cobra.Command{
 			return
 		}
 
-		appEUI, err := util.Parse64(viper.GetString("app-eui"))
-		if err != nil {
-			ctx.Fatalf("Invalid AppEUI: %s", err)
-		}
+		appEUI := util.GetAppEUI(ctx)
 
 		devAddr, err := util.Parse32(args[0])
 		if err != nil {

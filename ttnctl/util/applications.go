@@ -17,6 +17,19 @@ type App struct {
 	Valid      bool     `json:"valid"`
 }
 
+func GetAppEUI(ctx log.Interface) []byte {
+	if viper.GetString("app-eui") == "" {
+		ctx.Fatal("AppEUI not set. You probably want to run 'ttnctl applications use [appEUI]' to do this.")
+	}
+
+	appEUI, err := Parse64(viper.GetString("app-eui"))
+	if err != nil {
+		ctx.Fatalf("Invalid AppEUI: %s", err)
+	}
+
+	return appEUI
+}
+
 func GetApplications(ctx log.Interface) ([]*App, error) {
 	server := viper.GetString("ttn-account-server")
 	uri := fmt.Sprintf("%s/applications", server)

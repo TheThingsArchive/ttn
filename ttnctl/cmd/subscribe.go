@@ -12,7 +12,6 @@ import (
 	"github.com/TheThingsNetwork/ttn/mqtt"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 var subscribeCmd = &cobra.Command{
@@ -25,14 +24,11 @@ specific device. By default you will receive messages from all devices of your
 application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 
-		appEUI, err := util.Parse64(viper.GetString("app-eui"))
-		if err != nil {
-			ctx.Fatalf("Invalid AppEUI: %s", err)
-		}
+		appEUI := util.GetAppEUI(ctx)
 
 		var devEUI []byte
 		if len(args) > 0 {
-			devEUI, err = util.Parse64(args[0])
+			devEUI, err := util.Parse64(args[0])
 			if err != nil {
 				ctx.Fatalf("Invalid DevEUI: %s", err)
 			}

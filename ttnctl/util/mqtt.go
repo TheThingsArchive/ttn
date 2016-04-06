@@ -13,10 +13,7 @@ import (
 
 // ConnectMQTTClient connects a new MQTT clients with the specified credentials
 func ConnectMQTTClient(ctx log.Interface) mqtt.Client {
-	appEUI, err := Parse64(viper.GetString("app-eui"))
-	if err != nil {
-		ctx.Fatalf("Invalid AppEUI: %s", err)
-	}
+	appEUI := GetAppEUI(ctx)
 
 	apps, err := GetApplications(ctx)
 	if err != nil {
