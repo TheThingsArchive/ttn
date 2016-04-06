@@ -517,6 +517,9 @@ func TestHandleData(t *testing.T) {
 		// Operate
 		res, err := r.HandleData(context.Background(), req)
 
+		// Ignore ServerTime
+		br.InHandleData.Req.Metadata.ServerTime = ""
+
 		// Check
 		CheckErrors(t, wantErr, err)
 		Check(t, wantRes, res, "Router Data Responses")
@@ -593,6 +596,10 @@ func TestHandleData(t *testing.T) {
 
 		// Operate
 		res, err := r.HandleData(context.Background(), req)
+
+		// Ignore ServerTime
+		br1.InHandleData.Req.Metadata.ServerTime = ""
+		br2.InHandleData.Req.Metadata.ServerTime = ""
 
 		// Check
 		CheckErrors(t, wantErr, err)
@@ -672,6 +679,10 @@ func TestHandleData(t *testing.T) {
 
 		// Operate
 		res, err := r.HandleData(context.Background(), req)
+
+		// Ignore ServerTime
+		br1.InHandleData.Req.Metadata.ServerTime = ""
+		br2.InHandleData.Req.Metadata.ServerTime = ""
 
 		// Check
 		CheckErrors(t, wantErr, err)
@@ -823,6 +834,9 @@ func TestHandleData(t *testing.T) {
 		// Operate
 		res, err := r.HandleData(context.Background(), req)
 
+		// Ignore ServerTime
+		br.InHandleData.Req.Metadata.ServerTime = ""
+
 		// Check
 		CheckErrors(t, wantErr, err)
 		Check(t, wantRes, res, "Router Data Responses")
@@ -973,6 +987,10 @@ func TestHandleData(t *testing.T) {
 		// Operate
 		res, err := r.HandleData(context.Background(), req)
 
+		// Ignore ServerTime
+		br1.InHandleData.Req.Metadata.ServerTime = ""
+		br2.InHandleData.Req.Metadata.ServerTime = ""
+
 		// Check
 		CheckErrors(t, wantErr, err)
 		Check(t, wantRes, res, "Router Data Responses")
@@ -1049,6 +1067,10 @@ func TestHandleData(t *testing.T) {
 
 		// Operate
 		res, err := r.HandleData(context.Background(), req)
+
+		// Ignore ServerTime
+		br1.InHandleData.Req.Metadata.ServerTime = ""
+		br2.InHandleData.Req.Metadata.ServerTime = ""
 
 		// Check
 		CheckErrors(t, wantErr, err)
@@ -1131,6 +1153,9 @@ func TestHandleData(t *testing.T) {
 
 		// Operate
 		res, err := r.HandleData(context.Background(), req)
+
+		// Ignore ServerTime
+		br.InHandleData.Req.Metadata.ServerTime = ""
 
 		// Check
 		CheckErrors(t, wantErr, err)
@@ -1235,6 +1260,9 @@ func TestHandleData(t *testing.T) {
 		// Operate
 		res, err := r.HandleData(context.Background(), req)
 
+		// Ignore ServerTime
+		br.InHandleData.Req.Metadata.ServerTime = ""
+
 		// Check
 		CheckErrors(t, wantErr, err)
 		Check(t, wantRes, res, "Router Data Responses")
@@ -1335,6 +1363,9 @@ func TestHandleData(t *testing.T) {
 
 		// Operate
 		res, err := r.HandleData(context.Background(), req)
+
+		// Ignore ServerTime
+		br.InHandleData.Req.Metadata.ServerTime = ""
 
 		// Check
 		CheckErrors(t, wantErr, err)
@@ -1438,6 +1469,9 @@ func TestHandleData(t *testing.T) {
 		// Operate
 		res, err := r.HandleData(context.Background(), req)
 
+		// Ignore ServerTime
+		br.InHandleData.Req.Metadata.ServerTime = ""
+
 		// Check
 		CheckErrors(t, wantErr, err)
 		Check(t, wantRes, res, "Router Data Responses")
@@ -1516,6 +1550,10 @@ func TestHandleJoin(t *testing.T) {
 		// Operate
 		res, err := r.HandleJoin(context.Background(), req)
 
+		// Ignore ServerTime
+		br1.InHandleJoin.Req.Metadata.ServerTime = ""
+		br2.InHandleJoin.Req.Metadata.ServerTime = ""
+
 		// Check
 		CheckErrors(t, wantErr, err)
 		Check(t, wantRes, res, "Router Join Responses")
@@ -1592,6 +1630,10 @@ func TestHandleJoin(t *testing.T) {
 
 		// Operate
 		res, err := r.HandleJoin(context.Background(), req)
+
+		// Ignore ServerTime
+		br1.InHandleJoin.Req.Metadata.ServerTime = ""
+		br2.InHandleJoin.Req.Metadata.ServerTime = ""
 
 		// Check
 		CheckErrors(t, wantErr, err)
@@ -1974,6 +2016,9 @@ func TestHandleJoin(t *testing.T) {
 
 		// Operate
 		res, err := r.HandleJoin(context.Background(), req)
+
+		// Ignore ServerTime
+		br.InHandleJoin.Req.Metadata.ServerTime = ""
 
 		// Check
 		CheckErrors(t, wantErr, err)

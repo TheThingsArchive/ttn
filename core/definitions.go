@@ -19,8 +19,9 @@ type AppMetadata struct {
 	Frequency  float32 `json:"frequency"`
 	DataRate   string  `json:"datarate"`
 	CodingRate string  `json:"codingrate"`
-	Timestamp  uint32  `json:"timestamp"`
-	Time       string  `json:"time"`
+	Timestamp  uint32  `json:"gateway_timestamp"`
+	Time       string  `json:"gateway_time,omitempty"`
+	ServerTime string  `json:"server_time"`
 	Rssi       int32   `json:"rssi"`
 	Lsnr       float32 `json:"lsnr"`
 	RFChain    uint32  `json:"rfchain"`

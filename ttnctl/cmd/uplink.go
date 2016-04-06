@@ -200,6 +200,7 @@ var uplinkCmd = &cobra.Command{
 						Codr: pointer.String(random.Codr()),
 						Modu: pointer.String("LoRa"),
 						Tmst: pointer.Uint32(1),
+						Time: pointer.Time(time.Now().UTC()),
 						Data: &encoded,
 					},
 				},

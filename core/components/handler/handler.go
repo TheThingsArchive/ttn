@@ -209,7 +209,6 @@ func (h component) HandleJoin(bctx context.Context, req *core.JoinHandlerReq) (*
 	// 4. Send the actual bundle to the consumer
 	ctx.WithField("BundleID", bundleID).Debug("Define new bundle")
 
-	req.Metadata.Time = time.Now().Format(time.RFC3339Nano)
 	h.ChBundles <- bundle{
 		ID:       bundleID,
 		Packet:   req,
@@ -325,7 +324,6 @@ func (h component) HandleDataUp(bctx context.Context, req *core.DataUpHandlerReq
 
 	// 4. Send the actual bundle to the consumer
 	ctx.WithField("BundleID", bundleID).Debug("Define new bundle")
-	req.Metadata.Time = time.Now().Format(time.RFC3339Nano)
 	h.ChBundles <- bundle{
 		ID:       bundleID,
 		Packet:   req,
