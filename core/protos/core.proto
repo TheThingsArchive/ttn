@@ -23,6 +23,8 @@ message Metadata {
     int32   Altitude        = 21;
     float   Longitude       = 22;
     float   Latitude        = 23;
+
+    string   ServerTime      = 31;
 }
 
 message StatsMetadata {
@@ -30,4 +32,3 @@ message StatsMetadata {
     float   Longitude       = 2;
     float   Latitude        = 3;
 }
-

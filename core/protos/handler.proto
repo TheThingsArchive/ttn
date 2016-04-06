@@ -5,24 +5,25 @@ import "core.proto";
 package core;
 
 message DataUpHandlerReq {
-    bytes       Payload     = 1;
-    Metadata    Metadata    = 2;
-    bytes       AppEUI      = 3;
-    bytes       DevEUI      = 4;
-    uint32      FCnt        = 5;
-    uint32      MType       = 6;
+    bytes       AppEUI      = 1;
+    bytes       DevEUI      = 2;
+    uint32      FCnt        = 10;
+    uint32      FPort       = 11;
+    uint32      MType       = 12;
+    bytes       Payload     = 20;
+    Metadata    Metadata    = 30;
 }
 
 message DataUpHandlerRes {
-    LoRaWANData Payload     = 1;
-    Metadata    Metadata    = 2;
+    LoRaWANData Payload     = 20;
+    Metadata    Metadata    = 30;
 }
 
 message DataDownHandlerReq {
-    bytes       Payload     = 1;
-    bytes       AppEUI      = 2;
-    bytes       DevEUI      = 3;
-    string      TTL         = 4;
+    bytes       AppEUI      = 1;
+    bytes       DevEUI      = 2;
+    bytes       Payload     = 20;
+    string      TTL         = 30;
 }
 
 message DataDownHandlerRes {}
@@ -30,16 +31,16 @@ message DataDownHandlerRes {}
 message JoinHandlerReq {
     bytes               AppEUI      = 1;
     bytes               DevEUI      = 2;
-    bytes               DevNonce    = 3;
-    bytes               MIC         = 4;
-    Metadata            Metadata    = 5;
+    bytes               DevNonce    = 10;
+    bytes               MIC         = 11;
+    Metadata            Metadata    = 30;
 }
 
 message JoinHandlerRes {
-    LoRaWANJoinAccept   Payload     = 1;
-    bytes               DevAddr     = 2;
-    bytes               NwkSKey     = 3;
-    Metadata            Metadata    = 4;
+    bytes               DevAddr     = 1;
+    LoRaWANJoinAccept   Payload     = 20;
+    bytes               NwkSKey     = 21;
+    Metadata            Metadata    = 30;
 }
 
 service Handler {

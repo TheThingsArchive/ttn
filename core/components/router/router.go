@@ -7,6 +7,7 @@ import (
 	"net"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/dutycycle"
@@ -232,6 +233,8 @@ func (r component) HandleData(_ context.Context, req *core.DataRouterReq) (*core
 
 func (r component) injectMetadata(gid []byte, metadata core.Metadata) (*core.Metadata, error) {
 	ctx := r.Ctx.WithField("GatewayID", gid)
+
+	metadata.ServerTime = time.Now().UTC().Format(time.RFC3339Nano)
 
 	// Add Gateway location metadata
 	if entry, err := r.GtwStorage.read(gid); err == nil {

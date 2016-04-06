@@ -72,8 +72,7 @@ var uplinkCmd = &cobra.Command{
 			DevAddr: devAddr,
 			FCnt:    uint32(fcnt),
 		}
-		macPayload.FPort = new(uint8)
-		*macPayload.FPort = 1
+		macPayload.FPort = pointer.Uint8(1)
 		macPayload.FRMPayload = []lorawan.Payload{&lorawan.DataPayload{Bytes: []byte(args[4])}}
 		if err := macPayload.EncryptFRMPayload(appSKey); err != nil {
 			ctx.Fatalf("Unable to encrypt frame payload: %s", err)
@@ -200,6 +199,7 @@ var uplinkCmd = &cobra.Command{
 						Codr: pointer.String(random.Codr()),
 						Modu: pointer.String("LoRa"),
 						Tmst: pointer.Uint32(1),
+						Time: pointer.Time(time.Now().UTC()),
 						Data: &encoded,
 					},
 				},

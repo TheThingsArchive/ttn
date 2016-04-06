@@ -209,7 +209,6 @@ func (h component) HandleJoin(bctx context.Context, req *core.JoinHandlerReq) (*
 	// 4. Send the actual bundle to the consumer
 	ctx.WithField("BundleID", bundleID).Debug("Define new bundle")
 
-	req.Metadata.Time = time.Now().Format(time.RFC3339Nano)
 	h.ChBundles <- bundle{
 		ID:       bundleID,
 		Packet:   req,
@@ -325,7 +324,6 @@ func (h component) HandleDataUp(bctx context.Context, req *core.DataUpHandlerReq
 
 	// 4. Send the actual bundle to the consumer
 	ctx.WithField("BundleID", bundleID).Debug("Define new bundle")
-	req.Metadata.Time = time.Now().Format(time.RFC3339Nano)
 	h.ChBundles <- bundle{
 		ID:       bundleID,
 		Packet:   req,
@@ -535,6 +533,8 @@ func (h component) consumeJoin(appEUI []byte, devEUI []byte, appKey [16]byte, da
 func (h component) consumeDown(appEUI []byte, devEUI []byte, dataRate string, bundles []bundle) {
 	stats.UpdateHistogram("handler.uplink.duplicate.count", int64(len(bundles)))
 	var metadata []*core.Metadata
+	var fPort uint32
+	var fCnt uint32
 	var payload []byte
 	var firstTime time.Time
 
@@ -565,6 +565,8 @@ func (h component) consumeDown(appEUI []byte, devEUI []byte, dataRate string, bu
 				return
 			}
 			firstTime = bundle.Time
+			fPort = packet.FPort
+			fCnt = packet.FCnt
 			stats.MarkMeter("handler.uplink.in.unique")
 		} else {
 			diff := bundle.Time.Sub(firstTime).Nanoseconds()
@@ -581,6 +583,8 @@ func (h component) consumeDown(appEUI []byte, devEUI []byte, dataRate string, bu
 	_, err = h.AppAdapter.HandleData(context.Background(), &core.DataAppReq{
 		AppEUI:   appEUI,
 		DevEUI:   devEUI,
+		FPort:    fPort,
+		FCnt:     fCnt,
 		Payload:  payload,
 		Metadata: metadata,
 	})
