@@ -5,13 +5,18 @@ package cmd
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
+	"path"
 	"strings"
+
+	"gopkg.in/yaml.v2"
 
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/apex/log"
 	"github.com/gosuri/uitable"
+	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -169,9 +174,68 @@ var applicationsAuthorizeCmd = &cobra.Command{
 	},
 }
 
+var applicationsUseCmd = &cobra.Command{
+	Use:   "use [eui]",
+	Short: "Set an application as active",
+	Long:  `ttnctl applications use marks an application as the currently active application in ttnctl.`,
+	Run: func(cmd *cobra.Command, args []string) {
+		if len(args) < 1 {
+			cmd.Help()
+			return
+		}
+
+		appEUI, err := util.Parse64(args[0])
+		if err != nil {
+			ctx.Fatalf("Invalid AppEUI: %s", err)
+		}
+
+		// Determine config file
+		cFile := viper.ConfigFileUsed()
+		if cFile == "" {
+			dir, err := homedir.Dir()
+			if err != nil {
+				ctx.WithError(err).Fatal("Could not get homedir")
+			}
+			expanded, err := homedir.Expand(dir)
+			if err != nil {
+				ctx.WithError(err).Fatal("Could not get homedir")
+			}
+			cFile = path.Join(expanded, ".ttnctl.yaml")
+		}
+
+		c := make(map[string]interface{})
+
+		// Read config file
+		bytes, err := ioutil.ReadFile(cFile)
+		if err == nil {
+			err = yaml.Unmarshal(bytes, &c)
+		}
+		if err != nil {
+			ctx.Warnf("Could not read configuration file, will just create a new one")
+		}
+
+		// Update app
+		c["app-eui"] = fmt.Sprintf("%X", appEUI)
+
+		// Write config file
+		d, err := yaml.Marshal(&c)
+		if err != nil {
+			ctx.Fatal("Could not generate configiguration file contents")
+		}
+		err = ioutil.WriteFile(cFile, d, 0644)
+		if err != nil {
+			ctx.WithError(err).Fatal("Could not write configiguration file")
+		}
+
+		ctx.Infof("You are now using application %X.", appEUI)
+
+	},
+}
+
 func init() {
 	RootCmd.AddCommand(applicationsCmd)
 	applicationsCmd.AddCommand(applicationsCreateCmd)
 	applicationsCmd.AddCommand(applicationsDeleteCmd)
 	applicationsCmd.AddCommand(applicationsAuthorizeCmd)
+	applicationsCmd.AddCommand(applicationsUseCmd)
 }
