@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"fmt"
+	"reflect"
 
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/components/handler"
@@ -31,10 +32,8 @@ var devicesCmd = &cobra.Command{
 	Short: "Manage devices on the Handler",
 	Long:  `ttnctl devices retrieves a list of devices that your application registered on the Handler.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		appEUI, err := util.Parse64(viper.GetString("app-eui"))
-		if err != nil {
-			ctx.Fatalf("Invalid AppEUI: %s", err)
-		}
+
+		appEUI := util.GetAppEUI(ctx)
 
 		auth, err := util.LoadAuth(viper.GetString("ttn-account-server"))
 		if err != nil {
@@ -54,31 +53,147 @@ var devicesCmd = &cobra.Command{
 		}
 
 		ctx.Infof("Found %d personalized devices (ABP)", len(res.ABP))
+
 		table := uitable.New()
 		table.MaxColWidth = 70
-		table.AddRow("DevAddr", "NwkSKey", "AppSKey", "FCntUp", "FCntDown")
+		table.AddRow("DevAddr", "FCntUp", "FCntDown")
 		for _, device := range res.ABP {
 			devAddr := fmt.Sprintf("%X", device.DevAddr)
-			nwkSKey := fmt.Sprintf("%X", device.NwkSKey)
-			appSKey := fmt.Sprintf("%X", device.AppSKey)
-			table.AddRow(devAddr, nwkSKey, appSKey, device.FCntUp, device.FCntDown)
+			table.AddRow(devAddr, device.FCntUp, device.FCntDown)
 		}
+
+		fmt.Println()
 		fmt.Println(table)
+		fmt.Println()
 
 		ctx.Infof("Found %d dynamic devices (OTAA)", len(res.OTAA))
 		table = uitable.New()
 		table.MaxColWidth = 40
-		table.AddRow("DevEUI", "DevAddr", "NwkSKey", "AppSKey", "AppKey", "FCntUp", "FCntDown")
+		table.AddRow("DevEUI", "DevAddr", "FCntUp", "FCntDown")
 		for _, device := range res.OTAA {
 			devEUI := fmt.Sprintf("%X", device.DevEUI)
 			devAddr := fmt.Sprintf("%X", device.DevAddr)
-			nwkSKey := fmt.Sprintf("%X", device.NwkSKey)
-			appSKey := fmt.Sprintf("%X", device.AppSKey)
-			appKey := fmt.Sprintf("%X", device.AppKey)
-			table.AddRow(devEUI, devAddr, nwkSKey, appSKey, appKey, device.FCntUp, device.FCntDown)
+			table.AddRow(devEUI, devAddr, device.FCntUp, device.FCntDown)
 		}
+
+		fmt.Println()
 		fmt.Println(table)
+		fmt.Println()
+
+		ctx.Info("Run 'ttnctl devices info [DevAddr|DevEUI]' for more information about a specific device")
+
 	},
+}
+
+// devicesInfoCmd represents the `devices info` command
+var devicesInfoCmd = &cobra.Command{
+	Use:   "info [DevAddr|DevEUI]",
+	Short: "Show device information",
+	Long:  `ttnctl devices info shows information about a specific device.`,
+	Run: func(cmd *cobra.Command, args []string) {
+		appEUI := util.GetAppEUI(ctx)
+
+		if len(args) != 1 {
+			ctx.Fatal("Missing DevAddr or DevEUI")
+		}
+
+		auth, err := util.LoadAuth(viper.GetString("ttn-account-server"))
+		if err != nil {
+			ctx.WithError(err).Fatal("Failed to load authentication")
+		}
+		if auth == nil {
+			ctx.Fatal("No authentication found. Please login")
+		}
+
+		manager := getHandlerManager()
+		res, err := manager.ListDevices(context.Background(), &core.ListDevicesHandlerReq{
+			Token:  auth.AccessToken,
+			AppEUI: appEUI,
+		})
+		if err != nil {
+			ctx.WithError(err).Fatal("Could not get device list")
+		}
+
+		if devEUI, err := util.Parse64(args[0]); err == nil {
+			for _, device := range res.OTAA {
+				if reflect.DeepEqual(device.DevEUI, devEUI) {
+					fmt.Println("Dynamic device:")
+
+					fmt.Println()
+					fmt.Printf("  DevEUI:  %X\n", device.DevEUI)
+					fmt.Printf("           {%s}\n", cStyle(device.DevEUI))
+
+					fmt.Println()
+					fmt.Printf("  AppKey:  %X\n", device.AppKey)
+					fmt.Printf("           {%s}\n", cStyle(device.AppKey))
+
+					if len(device.DevAddr) != 0 {
+						fmt.Println()
+						fmt.Println("  Activated with the following parameters:")
+
+						fmt.Println()
+						fmt.Printf("  DevAddr: %X\n", device.DevAddr)
+						fmt.Printf("           {%s}\n", cStyle(device.DevAddr))
+
+						fmt.Println()
+						fmt.Printf("  NwkSKey: %X\n", device.NwkSKey)
+						fmt.Printf("           {%s}\n", cStyle(device.NwkSKey))
+
+						fmt.Println()
+						fmt.Printf("  AppSKey: %X\n", device.AppSKey)
+						fmt.Printf("           {%s}\n", cStyle(device.AppSKey))
+
+						fmt.Println()
+						fmt.Printf("  FCntUp:  %d\n  FCntDn:  %d\n", device.FCntUp, device.FCntDown)
+					} else {
+						fmt.Println()
+						fmt.Println("  Not yet activated")
+					}
+
+					return
+				}
+			}
+		}
+
+		if devAddr, err := util.Parse32(args[0]); err == nil {
+			for _, device := range res.ABP {
+				if reflect.DeepEqual(device.DevAddr, devAddr) {
+					fmt.Println("Personalized device:")
+
+					fmt.Println()
+					fmt.Printf("  DevAddr: %X\n", device.DevAddr)
+					fmt.Printf("           {%s}\n", cStyle(device.DevAddr))
+
+					fmt.Println()
+					fmt.Printf("  NwkSKey: %X\n", device.NwkSKey)
+					fmt.Printf("           {%s}\n", cStyle(device.NwkSKey))
+
+					fmt.Println()
+					fmt.Printf("  AppSKey: %X\n", device.AppSKey)
+					fmt.Printf("           {%s}\n", cStyle(device.AppSKey))
+
+					fmt.Println()
+					fmt.Printf("  FCntUp:  %d\n  FCntDn:  %d\n", device.FCntUp, device.FCntDown)
+					return
+				}
+			}
+		} else {
+			ctx.Fatal("Invalid DevAddr or DevEUI")
+		}
+
+		ctx.Info("Device not found")
+
+	},
+}
+
+func cStyle(bytes []byte) (output string) {
+	for i, b := range bytes {
+		if i != 0 {
+			output += ", "
+		}
+		output += fmt.Sprintf("0x%02X", b)
+	}
+	return
 }
 
 // devicesRegisterCmd represents the `device register` command
@@ -92,10 +207,7 @@ var devicesRegisterCmd = &cobra.Command{
 			return
 		}
 
-		appEUI, err := util.Parse64(viper.GetString("app-eui"))
-		if err != nil {
-			ctx.Fatalf("Invalid AppEUI: %s", err)
-		}
+		appEUI := util.GetAppEUI(ctx)
 
 		devEUI, err := util.Parse64(args[0])
 		if err != nil {
@@ -140,10 +252,7 @@ var devicesRegisterPersonalizedCmd = &cobra.Command{
 			return
 		}
 
-		appEUI, err := util.Parse64(viper.GetString("app-eui"))
-		if err != nil {
-			ctx.Fatalf("Invalid AppEUI: %s", err)
-		}
+		appEUI := util.GetAppEUI(ctx)
 
 		devAddr, err := util.Parse32(args[0])
 		if err != nil {
@@ -186,5 +295,6 @@ var devicesRegisterPersonalizedCmd = &cobra.Command{
 func init() {
 	RootCmd.AddCommand(devicesCmd)
 	devicesCmd.AddCommand(devicesRegisterCmd)
+	devicesCmd.AddCommand(devicesInfoCmd)
 	devicesRegisterCmd.AddCommand(devicesRegisterPersonalizedCmd)
 }

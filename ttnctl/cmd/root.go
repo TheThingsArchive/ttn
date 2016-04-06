@@ -58,7 +58,7 @@ func init() {
 	RootCmd.PersistentFlags().String("mqtt-broker", "staging.thethingsnetwork.org:1883", "The address of the MQTT broker")
 	viper.BindPFlag("mqtt-broker", RootCmd.PersistentFlags().Lookup("mqtt-broker"))
 
-	RootCmd.PersistentFlags().String("app-eui", "0102030405060708", "The app EUI to use")
+	RootCmd.PersistentFlags().String("app-eui", "", "The app EUI to use")
 	viper.BindPFlag("app-eui", RootCmd.PersistentFlags().Lookup("app-eui"))
 
 	RootCmd.PersistentFlags().String("ttn-account-server", "https://account.thethingsnetwork.org", "The address of the OAuth 2.0 server")
@@ -78,7 +78,7 @@ func initConfig() {
 	viper.AutomaticEnv()
 
 	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err == nil {
+	if err := viper.ReadInConfig(); err == nil && viper.GetBool("debug") {
 		fmt.Println("Using config file:", viper.ConfigFileUsed())
 	}
 }
