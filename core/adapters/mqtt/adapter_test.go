@@ -43,6 +43,8 @@ func TestHandleData(t *testing.T) {
 		},
 		AppEUI: eui,
 		DevEUI: eui,
+		FPort:  14,
+		FCnt:   200,
 	}
 
 	var wg sync.WaitGroup
@@ -51,6 +53,8 @@ func TestHandleData(t *testing.T) {
 	client.SubscribeDeviceUplink(eui, eui, func(client ttnMQTT.Client, appEUI []byte, devEUI []byte, dataUp core.DataUpAppReq) {
 		a.So(appEUI, ShouldResemble, eui)
 		a.So(devEUI, ShouldResemble, eui)
+		a.So(dataUp.FPort, ShouldEqual, 14)
+		a.So(dataUp.FCnt, ShouldEqual, 200)
 		a.So(dataUp.Payload, ShouldResemble, []byte{0x01, 0x02})
 		a.So(dataUp.Metadata[0].DataRate, ShouldEqual, "SF7BW125")
 		wg.Done()

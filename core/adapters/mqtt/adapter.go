@@ -34,6 +34,7 @@ func (a *defaultAdapter) HandleData(_ context.Context, req *core.DataAppReq, _ .
 		Payload:  req.Payload,
 		Metadata: core.ProtoMetaToAppMeta(req.Metadata...),
 		FPort:    uint8(req.FPort),
+		FCnt:     req.FCnt,
 	}
 
 	if a.ctx != nil {
