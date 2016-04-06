@@ -223,6 +223,7 @@ func TestHandleDataUp(t *testing.T) {
 			AppEUI:   []byte{1, 1, 1, 1, 1, 1, 1, 1},
 			DevEUI:   []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			FCnt:     14,
+			FPort:    1,
 			MType:    uint32(lorawan.UnconfirmedDataUp),
 		}
 
@@ -265,6 +266,7 @@ func TestHandleDataUp(t *testing.T) {
 			AppEUI:   []byte{1, 1, 1, 1, 1, 1, 1, 1},
 			DevEUI:   []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			FCnt:     14,
+			FPort:    1,
 			MType:    uint32(lorawan.UnconfirmedDataUp),
 		}
 
@@ -307,6 +309,7 @@ func TestHandleDataUp(t *testing.T) {
 			AppEUI:   []byte{1, 1, 1, 1, 1, 1, 1, 1},
 			DevEUI:   []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			FCnt:     14,
+			FPort:    1,
 			MType:    uint32(lorawan.UnconfirmedDataUp),
 		}
 
@@ -349,6 +352,7 @@ func TestHandleDataUp(t *testing.T) {
 			AppEUI:   []byte{1, 1, 1, 1, 1, 1, 1, 1},
 			DevEUI:   nil,
 			FCnt:     14,
+			FPort:    1,
 			MType:    uint32(lorawan.UnconfirmedDataUp),
 		}
 
@@ -391,6 +395,7 @@ func TestHandleDataUp(t *testing.T) {
 			AppEUI:   []byte{1, 1, 1, 1, 1},
 			DevEUI:   []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			FCnt:     14,
+			FPort:    1,
 			MType:    uint32(lorawan.UnconfirmedDataUp),
 		}
 
@@ -451,6 +456,7 @@ func TestHandleDataUp(t *testing.T) {
 			AppEUI: []byte{1, 1, 1, 1, 1, 1, 1, 1},
 			DevEUI: []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			FCnt:   fcnt,
+			FPort:  1,
 			MType:  uint32(lorawan.UnconfirmedDataUp),
 		}
 
@@ -462,6 +468,7 @@ func TestHandleDataUp(t *testing.T) {
 			Metadata: []*core.Metadata{req.Metadata},
 			AppEUI:   req.AppEUI,
 			DevEUI:   req.DevEUI,
+			FPort:    1,
 		}
 		var wantFCnt = devStorage.OutRead.Entry.FCntDown
 
@@ -520,6 +527,7 @@ func TestHandleDataUp(t *testing.T) {
 			AppEUI: []byte{1, 1, 1, 1, 1, 1, 1, 1},
 			DevEUI: []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			FCnt:   fcnt,
+			FPort:  10,
 			MType:  uint32(lorawan.UnconfirmedDataUp),
 		}
 		req2 := &core.DataUpHandlerReq{
@@ -534,6 +542,7 @@ func TestHandleDataUp(t *testing.T) {
 			AppEUI: req1.AppEUI,
 			DevEUI: req1.DevEUI,
 			FCnt:   req1.FCnt,
+			FPort:  req1.FPort,
 			MType:  req1.MType,
 		}
 
@@ -547,6 +556,7 @@ func TestHandleDataUp(t *testing.T) {
 			Metadata: []*core.Metadata{req1.Metadata, req2.Metadata},
 			AppEUI:   req1.AppEUI,
 			DevEUI:   req1.DevEUI,
+			FPort:    10,
 		}
 		var wantFCnt = devStorage.OutRead.Entry.FCntDown
 
@@ -633,6 +643,7 @@ func TestHandleDataUp(t *testing.T) {
 			AppEUI: []byte{1, 1, 1, 1, 1, 1, 1, 1},
 			DevEUI: []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			FCnt:   fcnt,
+			FPort:  1,
 			MType:  uint32(lorawan.UnconfirmedDataUp),
 		}
 
@@ -678,6 +689,7 @@ func TestHandleDataUp(t *testing.T) {
 			Metadata: []*core.Metadata{req.Metadata},
 			AppEUI:   req.AppEUI,
 			DevEUI:   req.DevEUI,
+			FPort:    1,
 		}
 		var wantFCnt = wantRes.Payload.MACPayload.FHDR.FCnt
 
@@ -842,6 +854,7 @@ func TestHandleDataUp(t *testing.T) {
 			AppEUI: []byte{1, 1, 1, 1, 1, 1, 1, 1},
 			DevEUI: []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			FCnt:   fcnt,
+			FPort:  1,
 			MType:  uint32(lorawan.UnconfirmedDataUp),
 		}
 
@@ -853,6 +866,7 @@ func TestHandleDataUp(t *testing.T) {
 			Metadata: []*core.Metadata{req.Metadata},
 			AppEUI:   req.AppEUI,
 			DevEUI:   req.DevEUI,
+			FPort:    1,
 		}
 		var wantFCnt uint32
 
@@ -908,6 +922,7 @@ func TestHandleDataUp(t *testing.T) {
 			AppEUI: []byte{1, 1, 1, 1, 1, 1, 1, 1},
 			DevEUI: []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			FCnt:   fcnt,
+			FPort:  1,
 			MType:  uint32(lorawan.UnconfirmedDataUp),
 		}
 
@@ -919,6 +934,7 @@ func TestHandleDataUp(t *testing.T) {
 			Metadata: []*core.Metadata{req.Metadata},
 			AppEUI:   req.AppEUI,
 			DevEUI:   req.DevEUI,
+			FPort:    1,
 		}
 		var wantFCnt uint32
 
@@ -981,6 +997,7 @@ func TestHandleDataUp(t *testing.T) {
 			AppEUI: []byte{1, 1, 1, 1, 1, 1, 1, 1},
 			DevEUI: []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			FCnt:   fcnt1,
+			FPort:  1,
 			MType:  uint32(lorawan.UnconfirmedDataUp),
 		}
 		req2 := &core.DataUpHandlerReq{
@@ -995,6 +1012,7 @@ func TestHandleDataUp(t *testing.T) {
 			AppEUI: []byte{1, 2, 3, 4, 5, 6, 7, 8},
 			DevEUI: []byte{1, 2, 3, 4, 5, 6, 7, 8},
 			FCnt:   fcnt2,
+			FPort:  1,
 			MType:  uint32(lorawan.UnconfirmedDataUp),
 		}
 
@@ -1008,12 +1026,14 @@ func TestHandleDataUp(t *testing.T) {
 			Metadata: []*core.Metadata{req1.Metadata},
 			AppEUI:   req1.AppEUI,
 			DevEUI:   req1.DevEUI,
+			FPort:    1,
 		}
 		var wantData2 = &core.DataAppReq{
 			Payload:  payload2,
 			Metadata: []*core.Metadata{req2.Metadata},
 			AppEUI:   req2.AppEUI,
 			DevEUI:   req2.DevEUI,
+			FPort:    1,
 		}
 		var wantFCnt1 uint32 = 3
 		var wantFCnt2 uint32 = 11
@@ -1100,6 +1120,7 @@ func TestHandleDataUp(t *testing.T) {
 			AppEUI: []byte{1, 1, 1, 1, 1, 1, 1, 1},
 			DevEUI: []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			FCnt:   fcnt,
+			FPort:  1,
 			MType:  uint32(lorawan.UnconfirmedDataUp),
 		}
 
@@ -1145,6 +1166,7 @@ func TestHandleDataUp(t *testing.T) {
 			Metadata: []*core.Metadata{req.Metadata},
 			AppEUI:   req.AppEUI,
 			DevEUI:   req.DevEUI,
+			FPort:    1,
 		}
 		var wantFCnt = wantRes.Payload.MACPayload.FHDR.FCnt
 
@@ -1209,6 +1231,7 @@ func TestHandleDataUp(t *testing.T) {
 			AppEUI: []byte{1, 1, 1, 1, 1, 1, 1, 1},
 			DevEUI: []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			FCnt:   fcnt,
+			FPort:  1,
 			MType:  uint32(lorawan.UnconfirmedDataUp),
 		}
 
@@ -1220,6 +1243,7 @@ func TestHandleDataUp(t *testing.T) {
 			Metadata: []*core.Metadata{req.Metadata},
 			AppEUI:   req.AppEUI,
 			DevEUI:   req.DevEUI,
+			FPort:    1,
 		}
 		var wantFCnt = devStorage.OutRead.Entry.FCntDown + 1
 
@@ -1283,6 +1307,7 @@ func TestHandleDataUp(t *testing.T) {
 			AppEUI: []byte{1, 1, 1, 1, 1, 1, 1, 1},
 			DevEUI: []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			FCnt:   fcnt,
+			FPort:  1,
 			MType:  uint32(lorawan.ConfirmedDataUp),
 		}
 
@@ -1330,6 +1355,7 @@ func TestHandleDataUp(t *testing.T) {
 			Metadata: []*core.Metadata{req.Metadata},
 			AppEUI:   req.AppEUI,
 			DevEUI:   req.DevEUI,
+			FPort:    1,
 		}
 		var wantFCnt = wantRes.Payload.MACPayload.FHDR.FCnt
 
@@ -1393,6 +1419,7 @@ func TestHandleDataUp(t *testing.T) {
 			AppEUI: []byte{1, 1, 1, 1, 1, 1, 1, 1},
 			DevEUI: []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			FCnt:   fcnt,
+			FPort:  1,
 			MType:  uint32(lorawan.ConfirmedDataUp),
 		}
 
@@ -1432,6 +1459,7 @@ func TestHandleDataUp(t *testing.T) {
 			Metadata: []*core.Metadata{req.Metadata},
 			AppEUI:   req.AppEUI,
 			DevEUI:   req.DevEUI,
+			FPort:    1,
 		}
 		var wantFCnt = wantRes.Payload.MACPayload.FHDR.FCnt
 

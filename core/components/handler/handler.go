@@ -533,6 +533,7 @@ func (h component) consumeJoin(appEUI []byte, devEUI []byte, appKey [16]byte, da
 func (h component) consumeDown(appEUI []byte, devEUI []byte, dataRate string, bundles []bundle) {
 	stats.UpdateHistogram("handler.uplink.duplicate.count", int64(len(bundles)))
 	var metadata []*core.Metadata
+	var fPort uint32
 	var payload []byte
 	var firstTime time.Time
 
@@ -563,6 +564,7 @@ func (h component) consumeDown(appEUI []byte, devEUI []byte, dataRate string, bu
 				return
 			}
 			firstTime = bundle.Time
+			fPort = packet.FPort
 			stats.MarkMeter("handler.uplink.in.unique")
 		} else {
 			diff := bundle.Time.Sub(firstTime).Nanoseconds()
@@ -579,6 +581,7 @@ func (h component) consumeDown(appEUI []byte, devEUI []byte, dataRate string, bu
 	_, err = h.AppAdapter.HandleData(context.Background(), &core.DataAppReq{
 		AppEUI:   appEUI,
 		DevEUI:   devEUI,
+		FPort:    fPort,
 		Payload:  payload,
 		Metadata: metadata,
 	})

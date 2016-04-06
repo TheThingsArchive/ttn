@@ -33,6 +33,7 @@ func (a *defaultAdapter) HandleData(_ context.Context, req *core.DataAppReq, _ .
 	dataUp := core.DataUpAppReq{
 		Payload:  req.Payload,
 		Metadata: core.ProtoMetaToAppMeta(req.Metadata...),
+		FPort:    uint8(req.FPort),
 	}
 
 	if a.ctx != nil {

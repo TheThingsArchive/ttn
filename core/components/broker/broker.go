@@ -309,6 +309,7 @@ func (b component) HandleData(bctx context.Context, req *core.DataBrokerReq) (*c
 		DevEUI:   mEntry.DevEUI,
 		AppEUI:   mEntry.AppEUI,
 		FCnt:     fhdr.FCnt,
+		FPort:    req.Payload.MACPayload.FPort,
 		MType:    req.Payload.MHDR.MType,
 		Metadata: req.Metadata,
 	})
