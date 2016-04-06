@@ -85,10 +85,11 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion1
 
 type DataAppReq struct {
-	Payload  []byte      `protobuf:"bytes,1,opt,name=Payload,json=payload,proto3" json:"Payload,omitempty"`
-	AppEUI   []byte      `protobuf:"bytes,2,opt,name=AppEUI,json=appEUI,proto3" json:"AppEUI,omitempty"`
-	DevEUI   []byte      `protobuf:"bytes,3,opt,name=DevEUI,json=devEUI,proto3" json:"DevEUI,omitempty"`
-	Metadata []*Metadata `protobuf:"bytes,4,rep,name=Metadata,json=metadata" json:"Metadata,omitempty"`
+	AppEUI   []byte      `protobuf:"bytes,1,opt,name=AppEUI,json=appEUI,proto3" json:"AppEUI,omitempty"`
+	DevEUI   []byte      `protobuf:"bytes,2,opt,name=DevEUI,json=devEUI,proto3" json:"DevEUI,omitempty"`
+	FPort    uint32      `protobuf:"varint,10,opt,name=FPort,json=fPort,proto3" json:"FPort,omitempty"`
+	Payload  []byte      `protobuf:"bytes,20,opt,name=Payload,json=payload,proto3" json:"Payload,omitempty"`
+	Metadata []*Metadata `protobuf:"bytes,30,rep,name=Metadata,json=metadata" json:"Metadata,omitempty"`
 }
 
 func (m *DataAppReq) Reset()                    { *m = DataAppReq{} }
@@ -114,7 +115,7 @@ func (*DataAppRes) Descriptor() ([]byte, []int) { return fileDescriptorApplicati
 type JoinAppReq struct {
 	AppEUI   []byte      `protobuf:"bytes,1,opt,name=AppEUI,json=appEUI,proto3" json:"AppEUI,omitempty"`
 	DevEUI   []byte      `protobuf:"bytes,2,opt,name=DevEUI,json=devEUI,proto3" json:"DevEUI,omitempty"`
-	Metadata []*Metadata `protobuf:"bytes,3,rep,name=Metadata,json=metadata" json:"Metadata,omitempty"`
+	Metadata []*Metadata `protobuf:"bytes,30,rep,name=Metadata,json=metadata" json:"Metadata,omitempty"`
 }
 
 func (m *JoinAppReq) Reset()                    { *m = JoinAppReq{} }
@@ -247,17 +248,9 @@ func (m *DataAppReq) MarshalTo(data []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.Payload != nil {
-		if len(m.Payload) > 0 {
-			data[i] = 0xa
-			i++
-			i = encodeVarintApplication(data, i, uint64(len(m.Payload)))
-			i += copy(data[i:], m.Payload)
-		}
-	}
 	if m.AppEUI != nil {
 		if len(m.AppEUI) > 0 {
-			data[i] = 0x12
+			data[i] = 0xa
 			i++
 			i = encodeVarintApplication(data, i, uint64(len(m.AppEUI)))
 			i += copy(data[i:], m.AppEUI)
@@ -265,15 +258,32 @@ func (m *DataAppReq) MarshalTo(data []byte) (int, error) {
 	}
 	if m.DevEUI != nil {
 		if len(m.DevEUI) > 0 {
-			data[i] = 0x1a
+			data[i] = 0x12
 			i++
 			i = encodeVarintApplication(data, i, uint64(len(m.DevEUI)))
 			i += copy(data[i:], m.DevEUI)
 		}
 	}
+	if m.FPort != 0 {
+		data[i] = 0x50
+		i++
+		i = encodeVarintApplication(data, i, uint64(m.FPort))
+	}
+	if m.Payload != nil {
+		if len(m.Payload) > 0 {
+			data[i] = 0xa2
+			i++
+			data[i] = 0x1
+			i++
+			i = encodeVarintApplication(data, i, uint64(len(m.Payload)))
+			i += copy(data[i:], m.Payload)
+		}
+	}
 	if len(m.Metadata) > 0 {
 		for _, msg := range m.Metadata {
-			data[i] = 0x22
+			data[i] = 0xf2
+			i++
+			data[i] = 0x1
 			i++
 			i = encodeVarintApplication(data, i, uint64(msg.Size()))
 			n, err := msg.MarshalTo(data[i:])
@@ -337,7 +347,9 @@ func (m *JoinAppReq) MarshalTo(data []byte) (int, error) {
 	}
 	if len(m.Metadata) > 0 {
 		for _, msg := range m.Metadata {
-			data[i] = 0x1a
+			data[i] = 0xf2
+			i++
+			data[i] = 0x1
 			i++
 			i = encodeVarintApplication(data, i, uint64(msg.Size()))
 			n, err := msg.MarshalTo(data[i:])
@@ -398,12 +410,6 @@ func encodeVarintApplication(data []byte, offset int, v uint64) int {
 func (m *DataAppReq) Size() (n int) {
 	var l int
 	_ = l
-	if m.Payload != nil {
-		l = len(m.Payload)
-		if l > 0 {
-			n += 1 + l + sovApplication(uint64(l))
-		}
-	}
 	if m.AppEUI != nil {
 		l = len(m.AppEUI)
 		if l > 0 {
@@ -416,10 +422,19 @@ func (m *DataAppReq) Size() (n int) {
 			n += 1 + l + sovApplication(uint64(l))
 		}
 	}
+	if m.FPort != 0 {
+		n += 1 + sovApplication(uint64(m.FPort))
+	}
+	if m.Payload != nil {
+		l = len(m.Payload)
+		if l > 0 {
+			n += 2 + l + sovApplication(uint64(l))
+		}
+	}
 	if len(m.Metadata) > 0 {
 		for _, e := range m.Metadata {
 			l = e.Size()
-			n += 1 + l + sovApplication(uint64(l))
+			n += 2 + l + sovApplication(uint64(l))
 		}
 	}
 	return n
@@ -449,7 +464,7 @@ func (m *JoinAppReq) Size() (n int) {
 	if len(m.Metadata) > 0 {
 		for _, e := range m.Metadata {
 			l = e.Size()
-			n += 1 + l + sovApplication(uint64(l))
+			n += 2 + l + sovApplication(uint64(l))
 		}
 	}
 	return n
@@ -505,37 +520,6 @@ func (m *DataAppReq) Unmarshal(data []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Payload", wireType)
-			}
-			var byteLen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowApplication
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				byteLen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if byteLen < 0 {
-				return ErrInvalidLengthApplication
-			}
-			postIndex := iNdEx + byteLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Payload = append(m.Payload[:0], data[iNdEx:postIndex]...)
-			if m.Payload == nil {
-				m.Payload = []byte{}
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field AppEUI", wireType)
 			}
 			var byteLen int
@@ -565,7 +549,7 @@ func (m *DataAppReq) Unmarshal(data []byte) error {
 				m.AppEUI = []byte{}
 			}
 			iNdEx = postIndex
-		case 3:
+		case 2:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field DevEUI", wireType)
 			}
@@ -596,7 +580,57 @@ func (m *DataAppReq) Unmarshal(data []byte) error {
 				m.DevEUI = []byte{}
 			}
 			iNdEx = postIndex
-		case 4:
+		case 10:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FPort", wireType)
+			}
+			m.FPort = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				m.FPort |= (uint32(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 20:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Payload", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApplication
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthApplication
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Payload = append(m.Payload[:0], data[iNdEx:postIndex]...)
+			if m.Payload == nil {
+				m.Payload = []byte{}
+			}
+			iNdEx = postIndex
+		case 30:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Metadata", wireType)
 			}
@@ -789,7 +823,7 @@ func (m *JoinAppReq) Unmarshal(data []byte) error {
 				m.DevEUI = []byte{}
 			}
 			iNdEx = postIndex
-		case 3:
+		case 30:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Metadata", wireType)
 			}
@@ -997,21 +1031,21 @@ var (
 )
 
 var fileDescriptorApplication = []byte{
-	// 242 bytes of a gzipped FileDescriptorProto
+	// 251 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xe2, 0x12, 0x4c, 0x2c, 0x28, 0xc8,
 	0xc9, 0x4c, 0x4e, 0x2c, 0xc9, 0xcc, 0xcf, 0xd3, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x62, 0x49,
-	0xce, 0x2f, 0x4a, 0x95, 0xe2, 0x02, 0x91, 0x10, 0x11, 0xa5, 0x26, 0x46, 0x2e, 0x2e, 0x97, 0xc4,
-	0x92, 0x44, 0xc7, 0x82, 0x82, 0xa0, 0xd4, 0x42, 0x21, 0x09, 0x2e, 0xf6, 0x80, 0xc4, 0xca, 0x9c,
-	0xfc, 0xc4, 0x14, 0x09, 0x46, 0x05, 0x46, 0x0d, 0x9e, 0x20, 0xf6, 0x02, 0x08, 0x57, 0x48, 0x8c,
-	0x8b, 0x0d, 0xa8, 0xc6, 0x35, 0xd4, 0x53, 0x82, 0x09, 0x2c, 0xc1, 0x96, 0x08, 0xe6, 0x81, 0xc4,
-	0x5d, 0x52, 0xcb, 0x40, 0xe2, 0xcc, 0x10, 0xf1, 0x14, 0x30, 0x4f, 0x48, 0x8b, 0x8b, 0xc3, 0x37,
-	0xb5, 0x24, 0x31, 0x05, 0x68, 0xb6, 0x04, 0x8b, 0x02, 0xb3, 0x06, 0xb7, 0x11, 0x9f, 0x1e, 0xd8,
-	0x5e, 0x98, 0x68, 0x10, 0x47, 0x2e, 0x94, 0xa5, 0xc4, 0x83, 0xe4, 0x86, 0x62, 0xa5, 0x0c, 0x2e,
-	0x2e, 0xaf, 0xfc, 0xcc, 0x3c, 0xa8, 0x8b, 0x10, 0xf6, 0x32, 0xe2, 0xb0, 0x97, 0x09, 0xa7, 0xbd,
-	0xcc, 0x84, 0xed, 0x85, 0xdb, 0x54, 0x6c, 0x94, 0xc9, 0xc5, 0x0c, 0x64, 0x09, 0x19, 0x70, 0x71,
-	0x79, 0x24, 0xe6, 0xa5, 0xe4, 0xa4, 0x82, 0x9c, 0x24, 0x24, 0x00, 0xd1, 0x8c, 0x08, 0x22, 0x29,
-	0x74, 0x91, 0x62, 0x84, 0x0e, 0x90, 0x61, 0x30, 0x1d, 0x08, 0x2f, 0x48, 0xa1, 0x8b, 0x14, 0x3b,
-	0x09, 0x9c, 0x78, 0x24, 0xc7, 0x78, 0x01, 0x88, 0x1f, 0x00, 0xf1, 0x8c, 0xc7, 0x72, 0x0c, 0x49,
-	0x6c, 0xe0, 0xe8, 0x30, 0x06, 0x04, 0x00, 0x00, 0xff, 0xff, 0x04, 0x04, 0x27, 0x4e, 0xb5, 0x01,
-	0x00, 0x00,
+	0xce, 0x2f, 0x4a, 0x95, 0xe2, 0x02, 0x91, 0x10, 0x11, 0xa5, 0x19, 0x8c, 0x5c, 0x5c, 0x2e, 0x89,
+	0x25, 0x89, 0x8e, 0x05, 0x05, 0x41, 0xa9, 0x85, 0x42, 0x62, 0x5c, 0x6c, 0x40, 0x96, 0x6b, 0xa8,
+	0xa7, 0x04, 0xa3, 0x02, 0xa3, 0x06, 0x4f, 0x10, 0x5b, 0x22, 0x98, 0x07, 0x12, 0x77, 0x49, 0x2d,
+	0x03, 0x89, 0x33, 0x41, 0xc4, 0x53, 0xc0, 0x3c, 0x21, 0x11, 0x2e, 0x56, 0xb7, 0x80, 0xfc, 0xa2,
+	0x12, 0x09, 0x2e, 0xa0, 0x30, 0x6f, 0x10, 0x6b, 0x1a, 0x88, 0x23, 0x24, 0xc1, 0xc5, 0x1e, 0x90,
+	0x58, 0x99, 0x93, 0x9f, 0x98, 0x22, 0x21, 0x02, 0x56, 0xce, 0x5e, 0x00, 0xe1, 0x0a, 0x69, 0x71,
+	0x71, 0xf8, 0xa6, 0x96, 0x24, 0xa6, 0x00, 0x6d, 0x94, 0x90, 0x53, 0x60, 0xd6, 0xe0, 0x36, 0xe2,
+	0xd3, 0x03, 0xbb, 0x06, 0x26, 0x1a, 0xc4, 0x91, 0x0b, 0x65, 0x29, 0xf1, 0x20, 0xb9, 0xac, 0x58,
+	0x29, 0x83, 0x8b, 0xcb, 0x2b, 0x3f, 0x33, 0x8f, 0x4c, 0x77, 0x92, 0x68, 0x2f, 0xdc, 0xa6, 0x62,
+	0xa3, 0x4c, 0x2e, 0x66, 0x20, 0x4b, 0xc8, 0x80, 0x8b, 0xcb, 0x23, 0x31, 0x2f, 0x25, 0x27, 0x15,
+	0xe4, 0x24, 0x21, 0x01, 0x88, 0x66, 0x44, 0xc0, 0x49, 0xa1, 0x8b, 0x14, 0x23, 0x74, 0x80, 0x0c,
+	0x83, 0xe9, 0x40, 0x78, 0x41, 0x0a, 0x5d, 0xa4, 0xd8, 0x49, 0xe0, 0xc4, 0x23, 0x39, 0xc6, 0x0b,
+	0x40, 0xfc, 0x00, 0x88, 0x67, 0x3c, 0x96, 0x63, 0x48, 0x62, 0x03, 0x47, 0x92, 0x31, 0x20, 0x00,
+	0x00, 0xff, 0xff, 0x79, 0x69, 0x22, 0xd8, 0xcb, 0x01, 0x00, 0x00,
 }

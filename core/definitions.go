@@ -6,6 +6,7 @@ package core
 // DataUpAppReq represents the actual payloads sent to application on uplink
 type DataUpAppReq struct {
 	Payload  []byte        `json:"payload"`
+	FPort    uint8         `json:"port,omitempty"`
 	Metadata []AppMetadata `json:"metadata"`
 }
 
@@ -35,6 +36,7 @@ type AppMetadata struct {
 // DataDownAppReq represents downlink messages sent by applications
 type DataDownAppReq struct {
 	Payload []byte `json:"payload"`
+	FPort   uint8  `json:"port,omitempty"`
 	TTL     string `json:"ttl"`
 }
 
