@@ -209,6 +209,7 @@ func TestHandleData(t *testing.T) {
 			AppEUI:   nc.OutRead.Entries[1].AppEUI,
 			DevEUI:   nc.OutRead.Entries[1].DevEUI,
 			FCnt:     req.Payload.MACPayload.FHDR.FCnt,
+			FPort:    1,
 			MType:    req.Payload.MHDR.MType,
 			Metadata: req.Metadata,
 		}
@@ -353,6 +354,7 @@ func TestHandleData(t *testing.T) {
 			AppEUI:   nc.OutRead.Entries[0].AppEUI,
 			DevEUI:   nc.OutRead.Entries[0].DevEUI,
 			FCnt:     nc.OutWholeCounter.FCnt,
+			FPort:    1,
 			MType:    req.Payload.MHDR.MType,
 			Metadata: req.Metadata,
 		}
@@ -501,6 +503,7 @@ func TestHandleData(t *testing.T) {
 			AppEUI:   nc.OutRead.Entries[0].AppEUI,
 			DevEUI:   nc.OutRead.Entries[0].DevEUI,
 			FCnt:     nc.OutWholeCounter.FCnt,
+			FPort:    1,
 			MType:    req.Payload.MHDR.MType,
 			Metadata: req.Metadata,
 		}
@@ -597,6 +600,7 @@ func TestHandleData(t *testing.T) {
 			AppEUI:   nc.OutRead.Entries[0].AppEUI,
 			DevEUI:   nc.OutRead.Entries[0].DevEUI,
 			FCnt:     nc.OutWholeCounter.FCnt,
+			FPort:    1,
 			MType:    req.Payload.MHDR.MType,
 			Metadata: req.Metadata,
 		}
@@ -763,6 +767,7 @@ func TestHandleData(t *testing.T) {
 			AppEUI:   nc.OutRead.Entries[0].AppEUI,
 			DevEUI:   nc.OutRead.Entries[0].DevEUI,
 			FCnt:     nc.OutWholeCounter.FCnt,
+			FPort:    1,
 			MType:    req.Payload.MHDR.MType,
 			Metadata: req.Metadata,
 		}

@@ -7,6 +7,7 @@ message DataAppReq {
     bytes               AppEUI      = 1;
     bytes               DevEUI      = 2;
     uint32              FPort       = 10;
+    uint32              FCnt        = 11;
     bytes               Payload     = 20;
     repeated Metadata   Metadata    = 30;
 }

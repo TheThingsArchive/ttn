@@ -7,6 +7,7 @@ package core
 type DataUpAppReq struct {
 	Payload  []byte        `json:"payload"`
 	FPort    uint8         `json:"port,omitempty"`
+	FCnt     uint32        `json:"counter"`
 	Metadata []AppMetadata `json:"metadata"`
 }
 
