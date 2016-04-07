@@ -506,10 +506,11 @@ func TestHandleData(t *testing.T) {
 		var wantBrReq = &core.DataBrokerReq{
 			Payload: req.Payload,
 			Metadata: &core.Metadata{
-				Altitude:  gt.OutRead.Entry.Metadata.Altitude,
-				Longitude: gt.OutRead.Entry.Metadata.Longitude,
-				Latitude:  gt.OutRead.Entry.Metadata.Latitude,
-				Frequency: req.Metadata.Frequency,
+				Altitude:   gt.OutRead.Entry.Metadata.Altitude,
+				Longitude:  gt.OutRead.Entry.Metadata.Longitude,
+				Latitude:   gt.OutRead.Entry.Metadata.Latitude,
+				Frequency:  req.Metadata.Frequency,
+				GatewayEUI: "0102030405060708",
 			},
 		}
 		var wantStore uint16
@@ -586,10 +587,11 @@ func TestHandleData(t *testing.T) {
 		var wantBrReq = &core.DataBrokerReq{
 			Payload: req.Payload,
 			Metadata: &core.Metadata{
-				Altitude:  gt.OutRead.Entry.Metadata.Altitude,
-				Longitude: gt.OutRead.Entry.Metadata.Longitude,
-				Latitude:  gt.OutRead.Entry.Metadata.Latitude,
-				Frequency: req.Metadata.Frequency,
+				Altitude:   gt.OutRead.Entry.Metadata.Altitude,
+				Longitude:  gt.OutRead.Entry.Metadata.Longitude,
+				Latitude:   gt.OutRead.Entry.Metadata.Latitude,
+				Frequency:  req.Metadata.Frequency,
+				GatewayEUI: "0102030405060708",
 			},
 		}
 		var wantStore uint16 = 1
@@ -669,10 +671,11 @@ func TestHandleData(t *testing.T) {
 		var wantBrReq = &core.DataBrokerReq{
 			Payload: req.Payload,
 			Metadata: &core.Metadata{
-				Altitude:  gt.OutRead.Entry.Metadata.Altitude,
-				Longitude: gt.OutRead.Entry.Metadata.Longitude,
-				Latitude:  gt.OutRead.Entry.Metadata.Latitude,
-				Frequency: req.Metadata.Frequency,
+				Altitude:   gt.OutRead.Entry.Metadata.Altitude,
+				Longitude:  gt.OutRead.Entry.Metadata.Longitude,
+				Latitude:   gt.OutRead.Entry.Metadata.Latitude,
+				Frequency:  req.Metadata.Frequency,
+				GatewayEUI: "0102030405060708",
 			},
 		}
 		var wantStore uint16 = 1
@@ -823,10 +826,11 @@ func TestHandleData(t *testing.T) {
 		var wantBrReq = &core.DataBrokerReq{
 			Payload: req.Payload,
 			Metadata: &core.Metadata{
-				Altitude:  gt.OutRead.Entry.Metadata.Altitude,
-				Longitude: gt.OutRead.Entry.Metadata.Longitude,
-				Latitude:  gt.OutRead.Entry.Metadata.Latitude,
-				Frequency: req.Metadata.Frequency,
+				Altitude:   gt.OutRead.Entry.Metadata.Altitude,
+				Longitude:  gt.OutRead.Entry.Metadata.Longitude,
+				Latitude:   gt.OutRead.Entry.Metadata.Latitude,
+				Frequency:  req.Metadata.Frequency,
+				GatewayEUI: "0102030405060708",
 			},
 		}
 		var wantStore uint16
@@ -976,10 +980,11 @@ func TestHandleData(t *testing.T) {
 		var wantBrReq = &core.DataBrokerReq{
 			Payload: req.Payload,
 			Metadata: &core.Metadata{
-				Altitude:  gt.OutRead.Entry.Metadata.Altitude,
-				Longitude: gt.OutRead.Entry.Metadata.Longitude,
-				Latitude:  gt.OutRead.Entry.Metadata.Latitude,
-				Frequency: req.Metadata.Frequency,
+				Altitude:   gt.OutRead.Entry.Metadata.Altitude,
+				Longitude:  gt.OutRead.Entry.Metadata.Longitude,
+				Latitude:   gt.OutRead.Entry.Metadata.Latitude,
+				Frequency:  req.Metadata.Frequency,
+				GatewayEUI: "0102030405060708",
 			},
 		}
 		var wantStore uint16
@@ -1057,10 +1062,11 @@ func TestHandleData(t *testing.T) {
 		var wantBrReq = &core.DataBrokerReq{
 			Payload: req.Payload,
 			Metadata: &core.Metadata{
-				Altitude:  gt.OutRead.Entry.Metadata.Altitude,
-				Longitude: gt.OutRead.Entry.Metadata.Longitude,
-				Latitude:  gt.OutRead.Entry.Metadata.Latitude,
-				Frequency: req.Metadata.Frequency,
+				Altitude:   gt.OutRead.Entry.Metadata.Altitude,
+				Longitude:  gt.OutRead.Entry.Metadata.Longitude,
+				Latitude:   gt.OutRead.Entry.Metadata.Latitude,
+				Frequency:  req.Metadata.Frequency,
+				GatewayEUI: "0102030405060708",
 			},
 		}
 		var wantStore uint16
@@ -1143,10 +1149,11 @@ func TestHandleData(t *testing.T) {
 		var wantBrReq = &core.DataBrokerReq{
 			Payload: req.Payload,
 			Metadata: &core.Metadata{
-				Altitude:  gt.OutRead.Entry.Metadata.Altitude,
-				Longitude: gt.OutRead.Entry.Metadata.Longitude,
-				Latitude:  gt.OutRead.Entry.Metadata.Latitude,
-				Frequency: req.Metadata.Frequency,
+				Altitude:   gt.OutRead.Entry.Metadata.Altitude,
+				Longitude:  gt.OutRead.Entry.Metadata.Longitude,
+				Latitude:   gt.OutRead.Entry.Metadata.Latitude,
+				Frequency:  req.Metadata.Frequency,
+				GatewayEUI: "0102030405060708",
 			},
 		}
 		var wantStore uint16
@@ -1248,10 +1255,11 @@ func TestHandleData(t *testing.T) {
 		var wantBrReq = &core.DataBrokerReq{
 			Payload: req.Payload,
 			Metadata: &core.Metadata{
-				Altitude:  gt.OutRead.Entry.Metadata.Altitude,
-				Longitude: gt.OutRead.Entry.Metadata.Longitude,
-				Latitude:  gt.OutRead.Entry.Metadata.Latitude,
-				Frequency: req.Metadata.Frequency,
+				Altitude:   gt.OutRead.Entry.Metadata.Altitude,
+				Longitude:  gt.OutRead.Entry.Metadata.Longitude,
+				Latitude:   gt.OutRead.Entry.Metadata.Latitude,
+				Frequency:  req.Metadata.Frequency,
+				GatewayEUI: "0102030405060708",
 			},
 		}
 		var wantStore uint16
@@ -1352,10 +1360,11 @@ func TestHandleData(t *testing.T) {
 		var wantBrReq = &core.DataBrokerReq{
 			Payload: req.Payload,
 			Metadata: &core.Metadata{
-				Altitude:  gt.OutRead.Entry.Metadata.Altitude,
-				Longitude: gt.OutRead.Entry.Metadata.Longitude,
-				Latitude:  gt.OutRead.Entry.Metadata.Latitude,
-				Frequency: req.Metadata.Frequency,
+				Altitude:   gt.OutRead.Entry.Metadata.Altitude,
+				Longitude:  gt.OutRead.Entry.Metadata.Longitude,
+				Latitude:   gt.OutRead.Entry.Metadata.Latitude,
+				Frequency:  req.Metadata.Frequency,
+				GatewayEUI: "0102030405060708",
 			},
 		}
 		var wantStore uint16
@@ -1457,10 +1466,11 @@ func TestHandleData(t *testing.T) {
 		var wantBrReq = &core.DataBrokerReq{
 			Payload: req.Payload,
 			Metadata: &core.Metadata{
-				Altitude:  gt.OutRead.Entry.Metadata.Altitude,
-				Longitude: gt.OutRead.Entry.Metadata.Longitude,
-				Latitude:  gt.OutRead.Entry.Metadata.Latitude,
-				Frequency: req.Metadata.Frequency,
+				Altitude:   gt.OutRead.Entry.Metadata.Altitude,
+				Longitude:  gt.OutRead.Entry.Metadata.Longitude,
+				Latitude:   gt.OutRead.Entry.Metadata.Latitude,
+				Frequency:  req.Metadata.Frequency,
+				GatewayEUI: "0102030405060708",
 			},
 		}
 		var wantStore uint16
@@ -1538,10 +1548,11 @@ func TestHandleJoin(t *testing.T) {
 			DevNonce: req.DevNonce,
 			MIC:      req.MIC,
 			Metadata: &core.Metadata{
-				Altitude:  gt.OutRead.Entry.Metadata.Altitude,
-				Longitude: gt.OutRead.Entry.Metadata.Longitude,
-				Latitude:  gt.OutRead.Entry.Metadata.Latitude,
-				Frequency: req.Metadata.Frequency,
+				Altitude:   gt.OutRead.Entry.Metadata.Altitude,
+				Longitude:  gt.OutRead.Entry.Metadata.Longitude,
+				Latitude:   gt.OutRead.Entry.Metadata.Latitude,
+				Frequency:  req.Metadata.Frequency,
+				GatewayEUI: "0102030405060708",
 			},
 		}
 		var wantStore uint16 = 1
@@ -1619,10 +1630,11 @@ func TestHandleJoin(t *testing.T) {
 			DevNonce: req.DevNonce,
 			MIC:      req.MIC,
 			Metadata: &core.Metadata{
-				Altitude:  gt.OutRead.Entry.Metadata.Altitude,
-				Longitude: gt.OutRead.Entry.Metadata.Longitude,
-				Latitude:  gt.OutRead.Entry.Metadata.Latitude,
-				Frequency: req.Metadata.Frequency,
+				Altitude:   gt.OutRead.Entry.Metadata.Altitude,
+				Longitude:  gt.OutRead.Entry.Metadata.Longitude,
+				Latitude:   gt.OutRead.Entry.Metadata.Latitude,
+				Frequency:  req.Metadata.Frequency,
+				GatewayEUI: "0102030405060708",
 			},
 		}
 		var wantStore uint16 = 1
@@ -2005,10 +2017,11 @@ func TestHandleJoin(t *testing.T) {
 			DevNonce: req.DevNonce,
 			MIC:      req.MIC,
 			Metadata: &core.Metadata{
-				Altitude:  gt.OutRead.Entry.Metadata.Altitude,
-				Longitude: gt.OutRead.Entry.Metadata.Longitude,
-				Latitude:  gt.OutRead.Entry.Metadata.Latitude,
-				Frequency: req.Metadata.Frequency,
+				Altitude:   gt.OutRead.Entry.Metadata.Altitude,
+				Longitude:  gt.OutRead.Entry.Metadata.Longitude,
+				Latitude:   gt.OutRead.Entry.Metadata.Latitude,
+				Frequency:  req.Metadata.Frequency,
+				GatewayEUI: "0102030405060708",
 			},
 		}
 		var wantStore uint16

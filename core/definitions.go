@@ -23,12 +23,14 @@ type AppMetadata struct {
 	CodingRate string  `json:"codingrate"`
 	Timestamp  uint32  `json:"gateway_timestamp"`
 	Time       string  `json:"gateway_time,omitempty"`
+	Channel    uint32  `json:"channel"`
 	ServerTime string  `json:"server_time"`
 	Rssi       int32   `json:"rssi"`
 	Lsnr       float32 `json:"lsnr"`
 	RFChain    uint32  `json:"rfchain"`
 	CRCStatus  int32   `json:"crc"`
 	Modulation string  `json:"modulation"`
+	GatewayEUI string  `json:"gateway_eui"`
 	Altitude   int32   `json:"altitude"`
 	Longitude  float32 `json:"longitude"`
 	Latitude   float32 `json:"latitude"`

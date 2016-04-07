@@ -4,6 +4,7 @@
 package router
 
 import (
+	"fmt"
 	"net"
 	"strings"
 	"sync"
@@ -234,6 +235,7 @@ func (r component) HandleData(_ context.Context, req *core.DataRouterReq) (*core
 func (r component) injectMetadata(gid []byte, metadata core.Metadata) (*core.Metadata, error) {
 	ctx := r.Ctx.WithField("GatewayID", gid)
 
+	metadata.GatewayEUI = fmt.Sprintf("%X", gid)
 	metadata.ServerTime = time.Now().UTC().Format(time.RFC3339Nano)
 
 	// Add Gateway location metadata
