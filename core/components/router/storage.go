@@ -48,8 +48,15 @@ func NewBrkStorage(name string, delay time.Duration) (BrkStorage, error) {
 
 // read implements the router.BrkStorage interface
 func (s *brkStorage) read(devAddr []byte) ([]brkEntry, error) {
-	s.Lock()
-	defer s.Unlock()
+	return s._read(devAddr, true)
+}
+
+// _read implements the router.BrkStorage interface logic but gives control over mutex to the caller
+func (s *brkStorage) _read(devAddr []byte, shouldLock bool) ([]brkEntry, error) {
+	if shouldLock {
+		s.Lock()
+		defer s.Unlock()
+	}
 	itf, err := s.db.Read(devAddr, &brkEntry{}, dbBrokers)
 	if err != nil {
 		return nil, err
@@ -85,7 +92,29 @@ func (s *brkStorage) read(devAddr []byte) ([]brkEntry, error) {
 func (s *brkStorage) create(entry brkEntry) error {
 	s.Lock()
 	defer s.Unlock()
-	entry.until = time.Now().Add(s.ExpiryDelay)
+
+	entries, err := s._read(entry.DevAddr, false)
+	if err != nil && err.(errors.Failure).Nature != errors.NotFound {
+		return err
+	}
+
+	var updates []encoding.BinaryMarshaler
+	until, found := time.Now().Add(s.ExpiryDelay), false
+	for i, e := range entries {
+		if entry.BrokerIndex == e.BrokerIndex {
+			// Entry already there, just update the TTL
+			entries[i].until = until
+			found = true
+		}
+		updates = append(updates, e)
+	}
+
+	if found { // The entry was already existing
+		return s.db.Update(entry.DevAddr, updates, dbBrokers)
+	}
+
+	// Otherwise, we just happend it
+	entry.until = until
 	return s.db.Append(entry.DevAddr, []encoding.BinaryMarshaler{entry}, dbBrokers)
 }
 
