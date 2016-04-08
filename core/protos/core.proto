@@ -19,7 +19,9 @@ message Metadata {
     string  Modulation      = 13;
     bool    InvPolarity     = 14;
     uint32  Power           = 15;
+    uint32  Channel         = 16;
 
+    string  GatewayEUI      = 20;
     int32   Altitude        = 21;
     float   Longitude       = 22;
     float   Latitude        = 23;
