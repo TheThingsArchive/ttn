@@ -49,8 +49,27 @@ message HandlerOTAADevice {
     uint32  FCntDown    = 8;
 }
 
+message GetDefaultDeviceReq {
+  string    Token       = 1;
+  bytes     AppEUI      = 2;
+}
+
+message GetDefaultDeviceRes {
+  bytes     AppKey      = 1;
+}
+
+message SetDefaultDeviceReq {
+    string  Token       = 1;
+    bytes   AppEUI      = 2;
+    bytes   AppKey      = 3;
+}
+
+message SetDefaultDeviceRes {}
+
 service HandlerManager {
-    rpc UpsertOTAA      (UpsertOTAAHandlerReq)      returns     (UpsertOTAAHandlerRes);
-    rpc UpsertABP       (UpsertABPHandlerReq)       returns     (UpsertABPHandlerRes);
-    rpc ListDevices     (ListDevicesHandlerReq)     returns     (ListDevicesHandlerRes);
+    rpc UpsertOTAA       (UpsertOTAAHandlerReq)      returns     (UpsertOTAAHandlerRes);
+    rpc UpsertABP        (UpsertABPHandlerReq)       returns     (UpsertABPHandlerRes);
+    rpc ListDevices      (ListDevicesHandlerReq)     returns     (ListDevicesHandlerRes);
+    rpc GetDefaultDevice (GetDefaultDeviceReq)       returns     (GetDefaultDeviceRes);
+    rpc SetDefaultDevice (SetDefaultDeviceReq)       returns     (SetDefaultDeviceRes);
 }
