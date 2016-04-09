@@ -58,7 +58,6 @@ func (h component) ListDevices(bctx context.Context, req *core.ListDevicesHandle
 		}
 	}
 
-	// 4. Done
 	return &core.ListDevicesHandlerRes{ABP: abp, OTAA: otaa}, nil
 }
 
@@ -86,7 +85,7 @@ func (h component) UpsertABP(bctx context.Context, req *core.UpsertABPHandlerReq
 		return new(core.UpsertABPHandlerRes), errors.New(errors.Operational, err)
 	}
 
-	// 3. Insert the request in our own storage
+	// 3. Save the device in the local storage
 	h.Ctx.WithField("AppEUI", req.AppEUI).WithField("DevAddr", req.DevAddr).Debug("Request accepted by broker. Registering Device.")
 	entry := devEntry{
 		AppEUI:   req.AppEUI,
@@ -103,7 +102,6 @@ func (h component) UpsertABP(bctx context.Context, req *core.UpsertABPHandlerReq
 	}
 	h.Processed.Remove(append([]byte{1}, append(entry.AppEUI, entry.DevEUI...)...))
 
-	// Done.
 	return new(core.UpsertABPHandlerRes), nil
 }
 
@@ -129,7 +127,7 @@ func (h component) UpsertOTAA(bctx context.Context, req *core.UpsertOTAAHandlerR
 		return new(core.UpsertOTAAHandlerRes), errors.New(errors.Operational, err)
 	}
 
-	// 3. Insert the request in our own storage
+	// 3. Save the device in the local storage
 	h.Ctx.WithField("AppEUI", req.AppEUI).WithField("DevEUI", req.DevEUI).Debug("Request accepted by broker. Registering Device.")
 	var appKey [16]byte
 	copy(appKey[:], req.AppKey)
@@ -143,6 +141,38 @@ func (h component) UpsertOTAA(bctx context.Context, req *core.UpsertOTAAHandlerR
 		return new(core.UpsertOTAAHandlerRes), err
 	}
 
-	// 4. Done.
 	return new(core.UpsertOTAAHandlerRes), nil
+}
+
+// SetDefaultAppKey implements the core.HandlerManager interface
+func (h component) SetDefaultAppKey(bctx context.Context, req *core.SetDefaultAppKeyReq) (*core.SetDefaultAppKeyRes, error) {
+	h.Ctx.Debug("Handle Set Default AppKey Request")
+
+	// 1. Validate the request
+	if len(req.AppEUI) != 8 || len(req.AppKey) != 16 {
+		err := errors.New(errors.Structural, "Invalid request parameters")
+		h.Ctx.WithError(err).Debug("Unable to handle set default AppKey request")
+		return new(core.SetDefaultAppKeyRes), err
+	}
+
+	// 2. Validate the token
+	_, err := h.Broker.ValidateToken(context.Background(), &core.ValidateTokenBrokerReq{
+		Token:  req.Token,
+		AppEUI: req.AppEUI,
+	})
+	if err != nil {
+		h.Ctx.WithError(err).Debug("Broker rejected token")
+		return new(core.SetDefaultAppKeyRes), errors.New(errors.Operational, err)
+	}
+
+	// 3. Set the key in the local storage
+	h.Ctx.WithField("AppEUI", req.AppEUI).Debug("Valid token. Registering default AppKey.")
+	var appKey [16]byte
+	copy(appKey[:], req.AppKey)
+	err = h.DevStorage.setDefault(devDefaultEntry{
+		AppEUI: req.AppEUI,
+		AppKey: appKey,
+	})
+
+	return new(core.SetDefaultAppKeyRes), nil
 }

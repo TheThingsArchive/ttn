@@ -17,6 +17,8 @@ type DevStorage interface {
 	read(appEUI []byte, devEUI []byte) (devEntry, error)
 	readAll(appEUI []byte) ([]devEntry, error)
 	upsert(entry devEntry) error
+	setDefault(entry devDefaultEntry) error
+	getDefault(appEUI []byte) (devDefaultEntry, error)
 	done() error
 }
 
@@ -33,6 +35,11 @@ type devEntry struct {
 	NwkSKey  [16]byte
 }
 
+type devDefaultEntry struct {
+	AppEUI []byte
+	AppKey [16]byte
+}
+
 type devStorage struct {
 	db dbutil.Interface
 }
@@ -47,7 +54,6 @@ func NewDevStorage(name string) (DevStorage, error) {
 	return &devStorage{db: itf}, nil
 }
 
-// read implements the handler.DevStorage interface
 func (s *devStorage) read(appEUI []byte, devEUI []byte) (devEntry, error) {
 	itf, err := s.db.Read(devEUI, &devEntry{}, appEUI)
 	if err != nil {
@@ -56,7 +62,6 @@ func (s *devStorage) read(appEUI []byte, devEUI []byte) (devEntry, error) {
 	return itf.([]devEntry)[0], nil // Type and dimensio guaranteed by db.Read()
 }
 
-// readAll implements the handler.DevStorage interface
 func (s *devStorage) readAll(appEUI []byte) ([]devEntry, error) {
 	itf, err := s.db.ReadAll(&devEntry{}, appEUI)
 	if err != nil {
@@ -65,9 +70,20 @@ func (s *devStorage) readAll(appEUI []byte) ([]devEntry, error) {
 	return itf.([]devEntry), nil
 }
 
-// upsert implements the handler.DevStorage interface
 func (s *devStorage) upsert(entry devEntry) error {
 	return s.db.Update(entry.DevEUI, []encoding.BinaryMarshaler{entry}, entry.AppEUI)
+}
+
+func (s *devStorage) setDefault(entry devDefaultEntry) error {
+	return s.db.Update([]byte("default"), []encoding.BinaryMarshaler{entry}, entry.AppEUI)
+}
+
+func (s *devStorage) getDefault(appEUI []byte) (devDefaultEntry, error) {
+	itf, err := s.db.Read([]byte("default"), &devDefaultEntry{}, appEUI)
+	if err != nil {
+		return devDefaultEntry{}, err
+	}
+	return itf.([]devDefaultEntry)[0], nil
 }
 
 // done implements the handler.DevStorage interface
@@ -100,6 +116,8 @@ func (e *devEntry) UnmarshalBinary(data []byte) error {
 		if len(data) == 16 {
 			e.AppKey = new([16]byte)
 			copy(e.AppKey[:], data)
+		} else {
+			e.AppKey = nil
 		}
 	})
 	rw.Read(func(data []byte) { copy(e.AppSKey[:], data) })
@@ -118,5 +136,21 @@ func (e *devEntry) UnmarshalBinary(data []byte) error {
 		e.DevAddr = make([]byte, len(data))
 		copy(e.DevAddr, data)
 	})
+	return rw.Err()
+}
+
+// MarshalBinary implements the encoding.BinaryMarshaler interface
+func (e devDefaultEntry) MarshalBinary() ([]byte, error) {
+	rw := readwriter.New(nil)
+	rw.Write(e.AppEUI)
+	rw.Write(e.AppKey[:])
+	return rw.Bytes()
+}
+
+// UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
+func (e *devDefaultEntry) UnmarshalBinary(data []byte) error {
+	rw := readwriter.New(data)
+	rw.Read(func(data []byte) { e.AppEUI = data })
+	rw.Read(func(data []byte) { copy(e.AppKey[:], data) })
 	return rw.Err()
 }
