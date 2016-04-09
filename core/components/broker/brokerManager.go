@@ -22,7 +22,7 @@ func (b component) ValidateToken(bctx context.Context, req *core.ValidateTokenBr
 		return new(core.ValidateTokenBrokerRes), err
 	}
 	if err := b.validateToken(bctx, req.Token, req.AppEUI); err != nil {
-		b.Ctx.WithError(err).Debug("Unable to handle ValidateToken request")
+		b.Ctx.WithError(err).Debug("The token is invalid")
 		return new(core.ValidateTokenBrokerRes), err
 	}
 	return new(core.ValidateTokenBrokerRes), nil
