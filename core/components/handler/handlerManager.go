@@ -21,7 +21,6 @@ func (h component) ListDevices(bctx context.Context, req *core.ListDevicesHandle
 	}
 
 	// 2. Validate token and retrieve devices from the storage
-	// TODO: On not found, report gracefully back to caller instead of failing with not found
 	if _, err := h.Broker.ValidateToken(context.Background(), &core.ValidateTokenBrokerReq{AppEUI: req.AppEUI, Token: req.Token}); err != nil {
 		h.Ctx.WithError(err).Debug("Unable to handle list devices request")
 		return new(core.ListDevicesHandlerRes), errors.New(errors.Operational, err)
@@ -167,7 +166,6 @@ func (h component) GetDefaultDevice(bctx context.Context, req *core.GetDefaultDe
 	}
 
 	// 3. Get default device entry from storage
-	// TODO: On not found, report gracefully back to caller instead of failing with not found
 	entry, err := h.DevStorage.getDefault(req.AppEUI)
 	if err != nil {
 		h.Ctx.WithError(err).Debug("Error while trying to retrieve default device")
@@ -205,6 +203,10 @@ func (h component) SetDefaultDevice(bctx context.Context, req *core.SetDefaultDe
 	err = h.DevStorage.setDefault(req.AppEUI, &devDefaultEntry{
 		AppKey: appKey,
 	})
+	if err != nil {
+		h.Ctx.WithError(err).Debug("Storage error")
+		return new(core.SetDefaultDeviceRes), errors.New(errors.Operational, err)
+	}
 
 	return new(core.SetDefaultDeviceRes), nil
 }
