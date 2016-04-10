@@ -171,7 +171,7 @@ func TestStore(t *testing.T) {
 
 		// Check
 		CheckErrors(t, nil, err)
-		Check(t, []devEntry{entry1, entry2}, entries, "Devices entries")
+		Check(t, []devEntry{entry1, entry2}, entries, "Devices Entries")
 	}
 
 	// ------------------
@@ -183,10 +183,14 @@ func TestStore(t *testing.T) {
 		appEUI := []byte{0, 0, 0, 0, 0, 0, 0, 1}
 
 		// Operate
-		_, err := db.getDefault(appEUI)
+		entry, err := db.getDefault(appEUI)
+
+		// Expect
+		var want *devDefaultEntry
 
 		// Check
-		CheckErrors(t, ErrNotFound, err)
+		CheckErrors(t, nil, err)
+		Check(t, want, entry, "Default Entry")
 	}
 
 	// ------------------
@@ -197,18 +201,17 @@ func TestStore(t *testing.T) {
 		// Build
 		appEUI := []byte{1, 2, 3, 4, 5, 6, 7, 8}
 		entry := devDefaultEntry{
-			AppEUI: appEUI,
 			AppKey: [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8},
 		}
 
 		// Operate
-		err := db.setDefault(entry)
+		err := db.setDefault(appEUI, &entry)
 		FatalUnless(t, err)
 		want, err := db.getDefault(appEUI)
 
 		// Check
-		CheckErrors(t, nil, err)
-		Check(t, want, entry, "Default entry")
+		FatalUnless(t, err)
+		Check(t, *want, entry, "Default Entry")
 	}
 
 	// ------------------
@@ -303,7 +306,6 @@ func TestMarshalUnmarshalDevDefaultEntries(t *testing.T) {
 	{
 		Desc(t, "Entry")
 		entry := devDefaultEntry{
-			AppEUI: []byte{1, 2, 3, 4, 5, 6, 7, 8},
 			AppKey: [16]byte{1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2},
 		}
 

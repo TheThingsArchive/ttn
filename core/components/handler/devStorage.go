@@ -17,8 +17,8 @@ type DevStorage interface {
 	read(appEUI []byte, devEUI []byte) (devEntry, error)
 	readAll(appEUI []byte) ([]devEntry, error)
 	upsert(entry devEntry) error
-	setDefault(entry devDefaultEntry) error
-	getDefault(appEUI []byte) (devDefaultEntry, error)
+	setDefault(appEUI []byte, entry *devDefaultEntry) error
+	getDefault(appEUI []byte) (*devDefaultEntry, error)
 	done() error
 }
 
@@ -36,7 +36,6 @@ type devEntry struct {
 }
 
 type devDefaultEntry struct {
-	AppEUI []byte
 	AppKey [16]byte
 }
 
@@ -74,16 +73,19 @@ func (s *devStorage) upsert(entry devEntry) error {
 	return s.db.Update(entry.DevEUI, []encoding.BinaryMarshaler{entry}, entry.AppEUI)
 }
 
-func (s *devStorage) setDefault(entry devDefaultEntry) error {
-	return s.db.Update([]byte("default"), []encoding.BinaryMarshaler{entry}, entry.AppEUI)
+func (s *devStorage) setDefault(appEUI []byte, entry *devDefaultEntry) error {
+	return s.db.Update([]byte("default"), []encoding.BinaryMarshaler{entry}, appEUI)
 }
 
-func (s *devStorage) getDefault(appEUI []byte) (devDefaultEntry, error) {
+func (s *devStorage) getDefault(appEUI []byte) (*devDefaultEntry, error) {
 	itf, err := s.db.Read([]byte("default"), &devDefaultEntry{}, appEUI)
 	if err != nil {
-		return devDefaultEntry{}, err
+		if ferr, ok := err.(errors.Failure); ok && ferr.Nature == errors.NotFound {
+			return nil, nil
+		}
+		return nil, err
 	}
-	return itf.([]devDefaultEntry)[0], nil
+	return &itf.([]devDefaultEntry)[0], nil
 }
 
 // done implements the handler.DevStorage interface
@@ -142,7 +144,6 @@ func (e *devEntry) UnmarshalBinary(data []byte) error {
 // MarshalBinary implements the encoding.BinaryMarshaler interface
 func (e devDefaultEntry) MarshalBinary() ([]byte, error) {
 	rw := readwriter.New(nil)
-	rw.Write(e.AppEUI)
 	rw.Write(e.AppKey[:])
 	return rw.Bytes()
 }
@@ -150,7 +151,6 @@ func (e devDefaultEntry) MarshalBinary() ([]byte, error) {
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface
 func (e *devDefaultEntry) UnmarshalBinary(data []byte) error {
 	rw := readwriter.New(data)
-	rw.Read(func(data []byte) { e.AppEUI = data })
 	rw.Read(func(data []byte) { copy(e.AppKey[:], data) })
 	return rw.Err()
 }

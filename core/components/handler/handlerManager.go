@@ -98,7 +98,7 @@ func (h component) UpsertABP(bctx context.Context, req *core.UpsertABPHandlerReq
 	copy(entry.NwkSKey[:], req.NwkSKey)
 	copy(entry.AppSKey[:], req.AppSKey)
 	if err = h.DevStorage.upsert(entry); err != nil {
-		h.Ctx.WithError(err).Debug("Error while trying to save valid request")
+		h.Ctx.WithError(err).Debug("Error while trying to handle valid request")
 		return new(core.UpsertABPHandlerRes), errors.New(errors.Operational, err)
 	}
 	h.Processed.Remove(append([]byte{1}, append(entry.AppEUI, entry.DevEUI...)...))
@@ -138,7 +138,7 @@ func (h component) UpsertOTAA(bctx context.Context, req *core.UpsertOTAAHandlerR
 		AppKey: &appKey,
 	})
 	if err != nil {
-		h.Ctx.WithError(err).Debug("Error while trying to save valid request")
+		h.Ctx.WithError(err).Debug("Error while trying to handle valid request")
 		return new(core.UpsertOTAAHandlerRes), err
 	}
 
@@ -202,8 +202,7 @@ func (h component) SetDefaultDevice(bctx context.Context, req *core.SetDefaultDe
 	h.Ctx.WithField("AppEUI", req.AppEUI).Debug("Valid token. Registering default device")
 	var appKey [16]byte
 	copy(appKey[:], req.AppKey)
-	err = h.DevStorage.setDefault(devDefaultEntry{
-		AppEUI: req.AppEUI,
+	err = h.DevStorage.setDefault(req.AppEUI, &devDefaultEntry{
 		AppKey: appKey,
 	})
 

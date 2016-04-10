@@ -28,10 +28,11 @@ type MockDevStorage struct {
 		AppEUI []byte
 	}
 	OutGetDefault struct {
-		Entry devDefaultEntry
+		Entry *devDefaultEntry
 	}
 	InSetDefault struct {
-		Entry devDefaultEntry
+		AppEUI []byte
+		Entry  *devDefaultEntry
 	}
 	InDone struct {
 		Called bool
@@ -65,13 +66,13 @@ func (m *MockDevStorage) upsert(entry devEntry) error {
 }
 
 // getDefault implements the DevStorage interface
-func (m *MockDevStorage) getDefault(appEUI []byte) (devDefaultEntry, error) {
+func (m *MockDevStorage) getDefault(appEUI []byte) (*devDefaultEntry, error) {
 	m.InGetDefault.AppEUI = appEUI
 	return m.OutGetDefault.Entry, m.Failures["getDefault"]
 }
 
 // setDefault implements the DevStorage Interface
-func (m *MockDevStorage) setDefault(e devDefaultEntry) error {
+func (m *MockDevStorage) setDefault(appEUI []byte, e *devDefaultEntry) error {
 	m.InSetDefault.Entry = e
 	return m.Failures["setDefault"]
 }

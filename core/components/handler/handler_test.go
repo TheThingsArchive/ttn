@@ -1809,7 +1809,7 @@ func TestHandleJoin(t *testing.T) {
 	// --------------------
 
 	{
-		Desc(t, "Handle invalid join request -> Invalid datarate")
+		Desc(t, "Handle invalid join request: Invalid datarate")
 
 		// Build
 		tmst := time.Now()
@@ -1927,7 +1927,69 @@ func TestHandleJoin(t *testing.T) {
 	// --------------------
 
 	{
-		Desc(t, "Handle invalid join-request -> invalid devEUI")
+		Desc(t, "Handle valid join-request, recover unknown device with default device")
+
+		// Build
+		tmst := time.Now()
+
+		appKey := [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6}
+		req := &core.JoinHandlerReq{
+			AppEUI:   []byte{1, 1, 1, 1, 1, 1, 1, 1},
+			DevEUI:   []byte{3, 3, 3, 3, 3, 3, 3, 3},
+			DevNonce: []byte{14, 42},
+			Metadata: &core.Metadata{
+				DataRate:   "SF7BW125",
+				Frequency:  865.5,
+				Timestamp:  uint32(tmst.Unix() * 1000000),
+				CodingRate: "4/5",
+				DutyRX1:    uint32(dutycycle.StateAvailable),
+				DutyRX2:    uint32(dutycycle.StateAvailable),
+				Rssi:       -20,
+				Lsnr:       5.0,
+			},
+		}
+
+		devStorage := NewMockDevStorage()
+		devStorage.Failures["read"] = errors.New(errors.NotFound, "Mock Error")
+		devStorage.OutGetDefault.Entry = &devDefaultEntry{
+			AppKey: appKey,
+		}
+		pktStorage := NewMockPktStorage()
+		appAdapter := mocks.NewAppClient()
+		broker := mocks.NewAuthBrokerClient()
+
+		payload := lorawan.NewPHYPayload(true)
+		payload.MHDR = lorawan.MHDR{MType: lorawan.JoinRequest, Major: lorawan.LoRaWANR1}
+		joinPayload := lorawan.JoinRequestPayload{}
+		copy(joinPayload.AppEUI[:], req.AppEUI)
+		copy(joinPayload.DevEUI[:], req.DevEUI)
+		copy(joinPayload.DevNonce[:], req.DevNonce)
+		payload.MACPayload = &joinPayload
+		err := payload.SetMIC(lorawan.AES128Key(appKey))
+		FatalUnless(t, err)
+		req.MIC = payload.MIC[:]
+
+		// Operate
+		handler := New(Components{
+			Ctx:        GetLogger(t, "Handler"),
+			Broker:     broker,
+			AppAdapter: appAdapter,
+			DevStorage: devStorage,
+			PktStorage: pktStorage,
+		}, Options{PublicNetAddr: "localhost", PrivateNetAddr: "localhost"})
+		_, err = handler.HandleJoin(context.Background(), req)
+
+		// Check
+		CheckErrors(t, nil, err)
+		Check(t, req.AppEUI, devStorage.InUpsert.Entry.AppEUI, "New Device's AppEUI")
+		Check(t, appKey, *devStorage.InUpsert.Entry.AppKey, "New Device's AppKey")
+		Check(t, req.DevEUI, devStorage.InUpsert.Entry.DevEUI, "New Device's DevEUI")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Handle invalid join-request: invalid devEUI")
 
 		// Build
 		tmst := time.Now()
@@ -1977,7 +2039,7 @@ func TestHandleJoin(t *testing.T) {
 	// --------------------
 
 	{
-		Desc(t, "Handle invalid join-request -> invalid appEUI")
+		Desc(t, "Handle invalid join-request: invalid appEUI")
 
 		// Build
 		tmst := time.Now()
@@ -2027,7 +2089,7 @@ func TestHandleJoin(t *testing.T) {
 	// --------------------
 
 	{
-		Desc(t, "Handle invalid join-request -> invalid devNonce")
+		Desc(t, "Handle invalid join-request: invalid devNonce")
 
 		// Build
 		tmst := time.Now()
@@ -2077,7 +2139,7 @@ func TestHandleJoin(t *testing.T) {
 	// --------------------
 
 	{
-		Desc(t, "Handle invalid join-request -> invalid Metadata")
+		Desc(t, "Handle invalid join-request: invalid Metadata")
 
 		// Build
 		req := &core.JoinHandlerReq{
