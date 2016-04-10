@@ -46,7 +46,22 @@ var devicesCmd = &cobra.Command{
 		}
 
 		manager := getHandlerManager()
-		res, err := manager.ListDevices(context.Background(), &core.ListDevicesHandlerReq{
+		defaultDevice, err := manager.GetDefaultDevice(context.Background(), &core.GetDefaultDeviceReq{
+			Token:  auth.AccessToken,
+			AppEUI: appEUI,
+		})
+		if err != nil {
+			ctx.WithError(err).Fatal("Could not get default device settings")
+		}
+		if defaultDevice != nil {
+			ctx.Warn("Application activates new devices with default AppKey")
+			fmt.Printf("Default AppKey:  %X\n", defaultDevice.AppKey)
+			fmt.Printf("                 {%s}\n", cStyle(defaultDevice.AppKey))
+		} else {
+			ctx.Info("Application does not activate new devices with default AppKey")
+		}
+
+		devices, err := manager.ListDevices(context.Background(), &core.ListDevicesHandlerReq{
 			Token:  auth.AccessToken,
 			AppEUI: appEUI,
 		})
@@ -54,12 +69,12 @@ var devicesCmd = &cobra.Command{
 			ctx.WithError(err).Fatal("Could not get device list")
 		}
 
-		ctx.Infof("Found %d personalized devices (ABP)", len(res.ABP))
+		ctx.Infof("Found %d personalized devices (ABP)", len(devices.ABP))
 
 		table := uitable.New()
 		table.MaxColWidth = 70
 		table.AddRow("DevAddr", "FCntUp", "FCntDown")
-		for _, device := range res.ABP {
+		for _, device := range devices.ABP {
 			devAddr := fmt.Sprintf("%X", device.DevAddr)
 			table.AddRow(devAddr, device.FCntUp, device.FCntDown)
 		}
@@ -68,11 +83,11 @@ var devicesCmd = &cobra.Command{
 		fmt.Println(table)
 		fmt.Println()
 
-		ctx.Infof("Found %d dynamic devices (OTAA)", len(res.OTAA))
+		ctx.Infof("Found %d dynamic devices (OTAA)", len(devices.OTAA))
 		table = uitable.New()
 		table.MaxColWidth = 40
 		table.AddRow("DevEUI", "DevAddr", "FCntUp", "FCntDown")
-		for _, device := range res.OTAA {
+		for _, device := range devices.OTAA {
 			devEUI := fmt.Sprintf("%X", device.DevEUI)
 			devAddr := fmt.Sprintf("%X", device.DevAddr)
 			table.AddRow(devEUI, devAddr, device.FCntUp, device.FCntDown)
@@ -83,7 +98,6 @@ var devicesCmd = &cobra.Command{
 		fmt.Println()
 
 		ctx.Info("Run 'ttnctl devices info [DevAddr|DevEUI]' for more information about a specific device")
-
 	},
 }
 
