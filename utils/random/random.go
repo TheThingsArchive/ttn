@@ -87,3 +87,10 @@ func Lsnr() float32 {
 	x := float64(src.Int31()) * float64(2e-9)
 	return float32(math.Floor((-0.1*math.Exp(x)+5.5)*10) / 10)
 }
+
+// Bytes generates a random byte slice of length n
+func Bytes(n int) []byte {
+	p := make([]byte, n)
+	src.Read(p)
+	return p
+}

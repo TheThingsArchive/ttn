@@ -10,6 +10,8 @@ import (
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/components/handler"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
+	"github.com/TheThingsNetwork/ttn/utils/random"
+	"github.com/apex/log"
 	"github.com/gosuri/uitable"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -202,7 +204,7 @@ var devicesRegisterCmd = &cobra.Command{
 	Short: "Create or Update registrations on the Handler",
 	Long:  `ttnctl devices register creates or updates an OTAA registration on the Handler`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) < 2 {
+		if len(args) == 0 {
 			cmd.Help()
 			return
 		}
@@ -214,9 +216,15 @@ var devicesRegisterCmd = &cobra.Command{
 			ctx.Fatalf("Invalid DevEUI: %s", err)
 		}
 
-		appKey, err := util.Parse128(args[1])
-		if err != nil {
-			ctx.Fatalf("Invalid AppKey: %s", err)
+		var appKey []byte
+		if len(args) >= 2 {
+			appKey, err = util.Parse128(args[1])
+			if err != nil {
+				ctx.Fatalf("Invalid AppKey: %s", err)
+			}
+		} else {
+			ctx.Info("Generating random AppKey...")
+			appKey = random.Bytes(16)
 		}
 
 		auth, err := util.LoadAuth(viper.GetString("ttn-account-server"))
@@ -237,7 +245,10 @@ var devicesRegisterCmd = &cobra.Command{
 		if err != nil || res == nil {
 			ctx.WithError(err).Fatal("Could not register device")
 		}
-		ctx.Info("Ok")
+		ctx.WithFields(log.Fields{
+			"DevEUI": devEUI,
+			"AppKey": appKey,
+		}).Info("Registered device")
 	},
 }
 
@@ -247,7 +258,7 @@ var devicesRegisterPersonalizedCmd = &cobra.Command{
 	Short: "Create or Update ABP registrations on the Handler",
 	Long:  `ttnctl devices register creates or updates an ABP registration on the Handler`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) < 3 {
+		if len(args) == 0 {
 			cmd.Help()
 			return
 		}
@@ -259,14 +270,20 @@ var devicesRegisterPersonalizedCmd = &cobra.Command{
 			ctx.Fatalf("Invalid DevAddr: %s", err)
 		}
 
-		nwkSKey, err := util.Parse128(args[1])
-		if err != nil {
-			ctx.Fatalf("Invalid NwkSKey: %s", err)
-		}
-
-		appSKey, err := util.Parse128(args[2])
-		if err != nil {
-			ctx.Fatalf("Invalid AppSKey: %s", err)
+		var nwkSKey, appSKey []byte
+		if len(args) >= 3 {
+			nwkSKey, err = util.Parse128(args[1])
+			if err != nil {
+				ctx.Fatalf("Invalid NwkSKey: %s", err)
+			}
+			appSKey, err = util.Parse128(args[2])
+			if err != nil {
+				ctx.Fatalf("Invalid AppSKey: %s", err)
+			}
+		} else {
+			ctx.Info("Generating random NwkSKey and AppSKey...")
+			nwkSKey = random.Bytes(16)
+			appSKey = random.Bytes(16)
 		}
 
 		auth, err := util.LoadAuth(viper.GetString("ttn-account-server"))
@@ -288,7 +305,11 @@ var devicesRegisterPersonalizedCmd = &cobra.Command{
 		if err != nil || res == nil {
 			ctx.WithError(err).Fatal("Could not register device")
 		}
-		ctx.Info("Ok")
+		ctx.WithFields(log.Fields{
+			"DevAddr": devAddr,
+			"NwkSKey": nwkSKey,
+			"AppSKey": appSKey,
+		}).Info("Registered personalized device")
 	},
 }
 
