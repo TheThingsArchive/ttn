@@ -345,9 +345,16 @@ register [DevEUI] [AppKey]`,
 
 		appEUI := util.GetAppEUI(ctx)
 
-		appKey, err := util.Parse128(args[0])
-		if err != nil {
-			ctx.Fatalf("Invalid AppKey: %s", err)
+		var appKey []byte
+		var err error
+		if len(args) >= 2 {
+			appKey, err = util.Parse128(args[0])
+			if err != nil {
+				ctx.Fatalf("Invalid AppKey: %s", err)
+			}
+		} else {
+			ctx.Info("Generating random AppKey...")
+			appKey = random.Bytes(16)
 		}
 
 		auth, err := util.LoadAuth(viper.GetString("ttn-account-server"))
