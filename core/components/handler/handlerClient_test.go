@@ -961,9 +961,10 @@ func TestSetDefault(t *testing.T) {
 
 		// Expect
 		var wantErr *string
-		var wantBrkCall = &core.ValidateTokenBrokerReq{
-			Token:  req.Token,
-			AppEUI: req.AppEUI,
+		var wantBrkCall = &core.ValidateOTAABrokerReq{
+			Token:      req.Token,
+			AppEUI:     req.AppEUI,
+			NetAddress: "PrivateNetAddrAnnounce",
 		}
 		var wantRes = new(core.SetDefaultDeviceRes)
 
@@ -972,7 +973,7 @@ func TestSetDefault(t *testing.T) {
 
 		// Check
 		CheckErrors(t, wantErr, err)
-		Check(t, wantBrkCall, br.InValidateToken.Req, "Broker Calls")
+		Check(t, wantBrkCall, br.InValidateOTAA.Req, "Broker Calls")
 		Check(t, wantRes, res, "Handler responses")
 	}
 
@@ -1002,7 +1003,7 @@ func TestSetDefault(t *testing.T) {
 
 		// Expect
 		var wantErr = ErrStructural
-		var wantBrkCall *core.ValidateTokenBrokerReq
+		var wantBrkCall *core.ValidateOTAABrokerReq
 		var wantRes = new(core.SetDefaultDeviceRes)
 
 		// Operate
@@ -1010,7 +1011,7 @@ func TestSetDefault(t *testing.T) {
 
 		// Check
 		CheckErrors(t, wantErr, err)
-		Check(t, wantBrkCall, br.InValidateToken.Req, "Broker Calls")
+		Check(t, wantBrkCall, br.InValidateOTAA.Req, "Broker Calls")
 		Check(t, wantRes, res, "Handler responses")
 	}
 
@@ -1040,7 +1041,7 @@ func TestSetDefault(t *testing.T) {
 
 		// Expect
 		var wantErr = ErrStructural
-		var wantBrkCall *core.ValidateTokenBrokerReq
+		var wantBrkCall *core.ValidateOTAABrokerReq
 		var wantRes = new(core.SetDefaultDeviceRes)
 
 		// Operate
@@ -1048,7 +1049,7 @@ func TestSetDefault(t *testing.T) {
 
 		// Check
 		CheckErrors(t, wantErr, err)
-		Check(t, wantBrkCall, br.InValidateToken.Req, "Broker Calls")
+		Check(t, wantBrkCall, br.InValidateOTAA.Req, "Broker Calls")
 		Check(t, wantRes, res, "Handler responses")
 	}
 
@@ -1059,7 +1060,7 @@ func TestSetDefault(t *testing.T) {
 
 		// Build
 		br := mocks.NewAuthBrokerClient()
-		br.Failures["ValidateToken"] = errors.New(errors.Operational, "Mock Error")
+		br.Failures["ValidateOTAA"] = errors.New(errors.Operational, "Mock Error")
 		st := NewMockDevStorage()
 		h := New(
 			Components{
@@ -1079,9 +1080,10 @@ func TestSetDefault(t *testing.T) {
 
 		// Expect
 		var wantErr = ErrOperational
-		var wantBrkCall = &core.ValidateTokenBrokerReq{
-			Token:  req.Token,
-			AppEUI: req.AppEUI,
+		var wantBrkCall = &core.ValidateOTAABrokerReq{
+			Token:      req.Token,
+			AppEUI:     req.AppEUI,
+			NetAddress: "PrivateNetAddrAnnounce",
 		}
 		var wantRes = new(core.SetDefaultDeviceRes)
 
@@ -1090,7 +1092,7 @@ func TestSetDefault(t *testing.T) {
 
 		// Check
 		CheckErrors(t, wantErr, err)
-		Check(t, wantBrkCall, br.InValidateToken.Req, "Broker Calls")
+		Check(t, wantBrkCall, br.InValidateOTAA.Req, "Broker Calls")
 		Check(t, wantRes, res, "Handler responses")
 	}
 
@@ -1121,9 +1123,10 @@ func TestSetDefault(t *testing.T) {
 
 		// Expect
 		var wantErr = ErrOperational
-		var wantBrkCall = &core.ValidateTokenBrokerReq{
-			Token:  req.Token,
-			AppEUI: req.AppEUI,
+		var wantBrkCall = &core.ValidateOTAABrokerReq{
+			Token:      req.Token,
+			AppEUI:     req.AppEUI,
+			NetAddress: "PrivateNetAddrAnnounce",
 		}
 		var wantRes = new(core.SetDefaultDeviceRes)
 
@@ -1132,7 +1135,7 @@ func TestSetDefault(t *testing.T) {
 
 		// Check
 		CheckErrors(t, wantErr, err)
-		Check(t, wantBrkCall, br.InValidateToken.Req, "Broker Calls")
+		Check(t, wantBrkCall, br.InValidateOTAA.Req, "Broker Calls")
 		Check(t, wantRes, res, "Handler responses")
 	}
 }

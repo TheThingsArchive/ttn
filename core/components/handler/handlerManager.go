@@ -21,7 +21,7 @@ func (h component) ListDevices(bctx context.Context, req *core.ListDevicesHandle
 	}
 
 	// 2. Validate token and retrieve devices from the storage
-	if _, err := h.Broker.ValidateOTAA(context.Background(), &core.ValidateOTAABrokerReq{AppEUI: req.AppEUI, Token: req.Token}); err != nil {
+	if _, err := h.Broker.ValidateToken(context.Background(), &core.ValidateTokenBrokerReq{AppEUI: req.AppEUI, Token: req.Token}); err != nil {
 		h.Ctx.WithError(err).Debug("Unable to handle list devices request")
 		return new(core.ListDevicesHandlerRes), errors.New(errors.Operational, err)
 	}
