@@ -30,7 +30,7 @@ ttnctlpkg = ttnctl-$(GOOS)-$(GOARCH)
 ttnbin = $(ttnpkg)$(GOEXE)
 ttnctlbin = $(ttnctlpkg)$(GOEXE)
 
-.PHONY: all clean deps test-deps test fmt vet cover build docker package
+.PHONY: all clean deps test-deps build-deps proto test fmt vet cover build docker package
 
 all: clean deps build package
 
@@ -39,6 +39,12 @@ deps:
 
 test-deps:
 	$(GOCMD) get -d -v $(TEST_DEPS)
+
+proto-deps:
+	$(GOCMD) get -v github.com/gogo/protobuf/protoc-gen-gofast
+
+proto:
+	find core/protos -name '*.proto' | xargs protoc --gofast_out=plugins=grpc:./core -I=core/protos
 
 cover-deps:
 	if ! $(GOCMD) get github.com/golang/tools/cmd/cover; then $(GOCMD) get golang.org/x/tools/cmd/cover; fi

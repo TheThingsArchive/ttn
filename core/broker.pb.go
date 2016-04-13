@@ -299,37 +299,29 @@ func (m *JoinBrokerReq) MarshalTo(data []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.AppEUI != nil {
-		if len(m.AppEUI) > 0 {
-			data[i] = 0xa
-			i++
-			i = encodeVarintBroker(data, i, uint64(len(m.AppEUI)))
-			i += copy(data[i:], m.AppEUI)
-		}
+	if len(m.AppEUI) > 0 {
+		data[i] = 0xa
+		i++
+		i = encodeVarintBroker(data, i, uint64(len(m.AppEUI)))
+		i += copy(data[i:], m.AppEUI)
 	}
-	if m.DevEUI != nil {
-		if len(m.DevEUI) > 0 {
-			data[i] = 0x12
-			i++
-			i = encodeVarintBroker(data, i, uint64(len(m.DevEUI)))
-			i += copy(data[i:], m.DevEUI)
-		}
+	if len(m.DevEUI) > 0 {
+		data[i] = 0x12
+		i++
+		i = encodeVarintBroker(data, i, uint64(len(m.DevEUI)))
+		i += copy(data[i:], m.DevEUI)
 	}
-	if m.DevNonce != nil {
-		if len(m.DevNonce) > 0 {
-			data[i] = 0x1a
-			i++
-			i = encodeVarintBroker(data, i, uint64(len(m.DevNonce)))
-			i += copy(data[i:], m.DevNonce)
-		}
+	if len(m.DevNonce) > 0 {
+		data[i] = 0x1a
+		i++
+		i = encodeVarintBroker(data, i, uint64(len(m.DevNonce)))
+		i += copy(data[i:], m.DevNonce)
 	}
-	if m.MIC != nil {
-		if len(m.MIC) > 0 {
-			data[i] = 0x22
-			i++
-			i = encodeVarintBroker(data, i, uint64(len(m.MIC)))
-			i += copy(data[i:], m.MIC)
-		}
+	if len(m.MIC) > 0 {
+		data[i] = 0x22
+		i++
+		i = encodeVarintBroker(data, i, uint64(len(m.MIC)))
+		i += copy(data[i:], m.MIC)
 	}
 	if m.Metadata != nil {
 		data[i] = 0x2a
@@ -369,13 +361,11 @@ func (m *JoinBrokerRes) MarshalTo(data []byte) (int, error) {
 		}
 		i += n6
 	}
-	if m.DevAddr != nil {
-		if len(m.DevAddr) > 0 {
-			data[i] = 0x12
-			i++
-			i = encodeVarintBroker(data, i, uint64(len(m.DevAddr)))
-			i += copy(data[i:], m.DevAddr)
-		}
+	if len(m.DevAddr) > 0 {
+		data[i] = 0x12
+		i++
+		i = encodeVarintBroker(data, i, uint64(len(m.DevAddr)))
+		i += copy(data[i:], m.DevAddr)
 	}
 	if m.Metadata != nil {
 		data[i] = 0x1a
@@ -448,29 +438,21 @@ func (m *DataBrokerRes) Size() (n int) {
 func (m *JoinBrokerReq) Size() (n int) {
 	var l int
 	_ = l
-	if m.AppEUI != nil {
-		l = len(m.AppEUI)
-		if l > 0 {
-			n += 1 + l + sovBroker(uint64(l))
-		}
+	l = len(m.AppEUI)
+	if l > 0 {
+		n += 1 + l + sovBroker(uint64(l))
 	}
-	if m.DevEUI != nil {
-		l = len(m.DevEUI)
-		if l > 0 {
-			n += 1 + l + sovBroker(uint64(l))
-		}
+	l = len(m.DevEUI)
+	if l > 0 {
+		n += 1 + l + sovBroker(uint64(l))
 	}
-	if m.DevNonce != nil {
-		l = len(m.DevNonce)
-		if l > 0 {
-			n += 1 + l + sovBroker(uint64(l))
-		}
+	l = len(m.DevNonce)
+	if l > 0 {
+		n += 1 + l + sovBroker(uint64(l))
 	}
-	if m.MIC != nil {
-		l = len(m.MIC)
-		if l > 0 {
-			n += 1 + l + sovBroker(uint64(l))
-		}
+	l = len(m.MIC)
+	if l > 0 {
+		n += 1 + l + sovBroker(uint64(l))
 	}
 	if m.Metadata != nil {
 		l = m.Metadata.Size()
@@ -486,11 +468,9 @@ func (m *JoinBrokerRes) Size() (n int) {
 		l = m.Payload.Size()
 		n += 1 + l + sovBroker(uint64(l))
 	}
-	if m.DevAddr != nil {
-		l = len(m.DevAddr)
-		if l > 0 {
-			n += 1 + l + sovBroker(uint64(l))
-		}
+	l = len(m.DevAddr)
+	if l > 0 {
+		n += 1 + l + sovBroker(uint64(l))
 	}
 	if m.Metadata != nil {
 		l = m.Metadata.Size()

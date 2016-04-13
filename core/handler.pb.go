@@ -271,21 +271,17 @@ func (m *DataUpHandlerReq) MarshalTo(data []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.AppEUI != nil {
-		if len(m.AppEUI) > 0 {
-			data[i] = 0xa
-			i++
-			i = encodeVarintHandler(data, i, uint64(len(m.AppEUI)))
-			i += copy(data[i:], m.AppEUI)
-		}
+	if len(m.AppEUI) > 0 {
+		data[i] = 0xa
+		i++
+		i = encodeVarintHandler(data, i, uint64(len(m.AppEUI)))
+		i += copy(data[i:], m.AppEUI)
 	}
-	if m.DevEUI != nil {
-		if len(m.DevEUI) > 0 {
-			data[i] = 0x12
-			i++
-			i = encodeVarintHandler(data, i, uint64(len(m.DevEUI)))
-			i += copy(data[i:], m.DevEUI)
-		}
+	if len(m.DevEUI) > 0 {
+		data[i] = 0x12
+		i++
+		i = encodeVarintHandler(data, i, uint64(len(m.DevEUI)))
+		i += copy(data[i:], m.DevEUI)
 	}
 	if m.FCnt != 0 {
 		data[i] = 0x50
@@ -302,15 +298,13 @@ func (m *DataUpHandlerReq) MarshalTo(data []byte) (int, error) {
 		i++
 		i = encodeVarintHandler(data, i, uint64(m.MType))
 	}
-	if m.Payload != nil {
-		if len(m.Payload) > 0 {
-			data[i] = 0xa2
-			i++
-			data[i] = 0x1
-			i++
-			i = encodeVarintHandler(data, i, uint64(len(m.Payload)))
-			i += copy(data[i:], m.Payload)
-		}
+	if len(m.Payload) > 0 {
+		data[i] = 0xa2
+		i++
+		data[i] = 0x1
+		i++
+		i = encodeVarintHandler(data, i, uint64(len(m.Payload)))
+		i += copy(data[i:], m.Payload)
 	}
 	if m.Metadata != nil {
 		data[i] = 0xf2
@@ -384,31 +378,25 @@ func (m *DataDownHandlerReq) MarshalTo(data []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.AppEUI != nil {
-		if len(m.AppEUI) > 0 {
-			data[i] = 0xa
-			i++
-			i = encodeVarintHandler(data, i, uint64(len(m.AppEUI)))
-			i += copy(data[i:], m.AppEUI)
-		}
+	if len(m.AppEUI) > 0 {
+		data[i] = 0xa
+		i++
+		i = encodeVarintHandler(data, i, uint64(len(m.AppEUI)))
+		i += copy(data[i:], m.AppEUI)
 	}
-	if m.DevEUI != nil {
-		if len(m.DevEUI) > 0 {
-			data[i] = 0x12
-			i++
-			i = encodeVarintHandler(data, i, uint64(len(m.DevEUI)))
-			i += copy(data[i:], m.DevEUI)
-		}
+	if len(m.DevEUI) > 0 {
+		data[i] = 0x12
+		i++
+		i = encodeVarintHandler(data, i, uint64(len(m.DevEUI)))
+		i += copy(data[i:], m.DevEUI)
 	}
-	if m.Payload != nil {
-		if len(m.Payload) > 0 {
-			data[i] = 0xa2
-			i++
-			data[i] = 0x1
-			i++
-			i = encodeVarintHandler(data, i, uint64(len(m.Payload)))
-			i += copy(data[i:], m.Payload)
-		}
+	if len(m.Payload) > 0 {
+		data[i] = 0xa2
+		i++
+		data[i] = 0x1
+		i++
+		i = encodeVarintHandler(data, i, uint64(len(m.Payload)))
+		i += copy(data[i:], m.Payload)
 	}
 	if len(m.TTL) > 0 {
 		data[i] = 0xf2
@@ -454,37 +442,29 @@ func (m *JoinHandlerReq) MarshalTo(data []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.AppEUI != nil {
-		if len(m.AppEUI) > 0 {
-			data[i] = 0xa
-			i++
-			i = encodeVarintHandler(data, i, uint64(len(m.AppEUI)))
-			i += copy(data[i:], m.AppEUI)
-		}
+	if len(m.AppEUI) > 0 {
+		data[i] = 0xa
+		i++
+		i = encodeVarintHandler(data, i, uint64(len(m.AppEUI)))
+		i += copy(data[i:], m.AppEUI)
 	}
-	if m.DevEUI != nil {
-		if len(m.DevEUI) > 0 {
-			data[i] = 0x12
-			i++
-			i = encodeVarintHandler(data, i, uint64(len(m.DevEUI)))
-			i += copy(data[i:], m.DevEUI)
-		}
+	if len(m.DevEUI) > 0 {
+		data[i] = 0x12
+		i++
+		i = encodeVarintHandler(data, i, uint64(len(m.DevEUI)))
+		i += copy(data[i:], m.DevEUI)
 	}
-	if m.DevNonce != nil {
-		if len(m.DevNonce) > 0 {
-			data[i] = 0x52
-			i++
-			i = encodeVarintHandler(data, i, uint64(len(m.DevNonce)))
-			i += copy(data[i:], m.DevNonce)
-		}
+	if len(m.DevNonce) > 0 {
+		data[i] = 0x52
+		i++
+		i = encodeVarintHandler(data, i, uint64(len(m.DevNonce)))
+		i += copy(data[i:], m.DevNonce)
 	}
-	if m.MIC != nil {
-		if len(m.MIC) > 0 {
-			data[i] = 0x5a
-			i++
-			i = encodeVarintHandler(data, i, uint64(len(m.MIC)))
-			i += copy(data[i:], m.MIC)
-		}
+	if len(m.MIC) > 0 {
+		data[i] = 0x5a
+		i++
+		i = encodeVarintHandler(data, i, uint64(len(m.MIC)))
+		i += copy(data[i:], m.MIC)
 	}
 	if m.Metadata != nil {
 		data[i] = 0xf2
@@ -516,13 +496,11 @@ func (m *JoinHandlerRes) MarshalTo(data []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.DevAddr != nil {
-		if len(m.DevAddr) > 0 {
-			data[i] = 0xa
-			i++
-			i = encodeVarintHandler(data, i, uint64(len(m.DevAddr)))
-			i += copy(data[i:], m.DevAddr)
-		}
+	if len(m.DevAddr) > 0 {
+		data[i] = 0xa
+		i++
+		i = encodeVarintHandler(data, i, uint64(len(m.DevAddr)))
+		i += copy(data[i:], m.DevAddr)
 	}
 	if m.Payload != nil {
 		data[i] = 0xa2
@@ -536,15 +514,13 @@ func (m *JoinHandlerRes) MarshalTo(data []byte) (int, error) {
 		}
 		i += n5
 	}
-	if m.NwkSKey != nil {
-		if len(m.NwkSKey) > 0 {
-			data[i] = 0xaa
-			i++
-			data[i] = 0x1
-			i++
-			i = encodeVarintHandler(data, i, uint64(len(m.NwkSKey)))
-			i += copy(data[i:], m.NwkSKey)
-		}
+	if len(m.NwkSKey) > 0 {
+		data[i] = 0xaa
+		i++
+		data[i] = 0x1
+		i++
+		i = encodeVarintHandler(data, i, uint64(len(m.NwkSKey)))
+		i += copy(data[i:], m.NwkSKey)
 	}
 	if m.Metadata != nil {
 		data[i] = 0xf2
@@ -591,17 +567,13 @@ func encodeVarintHandler(data []byte, offset int, v uint64) int {
 func (m *DataUpHandlerReq) Size() (n int) {
 	var l int
 	_ = l
-	if m.AppEUI != nil {
-		l = len(m.AppEUI)
-		if l > 0 {
-			n += 1 + l + sovHandler(uint64(l))
-		}
+	l = len(m.AppEUI)
+	if l > 0 {
+		n += 1 + l + sovHandler(uint64(l))
 	}
-	if m.DevEUI != nil {
-		l = len(m.DevEUI)
-		if l > 0 {
-			n += 1 + l + sovHandler(uint64(l))
-		}
+	l = len(m.DevEUI)
+	if l > 0 {
+		n += 1 + l + sovHandler(uint64(l))
 	}
 	if m.FCnt != 0 {
 		n += 1 + sovHandler(uint64(m.FCnt))
@@ -612,11 +584,9 @@ func (m *DataUpHandlerReq) Size() (n int) {
 	if m.MType != 0 {
 		n += 1 + sovHandler(uint64(m.MType))
 	}
-	if m.Payload != nil {
-		l = len(m.Payload)
-		if l > 0 {
-			n += 2 + l + sovHandler(uint64(l))
-		}
+	l = len(m.Payload)
+	if l > 0 {
+		n += 2 + l + sovHandler(uint64(l))
 	}
 	if m.Metadata != nil {
 		l = m.Metadata.Size()
@@ -642,23 +612,17 @@ func (m *DataUpHandlerRes) Size() (n int) {
 func (m *DataDownHandlerReq) Size() (n int) {
 	var l int
 	_ = l
-	if m.AppEUI != nil {
-		l = len(m.AppEUI)
-		if l > 0 {
-			n += 1 + l + sovHandler(uint64(l))
-		}
+	l = len(m.AppEUI)
+	if l > 0 {
+		n += 1 + l + sovHandler(uint64(l))
 	}
-	if m.DevEUI != nil {
-		l = len(m.DevEUI)
-		if l > 0 {
-			n += 1 + l + sovHandler(uint64(l))
-		}
+	l = len(m.DevEUI)
+	if l > 0 {
+		n += 1 + l + sovHandler(uint64(l))
 	}
-	if m.Payload != nil {
-		l = len(m.Payload)
-		if l > 0 {
-			n += 2 + l + sovHandler(uint64(l))
-		}
+	l = len(m.Payload)
+	if l > 0 {
+		n += 2 + l + sovHandler(uint64(l))
 	}
 	l = len(m.TTL)
 	if l > 0 {
@@ -676,29 +640,21 @@ func (m *DataDownHandlerRes) Size() (n int) {
 func (m *JoinHandlerReq) Size() (n int) {
 	var l int
 	_ = l
-	if m.AppEUI != nil {
-		l = len(m.AppEUI)
-		if l > 0 {
-			n += 1 + l + sovHandler(uint64(l))
-		}
+	l = len(m.AppEUI)
+	if l > 0 {
+		n += 1 + l + sovHandler(uint64(l))
 	}
-	if m.DevEUI != nil {
-		l = len(m.DevEUI)
-		if l > 0 {
-			n += 1 + l + sovHandler(uint64(l))
-		}
+	l = len(m.DevEUI)
+	if l > 0 {
+		n += 1 + l + sovHandler(uint64(l))
 	}
-	if m.DevNonce != nil {
-		l = len(m.DevNonce)
-		if l > 0 {
-			n += 1 + l + sovHandler(uint64(l))
-		}
+	l = len(m.DevNonce)
+	if l > 0 {
+		n += 1 + l + sovHandler(uint64(l))
 	}
-	if m.MIC != nil {
-		l = len(m.MIC)
-		if l > 0 {
-			n += 1 + l + sovHandler(uint64(l))
-		}
+	l = len(m.MIC)
+	if l > 0 {
+		n += 1 + l + sovHandler(uint64(l))
 	}
 	if m.Metadata != nil {
 		l = m.Metadata.Size()
@@ -710,21 +666,17 @@ func (m *JoinHandlerReq) Size() (n int) {
 func (m *JoinHandlerRes) Size() (n int) {
 	var l int
 	_ = l
-	if m.DevAddr != nil {
-		l = len(m.DevAddr)
-		if l > 0 {
-			n += 1 + l + sovHandler(uint64(l))
-		}
+	l = len(m.DevAddr)
+	if l > 0 {
+		n += 1 + l + sovHandler(uint64(l))
 	}
 	if m.Payload != nil {
 		l = m.Payload.Size()
 		n += 2 + l + sovHandler(uint64(l))
 	}
-	if m.NwkSKey != nil {
-		l = len(m.NwkSKey)
-		if l > 0 {
-			n += 2 + l + sovHandler(uint64(l))
-		}
+	l = len(m.NwkSKey)
+	if l > 0 {
+		n += 2 + l + sovHandler(uint64(l))
 	}
 	if m.Metadata != nil {
 		l = m.Metadata.Size()

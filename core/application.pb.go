@@ -249,21 +249,17 @@ func (m *DataAppReq) MarshalTo(data []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.AppEUI != nil {
-		if len(m.AppEUI) > 0 {
-			data[i] = 0xa
-			i++
-			i = encodeVarintApplication(data, i, uint64(len(m.AppEUI)))
-			i += copy(data[i:], m.AppEUI)
-		}
+	if len(m.AppEUI) > 0 {
+		data[i] = 0xa
+		i++
+		i = encodeVarintApplication(data, i, uint64(len(m.AppEUI)))
+		i += copy(data[i:], m.AppEUI)
 	}
-	if m.DevEUI != nil {
-		if len(m.DevEUI) > 0 {
-			data[i] = 0x12
-			i++
-			i = encodeVarintApplication(data, i, uint64(len(m.DevEUI)))
-			i += copy(data[i:], m.DevEUI)
-		}
+	if len(m.DevEUI) > 0 {
+		data[i] = 0x12
+		i++
+		i = encodeVarintApplication(data, i, uint64(len(m.DevEUI)))
+		i += copy(data[i:], m.DevEUI)
 	}
 	if m.FPort != 0 {
 		data[i] = 0x50
@@ -275,15 +271,13 @@ func (m *DataAppReq) MarshalTo(data []byte) (int, error) {
 		i++
 		i = encodeVarintApplication(data, i, uint64(m.FCnt))
 	}
-	if m.Payload != nil {
-		if len(m.Payload) > 0 {
-			data[i] = 0xa2
-			i++
-			data[i] = 0x1
-			i++
-			i = encodeVarintApplication(data, i, uint64(len(m.Payload)))
-			i += copy(data[i:], m.Payload)
-		}
+	if len(m.Payload) > 0 {
+		data[i] = 0xa2
+		i++
+		data[i] = 0x1
+		i++
+		i = encodeVarintApplication(data, i, uint64(len(m.Payload)))
+		i += copy(data[i:], m.Payload)
 	}
 	if len(m.Metadata) > 0 {
 		for _, msg := range m.Metadata {
@@ -335,21 +329,17 @@ func (m *JoinAppReq) MarshalTo(data []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.AppEUI != nil {
-		if len(m.AppEUI) > 0 {
-			data[i] = 0xa
-			i++
-			i = encodeVarintApplication(data, i, uint64(len(m.AppEUI)))
-			i += copy(data[i:], m.AppEUI)
-		}
+	if len(m.AppEUI) > 0 {
+		data[i] = 0xa
+		i++
+		i = encodeVarintApplication(data, i, uint64(len(m.AppEUI)))
+		i += copy(data[i:], m.AppEUI)
 	}
-	if m.DevEUI != nil {
-		if len(m.DevEUI) > 0 {
-			data[i] = 0x12
-			i++
-			i = encodeVarintApplication(data, i, uint64(len(m.DevEUI)))
-			i += copy(data[i:], m.DevEUI)
-		}
+	if len(m.DevEUI) > 0 {
+		data[i] = 0x12
+		i++
+		i = encodeVarintApplication(data, i, uint64(len(m.DevEUI)))
+		i += copy(data[i:], m.DevEUI)
 	}
 	if len(m.Metadata) > 0 {
 		for _, msg := range m.Metadata {
@@ -416,17 +406,13 @@ func encodeVarintApplication(data []byte, offset int, v uint64) int {
 func (m *DataAppReq) Size() (n int) {
 	var l int
 	_ = l
-	if m.AppEUI != nil {
-		l = len(m.AppEUI)
-		if l > 0 {
-			n += 1 + l + sovApplication(uint64(l))
-		}
+	l = len(m.AppEUI)
+	if l > 0 {
+		n += 1 + l + sovApplication(uint64(l))
 	}
-	if m.DevEUI != nil {
-		l = len(m.DevEUI)
-		if l > 0 {
-			n += 1 + l + sovApplication(uint64(l))
-		}
+	l = len(m.DevEUI)
+	if l > 0 {
+		n += 1 + l + sovApplication(uint64(l))
 	}
 	if m.FPort != 0 {
 		n += 1 + sovApplication(uint64(m.FPort))
@@ -434,11 +420,9 @@ func (m *DataAppReq) Size() (n int) {
 	if m.FCnt != 0 {
 		n += 1 + sovApplication(uint64(m.FCnt))
 	}
-	if m.Payload != nil {
-		l = len(m.Payload)
-		if l > 0 {
-			n += 2 + l + sovApplication(uint64(l))
-		}
+	l = len(m.Payload)
+	if l > 0 {
+		n += 2 + l + sovApplication(uint64(l))
 	}
 	if len(m.Metadata) > 0 {
 		for _, e := range m.Metadata {
@@ -458,17 +442,13 @@ func (m *DataAppRes) Size() (n int) {
 func (m *JoinAppReq) Size() (n int) {
 	var l int
 	_ = l
-	if m.AppEUI != nil {
-		l = len(m.AppEUI)
-		if l > 0 {
-			n += 1 + l + sovApplication(uint64(l))
-		}
+	l = len(m.AppEUI)
+	if l > 0 {
+		n += 1 + l + sovApplication(uint64(l))
 	}
-	if m.DevEUI != nil {
-		l = len(m.DevEUI)
-		if l > 0 {
-			n += 1 + l + sovApplication(uint64(l))
-		}
+	l = len(m.DevEUI)
+	if l > 0 {
+		n += 1 + l + sovApplication(uint64(l))
 	}
 	if len(m.Metadata) > 0 {
 		for _, e := range m.Metadata {

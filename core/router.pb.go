@@ -278,13 +278,11 @@ func (m *DataRouterReq) MarshalTo(data []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.GatewayID != nil {
-		if len(m.GatewayID) > 0 {
-			data[i] = 0xa
-			i++
-			i = encodeVarintRouter(data, i, uint64(len(m.GatewayID)))
-			i += copy(data[i:], m.GatewayID)
-		}
+	if len(m.GatewayID) > 0 {
+		data[i] = 0xa
+		i++
+		i = encodeVarintRouter(data, i, uint64(len(m.GatewayID)))
+		i += copy(data[i:], m.GatewayID)
 	}
 	if m.Payload != nil {
 		data[i] = 0x12
@@ -362,13 +360,11 @@ func (m *StatsReq) MarshalTo(data []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.GatewayID != nil {
-		if len(m.GatewayID) > 0 {
-			data[i] = 0xa
-			i++
-			i = encodeVarintRouter(data, i, uint64(len(m.GatewayID)))
-			i += copy(data[i:], m.GatewayID)
-		}
+	if len(m.GatewayID) > 0 {
+		data[i] = 0xa
+		i++
+		i = encodeVarintRouter(data, i, uint64(len(m.GatewayID)))
+		i += copy(data[i:], m.GatewayID)
 	}
 	if m.Metadata != nil {
 		data[i] = 0x12
@@ -416,45 +412,35 @@ func (m *JoinRouterReq) MarshalTo(data []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.GatewayID != nil {
-		if len(m.GatewayID) > 0 {
-			data[i] = 0xa
-			i++
-			i = encodeVarintRouter(data, i, uint64(len(m.GatewayID)))
-			i += copy(data[i:], m.GatewayID)
-		}
+	if len(m.GatewayID) > 0 {
+		data[i] = 0xa
+		i++
+		i = encodeVarintRouter(data, i, uint64(len(m.GatewayID)))
+		i += copy(data[i:], m.GatewayID)
 	}
-	if m.AppEUI != nil {
-		if len(m.AppEUI) > 0 {
-			data[i] = 0x12
-			i++
-			i = encodeVarintRouter(data, i, uint64(len(m.AppEUI)))
-			i += copy(data[i:], m.AppEUI)
-		}
+	if len(m.AppEUI) > 0 {
+		data[i] = 0x12
+		i++
+		i = encodeVarintRouter(data, i, uint64(len(m.AppEUI)))
+		i += copy(data[i:], m.AppEUI)
 	}
-	if m.DevEUI != nil {
-		if len(m.DevEUI) > 0 {
-			data[i] = 0x1a
-			i++
-			i = encodeVarintRouter(data, i, uint64(len(m.DevEUI)))
-			i += copy(data[i:], m.DevEUI)
-		}
+	if len(m.DevEUI) > 0 {
+		data[i] = 0x1a
+		i++
+		i = encodeVarintRouter(data, i, uint64(len(m.DevEUI)))
+		i += copy(data[i:], m.DevEUI)
 	}
-	if m.DevNonce != nil {
-		if len(m.DevNonce) > 0 {
-			data[i] = 0x22
-			i++
-			i = encodeVarintRouter(data, i, uint64(len(m.DevNonce)))
-			i += copy(data[i:], m.DevNonce)
-		}
+	if len(m.DevNonce) > 0 {
+		data[i] = 0x22
+		i++
+		i = encodeVarintRouter(data, i, uint64(len(m.DevNonce)))
+		i += copy(data[i:], m.DevNonce)
 	}
-	if m.MIC != nil {
-		if len(m.MIC) > 0 {
-			data[i] = 0x2a
-			i++
-			i = encodeVarintRouter(data, i, uint64(len(m.MIC)))
-			i += copy(data[i:], m.MIC)
-		}
+	if len(m.MIC) > 0 {
+		data[i] = 0x2a
+		i++
+		i = encodeVarintRouter(data, i, uint64(len(m.MIC)))
+		i += copy(data[i:], m.MIC)
 	}
 	if m.Metadata != nil {
 		data[i] = 0x32
@@ -537,11 +523,9 @@ func encodeVarintRouter(data []byte, offset int, v uint64) int {
 func (m *DataRouterReq) Size() (n int) {
 	var l int
 	_ = l
-	if m.GatewayID != nil {
-		l = len(m.GatewayID)
-		if l > 0 {
-			n += 1 + l + sovRouter(uint64(l))
-		}
+	l = len(m.GatewayID)
+	if l > 0 {
+		n += 1 + l + sovRouter(uint64(l))
 	}
 	if m.Payload != nil {
 		l = m.Payload.Size()
@@ -571,11 +555,9 @@ func (m *DataRouterRes) Size() (n int) {
 func (m *StatsReq) Size() (n int) {
 	var l int
 	_ = l
-	if m.GatewayID != nil {
-		l = len(m.GatewayID)
-		if l > 0 {
-			n += 1 + l + sovRouter(uint64(l))
-		}
+	l = len(m.GatewayID)
+	if l > 0 {
+		n += 1 + l + sovRouter(uint64(l))
 	}
 	if m.Metadata != nil {
 		l = m.Metadata.Size()
@@ -593,35 +575,25 @@ func (m *StatsRes) Size() (n int) {
 func (m *JoinRouterReq) Size() (n int) {
 	var l int
 	_ = l
-	if m.GatewayID != nil {
-		l = len(m.GatewayID)
-		if l > 0 {
-			n += 1 + l + sovRouter(uint64(l))
-		}
+	l = len(m.GatewayID)
+	if l > 0 {
+		n += 1 + l + sovRouter(uint64(l))
 	}
-	if m.AppEUI != nil {
-		l = len(m.AppEUI)
-		if l > 0 {
-			n += 1 + l + sovRouter(uint64(l))
-		}
+	l = len(m.AppEUI)
+	if l > 0 {
+		n += 1 + l + sovRouter(uint64(l))
 	}
-	if m.DevEUI != nil {
-		l = len(m.DevEUI)
-		if l > 0 {
-			n += 1 + l + sovRouter(uint64(l))
-		}
+	l = len(m.DevEUI)
+	if l > 0 {
+		n += 1 + l + sovRouter(uint64(l))
 	}
-	if m.DevNonce != nil {
-		l = len(m.DevNonce)
-		if l > 0 {
-			n += 1 + l + sovRouter(uint64(l))
-		}
+	l = len(m.DevNonce)
+	if l > 0 {
+		n += 1 + l + sovRouter(uint64(l))
 	}
-	if m.MIC != nil {
-		l = len(m.MIC)
-		if l > 0 {
-			n += 1 + l + sovRouter(uint64(l))
-		}
+	l = len(m.MIC)
+	if l > 0 {
+		n += 1 + l + sovRouter(uint64(l))
 	}
 	if m.Metadata != nil {
 		l = m.Metadata.Size()

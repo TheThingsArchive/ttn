@@ -176,13 +176,11 @@ func (m *LoRaWANData) MarshalTo(data []byte) (int, error) {
 		}
 		i += n2
 	}
-	if m.MIC != nil {
-		if len(m.MIC) > 0 {
-			data[i] = 0x1a
-			i++
-			i = encodeVarintLorawan(data, i, uint64(len(m.MIC)))
-			i += copy(data[i:], m.MIC)
-		}
+	if len(m.MIC) > 0 {
+		data[i] = 0x1a
+		i++
+		i = encodeVarintLorawan(data, i, uint64(len(m.MIC)))
+		i += copy(data[i:], m.MIC)
 	}
 	return i, nil
 }
@@ -245,13 +243,11 @@ func (m *LoRaWANMACPayload) MarshalTo(data []byte) (int, error) {
 		i++
 		i = encodeVarintLorawan(data, i, uint64(m.FPort))
 	}
-	if m.FRMPayload != nil {
-		if len(m.FRMPayload) > 0 {
-			data[i] = 0x1a
-			i++
-			i = encodeVarintLorawan(data, i, uint64(len(m.FRMPayload)))
-			i += copy(data[i:], m.FRMPayload)
-		}
+	if len(m.FRMPayload) > 0 {
+		data[i] = 0x1a
+		i++
+		i = encodeVarintLorawan(data, i, uint64(len(m.FRMPayload)))
+		i += copy(data[i:], m.FRMPayload)
 	}
 	return i, nil
 }
@@ -271,13 +267,11 @@ func (m *LoRaWANFHDR) MarshalTo(data []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.DevAddr != nil {
-		if len(m.DevAddr) > 0 {
-			data[i] = 0xa
-			i++
-			i = encodeVarintLorawan(data, i, uint64(len(m.DevAddr)))
-			i += copy(data[i:], m.DevAddr)
-		}
+	if len(m.DevAddr) > 0 {
+		data[i] = 0xa
+		i++
+		i = encodeVarintLorawan(data, i, uint64(len(m.DevAddr)))
+		i += copy(data[i:], m.DevAddr)
 	}
 	if m.FCtrl != nil {
 		data[i] = 0x12
@@ -360,13 +354,11 @@ func (m *LoRaWANFCtrl) MarshalTo(data []byte) (int, error) {
 		}
 		i++
 	}
-	if m.FOptsLen != nil {
-		if len(m.FOptsLen) > 0 {
-			data[i] = 0x2a
-			i++
-			i = encodeVarintLorawan(data, i, uint64(len(m.FOptsLen)))
-			i += copy(data[i:], m.FOptsLen)
-		}
+	if len(m.FOptsLen) > 0 {
+		data[i] = 0x2a
+		i++
+		i = encodeVarintLorawan(data, i, uint64(len(m.FOptsLen)))
+		i += copy(data[i:], m.FOptsLen)
 	}
 	return i, nil
 }
@@ -386,29 +378,23 @@ func (m *LoRaWANJoinRequest) MarshalTo(data []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.DevEUI != nil {
-		if len(m.DevEUI) > 0 {
-			data[i] = 0xa
-			i++
-			i = encodeVarintLorawan(data, i, uint64(len(m.DevEUI)))
-			i += copy(data[i:], m.DevEUI)
-		}
+	if len(m.DevEUI) > 0 {
+		data[i] = 0xa
+		i++
+		i = encodeVarintLorawan(data, i, uint64(len(m.DevEUI)))
+		i += copy(data[i:], m.DevEUI)
 	}
-	if m.AppEUI != nil {
-		if len(m.AppEUI) > 0 {
-			data[i] = 0x12
-			i++
-			i = encodeVarintLorawan(data, i, uint64(len(m.AppEUI)))
-			i += copy(data[i:], m.AppEUI)
-		}
+	if len(m.AppEUI) > 0 {
+		data[i] = 0x12
+		i++
+		i = encodeVarintLorawan(data, i, uint64(len(m.AppEUI)))
+		i += copy(data[i:], m.AppEUI)
 	}
-	if m.DevNonce != nil {
-		if len(m.DevNonce) > 0 {
-			data[i] = 0x1a
-			i++
-			i = encodeVarintLorawan(data, i, uint64(len(m.DevNonce)))
-			i += copy(data[i:], m.DevNonce)
-		}
+	if len(m.DevNonce) > 0 {
+		data[i] = 0x1a
+		i++
+		i = encodeVarintLorawan(data, i, uint64(len(m.DevNonce)))
+		i += copy(data[i:], m.DevNonce)
 	}
 	return i, nil
 }
@@ -428,13 +414,11 @@ func (m *LoRaWANJoinAccept) MarshalTo(data []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.Payload != nil {
-		if len(m.Payload) > 0 {
-			data[i] = 0xa
-			i++
-			i = encodeVarintLorawan(data, i, uint64(len(m.Payload)))
-			i += copy(data[i:], m.Payload)
-		}
+	if len(m.Payload) > 0 {
+		data[i] = 0xa
+		i++
+		i = encodeVarintLorawan(data, i, uint64(len(m.Payload)))
+		i += copy(data[i:], m.Payload)
 	}
 	return i, nil
 }
@@ -505,11 +489,9 @@ func (m *LoRaWANData) Size() (n int) {
 		l = m.MACPayload.Size()
 		n += 1 + l + sovLorawan(uint64(l))
 	}
-	if m.MIC != nil {
-		l = len(m.MIC)
-		if l > 0 {
-			n += 1 + l + sovLorawan(uint64(l))
-		}
+	l = len(m.MIC)
+	if l > 0 {
+		n += 1 + l + sovLorawan(uint64(l))
 	}
 	return n
 }
@@ -536,11 +518,9 @@ func (m *LoRaWANMACPayload) Size() (n int) {
 	if m.FPort != 0 {
 		n += 1 + sovLorawan(uint64(m.FPort))
 	}
-	if m.FRMPayload != nil {
-		l = len(m.FRMPayload)
-		if l > 0 {
-			n += 1 + l + sovLorawan(uint64(l))
-		}
+	l = len(m.FRMPayload)
+	if l > 0 {
+		n += 1 + l + sovLorawan(uint64(l))
 	}
 	return n
 }
@@ -548,11 +528,9 @@ func (m *LoRaWANMACPayload) Size() (n int) {
 func (m *LoRaWANFHDR) Size() (n int) {
 	var l int
 	_ = l
-	if m.DevAddr != nil {
-		l = len(m.DevAddr)
-		if l > 0 {
-			n += 1 + l + sovLorawan(uint64(l))
-		}
+	l = len(m.DevAddr)
+	if l > 0 {
+		n += 1 + l + sovLorawan(uint64(l))
 	}
 	if m.FCtrl != nil {
 		l = m.FCtrl.Size()
@@ -585,11 +563,9 @@ func (m *LoRaWANFCtrl) Size() (n int) {
 	if m.FPending {
 		n += 2
 	}
-	if m.FOptsLen != nil {
-		l = len(m.FOptsLen)
-		if l > 0 {
-			n += 1 + l + sovLorawan(uint64(l))
-		}
+	l = len(m.FOptsLen)
+	if l > 0 {
+		n += 1 + l + sovLorawan(uint64(l))
 	}
 	return n
 }
@@ -597,23 +573,17 @@ func (m *LoRaWANFCtrl) Size() (n int) {
 func (m *LoRaWANJoinRequest) Size() (n int) {
 	var l int
 	_ = l
-	if m.DevEUI != nil {
-		l = len(m.DevEUI)
-		if l > 0 {
-			n += 1 + l + sovLorawan(uint64(l))
-		}
+	l = len(m.DevEUI)
+	if l > 0 {
+		n += 1 + l + sovLorawan(uint64(l))
 	}
-	if m.AppEUI != nil {
-		l = len(m.AppEUI)
-		if l > 0 {
-			n += 1 + l + sovLorawan(uint64(l))
-		}
+	l = len(m.AppEUI)
+	if l > 0 {
+		n += 1 + l + sovLorawan(uint64(l))
 	}
-	if m.DevNonce != nil {
-		l = len(m.DevNonce)
-		if l > 0 {
-			n += 1 + l + sovLorawan(uint64(l))
-		}
+	l = len(m.DevNonce)
+	if l > 0 {
+		n += 1 + l + sovLorawan(uint64(l))
 	}
 	return n
 }
@@ -621,11 +591,9 @@ func (m *LoRaWANJoinRequest) Size() (n int) {
 func (m *LoRaWANJoinAccept) Size() (n int) {
 	var l int
 	_ = l
-	if m.Payload != nil {
-		l = len(m.Payload)
-		if l > 0 {
-			n += 1 + l + sovLorawan(uint64(l))
-		}
+	l = len(m.Payload)
+	if l > 0 {
+		n += 1 + l + sovLorawan(uint64(l))
 	}
 	return n
 }

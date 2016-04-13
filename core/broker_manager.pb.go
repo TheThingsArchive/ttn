@@ -243,13 +243,11 @@ func (m *ValidateOTAABrokerReq) MarshalTo(data []byte) (int, error) {
 		i = encodeVarintBrokerManager(data, i, uint64(len(m.Token)))
 		i += copy(data[i:], m.Token)
 	}
-	if m.AppEUI != nil {
-		if len(m.AppEUI) > 0 {
-			data[i] = 0x12
-			i++
-			i = encodeVarintBrokerManager(data, i, uint64(len(m.AppEUI)))
-			i += copy(data[i:], m.AppEUI)
-		}
+	if len(m.AppEUI) > 0 {
+		data[i] = 0x12
+		i++
+		i = encodeVarintBrokerManager(data, i, uint64(len(m.AppEUI)))
+		i += copy(data[i:], m.AppEUI)
 	}
 	if len(m.NetAddress) > 0 {
 		data[i] = 0x1a
@@ -299,13 +297,11 @@ func (m *UpsertABPBrokerReq) MarshalTo(data []byte) (int, error) {
 		i = encodeVarintBrokerManager(data, i, uint64(len(m.Token)))
 		i += copy(data[i:], m.Token)
 	}
-	if m.AppEUI != nil {
-		if len(m.AppEUI) > 0 {
-			data[i] = 0x12
-			i++
-			i = encodeVarintBrokerManager(data, i, uint64(len(m.AppEUI)))
-			i += copy(data[i:], m.AppEUI)
-		}
+	if len(m.AppEUI) > 0 {
+		data[i] = 0x12
+		i++
+		i = encodeVarintBrokerManager(data, i, uint64(len(m.AppEUI)))
+		i += copy(data[i:], m.AppEUI)
 	}
 	if len(m.NetAddress) > 0 {
 		data[i] = 0x1a
@@ -313,21 +309,17 @@ func (m *UpsertABPBrokerReq) MarshalTo(data []byte) (int, error) {
 		i = encodeVarintBrokerManager(data, i, uint64(len(m.NetAddress)))
 		i += copy(data[i:], m.NetAddress)
 	}
-	if m.DevAddr != nil {
-		if len(m.DevAddr) > 0 {
-			data[i] = 0x22
-			i++
-			i = encodeVarintBrokerManager(data, i, uint64(len(m.DevAddr)))
-			i += copy(data[i:], m.DevAddr)
-		}
+	if len(m.DevAddr) > 0 {
+		data[i] = 0x22
+		i++
+		i = encodeVarintBrokerManager(data, i, uint64(len(m.DevAddr)))
+		i += copy(data[i:], m.DevAddr)
 	}
-	if m.NwkSKey != nil {
-		if len(m.NwkSKey) > 0 {
-			data[i] = 0x2a
-			i++
-			i = encodeVarintBrokerManager(data, i, uint64(len(m.NwkSKey)))
-			i += copy(data[i:], m.NwkSKey)
-		}
+	if len(m.NwkSKey) > 0 {
+		data[i] = 0x2a
+		i++
+		i = encodeVarintBrokerManager(data, i, uint64(len(m.NwkSKey)))
+		i += copy(data[i:], m.NwkSKey)
 	}
 	return i, nil
 }
@@ -365,29 +357,23 @@ func (m *BrokerDevice) MarshalTo(data []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.DevEUI != nil {
-		if len(m.DevEUI) > 0 {
-			data[i] = 0xa
-			i++
-			i = encodeVarintBrokerManager(data, i, uint64(len(m.DevEUI)))
-			i += copy(data[i:], m.DevEUI)
-		}
+	if len(m.DevEUI) > 0 {
+		data[i] = 0xa
+		i++
+		i = encodeVarintBrokerManager(data, i, uint64(len(m.DevEUI)))
+		i += copy(data[i:], m.DevEUI)
 	}
-	if m.DevAddr != nil {
-		if len(m.DevAddr) > 0 {
-			data[i] = 0x12
-			i++
-			i = encodeVarintBrokerManager(data, i, uint64(len(m.DevAddr)))
-			i += copy(data[i:], m.DevAddr)
-		}
+	if len(m.DevAddr) > 0 {
+		data[i] = 0x12
+		i++
+		i = encodeVarintBrokerManager(data, i, uint64(len(m.DevAddr)))
+		i += copy(data[i:], m.DevAddr)
 	}
-	if m.NwkSKey != nil {
-		if len(m.NwkSKey) > 0 {
-			data[i] = 0x1a
-			i++
-			i = encodeVarintBrokerManager(data, i, uint64(len(m.NwkSKey)))
-			i += copy(data[i:], m.NwkSKey)
-		}
+	if len(m.NwkSKey) > 0 {
+		data[i] = 0x1a
+		i++
+		i = encodeVarintBrokerManager(data, i, uint64(len(m.NwkSKey)))
+		i += copy(data[i:], m.NwkSKey)
 	}
 	return i, nil
 }
@@ -413,13 +399,11 @@ func (m *ValidateTokenBrokerReq) MarshalTo(data []byte) (int, error) {
 		i = encodeVarintBrokerManager(data, i, uint64(len(m.Token)))
 		i += copy(data[i:], m.Token)
 	}
-	if m.AppEUI != nil {
-		if len(m.AppEUI) > 0 {
-			data[i] = 0x12
-			i++
-			i = encodeVarintBrokerManager(data, i, uint64(len(m.AppEUI)))
-			i += copy(data[i:], m.AppEUI)
-		}
+	if len(m.AppEUI) > 0 {
+		data[i] = 0x12
+		i++
+		i = encodeVarintBrokerManager(data, i, uint64(len(m.AppEUI)))
+		i += copy(data[i:], m.AppEUI)
 	}
 	return i, nil
 }
@@ -476,11 +460,9 @@ func (m *ValidateOTAABrokerReq) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovBrokerManager(uint64(l))
 	}
-	if m.AppEUI != nil {
-		l = len(m.AppEUI)
-		if l > 0 {
-			n += 1 + l + sovBrokerManager(uint64(l))
-		}
+	l = len(m.AppEUI)
+	if l > 0 {
+		n += 1 + l + sovBrokerManager(uint64(l))
 	}
 	l = len(m.NetAddress)
 	if l > 0 {
@@ -502,27 +484,21 @@ func (m *UpsertABPBrokerReq) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovBrokerManager(uint64(l))
 	}
-	if m.AppEUI != nil {
-		l = len(m.AppEUI)
-		if l > 0 {
-			n += 1 + l + sovBrokerManager(uint64(l))
-		}
+	l = len(m.AppEUI)
+	if l > 0 {
+		n += 1 + l + sovBrokerManager(uint64(l))
 	}
 	l = len(m.NetAddress)
 	if l > 0 {
 		n += 1 + l + sovBrokerManager(uint64(l))
 	}
-	if m.DevAddr != nil {
-		l = len(m.DevAddr)
-		if l > 0 {
-			n += 1 + l + sovBrokerManager(uint64(l))
-		}
+	l = len(m.DevAddr)
+	if l > 0 {
+		n += 1 + l + sovBrokerManager(uint64(l))
 	}
-	if m.NwkSKey != nil {
-		l = len(m.NwkSKey)
-		if l > 0 {
-			n += 1 + l + sovBrokerManager(uint64(l))
-		}
+	l = len(m.NwkSKey)
+	if l > 0 {
+		n += 1 + l + sovBrokerManager(uint64(l))
 	}
 	return n
 }
@@ -536,23 +512,17 @@ func (m *UpsertABPBrokerRes) Size() (n int) {
 func (m *BrokerDevice) Size() (n int) {
 	var l int
 	_ = l
-	if m.DevEUI != nil {
-		l = len(m.DevEUI)
-		if l > 0 {
-			n += 1 + l + sovBrokerManager(uint64(l))
-		}
+	l = len(m.DevEUI)
+	if l > 0 {
+		n += 1 + l + sovBrokerManager(uint64(l))
 	}
-	if m.DevAddr != nil {
-		l = len(m.DevAddr)
-		if l > 0 {
-			n += 1 + l + sovBrokerManager(uint64(l))
-		}
+	l = len(m.DevAddr)
+	if l > 0 {
+		n += 1 + l + sovBrokerManager(uint64(l))
 	}
-	if m.NwkSKey != nil {
-		l = len(m.NwkSKey)
-		if l > 0 {
-			n += 1 + l + sovBrokerManager(uint64(l))
-		}
+	l = len(m.NwkSKey)
+	if l > 0 {
+		n += 1 + l + sovBrokerManager(uint64(l))
 	}
 	return n
 }
@@ -564,11 +534,9 @@ func (m *ValidateTokenBrokerReq) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovBrokerManager(uint64(l))
 	}
-	if m.AppEUI != nil {
-		l = len(m.AppEUI)
-		if l > 0 {
-			n += 1 + l + sovBrokerManager(uint64(l))
-		}
+	l = len(m.AppEUI)
+	if l > 0 {
+		n += 1 + l + sovBrokerManager(uint64(l))
 	}
 	return n
 }

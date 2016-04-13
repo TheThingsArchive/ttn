@@ -282,29 +282,23 @@ func (m *UpsertOTAAHandlerReq) MarshalTo(data []byte) (int, error) {
 		i = encodeVarintHandlerManager(data, i, uint64(len(m.Token)))
 		i += copy(data[i:], m.Token)
 	}
-	if m.AppEUI != nil {
-		if len(m.AppEUI) > 0 {
-			data[i] = 0x12
-			i++
-			i = encodeVarintHandlerManager(data, i, uint64(len(m.AppEUI)))
-			i += copy(data[i:], m.AppEUI)
-		}
+	if len(m.AppEUI) > 0 {
+		data[i] = 0x12
+		i++
+		i = encodeVarintHandlerManager(data, i, uint64(len(m.AppEUI)))
+		i += copy(data[i:], m.AppEUI)
 	}
-	if m.DevEUI != nil {
-		if len(m.DevEUI) > 0 {
-			data[i] = 0x1a
-			i++
-			i = encodeVarintHandlerManager(data, i, uint64(len(m.DevEUI)))
-			i += copy(data[i:], m.DevEUI)
-		}
+	if len(m.DevEUI) > 0 {
+		data[i] = 0x1a
+		i++
+		i = encodeVarintHandlerManager(data, i, uint64(len(m.DevEUI)))
+		i += copy(data[i:], m.DevEUI)
 	}
-	if m.AppKey != nil {
-		if len(m.AppKey) > 0 {
-			data[i] = 0x22
-			i++
-			i = encodeVarintHandlerManager(data, i, uint64(len(m.AppKey)))
-			i += copy(data[i:], m.AppKey)
-		}
+	if len(m.AppKey) > 0 {
+		data[i] = 0x22
+		i++
+		i = encodeVarintHandlerManager(data, i, uint64(len(m.AppKey)))
+		i += copy(data[i:], m.AppKey)
 	}
 	return i, nil
 }
@@ -348,37 +342,29 @@ func (m *UpsertABPHandlerReq) MarshalTo(data []byte) (int, error) {
 		i = encodeVarintHandlerManager(data, i, uint64(len(m.Token)))
 		i += copy(data[i:], m.Token)
 	}
-	if m.AppEUI != nil {
-		if len(m.AppEUI) > 0 {
-			data[i] = 0x12
-			i++
-			i = encodeVarintHandlerManager(data, i, uint64(len(m.AppEUI)))
-			i += copy(data[i:], m.AppEUI)
-		}
+	if len(m.AppEUI) > 0 {
+		data[i] = 0x12
+		i++
+		i = encodeVarintHandlerManager(data, i, uint64(len(m.AppEUI)))
+		i += copy(data[i:], m.AppEUI)
 	}
-	if m.DevAddr != nil {
-		if len(m.DevAddr) > 0 {
-			data[i] = 0x1a
-			i++
-			i = encodeVarintHandlerManager(data, i, uint64(len(m.DevAddr)))
-			i += copy(data[i:], m.DevAddr)
-		}
+	if len(m.DevAddr) > 0 {
+		data[i] = 0x1a
+		i++
+		i = encodeVarintHandlerManager(data, i, uint64(len(m.DevAddr)))
+		i += copy(data[i:], m.DevAddr)
 	}
-	if m.NwkSKey != nil {
-		if len(m.NwkSKey) > 0 {
-			data[i] = 0x22
-			i++
-			i = encodeVarintHandlerManager(data, i, uint64(len(m.NwkSKey)))
-			i += copy(data[i:], m.NwkSKey)
-		}
+	if len(m.NwkSKey) > 0 {
+		data[i] = 0x22
+		i++
+		i = encodeVarintHandlerManager(data, i, uint64(len(m.NwkSKey)))
+		i += copy(data[i:], m.NwkSKey)
 	}
-	if m.AppSKey != nil {
-		if len(m.AppSKey) > 0 {
-			data[i] = 0x2a
-			i++
-			i = encodeVarintHandlerManager(data, i, uint64(len(m.AppSKey)))
-			i += copy(data[i:], m.AppSKey)
-		}
+	if len(m.AppSKey) > 0 {
+		data[i] = 0x2a
+		i++
+		i = encodeVarintHandlerManager(data, i, uint64(len(m.AppSKey)))
+		i += copy(data[i:], m.AppSKey)
 	}
 	return i, nil
 }
@@ -422,13 +408,11 @@ func (m *ListDevicesHandlerReq) MarshalTo(data []byte) (int, error) {
 		i = encodeVarintHandlerManager(data, i, uint64(len(m.Token)))
 		i += copy(data[i:], m.Token)
 	}
-	if m.AppEUI != nil {
-		if len(m.AppEUI) > 0 {
-			data[i] = 0x12
-			i++
-			i = encodeVarintHandlerManager(data, i, uint64(len(m.AppEUI)))
-			i += copy(data[i:], m.AppEUI)
-		}
+	if len(m.AppEUI) > 0 {
+		data[i] = 0x12
+		i++
+		i = encodeVarintHandlerManager(data, i, uint64(len(m.AppEUI)))
+		i += copy(data[i:], m.AppEUI)
 	}
 	return i, nil
 }
@@ -490,29 +474,23 @@ func (m *HandlerABPDevice) MarshalTo(data []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.DevAddr != nil {
-		if len(m.DevAddr) > 0 {
-			data[i] = 0x12
-			i++
-			i = encodeVarintHandlerManager(data, i, uint64(len(m.DevAddr)))
-			i += copy(data[i:], m.DevAddr)
-		}
+	if len(m.DevAddr) > 0 {
+		data[i] = 0x12
+		i++
+		i = encodeVarintHandlerManager(data, i, uint64(len(m.DevAddr)))
+		i += copy(data[i:], m.DevAddr)
 	}
-	if m.NwkSKey != nil {
-		if len(m.NwkSKey) > 0 {
-			data[i] = 0x1a
-			i++
-			i = encodeVarintHandlerManager(data, i, uint64(len(m.NwkSKey)))
-			i += copy(data[i:], m.NwkSKey)
-		}
+	if len(m.NwkSKey) > 0 {
+		data[i] = 0x1a
+		i++
+		i = encodeVarintHandlerManager(data, i, uint64(len(m.NwkSKey)))
+		i += copy(data[i:], m.NwkSKey)
 	}
-	if m.AppSKey != nil {
-		if len(m.AppSKey) > 0 {
-			data[i] = 0x22
-			i++
-			i = encodeVarintHandlerManager(data, i, uint64(len(m.AppSKey)))
-			i += copy(data[i:], m.AppSKey)
-		}
+	if len(m.AppSKey) > 0 {
+		data[i] = 0x22
+		i++
+		i = encodeVarintHandlerManager(data, i, uint64(len(m.AppSKey)))
+		i += copy(data[i:], m.AppSKey)
 	}
 	if m.FCntUp != 0 {
 		data[i] = 0x28
@@ -542,45 +520,35 @@ func (m *HandlerOTAADevice) MarshalTo(data []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.DevEUI != nil {
-		if len(m.DevEUI) > 0 {
-			data[i] = 0xa
-			i++
-			i = encodeVarintHandlerManager(data, i, uint64(len(m.DevEUI)))
-			i += copy(data[i:], m.DevEUI)
-		}
+	if len(m.DevEUI) > 0 {
+		data[i] = 0xa
+		i++
+		i = encodeVarintHandlerManager(data, i, uint64(len(m.DevEUI)))
+		i += copy(data[i:], m.DevEUI)
 	}
-	if m.DevAddr != nil {
-		if len(m.DevAddr) > 0 {
-			data[i] = 0x12
-			i++
-			i = encodeVarintHandlerManager(data, i, uint64(len(m.DevAddr)))
-			i += copy(data[i:], m.DevAddr)
-		}
+	if len(m.DevAddr) > 0 {
+		data[i] = 0x12
+		i++
+		i = encodeVarintHandlerManager(data, i, uint64(len(m.DevAddr)))
+		i += copy(data[i:], m.DevAddr)
 	}
-	if m.NwkSKey != nil {
-		if len(m.NwkSKey) > 0 {
-			data[i] = 0x1a
-			i++
-			i = encodeVarintHandlerManager(data, i, uint64(len(m.NwkSKey)))
-			i += copy(data[i:], m.NwkSKey)
-		}
+	if len(m.NwkSKey) > 0 {
+		data[i] = 0x1a
+		i++
+		i = encodeVarintHandlerManager(data, i, uint64(len(m.NwkSKey)))
+		i += copy(data[i:], m.NwkSKey)
 	}
-	if m.AppSKey != nil {
-		if len(m.AppSKey) > 0 {
-			data[i] = 0x22
-			i++
-			i = encodeVarintHandlerManager(data, i, uint64(len(m.AppSKey)))
-			i += copy(data[i:], m.AppSKey)
-		}
+	if len(m.AppSKey) > 0 {
+		data[i] = 0x22
+		i++
+		i = encodeVarintHandlerManager(data, i, uint64(len(m.AppSKey)))
+		i += copy(data[i:], m.AppSKey)
 	}
-	if m.AppKey != nil {
-		if len(m.AppKey) > 0 {
-			data[i] = 0x2a
-			i++
-			i = encodeVarintHandlerManager(data, i, uint64(len(m.AppKey)))
-			i += copy(data[i:], m.AppKey)
-		}
+	if len(m.AppKey) > 0 {
+		data[i] = 0x2a
+		i++
+		i = encodeVarintHandlerManager(data, i, uint64(len(m.AppKey)))
+		i += copy(data[i:], m.AppKey)
 	}
 	if m.FCntUp != 0 {
 		data[i] = 0x38
@@ -629,23 +597,17 @@ func (m *UpsertOTAAHandlerReq) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovHandlerManager(uint64(l))
 	}
-	if m.AppEUI != nil {
-		l = len(m.AppEUI)
-		if l > 0 {
-			n += 1 + l + sovHandlerManager(uint64(l))
-		}
+	l = len(m.AppEUI)
+	if l > 0 {
+		n += 1 + l + sovHandlerManager(uint64(l))
 	}
-	if m.DevEUI != nil {
-		l = len(m.DevEUI)
-		if l > 0 {
-			n += 1 + l + sovHandlerManager(uint64(l))
-		}
+	l = len(m.DevEUI)
+	if l > 0 {
+		n += 1 + l + sovHandlerManager(uint64(l))
 	}
-	if m.AppKey != nil {
-		l = len(m.AppKey)
-		if l > 0 {
-			n += 1 + l + sovHandlerManager(uint64(l))
-		}
+	l = len(m.AppKey)
+	if l > 0 {
+		n += 1 + l + sovHandlerManager(uint64(l))
 	}
 	return n
 }
@@ -663,29 +625,21 @@ func (m *UpsertABPHandlerReq) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovHandlerManager(uint64(l))
 	}
-	if m.AppEUI != nil {
-		l = len(m.AppEUI)
-		if l > 0 {
-			n += 1 + l + sovHandlerManager(uint64(l))
-		}
+	l = len(m.AppEUI)
+	if l > 0 {
+		n += 1 + l + sovHandlerManager(uint64(l))
 	}
-	if m.DevAddr != nil {
-		l = len(m.DevAddr)
-		if l > 0 {
-			n += 1 + l + sovHandlerManager(uint64(l))
-		}
+	l = len(m.DevAddr)
+	if l > 0 {
+		n += 1 + l + sovHandlerManager(uint64(l))
 	}
-	if m.NwkSKey != nil {
-		l = len(m.NwkSKey)
-		if l > 0 {
-			n += 1 + l + sovHandlerManager(uint64(l))
-		}
+	l = len(m.NwkSKey)
+	if l > 0 {
+		n += 1 + l + sovHandlerManager(uint64(l))
 	}
-	if m.AppSKey != nil {
-		l = len(m.AppSKey)
-		if l > 0 {
-			n += 1 + l + sovHandlerManager(uint64(l))
-		}
+	l = len(m.AppSKey)
+	if l > 0 {
+		n += 1 + l + sovHandlerManager(uint64(l))
 	}
 	return n
 }
@@ -703,11 +657,9 @@ func (m *ListDevicesHandlerReq) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovHandlerManager(uint64(l))
 	}
-	if m.AppEUI != nil {
-		l = len(m.AppEUI)
-		if l > 0 {
-			n += 1 + l + sovHandlerManager(uint64(l))
-		}
+	l = len(m.AppEUI)
+	if l > 0 {
+		n += 1 + l + sovHandlerManager(uint64(l))
 	}
 	return n
 }
@@ -733,23 +685,17 @@ func (m *ListDevicesHandlerRes) Size() (n int) {
 func (m *HandlerABPDevice) Size() (n int) {
 	var l int
 	_ = l
-	if m.DevAddr != nil {
-		l = len(m.DevAddr)
-		if l > 0 {
-			n += 1 + l + sovHandlerManager(uint64(l))
-		}
+	l = len(m.DevAddr)
+	if l > 0 {
+		n += 1 + l + sovHandlerManager(uint64(l))
 	}
-	if m.NwkSKey != nil {
-		l = len(m.NwkSKey)
-		if l > 0 {
-			n += 1 + l + sovHandlerManager(uint64(l))
-		}
+	l = len(m.NwkSKey)
+	if l > 0 {
+		n += 1 + l + sovHandlerManager(uint64(l))
 	}
-	if m.AppSKey != nil {
-		l = len(m.AppSKey)
-		if l > 0 {
-			n += 1 + l + sovHandlerManager(uint64(l))
-		}
+	l = len(m.AppSKey)
+	if l > 0 {
+		n += 1 + l + sovHandlerManager(uint64(l))
 	}
 	if m.FCntUp != 0 {
 		n += 1 + sovHandlerManager(uint64(m.FCntUp))
@@ -763,35 +709,25 @@ func (m *HandlerABPDevice) Size() (n int) {
 func (m *HandlerOTAADevice) Size() (n int) {
 	var l int
 	_ = l
-	if m.DevEUI != nil {
-		l = len(m.DevEUI)
-		if l > 0 {
-			n += 1 + l + sovHandlerManager(uint64(l))
-		}
+	l = len(m.DevEUI)
+	if l > 0 {
+		n += 1 + l + sovHandlerManager(uint64(l))
 	}
-	if m.DevAddr != nil {
-		l = len(m.DevAddr)
-		if l > 0 {
-			n += 1 + l + sovHandlerManager(uint64(l))
-		}
+	l = len(m.DevAddr)
+	if l > 0 {
+		n += 1 + l + sovHandlerManager(uint64(l))
 	}
-	if m.NwkSKey != nil {
-		l = len(m.NwkSKey)
-		if l > 0 {
-			n += 1 + l + sovHandlerManager(uint64(l))
-		}
+	l = len(m.NwkSKey)
+	if l > 0 {
+		n += 1 + l + sovHandlerManager(uint64(l))
 	}
-	if m.AppSKey != nil {
-		l = len(m.AppSKey)
-		if l > 0 {
-			n += 1 + l + sovHandlerManager(uint64(l))
-		}
+	l = len(m.AppSKey)
+	if l > 0 {
+		n += 1 + l + sovHandlerManager(uint64(l))
 	}
-	if m.AppKey != nil {
-		l = len(m.AppKey)
-		if l > 0 {
-			n += 1 + l + sovHandlerManager(uint64(l))
-		}
+	l = len(m.AppKey)
+	if l > 0 {
+		n += 1 + l + sovHandlerManager(uint64(l))
 	}
 	if m.FCntUp != 0 {
 		n += 1 + sovHandlerManager(uint64(m.FCntUp))
