@@ -171,6 +171,9 @@ func (h component) GetDefaultDevice(bctx context.Context, req *core.GetDefaultDe
 		h.Ctx.WithError(err).Debug("Error while trying to retrieve default device")
 		return new(core.GetDefaultDeviceRes), err
 	}
+	if entry == nil {
+		return new(core.GetDefaultDeviceRes), errors.New(errors.NotFound, "No default device found")
+	}
 
 	return &core.GetDefaultDeviceRes{AppKey: entry.AppKey[:]}, nil
 }
