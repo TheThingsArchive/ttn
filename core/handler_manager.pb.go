@@ -135,6 +135,52 @@ func (m *HandlerOTAADevice) String() string            { return proto.CompactTex
 func (*HandlerOTAADevice) ProtoMessage()               {}
 func (*HandlerOTAADevice) Descriptor() ([]byte, []int) { return fileDescriptorHandlerManager, []int{7} }
 
+type GetDefaultDeviceReq struct {
+	Token  string `protobuf:"bytes,1,opt,name=Token,json=token,proto3" json:"Token,omitempty"`
+	AppEUI []byte `protobuf:"bytes,2,opt,name=AppEUI,json=appEUI,proto3" json:"AppEUI,omitempty"`
+}
+
+func (m *GetDefaultDeviceReq) Reset()         { *m = GetDefaultDeviceReq{} }
+func (m *GetDefaultDeviceReq) String() string { return proto.CompactTextString(m) }
+func (*GetDefaultDeviceReq) ProtoMessage()    {}
+func (*GetDefaultDeviceReq) Descriptor() ([]byte, []int) {
+	return fileDescriptorHandlerManager, []int{8}
+}
+
+type GetDefaultDeviceRes struct {
+	AppKey []byte `protobuf:"bytes,1,opt,name=AppKey,json=appKey,proto3" json:"AppKey,omitempty"`
+}
+
+func (m *GetDefaultDeviceRes) Reset()         { *m = GetDefaultDeviceRes{} }
+func (m *GetDefaultDeviceRes) String() string { return proto.CompactTextString(m) }
+func (*GetDefaultDeviceRes) ProtoMessage()    {}
+func (*GetDefaultDeviceRes) Descriptor() ([]byte, []int) {
+	return fileDescriptorHandlerManager, []int{9}
+}
+
+type SetDefaultDeviceReq struct {
+	Token  string `protobuf:"bytes,1,opt,name=Token,json=token,proto3" json:"Token,omitempty"`
+	AppEUI []byte `protobuf:"bytes,2,opt,name=AppEUI,json=appEUI,proto3" json:"AppEUI,omitempty"`
+	AppKey []byte `protobuf:"bytes,3,opt,name=AppKey,json=appKey,proto3" json:"AppKey,omitempty"`
+}
+
+func (m *SetDefaultDeviceReq) Reset()         { *m = SetDefaultDeviceReq{} }
+func (m *SetDefaultDeviceReq) String() string { return proto.CompactTextString(m) }
+func (*SetDefaultDeviceReq) ProtoMessage()    {}
+func (*SetDefaultDeviceReq) Descriptor() ([]byte, []int) {
+	return fileDescriptorHandlerManager, []int{10}
+}
+
+type SetDefaultDeviceRes struct {
+}
+
+func (m *SetDefaultDeviceRes) Reset()         { *m = SetDefaultDeviceRes{} }
+func (m *SetDefaultDeviceRes) String() string { return proto.CompactTextString(m) }
+func (*SetDefaultDeviceRes) ProtoMessage()    {}
+func (*SetDefaultDeviceRes) Descriptor() ([]byte, []int) {
+	return fileDescriptorHandlerManager, []int{11}
+}
+
 func init() {
 	proto.RegisterType((*UpsertOTAAHandlerReq)(nil), "core.UpsertOTAAHandlerReq")
 	proto.RegisterType((*UpsertOTAAHandlerRes)(nil), "core.UpsertOTAAHandlerRes")
@@ -144,6 +190,10 @@ func init() {
 	proto.RegisterType((*ListDevicesHandlerRes)(nil), "core.ListDevicesHandlerRes")
 	proto.RegisterType((*HandlerABPDevice)(nil), "core.HandlerABPDevice")
 	proto.RegisterType((*HandlerOTAADevice)(nil), "core.HandlerOTAADevice")
+	proto.RegisterType((*GetDefaultDeviceReq)(nil), "core.GetDefaultDeviceReq")
+	proto.RegisterType((*GetDefaultDeviceRes)(nil), "core.GetDefaultDeviceRes")
+	proto.RegisterType((*SetDefaultDeviceReq)(nil), "core.SetDefaultDeviceReq")
+	proto.RegisterType((*SetDefaultDeviceRes)(nil), "core.SetDefaultDeviceRes")
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -156,6 +206,8 @@ type HandlerManagerClient interface {
 	UpsertOTAA(ctx context.Context, in *UpsertOTAAHandlerReq, opts ...grpc.CallOption) (*UpsertOTAAHandlerRes, error)
 	UpsertABP(ctx context.Context, in *UpsertABPHandlerReq, opts ...grpc.CallOption) (*UpsertABPHandlerRes, error)
 	ListDevices(ctx context.Context, in *ListDevicesHandlerReq, opts ...grpc.CallOption) (*ListDevicesHandlerRes, error)
+	GetDefaultDevice(ctx context.Context, in *GetDefaultDeviceReq, opts ...grpc.CallOption) (*GetDefaultDeviceRes, error)
+	SetDefaultDevice(ctx context.Context, in *SetDefaultDeviceReq, opts ...grpc.CallOption) (*SetDefaultDeviceRes, error)
 }
 
 type handlerManagerClient struct {
@@ -193,12 +245,32 @@ func (c *handlerManagerClient) ListDevices(ctx context.Context, in *ListDevicesH
 	return out, nil
 }
 
+func (c *handlerManagerClient) GetDefaultDevice(ctx context.Context, in *GetDefaultDeviceReq, opts ...grpc.CallOption) (*GetDefaultDeviceRes, error) {
+	out := new(GetDefaultDeviceRes)
+	err := grpc.Invoke(ctx, "/core.HandlerManager/GetDefaultDevice", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *handlerManagerClient) SetDefaultDevice(ctx context.Context, in *SetDefaultDeviceReq, opts ...grpc.CallOption) (*SetDefaultDeviceRes, error) {
+	out := new(SetDefaultDeviceRes)
+	err := grpc.Invoke(ctx, "/core.HandlerManager/SetDefaultDevice", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // Server API for HandlerManager service
 
 type HandlerManagerServer interface {
 	UpsertOTAA(context.Context, *UpsertOTAAHandlerReq) (*UpsertOTAAHandlerRes, error)
 	UpsertABP(context.Context, *UpsertABPHandlerReq) (*UpsertABPHandlerRes, error)
 	ListDevices(context.Context, *ListDevicesHandlerReq) (*ListDevicesHandlerRes, error)
+	GetDefaultDevice(context.Context, *GetDefaultDeviceReq) (*GetDefaultDeviceRes, error)
+	SetDefaultDevice(context.Context, *SetDefaultDeviceReq) (*SetDefaultDeviceRes, error)
 }
 
 func RegisterHandlerManagerServer(s *grpc.Server, srv HandlerManagerServer) {
@@ -241,6 +313,30 @@ func _HandlerManager_ListDevices_Handler(srv interface{}, ctx context.Context, d
 	return out, nil
 }
 
+func _HandlerManager_GetDefaultDevice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(GetDefaultDeviceReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(HandlerManagerServer).GetDefaultDevice(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func _HandlerManager_SetDefaultDevice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+	in := new(SetDefaultDeviceReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	out, err := srv.(HandlerManagerServer).SetDefaultDevice(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 var _HandlerManager_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "core.HandlerManager",
 	HandlerType: (*HandlerManagerServer)(nil),
@@ -256,6 +352,14 @@ var _HandlerManager_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListDevices",
 			Handler:    _HandlerManager_ListDevices_Handler,
+		},
+		{
+			MethodName: "GetDefaultDevice",
+			Handler:    _HandlerManager_GetDefaultDevice_Handler,
+		},
+		{
+			MethodName: "SetDefaultDevice",
+			Handler:    _HandlerManager_SetDefaultDevice_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{},
@@ -563,6 +667,122 @@ func (m *HandlerOTAADevice) MarshalTo(data []byte) (int, error) {
 	return i, nil
 }
 
+func (m *GetDefaultDeviceReq) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *GetDefaultDeviceReq) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if len(m.Token) > 0 {
+		data[i] = 0xa
+		i++
+		i = encodeVarintHandlerManager(data, i, uint64(len(m.Token)))
+		i += copy(data[i:], m.Token)
+	}
+	if m.AppEUI != nil {
+		if len(m.AppEUI) > 0 {
+			data[i] = 0x12
+			i++
+			i = encodeVarintHandlerManager(data, i, uint64(len(m.AppEUI)))
+			i += copy(data[i:], m.AppEUI)
+		}
+	}
+	return i, nil
+}
+
+func (m *GetDefaultDeviceRes) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *GetDefaultDeviceRes) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if m.AppKey != nil {
+		if len(m.AppKey) > 0 {
+			data[i] = 0xa
+			i++
+			i = encodeVarintHandlerManager(data, i, uint64(len(m.AppKey)))
+			i += copy(data[i:], m.AppKey)
+		}
+	}
+	return i, nil
+}
+
+func (m *SetDefaultDeviceReq) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *SetDefaultDeviceReq) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if len(m.Token) > 0 {
+		data[i] = 0xa
+		i++
+		i = encodeVarintHandlerManager(data, i, uint64(len(m.Token)))
+		i += copy(data[i:], m.Token)
+	}
+	if m.AppEUI != nil {
+		if len(m.AppEUI) > 0 {
+			data[i] = 0x12
+			i++
+			i = encodeVarintHandlerManager(data, i, uint64(len(m.AppEUI)))
+			i += copy(data[i:], m.AppEUI)
+		}
+	}
+	if m.AppKey != nil {
+		if len(m.AppKey) > 0 {
+			data[i] = 0x1a
+			i++
+			i = encodeVarintHandlerManager(data, i, uint64(len(m.AppKey)))
+			i += copy(data[i:], m.AppKey)
+		}
+	}
+	return i, nil
+}
+
+func (m *SetDefaultDeviceRes) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *SetDefaultDeviceRes) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	return i, nil
+}
+
 func encodeFixed64HandlerManager(data []byte, offset int, v uint64) int {
 	data[offset] = uint8(v)
 	data[offset+1] = uint8(v >> 8)
@@ -735,6 +955,62 @@ func (m *HandlerOTAADevice) Size() (n int) {
 	if m.FCntDown != 0 {
 		n += 1 + sovHandlerManager(uint64(m.FCntDown))
 	}
+	return n
+}
+
+func (m *GetDefaultDeviceReq) Size() (n int) {
+	var l int
+	_ = l
+	l = len(m.Token)
+	if l > 0 {
+		n += 1 + l + sovHandlerManager(uint64(l))
+	}
+	if m.AppEUI != nil {
+		l = len(m.AppEUI)
+		if l > 0 {
+			n += 1 + l + sovHandlerManager(uint64(l))
+		}
+	}
+	return n
+}
+
+func (m *GetDefaultDeviceRes) Size() (n int) {
+	var l int
+	_ = l
+	if m.AppKey != nil {
+		l = len(m.AppKey)
+		if l > 0 {
+			n += 1 + l + sovHandlerManager(uint64(l))
+		}
+	}
+	return n
+}
+
+func (m *SetDefaultDeviceReq) Size() (n int) {
+	var l int
+	_ = l
+	l = len(m.Token)
+	if l > 0 {
+		n += 1 + l + sovHandlerManager(uint64(l))
+	}
+	if m.AppEUI != nil {
+		l = len(m.AppEUI)
+		if l > 0 {
+			n += 1 + l + sovHandlerManager(uint64(l))
+		}
+	}
+	if m.AppKey != nil {
+		l = len(m.AppKey)
+		if l > 0 {
+			n += 1 + l + sovHandlerManager(uint64(l))
+		}
+	}
+	return n
+}
+
+func (m *SetDefaultDeviceRes) Size() (n int) {
+	var l int
+	_ = l
 	return n
 }
 
@@ -1872,6 +2148,388 @@ func (m *HandlerOTAADevice) Unmarshal(data []byte) error {
 	}
 	return nil
 }
+func (m *GetDefaultDeviceReq) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowHandlerManager
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GetDefaultDeviceReq: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GetDefaultDeviceReq: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Token", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandlerManager
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthHandlerManager
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Token = string(data[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AppEUI", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandlerManager
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthHandlerManager
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AppEUI = append(m.AppEUI[:0], data[iNdEx:postIndex]...)
+			if m.AppEUI == nil {
+				m.AppEUI = []byte{}
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipHandlerManager(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthHandlerManager
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *GetDefaultDeviceRes) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowHandlerManager
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GetDefaultDeviceRes: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GetDefaultDeviceRes: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AppKey", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandlerManager
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthHandlerManager
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AppKey = append(m.AppKey[:0], data[iNdEx:postIndex]...)
+			if m.AppKey == nil {
+				m.AppKey = []byte{}
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipHandlerManager(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthHandlerManager
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *SetDefaultDeviceReq) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowHandlerManager
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: SetDefaultDeviceReq: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: SetDefaultDeviceReq: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Token", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandlerManager
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthHandlerManager
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Token = string(data[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AppEUI", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandlerManager
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthHandlerManager
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AppEUI = append(m.AppEUI[:0], data[iNdEx:postIndex]...)
+			if m.AppEUI == nil {
+				m.AppEUI = []byte{}
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AppKey", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandlerManager
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthHandlerManager
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AppKey = append(m.AppKey[:0], data[iNdEx:postIndex]...)
+			if m.AppKey == nil {
+				m.AppKey = []byte{}
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipHandlerManager(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthHandlerManager
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *SetDefaultDeviceRes) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowHandlerManager
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: SetDefaultDeviceRes: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: SetDefaultDeviceRes: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipHandlerManager(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthHandlerManager
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func skipHandlerManager(data []byte) (n int, err error) {
 	l := len(data)
 	iNdEx := 0
@@ -1978,33 +2636,37 @@ var (
 )
 
 var fileDescriptorHandlerManager = []byte{
-	// 436 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xac, 0x54, 0xcb, 0x6e, 0xda, 0x40,
-	0x14, 0xed, 0xe0, 0x17, 0x5c, 0xda, 0x8a, 0x4e, 0x81, 0xba, 0xae, 0x84, 0xaa, 0x59, 0x21, 0x55,
-	0x62, 0x41, 0xbf, 0xc0, 0x14, 0xfa, 0x50, 0x5f, 0xc8, 0x81, 0x75, 0xe4, 0xe0, 0x21, 0x41, 0x24,
-	0xb6, 0xe3, 0xb1, 0x82, 0xf2, 0x19, 0x91, 0xb2, 0xc8, 0x0f, 0x45, 0xca, 0x32, 0x9f, 0x10, 0x91,
-	0x1f, 0xc9, 0x8c, 0xc7, 0x02, 0x3b, 0xb1, 0xb3, 0x40, 0x59, 0x58, 0xe2, 0xdc, 0x73, 0xb8, 0x3e,
-	0xf7, 0xce, 0x19, 0x43, 0xeb, 0xc8, 0xf5, 0xbd, 0x63, 0x1a, 0xed, 0x9f, 0xb8, 0xbe, 0x7b, 0x48,
-	0xa3, 0x5e, 0x18, 0x05, 0x71, 0x80, 0xd5, 0x59, 0x10, 0x51, 0x12, 0x43, 0x73, 0x1a, 0x32, 0x1a,
-	0xc5, 0xff, 0x27, 0xb6, 0xfd, 0x53, 0x0a, 0x1d, 0x7a, 0x8a, 0x9b, 0xa0, 0x4d, 0x82, 0x25, 0xf5,
-	0x4d, 0xf4, 0x19, 0x75, 0x6b, 0x8e, 0x16, 0x0b, 0x80, 0xdb, 0xa0, 0xdb, 0x61, 0x38, 0x9a, 0xfe,
-	0x32, 0x2b, 0xbc, 0xfc, 0xda, 0xd1, 0xdd, 0x04, 0x89, 0xfa, 0x90, 0x9e, 0x89, 0xba, 0x22, 0xeb,
-	0x5e, 0x82, 0x52, 0xfd, 0x6f, 0x7a, 0x6e, 0xaa, 0x1b, 0x3d, 0x47, 0xa4, 0x5d, 0xf8, 0x56, 0x46,
-	0x2e, 0x10, 0xbc, 0x97, 0x84, 0x3d, 0x18, 0xef, 0xec, 0xc6, 0x04, 0x83, 0xbb, 0xb1, 0x3d, 0x2f,
-	0x4a, 0xed, 0x18, 0x9e, 0x84, 0x82, 0xf9, 0xb7, 0x5a, 0xee, 0x6d, 0x0d, 0x19, 0xbe, 0x84, 0x82,
-	0xe1, 0xbd, 0x12, 0x46, 0x93, 0x8c, 0x2b, 0x21, 0x69, 0x15, 0x59, 0x62, 0x64, 0x04, 0xad, 0x3f,
-	0x0b, 0x16, 0xf3, 0x17, 0x2d, 0x66, 0x94, 0xed, 0xea, 0x95, 0xf8, 0xc5, 0x6d, 0x18, 0xfe, 0x02,
-	0xaa, 0x58, 0x0e, 0xef, 0xa2, 0x74, 0xeb, 0xfd, 0x0f, 0x3d, 0x71, 0x5a, 0xbd, 0x94, 0x17, 0x84,
-	0xfc, 0x87, 0xa3, 0x06, 0xfc, 0x37, 0xee, 0x82, 0xc2, 0xdd, 0xf1, 0xd6, 0x42, 0xdb, 0xce, 0x69,
-	0x79, 0x3d, 0x95, 0x2a, 0xee, 0x60, 0x4c, 0x2e, 0x11, 0x34, 0x1e, 0x33, 0xd9, 0x85, 0x55, 0x4a,
-	0x17, 0xa6, 0x94, 0x2e, 0x4c, 0xcd, 0x2d, 0x4c, 0x8c, 0xfa, 0xfd, 0x9b, 0x1f, 0x4f, 0xc3, 0x64,
-	0x93, 0x6f, 0x1c, 0x7d, 0x9e, 0x20, 0x6c, 0x41, 0x55, 0xd4, 0x87, 0xc1, 0xca, 0x37, 0xf5, 0x84,
-	0xa9, 0xce, 0x53, 0x4c, 0xae, 0x11, 0xbc, 0x7b, 0x32, 0x5c, 0x26, 0x56, 0x28, 0x17, 0xab, 0x17,
-	0xf7, 0x9b, 0x86, 0x54, 0xcb, 0x86, 0x34, 0x33, 0x87, 0x51, 0x3a, 0x47, 0x35, 0x3f, 0x47, 0x7f,
-	0x8d, 0xe0, 0x6d, 0x3a, 0xc7, 0x5f, 0x79, 0xdb, 0xf0, 0x10, 0x60, 0x9b, 0x75, 0x6c, 0xc9, 0xc3,
-	0x29, 0xba, 0x73, 0x56, 0x39, 0xc7, 0xb0, 0x0d, 0xb5, 0x4d, 0x0a, 0xf1, 0xc7, 0xac, 0x30, 0x77,
-	0x53, 0xac, 0x52, 0x8a, 0xe1, 0x1f, 0x50, 0xcf, 0x44, 0x0d, 0x7f, 0x92, 0xca, 0xc2, 0x10, 0x5b,
-	0xcf, 0x90, 0x6c, 0xd0, 0xb8, 0x59, 0x77, 0xd0, 0x2d, 0x7f, 0xee, 0xf8, 0x73, 0x75, 0xdf, 0x79,
-	0x75, 0xa0, 0x27, 0x9f, 0x94, 0xaf, 0x0f, 0x01, 0x00, 0x00, 0xff, 0xff, 0x8e, 0x92, 0x19, 0x70,
-	0x6b, 0x04, 0x00, 0x00,
+	// 501 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xac, 0x54, 0xcb, 0x6e, 0xd3, 0x40,
+	0x14, 0x65, 0x62, 0xc7, 0x49, 0x6f, 0x01, 0x85, 0x49, 0x13, 0x8c, 0x91, 0x2a, 0x34, 0xab, 0x48,
+	0x88, 0x2c, 0xca, 0x17, 0x38, 0x4d, 0x69, 0x11, 0xaf, 0xca, 0x6e, 0x56, 0x2c, 0x90, 0xa9, 0x27,
+	0x50, 0xb5, 0xd8, 0xc6, 0x63, 0xa8, 0xf8, 0x0c, 0x24, 0x16, 0xfc, 0x10, 0x12, 0x4b, 0x3e, 0x01,
+	0xc1, 0x3f, 0xb0, 0x66, 0x5e, 0xb4, 0xe3, 0x30, 0x83, 0x44, 0x61, 0x61, 0x29, 0xe7, 0x9e, 0x9b,
+	0x33, 0x67, 0xee, 0x63, 0x60, 0xf4, 0x32, 0x2b, 0xf2, 0x13, 0x5a, 0x3f, 0x7b, 0x95, 0x15, 0xd9,
+	0x0b, 0x5a, 0x4f, 0xab, 0xba, 0x6c, 0x4a, 0xec, 0x1f, 0x96, 0x35, 0x25, 0x0d, 0x6c, 0x2c, 0x2a,
+	0x46, 0xeb, 0xe6, 0xc9, 0x41, 0x1c, 0xef, 0xa9, 0xc4, 0x84, 0xbe, 0xc6, 0x1b, 0xd0, 0x3d, 0x28,
+	0x8f, 0x69, 0x11, 0xa2, 0x5b, 0x68, 0xb2, 0x96, 0x74, 0x1b, 0x01, 0xf0, 0x18, 0x82, 0xb8, 0xaa,
+	0x76, 0x16, 0xf7, 0xc3, 0x0e, 0x0f, 0x5f, 0x4e, 0x82, 0x4c, 0x22, 0x11, 0x9f, 0xd3, 0xb7, 0x22,
+	0xee, 0xa9, 0x78, 0x2e, 0x91, 0xce, 0x7f, 0x40, 0xdf, 0x85, 0xfe, 0x59, 0x3e, 0x47, 0x64, 0x6c,
+	0x3d, 0x95, 0x91, 0xf7, 0x08, 0x86, 0x8a, 0x88, 0x67, 0xfb, 0x17, 0x76, 0x13, 0x42, 0x8f, 0xbb,
+	0x89, 0xf3, 0xbc, 0xd6, 0x76, 0x7a, 0xb9, 0x82, 0x82, 0x79, 0x7c, 0x7a, 0x9c, 0x9e, 0x1b, 0xea,
+	0x15, 0x0a, 0x0a, 0x86, 0x6b, 0x49, 0xa6, 0xab, 0x98, 0x4c, 0x41, 0x32, 0xb2, 0x59, 0x62, 0x64,
+	0x07, 0x46, 0x0f, 0x8f, 0x58, 0xc3, 0x0f, 0x3a, 0x3a, 0xa4, 0xec, 0xa2, 0x5e, 0x49, 0x61, 0x97,
+	0x61, 0xf8, 0x36, 0xf8, 0xa2, 0x38, 0x5c, 0xc5, 0x9b, 0xac, 0x6f, 0x5d, 0x9f, 0x8a, 0x6e, 0x4d,
+	0x35, 0x2f, 0x08, 0xf5, 0x8f, 0xc4, 0x2f, 0xf9, 0x6f, 0x3c, 0x01, 0x8f, 0xbb, 0xe3, 0xd2, 0x22,
+	0x77, 0xdc, 0xca, 0xe5, 0x71, 0x9d, 0xea, 0x65, 0xb3, 0x7d, 0xf2, 0x01, 0xc1, 0x60, 0x95, 0x31,
+	0x0b, 0xd6, 0x71, 0x16, 0xcc, 0x73, 0x16, 0xcc, 0x6f, 0x15, 0x4c, 0x5c, 0xf5, 0xde, 0x76, 0xd1,
+	0x2c, 0x2a, 0x59, 0xc9, 0x2b, 0x49, 0xb0, 0x94, 0x08, 0x47, 0xd0, 0x17, 0xf1, 0x79, 0x79, 0x5a,
+	0x84, 0x81, 0x64, 0xfa, 0x4b, 0x8d, 0xc9, 0x27, 0x04, 0xd7, 0x7e, 0xbb, 0x9c, 0x31, 0x56, 0xa8,
+	0x35, 0x56, 0xff, 0xdd, 0xaf, 0x1e, 0xd2, 0xae, 0x39, 0xa4, 0xc6, 0x3d, 0x7a, 0xce, 0x7b, 0xf4,
+	0x57, 0xee, 0xb1, 0x0d, 0xc3, 0x5d, 0xca, 0xbb, 0xb9, 0xcc, 0xde, 0x9c, 0xe8, 0xa6, 0xfe, 0xfd,
+	0x4c, 0xdc, 0xb1, 0x89, 0x30, 0xc3, 0x27, 0x6a, 0x2d, 0xd3, 0x53, 0x18, 0xa6, 0xff, 0x7a, 0xa6,
+	0x21, 0xee, 0xb5, 0xc4, 0x47, 0x36, 0x71, 0xb6, 0xf5, 0xa3, 0x03, 0x57, 0x75, 0xbf, 0x1e, 0xa9,
+	0x57, 0x05, 0xcf, 0x01, 0xce, 0x77, 0x1a, 0x47, 0x6a, 0x08, 0x6d, 0x6f, 0x4b, 0xe4, 0xe6, 0x18,
+	0x8e, 0x61, 0xed, 0x6c, 0xdb, 0xf0, 0x0d, 0x33, 0xb1, 0xf5, 0x22, 0x44, 0x4e, 0x8a, 0xe1, 0x5d,
+	0x58, 0x37, 0x56, 0x0a, 0xdf, 0x54, 0x99, 0xd6, 0x65, 0x8d, 0xfe, 0x40, 0x32, 0xbc, 0x07, 0x83,
+	0xd5, 0x3e, 0xfc, 0xb2, 0x64, 0x69, 0x72, 0xe4, 0xa4, 0xa4, 0x52, 0xea, 0x50, 0x4a, 0xdd, 0x4a,
+	0x96, 0xc2, 0xcf, 0x06, 0x9f, 0xbf, 0x6d, 0xa2, 0x2f, 0xfc, 0xfb, 0xca, 0xbf, 0x8f, 0xdf, 0x37,
+	0x2f, 0x3d, 0x0f, 0xe4, 0x73, 0x7e, 0xf7, 0x67, 0x00, 0x00, 0x00, 0xff, 0xff, 0x3b, 0x2c, 0xbd,
+	0x68, 0xe7, 0x05, 0x00, 0x00,
 }

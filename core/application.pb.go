@@ -47,6 +47,10 @@
 		ListDevicesHandlerRes
 		HandlerABPDevice
 		HandlerOTAADevice
+		GetDefaultDeviceReq
+		GetDefaultDeviceRes
+		SetDefaultDeviceReq
+		SetDefaultDeviceRes
 		LoRaWANData
 		LoRaWANMHDR
 		LoRaWANMACPayload

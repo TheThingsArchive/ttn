@@ -763,3 +763,379 @@ func TestUpsertOTAA(t *testing.T) {
 		Check(t, wantRes, res, "Handler responses")
 	}
 }
+
+func TestGetDefault(t *testing.T) {
+	{
+		Desc(t, "Valid request, no issue")
+
+		// Build
+		br := mocks.NewAuthBrokerClient()
+		st := NewMockDevStorage()
+		st.OutGetDefault.Entry = &devDefaultEntry{
+			AppKey: [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 8, 7, 6, 5, 4, 3, 2, 1},
+		}
+		h := New(
+			Components{
+				Ctx:        GetLogger(t, "Handler"),
+				Broker:     br,
+				DevStorage: st,
+			}, Options{
+				PublicNetAddr:          "NetAddr",
+				PrivateNetAddr:         "PrivNetAddr",
+				PrivateNetAddrAnnounce: "PrivateNetAddrAnnounce",
+			})
+		req := &core.GetDefaultDeviceReq{
+			Token:  "==OAuth==Token==",
+			AppEUI: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+		}
+
+		// Expect
+		var wantErr *string
+		var wantBrkCall = &core.ValidateTokenBrokerReq{
+			Token:  req.Token,
+			AppEUI: req.AppEUI,
+		}
+		var wantRes = &core.GetDefaultDeviceRes{
+			AppKey: st.OutGetDefault.Entry.AppKey[:],
+		}
+
+		// Operate
+		res, err := h.GetDefaultDevice(context.Background(), req)
+
+		// Check
+		CheckErrors(t, wantErr, err)
+		Check(t, wantBrkCall, br.InValidateToken.Req, "Broker Calls")
+		Check(t, wantRes, res, "Handler responses")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Invalid request | Invalid AppEUI")
+
+		// Build
+		br := mocks.NewAuthBrokerClient()
+		st := NewMockDevStorage()
+		st.OutGetDefault.Entry = &devDefaultEntry{
+			AppKey: [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 8, 7, 6, 5, 4, 3, 2, 1},
+		}
+		h := New(
+			Components{
+				Ctx:        GetLogger(t, "Handler"),
+				Broker:     br,
+				DevStorage: st,
+			}, Options{
+				PublicNetAddr:          "NetAddr",
+				PrivateNetAddr:         "PrivNetAddr",
+				PrivateNetAddrAnnounce: "PrivateNetAddrAnnounce",
+			})
+		req := &core.GetDefaultDeviceReq{
+			Token:  "==OAuth==Token==",
+			AppEUI: []byte{1, 2, 3, 4, 5, 6},
+		}
+
+		// Expect
+		var wantErr = ErrStructural
+		var wantBrkCall *core.ValidateTokenBrokerReq
+		var wantRes = new(core.GetDefaultDeviceRes)
+
+		// Operate
+		res, err := h.GetDefaultDevice(context.Background(), req)
+
+		// Check
+		CheckErrors(t, wantErr, err)
+		Check(t, wantBrkCall, br.InValidateToken.Req, "Broker Calls")
+		Check(t, wantRes, res, "Handler responses")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Invalid request | Invalid token")
+
+		// Build
+		br := mocks.NewAuthBrokerClient()
+		br.Failures["ValidateToken"] = errors.New(errors.Operational, "Mock Error")
+		st := NewMockDevStorage()
+		st.OutGetDefault.Entry = &devDefaultEntry{
+			AppKey: [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 8, 7, 6, 5, 4, 3, 2, 1},
+		}
+		h := New(
+			Components{
+				Ctx:        GetLogger(t, "Handler"),
+				Broker:     br,
+				DevStorage: st,
+			}, Options{
+				PublicNetAddr:          "NetAddr",
+				PrivateNetAddr:         "PrivNetAddr",
+				PrivateNetAddrAnnounce: "PrivateNetAddrAnnounce",
+			})
+		req := &core.GetDefaultDeviceReq{
+			Token:  "==OAuth==Token==",
+			AppEUI: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+		}
+
+		// Expect
+		var wantErr = ErrOperational
+		var wantBrkCall = &core.ValidateTokenBrokerReq{
+			Token:  req.Token,
+			AppEUI: req.AppEUI,
+		}
+		var wantRes = new(core.GetDefaultDeviceRes)
+
+		// Operate
+		res, err := h.GetDefaultDevice(context.Background(), req)
+
+		// Check
+		CheckErrors(t, wantErr, err)
+		Check(t, wantBrkCall, br.InValidateToken.Req, "Broker Calls")
+		Check(t, wantRes, res, "Handler responses")
+	}
+
+	// --------------------
+	{
+		Desc(t, "Invalid request | Default not found")
+
+		// Build
+		br := mocks.NewAuthBrokerClient()
+		st := NewMockDevStorage()
+		st.Failures["getDefault"] = errors.New(errors.NotFound, "Mock Error")
+		st.OutGetDefault.Entry = &devDefaultEntry{
+			AppKey: [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 8, 7, 6, 5, 4, 3, 2, 1},
+		}
+		h := New(
+			Components{
+				Ctx:        GetLogger(t, "Handler"),
+				Broker:     br,
+				DevStorage: st,
+			}, Options{
+				PublicNetAddr:          "NetAddr",
+				PrivateNetAddr:         "PrivNetAddr",
+				PrivateNetAddrAnnounce: "PrivateNetAddrAnnounce",
+			})
+		req := &core.GetDefaultDeviceReq{
+			Token:  "==OAuth==Token==",
+			AppEUI: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+		}
+
+		// Expect
+		var wantErr = ErrNotFound
+		var wantBrkCall = &core.ValidateTokenBrokerReq{
+			Token:  req.Token,
+			AppEUI: req.AppEUI,
+		}
+		var wantRes = new(core.GetDefaultDeviceRes)
+
+		// Operate
+		res, err := h.GetDefaultDevice(context.Background(), req)
+
+		// Check
+		CheckErrors(t, wantErr, err)
+		Check(t, wantBrkCall, br.InValidateToken.Req, "Broker Calls")
+		Check(t, wantRes, res, "Handler responses")
+	}
+}
+
+func TestSetDefault(t *testing.T) {
+	{
+		Desc(t, "Valid request, no issue")
+
+		// Build
+		br := mocks.NewAuthBrokerClient()
+		st := NewMockDevStorage()
+		h := New(
+			Components{
+				Ctx:        GetLogger(t, "Handler"),
+				Broker:     br,
+				DevStorage: st,
+			}, Options{
+				PublicNetAddr:          "NetAddr",
+				PrivateNetAddr:         "PrivNetAddr",
+				PrivateNetAddrAnnounce: "PrivateNetAddrAnnounce",
+			})
+		req := &core.SetDefaultDeviceReq{
+			Token:  "==OAuth==Token==",
+			AppEUI: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			AppKey: []byte{1, 2, 3, 4, 5, 6, 7, 8, 8, 7, 6, 5, 4, 3, 2, 1},
+		}
+
+		// Expect
+		var wantErr *string
+		var wantBrkCall = &core.ValidateOTAABrokerReq{
+			Token:      req.Token,
+			AppEUI:     req.AppEUI,
+			NetAddress: "PrivateNetAddrAnnounce",
+		}
+		var wantRes = new(core.SetDefaultDeviceRes)
+
+		// Operate
+		res, err := h.SetDefaultDevice(context.Background(), req)
+
+		// Check
+		CheckErrors(t, wantErr, err)
+		Check(t, wantBrkCall, br.InValidateOTAA.Req, "Broker Calls")
+		Check(t, wantRes, res, "Handler responses")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Valid request | Invalid AppEUI")
+
+		// Build
+		br := mocks.NewAuthBrokerClient()
+		st := NewMockDevStorage()
+		h := New(
+			Components{
+				Ctx:        GetLogger(t, "Handler"),
+				Broker:     br,
+				DevStorage: st,
+			}, Options{
+				PublicNetAddr:          "NetAddr",
+				PrivateNetAddr:         "PrivNetAddr",
+				PrivateNetAddrAnnounce: "PrivateNetAddrAnnounce",
+			})
+		req := &core.SetDefaultDeviceReq{
+			Token:  "==OAuth==Token==",
+			AppEUI: []byte{5, 6, 7, 8},
+			AppKey: []byte{1, 2, 3, 4, 5, 6, 7, 8, 8, 7, 6, 5, 4, 3, 2, 1},
+		}
+
+		// Expect
+		var wantErr = ErrStructural
+		var wantBrkCall *core.ValidateOTAABrokerReq
+		var wantRes = new(core.SetDefaultDeviceRes)
+
+		// Operate
+		res, err := h.SetDefaultDevice(context.Background(), req)
+
+		// Check
+		CheckErrors(t, wantErr, err)
+		Check(t, wantBrkCall, br.InValidateOTAA.Req, "Broker Calls")
+		Check(t, wantRes, res, "Handler responses")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Valid request | Invalid AppKey")
+
+		// Build
+		br := mocks.NewAuthBrokerClient()
+		st := NewMockDevStorage()
+		h := New(
+			Components{
+				Ctx:        GetLogger(t, "Handler"),
+				Broker:     br,
+				DevStorage: st,
+			}, Options{
+				PublicNetAddr:          "NetAddr",
+				PrivateNetAddr:         "PrivNetAddr",
+				PrivateNetAddrAnnounce: "PrivateNetAddrAnnounce",
+			})
+		req := &core.SetDefaultDeviceReq{
+			Token:  "==OAuth==Token==",
+			AppEUI: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			AppKey: []byte{1, 2, 3, 4},
+		}
+
+		// Expect
+		var wantErr = ErrStructural
+		var wantBrkCall *core.ValidateOTAABrokerReq
+		var wantRes = new(core.SetDefaultDeviceRes)
+
+		// Operate
+		res, err := h.SetDefaultDevice(context.Background(), req)
+
+		// Check
+		CheckErrors(t, wantErr, err)
+		Check(t, wantBrkCall, br.InValidateOTAA.Req, "Broker Calls")
+		Check(t, wantRes, res, "Handler responses")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Valid request | Invalid token")
+
+		// Build
+		br := mocks.NewAuthBrokerClient()
+		br.Failures["ValidateOTAA"] = errors.New(errors.Operational, "Mock Error")
+		st := NewMockDevStorage()
+		h := New(
+			Components{
+				Ctx:        GetLogger(t, "Handler"),
+				Broker:     br,
+				DevStorage: st,
+			}, Options{
+				PublicNetAddr:          "NetAddr",
+				PrivateNetAddr:         "PrivNetAddr",
+				PrivateNetAddrAnnounce: "PrivateNetAddrAnnounce",
+			})
+		req := &core.SetDefaultDeviceReq{
+			Token:  "==OAuth==Token==",
+			AppEUI: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			AppKey: []byte{1, 2, 3, 4, 5, 6, 7, 8, 8, 7, 6, 5, 4, 3, 2, 1},
+		}
+
+		// Expect
+		var wantErr = ErrOperational
+		var wantBrkCall = &core.ValidateOTAABrokerReq{
+			Token:      req.Token,
+			AppEUI:     req.AppEUI,
+			NetAddress: "PrivateNetAddrAnnounce",
+		}
+		var wantRes = new(core.SetDefaultDeviceRes)
+
+		// Operate
+		res, err := h.SetDefaultDevice(context.Background(), req)
+
+		// Check
+		CheckErrors(t, wantErr, err)
+		Check(t, wantBrkCall, br.InValidateOTAA.Req, "Broker Calls")
+		Check(t, wantRes, res, "Handler responses")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Valid request | Storage error")
+
+		// Build
+		br := mocks.NewAuthBrokerClient()
+		st := NewMockDevStorage()
+		st.Failures["setDefault"] = errors.New(errors.Operational, "Mock Error")
+		h := New(
+			Components{
+				Ctx:        GetLogger(t, "Handler"),
+				Broker:     br,
+				DevStorage: st,
+			}, Options{
+				PublicNetAddr:          "NetAddr",
+				PrivateNetAddr:         "PrivNetAddr",
+				PrivateNetAddrAnnounce: "PrivateNetAddrAnnounce",
+			})
+		req := &core.SetDefaultDeviceReq{
+			Token:  "==OAuth==Token==",
+			AppEUI: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			AppKey: []byte{1, 2, 3, 4, 5, 6, 7, 8, 8, 7, 6, 5, 4, 3, 2, 1},
+		}
+
+		// Expect
+		var wantErr = ErrOperational
+		var wantBrkCall = &core.ValidateOTAABrokerReq{
+			Token:      req.Token,
+			AppEUI:     req.AppEUI,
+			NetAddress: "PrivateNetAddrAnnounce",
+		}
+		var wantRes = new(core.SetDefaultDeviceRes)
+
+		// Operate
+		res, err := h.SetDefaultDevice(context.Background(), req)
+
+		// Check
+		CheckErrors(t, wantErr, err)
+		Check(t, wantBrkCall, br.InValidateOTAA.Req, "Broker Calls")
+		Check(t, wantRes, res, "Handler responses")
+	}
+}

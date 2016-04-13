@@ -17,7 +17,8 @@ import (
 var subscribeCmd = &cobra.Command{
 	Use:   "subscribe [DevEUI]",
 	Short: "Subscribe to uplink messages from a device",
-	Long: `ttnctl subscribe prints out uplink messages from a device as they arrive.
+	Long: `ttnctl subscribe prints out uplink messages from a device as they
+arrive.
 
 The optional DevEUI argument can be used to only receive messages from a
 specific device. By default you will receive messages from all devices of your

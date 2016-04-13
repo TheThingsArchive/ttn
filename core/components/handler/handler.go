@@ -170,18 +170,38 @@ func (h component) HandleJoin(bctx context.Context, req *core.JoinHandlerReq) (*
 
 	ctx.Debug("Handle join request")
 
-	// 1. Lookup for the associated AppKey
+	// 1. Lookup the associated entry or create new entry based on default
 	entry, err := h.DevStorage.read(req.AppEUI, req.DevEUI)
-	if err != nil {
-		ctx.Debug("Trying to activate unknown device")
+	if ferr, ok := err.(errors.Failure); ok && ferr.Nature == errors.NotFound { // The device is unknown, check if there are default settings
+		defaultEntry, err := h.DevStorage.getDefault(req.AppEUI)
+		if err != nil {
+			ctx.WithError(err).Debug("Failed to retrieve default device settings")
+			return new(core.JoinHandlerRes), err
+		}
+		if defaultEntry == nil {
+			ctx.Debug("Device unknown and no default device settings configured")
+			return new(core.JoinHandlerRes), errors.New(errors.NotFound, "Device unknown and no default device settings configured")
+		}
+		// Register a new OTAA device based on default
+		ctx.Debug("Registering a new OTAA device based on default settings")
+		entry = devEntry{
+			AppEUI: req.AppEUI,
+			AppKey: &defaultEntry.AppKey,
+			DevEUI: req.DevEUI,
+		}
+		if err = h.DevStorage.upsert(entry); err != nil {
+			ctx.WithError(err).Debug("Failed to store new device based on default settings")
+			return new(core.JoinHandlerRes), err
+		}
+	} else if err != nil { // General error
+		ctx.WithError(err).Debug("Failed to retrieve device entry from storage")
 		return new(core.JoinHandlerRes), err
-	}
-	if entry.AppKey == nil { // Trying to activate an ABP device
-		ctx.Debug("Trying to activate personalized device")
-		return new(core.JoinHandlerRes), errors.New(errors.Behavioural, "Trying to activate a personalized device")
+	} else if entry.AppKey == nil { // Trying to activate an ABP device
+		ctx.Debug("Cannot activate a personalized device over the air")
+		return new(core.JoinHandlerRes), errors.New(errors.Behavioural, "Cannot activate a personalized device over the air")
 	}
 
-	// 1.5. (Yep, indexed comments sucks) Verify MIC
+	// 2. Verify MIC
 	payload := lorawan.NewPHYPayload(true)
 	payload.MHDR = lorawan.MHDR{Major: lorawan.LoRaWANR1, MType: lorawan.JoinRequest}
 	joinPayload := lorawan.JoinRequestPayload{}
@@ -195,18 +215,18 @@ func (h component) HandleJoin(bctx context.Context, req *core.JoinHandlerReq) (*
 		return new(core.JoinHandlerRes), errors.New(errors.Structural, "Unable to validate MIC")
 	}
 
-	// 2. Prepare a channel to receive the response from the consumer
+	// 3. Prepare a channel to receive the response from the consumer
 	chresp := make(chan interface{})
 
-	// 3. Create a "bundle" which holds info waiting for other related packets
+	// 4. Create a "bundle" which holds info waiting for other related packets
 	var bundleID [21]byte             // Type | AppEUI(8) | DevEUI(8) | DevNonce | [ 0 0 ]
 	buf := bytes.NewBuffer([]byte{0}) // 0 for join
-	_ = binary.Write(buf, binary.BigEndian, req.AppEUI)
-	_ = binary.Write(buf, binary.BigEndian, req.DevEUI)
-	_ = binary.Write(buf, binary.BigEndian, req.DevNonce)
+	binary.Write(buf, binary.BigEndian, req.AppEUI)
+	binary.Write(buf, binary.BigEndian, req.DevEUI)
+	binary.Write(buf, binary.BigEndian, req.DevNonce)
 	copy(bundleID[:], buf.Bytes())
 
-	// 4. Send the actual bundle to the consumer
+	// 5. Send the actual bundle to the consumer
 	ctx.WithField("BundleID", bundleID).Debug("Define new bundle")
 
 	h.ChBundles <- bundle{
@@ -218,7 +238,7 @@ func (h component) HandleJoin(bctx context.Context, req *core.JoinHandlerReq) (*
 		Time:     time.Now(),
 	}
 
-	// 5. Control the response
+	// 6. Control the response
 	resp := <-chresp
 	switch resp.(type) {
 	case *core.JoinHandlerRes:

@@ -13,7 +13,7 @@ import (
 
 const devDB = "TestDevStorage.db"
 
-func TestReadStore(t *testing.T) {
+func TestStore(t *testing.T) {
 	var db DevStorage
 	defer func() {
 		os.Remove(path.Join(os.TempDir(), devDB))
@@ -55,7 +55,7 @@ func TestReadStore(t *testing.T) {
 	// ------------------
 
 	{
-		Desc(t, "read a non-existing registration")
+		Desc(t, "Read a non-existing registration")
 
 		// Build
 		appEUI := []byte{0, 0, 0, 0, 0, 0, 0, 1}
@@ -177,13 +177,53 @@ func TestReadStore(t *testing.T) {
 	// ------------------
 
 	{
+		Desc(t, "Read a non-existing default device entry")
+
+		// Build
+		appEUI := []byte{0, 0, 0, 0, 0, 0, 0, 1}
+
+		// Operate
+		entry, err := db.getDefault(appEUI)
+
+		// Expect
+		var want *devDefaultEntry
+
+		// Check
+		CheckErrors(t, nil, err)
+		Check(t, want, entry, "Default Entry")
+	}
+
+	// ------------------
+
+	{
+		Desc(t, "Set and get default device entry")
+
+		// Build
+		appEUI := []byte{1, 2, 3, 4, 5, 6, 7, 8}
+		entry := devDefaultEntry{
+			AppKey: [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8},
+		}
+
+		// Operate
+		err := db.setDefault(appEUI, &entry)
+		FatalUnless(t, err)
+		want, err := db.getDefault(appEUI)
+
+		// Check
+		FatalUnless(t, err)
+		Check(t, *want, entry, "Default Entry")
+	}
+
+	// ------------------
+
+	{
 		Desc(t, "Close the storage")
 		err := db.done()
 		CheckErrors(t, nil, err)
 	}
 }
 
-func TestMarshalUnmarshalEntries(t *testing.T) {
+func TestMarshalUnmarshalDevEntries(t *testing.T) {
 	{
 		Desc(t, "Complete Entry")
 		entry := devEntry{
@@ -259,5 +299,21 @@ func TestMarshalUnmarshalEntries(t *testing.T) {
 		err = unmarshaled.UnmarshalBinary(data)
 		CheckErrors(t, nil, err)
 		Check(t, want, *unmarshaled, "Entries")
+	}
+}
+
+func TestMarshalUnmarshalDevDefaultEntries(t *testing.T) {
+	{
+		Desc(t, "Entry")
+		entry := devDefaultEntry{
+			AppKey: [16]byte{1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2},
+		}
+
+		data, err := entry.MarshalBinary()
+		CheckErrors(t, nil, err)
+		unmarshaled := new(devDefaultEntry)
+		err = unmarshaled.UnmarshalBinary(data)
+		CheckErrors(t, nil, err)
+		Check(t, entry, *unmarshaled, "Entries")
 	}
 }

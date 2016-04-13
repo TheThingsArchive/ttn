@@ -24,6 +24,16 @@ type MockDevStorage struct {
 	InUpsert struct {
 		Entry devEntry
 	}
+	InGetDefault struct {
+		AppEUI []byte
+	}
+	OutGetDefault struct {
+		Entry *devDefaultEntry
+	}
+	InSetDefault struct {
+		AppEUI []byte
+		Entry  *devDefaultEntry
+	}
 	InDone struct {
 		Called bool
 	}
@@ -53,6 +63,18 @@ func (m *MockDevStorage) readAll(appEUI []byte) ([]devEntry, error) {
 func (m *MockDevStorage) upsert(entry devEntry) error {
 	m.InUpsert.Entry = entry
 	return m.Failures["upsert"]
+}
+
+// getDefault implements the DevStorage interface
+func (m *MockDevStorage) getDefault(appEUI []byte) (*devDefaultEntry, error) {
+	m.InGetDefault.AppEUI = appEUI
+	return m.OutGetDefault.Entry, m.Failures["getDefault"]
+}
+
+// setDefault implements the DevStorage Interface
+func (m *MockDevStorage) setDefault(appEUI []byte, e *devDefaultEntry) error {
+	m.InSetDefault.Entry = e
+	return m.Failures["setDefault"]
 }
 
 // done implements the DevStorage Interface

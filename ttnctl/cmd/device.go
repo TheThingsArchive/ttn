@@ -32,7 +32,8 @@ func getHandlerManager() core.AuthHandlerClient {
 var devicesCmd = &cobra.Command{
 	Use:   "devices",
 	Short: "Manage devices on the Handler",
-	Long:  `ttnctl devices retrieves a list of devices that your application registered on the Handler.`,
+	Long: `ttnctl devices retrieves a list of devices that your application
+registered on the Handler.`,
 	Run: func(cmd *cobra.Command, args []string) {
 
 		appEUI := util.GetAppEUI(ctx)
@@ -46,7 +47,22 @@ var devicesCmd = &cobra.Command{
 		}
 
 		manager := getHandlerManager()
-		res, err := manager.ListDevices(context.Background(), &core.ListDevicesHandlerReq{
+		defaultDevice, err := manager.GetDefaultDevice(context.Background(), &core.GetDefaultDeviceReq{
+			Token:  auth.AccessToken,
+			AppEUI: appEUI,
+		})
+		if err != nil {
+			ctx.WithError(err).Fatal("Could not get default device settings")
+		}
+		if defaultDevice != nil {
+			ctx.Warn("Application activates new devices with default AppKey")
+			fmt.Printf("Default AppKey:  %X\n", defaultDevice.AppKey)
+			fmt.Printf("                 {%s}\n", cStyle(defaultDevice.AppKey))
+		} else {
+			ctx.Info("Application does not activate new devices with default AppKey")
+		}
+
+		devices, err := manager.ListDevices(context.Background(), &core.ListDevicesHandlerReq{
 			Token:  auth.AccessToken,
 			AppEUI: appEUI,
 		})
@@ -54,12 +70,12 @@ var devicesCmd = &cobra.Command{
 			ctx.WithError(err).Fatal("Could not get device list")
 		}
 
-		ctx.Infof("Found %d personalized devices (ABP)", len(res.ABP))
+		ctx.Infof("Found %d personalized devices (ABP)", len(devices.ABP))
 
 		table := uitable.New()
 		table.MaxColWidth = 70
 		table.AddRow("DevAddr", "FCntUp", "FCntDown")
-		for _, device := range res.ABP {
+		for _, device := range devices.ABP {
 			devAddr := fmt.Sprintf("%X", device.DevAddr)
 			table.AddRow(devAddr, device.FCntUp, device.FCntDown)
 		}
@@ -68,11 +84,11 @@ var devicesCmd = &cobra.Command{
 		fmt.Println(table)
 		fmt.Println()
 
-		ctx.Infof("Found %d dynamic devices (OTAA)", len(res.OTAA))
+		ctx.Infof("Found %d dynamic devices (OTAA)", len(devices.OTAA))
 		table = uitable.New()
 		table.MaxColWidth = 40
 		table.AddRow("DevEUI", "DevAddr", "FCntUp", "FCntDown")
-		for _, device := range res.OTAA {
+		for _, device := range devices.OTAA {
 			devEUI := fmt.Sprintf("%X", device.DevEUI)
 			devAddr := fmt.Sprintf("%X", device.DevAddr)
 			table.AddRow(devEUI, devAddr, device.FCntUp, device.FCntDown)
@@ -83,7 +99,6 @@ var devicesCmd = &cobra.Command{
 		fmt.Println()
 
 		ctx.Info("Run 'ttnctl devices info [DevAddr|DevEUI]' for more information about a specific device")
-
 	},
 }
 
@@ -202,7 +217,8 @@ func cStyle(bytes []byte) (output string) {
 var devicesRegisterCmd = &cobra.Command{
 	Use:   "register [DevEUI] [AppKey]",
 	Short: "Create or Update registrations on the Handler",
-	Long:  `ttnctl devices register creates or updates an OTAA registration on the Handler`,
+	Long: `ttnctl devices register creates or updates an OTAA registration on
+the Handler`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 0 {
 			cmd.Help()
@@ -255,8 +271,9 @@ var devicesRegisterCmd = &cobra.Command{
 // devicesRegisterPersonalizedCmd represents the `device register personalized` command
 var devicesRegisterPersonalizedCmd = &cobra.Command{
 	Use:   "personalized [DevAddr] [NwkSKey] [AppSKey]",
-	Short: "Create or Update ABP registrations on the Handler",
-	Long:  `ttnctl devices register creates or updates an ABP registration on the Handler`,
+	Short: "Create or update ABP registrations on the Handler",
+	Long: `ttnctl devices register personalized creates or updates an ABP
+registration on the Handler`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 0 {
 			cmd.Help()
@@ -313,9 +330,58 @@ var devicesRegisterPersonalizedCmd = &cobra.Command{
 	},
 }
 
+// devicesRegisterDefaultCmd represents the `device register` command
+var devicesRegisterDefaultCmd = &cobra.Command{
+	Use:   "default [AppKey]",
+	Short: "Create or update default OTAA registrations on the Handler",
+	Long: `ttnctl devices register default creates or updates OTAA registrations
+on the Handler that have not been explicitly registered using ttnctl devices
+register [DevEUI] [AppKey]`,
+	Run: func(cmd *cobra.Command, args []string) {
+		if len(args) < 1 {
+			cmd.Help()
+			return
+		}
+
+		appEUI := util.GetAppEUI(ctx)
+
+		var appKey []byte
+		var err error
+		if len(args) >= 2 {
+			appKey, err = util.Parse128(args[0])
+			if err != nil {
+				ctx.Fatalf("Invalid AppKey: %s", err)
+			}
+		} else {
+			ctx.Info("Generating random AppKey...")
+			appKey = random.Bytes(16)
+		}
+
+		auth, err := util.LoadAuth(viper.GetString("ttn-account-server"))
+		if err != nil {
+			ctx.WithError(err).Fatal("Failed to load authentication")
+		}
+		if auth == nil {
+			ctx.Fatal("No authentication found. Please login")
+		}
+
+		manager := getHandlerManager()
+		res, err := manager.SetDefaultDevice(context.Background(), &core.SetDefaultDeviceReq{
+			Token:  auth.AccessToken,
+			AppEUI: appEUI,
+			AppKey: appKey,
+		})
+		if err != nil || res == nil {
+			ctx.WithError(err).Fatal("Could not set default device settings")
+		}
+		ctx.Info("Ok")
+	},
+}
+
 func init() {
 	RootCmd.AddCommand(devicesCmd)
 	devicesCmd.AddCommand(devicesRegisterCmd)
 	devicesCmd.AddCommand(devicesInfoCmd)
 	devicesRegisterCmd.AddCommand(devicesRegisterPersonalizedCmd)
+	devicesRegisterCmd.AddCommand(devicesRegisterDefaultCmd)
 }
