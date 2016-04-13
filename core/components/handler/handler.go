@@ -177,7 +177,8 @@ func (h component) HandleJoin(bctx context.Context, req *core.JoinHandlerReq) (*
 		if err != nil {
 			ctx.WithError(err).Debug("Failed to retrieve default device settings")
 			return new(core.JoinHandlerRes), err
-		} else if defaultEntry == nil {
+		}
+		if defaultEntry == nil {
 			ctx.Debug("Device unknown and no default device settings configured")
 			return new(core.JoinHandlerRes), errors.New(errors.NotFound, "Device unknown and no default device settings configured")
 		}
