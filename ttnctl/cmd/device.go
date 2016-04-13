@@ -52,7 +52,8 @@ registered on the Handler.`,
 			AppEUI: appEUI,
 		})
 		if err != nil {
-			ctx.WithError(err).Fatal("Could not get default device settings")
+			// TODO: Check reason
+			defaultDevice = nil
 		}
 		if defaultDevice != nil {
 			ctx.Warn("Application activates new devices with default AppKey")
