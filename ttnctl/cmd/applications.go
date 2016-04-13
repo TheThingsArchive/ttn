@@ -45,25 +45,19 @@ var applicationsCmd = &cobra.Command{
 }
 
 var applicationsCreateCmd = &cobra.Command{
-	Use:   "create [eui] [name]",
+	Use:   "create [name]",
 	Short: "Create a new application",
 	Long:  `ttnctl applications create creates a new application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) < 2 {
+		if len(args) < 1 {
 			cmd.Help()
 			return
-		}
-
-		appEUI, err := util.Parse64(args[0])
-		if err != nil {
-			ctx.Fatalf("Invalid AppEUI: %s", err)
 		}
 
 		server := viper.GetString("ttn-account-server")
 		uri := fmt.Sprintf("%s/applications", server)
 		values := url.Values{
-			"eui":  {fmt.Sprintf("%X", appEUI)},
-			"name": {args[1]},
+			"name": {args[0]},
 		}
 		req, err := util.NewRequestWithAuth(server, "POST", uri, strings.NewReader(values.Encode()))
 		if err != nil {
