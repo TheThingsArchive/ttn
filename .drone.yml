@@ -1,3 +1,6 @@
+clone:
+  recursive: true
+
 matrix:
   GOOS:
     - linux
