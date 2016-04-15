@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"reflect"
 
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/howeyc/gopass"
@@ -48,6 +49,14 @@ var userCreateCmd = &cobra.Command{
 		password, err := gopass.GetPasswd()
 		if err != nil {
 			ctx.Fatal(err.Error())
+		}
+		fmt.Print("Retype password: ")
+		password2, err := gopass.GetPasswd()
+		if err != nil {
+			ctx.Fatal(err.Error())
+		}
+		if ! reflect.DeepEqual(password,password2) {
+			ctx.Fatal("Passwords do not match")
 		}
 
 		uri := fmt.Sprintf("%s/register", viper.GetString("ttn-account-server"))
