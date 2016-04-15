@@ -55,7 +55,7 @@ var userCreateCmd = &cobra.Command{
 		if err != nil {
 			ctx.Fatal(err.Error())
 		}
-		if ! reflect.DeepEqual(password,password2) {
+		if !reflect.DeepEqual(password, password2) {
 			ctx.Fatal("Passwords do not match")
 		}
 
