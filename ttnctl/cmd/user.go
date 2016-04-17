@@ -4,10 +4,10 @@
 package cmd
 
 import (
+	"bytes"
 	"fmt"
 	"net/http"
 	"net/url"
-	"bytes"
 
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/howeyc/gopass"
