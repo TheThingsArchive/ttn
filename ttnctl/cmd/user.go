@@ -4,6 +4,7 @@
 package cmd
 
 import (
+	"bytes"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -48,6 +49,14 @@ var userCreateCmd = &cobra.Command{
 		password, err := gopass.GetPasswd()
 		if err != nil {
 			ctx.Fatal(err.Error())
+		}
+		fmt.Print("Confirm password: ")
+		password2, err := gopass.GetPasswd()
+		if err != nil {
+			ctx.Fatal(err.Error())
+		}
+		if !bytes.Equal(password, password2) {
+			ctx.Fatal("Passwords do not match")
 		}
 
 		uri := fmt.Sprintf("%s/register", viper.GetString("ttn-account-server"))
