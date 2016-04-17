@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"reflect"
+	"bytes"
 
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/howeyc/gopass"
@@ -50,12 +50,12 @@ var userCreateCmd = &cobra.Command{
 		if err != nil {
 			ctx.Fatal(err.Error())
 		}
-		fmt.Print("Retype password: ")
+		fmt.Print("Confirm password: ")
 		password2, err := gopass.GetPasswd()
 		if err != nil {
 			ctx.Fatal(err.Error())
 		}
-		if !reflect.DeepEqual(password, password2) {
+		if !bytes.Equal(password, password2) {
 			ctx.Fatal("Passwords do not match")
 		}
 
