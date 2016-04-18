@@ -56,27 +56,27 @@ const (
 )
 
 func (appEUI AppEUI) String() string {
-	return fmt.Println("%X", []byte(appEUI))
+	return fmt.Sprintf("%X", []byte(appEUI))
 }
 
 func (devEUI DevEUI) String() string {
-	return fmt.Println("%X", []byte(devEUI))
+	return fmt.Sprintf("%X", []byte(devEUI))
 }
 
 func (devAddr DevAddr) String() string {
-	return fmt.Println("%X", []byte(devAddr))
+	return fmt.Sprintf("%X", []byte(devAddr))
 }
 
 func (appKey AppKey) String() string {
-	return fmt.Println("%X", []byte(appKey))
+	return fmt.Sprintf("%X", []byte(appKey))
 }
 
 func (appSKey AppSKey) String() string {
-	return fmt.Println("%X", []byte(appSKey))
+	return fmt.Sprintf("%X", []byte(appSKey))
 }
 
 func (nwkSKey NwkSKey) String() string {
-	return fmt.Println("%X", []byte(nwkSKey))
+	return fmt.Sprintf("%X", []byte(nwkSKey))
 }
 
 func (deviceType *DeviceType) UnmarshalText(b []byte) error {
