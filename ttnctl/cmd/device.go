@@ -138,6 +138,10 @@ var devicesInfoCmd = &cobra.Command{
 					fmt.Println("Dynamic device:")
 
 					fmt.Println()
+					fmt.Printf("  AppEUI:  %X\n", appEUI)
+					fmt.Printf("           {%s}\n", cStyle(appEUI))
+
+					fmt.Println()
 					fmt.Printf("  DevEUI:  %X\n", device.DevEUI)
 					fmt.Printf("           {%s}\n", cStyle(device.DevEUI))
 
