@@ -55,6 +55,30 @@ const (
 	OTAA
 )
 
+func (appEUI AppEUI) String() string {
+	return fmt.Println("%X", []byte(appEUI))
+}
+
+func (devEUI DevEUI) String() string {
+	return fmt.Println("%X", []byte(devEUI))
+}
+
+func (devAddr DevAddr) String() string {
+	return fmt.Println("%X", []byte(devAddr))
+}
+
+func (appKey AppKey) String() string {
+	return fmt.Println("%X", []byte(appKey))
+}
+
+func (appSKey AppSKey) String() string {
+	return fmt.Println("%X", []byte(appSKey))
+}
+
+func (nwkSKey NwkSKey) String() string {
+	return fmt.Println("%X", []byte(nwkSKey))
+}
+
 func (deviceType *DeviceType) UnmarshalText(b []byte) error {
 	str := string(b)
 	switch {
@@ -82,7 +106,7 @@ func (deviceType DeviceType) MarshalText() ([]byte, error) {
 }
 
 func (appEUI AppEUI) MarshalText() ([]byte, error) {
-	return []byte(fmt.Sprintf("%X", appEUI)), nil
+	return []byte(appEUI.String()), nil
 }
 
 func (appEUI *AppEUI) UnmarshalText(data []byte) error {
@@ -96,7 +120,7 @@ func (appEUI *AppEUI) UnmarshalText(data []byte) error {
 }
 
 func (devEUI DevEUI) MarshalText() ([]byte, error) {
-	return []byte(fmt.Sprintf("%X", devEUI)), nil
+	return []byte(devEUI.String()), nil
 }
 
 func (devEUI *DevEUI) UnmarshalText(data []byte) error {
@@ -110,7 +134,7 @@ func (devEUI *DevEUI) UnmarshalText(data []byte) error {
 }
 
 func (devAddr DevAddr) MarshalText() ([]byte, error) {
-	return []byte(fmt.Sprintf("%X", devAddr)), nil
+	return []byte(devAddr.String()), nil
 }
 
 func (devAddr *DevAddr) UnmarshalText(data []byte) error {
@@ -124,7 +148,7 @@ func (devAddr *DevAddr) UnmarshalText(data []byte) error {
 }
 
 func (appKey *AppKey) MarshalText() ([]byte, error) {
-	return []byte(fmt.Sprintf("%X", appKey)), nil
+	return []byte(appKey.String()), nil
 }
 
 func (appKey *AppKey) UnmarshalText(data []byte) error {
@@ -138,7 +162,7 @@ func (appKey *AppKey) UnmarshalText(data []byte) error {
 }
 
 func (appSKey *AppSKey) MarshalText() ([]byte, error) {
-	return []byte(fmt.Sprintf("%X", appSKey)), nil
+	return []byte(appSKey.String()), nil
 }
 
 func (appSKey *AppSKey) UnmarshalText(data []byte) error {
@@ -152,7 +176,7 @@ func (appSKey *AppSKey) UnmarshalText(data []byte) error {
 }
 
 func (nwkSKey *NwkSKey) MarshalText() ([]byte, error) {
-	return []byte(fmt.Sprintf("%X", nwkSKey)), nil
+	return []byte(nwkSKey.String()), nil
 }
 
 func (nwkSKey *NwkSKey) UnmarshalText(data []byte) error {
