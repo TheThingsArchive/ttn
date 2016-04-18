@@ -44,6 +44,7 @@ type Client interface {
 
 type Token interface {
 	Wait() bool
+	WaitTimeout(time.Duration) bool
 	Error() error
 }
 
@@ -53,6 +54,11 @@ type simpleToken struct {
 
 // Wait always returns true
 func (t *simpleToken) Wait() bool {
+	return true
+}
+
+// WaitTimeout always returns true
+func (t *simpleToken) WaitTimeout(_ time.Duration) bool {
 	return true
 }
 

@@ -4,6 +4,8 @@
 package mqtt
 
 import (
+	"time"
+
 	"github.com/TheThingsNetwork/ttn/core"
 	ttnMQTT "github.com/TheThingsNetwork/ttn/mqtt"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
@@ -12,6 +14,8 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )
+
+const mqttTimeout = 20 * time.Millisecond
 
 // Adapter defines a public interface for the mqtt adapter
 type Adapter interface {
@@ -45,8 +49,21 @@ func (a *defaultAdapter) HandleData(_ context.Context, req *core.DataAppReq, _ .
 	}
 
 	token := a.client.PublishUplink(req.AppEUI, req.DevEUI, dataUp)
-	if token.Wait(); token.Error() != nil {
-		return new(core.DataAppRes), errors.New(errors.Structural, token.Error())
+	if token.WaitTimeout(mqttTimeout) {
+		// token did not timeout: just return
+		if token.Error() != nil {
+			return new(core.DataAppRes), errors.New(errors.Structural, token.Error())
+		}
+	} else {
+		// token did timeout: wait for it in background and just return
+		go func() {
+			token.Wait()
+			if token.Error() != nil {
+				if a.ctx != nil {
+					a.ctx.WithError(token.Error()).Warn("Could not publish uplink")
+				}
+			}
+		}()
 	}
 	return new(core.DataAppRes), nil
 }
@@ -92,8 +109,21 @@ func (a *defaultAdapter) HandleJoin(_ context.Context, req *core.JoinAppReq, _ .
 	}
 
 	token := a.client.PublishActivation(req.AppEUI, req.DevEUI, otaa)
-	if token.Wait(); token.Error() != nil {
-		return new(core.JoinAppRes), errors.New(errors.Structural, token.Error())
+	if token.WaitTimeout(mqttTimeout) {
+		// token did not timeout: just return
+		if token.Error() != nil {
+			return new(core.JoinAppRes), errors.New(errors.Structural, token.Error())
+		}
+	} else {
+		// token did timeout: wait for it in background and just return
+		go func() {
+			token.Wait()
+			if token.Error() != nil {
+				if a.ctx != nil {
+					a.ctx.WithError(token.Error()).Warn("Could not publish activation")
+				}
+			}
+		}()
 	}
 	return new(core.JoinAppRes), nil
 }
