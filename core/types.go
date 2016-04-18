@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"regexp"
-	"strings"
 )
 
 func parseHEX(input string, length int) ([]byte, error) {
@@ -56,8 +55,8 @@ const (
 	OTAA
 )
 
-func (deviceType *DeviceType) UnmarshalJSON(b []byte) error {
-	str := strings.Trim(string(b), `"`)
+func (deviceType *DeviceType) UnmarshalText(b []byte) error {
+	str := string(b)
 	switch {
 	case str == "ABP":
 		*deviceType = ABP
@@ -69,26 +68,25 @@ func (deviceType *DeviceType) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func (deviceType DeviceType) MarshalJSON() ([]byte, error) {
+func (deviceType DeviceType) MarshalText() ([]byte, error) {
 	switch deviceType {
 	case OTAA:
-		return []byte(`"OTAA"`), nil
+		return []byte("OTAA"), nil
 
 	case ABP:
-		return []byte(`"ABP"`), nil
+		return []byte("ABP"), nil
 
 	default:
 		return nil, fmt.Errorf("Invalid device type value")
 	}
 }
 
-func (appEUI AppEUI) MarshalJSON() ([]byte, error) {
-	return []byte(fmt.Sprintf(`"%X"`, appEUI)), nil
+func (appEUI AppEUI) MarshalText() ([]byte, error) {
+	return []byte(fmt.Sprintf("%X", appEUI)), nil
 }
 
-func (appEUI *AppEUI) UnmarshalJSON(data []byte) error {
-	str := strings.Trim(string(data), `"`)
-	parsed, err := ParseEUI(str)
+func (appEUI *AppEUI) UnmarshalText(data []byte) error {
+	parsed, err := ParseEUI(string(data))
 	if err != nil {
 		return err
 	}
@@ -97,13 +95,12 @@ func (appEUI *AppEUI) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (devEUI DevEUI) MarshalJSON() ([]byte, error) {
-	return []byte(fmt.Sprintf(`"%X"`, devEUI)), nil
+func (devEUI DevEUI) MarshalText() ([]byte, error) {
+	return []byte(fmt.Sprintf("%X", devEUI)), nil
 }
 
-func (devEUI *DevEUI) UnmarshalJSON(data []byte) error {
-	str := strings.Trim(string(data), `"`)
-	parsed, err := ParseEUI(str)
+func (devEUI *DevEUI) UnmarshalText(data []byte) error {
+	parsed, err := ParseEUI(string(data))
 	if err != nil {
 		return err
 	}
@@ -112,13 +109,12 @@ func (devEUI *DevEUI) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (devAddr DevAddr) MarshalJSON() ([]byte, error) {
-	return []byte(fmt.Sprintf(`"%X"`, devAddr)), nil
+func (devAddr DevAddr) MarshalText() ([]byte, error) {
+	return []byte(fmt.Sprintf("%X", devAddr)), nil
 }
 
-func (devAddr *DevAddr) UnmarshalJSON(data []byte) error {
-	str := strings.Trim(string(data), `"`)
-	parsed, err := ParseAddr(str)
+func (devAddr *DevAddr) UnmarshalText(data []byte) error {
+	parsed, err := ParseAddr(string(data))
 	if err != nil {
 		return err
 	}
@@ -127,13 +123,12 @@ func (devAddr *DevAddr) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (appKey *AppKey) MarshalJSON() ([]byte, error) {
-	return []byte(fmt.Sprintf(`"%X"`, appKey)), nil
+func (appKey *AppKey) MarshalText() ([]byte, error) {
+	return []byte(fmt.Sprintf("%X", appKey)), nil
 }
 
-func (appKey *AppKey) UnmarshalJSON(data []byte) error {
-	str := strings.Trim(string(data), `"`)
-	parsed, err := ParseKey(str)
+func (appKey *AppKey) UnmarshalText(data []byte) error {
+	parsed, err := ParseKey(string(data))
 	if err != nil {
 		return err
 	}
@@ -142,13 +137,12 @@ func (appKey *AppKey) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (appSKey *AppSKey) MarshalJSON() ([]byte, error) {
-	return []byte(fmt.Sprintf(`"%X"`, appSKey)), nil
+func (appSKey *AppSKey) MarshalText() ([]byte, error) {
+	return []byte(fmt.Sprintf("%X", appSKey)), nil
 }
 
-func (appSKey *AppSKey) UnmarshalJSON(data []byte) error {
-	str := strings.Trim(string(data), `"`)
-	parsed, err := ParseKey(str)
+func (appSKey *AppSKey) UnmarshalText(data []byte) error {
+	parsed, err := ParseKey(string(data))
 	if err != nil {
 		return err
 	}
@@ -157,13 +151,12 @@ func (appSKey *AppSKey) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (nwkSKey *NwkSKey) MarshalJSON() ([]byte, error) {
-	return []byte(fmt.Sprintf(`"%X"`, nwkSKey)), nil
+func (nwkSKey *NwkSKey) MarshalText() ([]byte, error) {
+	return []byte(fmt.Sprintf("%X", nwkSKey)), nil
 }
 
-func (nwkSKey *NwkSKey) UnmarshalJSON(data []byte) error {
-	str := strings.Trim(string(data), `"`)
-	parsed, err := ParseKey(str)
+func (nwkSKey *NwkSKey) UnmarshalText(data []byte) error {
+	parsed, err := ParseKey(string(data))
 	if err != nil {
 		return err
 	}
