@@ -26,17 +26,17 @@ func parseHEX(input string, length int) ([]byte, error) {
 	return devAddr, nil
 }
 
-// Parse32 parses a 32-bit hex-encoded string
+// ParseAddr parses a 32-bit hex-encoded string
 func ParseAddr(input string) ([]byte, error) {
 	return parseHEX(input, 8)
 }
 
-// Parse64 parses a 64-bit hex-encoded string
+// ParseEUI parses a 64-bit hex-encoded string
 func ParseEUI(input string) ([]byte, error) {
 	return parseHEX(input, 16)
 }
 
-// Parse128 parses a 128-bit hex-encoded string
+// ParseKey parses a 128-bit hex-encoded string
 func ParseKey(input string) ([]byte, error) {
 	return parseHEX(input, 32)
 }
