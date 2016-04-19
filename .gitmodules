@@ -3,4 +3,4 @@
 	url = https://github.com/brocaar/lorawan.git
 [submodule "vendor/google.golang.org/grpc"]
 	path = vendor/google.golang.org/grpc
-	url = git@github.com:grpc/grpc-go.git
+	url = https://github.com/grpc/grpc-go.git
