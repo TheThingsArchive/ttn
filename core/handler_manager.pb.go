@@ -688,13 +688,11 @@ func (m *GetDefaultDeviceReq) MarshalTo(data []byte) (int, error) {
 		i = encodeVarintHandlerManager(data, i, uint64(len(m.Token)))
 		i += copy(data[i:], m.Token)
 	}
-	if m.AppEUI != nil {
-		if len(m.AppEUI) > 0 {
-			data[i] = 0x12
-			i++
-			i = encodeVarintHandlerManager(data, i, uint64(len(m.AppEUI)))
-			i += copy(data[i:], m.AppEUI)
-		}
+	if len(m.AppEUI) > 0 {
+		data[i] = 0x12
+		i++
+		i = encodeVarintHandlerManager(data, i, uint64(len(m.AppEUI)))
+		i += copy(data[i:], m.AppEUI)
 	}
 	return i, nil
 }
@@ -714,13 +712,11 @@ func (m *GetDefaultDeviceRes) MarshalTo(data []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.AppKey != nil {
-		if len(m.AppKey) > 0 {
-			data[i] = 0xa
-			i++
-			i = encodeVarintHandlerManager(data, i, uint64(len(m.AppKey)))
-			i += copy(data[i:], m.AppKey)
-		}
+	if len(m.AppKey) > 0 {
+		data[i] = 0xa
+		i++
+		i = encodeVarintHandlerManager(data, i, uint64(len(m.AppKey)))
+		i += copy(data[i:], m.AppKey)
 	}
 	return i, nil
 }
@@ -746,21 +742,17 @@ func (m *SetDefaultDeviceReq) MarshalTo(data []byte) (int, error) {
 		i = encodeVarintHandlerManager(data, i, uint64(len(m.Token)))
 		i += copy(data[i:], m.Token)
 	}
-	if m.AppEUI != nil {
-		if len(m.AppEUI) > 0 {
-			data[i] = 0x12
-			i++
-			i = encodeVarintHandlerManager(data, i, uint64(len(m.AppEUI)))
-			i += copy(data[i:], m.AppEUI)
-		}
+	if len(m.AppEUI) > 0 {
+		data[i] = 0x12
+		i++
+		i = encodeVarintHandlerManager(data, i, uint64(len(m.AppEUI)))
+		i += copy(data[i:], m.AppEUI)
 	}
-	if m.AppKey != nil {
-		if len(m.AppKey) > 0 {
-			data[i] = 0x1a
-			i++
-			i = encodeVarintHandlerManager(data, i, uint64(len(m.AppKey)))
-			i += copy(data[i:], m.AppKey)
-		}
+	if len(m.AppKey) > 0 {
+		data[i] = 0x1a
+		i++
+		i = encodeVarintHandlerManager(data, i, uint64(len(m.AppKey)))
+		i += copy(data[i:], m.AppKey)
 	}
 	return i, nil
 }
@@ -965,11 +957,9 @@ func (m *GetDefaultDeviceReq) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovHandlerManager(uint64(l))
 	}
-	if m.AppEUI != nil {
-		l = len(m.AppEUI)
-		if l > 0 {
-			n += 1 + l + sovHandlerManager(uint64(l))
-		}
+	l = len(m.AppEUI)
+	if l > 0 {
+		n += 1 + l + sovHandlerManager(uint64(l))
 	}
 	return n
 }
@@ -977,11 +967,9 @@ func (m *GetDefaultDeviceReq) Size() (n int) {
 func (m *GetDefaultDeviceRes) Size() (n int) {
 	var l int
 	_ = l
-	if m.AppKey != nil {
-		l = len(m.AppKey)
-		if l > 0 {
-			n += 1 + l + sovHandlerManager(uint64(l))
-		}
+	l = len(m.AppKey)
+	if l > 0 {
+		n += 1 + l + sovHandlerManager(uint64(l))
 	}
 	return n
 }
@@ -993,17 +981,13 @@ func (m *SetDefaultDeviceReq) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovHandlerManager(uint64(l))
 	}
-	if m.AppEUI != nil {
-		l = len(m.AppEUI)
-		if l > 0 {
-			n += 1 + l + sovHandlerManager(uint64(l))
-		}
+	l = len(m.AppEUI)
+	if l > 0 {
+		n += 1 + l + sovHandlerManager(uint64(l))
 	}
-	if m.AppKey != nil {
-		l = len(m.AppKey)
-		if l > 0 {
-			n += 1 + l + sovHandlerManager(uint64(l))
-		}
+	l = len(m.AppKey)
+	if l > 0 {
+		n += 1 + l + sovHandlerManager(uint64(l))
 	}
 	return n
 }
