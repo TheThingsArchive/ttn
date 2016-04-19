@@ -91,15 +91,19 @@ func NewClient(ctx log.Interface, id, username, password string, brokers ...stri
 	mqttOpts.SetKeepAlive(30 * time.Second)
 	mqttOpts.SetPingTimeout(10 * time.Second)
 
+	// Usually this setting should not be used together with random ClientIDs, but
+	// we configured The Things Network's MQTT servers to handle this correctly.
+	mqttOpts.SetCleanSession(false)
+
 	mqttOpts.SetDefaultPublishHandler(func(client MQTT.Client, msg MQTT.Message) {
 		if ctx != nil {
-			ctx.WithField("message", msg).Debug("Received unhandled message")
+			ctx.WithField("message", msg).Warn("Received unhandled message")
 		}
 	})
 
 	mqttOpts.SetConnectionLostHandler(func(client MQTT.Client, err error) {
 		if ctx != nil {
-			ctx.WithError(err).Debug("Disconnected, reconnecting...")
+			ctx.WithError(err).Warn("Disconnected, reconnecting...")
 		}
 	})
 
