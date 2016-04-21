@@ -58,7 +58,7 @@ var joinCmd = &cobra.Command{
 			DevEUI:   devEUI,
 			DevNonce: devNonce,
 		}
-		phyPayload := lorawan.NewPHYPayload(true)
+		phyPayload := &lorawan.PHYPayload{}
 		phyPayload.MHDR = lorawan.MHDR{
 			MType: lorawan.JoinRequest,
 			Major: lorawan.LoRaWANR1,
@@ -126,7 +126,7 @@ var joinCmd = &cobra.Command{
 				ctx.Fatalf("Unable to decode data payload: %s", err)
 			}
 
-			payload := lorawan.NewPHYPayload(false)
+			payload := &lorawan.PHYPayload{}
 			if err := payload.UnmarshalBinary(data); err != nil {
 				ctx.Fatalf("Unable to retrieve LoRaWAN PhyPayload: %s", err)
 			}

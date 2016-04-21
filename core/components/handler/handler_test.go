@@ -1526,7 +1526,7 @@ func TestHandleJoin(t *testing.T) {
 		appAdapter := mocks.NewAppClient()
 		broker := mocks.NewAuthBrokerClient()
 
-		payload := lorawan.NewPHYPayload(true)
+		payload := &lorawan.PHYPayload{}
 		payload.MHDR = lorawan.MHDR{MType: lorawan.JoinRequest, Major: lorawan.LoRaWANR1}
 		joinPayload := lorawan.JoinRequestPayload{}
 		copy(joinPayload.AppEUI[:], req.AppEUI)
@@ -1574,7 +1574,7 @@ func TestHandleJoin(t *testing.T) {
 		Check(t, 16, len(res.NwkSKey), "Network session keys' length")
 		Check(t, 4, len(res.DevAddr), "Device addresses' length")
 		Check(t, wantAppReq, appAdapter.InHandleJoin.Req, "Join Application Requests")
-		joinaccept := lorawan.NewPHYPayload(false)
+		joinaccept := &lorawan.PHYPayload{}
 		err = joinaccept.UnmarshalBinary(res.Payload.Payload)
 		CheckErrors(t, nil, err)
 		err = joinaccept.DecryptJoinAcceptPayload(lorawan.AES128Key(*devStorage.InUpsert.Entry.AppKey))
@@ -1617,7 +1617,7 @@ func TestHandleJoin(t *testing.T) {
 		appAdapter.Failures["HandleJoin"] = errors.New(errors.Operational, "Mock Error")
 		broker := mocks.NewAuthBrokerClient()
 
-		payload := lorawan.NewPHYPayload(true)
+		payload := &lorawan.PHYPayload{}
 		payload.MHDR = lorawan.MHDR{MType: lorawan.JoinRequest, Major: lorawan.LoRaWANR1}
 		joinPayload := lorawan.JoinRequestPayload{}
 		copy(joinPayload.AppEUI[:], req.AppEUI)
@@ -1665,7 +1665,7 @@ func TestHandleJoin(t *testing.T) {
 		Check(t, 16, len(res.NwkSKey), "Network session keys' length")
 		Check(t, 4, len(res.DevAddr), "Device addresses' length")
 		Check(t, wantAppReq, appAdapter.InHandleJoin.Req, "Join Application Requests")
-		joinaccept := lorawan.NewPHYPayload(false)
+		joinaccept := &lorawan.PHYPayload{}
 		err = joinaccept.UnmarshalBinary(res.Payload.Payload)
 		CheckErrors(t, nil, err)
 		err = joinaccept.DecryptJoinAcceptPayload(lorawan.AES128Key(*devStorage.InUpsert.Entry.AppKey))
@@ -1708,7 +1708,7 @@ func TestHandleJoin(t *testing.T) {
 		appAdapter := mocks.NewAppClient()
 		broker := mocks.NewAuthBrokerClient()
 
-		payload := lorawan.NewPHYPayload(true)
+		payload := &lorawan.PHYPayload{}
 		payload.MHDR = lorawan.MHDR{MType: lorawan.JoinRequest, Major: lorawan.LoRaWANR1}
 		joinPayload := lorawan.JoinRequestPayload{}
 		copy(joinPayload.AppEUI[:], req.AppEUI)
@@ -1774,7 +1774,7 @@ func TestHandleJoin(t *testing.T) {
 		appAdapter := mocks.NewAppClient()
 		broker := mocks.NewAuthBrokerClient()
 
-		payload := lorawan.NewPHYPayload(true)
+		payload := &lorawan.PHYPayload{}
 		payload.MHDR = lorawan.MHDR{MType: lorawan.JoinRequest, Major: lorawan.LoRaWANR1}
 		joinPayload := lorawan.JoinRequestPayload{}
 		copy(joinPayload.AppEUI[:], req.AppEUI)
@@ -1840,7 +1840,7 @@ func TestHandleJoin(t *testing.T) {
 		appAdapter := mocks.NewAppClient()
 		broker := mocks.NewAuthBrokerClient()
 
-		payload := lorawan.NewPHYPayload(true)
+		payload := &lorawan.PHYPayload{}
 		payload.MHDR = lorawan.MHDR{MType: lorawan.JoinRequest, Major: lorawan.LoRaWANR1}
 		joinPayload := lorawan.JoinRequestPayload{}
 		copy(joinPayload.AppEUI[:], req.AppEUI)
@@ -1958,7 +1958,7 @@ func TestHandleJoin(t *testing.T) {
 		appAdapter := mocks.NewAppClient()
 		broker := mocks.NewAuthBrokerClient()
 
-		payload := lorawan.NewPHYPayload(true)
+		payload := &lorawan.PHYPayload{}
 		payload.MHDR = lorawan.MHDR{MType: lorawan.JoinRequest, Major: lorawan.LoRaWANR1}
 		joinPayload := lorawan.JoinRequestPayload{}
 		copy(joinPayload.AppEUI[:], req.AppEUI)
@@ -2006,7 +2006,7 @@ func TestHandleJoin(t *testing.T) {
 		Check(t, 16, len(res.NwkSKey), "Network session keys' length")
 		Check(t, 4, len(res.DevAddr), "Device addresses' length")
 		Check(t, wantAppReq, appAdapter.InHandleJoin.Req, "Join Application Requests")
-		joinaccept := lorawan.NewPHYPayload(false)
+		joinaccept := &lorawan.PHYPayload{}
 		err = joinaccept.UnmarshalBinary(res.Payload.Payload)
 		CheckErrors(t, nil, err)
 		err = joinaccept.DecryptJoinAcceptPayload(lorawan.AES128Key(appKey))
@@ -2257,7 +2257,7 @@ func TestHandleJoin(t *testing.T) {
 		appAdapter := mocks.NewAppClient()
 		broker := mocks.NewAuthBrokerClient()
 
-		payload := lorawan.NewPHYPayload(true)
+		payload := &lorawan.PHYPayload{}
 		payload.MHDR = lorawan.MHDR{MType: lorawan.JoinRequest, Major: lorawan.LoRaWANR1}
 		joinPayload := lorawan.JoinRequestPayload{}
 		copy(joinPayload.AppEUI[:], req1.AppEUI)
@@ -2324,7 +2324,7 @@ func TestHandleJoin(t *testing.T) {
 			Check(t, wantRes2.Metadata, res.Metadata, "Join Handler Responses")
 			Check(t, 16, len(res.NwkSKey), "Network session keys' length")
 			Check(t, 4, len(res.DevAddr), "Device addresses' length")
-			joinaccept := lorawan.NewPHYPayload(false)
+			joinaccept := &lorawan.PHYPayload{}
 			err = joinaccept.UnmarshalBinary(res.Payload.Payload)
 			CheckErrors(t, nil, err)
 			err = joinaccept.DecryptJoinAcceptPayload(lorawan.AES128Key(*devStorage.InUpsert.Entry.AppKey))

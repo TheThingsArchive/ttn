@@ -67,22 +67,22 @@ var uplinkCmd = &cobra.Command{
 		}
 
 		// Lorawan Payload
-		macPayload := lorawan.NewMACPayload(true)
+		macPayload := &lorawan.MACPayload{}
 		macPayload.FHDR = lorawan.FHDR{
 			DevAddr: devAddr,
 			FCnt:    uint32(fcnt),
 		}
 		macPayload.FPort = pointer.Uint8(1)
 		macPayload.FRMPayload = []lorawan.Payload{&lorawan.DataPayload{Bytes: []byte(args[4])}}
-		if err := macPayload.EncryptFRMPayload(appSKey); err != nil {
-			ctx.Fatalf("Unable to encrypt frame payload: %s", err)
-		}
-		phyPayload := lorawan.NewPHYPayload(true)
+		phyPayload := &lorawan.PHYPayload{}
 		phyPayload.MHDR = lorawan.MHDR{
 			MType: mtype,
 			Major: lorawan.LoRaWANR1,
 		}
 		phyPayload.MACPayload = macPayload
+		if err := phyPayload.EncryptFRMPayload(appSKey); err != nil {
+			ctx.Fatalf("Unable to encrypt frame payload: %s", err)
+		}
 		if err := phyPayload.SetMIC(nwkSKey); err != nil {
 			ctx.Fatalf("Unable to set MIC: %s", err)
 		}
@@ -145,7 +145,7 @@ var uplinkCmd = &cobra.Command{
 				ctx.Fatalf("Unable to decode data payload: %s", err)
 			}
 
-			payload := lorawan.NewPHYPayload(false)
+			payload := &lorawan.PHYPayload{}
 			if err := payload.UnmarshalBinary(data); err != nil {
 				ctx.Fatalf("Unable to retrieve LoRaWAN PhyPayload: %s", err)
 			}
@@ -156,7 +156,7 @@ var uplinkCmd = &cobra.Command{
 			}
 			ctx.Infof("Frame counter: %d", macPayload.FHDR.FCnt)
 			if len(macPayload.FRMPayload) > 0 {
-				if err := macPayload.DecryptFRMPayload(appSKey); err != nil {
+				if err := phyPayload.DecryptFRMPayload(appSKey); err != nil {
 					ctx.Fatalf("Unable to decrypt MACPayload: %s", err)
 				}
 				ctx.Infof("Decrypted Payload: %s", string(macPayload.FRMPayload[0].(*lorawan.DataPayload).Bytes))

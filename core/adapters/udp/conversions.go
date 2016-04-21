@@ -30,7 +30,7 @@ func toLoRaWANPayload(rxpk semtech.RXPK, gid []byte, ctx log.Interface) (interfa
 			return nil, errors.New(errors.Structural, err)
 		}
 	}
-	payload := lorawan.NewPHYPayload(true)
+	payload := &lorawan.PHYPayload{}
 	if err = payload.UnmarshalBinary(raw); err != nil {
 		return nil, errors.New(errors.Structural, err)
 	}

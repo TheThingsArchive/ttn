@@ -271,38 +271,6 @@ func TestNewTXPKAndtoLoRaWANPayloadReq(t *testing.T) {
 	// --------------------
 
 	{
-		Desc(t, "Test toLoRaWANPayload with invalid macpayload")
-
-		// Build
-		gid := []byte{1, 2, 3, 4, 5, 6, 7, 8}
-		payload := lorawan.NewPHYPayload(true)
-		payload.MHDR.MType = lorawan.UnconfirmedDataUp
-		payload.MHDR.Major = lorawan.LoRaWANR1
-		payload.MIC = [4]byte{1, 2, 3, 4}
-		payload.MACPayload = pointer.Time(time.Now()) // Something marshable
-		data, err := payload.MarshalBinary()
-		FatalUnless(t, err)
-		rxpk := semtech.RXPK{
-			Codr: pointer.String("4/5"),
-			Freq: pointer.Float32(867.345),
-			Data: pointer.String(base64.RawStdEncoding.EncodeToString(data)),
-		}
-
-		// Expectations
-		var wantReq interface{}
-		var wantErr = ErrStructural
-
-		// Operate
-		req, err := toLoRaWANPayload(rxpk, gid, GetLogger(t, "Convert DataRouterReq"))
-
-		// Check
-		CheckErrors(t, wantErr, err)
-		Check(t, wantReq, req, "Data Router Requests")
-	}
-
-	// --------------------
-
-	{
 		Desc(t, "Test toLoRaWANPayload with no data in rxpk")
 
 		// Build
@@ -381,11 +349,11 @@ func TestNewTXPKAndtoLoRaWANPayloadReq(t *testing.T) {
 
 		// Build
 		gid := []byte{1, 2, 3, 4, 5, 6, 7, 8}
-		payload := lorawan.NewPHYPayload(false)
+		payload := &lorawan.PHYPayload{}
 		payload.MHDR.MType = lorawan.ConfirmedDataUp
 		payload.MHDR.Major = lorawan.LoRaWANR1
 		payload.MIC = [4]byte{1, 2, 3, 4}
-		macpayload := lorawan.NewMACPayload(false)
+		macpayload := &lorawan.MACPayload{}
 		macpayload.FPort = new(uint8)
 		*macpayload.FPort = 1
 
@@ -424,11 +392,11 @@ func TestNewTXPKAndtoLoRaWANPayloadReq(t *testing.T) {
 
 		// Build
 		gid := []byte{1, 2, 3, 4, 5, 6, 7, 8}
-		payload := lorawan.NewPHYPayload(false)
+		payload := &lorawan.PHYPayload{}
 		payload.MHDR.MType = lorawan.UnconfirmedDataDown
 		payload.MHDR.Major = lorawan.LoRaWANR1
 		payload.MIC = [4]byte{1, 2, 3, 4}
-		macpayload := lorawan.NewMACPayload(false)
+		macpayload := &lorawan.MACPayload{}
 		macpayload.FPort = new(uint8)
 		*macpayload.FPort = 1
 
@@ -459,7 +427,7 @@ func TestNewTXPKAndtoLoRaWANPayloadReq(t *testing.T) {
 
 		// Build
 		gid := []byte{1, 2, 3, 4, 5, 6, 7, 8}
-		payload := lorawan.NewPHYPayload(false)
+		payload := &lorawan.PHYPayload{}
 		payload.MHDR.MType = lorawan.JoinRequest
 		payload.MHDR.Major = lorawan.LoRaWANR1
 		payload.MIC = [4]byte{1, 2, 3, 4}

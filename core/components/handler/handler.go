@@ -202,7 +202,7 @@ func (h component) HandleJoin(bctx context.Context, req *core.JoinHandlerReq) (*
 	}
 
 	// 2. Verify MIC
-	payload := lorawan.NewPHYPayload(true)
+	payload := &lorawan.PHYPayload{}
 	payload.MHDR = lorawan.MHDR{Major: lorawan.LoRaWANR1, MType: lorawan.JoinRequest}
 	joinPayload := lorawan.JoinRequestPayload{}
 	copy(payload.MIC[:], req.MIC)
@@ -670,7 +670,7 @@ func (h component) abortConsume(err error, bundles []bundle) {
 // constructs a downlink packet from something we pulled from the gathered downlink, and, the actual
 // uplink.
 func (h component) buildDownlink(down []byte, mtype lorawan.MType, ack bool, up core.DataUpHandlerReq, entry devEntry, isRX2 bool) (*core.DataUpHandlerRes, error) {
-	macpayload := lorawan.NewMACPayload(false)
+	macpayload := &lorawan.MACPayload{}
 	macpayload.FHDR = lorawan.FHDR{
 		FCnt: entry.FCntDown + 1,
 	}
@@ -680,20 +680,12 @@ func (h component) buildDownlink(down []byte, mtype lorawan.MType, ack bool, up 
 	if ack {
 		macpayload.FHDR.FCtrl.ACK = true
 	}
-	var frmpayload []byte
+
 	if down != nil {
 		macpayload.FRMPayload = []lorawan.Payload{&lorawan.DataPayload{Bytes: down}}
-		err := macpayload.EncryptFRMPayload(entry.AppSKey)
-		if err != nil {
-			return nil, errors.New(errors.Structural, err)
-		}
-		frmpayload, err = macpayload.FRMPayload[0].MarshalBinary()
-		if err != nil {
-			return nil, errors.New(errors.Structural, err)
-		}
 	}
 
-	payload := lorawan.NewPHYPayload(false)
+	payload := &lorawan.PHYPayload{}
 	payload.MHDR = lorawan.MHDR{
 		MType: mtype,
 		Major: lorawan.LoRaWANR1,
@@ -703,6 +695,18 @@ func (h component) buildDownlink(down []byte, mtype lorawan.MType, ack bool, up 
 	data, err := payload.MarshalBinary()
 	if err != nil {
 		return nil, errors.New(errors.Structural, err)
+	}
+
+	var frmpayload []byte
+	err = payload.EncryptFRMPayload(entry.AppSKey)
+	if err != nil {
+		return nil, errors.New(errors.Structural, err)
+	}
+	if down != nil {
+		frmpayload, err = macpayload.FRMPayload[0].MarshalBinary()
+		if err != nil {
+			return nil, errors.New(errors.Structural, err)
+		}
 	}
 
 	metadata := h.buildMetadata(*up.Metadata, uint32(len(data)), 1000000*uint32(h.Configuration.RXDelay), isRX2)
@@ -734,7 +738,7 @@ func (h component) buildDownlink(down []byte, mtype lorawan.MType, ack bool, up 
 }
 
 func (h component) buildJoinAccept(joinReq *core.JoinHandlerReq, appKey [16]byte, appNonce []byte, devAddr [4]byte, isRX2 bool) (*core.JoinHandlerRes, error) {
-	payload := lorawan.NewPHYPayload(false)
+	payload := &lorawan.PHYPayload{}
 	payload.MHDR = lorawan.MHDR{
 		MType: lorawan.JoinAccept,
 		Major: lorawan.LoRaWANR1,
