@@ -256,6 +256,20 @@ func (r component) injectMetadata(gid []byte, metadata core.Metadata) (*core.Met
 
 	metadata.Region = r.Region
 
+	// If this Router is set to the "world" region, we just guess the actual region based on the frequency.
+	// The protocol proposed for The Things Gateway will provide this information in its "stat" messages.
+	// It's also possible to determine the actual region based on Gateway IP address
+	if metadata.Region == "world" {
+		switch {
+		case metadata.Frequency >= 865.0 && metadata.Frequency < 870:
+			metadata.Region = string(dutycycle.Europe)
+		case metadata.Frequency >= 902 && metadata.Frequency < 915:
+			metadata.Region = string(dutycycle.US)
+		case metadata.Frequency >= 915 && metadata.Frequency < 928:
+			metadata.Region = string(dutycycle.Australia)
+		}
+	}
+
 	sb1, err := dutycycle.GetSubBand(float32(metadata.Frequency))
 	if err != nil {
 		stats.MarkMeter("router.uplink.not_supported")
