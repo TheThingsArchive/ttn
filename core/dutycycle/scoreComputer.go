@@ -4,7 +4,11 @@
 package dutycycle
 
 import (
+	"fmt"
+
 	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/core/band"
+	"github.com/TheThingsNetwork/ttn/core/band/us902_928"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 )
 
@@ -79,6 +83,14 @@ func (c *ScoreComputer) Update(s scores, id int, metadata core.Metadata) scores 
 // Get returns the best score according to the configured spread factor and all updates.
 // It returns nil if none of the target is available for a response
 func (c *ScoreComputer) Get(s scores) *Configuration {
+	sf, bw, _ := ParseDatr(s.rx1.DataRate)
+	dataRate := band.DataRate{
+		Modulation:   band.LoRaModulation,
+		SpreadFactor: sf,
+		Bandwidth:    bw,
+	}
+	frequency := int(s.rx1.Frequency*10) * 100000 // Great idea to work with float32
+
 	switch c.region {
 	case Europe:
 		if s.rx1.Score > 0 && (c.sf == 7 || c.sf == 8) { // Favor RX1 on SF7 & SF8
@@ -104,13 +116,45 @@ func (c *ScoreComputer) Get(s scores) *Configuration {
 			}
 		}
 	case US:
-		return &Configuration{
-			ID:        s.rx2.ID,
-			Frequency: 923.3,
-			DataRate:  "SF12BW500",
-			Power:     26,
-			RXDelay:   2000000,
-			JoinDelay: 6000000,
+		var err error
+		if s.rx1.Score > 0 && (c.sf == 7 || c.sf == 8) { // Favor RX1 on SF7 & SF8
+			var dr int
+			dr, err = us_902_928.GetDataRate(dataRate)
+			if err != nil {
+				fmt.Println(err.Error())
+				return nil
+			}
+
+			frequency, err := us_902_928.GetRX1Frequency(frequency, dr)
+			if err != nil {
+				fmt.Println(err.Error())
+				return nil
+			}
+
+			rx1Dr := dr + 10
+			if rx1Dr > 13 {
+				rx1Dr = 13
+			}
+			dataRate := us_902_928.DataRateConfiguration[rx1Dr]
+
+			return &Configuration{
+				ID:        s.rx1.ID,
+				Frequency: float32(frequency/100000) / 10, // Great idea to work with float32
+				DataRate:  fmt.Sprintf("SF%dBW%d", dataRate.SpreadFactor, dataRate.Bandwidth),
+				Power:     21,
+				RXDelay:   1000000,
+				JoinDelay: 5000000,
+			}
+		}
+		if err != nil || s.rx2.Score > 0 {
+			return &Configuration{
+				ID:        s.rx2.ID,
+				Frequency: 923.3,
+				DataRate:  "SF12BW500",
+				Power:     26,
+				RXDelay:   2000000,
+				JoinDelay: 6000000,
+			}
 		}
 	default:
 	}

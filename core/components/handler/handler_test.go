@@ -1600,7 +1600,7 @@ func TestHandleJoin(t *testing.T) {
 	// --------------------
 
 	{
-		Desc(t, "Handle valid join-request [US] | get join-accept")
+		Desc(t, "Handle valid join-request [US, RX1] | get join-accept")
 
 		// Build
 		tmst := time.Now()
@@ -1612,7 +1612,98 @@ func TestHandleJoin(t *testing.T) {
 			Metadata: &core.Metadata{
 				DataRate:   "SF7BW125",
 				Region:     "us",
-				Frequency:  923.3,
+				Frequency:  904.9,
+				Timestamp:  uint32(tmst.Unix() * 1000000),
+				CodingRate: "4/5",
+				DutyRX1:    uint32(dutycycle.StateAvailable),
+				DutyRX2:    uint32(dutycycle.StateAvailable),
+				Rssi:       -20,
+				Lsnr:       5.0,
+			},
+		}
+
+		devStorage := NewMockDevStorage()
+		devStorage.OutRead.Entry = devEntry{
+			AppKey: &[16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6},
+			AppEUI: req.AppEUI,
+			DevEUI: req.DevEUI,
+		}
+		pktStorage := NewMockPktStorage()
+		appAdapter := mocks.NewAppClient()
+		broker := mocks.NewAuthBrokerClient()
+
+		payload := &lorawan.PHYPayload{}
+		payload.MHDR = lorawan.MHDR{MType: lorawan.JoinRequest, Major: lorawan.LoRaWANR1}
+		joinPayload := lorawan.JoinRequestPayload{}
+		copy(joinPayload.AppEUI[:], req.AppEUI)
+		copy(joinPayload.DevEUI[:], req.DevEUI)
+		copy(joinPayload.DevNonce[:], req.DevNonce)
+		payload.MACPayload = &joinPayload
+		err := payload.SetMIC(lorawan.AES128Key(*devStorage.OutRead.Entry.AppKey))
+		FatalUnless(t, err)
+		req.MIC = payload.MIC[:]
+
+		// Expect
+		var wantErr *string
+		var wantRes = &core.JoinHandlerRes{
+			Payload: &core.LoRaWANJoinAccept{}, // We'll check it by decoding
+			NwkSKey: nil,                       // We'll assume it's correct if payload is okay
+			Metadata: &core.Metadata{
+				DataRate:    "SF7BW500",
+				Frequency:   926.3,
+				CodingRate:  "4/5",
+				Timestamp:   uint32(tmst.Add(5*time.Second).Unix() * 1000000),
+				PayloadSize: 17,
+				Power:       21,
+				InvPolarity: true,
+			},
+		}
+		var wantAppReq = &core.JoinAppReq{
+			Metadata: []*core.Metadata{req.Metadata},
+			AppEUI:   req.AppEUI,
+			DevEUI:   req.DevEUI,
+		}
+
+		// Operate
+		handler := New(Components{
+			Ctx:        GetLogger(t, "Handler"),
+			Broker:     broker,
+			AppAdapter: appAdapter,
+			DevStorage: devStorage,
+			PktStorage: pktStorage,
+		}, Options{PublicNetAddr: "localhost", PrivateNetAddr: "localhost"})
+		res, err := handler.HandleJoin(context.Background(), req)
+
+		// Check
+		CheckErrors(t, wantErr, err)
+		Check(t, wantRes.Metadata, res.Metadata, "Join Handler Responses")
+		Check(t, 16, len(res.NwkSKey), "Network session keys' length")
+		Check(t, 4, len(res.DevAddr), "Device addresses' length")
+		Check(t, wantAppReq, appAdapter.InHandleJoin.Req, "Join Application Requests")
+		joinaccept := &lorawan.PHYPayload{}
+		err = joinaccept.UnmarshalBinary(res.Payload.Payload)
+		CheckErrors(t, nil, err)
+		err = joinaccept.DecryptJoinAcceptPayload(lorawan.AES128Key(*devStorage.InUpsert.Entry.AppKey))
+		CheckErrors(t, nil, err)
+		Check(t, handler.(*component).Configuration.NetID, joinaccept.MACPayload.(*lorawan.JoinAcceptPayload).NetID, "Network IDs")
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Handle valid join-request [US, RX2] | get join-accept")
+
+		// Build
+		tmst := time.Now()
+
+		req := &core.JoinHandlerReq{
+			AppEUI:   []byte{1, 1, 1, 1, 1, 1, 1, 1},
+			DevEUI:   []byte{2, 2, 2, 2, 2, 2, 2, 2},
+			DevNonce: []byte{14, 42},
+			Metadata: &core.Metadata{
+				DataRate:   "SF10BW125",
+				Region:     "us",
+				Frequency:  902.3,
 				Timestamp:  uint32(tmst.Unix() * 1000000),
 				CodingRate: "4/5",
 				DutyRX1:    uint32(dutycycle.StateAvailable),

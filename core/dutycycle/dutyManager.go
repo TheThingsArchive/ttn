@@ -277,14 +277,14 @@ func computeTOA(size uint32, datr string, codr string) (time.Duration, error) {
 	}
 
 	// Compute toa, Page 7: http://www.semtech.com/images/datasheet/LoraDesignGuide_STD.pdf
-	payloadNb := 8.0 + math.Max(0, 4*math.Ceil((2*s-sf-6)/(sf-2*de))/rc)
-	timeOnAir := (payloadNb + 12.25) * math.Pow(2, sf) / bw // in ms
+	payloadNb := 8.0 + math.Max(0, 4*math.Ceil((2*s-float64(sf)-6)/(float64(sf)-2*de))/rc)
+	timeOnAir := (payloadNb + 12.25) * math.Pow(2, float64(sf)) / float64(bw) // in ms
 
 	return time.ParseDuration(fmt.Sprintf("%fms", timeOnAir))
 }
 
 // ParseDatr extract the spread factor and the bandwidth from a DataRate identifier
-func ParseDatr(datr string) (float64, float64, error) {
+func ParseDatr(datr string) (int, int, error) {
 	re := regexp.MustCompile("^SF(7|8|9|10|11|12)BW(125|250|500)$")
 	matches := re.FindStringSubmatch(datr)
 
@@ -292,8 +292,8 @@ func ParseDatr(datr string) (float64, float64, error) {
 		return 0, 0, errors.New(errors.Structural, "Invalid Datr")
 	}
 
-	sf, _ := strconv.ParseFloat(matches[1], 64)
-	bw, _ := strconv.ParseFloat(matches[2], 64)
+	sf, _ := strconv.Atoi(matches[1])
+	bw, _ := strconv.Atoi(matches[2])
 
 	return sf, bw, nil
 }
