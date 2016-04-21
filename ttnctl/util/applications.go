@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/apex/log"
 	"github.com/spf13/viper"
 )
@@ -22,7 +23,7 @@ func GetAppEUI(ctx log.Interface) []byte {
 		ctx.Fatal("AppEUI not set. You probably want to run 'ttnctl applications use [appEUI]' to do this.")
 	}
 
-	appEUI, err := Parse64(viper.GetString("app-eui"))
+	appEUI, err := core.ParseEUI(viper.GetString("app-eui"))
 	if err != nil {
 		ctx.Fatalf("Invalid AppEUI: %s", err)
 	}

@@ -132,7 +132,7 @@ var devicesInfoCmd = &cobra.Command{
 			ctx.WithError(err).Fatal("Could not get device list")
 		}
 
-		if devEUI, err := util.Parse64(args[0]); err == nil {
+		if devEUI, err := core.ParseEUI(args[0]); err == nil {
 			for _, device := range res.OTAA {
 				if reflect.DeepEqual(device.DevEUI, devEUI) {
 					fmt.Println("Dynamic device:")
@@ -177,7 +177,7 @@ var devicesInfoCmd = &cobra.Command{
 			}
 		}
 
-		if devAddr, err := util.Parse32(args[0]); err == nil {
+		if devAddr, err := core.ParseAddr(args[0]); err == nil {
 			for _, device := range res.ABP {
 				if reflect.DeepEqual(device.DevAddr, devAddr) {
 					fmt.Println("Personalized device:")
@@ -232,14 +232,14 @@ the Handler`,
 
 		appEUI := util.GetAppEUI(ctx)
 
-		devEUI, err := util.Parse64(args[0])
+		devEUI, err := core.ParseEUI(args[0])
 		if err != nil {
 			ctx.Fatalf("Invalid DevEUI: %s", err)
 		}
 
 		var appKey []byte
 		if len(args) >= 2 {
-			appKey, err = util.Parse128(args[1])
+			appKey, err = core.ParseKey(args[1])
 			if err != nil {
 				ctx.Fatalf("Invalid AppKey: %s", err)
 			}
@@ -287,18 +287,18 @@ registration on the Handler`,
 
 		appEUI := util.GetAppEUI(ctx)
 
-		devAddr, err := util.Parse32(args[0])
+		devAddr, err := core.ParseAddr(args[0])
 		if err != nil {
 			ctx.Fatalf("Invalid DevAddr: %s", err)
 		}
 
 		var nwkSKey, appSKey []byte
 		if len(args) >= 3 {
-			nwkSKey, err = util.Parse128(args[1])
+			nwkSKey, err = core.ParseKey(args[1])
 			if err != nil {
 				ctx.Fatalf("Invalid NwkSKey: %s", err)
 			}
-			appSKey, err = util.Parse128(args[2])
+			appSKey, err = core.ParseKey(args[2])
 			if err != nil {
 				ctx.Fatalf("Invalid AppSKey: %s", err)
 			}
@@ -353,7 +353,7 @@ register [DevEUI] [AppKey]`,
 		var appKey []byte
 		var err error
 		if len(args) >= 2 {
-			appKey, err = util.Parse128(args[0])
+			appKey, err = core.ParseKey(args[0])
 			if err != nil {
 				ctx.Fatalf("Invalid AppKey: %s", err)
 			}
