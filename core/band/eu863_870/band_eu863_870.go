@@ -2,7 +2,7 @@
 // Copyright © 2016 Orne Brocaar
 // Use of this source code is governed by the MIT license that can be found in the LICENSE file.
 
-package eu_863_870
+package eu863_870
 
 import (
 	"errors"

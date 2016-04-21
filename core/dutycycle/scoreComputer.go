@@ -8,6 +8,7 @@ import (
 
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/band"
+	"github.com/TheThingsNetwork/ttn/core/band/au915_928"
 	"github.com/TheThingsNetwork/ttn/core/band/us902_928"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 )
@@ -119,13 +120,13 @@ func (c *ScoreComputer) Get(s scores) *Configuration {
 		var err error
 		if s.rx1.Score > 0 && (c.sf == 7 || c.sf == 8) { // Favor RX1 on SF7 & SF8
 			var dr int
-			dr, err = us_902_928.GetDataRate(dataRate)
+			dr, err = us902_928.GetDataRate(dataRate)
 			if err != nil {
 				fmt.Println(err.Error())
 				return nil
 			}
 
-			frequency, err := us_902_928.GetRX1Frequency(frequency, dr)
+			frequency, err := us902_928.GetRX1Frequency(frequency, dr)
 			if err != nil {
 				fmt.Println(err.Error())
 				return nil
@@ -135,7 +136,48 @@ func (c *ScoreComputer) Get(s scores) *Configuration {
 			if rx1Dr > 13 {
 				rx1Dr = 13
 			}
-			dataRate := us_902_928.DataRateConfiguration[rx1Dr]
+			dataRate := us902_928.DataRateConfiguration[rx1Dr]
+
+			return &Configuration{
+				ID:        s.rx1.ID,
+				Frequency: float32(frequency/100000) / 10, // Great idea to work with float32
+				DataRate:  fmt.Sprintf("SF%dBW%d", dataRate.SpreadFactor, dataRate.Bandwidth),
+				Power:     21,
+				RXDelay:   1000000,
+				JoinDelay: 5000000,
+			}
+		}
+		if err != nil || s.rx2.Score > 0 {
+			return &Configuration{
+				ID:        s.rx2.ID,
+				Frequency: 923.3,
+				DataRate:  "SF12BW500",
+				Power:     26,
+				RXDelay:   2000000,
+				JoinDelay: 6000000,
+			}
+		}
+	case Australia:
+		var err error
+		if s.rx1.Score > 0 && (c.sf == 7 || c.sf == 8) { // Favor RX1 on SF7 & SF8
+			var dr int
+			dr, err = au915_928.GetDataRate(dataRate)
+			if err != nil {
+				fmt.Println(err.Error())
+				return nil
+			}
+
+			frequency, err := au915_928.GetRX1Frequency(frequency, dr)
+			if err != nil {
+				fmt.Println(err.Error())
+				return nil
+			}
+
+			rx1Dr := dr + 10
+			if rx1Dr > 13 {
+				rx1Dr = 13
+			}
+			dataRate := au915_928.DataRateConfiguration[rx1Dr]
 
 			return &Configuration{
 				ID:        s.rx1.ID,

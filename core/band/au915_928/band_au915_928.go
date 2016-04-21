@@ -2,7 +2,7 @@
 // Copyright © 2016 Orne Brocaar
 // Use of this source code is governed by the MIT license that can be found in the LICENSE file.
 
-package us902_928
+package au915_928
 
 import (
 	"errors"
@@ -16,7 +16,7 @@ func init() {
 	// initialize uplink channel 0 - 63
 	for i := 0; i < 64; i++ {
 		UplinkChannelConfiguration[i] = Channel{
-			Frequency: 902300000 + (i * 200000),
+			Frequency: 915200000 + (i * 200000),
 			DataRates: []int{0, 1, 2, 3},
 		}
 	}
@@ -24,7 +24,7 @@ func init() {
 	// initialize uplink channel 64 - 71
 	for i := 0; i < 8; i++ {
 		UplinkChannelConfiguration[i+64] = Channel{
-			Frequency: 903000000 + (i * 1600000),
+			Frequency: 915900000 + (i * 1600000),
 			DataRates: []int{4},
 		}
 	}
@@ -39,7 +39,7 @@ func init() {
 }
 
 // Name defines the name of the band
-const Name = "US 902-928"
+const Name = "AU 915-928"
 
 // DataRateConfiguration defines the available data rates
 var DataRateConfiguration = [...]DataRate{

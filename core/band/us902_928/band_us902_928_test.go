@@ -2,7 +2,7 @@
 // Copyright © 2016 Orne Brocaar
 // Use of this source code is governed by the MIT license that can be found in the LICENSE file.
 
-package us_902_928
+package us902_928
 
 import (
 	"errors"

@@ -767,7 +767,8 @@ func (h component) buildJoinAccept(joinReq *core.JoinHandlerReq, appKey [16]byte
 		RXDelay: 1, // TODO: Configure this per region
 	}
 
-	if joinReq.Metadata.Region != dutycycle.US {
+	switch dutycycle.Region(joinReq.Metadata.Region) {
+	case dutycycle.Europe, dutycycle.China:
 		cflist := lorawan.CFList(h.Configuration.CFList)
 		joinAcceptPayload.CFList = &cflist
 	}
