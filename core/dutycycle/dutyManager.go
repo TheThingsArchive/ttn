@@ -64,6 +64,7 @@ const (
 	US               = "us"
 	China            = "cn"
 	Australia        = "au"
+	World            = "world"
 )
 
 type Region string
@@ -79,6 +80,8 @@ func GetRegion(region string) (Region, error) {
 		return China, nil
 	case "au", "australia":
 		return Australia, nil
+	case "world":
+		return World, nil
 	default:
 		return "", fmt.Errorf("Region %s not supported", region)
 	}
@@ -145,6 +148,16 @@ func NewManager(filepath string, cycleLength time.Duration, r Region) (DutyManag
 	case Australia:
 		maxDuty = map[subBand]float32{
 			AuISM: 0.1,
+		}
+	case World:
+		maxDuty = map[subBand]float32{
+			EuropeG:  0.01,
+			EuropeG1: 0.01,
+			EuropeG2: 0.001,
+			EuropeG3: 0.1,
+			EuropeG4: 0.01,
+			UsISM:    0.1,
+			AuISM:    0.1,
 		}
 	default:
 		return nil, errors.New(errors.Implementation, "Region not supported")

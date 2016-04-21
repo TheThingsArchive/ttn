@@ -195,7 +195,7 @@ func init() {
 	routerCmd.Flags().String("db-duty", "boltdb:/tmp/ttn_router_duty.db", "Database connection of managed dutycycles")
 	viper.BindPFlag("router.db-duty", routerCmd.Flags().Lookup("db-duty"))
 
-	routerCmd.Flags().String("region", "eu", "Region of the router (eu/us/cn)")
+	routerCmd.Flags().String("region", "world", "Region of the router (eu/us/au/cn)")
 	viper.BindPFlag("router.region", routerCmd.Flags().Lookup("region"))
 
 	routerCmd.Flags().String("status-address", "0.0.0.0", "The IP address to listen for serving status information")
