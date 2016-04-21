@@ -7,7 +7,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"math/rand"
 	"net"
 	"time"
 
@@ -15,6 +14,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/dutycycle"
 	"github.com/TheThingsNetwork/ttn/core/otaa"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
+	"github.com/TheThingsNetwork/ttn/utils/random"
 	"github.com/TheThingsNetwork/ttn/utils/stats"
 	"github.com/apex/log"
 	"github.com/brocaar/lorawan"
@@ -479,17 +479,14 @@ func (h component) consumeJoin(appEUI []byte, devEUI []byte, appKey [16]byte, da
 	}
 	packet := bundles[best.ID].Packet.(*core.JoinHandlerReq)
 
-	// Generate a DevAddr - Note: this should be done by the Broker (issue #90). Random generation should be moved to the random package
-	rdn := rand.New(rand.NewSource(int64(packet.Metadata.Rssi)))
+	// Generate a DevAddr - Note: this should be done by the Broker (issue #90).
 	var devAddr [4]byte
-	binary.BigEndian.PutUint32(devAddr[:], rdn.Uint32())
+	copy(devAddr[:], random.Bytes(4))
 	devAddr[0] = (h.Configuration.NetID[2] << 1) | (devAddr[0] & 1) // DevAddr 7 msb are NetID 7 lsb
 
-	// Generate appNonce - Note: this should be moved to the random package
-	b := make([]byte, 4)
-	binary.BigEndian.PutUint32(b, rdn.Uint32())
+	// Generate appNonce
 	var appNonce [3]byte
-	copy(appNonce[:], b[:3])
+	copy(appNonce[:], random.Bytes(3))
 
 	var devNonce [2]byte
 	copy(devNonce[:], packet.DevNonce)
