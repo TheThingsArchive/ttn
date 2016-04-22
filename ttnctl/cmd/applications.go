@@ -13,6 +13,7 @@ import (
 
 	"gopkg.in/yaml.v2"
 
+	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/apex/log"
 	"github.com/gosuri/uitable"
@@ -96,7 +97,7 @@ var applicationsDeleteCmd = &cobra.Command{
 			return
 		}
 
-		appEUI, err := util.Parse64(args[0])
+		appEUI, err := core.ParseEUI(args[0])
 		if err != nil {
 			ctx.Fatalf("Invalid AppEUI: %s", err)
 		}
@@ -138,7 +139,7 @@ var applicationsAuthorizeCmd = &cobra.Command{
 			return
 		}
 
-		appEUI, err := util.Parse64(args[0])
+		appEUI, err := core.ParseEUI(args[0])
 		if err != nil {
 			ctx.Fatalf("Invalid AppEUI: %s", err)
 		}
@@ -178,7 +179,7 @@ var applicationsUseCmd = &cobra.Command{
 			return
 		}
 
-		appEUI, err := util.Parse64(args[0])
+		appEUI, err := core.ParseEUI(args[0])
 		if err != nil {
 			ctx.Fatalf("Invalid AppEUI: %s", err)
 		}

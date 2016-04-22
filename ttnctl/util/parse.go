@@ -28,18 +28,3 @@ func ParseHEX(input string, length int) ([]byte, error) {
 
 	return devAddr, nil
 }
-
-// Parse32 parses a 32-bit hex-encoded string
-func Parse32(input string) ([]byte, error) {
-	return ParseHEX(input, 8)
-}
-
-// Parse64 parses a 64-bit hex-encoded string
-func Parse64(input string) ([]byte, error) {
-	return ParseHEX(input, 16)
-}
-
-// Parse128 parses a 128-bit hex-encoded string
-func Parse128(input string) ([]byte, error) {
-	return ParseHEX(input, 32)
-}

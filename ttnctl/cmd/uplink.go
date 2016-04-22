@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/semtech"
-	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	"github.com/TheThingsNetwork/ttn/utils/random"
 	"github.com/brocaar/lorawan"
@@ -41,21 +41,21 @@ var uplinkCmd = &cobra.Command{
 			mtype = lorawan.UnconfirmedDataUp
 		}
 
-		devAddrRaw, err := util.Parse32(args[1])
+		devAddrRaw, err := core.ParseAddr(args[1])
 		if err != nil {
 			ctx.Fatalf("Invalid DevAddr: %s", err)
 		}
 		var devAddr lorawan.DevAddr
 		copy(devAddr[:], devAddrRaw)
 
-		nwkSKeyRaw, err := util.Parse128(args[2])
+		nwkSKeyRaw, err := core.ParseKey(args[2])
 		if err != nil {
 			ctx.Fatalf("Invalid NwkSKey: %s", err)
 		}
 		var nwkSKey lorawan.AES128Key
 		copy(nwkSKey[:], nwkSKeyRaw[:])
 
-		appSKeyRaw, err := util.Parse128(args[3])
+		appSKeyRaw, err := core.ParseKey(args[3])
 		if err != nil {
 			ctx.Fatalf("Invalid appSKey: %s", err)
 		}

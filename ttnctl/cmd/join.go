@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/otaa"
 	"github.com/TheThingsNetwork/ttn/semtech"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
@@ -30,14 +31,14 @@ var joinCmd = &cobra.Command{
 		}
 
 		// Parse parameters
-		devEUIRaw, err := util.Parse64(args[0])
+		devEUIRaw, err := core.ParseEUI(args[0])
 		if err != nil {
 			ctx.Fatalf("Invalid DevEUI: %s", err)
 		}
 		var devEUI lorawan.EUI64
 		copy(devEUI[:], devEUIRaw)
 
-		appKeyRaw, err := util.Parse128(args[1])
+		appKeyRaw, err := core.ParseKey(args[1])
 		if err != nil {
 			ctx.Fatalf("Invalid appKey: %s", err)
 		}

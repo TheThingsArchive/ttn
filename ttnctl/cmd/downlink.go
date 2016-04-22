@@ -28,7 +28,7 @@ formatted as "1h2m" for one hour and two minutes. The default TTL is one hour.`,
 
 		appEUI := util.GetAppEUI(ctx)
 
-		devEUI, err := util.Parse64(args[0])
+		devEUI, err := core.ParseEUI(args[0])
 		if err != nil {
 			ctx.Fatalf("Invalid DevEUI: %s", err)
 		}
