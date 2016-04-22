@@ -12,6 +12,7 @@ import (
 
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/mocks"
+	"github.com/TheThingsNetwork/ttn/core/types"
 	ttnMQTT "github.com/TheThingsNetwork/ttn/mqtt"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/assertions"
@@ -34,15 +35,15 @@ func TestHandleData(t *testing.T) {
 
 	adapter := NewAdapter(ctx, client)
 
-	eui := []byte{0x0a, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}
+	eui := types.EUI64{0x0a, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}
 
 	req := core.DataAppReq{
 		Payload: []byte{0x01, 0x02},
 		Metadata: []*core.Metadata{
 			&core.Metadata{DataRate: "SF7BW125"},
 		},
-		AppEUI: eui,
-		DevEUI: eui,
+		AppEUI: eui.Bytes(),
+		DevEUI: eui.Bytes(),
 		FPort:  14,
 		FCnt:   200,
 	}
@@ -50,9 +51,9 @@ func TestHandleData(t *testing.T) {
 	var wg sync.WaitGroup
 	wg.Add(1)
 
-	client.SubscribeDeviceUplink(eui, eui, func(client ttnMQTT.Client, appEUI []byte, devEUI []byte, dataUp core.DataUpAppReq) {
-		a.So(appEUI, ShouldResemble, eui)
-		a.So(devEUI, ShouldResemble, eui)
+	client.SubscribeDeviceUplink(types.AppEUI(eui), types.DevEUI(eui), func(client ttnMQTT.Client, appEUI types.AppEUI, devEUI types.DevEUI, dataUp core.DataUpAppReq) {
+		a.So(types.EUI64(appEUI), ShouldEqual, eui)
+		a.So(types.EUI64(devEUI), ShouldEqual, eui)
 		a.So(dataUp.FPort, ShouldEqual, 14)
 		a.So(dataUp.FCnt, ShouldEqual, 200)
 		a.So(dataUp.Payload, ShouldResemble, []byte{0x01, 0x02})
@@ -124,11 +125,11 @@ func TestHandleJoin(t *testing.T) {
 
 	adapter := NewAdapter(ctx, client)
 
-	eui := []byte{0x0a, 0x03, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}
+	eui := types.EUI64{0x0a, 0x03, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}
 
 	req := core.JoinAppReq{
-		AppEUI: eui,
-		DevEUI: eui,
+		AppEUI: eui.Bytes(),
+		DevEUI: eui.Bytes(),
 		Metadata: []*core.Metadata{
 			&core.Metadata{DataRate: "SF7BW125"},
 		},
@@ -137,9 +138,9 @@ func TestHandleJoin(t *testing.T) {
 	var wg sync.WaitGroup
 	wg.Add(1)
 
-	client.SubscribeDeviceActivations(eui, eui, func(client ttnMQTT.Client, appEUI []byte, devEUI []byte, activation core.OTAAAppReq) {
-		a.So(appEUI, ShouldResemble, eui)
-		a.So(devEUI, ShouldResemble, eui)
+	client.SubscribeDeviceActivations(types.AppEUI(eui), types.DevEUI(eui), func(client ttnMQTT.Client, appEUI types.AppEUI, devEUI types.DevEUI, activation core.OTAAAppReq) {
+		a.So(types.EUI64(appEUI), ShouldResemble, eui)
+		a.So(types.EUI64(devEUI), ShouldResemble, eui)
 		a.So(activation.Metadata[0].DataRate, ShouldEqual, "SF7BW125")
 		wg.Done()
 	}).Wait()
@@ -201,15 +202,15 @@ func TestSubscribeDownlink(t *testing.T) {
 	err := adapter.SubscribeDownlink(handler)
 	a.So(err, ShouldBeNil)
 
-	appEUI := []byte{0x04, 0x03, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}
-	devEUI := []byte{0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01}
+	appEUI := types.AppEUI{0x04, 0x03, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}
+	devEUI := types.DevEUI{0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01}
 	client.PublishDownlink(appEUI, devEUI, core.DataDownAppReq{Payload: []byte{0x01, 0x02, 0x03, 0x04}}).Wait()
 
 	<-time.After(50 * time.Millisecond)
 
 	expected := &core.DataDownHandlerReq{
-		AppEUI:  appEUI,
-		DevEUI:  devEUI,
+		AppEUI:  appEUI.Bytes(),
+		DevEUI:  devEUI.Bytes(),
 		Payload: []byte{0x01, 0x02, 0x03, 0x04},
 	}
 
@@ -228,8 +229,8 @@ func TestSubscribeInvalidDownlink(t *testing.T) {
 	err := adapter.SubscribeDownlink(handler)
 	a.So(err, ShouldBeNil)
 
-	appEUI := []byte{0x04, 0x03, 0x03, 0x09, 0x05, 0x06, 0x07, 0x08}
-	devEUI := []byte{0x08, 0x07, 0x06, 0x09, 0x04, 0x03, 0x02, 0x01}
+	appEUI := types.AppEUI{0x04, 0x03, 0x03, 0x09, 0x05, 0x06, 0x07, 0x08}
+	devEUI := types.DevEUI{0x08, 0x07, 0x06, 0x09, 0x04, 0x03, 0x02, 0x01}
 	client.PublishDownlink(appEUI, devEUI, core.DataDownAppReq{Payload: []byte{}}).Wait()
 
 	<-time.After(50 * time.Millisecond)

@@ -57,7 +57,7 @@ formatted as "1h2m" for one hour and two minutes. The default TTL is one hour.`,
 		client := util.ConnectMQTTClient(ctx)
 		defer client.Disconnect()
 
-		token := client.PublishDownlink(appEUI.Bytes(), devEUI.Bytes(), dataDown)
+		token := client.PublishDownlink(appEUI, devEUI, dataDown)
 
 		if token.Wait(); token.Error() != nil {
 			ctx.WithError(token.Error()).Fatal("Could not publish downlink")

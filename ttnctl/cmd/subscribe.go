@@ -41,7 +41,7 @@ application.`,
 
 		client := util.ConnectMQTTClient(ctx)
 
-		token := client.SubscribeDeviceUplink(appEUI.Bytes(), devEUI.Bytes(), func(client mqtt.Client, appEUI []byte, devEUI []byte, dataUp core.DataUpAppReq) {
+		token := client.SubscribeDeviceUplink(appEUI, devEUI, func(client mqtt.Client, appEUI types.AppEUI, devEUI types.DevEUI, dataUp core.DataUpAppReq) {
 			ctx := ctx.WithField("DevEUI", devEUI)
 
 			// TODO: Find out what Metadata people want to see here

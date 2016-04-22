@@ -6,6 +6,7 @@ package mqtt
 import (
 	"testing"
 
+	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/smartystreets/assertions"
 )
 
@@ -15,8 +16,8 @@ func TestParseDeviceTopic(t *testing.T) {
 	topic := "0102030405060708/devices/0807060504030201/up"
 
 	expected := &DeviceTopic{
-		AppEUI: []byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08},
-		DevEUI: []byte{0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01},
+		AppEUI: types.AppEUI{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08},
+		DevEUI: types.DevEUI{0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01},
 		Type:   Uplink,
 	}
 
@@ -58,8 +59,8 @@ func TestTopicString(t *testing.T) {
 	a := New(t)
 
 	topic := &DeviceTopic{
-		AppEUI: []byte{0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0},
-		DevEUI: []byte{0x28, 0x27, 0x26, 0x25, 0x24, 0x23, 0x22, 0x21},
+		AppEUI: types.AppEUI{0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0},
+		DevEUI: types.DevEUI{0x28, 0x27, 0x26, 0x25, 0x24, 0x23, 0x22, 0x21},
 		Type:   Downlink,
 	}
 
@@ -87,9 +88,9 @@ func TestTopicParseAndString(t *testing.T) {
 		"+/devices/+/down",
 		"+/devices/+/activations",
 		// Not Wildcard
-		"0102030405060708/devices/0000000000000000/up",
-		"0102030405060708/devices/0000000000000000/down",
-		"0102030405060708/devices/0000000000000000/activations",
+		"0102030405060708/devices/0100000000000000/up",
+		"0102030405060708/devices/0100000000000000/down",
+		"0102030405060708/devices/0100000000000000/activations",
 	}
 
 	for _, expected := range expectedList {
