@@ -10,6 +10,7 @@ import (
 
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/components/handler"
+	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/TheThingsNetwork/ttn/utils/random"
 	"github.com/apex/log"
@@ -52,7 +53,7 @@ registered on the Handler.`,
 		manager := getHandlerManager()
 		defaultDevice, err := manager.GetDefaultDevice(context.Background(), &core.GetDefaultDeviceReq{
 			Token:  auth.AccessToken,
-			AppEUI: appEUI,
+			AppEUI: appEUI.Bytes(),
 		})
 		if err != nil {
 			// TODO: Check reason
@@ -68,7 +69,7 @@ registered on the Handler.`,
 
 		devices, err := manager.ListDevices(context.Background(), &core.ListDevicesHandlerReq{
 			Token:  auth.AccessToken,
-			AppEUI: appEUI,
+			AppEUI: appEUI.Bytes(),
 		})
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not get device list")
@@ -141,7 +142,7 @@ var devicesInfoCmd = &cobra.Command{
 		manager := getHandlerManager()
 		res, err := manager.ListDevices(context.Background(), &core.ListDevicesHandlerReq{
 			Token:  auth.AccessToken,
-			AppEUI: appEUI,
+			AppEUI: appEUI.Bytes(),
 		})
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not get device list")
@@ -149,7 +150,7 @@ var devicesInfoCmd = &cobra.Command{
 
 		lmic, _ := cmd.Flags().GetBool("lmic")
 
-		if devEUI, err := core.ParseEUI(args[0]); err == nil {
+		if devEUI, err := types.ParseDevEUI(args[0]); err == nil {
 			for _, device := range res.OTAA {
 				if reflect.DeepEqual(device.DevEUI, devEUI) {
 					fmt.Println("Dynamic device:")
@@ -159,10 +160,10 @@ var devicesInfoCmd = &cobra.Command{
 					// LMiC decided to use LSBF for AppEUI and call it ArtEUI
 					if lmic {
 						fmt.Printf("  AppEUI:  %X (sometimes called ArtEUI)\n", appEUI)
-						fmt.Printf("           {%s} (Note: LSBF)\n", cStyle(appEUI, lsbf))
+						fmt.Printf("           {%s} (Note: LSBF)\n", cStyle(appEUI.Bytes(), lsbf))
 					} else {
 						fmt.Printf("  AppEUI:  %X\n", appEUI)
-						fmt.Printf("           {%s}\n", cStyle(appEUI, msbf))
+						fmt.Printf("           {%s}\n", cStyle(appEUI.Bytes(), msbf))
 					}
 
 					fmt.Println()
@@ -216,7 +217,7 @@ var devicesInfoCmd = &cobra.Command{
 			}
 		}
 
-		if devAddr, err := core.ParseAddr(args[0]); err == nil {
+		if devAddr, err := types.ParseDevAddr(args[0]); err == nil {
 			for _, device := range res.ABP {
 				if reflect.DeepEqual(device.DevAddr, devAddr) {
 					fmt.Println("Personalized device:")
@@ -296,20 +297,20 @@ the Handler`,
 
 		appEUI := util.GetAppEUI(ctx)
 
-		devEUI, err := core.ParseEUI(args[0])
+		devEUI, err := types.ParseDevEUI(args[0])
 		if err != nil {
 			ctx.Fatalf("Invalid DevEUI: %s", err)
 		}
 
-		var appKey []byte
+		var appKey types.AppKey
 		if len(args) >= 2 {
-			appKey, err = core.ParseKey(args[1])
+			appKey, err = types.ParseAppKey(args[1])
 			if err != nil {
 				ctx.Fatalf("Invalid AppKey: %s", err)
 			}
 		} else {
 			ctx.Info("Generating random AppKey...")
-			appKey = random.Bytes(16)
+			copy(appKey[:], random.Bytes(16))
 		}
 
 		auth, err := util.LoadAuth(viper.GetString("ttn-account-server"))
@@ -323,9 +324,9 @@ the Handler`,
 		manager := getHandlerManager()
 		res, err := manager.UpsertOTAA(context.Background(), &core.UpsertOTAAHandlerReq{
 			Token:  auth.AccessToken,
-			AppEUI: appEUI,
-			DevEUI: devEUI,
-			AppKey: appKey,
+			AppEUI: appEUI.Bytes(),
+			DevEUI: devEUI.Bytes(),
+			AppKey: appKey.Bytes(),
 		})
 		if err != nil || res == nil {
 			ctx.WithError(err).Fatal("Could not register device")
@@ -351,18 +352,19 @@ registration on the Handler`,
 
 		appEUI := util.GetAppEUI(ctx)
 
-		devAddr, err := core.ParseAddr(args[0])
+		devAddr, err := types.ParseDevAddr(args[0])
 		if err != nil {
 			ctx.Fatalf("Invalid DevAddr: %s", err)
 		}
 
-		var nwkSKey, appSKey []byte
+		var nwkSKey types.NwkSKey
+		var appSKey types.AppSKey
 		if len(args) >= 3 {
-			nwkSKey, err = core.ParseKey(args[1])
+			nwkSKey, err = types.ParseNwkSKey(args[1])
 			if err != nil {
 				ctx.Fatalf("Invalid NwkSKey: %s", err)
 			}
-			appSKey, err = core.ParseKey(args[2])
+			appSKey, err = types.ParseAppSKey(args[2])
 			if err != nil {
 				ctx.Fatalf("Invalid AppSKey: %s", err)
 			}
@@ -371,8 +373,8 @@ registration on the Handler`,
 			}
 		} else {
 			ctx.Info("Generating random NwkSKey and AppSKey...")
-			nwkSKey = random.Bytes(16)
-			appSKey = random.Bytes(16)
+			copy(nwkSKey[:], random.Bytes(16))
+			copy(appSKey[:], random.Bytes(16))
 		}
 
 		var flags uint32
@@ -392,10 +394,10 @@ registration on the Handler`,
 		manager := getHandlerManager()
 		res, err := manager.UpsertABP(context.Background(), &core.UpsertABPHandlerReq{
 			Token:   auth.AccessToken,
-			AppEUI:  appEUI,
-			DevAddr: devAddr,
-			AppSKey: appSKey,
-			NwkSKey: nwkSKey,
+			AppEUI:  appEUI.Bytes(),
+			DevAddr: devAddr.Bytes(),
+			AppSKey: appSKey.Bytes(),
+			NwkSKey: nwkSKey.Bytes(),
 			Flags:   flags,
 		})
 		if err != nil || res == nil {
@@ -425,16 +427,16 @@ register [DevEUI] [AppKey]`,
 
 		appEUI := util.GetAppEUI(ctx)
 
-		var appKey []byte
+		var appKey types.AppKey
 		var err error
 		if len(args) >= 2 {
-			appKey, err = core.ParseKey(args[0])
+			appKey, err = types.ParseAppKey(args[0])
 			if err != nil {
 				ctx.Fatalf("Invalid AppKey: %s", err)
 			}
 		} else {
 			ctx.Info("Generating random AppKey...")
-			appKey = random.Bytes(16)
+			copy(appKey[:], random.Bytes(16))
 		}
 
 		auth, err := util.LoadAuth(viper.GetString("ttn-account-server"))
@@ -448,8 +450,8 @@ register [DevEUI] [AppKey]`,
 		manager := getHandlerManager()
 		res, err := manager.SetDefaultDevice(context.Background(), &core.SetDefaultDeviceReq{
 			Token:  auth.AccessToken,
-			AppEUI: appEUI,
-			AppKey: appKey,
+			AppEUI: appEUI.Bytes(),
+			AppKey: appKey.Bytes(),
 		})
 		if err != nil || res == nil {
 			ctx.WithError(err).Fatal("Could not set default device settings")

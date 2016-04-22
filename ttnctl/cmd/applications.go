@@ -13,7 +13,7 @@ import (
 
 	"gopkg.in/yaml.v2"
 
-	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/apex/log"
 	"github.com/gosuri/uitable"
@@ -97,13 +97,13 @@ var applicationsDeleteCmd = &cobra.Command{
 			return
 		}
 
-		appEUI, err := core.ParseEUI(args[0])
+		appEUI, err := types.ParseAppEUI(args[0])
 		if err != nil {
 			ctx.Fatalf("Invalid AppEUI: %s", err)
 		}
 
 		server := viper.GetString("ttn-account-server")
-		uri := fmt.Sprintf("%s/applications/%s", server, fmt.Sprintf("%X", appEUI))
+		uri := fmt.Sprintf("%s/applications/%s", server, appEUI)
 		req, err := util.NewRequestWithAuth(server, "DELETE", uri, nil)
 		if err != nil {
 			ctx.WithError(err).Fatal("Failed to create authenticated request")
@@ -139,7 +139,7 @@ var applicationsAuthorizeCmd = &cobra.Command{
 			return
 		}
 
-		appEUI, err := core.ParseEUI(args[0])
+		appEUI, err := types.ParseAppEUI(args[0])
 		if err != nil {
 			ctx.Fatalf("Invalid AppEUI: %s", err)
 		}
@@ -179,7 +179,7 @@ var applicationsUseCmd = &cobra.Command{
 			return
 		}
 
-		appEUI, err := core.ParseEUI(args[0])
+		appEUI, err := types.ParseAppEUI(args[0])
 		if err != nil {
 			ctx.Fatalf("Invalid AppEUI: %s", err)
 		}
@@ -241,7 +241,7 @@ var applicationsUseCmd = &cobra.Command{
 			ctx.WithError(err).Fatal("Could not write configiguration file")
 		}
 
-		ctx.Infof("You are now using application %X.", appEUI)
+		ctx.Infof("You are now using application %s.", appEUI)
 
 	},
 }

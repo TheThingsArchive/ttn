@@ -9,6 +9,7 @@ import (
 	"regexp"
 
 	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/mqtt"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/spf13/cobra"
@@ -27,9 +28,9 @@ application.`,
 
 		appEUI := util.GetAppEUI(ctx)
 
-		var devEUI []byte
+		var devEUI types.DevEUI
 		if len(args) > 0 {
-			devEUI, err := core.ParseEUI(args[0])
+			devEUI, err := types.ParseDevEUI(args[0])
 			if err != nil {
 				ctx.Fatalf("Invalid DevEUI: %s", err)
 			}
@@ -40,7 +41,7 @@ application.`,
 
 		client := util.ConnectMQTTClient(ctx)
 
-		token := client.SubscribeDeviceUplink(appEUI, devEUI, func(client mqtt.Client, appEUI []byte, devEUI []byte, dataUp core.DataUpAppReq) {
+		token := client.SubscribeDeviceUplink(appEUI.Bytes(), devEUI.Bytes(), func(client mqtt.Client, appEUI []byte, devEUI []byte, dataUp core.DataUpAppReq) {
 			ctx := ctx.WithField("DevEUI", devEUI)
 
 			// TODO: Find out what Metadata people want to see here

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/apex/log"
 	"github.com/spf13/viper"
 )
@@ -18,12 +18,12 @@ type App struct {
 	Valid      bool     `json:"valid"`
 }
 
-func GetAppEUI(ctx log.Interface) []byte {
+func GetAppEUI(ctx log.Interface) types.AppEUI {
 	if viper.GetString("app-eui") == "" {
 		ctx.Fatal("AppEUI not set. You probably want to run 'ttnctl applications use [appEUI]' to do this.")
 	}
 
-	appEUI, err := core.ParseEUI(viper.GetString("app-eui"))
+	appEUI, err := types.ParseAppEUI(viper.GetString("app-eui"))
 	if err != nil {
 		ctx.Fatalf("Invalid AppEUI: %s", err)
 	}

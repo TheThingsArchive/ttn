@@ -11,8 +11,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/semtech"
+	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	"github.com/TheThingsNetwork/ttn/utils/random"
 	"github.com/brocaar/lorawan"
@@ -41,26 +42,20 @@ var uplinkCmd = &cobra.Command{
 			mtype = lorawan.UnconfirmedDataUp
 		}
 
-		devAddrRaw, err := core.ParseAddr(args[1])
+		devAddr, err := types.ParseDevAddr(args[1])
 		if err != nil {
 			ctx.Fatalf("Invalid DevAddr: %s", err)
 		}
-		var devAddr lorawan.DevAddr
-		copy(devAddr[:], devAddrRaw)
 
-		nwkSKeyRaw, err := core.ParseKey(args[2])
+		nwkSKey, err := types.ParseNwkSKey(args[2])
 		if err != nil {
 			ctx.Fatalf("Invalid NwkSKey: %s", err)
 		}
-		var nwkSKey lorawan.AES128Key
-		copy(nwkSKey[:], nwkSKeyRaw[:])
 
-		appSKeyRaw, err := core.ParseKey(args[3])
+		appSKey, err := types.ParseAppSKey(args[3])
 		if err != nil {
 			ctx.Fatalf("Invalid appSKey: %s", err)
 		}
-		var appSKey lorawan.AES128Key
-		copy(appSKey[:], appSKeyRaw[:])
 
 		fcnt, err := strconv.ParseInt(args[5], 10, 64)
 		if err != nil {
@@ -70,7 +65,7 @@ var uplinkCmd = &cobra.Command{
 		// Lorawan Payload
 		macPayload := &lorawan.MACPayload{}
 		macPayload.FHDR = lorawan.FHDR{
-			DevAddr: devAddr,
+			DevAddr: lorawan.DevAddr(devAddr),
 			FCnt:    uint32(fcnt),
 		}
 		macPayload.FPort = pointer.Uint8(1)
@@ -90,10 +85,10 @@ var uplinkCmd = &cobra.Command{
 			Major: lorawan.LoRaWANR1,
 		}
 		phyPayload.MACPayload = macPayload
-		if err := phyPayload.EncryptFRMPayload(appSKey); err != nil {
+		if err := phyPayload.EncryptFRMPayload(lorawan.AES128Key(appSKey)); err != nil {
 			ctx.Fatalf("Unable to encrypt frame payload: %s", err)
 		}
-		if err := phyPayload.SetMIC(nwkSKey); err != nil {
+		if err := phyPayload.SetMIC(lorawan.AES128Key(nwkSKey)); err != nil {
 			ctx.Fatalf("Unable to set MIC: %s", err)
 		}
 
@@ -167,9 +162,9 @@ var uplinkCmd = &cobra.Command{
 			ctx.Infof("Frame counter: %d", macPayload.FHDR.FCnt)
 			if len(macPayload.FRMPayload) > 0 {
 				decrypted, err := lorawan.EncryptFRMPayload(
-					appSKey,
+					lorawan.AES128Key(appSKey),
 					false,
-					devAddr,
+					lorawan.DevAddr(devAddr),
 					macPayload.FHDR.FCnt,
 					macPayload.FRMPayload[0].(*lorawan.DataPayload).Bytes,
 				)

@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/otaa"
+	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/semtech"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
@@ -31,23 +31,17 @@ var joinCmd = &cobra.Command{
 		}
 
 		// Parse parameters
-		devEUIRaw, err := core.ParseEUI(args[0])
+		devEUI, err := types.ParseDevEUI(args[0])
 		if err != nil {
 			ctx.Fatalf("Invalid DevEUI: %s", err)
 		}
-		var devEUI lorawan.EUI64
-		copy(devEUI[:], devEUIRaw)
 
-		appKeyRaw, err := core.ParseKey(args[1])
+		appKey, err := types.ParseAppKey(args[1])
 		if err != nil {
 			ctx.Fatalf("Invalid appKey: %s", err)
 		}
-		var appKey lorawan.AES128Key
-		copy(appKey[:], appKeyRaw)
 
-		appEUIRaw := util.GetAppEUI(ctx)
-		var appEUI lorawan.EUI64
-		copy(appEUI[:], appEUIRaw)
+		appEUI := util.GetAppEUI(ctx)
 
 		// Generate a DevNonce
 		var devNonce [2]byte
@@ -55,8 +49,8 @@ var joinCmd = &cobra.Command{
 
 		// Lorawan Payload
 		joinPayload := lorawan.JoinRequestPayload{
-			AppEUI:   appEUI,
-			DevEUI:   devEUI,
+			AppEUI:   lorawan.EUI64(appEUI),
+			DevEUI:   lorawan.EUI64(devEUI),
 			DevNonce: devNonce,
 		}
 		phyPayload := &lorawan.PHYPayload{}
@@ -65,7 +59,7 @@ var joinCmd = &cobra.Command{
 			Major: lorawan.LoRaWANR1,
 		}
 		phyPayload.MACPayload = &joinPayload
-		if err := phyPayload.SetMIC(appKey); err != nil {
+		if err := phyPayload.SetMIC(lorawan.AES128Key(appKey)); err != nil {
 			ctx.Fatalf("Unable to set MIC: %s", err)
 		}
 
@@ -132,7 +126,7 @@ var joinCmd = &cobra.Command{
 				ctx.Fatalf("Unable to retrieve LoRaWAN PhyPayload: %s", err)
 			}
 
-			if err := payload.DecryptJoinAcceptPayload(appKey); err != nil {
+			if err := payload.DecryptJoinAcceptPayload(lorawan.AES128Key(appKey)); err != nil {
 				ctx.Fatalf("Unable to decrypt MACPayload: %s", err)
 			}
 
