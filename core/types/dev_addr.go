@@ -29,6 +29,11 @@ func (addr DevAddr) String() string {
 	return strings.ToUpper(hex.EncodeToString(addr.Bytes()))
 }
 
+// GoString implements the GoStringer interface.
+func (addr DevAddr) GoString() string {
+	return addr.String()
+}
+
 // MarshalText implements the TextMarshaler interface.
 func (addr DevAddr) MarshalText() ([]byte, error) {
 	return []byte(addr.String()), nil

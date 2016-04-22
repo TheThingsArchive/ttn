@@ -37,6 +37,11 @@ func (eui EUI64) String() string {
 	return strings.ToUpper(hex.EncodeToString(eui.Bytes()))
 }
 
+// GoString implements the GoStringer interface.
+func (eui EUI64) GoString() string {
+	return eui.String()
+}
+
 // MarshalText implements the TextMarshaler interface.
 func (eui EUI64) MarshalText() ([]byte, error) {
 	return []byte(eui.String()), nil
@@ -95,6 +100,11 @@ func (eui AppEUI) Bytes() []byte {
 // String implements the Stringer interface.
 func (eui AppEUI) String() string {
 	return EUI64(eui).String()
+}
+
+// GoString implements the GoStringer interface.
+func (eui AppEUI) GoString() string {
+	return eui.String()
 }
 
 // MarshalText implements the TextMarshaler interface.
@@ -160,6 +170,11 @@ func (eui DevEUI) String() string {
 	return EUI64(eui).String()
 }
 
+// GoString implements the GoStringer interface.
+func (eui DevEUI) GoString() string {
+	return eui.String()
+}
+
 // MarshalText implements the TextMarshaler interface.
 func (eui DevEUI) MarshalText() ([]byte, error) {
 	return EUI64(eui).MarshalText()
@@ -221,6 +236,11 @@ func (eui GatewayEUI) Bytes() []byte {
 // String implements the Stringer interface.
 func (eui GatewayEUI) String() string {
 	return EUI64(eui).String()
+}
+
+// GoString implements the GoStringer interface.
+func (eui GatewayEUI) GoString() string {
+	return eui.String()
 }
 
 // MarshalText implements the TextMarshaler interface.

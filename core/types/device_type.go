@@ -41,6 +41,11 @@ func (devType DeviceType) String() string {
 	return ""
 }
 
+// GoString implements the GoStringer interface.
+func (devType DeviceType) GoString() string {
+	return devType.String()
+}
+
 // MarshalText implements the TextMarshaler interface.
 func (devType DeviceType) MarshalText() ([]byte, error) {
 	str := devType.String()

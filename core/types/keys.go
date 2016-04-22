@@ -38,6 +38,11 @@ func (key AES128Key) String() string {
 	return strings.ToUpper(hex.EncodeToString(key.Bytes()))
 }
 
+// GoString implements the GoStringer interface.
+func (key AES128Key) GoString() string {
+	return key.String()
+}
+
 // MarshalText implements the TextMarshaler interface.
 func (key AES128Key) MarshalText() ([]byte, error) {
 	return []byte(key.String()), nil
@@ -95,6 +100,11 @@ func (key AppKey) Bytes() []byte {
 
 func (key AppKey) String() string {
 	return AES128Key(key).String()
+}
+
+// GoString implements the GoStringer interface.
+func (key AppKey) GoString() string {
+	return key.String()
 }
 
 // MarshalText implements the TextMarshaler interface.
@@ -159,6 +169,11 @@ func (key AppSKey) String() string {
 	return AES128Key(key).String()
 }
 
+// GoString implements the GoStringer interface.
+func (key AppSKey) GoString() string {
+	return key.String()
+}
+
 // MarshalText implements the TextMarshaler interface.
 func (key AppSKey) MarshalText() ([]byte, error) {
 	return AES128Key(key).MarshalText()
@@ -220,6 +235,11 @@ func (key NwkSKey) Bytes() []byte {
 // String implements the Stringer interface.
 func (key NwkSKey) String() string {
 	return AES128Key(key).String()
+}
+
+// GoString implements the GoStringer interface.
+func (key NwkSKey) GoString() string {
+	return key.String()
 }
 
 // MarshalText implements the TextMarshaler interface.
