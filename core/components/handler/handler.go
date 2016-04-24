@@ -511,6 +511,7 @@ func (h component) consumeJoin(appEUI []byte, devEUI []byte, appKey [16]byte, da
 		FCntDown: 0,
 		FCntUp:   0,
 		NwkSKey:  nwkSKey,
+		DevMode:  false,
 	})
 	if err != nil {
 		ctx.WithError(err).Debug("Unable to initialize devEntry with activation")
@@ -633,6 +634,9 @@ func (h component) consumeDown(appEUI []byte, devEUI []byte, dataRate string, bu
 			stats.MarkMeter("handler.downlink.pull")
 			downType := lorawan.UnconfirmedDataDown
 			ack := (upType == lorawan.ConfirmedDataUp)
+			if bundle.Packet.(*core.DataUpHandlerReq).FCUPRst {
+				bundle.Entry.FCntDown = 0
+			}
 			downlink, err := h.buildDownlink(downlink.Payload, downType, ack, *bundle.Packet.(*core.DataUpHandlerReq), bundle.Entry, best.IsRX2)
 			if err != nil {
 				h.abortConsume(errors.New(errors.Structural, err), bundles)

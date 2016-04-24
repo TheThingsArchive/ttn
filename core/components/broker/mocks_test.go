@@ -176,10 +176,10 @@ func (m *MockNetworkController) upsertNonces(entry noncesEntry) error {
 }
 
 // wholeCnt implements the NetworkController interface
-func (m *MockNetworkController) wholeCounter(devCnt, entryCnt uint32) (uint32, error) {
+func (m *MockNetworkController) wholeCounter(devCnt, entryCnt uint32) (uint32, bool, error) {
 	m.InWholeCounter.DevCnt = devCnt
 	m.InWholeCounter.EntryCnt = entryCnt
-	return m.OutWholeCounter.FCnt, m.Failures["wholeCounter"]
+	return m.OutWholeCounter.FCnt, false, m.Failures["wholeCounter"]
 }
 
 // done implements the NetworkController Interface
