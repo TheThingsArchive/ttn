@@ -49,6 +49,15 @@ func New(buf []byte) Interface {
 func (w *rw) Write(data interface{}) {
 	var dataLen uint16
 	switch data.(type) {
+	case bool:
+		if data.(bool) {
+			w.directWrite(uint16(1))
+			w.directWrite(byte(1))
+		} else {
+			w.directWrite(uint16(1))
+			w.directWrite(byte(0))
+		}
+		return
 	case uint8:
 		dataLen = 1
 	case uint16:

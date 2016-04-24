@@ -22,7 +22,7 @@ type NetworkController interface {
 	readNonces(appEUI []byte, devEUI []byte) (noncesEntry, error)
 	upsertNonces(entry noncesEntry) error
 	upsert(entry devEntry) error
-	wholeCounter(devCnt uint32, entryCnt uint32) (uint32, error)
+	wholeCounter(devCnt uint32, entryCnt uint32) (uint32, bool, error)
 	done() error
 }
 
@@ -33,6 +33,7 @@ type devEntry struct {
 	Dialer  Dialer
 	FCntUp  uint32
 	NwkSKey [16]byte
+	DevMode bool
 }
 
 type noncesEntry struct {
@@ -68,19 +69,22 @@ func (s *controller) read(devAddr []byte) ([]devEntry, error) {
 }
 
 // wholeCounter implements the broker.NetworkController interface
-func (s *controller) wholeCounter(devCnt uint32, entryCnt uint32) (uint32, error) {
+func (s *controller) wholeCounter(devCnt uint32, entryCnt uint32) (uint32, bool, error) {
 	upperSup := int(math.Pow(2, 16))
 	diff := int(devCnt) - (int(entryCnt) % upperSup)
 	var offset int
 	if diff >= 0 {
 		offset = diff
 	} else {
+		if entryCnt < (uint32(upperSup) - 10) {
+			return devCnt, true, nil
+		}
 		offset = upperSup + diff
 	}
 	if offset > upperSup/4 {
-		return 0, errors.New(errors.Structural, "Gap too big, counter is errored")
+		return 0, false, errors.New(errors.Structural, "Gap too big, counter is errored")
 	}
-	return entryCnt + uint32(offset), nil
+	return entryCnt + uint32(offset), false, nil
 }
 
 // upsert implements the broker.NetworkController interface
@@ -141,6 +145,7 @@ func (e devEntry) MarshalBinary() ([]byte, error) {
 	rw.Write(e.DevAddr)
 	rw.Write(e.NwkSKey[:])
 	rw.Write(e.FCntUp)
+	rw.Write(e.DevMode)
 	rw.Write(e.Dialer.MarshalSafely())
 	return rw.Bytes()
 }
@@ -162,6 +167,7 @@ func (e *devEntry) UnmarshalBinary(data []byte) error {
 	})
 	rw.Read(func(data []byte) { copy(e.NwkSKey[:], data) })
 	rw.Read(func(data []byte) { e.FCntUp = binary.BigEndian.Uint32(data) })
+	rw.Read(func(data []byte) { e.DevMode = (data[0] != 0) })
 	rw.Read(func(data []byte) { e.Dialer = NewDialer(data) })
 	return rw.Err()
 }

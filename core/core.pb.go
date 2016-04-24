@@ -2,6 +2,70 @@
 // source: core.proto
 // DO NOT EDIT!
 
+/*
+	Package core is a generated protocol buffer package.
+
+	It is generated from these files:
+		core.proto
+		broker.proto
+		broker_manager.proto
+		handler_manager.proto
+		lorawan.proto
+		handler.proto
+		application.proto
+		router.proto
+
+	It has these top-level messages:
+		Metadata
+		StatsMetadata
+		DataBrokerReq
+		DataBrokerRes
+		JoinBrokerReq
+		JoinBrokerRes
+		ValidateOTAABrokerReq
+		ValidateOTAABrokerRes
+		UpsertABPBrokerReq
+		UpsertABPBrokerRes
+		BrokerDevice
+		ValidateTokenBrokerReq
+		ValidateTokenBrokerRes
+		UpsertOTAAHandlerReq
+		UpsertOTAAHandlerRes
+		UpsertABPHandlerReq
+		UpsertABPHandlerRes
+		ListDevicesHandlerReq
+		ListDevicesHandlerRes
+		HandlerABPDevice
+		HandlerOTAADevice
+		GetDefaultDeviceReq
+		GetDefaultDeviceRes
+		SetDefaultDeviceReq
+		SetDefaultDeviceRes
+		LoRaWANData
+		LoRaWANMHDR
+		LoRaWANMACPayload
+		LoRaWANFHDR
+		LoRaWANFCtrl
+		LoRaWANJoinRequest
+		LoRaWANJoinAccept
+		LoRaWANDLSettings
+		DataUpHandlerReq
+		DataUpHandlerRes
+		DataDownHandlerReq
+		DataDownHandlerRes
+		JoinHandlerReq
+		JoinHandlerRes
+		DataAppReq
+		DataAppRes
+		JoinAppReq
+		JoinAppRes
+		DataRouterReq
+		DataRouterRes
+		StatsReq
+		StatsRes
+		JoinRouterReq
+		JoinRouterRes
+*/
 package core
 
 import proto "github.com/golang/protobuf/proto"
@@ -14,6 +78,10 @@ import io "io"
 var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+const _ = proto.ProtoPackageIsVersion1
 
 type Metadata struct {
 	DutyRX1     uint32  `protobuf:"varint,1,opt,name=DutyRX1,json=dutyRX1,proto3" json:"DutyRX1,omitempty"`
