@@ -634,7 +634,7 @@ func (h component) consumeDown(appEUI []byte, devEUI []byte, dataRate string, bu
 			stats.MarkMeter("handler.downlink.pull")
 			downType := lorawan.UnconfirmedDataDown
 			ack := (upType == lorawan.ConfirmedDataUp)
-			if bundle.Packet.(*core.DataUpHandlerReq).FCUPRst {
+			if bundle.Packet.(*core.DataUpHandlerReq).FCntUpReset {
 				bundle.Entry.FCntDown = 0
 			}
 			downlink, err := h.buildDownlink(downlink.Payload, downType, ack, *bundle.Packet.(*core.DataUpHandlerReq), bundle.Entry, best.IsRX2)

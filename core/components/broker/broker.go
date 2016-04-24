@@ -327,7 +327,7 @@ func (b component) HandleData(bctx context.Context, req *core.DataBrokerReq) (*c
 		FPort:    req.Payload.MACPayload.FPort,
 		MType:    req.Payload.MHDR.MType,
 		Metadata: req.Metadata,
-		FCUPRst:  fcntReset,
+		FCntUpReset:  fcntReset,
 	})
 
 	if err != nil {
