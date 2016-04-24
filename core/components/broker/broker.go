@@ -320,14 +320,14 @@ func (b component) HandleData(bctx context.Context, req *core.DataBrokerReq) (*c
 	}
 	defer closer.Close()
 	resp, err := handler.HandleDataUp(context.Background(), &core.DataUpHandlerReq{
-		Payload:  req.Payload.MACPayload.FRMPayload,
-		DevEUI:   mEntry.DevEUI,
-		AppEUI:   mEntry.AppEUI,
-		FCnt:     fhdr.FCnt,
-		FPort:    req.Payload.MACPayload.FPort,
-		MType:    req.Payload.MHDR.MType,
-		Metadata: req.Metadata,
-		FCntUpReset:  fcntReset,
+		Payload:     req.Payload.MACPayload.FRMPayload,
+		DevEUI:      mEntry.DevEUI,
+		AppEUI:      mEntry.AppEUI,
+		FCnt:        fhdr.FCnt,
+		FPort:       req.Payload.MACPayload.FPort,
+		MType:       req.Payload.MHDR.MType,
+		Metadata:    req.Metadata,
+		FCntUpReset: fcntReset,
 	})
 
 	if err != nil {
