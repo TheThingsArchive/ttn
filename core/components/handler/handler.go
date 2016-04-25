@@ -7,7 +7,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"math/rand"
 	"net"
 	"time"
 
@@ -15,6 +14,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/dutycycle"
 	"github.com/TheThingsNetwork/ttn/core/otaa"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
+	"github.com/TheThingsNetwork/ttn/utils/random"
 	"github.com/TheThingsNetwork/ttn/utils/stats"
 	"github.com/apex/log"
 	"github.com/brocaar/lorawan"
@@ -202,7 +202,7 @@ func (h component) HandleJoin(bctx context.Context, req *core.JoinHandlerReq) (*
 	}
 
 	// 2. Verify MIC
-	payload := lorawan.NewPHYPayload(true)
+	payload := &lorawan.PHYPayload{}
 	payload.MHDR = lorawan.MHDR{Major: lorawan.LoRaWANR1, MType: lorawan.JoinRequest}
 	joinPayload := lorawan.JoinRequestPayload{}
 	copy(payload.MIC[:], req.MIC)
@@ -479,17 +479,14 @@ func (h component) consumeJoin(appEUI []byte, devEUI []byte, appKey [16]byte, da
 	}
 	packet := bundles[best.ID].Packet.(*core.JoinHandlerReq)
 
-	// Generate a DevAddr - Note: this should be done by the Broker (issue #90). Random generation should be moved to the random package
-	rdn := rand.New(rand.NewSource(int64(packet.Metadata.Rssi)))
+	// Generate a DevAddr - Note: this should be done by the Broker (issue #90).
 	var devAddr [4]byte
-	binary.BigEndian.PutUint32(devAddr[:], rdn.Uint32())
+	copy(devAddr[:], random.Bytes(4))
 	devAddr[0] = (h.Configuration.NetID[2] << 1) | (devAddr[0] & 1) // DevAddr 7 msb are NetID 7 lsb
 
-	// Generate appNonce - Note: this should be moved to the random package
-	b := make([]byte, 4)
-	binary.BigEndian.PutUint32(b, rdn.Uint32())
+	// Generate appNonce
 	var appNonce [3]byte
-	copy(appNonce[:], b[:3])
+	copy(appNonce[:], random.Bytes(3))
 
 	var devNonce [2]byte
 	copy(devNonce[:], packet.DevNonce)
@@ -677,7 +674,7 @@ func (h component) abortConsume(err error, bundles []bundle) {
 // constructs a downlink packet from something we pulled from the gathered downlink, and, the actual
 // uplink.
 func (h component) buildDownlink(down []byte, mtype lorawan.MType, ack bool, up core.DataUpHandlerReq, entry devEntry, isRX2 bool) (*core.DataUpHandlerRes, error) {
-	macpayload := lorawan.NewMACPayload(false)
+	macpayload := &lorawan.MACPayload{}
 	macpayload.FHDR = lorawan.FHDR{
 		FCnt: entry.FCntDown + 1,
 	}
@@ -687,20 +684,12 @@ func (h component) buildDownlink(down []byte, mtype lorawan.MType, ack bool, up 
 	if ack {
 		macpayload.FHDR.FCtrl.ACK = true
 	}
-	var frmpayload []byte
+
 	if down != nil {
 		macpayload.FRMPayload = []lorawan.Payload{&lorawan.DataPayload{Bytes: down}}
-		err := macpayload.EncryptFRMPayload(entry.AppSKey)
-		if err != nil {
-			return nil, errors.New(errors.Structural, err)
-		}
-		frmpayload, err = macpayload.FRMPayload[0].MarshalBinary()
-		if err != nil {
-			return nil, errors.New(errors.Structural, err)
-		}
 	}
 
-	payload := lorawan.NewPHYPayload(false)
+	payload := &lorawan.PHYPayload{}
 	payload.MHDR = lorawan.MHDR{
 		MType: mtype,
 		Major: lorawan.LoRaWANR1,
@@ -710,6 +699,18 @@ func (h component) buildDownlink(down []byte, mtype lorawan.MType, ack bool, up 
 	data, err := payload.MarshalBinary()
 	if err != nil {
 		return nil, errors.New(errors.Structural, err)
+	}
+
+	var frmpayload []byte
+	err = payload.EncryptFRMPayload(entry.AppSKey)
+	if err != nil {
+		return nil, errors.New(errors.Structural, err)
+	}
+	if down != nil {
+		frmpayload, err = macpayload.FRMPayload[0].MarshalBinary()
+		if err != nil {
+			return nil, errors.New(errors.Structural, err)
+		}
 	}
 
 	metadata := h.buildMetadata(*up.Metadata, uint32(len(data)), 1000000*uint32(h.Configuration.RXDelay), isRX2)
@@ -741,7 +742,7 @@ func (h component) buildDownlink(down []byte, mtype lorawan.MType, ack bool, up 
 }
 
 func (h component) buildJoinAccept(joinReq *core.JoinHandlerReq, appKey [16]byte, appNonce []byte, devAddr [4]byte, isRX2 bool) (*core.JoinHandlerRes, error) {
-	payload := lorawan.NewPHYPayload(false)
+	payload := &lorawan.PHYPayload{}
 	payload.MHDR = lorawan.MHDR{
 		MType: lorawan.JoinAccept,
 		Major: lorawan.LoRaWANR1,

@@ -103,11 +103,11 @@ func TestUDPAdapter(t *testing.T) {
 		Desc(t, "Send a valid packet through udp, no downlink")
 
 		// Build
-		payload := lorawan.NewPHYPayload(true)
+		payload := &lorawan.PHYPayload{}
 		payload.MHDR.MType = lorawan.UnconfirmedDataUp
 		payload.MHDR.Major = lorawan.LoRaWANR1
 		payload.MIC = [4]byte{1, 2, 3, 4}
-		macpayload := lorawan.NewMACPayload(true)
+		macpayload := &lorawan.MACPayload{}
 		macpayload.FPort = new(uint8)
 		*macpayload.FPort = 1
 
@@ -216,11 +216,11 @@ func TestUDPAdapter(t *testing.T) {
 		FatalUnless(t, err)
 
 		// Build
-		payload := lorawan.NewPHYPayload(true)
+		payload := &lorawan.PHYPayload{}
 		payload.MHDR.MType = lorawan.UnconfirmedDataUp
 		payload.MHDR.Major = lorawan.LoRaWANR1
 		payload.MIC = [4]byte{1, 2, 3, 4}
-		macpayload := lorawan.NewMACPayload(true)
+		macpayload := &lorawan.MACPayload{}
 		macpayload.FPort = new(uint8)
 		*macpayload.FPort = 1
 
@@ -267,11 +267,11 @@ func TestUDPAdapter(t *testing.T) {
 			Metadata: new(core.Metadata),
 		}
 
-		payloadDown := lorawan.NewPHYPayload(false)
+		payloadDown := &lorawan.PHYPayload{}
 		payloadDown.MHDR.MType = lorawan.MType(router.OutHandleData.Res.Payload.MHDR.MType)
 		payloadDown.MHDR.Major = lorawan.Major(router.OutHandleData.Res.Payload.MHDR.Major)
 		copy(payloadDown.MIC[:], router.OutHandleData.Res.Payload.MIC)
-		macpayloadDown := lorawan.NewMACPayload(false)
+		macpayloadDown := &lorawan.MACPayload{}
 		macpayloadDown.FPort = new(uint8)
 		*macpayloadDown.FPort = uint8(router.OutHandleData.Res.Payload.MACPayload.FPort)
 		macpayloadDown.FHDR.FCnt = router.OutHandleData.Res.Payload.MACPayload.FHDR.FCnt
@@ -372,11 +372,11 @@ func TestUDPAdapter(t *testing.T) {
 		Desc(t, "Send a valid packet through udp, with invalid downlink")
 
 		// Build
-		payload := lorawan.NewPHYPayload(true)
+		payload := &lorawan.PHYPayload{}
 		payload.MHDR.MType = lorawan.UnconfirmedDataUp
 		payload.MHDR.Major = lorawan.LoRaWANR1
 		payload.MIC = [4]byte{1, 2, 3, 4}
-		macpayload := lorawan.NewMACPayload(true)
+		macpayload := &lorawan.MACPayload{}
 		macpayload.FPort = new(uint8)
 		*macpayload.FPort = 1
 
@@ -602,11 +602,11 @@ func TestUDPAdapter(t *testing.T) {
 		Desc(t, "Send a valid packet through udp, no downlink, router fails")
 
 		// Build
-		payload := lorawan.NewPHYPayload(true)
+		payload := &lorawan.PHYPayload{}
 		payload.MHDR.MType = lorawan.UnconfirmedDataUp
 		payload.MHDR.Major = lorawan.LoRaWANR1
 		payload.MIC = [4]byte{1, 2, 3, 4}
-		macpayload := lorawan.NewMACPayload(true)
+		macpayload := &lorawan.MACPayload{}
 		macpayload.FPort = new(uint8)
 		*macpayload.FPort = 1
 
@@ -930,7 +930,7 @@ func TestUDPAdapter(t *testing.T) {
 		FatalUnless(t, err)
 
 		// Build
-		payload := lorawan.NewPHYPayload(true)
+		payload := &lorawan.PHYPayload{}
 		payload.MHDR.MType = lorawan.JoinRequest
 		payload.MHDR.Major = lorawan.LoRaWANR1
 		payload.MIC = [4]byte{1, 2, 3, 4}
@@ -1037,7 +1037,7 @@ func TestUDPAdapter(t *testing.T) {
 		Desc(t, "Send a valid join through udp, no payload in accept")
 
 		// Build
-		payload := lorawan.NewPHYPayload(true)
+		payload := &lorawan.PHYPayload{}
 		payload.MHDR.MType = lorawan.JoinRequest
 		payload.MHDR.Major = lorawan.LoRaWANR1
 		payload.MIC = [4]byte{1, 2, 3, 4}
@@ -1125,7 +1125,7 @@ func TestUDPAdapter(t *testing.T) {
 		Desc(t, "Send a valid join through udp, no metadata in response")
 
 		// Build
-		payload := lorawan.NewPHYPayload(true)
+		payload := &lorawan.PHYPayload{}
 		payload.MHDR.MType = lorawan.JoinRequest
 		payload.MHDR.Major = lorawan.LoRaWANR1
 		payload.MIC = [4]byte{1, 2, 3, 4}
@@ -1216,7 +1216,7 @@ func TestUDPAdapter(t *testing.T) {
 		Desc(t, "Send a valid join through udp, router fails to handle")
 
 		// Build
-		payload := lorawan.NewPHYPayload(true)
+		payload := &lorawan.PHYPayload{}
 		payload.MHDR.MType = lorawan.JoinRequest
 		payload.MHDR.Major = lorawan.LoRaWANR1
 		payload.MIC = [4]byte{1, 2, 3, 4}

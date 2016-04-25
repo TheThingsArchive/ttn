@@ -9,6 +9,7 @@ import (
 	"reflect"
 
 	"github.com/TheThingsNetwork/ttn/utils/errors"
+	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	"github.com/brocaar/lorawan"
 )
 
@@ -45,14 +46,13 @@ func NewLoRaWANData(reqPayload *LoRaWANData, uplink bool) (lorawan.PHYPayload, e
 		return lorawan.PHYPayload{}, errors.New(errors.Structural, err)
 	}
 
-	macpayload := lorawan.NewMACPayload(uplink)
-	macpayload.FPort = new(uint8)
-	*macpayload.FPort = uint8(mac.FPort)
+	macpayload := &lorawan.MACPayload{}
+	macpayload.FPort = pointer.Uint8(uint8(mac.FPort))
 	copy(macpayload.FHDR.DevAddr[:], fhdr.DevAddr)
 	macpayload.FHDR.FCnt = fhdr.FCnt
 	for _, data := range fhdr.FOpts {
 		cmd := new(lorawan.MACCommand)
-		if err := cmd.UnmarshalBinary(data); err == nil { // We ignore invalid commands
+		if err := cmd.UnmarshalBinary(uplink, data); err == nil { // We ignore invalid commands
 			macpayload.FHDR.FOpts = append(macpayload.FHDR.FOpts, *cmd)
 		}
 	}
@@ -63,13 +63,13 @@ func NewLoRaWANData(reqPayload *LoRaWANData, uplink bool) (lorawan.PHYPayload, e
 	macpayload.FRMPayload = []lorawan.Payload{&lorawan.DataPayload{
 		Bytes: mac.FRMPayload,
 	}}
-	payload := lorawan.NewPHYPayload(uplink)
+	payload := &lorawan.PHYPayload{}
 	payload.MHDR.MType = lorawan.MType(mhdr.MType)
 	payload.MHDR.Major = lorawan.Major(mhdr.Major)
 	copy(payload.MIC[:], reqPayload.MIC)
 	payload.MACPayload = macpayload
 
-	return payload, nil
+	return *payload, nil
 }
 
 // ProtoMetaToAppMeta converts a set of Metadata generate with Protobuf to a set of valid
