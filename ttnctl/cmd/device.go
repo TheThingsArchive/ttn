@@ -6,6 +6,7 @@ package cmd
 import (
 	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/components/handler"
@@ -75,10 +76,10 @@ registered on the Handler.`,
 
 		table := uitable.New()
 		table.MaxColWidth = 70
-		table.AddRow("DevAddr", "FCntUp", "FCntDown")
+		table.AddRow("DevAddr", "FCntUp", "FCntDown", "DeveloperMode")
 		for _, device := range devices.ABP {
 			devAddr := fmt.Sprintf("%X", device.DevAddr)
-			table.AddRow(devAddr, device.FCntUp, device.FCntDown)
+			table.AddRow(devAddr, device.FCntUp, device.FCntDown, device.DevMode)
 		}
 
 		fmt.Println()
@@ -196,6 +197,8 @@ var devicesInfoCmd = &cobra.Command{
 
 					fmt.Println()
 					fmt.Printf("  FCntUp:  %d\n  FCntDn:  %d\n", device.FCntUp, device.FCntDown)
+					fmt.Println()
+					fmt.Printf("  Developer Mode: %t\n", device.DevMode)
 					return
 				}
 			}
@@ -275,7 +278,7 @@ the Handler`,
 
 // devicesRegisterPersonalizedCmd represents the `device register personalized` command
 var devicesRegisterPersonalizedCmd = &cobra.Command{
-	Use:   "personalized [DevAddr] [NwkSKey] [AppSKey]",
+	Use:   "personalized [DevAddr] [NwkSKey] [AppSKey] [DeveloperMode]",
 	Short: "Create or update ABP registrations on the Handler",
 	Long: `ttnctl devices register personalized creates or updates an ABP
 registration on the Handler`,
@@ -293,6 +296,7 @@ registration on the Handler`,
 		}
 
 		var nwkSKey, appSKey []byte
+		devMode := false
 		if len(args) >= 3 {
 			nwkSKey, err = util.Parse128(args[1])
 			if err != nil {
@@ -301,6 +305,9 @@ registration on the Handler`,
 			appSKey, err = util.Parse128(args[2])
 			if err != nil {
 				ctx.Fatalf("Invalid AppSKey: %s", err)
+			}
+			if (len(args) >= 4) && strings.EqualFold(args[3], "true") {
+				devMode = true
 			}
 		} else {
 			ctx.Info("Generating random NwkSKey and AppSKey...")
@@ -323,6 +330,7 @@ registration on the Handler`,
 			DevAddr: devAddr,
 			AppSKey: appSKey,
 			NwkSKey: nwkSKey,
+			DevMode: devMode,
 		})
 		if err != nil || res == nil {
 			ctx.WithError(err).Fatal("Could not register device")
@@ -331,6 +339,7 @@ registration on the Handler`,
 			"DevAddr": devAddr,
 			"NwkSKey": nwkSKey,
 			"AppSKey": appSKey,
+			"DevMode": devMode,
 		}).Info("Registered personalized device")
 	},
 }
