@@ -252,7 +252,7 @@ func TestNetworkControllerDevice(t *testing.T) {
 		cnt16 := wholeCnt + 1
 
 		// Operate
-		cnt32, _, err := db.wholeCounter(cnt16, wholeCnt)
+		cnt32, err := db.wholeCounter(cnt16, wholeCnt)
 
 		// Check
 		CheckErrors(t, nil, err)
@@ -272,12 +272,10 @@ func TestNetworkControllerDevice(t *testing.T) {
 		cnt16 := wholeCnt - 1
 
 		// Operate
-		cnt32, countReset, err := db.wholeCounter(cnt16, wholeCnt)
+		_, err := db.wholeCounter(cnt16, wholeCnt)
 
 		// Check
-		CheckErrors(t, nil, err)
-		Check(t, cnt16, cnt32, "Counters")
-		Check(t, true, countReset, "Counter reset")
+		CheckErrors(t, ErrStructural, err)
 
 		_ = db.done()
 	}
@@ -293,7 +291,7 @@ func TestNetworkControllerDevice(t *testing.T) {
 		cnt16 := uint32(wholeCnt%65536 + 2)
 
 		// Operate
-		cnt32, _, err := db.wholeCounter(cnt16, wholeCnt)
+		cnt32, err := db.wholeCounter(cnt16, wholeCnt)
 
 		// Check
 		CheckErrors(t, nil, err)
@@ -313,7 +311,7 @@ func TestNetworkControllerDevice(t *testing.T) {
 		cnt16 := uint32(wholeCnt%65536 + 45000)
 
 		// Operate
-		_, _, err := db.wholeCounter(cnt16, wholeCnt)
+		_, err := db.wholeCounter(cnt16, wholeCnt)
 
 		// Check
 		CheckErrors(t, ErrStructural, err)
@@ -332,7 +330,7 @@ func TestNetworkControllerDevice(t *testing.T) {
 		cnt16 := uint32(2)
 
 		// Operate
-		cnt32, _, err := db.wholeCounter(cnt16, wholeCnt)
+		cnt32, err := db.wholeCounter(cnt16, wholeCnt)
 
 		// Check
 		CheckErrors(t, nil, err)

@@ -246,26 +246,27 @@ func (b component) HandleData(bctx context.Context, req *core.DataBrokerReq) (*c
 	fhdr := &uplinkPayload.MACPayload.(*lorawan.MACPayload).FHDR // No nil ref, ensured by NewLoRaWANData()
 	fcnt16 := fhdr.FCnt                                          // Keep a reference to the original counter
 
-	fcntReset := false
+	var fcntReset bool
 	var mEntry *devEntry
 	for _, entry := range entries {
+		fcntReset = false
 		// retrieve the network session key
 		key := lorawan.AES128Key(entry.NwkSKey)
 
+		// Check frame counter is in valid range
+		fcnt32, err := b.NetworkController.wholeCounter(fcnt16, entry.FCntUp)
+		if err != nil {
+			// invalid, is device in developer mode
+			if entry.DevMode {
+				fcnt32 = fcnt16
+				fcntReset = true
+			} else {
+				continue
+			}
+		}
+
 		// Check with 16-bits counters
 		fhdr.FCnt = fcnt16
-		fcnt32, counterReset, err := b.NetworkController.wholeCounter(fcnt16, entry.FCntUp)
-		if err != nil {
-			continue
-		}
-
-		if counterReset {
-			dtx := ctx.WithFields(log.Fields{
-				"DevMode": entry.DevMode,
-			})
-			dtx.Debug("Counter reset detected")
-		}
-
 		ok, err := uplinkPayload.ValidateMIC(key)
 		if err != nil {
 			continue
@@ -279,12 +280,6 @@ func (b component) HandleData(bctx context.Context, req *core.DataBrokerReq) (*c
 		}
 
 		if ok {
-			if counterReset {
-				if !entry.DevMode {
-					continue
-				}
-				fcntReset = true
-			}
 			mEntry = &entry
 			stats.MarkMeter("broker.uplink.handler_lookup.mic_match")
 			ctx = ctx.WithFields(log.Fields{
