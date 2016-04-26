@@ -508,7 +508,7 @@ func (h component) consumeJoin(appEUI []byte, devEUI []byte, appKey [16]byte, da
 		FCntDown: 0,
 		FCntUp:   0,
 		NwkSKey:  nwkSKey,
-		DevMode:  false,
+		Flags:    0,
 	})
 	if err != nil {
 		ctx.WithError(err).Debug("Unable to initialize devEntry with activation")

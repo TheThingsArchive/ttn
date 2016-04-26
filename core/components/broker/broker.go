@@ -194,7 +194,7 @@ func (b component) HandleJoin(bctx context.Context, req *core.JoinBrokerReq) (*c
 		AppEUI:  req.AppEUI,
 		DevEUI:  req.DevEUI,
 		NwkSKey: nwkSKey,
-		DevMode: false,
+		Flags:   0,
 		FCntUp:  0,
 	})
 	if err != nil {
@@ -257,7 +257,7 @@ func (b component) HandleData(bctx context.Context, req *core.DataBrokerReq) (*c
 		fcnt32, err := b.NetworkController.wholeCounter(fcnt16, entry.FCntUp)
 		if err != nil {
 			// invalid, is device in developer mode
-			if entry.DevMode {
+			if (entry.Flags & core.RelaxFcntCheck) != 0 {
 				fcnt32 = fcnt16
 				fcntReset = true
 			} else {

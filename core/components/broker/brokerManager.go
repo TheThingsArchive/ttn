@@ -87,7 +87,7 @@ func (b component) UpsertABP(bctx context.Context, req *core.UpsertABPBrokerReq)
 		DevEUI:  append([]byte{0, 0, 0, 0}, req.DevAddr...),
 		DevAddr: req.DevAddr,
 		NwkSKey: nwkSKey,
-		DevMode: req.DevMode,
+		Flags:   req.Flags,
 		FCntUp:  0,
 	})
 	if err != nil {

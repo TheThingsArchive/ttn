@@ -44,7 +44,7 @@ func (h component) ListDevices(bctx context.Context, req *core.ListDevicesHandle
 				AppSKey:  d.AppSKey[:],
 				FCntUp:   d.FCntUp,
 				FCntDown: d.FCntDown,
-				DevMode:  d.DevMode,
+				Flags:    d.Flags,
 			})
 		} else {
 			otaa = append(otaa, &core.HandlerOTAADevice{
@@ -80,7 +80,7 @@ func (h component) UpsertABP(bctx context.Context, req *core.UpsertABPHandlerReq
 		DevAddr:    req.DevAddr,
 		NwkSKey:    req.NwkSKey,
 		NetAddress: h.PrivateNetAddrAnnounce,
-		DevMode:    req.DevMode,
+		Flags:      req.Flags,
 	})
 	if err != nil {
 		h.Ctx.WithError(err).Debug("Broker rejected ABP")
@@ -95,7 +95,7 @@ func (h component) UpsertABP(bctx context.Context, req *core.UpsertABPHandlerReq
 		DevAddr:  req.DevAddr,
 		FCntDown: 0,
 		FCntUp:   0,
-		DevMode:  req.DevMode,
+		Flags:    req.Flags,
 	}
 	copy(entry.NwkSKey[:], req.NwkSKey)
 	copy(entry.AppSKey[:], req.AppSKey)
