@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+import "github.com/TheThingsNetwork/ttn/api/api.proto";
+import "github.com/TheThingsNetwork/ttn/api/broker/broker.proto";
+
+package networkserver;
+
+message DevicesRequest {
+  bytes  dev_addr = 1;
+  uint32 f_cnt    = 2;
+}
+
+message DevicesResponse {
+  message Device {
+    bytes app_eui   = 1;
+    bytes dev_eui   = 2;
+    bytes nwk_s_key = 3;
+  }
+  repeated Device results = 1;
+}
+
+message UplinkResponse {
+  bool need_downlink = 1;
+}
+
+service NetworkServer {
+  // Broker requests devices with DevAddr for MIC check
+  rpc GetDevices(DevicesRequest) returns (DevicesResponse);
+
+  // Broker requests device activation "template" from Network Server
+  rpc Activate(broker.DeviceActivationResponse) returns (broker.DeviceActivationResponse);
+
+  // Broker informs Network Server about Uplink
+  rpc Uplink(broker.DeduplicatedUplinkMessage) returns (UplinkResponse);
+
+  // Broker informs Network Server about Downlink, NetworkServer should sign, add MIC, ...
+  rpc Downlink(broker.DownlinkMessage) returns (broker.DownlinkMessage);
+}
+
+// message RegisterDeviceRequest is used to register a device in the
+// NetworkServer
+message RegisterDeviceRequest {
+  // TODO
+}
+
+// message StatusRequest is used to request the status of this NetworkServer
+message StatusRequest {}
+
+// message StatusResponse is the response to the StatusRequest
+message StatusResponse {
+  // GetDevices histogram percentiles
+  api.Percentiles devices_per_address = 1;
+}
+
+// The NetworkServerManager service provides configuration and monitoring
+// functionality
+service NetworkServerManager {
+  rpc RegisterDevice(RegisterDeviceRequest) returns (api.Ack);
+  rpc Status(StatusRequest) returns (StatusResponse);
+}

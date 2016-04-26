@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+import "github.com/TheThingsNetwork/ttn/api/protocol/lorawan/lorawan.proto";
+
+package semtech;
+
+message RxMetadata {
+  uint32 timestamp = 1;
+  uint32 rf_chain = 11;
+  uint32 channel = 12;
+}
+
+message TxConfiguration {
+  uint32 timestamp = 1;
+  uint32 rf_chain = 11;
+  bool polarization_inversion = 21; // LoRa polarization inversion (basically always true)
+  uint32 frequency_deviation = 22; // FSK frequency deviation in Hz
+}
+
+message StatusMessage {
+  lorawan.Region region  = 13;
+}

@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+package lorawan;
+
+message Metadata {
+  enum Modulation {
+    LORA = 0;
+    FSK  = 1;
+  }
+  Modulation  modulation   = 11;
+  string      data_rate    = 12; // LoRa data rate - SF{spreadingfactor}BW{bandwidth}
+  uint32      bit_rate     = 13; // FSK bit rate in bit/s
+  string      coding_rate  = 14; // LoRa coding rate
+}
+
+message TxConfiguration {
+  bytes dev_addr = 1;
+}
+
+message ActivationMetadata {
+  bytes dev_addr             = 1;
+  bytes network_session_key  = 2;
+}
+
+message PHYPayload {
+  MHdr       mhdr        = 1;
+  MACPayload MAC_payload = 2;
+  bytes      mic         = 3;
+}
+
+message MHdr {
+  uint32 m_type = 1;
+  uint32 major  = 2;
+}
+
+message MACPayload {
+  FHdr   f_hdr       = 1;
+  uint32 f_port      = 2;
+  bytes  FRM_payload = 3;
+}
+
+message FHdr {
+  bytes          dev_addr = 1;
+  FCtrl          f_ctrl   = 2;
+  uint32         f_cnt    = 3;
+  repeated bytes f_opts   = 4;
+}
+
+message FCtrl {
+  bool  adr         = 1;
+  bool  adr_ack_req = 2;
+  bool  ack         = 3;
+  bool  f_pending   = 4;
+  bytes f_opts_len  = 5;
+}
+
+enum Region {
+  EU863_870 = 0;
+  US902_928 = 1;
+  CN779_787 = 2;
+  EU433     = 3;
+  AU915_928 = 4;
+  CN470_510 = 5;
+}

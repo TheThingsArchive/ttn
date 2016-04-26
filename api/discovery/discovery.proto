@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+import "github.com/TheThingsNetwork/ttn/api/api.proto";
+
+package discovery;
+
+message Announcement {
+  string service_name = 1;
+  string service_version = 2;
+  string net_address = 3;
+  string description = 11;
+  string fingerprint = 12;
+}
+
+message DiscoverRequest {
+  string service_name = 1;
+}
+
+message DiscoverResponse {
+  repeated Announcement services = 1;
+}
+
+service Discovery {
+  rpc Announce(Announcement) returns (api.Ack);
+  rpc Discover(DiscoverRequest) returns (DiscoverResponse);
+}
+
+// The DiscoveryManager service provides configuration and monitoring functionality
+service DiscoveryManager {
+
+}

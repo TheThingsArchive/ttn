@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package api;
+
+// message Ack is used to acknowledge a request, without giving a response.
+message Ack {}
+
+message Percentiles {
+  float percentile1  = 1;
+  float percentile5  = 2;
+  float percentile10 = 3;
+  float percentile25 = 4;
+  float percentile50 = 5;
+  float percentile75 = 6;
+  float percentile90 = 7;
+  float percentile95 = 8;
+  float percentile99 = 9;
+}
+
+message Rates {
+  float rate1 = 1;
+  float rate5 = 2;
+  float rate15 = 3;
+}
+
+message ServerMetadata {
+  
+}

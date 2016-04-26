@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+import "github.com/TheThingsNetwork/ttn/api/gateway/semtech/semtech.proto";
+
+package gateway;
+
+message GPSMetadata {
+  int64   time       = 1;
+  float   latitude   = 2;
+  float   longitude  = 3;
+  int32   altitude   = 4;
+}
+
+message RxMetadata {
+  uint64  frequency  = 1; // frequency in Hz
+  float   rssi       = 2; // received signal strength in dBm
+  float   snr        = 3; // signal-to-noise-ratio in dB
+  oneof gateway {
+    semtech.RxMetadata semtech = 11;
+  }
+}
+
+message TxConfiguration {
+  uint64  frequency  = 1; // frequency in Hz
+  int32   power      = 2; // transmit power in dBm
+  oneof gateway {
+    semtech.TxConfiguration semtech = 11;
+  }
+}
+
+// message StatusMessage represents a status update from a Gateway.
+// See https://gist.github.com/htdvisser/b2b1078005ed770233278a366430f992#stat
+message StatusMessage {
+  uint32  timestamp      = 1;
+  int64   time           = 2;
+
+  repeated string ip     = 11;
+  string  platform       = 12;
+  string  contact_email  = 13;
+  string  description    = 14;
+
+  GPSMetadata  gps       = 21;
+
+  uint32  rtt            = 31;
+
+  uint32  rx_in          = 41;
+  uint32  rx_ok          = 42;
+  uint32  tx_in          = 43;
+  uint32  tx_ok          = 44;
+
+  oneof gateway {
+    semtech.StatusMessage semtech = 51;
+  }
+}

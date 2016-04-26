@@ -8,6 +8,8 @@ export CGO_ENABLED=0
 GOCMD = go
 GOBUILD = $(GOCMD) build
 
+PROTOC = protoc --gofast_out=plugins=grpc:$(GOPATH)/src/ --proto_path=$(GOPATH)/src/ $(GOPATH)/src/github.com/TheThingsNetwork/ttn
+
 GIT_COMMIT = `git rev-parse HEAD 2>/dev/null`
 BUILD_DATE = `date -u +%Y-%m-%dT%H:%M:%SZ`
 
@@ -50,6 +52,16 @@ proto-deps:
 
 proto:
 	find core/protos -name '*.proto' | xargs protoc --gofast_out=plugins=grpc:./core -I=core/protos
+	@$(PROTOC)/api/*.proto
+	@$(PROTOC)/api/protocol/protocol.proto
+	@$(PROTOC)/api/protocol/**/*.proto
+	@$(PROTOC)/api/gateway/gateway.proto
+	@$(PROTOC)/api/gateway/**/*.proto
+	@$(PROTOC)/api/router/router.proto
+	@$(PROTOC)/api/broker/broker.proto
+	@$(PROTOC)/api/handler/handler.proto
+	@$(PROTOC)/api/networkserver/networkserver.proto
+	@$(PROTOC)/api/discovery/discovery.proto
 
 cover-deps:
 	if ! $(GOCMD) get github.com/golang/tools/cmd/cover; then $(GOCMD) get golang.org/x/tools/cmd/cover; fi
@@ -77,6 +89,7 @@ clean:
 	[ -d $(RELEASE_DIR) ] && rm -rf $(RELEASE_DIR) || [ ! -d $(RELEASE_DIR) ]
 	([ -d $(TEMP_COVER_DIR) ] && rm -rf $(TEMP_COVER_DIR)) || [ ! -d $(TEMP_COVER_DIR) ]
 	([ -f $(COVER_FILE) ] && rm $(COVER_FILE)) || [ ! -d $(COVER_FILE) ]
+	find ./api -name '*.pb.go' | xargs rm -f
 
 build: $(RELEASE_DIR)/$(ttnbin) $(RELEASE_DIR)/$(ttnctlbin)
 

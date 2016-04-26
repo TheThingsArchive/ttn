@@ -1,0 +1,124 @@
+syntax = "proto3";
+
+import "github.com/TheThingsNetwork/ttn/api/api.proto";
+import "github.com/TheThingsNetwork/ttn/api/protocol/protocol.proto";
+import "github.com/TheThingsNetwork/ttn/api/gateway/gateway.proto";
+
+package router;
+
+message SubscribeRequest {
+  string gateway_id = 1;
+}
+
+message UplinkMessage {
+  bytes                payload            = 1;
+  protocol.RxMetadata  protocol_metadata  = 11;
+  gateway.RxMetadata   gateway_metadata   = 12;
+}
+
+message DownlinkMessage {
+  bytes                     payload                 = 1;
+  protocol.TxConfiguration  protocol_configuration  = 11;
+  gateway.TxConfiguration   gateway_configuration   = 12;
+}
+
+message DeviceActivationRequest {
+  bytes                payload            = 1;
+  bytes                dev_eui            = 11;
+  bytes                app_eui            = 12;
+  protocol.RxMetadata  protocol_metadata  = 21;
+  gateway.RxMetadata   gateway_metadata   = 22;
+}
+
+message DeviceActivationResponse {
+  bytes                     payload                 = 1;
+  protocol.TxConfiguration  protocol_configuration  = 11;
+  gateway.TxConfiguration   gateway_configuration   = 12;
+}
+
+// The Router service provides pure network functionality
+service Router {
+  // Gateway streams status messages to Router
+  rpc GatewayStatus(stream gateway.StatusMessage) returns (api.Ack);
+
+  // Gateway streams uplink messages to Router
+  rpc Uplink(stream UplinkMessage) returns (api.Ack);
+
+  // Gateway subscribes to downlink messages from Router
+  rpc Subscribe(SubscribeRequest) returns (stream DownlinkMessage);
+
+  // Gateway requests device activation
+  rpc Activate(DeviceActivationRequest) returns (DeviceActivationResponse);
+}
+
+// message GatewaysRequest is used to list all Gateways on this Router
+message GatewaysRequest {}
+
+// message GatewaysResponse is the response to the GatewaysRequest
+message GatewaysResponse {
+  repeated string gateway_ids = 1;
+}
+
+// message RegisterGatewayRequest is used to register a Gateway with this Router
+message RegisterGatewayRequest {
+  string gateway_id = 1;
+}
+
+// message UnregisterGatewayRequest is used to unregister a Gateway from this
+// Router
+message UnregisterGatewayRequest {
+  string gateway_id = 1;
+}
+
+// message GatewayStatusRequest is used to request the status of a gateway from
+// this Router
+message GatewayStatusRequest {
+  string gateway_id = 1;
+}
+
+// message GatewayStatusResponse is the response to the GatewayStatusRequest
+message GatewayStatusResponse {
+  gateway.StatusMessage last_status = 1;
+}
+
+// message StatusRequest is used to request the status of this Router
+message StatusRequest {}
+
+// message StatusResponse is the response to the StatusRequest
+message StatusResponse {
+  // Gateways
+  api.Rates gateway_status   = 1;
+  uint32    active_gateways  = 4;
+
+  // Uplink
+  api.Rates uplink = 11;
+
+  // Downlink
+  api.Rates downlink = 21;
+
+  // Activations
+  api.Rates activations = 31;
+  api.Rates activations_accepted = 32;
+
+  // Connections
+  uint32  connected_gateways  = 41;
+  uint32  connected_brokers   = 42;
+}
+
+// The RouterManager service provides configuration and monitoring functionality
+service RouterManager {
+  // Network operator requests list of Gateways from Router Manager
+  rpc Gateways(GatewaysRequest) returns (GatewaysResponse);
+
+  // Gateway owner or network operator registers Gateway with Router Manager
+  rpc RegisterGateway(RegisterGatewayRequest) returns (api.Ack);
+
+  // Gateway owner or network operator unregisters Gateway with Router Manager
+  rpc UnregisterGateway(UnregisterGatewayRequest) returns (api.Ack);
+
+  // Gateway owner or network operator requests Gateway status from Router Manager
+  rpc GatewayStatus(GatewayStatusRequest) returns (GatewayStatusResponse);
+
+  // Network operator requests Router status
+  rpc Status(StatusRequest) returns (StatusResponse);
+}

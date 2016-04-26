@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+import "github.com/TheThingsNetwork/ttn/api/api.proto";
+import "github.com/TheThingsNetwork/ttn/api/broker/broker.proto";
+
+package handler;
+
+// The Handler service provides pure network functionality
+service Handler {
+  rpc Activate(broker.DeduplicatedDeviceActivationRequest) returns (broker.DeviceActivationResponse);
+}
+
+// message StatusRequest is used to request the status of this Handler
+message StatusRequest {}
+
+// message StatusResponse is the response to the StatusRequest
+message StatusResponse {}
+
+// The HandlerManager service provides configuration and monitoring
+// functionality
+service HandlerManager {
+  rpc Status(StatusRequest) returns (StatusResponse);
+}

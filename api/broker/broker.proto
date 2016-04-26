@@ -1,0 +1,142 @@
+syntax = "proto3";
+
+import "github.com/TheThingsNetwork/ttn/api/api.proto";
+import "github.com/TheThingsNetwork/ttn/api/protocol/protocol.proto";
+import "github.com/TheThingsNetwork/ttn/api/gateway/gateway.proto";
+
+package broker;
+
+message DownlinkOption {
+  string  identifier  = 1;
+  uint32  score       = 2; // lower is better, 0 is best
+  int64   deadline    = 3; // deadline time at server represented as the number of nanoseconds elapsed since January 1, 1970 UTC
+}
+
+// received from the Router
+message UplinkMessage {
+  bytes                    payload            = 1;
+  protocol.RxMetadata      protocol_metadata  = 11;
+  gateway.RxMetadata       gateway_metadata   = 12;
+  repeated DownlinkOption  downlink_options   = 21;
+}
+
+// received from the Handler, sent to the Router, used as Template
+message DownlinkMessage {
+  bytes           payload          = 1;
+  DownlinkOption  downlink_option  = 11;
+}
+
+//sent to the Router, used as Template
+message DeviceActivationResponse {
+  bytes           payload          = 1;
+  DownlinkOption  downlink_option  = 11;
+}
+
+// sent to the Handler
+message DeduplicatedUplinkMessage {
+  bytes                       payload            = 1;
+  bytes                       dev_eui            = 11;
+  bytes                       app_eui            = 12;
+  protocol.RxMetadata         protocol_metadata  = 21;
+  repeated gateway.RxMetadata gateway_metadata   = 22;
+  DownlinkMessage             response_template  = 31;
+}
+
+// received from the Router
+message DeviceActivationRequest {
+  bytes                        payload              = 1;
+  bytes                        dev_eui              = 11;
+  bytes                        app_eui              = 12;
+  protocol.RxMetadata          protocol_metadata    = 21;
+  gateway.RxMetadata           gateway_metadata     = 22;
+  protocol.ActivationMetadata  activation_metadata  = 23;
+  repeated DownlinkOption      downlink_options     = 31;
+}
+
+// sent to the Handler
+message DeduplicatedDeviceActivationRequest {
+  bytes                        payload              = 1;
+  bytes                        dev_eui              = 11;
+  bytes                        app_eui              = 12;
+  protocol.RxMetadata          protocol_metadata    = 21;
+  gateway.RxMetadata           gateway_metadata     = 22;
+  protocol.ActivationMetadata  activation_metadata  = 23;
+  DeviceActivationResponse     response_template    = 31;
+}
+
+// message SubscribeRequest is used by a Handler to subscribe to uplink messages
+// for a certain application.
+message SubscribeRequest {}
+
+// The Broker service provides pure network functionality
+service Broker {
+  // Router initiates an Association with the Broker.
+  rpc Associate(stream UplinkMessage) returns (stream DownlinkMessage);
+
+  // Handler subscribes to uplink stream.
+  rpc Subscribe(SubscribeRequest) returns (stream DeduplicatedUplinkMessage);
+
+  // Handler initiates downlink stream.
+  rpc Publish(stream DownlinkMessage) returns (api.Ack);
+
+  // Router requests device activation
+  rpc Activate(DeviceActivationRequest) returns (DeviceActivationResponse);
+}
+
+message ApplicationsRequest {}
+
+message ApplicationsResponse {
+  repeated string app_euis = 1;
+}
+
+// message RegisterApplicationRequest is used to register an application at this
+// Broker
+message RegisterApplicationRequest {
+  string app_eui = 1;
+}
+
+// message UnregisterApplicationRequest is used to unregister an application at
+// this Broker
+message UnregisterApplicationRequest {
+  string app_eui = 1;
+}
+
+// message StatusRequest is used to request the status of this Broker
+message StatusRequest {}
+
+// message StatusResponse is the response to the StatusRequest
+message StatusResponse {
+  // Uplink
+  api.Rates uplink        = 1;
+  api.Rates uplink_unique = 2;
+
+  // Downlink
+  api.Rates downlink = 11;
+
+  // Activations
+  api.Rates activations          = 21;
+  api.Rates activations_unique   = 22;
+  api.Rates activations_accepted = 23;
+
+  // Deduplication histogram percentiles
+  api.Percentiles deduplication = 31;
+
+  // Connections
+  uint32  connected_routers  = 41;
+  uint32  connected_handlers = 42;
+}
+
+// The BrokerManager service provides configuration and monitoring functionality
+service BrokerManager {
+  // Network operator lists all Applications on this Broker
+  rpc  Applications(ApplicationsRequest) returns (ApplicationsResponse);
+
+  // Application owner registers Application with Broker Manager
+  rpc  RegisterApplication(RegisterApplicationRequest) returns (api.Ack);
+
+  // Application owner unregisters Application with Broker Manager
+  rpc  UnregisterApplication(UnregisterApplicationRequest) returns (api.Ack);
+
+  // Network operator requests Broker status
+  rpc  Status(StatusRequest) returns (StatusResponse);
+}
