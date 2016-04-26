@@ -117,10 +117,8 @@ func (c *ScoreComputer) Get(s scores) *Configuration {
 			}
 		}
 	case US:
-		var err error
-		if s.rx1.Score > 0 && (c.sf == 7 || c.sf == 8) { // Favor RX1 on SF7 & SF8
-			var dr int
-			dr, err = us902_928.GetDataRate(dataRate)
+		if s.rx1.Score > 0 {
+			dr, err := us902_928.GetDataRate(dataRate)
 			if err != nil {
 				fmt.Println(err.Error())
 				return nil
@@ -147,21 +145,9 @@ func (c *ScoreComputer) Get(s scores) *Configuration {
 				JoinDelay: 5000000,
 			}
 		}
-		if err != nil || s.rx2.Score > 0 {
-			return &Configuration{
-				ID:        s.rx2.ID,
-				Frequency: 923.3,
-				DataRate:  "SF12BW500",
-				Power:     26,
-				RXDelay:   2000000,
-				JoinDelay: 6000000,
-			}
-		}
 	case Australia:
-		var err error
-		if s.rx1.Score > 0 && (c.sf == 7 || c.sf == 8) { // Favor RX1 on SF7 & SF8
-			var dr int
-			dr, err = au915_928.GetDataRate(dataRate)
+		if s.rx1.Score > 0 {
+			dr, err := au915_928.GetDataRate(dataRate)
 			if err != nil {
 				fmt.Println(err.Error())
 				return nil
@@ -186,16 +172,6 @@ func (c *ScoreComputer) Get(s scores) *Configuration {
 				Power:     21,
 				RXDelay:   1000000,
 				JoinDelay: 5000000,
-			}
-		}
-		if err != nil || s.rx2.Score > 0 {
-			return &Configuration{
-				ID:        s.rx2.ID,
-				Frequency: 923.3,
-				DataRate:  "SF12BW500",
-				Power:     26,
-				RXDelay:   2000000,
-				JoinDelay: 6000000,
 			}
 		}
 	default:

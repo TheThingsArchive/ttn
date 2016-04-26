@@ -1600,7 +1600,7 @@ func TestHandleJoin(t *testing.T) {
 	// --------------------
 
 	{
-		Desc(t, "Handle valid join-request [US, RX1] | get join-accept")
+		Desc(t, "Handle valid join-request [US, SF7] | get join-accept")
 
 		// Build
 		tmst := time.Now()
@@ -1691,7 +1691,7 @@ func TestHandleJoin(t *testing.T) {
 	// --------------------
 
 	{
-		Desc(t, "Handle valid join-request [US, RX2] | get join-accept")
+		Desc(t, "Handle valid join-request [US, SF9] | get join-accept")
 
 		// Build
 		tmst := time.Now()
@@ -1701,7 +1701,7 @@ func TestHandleJoin(t *testing.T) {
 			DevEUI:   []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			DevNonce: []byte{14, 42},
 			Metadata: &core.Metadata{
-				DataRate:   "SF10BW125",
+				DataRate:   "SF9BW125",
 				Region:     "us",
 				Frequency:  902.3,
 				Timestamp:  uint32(tmst.Unix() * 1000000),
@@ -1740,12 +1740,12 @@ func TestHandleJoin(t *testing.T) {
 			Payload: &core.LoRaWANJoinAccept{}, // We'll check it by decoding
 			NwkSKey: nil,                       // We'll assume it's correct if payload is okay
 			Metadata: &core.Metadata{
-				DataRate:    "SF12BW500",
+				DataRate:    "SF9BW500",
 				Frequency:   923.3,
 				CodingRate:  "4/5",
-				Timestamp:   uint32(tmst.Add(6*time.Second).Unix() * 1000000),
+				Timestamp:   uint32(tmst.Add(5*time.Second).Unix() * 1000000),
 				PayloadSize: 17,
-				Power:       26,
+				Power:       21,
 				InvPolarity: true,
 			},
 		}
@@ -1782,7 +1782,7 @@ func TestHandleJoin(t *testing.T) {
 	// --------------------
 
 	{
-		Desc(t, "Handle valid join-request [AU, RX1] | get join-accept")
+		Desc(t, "Handle valid join-request [AU, SF7] | get join-accept")
 
 		// Build
 		tmst := time.Now()
@@ -1873,7 +1873,7 @@ func TestHandleJoin(t *testing.T) {
 	// --------------------
 
 	{
-		Desc(t, "Handle valid join-request [AU, RX2] | get join-accept")
+		Desc(t, "Handle valid join-request [AU, SF9] | get join-accept")
 
 		// Build
 		tmst := time.Now()
@@ -1883,9 +1883,9 @@ func TestHandleJoin(t *testing.T) {
 			DevEUI:   []byte{2, 2, 2, 2, 2, 2, 2, 2},
 			DevNonce: []byte{14, 42},
 			Metadata: &core.Metadata{
-				DataRate:   "SF10BW125",
+				DataRate:   "SF9BW125",
 				Region:     "au",
-				Frequency:  902.3,
+				Frequency:  916.0,
 				Timestamp:  uint32(tmst.Unix() * 1000000),
 				CodingRate: "4/5",
 				DutyRX1:    uint32(dutycycle.StateAvailable),
@@ -1922,12 +1922,12 @@ func TestHandleJoin(t *testing.T) {
 			Payload: &core.LoRaWANJoinAccept{}, // We'll check it by decoding
 			NwkSKey: nil,                       // We'll assume it's correct if payload is okay
 			Metadata: &core.Metadata{
-				DataRate:    "SF12BW500",
-				Frequency:   923.3,
+				DataRate:    "SF9BW500",
+				Frequency:   925.7,
 				CodingRate:  "4/5",
-				Timestamp:   uint32(tmst.Add(6*time.Second).Unix() * 1000000),
+				Timestamp:   uint32(tmst.Add(5*time.Second).Unix() * 1000000),
 				PayloadSize: 17,
-				Power:       26,
+				Power:       21,
 				InvPolarity: true,
 			},
 		}
