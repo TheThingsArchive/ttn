@@ -33,7 +33,7 @@ func init() {
 	for i := 0; i < 8; i++ {
 		DownlinkChannelConfiguration[i] = Channel{
 			Frequency: 923300000 + (i * 600000),
-			DataRates: []int{10, 11, 12, 13},
+			DataRates: []int{8, 9, 10, 11, 12, 13},
 		}
 	}
 }
@@ -43,7 +43,7 @@ const Name = "AU 915-928"
 
 // DataRateConfiguration defines the available data rates
 var DataRateConfiguration = [...]DataRate{
-	{Modulation: LoRaModulation, SpreadFactor: 12, Bandwidth: 125},
+	{Modulation: LoRaModulation, SpreadFactor: 10, Bandwidth: 125},
 	{Modulation: LoRaModulation, SpreadFactor: 9, Bandwidth: 125},
 	{Modulation: LoRaModulation, SpreadFactor: 8, Bandwidth: 125},
 	{Modulation: LoRaModulation, SpreadFactor: 7, Bandwidth: 125},
@@ -67,18 +67,19 @@ const DefaultTXPower = 20
 // CFListAllowed defines if the optional JoinAccept CFList is allowed for this band
 const CFListAllowed = false
 
+// LoRaWAN 1.0. Standard - Section 7.5.3
 // TXPowerConfiguration defines the available TXPower settings in dBm
 var TXPowerConfiguration = [...]int{
 	30,
 	28,
 	26,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
+	24,
+	22,
+	20,
+	18,
+	16,
+	14,
+	12,
 	10,
 	0,
 	0,
@@ -91,7 +92,7 @@ var TXPowerConfiguration = [...]int{
 var MACPayloadSizeConfiguration = [...]MaxPayloadSize{
 	{M: 19, N: 11},
 	{M: 61, N: 53},
-	{M: 137, N: 129},
+	{M: 134, N: 126},
 	{M: 250, N: 242},
 	{M: 250, N: 242},
 	{}, // Not defined
@@ -115,15 +116,6 @@ var RX1DROffsetConfiguration = [...][4]int{
 	{12, 11, 10, 9},
 	{13, 12, 11, 10},
 	{13, 13, 12, 11},
-	{}, // Not defined
-	{}, // Not defined
-	{}, // Not defined
-	{8, 8, 8, 8},
-	{9, 8, 8, 8},
-	{10, 9, 8, 8},
-	{11, 10, 9, 8},
-	{12, 11, 10, 9},
-	{13, 12, 11, 10},
 }
 
 // RX2Frequency defines the RX2 receive window frequency to use (in Hz)
@@ -179,13 +171,13 @@ func getChannelNumber(frequency, dataRate int) (int, error) {
 
 // Default settings for this band
 const (
-	ReceiveDelay1    time.Duration = 1
-	ReceiveDelay2    time.Duration = 2
-	JoinAcceptDelay1 time.Duration = 5
-	JoinAcceptDelay2 time.Duration = 6
+	ReceiveDelay1    time.Duration = time.Second
+	ReceiveDelay2    time.Duration = time.Second * 2
+	JoinAcceptDelay1 time.Duration = time.Second * 5
+	JoinAcceptDelay2 time.Duration = time.Second * 6
 	MaxFCntGap       uint32        = 16384
 	ADRAckLimit                    = 64
 	ADRAckDelay                    = 32
-	AckTimeoutMin    time.Duration = 1
-	AckTimeoutMax    time.Duration = 3
+	AckTimeoutMin    time.Duration = time.Second // AckTimeout = 2 +/- 1 (random value between 1 - 3)
+	AckTimeoutMax    time.Duration = time.Second * 3
 )

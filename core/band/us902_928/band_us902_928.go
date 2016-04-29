@@ -43,7 +43,7 @@ const Name = "US 902-928"
 
 // DataRateConfiguration defines the available data rates
 var DataRateConfiguration = [...]DataRate{
-	{Modulation: LoRaModulation, SpreadFactor: 12, Bandwidth: 125},
+	{Modulation: LoRaModulation, SpreadFactor: 10, Bandwidth: 125},
 	{Modulation: LoRaModulation, SpreadFactor: 9, Bandwidth: 125},
 	{Modulation: LoRaModulation, SpreadFactor: 8, Bandwidth: 125},
 	{Modulation: LoRaModulation, SpreadFactor: 7, Bandwidth: 125},
@@ -72,13 +72,13 @@ var TXPowerConfiguration = [...]int{
 	30,
 	28,
 	26,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
+	24,
+	22,
+	20,
+	18,
+	16,
+	14,
+	12,
 	10,
 	0,
 	0,
@@ -179,13 +179,13 @@ func getChannelNumber(frequency, dataRate int) (int, error) {
 
 // Default settings for this band
 const (
-	ReceiveDelay1    time.Duration = 1
-	ReceiveDelay2    time.Duration = 2
-	JoinAcceptDelay1 time.Duration = 5
-	JoinAcceptDelay2 time.Duration = 6
+	ReceiveDelay1    time.Duration = time.Second
+	ReceiveDelay2    time.Duration = time.Second * 2
+	JoinAcceptDelay1 time.Duration = time.Second * 5
+	JoinAcceptDelay2 time.Duration = time.Second * 6
 	MaxFCntGap       uint32        = 16384
 	ADRAckLimit                    = 64
 	ADRAckDelay                    = 32
-	AckTimeoutMin    time.Duration = 1
-	AckTimeoutMax    time.Duration = 3
+	AckTimeoutMin    time.Duration = time.Second // AckTimeout = 2 +/- 1 (random value between 1 - 3)
+	AckTimeoutMax    time.Duration = time.Second * 3
 )
