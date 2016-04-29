@@ -4,6 +4,8 @@
 package mqtt
 
 import (
+	"encoding/hex"
+	"strings"
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/core"
@@ -39,6 +41,7 @@ func (a *defaultAdapter) HandleData(_ context.Context, req *core.DataAppReq, _ .
 		Metadata: core.ProtoMetaToAppMeta(req.Metadata...),
 		FPort:    uint8(req.FPort),
 		FCnt:     req.FCnt,
+		DevEUI:   strings.ToUpper(hex.EncodeToString(req.DevEUI)),
 	}
 
 	if a.ctx != nil {
