@@ -22,7 +22,30 @@ var ctx log.Interface
 var RootCmd = &cobra.Command{
 	Use:   "ttnctl",
 	Short: "Control The Things Network from the command line",
-	Long:  `ttnctl controls The Things Network from the command line.`,
+	Long: `ttnctl controls The Things Network from the command line.
+
+Quick start guide:
+  1. Create an account:
+     $ ttnctl user create [Your Email]
+  2. Sign in:
+     $ ttnctl user login [Your Email]
+  3. Create an application:
+     $ ttnctl applications create [Application Name]
+  4. List your applications:
+     $ ttnctl applications
+  5. Choose an application to use from now on:
+     $ ttnctl applications use [EUI]
+  6. Create a new device:
+     $ ttnctl devices register [DevEUI] [AppKey]
+  7. List your devices:
+     $ ttnctl devices
+  8. Get info about a specific device:
+     $ ttnctl devices info [DevEUI]
+  9. Subscribe to incoming messages from this device:
+     $ ttnctl subscribe [DevEUI]
+ 10. Schedule downlink to this device:
+     $ ttnctl downlink [DevEUI] [Hex-encoded Payload]
+	`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		var logLevel = log.InfoLevel
 		if viper.GetBool("debug") {
