@@ -8,7 +8,7 @@ type DataUpAppReq struct {
 	Payload  []byte        `json:"payload"`
 	FPort    uint8         `json:"port,omitempty"`
 	FCnt     uint32        `json:"counter"`
-	DevEUI   string        `json:"deveui"`
+	DevEUI   string        `json:"dev_eui"`
 	Metadata []AppMetadata `json:"metadata"`
 }
 
