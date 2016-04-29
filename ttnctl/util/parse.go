@@ -9,7 +9,8 @@ import (
 	"regexp"
 )
 
-func parseHEX(input string, length int) ([]byte, error) {
+// ParseHEX parses a hexidecimal string to a byte slice
+func ParseHEX(input string, length int) ([]byte, error) {
 	pattern, err := regexp.Compile(fmt.Sprintf("[[:xdigit:]]{%d}", length))
 	if err != nil {
 		return nil, fmt.Errorf("Invalid pattern")
@@ -30,15 +31,15 @@ func parseHEX(input string, length int) ([]byte, error) {
 
 // Parse32 parses a 32-bit hex-encoded string
 func Parse32(input string) ([]byte, error) {
-	return parseHEX(input, 8)
+	return ParseHEX(input, 8)
 }
 
 // Parse64 parses a 64-bit hex-encoded string
 func Parse64(input string) ([]byte, error) {
-	return parseHEX(input, 16)
+	return ParseHEX(input, 16)
 }
 
 // Parse128 parses a 128-bit hex-encoded string
 func Parse128(input string) ([]byte, error) {
-	return parseHEX(input, 32)
+	return ParseHEX(input, 32)
 }

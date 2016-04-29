@@ -15,12 +15,15 @@ var downlinkCmd = &cobra.Command{
 	Short: "Send downlink messages to the network",
 	Long: `ttnctl downlink sends a downlink message to the network
 
-The DevEUI should be an 8-byte long hex-encoded string (16 chars), whereas the
-TTL is expected to define a Time To Live in a handy format, for instance: "1h"
-for one hour.`,
+The DevEUI should be an 8-byte long hex-encoded string (16 chars), the Payload
+is a hex-encoded string and the TTL defines the time-to-live of this downlink,
+formatted as "1h2m" for one hour and two minutes. The default TTL is one hour.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) < 3 {
+		if len(args) < 2 {
 			ctx.Fatal("Insufficient arguments")
+		}
+		if len(args) < 3 {
+			args = append(args, "1h")
 		}
 
 		appEUI := util.GetAppEUI(ctx)
@@ -30,8 +33,18 @@ for one hour.`,
 			ctx.Fatalf("Invalid DevEUI: %s", err)
 		}
 
+		var payload []byte
+		if plain, _ := cmd.Flags().GetBool("plain"); plain {
+			payload = []byte(args[1])
+		} else {
+			payload, err = util.ParseHEX(args[1], len(args[1]))
+			if err != nil {
+				ctx.Fatalf("Invalid hexadecimal payload. If you are trying to send a plain-text payload, use the --plain flag.")
+			}
+		}
+
 		dataDown := core.DataDownAppReq{
-			Payload: []byte(args[1]),
+			Payload: payload,
 			TTL:     args[2],
 		}
 
@@ -40,18 +53,17 @@ for one hour.`,
 		}
 
 		client := util.ConnectMQTTClient(ctx)
+		defer client.Disconnect()
 
 		token := client.PublishDownlink(appEUI, devEUI, dataDown)
-
 		if token.Wait(); token.Error() != nil {
 			ctx.WithError(token.Error()).Fatal("Could not publish downlink")
 		}
-
-		client.Disconnect()
-
+		ctx.Info("Scheduled downlink")
 	},
 }
 
 func init() {
 	RootCmd.AddCommand(downlinkCmd)
+	downlinkCmd.Flags().Bool("plain", false, "send payload as plain-text")
 }
