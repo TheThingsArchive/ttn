@@ -20,7 +20,7 @@ type GatewayEUI EUI64
 
 // ParseEUI64 parses a 64-bit hex-encoded string to an EUI64.
 func ParseEUI64(input string) (eui EUI64, err error) {
-	bytes, err := parseHEX(input, 8)
+	bytes, err := ParseHEX(input, 8)
 	if err != nil {
 		return
 	}

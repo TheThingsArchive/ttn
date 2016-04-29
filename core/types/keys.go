@@ -20,7 +20,7 @@ type AppSKey AES128Key
 
 // ParseAES128Key parses a 128-bit hex-encoded string to an AES128Key
 func ParseAES128Key(input string) (key AES128Key, err error) {
-	bytes, err := parseHEX(input, 16)
+	bytes, err := ParseHEX(input, 16)
 	if err != nil {
 		return
 	}

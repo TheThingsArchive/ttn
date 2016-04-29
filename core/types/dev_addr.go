@@ -11,7 +11,7 @@ type DevAddr [4]byte
 
 // ParseDevAddr parses a 32-bit hex-encoded string to a DevAddr
 func ParseDevAddr(input string) (addr DevAddr, err error) {
-	bytes, err := parseHEX(input, 4)
+	bytes, err := ParseHEX(input, 4)
 	if err != nil {
 		return
 	}

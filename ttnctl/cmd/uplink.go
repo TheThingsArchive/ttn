@@ -13,7 +13,6 @@ import (
 
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/semtech"
-	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	"github.com/TheThingsNetwork/ttn/utils/random"
 	"github.com/brocaar/lorawan"
@@ -73,7 +72,7 @@ var uplinkCmd = &cobra.Command{
 			ctx.Warn("Sending data as plain text is bad practice. We recommend to transmit data in a binary format.")
 			macPayload.FRMPayload = []lorawan.Payload{&lorawan.DataPayload{Bytes: []byte(args[4])}}
 		} else {
-			payload, err := util.ParseHEX(args[4], len(args[4]))
+			payload, err := types.ParseHEX(args[4], len(args[4]))
 			if err != nil {
 				ctx.Fatalf("Invalid hexadecimal payload. If you are trying to send a plain-text payload, use the --plain flag.")
 			}
