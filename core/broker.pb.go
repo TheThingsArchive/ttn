@@ -124,6 +124,10 @@ func init() {
 var _ context.Context
 var _ grpc.ClientConn
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the grpc package it is being compiled against.
+const _ = grpc.SupportPackageIsVersion2
+
 // Client API for Broker service
 
 type BrokerClient interface {
@@ -168,28 +172,40 @@ func RegisterBrokerServer(s *grpc.Server, srv BrokerServer) {
 	s.RegisterService(&_Broker_serviceDesc, srv)
 }
 
-func _Broker_HandleData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _Broker_HandleData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DataBrokerReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(BrokerServer).HandleData(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(BrokerServer).HandleData(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/core.Broker/HandleData",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BrokerServer).HandleData(ctx, req.(*DataBrokerReq))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-func _Broker_HandleJoin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _Broker_HandleJoin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(JoinBrokerReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(BrokerServer).HandleJoin(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(BrokerServer).HandleJoin(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/core.Broker/HandleJoin",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BrokerServer).HandleJoin(ctx, req.(*JoinBrokerReq))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 var _Broker_serviceDesc = grpc.ServiceDesc{

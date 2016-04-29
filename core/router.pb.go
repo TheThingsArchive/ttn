@@ -152,6 +152,10 @@ func init() {
 var _ context.Context
 var _ grpc.ClientConn
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the grpc package it is being compiled against.
+const _ = grpc.SupportPackageIsVersion2
+
 // Client API for Router service
 
 type RouterClient interface {
@@ -207,40 +211,58 @@ func RegisterRouterServer(s *grpc.Server, srv RouterServer) {
 	s.RegisterService(&_Router_serviceDesc, srv)
 }
 
-func _Router_HandleData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _Router_HandleData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DataRouterReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(RouterServer).HandleData(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(RouterServer).HandleData(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/core.Router/HandleData",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RouterServer).HandleData(ctx, req.(*DataRouterReq))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-func _Router_HandleStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _Router_HandleStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(StatsReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(RouterServer).HandleStats(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(RouterServer).HandleStats(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/core.Router/HandleStats",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RouterServer).HandleStats(ctx, req.(*StatsReq))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-func _Router_HandleJoin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _Router_HandleJoin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(JoinRouterReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(RouterServer).HandleJoin(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(RouterServer).HandleJoin(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/core.Router/HandleJoin",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RouterServer).HandleJoin(ctx, req.(*JoinRouterReq))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 var _Router_serviceDesc = grpc.ServiceDesc{

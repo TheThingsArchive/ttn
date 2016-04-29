@@ -154,6 +154,10 @@ func init() {
 var _ context.Context
 var _ grpc.ClientConn
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the grpc package it is being compiled against.
+const _ = grpc.SupportPackageIsVersion2
+
 // Client API for App service
 
 type AppClient interface {
@@ -198,28 +202,40 @@ func RegisterAppServer(s *grpc.Server, srv AppServer) {
 	s.RegisterService(&_App_serviceDesc, srv)
 }
 
-func _App_HandleData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _App_HandleData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DataAppReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(AppServer).HandleData(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(AppServer).HandleData(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/core.App/HandleData",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AppServer).HandleData(ctx, req.(*DataAppReq))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-func _App_HandleJoin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _App_HandleJoin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(JoinAppReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(AppServer).HandleJoin(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(AppServer).HandleJoin(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/core.App/HandleJoin",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AppServer).HandleJoin(ctx, req.(*JoinAppReq))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 var _App_serviceDesc = grpc.ServiceDesc{

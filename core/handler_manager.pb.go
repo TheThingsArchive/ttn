@@ -200,6 +200,10 @@ func init() {
 var _ context.Context
 var _ grpc.ClientConn
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the grpc package it is being compiled against.
+const _ = grpc.SupportPackageIsVersion2
+
 // Client API for HandlerManager service
 
 type HandlerManagerClient interface {
@@ -277,64 +281,94 @@ func RegisterHandlerManagerServer(s *grpc.Server, srv HandlerManagerServer) {
 	s.RegisterService(&_HandlerManager_serviceDesc, srv)
 }
 
-func _HandlerManager_UpsertOTAA_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _HandlerManager_UpsertOTAA_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpsertOTAAHandlerReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(HandlerManagerServer).UpsertOTAA(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(HandlerManagerServer).UpsertOTAA(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/core.HandlerManager/UpsertOTAA",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(HandlerManagerServer).UpsertOTAA(ctx, req.(*UpsertOTAAHandlerReq))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-func _HandlerManager_UpsertABP_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _HandlerManager_UpsertABP_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpsertABPHandlerReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(HandlerManagerServer).UpsertABP(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(HandlerManagerServer).UpsertABP(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/core.HandlerManager/UpsertABP",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(HandlerManagerServer).UpsertABP(ctx, req.(*UpsertABPHandlerReq))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-func _HandlerManager_ListDevices_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _HandlerManager_ListDevices_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListDevicesHandlerReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(HandlerManagerServer).ListDevices(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(HandlerManagerServer).ListDevices(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/core.HandlerManager/ListDevices",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(HandlerManagerServer).ListDevices(ctx, req.(*ListDevicesHandlerReq))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-func _HandlerManager_GetDefaultDevice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _HandlerManager_GetDefaultDevice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetDefaultDeviceReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(HandlerManagerServer).GetDefaultDevice(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(HandlerManagerServer).GetDefaultDevice(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/core.HandlerManager/GetDefaultDevice",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(HandlerManagerServer).GetDefaultDevice(ctx, req.(*GetDefaultDeviceReq))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-func _HandlerManager_SetDefaultDevice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _HandlerManager_SetDefaultDevice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SetDefaultDeviceReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(HandlerManagerServer).SetDefaultDevice(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(HandlerManagerServer).SetDefaultDevice(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/core.HandlerManager/SetDefaultDevice",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(HandlerManagerServer).SetDefaultDevice(ctx, req.(*SetDefaultDeviceReq))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 var _HandlerManager_serviceDesc = grpc.ServiceDesc{
