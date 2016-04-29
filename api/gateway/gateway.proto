@@ -47,8 +47,4 @@ message StatusMessage {
   uint32  rx_ok          = 42;
   uint32  tx_in          = 43;
   uint32  tx_ok          = 44;
-
-  oneof gateway {
-    semtech.StatusMessage semtech = 51;
-  }
 }
