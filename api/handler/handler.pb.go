@@ -63,6 +63,10 @@ func init() {
 var _ context.Context
 var _ grpc.ClientConn
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the grpc package it is being compiled against.
+const _ = grpc.SupportPackageIsVersion2
+
 // Client API for Handler service
 
 type HandlerClient interface {
@@ -96,16 +100,22 @@ func RegisterHandlerServer(s *grpc.Server, srv HandlerServer) {
 	s.RegisterService(&_Handler_serviceDesc, srv)
 }
 
-func _Handler_Activate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _Handler_Activate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(broker.DeduplicatedDeviceActivationRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(HandlerServer).Activate(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(HandlerServer).Activate(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/handler.Handler/Activate",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(HandlerServer).Activate(ctx, req.(*broker.DeduplicatedDeviceActivationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 var _Handler_serviceDesc = grpc.ServiceDesc{
@@ -153,16 +163,22 @@ func RegisterHandlerManagerServer(s *grpc.Server, srv HandlerManagerServer) {
 	s.RegisterService(&_HandlerManager_serviceDesc, srv)
 }
 
-func _HandlerManager_Status_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _HandlerManager_Status_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(StatusRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(HandlerManagerServer).Status(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(HandlerManagerServer).Status(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/handler.HandlerManager/Status",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(HandlerManagerServer).Status(ctx, req.(*StatusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 var _HandlerManager_serviceDesc = grpc.ServiceDesc{

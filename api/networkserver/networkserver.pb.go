@@ -141,6 +141,10 @@ func init() {
 var _ context.Context
 var _ grpc.ClientConn
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the grpc package it is being compiled against.
+const _ = grpc.SupportPackageIsVersion2
+
 // Client API for NetworkServer service
 
 type NetworkServerClient interface {
@@ -215,52 +219,76 @@ func RegisterNetworkServerServer(s *grpc.Server, srv NetworkServerServer) {
 	s.RegisterService(&_NetworkServer_serviceDesc, srv)
 }
 
-func _NetworkServer_GetDevices_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _NetworkServer_GetDevices_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DevicesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(NetworkServerServer).GetDevices(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(NetworkServerServer).GetDevices(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/networkserver.NetworkServer/GetDevices",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NetworkServerServer).GetDevices(ctx, req.(*DevicesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkServer_Activate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _NetworkServer_Activate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(broker.DeviceActivationResponse)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(NetworkServerServer).Activate(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(NetworkServerServer).Activate(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/networkserver.NetworkServer/Activate",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NetworkServerServer).Activate(ctx, req.(*broker.DeviceActivationResponse))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkServer_Uplink_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _NetworkServer_Uplink_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(broker.DeduplicatedUplinkMessage)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(NetworkServerServer).Uplink(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(NetworkServerServer).Uplink(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/networkserver.NetworkServer/Uplink",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NetworkServerServer).Uplink(ctx, req.(*broker.DeduplicatedUplinkMessage))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkServer_Downlink_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _NetworkServer_Downlink_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(broker.DownlinkMessage)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(NetworkServerServer).Downlink(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(NetworkServerServer).Downlink(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/networkserver.NetworkServer/Downlink",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NetworkServerServer).Downlink(ctx, req.(*broker.DownlinkMessage))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 var _NetworkServer_serviceDesc = grpc.ServiceDesc{
@@ -331,28 +359,40 @@ func RegisterNetworkServerManagerServer(s *grpc.Server, srv NetworkServerManager
 	s.RegisterService(&_NetworkServerManager_serviceDesc, srv)
 }
 
-func _NetworkServerManager_RegisterDevice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _NetworkServerManager_RegisterDevice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RegisterDeviceRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(NetworkServerManagerServer).RegisterDevice(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(NetworkServerManagerServer).RegisterDevice(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/networkserver.NetworkServerManager/RegisterDevice",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NetworkServerManagerServer).RegisterDevice(ctx, req.(*RegisterDeviceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkServerManager_Status_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _NetworkServerManager_Status_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(StatusRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(NetworkServerManagerServer).Status(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(NetworkServerManagerServer).Status(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/networkserver.NetworkServerManager/Status",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NetworkServerManagerServer).Status(ctx, req.(*StatusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 var _NetworkServerManager_serviceDesc = grpc.ServiceDesc{

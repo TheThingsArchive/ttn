@@ -313,6 +313,10 @@ func init() {
 var _ context.Context
 var _ grpc.ClientConn
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the grpc package it is being compiled against.
+const _ = grpc.SupportPackageIsVersion2
+
 // Client API for Router service
 
 type RouterClient interface {
@@ -533,16 +537,22 @@ func (x *routerSubscribeServer) Send(m *DownlinkMessage) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func _Router_Activate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _Router_Activate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DeviceActivationRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(RouterServer).Activate(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(RouterServer).Activate(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/router.Router/Activate",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RouterServer).Activate(ctx, req.(*DeviceActivationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 var _Router_serviceDesc = grpc.ServiceDesc{
@@ -660,64 +670,94 @@ func RegisterRouterManagerServer(s *grpc.Server, srv RouterManagerServer) {
 	s.RegisterService(&_RouterManager_serviceDesc, srv)
 }
 
-func _RouterManager_Gateways_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _RouterManager_Gateways_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GatewaysRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(RouterManagerServer).Gateways(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(RouterManagerServer).Gateways(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/router.RouterManager/Gateways",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RouterManagerServer).Gateways(ctx, req.(*GatewaysRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-func _RouterManager_RegisterGateway_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _RouterManager_RegisterGateway_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RegisterGatewayRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(RouterManagerServer).RegisterGateway(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(RouterManagerServer).RegisterGateway(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/router.RouterManager/RegisterGateway",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RouterManagerServer).RegisterGateway(ctx, req.(*RegisterGatewayRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-func _RouterManager_UnregisterGateway_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _RouterManager_UnregisterGateway_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UnregisterGatewayRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(RouterManagerServer).UnregisterGateway(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(RouterManagerServer).UnregisterGateway(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/router.RouterManager/UnregisterGateway",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RouterManagerServer).UnregisterGateway(ctx, req.(*UnregisterGatewayRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-func _RouterManager_GatewayStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _RouterManager_GatewayStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GatewayStatusRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(RouterManagerServer).GatewayStatus(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(RouterManagerServer).GatewayStatus(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/router.RouterManager/GatewayStatus",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RouterManagerServer).GatewayStatus(ctx, req.(*GatewayStatusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-func _RouterManager_Status_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _RouterManager_Status_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(StatusRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(RouterManagerServer).Status(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(RouterManagerServer).Status(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/router.RouterManager/Status",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RouterManagerServer).Status(ctx, req.(*StatusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 var _RouterManager_serviceDesc = grpc.ServiceDesc{

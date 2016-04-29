@@ -412,6 +412,10 @@ func init() {
 var _ context.Context
 var _ grpc.ClientConn
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the grpc package it is being compiled against.
+const _ = grpc.SupportPackageIsVersion2
+
 // Client API for Broker service
 
 type BrokerClient interface {
@@ -629,16 +633,22 @@ func (x *brokerPublishServer) Recv() (*DownlinkMessage, error) {
 	return m, nil
 }
 
-func _Broker_Activate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _Broker_Activate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DeviceActivationRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(BrokerServer).Activate(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(BrokerServer).Activate(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/broker.Broker/Activate",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BrokerServer).Activate(ctx, req.(*DeviceActivationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 var _Broker_serviceDesc = grpc.ServiceDesc{
@@ -744,52 +754,76 @@ func RegisterBrokerManagerServer(s *grpc.Server, srv BrokerManagerServer) {
 	s.RegisterService(&_BrokerManager_serviceDesc, srv)
 }
 
-func _BrokerManager_Applications_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _BrokerManager_Applications_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ApplicationsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(BrokerManagerServer).Applications(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(BrokerManagerServer).Applications(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/broker.BrokerManager/Applications",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BrokerManagerServer).Applications(ctx, req.(*ApplicationsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-func _BrokerManager_RegisterApplication_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _BrokerManager_RegisterApplication_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RegisterApplicationRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(BrokerManagerServer).RegisterApplication(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(BrokerManagerServer).RegisterApplication(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/broker.BrokerManager/RegisterApplication",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BrokerManagerServer).RegisterApplication(ctx, req.(*RegisterApplicationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-func _BrokerManager_UnregisterApplication_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _BrokerManager_UnregisterApplication_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UnregisterApplicationRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(BrokerManagerServer).UnregisterApplication(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(BrokerManagerServer).UnregisterApplication(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/broker.BrokerManager/UnregisterApplication",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BrokerManagerServer).UnregisterApplication(ctx, req.(*UnregisterApplicationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-func _BrokerManager_Status_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
+func _BrokerManager_Status_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(StatusRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
-	out, err := srv.(BrokerManagerServer).Status(ctx, in)
-	if err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(BrokerManagerServer).Status(ctx, in)
 	}
-	return out, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/broker.BrokerManager/Status",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BrokerManagerServer).Status(ctx, req.(*StatusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 var _BrokerManager_serviceDesc = grpc.ServiceDesc{
