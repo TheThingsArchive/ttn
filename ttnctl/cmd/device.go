@@ -76,10 +76,17 @@ registered on the Handler.`,
 
 		table := uitable.New()
 		table.MaxColWidth = 70
-		table.AddRow("DevAddr", "FCntUp", "FCntDown", "RelaxFcntCheck")
+		table.AddRow("DevAddr", "FCntUp", "FCntDown", "Flags")
 		for _, device := range devices.ABP {
 			devAddr := fmt.Sprintf("%X", device.DevAddr)
-			table.AddRow(devAddr, device.FCntUp, device.FCntDown, (device.Flags&core.RelaxFcntCheck) != 0)
+			var flags string
+			if (device.Flags & core.RelaxFcntCheck) != 0 {
+				flags = "relax-fcnt"
+			}
+			if flags == "" {
+				flags = "-"
+			}
+			table.AddRow(devAddr, device.FCntUp, device.FCntDown, strings.TrimLeft(flags, ","))
 		}
 
 		fmt.Println()
@@ -198,7 +205,14 @@ var devicesInfoCmd = &cobra.Command{
 					fmt.Println()
 					fmt.Printf("  FCntUp:  %d\n  FCntDn:  %d\n", device.FCntUp, device.FCntDown)
 					fmt.Println()
-					fmt.Printf("  Relax Counter Checks: %t\n", device.Flags&core.RelaxFcntCheck)
+					var flags string
+					if (device.Flags & core.RelaxFcntCheck) != 0 {
+						flags = "relax-fcnt"
+					}
+					if flags == "" {
+						flags = "-"
+					}
+					fmt.Printf("  Flags:   %s\n", strings.TrimLeft(flags, ","))
 					return
 				}
 			}
@@ -278,7 +292,7 @@ the Handler`,
 
 // devicesRegisterPersonalizedCmd represents the `device register personalized` command
 var devicesRegisterPersonalizedCmd = &cobra.Command{
-	Use:   "personalized [DevAddr] [NwkSKey] [AppSKey] [RelaxFcntCheck]",
+	Use:   "personalized [DevAddr] [NwkSKey] [AppSKey]",
 	Short: "Create or update ABP registrations on the Handler",
 	Long: `ttnctl devices register personalized creates or updates an ABP
 registration on the Handler`,
@@ -296,7 +310,6 @@ registration on the Handler`,
 		}
 
 		var nwkSKey, appSKey []byte
-		var flags uint32 = 0
 		if len(args) >= 3 {
 			nwkSKey, err = util.Parse128(args[1])
 			if err != nil {
@@ -306,13 +319,15 @@ registration on the Handler`,
 			if err != nil {
 				ctx.Fatalf("Invalid AppSKey: %s", err)
 			}
-			if (len(args) >= 4) && strings.EqualFold(args[3], "true") {
-				flags = core.RelaxFcntCheck
-			}
 		} else {
 			ctx.Info("Generating random NwkSKey and AppSKey...")
 			nwkSKey = random.Bytes(16)
 			appSKey = random.Bytes(16)
+		}
+
+		var flags uint32
+		if value, _ := cmd.Flags().GetBool("relax-fcnt"); value {
+			flags |= core.RelaxFcntCheck
 		}
 
 		auth, err := util.LoadAuth(viper.GetString("ttn-account-server"))
@@ -398,4 +413,5 @@ func init() {
 	devicesCmd.AddCommand(devicesInfoCmd)
 	devicesRegisterCmd.AddCommand(devicesRegisterPersonalizedCmd)
 	devicesRegisterCmd.AddCommand(devicesRegisterDefaultCmd)
+	devicesRegisterPersonalizedCmd.Flags().Bool("relax-fcnt", false, "Allow frame counter to reset (insecure)")
 }
