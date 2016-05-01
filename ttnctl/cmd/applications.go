@@ -199,7 +199,7 @@ var applicationsUseCmd = &cobra.Command{
 		}
 
 		if !found {
-			ctx.Fatalf("%X not found in registered applications",appEUI)
+			ctx.Fatalf("%X not found in registered applications", appEUI)
 		}
 
 		// Determine config file
