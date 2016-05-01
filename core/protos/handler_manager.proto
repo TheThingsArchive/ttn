@@ -17,6 +17,7 @@ message UpsertABPHandlerReq {
     bytes   DevAddr     = 3;
     bytes   NwkSKey     = 4;
     bytes   AppSKey     = 5;
+    uint32  Flags       = 6;
 }
 
 message UpsertABPHandlerRes {}
@@ -37,6 +38,7 @@ message HandlerABPDevice {
     bytes   AppSKey     = 4;
     uint32  FCntUp      = 5;
     uint32  FCntDown    = 6;
+    uint32  Flags       = 7;
 }
 
 message HandlerOTAADevice {

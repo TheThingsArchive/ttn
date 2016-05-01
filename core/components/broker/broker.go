@@ -194,6 +194,7 @@ func (b component) HandleJoin(bctx context.Context, req *core.JoinBrokerReq) (*c
 		AppEUI:  req.AppEUI,
 		DevEUI:  req.DevEUI,
 		NwkSKey: nwkSKey,
+		Flags:   0,
 		FCntUp:  0,
 	})
 	if err != nil {
@@ -245,18 +246,27 @@ func (b component) HandleData(bctx context.Context, req *core.DataBrokerReq) (*c
 	fhdr := &uplinkPayload.MACPayload.(*lorawan.MACPayload).FHDR // No nil ref, ensured by NewLoRaWANData()
 	fcnt16 := fhdr.FCnt                                          // Keep a reference to the original counter
 
+	var fcntReset bool
 	var mEntry *devEntry
 	for _, entry := range entries {
+		fcntReset = false
 		// retrieve the network session key
 		key := lorawan.AES128Key(entry.NwkSKey)
 
-		// Check with 16-bits counters
-		fhdr.FCnt = fcnt16
+		// Check frame counter is in valid range
 		fcnt32, err := b.NetworkController.wholeCounter(fcnt16, entry.FCntUp)
 		if err != nil {
-			continue
+			// invalid, is device in developer mode
+			if (entry.Flags & core.RelaxFcntCheck) != 0 {
+				fcnt32 = fcnt16
+				fcntReset = true
+			} else {
+				continue
+			}
 		}
 
+		// Check with 16-bits counters
+		fhdr.FCnt = fcnt16
 		ok, err := uplinkPayload.ValidateMIC(key)
 		if err != nil {
 			continue
@@ -305,13 +315,14 @@ func (b component) HandleData(bctx context.Context, req *core.DataBrokerReq) (*c
 	}
 	defer closer.Close()
 	resp, err := handler.HandleDataUp(context.Background(), &core.DataUpHandlerReq{
-		Payload:  req.Payload.MACPayload.FRMPayload,
-		DevEUI:   mEntry.DevEUI,
-		AppEUI:   mEntry.AppEUI,
-		FCnt:     fhdr.FCnt,
-		FPort:    req.Payload.MACPayload.FPort,
-		MType:    req.Payload.MHDR.MType,
-		Metadata: req.Metadata,
+		Payload:     req.Payload.MACPayload.FRMPayload,
+		DevEUI:      mEntry.DevEUI,
+		AppEUI:      mEntry.AppEUI,
+		FCnt:        fhdr.FCnt,
+		FPort:       req.Payload.MACPayload.FPort,
+		MType:       req.Payload.MHDR.MType,
+		Metadata:    req.Metadata,
+		FCntUpReset: fcntReset,
 	})
 
 	if err != nil {

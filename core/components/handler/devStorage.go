@@ -33,6 +33,7 @@ type devEntry struct {
 	FCntDown uint32
 	FCntUp   uint32
 	NwkSKey  [16]byte
+	Flags    uint32
 }
 
 type devDefaultEntry struct {
@@ -105,6 +106,7 @@ func (e devEntry) MarshalBinary() ([]byte, error) {
 	rw.Write(e.NwkSKey[:])
 	rw.Write(e.FCntUp)
 	rw.Write(e.FCntDown)
+	rw.Write(e.Flags)
 	rw.Write(e.AppEUI)
 	rw.Write(e.DevEUI)
 	rw.Write(e.DevAddr)
@@ -126,6 +128,7 @@ func (e *devEntry) UnmarshalBinary(data []byte) error {
 	rw.Read(func(data []byte) { copy(e.NwkSKey[:], data) })
 	rw.Read(func(data []byte) { e.FCntUp = binary.BigEndian.Uint32(data) })
 	rw.Read(func(data []byte) { e.FCntDown = binary.BigEndian.Uint32(data) })
+	rw.Read(func(data []byte) { e.Flags = binary.BigEndian.Uint32(data) })
 	rw.Read(func(data []byte) {
 		e.AppEUI = make([]byte, len(data))
 		copy(e.AppEUI, data)

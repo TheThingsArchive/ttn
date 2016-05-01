@@ -16,6 +16,7 @@ message UpsertABPBrokerReq {
     string  NetAddress  = 3;
     bytes   DevAddr     = 4;
     bytes   NwkSKey     = 5;
+    uint32  Flags       = 6;
 }
 
 message UpsertABPBrokerRes {}

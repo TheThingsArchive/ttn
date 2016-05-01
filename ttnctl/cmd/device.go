@@ -6,6 +6,7 @@ package cmd
 import (
 	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/components/handler"
@@ -77,10 +78,17 @@ registered on the Handler.`,
 
 		table := uitable.New()
 		table.MaxColWidth = 70
-		table.AddRow("DevAddr", "FCntUp", "FCntDown")
+		table.AddRow("DevAddr", "FCntUp", "FCntDown", "Flags")
 		for _, device := range devices.ABP {
 			devAddr := fmt.Sprintf("%X", device.DevAddr)
-			table.AddRow(devAddr, device.FCntUp, device.FCntDown)
+			var flags string
+			if (device.Flags & core.RelaxFcntCheck) != 0 {
+				flags = "relax-fcnt"
+			}
+			if flags == "" {
+				flags = "-"
+			}
+			table.AddRow(devAddr, device.FCntUp, device.FCntDown, strings.TrimLeft(flags, ","))
 		}
 
 		fmt.Println()
@@ -198,6 +206,15 @@ var devicesInfoCmd = &cobra.Command{
 
 					fmt.Println()
 					fmt.Printf("  FCntUp:  %d\n  FCntDn:  %d\n", device.FCntUp, device.FCntDown)
+					fmt.Println()
+					var flags string
+					if (device.Flags & core.RelaxFcntCheck) != 0 {
+						flags = "relax-fcnt"
+					}
+					if flags == "" {
+						flags = "-"
+					}
+					fmt.Printf("  Flags:   %s\n", strings.TrimLeft(flags, ","))
 					return
 				}
 			}
@@ -313,6 +330,11 @@ registration on the Handler`,
 			appSKey = random.Bytes(16)
 		}
 
+		var flags uint32
+		if value, _ := cmd.Flags().GetBool("relax-fcnt"); value {
+			flags |= core.RelaxFcntCheck
+		}
+
 		auth, err := util.LoadAuth(viper.GetString("ttn-account-server"))
 		if err != nil {
 			ctx.WithError(err).Fatal("Failed to load authentication")
@@ -328,6 +350,7 @@ registration on the Handler`,
 			DevAddr: devAddr,
 			AppSKey: appSKey,
 			NwkSKey: nwkSKey,
+			Flags:   flags,
 		})
 		if err != nil || res == nil {
 			ctx.WithError(err).Fatal("Could not register device")
@@ -336,6 +359,7 @@ registration on the Handler`,
 			"DevAddr": devAddr,
 			"NwkSKey": nwkSKey,
 			"AppSKey": appSKey,
+			"Flags":   flags,
 		}).Info("Registered personalized device")
 	},
 }
@@ -394,4 +418,5 @@ func init() {
 	devicesCmd.AddCommand(devicesInfoCmd)
 	devicesRegisterCmd.AddCommand(devicesRegisterPersonalizedCmd)
 	devicesRegisterCmd.AddCommand(devicesRegisterDefaultCmd)
+	devicesRegisterPersonalizedCmd.Flags().Bool("relax-fcnt", false, "Allow frame counter to reset (insecure)")
 }

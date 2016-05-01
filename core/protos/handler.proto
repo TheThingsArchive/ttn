@@ -10,6 +10,7 @@ message DataUpHandlerReq {
     uint32      FCnt        = 10;
     uint32      FPort       = 11;
     uint32      MType       = 12;
+    bool        FCntUpReset = 13;
     bytes       Payload     = 20;
     Metadata    Metadata    = 30;
 }

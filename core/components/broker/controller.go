@@ -33,6 +33,7 @@ type devEntry struct {
 	Dialer  Dialer
 	FCntUp  uint32
 	NwkSKey [16]byte
+	Flags   uint32
 }
 
 type noncesEntry struct {
@@ -141,6 +142,7 @@ func (e devEntry) MarshalBinary() ([]byte, error) {
 	rw.Write(e.DevAddr)
 	rw.Write(e.NwkSKey[:])
 	rw.Write(e.FCntUp)
+	rw.Write(e.Flags)
 	rw.Write(e.Dialer.MarshalSafely())
 	return rw.Bytes()
 }
@@ -162,6 +164,7 @@ func (e *devEntry) UnmarshalBinary(data []byte) error {
 	})
 	rw.Read(func(data []byte) { copy(e.NwkSKey[:], data) })
 	rw.Read(func(data []byte) { e.FCntUp = binary.BigEndian.Uint32(data) })
+	rw.Read(func(data []byte) { e.Flags = binary.BigEndian.Uint32(data) })
 	rw.Read(func(data []byte) { e.Dialer = NewDialer(data) })
 	return rw.Err()
 }

@@ -525,6 +525,84 @@ func TestHandleData(t *testing.T) {
 	// --------------------
 
 	{
+		Desc(t, "Valid uplink | One entry, FCnt invalid, RelaxFcntCheck set")
+
+		// Build
+		hl := mocks.NewHandlerClient()
+		nc := NewMockNetworkController()
+		as := NewMockAppStorage()
+		nc.Failures["wholeCounter"] = errors.New(errors.Structural, "Mock Error")
+
+		dl := NewMockDialer()
+		dl.OutDial.Client = hl
+		dl.OutDial.Closer = NewMockCloser()
+
+		nc.OutRead.Entries = []devEntry{
+			{
+				Dialer:  dl,
+				AppEUI:  []byte{1, 1, 1, 1, 1, 1, 1, 1},
+				DevEUI:  []byte{2, 2, 2, 2, 2, 2, 2, 2},
+				NwkSKey: [16]byte{6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+				FCntUp:  40,
+				Flags:   core.RelaxFcntCheck,
+			},
+		}
+		br := New(Components{NetworkController: nc, AppStorage: as, Ctx: GetLogger(t, "Broker")}, Options{})
+		req := &core.DataBrokerReq{
+			Payload: &core.LoRaWANData{
+				MHDR: &core.LoRaWANMHDR{
+					MType: uint32(lorawan.UnconfirmedDataUp),
+					Major: uint32(lorawan.LoRaWANR1),
+				},
+				MACPayload: &core.LoRaWANMACPayload{
+					FHDR: &core.LoRaWANFHDR{
+						DevAddr: []byte{1, 2, 3, 4},
+						FCnt:    0,
+						FCtrl:   new(core.LoRaWANFCtrl),
+					},
+					FPort:      1,
+					FRMPayload: []byte{14, 14, 42, 42},
+				},
+				MIC: []byte{0, 0, 0, 0}, // Temporary, computed below
+			},
+			Metadata: new(core.Metadata),
+		}
+		payload, err := core.NewLoRaWANData(req.Payload, true)
+		FatalUnless(t, err)
+		err = payload.SetMIC(lorawan.AES128Key(nc.OutRead.Entries[0].NwkSKey))
+		FatalUnless(t, err)
+		req.Payload.MIC = payload.MIC[:]
+
+		// Expect
+		var wantErr *string
+		var wantDataUp = &core.DataUpHandlerReq{
+			Payload:     req.Payload.MACPayload.FRMPayload,
+			AppEUI:      nc.OutRead.Entries[0].AppEUI,
+			DevEUI:      nc.OutRead.Entries[0].DevEUI,
+			FCnt:        0,
+			FPort:       1,
+			MType:       req.Payload.MHDR.MType,
+			Metadata:    req.Metadata,
+			FCntUpReset: true,
+		}
+		var wantRes = new(core.DataBrokerRes)
+		var wantFCnt = nc.OutWholeCounter.FCnt
+		var wantDialer = true
+
+		// Operate
+		res, err := br.HandleData(context.Background(), req)
+
+		// Checks
+		CheckErrors(t, wantErr, err)
+		Check(t, wantDataUp, hl.InHandleDataUp.Req, "Handler Data Requests")
+		Check(t, wantRes, res, "Broker Data Responses")
+		Check(t, wantFCnt, nc.InUpsert.Entry.FCntUp, "Frame counters")
+		Check(t, wantDialer, dl.InDial.Called, "Dialer calls")
+	}
+
+	// --------------------
+
+	{
 		Desc(t, "Valid uplink | One entry | One valid downlink")
 
 		// Build
