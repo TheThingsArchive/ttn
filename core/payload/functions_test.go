@@ -32,35 +32,42 @@ func TestDecode(t *testing.T) {
 func TestConvert(t *testing.T) {
 	a := New(t)
 
-	functions := &Functions{
+	withFunction := &Functions{
 		Converter: `function(data) {
       return {
-        size: data.temperature * 2
+        celcius: data.temperature * 2
       };
     }`,
 	}
-
-	data, err := functions.Convert(map[string]interface{}{"temperature": 11})
+	data, err := withFunction.Convert(map[string]interface{}{"temperature": 11})
 	a.So(err, ShouldBeNil)
-	a.So(data["size"], ShouldEqual, 22)
+	a.So(data["celcius"], ShouldEqual, 22)
+
+	withoutFunction := &Functions{}
+	data, err = withoutFunction.Convert(map[string]interface{}{"temperature": 11})
+	a.So(err, ShouldBeNil)
+	a.So(data["temperature"], ShouldEqual, 11)
 }
 
 func TestValidate(t *testing.T) {
 	a := New(t)
 
-	functions := &Functions{
+	withFunction := &Functions{
 		Validator: `function(data) {
       return data.temperature < 20;
     }`,
 	}
-
-	valid, err := functions.Validate(map[string]interface{}{"temperature": 10})
+	valid, err := withFunction.Validate(map[string]interface{}{"temperature": 10})
 	a.So(err, ShouldBeNil)
 	a.So(valid, ShouldBeTrue)
-
-	valid, err = functions.Validate(map[string]interface{}{"temperature": 30})
+	valid, err = withFunction.Validate(map[string]interface{}{"temperature": 30})
 	a.So(err, ShouldBeNil)
 	a.So(valid, ShouldBeFalse)
+
+	withoutFunction := &Functions{}
+	valid, err = withoutFunction.Validate(map[string]interface{}{"temperature": 10})
+	a.So(err, ShouldBeNil)
+	a.So(valid, ShouldBeTrue)
 }
 
 func TestProcess(t *testing.T) {
