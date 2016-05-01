@@ -78,13 +78,13 @@ func TestProcess(t *testing.T) {
 			return data;
 		}`,
 		Validator: `function(data) {
-			return data.humidity >= 0 && data.temperature <= 100;
+			return data.humidity >= 0 && data.humidity <= 100;
 		}`,
 	}
 
-	data, valid, err := functions.Process([]byte{40, 15})
+	data, valid, err := functions.Process([]byte{40, 110})
 	a.So(err, ShouldBeNil)
-	a.So(valid, ShouldBeTrue)
+	a.So(valid, ShouldBeFalse)
 	a.So(data["temperature"], ShouldEqual, 20)
-	a.So(data["humidity"], ShouldEqual, 15)
+	a.So(data["humidity"], ShouldEqual, 110)
 }
