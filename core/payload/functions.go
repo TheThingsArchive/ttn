@@ -1,3 +1,6 @@
+// Copyright © 2016 The Things Network
+// Use of this source code is governed by the MIT license that can be found in the LICENSE file.
+
 package payload
 
 import (
@@ -83,4 +86,20 @@ func (f *Functions) Validate(data map[string]interface{}) (bool, error) {
 	}
 
 	return value.ToBoolean()
+}
+
+// Process decodes the specified payload, converts it and test the validity
+func (f *Functions) Process(payload []byte) (map[string]interface{}, bool, error) {
+	decoded, err := f.Decode(payload)
+	if err != nil {
+		return nil, false, err
+	}
+
+	converted, err := f.Convert(decoded)
+	if err != nil {
+		return nil, false, err
+	}
+
+	valid, err := f.Validate(converted)
+	return converted, valid, err
 }

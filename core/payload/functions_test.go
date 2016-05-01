@@ -1,3 +1,6 @@
+// Copyright © 2016 The Things Network
+// Use of this source code is governed by the MIT license that can be found in the LICENSE file.
+
 package payload
 
 import (
@@ -58,4 +61,30 @@ func TestValidate(t *testing.T) {
 	valid, err = functions.Validate(map[string]interface{}{"temperature": 30})
 	a.So(err, ShouldBeNil)
 	a.So(valid, ShouldBeFalse)
+}
+
+func TestProcess(t *testing.T) {
+	a := New(t)
+
+	functions := &Functions{
+		Decoder: `function(payload) {
+			return {
+				temperature: payload[0],
+				humidity: payload[1]
+			}
+		}`,
+		Converter: `function(data) {
+			data.temperature /= 2;
+			return data;
+		}`,
+		Validator: `function(data) {
+			return data.humidity >= 0 && data.temperature <= 100;
+		}`,
+	}
+
+	data, valid, err := functions.Process([]byte{40, 15})
+	a.So(err, ShouldBeNil)
+	a.So(valid, ShouldBeTrue)
+	a.So(data["temperature"], ShouldEqual, 20)
+	a.So(data["humidity"], ShouldEqual, 15)
 }
