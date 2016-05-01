@@ -4,6 +4,7 @@
 package mqtt
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/core"
@@ -39,6 +40,7 @@ func (a *defaultAdapter) HandleData(_ context.Context, req *core.DataAppReq, _ .
 		Metadata: core.ProtoMetaToAppMeta(req.Metadata...),
 		FPort:    uint8(req.FPort),
 		FCnt:     req.FCnt,
+		DevEUI:   fmt.Sprintf("%X", req.DevEUI),
 	}
 
 	if a.ctx != nil {
