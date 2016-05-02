@@ -4,6 +4,7 @@
 package cmd
 
 import (
+	"bytes"
 	"fmt"
 	"reflect"
 	"strings"
@@ -56,7 +57,7 @@ registered on the Handler.`,
 			AppEUI: appEUI.Bytes(),
 		})
 		if err != nil {
-			// TODO: Check reason
+			// TODO: Check reason; not found is OK here
 			defaultDevice = nil
 		}
 		if defaultDevice != nil {
@@ -152,7 +153,7 @@ var devicesInfoCmd = &cobra.Command{
 
 		if devEUI, err := types.ParseDevEUI(args[0]); err == nil {
 			for _, device := range res.OTAA {
-				if reflect.DeepEqual(device.DevEUI, devEUI.Bytes()) {
+				if bytes.Equal(device.DevEUI, devEUI.Bytes()) {
 					fmt.Println("Dynamic device:")
 
 					fmt.Println()
@@ -219,7 +220,7 @@ var devicesInfoCmd = &cobra.Command{
 
 		if devAddr, err := types.ParseDevAddr(args[0]); err == nil {
 			for _, device := range res.ABP {
-				if reflect.DeepEqual(device.DevAddr, devAddr.Bytes()) {
+				if bytes.Equal(device.DevAddr, devAddr.Bytes()) {
 					fmt.Println("Personalized device:")
 
 					fmt.Println()
