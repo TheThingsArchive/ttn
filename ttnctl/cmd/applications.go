@@ -183,6 +183,25 @@ var applicationsUseCmd = &cobra.Command{
 			ctx.Fatalf("Invalid AppEUI: %s", err)
 		}
 
+		// check AppEUI provided is owned by user
+		apps, err := util.GetApplications(ctx)
+		if err != nil {
+			ctx.WithError(err).Fatal("Failed to get applications")
+		}
+
+		var found bool
+		newEUI := fmt.Sprintf("%X", appEUI)
+		for _, app := range apps {
+			if app.EUI == newEUI {
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			ctx.Fatalf("%X not found in registered applications", appEUI)
+		}
+
 		// Determine config file
 		cFile := viper.ConfigFileUsed()
 		if cFile == "" {
@@ -209,7 +228,7 @@ var applicationsUseCmd = &cobra.Command{
 		}
 
 		// Update app
-		c["app-eui"] = fmt.Sprintf("%X", appEUI)
+		c["app-eui"] = newEUI
 
 		// Write config file
 		d, err := yaml.Marshal(&c)
