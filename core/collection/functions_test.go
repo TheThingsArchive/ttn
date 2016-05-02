@@ -14,10 +14,10 @@ func TestDecode(t *testing.T) {
 
 	functions := &Functions{
 		Decoder: `function(payload) {
-      return {
-        value: (payload[0] << 8) | payload[1]
-      };
-    }`,
+  return {
+    value: (payload[0] << 8) | payload[1]
+  };
+}`,
 	}
 	payload := []byte{0x48, 0x65}
 
@@ -34,10 +34,10 @@ func TestConvert(t *testing.T) {
 
 	withFunction := &Functions{
 		Converter: `function(data) {
-      return {
-        celcius: data.temperature * 2
-      };
-    }`,
+  return {
+    celcius: data.temperature * 2
+  };
+}`,
 	}
 	data, err := withFunction.Convert(map[string]interface{}{"temperature": 11})
 	a.So(err, ShouldBeNil)
@@ -75,18 +75,18 @@ func TestProcess(t *testing.T) {
 
 	functions := &Functions{
 		Decoder: `function(payload) {
-			return {
-				temperature: payload[0],
-				humidity: payload[1]
-			}
-		}`,
+	return {
+		temperature: payload[0],
+		humidity: payload[1]
+	}
+}`,
 		Converter: `function(data) {
-			data.temperature /= 2;
-			return data;
-		}`,
+	data.temperature /= 2;
+	return data;
+}`,
 		Validator: `function(data) {
-			return data.humidity >= 0 && data.humidity <= 100;
-		}`,
+	return data.humidity >= 0 && data.humidity <= 100;
+}`,
 	}
 
 	data, valid, err := functions.Process([]byte{40, 110})
