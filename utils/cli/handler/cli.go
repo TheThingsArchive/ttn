@@ -3,6 +3,7 @@ package handler
 import (
 	"fmt"
 	"io"
+	"runtime"
 	"sort"
 	"sync"
 
@@ -79,7 +80,11 @@ func (h *Handler) HandleLog(e *log.Entry) error {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
-	fmt.Fprintf(h.Writer, "\033[%dm%6s\033[0m %-40s", color, level, e.Message)
+	if runtime.GOOS == "windows" {
+		fmt.Fprintf(h.Writer, "%6s %-40s", level, e.Message)
+	} else {
+		fmt.Fprintf(h.Writer, "\033[%dm%6s\033[0m %-40s", color, level, e.Message)
+	}
 
 	for _, f := range fields {
 		var value interface{}
@@ -92,7 +97,12 @@ func (h *Handler) HandleLog(e *log.Entry) error {
 			value = f.Value
 		}
 
-		fmt.Fprintf(h.Writer, " \033[%dm%s\033[0m=%v", color, f.Name, value)
+		if runtime.GOOS == "windows" {
+			fmt.Fprintf(h.Writer, " %s=%v", f.Name, value)
+		} else {
+			fmt.Fprintf(h.Writer, " \033[%dm%s\033[0m=%v", color, f.Name, value)
+		}
+
 	}
 
 	fmt.Fprintln(h.Writer)
