@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+
 import "github.com/TheThingsNetwork/ttn/api/api.proto";
 import "github.com/TheThingsNetwork/ttn/api/protocol/protocol.proto";
 import "github.com/TheThingsNetwork/ttn/api/gateway/gateway.proto";
@@ -35,8 +37,8 @@ message DeviceActivationResponse {
 // sent to the Handler
 message DeduplicatedUplinkMessage {
   bytes                       payload            = 1;
-  bytes                       dev_eui            = 11;
-  bytes                       app_eui            = 12;
+  bytes                       dev_eui            = 11 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.DevEUI"];
+  bytes                       app_eui            = 12 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.AppEUI"];
   protocol.RxMetadata         protocol_metadata  = 21;
   repeated gateway.RxMetadata gateway_metadata   = 22;
   DownlinkMessage             response_template  = 31;
@@ -46,8 +48,8 @@ message DeduplicatedUplinkMessage {
 // received from the Router
 message DeviceActivationRequest {
   bytes                        payload              = 1;
-  bytes                        dev_eui              = 11;
-  bytes                        app_eui              = 12;
+  bytes                        dev_eui              = 11 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.DevEUI"];
+  bytes                        app_eui              = 12 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.AppEUI"];
   protocol.RxMetadata          protocol_metadata    = 21;
   gateway.RxMetadata           gateway_metadata     = 22;
   protocol.ActivationMetadata  activation_metadata  = 23;
@@ -57,8 +59,8 @@ message DeviceActivationRequest {
 // sent to the Handler
 message DeduplicatedDeviceActivationRequest {
   bytes                        payload              = 1;
-  bytes                        dev_eui              = 11;
-  bytes                        app_eui              = 12;
+  bytes                        dev_eui              = 11 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.DevEUI"];
+  bytes                        app_eui              = 12 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.AppEUI"];
   protocol.RxMetadata          protocol_metadata    = 21;
   gateway.RxMetadata           gateway_metadata     = 22;
   protocol.ActivationMetadata  activation_metadata  = 23;

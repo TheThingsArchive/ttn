@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+
 package lorawan;
 
 message Metadata {
@@ -14,12 +16,12 @@ message Metadata {
 }
 
 message TxConfiguration {
-  bytes dev_addr = 1;
+  bytes dev_addr = 1 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.DevAddr"];
 }
 
 message ActivationMetadata {
-  bytes dev_addr             = 1;
-  bytes network_session_key  = 2;
+  bytes dev_addr   = 1 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.DevAddr"];
+  bytes nwk_s_key  = 2 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.NwkSKey"];
 }
 
 message PHYPayload {
@@ -40,7 +42,7 @@ message MACPayload {
 }
 
 message FHdr {
-  bytes          dev_addr = 1;
+  bytes          dev_addr = 1 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.DevAddr"];
   FCtrl          f_ctrl   = 2;
   uint32         f_cnt    = 3;
   repeated bytes f_opts   = 4;

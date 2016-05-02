@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+
 import "github.com/TheThingsNetwork/ttn/api/api.proto";
 import "github.com/TheThingsNetwork/ttn/api/protocol/protocol.proto";
 import "github.com/TheThingsNetwork/ttn/api/gateway/gateway.proto";
@@ -24,8 +26,8 @@ message DownlinkMessage {
 
 message DeviceActivationRequest {
   bytes                payload            = 1;
-  bytes                dev_eui            = 11;
-  bytes                app_eui            = 12;
+  bytes                dev_eui            = 11 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.DevEUI"];
+  bytes                app_eui            = 12 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.AppEUI"];
   protocol.RxMetadata  protocol_metadata  = 21;
   gateway.RxMetadata   gateway_metadata   = 22;
 }
@@ -56,24 +58,24 @@ message GatewaysRequest {}
 
 // message GatewaysResponse is the response to the GatewaysRequest
 message GatewaysResponse {
-  repeated string gateway_ids = 1;
+  repeated bytes gateway_ids = 1 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.GatewayEUI"];
 }
 
 // message RegisterGatewayRequest is used to register a Gateway with this Router
 message RegisterGatewayRequest {
-  string gateway_id = 1;
+  bytes gateway_eui = 1 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.GatewayEUI"];
 }
 
 // message UnregisterGatewayRequest is used to unregister a Gateway from this
 // Router
 message UnregisterGatewayRequest {
-  string gateway_id = 1;
+  bytes gateway_eui = 1 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.GatewayEUI"];
 }
 
 // message GatewayStatusRequest is used to request the status of a gateway from
 // this Router
 message GatewayStatusRequest {
-  string gateway_id = 1;
+  bytes gateway_eui = 1 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.GatewayEUI"];
 }
 
 // message GatewayStatusResponse is the response to the GatewayStatusRequest
