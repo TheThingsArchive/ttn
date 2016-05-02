@@ -22,13 +22,15 @@ When you get started with The Things Network, you'll probably have some question
 - Read background information on the [wiki](http://thethingsnetwork.org/wiki)
 - Send an email to @johanstokking (johan@thethingsnetwork.org)
 
-## Running the Network
+## Development Setup
 
-We are working hard on building a working version of the v1.0 backend. Currently, we have the following components working:
-
-- [x] **Router**
-- [x] **Broker**
-- [x] **Handler**
+1. Make sure you have [Go](https://golang.org), [Mosquitto](http://mosquitto.org/download/) and [Redis](http://redis.io/download) installed.
+2. Fork this repository
+3. Clone the fork: `git clone --recursive https://github.com/YOURUSERNAME/ttn.git $GOPATH/src/github.com/TheThingsNetwork/ttn`
+4. `cd $GOPATH/src/github.com/TheThingsNetwork/ttn`
+5. Get some Go dependencies: `make deps test-deps`
+6. _Optional:_ install [protocol compiler](https://github.com/google/protobuf) and `make proto-deps`
+7. Run the tests: `make test`
 
 ## Contributing
 
