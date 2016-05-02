@@ -333,6 +333,7 @@ registration on the Handler`,
 		var flags uint32
 		if value, _ := cmd.Flags().GetBool("relax-fcnt"); value {
 			flags |= core.RelaxFcntCheck
+			ctx.Warn("You are disabling frame counter checks. Your device is not protected against replay-attacks.")
 		}
 
 		auth, err := util.LoadAuth(viper.GetString("ttn-account-server"))
