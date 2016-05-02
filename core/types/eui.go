@@ -71,6 +71,17 @@ func (eui *EUI64) UnmarshalBinary(data []byte) error {
 	return nil
 }
 
+// MarshalTo is used by Protobuf
+func (eui *EUI64) MarshalTo(b []byte) (int, error) {
+	copy(b, eui.Bytes())
+	return 8, nil
+}
+
+// Size is used by Protobuf
+func (eui *EUI64) Size() int {
+	return 8
+}
+
 // Marshal implements the Marshaler interface.
 func (eui EUI64) Marshal() ([]byte, error) {
 	return eui.MarshalBinary()
@@ -137,6 +148,17 @@ func (eui *AppEUI) UnmarshalBinary(data []byte) error {
 	}
 	*eui = AppEUI(e)
 	return nil
+}
+
+// MarshalTo is used by Protobuf
+func (eui *AppEUI) MarshalTo(b []byte) (int, error) {
+	copy(b, eui.Bytes())
+	return 8, nil
+}
+
+// Size is used by Protobuf
+func (eui *AppEUI) Size() int {
+	return 8
 }
 
 // Marshal implements the Marshaler interface.
@@ -207,6 +229,17 @@ func (eui *DevEUI) UnmarshalBinary(data []byte) error {
 	return nil
 }
 
+// MarshalTo is used by Protobuf
+func (eui *DevEUI) MarshalTo(b []byte) (int, error) {
+	copy(b, eui.Bytes())
+	return 8, nil
+}
+
+// Size is used by Protobuf
+func (eui *DevEUI) Size() int {
+	return 8
+}
+
 // Marshal implements the Marshaler interface.
 func (eui DevEUI) Marshal() ([]byte, error) {
 	return eui.MarshalBinary()
@@ -273,6 +306,17 @@ func (eui *GatewayEUI) UnmarshalBinary(data []byte) error {
 	}
 	*eui = GatewayEUI(e)
 	return nil
+}
+
+// MarshalTo is used by Protobuf
+func (eui *GatewayEUI) MarshalTo(b []byte) (int, error) {
+	copy(b, eui.Bytes())
+	return 8, nil
+}
+
+// Size is used by Protobuf
+func (eui *GatewayEUI) Size() int {
+	return 8
 }
 
 // Marshal implements the Marshaler interface.

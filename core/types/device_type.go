@@ -84,6 +84,17 @@ func (devType *DeviceType) UnmarshalBinary(data []byte) error {
 	return nil
 }
 
+// MarshalTo is used by Protobuf
+func (devType *DeviceType) MarshalTo(b []byte) (int, error) {
+	copy(b, []byte(devType.String()))
+	return len(devType.String()), nil
+}
+
+// Size is used by Protobuf
+func (devType *DeviceType) Size() int {
+	return len(devType.String())
+}
+
 // Marshal implements the Marshaler interface.
 func (devType DeviceType) Marshal() ([]byte, error) {
 	return devType.MarshalBinary()

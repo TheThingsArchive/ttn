@@ -69,6 +69,17 @@ func (datr *DataRate) UnmarshalBinary(data []byte) error {
 	return datr.UnmarshalText(data)
 }
 
+// MarshalTo is used by Protobuf
+func (datr DataRate) MarshalTo(b []byte) (int, error) {
+	copy(b, datr.Bytes())
+	return len(datr.Bytes()), nil
+}
+
+// Size is used by Protobuf
+func (datr DataRate) Size() int {
+	return len(datr.Bytes())
+}
+
 // Marshal implements the Marshaler interface.
 func (datr DataRate) Marshal() ([]byte, error) {
 	return datr.MarshalBinary()

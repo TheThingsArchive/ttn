@@ -72,6 +72,17 @@ func (key *AES128Key) UnmarshalBinary(data []byte) error {
 	return nil
 }
 
+// MarshalTo is used by Protobuf
+func (key *AES128Key) MarshalTo(b []byte) (int, error) {
+	copy(b, key.Bytes())
+	return 16, nil
+}
+
+// Size is used by Protobuf
+func (key *AES128Key) Size() int {
+	return 16
+}
+
 // Marshal implements the Marshaler interface.
 func (key AES128Key) Marshal() ([]byte, error) {
 	return key.MarshalBinary()
@@ -137,6 +148,17 @@ func (key *AppKey) UnmarshalBinary(data []byte) error {
 	}
 	*key = AppKey(e)
 	return nil
+}
+
+// MarshalTo is used by Protobuf
+func (key *AppKey) MarshalTo(b []byte) (int, error) {
+	copy(b, key.Bytes())
+	return 16, nil
+}
+
+// Size is used by Protobuf
+func (key *AppKey) Size() int {
+	return 16
 }
 
 // Marshal implements the Marshaler interface.
@@ -206,6 +228,17 @@ func (key *AppSKey) UnmarshalBinary(data []byte) error {
 	return nil
 }
 
+// MarshalTo is used by Protobuf
+func (key *AppSKey) MarshalTo(b []byte) (int, error) {
+	copy(b, key.Bytes())
+	return 16, nil
+}
+
+// Size is used by Protobuf
+func (key *AppSKey) Size() int {
+	return 16
+}
+
 // Marshal implements the Marshaler interface.
 func (key AppSKey) Marshal() ([]byte, error) {
 	return key.MarshalBinary()
@@ -272,6 +305,17 @@ func (key *NwkSKey) UnmarshalBinary(data []byte) error {
 	}
 	*key = NwkSKey(e)
 	return nil
+}
+
+// MarshalTo is used by Protobuf
+func (key *NwkSKey) MarshalTo(b []byte) (int, error) {
+	copy(b, key.Bytes())
+	return 16, nil
+}
+
+// Size is used by Protobuf
+func (key *NwkSKey) Size() int {
+	return 16
 }
 
 // Marshal implements the Marshaler interface.

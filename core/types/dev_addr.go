@@ -63,6 +63,17 @@ func (addr *DevAddr) UnmarshalBinary(data []byte) error {
 	return nil
 }
 
+// MarshalTo is used by Protobuf
+func (addr DevAddr) MarshalTo(b []byte) (int, error) {
+	copy(b, addr.Bytes())
+	return 4, nil
+}
+
+// Size is used by Protobuf
+func (addr DevAddr) Size() int {
+	return 4
+}
+
 // Marshal implements the Marshaler interface.
 func (addr DevAddr) Marshal() ([]byte, error) {
 	return addr.MarshalBinary()
