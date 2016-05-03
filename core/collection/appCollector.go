@@ -80,6 +80,7 @@ func (c *appCollector) handleUplink(client mqtt.Client, appEUI types.AppEUI, dev
 	err = c.storage.Save(appEUI, devEUI, t, fields)
 	if err != nil {
 		ctx.WithError(err).Error("Failed to save data")
+		return
 	}
 	ctx.Debug("Saved uplink packet in store")
 }
