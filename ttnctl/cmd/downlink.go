@@ -35,6 +35,7 @@ formatted as "1h2m" for one hour and two minutes. The default TTL is one hour.`,
 
 		var payload []byte
 		if plain, _ := cmd.Flags().GetBool("plain"); plain {
+			ctx.Warn("Sending data as plain text is bad practice. We recommend to transmit data in a binary format.")
 			payload = []byte(args[1])
 		} else {
 			payload, err = util.ParseHEX(args[1], len(args[1]))

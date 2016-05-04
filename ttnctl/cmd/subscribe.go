@@ -45,13 +45,15 @@ application.`,
 
 			// TODO: Find out what Metadata people want to see here
 
-			// NOTE: This is a race condition; binary values may be printable
-			unprintable, _ := regexp.Compile(`[^[:print:]]`)
-			if unprintable.Match(dataUp.Payload) {
-				ctx.Infof("%X", dataUp.Payload)
+			if plain, _ := cmd.Flags().GetBool("plain"); plain {
+				unprintable, _ := regexp.Compile(`[^[:print:]]`)
+				if unprintable.Match(dataUp.Payload) {
+					ctx.WithField("warning", "payload contains unprintable characters").Infof("%X", dataUp.Payload)
+				} else {
+					ctx.Infof("%s", dataUp.Payload)
+				}
 			} else {
-				ctx.Infof("%s", dataUp.Payload)
-				ctx.Warn("Sending data as plain text is bad practice. We recommend to transmit data in a binary format.")
+				ctx.Infof("%X", dataUp.Payload)
 			}
 
 			if l := len(dataUp.Payload); l > 20 {
@@ -66,6 +68,10 @@ application.`,
 		}
 		ctx.Info("Subscribed. Waiting for messages...")
 
+		if plain, _ := cmd.Flags().GetBool("plain"); plain {
+			ctx.Warn("Sending data as plain text is bad practice. We recommend to transmit data in a binary format.")
+		}
+
 		c := make(chan os.Signal, 1)
 		signal.Notify(c, os.Interrupt)
 
@@ -79,4 +85,5 @@ application.`,
 
 func init() {
 	RootCmd.AddCommand(subscribeCmd)
+	subscribeCmd.Flags().Bool("plain", false, "parse payload as plain-text")
 }
