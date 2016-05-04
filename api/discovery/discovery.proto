@@ -4,12 +4,21 @@ import "github.com/TheThingsNetwork/ttn/api/api.proto";
 
 package discovery;
 
+message Metadata {
+  enum Key {
+    PREFIX = 0;
+  }
+  Key key = 1;
+  bytes value = 2;
+}
+
 message Announcement {
   string service_name = 1;
   string service_version = 2;
   string net_address = 3;
   string description = 11;
   string fingerprint = 12;
+  repeated Metadata metadata = 21;
 }
 
 message DiscoverRequest {
