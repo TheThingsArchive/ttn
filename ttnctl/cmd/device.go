@@ -61,7 +61,7 @@ registered on the Handler.`,
 		if defaultDevice != nil {
 			ctx.Warn("Application activates new devices with default AppKey")
 			fmt.Printf("Default AppKey:  %X\n", defaultDevice.AppKey)
-			fmt.Printf("                 {%s}\n", cStyle(defaultDevice.AppKey))
+			fmt.Printf("                 {%s}\n", cStyle(defaultDevice.AppKey, msbf))
 		} else {
 			ctx.Info("Application does not activate new devices with default AppKey")
 		}
@@ -113,6 +113,11 @@ registered on the Handler.`,
 	},
 }
 
+const (
+	msbf = true
+	lsbf = false
+)
+
 // devicesInfoCmd represents the `devices info` command
 var devicesInfoCmd = &cobra.Command{
 	Use:   "info [DevAddr|DevEUI]",
@@ -142,22 +147,41 @@ var devicesInfoCmd = &cobra.Command{
 			ctx.WithError(err).Fatal("Could not get device list")
 		}
 
+		lmic, _ := cmd.Flags().GetBool("lmic")
+
 		if devEUI, err := util.Parse64(args[0]); err == nil {
 			for _, device := range res.OTAA {
 				if reflect.DeepEqual(device.DevEUI, devEUI) {
 					fmt.Println("Dynamic device:")
 
 					fmt.Println()
-					fmt.Printf("  AppEUI:  %X\n", appEUI)
-					fmt.Printf("           {%s}\n", cStyle(appEUI))
+
+					// LMiC decided to use LSBF for AppEUI and call it ArtEUI
+					if lmic {
+						fmt.Printf("  AppEUI:  %X (sometimes called ArtEUI)\n", appEUI)
+						fmt.Printf("           {%s} (Note: LSBF)\n", cStyle(appEUI, lsbf))
+					} else {
+						fmt.Printf("  AppEUI:  %X\n", appEUI)
+						fmt.Printf("           {%s}\n", cStyle(appEUI, msbf))
+					}
 
 					fmt.Println()
 					fmt.Printf("  DevEUI:  %X\n", device.DevEUI)
-					fmt.Printf("           {%s}\n", cStyle(device.DevEUI))
+					// LMiC decided to use LSBF for DevEUI
+					if lmic {
+						fmt.Printf("           {%s} (Note: LSBF)\n", cStyle(device.DevEUI, lsbf))
+					} else {
+						fmt.Printf("           {%s}\n", cStyle(device.DevEUI, msbf))
+					}
 
 					fmt.Println()
-					fmt.Printf("  AppKey:  %X\n", device.AppKey)
-					fmt.Printf("           {%s}\n", cStyle(device.AppKey))
+					// LMiC decided to rename AppKey to DevKey
+					if lmic {
+						fmt.Printf("  AppKey:  %X (sometimes called DevKey)\n", device.AppKey)
+					} else {
+						fmt.Printf("  AppKey:  %X\n", device.AppKey)
+					}
+					fmt.Printf("           {%s}\n", cStyle(device.AppKey, msbf))
 
 					if len(device.DevAddr) != 0 {
 						fmt.Println()
@@ -165,15 +189,20 @@ var devicesInfoCmd = &cobra.Command{
 
 						fmt.Println()
 						fmt.Printf("  DevAddr: %X\n", device.DevAddr)
-						fmt.Printf("           {%s}\n", cStyle(device.DevAddr))
+						fmt.Printf("           {%s}\n", cStyle(device.DevAddr, msbf))
 
 						fmt.Println()
 						fmt.Printf("  NwkSKey: %X\n", device.NwkSKey)
-						fmt.Printf("           {%s}\n", cStyle(device.NwkSKey))
+						fmt.Printf("           {%s}\n", cStyle(device.NwkSKey, msbf))
 
 						fmt.Println()
-						fmt.Printf("  AppSKey: %X\n", device.AppSKey)
-						fmt.Printf("           {%s}\n", cStyle(device.AppSKey))
+						// LMiC decided to rename AppSKey to ArtSKey
+						if lmic {
+							fmt.Printf("  AppSKey:  %X (sometimes called ArtSKey)\n", device.AppSKey)
+						} else {
+							fmt.Printf("  AppSKey:  %X\n", device.AppSKey)
+						}
+						fmt.Printf("           {%s}\n", cStyle(device.AppSKey, msbf))
 
 						fmt.Println()
 						fmt.Printf("  FCntUp:  %d\n  FCntDn:  %d\n", device.FCntUp, device.FCntDown)
@@ -194,15 +223,20 @@ var devicesInfoCmd = &cobra.Command{
 
 					fmt.Println()
 					fmt.Printf("  DevAddr: %X\n", device.DevAddr)
-					fmt.Printf("           {%s}\n", cStyle(device.DevAddr))
+					fmt.Printf("           {%s}\n", cStyle(device.DevAddr, msbf))
 
 					fmt.Println()
 					fmt.Printf("  NwkSKey: %X\n", device.NwkSKey)
-					fmt.Printf("           {%s}\n", cStyle(device.NwkSKey))
+					fmt.Printf("           {%s}\n", cStyle(device.NwkSKey, msbf))
 
 					fmt.Println()
-					fmt.Printf("  AppSKey: %X\n", device.AppSKey)
-					fmt.Printf("           {%s}\n", cStyle(device.AppSKey))
+					// LMiC decided to rename AppSKey to ArtSKey
+					if lmic {
+						fmt.Printf("  AppSKey:  %X (sometimes called ArtSKey)\n", device.AppSKey)
+					} else {
+						fmt.Printf("  AppSKey:  %X\n", device.AppSKey)
+					}
+					fmt.Printf("           {%s}\n", cStyle(device.AppSKey, msbf))
 
 					fmt.Println()
 					fmt.Printf("  FCntUp:  %d\n  FCntDn:  %d\n", device.FCntUp, device.FCntDown)
@@ -227,12 +261,23 @@ var devicesInfoCmd = &cobra.Command{
 	},
 }
 
-func cStyle(bytes []byte) (output string) {
+func cStyle(bytes []byte, msbf bool) (output string) {
+	if !msbf {
+		bytes = reverse(bytes)
+	}
 	for i, b := range bytes {
 		if i != 0 {
 			output += ", "
 		}
 		output += fmt.Sprintf("0x%02X", b)
+	}
+	return
+}
+
+// reverse is used to convert between MSB-first and LSB-first
+func reverse(in []byte) (out []byte) {
+	for i := len(in) - 1; i >= 0; i-- {
+		out = append(out, in[i])
 	}
 	return
 }
@@ -417,6 +462,7 @@ func init() {
 	RootCmd.AddCommand(devicesCmd)
 	devicesCmd.AddCommand(devicesRegisterCmd)
 	devicesCmd.AddCommand(devicesInfoCmd)
+	devicesInfoCmd.Flags().Bool("lmic", false, "Print info for LMiC")
 	devicesRegisterCmd.AddCommand(devicesRegisterPersonalizedCmd)
 	devicesRegisterCmd.AddCommand(devicesRegisterDefaultCmd)
 	devicesRegisterPersonalizedCmd.Flags().Bool("relax-fcnt", false, "Allow frame counter to reset (insecure)")
