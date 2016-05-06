@@ -4,11 +4,12 @@ import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 
 package lorawan;
 
+enum Modulation {
+  LORA = 0;
+  FSK  = 1;
+}
+
 message Metadata {
-  enum Modulation {
-    LORA = 0;
-    FSK  = 1;
-  }
   Modulation  modulation   = 11;
   string      data_rate    = 12; // LoRa data rate - SF{spreadingfactor}BW{bandwidth}
   uint32      bit_rate     = 13; // FSK bit rate in bit/s
@@ -17,6 +18,10 @@ message Metadata {
 
 message TxConfiguration {
   bytes dev_addr = 1 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.DevAddr"];
+  Modulation  modulation   = 11;
+  string      data_rate    = 12; // LoRa data rate - SF{spreadingfactor}BW{bandwidth}
+  uint32      bit_rate     = 13; // FSK bit rate in bit/s
+  string      coding_rate  = 14; // LoRa coding rate
 }
 
 message ActivationMetadata {
