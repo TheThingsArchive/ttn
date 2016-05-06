@@ -6,6 +6,7 @@ package cmd
 import (
 	"encoding/base64"
 	"net"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -73,7 +74,16 @@ var uplinkCmd = &cobra.Command{
 			FCnt:    uint32(fcnt),
 		}
 		macPayload.FPort = pointer.Uint8(1)
-		macPayload.FRMPayload = []lorawan.Payload{&lorawan.DataPayload{Bytes: []byte(args[4])}}
+		if plain, _ := cmd.Flags().GetBool("plain"); plain {
+			ctx.Warn("Sending data as plain text is bad practice. We recommend to transmit data in a binary format.")
+			macPayload.FRMPayload = []lorawan.Payload{&lorawan.DataPayload{Bytes: []byte(args[4])}}
+		} else {
+			payload, err := util.ParseHEX(args[4], len(args[4]))
+			if err != nil {
+				ctx.Fatalf("Invalid hexadecimal payload. If you are trying to send a plain-text payload, use the --plain flag.")
+			}
+			macPayload.FRMPayload = []lorawan.Payload{&lorawan.DataPayload{Bytes: payload}}
+		}
 		phyPayload := &lorawan.PHYPayload{}
 		phyPayload.MHDR = lorawan.MHDR{
 			MType: mtype,
@@ -156,10 +166,26 @@ var uplinkCmd = &cobra.Command{
 			}
 			ctx.Infof("Frame counter: %d", macPayload.FHDR.FCnt)
 			if len(macPayload.FRMPayload) > 0 {
-				if err := phyPayload.DecryptFRMPayload(appSKey); err != nil {
+				decrypted, err := lorawan.EncryptFRMPayload(
+					appSKey,
+					false,
+					devAddr,
+					macPayload.FHDR.FCnt,
+					macPayload.FRMPayload[0].(*lorawan.DataPayload).Bytes,
+				)
+				if err != nil {
 					ctx.Fatalf("Unable to decrypt MACPayload: %s", err)
 				}
-				ctx.Infof("Decrypted Payload: %s", string(macPayload.FRMPayload[0].(*lorawan.DataPayload).Bytes))
+				if plain, _ := cmd.Flags().GetBool("plain"); plain {
+					unprintable, _ := regexp.Compile(`[^[:print:]]`)
+					if unprintable.Match(decrypted) {
+						ctx.WithField("warning", "payload contains unprintable characters").Infof("Decrypted Payload: %X", decrypted)
+					} else {
+						ctx.Infof("%s", decrypted)
+					}
+				} else {
+					ctx.Infof("Decrypted Payload: %X", decrypted)
+				}
 			} else {
 				ctx.Infof("The frame payload was empty.")
 			}
@@ -232,4 +258,5 @@ var uplinkCmd = &cobra.Command{
 
 func init() {
 	RootCmd.AddCommand(uplinkCmd)
+	uplinkCmd.Flags().Bool("plain", false, "send payload as plain-text")
 }
