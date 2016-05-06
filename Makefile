@@ -29,12 +29,15 @@ ttnctlpkg = ttnctl-$(GOOS)-$(GOARCH)
 ttnbin = $(ttnpkg)$(GOEXE)
 ttnctlbin = $(ttnctlpkg)$(GOEXE)
 
-.PHONY: all clean deps test-deps dev-deps proto test fmt vet cover build docker package
+.PHONY: all clean deps update-deps test-deps dev-deps proto test fmt vet cover build docker package
 
 all: clean deps build package
 
 deps:
 	$(GOCMD) get -d -v $(DEPS)
+
+update-deps:
+	$(GOCMD) get -u -d -v $(DEPS)
 
 test-deps:
 	$(GOCMD) get -d -v $(TEST_DEPS)
