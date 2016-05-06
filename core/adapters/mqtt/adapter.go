@@ -4,24 +4,22 @@
 package mqtt
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	ttnMQTT "github.com/TheThingsNetwork/ttn/mqtt"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
-	"github.com/TheThingsNetwork/ttn/utils/stats"
 	"github.com/apex/log"
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
 )
 
-const mqttTimeout = 20 * time.Millisecond
+const publishTimeout = 20 * time.Millisecond
 
-// Adapter defines a public interface for the mqtt adapter
+// Adapter represents the interface of an application
 type Adapter interface {
-	core.AppClient
+	PublishUplink(appEUI types.AppEUI, devEUI types.DevEUI, req core.DataUpAppReq) error
+	PublishActivation(appEUI types.AppEUI, devEUI types.DevEUI, req core.OTAAAppReq) error
 	SubscribeDownlink(handler core.HandlerServer) error
 }
 
@@ -30,155 +28,73 @@ type defaultAdapter struct {
 	client ttnMQTT.Client
 }
 
+// NewAdapter returns a new MQTT handler adapter
+func NewAdapter(ctx log.Interface, client ttnMQTT.Client) Adapter {
+	return &defaultAdapter{ctx, client}
+}
+
 // HandleData implements the core.AppClient interface
-func (a *defaultAdapter) HandleData(_ context.Context, req *core.DataAppReq, _ ...grpc.CallOption) (*core.DataAppRes, error) {
-	if err := validateData(req); err != nil {
-		return new(core.DataAppRes), errors.New(errors.Structural, err)
-	}
+func (a *defaultAdapter) PublishUplink(appEUI types.AppEUI, devEUI types.DevEUI, req core.DataUpAppReq) error {
+	ctx := a.ctx.WithFields(log.Fields{
+		"AppEUI": appEUI,
+		"DevEUI": devEUI,
+	})
+	ctx.Debug("Publishing Uplink")
 
-	dataUp := core.DataUpAppReq{
-		Payload:  req.Payload,
-		Metadata: core.ProtoMetaToAppMeta(req.Metadata...),
-		FPort:    uint8(req.FPort),
-		FCnt:     req.FCnt,
-		DevEUI:   fmt.Sprintf("%X", req.DevEUI),
-	}
-
-	if a.ctx != nil {
-		a.ctx.WithFields(log.Fields{
-			"AppEUI": req.AppEUI,
-			"DevEUI": req.DevEUI,
-		}).Debug("Publishing Uplink")
-	}
-
-	// Type conversions for MQTT (we'll refactor the adapter later)
-	var appEUI types.AppEUI
-	appEUI.Unmarshal(req.AppEUI)
-	var devEUI types.DevEUI
-	devEUI.Unmarshal(req.DevEUI)
-
-	token := a.client.PublishUplink(appEUI, devEUI, dataUp)
-	if token.WaitTimeout(mqttTimeout) {
+	token := a.client.PublishUplink(appEUI, devEUI, req)
+	if token.WaitTimeout(publishTimeout) {
 		// token did not timeout: just return
 		if token.Error() != nil {
-			return new(core.DataAppRes), errors.New(errors.Structural, token.Error())
+			return errors.New(errors.Structural, token.Error())
 		}
 	} else {
 		// token did timeout: wait for it in background and just return
 		go func() {
 			token.Wait()
 			if token.Error() != nil {
-				if a.ctx != nil {
-					a.ctx.WithError(token.Error()).Warn("Could not publish uplink")
-				}
+				ctx.WithError(token.Error()).Warn("Could not publish uplink")
 			}
 		}()
 	}
-	return new(core.DataAppRes), nil
-}
-
-func validateData(req *core.DataAppReq) error {
-	var err error
-	switch {
-	case req == nil:
-		err = errors.New(errors.Structural, "Received Nil Application Request")
-	case len(req.Payload) == 0:
-		err = errors.New(errors.Structural, "Invalid Packet Payload")
-	case len(req.DevEUI) != 8:
-		err = errors.New(errors.Structural, "Invalid Device EUI")
-	case len(req.AppEUI) != 8:
-		err = errors.New(errors.Structural, "Invalid Application EUI")
-	case req.Metadata == nil:
-		err = errors.New(errors.Structural, "Missing Mandatory Metadata")
-	}
-
-	if err != nil {
-		stats.MarkMeter("mqtt_adapter.uplink.invalid")
-		return err
-	}
-
 	return nil
 }
 
-// HandleJoin implements the core.AppClient interface
-func (a *defaultAdapter) HandleJoin(_ context.Context, req *core.JoinAppReq, _ ...grpc.CallOption) (*core.JoinAppRes, error) {
-	if err := validateJoin(req); err != nil {
-		return new(core.JoinAppRes), errors.New(errors.Structural, err)
-	}
+func (a *defaultAdapter) PublishActivation(appEUI types.AppEUI, devEUI types.DevEUI, req core.OTAAAppReq) error {
+	ctx := a.ctx.WithFields(log.Fields{
+		"AppEUI": appEUI,
+		"DevEUI": devEUI,
+	})
+	ctx.Debug("Publishing Activation")
 
-	otaa := core.OTAAAppReq{
-		Metadata: core.ProtoMetaToAppMeta(req.Metadata...),
-	}
-
-	if a.ctx != nil {
-		a.ctx.WithFields(log.Fields{
-			"AppEUI": req.AppEUI,
-			"DevEUI": req.DevEUI,
-		}).Debug("Publishing Activation")
-	}
-
-	// Type conversions for MQTT (we'll refactor the adapter later)
-	var appEUI types.AppEUI
-	appEUI.Unmarshal(req.AppEUI)
-	var devEUI types.DevEUI
-	devEUI.Unmarshal(req.DevEUI)
-
-	token := a.client.PublishActivation(appEUI, devEUI, otaa)
-	if token.WaitTimeout(mqttTimeout) {
+	token := a.client.PublishActivation(appEUI, devEUI, req)
+	if token.WaitTimeout(publishTimeout) {
 		// token did not timeout: just return
 		if token.Error() != nil {
-			return new(core.JoinAppRes), errors.New(errors.Structural, token.Error())
+			return errors.New(errors.Structural, token.Error())
 		}
 	} else {
 		// token did timeout: wait for it in background and just return
 		go func() {
 			token.Wait()
 			if token.Error() != nil {
-				if a.ctx != nil {
-					a.ctx.WithError(token.Error()).Warn("Could not publish activation")
-				}
+				ctx.WithError(token.Error()).Warn("Could not publish activation")
 			}
 		}()
 	}
-	return new(core.JoinAppRes), nil
-}
-
-func validateJoin(req *core.JoinAppReq) error {
-	var err error
-	switch {
-	case req == nil:
-		err = errors.New(errors.Structural, "Received Nil Application Request")
-	case len(req.DevEUI) != 8:
-		err = errors.New(errors.Structural, "Invalid Device EUI")
-	case len(req.AppEUI) != 8:
-		err = errors.New(errors.Structural, "Invalid Application EUI")
-	case req.Metadata == nil:
-		err = errors.New(errors.Structural, "Missing Mandatory Metadata")
-	}
-
-	if err != nil {
-		stats.MarkMeter("mqtt_adapter.join.invalid")
-		return err
-	}
-
 	return nil
 }
 
 func (a *defaultAdapter) SubscribeDownlink(handler core.HandlerServer) error {
 	token := a.client.SubscribeDownlink(func(client ttnMQTT.Client, appEUI types.AppEUI, devEUI types.DevEUI, req core.DataDownAppReq) {
 		if len(req.Payload) == 0 {
-			if a.ctx != nil {
-				a.ctx.Debug("Skipping empty downlink")
-			}
+			a.ctx.Debug("Skipping empty downlink")
 			return
 		}
 
-		if a.ctx != nil {
-			a.ctx.WithFields(log.Fields{
-				"AppEUI": appEUI,
-				"DevEUI": devEUI,
-			}).Debug("Receiving Downlink")
-		}
+		a.ctx.WithFields(log.Fields{
+			"AppEUI": appEUI,
+			"DevEUI": devEUI,
+		}).Debug("Receiving Downlink")
 
 		// Convert it to an handler downlink
 		handler.HandleDataDown(context.Background(), &core.DataDownHandlerReq{
@@ -191,9 +107,4 @@ func (a *defaultAdapter) SubscribeDownlink(handler core.HandlerServer) error {
 
 	token.Wait()
 	return token.Error()
-}
-
-// NewAdapter returns a new MQTT handler adapter
-func NewAdapter(ctx log.Interface, client ttnMQTT.Client) Adapter {
-	return &defaultAdapter{ctx, client}
 }

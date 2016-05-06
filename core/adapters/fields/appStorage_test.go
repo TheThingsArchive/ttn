@@ -1,11 +1,12 @@
 // Copyright © 2016 The Things Network
 // Use of this source code is governed by the MIT license that can be found in the LICENSE file.
 
-package collector
+package fields
 
 import (
 	"testing"
 
+	"github.com/TheThingsNetwork/ttn/core/collection"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/smartystreets/assertions"
 )
@@ -29,41 +30,26 @@ func TestConnect(t *testing.T) {
 	a.So(err, ShouldNotBeNil)
 }
 
-func TestSetKey(t *testing.T) {
+func TestSetFunctions(t *testing.T) {
 	a := New(t)
 
 	eui, _ := types.ParseAppEUI("8000000000000001")
-	key := "key"
+	functions := &collection.Functions{
+		Decoder:   `function (payload) { return { size: payload.length; } }`,
+		Converter: `function (data) { return data; }`,
+		Validator: `function (data) { return data.size % 2 == 0; }`,
+	}
 
 	storage := createStorage()
 	defer storage.Close()
 	defer storage.Reset()
 
-	err := storage.SetKey(eui, key)
+	err := storage.SetFunctions(eui, functions)
 	a.So(err, ShouldBeNil)
 
-	app, err := storage.Get(eui)
+	fetchedFunctions, err := storage.GetFunctions(eui)
 	a.So(err, ShouldBeNil)
-	a.So(app.EUI, ShouldEqual, eui)
-	a.So(app.Key, ShouldEqual, key)
-}
-
-func TestGetAll(t *testing.T) {
-	a := New(t)
-
-	eui1, _ := types.ParseAppEUI("8000000000000001")
-	eui2, _ := types.ParseAppEUI("8000000000000002")
-
-	storage := createStorage()
-	defer storage.Close()
-	defer storage.Reset()
-
-	err := storage.SetKey(eui1, "key1")
-	a.So(err, ShouldBeNil)
-	err = storage.SetKey(eui2, "key2")
-	a.So(err, ShouldBeNil)
-
-	apps, err := storage.GetAll()
-	a.So(err, ShouldBeNil)
-	a.So(apps, ShouldHaveLength, 2)
+	a.So(fetchedFunctions.Decoder, ShouldEqual, functions.Decoder)
+	a.So(fetchedFunctions.Converter, ShouldEqual, functions.Converter)
+	a.So(fetchedFunctions.Validator, ShouldEqual, functions.Validator)
 }

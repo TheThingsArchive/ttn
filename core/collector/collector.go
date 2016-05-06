@@ -59,7 +59,7 @@ func (c *collector) Start() ([]collection.AppCollector, error) {
 	startErrors := make(map[types.AppEUI]error)
 	for _, app := range apps {
 		ctx := c.ctx.WithField("appEUI", app.EUI)
-		ac := collection.NewMqttAppCollector(ctx, c.broker, app.EUI, app.Key, &app.Functions, c.dataStorage)
+		ac := collection.NewMqttAppCollector(ctx, c.broker, app.EUI, app.Key, c.dataStorage)
 		ctx.Info("Starting app collector")
 		if err := ac.Start(); err != nil {
 			ctx.WithError(err).Warn("Failed to start app collector; ignoring app")

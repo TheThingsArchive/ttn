@@ -1,25 +1,21 @@
 // Copyright © 2016 The Things Network
 // Use of this source code is governed by the MIT license that can be found in the LICENSE file.
 
-package collector
+package fields
 
 import (
+	"fmt"
+
 	"gopkg.in/redis.v3"
 
+	"github.com/TheThingsNetwork/ttn/core/collection"
 	"github.com/TheThingsNetwork/ttn/core/types"
 )
 
-// App represents a stored application
-type App struct {
-	EUI types.AppEUI
-	Key string
-}
-
 // AppStorage provides storage for applications
 type AppStorage interface {
-	SetKey(eui types.AppEUI, key string) error
-	Get(eui types.AppEUI) (*App, error)
-	GetAll() ([]*App, error)
+	SetFunctions(eui types.AppEUI, functions *collection.Functions) error
+	GetFunctions(eui types.AppEUI) (*collection.Functions, error)
 	Reset() error
 	Close() error
 }
@@ -42,42 +38,30 @@ func ConnectRedis(addr string, db int64) (AppStorage, error) {
 	return &redisAppStorage{client}, nil
 }
 
-func (s *redisAppStorage) SetKey(eui types.AppEUI, key string) error {
-	return s.client.HSet(eui.String(), "key", key).Err()
+func (s *redisAppStorage) makeKey(eui types.AppEUI) string {
+	return fmt.Sprintf("app:%s", eui.String())
 }
 
-func (s *redisAppStorage) Get(eui types.AppEUI) (*App, error) {
-	m, err := s.client.HGetAllMap(eui.String()).Result()
+func (s *redisAppStorage) SetFunctions(eui types.AppEUI, functions *collection.Functions) error {
+	return s.client.HMSetMap(s.makeKey(eui), map[string]string{
+		"decoder":   functions.Decoder,
+		"converter": functions.Converter,
+		"validator": functions.Validator,
+	}).Err()
+}
+
+func (s *redisAppStorage) GetFunctions(eui types.AppEUI) (*collection.Functions, error) {
+	m, err := s.client.HGetAllMap(s.makeKey(eui)).Result()
 	if err == redis.Nil {
 		return nil, nil
 	} else if err != nil {
 		return nil, err
 	}
-	app := &App{
-		EUI: eui,
-		Key: m["key"],
-	}
-	return app, nil
-}
-
-func (s *redisAppStorage) GetAll() ([]*App, error) {
-	euis, err := s.client.Keys("*").Result()
-	if err != nil {
-		return nil, err
-	}
-	apps := make([]*App, len(euis))
-	for i, k := range euis {
-		eui, err := types.ParseAppEUI(k)
-		if err != nil {
-			return nil, err
-		}
-		app, err := s.Get(eui)
-		if err != nil {
-			return nil, err
-		}
-		apps[i] = app
-	}
-	return apps, nil
+	return &collection.Functions{
+		Decoder:   m["decoder"],
+		Converter: m["converter"],
+		Validator: m["validator"],
+	}, nil
 }
 
 func (s *redisAppStorage) Reset() error {

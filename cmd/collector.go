@@ -11,7 +11,6 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/collector/influxdb"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"gopkg.in/redis.v3"
 )
 
 // collectorCmd represents the collector command
@@ -26,10 +25,7 @@ configured applications.
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx.Info("Starting")
 
-		appStorage, err := collector.ConnectRedisAppStorage(&redis.Options{
-			Addr: viper.GetString("collector.redis-addr"),
-			DB:   int64(viper.GetInt("collector.redis-db")),
-		})
+		appStorage, err := collector.ConnectRedis(viper.GetString("collector.redis-addr"), int64(viper.GetInt("collector.redis-db")))
 		if err != nil {
 			ctx.WithError(err).Fatal("Failed to connect to Redis")
 		}

@@ -17,8 +17,7 @@ import (
 )
 
 type mockStorage struct {
-	entry   chan *mockStorageEntry
-	entries []*mockStorageEntry
+	entry chan *mockStorageEntry
 }
 
 type mockStorageEntry struct {
@@ -28,12 +27,7 @@ type mockStorageEntry struct {
 
 func createTestCollector(ctx log.Interface, storage DataStorage) AppCollector {
 	eui, _ := types.ParseAppEUI("8000000000000001")
-	functions := &Functions{
-		Decoder:   `function(payload) { return { size: payload.length } }`,
-		Converter: `function(data) { return data; }`,
-		Validator: `function(data) { return data.size > 0; }`,
-	}
-	return NewMqttAppCollector(ctx, "localhost:1883", eui, "", functions, storage)
+	return NewMqttAppCollector(ctx, "localhost:1883", eui, "", storage)
 }
 
 func TestStart(t *testing.T) {
@@ -76,6 +70,7 @@ func TestCollect(t *testing.T) {
 		FPort:    1,
 		Metadata: []core.AppMetadata{core.AppMetadata{ServerTime: time.Now().Format(time.RFC3339)}},
 		Payload:  []byte{0x1, 0x2, 0x3},
+		Fields:   map[string]interface{}{"size": 3},
 	}
 	if token := client.PublishUplink(appEUI, devEUI, req); token.Wait() && token.Error() != nil {
 		panic(token.Error())
@@ -95,9 +90,7 @@ func TestCollect(t *testing.T) {
 }
 
 func (s *mockStorage) Save(appEUI types.AppEUI, devEUI types.DevEUI, t time.Time, fields map[string]interface{}) error {
-	entry := &mockStorageEntry{devEUI, fields}
-	s.entries = append(s.entries, entry)
-	s.entry <- entry
+	s.entry <- &mockStorageEntry{devEUI, fields}
 	return nil
 }
 

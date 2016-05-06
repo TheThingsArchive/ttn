@@ -20,23 +20,21 @@ type AppCollector interface {
 }
 
 type appCollector struct {
-	ctx       log.Interface
-	eui       types.AppEUI
-	functions *Functions
-	broker    string
-	client    mqtt.Client
-	storage   DataStorage
+	ctx     log.Interface
+	eui     types.AppEUI
+	broker  string
+	client  mqtt.Client
+	storage DataStorage
 }
 
 // NewMqttAppCollector instantiates a new AppCollector instance using MQTT
-func NewMqttAppCollector(ctx log.Interface, broker string, eui types.AppEUI, key string, functions *Functions, storage DataStorage) AppCollector {
+func NewMqttAppCollector(ctx log.Interface, broker string, eui types.AppEUI, key string, storage DataStorage) AppCollector {
 	return &appCollector{
-		ctx:       ctx,
-		eui:       eui,
-		functions: functions,
-		broker:    broker,
-		client:    mqtt.NewClient(ctx, "collector", eui.String(), key, fmt.Sprintf("tcp://%s", broker)),
-		storage:   storage,
+		ctx:     ctx,
+		eui:     eui,
+		broker:  broker,
+		client:  mqtt.NewClient(ctx, "collector", eui.String(), key, fmt.Sprintf("tcp://%s", broker)),
+		storage: storage,
 	}
 }
 
@@ -61,23 +59,13 @@ func (c *appCollector) Stop() {
 func (c *appCollector) handleUplink(client mqtt.Client, appEUI types.AppEUI, devEUI types.DevEUI, req core.DataUpAppReq) {
 	ctx := c.ctx.WithField("devEUI", devEUI)
 
-	fields, valid, err := c.functions.Process(req.Payload)
-	if err != nil {
-		ctx.WithError(err).Error("Failed to process payload")
-		return
-	}
-	if !valid {
-		ctx.Warn("The payload is not valid")
-		return
-	}
-
 	t, err := time.Parse(time.RFC3339, req.Metadata[0].ServerTime)
 	if err != nil {
 		ctx.WithError(err).Warnf("Invalid time: %v", req.Metadata[0].ServerTime)
 		return
 	}
 
-	err = c.storage.Save(appEUI, devEUI, t, fields)
+	err = c.storage.Save(appEUI, devEUI, t, req.Fields)
 	if err != nil {
 		ctx.WithError(err).Error("Failed to save data")
 		return
