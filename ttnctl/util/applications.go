@@ -11,11 +11,11 @@ import (
 )
 
 type App struct {
-	EUI        string   `json:"eui"` // TODO: Change to []string
-	Name       string   `json:"name"`
-	Owner      string   `json:"owner"`
-	AccessKeys []string `json:"accessKeys"`
-	Valid      bool     `json:"valid"`
+	EUI        types.AppEUI `json:"eui"` // TODO: Change to []string
+	Name       string       `json:"name"`
+	Owner      string       `json:"owner"`
+	AccessKeys []string     `json:"accessKeys"`
+	Valid      bool         `json:"valid"`
 }
 
 func GetAppEUI(ctx log.Interface) types.AppEUI {

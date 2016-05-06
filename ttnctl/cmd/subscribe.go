@@ -34,9 +34,9 @@ application.`,
 			if err != nil {
 				ctx.Fatalf("Invalid DevEUI: %s", err)
 			}
-			ctx.Infof("Subscribing uplink messages from device %X", devEUI)
+			ctx.Infof("Subscribing uplink messages from device %s", devEUI)
 		} else {
-			ctx.Infof("Subscribing to uplink messages from all devices in application %X", appEUI)
+			ctx.Infof("Subscribing to uplink messages from all devices in application %s", appEUI)
 		}
 
 		client := util.ConnectMQTTClient(ctx)

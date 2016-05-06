@@ -155,6 +155,11 @@ var uplinkCmd = &cobra.Command{
 				ctx.Fatalf("Unable to retrieve LoRaWAN PhyPayload: %s", err)
 			}
 
+			micOK, _ := payload.ValidateMIC(lorawan.AES128Key(nwkSKey))
+			if !micOK {
+				ctx.Warn("MIC check failed.")
+			}
+
 			macPayload, ok := payload.MACPayload.(*lorawan.MACPayload)
 			if !ok || len(macPayload.FRMPayload) > 1 {
 				ctx.Fatalf("Unable to retrieve LoRaWAN MACPayload")

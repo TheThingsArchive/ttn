@@ -191,16 +191,15 @@ var applicationsUseCmd = &cobra.Command{
 		}
 
 		var found bool
-		newEUI := fmt.Sprintf("%X", appEUI)
 		for _, app := range apps {
-			if app.EUI == newEUI {
+			if app.EUI == appEUI {
 				found = true
 				break
 			}
 		}
 
 		if !found {
-			ctx.Fatalf("%X not found in registered applications", appEUI)
+			ctx.Fatalf("%s not found in registered applications", appEUI)
 		}
 
 		// Determine config file
@@ -229,7 +228,7 @@ var applicationsUseCmd = &cobra.Command{
 		}
 
 		// Update app
-		c["app-eui"] = newEUI
+		c["app-eui"] = appEUI
 
 		// Write config file
 		d, err := yaml.Marshal(&c)

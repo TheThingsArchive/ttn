@@ -152,7 +152,7 @@ var devicesInfoCmd = &cobra.Command{
 
 		if devEUI, err := types.ParseDevEUI(args[0]); err == nil {
 			for _, device := range res.OTAA {
-				if reflect.DeepEqual(device.DevEUI, devEUI) {
+				if reflect.DeepEqual(device.DevEUI, devEUI.Bytes()) {
 					fmt.Println("Dynamic device:")
 
 					fmt.Println()
@@ -219,7 +219,7 @@ var devicesInfoCmd = &cobra.Command{
 
 		if devAddr, err := types.ParseDevAddr(args[0]); err == nil {
 			for _, device := range res.ABP {
-				if reflect.DeepEqual(device.DevAddr, devAddr) {
+				if reflect.DeepEqual(device.DevAddr, devAddr.Bytes()) {
 					fmt.Println("Personalized device:")
 
 					fmt.Println()
@@ -368,7 +368,7 @@ registration on the Handler`,
 			if err != nil {
 				ctx.Fatalf("Invalid AppSKey: %s", err)
 			}
-			if reflect.DeepEqual(nwkSKey, defaultKey) || reflect.DeepEqual(appSKey, defaultKey) {
+			if reflect.DeepEqual(nwkSKey.Bytes(), defaultKey) || reflect.DeepEqual(appSKey.Bytes(), defaultKey) {
 				ctx.Warn("You are using default keys, any attacker can read your data or attack your device's connectivity.")
 			}
 		} else {
