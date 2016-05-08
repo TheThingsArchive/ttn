@@ -28,9 +28,9 @@ message TxConfiguration {
   }
 }
 
-// message StatusMessage represents a status update from a Gateway.
+// message Status represents a status update from a Gateway.
 // See https://gist.github.com/htdvisser/b2b1078005ed770233278a366430f992#stat
-message StatusMessage {
+message Status {
   uint32  timestamp      = 1;
   int64   time           = 2;
 

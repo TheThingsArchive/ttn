@@ -12,6 +12,7 @@ message DownlinkOption {
   string  identifier  = 1;
   uint32  score       = 2; // lower is better, 0 is best
   int64   deadline    = 3; // deadline time at server represented as the number of nanoseconds elapsed since January 1, 1970 UTC
+  gateway.TxConfiguration configuration = 4;
 }
 
 // received from the Router
@@ -107,8 +108,8 @@ message UnregisterApplicationRequest {
 // message StatusRequest is used to request the status of this Broker
 message StatusRequest {}
 
-// message StatusResponse is the response to the StatusRequest
-message StatusResponse {
+// message Status is the response to the StatusRequest
+message Status {
   // Uplink
   api.Rates uplink        = 1;
   api.Rates uplink_unique = 2;
@@ -141,5 +142,5 @@ service BrokerManager {
   rpc  UnregisterApplication(UnregisterApplicationRequest) returns (api.Ack);
 
   // Network operator requests Broker status
-  rpc  Status(StatusRequest) returns (StatusResponse);
+  rpc  GetStatus(StatusRequest) returns (Status);
 }

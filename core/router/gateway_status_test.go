@@ -18,7 +18,7 @@ func TestHandleGatewayStatus(t *testing.T) {
 	}
 
 	// Handle
-	statusMessage := &pb_gateway.StatusMessage{Description: "Fake Gateway"}
+	statusMessage := &pb_gateway.Status{Description: "Fake Gateway"}
 	err := router.HandleGatewayStatus(eui, statusMessage)
 	a.So(err, ShouldBeNil)
 

@@ -20,7 +20,7 @@ import (
 // Router component
 type Router interface {
 	// Handle a status message from a gateway
-	HandleGatewayStatus(gatewayEUI types.GatewayEUI, status *pb_gateway.StatusMessage) error
+	HandleGatewayStatus(gatewayEUI types.GatewayEUI, status *pb_gateway.Status) error
 	// Handle an uplink message from a gateway
 	HandleUplink(gatewayEUI types.GatewayEUI, uplink *pb.UplinkMessage) error
 	// Handle a downlink message

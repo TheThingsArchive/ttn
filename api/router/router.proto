@@ -41,7 +41,7 @@ message DeviceActivationResponse {
 // The Router service provides pure network functionality
 service Router {
   // Gateway streams status messages to Router
-  rpc GatewayStatus(stream gateway.StatusMessage) returns (api.Ack);
+  rpc GatewayStatus(stream gateway.Status) returns (api.Ack);
 
   // Gateway streams uplink messages to Router
   rpc Uplink(stream UplinkMessage) returns (api.Ack);
@@ -80,14 +80,14 @@ message GatewayStatusRequest {
 
 // message GatewayStatusResponse is the response to the GatewayStatusRequest
 message GatewayStatusResponse {
-  gateway.StatusMessage last_status = 1;
+  gateway.Status last_status = 1;
 }
 
 // message StatusRequest is used to request the status of this Router
 message StatusRequest {}
 
-// message StatusResponse is the response to the StatusRequest
-message StatusResponse {
+// message Status is the response to the StatusRequest
+message Status {
   // Gateways
   api.Rates gateway_status   = 1;
   uint32    active_gateways  = 4;
@@ -122,5 +122,5 @@ service RouterManager {
   rpc GatewayStatus(GatewayStatusRequest) returns (GatewayStatusResponse);
 
   // Network operator requests Router status
-  rpc Status(StatusRequest) returns (StatusResponse);
+  rpc GetStatus(StatusRequest) returns (Status);
 }

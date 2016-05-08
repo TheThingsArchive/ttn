@@ -13,11 +13,11 @@ service Handler {
 // message StatusRequest is used to request the status of this Handler
 message StatusRequest {}
 
-// message StatusResponse is the response to the StatusRequest
-message StatusResponse {}
+// message Status is the response to the StatusRequest
+message Status {}
 
 // The HandlerManager service provides configuration and monitoring
 // functionality
 service HandlerManager {
-  rpc Status(StatusRequest) returns (StatusResponse);
+  rpc GetStatus(StatusRequest) returns (Status);
 }

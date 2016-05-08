@@ -10,7 +10,7 @@
 
 	It has these top-level messages:
 		StatusRequest
-		StatusResponse
+		Status
 */
 package handler
 
@@ -45,18 +45,18 @@ func (m *StatusRequest) String() string            { return proto.CompactTextStr
 func (*StatusRequest) ProtoMessage()               {}
 func (*StatusRequest) Descriptor() ([]byte, []int) { return fileDescriptorHandler, []int{0} }
 
-// message StatusResponse is the response to the StatusRequest
-type StatusResponse struct {
+// message Status is the response to the StatusRequest
+type Status struct {
 }
 
-func (m *StatusResponse) Reset()                    { *m = StatusResponse{} }
-func (m *StatusResponse) String() string            { return proto.CompactTextString(m) }
-func (*StatusResponse) ProtoMessage()               {}
-func (*StatusResponse) Descriptor() ([]byte, []int) { return fileDescriptorHandler, []int{1} }
+func (m *Status) Reset()                    { *m = Status{} }
+func (m *Status) String() string            { return proto.CompactTextString(m) }
+func (*Status) ProtoMessage()               {}
+func (*Status) Descriptor() ([]byte, []int) { return fileDescriptorHandler, []int{1} }
 
 func init() {
 	proto.RegisterType((*StatusRequest)(nil), "handler.StatusRequest")
-	proto.RegisterType((*StatusResponse)(nil), "handler.StatusResponse")
+	proto.RegisterType((*Status)(nil), "handler.Status")
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -133,7 +133,7 @@ var _Handler_serviceDesc = grpc.ServiceDesc{
 // Client API for HandlerManager service
 
 type HandlerManagerClient interface {
-	Status(ctx context.Context, in *StatusRequest, opts ...grpc.CallOption) (*StatusResponse, error)
+	GetStatus(ctx context.Context, in *StatusRequest, opts ...grpc.CallOption) (*Status, error)
 }
 
 type handlerManagerClient struct {
@@ -144,9 +144,9 @@ func NewHandlerManagerClient(cc *grpc.ClientConn) HandlerManagerClient {
 	return &handlerManagerClient{cc}
 }
 
-func (c *handlerManagerClient) Status(ctx context.Context, in *StatusRequest, opts ...grpc.CallOption) (*StatusResponse, error) {
-	out := new(StatusResponse)
-	err := grpc.Invoke(ctx, "/handler.HandlerManager/Status", in, out, c.cc, opts...)
+func (c *handlerManagerClient) GetStatus(ctx context.Context, in *StatusRequest, opts ...grpc.CallOption) (*Status, error) {
+	out := new(Status)
+	err := grpc.Invoke(ctx, "/handler.HandlerManager/GetStatus", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -156,27 +156,27 @@ func (c *handlerManagerClient) Status(ctx context.Context, in *StatusRequest, op
 // Server API for HandlerManager service
 
 type HandlerManagerServer interface {
-	Status(context.Context, *StatusRequest) (*StatusResponse, error)
+	GetStatus(context.Context, *StatusRequest) (*Status, error)
 }
 
 func RegisterHandlerManagerServer(s *grpc.Server, srv HandlerManagerServer) {
 	s.RegisterService(&_HandlerManager_serviceDesc, srv)
 }
 
-func _HandlerManager_Status_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _HandlerManager_GetStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(StatusRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(HandlerManagerServer).Status(ctx, in)
+		return srv.(HandlerManagerServer).GetStatus(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/handler.HandlerManager/Status",
+		FullMethod: "/handler.HandlerManager/GetStatus",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(HandlerManagerServer).Status(ctx, req.(*StatusRequest))
+		return srv.(HandlerManagerServer).GetStatus(ctx, req.(*StatusRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -186,8 +186,8 @@ var _HandlerManager_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*HandlerManagerServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Status",
-			Handler:    _HandlerManager_Status_Handler,
+			MethodName: "GetStatus",
+			Handler:    _HandlerManager_GetStatus_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{},
@@ -211,7 +211,7 @@ func (m *StatusRequest) MarshalTo(data []byte) (int, error) {
 	return i, nil
 }
 
-func (m *StatusResponse) Marshal() (data []byte, err error) {
+func (m *Status) Marshal() (data []byte, err error) {
 	size := m.Size()
 	data = make([]byte, size)
 	n, err := m.MarshalTo(data)
@@ -221,7 +221,7 @@ func (m *StatusResponse) Marshal() (data []byte, err error) {
 	return data[:n], nil
 }
 
-func (m *StatusResponse) MarshalTo(data []byte) (int, error) {
+func (m *Status) MarshalTo(data []byte) (int, error) {
 	var i int
 	_ = i
 	var l int
@@ -262,7 +262,7 @@ func (m *StatusRequest) Size() (n int) {
 	return n
 }
 
-func (m *StatusResponse) Size() (n int) {
+func (m *Status) Size() (n int) {
 	var l int
 	_ = l
 	return n
@@ -331,7 +331,7 @@ func (m *StatusRequest) Unmarshal(data []byte) error {
 	}
 	return nil
 }
-func (m *StatusResponse) Unmarshal(data []byte) error {
+func (m *Status) Unmarshal(data []byte) error {
 	l := len(data)
 	iNdEx := 0
 	for iNdEx < l {
@@ -354,10 +354,10 @@ func (m *StatusResponse) Unmarshal(data []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: StatusResponse: wiretype end group for non-group")
+			return fmt.Errorf("proto: Status: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: StatusResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: Status: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		default:
@@ -494,13 +494,13 @@ var fileDescriptorHandler = []byte{
 	0xcf, 0x48, 0xcc, 0x4b, 0xc9, 0x49, 0x2d, 0x82, 0xd1, 0x7a, 0x05, 0x45, 0xf9, 0x25, 0xf9, 0x42,
 	0xec, 0x50, 0xae, 0x94, 0x2e, 0x31, 0x66, 0x00, 0x31, 0x44, 0x9f, 0x94, 0x39, 0x31, 0xca, 0x93,
 	0x8a, 0xf2, 0xb3, 0x81, 0x36, 0x42, 0x28, 0x88, 0x46, 0x25, 0x7e, 0x2e, 0xde, 0xe0, 0x92, 0xc4,
-	0x92, 0xd2, 0xe2, 0xa0, 0xd4, 0xc2, 0xd2, 0xd4, 0xe2, 0x12, 0x25, 0x01, 0x2e, 0x3e, 0x98, 0x40,
-	0x71, 0x41, 0x7e, 0x5e, 0x71, 0xaa, 0x51, 0x0a, 0x17, 0xbb, 0x07, 0xc4, 0x55, 0x42, 0x91, 0x5c,
-	0x1c, 0x8e, 0xc9, 0x25, 0x99, 0x65, 0x89, 0x25, 0xa9, 0x42, 0xda, 0x7a, 0x50, 0x83, 0x5c, 0x52,
-	0x53, 0x4a, 0x0b, 0x72, 0x32, 0x93, 0x81, 0x82, 0x29, 0x2e, 0xa9, 0x65, 0x99, 0xc9, 0xa9, 0x50,
-	0x35, 0x99, 0xf9, 0x79, 0x50, 0x53, 0xa5, 0x14, 0x10, 0x8a, 0xd1, 0x15, 0x40, 0x6d, 0xf1, 0xe6,
-	0xe2, 0x83, 0xda, 0xe2, 0x9b, 0x98, 0x97, 0x98, 0x0e, 0xb4, 0xcc, 0x92, 0x8b, 0x0d, 0xe2, 0x12,
-	0x21, 0x31, 0x3d, 0x58, 0x28, 0xa1, 0xb8, 0x55, 0x4a, 0x1c, 0x43, 0x1c, 0x62, 0x98, 0x93, 0xc0,
-	0x89, 0x47, 0x72, 0x8c, 0x17, 0x80, 0xf8, 0x01, 0x10, 0xcf, 0x78, 0x2c, 0xc7, 0x90, 0xc4, 0x06,
-	0xf6, 0xae, 0x31, 0x20, 0x00, 0x00, 0xff, 0xff, 0xdc, 0xb9, 0xd2, 0x6f, 0x9c, 0x01, 0x00, 0x00,
+	0x92, 0xd2, 0xe2, 0xa0, 0xd4, 0xc2, 0xd2, 0xd4, 0xe2, 0x12, 0x25, 0x0e, 0x2e, 0x36, 0x88, 0x80,
+	0x51, 0x0a, 0x17, 0xbb, 0x07, 0xc4, 0x35, 0x42, 0x91, 0x5c, 0x1c, 0x8e, 0xc9, 0x25, 0x99, 0x65,
+	0x89, 0x25, 0xa9, 0x42, 0xda, 0x7a, 0x50, 0x03, 0x5c, 0x52, 0x53, 0x4a, 0x0b, 0x72, 0x32, 0x93,
+	0x81, 0x82, 0x29, 0x2e, 0xa9, 0x65, 0x99, 0xc9, 0xa9, 0x50, 0x35, 0x99, 0xf9, 0x79, 0x50, 0xd3,
+	0xa4, 0x14, 0x10, 0x8a, 0xd1, 0x15, 0x14, 0x17, 0xe4, 0xe7, 0x15, 0xa7, 0x1a, 0xb9, 0x71, 0xf1,
+	0x41, 0x6d, 0xf1, 0x4d, 0xcc, 0x4b, 0x4c, 0x07, 0x5a, 0x66, 0xc2, 0xc5, 0xe9, 0x9e, 0x5a, 0x02,
+	0x71, 0x84, 0x90, 0x98, 0x1e, 0x2c, 0x80, 0x50, 0x9c, 0x29, 0xc5, 0x8f, 0x26, 0xee, 0x24, 0x70,
+	0xe2, 0x91, 0x1c, 0xe3, 0x05, 0x20, 0x7e, 0x00, 0xc4, 0x33, 0x1e, 0xcb, 0x31, 0x24, 0xb1, 0x81,
+	0x7d, 0x68, 0x0c, 0x08, 0x00, 0x00, 0xff, 0xff, 0x70, 0x1c, 0x54, 0x57, 0x8f, 0x01, 0x00, 0x00,
 }

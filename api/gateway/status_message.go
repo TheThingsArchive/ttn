@@ -27,9 +27,9 @@ var StatusMessageProperties = []string{
 	"tx_ok",
 }
 
-// ToStringStringMap converts the given properties of StatusMessage to a
+// ToStringStringMap converts the given properties of Status to a
 // map[string]string for storage in Redis.
-func (status *StatusMessage) ToStringStringMap(properties ...string) (map[string]string, error) {
+func (status *Status) ToStringStringMap(properties ...string) (map[string]string, error) {
 	output := make(map[string]string)
 	for _, p := range properties {
 		property, err := status.formatProperty(p)
@@ -43,15 +43,15 @@ func (status *StatusMessage) ToStringStringMap(properties ...string) (map[string
 	return output, nil
 }
 
-// FromStringStringMap imports known values from the input to a StatusMessage.
-func (status *StatusMessage) FromStringStringMap(input map[string]string) error {
+// FromStringStringMap imports known values from the input to a Status.
+func (status *Status) FromStringStringMap(input map[string]string) error {
 	for k, v := range input {
 		status.parseProperty(k, v)
 	}
 	return nil
 }
 
-func (status *StatusMessage) formatProperty(property string) (formatted string, err error) {
+func (status *Status) formatProperty(property string) (formatted string, err error) {
 	switch property {
 	case "timestamp":
 		formatted = storage.FormatUint32(status.Timestamp)
@@ -92,12 +92,12 @@ func (status *StatusMessage) formatProperty(property string) (formatted string, 
 	case "tx_ok":
 		formatted = storage.FormatUint32(status.TxOk)
 	default:
-		err = fmt.Errorf("Property %s does not exist in StatusMessage", property)
+		err = fmt.Errorf("Property %s does not exist in Status", property)
 	}
 	return
 }
 
-func (status *StatusMessage) parseProperty(property string, value string) error {
+func (status *Status) parseProperty(property string, value string) error {
 	if value == "" {
 		return nil
 	}

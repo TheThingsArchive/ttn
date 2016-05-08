@@ -5,7 +5,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/types"
 )
 
-func (r *router) HandleGatewayStatus(gatewayEUI types.GatewayEUI, status *pb_gateway.StatusMessage) error {
+func (r *router) HandleGatewayStatus(gatewayEUI types.GatewayEUI, status *pb_gateway.Status) error {
 	gateway := r.getGateway(gatewayEUI)
 	return gateway.Status.Update(status)
 }

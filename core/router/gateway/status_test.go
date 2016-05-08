@@ -36,10 +36,10 @@ func TestStatusGetUpsert(t *testing.T) {
 	status, err := store.Get()
 	a.So(err, ShouldBeNil)
 	a.So(status, ShouldNotBeNil)
-	a.So(*status, ShouldResemble, pb_gateway.StatusMessage{})
+	a.So(*status, ShouldResemble, pb_gateway.Status{})
 
 	// Update -> expect no error
-	statusMessage := &pb_gateway.StatusMessage{Description: "Fake Gateway"}
+	statusMessage := &pb_gateway.Status{Description: "Fake Gateway"}
 	err = store.Update(statusMessage)
 	a.So(err, ShouldBeNil)
 
@@ -64,10 +64,10 @@ func TestRedisStatusGetUpsert(t *testing.T) {
 	status, err := store.Get()
 	a.So(err, ShouldBeNil)
 	a.So(status, ShouldNotBeNil)
-	a.So(*status, ShouldResemble, pb_gateway.StatusMessage{})
+	a.So(*status, ShouldResemble, pb_gateway.Status{})
 
 	// Update -> expect no error
-	statusMessage := &pb_gateway.StatusMessage{Description: "Fake Gateway"}
+	statusMessage := &pb_gateway.Status{Description: "Fake Gateway"}
 	err = store.Update(statusMessage)
 	a.So(err, ShouldBeNil)
 

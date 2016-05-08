@@ -11,9 +11,9 @@ import (
 // StatusStore is a database for setting and retrieving the latest gateway status
 type StatusStore interface {
 	// Insert or Update the status
-	Update(status *pb_gateway.StatusMessage) error
+	Update(status *pb_gateway.Status) error
 	// Get the last status
-	Get() (*pb_gateway.StatusMessage, error)
+	Get() (*pb_gateway.Status, error)
 }
 
 // NewStatusStore creates a new in-memory status store
@@ -22,19 +22,19 @@ func NewStatusStore() StatusStore {
 }
 
 type statusStore struct {
-	lastStatus *pb_gateway.StatusMessage
+	lastStatus *pb_gateway.Status
 }
 
-func (s *statusStore) Update(status *pb_gateway.StatusMessage) error {
+func (s *statusStore) Update(status *pb_gateway.Status) error {
 	s.lastStatus = status
 	return nil
 }
 
-func (s *statusStore) Get() (*pb_gateway.StatusMessage, error) {
+func (s *statusStore) Get() (*pb_gateway.Status, error) {
 	if s.lastStatus != nil {
 		return s.lastStatus, nil
 	}
-	return &pb_gateway.StatusMessage{}, nil
+	return &pb_gateway.Status{}, nil
 }
 
 // NewRedisStatusStore creates a new Redis-based status store
@@ -50,7 +50,7 @@ type redisStatusStore struct {
 	key    string
 }
 
-func (s *redisStatusStore) Update(status *pb_gateway.StatusMessage) error {
+func (s *redisStatusStore) Update(status *pb_gateway.Status) error {
 	m, err := status.ToStringStringMap(pb_gateway.StatusMessageProperties...)
 	if err != nil {
 		return err
@@ -58,8 +58,8 @@ func (s *redisStatusStore) Update(status *pb_gateway.StatusMessage) error {
 	return s.client.HMSetMap(s.key, m).Err()
 }
 
-func (s *redisStatusStore) Get() (*pb_gateway.StatusMessage, error) {
-	status := &pb_gateway.StatusMessage{}
+func (s *redisStatusStore) Get() (*pb_gateway.Status, error) {
+	status := &pb_gateway.Status{}
 	res, err := s.client.HGetAllMap(s.key).Result()
 	if err != nil {
 		return nil, err

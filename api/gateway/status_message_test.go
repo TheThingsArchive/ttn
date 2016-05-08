@@ -6,9 +6,9 @@ import (
 	. "github.com/smartystreets/assertions"
 )
 
-func getStatusMessage() (status *StatusMessage, smap map[string]string) {
+func getStatusMessage() (status *Status, smap map[string]string) {
 	t := int64(1462201853428843766)
-	return &StatusMessage{
+	return &Status{
 			Timestamp:    12345,
 			Time:         t,
 			Ip:           []string{"169.50.131.24", "2a03:8180:1401:14f::2"},
@@ -55,7 +55,7 @@ func TestToStringMap(t *testing.T) {
 
 func TestFromStringMap(t *testing.T) {
 	a := New(t)
-	status := &StatusMessage{}
+	status := &Status{}
 	expected, smap := getStatusMessage()
 	err := status.FromStringStringMap(smap)
 	a.So(err, ShouldBeNil)

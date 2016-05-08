@@ -62,6 +62,7 @@ proto:
 	@$(PROTOC)/api/handler/handler.proto
 	@$(PROTOC)/api/networkserver/networkserver.proto
 	@$(PROTOC)/api/discovery/discovery.proto
+	@$(PROTOC)/api/noc/noc.proto
 
 cover-deps:
 	if ! $(GOCMD) get github.com/golang/tools/cmd/cover; then $(GOCMD) get golang.org/x/tools/cmd/cover; fi

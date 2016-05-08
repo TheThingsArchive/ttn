@@ -48,8 +48,8 @@ message RegisterDeviceRequest {
 // message StatusRequest is used to request the status of this NetworkServer
 message StatusRequest {}
 
-// message StatusResponse is the response to the StatusRequest
-message StatusResponse {
+// message Status is the response to the StatusRequest
+message Status {
   // GetDevices histogram percentiles
   api.Percentiles devices_per_address = 1;
 }
@@ -58,5 +58,5 @@ message StatusResponse {
 // functionality
 service NetworkServerManager {
   rpc RegisterDevice(RegisterDeviceRequest) returns (api.Ack);
-  rpc Status(StatusRequest) returns (StatusResponse);
+  rpc GetStatus(StatusRequest) returns (Status);
 }
