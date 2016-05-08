@@ -22,7 +22,7 @@ func ConnectMQTTClient(ctx log.Interface) mqtt.Client {
 
 	var app *App
 	for _, a := range apps {
-		if a.EUI == fmt.Sprintf("%X", appEUI) {
+		if a.EUI == appEUI {
 			app = a
 		}
 	}
@@ -32,7 +32,7 @@ func ConnectMQTTClient(ctx log.Interface) mqtt.Client {
 
 	broker := fmt.Sprintf("tcp://%s", viper.GetString("mqtt-broker"))
 	// Don't care about which access key here
-	client := mqtt.NewClient(ctx, "ttnctl", app.EUI, app.AccessKeys[0], broker)
+	client := mqtt.NewClient(ctx, "ttnctl", app.EUI.String(), app.AccessKeys[0], broker)
 
 	if err := client.Connect(); err != nil {
 		ctx.WithError(err).Fatal("Could not connect")

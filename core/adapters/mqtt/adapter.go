@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/core/types"
 	ttnMQTT "github.com/TheThingsNetwork/ttn/mqtt"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/stats"
@@ -50,7 +51,13 @@ func (a *defaultAdapter) HandleData(_ context.Context, req *core.DataAppReq, _ .
 		}).Debug("Publishing Uplink")
 	}
 
-	token := a.client.PublishUplink(req.AppEUI, req.DevEUI, dataUp)
+	// Type conversions for MQTT (we'll refactor the adapter later)
+	var appEUI types.AppEUI
+	appEUI.Unmarshal(req.AppEUI)
+	var devEUI types.DevEUI
+	devEUI.Unmarshal(req.DevEUI)
+
+	token := a.client.PublishUplink(appEUI, devEUI, dataUp)
 	if token.WaitTimeout(mqttTimeout) {
 		// token did not timeout: just return
 		if token.Error() != nil {
@@ -110,7 +117,13 @@ func (a *defaultAdapter) HandleJoin(_ context.Context, req *core.JoinAppReq, _ .
 		}).Debug("Publishing Activation")
 	}
 
-	token := a.client.PublishActivation(req.AppEUI, req.DevEUI, otaa)
+	// Type conversions for MQTT (we'll refactor the adapter later)
+	var appEUI types.AppEUI
+	appEUI.Unmarshal(req.AppEUI)
+	var devEUI types.DevEUI
+	devEUI.Unmarshal(req.DevEUI)
+
+	token := a.client.PublishActivation(appEUI, devEUI, otaa)
 	if token.WaitTimeout(mqttTimeout) {
 		// token did not timeout: just return
 		if token.Error() != nil {
@@ -152,7 +165,7 @@ func validateJoin(req *core.JoinAppReq) error {
 }
 
 func (a *defaultAdapter) SubscribeDownlink(handler core.HandlerServer) error {
-	token := a.client.SubscribeDownlink(func(client ttnMQTT.Client, appEUI []byte, devEUI []byte, req core.DataDownAppReq) {
+	token := a.client.SubscribeDownlink(func(client ttnMQTT.Client, appEUI types.AppEUI, devEUI types.DevEUI, req core.DataDownAppReq) {
 		if len(req.Payload) == 0 {
 			if a.ctx != nil {
 				a.ctx.Debug("Skipping empty downlink")
@@ -171,8 +184,8 @@ func (a *defaultAdapter) SubscribeDownlink(handler core.HandlerServer) error {
 		handler.HandleDataDown(context.Background(), &core.DataDownHandlerReq{
 			Payload: req.Payload,
 			TTL:     req.TTL,
-			AppEUI:  appEUI,
-			DevEUI:  devEUI,
+			AppEUI:  appEUI.Bytes(),
+			DevEUI:  devEUI.Bytes(),
 		})
 	})
 
