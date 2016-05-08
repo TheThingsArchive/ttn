@@ -7,6 +7,7 @@ import (
 
 	"google.golang.org/grpc"
 
+	"github.com/TheThingsNetwork/ttn/api"
 	pb "github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"golang.org/x/net/context"
@@ -34,7 +35,7 @@ func NewBrokerDiscovery(serverAddress string) BrokerDiscovery {
 
 func (d *brokerDiscovery) refreshCache() error {
 	// Connect to the server
-	conn, err := grpc.Dial(d.serverAddress, DialOptions...)
+	conn, err := grpc.Dial(d.serverAddress, api.DialOptions...)
 	if err != nil {
 		return err
 	}

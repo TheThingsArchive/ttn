@@ -6,14 +6,7 @@ import (
 	"sync"
 
 	pb "github.com/TheThingsNetwork/ttn/api/discovery"
-	"google.golang.org/grpc"
 )
-
-// DialOptions are the gRPC dial options for discovery calls
-// TODO: disable insecure connections
-var DialOptions = []grpc.DialOption{
-	grpc.WithInsecure(),
-}
 
 // Discovery specifies the interface for the TTN Service Discovery component
 type Discovery interface {
