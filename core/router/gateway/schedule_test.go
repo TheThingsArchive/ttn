@@ -104,3 +104,43 @@ func TestScheduleSchedule(t *testing.T) {
 	_, conflicts = s.GetOption(50, 100)
 	a.So(conflicts, ShouldEqual, 10)
 }
+
+func TestScheduleSubscribe(t *testing.T) {
+	a := New(t)
+	s := NewSchedule().(*schedule)
+	s.Sync(0)
+
+	downlink1 := &router_pb.DownlinkMessage{Payload: []byte{1}}
+	downlink2 := &router_pb.DownlinkMessage{Payload: []byte{2}}
+	downlink3 := &router_pb.DownlinkMessage{Payload: []byte{3}}
+
+	go func() {
+		var i int
+		for out := range s.Subscribe() {
+			switch i {
+			case 0:
+				a.So(out, ShouldEqual, downlink2)
+			case 1:
+				a.So(out, ShouldEqual, downlink1)
+			case 3:
+				a.So(out, ShouldEqual, downlink3)
+			}
+			i++
+		}
+	}()
+
+	id, _ := s.GetOption(300, 50)
+	s.Schedule(id, downlink1)
+	id, _ = s.GetOption(200, 50)
+	s.Schedule(id, downlink2)
+	id, _ = s.GetOption(400, 50)
+	s.Schedule(id, downlink3)
+
+	go func() {
+		<-time.After(400 * time.Millisecond)
+		s.Stop()
+	}()
+
+	<-time.After(500 * time.Millisecond)
+
+}

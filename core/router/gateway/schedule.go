@@ -1,7 +1,6 @@
 package gateway
 
 import (
-	"container/heap"
 	"errors"
 	"sync"
 	"sync/atomic"
@@ -15,7 +14,7 @@ import (
 type Schedule interface {
 	// Synchronize the schedule with the gateway timestamp (in microseconds)
 	Sync(timestamp uint32)
-	// Get an "option" on a transmission slot at timestamp for the maximum duration of length (in nanoseconds)
+	// Get an "option" on a transmission slot at timestamp for the maximum duration of length (both in microseconds)
 	GetOption(timestamp uint32, length uint32) (id string, score uint)
 	// Schedule a transmission on a slot
 	Schedule(id string, downlink *router_pb.DownlinkMessage) error
@@ -32,15 +31,18 @@ func NewSchedule() Schedule {
 
 type schedule struct {
 	sync.RWMutex
-	active bool
-	offset int64
-	queue  *downlinkQueue
-	byID   map[string]*scheduledItem
-	// some schedule datastructure
+	active         bool
+	offset         int64
+	queue          *downlinkQueue
+	byID           map[string]*scheduledItem
+	downlinkActive bool
+	downlink       chan *router_pb.DownlinkMessage
 }
 
 const uintmax = 1 << 32
 
+// getConflicts walks over the schedule and returns the number of conflicts.
+// Both timestamp and length are in microseconds
 func (s *schedule) getConflicts(timestamp uint32, length uint32) (conflicts uint) {
 	s.RLock()
 	snapshot := s.queue.Snapshot()
@@ -68,6 +70,8 @@ func (s *schedule) getConflicts(timestamp uint32, length uint32) (conflicts uint
 	return
 }
 
+// realtime gets the synchronized time for a timestamp (in microseconds). Time
+// should first be syncronized using func Sync()
 func (s *schedule) realtime(timestamp uint32) (t time.Time) {
 	offset := atomic.LoadInt64(&s.offset)
 	t = time.Unix(0, 0)
@@ -78,10 +82,12 @@ func (s *schedule) realtime(timestamp uint32) (t time.Time) {
 	return
 }
 
+// see interface
 func (s *schedule) Sync(timestamp uint32) {
 	atomic.StoreInt64(&s.offset, time.Now().UnixNano()-int64(timestamp)*1000)
 }
 
+// see interface
 func (s *schedule) GetOption(timestamp uint32, length uint32) (id string, score uint) {
 	id = random.String(32)
 	score = s.getConflicts(timestamp, length)
@@ -94,11 +100,12 @@ func (s *schedule) GetOption(timestamp uint32, length uint32) (id string, score 
 	}
 	s.Lock()
 	defer s.Unlock()
-	heap.Push(s.queue, item)
+	s.queue.Push(item)
 	s.byID[id] = item
 	return id, score
 }
 
+// see interface
 func (s *schedule) Schedule(id string, downlink *router_pb.DownlinkMessage) error {
 	s.RLock()
 	defer s.RUnlock()
@@ -107,4 +114,41 @@ func (s *schedule) Schedule(id string, downlink *router_pb.DownlinkMessage) erro
 		return nil
 	}
 	return errors.New("ID not found")
+}
+
+func (s *schedule) Stop() {
+	s.downlinkActive = false
+}
+
+// TODO: Make configurable
+const deadline = 50
+const waitTime = 10 * time.Millisecond
+
+func (s *schedule) Subscribe() <-chan *router_pb.DownlinkMessage {
+	if s.downlinkActive {
+		return nil
+	}
+	s.downlink = make(chan *router_pb.DownlinkMessage)
+	s.downlinkActive = true
+	go func() {
+		for s.downlinkActive {
+			<-time.After(waitTime)
+			s.Lock()
+			for {
+				item := s.queue.Peek()
+				if item != nil && time.Now().Add(-1*deadline*time.Millisecond).After(item.time) {
+					s.queue.Pop()
+					delete(s.byID, item.id)
+					if item.payload != nil {
+						s.downlink <- item.payload
+					}
+				} else {
+					break
+				}
+			}
+			s.Unlock()
+		}
+		close(s.downlink)
+	}()
+	return s.downlink
 }
