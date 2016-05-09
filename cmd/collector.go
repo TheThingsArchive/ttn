@@ -31,7 +31,7 @@ configured applications.
 		}
 		defer appStorage.Close()
 
-		dataStorage, err := influxdb.NewInfluxDBStorage(viper.GetString("collector.influxdb-addr"),
+		dataStorage, err := influxdb.NewDataStorage(viper.GetString("collector.influxdb-addr"),
 			viper.GetString("collector.influxdb-username"), viper.GetString("collector.influxdb-password"))
 		if err != nil {
 			ctx.WithError(err).Fatal("Failed to connect to InfluxDB")

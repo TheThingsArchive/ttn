@@ -15,8 +15,8 @@ type influxDBStorage struct {
 	client client.Client
 }
 
-// NewInfluxDBStorage instantiates a new DataStorage for InfluxDB
-func NewInfluxDBStorage(addr, username, password string) (collection.DataStorage, error) {
+// NewDataStorage instantiates a new DataStorage for InfluxDB
+func NewDataStorage(addr, username, password string) (collection.DataStorage, error) {
 	c, err := client.NewHTTPClient(client.HTTPConfig{
 		Addr:     addr,
 		Username: username,
