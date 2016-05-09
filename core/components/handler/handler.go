@@ -213,7 +213,6 @@ func (h component) HandleJoin(bctx context.Context, req *core.JoinHandlerReq) (*
 		return new(core.JoinHandlerRes), errors.New(errors.Structural, "Invalid Region")
 	}
 
-	req.Metadata.Time = time.Now().Format(time.RFC3339Nano)
 	h.ChBundles <- bundle{
 		ID:       bundleID,
 		Packet:   req,
@@ -334,7 +333,6 @@ func (h component) HandleDataUp(bctx context.Context, req *core.DataUpHandlerReq
 	if err != nil {
 		return new(core.DataUpHandlerRes), errors.New(errors.Structural, "Invalid Region")
 	}
-	req.Metadata.Time = time.Now().Format(time.RFC3339Nano)
 	h.ChBundles <- bundle{
 		ID:       bundleID,
 		Packet:   req,
