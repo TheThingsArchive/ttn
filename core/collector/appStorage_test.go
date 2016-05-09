@@ -58,12 +58,17 @@ func TestGetAll(t *testing.T) {
 	defer storage.Close()
 	defer storage.Reset()
 
-	err := storage.SetKey(eui1, "key1")
+	err := storage.Add(eui1)
 	a.So(err, ShouldBeNil)
-	err = storage.SetKey(eui2, "key2")
+	err = storage.Add(eui2)
 	a.So(err, ShouldBeNil)
-
 	apps, err := storage.GetAll()
 	a.So(err, ShouldBeNil)
 	a.So(apps, ShouldHaveLength, 2)
+
+	err = storage.Remove(eui1)
+	a.So(err, ShouldBeNil)
+	apps, err = storage.GetAll()
+	a.So(err, ShouldBeNil)
+	a.So(apps, ShouldHaveLength, 1)
 }

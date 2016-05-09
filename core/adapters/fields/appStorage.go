@@ -12,6 +12,8 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/types"
 )
 
+const appKey = "fields:app:%s"
+
 // AppStorage provides storage for applications
 type AppStorage interface {
 	SetFunctions(eui types.AppEUI, functions *collection.Functions) error
@@ -38,12 +40,12 @@ func ConnectRedis(addr string, db int64) (AppStorage, error) {
 	return &redisAppStorage{client}, nil
 }
 
-func (s *redisAppStorage) makeKey(eui types.AppEUI) string {
-	return fmt.Sprintf("app:%s", eui.String())
+func makeKey(eui types.AppEUI) string {
+	return fmt.Sprintf(appKey, eui.String())
 }
 
 func (s *redisAppStorage) SetFunctions(eui types.AppEUI, functions *collection.Functions) error {
-	return s.client.HMSetMap(s.makeKey(eui), map[string]string{
+	return s.client.HMSetMap(makeKey(eui), map[string]string{
 		"decoder":   functions.Decoder,
 		"converter": functions.Converter,
 		"validator": functions.Validator,
@@ -51,7 +53,7 @@ func (s *redisAppStorage) SetFunctions(eui types.AppEUI, functions *collection.F
 }
 
 func (s *redisAppStorage) GetFunctions(eui types.AppEUI) (*collection.Functions, error) {
-	m, err := s.client.HGetAllMap(s.makeKey(eui)).Result()
+	m, err := s.client.HGetAllMap(makeKey(eui)).Result()
 	if err == redis.Nil {
 		return nil, nil
 	} else if err != nil {

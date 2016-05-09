@@ -27,6 +27,8 @@ func TestCollection(t *testing.T) {
 	defer appStorage.Reset()
 
 	eui, _ := types.ParseAppEUI("8000000000000001")
+	err = appStorage.Add(eui)
+	a.So(err, ShouldBeNil)
 	err = appStorage.SetKey(eui, "secret")
 	a.So(err, ShouldBeNil)
 

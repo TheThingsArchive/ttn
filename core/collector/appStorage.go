@@ -4,9 +4,16 @@
 package collector
 
 import (
+	"fmt"
+
 	"gopkg.in/redis.v3"
 
 	"github.com/TheThingsNetwork/ttn/core/types"
+)
+
+const (
+	appsKey = "collector:apps"
+	appKey  = "collector:app:%s"
 )
 
 // App represents a stored application
@@ -17,6 +24,8 @@ type App struct {
 
 // AppStorage provides storage for applications
 type AppStorage interface {
+	Add(eui types.AppEUI) error
+	Remove(eui types.AppEUI) error
 	SetKey(eui types.AppEUI, key string) error
 	Get(eui types.AppEUI) (*App, error)
 	GetAll() ([]*App, error)
@@ -42,12 +51,29 @@ func ConnectRedis(addr string, db int64) (AppStorage, error) {
 	return &redisAppStorage{client}, nil
 }
 
+func makeKey(eui types.AppEUI) string {
+	return fmt.Sprintf(appKey, eui.String())
+}
+
+func (s *redisAppStorage) Add(eui types.AppEUI) error {
+	return s.client.SAdd(appsKey, eui.String()).Err()
+}
+
+func (s *redisAppStorage) Remove(eui types.AppEUI) error {
+	err := s.client.SRem(appsKey, eui.String()).Err()
+	if err != nil {
+		return err
+	}
+	s.client.Del(makeKey(eui))
+	return nil
+}
+
 func (s *redisAppStorage) SetKey(eui types.AppEUI, key string) error {
-	return s.client.HSet(eui.String(), "key", key).Err()
+	return s.client.HSet(makeKey(eui), "key", key).Err()
 }
 
 func (s *redisAppStorage) Get(eui types.AppEUI) (*App, error) {
-	m, err := s.client.HGetAllMap(eui.String()).Result()
+	m, err := s.client.HGetAllMap(makeKey(eui)).Result()
 	if err == redis.Nil {
 		return nil, nil
 	} else if err != nil {
@@ -61,7 +87,7 @@ func (s *redisAppStorage) Get(eui types.AppEUI) (*App, error) {
 }
 
 func (s *redisAppStorage) GetAll() ([]*App, error) {
-	euis, err := s.client.Keys("*").Result()
+	euis, err := s.client.SMembers(appsKey).Result()
 	if err != nil {
 		return nil, err
 	}
