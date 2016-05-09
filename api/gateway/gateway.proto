@@ -38,6 +38,7 @@ message Status {
   string  platform       = 12;
   string  contact_email  = 13;
   string  description    = 14;
+  string  region         = 15;
 
   GPSMetadata  gps       = 21;
 

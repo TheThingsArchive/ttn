@@ -16,6 +16,7 @@ var StatusMessageProperties = []string{
 	"platform",
 	"contact_email",
 	"description",
+	"region",
 	"gps.time",
 	"gps.latitude",
 	"gps.longitude",
@@ -65,6 +66,8 @@ func (status *Status) formatProperty(property string) (formatted string, err err
 		formatted = status.ContactEmail
 	case "description":
 		formatted = status.Description
+	case "region":
+		formatted = status.Region
 	case "gps.time":
 		if status.Gps != nil {
 			formatted = storage.FormatInt64(status.Gps.Time)
@@ -123,6 +126,8 @@ func (status *Status) parseProperty(property string, value string) error {
 		status.ContactEmail = value
 	case "description":
 		status.Description = value
+	case "region":
+		status.Region = value
 	case "gps.time":
 		if status.Gps == nil {
 			status.Gps = &GPSMetadata{}

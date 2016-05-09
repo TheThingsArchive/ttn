@@ -15,6 +15,7 @@ func getStatusMessage() (status *Status, smap map[string]string) {
 			Platform:     "The Things Gateway",
 			ContactEmail: "contact@email.net",
 			Description:  "Description",
+			Region:       "EU_863_870",
 			Gps: &GPSMetadata{
 				Time:      t,
 				Latitude:  52.3737171,
@@ -33,6 +34,7 @@ func getStatusMessage() (status *Status, smap map[string]string) {
 			"platform":      "The Things Gateway",
 			"contact_email": "contact@email.net",
 			"description":   "Description",
+			"region":        "EU_863_870",
 			"gps.time":      "1462201853428843766",
 			"gps.latitude":  "52.37372",
 			"gps.longitude": "4.884567",
