@@ -8,9 +8,7 @@ import "github.com/TheThingsNetwork/ttn/api/gateway/gateway.proto";
 
 package router;
 
-message SubscribeRequest {
-  string gateway_id = 1;
-}
+message SubscribeRequest {}
 
 message UplinkMessage {
   bytes                payload            = 1;
