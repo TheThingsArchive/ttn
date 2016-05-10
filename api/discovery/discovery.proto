@@ -17,7 +17,7 @@ message Announcement {
   string service_version = 2;
   string net_address = 3;
   string description = 11;
-  string fingerprint = 12;
+  string token = 12;
   repeated Metadata metadata = 21;
 }
 

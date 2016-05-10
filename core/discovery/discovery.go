@@ -33,11 +33,11 @@ func (d *discovery) Announce(announcement *pb.Announcement) error {
 	}
 
 	// Find an existing announcement
-	service, ok := services[announcement.Fingerprint]
+	service, ok := services[announcement.Token]
 	if ok {
 		*service = *announcement
 	} else {
-		services[announcement.Fingerprint] = announcement
+		services[announcement.Token] = announcement
 	}
 
 	return nil

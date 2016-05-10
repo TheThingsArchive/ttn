@@ -10,9 +10,9 @@ import (
 func TestDiscoveryDiscover(t *testing.T) {
 	a := New(t)
 
-	router := &pb.Announcement{Fingerprint: "router"}
-	broker1 := &pb.Announcement{Fingerprint: "broker1"}
-	broker2 := &pb.Announcement{Fingerprint: "broker2"}
+	router := &pb.Announcement{Token: "router"}
+	broker1 := &pb.Announcement{Token: "broker1"}
+	broker2 := &pb.Announcement{Token: "broker2"}
 
 	d := &discovery{
 		services: map[string]map[string]*pb.Announcement{
@@ -44,9 +44,9 @@ func TestDiscoveryDiscover(t *testing.T) {
 func TestDiscoveryAnnounce(t *testing.T) {
 	a := New(t)
 
-	broker1a := &pb.Announcement{ServiceName: "broker", Fingerprint: "broker1", NetAddress: "old address"}
-	broker1b := &pb.Announcement{ServiceName: "broker", Fingerprint: "broker1", NetAddress: "new address"}
-	broker2 := &pb.Announcement{ServiceName: "broker", Fingerprint: "broker2", NetAddress: "other address"}
+	broker1a := &pb.Announcement{ServiceName: "broker", Token: "broker1", NetAddress: "old address"}
+	broker1b := &pb.Announcement{ServiceName: "broker", Token: "broker1", NetAddress: "new address"}
+	broker2 := &pb.Announcement{ServiceName: "broker", Token: "broker2", NetAddress: "other address"}
 
 	d := &discovery{
 		services: map[string]map[string]*pb.Announcement{},
