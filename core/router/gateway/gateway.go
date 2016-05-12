@@ -2,6 +2,7 @@ package gateway
 
 import "github.com/TheThingsNetwork/ttn/core/types"
 
+// NewGateway creates a new in-memory Gateway structure
 func NewGateway(eui types.GatewayEUI) *Gateway {
 	return &Gateway{
 		EUI:         eui,
@@ -11,6 +12,7 @@ func NewGateway(eui types.GatewayEUI) *Gateway {
 	}
 }
 
+// Gateway contains the state of a gateway
 type Gateway struct {
 	EUI         types.GatewayEUI
 	Status      StatusStore

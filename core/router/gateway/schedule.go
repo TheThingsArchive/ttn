@@ -18,7 +18,10 @@ type Schedule interface {
 	GetOption(timestamp uint32, length uint32) (id string, score uint)
 	// Schedule a transmission on a slot
 	Schedule(id string, downlink *router_pb.DownlinkMessage) error
-	// TODO: Add some way to retrieve the next scheduled item (preferably at the right time)
+	// Subscribe to downlink messages
+	Subscribe() <-chan *router_pb.DownlinkMessage
+	// Stop the subscription
+	Stop()
 }
 
 // NewSchedule creates a new Schedule

@@ -22,6 +22,7 @@ type downlinkQueue struct {
 	items []*scheduledItem
 }
 
+// NewDownlinkQueue creates a new downlinkQueue
 func NewDownlinkQueue(items ...*scheduledItem) *downlinkQueue {
 	dq := &downlinkQueue{
 		items: items,
@@ -42,6 +43,7 @@ func (dq *downlinkQueue) swap(i, j int) {
 // Push an item to the queue
 func (dq *downlinkQueue) Push(item *scheduledItem) {
 	dq.items = append(dq.items, item)
+	// TODO: Insertion sort is nice, but can be optimized for the use-case of TTN (LoRaWAN RX1 and RX2)
 	for i := len(dq.items); i > 1; i-- {
 		if dq.less(i-1, i-2) {
 			dq.swap(i-1, i-2)
