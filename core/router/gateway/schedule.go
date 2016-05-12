@@ -8,6 +8,7 @@ import (
 
 	router_pb "github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/utils/random"
+	"github.com/TheThingsNetwork/ttn/utils/toa"
 )
 
 // Schedule is used to schedule downlink transmissions
@@ -110,10 +111,18 @@ func (s *schedule) GetOption(timestamp uint32, length uint32) (id string, score 
 
 // see interface
 func (s *schedule) Schedule(id string, downlink *router_pb.DownlinkMessage) error {
-	s.RLock()
-	defer s.RUnlock()
+	s.Lock()
+	defer s.Unlock()
 	if item, ok := s.byID[id]; ok {
 		item.payload = downlink
+		if lora := downlink.GetProtocolConfiguration().GetLorawan(); lora != nil {
+			time, _ := toa.Compute(
+				uint(len(downlink.Payload)),
+				lora.DataRate,
+				lora.CodingRate,
+			)
+			item.length = uint32(time / 1000)
+		}
 		return nil
 	}
 	return errors.New("ID not found")
