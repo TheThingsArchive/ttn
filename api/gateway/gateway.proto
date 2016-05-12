@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+
 import "github.com/TheThingsNetwork/ttn/api/gateway/semtech/semtech.proto";
 
 package gateway;
@@ -12,11 +14,14 @@ message GPSMetadata {
 }
 
 message RxMetadata {
-  uint64  frequency  = 1; // frequency in Hz
-  float   rssi       = 2; // received signal strength in dBm
-  float   snr        = 3; // signal-to-noise-ratio in dB
+  bytes   gateway_eui = 1 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.GatewayEUI"];
+
+  uint64  frequency  = 11; // frequency in Hz
+  float   rssi       = 12; // received signal strength in dBm
+  float   snr        = 13; // signal-to-noise-ratio in dB
+
   oneof gateway {
-    semtech.RxMetadata semtech = 11;
+    semtech.RxMetadata semtech = 21;
   }
 }
 

@@ -10,9 +10,11 @@ package broker;
 
 message DownlinkOption {
   string  identifier  = 1;
-  uint32  score       = 2; // lower is better, 0 is best
-  int64   deadline    = 3; // deadline time at server represented as the number of nanoseconds elapsed since January 1, 1970 UTC
-  gateway.TxConfiguration configuration = 4;
+  bytes   gateway_eui = 2 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.GatewayEUI"];
+  uint32  score       = 3; // lower is better, 0 is best
+  int64   deadline    = 4; // deadline time at server represented as the number of nanoseconds elapsed since January 1, 1970 UTC
+  protocol.TxConfiguration protocol_config = 5;
+  gateway.TxConfiguration  gateway_config = 6;
 }
 
 // received from the Router
