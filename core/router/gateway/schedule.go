@@ -58,17 +58,17 @@ func (s *schedule) getConflicts(timestamp uint32, length uint32) (conflicts uint
 		to := from + uint64(length)
 
 		if scheduledTo > uintmax || to > uintmax {
-			if scheduledTo-uintmax < from || scheduledFrom > to-uintmax {
+			if scheduledTo-uintmax <= from || scheduledFrom >= to-uintmax {
 				continue
 			}
-		} else if scheduledTo < from || scheduledFrom > to {
+		} else if scheduledTo <= from || scheduledFrom >= to {
 			continue
 		}
 
 		if item.payload == nil {
 			conflicts++
 		} else {
-			conflicts += 10 // TODO: Configure this
+			conflicts += 100
 		}
 	}
 	return

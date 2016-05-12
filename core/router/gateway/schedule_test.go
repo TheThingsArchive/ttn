@@ -102,7 +102,7 @@ func TestScheduleSchedule(t *testing.T) {
 	a.So(err, ShouldBeNil)
 
 	_, conflicts = s.GetOption(50, 100)
-	a.So(conflicts, ShouldEqual, 10)
+	a.So(conflicts, ShouldEqual, 100)
 }
 
 func TestScheduleSubscribe(t *testing.T) {
