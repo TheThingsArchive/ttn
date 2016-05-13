@@ -42,7 +42,7 @@ registered on the Handler.`,
 			ctx.Fatal("No authentication found. Please login")
 		}
 
-		manager := getHandlerManager()
+		manager := util.GetHandlerManager(ctx)
 		defaultDevice, err := manager.GetDefaultDevice(context.Background(), &core.GetDefaultDeviceReq{
 			Token:  auth.AccessToken,
 			AppEUI: appEUI.Bytes(),
@@ -131,7 +131,7 @@ var devicesInfoCmd = &cobra.Command{
 			ctx.Fatal("No authentication found. Please login")
 		}
 
-		manager := getHandlerManager()
+		manager := util.GetHandlerManager(ctx)
 		res, err := manager.ListDevices(context.Background(), &core.ListDevicesHandlerReq{
 			Token:  auth.AccessToken,
 			AppEUI: appEUI.Bytes(),
@@ -313,7 +313,7 @@ the Handler`,
 			ctx.Fatal("No authentication found. Please login")
 		}
 
-		manager := getHandlerManager()
+		manager := util.GetHandlerManager(ctx)
 		res, err := manager.UpsertOTAA(context.Background(), &core.UpsertOTAAHandlerReq{
 			Token:  auth.AccessToken,
 			AppEUI: appEUI.Bytes(),
@@ -383,7 +383,7 @@ registration on the Handler`,
 			ctx.Fatal("No authentication found. Please login")
 		}
 
-		manager := getHandlerManager()
+		manager := util.GetHandlerManager(ctx)
 		res, err := manager.UpsertABP(context.Background(), &core.UpsertABPHandlerReq{
 			Token:   auth.AccessToken,
 			AppEUI:  appEUI.Bytes(),
@@ -439,7 +439,7 @@ register [DevEUI] [AppKey]`,
 			ctx.Fatal("No authentication found. Please login")
 		}
 
-		manager := getHandlerManager()
+		manager := util.GetHandlerManager(ctx)
 		res, err := manager.SetDefaultDevice(context.Background(), &core.SetDefaultDeviceReq{
 			Token:  auth.AccessToken,
 			AppEUI: appEUI.Bytes(),

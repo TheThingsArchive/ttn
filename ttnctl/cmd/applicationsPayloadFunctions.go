@@ -24,7 +24,7 @@ converting and validating binary payload.
 	Run: func(cmd *cobra.Command, args []string) {
 		appEUI := util.GetAppEUI(ctx)
 
-		manager := getHandlerManager()
+		manager := util.GetHandlerManager(ctx)
 		res, err := manager.GetPayloadFunctions(context.Background(), &core.GetPayloadFunctionsReq{
 			AppEUI: appEUI.Bytes(),
 		})
@@ -87,7 +87,7 @@ function by loading the specified files containing JavaScript code.
 			}
 		}
 
-		manager := getHandlerManager()
+		manager := util.GetHandlerManager(ctx)
 		_, err = manager.SetPayloadFunctions(context.Background(), &core.SetPayloadFunctionsReq{
 			AppEUI:    appEUI.Bytes(),
 			Decoder:   string(decoder),
@@ -121,7 +121,7 @@ Handler and returns the fields and validation result.
 			ctx.WithError(err).Fatal("Invalid payload")
 		}
 
-		manager := getHandlerManager()
+		manager := util.GetHandlerManager(ctx)
 		res, err := manager.TestPayloadFunctions(context.Background(), &core.TestPayloadFunctionsReq{
 			AppEUI:  appEUI.Bytes(),
 			Payload: payload,
