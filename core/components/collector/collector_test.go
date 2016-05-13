@@ -32,7 +32,7 @@ func TestCollection(t *testing.T) {
 	err = appStorage.SetKey(eui, "secret")
 	a.So(err, ShouldBeNil)
 
-	collector := NewCollector(ttntesting.GetLogger(t, "Collector"), appStorage, "localhost:1883", &mockStorage{})
+	collector := NewCollector(ttntesting.GetLogger(t, "Collector"), appStorage, "localhost:1883", &mockStorage{}, "localhost:1783")
 	collectors, err := collector.Start()
 	defer collector.Stop()
 	a.So(err, ShouldBeNil)

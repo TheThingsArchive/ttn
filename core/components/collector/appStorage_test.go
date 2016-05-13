@@ -42,13 +42,12 @@ func TestSetKey(t *testing.T) {
 	err := storage.SetKey(eui, key)
 	a.So(err, ShouldBeNil)
 
-	app, err := storage.Get(eui)
+	fetchedKey, err := storage.GetKey(eui)
 	a.So(err, ShouldBeNil)
-	a.So(app.EUI, ShouldEqual, eui)
-	a.So(app.Key, ShouldEqual, key)
+	a.So(fetchedKey, ShouldEqual, key)
 }
 
-func TestGetAll(t *testing.T) {
+func TestList(t *testing.T) {
 	a := New(t)
 
 	eui1, _ := types.ParseAppEUI("8000000000000001")
@@ -62,13 +61,13 @@ func TestGetAll(t *testing.T) {
 	a.So(err, ShouldBeNil)
 	err = storage.Add(eui2)
 	a.So(err, ShouldBeNil)
-	apps, err := storage.GetAll()
+	apps, err := storage.List()
 	a.So(err, ShouldBeNil)
 	a.So(apps, ShouldHaveLength, 2)
 
 	err = storage.Remove(eui1)
 	a.So(err, ShouldBeNil)
-	apps, err = storage.GetAll()
+	apps, err = storage.List()
 	a.So(err, ShouldBeNil)
 	a.So(apps, ShouldHaveLength, 1)
 }

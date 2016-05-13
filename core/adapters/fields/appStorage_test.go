@@ -6,7 +6,6 @@ package fields
 import (
 	"testing"
 
-	"github.com/TheThingsNetwork/ttn/core/collection"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/smartystreets/assertions"
 )
@@ -34,7 +33,7 @@ func TestSetFunctions(t *testing.T) {
 	a := New(t)
 
 	eui, _ := types.ParseAppEUI("8000000000000001")
-	functions := &collection.Functions{
+	functions := &Functions{
 		Decoder:   `function (payload) { return { size: payload.length; } }`,
 		Converter: `function (data) { return data; }`,
 		Validator: `function (data) { return data.size % 2 == 0; }`,

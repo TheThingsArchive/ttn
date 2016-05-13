@@ -8,7 +8,6 @@ import (
 
 	"gopkg.in/redis.v3"
 
-	"github.com/TheThingsNetwork/ttn/core/collection"
 	"github.com/TheThingsNetwork/ttn/core/types"
 )
 
@@ -16,8 +15,8 @@ const appKey = "fields:app:%s"
 
 // AppStorage provides storage for applications
 type AppStorage interface {
-	SetFunctions(eui types.AppEUI, functions *collection.Functions) error
-	GetFunctions(eui types.AppEUI) (*collection.Functions, error)
+	SetFunctions(eui types.AppEUI, functions *Functions) error
+	GetFunctions(eui types.AppEUI) (*Functions, error)
 	Reset() error
 	Close() error
 }
@@ -44,7 +43,7 @@ func makeKey(eui types.AppEUI) string {
 	return fmt.Sprintf(appKey, eui.String())
 }
 
-func (s *redisAppStorage) SetFunctions(eui types.AppEUI, functions *collection.Functions) error {
+func (s *redisAppStorage) SetFunctions(eui types.AppEUI, functions *Functions) error {
 	return s.client.HMSetMap(makeKey(eui), map[string]string{
 		"decoder":   functions.Decoder,
 		"converter": functions.Converter,
@@ -52,15 +51,19 @@ func (s *redisAppStorage) SetFunctions(eui types.AppEUI, functions *collection.F
 	}).Err()
 }
 
-func (s *redisAppStorage) GetFunctions(eui types.AppEUI) (*collection.Functions, error) {
+func (s *redisAppStorage) GetFunctions(eui types.AppEUI) (*Functions, error) {
 	m, err := s.client.HGetAllMap(makeKey(eui)).Result()
 	if err == redis.Nil {
 		return nil, nil
 	} else if err != nil {
 		return nil, err
 	}
-	return &collection.Functions{
-		Decoder:   m["decoder"],
+	decoder, ok := m["decoder"]
+	if !ok {
+		return nil, nil
+	}
+	return &Functions{
+		Decoder:   decoder,
 		Converter: m["converter"],
 		Validator: m["validator"],
 	}, nil

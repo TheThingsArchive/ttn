@@ -16,19 +16,13 @@ const (
 	appKey  = "collector:app:%s"
 )
 
-// App represents a stored application
-type App struct {
-	EUI types.AppEUI
-	Key string
-}
-
 // AppStorage provides storage for applications
 type AppStorage interface {
 	Add(eui types.AppEUI) error
 	Remove(eui types.AppEUI) error
 	SetKey(eui types.AppEUI, key string) error
-	Get(eui types.AppEUI) (*App, error)
-	GetAll() ([]*App, error)
+	GetKey(eui types.AppEUI) (string, error)
+	List() ([]types.AppEUI, error)
 	Reset() error
 	Close() error
 }
@@ -72,38 +66,30 @@ func (s *redisAppStorage) SetKey(eui types.AppEUI, key string) error {
 	return s.client.HSet(makeKey(eui), "key", key).Err()
 }
 
-func (s *redisAppStorage) Get(eui types.AppEUI) (*App, error) {
+func (s *redisAppStorage) GetKey(eui types.AppEUI) (string, error) {
 	m, err := s.client.HGetAllMap(makeKey(eui)).Result()
 	if err == redis.Nil {
-		return nil, nil
+		return "", nil
 	} else if err != nil {
-		return nil, err
+		return "", err
 	}
-	app := &App{
-		EUI: eui,
-		Key: m["key"],
-	}
-	return app, nil
+	return m["key"], nil
 }
 
-func (s *redisAppStorage) GetAll() ([]*App, error) {
-	euis, err := s.client.SMembers(appsKey).Result()
+func (s *redisAppStorage) List() ([]types.AppEUI, error) {
+	members, err := s.client.SMembers(appsKey).Result()
 	if err != nil {
 		return nil, err
 	}
-	apps := make([]*App, len(euis))
-	for i, k := range euis {
+	euis := make([]types.AppEUI, len(members))
+	for i, k := range members {
 		eui, err := types.ParseAppEUI(k)
 		if err != nil {
 			return nil, err
 		}
-		app, err := s.Get(eui)
-		if err != nil {
-			return nil, err
-		}
-		apps[i] = app
+		euis[i] = eui
 	}
-	return apps, nil
+	return euis, nil
 }
 
 func (s *redisAppStorage) Reset() error {

@@ -57,7 +57,7 @@ func (c *appCollector) Stop() {
 }
 
 func (c *appCollector) handleUplink(client mqtt.Client, appEUI types.AppEUI, devEUI types.DevEUI, req core.DataUpAppReq) {
-	ctx := c.ctx.WithField("devEUI", devEUI)
+	ctx := c.ctx.WithField("DevEUI", devEUI)
 
 	t, err := time.Parse(time.RFC3339, req.Metadata[0].ServerTime)
 	if err != nil {

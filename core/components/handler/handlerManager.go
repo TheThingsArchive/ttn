@@ -4,12 +4,15 @@
 package handler
 
 import (
+	"encoding/json"
+
 	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/core/adapters/fields"
+	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"golang.org/x/net/context"
 )
 
-// ListDevices implements the core.HandlerManagerServer interface
 func (h component) ListDevices(bctx context.Context, req *core.ListDevicesHandlerReq) (*core.ListDevicesHandlerRes, error) {
 	h.Ctx.Debug("Handle list devices request")
 
@@ -35,6 +38,7 @@ func (h component) ListDevices(bctx context.Context, req *core.ListDevicesHandle
 	var abp []*core.HandlerABPDevice
 	var otaa []*core.HandlerOTAADevice
 	for _, dev := range entries {
+		// WTF?
 		d := new(devEntry)
 		*d = dev
 		if dev.AppKey == nil {
@@ -62,7 +66,6 @@ func (h component) ListDevices(bctx context.Context, req *core.ListDevicesHandle
 	return &core.ListDevicesHandlerRes{ABP: abp, OTAA: otaa}, nil
 }
 
-// UpsertABP implements the core.HandlerManager interface
 func (h component) UpsertABP(bctx context.Context, req *core.UpsertABPHandlerReq) (*core.UpsertABPHandlerRes, error) {
 	h.Ctx.Debug("Handle upsert ABP request")
 
@@ -108,7 +111,6 @@ func (h component) UpsertABP(bctx context.Context, req *core.UpsertABPHandlerReq
 	return new(core.UpsertABPHandlerRes), nil
 }
 
-// UpsertOTAA implements the core.HandlerManager interface
 func (h component) UpsertOTAA(bctx context.Context, req *core.UpsertOTAAHandlerReq) (*core.UpsertOTAAHandlerRes, error) {
 	h.Ctx.Debug("Handle upsert OTAA request")
 
@@ -147,7 +149,6 @@ func (h component) UpsertOTAA(bctx context.Context, req *core.UpsertOTAAHandlerR
 	return new(core.UpsertOTAAHandlerRes), nil
 }
 
-// GetDefaultDevice implements the core.HandlerManager Interface
 func (h component) GetDefaultDevice(bctx context.Context, req *core.GetDefaultDeviceReq) (*core.GetDefaultDeviceRes, error) {
 	h.Ctx.Debug("Handle get default device request")
 
@@ -181,7 +182,6 @@ func (h component) GetDefaultDevice(bctx context.Context, req *core.GetDefaultDe
 	return &core.GetDefaultDeviceRes{AppKey: entry.AppKey[:]}, nil
 }
 
-// SetDefaultDevice implements the core.HandlerManager interface
 func (h component) SetDefaultDevice(bctx context.Context, req *core.SetDefaultDeviceReq) (*core.SetDefaultDeviceRes, error) {
 	h.Ctx.Debug("Handle set default device request")
 
@@ -216,4 +216,83 @@ func (h component) SetDefaultDevice(bctx context.Context, req *core.SetDefaultDe
 	}
 
 	return new(core.SetDefaultDeviceRes), nil
+}
+
+func (h component) GetPayloadFunctions(ctx context.Context, req *core.GetPayloadFunctionsReq) (*core.GetPayloadFunctionsRes, error) {
+	res := new(core.GetPayloadFunctionsRes)
+
+	adapter, ok := h.AppAdapter.(fields.Adapter)
+	if !ok {
+		return res, errors.New(errors.Structural, "Invalid adapter")
+	}
+
+	var appEUI types.AppEUI
+	appEUI.Unmarshal(req.AppEUI)
+	functions, err := adapter.Storage().GetFunctions(appEUI)
+	if err != nil {
+		return res, err
+	}
+	if functions == nil {
+		return res, errors.New(errors.Operational, "Not found")
+	}
+
+	res.Decoder = functions.Decoder
+	res.Converter = functions.Converter
+	res.Validator = functions.Validator
+	return res, nil
+}
+
+func (h component) SetPayloadFunctions(ctx context.Context, req *core.SetPayloadFunctionsReq) (*core.SetPayloadFunctionsRes, error) {
+	res := new(core.SetPayloadFunctionsRes)
+
+	adapter, ok := h.AppAdapter.(fields.Adapter)
+	if !ok {
+		return res, errors.New(errors.Structural, "Invalid adapter")
+	}
+
+	var appEUI types.AppEUI
+	appEUI.Unmarshal(req.AppEUI)
+	err := adapter.Storage().SetFunctions(appEUI, &fields.Functions{
+		Decoder:   req.Decoder,
+		Converter: req.Converter,
+		Validator: req.Validator,
+	})
+	if err != nil {
+		return res, err
+	}
+
+	return res, nil
+}
+
+func (h component) TestPayloadFunctions(ctx context.Context, req *core.TestPayloadFunctionsReq) (*core.TestPayloadFunctionsRes, error) {
+	res := new(core.TestPayloadFunctionsRes)
+
+	adapter, ok := h.AppAdapter.(fields.Adapter)
+	if !ok {
+		return res, errors.New(errors.Structural, "Invalid adapter")
+	}
+
+	var appEUI types.AppEUI
+	appEUI.Unmarshal(req.AppEUI)
+	functions, err := adapter.Storage().GetFunctions(appEUI)
+	if err != nil {
+		return res, err
+	}
+	if functions == nil {
+		return res, errors.New(errors.Operational, "Not found")
+	}
+
+	fields, valid, err := functions.Process(req.Payload)
+	if err != nil {
+		return res, err
+	}
+
+	buf, err := json.Marshal(fields)
+	if err != nil {
+		return res, err
+	}
+
+	res.Valid = valid
+	res.Fields = string(buf)
+	return res, nil
 }

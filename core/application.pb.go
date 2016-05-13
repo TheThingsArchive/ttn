@@ -9,6 +9,7 @@
 		application.proto
 		broker.proto
 		broker_manager.proto
+		collector.proto
 		core.proto
 		handler.proto
 		handler_manager.proto
@@ -31,6 +32,13 @@
 		BrokerDevice
 		ValidateTokenBrokerReq
 		ValidateTokenBrokerRes
+		GetApplicationsCollectorReq
+		GetApplicationsCollectorRes
+		CollectorApplication
+		AddApplicationCollectorReq
+		AddApplicationCollectorRes
+		RemoveApplicationCollectorReq
+		RemoveApplicationCollectorRes
 		Metadata
 		StatsMetadata
 		DataUpHandlerReq
@@ -50,6 +58,12 @@
 		GetDefaultDeviceReq
 		GetDefaultDeviceRes
 		SetDefaultDeviceReq
+		GetPayloadFunctionsReq
+		GetPayloadFunctionsRes
+		SetPayloadFunctionsReq
+		SetPayloadFunctionsRes
+		TestPayloadFunctionsReq
+		TestPayloadFunctionsRes
 		SetDefaultDeviceRes
 		LoRaWANData
 		LoRaWANMHDR

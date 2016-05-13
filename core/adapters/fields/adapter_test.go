@@ -9,7 +9,6 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/TheThingsNetwork/ttn/core"
-	"github.com/TheThingsNetwork/ttn/core/collection"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/assertions"
@@ -45,7 +44,7 @@ func TestHandleData(t *testing.T) {
 	}
 
 	// Normal flow
-	functions := &collection.Functions{
+	functions := &Functions{
 		Decoder: `function(data) { return { temperature: ((data[0] << 8) | data[1]) / 100 }; }`,
 	}
 	err = storage.SetFunctions(appEUI, functions)

@@ -16,6 +16,7 @@ import (
 // Adapter represents the interface of an application
 type Adapter interface {
 	core.AppClient
+	Storage() AppStorage
 	SubscribeDownlink(handler core.HandlerServer) error
 }
 
@@ -35,7 +36,7 @@ func (s *adapter) HandleData(context context.Context, in *core.DataAppReq, opt .
 	appEUI.Unmarshal(in.AppEUI)
 	var devEUI types.DevEUI
 	devEUI.Unmarshal(in.DevEUI)
-	ctx := s.ctx.WithFields(&log.Fields{"appEUI": appEUI, "devEUI": devEUI})
+	ctx := s.ctx.WithFields(&log.Fields{"AppEUI": appEUI, "DevEUI": devEUI})
 
 	req := core.DataUpAppReq{
 		Payload:  in.Payload,
@@ -90,4 +91,8 @@ func (s *adapter) HandleJoin(context context.Context, in *core.JoinAppReq, opt .
 
 func (s *adapter) SubscribeDownlink(handler core.HandlerServer) error {
 	return s.mqtt.SubscribeDownlink(handler)
+}
+
+func (s *adapter) Storage() AppStorage {
+	return s.storage
 }

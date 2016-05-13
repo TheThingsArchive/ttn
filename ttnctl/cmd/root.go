@@ -8,6 +8,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/core/components/handler"
 	cliHandler "github.com/TheThingsNetwork/ttn/utils/cli/handler"
 	"github.com/apex/log"
 	"github.com/spf13/cobra"
@@ -17,6 +19,14 @@ import (
 var cfgFile string
 
 var ctx log.Interface
+
+func getHandlerManager() core.AuthHandlerClient {
+	cli, err := handler.NewClient(viper.GetString("ttn-handler"))
+	if err != nil {
+		ctx.Fatalf("Could not connect: %v", err)
+	}
+	return cli
+}
 
 // RootCmd is the entrypoint for handlerctl
 var RootCmd = &cobra.Command{

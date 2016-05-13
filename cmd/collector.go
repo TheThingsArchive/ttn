@@ -4,11 +4,12 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"os/signal"
 
-	"github.com/TheThingsNetwork/ttn/core/collector"
-	"github.com/TheThingsNetwork/ttn/core/collector/influxdb"
+	"github.com/TheThingsNetwork/ttn/core/components/collector"
+	"github.com/TheThingsNetwork/ttn/core/components/collector/influxdb"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -37,7 +38,11 @@ configured applications.
 			ctx.WithError(err).Fatal("Failed to connect to InfluxDB")
 		}
 
-		col := collector.NewCollector(ctx, appStorage, viper.GetString("collector.mqtt-broker"), dataStorage)
+		col := collector.NewCollector(ctx,
+			appStorage,
+			viper.GetString("collector.mqtt-broker"),
+			dataStorage,
+			fmt.Sprintf("%s:%d", viper.GetString("collector.address"), viper.GetInt("collector.port")))
 		collectors, err := col.Start()
 		if startError, ok := err.(collector.StartError); ok {
 			ctx.WithError(startError).Warn("Could not start collecting all applications")
@@ -46,7 +51,7 @@ configured applications.
 		}
 		defer col.Stop()
 
-		ctx.Infof("Started %d collectors", len(collectors))
+		ctx.Infof("Started %d app collectors", len(collectors))
 
 		c := make(chan os.Signal, 1)
 		signal.Notify(c, os.Interrupt)
@@ -56,6 +61,11 @@ configured applications.
 
 func init() {
 	RootCmd.AddCommand(collectorCmd)
+
+	collectorCmd.Flags().String("address", "0.0.0.0", "The IP address to listen for management")
+	collectorCmd.Flags().Int("port", 1783, "The port to listen for management")
+	viper.BindPFlag("collector.address", collectorCmd.Flags().Lookup("address"))
+	viper.BindPFlag("collector.port", collectorCmd.Flags().Lookup("port"))
 
 	collectorCmd.Flags().String("mqtt-broker", "localhost:1883", "The address of the MQTT broker")
 	viper.BindPFlag("collector.mqtt-broker", collectorCmd.Flags().Lookup("mqtt-broker"))
