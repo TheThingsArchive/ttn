@@ -53,6 +53,11 @@ func (s *adapter) HandleData(context context.Context, in *core.DataAppReq, opt .
 		return new(core.DataAppRes), s.mqtt.PublishUplink(appEUI, devEUI, req)
 	}
 
+	if functions == nil {
+		// Publish when there are no payload functions set
+		return new(core.DataAppRes), s.mqtt.PublishUplink(appEUI, devEUI, req)
+	}
+
 	fields, valid, err := functions.Process(in.Payload)
 	if err != nil {
 		// If there were errors processing the payload, just publish it anyway

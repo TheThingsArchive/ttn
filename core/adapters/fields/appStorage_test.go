@@ -29,6 +29,19 @@ func TestConnect(t *testing.T) {
 	a.So(err, ShouldNotBeNil)
 }
 
+func TestGetFunctions(t *testing.T) {
+	a := New(t)
+
+	eui, _ := types.ParseAppEUI("8000000000000001")
+
+	storage := createStorage()
+	defer storage.Close()
+
+	fetchedFunctions, err := storage.GetFunctions(eui)
+	a.So(err, ShouldBeNil)
+	a.So(fetchedFunctions, ShouldBeNil)
+}
+
 func TestSetFunctions(t *testing.T) {
 	a := New(t)
 
