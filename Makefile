@@ -1,12 +1,11 @@
 SHELL = bash
 
-GOOS ?= $(or $(word 1,$(subst -, ,${TARGET_PLATFORM})), $(shell echo "`go env GOOS`"))
-GOARCH ?= $(or $(word 2,$(subst -, ,${TARGET_PLATFORM})), $(shell echo "`go env GOARCH`"))
-GOEXE ?= $(shell echo "`GOOS=$(GOOS) GOARCH=$(GOARCH) go env GOEXE`")
+export GOOS=$(or $(word 1,$(subst -, ,${TARGET_PLATFORM})), $(shell echo "`go env GOOS`"))
+export GOARCH=$(or $(word 2,$(subst -, ,${TARGET_PLATFORM})), $(shell echo "`go env GOARCH`"))
+export GOEXE=$(shell echo "`GOOS=$(GOOS) GOARCH=$(GOARCH) go env GOEXE`")
+export CGO_ENABLED=0
 
 GOCMD = go
-
-export CGO_ENABLED=0
 GOBUILD = $(GOCMD) build
 
 GIT_COMMIT = `git rev-parse HEAD 2>/dev/null`
