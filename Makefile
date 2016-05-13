@@ -1,8 +1,8 @@
 SHELL = bash
 
-GOOS ?= $(shell echo "`go env GOOS`")
-GOARCH ?= $(shell echo "`go env GOARCH`")
-GOEXE ?= $(shell echo "`go env GOEXE`")
+GOOS ?= $(or $(word 1,$(subst -, ,${TARGET_PLATFORM})), $(shell echo "`go env GOOS`"))
+GOARCH ?= $(or $(word 2,$(subst -, ,${TARGET_PLATFORM})), $(shell echo "`go env GOARCH`"))
+GOEXE ?= $(shell echo "`GOOS=$(GOOS) GOARCH=$(GOARCH) go env GOEXE`")
 
 GOCMD = go
 
@@ -75,8 +75,7 @@ clean:
 
 build: $(RELEASE_DIR)/$(ttnbin) $(RELEASE_DIR)/$(ttnctlbin)
 
-docker: GOOS = linux
-docker: GOARCH = amd64
+docker: TARGET_PLATFORM = linux-amd64
 docker: clean $(RELEASE_DIR)/$(ttnbin)
 	docker build -t thethingsnetwork/ttn -f Dockerfile.local .
 

@@ -2,13 +2,13 @@ clone:
   recursive: true
 
 matrix:
-  GOOS:
-    - linux
-    - darwin
-    - windows
-  GOARCH:
-    - "386"
-    - amd64
+  TARGET_PLATFORM:
+    - linux-386
+    - linux-amd64
+    - linux-arm
+    - darwin-amd64
+    - windows-386
+    - windows-amd64
 
 compose:
   mqtt:
@@ -43,5 +43,4 @@ publish:
     when:
       branch: master
       matrix:
-        GOOS: linux
-        GOARCH: amd64
+        TARGET_PLATFORM: linux-amd64
