@@ -95,3 +95,27 @@ func TestProcess(t *testing.T) {
 	a.So(data["temperature"], ShouldEqual, 20)
 	a.So(data["humidity"], ShouldEqual, 110)
 }
+
+func TestProcessInvalidFunction(t *testing.T) {
+	a := New(t)
+
+	functions := &Functions{
+		Decoder: `this is not valid JavaScript`,
+	}
+	_, _, err := functions.Process([]byte{40, 110})
+	a.So(err, ShouldNotBeNil)
+
+	functions = &Functions{
+		Decoder:   `function(payload) { return { temperature: payload[0] } }`,
+		Converter: `this is not valid JavaScript`,
+	}
+	_, _, err = functions.Process([]byte{40, 110})
+	a.So(err, ShouldNotBeNil)
+
+	functions = &Functions{
+		Decoder:   `function(payload) { return { temperature: payload[0] } }`,
+		Validator: `this is not valid JavaScript`,
+	}
+	_, _, err = functions.Process([]byte{40, 110})
+	a.So(err, ShouldNotBeNil)
+}
