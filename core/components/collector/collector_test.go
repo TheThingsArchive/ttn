@@ -29,7 +29,7 @@ func TestCollection(t *testing.T) {
 	eui, _ := types.ParseAppEUI("8000000000000001")
 	err = appStorage.Add(eui)
 	a.So(err, ShouldBeNil)
-	err = appStorage.SetKey(eui, "secret")
+	err = appStorage.SetAccessKey(eui, "secret")
 	a.So(err, ShouldBeNil)
 
 	collector := NewCollector(ttntesting.GetLogger(t, "Collector"), appStorage, "localhost:1883", &mockStorage{}, "localhost:1783")
@@ -37,6 +37,12 @@ func TestCollection(t *testing.T) {
 	defer collector.Stop()
 	a.So(err, ShouldBeNil)
 	a.So(collectors, ShouldHaveLength, 1)
+
+	err = collector.StopApp(eui)
+	a.So(err, ShouldBeNil)
+
+	err = collector.StopApp(eui)
+	a.So(err, ShouldNotBeNil) // Not found
 }
 
 func (s *mockStorage) Save(appEUI types.AppEUI, devEUI types.DevEUI, t time.Time, fields map[string]interface{}) error {

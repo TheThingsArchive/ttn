@@ -29,7 +29,7 @@ func TestConnect(t *testing.T) {
 	a.So(err, ShouldNotBeNil)
 }
 
-func TestSetKey(t *testing.T) {
+func TestAccessSetKey(t *testing.T) {
 	a := New(t)
 
 	eui, _ := types.ParseAppEUI("8000000000000001")
@@ -39,10 +39,10 @@ func TestSetKey(t *testing.T) {
 	defer storage.Close()
 	defer storage.Reset()
 
-	err := storage.SetKey(eui, key)
+	err := storage.SetAccessKey(eui, key)
 	a.So(err, ShouldBeNil)
 
-	fetchedKey, err := storage.GetKey(eui)
+	fetchedKey, err := storage.GetAccessKey(eui)
 	a.So(err, ShouldBeNil)
 	a.So(fetchedKey, ShouldEqual, key)
 }

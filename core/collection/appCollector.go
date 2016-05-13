@@ -20,21 +20,21 @@ type AppCollector interface {
 }
 
 type appCollector struct {
-	ctx     log.Interface
-	eui     types.AppEUI
-	broker  string
-	client  mqtt.Client
-	storage DataStorage
+	ctx        log.Interface
+	eui        types.AppEUI
+	mqttBroker string
+	client     mqtt.Client
+	storage    DataStorage
 }
 
 // NewMqttAppCollector instantiates a new AppCollector instance using MQTT
-func NewMqttAppCollector(ctx log.Interface, broker string, eui types.AppEUI, key string, storage DataStorage) AppCollector {
+func NewMqttAppCollector(ctx log.Interface, mqttBroker string, eui types.AppEUI, key string, storage DataStorage) AppCollector {
 	return &appCollector{
-		ctx:     ctx,
-		eui:     eui,
-		broker:  broker,
-		client:  mqtt.NewClient(ctx, "collector", eui.String(), key, fmt.Sprintf("tcp://%s", broker)),
-		storage: storage,
+		ctx:        ctx,
+		eui:        eui,
+		mqttBroker: mqttBroker,
+		client:     mqtt.NewClient(ctx, "collector", eui.String(), key, fmt.Sprintf("tcp://%s", mqttBroker)),
+		storage:    storage,
 	}
 }
 
@@ -48,7 +48,7 @@ func (c *appCollector) Start() error {
 		c.ctx.WithError(token.Error()).Error("Failed to subscribe")
 		return token.Error()
 	}
-	c.ctx.WithField("broker", c.broker).Info("Subscribed to app uplink packets")
+	c.ctx.WithField("Broker", c.mqttBroker).Info("Subscribed to app uplink packets")
 	return nil
 }
 
@@ -57,6 +57,10 @@ func (c *appCollector) Stop() {
 }
 
 func (c *appCollector) handleUplink(client mqtt.Client, appEUI types.AppEUI, devEUI types.DevEUI, req core.DataUpAppReq) {
+	if req.Fields == nil || len(req.Fields) == 0 {
+		return
+	}
+
 	ctx := c.ctx.WithField("DevEUI", devEUI)
 
 	t, err := time.Parse(time.RFC3339, req.Metadata[0].ServerTime)

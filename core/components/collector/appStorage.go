@@ -20,8 +20,8 @@ const (
 type AppStorage interface {
 	Add(eui types.AppEUI) error
 	Remove(eui types.AppEUI) error
-	SetKey(eui types.AppEUI, key string) error
-	GetKey(eui types.AppEUI) (string, error)
+	SetAccessKey(eui types.AppEUI, key string) error
+	GetAccessKey(eui types.AppEUI) (string, error)
 	List() ([]types.AppEUI, error)
 	Reset() error
 	Close() error
@@ -62,11 +62,11 @@ func (s *redisAppStorage) Remove(eui types.AppEUI) error {
 	return nil
 }
 
-func (s *redisAppStorage) SetKey(eui types.AppEUI, key string) error {
+func (s *redisAppStorage) SetAccessKey(eui types.AppEUI, key string) error {
 	return s.client.HSet(makeKey(eui), "key", key).Err()
 }
 
-func (s *redisAppStorage) GetKey(eui types.AppEUI) (string, error) {
+func (s *redisAppStorage) GetAccessKey(eui types.AppEUI) (string, error) {
 	m, err := s.client.HGetAllMap(makeKey(eui)).Result()
 	if err == redis.Nil {
 		return "", nil

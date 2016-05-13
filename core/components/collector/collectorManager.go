@@ -43,7 +43,7 @@ func (s *collectorManagerServer) AddApplication(ctx context.Context, req *core.A
 	if err := s.collector.appStorage.Add(appEUI); err != nil {
 		return res, err
 	}
-	if err := s.collector.appStorage.SetKey(appEUI, req.AppAccessKey); err != nil {
+	if err := s.collector.appStorage.SetAccessKey(appEUI, req.AppAccessKey); err != nil {
 		return res, err
 	}
 
@@ -60,7 +60,7 @@ func (s *collectorManagerServer) RemoveApplication(ctx context.Context, req *cor
 		return res, err
 	}
 
-	s.collector.stopApp(appEUI)
+	s.collector.StopApp(appEUI)
 
 	if err := s.collector.appStorage.Remove(appEUI); err != nil {
 		return res, err

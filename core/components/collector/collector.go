@@ -20,6 +20,7 @@ import (
 type Collector interface {
 	Start() (map[types.AppEUI]collection.AppCollector, error)
 	Stop()
+	StopApp(eui types.AppEUI) error
 }
 
 type collector struct {
@@ -101,7 +102,7 @@ func (c *collector) Stop() {
 func (c *collector) startApp(eui types.AppEUI) error {
 	ctx := c.ctx.WithField("AppEUI", eui)
 
-	key, err := c.appStorage.GetKey(eui)
+	key, err := c.appStorage.GetAccessKey(eui)
 	if err != nil {
 		return err
 	} else if key == "" {
@@ -117,11 +118,12 @@ func (c *collector) startApp(eui types.AppEUI) error {
 	return nil
 }
 
-func (c *collector) stopApp(eui types.AppEUI) error {
+func (c *collector) StopApp(eui types.AppEUI) error {
 	app, ok := c.apps[eui]
 	if !ok {
 		return errors.New("Not found")
 	}
 	app.Stop()
+	delete(c.apps, eui)
 	return nil
 }
