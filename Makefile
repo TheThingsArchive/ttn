@@ -29,7 +29,7 @@ ttnctlpkg = ttnctl-$(GOOS)-$(GOARCH)
 ttnbin = $(ttnpkg)$(GOEXE)
 ttnctlbin = $(ttnctlpkg)$(GOEXE)
 
-.PHONY: all clean deps test-deps build-deps proto test fmt vet cover build docker package
+.PHONY: all clean deps test-deps dev-deps proto test fmt vet cover build docker package
 
 all: clean deps build package
 
@@ -38,6 +38,9 @@ deps:
 
 test-deps:
 	$(GOCMD) get -d -v $(TEST_DEPS)
+
+dev-deps:
+	$(GOCMD) go get -v github.com/ddollar/forego
 
 proto-deps:
 	$(GOCMD) get -v github.com/gogo/protobuf/protoc-gen-gofast
