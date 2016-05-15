@@ -40,7 +40,7 @@ test-deps:
 	$(GOCMD) get -d -v $(TEST_DEPS)
 
 dev-deps:
-	$(GOCMD) go get -v github.com/ddollar/forego
+	$(GOCMD) get -v github.com/ddollar/forego
 
 proto-deps:
 	$(GOCMD) get -v github.com/gogo/protobuf/protoc-gen-gofast
