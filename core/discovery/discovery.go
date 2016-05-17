@@ -2,6 +2,7 @@
 package discovery
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 
@@ -33,11 +34,15 @@ func (d *discovery) Announce(announcement *pb.Announcement) error {
 	}
 
 	// Find an existing announcement
-	service, ok := services[announcement.Token]
+	service, ok := services[announcement.Id]
 	if ok {
-		*service = *announcement
+		if announcement.Token == service.Token {
+			*service = *announcement
+		} else {
+			return errors.New("ttn/core: Invalid token")
+		}
 	} else {
-		services[announcement.Token] = announcement
+		services[announcement.Id] = announcement
 	}
 
 	return nil
@@ -56,7 +61,9 @@ func (d *discovery) Discover(serviceName string) ([]*pb.Announcement, error) {
 	// Traverse the list
 	announcements := make([]*pb.Announcement, 0, len(services))
 	for _, service := range services {
-		announcements = append(announcements, service)
+		serviceCopy := *service
+		serviceCopy.Token = ""
+		announcements = append(announcements, &serviceCopy)
 	}
 	return announcements, nil
 }

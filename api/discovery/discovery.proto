@@ -13,11 +13,12 @@ message Metadata {
 }
 
 message Announcement {
-  string service_name = 1;
-  string service_version = 2;
-  string net_address = 3;
-  string description = 11;
-  string token = 12;
+  string id = 1;
+  string token = 2;
+  string description = 3;
+  string service_name = 4;
+  string service_version = 5;
+  string net_address = 11;
   repeated Metadata metadata = 21;
 }
 

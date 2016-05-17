@@ -19,6 +19,7 @@ var BrokerCacheTime = 30 * time.Minute
 // BrokerDiscovery is used as a client to discover Brokers
 type BrokerDiscovery interface {
 	Discover(devAddr types.DevAddr) ([]*pb.Announcement, error)
+	All() ([]*pb.Announcement, error)
 }
 
 type brokerDiscovery struct {
@@ -51,6 +52,17 @@ func (d *brokerDiscovery) refreshCache() error {
 	d.cacheValidUntil = time.Now().Add(BrokerCacheTime)
 	d.cache = res.Services
 	return nil
+}
+
+func (d *brokerDiscovery) All() (announcements []*pb.Announcement, err error) {
+	d.cacheLock.Lock()
+	if time.Now().After(d.cacheValidUntil) {
+		d.cacheValidUntil = time.Now().Add(10 * time.Second)
+		go d.refreshCache()
+	}
+	announcements = d.cache
+	d.cacheLock.Unlock()
+	return
 }
 
 func (d *brokerDiscovery) Discover(devAddr types.DevAddr) ([]*pb.Announcement, error) {

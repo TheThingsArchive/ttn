@@ -16,7 +16,7 @@ func buildTestBrokerDiscoveryClient(port uint) *brokerDiscovery {
 	return discovery
 }
 
-func TestBrokerDiscoveryDiscover(t *testing.T) {
+func TestBrokerDiscovery(t *testing.T) {
 	a := New(t)
 
 	// Broker1 has a prefix with all DevAddrs
@@ -45,7 +45,14 @@ func TestBrokerDiscoveryDiscover(t *testing.T) {
 		cache:           []*pb.Announcement{broker1, broker2, broker3},
 	}
 
-	results, err := d.Discover(types.DevAddr{0x01, 0x02, 0x03, 0x04})
+	results, err := d.All()
+	a.So(err, ShouldBeNil)
+	a.So(results, ShouldNotBeEmpty)
+	a.So(results, ShouldContain, broker1)
+	a.So(results, ShouldContain, broker2)
+	a.So(results, ShouldContain, broker3)
+
+	results, err = d.Discover(types.DevAddr{0x01, 0x02, 0x03, 0x04})
 	a.So(err, ShouldBeNil)
 	a.So(results, ShouldNotBeEmpty)
 	a.So(results, ShouldContain, broker1)
