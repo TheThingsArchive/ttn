@@ -99,12 +99,28 @@ func TestProcess(t *testing.T) {
 func TestProcessInvalidFunction(t *testing.T) {
 	a := New(t)
 
+	// Empty Function
 	functions := &Functions{
-		Decoder: `this is not valid JavaScript`,
+		Decoder: ``,
 	}
 	_, _, err := functions.Process([]byte{40, 110})
 	a.So(err, ShouldNotBeNil)
 
+	// Invalid Function
+	functions = &Functions{
+		Decoder: `this is not valid JavaScript`,
+	}
+	_, _, err = functions.Process([]byte{40, 110})
+	a.So(err, ShouldNotBeNil)
+
+	// Invalid return
+	functions = &Functions{
+		Decoder: `function(payload) { return "Hello" }`,
+	}
+	_, _, err = functions.Process([]byte{40, 110})
+	a.So(err, ShouldNotBeNil)
+
+	// Invalid Function
 	functions = &Functions{
 		Decoder:   `function(payload) { return { temperature: payload[0] } }`,
 		Converter: `this is not valid JavaScript`,
@@ -112,9 +128,26 @@ func TestProcessInvalidFunction(t *testing.T) {
 	_, _, err = functions.Process([]byte{40, 110})
 	a.So(err, ShouldNotBeNil)
 
+	// Invalid Return
+	functions = &Functions{
+		Decoder:   `function(payload) { return { temperature: payload[0] } }`,
+		Converter: `function(data) { return "Hello" }`,
+	}
+	_, _, err = functions.Process([]byte{40, 110})
+	a.So(err, ShouldNotBeNil)
+
+	// Invalid Function
 	functions = &Functions{
 		Decoder:   `function(payload) { return { temperature: payload[0] } }`,
 		Validator: `this is not valid JavaScript`,
+	}
+	_, _, err = functions.Process([]byte{40, 110})
+	a.So(err, ShouldNotBeNil)
+
+	// Invalid Return
+	functions = &Functions{
+		Decoder:   `function(payload) { return { temperature: payload[0] } }`,
+		Validator: `function(data) { return "Hello" }`,
 	}
 	_, _, err = functions.Process([]byte{40, 110})
 	a.So(err, ShouldNotBeNil)
