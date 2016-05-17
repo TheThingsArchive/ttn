@@ -752,8 +752,8 @@ func (h component) buildJoinAccept(joinReq *core.JoinHandlerReq, appKey [16]byte
 	joinAcceptPayload := &lorawan.JoinAcceptPayload{
 		NetID:   lorawan.NetID(h.Configuration.NetID),
 		DevAddr: lorawan.DevAddr(devAddr),
-		DLSettings: lorawan.DLsettings{
-			RX1DRoffset: h.Configuration.RX1DROffset,
+		DLSettings: lorawan.DLSettings{
+			RX1DROffset: h.Configuration.RX1DROffset,
 			RX2DataRate: dataRates[h.Configuration.RX2DataRate],
 		},
 		RXDelay: h.Configuration.RXDelay,
