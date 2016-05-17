@@ -57,4 +57,9 @@ func TestDevAddr(t *testing.T) {
 	err = uOut.Unmarshal(bin)
 	a.So(err, ShouldBeNil)
 	a.So(*uOut, ShouldEqual, addr)
+
+	// IsEmpty
+	var empty DevAddr
+	a.So(empty.IsEmpty(), ShouldEqual, true)
+	a.So(addr.IsEmpty(), ShouldEqual, false)
 }

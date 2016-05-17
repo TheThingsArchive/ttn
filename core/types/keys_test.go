@@ -57,6 +57,11 @@ func TestAES128Key(t *testing.T) {
 	err = uOut.Unmarshal(bin)
 	a.So(err, ShouldBeNil)
 	a.So(*uOut, ShouldEqual, key)
+
+	// IsEmpty
+	var empty AES128Key
+	a.So(empty.IsEmpty(), ShouldBeTrue)
+	a.So(key.IsEmpty(), ShouldBeFalse)
 }
 
 func TestAppKey(t *testing.T) {
@@ -110,6 +115,11 @@ func TestAppKey(t *testing.T) {
 	err = uOut.Unmarshal(bin)
 	a.So(err, ShouldBeNil)
 	a.So(*uOut, ShouldEqual, key)
+
+	// IsEmpty
+	var empty AppKey
+	a.So(empty.IsEmpty(), ShouldBeTrue)
+	a.So(key.IsEmpty(), ShouldBeFalse)
 }
 
 func TestNwkSKey(t *testing.T) {
@@ -163,6 +173,11 @@ func TestNwkSKey(t *testing.T) {
 	err = uOut.Unmarshal(bin)
 	a.So(err, ShouldBeNil)
 	a.So(*uOut, ShouldEqual, key)
+
+	// IsEmpty
+	var empty NwkSKey
+	a.So(empty.IsEmpty(), ShouldBeTrue)
+	a.So(key.IsEmpty(), ShouldBeFalse)
 }
 
 func TestAppSKey(t *testing.T) {
@@ -216,4 +231,9 @@ func TestAppSKey(t *testing.T) {
 	err = uOut.Unmarshal(bin)
 	a.So(err, ShouldBeNil)
 	a.So(*uOut, ShouldEqual, key)
+
+	// IsEmpty
+	var empty AppSKey
+	a.So(empty.IsEmpty(), ShouldBeTrue)
+	a.So(key.IsEmpty(), ShouldBeFalse)
 }

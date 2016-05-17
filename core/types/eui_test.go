@@ -57,6 +57,11 @@ func TestEUI64(t *testing.T) {
 	err = uOut.Unmarshal(bin)
 	a.So(err, ShouldBeNil)
 	a.So(uOut, ShouldResemble, &eui)
+
+	// IsEmpty
+	var empty EUI64
+	a.So(empty.IsEmpty(), ShouldEqual, true)
+	a.So(eui.IsEmpty(), ShouldEqual, false)
 }
 
 func TestAppEUI(t *testing.T) {
@@ -110,6 +115,11 @@ func TestAppEUI(t *testing.T) {
 	err = uOut.Unmarshal(bin)
 	a.So(err, ShouldBeNil)
 	a.So(*uOut, ShouldEqual, eui)
+
+	// IsEmpty
+	var empty AppEUI
+	a.So(empty.IsEmpty(), ShouldEqual, true)
+	a.So(eui.IsEmpty(), ShouldEqual, false)
 }
 
 func TestDevEUI(t *testing.T) {
@@ -163,6 +173,11 @@ func TestDevEUI(t *testing.T) {
 	err = uOut.Unmarshal(bin)
 	a.So(err, ShouldBeNil)
 	a.So(*uOut, ShouldEqual, eui)
+
+	// IsEmpty
+	var empty DevEUI
+	a.So(empty.IsEmpty(), ShouldEqual, true)
+	a.So(eui.IsEmpty(), ShouldEqual, false)
 }
 
 func TestGatewayEUI(t *testing.T) {
@@ -216,4 +231,9 @@ func TestGatewayEUI(t *testing.T) {
 	err = uOut.Unmarshal(bin)
 	a.So(err, ShouldBeNil)
 	a.So(*uOut, ShouldEqual, eui)
+
+	// IsEmpty
+	var empty GatewayEUI
+	a.So(empty.IsEmpty(), ShouldEqual, true)
+	a.So(eui.IsEmpty(), ShouldEqual, false)
 }

@@ -73,3 +73,9 @@ func (addr *DevAddr) Unmarshal(data []byte) error {
 	*addr = [4]byte{} // Reset the receiver
 	return addr.UnmarshalBinary(data)
 }
+
+var empty DevAddr
+
+func (addr DevAddr) IsEmpty() bool {
+	return addr == empty
+}
