@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package core;
+
+message GetApplicationsCollectorReq {
+}
+
+message GetApplicationsCollectorRes {
+  repeated CollectorApplication Applications = 1;
+}
+
+message CollectorApplication {
+  bytes AppEUI = 1;
+}
+
+message AddApplicationCollectorReq {
+  bytes AppEUI = 1;
+  string AppAccessKey = 2;
+}
+
+message AddApplicationCollectorRes {
+}
+
+message RemoveApplicationCollectorReq {
+  bytes AppEUI = 1;
+}
+
+message RemoveApplicationCollectorRes {
+}
+
+service CollectorManager {
+  rpc GetApplications   (GetApplicationsCollectorReq)   returns (GetApplicationsCollectorRes);
+  rpc AddApplication    (AddApplicationCollectorReq)    returns (AddApplicationCollectorRes);
+  rpc RemoveApplication (RemoveApplicationCollectorReq) returns (RemoveApplicationCollectorRes);
+}

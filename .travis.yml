@@ -18,6 +18,9 @@ install:
 before_script:
     - mosquitto -p 1883 1>/dev/null 2>/dev/null &
 
+services:
+  - redis-server
+
 script:
     - make test
     - make fmt

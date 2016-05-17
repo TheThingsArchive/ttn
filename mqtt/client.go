@@ -97,21 +97,15 @@ func NewClient(ctx log.Interface, id, username, password string, brokers ...stri
 	mqttOpts.SetCleanSession(false)
 
 	mqttOpts.SetDefaultPublishHandler(func(client MQTT.Client, msg MQTT.Message) {
-		if ctx != nil {
-			ctx.WithField("message", msg).Warn("Received unhandled message")
-		}
+		ctx.WithField("message", msg).Warn("Received unhandled message")
 	})
 
 	mqttOpts.SetConnectionLostHandler(func(client MQTT.Client, err error) {
-		if ctx != nil {
-			ctx.WithError(err).Warn("Disconnected, reconnecting...")
-		}
+		ctx.WithError(err).Warn("Disconnected, reconnecting...")
 	})
 
 	mqttOpts.SetOnConnectHandler(func(client MQTT.Client) {
-		if ctx != nil {
-			ctx.Debug("Connected")
-		}
+		ctx.Debug("Connected")
 	})
 
 	return &defaultClient{
@@ -156,9 +150,7 @@ func (c *defaultClient) SubscribeDeviceUplink(appEUI types.AppEUI, devEUI types.
 		// Determine the actual topic
 		topic, err := ParseDeviceTopic(msg.Topic())
 		if err != nil {
-			if c.ctx != nil {
-				c.ctx.WithField("topic", msg.Topic()).WithError(err).Warn("Received message on invalid uplink topic")
-			}
+			c.ctx.WithField("topic", msg.Topic()).WithError(err).Warn("Received message on invalid uplink topic")
 			return
 		}
 
@@ -167,9 +159,7 @@ func (c *defaultClient) SubscribeDeviceUplink(appEUI types.AppEUI, devEUI types.
 		err = json.Unmarshal(msg.Payload(), dataUp)
 
 		if err != nil {
-			if c.ctx != nil {
-				c.ctx.WithError(err).Warn("Could not unmarshal uplink")
-			}
+			c.ctx.WithError(err).Warn("Could not unmarshal uplink")
 			return
 		}
 
@@ -201,9 +191,7 @@ func (c *defaultClient) SubscribeDeviceDownlink(appEUI types.AppEUI, devEUI type
 		// Determine the actual topic
 		topic, err := ParseDeviceTopic(msg.Topic())
 		if err != nil {
-			if c.ctx != nil {
-				c.ctx.WithField("topic", msg.Topic()).WithError(err).Warn("Received message on invalid Downlink topic")
-			}
+			c.ctx.WithField("topic", msg.Topic()).WithError(err).Warn("Received message on invalid Downlink topic")
 			return
 		}
 
@@ -211,9 +199,7 @@ func (c *defaultClient) SubscribeDeviceDownlink(appEUI types.AppEUI, devEUI type
 		dataDown := &core.DataDownAppReq{}
 		err = json.Unmarshal(msg.Payload(), dataDown)
 		if err != nil {
-			if c.ctx != nil {
-				c.ctx.WithError(err).Warn("Could not unmarshal Downlink")
-			}
+			c.ctx.WithError(err).Warn("Could not unmarshal Downlink")
 			return
 		}
 
@@ -245,9 +231,7 @@ func (c *defaultClient) SubscribeDeviceActivations(appEUI types.AppEUI, devEUI t
 		// Determine the actual topic
 		topic, err := ParseDeviceTopic(msg.Topic())
 		if err != nil {
-			if c.ctx != nil {
-				c.ctx.WithField("topic", msg.Topic()).WithError(err).Warn("Received message on invalid Activations topic")
-			}
+			c.ctx.WithField("topic", msg.Topic()).WithError(err).Warn("Received message on invalid Activations topic")
 			return
 		}
 
@@ -255,9 +239,7 @@ func (c *defaultClient) SubscribeDeviceActivations(appEUI types.AppEUI, devEUI t
 		activation := &core.OTAAAppReq{}
 		err = json.Unmarshal(msg.Payload(), activation)
 		if err != nil {
-			if c.ctx != nil {
-				c.ctx.WithError(err).Warn("Could not unmarshal Activation")
-			}
+			c.ctx.WithError(err).Warn("Could not unmarshal Activation")
 			return
 		}
 

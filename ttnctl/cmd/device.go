@@ -4,12 +4,12 @@
 package cmd
 
 import (
+	"bytes"
 	"fmt"
 	"reflect"
 	"strings"
 
 	"github.com/TheThingsNetwork/ttn/core"
-	"github.com/TheThingsNetwork/ttn/core/components/handler"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/TheThingsNetwork/ttn/utils/random"
@@ -23,14 +23,6 @@ import (
 const emptyCell = "-"
 
 var defaultKey = []byte{0x2B, 0x7E, 0x15, 0x16, 0x28, 0xAE, 0xD2, 0xA6, 0xAB, 0xF7, 0x15, 0x88, 0x09, 0xCF, 0x4F, 0x3C}
-
-func getHandlerManager() core.AuthHandlerClient {
-	cli, err := handler.NewClient(viper.GetString("ttn-handler"))
-	if err != nil {
-		ctx.Fatalf("Could not connect: %v", err)
-	}
-	return cli
-}
 
 // devicesCmd represents the `devices` command
 var devicesCmd = &cobra.Command{
@@ -50,13 +42,13 @@ registered on the Handler.`,
 			ctx.Fatal("No authentication found. Please login")
 		}
 
-		manager := getHandlerManager()
+		manager := util.GetHandlerManager(ctx)
 		defaultDevice, err := manager.GetDefaultDevice(context.Background(), &core.GetDefaultDeviceReq{
 			Token:  auth.AccessToken,
 			AppEUI: appEUI.Bytes(),
 		})
 		if err != nil {
-			// TODO: Check reason
+			// TODO: Check reason; not found is OK here
 			defaultDevice = nil
 		}
 		if defaultDevice != nil {
@@ -139,7 +131,7 @@ var devicesInfoCmd = &cobra.Command{
 			ctx.Fatal("No authentication found. Please login")
 		}
 
-		manager := getHandlerManager()
+		manager := util.GetHandlerManager(ctx)
 		res, err := manager.ListDevices(context.Background(), &core.ListDevicesHandlerReq{
 			Token:  auth.AccessToken,
 			AppEUI: appEUI.Bytes(),
@@ -152,7 +144,7 @@ var devicesInfoCmd = &cobra.Command{
 
 		if devEUI, err := types.ParseDevEUI(args[0]); err == nil {
 			for _, device := range res.OTAA {
-				if reflect.DeepEqual(device.DevEUI, devEUI.Bytes()) {
+				if bytes.Equal(device.DevEUI, devEUI.Bytes()) {
 					fmt.Println("Dynamic device:")
 
 					fmt.Println()
@@ -219,7 +211,7 @@ var devicesInfoCmd = &cobra.Command{
 
 		if devAddr, err := types.ParseDevAddr(args[0]); err == nil {
 			for _, device := range res.ABP {
-				if reflect.DeepEqual(device.DevAddr, devAddr.Bytes()) {
+				if bytes.Equal(device.DevAddr, devAddr.Bytes()) {
 					fmt.Println("Personalized device:")
 
 					fmt.Println()
@@ -321,7 +313,7 @@ the Handler`,
 			ctx.Fatal("No authentication found. Please login")
 		}
 
-		manager := getHandlerManager()
+		manager := util.GetHandlerManager(ctx)
 		res, err := manager.UpsertOTAA(context.Background(), &core.UpsertOTAAHandlerReq{
 			Token:  auth.AccessToken,
 			AppEUI: appEUI.Bytes(),
@@ -391,7 +383,7 @@ registration on the Handler`,
 			ctx.Fatal("No authentication found. Please login")
 		}
 
-		manager := getHandlerManager()
+		manager := util.GetHandlerManager(ctx)
 		res, err := manager.UpsertABP(context.Background(), &core.UpsertABPHandlerReq{
 			Token:   auth.AccessToken,
 			AppEUI:  appEUI.Bytes(),
@@ -447,7 +439,7 @@ register [DevEUI] [AppKey]`,
 			ctx.Fatal("No authentication found. Please login")
 		}
 
-		manager := getHandlerManager()
+		manager := util.GetHandlerManager(ctx)
 		res, err := manager.SetDefaultDevice(context.Background(), &core.SetDefaultDeviceReq{
 			Token:  auth.AccessToken,
 			AppEUI: appEUI.Bytes(),

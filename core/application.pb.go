@@ -2,6 +2,84 @@
 // source: application.proto
 // DO NOT EDIT!
 
+/*
+	Package core is a generated protocol buffer package.
+
+	It is generated from these files:
+		application.proto
+		broker.proto
+		broker_manager.proto
+		collector.proto
+		core.proto
+		handler.proto
+		handler_manager.proto
+		lorawan.proto
+		router.proto
+
+	It has these top-level messages:
+		DataAppReq
+		DataAppRes
+		JoinAppReq
+		JoinAppRes
+		DataBrokerReq
+		DataBrokerRes
+		JoinBrokerReq
+		JoinBrokerRes
+		ValidateOTAABrokerReq
+		ValidateOTAABrokerRes
+		UpsertABPBrokerReq
+		UpsertABPBrokerRes
+		BrokerDevice
+		ValidateTokenBrokerReq
+		ValidateTokenBrokerRes
+		GetApplicationsCollectorReq
+		GetApplicationsCollectorRes
+		CollectorApplication
+		AddApplicationCollectorReq
+		AddApplicationCollectorRes
+		RemoveApplicationCollectorReq
+		RemoveApplicationCollectorRes
+		Metadata
+		StatsMetadata
+		DataUpHandlerReq
+		DataUpHandlerRes
+		DataDownHandlerReq
+		DataDownHandlerRes
+		JoinHandlerReq
+		JoinHandlerRes
+		UpsertOTAAHandlerReq
+		UpsertOTAAHandlerRes
+		UpsertABPHandlerReq
+		UpsertABPHandlerRes
+		ListDevicesHandlerReq
+		ListDevicesHandlerRes
+		HandlerABPDevice
+		HandlerOTAADevice
+		GetDefaultDeviceReq
+		GetDefaultDeviceRes
+		SetDefaultDeviceReq
+		GetPayloadFunctionsReq
+		GetPayloadFunctionsRes
+		SetPayloadFunctionsReq
+		SetPayloadFunctionsRes
+		TestPayloadFunctionsReq
+		TestPayloadFunctionsRes
+		SetDefaultDeviceRes
+		LoRaWANData
+		LoRaWANMHDR
+		LoRaWANMACPayload
+		LoRaWANFHDR
+		LoRaWANFCtrl
+		LoRaWANJoinRequest
+		LoRaWANJoinAccept
+		LoRaWANDLSettings
+		DataRouterReq
+		DataRouterRes
+		StatsReq
+		StatsRes
+		JoinRouterReq
+		JoinRouterRes
+*/
 package core
 
 import proto "github.com/golang/protobuf/proto"
@@ -19,6 +97,10 @@ import io "io"
 var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+const _ = proto.ProtoPackageIsVersion1
 
 type DataAppReq struct {
 	AppEUI   []byte      `protobuf:"bytes,1,opt,name=AppEUI,json=appEUI,proto3" json:"AppEUI,omitempty"`

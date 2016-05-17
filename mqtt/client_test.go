@@ -29,13 +29,13 @@ func TestToken(t *testing.T) {
 
 func TestNewClient(t *testing.T) {
 	a := New(t)
-	c := NewClient(nil, "test", "", "", "tcp://localhost:1883")
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
 	a.So(c.(*defaultClient).mqtt, ShouldNotBeNil)
 }
 
 func TestConnect(t *testing.T) {
 	a := New(t)
-	c := NewClient(nil, "test", "", "", "tcp://localhost:1883")
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
 	err := c.Connect()
 	a.So(err, ShouldBeNil)
 
@@ -46,7 +46,7 @@ func TestConnect(t *testing.T) {
 
 func TestConnectInvalidAddress(t *testing.T) {
 	a := New(t)
-	c := NewClient(nil, "test", "", "", "tcp://localhost:18830") // No MQTT on 18830
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:18830") // No MQTT on 18830
 	err := c.Connect()
 	a.So(err, ShouldNotBeNil)
 }
@@ -57,7 +57,7 @@ func TestConnectInvalidCredentials(t *testing.T) {
 
 func TestIsConnected(t *testing.T) {
 	a := New(t)
-	c := NewClient(nil, "test", "", "", "tcp://localhost:1883")
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
 
 	a.So(c.IsConnected(), ShouldBeFalse)
 
@@ -68,7 +68,7 @@ func TestIsConnected(t *testing.T) {
 
 func TestDisconnect(t *testing.T) {
 	a := New(t)
-	c := NewClient(nil, "test", "", "", "tcp://localhost:1883")
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
 
 	// Disconnecting when not connected should not change anything
 	c.Disconnect()
@@ -98,7 +98,7 @@ func TestRandomTopicPublish(t *testing.T) {
 
 func TestPublishUplink(t *testing.T) {
 	a := New(t)
-	c := NewClient(nil, "test", "", "", "tcp://localhost:1883")
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
 	c.Connect()
 
 	eui := types.EUI64{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}
@@ -114,7 +114,7 @@ func TestPublishUplink(t *testing.T) {
 
 func TestSubscribeDeviceUplink(t *testing.T) {
 	a := New(t)
-	c := NewClient(nil, "test", "", "", "tcp://localhost:1883")
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
 	c.Connect()
 
 	eui := types.EUI64{0x02, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}
@@ -129,7 +129,7 @@ func TestSubscribeDeviceUplink(t *testing.T) {
 
 func TestSubscribeAppUplink(t *testing.T) {
 	a := New(t)
-	c := NewClient(nil, "test", "", "", "tcp://localhost:1883")
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
 	c.Connect()
 
 	eui := types.AppEUI{0x03, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}
@@ -144,7 +144,7 @@ func TestSubscribeAppUplink(t *testing.T) {
 
 func TestSubscribeUplink(t *testing.T) {
 	a := New(t)
-	c := NewClient(nil, "test", "", "", "tcp://localhost:1883")
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
 	c.Connect()
 
 	token := c.SubscribeUplink(func(client Client, appEUI types.AppEUI, devEUI types.DevEUI, req core.DataUpAppReq) {
@@ -157,7 +157,7 @@ func TestSubscribeUplink(t *testing.T) {
 
 func TestPubSubUplink(t *testing.T) {
 	a := New(t)
-	c := NewClient(nil, "test", "", "", "tcp://localhost:1883")
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
 	c.Connect()
 
 	appEUI := types.AppEUI{0x04, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}
@@ -181,7 +181,7 @@ func TestPubSubUplink(t *testing.T) {
 
 func TestPubSubAppUplink(t *testing.T) {
 	a := New(t)
-	c := NewClient(nil, "test", "", "", "tcp://localhost:1883")
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
 	c.Connect()
 
 	appEUI := types.AppEUI{0x05, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}
@@ -231,7 +231,7 @@ func TestInvalidUplink(t *testing.T) {
 
 func TestPublishDownlink(t *testing.T) {
 	a := New(t)
-	c := NewClient(nil, "test", "", "", "tcp://localhost:1883")
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
 	c.Connect()
 
 	eui := types.EUI64{0x01, 0x03, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}
@@ -247,7 +247,7 @@ func TestPublishDownlink(t *testing.T) {
 
 func TestSubscribeDeviceDownlink(t *testing.T) {
 	a := New(t)
-	c := NewClient(nil, "test", "", "", "tcp://localhost:1883")
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
 	c.Connect()
 
 	eui := types.EUI64{0x02, 0x03, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}
@@ -262,7 +262,7 @@ func TestSubscribeDeviceDownlink(t *testing.T) {
 
 func TestSubscribeAppDownlink(t *testing.T) {
 	a := New(t)
-	c := NewClient(nil, "test", "", "", "tcp://localhost:1883")
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
 	c.Connect()
 
 	eui := types.AppEUI{0x03, 0x03, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}
@@ -277,7 +277,7 @@ func TestSubscribeAppDownlink(t *testing.T) {
 
 func TestSubscribeDownlink(t *testing.T) {
 	a := New(t)
-	c := NewClient(nil, "test", "", "", "tcp://localhost:1883")
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
 	c.Connect()
 
 	token := c.SubscribeDownlink(func(client Client, appEUI types.AppEUI, devEUI types.DevEUI, req core.DataDownAppReq) {
@@ -290,7 +290,7 @@ func TestSubscribeDownlink(t *testing.T) {
 
 func TestPubSubDownlink(t *testing.T) {
 	a := New(t)
-	c := NewClient(nil, "test", "", "", "tcp://localhost:1883")
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
 	c.Connect()
 
 	appEUI := types.AppEUI{0x04, 0x03, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}
@@ -314,7 +314,7 @@ func TestPubSubDownlink(t *testing.T) {
 
 func TestPubSubAppDownlink(t *testing.T) {
 	a := New(t)
-	c := NewClient(nil, "test", "", "", "tcp://localhost:1883")
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
 	c.Connect()
 
 	appEUI := types.AppEUI{0x05, 0x03, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}
@@ -364,7 +364,7 @@ func TestInvalidDownlink(t *testing.T) {
 
 func TestPublishActivations(t *testing.T) {
 	a := New(t)
-	c := NewClient(nil, "test", "", "", "tcp://localhost:1883")
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
 	c.Connect()
 
 	eui := types.EUI64{0x01, 0x04, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}
@@ -378,7 +378,7 @@ func TestPublishActivations(t *testing.T) {
 
 func TestSubscribeDeviceActivations(t *testing.T) {
 	a := New(t)
-	c := NewClient(nil, "test", "", "", "tcp://localhost:1883")
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
 	c.Connect()
 
 	eui := types.EUI64{0x02, 0x04, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}
@@ -393,7 +393,7 @@ func TestSubscribeDeviceActivations(t *testing.T) {
 
 func TestSubscribeAppActivations(t *testing.T) {
 	a := New(t)
-	c := NewClient(nil, "test", "", "", "tcp://localhost:1883")
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
 	c.Connect()
 
 	eui := types.AppEUI{0x03, 0x04, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}
@@ -408,7 +408,7 @@ func TestSubscribeAppActivations(t *testing.T) {
 
 func TestSubscribeActivations(t *testing.T) {
 	a := New(t)
-	c := NewClient(nil, "test", "", "", "tcp://localhost:1883")
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
 	c.Connect()
 
 	token := c.SubscribeActivations(func(client Client, appEUI types.AppEUI, devEUI types.DevEUI, req core.OTAAAppReq) {
@@ -421,7 +421,7 @@ func TestSubscribeActivations(t *testing.T) {
 
 func TestPubSubActivations(t *testing.T) {
 	a := New(t)
-	c := NewClient(nil, "test", "", "", "tcp://localhost:1883")
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
 	c.Connect()
 
 	appEUI := types.AppEUI{0x04, 0x04, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}
@@ -445,7 +445,7 @@ func TestPubSubActivations(t *testing.T) {
 
 func TestPubSubAppActivations(t *testing.T) {
 	a := New(t)
-	c := NewClient(nil, "test", "", "", "tcp://localhost:1883")
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
 	c.Connect()
 
 	appEUI := types.AppEUI{0x05, 0x04, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}

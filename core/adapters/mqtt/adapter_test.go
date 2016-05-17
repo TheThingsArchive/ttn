@@ -8,8 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"golang.org/x/net/context"
-
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/mocks"
 	"github.com/TheThingsNetwork/ttn/core/types"
@@ -27,23 +25,23 @@ func TestNewAdapter(t *testing.T) {
 	a.So(adapter.(*defaultAdapter).client, ShouldEqual, client)
 }
 
-func TestHandleData(t *testing.T) {
+func TestPublishUplink(t *testing.T) {
 	a := New(t)
-	ctx := GetLogger(t, "TestHandleData")
+	ctx := GetLogger(t, "TestPublishUplink")
 	client := ttnMQTT.NewClient(ctx, "test", "", "", "tcp://localhost:1883")
 	client.Connect()
 
 	adapter := NewAdapter(ctx, client)
 
-	eui := types.EUI64{0x0a, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}
+	appEUI := types.AppEUI{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}
+	devEUI := types.DevEUI{0x0a, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}
 
-	req := core.DataAppReq{
+	req := core.DataUpAppReq{
 		Payload: []byte{0x01, 0x02},
-		Metadata: []*core.Metadata{
-			&core.Metadata{DataRate: "SF7BW125"},
+		Metadata: []core.AppMetadata{
+			core.AppMetadata{DataRate: "SF7BW125"},
 		},
-		AppEUI: eui.Bytes(),
-		DevEUI: eui.Bytes(),
+		DevEUI: devEUI.String(),
 		FPort:  14,
 		FCnt:   200,
 	}
@@ -51,9 +49,9 @@ func TestHandleData(t *testing.T) {
 	var wg sync.WaitGroup
 	wg.Add(1)
 
-	client.SubscribeDeviceUplink(types.AppEUI(eui), types.DevEUI(eui), func(client ttnMQTT.Client, appEUI types.AppEUI, devEUI types.DevEUI, dataUp core.DataUpAppReq) {
-		a.So(types.EUI64(appEUI), ShouldEqual, eui)
-		a.So(types.EUI64(devEUI), ShouldEqual, eui)
+	client.SubscribeDeviceUplink(appEUI, devEUI, func(client ttnMQTT.Client, rappEUI types.AppEUI, rdevEUI types.DevEUI, dataUp core.DataUpAppReq) {
+		a.So(rappEUI, ShouldEqual, appEUI)
+		a.So(rdevEUI, ShouldEqual, devEUI)
 		a.So(dataUp.FPort, ShouldEqual, 14)
 		a.So(dataUp.FCnt, ShouldEqual, 200)
 		a.So(dataUp.Payload, ShouldResemble, []byte{0x01, 0x02})
@@ -61,60 +59,10 @@ func TestHandleData(t *testing.T) {
 		wg.Done()
 	}).Wait()
 
-	res, err := adapter.HandleData(context.Background(), &req)
+	err := adapter.PublishUplink(appEUI, devEUI, req)
 	a.So(err, ShouldBeNil)
-	a.So(res, ShouldResemble, new(core.DataAppRes))
 
 	wg.Wait()
-
-}
-
-func TestHandleInvalidData(t *testing.T) {
-	a := New(t)
-	client := ttnMQTT.NewClient(nil, "test", "", "", "tcp://localhost:1883")
-	adapter := NewAdapter(nil, client)
-
-	// nil Request
-	_, err := adapter.HandleData(context.Background(), nil)
-	a.So(err, ShouldNotBeNil)
-
-	// Invalid Payload
-	_, err = adapter.HandleData(context.Background(), &core.DataAppReq{
-		Payload: []byte{},
-	})
-	a.So(err, ShouldNotBeNil)
-
-	// Invalid DevEUI
-	_, err = adapter.HandleData(context.Background(), &core.DataAppReq{
-		Payload: []byte{0x00},
-		DevEUI:  []byte{},
-	})
-	a.So(err, ShouldNotBeNil)
-
-	// Invalid AppEUI
-	_, err = adapter.HandleData(context.Background(), &core.DataAppReq{
-		Payload: []byte{0x00},
-		DevEUI:  []byte{0x0b, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08},
-		AppEUI:  []byte{},
-	})
-	a.So(err, ShouldNotBeNil)
-
-	// Missing Metadata
-	_, err = adapter.HandleData(context.Background(), &core.DataAppReq{
-		Payload: []byte{0x00},
-		DevEUI:  []byte{0x0b, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08},
-		AppEUI:  []byte{0x0b, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08},
-	})
-	a.So(err, ShouldNotBeNil)
-
-	// Not Connected
-	_, err = adapter.HandleData(context.Background(), &core.DataAppReq{
-		Payload:  []byte{0x00},
-		DevEUI:   []byte{0x0b, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08},
-		AppEUI:   []byte{0x0b, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08},
-		Metadata: []*core.Metadata{},
-	})
-	a.So(err, ShouldNotBeNil)
 }
 
 func TestHandleJoin(t *testing.T) {
@@ -125,69 +73,29 @@ func TestHandleJoin(t *testing.T) {
 
 	adapter := NewAdapter(ctx, client)
 
-	eui := types.EUI64{0x0a, 0x03, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}
+	appEUI := types.AppEUI{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}
+	devEUI := types.DevEUI{0x0a, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}
 
-	req := core.JoinAppReq{
-		AppEUI: eui.Bytes(),
-		DevEUI: eui.Bytes(),
-		Metadata: []*core.Metadata{
-			&core.Metadata{DataRate: "SF7BW125"},
+	req := core.OTAAAppReq{
+		Metadata: []core.AppMetadata{
+			core.AppMetadata{DataRate: "SF7BW125"},
 		},
 	}
 
 	var wg sync.WaitGroup
 	wg.Add(1)
 
-	client.SubscribeDeviceActivations(types.AppEUI(eui), types.DevEUI(eui), func(client ttnMQTT.Client, appEUI types.AppEUI, devEUI types.DevEUI, activation core.OTAAAppReq) {
-		a.So(types.EUI64(appEUI), ShouldResemble, eui)
-		a.So(types.EUI64(devEUI), ShouldResemble, eui)
+	client.SubscribeDeviceActivations(appEUI, devEUI, func(client ttnMQTT.Client, rappEUI types.AppEUI, rdevEUI types.DevEUI, activation core.OTAAAppReq) {
+		a.So(rappEUI, ShouldResemble, appEUI)
+		a.So(rdevEUI, ShouldResemble, devEUI)
 		a.So(activation.Metadata[0].DataRate, ShouldEqual, "SF7BW125")
 		wg.Done()
 	}).Wait()
 
-	res, err := adapter.HandleJoin(context.Background(), &req)
+	err := adapter.PublishActivation(appEUI, devEUI, req)
 	a.So(err, ShouldBeNil)
-	a.So(res, ShouldResemble, new(core.JoinAppRes))
 
 	wg.Wait()
-}
-
-func TestHandleInvalidJoin(t *testing.T) {
-	a := New(t)
-	client := ttnMQTT.NewClient(nil, "test", "", "", "tcp://localhost:1883")
-	adapter := NewAdapter(nil, client)
-
-	// nil Request
-	_, err := adapter.HandleJoin(context.Background(), nil)
-	a.So(err, ShouldNotBeNil)
-
-	// Invalid DevEUI
-	_, err = adapter.HandleJoin(context.Background(), &core.JoinAppReq{
-		DevEUI: []byte{},
-	})
-	a.So(err, ShouldNotBeNil)
-
-	// Invalid AppEUI
-	_, err = adapter.HandleJoin(context.Background(), &core.JoinAppReq{
-		DevEUI: []byte{0x0c, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08},
-		AppEUI: []byte{},
-	})
-	a.So(err, ShouldNotBeNil)
-
-	// Missing Metadata
-	_, err = adapter.HandleJoin(context.Background(), &core.JoinAppReq{
-		DevEUI: []byte{0x0c, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08},
-		AppEUI: []byte{0x0c, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08},
-	})
-	a.So(err, ShouldNotBeNil)
-
-	// Not Connected
-	_, err = adapter.HandleJoin(context.Background(), &core.JoinAppReq{
-		DevEUI:   []byte{0x0c, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08},
-		AppEUI:   []byte{0x0c, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08},
-		Metadata: []*core.Metadata{},
-	})
-	a.So(err, ShouldNotBeNil)
 }
 
 func TestSubscribeDownlink(t *testing.T) {

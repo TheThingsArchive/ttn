@@ -52,12 +52,12 @@ message HandlerOTAADevice {
 }
 
 message GetDefaultDeviceReq {
-  string    Token       = 1;
-  bytes     AppEUI      = 2;
+    string    Token       = 1;
+    bytes     AppEUI      = 2;
 }
 
 message GetDefaultDeviceRes {
-  bytes     AppKey      = 1;
+    bytes     AppKey      = 1;
 }
 
 message SetDefaultDeviceReq {
@@ -66,12 +66,45 @@ message SetDefaultDeviceReq {
     bytes   AppKey      = 3;
 }
 
+message GetPayloadFunctionsReq {
+    bytes   AppEUI      = 1;
+}
+
+message GetPayloadFunctionsRes {
+    string  Decoder     = 1;
+    string  Converter   = 2;
+    string  Validator   = 3;
+}
+
+message SetPayloadFunctionsReq {
+    bytes   AppEUI      = 1;
+    string  Decoder     = 11;
+    string  Converter   = 12;
+    string  Validator   = 13;
+}
+
+message SetPayloadFunctionsRes {
+}
+
+message TestPayloadFunctionsReq {
+    bytes   AppEUI      = 1;
+    bytes   Payload     = 11;
+}
+
+message TestPayloadFunctionsRes {
+    string  Fields      = 1;
+    bool    Valid       = 2;
+}
+
 message SetDefaultDeviceRes {}
 
 service HandlerManager {
-    rpc UpsertOTAA       (UpsertOTAAHandlerReq)      returns     (UpsertOTAAHandlerRes);
-    rpc UpsertABP        (UpsertABPHandlerReq)       returns     (UpsertABPHandlerRes);
-    rpc ListDevices      (ListDevicesHandlerReq)     returns     (ListDevicesHandlerRes);
-    rpc GetDefaultDevice (GetDefaultDeviceReq)       returns     (GetDefaultDeviceRes);
-    rpc SetDefaultDevice (SetDefaultDeviceReq)       returns     (SetDefaultDeviceRes);
+    rpc UpsertOTAA           (UpsertOTAAHandlerReq)      returns     (UpsertOTAAHandlerRes);
+    rpc UpsertABP            (UpsertABPHandlerReq)       returns     (UpsertABPHandlerRes);
+    rpc ListDevices          (ListDevicesHandlerReq)     returns     (ListDevicesHandlerRes);
+    rpc GetDefaultDevice     (GetDefaultDeviceReq)       returns     (GetDefaultDeviceRes);
+    rpc SetDefaultDevice     (SetDefaultDeviceReq)       returns     (SetDefaultDeviceRes);
+    rpc GetPayloadFunctions  (GetPayloadFunctionsReq)    returns     (GetPayloadFunctionsRes);
+    rpc SetPayloadFunctions  (SetPayloadFunctionsReq)    returns     (SetPayloadFunctionsRes);
+    rpc TestPayloadFunctions (TestPayloadFunctionsReq)   returns     (TestPayloadFunctionsRes);
 }

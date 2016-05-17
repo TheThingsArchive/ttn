@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/TheThingsNetwork/ttn/core/adapters/fields"
 	"github.com/TheThingsNetwork/ttn/core/adapters/http"
 	handlerMQTT "github.com/TheThingsNetwork/ttn/core/adapters/mqtt"
 	"github.com/TheThingsNetwork/ttn/core/components/broker"
@@ -122,9 +123,18 @@ The Handler is the bridge between The Things Network and applications.
 			ctx.WithError(err).Fatal("Could not connect to MQTT")
 		}
 
-		appAdapter := handlerMQTT.NewAdapter(
-			ctx.WithField("adapter", "app-adapter"),
-			mqttClient,
+		storage, err := fields.ConnectRedis(viper.GetString("handler.redis-addr"), int64(viper.GetInt("handler.redis-db")))
+		if err != nil {
+			ctx.WithError(err).Fatal("Could not connect to Redis")
+		}
+
+		fieldsAdapter := fields.NewAdapter(
+			ctx.WithField("adapter", "fields-adapter"),
+			storage,
+			handlerMQTT.NewAdapter(
+				ctx.WithField("adapter", "mqtt-adapter"),
+				mqttClient,
+			),
 		)
 
 		// Handler
@@ -134,7 +144,7 @@ The Handler is the bridge between The Things Network and applications.
 				DevStorage: devicesDB,
 				PktStorage: packetsDB,
 				Broker:     brokerClient,
-				AppAdapter: appAdapter,
+				AppAdapter: fieldsAdapter,
 			},
 			handler.Options{
 				PublicNetAddr:          fmt.Sprintf("%s:%d", viper.GetString("handler.public-address"), viper.GetInt("handler.public-port")),
@@ -143,7 +153,7 @@ The Handler is the bridge between The Things Network and applications.
 			},
 		)
 
-		appAdapter.SubscribeDownlink(handler)
+		fieldsAdapter.SubscribeDownlink(handler)
 
 		if err := handler.Start(); err != nil {
 			ctx.WithError(err).Fatal("Handler has fallen...")
@@ -182,6 +192,11 @@ func init() {
 	viper.BindPFlag("handler.mqtt-broker", handlerCmd.Flags().Lookup("mqtt-broker"))
 	viper.BindPFlag("handler.mqtt-username", handlerCmd.Flags().Lookup("mqtt-username"))
 	viper.BindPFlag("handler.mqtt-password", handlerCmd.Flags().Lookup("mqtt-password"))
+
+	handlerCmd.Flags().String("redis-addr", "localhost:6379", "The address of Redis")
+	handlerCmd.Flags().Int64("redis-db", 0, "The database of Redis")
+	viper.BindPFlag("handler.redis-addr", handlerCmd.Flags().Lookup("redis-addr"))
+	viper.BindPFlag("handler.redis-db", handlerCmd.Flags().Lookup("redis-db"))
 
 	handlerCmd.Flags().String("ttn-broker", "localhost:1781", "The address of the TTN broker (downlink)")
 	viper.BindPFlag("handler.ttn-broker", handlerCmd.Flags().Lookup("ttn-broker"))

@@ -241,7 +241,6 @@ var applicationsUseCmd = &cobra.Command{
 		}
 
 		ctx.Infof("You are now using application %s.", appEUI)
-
 	},
 }
 

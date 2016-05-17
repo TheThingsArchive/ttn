@@ -5,11 +5,12 @@ package core
 
 // DataUpAppReq represents the actual payloads sent to application on uplink
 type DataUpAppReq struct {
-	Payload  []byte        `json:"payload"`
-	FPort    uint8         `json:"port,omitempty"`
-	FCnt     uint32        `json:"counter"`
-	DevEUI   string        `json:"dev_eui"`
-	Metadata []AppMetadata `json:"metadata"`
+	Payload  []byte                 `json:"payload"`
+	Fields   map[string]interface{} `json:"fields,omitempty"`
+	FPort    uint8                  `json:"port,omitempty"`
+	FCnt     uint32                 `json:"counter"`
+	DevEUI   string                 `json:"dev_eui"`
+	Metadata []AppMetadata          `json:"metadata"`
 }
 
 // OTAAAppReq are used to notify application of an accepted OTAA
