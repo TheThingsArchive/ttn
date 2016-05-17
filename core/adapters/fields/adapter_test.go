@@ -43,13 +43,22 @@ func TestHandleData(t *testing.T) {
 		Payload: []byte{0x08, 0x70},
 	}
 
+	// No functions
+	res, err := adapter.HandleData(context.Background(), req)
+	a.So(res, ShouldEqual, new(core.DataAppRes))
+	a.So(err, ShouldBeNil)
+	a.So(publisher.appEUI, ShouldResemble, &appEUI)
+	a.So(publisher.devEUI, ShouldResemble, &devEUI)
+	a.So(publisher.uplinkReq, ShouldNotBeNil)
+	a.So(publisher.uplinkReq.Fields, ShouldBeEmpty)
+
 	// Normal flow
 	functions := &Functions{
 		Decoder: `function(data) { return { temperature: ((data[0] << 8) | data[1]) / 100 }; }`,
 	}
 	err = storage.SetFunctions(appEUI, functions)
 	a.So(err, ShouldBeNil)
-	res, err := adapter.HandleData(context.Background(), req)
+	res, err = adapter.HandleData(context.Background(), req)
 	a.So(res, ShouldEqual, new(core.DataAppRes))
 	a.So(err, ShouldBeNil)
 	a.So(publisher.appEUI, ShouldResemble, &appEUI)
@@ -78,6 +87,35 @@ func TestHandleData(t *testing.T) {
 	a.So(publisher.devEUI, ShouldResemble, &devEUI)
 	a.So(publisher.uplinkReq, ShouldNotBeNil)
 	a.So(publisher.uplinkReq.Fields, ShouldResemble, *new(map[string]interface{}))
+}
+
+func TestHandleJoin(t *testing.T) {
+	a := New(t)
+
+	ctx := GetLogger(t, "TestHandleJoin")
+	storage, err := ConnectRedis("localhost:6379", 0)
+	a.So(err, ShouldBeNil)
+	defer storage.Close()
+	defer storage.Reset()
+
+	publisher := &mockPublisher{}
+	adapter := NewAdapter(ctx, storage, publisher)
+
+	appEUI, _ := types.ParseAppEUI("0102030405060708")
+	devEUI, _ := types.ParseDevEUI("00000000AABBCCDD")
+
+	req := &core.JoinAppReq{
+		AppEUI: appEUI.Bytes(),
+		DevEUI: devEUI.Bytes(),
+	}
+
+	res, err := adapter.HandleJoin(context.Background(), req)
+	a.So(res, ShouldEqual, new(core.JoinAppRes))
+	a.So(err, ShouldBeNil)
+
+	a.So(publisher.appEUI, ShouldResemble, &appEUI)
+	a.So(publisher.devEUI, ShouldResemble, &devEUI)
+	a.So(publisher.activationReq, ShouldNotBeNil)
 }
 
 func (p *mockPublisher) PublishUplink(appEUI types.AppEUI, devEUI types.DevEUI, req core.DataUpAppReq) error {
