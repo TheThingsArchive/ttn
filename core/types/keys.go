@@ -284,3 +284,21 @@ func (key *NwkSKey) Unmarshal(data []byte) error {
 	*key = [16]byte{} // Reset the receiver
 	return key.UnmarshalBinary(data)
 }
+
+var emptyAES AES128Key
+
+func (key AES128Key) IsEmpty() bool {
+	return key == emptyAES
+}
+
+func (key AppKey) IsEmpty() bool {
+	return AES128Key(key).IsEmpty()
+}
+
+func (key AppSKey) IsEmpty() bool {
+	return AES128Key(key).IsEmpty()
+}
+
+func (key NwkSKey) IsEmpty() bool {
+	return AES128Key(key).IsEmpty()
+}

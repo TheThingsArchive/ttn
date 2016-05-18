@@ -285,3 +285,21 @@ func (eui *GatewayEUI) Unmarshal(data []byte) error {
 	*eui = [8]byte{} // Reset the receiver
 	return eui.UnmarshalBinary(data)
 }
+
+var emptyEUI64 EUI64
+
+func (eui EUI64) IsEmpty() bool {
+	return eui == emptyEUI64
+}
+
+func (eui DevEUI) IsEmpty() bool {
+	return EUI64(eui).IsEmpty()
+}
+
+func (eui AppEUI) IsEmpty() bool {
+	return EUI64(eui).IsEmpty()
+}
+
+func (eui GatewayEUI) IsEmpty() bool {
+	return EUI64(eui).IsEmpty()
+}
