@@ -12,6 +12,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // applicationsPayloadFunctionsCmd represents the applicationsPayloadFunctions command
@@ -24,8 +25,17 @@ converting and validating binary payload.
 	Run: func(cmd *cobra.Command, args []string) {
 		appEUI := util.GetAppEUI(ctx)
 
+		auth, err := util.LoadAuth(viper.GetString("ttn-account-server"))
+		if err != nil {
+			ctx.WithError(err).Fatal("Failed to load authentication")
+		}
+		if auth == nil {
+			ctx.Fatal("No authentication found. Please login")
+		}
+
 		manager := util.GetHandlerManager(ctx)
 		res, err := manager.GetPayloadFunctions(context.Background(), &core.GetPayloadFunctionsReq{
+			Token:  auth.AccessToken,
 			AppEUI: appEUI.Bytes(),
 		})
 		if err != nil {
@@ -64,6 +74,14 @@ function by loading the specified files containing JavaScript code.
 			return
 		}
 
+		auth, err := util.LoadAuth(viper.GetString("ttn-account-server"))
+		if err != nil {
+			ctx.WithError(err).Fatal("Failed to load authentication")
+		}
+		if auth == nil {
+			ctx.Fatal("No authentication found. Please login")
+		}
+
 		decoder, err := ioutil.ReadFile(args[0])
 		if err != nil {
 			ctx.WithError(err).Fatal("Read decoder file failed")
@@ -89,6 +107,7 @@ function by loading the specified files containing JavaScript code.
 
 		manager := util.GetHandlerManager(ctx)
 		_, err = manager.SetPayloadFunctions(context.Background(), &core.SetPayloadFunctionsReq{
+			Token:     auth.AccessToken,
 			AppEUI:    appEUI.Bytes(),
 			Decoder:   string(decoder),
 			Converter: string(converter),
@@ -116,6 +135,14 @@ Handler and returns the fields and validation result.
 			return
 		}
 
+		auth, err := util.LoadAuth(viper.GetString("ttn-account-server"))
+		if err != nil {
+			ctx.WithError(err).Fatal("Failed to load authentication")
+		}
+		if auth == nil {
+			ctx.Fatal("No authentication found. Please login")
+		}
+
 		payload, err := util.ParseHEX(args[0], len(args[0]))
 		if err != nil {
 			ctx.WithError(err).Fatal("Invalid payload")
@@ -123,6 +150,7 @@ Handler and returns the fields and validation result.
 
 		manager := util.GetHandlerManager(ctx)
 		res, err := manager.TestPayloadFunctions(context.Background(), &core.TestPayloadFunctionsReq{
+			Token:   auth.AccessToken,
 			AppEUI:  appEUI.Bytes(),
 			Payload: payload,
 		})
