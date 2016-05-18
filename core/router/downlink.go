@@ -253,8 +253,8 @@ func computeDownlinkScores(gateway *gateway.Gateway, uplink *pb.UplinkMessage, o
 			if gatewayStatus.Region == "EU_863_870" {
 				var duty float64
 				switch {
-				case freq >= 865000000 && freq < 868000000:
-					duty = 0.01 // g 865.0 – 868.0 MHz 1%
+				case freq >= 863000000 && freq < 868000000:
+					duty = 0.01 // g 863.0 – 868.0 MHz 1%
 				case freq >= 868000000 && freq < 868600000:
 					duty = 0.01 // g1 868.0 – 868.6 MHz 1%
 				case freq >= 868700000 && freq < 869200000:
