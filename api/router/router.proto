@@ -31,9 +31,12 @@ message DeviceActivationRequest {
 }
 
 message DeviceActivationResponse {
-  bytes                     payload                 = 1;
-  protocol.TxConfiguration  protocol_configuration  = 11;
-  gateway.TxConfiguration   gateway_configuration   = 12;
+  // NOTE: In LoRaWAN, device activations are accepted with DownlinkMessages, so
+  // this message is just an Ack.
+  //
+  // bytes                     payload                 = 1;
+  // protocol.TxConfiguration  protocol_configuration  = 11;
+  // gateway.TxConfiguration   gateway_configuration   = 12;
 }
 
 // The Router service provides pure network functionality
