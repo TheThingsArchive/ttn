@@ -221,6 +221,15 @@ func (h component) SetDefaultDevice(bctx context.Context, req *core.SetDefaultDe
 func (h component) GetPayloadFunctions(ctx context.Context, req *core.GetPayloadFunctionsReq) (*core.GetPayloadFunctionsRes, error) {
 	res := new(core.GetPayloadFunctionsRes)
 
+	_, err := h.Broker.ValidateToken(context.Background(), &core.ValidateTokenBrokerReq{
+		Token:  req.Token,
+		AppEUI: req.AppEUI,
+	})
+	if err != nil {
+		h.Ctx.WithError(err).Debug("Broker rejected token")
+		return res, errors.New(errors.Operational, err)
+	}
+
 	adapter, ok := h.AppAdapter.(fields.Adapter)
 	if !ok {
 		return res, errors.New(errors.Structural, "Invalid adapter")
@@ -245,6 +254,15 @@ func (h component) GetPayloadFunctions(ctx context.Context, req *core.GetPayload
 func (h component) SetPayloadFunctions(ctx context.Context, req *core.SetPayloadFunctionsReq) (*core.SetPayloadFunctionsRes, error) {
 	res := new(core.SetPayloadFunctionsRes)
 
+	_, err := h.Broker.ValidateToken(context.Background(), &core.ValidateTokenBrokerReq{
+		Token:  req.Token,
+		AppEUI: req.AppEUI,
+	})
+	if err != nil {
+		h.Ctx.WithError(err).Debug("Broker rejected token")
+		return res, errors.New(errors.Operational, err)
+	}
+
 	adapter, ok := h.AppAdapter.(fields.Adapter)
 	if !ok {
 		return res, errors.New(errors.Structural, "Invalid adapter")
@@ -252,7 +270,7 @@ func (h component) SetPayloadFunctions(ctx context.Context, req *core.SetPayload
 
 	var appEUI types.AppEUI
 	appEUI.Unmarshal(req.AppEUI)
-	err := adapter.Storage().SetFunctions(appEUI, &fields.Functions{
+	err = adapter.Storage().SetFunctions(appEUI, &fields.Functions{
 		Decoder:   req.Decoder,
 		Converter: req.Converter,
 		Validator: req.Validator,
@@ -266,6 +284,15 @@ func (h component) SetPayloadFunctions(ctx context.Context, req *core.SetPayload
 
 func (h component) TestPayloadFunctions(ctx context.Context, req *core.TestPayloadFunctionsReq) (*core.TestPayloadFunctionsRes, error) {
 	res := new(core.TestPayloadFunctionsRes)
+
+	_, err := h.Broker.ValidateToken(context.Background(), &core.ValidateTokenBrokerReq{
+		Token:  req.Token,
+		AppEUI: req.AppEUI,
+	})
+	if err != nil {
+		h.Ctx.WithError(err).Debug("Broker rejected token")
+		return res, errors.New(errors.Operational, err)
+	}
 
 	adapter, ok := h.AppAdapter.(fields.Adapter)
 	if !ok {

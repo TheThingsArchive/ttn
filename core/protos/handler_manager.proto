@@ -67,7 +67,8 @@ message SetDefaultDeviceReq {
 }
 
 message GetPayloadFunctionsReq {
-    bytes   AppEUI      = 1;
+    string  Token       = 1;
+    bytes   AppEUI      = 2;
 }
 
 message GetPayloadFunctionsRes {
@@ -77,7 +78,8 @@ message GetPayloadFunctionsRes {
 }
 
 message SetPayloadFunctionsReq {
-    bytes   AppEUI      = 1;
+    string  Token       = 1;
+    bytes   AppEUI      = 2;
     string  Decoder     = 11;
     string  Converter   = 12;
     string  Validator   = 13;
@@ -87,7 +89,8 @@ message SetPayloadFunctionsRes {
 }
 
 message TestPayloadFunctionsReq {
-    bytes   AppEUI      = 1;
+    string  Token       = 1;
+    bytes   AppEUI      = 2;
     bytes   Payload     = 11;
 }
 
