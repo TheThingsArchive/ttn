@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+
+	"github.com/brocaar/lorawan/band"
 )
 
 type DataRate struct {
@@ -27,6 +29,17 @@ func ParseDataRate(input string) (datr *DataRate, err error) {
 		SpreadingFactor: uint(sf),
 		Bandwidth:       uint(bw),
 	}, nil
+}
+
+func ConvertDataRate(input band.DataRate) (datr *DataRate, err error) {
+	if input.Modulation != band.LoRaModulation {
+		err = errors.New("ttn/core: FSK not yet supported")
+	}
+	datr = &DataRate{
+		SpreadingFactor: uint(input.SpreadFactor),
+		Bandwidth:       uint(input.Bandwidth),
+	}
+	return
 }
 
 // Bytes returns the DataRate as a byte slice

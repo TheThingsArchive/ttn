@@ -1,6 +1,7 @@
 package router
 
 import (
+	"io"
 	"sync"
 
 	"golang.org/x/net/context"
@@ -24,13 +25,18 @@ type Router interface {
 	// Handle an uplink message from a gateway
 	HandleUplink(gatewayEUI types.GatewayEUI, uplink *pb.UplinkMessage) error
 	// Handle a downlink message
-	HandleDownlink(message *pb.DownlinkMessage) error
+	HandleDownlink(message *pb_broker.DownlinkMessage) error
 	// Subscribe to downlink messages
-	SubscribeDownlink(gatewayEUI types.GatewayEUI) (chan pb.DownlinkMessage, error)
+	SubscribeDownlink(gatewayEUI types.GatewayEUI) (<-chan *pb.DownlinkMessage, error)
 	// Unsubscribe from downlink messages
 	UnsubscribeDownlink(gatewayEUI types.GatewayEUI) error
 	// Handle a device activation
 	HandleActivation(gatewayEUI types.GatewayEUI, activation *pb.DeviceActivationRequest) (*pb.DeviceActivationResponse, error)
+}
+
+type broker struct {
+	client      pb_broker.BrokerClient
+	association pb_broker.Broker_AssociateClient
 }
 
 type router struct {
@@ -38,7 +44,7 @@ type router struct {
 	gateways        map[types.GatewayEUI]*gateway.Gateway
 	gatewaysLock    sync.RWMutex
 	brokerDiscovery discovery.BrokerDiscovery
-	brokers         map[string]pb_broker.Broker_AssociateClient
+	brokers         map[string]*broker
 	brokersLock     sync.RWMutex
 }
 
@@ -52,22 +58,46 @@ func (r *router) getGateway(eui types.GatewayEUI) *gateway.Gateway {
 	return r.gateways[eui]
 }
 
-// getBroker gets or creates a broker association
-func (r *router) getBroker(broker *pb_discovery.Announcement) (pb_broker.Broker_AssociateClient, error) {
-	r.gatewaysLock.Lock()
-	defer r.gatewaysLock.Unlock()
-	if _, ok := r.brokers[broker.NetAddress]; !ok {
+// getBroker gets or creates a broker association and returns the broker
+// the first time it also starts a goroutine that receives downlink from the broker
+func (r *router) getBroker(req *pb_discovery.Announcement) (*broker, error) {
+	r.brokersLock.Lock()
+	defer r.brokersLock.Unlock()
+	if _, ok := r.brokers[req.NetAddress]; !ok {
 		// Connect to the server
-		conn, err := grpc.Dial(broker.NetAddress, api.DialOptions...)
+		conn, err := grpc.Dial(req.NetAddress, api.DialOptions...)
 		if err != nil {
 			return nil, err
 		}
 		client := pb_broker.NewBrokerClient(conn)
+
 		association, err := client.Associate(context.Background())
 		if err != nil {
 			return nil, err
 		}
-		r.brokers[broker.NetAddress] = association
+		// Start a goroutine that receives and processes downlink
+		go func() {
+			for {
+				downlink, err := association.Recv()
+				if err == io.EOF {
+					association.CloseSend()
+					break
+				}
+				if err != nil {
+					break
+				}
+				go r.HandleDownlink(downlink)
+			}
+			// When the loop is broken: close connection and unregister broker.
+			conn.Close()
+			r.brokersLock.Lock()
+			defer r.brokersLock.Unlock()
+			delete(r.brokers, req.NetAddress)
+		}()
+		r.brokers[req.NetAddress] = &broker{
+			client:      client,
+			association: association,
+		}
 	}
-	return r.brokers[broker.NetAddress], nil
+	return r.brokers[req.NetAddress], nil
 }
