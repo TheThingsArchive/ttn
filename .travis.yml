@@ -6,11 +6,10 @@ go:
     - 1.6
 
 before_install:
-    - sudo apt-add-repository ppa:mosquitto-dev/mosquitto-ppa -y
     - sudo apt-get update
 
 install:
-    - sudo apt-get install mosquitto mosquitto-clients
+    - sudo apt-get install mosquitto
     - make deps
     - make test-deps
     - make cover-deps
@@ -19,7 +18,7 @@ before_script:
     - mosquitto -p 1883 1>/dev/null 2>/dev/null &
 
 services:
-  - redis-server
+    - redis-server
 
 script:
     - make test
