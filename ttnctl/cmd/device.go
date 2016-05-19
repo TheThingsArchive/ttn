@@ -151,10 +151,10 @@ var devicesInfoCmd = &cobra.Command{
 
 					// LMiC decided to use LSBF for AppEUI and call it ArtEUI
 					if lmic {
-						fmt.Printf("  AppEUI:  %X (sometimes called ArtEUI)\n", appEUI)
+						fmt.Printf("  AppEUI:  %s (sometimes called ArtEUI)\n", appEUI)
 						fmt.Printf("           {%s} (Note: LSBF)\n", cStyle(appEUI.Bytes(), lsbf))
 					} else {
-						fmt.Printf("  AppEUI:  %X\n", appEUI)
+						fmt.Printf("  AppEUI:  %s\n", appEUI)
 						fmt.Printf("           {%s}\n", cStyle(appEUI.Bytes(), msbf))
 					}
 
