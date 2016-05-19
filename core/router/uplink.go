@@ -1,9 +1,12 @@
 package router
 
 import (
+	"errors"
+
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb "github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/core/types"
+	"github.com/brocaar/lorawan"
 )
 
 func (r *router) HandleUplink(gatewayEUI types.GatewayEUI, uplink *pb.UplinkMessage) error {
@@ -13,8 +16,19 @@ func (r *router) HandleUplink(gatewayEUI types.GatewayEUI, uplink *pb.UplinkMess
 
 	downlinkOptions := buildDownlinkOptions(uplink, false, gateway)
 
+	// LoRaWAN: Unmarshal
+	var phyPayload lorawan.PHYPayload
+	err := phyPayload.UnmarshalBinary(uplink.Payload)
+	if err != nil {
+		return err
+	}
+	macPayload, ok := phyPayload.MACPayload.(*lorawan.MACPayload)
+	if !ok {
+		return errors.New("Uplink message does not contain a MAC payload.")
+	}
+	devAddr := types.DevAddr(macPayload.FHDR.DevAddr)
+
 	// Find Broker
-	devAddr := types.DevAddr{1, 2, 3, 4}
 	brokers, err := r.brokerDiscovery.Discover(devAddr)
 	if err != nil {
 		return err

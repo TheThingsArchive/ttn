@@ -11,6 +11,7 @@ import (
 	pb "github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/core/router/gateway"
 	"github.com/TheThingsNetwork/ttn/core/types"
+	"github.com/brocaar/lorawan"
 	. "github.com/smartystreets/assertions"
 )
 
@@ -25,8 +26,21 @@ func newReferenceGateway(region string) *gateway.Gateway {
 
 // newReferenceUplink returns a default uplink message
 func newReferenceUplink() *pb.UplinkMessage {
+	phy := lorawan.PHYPayload{
+		MHDR: lorawan.MHDR{
+			MType: lorawan.UnconfirmedDataUp,
+			Major: lorawan.LoRaWANR1,
+		},
+		MACPayload: &lorawan.MACPayload{
+			FHDR: lorawan.FHDR{
+				DevAddr: lorawan.DevAddr([4]byte{1, 2, 3, 4}),
+			},
+		},
+	}
+	bytes, _ := phy.MarshalBinary()
+
 	up := &pb.UplinkMessage{
-		Payload: make([]byte, 20),
+		Payload: bytes,
 		ProtocolMetadata: &pb_protocol.RxMetadata{Protocol: &pb_protocol.RxMetadata_Lorawan{Lorawan: &pb_lorawan.Metadata{
 			CodingRate: "4/5",
 			DataRate:   "SF7BW125",
