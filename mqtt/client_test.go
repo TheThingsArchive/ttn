@@ -46,6 +46,8 @@ func TestConnect(t *testing.T) {
 
 func TestConnectInvalidAddress(t *testing.T) {
 	a := New(t)
+	ConnectRetries = 2
+	ConnectRetryDelay = 50 * time.Millisecond
 	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:18830") // No MQTT on 18830
 	err := c.Connect()
 	a.So(err, ShouldNotBeNil)
