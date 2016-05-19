@@ -421,7 +421,7 @@ register [DevEUI] [AppKey]`,
 
 		var appKey types.AppKey
 		var err error
-		if len(args) >= 2 {
+		if len(args) >= 1 {
 			appKey, err = types.ParseAppKey(args[0])
 			if err != nil {
 				ctx.Fatalf("Invalid AppKey: %s", err)
