@@ -412,11 +412,6 @@ var devicesRegisterDefaultCmd = &cobra.Command{
 on the Handler that have not been explicitly registered using ttnctl devices
 register [DevEUI] [AppKey]`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) < 1 {
-			cmd.Help()
-			return
-		}
-
 		appEUI := util.GetAppEUI(ctx)
 
 		var appKey types.AppKey
