@@ -2,12 +2,19 @@ syntax = "proto3";
 
 import "github.com/TheThingsNetwork/ttn/api/api.proto";
 import "github.com/TheThingsNetwork/ttn/api/broker/broker.proto";
+import "github.com/TheThingsNetwork/ttn/api/protocol/protocol.proto";
 
 package handler;
 
+message DeviceActivationResponse {
+  bytes                        payload              = 1;
+  broker.DownlinkOption        downlink_option      = 11;
+  protocol.ActivationMetadata  activation_metadata  = 23;
+}
+
 // The Handler service provides pure network functionality
 service Handler {
-  rpc Activate(broker.DeduplicatedDeviceActivationRequest) returns (broker.DeviceActivationResponse);
+  rpc Activate(broker.DeduplicatedDeviceActivationRequest) returns (DeviceActivationResponse);
 }
 
 // message StatusRequest is used to request the status of this Handler

@@ -20,15 +20,20 @@ message DownlinkOption {
 // received from the Router
 message UplinkMessage {
   bytes                    payload            = 1;
-  protocol.RxMetadata      protocol_metadata  = 11;
-  gateway.RxMetadata       gateway_metadata   = 12;
-  repeated DownlinkOption  downlink_options   = 21;
+  // NOTE: For LoRaWAN, the Router doesn't know the DevEUI and AppEUI
+  bytes                    dev_eui            = 11 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.DevEUI"];
+  bytes                    app_eui            = 12 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.AppEUI"];
+  protocol.RxMetadata      protocol_metadata  = 21;
+  gateway.RxMetadata       gateway_metadata   = 22;
+  repeated DownlinkOption  downlink_options   = 31;
 }
 
 // received from the Handler, sent to the Router, used as Template
 message DownlinkMessage {
   bytes           payload          = 1;
-  DownlinkOption  downlink_option  = 11;
+  bytes           dev_eui          = 11 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.DevEUI"];
+  bytes           app_eui          = 12 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.AppEUI"];
+  DownlinkOption  downlink_option  = 21;
 }
 
 //sent to the Router, used as Template
@@ -45,7 +50,6 @@ message DeduplicatedUplinkMessage {
   protocol.RxMetadata         protocol_metadata  = 21;
   repeated gateway.RxMetadata gateway_metadata   = 22;
   DownlinkMessage             response_template  = 31;
-  bool                        need_downlink      = 32;
 }
 
 // received from the Router

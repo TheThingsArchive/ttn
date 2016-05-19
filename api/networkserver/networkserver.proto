@@ -4,6 +4,8 @@ import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 
 import "github.com/TheThingsNetwork/ttn/api/api.proto";
 import "github.com/TheThingsNetwork/ttn/api/broker/broker.proto";
+import "github.com/TheThingsNetwork/ttn/api/handler/handler.proto";
+
 
 package networkserver;
 
@@ -17,12 +19,10 @@ message DevicesResponse {
     bytes app_eui   = 1 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.AppEUI"];
     bytes dev_eui   = 2 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.DevEUI"];
     bytes nwk_s_key = 3 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.NwkSKey"];
+    bool  disable_f_cnt_check = 4;
+    bool  uses32_bit_f_cnt = 5;
   }
   repeated Device results = 1;
-}
-
-message UplinkResponse {
-  bool need_downlink = 1;
 }
 
 service NetworkServer {
@@ -30,10 +30,13 @@ service NetworkServer {
   rpc GetDevices(DevicesRequest) returns (DevicesResponse);
 
   // Broker requests device activation "template" from Network Server
-  rpc Activate(broker.DeviceActivationResponse) returns (broker.DeviceActivationResponse);
+  rpc PrepareActivation(broker.DeduplicatedDeviceActivationRequest) returns (broker.DeduplicatedDeviceActivationRequest);
+
+  // Broker confirms device activation
+  rpc Activate(handler.DeviceActivationResponse) returns (handler.DeviceActivationResponse);
 
   // Broker informs Network Server about Uplink
-  rpc Uplink(broker.DeduplicatedUplinkMessage) returns (UplinkResponse);
+  rpc Uplink(broker.DeduplicatedUplinkMessage) returns (broker.DeduplicatedUplinkMessage);
 
   // Broker informs Network Server about Downlink, NetworkServer should sign, add MIC, ...
   rpc Downlink(broker.DownlinkMessage) returns (broker.DownlinkMessage);
