@@ -294,19 +294,13 @@ func (h component) TestPayloadFunctions(ctx context.Context, req *core.TestPaylo
 		return res, errors.New(errors.Operational, err)
 	}
 
-	adapter, ok := h.AppAdapter.(fields.Adapter)
-	if !ok {
-		return res, errors.New(errors.Structural, "Invalid adapter")
-	}
-
 	var appEUI types.AppEUI
 	appEUI.Unmarshal(req.AppEUI)
-	functions, err := adapter.Storage().GetFunctions(appEUI)
-	if err != nil {
-		return res, err
-	}
-	if functions == nil {
-		return res, errors.New(errors.Operational, "Not found")
+
+	functions := fields.Functions{
+		Decoder:   req.Decoder,
+		Converter: req.Converter,
+		Validator: req.Validator,
 	}
 
 	fields, valid, err := functions.Process(req.Payload)
