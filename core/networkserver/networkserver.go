@@ -44,6 +44,7 @@ func (n *networkServer) HandleGetDevices(req *pb.DevicesRequest) (*pb.DevicesRes
 			AppEui:           &device.AppEUI,
 			DevEui:           &device.DevEUI,
 			NwkSKey:          &device.NwkSKey,
+			FCnt:             device.FCntUp,
 			Uses32BitFCnt:    device.Options.Uses32BitFCnt,
 			DisableFCntCheck: device.Options.DisableFCntCheck,
 		}
