@@ -5,6 +5,7 @@ package collector
 
 import (
 	"fmt"
+	"time"
 
 	"gopkg.in/redis.v3"
 
@@ -14,6 +15,13 @@ import (
 const (
 	appsKey = "collector:apps"
 	appKey  = "collector:app:%s"
+)
+
+var (
+	// ConnectRetries says how many times the client should retry a failed connection
+	ConnectRetries = 5
+	// ConnectRetryDelay says how long the client should wait between retries
+	ConnectRetryDelay = time.Second
 )
 
 // AppStorage provides storage for applications
@@ -37,7 +45,14 @@ func ConnectRedis(addr string, db int64) (AppStorage, error) {
 		Addr: addr,
 		DB:   db,
 	})
-	_, err := client.Ping().Result()
+	var err error
+	for retries := 0; retries < ConnectRetries; retries++ {
+		_, err = client.Ping().Result()
+		if err == nil {
+			break
+		}
+		<-time.After(ConnectRetryDelay)
+	}
 	if err != nil {
 		client.Close()
 		return nil, err
