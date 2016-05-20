@@ -29,6 +29,16 @@ func (d *discoveryServer) Discover(ctx context.Context, req *pb.DiscoverRequest)
 	}, nil
 }
 
+func (d *discoveryServer) Get(ctx context.Context, req *pb.GetRequest) (*pb.DiscoverResponse, error) {
+	services, err := d.discovery.Discover(req.ServiceName, req.Id...)
+	if err != nil {
+		return nil, err
+	}
+	return &pb.DiscoverResponse{
+		Services: services,
+	}, nil
+}
+
 func (d *discovery) RegisterDiscoveryServer(s *grpc.Server) {
 	server := &discoveryServer{d}
 	pb.RegisterDiscoveryServer(s, server)

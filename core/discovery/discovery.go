@@ -4,7 +4,10 @@ package discovery
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
+
+	"gopkg.in/redis.v3"
 
 	pb "github.com/TheThingsNetwork/ttn/api/discovery"
 )
@@ -12,7 +15,7 @@ import (
 // Discovery specifies the interface for the TTN Service Discovery component
 type Discovery interface {
 	Announce(announcement *pb.Announcement) error
-	Discover(serviceName string) ([]*pb.Announcement, error)
+	Discover(serviceName string, ids ...string) ([]*pb.Announcement, error)
 }
 
 // discovery is a reference implementation for a TTN Service Discovery component.
@@ -48,14 +51,14 @@ func (d *discovery) Announce(announcement *pb.Announcement) error {
 	return nil
 }
 
-func (d *discovery) Discover(serviceName string) ([]*pb.Announcement, error) {
+func (d *discovery) Discover(serviceName string, ids ...string) ([]*pb.Announcement, error) {
 	d.RLock()
 	defer d.RUnlock()
 
 	// Get the list
 	services, ok := d.services[serviceName]
 	if !ok {
-		return nil, fmt.Errorf("Service %s does not exist", serviceName)
+		return []*pb.Announcement{}, nil
 	}
 
 	// Traverse the list
@@ -63,7 +66,99 @@ func (d *discovery) Discover(serviceName string) ([]*pb.Announcement, error) {
 	for _, service := range services {
 		serviceCopy := *service
 		serviceCopy.Token = ""
-		announcements = append(announcements, &serviceCopy)
+		if len(ids) == 0 {
+			announcements = append(announcements, &serviceCopy)
+		} else {
+			for _, id := range ids {
+				if service.Id == id {
+					announcements = append(announcements, &serviceCopy)
+					break
+				}
+			}
+		}
 	}
 	return announcements, nil
+}
+
+// NewRedisDiscovery creates a new Redis-based discovery service
+func NewRedisDiscovery(client *redis.Client) Discovery {
+	return &redisDiscovery{
+		client: client,
+	}
+}
+
+const redisAnnouncementPrefix = "service"
+
+type redisDiscovery struct {
+	client *redis.Client
+}
+
+func (d *redisDiscovery) Announce(announcement *pb.Announcement) error {
+	key := fmt.Sprintf("%s:%s:%s", redisAnnouncementPrefix, announcement.ServiceName, announcement.Id)
+
+	if token, err := d.client.HGet(key, "token").Result(); err == nil && token != announcement.Token {
+		return errors.New("ttn/core: Invalid token")
+	}
+
+	dmap, err := announcement.ToStringStringMap(pb.AnnouncementProperties...)
+	if err != nil {
+		return err
+	}
+
+	return d.client.HMSetMap(key, dmap).Err()
+}
+
+func (d *redisDiscovery) Discover(serviceName string, ids ...string) ([]*pb.Announcement, error) {
+	announcements := []*pb.Announcement{}
+	if len(ids) == 0 {
+		keys, err := d.client.Keys(fmt.Sprintf("%s:%s:*", redisAnnouncementPrefix, serviceName)).Result()
+		if err != nil {
+			return nil, err
+		}
+		for _, key := range keys {
+			if parts := strings.Split(key, ":"); len(parts) == 3 {
+				ids = append(ids, parts[2])
+			}
+		}
+	}
+
+	var wg sync.WaitGroup
+	wg.Add(len(ids))
+	results := make(chan *pb.Announcement)
+	go func() {
+		wg.Wait()
+		close(results)
+	}()
+	for _, id := range ids {
+		go func(id string) {
+			res, err := d.Get(serviceName, id)
+			if err == nil && res != nil {
+				results <- res
+			}
+			wg.Done()
+		}(id)
+	}
+
+	for res := range results {
+		announcements = append(announcements, res)
+	}
+
+	return announcements, nil
+}
+
+func (d *redisDiscovery) Get(serviceName string, id string) (*pb.Announcement, error) {
+	key := fmt.Sprintf("%s:%s:%s", redisAnnouncementPrefix, serviceName, id)
+	res, err := d.client.HGetAllMap(key).Result()
+	if err != nil {
+		return nil, err
+	} else if len(res) == 0 {
+		return nil, redis.Nil // This might be a bug in redis package
+	}
+	announcement := &pb.Announcement{}
+	err = announcement.FromStringStringMap(res)
+	if err != nil {
+		return nil, err
+	}
+	announcement.Token = ""
+	return announcement, nil
 }

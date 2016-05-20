@@ -46,6 +46,7 @@ func buildMockDiscoveryServer(port uint) (*mockDiscoveryServer, *grpc.Server) {
 type mockDiscoveryServer struct {
 	announce uint
 	discover uint
+	get      uint
 }
 
 func (d *mockDiscoveryServer) Announce(ctx context.Context, announcement *pb.Announcement) (*api.Ack, error) {
@@ -55,6 +56,13 @@ func (d *mockDiscoveryServer) Announce(ctx context.Context, announcement *pb.Ann
 }
 func (d *mockDiscoveryServer) Discover(ctx context.Context, req *pb.DiscoverRequest) (*pb.DiscoverResponse, error) {
 	d.discover++
+	<-time.After(5 * time.Millisecond)
+	return &pb.DiscoverResponse{
+		Services: []*pb.Announcement{},
+	}, nil
+}
+func (d *mockDiscoveryServer) Get(ctx context.Context, req *pb.GetRequest) (*pb.DiscoverResponse, error) {
+	d.get++
 	<-time.After(5 * time.Millisecond)
 	return &pb.DiscoverResponse{
 		Services: []*pb.Announcement{},

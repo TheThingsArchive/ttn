@@ -6,7 +6,8 @@ package discovery;
 
 message Metadata {
   enum Key {
-    PREFIX = 0;
+    OTHER = 0;
+    PREFIX = 1;
   }
   Key key = 1;
   bytes value = 2;
@@ -26,6 +27,11 @@ message DiscoverRequest {
   string service_name = 1;
 }
 
+message GetRequest {
+  string service_name = 1;
+  repeated string id = 2;
+}
+
 message DiscoverResponse {
   repeated Announcement services = 1;
 }
@@ -33,6 +39,7 @@ message DiscoverResponse {
 service Discovery {
   rpc Announce(Announcement) returns (api.Ack);
   rpc Discover(DiscoverRequest) returns (DiscoverResponse);
+  rpc Get(GetRequest) returns (DiscoverResponse);
 }
 
 // The DiscoveryManager service provides configuration and monitoring functionality
