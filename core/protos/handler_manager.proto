@@ -92,6 +92,9 @@ message TestPayloadFunctionsReq {
     string  Token       = 1;
     bytes   AppEUI      = 2;
     bytes   Payload     = 11;
+    string  Decoder     = 21;
+    string  Converter   = 22;
+    string  Validator   = 23;
 }
 
 message TestPayloadFunctionsRes {

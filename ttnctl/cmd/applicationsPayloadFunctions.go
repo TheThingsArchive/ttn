@@ -122,10 +122,10 @@ function by loading the specified files containing JavaScript code.
 
 // applicationsTestPayloadFunctionsCmd represents the applicationsTestPayloadFunctions command
 var applicationsTestPayloadFunctionsCmd = &cobra.Command{
-	Use:   "test [payload]",
+	Use:   "test [payload] [decoder.js]",
 	Short: "Test the payload functions",
-	Long: `ttnctl applications pf test sends the specified binary data to the
-Handler and returns the fields and validation result.
+	Long: `ttnctl applications pf test sends the specified payload functions to
+the Handler, as well as a payload to test them on and returns the fields and validation result.
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		appEUI := util.GetAppEUI(ctx)
@@ -148,11 +148,37 @@ Handler and returns the fields and validation result.
 			ctx.WithError(err).Fatal("Invalid payload")
 		}
 
+		decoder, err := ioutil.ReadFile(args[0])
+		if err != nil {
+			ctx.WithError(err).Fatal("Read decoder file failed")
+		}
+
+		var converter []byte
+		converterFile, err := cmd.Flags().GetString("converter")
+		if converterFile != "" {
+			converter, err = ioutil.ReadFile(converterFile)
+			if err != nil {
+				ctx.WithError(err).Fatal("Read converter file failed")
+			}
+		}
+
+		var validator []byte
+		validatorFile, err := cmd.Flags().GetString("validator")
+		if validatorFile != "" {
+			validator, err = ioutil.ReadFile(validatorFile)
+			if err != nil {
+				ctx.WithError(err).Fatal("Read validator file failed")
+			}
+		}
+
 		manager := util.GetHandlerManager(ctx)
 		res, err := manager.TestPayloadFunctions(context.Background(), &core.TestPayloadFunctionsReq{
-			Token:   auth.AccessToken,
-			AppEUI:  appEUI.Bytes(),
-			Payload: payload,
+			Token:     auth.AccessToken,
+			AppEUI:    appEUI.Bytes(),
+			Payload:   payload,
+			Decoder:   string(decoder),
+			Converter: string(converter),
+			Validator: string(validator),
 		})
 		if err != nil {
 			ctx.WithError(err).Fatal("Test payload functions failed")
@@ -174,4 +200,7 @@ func init() {
 
 	applicationsSetPayloadFunctionsCmd.Flags().StringP("converter", "c", "", "Converter function")
 	applicationsSetPayloadFunctionsCmd.Flags().StringP("validator", "v", "", "Validator function")
+
+	applicationsTestPayloadFunctionsCmd.Flags().StringP("converter", "c", "", "Converter function")
+	applicationsTestPayloadFunctionsCmd.Flags().StringP("validator", "v", "", "Validator function")
 }
