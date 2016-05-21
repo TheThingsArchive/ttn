@@ -144,7 +144,7 @@ the Handler, as well as a payload to test them on and returns the fields and val
 			ctx.Fatal("No authentication found. Please login")
 		}
 
-		payload, err := types.ParseHEX(args[0], len(args[0]))
+		payload, err := types.ParseHEX(args[0], len(args[0])/2)
 		if err != nil {
 			ctx.WithError(err).Fatal("Invalid payload")
 		}

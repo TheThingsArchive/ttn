@@ -39,7 +39,7 @@ formatted as "1h2m" for one hour and two minutes. The default TTL is one hour.`,
 			ctx.Warn("Sending data as plain text is bad practice. We recommend to transmit data in a binary format.")
 			payload = []byte(args[1])
 		} else {
-			payload, err = types.ParseHEX(args[1], len(args[1]))
+			payload, err = types.ParseHEX(args[1], len(args[1])/2)
 			if err != nil {
 				ctx.Fatalf("Invalid hexadecimal payload. If you are trying to send a plain-text payload, use the --plain flag.")
 			}
