@@ -145,7 +145,7 @@ var applicationsAuthorizeCmd = &cobra.Command{
 		}
 
 		server := viper.GetString("ttn-account-server")
-		uri := fmt.Sprintf("%s/applications/%s/authorize", server, fmt.Sprintf("%X", appEUI))
+		uri := fmt.Sprintf("%s/applications/%s/authorize", server, appEUI)
 		values := url.Values{
 			"email": {args[1]},
 		}
