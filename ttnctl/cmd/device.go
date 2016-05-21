@@ -330,6 +330,8 @@ the Handler`,
 	},
 }
 
+const netID = 0x13
+
 // devicesRegisterPersonalizedCmd represents the `device register personalized` command
 var devicesRegisterPersonalizedCmd = &cobra.Command{
 	Use:   "personalized [DevAddr] [NwkSKey] [AppSKey]",
@@ -337,17 +339,21 @@ var devicesRegisterPersonalizedCmd = &cobra.Command{
 	Long: `ttnctl devices register personalized creates or updates an ABP
 registration on the Handler`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) == 0 {
-			cmd.Help()
-			return
+		var devAddr types.DevAddr
+		var err error
+
+		if len(args) >= 1 {
+			devAddr, err = types.ParseDevAddr(args[0])
+			if err != nil {
+				ctx.Fatalf("Invalid DevAddr: %s", err)
+			}
+		} else {
+			ctx.Info("Generating random DevAddr...")
+			copy(devAddr[:], random.Bytes(4))
+			devAddr[0] = (netID << 1) | (devAddr[0] & 1)
 		}
 
 		appEUI := util.GetAppEUI(ctx)
-
-		devAddr, err := types.ParseDevAddr(args[0])
-		if err != nil {
-			ctx.Fatalf("Invalid DevAddr: %s", err)
-		}
 
 		var nwkSKey types.NwkSKey
 		var appSKey types.AppSKey
