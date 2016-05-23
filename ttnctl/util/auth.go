@@ -154,6 +154,10 @@ func newToken(server, email string, values url.Values) (*Auth, error) {
 		return nil, err
 	}
 
+	if resp.StatusCode == http.StatusUnauthorized {
+		return nil, errors.New("Incorrect username or password.")
+	}
+
 	if resp.StatusCode != http.StatusOK {
 		if t.Error != "" {
 			return nil, errors.New(t.ErrorDescription)

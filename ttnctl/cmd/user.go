@@ -94,8 +94,10 @@ var userLoginCmd = &cobra.Command{
 			ctx.Fatal(err.Error())
 		}
 
-		_, err = util.Login(viper.GetString("ttn-account-server"), email, string(password))
+		server := viper.GetString("ttn-account-server")
+		_, err = util.Login(server, email, string(password))
 		if err != nil {
+			ctx.Info(fmt.Sprintf("Visit %s to register or to retrieve your account credentials.", server))
 			ctx.WithError(err).Fatal("Failed to login")
 		}
 
