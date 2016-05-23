@@ -130,7 +130,7 @@ the Handler, as well as a payload to test them on and returns the fields and val
 	Run: func(cmd *cobra.Command, args []string) {
 		appEUI := util.GetAppEUI(ctx)
 
-		if len(args) == 0 {
+		if len(args) <= 1 {
 			cmd.Help()
 			return
 		}
@@ -148,7 +148,7 @@ the Handler, as well as a payload to test them on and returns the fields and val
 			ctx.WithError(err).Fatal("Invalid payload")
 		}
 
-		decoder, err := ioutil.ReadFile(args[0])
+		decoder, err := ioutil.ReadFile(args[1])
 		if err != nil {
 			ctx.WithError(err).Fatal("Read decoder file failed")
 		}
