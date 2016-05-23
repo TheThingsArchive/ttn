@@ -39,7 +39,14 @@ func (d *discoveryServer) Get(ctx context.Context, req *pb.GetRequest) (*pb.Disc
 	}, nil
 }
 
-func (d *discovery) RegisterDiscoveryServer(s *grpc.Server) {
+// RegisterRPC registers the local discovery with a gRPC server
+func (d *discovery) RegisterRPC(s *grpc.Server) {
+	server := &discoveryServer{d}
+	pb.RegisterDiscoveryServer(s, server)
+}
+
+// RegisterRPC registers the Redis-based discovery with a gRPC server
+func (d *redisDiscovery) RegisterRPC(s *grpc.Server) {
 	server := &discoveryServer{d}
 	pb.RegisterDiscoveryServer(s, server)
 }
