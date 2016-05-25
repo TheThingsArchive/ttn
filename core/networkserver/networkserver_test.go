@@ -15,6 +15,16 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/types"
 )
 
+func getDevAddr(bytes ...byte) (addr types.DevAddr) {
+	copy(addr[:], bytes[:4])
+	return
+}
+
+func getEUI(bytes ...byte) (eui types.EUI64) {
+	copy(eui[:], bytes[:8])
+	return
+}
+
 func TestHandleGetDevices(t *testing.T) {
 	a := New(t)
 
@@ -23,8 +33,9 @@ func TestHandleGetDevices(t *testing.T) {
 	}
 
 	// No Devices
+	devAddr1 := getDevAddr(1, 2, 3, 4)
 	res, err := ns.HandleGetDevices(&pb.DevicesRequest{
-		DevAddr: &types.DevAddr{1, 2, 3, 4},
+		DevAddr: &devAddr1,
 		FCnt:    5,
 	})
 	a.So(err, ShouldBeNil)
@@ -32,21 +43,22 @@ func TestHandleGetDevices(t *testing.T) {
 
 	// Matching Device
 	ns.devices.Set(&device.Device{
-		DevAddr: types.DevAddr{1, 2, 3, 4},
-		AppEUI:  types.AppEUI{1, 2, 3, 4, 5, 6, 7, 8},
-		DevEUI:  types.DevEUI{1, 2, 3, 4, 5, 6, 7, 8},
+		DevAddr: getDevAddr(1, 2, 3, 4),
+		AppEUI:  types.AppEUI(getEUI(1, 2, 3, 4, 5, 6, 7, 8)),
+		DevEUI:  types.DevEUI(getEUI(1, 2, 3, 4, 5, 6, 7, 8)),
 		FCntUp:  5,
 	})
 	res, err = ns.HandleGetDevices(&pb.DevicesRequest{
-		DevAddr: &types.DevAddr{1, 2, 3, 4},
+		DevAddr: &devAddr1,
 		FCnt:    5,
 	})
 	a.So(err, ShouldBeNil)
 	a.So(res.Results, ShouldHaveLength, 1)
 
 	// Non-Matching DevAddr
+	devAddr2 := getDevAddr(5, 6, 7, 8)
 	res, err = ns.HandleGetDevices(&pb.DevicesRequest{
-		DevAddr: &types.DevAddr{5, 6, 7, 8},
+		DevAddr: &devAddr2,
 		FCnt:    5,
 	})
 	a.So(err, ShouldBeNil)
@@ -54,7 +66,7 @@ func TestHandleGetDevices(t *testing.T) {
 
 	// Non-Matching FCnt
 	res, err = ns.HandleGetDevices(&pb.DevicesRequest{
-		DevAddr: &types.DevAddr{1, 2, 3, 4},
+		DevAddr: &devAddr1,
 		FCnt:    4,
 	})
 	a.So(err, ShouldBeNil)
@@ -62,33 +74,34 @@ func TestHandleGetDevices(t *testing.T) {
 
 	// Non-Matching FCnt, but FCnt Check Disabled
 	ns.devices.Set(&device.Device{
-		DevAddr: types.DevAddr{5, 6, 7, 8},
-		AppEUI:  types.AppEUI{5, 6, 7, 8, 1, 2, 3, 4},
-		DevEUI:  types.DevEUI{5, 6, 7, 8, 1, 2, 3, 4},
+		DevAddr: getDevAddr(5, 6, 7, 8),
+		AppEUI:  types.AppEUI(getEUI(5, 6, 7, 8, 1, 2, 3, 4)),
+		DevEUI:  types.DevEUI(getEUI(5, 6, 7, 8, 1, 2, 3, 4)),
 		FCntUp:  5,
 		Options: device.Options{
 			DisableFCntCheck: true,
 		},
 	})
 	res, err = ns.HandleGetDevices(&pb.DevicesRequest{
-		DevAddr: &types.DevAddr{5, 6, 7, 8},
+		DevAddr: &devAddr2,
 		FCnt:    4,
 	})
 	a.So(err, ShouldBeNil)
 	a.So(res.Results, ShouldHaveLength, 1)
 
 	// 32 Bit Frame Counter (A)
+	devAddr3 := getDevAddr(2, 2, 3, 4)
 	ns.devices.Set(&device.Device{
-		DevAddr: types.DevAddr{2, 2, 3, 4},
-		AppEUI:  types.AppEUI{2, 2, 3, 4, 5, 6, 7, 8},
-		DevEUI:  types.DevEUI{2, 2, 3, 4, 5, 6, 7, 8},
+		DevAddr: getDevAddr(2, 2, 3, 4),
+		AppEUI:  types.AppEUI(getEUI(2, 2, 3, 4, 5, 6, 7, 8)),
+		DevEUI:  types.DevEUI(getEUI(2, 2, 3, 4, 5, 6, 7, 8)),
 		FCntUp:  5 + (2 << 16),
 		Options: device.Options{
 			Uses32BitFCnt: true,
 		},
 	})
 	res, err = ns.HandleGetDevices(&pb.DevicesRequest{
-		DevAddr: &types.DevAddr{2, 2, 3, 4},
+		DevAddr: &devAddr3,
 		FCnt:    5,
 	})
 	a.So(err, ShouldBeNil)
@@ -96,16 +109,16 @@ func TestHandleGetDevices(t *testing.T) {
 
 	// 32 Bit Frame Counter (B)
 	ns.devices.Set(&device.Device{
-		DevAddr: types.DevAddr{2, 2, 3, 4},
-		AppEUI:  types.AppEUI{2, 2, 3, 4, 5, 6, 7, 8},
-		DevEUI:  types.DevEUI{2, 2, 3, 4, 5, 6, 7, 8},
+		DevAddr: devAddr3,
+		AppEUI:  types.AppEUI(getEUI(2, 2, 3, 4, 5, 6, 7, 8)),
+		DevEUI:  types.DevEUI(getEUI(2, 2, 3, 4, 5, 6, 7, 8)),
 		FCntUp:  (2 << 16) - 1,
 		Options: device.Options{
 			Uses32BitFCnt: true,
 		},
 	})
 	res, err = ns.HandleGetDevices(&pb.DevicesRequest{
-		DevAddr: &types.DevAddr{2, 2, 3, 4},
+		DevAddr: &devAddr3,
 		FCnt:    5,
 	})
 	a.So(err, ShouldBeNil)
@@ -137,13 +150,18 @@ func TestHandleActivate(t *testing.T) {
 	})
 	a.So(err, ShouldNotBeNil)
 
+	devAddr := getDevAddr(0, 0, 3, 1)
+	var nwkSKey types.NwkSKey
+	copy(nwkSKey[:], []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 1})
+	appEUI := types.AppEUI(getEUI(0, 0, 0, 0, 0, 0, 3, 1))
+	devEUI := types.DevEUI(getEUI(0, 0, 0, 0, 0, 0, 3, 1))
 	_, err = ns.HandleActivate(&pb_handler.DeviceActivationResponse{
 		ActivationMetadata: &pb_protocol.ActivationMetadata{Protocol: &pb_protocol.ActivationMetadata_Lorawan{
 			Lorawan: &pb_lorawan.ActivationMetadata{
-				AppEui:  &types.AppEUI{0, 0, 0, 0, 0, 0, 3, 1},
-				DevEui:  &types.DevEUI{0, 0, 0, 0, 0, 0, 3, 1},
-				DevAddr: &types.DevAddr{0, 0, 3, 1},
-				NwkSKey: &types.NwkSKey{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 1},
+				AppEui:  &appEUI,
+				DevEui:  &devEUI,
+				DevAddr: &devAddr,
+				NwkSKey: &nwkSKey,
 			},
 		}},
 	})
@@ -156,25 +174,29 @@ func TestHandleUplink(t *testing.T) {
 		devices: device.NewDeviceStore(),
 	}
 
+	appEUI := types.AppEUI(getEUI(1, 2, 3, 4, 5, 6, 7, 8))
+	devEUI := types.DevEUI(getEUI(1, 2, 3, 4, 5, 6, 7, 8))
+	devAddr := getDevAddr(1, 2, 3, 4)
+
 	// Device Not Found
 	message := &pb_broker.DeduplicatedUplinkMessage{
-		AppEui:  &types.AppEUI{1, 2, 3, 4, 5, 6, 7, 8},
-		DevEui:  &types.DevEUI{1, 2, 3, 4, 5, 6, 7, 8},
+		AppEui:  &appEUI,
+		DevEui:  &devEUI,
 		Payload: []byte{},
 	}
 	_, err := ns.HandleUplink(message)
 	a.So(err, ShouldNotBeNil)
 
 	ns.devices.Set(&device.Device{
-		DevAddr: types.DevAddr{1, 2, 3, 4},
-		AppEUI:  types.AppEUI{1, 2, 3, 4, 5, 6, 7, 8},
-		DevEUI:  types.DevEUI{1, 2, 3, 4, 5, 6, 7, 8},
+		DevAddr: devAddr,
+		AppEUI:  appEUI,
+		DevEUI:  devEUI,
 	})
 
 	// Invalid Payload
 	message = &pb_broker.DeduplicatedUplinkMessage{
-		AppEui:  &types.AppEUI{1, 2, 3, 4, 5, 6, 7, 8},
-		DevEui:  &types.DevEUI{1, 2, 3, 4, 5, 6, 7, 8},
+		AppEui:  &appEUI,
+		DevEui:  &devEUI,
 		Payload: []byte{},
 	}
 	_, err = ns.HandleUplink(message)
@@ -196,8 +218,8 @@ func TestHandleUplink(t *testing.T) {
 
 	// Valid Uplink
 	message = &pb_broker.DeduplicatedUplinkMessage{
-		AppEui:  &types.AppEUI{1, 2, 3, 4, 5, 6, 7, 8},
-		DevEui:  &types.DevEUI{1, 2, 3, 4, 5, 6, 7, 8},
+		AppEui:  &appEUI,
+		DevEui:  &devEUI,
 		Payload: bytes,
 	}
 	res, err := ns.HandleUplink(message)
@@ -205,7 +227,7 @@ func TestHandleUplink(t *testing.T) {
 	a.So(res.ResponseTemplate, ShouldNotBeNil)
 
 	// Frame Counter should have been updated
-	dev, _ := ns.devices.Get(types.AppEUI{1, 2, 3, 4, 5, 6, 7, 8}, types.DevEUI{1, 2, 3, 4, 5, 6, 7, 8})
+	dev, _ := ns.devices.Get(appEUI, devEUI)
 	a.So(dev.FCntUp, ShouldEqual, 1)
 }
 
@@ -215,25 +237,29 @@ func TestHandleDownlink(t *testing.T) {
 		devices: device.NewDeviceStore(),
 	}
 
+	appEUI := types.AppEUI(getEUI(1, 2, 3, 4, 5, 6, 7, 8))
+	devEUI := types.DevEUI(getEUI(1, 2, 3, 4, 5, 6, 7, 8))
+	devAddr := getDevAddr(1, 2, 3, 4)
+
 	// Device Not Found
 	message := &pb_broker.DownlinkMessage{
-		AppEui:  &types.AppEUI{1, 2, 3, 4, 5, 6, 7, 8},
-		DevEui:  &types.DevEUI{1, 2, 3, 4, 5, 6, 7, 8},
+		AppEui:  &appEUI,
+		DevEui:  &devEUI,
 		Payload: []byte{},
 	}
 	_, err := ns.HandleDownlink(message)
 	a.So(err, ShouldNotBeNil)
 
 	ns.devices.Set(&device.Device{
-		DevAddr: types.DevAddr{1, 2, 3, 4},
-		AppEUI:  types.AppEUI{1, 2, 3, 4, 5, 6, 7, 8},
-		DevEUI:  types.DevEUI{1, 2, 3, 4, 5, 6, 7, 8},
+		DevAddr: devAddr,
+		AppEUI:  appEUI,
+		DevEUI:  devEUI,
 	})
 
 	// Invalid Payload
 	message = &pb_broker.DownlinkMessage{
-		AppEui:  &types.AppEUI{1, 2, 3, 4, 5, 6, 7, 8},
-		DevEui:  &types.DevEUI{1, 2, 3, 4, 5, 6, 7, 8},
+		AppEui:  &appEUI,
+		DevEui:  &devEUI,
 		Payload: []byte{},
 	}
 	_, err = ns.HandleDownlink(message)
@@ -257,8 +283,8 @@ func TestHandleDownlink(t *testing.T) {
 	bytes, _ := phy.MarshalBinary()
 
 	message = &pb_broker.DownlinkMessage{
-		AppEui:  &types.AppEUI{1, 2, 3, 4, 5, 6, 7, 8},
-		DevEui:  &types.DevEUI{1, 2, 3, 4, 5, 6, 7, 8},
+		AppEui:  &appEUI,
+		DevEui:  &devEUI,
 		Payload: bytes,
 	}
 	res, err := ns.HandleDownlink(message)
@@ -272,7 +298,7 @@ func TestHandleDownlink(t *testing.T) {
 	a.So(macPayload.FHDR.FCnt, ShouldEqual, 0)                // The first Frame counter is zero
 	a.So(phyPayload.MIC, ShouldNotEqual, [4]byte{0, 0, 0, 0}) // MIC should be set, we'll check it with actual examples in the integration test
 
-	dev, _ := ns.devices.Get(types.AppEUI{1, 2, 3, 4, 5, 6, 7, 8}, types.DevEUI{1, 2, 3, 4, 5, 6, 7, 8})
+	dev, _ := ns.devices.Get(appEUI, devEUI)
 	a.So(dev.FCntDown, ShouldEqual, 1)
 
 }
