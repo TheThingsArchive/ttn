@@ -56,24 +56,24 @@ func (d *brokerDiscovery) refreshCache() error {
 
 func (d *brokerDiscovery) All() (announcements []*pb.Announcement, err error) {
 	d.cacheLock.Lock()
+	defer d.cacheLock.Unlock()
 	if time.Now().After(d.cacheValidUntil) {
 		d.cacheValidUntil = time.Now().Add(10 * time.Second)
 		go d.refreshCache()
 	}
 	announcements = d.cache
-	d.cacheLock.Unlock()
 	return
 }
 
 func (d *brokerDiscovery) Discover(devAddr types.DevAddr) ([]*pb.Announcement, error) {
 	d.cacheLock.Lock()
+	defer d.cacheLock.Unlock()
+
 	if time.Now().After(d.cacheValidUntil) {
 		d.cacheValidUntil = time.Now().Add(10 * time.Second)
 		go d.refreshCache()
 	}
-	d.cacheLock.Unlock()
-	d.cacheLock.RLock()
-	defer d.cacheLock.RUnlock()
+
 	matches := []*pb.Announcement{}
 	for _, service := range d.cache {
 		for _, meta := range service.Metadata {
@@ -83,5 +83,6 @@ func (d *brokerDiscovery) Discover(devAddr types.DevAddr) ([]*pb.Announcement, e
 			}
 		}
 	}
+
 	return matches, nil
 }
