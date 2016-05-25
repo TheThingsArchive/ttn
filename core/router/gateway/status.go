@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"fmt"
+	"sync"
 
 	pb_gateway "github.com/TheThingsNetwork/ttn/api/gateway"
 	"github.com/TheThingsNetwork/ttn/core/types"
@@ -22,15 +23,20 @@ func NewStatusStore() StatusStore {
 }
 
 type statusStore struct {
+	sync.RWMutex
 	lastStatus *pb_gateway.Status
 }
 
 func (s *statusStore) Update(status *pb_gateway.Status) error {
+	s.Lock()
+	defer s.Unlock()
 	s.lastStatus = status
 	return nil
 }
 
 func (s *statusStore) Get() (*pb_gateway.Status, error) {
+	s.RLock()
+	defer s.RUnlock()
 	if s.lastStatus != nil {
 		return s.lastStatus, nil
 	}
