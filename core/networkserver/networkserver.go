@@ -27,6 +27,8 @@ type networkServer struct {
 	devices device.Store
 }
 
+const maxFCntGap = 16384
+
 func (n *networkServer) HandleGetDevices(req *pb.DevicesRequest) (*pb.DevicesResponse, error) {
 	devices, err := n.devices.GetWithAddress(*req.DevAddr)
 	if err != nil {
@@ -54,7 +56,10 @@ func (n *networkServer) HandleGetDevices(req *pb.DevicesRequest) (*pb.DevicesRes
 		}
 		if device.Options.Uses32BitFCnt {
 			ms := device.FCntUp / (1 << 16)
-			if device.FCntUp <= req.FCnt+(ms*(1<<16)) {
+			if device.FCntUp+maxFCntGap >= (ms+1)*(1<<16) && device.FCntUp <= req.FCnt+((ms+1)*(1<<16)) {
+				res.Results = append(res.Results, dev)
+				continue
+			} else if device.FCntUp <= req.FCnt+(ms*(1<<16)) {
 				res.Results = append(res.Results, dev)
 				continue
 			}

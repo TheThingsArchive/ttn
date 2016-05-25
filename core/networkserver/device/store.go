@@ -83,7 +83,16 @@ func (s *deviceStore) Set(new *Device, fields ...string) error {
 
 	if !new.DevAddr.IsEmpty() {
 		if devices, ok := s.byAddress[new.DevAddr]; ok {
-			s.byAddress[new.DevAddr] = append(devices, new)
+			var exists bool
+			for _, candidate := range devices {
+				if candidate.AppEUI == new.AppEUI && candidate.DevEUI == new.DevEUI {
+					exists = true
+					break
+				}
+			}
+			if !exists {
+				s.byAddress[new.DevAddr] = append(devices, new)
+			}
 		} else {
 			s.byAddress[new.DevAddr] = []*Device{new}
 		}

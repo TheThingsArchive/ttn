@@ -77,12 +77,29 @@ func TestHandleGetDevices(t *testing.T) {
 	a.So(err, ShouldBeNil)
 	a.So(res.Results, ShouldHaveLength, 1)
 
-	// 32 Bit Frame Counter
+	// 32 Bit Frame Counter (A)
 	ns.devices.Set(&device.Device{
 		DevAddr: types.DevAddr{2, 2, 3, 4},
 		AppEUI:  types.AppEUI{2, 2, 3, 4, 5, 6, 7, 8},
 		DevEUI:  types.DevEUI{2, 2, 3, 4, 5, 6, 7, 8},
 		FCntUp:  5 + (2 << 16),
+		Options: device.Options{
+			Uses32BitFCnt: true,
+		},
+	})
+	res, err = ns.HandleGetDevices(&pb.DevicesRequest{
+		DevAddr: &types.DevAddr{2, 2, 3, 4},
+		FCnt:    5,
+	})
+	a.So(err, ShouldBeNil)
+	a.So(res.Results, ShouldHaveLength, 1)
+
+	// 32 Bit Frame Counter (B)
+	ns.devices.Set(&device.Device{
+		DevAddr: types.DevAddr{2, 2, 3, 4},
+		AppEUI:  types.AppEUI{2, 2, 3, 4, 5, 6, 7, 8},
+		DevEUI:  types.DevEUI{2, 2, 3, 4, 5, 6, 7, 8},
+		FCntUp:  (2 << 16) - 1,
 		Options: device.Options{
 			Uses32BitFCnt: true,
 		},
