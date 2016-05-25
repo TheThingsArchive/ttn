@@ -25,7 +25,7 @@ func buildTestDiscoveryServer(port uint) (*discovery, *grpc.Server) {
 	}
 	d := &discovery{}
 	s := grpc.NewServer()
-	d.RegisterDiscoveryServer(s)
+	d.RegisterRPC(s)
 	go s.Serve(lis)
 
 	return d, s
