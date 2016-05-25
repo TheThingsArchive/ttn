@@ -2,6 +2,7 @@ package networkserver
 
 import (
 	"errors"
+	"time"
 
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_handler "github.com/TheThingsNetwork/ttn/api/handler"
@@ -126,6 +127,7 @@ func (n *networkServer) HandleUplink(message *pb_broker.DeduplicatedUplinkMessag
 
 	// Update FCntUp
 	dev.FCntUp = macPayload.FHDR.FCnt
+	dev.LastSeen = time.Now().UTC()
 	err = n.devices.Set(dev, "f_cnt_up")
 	if err != nil {
 		return nil, err

@@ -2,6 +2,7 @@ package networkserver
 
 import (
 	"testing"
+	"time"
 
 	"github.com/brocaar/lorawan"
 	. "github.com/smartystreets/assertions"
@@ -229,6 +230,7 @@ func TestHandleUplink(t *testing.T) {
 	// Frame Counter should have been updated
 	dev, _ := ns.devices.Get(appEUI, devEUI)
 	a.So(dev.FCntUp, ShouldEqual, 1)
+	a.So(time.Now().Sub(dev.LastSeen), ShouldBeLessThan, 1*time.Second)
 }
 
 func TestHandleDownlink(t *testing.T) {

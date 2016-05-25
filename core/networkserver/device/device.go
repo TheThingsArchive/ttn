@@ -2,6 +2,7 @@ package device
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/TheThingsNetwork/ttn/core/storage"
 	"github.com/TheThingsNetwork/ttn/core/types"
@@ -21,6 +22,7 @@ type Device struct {
 	NwkSKey     types.NwkSKey
 	FCntUp      uint32
 	FCntDown    uint32
+	LastSeen    time.Time
 	Options     Options
 	Utilization Utilization
 }
@@ -33,6 +35,7 @@ var DeviceProperties = []string{
 	"nwk_s_key",
 	"f_cnt_up",
 	"f_cnt_down",
+	"last_seen",
 	"options",
 	"utilization",
 }
@@ -75,6 +78,8 @@ func (device *Device) formatProperty(property string) (formatted string, err err
 		formatted = storage.FormatUint32(device.FCntUp)
 	case "f_cnt_down":
 		formatted = storage.FormatUint32(device.FCntDown)
+	case "last_seen":
+		formatted = device.LastSeen.Format(time.RFC3339Nano)
 	case "options":
 		// TODO
 	case "utilization":
@@ -126,6 +131,12 @@ func (device *Device) parseProperty(property string, value string) error {
 			return err
 		}
 		device.FCntDown = val
+	case "last_seen":
+		val, err := time.Parse(time.RFC3339Nano, value)
+		if err != nil {
+			return err
+		}
+		device.LastSeen = val
 	case "options":
 		// TODO
 	case "utilization":
