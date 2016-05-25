@@ -50,6 +50,14 @@ type router struct {
 
 // getGateway gets or creates a Gateway
 func (r *router) getGateway(eui types.GatewayEUI) *gateway.Gateway {
+	// We're going to be optimistic and guess that the gateway is already active
+	r.gatewaysLock.RLock()
+	gtw, ok := r.gateways[eui]
+	r.gatewaysLock.RUnlock()
+	if ok {
+		return gtw
+	}
+	// If it doesn't we still have to lock
 	r.gatewaysLock.Lock()
 	defer r.gatewaysLock.Unlock()
 	if _, ok := r.gateways[eui]; !ok {
@@ -61,6 +69,14 @@ func (r *router) getGateway(eui types.GatewayEUI) *gateway.Gateway {
 // getBroker gets or creates a broker association and returns the broker
 // the first time it also starts a goroutine that receives downlink from the broker
 func (r *router) getBroker(req *pb_discovery.Announcement) (*broker, error) {
+	// We're going to be optimistic and guess that the broker is already active
+	r.brokersLock.RLock()
+	brk, ok := r.brokers[req.NetAddress]
+	r.brokersLock.RUnlock()
+	if ok {
+		return brk, nil
+	}
+	// If it doesn't we still have to lock
 	r.brokersLock.Lock()
 	defer r.brokersLock.Unlock()
 	if _, ok := r.brokers[req.NetAddress]; !ok {
