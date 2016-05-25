@@ -111,7 +111,8 @@ func NewRequestWithAuth(server, method, urlStr string, body io.Reader) (*http.Re
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Add("Authorization", fmt.Sprintf("bearer %s", auth.AccessToken))
+	req.Header.Set("Authorization", fmt.Sprintf("bearer %s", auth.AccessToken))
+	req.Header.Set("Accept", "application/json")
 	return req, nil
 }
 

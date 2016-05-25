@@ -6,8 +6,10 @@ package cmd
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/howeyc/gopass"
@@ -64,13 +66,23 @@ var userCreateCmd = &cobra.Command{
 			"email":    {email},
 			"password": {string(password)},
 		}
-		res, err := http.PostForm(uri, values)
+
+		req, err := http.NewRequest("POST", uri, strings.NewReader(values.Encode()))
+		if err != nil {
+			ctx.WithError(err).Fatalf("Failed to create request")
+		}
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		req.Header.Set("Accept", "application/json")
+
+		client := &http.Client{}
+		res, err := client.Do(req)
 		if err != nil {
 			ctx.WithError(err).Fatal("Registration failed")
 		}
 
 		if res.StatusCode != http.StatusCreated {
-			ctx.Fatalf("Registration failed: %d %s", res.StatusCode, res.Status)
+			buf, _ := ioutil.ReadAll(res.Body)
+			ctx.Fatalf("Registration failed: %s (%v)", res.Status, string(buf))
 		}
 
 		ctx.Info("User created")
