@@ -8,6 +8,7 @@ import (
 	pb "github.com/TheThingsNetwork/ttn/api/networkserver"
 	pb_protocol "github.com/TheThingsNetwork/ttn/api/protocol"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
+	"github.com/TheThingsNetwork/ttn/core/fcnt"
 	"github.com/TheThingsNetwork/ttn/core/networkserver/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/random"
@@ -26,8 +27,6 @@ type NetworkServer interface {
 type networkServer struct {
 	devices device.Store
 }
-
-const maxFCntGap = 16384
 
 func (n *networkServer) HandleGetDevices(req *pb.DevicesRequest) (*pb.DevicesResponse, error) {
 	devices, err := n.devices.GetWithAddress(*req.DevAddr)
@@ -54,16 +53,10 @@ func (n *networkServer) HandleGetDevices(req *pb.DevicesRequest) (*pb.DevicesRes
 			res.Results = append(res.Results, dev)
 			continue
 		}
-		if device.Options.Uses32BitFCnt {
-			ms := device.FCntUp / (1 << 16)
-			if device.FCntUp+maxFCntGap >= (ms+1)*(1<<16) && device.FCntUp <= req.FCnt+((ms+1)*(1<<16)) {
-				res.Results = append(res.Results, dev)
-				continue
-			} else if device.FCntUp <= req.FCnt+(ms*(1<<16)) {
-				res.Results = append(res.Results, dev)
-				continue
-			}
-		} else if device.FCntUp <= req.FCnt {
+		if device.FCntUp <= req.FCnt {
+			res.Results = append(res.Results, dev)
+			continue
+		} else if device.Options.Uses32BitFCnt && device.FCntUp <= fcnt.GetFull(device.FCntUp, uint16(req.FCnt)) {
 			res.Results = append(res.Results, dev)
 			continue
 		}
