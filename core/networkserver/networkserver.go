@@ -76,7 +76,10 @@ func (n *networkServer) HandlePrepareActivation(activation *pb_broker.Deduplicat
 	// Build lorawan metadata if not present
 	if lorawan := activation.ActivationMetadata.GetLorawan(); lorawan == nil {
 		activation.ActivationMetadata.Protocol = &pb_protocol.ActivationMetadata_Lorawan{
-			Lorawan: &pb_lorawan.ActivationMetadata{},
+			Lorawan: &pb_lorawan.ActivationMetadata{
+				DevEui: activation.DevEui,
+				AppEui: activation.AppEui,
+			},
 		}
 	}
 	// Generate random DevAddr
