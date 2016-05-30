@@ -45,6 +45,8 @@ func (r *router) HandleActivation(gatewayEUI types.GatewayEUI, activation *pb.De
 		go func() {
 			res, err := broker.client.Activate(context.Background(), &pb_broker.DeviceActivationRequest{
 				Payload:          activation.Payload,
+				DevEui:           activation.DevEui,
+				AppEui:           activation.AppEui,
 				ProtocolMetadata: activation.ProtocolMetadata,
 				GatewayMetadata:  activation.GatewayMetadata,
 				DownlinkOptions:  downlinkOptions,
