@@ -5,6 +5,8 @@ import (
 	"sync"
 
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
+	pb_protocol "github.com/TheThingsNetwork/ttn/api/protocol"
+	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	pb "github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/core/types"
 )
@@ -30,6 +32,42 @@ func (r *router) HandleActivation(gatewayEUI types.GatewayEUI, activation *pb.De
 		return nil, err
 	}
 
+	// Prepare request
+	request := &pb_broker.DeviceActivationRequest{
+		Payload:          activation.Payload,
+		DevEui:           activation.DevEui,
+		AppEui:           activation.AppEui,
+		ProtocolMetadata: activation.ProtocolMetadata,
+		GatewayMetadata:  activation.GatewayMetadata,
+		ActivationMetadata: &pb_protocol.ActivationMetadata{
+			Protocol: &pb_protocol.ActivationMetadata_Lorawan{
+				Lorawan: &pb_lorawan.ActivationMetadata{
+					AppEui: activation.AppEui,
+					DevEui: activation.DevEui,
+				},
+			},
+		},
+		DownlinkOptions: downlinkOptions,
+	}
+
+	// Prepare LoRaWAN activation
+	status, err := gateway.Status.Get()
+	if err != nil {
+		return nil, err
+	}
+	band, err := getBand(status.Region)
+	if err != nil {
+		return nil, err
+	}
+	lorawan := request.ActivationMetadata.GetLorawan()
+	lorawan.Rx1DrOffset = 0
+	lorawan.Rx2Dr = uint32(band.RX2DataRate)
+	lorawan.RxDelay = uint32(band.ReceiveDelay1.Seconds())
+	switch status.Region {
+	case "EU_863_870":
+		lorawan.CfList = []uint64{867100000, 867300000, 867500000, 867700000, 867900000}
+	}
+
 	// Forward to all brokers and collect responses
 	var wg sync.WaitGroup
 	responses := make(chan *pb_broker.DeviceActivationResponse, len(brokers))
@@ -42,14 +80,7 @@ func (r *router) HandleActivation(gatewayEUI types.GatewayEUI, activation *pb.De
 		// Do async request
 		wg.Add(1)
 		go func() {
-			res, err := broker.client.Activate(r.getContext(), &pb_broker.DeviceActivationRequest{
-				Payload:          activation.Payload,
-				DevEui:           activation.DevEui,
-				AppEui:           activation.AppEui,
-				ProtocolMetadata: activation.ProtocolMetadata,
-				GatewayMetadata:  activation.GatewayMetadata,
-				DownlinkOptions:  downlinkOptions,
-			})
+			res, err := broker.client.Activate(r.getContext(), request)
 			if err == nil && res != nil {
 				responses <- res
 			}

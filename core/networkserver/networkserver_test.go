@@ -130,11 +130,27 @@ func TestHandleGetDevices(t *testing.T) {
 func TestHandlePrepareActivation(t *testing.T) {
 	a := New(t)
 	ns := &networkServer{}
-	resp, err := ns.HandlePrepareActivation(&pb_broker.DeduplicatedDeviceActivationRequest{})
+	resp, err := ns.HandlePrepareActivation(&pb_broker.DeduplicatedDeviceActivationRequest{
+		ActivationMetadata: &pb_protocol.ActivationMetadata{Protocol: &pb_protocol.ActivationMetadata_Lorawan{
+			Lorawan: &pb_lorawan.ActivationMetadata{
+				CfList: []uint64{867100000, 867300000, 867500000, 867700000, 867900000},
+			},
+		}},
+		ResponseTemplate: &pb_broker.DeviceActivationResponse{},
+	})
 	a.So(err, ShouldBeNil)
 	devAddr := resp.ActivationMetadata.GetLorawan().DevAddr
 	a.So(devAddr.IsEmpty(), ShouldBeFalse)
 	a.So(devAddr[0]&254, ShouldEqual, 19<<1) // 7 MSB should be NetID
+
+	var resPHY lorawan.PHYPayload
+	resPHY.UnmarshalBinary(resp.ResponseTemplate.Payload)
+	resMAC, _ := resPHY.MACPayload.(*lorawan.DataPayload)
+	joinAccept := &lorawan.JoinAcceptPayload{}
+	joinAccept.UnmarshalBinary(false, resMAC.Bytes)
+
+	a.So(joinAccept.DevAddr[0]&254, ShouldEqual, 19<<1)
+	a.So(*joinAccept.CFList, ShouldEqual, lorawan.CFList{867100000, 867300000, 867500000, 867700000, 867900000})
 }
 
 func TestHandleActivate(t *testing.T) {
@@ -226,6 +242,13 @@ func TestHandleUplink(t *testing.T) {
 	res, err := ns.HandleUplink(message)
 	a.So(err, ShouldBeNil)
 	a.So(res.ResponseTemplate, ShouldNotBeNil)
+
+	// LoRaWAN: Unmarshal
+	var phyPayload lorawan.PHYPayload
+	phyPayload.UnmarshalBinary(res.ResponseTemplate.Payload)
+	macPayload, _ := phyPayload.MACPayload.(*lorawan.MACPayload)
+
+	a.So([4]byte(macPayload.FHDR.DevAddr), ShouldEqual, [4]byte(devAddr))
 
 	// Frame Counter should have been updated
 	dev, _ := ns.devices.Get(appEUI, devEUI)

@@ -8,7 +8,6 @@ import (
 	pb_handler "github.com/TheThingsNetwork/ttn/api/handler"
 	pb "github.com/TheThingsNetwork/ttn/api/networkserver"
 	pb_protocol "github.com/TheThingsNetwork/ttn/api/protocol"
-	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core/fcnt"
 	"github.com/TheThingsNetwork/ttn/core/networkserver/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
@@ -66,7 +65,8 @@ func (n *networkServer) HandleGetDevices(req *pb.DevicesRequest) (*pb.DevicesRes
 	return res, nil
 }
 
-const nwkID = 0x13
+var netID = [3]byte{0x14, 0x14, 0x14} // TODO: Change to actual NetID
+var nwkID byte = 0x13
 
 func (n *networkServer) HandlePrepareActivation(activation *pb_broker.DeduplicatedDeviceActivationRequest) (*pb_broker.DeduplicatedDeviceActivationRequest, error) {
 	// Build activation metadata if not present
@@ -75,21 +75,51 @@ func (n *networkServer) HandlePrepareActivation(activation *pb_broker.Deduplicat
 	}
 	// Build lorawan metadata if not present
 	if lorawan := activation.ActivationMetadata.GetLorawan(); lorawan == nil {
-		activation.ActivationMetadata.Protocol = &pb_protocol.ActivationMetadata_Lorawan{
-			Lorawan: &pb_lorawan.ActivationMetadata{
-				DevEui: activation.DevEui,
-				AppEui: activation.AppEui,
-			},
-		}
+		return nil, errors.New("ttn/networkserver: Can only handle LoRaWAN activations")
 	}
+
+	// Build response template if not present
+	if pld := activation.GetResponseTemplate(); pld == nil {
+		return nil, errors.New("ttn/networkserver: Activation does not contain a response template")
+	}
+	lorawanMeta := activation.ActivationMetadata.GetLorawan()
+
 	// Generate random DevAddr
 	// TODO: Be smarter than just randomly generating addresses.
 	var devAddr types.DevAddr
 	copy(devAddr[:], random.Bytes(4))
 	devAddr[0] = (nwkID << 1) | (devAddr[0] & 1) // DevAddr 7 msb are NetID 7 lsb
 
-	// Set the DevAddr in the Activation
-	activation.ActivationMetadata.GetLorawan().DevAddr = &devAddr
+	// Set the DevAddr in the Activation Metadata
+	lorawanMeta.DevAddr = &devAddr
+
+	// Build JoinAccept Payload
+	phy := lorawan.PHYPayload{
+		MHDR: lorawan.MHDR{
+			MType: lorawan.JoinAccept,
+			Major: lorawan.LoRaWANR1,
+		},
+		MACPayload: &lorawan.JoinAcceptPayload{
+			NetID:      netID,
+			DLSettings: lorawan.DLSettings{RX2DataRate: uint8(lorawanMeta.Rx2Dr), RX1DROffset: uint8(lorawanMeta.Rx1DrOffset)},
+			RXDelay:    uint8(lorawanMeta.RxDelay),
+			DevAddr:    lorawan.DevAddr(devAddr),
+		},
+	}
+	if len(lorawanMeta.CfList) == 5 {
+		var cfList lorawan.CFList
+		for i, cfListItem := range lorawanMeta.CfList {
+			cfList[i] = uint32(cfListItem)
+		}
+		phy.MACPayload.(*lorawan.JoinAcceptPayload).CFList = &cfList
+	}
+
+	// Set the Payload
+	phyBytes, err := phy.MarshalBinary()
+	if err != nil {
+		return nil, err
+	}
+	activation.ResponseTemplate.Payload = phyBytes
 
 	return activation, nil
 }
@@ -143,8 +173,30 @@ func (n *networkServer) HandleUplink(message *pb_broker.DeduplicatedUplinkMessag
 	message.ResponseTemplate.AppEui = message.AppEui
 	message.ResponseTemplate.DevEui = message.DevEui
 
+	phy := lorawan.PHYPayload{
+		MHDR: lorawan.MHDR{
+			MType: lorawan.UnconfirmedDataDown,
+			Major: lorawan.LoRaWANR1,
+		},
+		MACPayload: &lorawan.MACPayload{
+			FHDR: lorawan.FHDR{
+				DevAddr: macPayload.FHDR.DevAddr,
+				FCtrl: lorawan.FCtrl{
+					ACK: phyPayload.MHDR.MType == lorawan.ConfirmedDataUp,
+				},
+				FCnt: dev.FCntDown,
+			},
+			FPort: macPayload.FPort,
+		},
+	}
+	phyBytes, err := phy.MarshalBinary()
+	if err != nil {
+		return nil, err
+	}
+
 	// TODO: Maybe we need to add MAC commands on downlink
-	message.ResponseTemplate.Payload = []byte{}
+
+	message.ResponseTemplate.Payload = phyBytes
 
 	return message, nil
 }
