@@ -1,0 +1,153 @@
+package broker
+
+import (
+	"sync"
+	"testing"
+	"time"
+
+	pb "github.com/TheThingsNetwork/ttn/api/broker"
+	"github.com/TheThingsNetwork/ttn/api/gateway"
+	pb_networkserver "github.com/TheThingsNetwork/ttn/api/networkserver"
+	"github.com/TheThingsNetwork/ttn/api/protocol"
+	"github.com/TheThingsNetwork/ttn/core/broker/application"
+	"github.com/TheThingsNetwork/ttn/core/types"
+	"github.com/brocaar/lorawan"
+	. "github.com/smartystreets/assertions"
+)
+
+func TestHandleUplink(t *testing.T) {
+	a := New(t)
+
+	b := &broker{
+		uplinkDeduplicator: NewDeduplicator(10 * time.Millisecond),
+		ns: &mockNetworkServer{
+			devices: []*pb_networkserver.DevicesResponse_Device{},
+		},
+	}
+
+	// Invalid Payload
+	err := b.HandleUplink(&pb.UplinkMessage{
+		Payload:          []byte{0x01, 0x02, 0x03},
+		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2},
+		ProtocolMetadata: &protocol.RxMetadata{},
+	})
+	a.So(err, ShouldNotBeNil)
+
+	// Valid Payload
+	phy := lorawan.PHYPayload{
+		MHDR: lorawan.MHDR{
+			MType: lorawan.UnconfirmedDataUp,
+			Major: lorawan.LoRaWANR1,
+		},
+		MACPayload: &lorawan.MACPayload{
+			FHDR: lorawan.FHDR{
+				DevAddr: lorawan.DevAddr([4]byte{1, 2, 3, 4}),
+				FCnt:    1,
+			},
+		},
+	}
+	bytes, _ := phy.MarshalBinary()
+
+	// Device not found
+	b.uplinkDeduplicator = NewDeduplicator(10 * time.Millisecond)
+	err = b.HandleUplink(&pb.UplinkMessage{
+		Payload:          bytes,
+		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2},
+		ProtocolMetadata: &protocol.RxMetadata{},
+	})
+	a.So(err, ShouldEqual, ErrNotFound)
+
+	// Add devices
+	b = &broker{
+		handlers:           make(map[string]chan *pb.DeduplicatedUplinkMessage),
+		uplinkDeduplicator: NewDeduplicator(10 * time.Millisecond),
+		ns: &mockNetworkServer{
+			devices: []*pb_networkserver.DevicesResponse_Device{
+				&pb_networkserver.DevicesResponse_Device{
+					DevEui:  &types.DevEUI{1, 2, 3, 4, 5, 6, 7, 8},
+					AppEui:  &types.AppEUI{1, 2, 3, 4, 5, 6, 7, 8},
+					NwkSKey: &types.NwkSKey{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8},
+					FCnt:    3,
+				},
+			},
+		},
+		applications: application.NewApplicationStore(),
+	}
+	b.applications.Set(&application.Application{AppEUI: types.AppEUI{1, 2, 3, 4, 5, 6, 7, 8}, HandlerID: "handlerID"})
+	b.handlers["handlerID"] = make(chan *pb.DeduplicatedUplinkMessage, 10)
+
+	// Device doesn't match
+	b.uplinkDeduplicator = NewDeduplicator(10 * time.Millisecond)
+	err = b.HandleUplink(&pb.UplinkMessage{
+		Payload:          bytes,
+		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2},
+		ProtocolMetadata: &protocol.RxMetadata{},
+	})
+	a.So(err, ShouldEqual, ErrNoMatch)
+
+	phy.SetMIC(lorawan.AES128Key{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8})
+	bytes, _ = phy.MarshalBinary()
+
+	// Wrong FCnt
+	b.uplinkDeduplicator = NewDeduplicator(10 * time.Millisecond)
+	err = b.HandleUplink(&pb.UplinkMessage{
+		Payload:          bytes,
+		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2},
+		ProtocolMetadata: &protocol.RxMetadata{},
+	})
+	a.So(err, ShouldEqual, ErrInvalidFCnt)
+
+	// Disable FCnt Check
+	b.uplinkDeduplicator = NewDeduplicator(10 * time.Millisecond)
+	b.ns.(*mockNetworkServer).devices[0].DisableFCntCheck = true
+	err = b.HandleUplink(&pb.UplinkMessage{
+		Payload:          bytes,
+		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2},
+		ProtocolMetadata: &protocol.RxMetadata{},
+	})
+	a.So(err, ShouldBeNil)
+
+	// OK FCnt
+	b.uplinkDeduplicator = NewDeduplicator(10 * time.Millisecond)
+	b.ns.(*mockNetworkServer).devices[0].FCnt = 0
+	b.ns.(*mockNetworkServer).devices[0].DisableFCntCheck = false
+	err = b.HandleUplink(&pb.UplinkMessage{
+		Payload:          bytes,
+		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2},
+		ProtocolMetadata: &protocol.RxMetadata{},
+	})
+	a.So(err, ShouldBeNil)
+}
+
+func TestDeduplicateUplink(t *testing.T) {
+	a := New(t)
+	d := NewDeduplicator(10 * time.Millisecond).(*deduplicator)
+
+	payload := []byte{0x01, 0x02, 0x03}
+	protocolMetadata := &protocol.RxMetadata{}
+	uplink1 := &pb.UplinkMessage{Payload: payload, GatewayMetadata: &gateway.RxMetadata{Snr: 1.2}, ProtocolMetadata: protocolMetadata}
+	uplink2 := &pb.UplinkMessage{Payload: payload, GatewayMetadata: &gateway.RxMetadata{Snr: 3.4}, ProtocolMetadata: protocolMetadata}
+	uplink3 := &pb.UplinkMessage{Payload: payload, GatewayMetadata: &gateway.RxMetadata{Snr: 5.6}, ProtocolMetadata: protocolMetadata}
+	uplink4 := &pb.UplinkMessage{Payload: payload, GatewayMetadata: &gateway.RxMetadata{Snr: 7.8}, ProtocolMetadata: protocolMetadata}
+
+	b := &broker{uplinkDeduplicator: d}
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		res := b.deduplicateUplink(uplink1)
+		a.So(res, ShouldResemble, []*pb.UplinkMessage{uplink1, uplink2, uplink3})
+		a.So(res, ShouldNotContain, uplink4)
+		wg.Done()
+	}()
+
+	<-time.After(5 * time.Millisecond)
+
+	a.So(b.deduplicateUplink(uplink2), ShouldBeNil)
+	a.So(b.deduplicateUplink(uplink3), ShouldBeNil)
+
+	<-time.After(10 * time.Millisecond)
+
+	a.So(b.deduplicateUplink(uplink4), ShouldBeNil)
+
+	wg.Wait()
+}
