@@ -69,7 +69,7 @@ message DeduplicatedDeviceActivationRequest {
   bytes                        dev_eui              = 11 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.DevEUI"];
   bytes                        app_eui              = 12 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.AppEUI"];
   protocol.RxMetadata          protocol_metadata    = 21;
-  gateway.RxMetadata           gateway_metadata     = 22;
+  repeated gateway.RxMetadata  gateway_metadata     = 22;
   protocol.ActivationMetadata  activation_metadata  = 23;
   DeviceActivationResponse     response_template    = 31;
 }
