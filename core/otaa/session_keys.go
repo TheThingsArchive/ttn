@@ -6,12 +6,13 @@ package otaa
 import (
 	"crypto/aes"
 
+	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 )
 
 // CalculateSessionKeys calculates the AppSKey and NwkSKey
 // All arguments are MSB-first
-func CalculateSessionKeys(appKey [16]byte, appNonce [3]byte, netID [3]byte, devNonce [2]byte) (appSKey, nwkSKey [16]byte, err error) {
+func CalculateSessionKeys(appKey types.AppKey, appNonce [3]byte, netID [3]byte, devNonce [2]byte) (appSKey types.AppSKey, nwkSKey types.NwkSKey, err error) {
 
 	buf := make([]byte, 16)
 	copy(buf[1:4], reverse(appNonce[:]))
