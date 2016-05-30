@@ -57,6 +57,10 @@ func TestHandleUplink(t *testing.T) {
 	})
 	a.So(err, ShouldEqual, ErrNotFound)
 
+	devEUI := types.DevEUI{1, 2, 3, 4, 5, 6, 7, 8}
+	appEUI := types.AppEUI{1, 2, 3, 4, 5, 6, 7, 8}
+	nwkSKey := types.NwkSKey{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8}
+
 	// Add devices
 	b = &broker{
 		handlers:           make(map[string]chan *pb.DeduplicatedUplinkMessage),
@@ -64,16 +68,16 @@ func TestHandleUplink(t *testing.T) {
 		ns: &mockNetworkServer{
 			devices: []*pb_networkserver.DevicesResponse_Device{
 				&pb_networkserver.DevicesResponse_Device{
-					DevEui:  &types.DevEUI{1, 2, 3, 4, 5, 6, 7, 8},
-					AppEui:  &types.AppEUI{1, 2, 3, 4, 5, 6, 7, 8},
-					NwkSKey: &types.NwkSKey{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8},
+					DevEui:  &devEUI,
+					AppEui:  &appEUI,
+					NwkSKey: &nwkSKey,
 					FCnt:    3,
 				},
 			},
 		},
 		applications: application.NewApplicationStore(),
 	}
-	b.applications.Set(&application.Application{AppEUI: types.AppEUI{1, 2, 3, 4, 5, 6, 7, 8}, HandlerID: "handlerID"})
+	b.applications.Set(&application.Application{AppEUI: appEUI, HandlerID: "handlerID"})
 	b.handlers["handlerID"] = make(chan *pb.DeduplicatedUplinkMessage, 10)
 
 	// Device doesn't match
