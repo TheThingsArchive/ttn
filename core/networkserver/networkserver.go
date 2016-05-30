@@ -66,7 +66,7 @@ func (n *networkServer) HandleGetDevices(req *pb.DevicesRequest) (*pb.DevicesRes
 	return res, nil
 }
 
-const netID = 0x13
+const nwkID = 0x13
 
 func (n *networkServer) HandlePrepareActivation(activation *pb_broker.DeduplicatedDeviceActivationRequest) (*pb_broker.DeduplicatedDeviceActivationRequest, error) {
 	// Build activation metadata if not present
@@ -86,7 +86,7 @@ func (n *networkServer) HandlePrepareActivation(activation *pb_broker.Deduplicat
 	// TODO: Be smarter than just randomly generating addresses.
 	var devAddr types.DevAddr
 	copy(devAddr[:], random.Bytes(4))
-	devAddr[0] = (netID << 1) | (devAddr[0] & 1) // DevAddr 7 msb are NetID 7 lsb
+	devAddr[0] = (nwkID << 1) | (devAddr[0] & 1) // DevAddr 7 msb are NetID 7 lsb
 
 	// Set the DevAddr in the Activation
 	activation.ActivationMetadata.GetLorawan().DevAddr = &devAddr
