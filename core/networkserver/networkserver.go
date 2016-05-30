@@ -65,7 +65,7 @@ func (n *networkServer) HandleGetDevices(req *pb.DevicesRequest) (*pb.DevicesRes
 	return res, nil
 }
 
-var netID = [3]byte{0x14, 0x14, 0x14} // TODO: Change to actual NetID
+var netID = [3]byte{0x00, 0x00, 0x13}
 var nwkID byte = 0x13
 
 func (n *networkServer) HandlePrepareActivation(activation *pb_broker.DeduplicatedDeviceActivationRequest) (*pb_broker.DeduplicatedDeviceActivationRequest, error) {
