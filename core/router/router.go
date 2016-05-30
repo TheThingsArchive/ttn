@@ -7,6 +7,7 @@ import (
 	"golang.org/x/net/context"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 
 	"github.com/TheThingsNetwork/ttn/api"
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
@@ -87,7 +88,7 @@ func (r *router) getBroker(req *pb_discovery.Announcement) (*broker, error) {
 		}
 		client := pb_broker.NewBrokerClient(conn)
 
-		association, err := client.Associate(context.Background())
+		association, err := client.Associate(r.getContext())
 		if err != nil {
 			return nil, err
 		}
@@ -116,4 +117,14 @@ func (r *router) getBroker(req *pb_discovery.Announcement) (*broker, error) {
 		}
 	}
 	return r.brokers[req.NetAddress], nil
+}
+
+func (r *router) getContext() context.Context {
+	// TODO: insert correct metadata
+	md := metadata.Pairs(
+		"token", "token",
+		"id", "RouterID",
+	)
+	ctx := metadata.NewContext(context.Background(), md)
+	return ctx
 }

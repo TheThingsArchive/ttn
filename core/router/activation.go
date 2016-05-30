@@ -7,7 +7,6 @@ import (
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb "github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/core/types"
-	"golang.org/x/net/context"
 )
 
 func (r *router) HandleActivation(gatewayEUI types.GatewayEUI, activation *pb.DeviceActivationRequest) (*pb.DeviceActivationResponse, error) {
@@ -43,7 +42,7 @@ func (r *router) HandleActivation(gatewayEUI types.GatewayEUI, activation *pb.De
 		// Do async request
 		wg.Add(1)
 		go func() {
-			res, err := broker.client.Activate(context.Background(), &pb_broker.DeviceActivationRequest{
+			res, err := broker.client.Activate(r.getContext(), &pb_broker.DeviceActivationRequest{
 				Payload:          activation.Payload,
 				DevEui:           activation.DevEui,
 				AppEui:           activation.AppEui,
