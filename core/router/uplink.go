@@ -22,6 +22,29 @@ func (r *router) HandleUplink(gatewayEUI types.GatewayEUI, uplink *pb.UplinkMess
 	if err != nil {
 		return err
 	}
+
+	switch phyPayload.MHDR.MType {
+	case lorawan.JoinRequest:
+		joinRequestPayload, ok := phyPayload.MACPayload.(*lorawan.JoinRequestPayload)
+		if !ok {
+			return errors.New("Join Request message does not contain a join payload.")
+		}
+		devEUI := types.DevEUI(joinRequestPayload.DevEUI)
+		appEUI := types.AppEUI(joinRequestPayload.AppEUI)
+		_, err := r.HandleActivation(gatewayEUI, &pb.DeviceActivationRequest{
+			Payload:          uplink.Payload,
+			DevEui:           &devEUI,
+			AppEui:           &appEUI,
+			ProtocolMetadata: uplink.ProtocolMetadata,
+			GatewayMetadata:  uplink.GatewayMetadata,
+		})
+		return err
+	case lorawan.UnconfirmedDataUp, lorawan.ConfirmedDataUp:
+		// Just continue handling uplink
+	default:
+		return errors.New("ttn/router: Unhandled message type")
+	}
+
 	macPayload, ok := phyPayload.MACPayload.(*lorawan.MACPayload)
 	if !ok {
 		return errors.New("Uplink message does not contain a MAC payload.")
