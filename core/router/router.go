@@ -120,10 +120,14 @@ func (r *router) getBroker(req *pb_discovery.Announcement) (*broker, error) {
 }
 
 func (r *router) getContext() context.Context {
-	// TODO: insert correct metadata
+	var id, token string
+	if r.identity != nil {
+		id = r.identity.Id
+		token = r.identity.Token
+	}
 	md := metadata.Pairs(
-		"token", "token",
-		"id", "RouterID",
+		"token", token,
+		"id", id,
 	)
 	ctx := metadata.NewContext(context.Background(), md)
 	return ctx
