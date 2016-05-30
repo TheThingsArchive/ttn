@@ -2,7 +2,9 @@ package router
 
 import (
 	"errors"
+	"fmt"
 	"math"
+	"strings"
 
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_gateway "github.com/TheThingsNetwork/ttn/api/gateway"
@@ -48,7 +50,12 @@ func (r *router) HandleDownlink(downlink *pb_broker.DownlinkMessage) error {
 		GatewayConfiguration:  option.GatewayConfig,
 	}
 
-	err := gateway.Schedule.Schedule(option.Identifier, downlinkMessage)
+	identifier := option.Identifier
+	if r.identity != nil {
+		identifier = strings.TrimPrefix(option.Identifier, fmt.Sprintf("%s:", r.identity.Id))
+	}
+
+	err := gateway.Schedule.Schedule(identifier, downlinkMessage)
 	if err != nil {
 		return err
 	}
@@ -102,7 +109,7 @@ func getBand(region string) (band *lora.Band, err error) {
 	return
 }
 
-func buildDownlinkOptions(uplink *pb.UplinkMessage, isActivation bool, gateway *gateway.Gateway) (downlinkOptions []*pb_broker.DownlinkOption) {
+func (r *router) buildDownlinkOptions(uplink *pb.UplinkMessage, isActivation bool, gateway *gateway.Gateway) (downlinkOptions []*pb_broker.DownlinkOption) {
 	var options []*pb_broker.DownlinkOption
 
 	gatewayStatus, _ := gateway.Status.Get() // This just returns empty if non-existing
@@ -200,8 +207,13 @@ func buildDownlinkOptions(uplink *pb.UplinkMessage, isActivation bool, gateway *
 
 	computeDownlinkScores(gateway, uplink, options)
 
-	// Filter all illegal options
 	for _, option := range options {
+		// Add router ID to downlink option
+		if r.identity != nil {
+			option.Identifier = fmt.Sprintf("%s:%s", option.Identifier, r.identity.Id)
+		}
+
+		// Filter all illegal options
 		if option.Score < 1000 {
 			downlinkOptions = append(downlinkOptions, option)
 		}

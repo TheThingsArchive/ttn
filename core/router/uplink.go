@@ -14,7 +14,7 @@ func (r *router) HandleUplink(gatewayEUI types.GatewayEUI, uplink *pb.UplinkMess
 
 	gateway.Utilization.AddRx(uplink)
 
-	downlinkOptions := buildDownlinkOptions(uplink, false, gateway)
+	downlinkOptions := r.buildDownlinkOptions(uplink, false, gateway)
 
 	// LoRaWAN: Unmarshal
 	var phyPayload lorawan.PHYPayload
