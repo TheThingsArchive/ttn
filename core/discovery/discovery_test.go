@@ -30,7 +30,6 @@ func TestDiscoveryAnnounce(t *testing.T) {
 		client.Del("service:broker:broker1.1")
 		client.Del("service:broker:broker1.2")
 	}()
-	client.FlushAll()
 
 	discoveries := map[string]Discovery{
 		"local": localDiscovery,
@@ -100,7 +99,6 @@ func TestDiscoveryDiscover(t *testing.T) {
 		client.Del("service:broker:broker2.1")
 		client.Del("service:broker:broker2.2")
 	}()
-	client.FlushAll()
 
 	// This depends on the previous test to pass
 	redisDiscovery.Announce(router)
