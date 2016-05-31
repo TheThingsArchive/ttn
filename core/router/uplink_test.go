@@ -5,7 +5,6 @@ import (
 
 	"github.com/TheThingsNetwork/ttn/api/discovery"
 	pb_gateway "github.com/TheThingsNetwork/ttn/api/gateway"
-	pb_semtech "github.com/TheThingsNetwork/ttn/api/gateway/semtech"
 	pb_protocol "github.com/TheThingsNetwork/ttn/api/protocol"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	pb "github.com/TheThingsNetwork/ttn/api/router"
@@ -46,9 +45,8 @@ func newReferenceUplink() *pb.UplinkMessage {
 			DataRate:   "SF7BW125",
 			Modulation: pb_lorawan.Modulation_LORA,
 		}}},
-		GatewayMetadata: &pb_gateway.RxMetadata{Gateway: &pb_gateway.RxMetadata_Semtech{Semtech: &pb_semtech.RxMetadata{
+		GatewayMetadata: &pb_gateway.RxMetadata{
 			Timestamp: 100,
-		}},
 			Frequency: 868100000,
 			Rssi:      -25.0,
 			Snr:       5.0,

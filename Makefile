@@ -56,7 +56,6 @@ proto:
 	@$(PROTOC)/api/protocol/protocol.proto
 	@$(PROTOC)/api/protocol/**/*.proto
 	@$(PROTOC)/api/gateway/gateway.proto
-	@$(PROTOC)/api/gateway/**/*.proto
 	@$(PROTOC)/api/router/router.proto
 	@$(PROTOC)/api/broker/broker.proto
 	@$(PROTOC)/api/handler/handler.proto

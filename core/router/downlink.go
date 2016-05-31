@@ -8,7 +8,6 @@ import (
 
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_gateway "github.com/TheThingsNetwork/ttn/api/gateway"
-	pb_semtech "github.com/TheThingsNetwork/ttn/api/gateway/semtech"
 	pb_protocol "github.com/TheThingsNetwork/ttn/api/protocol"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	pb "github.com/TheThingsNetwork/ttn/api/router"
@@ -119,11 +118,6 @@ func (r *router) buildDownlinkOptions(uplink *pb.UplinkMessage, isActivation boo
 		return // We can't handle any other protocols than LoRaWAN yet
 	}
 
-	semtechMetadata := uplink.GatewayMetadata.GetSemtech()
-	if semtechMetadata == nil {
-		return // We can't handle any other gateways than Semtech yet
-	}
-
 	band, err := getBand(gatewayStatus.Region)
 	if err != nil {
 		return // We can't handle this region
@@ -157,13 +151,12 @@ func (r *router) buildDownlinkOptions(uplink *pb.UplinkMessage, isActivation boo
 						DataRate:   dataRate.String(),          // This is default
 						CodingRate: lorawanMetadata.CodingRate, // Let's just take this from the Rx
 					}}},
-					GatewayConfig: &pb_gateway.TxConfiguration{Gateway: &pb_gateway.TxConfiguration_Semtech{Semtech: &pb_semtech.TxConfiguration{
-						Timestamp:             semtechMetadata.Timestamp + uint32(delay/1000),
+					GatewayConfig: &pb_gateway.TxConfiguration{
+						Timestamp:             uplink.GatewayMetadata.Timestamp + uint32(delay/1000),
 						RfChain:               0,
 						PolarizationInversion: true,
-					}},
-						Frequency: uint64(downlinkChannel.Frequency),
-						Power:     int32(band.DefaultTXPower),
+						Frequency:             uint64(downlinkChannel.Frequency),
+						Power:                 int32(band.DefaultTXPower),
 					},
 				}
 				options = append(options, rx1)
@@ -193,13 +186,12 @@ func (r *router) buildDownlinkOptions(uplink *pb.UplinkMessage, isActivation boo
 				DataRate:   dataRate.String(),          // This is default
 				CodingRate: lorawanMetadata.CodingRate, // Let's just take this from the Rx
 			}}},
-			GatewayConfig: &pb_gateway.TxConfiguration{Gateway: &pb_gateway.TxConfiguration_Semtech{Semtech: &pb_semtech.TxConfiguration{
-				Timestamp:             semtechMetadata.Timestamp + uint32(delay/1000),
+			GatewayConfig: &pb_gateway.TxConfiguration{
+				Timestamp:             uplink.GatewayMetadata.Timestamp + uint32(delay/1000),
 				RfChain:               0,
 				PolarizationInversion: true,
-			}},
-				Frequency: uint64(band.RX2Frequency),
-				Power:     power,
+				Frequency:             uint64(band.RX2Frequency),
+				Power:                 power,
 			},
 		}
 		options = append(options, rx2)
@@ -286,7 +278,7 @@ func computeDownlinkScores(gateway *gateway.Gateway, uplink *pb.UplinkMessage, o
 
 		scheduleScore := 0.0 // Between 0 and 30 (lower is better) will be over 100 if forbidden
 		{
-			id, conflicts := gateway.Schedule.GetOption(option.GatewayConfig.GetSemtech().Timestamp, uint32(time/1000))
+			id, conflicts := gateway.Schedule.GetOption(option.GatewayConfig.Timestamp, uint32(time/1000))
 			option.Identifier = id
 			if conflicts >= 100 {
 				scheduleScore += 100

@@ -20,7 +20,6 @@ import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
 import _ "github.com/gogo/protobuf/gogoproto"
-import semtech "github.com/TheThingsNetwork/ttn/api/gateway/semtech"
 
 import github_com_TheThingsNetwork_ttn_core_types "github.com/TheThingsNetwork/ttn/core/types"
 
@@ -49,12 +48,14 @@ func (*GPSMetadata) Descriptor() ([]byte, []int) { return fileDescriptorGateway,
 
 type RxMetadata struct {
 	GatewayEui *github_com_TheThingsNetwork_ttn_core_types.GatewayEUI `protobuf:"bytes,1,opt,name=gateway_eui,json=gatewayEui,proto3,customtype=github.com/TheThingsNetwork/ttn/core/types.GatewayEUI" json:"gateway_eui,omitempty"`
-	Frequency  uint64                                                 `protobuf:"varint,11,opt,name=frequency,proto3" json:"frequency,omitempty"`
-	Rssi       float32                                                `protobuf:"fixed32,12,opt,name=rssi,proto3" json:"rssi,omitempty"`
-	Snr        float32                                                `protobuf:"fixed32,13,opt,name=snr,proto3" json:"snr,omitempty"`
-	// Types that are valid to be assigned to Gateway:
-	//	*RxMetadata_Semtech
-	Gateway isRxMetadata_Gateway `protobuf_oneof:"gateway"`
+	Timestamp  uint32                                                 `protobuf:"varint,11,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	Time       int64                                                  `protobuf:"varint,12,opt,name=time,proto3" json:"time,omitempty"`
+	RfChain    uint32                                                 `protobuf:"varint,21,opt,name=rf_chain,json=rfChain,proto3" json:"rf_chain,omitempty"`
+	Channel    uint32                                                 `protobuf:"varint,22,opt,name=channel,proto3" json:"channel,omitempty"`
+	Frequency  uint64                                                 `protobuf:"varint,31,opt,name=frequency,proto3" json:"frequency,omitempty"`
+	Rssi       float32                                                `protobuf:"fixed32,32,opt,name=rssi,proto3" json:"rssi,omitempty"`
+	Snr        float32                                                `protobuf:"fixed32,33,opt,name=snr,proto3" json:"snr,omitempty"`
+	Gps        *GPSMetadata                                           `protobuf:"bytes,41,opt,name=gps" json:"gps,omitempty"`
 }
 
 func (m *RxMetadata) Reset()                    { *m = RxMetadata{} }
@@ -62,180 +63,27 @@ func (m *RxMetadata) String() string            { return proto.CompactTextString
 func (*RxMetadata) ProtoMessage()               {}
 func (*RxMetadata) Descriptor() ([]byte, []int) { return fileDescriptorGateway, []int{1} }
 
-type isRxMetadata_Gateway interface {
-	isRxMetadata_Gateway()
-	MarshalTo([]byte) (int, error)
-	Size() int
-}
-
-type RxMetadata_Semtech struct {
-	Semtech *semtech.RxMetadata `protobuf:"bytes,21,opt,name=semtech,oneof"`
-}
-
-func (*RxMetadata_Semtech) isRxMetadata_Gateway() {}
-
-func (m *RxMetadata) GetGateway() isRxMetadata_Gateway {
+func (m *RxMetadata) GetGps() *GPSMetadata {
 	if m != nil {
-		return m.Gateway
+		return m.Gps
 	}
 	return nil
-}
-
-func (m *RxMetadata) GetSemtech() *semtech.RxMetadata {
-	if x, ok := m.GetGateway().(*RxMetadata_Semtech); ok {
-		return x.Semtech
-	}
-	return nil
-}
-
-// XXX_OneofFuncs is for the internal use of the proto package.
-func (*RxMetadata) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
-	return _RxMetadata_OneofMarshaler, _RxMetadata_OneofUnmarshaler, _RxMetadata_OneofSizer, []interface{}{
-		(*RxMetadata_Semtech)(nil),
-	}
-}
-
-func _RxMetadata_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
-	m := msg.(*RxMetadata)
-	// gateway
-	switch x := m.Gateway.(type) {
-	case *RxMetadata_Semtech:
-		_ = b.EncodeVarint(21<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Semtech); err != nil {
-			return err
-		}
-	case nil:
-	default:
-		return fmt.Errorf("RxMetadata.Gateway has unexpected type %T", x)
-	}
-	return nil
-}
-
-func _RxMetadata_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
-	m := msg.(*RxMetadata)
-	switch tag {
-	case 21: // gateway.semtech
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(semtech.RxMetadata)
-		err := b.DecodeMessage(msg)
-		m.Gateway = &RxMetadata_Semtech{msg}
-		return true, err
-	default:
-		return false, nil
-	}
-}
-
-func _RxMetadata_OneofSizer(msg proto.Message) (n int) {
-	m := msg.(*RxMetadata)
-	// gateway
-	switch x := m.Gateway.(type) {
-	case *RxMetadata_Semtech:
-		s := proto.Size(x.Semtech)
-		n += proto.SizeVarint(21<<3 | proto.WireBytes)
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case nil:
-	default:
-		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
-	}
-	return n
 }
 
 type TxConfiguration struct {
-	Frequency uint64 `protobuf:"varint,1,opt,name=frequency,proto3" json:"frequency,omitempty"`
-	Power     int32  `protobuf:"varint,2,opt,name=power,proto3" json:"power,omitempty"`
-	// Types that are valid to be assigned to Gateway:
-	//	*TxConfiguration_Semtech
-	Gateway isTxConfiguration_Gateway `protobuf_oneof:"gateway"`
+	GatewayEui            *github_com_TheThingsNetwork_ttn_core_types.GatewayEUI `protobuf:"bytes,1,opt,name=gateway_eui,json=gatewayEui,proto3,customtype=github.com/TheThingsNetwork/ttn/core/types.GatewayEUI" json:"gateway_eui,omitempty"`
+	Timestamp             uint32                                                 `protobuf:"varint,11,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	RfChain               uint32                                                 `protobuf:"varint,21,opt,name=rf_chain,json=rfChain,proto3" json:"rf_chain,omitempty"`
+	Frequency             uint64                                                 `protobuf:"varint,22,opt,name=frequency,proto3" json:"frequency,omitempty"`
+	Power                 int32                                                  `protobuf:"varint,23,opt,name=power,proto3" json:"power,omitempty"`
+	PolarizationInversion bool                                                   `protobuf:"varint,31,opt,name=polarization_inversion,json=polarizationInversion,proto3" json:"polarization_inversion,omitempty"`
+	FrequencyDeviation    uint32                                                 `protobuf:"varint,32,opt,name=frequency_deviation,json=frequencyDeviation,proto3" json:"frequency_deviation,omitempty"`
 }
 
 func (m *TxConfiguration) Reset()                    { *m = TxConfiguration{} }
 func (m *TxConfiguration) String() string            { return proto.CompactTextString(m) }
 func (*TxConfiguration) ProtoMessage()               {}
 func (*TxConfiguration) Descriptor() ([]byte, []int) { return fileDescriptorGateway, []int{2} }
-
-type isTxConfiguration_Gateway interface {
-	isTxConfiguration_Gateway()
-	MarshalTo([]byte) (int, error)
-	Size() int
-}
-
-type TxConfiguration_Semtech struct {
-	Semtech *semtech.TxConfiguration `protobuf:"bytes,11,opt,name=semtech,oneof"`
-}
-
-func (*TxConfiguration_Semtech) isTxConfiguration_Gateway() {}
-
-func (m *TxConfiguration) GetGateway() isTxConfiguration_Gateway {
-	if m != nil {
-		return m.Gateway
-	}
-	return nil
-}
-
-func (m *TxConfiguration) GetSemtech() *semtech.TxConfiguration {
-	if x, ok := m.GetGateway().(*TxConfiguration_Semtech); ok {
-		return x.Semtech
-	}
-	return nil
-}
-
-// XXX_OneofFuncs is for the internal use of the proto package.
-func (*TxConfiguration) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
-	return _TxConfiguration_OneofMarshaler, _TxConfiguration_OneofUnmarshaler, _TxConfiguration_OneofSizer, []interface{}{
-		(*TxConfiguration_Semtech)(nil),
-	}
-}
-
-func _TxConfiguration_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
-	m := msg.(*TxConfiguration)
-	// gateway
-	switch x := m.Gateway.(type) {
-	case *TxConfiguration_Semtech:
-		_ = b.EncodeVarint(11<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Semtech); err != nil {
-			return err
-		}
-	case nil:
-	default:
-		return fmt.Errorf("TxConfiguration.Gateway has unexpected type %T", x)
-	}
-	return nil
-}
-
-func _TxConfiguration_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
-	m := msg.(*TxConfiguration)
-	switch tag {
-	case 11: // gateway.semtech
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(semtech.TxConfiguration)
-		err := b.DecodeMessage(msg)
-		m.Gateway = &TxConfiguration_Semtech{msg}
-		return true, err
-	default:
-		return false, nil
-	}
-}
-
-func _TxConfiguration_OneofSizer(msg proto.Message) (n int) {
-	m := msg.(*TxConfiguration)
-	// gateway
-	switch x := m.Gateway.(type) {
-	case *TxConfiguration_Semtech:
-		s := proto.Size(x.Semtech)
-		n += proto.SizeVarint(11<<3 | proto.WireBytes)
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case nil:
-	default:
-		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
-	}
-	return n
-}
 
 // message Status represents a status update from a Gateway.
 // See https://gist.github.com/htdvisser/b2b1078005ed770233278a366430f992#stat
@@ -336,47 +184,66 @@ func (m *RxMetadata) MarshalTo(data []byte) (int, error) {
 		}
 		i += n1
 	}
-	if m.Frequency != 0 {
+	if m.Timestamp != 0 {
 		data[i] = 0x58
+		i++
+		i = encodeVarintGateway(data, i, uint64(m.Timestamp))
+	}
+	if m.Time != 0 {
+		data[i] = 0x60
+		i++
+		i = encodeVarintGateway(data, i, uint64(m.Time))
+	}
+	if m.RfChain != 0 {
+		data[i] = 0xa8
+		i++
+		data[i] = 0x1
+		i++
+		i = encodeVarintGateway(data, i, uint64(m.RfChain))
+	}
+	if m.Channel != 0 {
+		data[i] = 0xb0
+		i++
+		data[i] = 0x1
+		i++
+		i = encodeVarintGateway(data, i, uint64(m.Channel))
+	}
+	if m.Frequency != 0 {
+		data[i] = 0xf8
+		i++
+		data[i] = 0x1
 		i++
 		i = encodeVarintGateway(data, i, uint64(m.Frequency))
 	}
 	if m.Rssi != 0 {
-		data[i] = 0x65
+		data[i] = 0x85
+		i++
+		data[i] = 0x2
 		i++
 		i = encodeFixed32Gateway(data, i, uint32(math.Float32bits(float32(m.Rssi))))
 	}
 	if m.Snr != 0 {
-		data[i] = 0x6d
+		data[i] = 0x8d
+		i++
+		data[i] = 0x2
 		i++
 		i = encodeFixed32Gateway(data, i, uint32(math.Float32bits(float32(m.Snr))))
 	}
-	if m.Gateway != nil {
-		nn2, err := m.Gateway.MarshalTo(data[i:])
+	if m.Gps != nil {
+		data[i] = 0xca
+		i++
+		data[i] = 0x2
+		i++
+		i = encodeVarintGateway(data, i, uint64(m.Gps.Size()))
+		n2, err := m.Gps.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += nn2
+		i += n2
 	}
 	return i, nil
 }
 
-func (m *RxMetadata_Semtech) MarshalTo(data []byte) (int, error) {
-	i := 0
-	if m.Semtech != nil {
-		data[i] = 0xaa
-		i++
-		data[i] = 0x1
-		i++
-		i = encodeVarintGateway(data, i, uint64(m.Semtech.Size()))
-		n3, err := m.Semtech.MarshalTo(data[i:])
-		if err != nil {
-			return 0, err
-		}
-		i += n3
-	}
-	return i, nil
-}
 func (m *TxConfiguration) Marshal() (data []byte, err error) {
 	size := m.Size()
 	data = make([]byte, size)
@@ -392,40 +259,64 @@ func (m *TxConfiguration) MarshalTo(data []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if m.GatewayEui != nil {
+		data[i] = 0xa
+		i++
+		i = encodeVarintGateway(data, i, uint64(m.GatewayEui.Size()))
+		n3, err := m.GatewayEui.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n3
+	}
+	if m.Timestamp != 0 {
+		data[i] = 0x58
+		i++
+		i = encodeVarintGateway(data, i, uint64(m.Timestamp))
+	}
+	if m.RfChain != 0 {
+		data[i] = 0xa8
+		i++
+		data[i] = 0x1
+		i++
+		i = encodeVarintGateway(data, i, uint64(m.RfChain))
+	}
 	if m.Frequency != 0 {
-		data[i] = 0x8
+		data[i] = 0xb0
+		i++
+		data[i] = 0x1
 		i++
 		i = encodeVarintGateway(data, i, uint64(m.Frequency))
 	}
 	if m.Power != 0 {
-		data[i] = 0x10
+		data[i] = 0xb8
+		i++
+		data[i] = 0x1
 		i++
 		i = encodeVarintGateway(data, i, uint64(m.Power))
 	}
-	if m.Gateway != nil {
-		nn4, err := m.Gateway.MarshalTo(data[i:])
-		if err != nil {
-			return 0, err
+	if m.PolarizationInversion {
+		data[i] = 0xf8
+		i++
+		data[i] = 0x1
+		i++
+		if m.PolarizationInversion {
+			data[i] = 1
+		} else {
+			data[i] = 0
 		}
-		i += nn4
+		i++
+	}
+	if m.FrequencyDeviation != 0 {
+		data[i] = 0x80
+		i++
+		data[i] = 0x2
+		i++
+		i = encodeVarintGateway(data, i, uint64(m.FrequencyDeviation))
 	}
 	return i, nil
 }
 
-func (m *TxConfiguration_Semtech) MarshalTo(data []byte) (int, error) {
-	i := 0
-	if m.Semtech != nil {
-		data[i] = 0x5a
-		i++
-		i = encodeVarintGateway(data, i, uint64(m.Semtech.Size()))
-		n5, err := m.Semtech.MarshalTo(data[i:])
-		if err != nil {
-			return 0, err
-		}
-		i += n5
-	}
-	return i, nil
-}
 func (m *Status) Marshal() (data []byte, err error) {
 	size := m.Size()
 	data = make([]byte, size)
@@ -496,11 +387,11 @@ func (m *Status) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x1
 		i++
 		i = encodeVarintGateway(data, i, uint64(m.Gps.Size()))
-		n6, err := m.Gps.MarshalTo(data[i:])
+		n4, err := m.Gps.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n6
+		i += n4
 	}
 	if m.Rtt != 0 {
 		data[i] = 0xf8
@@ -592,54 +483,62 @@ func (m *RxMetadata) Size() (n int) {
 		l = m.GatewayEui.Size()
 		n += 1 + l + sovGateway(uint64(l))
 	}
+	if m.Timestamp != 0 {
+		n += 1 + sovGateway(uint64(m.Timestamp))
+	}
+	if m.Time != 0 {
+		n += 1 + sovGateway(uint64(m.Time))
+	}
+	if m.RfChain != 0 {
+		n += 2 + sovGateway(uint64(m.RfChain))
+	}
+	if m.Channel != 0 {
+		n += 2 + sovGateway(uint64(m.Channel))
+	}
 	if m.Frequency != 0 {
-		n += 1 + sovGateway(uint64(m.Frequency))
+		n += 2 + sovGateway(uint64(m.Frequency))
 	}
 	if m.Rssi != 0 {
-		n += 5
+		n += 6
 	}
 	if m.Snr != 0 {
-		n += 5
+		n += 6
 	}
-	if m.Gateway != nil {
-		n += m.Gateway.Size()
-	}
-	return n
-}
-
-func (m *RxMetadata_Semtech) Size() (n int) {
-	var l int
-	_ = l
-	if m.Semtech != nil {
-		l = m.Semtech.Size()
+	if m.Gps != nil {
+		l = m.Gps.Size()
 		n += 2 + l + sovGateway(uint64(l))
 	}
 	return n
 }
+
 func (m *TxConfiguration) Size() (n int) {
 	var l int
 	_ = l
+	if m.GatewayEui != nil {
+		l = m.GatewayEui.Size()
+		n += 1 + l + sovGateway(uint64(l))
+	}
+	if m.Timestamp != 0 {
+		n += 1 + sovGateway(uint64(m.Timestamp))
+	}
+	if m.RfChain != 0 {
+		n += 2 + sovGateway(uint64(m.RfChain))
+	}
 	if m.Frequency != 0 {
-		n += 1 + sovGateway(uint64(m.Frequency))
+		n += 2 + sovGateway(uint64(m.Frequency))
 	}
 	if m.Power != 0 {
-		n += 1 + sovGateway(uint64(m.Power))
+		n += 2 + sovGateway(uint64(m.Power))
 	}
-	if m.Gateway != nil {
-		n += m.Gateway.Size()
+	if m.PolarizationInversion {
+		n += 3
+	}
+	if m.FrequencyDeviation != 0 {
+		n += 2 + sovGateway(uint64(m.FrequencyDeviation))
 	}
 	return n
 }
 
-func (m *TxConfiguration_Semtech) Size() (n int) {
-	var l int
-	_ = l
-	if m.Semtech != nil {
-		l = m.Semtech.Size()
-		n += 1 + l + sovGateway(uint64(l))
-	}
-	return n
-}
 func (m *Status) Size() (n int) {
 	var l int
 	_ = l
@@ -885,6 +784,82 @@ func (m *RxMetadata) Unmarshal(data []byte) error {
 			iNdEx = postIndex
 		case 11:
 			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Timestamp", wireType)
+			}
+			m.Timestamp = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGateway
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				m.Timestamp |= (uint32(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 12:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Time", wireType)
+			}
+			m.Time = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGateway
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				m.Time |= (int64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 21:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RfChain", wireType)
+			}
+			m.RfChain = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGateway
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				m.RfChain |= (uint32(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 22:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Channel", wireType)
+			}
+			m.Channel = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGateway
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				m.Channel |= (uint32(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 31:
+			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Frequency", wireType)
 			}
 			m.Frequency = 0
@@ -902,7 +877,7 @@ func (m *RxMetadata) Unmarshal(data []byte) error {
 					break
 				}
 			}
-		case 12:
+		case 32:
 			if wireType != 5 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Rssi", wireType)
 			}
@@ -916,7 +891,7 @@ func (m *RxMetadata) Unmarshal(data []byte) error {
 			v |= uint32(data[iNdEx-2]) << 16
 			v |= uint32(data[iNdEx-1]) << 24
 			m.Rssi = float32(math.Float32frombits(v))
-		case 13:
+		case 33:
 			if wireType != 5 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Snr", wireType)
 			}
@@ -930,9 +905,9 @@ func (m *RxMetadata) Unmarshal(data []byte) error {
 			v |= uint32(data[iNdEx-2]) << 16
 			v |= uint32(data[iNdEx-1]) << 24
 			m.Snr = float32(math.Float32frombits(v))
-		case 21:
+		case 41:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Semtech", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Gps", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -956,11 +931,12 @@ func (m *RxMetadata) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			v := &semtech.RxMetadata{}
-			if err := v.Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if m.Gps == nil {
+				m.Gps = &GPSMetadata{}
+			}
+			if err := m.Gps.Unmarshal(data[iNdEx:postIndex]); err != nil {
 				return err
 			}
-			m.Gateway = &RxMetadata_Semtech{v}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -1013,6 +989,76 @@ func (m *TxConfiguration) Unmarshal(data []byte) error {
 		}
 		switch fieldNum {
 		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field GatewayEui", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGateway
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthGateway
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var v github_com_TheThingsNetwork_ttn_core_types.GatewayEUI
+			m.GatewayEui = &v
+			if err := m.GatewayEui.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 11:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Timestamp", wireType)
+			}
+			m.Timestamp = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGateway
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				m.Timestamp |= (uint32(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 21:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RfChain", wireType)
+			}
+			m.RfChain = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGateway
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				m.RfChain |= (uint32(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 22:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Frequency", wireType)
 			}
@@ -1031,7 +1077,7 @@ func (m *TxConfiguration) Unmarshal(data []byte) error {
 					break
 				}
 			}
-		case 2:
+		case 23:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Power", wireType)
 			}
@@ -1050,11 +1096,11 @@ func (m *TxConfiguration) Unmarshal(data []byte) error {
 					break
 				}
 			}
-		case 11:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Semtech", wireType)
+		case 31:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PolarizationInversion", wireType)
 			}
-			var msglen int
+			var v int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowGateway
@@ -1064,24 +1110,31 @@ func (m *TxConfiguration) Unmarshal(data []byte) error {
 				}
 				b := data[iNdEx]
 				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
+				v |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			if msglen < 0 {
-				return ErrInvalidLengthGateway
+			m.PolarizationInversion = bool(v != 0)
+		case 32:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FrequencyDeviation", wireType)
 			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
+			m.FrequencyDeviation = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGateway
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				m.FrequencyDeviation |= (uint32(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
 			}
-			v := &semtech.TxConfiguration{}
-			if err := v.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			m.Gateway = &TxConfiguration_Semtech{v}
-			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGateway(data[iNdEx:])
@@ -1570,41 +1623,43 @@ var (
 )
 
 var fileDescriptorGateway = []byte{
-	// 561 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x94, 0x53, 0xcd, 0x6e, 0xd3, 0x40,
-	0x10, 0xae, 0xf3, 0xd3, 0x92, 0x75, 0xd2, 0x56, 0xdb, 0x82, 0xac, 0x08, 0xb5, 0x55, 0x90, 0x50,
-	0xf9, 0x8b, 0x25, 0x7e, 0x0e, 0x3d, 0x12, 0x14, 0x95, 0x1e, 0xa0, 0x68, 0x1b, 0x2e, 0x5c, 0xa2,
-	0x8d, 0xb3, 0x71, 0x56, 0x89, 0xbd, 0x66, 0x3d, 0x56, 0x92, 0x17, 0xe0, 0x19, 0x78, 0x24, 0x8e,
-	0x48, 0xdc, 0x38, 0x20, 0x04, 0x17, 0x1e, 0x03, 0xef, 0xf8, 0x27, 0xa1, 0x12, 0x42, 0x1c, 0x2c,
-	0xcf, 0xf7, 0xcd, 0xec, 0xcc, 0xb7, 0x33, 0xb3, 0xe4, 0xcc, 0x97, 0x30, 0x4d, 0x46, 0x5d, 0x4f,
-	0x05, 0xee, 0x60, 0x2a, 0x06, 0x53, 0x19, 0xfa, 0xf1, 0x6b, 0x01, 0x0b, 0xa5, 0x67, 0x2e, 0x40,
-	0xe8, 0xf2, 0x48, 0xba, 0x3e, 0x07, 0xb1, 0xe0, 0xab, 0xe2, 0xdf, 0x8d, 0xb4, 0x02, 0x45, 0x77,
-	0x72, 0xd8, 0x7e, 0xb4, 0x91, 0xc3, 0x57, 0xbe, 0x72, 0xd1, 0x3f, 0x4a, 0x26, 0x88, 0x10, 0xa0,
-	0x95, 0x9d, 0x6b, 0x3f, 0xff, 0x9f, 0x92, 0xb1, 0x08, 0x40, 0x78, 0xd3, 0xe2, 0x9f, 0xa5, 0xe8,
-	0x2c, 0x88, 0x7d, 0xfe, 0xe6, 0xea, 0x95, 0x00, 0x3e, 0xe6, 0xc0, 0x29, 0x25, 0x35, 0x90, 0x81,
-	0x70, 0xac, 0x13, 0xeb, 0xb4, 0xca, 0xd0, 0xa6, 0x6d, 0x72, 0x63, 0xce, 0x41, 0x42, 0x32, 0x16,
-	0x4e, 0x25, 0xe5, 0x2b, 0xac, 0xc4, 0xf4, 0x36, 0x69, 0xcc, 0x55, 0xe8, 0x67, 0xce, 0x2a, 0x3a,
-	0xd7, 0x84, 0x39, 0xc9, 0xe7, 0xf9, 0xc9, 0x5a, 0xea, 0xac, 0xb3, 0x12, 0x77, 0x7e, 0x59, 0x84,
-	0xb0, 0x65, 0x59, 0xf8, 0x1d, 0xb1, 0x73, 0xa1, 0x43, 0x91, 0x48, 0xac, 0xdf, 0xec, 0x9d, 0x7d,
-	0xfd, 0x76, 0xfc, 0xec, 0x5f, 0x77, 0xf4, 0x94, 0x16, 0x2e, 0xac, 0x22, 0x11, 0x77, 0xcf, 0xb3,
-	0x0c, 0xfd, 0xb7, 0x17, 0x8c, 0xe4, 0xd9, 0xfa, 0x89, 0x34, 0x22, 0x27, 0x5a, 0xbc, 0x4f, 0x44,
-	0xe8, 0xad, 0x1c, 0x3b, 0xcd, 0x5c, 0x63, 0x6b, 0xc2, 0x5c, 0x59, 0xc7, 0xb1, 0x74, 0x9a, 0xa8,
-	0x1e, 0x6d, 0xba, 0x4f, 0xaa, 0x71, 0xa8, 0x9d, 0x16, 0x52, 0xc6, 0xa4, 0x2e, 0xd9, 0xc9, 0x1b,
-	0xe7, 0xdc, 0x4c, 0x59, 0xfb, 0xf1, 0x41, 0xb7, 0x68, 0xe4, 0xfa, 0x16, 0x2f, 0xb7, 0x58, 0x11,
-	0xd5, 0x6b, 0x90, 0x62, 0xaa, 0x9d, 0x0f, 0x16, 0xd9, 0x1b, 0x2c, 0x5f, 0xa8, 0x70, 0x22, 0xfd,
-	0x44, 0xa7, 0xad, 0x53, 0xe1, 0x9f, 0x9a, 0xac, 0xeb, 0x9a, 0x0e, 0x49, 0x3d, 0x52, 0x0b, 0xa1,
-	0xb1, 0xdf, 0x75, 0x96, 0x01, 0xfa, 0x74, 0xad, 0xc1, 0x46, 0x0d, 0x4e, 0xa9, 0xe1, 0x5a, 0xfa,
-	0xbf, 0x08, 0xf9, 0x52, 0x21, 0xdb, 0x57, 0xc0, 0x21, 0x89, 0x4d, 0x7d, 0x33, 0xdc, 0x18, 0x78,
-	0x10, 0x61, 0xfd, 0x16, 0x5b, 0x13, 0xe5, 0x1a, 0x54, 0x36, 0xd6, 0x60, 0x97, 0x54, 0x64, 0x94,
-	0x16, 0xae, 0x9e, 0x36, 0x58, 0x6a, 0x99, 0xe1, 0x46, 0xe9, 0x1e, 0x4c, 0x94, 0x0e, 0xb0, 0x77,
-	0x0d, 0x56, 0x62, 0x7a, 0x87, 0xb4, 0x3c, 0x15, 0x02, 0xf7, 0x60, 0x28, 0x02, 0x2e, 0xe7, 0xd8,
-	0xc9, 0x06, 0x6b, 0xe6, 0x64, 0xdf, 0x70, 0xf4, 0x84, 0xd8, 0x63, 0x11, 0x7b, 0x5a, 0x46, 0x46,
-	0xb2, 0xb3, 0x8b, 0x21, 0x9b, 0x14, 0xbd, 0x45, 0xb6, 0xb5, 0xf0, 0x8d, 0x73, 0x0f, 0x9d, 0x39,
-	0xa2, 0x77, 0x49, 0xd5, 0x8f, 0xe2, 0x7c, 0x10, 0x87, 0xdd, 0xe2, 0x31, 0x6d, 0x2c, 0x32, 0x33,
-	0x01, 0x66, 0x8c, 0x1a, 0xc0, 0x39, 0xc6, 0xeb, 0x19, 0x93, 0x1e, 0x90, 0xba, 0x5e, 0x0e, 0x65,
-	0xe8, 0xdc, 0x43, 0xae, 0xa6, 0x97, 0x17, 0x61, 0x4e, 0xaa, 0x99, 0x73, 0xbf, 0x20, 0x2f, 0x67,
-	0x86, 0x04, 0x8c, 0x7c, 0x90, 0x91, 0x90, 0x47, 0x02, 0x46, 0x3e, 0x2c, 0xc8, 0xcb, 0x59, 0x6f,
-	0xff, 0xd3, 0x8f, 0x23, 0xeb, 0x73, 0xfa, 0x7d, 0x4f, 0xbf, 0x8f, 0x3f, 0x8f, 0xb6, 0x46, 0xdb,
-	0xf8, 0xb6, 0x9e, 0xfc, 0x0e, 0x00, 0x00, 0xff, 0xff, 0x53, 0x5b, 0x1b, 0xe0, 0x13, 0x04, 0x00,
-	0x00,
+	// 607 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xc4, 0x54, 0xcb, 0x6e, 0x13, 0x31,
+	0x14, 0x25, 0x93, 0x3e, 0x9d, 0xa6, 0xad, 0xdc, 0x36, 0x98, 0x0a, 0xb5, 0x25, 0x48, 0xa8, 0xbc,
+	0x32, 0x12, 0xa8, 0x8b, 0x6e, 0x5b, 0xaa, 0xaa, 0x0b, 0x28, 0x72, 0xcb, 0x86, 0x4d, 0xe4, 0x4e,
+	0x9c, 0x89, 0x95, 0x89, 0x3d, 0x78, 0x3c, 0x4d, 0xca, 0x97, 0xf0, 0x2f, 0xec, 0x58, 0xb1, 0x44,
+	0x62, 0xc7, 0x02, 0x21, 0xf8, 0x11, 0xec, 0x3b, 0x8f, 0x4c, 0x91, 0xa0, 0x4b, 0x16, 0xa3, 0xdc,
+	0x73, 0xce, 0xb5, 0x3d, 0xf7, 0xf8, 0x64, 0xd0, 0x7e, 0x28, 0xcc, 0x20, 0xbd, 0xe8, 0x04, 0x6a,
+	0xe4, 0x9f, 0x0f, 0xf8, 0xf9, 0x40, 0xc8, 0x30, 0x79, 0xc5, 0xcd, 0x58, 0xe9, 0xa1, 0x6f, 0x8c,
+	0xf4, 0x59, 0x2c, 0xfc, 0x90, 0x19, 0x3e, 0x66, 0x57, 0xc5, 0x6f, 0x27, 0xd6, 0xca, 0x28, 0x3c,
+	0x9f, 0xc3, 0xcd, 0xa7, 0x95, 0x3d, 0x42, 0x15, 0x2a, 0x1f, 0xf4, 0x8b, 0xb4, 0x0f, 0x08, 0x00,
+	0x54, 0xd9, 0xba, 0xf6, 0x18, 0x35, 0x8e, 0x5f, 0x9f, 0xbd, 0xe4, 0x86, 0xf5, 0x98, 0x61, 0x18,
+	0xa3, 0x19, 0x23, 0x46, 0x9c, 0xd4, 0x76, 0x6a, 0xbb, 0x75, 0x0a, 0x35, 0xde, 0x44, 0x0b, 0x11,
+	0x33, 0xc2, 0xa4, 0x3d, 0x4e, 0x3c, 0xcb, 0x7b, 0xb4, 0xc4, 0xf8, 0x2e, 0x5a, 0x8c, 0x94, 0x0c,
+	0x33, 0xb1, 0x0e, 0xe2, 0x94, 0x70, 0x2b, 0x59, 0x94, 0xaf, 0x9c, 0xb1, 0xe2, 0x2c, 0x2d, 0x71,
+	0xfb, 0xa3, 0x87, 0x10, 0x9d, 0x94, 0x07, 0xbf, 0x45, 0x8d, 0x7c, 0x82, 0x2e, 0x4f, 0x05, 0x9c,
+	0xbf, 0x74, 0xb0, 0xff, 0xed, 0xfb, 0xf6, 0xde, 0x4d, 0x9e, 0x04, 0x4a, 0x73, 0xdf, 0x5c, 0xc5,
+	0x3c, 0xe9, 0x1c, 0x67, 0x3b, 0x1c, 0xbd, 0x39, 0xa1, 0x28, 0xdf, 0xed, 0x28, 0x15, 0xee, 0x25,
+	0xdd, 0x20, 0x89, 0x61, 0xa3, 0x98, 0x34, 0xec, 0xce, 0x4d, 0x3a, 0x25, 0xca, 0x91, 0x97, 0x2a,
+	0x23, 0xdf, 0x41, 0x0b, 0xba, 0xdf, 0x0d, 0x06, 0x4c, 0x48, 0xb2, 0x01, 0x0b, 0xe6, 0x75, 0xff,
+	0xd0, 0x41, 0x4c, 0xd0, 0xbc, 0xe5, 0xa5, 0xe4, 0x11, 0x69, 0x65, 0x4a, 0x0e, 0xdd, 0x31, 0x7d,
+	0xcd, 0xdf, 0xa5, 0x5c, 0x06, 0x57, 0x64, 0xdb, 0x6a, 0x33, 0x74, 0x4a, 0xb8, 0x63, 0x74, 0x92,
+	0x08, 0xb2, 0x03, 0x26, 0x41, 0x8d, 0x57, 0x51, 0x3d, 0x91, 0x9a, 0xdc, 0x03, 0xca, 0x95, 0xf8,
+	0x01, 0xaa, 0x87, 0x71, 0x42, 0x1e, 0x5a, 0xa6, 0xf1, 0x6c, 0xbd, 0x53, 0xdc, 0x71, 0xe5, 0x8a,
+	0xa8, 0x6b, 0x68, 0x7f, 0xf2, 0xd0, 0xca, 0xf9, 0xe4, 0x50, 0xc9, 0xbe, 0x08, 0x53, 0x6d, 0x6f,
+	0x43, 0xc9, 0xff, 0x68, 0xe1, 0x3f, 0xec, 0xba, 0x66, 0x4a, 0xeb, 0x4f, 0x53, 0xd6, 0xd1, 0x6c,
+	0xac, 0xc6, 0x5c, 0x93, 0xdb, 0x90, 0x8e, 0x0c, 0xe0, 0x3d, 0xd4, 0x8a, 0x55, 0xc4, 0xb4, 0x78,
+	0x0f, 0x83, 0x75, 0x85, 0xbc, 0xe4, 0x3a, 0xb1, 0x15, 0xb8, 0xba, 0x40, 0x37, 0xaa, 0xea, 0x49,
+	0x21, 0x62, 0x1f, 0xad, 0x95, 0x3b, 0x77, 0x7b, 0xfc, 0x52, 0x80, 0x0e, 0x86, 0x37, 0x29, 0x2e,
+	0xa5, 0x17, 0x85, 0xd2, 0xfe, 0xea, 0xa1, 0xb9, 0x33, 0xc3, 0x4c, 0x9a, 0x5c, 0x9f, 0xaf, 0xf6,
+	0xb7, 0x88, 0x78, 0x95, 0x88, 0x2c, 0x23, 0x4f, 0x38, 0x2b, 0xea, 0xbb, 0x8b, 0xd4, 0x56, 0x2e,
+	0xeb, 0xb1, 0xfd, 0x5b, 0xf4, 0x95, 0x1e, 0x41, 0x94, 0x16, 0x69, 0x89, 0xf1, 0x7d, 0xd4, 0x0c,
+	0x94, 0x34, 0x2c, 0x30, 0x5d, 0x3e, 0x62, 0x22, 0x22, 0x4d, 0x68, 0x58, 0xca, 0xc9, 0x23, 0xc7,
+	0xe1, 0x1d, 0xd4, 0xe8, 0xf1, 0x24, 0xd0, 0x22, 0x86, 0xd7, 0x5e, 0x86, 0x96, 0x2a, 0x85, 0x5b,
+	0x68, 0x4e, 0xf3, 0xd0, 0x89, 0x2b, 0x20, 0xe6, 0xa8, 0x08, 0xcd, 0xc6, 0x0d, 0xa1, 0x71, 0x71,
+	0xd3, 0xc6, 0x80, 0x89, 0x4d, 0xea, 0x4a, 0xbc, 0x86, 0x66, 0xf5, 0xc4, 0xfa, 0x0b, 0x81, 0x6b,
+	0xda, 0x54, 0x4e, 0x4e, 0x64, 0x4e, 0xaa, 0x21, 0x79, 0x54, 0x90, 0xa7, 0x43, 0x47, 0x1a, 0xe8,
+	0x7c, 0x9c, 0x91, 0x26, 0xef, 0x34, 0xd0, 0xf9, 0xa4, 0x20, 0x4f, 0x87, 0x07, 0xab, 0x9f, 0x7f,
+	0x6e, 0xd5, 0xbe, 0xd8, 0xe7, 0x87, 0x7d, 0x3e, 0xfc, 0xda, 0xba, 0x75, 0x31, 0x07, 0x9f, 0x9a,
+	0xe7, 0xbf, 0x03, 0x00, 0x00, 0xff, 0xff, 0x87, 0xc4, 0x95, 0x62, 0xdf, 0x04, 0x00, 0x00,
 }

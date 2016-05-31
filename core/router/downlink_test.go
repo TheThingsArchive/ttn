@@ -7,7 +7,6 @@ import (
 
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_gateway "github.com/TheThingsNetwork/ttn/api/gateway"
-	pb_semtech "github.com/TheThingsNetwork/ttn/api/gateway/semtech"
 	pb_protocol "github.com/TheThingsNetwork/ttn/api/protocol"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	pb "github.com/TheThingsNetwork/ttn/api/router"
@@ -25,9 +24,8 @@ func newReferenceDownlink() *pb.DownlinkMessage {
 			DataRate:   "SF7BW125",
 			Modulation: pb_lorawan.Modulation_LORA,
 		}}},
-		GatewayConfiguration: &pb_gateway.TxConfiguration{Gateway: &pb_gateway.TxConfiguration_Semtech{Semtech: &pb_semtech.TxConfiguration{
+		GatewayConfiguration: &pb_gateway.TxConfiguration{
 			Timestamp: 100,
-		}},
 			Frequency: 868100000,
 		},
 	}
@@ -119,8 +117,8 @@ func TestUplinkBuildDownlinkOptions(t *testing.T) {
 	a.So(options[0].Score, ShouldBeLessThan, options[1].Score)
 
 	// Check Delay
-	a.So(options[0].GatewayConfig.GetSemtech().Timestamp, ShouldEqual, 1000100)
-	a.So(options[1].GatewayConfig.GetSemtech().Timestamp, ShouldEqual, 2000100)
+	a.So(options[0].GatewayConfig.Timestamp, ShouldEqual, 1000100)
+	a.So(options[1].GatewayConfig.Timestamp, ShouldEqual, 2000100)
 
 	// Check Frequency
 	a.So(options[0].GatewayConfig.Frequency, ShouldEqual, 868100000)
@@ -141,8 +139,8 @@ func TestUplinkBuildDownlinkOptions(t *testing.T) {
 	// And for joins we want a different delay (both RX1 and RX2) and DataRate (RX2)
 	gtw, up = newReferenceGateway("EU_863_870"), newReferenceUplink()
 	options = r.buildDownlinkOptions(up, true, gtw)
-	a.So(options[0].GatewayConfig.GetSemtech().Timestamp, ShouldEqual, 5000100)
-	a.So(options[1].GatewayConfig.GetSemtech().Timestamp, ShouldEqual, 6000100)
+	a.So(options[0].GatewayConfig.Timestamp, ShouldEqual, 5000100)
+	a.So(options[1].GatewayConfig.Timestamp, ShouldEqual, 6000100)
 	a.So(options[1].ProtocolConfig.GetLorawan().DataRate, ShouldEqual, "SF12BW125")
 }
 
@@ -335,7 +333,7 @@ func TestComputeDownlinkScores(t *testing.T) {
 	// Gateway used for Rx -> worse score
 	testSubject1 := newReferenceUplink()
 	testSubject2 := newReferenceUplink()
-	testSubject2.GatewayMetadata.GetSemtech().Timestamp = 10000000
+	testSubject2.GatewayMetadata.Timestamp = 10000000
 	testSubject2.GatewayMetadata.Frequency = 868500000
 	testSubjectgtw = newReferenceGateway("EU_863_870")
 	testSubjectgtw.Utilization.AddRx(newReferenceUplink())
@@ -371,7 +369,7 @@ func TestComputeDownlinkScores(t *testing.T) {
 	// Scheduling Conflicts
 	testSubject1 = newReferenceUplink()
 	testSubject2 = newReferenceUplink()
-	testSubject2.GatewayMetadata.GetSemtech().Timestamp = 2000000
+	testSubject2.GatewayMetadata.Timestamp = 2000000
 	testSubjectgtw = newReferenceGateway("EU_863_870")
 	testSubjectgtw.Schedule.GetOption(1000100, 50000)
 	testSubject1Score = r.buildDownlinkOptions(testSubject1, false, testSubjectgtw)[0].Score
