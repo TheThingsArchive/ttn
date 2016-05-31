@@ -19,7 +19,6 @@ type Discovery interface {
 }
 
 // discovery is a reference implementation for a TTN Service Discovery component.
-// TODO: Implement one with a real database
 type discovery struct {
 	services map[string]map[string]*pb.Announcement
 	sync.RWMutex

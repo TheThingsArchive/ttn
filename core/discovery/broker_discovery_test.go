@@ -101,7 +101,7 @@ func TestBrokerDiscoveryCache(t *testing.T) {
 	a.So(err, ShouldBeNil)
 	a.So(results, ShouldContain, broker)
 
-	<-time.After(10 * time.Millisecond)
+	<-time.After(20 * time.Millisecond)
 
 	// It should return the refreshed (empty) broker list
 	results, err = d.Discover(types.DevAddr{0x01, 0x02, 0x03, 0x04})
