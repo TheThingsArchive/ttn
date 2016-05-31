@@ -19,9 +19,10 @@ message DevicesResponse {
     bytes  app_eui   = 1 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.AppEUI"];
     bytes  dev_eui   = 2 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.DevEUI"];
     bytes  nwk_s_key = 3 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.NwkSKey"];
-    uint32 f_cnt     = 4;
+    uint32 stored_f_cnt        = 4;
+    uint32 full_f_cnt          = 5;
     bool   disable_f_cnt_check = 11;
-    bool   uses32_bit_f_cnt = 12;
+    bool   uses32_bit_f_cnt    = 12;
   }
   repeated Device results = 1;
 }

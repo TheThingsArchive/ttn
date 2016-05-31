@@ -9,6 +9,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/api/gateway"
 	pb_networkserver "github.com/TheThingsNetwork/ttn/api/networkserver"
 	"github.com/TheThingsNetwork/ttn/api/protocol"
+	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core/broker/application"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/brocaar/lorawan"
@@ -53,7 +54,7 @@ func TestHandleUplink(t *testing.T) {
 	err = b.HandleUplink(&pb.UplinkMessage{
 		Payload:          bytes,
 		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2},
-		ProtocolMetadata: &protocol.RxMetadata{},
+		ProtocolMetadata: &protocol.RxMetadata{Protocol: &protocol.RxMetadata_Lorawan{Lorawan: &pb_lorawan.Metadata{}}},
 	})
 	a.So(err, ShouldEqual, ErrNotFound)
 
@@ -68,10 +69,10 @@ func TestHandleUplink(t *testing.T) {
 		ns: &mockNetworkServer{
 			devices: []*pb_networkserver.DevicesResponse_Device{
 				&pb_networkserver.DevicesResponse_Device{
-					DevEui:  &devEUI,
-					AppEui:  &appEUI,
-					NwkSKey: &nwkSKey,
-					FCnt:    3,
+					DevEui:     &devEUI,
+					AppEui:     &appEUI,
+					NwkSKey:    &nwkSKey,
+					StoredFCnt: 3,
 				},
 			},
 		},
@@ -85,7 +86,7 @@ func TestHandleUplink(t *testing.T) {
 	err = b.HandleUplink(&pb.UplinkMessage{
 		Payload:          bytes,
 		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2},
-		ProtocolMetadata: &protocol.RxMetadata{},
+		ProtocolMetadata: &protocol.RxMetadata{Protocol: &protocol.RxMetadata_Lorawan{Lorawan: &pb_lorawan.Metadata{}}},
 	})
 	a.So(err, ShouldEqual, ErrNoMatch)
 
@@ -97,7 +98,7 @@ func TestHandleUplink(t *testing.T) {
 	err = b.HandleUplink(&pb.UplinkMessage{
 		Payload:          bytes,
 		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2},
-		ProtocolMetadata: &protocol.RxMetadata{},
+		ProtocolMetadata: &protocol.RxMetadata{Protocol: &protocol.RxMetadata_Lorawan{Lorawan: &pb_lorawan.Metadata{}}},
 	})
 	a.So(err, ShouldEqual, ErrInvalidFCnt)
 
@@ -107,18 +108,18 @@ func TestHandleUplink(t *testing.T) {
 	err = b.HandleUplink(&pb.UplinkMessage{
 		Payload:          bytes,
 		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2},
-		ProtocolMetadata: &protocol.RxMetadata{},
+		ProtocolMetadata: &protocol.RxMetadata{Protocol: &protocol.RxMetadata_Lorawan{Lorawan: &pb_lorawan.Metadata{}}},
 	})
 	a.So(err, ShouldBeNil)
 
 	// OK FCnt
 	b.uplinkDeduplicator = NewDeduplicator(10 * time.Millisecond)
-	b.ns.(*mockNetworkServer).devices[0].FCnt = 0
+	b.ns.(*mockNetworkServer).devices[0].StoredFCnt = 0
 	b.ns.(*mockNetworkServer).devices[0].DisableFCntCheck = false
 	err = b.HandleUplink(&pb.UplinkMessage{
 		Payload:          bytes,
 		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2},
-		ProtocolMetadata: &protocol.RxMetadata{},
+		ProtocolMetadata: &protocol.RxMetadata{Protocol: &protocol.RxMetadata_Lorawan{Lorawan: &pb_lorawan.Metadata{}}},
 	})
 	a.So(err, ShouldBeNil)
 }

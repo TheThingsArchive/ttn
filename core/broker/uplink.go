@@ -10,7 +10,6 @@ import (
 	"github.com/TheThingsNetwork/ttn/api/gateway"
 	"github.com/TheThingsNetwork/ttn/api/networkserver"
 	pb_networkserver "github.com/TheThingsNetwork/ttn/api/networkserver"
-	"github.com/TheThingsNetwork/ttn/core/fcnt"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/brocaar/lorawan"
 )
@@ -30,8 +29,13 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) error {
 		return nil
 	}
 
-	// LoRaWAN: Unmarshal
 	base := duplicates[0]
+
+	if base.ProtocolMetadata.GetLorawan() == nil {
+		return errors.New("ttn/broker: Can not handle uplink from non-LoRaWAN device")
+	}
+
+	// LoRaWAN: Unmarshal
 	var phyPayload lorawan.PHYPayload
 	err := phyPayload.UnmarshalBinary(base.Payload)
 	if err != nil {
@@ -58,10 +62,9 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) error {
 	// Find AppEUI/DevEUI through MIC check
 	var device *pb_networkserver.DevicesResponse_Device
 	for _, candidate := range getDevicesResp.Results {
-		var nwkSKey lorawan.AES128Key
-		copy(nwkSKey[:], candidate.NwkSKey.Bytes())
+		nwkSKey := lorawan.AES128Key(*candidate.NwkSKey)
 		if candidate.Uses32BitFCnt {
-			macPayload.FHDR.FCnt = fcnt.GetFull(candidate.FCnt, uint16(macPayload.FHDR.FCnt))
+			macPayload.FHDR.FCnt = candidate.FullFCnt
 		}
 		ok, err = phyPayload.ValidateMIC(nwkSKey)
 		if err != nil {
@@ -78,10 +81,13 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) error {
 
 	if device.DisableFCntCheck {
 		// TODO: Add warning to message?
-	} else if macPayload.FHDR.FCnt < device.FCnt || macPayload.FHDR.FCnt-device.FCnt > maxFCntGap {
+	} else if macPayload.FHDR.FCnt < device.StoredFCnt || macPayload.FHDR.FCnt-device.StoredFCnt > maxFCntGap {
 		// Replay attack or FCnt gap too big
 		return ErrInvalidFCnt
 	}
+
+	// Add FCnt to Metadata (because it's not marshaled in lorawan payload)
+	base.ProtocolMetadata.GetLorawan().FCnt = device.FullFCnt
 
 	// Collect GatewayMetadata and DownlinkOptions
 	var gatewayMetadata []*gateway.RxMetadata

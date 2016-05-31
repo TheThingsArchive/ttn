@@ -14,6 +14,8 @@ message Metadata {
   string      data_rate    = 12; // LoRa data rate - SF{spreadingfactor}BW{bandwidth}
   uint32      bit_rate     = 13; // FSK bit rate in bit/s
   string      coding_rate  = 14; // LoRa coding rate
+
+  uint32      f_cnt = 15; // Store the full 32 bit FCnt
 }
 
 message TxConfiguration {
@@ -21,6 +23,8 @@ message TxConfiguration {
   string      data_rate    = 12; // LoRa data rate - SF{spreadingfactor}BW{bandwidth}
   uint32      bit_rate     = 13; // FSK bit rate in bit/s
   string      coding_rate  = 14; // LoRa coding rate
+
+  uint32      f_cnt = 15; // Store the full 32 bit FCnt
 }
 
 message ActivationMetadata {

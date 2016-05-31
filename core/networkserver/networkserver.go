@@ -41,11 +41,13 @@ func (n *networkServer) HandleGetDevices(req *pb.DevicesRequest) (*pb.DevicesRes
 	}
 
 	for _, device := range devices {
+		fullFCnt := fcnt.GetFull(device.FCntUp, uint16(req.FCnt))
 		dev := &pb.DevicesResponse_Device{
 			AppEui:           &device.AppEUI,
 			DevEui:           &device.DevEUI,
 			NwkSKey:          &device.NwkSKey,
-			FCnt:             device.FCntUp,
+			StoredFCnt:       device.FCntUp,
+			FullFCnt:         fullFCnt,
 			Uses32BitFCnt:    device.Options.Uses32BitFCnt,
 			DisableFCntCheck: device.Options.DisableFCntCheck,
 		}
@@ -56,7 +58,7 @@ func (n *networkServer) HandleGetDevices(req *pb.DevicesRequest) (*pb.DevicesRes
 		if device.FCntUp <= req.FCnt {
 			res.Results = append(res.Results, dev)
 			continue
-		} else if device.Options.Uses32BitFCnt && device.FCntUp <= fcnt.GetFull(device.FCntUp, uint16(req.FCnt)) {
+		} else if device.Options.Uses32BitFCnt && device.FCntUp <= fullFCnt {
 			res.Results = append(res.Results, dev)
 			continue
 		}
@@ -158,8 +160,12 @@ func (n *networkServer) HandleUplink(message *pb_broker.DeduplicatedUplinkMessag
 		return nil, errors.New("ttn/networkserver: LoRaWAN message does not contain a MACPayload")
 	}
 
-	// Update FCntUp
-	dev.FCntUp = macPayload.FHDR.FCnt
+	// Update FCntUp (from metadata if possible, because only 16lsb are marshaled in FHDR)
+	if lorawan := message.GetProtocolMetadata().GetLorawan(); lorawan != nil {
+		dev.FCntUp = lorawan.FCnt
+	} else {
+		dev.FCntUp = macPayload.FHDR.FCnt
+	}
 	dev.LastSeen = time.Now().UTC()
 	err = n.devices.Set(dev, "f_cnt_up")
 	if err != nil {
