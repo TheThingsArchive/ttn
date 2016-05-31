@@ -208,21 +208,16 @@ func (s *redisDeviceStore) Set(new *Device, fields ...string) error {
 	}
 
 	key := fmt.Sprintf("%s:%s:%s", redisDevicePrefix, new.AppEUI, new.DevEUI)
-	tx, err := s.client.Watch(key)
-	if err == nil {
-		defer tx.Close()
-		// Check for old DevAddr
-		if devAddr, err := s.client.HGet(key, "dev_addr").Result(); err == nil {
-			// Delete old DevAddr
-			if devAddr != "" {
-				err := s.client.SRem(fmt.Sprintf("%s:%s", redisDevAddrPrefix, devAddr), key).Err()
-				if err != nil {
-					return err
-				}
+
+	// Check for old DevAddr
+	if devAddr, err := s.client.HGet(key, "dev_addr").Result(); err == nil {
+		// Delete old DevAddr
+		if devAddr != "" {
+			err := s.client.SRem(fmt.Sprintf("%s:%s", redisDevAddrPrefix, devAddr), key).Err()
+			if err != nil {
+				return err
 			}
 		}
-	} else if err != redis.Nil {
-		return err
 	}
 
 	dmap, err := new.ToStringStringMap(fields...)
@@ -243,12 +238,8 @@ func (s *redisDeviceStore) Set(new *Device, fields ...string) error {
 
 func (s *redisDeviceStore) Activate(appEUI types.AppEUI, devEUI types.DevEUI, devAddr types.DevAddr, nwkSKey types.NwkSKey) error {
 	key := fmt.Sprintf("%s:%s:%s", redisDevicePrefix, appEUI, devEUI)
-	tx, err := s.client.Watch(key)
 	var dmap map[string]string
-	if err != nil && err != redis.Nil {
-		return err
-	}
-	defer tx.Close()
+
 	// Check for old DevAddr
 	if devAddr, err := s.client.HGet(key, "dev_addr").Result(); err == nil {
 		// Delete old DevAddr
@@ -259,6 +250,7 @@ func (s *redisDeviceStore) Activate(appEUI types.AppEUI, devEUI types.DevEUI, de
 			}
 		}
 	}
+
 	// Update Device
 	dev := &Device{
 		AppEUI:   appEUI,
@@ -270,7 +262,7 @@ func (s *redisDeviceStore) Activate(appEUI types.AppEUI, devEUI types.DevEUI, de
 	}
 
 	// Don't touch Utilization and Options
-	dmap, err = dev.ToStringStringMap([]string{"dev_eui", "app_eui", "dev_addr", "nwk_s_key", "f_cnt_up", "f_cnt_down"}...)
+	dmap, err := dev.ToStringStringMap("dev_eui", "app_eui", "dev_addr", "nwk_s_key", "f_cnt_up", "f_cnt_down")
 
 	// Register Device
 	err = s.client.HMSetMap(key, dmap).Err()
