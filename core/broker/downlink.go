@@ -16,7 +16,7 @@ func (a ByScore) Less(i, j int) bool { return a[i].Score < a[j].Score }
 
 func (b *broker) HandleDownlink(downlink *pb.DownlinkMessage) error {
 	var err error
-	downlink, err = b.ns.Downlink(b.getContext(), downlink)
+	downlink, err = b.ns.Downlink(b.Component.GetContext(), downlink)
 	if err != nil {
 		return err
 	}

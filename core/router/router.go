@@ -4,16 +4,14 @@ import (
 	"io"
 	"sync"
 
-	"golang.org/x/net/context"
-
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/metadata"
 
 	"github.com/TheThingsNetwork/ttn/api"
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	pb_gateway "github.com/TheThingsNetwork/ttn/api/gateway"
 	pb "github.com/TheThingsNetwork/ttn/api/router"
+	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/discovery"
 	"github.com/TheThingsNetwork/ttn/core/router/gateway"
 	"github.com/TheThingsNetwork/ttn/core/types"
@@ -21,6 +19,7 @@ import (
 
 // Router component
 type Router interface {
+	core.ComponentInterface
 	// Handle a status message from a gateway
 	HandleGatewayStatus(gatewayEUI types.GatewayEUI, status *pb_gateway.Status) error
 	// Handle an uplink message from a gateway
@@ -40,13 +39,35 @@ type broker struct {
 	association pb_broker.Broker_AssociateClient
 }
 
+// NewRouter creates a new Router
+func NewRouter() Router {
+	return &router{
+		gateways: make(map[types.GatewayEUI]*gateway.Gateway),
+		brokers:  make(map[string]*broker),
+	}
+}
+
 type router struct {
-	identity        *pb_discovery.Announcement
+	*core.Component
 	gateways        map[types.GatewayEUI]*gateway.Gateway
 	gatewaysLock    sync.RWMutex
 	brokerDiscovery discovery.BrokerDiscovery
 	brokers         map[string]*broker
 	brokersLock     sync.RWMutex
+}
+
+func (r *router) Init(c *core.Component) error {
+	r.Component = c
+	err := r.Component.UpdateTokenKey()
+	if err != nil {
+		return err
+	}
+	err = r.Component.Announce()
+	if err != nil {
+		return err
+	}
+	r.brokerDiscovery = discovery.NewBrokerDiscovery(r.Component.DiscoveryServer)
+	return nil
 }
 
 // getGateway gets or creates a Gateway
@@ -88,7 +109,7 @@ func (r *router) getBroker(req *pb_discovery.Announcement) (*broker, error) {
 		}
 		client := pb_broker.NewBrokerClient(conn)
 
-		association, err := client.Associate(r.getContext())
+		association, err := client.Associate(r.Component.GetContext())
 		if err != nil {
 			return nil, err
 		}
@@ -117,18 +138,4 @@ func (r *router) getBroker(req *pb_discovery.Announcement) (*broker, error) {
 		}
 	}
 	return r.brokers[req.NetAddress], nil
-}
-
-func (r *router) getContext() context.Context {
-	var id, token string
-	if r.identity != nil {
-		id = r.identity.Id
-		token = r.identity.Token
-	}
-	md := metadata.Pairs(
-		"token", token,
-		"id", id,
-	)
-	ctx := metadata.NewContext(context.Background(), md)
-	return ctx
 }

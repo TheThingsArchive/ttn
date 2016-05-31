@@ -50,8 +50,8 @@ func (r *router) HandleDownlink(downlink *pb_broker.DownlinkMessage) error {
 	}
 
 	identifier := option.Identifier
-	if r.identity != nil {
-		identifier = strings.TrimPrefix(option.Identifier, fmt.Sprintf("%s:", r.identity.Id))
+	if r.Component != nil && r.Component.Identity != nil {
+		identifier = strings.TrimPrefix(option.Identifier, fmt.Sprintf("%s:", r.Component.Identity.Id))
 	}
 
 	err := gateway.Schedule.Schedule(identifier, downlinkMessage)
@@ -201,8 +201,8 @@ func (r *router) buildDownlinkOptions(uplink *pb.UplinkMessage, isActivation boo
 
 	for _, option := range options {
 		// Add router ID to downlink option
-		if r.identity != nil {
-			option.Identifier = fmt.Sprintf("%s:%s", option.Identifier, r.identity.Id)
+		if r.Component != nil && r.Component.Identity != nil {
+			option.Identifier = fmt.Sprintf("%s:%s", option.Identifier, r.Component.Identity.Id)
 		}
 
 		// Filter all illegal options

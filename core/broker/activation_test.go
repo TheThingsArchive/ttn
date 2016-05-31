@@ -8,6 +8,7 @@ import (
 	pb "github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/api/gateway"
 	"github.com/TheThingsNetwork/ttn/api/protocol"
+	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/broker/application"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/smartystreets/assertions"
@@ -20,6 +21,7 @@ func TestHandleActivation(t *testing.T) {
 	appEUI := types.AppEUI([8]byte{0, 1, 2, 3, 4, 5, 6, 7})
 
 	b := &broker{
+		Component:              &core.Component{},
 		activationDeduplicator: NewDeduplicator(10 * time.Millisecond),
 		applications:           application.NewApplicationStore(),
 		ns:                     &mockNetworkServer{},

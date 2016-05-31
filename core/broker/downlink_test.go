@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	pb "github.com/TheThingsNetwork/ttn/api/broker"
+	"github.com/TheThingsNetwork/ttn/core"
 	. "github.com/smartystreets/assertions"
 )
 
@@ -13,7 +14,8 @@ func TestDownlink(t *testing.T) {
 	dlch := make(chan *pb.DownlinkMessage, 2)
 
 	b := &broker{
-		ns: &mockNetworkServer{},
+		Component: &core.Component{},
+		ns:        &mockNetworkServer{},
 		routers: map[string]chan *pb.DownlinkMessage{
 			"routerID": dlch,
 		},

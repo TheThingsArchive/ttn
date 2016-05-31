@@ -4,10 +4,13 @@ import (
 	"errors"
 	"time"
 
+	"gopkg.in/redis.v3"
+
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_handler "github.com/TheThingsNetwork/ttn/api/handler"
 	pb "github.com/TheThingsNetwork/ttn/api/networkserver"
 	pb_protocol "github.com/TheThingsNetwork/ttn/api/protocol"
+	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/fcnt"
 	"github.com/TheThingsNetwork/ttn/core/networkserver/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
@@ -17,6 +20,7 @@ import (
 
 // NetworkServer implements LoRaWAN-specific functionality for TTN
 type NetworkServer interface {
+	core.ComponentInterface
 	HandleGetDevices(*pb.DevicesRequest) (*pb.DevicesResponse, error)
 	HandlePrepareActivation(*pb_broker.DeduplicatedDeviceActivationRequest) (*pb_broker.DeduplicatedDeviceActivationRequest, error)
 	HandleActivate(*pb_handler.DeviceActivationResponse) (*pb_handler.DeviceActivationResponse, error)
@@ -24,8 +28,25 @@ type NetworkServer interface {
 	HandleDownlink(*pb_broker.DownlinkMessage) (*pb_broker.DownlinkMessage, error)
 }
 
+// NewRedisNetworkServer creates a new Redis-backed NetworkServer
+func NewRedisNetworkServer(client *redis.Client) NetworkServer {
+	return &networkServer{
+		devices: device.NewRedisDeviceStore(client),
+	}
+}
+
 type networkServer struct {
+	*core.Component
 	devices device.Store
+}
+
+func (n *networkServer) Init(c *core.Component) error {
+	n.Component = c
+	err := n.Component.UpdateTokenKey()
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (n *networkServer) HandleGetDevices(req *pb.DevicesRequest) (*pb.DevicesResponse, error) {

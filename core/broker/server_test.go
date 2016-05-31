@@ -9,6 +9,7 @@ import (
 
 	"github.com/TheThingsNetwork/ttn/api"
 	pb "github.com/TheThingsNetwork/ttn/api/broker"
+	"github.com/TheThingsNetwork/ttn/core"
 	. "github.com/smartystreets/assertions"
 	"golang.org/x/net/context"
 
@@ -28,6 +29,7 @@ func buildTestBrokerServer(port uint) (*broker, *grpc.Server) {
 		panic(err)
 	}
 	b := &broker{
+		Component:              &core.Component{},
 		routers:                make(map[string]chan *pb.DownlinkMessage),
 		handlers:               make(map[string]chan *pb.DeduplicatedUplinkMessage),
 		ns:                     &mockNetworkServer{},

@@ -3,18 +3,19 @@ package broker
 import (
 	"errors"
 	"sync"
+	"time"
 
-	"google.golang.org/grpc/metadata"
-
-	"golang.org/x/net/context"
+	"gopkg.in/redis.v3"
 
 	pb "github.com/TheThingsNetwork/ttn/api/broker"
-	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/api/networkserver"
+	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/broker/application"
 )
 
 type Broker interface {
+	core.ComponentInterface
+
 	HandleUplink(uplink *pb.UplinkMessage) error
 	HandleDownlink(downlink *pb.DownlinkMessage) error
 	HandleActivation(activation *pb.DeviceActivationRequest) (*pb.DeviceActivationResponse, error)
@@ -25,16 +26,42 @@ type Broker interface {
 	DeactivateHandler(id string) error
 }
 
+func NewRedisBroker(client *redis.Client, networkserver string, timeout time.Duration) Broker {
+	return &broker{
+		routers:                make(map[string]chan *pb.DownlinkMessage),
+		handlers:               make(map[string]chan *pb.DeduplicatedUplinkMessage),
+		applications:           application.NewRedisApplicationStore(client),
+		uplinkDeduplicator:     NewDeduplicator(timeout),
+		activationDeduplicator: NewDeduplicator(timeout),
+		nsAddr:                 networkserver,
+	}
+}
+
 type broker struct {
-	identity               *pb_discovery.Announcement
+	*core.Component
 	routers                map[string]chan *pb.DownlinkMessage
 	routersLock            sync.RWMutex
 	handlers               map[string]chan *pb.DeduplicatedUplinkMessage
 	handlersLock           sync.RWMutex
 	applications           application.Store
+	nsAddr                 string
 	ns                     networkserver.NetworkServerClient
 	uplinkDeduplicator     Deduplicator
 	activationDeduplicator Deduplicator
+}
+
+func (b *broker) Init(c *core.Component) error {
+	b.Component = c
+	err := b.Component.UpdateTokenKey()
+	if err != nil {
+		return err
+	}
+	err = b.Component.Announce()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (b *broker) ActivateRouter(id string) (<-chan *pb.DownlinkMessage, error) {
@@ -95,18 +122,4 @@ func (b *broker) getHandler(id string) (chan<- *pb.DeduplicatedUplinkMessage, er
 		return handler, nil
 	}
 	return nil, errors.New("Handler not active")
-}
-
-func (b *broker) getContext() context.Context {
-	var id, token string
-	if b.identity != nil {
-		id = b.identity.Id
-		token = b.identity.Token
-	}
-	md := metadata.Pairs(
-		"token", token,
-		"id", id,
-	)
-	ctx := metadata.NewContext(context.Background(), md)
-	return ctx
 }

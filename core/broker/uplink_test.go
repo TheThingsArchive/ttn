@@ -10,6 +10,7 @@ import (
 	pb_networkserver "github.com/TheThingsNetwork/ttn/api/networkserver"
 	"github.com/TheThingsNetwork/ttn/api/protocol"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
+	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/broker/application"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/brocaar/lorawan"
@@ -20,6 +21,7 @@ func TestHandleUplink(t *testing.T) {
 	a := New(t)
 
 	b := &broker{
+		Component:          &core.Component{},
 		uplinkDeduplicator: NewDeduplicator(10 * time.Millisecond),
 		ns: &mockNetworkServer{
 			devices: []*pb_networkserver.DevicesResponse_Device{},
@@ -64,6 +66,7 @@ func TestHandleUplink(t *testing.T) {
 
 	// Add devices
 	b = &broker{
+		Component:          &core.Component{},
 		handlers:           make(map[string]chan *pb.DeduplicatedUplinkMessage),
 		uplinkDeduplicator: NewDeduplicator(10 * time.Millisecond),
 		ns: &mockNetworkServer{

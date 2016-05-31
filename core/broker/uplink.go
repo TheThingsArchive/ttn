@@ -48,7 +48,7 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) error {
 
 	// Request devices from NS
 	devAddr := types.DevAddr(macPayload.FHDR.DevAddr)
-	getDevicesResp, err := b.ns.GetDevices(b.getContext(), &networkserver.DevicesRequest{
+	getDevicesResp, err := b.ns.GetDevices(b.Component.GetContext(), &networkserver.DevicesRequest{
 		DevAddr: &devAddr,
 		FCnt:    macPayload.FHDR.FCnt,
 	})
@@ -116,7 +116,7 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) error {
 	}
 
 	// Pass Uplink through NS
-	deduplicatedUplink, err = b.ns.Uplink(b.getContext(), deduplicatedUplink)
+	deduplicatedUplink, err = b.ns.Uplink(b.Component.GetContext(), deduplicatedUplink)
 	if err != nil {
 		return err
 	}

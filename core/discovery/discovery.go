@@ -10,18 +10,30 @@ import (
 	"gopkg.in/redis.v3"
 
 	pb "github.com/TheThingsNetwork/ttn/api/discovery"
+	"github.com/TheThingsNetwork/ttn/core"
 )
 
 // Discovery specifies the interface for the TTN Service Discovery component
 type Discovery interface {
+	core.ComponentInterface
 	Announce(announcement *pb.Announcement) error
 	Discover(serviceName string, ids ...string) ([]*pb.Announcement, error)
 }
 
 // discovery is a reference implementation for a TTN Service Discovery component.
 type discovery struct {
+	*core.Component
 	services map[string]map[string]*pb.Announcement
 	sync.RWMutex
+}
+
+func (d *discovery) Init(c *core.Component) error {
+	d.Component = c
+	err := d.Component.UpdateTokenKey()
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (d *discovery) Announce(announcement *pb.Announcement) error {
@@ -89,7 +101,17 @@ func NewRedisDiscovery(client *redis.Client) Discovery {
 const redisAnnouncementPrefix = "service"
 
 type redisDiscovery struct {
+	*core.Component
 	client *redis.Client
+}
+
+func (d *redisDiscovery) Init(c *core.Component) error {
+	d.Component = c
+	err := d.Component.UpdateTokenKey()
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (d *redisDiscovery) Announce(announcement *pb.Announcement) error {
