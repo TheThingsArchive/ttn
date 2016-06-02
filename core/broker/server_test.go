@@ -111,10 +111,6 @@ func TestSubscribeRPC(t *testing.T) {
 
 	<-time.After(5 * time.Millisecond)
 
-	b.handlers["HandlerID"] <- &pb.DeduplicatedUplinkMessage{}
-
-	<-time.After(5 * time.Millisecond)
-
 	a.So(b.handlers, ShouldBeEmpty)
 
 }

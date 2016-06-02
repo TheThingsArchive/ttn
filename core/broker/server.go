@@ -52,17 +52,27 @@ func (b *brokerRPC) Associate(stream pb.Broker_AssociateServer) error {
 	}
 	defer b.broker.DeactivateRouter(routerID)
 	go func() {
-		// DeactivateRouter closes the channel, so this goroutine will return
-		for downlink := range downlinkChannel {
-			if err := stream.Send(downlink); err != nil {
-				return // TODO: panic or something
+		for {
+			if downlinkChannel == nil {
+				return
+			}
+			select {
+			case <-stream.Context().Done():
+				return
+			case downlink := <-downlinkChannel:
+				if downlink != nil {
+					if err := stream.Send(downlink); err != nil {
+						// TODO: Check if the stream should be closed here
+						return
+					}
+				}
 			}
 		}
 	}()
 	for {
 		uplink, err := stream.Recv()
 		if err == io.EOF {
-			return nil // TODO: Close stream
+			return nil
 		}
 		if err != nil {
 			return err
@@ -81,12 +91,21 @@ func (b *brokerRPC) Subscribe(req *pb.SubscribeRequest, stream pb.Broker_Subscri
 		return err
 	}
 	defer b.broker.DeactivateHandler(handlerID)
-	for uplink := range uplinkChannel {
-		if err := stream.Send(uplink); err != nil {
-			return err
+	for {
+		if uplinkChannel == nil {
+			return nil
+		}
+		select {
+		case <-stream.Context().Done():
+			return stream.Context().Err()
+		case uplink := <-uplinkChannel:
+			if uplink != nil {
+				if err := stream.Send(uplink); err != nil {
+					return err
+				}
+			}
 		}
 	}
-	return nil
 }
 
 func (b *brokerRPC) Publish(stream pb.Broker_PublishServer) error {

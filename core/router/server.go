@@ -89,10 +89,19 @@ func (r *routerRPC) Subscribe(req *pb.SubscribeRequest, stream pb.Router_Subscri
 		return err
 	}
 	defer r.router.UnsubscribeDownlink(gatewayEUI)
-	for downlink := range downlinkChannel {
-		stream.Send(downlink)
+	for {
+		if downlinkChannel == nil {
+			return nil
+		}
+		select {
+		case <-stream.Context().Done():
+			return stream.Context().Err()
+		case downlink := <-downlinkChannel:
+			if err := stream.Send(downlink); err != nil {
+				return err
+			}
+		}
 	}
-	return nil
 }
 
 // Activate implements RouterServer interface (github.com/TheThingsNetwork/ttn/api/router)
