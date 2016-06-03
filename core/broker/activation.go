@@ -4,6 +4,7 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"errors"
+	"time"
 
 	"google.golang.org/grpc"
 
@@ -15,6 +16,7 @@ import (
 
 func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (*pb.DeviceActivationResponse, error) {
 	var err error
+	time := time.Now()
 
 	// De-duplicate uplink messages
 	duplicates := b.deduplicateActivation(activation)
@@ -48,6 +50,7 @@ func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (*pb.D
 		ProtocolMetadata:   base.ProtocolMetadata,
 		GatewayMetadata:    gatewayMetadata,
 		ActivationMetadata: base.ActivationMetadata,
+		ServerTime:         time.UnixNano(),
 		ResponseTemplate:   deviceActivationResponse,
 	}
 

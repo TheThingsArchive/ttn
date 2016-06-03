@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"sort"
+	"time"
 
 	pb "github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/api/gateway"
@@ -23,6 +24,8 @@ var (
 )
 
 func (b *broker) HandleUplink(uplink *pb.UplinkMessage) error {
+	time := time.Now()
+
 	// De-duplicate uplink messages
 	duplicates := b.deduplicateUplink(uplink)
 	if len(duplicates) == 0 {
@@ -112,6 +115,7 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) error {
 		AppEui:           device.AppEui,
 		ProtocolMetadata: base.ProtocolMetadata,
 		GatewayMetadata:  gatewayMetadata,
+		ServerTime:       time.UnixNano(),
 		ResponseTemplate: downlinkMessage,
 	}
 
