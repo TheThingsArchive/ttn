@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/mqtt"
 	"github.com/apex/log"
@@ -56,7 +55,7 @@ func (c *appCollector) Stop() {
 	c.client.Disconnect()
 }
 
-func (c *appCollector) handleUplink(client mqtt.Client, appEUI types.AppEUI, devEUI types.DevEUI, req core.DataUpAppReq) {
+func (c *appCollector) handleUplink(client mqtt.Client, appEUI types.AppEUI, devEUI types.DevEUI, req mqtt.UplinkMessage) {
 	if req.Fields == nil || len(req.Fields) == 0 {
 		return
 	}

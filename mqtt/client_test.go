@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/assertions"
@@ -104,7 +103,7 @@ func TestPublishUplink(t *testing.T) {
 	c.Connect()
 
 	eui := types.EUI64{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}
-	dataUp := core.DataUpAppReq{
+	dataUp := UplinkMessage{
 		Payload: []byte{0x01, 0x02, 0x03, 0x04},
 	}
 
@@ -121,7 +120,7 @@ func TestSubscribeDeviceUplink(t *testing.T) {
 
 	eui := types.EUI64{0x02, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}
 
-	token := c.SubscribeDeviceUplink(types.AppEUI(eui), types.DevEUI(eui), func(client Client, appEUI types.AppEUI, devEUI types.DevEUI, req core.DataUpAppReq) {
+	token := c.SubscribeDeviceUplink(types.AppEUI(eui), types.DevEUI(eui), func(client Client, appEUI types.AppEUI, devEUI types.DevEUI, req UplinkMessage) {
 
 	})
 	token.Wait()
@@ -136,7 +135,7 @@ func TestSubscribeAppUplink(t *testing.T) {
 
 	eui := types.AppEUI{0x03, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}
 
-	token := c.SubscribeAppUplink(eui, func(client Client, appEUI types.AppEUI, devEUI types.DevEUI, req core.DataUpAppReq) {
+	token := c.SubscribeAppUplink(eui, func(client Client, appEUI types.AppEUI, devEUI types.DevEUI, req UplinkMessage) {
 
 	})
 	token.Wait()
@@ -149,7 +148,7 @@ func TestSubscribeUplink(t *testing.T) {
 	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
 	c.Connect()
 
-	token := c.SubscribeUplink(func(client Client, appEUI types.AppEUI, devEUI types.DevEUI, req core.DataUpAppReq) {
+	token := c.SubscribeUplink(func(client Client, appEUI types.AppEUI, devEUI types.DevEUI, req UplinkMessage) {
 
 	})
 	token.Wait()
@@ -169,14 +168,14 @@ func TestPubSubUplink(t *testing.T) {
 
 	wg.Add(1)
 
-	c.SubscribeDeviceUplink(appEUI, devEUI, func(client Client, appEUI types.AppEUI, devEUI types.DevEUI, req core.DataUpAppReq) {
+	c.SubscribeDeviceUplink(appEUI, devEUI, func(client Client, appEUI types.AppEUI, devEUI types.DevEUI, req UplinkMessage) {
 		a.So(appEUI, ShouldResemble, appEUI)
 		a.So(devEUI, ShouldResemble, devEUI)
 
 		wg.Done()
 	}).Wait()
 
-	c.PublishUplink(appEUI, devEUI, core.DataUpAppReq{Payload: []byte{0x01, 0x02, 0x03, 0x04}}).Wait()
+	c.PublishUplink(appEUI, devEUI, UplinkMessage{Payload: []byte{0x01, 0x02, 0x03, 0x04}}).Wait()
 
 	wg.Wait()
 }
@@ -194,14 +193,14 @@ func TestPubSubAppUplink(t *testing.T) {
 
 	wg.Add(2)
 
-	c.SubscribeAppUplink(appEUI, func(client Client, appEUI types.AppEUI, devEUI types.DevEUI, req core.DataUpAppReq) {
+	c.SubscribeAppUplink(appEUI, func(client Client, appEUI types.AppEUI, devEUI types.DevEUI, req UplinkMessage) {
 		a.So(appEUI, ShouldResemble, appEUI)
 		a.So(req.Payload, ShouldResemble, []byte{0x01, 0x02, 0x03, 0x04})
 		wg.Done()
 	}).Wait()
 
-	c.PublishUplink(appEUI, devEUI1, core.DataUpAppReq{Payload: []byte{0x01, 0x02, 0x03, 0x04}}).Wait()
-	c.PublishUplink(appEUI, devEUI2, core.DataUpAppReq{Payload: []byte{0x01, 0x02, 0x03, 0x04}}).Wait()
+	c.PublishUplink(appEUI, devEUI1, UplinkMessage{Payload: []byte{0x01, 0x02, 0x03, 0x04}}).Wait()
+	c.PublishUplink(appEUI, devEUI2, UplinkMessage{Payload: []byte{0x01, 0x02, 0x03, 0x04}}).Wait()
 
 	wg.Wait()
 }
@@ -214,8 +213,8 @@ func TestInvalidUplink(t *testing.T) {
 
 	eui := types.AppEUI{0x06, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}
 
-	c.SubscribeAppUplink(eui, func(client Client, appEUI types.AppEUI, devEUI types.DevEUI, req core.DataUpAppReq) {
-		Ko(t, "Did not expect any message")
+	c.SubscribeAppUplink(eui, func(client Client, appEUI types.AppEUI, devEUI types.DevEUI, req UplinkMessage) {
+		t.Error("Did not expect any message")
 	}).Wait()
 
 	// Invalid Topic
@@ -237,7 +236,7 @@ func TestPublishDownlink(t *testing.T) {
 	c.Connect()
 
 	eui := types.EUI64{0x01, 0x03, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}
-	dataDown := core.DataDownAppReq{
+	dataDown := DownlinkMessage{
 		Payload: []byte{0x01, 0x02, 0x03, 0x04},
 	}
 
@@ -254,7 +253,7 @@ func TestSubscribeDeviceDownlink(t *testing.T) {
 
 	eui := types.EUI64{0x02, 0x03, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}
 
-	token := c.SubscribeDeviceDownlink(types.AppEUI(eui), types.DevEUI(eui), func(client Client, appEUI types.AppEUI, devEUI types.DevEUI, req core.DataDownAppReq) {
+	token := c.SubscribeDeviceDownlink(types.AppEUI(eui), types.DevEUI(eui), func(client Client, appEUI types.AppEUI, devEUI types.DevEUI, req DownlinkMessage) {
 
 	})
 	token.Wait()
@@ -269,7 +268,7 @@ func TestSubscribeAppDownlink(t *testing.T) {
 
 	eui := types.AppEUI{0x03, 0x03, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}
 
-	token := c.SubscribeAppDownlink(eui, func(client Client, appEUI types.AppEUI, devEUI types.DevEUI, req core.DataDownAppReq) {
+	token := c.SubscribeAppDownlink(eui, func(client Client, appEUI types.AppEUI, devEUI types.DevEUI, req DownlinkMessage) {
 
 	})
 	token.Wait()
@@ -282,7 +281,7 @@ func TestSubscribeDownlink(t *testing.T) {
 	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
 	c.Connect()
 
-	token := c.SubscribeDownlink(func(client Client, appEUI types.AppEUI, devEUI types.DevEUI, req core.DataDownAppReq) {
+	token := c.SubscribeDownlink(func(client Client, appEUI types.AppEUI, devEUI types.DevEUI, req DownlinkMessage) {
 
 	})
 	token.Wait()
@@ -302,14 +301,14 @@ func TestPubSubDownlink(t *testing.T) {
 
 	wg.Add(1)
 
-	c.SubscribeDeviceDownlink(appEUI, devEUI, func(client Client, appEUI types.AppEUI, devEUI types.DevEUI, req core.DataDownAppReq) {
+	c.SubscribeDeviceDownlink(appEUI, devEUI, func(client Client, appEUI types.AppEUI, devEUI types.DevEUI, req DownlinkMessage) {
 		a.So(appEUI, ShouldResemble, appEUI)
 		a.So(devEUI, ShouldResemble, devEUI)
 
 		wg.Done()
 	}).Wait()
 
-	c.PublishDownlink(appEUI, devEUI, core.DataDownAppReq{Payload: []byte{0x01, 0x02, 0x03, 0x04}}).Wait()
+	c.PublishDownlink(appEUI, devEUI, DownlinkMessage{Payload: []byte{0x01, 0x02, 0x03, 0x04}}).Wait()
 
 	wg.Wait()
 }
@@ -327,14 +326,14 @@ func TestPubSubAppDownlink(t *testing.T) {
 
 	wg.Add(2)
 
-	c.SubscribeAppDownlink(appEUI, func(client Client, appEUI types.AppEUI, devEUI types.DevEUI, req core.DataDownAppReq) {
+	c.SubscribeAppDownlink(appEUI, func(client Client, appEUI types.AppEUI, devEUI types.DevEUI, req DownlinkMessage) {
 		a.So(appEUI, ShouldResemble, appEUI)
 		a.So(req.Payload, ShouldResemble, []byte{0x01, 0x02, 0x03, 0x04})
 		wg.Done()
 	}).Wait()
 
-	c.PublishDownlink(appEUI, devEUI1, core.DataDownAppReq{Payload: []byte{0x01, 0x02, 0x03, 0x04}}).Wait()
-	c.PublishDownlink(appEUI, devEUI2, core.DataDownAppReq{Payload: []byte{0x01, 0x02, 0x03, 0x04}}).Wait()
+	c.PublishDownlink(appEUI, devEUI1, DownlinkMessage{Payload: []byte{0x01, 0x02, 0x03, 0x04}}).Wait()
+	c.PublishDownlink(appEUI, devEUI2, DownlinkMessage{Payload: []byte{0x01, 0x02, 0x03, 0x04}}).Wait()
 
 	wg.Wait()
 }
@@ -347,8 +346,8 @@ func TestInvalidDownlink(t *testing.T) {
 
 	eui := types.AppEUI{0x06, 0x03, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}
 
-	c.SubscribeAppDownlink(eui, func(client Client, appEUI types.AppEUI, devEUI types.DevEUI, req core.DataDownAppReq) {
-		Ko(t, "Did not expect any message")
+	c.SubscribeAppDownlink(eui, func(client Client, appEUI types.AppEUI, devEUI types.DevEUI, req DownlinkMessage) {
+		t.Error("Did not expect any message")
 	}).Wait()
 
 	// Invalid Topic
@@ -370,7 +369,7 @@ func TestPublishActivations(t *testing.T) {
 	c.Connect()
 
 	eui := types.EUI64{0x01, 0x04, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}
-	dataActivations := core.OTAAAppReq{Metadata: []core.AppMetadata{core.AppMetadata{DataRate: "SF7BW125"}}}
+	dataActivations := Activation{Metadata: []Metadata{Metadata{DataRate: "SF7BW125"}}}
 
 	token := c.PublishActivation(types.AppEUI(eui), types.DevEUI(eui), dataActivations)
 	token.Wait()
@@ -385,7 +384,7 @@ func TestSubscribeDeviceActivations(t *testing.T) {
 
 	eui := types.EUI64{0x02, 0x04, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}
 
-	token := c.SubscribeDeviceActivations(types.AppEUI(eui), types.DevEUI(eui), func(client Client, appEUI types.AppEUI, devEUI types.DevEUI, req core.OTAAAppReq) {
+	token := c.SubscribeDeviceActivations(types.AppEUI(eui), types.DevEUI(eui), func(client Client, appEUI types.AppEUI, devEUI types.DevEUI, req Activation) {
 
 	})
 	token.Wait()
@@ -400,7 +399,7 @@ func TestSubscribeAppActivations(t *testing.T) {
 
 	eui := types.AppEUI{0x03, 0x04, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}
 
-	token := c.SubscribeAppActivations(eui, func(client Client, appEUI types.AppEUI, devEUI types.DevEUI, req core.OTAAAppReq) {
+	token := c.SubscribeAppActivations(eui, func(client Client, appEUI types.AppEUI, devEUI types.DevEUI, req Activation) {
 
 	})
 	token.Wait()
@@ -413,7 +412,7 @@ func TestSubscribeActivations(t *testing.T) {
 	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
 	c.Connect()
 
-	token := c.SubscribeActivations(func(client Client, appEUI types.AppEUI, devEUI types.DevEUI, req core.OTAAAppReq) {
+	token := c.SubscribeActivations(func(client Client, appEUI types.AppEUI, devEUI types.DevEUI, req Activation) {
 
 	})
 	token.Wait()
@@ -433,14 +432,14 @@ func TestPubSubActivations(t *testing.T) {
 
 	wg.Add(1)
 
-	c.SubscribeDeviceActivations(appEUI, devEUI, func(client Client, appEUI types.AppEUI, devEUI types.DevEUI, req core.OTAAAppReq) {
+	c.SubscribeDeviceActivations(appEUI, devEUI, func(client Client, appEUI types.AppEUI, devEUI types.DevEUI, req Activation) {
 		a.So(appEUI, ShouldResemble, appEUI)
 		a.So(devEUI, ShouldResemble, devEUI)
 
 		wg.Done()
 	}).Wait()
 
-	c.PublishActivation(appEUI, devEUI, core.OTAAAppReq{Metadata: []core.AppMetadata{core.AppMetadata{DataRate: "SF7BW125"}}}).Wait()
+	c.PublishActivation(appEUI, devEUI, Activation{Metadata: []Metadata{Metadata{DataRate: "SF7BW125"}}}).Wait()
 
 	wg.Wait()
 }
@@ -458,14 +457,14 @@ func TestPubSubAppActivations(t *testing.T) {
 
 	wg.Add(2)
 
-	c.SubscribeAppActivations(appEUI, func(client Client, appEUI types.AppEUI, devEUI types.DevEUI, req core.OTAAAppReq) {
+	c.SubscribeAppActivations(appEUI, func(client Client, appEUI types.AppEUI, devEUI types.DevEUI, req Activation) {
 		a.So(appEUI, ShouldResemble, appEUI)
 		a.So(req.Metadata[0].DataRate, ShouldEqual, "SF7BW125")
 		wg.Done()
 	}).Wait()
 
-	c.PublishActivation(appEUI, devEUI1, core.OTAAAppReq{Metadata: []core.AppMetadata{core.AppMetadata{DataRate: "SF7BW125"}}}).Wait()
-	c.PublishActivation(appEUI, devEUI2, core.OTAAAppReq{Metadata: []core.AppMetadata{core.AppMetadata{DataRate: "SF7BW125"}}}).Wait()
+	c.PublishActivation(appEUI, devEUI1, Activation{Metadata: []Metadata{Metadata{DataRate: "SF7BW125"}}}).Wait()
+	c.PublishActivation(appEUI, devEUI2, Activation{Metadata: []Metadata{Metadata{DataRate: "SF7BW125"}}}).Wait()
 
 	wg.Wait()
 }
@@ -478,8 +477,8 @@ func TestInvalidActivations(t *testing.T) {
 
 	eui := types.AppEUI{0x06, 0x04, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}
 
-	c.SubscribeAppActivations(eui, func(client Client, appEUI types.AppEUI, devEUI types.DevEUI, req core.OTAAAppReq) {
-		Ko(t, "Did not expect any message")
+	c.SubscribeAppActivations(eui, func(client Client, appEUI types.AppEUI, devEUI types.DevEUI, req Activation) {
+		t.Error("Did not expect any message")
 	}).Wait()
 
 	// Invalid Topic

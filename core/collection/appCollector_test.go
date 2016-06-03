@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/mqtt"
 	ttntesting "github.com/TheThingsNetwork/ttn/utils/testing"
@@ -64,11 +63,11 @@ func TestCollect(t *testing.T) {
 	So(err, ShouldBeNil)
 	defer client.Disconnect()
 
-	req := core.DataUpAppReq{
-		DevEUI:   devEUI.String(),
+	req := mqtt.UplinkMessage{
+		DevEUI:   devEUI,
 		FCnt:     0,
 		FPort:    1,
-		Metadata: []core.AppMetadata{core.AppMetadata{ServerTime: time.Now().Format(time.RFC3339)}},
+		Metadata: []*mqtt.Metadata{&mqtt.Metadata{ServerTime: time.Now().Format(time.RFC3339)}},
 		Payload:  []byte{0x1, 0x2, 0x3},
 		Fields:   map[string]interface{}{"size": 3},
 	}
