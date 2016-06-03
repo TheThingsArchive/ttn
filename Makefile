@@ -18,7 +18,7 @@ LDFLAGS = -ldflags "-w -X main.gitCommit=${GIT_COMMIT} -X main.buildDate=${BUILD
 DEPS = `comm -23 <(sort <($(GOCMD) list -f '{{join .Imports "\n"}}' ./...) | uniq) <($(GOCMD) list std) | grep -v TheThingsNetwork`
 TEST_DEPS = `comm -23 <(sort <($(GOCMD) list -f '{{join .TestImports "\n"}}' ./...) | uniq) <($(GOCMD) list std) | grep -v TheThingsNetwork`
 
-select_pkgs = $(GOCMD) list ./... | grep -vE 'vendor'
+select_pkgs = $(GOCMD) list ./... | grep -vE 'vendor|ttnctl'
 coverage_pkgs = $(GOCMD) list ./... | grep -E 'core' | grep -vE 'core$$|mocks$$'
 
 RELEASE_DIR ?= release
