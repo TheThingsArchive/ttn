@@ -5,9 +5,9 @@ package otaa
 
 import (
 	"crypto/aes"
+	"errors"
 
 	"github.com/TheThingsNetwork/ttn/core/types"
-	"github.com/TheThingsNetwork/ttn/utils/errors"
 )
 
 // CalculateSessionKeys calculates the AppSKey and NwkSKey
@@ -22,7 +22,7 @@ func CalculateSessionKeys(appKey types.AppKey, appNonce [3]byte, netID [3]byte, 
 	block, err := aes.NewCipher(appKey[:])
 
 	if err != nil || block.BlockSize() != 16 {
-		err = errors.New(errors.Structural, "Unable to create cipher to generate keys")
+		err = errors.New("Unable to create cipher to generate keys")
 		return
 	}
 

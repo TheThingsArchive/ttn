@@ -1,11 +1,11 @@
 package toa
 
 import (
+	"errors"
 	"math"
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/core/types"
-	"github.com/TheThingsNetwork/ttn/utils/errors"
 )
 
 // Compute the time-on-air given a PHY payload size in bytes, a datr identifier,
@@ -26,7 +26,7 @@ func Compute(payloadSize uint, datr string, codr string) (time.Duration, error) 
 	case "4/8":
 		cr = 4
 	default:
-		return 0, errors.New(errors.Structural, "Invalid Codr")
+		return 0, errors.New("Invalid Codr")
 	}
 	// Determine DR
 	dr, err := types.ParseDataRate(datr)
