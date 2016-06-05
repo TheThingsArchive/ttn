@@ -1636,7 +1636,7 @@ func TestHandleJoin(t *testing.T) {
 				DataRate:    "SF12BW125",
 				Frequency:   869.525,
 				CodingRate:  "4/5",
-				Timestamp:   uint32(tmst.Add(5*time.Second).Unix() * 1000000 + 1000000),
+				Timestamp:   uint32(tmst.Add(5*time.Second).Unix()*1000000 + 1000000),
 				PayloadSize: 33,
 				Power:       27,
 				InvPolarity: true,
