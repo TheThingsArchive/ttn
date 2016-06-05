@@ -110,7 +110,7 @@ func New(c Components, o Options) Interface {
 	h.Configuration.CFList = [5]uint32{867100000, 867300000, 867500000, 867700000, 867900000}
 	h.Configuration.NetID = [3]byte{14, 14, 14}
 	h.Configuration.RX1DROffset = 0
-	h.Configuration.RX2DataRate = "SF9BW125"
+	h.Configuration.RX2DataRate = "SF12BW125"
 	h.Configuration.RX2Freq = 869.525
 	h.Configuration.RXDelay = 1
 	h.Configuration.JoinDelay = 5
