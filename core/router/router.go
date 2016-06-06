@@ -3,6 +3,7 @@ package router
 import (
 	"io"
 	"sync"
+	"time"
 
 	"google.golang.org/grpc"
 
@@ -56,6 +57,14 @@ type router struct {
 	brokersLock     sync.RWMutex
 }
 
+func (r *router) tickGateways() {
+	r.gatewaysLock.RLock()
+	defer r.gatewaysLock.RUnlock()
+	for _, gtw := range r.gateways {
+		gtw.Utilization.Tick()
+	}
+}
+
 func (r *router) Init(c *core.Component) error {
 	r.Component = c
 	err := r.Component.UpdateTokenKey()
@@ -67,6 +76,11 @@ func (r *router) Init(c *core.Component) error {
 		return err
 	}
 	r.brokerDiscovery = discovery.NewBrokerDiscovery(r.Component)
+	go func() {
+		for range time.Tick(5 * time.Second) {
+			r.tickGateways()
+		}
+	}()
 	return nil
 }
 
