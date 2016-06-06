@@ -461,7 +461,7 @@ func (h component) consumeJoin(appEUI []byte, devEUI []byte, appKey [16]byte, re
 	}
 
 	// Check if at least one is available
-	best := computer.Get(scores)
+	best := computer.Get(scores, true)
 	ctx.WithField("Best", best).Debug("Determine best response gateway")
 	if best == nil {
 		h.abortConsume(errors.New(errors.Operational, "No gateway is available for an answer"), bundles)
@@ -604,7 +604,7 @@ func (h component) consumeDown(appEUI []byte, devEUI []byte, region dutycycle.Re
 	stats.MarkMeter("handler.uplink.out")
 
 	// Now handle the downlink and respond to node
-	best := computer.Get(scores)
+	best := computer.Get(scores, false)
 	var downlink pktEntry
 	if best != nil { // Avoid pulling when there's no gateway available for an answer
 		downlink, err = h.PktStorage.dequeue(appEUI, devEUI)

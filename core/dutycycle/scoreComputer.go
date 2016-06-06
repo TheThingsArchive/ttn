@@ -83,7 +83,7 @@ func (c *ScoreComputer) Update(s scores, id int, metadata core.Metadata) scores 
 
 // Get returns the best score according to the configured spread factor and all updates.
 // It returns nil if none of the target is available for a response
-func (c *ScoreComputer) Get(s scores) *Configuration {
+func (c *ScoreComputer) Get(s scores, isJoin bool) *Configuration {
 	sf, bw, _ := ParseDatr(s.rx1.DataRate)
 	dataRate := band.DataRate{
 		Modulation:   band.LoRaModulation,
@@ -106,14 +106,26 @@ func (c *ScoreComputer) Get(s scores) *Configuration {
 			}
 		}
 		if s.rx2.Score > 0 {
-			return &Configuration{
-				ID:        s.rx2.ID,
-				Frequency: 869.525,
-				DataRate:  "SF9BW125",
-				Power:     27,
-				RXDelay:   2000000,
-				JoinDelay: 6000000,
-				CFList:    [5]uint32{867100000, 867300000, 867500000, 867700000, 867900000},
+			if isJoin {
+				return &Configuration{
+					ID:        s.rx2.ID,
+					Frequency: 869.525,
+					DataRate:  "SF12BW125",
+					Power:     27,
+					RXDelay:   2000000,
+					JoinDelay: 6000000,
+					CFList:    [5]uint32{867100000, 867300000, 867500000, 867700000, 867900000},
+				}
+			} else {
+				return &Configuration{
+					ID:        s.rx2.ID,
+					Frequency: 869.525,
+					DataRate:  "SF9BW125",
+					Power:     27,
+					RXDelay:   2000000,
+					JoinDelay: 6000000,
+					CFList:    [5]uint32{867100000, 867300000, 867500000, 867700000, 867900000},
+				}
 			}
 		}
 	case US:

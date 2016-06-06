@@ -46,10 +46,11 @@ func TestUpdateGet(t *testing.T) {
 
 		// Build
 		c, s, err := NewScoreComputer(World, "SF7BW125")
+		join := false
 		CheckErrors(t, nil, err)
 
 		// Operate
-		got := c.Get(s)
+		got := c.Get(s, join)
 
 		// Check
 		CheckConfiguration(t, nil, got)
@@ -59,12 +60,14 @@ func TestUpdateGet(t *testing.T) {
 
 	rx1cfg := &Configuration{ID: 1, RXDelay: 1000000, JoinDelay: 5000000, Power: 14, CFList: [5]uint32{867100000, 867300000, 867500000, 867700000, 867900000}}
 	rx2cfg := &Configuration{ID: 1, Frequency: 869.525, DataRate: "SF9BW125", RXDelay: 2000000, JoinDelay: 6000000, Power: 27, CFList: [5]uint32{867100000, 867300000, 867500000, 867700000, 867900000}}
+	rx2joincfg := &Configuration{ID: 1, Frequency: 869.525, DataRate: "SF12BW125", RXDelay: 2000000, JoinDelay: 6000000, Power: 27, CFList: [5]uint32{867100000, 867300000, 867500000, 867700000, 867900000}}
 
 	{
 		Desc(t, "SF7 | (1, Av, Bl, -25, 5.0)")
 
 		// Build
 		c, s, err := NewScoreComputer(Europe, "SF7BW125")
+		join := false
 		CheckErrors(t, nil, err)
 
 		// Operate
@@ -74,7 +77,7 @@ func TestUpdateGet(t *testing.T) {
 			Rssi:    -25,
 			Lsnr:    5.0,
 		})
-		got := c.Get(s)
+		got := c.Get(s, join)
 
 		// Check
 		CheckConfiguration(t, rx1cfg, got)
@@ -87,6 +90,7 @@ func TestUpdateGet(t *testing.T) {
 
 		// Build
 		c, s, err := NewScoreComputer(Europe, "SF7BW125")
+		join := false
 		CheckErrors(t, nil, err)
 
 		// Operate
@@ -96,7 +100,7 @@ func TestUpdateGet(t *testing.T) {
 			Rssi:    -25,
 			Lsnr:    5.0,
 		})
-		got := c.Get(s)
+		got := c.Get(s, join)
 
 		// Check
 		CheckConfiguration(t, rx2cfg, got)
@@ -109,6 +113,7 @@ func TestUpdateGet(t *testing.T) {
 
 		// Build
 		c, s, err := NewScoreComputer(Europe, "SF7BW125")
+		join := false
 		CheckErrors(t, nil, err)
 
 		// Operate
@@ -118,7 +123,7 @@ func TestUpdateGet(t *testing.T) {
 			Rssi:    -25,
 			Lsnr:    5.0,
 		})
-		got := c.Get(s)
+		got := c.Get(s, join)
 
 		// Check
 		CheckConfiguration(t, nil, got)
@@ -131,6 +136,7 @@ func TestUpdateGet(t *testing.T) {
 
 		// Build
 		c, s, err := NewScoreComputer(Europe, "SF9BW125")
+		join := false
 		CheckErrors(t, nil, err)
 
 		// Operate
@@ -140,7 +146,7 @@ func TestUpdateGet(t *testing.T) {
 			Rssi:    -25,
 			Lsnr:    5.0,
 		})
-		got := c.Get(s)
+		got := c.Get(s, join)
 
 		// Check
 		CheckConfiguration(t, rx2cfg, got)
@@ -153,6 +159,7 @@ func TestUpdateGet(t *testing.T) {
 
 		// Build
 		c, s, err := NewScoreComputer(Europe, "SF10BW125")
+		join := false
 		CheckErrors(t, nil, err)
 
 		// Operate
@@ -168,7 +175,7 @@ func TestUpdateGet(t *testing.T) {
 			Rssi:    -25,
 			Lsnr:    3.0,
 		})
-		got := c.Get(s)
+		got := c.Get(s, join)
 
 		// Check
 		CheckConfiguration(t, rx2cfg, got)
@@ -181,6 +188,7 @@ func TestUpdateGet(t *testing.T) {
 
 		// Build
 		c, s, err := NewScoreComputer(Europe, "SF10BW125")
+		join := false
 		CheckErrors(t, nil, err)
 
 		// Operate
@@ -190,7 +198,7 @@ func TestUpdateGet(t *testing.T) {
 			Rssi:    -25,
 			Lsnr:    5.0,
 		})
-		got := c.Get(s)
+		got := c.Get(s, join)
 
 		// Check
 		CheckConfiguration(t, nil, got)
@@ -203,6 +211,7 @@ func TestUpdateGet(t *testing.T) {
 
 		// Build
 		c, s, err := NewScoreComputer(Europe, "SF8BW125")
+		join := false
 		CheckErrors(t, nil, err)
 
 		// Operate
@@ -218,7 +227,7 @@ func TestUpdateGet(t *testing.T) {
 			Rssi:    -25,
 			Lsnr:    5.0,
 		})
-		got := c.Get(s)
+		got := c.Get(s, join)
 
 		// Check
 		CheckConfiguration(t, &Configuration{ID: 2, RXDelay: 1000000, JoinDelay: 5000000, Power: 14, CFList: [5]uint32{867100000, 867300000, 867500000, 867700000, 867900000}}, got)
@@ -231,6 +240,7 @@ func TestUpdateGet(t *testing.T) {
 
 		// Build
 		c, s, err := NewScoreComputer(Europe, "SF12BW125")
+		join := false
 		CheckErrors(t, nil, err)
 
 		// Operate
@@ -246,7 +256,7 @@ func TestUpdateGet(t *testing.T) {
 			Rssi:    -25,
 			Lsnr:    3.4,
 		})
-		got := c.Get(s)
+		got := c.Get(s, join)
 
 		// Check
 		CheckConfiguration(t, rx2cfg, got)
