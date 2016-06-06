@@ -5,8 +5,11 @@ import (
 	"sync"
 	"time"
 
+	"google.golang.org/grpc"
+
 	"gopkg.in/redis.v3"
 
+	"github.com/TheThingsNetwork/ttn/api"
 	pb "github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/api/networkserver"
 	"github.com/TheThingsNetwork/ttn/core"
@@ -60,6 +63,12 @@ func (b *broker) Init(c *core.Component) error {
 	if err != nil {
 		return err
 	}
+	conn, err := grpc.Dial(b.nsAddr, api.DialOptions...)
+	if err != nil {
+		return err
+	}
+	client := networkserver.NewNetworkServerClient(conn)
+	b.ns = client
 
 	return nil
 }
