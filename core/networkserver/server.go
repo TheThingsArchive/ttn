@@ -45,7 +45,7 @@ func (s *networkServerRPC) GetDevices(ctx context.Context, req *pb.DevicesReques
 	if err != nil {
 		return nil, err
 	}
-	return nil, nil
+	return s.networkServer.HandleGetDevices(req)
 }
 
 func (s *networkServerRPC) PrepareActivation(ctx context.Context, activation *broker.DeduplicatedDeviceActivationRequest) (*broker.DeduplicatedDeviceActivationRequest, error) {
