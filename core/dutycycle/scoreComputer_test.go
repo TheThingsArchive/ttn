@@ -60,7 +60,6 @@ func TestUpdateGet(t *testing.T) {
 
 	rx1cfg := &Configuration{ID: 1, RXDelay: 1000000, JoinDelay: 5000000, Power: 14, CFList: [5]uint32{867100000, 867300000, 867500000, 867700000, 867900000}}
 	rx2cfg := &Configuration{ID: 1, Frequency: 869.525, DataRate: "SF9BW125", RXDelay: 2000000, JoinDelay: 6000000, Power: 27, CFList: [5]uint32{867100000, 867300000, 867500000, 867700000, 867900000}}
-	rx2joincfg := &Configuration{ID: 1, Frequency: 869.525, DataRate: "SF12BW125", RXDelay: 2000000, JoinDelay: 6000000, Power: 27, CFList: [5]uint32{867100000, 867300000, 867500000, 867700000, 867900000}}
 
 	{
 		Desc(t, "SF7 | (1, Av, Bl, -25, 5.0)")
