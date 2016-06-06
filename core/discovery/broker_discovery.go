@@ -9,8 +9,8 @@ import (
 
 	"github.com/TheThingsNetwork/ttn/api"
 	pb "github.com/TheThingsNetwork/ttn/api/discovery"
+	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/types"
-	"golang.org/x/net/context"
 )
 
 // BrokerCacheTime indicates how long the BrokerDiscovery should cache the services
@@ -23,26 +23,26 @@ type BrokerDiscovery interface {
 }
 
 type brokerDiscovery struct {
-	serverAddress   string
+	component       *core.Component
 	cache           []*pb.Announcement
 	cacheLock       sync.RWMutex
 	cacheValidUntil time.Time
 }
 
 // NewBrokerDiscovery returns a new BrokerDiscovery on top of the given gRPC connection
-func NewBrokerDiscovery(serverAddress string) BrokerDiscovery {
-	return &brokerDiscovery{serverAddress: serverAddress}
+func NewBrokerDiscovery(component *core.Component) BrokerDiscovery {
+	return &brokerDiscovery{component: component}
 }
 
 func (d *brokerDiscovery) refreshCache() error {
 	// Connect to the server
-	conn, err := grpc.Dial(d.serverAddress, api.DialOptions...)
+	conn, err := grpc.Dial(d.component.DiscoveryServer, api.DialOptions...)
 	if err != nil {
 		return err
 	}
 	defer conn.Close()
 	client := pb.NewDiscoveryClient(conn)
-	res, err := client.Discover(context.Background(), &pb.DiscoverRequest{ServiceName: "broker"})
+	res, err := client.Discover(d.component.GetContext(), &pb.DiscoverRequest{ServiceName: "broker"})
 	if err != nil {
 		return err
 	}

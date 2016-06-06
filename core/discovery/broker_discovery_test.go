@@ -6,12 +6,13 @@ import (
 	"time"
 
 	pb "github.com/TheThingsNetwork/ttn/api/discovery"
+	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/smartystreets/assertions"
 )
 
 func buildTestBrokerDiscoveryClient(port uint) *brokerDiscovery {
-	discovery := NewBrokerDiscovery(fmt.Sprintf("localhost:%d", port)).(*brokerDiscovery)
+	discovery := NewBrokerDiscovery(&core.Component{DiscoveryServer: fmt.Sprintf("localhost:%d", port)}).(*brokerDiscovery)
 	discovery.refreshCache()
 	return discovery
 }
@@ -86,7 +87,9 @@ func TestBrokerDiscoveryCache(t *testing.T) {
 	}
 
 	d := &brokerDiscovery{
-		serverAddress:   fmt.Sprintf("localhost:%d", port),
+		component: &core.Component{
+			DiscoveryServer: fmt.Sprintf("localhost:%d", port),
+		},
 		cacheValidUntil: time.Now().Add(-1 * time.Minute),
 		cache:           []*pb.Announcement{broker},
 	}

@@ -66,7 +66,7 @@ func (r *router) Init(c *core.Component) error {
 	if err != nil {
 		return err
 	}
-	r.brokerDiscovery = discovery.NewBrokerDiscovery(r.Component.DiscoveryServer)
+	r.brokerDiscovery = discovery.NewBrokerDiscovery(r.Component)
 	return nil
 }
 

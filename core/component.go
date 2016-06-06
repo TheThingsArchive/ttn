@@ -64,7 +64,7 @@ func (c *Component) Announce() error {
 	}
 	defer conn.Close()
 	client := pb_discovery.NewDiscoveryClient(conn)
-	_, err = client.Announce(context.Background(), c.Identity)
+	_, err = client.Announce(c.GetContext(), c.Identity)
 	if err != nil {
 		return fmt.Errorf("ttn: Failed to announce this component to TTN discovery: %s", err.Error())
 	}
