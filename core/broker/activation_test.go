@@ -11,17 +11,21 @@ import (
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/broker/application"
 	"github.com/TheThingsNetwork/ttn/core/types"
+	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/assertions"
 )
 
 func TestHandleActivation(t *testing.T) {
 	a := New(t)
 
+	gtwEUI := types.GatewayEUI([8]byte{0, 1, 2, 3, 4, 5, 6, 7})
 	devEUI := types.DevEUI([8]byte{0, 1, 2, 3, 4, 5, 6, 7})
 	appEUI := types.AppEUI([8]byte{0, 1, 2, 3, 4, 5, 6, 7})
 
 	b := &broker{
-		Component:              &core.Component{},
+		Component: &core.Component{
+			Ctx: GetLogger(t, "TestHandleActivation"),
+		},
 		activationDeduplicator: NewDeduplicator(10 * time.Millisecond),
 		applications:           application.NewApplicationStore(),
 		ns:                     &mockNetworkServer{},
@@ -32,7 +36,7 @@ func TestHandleActivation(t *testing.T) {
 		Payload:          []byte{},
 		DevEui:           &devEUI,
 		AppEui:           &appEUI,
-		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2},
+		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2, GatewayEui: &gtwEUI},
 		ProtocolMetadata: &protocol.RxMetadata{},
 	})
 	a.So(err, ShouldNotBeNil)
@@ -47,7 +51,7 @@ func TestHandleActivation(t *testing.T) {
 		Payload:          []byte{},
 		DevEui:           &devEUI,
 		AppEui:           &appEUI,
-		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2},
+		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2, GatewayEui: &gtwEUI},
 		ProtocolMetadata: &protocol.RxMetadata{},
 	})
 	a.So(err, ShouldNotBeNil)

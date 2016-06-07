@@ -5,23 +5,32 @@ import (
 
 	pb "github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/core/types"
+	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/assertions"
 )
 
 func TestDownlink(t *testing.T) {
 	a := New(t)
 
+	appEUI := types.AppEUI{0, 1, 2, 3, 4, 5, 6, 7}
+	devEUI := types.DevEUI{0, 1, 2, 3, 4, 5, 6, 7}
+
 	dlch := make(chan *pb.DownlinkMessage, 2)
 
 	b := &broker{
-		Component: &core.Component{},
-		ns:        &mockNetworkServer{},
+		Component: &core.Component{
+			Ctx: GetLogger(t, "TestDownlink"),
+		},
+		ns: &mockNetworkServer{},
 		routers: map[string]chan *pb.DownlinkMessage{
 			"routerID": dlch,
 		},
 	}
 
 	err := b.HandleDownlink(&pb.DownlinkMessage{
+		DevEui: &devEUI,
+		AppEui: &appEUI,
 		DownlinkOption: &pb.DownlinkOption{
 			Identifier: "fakeID",
 		},
@@ -29,6 +38,8 @@ func TestDownlink(t *testing.T) {
 	a.So(err, ShouldNotBeNil)
 
 	err = b.HandleDownlink(&pb.DownlinkMessage{
+		DevEui: &devEUI,
+		AppEui: &appEUI,
 		DownlinkOption: &pb.DownlinkOption{
 			Identifier: "nonExistentRouterID:scheduleID",
 		},
@@ -36,6 +47,8 @@ func TestDownlink(t *testing.T) {
 	a.So(err, ShouldNotBeNil)
 
 	err = b.HandleDownlink(&pb.DownlinkMessage{
+		DevEui: &devEUI,
+		AppEui: &appEUI,
 		DownlinkOption: &pb.DownlinkOption{
 			Identifier: "routerID:scheduleID",
 		},

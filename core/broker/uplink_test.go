@@ -13,6 +13,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/broker/application"
 	"github.com/TheThingsNetwork/ttn/core/types"
+	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"github.com/brocaar/lorawan"
 	. "github.com/smartystreets/assertions"
 )
@@ -21,17 +22,21 @@ func TestHandleUplink(t *testing.T) {
 	a := New(t)
 
 	b := &broker{
-		Component:          &core.Component{},
+		Component: &core.Component{
+			Ctx: GetLogger(t, "TestHandleUplink"),
+		},
 		uplinkDeduplicator: NewDeduplicator(10 * time.Millisecond),
 		ns: &mockNetworkServer{
 			devices: []*pb_networkserver.DevicesResponse_Device{},
 		},
 	}
 
+	gtwEUI := types.GatewayEUI([8]byte{0, 1, 2, 3, 4, 5, 6, 7})
+
 	// Invalid Payload
 	err := b.HandleUplink(&pb.UplinkMessage{
 		Payload:          []byte{0x01, 0x02, 0x03},
-		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2},
+		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2, GatewayEui: &gtwEUI},
 		ProtocolMetadata: &protocol.RxMetadata{},
 	})
 	a.So(err, ShouldNotBeNil)
@@ -55,7 +60,7 @@ func TestHandleUplink(t *testing.T) {
 	b.uplinkDeduplicator = NewDeduplicator(10 * time.Millisecond)
 	err = b.HandleUplink(&pb.UplinkMessage{
 		Payload:          bytes,
-		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2},
+		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2, GatewayEui: &gtwEUI},
 		ProtocolMetadata: &protocol.RxMetadata{Protocol: &protocol.RxMetadata_Lorawan{Lorawan: &pb_lorawan.Metadata{}}},
 	})
 	a.So(err, ShouldEqual, ErrNotFound)
@@ -66,7 +71,9 @@ func TestHandleUplink(t *testing.T) {
 
 	// Add devices
 	b = &broker{
-		Component:          &core.Component{},
+		Component: &core.Component{
+			Ctx: GetLogger(t, "TestHandleUplink"),
+		},
 		handlers:           make(map[string]chan *pb.DeduplicatedUplinkMessage),
 		uplinkDeduplicator: NewDeduplicator(10 * time.Millisecond),
 		ns: &mockNetworkServer{
@@ -88,7 +95,7 @@ func TestHandleUplink(t *testing.T) {
 	b.uplinkDeduplicator = NewDeduplicator(10 * time.Millisecond)
 	err = b.HandleUplink(&pb.UplinkMessage{
 		Payload:          bytes,
-		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2},
+		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2, GatewayEui: &gtwEUI},
 		ProtocolMetadata: &protocol.RxMetadata{Protocol: &protocol.RxMetadata_Lorawan{Lorawan: &pb_lorawan.Metadata{}}},
 	})
 	a.So(err, ShouldEqual, ErrNoMatch)
@@ -100,7 +107,7 @@ func TestHandleUplink(t *testing.T) {
 	b.uplinkDeduplicator = NewDeduplicator(10 * time.Millisecond)
 	err = b.HandleUplink(&pb.UplinkMessage{
 		Payload:          bytes,
-		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2},
+		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2, GatewayEui: &gtwEUI},
 		ProtocolMetadata: &protocol.RxMetadata{Protocol: &protocol.RxMetadata_Lorawan{Lorawan: &pb_lorawan.Metadata{}}},
 	})
 	a.So(err, ShouldEqual, ErrInvalidFCnt)
@@ -110,7 +117,7 @@ func TestHandleUplink(t *testing.T) {
 	b.ns.(*mockNetworkServer).devices[0].DisableFCntCheck = true
 	err = b.HandleUplink(&pb.UplinkMessage{
 		Payload:          bytes,
-		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2},
+		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2, GatewayEui: &gtwEUI},
 		ProtocolMetadata: &protocol.RxMetadata{Protocol: &protocol.RxMetadata_Lorawan{Lorawan: &pb_lorawan.Metadata{}}},
 	})
 	a.So(err, ShouldBeNil)
@@ -121,7 +128,7 @@ func TestHandleUplink(t *testing.T) {
 	b.ns.(*mockNetworkServer).devices[0].DisableFCntCheck = false
 	err = b.HandleUplink(&pb.UplinkMessage{
 		Payload:          bytes,
-		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2},
+		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2, GatewayEui: &gtwEUI},
 		ProtocolMetadata: &protocol.RxMetadata{Protocol: &protocol.RxMetadata_Lorawan{Lorawan: &pb_lorawan.Metadata{}}},
 	})
 	a.So(err, ShouldBeNil)

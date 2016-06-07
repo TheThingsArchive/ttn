@@ -12,16 +12,30 @@ import (
 	pb "github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/api/gateway"
 	pb_handler "github.com/TheThingsNetwork/ttn/api/handler"
+	"github.com/TheThingsNetwork/ttn/core/broker/application"
+	"github.com/apex/log"
 )
 
 func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (*pb.DeviceActivationResponse, error) {
+	ctx := b.Ctx.WithFields(log.Fields{
+		"GatewayEUI": *activation.GatewayMetadata.GatewayEui,
+		"AppEUI":     *activation.AppEui,
+		"DevEUI":     *activation.DevEui,
+	})
 	var err error
+	defer func() {
+		if err != nil {
+			ctx.WithError(err).Warn("Could not handle activation")
+		}
+	}()
+
 	time := time.Now()
 
 	// De-duplicate uplink messages
 	duplicates := b.deduplicateActivation(activation)
 	if len(duplicates) == 0 {
-		return nil, errors.New("ttn/broker: No duplicates")
+		err = errors.New("ttn/broker: No duplicates")
+		return nil, err
 	}
 
 	base := duplicates[0]
@@ -61,18 +75,24 @@ func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (*pb.D
 	}
 
 	// Find Handler (based on AppEUI)
-	application, err := b.applications.Get(*base.AppEui)
+	var application *application.Application
+	application, err = b.applications.Get(*base.AppEui)
 	if err != nil {
 		return nil, err
 	}
 
-	conn, err := grpc.Dial(application.HandlerNetAddress, api.DialOptions...)
+	ctx = ctx.WithField("HandlerID", application.HandlerID)
+	ctx.Debug("Forward Activation")
+
+	var conn *grpc.ClientConn
+	conn, err = grpc.Dial(application.HandlerNetAddress, api.DialOptions...)
 	if err != nil {
 		return nil, err
 	}
 	defer conn.Close()
 	client := pb_handler.NewHandlerClient(conn)
-	handlerResponse, err := client.Activate(b.Component.GetContext(), deduplicatedActivationRequest)
+	var handlerResponse *pb_handler.DeviceActivationResponse
+	handlerResponse, err = client.Activate(b.Component.GetContext(), deduplicatedActivationRequest)
 	if err != nil {
 		return nil, err
 	}
@@ -86,6 +106,8 @@ func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (*pb.D
 		Payload:        handlerResponse.Payload,
 		DownlinkOption: handlerResponse.DownlinkOption,
 	}
+
+	ctx.Debug("Successful Activation")
 
 	return deviceActivationResponse, nil
 }

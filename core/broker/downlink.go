@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	pb "github.com/TheThingsNetwork/ttn/api/broker"
+	"github.com/apex/log"
 )
 
 // ByScore is used to sort a list of DownlinkOptions based on Score
@@ -15,7 +16,17 @@ func (a ByScore) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a ByScore) Less(i, j int) bool { return a[i].Score < a[j].Score }
 
 func (b *broker) HandleDownlink(downlink *pb.DownlinkMessage) error {
+	ctx := b.Ctx.WithFields(log.Fields{
+		"DevEUI": *downlink.DevEui,
+		"AppEUI": *downlink.AppEui,
+	})
 	var err error
+	defer func() {
+		if err != nil {
+			ctx.WithError(err).Warn("Could not handle downlink")
+		}
+	}()
+
 	downlink, err = b.ns.Downlink(b.Component.GetContext(), downlink)
 	if err != nil {
 		return err
@@ -27,11 +38,15 @@ func (b *broker) HandleDownlink(downlink *pb.DownlinkMessage) error {
 	} else {
 		return errors.New("ttn/broker: Invalid downlink option")
 	}
+	ctx = ctx.WithField("RouterID", routerID)
 
-	router, err := b.getRouter(routerID)
+	var router chan<- *pb.DownlinkMessage
+	router, err = b.getRouter(routerID)
 	if err != nil {
 		return err
 	}
+
+	ctx.Debug("Send Downlink")
 
 	router <- downlink
 

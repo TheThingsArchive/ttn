@@ -11,7 +11,9 @@ import (
 	"github.com/TheThingsNetwork/ttn/api/gateway"
 	"github.com/TheThingsNetwork/ttn/api/networkserver"
 	pb_networkserver "github.com/TheThingsNetwork/ttn/api/networkserver"
+	"github.com/TheThingsNetwork/ttn/core/broker/application"
 	"github.com/TheThingsNetwork/ttn/core/types"
+	"github.com/apex/log"
 	"github.com/brocaar/lorawan"
 )
 
@@ -24,6 +26,14 @@ var (
 )
 
 func (b *broker) HandleUplink(uplink *pb.UplinkMessage) error {
+	ctx := b.Ctx.WithField("GatewayEUI", *uplink.GatewayMetadata.GatewayEui)
+	var err error
+	defer func() {
+		if err != nil {
+			ctx.WithError(err).Warn("Could not handle uplink")
+		}
+	}()
+
 	time := time.Now()
 
 	// De-duplicate uplink messages
@@ -40,18 +50,21 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) error {
 
 	// LoRaWAN: Unmarshal
 	var phyPayload lorawan.PHYPayload
-	err := phyPayload.UnmarshalBinary(base.Payload)
+	err = phyPayload.UnmarshalBinary(base.Payload)
 	if err != nil {
 		return err
 	}
 	macPayload, ok := phyPayload.MACPayload.(*lorawan.MACPayload)
 	if !ok {
-		return errors.New("Uplink message does not contain a MAC payload.")
+		err = errors.New("Uplink message does not contain a MAC payload.")
+		return err
 	}
 
 	// Request devices from NS
 	devAddr := types.DevAddr(macPayload.FHDR.DevAddr)
-	getDevicesResp, err := b.ns.GetDevices(b.Component.GetContext(), &networkserver.DevicesRequest{
+	ctx = ctx.WithField("DevAddr", devAddr)
+	var getDevicesResp *networkserver.DevicesResponse
+	getDevicesResp, err = b.ns.GetDevices(b.Component.GetContext(), &networkserver.DevicesRequest{
 		DevAddr: &devAddr,
 		FCnt:    macPayload.FHDR.FCnt,
 	})
@@ -59,8 +72,10 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) error {
 		return err
 	}
 	if len(getDevicesResp.Results) == 0 {
-		return ErrNotFound
+		err = ErrNotFound
+		return err
 	}
+	ctx = ctx.WithField("DevAddrResults", len(getDevicesResp.Results))
 
 	// Find AppEUI/DevEUI through MIC check
 	var device *pb_networkserver.DevicesResponse_Device
@@ -79,14 +94,21 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) error {
 		}
 	}
 	if device == nil {
-		return ErrNoMatch
+		err = ErrNoMatch
+		return err
 	}
+	ctx = ctx.WithFields(log.Fields{
+		"DevEUI": device.DevEui,
+		"AppEUI": device.AppEui,
+		"FCnt":   device.FullFCnt,
+	})
 
 	if device.DisableFCntCheck {
 		// TODO: Add warning to message?
 	} else if macPayload.FHDR.FCnt < device.StoredFCnt || macPayload.FHDR.FCnt-device.StoredFCnt > maxFCntGap {
 		// Replay attack or FCnt gap too big
-		return ErrInvalidFCnt
+		err = ErrInvalidFCnt
+		return err
 	}
 
 	// Add FCnt to Metadata (because it's not marshaled in lorawan payload)
@@ -125,15 +147,21 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) error {
 		return err
 	}
 
-	application, err := b.applications.Get(*device.AppEui)
+	var application *application.Application
+	application, err = b.applications.Get(*device.AppEui)
 	if err != nil {
 		return err
 	}
 
-	handler, err := b.getHandler(application.HandlerID)
+	ctx = ctx.WithField("HandlerID", application.HandlerID)
+
+	var handler chan<- *pb.DeduplicatedUplinkMessage
+	handler, err = b.getHandler(application.HandlerID)
 	if err != nil {
 		return err
 	}
+
+	ctx.Debug("Forward Uplink")
 
 	handler <- deduplicatedUplink
 

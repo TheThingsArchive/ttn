@@ -10,6 +10,8 @@ import (
 	"github.com/TheThingsNetwork/ttn/api"
 	pb "github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/core/types"
+	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/assertions"
 	"golang.org/x/net/context"
 
@@ -23,13 +25,15 @@ func randomPort() uint {
 	return uint(port)
 }
 
-func buildTestBrokerServer(port uint) (*broker, *grpc.Server) {
+func buildTestBrokerServer(t *testing.T, port uint) (*broker, *grpc.Server) {
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
 		panic(err)
 	}
 	b := &broker{
-		Component:              &core.Component{},
+		Component: &core.Component{
+			Ctx: GetLogger(t, "TestBrokerServer"),
+		},
 		routers:                make(map[string]chan *pb.DownlinkMessage),
 		handlers:               make(map[string]chan *pb.DeduplicatedUplinkMessage),
 		ns:                     &mockNetworkServer{},
@@ -46,7 +50,7 @@ func TestAssociateRPC(t *testing.T) {
 	a := New(t)
 
 	port := randomPort()
-	b, s := buildTestBrokerServer(port)
+	b, s := buildTestBrokerServer(t, port)
 	defer s.Stop()
 
 	conn, err := grpc.Dial(fmt.Sprintf("localhost:%d", port), api.DialOptions...)
@@ -81,7 +85,7 @@ func TestSubscribeRPC(t *testing.T) {
 	a := New(t)
 
 	port := randomPort()
-	b, s := buildTestBrokerServer(port)
+	b, s := buildTestBrokerServer(t, port)
 	defer s.Stop()
 
 	conn, err := grpc.Dial(fmt.Sprintf("localhost:%d", port), api.DialOptions...)
@@ -118,8 +122,11 @@ func TestSubscribeRPC(t *testing.T) {
 func TestPublishRPC(t *testing.T) {
 	a := New(t)
 
+	appEUI := types.AppEUI{0, 1, 2, 3, 4, 5, 6, 7}
+	devEUI := types.DevEUI{0, 1, 2, 3, 4, 5, 6, 7}
+
 	port := randomPort()
-	b, s := buildTestBrokerServer(port)
+	b, s := buildTestBrokerServer(t, port)
 	defer s.Stop()
 
 	conn, err := grpc.Dial(fmt.Sprintf("localhost:%d", port), api.DialOptions...)
@@ -139,6 +146,8 @@ func TestPublishRPC(t *testing.T) {
 
 	stream, _ := client.Publish(ctx)
 	stream.Send(&pb.DownlinkMessage{
+		DevEui: &devEUI,
+		AppEui: &appEUI,
 		DownlinkOption: &pb.DownlinkOption{
 			Identifier: "routerID:scheduleID",
 		},
