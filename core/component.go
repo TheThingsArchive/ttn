@@ -3,6 +3,8 @@ package core
 import (
 	"errors"
 	"fmt"
+	"runtime"
+	"time"
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -25,6 +27,17 @@ type ComponentInterface interface {
 
 // NewComponent creates a new Component
 func NewComponent(ctx log.Interface, serviceName string, announcedAddress string) *Component {
+	go func() {
+		memstats := new(runtime.MemStats)
+		for range time.Tick(time.Minute) {
+			runtime.ReadMemStats(memstats)
+			ctx.WithFields(log.Fields{
+				"Goroutines": runtime.NumGoroutine(),
+				"Memory":     float64(memstats.Alloc) / 1000000,
+			}).Debugf("Stats")
+		}
+	}()
+
 	return &Component{
 		Ctx: ctx,
 		Identity: &pb_discovery.Announcement{
