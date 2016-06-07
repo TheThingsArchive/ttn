@@ -76,6 +76,7 @@ func (r *router) Init(c *core.Component) error {
 		return err
 	}
 	r.brokerDiscovery = discovery.NewBrokerDiscovery(r.Component)
+	r.brokerDiscovery.All() // Update cache
 	go func() {
 		for range time.Tick(5 * time.Second) {
 			r.tickGateways()
