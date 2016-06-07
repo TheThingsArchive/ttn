@@ -224,7 +224,7 @@ func (r *router) buildDownlinkOptions(uplink *pb.UplinkMessage, isActivation boo
 	for _, option := range options {
 		// Add router ID to downlink option
 		if r.Component != nil && r.Component.Identity != nil {
-			option.Identifier = fmt.Sprintf("%s:%s", option.Identifier, r.Component.Identity.Id)
+			option.Identifier = fmt.Sprintf("%s:%s", r.Component.Identity.Id, option.Identifier)
 		}
 
 		// Filter all illegal options
