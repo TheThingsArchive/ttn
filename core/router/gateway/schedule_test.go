@@ -1,6 +1,7 @@
 package gateway
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -37,12 +38,20 @@ func TestScheduleRealtime(t *testing.T) {
 	a.So(tm.UnixNano(), ShouldAlmostEqual, time.Now().UnixNano()+9*1000, almostEqual)
 }
 
+func buildItems(items ...*scheduledItem) map[string]*scheduledItem {
+	m := make(map[string]*scheduledItem)
+	for idx, item := range items {
+		m[fmt.Sprintf("%d", idx)] = item
+	}
+	return m
+}
+
 func TestScheduleGetConflicts(t *testing.T) {
 	a := New(t)
 
 	// Test without overflow
 	s := &schedule{
-		queue: NewDownlinkQueue(
+		items: buildItems(
 			&scheduledItem{timestamp: 5, length: 15},
 			&scheduledItem{timestamp: 25, length: 10},
 			&scheduledItem{timestamp: 55, length: 5},
@@ -60,7 +69,7 @@ func TestScheduleGetConflicts(t *testing.T) {
 
 	// Test with overflow (already scheduled)
 	s = &schedule{
-		queue: NewDownlinkQueue(
+		items: buildItems(
 			&scheduledItem{timestamp: 1<<32 - 1, length: 20},
 		),
 	}
@@ -69,7 +78,7 @@ func TestScheduleGetConflicts(t *testing.T) {
 
 	// Test with overflow (to schedule)
 	s = &schedule{
-		queue: NewDownlinkQueue(
+		items: buildItems(
 			&scheduledItem{timestamp: 10, length: 20},
 		),
 	}
@@ -109,6 +118,7 @@ func TestScheduleSubscribe(t *testing.T) {
 	a := New(t)
 	s := NewSchedule().(*schedule)
 	s.Sync(0)
+	Deadline = 1 // Extremely short deadline
 
 	downlink1 := &router_pb.DownlinkMessage{Payload: []byte{1}}
 	downlink2 := &router_pb.DownlinkMessage{Payload: []byte{2}}

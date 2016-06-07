@@ -28,20 +28,29 @@ type Schedule interface {
 // NewSchedule creates a new Schedule
 func NewSchedule() Schedule {
 	return &schedule{
-		queue: NewDownlinkQueue(),
-		byID:  make(map[string]*scheduledItem),
+		items: make(map[string]*scheduledItem),
 	}
+}
+
+type scheduledItem struct {
+	id        string
+	time      time.Time
+	timestamp uint32
+	length    uint32
+	score     uint
+	payload   *router_pb.DownlinkMessage
 }
 
 type schedule struct {
 	sync.RWMutex
-	active         bool
-	offset         int64
-	queue          *downlinkQueue
-	byID           map[string]*scheduledItem
-	downlinkActive bool
-	downlink       chan *router_pb.DownlinkMessage
+	active   bool
+	offset   int64
+	items    map[string]*scheduledItem
+	downlink chan *router_pb.DownlinkMessage
 }
+
+// TODO: Make configurable
+var Deadline = 200 * time.Millisecond
 
 const uintmax = 1 << 32
 
@@ -49,9 +58,8 @@ const uintmax = 1 << 32
 // Both timestamp and length are in microseconds
 func (s *schedule) getConflicts(timestamp uint32, length uint32) (conflicts uint) {
 	s.RLock()
-	snapshot := s.queue.Snapshot()
-	s.RUnlock()
-	for _, item := range snapshot {
+	defer s.RUnlock()
+	for _, item := range s.items {
 		scheduledFrom := uint64(item.timestamp) % uintmax
 		scheduledTo := scheduledFrom + uint64(item.length)
 		from := uint64(timestamp)
@@ -104,8 +112,16 @@ func (s *schedule) GetOption(timestamp uint32, length uint32) (id string, score 
 	}
 	s.Lock()
 	defer s.Unlock()
-	s.queue.Push(item)
-	s.byID[id] = item
+	s.items[id] = item
+
+	// Schedule deletion after the option expires
+	go func() {
+		<-time.After(10 * time.Second)
+		s.Lock()
+		defer s.Unlock()
+		delete(s.items, id)
+	}()
+
 	return id, score
 }
 
@@ -113,7 +129,7 @@ func (s *schedule) GetOption(timestamp uint32, length uint32) (id string, score 
 func (s *schedule) Schedule(id string, downlink *router_pb.DownlinkMessage) error {
 	s.Lock()
 	defer s.Unlock()
-	if item, ok := s.byID[id]; ok {
+	if item, ok := s.items[id]; ok {
 		item.payload = downlink
 		if lora := downlink.GetProtocolConfiguration().GetLorawan(); lora != nil {
 			time, _ := toa.Compute(
@@ -123,44 +139,36 @@ func (s *schedule) Schedule(id string, downlink *router_pb.DownlinkMessage) erro
 			)
 			item.length = uint32(time / 1000)
 		}
+
+		if time.Now().Add(Deadline).Before(item.time) {
+			// Schedule transmission before the Deadline
+			go func() {
+				waitTime := item.time.Sub(time.Now().Add(Deadline))
+				<-time.After(waitTime)
+				if s.downlink != nil {
+					s.downlink <- item.payload
+				}
+			}()
+		} else if s.downlink != nil {
+			// Immediately send it
+			s.downlink <- item.payload
+		} else {
+			// We can not send it
+		}
+
 		return nil
 	}
 	return errors.New("ID not found")
 }
 
 func (s *schedule) Stop() {
-	s.downlinkActive = false
+	close(s.downlink)
 }
 
-// TODO: Make configurable
-const deadline = 50
-const waitTime = 10 * time.Millisecond
-
 func (s *schedule) Subscribe() <-chan *router_pb.DownlinkMessage {
-	if s.downlinkActive {
+	if s.downlink != nil {
 		return nil
 	}
 	s.downlink = make(chan *router_pb.DownlinkMessage)
-	s.downlinkActive = true
-	go func() {
-		for s.downlinkActive {
-			<-time.After(waitTime)
-			s.Lock()
-			for {
-				item := s.queue.Peek()
-				if item != nil && time.Now().Add(-1*deadline*time.Millisecond).After(item.time) {
-					s.queue.Pop()
-					delete(s.byID, item.id)
-					if item.payload != nil {
-						s.downlink <- item.payload
-					}
-				} else {
-					break
-				}
-			}
-			s.Unlock()
-		}
-		close(s.downlink)
-	}()
 	return s.downlink
 }
