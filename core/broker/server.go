@@ -1,13 +1,13 @@
 package broker
 
 import (
-	"errors"
 	"io"
 
 	pb_api "github.com/TheThingsNetwork/ttn/api"
 	pb "github.com/TheThingsNetwork/ttn/api/broker"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -20,7 +20,7 @@ func getCallerFromMetadata(ctx context.Context) (callerID string, err error) {
 	// TODO: Check OK
 	id, ok := md["id"]
 	if !ok || len(id) < 1 {
-		err = errors.New("ttn/broker: Caller did not provide \"id\" in context")
+		err = grpc.Errorf(codes.Unauthenticated, "ttn/broker: Caller did not provide \"id\" in context")
 		return
 	}
 	callerID = id[0]
@@ -29,12 +29,12 @@ func getCallerFromMetadata(ctx context.Context) (callerID string, err error) {
 	}
 	token, ok := md["token"]
 	if !ok || len(token) < 1 {
-		err = errors.New("ttn/broker: Caller did not provide \"token\" in context")
+		err = grpc.Errorf(codes.Unauthenticated, "ttn/broker: Caller did not provide \"token\" in context")
 		return
 	}
 	if token[0] != "token" {
 		// TODO: Validate Token
-		err = errors.New("ttn/broker: Caller not authorized")
+		err = grpc.Errorf(codes.Unauthenticated, "ttn/broker: Caller not authorized")
 		return
 	}
 
