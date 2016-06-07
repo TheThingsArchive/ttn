@@ -62,7 +62,7 @@ func NewRedisApplicationStore(client *redis.Client) Store {
 	}
 }
 
-const redisApplicationPrefix = "application"
+const redisApplicationPrefix = "broker:application"
 
 type redisApplicationStore struct {
 	client *redis.Client

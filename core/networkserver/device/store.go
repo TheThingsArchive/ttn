@@ -142,8 +142,8 @@ func NewRedisDeviceStore(client *redis.Client) Store {
 	}
 }
 
-const redisDevicePrefix = "device"
-const redisDevAddrPrefix = "dev_addr"
+const redisDevicePrefix = "ns:device"
+const redisDevAddrPrefix = "ns:dev_addr"
 
 type redisDeviceStore struct {
 	client *redis.Client

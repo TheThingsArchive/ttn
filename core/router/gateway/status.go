@@ -47,7 +47,7 @@ func (s *statusStore) Get() (*pb_gateway.Status, error) {
 func NewRedisStatusStore(client *redis.Client, eui types.GatewayEUI) StatusStore {
 	return &redisStatusStore{
 		client: client,
-		key:    fmt.Sprintf("gateway:%s", eui),
+		key:    fmt.Sprintf("router:gateway:%s", eui),
 	}
 }
 
