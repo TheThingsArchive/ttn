@@ -48,6 +48,7 @@ type component struct {
 		NetID       [3]byte
 		RX1DROffset uint8
 		RX2DataRate string
+		RX2JoinRate string
 		RX2Freq     float32
 		RXDelay     uint8
 		PowerRX1    uint32
@@ -111,6 +112,7 @@ func New(c Components, o Options) Interface {
 	h.Configuration.NetID = [3]byte{14, 14, 14}
 	h.Configuration.RX1DROffset = 0
 	h.Configuration.RX2DataRate = "SF9BW125"
+	h.Configuration.RX2JoinRate = "SF12BW125"
 	h.Configuration.RX2Freq = 869.525
 	h.Configuration.RXDelay = 1
 	h.Configuration.JoinDelay = 5
@@ -713,7 +715,7 @@ func (h component) buildDownlink(down []byte, mtype lorawan.MType, ack bool, up 
 		}
 	}
 
-	metadata := h.buildMetadata(*up.Metadata, uint32(len(data)), 1000000*uint32(h.Configuration.RXDelay), isRX2)
+	metadata := h.buildMetadata(*up.Metadata, uint32(len(data)), 1000000*uint32(h.Configuration.RXDelay), isRX2, false)
 
 	return &core.DataUpHandlerRes{
 		Payload: &core.LoRaWANData{
@@ -771,7 +773,8 @@ func (h component) buildJoinAccept(joinReq *core.JoinHandlerReq, appKey [16]byte
 		return nil, errors.New(errors.Structural, err)
 	}
 
-	m := h.buildMetadata(*joinReq.Metadata, uint32(len(data)), 1000000*uint32(h.Configuration.JoinDelay), isRX2)
+	// force RX2 for testing
+	m := h.buildMetadata(*joinReq.Metadata, uint32(len(data)), 1000000*uint32(h.Configuration.JoinDelay), isRX2, true)
 	return &core.JoinHandlerRes{
 		Payload: &core.LoRaWANJoinAccept{
 			Payload: data,
@@ -781,7 +784,7 @@ func (h component) buildJoinAccept(joinReq *core.JoinHandlerReq, appKey [16]byte
 }
 
 // buildMetadata construct a new Metadata
-func (h component) buildMetadata(metadata core.Metadata, size uint32, baseDelay uint32, isRX2 bool) core.Metadata {
+func (h component) buildMetadata(metadata core.Metadata, size uint32, baseDelay uint32, isRX2 bool, isJoin bool) core.Metadata {
 	m := core.Metadata{
 		Frequency:   metadata.Frequency,
 		CodingRate:  metadata.CodingRate,
@@ -797,7 +800,11 @@ func (h component) buildMetadata(metadata core.Metadata, size uint32, baseDelay 
 	if isRX2 { // Should we reply on RX2, metadata aren't the same
 		// TODO Handle different regions with non hard-coded values
 		m.Frequency = h.Configuration.RX2Freq
-		m.DataRate = h.Configuration.RX2DataRate
+		if isJoin {
+			m.DataRate = h.Configuration.RX2JoinRate
+		} else {
+			m.DataRate = h.Configuration.RX2DataRate
+		}
 		m.Power = h.Configuration.PowerRX2
 		m.Timestamp = metadata.Timestamp + baseDelay + 1000000
 	}
