@@ -55,7 +55,11 @@ func (r *router) HandleActivation(gatewayEUI types.GatewayEUI, activation *pb.De
 	if err != nil {
 		return nil, err
 	}
-	band, err := getBand(status.Region)
+	region := status.Region
+	if region == "" {
+		region = guessRegion(uplink.GatewayMetadata.Frequency)
+	}
+	band, err := getBand(region)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +67,7 @@ func (r *router) HandleActivation(gatewayEUI types.GatewayEUI, activation *pb.De
 	lorawan.Rx1DrOffset = 0
 	lorawan.Rx2Dr = uint32(band.RX2DataRate)
 	lorawan.RxDelay = uint32(band.ReceiveDelay1.Seconds())
-	switch status.Region {
+	switch region {
 	case "EU_863_870":
 		lorawan.CfList = []uint64{867100000, 867300000, 867500000, 867700000, 867900000}
 	}

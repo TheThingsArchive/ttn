@@ -62,6 +62,24 @@ func (r *router) HandleDownlink(downlink *pb_broker.DownlinkMessage) error {
 	return nil
 }
 
+func guessRegion(frequency uint64) string {
+	switch {
+	case frequency >= 863000000 && frequency <= 870000000:
+		return "EU_863_870"
+	case frequency >= 902300000 && frequency <= 914900000:
+		return "US_902_928"
+	case frequency >= 779500000 && frequency <= 786500000:
+		return "CN_779_787"
+	case frequency >= 433175000 && frequency <= 434665000:
+		return "EU_433"
+	case frequency >= 915200000 && frequency <= 927800000:
+		return "AU_915_928"
+	case frequency >= 470300000 && frequency <= 489300000:
+		return "CN_470_510"
+	}
+	return ""
+}
+
 func getBand(region string) (band *lora.Band, err error) {
 	var b lora.Band
 
@@ -118,7 +136,11 @@ func (r *router) buildDownlinkOptions(uplink *pb.UplinkMessage, isActivation boo
 		return // We can't handle any other protocols than LoRaWAN yet
 	}
 
-	band, err := getBand(gatewayStatus.Region)
+	region := gatewayStatus.Region
+	if region == "" {
+		region = guessRegion(uplink.GatewayMetadata.Frequency)
+	}
+	band, err := getBand(region)
 	if err != nil {
 		return // We can't handle this region
 	}
@@ -167,7 +189,7 @@ func (r *router) buildDownlinkOptions(uplink *pb.UplinkMessage, isActivation boo
 	// Configuration for RX2
 	{
 		power := int32(band.DefaultTXPower)
-		if gatewayStatus.Region == "EU_863_870" {
+		if region == "EU_863_870" {
 			power = 27 // The EU Downlink frequency allows up to 27dBm
 			if isActivation {
 				// TTN uses SF9BW125 in RX2, we have to reset this for joins
@@ -221,6 +243,11 @@ func (r *router) buildDownlinkOptions(uplink *pb.UplinkMessage, isActivation boo
 func computeDownlinkScores(gateway *gateway.Gateway, uplink *pb.UplinkMessage, options []*pb_broker.DownlinkOption) {
 	gatewayStatus, _ := gateway.Status.Get() // This just returns empty if non-existing
 
+	region := gatewayStatus.Region
+	if region == "" {
+		region = guessRegion(uplink.GatewayMetadata.Frequency)
+	}
+
 	gatewayRx, _ := gateway.Utilization.Get()
 	for _, option := range options {
 
@@ -254,7 +281,7 @@ func computeDownlinkScores(gateway *gateway.Gateway, uplink *pb.UplinkMessage, o
 			utilizationScore += math.Min((channelTx+channelRx)*200, 20) // 10% utilization = 20 (max)
 
 			// Enforce European Duty Cycle
-			if gatewayStatus.Region == "EU_863_870" {
+			if region == "EU_863_870" {
 				var duty float64
 				switch {
 				case freq >= 863000000 && freq < 868000000:
