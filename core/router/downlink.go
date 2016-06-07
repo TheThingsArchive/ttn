@@ -14,18 +14,26 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/router/gateway"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/toa"
+	"github.com/apex/log"
 	lora "github.com/brocaar/lorawan/band"
 )
 
 func (r *router) SubscribeDownlink(gatewayEUI types.GatewayEUI) (<-chan *pb.DownlinkMessage, error) {
+	ctx := r.Ctx.WithFields(log.Fields{
+		"GatewayEUI": gatewayEUI,
+	})
+
 	gateway := r.getGateway(gatewayEUI)
 	if fromSchedule := gateway.Schedule.Subscribe(); fromSchedule != nil {
 		toGateway := make(chan *pb.DownlinkMessage)
 		go func() {
+			ctx.Debug("Activate Downlink")
 			for message := range fromSchedule {
 				gateway.Utilization.AddTx(message)
+				ctx.Debug("Send Downlink")
 				toGateway <- message
 			}
+			ctx.Debug("Deactivate Downlink")
 			close(toGateway)
 		}()
 		return toGateway, nil
@@ -40,6 +48,9 @@ func (r *router) UnsubscribeDownlink(gatewayEUI types.GatewayEUI) error {
 
 func (r *router) HandleDownlink(downlink *pb_broker.DownlinkMessage) error {
 	option := downlink.DownlinkOption
+	ctx := r.Ctx.WithFields(log.Fields{
+		"GatewayEUI": *option.GatewayEui,
+	})
 
 	gateway := r.getGateway(*option.GatewayEui)
 
@@ -53,11 +64,14 @@ func (r *router) HandleDownlink(downlink *pb_broker.DownlinkMessage) error {
 	if r.Component != nil && r.Component.Identity != nil {
 		identifier = strings.TrimPrefix(option.Identifier, fmt.Sprintf("%s:", r.Component.Identity.Id))
 	}
+	ctx = ctx.WithField("Identifier", identifier)
 
 	err := gateway.Schedule.Schedule(identifier, downlinkMessage)
 	if err != nil {
+		ctx.WithError(err).Warn("Could not schedule Downlink")
 		return err
 	}
+	ctx.Debug("Schedule Downlink")
 
 	return nil
 }

@@ -4,8 +4,10 @@ import (
 	"testing"
 
 	pb_gateway "github.com/TheThingsNetwork/ttn/api/gateway"
+	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/router/gateway"
 	"github.com/TheThingsNetwork/ttn/core/types"
+	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/assertions"
 )
 
@@ -14,6 +16,9 @@ func TestHandleGatewayStatus(t *testing.T) {
 	eui := types.GatewayEUI{0, 0, 0, 0, 0, 0, 0, 2}
 
 	router := &router{
+		Component: &core.Component{
+			Ctx: GetLogger(t, "TestHandleActivation"),
+		},
 		gateways: map[types.GatewayEUI]*gateway.Gateway{},
 	}
 

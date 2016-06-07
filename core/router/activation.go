@@ -9,9 +9,21 @@ import (
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	pb "github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/core/types"
+	"github.com/apex/log"
 )
 
 func (r *router) HandleActivation(gatewayEUI types.GatewayEUI, activation *pb.DeviceActivationRequest) (*pb.DeviceActivationResponse, error) {
+	ctx := r.Ctx.WithFields(log.Fields{
+		"GatewayEUI": gatewayEUI,
+		"AppEUI":     *activation.AppEui,
+		"DevEUI":     *activation.DevEui,
+	})
+	var err error
+	defer func() {
+		if err != nil {
+			ctx.WithError(err).Warn("Could not handle activation")
+		}
+	}()
 
 	gateway := r.getGateway(gatewayEUI)
 
@@ -72,6 +84,9 @@ func (r *router) HandleActivation(gatewayEUI types.GatewayEUI, activation *pb.De
 		lorawan.CfList = []uint64{867100000, 867300000, 867500000, 867700000, 867900000}
 	}
 
+	ctx = ctx.WithField("NumBrokers", len(brokers))
+	ctx.Debug("Forward Activation")
+
 	// Forward to all brokers and collect responses
 	var wg sync.WaitGroup
 	responses := make(chan *pb_broker.DeviceActivationResponse, len(brokers))
@@ -101,7 +116,7 @@ func (r *router) HandleActivation(gatewayEUI types.GatewayEUI, activation *pb.De
 	var gotFirst bool
 	for res := range responses {
 		if gotFirst {
-			// warn for duplicate responses
+			ctx.Warn("Duplicate Activation Response")
 		} else {
 			gotFirst = true
 			downlink := &pb_broker.DownlinkMessage{
@@ -110,6 +125,7 @@ func (r *router) HandleActivation(gatewayEUI types.GatewayEUI, activation *pb.De
 			}
 			err := r.HandleDownlink(downlink)
 			if err != nil {
+				ctx.Warn("Could not send downlink for Activation")
 				gotFirst = false // try again
 			}
 		}
@@ -117,9 +133,11 @@ func (r *router) HandleActivation(gatewayEUI types.GatewayEUI, activation *pb.De
 
 	// Activation not accepted by any broker
 	if !gotFirst {
+		ctx.Debug("Activation not accepted at this gateway")
 		return nil, errors.New("ttn/router: Activation not accepted at this Gateway")
 	}
 
 	// Activation accepted by (at least one) broker
+	ctx.Debug("Activation accepted")
 	return &pb.DeviceActivationResponse{}, nil
 }

@@ -8,8 +8,10 @@ import (
 	pb_protocol "github.com/TheThingsNetwork/ttn/api/protocol"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	pb "github.com/TheThingsNetwork/ttn/api/router"
+	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/router/gateway"
 	"github.com/TheThingsNetwork/ttn/core/types"
+	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"github.com/brocaar/lorawan"
 	. "github.com/smartystreets/assertions"
 )
@@ -69,6 +71,9 @@ func TestHandleUplink(t *testing.T) {
 	a := New(t)
 
 	r := &router{
+		Component: &core.Component{
+			Ctx: GetLogger(t, "TestHandleActivation"),
+		},
 		gateways:        map[types.GatewayEUI]*gateway.Gateway{},
 		brokerDiscovery: &mockBrokerDiscovery{},
 	}

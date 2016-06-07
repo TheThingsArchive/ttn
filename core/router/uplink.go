@@ -6,10 +6,18 @@ import (
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb "github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/core/types"
+	"github.com/apex/log"
 	"github.com/brocaar/lorawan"
 )
 
 func (r *router) HandleUplink(gatewayEUI types.GatewayEUI, uplink *pb.UplinkMessage) error {
+	ctx := r.Ctx.WithField("GatewayEUI", gatewayEUI)
+	var err error
+	defer func() {
+		if err != nil {
+			ctx.WithError(err).Warn("Could not handle uplink")
+		}
+	}()
 
 	gateway := r.getGateway(gatewayEUI)
 	gateway.Schedule.Sync(uplink.GatewayMetadata.Timestamp)
@@ -19,7 +27,7 @@ func (r *router) HandleUplink(gatewayEUI types.GatewayEUI, uplink *pb.UplinkMess
 
 	// LoRaWAN: Unmarshal
 	var phyPayload lorawan.PHYPayload
-	err := phyPayload.UnmarshalBinary(uplink.Payload)
+	err = phyPayload.UnmarshalBinary(uplink.Payload)
 	if err != nil {
 		return err
 	}
@@ -32,6 +40,10 @@ func (r *router) HandleUplink(gatewayEUI types.GatewayEUI, uplink *pb.UplinkMess
 		}
 		devEUI := types.DevEUI(joinRequestPayload.DevEUI)
 		appEUI := types.AppEUI(joinRequestPayload.AppEUI)
+		ctx.WithFields(log.Fields{
+			"DevEUI": devEUI,
+			"AppEUI": appEUI,
+		}).Debug("Handle Uplink as Activation")
 		_, err := r.HandleActivation(gatewayEUI, &pb.DeviceActivationRequest{
 			Payload:          uplink.Payload,
 			DevEui:           &devEUI,
@@ -52,11 +64,16 @@ func (r *router) HandleUplink(gatewayEUI types.GatewayEUI, uplink *pb.UplinkMess
 	}
 	devAddr := types.DevAddr(macPayload.FHDR.DevAddr)
 
+	ctx = ctx.WithField("DevAddr", devAddr)
+
 	// Find Broker
 	brokers, err := r.brokerDiscovery.Discover(devAddr)
 	if err != nil {
 		return err
 	}
+
+	ctx = ctx.WithField("NumBrokers", len(brokers))
+	ctx.Debug("Forward Uplink")
 
 	// Forward to all brokers
 	for _, broker := range brokers {

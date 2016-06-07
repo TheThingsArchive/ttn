@@ -16,8 +16,10 @@ import (
 	"github.com/TheThingsNetwork/ttn/api"
 	pb_gateway "github.com/TheThingsNetwork/ttn/api/gateway"
 	pb "github.com/TheThingsNetwork/ttn/api/router"
+	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/router/gateway"
 	"github.com/TheThingsNetwork/ttn/core/types"
+	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/assertions"
 )
 
@@ -27,12 +29,15 @@ func randomPort() uint {
 	return uint(port)
 }
 
-func buildTestRouterServer(port uint) (*router, *grpc.Server) {
+func buildTestRouterServer(t *testing.T, port uint) (*router, *grpc.Server) {
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
 		panic(err)
 	}
 	r := &router{
+		Component: &core.Component{
+			Ctx: GetLogger(t, "TestHandleActivation"),
+		},
 		gateways:        map[types.GatewayEUI]*gateway.Gateway{},
 		brokerDiscovery: &mockBrokerDiscovery{},
 	}
@@ -46,7 +51,7 @@ func TestGatewayStatusRPC(t *testing.T) {
 	a := New(t)
 
 	port := randomPort()
-	r, s := buildTestRouterServer(port)
+	r, s := buildTestRouterServer(t, port)
 	defer s.Stop()
 
 	eui := types.GatewayEUI{1, 2, 3, 4, 5, 6, 7, 8}
@@ -84,7 +89,7 @@ func TestUplinkRPC(t *testing.T) {
 	a := New(t)
 
 	port := randomPort()
-	r, s := buildTestRouterServer(port)
+	r, s := buildTestRouterServer(t, port)
 	defer s.Stop()
 
 	eui := types.GatewayEUI{1, 2, 3, 4, 5, 6, 7, 8}
@@ -121,7 +126,7 @@ func TestSubscribeRPC(t *testing.T) {
 	a := New(t)
 
 	port := randomPort()
-	r, s := buildTestRouterServer(port)
+	r, s := buildTestRouterServer(t, port)
 	defer s.Stop()
 
 	eui := types.GatewayEUI{1, 2, 3, 4, 5, 6, 7, 8}
@@ -153,6 +158,8 @@ func TestSubscribeRPC(t *testing.T) {
 
 	wg.Add(1)
 	schedule := r.getGateway(eui).Schedule
+	gateway.Deadline = 1 // Extremely short deadline
+	schedule.Sync(0)
 	id, _ := schedule.GetOption(300, 50)
 	schedule.Schedule(id, downlink)
 
@@ -163,10 +170,12 @@ func TestActivateRPC(t *testing.T) {
 	a := New(t)
 
 	port := randomPort()
-	r, s := buildTestRouterServer(port)
+	r, s := buildTestRouterServer(t, port)
 	defer s.Stop()
 
 	eui := types.GatewayEUI{1, 2, 3, 4, 5, 6, 7, 8}
+	appEUI := types.AppEUI{1, 2, 3, 4, 5, 6, 7, 8}
+	devEUI := types.DevEUI{1, 2, 3, 4, 5, 6, 7, 8}
 
 	conn, err := grpc.Dial(fmt.Sprintf("localhost:%d", port), api.DialOptions...)
 	if err != nil {
@@ -184,6 +193,8 @@ func TestActivateRPC(t *testing.T) {
 		Payload:          []byte{},
 		ProtocolMetadata: uplink.ProtocolMetadata,
 		GatewayMetadata:  uplink.GatewayMetadata,
+		AppEui:           &appEUI,
+		DevEui:           &devEUI,
 	}
 	res, err := client.Activate(ctx, activation)
 	a.So(res, ShouldBeNil)
