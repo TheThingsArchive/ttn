@@ -10,8 +10,9 @@ import (
 )
 
 func (r *router) HandleUplink(gatewayEUI types.GatewayEUI, uplink *pb.UplinkMessage) error {
-	gateway := r.getGateway(gatewayEUI)
 
+	gateway := r.getGateway(gatewayEUI)
+	gateway.Schedule.Sync(uplink.GatewayMetadata.Timestamp)
 	gateway.Utilization.AddRx(uplink)
 
 	downlinkOptions := r.buildDownlinkOptions(uplink, false, gateway)
