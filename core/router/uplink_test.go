@@ -72,7 +72,7 @@ func TestHandleUplink(t *testing.T) {
 
 	r := &router{
 		Component: &core.Component{
-			Ctx: GetLogger(t, "TestHandleActivation"),
+			Ctx: GetLogger(t, "TestHandleUplink"),
 		},
 		gateways:        map[types.GatewayEUI]*gateway.Gateway{},
 		brokerDiscovery: &mockBrokerDiscovery{},

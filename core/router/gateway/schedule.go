@@ -115,6 +115,7 @@ func (s *schedule) GetOption(timestamp uint32, length uint32) (id string, score 
 	s.items[id] = item
 
 	// Schedule deletion after the option expires
+	// TODO: Periodically clean up instead of this goroutine
 	go func() {
 		<-time.After(10 * time.Second)
 		s.Lock()
@@ -163,6 +164,7 @@ func (s *schedule) Schedule(id string, downlink *router_pb.DownlinkMessage) erro
 
 func (s *schedule) Stop() {
 	close(s.downlink)
+	s.downlink = nil
 }
 
 func (s *schedule) Subscribe() <-chan *router_pb.DownlinkMessage {

@@ -39,7 +39,7 @@ func TestHandleDownlink(t *testing.T) {
 
 	r := &router{
 		Component: &core.Component{
-			Ctx: GetLogger(t, "TestHandleActivation"),
+			Ctx: GetLogger(t, "TestHandleDownlink"),
 		},
 		gateways:        map[types.GatewayEUI]*gateway.Gateway{},
 		brokerDiscovery: &mockBrokerDiscovery{},
@@ -65,7 +65,7 @@ func TestSubscribeUnsubscribeDownlink(t *testing.T) {
 
 	r := &router{
 		Component: &core.Component{
-			Ctx: GetLogger(t, "TestHandleActivation"),
+			Ctx: GetLogger(t, "TestSubscribeUnsubscribeDownlink"),
 		},
 		gateways:        map[types.GatewayEUI]*gateway.Gateway{},
 		brokerDiscovery: &mockBrokerDiscovery{},

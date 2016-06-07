@@ -36,7 +36,7 @@ func buildTestRouterServer(t *testing.T, port uint) (*router, *grpc.Server) {
 	}
 	r := &router{
 		Component: &core.Component{
-			Ctx: GetLogger(t, "TestHandleActivation"),
+			Ctx: GetLogger(t, "TestRouterServer"),
 		},
 		gateways:        map[types.GatewayEUI]*gateway.Gateway{},
 		brokerDiscovery: &mockBrokerDiscovery{},

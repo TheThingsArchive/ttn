@@ -17,7 +17,7 @@ func TestHandleGatewayStatus(t *testing.T) {
 
 	router := &router{
 		Component: &core.Component{
-			Ctx: GetLogger(t, "TestHandleActivation"),
+			Ctx: GetLogger(t, "TestHandleGatewayStatus"),
 		},
 		gateways: map[types.GatewayEUI]*gateway.Gateway{},
 	}
