@@ -96,10 +96,15 @@ func (a *defaultAdapter) SubscribeDownlink(handler core.HandlerServer) error {
 			"DevEUI": devEUI,
 		}).Debug("Receiving Downlink")
 
+		FPort := req.FPort
+		if FPort == 0 {
+			FPort = 1
+		}
 		// Convert it to an handler downlink
 		handler.HandleDataDown(context.Background(), &core.DataDownHandlerReq{
 			Payload: req.Payload,
 			TTL:     req.TTL,
+			FPort:   uint32(FPort),
 			AppEUI:  appEUI.Bytes(),
 			DevEUI:  devEUI.Bytes(),
 		})

@@ -624,6 +624,7 @@ func TestHandleDataUp(t *testing.T) {
 		}
 		pktStorage := NewMockPktStorage()
 		pktStorage.OutDequeue.Entry.Payload = []byte("Downlink")
+		pktStorage.OutDequeue.Entry.FPort = 1
 		appAdapter := mocks.NewAppClient()
 		broker := mocks.NewAuthBrokerClient()
 		payload, fcnt := []byte("Payload"), uint32(14)
@@ -1111,6 +1112,7 @@ func TestHandleDataUp(t *testing.T) {
 		}
 		pktStorage := NewMockPktStorage()
 		pktStorage.OutDequeue.Entry.Payload = []byte("Downlink")
+		pktStorage.OutDequeue.Entry.FPort = 1
 		appAdapter := mocks.NewAppClient()
 		broker := mocks.NewAuthBrokerClient()
 		payload, fcnt := []byte("Payload"), uint32(14)
@@ -1224,6 +1226,7 @@ func TestHandleDataUp(t *testing.T) {
 		devStorage.Failures["upsert"] = errors.New(errors.Operational, "Mock Error")
 		pktStorage := NewMockPktStorage()
 		pktStorage.OutDequeue.Entry.Payload = []byte("Downlink")
+		pktStorage.OutDequeue.Entry.FPort = 1
 		appAdapter := mocks.NewAppClient()
 		broker := mocks.NewAuthBrokerClient()
 		payload, fcnt := []byte("Payload"), uint32(14)
@@ -1302,6 +1305,7 @@ func TestHandleDataUp(t *testing.T) {
 		}
 		pktStorage := NewMockPktStorage()
 		pktStorage.OutDequeue.Entry.Payload = []byte("Downlink")
+		pktStorage.OutDequeue.Entry.FPort = 1
 		appAdapter := mocks.NewAppClient()
 		broker := mocks.NewAuthBrokerClient()
 		payload, fcnt := []byte("Payload"), uint32(14)
@@ -1463,7 +1467,6 @@ func TestHandleDataUp(t *testing.T) {
 							Ack: true,
 						},
 					},
-					FPort:      uint32(1),
 					FRMPayload: nil,
 				},
 				MIC: []byte{0, 0, 0, 0},

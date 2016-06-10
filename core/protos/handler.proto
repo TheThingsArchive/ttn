@@ -23,6 +23,7 @@ message DataUpHandlerRes {
 message DataDownHandlerReq {
     bytes       AppEUI      = 1;
     bytes       DevEUI      = 2;
+    uint32      FPort       = 3;
     bytes       Payload     = 20;
     string      TTL         = 30;
 }
