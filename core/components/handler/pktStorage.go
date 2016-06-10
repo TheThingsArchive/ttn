@@ -5,6 +5,7 @@ package handler
 
 import (
 	"encoding"
+	"encoding/binary"
 	"sync"
 	"time"
 
@@ -32,6 +33,7 @@ type pktStorage struct {
 type pktEntry struct {
 	AppEUI  []byte
 	DevEUI  []byte
+	FPort   byte
 	Payload []byte
 	TTL     time.Time
 }
@@ -145,6 +147,7 @@ func (e pktEntry) MarshalBinary() ([]byte, error) {
 	rw := readwriter.New(nil)
 	rw.Write(e.AppEUI)
 	rw.Write(e.DevEUI)
+	rw.Write(uint16(e.FPort))
 	rw.Write(e.Payload)
 	rw.Write(data)
 	return rw.Bytes()
@@ -160,6 +163,9 @@ func (e *pktEntry) UnmarshalBinary(data []byte) error {
 	rw.Read(func(data []byte) {
 		e.DevEUI = make([]byte, len(data))
 		copy(e.DevEUI, data)
+	})
+	rw.Read(func(data []byte) {
+		e.FPort = byte(binary.BigEndian.Uint16(data))
 	})
 	rw.Read(func(data []byte) {
 		e.Payload = make([]byte, len(data))

@@ -267,12 +267,13 @@ func (h component) HandleDataDown(bctx context.Context, req *core.DataDownHandle
 		return new(core.DataDownHandlerRes), errors.New(errors.Structural, "Invalid TTL")
 	}
 
-	h.Ctx.WithField("DevEUI", req.DevEUI).WithField("AppEUI", req.AppEUI).Debug("Handle downlink - enqueue")
+	h.Ctx.WithField("DevEUI", req.DevEUI).WithField("AppEUI", req.AppEUI).WithField("FPort", req.FPort).Debug("Handle downlink - enqueue")
 
 	return new(core.DataDownHandlerRes), h.PktStorage.enqueue(pktEntry{
 		Payload: req.Payload,
 		AppEUI:  req.AppEUI,
 		DevEUI:  req.DevEUI,
+		FPort:   byte(req.FPort),
 		TTL:     time.Now().Add(ttl),
 	})
 }
@@ -624,7 +625,7 @@ func (h component) consumeDown(appEUI []byte, devEUI []byte, region dutycycle.Re
 			if bundle.Packet.(*core.DataUpHandlerReq).FCntUpReset {
 				bundle.Entry.FCntDown = 0
 			}
-			downlink, err := h.buildDownlink(downlink.Payload, downType, ack, *bundle.Packet.(*core.DataUpHandlerReq), bundle.Entry, best)
+			downlink, err := h.buildDownlink(downlink.Payload, downlink.FPort, downType, ack, *bundle.Packet.(*core.DataUpHandlerReq), bundle.Entry, best)
 			if err != nil {
 				h.abortConsume(errors.New(errors.Structural, err), bundles)
 				return
@@ -663,14 +664,14 @@ func (h component) abortConsume(err error, bundles []bundle) {
 
 // constructs a downlink packet from something we pulled from the gathered downlink, and, the actual
 // uplink.
-func (h component) buildDownlink(down []byte, mtype lorawan.MType, ack bool, up core.DataUpHandlerReq, entry devEntry, config *dutycycle.Configuration) (*core.DataUpHandlerRes, error) {
+func (h component) buildDownlink(down []byte, fport byte, mtype lorawan.MType, ack bool, up core.DataUpHandlerReq, entry devEntry, config *dutycycle.Configuration) (*core.DataUpHandlerRes, error) {
 	macpayload := &lorawan.MACPayload{}
 	macpayload.FHDR = lorawan.FHDR{
 		FCnt: entry.FCntDown + 1,
 	}
 	copy(macpayload.FHDR.DevAddr[:], entry.DevAddr)
 	macpayload.FPort = new(uint8)
-	*macpayload.FPort = 1
+	*macpayload.FPort = fport
 	if ack {
 		macpayload.FHDR.FCtrl.ACK = true
 	}

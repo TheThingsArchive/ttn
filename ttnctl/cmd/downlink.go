@@ -8,23 +8,33 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/spf13/cobra"
+	"strconv"
 )
 
 // downlinkCmd represents the `downlink` command
 var downlinkCmd = &cobra.Command{
-	Use:   "downlink [DevEUI] [Payload] [TTL]",
+	Use:   "downlink [DevEUI] [Payload] [TTL] [Port]",
 	Short: "Send downlink messages to the network",
 	Long: `ttnctl downlink sends a downlink message to the network
 
 The DevEUI should be an 8-byte long hex-encoded string (16 chars), the Payload
 is a hex-encoded string and the TTL defines the time-to-live of this downlink,
-formatted as "1h2m" for one hour and two minutes. The default TTL is one hour.`,
+formatted as "1h2m" for one hour and two minutes. The default TTL is one hour.
+Port specifies the decimal port number for this message.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		port := 1
 		if len(args) < 2 {
 			ctx.Fatal("Insufficient arguments")
 		}
 		if len(args) < 3 {
 			args = append(args, "1h")
+		}
+		if len(args) >= 4 {
+			p, error := strconv.Atoi(args[3])
+			if error != nil {
+				ctx.Fatalf("Invalid port specified %s", args[3])
+			}
+			port = p
 		}
 
 		appEUI := util.GetAppEUI(ctx)
@@ -48,6 +58,7 @@ formatted as "1h2m" for one hour and two minutes. The default TTL is one hour.`,
 		dataDown := core.DataDownAppReq{
 			Payload: payload,
 			TTL:     args[2],
+			FPort:   byte(port),
 		}
 
 		if err != nil {

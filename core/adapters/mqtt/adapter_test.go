@@ -119,6 +119,7 @@ func TestSubscribeDownlink(t *testing.T) {
 	expected := &core.DataDownHandlerReq{
 		AppEUI:  appEUI.Bytes(),
 		DevEUI:  devEUI.Bytes(),
+		FPort:   1,
 		Payload: []byte{0x01, 0x02, 0x03, 0x04},
 	}
 
