@@ -21,6 +21,7 @@ import (
 // NetworkServer implements LoRaWAN-specific functionality for TTN
 type NetworkServer interface {
 	core.ComponentInterface
+	UsePrefix(prefixBytes []byte, length int) error
 	HandleGetDevices(*pb.DevicesRequest) (*pb.DevicesResponse, error)
 	HandlePrepareActivation(*pb_broker.DeduplicatedDeviceActivationRequest) (*pb_broker.DeduplicatedDeviceActivationRequest, error)
 	HandleActivate(*pb_handler.DeviceActivationResponse) (*pb_handler.DeviceActivationResponse, error)
@@ -34,13 +35,29 @@ func NewRedisNetworkServer(client *redis.Client, netID int) NetworkServer {
 		devices: device.NewRedisDeviceStore(client),
 	}
 	ns.netID = [3]byte{byte(netID >> 16), byte(netID >> 8), byte(netID)}
+	ns.prefix = [4]byte{ns.netID[2] << 1, 0, 0, 0}
+	ns.prefixLength = 7
 	return ns
 }
 
 type networkServer struct {
 	*core.Component
-	netID   [3]byte
-	devices device.Store
+	devices      device.Store
+	netID        [3]byte
+	prefix       [4]byte
+	prefixLength int
+}
+
+func (n *networkServer) UsePrefix(prefixBytes []byte, length int) error {
+	if length < 7 {
+		return errors.New("ttn/networkserver: Invalid prefix length")
+	}
+	if prefixBytes[0]>>1 != n.netID[2] {
+		return errors.New("ttn/networkserver: Invalid prefix")
+	}
+	copy(n.prefix[:], prefixBytes)
+	n.prefixLength = length
+	return nil
 }
 
 func (n *networkServer) Init(c *core.Component) error {
@@ -115,10 +132,19 @@ func (n *networkServer) HandlePrepareActivation(activation *pb_broker.Deduplicat
 	lorawanMeta := activation.ActivationMetadata.GetLorawan()
 
 	// Generate random DevAddr
-	// TODO: Be smarter than just randomly generating addresses.
 	var devAddr types.DevAddr
 	copy(devAddr[:], random.Bytes(4))
-	devAddr[0] = (n.netID[2] << 1) | (devAddr[0] & 1) // DevAddr 7 msb are NetID 7 lsb
+	// Fill the prefixSize first bits with the prefix
+	k := uint(n.prefixLength)
+	for i := 0; i < 4; i++ {
+		if k >= 8 {
+			devAddr[i] = n.prefix[i] & 0xff
+			k -= 8
+			continue
+		}
+		devAddr[i] = n.prefix[i] & ^byte(0xff>>k)
+		k = 0
+	}
 
 	// Set the DevAddr in the Activation Metadata
 	lorawanMeta.DevAddr = &devAddr

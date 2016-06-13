@@ -43,6 +43,17 @@ func TestNewNetworkServer(t *testing.T) {
 	a.So(ns.(*networkServer).netID, ShouldEqual, [3]byte{0x01, 0x02, 0x13})
 }
 
+func TestUsePrefix(t *testing.T) {
+	a := New(t)
+	var client redis.Client
+	ns := NewRedisNetworkServer(&client, 19)
+
+	a.So(ns.UsePrefix([]byte{}, 0), ShouldNotBeNil)
+	a.So(ns.UsePrefix([]byte{0x14}, 7), ShouldNotBeNil)
+	a.So(ns.UsePrefix([]byte{0x26}, 7), ShouldBeNil)
+	a.So(ns.(*networkServer).prefix, ShouldEqual, [4]byte{0x26, 0x00, 0x00, 0x00})
+}
+
 func TestHandleGetDevices(t *testing.T) {
 	a := New(t)
 
@@ -146,7 +157,7 @@ func TestHandleGetDevices(t *testing.T) {
 
 func TestHandlePrepareActivation(t *testing.T) {
 	a := New(t)
-	ns := &networkServer{netID: [3]byte{0, 0, 0x13}}
+	ns := &networkServer{netID: [3]byte{0x00, 0x00, 0x13}, prefix: [4]byte{0x26, 0x00, 0x00, 0x00}, prefixLength: 7}
 	resp, err := ns.HandlePrepareActivation(&pb_broker.DeduplicatedDeviceActivationRequest{
 		ActivationMetadata: &pb_protocol.ActivationMetadata{Protocol: &pb_protocol.ActivationMetadata_Lorawan{
 			Lorawan: &pb_lorawan.ActivationMetadata{
