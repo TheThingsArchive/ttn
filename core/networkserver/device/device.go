@@ -79,7 +79,7 @@ func (device *Device) formatProperty(property string) (formatted string, err err
 	case "f_cnt_down":
 		formatted = storage.FormatUint32(device.FCntDown)
 	case "last_seen":
-		formatted = device.LastSeen.Format(time.RFC3339Nano)
+		formatted = device.LastSeen.UTC().Format(time.RFC3339Nano)
 	case "options":
 		// TODO
 	case "utilization":
