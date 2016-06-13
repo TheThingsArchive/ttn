@@ -3,6 +3,8 @@ package types
 import (
 	"encoding/hex"
 	"errors"
+	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -111,4 +113,18 @@ func (addr DevAddr) HasPrefix(length int, prefixBytes []byte) bool {
 	var prefix DevAddr
 	copy(prefix[:], prefixBytes)
 	return addr.Mask(length) == prefix.Mask(length)
+}
+
+// ParseDevAddrPrefix parses a DevAddr in prefix notation (01020304/24) to a prefix (01020300) and length (24)
+func ParseDevAddrPrefix(prefix string) (addr DevAddr, length int, err error) {
+	pattern := regexp.MustCompile("([[:xdigit:]]{8})/([[:digit:]]+)")
+	matches := pattern.FindStringSubmatch(prefix)
+	if len(matches) != 3 {
+		err = errors.New("Invalid Prefix")
+		return
+	}
+	addr, _ = ParseDevAddr(matches[1])   // errors handled in regexp
+	length, _ = strconv.Atoi(matches[2]) // errors handled in regexp
+	addr = addr.Mask(length)
+	return
 }

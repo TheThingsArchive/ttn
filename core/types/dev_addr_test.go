@@ -86,3 +86,21 @@ func TestDevAddrHasPrefix(t *testing.T) {
 	a.So(DevAddr{1, 2, 3, 4}.HasPrefix(31, []byte{1, 1, 3, 4}), ShouldBeFalse)
 	a.So(DevAddr{1, 2, 3, 4}.HasPrefix(15, []byte{1, 1}), ShouldBeFalse)
 }
+
+func TestParseDevAddrPrefix(t *testing.T) {
+	a := New(t)
+	addr, length, err := ParseDevAddrPrefix("XYZ")
+	a.So(err, ShouldNotBeNil)
+	addr, length, err = ParseDevAddrPrefix("00/bla")
+	a.So(err, ShouldNotBeNil)
+	addr, length, err = ParseDevAddrPrefix("00/1")
+	a.So(err, ShouldNotBeNil)
+	addr, length, err = ParseDevAddrPrefix("01020304/1")
+	a.So(err, ShouldBeNil)
+	a.So(addr, ShouldEqual, DevAddr{0, 0, 0, 0})
+	a.So(length, ShouldEqual, 1)
+	addr, length, err = ParseDevAddrPrefix("ff020304/1")
+	a.So(err, ShouldBeNil)
+	a.So(addr, ShouldEqual, DevAddr{128, 0, 0, 0})
+	a.So(length, ShouldEqual, 1)
+}
