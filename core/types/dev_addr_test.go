@@ -63,3 +63,26 @@ func TestDevAddr(t *testing.T) {
 	a.So(empty.IsEmpty(), ShouldEqual, true)
 	a.So(addr.IsEmpty(), ShouldEqual, false)
 }
+
+func TestDevAddrMask(t *testing.T) {
+	a := New(t)
+	d1 := DevAddr{255, 255, 255, 255}
+	a.So(d1.Mask(1), ShouldEqual, DevAddr{128, 0, 0, 0})
+	a.So(d1.Mask(2), ShouldEqual, DevAddr{192, 0, 0, 0})
+	a.So(d1.Mask(3), ShouldEqual, DevAddr{224, 0, 0, 0})
+	a.So(d1.Mask(4), ShouldEqual, DevAddr{240, 0, 0, 0})
+	a.So(d1.Mask(5), ShouldEqual, DevAddr{248, 0, 0, 0})
+	a.So(d1.Mask(6), ShouldEqual, DevAddr{252, 0, 0, 0})
+	a.So(d1.Mask(7), ShouldEqual, DevAddr{254, 0, 0, 0})
+	a.So(d1.Mask(8), ShouldEqual, DevAddr{255, 0, 0, 0})
+}
+
+func TestDevAddrHasPrefix(t *testing.T) {
+	a := New(t)
+	a.So(DevAddr{1, 2, 3, 4}.HasPrefix(0, []byte{}), ShouldBeTrue)
+	a.So(DevAddr{1, 2, 3, 4}.HasPrefix(32, []byte{1, 2, 3, 4}), ShouldBeTrue)
+	a.So(DevAddr{1, 2, 3, 4}.HasPrefix(31, []byte{1, 2, 3, 4}), ShouldBeTrue)
+	a.So(DevAddr{1, 2, 3, 4}.HasPrefix(31, []byte{2, 2, 3, 4}), ShouldBeFalse)
+	a.So(DevAddr{1, 2, 3, 4}.HasPrefix(31, []byte{1, 1, 3, 4}), ShouldBeFalse)
+	a.So(DevAddr{1, 2, 3, 4}.HasPrefix(15, []byte{1, 1}), ShouldBeFalse)
+}

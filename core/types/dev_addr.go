@@ -90,3 +90,25 @@ var empty DevAddr
 func (addr DevAddr) IsEmpty() bool {
 	return addr == empty
 }
+
+// Mask returns a copy of the DevAddr with only the first "bits" bits
+func (addr DevAddr) Mask(bits int) (masked DevAddr) {
+	n := uint(bits)
+	for i := 0; i < 4; i++ {
+		if n >= 8 {
+			masked[i] = addr[i] & 0xff
+			n -= 8
+			continue
+		}
+		masked[i] = addr[i] & ^byte(0xff>>n)
+		n = 0
+	}
+	return
+}
+
+// HasPrefix returns true if the DevAddr has a prefix of given length
+func (addr DevAddr) HasPrefix(length int, prefixBytes []byte) bool {
+	var prefix DevAddr
+	copy(prefix[:], prefixBytes)
+	return addr.Mask(length) == prefix.Mask(length)
+}
