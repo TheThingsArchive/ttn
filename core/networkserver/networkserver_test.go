@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"gopkg.in/redis.v3"
+
 	"github.com/brocaar/lorawan"
 	. "github.com/smartystreets/assertions"
 
@@ -24,6 +26,21 @@ func getDevAddr(bytes ...byte) (addr types.DevAddr) {
 func getEUI(bytes ...byte) (eui types.EUI64) {
 	copy(eui[:], bytes[:8])
 	return
+}
+
+func TestNewNetworkServer(t *testing.T) {
+	a := New(t)
+	var client redis.Client
+
+	// TTN NetID
+	ns := NewRedisNetworkServer(&client, 19)
+	a.So(ns, ShouldNotBeNil)
+	a.So(ns.(*networkServer).netID, ShouldEqual, [3]byte{0, 0, 0x13})
+
+	// Other NetID, same NwkID
+	ns = NewRedisNetworkServer(&client, 66067)
+	a.So(ns, ShouldNotBeNil)
+	a.So(ns.(*networkServer).netID, ShouldEqual, [3]byte{0x01, 0x02, 0x13})
 }
 
 func TestHandleGetDevices(t *testing.T) {
@@ -129,7 +146,7 @@ func TestHandleGetDevices(t *testing.T) {
 
 func TestHandlePrepareActivation(t *testing.T) {
 	a := New(t)
-	ns := &networkServer{}
+	ns := &networkServer{netID: [3]byte{0, 0, 0x13}}
 	resp, err := ns.HandlePrepareActivation(&pb_broker.DeduplicatedDeviceActivationRequest{
 		ActivationMetadata: &pb_protocol.ActivationMetadata{Protocol: &pb_protocol.ActivationMetadata_Lorawan{
 			Lorawan: &pb_lorawan.ActivationMetadata{

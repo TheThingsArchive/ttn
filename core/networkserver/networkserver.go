@@ -29,14 +29,17 @@ type NetworkServer interface {
 }
 
 // NewRedisNetworkServer creates a new Redis-backed NetworkServer
-func NewRedisNetworkServer(client *redis.Client) NetworkServer {
-	return &networkServer{
+func NewRedisNetworkServer(client *redis.Client, netID int) NetworkServer {
+	ns := &networkServer{
 		devices: device.NewRedisDeviceStore(client),
 	}
+	ns.netID = [3]byte{byte(netID >> 16), byte(netID >> 8), byte(netID)}
+	return ns
 }
 
 type networkServer struct {
 	*core.Component
+	netID   [3]byte
 	devices device.Store
 }
 
@@ -46,6 +49,13 @@ func (n *networkServer) Init(c *core.Component) error {
 	if err != nil {
 		return err
 	}
+	// Set fake device
+	n.devices.Set(&device.Device{
+		AppEUI:  types.AppEUI{1, 2, 3, 4, 5, 6, 7, 8},
+		DevEUI:  types.DevEUI{1, 2, 3, 4, 5, 6, 7, 8},
+		DevAddr: types.DevAddr{1, 2, 3, 4},
+		NwkSKey: types.NwkSKey{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8},
+	})
 	return nil
 }
 
@@ -88,9 +98,6 @@ func (n *networkServer) HandleGetDevices(req *pb.DevicesRequest) (*pb.DevicesRes
 	return res, nil
 }
 
-var netID = [3]byte{0x00, 0x00, 0x13}
-var nwkID byte = 0x13
-
 func (n *networkServer) HandlePrepareActivation(activation *pb_broker.DeduplicatedDeviceActivationRequest) (*pb_broker.DeduplicatedDeviceActivationRequest, error) {
 	// Build activation metadata if not present
 	if meta := activation.GetActivationMetadata(); meta == nil {
@@ -111,7 +118,7 @@ func (n *networkServer) HandlePrepareActivation(activation *pb_broker.Deduplicat
 	// TODO: Be smarter than just randomly generating addresses.
 	var devAddr types.DevAddr
 	copy(devAddr[:], random.Bytes(4))
-	devAddr[0] = (nwkID << 1) | (devAddr[0] & 1) // DevAddr 7 msb are NetID 7 lsb
+	devAddr[0] = (n.netID[2] << 1) | (devAddr[0] & 1) // DevAddr 7 msb are NetID 7 lsb
 
 	// Set the DevAddr in the Activation Metadata
 	lorawanMeta.DevAddr = &devAddr
@@ -123,7 +130,7 @@ func (n *networkServer) HandlePrepareActivation(activation *pb_broker.Deduplicat
 			Major: lorawan.LoRaWANR1,
 		},
 		MACPayload: &lorawan.JoinAcceptPayload{
-			NetID:      netID,
+			NetID:      n.netID,
 			DLSettings: lorawan.DLSettings{RX2DataRate: uint8(lorawanMeta.Rx2Dr), RX1DROffset: uint8(lorawanMeta.Rx1DrOffset)},
 			RXDelay:    uint8(lorawanMeta.RxDelay),
 			DevAddr:    lorawan.DevAddr(devAddr),
@@ -199,6 +206,15 @@ func (n *networkServer) HandleUplink(message *pb_broker.DeduplicatedUplinkMessag
 	}
 	message.ResponseTemplate.AppEui = message.AppEui
 	message.ResponseTemplate.DevEui = message.DevEui
+
+	// Add Full FCnt (avoiding nil pointer panics)
+	if option := message.ResponseTemplate.DownlinkOption; option != nil {
+		if protocol := option.ProtocolConfig; protocol != nil {
+			if lorawan := protocol.GetLorawan(); lorawan != nil {
+				lorawan.FCnt = dev.FCntDown
+			}
+		}
+	}
 
 	phy := lorawan.PHYPayload{
 		MHDR: lorawan.MHDR{
