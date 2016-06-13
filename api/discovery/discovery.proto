@@ -7,6 +7,9 @@ package discovery;
 message Metadata {
   enum Key {
     OTHER = 0;
+
+    // The value for PREFIX consists of 1 byte denoting the number of bits,
+    // followed by the prefix and enough trailing bits to fill 4 octets
     PREFIX = 1;
   }
   Key key = 1;

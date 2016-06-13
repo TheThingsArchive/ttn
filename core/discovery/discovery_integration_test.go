@@ -19,10 +19,10 @@ func TestIntegrationBrokerDiscovery(t *testing.T) {
 	discoveryServer.services = map[string]map[string]*pb.Announcement{
 		"broker": map[string]*pb.Announcement{
 			"broker1": &pb.Announcement{Metadata: []*pb.Metadata{
-				&pb.Metadata{Key: pb.Metadata_PREFIX, Value: []byte{0x01}},
+				&pb.Metadata{Key: pb.Metadata_PREFIX, Value: []byte{8, 0x01, 0x00, 0x00, 0x00}},
 			}},
 			"broker2": &pb.Announcement{Metadata: []*pb.Metadata{
-				&pb.Metadata{Key: pb.Metadata_PREFIX, Value: []byte{0x02}},
+				&pb.Metadata{Key: pb.Metadata_PREFIX, Value: []byte{8, 0x02, 0x00, 0x00, 0x00}},
 			}},
 		},
 		"other": map[string]*pb.Announcement{

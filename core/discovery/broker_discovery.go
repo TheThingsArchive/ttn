@@ -1,7 +1,6 @@
 package discovery
 
 import (
-	"bytes"
 	"sync"
 	"time"
 
@@ -77,7 +76,7 @@ func (d *brokerDiscovery) Discover(devAddr types.DevAddr) ([]*pb.Announcement, e
 	matches := []*pb.Announcement{}
 	for _, service := range d.cache {
 		for _, meta := range service.Metadata {
-			if meta.Key == pb.Metadata_PREFIX && bytes.HasPrefix(devAddr.Bytes(), meta.Value) {
+			if meta.Key == pb.Metadata_PREFIX && len(meta.Value) == 5 && devAddr.HasPrefix(int(meta.Value[0]), meta.Value[1:]) {
 				matches = append(matches, service)
 				break
 			}

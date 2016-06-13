@@ -23,21 +23,21 @@ func TestBrokerDiscovery(t *testing.T) {
 	// Broker1 has a prefix with all DevAddrs
 	broker1 := &pb.Announcement{ServiceName: "broker", Token: "broker1", NetAddress: "localhost1:1881",
 		Metadata: []*pb.Metadata{
-			&pb.Metadata{Key: pb.Metadata_PREFIX, Value: []byte{}},
+			&pb.Metadata{Key: pb.Metadata_PREFIX, Value: []byte{0, 0x00, 0x00, 0x00, 0x00}},
 		},
 	}
 
 	// Broker2 has one DevAddr prefix
 	broker2 := &pb.Announcement{ServiceName: "broker", Token: "broker2", NetAddress: "localhost2:1881",
 		Metadata: []*pb.Metadata{
-			&pb.Metadata{Key: pb.Metadata_PREFIX, Value: []byte{0x01}},
+			&pb.Metadata{Key: pb.Metadata_PREFIX, Value: []byte{8, 0x01, 0x00, 0x00, 0x00}},
 		},
 	}
 
 	// Broker3 has multiple DevAddr prefixes
 	broker3 := &pb.Announcement{ServiceName: "broker", Token: "broker3", NetAddress: "localhost3:1881",
 		Metadata: []*pb.Metadata{
-			&pb.Metadata{Key: pb.Metadata_PREFIX, Value: []byte{0x02, 0x03}},
+			&pb.Metadata{Key: pb.Metadata_PREFIX, Value: []byte{16, 0x02, 0x03, 0x00, 0x00}},
 		},
 	}
 
@@ -83,7 +83,7 @@ func TestBrokerDiscoveryCache(t *testing.T) {
 	discoveryServer, _ := buildMockDiscoveryServer(port)
 
 	broker := &pb.Announcement{ServiceName: "broker", Token: "broker", NetAddress: "localhost1:1881",
-		Metadata: []*pb.Metadata{&pb.Metadata{Key: pb.Metadata_PREFIX, Value: []byte{}}},
+		Metadata: []*pb.Metadata{&pb.Metadata{Key: pb.Metadata_PREFIX, Value: []byte{0x00, 0x00, 0x00, 0x00, 0x00}}},
 	}
 
 	d := &brokerDiscovery{
