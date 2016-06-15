@@ -77,20 +77,24 @@ func TestDevAddrMask(t *testing.T) {
 	a.So(d1.Mask(8), ShouldEqual, DevAddr{255, 0, 0, 0})
 }
 
-func TestDevAddrSetPrefix(t *testing.T) {
+func TestDevAddrWithPrefix(t *testing.T) {
 	a := New(t)
-	d1 := DevAddr{255, 255, 255, 255}
-	a.So(d1.SetPrefix(DevAddr{1, 2, 3, 4}, 7), ShouldEqual, DevAddr{1, 255, 255, 255})
+	addr := DevAddr{0xAA, 0xAA, 0xAA, 0xAA}
+	prefix := DevAddr{0x55, 0x55, 0x55, 0x55}
+	a.So(addr.WithPrefix(prefix, 4), ShouldEqual, DevAddr{0x5A, 0xAA, 0xAA, 0xAA})
+	a.So(addr.WithPrefix(prefix, 8), ShouldEqual, DevAddr{0x55, 0xAA, 0xAA, 0xAA})
+	a.So(addr.WithPrefix(prefix, 12), ShouldEqual, DevAddr{0x55, 0x5A, 0xAA, 0xAA})
+	a.So(addr.WithPrefix(prefix, 16), ShouldEqual, DevAddr{0x55, 0x55, 0xAA, 0xAA})
 }
 
 func TestDevAddrHasPrefix(t *testing.T) {
 	a := New(t)
-	a.So(DevAddr{1, 2, 3, 4}.HasPrefix(0, []byte{}), ShouldBeTrue)
-	a.So(DevAddr{1, 2, 3, 4}.HasPrefix(32, []byte{1, 2, 3, 4}), ShouldBeTrue)
-	a.So(DevAddr{1, 2, 3, 4}.HasPrefix(31, []byte{1, 2, 3, 4}), ShouldBeTrue)
-	a.So(DevAddr{1, 2, 3, 4}.HasPrefix(31, []byte{2, 2, 3, 4}), ShouldBeFalse)
-	a.So(DevAddr{1, 2, 3, 4}.HasPrefix(31, []byte{1, 1, 3, 4}), ShouldBeFalse)
-	a.So(DevAddr{1, 2, 3, 4}.HasPrefix(15, []byte{1, 1}), ShouldBeFalse)
+	addr := DevAddr{1, 2, 3, 4}
+	a.So(addr.HasPrefix(DevAddr{0, 0, 0, 0}, 0), ShouldBeTrue)
+	a.So(addr.HasPrefix(DevAddr{1, 2, 3, 0}, 24), ShouldBeTrue)
+	a.So(addr.HasPrefix(DevAddr{2, 2, 3, 4}, 31), ShouldBeFalse)
+	a.So(addr.HasPrefix(DevAddr{1, 1, 3, 4}, 31), ShouldBeFalse)
+	a.So(addr.HasPrefix(DevAddr{1, 1, 1, 1}, 15), ShouldBeFalse)
 }
 
 func TestParseDevAddrPrefix(t *testing.T) {
