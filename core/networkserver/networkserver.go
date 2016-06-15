@@ -131,20 +131,10 @@ func (n *networkServer) HandlePrepareActivation(activation *pb_broker.Deduplicat
 	}
 	lorawanMeta := activation.ActivationMetadata.GetLorawan()
 
-	// Generate random DevAddr
+	// Generate random DevAddr with prefix
 	var devAddr types.DevAddr
 	copy(devAddr[:], random.Bytes(4))
-	// Fill the prefixSize first bits with the prefix
-	k := uint(n.prefixLength)
-	for i := 0; i < 4; i++ {
-		if k >= 8 {
-			devAddr[i] = n.prefix[i] & 0xff
-			k -= 8
-			continue
-		}
-		devAddr[i] = n.prefix[i] & ^byte(0xff>>k)
-		k = 0
-	}
+	devAddr.SetPrefix(types.DevAddr(n.prefix), n.prefixLength)
 
 	// Set the DevAddr in the Activation Metadata
 	lorawanMeta.DevAddr = &devAddr

@@ -77,6 +77,12 @@ func TestDevAddrMask(t *testing.T) {
 	a.So(d1.Mask(8), ShouldEqual, DevAddr{255, 0, 0, 0})
 }
 
+func TestDevAddrSetPrefix(t *testing.T) {
+	a := New(t)
+	d1 := DevAddr{255, 255, 255, 255}
+	a.So(d1.SetPrefix(DevAddr{1, 2, 3, 4}, 7), ShouldEqual, DevAddr{1, 255, 255, 255})
+}
+
 func TestDevAddrHasPrefix(t *testing.T) {
 	a := New(t)
 	a.So(DevAddr{1, 2, 3, 4}.HasPrefix(0, []byte{}), ShouldBeTrue)

@@ -95,15 +95,20 @@ func (addr DevAddr) IsEmpty() bool {
 
 // Mask returns a copy of the DevAddr with only the first "bits" bits
 func (addr DevAddr) Mask(bits int) (masked DevAddr) {
-	n := uint(bits)
+	return empty.SetPrefix(addr, bits)
+}
+
+// SetPrefix sets a prefix of given length
+func (addr DevAddr) SetPrefix(prefix DevAddr, length int) (prefixed DevAddr) {
+	k := uint(length)
 	for i := 0; i < 4; i++ {
-		if n >= 8 {
-			masked[i] = addr[i] & 0xff
-			n -= 8
+		if k >= 8 {
+			prefixed[i] = prefix[i] & 0xff
+			k -= 8
 			continue
 		}
-		masked[i] = addr[i] & ^byte(0xff>>n)
-		n = 0
+		prefixed[i] = (prefix[i] & ^byte(0xff>>k)) | (addr[i] & byte(0xff>>k))
+		k = 0
 	}
 	return
 }
