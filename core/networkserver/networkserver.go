@@ -66,13 +66,6 @@ func (n *networkServer) Init(c *core.Component) error {
 	if err != nil {
 		return err
 	}
-	// Set fake device
-	n.devices.Set(&device.Device{
-		AppEUI:  types.AppEUI{1, 2, 3, 4, 5, 6, 7, 8},
-		DevEUI:  types.DevEUI{1, 2, 3, 4, 5, 6, 7, 8},
-		DevAddr: types.DevAddr{1, 2, 3, 4},
-		NwkSKey: types.NwkSKey{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8},
-	})
 	return nil
 }
 
