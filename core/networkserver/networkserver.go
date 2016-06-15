@@ -218,7 +218,7 @@ func (n *networkServer) HandleUplink(message *pb_broker.DeduplicatedUplinkMessag
 
 	// Prepare Downlink
 	if message.ResponseTemplate == nil {
-		message.ResponseTemplate = &pb_broker.DownlinkMessage{}
+		return message, nil
 	}
 	message.ResponseTemplate.AppEui = message.AppEui
 	message.ResponseTemplate.DevEui = message.DevEui

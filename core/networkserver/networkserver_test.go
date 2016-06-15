@@ -263,9 +263,10 @@ func TestHandleUplink(t *testing.T) {
 
 	// Valid Uplink
 	message = &pb_broker.DeduplicatedUplinkMessage{
-		AppEui:  &appEUI,
-		DevEui:  &devEUI,
-		Payload: bytes,
+		AppEui:           &appEUI,
+		DevEui:           &devEUI,
+		Payload:          bytes,
+		ResponseTemplate: &pb_broker.DownlinkMessage{},
 	}
 	res, err := ns.HandleUplink(message)
 	a.So(err, ShouldBeNil)
