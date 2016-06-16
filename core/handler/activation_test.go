@@ -8,10 +8,12 @@ import (
 	pb "github.com/TheThingsNetwork/ttn/api/handler"
 	pb_protocol "github.com/TheThingsNetwork/ttn/api/protocol"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
+	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/handler/application"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/mqtt"
+	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"github.com/brocaar/lorawan"
 	. "github.com/smartystreets/assertions"
 )
@@ -60,6 +62,7 @@ func TestHandleActivation(t *testing.T) {
 	a := New(t)
 
 	h := &handler{
+		Component:    &core.Component{Ctx: GetLogger(t, "TestHandleActivation")},
 		applications: application.NewApplicationStore(),
 		devices:      device.NewDeviceStore(),
 	}
