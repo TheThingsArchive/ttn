@@ -105,7 +105,7 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) error {
 
 	if device.DisableFCntCheck {
 		// TODO: Add warning to message?
-	} else if macPayload.FHDR.FCnt < device.StoredFCnt || macPayload.FHDR.FCnt-device.StoredFCnt > maxFCntGap {
+	} else if macPayload.FHDR.FCnt <= device.StoredFCnt || macPayload.FHDR.FCnt-device.StoredFCnt > maxFCntGap {
 		// Replay attack or FCnt gap too big
 		err = ErrInvalidFCnt
 		return err

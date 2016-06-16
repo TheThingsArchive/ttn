@@ -11,7 +11,7 @@ import (
 
 var (
 	// ErrNotFound is returned when an application was not found
-	ErrNotFound = errors.New("ttn/networkserver: Application not found")
+	ErrNotFound = errors.New("ttn/broker: Application not found")
 )
 
 // Store is used to store application configurations
@@ -71,9 +71,12 @@ type redisApplicationStore struct {
 func (s *redisApplicationStore) Get(appEUI types.AppEUI) (*Application, error) {
 	res, err := s.client.HGetAllMap(fmt.Sprintf("%s:%s", redisApplicationPrefix, appEUI)).Result()
 	if err != nil {
+		if err == redis.Nil {
+			return nil, ErrNotFound
+		}
 		return nil, err
 	} else if len(res) == 0 {
-		return nil, redis.Nil // This might be a bug in redis package
+		return nil, ErrNotFound
 	}
 	application := &Application{}
 	err = application.FromStringStringMap(res)

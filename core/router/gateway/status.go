@@ -68,7 +68,7 @@ func (s *redisStatusStore) Get() (*pb_gateway.Status, error) {
 	status := &pb_gateway.Status{}
 	res, err := s.client.HGetAllMap(s.key).Result()
 	if err != nil {
-		return nil, err
+		return status, nil
 	}
 	err = status.FromStringStringMap(res)
 	if err != nil {

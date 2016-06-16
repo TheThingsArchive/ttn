@@ -79,9 +79,12 @@ type redisDeviceStore struct {
 func (s *redisDeviceStore) Get(appEUI types.AppEUI, devEUI types.DevEUI) (*Device, error) {
 	res, err := s.client.HGetAllMap(fmt.Sprintf("%s:%s:%s", redisDevicePrefix, appEUI, devEUI)).Result()
 	if err != nil {
+		if err == redis.Nil {
+			return nil, ErrNotFound
+		}
 		return nil, err
 	} else if len(res) == 0 {
-		return nil, redis.Nil // This might be a bug in redis package
+		return nil, ErrNotFound
 	}
 	device := &Device{}
 	err = device.FromStringStringMap(res)
