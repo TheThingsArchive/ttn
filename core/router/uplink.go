@@ -19,12 +19,6 @@ func (r *router) HandleUplink(gatewayEUI types.GatewayEUI, uplink *pb.UplinkMess
 		}
 	}()
 
-	gateway := r.getGateway(gatewayEUI)
-	gateway.Schedule.Sync(uplink.GatewayMetadata.Timestamp)
-	gateway.Utilization.AddRx(uplink)
-
-	downlinkOptions := r.buildDownlinkOptions(uplink, false, gateway)
-
 	// LoRaWAN: Unmarshal
 	var phyPayload lorawan.PHYPayload
 	err = phyPayload.UnmarshalBinary(uplink.Payload)
@@ -32,8 +26,7 @@ func (r *router) HandleUplink(gatewayEUI types.GatewayEUI, uplink *pb.UplinkMess
 		return err
 	}
 
-	switch phyPayload.MHDR.MType {
-	case lorawan.JoinRequest:
+	if phyPayload.MHDR.MType == lorawan.JoinRequest {
 		joinRequestPayload, ok := phyPayload.MACPayload.(*lorawan.JoinRequestPayload)
 		if !ok {
 			return errors.New("Join Request message does not contain a join payload.")
@@ -52,10 +45,6 @@ func (r *router) HandleUplink(gatewayEUI types.GatewayEUI, uplink *pb.UplinkMess
 			GatewayMetadata:  uplink.GatewayMetadata,
 		})
 		return err
-	case lorawan.UnconfirmedDataUp, lorawan.ConfirmedDataUp:
-		// Just continue handling uplink
-	default:
-		return errors.New("ttn/router: Unhandled message type")
 	}
 
 	macPayload, ok := phyPayload.MACPayload.(*lorawan.MACPayload)
@@ -65,6 +54,12 @@ func (r *router) HandleUplink(gatewayEUI types.GatewayEUI, uplink *pb.UplinkMess
 	devAddr := types.DevAddr(macPayload.FHDR.DevAddr)
 
 	ctx = ctx.WithField("DevAddr", devAddr)
+
+	gateway := r.getGateway(gatewayEUI)
+	gateway.Schedule.Sync(uplink.GatewayMetadata.Timestamp)
+	gateway.Utilization.AddRx(uplink)
+
+	downlinkOptions := r.buildDownlinkOptions(uplink, false, gateway)
 
 	// Find Broker
 	brokers, err := r.brokerDiscovery.Discover(devAddr)
