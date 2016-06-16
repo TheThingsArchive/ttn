@@ -77,7 +77,6 @@ message DeduplicatedDeviceActivationRequest {
 }
 
 // message SubscribeRequest is used by a Handler to subscribe to uplink messages
-// for a certain application.
 message SubscribeRequest {}
 
 // The Broker service provides pure network functionality

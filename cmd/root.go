@@ -6,10 +6,12 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path"
 	"strings"
 
 	cliHandler "github.com/TheThingsNetwork/ttn/utils/cli/handler"
 	"github.com/apex/log"
+	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -48,6 +50,33 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default \"$HOME/.ttn.yaml\")")
+
+	RootCmd.PersistentFlags().String("id", "", "The id of this component")
+	viper.BindPFlag("id", RootCmd.PersistentFlags().Lookup("id"))
+
+	RootCmd.PersistentFlags().String("token", "", "The auth token this component should use")
+	viper.BindPFlag("token", RootCmd.PersistentFlags().Lookup("token"))
+
+	RootCmd.PersistentFlags().String("description", "", "The description of this component")
+	viper.BindPFlag("description", RootCmd.PersistentFlags().Lookup("description"))
+
+	RootCmd.PersistentFlags().String("discovery-server", "localhost:1900", "The address of the Discovery server")
+	viper.BindPFlag("discovery-server", RootCmd.PersistentFlags().Lookup("discovery-server"))
+
+	RootCmd.PersistentFlags().String("auth-server", "https://account.thethingsnetwork.org", "The address of the OAuth 2.0 server")
+	viper.BindPFlag("auth-server", RootCmd.PersistentFlags().Lookup("auth-server"))
+
+	var defaultOAuth2KeyFile string
+	dir, err := homedir.Dir()
+	if err == nil {
+		expanded, err := homedir.Expand(dir)
+		if err == nil {
+			defaultOAuth2KeyFile = path.Join(expanded, ".ttn/oauth2-token.pub")
+		}
+	}
+
+	RootCmd.PersistentFlags().String("oauth2-keyfile", defaultOAuth2KeyFile, "The OAuth 2.0 public key")
+	viper.BindPFlag("oauth2-keyfile", RootCmd.PersistentFlags().Lookup("oauth2-keyfile"))
 }
 
 // initConfig reads in config file and ENV variables if set.
