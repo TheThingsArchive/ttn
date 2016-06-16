@@ -2,6 +2,21 @@
 // source: collector.proto
 // DO NOT EDIT!
 
+/*
+Package core is a generated protocol buffer package.
+
+It is generated from these files:
+	collector.proto
+
+It has these top-level messages:
+	GetApplicationsCollectorReq
+	GetApplicationsCollectorRes
+	CollectorApplication
+	AddApplicationCollectorReq
+	AddApplicationCollectorRes
+	RemoveApplicationCollectorReq
+	RemoveApplicationCollectorRes
+*/
 package core
 
 import proto "github.com/golang/protobuf/proto"
@@ -19,6 +34,10 @@ import io "io"
 var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+const _ = proto.ProtoPackageIsVersion2
 
 type GetApplicationsCollectorReq struct {
 }
@@ -116,7 +135,7 @@ var _ grpc.ClientConn
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion2
+const _ = grpc.SupportPackageIsVersion3
 
 // Client API for CollectorManager service
 

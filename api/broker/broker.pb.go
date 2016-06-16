@@ -50,7 +50,7 @@ var _ = math.Inf
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the proto package it is being compiled against.
-const _ = proto.ProtoPackageIsVersion1
+const _ = proto.ProtoPackageIsVersion2
 
 type DownlinkOption struct {
 	Identifier     string                                                 `protobuf:"bytes,1,opt,name=identifier,proto3" json:"identifier,omitempty"`
@@ -284,7 +284,6 @@ func (m *DeduplicatedDeviceActivationRequest) GetResponseTemplate() *DeviceActiv
 }
 
 // message SubscribeRequest is used by a Handler to subscribe to uplink messages
-// for a certain application.
 type SubscribeRequest struct {
 }
 
@@ -440,7 +439,7 @@ var _ grpc.ClientConn
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion2
+const _ = grpc.SupportPackageIsVersion3
 
 // Client API for Broker service
 

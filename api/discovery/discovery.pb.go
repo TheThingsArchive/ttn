@@ -36,12 +36,14 @@ var _ = math.Inf
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the proto package it is being compiled against.
-const _ = proto.ProtoPackageIsVersion1
+const _ = proto.ProtoPackageIsVersion2
 
 type Metadata_Key int32
 
 const (
-	Metadata_OTHER  Metadata_Key = 0
+	Metadata_OTHER Metadata_Key = 0
+	// The value for PREFIX consists of 1 byte denoting the number of bits,
+	// followed by the prefix and enough trailing bits to fill 4 octets
 	Metadata_PREFIX Metadata_Key = 1
 )
 
@@ -141,7 +143,7 @@ var _ grpc.ClientConn
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion2
+const _ = grpc.SupportPackageIsVersion3
 
 // Client API for Discovery service
 

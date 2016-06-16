@@ -32,7 +32,7 @@ var _ = math.Inf
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the proto package it is being compiled against.
-const _ = proto.ProtoPackageIsVersion1
+const _ = proto.ProtoPackageIsVersion2
 
 type GPSMetadata struct {
 	Time      int64   `protobuf:"varint,1,opt,name=time,proto3" json:"time,omitempty"`
