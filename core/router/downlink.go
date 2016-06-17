@@ -168,38 +168,6 @@ func (r *router) buildDownlinkOptions(uplink *pb.UplinkMessage, isActivation boo
 		return // Invalid packet, probably won't happen if the gateway is just doing its job
 	}
 
-	// Configuration for RX1
-	{
-		uplinkChannel, err := band.GetChannel(int(uplink.GatewayMetadata.Frequency), uplinkDRIndex)
-		if err == nil {
-			downlinkChannel := band.DownlinkChannels[band.GetRX1Channel(uplinkChannel)]
-			downlinkDRIndex, err := band.GetRX1DataRateForOffset(uplinkDRIndex, 0)
-			if err == nil {
-				dataRate, _ := types.ConvertDataRate(band.DataRates[downlinkDRIndex])
-				delay := band.ReceiveDelay1
-				if isActivation {
-					delay = band.JoinAcceptDelay1
-				}
-				rx1 := &pb_broker.DownlinkOption{
-					GatewayEui: &gateway.EUI,
-					ProtocolConfig: &pb_protocol.TxConfiguration{Protocol: &pb_protocol.TxConfiguration_Lorawan{Lorawan: &pb_lorawan.TxConfiguration{
-						Modulation: pb_lorawan.Modulation_LORA, // We only support LoRa
-						DataRate:   dataRate.String(),          // This is default
-						CodingRate: lorawanMetadata.CodingRate, // Let's just take this from the Rx
-					}}},
-					GatewayConfig: &pb_gateway.TxConfiguration{
-						Timestamp:             uplink.GatewayMetadata.Timestamp + uint32(delay/1000),
-						RfChain:               0,
-						PolarizationInversion: true,
-						Frequency:             uint64(downlinkChannel.Frequency),
-						Power:                 int32(band.DefaultTXPower),
-					},
-				}
-				options = append(options, rx1)
-			}
-		}
-	}
-
 	// Configuration for RX2
 	{
 		power := int32(band.DefaultTXPower)
@@ -231,6 +199,38 @@ func (r *router) buildDownlinkOptions(uplink *pb.UplinkMessage, isActivation boo
 			},
 		}
 		options = append(options, rx2)
+	}
+
+	// Configuration for RX1
+	{
+		uplinkChannel, err := band.GetChannel(int(uplink.GatewayMetadata.Frequency), uplinkDRIndex)
+		if err == nil {
+			downlinkChannel := band.DownlinkChannels[band.GetRX1Channel(uplinkChannel)]
+			downlinkDRIndex, err := band.GetRX1DataRateForOffset(uplinkDRIndex, 0)
+			if err == nil {
+				dataRate, _ := types.ConvertDataRate(band.DataRates[downlinkDRIndex])
+				delay := band.ReceiveDelay1
+				if isActivation {
+					delay = band.JoinAcceptDelay1
+				}
+				rx1 := &pb_broker.DownlinkOption{
+					GatewayEui: &gateway.EUI,
+					ProtocolConfig: &pb_protocol.TxConfiguration{Protocol: &pb_protocol.TxConfiguration_Lorawan{Lorawan: &pb_lorawan.TxConfiguration{
+						Modulation: pb_lorawan.Modulation_LORA, // We only support LoRa
+						DataRate:   dataRate.String(),          // This is default
+						CodingRate: lorawanMetadata.CodingRate, // Let's just take this from the Rx
+					}}},
+					GatewayConfig: &pb_gateway.TxConfiguration{
+						Timestamp:             uplink.GatewayMetadata.Timestamp + uint32(delay/1000),
+						RfChain:               0,
+						PolarizationInversion: true,
+						Frequency:             uint64(downlinkChannel.Frequency),
+						Power:                 int32(band.DefaultTXPower),
+					},
+				}
+				options = append(options, rx1)
+			}
+		}
 	}
 
 	computeDownlinkScores(gateway, uplink, options)
@@ -287,14 +287,14 @@ func computeDownlinkScores(gateway *gateway.Gateway, uplink *pb.UplinkMessage, o
 		utilizationScore := 0.0 // Between 0 and 40 (lower is better) will be over 100 if forbidden
 		{
 			// Avoid gateways that do more Rx
-			utilizationScore += math.Min(gatewayRx*50, 20) // 40% utilization = 20 (max)
+			utilizationScore += math.Min(gatewayRx*50, 20) / 2 // 40% utilization = 10 (max)
 
 			// Avoid busy channels
 			freq := option.GatewayConfig.Frequency
 			channelRx, channelTx := gateway.Utilization.GetChannel(freq)
-			utilizationScore += math.Min((channelTx+channelRx)*200, 20) // 10% utilization = 20 (max)
+			utilizationScore += math.Min((channelTx+channelRx)*200, 20) / 2 // 10% utilization = 10 (max)
 
-			// Enforce European Duty Cycle
+			// European Duty Cycle
 			if region == "EU_863_870" {
 				var duty float64
 				switch {
@@ -313,6 +313,9 @@ func computeDownlinkScores(gateway *gateway.Gateway, uplink *pb.UplinkMessage, o
 				}
 				if channelTx > duty {
 					utilizationScore += 100 // Transmissions on this frequency are forbidden
+				}
+				if duty > 0 {
+					utilizationScore += math.Min(time.Seconds()/duty/100, 20) // Impact on duty-cycle (in order to prefer RX2 for SF9BW125)
 				}
 			}
 		}
