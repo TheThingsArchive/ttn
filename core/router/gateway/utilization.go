@@ -1,6 +1,7 @@
 package gateway
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 // Utilization manages the utilization of a gateway and its channels
 // It is based on an exponentially weighted moving average over one minute
 type Utilization interface {
+	fmt.GoStringer
 	// AddRx updates the utilization for receiving an uplink message
 	AddRx(uplink *pb_router.UplinkMessage) error
 	// AddRx updates the utilization for transmitting a downlink message
@@ -41,6 +43,20 @@ type utilization struct {
 	overallTx     metrics.EWMA
 	channelTx     map[uint64]metrics.EWMA
 	channelTxLock sync.RWMutex
+}
+
+func (u *utilization) GoString() (str string) {
+	str += fmt.Sprintf("Rx %5.2f ", u.overallRx.Rate()/1000)
+	for ch, r := range u.channelRx {
+		str += fmt.Sprintf("(%d:%5.2f) ", ch, r.Rate()/1000)
+	}
+	str += "\n"
+	str += fmt.Sprintf("Tx %5.2f ", u.overallTx.Rate()/1000)
+	for ch, r := range u.channelTx {
+		str += fmt.Sprintf("(%d:%5.2f) ", ch, r.Rate()/1000)
+	}
+	str += "\n"
+	return
 }
 
 func (u *utilization) AddRx(uplink *pb_router.UplinkMessage) error {

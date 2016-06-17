@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"errors"
+	"fmt"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -13,6 +14,7 @@ import (
 
 // Schedule is used to schedule downlink transmissions
 type Schedule interface {
+	fmt.GoStringer
 	// Synchronize the schedule with the gateway timestamp (in microseconds)
 	Sync(timestamp uint32)
 	// Get an "option" on a transmission slot at timestamp for the maximum duration of length (both in microseconds)
@@ -47,6 +49,15 @@ type schedule struct {
 	offset   int64
 	items    map[string]*scheduledItem
 	downlink chan *router_pb.DownlinkMessage
+}
+
+func (s *schedule) GoString() (str string) {
+	s.RLock()
+	defer s.RUnlock()
+	for _, item := range s.items {
+		str += fmt.Sprintf("%s at %s\n", item.id, item.time)
+	}
+	return
 }
 
 // TODO: Make configurable
