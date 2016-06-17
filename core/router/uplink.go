@@ -61,6 +61,8 @@ func (r *router) HandleUplink(gatewayEUI types.GatewayEUI, uplink *pb.UplinkMess
 
 	downlinkOptions := r.buildDownlinkOptions(uplink, false, gateway)
 
+	ctx = ctx.WithField("DownlinkOptions", len(downlinkOptions))
+
 	// Find Broker
 	brokers, err := r.brokerDiscovery.Discover(devAddr)
 	if err != nil {
