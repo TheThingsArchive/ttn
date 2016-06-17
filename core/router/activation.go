@@ -34,8 +34,8 @@ func (r *router) HandleActivation(gatewayEUI types.GatewayEUI, activation *pb.De
 	}
 
 	// Only for LoRaWAN
+	gateway.Schedule.Sync(uplink.GatewayMetadata.Timestamp)
 	gateway.Utilization.AddRx(uplink)
-
 	downlinkOptions := r.buildDownlinkOptions(uplink, true, gateway)
 
 	// Find Broker
