@@ -106,9 +106,18 @@ func (c *Component) UpdateTokenKey() error {
 
 }
 
+// TTNClaims contains the claims that are set by the TTN Token Issuer
+type TTNClaims struct {
+	jwt.StandardClaims
+	Client string              `json:"client"`
+	Scopes []string            `json:"scope"`
+	Apps   map[string][]string `json:"apps,omitempty"`
+}
+
 // ValidateToken verifies an OAuth Bearer token
-func (c *Component) ValidateToken(token string) (claims map[string]interface{}, err error) {
-	parsed, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
+func (c *Component) ValidateToken(token string) (*TTNClaims, error) {
+	ttnClaims := &TTNClaims{}
+	parsed, err := jwt.ParseWithClaims(token, ttnClaims, func(token *jwt.Token) (interface{}, error) {
 		if c.TokenKeyProvider == nil {
 			return nil, errors.New("No token provider configured")
 		}
@@ -127,7 +136,7 @@ func (c *Component) ValidateToken(token string) (claims map[string]interface{}, 
 	if !parsed.Valid {
 		return nil, errors.New("The token is not valid or is expired")
 	}
-	return parsed.Claims, nil
+	return ttnClaims, nil
 }
 
 func (c *Component) ServerOptions() []grpc.ServerOption {
