@@ -98,7 +98,7 @@ func (r *router) getGateway(eui types.GatewayEUI) *gateway.Gateway {
 	r.gatewaysLock.Lock()
 	defer r.gatewaysLock.Unlock()
 	if _, ok := r.gateways[eui]; !ok {
-		r.gateways[eui] = gateway.NewGateway(eui)
+		r.gateways[eui] = gateway.NewGateway(r.Ctx, eui)
 	}
 	return r.gateways[eui]
 }

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	router_pb "github.com/TheThingsNetwork/ttn/api/router"
+	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/assertions"
 )
 
@@ -88,7 +89,7 @@ func TestScheduleGetConflicts(t *testing.T) {
 
 func TestScheduleGetOption(t *testing.T) {
 	a := New(t)
-	s := NewSchedule().(*schedule)
+	s := NewSchedule(nil).(*schedule)
 
 	s.Sync(0)
 	_, conflicts := s.GetOption(100, 100)
@@ -99,7 +100,7 @@ func TestScheduleGetOption(t *testing.T) {
 
 func TestScheduleSchedule(t *testing.T) {
 	a := New(t)
-	s := NewSchedule().(*schedule)
+	s := NewSchedule(GetLogger(t, "TestScheduleSchedule")).(*schedule)
 
 	s.Sync(0)
 
@@ -116,7 +117,7 @@ func TestScheduleSchedule(t *testing.T) {
 
 func TestScheduleSubscribe(t *testing.T) {
 	a := New(t)
-	s := NewSchedule().(*schedule)
+	s := NewSchedule(GetLogger(t, "TestScheduleSubscribe")).(*schedule)
 	s.Sync(0)
 	Deadline = 1 // Extremely short deadline
 

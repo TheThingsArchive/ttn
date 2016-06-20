@@ -71,7 +71,6 @@ func (r *router) HandleDownlink(downlink *pb_broker.DownlinkMessage) error {
 		ctx.WithError(err).Warn("Could not schedule Downlink")
 		return err
 	}
-	ctx.Debug("Schedule Downlink")
 
 	return nil
 }

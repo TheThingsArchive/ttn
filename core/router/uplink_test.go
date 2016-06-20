@@ -17,8 +17,8 @@ import (
 )
 
 // newReferenceGateway returns a default gateway
-func newReferenceGateway(region string) *gateway.Gateway {
-	gtw := gateway.NewGateway(types.GatewayEUI{0, 1, 2, 3, 4, 5, 6, 7})
+func newReferenceGateway(t *testing.T, region string) *gateway.Gateway {
+	gtw := gateway.NewGateway(GetLogger(t, "ReferenceGateway"), types.GatewayEUI{0, 1, 2, 3, 4, 5, 6, 7})
 	gtw.Status.Update(&pb_gateway.Status{
 		Region: region,
 	})

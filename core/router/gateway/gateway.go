@@ -1,14 +1,17 @@
 package gateway
 
-import "github.com/TheThingsNetwork/ttn/core/types"
+import (
+	"github.com/TheThingsNetwork/ttn/core/types"
+	"github.com/apex/log"
+)
 
 // NewGateway creates a new in-memory Gateway structure
-func NewGateway(eui types.GatewayEUI) *Gateway {
+func NewGateway(ctx log.Interface, eui types.GatewayEUI) *Gateway {
 	return &Gateway{
 		EUI:         eui,
 		Status:      NewStatusStore(),
 		Utilization: NewUtilization(),
-		Schedule:    NewSchedule(),
+		Schedule:    NewSchedule(ctx.WithField("GatewayEUI", eui)),
 	}
 }
 

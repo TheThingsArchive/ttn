@@ -10,6 +10,7 @@ import (
 	router_pb "github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/utils/random"
 	"github.com/TheThingsNetwork/ttn/utils/toa"
+	"github.com/apex/log"
 )
 
 // Schedule is used to schedule downlink transmissions
@@ -28,8 +29,9 @@ type Schedule interface {
 }
 
 // NewSchedule creates a new Schedule
-func NewSchedule() Schedule {
+func NewSchedule(ctx log.Interface) Schedule {
 	return &schedule{
+		ctx:   ctx,
 		items: make(map[string]*scheduledItem),
 	}
 }
@@ -45,6 +47,7 @@ type scheduledItem struct {
 
 type schedule struct {
 	sync.RWMutex
+	ctx      log.Interface
 	active   bool
 	offset   int64
 	items    map[string]*scheduledItem
@@ -139,6 +142,8 @@ func (s *schedule) GetOption(timestamp uint32, length uint32) (id string, score 
 
 // see interface
 func (s *schedule) Schedule(id string, downlink *router_pb.DownlinkMessage) error {
+	ctx := s.ctx.WithField("Identifier", id)
+
 	s.Lock()
 	defer s.Unlock()
 	if item, ok := s.items[id]; ok {
@@ -156,6 +161,7 @@ func (s *schedule) Schedule(id string, downlink *router_pb.DownlinkMessage) erro
 			// Schedule transmission before the Deadline
 			go func() {
 				waitTime := item.time.Sub(time.Now().Add(Deadline))
+				ctx.WithField("Remaining", waitTime).Debug("Schedule Downlink")
 				<-time.After(waitTime)
 				if s.downlink != nil {
 					s.downlink <- item.payload
@@ -163,9 +169,10 @@ func (s *schedule) Schedule(id string, downlink *router_pb.DownlinkMessage) erro
 			}()
 		} else if s.downlink != nil {
 			// Immediately send it
+			ctx.WithField("Overdue", time.Now().Add(Deadline).Sub(item.time)).Debug("Send Late Downlink")
 			s.downlink <- item.payload
 		} else {
-			// We can not send it
+			ctx.Debug("Unable to send Downlink")
 		}
 
 		return nil

@@ -14,12 +14,14 @@ import (
 func TestHandleActivation(t *testing.T) {
 	a := New(t)
 
+	gatewayEUI := types.GatewayEUI{0, 1, 2, 3, 4, 5, 6, 7}
+
 	r := &router{
 		Component: &core.Component{
 			Ctx: GetLogger(t, "TestHandleActivation"),
 		},
 		gateways: map[types.GatewayEUI]*gateway.Gateway{
-			types.GatewayEUI{0, 1, 2, 3, 4, 5, 6, 7}: newReferenceGateway("EU_863_870"),
+			gatewayEUI: newReferenceGateway(t, "EU_863_870"),
 		},
 		brokerDiscovery: &mockBrokerDiscovery{},
 	}
