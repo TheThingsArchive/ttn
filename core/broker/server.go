@@ -15,12 +15,14 @@ type brokerRPC struct {
 	broker Broker
 }
 
+var grpcErrf = grpc.Errorf // To make go vet stop complaining
+
 func getCallerFromMetadata(ctx context.Context) (callerID string, err error) {
 	md, ok := metadata.FromContext(ctx)
 	// TODO: Check OK
 	id, ok := md["id"]
 	if !ok || len(id) < 1 {
-		err = grpc.Errorf(codes.Unauthenticated, "ttn/broker: Caller did not provide \"id\" in context")
+		err = grpcErrf(codes.Unauthenticated, "ttn/broker: Caller did not provide \"id\" in context")
 		return
 	}
 	callerID = id[0]
@@ -29,12 +31,12 @@ func getCallerFromMetadata(ctx context.Context) (callerID string, err error) {
 	}
 	token, ok := md["token"]
 	if !ok || len(token) < 1 {
-		err = grpc.Errorf(codes.Unauthenticated, "ttn/broker: Caller did not provide \"token\" in context")
+		err = grpcErrf(codes.Unauthenticated, "ttn/broker: Caller did not provide \"token\" in context")
 		return
 	}
 	if token[0] != "token" {
 		// TODO: Validate Token
-		err = grpc.Errorf(codes.Unauthenticated, "ttn/broker: Caller not authorized")
+		err = grpcErrf(codes.Unauthenticated, "ttn/broker: Caller not authorized")
 		return
 	}
 
