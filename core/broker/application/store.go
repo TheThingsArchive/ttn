@@ -16,6 +16,8 @@ var (
 
 // Store is used to store application configurations
 type Store interface {
+	// List all applications
+	List() ([]*Application, error)
 	// Get the full information about an application
 	Get(appEUI types.AppEUI) (*Application, error)
 	// Set the given fields of an application. If fields empty, it sets all fields.
@@ -35,6 +37,14 @@ func NewApplicationStore() Store {
 // purposes. Use the redisApplicationStore for actual deployments.
 type applicationStore struct {
 	applications map[types.AppEUI]*Application
+}
+
+func (s *applicationStore) List() ([]*Application, error) {
+	apps := make([]*Application, 0, len(s.applications))
+	for _, application := range s.applications {
+		apps = append(apps, application)
+	}
+	return apps, nil
 }
 
 func (s *applicationStore) Get(appEUI types.AppEUI) (*Application, error) {
@@ -66,6 +76,27 @@ const redisApplicationPrefix = "broker:application"
 
 type redisApplicationStore struct {
 	client *redis.Client
+}
+
+func (s *redisApplicationStore) List() ([]*Application, error) {
+	var apps []*Application
+	keys, err := s.client.Keys(fmt.Sprintf("%s:*", redisApplicationPrefix)).Result()
+	if err != nil {
+		return nil, err
+	}
+	for _, key := range keys {
+		res, err := s.client.HGetAllMap(key).Result()
+		if err != nil {
+			return nil, err
+		}
+		application := &Application{}
+		err = application.FromStringStringMap(res)
+		if err != nil {
+			return nil, err
+		}
+		apps = append(apps, application)
+	}
+	return apps, nil
 }
 
 func (s *redisApplicationStore) Get(appEUI types.AppEUI) (*Application, error) {

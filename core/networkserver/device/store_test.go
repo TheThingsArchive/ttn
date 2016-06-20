@@ -13,7 +13,7 @@ func getRedisClient() *redis.Client {
 	return redis.NewClient(&redis.Options{
 		Addr:     "localhost:6379",
 		Password: "", // no password set
-		DB:       0,  // use default DB
+		DB:       1,  // use default DB
 	})
 }
 
@@ -91,6 +91,11 @@ func TestDeviceStore(t *testing.T) {
 		dev, err = s.Get(types.AppEUI{0, 0, 0, 0, 0, 0, 0, 1}, types.DevEUI{0, 0, 0, 0, 0, 0, 0, 1})
 		a.So(err, ShouldBeNil)
 		a.So(dev.DevAddr, ShouldEqual, types.DevAddr{0, 0, 0, 3})
+
+		// List
+		devices, err := s.List()
+		a.So(err, ShouldBeNil)
+		a.So(devices, ShouldHaveLength, 2)
 
 		err = s.Delete(types.AppEUI{0, 0, 0, 0, 0, 0, 0, 1}, types.DevEUI{0, 0, 0, 0, 0, 0, 0, 1})
 		a.So(err, ShouldBeNil)

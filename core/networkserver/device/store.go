@@ -17,6 +17,8 @@ var (
 
 // Store is used to store device configurations
 type Store interface {
+	// List all devices
+	List() ([]*Device, error)
 	// Get the full information about a device
 	Get(appEUI types.AppEUI, devEUI types.DevEUI) (*Device, error)
 	// Get a list of devices matching the DevAddr
@@ -42,6 +44,16 @@ func NewDeviceStore() Store {
 type deviceStore struct {
 	devices   map[types.AppEUI]map[types.DevEUI]*Device
 	byAddress map[types.DevAddr][]*Device
+}
+
+func (s *deviceStore) List() ([]*Device, error) {
+	devices := make([]*Device, 0, len(s.devices))
+	for _, app := range s.devices {
+		for _, device := range app {
+			devices = append(devices, device)
+		}
+	}
+	return devices, nil
 }
 
 func (s *deviceStore) Get(appEUI types.AppEUI, devEUI types.DevEUI) (*Device, error) {
@@ -147,6 +159,27 @@ const redisDevAddrPrefix = "ns:dev_addr"
 
 type redisDeviceStore struct {
 	client *redis.Client
+}
+
+func (s *redisDeviceStore) List() ([]*Device, error) {
+	var devices []*Device
+	keys, err := s.client.Keys(fmt.Sprintf("%s:*", redisDevicePrefix)).Result()
+	if err != nil {
+		return nil, err
+	}
+	for _, key := range keys {
+		res, err := s.client.HGetAllMap(key).Result()
+		if err != nil {
+			return nil, err
+		}
+		device := &Device{}
+		err = device.FromStringStringMap(res)
+		if err != nil {
+			return nil, err
+		}
+		devices = append(devices, device)
+	}
+	return devices, nil
 }
 
 func (s *redisDeviceStore) Get(appEUI types.AppEUI, devEUI types.DevEUI) (*Device, error) {

@@ -16,6 +16,8 @@ var (
 
 // Store is used to store device configurations
 type Store interface {
+	// List all devices
+	List() ([]*Device, error)
 	// Get the full information about a device
 	Get(appEUI types.AppEUI, devEUI types.DevEUI) (*Device, error)
 	// Set the given fields of a device. If fields empty, it sets all fields.
@@ -35,6 +37,16 @@ func NewDeviceStore() Store {
 // purposes. Use the redisDeviceStore for actual deployments.
 type deviceStore struct {
 	devices map[types.AppEUI]map[types.DevEUI]*Device
+}
+
+func (s *deviceStore) List() ([]*Device, error) {
+	devices := make([]*Device, 0, len(s.devices))
+	for _, app := range s.devices {
+		for _, device := range app {
+			devices = append(devices, device)
+		}
+	}
+	return devices, nil
 }
 
 func (s *deviceStore) Get(appEUI types.AppEUI, devEUI types.DevEUI) (*Device, error) {
@@ -74,6 +86,27 @@ const redisDevicePrefix = "handler:device"
 
 type redisDeviceStore struct {
 	client *redis.Client
+}
+
+func (s *redisDeviceStore) List() ([]*Device, error) {
+	var devices []*Device
+	keys, err := s.client.Keys(fmt.Sprintf("%s:*", redisDevicePrefix)).Result()
+	if err != nil {
+		return nil, err
+	}
+	for _, key := range keys {
+		res, err := s.client.HGetAllMap(key).Result()
+		if err != nil {
+			return nil, err
+		}
+		device := &Device{}
+		err = device.FromStringStringMap(res)
+		if err != nil {
+			return nil, err
+		}
+		devices = append(devices, device)
+	}
+	return devices, nil
 }
 
 func (s *redisDeviceStore) Get(appEUI types.AppEUI, devEUI types.DevEUI) (*Device, error) {
