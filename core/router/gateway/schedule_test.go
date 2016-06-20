@@ -119,7 +119,7 @@ func TestScheduleSubscribe(t *testing.T) {
 	a := New(t)
 	s := NewSchedule(GetLogger(t, "TestScheduleSubscribe")).(*schedule)
 	s.Sync(0)
-	Deadline = 1 // Extremely short deadline
+	Deadline = 1 * time.Millisecond // Very short deadline
 
 	downlink1 := &router_pb.DownlinkMessage{Payload: []byte{1}}
 	downlink2 := &router_pb.DownlinkMessage{Payload: []byte{2}}
@@ -140,11 +140,11 @@ func TestScheduleSubscribe(t *testing.T) {
 		}
 	}()
 
-	id, _ := s.GetOption(300, 50)
+	id, _ := s.GetOption(30000, 50)
 	s.Schedule(id, downlink1)
-	id, _ = s.GetOption(200, 50)
+	id, _ = s.GetOption(20000, 50)
 	s.Schedule(id, downlink2)
-	id, _ = s.GetOption(400, 50)
+	id, _ = s.GetOption(40000, 50)
 	s.Schedule(id, downlink3)
 
 	go func() {

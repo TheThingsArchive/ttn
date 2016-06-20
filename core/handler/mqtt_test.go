@@ -34,7 +34,7 @@ func TestHandleMQTT(t *testing.T) {
 	c.PublishDownlink(appEUI, devEUI, mqtt.DownlinkMessage{
 		Payload: []byte{0xAA, 0xBC},
 	}).Wait()
-	<-time.After(10 * time.Millisecond)
+	<-time.After(50 * time.Millisecond)
 	dev, _ := h.devices.Get(appEUI, devEUI)
 	a.So(dev.NextDownlink, ShouldNotBeNil)
 

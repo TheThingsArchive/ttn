@@ -62,7 +62,7 @@ func TestHandleActivation(t *testing.T) {
 
 func TestDeduplicateActivation(t *testing.T) {
 	a := New(t)
-	d := NewDeduplicator(10 * time.Millisecond).(*deduplicator)
+	d := NewDeduplicator(20 * time.Millisecond).(*deduplicator)
 
 	payload := []byte{0x01, 0x02, 0x03}
 	protocolMetadata := &protocol.RxMetadata{}
@@ -80,14 +80,14 @@ func TestDeduplicateActivation(t *testing.T) {
 		wg.Done()
 	}()
 
-	<-time.After(5 * time.Millisecond)
+	<-time.After(10 * time.Millisecond)
 
 	a.So(b.deduplicateActivation(activation2), ShouldBeNil)
 	a.So(b.deduplicateActivation(activation3), ShouldBeNil)
 
-	wg.Wait()
-
-	<-time.After(20 * time.Millisecond)
+	<-time.After(50 * time.Millisecond)
 
 	a.So(b.deduplicateActivation(activation4), ShouldNotBeNil)
+
+	wg.Wait()
 }

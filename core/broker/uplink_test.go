@@ -136,7 +136,7 @@ func TestHandleUplink(t *testing.T) {
 
 func TestDeduplicateUplink(t *testing.T) {
 	a := New(t)
-	d := NewDeduplicator(10 * time.Millisecond).(*deduplicator)
+	d := NewDeduplicator(20 * time.Millisecond).(*deduplicator)
 
 	payload := []byte{0x01, 0x02, 0x03}
 	protocolMetadata := &protocol.RxMetadata{}
@@ -155,14 +155,14 @@ func TestDeduplicateUplink(t *testing.T) {
 		wg.Done()
 	}()
 
-	<-time.After(5 * time.Millisecond)
+	<-time.After(10 * time.Millisecond)
 
 	a.So(b.deduplicateUplink(uplink2), ShouldBeNil)
 	a.So(b.deduplicateUplink(uplink3), ShouldBeNil)
 
-	<-time.After(10 * time.Millisecond)
+	<-time.After(50 * time.Millisecond)
 
-	a.So(b.deduplicateUplink(uplink4), ShouldBeNil)
+	a.So(b.deduplicateUplink(uplink4), ShouldNotBeNil)
 
 	wg.Wait()
 }

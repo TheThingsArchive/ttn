@@ -156,6 +156,8 @@ func TestPublishRPC(t *testing.T) {
 	a.So(err, ShouldBeNil)
 	a.So(ack, ShouldNotBeNil)
 
+	<-time.After(10 * time.Millisecond)
+
 	a.So(len(dlch), ShouldEqual, 1)
 }
 
