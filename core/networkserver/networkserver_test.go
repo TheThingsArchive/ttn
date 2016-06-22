@@ -75,6 +75,7 @@ func TestHandleGetDevices(t *testing.T) {
 		DevAddr: getDevAddr(1, 2, 3, 4),
 		AppEUI:  types.AppEUI(getEUI(1, 2, 3, 4, 5, 6, 7, 8)),
 		DevEUI:  types.DevEUI(getEUI(1, 2, 3, 4, 5, 6, 7, 8)),
+		NwkSKey: types.NwkSKey{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8},
 		FCntUp:  5,
 	})
 	res, err = ns.HandleGetDevices(&pb.DevicesRequest{
@@ -106,6 +107,7 @@ func TestHandleGetDevices(t *testing.T) {
 		DevAddr: getDevAddr(5, 6, 7, 8),
 		AppEUI:  types.AppEUI(getEUI(5, 6, 7, 8, 1, 2, 3, 4)),
 		DevEUI:  types.DevEUI(getEUI(5, 6, 7, 8, 1, 2, 3, 4)),
+		NwkSKey: types.NwkSKey{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8},
 		FCntUp:  5,
 		Options: device.Options{
 			DisableFCntCheck: true,
@@ -124,6 +126,7 @@ func TestHandleGetDevices(t *testing.T) {
 		DevAddr: getDevAddr(2, 2, 3, 4),
 		AppEUI:  types.AppEUI(getEUI(2, 2, 3, 4, 5, 6, 7, 8)),
 		DevEUI:  types.DevEUI(getEUI(2, 2, 3, 4, 5, 6, 7, 8)),
+		NwkSKey: types.NwkSKey{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8},
 		FCntUp:  5 + (2 << 16),
 		Options: device.Options{
 			Uses32BitFCnt: true,
@@ -141,6 +144,7 @@ func TestHandleGetDevices(t *testing.T) {
 		DevAddr: devAddr3,
 		AppEUI:  types.AppEUI(getEUI(2, 2, 3, 4, 5, 6, 7, 8)),
 		DevEUI:  types.DevEUI(getEUI(2, 2, 3, 4, 5, 6, 7, 8)),
+		NwkSKey: types.NwkSKey{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8},
 		FCntUp:  (2 << 16) - 1,
 		Options: device.Options{
 			Uses32BitFCnt: true,
@@ -157,8 +161,32 @@ func TestHandleGetDevices(t *testing.T) {
 
 func TestHandlePrepareActivation(t *testing.T) {
 	a := New(t)
-	ns := &networkServer{netID: [3]byte{0x00, 0x00, 0x13}, prefix: [4]byte{0x26, 0x00, 0x00, 0x00}, prefixLength: 7}
+	ns := &networkServer{
+		netID:        [3]byte{0x00, 0x00, 0x13},
+		prefix:       [4]byte{0x26, 0x00, 0x00, 0x00},
+		prefixLength: 7,
+		devices:      device.NewDeviceStore(),
+	}
+
+	appEUI := types.AppEUI(getEUI(2, 2, 3, 4, 5, 6, 7, 8))
+	devEUI := types.DevEUI(getEUI(2, 2, 3, 4, 5, 6, 7, 8))
+
+	// Device not registered
 	resp, err := ns.HandlePrepareActivation(&pb_broker.DeduplicatedDeviceActivationRequest{
+		ActivationMetadata: &pb_protocol.ActivationMetadata{Protocol: &pb_protocol.ActivationMetadata_Lorawan{
+			Lorawan: &pb_lorawan.ActivationMetadata{
+				CfList: []uint64{867100000, 867300000, 867500000, 867700000, 867900000},
+			},
+		}},
+		ResponseTemplate: &pb_broker.DeviceActivationResponse{},
+	})
+	a.So(err, ShouldNotBeNil)
+
+	// Device registered
+	ns.devices.Set(&device.Device{AppEUI: appEUI, DevEUI: devEUI})
+	resp, err = ns.HandlePrepareActivation(&pb_broker.DeduplicatedDeviceActivationRequest{
+		DevEui: &devEUI,
+		AppEui: &appEUI,
 		ActivationMetadata: &pb_protocol.ActivationMetadata{Protocol: &pb_protocol.ActivationMetadata_Lorawan{
 			Lorawan: &pb_lorawan.ActivationMetadata{
 				CfList: []uint64{867100000, 867300000, 867500000, 867700000, 867900000},
@@ -186,6 +214,10 @@ func TestHandleActivate(t *testing.T) {
 	ns := &networkServer{
 		devices: device.NewDeviceStore(),
 	}
+	ns.devices.Set(&device.Device{
+		AppEUI: types.AppEUI(getEUI(0, 0, 0, 0, 0, 0, 3, 1)),
+		DevEUI: types.DevEUI(getEUI(0, 0, 0, 0, 0, 0, 3, 1)),
+	})
 
 	_, err := ns.HandleActivate(&pb_handler.DeviceActivationResponse{})
 	a.So(err, ShouldNotBeNil)

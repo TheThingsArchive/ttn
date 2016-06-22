@@ -34,6 +34,7 @@ func TestDeviceStore(t *testing.T) {
 			DevAddr: types.DevAddr{0, 0, 0, 1},
 			DevEUI:  types.DevEUI{0, 0, 0, 0, 0, 0, 0, 1},
 			AppEUI:  types.AppEUI{0, 0, 0, 0, 0, 0, 0, 1},
+			NwkSKey: types.NwkSKey{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 1},
 		})
 		a.So(err, ShouldBeNil)
 
@@ -42,6 +43,7 @@ func TestDeviceStore(t *testing.T) {
 			DevAddr: types.DevAddr{0, 0, 0, 1},
 			DevEUI:  types.DevEUI{0, 0, 0, 0, 0, 0, 0, 2},
 			AppEUI:  types.AppEUI{0, 0, 0, 0, 0, 0, 0, 1},
+			NwkSKey: types.NwkSKey{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 1},
 		})
 		a.So(err, ShouldBeNil)
 
@@ -57,6 +59,7 @@ func TestDeviceStore(t *testing.T) {
 			DevAddr: types.DevAddr{0, 0, 0, 3},
 			DevEUI:  types.DevEUI{0, 0, 0, 0, 0, 0, 0, 2},
 			AppEUI:  types.AppEUI{0, 0, 0, 0, 0, 0, 0, 1},
+			NwkSKey: types.NwkSKey{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 1},
 		})
 		a.So(err, ShouldBeNil)
 
@@ -71,6 +74,7 @@ func TestDeviceStore(t *testing.T) {
 			DevAddr: types.DevAddr{0, 0, 0, 3},
 			DevEUI:  types.DevEUI{0, 0, 0, 0, 0, 0, 0, 1},
 			AppEUI:  types.AppEUI{0, 0, 0, 0, 0, 0, 0, 1},
+			NwkSKey: types.NwkSKey{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 2},
 		})
 
 		res, err = s.GetWithAddress(types.DevAddr{0, 0, 0, 1})
@@ -123,8 +127,21 @@ func TestDeviceActivate(t *testing.T) {
 
 		t.Logf("Testing %s store", name)
 
-		// Activate a device for the first time
+		// Device not registered
 		err := s.Activate(
+			types.AppEUI{0, 0, 0, 0, 0, 0, 1, 1},
+			types.DevEUI{0, 0, 0, 0, 0, 0, 1, 1},
+			types.DevAddr{0, 0, 1, 1},
+			types.NwkSKey{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1},
+		)
+		a.So(err, ShouldNotBeNil)
+
+		// Device registered
+		s.Set(&Device{
+			AppEUI: types.AppEUI{0, 0, 0, 0, 0, 0, 1, 1},
+			DevEUI: types.DevEUI{0, 0, 0, 0, 0, 0, 1, 1},
+		})
+		err = s.Activate(
 			types.AppEUI{0, 0, 0, 0, 0, 0, 1, 1},
 			types.DevEUI{0, 0, 0, 0, 0, 0, 1, 1},
 			types.DevAddr{0, 0, 1, 1},

@@ -93,7 +93,7 @@ func (s *deviceStore) Set(new *Device, fields ...string) error {
 		s.devices[new.AppEUI] = map[types.DevEUI]*Device{new.DevEUI: new}
 	}
 
-	if !new.DevAddr.IsEmpty() {
+	if !new.DevAddr.IsEmpty() && !new.NwkSKey.IsEmpty() {
 		if devices, ok := s.byAddress[new.DevAddr]; ok {
 			var exists bool
 			for _, candidate := range devices {
@@ -115,12 +115,7 @@ func (s *deviceStore) Set(new *Device, fields ...string) error {
 
 func (s *deviceStore) Activate(appEUI types.AppEUI, devEUI types.DevEUI, devAddr types.DevAddr, nwkSKey types.NwkSKey) error {
 	dev, err := s.Get(appEUI, devEUI)
-	if err == ErrNotFound {
-		dev = &Device{
-			AppEUI: appEUI,
-			DevEUI: devEUI,
-		}
-	} else if err != nil {
+	if err != nil {
 		return err
 	}
 	dev.DevAddr = devAddr
@@ -262,7 +257,7 @@ func (s *redisDeviceStore) Set(new *Device, fields ...string) error {
 	}
 	s.client.HMSetMap(key, dmap)
 
-	if !new.DevAddr.IsEmpty() {
+	if !new.DevAddr.IsEmpty() && !new.NwkSKey.IsEmpty() {
 		err := s.client.SAdd(fmt.Sprintf("%s:%s", redisDevAddrPrefix, new.DevAddr), key).Err()
 		if err != nil {
 			return err
@@ -274,7 +269,15 @@ func (s *redisDeviceStore) Set(new *Device, fields ...string) error {
 
 func (s *redisDeviceStore) Activate(appEUI types.AppEUI, devEUI types.DevEUI, devAddr types.DevAddr, nwkSKey types.NwkSKey) error {
 	key := fmt.Sprintf("%s:%s:%s", redisDevicePrefix, appEUI, devEUI)
-	var dmap map[string]string
+
+	// Find existing device
+	exists, err := s.client.Exists(key).Result()
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return ErrNotFound
+	}
 
 	// Check for old DevAddr
 	if devAddr, err := s.client.HGet(key, "dev_addr").Result(); err == nil {
@@ -289,8 +292,6 @@ func (s *redisDeviceStore) Activate(appEUI types.AppEUI, devEUI types.DevEUI, de
 
 	// Update Device
 	dev := &Device{
-		AppEUI:   appEUI,
-		DevEUI:   devEUI,
 		DevAddr:  devAddr,
 		NwkSKey:  nwkSKey,
 		FCntUp:   0,
@@ -298,7 +299,7 @@ func (s *redisDeviceStore) Activate(appEUI types.AppEUI, devEUI types.DevEUI, de
 	}
 
 	// Don't touch Utilization and Options
-	dmap, err := dev.ToStringStringMap("dev_eui", "app_eui", "dev_addr", "nwk_s_key", "f_cnt_up", "f_cnt_down")
+	dmap, err := dev.ToStringStringMap("dev_addr", "nwk_s_key", "f_cnt_up", "f_cnt_down")
 
 	// Register Device
 	err = s.client.HMSetMap(key, dmap).Err()

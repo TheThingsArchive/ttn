@@ -85,6 +85,7 @@ func (n *networkServer) HandleGetDevices(req *pb.DevicesRequest) (*pb.DevicesRes
 		fullFCnt := fcnt.GetFull(device.FCntUp, uint16(req.FCnt))
 		dev := &pb.DevicesResponse_Device{
 			AppEui:           &device.AppEUI,
+			AppId:            device.AppID,
 			DevEui:           &device.DevEUI,
 			NwkSKey:          &device.NwkSKey,
 			StoredFCnt:       device.FCntUp,
@@ -109,6 +110,15 @@ func (n *networkServer) HandleGetDevices(req *pb.DevicesRequest) (*pb.DevicesRes
 }
 
 func (n *networkServer) HandlePrepareActivation(activation *pb_broker.DeduplicatedDeviceActivationRequest) (*pb_broker.DeduplicatedDeviceActivationRequest, error) {
+	if activation.AppEui == nil || activation.DevEui == nil {
+		return nil, errors.New("ttn/networkserver: Activation missing AppEUI or DevEUI")
+	}
+	dev, err := n.devices.Get(*activation.AppEui, *activation.DevEui)
+	if err != nil {
+		return nil, err
+	}
+	activation.AppId = dev.AppID
+
 	// Build activation metadata if not present
 	if meta := activation.GetActivationMetadata(); meta == nil {
 		activation.ActivationMetadata = &pb_protocol.ActivationMetadata{}
