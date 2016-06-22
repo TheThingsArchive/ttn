@@ -12,6 +12,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/api"
 	pb "github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/api/networkserver"
+	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/discovery"
 )
@@ -48,6 +49,7 @@ type broker struct {
 	handlersLock           sync.RWMutex
 	nsAddr                 string
 	ns                     networkserver.NetworkServerClient
+	nsManager              pb_lorawan.DeviceManagerClient
 	uplinkDeduplicator     Deduplicator
 	activationDeduplicator Deduplicator
 }
@@ -68,9 +70,8 @@ func (b *broker) Init(c *core.Component) error {
 	if err != nil {
 		return err
 	}
-	client := networkserver.NewNetworkServerClient(conn)
-	b.ns = client
-
+	b.ns = networkserver.NewNetworkServerClient(conn)
+	b.nsManager = pb_lorawan.NewDeviceManagerClient(conn)
 	return nil
 }
 

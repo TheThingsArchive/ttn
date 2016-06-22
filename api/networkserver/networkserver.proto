@@ -3,9 +3,9 @@ syntax = "proto3";
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 
 import "github.com/TheThingsNetwork/ttn/api/api.proto";
+import "github.com/TheThingsNetwork/ttn/api/protocol/lorawan/device.proto";
 import "github.com/TheThingsNetwork/ttn/api/broker/broker.proto";
 import "github.com/TheThingsNetwork/ttn/api/handler/handler.proto";
-
 
 package networkserver;
 
@@ -14,19 +14,8 @@ message DevicesRequest {
   uint32 f_cnt    = 2;
 }
 
-message Device {
-  bytes  app_eui   = 1 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.AppEUI"];
-  bytes  dev_eui   = 2 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.DevEUI"];
-  bytes  nwk_s_key = 3 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.NwkSKey"];
-  uint32 stored_f_cnt        = 4;
-  uint32 full_f_cnt          = 5;
-  string app_id              = 6;
-  bool   disable_f_cnt_check = 11;
-  bool   uses32_bit_f_cnt    = 12;
-}
-
 message DevicesResponse {
-  repeated Device results = 1;
+  repeated lorawan.Device results = 1;
 }
 
 service NetworkServer {
@@ -46,12 +35,6 @@ service NetworkServer {
   rpc Downlink(broker.DownlinkMessage) returns (broker.DownlinkMessage);
 }
 
-// message RegisterDeviceRequest is used to register a device in the
-// NetworkServer
-message RegisterDeviceRequest {
-  // TODO
-}
-
 // message StatusRequest is used to request the status of this NetworkServer
 message StatusRequest {}
 
@@ -64,6 +47,5 @@ message Status {
 // The NetworkServerManager service provides configuration and monitoring
 // functionality
 service NetworkServerManager {
-  rpc RegisterDevice(RegisterDeviceRequest) returns (api.Ack);
   rpc GetStatus(StatusRequest) returns (Status);
 }

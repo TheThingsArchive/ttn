@@ -9,6 +9,7 @@ import (
 	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	pb_handler "github.com/TheThingsNetwork/ttn/api/handler"
 	pb_networkserver "github.com/TheThingsNetwork/ttn/api/networkserver"
+	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	. "github.com/smartystreets/assertions"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -37,7 +38,7 @@ func (d *mockHandlerDiscovery) All() (a []*pb_discovery.Announcement, err error)
 }
 
 type mockNetworkServer struct {
-	devices []*pb_networkserver.Device
+	devices []*pb_lorawan.Device
 }
 
 func (s *mockNetworkServer) GetDevices(ctx context.Context, req *pb_networkserver.DevicesRequest, options ...grpc.CallOption) (*pb_networkserver.DevicesResponse, error) {

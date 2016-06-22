@@ -141,15 +141,6 @@ message Status {
 
 // The BrokerManager service provides configuration and monitoring functionality
 service BrokerManager {
-  // Network operator lists all Applications on this Broker
-  rpc  Applications(ApplicationsRequest) returns (ApplicationsResponse);
-
-  // Application owner registers Application with Broker Manager
-  rpc  RegisterApplication(RegisterApplicationRequest) returns (api.Ack);
-
-  // Application owner unregisters Application with Broker Manager
-  rpc  UnregisterApplication(UnregisterApplicationRequest) returns (api.Ack);
-
   // Network operator requests Broker status
   rpc  GetStatus(StatusRequest) returns (Status);
 }

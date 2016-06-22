@@ -11,7 +11,8 @@ import (
 	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/api/gateway"
 	"github.com/TheThingsNetwork/ttn/api/networkserver"
-	pb_networkserver "github.com/TheThingsNetwork/ttn/api/networkserver"
+	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
+	"github.com/TheThingsNetwork/ttn/core/fcnt"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/apex/log"
 	"github.com/brocaar/lorawan"
@@ -78,11 +79,11 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) error {
 	ctx = ctx.WithField("DevAddrResults", len(getDevicesResp.Results))
 
 	// Find AppEUI/DevEUI through MIC check
-	var device *pb_networkserver.Device
+	var device *pb_lorawan.Device
 	for _, candidate := range getDevicesResp.Results {
 		nwkSKey := lorawan.AES128Key(*candidate.NwkSKey)
 		if candidate.Uses32BitFCnt {
-			macPayload.FHDR.FCnt = candidate.FullFCnt
+			macPayload.FHDR.FCnt = fcnt.GetFull(macPayload.FHDR.FCnt, uint16(candidate.FCntUp))
 		}
 		ok, err = phyPayload.ValidateMIC(nwkSKey)
 		if err != nil {
@@ -101,19 +102,18 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) error {
 		"DevEUI": device.DevEui,
 		"AppEUI": device.AppEui,
 		"AppID":  device.AppId,
-		"FCnt":   device.FullFCnt,
 	})
 
 	if device.DisableFCntCheck {
 		// TODO: Add warning to message?
-	} else if macPayload.FHDR.FCnt <= device.StoredFCnt || macPayload.FHDR.FCnt-device.StoredFCnt > maxFCntGap {
+	} else if macPayload.FHDR.FCnt <= device.FCntUp || macPayload.FHDR.FCnt-device.FCntUp > maxFCntGap {
 		// Replay attack or FCnt gap too big
 		err = ErrInvalidFCnt
 		return err
 	}
 
 	// Add FCnt to Metadata (because it's not marshaled in lorawan payload)
-	base.ProtocolMetadata.GetLorawan().FCnt = device.FullFCnt
+	base.ProtocolMetadata.GetLorawan().FCnt = macPayload.FHDR.FCnt
 
 	// Collect GatewayMetadata and DownlinkOptions
 	var gatewayMetadata []*gateway.RxMetadata

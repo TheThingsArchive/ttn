@@ -10,6 +10,7 @@ import (
 	pb_handler "github.com/TheThingsNetwork/ttn/api/handler"
 	pb "github.com/TheThingsNetwork/ttn/api/networkserver"
 	pb_protocol "github.com/TheThingsNetwork/ttn/api/protocol"
+	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/fcnt"
 	"github.com/TheThingsNetwork/ttn/core/networkserver/device"
@@ -78,18 +79,17 @@ func (n *networkServer) HandleGetDevices(req *pb.DevicesRequest) (*pb.DevicesRes
 	// Return all devices with DevAddr with FCnt <= fCnt or Security off
 
 	res := &pb.DevicesResponse{
-		Results: make([]*pb.Device, 0, len(devices)),
+		Results: make([]*pb_lorawan.Device, 0, len(devices)),
 	}
 
 	for _, device := range devices {
 		fullFCnt := fcnt.GetFull(device.FCntUp, uint16(req.FCnt))
-		dev := &pb.Device{
+		dev := &pb_lorawan.Device{
 			AppEui:           &device.AppEUI,
 			AppId:            device.AppID,
 			DevEui:           &device.DevEUI,
 			NwkSKey:          &device.NwkSKey,
-			StoredFCnt:       device.FCntUp,
-			FullFCnt:         fullFCnt,
+			FCntUp:           device.FCntUp,
 			Uses32BitFCnt:    device.Options.Uses32BitFCnt,
 			DisableFCntCheck: device.Options.DisableFCntCheck,
 		}

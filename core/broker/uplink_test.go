@@ -8,7 +8,6 @@ import (
 	pb "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/api/gateway"
-	pb_networkserver "github.com/TheThingsNetwork/ttn/api/networkserver"
 	"github.com/TheThingsNetwork/ttn/api/protocol"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core"
@@ -27,7 +26,7 @@ func TestHandleUplink(t *testing.T) {
 		},
 		uplinkDeduplicator: NewDeduplicator(10 * time.Millisecond),
 		ns: &mockNetworkServer{
-			devices: []*pb_networkserver.Device{},
+			devices: []*pb_lorawan.Device{},
 		},
 	}
 
@@ -78,13 +77,13 @@ func TestHandleUplink(t *testing.T) {
 		handlers:           make(map[string]chan *pb.DeduplicatedUplinkMessage),
 		uplinkDeduplicator: NewDeduplicator(10 * time.Millisecond),
 		ns: &mockNetworkServer{
-			devices: []*pb_networkserver.Device{
-				&pb_networkserver.Device{
-					DevEui:     &devEUI,
-					AppEui:     &appEUI,
-					AppId:      appID,
-					NwkSKey:    &nwkSKey,
-					StoredFCnt: 3,
+			devices: []*pb_lorawan.Device{
+				&pb_lorawan.Device{
+					DevEui:  &devEUI,
+					AppEui:  &appEUI,
+					AppId:   appID,
+					NwkSKey: &nwkSKey,
+					FCntUp:  3,
 				},
 			},
 		},
@@ -127,7 +126,7 @@ func TestHandleUplink(t *testing.T) {
 
 	// OK FCnt
 	b.uplinkDeduplicator = NewDeduplicator(10 * time.Millisecond)
-	b.ns.(*mockNetworkServer).devices[0].StoredFCnt = 0
+	b.ns.(*mockNetworkServer).devices[0].FCntUp = 0
 	b.ns.(*mockNetworkServer).devices[0].DisableFCntCheck = false
 	err = b.HandleUplink(&pb.UplinkMessage{
 		Payload:          bytes,

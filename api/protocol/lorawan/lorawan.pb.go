@@ -2,22 +2,6 @@
 // source: github.com/TheThingsNetwork/ttn/api/protocol/lorawan/lorawan.proto
 // DO NOT EDIT!
 
-/*
-	Package lorawan is a generated protocol buffer package.
-
-	It is generated from these files:
-		github.com/TheThingsNetwork/ttn/api/protocol/lorawan/lorawan.proto
-
-	It has these top-level messages:
-		Metadata
-		TxConfiguration
-		ActivationMetadata
-		PHYPayload
-		MHdr
-		MACPayload
-		FHdr
-		FCtrl
-*/
 package lorawan
 
 import proto "github.com/golang/protobuf/proto"
@@ -33,10 +17,6 @@ import io "io"
 var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
-
-// This is a compile-time assertion to ensure that this generated file
-// is compatible with the proto package it is being compiled against.
-const _ = proto.ProtoPackageIsVersion2
 
 type Modulation int32
 
