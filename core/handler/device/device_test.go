@@ -12,6 +12,7 @@ func getTestDevice() (device *Device, dmap map[string]string) {
 	return &Device{
 			DevEUI:        types.DevEUI{1, 2, 3, 4, 5, 6, 7, 8},
 			AppEUI:        types.AppEUI{8, 7, 6, 5, 4, 3, 2, 1},
+			AppID:         "AppID-1",
 			DevAddr:       types.DevAddr{1, 2, 3, 4},
 			AppKey:        types.AppKey{0, 1, 0, 2, 0, 3, 0, 4, 0, 5, 0, 6, 0, 7, 0, 8},
 			NwkSKey:       types.NwkSKey{1, 1, 1, 2, 1, 3, 1, 4, 1, 5, 1, 6, 1, 7, 1, 8},
@@ -21,6 +22,7 @@ func getTestDevice() (device *Device, dmap map[string]string) {
 		}, map[string]string{
 			"dev_eui":         "0102030405060708",
 			"app_eui":         "0807060504030201",
+			"app_id":          "AppID-1",
 			"dev_addr":        "01020304",
 			"app_key":         "00010002000300040005000600070008",
 			"nwk_s_key":       "01010102010301040105010601070108",

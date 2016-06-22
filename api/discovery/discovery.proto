@@ -11,6 +11,9 @@ message Metadata {
     // The value for PREFIX consists of 1 byte denoting the number of bits,
     // followed by the prefix and enough trailing bits to fill 4 octets
     PREFIX = 1;
+
+    // The value for APP_ID are the bytes of the AppID string
+    APP_ID = 3;
   }
   Key key = 1;
   bytes value = 2;

@@ -23,6 +23,7 @@ type Metadata struct {
 
 // UplinkMessage represents an application-layer uplink message
 type UplinkMessage struct {
+	AppID    string                 `json:"app_id,omitempty"`
 	AppEUI   types.AppEUI           `json:"app_eui,omitempty"`
 	DevEUI   types.DevEUI           `json:"dev_eui,omitempty"`
 	Payload  []byte                 `json:"payload,omitempty"`
@@ -34,6 +35,7 @@ type UplinkMessage struct {
 
 // DownlinkMessage represents an application-layer downlink message
 type DownlinkMessage struct {
+	AppID   string                 `json:"app_id,omitempty"`
 	AppEUI  types.AppEUI           `json:"app_eui,omitempty"`
 	DevEUI  types.DevEUI           `json:"dev_eui,omitempty"`
 	Payload []byte                 `json:"payload,omitempty"`
@@ -44,6 +46,7 @@ type DownlinkMessage struct {
 
 // Activation are used to notify application of a device activation
 type Activation struct {
+	AppID    string       `json:"app_id,omitempty"`
 	AppEUI   types.AppEUI `json:"app_eui,omitempty"`
 	DevEUI   types.DevEUI `json:"dev_eui,omitempty"`
 	Metadata []Metadata   `json:"metadata"`

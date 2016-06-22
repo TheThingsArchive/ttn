@@ -16,7 +16,7 @@ import (
 // ConvertFields converts the payload to fields using payload functions
 func (h *handler) ConvertFields(ctx log.Interface, ttnUp *pb_broker.DeduplicatedUplinkMessage, appUp *mqtt.UplinkMessage) error {
 	// Find Application
-	app, err := h.applications.Get(appUp.AppEUI)
+	app, err := h.applications.Get(ttnUp.AppId)
 	if err != nil {
 		return nil // Do not process if application not found
 	}

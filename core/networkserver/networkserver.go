@@ -78,12 +78,12 @@ func (n *networkServer) HandleGetDevices(req *pb.DevicesRequest) (*pb.DevicesRes
 	// Return all devices with DevAddr with FCnt <= fCnt or Security off
 
 	res := &pb.DevicesResponse{
-		Results: make([]*pb.DevicesResponse_Device, 0, len(devices)),
+		Results: make([]*pb.Device, 0, len(devices)),
 	}
 
 	for _, device := range devices {
 		fullFCnt := fcnt.GetFull(device.FCntUp, uint16(req.FCnt))
-		dev := &pb.DevicesResponse_Device{
+		dev := &pb.Device{
 			AppEui:           &device.AppEUI,
 			AppId:            device.AppID,
 			DevEui:           &device.DevEUI,

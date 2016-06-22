@@ -9,7 +9,6 @@ import (
 	"github.com/TheThingsNetwork/ttn/api/gateway"
 	"github.com/TheThingsNetwork/ttn/api/protocol"
 	"github.com/TheThingsNetwork/ttn/core"
-	"github.com/TheThingsNetwork/ttn/core/broker/application"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/assertions"
@@ -26,28 +25,12 @@ func TestHandleActivation(t *testing.T) {
 		Component: &core.Component{
 			Ctx: GetLogger(t, "TestHandleActivation"),
 		},
+		handlerDiscovery:       &mockHandlerDiscovery{},
 		activationDeduplicator: NewDeduplicator(10 * time.Millisecond),
-		applications:           application.NewApplicationStore(),
-		ns:                     &mockNetworkServer{},
+		ns: &mockNetworkServer{},
 	}
 
-	// Non-existing Application
 	res, err := b.HandleActivation(&pb.DeviceActivationRequest{
-		Payload:          []byte{},
-		DevEui:           &devEUI,
-		AppEui:           &appEUI,
-		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2, GatewayEui: &gtwEUI},
-		ProtocolMetadata: &protocol.RxMetadata{},
-	})
-	a.So(err, ShouldNotBeNil)
-	a.So(res, ShouldBeNil)
-
-	// Non-existing Broker
-	b.applications.Set(&application.Application{
-		AppEUI:            appEUI,
-		HandlerNetAddress: "localhost:1234",
-	})
-	res, err = b.HandleActivation(&pb.DeviceActivationRequest{
 		Payload:          []byte{},
 		DevEui:           &devEUI,
 		AppEui:           &appEUI,

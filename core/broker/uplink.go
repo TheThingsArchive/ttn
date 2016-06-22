@@ -8,10 +8,10 @@ import (
 	"time"
 
 	pb "github.com/TheThingsNetwork/ttn/api/broker"
+	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/api/gateway"
 	"github.com/TheThingsNetwork/ttn/api/networkserver"
 	pb_networkserver "github.com/TheThingsNetwork/ttn/api/networkserver"
-	"github.com/TheThingsNetwork/ttn/core/broker/application"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/apex/log"
 	"github.com/brocaar/lorawan"
@@ -78,7 +78,7 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) error {
 	ctx = ctx.WithField("DevAddrResults", len(getDevicesResp.Results))
 
 	// Find AppEUI/DevEUI through MIC check
-	var device *pb_networkserver.DevicesResponse_Device
+	var device *pb_networkserver.Device
 	for _, candidate := range getDevicesResp.Results {
 		nwkSKey := lorawan.AES128Key(*candidate.NwkSKey)
 		if candidate.Uses32BitFCnt {
@@ -100,6 +100,7 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) error {
 	ctx = ctx.WithFields(log.Fields{
 		"DevEUI": device.DevEui,
 		"AppEUI": device.AppEui,
+		"AppID":  device.AppId,
 		"FCnt":   device.FullFCnt,
 	})
 
@@ -147,16 +148,20 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) error {
 		return err
 	}
 
-	var application *application.Application
-	application, err = b.applications.Get(*device.AppEui)
+	var announcements []*pb_discovery.Announcement
+	announcements, err = b.handlerDiscovery.ForAppID(device.AppId)
 	if err != nil {
 		return err
 	}
-
-	ctx = ctx.WithField("HandlerID", application.HandlerID)
+	if len(announcements) == 0 {
+		return errors.New("ttn/broker: No Handlers")
+	}
+	if len(announcements) > 1 {
+		return errors.New("ttn/broker: Can't forward to multiple Handlers")
+	}
 
 	var handler chan<- *pb.DeduplicatedUplinkMessage
-	handler, err = b.getHandler(application.HandlerID)
+	handler, err = b.getHandler(announcements[0].Id)
 	if err != nil {
 		return err
 	}

@@ -21,6 +21,7 @@ func TestHandleUplink(t *testing.T) {
 	var err error
 	var wg sync.WaitGroup
 	appEUI := types.AppEUI{1, 2, 3, 4, 5, 6, 7, 8}
+	appID := "AppID-1"
 	devEUI := types.DevEUI{1, 2, 3, 4, 5, 6, 7, 8}
 	h := &handler{
 		Component:    &core.Component{Ctx: GetLogger(t, "TestHandleUplink")},
@@ -28,11 +29,12 @@ func TestHandleUplink(t *testing.T) {
 		applications: application.NewApplicationStore(),
 	}
 	h.devices.Set(&device.Device{
+		AppID:  appID,
 		AppEUI: appEUI,
 		DevEUI: devEUI,
 	})
 	h.applications.Set(&application.Application{
-		AppEUI: appEUI,
+		AppID: appID,
 	})
 	h.mqttUp = make(chan *mqtt.UplinkMessage)
 	h.downlink = make(chan *pb_broker.DownlinkMessage)

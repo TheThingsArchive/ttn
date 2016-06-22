@@ -6,12 +6,12 @@ import (
 	"time"
 
 	pb "github.com/TheThingsNetwork/ttn/api/broker"
+	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/api/gateway"
 	pb_networkserver "github.com/TheThingsNetwork/ttn/api/networkserver"
 	"github.com/TheThingsNetwork/ttn/api/protocol"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core"
-	"github.com/TheThingsNetwork/ttn/core/broker/application"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"github.com/brocaar/lorawan"
@@ -27,7 +27,7 @@ func TestHandleUplink(t *testing.T) {
 		},
 		uplinkDeduplicator: NewDeduplicator(10 * time.Millisecond),
 		ns: &mockNetworkServer{
-			devices: []*pb_networkserver.DevicesResponse_Device{},
+			devices: []*pb_networkserver.Device{},
 		},
 	}
 
@@ -67,6 +67,7 @@ func TestHandleUplink(t *testing.T) {
 
 	devEUI := types.DevEUI{1, 2, 3, 4, 5, 6, 7, 8}
 	appEUI := types.AppEUI{1, 2, 3, 4, 5, 6, 7, 8}
+	appID := "AppID-1"
 	nwkSKey := types.NwkSKey{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8}
 
 	// Add devices
@@ -77,18 +78,20 @@ func TestHandleUplink(t *testing.T) {
 		handlers:           make(map[string]chan *pb.DeduplicatedUplinkMessage),
 		uplinkDeduplicator: NewDeduplicator(10 * time.Millisecond),
 		ns: &mockNetworkServer{
-			devices: []*pb_networkserver.DevicesResponse_Device{
-				&pb_networkserver.DevicesResponse_Device{
+			devices: []*pb_networkserver.Device{
+				&pb_networkserver.Device{
 					DevEui:     &devEUI,
 					AppEui:     &appEUI,
+					AppId:      appID,
 					NwkSKey:    &nwkSKey,
 					StoredFCnt: 3,
 				},
 			},
 		},
-		applications: application.NewApplicationStore(),
+		handlerDiscovery: &mockHandlerDiscovery{
+			&pb_discovery.Announcement{Id: "handlerID"},
+		},
 	}
-	b.applications.Set(&application.Application{AppEUI: appEUI, HandlerID: "handlerID"})
 	b.handlers["handlerID"] = make(chan *pb.DeduplicatedUplinkMessage, 10)
 
 	// Device doesn't match

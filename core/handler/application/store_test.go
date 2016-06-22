@@ -5,7 +5,6 @@ import (
 
 	"gopkg.in/redis.v3"
 
-	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/smartystreets/assertions"
 )
 
@@ -29,21 +28,21 @@ func TestApplicationStore(t *testing.T) {
 
 		t.Logf("Testing %s store", name)
 
-		appEUI := types.AppEUI{0, 0, 0, 0, 0, 0, 0, 1}
+		appID := "AppID-1"
 
 		// Get non-existing
-		app, err := s.Get(appEUI)
+		app, err := s.Get(appID)
 		a.So(err, ShouldNotBeNil)
 		a.So(app, ShouldBeNil)
 
 		// Create
 		err = s.Set(&Application{
-			AppEUI: appEUI,
+			AppID: appID,
 		})
 		a.So(err, ShouldBeNil)
 
 		// Get existing
-		app, err = s.Get(appEUI)
+		app, err = s.Get(appID)
 		a.So(err, ShouldBeNil)
 		a.So(app, ShouldNotBeNil)
 
@@ -53,11 +52,11 @@ func TestApplicationStore(t *testing.T) {
 		a.So(apps, ShouldHaveLength, 1)
 
 		// Delete
-		err = s.Delete(appEUI)
+		err = s.Delete(appID)
 		a.So(err, ShouldBeNil)
 
 		// Get deleted
-		app, err = s.Get(appEUI)
+		app, err = s.Get(appID)
 		a.So(err, ShouldNotBeNil)
 		a.So(app, ShouldBeNil)
 	}

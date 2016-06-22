@@ -70,18 +70,18 @@ func TestHandleActivation(t *testing.T) {
 	var wg sync.WaitGroup
 
 	appEUI := types.AppEUI{1, 2, 3, 4, 5, 6, 7, 8}
+	appID := "AppID-1"
 	devEUI := types.DevEUI{1, 2, 3, 4, 5, 6, 7, 8}
 	unknownDevEUI := types.DevEUI{8, 7, 6, 5, 4, 3, 2, 1}
 
 	appKey := [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
-	defaultAppKey := [16]byte{0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8}
 
 	h.applications.Set(&application.Application{
-		AppEUI:        appEUI,
-		DefaultAppKey: defaultAppKey,
+		AppID: appID,
 	})
 
 	h.devices.Set(&device.Device{
+		AppID:  appID,
 		AppEUI: appEUI,
 		DevEUI: devEUI,
 		AppKey: appKey,

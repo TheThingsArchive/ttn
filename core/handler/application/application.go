@@ -1,15 +1,10 @@
 package application
 
-import (
-	"fmt"
-
-	"github.com/TheThingsNetwork/ttn/core/types"
-)
+import "fmt"
 
 // Application contains the state of an application
 type Application struct {
-	AppEUI        types.AppEUI
-	DefaultAppKey types.AppKey
+	AppID string
 	// Decoder is a JavaScript function that accepts the payload as byte array and
 	// returns an object containing the decoded values
 	Decoder string
@@ -23,8 +18,7 @@ type Application struct {
 
 // ApplicationProperties contains all properties of a Application that can be stored in Redis.
 var ApplicationProperties = []string{
-	"app_eui",
-	"default_app_key",
+	"app_id",
 	"decoder",
 	"converter",
 	"validator",
@@ -56,10 +50,8 @@ func (application *Application) FromStringStringMap(input map[string]string) err
 
 func (application *Application) formatProperty(property string) (formatted string, err error) {
 	switch property {
-	case "app_eui":
-		formatted = application.AppEUI.String()
-	case "default_app_key":
-		formatted = application.DefaultAppKey.String()
+	case "app_id":
+		formatted = application.AppID
 	case "decoder":
 		formatted = application.Decoder
 	case "converter":
@@ -77,22 +69,8 @@ func (application *Application) parseProperty(property string, value string) err
 		return nil
 	}
 	switch property {
-	case "app_eui":
-		val, err := types.ParseAppEUI(value)
-		if err != nil {
-			return err
-		}
-		if !val.IsEmpty() {
-			application.AppEUI = val
-		}
-	case "default_app_key":
-		val, err := types.ParseAppKey(value)
-		if err != nil {
-			return err
-		}
-		if !val.IsEmpty() {
-			application.DefaultAppKey = val
-		}
+	case "app_id":
+		application.AppID = value
 	case "decoder":
 		application.Decoder = value
 	case "converter":

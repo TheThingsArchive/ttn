@@ -13,7 +13,7 @@ import (
 	pb "github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/api/networkserver"
 	"github.com/TheThingsNetwork/ttn/core"
-	"github.com/TheThingsNetwork/ttn/core/broker/application"
+	"github.com/TheThingsNetwork/ttn/core/discovery"
 )
 
 type Broker interface {
@@ -33,7 +33,6 @@ func NewRedisBroker(client *redis.Client, networkserver string, timeout time.Dur
 	return &broker{
 		routers:                make(map[string]chan *pb.DownlinkMessage),
 		handlers:               make(map[string]chan *pb.DeduplicatedUplinkMessage),
-		applications:           application.NewRedisApplicationStore(client),
 		uplinkDeduplicator:     NewDeduplicator(timeout),
 		activationDeduplicator: NewDeduplicator(timeout),
 		nsAddr:                 networkserver,
@@ -44,9 +43,9 @@ type broker struct {
 	*core.Component
 	routers                map[string]chan *pb.DownlinkMessage
 	routersLock            sync.RWMutex
+	handlerDiscovery       discovery.HandlerDiscovery
 	handlers               map[string]chan *pb.DeduplicatedUplinkMessage
 	handlersLock           sync.RWMutex
-	applications           application.Store
 	nsAddr                 string
 	ns                     networkserver.NetworkServerClient
 	uplinkDeduplicator     Deduplicator
@@ -63,6 +62,8 @@ func (b *broker) Init(c *core.Component) error {
 	if err != nil {
 		return err
 	}
+	b.handlerDiscovery = discovery.NewHandlerDiscovery(b.Component)
+	b.handlerDiscovery.All() // Update cache
 	conn, err := grpc.Dial(b.nsAddr, api.DialOptions...)
 	if err != nil {
 		return err

@@ -1,6 +1,7 @@
 package device
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -10,14 +11,15 @@ import (
 
 // Options for the specified device
 type Options struct {
-	DisableFCntCheck bool // Disable Frame counter check (insecure)
-	Uses32BitFCnt    bool // Use 32-bit Frame counters
+	DisableFCntCheck bool `json:"disable_fcnt_check,omitemtpy"` // Disable Frame counter check (insecure)
+	Uses32BitFCnt    bool `json:"uses_32_bit_fcnt,omitemtpy"`   // Use 32-bit Frame counters
 }
 
 // Device contains the state of a device
 type Device struct {
 	DevEUI      types.DevEUI
 	AppEUI      types.AppEUI
+	AppID       string
 	DevAddr     types.DevAddr
 	NwkSKey     types.NwkSKey
 	FCntUp      uint32
@@ -31,6 +33,7 @@ type Device struct {
 var DeviceProperties = []string{
 	"dev_eui",
 	"app_eui",
+	"app_id",
 	"dev_addr",
 	"nwk_s_key",
 	"f_cnt_up",
@@ -70,6 +73,8 @@ func (device *Device) formatProperty(property string) (formatted string, err err
 		formatted = device.DevEUI.String()
 	case "app_eui":
 		formatted = device.AppEUI.String()
+	case "app_id":
+		formatted = device.AppID
 	case "dev_addr":
 		formatted = device.DevAddr.String()
 	case "nwk_s_key":
@@ -81,7 +86,11 @@ func (device *Device) formatProperty(property string) (formatted string, err err
 	case "last_seen":
 		formatted = device.LastSeen.UTC().Format(time.RFC3339Nano)
 	case "options":
-		// TODO
+		data, err := json.Marshal(device.Options)
+		if err != nil {
+			return "", err
+		}
+		formatted = string(data)
 	case "utilization":
 		// TODO
 	default:
@@ -107,6 +116,8 @@ func (device *Device) parseProperty(property string, value string) error {
 			return err
 		}
 		device.AppEUI = val
+	case "app_id":
+		device.AppID = value
 	case "dev_addr":
 		val, err := types.ParseDevAddr(value)
 		if err != nil {
@@ -138,7 +149,12 @@ func (device *Device) parseProperty(property string, value string) error {
 		}
 		device.LastSeen = val
 	case "options":
-		// TODO
+		var options Options
+		err := json.Unmarshal([]byte(value), &options)
+		if err != nil {
+			return err
+		}
+		device.Options = options
 	case "utilization":
 		// TODO
 	}

@@ -10,6 +10,7 @@ import (
 
 	"github.com/TheThingsNetwork/ttn/api"
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
+	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	pb "github.com/TheThingsNetwork/ttn/api/handler"
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/handler/application"
@@ -66,6 +67,21 @@ func (h *handler) Init(c *core.Component) error {
 	if err != nil {
 		return err
 	}
+
+	h.applications.Set(&application.Application{
+		AppID: "htdvisser",
+	})
+
+	apps, err := h.applications.List()
+	if err != nil {
+		return err
+	}
+	for _, app := range apps {
+		h.Component.Identity.Metadata = append(h.Component.Identity.Metadata, &pb_discovery.Metadata{
+			Key: pb_discovery.Metadata_APP_ID, Value: []byte(app.AppID),
+		})
+	}
+
 	err = h.Component.Announce()
 	if err != nil {
 		return err
@@ -75,7 +91,6 @@ func (h *handler) Init(c *core.Component) error {
 	for _, broker := range h.mqttBrokers {
 		brokers = append(brokers, fmt.Sprintf("tcp://%s", broker))
 	}
-
 	err = h.HandleMQTT(h.mqttUsername, h.mqttPassword, brokers...)
 	if err != nil {
 		return err

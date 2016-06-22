@@ -17,7 +17,9 @@ import (
 
 func buildConversionUplink() (*pb_broker.DeduplicatedUplinkMessage, *mqtt.UplinkMessage) {
 	appEUI, _ := types.ParseAppEUI("0102030405060708")
-	ttnUp := &pb_broker.DeduplicatedUplinkMessage{}
+	ttnUp := &pb_broker.DeduplicatedUplinkMessage{
+		AppId: "AppID-1",
+	}
 	appUp := &mqtt.UplinkMessage{
 		FPort:   1,
 		AppEUI:  appEUI,
@@ -28,7 +30,7 @@ func buildConversionUplink() (*pb_broker.DeduplicatedUplinkMessage, *mqtt.Uplink
 
 func TestConvertFields(t *testing.T) {
 	a := New(t)
-	appEUI, _ := types.ParseAppEUI("0102030405060708")
+	appID := "AppID-1"
 
 	h := &handler{
 		applications: application.NewApplicationStore(),
@@ -42,7 +44,7 @@ func TestConvertFields(t *testing.T) {
 
 	// Normal flow
 	h.applications.Set(&application.Application{
-		AppEUI:  appEUI,
+		AppID:   appID,
 		Decoder: `function(data) { return { temperature: ((data[0] << 8) | data[1]) / 100 }; }`,
 	})
 	ttnUp, appUp = buildConversionUplink()
@@ -55,7 +57,7 @@ func TestConvertFields(t *testing.T) {
 
 	// Invalidate data
 	h.applications.Set(&application.Application{
-		AppEUI:    appEUI,
+		AppID:     appID,
 		Decoder:   `function(data) { return { temperature: ((data[0] << 8) | data[1]) / 100 }; }`,
 		Validator: `function(data) { return false; }`,
 	})
@@ -66,7 +68,7 @@ func TestConvertFields(t *testing.T) {
 
 	// Function error
 	h.applications.Set(&application.Application{
-		AppEUI:    appEUI,
+		AppID:     appID,
 		Decoder:   `function(data) { return { temperature: ((data[0] << 8) | data[1]) / 100 }; }`,
 		Converter: `function(data) { throw "expected"; }`,
 	})

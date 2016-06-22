@@ -1,10 +1,12 @@
 package broker
 
 import (
+	"errors"
 	"sync"
 	"testing"
 
 	pb "github.com/TheThingsNetwork/ttn/api/broker"
+	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	pb_handler "github.com/TheThingsNetwork/ttn/api/handler"
 	pb_networkserver "github.com/TheThingsNetwork/ttn/api/networkserver"
 	. "github.com/smartystreets/assertions"
@@ -12,8 +14,30 @@ import (
 	"google.golang.org/grpc"
 )
 
+type mockHandlerDiscovery struct {
+	a *pb_discovery.Announcement
+}
+
+func (d *mockHandlerDiscovery) ForAppID(appID string) (a []*pb_discovery.Announcement, err error) {
+	return d.All()
+}
+
+func (d *mockHandlerDiscovery) Get(id string) (a *pb_discovery.Announcement, err error) {
+	if d.a == nil {
+		return nil, errors.New("Not found")
+	}
+	return d.a, nil
+}
+
+func (d *mockHandlerDiscovery) All() (a []*pb_discovery.Announcement, err error) {
+	if d.a == nil {
+		return []*pb_discovery.Announcement{}, nil
+	}
+	return []*pb_discovery.Announcement{d.a}, nil
+}
+
 type mockNetworkServer struct {
-	devices []*pb_networkserver.DevicesResponse_Device
+	devices []*pb_networkserver.Device
 }
 
 func (s *mockNetworkServer) GetDevices(ctx context.Context, req *pb_networkserver.DevicesRequest, options ...grpc.CallOption) (*pb_networkserver.DevicesResponse, error) {

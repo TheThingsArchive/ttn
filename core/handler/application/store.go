@@ -5,8 +5,6 @@ import (
 	"fmt"
 
 	"gopkg.in/redis.v3"
-
-	"github.com/TheThingsNetwork/ttn/core/types"
 )
 
 var (
@@ -19,24 +17,24 @@ type Store interface {
 	// List all applications
 	List() ([]*Application, error)
 	// Get the full information about a application
-	Get(appEUI types.AppEUI) (*Application, error)
+	Get(appID string) (*Application, error)
 	// Set the given fields of a application. If fields empty, it sets all fields.
 	Set(application *Application, fields ...string) error
 	// Delete a application
-	Delete(types.AppEUI) error
+	Delete(appid string) error
 }
 
 // NewApplicationStore creates a new in-memory Application store
 func NewApplicationStore() Store {
 	return &applicationStore{
-		applications: make(map[types.AppEUI]*Application),
+		applications: make(map[string]*Application),
 	}
 }
 
 // applicationStore is an in-memory Application store. It should only be used for testing
 // purposes. Use the redisApplicationStore for actual deployments.
 type applicationStore struct {
-	applications map[types.AppEUI]*Application
+	applications map[string]*Application
 }
 
 func (s *applicationStore) List() ([]*Application, error) {
@@ -47,8 +45,8 @@ func (s *applicationStore) List() ([]*Application, error) {
 	return apps, nil
 }
 
-func (s *applicationStore) Get(appEUI types.AppEUI) (*Application, error) {
-	if app, ok := s.applications[appEUI]; ok {
+func (s *applicationStore) Get(appID string) (*Application, error) {
+	if app, ok := s.applications[appID]; ok {
 		return app, nil
 	}
 	return nil, ErrNotFound
@@ -56,12 +54,12 @@ func (s *applicationStore) Get(appEUI types.AppEUI) (*Application, error) {
 
 func (s *applicationStore) Set(new *Application, fields ...string) error {
 	// NOTE: We don't care about fields for testing
-	s.applications[new.AppEUI] = new
+	s.applications[new.AppID] = new
 	return nil
 }
 
-func (s *applicationStore) Delete(appEUI types.AppEUI) error {
-	delete(s.applications, appEUI)
+func (s *applicationStore) Delete(appID string) error {
+	delete(s.applications, appID)
 	return nil
 }
 
@@ -99,8 +97,8 @@ func (s *redisApplicationStore) List() ([]*Application, error) {
 	return apps, nil
 }
 
-func (s *redisApplicationStore) Get(appEUI types.AppEUI) (*Application, error) {
-	res, err := s.client.HGetAllMap(fmt.Sprintf("%s:%s", redisApplicationPrefix, appEUI)).Result()
+func (s *redisApplicationStore) Get(appID string) (*Application, error) {
+	res, err := s.client.HGetAllMap(fmt.Sprintf("%s:%s", redisApplicationPrefix, appID)).Result()
 	if err != nil {
 		if err == redis.Nil {
 			return nil, ErrNotFound
@@ -122,7 +120,7 @@ func (s *redisApplicationStore) Set(new *Application, fields ...string) error {
 		fields = ApplicationProperties
 	}
 
-	key := fmt.Sprintf("%s:%s", redisApplicationPrefix, new.AppEUI)
+	key := fmt.Sprintf("%s:%s", redisApplicationPrefix, new.AppID)
 	dmap, err := new.ToStringStringMap(fields...)
 	if err != nil {
 		return err
@@ -135,8 +133,8 @@ func (s *redisApplicationStore) Set(new *Application, fields ...string) error {
 	return nil
 }
 
-func (s *redisApplicationStore) Delete(appEUI types.AppEUI) error {
-	key := fmt.Sprintf("%s:%s", redisApplicationPrefix, appEUI)
+func (s *redisApplicationStore) Delete(appID string) error {
+	key := fmt.Sprintf("%s:%s", redisApplicationPrefix, appID)
 	err := s.client.Del(key).Err()
 	if err != nil {
 		return err

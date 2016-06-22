@@ -5,7 +5,6 @@ import (
 
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb "github.com/TheThingsNetwork/ttn/api/handler"
-	"github.com/TheThingsNetwork/ttn/core/handler/application"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
 	"github.com/TheThingsNetwork/ttn/core/otaa"
 	"github.com/TheThingsNetwork/ttn/core/types"
@@ -27,6 +26,7 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 	ctx := h.Ctx.WithFields(log.Fields{
 		"DevEUI": devEUI,
 		"AppEUI": appEUI,
+		"AppID":  activation.AppId,
 	})
 	var err error
 	defer func() {
@@ -37,23 +37,9 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 
 	// Find Device
 	var dev *device.Device
-	dev, err = h.devices.Get(*activation.AppEui, *activation.DevEui)
+	dev, err = h.devices.Get(appEUI, devEUI)
 	if err != nil {
-		// Find application
-		var app *application.Application
-		app, err = h.applications.Get(*activation.AppEui)
-		if err != nil {
-			return nil, err
-		}
-		if app.DefaultAppKey.IsEmpty() {
-			return nil, errors.New("ttn/handler: Device not found")
-		}
-		// Use Default AppKey
-		dev = &device.Device{
-			AppEUI: *activation.AppEui,
-			DevEUI: *activation.DevEui,
-			AppKey: app.DefaultAppKey,
-		}
+		return nil, err
 	}
 
 	// Check for LoRaWAN
@@ -174,6 +160,7 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 		Payload:            resBytes,
 		DownlinkOption:     activation.ResponseTemplate.DownlinkOption,
 		ActivationMetadata: metadata,
+		AppId:              dev.AppID,
 	}
 
 	return res, nil

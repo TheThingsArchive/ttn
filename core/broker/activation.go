@@ -10,9 +10,9 @@ import (
 
 	"github.com/TheThingsNetwork/ttn/api"
 	pb "github.com/TheThingsNetwork/ttn/api/broker"
+	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/api/gateway"
 	pb_handler "github.com/TheThingsNetwork/ttn/api/handler"
-	"github.com/TheThingsNetwork/ttn/core/broker/application"
 	"github.com/apex/log"
 )
 
@@ -74,22 +74,32 @@ func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (*pb.D
 		return nil, err
 	}
 
+	ctx = ctx.WithField("AppID", deduplicatedActivationRequest.AppId)
+
 	// Find Handler (based on AppEUI)
-	var application *application.Application
-	application, err = b.applications.Get(*base.AppEui)
+	var announcements []*pb_discovery.Announcement
+	announcements, err = b.handlerDiscovery.ForAppID(deduplicatedActivationRequest.AppId)
 	if err != nil {
 		return nil, err
 	}
+	if len(announcements) == 0 {
+		err = errors.New("ttn/broker: No Handler found")
+		return nil, err
+	}
+	if len(announcements) > 1 {
+		err = errors.New("ttn/broker: Multiple Handlers found for same AppID")
+		return nil, err
+	}
+	handler := announcements[0]
 
-	ctx = ctx.WithField("HandlerID", application.HandlerID)
-	ctx.Debug("Forward Activation")
+	ctx.WithField("HandlerID", handler.Id).Debug("Forward Activation")
 
 	var conn *grpc.ClientConn
-	conn, err = grpc.Dial(application.HandlerNetAddress, api.DialOptions...)
+	conn, err = grpc.Dial(handler.NetAddress, api.DialOptions...)
+	defer conn.Close()
 	if err != nil {
 		return nil, err
 	}
-	defer conn.Close()
 	client := pb_handler.NewHandlerClient(conn)
 	var handlerResponse *pb_handler.DeviceActivationResponse
 	handlerResponse, err = client.Activate(b.Component.GetContext(), deduplicatedActivationRequest)
