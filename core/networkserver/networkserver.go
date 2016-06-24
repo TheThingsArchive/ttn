@@ -136,7 +136,7 @@ func (n *networkServer) HandlePrepareActivation(activation *pb_broker.Deduplicat
 
 	// Generate random DevAddr with prefix
 	var devAddr types.DevAddr
-	copy(devAddr[:], random.Bytes(4))
+	copy(devAddr[:], random.New().Bytes(4))
 	devAddr = devAddr.WithPrefix(types.DevAddr(n.prefix), n.prefixLength)
 
 	// Set the DevAddr in the Activation Metadata

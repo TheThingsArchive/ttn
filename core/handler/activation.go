@@ -108,7 +108,7 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 		// NOTE: As DevNonces are only 2 bytes, we will start rejecting those before we run out of AppNonces.
 		// It might just take some time to get one we didn't use yet...
 		alreadyUsed = false
-		copy(appNonce[:], random.Bytes(3))
+		copy(appNonce[:], random.New().Bytes(3))
 		for _, usedNonce := range dev.UsedAppNonces {
 			if usedNonce == appNonce {
 				alreadyUsed = true

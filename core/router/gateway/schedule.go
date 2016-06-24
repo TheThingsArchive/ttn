@@ -31,8 +31,9 @@ type Schedule interface {
 // NewSchedule creates a new Schedule
 func NewSchedule(ctx log.Interface) Schedule {
 	return &schedule{
-		ctx:   ctx,
-		items: make(map[string]*scheduledItem),
+		ctx:    ctx,
+		items:  make(map[string]*scheduledItem),
+		random: random.New(),
 	}
 }
 
@@ -47,6 +48,7 @@ type scheduledItem struct {
 
 type schedule struct {
 	sync.RWMutex
+	random   random.TTNRandom
 	ctx      log.Interface
 	active   bool
 	offset   int64
@@ -115,7 +117,7 @@ func (s *schedule) Sync(timestamp uint32) {
 
 // see interface
 func (s *schedule) GetOption(timestamp uint32, length uint32) (id string, score uint) {
-	id = random.String(32)
+	id = s.random.String(32)
 	score = s.getConflicts(timestamp, length)
 	item := &scheduledItem{
 		id:        id,
