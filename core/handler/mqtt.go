@@ -1,10 +1,18 @@
 package handler
 
 import (
+	"time"
+
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/mqtt"
 	"github.com/apex/log"
 )
+
+// MQTTTimeout indicates how long we should wait for an MQTT publish
+var MQTTTimeout = 2 * time.Second
+
+// MQTTBufferSize indicates the size for uplink channel buffers
+var MQTTBufferSize = 10
 
 func (h *handler) HandleMQTT(username, password string, mqttBrokers ...string) error {
 	h.mqttClient = mqtt.NewClient(h.Ctx, "ttnhdl", username, password, mqttBrokers...)
@@ -14,8 +22,8 @@ func (h *handler) HandleMQTT(username, password string, mqttBrokers ...string) e
 		return err
 	}
 
-	h.mqttUp = make(chan *mqtt.UplinkMessage)
-	h.mqttActivation = make(chan *mqtt.Activation)
+	h.mqttUp = make(chan *mqtt.UplinkMessage, MQTTBufferSize)
+	h.mqttActivation = make(chan *mqtt.Activation, MQTTBufferSize)
 
 	token := h.mqttClient.SubscribeDownlink(func(client mqtt.Client, appEUI types.AppEUI, devEUI types.DevEUI, msg mqtt.DownlinkMessage) {
 		down := &msg
@@ -36,9 +44,12 @@ func (h *handler) HandleMQTT(username, password string, mqttBrokers ...string) e
 			}).Debug("Publish Uplink")
 			token := h.mqttClient.PublishUplink(up.AppEUI, up.DevEUI, *up)
 			go func() {
-				token.Wait()
-				if token.Error() != nil {
-					h.Ctx.WithError(token.Error()).Warn("Could not publish Uplink")
+				if token.WaitTimeout(MQTTTimeout) {
+					if token.Error() != nil {
+						h.Ctx.WithError(token.Error()).Warn("Could not publish Uplink")
+					}
+				} else {
+					h.Ctx.Warn("Uplink publish timeout")
 				}
 			}()
 		}
@@ -48,9 +59,12 @@ func (h *handler) HandleMQTT(username, password string, mqttBrokers ...string) e
 		for activation := range h.mqttActivation {
 			token := h.mqttClient.PublishActivation(activation.AppEUI, activation.DevEUI, *activation)
 			go func() {
-				token.Wait()
-				if token.Error() != nil {
-					h.Ctx.WithError(token.Error()).Warn("Could not publish Activation")
+				if token.WaitTimeout(MQTTTimeout) {
+					if token.Error() != nil {
+						h.Ctx.WithError(token.Error()).Warn("Could not publish Activation")
+					}
+				} else {
+					h.Ctx.Warn("Activation publish timeout")
 				}
 			}()
 		}
