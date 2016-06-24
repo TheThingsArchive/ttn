@@ -3,6 +3,7 @@ package router
 import (
 	"errors"
 	"sync"
+	"time"
 
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_protocol "github.com/TheThingsNetwork/ttn/api/protocol"
@@ -26,6 +27,7 @@ func (r *router) HandleActivation(gatewayEUI types.GatewayEUI, activation *pb.De
 	}()
 
 	gateway := r.getGateway(gatewayEUI)
+	gateway.LastSeen = time.Now()
 
 	uplink := &pb.UplinkMessage{
 		Payload:          activation.Payload,

@@ -1,6 +1,8 @@
 package gateway
 
 import (
+	"time"
+
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/apex/log"
 )
@@ -21,4 +23,5 @@ type Gateway struct {
 	Status      StatusStore
 	Utilization Utilization
 	Schedule    Schedule
+	LastSeen    time.Time
 }

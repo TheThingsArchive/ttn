@@ -2,6 +2,7 @@ package router
 
 import (
 	"errors"
+	"time"
 
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb "github.com/TheThingsNetwork/ttn/api/router"
@@ -56,6 +57,7 @@ func (r *router) HandleUplink(gatewayEUI types.GatewayEUI, uplink *pb.UplinkMess
 	ctx = ctx.WithField("DevAddr", devAddr)
 
 	gateway := r.getGateway(gatewayEUI)
+	gateway.LastSeen = time.Now()
 	gateway.Schedule.Sync(uplink.GatewayMetadata.Timestamp)
 	gateway.Utilization.AddRx(uplink)
 

@@ -79,9 +79,9 @@ message GatewayStatusRequest {
   bytes gateway_eui = 1 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.GatewayEUI"];
 }
 
-// message GatewayStatusResponse is the response to the GatewayStatusRequest
 message GatewayStatusResponse {
-  gateway.Status last_status = 1;
+  int64           last_seen  = 1;
+  gateway.Status  status     = 2;
 }
 
 // message StatusRequest is used to request the status of this Router
@@ -110,15 +110,6 @@ message Status {
 
 // The RouterManager service provides configuration and monitoring functionality
 service RouterManager {
-  // Network operator requests list of Gateways from Router Manager
-  rpc Gateways(GatewaysRequest) returns (GatewaysResponse);
-
-  // Gateway owner or network operator registers Gateway with Router Manager
-  rpc RegisterGateway(RegisterGatewayRequest) returns (api.Ack);
-
-  // Gateway owner or network operator unregisters Gateway with Router Manager
-  rpc UnregisterGateway(UnregisterGatewayRequest) returns (api.Ack);
-
   // Gateway owner or network operator requests Gateway status from Router Manager
   rpc GatewayStatus(GatewayStatusRequest) returns (GatewayStatusResponse);
 

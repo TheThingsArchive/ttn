@@ -1,6 +1,8 @@
 package router
 
 import (
+	"time"
+
 	pb_gateway "github.com/TheThingsNetwork/ttn/api/gateway"
 	"github.com/TheThingsNetwork/ttn/core/types"
 )
@@ -15,6 +17,7 @@ func (r *router) HandleGatewayStatus(gatewayEUI types.GatewayEUI, status *pb_gat
 	}()
 
 	gateway := r.getGateway(gatewayEUI)
+	gateway.LastSeen = time.Now()
 	err = gateway.Status.Update(status)
 	if err != nil {
 		return err
