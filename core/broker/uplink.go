@@ -46,7 +46,8 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) error {
 	base := duplicates[0]
 
 	if base.ProtocolMetadata.GetLorawan() == nil {
-		return errors.New("ttn/broker: Can not handle uplink from non-LoRaWAN device")
+		err = errors.New("ttn/broker: Can not handle uplink from non-LoRaWAN device")
+		return err
 	}
 
 	// LoRaWAN: Unmarshal
@@ -106,6 +107,8 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) error {
 
 	if device.DisableFCntCheck {
 		// TODO: Add warning to message?
+	} else if device.FCntUp == 0 {
+
 	} else if macPayload.FHDR.FCnt <= device.FCntUp || macPayload.FHDR.FCnt-device.FCntUp > maxFCntGap {
 		// Replay attack or FCnt gap too big
 		err = ErrInvalidFCnt
@@ -154,10 +157,12 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) error {
 		return err
 	}
 	if len(announcements) == 0 {
-		return errors.New("ttn/broker: No Handlers")
+		err = errors.New("ttn/broker: No Handlers")
+		return err
 	}
 	if len(announcements) > 1 {
-		return errors.New("ttn/broker: Can't forward to multiple Handlers")
+		err = errors.New("ttn/broker: Can't forward to multiple Handlers")
+		return err
 	}
 
 	var handler chan<- *pb.DeduplicatedUplinkMessage
