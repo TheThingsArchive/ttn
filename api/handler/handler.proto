@@ -24,6 +24,23 @@ message StatusRequest {}
 // message Status is the response to the StatusRequest
 message Status {}
 
+message ApplicationIdentifier {
+  string app_id      = 1;
+}
+
+message Application {
+  string app_id      = 1;
+  string decoder     = 2;
+  string converter   = 3;
+  string validator   = 4;
+}
+
+service ApplicationManager {
+  rpc GetApplication(ApplicationIdentifier) returns (Application);
+  rpc SetApplication(Application) returns (api.Ack);
+  rpc DeleteApplication(ApplicationIdentifier) returns (api.Ack);
+}
+
 // The HandlerManager service provides configuration and monitoring
 // functionality
 service HandlerManager {

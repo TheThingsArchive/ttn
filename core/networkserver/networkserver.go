@@ -22,6 +22,8 @@ import (
 // NetworkServer implements LoRaWAN-specific functionality for TTN
 type NetworkServer interface {
 	core.ComponentInterface
+	core.ManagementInterface
+
 	UsePrefix(prefixBytes []byte, length int) error
 	HandleGetDevices(*pb.DevicesRequest) (*pb.DevicesResponse, error)
 	HandlePrepareActivation(*pb_broker.DeduplicatedDeviceActivationRequest) (*pb_broker.DeduplicatedDeviceActivationRequest, error)

@@ -80,6 +80,7 @@ var brokerCmd = &cobra.Command{
 
 		// Register and Listen
 		broker.RegisterRPC(grpc)
+		broker.RegisterManager(grpc)
 		go grpc.Serve(lis)
 
 		sigChan := make(chan os.Signal)

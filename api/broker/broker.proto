@@ -139,8 +139,15 @@ message Status {
   uint32  connected_handlers = 42;
 }
 
+message ApplicationHandlerRegistration {
+  string app_id      = 1;
+  string handler_id  = 2;
+}
+
 // The BrokerManager service provides configuration and monitoring functionality
 service BrokerManager {
+  // Handler announces new application to Broker
+  rpc  RegisterApplicationHandler(ApplicationHandlerRegistration) returns (api.Ack);
   // Network operator requests Broker status
   rpc  GetStatus(StatusRequest) returns (Status);
 }

@@ -65,6 +65,7 @@ var handlerCmd = &cobra.Command{
 
 		// Register and Listen
 		handler.RegisterRPC(grpc)
+		handler.RegisterManager(grpc)
 		go grpc.Serve(lis)
 
 		sigChan := make(chan os.Signal)

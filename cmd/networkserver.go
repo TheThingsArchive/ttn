@@ -70,6 +70,7 @@ var networkserverCmd = &cobra.Command{
 
 		// Register and Listen
 		networkserver.RegisterRPC(grpc)
+		networkserver.RegisterManager(grpc)
 		go grpc.Serve(lis)
 
 		sigChan := make(chan os.Signal)

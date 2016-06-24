@@ -25,6 +25,10 @@ type ComponentInterface interface {
 	Init(c *Component) error
 }
 
+type ManagementInterface interface {
+	RegisterManager(s *grpc.Server)
+}
+
 // NewComponent creates a new Component
 func NewComponent(ctx log.Interface, serviceName string, announcedAddress string) *Component {
 	go func() {
@@ -114,6 +118,33 @@ type TTNClaims struct {
 	Apps   map[string][]string `json:"apps,omitempty"`
 }
 
+// CanEditApp indicates wheter someone with the claims can manage the given app
+func (c *TTNClaims) CanEditApp(appID string) bool {
+	for id, rights := range c.Apps {
+		if appID == id {
+			for _, right := range rights {
+				if right == "settings" {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
+// ValidateContext gets a token from the context and validates it
+func (c *Component) ValidateContext(ctx context.Context) (*TTNClaims, error) {
+	md, ok := metadata.FromContext(ctx)
+	if !ok {
+		return nil, errors.New("ttn: Could not get metadata")
+	}
+	token, ok := md["token"]
+	if !ok || len(token) < 1 {
+		return nil, errors.New("ttn: Could not get token")
+	}
+	return c.ValidateToken(token[0])
+}
+
 // ValidateToken verifies an OAuth Bearer token
 func (c *Component) ValidateToken(token string) (*TTNClaims, error) {
 	ttnClaims := &TTNClaims{}
@@ -128,7 +159,11 @@ func (c *Component) ValidateToken(token string) (*TTNClaims, error) {
 		if k.Algorithm != token.Header["alg"] {
 			return nil, fmt.Errorf("Expected algorithm %v but got %v", k.Algorithm, token.Header["alg"])
 		}
-		return []byte(k.Key), nil
+		key, err := jwt.ParseRSAPublicKeyFromPEM([]byte(k.Key))
+		if err != nil {
+			return nil, err
+		}
+		return key, nil
 	})
 	if err != nil {
 		return nil, fmt.Errorf("Unable to parse token: %s", err.Error())
@@ -192,14 +227,16 @@ func (c *Component) ServerOptions() []grpc.ServerOption {
 
 // GetContext returns a context for outgoing RPC requests
 func (c *Component) GetContext() context.Context {
-	var id, token string
+	var id, token, netAddress string
 	if c.Identity != nil {
 		id = c.Identity.Id
 		token = c.Identity.Token
+		netAddress = c.Identity.NetAddress
 	}
 	md := metadata.Pairs(
-		"token", token,
 		"id", id,
+		"token", token,
+		"net-address", netAddress,
 	)
 	ctx := metadata.NewContext(context.Background(), md)
 	return ctx

@@ -19,6 +19,7 @@ import (
 
 type Broker interface {
 	core.ComponentInterface
+	core.ManagementInterface
 
 	HandleUplink(uplink *pb.UplinkMessage) error
 	HandleDownlink(downlink *pb.DownlinkMessage) error

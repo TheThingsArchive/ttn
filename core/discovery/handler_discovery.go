@@ -13,10 +13,11 @@ import (
 )
 
 // HandlerCacheTime indicates how long the HandlerDiscovery should cache the services
-var HandlerCacheTime = 30 * time.Minute
+var HandlerCacheTime = 5 * time.Minute
 
 // HandlerDiscovery is used as a client to discover Handlers
 type HandlerDiscovery interface {
+	AddAppID(handlerID, appID string) error
 	ForAppID(appID string) ([]*pb.Announcement, error)
 	Get(id string) (*pb.Announcement, error)
 	All() ([]*pb.Announcement, error)
@@ -111,4 +112,22 @@ func (d *handlerDiscovery) ForAppID(appID string) ([]*pb.Announcement, error) {
 		return []*pb.Announcement{}, nil
 	}
 	return matches, nil
+}
+
+func (d *handlerDiscovery) AddAppID(handlerID, appID string) error {
+	d.cacheLock.Lock()
+	defer d.cacheLock.Unlock()
+	handler, found := d.byID[handlerID]
+	if !found {
+		return errors.New("ttn/discovery: Handler not found")
+	}
+	existing, found := d.byAppID[appID]
+	if found && len(existing) > 0 {
+		if existing[0].Id == handlerID {
+			return nil
+		}
+		return errors.New("ttn/discovery: AppID already registered")
+	}
+	d.byAppID[appID] = []*pb.Announcement{handler}
+	return nil
 }
