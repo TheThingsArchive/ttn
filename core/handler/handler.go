@@ -2,12 +2,10 @@ package handler
 
 import (
 	"fmt"
-	"io"
 	"sync"
 	"time"
 
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 
 	"github.com/TheThingsNetwork/ttn/api"
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
@@ -134,50 +132,39 @@ func (h *handler) associateBroker() error {
 
 	ctx := h.GetContext()
 
-	upStream, err := h.ttnBroker.Subscribe(ctx, &pb_broker.SubscribeRequest{})
-	if err != nil {
-		return err
-	}
-
 	h.downlink = make(chan *pb_broker.DownlinkMessage)
-	downStream, err := h.ttnBroker.Publish(ctx)
-	if err != nil {
-		return err
-	}
 
 	go func() {
 		for {
-			in, err := upStream.Recv()
-			if err != nil && (err == io.EOF ||
-				grpc.Code(err) == codes.Canceled ||
-				grpc.Code(err) == codes.Internal ||
-				grpc.Code(err) == codes.Unauthenticated) {
-				h.Ctx.Fatalf("ttn/handler: Stopping Broker subscribe: %s", err) // TODO: Restart
-				break
-			}
+			upStream, err := h.ttnBroker.Subscribe(ctx, &pb_broker.SubscribeRequest{})
 			if err != nil {
-				h.Ctx.Warnf("ttn/handler: Error in Broker subscribe: %s", err)
 				<-time.After(api.Backoff)
 				continue
 			}
-			go h.HandleUplink(in)
+			for {
+				in, err := upStream.Recv()
+				if err != nil {
+					h.Ctx.Errorf("ttn/handler: Error in Broker subscribe: %s", err)
+					break
+				}
+				go h.HandleUplink(in)
+			}
 		}
 	}()
 
 	go func() {
-		for downlink := range h.downlink {
-			err := downStream.Send(downlink)
-			if err != nil && (err == io.EOF ||
-				grpc.Code(err) == codes.Canceled ||
-				grpc.Code(err) == codes.Internal ||
-				grpc.Code(err) == codes.Unauthenticated) {
-				h.Ctx.Fatalf("ttn/handler: Stopping Broker publish: %s", err) // TODO: Restart
-				break
-			}
+		for {
+			downStream, err := h.ttnBroker.Publish(ctx)
 			if err != nil {
-				h.Ctx.Warnf("ttn/handler: Error in Broker publish: %s", err)
 				<-time.After(api.Backoff)
 				continue
+			}
+			for downlink := range h.downlink {
+				err := downStream.Send(downlink)
+				if err != nil {
+					h.Ctx.Errorf("ttn/handler: Error in Broker publish: %s", err)
+					break
+				}
 			}
 		}
 	}()
