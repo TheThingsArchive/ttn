@@ -58,6 +58,7 @@ func (n *networkServerManager) GetDevice(ctx context.Context, in *pb_lorawan.Dev
 		FCntDown:         dev.FCntDown,
 		DisableFCntCheck: dev.Options.DisableFCntCheck,
 		Uses32BitFCnt:    dev.Options.Uses32BitFCnt,
+		LastSeen:         dev.LastSeen.UnixNano(),
 	}, nil
 }
 

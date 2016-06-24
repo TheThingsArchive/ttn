@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"time"
 
 	"gopkg.in/redis.v3"
 
@@ -121,6 +122,7 @@ func (s *deviceStore) Activate(appEUI types.AppEUI, devEUI types.DevEUI, devAddr
 	if err != nil {
 		return err
 	}
+	dev.LastSeen = time.Now()
 	dev.DevAddr = devAddr
 	dev.NwkSKey = nwkSKey
 	dev.FCntUp = 0
@@ -295,6 +297,7 @@ func (s *redisDeviceStore) Activate(appEUI types.AppEUI, devEUI types.DevEUI, de
 
 	// Update Device
 	dev := &Device{
+		LastSeen: time.Now(),
 		DevAddr:  devAddr,
 		NwkSKey:  nwkSKey,
 		FCntUp:   0,
@@ -302,7 +305,7 @@ func (s *redisDeviceStore) Activate(appEUI types.AppEUI, devEUI types.DevEUI, de
 	}
 
 	// Don't touch Utilization and Options
-	dmap, err := dev.ToStringStringMap("dev_addr", "nwk_s_key", "f_cnt_up", "f_cnt_down")
+	dmap, err := dev.ToStringStringMap("last_seen", "dev_addr", "nwk_s_key", "f_cnt_up", "f_cnt_down")
 
 	// Register Device
 	err = s.client.HMSetMap(key, dmap).Err()

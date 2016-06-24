@@ -67,6 +67,7 @@ func (h *handlerManager) GetDevice(ctx context.Context, in *pb_lorawan.DeviceIde
 		FCntDown:         nsDev.FCntDown,
 		DisableFCntCheck: nsDev.DisableFCntCheck,
 		Uses32BitFCnt:    nsDev.Uses32BitFCnt,
+		LastSeen:         nsDev.LastSeen,
 	}, nil
 }
 
