@@ -73,6 +73,11 @@ func TestSubscribeUnsubscribeDownlink(t *testing.T) {
 	}
 
 	eui := types.GatewayEUI{0, 1, 2, 3, 4, 5, 6, 7}
+	gateway.Deadline = 1 * time.Millisecond
+	gtw := r.getGateway(eui)
+	gtw.Schedule.Sync(0)
+	id, _ := gtw.Schedule.GetOption(5000, 10*1000)
+
 	ch, err := r.SubscribeDownlink(eui)
 	a.So(err, ShouldBeNil)
 
@@ -88,7 +93,6 @@ func TestSubscribeUnsubscribeDownlink(t *testing.T) {
 		wg.Done()
 	}()
 
-	id, _ := r.getGateway(eui).Schedule.GetOption(0, 10*1000)
 	r.HandleDownlink(&pb_broker.DownlinkMessage{
 		Payload: []byte{0x02},
 		DownlinkOption: &pb_broker.DownlinkOption{
@@ -100,7 +104,7 @@ func TestSubscribeUnsubscribeDownlink(t *testing.T) {
 	})
 
 	// Wait for the downlink to arrive
-	<-time.After(5 * time.Millisecond)
+	<-time.After(10 * time.Millisecond)
 
 	err = r.UnsubscribeDownlink(eui)
 	a.So(err, ShouldBeNil)

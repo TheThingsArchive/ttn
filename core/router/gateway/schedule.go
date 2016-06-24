@@ -38,12 +38,12 @@ func NewSchedule(ctx log.Interface) Schedule {
 }
 
 type scheduledItem struct {
-	id        string
-	time      time.Time
-	timestamp uint32
-	length    uint32
-	score     uint
-	payload   *router_pb.DownlinkMessage
+	id         string
+	deadlineAt time.Time
+	timestamp  uint32
+	length     uint32
+	score      uint
+	payload    *router_pb.DownlinkMessage
 }
 
 type schedule struct {
@@ -60,7 +60,7 @@ func (s *schedule) GoString() (str string) {
 	s.RLock()
 	defer s.RUnlock()
 	for _, item := range s.items {
-		str += fmt.Sprintf("%s at %s\n", item.id, item.time)
+		str += fmt.Sprintf("%s at %s\n", item.id, item.deadlineAt)
 	}
 	return
 }
@@ -120,11 +120,11 @@ func (s *schedule) GetOption(timestamp uint32, length uint32) (id string, score 
 	id = s.random.String(32)
 	score = s.getConflicts(timestamp, length)
 	item := &scheduledItem{
-		id:        id,
-		time:      s.realtime(timestamp),
-		timestamp: timestamp,
-		length:    length,
-		score:     score,
+		id:         id,
+		deadlineAt: s.realtime(timestamp).Add(-1 * Deadline),
+		timestamp:  timestamp,
+		length:     length,
+		score:      score,
 	}
 	s.Lock()
 	defer s.Unlock()
@@ -159,10 +159,10 @@ func (s *schedule) Schedule(id string, downlink *router_pb.DownlinkMessage) erro
 			item.length = uint32(time / 1000)
 		}
 
-		if time.Now().Add(Deadline).Before(item.time) {
+		if time.Now().Before(item.deadlineAt) {
 			// Schedule transmission before the Deadline
 			go func() {
-				waitTime := item.time.Sub(time.Now().Add(Deadline))
+				waitTime := item.deadlineAt.Sub(time.Now())
 				ctx.WithField("Remaining", waitTime).Debug("Schedule Downlink")
 				<-time.After(waitTime)
 				if s.downlink != nil {
@@ -170,11 +170,16 @@ func (s *schedule) Schedule(id string, downlink *router_pb.DownlinkMessage) erro
 				}
 			}()
 		} else if s.downlink != nil {
-			// Immediately send it
-			ctx.WithField("Overdue", time.Now().Add(Deadline).Sub(item.time)).Debug("Send Late Downlink")
-			s.downlink <- item.payload
+			overdue := time.Now().Sub(item.deadlineAt)
+			if overdue < Deadline {
+				// Immediately send it
+				ctx.WithField("Overdue", overdue).Warn("Send Late Downlink")
+				s.downlink <- item.payload
+			} else {
+				ctx.WithField("Overdue", overdue).Warn("Discard Late Downlink")
+			}
 		} else {
-			ctx.Debug("Unable to send Downlink")
+			ctx.Warn("Unable to send Downlink")
 		}
 
 		return nil
