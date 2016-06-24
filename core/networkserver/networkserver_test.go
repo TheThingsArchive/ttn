@@ -64,6 +64,8 @@ func TestHandleGetDevices(t *testing.T) {
 		devices: device.NewDeviceStore(),
 	}
 
+	nwkSKey := types.NwkSKey{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8}
+
 	// No Devices
 	devAddr1 := getDevAddr(1, 2, 3, 4)
 	res, err := ns.HandleGetDevices(&pb.DevicesRequest{
@@ -78,7 +80,7 @@ func TestHandleGetDevices(t *testing.T) {
 		DevAddr: getDevAddr(1, 2, 3, 4),
 		AppEUI:  types.AppEUI(getEUI(1, 2, 3, 4, 5, 6, 7, 8)),
 		DevEUI:  types.DevEUI(getEUI(1, 2, 3, 4, 5, 6, 7, 8)),
-		NwkSKey: types.NwkSKey{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8},
+		NwkSKey: nwkSKey,
 		FCntUp:  5,
 	})
 	res, err = ns.HandleGetDevices(&pb.DevicesRequest{
@@ -110,7 +112,7 @@ func TestHandleGetDevices(t *testing.T) {
 		DevAddr: getDevAddr(5, 6, 7, 8),
 		AppEUI:  types.AppEUI(getEUI(5, 6, 7, 8, 1, 2, 3, 4)),
 		DevEUI:  types.DevEUI(getEUI(5, 6, 7, 8, 1, 2, 3, 4)),
-		NwkSKey: types.NwkSKey{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8},
+		NwkSKey: nwkSKey,
 		FCntUp:  5,
 		Options: device.Options{
 			DisableFCntCheck: true,
@@ -129,7 +131,7 @@ func TestHandleGetDevices(t *testing.T) {
 		DevAddr: getDevAddr(2, 2, 3, 4),
 		AppEUI:  types.AppEUI(getEUI(2, 2, 3, 4, 5, 6, 7, 8)),
 		DevEUI:  types.DevEUI(getEUI(2, 2, 3, 4, 5, 6, 7, 8)),
-		NwkSKey: types.NwkSKey{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8},
+		NwkSKey: nwkSKey,
 		FCntUp:  5 + (2 << 16),
 		Options: device.Options{
 			Uses32BitFCnt: true,
@@ -147,7 +149,7 @@ func TestHandleGetDevices(t *testing.T) {
 		DevAddr: devAddr3,
 		AppEUI:  types.AppEUI(getEUI(2, 2, 3, 4, 5, 6, 7, 8)),
 		DevEUI:  types.DevEUI(getEUI(2, 2, 3, 4, 5, 6, 7, 8)),
-		NwkSKey: types.NwkSKey{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8},
+		NwkSKey: nwkSKey,
 		FCntUp:  (2 << 16) - 1,
 		Options: device.Options{
 			Uses32BitFCnt: true,

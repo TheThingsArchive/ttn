@@ -51,7 +51,7 @@ type scheduledItem struct {
 
 type schedule struct {
 	sync.RWMutex
-	random   random.TTNRandom
+	random   *random.TTNRandom
 	ctx      log.Interface
 	active   bool
 	offset   int64

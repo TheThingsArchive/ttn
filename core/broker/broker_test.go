@@ -40,6 +40,10 @@ func (d *mockHandlerDiscovery) All() (a []*pb_discovery.Announcement, err error)
 	return []*pb_discovery.Announcement{d.a}, nil
 }
 
+func (d *mockHandlerDiscovery) AddAppID(_, _ string) error {
+	return nil
+}
+
 type mockNetworkServer struct {
 	devices []*pb_lorawan.Device
 }

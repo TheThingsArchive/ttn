@@ -26,8 +26,8 @@ type TTNRandom struct {
 	src *rand.Rand
 }
 
-func New() TTNRandom {
-	return TTNRandom{
+func New() *TTNRandom {
+	return &TTNRandom{
 		src: rand.New(rand.NewSource(time.Now().UnixNano())),
 	}
 }
@@ -35,7 +35,7 @@ func New() TTNRandom {
 var global = New()
 
 // String returns random string of length n
-func (r TTNRandom) String(n int) string {
+func (r *TTNRandom) String(n int) string {
 	r.Lock()
 	defer r.Unlock()
 	b := make([]byte, n)
@@ -56,7 +56,7 @@ func (r TTNRandom) String(n int) string {
 }
 
 // Token generate a random 2-bytes token
-func (r TTNRandom) Token() []byte {
+func (r *TTNRandom) Token() []byte {
 	r.Lock()
 	defer r.Unlock()
 	b := make([]byte, 4)
@@ -65,7 +65,7 @@ func (r TTNRandom) Token() []byte {
 }
 
 // Rssi generates RSSI signal between -120 < rssi < 0
-func (r TTNRandom) Rssi() int32 {
+func (r *TTNRandom) Rssi() int32 {
 	r.Lock()
 	defer r.Unlock()
 	// Generate RSSI. Tend towards generating great signal strength.
@@ -98,14 +98,14 @@ var usFreqs = []float32{
 }
 
 // Freq generates a frequency between 865.0 and 870.0 Mhz
-func (r TTNRandom) Freq() float32 {
+func (r *TTNRandom) Freq() float32 {
 	r.Lock()
 	defer r.Unlock()
 	return usFreqs[r.src.Intn(len(usFreqs))]
 }
 
 // Datr generates Datr for instance: SF4BW125
-func (r TTNRandom) Datr() string {
+func (r *TTNRandom) Datr() string {
 	r.Lock()
 	defer r.Unlock()
 	// Spread Factor from 12 to 7
@@ -122,7 +122,7 @@ func (r TTNRandom) Datr() string {
 }
 
 // Codr generates Codr for instance: 4/6
-func (r TTNRandom) Codr() string {
+func (r *TTNRandom) Codr() string {
 	r.Lock()
 	defer r.Unlock()
 	d := r.src.Intn(4) + 5
@@ -130,7 +130,7 @@ func (r TTNRandom) Codr() string {
 }
 
 // Lsnr generates LoRa SNR ratio in db. Tend towards generating good ratio with low noise
-func (r TTNRandom) Lsnr() float32 {
+func (r *TTNRandom) Lsnr() float32 {
 	r.Lock()
 	defer r.Unlock()
 	x := float64(r.src.Int31()) * float64(2e-9)
@@ -138,7 +138,7 @@ func (r TTNRandom) Lsnr() float32 {
 }
 
 // Bytes generates a random byte slice of length n
-func (r TTNRandom) Bytes(n int) []byte {
+func (r *TTNRandom) Bytes(n int) []byte {
 	r.Lock()
 	defer r.Unlock()
 	p := make([]byte, n)
