@@ -163,7 +163,7 @@ func TestTimeoutExceeded(t *testing.T) {
 	a := New(t)
 	start := time.Now()
 	functions := &Functions{
-		Decoder: `function(payload){ while (true) { console.log('ok') } }`,
+		Decoder: `function(payload){ while (true) { } }`,
 	}
 
 	go func() {
