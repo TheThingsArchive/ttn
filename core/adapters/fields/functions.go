@@ -24,6 +24,9 @@ type Functions struct {
 	Validator string
 }
 
+// timeOut is the maximum allowed time a payload function is allowed to run
+var timeOut = 2 * time.Second
+
 // Decode decodes the payload using the Decoder function into a map
 func (f *Functions) Decode(payload []byte) (map[string]interface{}, error) {
 	if f.Decoder == "" {
@@ -32,7 +35,7 @@ func (f *Functions) Decode(payload []byte) (map[string]interface{}, error) {
 
 	vm := otto.New()
 	vm.Set("payload", payload)
-	value, err := vm.Run(fmt.Sprintf("(%s)(payload)", f.Decoder))
+	value, err := RunUnsafeCode(vm, fmt.Sprintf("(%s)(payload)", f.Decoder), timeOut)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +58,7 @@ func (f *Functions) Convert(data map[string]interface{}) (map[string]interface{}
 
 	vm := otto.New()
 	vm.Set("data", data)
-	value, err := vm.Run(fmt.Sprintf("(%s)(data)", f.Converter))
+	value, err := RunUnsafeCode(vm, fmt.Sprintf("(%s)(data)", f.Converter), timeOut)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +80,7 @@ func (f *Functions) Validate(data map[string]interface{}) (bool, error) {
 
 	vm := otto.New()
 	vm.Set("data", data)
-	value, err := vm.Run(fmt.Sprintf("(%s)(data)", f.Validator))
+	value, err := RunUnsafeCode(vm, fmt.Sprintf("(%s)(data)", f.Validator), timeOut)
 	if err != nil {
 		return false, err
 	}
