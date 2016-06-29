@@ -25,7 +25,7 @@ type Functions struct {
 }
 
 // timeOut is the maximum allowed time a payload function is allowed to run
-var timeOut = 2 * time.Second
+var timeOut = time.Second
 
 // Decode decodes the payload using the Decoder function into a map
 func (f *Functions) Decode(payload []byte) (map[string]interface{}, error) {

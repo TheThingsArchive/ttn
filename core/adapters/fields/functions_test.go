@@ -172,6 +172,6 @@ func TestTimeoutExceeded(t *testing.T) {
 	}()
 
 	_, _, err := functions.Process([]byte{0})
-	a.So(time.Since(start), ShouldAlmostEqual, 2*time.Second, 0.5e9)
+	a.So(time.Since(start), ShouldAlmostEqual, time.Second, 0.5e9)
 	a.So(err, ShouldNotBeNil)
 }
