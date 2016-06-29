@@ -6,6 +6,7 @@ package fields
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/robertkrimen/otto"
 )
@@ -102,4 +103,33 @@ func (f *Functions) Process(payload []byte) (map[string]interface{}, bool, error
 
 	valid, err := f.Validate(converted)
 	return converted, valid, err
+}
+
+var timeOutExceeded = errors.New("Code has been running to long")
+
+func RunUnsafeCode(vm *otto.Otto, code string, timeOut time.Duration) (value otto.Value, err error) {
+	start := time.Now()
+	defer func() {
+		duration := time.Since(start)
+		if caught := recover(); caught != nil {
+			if caught == timeOutExceeded {
+				value = otto.Value{}
+				err = fmt.Errorf("Interrupted javascript execution after %v", duration)
+				return
+			}
+			// if this is not the our timeout interrupt, raise the panic again
+			// so someone else can handle it
+			panic(caught)
+		}
+	}()
+
+	vm.Interrupt = make(chan func(), 1)
+
+	go func() {
+		time.Sleep(timeOut)
+		vm.Interrupt <- func() {
+			panic(timeOutExceeded)
+		}
+	}()
+	return vm.Run(code)
 }
