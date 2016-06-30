@@ -4,7 +4,9 @@
 package fields
 
 import (
+	"errors"
 	"testing"
+	"time"
 
 	. "github.com/smartystreets/assertions"
 )
@@ -150,5 +152,26 @@ func TestProcessInvalidFunction(t *testing.T) {
 		Validator: `function(data) { return "Hello" }`,
 	}
 	_, _, err = functions.Process([]byte{40, 110})
+	a.So(err, ShouldNotBeNil)
+}
+
+func TestTimeoutExceeded(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+
+	a := New(t)
+	start := time.Now()
+	functions := &Functions{
+		Decoder: `function(payload){ while (true) { } }`,
+	}
+
+	go func() {
+		time.Sleep(4 * time.Second)
+		panic(errors.New("Payload function was not interrupted"))
+	}()
+
+	_, _, err := functions.Process([]byte{0})
+	a.So(time.Since(start), ShouldAlmostEqual, time.Second, 0.5e9)
 	a.So(err, ShouldNotBeNil)
 }

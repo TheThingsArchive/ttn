@@ -6,6 +6,7 @@ package fields
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/robertkrimen/otto"
 )
@@ -23,6 +24,9 @@ type Functions struct {
 	Validator string
 }
 
+// timeOut is the maximum allowed time a payload function is allowed to run
+var timeOut = time.Second
+
 // Decode decodes the payload using the Decoder function into a map
 func (f *Functions) Decode(payload []byte) (map[string]interface{}, error) {
 	if f.Decoder == "" {
@@ -31,7 +35,7 @@ func (f *Functions) Decode(payload []byte) (map[string]interface{}, error) {
 
 	vm := otto.New()
 	vm.Set("payload", payload)
-	value, err := vm.Run(fmt.Sprintf("(%s)(payload)", f.Decoder))
+	value, err := RunUnsafeCode(vm, fmt.Sprintf("(%s)(payload)", f.Decoder), timeOut)
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +58,7 @@ func (f *Functions) Convert(data map[string]interface{}) (map[string]interface{}
 
 	vm := otto.New()
 	vm.Set("data", data)
-	value, err := vm.Run(fmt.Sprintf("(%s)(data)", f.Converter))
+	value, err := RunUnsafeCode(vm, fmt.Sprintf("(%s)(data)", f.Converter), timeOut)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +80,7 @@ func (f *Functions) Validate(data map[string]interface{}) (bool, error) {
 
 	vm := otto.New()
 	vm.Set("data", data)
-	value, err := vm.Run(fmt.Sprintf("(%s)(data)", f.Validator))
+	value, err := RunUnsafeCode(vm, fmt.Sprintf("(%s)(data)", f.Validator), timeOut)
 	if err != nil {
 		return false, err
 	}
@@ -102,4 +106,33 @@ func (f *Functions) Process(payload []byte) (map[string]interface{}, bool, error
 
 	valid, err := f.Validate(converted)
 	return converted, valid, err
+}
+
+var timeOutExceeded = errors.New("Code has been running to long")
+
+func RunUnsafeCode(vm *otto.Otto, code string, timeOut time.Duration) (value otto.Value, err error) {
+	start := time.Now()
+	defer func() {
+		duration := time.Since(start)
+		if caught := recover(); caught != nil {
+			if caught == timeOutExceeded {
+				value = otto.Value{}
+				err = fmt.Errorf("Interrupted javascript execution after %v", duration)
+				return
+			}
+			// if this is not the our timeout interrupt, raise the panic again
+			// so someone else can handle it
+			panic(caught)
+		}
+	}()
+
+	vm.Interrupt = make(chan func(), 1)
+
+	go func() {
+		time.Sleep(timeOut)
+		vm.Interrupt <- func() {
+			panic(timeOutExceeded)
+		}
+	}()
+	return vm.Run(code)
 }
