@@ -4,3 +4,6 @@
 [submodule "vendor/google.golang.org/grpc"]
 	path = vendor/google.golang.org/grpc
 	url = https://github.com/grpc/grpc-go.git
+[submodule "vendor/github.com/jwt-go"]
+	path = vendor/github.com/jwt-go
+	url = https://github.com/dgrijalva/jwt-go.git
