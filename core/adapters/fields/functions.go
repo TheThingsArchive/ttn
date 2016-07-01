@@ -45,7 +45,11 @@ func (f *Functions) Decode(payload []byte) (map[string]interface{}, error) {
 	}
 
 	v, _ := value.Export()
-	return v.(map[string]interface{}), nil
+	m, ok := v.(map[string]interface{})
+	if !ok {
+		return nil, errors.New("Decoder does not return an object")
+	}
+	return m, nil
 }
 
 // Convert converts the values in the specified map to a another map using the
@@ -68,7 +72,12 @@ func (f *Functions) Convert(data map[string]interface{}) (map[string]interface{}
 	}
 
 	v, _ := value.Export()
-	return v.(map[string]interface{}), nil
+	m, ok := v.(map[string]interface{})
+	if !ok {
+		return nil, errors.New("Decoder does not return an object")
+	}
+
+	return m, nil
 }
 
 // Validate validates the values in the specified map using the Validator
