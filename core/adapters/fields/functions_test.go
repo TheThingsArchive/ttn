@@ -170,6 +170,15 @@ func TestProcessInvalidFunction(t *testing.T) {
 	}
 	_, _, err = functions.Process([]byte{40, 110})
 	a.So(err, ShouldNotBeNil)
+
+	// Invalid Object (Arrays are Objects too), this should work error because
+	// we're expecting a Boolean
+	functions = &Functions{
+		Decoder:   `function(payload) { return { temperature: payload[0] } }`,
+		Validator: `function(payload) { return [1] }`,
+	}
+	_, _, err = functions.Process([]byte{40, 110})
+	a.So(err, ShouldNotBeNil)
 }
 
 func TestTimeoutExceeded(t *testing.T) {
