@@ -153,6 +153,23 @@ func TestProcessInvalidFunction(t *testing.T) {
 	}
 	_, _, err = functions.Process([]byte{40, 110})
 	a.So(err, ShouldNotBeNil)
+
+	// Invalid Object (Arrays are Objects too, but don't jive well with
+	// map[string]interface{})
+	functions = &Functions{
+		Decoder: `function(payload) { return [1] }`,
+	}
+	_, _, err = functions.Process([]byte{40, 110})
+	a.So(err, ShouldNotBeNil)
+
+	// Invalid Object (Arrays are Objects too, but don't jive well with
+	// map[string]interface{})
+	functions = &Functions{
+		Decoder:   `function(payload) { return { temperature: payload[0] } }`,
+		Converter: `function(payload) { return [1] }`,
+	}
+	_, _, err = functions.Process([]byte{40, 110})
+	a.So(err, ShouldNotBeNil)
 }
 
 func TestTimeoutExceeded(t *testing.T) {
