@@ -80,10 +80,11 @@ func (addr DevAddr) IsEmpty() bool {
 	return addr == empty
 }
 
-var prefix = []byte{0, 0, 0, 0}
+// ABPEUIPrefix is the prefix denoting a prefixed dev address
+var ABPEUIPrefix = []byte{0, 0, 0, 0}
 
 func (addr DevAddr) ToEUI() DevEUI {
 	var devEUI DevEUI
-	devEUI.UnmarshalBinary(append(prefix, addr.Bytes()...))
+	devEUI.UnmarshalBinary(append(ABPEUIPrefix, addr.Bytes()...))
 	return devEUI
 }
