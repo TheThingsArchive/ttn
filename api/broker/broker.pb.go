@@ -51,7 +51,7 @@ var _ = math.Inf
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the proto package it is being compiled against.
-const _ = proto.ProtoPackageIsVersion2
+const _ = proto.ProtoPackageIsVersion1
 
 type DownlinkOption struct {
 	Identifier     string                                                 `protobuf:"bytes,1,opt,name=identifier,proto3" json:"identifier,omitempty"`
@@ -719,6 +719,7 @@ var _Broker_serviceDesc = grpc.ServiceDesc{
 			ClientStreams: true,
 		},
 	},
+	Metadata: fileDescriptorBroker,
 }
 
 // Client API for BrokerManager service
@@ -818,7 +819,8 @@ var _BrokerManager_serviceDesc = grpc.ServiceDesc{
 			Handler:    _BrokerManager_GetStatus_Handler,
 		},
 	},
-	Streams: []grpc.StreamDesc{},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: fileDescriptorBroker,
 }
 
 func (m *DownlinkOption) Marshal() (data []byte, err error) {

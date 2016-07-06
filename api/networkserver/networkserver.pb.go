@@ -41,7 +41,7 @@ var _ = math.Inf
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the proto package it is being compiled against.
-const _ = proto.ProtoPackageIsVersion2
+const _ = proto.ProtoPackageIsVersion1
 
 type DevicesRequest struct {
 	DevAddr *github_com_TheThingsNetwork_ttn_core_types.DevAddr `protobuf:"bytes,1,opt,name=dev_addr,json=devAddr,proto3,customtype=github.com/TheThingsNetwork/ttn/core/types.DevAddr" json:"dev_addr,omitempty"`
@@ -313,7 +313,8 @@ var _NetworkServer_serviceDesc = grpc.ServiceDesc{
 			Handler:    _NetworkServer_Downlink_Handler,
 		},
 	},
-	Streams: []grpc.StreamDesc{},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: fileDescriptorNetworkserver,
 }
 
 // Client API for NetworkServerManager service
@@ -376,7 +377,8 @@ var _NetworkServerManager_serviceDesc = grpc.ServiceDesc{
 			Handler:    _NetworkServerManager_GetStatus_Handler,
 		},
 	},
-	Streams: []grpc.StreamDesc{},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: fileDescriptorNetworkserver,
 }
 
 func (m *DevicesRequest) Marshal() (data []byte, err error) {

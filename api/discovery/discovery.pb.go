@@ -36,7 +36,7 @@ var _ = math.Inf
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the proto package it is being compiled against.
-const _ = proto.ProtoPackageIsVersion2
+const _ = proto.ProtoPackageIsVersion1
 
 type Metadata_Key int32
 
@@ -275,7 +275,8 @@ var _Discovery_serviceDesc = grpc.ServiceDesc{
 			Handler:    _Discovery_Get_Handler,
 		},
 	},
-	Streams: []grpc.StreamDesc{},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: fileDescriptorDiscovery,
 }
 
 // Client API for DiscoveryManager service
@@ -305,6 +306,7 @@ var _DiscoveryManager_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*DiscoveryManagerServer)(nil),
 	Methods:     []grpc.MethodDesc{},
 	Streams:     []grpc.StreamDesc{},
+	Metadata:    fileDescriptorDiscovery,
 }
 
 func (m *Metadata) Marshal() (data []byte, err error) {

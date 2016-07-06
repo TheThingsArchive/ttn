@@ -37,7 +37,7 @@ var _ = math.Inf
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the proto package it is being compiled against.
-const _ = proto.ProtoPackageIsVersion2
+const _ = proto.ProtoPackageIsVersion1
 
 type GetApplicationsCollectorReq struct {
 }
@@ -263,7 +263,8 @@ var _CollectorManager_serviceDesc = grpc.ServiceDesc{
 			Handler:    _CollectorManager_RemoveApplication_Handler,
 		},
 	},
-	Streams: []grpc.StreamDesc{},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: fileDescriptorCollector,
 }
 
 func (m *GetApplicationsCollectorReq) Marshal() (data []byte, err error) {

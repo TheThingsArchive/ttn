@@ -33,7 +33,7 @@ var _ = math.Inf
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the proto package it is being compiled against.
-const _ = proto.ProtoPackageIsVersion2
+const _ = proto.ProtoPackageIsVersion1
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ context.Context
@@ -339,6 +339,7 @@ var _Monitoring_serviceDesc = grpc.ServiceDesc{
 			ClientStreams: true,
 		},
 	},
+	Metadata: fileDescriptorNoc,
 }
 
 var fileDescriptorNoc = []byte{
