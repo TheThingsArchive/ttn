@@ -79,3 +79,11 @@ var empty DevAddr
 func (addr DevAddr) IsEmpty() bool {
 	return addr == empty
 }
+
+var prefix = []byte{0, 0, 0, 0}
+
+func (addr DevAddr) ToEUI() DevEUI {
+	var devEUI DevEUI
+	devEUI.UnmarshalBinary(append(prefix, addr.Bytes()...))
+	return devEUI
+}
