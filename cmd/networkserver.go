@@ -43,6 +43,8 @@ var networkserverCmd = &cobra.Command{
 			DB:       int64(viper.GetInt("networkserver.redis-db")),
 		})
 
+		connectRedis(client)
+
 		// Component
 		component := core.NewComponent(ctx, "networkserver", fmt.Sprintf("%s:%d", viper.GetString("networkserver.server-address-announce"), viper.GetInt("networkserver.server-port")))
 

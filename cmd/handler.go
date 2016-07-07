@@ -40,6 +40,8 @@ var handlerCmd = &cobra.Command{
 			DB:       int64(viper.GetInt("handler.redis-db")),
 		})
 
+		connectRedis(client)
+
 		// Component
 		component := core.NewComponent(ctx, "handler", fmt.Sprintf("%s:%d", viper.GetString("handler.server-address-announce"), viper.GetInt("handler.server-port")))
 

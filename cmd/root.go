@@ -8,6 +8,9 @@ import (
 	"os"
 	"path"
 	"strings"
+	"time"
+
+	"gopkg.in/redis.v3"
 
 	cliHandler "github.com/TheThingsNetwork/ttn/utils/cli/handler"
 	"github.com/apex/log"
@@ -97,4 +100,23 @@ func initConfig() {
 	if err := viper.ReadInConfig(); err == nil {
 		fmt.Println("Using config file:", viper.ConfigFileUsed())
 	}
+}
+
+var RedisConnectRetries = 10
+var RedisConnectRetryDelay = 1 * time.Second
+
+func connectRedis(client *redis.Client) error {
+	var err error
+	for retries := 0; retries < RedisConnectRetries; retries++ {
+		_, err = client.Ping().Result()
+		if err == nil {
+			break
+		}
+		<-time.After(RedisConnectRetryDelay)
+	}
+	if err != nil {
+		client.Close()
+		return err
+	}
+	return nil
 }

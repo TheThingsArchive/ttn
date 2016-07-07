@@ -45,6 +45,8 @@ var brokerCmd = &cobra.Command{
 			DB:       int64(viper.GetInt("broker.redis-db")),
 		})
 
+		connectRedis(client)
+
 		// Component
 		component := core.NewComponent(ctx, "broker", fmt.Sprintf("%s:%d", viper.GetString("broker.server-address-announce"), viper.GetInt("broker.server-port")))
 
