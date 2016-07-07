@@ -89,7 +89,6 @@ clean:
 	[ -d $(RELEASE_DIR) ] && rm -rf $(RELEASE_DIR) || [ ! -d $(RELEASE_DIR) ]
 	([ -d $(TEMP_COVER_DIR) ] && rm -rf $(TEMP_COVER_DIR)) || [ ! -d $(TEMP_COVER_DIR) ]
 	([ -f $(COVER_FILE) ] && rm $(COVER_FILE)) || [ ! -d $(COVER_FILE) ]
-	find ./api -name '*.pb.go' | xargs rm -f
 
 build: $(RELEASE_DIR)/$(ttnbin) $(RELEASE_DIR)/$(ttnctlbin)
 
