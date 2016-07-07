@@ -1,3 +1,6 @@
 [submodule "vendor/github.com/brocaar/lorawan"]
 	path = vendor/github.com/brocaar/lorawan
 	url = https://github.com/brocaar/lorawan.git
+[submodule "vendor/github.com/dgrijalva/jwt-go"]
+	path = vendor/github.com/dgrijalva/jwt-go
+	url = https://github.com/dgrijalva/jwt-go.git

@@ -4,7 +4,9 @@
 package handler
 
 import (
+	"errors"
 	"testing"
+	"time"
 
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/mqtt"
@@ -219,5 +221,52 @@ func TestProcessInvalidFunction(t *testing.T) {
 		Validator: `function(data) { return "Hello" }`,
 	}
 	_, _, err = functions.Process([]byte{40, 110})
+	a.So(err, ShouldNotBeNil)
+
+	// Invalid Object (Arrays are Objects too, but don't jive well with
+	// map[string]interface{})
+	functions = &Functions{
+		Decoder: `function(payload) { return [1] }`,
+	}
+	_, _, err = functions.Process([]byte{40, 110})
+	a.So(err, ShouldNotBeNil)
+
+	// Invalid Object (Arrays are Objects too, but don't jive well with
+	// map[string]interface{})
+	functions = &Functions{
+		Decoder:   `function(payload) { return { temperature: payload[0] } }`,
+		Converter: `function(payload) { return [1] }`,
+	}
+	_, _, err = functions.Process([]byte{40, 110})
+	a.So(err, ShouldNotBeNil)
+
+	// Invalid Object (Arrays are Objects too), this should work error because
+	// we're expecting a Boolean
+	functions = &Functions{
+		Decoder:   `function(payload) { return { temperature: payload[0] } }`,
+		Validator: `function(payload) { return [1] }`,
+	}
+	_, _, err = functions.Process([]byte{40, 110})
+	a.So(err, ShouldNotBeNil)
+}
+
+func TestTimeoutExceeded(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+
+	a := New(t)
+	start := time.Now()
+	functions := &Functions{
+		Decoder: `function(payload){ while (true) { } }`,
+	}
+
+	go func() {
+		time.Sleep(4 * time.Second)
+		panic(errors.New("Payload function was not interrupted"))
+	}()
+
+	_, _, err := functions.Process([]byte{0})
+	a.So(time.Since(start), ShouldAlmostEqual, time.Second, 0.5e9)
 	a.So(err, ShouldNotBeNil)
 }
