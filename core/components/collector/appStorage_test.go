@@ -11,7 +11,7 @@ import (
 )
 
 func createStorage() AppStorage {
-	storage, err := ConnectRedis("localhost:6379", 0)
+	storage, err := ConnectRedis("localhost:6379", 1)
 	if err != nil {
 		panic(err)
 	}
@@ -21,11 +21,11 @@ func createStorage() AppStorage {
 func TestConnect(t *testing.T) {
 	a := New(t)
 
-	c, err := ConnectRedis("localhost:6379", 0)
+	c, err := ConnectRedis("localhost:6379", 1)
 	a.So(err, ShouldBeNil)
 	defer c.Close()
 
-	_, err = ConnectRedis("", 0)
+	_, err = ConnectRedis("", 1)
 	a.So(err, ShouldNotBeNil)
 }
 

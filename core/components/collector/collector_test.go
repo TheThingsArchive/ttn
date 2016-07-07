@@ -19,7 +19,7 @@ type mockStorage struct {
 func TestCollection(t *testing.T) {
 	a := New(t)
 
-	appStorage, err := ConnectRedis("localhost:6379", 0)
+	appStorage, err := ConnectRedis("localhost:6379", 1)
 	if err != nil {
 		panic(err)
 	}
