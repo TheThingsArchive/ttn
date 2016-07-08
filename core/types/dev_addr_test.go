@@ -62,4 +62,8 @@ func TestDevAddr(t *testing.T) {
 	var empty DevAddr
 	a.So(empty.IsEmpty(), ShouldEqual, true)
 	a.So(addr.IsEmpty(), ShouldEqual, false)
+
+	// ToEUI
+	eui := DevEUI{0, 0, 0, 0, 1, 2, 254, 255}
+	a.So(addr.ToEUI(), ShouldEqual, eui)
 }
