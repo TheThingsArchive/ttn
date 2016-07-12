@@ -8,6 +8,7 @@ import (
 	"time"
 
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
+	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	pb "github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/apex/log"
@@ -49,6 +50,23 @@ func (r *router) HandleUplink(gatewayEUI types.GatewayEUI, uplink *pb.UplinkMess
 			GatewayMetadata:  uplink.GatewayMetadata,
 		})
 		return err
+	}
+
+	if lorawan := uplink.ProtocolMetadata.GetLorawan(); lorawan != nil {
+		ctx = ctx.WithField("Modulation", lorawan.Modulation.String())
+		if lorawan.Modulation == pb_lorawan.Modulation_LORA {
+			ctx = ctx.WithField("DataRate", lorawan.DataRate)
+		} else {
+			ctx = ctx.WithField("BitRate", lorawan.BitRate)
+		}
+	}
+
+	if gateway := uplink.GatewayMetadata; gateway != nil {
+		ctx = ctx.WithFields(log.Fields{
+			"Frequency": gateway.Frequency,
+			"RSSI":      gateway.Rssi,
+			"SNR":       gateway.Snr,
+		})
 	}
 
 	macPayload, ok := phyPayload.MACPayload.(*lorawan.MACPayload)
