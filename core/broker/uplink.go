@@ -82,13 +82,18 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) error {
 	}
 	ctx = ctx.WithField("DevAddrResults", len(getDevicesResp.Results))
 
+	// Sort by FCntUp to optimize the number of MIC checks
+	sort.Sort(ByFCntUp(getDevicesResp.Results))
+
 	// Find AppEUI/DevEUI through MIC check
 	var device *pb_lorawan.Device
+	var micChecks int
 	for _, candidate := range getDevicesResp.Results {
 		nwkSKey := lorawan.AES128Key(*candidate.NwkSKey)
 		if candidate.Uses32BitFCnt {
 			macPayload.FHDR.FCnt = fcnt.GetFull(macPayload.FHDR.FCnt, uint16(candidate.FCntUp))
 		}
+		micChecks++
 		ok, err = phyPayload.ValidateMIC(nwkSKey)
 		if err != nil {
 			return err
@@ -103,9 +108,10 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) error {
 		return err
 	}
 	ctx = ctx.WithFields(log.Fields{
-		"DevEUI": device.DevEui,
-		"AppEUI": device.AppEui,
-		"AppID":  device.AppId,
+		"MICChecks": micChecks,
+		"DevEUI":    device.DevEui,
+		"AppEUI":    device.AppEui,
+		"AppID":     device.AppId,
 	})
 
 	if device.DisableFCntCheck {
@@ -198,3 +204,10 @@ func selectBestDownlink(options []*pb.DownlinkOption) *pb.DownlinkOption {
 	sort.Sort(ByScore(options))
 	return options[0]
 }
+
+// ByFCntUp implements sort.Interface for []*pb_lorawan.Device based on FCnt
+type ByFCntUp []*pb_lorawan.Device
+
+func (a ByFCntUp) Len() int           { return len(a) }
+func (a ByFCntUp) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a ByFCntUp) Less(i, j int) bool { return a[i].FCntUp < a[j].FCntUp }

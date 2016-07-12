@@ -68,6 +68,7 @@ func TestHandleUplink(t *testing.T) {
 	a.So(err, ShouldEqual, ErrNotFound)
 
 	devEUI := types.DevEUI{1, 2, 3, 4, 5, 6, 7, 8}
+	wrongDevEUI := types.DevEUI{1, 2, 3, 4, 5, 6, 7, 9}
 	appEUI := types.AppEUI{1, 2, 3, 4, 5, 6, 7, 8}
 	appID := "AppID-1"
 	nwkSKey := types.NwkSKey{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8}
@@ -81,6 +82,13 @@ func TestHandleUplink(t *testing.T) {
 		uplinkDeduplicator: NewDeduplicator(10 * time.Millisecond),
 		ns: &mockNetworkServer{
 			devices: []*pb_lorawan.Device{
+				&pb_lorawan.Device{
+					DevEui:  &wrongDevEUI,
+					AppEui:  &appEUI,
+					AppId:   appID,
+					NwkSKey: &nwkSKey,
+					FCntUp:  4,
+				},
 				&pb_lorawan.Device{
 					DevEui:  &devEUI,
 					AppEui:  &appEUI,
