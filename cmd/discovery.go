@@ -28,9 +28,9 @@ var discoveryCmd = &cobra.Command{
 	Long:  ``,
 	PreRun: func(cmd *cobra.Command, args []string) {
 		ctx.WithFields(log.Fields{
-			"server":   fmt.Sprintf("%s:%d", viper.GetString("discovery.server-address"), viper.GetInt("discovery.server-port")),
-			"database": fmt.Sprintf("%s/%d", viper.GetString("discovery.redis-address"), viper.GetInt("discovery.redis-db")),
-		}).Info("Using Configuration")
+			"Server":   fmt.Sprintf("%s:%d", viper.GetString("discovery.server-address"), viper.GetInt("discovery.server-port")),
+			"Database": fmt.Sprintf("%s/%d", viper.GetString("discovery.redis-address"), viper.GetInt("discovery.redis-db")),
+		}).Info("Initializing Discovery")
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx.Info("Starting")
@@ -80,9 +80,7 @@ func init() {
 	viper.BindPFlag("discovery.redis-db", discoveryCmd.Flags().Lookup("redis-db"))
 
 	discoveryCmd.Flags().String("server-address", "0.0.0.0", "The IP address to listen for communication")
-	discoveryCmd.Flags().String("server-address-announce", "localhost", "The public IP address to announce")
 	discoveryCmd.Flags().Int("server-port", 1900, "The port for communication")
 	viper.BindPFlag("discovery.server-address", discoveryCmd.Flags().Lookup("server-address"))
-	viper.BindPFlag("discovery.server-address-announce", discoveryCmd.Flags().Lookup("server-address-announce"))
 	viper.BindPFlag("discovery.server-port", discoveryCmd.Flags().Lookup("server-port"))
 }

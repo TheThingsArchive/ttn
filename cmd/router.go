@@ -26,8 +26,9 @@ var routerCmd = &cobra.Command{
 	Long:  ``,
 	PreRun: func(cmd *cobra.Command, args []string) {
 		ctx.WithFields(log.Fields{
-			"server": fmt.Sprintf("%s:%d", viper.GetString("router.server-address"), viper.GetInt("router.server-port")),
-		}).Info("Using Configuration")
+			"Server":   fmt.Sprintf("%s:%d", viper.GetString("router.server-address"), viper.GetInt("router.server-port")),
+			"Announce": fmt.Sprintf("%s:%d", viper.GetString("router.server-address-announce"), viper.GetInt("router.server-port")),
+		}).Info("Initializing Router")
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx.Info("Starting")

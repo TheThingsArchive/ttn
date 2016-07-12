@@ -27,8 +27,12 @@ var handlerCmd = &cobra.Command{
 	Long:  ``,
 	PreRun: func(cmd *cobra.Command, args []string) {
 		ctx.WithFields(log.Fields{
-			"server": fmt.Sprintf("%s:%d", viper.GetString("handler.server-address"), viper.GetInt("handler.server-port")),
-		}).Info("Using Configuration")
+			"Server":     fmt.Sprintf("%s:%d", viper.GetString("handler.server-address"), viper.GetInt("handler.server-port")),
+			"Announce":   fmt.Sprintf("%s:%d", viper.GetString("handler.server-address-announce"), viper.GetInt("handler.server-port")),
+			"Database":   fmt.Sprintf("%s/%d", viper.GetString("handler.redis-address"), viper.GetInt("handler.redis-db")),
+			"TTNbroker":  viper.GetString("handler.ttn-broker"),
+			"MQTTbroker": viper.GetString("handler.mqtt-broker"),
+		}).Info("Initializing Handler")
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx.Info("Starting")

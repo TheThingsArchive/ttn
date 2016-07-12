@@ -32,8 +32,13 @@ var brokerCmd = &cobra.Command{
 	Long:  ``,
 	PreRun: func(cmd *cobra.Command, args []string) {
 		ctx.WithFields(log.Fields{
-			"server": fmt.Sprintf("%s:%d", viper.GetString("broker.server-address"), viper.GetInt("broker.server-port")),
-		}).Info("Using Configuration")
+			"Server":             fmt.Sprintf("%s:%d", viper.GetString("broker.server-address"), viper.GetInt("broker.server-port")),
+			"Announce":           fmt.Sprintf("%s:%d", viper.GetString("broker.server-address-announce"), viper.GetInt("broker.server-port")),
+			"NetworkServer":      viper.GetString("broker.networkserver-address"),
+			"DeduplicationDelay": viper.GetString("broker.deduplication-delay"),
+			"Prefixes":           viper.GetStringSlice("broker.prefix"),
+			"Database":           fmt.Sprintf("%s/%d", viper.GetString("broker.redis-address"), viper.GetInt("broker.redis-db")),
+		}).Info("Initializing Broker")
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx.Info("Starting")

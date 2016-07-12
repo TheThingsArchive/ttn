@@ -29,9 +29,11 @@ var networkserverCmd = &cobra.Command{
 	Long:  ``,
 	PreRun: func(cmd *cobra.Command, args []string) {
 		ctx.WithFields(log.Fields{
-			"server":   fmt.Sprintf("%s:%d", viper.GetString("networkserver.server-address"), viper.GetInt("networkserver.server-port")),
-			"database": fmt.Sprintf("%s/%d", viper.GetString("networkserver.redis-address"), viper.GetInt("networkserver.redis-db")),
-		}).Info("Using Configuration")
+			"Server":   fmt.Sprintf("%s:%d", viper.GetString("networkserver.server-address"), viper.GetInt("networkserver.server-port")),
+			"Database": fmt.Sprintf("%s/%d", viper.GetString("networkserver.redis-address"), viper.GetInt("networkserver.redis-db")),
+			"NetID":    viper.GetString("networkserver.net-id"),
+			"Prefix":   viper.GetString("networkserver.prefix"),
+		}).Info("Initializing Network Server")
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx.Info("Starting")

@@ -38,6 +38,12 @@ var RootCmd = &cobra.Command{
 			Level:   logLevel,
 			Handler: cliHandler.New(os.Stdout),
 		}
+		ctx.WithFields(log.Fields{
+			"ComponentID":     viper.GetString("id"),
+			"Description":     viper.GetString("description"),
+			"DiscoveryServer": viper.GetString("discovery-server"),
+			"AuthServer":      viper.GetString("auth-server"),
+		}).Info("Initializing The Things Network")
 	},
 }
 
@@ -72,7 +78,7 @@ func init() {
 	RootCmd.PersistentFlags().String("description", "", "The description of this component")
 	viper.BindPFlag("description", RootCmd.PersistentFlags().Lookup("description"))
 
-	RootCmd.PersistentFlags().String("discovery-server", "localhost:1900", "The address of the Discovery server")
+	RootCmd.PersistentFlags().String("discovery-server", "discover.thethingsnetwork.org:1900", "The address of the Discovery server")
 	viper.BindPFlag("discovery-server", RootCmd.PersistentFlags().Lookup("discovery-server"))
 
 	RootCmd.PersistentFlags().String("auth-server", "https://account.thethingsnetwork.org", "The address of the OAuth 2.0 server")
