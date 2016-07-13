@@ -12,7 +12,6 @@
 		RxMetadata
 		TxConfiguration
 		ActivationMetadata
-		Payload
 */
 package protocol
 
@@ -308,104 +307,10 @@ func _ActivationMetadata_OneofSizer(msg proto.Message) (n int) {
 	return n
 }
 
-type Payload struct {
-	Data []byte `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
-	// Types that are valid to be assigned to Protocol:
-	//	*Payload_Lorawan
-	Protocol isPayload_Protocol `protobuf_oneof:"protocol"`
-}
-
-func (m *Payload) Reset()                    { *m = Payload{} }
-func (m *Payload) String() string            { return proto.CompactTextString(m) }
-func (*Payload) ProtoMessage()               {}
-func (*Payload) Descriptor() ([]byte, []int) { return fileDescriptorProtocol, []int{3} }
-
-type isPayload_Protocol interface {
-	isPayload_Protocol()
-	MarshalTo([]byte) (int, error)
-	Size() int
-}
-
-type Payload_Lorawan struct {
-	Lorawan *lorawan.PHYPayload `protobuf:"bytes,2,opt,name=lorawan,oneof"`
-}
-
-func (*Payload_Lorawan) isPayload_Protocol() {}
-
-func (m *Payload) GetProtocol() isPayload_Protocol {
-	if m != nil {
-		return m.Protocol
-	}
-	return nil
-}
-
-func (m *Payload) GetLorawan() *lorawan.PHYPayload {
-	if x, ok := m.GetProtocol().(*Payload_Lorawan); ok {
-		return x.Lorawan
-	}
-	return nil
-}
-
-// XXX_OneofFuncs is for the internal use of the proto package.
-func (*Payload) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
-	return _Payload_OneofMarshaler, _Payload_OneofUnmarshaler, _Payload_OneofSizer, []interface{}{
-		(*Payload_Lorawan)(nil),
-	}
-}
-
-func _Payload_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
-	m := msg.(*Payload)
-	// protocol
-	switch x := m.Protocol.(type) {
-	case *Payload_Lorawan:
-		_ = b.EncodeVarint(2<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Lorawan); err != nil {
-			return err
-		}
-	case nil:
-	default:
-		return fmt.Errorf("Payload.Protocol has unexpected type %T", x)
-	}
-	return nil
-}
-
-func _Payload_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
-	m := msg.(*Payload)
-	switch tag {
-	case 2: // protocol.lorawan
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(lorawan.PHYPayload)
-		err := b.DecodeMessage(msg)
-		m.Protocol = &Payload_Lorawan{msg}
-		return true, err
-	default:
-		return false, nil
-	}
-}
-
-func _Payload_OneofSizer(msg proto.Message) (n int) {
-	m := msg.(*Payload)
-	// protocol
-	switch x := m.Protocol.(type) {
-	case *Payload_Lorawan:
-		s := proto.Size(x.Lorawan)
-		n += proto.SizeVarint(2<<3 | proto.WireBytes)
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case nil:
-	default:
-		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
-	}
-	return n
-}
-
 func init() {
 	proto.RegisterType((*RxMetadata)(nil), "protocol.RxMetadata")
 	proto.RegisterType((*TxConfiguration)(nil), "protocol.TxConfiguration")
 	proto.RegisterType((*ActivationMetadata)(nil), "protocol.ActivationMetadata")
-	proto.RegisterType((*Payload)(nil), "protocol.Payload")
 }
 func (m *RxMetadata) Marshal() (data []byte, err error) {
 	size := m.Size()
@@ -524,51 +429,6 @@ func (m *ActivationMetadata_Lorawan) MarshalTo(data []byte) (int, error) {
 	}
 	return i, nil
 }
-func (m *Payload) Marshal() (data []byte, err error) {
-	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
-	if err != nil {
-		return nil, err
-	}
-	return data[:n], nil
-}
-
-func (m *Payload) MarshalTo(data []byte) (int, error) {
-	var i int
-	_ = i
-	var l int
-	_ = l
-	if len(m.Data) > 0 {
-		data[i] = 0xa
-		i++
-		i = encodeVarintProtocol(data, i, uint64(len(m.Data)))
-		i += copy(data[i:], m.Data)
-	}
-	if m.Protocol != nil {
-		nn7, err := m.Protocol.MarshalTo(data[i:])
-		if err != nil {
-			return 0, err
-		}
-		i += nn7
-	}
-	return i, nil
-}
-
-func (m *Payload_Lorawan) MarshalTo(data []byte) (int, error) {
-	i := 0
-	if m.Lorawan != nil {
-		data[i] = 0x12
-		i++
-		i = encodeVarintProtocol(data, i, uint64(m.Lorawan.Size()))
-		n8, err := m.Lorawan.MarshalTo(data[i:])
-		if err != nil {
-			return 0, err
-		}
-		i += n8
-	}
-	return i, nil
-}
 func encodeFixed64Protocol(data []byte, offset int, v uint64) int {
 	data[offset] = uint8(v)
 	data[offset+1] = uint8(v >> 8)
@@ -642,28 +502,6 @@ func (m *ActivationMetadata) Size() (n int) {
 }
 
 func (m *ActivationMetadata_Lorawan) Size() (n int) {
-	var l int
-	_ = l
-	if m.Lorawan != nil {
-		l = m.Lorawan.Size()
-		n += 1 + l + sovProtocol(uint64(l))
-	}
-	return n
-}
-func (m *Payload) Size() (n int) {
-	var l int
-	_ = l
-	l = len(m.Data)
-	if l > 0 {
-		n += 1 + l + sovProtocol(uint64(l))
-	}
-	if m.Protocol != nil {
-		n += m.Protocol.Size()
-	}
-	return n
-}
-
-func (m *Payload_Lorawan) Size() (n int) {
 	var l int
 	_ = l
 	if m.Lorawan != nil {
@@ -932,119 +770,6 @@ func (m *ActivationMetadata) Unmarshal(data []byte) error {
 	}
 	return nil
 }
-func (m *Payload) Unmarshal(data []byte) error {
-	l := len(data)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowProtocol
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := data[iNdEx]
-			iNdEx++
-			wire |= (uint64(b) & 0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: Payload: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: Payload: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Data", wireType)
-			}
-			var byteLen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowProtocol
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				byteLen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if byteLen < 0 {
-				return ErrInvalidLengthProtocol
-			}
-			postIndex := iNdEx + byteLen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Data = append(m.Data[:0], data[iNdEx:postIndex]...)
-			if m.Data == nil {
-				m.Data = []byte{}
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Lorawan", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowProtocol
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := data[iNdEx]
-				iNdEx++
-				msglen |= (int(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthProtocol
-			}
-			postIndex := iNdEx + msglen
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			v := &lorawan.PHYPayload{}
-			if err := v.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			m.Protocol = &Payload_Lorawan{v}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipProtocol(data[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if skippy < 0 {
-				return ErrInvalidLengthProtocol
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
 func skipProtocol(data []byte) (n int, err error) {
 	l := len(data)
 	iNdEx := 0
@@ -1151,7 +876,7 @@ var (
 )
 
 var fileDescriptorProtocol = []byte{
-	// 251 bytes of a gzipped FileDescriptorProto
+	// 211 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xe2, 0xb2, 0x4e, 0xcf, 0x2c, 0xc9,
 	0x28, 0x4d, 0xd2, 0x4b, 0xce, 0xcf, 0xd5, 0x0f, 0xc9, 0x48, 0x0d, 0xc9, 0xc8, 0xcc, 0x4b, 0x2f,
 	0xf6, 0x4b, 0x2d, 0x29, 0xcf, 0x2f, 0xca, 0xd6, 0x2f, 0x29, 0xc9, 0xd3, 0x4f, 0x2c, 0xc8, 0xd4,
@@ -1162,10 +887,8 @@ var fileDescriptorProtocol = []byte{
 	0x8d, 0x07, 0x43, 0x10, 0x4c, 0x8d, 0x13, 0x17, 0x17, 0xdc, 0x31, 0x4a, 0xc1, 0x5c, 0xfc, 0x21,
 	0x15, 0xce, 0xf9, 0x79, 0x69, 0x99, 0xe9, 0xa5, 0x45, 0x89, 0x25, 0x99, 0xf9, 0x79, 0x42, 0x26,
 	0xe8, 0xa6, 0x49, 0xc0, 0x4d, 0x43, 0x53, 0x8a, 0xcb, 0xd0, 0x48, 0x2e, 0x21, 0xc7, 0xe4, 0x92,
-	0xcc, 0x32, 0xb0, 0x22, 0xb8, 0x2b, 0xcd, 0xd1, 0xcd, 0x95, 0x86, 0x9b, 0x8b, 0xa9, 0x1a, 0x97,
-	0xd1, 0x51, 0x5c, 0xec, 0x01, 0x89, 0x95, 0x39, 0xf9, 0x89, 0x29, 0x42, 0x42, 0x5c, 0x2c, 0x20,
-	0x95, 0x60, 0xc3, 0x78, 0x82, 0xc0, 0x6c, 0x21, 0x7d, 0x84, 0x1d, 0x4c, 0x60, 0x3b, 0x84, 0xe1,
-	0x76, 0x04, 0x78, 0x44, 0x42, 0x75, 0xe2, 0x30, 0xdb, 0x49, 0xe0, 0xc4, 0x23, 0x39, 0xc6, 0x0b,
-	0x40, 0xfc, 0x00, 0x88, 0x67, 0x3c, 0x96, 0x63, 0x48, 0x62, 0x03, 0xcb, 0x19, 0x03, 0x02, 0x00,
-	0x00, 0xff, 0xff, 0xca, 0x90, 0x37, 0x29, 0xfa, 0x01, 0x00, 0x00,
+	0xcc, 0x32, 0xb0, 0x22, 0xb8, 0x2b, 0xcd, 0xd1, 0xcd, 0x95, 0x86, 0x9b, 0x8b, 0xa9, 0x1a, 0x87,
+	0xd1, 0x4e, 0x02, 0x27, 0x1e, 0xc9, 0x31, 0x5e, 0x00, 0xe2, 0x07, 0x40, 0x3c, 0xe3, 0xb1, 0x1c,
+	0x43, 0x12, 0x1b, 0x58, 0xce, 0x18, 0x10, 0x00, 0x00, 0xff, 0xff, 0x86, 0x56, 0x63, 0x9b, 0x9e,
+	0x01, 0x00, 0x00,
 }

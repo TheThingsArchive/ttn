@@ -10,12 +10,15 @@ import (
 	pb "github.com/TheThingsNetwork/ttn/api/handler"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 )
 
 type handlerRPC struct {
 	handler Handler
 }
+
+var grpcErrf = grpc.Errorf // To make go vet stop complaining
 
 func validateBrokerFromMetadata(ctx context.Context) (err error) {
 	md, ok := metadata.FromContext(ctx)
@@ -46,6 +49,9 @@ func (h *handlerRPC) Activate(ctx context.Context, activation *pb_broker.Dedupli
 	err := validateBrokerFromMetadata(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if !activation.Validate() {
+		return nil, grpcErrf(codes.InvalidArgument, "Invalid Activation Request")
 	}
 	return h.handler.HandleActivation(activation)
 }

@@ -42,38 +42,6 @@ message ActivationMetadata {
   repeated uint64 cf_list = 14;
 }
 
-message PHYPayload {
-  MHdr       mhdr        = 1;
-  MACPayload MAC_payload = 2;
-  bytes      mic         = 3;
-}
-
-message MHdr {
-  uint32 m_type = 1;
-  uint32 major  = 2;
-}
-
-message MACPayload {
-  FHdr   f_hdr       = 1;
-  uint32 f_port      = 2;
-  bytes  FRM_payload = 3;
-}
-
-message FHdr {
-  bytes          dev_addr = 1 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.DevAddr"];
-  FCtrl          f_ctrl   = 2;
-  uint32         f_cnt    = 3;
-  repeated bytes f_opts   = 4;
-}
-
-message FCtrl {
-  bool  adr         = 1;
-  bool  adr_ack_req = 2;
-  bool  ack         = 3;
-  bool  f_pending   = 4;
-  bytes f_opts_len  = 5;
-}
-
 enum Region {
   EU_863_870 = 0;
   US_902_928 = 1;

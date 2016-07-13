@@ -11,12 +11,15 @@ import (
 	pb "github.com/TheThingsNetwork/ttn/api/networkserver"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 )
 
 type networkServerRPC struct {
 	networkServer NetworkServer
 }
+
+var grpcErrf = grpc.Errorf // To make go vet stop complaining
 
 func validateBrokerFromMetadata(ctx context.Context) (err error) {
 	md, ok := metadata.FromContext(ctx)
@@ -48,6 +51,9 @@ func (s *networkServerRPC) GetDevices(ctx context.Context, req *pb.DevicesReques
 	if err != nil {
 		return nil, err
 	}
+	if !req.Validate() {
+		return nil, grpcErrf(codes.InvalidArgument, "Invalid Devices Request")
+	}
 	return s.networkServer.HandleGetDevices(req)
 }
 
@@ -55,6 +61,9 @@ func (s *networkServerRPC) PrepareActivation(ctx context.Context, activation *br
 	err := validateBrokerFromMetadata(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if !activation.Validate() {
+		return nil, grpcErrf(codes.InvalidArgument, "Invalid Activation Request")
 	}
 	return s.networkServer.HandlePrepareActivation(activation)
 }
@@ -64,6 +73,9 @@ func (s *networkServerRPC) Activate(ctx context.Context, activation *handler.Dev
 	if err != nil {
 		return nil, err
 	}
+	if !activation.Validate() {
+		return nil, grpcErrf(codes.InvalidArgument, "Invalid Activation Request")
+	}
 	return s.networkServer.HandleActivate(activation)
 }
 
@@ -72,6 +84,9 @@ func (s *networkServerRPC) Uplink(ctx context.Context, message *broker.Deduplica
 	if err != nil {
 		return nil, err
 	}
+	if !message.Validate() {
+		return nil, grpcErrf(codes.InvalidArgument, "Invalid Uplink")
+	}
 	return s.networkServer.HandleUplink(message)
 }
 
@@ -79,6 +94,9 @@ func (s *networkServerRPC) Downlink(ctx context.Context, message *broker.Downlin
 	err := validateBrokerFromMetadata(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if !message.Validate() {
+		return nil, grpcErrf(codes.InvalidArgument, "Invalid Downlink")
 	}
 	return s.networkServer.HandleDownlink(message)
 }

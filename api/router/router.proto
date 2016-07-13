@@ -57,25 +57,6 @@ service Router {
   rpc Activate(DeviceActivationRequest) returns (DeviceActivationResponse);
 }
 
-// message GatewaysRequest is used to list all Gateways on this Router
-message GatewaysRequest {}
-
-// message GatewaysResponse is the response to the GatewaysRequest
-message GatewaysResponse {
-  repeated bytes gateway_ids = 1 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.GatewayEUI"];
-}
-
-// message RegisterGatewayRequest is used to register a Gateway with this Router
-message RegisterGatewayRequest {
-  bytes gateway_eui = 1 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.GatewayEUI"];
-}
-
-// message UnregisterGatewayRequest is used to unregister a Gateway from this
-// Router
-message UnregisterGatewayRequest {
-  bytes gateway_eui = 1 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.GatewayEUI"];
-}
-
 // message GatewayStatusRequest is used to request the status of a gateway from
 // this Router
 message GatewayStatusRequest {

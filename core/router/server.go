@@ -12,12 +12,15 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 )
 
 type routerRPC struct {
 	router Router
 }
+
+var grpcErrf = grpc.Errorf // To make go vet stop complaining
 
 func getGatewayFromMetadata(ctx context.Context) (gatewayEUI types.GatewayEUI, err error) {
 	md, ok := metadata.FromContext(ctx)
@@ -56,6 +59,9 @@ func (r *routerRPC) GatewayStatus(stream pb.Router_GatewayStatusServer) error {
 		if err == io.EOF {
 			return stream.SendAndClose(&api.Ack{})
 		}
+		if !status.Validate() {
+			return grpcErrf(codes.InvalidArgument, "Invalid Gateway Status")
+		}
 		if err != nil {
 			return err
 		}
@@ -76,6 +82,9 @@ func (r *routerRPC) Uplink(stream pb.Router_UplinkServer) error {
 		}
 		if err != nil {
 			return err
+		}
+		if !uplink.Validate() {
+			return grpcErrf(codes.InvalidArgument, "Invalid Uplink")
 		}
 		go r.router.HandleUplink(gatewayEUI, uplink)
 	}
@@ -112,6 +121,9 @@ func (r *routerRPC) Activate(ctx context.Context, req *pb.DeviceActivationReques
 	gatewayEUI, err := getGatewayFromMetadata(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if !req.Validate() {
+		return nil, grpcErrf(codes.InvalidArgument, "Invalid Activation Request")
 	}
 	return r.router.HandleActivation(gatewayEUI, req)
 }

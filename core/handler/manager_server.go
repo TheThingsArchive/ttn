@@ -24,8 +24,8 @@ type handlerManager struct {
 var errf = grpc.Errorf
 
 func (h *handlerManager) getDevice(ctx context.Context, in *pb_lorawan.DeviceIdentifier) (*device.Device, error) {
-	if in.AppId == "" || in.AppEui == nil || in.DevEui == nil {
-		return nil, errf(codes.InvalidArgument, "AppID, AppEUI and DevEUI are required")
+	if !in.Validate() {
+		return nil, grpcErrf(codes.InvalidArgument, "Invalid Device Identifier")
 	}
 	claims, err := h.Component.ValidateContext(ctx)
 	if err != nil {
@@ -133,8 +133,8 @@ func (h *handlerManager) DeleteDevice(ctx context.Context, in *pb_lorawan.Device
 }
 
 func (h *handlerManager) getApplication(ctx context.Context, in *pb.ApplicationIdentifier) (*application.Application, error) {
-	if in.AppId == "" {
-		return nil, errf(codes.InvalidArgument, "AppID is required")
+	if !in.Validate() {
+		return nil, grpcErrf(codes.InvalidArgument, "Invalid Application Identifier")
 	}
 	claims, err := h.Component.ValidateContext(ctx)
 	if err != nil {
@@ -154,18 +154,11 @@ func (h *handlerManager) getApplication(ctx context.Context, in *pb.ApplicationI
 }
 
 func (h *handlerManager) GetApplication(ctx context.Context, in *pb.ApplicationIdentifier) (*pb.Application, error) {
-	claims, err := h.Component.ValidateContext(ctx)
+	app, err := h.getApplication(ctx, in)
 	if err != nil {
 		return nil, err
-	}
-	if !claims.CanEditApp(in.AppId) {
-		return nil, errf(codes.Unauthenticated, "No access to this application")
 	}
 
-	app, err := h.applications.Get(in.AppId)
-	if err != nil {
-		return nil, err
-	}
 	return &pb.Application{
 		AppId:     app.AppID,
 		Decoder:   app.Decoder,

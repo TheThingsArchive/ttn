@@ -30,6 +30,8 @@ func newReferenceGateway(t *testing.T, region string) *gateway.Gateway {
 
 // newReferenceUplink returns a default uplink message
 func newReferenceUplink() *pb.UplinkMessage {
+	gtwEUI := types.GatewayEUI{1, 2, 3, 4, 5, 6, 7, 8}
+
 	phy := lorawan.PHYPayload{
 		MHDR: lorawan.MHDR{
 			MType: lorawan.UnconfirmedDataUp,
@@ -51,10 +53,11 @@ func newReferenceUplink() *pb.UplinkMessage {
 			Modulation: pb_lorawan.Modulation_LORA,
 		}}},
 		GatewayMetadata: &pb_gateway.RxMetadata{
-			Timestamp: 100,
-			Frequency: 868100000,
-			Rssi:      -25.0,
-			Snr:       5.0,
+			GatewayEui: &gtwEUI,
+			Timestamp:  100,
+			Frequency:  868100000,
+			Rssi:       -25.0,
+			Snr:        5.0,
 		},
 	}
 	return up

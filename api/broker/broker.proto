@@ -99,24 +99,6 @@ service Broker {
   rpc Activate(DeviceActivationRequest) returns (DeviceActivationResponse);
 }
 
-message ApplicationsRequest {}
-
-message ApplicationsResponse {
-  repeated string app_euis = 1;
-}
-
-// message RegisterApplicationRequest is used to register an application at this
-// Broker
-message RegisterApplicationRequest {
-  string app_eui = 1;
-}
-
-// message UnregisterApplicationRequest is used to unregister an application at
-// this Broker
-message UnregisterApplicationRequest {
-  string app_eui = 1;
-}
-
 // message StatusRequest is used to request the status of this Broker
 message StatusRequest {}
 

@@ -22,8 +22,8 @@ type networkServerManager struct {
 var errf = grpc.Errorf
 
 func (n *networkServerManager) getDevice(ctx context.Context, in *pb_lorawan.DeviceIdentifier) (*device.Device, error) {
-	if in.AppId == "" || in.AppEui == nil || in.DevEui == nil {
-		return nil, errf(codes.InvalidArgument, "AppID, AppEUI and DevEUI are required")
+	if !in.Validate() {
+		return nil, grpcErrf(codes.InvalidArgument, "Invalid Device Identifier")
 	}
 	claims, err := n.Component.ValidateContext(ctx)
 	if err != nil {

@@ -82,6 +82,9 @@ func (b *brokerRPC) Associate(stream pb.Broker_AssociateServer) error {
 		if err != nil {
 			return err
 		}
+		if !uplink.Validate() {
+			return grpcErrf(codes.InvalidArgument, "Invalid Uplink")
+		}
 		go b.broker.HandleUplink(uplink)
 	}
 }
@@ -126,6 +129,9 @@ func (b *brokerRPC) Publish(stream pb.Broker_PublishServer) error {
 		if err != nil {
 			return err
 		}
+		if !downlink.Validate() {
+			return grpcErrf(codes.InvalidArgument, "Invalid Downlink")
+		}
 		// TODO: Validate that this handler can publish downlink for the application
 		_ = handlerID
 		go b.broker.HandleDownlink(downlink)
@@ -136,6 +142,9 @@ func (b *brokerRPC) Activate(ctx context.Context, req *pb.DeviceActivationReques
 	_, err = getCallerFromMetadata(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if !req.Validate() {
+		return nil, grpcErrf(codes.InvalidArgument, "Invalid Activation Request")
 	}
 	return b.broker.HandleActivation(req)
 }

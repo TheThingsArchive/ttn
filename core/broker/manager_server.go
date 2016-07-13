@@ -37,6 +37,9 @@ func (b *brokerManager) RegisterApplicationHandler(ctx context.Context, in *pb.A
 	if err != nil {
 		return nil, err
 	}
+	if !in.Validate() {
+		return nil, grpcErrf(codes.InvalidArgument, "Invalid Application Handler Registration")
+	}
 	if !claims.CanEditApp(in.AppId) {
 		return nil, errf(codes.Unauthenticated, "No access to this application")
 	}

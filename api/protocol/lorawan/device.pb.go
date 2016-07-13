@@ -15,11 +15,6 @@
 		Metadata
 		TxConfiguration
 		ActivationMetadata
-		PHYPayload
-		MHdr
-		MACPayload
-		FHdr
-		FCtrl
 */
 package lorawan
 

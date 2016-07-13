@@ -10,6 +10,11 @@ import (
 	"google.golang.org/grpc"
 )
 
+// Validator interface is used to validate protos
+type Validator interface {
+	Validate() bool
+}
+
 // Backoff indicates how long a client should wait between failed requests
 var Backoff = 1 * time.Second
 

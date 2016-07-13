@@ -12,6 +12,8 @@ import (
 
 	"github.com/TheThingsNetwork/ttn/api"
 	pb "github.com/TheThingsNetwork/ttn/api/broker"
+	pb_gateway "github.com/TheThingsNetwork/ttn/api/gateway"
+	pb_protocol "github.com/TheThingsNetwork/ttn/api/protocol"
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
@@ -127,6 +129,7 @@ func TestPublishRPC(t *testing.T) {
 
 	appEUI := types.AppEUI{0, 1, 2, 3, 4, 5, 6, 7}
 	devEUI := types.DevEUI{0, 1, 2, 3, 4, 5, 6, 7}
+	gtwEUI := types.GatewayEUI{0, 1, 2, 3, 4, 5, 6, 7}
 
 	port := randomPort()
 	b, s := buildTestBrokerServer(t, port)
@@ -152,7 +155,10 @@ func TestPublishRPC(t *testing.T) {
 		DevEui: &devEUI,
 		AppEui: &appEUI,
 		DownlinkOption: &pb.DownlinkOption{
-			Identifier: "routerID:scheduleID",
+			Identifier:     "routerID:scheduleID",
+			GatewayConfig:  &pb_gateway.TxConfiguration{},
+			ProtocolConfig: &pb_protocol.TxConfiguration{},
+			GatewayEui:     &gtwEUI,
 		},
 	})
 	ack, err := stream.CloseAndRecv()

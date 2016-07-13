@@ -31,8 +31,6 @@ message RxMetadata {
 }
 
 message TxConfiguration {
-  bytes   gateway_eui = 1 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.GatewayEUI"];
-
   uint32 timestamp   = 11;
 
   uint32  rf_chain   = 21;

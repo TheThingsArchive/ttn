@@ -24,10 +24,3 @@ message ActivationMetadata {
     lorawan.ActivationMetadata lorawan = 1;
   }
 }
-
-message Payload {
-  bytes data = 1;
-  oneof protocol {
-    lorawan.PHYPayload lorawan = 2;
-  }
-}
