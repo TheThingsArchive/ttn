@@ -26,6 +26,7 @@ type Device struct {
 	DevEUI        types.DevEUI
 	AppEUI        types.AppEUI
 	AppID         string
+	DevID         string
 	DevAddr       types.DevAddr
 	AppKey        types.AppKey
 	UsedDevNonces []DevNonce
@@ -40,6 +41,7 @@ var DeviceProperties = []string{
 	"dev_eui",
 	"app_eui",
 	"app_id",
+	"dev_id",
 	"dev_addr",
 	"app_key",
 	"nwk_s_key",
@@ -81,6 +83,8 @@ func (device *Device) formatProperty(property string) (formatted string, err err
 		formatted = device.AppEUI.String()
 	case "app_id":
 		formatted = device.AppID
+	case "dev_id":
+		formatted = device.DevID
 	case "dev_addr":
 		formatted = device.DevAddr.String()
 	case "app_key":
@@ -130,6 +134,8 @@ func (device *Device) parseProperty(property string, value string) error {
 		device.AppEUI = val
 	case "app_id":
 		device.AppID = value
+	case "dev_id":
+		device.DevID = value
 	case "dev_addr":
 		val, err := types.ParseDevAddr(value)
 		if err != nil {
