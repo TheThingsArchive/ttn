@@ -6,7 +6,6 @@ package device
 import (
 	"errors"
 	"fmt"
-	"sync"
 	"time"
 
 	"gopkg.in/redis.v3"
@@ -162,23 +161,39 @@ type redisDeviceStore struct {
 }
 
 func (s *redisDeviceStore) List() ([]*Device, error) {
-	var devices []*Device
 	keys, err := s.client.Keys(fmt.Sprintf("%s:*", redisDevicePrefix)).Result()
 	if err != nil {
 		return nil, err
 	}
+
+	pipe := s.client.Pipeline()
+	defer pipe.Close()
+
+	// Add all commands to pipeline
+	cmds := make(map[string]*redis.StringStringMapCmd)
 	for _, key := range keys {
-		res, err := s.client.HGetAllMap(key).Result()
-		if err != nil {
-			return nil, err
-		}
-		device := &Device{}
-		err = device.FromStringStringMap(res)
-		if err != nil {
-			return nil, err
-		}
-		devices = append(devices, device)
+		cmds[key] = s.client.HGetAllMap(key)
 	}
+
+	// Execute pipeline
+	_, err = pipe.Exec()
+	if err != nil {
+		return nil, err
+	}
+
+	// Get all results from pipeline
+	devices := make([]*Device, 0, len(keys))
+	for _, cmd := range cmds {
+		dmap, err := cmd.Result()
+		if err == nil {
+			device := &Device{}
+			err := device.FromStringStringMap(dmap)
+			if err == nil {
+				devices = append(devices, device)
+			}
+		}
+	}
+
 	return devices, nil
 }
 
@@ -206,33 +221,32 @@ func (s *redisDeviceStore) GetWithAddress(devAddr types.DevAddr) ([]*Device, err
 		return nil, err
 	}
 
-	// TODO: If someone finds a nice way to do this more efficiently, please submit a PR!
+	pipe := s.client.Pipeline()
+	defer pipe.Close()
 
-	var wg sync.WaitGroup
-	responses := make(chan *Device)
+	// Add all commands to pipeline
+	cmds := make(map[string]*redis.StringStringMapCmd)
 	for _, key := range keys {
-		wg.Add(1)
-		go func(key string) {
-			dmap, err := s.client.HGetAllMap(key).Result()
-			if err == nil {
-				device := &Device{}
-				err := device.FromStringStringMap(dmap)
-				if err == nil {
-					responses <- device
-				}
-			}
-			wg.Done()
-		}(key)
+		cmds[key] = s.client.HGetAllMap(key)
 	}
 
-	go func() {
-		wg.Wait()
-		close(responses)
-	}()
+	// Execute pipeline
+	_, err = pipe.Exec()
+	if err != nil {
+		return nil, err
+	}
 
+	// Get all results from pipeline
 	devices := make([]*Device, 0, len(keys))
-	for res := range responses {
-		devices = append(devices, res)
+	for _, cmd := range cmds {
+		dmap, err := cmd.Result()
+		if err == nil {
+			device := &Device{}
+			err := device.FromStringStringMap(dmap)
+			if err == nil {
+				devices = append(devices, device)
+			}
+		}
 	}
 
 	return devices, nil
