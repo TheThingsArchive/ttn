@@ -38,10 +38,20 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 		}
 	}()
 
+	if activation.ResponseTemplate == nil {
+		err = errors.New("ttn/handler: No Downlink Available")
+		return nil, err
+	}
+
 	// Find Device
 	var dev *device.Device
 	dev, err = h.devices.Get(appEUI, devEUI)
 	if err != nil {
+		return nil, err
+	}
+
+	if dev.AppKey.IsEmpty() {
+		err = errors.New("ttn/handler: Can not activate device without AppKey")
 		return nil, err
 	}
 
