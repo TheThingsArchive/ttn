@@ -92,23 +92,39 @@ type redisDeviceStore struct {
 }
 
 func (s *redisDeviceStore) List() ([]*Device, error) {
-	var devices []*Device
 	keys, err := s.client.Keys(fmt.Sprintf("%s:*", redisDevicePrefix)).Result()
 	if err != nil {
 		return nil, err
 	}
+
+	pipe := s.client.Pipeline()
+	defer pipe.Close()
+
+	// Add all commands to pipeline
+	cmds := make(map[string]*redis.StringStringMapCmd)
 	for _, key := range keys {
-		res, err := s.client.HGetAllMap(key).Result()
-		if err != nil {
-			return nil, err
-		}
-		device := &Device{}
-		err = device.FromStringStringMap(res)
-		if err != nil {
-			return nil, err
-		}
-		devices = append(devices, device)
+		cmds[key] = s.client.HGetAllMap(key)
 	}
+
+	// Execute pipeline
+	_, err = pipe.Exec()
+	if err != nil {
+		return nil, err
+	}
+
+	// Get all results from pipeline
+	devices := make([]*Device, 0, len(keys))
+	for _, cmd := range cmds {
+		dmap, err := cmd.Result()
+		if err == nil {
+			device := &Device{}
+			err := device.FromStringStringMap(dmap)
+			if err == nil {
+				devices = append(devices, device)
+			}
+		}
+	}
+
 	return devices, nil
 }
 
