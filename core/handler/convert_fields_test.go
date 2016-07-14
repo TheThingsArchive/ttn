@@ -4,7 +4,6 @@
 package handler
 
 import (
-	"errors"
 	"testing"
 	"time"
 
@@ -12,19 +11,19 @@ import (
 	"github.com/TheThingsNetwork/ttn/mqtt"
 
 	"github.com/TheThingsNetwork/ttn/core/handler/application"
-	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/assertions"
 )
 
 func buildConversionUplink() (*pb_broker.DeduplicatedUplinkMessage, *mqtt.UplinkMessage) {
-	appEUI, _ := types.ParseAppEUI("0102030405060708")
 	ttnUp := &pb_broker.DeduplicatedUplinkMessage{
 		AppId: "AppID-1",
+		DevId: "DevID-1",
 	}
 	appUp := &mqtt.UplinkMessage{
 		FPort:   1,
-		AppEUI:  appEUI,
+		AppID:   "AppID-1",
+		DevID:   "DevID-1",
 		Payload: []byte{0x08, 0x70},
 	}
 	return ttnUp, appUp
@@ -257,16 +256,19 @@ func TestTimeoutExceeded(t *testing.T) {
 
 	a := New(t)
 	start := time.Now()
+
 	functions := &Functions{
 		Decoder: `function(payload){ while (true) { } }`,
 	}
 
+	interrupted := make(chan bool, 2)
 	go func() {
-		time.Sleep(4 * time.Second)
-		panic(errors.New("Payload function was not interrupted"))
+		_, _, err := functions.Process([]byte{0})
+		a.So(time.Since(start), ShouldAlmostEqual, 100*time.Millisecond, 0.5e9)
+		a.So(err, ShouldNotBeNil)
+		interrupted <- true
 	}()
 
-	_, _, err := functions.Process([]byte{0})
-	a.So(time.Since(start), ShouldAlmostEqual, time.Second, 0.5e9)
-	a.So(err, ShouldNotBeNil)
+	<-time.After(200 * time.Millisecond)
+	a.So(interrupted, ShouldHaveLength, 1)
 }

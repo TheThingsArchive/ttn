@@ -49,7 +49,9 @@ func doTestHandleActivation(h *handler, appEUI types.AppEUI, devEUI types.DevEUI
 	return h.HandleActivation(&pb_broker.DeduplicatedDeviceActivationRequest{
 		Payload: requestBytes,
 		AppEui:  &appEUI,
+		AppId:   appEUI.String(),
 		DevEui:  &devEUI,
+		DevId:   devEUI.String(),
 		ActivationMetadata: &pb_protocol.ActivationMetadata{Protocol: &pb_protocol.ActivationMetadata_Lorawan{
 			Lorawan: &pb_lorawan.ActivationMetadata{
 				DevAddr: &devAddr,
@@ -73,8 +75,9 @@ func TestHandleActivation(t *testing.T) {
 	var wg sync.WaitGroup
 
 	appEUI := types.AppEUI{1, 2, 3, 4, 5, 6, 7, 8}
-	appID := "AppID-1"
+	appID := appEUI.String()
 	devEUI := types.DevEUI{1, 2, 3, 4, 5, 6, 7, 8}
+	devID := devEUI.String()
 	unknownDevEUI := types.DevEUI{8, 7, 6, 5, 4, 3, 2, 1}
 
 	appKey := [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
@@ -85,6 +88,7 @@ func TestHandleActivation(t *testing.T) {
 
 	h.devices.Set(&device.Device{
 		AppID:  appID,
+		DevID:  devID,
 		AppEUI: appEUI,
 		DevEUI: devEUI,
 		AppKey: appKey,

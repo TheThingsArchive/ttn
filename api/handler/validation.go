@@ -1,5 +1,7 @@
 package handler
 
+import "github.com/TheThingsNetwork/ttn/api"
+
 // Validate implements the api.Validator interface
 func (m *DeviceActivationResponse) Validate() bool {
 	if m.AppId == "" {
@@ -25,6 +27,31 @@ func (m *ApplicationIdentifier) Validate() bool {
 // Validate implements the api.Validator interface
 func (m *Application) Validate() bool {
 	if m.AppId == "" {
+		return false
+	}
+	return true
+}
+
+// Validate implements the api.Validator interface
+func (m *DeviceIdentifier) Validate() bool {
+	if m.AppId == "" {
+		return false
+	}
+	if m.DevId == "" {
+		return false
+	}
+	return true
+}
+
+// Validate implements the api.Validator interface
+func (m *Device) Validate() bool {
+	if m.AppId == "" {
+		return false
+	}
+	if m.DevId == "" {
+		return false
+	}
+	if m.Device == nil || !api.Validate(m.Device) {
 		return false
 	}
 	return true

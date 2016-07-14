@@ -77,7 +77,10 @@ func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (*pb.D
 		return nil, err
 	}
 
-	ctx = ctx.WithField("AppID", deduplicatedActivationRequest.AppId)
+	ctx = ctx.WithFields(log.Fields{
+		"AppID": deduplicatedActivationRequest.AppId,
+		"DevID": deduplicatedActivationRequest.DevId,
+	})
 
 	// Find Handler (based on AppEUI)
 	var announcements []*pb_discovery.Announcement

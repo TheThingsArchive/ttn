@@ -33,28 +33,32 @@ func TestDeviceStore(t *testing.T) {
 		t.Logf("Testing %s store", name)
 
 		// Get non-existing
-		dev, err := s.Get(types.AppEUI{0, 0, 0, 0, 0, 0, 0, 1}, types.DevEUI{0, 0, 0, 0, 0, 0, 0, 1})
+		dev, err := s.Get("AppID-1", "DevID-1")
 		a.So(err, ShouldNotBeNil)
 		a.So(dev, ShouldBeNil)
 
 		// Create
 		err = s.Set(&Device{
-			DevAddr: types.DevAddr{0, 0, 0, 1},
-			DevEUI:  types.DevEUI{0, 0, 0, 0, 0, 0, 0, 1},
-			AppEUI:  types.AppEUI{0, 0, 0, 0, 0, 0, 0, 1},
+			DevAddr: types.DevAddr([4]byte{0, 0, 0, 1}),
+			DevEUI:  types.DevEUI([8]byte{0, 0, 0, 0, 0, 0, 0, 1}),
+			AppEUI:  types.AppEUI([8]byte{0, 0, 0, 0, 0, 0, 0, 1}),
+			AppID:   "AppID-1",
+			DevID:   "DevID-1",
 		})
 		a.So(err, ShouldBeNil)
 
 		// Get existing
-		dev, err = s.Get(types.AppEUI{0, 0, 0, 0, 0, 0, 0, 1}, types.DevEUI{0, 0, 0, 0, 0, 0, 0, 1})
+		dev, err = s.Get("AppID-1", "DevID-1")
 		a.So(err, ShouldBeNil)
 		a.So(dev, ShouldNotBeNil)
 
 		// Create extra
 		err = s.Set(&Device{
-			DevAddr: types.DevAddr{0, 0, 0, 2},
-			DevEUI:  types.DevEUI{0, 0, 0, 0, 0, 0, 0, 2},
-			AppEUI:  types.AppEUI{0, 0, 0, 0, 0, 0, 0, 1},
+			DevAddr: types.DevAddr([4]byte{0, 0, 0, 2}),
+			DevEUI:  types.DevEUI([8]byte{0, 0, 0, 0, 0, 0, 0, 2}),
+			AppEUI:  types.AppEUI([8]byte{0, 0, 0, 0, 0, 0, 0, 1}),
+			AppID:   "AppID-1",
+			DevID:   "DevID-2",
 		})
 		a.So(err, ShouldBeNil)
 
@@ -64,16 +68,16 @@ func TestDeviceStore(t *testing.T) {
 		a.So(devices, ShouldHaveLength, 2)
 
 		// Delete
-		err = s.Delete(types.AppEUI{0, 0, 0, 0, 0, 0, 0, 1}, types.DevEUI{0, 0, 0, 0, 0, 0, 0, 1})
+		err = s.Delete("AppID-1", "DevID-1")
 		a.So(err, ShouldBeNil)
 
 		// Get deleted
-		dev, err = s.Get(types.AppEUI{0, 0, 0, 0, 0, 0, 0, 1}, types.DevEUI{0, 0, 0, 0, 0, 0, 0, 1})
+		dev, err = s.Get("AppID-1", "DevID-1")
 		a.So(err, ShouldNotBeNil)
 		a.So(dev, ShouldBeNil)
 
 		// Cleanup
-		s.Delete(types.AppEUI{0, 0, 0, 0, 0, 0, 0, 1}, types.DevEUI{0, 0, 0, 0, 0, 0, 0, 2})
+		s.Delete("AppID-1", "DevID-2")
 	}
 
 }

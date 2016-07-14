@@ -6,7 +6,6 @@ package handler
 import (
 	"time"
 
-	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/mqtt"
 	"github.com/apex/log"
 )
@@ -28,10 +27,10 @@ func (h *handler) HandleMQTT(username, password string, mqttBrokers ...string) e
 	h.mqttUp = make(chan *mqtt.UplinkMessage, MQTTBufferSize)
 	h.mqttActivation = make(chan *mqtt.Activation, MQTTBufferSize)
 
-	token := h.mqttClient.SubscribeDownlink(func(client mqtt.Client, appEUI types.AppEUI, devEUI types.DevEUI, msg mqtt.DownlinkMessage) {
+	token := h.mqttClient.SubscribeDownlink(func(client mqtt.Client, appID string, devID string, msg mqtt.DownlinkMessage) {
 		down := &msg
-		down.DevEUI = devEUI
-		down.AppEUI = appEUI
+		down.DevID = devID
+		down.AppID = appID
 		go h.EnqueueDownlink(down)
 	})
 	token.Wait()
@@ -42,10 +41,10 @@ func (h *handler) HandleMQTT(username, password string, mqttBrokers ...string) e
 	go func() {
 		for up := range h.mqttUp {
 			h.Ctx.WithFields(log.Fields{
-				"DevEUI": up.DevEUI,
-				"AppEUI": up.AppEUI,
+				"DevID": up.DevID,
+				"AppID": up.AppID,
 			}).Debug("Publish Uplink")
-			token := h.mqttClient.PublishUplink(up.AppEUI, up.DevEUI, *up)
+			token := h.mqttClient.PublishUplink(up.AppID, up.DevID, *up)
 			go func() {
 				if token.WaitTimeout(MQTTTimeout) {
 					if token.Error() != nil {
@@ -60,7 +59,14 @@ func (h *handler) HandleMQTT(username, password string, mqttBrokers ...string) e
 
 	go func() {
 		for activation := range h.mqttActivation {
-			token := h.mqttClient.PublishActivation(activation.AppEUI, activation.DevEUI, *activation)
+			h.Ctx.WithFields(log.Fields{
+				"DevID":   activation.DevID,
+				"AppID":   activation.AppID,
+				"DevEUI":  activation.DevEUI,
+				"AppEUI":  activation.AppEUI,
+				"DevAddr": activation.DevAddr,
+			}).Debug("Publish Activation")
+			token := h.mqttClient.PublishActivation(activation.AppID, activation.DevID, *activation)
 			go func() {
 				if token.WaitTimeout(MQTTTimeout) {
 					if token.Error() != nil {

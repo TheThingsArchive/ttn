@@ -6,19 +6,18 @@ package mqtt
 import (
 	"testing"
 
-	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/smartystreets/assertions"
 )
 
 func TestParseDeviceTopic(t *testing.T) {
 	a := New(t)
 
-	topic := "0102030405060708/devices/0807060504030201/up"
+	topic := "AppID-1/devices/DevID-1/up"
 
 	expected := &DeviceTopic{
-		AppEUI: types.AppEUI{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08},
-		DevEUI: types.DevEUI{0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01},
-		Type:   Uplink,
+		AppID: "AppID-1",
+		DevID: "DevID-1",
+		Type:  Uplink,
 	}
 
 	got, err := ParseDeviceTopic(topic)
@@ -30,28 +29,16 @@ func TestParseDeviceTopic(t *testing.T) {
 func TestParseDeviceTopicInvalid(t *testing.T) {
 	a := New(t)
 
-	_, err := ParseDeviceTopic("000000000000000a/devices/0807060504030201/up") // AppEUI contains lowercase hex chars
+	_, err := ParseDeviceTopic("AppID:Invalid/devices/dev/up")
 	a.So(err, ShouldNotBeNil)
 
-	_, err = ParseDeviceTopic("01020304050607/devices/0807060504030201/up") // AppEUI too short
+	_, err = ParseDeviceTopic("AppID-1/devices/DevID:Invalid/up") // DevEUI contains lowercase hex chars
 	a.So(err, ShouldNotBeNil)
 
-	_, err = ParseDeviceTopic("abcdefghijklmnop/devices/08070605040302/up") // AppEUI contains invalid characters
+	_, err = ParseDeviceTopic("AppID-1/fridges/DevID-1/up") // We don't support fridges (at least, not specifically fridges)
 	a.So(err, ShouldNotBeNil)
 
-	_, err = ParseDeviceTopic("0102030405060708/devices/000000000000000a/up") // DevEUI contains lowercase hex chars
-	a.So(err, ShouldNotBeNil)
-
-	_, err = ParseDeviceTopic("0102030405060708/devices/08070605040302/up") // DevEUI too short
-	a.So(err, ShouldNotBeNil)
-
-	_, err = ParseDeviceTopic("0102030405060708/devices/abcdefghijklmnop/up") // DevEUI contains invalid characters
-	a.So(err, ShouldNotBeNil)
-
-	_, err = ParseDeviceTopic("0102030405060708/fridges/0102030405060708/up") // We don't support fridges (at least, not specifically fridges)
-	a.So(err, ShouldNotBeNil)
-
-	_, err = ParseDeviceTopic("0102030405060708/devices/0102030405060708/emotions") // Devices usually don't publish emotions
+	_, err = ParseDeviceTopic("AppID-1/devices/DevID-1/emotions") // Devices usually don't publish emotions
 	a.So(err, ShouldNotBeNil)
 }
 
@@ -59,12 +46,12 @@ func TestTopicString(t *testing.T) {
 	a := New(t)
 
 	topic := &DeviceTopic{
-		AppEUI: types.AppEUI{0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0},
-		DevEUI: types.DevEUI{0x28, 0x27, 0x26, 0x25, 0x24, 0x23, 0x22, 0x21},
-		Type:   Downlink,
+		AppID: "AppID-1",
+		DevID: "DevID-1",
+		Type:  Downlink,
 	}
 
-	expected := "123456789ABCDEF0/devices/2827262524232221/down"
+	expected := "AppID-1/devices/DevID-1/down"
 
 	got := topic.String()
 

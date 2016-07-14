@@ -5,6 +5,7 @@ package handler
 
 import (
 	"errors"
+	"fmt"
 
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/mqtt"
@@ -15,7 +16,7 @@ import (
 
 func (h *handler) ConvertFromLoRaWAN(ctx log.Interface, ttnUp *pb_broker.DeduplicatedUplinkMessage, appUp *mqtt.UplinkMessage) error {
 	// Find Device
-	dev, err := h.devices.Get(*ttnUp.AppEui, *ttnUp.DevEui)
+	dev, err := h.devices.Get(ttnUp.AppId, ttnUp.DevId)
 	if err != nil {
 		return err
 	}
@@ -37,6 +38,16 @@ func (h *handler) ConvertFromLoRaWAN(ctx log.Interface, ttnUp *pb_broker.Dedupli
 	}
 	macPayload.FHDR.FCnt = ttnUp.ProtocolMetadata.GetLorawan().FCnt
 	appUp.FCnt = macPayload.FHDR.FCnt
+
+	// LoRaWAN: Validate MIC
+	ok, err = phyPayload.ValidateMIC(lorawan.AES128Key(dev.NwkSKey))
+	if err != nil {
+		return err
+	}
+	if !ok {
+		fmt.Printf("Invalid MIC for %X / NwkSKey %s", ttnUp.Payload, dev.NwkSKey)
+		return errors.New("ttn/handler: Invalid MIC")
+	}
 
 	ctx = ctx.WithField("FCnt", appUp.FCnt)
 
@@ -63,7 +74,7 @@ func (h *handler) ConvertFromLoRaWAN(ctx log.Interface, ttnUp *pb_broker.Dedupli
 
 func (h *handler) ConvertToLoRaWAN(ctx log.Interface, appDown *mqtt.DownlinkMessage, ttnDown *pb_broker.DownlinkMessage) error {
 	// Find Device
-	dev, err := h.devices.Get(appDown.AppEUI, appDown.DevEUI)
+	dev, err := h.devices.Get(appDown.AppID, appDown.DevID)
 	if err != nil {
 		return err
 	}
@@ -101,6 +112,12 @@ func (h *handler) ConvertToLoRaWAN(ctx log.Interface, appDown *mqtt.DownlinkMess
 
 	// Encrypt
 	err = phyPayload.EncryptFRMPayload(lorawan.AES128Key(dev.AppSKey))
+	if err != nil {
+		return err
+	}
+
+	// Set MIC
+	err = phyPayload.SetMIC(lorawan.AES128Key(dev.NwkSKey))
 	if err != nil {
 		return err
 	}

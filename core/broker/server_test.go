@@ -14,6 +14,7 @@ import (
 	pb "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_gateway "github.com/TheThingsNetwork/ttn/api/gateway"
 	pb_protocol "github.com/TheThingsNetwork/ttn/api/protocol"
+	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
@@ -157,7 +158,7 @@ func TestPublishRPC(t *testing.T) {
 		DownlinkOption: &pb.DownlinkOption{
 			Identifier:     "routerID:scheduleID",
 			GatewayConfig:  &pb_gateway.TxConfiguration{},
-			ProtocolConfig: &pb_protocol.TxConfiguration{},
+			ProtocolConfig: &pb_protocol.TxConfiguration{Protocol: &pb_protocol.TxConfiguration_Lorawan{Lorawan: &pb_lorawan.TxConfiguration{}}},
 			GatewayEui:     &gtwEUI,
 		},
 	})

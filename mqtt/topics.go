@@ -5,10 +5,7 @@ package mqtt
 
 import (
 	"fmt"
-	"reflect"
 	"regexp"
-
-	"github.com/TheThingsNetwork/ttn/core/types"
 )
 
 // DeviceTopicType represents the type of a device topic
@@ -26,48 +23,40 @@ const (
 const wildcard = "+"
 
 // DeviceTopic represents an MQTT topic for application devices
-// If the DevEUI is an empty []byte{}, it is considered to be a wildcard
 type DeviceTopic struct {
-	AppEUI types.AppEUI
-	DevEUI types.DevEUI
-	Type   DeviceTopicType
+	AppID string
+	DevID string
+	Type  DeviceTopicType
 }
 
 // ParseDeviceTopic parses an MQTT device topic string to a DeviceTopic struct
 func ParseDeviceTopic(topic string) (*DeviceTopic, error) {
-	var err error
-	pattern := regexp.MustCompile("([0-9A-F]{16}|\\+)/(devices)/([0-9A-F]{16}|\\+)/(activations|up|down)")
+	pattern := regexp.MustCompile("^([[:alnum:]](?:[_-]?[[:alnum:]]){1,35}|\\+)/(devices)/([[:alnum:]](?:[_-]?[[:alnum:]]){1,35}|\\+)/(activations|up|down)$")
 	matches := pattern.FindStringSubmatch(topic)
 	if len(matches) < 4 {
 		return nil, fmt.Errorf("Invalid topic format")
 	}
-	var appEUI types.AppEUI
+	var appID string
 	if matches[1] != wildcard {
-		appEUI, err = types.ParseAppEUI(matches[1])
-		if err != nil {
-			return nil, err
-		}
+		appID = matches[1]
 	}
-	var devEUI types.DevEUI
-	if matches[1] != wildcard {
-		devEUI, err = types.ParseDevEUI(matches[3])
-		if err != nil {
-			return nil, err
-		}
+	var devID string
+	if matches[3] != wildcard {
+		devID = matches[3]
 	}
 	topicType := DeviceTopicType(matches[4])
-	return &DeviceTopic{appEUI, devEUI, topicType}, nil
+	return &DeviceTopic{appID, devID, topicType}, nil
 }
 
 // String implements the Stringer interface
 func (t DeviceTopic) String() string {
-	appEUI := wildcard
-	if !reflect.DeepEqual(t.AppEUI, types.AppEUI{}) {
-		appEUI = t.AppEUI.String()
+	appID := wildcard
+	if t.AppID != "" {
+		appID = t.AppID
 	}
-	devEUI := wildcard
-	if !reflect.DeepEqual(t.DevEUI, types.DevEUI{}) {
-		devEUI = t.DevEUI.String()
+	devID := wildcard
+	if t.DevID != "" {
+		devID = t.DevID
 	}
-	return fmt.Sprintf("%s/%s/%s/%s", appEUI, "devices", devEUI, t.Type)
+	return fmt.Sprintf("%s/%s/%s/%s", appID, "devices", devID, t.Type)
 }

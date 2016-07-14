@@ -8,8 +8,6 @@ import (
 	"fmt"
 
 	"gopkg.in/redis.v3"
-
-	"github.com/TheThingsNetwork/ttn/core/types"
 )
 
 var (
@@ -21,25 +19,27 @@ var (
 type Store interface {
 	// List all devices
 	List() ([]*Device, error)
+	// ListForApp lists all devices for an app
+	ListForApp(appID string) ([]*Device, error)
 	// Get the full information about a device
-	Get(appEUI types.AppEUI, devEUI types.DevEUI) (*Device, error)
+	Get(appID, devID string) (*Device, error)
 	// Set the given fields of a device. If fields empty, it sets all fields.
 	Set(device *Device, fields ...string) error
 	// Delete a device
-	Delete(types.AppEUI, types.DevEUI) error
+	Delete(appID, devID string) error
 }
 
 // NewDeviceStore creates a new in-memory Device store
 func NewDeviceStore() Store {
 	return &deviceStore{
-		devices: make(map[types.AppEUI]map[types.DevEUI]*Device),
+		devices: make(map[string]map[string]*Device),
 	}
 }
 
 // deviceStore is an in-memory Device store. It should only be used for testing
 // purposes. Use the redisDeviceStore for actual deployments.
 type deviceStore struct {
-	devices map[types.AppEUI]map[types.DevEUI]*Device
+	devices map[string]map[string]*Device
 }
 
 func (s *deviceStore) List() ([]*Device, error) {
@@ -52,9 +52,19 @@ func (s *deviceStore) List() ([]*Device, error) {
 	return devices, nil
 }
 
-func (s *deviceStore) Get(appEUI types.AppEUI, devEUI types.DevEUI) (*Device, error) {
-	if app, ok := s.devices[appEUI]; ok {
-		if dev, ok := app[devEUI]; ok {
+func (s *deviceStore) ListForApp(appID string) ([]*Device, error) {
+	devices := make([]*Device, 0, len(s.devices))
+	if app, ok := s.devices[appID]; ok {
+		for _, device := range app {
+			devices = append(devices, device)
+		}
+	}
+	return devices, nil
+}
+
+func (s *deviceStore) Get(appID, devID string) (*Device, error) {
+	if app, ok := s.devices[appID]; ok {
+		if dev, ok := app[devID]; ok {
 			return dev, nil
 		}
 	}
@@ -63,17 +73,17 @@ func (s *deviceStore) Get(appEUI types.AppEUI, devEUI types.DevEUI) (*Device, er
 
 func (s *deviceStore) Set(new *Device, fields ...string) error {
 	// NOTE: We don't care about fields for testing
-	if app, ok := s.devices[new.AppEUI]; ok {
-		app[new.DevEUI] = new
+	if app, ok := s.devices[new.AppID]; ok {
+		app[new.DevID] = new
 	} else {
-		s.devices[new.AppEUI] = map[types.DevEUI]*Device{new.DevEUI: new}
+		s.devices[new.AppID] = map[string]*Device{new.DevID: new}
 	}
 	return nil
 }
 
-func (s *deviceStore) Delete(appEUI types.AppEUI, devEUI types.DevEUI) error {
-	if app, ok := s.devices[appEUI]; ok {
-		delete(app, devEUI)
+func (s *deviceStore) Delete(appID, devID string) error {
+	if app, ok := s.devices[appID]; ok {
+		delete(app, devID)
 	}
 	return nil
 }
@@ -91,12 +101,7 @@ type redisDeviceStore struct {
 	client *redis.Client
 }
 
-func (s *redisDeviceStore) List() ([]*Device, error) {
-	keys, err := s.client.Keys(fmt.Sprintf("%s:*", redisDevicePrefix)).Result()
-	if err != nil {
-		return nil, err
-	}
-
+func (s *redisDeviceStore) getForKeys(keys []string) ([]*Device, error) {
 	pipe := s.client.Pipeline()
 	defer pipe.Close()
 
@@ -107,7 +112,7 @@ func (s *redisDeviceStore) List() ([]*Device, error) {
 	}
 
 	// Execute pipeline
-	_, err = pipe.Exec()
+	_, err := pipe.Exec()
 	if err != nil {
 		return nil, err
 	}
@@ -128,8 +133,24 @@ func (s *redisDeviceStore) List() ([]*Device, error) {
 	return devices, nil
 }
 
-func (s *redisDeviceStore) Get(appEUI types.AppEUI, devEUI types.DevEUI) (*Device, error) {
-	res, err := s.client.HGetAllMap(fmt.Sprintf("%s:%s:%s", redisDevicePrefix, appEUI, devEUI)).Result()
+func (s *redisDeviceStore) List() ([]*Device, error) {
+	keys, err := s.client.Keys(fmt.Sprintf("%s:*", redisDevicePrefix)).Result()
+	if err != nil {
+		return nil, err
+	}
+	return s.getForKeys(keys)
+}
+
+func (s *redisDeviceStore) ListForApp(appID string) ([]*Device, error) {
+	keys, err := s.client.Keys(fmt.Sprintf("%s:%s:*", redisDevicePrefix, appID)).Result()
+	if err != nil {
+		return nil, err
+	}
+	return s.getForKeys(keys)
+}
+
+func (s *redisDeviceStore) Get(appID, devID string) (*Device, error) {
+	res, err := s.client.HGetAllMap(fmt.Sprintf("%s:%s:%s", redisDevicePrefix, appID, devID)).Result()
 	if err != nil {
 		if err == redis.Nil {
 			return nil, ErrNotFound
@@ -151,7 +172,7 @@ func (s *redisDeviceStore) Set(new *Device, fields ...string) error {
 		fields = DeviceProperties
 	}
 
-	key := fmt.Sprintf("%s:%s:%s", redisDevicePrefix, new.AppEUI, new.DevEUI)
+	key := fmt.Sprintf("%s:%s:%s", redisDevicePrefix, new.AppID, new.DevID)
 	dmap, err := new.ToStringStringMap(fields...)
 	if err != nil {
 		return err
@@ -167,8 +188,8 @@ func (s *redisDeviceStore) Set(new *Device, fields ...string) error {
 	return nil
 }
 
-func (s *redisDeviceStore) Delete(appEUI types.AppEUI, devEUI types.DevEUI) error {
-	key := fmt.Sprintf("%s:%s:%s", redisDevicePrefix, appEUI, devEUI)
+func (s *redisDeviceStore) Delete(appID, devID string) error {
+	key := fmt.Sprintf("%s:%s:%s", redisDevicePrefix, appID, devID)
 	err := s.client.Del(key).Err()
 	if err != nil {
 		return err

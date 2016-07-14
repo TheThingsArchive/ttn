@@ -30,6 +30,7 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 		"DevEUI": devEUI,
 		"AppEUI": appEUI,
 		"AppID":  activation.AppId,
+		"DevID":  activation.DevId,
 	})
 	var err error
 	defer func() {
@@ -45,7 +46,7 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 
 	// Find Device
 	var dev *device.Device
-	dev, err = h.devices.Get(appEUI, devEUI)
+	dev, err = h.devices.Get(activation.AppId, activation.DevId)
 	if err != nil {
 		return nil, err
 	}

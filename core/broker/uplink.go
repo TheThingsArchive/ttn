@@ -112,6 +112,7 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) error {
 		"DevEUI":    device.DevEui,
 		"AppEUI":    device.AppEui,
 		"AppID":     device.AppId,
+		"DevID":     device.DevId,
 	})
 
 	if device.DisableFCntCheck {

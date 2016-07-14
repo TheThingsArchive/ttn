@@ -13,14 +13,14 @@ import (
 
 func getTestDevice() (device *Device, dmap map[string]string) {
 	return &Device{
-			DevEUI:        types.DevEUI{1, 2, 3, 4, 5, 6, 7, 8},
-			AppEUI:        types.AppEUI{8, 7, 6, 5, 4, 3, 2, 1},
+			DevEUI:        types.DevEUI([8]byte{1, 2, 3, 4, 5, 6, 7, 8}),
+			AppEUI:        types.AppEUI([8]byte{8, 7, 6, 5, 4, 3, 2, 1}),
 			AppID:         "AppID-1",
 			DevID:         "DevID-1",
-			DevAddr:       types.DevAddr{1, 2, 3, 4},
-			AppKey:        types.AppKey{0, 1, 0, 2, 0, 3, 0, 4, 0, 5, 0, 6, 0, 7, 0, 8},
-			NwkSKey:       types.NwkSKey{1, 1, 1, 2, 1, 3, 1, 4, 1, 5, 1, 6, 1, 7, 1, 8},
-			AppSKey:       types.AppSKey{2, 1, 2, 2, 2, 3, 2, 4, 2, 5, 2, 6, 2, 7, 2, 8},
+			DevAddr:       types.DevAddr([4]byte{1, 2, 3, 4}),
+			AppKey:        types.AppKey([16]byte{0, 1, 0, 2, 0, 3, 0, 4, 0, 5, 0, 6, 0, 7, 0, 8}),
+			NwkSKey:       types.NwkSKey([16]byte{1, 1, 1, 2, 1, 3, 1, 4, 1, 5, 1, 6, 1, 7, 1, 8}),
+			AppSKey:       types.AppSKey([16]byte{2, 1, 2, 2, 2, 3, 2, 4, 2, 5, 2, 6, 2, 7, 2, 8}),
 			UsedDevNonces: []DevNonce{DevNonce{1, 2}, DevNonce{3, 4}},
 			UsedAppNonces: []AppNonce{AppNonce{1, 2, 3}, AppNonce{4, 5, 6}},
 		}, map[string]string{

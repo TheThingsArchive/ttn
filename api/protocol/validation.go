@@ -1,34 +1,27 @@
 package protocol
 
+import "github.com/TheThingsNetwork/ttn/api"
+
 // Validate implements the api.Validator interface
 func (m *RxMetadata) Validate() bool {
-	switch {
-	case m.GetLorawan() != nil:
-		if !m.GetLorawan().Validate() {
-			return false
-		}
+	if m.Protocol == nil || !api.Validate(m.Protocol) {
+		return false
 	}
 	return true
 }
 
 // Validate implements the api.Validator interface
 func (m *TxConfiguration) Validate() bool {
-	switch {
-	case m.GetLorawan() != nil:
-		if !m.GetLorawan().Validate() {
-			return false
-		}
+	if m.Protocol == nil || !api.Validate(m.Protocol) {
+		return false
 	}
 	return true
 }
 
 // Validate implements the api.Validator interface
 func (m *ActivationMetadata) Validate() bool {
-	switch {
-	case m.GetLorawan() != nil:
-		if !m.GetLorawan().Validate() {
-			return false
-		}
+	if m.Protocol == nil || !api.Validate(m.Protocol) {
+		return false
 	}
 	return true
 }

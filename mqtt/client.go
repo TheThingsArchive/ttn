@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/random"
 	"github.com/apex/log"
 	MQTT "github.com/eclipse/paho.mqtt.golang"
@@ -24,21 +23,21 @@ type Client interface {
 	IsConnected() bool
 
 	// Uplink pub/sub
-	PublishUplink(appEUI types.AppEUI, devEUI types.DevEUI, payload UplinkMessage) Token
-	SubscribeDeviceUplink(appEUI types.AppEUI, devEUI types.DevEUI, handler UplinkHandler) Token
-	SubscribeAppUplink(appEUI types.AppEUI, handler UplinkHandler) Token
+	PublishUplink(appID string, devID string, payload UplinkMessage) Token
+	SubscribeDeviceUplink(appID string, devID string, handler UplinkHandler) Token
+	SubscribeAppUplink(appID string, handler UplinkHandler) Token
 	SubscribeUplink(handler UplinkHandler) Token
 
 	// Downlink pub/sub
-	PublishDownlink(appEUI types.AppEUI, devEUI types.DevEUI, payload DownlinkMessage) Token
-	SubscribeDeviceDownlink(appEUI types.AppEUI, devEUI types.DevEUI, handler DownlinkHandler) Token
-	SubscribeAppDownlink(appEUI types.AppEUI, handler DownlinkHandler) Token
+	PublishDownlink(appID string, devID string, payload DownlinkMessage) Token
+	SubscribeDeviceDownlink(appID string, devID string, handler DownlinkHandler) Token
+	SubscribeAppDownlink(appID string, handler DownlinkHandler) Token
 	SubscribeDownlink(handler DownlinkHandler) Token
 
 	// Activation pub/sub
-	PublishActivation(appEUI types.AppEUI, devEUI types.DevEUI, payload Activation) Token
-	SubscribeDeviceActivations(appEUI types.AppEUI, devEUI types.DevEUI, handler ActivationHandler) Token
-	SubscribeAppActivations(appEUI types.AppEUI, handler ActivationHandler) Token
+	PublishActivation(appID string, devID string, payload Activation) Token
+	SubscribeDeviceActivations(appID string, devID string, handler ActivationHandler) Token
+	SubscribeAppActivations(appID string, handler ActivationHandler) Token
 	SubscribeActivations(handler ActivationHandler) Token
 }
 
@@ -67,9 +66,9 @@ func (t *simpleToken) Error() error {
 	return t.err
 }
 
-type UplinkHandler func(client Client, appEUI types.AppEUI, devEUI types.DevEUI, req UplinkMessage)
-type DownlinkHandler func(client Client, appEUI types.AppEUI, devEUI types.DevEUI, req DownlinkMessage)
-type ActivationHandler func(client Client, appEUI types.AppEUI, devEUI types.DevEUI, req Activation)
+type UplinkHandler func(client Client, appID string, devID string, req UplinkMessage)
+type DownlinkHandler func(client Client, appID string, devID string, req DownlinkMessage)
+type ActivationHandler func(client Client, appID string, devID string, req Activation)
 
 type defaultClient struct {
 	mqtt MQTT.Client
@@ -153,8 +152,8 @@ func (c *defaultClient) IsConnected() bool {
 	return c.mqtt.IsConnected()
 }
 
-func (c *defaultClient) PublishUplink(appEUI types.AppEUI, devEUI types.DevEUI, dataUp UplinkMessage) Token {
-	topic := DeviceTopic{appEUI, devEUI, Uplink}
+func (c *defaultClient) PublishUplink(appID string, devID string, dataUp UplinkMessage) Token {
+	topic := DeviceTopic{appID, devID, Uplink}
 	msg, err := json.Marshal(dataUp)
 	if err != nil {
 		return &simpleToken{fmt.Errorf("Unable to marshal the message payload")}
@@ -162,8 +161,8 @@ func (c *defaultClient) PublishUplink(appEUI types.AppEUI, devEUI types.DevEUI, 
 	return c.mqtt.Publish(topic.String(), QoS, false, msg)
 }
 
-func (c *defaultClient) SubscribeDeviceUplink(appEUI types.AppEUI, devEUI types.DevEUI, handler UplinkHandler) Token {
-	topic := DeviceTopic{appEUI, devEUI, Uplink}
+func (c *defaultClient) SubscribeDeviceUplink(appID string, devID string, handler UplinkHandler) Token {
+	topic := DeviceTopic{appID, devID, Uplink}
 	return c.mqtt.Subscribe(topic.String(), QoS, func(mqtt MQTT.Client, msg MQTT.Message) {
 		// Determine the actual topic
 		topic, err := ParseDeviceTopic(msg.Topic())
@@ -182,20 +181,20 @@ func (c *defaultClient) SubscribeDeviceUplink(appEUI types.AppEUI, devEUI types.
 		}
 
 		// Call the uplink handler
-		handler(c, topic.AppEUI, topic.DevEUI, *dataUp)
+		handler(c, topic.AppID, topic.DevID, *dataUp)
 	})
 }
 
-func (c *defaultClient) SubscribeAppUplink(appEUI types.AppEUI, handler UplinkHandler) Token {
-	return c.SubscribeDeviceUplink(appEUI, types.DevEUI{}, handler)
+func (c *defaultClient) SubscribeAppUplink(appID string, handler UplinkHandler) Token {
+	return c.SubscribeDeviceUplink(appID, "", handler)
 }
 
 func (c *defaultClient) SubscribeUplink(handler UplinkHandler) Token {
-	return c.SubscribeDeviceUplink(types.AppEUI{}, types.DevEUI{}, handler)
+	return c.SubscribeDeviceUplink("", "", handler)
 }
 
-func (c *defaultClient) PublishDownlink(appEUI types.AppEUI, devEUI types.DevEUI, dataDown DownlinkMessage) Token {
-	topic := DeviceTopic{appEUI, devEUI, Downlink}
+func (c *defaultClient) PublishDownlink(appID string, devID string, dataDown DownlinkMessage) Token {
+	topic := DeviceTopic{appID, devID, Downlink}
 	msg, err := json.Marshal(dataDown)
 	if err != nil {
 		return &simpleToken{fmt.Errorf("Unable to marshal the message payload")}
@@ -203,8 +202,8 @@ func (c *defaultClient) PublishDownlink(appEUI types.AppEUI, devEUI types.DevEUI
 	return c.mqtt.Publish(topic.String(), QoS, false, msg)
 }
 
-func (c *defaultClient) SubscribeDeviceDownlink(appEUI types.AppEUI, devEUI types.DevEUI, handler DownlinkHandler) Token {
-	topic := DeviceTopic{appEUI, devEUI, Downlink}
+func (c *defaultClient) SubscribeDeviceDownlink(appID string, devID string, handler DownlinkHandler) Token {
+	topic := DeviceTopic{appID, devID, Downlink}
 	return c.mqtt.Subscribe(topic.String(), QoS, func(mqtt MQTT.Client, msg MQTT.Message) {
 		// Determine the actual topic
 		topic, err := ParseDeviceTopic(msg.Topic())
@@ -222,20 +221,20 @@ func (c *defaultClient) SubscribeDeviceDownlink(appEUI types.AppEUI, devEUI type
 		}
 
 		// Call the Downlink handler
-		handler(c, topic.AppEUI, topic.DevEUI, *dataDown)
+		handler(c, topic.AppID, topic.DevID, *dataDown)
 	})
 }
 
-func (c *defaultClient) SubscribeAppDownlink(appEUI types.AppEUI, handler DownlinkHandler) Token {
-	return c.SubscribeDeviceDownlink(appEUI, types.DevEUI{}, handler)
+func (c *defaultClient) SubscribeAppDownlink(appID string, handler DownlinkHandler) Token {
+	return c.SubscribeDeviceDownlink(appID, "", handler)
 }
 
 func (c *defaultClient) SubscribeDownlink(handler DownlinkHandler) Token {
-	return c.SubscribeDeviceDownlink(types.AppEUI{}, types.DevEUI{}, handler)
+	return c.SubscribeDeviceDownlink("", "", handler)
 }
 
-func (c *defaultClient) PublishActivation(appEUI types.AppEUI, devEUI types.DevEUI, activation Activation) Token {
-	topic := DeviceTopic{appEUI, devEUI, Activations}
+func (c *defaultClient) PublishActivation(appID string, devID string, activation Activation) Token {
+	topic := DeviceTopic{appID, devID, Activations}
 	msg, err := json.Marshal(activation)
 	if err != nil {
 		return &simpleToken{fmt.Errorf("Unable to marshal the message payload")}
@@ -243,8 +242,8 @@ func (c *defaultClient) PublishActivation(appEUI types.AppEUI, devEUI types.DevE
 	return c.mqtt.Publish(topic.String(), QoS, false, msg)
 }
 
-func (c *defaultClient) SubscribeDeviceActivations(appEUI types.AppEUI, devEUI types.DevEUI, handler ActivationHandler) Token {
-	topic := DeviceTopic{appEUI, devEUI, Activations}
+func (c *defaultClient) SubscribeDeviceActivations(appID string, devID string, handler ActivationHandler) Token {
+	topic := DeviceTopic{appID, devID, Activations}
 	return c.mqtt.Subscribe(topic.String(), QoS, func(mqtt MQTT.Client, msg MQTT.Message) {
 		// Determine the actual topic
 		topic, err := ParseDeviceTopic(msg.Topic())
@@ -262,14 +261,14 @@ func (c *defaultClient) SubscribeDeviceActivations(appEUI types.AppEUI, devEUI t
 		}
 
 		// Call the Activation handler
-		handler(c, topic.AppEUI, topic.DevEUI, *activation)
+		handler(c, topic.AppID, topic.DevID, *activation)
 	})
 }
 
-func (c *defaultClient) SubscribeAppActivations(appEUI types.AppEUI, handler ActivationHandler) Token {
-	return c.SubscribeDeviceActivations(appEUI, types.DevEUI{}, handler)
+func (c *defaultClient) SubscribeAppActivations(appID string, handler ActivationHandler) Token {
+	return c.SubscribeDeviceActivations(appID, "", handler)
 }
 
 func (c *defaultClient) SubscribeActivations(handler ActivationHandler) Token {
-	return c.SubscribeDeviceActivations(types.AppEUI{}, types.DevEUI{}, handler)
+	return c.SubscribeDeviceActivations("", "", handler)
 }

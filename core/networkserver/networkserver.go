@@ -93,6 +93,7 @@ func (n *networkServer) HandleGetDevices(req *pb.DevicesRequest) (*pb.DevicesRes
 			AppEui:           &device.AppEUI,
 			AppId:            device.AppID,
 			DevEui:           &device.DevEUI,
+			DevId:            device.DevID,
 			NwkSKey:          &device.NwkSKey,
 			FCntUp:           device.FCntUp,
 			Uses32BitFCnt:    device.Options.Uses32BitFCnt,
@@ -123,6 +124,7 @@ func (n *networkServer) HandlePrepareActivation(activation *pb_broker.Deduplicat
 		return nil, err
 	}
 	activation.AppId = dev.AppID
+	activation.DevId = dev.DevID
 
 	// Build activation metadata if not present
 	if meta := activation.GetActivationMetadata(); meta == nil {

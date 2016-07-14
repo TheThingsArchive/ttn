@@ -17,24 +17,24 @@ import (
 
 func TestEnqueueDownlink(t *testing.T) {
 	a := New(t)
-	appEUI := types.AppEUI{1, 2, 3, 4, 5, 6, 7, 8}
-	devEUI := types.DevEUI{1, 2, 3, 4, 5, 6, 7, 8}
+	appID := "app1"
+	devID := "dev1"
 	h := &handler{
 		Component: &core.Component{Ctx: GetLogger(t, "TestEnqueueDownlink")},
 		devices:   device.NewDeviceStore(),
 	}
 	err := h.EnqueueDownlink(&mqtt.DownlinkMessage{
-		AppEUI: appEUI,
-		DevEUI: devEUI,
+		AppID: appID,
+		DevID: devID,
 	})
 	a.So(err, ShouldNotBeNil)
 	h.devices.Set(&device.Device{
-		AppEUI: appEUI,
-		DevEUI: devEUI,
+		AppID: appID,
+		DevID: devID,
 	})
 	err = h.EnqueueDownlink(&mqtt.DownlinkMessage{
-		AppEUI: appEUI,
-		DevEUI: devEUI,
+		AppID: appID,
+		DevID: devID,
 		Fields: map[string]interface{}{
 			"string": "hello!",
 			"int":    42,
@@ -42,34 +42,37 @@ func TestEnqueueDownlink(t *testing.T) {
 		},
 	})
 	a.So(err, ShouldBeNil)
-	dev, _ := h.devices.Get(appEUI, devEUI)
+	dev, _ := h.devices.Get(appID, devID)
 	a.So(dev.NextDownlink, ShouldNotBeEmpty)
 	a.So(dev.NextDownlink.Fields, ShouldHaveLength, 3)
 }
 
 func TestHandleDownlink(t *testing.T) {
 	a := New(t)
-	appEUI := types.AppEUI{1, 2, 3, 4, 5, 6, 7, 8}
-	devEUI := types.DevEUI{1, 2, 3, 4, 5, 6, 7, 8}
+	appID := "app2"
+	devID := "dev2"
+	appEUI := types.AppEUI([8]byte{1, 2, 3, 4, 5, 6, 7, 8})
+	devEUI := types.DevEUI([8]byte{1, 2, 3, 4, 5, 6, 7, 8})
 	h := &handler{
 		Component: &core.Component{Ctx: GetLogger(t, "TestHandleDownlink")},
 		devices:   device.NewDeviceStore(),
 	}
+
 	err := h.HandleDownlink(&mqtt.DownlinkMessage{
-		AppEUI: appEUI,
-		DevEUI: devEUI,
+		AppID: appID,
+		DevID: devID,
 	}, &pb_broker.DownlinkMessage{
 		AppEui: &appEUI,
 		DevEui: &devEUI,
 	})
 	a.So(err, ShouldNotBeNil)
 	h.devices.Set(&device.Device{
-		AppEUI: appEUI,
-		DevEUI: devEUI,
+		AppID: appID,
+		DevID: devID,
 	})
 	err = h.HandleDownlink(&mqtt.DownlinkMessage{
-		AppEUI: appEUI,
-		DevEUI: devEUI,
+		AppID: appID,
+		DevID: devID,
 	}, &pb_broker.DownlinkMessage{
 		AppEui:  &appEUI,
 		DevEui:  &devEUI,
@@ -82,8 +85,8 @@ func TestHandleDownlink(t *testing.T) {
 		a.So(dl.Payload, ShouldNotBeEmpty)
 	}()
 	err = h.HandleDownlink(&mqtt.DownlinkMessage{
-		AppEUI:  appEUI,
-		DevEUI:  devEUI,
+		AppID:   appID,
+		DevID:   devID,
 		Payload: []byte{0xAA, 0xBC},
 	}, &pb_broker.DownlinkMessage{
 		AppEui:  &appEUI,

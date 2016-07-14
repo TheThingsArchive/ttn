@@ -8,9 +8,6 @@ func (m *DeviceIdentifier) Validate() bool {
 	if m.DevEui == nil || m.DevEui.IsEmpty() {
 		return false
 	}
-	if m.AppId == "" {
-		return false
-	}
 	return true
 }
 

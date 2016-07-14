@@ -23,7 +23,7 @@ type handlerManager struct {
 
 var errf = grpc.Errorf
 
-func (h *handlerManager) getDevice(ctx context.Context, in *pb_lorawan.DeviceIdentifier) (*device.Device, error) {
+func (h *handlerManager) getDevice(ctx context.Context, in *pb.DeviceIdentifier) (*device.Device, error) {
 	if !in.Validate() {
 		return nil, grpcErrf(codes.InvalidArgument, "Invalid Device Identifier")
 	}
@@ -34,7 +34,7 @@ func (h *handlerManager) getDevice(ctx context.Context, in *pb_lorawan.DeviceIde
 	if !claims.CanEditApp(in.AppId) {
 		return nil, errf(codes.Unauthenticated, "No access to this device")
 	}
-	dev, err := h.devices.Get(*in.AppEui, *in.DevEui)
+	dev, err := h.devices.Get(in.AppId, in.DevId)
 	if err != nil {
 		return nil, err
 	}
@@ -44,68 +44,87 @@ func (h *handlerManager) getDevice(ctx context.Context, in *pb_lorawan.DeviceIde
 	return dev, nil
 }
 
-func (h *handlerManager) GetDevice(ctx context.Context, in *pb_lorawan.DeviceIdentifier) (*pb_lorawan.Device, error) {
+func (h *handlerManager) GetDevice(ctx context.Context, in *pb.DeviceIdentifier) (*pb.Device, error) {
 	dev, err := h.getDevice(ctx, in)
 	if err != nil {
 		return nil, err
 	}
 
-	nsDev, err := h.ttnDeviceManager.GetDevice(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-
-	return &pb_lorawan.Device{
-		AppId:            dev.AppID,
-		AppEui:           nsDev.AppEui,
-		DevEui:           nsDev.DevEui,
-		DevAddr:          nsDev.DevAddr,
-		NwkSKey:          nsDev.NwkSKey,
-		AppSKey:          &dev.AppSKey,
-		AppKey:           &dev.AppKey,
-		FCntUp:           nsDev.FCntUp,
-		FCntDown:         nsDev.FCntDown,
-		DisableFCntCheck: nsDev.DisableFCntCheck,
-		Uses32BitFCnt:    nsDev.Uses32BitFCnt,
-		LastSeen:         nsDev.LastSeen,
-	}, nil
-}
-
-func (h *handlerManager) SetDevice(ctx context.Context, in *pb_lorawan.Device) (*api.Ack, error) {
-	_, err := h.getDevice(ctx, &pb_lorawan.DeviceIdentifier{AppId: in.AppId, AppEui: in.AppEui, DevEui: in.DevEui})
-	if err != nil && err != device.ErrNotFound {
-		return nil, err
-	}
-
-	_, err = h.ttnDeviceManager.SetDevice(ctx, &pb_lorawan.Device{
-		AppId:            in.AppId,
-		AppEui:           in.AppEui,
-		DevEui:           in.DevEui,
-		DevAddr:          in.DevAddr,
-		NwkSKey:          in.NwkSKey,
-		FCntUp:           in.FCntUp,
-		FCntDown:         in.FCntDown,
-		DisableFCntCheck: in.DisableFCntCheck,
-		Uses32BitFCnt:    in.Uses32BitFCnt,
+	nsDev, err := h.ttnDeviceManager.GetDevice(ctx, &pb_lorawan.DeviceIdentifier{
+		AppEui: &dev.AppEUI,
+		DevEui: &dev.DevEUI,
 	})
 	if err != nil {
 		return nil, err
 	}
 
+	return &pb.Device{
+		AppId: dev.AppID,
+		DevId: dev.DevID,
+		Device: &pb.Device_LorawanDevice{LorawanDevice: &pb_lorawan.Device{
+			AppId:            dev.AppID,
+			AppEui:           nsDev.AppEui,
+			DevId:            dev.DevID,
+			DevEui:           nsDev.DevEui,
+			DevAddr:          nsDev.DevAddr,
+			NwkSKey:          nsDev.NwkSKey,
+			AppSKey:          &dev.AppSKey,
+			AppKey:           &dev.AppKey,
+			FCntUp:           nsDev.FCntUp,
+			FCntDown:         nsDev.FCntDown,
+			DisableFCntCheck: nsDev.DisableFCntCheck,
+			Uses32BitFCnt:    nsDev.Uses32BitFCnt,
+			LastSeen:         nsDev.LastSeen,
+		}},
+	}, nil
+}
+
+func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*api.Ack, error) {
+	_, err := h.getDevice(ctx, &pb.DeviceIdentifier{AppId: in.AppId, DevId: in.DevId})
+	if err != nil && err != device.ErrNotFound {
+		return nil, err
+	}
+
+	if !in.Validate() {
+		return nil, grpcErrf(codes.InvalidArgument, "Invalid Device")
+	}
+
 	updated := &device.Device{
-		AppID:  in.AppId,
-		AppEUI: *in.AppEui,
-		DevEUI: *in.DevEui,
+		AppID: in.AppId,
+		DevID: in.DevId,
 	}
 
-	if in.DevAddr != nil && in.NwkSKey != nil && in.AppSKey != nil {
-		updated.DevAddr = *in.DevAddr
-		updated.NwkSKey = *in.NwkSKey
-		updated.AppSKey = *in.AppSKey
+	lorawan := in.GetLorawanDevice()
+	if lorawan == nil {
+		err = grpcErrf(codes.InvalidArgument, "No LoRaWAN Device")
 	}
 
-	if in.AppKey != nil {
-		updated.AppKey = *in.AppKey
+	_, err = h.ttnDeviceManager.SetDevice(ctx, &pb_lorawan.Device{
+		AppId:            in.AppId,
+		AppEui:           lorawan.AppEui,
+		DevEui:           lorawan.DevEui,
+		DevAddr:          lorawan.DevAddr,
+		NwkSKey:          lorawan.NwkSKey,
+		FCntUp:           lorawan.FCntUp,
+		FCntDown:         lorawan.FCntDown,
+		DisableFCntCheck: lorawan.DisableFCntCheck,
+		Uses32BitFCnt:    lorawan.Uses32BitFCnt,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	updated.AppEUI = *lorawan.AppEui
+	updated.DevEUI = *lorawan.DevEui
+
+	if lorawan.DevAddr != nil && lorawan.NwkSKey != nil && lorawan.AppSKey != nil {
+		updated.DevAddr = *lorawan.DevAddr
+		updated.NwkSKey = *lorawan.NwkSKey
+		updated.AppSKey = *lorawan.AppSKey
+	}
+
+	if lorawan.AppKey != nil {
+		updated.AppKey = *lorawan.AppKey
 	}
 
 	err = h.devices.Set(updated)
@@ -116,20 +135,55 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb_lorawan.Device) (
 	return &api.Ack{}, nil
 }
 
-func (h *handlerManager) DeleteDevice(ctx context.Context, in *pb_lorawan.DeviceIdentifier) (*api.Ack, error) {
-	_, err := h.getDevice(ctx, in)
+func (h *handlerManager) DeleteDevice(ctx context.Context, in *pb.DeviceIdentifier) (*api.Ack, error) {
+	dev, err := h.getDevice(ctx, in)
 	if err != nil {
 		return nil, err
 	}
-	_, err = h.ttnDeviceManager.DeleteDevice(ctx, in)
+	_, err = h.ttnDeviceManager.DeleteDevice(ctx, &pb_lorawan.DeviceIdentifier{AppEui: &dev.AppEUI, DevEui: &dev.DevEUI})
 	if err != nil {
 		return nil, err
 	}
-	err = h.devices.Delete(*in.AppEui, *in.DevEui)
+	err = h.devices.Delete(in.AppId, in.DevId)
 	if err != nil {
 		return nil, err
 	}
 	return &api.Ack{}, nil
+}
+
+func (h *handlerManager) GetDevicesForApplication(ctx context.Context, in *pb.ApplicationIdentifier) (*pb.DeviceList, error) {
+	if !in.Validate() {
+		return nil, grpcErrf(codes.InvalidArgument, "Invalid Application Identifier")
+	}
+	claims, err := h.Component.ValidateContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if !claims.CanEditApp(in.AppId) {
+		return nil, errf(codes.Unauthenticated, "No access to this application")
+	}
+	devices, err := h.devices.ListForApp(in.AppId)
+	if err != nil {
+		return nil, err
+	}
+	res := &pb.DeviceList{Devices: []*pb.Device{}}
+	for _, dev := range devices {
+		res.Devices = append(res.Devices, &pb.Device{
+			AppId: dev.AppID,
+			DevId: dev.DevID,
+			Device: &pb.Device_LorawanDevice{LorawanDevice: &pb_lorawan.Device{
+				AppId:   dev.AppID,
+				AppEui:  &dev.AppEUI,
+				DevId:   dev.DevID,
+				DevEui:  &dev.DevEUI,
+				DevAddr: &dev.DevAddr,
+				NwkSKey: &dev.NwkSKey,
+				AppSKey: &dev.AppSKey,
+				AppKey:  &dev.AppKey,
+			}},
+		})
+	}
+	return res, nil
 }
 
 func (h *handlerManager) getApplication(ctx context.Context, in *pb.ApplicationIdentifier) (*application.Application, error) {
@@ -171,6 +225,10 @@ func (h *handlerManager) SetApplication(ctx context.Context, in *pb.Application)
 	app, err := h.getApplication(ctx, &pb.ApplicationIdentifier{AppId: in.AppId})
 	if err != nil && err != application.ErrNotFound {
 		return nil, err
+	}
+
+	if !in.Validate() {
+		return nil, grpcErrf(codes.InvalidArgument, "Invalid Application")
 	}
 
 	err = h.applications.Set(&application.Application{
@@ -247,5 +305,4 @@ func (b *handler) RegisterManager(s *grpc.Server) {
 	server := &handlerManager{b}
 	pb.RegisterHandlerManagerServer(s, server)
 	pb.RegisterApplicationManagerServer(s, server)
-	pb_lorawan.RegisterDeviceManagerServer(s, server)
 }

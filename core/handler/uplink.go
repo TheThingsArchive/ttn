@@ -4,10 +4,10 @@
 package handler
 
 import (
+	"fmt"
 	"time"
 
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
-	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/mqtt"
 	"github.com/apex/log"
 )
@@ -15,18 +15,9 @@ import (
 var ResponseDeadline = 100 * time.Millisecond
 
 func (h *handler) HandleUplink(uplink *pb_broker.DeduplicatedUplinkMessage) error {
-	var appEUI types.AppEUI
-	if uplink.AppEui != nil {
-		appEUI = *uplink.AppEui
-	}
-	var devEUI types.DevEUI
-	if uplink.DevEui != nil {
-		devEUI = *uplink.DevEui
-	}
-
 	ctx := h.Ctx.WithFields(log.Fields{
-		"DevEUI": devEUI,
-		"AppEUI": appEUI,
+		"AppID": uplink.AppId,
+		"DevID": uplink.DevId,
 	})
 	var err error
 	defer func() {
@@ -37,8 +28,8 @@ func (h *handler) HandleUplink(uplink *pb_broker.DeduplicatedUplinkMessage) erro
 
 	// Build AppUplink
 	appUplink := &mqtt.UplinkMessage{
-		DevEUI: devEUI,
-		AppEUI: appEUI,
+		AppID: uplink.AppId,
+		DevID: uplink.DevId,
 	}
 
 	// Get Uplink Processors
@@ -57,6 +48,7 @@ func (h *handler) HandleUplink(uplink *pb_broker.DeduplicatedUplinkMessage) erro
 			err = nil
 			return nil
 		} else if err != nil {
+			fmt.Println(err)
 			return err
 		}
 	}
@@ -68,7 +60,7 @@ func (h *handler) HandleUplink(uplink *pb_broker.DeduplicatedUplinkMessage) erro
 
 	// Find Device and scheduled downlink
 	var appDownlink mqtt.DownlinkMessage
-	dev, err := h.devices.Get(appEUI, devEUI)
+	dev, err := h.devices.Get(uplink.AppId, uplink.DevId)
 	if err != nil {
 		return err
 	}
@@ -83,8 +75,8 @@ func (h *handler) HandleUplink(uplink *pb_broker.DeduplicatedUplinkMessage) erro
 
 	// Prepare Downlink
 	downlink := uplink.ResponseTemplate
-	appDownlink.AppEUI = appEUI
-	appDownlink.DevEUI = devEUI
+	appDownlink.AppID = uplink.AppId
+	appDownlink.DevID = uplink.DevId
 
 	// Handle Downlink
 	err = h.HandleDownlink(&appDownlink, downlink)

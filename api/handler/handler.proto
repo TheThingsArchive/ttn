@@ -6,6 +6,7 @@ syntax = "proto3";
 import "github.com/TheThingsNetwork/ttn/api/api.proto";
 import "github.com/TheThingsNetwork/ttn/api/broker/broker.proto";
 import "github.com/TheThingsNetwork/ttn/api/protocol/protocol.proto";
+import "github.com/TheThingsNetwork/ttn/api/protocol/lorawan/device.proto";
 
 package handler;
 
@@ -38,10 +39,31 @@ message Application {
   string validator   = 4;
 }
 
+message DeviceIdentifier {
+  string app_id      = 1;
+  string dev_id      = 2;
+}
+
+message Device {
+  string app_id      = 1;
+  string dev_id      = 2;
+  oneof device {
+    lorawan.Device lorawan_device = 3;
+  }
+}
+
+message DeviceList {
+  repeated Device devices = 1;
+}
+
 service ApplicationManager {
   rpc GetApplication(ApplicationIdentifier) returns (Application);
   rpc SetApplication(Application) returns (api.Ack);
   rpc DeleteApplication(ApplicationIdentifier) returns (api.Ack);
+  rpc GetDevice(DeviceIdentifier) returns (Device);
+  rpc SetDevice(Device) returns (api.Ack);
+  rpc DeleteDevice(DeviceIdentifier) returns (api.Ack);
+  rpc GetDevicesForApplication(ApplicationIdentifier) returns (DeviceList);
 }
 
 // The HandlerManager service provides configuration and monitoring

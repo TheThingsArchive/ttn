@@ -51,6 +51,7 @@ message DeduplicatedUplinkMessage {
   bytes                       dev_eui            = 11 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.DevEUI"];
   bytes                       app_eui            = 12 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.AppEUI"];
   string                      app_id             = 13;
+  string                      dev_id             = 14;
   protocol.RxMetadata         protocol_metadata  = 21;
   repeated gateway.RxMetadata gateway_metadata   = 22;
   int64                       server_time        = 23;
@@ -74,6 +75,7 @@ message DeduplicatedDeviceActivationRequest {
   bytes                        dev_eui              = 11 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.DevEUI"];
   bytes                        app_eui              = 12 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.AppEUI"];
   string                       app_id               = 13;
+  string                       dev_id               = 14;
   protocol.RxMetadata          protocol_metadata    = 21;
   repeated gateway.RxMetadata  gateway_metadata     = 22;
   protocol.ActivationMetadata  activation_metadata  = 23;

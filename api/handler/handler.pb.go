@@ -14,6 +14,9 @@
 		Status
 		ApplicationIdentifier
 		Application
+		DeviceIdentifier
+		Device
+		DeviceList
 */
 package handler
 
@@ -23,6 +26,7 @@ import math "math"
 import api "github.com/TheThingsNetwork/ttn/api"
 import broker "github.com/TheThingsNetwork/ttn/api/broker"
 import protocol "github.com/TheThingsNetwork/ttn/api/protocol"
+import lorawan1 "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 
 import (
 	context "golang.org/x/net/context"
@@ -105,12 +109,135 @@ func (m *Application) String() string            { return proto.CompactTextStrin
 func (*Application) ProtoMessage()               {}
 func (*Application) Descriptor() ([]byte, []int) { return fileDescriptorHandler, []int{4} }
 
+type DeviceIdentifier struct {
+	AppId string `protobuf:"bytes,1,opt,name=app_id,json=appId,proto3" json:"app_id,omitempty"`
+	DevId string `protobuf:"bytes,2,opt,name=dev_id,json=devId,proto3" json:"dev_id,omitempty"`
+}
+
+func (m *DeviceIdentifier) Reset()                    { *m = DeviceIdentifier{} }
+func (m *DeviceIdentifier) String() string            { return proto.CompactTextString(m) }
+func (*DeviceIdentifier) ProtoMessage()               {}
+func (*DeviceIdentifier) Descriptor() ([]byte, []int) { return fileDescriptorHandler, []int{5} }
+
+type Device struct {
+	AppId string `protobuf:"bytes,1,opt,name=app_id,json=appId,proto3" json:"app_id,omitempty"`
+	DevId string `protobuf:"bytes,2,opt,name=dev_id,json=devId,proto3" json:"dev_id,omitempty"`
+	// Types that are valid to be assigned to Device:
+	//	*Device_LorawanDevice
+	Device isDevice_Device `protobuf_oneof:"device"`
+}
+
+func (m *Device) Reset()                    { *m = Device{} }
+func (m *Device) String() string            { return proto.CompactTextString(m) }
+func (*Device) ProtoMessage()               {}
+func (*Device) Descriptor() ([]byte, []int) { return fileDescriptorHandler, []int{6} }
+
+type isDevice_Device interface {
+	isDevice_Device()
+	MarshalTo([]byte) (int, error)
+	Size() int
+}
+
+type Device_LorawanDevice struct {
+	LorawanDevice *lorawan1.Device `protobuf:"bytes,3,opt,name=lorawan_device,json=lorawanDevice,oneof"`
+}
+
+func (*Device_LorawanDevice) isDevice_Device() {}
+
+func (m *Device) GetDevice() isDevice_Device {
+	if m != nil {
+		return m.Device
+	}
+	return nil
+}
+
+func (m *Device) GetLorawanDevice() *lorawan1.Device {
+	if x, ok := m.GetDevice().(*Device_LorawanDevice); ok {
+		return x.LorawanDevice
+	}
+	return nil
+}
+
+// XXX_OneofFuncs is for the internal use of the proto package.
+func (*Device) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
+	return _Device_OneofMarshaler, _Device_OneofUnmarshaler, _Device_OneofSizer, []interface{}{
+		(*Device_LorawanDevice)(nil),
+	}
+}
+
+func _Device_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
+	m := msg.(*Device)
+	// device
+	switch x := m.Device.(type) {
+	case *Device_LorawanDevice:
+		_ = b.EncodeVarint(3<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.LorawanDevice); err != nil {
+			return err
+		}
+	case nil:
+	default:
+		return fmt.Errorf("Device.Device has unexpected type %T", x)
+	}
+	return nil
+}
+
+func _Device_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
+	m := msg.(*Device)
+	switch tag {
+	case 3: // device.lorawan_device
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(lorawan1.Device)
+		err := b.DecodeMessage(msg)
+		m.Device = &Device_LorawanDevice{msg}
+		return true, err
+	default:
+		return false, nil
+	}
+}
+
+func _Device_OneofSizer(msg proto.Message) (n int) {
+	m := msg.(*Device)
+	// device
+	switch x := m.Device.(type) {
+	case *Device_LorawanDevice:
+		s := proto.Size(x.LorawanDevice)
+		n += proto.SizeVarint(3<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case nil:
+	default:
+		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
+	}
+	return n
+}
+
+type DeviceList struct {
+	Devices []*Device `protobuf:"bytes,1,rep,name=devices" json:"devices,omitempty"`
+}
+
+func (m *DeviceList) Reset()                    { *m = DeviceList{} }
+func (m *DeviceList) String() string            { return proto.CompactTextString(m) }
+func (*DeviceList) ProtoMessage()               {}
+func (*DeviceList) Descriptor() ([]byte, []int) { return fileDescriptorHandler, []int{7} }
+
+func (m *DeviceList) GetDevices() []*Device {
+	if m != nil {
+		return m.Devices
+	}
+	return nil
+}
+
 func init() {
 	proto.RegisterType((*DeviceActivationResponse)(nil), "handler.DeviceActivationResponse")
 	proto.RegisterType((*StatusRequest)(nil), "handler.StatusRequest")
 	proto.RegisterType((*Status)(nil), "handler.Status")
 	proto.RegisterType((*ApplicationIdentifier)(nil), "handler.ApplicationIdentifier")
 	proto.RegisterType((*Application)(nil), "handler.Application")
+	proto.RegisterType((*DeviceIdentifier)(nil), "handler.DeviceIdentifier")
+	proto.RegisterType((*Device)(nil), "handler.Device")
+	proto.RegisterType((*DeviceList)(nil), "handler.DeviceList")
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -191,6 +318,10 @@ type ApplicationManagerClient interface {
 	GetApplication(ctx context.Context, in *ApplicationIdentifier, opts ...grpc.CallOption) (*Application, error)
 	SetApplication(ctx context.Context, in *Application, opts ...grpc.CallOption) (*api.Ack, error)
 	DeleteApplication(ctx context.Context, in *ApplicationIdentifier, opts ...grpc.CallOption) (*api.Ack, error)
+	GetDevice(ctx context.Context, in *DeviceIdentifier, opts ...grpc.CallOption) (*Device, error)
+	SetDevice(ctx context.Context, in *Device, opts ...grpc.CallOption) (*api.Ack, error)
+	DeleteDevice(ctx context.Context, in *DeviceIdentifier, opts ...grpc.CallOption) (*api.Ack, error)
+	GetDevicesForApplication(ctx context.Context, in *ApplicationIdentifier, opts ...grpc.CallOption) (*DeviceList, error)
 }
 
 type applicationManagerClient struct {
@@ -228,12 +359,52 @@ func (c *applicationManagerClient) DeleteApplication(ctx context.Context, in *Ap
 	return out, nil
 }
 
+func (c *applicationManagerClient) GetDevice(ctx context.Context, in *DeviceIdentifier, opts ...grpc.CallOption) (*Device, error) {
+	out := new(Device)
+	err := grpc.Invoke(ctx, "/handler.ApplicationManager/GetDevice", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *applicationManagerClient) SetDevice(ctx context.Context, in *Device, opts ...grpc.CallOption) (*api.Ack, error) {
+	out := new(api.Ack)
+	err := grpc.Invoke(ctx, "/handler.ApplicationManager/SetDevice", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *applicationManagerClient) DeleteDevice(ctx context.Context, in *DeviceIdentifier, opts ...grpc.CallOption) (*api.Ack, error) {
+	out := new(api.Ack)
+	err := grpc.Invoke(ctx, "/handler.ApplicationManager/DeleteDevice", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *applicationManagerClient) GetDevicesForApplication(ctx context.Context, in *ApplicationIdentifier, opts ...grpc.CallOption) (*DeviceList, error) {
+	out := new(DeviceList)
+	err := grpc.Invoke(ctx, "/handler.ApplicationManager/GetDevicesForApplication", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // Server API for ApplicationManager service
 
 type ApplicationManagerServer interface {
 	GetApplication(context.Context, *ApplicationIdentifier) (*Application, error)
 	SetApplication(context.Context, *Application) (*api.Ack, error)
 	DeleteApplication(context.Context, *ApplicationIdentifier) (*api.Ack, error)
+	GetDevice(context.Context, *DeviceIdentifier) (*Device, error)
+	SetDevice(context.Context, *Device) (*api.Ack, error)
+	DeleteDevice(context.Context, *DeviceIdentifier) (*api.Ack, error)
+	GetDevicesForApplication(context.Context, *ApplicationIdentifier) (*DeviceList, error)
 }
 
 func RegisterApplicationManagerServer(s *grpc.Server, srv ApplicationManagerServer) {
@@ -294,6 +465,78 @@ func _ApplicationManager_DeleteApplication_Handler(srv interface{}, ctx context.
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ApplicationManager_GetDevice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeviceIdentifier)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApplicationManagerServer).GetDevice(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/handler.ApplicationManager/GetDevice",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApplicationManagerServer).GetDevice(ctx, req.(*DeviceIdentifier))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ApplicationManager_SetDevice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Device)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApplicationManagerServer).SetDevice(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/handler.ApplicationManager/SetDevice",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApplicationManagerServer).SetDevice(ctx, req.(*Device))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ApplicationManager_DeleteDevice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeviceIdentifier)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApplicationManagerServer).DeleteDevice(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/handler.ApplicationManager/DeleteDevice",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApplicationManagerServer).DeleteDevice(ctx, req.(*DeviceIdentifier))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ApplicationManager_GetDevicesForApplication_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ApplicationIdentifier)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApplicationManagerServer).GetDevicesForApplication(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/handler.ApplicationManager/GetDevicesForApplication",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApplicationManagerServer).GetDevicesForApplication(ctx, req.(*ApplicationIdentifier))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _ApplicationManager_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "handler.ApplicationManager",
 	HandlerType: (*ApplicationManagerServer)(nil),
@@ -309,6 +552,22 @@ var _ApplicationManager_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteApplication",
 			Handler:    _ApplicationManager_DeleteApplication_Handler,
+		},
+		{
+			MethodName: "GetDevice",
+			Handler:    _ApplicationManager_GetDevice_Handler,
+		},
+		{
+			MethodName: "SetDevice",
+			Handler:    _ApplicationManager_SetDevice_Handler,
+		},
+		{
+			MethodName: "DeleteDevice",
+			Handler:    _ApplicationManager_DeleteDevice_Handler,
+		},
+		{
+			MethodName: "GetDevicesForApplication",
+			Handler:    _ApplicationManager_GetDevicesForApplication_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -533,6 +792,117 @@ func (m *Application) MarshalTo(data []byte) (int, error) {
 	return i, nil
 }
 
+func (m *DeviceIdentifier) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *DeviceIdentifier) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if len(m.AppId) > 0 {
+		data[i] = 0xa
+		i++
+		i = encodeVarintHandler(data, i, uint64(len(m.AppId)))
+		i += copy(data[i:], m.AppId)
+	}
+	if len(m.DevId) > 0 {
+		data[i] = 0x12
+		i++
+		i = encodeVarintHandler(data, i, uint64(len(m.DevId)))
+		i += copy(data[i:], m.DevId)
+	}
+	return i, nil
+}
+
+func (m *Device) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *Device) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if len(m.AppId) > 0 {
+		data[i] = 0xa
+		i++
+		i = encodeVarintHandler(data, i, uint64(len(m.AppId)))
+		i += copy(data[i:], m.AppId)
+	}
+	if len(m.DevId) > 0 {
+		data[i] = 0x12
+		i++
+		i = encodeVarintHandler(data, i, uint64(len(m.DevId)))
+		i += copy(data[i:], m.DevId)
+	}
+	if m.Device != nil {
+		nn3, err := m.Device.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += nn3
+	}
+	return i, nil
+}
+
+func (m *Device_LorawanDevice) MarshalTo(data []byte) (int, error) {
+	i := 0
+	if m.LorawanDevice != nil {
+		data[i] = 0x1a
+		i++
+		i = encodeVarintHandler(data, i, uint64(m.LorawanDevice.Size()))
+		n4, err := m.LorawanDevice.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n4
+	}
+	return i, nil
+}
+func (m *DeviceList) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *DeviceList) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if len(m.Devices) > 0 {
+		for _, msg := range m.Devices {
+			data[i] = 0xa
+			i++
+			i = encodeVarintHandler(data, i, uint64(msg.Size()))
+			n, err := msg.MarshalTo(data[i:])
+			if err != nil {
+				return 0, err
+			}
+			i += n
+		}
+	}
+	return i, nil
+}
+
 func encodeFixed64Handler(data []byte, offset int, v uint64) int {
 	data[offset] = uint8(v)
 	data[offset+1] = uint8(v >> 8)
@@ -622,6 +992,58 @@ func (m *Application) Size() (n int) {
 	l = len(m.Validator)
 	if l > 0 {
 		n += 1 + l + sovHandler(uint64(l))
+	}
+	return n
+}
+
+func (m *DeviceIdentifier) Size() (n int) {
+	var l int
+	_ = l
+	l = len(m.AppId)
+	if l > 0 {
+		n += 1 + l + sovHandler(uint64(l))
+	}
+	l = len(m.DevId)
+	if l > 0 {
+		n += 1 + l + sovHandler(uint64(l))
+	}
+	return n
+}
+
+func (m *Device) Size() (n int) {
+	var l int
+	_ = l
+	l = len(m.AppId)
+	if l > 0 {
+		n += 1 + l + sovHandler(uint64(l))
+	}
+	l = len(m.DevId)
+	if l > 0 {
+		n += 1 + l + sovHandler(uint64(l))
+	}
+	if m.Device != nil {
+		n += m.Device.Size()
+	}
+	return n
+}
+
+func (m *Device_LorawanDevice) Size() (n int) {
+	var l int
+	_ = l
+	if m.LorawanDevice != nil {
+		l = m.LorawanDevice.Size()
+		n += 1 + l + sovHandler(uint64(l))
+	}
+	return n
+}
+func (m *DeviceList) Size() (n int) {
+	var l int
+	_ = l
+	if len(m.Devices) > 0 {
+		for _, e := range m.Devices {
+			l = e.Size()
+			n += 1 + l + sovHandler(uint64(l))
+		}
 	}
 	return n
 }
@@ -1160,6 +1582,335 @@ func (m *Application) Unmarshal(data []byte) error {
 	}
 	return nil
 }
+func (m *DeviceIdentifier) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowHandler
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DeviceIdentifier: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DeviceIdentifier: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AppId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandler
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthHandler
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AppId = string(data[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DevId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandler
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthHandler
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.DevId = string(data[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipHandler(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthHandler
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *Device) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowHandler
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: Device: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: Device: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AppId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandler
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthHandler
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AppId = string(data[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DevId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandler
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthHandler
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.DevId = string(data[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LorawanDevice", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandler
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthHandler
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &lorawan1.Device{}
+			if err := v.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.Device = &Device_LorawanDevice{v}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipHandler(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthHandler
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *DeviceList) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowHandler
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DeviceList: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DeviceList: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Devices", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandler
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthHandler
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Devices = append(m.Devices, &Device{})
+			if err := m.Devices[len(m.Devices)-1].Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipHandler(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthHandler
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func skipHandler(data []byte) (n int, err error) {
 	l := len(data)
 	iNdEx := 0
@@ -1266,36 +2017,45 @@ var (
 )
 
 var fileDescriptorHandler = []byte{
-	// 491 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x94, 0x53, 0x4b, 0x8b, 0x13, 0x41,
-	0x10, 0x76, 0x7c, 0xe4, 0x51, 0xd1, 0x44, 0x5b, 0x77, 0x1d, 0x86, 0x25, 0xe8, 0x9c, 0x04, 0x71,
-	0x22, 0x51, 0x10, 0x11, 0x91, 0x48, 0x50, 0xf7, 0x10, 0x85, 0xd9, 0x3d, 0x79, 0x09, 0x9d, 0xe9,
-	0x32, 0x69, 0x32, 0xdb, 0xdd, 0xce, 0x74, 0xb2, 0xe8, 0x2f, 0xf1, 0x27, 0x79, 0x11, 0xbc, 0x7b,
-	0x11, 0xfd, 0x23, 0x76, 0xe6, 0xd1, 0x3b, 0x71, 0x13, 0xc8, 0x1e, 0x9a, 0x9e, 0xaa, 0xaf, 0x1e,
-	0xdf, 0x57, 0x5d, 0x03, 0xcf, 0xa7, 0x5c, 0xcf, 0x16, 0x93, 0x20, 0x92, 0x27, 0xbd, 0xe3, 0x19,
-	0x1e, 0xcf, 0xb8, 0x98, 0xa6, 0xef, 0x51, 0x9f, 0xca, 0x64, 0xde, 0xd3, 0x5a, 0xf4, 0xa8, 0xe2,
-	0xbd, 0x19, 0x15, 0x2c, 0xc6, 0xa4, 0xbc, 0x03, 0x95, 0x48, 0x2d, 0x49, 0xbd, 0x30, 0xbd, 0x47,
-	0xbb, 0xd4, 0x30, 0x27, 0xcf, 0xf3, 0x9e, 0xed, 0x12, 0x3e, 0x49, 0xe4, 0xdc, 0x74, 0xcc, 0xaf,
-	0x22, 0xf1, 0xc5, 0x2e, 0x89, 0x59, 0x68, 0x24, 0x63, 0xfb, 0x91, 0x27, 0xfb, 0xbf, 0x1c, 0x70,
-	0x87, 0xb8, 0xe4, 0x11, 0x0e, 0x22, 0xcd, 0x97, 0x54, 0x73, 0x29, 0x42, 0x4c, 0x95, 0x14, 0x29,
-	0x12, 0x17, 0xea, 0x8a, 0x7e, 0x89, 0x25, 0x65, 0xae, 0x73, 0xcf, 0x79, 0x70, 0x3d, 0x2c, 0x4d,
-	0xb2, 0x07, 0x35, 0xaa, 0xd4, 0x98, 0x33, 0xf7, 0xb2, 0x01, 0x9a, 0xe1, 0x35, 0x63, 0x1d, 0x32,
-	0xf2, 0x0a, 0x3a, 0x4c, 0x9e, 0x8a, 0x98, 0x8b, 0xf9, 0x58, 0xaa, 0x55, 0x2d, 0xb7, 0x65, 0xf0,
-	0x56, 0x7f, 0x3f, 0x28, 0x28, 0x0f, 0x0b, 0xf8, 0x43, 0x86, 0x86, 0x6d, 0xb6, 0x66, 0x93, 0x11,
-	0xdc, 0xa6, 0x96, 0xc7, 0xf8, 0x04, 0x35, 0x65, 0x54, 0x53, 0xf7, 0x6e, 0x56, 0xe4, 0x20, 0xb0,
-	0xe4, 0xcf, 0xc8, 0x8e, 0x8a, 0x98, 0x90, 0xd0, 0x73, 0x3e, 0xbf, 0x03, 0x37, 0x8e, 0x34, 0xd5,
-	0x8b, 0x34, 0xc4, 0xcf, 0x0b, 0x4c, 0xb5, 0xdf, 0x80, 0x5a, 0xee, 0xf0, 0x03, 0xd8, 0x1b, 0x28,
-	0x15, 0xf3, 0x28, 0xcb, 0x38, 0x64, 0x28, 0x34, 0xff, 0xc4, 0x31, 0xa9, 0x48, 0x73, 0x2a, 0xd2,
-	0xfc, 0xaf, 0xd0, 0xaa, 0xc4, 0x6f, 0x89, 0x5a, 0x4d, 0x8c, 0x61, 0x24, 0x19, 0x26, 0xc5, 0x60,
-	0x4a, 0x93, 0x1c, 0x40, 0x33, 0x92, 0x62, 0x89, 0x89, 0x36, 0xd8, 0x95, 0x0c, 0x3b, 0x73, 0xac,
-	0xd0, 0x25, 0x8d, 0xb9, 0x21, 0x2d, 0x13, 0xf7, 0x6a, 0x8e, 0x5a, 0x47, 0x1f, 0xa1, 0xfe, 0x2e,
-	0x5f, 0x2a, 0xf2, 0x11, 0x1a, 0x85, 0x76, 0x24, 0x0f, 0xed, 0x50, 0x91, 0x2d, 0x72, 0x6a, 0xc8,
-	0xce, 0x3f, 0x66, 0xa6, 0xdc, 0xbb, 0x1f, 0x94, 0x6b, 0xba, 0xed, 0xb9, 0xfb, 0x3f, 0x1c, 0x20,
-	0x15, 0x8d, 0x23, 0x2a, 0xe8, 0xd4, 0xb4, 0x7c, 0x03, 0xed, 0xb7, 0xa8, 0xab, 0xe2, 0xbb, 0xb6,
-	0xd6, 0xc6, 0x11, 0x7a, 0x77, 0x36, 0xe1, 0xe4, 0x31, 0xb4, 0x8f, 0xd6, 0xeb, 0x6c, 0x8c, 0xf3,
-	0x1a, 0xc1, 0xea, 0xa7, 0x18, 0x44, 0x73, 0xf2, 0x12, 0x6e, 0x0d, 0x31, 0x46, 0x8d, 0x17, 0x69,
-	0x6e, 0xd3, 0xfb, 0x86, 0x78, 0x31, 0xb6, 0x52, 0xca, 0x53, 0x68, 0x1a, 0x29, 0xf9, 0x06, 0x90,
-	0x7d, 0x5b, 0x68, 0x6d, 0x47, 0xbc, 0xce, 0x7f, 0xfe, 0xd7, 0x37, 0xbf, 0xff, 0xe9, 0x3a, 0x3f,
-	0xcd, 0xf9, 0x6d, 0xce, 0xb7, 0xbf, 0xdd, 0x4b, 0x93, 0x5a, 0xb6, 0x88, 0x4f, 0xfe, 0x05, 0x00,
-	0x00, 0xff, 0xff, 0x38, 0xc6, 0xdf, 0x31, 0x27, 0x04, 0x00, 0x00,
+	// 633 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x94, 0x54, 0xdd, 0x6e, 0xd3, 0x30,
+	0x14, 0x5e, 0x19, 0x74, 0xed, 0xe9, 0xd6, 0x0d, 0x8f, 0x8d, 0x50, 0x4d, 0x13, 0xe4, 0x02, 0x81,
+	0x10, 0x29, 0xea, 0x90, 0x06, 0x42, 0x08, 0x3a, 0x4d, 0x63, 0x93, 0x18, 0x93, 0xd2, 0x5d, 0x71,
+	0x53, 0xb9, 0xb1, 0x69, 0xad, 0x66, 0x71, 0x48, 0xdc, 0x56, 0xf0, 0x24, 0x3c, 0x08, 0x0f, 0xc1,
+	0x25, 0xf7, 0xdc, 0x20, 0x78, 0x11, 0x1c, 0xdb, 0x49, 0xd3, 0x1f, 0xb4, 0xf6, 0x22, 0x4a, 0xce,
+	0xf9, 0xce, 0x77, 0x7e, 0xfc, 0x9d, 0x18, 0x5e, 0x76, 0x99, 0xe8, 0x0d, 0x3a, 0x8e, 0xc7, 0xaf,
+	0xea, 0x97, 0x3d, 0x7a, 0xd9, 0x63, 0x41, 0x37, 0xfe, 0x40, 0xc5, 0x88, 0x47, 0xfd, 0xba, 0x10,
+	0x41, 0x1d, 0x87, 0xac, 0xde, 0xc3, 0x01, 0xf1, 0x69, 0x94, 0xbe, 0x9d, 0x30, 0xe2, 0x82, 0xa3,
+	0x35, 0x63, 0xd6, 0x9e, 0x2e, 0x92, 0x43, 0x3e, 0x9a, 0x57, 0x3b, 0x5c, 0x24, 0xbc, 0x13, 0xf1,
+	0xbe, 0xac, 0xa8, 0x5f, 0x86, 0xf8, 0x6a, 0x11, 0xa2, 0x0a, 0xf5, 0xb8, 0x9f, 0x7d, 0x18, 0x72,
+	0x73, 0x29, 0xb2, 0xcf, 0x23, 0x3c, 0xc2, 0x41, 0x9d, 0xd0, 0x21, 0xf3, 0xa8, 0x4e, 0x61, 0xff,
+	0x2a, 0x80, 0x75, 0xac, 0x1c, 0x4d, 0x4f, 0xb0, 0x21, 0x16, 0x8c, 0x07, 0x2e, 0x8d, 0x43, 0x1e,
+	0xc4, 0x14, 0x59, 0xb0, 0x16, 0xe2, 0x2f, 0x3e, 0xc7, 0xc4, 0x2a, 0xdc, 0x2f, 0x3c, 0x5a, 0x77,
+	0x53, 0x13, 0xed, 0x40, 0x11, 0x87, 0x61, 0x9b, 0x11, 0xeb, 0x86, 0x04, 0xca, 0xee, 0x2d, 0x69,
+	0x9d, 0x11, 0xf4, 0x06, 0x36, 0x09, 0x1f, 0x05, 0x3e, 0x0b, 0xfa, 0x6d, 0x1e, 0x26, 0xb9, 0xac,
+	0x8a, 0xc4, 0x2b, 0x8d, 0x5d, 0xc7, 0x4c, 0x7d, 0x6c, 0xe0, 0x0b, 0x85, 0xba, 0x55, 0x32, 0x61,
+	0xa3, 0x73, 0xd8, 0xc6, 0x59, 0x1f, 0xed, 0x2b, 0x2a, 0x30, 0xc1, 0x02, 0x5b, 0x77, 0x55, 0x92,
+	0x3d, 0x27, 0x9b, 0x7f, 0xdc, 0xec, 0xb9, 0x89, 0x71, 0x11, 0x9e, 0xf1, 0xd9, 0x9b, 0xb0, 0xd1,
+	0x12, 0x58, 0x0c, 0x62, 0x97, 0x7e, 0x1e, 0xd0, 0x58, 0xd8, 0x25, 0x28, 0x6a, 0x87, 0xed, 0xc0,
+	0x4e, 0x33, 0x0c, 0x7d, 0xe6, 0x29, 0xc6, 0x19, 0xa1, 0x81, 0x60, 0x9f, 0x18, 0x8d, 0x72, 0xa3,
+	0x15, 0x72, 0xa3, 0xd9, 0x5f, 0xa1, 0x92, 0x8b, 0xff, 0x4f, 0x54, 0x72, 0x62, 0x84, 0x7a, 0x9c,
+	0xd0, 0xc8, 0x1c, 0x4c, 0x6a, 0xa2, 0x3d, 0x28, 0x7b, 0x3c, 0x18, 0xd2, 0x48, 0x48, 0x6c, 0x55,
+	0x61, 0x63, 0x47, 0x82, 0x0e, 0xb1, 0xcf, 0x64, 0xd3, 0x3c, 0xb2, 0x6e, 0x6a, 0x34, 0x73, 0xd8,
+	0x6f, 0x61, 0x4b, 0x6b, 0x74, 0x6d, 0x9b, 0x89, 0x5b, 0xea, 0x9b, 0x13, 0x46, 0x5a, 0xaa, 0xfb,
+	0xa2, 0xce, 0xb0, 0x1c, 0x0f, 0xbd, 0x80, 0xaa, 0x59, 0x9b, 0xb6, 0x5e, 0x1b, 0xd5, 0x7a, 0xa5,
+	0xb1, 0xe9, 0x18, 0xb7, 0xa3, 0xd3, 0x9e, 0xae, 0xb8, 0x1b, 0xc6, 0xa3, 0x1d, 0x47, 0x25, 0x95,
+	0x50, 0x7e, 0xd9, 0x87, 0x00, 0xda, 0xf7, 0x9e, 0xc5, 0x02, 0x3d, 0x4e, 0x4e, 0x28, 0xb1, 0x62,
+	0xd9, 0xc0, 0xaa, 0x4a, 0x95, 0xfe, 0x82, 0x3a, 0xca, 0x4d, 0xf1, 0x06, 0x85, 0xb5, 0x53, 0x0d,
+	0xa1, 0x8f, 0x50, 0x32, 0x92, 0x53, 0xf4, 0x24, 0xdb, 0x25, 0x4a, 0x06, 0x5a, 0x11, 0x4a, 0x66,
+	0x77, 0x58, 0x09, 0x5e, 0x7b, 0x30, 0x95, 0x7d, 0x76, 0xcb, 0x1b, 0xdf, 0x57, 0x01, 0xe5, 0xa4,
+	0x3d, 0xc7, 0x01, 0xee, 0xca, 0x92, 0x27, 0x50, 0x7d, 0x47, 0x45, 0x5e, 0xf3, 0xfd, 0x2c, 0xd7,
+	0xdc, 0xcd, 0xa9, 0xdd, 0x99, 0x87, 0xa3, 0x67, 0x50, 0x6d, 0x4d, 0xe6, 0x99, 0x1b, 0x57, 0x2b,
+	0x39, 0xc9, 0x75, 0xd2, 0xf4, 0xfa, 0xe8, 0x35, 0xdc, 0x3e, 0xa6, 0x3e, 0x15, 0x74, 0x99, 0xe2,
+	0x63, 0xfa, 0x21, 0x94, 0x65, 0xe3, 0x46, 0xee, 0x7b, 0x53, 0xf3, 0xe7, 0x18, 0xd3, 0x07, 0x8f,
+	0x1e, 0x42, 0xb9, 0x95, 0x11, 0xa7, 0xd1, 0x5c, 0x81, 0x03, 0x58, 0xd7, 0xfd, 0x5d, 0x5f, 0x63,
+	0x4c, 0xba, 0x00, 0x2b, 0xeb, 0x2a, 0x3e, 0xe1, 0xd1, 0x32, 0xb3, 0x6d, 0x4f, 0x15, 0x48, 0x16,
+	0xa9, 0x21, 0xf5, 0x31, 0xdb, 0x91, 0x2a, 0xf6, 0x5c, 0x0d, 0xae, 0xff, 0x6f, 0xb4, 0x9b, 0x71,
+	0x26, 0x6e, 0x80, 0xdc, 0xd4, 0xda, 0x7f, 0xb4, 0xf5, 0xe3, 0xcf, 0x7e, 0xe1, 0xa7, 0x7c, 0x7e,
+	0xcb, 0xe7, 0xdb, 0xdf, 0xfd, 0x95, 0x4e, 0x51, 0x5d, 0x33, 0x07, 0xff, 0x02, 0x00, 0x00, 0xff,
+	0xff, 0x2d, 0x69, 0xa7, 0x71, 0x48, 0x06, 0x00, 0x00,
 }

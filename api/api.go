@@ -15,6 +15,14 @@ type Validator interface {
 	Validate() bool
 }
 
+// Validate the given object if it implements the Validator interface
+func Validate(in interface{}) bool {
+	if v, ok := in.(Validator); ok {
+		return v.Validate()
+	}
+	return true
+}
+
 // Backoff indicates how long a client should wait between failed requests
 var Backoff = 1 * time.Second
 

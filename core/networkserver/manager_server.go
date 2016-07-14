@@ -29,9 +29,6 @@ func (n *networkServerManager) getDevice(ctx context.Context, in *pb_lorawan.Dev
 	if err != nil {
 		return nil, err
 	}
-	if !claims.CanEditApp(in.AppId) {
-		return nil, errf(codes.Unauthenticated, "No access to this device")
-	}
 	dev, err := n.devices.Get(*in.AppEui, *in.DevEui)
 	if err != nil {
 		return nil, err
@@ -51,6 +48,7 @@ func (n *networkServerManager) GetDevice(ctx context.Context, in *pb_lorawan.Dev
 	return &pb_lorawan.Device{
 		AppId:            dev.AppID,
 		AppEui:           &dev.AppEUI,
+		DevId:            dev.DevID,
 		DevEui:           &dev.DevEUI,
 		DevAddr:          &dev.DevAddr,
 		NwkSKey:          &dev.NwkSKey,
@@ -63,14 +61,19 @@ func (n *networkServerManager) GetDevice(ctx context.Context, in *pb_lorawan.Dev
 }
 
 func (n *networkServerManager) SetDevice(ctx context.Context, in *pb_lorawan.Device) (*api.Ack, error) {
-	_, err := n.getDevice(ctx, &pb_lorawan.DeviceIdentifier{AppId: in.AppId, AppEui: in.AppEui, DevEui: in.DevEui})
+	_, err := n.getDevice(ctx, &pb_lorawan.DeviceIdentifier{AppEui: in.AppEui, DevEui: in.DevEui})
 	if err != nil && err != device.ErrNotFound {
 		return nil, err
+	}
+
+	if !in.Validate() {
+		return nil, grpcErrf(codes.InvalidArgument, "Invalid Device Identifier")
 	}
 
 	updated := &device.Device{
 		AppID:    in.AppId,
 		AppEUI:   *in.AppEui,
+		DevID:    in.DevId,
 		DevEUI:   *in.DevEui,
 		FCntUp:   in.FCntUp,
 		FCntDown: in.FCntDown,

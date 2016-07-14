@@ -11,8 +11,8 @@ import (
 
 func (h *handler) EnqueueDownlink(appDownlink *mqtt.DownlinkMessage) error {
 	ctx := h.Ctx.WithFields(log.Fields{
-		"DevEUI": appDownlink.DevEUI,
-		"AppEUI": appDownlink.AppEUI,
+		"DevID": appDownlink.DevID,
+		"AppID": appDownlink.AppID,
 	})
 	var err error
 	defer func() {
@@ -21,7 +21,7 @@ func (h *handler) EnqueueDownlink(appDownlink *mqtt.DownlinkMessage) error {
 		}
 	}()
 
-	dev, err := h.devices.Get(appDownlink.AppEUI, appDownlink.DevEUI)
+	dev, err := h.devices.Get(appDownlink.AppID, appDownlink.DevID)
 	if err != nil {
 		return err
 	}
@@ -38,8 +38,10 @@ func (h *handler) EnqueueDownlink(appDownlink *mqtt.DownlinkMessage) error {
 
 func (h *handler) HandleDownlink(appDownlink *mqtt.DownlinkMessage, downlink *pb_broker.DownlinkMessage) error {
 	ctx := h.Ctx.WithFields(log.Fields{
-		"DevEUI": appDownlink.DevEUI,
-		"AppEUI": appDownlink.AppEUI,
+		"DevID":  appDownlink.AppID,
+		"AppID":  appDownlink.DevID,
+		"DevEUI": downlink.AppEui,
+		"AppEUI": downlink.DevEui,
 	})
 	var err error
 	defer func() {
