@@ -4,7 +4,7 @@ import "github.com/TheThingsNetwork/ttn/api"
 
 // Validate implements the api.Validator interface
 func (m *DeviceActivationResponse) Validate() bool {
-	if m.AppId == "" {
+	if m.AppId == "" || !api.ValidID(m.AppId) {
 		return false
 	}
 	if m.DownlinkOption == nil || !m.DownlinkOption.Validate() {
@@ -18,7 +18,7 @@ func (m *DeviceActivationResponse) Validate() bool {
 
 // Validate implements the api.Validator interface
 func (m *ApplicationIdentifier) Validate() bool {
-	if m.AppId == "" {
+	if m.AppId == "" || !api.ValidID(m.AppId) {
 		return false
 	}
 	return true
@@ -26,7 +26,7 @@ func (m *ApplicationIdentifier) Validate() bool {
 
 // Validate implements the api.Validator interface
 func (m *Application) Validate() bool {
-	if m.AppId == "" {
+	if m.AppId == "" || !api.ValidID(m.AppId) {
 		return false
 	}
 	return true
@@ -34,10 +34,10 @@ func (m *Application) Validate() bool {
 
 // Validate implements the api.Validator interface
 func (m *DeviceIdentifier) Validate() bool {
-	if m.AppId == "" {
+	if m.AppId == "" || !api.ValidID(m.AppId) {
 		return false
 	}
-	if m.DevId == "" {
+	if m.DevId == "" || !api.ValidID(m.DevId) {
 		return false
 	}
 	return true
@@ -45,10 +45,10 @@ func (m *DeviceIdentifier) Validate() bool {
 
 // Validate implements the api.Validator interface
 func (m *Device) Validate() bool {
-	if m.AppId == "" {
+	if m.AppId == "" || !api.ValidID(m.AppId) {
 		return false
 	}
-	if m.DevId == "" {
+	if m.DevId == "" || !api.ValidID(m.DevId) {
 		return false
 	}
 	if m.Device == nil || !api.Validate(m.Device) {

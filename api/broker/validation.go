@@ -1,5 +1,7 @@
 package broker
 
+import "github.com/TheThingsNetwork/ttn/api"
+
 // Validate implements the api.Validator interface
 func (m *DownlinkOption) Validate() bool {
 	if m.Identifier == "" {
@@ -56,7 +58,7 @@ func (m *DeduplicatedUplinkMessage) Validate() bool {
 	if m.AppEui == nil || m.AppEui.IsEmpty() {
 		return false
 	}
-	if m.AppId == "" {
+	if m.AppId == "" || !api.ValidID(m.AppId) {
 		return false
 	}
 	if m.ProtocolMetadata == nil || !m.ProtocolMetadata.Validate() {
@@ -101,7 +103,7 @@ func (m *DeduplicatedDeviceActivationRequest) Validate() bool {
 
 // Validate implements the api.Validator interface
 func (m *ApplicationHandlerRegistration) Validate() bool {
-	if m.AppId == "" {
+	if m.AppId == "" || !api.ValidID(m.AppId) {
 		return false
 	}
 	if m.HandlerId == "" {

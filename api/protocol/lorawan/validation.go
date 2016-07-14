@@ -1,5 +1,7 @@
 package lorawan
 
+import "github.com/TheThingsNetwork/ttn/api"
+
 // Validate implements the api.Validator interface
 func (m *DeviceIdentifier) Validate() bool {
 	if m.AppEui == nil || m.AppEui.IsEmpty() {
@@ -19,7 +21,10 @@ func (m *Device) Validate() bool {
 	if m.DevEui == nil || m.DevEui.IsEmpty() {
 		return false
 	}
-	if m.AppId == "" {
+	if m.AppId == "" || !api.ValidID(m.AppId) {
+		return false
+	}
+	if m.DevId == "" || !api.ValidID(m.DevId) {
 		return false
 	}
 	return true
