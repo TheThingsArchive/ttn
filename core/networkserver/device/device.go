@@ -31,6 +31,7 @@ type Device struct {
 	LastSeen    time.Time
 	Options     Options
 	Utilization Utilization
+	UpdatedAt   time.Time
 }
 
 // DeviceProperties contains all properties of a Device that can be stored in Redis.
@@ -46,6 +47,7 @@ var DeviceProperties = []string{
 	"last_seen",
 	"options",
 	"utilization",
+	"updated_at",
 }
 
 // ToStringStringMap converts the given properties of Device to a
@@ -91,7 +93,9 @@ func (device *Device) formatProperty(property string) (formatted string, err err
 	case "f_cnt_down":
 		formatted = storage.FormatUint32(device.FCntDown)
 	case "last_seen":
-		formatted = device.LastSeen.UTC().Format(time.RFC3339Nano)
+		if !device.LastSeen.IsZero() {
+			formatted = device.LastSeen.UTC().Format(time.RFC3339Nano)
+		}
 	case "options":
 		data, err := json.Marshal(device.Options)
 		if err != nil {
@@ -100,6 +104,10 @@ func (device *Device) formatProperty(property string) (formatted string, err err
 		formatted = string(data)
 	case "utilization":
 		// TODO
+	case "updated_at":
+		if !device.UpdatedAt.IsZero() {
+			formatted = device.UpdatedAt.UTC().Format(time.RFC3339Nano)
+		}
 	default:
 		err = fmt.Errorf("Property %s does not exist in Status", property)
 	}
@@ -166,6 +174,12 @@ func (device *Device) parseProperty(property string, value string) error {
 		device.Options = options
 	case "utilization":
 		// TODO
+	case "updated_at":
+		val, err := time.Parse(time.RFC3339Nano, value)
+		if err != nil {
+			return err
+		}
+		device.UpdatedAt = val
 	}
 	return nil
 }

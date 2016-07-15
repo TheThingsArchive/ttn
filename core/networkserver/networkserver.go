@@ -220,7 +220,7 @@ func (n *networkServer) HandleUplink(message *pb_broker.DeduplicatedUplinkMessag
 	} else {
 		dev.FCntUp = macPayload.FHDR.FCnt
 	}
-	dev.LastSeen = time.Now().UTC()
+	dev.LastSeen = time.Now()
 	err = n.devices.Set(dev, "f_cnt_up", "last_seen")
 	if err != nil {
 		return nil, err

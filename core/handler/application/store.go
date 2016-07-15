@@ -6,6 +6,7 @@ package application
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"gopkg.in/redis.v3"
 )
@@ -124,6 +125,7 @@ func (s *redisApplicationStore) Set(new *Application, fields ...string) error {
 	}
 
 	key := fmt.Sprintf("%s:%s", redisApplicationPrefix, new.AppID)
+	new.UpdatedAt = time.Now()
 	dmap, err := new.ToStringStringMap(fields...)
 	if err != nil {
 		return err

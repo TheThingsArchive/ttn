@@ -5,6 +5,7 @@ package networkserver
 
 import (
 	"errors"
+	"time"
 
 	"github.com/TheThingsNetwork/ttn/api"
 	pb "github.com/TheThingsNetwork/ttn/api/networkserver"
@@ -45,6 +46,11 @@ func (n *networkServerManager) GetDevice(ctx context.Context, in *pb_lorawan.Dev
 		return nil, err
 	}
 
+	lastSeen := time.Unix(0, 0)
+	if !dev.LastSeen.IsZero() {
+		lastSeen = dev.LastSeen
+	}
+
 	return &pb_lorawan.Device{
 		AppId:            dev.AppID,
 		AppEui:           &dev.AppEUI,
@@ -56,7 +62,7 @@ func (n *networkServerManager) GetDevice(ctx context.Context, in *pb_lorawan.Dev
 		FCntDown:         dev.FCntDown,
 		DisableFCntCheck: dev.Options.DisableFCntCheck,
 		Uses32BitFCnt:    dev.Options.Uses32BitFCnt,
-		LastSeen:         dev.LastSeen.UnixNano(),
+		LastSeen:         lastSeen.UnixNano(),
 	}, nil
 }
 

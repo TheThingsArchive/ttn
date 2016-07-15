@@ -6,6 +6,7 @@ package device
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"gopkg.in/redis.v3"
 )
@@ -173,6 +174,7 @@ func (s *redisDeviceStore) Set(new *Device, fields ...string) error {
 	}
 
 	key := fmt.Sprintf("%s:%s:%s", redisDevicePrefix, new.AppID, new.DevID)
+	new.UpdatedAt = time.Now()
 	dmap, err := new.ToStringStringMap(fields...)
 	if err != nil {
 		return err

@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/mqtt"
@@ -34,6 +35,7 @@ type Device struct {
 	NwkSKey       types.NwkSKey
 	AppSKey       types.AppSKey
 	NextDownlink  *mqtt.DownlinkMessage
+	UpdatedAt     time.Time
 }
 
 // DeviceProperties contains all properties of a Device that can be stored in Redis.
@@ -49,6 +51,7 @@ var DeviceProperties = []string{
 	"used_dev_nonces",
 	"used_app_nonces",
 	"next_downlink",
+	"updated_at",
 }
 
 // ToStringStringMap converts the given properties of Device to a
@@ -109,6 +112,10 @@ func (device *Device) formatProperty(property string) (formatted string, err err
 		var jsonBytes []byte
 		jsonBytes, err = json.Marshal(device.NextDownlink)
 		formatted = string(jsonBytes)
+	case "updated_at":
+		if !device.UpdatedAt.IsZero() {
+			formatted = device.UpdatedAt.UTC().Format(time.RFC3339Nano)
+		}
 	default:
 		err = fmt.Errorf("Property %s does not exist in Device", property)
 	}
@@ -195,6 +202,12 @@ func (device *Device) parseProperty(property string, value string) error {
 			}
 			device.NextDownlink = nextDownlink
 		}
+	case "updated_at":
+		val, err := time.Parse(time.RFC3339Nano, value)
+		if err != nil {
+			return err
+		}
+		device.UpdatedAt = val
 	}
 	return nil
 }

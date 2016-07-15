@@ -3,7 +3,10 @@
 
 package application
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 // Application contains the state of an application
 type Application struct {
@@ -17,6 +20,8 @@ type Application struct {
 	// Validator is a JavaScript function that validates the data is converted by
 	// Converter and returns a boolean value indicating the validity of the data
 	Validator string
+
+	UpdatedAt time.Time
 }
 
 // ApplicationProperties contains all properties of a Application that can be stored in Redis.
@@ -25,6 +30,7 @@ var ApplicationProperties = []string{
 	"decoder",
 	"converter",
 	"validator",
+	"updated_at",
 }
 
 // ToStringStringMap converts the given properties of an Application to a
@@ -61,6 +67,10 @@ func (application *Application) formatProperty(property string) (formatted strin
 		formatted = application.Converter
 	case "validator":
 		formatted = application.Validator
+	case "updated_at":
+		if !application.UpdatedAt.IsZero() {
+			formatted = application.UpdatedAt.UTC().Format(time.RFC3339Nano)
+		}
 	default:
 		err = fmt.Errorf("Property %s does not exist in Application", property)
 	}
@@ -80,6 +90,12 @@ func (application *Application) parseProperty(property string, value string) err
 		application.Converter = value
 	case "validator":
 		application.Validator = value
+	case "updated_at":
+		val, err := time.Parse(time.RFC3339Nano, value)
+		if err != nil {
+			return err
+		}
+		application.UpdatedAt = val
 	}
 	return nil
 }
