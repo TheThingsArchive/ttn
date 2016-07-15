@@ -209,6 +209,12 @@ func selectBestDownlink(options []*pb.DownlinkOption) *pb.DownlinkOption {
 // ByFCntUp implements sort.Interface for []*pb_lorawan.Device based on FCnt
 type ByFCntUp []*pb_lorawan.Device
 
-func (a ByFCntUp) Len() int           { return len(a) }
-func (a ByFCntUp) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a ByFCntUp) Less(i, j int) bool { return a[i].FCntUp < a[j].FCntUp }
+func (a ByFCntUp) Len() int      { return len(a) }
+func (a ByFCntUp) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a ByFCntUp) Less(i, j int) bool {
+	// Devices that disable the FCnt check have low priority
+	if a[i].DisableFCntCheck {
+		return 2*int(a[i].FCntUp)+100 < int(a[j].FCntUp)
+	}
+	return int(a[i].FCntUp) < int(a[j].FCntUp)
+}
