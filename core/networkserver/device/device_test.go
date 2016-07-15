@@ -24,16 +24,18 @@ func getTestDevice() (device *Device, dmap map[string]string) {
 			LastSeen: time.Unix(0, 0).UTC(),
 			Options:  Options{},
 		}, map[string]string{
-			"dev_eui":    "0102030405060708",
-			"app_eui":    "0807060504030201",
-			"app_id":     "TestApp-1",
-			"dev_id":     "TestDev-1",
-			"dev_addr":   "01020304",
-			"nwk_s_key":  "00010002000300040005000600070008",
-			"f_cnt_up":   "42",
-			"f_cnt_down": "24",
-			"last_seen":  "1970-01-01T00:00:00Z",
-			"options":    `{"disable_fcnt_check":false,"uses_32_bit_fcnt":false}`,
+			"dev_eui":     "0102030405060708",
+			"app_eui":     "0807060504030201",
+			"app_id":      "TestApp-1",
+			"dev_id":      "TestDev-1",
+			"dev_addr":    "01020304",
+			"nwk_s_key":   "00010002000300040005000600070008",
+			"f_cnt_up":    "42",
+			"f_cnt_down":  "24",
+			"last_seen":   "1970-01-01T00:00:00Z",
+			"options":     `{"disable_fcnt_check":false,"uses_32_bit_fcnt":false}`,
+			"utilization": "",
+			"updated_at":  "",
 		}
 }
 

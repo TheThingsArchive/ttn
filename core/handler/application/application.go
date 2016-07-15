@@ -42,9 +42,7 @@ func (application *Application) ToStringStringMap(properties ...string) (map[str
 		if err != nil {
 			return output, err
 		}
-		if property != "" {
-			output[p] = property
-		}
+		output[p] = property
 	}
 	return output, nil
 }

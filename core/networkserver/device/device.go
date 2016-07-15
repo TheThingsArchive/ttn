@@ -59,9 +59,8 @@ func (device *Device) ToStringStringMap(properties ...string) (map[string]string
 		if err != nil {
 			return output, err
 		}
-		if property != "" {
-			output[p] = property
-		}
+		output[p] = property
+
 	}
 	return output, nil
 }

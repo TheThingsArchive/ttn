@@ -16,10 +16,11 @@ func getTestApplication() (application *Application, dmap map[string]string) {
 			Converter: `function (data) { return data; }`,
 			Validator: `function (data) { return data.size % 2 == 0; }`,
 		}, map[string]string{
-			"app_id":    "AppID-1",
-			"decoder":   `function (payload) { return { size: payload.length; } }`,
-			"converter": `function (data) { return data; }`,
-			"validator": `function (data) { return data.size % 2 == 0; }`,
+			"app_id":     "AppID-1",
+			"decoder":    `function (payload) { return { size: payload.length; } }`,
+			"converter":  `function (data) { return data; }`,
+			"validator":  `function (data) { return data.size % 2 == 0; }`,
+			"updated_at": "",
 		}
 }
 

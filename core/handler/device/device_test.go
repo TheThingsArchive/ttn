@@ -35,6 +35,7 @@ func getTestDevice() (device *Device, dmap map[string]string) {
 			"used_dev_nonces": "0102,0304",
 			"used_app_nonces": "010203,040506",
 			"next_downlink":   "null",
+			"updated_at":      "",
 		}
 }
 

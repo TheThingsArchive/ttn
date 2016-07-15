@@ -29,9 +29,7 @@ func (announcement *Announcement) ToStringStringMap(properties ...string) (map[s
 		if err != nil {
 			return output, err
 		}
-		if property != "" {
-			output[p] = property
-		}
+		output[p] = property
 	}
 	return output, nil
 }
