@@ -11,6 +11,10 @@ import (
 
 // ParseHEX parses a string "input" to a byteslice with length "length".
 func ParseHEX(input string, length int) ([]byte, error) {
+	if input == "" {
+		return make([]byte, length), nil
+	}
+
 	pattern, err := regexp.Compile(fmt.Sprintf("[[:xdigit:]]{%d}", length*2))
 	if err != nil {
 		return nil, fmt.Errorf("Invalid pattern")

@@ -38,6 +38,9 @@ func (key AES128Key) Bytes() []byte {
 
 // String implements the Stringer interface.
 func (key AES128Key) String() string {
+	if key.IsEmpty() {
+		return ""
+	}
 	return strings.ToUpper(hex.EncodeToString(key.Bytes()))
 }
 

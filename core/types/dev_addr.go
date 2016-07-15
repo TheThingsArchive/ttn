@@ -31,6 +31,9 @@ func (addr DevAddr) Bytes() []byte {
 
 // String implements the Stringer interface.
 func (addr DevAddr) String() string {
+	if addr.IsEmpty() {
+		return ""
+	}
 	return strings.ToUpper(hex.EncodeToString(addr.Bytes()))
 }
 

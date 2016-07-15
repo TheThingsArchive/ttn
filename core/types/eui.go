@@ -37,6 +37,9 @@ func (eui EUI64) Bytes() []byte {
 }
 
 func (eui EUI64) String() string {
+	if eui.IsEmpty() {
+		return ""
+	}
 	return strings.ToUpper(hex.EncodeToString(eui.Bytes()))
 }
 
