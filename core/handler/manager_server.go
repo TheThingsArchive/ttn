@@ -80,7 +80,7 @@ func (h *handlerManager) GetDevice(ctx context.Context, in *pb.DeviceIdentifier)
 }
 
 func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*api.Ack, error) {
-	_, err := h.getDevice(ctx, &pb.DeviceIdentifier{AppId: in.AppId, DevId: in.DevId})
+	dev, err := h.getDevice(ctx, &pb.DeviceIdentifier{AppId: in.AppId, DevId: in.DevId})
 	if err != nil && err != device.ErrNotFound {
 		return nil, err
 	}
@@ -89,18 +89,49 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*api.Ack
 		return nil, grpcErrf(codes.InvalidArgument, "Invalid Device")
 	}
 
-	updated := &device.Device{
-		AppID: in.AppId,
-		DevID: in.DevId,
-	}
-
 	lorawan := in.GetLorawanDevice()
 	if lorawan == nil {
-		err = grpcErrf(codes.InvalidArgument, "No LoRaWAN Device")
+		return nil, grpcErrf(codes.InvalidArgument, "No LoRaWAN Device")
 	}
 
-	_, err = h.ttnDeviceManager.SetDevice(ctx, &pb_lorawan.Device{
+	if dev != nil { // When this is an update
+		if dev.AppEUI != *lorawan.AppEui || dev.DevEUI != *lorawan.DevEui {
+			// If the AppEUI or DevEUI is changed, we should remove the device from the NetworkServer and re-add it later
+			_, err = h.ttnDeviceManager.DeleteDevice(ctx, &pb_lorawan.DeviceIdentifier{
+				AppEui: &dev.AppEUI,
+				DevEui: &dev.DevEUI,
+			})
+			if err != nil {
+				return nil, err
+			}
+		}
+	} else { // When this is a create
+
+	}
+
+	updated := &device.Device{
+		AppID:  in.AppId,
+		DevID:  in.DevId,
+		AppEUI: *lorawan.AppEui,
+		DevEUI: *lorawan.DevEui,
+	}
+
+	if lorawan.DevAddr != nil {
+		updated.DevAddr = *lorawan.DevAddr
+	}
+	if lorawan.NwkSKey != nil {
+		updated.NwkSKey = *lorawan.NwkSKey
+	}
+	if lorawan.AppSKey != nil {
+		updated.AppSKey = *lorawan.AppSKey
+	}
+	if lorawan.AppKey != nil {
+		updated.AppKey = *lorawan.AppKey
+	}
+
+	nsUpdated := &pb_lorawan.Device{
 		AppId:            in.AppId,
+		DevId:            in.DevId,
 		AppEui:           lorawan.AppEui,
 		DevEui:           lorawan.DevEui,
 		DevAddr:          lorawan.DevAddr,
@@ -109,22 +140,11 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*api.Ack
 		FCntDown:         lorawan.FCntDown,
 		DisableFCntCheck: lorawan.DisableFCntCheck,
 		Uses32BitFCnt:    lorawan.Uses32BitFCnt,
-	})
+	}
+
+	_, err = h.ttnDeviceManager.SetDevice(ctx, nsUpdated)
 	if err != nil {
 		return nil, err
-	}
-
-	updated.AppEUI = *lorawan.AppEui
-	updated.DevEUI = *lorawan.DevEui
-
-	if lorawan.DevAddr != nil && lorawan.NwkSKey != nil && lorawan.AppSKey != nil {
-		updated.DevAddr = *lorawan.DevAddr
-		updated.NwkSKey = *lorawan.NwkSKey
-		updated.AppSKey = *lorawan.AppSKey
-	}
-
-	if lorawan.AppKey != nil {
-		updated.AppKey = *lorawan.AppKey
 	}
 
 	err = h.devices.Set(updated)
@@ -278,6 +298,23 @@ func (h *handlerManager) DeleteApplication(ctx context.Context, in *pb.Applicati
 		return nil, err
 	}
 
+	// Get and delete all devices for this application
+	devices, err := h.devices.ListForApp(in.AppId)
+	if err != nil {
+		return nil, err
+	}
+	for _, dev := range devices {
+		_, err = h.ttnDeviceManager.DeleteDevice(ctx, &pb_lorawan.DeviceIdentifier{AppEui: &dev.AppEUI, DevEui: &dev.DevEUI})
+		if err != nil {
+			return nil, err
+		}
+		err = h.devices.Delete(dev.AppID, dev.DevID)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// Delete the Application
 	err = h.applications.Delete(in.AppId)
 	if err != nil {
 		return nil, err
