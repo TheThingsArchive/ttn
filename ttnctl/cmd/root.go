@@ -22,30 +22,7 @@ var ctx log.Interface
 var RootCmd = &cobra.Command{
 	Use:   "ttnctl",
 	Short: "Control The Things Network from the command line",
-	Long: `ttnctl controls The Things Network from the command line.
-
-Quick start guide:
-  1. Create an account:
-     $ ttnctl user create [Your Email]
-  2. Sign in:
-     $ ttnctl user login [Your Email]
-  3. Create an application:
-     $ ttnctl applications create [Application Name]
-  4. List your applications:
-     $ ttnctl applications
-  5. Choose an application to use from now on:
-     $ ttnctl applications use [EUI]
-  6. Create a new device:
-     $ ttnctl devices register [DevEUI] [AppKey]
-  7. List your devices:
-     $ ttnctl devices
-  8. Get info about a specific device:
-     $ ttnctl devices info [DevEUI]
-  9. Subscribe to incoming messages from this device:
-     $ ttnctl subscribe [DevEUI]
- 10. Schedule downlink to this device:
-     $ ttnctl downlink [DevEUI] [Hex-encoded Payload]
-	`,
+	Long:  `ttnctl controls The Things Network from the command line.`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		var logLevel = log.InfoLevel
 		if viper.GetBool("debug") {
@@ -72,14 +49,17 @@ func init() {
 
 	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.ttnctl.yaml)")
 
-	RootCmd.PersistentFlags().String("ttn-router", "staging.thethingsnetwork.org:1700", "The net address of the TTN Router")
+	RootCmd.PersistentFlags().String("ttn-router", "staging.thethingsnetwork.org:1901", "The address of the TTN Router")
 	viper.BindPFlag("ttn-router", RootCmd.PersistentFlags().Lookup("ttn-router"))
 
-	RootCmd.PersistentFlags().String("ttn-handler", "staging.thethingsnetwork.org:1782", "The net address of the TTN Handler")
+	RootCmd.PersistentFlags().String("ttn-handler", "staging.thethingsnetwork.org:1782", "The address of the TTN Handler")
 	viper.BindPFlag("ttn-handler", RootCmd.PersistentFlags().Lookup("ttn-handler"))
 
 	RootCmd.PersistentFlags().String("mqtt-broker", "staging.thethingsnetwork.org:1883", "The address of the MQTT broker")
 	viper.BindPFlag("mqtt-broker", RootCmd.PersistentFlags().Lookup("mqtt-broker"))
+
+	RootCmd.PersistentFlags().String("app-id", "", "The app ID to use")
+	viper.BindPFlag("app-id", RootCmd.PersistentFlags().Lookup("app-id"))
 
 	RootCmd.PersistentFlags().String("app-eui", "", "The app EUI to use")
 	viper.BindPFlag("app-eui", RootCmd.PersistentFlags().Lookup("app-eui"))

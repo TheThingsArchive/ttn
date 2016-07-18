@@ -16,8 +16,8 @@ var versionCmd = &cobra.Command{
 	Long:  `ttnctl version gets the build and version information of ttnctl`,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx.WithFields(log.Fields{
-			"commit":     viper.GetString("gitCommit"),
-			"build date": viper.GetString("buildDate"),
+			"Commit":    viper.GetString("gitCommit"),
+			"BuildDate": viper.GetString("buildDate"),
 		}).Infof("You are running %s of ttnctl.", viper.GetString("version"))
 	},
 }
