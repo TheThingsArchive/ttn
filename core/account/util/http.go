@@ -87,7 +87,7 @@ func performRequest(server, accessToken, method, URI string, body, res interface
 	return nil
 }
 
-// GET does a get request to the account server
+// GET does a get request to the account server,  decoding the result into the object pointed to byres
 func GET(server, accessToken, URI string, res interface{}) error {
 	return performRequest(server, accessToken, "GET", URI, nil, res)
 }
@@ -98,13 +98,19 @@ func DELETE(server, accessToken, URI string) error {
 }
 
 // POST creates an HTTP Post request to the specified server, with the body
-// encoded as JSON
+// encoded as JSON, decoding the result into the object pointed to byres
 func POST(server, accessToken, URI string, body, res interface{}) error {
 	return performRequest(server, accessToken, "POST", URI, body, res)
 }
 
 // POST creates an HTTP Put request to the specified server, with the body
-// encoded as JSON
+// encoded as JSON, decoding the result into the object pointed to byres
 func PUT(server, accessToken, URI string, body, res interface{}) error {
 	return performRequest(server, accessToken, "PUT", URI, body, res)
+}
+
+// PATCH creates an HTTP Patch request to the specified server, with the body
+// encoded as JSON, decoding the result into the object pointed to byres
+func PATCH(server, accessToken, URI string, body, res interface{}) error {
+	return performRequest(server, accessToken, "POST", URI, body, res)
 }
