@@ -43,6 +43,23 @@ func FooHandler(a *Assertion, method string) http.HandlerFunc {
 	})
 }
 
+func RedirectHandler(a *Assertion, method string) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.RequestURI == "/foo" {
+			w.Header().Set("Location", "/bar")
+			w.WriteHeader(307)
+		} else {
+			a.So(r.RequestURI, ShouldEqual, "/bar")
+			resp := FooResp{
+				Foo: "ok",
+			}
+			w.WriteHeader(http.StatusOK)
+			encoder := json.NewEncoder(w)
+			encoder.Encode(&resp)
+		}
+	})
+}
+
 func TestGET(t *testing.T) {
 	a := New(t)
 	server := httptest.NewServer(OKHandler(a, "GET"))
@@ -76,6 +93,16 @@ func TestGETWrongResponseType(t *testing.T) {
 func TestGETWrongResponseTypeIgnore(t *testing.T) {
 	a := New(t)
 	server := httptest.NewServer(FooHandler(a, "GET"))
+	defer server.Close()
+
+	var resp OKResp
+	err := GET(server.URL, "ok", "/foo", &resp)
+	a.So(err, ShouldBeNil)
+}
+
+func TestGETRedirect(t *testing.T) {
+	a := New(t)
+	server := httptest.NewServer(RedirectHandler(a, "GET"))
 	defer server.Close()
 
 	var resp OKResp
