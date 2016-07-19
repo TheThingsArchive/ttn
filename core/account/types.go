@@ -11,8 +11,8 @@ import (
 
 // Application represents an application on The Things Network
 type Application struct {
-	ID            string            `json:"id" validate:"nonzero"`
-	Name          string            `json:"name" validate:"nonzero"`
+	ID            string            `json:"id"   valid:"required"`
+	Name          string            `json:"name" valid:"required"`
 	EUIs          []types.AppEUI    `json:"euis,omitempty"`
 	AccessKeys    []types.AccessKey `json:"access_keys,omitempty"`
 	Created       time.Time         `json:"created,omitempty"`
@@ -21,6 +21,6 @@ type Application struct {
 
 // Collaborator is a user that has rights to a certain application
 type Collaborator struct {
-	Username string        `json:"username" validate:"nonzero"`
-	Rights   []types.Right `json:"rights" validate:"nonzero"`
+	Username string        `json:"username" valid:"required"`
+	Rights   []types.Right `json:"rights"   valid:"required"`
 }

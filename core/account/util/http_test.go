@@ -14,7 +14,7 @@ type OKResp struct {
 }
 
 type FooResp struct {
-	Foo string `json:"foo" validate:"nonzero"`
+	Foo string `json:"foo" valid:"required"`
 }
 
 func OKHandler(a *Assertion, method string) http.HandlerFunc {

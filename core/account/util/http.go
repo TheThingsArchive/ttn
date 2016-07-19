@@ -7,7 +7,7 @@ import (
 	"io"
 	"net/http"
 
-	"gopkg.in/validator.v2"
+	"github.com/asaskevich/govalidator"
 )
 
 type HTTPError struct {
@@ -75,9 +75,8 @@ func performRequest(server, accessToken, method, URI string, body, res interface
 			return err
 		}
 
-		if err = validator.Validate(res); err != nil {
-			// return first error
-			return fmt.Errorf("Got a bad response from server: %s", err)
+		if _, err := govalidator.ValidateStruct(res); err != nil {
+			return fmt.Errorf("Got an illegal response from server: %s", err)
 		}
 	}
 
