@@ -36,7 +36,7 @@ func (a *Account) FindApplication(appID string) (app Application, err error) {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode == http.StatusNotFound {
 		return app, fmt.Errorf("Application with id '%s' does not exist", appID)
 	}
 
