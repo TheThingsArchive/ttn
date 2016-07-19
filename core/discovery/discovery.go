@@ -5,29 +5,29 @@
 package discovery
 
 import (
-	"errors"
-	"fmt"
-	"strings"
-	"sync"
+	"bytes"
 
 	"gopkg.in/redis.v3"
 
 	pb "github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/core/discovery/announcement"
 )
 
 // Discovery specifies the interface for the TTN Service Discovery component
 type Discovery interface {
 	core.ComponentInterface
 	Announce(announcement *pb.Announcement) error
-	Discover(serviceName string, ids ...string) ([]*pb.Announcement, error)
+	GetAll(serviceName string) ([]*pb.Announcement, error)
+	Get(serviceName string, id string) (*pb.Announcement, error)
+	AddMetadata(serviceName string, id string, metadata *pb.Metadata) error
+	DeleteMetadata(serviceName string, id string, metadata *pb.Metadata) error
 }
 
 // discovery is a reference implementation for a TTN Service Discovery component.
 type discovery struct {
 	*core.Component
-	services map[string]map[string]*pb.Announcement
-	sync.RWMutex
+	services announcement.Store
 }
 
 func (d *discovery) Init(c *core.Component) error {
@@ -39,150 +39,81 @@ func (d *discovery) Init(c *core.Component) error {
 	return nil
 }
 
-func (d *discovery) Announce(announcement *pb.Announcement) error {
-	d.Lock()
-	defer d.Unlock()
-
-	// Get the list
-	services, ok := d.services[announcement.ServiceName]
-	if !ok {
-		services = map[string]*pb.Announcement{}
-		d.services[announcement.ServiceName] = services
+func (d *discovery) Announce(in *pb.Announcement) error {
+	existing, err := d.services.Get(in.ServiceName, in.Id)
+	if err == announcement.ErrNotFound {
+		// Not found; create new
+		existing = &pb.Announcement{}
+	} else if err != nil {
+		return err
 	}
-
-	// Find an existing announcement
-	service, ok := services[announcement.Id]
-	if ok {
-		if announcement.Token == service.Token {
-			*service = *announcement
-		} else {
-			return errors.New("ttn/core: Invalid token")
-		}
-	} else {
-		services[announcement.Id] = announcement
-	}
-
-	return nil
+	in.Metadata = existing.Metadata
+	return d.services.Set(in)
 }
 
-func (d *discovery) Discover(serviceName string, ids ...string) ([]*pb.Announcement, error) {
-	d.RLock()
-	defer d.RUnlock()
-
-	// Get the list
-	services, ok := d.services[serviceName]
-	if !ok {
-		return []*pb.Announcement{}, nil
+func (d *discovery) Get(serviceName string, id string) (*pb.Announcement, error) {
+	service, err := d.services.Get(serviceName, id)
+	if err != nil {
+		return nil, err
 	}
+	serviceCopy := *service
+	return &serviceCopy, nil
+}
 
-	// Traverse the list
-	announcements := make([]*pb.Announcement, 0, len(services))
+func (d *discovery) GetAll(serviceName string) ([]*pb.Announcement, error) {
+	services, err := d.services.ListService(serviceName)
+	if err != nil {
+		return nil, err
+	}
+	serviceCopies := make([]*pb.Announcement, 0, len(services))
 	for _, service := range services {
 		serviceCopy := *service
-		serviceCopy.Token = ""
-		if len(ids) == 0 {
-			announcements = append(announcements, &serviceCopy)
-		} else {
-			for _, id := range ids {
-				if service.Id == id {
-					announcements = append(announcements, &serviceCopy)
-					break
-				}
-			}
+		serviceCopies = append(serviceCopies, &serviceCopy)
+	}
+	return serviceCopies, nil
+}
+
+func (d *discovery) AddMetadata(serviceName string, id string, in *pb.Metadata) error {
+	existing, err := d.services.Get(serviceName, id)
+	if err != nil {
+		return err
+	}
+	// Skip if already existing
+	for _, md := range existing.Metadata {
+		if md.Key == in.Key && bytes.Equal(md.Value, in.Value) {
+			return nil
 		}
 	}
-	return announcements, nil
+	existing.Metadata = append(existing.Metadata, in)
+	return d.services.Set(existing)
+}
+
+func (d *discovery) DeleteMetadata(serviceName string, id string, in *pb.Metadata) error {
+	existing, err := d.services.Get(serviceName, id)
+	if err != nil {
+		return err
+	}
+	newMeta := make([]*pb.Metadata, 0, len(existing.Metadata))
+	for _, md := range existing.Metadata {
+		if md.Key == in.Key && bytes.Equal(md.Value, in.Value) {
+			continue
+		}
+		newMeta = append(newMeta, md)
+	}
+	existing.Metadata = newMeta
+	return d.services.Set(existing)
+}
+
+// NewDiscovery creates a new memory-based discovery service
+func NewDiscovery(client *redis.Client) Discovery {
+	return &discovery{
+		services: announcement.NewAnnouncementStore(),
+	}
 }
 
 // NewRedisDiscovery creates a new Redis-based discovery service
 func NewRedisDiscovery(client *redis.Client) Discovery {
-	return &redisDiscovery{
-		client: client,
+	return &discovery{
+		services: announcement.NewRedisAnnouncementStore(client),
 	}
-}
-
-const redisAnnouncementPrefix = "service"
-
-type redisDiscovery struct {
-	*core.Component
-	client *redis.Client
-}
-
-func (d *redisDiscovery) Init(c *core.Component) error {
-	d.Component = c
-	err := d.Component.UpdateTokenKey()
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (d *redisDiscovery) Announce(announcement *pb.Announcement) error {
-	key := fmt.Sprintf("%s:%s:%s", redisAnnouncementPrefix, announcement.ServiceName, announcement.Id)
-
-	if token, err := d.client.HGet(key, "token").Result(); err == nil && token != announcement.Token {
-		return errors.New("ttn/core: Invalid token")
-	}
-
-	dmap, err := announcement.ToStringStringMap(pb.AnnouncementProperties...)
-	if err != nil {
-		return err
-	}
-
-	return d.client.HMSetMap(key, dmap).Err()
-}
-
-func (d *redisDiscovery) Discover(serviceName string, ids ...string) ([]*pb.Announcement, error) {
-	announcements := []*pb.Announcement{}
-	if len(ids) == 0 {
-		keys, err := d.client.Keys(fmt.Sprintf("%s:%s:*", redisAnnouncementPrefix, serviceName)).Result()
-		if err != nil {
-			return nil, err
-		}
-		for _, key := range keys {
-			if parts := strings.Split(key, ":"); len(parts) == 3 {
-				ids = append(ids, parts[2])
-			}
-		}
-	}
-
-	var wg sync.WaitGroup
-	wg.Add(len(ids))
-	results := make(chan *pb.Announcement)
-	go func() {
-		wg.Wait()
-		close(results)
-	}()
-	for _, id := range ids {
-		go func(id string) {
-			res, err := d.Get(serviceName, id)
-			if err == nil && res != nil {
-				results <- res
-			}
-			wg.Done()
-		}(id)
-	}
-
-	for res := range results {
-		announcements = append(announcements, res)
-	}
-
-	return announcements, nil
-}
-
-func (d *redisDiscovery) Get(serviceName string, id string) (*pb.Announcement, error) {
-	key := fmt.Sprintf("%s:%s:%s", redisAnnouncementPrefix, serviceName, id)
-	res, err := d.client.HGetAllMap(key).Result()
-	if err != nil {
-		return nil, err
-	} else if len(res) == 0 {
-		return nil, redis.Nil // This might be a bug in redis package
-	}
-	announcement := &pb.Announcement{}
-	err = announcement.FromStringStringMap(res)
-	if err != nil {
-		return nil, err
-	}
-	announcement.Token = ""
-	return announcement, nil
 }

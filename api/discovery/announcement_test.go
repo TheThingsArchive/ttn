@@ -12,7 +12,6 @@ import (
 func getTestAnnouncement() (announcement *Announcement, dmap map[string]string) {
 	return &Announcement{
 			Id:             "abcdef",
-			Token:          "ghijkl",
 			Description:    "Test Description",
 			ServiceName:    "router",
 			ServiceVersion: "1.0-preview build abcdef",
@@ -29,7 +28,6 @@ func getTestAnnouncement() (announcement *Announcement, dmap map[string]string) 
 			},
 		}, map[string]string{
 			"id":              "abcdef",
-			"token":           "ghijkl",
 			"description":     "Test Description",
 			"service_name":    "router",
 			"service_version": "1.0-preview build abcdef",

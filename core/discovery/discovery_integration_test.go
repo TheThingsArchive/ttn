@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	pb "github.com/TheThingsNetwork/ttn/api/discovery"
+	"github.com/TheThingsNetwork/ttn/core/discovery/announcement"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/smartystreets/assertions"
 )
@@ -19,19 +20,21 @@ func TestIntegrationBrokerDiscovery(t *testing.T) {
 	discoveryServer, s := buildTestDiscoveryServer(port)
 	defer s.Stop()
 
-	discoveryServer.services = map[string]map[string]*pb.Announcement{
-		"broker": map[string]*pb.Announcement{
-			"broker1": &pb.Announcement{Metadata: []*pb.Metadata{
-				&pb.Metadata{Key: pb.Metadata_PREFIX, Value: []byte{8, 0x01, 0x00, 0x00, 0x00}},
-			}},
-			"broker2": &pb.Announcement{Metadata: []*pb.Metadata{
-				&pb.Metadata{Key: pb.Metadata_PREFIX, Value: []byte{8, 0x02, 0x00, 0x00, 0x00}},
-			}},
+	discoveryServer.services = announcement.NewAnnouncementStore()
+	discoveryServer.services.Set(&pb.Announcement{
+		Id:          "broker1",
+		ServiceName: "broker",
+		Metadata: []*pb.Metadata{
+			&pb.Metadata{Key: pb.Metadata_PREFIX, Value: []byte{8, 0x01, 0x00, 0x00, 0x00}},
 		},
-		"other": map[string]*pb.Announcement{
-			"other": &pb.Announcement{},
+	})
+	discoveryServer.services.Set(&pb.Announcement{
+		Id:          "broker2",
+		ServiceName: "broker",
+		Metadata: []*pb.Metadata{
+			&pb.Metadata{Key: pb.Metadata_PREFIX, Value: []byte{8, 0x02, 0x00, 0x00, 0x00}},
 		},
-	}
+	})
 
 	discoveryClient := buildTestBrokerDiscoveryClient(port)
 

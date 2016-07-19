@@ -26,6 +26,7 @@ import (
 type ComponentInterface interface {
 	RegisterRPC(s *grpc.Server)
 	Init(c *Component) error
+	ValidateContext(ctx context.Context) (*TTNClaims, error)
 }
 
 type ManagementInterface interface {
@@ -49,11 +50,11 @@ func NewComponent(ctx log.Interface, serviceName string, announcedAddress string
 		Ctx: ctx,
 		Identity: &pb_discovery.Announcement{
 			Id:          viper.GetString("id"),
-			Token:       viper.GetString("token"),
 			Description: viper.GetString("description"),
 			ServiceName: serviceName,
 			NetAddress:  announcedAddress,
 		},
+		AccessToken:     viper.GetString("token"),
 		DiscoveryServer: viper.GetString("discovery-server"),
 		TokenKeyProvider: tokenkey.NewHTTPProvider(
 			fmt.Sprintf("%s/key", viper.GetString("auth-server")),
@@ -67,6 +68,7 @@ type Component struct {
 	Identity         *pb_discovery.Announcement
 	DiscoveryServer  string
 	Ctx              log.Interface
+	AccessToken      string
 	TokenKeyProvider tokenkey.Provider
 }
 
@@ -233,7 +235,7 @@ func (c *Component) GetContext() context.Context {
 	var id, token, netAddress string
 	if c.Identity != nil {
 		id = c.Identity.Id
-		token = c.Identity.Token
+		token = c.AccessToken
 		netAddress = c.Identity.NetAddress
 	}
 	md := metadata.Pairs(

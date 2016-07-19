@@ -23,14 +23,14 @@ func TestHandlerDiscovery(t *testing.T) {
 	a := New(t)
 
 	// Handler1 owns one AppEUI
-	handler1 := &pb.Announcement{ServiceName: "handler", Id: "handler1", Token: "handler1", NetAddress: "localhost1:1881",
+	handler1 := &pb.Announcement{ServiceName: "handler", Id: "handler1", NetAddress: "localhost1:1881",
 		Metadata: []*pb.Metadata{
 			&pb.Metadata{Key: pb.Metadata_APP_ID, Value: []byte("AppID-2")},
 		},
 	}
 
 	// Handler2 has two AppEUIs
-	handler2 := &pb.Announcement{ServiceName: "handler", Id: "handler2", Token: "handler2", NetAddress: "localhost2:1881",
+	handler2 := &pb.Announcement{ServiceName: "handler", Id: "handler2", NetAddress: "localhost2:1881",
 		Metadata: []*pb.Metadata{
 			&pb.Metadata{Key: pb.Metadata_APP_ID, Value: []byte("AppID-1")},
 		},
@@ -76,7 +76,7 @@ func TestHandlerDiscoveryCache(t *testing.T) {
 
 	discoveryServer, _ := buildMockDiscoveryServer(port)
 
-	handler := &pb.Announcement{ServiceName: "handler", Token: "handler", NetAddress: "localhost1:1881",
+	handler := &pb.Announcement{ServiceName: "handler", NetAddress: "localhost1:1881",
 		Metadata: []*pb.Metadata{&pb.Metadata{Key: pb.Metadata_APP_ID, Value: []byte("AppID-1")}},
 	}
 

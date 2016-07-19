@@ -12,7 +12,6 @@ import (
 // be stored in Redis.
 var AnnouncementProperties = []string{
 	"id",
-	"token",
 	"description",
 	"service_name",
 	"service_version",
@@ -46,8 +45,6 @@ func (announcement *Announcement) formatProperty(property string) (formatted str
 	switch property {
 	case "id":
 		formatted = announcement.Id
-	case "token":
-		formatted = announcement.Token
 	case "description":
 		formatted = announcement.Description
 	case "service_name":
@@ -75,8 +72,6 @@ func (announcement *Announcement) parseProperty(property string, value string) e
 	switch property {
 	case "id":
 		announcement.Id = value
-	case "token":
-		announcement.Token = value
 	case "description":
 		announcement.Description = value
 	case "service_name":

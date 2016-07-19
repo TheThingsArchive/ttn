@@ -48,7 +48,7 @@ func (d *handlerDiscovery) refreshCache() error {
 	}
 	defer conn.Close()
 	client := pb.NewDiscoveryClient(conn)
-	res, err := client.Discover(d.component.GetContext(), &pb.DiscoverRequest{ServiceName: "handler"})
+	res, err := client.GetAll(d.component.GetContext(), &pb.GetAllRequest{ServiceName: "handler"})
 	if err != nil {
 		return err
 	}

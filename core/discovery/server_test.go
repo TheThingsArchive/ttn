@@ -57,17 +57,23 @@ func (d *mockDiscoveryServer) Announce(ctx context.Context, announcement *pb.Ann
 	<-time.After(5 * time.Millisecond)
 	return &api.Ack{}, nil
 }
-func (d *mockDiscoveryServer) Discover(ctx context.Context, req *pb.DiscoverRequest) (*pb.DiscoverResponse, error) {
+func (d *mockDiscoveryServer) GetAll(ctx context.Context, req *pb.GetAllRequest) (*pb.AnnouncementsResponse, error) {
 	d.discover++
 	<-time.After(5 * time.Millisecond)
-	return &pb.DiscoverResponse{
+	return &pb.AnnouncementsResponse{
 		Services: []*pb.Announcement{},
 	}, nil
 }
-func (d *mockDiscoveryServer) Get(ctx context.Context, req *pb.GetRequest) (*pb.DiscoverResponse, error) {
+func (d *mockDiscoveryServer) Get(ctx context.Context, req *pb.GetRequest) (*pb.Announcement, error) {
 	d.get++
 	<-time.After(5 * time.Millisecond)
-	return &pb.DiscoverResponse{
-		Services: []*pb.Announcement{},
-	}, nil
+	return &pb.Announcement{}, nil
+}
+func (d *mockDiscoveryServer) AddMetadata(ctx context.Context, in *pb.MetadataRequest) (*api.Ack, error) {
+	<-time.After(5 * time.Millisecond)
+	return &api.Ack{}, nil
+}
+func (d *mockDiscoveryServer) DeleteMetadata(ctx context.Context, in *pb.MetadataRequest) (*api.Ack, error) {
+	<-time.After(5 * time.Millisecond)
+	return &api.Ack{}, nil
 }
