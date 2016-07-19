@@ -13,7 +13,7 @@ import (
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 )
 
-const QoS = 0x02
+const QoS = 0x00
 
 // Client connects to the MQTT server and can publish/subscribe on uplink, downlink and activations from devices
 type Client interface {
@@ -27,18 +27,27 @@ type Client interface {
 	SubscribeDeviceUplink(appID string, devID string, handler UplinkHandler) Token
 	SubscribeAppUplink(appID string, handler UplinkHandler) Token
 	SubscribeUplink(handler UplinkHandler) Token
+	UnsubscribeDeviceUplink(appID string, devID string) Token
+	UnsubscribeAppUplink(appID string) Token
+	UnsubscribeUplink() Token
 
 	// Downlink pub/sub
 	PublishDownlink(appID string, devID string, payload DownlinkMessage) Token
 	SubscribeDeviceDownlink(appID string, devID string, handler DownlinkHandler) Token
 	SubscribeAppDownlink(appID string, handler DownlinkHandler) Token
 	SubscribeDownlink(handler DownlinkHandler) Token
+	UnsubscribeDeviceDownlink(appID string, devID string) Token
+	UnsubscribeAppDownlink(appID string) Token
+	UnsubscribeDownlink() Token
 
 	// Activation pub/sub
 	PublishActivation(appID string, devID string, payload Activation) Token
 	SubscribeDeviceActivations(appID string, devID string, handler ActivationHandler) Token
 	SubscribeAppActivations(appID string, handler ActivationHandler) Token
 	SubscribeActivations(handler ActivationHandler) Token
+	UnsubscribeDeviceActivations(appID string, devID string) Token
+	UnsubscribeAppActivations(appID string) Token
+	UnsubscribeActivations() Token
 }
 
 type Token interface {
@@ -71,8 +80,9 @@ type DownlinkHandler func(client Client, appID string, devID string, req Downlin
 type ActivationHandler func(client Client, appID string, devID string, req Activation)
 
 type defaultClient struct {
-	mqtt MQTT.Client
-	ctx  log.Interface
+	mqtt          MQTT.Client
+	ctx           log.Interface
+	subscriptions map[string]MQTT.MessageHandler
 }
 
 func NewClient(ctx log.Interface, id, username, password string, brokers ...string) Client {
@@ -90,9 +100,7 @@ func NewClient(ctx log.Interface, id, username, password string, brokers ...stri
 	mqttOpts.SetKeepAlive(30 * time.Second)
 	mqttOpts.SetPingTimeout(10 * time.Second)
 
-	// Usually this setting should not be used together with random ClientIDs, but
-	// we configured The Things Network's MQTT servers to handle this correctly.
-	mqttOpts.SetCleanSession(false)
+	mqttOpts.SetCleanSession(true)
 
 	mqttOpts.SetDefaultPublishHandler(func(client MQTT.Client, msg MQTT.Message) {
 		ctx.WithField("message", msg).Warn("Received unhandled message")
@@ -102,14 +110,20 @@ func NewClient(ctx log.Interface, id, username, password string, brokers ...stri
 		ctx.WithError(err).Warn("Disconnected, reconnecting...")
 	})
 
+	ttnClient := &defaultClient{
+		mqtt:          MQTT.NewClient(mqttOpts),
+		ctx:           ctx,
+		subscriptions: make(map[string]MQTT.MessageHandler),
+	}
+
 	mqttOpts.SetOnConnectHandler(func(client MQTT.Client) {
 		ctx.Debug("Connected to MQTT")
+		for topic, handler := range ttnClient.subscriptions {
+			ttnClient.subscribe(topic, handler) // re-subscribe
+		}
 	})
 
-	return &defaultClient{
-		mqtt: MQTT.NewClient(mqttOpts),
-		ctx:  ctx,
-	}
+	return ttnClient
 }
 
 var (
@@ -140,6 +154,16 @@ func (c *defaultClient) Connect() error {
 	return nil
 }
 
+func (c *defaultClient) subscribe(topic string, handler MQTT.MessageHandler) Token {
+	c.subscriptions[topic] = handler
+	return c.mqtt.Subscribe(topic, QoS, handler)
+}
+
+func (c *defaultClient) unsubscribe(topic string) Token {
+	delete(c.subscriptions, topic)
+	return c.mqtt.Unsubscribe(topic)
+}
+
 func (c *defaultClient) Disconnect() {
 	if !c.mqtt.IsConnected() {
 		return
@@ -163,7 +187,7 @@ func (c *defaultClient) PublishUplink(appID string, devID string, dataUp UplinkM
 
 func (c *defaultClient) SubscribeDeviceUplink(appID string, devID string, handler UplinkHandler) Token {
 	topic := DeviceTopic{appID, devID, Uplink}
-	return c.mqtt.Subscribe(topic.String(), QoS, func(mqtt MQTT.Client, msg MQTT.Message) {
+	return c.subscribe(topic.String(), func(mqtt MQTT.Client, msg MQTT.Message) {
 		// Determine the actual topic
 		topic, err := ParseDeviceTopic(msg.Topic())
 		if err != nil {
@@ -193,6 +217,17 @@ func (c *defaultClient) SubscribeUplink(handler UplinkHandler) Token {
 	return c.SubscribeDeviceUplink("", "", handler)
 }
 
+func (c *defaultClient) UnsubscribeDeviceUplink(appID string, devID string) Token {
+	topic := DeviceTopic{appID, devID, Uplink}
+	return c.unsubscribe(topic.String())
+}
+func (c *defaultClient) UnsubscribeAppUplink(appID string) Token {
+	return c.UnsubscribeDeviceUplink(appID, "")
+}
+func (c *defaultClient) UnsubscribeUplink() Token {
+	return c.UnsubscribeDeviceUplink("", "")
+}
+
 func (c *defaultClient) PublishDownlink(appID string, devID string, dataDown DownlinkMessage) Token {
 	topic := DeviceTopic{appID, devID, Downlink}
 	msg, err := json.Marshal(dataDown)
@@ -204,7 +239,7 @@ func (c *defaultClient) PublishDownlink(appID string, devID string, dataDown Dow
 
 func (c *defaultClient) SubscribeDeviceDownlink(appID string, devID string, handler DownlinkHandler) Token {
 	topic := DeviceTopic{appID, devID, Downlink}
-	return c.mqtt.Subscribe(topic.String(), QoS, func(mqtt MQTT.Client, msg MQTT.Message) {
+	return c.subscribe(topic.String(), func(mqtt MQTT.Client, msg MQTT.Message) {
 		// Determine the actual topic
 		topic, err := ParseDeviceTopic(msg.Topic())
 		if err != nil {
@@ -233,6 +268,17 @@ func (c *defaultClient) SubscribeDownlink(handler DownlinkHandler) Token {
 	return c.SubscribeDeviceDownlink("", "", handler)
 }
 
+func (c *defaultClient) UnsubscribeDeviceDownlink(appID string, devID string) Token {
+	topic := DeviceTopic{appID, devID, Downlink}
+	return c.unsubscribe(topic.String())
+}
+func (c *defaultClient) UnsubscribeAppDownlink(appID string) Token {
+	return c.UnsubscribeDeviceDownlink(appID, "")
+}
+func (c *defaultClient) UnsubscribeDownlink() Token {
+	return c.UnsubscribeDeviceDownlink("", "")
+}
+
 func (c *defaultClient) PublishActivation(appID string, devID string, activation Activation) Token {
 	topic := DeviceTopic{appID, devID, Activations}
 	msg, err := json.Marshal(activation)
@@ -244,7 +290,7 @@ func (c *defaultClient) PublishActivation(appID string, devID string, activation
 
 func (c *defaultClient) SubscribeDeviceActivations(appID string, devID string, handler ActivationHandler) Token {
 	topic := DeviceTopic{appID, devID, Activations}
-	return c.mqtt.Subscribe(topic.String(), QoS, func(mqtt MQTT.Client, msg MQTT.Message) {
+	return c.subscribe(topic.String(), func(mqtt MQTT.Client, msg MQTT.Message) {
 		// Determine the actual topic
 		topic, err := ParseDeviceTopic(msg.Topic())
 		if err != nil {
@@ -271,4 +317,17 @@ func (c *defaultClient) SubscribeAppActivations(appID string, handler Activation
 
 func (c *defaultClient) SubscribeActivations(handler ActivationHandler) Token {
 	return c.SubscribeDeviceActivations("", "", handler)
+}
+
+func (c *defaultClient) UnsubscribeDeviceActivations(appID string, devID string) Token {
+	topic := DeviceTopic{appID, devID, Activations}
+	return c.unsubscribe(topic.String())
+}
+
+func (c *defaultClient) UnsubscribeAppActivations(appID string) Token {
+	return c.UnsubscribeDeviceActivations(appID, "")
+}
+
+func (c *defaultClient) UnsubscribeActivations() Token {
+	return c.UnsubscribeDeviceActivations("", "")
 }

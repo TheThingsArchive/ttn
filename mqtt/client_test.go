@@ -35,10 +35,12 @@ func TestConnect(t *testing.T) {
 	a := New(t)
 	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
 	err := c.Connect()
+	defer c.Disconnect()
 	a.So(err, ShouldBeNil)
 
 	// Connecting while already connected should not change anything
 	err = c.Connect()
+	defer c.Disconnect()
 	a.So(err, ShouldBeNil)
 }
 
@@ -48,6 +50,7 @@ func TestConnectInvalidAddress(t *testing.T) {
 	ConnectRetryDelay = 50 * time.Millisecond
 	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:18830") // No MQTT on 18830
 	err := c.Connect()
+	defer c.Disconnect()
 	a.So(err, ShouldNotBeNil)
 }
 
@@ -62,6 +65,7 @@ func TestIsConnected(t *testing.T) {
 	a.So(c.IsConnected(), ShouldBeFalse)
 
 	c.Connect()
+	defer c.Disconnect()
 
 	a.So(c.IsConnected(), ShouldBeTrue)
 }
@@ -75,6 +79,7 @@ func TestDisconnect(t *testing.T) {
 	a.So(c.IsConnected(), ShouldBeFalse)
 
 	c.Connect()
+	defer c.Disconnect()
 	c.Disconnect()
 
 	a.So(c.IsConnected(), ShouldBeFalse)
@@ -85,6 +90,7 @@ func TestRandomTopicPublish(t *testing.T) {
 
 	c := NewClient(ctx, "test", "", "", "tcp://localhost:1883")
 	c.Connect()
+	defer c.Disconnect()
 
 	c.(*defaultClient).mqtt.Subscribe("randomtopic", QoS, nil).Wait()
 	c.(*defaultClient).mqtt.Publish("randomtopic", QoS, false, []byte{0x00}).Wait()
@@ -100,6 +106,7 @@ func TestPublishUplink(t *testing.T) {
 	a := New(t)
 	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
 	c.Connect()
+	defer c.Disconnect()
 
 	dataUp := UplinkMessage{
 		Payload: []byte{0x01, 0x02, 0x03, 0x04},
@@ -115,12 +122,16 @@ func TestSubscribeDeviceUplink(t *testing.T) {
 	a := New(t)
 	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
 	c.Connect()
+	defer c.Disconnect()
 
 	token := c.SubscribeDeviceUplink("someid", "someid", func(client Client, appID string, devID string, req UplinkMessage) {
 
 	})
 	token.Wait()
+	a.So(token.Error(), ShouldBeNil)
 
+	token = c.UnsubscribeDeviceUplink("someid", "someid")
+	token.Wait()
 	a.So(token.Error(), ShouldBeNil)
 }
 
@@ -128,12 +139,16 @@ func TestSubscribeAppUplink(t *testing.T) {
 	a := New(t)
 	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
 	c.Connect()
+	defer c.Disconnect()
 
 	token := c.SubscribeAppUplink("someid", func(client Client, appID string, devID string, req UplinkMessage) {
 
 	})
 	token.Wait()
+	a.So(token.Error(), ShouldBeNil)
 
+	token = c.UnsubscribeAppUplink("someid")
+	token.Wait()
 	a.So(token.Error(), ShouldBeNil)
 }
 
@@ -141,12 +156,16 @@ func TestSubscribeUplink(t *testing.T) {
 	a := New(t)
 	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
 	c.Connect()
+	defer c.Disconnect()
 
 	token := c.SubscribeUplink(func(client Client, appID string, devID string, req UplinkMessage) {
 
 	})
 	token.Wait()
+	a.So(token.Error(), ShouldBeNil)
 
+	token = c.UnsubscribeUplink()
+	token.Wait()
 	a.So(token.Error(), ShouldBeNil)
 }
 
@@ -154,6 +173,7 @@ func TestPubSubUplink(t *testing.T) {
 	a := New(t)
 	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
 	c.Connect()
+	defer c.Disconnect()
 
 	var wg sync.WaitGroup
 
@@ -169,12 +189,15 @@ func TestPubSubUplink(t *testing.T) {
 	c.PublishUplink("app1", "dev1", UplinkMessage{Payload: []byte{0x01, 0x02, 0x03, 0x04}}).Wait()
 
 	wg.Wait()
+
+	c.UnsubscribeDeviceUplink("app1", "dev1").Wait()
 }
 
 func TestPubSubAppUplink(t *testing.T) {
 	a := New(t)
 	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
 	c.Connect()
+	defer c.Disconnect()
 
 	var wg sync.WaitGroup
 
@@ -190,6 +213,8 @@ func TestPubSubAppUplink(t *testing.T) {
 	c.PublishUplink("app2", "dev2", UplinkMessage{Payload: []byte{0x01, 0x02, 0x03, 0x04}}).Wait()
 
 	wg.Wait()
+
+	c.UnsubscribeAppUplink("app1").Wait()
 }
 
 // Downlink pub/sub
@@ -198,6 +223,7 @@ func TestPublishDownlink(t *testing.T) {
 	a := New(t)
 	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
 	c.Connect()
+	defer c.Disconnect()
 
 	dataDown := DownlinkMessage{
 		Payload: []byte{0x01, 0x02, 0x03, 0x04},
@@ -213,12 +239,16 @@ func TestSubscribeDeviceDownlink(t *testing.T) {
 	a := New(t)
 	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
 	c.Connect()
+	defer c.Disconnect()
 
 	token := c.SubscribeDeviceDownlink("someid", "someid", func(client Client, appID string, devID string, req DownlinkMessage) {
 
 	})
 	token.Wait()
+	a.So(token.Error(), ShouldBeNil)
 
+	token = c.UnsubscribeDeviceDownlink("someid", "someid")
+	token.Wait()
 	a.So(token.Error(), ShouldBeNil)
 }
 
@@ -226,12 +256,16 @@ func TestSubscribeAppDownlink(t *testing.T) {
 	a := New(t)
 	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
 	c.Connect()
+	defer c.Disconnect()
 
 	token := c.SubscribeAppDownlink("someid", func(client Client, appID string, devID string, req DownlinkMessage) {
 
 	})
 	token.Wait()
+	a.So(token.Error(), ShouldBeNil)
 
+	token = c.UnsubscribeAppDownlink("someid")
+	token.Wait()
 	a.So(token.Error(), ShouldBeNil)
 }
 
@@ -239,12 +273,16 @@ func TestSubscribeDownlink(t *testing.T) {
 	a := New(t)
 	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
 	c.Connect()
+	defer c.Disconnect()
 
 	token := c.SubscribeDownlink(func(client Client, appID string, devID string, req DownlinkMessage) {
 
 	})
 	token.Wait()
+	a.So(token.Error(), ShouldBeNil)
 
+	token = c.UnsubscribeDownlink()
+	token.Wait()
 	a.So(token.Error(), ShouldBeNil)
 }
 
@@ -252,6 +290,7 @@ func TestPubSubDownlink(t *testing.T) {
 	a := New(t)
 	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
 	c.Connect()
+	defer c.Disconnect()
 
 	var wg sync.WaitGroup
 
@@ -267,12 +306,15 @@ func TestPubSubDownlink(t *testing.T) {
 	c.PublishDownlink("app3", "dev3", DownlinkMessage{Payload: []byte{0x01, 0x02, 0x03, 0x04}}).Wait()
 
 	wg.Wait()
+
+	c.UnsubscribeDeviceDownlink("app3", "dev3").Wait()
 }
 
 func TestPubSubAppDownlink(t *testing.T) {
 	a := New(t)
 	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
 	c.Connect()
+	defer c.Disconnect()
 
 	var wg sync.WaitGroup
 
@@ -288,6 +330,8 @@ func TestPubSubAppDownlink(t *testing.T) {
 	c.PublishDownlink("app4", "dev2", DownlinkMessage{Payload: []byte{0x01, 0x02, 0x03, 0x04}}).Wait()
 
 	wg.Wait()
+
+	c.UnsubscribeAppDownlink("app3").Wait()
 }
 
 // Activations pub/sub
@@ -296,6 +340,7 @@ func TestPublishActivations(t *testing.T) {
 	a := New(t)
 	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
 	c.Connect()
+	defer c.Disconnect()
 
 	dataActivations := Activation{Metadata: []Metadata{Metadata{DataRate: "SF7BW125"}}}
 
@@ -309,12 +354,16 @@ func TestSubscribeDeviceActivations(t *testing.T) {
 	a := New(t)
 	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
 	c.Connect()
+	defer c.Disconnect()
 
 	token := c.SubscribeDeviceActivations("someid", "someid", func(client Client, appID string, devID string, req Activation) {
 
 	})
 	token.Wait()
+	a.So(token.Error(), ShouldBeNil)
 
+	token = c.UnsubscribeDeviceActivations("someid", "someid")
+	token.Wait()
 	a.So(token.Error(), ShouldBeNil)
 }
 
@@ -322,12 +371,16 @@ func TestSubscribeAppActivations(t *testing.T) {
 	a := New(t)
 	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
 	c.Connect()
+	defer c.Disconnect()
 
 	token := c.SubscribeAppActivations("someid", func(client Client, appID string, devID string, req Activation) {
 
 	})
 	token.Wait()
+	a.So(token.Error(), ShouldBeNil)
 
+	token = c.UnsubscribeAppActivations("someid")
+	token.Wait()
 	a.So(token.Error(), ShouldBeNil)
 }
 
@@ -335,12 +388,16 @@ func TestSubscribeActivations(t *testing.T) {
 	a := New(t)
 	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
 	c.Connect()
+	defer c.Disconnect()
 
 	token := c.SubscribeActivations(func(client Client, appID string, devID string, req Activation) {
 
 	})
 	token.Wait()
+	a.So(token.Error(), ShouldBeNil)
 
+	token = c.UnsubscribeActivations()
+	token.Wait()
 	a.So(token.Error(), ShouldBeNil)
 }
 
@@ -348,6 +405,7 @@ func TestPubSubActivations(t *testing.T) {
 	a := New(t)
 	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
 	c.Connect()
+	defer c.Disconnect()
 
 	var wg sync.WaitGroup
 
@@ -363,12 +421,15 @@ func TestPubSubActivations(t *testing.T) {
 	c.PublishActivation("app5", "dev1", Activation{Metadata: []Metadata{Metadata{DataRate: "SF7BW125"}}}).Wait()
 
 	wg.Wait()
+
+	c.UnsubscribeDeviceActivations("app5", "dev1")
 }
 
 func TestPubSubAppActivations(t *testing.T) {
 	a := New(t)
 	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
 	c.Connect()
+	defer c.Disconnect()
 
 	var wg sync.WaitGroup
 
@@ -384,4 +445,6 @@ func TestPubSubAppActivations(t *testing.T) {
 	c.PublishActivation("app6", "dev2", Activation{Metadata: []Metadata{Metadata{DataRate: "SF7BW125"}}}).Wait()
 
 	wg.Wait()
+
+	c.UnsubscribeAppActivations("app6")
 }
