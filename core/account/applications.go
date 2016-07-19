@@ -23,9 +23,9 @@ func (a *Account) FindApplication(appID string) (app Application, err error) {
 }
 
 type createApplicationReq struct {
-	Name  string         `json:"name"`
-	AppID string         `json:"id"`
-	EUIs  []types.AppEUI `json:"euis"`
+	Name  string         `json:"name" valid:"required"`
+	AppID string         `json:"id"   valid:"required"`
+	EUIs  []types.AppEUI `json:"euis" valid:"required"`
 }
 
 // CreateApplication creates a new application on the account server
@@ -56,7 +56,7 @@ func (a *Account) Retract(appID string, username string) error {
 }
 
 type addAccessKeyReq struct {
-	Name   string        `json:"name" valid:"required"`
+	Name   string        `json:"name"   valid:"required"`
 	Rights []types.Right `json:"rights" valid:"required"`
 }
 
