@@ -50,7 +50,6 @@ func performRequest(server, accessToken, method, URI string, body, res interface
 		req, err = newRequest(server, accessToken, method, URI, nil)
 	}
 
-	//
 	if err != nil {
 		return err
 	}
@@ -61,11 +60,16 @@ func performRequest(server, accessToken, method, URI string, body, res interface
 		return err
 	}
 
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode >= 400 {
 		return HTTPError{
 			Code:    resp.StatusCode,
 			Message: resp.Status,
 		}
+	}
+
+	if resp.StatusCode >= 300 {
+		// 307 is resolved automatically, 301, 302, 304 cannot be
+		return fmt.Errorf("Unexpected redirection to %s", resp.Header.Get("Location"))
 	}
 
 	if res != nil {
