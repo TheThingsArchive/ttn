@@ -10,6 +10,9 @@ import (
 	"github.com/asaskevich/govalidator"
 )
 
+// HTTPError represents an error coming over HTTP,
+// it is not an error with executing the request itself, it is
+// an error the server is flaggin to the client.
 type HTTPError struct {
 	Code    int
 	Message string
@@ -38,6 +41,10 @@ func performRequest(server, accessToken, method, URI string, body, res interface
 
 	if body != nil {
 		// body is not nil, so serialize it and pass it in the request
+		if _, err = govalidator.ValidateStruct(body); err != nil {
+			return fmt.Errorf("Got an illegal request body: %s", err)
+		}
+
 		buf := new(bytes.Buffer)
 		encoder := json.NewEncoder(buf)
 		err = encoder.Encode(body)
@@ -103,7 +110,7 @@ func POST(server, accessToken, URI string, body, res interface{}) error {
 	return performRequest(server, accessToken, "POST", URI, body, res)
 }
 
-// POST creates an HTTP Put request to the specified server, with the body
+// PUT creates an HTTP Put request to the specified server, with the body
 // encoded as JSON, decoding the result into the object pointed to byres
 func PUT(server, accessToken, URI string, body, res interface{}) error {
 	return performRequest(server, accessToken, "PUT", URI, body, res)

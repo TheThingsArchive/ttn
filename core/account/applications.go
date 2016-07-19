@@ -16,7 +16,7 @@ func (a *Account) ListApplications() (apps []Application, err error) {
 	return apps, err
 }
 
-// GetApplication gets a specific application from the account server
+// FindApplication gets a specific application from the account server
 func (a *Account) FindApplication(appID string) (app Application, err error) {
 	err = util.GET(a.server, a.accessToken, fmt.Sprintf("/applications/%s", appID), &app)
 	return app, err
@@ -41,7 +41,7 @@ func (a *Account) CreateApplication(appID string, name string, EUIs []types.AppE
 }
 
 // DeleteApplication deletes an application
-func (a *Account) DeleteAppliction(appID string) error {
+func (a *Account) DeleteApplication(appID string) error {
 	return util.DELETE(a.server, a.accessToken, fmt.Sprintf("/applications/%s", appID))
 }
 
@@ -60,17 +60,18 @@ type addAccessKeyReq struct {
 	Rights []types.Right `json:"rights" valid:"required"`
 }
 
-// AddAccessKey
+// AddAccessKey adds an access key to the application with the specified name
+// and rights
 func (a *Account) AddAccessKey(appID string, name string, rights []types.Right) (key types.AccessKey, err error) {
 	body := addAccessKeyReq{
 		Name:   name,
 		Rights: rights,
 	}
-	util.POST(a.server, a.accessToken, fmt.Sprintf("/applications/%s/access-keys", appID), body, &key)
+	err = util.POST(a.server, a.accessToken, fmt.Sprintf("/applications/%s/access-keys", appID), body, &key)
 	return key, err
 }
 
-// RemoveAccessKey
+// RemoveAccessKey removes the specified access key from the application
 func (a *Account) RemoveAccessKey(appID string, name string) error {
 	return util.DELETE(a.server, a.accessToken, fmt.Sprintf("/applications/%s/access-keys/%s", appID, name))
 }
@@ -79,7 +80,7 @@ type editAppReq struct {
 	Name string `json:"name,omitempty"`
 }
 
-// ChangeName
+// ChangeName changes the application name
 func (a *Account) ChangeName(appID string, name string) (app Application, err error) {
 	body := editAppReq{
 		Name: name,
@@ -88,12 +89,12 @@ func (a *Account) ChangeName(appID string, name string) (app Application, err er
 	return app, err
 }
 
-// AddEUI
+// AddEUI adds an EUI to the applications list of EUIs
 func (a *Account) AddEUI(appID string, eui types.AppEUI) error {
 	return util.POST(a.server, a.accessToken, fmt.Sprintf("/applications/%s/euis/%s", appID, eui.String()), nil, nil)
 }
 
-// RemoveEUI
+// RemoveEUI removes the specified EUI from the application
 func (a *Account) RemoveEUI(appID string, eui types.AppEUI) error {
 	return util.DELETE(a.server, a.accessToken, fmt.Sprintf("/applications/%s/euis/%s", appID, eui.String()))
 }
