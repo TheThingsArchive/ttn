@@ -10,7 +10,6 @@ import (
 
 	"github.com/TheThingsNetwork/ttn/core/account/util"
 	"github.com/TheThingsNetwork/ttn/core/types"
-	"github.com/apex/log"
 )
 
 // ListApplications list all applications
@@ -56,7 +55,7 @@ type createApplicationReq struct {
 }
 
 // CreateApplication creates a new application on the account server
-func (a *Account) CreateApplication(ctx log.Interface, appID string, name string, EUIs []types.AppEUI) (app Application, err error) {
+func (a *Account) CreateApplication(appID string, name string, EUIs []types.AppEUI) (app Application, err error) {
 	body := createApplicationReq{
 		Name:  name,
 		AppID: appID,
@@ -77,41 +76,41 @@ func (a *Account) CreateApplication(ctx log.Interface, appID string, name string
 }
 
 // DeleteApplication deletes an application
-func (a *Account) DeleteAppliction(ctx log.Interface, appID string) error {
+func (a *Account) DeleteAppliction(appID string) error {
 	panic("DeleteApplication not implemented")
 }
 
 // Grant adds a collaborator to the application
-func (a *Account) Grant(ctx log.Interface, appID string, username string, rights []Right) error {
+func (a *Account) Grant(appID string, username string, rights []Right) error {
 	panic("Grant not implemented")
 }
 
 // Retract removes rights from a collaborator of the application
-func (a *Account) Retract(ctx log.Interface, appID string, username string, rights []Right) error {
+func (a *Account) Retract(appID string, username string, rights []Right) error {
 	panic("Retract not implemented")
 }
 
 // AddAccessKey
-func (a *Account) AddAccessKey(ctx log.Interface, appID string, key AccessKey) error {
+func (a *Account) AddAccessKey(appID string, key AccessKey) error {
 	panic("AddAccessKey not implemented")
 }
 
 // RemoveAccessKey
-func (a *Account) RemoveAccessKey(ctx log.Interface, appID string, key AccessKey) error {
+func (a *Account) RemoveAccessKey(appID string, key AccessKey) error {
 	panic("RemoveAccessKey not implemented")
 }
 
 // ChangeName
-func (a *Account) ChangeName(ctx log.Interface, appID string, name string) error {
+func (a *Account) ChangeName(appID string, name string) error {
 	panic("ChangeName not implemented")
 }
 
 // AddEUI
-func (a *Account) AddEUI(ctx log.Interface, appID string, eui types.AppEUI) error {
+func (a *Account) AddEUI(appID string, eui types.AppEUI) error {
 	panic("AddEUI not implemented")
 }
 
 // RemoveEUI
-func (a *Account) RemoveEUI(ctx log.Interface, appID string, eui types.AppEUI) error {
+func (a *Account) RemoveEUI(appID string, eui types.AppEUI) error {
 	panic("RemoveEUI not implemented")
 }
