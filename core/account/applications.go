@@ -4,6 +4,8 @@
 package account
 
 import (
+	"fmt"
+
 	"github.com/TheThingsNetwork/ttn/core/account/util"
 	"github.com/TheThingsNetwork/ttn/core/types"
 )
@@ -16,7 +18,7 @@ func (a *Account) ListApplications() (apps []Application, err error) {
 
 // GetApplication gets a specific application from the account server
 func (a *Account) FindApplication(appID string) (app Application, err error) {
-	err = util.GET(a.server, a.accessToken, "/applications", &app)
+	err = util.GET(a.server, a.accessToken, fmt.Sprintf("/applications/%s", appID), &app)
 	return app, err
 }
 
@@ -40,40 +42,58 @@ func (a *Account) CreateApplication(appID string, name string, EUIs []types.AppE
 
 // DeleteApplication deletes an application
 func (a *Account) DeleteAppliction(appID string) error {
-	panic("DeleteApplication not implemented")
+	return util.DELETE(a.server, a.accessToken, fmt.Sprintf("/applications/%s", appID))
 }
 
 // Grant adds a collaborator to the application
 func (a *Account) Grant(appID string, username string, rights []types.Right) error {
-	panic("Grant not implemented")
+	return util.PUT(a.server, a.accessToken, fmt.Sprintf("/applications/%s/collaborators/%s", appID, username), rights, nil)
 }
 
 // Retract removes rights from a collaborator of the application
-func (a *Account) Retract(appID string, username string, rights []types.Right) error {
-	panic("Retract not implemented")
+func (a *Account) Retract(appID string, username string) error {
+	return util.DELETE(a.server, a.accessToken, fmt.Sprintf("/applications/%s/collaborators/%s", appID, username))
+}
+
+type addAccessKeyReq struct {
+	Name   string        `json:"name" valid:"required"`
+	Rights []types.Right `json:"rights" valid:"required"`
 }
 
 // AddAccessKey
-func (a *Account) AddAccessKey(appID string, key types.AccessKey) error {
-	panic("AddAccessKey not implemented")
+func (a *Account) AddAccessKey(appID string, name string, rights []types.Right) (key types.AccessKey, err error) {
+	body := addAccessKeyReq{
+		Name:   name,
+		Rights: rights,
+	}
+	util.POST(a.server, a.accessToken, fmt.Sprintf("/applications/%s/access-keys", appID), body, &key)
+	return key, err
 }
 
 // RemoveAccessKey
-func (a *Account) RemoveAccessKey(appID string, key types.AccessKey) error {
-	panic("RemoveAccessKey not implemented")
+func (a *Account) RemoveAccessKey(appID string, name string) error {
+	return util.DELETE(a.server, a.accessToken, fmt.Sprintf("/applications/%s/access-keys/%s", appID, name))
+}
+
+type editAppReq struct {
+	Name string `json:"name,omitempty"`
 }
 
 // ChangeName
-func (a *Account) ChangeName(appID string, name string) error {
-	panic("ChangeName not implemented")
+func (a *Account) ChangeName(appID string, name string) (app Application, err error) {
+	body := editAppReq{
+		Name: name,
+	}
+	err = util.PATCH(a.server, a.accessToken, fmt.Sprintf("/applications/%s", appID), body, &app)
+	return app, err
 }
 
 // AddEUI
 func (a *Account) AddEUI(appID string, eui types.AppEUI) error {
-	panic("AddEUI not implemented")
+	return util.POST(a.server, a.accessToken, fmt.Sprintf("/applications/%s/euis/%s", appID, eui.String()), nil, nil)
 }
 
 // RemoveEUI
 func (a *Account) RemoveEUI(appID string, eui types.AppEUI) error {
-	panic("RemoveEUI not implemented")
+	return util.DELETE(a.server, a.accessToken, fmt.Sprintf("/applications/%s/euis/%s", appID, eui.String()))
 }
