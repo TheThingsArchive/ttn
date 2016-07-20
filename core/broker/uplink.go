@@ -148,7 +148,9 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) error {
 	deduplicatedUplink := &pb.DeduplicatedUplinkMessage{
 		Payload:          base.Payload,
 		DevEui:           device.DevEui,
+		DevId:            device.DevId,
 		AppEui:           device.AppEui,
+		AppId:            device.AppId,
 		ProtocolMetadata: base.ProtocolMetadata,
 		GatewayMetadata:  gatewayMetadata,
 		ServerTime:       time.UnixNano(),

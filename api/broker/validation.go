@@ -21,12 +21,6 @@ func (m *DownlinkOption) Validate() bool {
 
 // Validate implements the api.Validator interface
 func (m *UplinkMessage) Validate() bool {
-	if m.DevEui == nil || m.DevEui.IsEmpty() {
-		return false
-	}
-	if m.AppEui == nil || m.AppEui.IsEmpty() {
-		return false
-	}
 	if m.ProtocolMetadata == nil || !m.ProtocolMetadata.Validate() {
 		return false
 	}
@@ -56,6 +50,9 @@ func (m *DeduplicatedUplinkMessage) Validate() bool {
 		return false
 	}
 	if m.AppEui == nil || m.AppEui.IsEmpty() {
+		return false
+	}
+	if m.DevId == "" || !api.ValidID(m.DevId) {
 		return false
 	}
 	if m.AppId == "" || !api.ValidID(m.AppId) {
