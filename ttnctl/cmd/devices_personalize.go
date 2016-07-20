@@ -27,7 +27,7 @@ var devicesPersonalizeCmd = &cobra.Command{
 		}
 
 		if len(args) == 0 {
-			cmd.Usage()
+			cmd.UsageFunc()(cmd)
 			return
 		}
 

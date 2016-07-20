@@ -15,7 +15,7 @@ import (
 
 // applicationsPayloadFunctionsSetCmd represents the `applications pf set` command
 var applicationsPayloadFunctionsSetCmd = &cobra.Command{
-	Use:   "set [decoder/converter/validator] [file.js]",
+	Use:   "pf set [decoder/converter/validator] [file.js]",
 	Short: "Set payload functions of an application",
 	Long: `ttnctl pf set can be used to get or set payload functions of an application.
 The functions are read from the supplied file or from STDIN.`,
@@ -47,7 +47,7 @@ The functions are read from the supplied file or from STDIN.`,
 		}
 
 		if len(args) == 0 {
-			cmd.Usage()
+			cmd.UsageFunc()(cmd)
 			return
 		}
 
