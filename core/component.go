@@ -194,12 +194,20 @@ func (c *Component) ServerOptions() []grpc.ServerOption {
 				peerID = id[0]
 			}
 		}
-		c.Ctx.WithFields(log.Fields{
+		logCtx := c.Ctx.WithFields(log.Fields{
 			"CallerID": peerID,
 			"CallerIP": peerAddr,
 			"Method":   info.FullMethod,
-		}).Debug("Handle Request")
-		return handler(ctx, req)
+		})
+		t := time.Now()
+		iface, err := handler(ctx, req)
+		logCtx = logCtx.WithField("Time", time.Now().Sub(t))
+		if err != nil {
+			logCtx.WithError(err).Warn("Could not handle Request")
+		} else {
+			logCtx.Debug("Handled Request")
+		}
+		return iface, err
 	}
 
 	stream := func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
