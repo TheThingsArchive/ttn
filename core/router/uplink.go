@@ -18,9 +18,12 @@ import (
 func (r *router) HandleUplink(gatewayEUI types.GatewayEUI, uplink *pb.UplinkMessage) error {
 	ctx := r.Ctx.WithField("GatewayEUI", gatewayEUI)
 	var err error
+	start := time.Now()
 	defer func() {
 		if err != nil {
 			ctx.WithError(err).Warn("Could not handle uplink")
+		} else {
+			ctx.WithField("Duration", time.Now().Sub(start)).Info("Handled uplink")
 		}
 	}()
 
@@ -93,7 +96,6 @@ func (r *router) HandleUplink(gatewayEUI types.GatewayEUI, uplink *pb.UplinkMess
 	}
 
 	ctx = ctx.WithField("NumBrokers", len(brokers))
-	ctx.Debug("Forward Uplink")
 
 	// Forward to all brokers
 	for _, broker := range brokers {

@@ -23,9 +23,12 @@ func (r *router) HandleActivation(gatewayEUI types.GatewayEUI, activation *pb.De
 		"DevEUI":     *activation.DevEui,
 	})
 	var err error
+	start := time.Now()
 	defer func() {
 		if err != nil {
 			ctx.WithError(err).Warn("Could not handle activation")
+		} else {
+			ctx.WithField("Duration", time.Now().Sub(start)).Info("Handled activation")
 		}
 	}()
 
@@ -90,7 +93,6 @@ func (r *router) HandleActivation(gatewayEUI types.GatewayEUI, activation *pb.De
 	}
 
 	ctx = ctx.WithField("NumBrokers", len(brokers))
-	ctx.Debug("Forward Activation")
 
 	// Forward to all brokers and collect responses
 	var wg sync.WaitGroup

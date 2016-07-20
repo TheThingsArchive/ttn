@@ -26,9 +26,12 @@ func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (*pb.D
 		"DevEUI":     *activation.DevEui,
 	})
 	var err error
+	start := time.Now()
 	defer func() {
 		if err != nil {
 			ctx.WithError(err).Warn("Could not handle activation")
+		} else {
+			ctx.WithField("Duration", time.Now().Sub(start)).Info("Handled activation")
 		}
 	}()
 
@@ -122,8 +125,6 @@ func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (*pb.D
 		Payload:        handlerResponse.Payload,
 		DownlinkOption: handlerResponse.DownlinkOption,
 	}
-
-	ctx.Debug("Successful Activation")
 
 	return deviceActivationResponse, nil
 }

@@ -32,9 +32,12 @@ var (
 func (b *broker) HandleUplink(uplink *pb.UplinkMessage) error {
 	ctx := b.Ctx.WithField("GatewayEUI", *uplink.GatewayMetadata.GatewayEui)
 	var err error
+	start := time.Now()
 	defer func() {
 		if err != nil {
 			ctx.WithError(err).Warn("Could not handle uplink")
+		} else {
+			ctx.WithField("Duration", time.Now().Sub(start)).Info("Handled uplink")
 		}
 	}()
 
@@ -182,8 +185,6 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) error {
 	if err != nil {
 		return err
 	}
-
-	ctx.Debug("Forward Uplink")
 
 	handler <- deduplicatedUplink
 

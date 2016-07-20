@@ -176,7 +176,7 @@ func (s *schedule) Schedule(id string, downlink *router_pb.DownlinkMessage) erro
 			// Schedule transmission before the Deadline
 			go func() {
 				waitTime := item.deadlineAt.Sub(time.Now())
-				ctx.WithField("Remaining", waitTime).Debug("Schedule Downlink")
+				ctx.WithField("Remaining", waitTime).Info("Scheduled downlink")
 				<-time.After(waitTime)
 				if s.downlink != nil {
 					s.downlink <- item.payload

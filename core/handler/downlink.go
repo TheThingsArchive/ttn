@@ -4,7 +4,10 @@
 package handler
 
 import (
+	"time"
+
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
+	"github.com/TheThingsNetwork/ttn/core/handler/device"
 	"github.com/TheThingsNetwork/ttn/mqtt"
 	"github.com/apex/log"
 )
@@ -15,13 +18,17 @@ func (h *handler) EnqueueDownlink(appDownlink *mqtt.DownlinkMessage) error {
 		"AppID": appDownlink.AppID,
 	})
 	var err error
+	start := time.Now()
 	defer func() {
 		if err != nil {
 			ctx.WithError(err).Warn("Could not enqueue downlink")
+		} else {
+			ctx.WithField("Duration", time.Now().Sub(start)).Debug("Enqueued downlink")
 		}
 	}()
 
-	dev, err := h.devices.Get(appDownlink.AppID, appDownlink.DevID)
+	var dev *device.Device
+	dev, err = h.devices.Get(appDownlink.AppID, appDownlink.DevID)
 	if err != nil {
 		return err
 	}
@@ -30,8 +37,6 @@ func (h *handler) EnqueueDownlink(appDownlink *mqtt.DownlinkMessage) error {
 	if err != nil {
 		return err
 	}
-
-	ctx.Debug("Enqueue Downlink")
 
 	return nil
 }

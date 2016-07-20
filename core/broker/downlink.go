@@ -6,6 +6,7 @@ package broker
 import (
 	"errors"
 	"strings"
+	"time"
 
 	pb "github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/apex/log"
@@ -24,9 +25,12 @@ func (b *broker) HandleDownlink(downlink *pb.DownlinkMessage) error {
 		"AppEUI": *downlink.AppEui,
 	})
 	var err error
+	start := time.Now()
 	defer func() {
 		if err != nil {
 			ctx.WithError(err).Warn("Could not handle downlink")
+		} else {
+			ctx.WithField("Duration", time.Now().Sub(start)).Info("Handled downlink")
 		}
 	}()
 
@@ -48,8 +52,6 @@ func (b *broker) HandleDownlink(downlink *pb.DownlinkMessage) error {
 	if err != nil {
 		return err
 	}
-
-	ctx.Debug("Send Downlink")
 
 	router <- downlink
 

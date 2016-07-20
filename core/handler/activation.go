@@ -5,6 +5,7 @@ package handler
 
 import (
 	"errors"
+	"time"
 
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb "github.com/TheThingsNetwork/ttn/api/handler"
@@ -33,9 +34,12 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 		"DevID":  activation.DevId,
 	})
 	var err error
+	start := time.Now()
 	defer func() {
 		if err != nil {
 			ctx.WithError(err).Warn("Could not handle activation")
+		} else {
+			ctx.WithField("Duration", time.Now().Sub(start)).Info("Handled activation")
 		}
 	}()
 

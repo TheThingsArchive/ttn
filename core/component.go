@@ -200,11 +200,11 @@ func (c *Component) ServerOptions() []grpc.ServerOption {
 		})
 		t := time.Now()
 		iface, err := handler(ctx, req)
-		logCtx = logCtx.WithField("Time", time.Now().Sub(t))
+		logCtx = logCtx.WithField("Duration", time.Now().Sub(t))
 		if err != nil {
 			logCtx.WithError(err).Warn("Could not handle Request")
 		} else {
-			logCtx.Debug("Handled Request")
+			logCtx.Info("Handled request")
 		}
 		return iface, err
 	}
@@ -227,7 +227,7 @@ func (c *Component) ServerOptions() []grpc.ServerOption {
 			"CallerID": peerID,
 			"CallerIP": peerAddr,
 			"Method":   info.FullMethod,
-		}).Debug("Start Stream")
+		}).Info("Start stream")
 		return handler(srv, stream)
 	}
 

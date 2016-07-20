@@ -13,9 +13,12 @@ import (
 func (r *router) HandleGatewayStatus(gatewayEUI types.GatewayEUI, status *pb_gateway.Status) error {
 	ctx := r.Ctx.WithField("GatewayEUI", gatewayEUI)
 	var err error
+	start := time.Now()
 	defer func() {
 		if err != nil {
 			ctx.WithError(err).Warn("Could not handle gateway status")
+		} else {
+			ctx.WithField("Duration", time.Now().Sub(start)).Info("Handled gateway status")
 		}
 	}()
 

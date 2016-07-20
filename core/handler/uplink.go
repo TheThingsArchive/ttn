@@ -20,9 +20,12 @@ func (h *handler) HandleUplink(uplink *pb_broker.DeduplicatedUplinkMessage) erro
 		"DevID": uplink.DevId,
 	})
 	var err error
+	start := time.Now()
 	defer func() {
 		if err != nil {
 			ctx.WithError(err).Warn("Could not handle uplink")
+		} else {
+			ctx.WithField("Duration", time.Now().Sub(start)).Info("Handled uplink")
 		}
 	}()
 
