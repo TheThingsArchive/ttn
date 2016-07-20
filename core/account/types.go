@@ -24,3 +24,12 @@ type Collaborator struct {
 	Username string        `json:"username" valid:"required"`
 	Rights   []types.Right `json:"rights"   valid:"required"`
 }
+
+func (c *Collaborator) HasRight(right types.Right) bool {
+	for _, r := range c.Rights {
+		if r == right {
+			return true
+		}
+	}
+	return false
+}
