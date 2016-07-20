@@ -13,6 +13,10 @@ import (
 	"github.com/asaskevich/govalidator"
 )
 
+var (
+	MaxRedirects = 5
+)
+
 // HTTPError represents an error coming over HTTP,
 // it is not an error with executing the request itself, it is
 // an error the server is flaggin to the client.
@@ -39,7 +43,7 @@ func newRequest(server string, accessToken string, method string, URI string, bo
 	return req, nil
 }
 
-func performRequest(server, accessToken, method, URI string, body, res interface{}) (err error) {
+func performRequest(server, accessToken, method, URI string, body, res interface{}, redirects int) (err error) {
 	var req *http.Request
 
 	if body != nil {
@@ -77,8 +81,16 @@ func performRequest(server, accessToken, method, URI string, body, res interface
 		}
 	}
 
+	if resp.StatusCode == 307 {
+		if redirects > 0 {
+			location := resp.Header.Get("Location")
+			return performRequest(server, accessToken, method, location, body, res, redirects-1)
+		}
+		return fmt.Errorf("Reached maximum number of redirects")
+	}
+
 	if resp.StatusCode >= 300 {
-		// 307 is resolved automatically, 301, 302, 304 cannot be
+		// 307 is handled, 301, 302, 304 cannot be
 		return fmt.Errorf("Unexpected redirection to %s", resp.Header.Get("Location"))
 	}
 
@@ -99,28 +111,28 @@ func performRequest(server, accessToken, method, URI string, body, res interface
 
 // GET does a get request to the account server,  decoding the result into the object pointed to byres
 func GET(server, accessToken, URI string, res interface{}) error {
-	return performRequest(server, accessToken, "GET", URI, nil, res)
+	return performRequest(server, accessToken, "GET", URI, nil, res, MaxRedirects)
 }
 
 // DELETE does a delete request to the account server
 func DELETE(server, accessToken, URI string) error {
-	return performRequest(server, accessToken, "DELETE", URI, nil, nil)
+	return performRequest(server, accessToken, "DELETE", URI, nil, nil, MaxRedirects)
 }
 
 // POST creates an HTTP Post request to the specified server, with the body
 // encoded as JSON, decoding the result into the object pointed to byres
 func POST(server, accessToken, URI string, body, res interface{}) error {
-	return performRequest(server, accessToken, "POST", URI, body, res)
+	return performRequest(server, accessToken, "POST", URI, body, res, MaxRedirects)
 }
 
 // PUT creates an HTTP Put request to the specified server, with the body
 // encoded as JSON, decoding the result into the object pointed to byres
 func PUT(server, accessToken, URI string, body, res interface{}) error {
-	return performRequest(server, accessToken, "PUT", URI, body, res)
+	return performRequest(server, accessToken, "PUT", URI, body, res, MaxRedirects)
 }
 
 // PATCH creates an HTTP Patch request to the specified server, with the body
 // encoded as JSON, decoding the result into the object pointed to byres
 func PATCH(server, accessToken, URI string, body, res interface{}) error {
-	return performRequest(server, accessToken, "POST", URI, body, res)
+	return performRequest(server, accessToken, "POST", URI, body, res, MaxRedirects)
 }
