@@ -25,6 +25,7 @@ type Collaborator struct {
 	Rights   []types.Right `json:"rights"   valid:"required"`
 }
 
+// HasRight checks if the collaborator has a specific right
 func (c *Collaborator) HasRight(right types.Right) bool {
 	for _, r := range c.Rights {
 		if r == right {

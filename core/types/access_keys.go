@@ -3,8 +3,11 @@
 
 package types
 
+// Right is the type that represents a right to do something on TTN
 type Right string
 
+// AccessKey is an access key that gives someone the right to do something with
+// an application
 type AccessKey struct {
 	// The friendly name of the access key
 	Name string `json:"name"`

@@ -19,7 +19,7 @@ var (
 )
 
 type OKResp struct {
-	OK string `json:token`
+	OK string `json:"token"`
 }
 
 type FooResp struct {

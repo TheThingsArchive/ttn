@@ -15,6 +15,8 @@ import (
 )
 
 var (
+	// MaxRedirects specifies the maximum number of redirects an HTTP
+	// request should be able to make
 	MaxRedirects = 5
 )
 
