@@ -13,8 +13,13 @@ import (
 	. "github.com/smartystreets/assertions"
 )
 
+var (
+	url   = "/foo"
+	token = "token"
+)
+
 type OKResp struct {
-	OK string `json:"ok"`
+	OK string `json:token`
 }
 
 type FooResp struct {
@@ -23,10 +28,11 @@ type FooResp struct {
 
 func OKHandler(a *Assertion, method string) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		a.So(r.RequestURI, ShouldEqual, "/foo")
+		a.So(r.RequestURI, ShouldEqual, url)
 		a.So(r.Method, ShouldEqual, method)
+		a.So(r.Header.Get("Authorization"), ShouldEqual, "bearer "+token)
 		resp := OKResp{
-			OK: "ok",
+			OK: token,
 		}
 		w.WriteHeader(http.StatusOK)
 		encoder := json.NewEncoder(w)
@@ -36,10 +42,11 @@ func OKHandler(a *Assertion, method string) http.HandlerFunc {
 
 func FooHandler(a *Assertion, method string) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		a.So(r.RequestURI, ShouldEqual, "/foo")
+		a.So(r.RequestURI, ShouldEqual, url)
 		a.So(r.Method, ShouldEqual, method)
+		a.So(r.Header.Get("Authorization"), ShouldEqual, "bearer "+token)
 		resp := FooResp{
-			Foo: "ok",
+			Foo: token,
 		}
 		w.WriteHeader(http.StatusOK)
 		encoder := json.NewEncoder(w)
@@ -49,13 +56,14 @@ func FooHandler(a *Assertion, method string) http.HandlerFunc {
 
 func RedirectHandler(a *Assertion, method string) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.RequestURI == "/foo" {
+		a.So(r.Header.Get("Authorization"), ShouldEqual, "bearer "+token)
+		if r.RequestURI == url {
 			w.Header().Set("Location", "/bar")
 			w.WriteHeader(307)
 		} else {
 			a.So(r.RequestURI, ShouldEqual, "/bar")
 			resp := FooResp{
-				Foo: "ok",
+				Foo: token,
 			}
 			w.WriteHeader(http.StatusOK)
 			encoder := json.NewEncoder(w)
@@ -66,8 +74,9 @@ func RedirectHandler(a *Assertion, method string) http.HandlerFunc {
 
 func EchoHandler(a *Assertion, method string) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		a.So(r.RequestURI, ShouldEqual, "/foo")
+		a.So(r.RequestURI, ShouldEqual, url)
 		a.So(r.Method, ShouldEqual, method)
+		a.So(r.Header.Get("Authorization"), ShouldEqual, "bearer "+token)
 		w.WriteHeader(http.StatusOK)
 		defer r.Body.Close()
 		body, err := ioutil.ReadAll(r.Body)
@@ -82,9 +91,9 @@ func TestGET(t *testing.T) {
 	defer server.Close()
 
 	var resp OKResp
-	err := GET(server.URL, "ok", "/foo", &resp)
+	err := GET(server.URL, token, url, &resp)
 	a.So(err, ShouldBeNil)
-	a.So(resp.OK, ShouldEqual, "ok")
+	a.So(resp.OK, ShouldEqual, token)
 }
 
 func TestGETDropResponse(t *testing.T) {
@@ -92,7 +101,7 @@ func TestGETDropResponse(t *testing.T) {
 	server := httptest.NewServer(OKHandler(a, "GET"))
 	defer server.Close()
 
-	err := GET(server.URL, "ok", "/foo", nil)
+	err := GET(server.URL, token, url, nil)
 	a.So(err, ShouldBeNil)
 }
 
@@ -102,7 +111,7 @@ func TestGETIllegalResponse(t *testing.T) {
 	defer server.Close()
 
 	var resp FooResp
-	err := GET(server.URL, "ok", "/foo", &resp)
+	err := GET(server.URL, token, url, &resp)
 	a.So(err, ShouldNotBeNil)
 }
 
@@ -112,7 +121,7 @@ func TestGETIllegalResponseIgnore(t *testing.T) {
 	defer server.Close()
 
 	var resp OKResp
-	err := GET(server.URL, "ok", "/foo", &resp)
+	err := GET(server.URL, token, url, &resp)
 	a.So(err, ShouldBeNil)
 }
 
@@ -122,7 +131,7 @@ func TestGETRedirect(t *testing.T) {
 	defer server.Close()
 
 	var resp OKResp
-	err := GET(server.URL, "ok", "/foo", &resp)
+	err := GET(server.URL, token, url, &resp)
 	a.So(err, ShouldBeNil)
 }
 
@@ -133,9 +142,9 @@ func TestPUT(t *testing.T) {
 
 	var resp FooResp
 	body := FooResp{
-		Foo: "ok",
+		Foo: token,
 	}
-	err := PUT(server.URL, "ok", "/foo", body, &resp)
+	err := PUT(server.URL, token, url, body, &resp)
 	a.So(err, ShouldBeNil)
 	a.So(resp.Foo, ShouldEqual, body.Foo)
 }
@@ -147,7 +156,7 @@ func TestPUTIllegalRequest(t *testing.T) {
 
 	var resp FooResp
 	body := FooResp{}
-	err := PUT(server.URL, "ok", "/foo", body, &resp)
+	err := PUT(server.URL, token, url, body, &resp)
 	a.So(err, ShouldNotBeNil)
 }
 
@@ -157,7 +166,7 @@ func TestPUTIllegalResponse(t *testing.T) {
 	defer server.Close()
 
 	var resp FooResp
-	err := PUT(server.URL, "ok", "/foo", nil, &resp)
+	err := PUT(server.URL, token, url, nil, &resp)
 	a.So(err, ShouldNotBeNil)
 }
 
@@ -167,7 +176,7 @@ func TestPUTRedirect(t *testing.T) {
 	defer server.Close()
 
 	var resp FooResp
-	err := PUT(server.URL, "ok", "/foo", nil, &resp)
+	err := PUT(server.URL, token, url, nil, &resp)
 	a.So(err, ShouldBeNil)
-	a.So(resp.Foo, ShouldEqual, "ok")
+	a.So(resp.Foo, ShouldEqual, token)
 }
