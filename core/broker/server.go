@@ -4,6 +4,7 @@
 package broker
 
 import (
+	"errors"
 	"io"
 
 	pb_api "github.com/TheThingsNetwork/ttn/api"
@@ -22,7 +23,10 @@ var grpcErrf = grpc.Errorf // To make go vet stop complaining
 
 func getCallerFromMetadata(ctx context.Context) (callerID string, err error) {
 	md, ok := metadata.FromContext(ctx)
-	// TODO: Check OK
+	if !ok {
+		err = errors.New("ttn: Could not get metadata")
+		return
+	}
 	id, ok := md["id"]
 	if !ok || len(id) < 1 {
 		err = grpcErrf(codes.Unauthenticated, "ttn/broker: Caller did not provide \"id\" in context")

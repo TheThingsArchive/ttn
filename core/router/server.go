@@ -24,7 +24,10 @@ var grpcErrf = grpc.Errorf // To make go vet stop complaining
 
 func getGatewayFromMetadata(ctx context.Context) (gatewayEUI types.GatewayEUI, err error) {
 	md, ok := metadata.FromContext(ctx)
-	// TODO: Check OK
+	if !ok {
+		err = errors.New("ttn: Could not get metadata")
+		return
+	}
 	euiString, ok := md["gateway_eui"]
 	if !ok || len(euiString) < 1 {
 		err = errors.New("ttn/router: Gateway did not provide \"gateway_eui\" in context")

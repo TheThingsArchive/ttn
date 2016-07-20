@@ -22,7 +22,10 @@ var grpcErrf = grpc.Errorf // To make go vet stop complaining
 
 func validateBrokerFromMetadata(ctx context.Context) (err error) {
 	md, ok := metadata.FromContext(ctx)
-	// TODO: Check OK
+	if !ok {
+		err = errors.New("ttn: Could not get metadata")
+		return
+	}
 	id, ok := md["id"]
 	if !ok || len(id) < 1 {
 		err = errors.New("ttn/handler: Broker did not provide \"id\" in context")
