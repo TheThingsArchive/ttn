@@ -180,3 +180,67 @@ func TestPUTRedirect(t *testing.T) {
 	a.So(err, ShouldBeNil)
 	a.So(resp.Foo, ShouldEqual, token)
 }
+
+func TestPOST(t *testing.T) {
+	a := New(t)
+	server := httptest.NewServer(EchoHandler(a, "POST"))
+	defer server.Close()
+
+	var resp FooResp
+	body := FooResp{
+		Foo: token,
+	}
+	err := POST(server.URL, token, url, body, &resp)
+	a.So(err, ShouldBeNil)
+	a.So(resp.Foo, ShouldEqual, body.Foo)
+}
+
+func TestPOSTIllegalRequest(t *testing.T) {
+	a := New(t)
+	server := httptest.NewServer(EchoHandler(a, "POST"))
+	defer server.Close()
+
+	var resp FooResp
+	body := FooResp{}
+	err := POST(server.URL, token, url, body, &resp)
+	a.So(err, ShouldNotBeNil)
+}
+
+func TestPOSTIllegalResponse(t *testing.T) {
+	a := New(t)
+	server := httptest.NewServer(OKHandler(a, "POST"))
+	defer server.Close()
+
+	var resp FooResp
+	err := POST(server.URL, token, url, nil, &resp)
+	a.So(err, ShouldNotBeNil)
+}
+
+func TestPOSTRedirect(t *testing.T) {
+	a := New(t)
+	server := httptest.NewServer(RedirectHandler(a, "POST"))
+	defer server.Close()
+
+	var resp FooResp
+	err := POST(server.URL, token, url, nil, &resp)
+	a.So(err, ShouldBeNil)
+	a.So(resp.Foo, ShouldEqual, token)
+}
+
+func TestDELETE(t *testing.T) {
+	a := New(t)
+	server := httptest.NewServer(OKHandler(a, "DELETE"))
+	defer server.Close()
+
+	err := DELETE(server.URL, token, url)
+	a.So(err, ShouldBeNil)
+}
+
+func TestDELETERedirect(t *testing.T) {
+	a := New(t)
+	server := httptest.NewServer(RedirectHandler(a, "DELETE"))
+	defer server.Close()
+
+	err := DELETE(server.URL, token, url)
+	a.So(err, ShouldBeNil)
+}
