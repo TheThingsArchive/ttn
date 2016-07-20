@@ -47,7 +47,10 @@ var handlerCmd = &cobra.Command{
 		connectRedis(client)
 
 		// Component
-		component := core.NewComponent(ctx, "handler", fmt.Sprintf("%s:%d", viper.GetString("handler.server-address-announce"), viper.GetInt("handler.server-port")))
+		component, err := core.NewComponent(ctx, "handler", fmt.Sprintf("%s:%d", viper.GetString("handler.server-address-announce"), viper.GetInt("handler.server-port")))
+		if err != nil {
+			ctx.WithError(err).Fatal("Could not initialize component")
+		}
 
 		// Broker
 		handler := handler.NewRedisHandler(
@@ -57,7 +60,7 @@ var handlerCmd = &cobra.Command{
 			viper.GetString("handler.mqtt-password"),
 			viper.GetString("handler.mqtt-broker"),
 		)
-		err := handler.Init(component)
+		err = handler.Init(component)
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not initialize handler")
 		}

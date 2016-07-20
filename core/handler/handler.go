@@ -5,14 +5,12 @@ package handler
 
 import (
 	"fmt"
-	"sync"
 	"time"
 
 	"google.golang.org/grpc"
 
 	"github.com/TheThingsNetwork/ttn/api"
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
-	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	pb "github.com/TheThingsNetwork/ttn/api/handler"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core"
@@ -47,10 +45,8 @@ func NewRedisHandler(client *redis.Client, ttnBrokerAddr string, mqttUsername st
 type handler struct {
 	*core.Component
 
-	devices            device.Store
-	applications       application.Store
-	applicationIds     []string // this is a cache
-	applicationIdsLock sync.RWMutex
+	devices      device.Store
+	applications application.Store
 
 	ttnBrokerAddr    string
 	ttnBrokerConn    *grpc.ClientConn
@@ -69,18 +65,6 @@ type handler struct {
 	mqttActivation chan *mqtt.Activation
 }
 
-func (h *handler) announce() error {
-	h.applicationIdsLock.RLock()
-	defer h.applicationIdsLock.RUnlock()
-	h.Component.Identity.Metadata = []*pb_discovery.Metadata{}
-	for _, id := range h.applicationIds {
-		h.Identity.Metadata = append(h.Component.Identity.Metadata, &pb_discovery.Metadata{
-			Key: pb_discovery.Metadata_APP_ID, Value: []byte(id),
-		})
-	}
-	return h.Component.Announce()
-}
-
 func (h *handler) Init(c *core.Component) error {
 	h.Component = c
 	err := h.Component.UpdateTokenKey()
@@ -92,16 +76,7 @@ func (h *handler) Init(c *core.Component) error {
 		AppID: "htdvisser",
 	})
 
-	apps, err := h.applications.List()
-	if err != nil {
-		return err
-	}
-	h.applicationIdsLock.Lock()
-	for _, app := range apps {
-		h.applicationIds = append(h.applicationIds, app.AppID)
-	}
-	h.applicationIdsLock.Unlock()
-	err = h.announce()
+	err = h.Announce()
 	if err != nil {
 		return err
 	}
@@ -133,7 +108,7 @@ func (h *handler) associateBroker() error {
 	h.ttnBrokerManager = pb_broker.NewBrokerManagerClient(conn)
 	h.ttnDeviceManager = pb_lorawan.NewDeviceManagerClient(conn)
 
-	ctx := h.GetContext()
+	ctx := h.GetContext(false)
 
 	h.downlink = make(chan *pb_broker.DownlinkMessage)
 

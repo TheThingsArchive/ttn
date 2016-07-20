@@ -43,11 +43,14 @@ var discoveryCmd = &cobra.Command{
 		})
 
 		// Component
-		component := core.NewComponent(ctx, "discovery", fmt.Sprintf("%s:%d", viper.GetString("discovery.server-address-announce"), viper.GetInt("discovery.server-port")))
+		component, err := core.NewComponent(ctx, "discovery", fmt.Sprintf("%s:%d", viper.GetString("discovery.server-address-announce"), viper.GetInt("discovery.server-port")))
+		if err != nil {
+			ctx.WithError(err).Fatal("Could not initialize component")
+		}
 
 		// Discovery Server
 		discovery := discovery.NewRedisDiscovery(client)
-		err := discovery.Init(component)
+		err = discovery.Init(component)
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not initialize discovery")
 		}

@@ -8,6 +8,9 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/grpc"
+
+	"github.com/TheThingsNetwork/ttn/api"
 	pb "github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/types"
@@ -15,7 +18,12 @@ import (
 )
 
 func buildTestBrokerDiscoveryClient(port uint) *brokerDiscovery {
-	discovery := NewBrokerDiscovery(&core.Component{DiscoveryServer: fmt.Sprintf("localhost:%d", port)}).(*brokerDiscovery)
+	conn, err := grpc.Dial(fmt.Sprintf("localhost:%d", port), append(api.DialOptions, grpc.WithBlock())...)
+	if err != nil {
+		panic(err)
+	}
+	client := pb.NewDiscoveryClient(conn)
+	discovery := NewBrokerDiscovery(&core.Component{Discovery: client}).(*brokerDiscovery)
 	discovery.refreshCache()
 	return discovery
 }
@@ -89,9 +97,15 @@ func TestBrokerDiscoveryCache(t *testing.T) {
 		Metadata: []*pb.Metadata{&pb.Metadata{Key: pb.Metadata_PREFIX, Value: []byte{0x00, 0x00, 0x00, 0x00, 0x00}}},
 	}
 
+	conn, err := grpc.Dial(fmt.Sprintf("localhost:%d", port), append(api.DialOptions, grpc.WithBlock())...)
+	if err != nil {
+		panic(err)
+	}
+	client := pb.NewDiscoveryClient(conn)
+
 	d := &brokerDiscovery{
 		component: &core.Component{
-			DiscoveryServer: fmt.Sprintf("localhost:%d", port),
+			Discovery: client,
 		},
 		cacheValidUntil: time.Now().Add(-1 * time.Minute),
 		cache:           []*pb.Announcement{broker},

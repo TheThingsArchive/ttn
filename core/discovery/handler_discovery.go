@@ -8,9 +8,6 @@ import (
 	"sync"
 	"time"
 
-	"google.golang.org/grpc"
-
-	"github.com/TheThingsNetwork/ttn/api"
 	pb "github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/core"
 )
@@ -41,14 +38,7 @@ func NewHandlerDiscovery(component *core.Component) HandlerDiscovery {
 }
 
 func (d *handlerDiscovery) refreshCache() error {
-	// Connect to the server
-	conn, err := grpc.Dial(d.component.DiscoveryServer, api.DialOptions...)
-	if err != nil {
-		return err
-	}
-	defer conn.Close()
-	client := pb.NewDiscoveryClient(conn)
-	res, err := client.GetAll(d.component.GetContext(), &pb.GetAllRequest{ServiceName: "handler"})
+	res, err := d.component.Discovery.GetAll(d.component.GetContext(false), &pb.GetAllRequest{ServiceName: "handler"})
 	if err != nil {
 		return err
 	}

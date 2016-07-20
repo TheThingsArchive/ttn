@@ -8,6 +8,7 @@ import (
 
 	"github.com/TheThingsNetwork/ttn/api"
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
+	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	pb "github.com/TheThingsNetwork/ttn/api/handler"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core/handler/application"
@@ -241,9 +242,49 @@ func (h *handlerManager) GetApplication(ctx context.Context, in *pb.ApplicationI
 	}, nil
 }
 
-func (h *handlerManager) SetApplication(ctx context.Context, in *pb.Application) (*api.Ack, error) {
+func (h *handlerManager) RegisterApplication(ctx context.Context, in *pb.ApplicationIdentifier) (*api.Ack, error) {
 	app, err := h.getApplication(ctx, &pb.ApplicationIdentifier{AppId: in.AppId})
 	if err != nil && err != application.ErrNotFound {
+		return nil, err
+	}
+	if app != nil {
+		return nil, errf(codes.InvalidArgument, "Application already registered")
+	}
+
+	err = h.applications.Set(&application.Application{
+		AppID: in.AppId,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = h.Discovery.AddMetadata(ctx, &pb_discovery.MetadataRequest{
+		ServiceName: h.Identity.ServiceName,
+		Id:          h.Identity.Id,
+		Metadata: &pb_discovery.Metadata{
+			Key:   pb_discovery.Metadata_APP_ID,
+			Value: []byte(in.AppId),
+		},
+	})
+	if err != nil {
+		h.Ctx.WithField("AppID", in.AppId).WithError(err).Warn("Could not register Application with Discovery")
+	}
+
+	_, err = h.ttnBrokerManager.RegisterApplicationHandler(ctx, &pb_broker.ApplicationHandlerRegistration{
+		AppId:     in.AppId,
+		HandlerId: h.Identity.Id,
+	})
+	if err != nil {
+		h.Ctx.WithField("AppID", in.AppId).WithError(err).Warn("Could not register Application with Broker")
+	}
+
+	return &api.Ack{}, nil
+
+}
+
+func (h *handlerManager) SetApplication(ctx context.Context, in *pb.Application) (*api.Ack, error) {
+	_, err := h.getApplication(ctx, &pb.ApplicationIdentifier{AppId: in.AppId})
+	if err != nil {
 		return nil, err
 	}
 
@@ -259,34 +300,6 @@ func (h *handlerManager) SetApplication(ctx context.Context, in *pb.Application)
 	})
 	if err != nil {
 		return nil, err
-	}
-
-	if app == nil {
-		// Add this application ID to the cache if needed
-		h.applicationIdsLock.Lock()
-		var alreadyInCache bool
-		for _, id := range h.applicationIds {
-			if id == in.AppId {
-				alreadyInCache = true
-				break
-			}
-		}
-		if !alreadyInCache {
-			h.applicationIds = append(h.applicationIds, in.AppId)
-		}
-		h.applicationIdsLock.Unlock()
-
-		// If we had to add it, we also have to announce it to the Discovery and Broker
-		if !alreadyInCache {
-			h.announce()
-			_, err := h.ttnBrokerManager.RegisterApplicationHandler(ctx, &pb_broker.ApplicationHandlerRegistration{
-				AppId:     in.AppId,
-				HandlerId: h.Identity.Id,
-			})
-			if err != nil {
-				h.Ctx.WithField("AppID", in.AppId).WithError(err).Warn("Could not register Application with Broker")
-			}
-		}
 	}
 
 	return &api.Ack{}, nil
@@ -320,16 +333,17 @@ func (h *handlerManager) DeleteApplication(ctx context.Context, in *pb.Applicati
 		return nil, err
 	}
 
-	// Remove this application ID from the cache
-	h.applicationIdsLock.Lock()
-	newApplicationIDList := make([]string, 0, len(h.applicationIds))
-	for _, id := range h.applicationIds {
-		if id != in.AppId {
-			newApplicationIDList = append(newApplicationIDList, id)
-		}
+	_, err = h.Discovery.DeleteMetadata(ctx, &pb_discovery.MetadataRequest{
+		ServiceName: h.Identity.ServiceName,
+		Id:          h.Identity.Id,
+		Metadata: &pb_discovery.Metadata{
+			Key:   pb_discovery.Metadata_APP_ID,
+			Value: []byte(in.AppId),
+		},
+	})
+	if err != nil {
+		h.Ctx.WithField("AppID", in.AppId).WithError(err).Warn("Could not unregister Application from Discovery")
 	}
-	h.applicationIds = newApplicationIDList
-	h.applicationIdsLock.Unlock()
 
 	return &api.Ack{}, nil
 }

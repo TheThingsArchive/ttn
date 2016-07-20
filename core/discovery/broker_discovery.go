@@ -7,9 +7,6 @@ import (
 	"sync"
 	"time"
 
-	"google.golang.org/grpc"
-
-	"github.com/TheThingsNetwork/ttn/api"
 	pb "github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/types"
@@ -37,14 +34,7 @@ func NewBrokerDiscovery(component *core.Component) BrokerDiscovery {
 }
 
 func (d *brokerDiscovery) refreshCache() error {
-	// Connect to the server
-	conn, err := grpc.Dial(d.component.DiscoveryServer, api.DialOptions...)
-	if err != nil {
-		return err
-	}
-	defer conn.Close()
-	client := pb.NewDiscoveryClient(conn)
-	res, err := client.GetAll(d.component.GetContext(), &pb.GetAllRequest{ServiceName: "broker"})
+	res, err := d.component.Discovery.GetAll(d.component.GetContext(false), &pb.GetAllRequest{ServiceName: "broker"})
 	if err != nil {
 		return err
 	}

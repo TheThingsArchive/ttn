@@ -104,7 +104,7 @@ func (r *router) HandleActivation(gatewayEUI types.GatewayEUI, activation *pb.De
 		// Do async request
 		wg.Add(1)
 		go func() {
-			res, err := broker.client.Activate(r.Component.GetContext(), request)
+			res, err := broker.client.Activate(r.Component.GetContext(false), request)
 			if err == nil && res != nil {
 				responses <- res
 			}

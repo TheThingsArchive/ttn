@@ -57,6 +57,7 @@ message DeviceList {
 }
 
 service ApplicationManager {
+  rpc RegisterApplication(ApplicationIdentifier) returns (api.Ack);
   rpc GetApplication(ApplicationIdentifier) returns (Application);
   rpc SetApplication(Application) returns (api.Ack);
   rpc DeleteApplication(ApplicationIdentifier) returns (api.Ack);

@@ -61,6 +61,14 @@ func (h *ManagerClient) SetApplication(in *Application) error {
 	return err
 }
 
+// RegisterApplication registers an application on the Handler
+func (h *ManagerClient) RegisterApplication(appID string) error {
+	h.RLock()
+	defer h.RUnlock()
+	_, err := h.applicationManagerClient.RegisterApplication(h.context, &ApplicationIdentifier{AppId: appID})
+	return err
+}
+
 // DeleteApplication deletes an application and all its devices from the Handler
 func (h *ManagerClient) DeleteApplication(appID string) error {
 	h.RLock()

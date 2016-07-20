@@ -34,11 +34,14 @@ var routerCmd = &cobra.Command{
 		ctx.Info("Starting")
 
 		// Component
-		component := core.NewComponent(ctx, "router", fmt.Sprintf("%s:%d", viper.GetString("router.server-address-announce"), viper.GetInt("router.server-port")))
+		component, err := core.NewComponent(ctx, "router", fmt.Sprintf("%s:%d", viper.GetString("router.server-address-announce"), viper.GetInt("router.server-port")))
+		if err != nil {
+			ctx.WithError(err).Fatal("Could not initialize component")
+		}
 
 		// Router
 		router := router.NewRouter()
-		err := router.Init(component)
+		err = router.Init(component)
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not initialize router")
 		}

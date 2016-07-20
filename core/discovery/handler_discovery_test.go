@@ -8,13 +8,21 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/grpc"
+
+	"github.com/TheThingsNetwork/ttn/api"
 	pb "github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/core"
 	. "github.com/smartystreets/assertions"
 )
 
 func buildTestHandlerDiscoveryClient(port uint) *handlerDiscovery {
-	discovery := NewHandlerDiscovery(&core.Component{DiscoveryServer: fmt.Sprintf("localhost:%d", port)}).(*handlerDiscovery)
+	conn, err := grpc.Dial(fmt.Sprintf("localhost:%d", port), append(api.DialOptions, grpc.WithBlock())...)
+	if err != nil {
+		panic(err)
+	}
+	client := pb.NewDiscoveryClient(conn)
+	discovery := NewHandlerDiscovery(&core.Component{Discovery: client}).(*handlerDiscovery)
 	discovery.refreshCache()
 	return discovery
 }
@@ -80,9 +88,15 @@ func TestHandlerDiscoveryCache(t *testing.T) {
 		Metadata: []*pb.Metadata{&pb.Metadata{Key: pb.Metadata_APP_ID, Value: []byte("AppID-1")}},
 	}
 
+	conn, err := grpc.Dial(fmt.Sprintf("localhost:%d", port), append(api.DialOptions, grpc.WithBlock())...)
+	if err != nil {
+		panic(err)
+	}
+	client := pb.NewDiscoveryClient(conn)
+
 	d := &handlerDiscovery{
 		component: &core.Component{
-			DiscoveryServer: fmt.Sprintf("localhost:%d", port),
+			Discovery: client,
 		},
 		cacheValidUntil: time.Now().Add(-1 * time.Minute),
 		cache:           []*pb.Announcement{handler},

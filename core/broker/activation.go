@@ -72,7 +72,7 @@ func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (*pb.D
 	}
 
 	// Send Activate to NS
-	deduplicatedActivationRequest, err = b.ns.PrepareActivation(b.Component.GetContext(), deduplicatedActivationRequest)
+	deduplicatedActivationRequest, err = b.ns.PrepareActivation(b.Component.GetContext(false), deduplicatedActivationRequest)
 	if err != nil {
 		return nil, err
 	}
@@ -108,12 +108,12 @@ func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (*pb.D
 	}
 	client := pb_handler.NewHandlerClient(conn)
 	var handlerResponse *pb_handler.DeviceActivationResponse
-	handlerResponse, err = client.Activate(b.Component.GetContext(), deduplicatedActivationRequest)
+	handlerResponse, err = client.Activate(b.Component.GetContext(false), deduplicatedActivationRequest)
 	if err != nil {
 		return nil, err
 	}
 
-	handlerResponse, err = b.ns.Activate(b.Component.GetContext(), handlerResponse)
+	handlerResponse, err = b.ns.Activate(b.Component.GetContext(false), handlerResponse)
 	if err != nil {
 		return nil, err
 	}

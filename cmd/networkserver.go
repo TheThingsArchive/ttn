@@ -48,7 +48,10 @@ var networkserverCmd = &cobra.Command{
 		connectRedis(client)
 
 		// Component
-		component := core.NewComponent(ctx, "networkserver", fmt.Sprintf("%s:%d", viper.GetString("networkserver.server-address-announce"), viper.GetInt("networkserver.server-port")))
+		component, err := core.NewComponent(ctx, "networkserver", fmt.Sprintf("%s:%d", viper.GetString("networkserver.server-address-announce"), viper.GetInt("networkserver.server-port")))
+		if err != nil {
+			ctx.WithError(err).Fatal("Could not initialize component")
+		}
 
 		// networkserver Server
 		networkserver := networkserver.NewRedisNetworkServer(client, viper.GetInt("networkserver.net-id"))

@@ -34,7 +34,7 @@ type ManagementInterface interface {
 }
 
 // NewComponent creates a new Component
-func NewComponent(ctx log.Interface, serviceName string, announcedAddress string) *Component {
+func NewComponent(ctx log.Interface, serviceName string, announcedAddress string) (*Component, error) {
 	go func() {
 		memstats := new(runtime.MemStats)
 		for range time.Tick(time.Minute) {
@@ -46,6 +46,15 @@ func NewComponent(ctx log.Interface, serviceName string, announcedAddress string
 		}
 	}()
 
+	var discovery pb_discovery.DiscoveryClient
+	if serviceName != "discovery" {
+		discoveryConn, err := grpc.Dial(viper.GetString("discovery-server"), append(api.DialOptions, grpc.WithBlock())...)
+		if err != nil {
+			return nil, err
+		}
+		discovery = pb_discovery.NewDiscoveryClient(discoveryConn)
+	}
+
 	return &Component{
 		Ctx: ctx,
 		Identity: &pb_discovery.Announcement{
@@ -54,19 +63,19 @@ func NewComponent(ctx log.Interface, serviceName string, announcedAddress string
 			ServiceName: serviceName,
 			NetAddress:  announcedAddress,
 		},
-		AccessToken:     viper.GetString("token"),
-		DiscoveryServer: viper.GetString("discovery-server"),
+		AccessToken: viper.GetString("token"),
+		Discovery:   discovery,
 		TokenKeyProvider: tokenkey.NewHTTPProvider(
 			fmt.Sprintf("%s/key", viper.GetString("auth-server")),
 			viper.GetString("oauth2-keyfile"),
 		),
-	}
+	}, nil
 }
 
 // Component contains the common attributes for all TTN components
 type Component struct {
 	Identity         *pb_discovery.Announcement
-	DiscoveryServer  string
+	Discovery        pb_discovery.DiscoveryClient
 	Ctx              log.Interface
 	AccessToken      string
 	TokenKeyProvider tokenkey.Provider
@@ -74,21 +83,11 @@ type Component struct {
 
 // Announce the component to TTN discovery
 func (c *Component) Announce() error {
-	if c.DiscoveryServer == "" {
-		return errors.New("ttn: No discovery server configured")
-	}
-
 	if c.Identity.Id == "" {
 		return errors.New("ttn: No ID configured")
 	}
 
-	conn, err := grpc.Dial(c.DiscoveryServer, append(api.DialOptions, grpc.WithBlock())...)
-	if err != nil {
-		return err
-	}
-	defer conn.Close()
-	client := pb_discovery.NewDiscoveryClient(conn)
-	_, err = client.Announce(c.GetContext(), c.Identity)
+	_, err := c.Discovery.Announce(c.GetContext(true), c.Identity)
 	if err != nil {
 		return fmt.Errorf("ttn: Failed to announce this component to TTN discovery: %s", err.Error())
 	}
@@ -239,14 +238,18 @@ func (c *Component) ServerOptions() []grpc.ServerOption {
 }
 
 // GetContext returns a context for outgoing RPC requests
-func (c *Component) GetContext() context.Context {
-	var id, token, netAddress string
+func (c *Component) GetContext(includeAccessToken bool) context.Context {
+	var serviceName, id, token, netAddress string
 	if c.Identity != nil {
+		serviceName = c.Identity.ServiceName
 		id = c.Identity.Id
-		token = c.AccessToken
+		if includeAccessToken {
+			token = c.AccessToken
+		}
 		netAddress = c.Identity.NetAddress
 	}
 	md := metadata.Pairs(
+		"service-name", serviceName,
 		"id", id,
 		"token", token,
 		"net-address", netAddress,

@@ -129,7 +129,7 @@ func (r *router) getBroker(req *pb_discovery.Announcement) (*broker, error) {
 		}
 		client := pb_broker.NewBrokerClient(conn)
 
-		association, err := client.Associate(r.Component.GetContext())
+		association, err := client.Associate(r.Component.GetContext(false))
 		if err != nil {
 			return nil, err
 		}

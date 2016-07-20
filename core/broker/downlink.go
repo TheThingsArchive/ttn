@@ -30,7 +30,7 @@ func (b *broker) HandleDownlink(downlink *pb.DownlinkMessage) error {
 		}
 	}()
 
-	downlink, err = b.ns.Downlink(b.Component.GetContext(), downlink)
+	downlink, err = b.ns.Downlink(b.Component.GetContext(false), downlink)
 	if err != nil {
 		return err
 	}

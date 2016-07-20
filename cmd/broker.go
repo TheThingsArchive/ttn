@@ -53,7 +53,10 @@ var brokerCmd = &cobra.Command{
 		connectRedis(client)
 
 		// Component
-		component := core.NewComponent(ctx, "broker", fmt.Sprintf("%s:%d", viper.GetString("broker.server-address-announce"), viper.GetInt("broker.server-port")))
+		component, err := core.NewComponent(ctx, "broker", fmt.Sprintf("%s:%d", viper.GetString("broker.server-address-announce"), viper.GetInt("broker.server-port")))
+		if err != nil {
+			ctx.WithError(err).Fatal("Could not initialize component")
+		}
 
 		component.Identity.Metadata = []*pb_discovery.Metadata{}
 		for _, prefixString := range viper.GetStringSlice("broker.prefix") {
@@ -73,7 +76,7 @@ var brokerCmd = &cobra.Command{
 			viper.GetString("broker.networkserver-address"),
 			time.Duration(viper.GetInt("broker.deduplication-delay"))*time.Millisecond,
 		)
-		err := broker.Init(component)
+		err = broker.Init(component)
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not initialize broker")
 		}
