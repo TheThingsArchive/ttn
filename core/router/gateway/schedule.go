@@ -33,11 +33,30 @@ type Schedule interface {
 
 // NewSchedule creates a new Schedule
 func NewSchedule(ctx log.Interface) Schedule {
-	return &schedule{
+	s := &schedule{
 		ctx:    ctx,
 		items:  make(map[string]*scheduledItem),
 		random: random.New(),
 	}
+	go func() {
+		for {
+			s.RLock()
+			numItems := len(s.items)
+			s.RUnlock()
+			if numItems > 0 {
+				s.Lock()
+				for id, item := range s.items {
+					// Delete the item if we are more than 2 seconds after the deadline
+					if time.Now().After(item.deadlineAt.Add(2 * time.Second)) {
+						delete(s.items, id)
+					}
+				}
+				s.Unlock()
+			}
+			<-time.After(10 * time.Second)
+		}
+	}()
+	return s
 }
 
 type scheduledItem struct {
@@ -68,6 +87,7 @@ func (s *schedule) GoString() (str string) {
 	return
 }
 
+// Deadline for sending a downlink back to the gateway
 // TODO: Make configurable
 var Deadline = 200 * time.Millisecond
 
@@ -132,16 +152,6 @@ func (s *schedule) GetOption(timestamp uint32, length uint32) (id string, score 
 	s.Lock()
 	defer s.Unlock()
 	s.items[id] = item
-
-	// Schedule deletion after the option expires
-	// TODO: Periodically clean up instead of this goroutine
-	go func() {
-		<-time.After(10 * time.Second)
-		s.Lock()
-		defer s.Unlock()
-		delete(s.items, id)
-	}()
-
 	return id, score
 }
 
