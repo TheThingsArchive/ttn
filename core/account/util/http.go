@@ -6,6 +6,7 @@ package util
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -27,6 +28,18 @@ type HTTPError struct {
 
 func (e HTTPError) Error() string {
 	return e.Message
+}
+
+// checkRedirect implements this clients redirection policy
+func checkRedirect(req *http.Request, via []*http.Request) error {
+	if len(via) > MaxRedirects {
+		return errors.New("Maximum number of redirects reached")
+	}
+
+	// use the same headers as before
+	req.Header.Set("Authorization", via[len(via)-1].Header.Get("Authorization"))
+	req.Header.Set("Accept", "application/json")
+	return nil
 }
 
 // NewRequest creates a new http.Request that has authorization set up
@@ -68,7 +81,9 @@ func performRequest(server, accessToken, method, URI string, body, res interface
 		return err
 	}
 
-	client := &http.Client{}
+	client := &http.Client{
+		CheckRedirect: checkRedirect,
+	}
 	resp, err := client.Do(req)
 	if err != nil {
 		return err
@@ -91,7 +106,7 @@ func performRequest(server, accessToken, method, URI string, body, res interface
 
 	if resp.StatusCode >= 300 {
 		// 307 is handled, 301, 302, 304 cannot be
-		return fmt.Errorf("Unexpected redirection to %s", resp.Header.Get("Location"))
+		return fmt.Errorf("Unexpected %v redirection to %s", resp.StatusCode, resp.Header.Get("Location"))
 	}
 
 	if res != nil {
