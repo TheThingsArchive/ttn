@@ -39,6 +39,7 @@ func checkRedirect(req *http.Request, via []*http.Request) error {
 	// use the same headers as before
 	req.Header.Set("Authorization", via[len(via)-1].Header.Get("Authorization"))
 	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Content-Type", "application/json")
 	return nil
 }
 
@@ -52,6 +53,7 @@ func newRequest(server string, accessToken string, method string, URI string, bo
 
 	req.Header.Set("Authorization", fmt.Sprintf("bearer %s", accessToken))
 	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Content-Type", "application/json")
 
 	return req, nil
 }
