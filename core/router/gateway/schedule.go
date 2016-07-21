@@ -40,6 +40,7 @@ func NewSchedule(ctx log.Interface) Schedule {
 	}
 	go func() {
 		for {
+			<-time.After(10 * time.Second)
 			s.RLock()
 			numItems := len(s.items)
 			s.RUnlock()
@@ -53,7 +54,6 @@ func NewSchedule(ctx log.Interface) Schedule {
 				}
 				s.Unlock()
 			}
-			<-time.After(10 * time.Second)
 		}
 	}()
 	return s
