@@ -38,7 +38,7 @@ func NewHandlerDiscovery(component *core.Component) HandlerDiscovery {
 }
 
 func (d *handlerDiscovery) refreshCache() error {
-	res, err := d.component.Discovery.GetAll(d.component.GetContext(false), &pb.GetAllRequest{ServiceName: "handler"})
+	res, err := d.component.Discovery.GetAll(d.component.GetContext(""), &pb.GetAllRequest{ServiceName: "handler"})
 	if err != nil {
 		return err
 	}

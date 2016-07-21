@@ -31,14 +31,14 @@ type Handler interface {
 }
 
 // NewRedisHandler creates a new Redis-backed Handler
-func NewRedisHandler(client *redis.Client, ttnBrokerAddr string, mqttUsername string, mqttPassword string, mqttBrokers ...string) Handler {
+func NewRedisHandler(client *redis.Client, ttnBrokerID string, mqttUsername string, mqttPassword string, mqttBrokers ...string) Handler {
 	return &handler{
-		devices:       device.NewRedisDeviceStore(client),
-		applications:  application.NewRedisApplicationStore(client),
-		ttnBrokerAddr: ttnBrokerAddr,
-		mqttUsername:  mqttUsername,
-		mqttPassword:  mqttPassword,
-		mqttBrokers:   mqttBrokers,
+		devices:      device.NewRedisDeviceStore(client),
+		applications: application.NewRedisApplicationStore(client),
+		ttnBrokerID:  ttnBrokerID,
+		mqttUsername: mqttUsername,
+		mqttPassword: mqttPassword,
+		mqttBrokers:  mqttBrokers,
 	}
 }
 
@@ -48,7 +48,7 @@ type handler struct {
 	devices      device.Store
 	applications application.Store
 
-	ttnBrokerAddr    string
+	ttnBrokerID      string
 	ttnBrokerConn    *grpc.ClientConn
 	ttnBroker        pb_broker.BrokerClient
 	ttnBrokerManager pb_broker.BrokerManagerClient
@@ -99,7 +99,11 @@ func (h *handler) Init(c *core.Component) error {
 }
 
 func (h *handler) associateBroker() error {
-	conn, err := grpc.Dial(h.ttnBrokerAddr, api.DialOptions...)
+	broker, err := h.Discover("broker", h.ttnBrokerID)
+	if err != nil {
+		return err
+	}
+	conn, err := broker.Dial()
 	if err != nil {
 		return err
 	}
@@ -108,7 +112,7 @@ func (h *handler) associateBroker() error {
 	h.ttnBrokerManager = pb_broker.NewBrokerManagerClient(conn)
 	h.ttnDeviceManager = pb_lorawan.NewDeviceManagerClient(conn)
 
-	ctx := h.GetContext(false)
+	ctx := h.GetContext("")
 
 	h.downlink = make(chan *pb_broker.DownlinkMessage)
 

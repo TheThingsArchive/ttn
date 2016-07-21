@@ -33,6 +33,8 @@ message Announcement {
   string service_version = 3;
   string description = 4;
   string net_address = 11;
+  string public_key  = 12;
+  string certificate = 13;
   repeated Metadata metadata = 21;
 }
 

@@ -94,7 +94,7 @@ func init() {
 	handlerCmd.Flags().Int("redis-db", 0, "Redis database")
 	viper.BindPFlag("handler.redis-db", handlerCmd.Flags().Lookup("redis-db"))
 
-	handlerCmd.Flags().String("ttn-broker", "localhost:1902", "TTN broker host and port")
+	handlerCmd.Flags().String("ttn-broker", "dev", "The ID of the TTN Broker as announced in the Discovery server")
 	viper.BindPFlag("handler.ttn-broker", handlerCmd.Flags().Lookup("ttn-broker"))
 
 	handlerCmd.Flags().String("mqtt-broker", "localhost:1883", "MQTT broker host and port")

@@ -95,6 +95,12 @@ func init() {
 
 	RootCmd.PersistentFlags().String("oauth2-keyfile", defaultOAuth2KeyFile, "The OAuth 2.0 public key")
 	viper.BindPFlag("oauth2-keyfile", RootCmd.PersistentFlags().Lookup("oauth2-keyfile"))
+
+	RootCmd.PersistentFlags().Bool("tls", false, "Use TLS")
+	viper.BindPFlag("tls", RootCmd.PersistentFlags().Lookup("tls"))
+
+	RootCmd.PersistentFlags().String("key-dir", path.Clean(dir+"/.ttn/"), "The directory where public/private keys are stored")
+	viper.BindPFlag("key-dir", RootCmd.PersistentFlags().Lookup("key-dir"))
 }
 
 // initConfig reads in config file and ENV variables if set.

@@ -1,10 +1,10 @@
 package handler
 
 import (
-	"fmt"
+	"os"
+	"os/user"
 	"sync"
 
-	"github.com/TheThingsNetwork/ttn/api"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -13,98 +13,99 @@ import (
 // ManagerClient is used to manage applications and devices on a handler
 type ManagerClient struct {
 	sync.RWMutex
+	id                       string
+	accessToken              string
 	conn                     *grpc.ClientConn
-	context                  context.Context
 	applicationManagerClient ApplicationManagerClient
 }
 
-// NewManagerClient returns a new ManagerClient for a handler at the given address that accepts the given access token
-func NewManagerClient(address string, accessToken string) (*ManagerClient, error) {
-	conn, err := grpc.Dial(address, api.DialOptions...)
-	if err != nil {
-		return nil, fmt.Errorf("Could not connect to NetworkServer: %s", err.Error())
-	}
+// NewManagerClient returns a new ManagerClient for a handler on the given conn that accepts the given access token
+func NewManagerClient(conn *grpc.ClientConn, accessToken string) (*ManagerClient, error) {
 	applicationManagerClient := NewApplicationManagerClient(conn)
-	md := metadata.Pairs(
-		"token", accessToken,
-	)
-	manageContext := metadata.NewContext(context.Background(), md)
+
+	id := "client"
+	if user, err := user.Current(); err == nil {
+		id += "-" + user.Username
+	}
+	if hostname, err := os.Hostname(); err == nil {
+		id += "@" + hostname
+	}
+
 	return &ManagerClient{
-		conn:                     conn,
-		context:                  manageContext,
+		id:          id,
+		accessToken: accessToken,
+		conn:        conn,
 		applicationManagerClient: applicationManagerClient,
 	}, nil
+}
+
+// SetID sets the ID of this client
+func (h *ManagerClient) SetID(id string) {
+	h.Lock()
+	defer h.Unlock()
+	h.id = id
 }
 
 // UpdateAccessToken updates the access token that is used for running commands
 func (h *ManagerClient) UpdateAccessToken(accessToken string) {
 	h.Lock()
 	defer h.Unlock()
+	h.accessToken = accessToken
+}
+
+func (h *ManagerClient) getContext() context.Context {
+	h.RLock()
+	defer h.RUnlock()
 	md := metadata.Pairs(
-		"token", accessToken,
+		"id", h.id,
+		"token", h.accessToken,
 	)
-	h.context = metadata.NewContext(context.Background(), md)
+	return metadata.NewContext(context.Background(), md)
 }
 
 // GetApplication retrieves an application from the Handler
 func (h *ManagerClient) GetApplication(appID string) (*Application, error) {
-	h.RLock()
-	defer h.RUnlock()
-	return h.applicationManagerClient.GetApplication(h.context, &ApplicationIdentifier{AppId: appID})
+	return h.applicationManagerClient.GetApplication(h.getContext(), &ApplicationIdentifier{AppId: appID})
 }
 
 // SetApplication sets an application on the Handler
 func (h *ManagerClient) SetApplication(in *Application) error {
-	h.RLock()
-	defer h.RUnlock()
-	_, err := h.applicationManagerClient.SetApplication(h.context, in)
+	_, err := h.applicationManagerClient.SetApplication(h.getContext(), in)
 	return err
 }
 
 // RegisterApplication registers an application on the Handler
 func (h *ManagerClient) RegisterApplication(appID string) error {
-	h.RLock()
-	defer h.RUnlock()
-	_, err := h.applicationManagerClient.RegisterApplication(h.context, &ApplicationIdentifier{AppId: appID})
+	_, err := h.applicationManagerClient.RegisterApplication(h.getContext(), &ApplicationIdentifier{AppId: appID})
 	return err
 }
 
 // DeleteApplication deletes an application and all its devices from the Handler
 func (h *ManagerClient) DeleteApplication(appID string) error {
-	h.RLock()
-	defer h.RUnlock()
-	_, err := h.applicationManagerClient.DeleteApplication(h.context, &ApplicationIdentifier{AppId: appID})
+	_, err := h.applicationManagerClient.DeleteApplication(h.getContext(), &ApplicationIdentifier{AppId: appID})
 	return err
 }
 
 // GetDevice retrieves a device from the Handler
 func (h *ManagerClient) GetDevice(appID string, devID string) (*Device, error) {
-	h.RLock()
-	defer h.RUnlock()
-	return h.applicationManagerClient.GetDevice(h.context, &DeviceIdentifier{AppId: appID, DevId: devID})
+	return h.applicationManagerClient.GetDevice(h.getContext(), &DeviceIdentifier{AppId: appID, DevId: devID})
 }
 
 // SetDevice sets a device on the Handler
 func (h *ManagerClient) SetDevice(in *Device) error {
-	h.RLock()
-	defer h.RUnlock()
-	_, err := h.applicationManagerClient.SetDevice(h.context, in)
+	_, err := h.applicationManagerClient.SetDevice(h.getContext(), in)
 	return err
 }
 
 // DeleteDevice deletes a device from the Handler
 func (h *ManagerClient) DeleteDevice(appID string, devID string) error {
-	h.RLock()
-	defer h.RUnlock()
-	_, err := h.applicationManagerClient.DeleteDevice(h.context, &DeviceIdentifier{AppId: appID, DevId: devID})
+	_, err := h.applicationManagerClient.DeleteDevice(h.getContext(), &DeviceIdentifier{AppId: appID, DevId: devID})
 	return err
 }
 
 // GetDevicesForApplication retrieves all devices for an application from the Handler
 func (h *ManagerClient) GetDevicesForApplication(appID string) (devices []*Device, err error) {
-	h.RLock()
-	defer h.RUnlock()
-	res, err := h.applicationManagerClient.GetDevicesForApplication(h.context, &ApplicationIdentifier{AppId: appID})
+	res, err := h.applicationManagerClient.GetDevicesForApplication(h.getContext(), &ApplicationIdentifier{AppId: appID})
 	if err != nil {
 		return nil, err
 	}

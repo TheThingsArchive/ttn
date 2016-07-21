@@ -11,7 +11,6 @@ import (
 
 	"google.golang.org/grpc"
 
-	"github.com/TheThingsNetwork/ttn/api"
 	pb "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/api/gateway"
@@ -75,7 +74,7 @@ func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (*pb.D
 	}
 
 	// Send Activate to NS
-	deduplicatedActivationRequest, err = b.ns.PrepareActivation(b.Component.GetContext(false), deduplicatedActivationRequest)
+	deduplicatedActivationRequest, err = b.ns.PrepareActivation(b.Component.GetContext(""), deduplicatedActivationRequest)
 	if err != nil {
 		return nil, err
 	}
@@ -104,19 +103,19 @@ func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (*pb.D
 	ctx.WithField("HandlerID", handler.Id).Debug("Forward Activation")
 
 	var conn *grpc.ClientConn
-	conn, err = grpc.Dial(handler.NetAddress, api.DialOptions...)
+	conn, err = handler.Dial()
 	defer conn.Close()
 	if err != nil {
 		return nil, err
 	}
 	client := pb_handler.NewHandlerClient(conn)
 	var handlerResponse *pb_handler.DeviceActivationResponse
-	handlerResponse, err = client.Activate(b.Component.GetContext(false), deduplicatedActivationRequest)
+	handlerResponse, err = client.Activate(b.Component.GetContext(""), deduplicatedActivationRequest)
 	if err != nil {
 		return nil, err
 	}
 
-	handlerResponse, err = b.ns.Activate(b.Component.GetContext(false), handlerResponse)
+	handlerResponse, err = b.ns.Activate(b.Component.GetContext(""), handlerResponse)
 	if err != nil {
 		return nil, err
 	}

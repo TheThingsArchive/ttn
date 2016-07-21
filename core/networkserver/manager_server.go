@@ -26,7 +26,7 @@ func (n *networkServerManager) getDevice(ctx context.Context, in *pb_lorawan.Dev
 	if !in.Validate() {
 		return nil, grpcErrf(codes.InvalidArgument, "Invalid Device Identifier")
 	}
-	claims, err := n.Component.ValidateContext(ctx)
+	claims, err := n.Component.ValidateTTNAuthContext(ctx)
 	if err != nil {
 		return nil, err
 	}

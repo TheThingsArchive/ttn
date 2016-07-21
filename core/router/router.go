@@ -8,9 +8,6 @@ import (
 	"sync"
 	"time"
 
-	"google.golang.org/grpc"
-
-	"github.com/TheThingsNetwork/ttn/api"
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	pb_gateway "github.com/TheThingsNetwork/ttn/api/gateway"
@@ -110,10 +107,10 @@ func (r *router) getGateway(eui types.GatewayEUI) *gateway.Gateway {
 
 // getBroker gets or creates a broker association and returns the broker
 // the first time it also starts a goroutine that receives downlink from the broker
-func (r *router) getBroker(req *pb_discovery.Announcement) (*broker, error) {
+func (r *router) getBroker(brokerAnnouncement *pb_discovery.Announcement) (*broker, error) {
 	// We're going to be optimistic and guess that the broker is already active
 	r.brokersLock.RLock()
-	brk, ok := r.brokers[req.NetAddress]
+	brk, ok := r.brokers[brokerAnnouncement.Id]
 	r.brokersLock.RUnlock()
 	if ok {
 		return brk, nil
@@ -121,15 +118,15 @@ func (r *router) getBroker(req *pb_discovery.Announcement) (*broker, error) {
 	// If it doesn't we still have to lock
 	r.brokersLock.Lock()
 	defer r.brokersLock.Unlock()
-	if _, ok := r.brokers[req.NetAddress]; !ok {
+	if _, ok := r.brokers[brokerAnnouncement.Id]; !ok {
 		// Connect to the server
-		conn, err := grpc.Dial(req.NetAddress, api.DialOptions...)
+		conn, err := brokerAnnouncement.Dial()
 		if err != nil {
 			return nil, err
 		}
 		client := pb_broker.NewBrokerClient(conn)
 
-		association, err := client.Associate(r.Component.GetContext(false))
+		association, err := client.Associate(r.Component.GetContext(""))
 		if err != nil {
 			return nil, err
 		}
@@ -150,12 +147,12 @@ func (r *router) getBroker(req *pb_discovery.Announcement) (*broker, error) {
 			conn.Close()
 			r.brokersLock.Lock()
 			defer r.brokersLock.Unlock()
-			delete(r.brokers, req.NetAddress)
+			delete(r.brokers, brokerAnnouncement.Id)
 		}()
-		r.brokers[req.NetAddress] = &broker{
+		r.brokers[brokerAnnouncement.Id] = &broker{
 			client:      client,
 			association: association,
 		}
 	}
-	return r.brokers[req.NetAddress], nil
+	return r.brokers[brokerAnnouncement.Id], nil
 }

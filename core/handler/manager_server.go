@@ -28,7 +28,7 @@ func (h *handlerManager) getDevice(ctx context.Context, in *pb.DeviceIdentifier)
 	if !in.Validate() {
 		return nil, grpcErrf(codes.InvalidArgument, "Invalid Device Identifier")
 	}
-	claims, err := h.Component.ValidateContext(ctx)
+	claims, err := h.Component.ValidateTTNAuthContext(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -176,7 +176,7 @@ func (h *handlerManager) GetDevicesForApplication(ctx context.Context, in *pb.Ap
 	if !in.Validate() {
 		return nil, grpcErrf(codes.InvalidArgument, "Invalid Application Identifier")
 	}
-	claims, err := h.Component.ValidateContext(ctx)
+	claims, err := h.Component.ValidateTTNAuthContext(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -211,7 +211,7 @@ func (h *handlerManager) getApplication(ctx context.Context, in *pb.ApplicationI
 	if !in.Validate() {
 		return nil, grpcErrf(codes.InvalidArgument, "Invalid Application Identifier")
 	}
-	claims, err := h.Component.ValidateContext(ctx)
+	claims, err := h.Component.ValidateTTNAuthContext(ctx)
 	if err != nil {
 		return nil, err
 	}

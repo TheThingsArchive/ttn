@@ -18,7 +18,7 @@ import (
 )
 
 func buildTestBrokerDiscoveryClient(port uint) *brokerDiscovery {
-	conn, err := grpc.Dial(fmt.Sprintf("localhost:%d", port), append(api.DialOptions, grpc.WithBlock())...)
+	conn, err := grpc.Dial(fmt.Sprintf("localhost:%d", port), append(api.DialOptions, grpc.WithInsecure(), grpc.WithBlock())...)
 	if err != nil {
 		panic(err)
 	}
@@ -97,7 +97,7 @@ func TestBrokerDiscoveryCache(t *testing.T) {
 		Metadata: []*pb.Metadata{&pb.Metadata{Key: pb.Metadata_PREFIX, Value: []byte{0x00, 0x00, 0x00, 0x00, 0x00}}},
 	}
 
-	conn, err := grpc.Dial(fmt.Sprintf("localhost:%d", port), append(api.DialOptions, grpc.WithBlock())...)
+	conn, err := grpc.Dial(fmt.Sprintf("localhost:%d", port), append(api.DialOptions, grpc.WithInsecure(), grpc.WithBlock())...)
 	if err != nil {
 		panic(err)
 	}

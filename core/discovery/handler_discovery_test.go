@@ -17,7 +17,7 @@ import (
 )
 
 func buildTestHandlerDiscoveryClient(port uint) *handlerDiscovery {
-	conn, err := grpc.Dial(fmt.Sprintf("localhost:%d", port), append(api.DialOptions, grpc.WithBlock())...)
+	conn, err := grpc.Dial(fmt.Sprintf("localhost:%d", port), append(api.DialOptions, grpc.WithInsecure(), grpc.WithBlock())...)
 	if err != nil {
 		panic(err)
 	}
@@ -88,7 +88,7 @@ func TestHandlerDiscoveryCache(t *testing.T) {
 		Metadata: []*pb.Metadata{&pb.Metadata{Key: pb.Metadata_APP_ID, Value: []byte("AppID-1")}},
 	}
 
-	conn, err := grpc.Dial(fmt.Sprintf("localhost:%d", port), append(api.DialOptions, grpc.WithBlock())...)
+	conn, err := grpc.Dial(fmt.Sprintf("localhost:%d", port), append(api.DialOptions, grpc.WithInsecure(), grpc.WithBlock())...)
 	if err != nil {
 		panic(err)
 	}

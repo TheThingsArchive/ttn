@@ -4,10 +4,13 @@
 package api
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"net"
 	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
 // Validator interface is used to validate protos
@@ -30,10 +33,34 @@ var Backoff = 1 * time.Second
 var KeepAlive = 10 * time.Second
 
 // DialOptions to use in TTN gRPC
-// TODO: disable insecure connections
 var DialOptions = []grpc.DialOption{
-	grpc.WithInsecure(),
 	WithKeepAliveDialer(),
+}
+
+// DialWithCert dials the address using the given TLS root cert
+func DialWithCert(address string, cert string) (*grpc.ClientConn, error) {
+	var tlsConfig *tls.Config
+
+	if cert != "" {
+		roots := x509.NewCertPool()
+		ok := roots.AppendCertsFromPEM([]byte(cert))
+		if !ok {
+			panic("failed to parse root certificate")
+		}
+		tlsConfig = &tls.Config{RootCAs: roots}
+	}
+
+	opts := DialOptions
+	if tlsConfig != nil {
+		opts = append(opts, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
+	} else {
+		opts = append(opts, grpc.WithInsecure())
+	}
+
+	return grpc.Dial(
+		address,
+		opts...,
+	)
 }
 
 // WithKeepAliveDialer creates a dialer with the configured KeepAlive time

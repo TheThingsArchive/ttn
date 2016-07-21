@@ -22,7 +22,7 @@ func (r *routerManager) GatewayStatus(ctx context.Context, in *pb.GatewayStatusR
 	if in.GatewayEui == nil {
 		return nil, errf(codes.InvalidArgument, "GatewayEUI is required")
 	}
-	_, err := r.ValidateContext(ctx)
+	_, err := r.ValidateTTNAuthContext(ctx)
 	if err != nil {
 		return nil, errf(codes.Unauthenticated, "No access")
 	}

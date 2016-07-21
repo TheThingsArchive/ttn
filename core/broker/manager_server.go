@@ -33,7 +33,7 @@ func (b *brokerManager) DeleteDevice(ctx context.Context, in *lorawan.DeviceIden
 }
 
 func (b *brokerManager) RegisterApplicationHandler(ctx context.Context, in *pb.ApplicationHandlerRegistration) (*api.Ack, error) {
-	claims, err := b.Component.ValidateContext(ctx)
+	claims, err := b.Component.ValidateTTNAuthContext(ctx)
 	if err != nil {
 		return nil, err
 	}

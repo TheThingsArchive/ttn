@@ -17,7 +17,7 @@ type discoveryServer struct {
 }
 
 func (d *discoveryServer) Announce(ctx context.Context, announcement *pb.Announcement) (*api.Ack, error) {
-	claims, err := d.discovery.ValidateContext(ctx)
+	claims, err := d.discovery.ValidateTTNAuthContext(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +32,7 @@ func (d *discoveryServer) Announce(ctx context.Context, announcement *pb.Announc
 }
 
 func (d *discoveryServer) AddMetadata(ctx context.Context, in *pb.MetadataRequest) (*api.Ack, error) {
-	claims, err := d.discovery.ValidateContext(ctx)
+	claims, err := d.discovery.ValidateTTNAuthContext(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +55,7 @@ func (d *discoveryServer) AddMetadata(ctx context.Context, in *pb.MetadataReques
 }
 
 func (d *discoveryServer) DeleteMetadata(ctx context.Context, in *pb.MetadataRequest) (*api.Ack, error) {
-	claims, err := d.discovery.ValidateContext(ctx)
+	claims, err := d.discovery.ValidateTTNAuthContext(ctx)
 	if err != nil {
 		return nil, err
 	}

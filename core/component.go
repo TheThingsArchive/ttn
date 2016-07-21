@@ -4,6 +4,7 @@
 package core
 
 import (
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"runtime"
@@ -11,11 +12,13 @@ import (
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
 
 	"github.com/TheThingsNetwork/ttn/api"
 	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
+	"github.com/TheThingsNetwork/ttn/utils/security"
 	"github.com/TheThingsNetwork/ttn/utils/tokenkey"
 	"github.com/apex/log"
 	"github.com/dgrijalva/jwt-go"
@@ -26,7 +29,8 @@ import (
 type ComponentInterface interface {
 	RegisterRPC(s *grpc.Server)
 	Init(c *Component) error
-	ValidateContext(ctx context.Context) (*TTNClaims, error)
+	ValidateNetworkContext(ctx context.Context) (string, error)
+	ValidateTTNAuthContext(ctx context.Context) (*TTNClaims, error)
 }
 
 type ManagementInterface interface {
@@ -48,14 +52,14 @@ func NewComponent(ctx log.Interface, serviceName string, announcedAddress string
 
 	var discovery pb_discovery.DiscoveryClient
 	if serviceName != "discovery" {
-		discoveryConn, err := grpc.Dial(viper.GetString("discovery-server"), append(api.DialOptions, grpc.WithBlock())...)
+		discoveryConn, err := grpc.Dial(viper.GetString("discovery-server"), append(api.DialOptions, grpc.WithBlock(), grpc.WithInsecure())...)
 		if err != nil {
 			return nil, err
 		}
 		discovery = pb_discovery.NewDiscoveryClient(discoveryConn)
 	}
 
-	return &Component{
+	component := &Component{
 		Ctx: ctx,
 		Identity: &pb_discovery.Announcement{
 			Id:          viper.GetString("id"),
@@ -69,7 +73,23 @@ func NewComponent(ctx log.Interface, serviceName string, announcedAddress string
 			fmt.Sprintf("%s/key", viper.GetString("auth-server")),
 			viper.GetString("oauth2-keyfile"),
 		),
-	}, nil
+	}
+
+	if pub, priv, cert, err := security.LoadKeys(viper.GetString("key-dir")); err == nil {
+		component.Identity.PublicKey = string(pub)
+		component.privateKey = string(priv)
+
+		if viper.GetBool("tls") {
+			component.Identity.Certificate = string(cert)
+			cer, err := tls.X509KeyPair(cert, priv)
+			if err != nil {
+				return nil, err
+			}
+			component.tlsConfig = &tls.Config{Certificates: []tls.Certificate{cer}}
+		}
+	}
+
+	return component, nil
 }
 
 // Component contains the common attributes for all TTN components
@@ -78,7 +98,17 @@ type Component struct {
 	Discovery        pb_discovery.DiscoveryClient
 	Ctx              log.Interface
 	AccessToken      string
+	privateKey       string
+	tlsConfig        *tls.Config
 	TokenKeyProvider tokenkey.Provider
+}
+
+// Discover is used to discover another component
+func (c *Component) Discover(serviceName, id string) (*pb_discovery.Announcement, error) {
+	return c.Discovery.Get(c.GetContext(""), &pb_discovery.GetRequest{
+		ServiceName: serviceName,
+		Id:          id,
+	})
 }
 
 // Announce the component to TTN discovery
@@ -86,8 +116,7 @@ func (c *Component) Announce() error {
 	if c.Identity.Id == "" {
 		return errors.New("ttn: No ID configured")
 	}
-
-	_, err := c.Discovery.Announce(c.GetContext(true), c.Identity)
+	_, err := c.Discovery.Announce(c.GetContext(c.AccessToken), c.Identity)
 	if err != nil {
 		return fmt.Errorf("ttn: Failed to announce this component to TTN discovery: %s", err.Error())
 	}
@@ -136,8 +165,68 @@ func (c *TTNClaims) CanEditApp(appID string) bool {
 	return false
 }
 
-// ValidateContext gets a token from the context and validates it
-func (c *Component) ValidateContext(ctx context.Context) (*TTNClaims, error) {
+// ValidateNetworkContext validates the context of a network request (router-broker, broker-handler, etc)
+func (c *Component) ValidateNetworkContext(ctx context.Context) (componentID string, err error) {
+	defer func() {
+		if err != nil {
+			time.Sleep(time.Second)
+		}
+	}()
+
+	md, ok := metadata.FromContext(ctx)
+	if !ok {
+		err = errors.New("ttn: Could not get metadata")
+		return
+	}
+	var id, serviceName, token string
+	if ids, ok := md["id"]; ok && len(ids) == 1 {
+		id = ids[0]
+	}
+	if id == "" {
+		err = errors.New("ttn: Could not get id")
+		return
+	}
+	if serviceNames, ok := md["service-name"]; ok && len(serviceNames) == 1 {
+		serviceName = serviceNames[0]
+	}
+	if serviceName == "" {
+		err = errors.New("ttn: Could not get service name")
+		return
+	}
+	if tokens, ok := md["token"]; ok && len(tokens) == 1 {
+		token = tokens[0]
+	}
+
+	var announcement *pb_discovery.Announcement
+	announcement, err = c.Discover(serviceName, id)
+	if err != nil {
+		return
+	}
+
+	if announcement.PublicKey == "" {
+		return id, nil
+	}
+
+	if token == "" {
+		err = errors.New("ttn: Could not get token")
+		return
+	}
+
+	var claims *jwt.StandardClaims
+	claims, err = security.ValidateJWT(token, []byte(announcement.PublicKey))
+	if err != nil {
+		return
+	}
+	if claims.Subject != id {
+		err = errors.New("The token was issued for a different component ID")
+		return
+	}
+
+	return id, nil
+}
+
+// ValidateTTNAuthContext gets a token from the context and validates it
+func (c *Component) ValidateTTNAuthContext(ctx context.Context) (*TTNClaims, error) {
 	md, ok := metadata.FromContext(ctx)
 	if !ok {
 		return nil, errors.New("ttn: Could not get metadata")
@@ -146,13 +235,8 @@ func (c *Component) ValidateContext(ctx context.Context) (*TTNClaims, error) {
 	if !ok || len(token) < 1 {
 		return nil, errors.New("ttn: Could not get token")
 	}
-	return c.ValidateToken(token[0])
-}
-
-// ValidateToken verifies an OAuth Bearer token
-func (c *Component) ValidateToken(token string) (*TTNClaims, error) {
 	ttnClaims := &TTNClaims{}
-	parsed, err := jwt.ParseWithClaims(token, ttnClaims, func(token *jwt.Token) (interface{}, error) {
+	parsed, err := jwt.ParseWithClaims(token[0], ttnClaims, func(token *jwt.Token) (interface{}, error) {
 		if c.TokenKeyProvider == nil {
 			return nil, errors.New("No token provider configured")
 		}
@@ -231,20 +315,34 @@ func (c *Component) ServerOptions() []grpc.ServerOption {
 		return handler(srv, stream)
 	}
 
-	return []grpc.ServerOption{
+	opts := []grpc.ServerOption{
 		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(unary)),
 		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(stream)),
 	}
+
+	if c.tlsConfig != nil {
+		opts = append(opts, grpc.Creds(credentials.NewTLS(c.tlsConfig)))
+	}
+
+	return opts
 }
 
-// GetContext returns a context for outgoing RPC requests
-func (c *Component) GetContext(includeAccessToken bool) context.Context {
-	var serviceName, id, token, netAddress string
+// BuildJWT builds a short-lived JSON Web Token for this component
+func (c *Component) BuildJWT() (string, error) {
+	if c.privateKey != "" {
+		return security.BuildJWT(c.Identity.Id, 10*time.Second, []byte(c.privateKey))
+	}
+	return "", nil
+}
+
+// GetContext returns a context for outgoing RPC request. If token is "", this function will generate a short lived token from the component
+func (c *Component) GetContext(token string) context.Context {
+	var serviceName, id, netAddress string
 	if c.Identity != nil {
 		serviceName = c.Identity.ServiceName
 		id = c.Identity.Id
-		if includeAccessToken {
-			token = c.AccessToken
+		if token == "" {
+			token, _ = c.BuildJWT()
 		}
 		netAddress = c.Identity.NetAddress
 	}

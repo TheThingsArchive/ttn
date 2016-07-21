@@ -34,7 +34,7 @@ func NewBrokerDiscovery(component *core.Component) BrokerDiscovery {
 }
 
 func (d *brokerDiscovery) refreshCache() error {
-	res, err := d.component.Discovery.GetAll(d.component.GetContext(false), &pb.GetAllRequest{ServiceName: "broker"})
+	res, err := d.component.Discovery.GetAll(d.component.GetContext(""), &pb.GetAllRequest{ServiceName: "broker"})
 	if err != nil {
 		return err
 	}

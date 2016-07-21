@@ -8,12 +8,11 @@ import (
 	"sync"
 	"time"
 
-	"google.golang.org/grpc"
-
 	"gopkg.in/redis.v3"
 
 	"github.com/TheThingsNetwork/ttn/api"
 	pb "github.com/TheThingsNetwork/ttn/api/broker"
+	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/api/networkserver"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core"
@@ -34,13 +33,14 @@ type Broker interface {
 	DeactivateHandler(id string) error
 }
 
-func NewRedisBroker(client *redis.Client, networkserver string, timeout time.Duration) Broker {
+func NewRedisBroker(client *redis.Client, networkserver string, networkserverCert string, timeout time.Duration) Broker {
 	return &broker{
 		routers:                make(map[string]chan *pb.DownlinkMessage),
 		handlers:               make(map[string]chan *pb.DeduplicatedUplinkMessage),
 		uplinkDeduplicator:     NewDeduplicator(timeout),
 		activationDeduplicator: NewDeduplicator(timeout),
 		nsAddr:                 networkserver,
+		nsCert:                 networkserverCert,
 	}
 }
 
@@ -52,6 +52,7 @@ type broker struct {
 	handlers               map[string]chan *pb.DeduplicatedUplinkMessage
 	handlersLock           sync.RWMutex
 	nsAddr                 string
+	nsCert                 string
 	ns                     networkserver.NetworkServerClient
 	nsManager              pb_lorawan.DeviceManagerClient
 	uplinkDeduplicator     Deduplicator
@@ -70,7 +71,7 @@ func (b *broker) Init(c *core.Component) error {
 	}
 	b.handlerDiscovery = discovery.NewHandlerDiscovery(b.Component)
 	b.handlerDiscovery.All() // Update cache
-	conn, err := grpc.Dial(b.nsAddr, api.DialOptions...)
+	conn, err := api.DialWithCert(b.nsAddr, b.nsCert)
 	if err != nil {
 		return err
 	}

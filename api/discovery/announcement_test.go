@@ -32,6 +32,8 @@ func getTestAnnouncement() (announcement *Announcement, dmap map[string]string) 
 			"service_name":    "router",
 			"service_version": "1.0-preview build abcdef",
 			"net_address":     "localhost:1234",
+			"public_key":      "",
+			"certificate":     "",
 			"metadata":        `[{"key":1,"value":"Mzg="},{"key":1,"value":"Mzk="}]`,
 		}
 }

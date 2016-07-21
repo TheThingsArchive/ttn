@@ -9,6 +9,8 @@ import (
 	"github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/api/handler"
 	pb "github.com/TheThingsNetwork/ttn/api/networkserver"
+	"github.com/TheThingsNetwork/ttn/utils/security"
+	"github.com/dgrijalva/jwt-go"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -21,37 +23,37 @@ type networkServerRPC struct {
 
 var grpcErrf = grpc.Errorf // To make go vet stop complaining
 
-func validateBrokerFromMetadata(ctx context.Context) (err error) {
+func (s *networkServerRPC) ValidateContext(ctx context.Context) error {
 	md, ok := metadata.FromContext(ctx)
 	if !ok {
-		err = errors.New("ttn: Could not get metadata")
-		return
+		return errors.New("ttn: Could not get metadata")
 	}
-	id, ok := md["id"]
-	if !ok || len(id) < 1 {
-		err = errors.New("ttn/networkserver: Broker did not provide \"id\" in context")
-		return
+	var id, token string
+	if ids, ok := md["id"]; ok && len(ids) == 1 {
+		id = ids[0]
 	}
+	if id == "" {
+		return errors.New("ttn: Could not get id")
+	}
+	if tokens, ok := md["token"]; ok && len(tokens) == 1 {
+		token = tokens[0]
+	}
+	if token == "" {
+		return errors.New("ttn: Could not get token")
+	}
+	var claims *jwt.StandardClaims
+	claims, err := security.ValidateJWT(token, []byte(s.networkServer.(*networkServer).Identity.PublicKey))
 	if err != nil {
-		return
+		return err
 	}
-	token, ok := md["token"]
-	if !ok || len(token) < 1 {
-		err = errors.New("ttn/networkserver: Broker did not provide \"token\" in context")
-		return
+	if claims.Subject != id {
+		return errors.New("The token was issued for a different component ID")
 	}
-	if token[0] != "token" {
-		// TODO: Validate Token
-		err = errors.New("ttn/networkserver: Broker not authorized")
-		return
-	}
-
-	return
+	return nil
 }
 
 func (s *networkServerRPC) GetDevices(ctx context.Context, req *pb.DevicesRequest) (*pb.DevicesResponse, error) {
-	err := validateBrokerFromMetadata(ctx)
-	if err != nil {
+	if err := s.ValidateContext(ctx); err != nil {
 		return nil, err
 	}
 	if !req.Validate() {
@@ -61,8 +63,7 @@ func (s *networkServerRPC) GetDevices(ctx context.Context, req *pb.DevicesReques
 }
 
 func (s *networkServerRPC) PrepareActivation(ctx context.Context, activation *broker.DeduplicatedDeviceActivationRequest) (*broker.DeduplicatedDeviceActivationRequest, error) {
-	err := validateBrokerFromMetadata(ctx)
-	if err != nil {
+	if err := s.ValidateContext(ctx); err != nil {
 		return nil, err
 	}
 	if !activation.Validate() {
@@ -72,8 +73,7 @@ func (s *networkServerRPC) PrepareActivation(ctx context.Context, activation *br
 }
 
 func (s *networkServerRPC) Activate(ctx context.Context, activation *handler.DeviceActivationResponse) (*handler.DeviceActivationResponse, error) {
-	err := validateBrokerFromMetadata(ctx)
-	if err != nil {
+	if err := s.ValidateContext(ctx); err != nil {
 		return nil, err
 	}
 	if !activation.Validate() {
@@ -83,8 +83,7 @@ func (s *networkServerRPC) Activate(ctx context.Context, activation *handler.Dev
 }
 
 func (s *networkServerRPC) Uplink(ctx context.Context, message *broker.DeduplicatedUplinkMessage) (*broker.DeduplicatedUplinkMessage, error) {
-	err := validateBrokerFromMetadata(ctx)
-	if err != nil {
+	if err := s.ValidateContext(ctx); err != nil {
 		return nil, err
 	}
 	if !message.Validate() {
@@ -94,8 +93,7 @@ func (s *networkServerRPC) Uplink(ctx context.Context, message *broker.Deduplica
 }
 
 func (s *networkServerRPC) Downlink(ctx context.Context, message *broker.DownlinkMessage) (*broker.DownlinkMessage, error) {
-	err := validateBrokerFromMetadata(ctx)
-	if err != nil {
+	if err := s.ValidateContext(ctx); err != nil {
 		return nil, err
 	}
 	if !message.Validate() {

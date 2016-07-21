@@ -16,6 +16,8 @@ var AnnouncementProperties = []string{
 	"service_name",
 	"service_version",
 	"net_address",
+	"public_key",
+	"certificate",
 	"metadata",
 }
 
@@ -53,6 +55,10 @@ func (announcement *Announcement) formatProperty(property string) (formatted str
 		formatted = announcement.ServiceVersion
 	case "net_address":
 		formatted = announcement.NetAddress
+	case "public_key":
+		formatted = announcement.PublicKey
+	case "certificate":
+		formatted = announcement.Certificate
 	case "metadata":
 		json, err := json.Marshal(announcement.Metadata)
 		if err != nil {
@@ -80,6 +86,10 @@ func (announcement *Announcement) parseProperty(property string, value string) e
 		announcement.ServiceVersion = value
 	case "net_address":
 		announcement.NetAddress = value
+	case "public_key":
+		announcement.PublicKey = value
+	case "certificate":
+		announcement.Certificate = value
 	case "metadata":
 		metadata := []*Metadata{}
 		err := json.Unmarshal([]byte(value), &metadata)

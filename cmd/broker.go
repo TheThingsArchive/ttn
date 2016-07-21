@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net"
 	"os"
 	"os/signal"
@@ -70,10 +71,20 @@ var brokerCmd = &cobra.Command{
 			})
 		}
 
+		var nsCert string
+		if nsCertFile := viper.GetString("broker.networkserver-cert"); nsCertFile != "" {
+			contents, err := ioutil.ReadFile(nsCertFile)
+			if err != nil {
+				ctx.WithError(err).Fatal("Could not get Networkserver certificate")
+			}
+			nsCert = string(contents)
+		}
+
 		// Broker
 		broker := broker.NewRedisBroker(
 			client,
 			viper.GetString("broker.networkserver-address"),
+			nsCert,
 			time.Duration(viper.GetInt("broker.deduplication-delay"))*time.Millisecond,
 		)
 		err = broker.Init(component)
@@ -111,6 +122,8 @@ func init() {
 
 	brokerCmd.Flags().String("networkserver-address", "localhost:1903", "Networkserver host and port")
 	viper.BindPFlag("broker.networkserver-address", brokerCmd.Flags().Lookup("networkserver-address"))
+	brokerCmd.Flags().String("networkserver-cert", "", "Networkserver certificate to use")
+	viper.BindPFlag("broker.networkserver-cert", brokerCmd.Flags().Lookup("networkserver-cert"))
 
 	brokerCmd.Flags().StringSlice("prefix", []string{"26000000/24"}, "LoRaWAN DevAddr prefix to announce")
 	viper.BindPFlag("broker.prefix", brokerCmd.Flags().Lookup("prefix"))

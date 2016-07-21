@@ -4,7 +4,6 @@
 package broker
 
 import (
-	"errors"
 	"io"
 
 	pb_api "github.com/TheThingsNetwork/ttn/api"
@@ -12,7 +11,6 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/metadata"
 )
 
 type brokerRPC struct {
@@ -21,37 +19,8 @@ type brokerRPC struct {
 
 var grpcErrf = grpc.Errorf // To make go vet stop complaining
 
-func getCallerFromMetadata(ctx context.Context) (callerID string, err error) {
-	md, ok := metadata.FromContext(ctx)
-	if !ok {
-		err = errors.New("ttn: Could not get metadata")
-		return
-	}
-	id, ok := md["id"]
-	if !ok || len(id) < 1 {
-		err = grpcErrf(codes.Unauthenticated, "ttn/broker: Caller did not provide \"id\" in context")
-		return
-	}
-	callerID = id[0]
-	if err != nil {
-		return
-	}
-	token, ok := md["token"]
-	if !ok || len(token) < 1 {
-		err = grpcErrf(codes.Unauthenticated, "ttn/broker: Caller did not provide \"token\" in context")
-		return
-	}
-	if token[0] != "token" {
-		// TODO: Validate Token
-		err = grpcErrf(codes.Unauthenticated, "ttn/broker: Caller not authorized")
-		return
-	}
-
-	return
-}
-
 func (b *brokerRPC) Associate(stream pb.Broker_AssociateServer) error {
-	routerID, err := getCallerFromMetadata(stream.Context())
+	routerID, err := b.broker.ValidateNetworkContext(stream.Context())
 	if err != nil {
 		return err
 	}
@@ -94,7 +63,7 @@ func (b *brokerRPC) Associate(stream pb.Broker_AssociateServer) error {
 }
 
 func (b *brokerRPC) Subscribe(req *pb.SubscribeRequest, stream pb.Broker_SubscribeServer) error {
-	handlerID, err := getCallerFromMetadata(stream.Context())
+	handlerID, err := b.broker.ValidateNetworkContext(stream.Context())
 	if err != nil {
 		return err
 	}
@@ -121,7 +90,7 @@ func (b *brokerRPC) Subscribe(req *pb.SubscribeRequest, stream pb.Broker_Subscri
 }
 
 func (b *brokerRPC) Publish(stream pb.Broker_PublishServer) error {
-	handlerID, err := getCallerFromMetadata(stream.Context())
+	handlerID, err := b.broker.ValidateNetworkContext(stream.Context())
 	if err != nil {
 		return err
 	}
@@ -143,7 +112,7 @@ func (b *brokerRPC) Publish(stream pb.Broker_PublishServer) error {
 }
 
 func (b *brokerRPC) Activate(ctx context.Context, req *pb.DeviceActivationRequest) (res *pb.DeviceActivationResponse, err error) {
-	_, err = getCallerFromMetadata(ctx)
+	_, err = b.broker.ValidateNetworkContext(ctx)
 	if err != nil {
 		return nil, err
 	}
