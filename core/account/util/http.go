@@ -10,8 +10,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-
-	"github.com/asaskevich/govalidator"
 )
 
 var (
@@ -63,7 +61,7 @@ func performRequest(server, accessToken, method, URI string, body, res interface
 
 	if body != nil {
 		// body is not nil, so serialize it and pass it in the request
-		if _, err = govalidator.ValidateStruct(body); err != nil {
+		if err = Validate(body); err != nil {
 			return fmt.Errorf("Got an illegal request body: %s", err)
 		}
 
@@ -118,7 +116,7 @@ func performRequest(server, accessToken, method, URI string, body, res interface
 			return err
 		}
 
-		if _, err := govalidator.ValidateStruct(res); err != nil {
+		if err := Validate(res); err != nil {
 			return fmt.Errorf("Got an illegal response from server: %s", err)
 		}
 	}
