@@ -25,7 +25,7 @@ func (a *Account) FindApplication(appID string) (app Application, err error) {
 type createApplicationReq struct {
 	Name  string         `json:"name" valid:"required"`
 	AppID string         `json:"id"   valid:"required"`
-	EUIs  []types.AppEUI `json:"euis" valid:"required"`
+	EUIs  []types.AppEUI `json:"euis"`
 }
 
 // CreateApplication creates a new application on the account server
