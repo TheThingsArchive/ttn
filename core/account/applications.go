@@ -6,19 +6,18 @@ package account
 import (
 	"fmt"
 
-	"github.com/TheThingsNetwork/ttn/core/account/util"
 	"github.com/TheThingsNetwork/ttn/core/types"
 )
 
 // ListApplications list all applications
 func (a *Account) ListApplications() (apps []Application, err error) {
-	err = util.GET(a.server, a.accessToken, "/applications", &apps)
+	err = a.get("/applications", &apps)
 	return apps, err
 }
 
 // FindApplication gets a specific application from the account server
 func (a *Account) FindApplication(appID string) (app Application, err error) {
-	err = util.GET(a.server, a.accessToken, fmt.Sprintf("/applications/%s", appID), &app)
+	err = a.get(fmt.Sprintf("/applications/%s", appID), &app)
 	return app, err
 }
 
@@ -36,13 +35,13 @@ func (a *Account) CreateApplication(appID string, name string, EUIs []types.AppE
 		EUIs:  EUIs,
 	}
 
-	err = util.POST(a.server, a.accessToken, "/applications", &body, &app)
+	err = a.post("/applications", &body, &app)
 	return app, err
 }
 
 // DeleteApplication deletes an application
 func (a *Account) DeleteApplication(appID string) error {
-	return util.DELETE(a.server, a.accessToken, fmt.Sprintf("/applications/%s", appID))
+	return a.del(fmt.Sprintf("/applications/%s", appID))
 }
 
 type grantReq struct {
@@ -54,12 +53,12 @@ func (a *Account) Grant(appID string, username string, rights []types.Right) err
 	req := grantReq{
 		Rights: rights,
 	}
-	return util.PUT(a.server, a.accessToken, fmt.Sprintf("/applications/%s/collaborators/%s", appID, username), req, nil)
+	return a.put(fmt.Sprintf("/applications/%s/collaborators/%s", appID, username), req, nil)
 }
 
 // Retract removes rights from a collaborator of the application
 func (a *Account) Retract(appID string, username string) error {
-	return util.DELETE(a.server, a.accessToken, fmt.Sprintf("/applications/%s/collaborators/%s", appID, username))
+	return a.del(fmt.Sprintf("/applications/%s/collaborators/%s", appID, username))
 }
 
 type addAccessKeyReq struct {
@@ -74,13 +73,13 @@ func (a *Account) AddAccessKey(appID string, name string, rights []types.Right) 
 		Name:   name,
 		Rights: rights,
 	}
-	err = util.POST(a.server, a.accessToken, fmt.Sprintf("/applications/%s/access-keys", appID), body, &key)
+	err = a.post(fmt.Sprintf("/applications/%s/access-keys", appID), body, &key)
 	return key, err
 }
 
 // RemoveAccessKey removes the specified access key from the application
 func (a *Account) RemoveAccessKey(appID string, name string) error {
-	return util.DELETE(a.server, a.accessToken, fmt.Sprintf("/applications/%s/access-keys/%s", appID, name))
+	return a.del(fmt.Sprintf("/applications/%s/access-keys/%s", appID, name))
 }
 
 type editAppReq struct {
@@ -92,16 +91,16 @@ func (a *Account) ChangeName(appID string, name string) (app Application, err er
 	body := editAppReq{
 		Name: name,
 	}
-	err = util.PATCH(a.server, a.accessToken, fmt.Sprintf("/applications/%s", appID), body, &app)
+	err = a.patch(fmt.Sprintf("/applications/%s", appID), body, &app)
 	return app, err
 }
 
 // AddEUI adds an EUI to the applications list of EUIs
 func (a *Account) AddEUI(appID string, eui types.AppEUI) error {
-	return util.PUT(a.server, a.accessToken, fmt.Sprintf("/applications/%s/euis/%s", appID, eui.String()), nil, nil)
+	return a.put(fmt.Sprintf("/applications/%s/euis/%s", appID, eui.String()), nil, nil)
 }
 
 // RemoveEUI removes the specified EUI from the application
 func (a *Account) RemoveEUI(appID string, eui types.AppEUI) error {
-	return util.DELETE(a.server, a.accessToken, fmt.Sprintf("/applications/%s/euis/%s", appID, eui.String()))
+	return a.del(fmt.Sprintf("/applications/%s/euis/%s", appID, eui.String()))
 }
