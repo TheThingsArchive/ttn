@@ -22,8 +22,8 @@ var (
 // it is not an error with executing the request itself, it is
 // an error the server is flaggin to the client.
 type HTTPError struct {
-	Code    int
-	Message string
+	Code    int    `json:"code"`
+	Message string `json:"error"`
 }
 
 func (e HTTPError) Error() string {
@@ -92,10 +92,29 @@ func performRequest(server, accessToken, method, URI string, body, res interface
 	}
 
 	if resp.StatusCode >= 400 {
-		return HTTPError{
-			Code:    resp.StatusCode,
-			Message: resp.Status,
+
+		var herr HTTPError
+		defer resp.Body.Close()
+		decoder := json.NewDecoder(resp.Body)
+		if err := decoder.Decode(&herr); err != nil {
+			// could not decode body as error, just return http error
+			return HTTPError{
+				Code:    resp.StatusCode,
+				Message: resp.Status[4:],
+			}
 		}
+
+		// fill in blank code
+		if herr.Code == 0 {
+			herr.Code = resp.StatusCode
+		}
+
+		// fill in blank message
+		if herr.Message == "" {
+			herr.Message = resp.Status[4:]
+		}
+
+		return herr
 	}
 
 	if resp.StatusCode == 307 {
