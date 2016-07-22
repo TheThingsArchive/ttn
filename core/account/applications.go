@@ -45,9 +45,16 @@ func (a *Account) DeleteApplication(appID string) error {
 	return util.DELETE(a.server, a.accessToken, fmt.Sprintf("/applications/%s", appID))
 }
 
+type grantReq struct {
+	Rights []types.Right `json:"rights"`
+}
+
 // Grant adds a collaborator to the application
 func (a *Account) Grant(appID string, username string, rights []types.Right) error {
-	return util.PUT(a.server, a.accessToken, fmt.Sprintf("/applications/%s/collaborators/%s", appID, username), rights, nil)
+	req := grantReq{
+		Rights: rights,
+	}
+	return util.PUT(a.server, a.accessToken, fmt.Sprintf("/applications/%s/collaborators/%s", appID, username), req, nil)
 }
 
 // Retract removes rights from a collaborator of the application
@@ -91,7 +98,7 @@ func (a *Account) ChangeName(appID string, name string) (app Application, err er
 
 // AddEUI adds an EUI to the applications list of EUIs
 func (a *Account) AddEUI(appID string, eui types.AppEUI) error {
-	return util.POST(a.server, a.accessToken, fmt.Sprintf("/applications/%s/euis/%s", appID, eui.String()), nil, nil)
+	return util.PUT(a.server, a.accessToken, fmt.Sprintf("/applications/%s/euis/%s", appID, eui.String()), nil, nil)
 }
 
 // RemoveEUI removes the specified EUI from the application
