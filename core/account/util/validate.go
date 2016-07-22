@@ -21,6 +21,8 @@ func validateSlice(val interface{}) error {
 	return nil
 }
 
+// Validate recursivly validates most structures using govalidator
+// struct tags. It currently works for slices, structs and pointers.
 func Validate(val interface{}) error {
 	switch reflect.TypeOf(val).Kind() {
 	case reflect.Slice:
