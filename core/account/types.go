@@ -34,3 +34,16 @@ func (c *Collaborator) HasRight(right types.Right) bool {
 	}
 	return false
 }
+
+// Profile represents the profile of a user
+type Profile struct {
+	Username string `json:"username"`
+	Email    string `json:"email"`
+	Name     *Name  `json:"name"`
+}
+
+// Name represents the full name of a user
+type Name struct {
+	First string `json:"first"`
+	Last  string `json:"last"`
+}
