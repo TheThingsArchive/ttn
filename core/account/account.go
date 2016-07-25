@@ -4,6 +4,8 @@
 package account
 
 import (
+	"fmt"
+
 	"github.com/TheThingsNetwork/ttn/core/account/util"
 	"golang.org/x/oauth2"
 )
@@ -30,6 +32,9 @@ func New(server string, source oauth2.TokenSource) *Account {
 // with an Account. If you fail to do this, the token might have refreshed
 // and restoring your last copy will return an invalid token
 func (a *Account) Token() (*oauth2.Token, error) {
+	if a.tokenSource == nil {
+		return nil, fmt.Errorf("Could not get credentials for account")
+	}
 	return a.tokenSource.Token()
 }
 
