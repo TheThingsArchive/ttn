@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/TheThingsNetwork/ttn/core/account/util"
+	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 )
 
@@ -38,6 +39,22 @@ func WithAccessToken(server, accessToken string) *Account {
 		server:      server,
 		tokenSource: source,
 	}
+}
+
+// WithCredentials creates a new Account that logs in to
+// the specified account server using the specified username and password.
+func WithCredentials(server, clientID, clientSecret, username, password string) (*Account, error) {
+	config := util.MakeConfig(server, clientID, clientSecret, "")
+	token, err := config.PasswordCredentialsToken(context.TODO(), username, password)
+	if err != nil {
+		return nil, err
+	}
+
+	source := config.TokenSource(context.TODO(), token)
+	return &Account{
+		server:      server,
+		tokenSource: source,
+	}, nil
 }
 
 // Token returns the last valid accessToken/refreshToken pair
