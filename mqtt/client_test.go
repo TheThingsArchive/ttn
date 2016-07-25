@@ -109,10 +109,12 @@ func TestPublishUplink(t *testing.T) {
 	defer c.Disconnect()
 
 	dataUp := UplinkMessage{
+		AppID:   "someid",
+		DevID:   "someid",
 		Payload: []byte{0x01, 0x02, 0x03, 0x04},
 	}
 
-	token := c.PublishUplink("someid", "someid", dataUp)
+	token := c.PublishUplink(dataUp)
 	token.Wait()
 
 	a.So(token.Error(), ShouldBeNil)
@@ -186,7 +188,11 @@ func TestPubSubUplink(t *testing.T) {
 		wg.Done()
 	}).Wait()
 
-	c.PublishUplink("app1", "dev1", UplinkMessage{Payload: []byte{0x01, 0x02, 0x03, 0x04}}).Wait()
+	c.PublishUplink(UplinkMessage{
+		Payload: []byte{0x01, 0x02, 0x03, 0x04},
+		AppID:   "app1",
+		DevID:   "dev1",
+	}).Wait()
 
 	wg.Wait()
 
@@ -209,8 +215,16 @@ func TestPubSubAppUplink(t *testing.T) {
 		wg.Done()
 	}).Wait()
 
-	c.PublishUplink("app2", "dev1", UplinkMessage{Payload: []byte{0x01, 0x02, 0x03, 0x04}}).Wait()
-	c.PublishUplink("app2", "dev2", UplinkMessage{Payload: []byte{0x01, 0x02, 0x03, 0x04}}).Wait()
+	c.PublishUplink(UplinkMessage{
+		AppID:   "app2",
+		DevID:   "dev1",
+		Payload: []byte{0x01, 0x02, 0x03, 0x04},
+	}).Wait()
+	c.PublishUplink(UplinkMessage{
+		AppID:   "app2",
+		DevID:   "dev2",
+		Payload: []byte{0x01, 0x02, 0x03, 0x04},
+	}).Wait()
 
 	wg.Wait()
 
@@ -226,10 +240,12 @@ func TestPublishDownlink(t *testing.T) {
 	defer c.Disconnect()
 
 	dataDown := DownlinkMessage{
+		AppID:   "someid",
+		DevID:   "someid",
 		Payload: []byte{0x01, 0x02, 0x03, 0x04},
 	}
 
-	token := c.PublishDownlink("someid", "someid", dataDown)
+	token := c.PublishDownlink(dataDown)
 	token.Wait()
 
 	a.So(token.Error(), ShouldBeNil)
@@ -303,7 +319,11 @@ func TestPubSubDownlink(t *testing.T) {
 		wg.Done()
 	}).Wait()
 
-	c.PublishDownlink("app3", "dev3", DownlinkMessage{Payload: []byte{0x01, 0x02, 0x03, 0x04}}).Wait()
+	c.PublishDownlink(DownlinkMessage{
+		AppID:   "app3",
+		DevID:   "dev3",
+		Payload: []byte{0x01, 0x02, 0x03, 0x04},
+	}).Wait()
 
 	wg.Wait()
 
@@ -326,8 +346,16 @@ func TestPubSubAppDownlink(t *testing.T) {
 		wg.Done()
 	}).Wait()
 
-	c.PublishDownlink("app4", "dev1", DownlinkMessage{Payload: []byte{0x01, 0x02, 0x03, 0x04}}).Wait()
-	c.PublishDownlink("app4", "dev2", DownlinkMessage{Payload: []byte{0x01, 0x02, 0x03, 0x04}}).Wait()
+	c.PublishDownlink(DownlinkMessage{
+		AppID:   "app4",
+		DevID:   "dev1",
+		Payload: []byte{0x01, 0x02, 0x03, 0x04},
+	}).Wait()
+	c.PublishDownlink(DownlinkMessage{
+		AppID:   "app4",
+		DevID:   "dev2",
+		Payload: []byte{0x01, 0x02, 0x03, 0x04},
+	}).Wait()
 
 	wg.Wait()
 
@@ -342,9 +370,13 @@ func TestPublishActivations(t *testing.T) {
 	c.Connect()
 	defer c.Disconnect()
 
-	dataActivations := Activation{Metadata: []Metadata{Metadata{DataRate: "SF7BW125"}}}
+	dataActivations := Activation{
+		AppID:    "someid",
+		DevID:    "someid",
+		Metadata: []Metadata{Metadata{DataRate: "SF7BW125"}},
+	}
 
-	token := c.PublishActivation("someid", "someid", dataActivations)
+	token := c.PublishActivation(dataActivations)
 	token.Wait()
 
 	a.So(token.Error(), ShouldBeNil)
@@ -418,7 +450,11 @@ func TestPubSubActivations(t *testing.T) {
 		wg.Done()
 	}).Wait()
 
-	c.PublishActivation("app5", "dev1", Activation{Metadata: []Metadata{Metadata{DataRate: "SF7BW125"}}}).Wait()
+	c.PublishActivation(Activation{
+		AppID:    "app5",
+		DevID:    "dev1",
+		Metadata: []Metadata{Metadata{DataRate: "SF7BW125"}},
+	}).Wait()
 
 	wg.Wait()
 
@@ -441,8 +477,16 @@ func TestPubSubAppActivations(t *testing.T) {
 		wg.Done()
 	}).Wait()
 
-	c.PublishActivation("app6", "dev1", Activation{Metadata: []Metadata{Metadata{DataRate: "SF7BW125"}}}).Wait()
-	c.PublishActivation("app6", "dev2", Activation{Metadata: []Metadata{Metadata{DataRate: "SF7BW125"}}}).Wait()
+	c.PublishActivation(Activation{
+		AppID:    "app6",
+		DevID:    "dev1",
+		Metadata: []Metadata{Metadata{DataRate: "SF7BW125"}},
+	}).Wait()
+	c.PublishActivation(Activation{
+		AppID:    "app6",
+		DevID:    "dev2",
+		Metadata: []Metadata{Metadata{DataRate: "SF7BW125"}},
+	}).Wait()
 
 	wg.Wait()
 

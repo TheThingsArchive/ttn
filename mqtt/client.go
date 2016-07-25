@@ -23,7 +23,7 @@ type Client interface {
 	IsConnected() bool
 
 	// Uplink pub/sub
-	PublishUplink(appID string, devID string, payload UplinkMessage) Token
+	PublishUplink(payload UplinkMessage) Token
 	SubscribeDeviceUplink(appID string, devID string, handler UplinkHandler) Token
 	SubscribeAppUplink(appID string, handler UplinkHandler) Token
 	SubscribeUplink(handler UplinkHandler) Token
@@ -32,7 +32,7 @@ type Client interface {
 	UnsubscribeUplink() Token
 
 	// Downlink pub/sub
-	PublishDownlink(appID string, devID string, payload DownlinkMessage) Token
+	PublishDownlink(payload DownlinkMessage) Token
 	SubscribeDeviceDownlink(appID string, devID string, handler DownlinkHandler) Token
 	SubscribeAppDownlink(appID string, handler DownlinkHandler) Token
 	SubscribeDownlink(handler DownlinkHandler) Token
@@ -41,7 +41,7 @@ type Client interface {
 	UnsubscribeDownlink() Token
 
 	// Activation pub/sub
-	PublishActivation(appID string, devID string, payload Activation) Token
+	PublishActivation(payload Activation) Token
 	SubscribeDeviceActivations(appID string, devID string, handler ActivationHandler) Token
 	SubscribeAppActivations(appID string, handler ActivationHandler) Token
 	SubscribeActivations(handler ActivationHandler) Token
@@ -176,8 +176,8 @@ func (c *defaultClient) IsConnected() bool {
 	return c.mqtt.IsConnected()
 }
 
-func (c *defaultClient) PublishUplink(appID string, devID string, dataUp UplinkMessage) Token {
-	topic := DeviceTopic{appID, devID, Uplink}
+func (c *defaultClient) PublishUplink(dataUp UplinkMessage) Token {
+	topic := DeviceTopic{dataUp.AppID, dataUp.DevID, Uplink}
 	msg, err := json.Marshal(dataUp)
 	if err != nil {
 		return &simpleToken{fmt.Errorf("Unable to marshal the message payload")}
@@ -228,8 +228,8 @@ func (c *defaultClient) UnsubscribeUplink() Token {
 	return c.UnsubscribeDeviceUplink("", "")
 }
 
-func (c *defaultClient) PublishDownlink(appID string, devID string, dataDown DownlinkMessage) Token {
-	topic := DeviceTopic{appID, devID, Downlink}
+func (c *defaultClient) PublishDownlink(dataDown DownlinkMessage) Token {
+	topic := DeviceTopic{dataDown.AppID, dataDown.DevID, Downlink}
 	msg, err := json.Marshal(dataDown)
 	if err != nil {
 		return &simpleToken{fmt.Errorf("Unable to marshal the message payload")}
@@ -279,8 +279,8 @@ func (c *defaultClient) UnsubscribeDownlink() Token {
 	return c.UnsubscribeDeviceDownlink("", "")
 }
 
-func (c *defaultClient) PublishActivation(appID string, devID string, activation Activation) Token {
-	topic := DeviceTopic{appID, devID, Activations}
+func (c *defaultClient) PublishActivation(activation Activation) Token {
+	topic := DeviceTopic{activation.AppID, activation.DevID, Activations}
 	msg, err := json.Marshal(activation)
 	if err != nil {
 		return &simpleToken{fmt.Errorf("Unable to marshal the message payload")}

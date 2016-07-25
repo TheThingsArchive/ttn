@@ -44,7 +44,7 @@ func (h *handler) HandleMQTT(username, password string, mqttBrokers ...string) e
 				"DevID": up.DevID,
 				"AppID": up.AppID,
 			}).Debug("Publish Uplink")
-			token := h.mqttClient.PublishUplink(up.AppID, up.DevID, *up)
+			token := h.mqttClient.PublishUplink(*up)
 			go func() {
 				if token.WaitTimeout(MQTTTimeout) {
 					if token.Error() != nil {
@@ -66,7 +66,7 @@ func (h *handler) HandleMQTT(username, password string, mqttBrokers ...string) e
 				"AppEUI":  activation.AppEUI,
 				"DevAddr": activation.DevAddr,
 			}).Debug("Publish Activation")
-			token := h.mqttClient.PublishActivation(activation.AppID, activation.DevID, *activation)
+			token := h.mqttClient.PublishActivation(*activation)
 			go func() {
 				if token.WaitTimeout(MQTTTimeout) {
 					if token.Error() != nil {

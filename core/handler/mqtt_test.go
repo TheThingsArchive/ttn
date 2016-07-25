@@ -33,7 +33,9 @@ func TestHandleMQTT(t *testing.T) {
 	err := h.HandleMQTT("", "", "tcp://localhost:1883")
 	a.So(err, ShouldBeNil)
 
-	c.PublishDownlink(appID, devID, mqtt.DownlinkMessage{
+	c.PublishDownlink(mqtt.DownlinkMessage{
+		AppID:   appID,
+		DevID:   devID,
 		Payload: []byte{0xAA, 0xBC},
 	}).Wait()
 	<-time.After(50 * time.Millisecond)
