@@ -170,5 +170,5 @@ func PUT(server, accessToken, URI string, body, res interface{}) error {
 // PATCH creates an HTTP Patch request to the specified server, with the body
 // encoded as JSON, decoding the result into the object pointed to byres
 func PATCH(server, accessToken, URI string, body, res interface{}) error {
-	return performRequest(server, accessToken, "POST", URI, body, res, MaxRedirects)
+	return performRequest(server, accessToken, "PATCH", URI, body, res, MaxRedirects)
 }
