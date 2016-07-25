@@ -22,3 +22,13 @@ func TestCollaboratorRights(t *testing.T) {
 	a.So(c.HasRight(types.Right("right")), s.ShouldBeTrue)
 	a.So(c.HasRight(types.Right("foo")), s.ShouldBeFalse)
 }
+
+func TestNameString(t *testing.T) {
+	a := s.New(t)
+	name := Name{
+		First: "John",
+		Last:  "Doe",
+	}
+
+	a.So(name.String(), s.ShouldEqual, "John Doe")
+}

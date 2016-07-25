@@ -54,3 +54,8 @@ type Component struct {
 	ID      string    `json:"id"`
 	Created time.Time `json:"created,omitempty"`
 }
+
+// String implements the Stringer interface for Name
+func (n *Name) String() string {
+	return n.First + " " + n.Last
+}
