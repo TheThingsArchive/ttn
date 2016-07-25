@@ -47,3 +47,10 @@ type Name struct {
 	First string `json:"first"`
 	Last  string `json:"last"`
 }
+
+// Component represents a component on the newtork
+type Component struct {
+	Type    string    `json:"type"`
+	ID      string    `json:"id"`
+	Created time.Time `json:"created,omitempty"`
+}
