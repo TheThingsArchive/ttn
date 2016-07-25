@@ -255,7 +255,6 @@ func (n *networkServer) HandleUplink(message *pb_broker.DeduplicatedUplinkMessag
 				},
 				FCnt: dev.FCntDown,
 			},
-			FPort: macPayload.FPort,
 		},
 	}
 	phyBytes, err := phy.MarshalBinary()

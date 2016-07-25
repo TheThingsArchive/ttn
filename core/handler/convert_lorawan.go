@@ -9,6 +9,7 @@ import (
 
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/mqtt"
+	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	"github.com/apex/log"
 
 	"github.com/brocaar/lorawan"
@@ -106,6 +107,9 @@ func (h *handler) ConvertToLoRaWAN(ctx log.Interface, appDown *mqtt.DownlinkMess
 	// Set Payload
 	if len(appDown.Payload) > 0 {
 		macPayload.FRMPayload = []lorawan.Payload{&lorawan.DataPayload{Bytes: appDown.Payload}}
+		if macPayload.FPort == nil || *macPayload.FPort == 0 {
+			macPayload.FPort = pointer.Uint8(1)
+		}
 	} else {
 		macPayload.FRMPayload = []lorawan.Payload{}
 	}

@@ -32,6 +32,9 @@ func (h *handler) EnqueueDownlink(appDownlink *mqtt.DownlinkMessage) error {
 	if err != nil {
 		return err
 	}
+	// Clear redundant fields
+	appDownlink.AppID = ""
+	appDownlink.DevID = ""
 	dev.NextDownlink = appDownlink
 	err = h.devices.Set(dev, "next_downlink")
 	if err != nil {
