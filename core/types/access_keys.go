@@ -28,3 +28,7 @@ func (k *AccessKey) HasRight(right Right) bool {
 	}
 	return false
 }
+
+func (r *Right) String() string {
+	return string(*r)
+}

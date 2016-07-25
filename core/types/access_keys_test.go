@@ -22,3 +22,10 @@ func TestAccessKeysRights(t *testing.T) {
 	a.So(c.HasRight(Right("right")), s.ShouldBeTrue)
 	a.So(c.HasRight(Right("foo")), s.ShouldBeFalse)
 }
+
+func TestRightString(t *testing.T) {
+	a := s.New(t)
+
+	right := Right("foo")
+	a.So(right.String(), s.ShouldEqual, "foo")
+}
