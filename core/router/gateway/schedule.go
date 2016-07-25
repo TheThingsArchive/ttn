@@ -27,6 +27,8 @@ type Schedule interface {
 	Schedule(id string, downlink *router_pb.DownlinkMessage) error
 	// Subscribe to downlink messages
 	Subscribe() <-chan *router_pb.DownlinkMessage
+	// Whether the gateway has active downlink
+	IsActive() bool
 	// Stop the subscription
 	Stop()
 }
@@ -72,7 +74,6 @@ type schedule struct {
 	sync.RWMutex
 	random   *random.TTNRandom
 	ctx      log.Interface
-	active   bool
 	offset   int64
 	items    map[string]*scheduledItem
 	downlink chan *router_pb.DownlinkMessage
@@ -211,4 +212,8 @@ func (s *schedule) Subscribe() <-chan *router_pb.DownlinkMessage {
 	}
 	s.downlink = make(chan *router_pb.DownlinkMessage)
 	return s.downlink
+}
+
+func (s *schedule) IsActive() bool {
+	return s.downlink != nil
 }
