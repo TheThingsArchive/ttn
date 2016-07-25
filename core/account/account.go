@@ -27,6 +27,19 @@ func New(server string, source oauth2.TokenSource) *Account {
 	}
 }
 
+// WithAccessToken creates a new Account that just has an accessToken,
+// which it cannot refresh itself. This is useful if you need to manage
+// the token refreshes outside of the Account.
+func WithAccessToken(server, accessToken string) *Account {
+	source := oauth2.StaticTokenSource(&oauth2.Token{
+		AccessToken: accessToken,
+	})
+	return &Account{
+		server:      server,
+		tokenSource: source,
+	}
+}
+
 // Token returns the last valid accessToken/refreshToken pair
 // and should be used to store the latest token after doing things
 // with an Account. If you fail to do this, the token might have refreshed
