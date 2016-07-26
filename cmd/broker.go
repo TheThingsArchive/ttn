@@ -16,11 +16,8 @@ import (
 
 	"google.golang.org/grpc"
 
-	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
-
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/broker"
-	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/apex/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -37,7 +34,6 @@ var brokerCmd = &cobra.Command{
 			"Announce":           fmt.Sprintf("%s:%d", viper.GetString("broker.server-address-announce"), viper.GetInt("broker.server-port")),
 			"NetworkServer":      viper.GetString("broker.networkserver-address"),
 			"DeduplicationDelay": viper.GetString("broker.deduplication-delay"),
-			"Prefixes":           viper.GetStringSlice("broker.prefix"),
 			"Database":           fmt.Sprintf("%s/%d", viper.GetString("broker.redis-address"), viper.GetInt("broker.redis-db")),
 		}).Info("Initializing Broker")
 	},
@@ -59,18 +55,6 @@ var brokerCmd = &cobra.Command{
 			ctx.WithError(err).Fatal("Could not initialize component")
 		}
 
-		component.Identity.Metadata = []*pb_discovery.Metadata{}
-		for _, prefixString := range viper.GetStringSlice("broker.prefix") {
-			prefix, length, err := types.ParseDevAddrPrefix(prefixString)
-			if err != nil {
-				ctx.WithError(err).Fatal("Could not initialize broker")
-			}
-			component.Identity.Metadata = append(component.Identity.Metadata, &pb_discovery.Metadata{
-				Key:   pb_discovery.Metadata_PREFIX,
-				Value: []byte{byte(length), prefix[0], prefix[1], prefix[2], prefix[3]},
-			})
-		}
-
 		var nsCert string
 		if nsCertFile := viper.GetString("broker.networkserver-cert"); nsCertFile != "" {
 			contents, err := ioutil.ReadFile(nsCertFile)
@@ -83,10 +67,9 @@ var brokerCmd = &cobra.Command{
 		// Broker
 		broker := broker.NewRedisBroker(
 			client,
-			viper.GetString("broker.networkserver-address"),
-			nsCert,
 			time.Duration(viper.GetInt("broker.deduplication-delay"))*time.Millisecond,
 		)
+		broker.SetNetworkServer(viper.GetString("broker.networkserver-address"), nsCert, viper.GetString("broker.networkserver-token"))
 		err = broker.Init(component)
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not initialize broker")
@@ -124,9 +107,8 @@ func init() {
 	viper.BindPFlag("broker.networkserver-address", brokerCmd.Flags().Lookup("networkserver-address"))
 	brokerCmd.Flags().String("networkserver-cert", "", "Networkserver certificate to use")
 	viper.BindPFlag("broker.networkserver-cert", brokerCmd.Flags().Lookup("networkserver-cert"))
-
-	brokerCmd.Flags().StringSlice("prefix", []string{"26000000/24"}, "LoRaWAN DevAddr prefix to announce")
-	viper.BindPFlag("broker.prefix", brokerCmd.Flags().Lookup("prefix"))
+	brokerCmd.Flags().String("networkserver-token", "", "Networkserver token to use")
+	viper.BindPFlag("broker.networkserver-token", brokerCmd.Flags().Lookup("networkserver-token"))
 
 	brokerCmd.Flags().Int("deduplication-delay", 200, "Deduplication delay (in ms)")
 	viper.BindPFlag("broker.deduplication-delay", brokerCmd.Flags().Lookup("deduplication-delay"))

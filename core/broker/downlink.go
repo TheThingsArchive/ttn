@@ -34,7 +34,7 @@ func (b *broker) HandleDownlink(downlink *pb.DownlinkMessage) error {
 		}
 	}()
 
-	downlink, err = b.ns.Downlink(b.Component.GetContext(""), downlink)
+	downlink, err = b.ns.Downlink(b.Component.GetContext(b.nsToken), downlink)
 	if err != nil {
 		return err
 	}

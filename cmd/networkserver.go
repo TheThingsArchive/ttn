@@ -99,7 +99,7 @@ func init() {
 	networkserverCmd.Flags().Int("net-id", 19, "LoRaWAN NetID")
 	viper.BindPFlag("networkserver.net-id", networkserverCmd.Flags().Lookup("net-id"))
 
-	networkserverCmd.Flags().String("prefix", "26000000/24", "LoRaWAN DevAddr Prefix that should be used for issuing device addresses")
+	networkserverCmd.Flags().String("prefix", "26002000/20", "LoRaWAN DevAddr Prefix that should be used for issuing device addresses")
 	viper.BindPFlag("networkserver.prefix", networkserverCmd.Flags().Lookup("prefix"))
 
 	networkserverCmd.Flags().String("server-address", "0.0.0.0", "The IP address to listen for communication")

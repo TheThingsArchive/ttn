@@ -12,7 +12,6 @@ import (
 
 	"github.com/TheThingsNetwork/ttn/api"
 	pb "github.com/TheThingsNetwork/ttn/api/broker"
-	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/api/networkserver"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core"
@@ -22,6 +21,8 @@ import (
 type Broker interface {
 	core.ComponentInterface
 	core.ManagementInterface
+
+	SetNetworkServer(addr, cert, token string)
 
 	HandleUplink(uplink *pb.UplinkMessage) error
 	HandleDownlink(downlink *pb.DownlinkMessage) error
@@ -33,15 +34,19 @@ type Broker interface {
 	DeactivateHandler(id string) error
 }
 
-func NewRedisBroker(client *redis.Client, networkserver string, networkserverCert string, timeout time.Duration) Broker {
+func NewRedisBroker(client *redis.Client, timeout time.Duration) Broker {
 	return &broker{
 		routers:                make(map[string]chan *pb.DownlinkMessage),
 		handlers:               make(map[string]chan *pb.DeduplicatedUplinkMessage),
 		uplinkDeduplicator:     NewDeduplicator(timeout),
 		activationDeduplicator: NewDeduplicator(timeout),
-		nsAddr:                 networkserver,
-		nsCert:                 networkserverCert,
 	}
+}
+
+func (b *broker) SetNetworkServer(addr, cert, token string) {
+	b.nsAddr = addr
+	b.nsCert = cert
+	b.nsToken = token
 }
 
 type broker struct {
@@ -53,6 +58,7 @@ type broker struct {
 	handlersLock           sync.RWMutex
 	nsAddr                 string
 	nsCert                 string
+	nsToken                string
 	ns                     networkserver.NetworkServerClient
 	nsManager              pb_lorawan.DeviceManagerClient
 	uplinkDeduplicator     Deduplicator
