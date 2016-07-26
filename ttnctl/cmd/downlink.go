@@ -34,9 +34,12 @@ var downlinkCmd = &cobra.Command{
 			ctx.WithError(err).Fatal("Invalid Payload")
 		}
 
+		fPort, _ := cmd.Flags().GetInt("fport")
+
 		token := client.PublishDownlink(mqtt.DownlinkMessage{
 			AppID:   appID,
 			DevID:   devID,
+			FPort:   uint8(fPort),
 			Payload: payload,
 		})
 		token.Wait()
@@ -51,4 +54,5 @@ var downlinkCmd = &cobra.Command{
 
 func init() {
 	RootCmd.AddCommand(downlinkCmd)
+	downlinkCmd.Flags().Int("fport", 1, "FPort for downlink")
 }

@@ -57,8 +57,6 @@ func GetMQTT(ctx log.Interface) mqtt.Client {
 	}
 	key := app.AccessKeys[keyIdx]
 
-	ctx = ctx.WithField("Username", appID).WithField("Password", key.Key)
-
 	broker := fmt.Sprintf("tcp://%s", viper.GetString("mqtt-broker"))
 	client := mqtt.NewClient(ctx, "ttnctl", appID, key.Key, broker)
 

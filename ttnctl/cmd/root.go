@@ -90,6 +90,7 @@ func confirm(prompt string) bool {
 	case "no", "n", "":
 		return false
 	default:
+		fmt.Println("When you make up your mind, please answer yes or no.")
 		return confirm(prompt)
 	}
 }
