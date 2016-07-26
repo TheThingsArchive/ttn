@@ -20,8 +20,8 @@ func TestHandleMQTT(t *testing.T) {
 	var wg sync.WaitGroup
 	c := mqtt.NewClient(GetLogger(t, "TestHandleMQTT"), "test", "", "", "tcp://localhost:1883")
 	c.Connect()
-	appID := "app1"
-	devID := "dev1"
+	appID := "handler-mqtt-app1"
+	devID := "handler-mqtt-dev1"
 	h := &handler{
 		Component: &core.Component{Ctx: GetLogger(t, "TestHandleMQTT")},
 		devices:   device.NewDeviceStore(),
@@ -43,7 +43,7 @@ func TestHandleMQTT(t *testing.T) {
 	a.So(dev.NextDownlink, ShouldNotBeNil)
 
 	wg.Add(1)
-	c.SubscribeUplink(func(client mqtt.Client, r_appID string, r_devID string, req mqtt.UplinkMessage) {
+	c.SubscribeDeviceUplink(appID, devID, func(client mqtt.Client, r_appID string, r_devID string, req mqtt.UplinkMessage) {
 		a.So(r_appID, ShouldEqual, appID)
 		a.So(r_devID, ShouldEqual, devID)
 		a.So(req.Payload, ShouldResemble, []byte{0xAA, 0xBC})
@@ -57,7 +57,7 @@ func TestHandleMQTT(t *testing.T) {
 	}
 
 	wg.Add(1)
-	c.SubscribeActivations(func(client mqtt.Client, r_appID string, r_devID string, req mqtt.Activation) {
+	c.SubscribeDeviceActivations(appID, devID, func(client mqtt.Client, r_appID string, r_devID string, req mqtt.Activation) {
 		a.So(r_appID, ShouldEqual, appID)
 		a.So(r_devID, ShouldEqual, devID)
 		wg.Done()
