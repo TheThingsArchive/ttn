@@ -51,7 +51,6 @@ proto-deps:
 	$(GOCMD) get -v github.com/gogo/protobuf/protoc-gen-gofast
 
 proto:
-	find core/protos -name '*.proto' | xargs protoc --gofast_out=plugins=grpc:./core -I=core/protos
 	@$(PROTOC)/api/*.proto
 	@$(PROTOC)/api/protocol/protocol.proto
 	@$(PROTOC)/api/protocol/**/*.proto
@@ -91,6 +90,9 @@ clean:
 	([ -f $(COVER_FILE) ] && rm $(COVER_FILE)) || [ ! -d $(COVER_FILE) ]
 
 build: $(RELEASE_DIR)/$(ttnbin) $(RELEASE_DIR)/$(ttnctlbin)
+
+install:
+	$(GOCMD) install -a -installsuffix cgo ${LDFLAGS} . ./ttnctl
 
 docker: TARGET_PLATFORM = linux-amd64
 docker: clean $(RELEASE_DIR)/$(ttnbin)
