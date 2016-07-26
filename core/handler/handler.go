@@ -72,10 +72,6 @@ func (h *handler) Init(c *core.Component) error {
 		return err
 	}
 
-	h.applications.Set(&application.Application{
-		AppID: "htdvisser",
-	})
-
 	err = h.Announce()
 	if err != nil {
 		return err

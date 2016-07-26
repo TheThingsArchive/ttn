@@ -88,8 +88,6 @@ func (r *router) HandleUplink(gatewayEUI types.GatewayEUI, uplink *pb.UplinkMess
 	var downlinkOptions []*pb_broker.DownlinkOption
 	if gateway.Schedule.IsActive() {
 		downlinkOptions = r.buildDownlinkOptions(uplink, false, gateway)
-	} else {
-		ctx.Warn("Gateway not active")
 	}
 
 	ctx = ctx.WithField("DownlinkOptions", len(downlinkOptions))
