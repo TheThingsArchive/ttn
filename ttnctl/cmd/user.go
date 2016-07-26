@@ -4,135 +4,65 @@
 package cmd
 
 import (
-	"bytes"
+	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"net/http"
-	"net/url"
 	"strings"
+	"time"
 
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
-	"github.com/howeyc/gopass"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 // userCmd represents the users command
 var userCmd = &cobra.Command{
 	Use:   "user",
 	Short: "Show the current user",
-	Long:  `ttnctl user shows the current logged on user`,
+	Long:  `ttnctl user shows the current logged on user's profile`,
 	Run: func(cmd *cobra.Command, args []string) {
-		t, err := util.LoadAuth(viper.GetString("ttn-account-server"))
+		account := util.GetAccount(ctx)
+		profile, err := account.Profile()
 		if err != nil {
-			ctx.WithError(err).Fatal("Failed to load authentication token")
-		}
-		if t == nil {
-			ctx.Warn("No login found. Please login with ttnctl user login [e-mail]")
-			return
+			ctx.WithError(err).Fatal("Could not get user profile")
 		}
 
-		ctx.Infof("Logged on as %s", t.Email)
-	},
-}
+		ctx.Info("Found user profile:")
+		fmt.Println()
+		printKV("Username", profile.Username)
+		printKV("Name", profile.Name)
+		printKV("Email", profile.Email)
+		fmt.Println()
 
-var userCreateCmd = &cobra.Command{
-	Use:   "create [e-mail]",
-	Short: "Create a new user",
-	Long:  `ttnctl user create allows you to create a new user`,
-	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) < 1 {
-			cmd.UsageFunc()(cmd)
-			return
-		}
-
-		email := args[0]
-		fmt.Print("Password: ")
-		password, err := gopass.GetPasswd()
+		token, err := util.GetTokenSource(ctx).Token()
 		if err != nil {
-			ctx.Fatal(err.Error())
+			ctx.WithError(err).Fatal("Could not get access token")
 		}
-		fmt.Print("Confirm password: ")
-		password2, err := gopass.GetPasswd()
+		tokenParts := strings.Split(token.AccessToken, ".")
+		if len(tokenParts) != 3 {
+			ctx.Fatal("Invalid access token")
+		}
+		segment, err := jwt.DecodeSegment(tokenParts[1])
 		if err != nil {
-			ctx.Fatal(err.Error())
+			ctx.WithError(err).Fatal("Could not decode access token")
 		}
-		if !bytes.Equal(password, password2) {
-			ctx.Fatal("Passwords do not match")
-		}
-
-		uri := fmt.Sprintf("%s/register", viper.GetString("ttn-account-server"))
-		values := url.Values{
-			"email":    {email},
-			"password": {string(password)},
-		}
-
-		req, err := http.NewRequest("POST", uri, strings.NewReader(values.Encode()))
+		var claims util.AccountClaims
+		err = json.Unmarshal(segment, &claims)
 		if err != nil {
-			ctx.WithError(err).Fatalf("Failed to create request")
-		}
-		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-		req.Header.Set("Accept", "application/json")
-
-		client := &http.Client{}
-		res, err := client.Do(req)
-		if err != nil {
-			ctx.WithError(err).Fatal("Registration failed")
+			ctx.WithError(err).Fatal("Could not unmarshal access token")
 		}
 
-		if res.StatusCode != http.StatusCreated {
-			buf, _ := ioutil.ReadAll(res.Body)
-			ctx.Fatalf("Registration failed: %s (%v)", res.Status, string(buf))
+		if claims.ExpiresAt != 0 {
+			expires := time.Unix(claims.ExpiresAt, 0)
+			if expires.After(time.Now()) {
+				ctx.Infof("Login credentials valid until %s", expires.Format(time.Stamp))
+			} else {
+				ctx.Warnf("Login credentials expired %s", expires.Format(time.Stamp))
+			}
 		}
 
-		ctx.Info("User created")
-	},
-}
-
-var userLoginCmd = &cobra.Command{
-	Use:   "login [e-mail]",
-	Short: "Login",
-	Long:  `ttnctl user login allows you to login`,
-	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) < 1 {
-			cmd.UsageFunc()(cmd)
-			return
-		}
-
-		email := args[0]
-		fmt.Print("Password: ")
-		password, err := gopass.GetPasswd()
-		if err != nil {
-			ctx.Fatal(err.Error())
-		}
-
-		server := viper.GetString("ttn-account-server")
-		_, err = util.Login(server, email, string(password))
-		if err != nil {
-			ctx.Info(fmt.Sprintf("Visit %s to register or to retrieve your account credentials.", server))
-			ctx.WithError(err).Fatal("Failed to login")
-		}
-
-		ctx.Infof("Logged in as %s and persisted token in %s", email, util.AuthsFileName)
-	},
-}
-
-var userLogoutCmd = &cobra.Command{
-	Use:   "logout",
-	Short: "Logout the current user",
-	Long:  `ttnctl user logout logs out the current user`,
-	Run: func(cmd *cobra.Command, args []string) {
-		if err := util.Logout(viper.GetString("ttn-account-server")); err != nil {
-			ctx.WithError(err).Fatal("Failed to log out")
-		}
-
-		ctx.Info("Logged out")
 	},
 }
 
 func init() {
 	RootCmd.AddCommand(userCmd)
-	userCmd.AddCommand(userCreateCmd)
-	userCmd.AddCommand(userLoginCmd)
-	userCmd.AddCommand(userLogoutCmd)
 }

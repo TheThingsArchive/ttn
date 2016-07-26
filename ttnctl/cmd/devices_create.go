@@ -1,3 +1,6 @@
+// Copyright © 2016 The Things Network
+// Use of this source code is governed by the MIT license that can be found in the LICENSE file.
+
 package cmd
 
 import (
@@ -9,7 +12,6 @@ import (
 	"github.com/TheThingsNetwork/ttn/utils/random"
 	"github.com/apex/log"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 // devicesCreateCmd represents the `device create` command
@@ -19,13 +21,7 @@ var devicesCreateCmd = &cobra.Command{
 	Long:  `ttnctl devices create can be used to create a new device.`,
 	Run: func(cmd *cobra.Command, args []string) {
 
-		auth, err := util.LoadAuth(viper.GetString("ttn-account-server"))
-		if err != nil {
-			ctx.WithError(err).Fatal("Failed to load authentication")
-		}
-		if auth == nil {
-			ctx.Fatal("No authentication found, please login")
-		}
+		var err error
 
 		if len(args) == 0 {
 			ctx.Fatalf("Device ID is required")
@@ -36,20 +32,8 @@ var devicesCreateCmd = &cobra.Command{
 			ctx.Fatalf("Invalid Device ID") // TODO: Add link to wiki explaining device IDs
 		}
 
-		appID := viper.GetString("app-id")
-		if appID == "" {
-			ctx.Fatal("Missing AppID. You should run ttnctl applications use [AppID] [AppEUI]")
-		}
-
-		var appEUI types.AppEUI
-		if suppliedAppEUI := viper.GetString("app-eui"); suppliedAppEUI != "" {
-			appEUI, err = types.ParseAppEUI(suppliedAppEUI)
-			if err != nil {
-				ctx.Fatalf("Invalid AppEUI: %s", err)
-			}
-		} else {
-			ctx.Fatal("Missing AppEUI. You should run ttnctl applications use [AppID] [AppEUI]")
-		}
+		appID := util.GetAppID(ctx)
+		appEUI := util.GetAppEUI(ctx)
 
 		var devEUI types.DevEUI
 		if len(args) > 1 {
@@ -73,10 +57,8 @@ var devicesCreateCmd = &cobra.Command{
 			copy(appKey[:], random.Bytes(16))
 		}
 
-		manager, err := handler.NewManagerClient(viper.GetString("ttn-handler"), auth.AccessToken)
-		if err != nil {
-			ctx.WithError(err).Fatal("Could not create Handler client")
-		}
+		conn, manager := util.GetHandlerManager(ctx)
+		defer conn.Close()
 
 		err = manager.SetDevice(&handler.Device{
 			AppId: appID,

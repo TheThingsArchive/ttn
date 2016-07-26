@@ -49,23 +49,49 @@ func init() {
 
 	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.ttnctl.yaml)")
 
-	RootCmd.PersistentFlags().String("ttn-router", "staging.thethingsnetwork.org:1901", "The address of the TTN Router")
+	RootCmd.PersistentFlags().String("discovery-server", "discover.thethingsnetwork.org:1900", "The address of the Discovery server")
+	viper.BindPFlag("discovery-server", RootCmd.PersistentFlags().Lookup("discovery-server"))
+
+	RootCmd.PersistentFlags().String("ttn-router", "dev", "The ID of the TTN Router as announced in the Discovery server")
 	viper.BindPFlag("ttn-router", RootCmd.PersistentFlags().Lookup("ttn-router"))
 
-	RootCmd.PersistentFlags().String("ttn-handler", "staging.thethingsnetwork.org:1782", "The address of the TTN Handler")
+	RootCmd.PersistentFlags().String("ttn-handler", "dev", "The ID of the TTN Handler as announced in the Discovery server")
 	viper.BindPFlag("ttn-handler", RootCmd.PersistentFlags().Lookup("ttn-handler"))
 
 	RootCmd.PersistentFlags().String("mqtt-broker", "staging.thethingsnetwork.org:1883", "The address of the MQTT broker")
 	viper.BindPFlag("mqtt-broker", RootCmd.PersistentFlags().Lookup("mqtt-broker"))
 
-	RootCmd.PersistentFlags().String("app-id", "", "The app ID to use")
-	viper.BindPFlag("app-id", RootCmd.PersistentFlags().Lookup("app-id"))
-
-	RootCmd.PersistentFlags().String("app-eui", "", "The app EUI to use")
-	viper.BindPFlag("app-eui", RootCmd.PersistentFlags().Lookup("app-eui"))
-
 	RootCmd.PersistentFlags().String("ttn-account-server", "https://account.thethingsnetwork.org", "The address of the OAuth 2.0 server")
 	viper.BindPFlag("ttn-account-server", RootCmd.PersistentFlags().Lookup("ttn-account-server"))
+}
+
+func printKV(key, t interface{}) {
+	var val string
+	switch t := t.(type) {
+	case []byte:
+		val = fmt.Sprintf("%X", t)
+	default:
+		val = fmt.Sprintf("%v", t)
+	}
+
+	if val != "" {
+		fmt.Printf("%20s: %s\n", key, val)
+	}
+}
+
+func confirm(prompt string) bool {
+	fmt.Println(prompt)
+	fmt.Print("> ")
+	var answer string
+	fmt.Scanf("%s", &answer)
+	switch strings.ToLower(answer) {
+	case "yes", "y":
+		return true
+	case "no", "n", "":
+		return false
+	default:
+		return confirm(prompt)
+	}
 }
 
 // initConfig reads in config file and ENV variables if set.

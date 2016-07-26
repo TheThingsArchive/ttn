@@ -1,3 +1,6 @@
+// Copyright © 2016 The Things Network
+// Use of this source code is governed by the MIT license that can be found in the LICENSE file.
+
 package cmd
 
 import (
@@ -6,10 +9,8 @@ import (
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/api"
-	"github.com/TheThingsNetwork/ttn/api/handler"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 // devicesInfoCmd represents the `device info` command
@@ -18,14 +19,6 @@ var devicesInfoCmd = &cobra.Command{
 	Short: "Get information about a device",
 	Long:  `ttnctl devices info can be used to get information about a device.`,
 	Run: func(cmd *cobra.Command, args []string) {
-
-		auth, err := util.LoadAuth(viper.GetString("ttn-account-server"))
-		if err != nil {
-			ctx.WithError(err).Fatal("Failed to load authentication")
-		}
-		if auth == nil {
-			ctx.Fatal("No authentication found, please login")
-		}
 
 		if len(args) == 0 {
 			cmd.UsageFunc()(cmd)
@@ -37,15 +30,10 @@ var devicesInfoCmd = &cobra.Command{
 			ctx.Fatalf("Invalid Device ID") // TODO: Add link to wiki explaining device IDs
 		}
 
-		appID := viper.GetString("app-id")
-		if appID == "" {
-			ctx.Fatal("Missing AppID. You should run ttnctl applications use [AppID] [AppEUI]")
-		}
+		appID := util.GetAppID(ctx)
 
-		manager, err := handler.NewManagerClient(viper.GetString("ttn-handler"), auth.AccessToken)
-		if err != nil {
-			ctx.WithError(err).Fatal("Could not create Handler client")
-		}
+		conn, manager := util.GetHandlerManager(ctx)
+		defer conn.Close()
 
 		dev, err := manager.GetDevice(appID, devID)
 		if err != nil {

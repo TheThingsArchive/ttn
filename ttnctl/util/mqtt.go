@@ -5,34 +5,62 @@ package util
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/TheThingsNetwork/ttn/mqtt"
 	"github.com/apex/log"
+	"github.com/gosuri/uitable"
 	"github.com/spf13/viper"
 )
 
-// ConnectMQTTClient connects a new MQTT clients with the specified credentials
-func ConnectMQTTClient(ctx log.Interface) mqtt.Client {
-	appEUI := GetAppEUI(ctx)
+// GetMQTT connects a new MQTT clients with the specified credentials
+func GetMQTT(ctx log.Interface) mqtt.Client {
+	appID := GetAppID(ctx)
 
-	apps, err := GetApplications(ctx)
+	account := GetAccount(ctx)
+	app, err := account.FindApplication(appID)
 	if err != nil {
-		ctx.WithError(err).Fatal("Failed to get applications")
+		ctx.WithError(err).Fatal("Failed to get application")
 	}
 
-	var app *App
-	for _, a := range apps {
-		if a.EUI == appEUI {
-			app = a
+	var keyIdx int
+	switch len(app.AccessKeys) {
+	case 0:
+		ctx.Fatal("Can not connect to MQTT. Your application does not have any access keys.")
+	case 1:
+	default:
+		ctx.Infof("Found %d access keys for your application:", len(app.AccessKeys))
+
+		table := uitable.New()
+		table.MaxColWidth = 70
+		table.AddRow("", "Name", "Rights")
+		for i, key := range app.AccessKeys {
+			rightStrings := make([]string, 0, len(key.Rights))
+			for _, i := range key.Rights {
+				rightStrings = append(rightStrings, string(i))
+			}
+			table.AddRow(i+1, key.Name, strings.Join(rightStrings, ","))
 		}
+
+		fmt.Println()
+		fmt.Println(table)
+		fmt.Println()
+
+		fmt.Println("Which one do you want to use?")
+		fmt.Printf("Enter the number (1 - %d) > ", len(app.AccessKeys))
+		fmt.Scanf("%d", &keyIdx)
+		keyIdx--
 	}
-	if app == nil {
-		ctx.Fatal("Application not found")
+
+	if keyIdx < 0 || keyIdx >= len(app.AccessKeys) {
+		ctx.Fatal("Invalid choice for access key")
 	}
+	key := app.AccessKeys[keyIdx]
+
+	ctx = ctx.WithField("Username", appID).WithField("Password", key.Key)
 
 	broker := fmt.Sprintf("tcp://%s", viper.GetString("mqtt-broker"))
-	// Don't care about which access key here
-	client := mqtt.NewClient(ctx, "ttnctl", app.EUI.String(), app.AccessKeys[0], broker)
+	client := mqtt.NewClient(ctx, "ttnctl", appID, key.Key, broker)
 
 	if err := client.Connect(); err != nil {
 		ctx.WithError(err).Fatal("Could not connect")

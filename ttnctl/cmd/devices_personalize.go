@@ -1,14 +1,15 @@
+// Copyright © 2016 The Things Network
+// Use of this source code is governed by the MIT license that can be found in the LICENSE file.
+
 package cmd
 
 import (
 	"github.com/TheThingsNetwork/ttn/api"
-	"github.com/TheThingsNetwork/ttn/api/handler"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/TheThingsNetwork/ttn/utils/random"
 	"github.com/apex/log"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 // devicesPersonalizeCmd represents the `device personalize` command
@@ -18,13 +19,7 @@ var devicesPersonalizeCmd = &cobra.Command{
 	Long:  `ttnctl devices personalize can be used to personalize a device (ABP).`,
 	Run: func(cmd *cobra.Command, args []string) {
 
-		auth, err := util.LoadAuth(viper.GetString("ttn-account-server"))
-		if err != nil {
-			ctx.WithError(err).Fatal("Failed to load authentication")
-		}
-		if auth == nil {
-			ctx.Fatal("No authentication found, please login")
-		}
+		var err error
 
 		if len(args) == 0 {
 			cmd.UsageFunc()(cmd)
@@ -36,10 +31,7 @@ var devicesPersonalizeCmd = &cobra.Command{
 			ctx.Fatalf("Invalid Device ID") // TODO: Add link to wiki explaining device IDs
 		}
 
-		appID := viper.GetString("app-id")
-		if appID == "" {
-			ctx.Fatal("Missing AppID. You should run ttnctl applications use [AppID] [AppEUI]")
-		}
+		appID := util.GetAppID(ctx)
 
 		var devAddr types.DevAddr
 		if len(args) > 1 {
@@ -49,8 +41,8 @@ var devicesPersonalizeCmd = &cobra.Command{
 			}
 		} else {
 			ctx.Info("Generating random DevAddr...")
-			copy(devAddr[:], random.Bytes(8))
-			devAddr[0] = (0x13 << 1) | (devAddr[0] & 1) // Use the TTN netID
+			copy(devAddr[:], random.Bytes(4))
+			devAddr = devAddr.WithPrefix(types.DevAddr([4]byte{0x26, 0x00, 0x10, 0x00}), 20)
 		}
 
 		var nwkSKey types.NwkSKey
@@ -75,10 +67,8 @@ var devicesPersonalizeCmd = &cobra.Command{
 			copy(appSKey[:], random.Bytes(16))
 		}
 
-		manager, err := handler.NewManagerClient(viper.GetString("ttn-handler"), auth.AccessToken)
-		if err != nil {
-			ctx.WithError(err).Fatal("Could not create Handler client")
-		}
+		conn, manager := util.GetHandlerManager(ctx)
+		defer conn.Close()
 
 		dev, err := manager.GetDevice(appID, devID)
 		if err != nil {
