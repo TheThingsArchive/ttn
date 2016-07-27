@@ -19,6 +19,9 @@ func GetRouter(ctx log.Interface) (*grpc.ClientConn, router.RouterClient) {
 		ServiceName: "router",
 		Id:          viper.GetString("ttn-router"),
 	})
+	if err != nil {
+		ctx.WithError(err).Fatal("Could not get Router from Discovery")
+	}
 	rtrConn, err := routerAnnouncement.Dial()
 	if err != nil {
 		ctx.WithError(err).Fatal("Could not connect to Router")
