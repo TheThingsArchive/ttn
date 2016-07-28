@@ -14,7 +14,7 @@ import (
 // applicationsListCmd is the entrypoint for handlerctl
 var applicationsListCmd = &cobra.Command{
 	Use:   "list",
-	Short: "list applications",
+	Short: "List applications",
 	Long:  `ttnctl applications list can be used to list applications.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		account := util.GetAccount(ctx)
