@@ -147,6 +147,7 @@ func (c *Component) UpdateTokenKey() error {
 // TTNClaims contains the claims that are set by the TTN Token Issuer
 type TTNClaims struct {
 	jwt.StandardClaims
+	Type   string              `json:"type"`
 	Client string              `json:"client"`
 	Scopes []string            `json:"scope"`
 	Apps   map[string][]string `json:"apps,omitempty"`

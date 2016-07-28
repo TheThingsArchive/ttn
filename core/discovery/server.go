@@ -21,7 +21,12 @@ func (d *discoveryServer) Announce(ctx context.Context, announcement *pb.Announc
 	if err != nil {
 		return nil, err
 	}
-	_ = claims // TODO: Check the claims for the announced Component ID
+	if claims.Subject != announcement.Id {
+		return nil, errors.New("ttn/discovery: Token subject does not correspond with announcement ID")
+	}
+	if claims.Type != announcement.ServiceName {
+		return nil, errors.New("ttn/discovery: Token type does not correspond with announcement service type")
+	}
 	announcementCopy := *announcement
 	announcement.Metadata = []*pb.Metadata{} // This will be taken from existing announcement
 	err = d.discovery.Announce(&announcementCopy)
@@ -35,6 +40,12 @@ func (d *discoveryServer) AddMetadata(ctx context.Context, in *pb.MetadataReques
 	claims, err := d.discovery.ValidateTTNAuthContext(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if claims.Subject != in.Id {
+		return nil, errors.New("ttn/discovery: Token subject does not correspond with announcement ID")
+	}
+	if claims.Type != in.ServiceName {
+		return nil, errors.New("ttn/discovery: Token type does not correspond with announcement service type")
 	}
 	switch in.Metadata.Key {
 	case pb.Metadata_PREFIX:
@@ -59,7 +70,12 @@ func (d *discoveryServer) DeleteMetadata(ctx context.Context, in *pb.MetadataReq
 	if err != nil {
 		return nil, err
 	}
-	_ = claims // TODO: Check the claims for the announced Component ID
+	if claims.Subject != in.Id {
+		return nil, errors.New("ttn/discovery: Token subject does not correspond with announcement ID")
+	}
+	if claims.Type != in.ServiceName {
+		return nil, errors.New("ttn/discovery: Token type does not correspond with announcement service type")
+	}
 	err = d.discovery.DeleteMetadata(in.ServiceName, in.Id, in.Metadata)
 	if err != nil {
 		return nil, err
