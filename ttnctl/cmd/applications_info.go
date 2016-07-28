@@ -1,0 +1,77 @@
+// Copyright © 2016 The Things Network
+// Use of this source code is governed by the MIT license that can be found in the LICENSE file.
+
+package cmd
+
+import (
+	"fmt"
+
+	"github.com/TheThingsNetwork/ttn/ttnctl/util"
+	"github.com/spf13/cobra"
+)
+
+var applicationsInfoCmd = &cobra.Command{
+	Use:   "info [AppID]",
+	Short: "Get information about an application",
+	Long:  `ttnctl applications info can be used to info applications.`,
+	Run: func(cmd *cobra.Command, args []string) {
+		account := util.GetAccount(ctx)
+
+		var appID string
+		if len(args) == 1 {
+			appID = args[0]
+		} else {
+			appID = util.GetAppID(ctx)
+		}
+
+		app, err := account.FindApplication(appID)
+		if err != nil {
+			ctx.WithError(err).Fatal("Could not find application")
+		}
+
+		ctx.Info("Found application")
+
+		fmt.Println()
+
+		fmt.Printf("AppID:   %s\n", app.ID)
+		fmt.Printf("Name:    %s\n", app.Name)
+
+		fmt.Println("EUIs:")
+		for _, eui := range app.EUIs {
+			fmt.Printf("       - %s\n", eui)
+		}
+		fmt.Println()
+		fmt.Println("Access Keys:")
+		for _, key := range app.AccessKeys {
+			fmt.Printf("       - Name: %s\n", key.Name)
+			fmt.Printf("         Key:  %s\n", key.Key)
+			fmt.Print("         Rights: ")
+			for i, right := range key.Rights {
+				if i != 0 {
+					fmt.Print(", ")
+				}
+				fmt.Print(right)
+			}
+			fmt.Println()
+		}
+		fmt.Println()
+		fmt.Println("Collaborators:")
+		for _, collaborator := range app.Collaborators {
+			fmt.Printf("       - Name: %s\n", collaborator.Username)
+			fmt.Print("         Rights: ")
+			for i, right := range collaborator.Rights {
+				if i != 0 {
+					fmt.Print(", ")
+				}
+				fmt.Print(right)
+			}
+			fmt.Println()
+		}
+		fmt.Println()
+
+	},
+}
+
+func init() {
+	applicationsCmd.AddCommand(applicationsInfoCmd)
+}
