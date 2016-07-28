@@ -84,17 +84,16 @@ func init() {
 	RootCmd.PersistentFlags().String("auth-server", "https://account.thethingsnetwork.org", "The address of the OAuth 2.0 server")
 	viper.BindPFlag("auth-server", RootCmd.PersistentFlags().Lookup("auth-server"))
 
-	var defaultOAuth2KeyFile string
 	dir, err := homedir.Dir()
 	if err == nil {
-		expanded, err := homedir.Expand(dir)
-		if err == nil {
-			defaultOAuth2KeyFile = path.Join(expanded, ".ttn/oauth2-token.pub")
+		dir, _ = homedir.Expand(dir)
+	}
+	if dir == "" {
+		dir, err = os.Getwd()
+		if err != nil {
+			panic(err)
 		}
 	}
-
-	RootCmd.PersistentFlags().String("oauth2-keyfile", defaultOAuth2KeyFile, "The OAuth 2.0 public key")
-	viper.BindPFlag("oauth2-keyfile", RootCmd.PersistentFlags().Lookup("oauth2-keyfile"))
 
 	RootCmd.PersistentFlags().Bool("tls", false, "Use TLS")
 	viper.BindPFlag("tls", RootCmd.PersistentFlags().Lookup("tls"))

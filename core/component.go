@@ -7,6 +7,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"path"
 	"runtime"
 	"time"
 
@@ -71,7 +72,7 @@ func NewComponent(ctx log.Interface, serviceName string, announcedAddress string
 		Discovery:   discovery,
 		TokenKeyProvider: tokenkey.NewHTTPProvider(
 			fmt.Sprintf("%s/key", viper.GetString("auth-server")),
-			viper.GetString("oauth2-keyfile"),
+			path.Join(viper.GetString("key-dir"), "/auth-server.pub"),
 		),
 	}
 
