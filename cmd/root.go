@@ -72,9 +72,6 @@ func init() {
 	RootCmd.PersistentFlags().String("id", "", "The id of this component")
 	viper.BindPFlag("id", RootCmd.PersistentFlags().Lookup("id"))
 
-	RootCmd.PersistentFlags().String("token", "", "The auth token this component should use")
-	viper.BindPFlag("token", RootCmd.PersistentFlags().Lookup("token"))
-
 	RootCmd.PersistentFlags().String("description", "", "The description of this component")
 	viper.BindPFlag("description", RootCmd.PersistentFlags().Lookup("description"))
 
@@ -83,6 +80,9 @@ func init() {
 
 	RootCmd.PersistentFlags().String("auth-server", "https://account.thethingsnetwork.org", "The address of the OAuth 2.0 server")
 	viper.BindPFlag("auth-server", RootCmd.PersistentFlags().Lookup("auth-server"))
+
+	RootCmd.PersistentFlags().String("auth-token", "", "The auth token signed JWT from the auth-server")
+	viper.BindPFlag("auth-token", RootCmd.PersistentFlags().Lookup("auth-token"))
 
 	dir, err := homedir.Dir()
 	if err == nil {

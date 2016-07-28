@@ -33,7 +33,7 @@ var brokerRegisterPrefixCmd = &cobra.Command{
 		md := metadata.Pairs(
 			"service-name", "broker",
 			"id", viper.GetString("id"),
-			"token", viper.GetString("token"),
+			"token", viper.GetString("auth-token"),
 		)
 		dscContext := metadata.NewContext(context.Background(), md)
 

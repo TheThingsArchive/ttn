@@ -68,7 +68,7 @@ func NewComponent(ctx log.Interface, serviceName string, announcedAddress string
 			ServiceName: serviceName,
 			NetAddress:  announcedAddress,
 		},
-		AccessToken: viper.GetString("token"),
+		AccessToken: viper.GetString("auth-token"),
 		Discovery:   discovery,
 		TokenKeyProvider: tokenkey.NewHTTPProvider(
 			fmt.Sprintf("%s/key", viper.GetString("auth-server")),
