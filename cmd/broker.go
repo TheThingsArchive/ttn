@@ -12,8 +12,6 @@ import (
 	"syscall"
 	"time"
 
-	"gopkg.in/redis.v3"
-
 	"google.golang.org/grpc"
 
 	"github.com/TheThingsNetwork/ttn/core"
@@ -34,20 +32,10 @@ var brokerCmd = &cobra.Command{
 			"Announce":           fmt.Sprintf("%s:%d", viper.GetString("broker.server-address-announce"), viper.GetInt("broker.server-port")),
 			"NetworkServer":      viper.GetString("broker.networkserver-address"),
 			"DeduplicationDelay": viper.GetString("broker.deduplication-delay"),
-			"Database":           fmt.Sprintf("%s/%d", viper.GetString("broker.redis-address"), viper.GetInt("broker.redis-db")),
 		}).Info("Initializing Broker")
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx.Info("Starting")
-
-		// Redis Client
-		client := redis.NewClient(&redis.Options{
-			Addr:     viper.GetString("broker.redis-address"),
-			Password: "", // no password set
-			DB:       int64(viper.GetInt("broker.redis-db")),
-		})
-
-		connectRedis(client)
 
 		// Component
 		component, err := core.NewComponent(ctx, "broker", fmt.Sprintf("%s:%d", viper.GetString("broker.server-address-announce"), viper.GetInt("broker.server-port")))
@@ -65,9 +53,8 @@ var brokerCmd = &cobra.Command{
 		}
 
 		// Broker
-		broker := broker.NewRedisBroker(
-			client,
-			time.Duration(viper.GetInt("broker.deduplication-delay"))*time.Millisecond,
+		broker := broker.NewBroker(
+			time.Duration(viper.GetInt("broker.deduplication-delay")) * time.Millisecond,
 		)
 		broker.SetNetworkServer(viper.GetString("broker.networkserver-address"), nsCert, viper.GetString("broker.networkserver-token"))
 		err = broker.Init(component)
@@ -97,11 +84,6 @@ var brokerCmd = &cobra.Command{
 
 func init() {
 	RootCmd.AddCommand(brokerCmd)
-
-	brokerCmd.Flags().String("redis-address", "localhost:6379", "Redis host and port")
-	viper.BindPFlag("broker.redis-address", brokerCmd.Flags().Lookup("redis-address"))
-	brokerCmd.Flags().Int("redis-db", 0, "Redis database")
-	viper.BindPFlag("broker.redis-db", brokerCmd.Flags().Lookup("redis-db"))
 
 	brokerCmd.Flags().String("networkserver-address", "localhost:1903", "Networkserver host and port")
 	viper.BindPFlag("broker.networkserver-address", brokerCmd.Flags().Lookup("networkserver-address"))

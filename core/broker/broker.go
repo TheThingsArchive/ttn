@@ -8,8 +8,6 @@ import (
 	"sync"
 	"time"
 
-	"gopkg.in/redis.v3"
-
 	"github.com/TheThingsNetwork/ttn/api"
 	pb "github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/api/networkserver"
@@ -34,7 +32,7 @@ type Broker interface {
 	DeactivateHandler(id string) error
 }
 
-func NewRedisBroker(client *redis.Client, timeout time.Duration) Broker {
+func NewBroker(timeout time.Duration) Broker {
 	return &broker{
 		routers:                make(map[string]chan *pb.DownlinkMessage),
 		handlers:               make(map[string]chan *pb.DeduplicatedUplinkMessage),
