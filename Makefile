@@ -31,7 +31,7 @@ ttnctlpkg = ttnctl-$(GOOS)-$(GOARCH)
 ttnbin = $(ttnpkg)$(GOEXE)
 ttnctlbin = $(ttnctlpkg)$(GOEXE)
 
-.PHONY: all clean deps update-deps test-deps dev-deps proto test fmt vet cover build docker package
+.PHONY: all clean deps update-deps test-deps proto-deps dev-deps cover-deps proto test fmt vet cover coveralls build install docker package
 
 all: clean deps build package
 
@@ -44,11 +44,15 @@ update-deps:
 test-deps:
 	$(GOCMD) get -d -v $(TEST_DEPS)
 
-dev-deps:
-	$(GOCMD) get -v github.com/ddollar/forego
-
 proto-deps:
 	$(GOCMD) get -v github.com/gogo/protobuf/protoc-gen-gofast
+
+dev-deps: update-deps proto-deps test-deps
+	$(GOCMD) get -v github.com/ddollar/forego
+
+cover-deps:
+	if ! $(GOCMD) get github.com/golang/tools/cmd/cover; then $(GOCMD) get golang.org/x/tools/cmd/cover; fi
+	$(GOCMD) get github.com/mattn/goveralls
 
 proto:
 	@$(PROTOC)/api/*.proto
@@ -61,10 +65,6 @@ proto:
 	@$(PROTOC)/api/networkserver/networkserver.proto
 	@$(PROTOC)/api/discovery/discovery.proto
 	@$(PROTOC)/api/noc/noc.proto
-
-cover-deps:
-	if ! $(GOCMD) get github.com/golang/tools/cmd/cover; then $(GOCMD) get golang.org/x/tools/cmd/cover; fi
-	$(GOCMD) get github.com/mattn/goveralls
 
 test:
 	$(select_pkgs) | xargs $(GOCMD) test
