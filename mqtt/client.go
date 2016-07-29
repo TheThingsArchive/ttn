@@ -106,22 +106,30 @@ func NewClient(ctx log.Interface, id, username, password string, brokers ...stri
 		ctx.WithField("message", msg).Warn("Received unhandled message")
 	})
 
+	var reconnecting bool
+
 	mqttOpts.SetConnectionLostHandler(func(client MQTT.Client, err error) {
 		ctx.WithError(err).Warn("Disconnected, reconnecting...")
+		reconnecting = true
 	})
 
 	ttnClient := &defaultClient{
-		mqtt:          MQTT.NewClient(mqttOpts),
 		ctx:           ctx,
 		subscriptions: make(map[string]MQTT.MessageHandler),
 	}
 
 	mqttOpts.SetOnConnectHandler(func(client MQTT.Client) {
-		ctx.Debug("Connected to MQTT")
-		for topic, handler := range ttnClient.subscriptions {
-			ttnClient.subscribe(topic, handler) // re-subscribe
+		ctx.Info("Connected to MQTT")
+		if reconnecting {
+			for topic, handler := range ttnClient.subscriptions {
+				ctx.Infof("Re-subscribing to %s", topic)
+				ttnClient.subscribe(topic, handler)
+			}
+			reconnecting = false
 		}
 	})
+
+	ttnClient.mqtt = MQTT.NewClient(mqttOpts)
 
 	return ttnClient
 }
