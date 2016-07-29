@@ -23,7 +23,7 @@ var subscribeCmd = &cobra.Command{
 		client := util.GetMQTT(ctx)
 		defer client.Disconnect()
 
-		client.SubscribeActivations(func(client mqtt.Client, appID string, devID string, req mqtt.Activation) {
+		token := client.SubscribeActivations(func(client mqtt.Client, appID string, devID string, req mqtt.Activation) {
 			ctx.Info("Activation")
 			printKV("AppID", appID)
 			printKV("DevID", devID)
@@ -32,8 +32,13 @@ var subscribeCmd = &cobra.Command{
 			printKV("DevAddr", req.DevAddr)
 			fmt.Println()
 		})
+		token.Wait()
+		if err := token.Error(); err != nil {
+			ctx.WithError(err).Fatal("Could not subscribe to activations")
+		}
+		ctx.Info("Subscribed to activations")
 
-		client.SubscribeUplink(func(client mqtt.Client, appID string, devID string, req mqtt.UplinkMessage) {
+		token = client.SubscribeUplink(func(client mqtt.Client, appID string, devID string, req mqtt.UplinkMessage) {
 			ctx.Info("Uplink Message")
 			printKV("AppID", appID)
 			printKV("DevID", devID)
@@ -48,6 +53,11 @@ var subscribeCmd = &cobra.Command{
 			}
 			fmt.Println()
 		})
+		token.Wait()
+		if err := token.Error(); err != nil {
+			ctx.WithError(err).Fatal("Could not subscribe to uplink")
+		}
+		ctx.Info("Subscribed to uplink")
 
 		sigChan := make(chan os.Signal)
 		signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)

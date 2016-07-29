@@ -60,6 +60,8 @@ func GetMQTT(ctx log.Interface) mqtt.Client {
 	broker := fmt.Sprintf("tcp://%s", viper.GetString("mqtt-broker"))
 	client := mqtt.NewClient(ctx, "ttnctl", appID, key.Key, broker)
 
+	ctx.WithField("MQTT Broker", broker).Info("Connecting to MQTT...")
+
 	if err := client.Connect(); err != nil {
 		ctx.WithError(err).Fatal("Could not connect")
 	}
