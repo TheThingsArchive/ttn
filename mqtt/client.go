@@ -186,6 +186,8 @@ func (c *defaultClient) IsConnected() bool {
 
 func (c *defaultClient) PublishUplink(dataUp UplinkMessage) Token {
 	topic := DeviceTopic{dataUp.AppID, dataUp.DevID, Uplink}
+	dataUp.AppID = ""
+	dataUp.DevID = ""
 	msg, err := json.Marshal(dataUp)
 	if err != nil {
 		return &simpleToken{fmt.Errorf("Unable to marshal the message payload")}
@@ -206,6 +208,8 @@ func (c *defaultClient) SubscribeDeviceUplink(appID string, devID string, handle
 		// Unmarshal the payload
 		dataUp := &UplinkMessage{}
 		err = json.Unmarshal(msg.Payload(), dataUp)
+		dataUp.AppID = topic.AppID
+		dataUp.DevID = topic.DevID
 
 		if err != nil {
 			c.ctx.WithError(err).Warn("Could not unmarshal uplink")
@@ -238,6 +242,8 @@ func (c *defaultClient) UnsubscribeUplink() Token {
 
 func (c *defaultClient) PublishDownlink(dataDown DownlinkMessage) Token {
 	topic := DeviceTopic{dataDown.AppID, dataDown.DevID, Downlink}
+	dataDown.AppID = ""
+	dataDown.DevID = ""
 	msg, err := json.Marshal(dataDown)
 	if err != nil {
 		return &simpleToken{fmt.Errorf("Unable to marshal the message payload")}
@@ -262,6 +268,8 @@ func (c *defaultClient) SubscribeDeviceDownlink(appID string, devID string, hand
 			c.ctx.WithError(err).Warn("Could not unmarshal Downlink")
 			return
 		}
+		dataDown.AppID = topic.AppID
+		dataDown.DevID = topic.DevID
 
 		// Call the Downlink handler
 		handler(c, topic.AppID, topic.DevID, *dataDown)
@@ -289,6 +297,8 @@ func (c *defaultClient) UnsubscribeDownlink() Token {
 
 func (c *defaultClient) PublishActivation(activation Activation) Token {
 	topic := DeviceTopic{activation.AppID, activation.DevID, Activations}
+	activation.AppID = ""
+	activation.DevID = ""
 	msg, err := json.Marshal(activation)
 	if err != nil {
 		return &simpleToken{fmt.Errorf("Unable to marshal the message payload")}
@@ -313,6 +323,8 @@ func (c *defaultClient) SubscribeDeviceActivations(appID string, devID string, h
 			c.ctx.WithError(err).Warn("Could not unmarshal Activation")
 			return
 		}
+		activation.AppID = topic.AppID
+		activation.DevID = topic.DevID
 
 		// Call the Activation handler
 		handler(c, topic.AppID, topic.DevID, *activation)
