@@ -19,7 +19,7 @@ DEPS = `comm -23 <(sort <($(GOCMD) list -f '{{join .Imports "\n"}}' ./...) | uni
 TEST_DEPS = `comm -23 <(sort <($(GOCMD) list -f '{{join .TestImports "\n"}}' ./...) | uniq) <($(GOCMD) list std) | grep -v TheThingsNetwork`
 
 select_pkgs = $(GOCMD) list ./... | grep -vE 'vendor|ttnctl'
-coverage_pkgs = $(GOCMD) list ./... | grep -E 'core' | grep -vE 'core$$|mocks$$'
+coverage_pkgs = $(GOCMD) list ./... | grep -vE 'ttn/api|ttn/cmd|ttn/vendor|ttn/ttnctl'
 
 RELEASE_DIR ?= release
 COVER_FILE = coverage.out
