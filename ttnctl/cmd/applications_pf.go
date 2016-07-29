@@ -34,21 +34,26 @@ converting and validating binary payload.
 		if app.Decoder != "" {
 			ctx.Info("Decoder function")
 			fmt.Println(app.Decoder)
+		} else {
+			ctx.Info("No decoder function")
 		}
 
 		if app.Converter != "" {
 			ctx.Info("Converter function")
 			fmt.Println(app.Converter)
+		} else {
+			ctx.Info("No converter function")
 		}
 
 		if app.Validator != "" {
 			ctx.Info("Validator function")
 			fmt.Println(app.Validator)
+		} else {
+			ctx.Info("No validator function")
 		}
 	},
 }
 
 func init() {
 	applicationsCmd.AddCommand(applicationsPayloadFunctionsCmd)
-	applicationsPayloadFunctionsCmd.AddCommand(applicationsPayloadFunctionsSetCmd)
 }
