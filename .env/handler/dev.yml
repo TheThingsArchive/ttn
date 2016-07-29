@@ -1,0 +1,7 @@
+id: dev
+debug: true
+discovery-server: "localhost:1900"
+tls: true
+key-dir: "./.env/handler/"
+
+auth-token: eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJkZXYiLCJ0eXBlIjoiaGFuZGxlciIsImlhdCI6MTQ2OTc5MjU3OH0.KM579aO-zSGCms87dEeovUS6M3P45Lks_Ctch5xcmpOwF2HjhQqCU7F476OxAaS70OJ2owpBF9Py_ZwcxaxGcnyx4FVW9V3nSd4aXmUQ4sIwP9zVut9xNB-3gelttvP6MRLl2EoUcGF-5nIEP-AanhVH8jyC_AFMXafyNMJAOE0M3gSlprTcm80h8jRRRjD8fhac_JMvfJfqjS41pw5SKo8csTJVql5-zuAE0hiCY_CREiHJLY8BmX8bqNgQFZr3QlqeJMxcy29kKuZYCi_jYSnCh8LjD6ebOxx99mIcniGk6hbVQNmARns-RZpwPLFOIdsPwxGKIzPD6Liato4kXw

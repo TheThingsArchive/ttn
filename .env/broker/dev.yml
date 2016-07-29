@@ -1,0 +1,11 @@
+id: dev
+debug: true
+discovery-server: "localhost:1900"
+tls: true
+key-dir: "./.env/broker/"
+
+auth-token: eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJkZXYiLCJ0eXBlIjoiYnJva2VyIiwiaWF0IjoxNDY5NzkyNTc2fQ.BPY3MIeXA0-mzOW9Y-Zef9ME03oz13glerh-1HtkiS0_d7vkReJfG3KaWIvISbETql8ooErphP0-LE0xcCvPlqRRBPM-fPhy2DTyMSVsNPmaABC2WtWvqIsVjoPCqhu3TRzBQkvf9CE6o7F3wXQCOHQzcLXF3EsKUqSK8_p1dpFYsrVdx6V0gylzi5Ne3z5oEqKmUc8L5j14fXpwUOUMIF7awfrbs0E2h5JpvyN6cN__OX5do7o-Icm6WB4sRZzGSIONmwH4BEeqiTb-BM3FYGfPEdeiGl1W4A2-v_m8iU28L28y5Z9b_iPnUufb0K3ffXP7MkRPNRl5G1LpafofOQ
+
+broker:
+  networkserver-cert: ./.env/broker/networkserver.cert
+  networkserver-token: eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE0Njk3OTQzNTksIm5iZiI6MTQ2OTc5NDM1OSwic3ViIjoiZGV2In0.Xj1AFEAblzFLdS5cUiDrG773EqHazARvGdkTHFoPa_c0XGhdKSrevVpTNkzvcXeTQTWnTQrg1t98atNIk7F13Q

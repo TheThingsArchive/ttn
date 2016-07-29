@@ -1,0 +1,6 @@
+id: dev
+debug: true
+discovery-server: "localhost:1900"
+key-dir: "./.env/discovery/"
+# We use a non-existing server, so that the discovery just grabs the auth-server.pub form the key-dir
+auth-server: "http://localhost:5000"

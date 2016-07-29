@@ -1,0 +1,4 @@
+discovery-server: localhost:1900
+mqtt-broker: localhost:1883
+ttn-handler: dev
+ttn-router: dev

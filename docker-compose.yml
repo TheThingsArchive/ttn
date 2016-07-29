@@ -1,0 +1,70 @@
+version: '2'
+services:
+  redis:
+    image: redis
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./.env/redis:/data
+  mosquitto:
+    image: ansi/mosquitto
+    ports:
+      - "1883:1883"
+  discovery:
+    image: thethingsnetwork/ttn
+    working_dir: /root
+    command: discovery --config ./.env/discovery/dev.yml --auth-server "http://192.168.1.29:5000"
+    environment:
+      TTN_DISCOVERY_REDIS_ADDRESS: redis:6379
+    ports:
+      - "1900:1900"
+    volumes:
+      - "./.env/:/root/.env/"
+  router:
+    image: thethingsnetwork/ttn
+    working_dir: /root
+    command: router --config ./.env/router/dev.yml --auth-server "http://192.168.1.29:5000"
+    environment:
+      TTN_DISCOVERY_SERVER: discovery:1900
+      TTN_ROUTER_SERVER_ADDRESS_ANNOUNCE: router
+    ports:
+      - "1901:1901"
+    volumes:
+      - "./.env/:/root/.env/"
+  broker:
+    image: thethingsnetwork/ttn
+    working_dir: /root
+    command: broker --config ./.env/broker/dev.yml --auth-server "http://192.168.1.29:5000"
+    environment:
+      TTN_DISCOVERY_SERVER: discovery:1900
+      TTN_BROKER_SERVER_ADDRESS_ANNOUNCE: broker
+      TTN_BROKER_NETWORKSERVER_ADDRESS: networkserver:1903
+    ports:
+      - "1902:1902"
+    volumes:
+      - "./.env/:/root/.env/"
+  networkserver:
+    image: thethingsnetwork/ttn
+    working_dir: /root
+    command: networkserver --config ./.env/networkserver/dev.yml --auth-server "http://192.168.1.29:5000"
+    environment:
+      TTN_DISCOVERY_SERVER: discovery:1900
+      TTN_NETWORKSERVER_REDIS_ADDRESS: redis:6379
+    ports:
+      - "1903:1903"
+    volumes:
+      - "./.env/:/root/.env/"
+  handler:
+    image: thethingsnetwork/ttn
+    working_dir: /root
+    command: handler --config ./.env/handler/dev.yml --auth-server "http://192.168.1.29:5000"
+    environment:
+      TTN_DISCOVERY_SERVER: discovery:1900
+      TTN_HANDLER_SERVER_ADDRESS_ANNOUNCE: handler
+      TTN_HANDLER_REDIS_ADDRESS: redis:6379
+      TTN_HANDLER_MQTT_BROKER: mosquitto:1883
+    ports:
+      - "1904:1904"
+    volumes:
+      - "./.env/:/root/.env/"

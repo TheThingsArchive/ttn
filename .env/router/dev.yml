@@ -1,0 +1,7 @@
+id: dev
+debug: true
+discovery-server: "localhost:1900"
+tls: true
+key-dir: "./.env/router/"
+
+auth-token: eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJkZXYiLCJ0eXBlIjoicm91dGVyIiwiaWF0IjoxNDY5NzkyNTczfQ.nIH2eqv8F7Rmd0v2WLQJrK8jZT-3-ONka_FxuTdu0rQbNyKyOzXjr10Y9hG0CmS2Fn4nM37P7gsjyEhiCYVfMg7cRwAKSPEzC_0caW3dTQV0CgQ6S-sNGVD_ElBPHhrW11moetPpL1G5eJAoB4FtksREmdNikofuQ3z2F-LK5u7NaHiZd_EqOp6K5fedwMzRoXIJl9gthZLnXee0ShgHxzqWR-oS0fl-fw48IJ_aLhDngWi9ECloseDAfO31kzEA5l_wgsic6xBpC2y-bItj_MbT_84pqWc1NdtFlQNsOtZwzRw0w27K9PafTEOLSaVjGWy_FEckbsmUpq3_UYeDJw

@@ -1,0 +1,4 @@
+debug: true
+discovery-server: "localhost:1900"
+tls: true
+key-dir: "./.env/networkserver/"
