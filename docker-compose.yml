@@ -14,7 +14,7 @@ services:
   discovery:
     image: thethingsnetwork/ttn
     working_dir: /root
-    command: discovery --config ./.env/discovery/dev.yml --auth-server "http://192.168.1.29:5000"
+    command: discovery --config ./.env/discovery/dev.yml
     environment:
       TTN_DISCOVERY_REDIS_ADDRESS: redis:6379
     ports:
@@ -24,7 +24,7 @@ services:
   router:
     image: thethingsnetwork/ttn
     working_dir: /root
-    command: router --config ./.env/router/dev.yml --auth-server "http://192.168.1.29:5000"
+    command: router --config ./.env/router/dev.yml
     environment:
       TTN_DISCOVERY_SERVER: discovery:1900
       TTN_ROUTER_SERVER_ADDRESS_ANNOUNCE: router
@@ -35,7 +35,7 @@ services:
   broker:
     image: thethingsnetwork/ttn
     working_dir: /root
-    command: broker --config ./.env/broker/dev.yml --auth-server "http://192.168.1.29:5000"
+    command: broker --config ./.env/broker/dev.yml
     environment:
       TTN_DISCOVERY_SERVER: discovery:1900
       TTN_BROKER_SERVER_ADDRESS_ANNOUNCE: broker
@@ -47,7 +47,7 @@ services:
   networkserver:
     image: thethingsnetwork/ttn
     working_dir: /root
-    command: networkserver --config ./.env/networkserver/dev.yml --auth-server "http://192.168.1.29:5000"
+    command: networkserver --config ./.env/networkserver/dev.yml
     environment:
       TTN_DISCOVERY_SERVER: discovery:1900
       TTN_NETWORKSERVER_REDIS_ADDRESS: redis:6379
@@ -58,7 +58,7 @@ services:
   handler:
     image: thethingsnetwork/ttn
     working_dir: /root
-    command: handler --config ./.env/handler/dev.yml --auth-server "http://192.168.1.29:5000"
+    command: handler --config ./.env/handler/dev.yml
     environment:
       TTN_DISCOVERY_SERVER: discovery:1900
       TTN_HANDLER_SERVER_ADDRESS_ANNOUNCE: handler

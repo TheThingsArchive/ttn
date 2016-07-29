@@ -30,6 +30,8 @@ When you get started with The Things Network, you'll probably have some question
 4. Install the dependencies for development: `make dev-deps`
 5. Run the tests: `make test`
 
+**NOTE:** From now on you should run all commands from the `$GOPATH/src/github.com/TheThingsNetwork/ttn` directory.
+
 ## Build, install and run The Things Network's backend locally
 
 1. Configure your `ttnctl` with the settings in `.env/ttnctl.yaml.dev-example`
@@ -42,9 +44,11 @@ When you get started with The Things Network, you'll probably have some question
 ## Build and run The Things Network's backend in Docker
 
 1. Configure your `ttnctl` with the settings in `.env/ttnctl.yaml.dev-example`
-2. Run `make docker`
-3. Run `docker-compose up`
-4. First time only (or when Redis is flushed):
+2. Add the following line to your `/etc/hosts` file:
+    `127.0.0.1 router handler`
+3. Run `make install docker`
+4. Run `docker-compose up`
+5. First time only (or when Redis is flushed):
   * Run `docker-compose run broker broker register-prefix 00000000/0 --config ./.env/broker/dev.yml`
   * Restart the backend
 
