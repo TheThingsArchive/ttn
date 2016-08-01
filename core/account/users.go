@@ -76,3 +76,23 @@ func (a *Account) EditProfile(profile Profile) error {
 	}
 	return err
 }
+
+type editPasswordReq struct {
+	OldPassword string `json:"old_password"`
+	Password    string `json:"password"`
+}
+
+// EditPassword edits the users password, it requires the old password
+// to be given.
+func (a *Account) EditPassword(oldPassword, newPassword string) error {
+	edits := editPasswordReq{
+		OldPassword: oldPassword,
+		Password:    newPassword,
+	}
+
+	err := a.patch("/api/users/me", edits, nil)
+	if err != nil {
+		return fmt.Errorf("Could change not password: %s", err)
+	}
+	return nil
+}
