@@ -50,9 +50,13 @@ type Client interface {
 	UnsubscribeActivations() Token
 }
 
+// Token is returned on asyncronous functions
 type Token interface {
+	// Wait for the function to finish
 	Wait() bool
+	// Wait for the function to finish or return false after a certain time
 	WaitTimeout(time.Duration) bool
+	// The error associated with the result of the function (nil if everything okay)
 	Error() error
 }
 
@@ -75,16 +79,23 @@ func (t *simpleToken) Error() error {
 	return t.err
 }
 
+// UplinkHandler is called for uplink messages
 type UplinkHandler func(client Client, appID string, devID string, req UplinkMessage)
+
+// DownlinkHandler is called for downlink messages
 type DownlinkHandler func(client Client, appID string, devID string, req DownlinkMessage)
+
+// ActivationHandler is called for activations
 type ActivationHandler func(client Client, appID string, devID string, req Activation)
 
-type defaultClient struct {
+// DefaultClient is the default MQTT client for The Things Network
+type DefaultClient struct {
 	mqtt          MQTT.Client
 	ctx           log.Interface
 	subscriptions map[string]MQTT.MessageHandler
 }
 
+// NewClient creates a new DefaultClient
 func NewClient(ctx log.Interface, id, username, password string, brokers ...string) Client {
 	mqttOpts := MQTT.NewClientOptions()
 
@@ -113,7 +124,7 @@ func NewClient(ctx log.Interface, id, username, password string, brokers ...stri
 		reconnecting = true
 	})
 
-	ttnClient := &defaultClient{
+	ttnClient := &DefaultClient{
 		ctx:           ctx,
 		subscriptions: make(map[string]MQTT.MessageHandler),
 	}
@@ -141,7 +152,8 @@ var (
 	ConnectRetryDelay = time.Second
 )
 
-func (c *defaultClient) Connect() error {
+// Connect to the MQTT broker. It will retry for ConnectRetries times with a delay of ConnectRetryDelay between retries
+func (c *DefaultClient) Connect() error {
 	if c.mqtt.IsConnected() {
 		return nil
 	}
@@ -162,17 +174,18 @@ func (c *defaultClient) Connect() error {
 	return nil
 }
 
-func (c *defaultClient) subscribe(topic string, handler MQTT.MessageHandler) Token {
+func (c *DefaultClient) subscribe(topic string, handler MQTT.MessageHandler) Token {
 	c.subscriptions[topic] = handler
 	return c.mqtt.Subscribe(topic, QoS, handler)
 }
 
-func (c *defaultClient) unsubscribe(topic string) Token {
+func (c *DefaultClient) unsubscribe(topic string) Token {
 	delete(c.subscriptions, topic)
 	return c.mqtt.Unsubscribe(topic)
 }
 
-func (c *defaultClient) Disconnect() {
+// Disconnect from the MQTT broker
+func (c *DefaultClient) Disconnect() {
 	if !c.mqtt.IsConnected() {
 		return
 	}
@@ -180,11 +193,13 @@ func (c *defaultClient) Disconnect() {
 	c.mqtt.Disconnect(25)
 }
 
-func (c *defaultClient) IsConnected() bool {
+// IsConnected returns true if there is a connection to the MQTT broker
+func (c *DefaultClient) IsConnected() bool {
 	return c.mqtt.IsConnected()
 }
 
-func (c *defaultClient) PublishUplink(dataUp UplinkMessage) Token {
+// PublishUplink publishes an uplink message to the MQTT broker
+func (c *DefaultClient) PublishUplink(dataUp UplinkMessage) Token {
 	topic := DeviceTopic{dataUp.AppID, dataUp.DevID, Uplink}
 	dataUp.AppID = ""
 	dataUp.DevID = ""
@@ -195,7 +210,8 @@ func (c *defaultClient) PublishUplink(dataUp UplinkMessage) Token {
 	return c.mqtt.Publish(topic.String(), QoS, false, msg)
 }
 
-func (c *defaultClient) SubscribeDeviceUplink(appID string, devID string, handler UplinkHandler) Token {
+// SubscribeDeviceUplink subscribes to all uplink messages for the given application and device
+func (c *DefaultClient) SubscribeDeviceUplink(appID string, devID string, handler UplinkHandler) Token {
 	topic := DeviceTopic{appID, devID, Uplink}
 	return c.subscribe(topic.String(), func(mqtt MQTT.Client, msg MQTT.Message) {
 		// Determine the actual topic
@@ -221,26 +237,34 @@ func (c *defaultClient) SubscribeDeviceUplink(appID string, devID string, handle
 	})
 }
 
-func (c *defaultClient) SubscribeAppUplink(appID string, handler UplinkHandler) Token {
+// SubscribeAppUplink subscribes to all uplink messages for the given application
+func (c *DefaultClient) SubscribeAppUplink(appID string, handler UplinkHandler) Token {
 	return c.SubscribeDeviceUplink(appID, "", handler)
 }
 
-func (c *defaultClient) SubscribeUplink(handler UplinkHandler) Token {
+// SubscribeUplink subscribes to all uplink messages that the current user has access to
+func (c *DefaultClient) SubscribeUplink(handler UplinkHandler) Token {
 	return c.SubscribeDeviceUplink("", "", handler)
 }
 
-func (c *defaultClient) UnsubscribeDeviceUplink(appID string, devID string) Token {
+// UnsubscribeDeviceUplink unsubscribes from the uplink messages for the given application and device
+func (c *DefaultClient) UnsubscribeDeviceUplink(appID string, devID string) Token {
 	topic := DeviceTopic{appID, devID, Uplink}
 	return c.unsubscribe(topic.String())
 }
-func (c *defaultClient) UnsubscribeAppUplink(appID string) Token {
+
+// UnsubscribeAppUplink unsubscribes from the uplink messages for the given application
+func (c *DefaultClient) UnsubscribeAppUplink(appID string) Token {
 	return c.UnsubscribeDeviceUplink(appID, "")
 }
-func (c *defaultClient) UnsubscribeUplink() Token {
+
+// UnsubscribeUplink unsubscribes from the uplink messages that the current user has access to
+func (c *DefaultClient) UnsubscribeUplink() Token {
 	return c.UnsubscribeDeviceUplink("", "")
 }
 
-func (c *defaultClient) PublishDownlink(dataDown DownlinkMessage) Token {
+// PublishDownlink publishes a downlink message
+func (c *DefaultClient) PublishDownlink(dataDown DownlinkMessage) Token {
 	topic := DeviceTopic{dataDown.AppID, dataDown.DevID, Downlink}
 	dataDown.AppID = ""
 	dataDown.DevID = ""
@@ -251,7 +275,8 @@ func (c *defaultClient) PublishDownlink(dataDown DownlinkMessage) Token {
 	return c.mqtt.Publish(topic.String(), QoS, false, msg)
 }
 
-func (c *defaultClient) SubscribeDeviceDownlink(appID string, devID string, handler DownlinkHandler) Token {
+// SubscribeDeviceDownlink subscribes to all downlink messages for the given application and device
+func (c *DefaultClient) SubscribeDeviceDownlink(appID string, devID string, handler DownlinkHandler) Token {
 	topic := DeviceTopic{appID, devID, Downlink}
 	return c.subscribe(topic.String(), func(mqtt MQTT.Client, msg MQTT.Message) {
 		// Determine the actual topic
@@ -276,26 +301,34 @@ func (c *defaultClient) SubscribeDeviceDownlink(appID string, devID string, hand
 	})
 }
 
-func (c *defaultClient) SubscribeAppDownlink(appID string, handler DownlinkHandler) Token {
+// SubscribeAppDownlink subscribes to all downlink messages for the given application
+func (c *DefaultClient) SubscribeAppDownlink(appID string, handler DownlinkHandler) Token {
 	return c.SubscribeDeviceDownlink(appID, "", handler)
 }
 
-func (c *defaultClient) SubscribeDownlink(handler DownlinkHandler) Token {
+// SubscribeDownlink subscribes to all downlink messages that the current user has access to
+func (c *DefaultClient) SubscribeDownlink(handler DownlinkHandler) Token {
 	return c.SubscribeDeviceDownlink("", "", handler)
 }
 
-func (c *defaultClient) UnsubscribeDeviceDownlink(appID string, devID string) Token {
+// UnsubscribeDeviceDownlink unsubscribes from the downlink messages for the given application and device
+func (c *DefaultClient) UnsubscribeDeviceDownlink(appID string, devID string) Token {
 	topic := DeviceTopic{appID, devID, Downlink}
 	return c.unsubscribe(topic.String())
 }
-func (c *defaultClient) UnsubscribeAppDownlink(appID string) Token {
+
+// UnsubscribeAppDownlink unsubscribes from the downlink messages for the given application
+func (c *DefaultClient) UnsubscribeAppDownlink(appID string) Token {
 	return c.UnsubscribeDeviceDownlink(appID, "")
 }
-func (c *defaultClient) UnsubscribeDownlink() Token {
+
+// UnsubscribeDownlink unsubscribes from the downlink messages that the current user has access to
+func (c *DefaultClient) UnsubscribeDownlink() Token {
 	return c.UnsubscribeDeviceDownlink("", "")
 }
 
-func (c *defaultClient) PublishActivation(activation Activation) Token {
+// PublishActivation publishes an activation
+func (c *DefaultClient) PublishActivation(activation Activation) Token {
 	topic := DeviceTopic{activation.AppID, activation.DevID, Activations}
 	activation.AppID = ""
 	activation.DevID = ""
@@ -306,7 +339,8 @@ func (c *defaultClient) PublishActivation(activation Activation) Token {
 	return c.mqtt.Publish(topic.String(), QoS, false, msg)
 }
 
-func (c *defaultClient) SubscribeDeviceActivations(appID string, devID string, handler ActivationHandler) Token {
+// SubscribeDeviceActivations subscribes to all activations for the given application and device
+func (c *DefaultClient) SubscribeDeviceActivations(appID string, devID string, handler ActivationHandler) Token {
 	topic := DeviceTopic{appID, devID, Activations}
 	return c.subscribe(topic.String(), func(mqtt MQTT.Client, msg MQTT.Message) {
 		// Determine the actual topic
@@ -331,23 +365,28 @@ func (c *defaultClient) SubscribeDeviceActivations(appID string, devID string, h
 	})
 }
 
-func (c *defaultClient) SubscribeAppActivations(appID string, handler ActivationHandler) Token {
+// SubscribeAppActivations subscribes to all activations for the given application
+func (c *DefaultClient) SubscribeAppActivations(appID string, handler ActivationHandler) Token {
 	return c.SubscribeDeviceActivations(appID, "", handler)
 }
 
-func (c *defaultClient) SubscribeActivations(handler ActivationHandler) Token {
+// SubscribeActivations subscribes to all activations that the current user has access to
+func (c *DefaultClient) SubscribeActivations(handler ActivationHandler) Token {
 	return c.SubscribeDeviceActivations("", "", handler)
 }
 
-func (c *defaultClient) UnsubscribeDeviceActivations(appID string, devID string) Token {
+// UnsubscribeDeviceActivations unsubscribes from the activations for the given application and device
+func (c *DefaultClient) UnsubscribeDeviceActivations(appID string, devID string) Token {
 	topic := DeviceTopic{appID, devID, Activations}
 	return c.unsubscribe(topic.String())
 }
 
-func (c *defaultClient) UnsubscribeAppActivations(appID string) Token {
+// UnsubscribeAppActivations unsubscribes from the activations for the given application
+func (c *DefaultClient) UnsubscribeAppActivations(appID string) Token {
 	return c.UnsubscribeDeviceActivations(appID, "")
 }
 
-func (c *defaultClient) UnsubscribeActivations() Token {
+// UnsubscribeActivations unsubscribes from the activations that the current user has access to
+func (c *DefaultClient) UnsubscribeActivations() Token {
 	return c.UnsubscribeDeviceActivations("", "")
 }

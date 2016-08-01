@@ -10,6 +10,7 @@ import (
 	"time"
 
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
+	"github.com/apex/log"
 	. "github.com/smartystreets/assertions"
 )
 
@@ -28,7 +29,7 @@ func TestToken(t *testing.T) {
 func TestNewClient(t *testing.T) {
 	a := New(t)
 	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
-	a.So(c.(*defaultClient).mqtt, ShouldNotBeNil)
+	a.So(c.(*DefaultClient).mqtt, ShouldNotBeNil)
 }
 
 func TestConnect(t *testing.T) {
@@ -92,8 +93,8 @@ func TestRandomTopicPublish(t *testing.T) {
 	c.Connect()
 	defer c.Disconnect()
 
-	c.(*defaultClient).mqtt.Subscribe("randomtopic", QoS, nil).Wait()
-	c.(*defaultClient).mqtt.Publish("randomtopic", QoS, false, []byte{0x00}).Wait()
+	c.(*DefaultClient).mqtt.Subscribe("randomtopic", QoS, nil).Wait()
+	c.(*DefaultClient).mqtt.Publish("randomtopic", QoS, false, []byte{0x00}).Wait()
 
 	<-time.After(50 * time.Millisecond)
 
@@ -177,15 +178,13 @@ func TestPubSubUplink(t *testing.T) {
 	c.Connect()
 	defer c.Disconnect()
 
-	var wg sync.WaitGroup
-
-	wg.Add(1)
+	waitChan := make(chan bool, 1)
 
 	c.SubscribeDeviceUplink("app1", "dev1", func(client Client, appID string, devID string, req UplinkMessage) {
 		a.So(appID, ShouldResemble, "app1")
 		a.So(devID, ShouldResemble, "dev1")
 
-		wg.Done()
+		waitChan <- true
 	}).Wait()
 
 	c.PublishUplink(UplinkMessage{
@@ -194,7 +193,11 @@ func TestPubSubUplink(t *testing.T) {
 		DevID:   "dev1",
 	}).Wait()
 
-	wg.Wait()
+	select {
+	case <-waitChan:
+	case <-time.After(1 * time.Second):
+		panic("Did not receive Uplink")
+	}
 
 	c.UnsubscribeDeviceUplink("app1", "dev1").Wait()
 }
@@ -373,7 +376,7 @@ func TestPublishActivations(t *testing.T) {
 	dataActivations := Activation{
 		AppID:    "someid",
 		DevID:    "someid",
-		Metadata: []Metadata{Metadata{DataRate: "SF7BW125"}},
+		Metadata: Metadata{DataRate: "SF7BW125"},
 	}
 
 	token := c.PublishActivation(dataActivations)
@@ -453,7 +456,7 @@ func TestPubSubActivations(t *testing.T) {
 	c.PublishActivation(Activation{
 		AppID:    "app5",
 		DevID:    "dev1",
-		Metadata: []Metadata{Metadata{DataRate: "SF7BW125"}},
+		Metadata: Metadata{DataRate: "SF7BW125"},
 	}).Wait()
 
 	wg.Wait()
@@ -473,22 +476,56 @@ func TestPubSubAppActivations(t *testing.T) {
 
 	c.SubscribeAppActivations("app6", func(client Client, appID string, devID string, req Activation) {
 		a.So(appID, ShouldResemble, "app6")
-		a.So(req.Metadata[0].DataRate, ShouldEqual, "SF7BW125")
+		a.So(req.Metadata.DataRate, ShouldEqual, "SF7BW125")
 		wg.Done()
 	}).Wait()
 
 	c.PublishActivation(Activation{
 		AppID:    "app6",
 		DevID:    "dev1",
-		Metadata: []Metadata{Metadata{DataRate: "SF7BW125"}},
+		Metadata: Metadata{DataRate: "SF7BW125"},
 	}).Wait()
 	c.PublishActivation(Activation{
 		AppID:    "app6",
 		DevID:    "dev2",
-		Metadata: []Metadata{Metadata{DataRate: "SF7BW125"}},
+		Metadata: Metadata{DataRate: "SF7BW125"},
 	}).Wait()
 
 	wg.Wait()
 
 	c.UnsubscribeAppActivations("app6")
+}
+
+func ExampleNewClient() {
+	ctx := log.WithField("Example", "NewClient")
+	exampleClient := NewClient(ctx, "ttnctl", "my-app-id", "my-access-key", "staging.thethingsnetwork.org:1883")
+	err := exampleClient.Connect()
+	if err != nil {
+		ctx.WithError(err).Fatal("Could not connect")
+	}
+}
+
+var exampleClient Client
+
+func ExampleDefaultClient_SubscribeDeviceUplink() {
+	token := exampleClient.SubscribeDeviceUplink("my-app-id", "my-dev-id", func(client Client, appID string, devID string, req UplinkMessage) {
+		// Do something with the message
+	})
+	token.Wait()
+	if err := token.Error(); err != nil {
+		panic(err)
+	}
+}
+
+func ExampleDefaultClient_PublishDownlink() {
+	token := exampleClient.PublishDownlink(DownlinkMessage{
+		AppID:   "my-app-id",
+		DevID:   "my-dev-id",
+		FPort:   1,
+		Payload: []byte{0x01, 0x02, 0x03, 0x04},
+	})
+	token.Wait()
+	if err := token.Error(); err != nil {
+		panic(err)
+	}
 }

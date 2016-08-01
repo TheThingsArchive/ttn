@@ -69,10 +69,10 @@ func TestNextDownlink(t *testing.T) {
 	}
 	formatted, err := dev.formatProperty("next_downlink")
 	a.So(err, ShouldBeNil)
-	a.So(formatted, ShouldContainSubstring, `"fields":{"bool":true,"int":42,"string":"hello!"}`)
+	a.So(formatted, ShouldContainSubstring, `"payload_fields":{"bool":true,"int":42,"string":"hello!"}`)
 
 	dev = &Device{}
-	err = dev.parseProperty("next_downlink", `{"fields":{"bool":true,"int":42,"string":"hello!"}}`)
+	err = dev.parseProperty("next_downlink", `{"payload_fields":{"bool":true,"int":42,"string":"hello!"}}`)
 	a.So(err, ShouldBeNil)
 	a.So(dev.NextDownlink.Fields, ShouldNotBeNil)
 	a.So(dev.NextDownlink.Fields["bool"], ShouldBeTrue)

@@ -5,6 +5,7 @@ package handler
 
 import (
 	"testing"
+	"time"
 
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_gateway "github.com/TheThingsNetwork/ttn/api/gateway"
@@ -41,7 +42,7 @@ func TestConvertMetadata(t *testing.T) {
 
 	err = h.ConvertMetadata(h.Ctx, ttnUp, appUp)
 	a.So(err, ShouldBeNil)
-	a.So(appUp.Metadata, ShouldHaveLength, 2)
+	a.So(appUp.Metadata.Gateways, ShouldHaveLength, 2)
 
 	ttnUp.ProtocolMetadata = &pb_protocol.RxMetadata{Protocol: &pb_protocol.RxMetadata_Lorawan{
 		Lorawan: &pb_lorawan.Metadata{
@@ -51,8 +52,7 @@ func TestConvertMetadata(t *testing.T) {
 
 	err = h.ConvertMetadata(h.Ctx, ttnUp, appUp)
 	a.So(err, ShouldBeNil)
-	a.So(appUp.Metadata[0].DataRate, ShouldEqual, "SF7BW125")
-	a.So(appUp.Metadata[1].DataRate, ShouldEqual, "SF7BW125")
+	a.So(appUp.Metadata.DataRate, ShouldEqual, "SF7BW125")
 
 	ttnUp.GatewayMetadata[0].Time = 1465831736000000000
 	ttnUp.GatewayMetadata[0].Gps = &pb_gateway.GPSMetadata{
@@ -61,7 +61,7 @@ func TestConvertMetadata(t *testing.T) {
 
 	err = h.ConvertMetadata(h.Ctx, ttnUp, appUp)
 	a.So(err, ShouldBeNil)
-	a.So(appUp.Metadata[0].Latitude, ShouldEqual, 42)
-	a.So(appUp.Metadata[0].Time, ShouldEqual, "2016-06-13T15:28:56Z")
+	a.So(appUp.Metadata.Gateways[0].Latitude, ShouldEqual, 42)
+	a.So(time.Time(appUp.Metadata.Gateways[0].Time).UTC(), ShouldResemble, time.Date(2016, 06, 13, 15, 28, 56, 0, time.UTC))
 
 }

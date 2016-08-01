@@ -4,8 +4,6 @@
 package handler
 
 import (
-	"time"
-
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/mqtt"
 	"github.com/apex/log"
@@ -13,43 +11,44 @@ import (
 
 // ConvertMetadata converts the protobuf matadata to application metadata
 func (h *handler) ConvertMetadata(ctx log.Interface, ttnUp *pb_broker.DeduplicatedUplinkMessage, appUp *mqtt.UplinkMessage) error {
-
 	ctx = ctx.WithField("NumGateways", len(ttnUp.GatewayMetadata))
 
 	// Transform Metadata
-	metadata := make([]*mqtt.Metadata, 0, len(ttnUp.GatewayMetadata))
-	for _, in := range ttnUp.GatewayMetadata {
-		out := &mqtt.Metadata{}
-
-		out.ServerTime = time.Unix(0, 0).Add(time.Duration(ttnUp.ServerTime)).UTC().Format(time.RFC3339Nano)
-
-		if lorawan := ttnUp.ProtocolMetadata.GetLorawan(); lorawan != nil {
-			out.DataRate = lorawan.DataRate
-			out.CodingRate = lorawan.CodingRate
-			out.Modulation = lorawan.Modulation.String()
-		}
-
-		if in.GatewayEui != nil {
-			out.GatewayEUI = *in.GatewayEui
-		}
-		out.Timestamp = in.Timestamp
-		out.Time = time.Unix(0, 0).Add(time.Duration(in.Time)).UTC().Format(time.RFC3339Nano)
-		out.Channel = in.Channel
-		out.RFChain = in.RfChain
-		out.Frequency = float32(float64(in.Frequency) / 1000000)
-		out.Rssi = in.Rssi
-		out.Lsnr = in.Snr
-
-		if gps := in.GetGps(); gps != nil {
-			out.Altitude = gps.Altitude
-			out.Longitude = gps.Longitude
-			out.Latitude = gps.Latitude
-		}
-
-		metadata = append(metadata, out)
+	appUp.Metadata.Time = mqtt.BuildTime(ttnUp.ServerTime)
+	if lorawan := ttnUp.ProtocolMetadata.GetLorawan(); lorawan != nil {
+		appUp.Metadata.Modulation = lorawan.Modulation.String()
+		appUp.Metadata.DataRate = lorawan.DataRate
+		appUp.Metadata.Bitrate = lorawan.BitRate
+		appUp.Metadata.CodingRate = lorawan.CodingRate
 	}
 
-	appUp.Metadata = metadata
+	// Transform Gateway Metadata
+	appUp.Metadata.Gateways = make([]mqtt.GatewayMetadata, 0, len(ttnUp.GatewayMetadata))
+	for i, in := range ttnUp.GatewayMetadata {
+
+		// Same for all gateways, take first one
+		if i == 0 {
+			appUp.Metadata.Frequency = float32(float64(in.Frequency) / 1000000)
+		}
+
+		gatewayMetadata := mqtt.GatewayMetadata{
+			EUI:       *in.GatewayEui,
+			Timestamp: in.Timestamp,
+			Time:      mqtt.BuildTime(in.Time),
+			Channel:   in.Channel,
+			RFChain:   in.RfChain,
+			RSSI:      in.Rssi,
+			SNR:       in.Snr,
+		}
+
+		if gps := in.GetGps(); gps != nil {
+			gatewayMetadata.Altitude = gps.Altitude
+			gatewayMetadata.Longitude = gps.Longitude
+			gatewayMetadata.Latitude = gps.Latitude
+		}
+
+		appUp.Metadata.Gateways = append(appUp.Metadata.Gateways, gatewayMetadata)
+	}
 
 	return nil
 }
