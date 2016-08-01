@@ -39,7 +39,7 @@ When you get started with The Things Network, you'll probably have some question
 
 ## Build, install and run The Things Network's backend locally
 
-1. Configure your `ttnctl` with the settings in `.env/ttnctl.yaml.dev-example`
+1. Configure your `ttnctl` with the settings in `.env/ttnctl.yaml.dev-example` by copying that file to `~/.ttnctl.yaml`.
 2. Run `make install`
 3. Run `forego start`
 4. First time only (or when Redis is flushed):
@@ -48,7 +48,7 @@ When you get started with The Things Network, you'll probably have some question
 
 ## Build and run The Things Network's backend in Docker
 
-1. Configure your `ttnctl` with the settings in `.env/ttnctl.yaml.dev-example`
+1. Configure your `ttnctl` with the settings in `.env/ttnctl.yaml.dev-example` by copying that file to `~/.ttnctl.yaml`.
 2. Add the following line to your `/etc/hosts` file:
     `127.0.0.1 router handler`
 3. Run `make install docker`
