@@ -18,9 +18,14 @@ When you get started with The Things Network, you'll probably have some question
 
 ## Prepare your Development Environment
 
-1. Make sure you have [Go](https://golang.org), [Mosquitto](http://mosquitto.org/download/) and [Redis](http://redis.io/download) installed on your development machine. If you're on a Mac, just run `brew install go mosquitto redis`.
+1. Make sure you have [Go](https://golang.org) installed.
 2. Set up your [Go environment](https://golang.org/doc/code.html#GOPATH)
 3. Install the [protobuf compiler (`protoc`)](https://github.com/google/protobuf/releases)
+4. Make sure you have [Mosquitto](http://mosquitto.org/download/) and [Redis](http://redis.io/download) **installed** and **running**.  
+   If you're on a Mac, just run:
+    * `brew install go mosquitto redis`
+    * `brew services start mosquitto`
+    * `brew services start redis`
 
 ## Set up The Things Network's backend for Development
 
