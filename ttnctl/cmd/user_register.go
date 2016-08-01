@@ -33,6 +33,7 @@ var userRegisterCmd = &cobra.Command{
 			ctx.WithError(err).Fatal("Could not register user")
 		}
 		ctx.Info("Registered user")
+		ctx.Warn("You might have to verify your email before you can login")
 	},
 }
 

@@ -1,5 +1,2 @@
-router/auth-server.pub
-broker/auth-server.pub
-networkserver/auth-server.pub
-handler/auth-server.pub
+*/auth-server.pub
 redis/

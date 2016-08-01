@@ -1,6 +1,7 @@
 id: dev
 debug: true
 discovery-server: "localhost:1900"
+auth-server: https://staging.account.thethingsnetwork.org
 tls: true
 key-dir: "./.env/broker/"
 
