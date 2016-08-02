@@ -55,6 +55,7 @@ var routerCmd = &cobra.Command{
 
 		// Register and Listen
 		router.RegisterRPC(grpc)
+		router.RegisterManager(grpc)
 		go grpc.Serve(lis)
 
 		sigChan := make(chan os.Signal)
