@@ -42,6 +42,8 @@ var discoveryCmd = &cobra.Command{
 			DB:       int64(viper.GetInt("discovery.redis-db")),
 		})
 
+		connectRedis(client)
+
 		// Component
 		component, err := core.NewComponent(ctx, "discovery", fmt.Sprintf("%s:%d", viper.GetString("discovery.server-address-announce"), viper.GetInt("discovery.server-port")))
 		if err != nil {
