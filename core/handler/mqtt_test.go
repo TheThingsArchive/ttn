@@ -4,7 +4,6 @@
 package handler
 
 import (
-	"sync"
 	"testing"
 	"time"
 
@@ -17,7 +16,7 @@ import (
 
 func TestHandleMQTT(t *testing.T) {
 	a := New(t)
-	var wg sync.WaitGroup
+	var wg WaitGroup
 	c := mqtt.NewClient(GetLogger(t, "TestHandleMQTT"), "test", "", "", "tcp://localhost:1883")
 	c.Connect()
 	appID := "handler-mqtt-app1"
@@ -68,5 +67,5 @@ func TestHandleMQTT(t *testing.T) {
 		AppID: appID,
 	}
 
-	wg.Wait()
+	a.So(wg.WaitFor(200*time.Millisecond), ShouldBeNil)
 }

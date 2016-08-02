@@ -6,7 +6,11 @@
 package testing
 
 import (
+	"errors"
+	"fmt"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/apex/log"
 )
@@ -17,4 +21,26 @@ func GetLogger(t *testing.T, tag string) log.Interface {
 		Level:   log.DebugLevel,
 	}
 	return logger.WithField("tag", tag)
+}
+
+// WaitGroup is an extension of sync.WaitGroup with a WaitFor function for testing
+type WaitGroup struct {
+	sync.WaitGroup
+}
+
+// WaitFor waits for the specified duration
+func (wg *WaitGroup) WaitFor(d time.Duration) error {
+	waitChan := make(chan bool)
+	go func() {
+		wg.Wait()
+		fmt.Println("WG DONE")
+		waitChan <- true
+		close(waitChan)
+	}()
+	select {
+	case <-waitChan:
+		return nil
+	case <-time.After(d):
+		return errors.New("Wait timeout expired")
+	}
 }

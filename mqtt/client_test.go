@@ -5,7 +5,6 @@ package mqtt
 
 import (
 	"fmt"
-	"sync"
 	"testing"
 	"time"
 
@@ -208,7 +207,7 @@ func TestPubSubAppUplink(t *testing.T) {
 	c.Connect()
 	defer c.Disconnect()
 
-	var wg sync.WaitGroup
+	var wg WaitGroup
 
 	wg.Add(2)
 
@@ -229,7 +228,7 @@ func TestPubSubAppUplink(t *testing.T) {
 		Payload: []byte{0x01, 0x02, 0x03, 0x04},
 	}).Wait()
 
-	wg.Wait()
+	a.So(wg.WaitFor(200*time.Millisecond), ShouldBeNil)
 
 	c.UnsubscribeAppUplink("app1").Wait()
 }
@@ -311,7 +310,7 @@ func TestPubSubDownlink(t *testing.T) {
 	c.Connect()
 	defer c.Disconnect()
 
-	var wg sync.WaitGroup
+	var wg WaitGroup
 
 	wg.Add(1)
 
@@ -328,7 +327,7 @@ func TestPubSubDownlink(t *testing.T) {
 		Payload: []byte{0x01, 0x02, 0x03, 0x04},
 	}).Wait()
 
-	wg.Wait()
+	a.So(wg.WaitFor(200*time.Millisecond), ShouldBeNil)
 
 	c.UnsubscribeDeviceDownlink("app3", "dev3").Wait()
 }
@@ -339,7 +338,7 @@ func TestPubSubAppDownlink(t *testing.T) {
 	c.Connect()
 	defer c.Disconnect()
 
-	var wg sync.WaitGroup
+	var wg WaitGroup
 
 	wg.Add(2)
 
@@ -360,7 +359,7 @@ func TestPubSubAppDownlink(t *testing.T) {
 		Payload: []byte{0x01, 0x02, 0x03, 0x04},
 	}).Wait()
 
-	wg.Wait()
+	a.So(wg.WaitFor(200*time.Millisecond), ShouldBeNil)
 
 	c.UnsubscribeAppDownlink("app3").Wait()
 }
@@ -442,7 +441,7 @@ func TestPubSubActivations(t *testing.T) {
 	c.Connect()
 	defer c.Disconnect()
 
-	var wg sync.WaitGroup
+	var wg WaitGroup
 
 	wg.Add(1)
 
@@ -459,7 +458,7 @@ func TestPubSubActivations(t *testing.T) {
 		Metadata: Metadata{DataRate: "SF7BW125"},
 	}).Wait()
 
-	wg.Wait()
+	a.So(wg.WaitFor(200*time.Millisecond), ShouldBeNil)
 
 	c.UnsubscribeDeviceActivations("app5", "dev1")
 }
@@ -470,7 +469,7 @@ func TestPubSubAppActivations(t *testing.T) {
 	c.Connect()
 	defer c.Disconnect()
 
-	var wg sync.WaitGroup
+	var wg WaitGroup
 
 	wg.Add(2)
 
@@ -491,7 +490,7 @@ func TestPubSubAppActivations(t *testing.T) {
 		Metadata: Metadata{DataRate: "SF7BW125"},
 	}).Wait()
 
-	wg.Wait()
+	a.So(wg.WaitFor(200*time.Millisecond), ShouldBeNil)
 
 	c.UnsubscribeAppActivations("app6")
 }
