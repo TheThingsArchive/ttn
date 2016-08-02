@@ -28,3 +28,21 @@ func GetRouter(ctx log.Interface) (*grpc.ClientConn, router.RouterClient) {
 	}
 	return rtrConn, router.NewRouterClient(rtrConn)
 }
+
+// GetRouterManager starts a management connection with the router
+func GetRouterManager(ctx log.Interface) (*grpc.ClientConn, router.RouterManagerClient) {
+	dscConn, client := GetDiscovery(ctx)
+	defer dscConn.Close()
+	routerAnnouncement, err := client.Get(GetContext(ctx), &discovery.GetRequest{
+		ServiceName: "router",
+		Id:          viper.GetString("ttn-router"),
+	})
+	if err != nil {
+		ctx.WithError(err).Fatal("Could not get Router from Discovery")
+	}
+	rtrConn, err := routerAnnouncement.Dial()
+	if err != nil {
+		ctx.WithError(err).Fatal("Could not connect to Router")
+	}
+	return rtrConn, router.NewRouterManagerClient(rtrConn)
+}
