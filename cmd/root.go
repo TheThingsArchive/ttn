@@ -132,6 +132,7 @@ func connectRedis(client *redis.Client) error {
 		if err == nil {
 			break
 		}
+		ctx.WithError(err).Warn("Could not connect to Redis. Retrying...")
 		<-time.After(RedisConnectRetryDelay)
 	}
 	if err != nil {
