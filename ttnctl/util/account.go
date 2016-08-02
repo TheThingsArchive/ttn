@@ -56,9 +56,12 @@ func saveToken(ctx log.Interface, token *oauth2.Token) {
 		ctx.WithError(err).Fatal("Could not save access token")
 	}
 	if viper.GetString("oauth2-token") != string(tokenBytes) {
-		err = SetConfig(map[string]interface{}{
-			"oauth2-token": string(tokenBytes),
-		})
+		config, _ := ReadConfig()
+		if config == nil {
+			config = map[string]interface{}{}
+		}
+		config["oauth2-token"] = string(tokenBytes)
+		err = WriteConfigFile(config)
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not save access token")
 		}
