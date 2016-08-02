@@ -91,6 +91,8 @@ func (h *handler) Init(c *core.Component) error {
 		return err
 	}
 
+	h.Component.SetStatus(core.StatusHealthy)
+
 	return nil
 }
 

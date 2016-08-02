@@ -36,6 +36,7 @@ func (d *discovery) Init(c *core.Component) error {
 	if err != nil {
 		return err
 	}
+	d.Component.SetStatus(core.StatusHealthy)
 	return nil
 }
 

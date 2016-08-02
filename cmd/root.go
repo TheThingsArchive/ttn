@@ -84,6 +84,9 @@ func init() {
 	RootCmd.PersistentFlags().String("auth-token", "", "The auth token signed JWT from the auth-server")
 	viper.BindPFlag("auth-token", RootCmd.PersistentFlags().Lookup("auth-token"))
 
+	RootCmd.PersistentFlags().Int("health-port", 0, "The port number where the health server should be started")
+	viper.BindPFlag("health-port", RootCmd.PersistentFlags().Lookup("health-port"))
+
 	dir, err := homedir.Dir()
 	if err == nil {
 		dir, _ = homedir.Expand(dir)

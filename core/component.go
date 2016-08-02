@@ -7,8 +7,10 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"net/http"
 	"path"
 	"runtime"
+	"sync/atomic"
 	"time"
 
 	"golang.org/x/net/context"
@@ -90,8 +92,34 @@ func NewComponent(ctx log.Interface, serviceName string, announcedAddress string
 		}
 	}
 
+	if healthPort := viper.GetInt("health-port"); healthPort > 0 {
+		http.HandleFunc("/healthz", func(w http.ResponseWriter, req *http.Request) {
+			switch component.GetStatus() {
+			case StatusHealthy:
+				w.WriteHeader(200)
+				w.Write([]byte("Status is HEALTHY"))
+				return
+			case StatusUnhealthy:
+				w.WriteHeader(503)
+				w.Write([]byte("Status is UNHEALTHY"))
+				return
+			}
+		})
+		http.ListenAndServe(fmt.Sprintf(":%d", healthPort), nil)
+	}
+
 	return component, nil
 }
+
+// Status indicates the health status of this component
+type Status int
+
+const (
+	// StatusHealthy indicates a healthy component
+	StatusHealthy Status = iota
+	// StatusUnhealthy indicates an unhealthy component
+	StatusUnhealthy
+)
 
 // Component contains the common attributes for all TTN components
 type Component struct {
@@ -102,6 +130,17 @@ type Component struct {
 	privateKey       string
 	tlsConfig        *tls.Config
 	TokenKeyProvider tokenkey.Provider
+	status           int64
+}
+
+// GetStatus gets the health status of the component
+func (c *Component) GetStatus() Status {
+	return Status(atomic.LoadInt64(&c.status))
+}
+
+// SetStatus sets the health status of the component
+func (c *Component) SetStatus(status Status) {
+	atomic.StoreInt64(&c.status, int64(status))
 }
 
 // Discover is used to discover another component

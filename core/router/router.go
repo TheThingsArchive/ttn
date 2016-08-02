@@ -84,6 +84,7 @@ func (r *router) Init(c *core.Component) error {
 			r.tickGateways()
 		}
 	}()
+	r.Component.SetStatus(core.StatusHealthy)
 	return nil
 }
 

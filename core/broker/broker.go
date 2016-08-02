@@ -81,6 +81,7 @@ func (b *broker) Init(c *core.Component) error {
 	}
 	b.ns = networkserver.NewNetworkServerClient(conn)
 	b.nsManager = pb_lorawan.NewDeviceManagerClient(conn)
+	b.Component.SetStatus(core.StatusHealthy)
 	return nil
 }
 

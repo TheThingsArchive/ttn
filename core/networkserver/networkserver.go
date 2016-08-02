@@ -72,6 +72,7 @@ func (n *networkServer) Init(c *core.Component) error {
 	if err != nil {
 		return err
 	}
+	n.Component.SetStatus(core.StatusHealthy)
 	return nil
 }
 
