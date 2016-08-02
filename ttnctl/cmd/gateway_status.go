@@ -45,28 +45,25 @@ var gatewayStatusCmd = &cobra.Command{
 		fmt.Println()
 		printKV("Last seen", time.Unix(0, st.LastSeen))
 		printKV("Timestamp", time.Duration(st.Status.Timestamp))
-
 		if t := st.Status.Time; t != 0 {
 			printKV("Reported time", time.Unix(0, t))
 		}
-
 		printKV("Description", st.Status.Description)
 		printKV("Platform", st.Status.Platform)
 		printKV("Contact email", st.Status.ContactEmail)
 		printKV("Region", st.Status.Region)
-
-		if gps := st.Status.Gps; gps != nil {
-			printKV("Gps coordinates", fmt.Sprintf("(%v %v %v)", gps.Latitude, gps.Longitude, gps.Altitude))
-		} else {
-			printKV("Gps coordinates", "not available")
-		}
-
-		if t := st.Status.Rtt; t != 0 {
-			printKV("Rtt", time.Duration(t))
-		} else {
-			printKV("Rtt", "unknown")
-		}
-
+		printKV("GPS coordinates", func() interface{} {
+			if gps := st.Status.Gps; gps != nil {
+				return fmt.Sprintf("(%v %v %v)", gps.Latitude, gps.Longitude, gps.Altitude)
+			}
+			return "not available"
+		}())
+		printKV("Rtt", func() interface{} {
+			if t := st.Status.Rtt; t != 0 {
+				return time.Duration(t)
+			}
+			return "unknown"
+		}())
 		printKV("Rx", fmt.Sprintf("(in: %v; ok: %v)", st.Status.RxIn, st.Status.RxOk))
 		printKV("Tx", fmt.Sprintf("(in: %v; ok: %v)", st.Status.TxIn, st.Status.TxOk))
 		fmt.Println()
