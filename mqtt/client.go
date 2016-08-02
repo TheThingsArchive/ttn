@@ -159,17 +159,17 @@ func (c *DefaultClient) Connect() error {
 	}
 	var err error
 	for retries := 0; retries < ConnectRetries; retries++ {
-		c.ctx.Debug("Connecting to MQTT...")
 		token := c.mqtt.Connect()
-		token.Wait()
+		finished := token.WaitTimeout(1 * time.Second)
 		err = token.Error()
-		if err == nil {
+		if finished && err == nil {
 			break
 		}
+		c.ctx.WithError(err).Warn("Could not connect to MQTT Broker. Retrying...")
 		<-time.After(ConnectRetryDelay)
 	}
 	if err != nil {
-		return fmt.Errorf("Could not connect: %s", err)
+		return fmt.Errorf("Could not connect to MQTT Broker: %s", err)
 	}
 	return nil
 }
