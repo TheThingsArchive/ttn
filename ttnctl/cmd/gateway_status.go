@@ -53,7 +53,7 @@ var gatewayStatusCmd = &cobra.Command{
 		printKV("Contact email", st.Status.ContactEmail)
 		printKV("Region", st.Status.Region)
 		printKV("GPS coordinates", func() interface{} {
-			if gps := st.Status.Gps; gps != nil {
+			if gps := st.Status.Gps; gps != nil && !(gps.Latitude == 0 && gps.Longitude == 0) {
 				return fmt.Sprintf("(%v %v %v)", gps.Latitude, gps.Longitude, gps.Altitude)
 			}
 			return "not available"
