@@ -24,7 +24,7 @@ var gatewayStatusCmd = &cobra.Command{
 		}
 
 		euiString := args[0]
-		ctx.WithField("Gateway EUI", euiString)
+		ctx = ctx.WithField("Gateway EUI", euiString)
 
 		eui, err := types.ParseGatewayEUI(euiString)
 		if err != nil {
@@ -34,38 +34,38 @@ var gatewayStatusCmd = &cobra.Command{
 		conn, manager := util.GetRouterManager(ctx)
 		defer conn.Close()
 
-		st, err := manager.GatewayStatus(util.GetContext(ctx), &router.GatewayStatusRequest{
+		resp, err := manager.GatewayStatus(util.GetContext(ctx), &router.GatewayStatusRequest{
 			GatewayEui: &eui,
 		})
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not get status of gateway.")
 		}
 
-		ctx.Infof("Status of gateway %s:", eui)
+		ctx.Infof("Received status")
 		fmt.Println()
-		printKV("Last seen", time.Unix(0, st.LastSeen))
-		printKV("Timestamp", time.Duration(st.Status.Timestamp))
-		if t := st.Status.Time; t != 0 {
+		printKV("Last seen", time.Unix(0, resp.LastSeen))
+		printKV("Timestamp", time.Duration(resp.Status.Timestamp))
+		if t := resp.Status.Time; t != 0 {
 			printKV("Reported time", time.Unix(0, t))
 		}
-		printKV("Description", st.Status.Description)
-		printKV("Platform", st.Status.Platform)
-		printKV("Contact email", st.Status.ContactEmail)
-		printKV("Region", st.Status.Region)
+		printKV("Description", resp.Status.Description)
+		printKV("Platform", resp.Status.Platform)
+		printKV("Contact email", resp.Status.ContactEmail)
+		printKV("Region", resp.Status.Region)
 		printKV("GPS coordinates", func() interface{} {
-			if gps := st.Status.Gps; gps != nil && !(gps.Latitude == 0 && gps.Longitude == 0) {
-				return fmt.Sprintf("(%v %v %v)", gps.Latitude, gps.Longitude, gps.Altitude)
+			if gps := resp.Status.Gps; gps != nil && !(gps.Latitude == 0 && gps.Longitude == 0) {
+				return fmt.Sprintf("(%.6f %.6f)", gps.Latitude, gps.Longitude)
 			}
 			return "not available"
 		}())
 		printKV("Rtt", func() interface{} {
-			if t := st.Status.Rtt; t != 0 {
+			if t := resp.Status.Rtt; t != 0 {
 				return time.Duration(t)
 			}
-			return "unknown"
+			return "not available"
 		}())
-		printKV("Rx", fmt.Sprintf("(in: %v; ok: %v)", st.Status.RxIn, st.Status.RxOk))
-		printKV("Tx", fmt.Sprintf("(in: %v; ok: %v)", st.Status.TxIn, st.Status.TxOk))
+		printKV("Rx", fmt.Sprintf("(in: %d; ok: %d)", resp.Status.RxIn, resp.Status.RxOk))
+		printKV("Tx", fmt.Sprintf("(in: %d; ok: %d)", resp.Status.TxIn, resp.Status.TxOk))
 		fmt.Println()
 	},
 }
