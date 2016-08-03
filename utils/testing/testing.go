@@ -7,7 +7,6 @@ package testing
 
 import (
 	"errors"
-	"fmt"
 	"sync"
 	"testing"
 	"time"
@@ -33,7 +32,6 @@ func (wg *WaitGroup) WaitFor(d time.Duration) error {
 	waitChan := make(chan bool)
 	go func() {
 		wg.Wait()
-		fmt.Println("WG DONE")
 		waitChan <- true
 		close(waitChan)
 	}()

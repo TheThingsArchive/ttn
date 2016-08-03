@@ -2,23 +2,20 @@ language: go
 
 sudo: required
 
+services:
+    - docker
+
 go:
     - 1.6
 
-before_install:
-    - sudo apt-get update
-
 install:
-    - sudo apt-get install mosquitto
     - make deps
     - make test-deps
     - make cover-deps
 
 before_script:
-    - mosquitto -p 1883 1>/dev/null 2>/dev/null &
-
-services:
-    - redis-server
+    - docker run -d -p 127.0.0.1:6379:6379 redis
+    - docker run -d -p 127.0.0.1:1883:1883 ansi/mosquitto
 
 script:
     - make test

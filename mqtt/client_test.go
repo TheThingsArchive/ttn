@@ -5,6 +5,7 @@ package mqtt
 
 import (
 	"fmt"
+	"os"
 	"testing"
 	"time"
 
@@ -12,6 +13,15 @@ import (
 	"github.com/apex/log"
 	. "github.com/smartystreets/assertions"
 )
+
+var host string
+
+func init() {
+	host = os.Getenv("MQTT_HOST")
+	if host == "" {
+		host = "localhost"
+	}
+}
 
 func TestToken(t *testing.T) {
 	a := New(t)
@@ -27,13 +37,13 @@ func TestToken(t *testing.T) {
 
 func TestNewClient(t *testing.T) {
 	a := New(t)
-	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s:1883", host))
 	a.So(c.(*DefaultClient).mqtt, ShouldNotBeNil)
 }
 
 func TestConnect(t *testing.T) {
 	a := New(t)
-	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s:1883", host))
 	err := c.Connect()
 	defer c.Disconnect()
 	a.So(err, ShouldBeNil)
@@ -60,7 +70,7 @@ func TestConnectInvalidCredentials(t *testing.T) {
 
 func TestIsConnected(t *testing.T) {
 	a := New(t)
-	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s:1883", host))
 
 	a.So(c.IsConnected(), ShouldBeFalse)
 
@@ -72,7 +82,7 @@ func TestIsConnected(t *testing.T) {
 
 func TestDisconnect(t *testing.T) {
 	a := New(t)
-	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s:1883", host))
 
 	// Disconnecting when not connected should not change anything
 	c.Disconnect()
@@ -88,7 +98,7 @@ func TestDisconnect(t *testing.T) {
 func TestRandomTopicPublish(t *testing.T) {
 	ctx := GetLogger(t, "TestRandomTopicPublish")
 
-	c := NewClient(ctx, "test", "", "", "tcp://localhost:1883")
+	c := NewClient(ctx, "test", "", "", fmt.Sprintf("tcp://%s:1883", host))
 	c.Connect()
 	defer c.Disconnect()
 
@@ -104,7 +114,7 @@ func TestRandomTopicPublish(t *testing.T) {
 
 func TestPublishUplink(t *testing.T) {
 	a := New(t)
-	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s:1883", host))
 	c.Connect()
 	defer c.Disconnect()
 
@@ -122,7 +132,7 @@ func TestPublishUplink(t *testing.T) {
 
 func TestSubscribeDeviceUplink(t *testing.T) {
 	a := New(t)
-	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s:1883", host))
 	c.Connect()
 	defer c.Disconnect()
 
@@ -139,7 +149,7 @@ func TestSubscribeDeviceUplink(t *testing.T) {
 
 func TestSubscribeAppUplink(t *testing.T) {
 	a := New(t)
-	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s:1883", host))
 	c.Connect()
 	defer c.Disconnect()
 
@@ -156,7 +166,7 @@ func TestSubscribeAppUplink(t *testing.T) {
 
 func TestSubscribeUplink(t *testing.T) {
 	a := New(t)
-	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s:1883", host))
 	c.Connect()
 	defer c.Disconnect()
 
@@ -173,7 +183,7 @@ func TestSubscribeUplink(t *testing.T) {
 
 func TestPubSubUplink(t *testing.T) {
 	a := New(t)
-	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s:1883", host))
 	c.Connect()
 	defer c.Disconnect()
 
@@ -203,7 +213,7 @@ func TestPubSubUplink(t *testing.T) {
 
 func TestPubSubAppUplink(t *testing.T) {
 	a := New(t)
-	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s:1883", host))
 	c.Connect()
 	defer c.Disconnect()
 
@@ -237,7 +247,7 @@ func TestPubSubAppUplink(t *testing.T) {
 
 func TestPublishDownlink(t *testing.T) {
 	a := New(t)
-	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s:1883", host))
 	c.Connect()
 	defer c.Disconnect()
 
@@ -255,7 +265,7 @@ func TestPublishDownlink(t *testing.T) {
 
 func TestSubscribeDeviceDownlink(t *testing.T) {
 	a := New(t)
-	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s:1883", host))
 	c.Connect()
 	defer c.Disconnect()
 
@@ -272,7 +282,7 @@ func TestSubscribeDeviceDownlink(t *testing.T) {
 
 func TestSubscribeAppDownlink(t *testing.T) {
 	a := New(t)
-	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s:1883", host))
 	c.Connect()
 	defer c.Disconnect()
 
@@ -289,7 +299,7 @@ func TestSubscribeAppDownlink(t *testing.T) {
 
 func TestSubscribeDownlink(t *testing.T) {
 	a := New(t)
-	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s:1883", host))
 	c.Connect()
 	defer c.Disconnect()
 
@@ -306,7 +316,7 @@ func TestSubscribeDownlink(t *testing.T) {
 
 func TestPubSubDownlink(t *testing.T) {
 	a := New(t)
-	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s:1883", host))
 	c.Connect()
 	defer c.Disconnect()
 
@@ -334,7 +344,7 @@ func TestPubSubDownlink(t *testing.T) {
 
 func TestPubSubAppDownlink(t *testing.T) {
 	a := New(t)
-	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s:1883", host))
 	c.Connect()
 	defer c.Disconnect()
 
@@ -368,7 +378,7 @@ func TestPubSubAppDownlink(t *testing.T) {
 
 func TestPublishActivations(t *testing.T) {
 	a := New(t)
-	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s:1883", host))
 	c.Connect()
 	defer c.Disconnect()
 
@@ -386,7 +396,7 @@ func TestPublishActivations(t *testing.T) {
 
 func TestSubscribeDeviceActivations(t *testing.T) {
 	a := New(t)
-	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s:1883", host))
 	c.Connect()
 	defer c.Disconnect()
 
@@ -403,7 +413,7 @@ func TestSubscribeDeviceActivations(t *testing.T) {
 
 func TestSubscribeAppActivations(t *testing.T) {
 	a := New(t)
-	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s:1883", host))
 	c.Connect()
 	defer c.Disconnect()
 
@@ -420,7 +430,7 @@ func TestSubscribeAppActivations(t *testing.T) {
 
 func TestSubscribeActivations(t *testing.T) {
 	a := New(t)
-	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s:1883", host))
 	c.Connect()
 	defer c.Disconnect()
 
@@ -437,7 +447,7 @@ func TestSubscribeActivations(t *testing.T) {
 
 func TestPubSubActivations(t *testing.T) {
 	a := New(t)
-	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s:1883", host))
 	c.Connect()
 	defer c.Disconnect()
 
@@ -465,7 +475,7 @@ func TestPubSubActivations(t *testing.T) {
 
 func TestPubSubAppActivations(t *testing.T) {
 	a := New(t)
-	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:1883")
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s:1883", host))
 	c.Connect()
 	defer c.Disconnect()
 

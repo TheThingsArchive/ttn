@@ -4,6 +4,8 @@
 package gateway
 
 import (
+	"fmt"
+	"os"
 	"testing"
 
 	pb_gateway "github.com/TheThingsNetwork/ttn/api/gateway"
@@ -14,8 +16,12 @@ import (
 )
 
 func getRedisClient() *redis.Client {
+	host := os.Getenv("REDIS_HOST")
+	if host == "" {
+		host = "localhost"
+	}
 	return redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
+		Addr:     fmt.Sprintf("%s:6379", host),
 		Password: "", // no password set
 		DB:       1,  // use default DB
 	})

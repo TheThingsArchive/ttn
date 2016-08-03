@@ -4,6 +4,8 @@
 package application
 
 import (
+	"fmt"
+	"os"
 	"testing"
 
 	"gopkg.in/redis.v3"
@@ -12,8 +14,12 @@ import (
 )
 
 func getRedisClient() *redis.Client {
+	host := os.Getenv("REDIS_HOST")
+	if host == "" {
+		host = "localhost"
+	}
 	return redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
+		Addr:     fmt.Sprintf("%s:6379", host),
 		Password: "", // no password set
 		DB:       1,  // use default DB
 	})

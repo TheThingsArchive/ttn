@@ -4,6 +4,8 @@
 package handler
 
 import (
+	"fmt"
+	"os"
 	"testing"
 	"time"
 
@@ -15,9 +17,14 @@ import (
 )
 
 func TestHandleMQTT(t *testing.T) {
+	host := os.Getenv("MQTT_HOST")
+	if host == "" {
+		host = "localhost"
+	}
+
 	a := New(t)
 	var wg WaitGroup
-	c := mqtt.NewClient(GetLogger(t, "TestHandleMQTT"), "test", "", "", "tcp://localhost:1883")
+	c := mqtt.NewClient(GetLogger(t, "TestHandleMQTT"), "test", "", "", fmt.Sprintf("tcp://%s:1883", host))
 	c.Connect()
 	appID := "handler-mqtt-app1"
 	devID := "handler-mqtt-dev1"
@@ -29,7 +36,7 @@ func TestHandleMQTT(t *testing.T) {
 		AppID: appID,
 		DevID: devID,
 	})
-	err := h.HandleMQTT("", "", "tcp://localhost:1883")
+	err := h.HandleMQTT("", "", fmt.Sprintf("tcp://%s:1883", host))
 	a.So(err, ShouldBeNil)
 
 	c.PublishDownlink(mqtt.DownlinkMessage{
@@ -47,7 +54,7 @@ func TestHandleMQTT(t *testing.T) {
 		a.So(r_devID, ShouldEqual, devID)
 		a.So(req.Payload, ShouldResemble, []byte{0xAA, 0xBC})
 		wg.Done()
-	})
+	}).Wait()
 
 	h.mqttUp <- &mqtt.UplinkMessage{
 		DevID:   devID,
@@ -60,7 +67,7 @@ func TestHandleMQTT(t *testing.T) {
 		a.So(r_appID, ShouldEqual, appID)
 		a.So(r_devID, ShouldEqual, devID)
 		wg.Done()
-	})
+	}).Wait()
 
 	h.mqttActivation <- &mqtt.Activation{
 		DevID: devID,
