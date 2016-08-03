@@ -161,8 +161,12 @@ func (c *DefaultClient) Connect() error {
 	for retries := 0; retries < ConnectRetries; retries++ {
 		token := c.mqtt.Connect()
 		finished := token.WaitTimeout(1 * time.Second)
+		if !finished {
+			c.ctx.Warn("MQTT connection took longer than expected...")
+			token.Wait()
+		}
 		err = token.Error()
-		if finished && err == nil {
+		if err == nil {
 			break
 		}
 		c.ctx.WithError(err).Warn("Could not connect to MQTT Broker. Retrying...")
