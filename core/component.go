@@ -105,7 +105,7 @@ func NewComponent(ctx log.Interface, serviceName string, announcedAddress string
 				return
 			}
 		})
-		http.ListenAndServe(fmt.Sprintf(":%d", healthPort), nil)
+		go http.ListenAndServe(fmt.Sprintf(":%d", healthPort), nil)
 	}
 
 	return component, nil
