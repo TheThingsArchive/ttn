@@ -62,11 +62,11 @@ func (r *routerRPC) GatewayStatus(stream pb.Router_GatewayStatusServer) error {
 		if err == io.EOF {
 			return stream.SendAndClose(&api.Ack{})
 		}
-		if !status.Validate() {
-			return grpcErrf(codes.InvalidArgument, "Invalid Gateway Status")
-		}
 		if err != nil {
 			return err
+		}
+		if !status.Validate() {
+			return grpcErrf(codes.InvalidArgument, "Invalid Gateway Status")
 		}
 		go r.router.HandleGatewayStatus(gatewayEUI, status)
 	}
