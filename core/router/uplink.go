@@ -106,12 +106,12 @@ func (r *router) HandleUplink(gatewayEUI types.GatewayEUI, uplink *pb.UplinkMess
 		if err != nil {
 			continue
 		}
-		broker.association.Send(&pb_broker.UplinkMessage{
+		broker.uplink <- &pb_broker.UplinkMessage{
 			Payload:          uplink.Payload,
 			ProtocolMetadata: uplink.ProtocolMetadata,
 			GatewayMetadata:  uplink.GatewayMetadata,
 			DownlinkOptions:  downlinkOptions,
-		})
+		}
 	}
 
 	return nil

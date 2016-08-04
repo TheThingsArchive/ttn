@@ -4,10 +4,10 @@
 package router
 
 import (
-	"io"
 	"sync"
 	"time"
 
+	"github.com/TheThingsNetwork/ttn/api"
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	pb_gateway "github.com/TheThingsNetwork/ttn/api/gateway"
@@ -38,8 +38,9 @@ type Router interface {
 }
 
 type broker struct {
-	client      pb_broker.BrokerClient
-	association pb_broker.Broker_AssociateClient
+	client   pb_broker.BrokerClient
+	uplink   chan *pb_broker.UplinkMessage
+	downlink chan *pb_broker.DownlinkMessage
 }
 
 // NewRouter creates a new Router
@@ -120,6 +121,7 @@ func (r *router) getBroker(brokerAnnouncement *pb_discovery.Announcement) (*brok
 	r.brokersLock.Lock()
 	defer r.brokersLock.Unlock()
 	if _, ok := r.brokers[brokerAnnouncement.Id]; !ok {
+
 		// Connect to the server
 		conn, err := brokerAnnouncement.Dial()
 		if err != nil {
@@ -127,33 +129,62 @@ func (r *router) getBroker(brokerAnnouncement *pb_discovery.Announcement) (*brok
 		}
 		client := pb_broker.NewBrokerClient(conn)
 
-		association, err := client.Associate(r.Component.GetContext(""))
-		if err != nil {
-			return nil, err
+		brk := &broker{
+			client:   client,
+			uplink:   make(chan *pb_broker.UplinkMessage),
+			downlink: make(chan *pb_broker.DownlinkMessage),
 		}
-		// Start a goroutine that receives and processes downlink
+
 		go func() {
+			errors := 0
 			for {
-				downlink, err := association.Recv()
-				if err == io.EOF {
-					association.CloseSend()
-					break
-				}
+				association, err := client.Associate(r.Component.GetContext(""))
 				if err != nil {
-					break
+					errors++
+					<-time.After(api.Backoff)
+					if errors > 10 {
+						break
+					}
+					continue
 				}
-				go r.HandleDownlink(downlink)
+
+				errChan := make(chan error)
+
+				go func() {
+					for {
+						downlink, err := association.Recv()
+						if err != nil {
+							errChan <- err
+							return
+						}
+						brk.downlink <- downlink
+					}
+				}()
+
+			associationLoop:
+				for {
+					select {
+					case err := <-errChan:
+						r.Ctx.Errorf("ttn/router: Error in Broker associate: %s", err)
+						break associationLoop
+					case uplink := <-brk.uplink:
+						err := association.Send(uplink)
+						if err != nil {
+							errChan <- err
+						}
+					case downlink := <-brk.downlink:
+						go r.HandleDownlink(downlink)
+					}
+				}
+
 			}
-			// When the loop is broken: close connection and unregister broker.
 			conn.Close()
 			r.brokersLock.Lock()
 			defer r.brokersLock.Unlock()
 			delete(r.brokers, brokerAnnouncement.Id)
 		}()
-		r.brokers[brokerAnnouncement.Id] = &broker{
-			client:      client,
-			association: association,
-		}
+
+		r.brokers[brokerAnnouncement.Id] = brk
 	}
 	return r.brokers[brokerAnnouncement.Id], nil
 }

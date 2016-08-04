@@ -110,13 +110,11 @@ func (h *handler) associateBroker() error {
 	h.ttnBrokerManager = pb_broker.NewBrokerManagerClient(conn)
 	h.ttnDeviceManager = pb_lorawan.NewDeviceManagerClient(conn)
 
-	ctx := h.GetContext("")
-
 	h.downlink = make(chan *pb_broker.DownlinkMessage)
 
 	go func() {
 		for {
-			upStream, err := h.ttnBroker.Subscribe(ctx, &pb_broker.SubscribeRequest{})
+			upStream, err := h.ttnBroker.Subscribe(h.GetContext(""), &pb_broker.SubscribeRequest{})
 			if err != nil {
 				<-time.After(api.Backoff)
 				continue
@@ -134,7 +132,7 @@ func (h *handler) associateBroker() error {
 
 	go func() {
 		for {
-			downStream, err := h.ttnBroker.Publish(ctx)
+			downStream, err := h.ttnBroker.Publish(h.GetContext(""))
 			if err != nil {
 				<-time.After(api.Backoff)
 				continue
