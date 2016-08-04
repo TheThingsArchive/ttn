@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
@@ -15,12 +16,17 @@ import (
 
 	cliHandler "github.com/TheThingsNetwork/ttn/utils/cli/handler"
 	"github.com/apex/log"
+	jsonHandler "github.com/apex/log/handlers/json"
+	levelHandler "github.com/apex/log/handlers/level"
+	multiHandler "github.com/apex/log/handlers/multi"
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 var cfgFile string
+
+var logFile *os.File
 
 var ctx log.Interface
 
@@ -34,9 +40,26 @@ var RootCmd = &cobra.Command{
 		if viper.GetBool("debug") {
 			logLevel = log.DebugLevel
 		}
+
+		var logHandlers []log.Handler
+		logHandlers = append(logHandlers, levelHandler.New(cliHandler.New(os.Stdout), logLevel))
+
+		if logFileLocation := viper.GetString("log-file"); logFileLocation != "" {
+			absLogFileLocation, err := filepath.Abs(logFileLocation)
+			if err != nil {
+				panic(err)
+			}
+			logFile, err = os.OpenFile(absLogFileLocation, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+			if err != nil {
+				panic(err)
+			}
+			if err == nil {
+				logHandlers = append(logHandlers, levelHandler.New(jsonHandler.New(logFile), logLevel))
+			}
+		}
+
 		ctx = &log.Logger{
-			Level:   logLevel,
-			Handler: cliHandler.New(os.Stdout),
+			Handler: multiHandler.New(logHandlers...),
 		}
 		ctx.WithFields(log.Fields{
 			"ComponentID":     viper.GetString("id"),
@@ -44,6 +67,11 @@ var RootCmd = &cobra.Command{
 			"DiscoveryServer": viper.GetString("discovery-server"),
 			"AuthServer":      viper.GetString("auth-server"),
 		}).Info("Initializing The Things Network")
+	},
+	PersistentPostRun: func(cmd *cobra.Command, args []string) {
+		if logFile != nil {
+			logFile.Close()
+		}
 	},
 }
 
@@ -103,6 +131,9 @@ func init() {
 
 	RootCmd.PersistentFlags().String("key-dir", path.Clean(dir+"/.ttn/"), "The directory where public/private keys are stored")
 	viper.BindPFlag("key-dir", RootCmd.PersistentFlags().Lookup("key-dir"))
+
+	RootCmd.PersistentFlags().String("log-file", "", "Location of the log file")
+	viper.BindPFlag("log-file", RootCmd.PersistentFlags().Lookup("log-file"))
 }
 
 // initConfig reads in config file and ENV variables if set.
