@@ -12,6 +12,7 @@ import (
 
 	pb "github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/core/discovery/announcement"
+	"github.com/TheThingsNetwork/ttn/core/discovery/kv"
 	. "github.com/smartystreets/assertions"
 )
 
@@ -32,6 +33,7 @@ func TestDiscoveryAnnounce(t *testing.T) {
 
 	localDiscovery := &discovery{
 		services: announcement.NewAnnouncementStore(),
+		appIDs:   kv.NewKVStore(),
 	}
 
 	client := getRedisClient(1)
@@ -86,7 +88,11 @@ func TestDiscoveryDiscover(t *testing.T) {
 	broker1 := &pb.Announcement{ServiceName: "broker", Id: "broker2.1"}
 	broker2 := &pb.Announcement{ServiceName: "broker", Id: "broker2.2"}
 
-	localDiscovery := &discovery{services: announcement.NewAnnouncementStore()}
+	localDiscovery := &discovery{
+		services: announcement.NewAnnouncementStore(),
+		appIDs:   kv.NewKVStore(),
+	}
+
 	localDiscovery.services.Set(router)
 	localDiscovery.services.Set(broker1)
 	localDiscovery.services.Set(broker2)
@@ -133,12 +139,15 @@ func TestDiscoveryMetadata(t *testing.T) {
 
 	localDiscovery := &discovery{
 		services: announcement.NewAnnouncementStore(),
+		appIDs:   kv.NewKVStore(),
 	}
 
 	client := getRedisClient(1)
 	redisDiscovery := NewRedisDiscovery(client)
 	defer func() {
 		client.Del("discovery:announcement:broker:broker3")
+		client.Del("discovery:announcement:broker:broker4")
+		client.Del("discovery:app-id:app-id-2")
 	}()
 
 	discoveries := map[string]Discovery{
@@ -147,19 +156,25 @@ func TestDiscoveryMetadata(t *testing.T) {
 	}
 
 	for name, d := range discoveries {
-		broker := &pb.Announcement{ServiceName: "broker", Id: "broker3", Metadata: []*pb.Metadata{&pb.Metadata{
+		broker3 := &pb.Announcement{ServiceName: "broker", Id: "broker3", Metadata: []*pb.Metadata{&pb.Metadata{
 			Key:   pb.Metadata_APP_ID,
 			Value: []byte("app-id-1"),
+		}}}
+		broker4 := &pb.Announcement{ServiceName: "broker", Id: "broker4", Metadata: []*pb.Metadata{&pb.Metadata{
+			Key:   pb.Metadata_APP_ID,
+			Value: []byte("app-id-2"),
 		}}}
 
 		t.Logf("Testing %s\n", name)
 
 		// Announce should not change metadata
-		err := d.Announce(broker)
+		err := d.Announce(broker3)
 		a.So(err, ShouldBeNil)
 		service, err := d.Get("broker", "broker3")
 		a.So(err, ShouldBeNil)
 		a.So(service.Metadata, ShouldHaveLength, 0)
+
+		d.Announce(broker4)
 
 		// AddMetadata should add one
 		err = d.AddMetadata("broker", "broker3", &pb.Metadata{
@@ -170,6 +185,11 @@ func TestDiscoveryMetadata(t *testing.T) {
 		service, err = d.Get("broker", "broker3")
 		a.So(err, ShouldBeNil)
 		a.So(service.Metadata, ShouldHaveLength, 1)
+
+		// And should remove it from the other broker
+		service, err = d.Get("broker", "broker4")
+		a.So(err, ShouldBeNil)
+		a.So(service.Metadata, ShouldHaveLength, 0)
 
 		// AddMetadata again should not add one
 		err = d.AddMetadata("broker", "broker3", &pb.Metadata{
@@ -191,7 +211,7 @@ func TestDiscoveryMetadata(t *testing.T) {
 		a.So(service.Metadata, ShouldHaveLength, 1)
 
 		// Announce should not change metadata
-		err = d.Announce(broker)
+		err = d.Announce(broker3)
 		a.So(err, ShouldBeNil)
 		service, err = d.Get("broker", "broker3")
 		a.So(err, ShouldBeNil)

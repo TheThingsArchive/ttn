@@ -12,6 +12,7 @@ import (
 	pb "github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/discovery/announcement"
+	"github.com/TheThingsNetwork/ttn/core/discovery/kv"
 )
 
 // Discovery specifies the interface for the TTN Service Discovery component
@@ -28,6 +29,7 @@ type Discovery interface {
 type discovery struct {
 	*core.Component
 	services announcement.Store
+	appIDs   kv.Store
 }
 
 func (d *discovery) Init(c *core.Component) error {
@@ -85,8 +87,33 @@ func (d *discovery) AddMetadata(serviceName string, id string, in *pb.Metadata) 
 			return nil
 		}
 	}
+
+	// Pre-update
+	switch in.Key {
+	case pb.Metadata_APP_ID:
+		existingHandler, err := d.appIDs.Get(string(in.Value))
+		if err == nil {
+			d.DeleteMetadata("handler", existingHandler, in)
+		}
+	}
+
+	// Update
 	existing.Metadata = append(existing.Metadata, in)
-	return d.services.Set(existing)
+	err = d.services.Set(existing)
+	if err != nil {
+		return err
+	}
+
+	// Post-update
+	switch in.Key {
+	case pb.Metadata_APP_ID:
+		err := d.appIDs.Set(string(in.Value), id)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (d *discovery) DeleteMetadata(serviceName string, id string, in *pb.Metadata) error {
@@ -109,6 +136,7 @@ func (d *discovery) DeleteMetadata(serviceName string, id string, in *pb.Metadat
 func NewDiscovery(client *redis.Client) Discovery {
 	return &discovery{
 		services: announcement.NewAnnouncementStore(),
+		appIDs:   kv.NewKVStore(),
 	}
 }
 
@@ -116,5 +144,6 @@ func NewDiscovery(client *redis.Client) Discovery {
 func NewRedisDiscovery(client *redis.Client) Discovery {
 	return &discovery{
 		services: announcement.NewRedisAnnouncementStore(client),
+		appIDs:   kv.NewRedisKVStore(client, "app-id"),
 	}
 }
