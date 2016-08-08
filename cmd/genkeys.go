@@ -16,7 +16,10 @@ func genkeysCmd(component string) *cobra.Command {
 		Short: "Generate keys and certificate",
 		Long:  `ttn genkeys generates keys and a TLS certificate for this component`,
 		Run: func(cmd *cobra.Command, args []string) {
-			err := security.GenerateKeys(viper.GetString("key-dir"), viper.GetString(component+".server-address-announce"))
+			var names []string
+			names = append(names, viper.GetString(component+".server-address-announce"))
+			names = append(names, args...)
+			err := security.GenerateKeys(viper.GetString("key-dir"), names...)
 			if err != nil {
 				ctx.WithError(err).Fatal("Could not generate keys")
 			}
