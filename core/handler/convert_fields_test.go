@@ -272,3 +272,66 @@ func TestTimeoutExceeded(t *testing.T) {
 	<-time.After(200 * time.Millisecond)
 	a.So(interrupted, ShouldHaveLength, 1)
 }
+
+// -------------------------------------- //
+// -------------- Downlink -------------- //
+// -------------------------------------- //
+
+func TestEncode(t *testing.T) {
+	a := New(t)
+
+	// This function return an array of bytes (random)
+	functions := &FunctionsDownlink{
+		Encoder: `function test(payload){
+  		return [ 7 ]
+		}`,
+	}
+
+	// The payload is a JSON structure
+	payload := 11
+
+	m, err := functions.Encode(payload)
+	a.So(err, ShouldBeNil)
+
+	valueBytes := m[0]
+	a.So(valueBytes, ShouldEqual, byte(7))
+}
+
+func buildConversionDownlink() *mqtt.DownlinkMessage {
+	appDown := &mqtt.DownlinkMessage{
+		FPort:  1,
+		AppID:  "AppID-1",
+		DevID:  "DevID-1",
+		Fields: map[string]interface{}{"temperature": 30},
+		// We want to "build" the payload with the content of the fields
+	}
+	return appDown
+}
+
+func TestConvertBytesDownlink(t *testing.T) {
+	a := New(t)
+	appID := "AppID-1"
+
+	h := &handler{
+		applications: application.NewApplicationStore(),
+	}
+
+	// No Encoder
+	appDown := buildConversionDownlink()
+	err := h.ConvertBytesDownlink(GetLogger(t, "TestConvertFields"), appDown)
+	a.So(err, ShouldNotBeNil)
+	a.So(appDown.Payload, ShouldBeEmpty)
+
+	// Normal flow with Encoder
+	h.applications.Set(&application.Application{
+		AppID: appID,
+		// Encoder takes JSON fields as argument and return the payloa as []byte
+		Encoder: `function test(payload){
+			return [ 7 ]
+		}`,
+	})
+	appDown = buildConversionDownlink()
+	err = h.ConvertBytesDownlink(GetLogger(t, "TestConvertFields"), appDown)
+	a.So(err, ShouldBeNil)
+	a.So(appDown.Payload, ShouldEqual, []byte{7})
+}

@@ -31,6 +31,10 @@ var downlinkCmd = &cobra.Command{
 
 		payload, err := types.ParseHEX(args[1], len(args[1])/2)
 		if err != nil {
+			// If we send directly a message with a valid payload
+			// If the --json flag is set then check the fields to build a payload
+
+			// Else, the payload is invalid
 			ctx.WithError(err).Fatal("Invalid Payload")
 		}
 

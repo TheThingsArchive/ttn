@@ -14,6 +14,10 @@ import (
 	"github.com/robertkrimen/otto"
 )
 
+// --------------------------------------------------------------- //
+// ---------------------- Uplink messages ------------------------ //
+// --------------------------------------------------------------- //
+
 // ConvertFields converts the payload to fields using payload functions
 func (h *handler) ConvertFields(ctx log.Interface, ttnUp *pb_broker.DeduplicatedUplinkMessage, appUp *mqtt.UplinkMessage) error {
 	// Find Application
@@ -175,4 +179,92 @@ func RunUnsafeCode(vm *otto.Otto, code string, timeOut time.Duration) (value ott
 		}
 	}()
 	return vm.Run(code)
+}
+
+// --------------------------------------------------------------- //
+// --------------------- Downlink messages ----------------------- //
+// --------------------------------------------------------------- //
+
+type FunctionsDownlink struct {
+	// Encoder is a JavaScript function that accepts the payload as JSON and
+	// returns an array of bytes
+	Encoder string
+}
+
+// Encoder for downlink messages. Takes a JSON string as argument and return an array of bytes
+// Encode is a method of the FunctionsDownlink struct
+func (f *FunctionsDownlink) Encode(payload interface{}) ([]byte, error) {
+
+	// If there is no encoder function and if the data is not of []byte type, then we can't send it
+	if _, ok := payload.([]byte); (f.Encoder == "") && (ok == false) {
+		return nil, errors.New("Encoder function not set: the data you need to be []bytes")
+	}
+
+	// Here we have either a []byte payload or a encoder for our data.
+	vm := otto.New()
+	// Here we set a string variable "payload" to the JSON payload passed in arguments
+	vm.Set("payload", payload)
+	// Value will have the returning value of the Encoder function (otto.Value)
+	value, err := RunUnsafeCode(vm, fmt.Sprintf("(%s)(payload)", f.Encoder), timeOut)
+	if err != nil {
+		return nil, err
+	}
+
+	if value.Class() != "Array" {
+		return nil, errors.New("Encoder should return an Array.")
+	}
+
+	// Export will attempt to convert the value to a Go representation and return it via an interface{} kind
+	v, err := value.Export()
+	if err != nil {
+		return nil, fmt.Errorf("Error while encoding: %s", err)
+	}
+
+	m, ok := v.([]int64)
+	if !ok {
+		return nil, errors.New("Encoder should return an Array of numbers")
+	}
+
+	res := make([]byte, len(m))
+	for i, v := range m {
+		if v < 0 || v > 255 {
+			return nil, errors.New("Encoder error: numbers in array should be between 0 and 255")
+		}
+		res[i] = byte(v)
+	}
+
+	return res, nil
+}
+
+// ProcessDownLink encode the data sent by the application in []bytes which can be sent to the device
+// The payload is interface{} because it can be JSON or []bytes for instance (and maybe other kind of type later)
+func (f *FunctionsDownlink) ProcessDownlink(payload interface{}) ([]byte, bool, error) {
+	encoded, err := f.Encode(payload)
+	if err != nil {
+		return nil, false, err
+	}
+	// We make the hypothesis that the handler as just to encode data without checking if it's valid or not.
+	return encoded, true, nil
+}
+
+func (h *handler) ConvertBytesDownlink(ctx log.Interface, appDown *mqtt.DownlinkMessage) error {
+	// Find Application
+	app, err := h.applications.Get(appDown.AppID)
+	if err != nil {
+		return errors.New("Application not found")
+	}
+
+	functions := &FunctionsDownlink{
+		Encoder: app.Encoder,
+	}
+
+	// The validity of the message is the application responsability. Message is the payload in []byte
+	message, _, err := functions.ProcessDownlink(appDown.Fields)
+	if err != nil {
+		return errors.New("Error while processing")
+	}
+
+	appDown.Payload = message
+
+	return nil
 }
