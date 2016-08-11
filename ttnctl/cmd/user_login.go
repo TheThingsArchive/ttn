@@ -7,28 +7,32 @@ import (
 	"fmt"
 
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
-	"github.com/howeyc/gopass"
 	"github.com/spf13/cobra"
 )
 
 var userLoginCmd = &cobra.Command{
-	Use:   "login [e-mail]",
+	Use:   "login [client code]",
 	Short: "Login",
-	Long:  `ttnctl user login allows you to login to the account server`,
+	Long:  `ttnctl user login allows you to login to the account server.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) < 1 {
 			cmd.UsageFunc()(cmd)
 			return
 		}
 
-		email := args[0]
-		fmt.Print("Password: ")
-		password, err := gopass.GetPasswd()
+		code := args[0]
+		err := util.Login(ctx, code)
 		if err != nil {
-			ctx.Fatal(err.Error())
+			ctx.WithError(err).Fatal("Login failed")
 		}
 
-		util.Login(ctx, email, string(password))
+		account := util.GetAccount(ctx)
+		profile, err := account.Profile()
+		if err != nil {
+			ctx.WithError(err).Fatal("Could not get user profile")
+		}
+
+		ctx.Info(fmt.Sprintf("Successfully logged in as %s (%s)", profile.Username, profile.Email))
 	},
 }
 
