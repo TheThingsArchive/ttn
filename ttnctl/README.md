@@ -33,7 +33,9 @@ The arguments and flags for each command are shown when executing a command with
 
 * Create an account: `ttnctl user register [username] [e-mail]`
     * Note: You might have to verify your email before you can login.
-* Login: `ttnctl user login [e-mail]`
+* Get a client access code on the account server by clicking *ttnctl access
+  code* on the home page.
+* Login with the client code you received `ttnctl user login [client code]`
 * List your applications: `ttnctl applications list`
 * Create a new application: `ttnctl applications create [AppID] [Description]`
 * Select the application you want to use from now on: `ttnctl applications select`
