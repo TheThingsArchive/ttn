@@ -29,7 +29,7 @@ func buildConversionUplink() (*pb_broker.DeduplicatedUplinkMessage, *mqtt.Uplink
 	return ttnUp, appUp
 }
 
-func TestConvertFields(t *testing.T) {
+func TestConvertFieldsUp(t *testing.T) {
 	a := New(t)
 	appID := "AppID-1"
 
@@ -39,7 +39,7 @@ func TestConvertFields(t *testing.T) {
 
 	// No functions
 	ttnUp, appUp := buildConversionUplink()
-	err := h.ConvertFields(GetLogger(t, "TestConvertFields"), ttnUp, appUp)
+	err := h.ConvertFieldsUp(GetLogger(t, "TestConvertFieldsUp"), ttnUp, appUp)
 	a.So(err, ShouldBeNil)
 	a.So(appUp.Fields, ShouldBeEmpty)
 
@@ -49,7 +49,7 @@ func TestConvertFields(t *testing.T) {
 		Decoder: `function(data) { return { temperature: ((data[0] << 8) | data[1]) / 100 }; }`,
 	})
 	ttnUp, appUp = buildConversionUplink()
-	err = h.ConvertFields(GetLogger(t, "TestConvertFields"), ttnUp, appUp)
+	err = h.ConvertFieldsUp(GetLogger(t, "TestConvertFieldsUp"), ttnUp, appUp)
 	a.So(err, ShouldBeNil)
 
 	a.So(appUp.Fields, ShouldResemble, map[string]interface{}{
@@ -63,7 +63,7 @@ func TestConvertFields(t *testing.T) {
 		Validator: `function(data) { return false; }`,
 	})
 	ttnUp, appUp = buildConversionUplink()
-	err = h.ConvertFields(GetLogger(t, "TestConvertFields"), ttnUp, appUp)
+	err = h.ConvertFieldsUp(GetLogger(t, "TestConvertFieldsUp"), ttnUp, appUp)
 	a.So(err, ShouldNotBeNil)
 	a.So(appUp.Fields, ShouldBeEmpty)
 
@@ -74,7 +74,7 @@ func TestConvertFields(t *testing.T) {
 		Converter: `function(data) { throw "expected"; }`,
 	})
 	ttnUp, appUp = buildConversionUplink()
-	err = h.ConvertFields(GetLogger(t, "TestConvertFields"), ttnUp, appUp)
+	err = h.ConvertFieldsUp(GetLogger(t, "TestConvertFieldsUp"), ttnUp, appUp)
 	a.So(err, ShouldBeNil)
 	a.So(appUp.Fields, ShouldBeEmpty)
 }
@@ -281,7 +281,7 @@ func TestEncode(t *testing.T) {
 	a := New(t)
 
 	// This function return an array of bytes (random)
-	functions := &FunctionsDownlink{
+	functions := &DownlinkFunctions{
 		Encoder: `function test(payload){
   		return [ 7 ]
 		}`,
@@ -293,6 +293,7 @@ func TestEncode(t *testing.T) {
 	m, err := functions.Encode(payload)
 	a.So(err, ShouldBeNil)
 
+	a.So(m, ShouldHaveLength, 1)
 	valueBytes := m[0]
 	a.So(valueBytes, ShouldEqual, byte(7))
 }
@@ -308,7 +309,7 @@ func buildConversionDownlink() *mqtt.DownlinkMessage {
 	return appDown
 }
 
-func TestConvertBytesDownlink(t *testing.T) {
+func TestConvertFieldsDown(t *testing.T) {
 	a := New(t)
 	appID := "AppID-1"
 
@@ -318,7 +319,7 @@ func TestConvertBytesDownlink(t *testing.T) {
 
 	// No Encoder
 	appDown := buildConversionDownlink()
-	err := h.ConvertBytesDownlink(GetLogger(t, "TestConvertFields"), appDown)
+	err := h.ConvertFieldsDown(GetLogger(t, "TestConvertFieldsDown"), appDown)
 	a.So(err, ShouldNotBeNil)
 	a.So(appDown.Payload, ShouldBeEmpty)
 
@@ -331,7 +332,8 @@ func TestConvertBytesDownlink(t *testing.T) {
 		}`,
 	})
 	appDown = buildConversionDownlink()
-	err = h.ConvertBytesDownlink(GetLogger(t, "TestConvertFields"), appDown)
+	err = h.ConvertFieldsDown(GetLogger(t, "TestConvertFieldsDown"), appDown)
 	a.So(err, ShouldBeNil)
-	a.So(appDown.Payload, ShouldEqual, []byte{7})
+	// ShouldResemble with array, slices and so on
+	a.So(appDown.Payload, ShouldResemble, []byte{7})
 }
