@@ -4,6 +4,8 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/spf13/cobra"
 )
@@ -19,7 +21,18 @@ var userLoginCmd = &cobra.Command{
 		}
 
 		code := args[0]
-		util.Login(ctx, code)
+		err := util.Login(ctx, code)
+		if err != nil {
+			ctx.WithError(err).Fatal("Login failed")
+		}
+
+		account := util.GetAccount(ctx)
+		profile, err := account.Profile()
+		if err != nil {
+			ctx.WithError(err).Fatal("Could not get user profile")
+		}
+
+		ctx.Info(fmt.Sprintf("Successfully logged in as %s (%s)", profile.Username, profile.Email))
 	},
 }
 
