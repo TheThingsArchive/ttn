@@ -60,16 +60,9 @@ func (h *handler) HandleDownlink(appDownlink *mqtt.DownlinkMessage, downlink *pb
 
 	// Get Processors
 	processors := []DownlinkProcessor{
-		//h.ConvertFieldsDown,
+		h.ConvertFieldsDown,
 		h.ConvertToLoRaWAN,
 	}
-
-	/*
-		processors := []UplinkProcessor{
-		h.ConvertFromLoRaWAN,
-		h.ConvertMetadata,
-		h.ConvertFields,
-	}*/
 
 	ctx.WithField("NumProcessors", len(processors)).Debug("Running Downlink Processors")
 
@@ -78,8 +71,10 @@ func (h *handler) HandleDownlink(appDownlink *mqtt.DownlinkMessage, downlink *pb
 		err = processor(ctx, appDownlink, downlink)
 		if err == ErrNotNeeded {
 			err = nil
+			ctx.Debug("HERE ERR NIL") // To delete
 			return nil
 		} else if err != nil {
+			ctx.Debug("HERE ERR NOT NIL") // To delete
 			return err
 		}
 	}

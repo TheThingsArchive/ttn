@@ -11,6 +11,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/mqtt"
 
 	"github.com/TheThingsNetwork/ttn/core/handler/application"
+	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/assertions"
 )
@@ -283,22 +284,27 @@ func TestEncode(t *testing.T) {
 	// This function return an array of bytes (random)
 	functions := &DownlinkFunctions{
 		Encoder: `function test(payload){
-  		return [ 7 ]
+  		return [ 1, 2, 3, 4, 5, 6, 7 ]
 		}`,
 	}
 
 	// The payload is a JSON structure
-	payload := 11
+	payload := map[string]interface{}{"temperature": 11}
 
 	m, err := functions.Encode(payload)
 	a.So(err, ShouldBeNil)
 
-	a.So(m, ShouldHaveLength, 1)
-	valueBytes := m[0]
-	a.So(valueBytes, ShouldEqual, byte(7))
+	a.So(m, ShouldHaveLength, 7)
+	a.So(m, ShouldResemble, []byte{1, 2, 3, 4, 5, 6, 7})
 }
 
-func buildConversionDownlink() *mqtt.DownlinkMessage {
+func buildConversionDownlink() (*pb_broker.DownlinkMessage, *mqtt.DownlinkMessage) {
+	appEUI := types.AppEUI([8]byte{1, 2, 3, 4, 5, 6, 7, 8})
+	devEUI := types.DevEUI([8]byte{1, 2, 3, 4, 5, 6, 7, 8})
+	ttnDown := &pb_broker.DownlinkMessage{
+		AppEui: &appEUI,
+		DevEui: &devEUI,
+	}
 	appDown := &mqtt.DownlinkMessage{
 		FPort:  1,
 		AppID:  "AppID-1",
@@ -306,7 +312,7 @@ func buildConversionDownlink() *mqtt.DownlinkMessage {
 		Fields: map[string]interface{}{"temperature": 30},
 		// We want to "build" the payload with the content of the fields
 	}
-	return appDown
+	return ttnDown, appDown
 }
 
 func TestConvertFieldsDown(t *testing.T) {
@@ -317,23 +323,23 @@ func TestConvertFieldsDown(t *testing.T) {
 		applications: application.NewApplicationStore(),
 	}
 
-	// No Encoder
-	appDown := buildConversionDownlink()
-	err := h.ConvertFieldsDown(GetLogger(t, "TestConvertFieldsDown"), appDown)
-	a.So(err, ShouldNotBeNil)
-	a.So(appDown.Payload, ShouldBeEmpty)
+	// Case1: No Encoder
+	ttnDown, appDown := buildConversionDownlink()
+	err := h.ConvertFieldsDown(GetLogger(t, "TestConvertFieldsDown"), appDown, ttnDown)
+	a.So(err, ShouldBeNil)
+	a.So(ttnDown.Payload, ShouldBeEmpty)
 
-	// Normal flow with Encoder
+	// Case2: Normal flow with Encoder
 	h.applications.Set(&application.Application{
 		AppID: appID,
 		// Encoder takes JSON fields as argument and return the payloa as []byte
 		Encoder: `function test(payload){
-			return [ 7 ]
+  		return [ 1, 2, 3, 4, 5, 6, 7 ]
 		}`,
 	})
-	appDown = buildConversionDownlink()
-	err = h.ConvertFieldsDown(GetLogger(t, "TestConvertFieldsDown"), appDown)
+	ttnDown, appDown = buildConversionDownlink()
+	err = h.ConvertFieldsDown(GetLogger(t, "TestConvertFieldsDown"), appDown, ttnDown)
 	a.So(err, ShouldBeNil)
-	// ShouldResemble with array, slices and so on
-	a.So(appDown.Payload, ShouldResemble, []byte{7})
+	// ShouldResemble: with array, slices and so on
+	a.So(ttnDown.Payload, ShouldResemble, []byte{1, 2, 3, 4, 5, 6, 7})
 }

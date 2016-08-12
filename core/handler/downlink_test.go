@@ -8,6 +8,7 @@ import (
 
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/core/handler/application"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/mqtt"
@@ -54,10 +55,10 @@ func TestHandleDownlink(t *testing.T) {
 	appEUI := types.AppEUI([8]byte{1, 2, 3, 4, 5, 6, 7, 8})
 	devEUI := types.DevEUI([8]byte{1, 2, 3, 4, 5, 6, 7, 8})
 	h := &handler{
-		Component: &core.Component{Ctx: GetLogger(t, "TestHandleDownlink")},
-		devices:   device.NewDeviceStore(),
+		Component:    &core.Component{Ctx: GetLogger(t, "TestHandleDownlink")},
+		devices:      device.NewDeviceStore(),
+		applications: application.NewApplicationStore(), // to delete
 	}
-
 	err := h.HandleDownlink(&mqtt.DownlinkMessage{
 		AppID: appID,
 		DevID: devID,
@@ -94,4 +95,26 @@ func TestHandleDownlink(t *testing.T) {
 		Payload: []byte{96, 4, 3, 2, 1, 0, 1, 0, 1, 0, 0, 0, 0},
 	})
 	a.So(err, ShouldBeNil)
+
+	// testing json Fields
+	jsonFields := map[string]interface{}{"key": 11}
+	h.applications.Set(&application.Application{
+		AppID: appID,
+		// Encoder takes JSON fields as argument and return the payloa as []byte
+		Encoder: `function test(payload){
+  		return [96, 4, 3, 2, 1, 0, 1, 0, 1, 0, 0, 0, 0]
+		}`,
+	})
+	appDown := &mqtt.DownlinkMessage{
+		AppID:  appID,
+		DevID:  devID,
+		Fields: jsonFields,
+	}
+	ttnDown := &pb_broker.DownlinkMessage{
+		AppEui: &appEUI,
+		DevEui: &devEUI,
+	}
+	err = h.HandleDownlink(appDown, ttnDown)
+	a.So(err, ShouldBeNil)
+	a.So(ttnDown.Payload, ShouldResemble, []byte{96, 4, 3, 2, 1, 0, 1, 0, 1, 0, 0, 0, 0})
 }
