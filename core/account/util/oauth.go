@@ -18,8 +18,8 @@ func MakeConfig(server string, clientID string, clientSecret string, redirectURL
 	}
 
 	return oauth2.Config{
-		ClientID:     "ttnctl",
-		ClientSecret: "",
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
 		Endpoint:     endpoint,
 		RedirectURL:  redirectURL,
 	}
