@@ -115,12 +115,12 @@ func GetAccount(ctx log.Interface) *account.Account {
 }
 
 // Login does a login to the Account server with the given username and password
-func Login(ctx log.Interface, code string) error {
+func Login(ctx log.Interface, code string) (*oauth2.Token, error) {
 	config := accountUtil.MakeConfig(viper.GetString("ttn-account-server"), "ttnctl", "", "")
 	token, err := config.Exchange(context.Background(), code)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	saveToken(ctx, token)
-	return nil
+	return token, nil
 }

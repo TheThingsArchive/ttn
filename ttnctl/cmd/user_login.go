@@ -6,8 +6,10 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/TheThingsNetwork/ttn/core/account"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var userLoginCmd = &cobra.Command{
@@ -21,17 +23,16 @@ var userLoginCmd = &cobra.Command{
 		}
 
 		code := args[0]
-		err := util.Login(ctx, code)
+		token, err := util.Login(ctx, code)
 		if err != nil {
 			ctx.WithError(err).Fatal("Login failed")
 		}
 
-		account := util.GetAccount(ctx)
-		profile, err := account.Profile()
+		acc := account.New(viper.GetString("ttn-account-server"), token.AccessToken)
+		profile, err := acc.Profile()
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not get user profile")
 		}
-
 		ctx.Info(fmt.Sprintf("Successfully logged in as %s (%s)", profile.Username, profile.Email))
 	},
 }
