@@ -97,18 +97,22 @@ func confirm(prompt string) bool {
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
-	if cfgFile != "" {
-		viper.SetConfigFile(cfgFile)
-	}
-
+	viper.SetConfigType("yaml")
 	viper.SetConfigName(".ttnctl")
 	viper.AddConfigPath("$HOME")
 	viper.SetEnvPrefix("ttnctl") // set environment prefix
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
 	viper.AutomaticEnv()
 
+	if cfgFile != "" { // enable ability to specify config file via flag
+		viper.SetConfigFile(cfgFile)
+	}
+
 	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err == nil && viper.GetBool("debug") {
+	err := viper.ReadInConfig()
+	if err != nil {
+		fmt.Println("Error when reading config file:", err)
+	} else if err == nil && viper.GetBool("debug") {
 		fmt.Println("Using config file:", viper.ConfigFileUsed())
 	}
 }
