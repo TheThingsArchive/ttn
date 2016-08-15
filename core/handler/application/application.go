@@ -21,6 +21,7 @@ type Application struct {
 	// Converter and returns a boolean value indicating the validity of the data
 	Validator string
 	// Encoder is a JavaScript function that encode the data send on Downlink messages
+	// Returns an object containing the converted values in []byte
 	Encoder string
 
 	UpdatedAt time.Time

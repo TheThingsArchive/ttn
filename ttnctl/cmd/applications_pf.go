@@ -52,7 +52,7 @@ converting and validating binary payload.
 			ctx.Info("No validator function")
 		}
 
-		if app.Encoder != "" { // HERE
+		if app.Encoder != "" {
 			ctx.Info("Encoder function")
 			fmt.Println(app.Encoder)
 		} else {
