@@ -54,6 +54,8 @@ The functions are read from the supplied file or from STDIN.`,
 				app.Converter = string(content)
 			case "validator":
 				app.Validator = string(content)
+			case "encoder": // HERE
+				app.Encoder = string(content)
 			default:
 				ctx.Fatalf("Function %s does not exist", function)
 			}
@@ -88,6 +90,15 @@ The functions are read from the supplied file or from STDIN.`,
 }
 ########## Write your Validator here and end with Ctrl+D (EOF):`)
 				app.Validator = readFunction()
+			case "encoder":
+				fmt.Println(`function (val) {
+  // val is the output of the encoder function.
+
+  // todo: return a boolean
+  return true;
+}
+########## Write your Encoder here and end with Ctrl+D (EOF):`)
+				app.Encoder = readFunction()
 			default:
 				ctx.Fatalf("Function %s does not exist", function)
 			}
