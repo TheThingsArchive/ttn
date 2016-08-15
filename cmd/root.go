@@ -138,20 +138,24 @@ func init() {
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
-	if cfgFile != "" { // enable ability to specify config file via flag
-		viper.SetConfigFile(cfgFile)
-	}
-
+	viper.SetConfigType("yaml")
 	viper.SetConfigName(".ttn")  // name of config file (without extension)
 	viper.AddConfigPath("$HOME") // adding home directory as first search path
 	viper.SetEnvPrefix("ttn")    // set environment prefix
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
 	viper.AutomaticEnv() // read in environment variables that match
 
+	if cfgFile != "" { // enable ability to specify config file via flag
+		viper.SetConfigFile(cfgFile)
+	}
+
 	viper.BindEnv("debug")
 
 	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err == nil {
+	err := viper.ReadInConfig()
+	if err != nil {
+		fmt.Println("Error when reading config file:", err)
+	} else if err == nil {
 		fmt.Println("Using config file:", viper.ConfigFileUsed())
 	}
 }
