@@ -17,7 +17,7 @@ import (
 
 // applicationsPayloadFunctionsSetCmd represents the `applications pf set` command
 var applicationsPayloadFunctionsSetCmd = &cobra.Command{
-	Use:   "set [decoder/converter/validator/encoder/test] [file.js]",
+	Use:   "set [decoder/converter/validator/encoder] [file.js]",
 	Short: "Set payload functions of an application",
 	Long: `ttnctl pf set can be used to get or set payload functions of an application.
 The functions are read from the supplied file or from STDIN.`,
@@ -42,7 +42,6 @@ The functions are read from the supplied file or from STDIN.`,
 
 		function := args[0]
 
-		//If we provide a file.js then we read the content and assign it to our pf function
 		if len(args) == 2 {
 			content, err := ioutil.ReadFile(args[1])
 			if err != nil {
@@ -60,7 +59,7 @@ The functions are read from the supplied file or from STDIN.`,
 			default:
 				ctx.Fatalf("Function %s does not exist", function)
 			}
-		} else { //If we want to enter the function by ourselves
+		} else {
 			switch function {
 			case "decoder":
 				fmt.Println(`function (bytes) {
@@ -95,8 +94,8 @@ The functions are read from the supplied file or from STDIN.`,
 				fmt.Println(`function (val) {
   // val is the output of the encoder function.
 
-  // todo: return a boolean
-  return true;
+  // todo: return an array of numbers
+  return ArrayNumbers;
 }
 ########## Write your Encoder here and end with Ctrl+D (EOF):`)
 				app.Encoder = readFunction()

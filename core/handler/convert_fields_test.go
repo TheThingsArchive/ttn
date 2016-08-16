@@ -340,6 +340,6 @@ func TestConvertFieldsDown(t *testing.T) {
 	ttnDown, appDown = buildConversionDownlink()
 	err = h.ConvertFieldsDown(GetLogger(t, "TestConvertFieldsDown"), appDown, ttnDown)
 	a.So(err, ShouldBeNil)
-	// ShouldResemble: with array, slices and so on
+	// ShouldResemble used for Array, Slices, Map
 	a.So(ttnDown.Payload, ShouldResemble, []byte{1, 2, 3, 4, 5, 6, 7})
 }

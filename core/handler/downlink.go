@@ -69,22 +69,17 @@ func (h *handler) HandleDownlink(appDownlink *mqtt.DownlinkMessage, downlink *pb
 	// Run Processors
 	for _, processor := range processors {
 		err = processor(ctx, appDownlink, downlink)
-		// If the payload hasn't to be sent
+		// If the payload hasn't to be sent (bad payload)
 		if err == ErrNotNeeded {
 			err = nil
-			ctx.Debug("HERE ERR NOT NEEDED") // To delete
 			return nil
 			// If the payload has to be sent but an error occured while processing
 		} else if err != nil {
-			ctx.Debug("HERE ERR NOT NIL") // To delete
 			return err
-		} else if err == nil {
-			ctx.Debug("HERE ERR NIL OK")
 		}
 	}
 
 	ctx.Debug("Send Downlink")
-	ctx.Debugf("Downlink : --> ", downlink.Payload)
 
 	h.downlink <- downlink
 

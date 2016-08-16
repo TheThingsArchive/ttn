@@ -38,14 +38,13 @@ var downlinkCmd = &cobra.Command{
 		}
 		ctx = ctx.WithField("DevID", devID)
 
-		// Flag JSON
-		fJSON, err := cmd.Flags().GetBool("fjson")
+		JSON, err := cmd.Flags().GetBool("json")
 
 		if err != nil {
 			ctx.WithError(err).Fatal("Error: value of the json flag")
 		}
 
-		if fJSON { // No Payload but fields
+		if JSON { // No Fields or payload but Json flag set
 			fields := args[1]
 			if fields == "" {
 				ctx.WithError(err).Fatal("No fields or payload provided")
@@ -54,7 +53,7 @@ var downlinkCmd = &cobra.Command{
 			// In case we provide a valid payload using the json flag
 			_, err := types.ParseHEX(args[1], len(args[1])/2)
 			if err == nil {
-				ctx.WithError(err).Fatal("You are providing a valid payload using the --fjson flag.")
+				ctx.WithError(err).Fatal("You are providing a valid payload using the --json flag.")
 			}
 
 			fPort, _ := cmd.Flags().GetInt("fport")
@@ -71,7 +70,7 @@ var downlinkCmd = &cobra.Command{
 			}
 
 			ctx.Info("Enqueued downlink")
-		} else { // Payload
+		} else { // We provide a Payload
 			payload, err := types.ParseHEX(args[1], len(args[1])/2)
 			if err != nil {
 				ctx.WithError(err).Fatal("Invalid Payload")
@@ -98,12 +97,11 @@ var downlinkCmd = &cobra.Command{
 func init() {
 	RootCmd.AddCommand(downlinkCmd)
 	downlinkCmd.Flags().Int("fport", 1, "FPort for downlink")
-	// New flag for json fields. Using the flag means that we send json, otherwise we send []byte (false by default)
-	downlinkCmd.Flags().Bool("fjson", false, "Send Json to the handler (MQTT)")
+	downlinkCmd.Flags().Bool("json", false, "Send Json to the handler (MQTT)")
 }
 
-// example of json string : "{"key" : 1}"
-func convertStringIntoMapStringInterface(s string) map[string]interface{} {
+// Example of json string : "{\"foo\":{\"key\": [1,2,3]}}"
+func parseJSON(s string) map[string]interface{} {
 	var res map[string]interface{}
 	json.Unmarshal([]byte(s), &res)
 	return res

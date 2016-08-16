@@ -57,7 +57,7 @@ func TestHandleDownlink(t *testing.T) {
 	h := &handler{
 		Component:    &core.Component{Ctx: GetLogger(t, "TestHandleDownlink")},
 		devices:      device.NewDeviceStore(),
-		applications: application.NewApplicationStore(), // to delete
+		applications: application.NewApplicationStore(),
 	}
 	err := h.HandleDownlink(&mqtt.DownlinkMessage{
 		AppID: appID,
@@ -96,25 +96,42 @@ func TestHandleDownlink(t *testing.T) {
 	})
 	a.So(err, ShouldBeNil)
 
-	// testing json Fields
+	// ------ Testing with the --fjson flag ------ //
+
+	// 1) Provide a payload and fields : ERROR
 	jsonFields := map[string]interface{}{"key": 11}
 	h.applications.Set(&application.Application{
 		AppID: appID,
 		// Encoder takes JSON fields as argument and return the payloa as []byte
-		Encoder: `function test(payload){
+		Encoder: `function (payload){
   		return [96, 4, 3, 2, 1, 0, 1, 0, 1, 0, 0, 0, 0]
 		}`,
 	})
 	appDown := &mqtt.DownlinkMessage{
-		AppID:  appID,
-		DevID:  devID,
-		Fields: jsonFields,
+		FPort:   1,
+		AppID:   appID,
+		DevID:   devID,
+		Fields:  jsonFields,
+		Payload: []byte{0xAA, 0xBC},
 	}
 	ttnDown := &pb_broker.DownlinkMessage{
 		AppEui: &appEUI,
 		DevEui: &devEUI,
 	}
 	err = h.HandleDownlink(appDown, ttnDown)
-	a.So(err, ShouldBeNil)
-	a.So(ttnDown.Payload, ShouldResemble, []byte{96, 4, 3, 2, 1, 0, 1, 0, 1, 0, 0, 0, 0})
+	a.So(err, ShouldNotBeNil)
+
+	// 2) Provide fields without payload : OK
+	/*
+		err = h.HandleDownlink(&mqtt.DownlinkMessage{
+			FPort:  1,
+			AppID:  appID,
+			DevID:  devID,
+			Fields: jsonFields,
+		}, &pb_broker.DownlinkMessage{
+			AppEui: &appEUI,
+			DevEui: &devEUI,
+		})
+		a.So(err, ShouldBeNil)
+	*/
 }
