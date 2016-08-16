@@ -4,8 +4,7 @@
 package cmd
 
 import (
-	"fmt"
-	"strings"
+	"encoding/json"
 
 	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/core/types"
@@ -22,6 +21,13 @@ var downlinkCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		client := util.GetMQTT(ctx)
 		defer client.Disconnect()
+
+		// To avoid an error if not enough arguments are provided
+		if len(args) < 2 {
+			ctx.Info("Not enough arguments. Please, provide a devID and a Payload")
+			cmd.UsageFunc()(cmd)
+			return
+		}
 
 		appID := util.GetAppID(ctx)
 		ctx = ctx.WithField("AppID", appID)
@@ -98,12 +104,7 @@ func init() {
 
 // example of json string : "{"key" : 1}"
 func convertStringIntoMapStringInterface(s string) map[string]interface{} {
-	fmt.Println("La chaine entree est : ", s)
-
-	res := make(map[string]interface{})
-	s = strings.Replace(s, "{", "", -1)
-	s = strings.Replace(s, "}", "", -1)
-	arrayIndex := strings.Split(s, ":")
-	res[arrayIndex[0]] = arrayIndex[1]
+	var res map[string]interface{}
+	json.Unmarshal([]byte(s), &res)
 	return res
 }

@@ -193,10 +193,11 @@ type DownlinkFunctions struct {
 
 // Encoder for downlink messages. Takes a JSON string as argument and return an array of bytes
 // Encode is a method of the DownlinkFunctions struct
-func (f *DownlinkFunctions) Encode(payload interface{}) ([]byte, error) { // change interface{} to map[string]interface{}
+func (f *DownlinkFunctions) Encode(payload map[string]interface{}) ([]byte, error) { // change interface{} to map[string]interface{}
 
 	// If there is no encoder function and if the data is not of []byte type, then we can't send it
-	if _, ok := payload.([]byte); (f.Encoder == "") && (ok == false) {
+	//if _, ok := payload.([]byte); (f.Encoder == "") && (ok == false) {
+	if f.Encoder == "" {
 		return nil, errors.New("Encoder function not set: the data you need to be []bytes")
 	}
 
@@ -207,7 +208,7 @@ func (f *DownlinkFunctions) Encode(payload interface{}) ([]byte, error) { // cha
 	// Value will have the returning value of the Encoder function (otto.Value)
 	value, err := RunUnsafeCode(vm, fmt.Sprintf("(%s)(payload)", f.Encoder), timeOut)
 	if err != nil {
-		return nil, err
+		return nil, errors.New("Error while running the JS function")
 	}
 
 	//not necessary --> use IsObject method
@@ -239,7 +240,7 @@ func (f *DownlinkFunctions) Encode(payload interface{}) ([]byte, error) { // cha
 
 // ProcessDownLink encode the data sent by the application in []bytes which can be sent to the device
 // The payload is interface{} because it can be JSON or []bytes for instance (and maybe other kind of type later)
-func (f *DownlinkFunctions) ProcessDownlink(payload interface{}) ([]byte, bool, error) {
+func (f *DownlinkFunctions) ProcessDownlink(payload map[string]interface{}) ([]byte, bool, error) {
 	encoded, err := f.Encode(payload)
 	if err != nil {
 		return nil, false, err
@@ -251,28 +252,29 @@ func (f *DownlinkFunctions) ProcessDownlink(payload interface{}) ([]byte, bool, 
 // We have to have a ttnDown *pb_broker.DownlinkMessage argument because of the type func in downlink.go
 func (h *handler) ConvertFieldsDown(ctx log.Interface, appDown *mqtt.DownlinkMessage, ttnDown *pb_broker.DownlinkMessage) error {
 
-	ctx.Debug("HERE 1") // To delete
-
-	// Find Application thanks to the AppID, so we can access the Payload functions of the Applications
-	app, err := h.applications.Get(appDown.AppID)
-	if err != nil {
-		ctx.Debug("HERE 2") // To delete
-		return nil          // Do not process if application not found
-	}
-
-	ctx.Debug("HERE 3") // To delete
-
-	//Downlink processor -> Downlink fields
-	functions := &DownlinkFunctions{
-		Encoder: app.Encoder,
-	}
-
-	ctx.Debug("HERE 4") // To delete
-
 	// The validity of the message is the application responsability.
 	// Message is the payload in []byte coming from the conversion of the Fields
 	// Checking the fields of the message coming from the App -> MQTT
 	if appDown.Fields != nil {
+
+		ctx.Debug("HERE 1") // To delete
+
+		// Find Application thanks to the AppID, so we can access the Payload functions of the Applications
+		app, err := h.applications.Get(appDown.AppID)
+		if err != nil {
+			ctx.Debug("HERE 2") // To delete
+			return nil          // Do not process if application not found
+		}
+
+		ctx.Debug("HERE 3") // To delete
+
+		// Downlink processor -> Downlink fields
+		functions := &DownlinkFunctions{
+			Encoder: app.Encoder,
+		}
+
+		ctx.Debug("HERE 4") // To delete
+
 		message, valid, err := functions.ProcessDownlink(appDown.Fields)
 		if err != nil {
 			return errors.New("Error while processing")
@@ -288,8 +290,11 @@ func (h *handler) ConvertFieldsDown(ctx log.Interface, appDown *mqtt.DownlinkMes
 		}
 
 		// Taking the fields from MQTT and putting them into the gRPC payload to send it to the broker
+		appDown.Payload = message
 		ttnDown.Payload = message
+		ctx.Debug("HERE ENDDD") // To delete
 	}
 
+	// If the fields are empty we return directly, otherwise we execute the function before returning
 	return nil
 }
