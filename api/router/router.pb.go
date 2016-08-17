@@ -45,7 +45,9 @@ var _ = math.Inf
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the proto package it is being compiled against.
-const _ = proto.ProtoPackageIsVersion1
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 type SubscribeRequest struct {
 }
@@ -2379,6 +2381,10 @@ var (
 	ErrInvalidLengthRouter = fmt.Errorf("proto: negative length found during unmarshaling")
 	ErrIntOverflowRouter   = fmt.Errorf("proto: integer overflow")
 )
+
+func init() {
+	proto.RegisterFile("github.com/TheThingsNetwork/ttn/api/router/router.proto", fileDescriptorRouter)
+}
 
 var fileDescriptorRouter = []byte{
 	// 797 bytes of a gzipped FileDescriptorProto

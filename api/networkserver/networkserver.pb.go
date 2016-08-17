@@ -41,7 +41,9 @@ var _ = math.Inf
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the proto package it is being compiled against.
-const _ = proto.ProtoPackageIsVersion1
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 type DevicesRequest struct {
 	DevAddr *github_com_TheThingsNetwork_ttn_core_types.DevAddr `protobuf:"bytes,1,opt,name=dev_addr,json=devAddr,proto3,customtype=github.com/TheThingsNetwork/ttn/core/types.DevAddr" json:"dev_addr,omitempty"`
@@ -990,6 +992,10 @@ var (
 	ErrInvalidLengthNetworkserver = fmt.Errorf("proto: negative length found during unmarshaling")
 	ErrIntOverflowNetworkserver   = fmt.Errorf("proto: integer overflow")
 )
+
+func init() {
+	proto.RegisterFile("github.com/TheThingsNetwork/ttn/api/networkserver/networkserver.proto", fileDescriptorNetworkserver)
+}
 
 var fileDescriptorNetworkserver = []byte{
 	// 519 bytes of a gzipped FileDescriptorProto
