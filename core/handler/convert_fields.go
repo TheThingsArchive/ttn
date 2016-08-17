@@ -185,7 +185,7 @@ type DownlinkFunctions struct {
 
 func (f *DownlinkFunctions) Encode(payload map[string]interface{}) ([]byte, error) {
 	if f.Encoder == "" {
-		return nil, errors.New("Encoder function not set: the data you need to be []bytes")
+		return nil, errors.New("Encoder function not set")
 	}
 
 	vm := otto.New()
@@ -196,7 +196,7 @@ func (f *DownlinkFunctions) Encode(payload map[string]interface{}) ([]byte, erro
 	}
 
 	if !value.IsObject() {
-		return nil, errors.New("Converter does not return an object")
+		return nil, errors.New("Encoder does not return an object")
 	}
 
 	if value.Class() != "Array" {
@@ -224,7 +224,6 @@ func (f *DownlinkFunctions) Encode(payload map[string]interface{}) ([]byte, erro
 	return res, nil
 }
 
-// Encode the data sent by the application in []bytes which can be sent to the device
 func (f *DownlinkFunctions) ProcessDownlink(payload map[string]interface{}) ([]byte, bool, error) {
 	encoded, err := f.Encode(payload)
 	if err != nil {
@@ -238,11 +237,9 @@ func (h *handler) ConvertFieldsDown(ctx log.Interface, appDown *mqtt.DownlinkMes
 
 	// The validity of the message is the application responsability.
 	if appDown.Fields == nil {
-		// If the fields are empty we return directly
 		return nil
 	}
 
-	// Find Application thanks to the AppID, so we can access its Payload functions
 	app, err := h.applications.Get(appDown.AppID)
 	if err != nil {
 		return nil // Do not process if application not found
@@ -262,7 +259,6 @@ func (h *handler) ConvertFieldsDown(ctx log.Interface, appDown *mqtt.DownlinkMes
 		return err
 	}
 
-	// Taking the fields from MQTT and putting them into the gRPC payload to send it to the broker
 	appDown.Payload = message
 	ttnDown.Payload = message
 

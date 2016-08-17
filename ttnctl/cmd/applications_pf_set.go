@@ -15,7 +15,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// applicationsPayloadFunctionsSetCmd represents the `applications pf set` command
 var applicationsPayloadFunctionsSetCmd = &cobra.Command{
 	Use:   "set [decoder/converter/validator/encoder] [file.js]",
 	Short: "Set payload functions of an application",
@@ -95,7 +94,7 @@ The functions are read from the supplied file or from STDIN.`,
   // val is the output of the encoder function.
 
   // todo: return an array of numbers
-  return ArrayNumbers;
+  return return [96, 4, 3, 2, 1, 0, 1, 0, 1, 0, 0, 0, 0];
 }
 ########## Write your Encoder here and end with Ctrl+D (EOF):`)
 				app.Encoder = readFunction()

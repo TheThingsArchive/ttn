@@ -13,7 +13,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// downlinkCmd represents the `downlink` command
 var downlinkCmd = &cobra.Command{
 	Use:   "downlink [DevID] [Payload]",
 	Short: "Send a downlink message to a device",
@@ -22,7 +21,6 @@ var downlinkCmd = &cobra.Command{
 		client := util.GetMQTT(ctx)
 		defer client.Disconnect()
 
-		// To avoid an error if not enough arguments are provided
 		if len(args) < 2 {
 			ctx.Info("Not enough arguments. Please, provide a devID and a Payload")
 			cmd.UsageFunc()(cmd)
@@ -44,13 +42,13 @@ var downlinkCmd = &cobra.Command{
 			ctx.WithError(err).Fatal("Error: value of the json flag")
 		}
 
-		if JSON { // No Fields or payload but Json flag set
+		if JSON {
 			fields := args[1]
 			if fields == "" {
 				ctx.WithError(err).Fatal("No fields or payload provided")
 			}
 
-			// In case we provide a valid payload using the json flag
+			// Valid payload provided + json flag
 			_, err := types.ParseHEX(args[1], len(args[1])/2)
 			if err == nil {
 				ctx.WithError(err).Fatal("You are providing a valid payload using the --json flag.")
@@ -70,7 +68,7 @@ var downlinkCmd = &cobra.Command{
 			}
 
 			ctx.Info("Enqueued downlink")
-		} else { // We provide a Payload
+		} else { // Payload provided
 			payload, err := types.ParseHEX(args[1], len(args[1])/2)
 			if err != nil {
 				ctx.WithError(err).Fatal("Invalid Payload")
