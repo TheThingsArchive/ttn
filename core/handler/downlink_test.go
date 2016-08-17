@@ -5,6 +5,7 @@ package handler
 
 import (
 	"testing"
+	"time"
 
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/core"
@@ -59,6 +60,7 @@ func TestHandleDownlink(t *testing.T) {
 		devices:      device.NewDeviceStore(),
 		applications: application.NewApplicationStore(),
 	}
+	// Neither payload nor Fields provided : ERROR
 	err := h.HandleDownlink(&mqtt.DownlinkMessage{
 		AppID: appID,
 		DevID: devID,
@@ -67,6 +69,7 @@ func TestHandleDownlink(t *testing.T) {
 		DevEui: &devEUI,
 	})
 	a.So(err, ShouldNotBeNil)
+
 	h.devices.Set(&device.Device{
 		AppID: appID,
 		DevID: devID,
@@ -85,6 +88,7 @@ func TestHandleDownlink(t *testing.T) {
 		dl := <-h.downlink
 		a.So(dl.Payload, ShouldNotBeEmpty)
 	}()
+	// Payload provided
 	err = h.HandleDownlink(&mqtt.DownlinkMessage{
 		AppID:   appID,
 		DevID:   devID,
@@ -96,42 +100,57 @@ func TestHandleDownlink(t *testing.T) {
 	})
 	a.So(err, ShouldBeNil)
 
-	// ------ Testing with the --fjson flag ------ //
-
-	// 1) Provide a payload and fields : ERROR
-	jsonFields := map[string]interface{}{"key": 11}
 	h.applications.Set(&application.Application{
 		AppID: appID,
-		// Encoder takes JSON fields as argument and return the payloa as []byte
 		Encoder: `function (payload){
-  		return [96, 4, 3, 2, 1, 0, 1, 0, 1, 0, 0, 0, 0]
-		}`,
+	  		return [96, 4, 3, 2, 1, 0, 1, 0, 1, 0, 0, 0, 0]
+			}`,
 	})
-	appDown := &mqtt.DownlinkMessage{
+	jsonFields := make(map[string]interface{})
+	jsonFields["key"] = "value"
+	jsonFields["key2"] = 11
+	// Both Payload and Fields provided : ERROR
+	err = h.HandleDownlink(&mqtt.DownlinkMessage{
 		FPort:   1,
 		AppID:   appID,
 		DevID:   devID,
 		Fields:  jsonFields,
 		Payload: []byte{0xAA, 0xBC},
-	}
-	ttnDown := &pb_broker.DownlinkMessage{
+	}, &pb_broker.DownlinkMessage{
 		AppEui: &appEUI,
 		DevEui: &devEUI,
-	}
-	err = h.HandleDownlink(appDown, ttnDown)
+	})
 	a.So(err, ShouldNotBeNil)
 
-	// 2) Provide fields without payload : OK
-	/*
-		err = h.HandleDownlink(&mqtt.DownlinkMessage{
-			FPort:  1,
-			AppID:  appID,
-			DevID:  devID,
-			Fields: jsonFields,
-		}, &pb_broker.DownlinkMessage{
-			AppEui: &appEUI,
-			DevEui: &devEUI,
-		})
-		a.So(err, ShouldBeNil)
-	*/
+	// Wait for the first goroutine to end
+	time.Sleep(time.Millisecond * 50)
+	//Flushchannel(h.downlink)
+
+	go func() {
+		dl := <-h.downlink
+		a.So(dl.Payload, ShouldNotBeEmpty)
+	}()
+
+	// Json Fields provided
+	err = h.HandleDownlink(&mqtt.DownlinkMessage{
+		FPort:  1,
+		AppID:  appID,
+		DevID:  devID,
+		Fields: jsonFields,
+	}, &pb_broker.DownlinkMessage{
+		AppEui: &appEUI,
+		DevEui: &devEUI,
+	})
+	a.So(err, ShouldBeNil)
+}
+
+func Flushchannel(channel chan *pb_broker.DownlinkMessage) {
+	for {
+		select {
+		case <-channel:
+			// nothing we are just flushing the channel
+		default:
+			return
+		}
+	}
 }

@@ -51,6 +51,7 @@ func (h *handler) HandleDownlink(appDownlink *mqtt.DownlinkMessage, downlink *pb
 		"DevEUI": downlink.AppEui,
 		"AppEUI": downlink.DevEui,
 	})
+
 	var err error
 	defer func() {
 		if err != nil {
@@ -69,7 +70,6 @@ func (h *handler) HandleDownlink(appDownlink *mqtt.DownlinkMessage, downlink *pb
 	// Run Processors
 	for _, processor := range processors {
 		err = processor(ctx, appDownlink, downlink)
-		// If the payload hasn't to be sent (bad payload)
 		if err == ErrNotNeeded {
 			err = nil
 			return nil

@@ -62,7 +62,7 @@ var downlinkCmd = &cobra.Command{
 				AppID:  appID,
 				DevID:  devID,
 				FPort:  uint8(fPort),
-				Fields: convertStringIntoMapStringInterface(fields),
+				Fields: parseJSON(fields),
 			})
 			token.Wait()
 			if token.Error() != nil {
