@@ -22,7 +22,7 @@ func (h *handler) ConvertFieldsUp(ctx log.Interface, ttnUp *pb_broker.Deduplicat
 		return nil // Do not process if application not found
 	}
 
-	functions := &Functions{
+	functions := &UplinkFunctions{
 		Decoder:   app.Decoder,
 		Converter: app.Converter,
 		Validator: app.Validator,
@@ -42,8 +42,8 @@ func (h *handler) ConvertFieldsUp(ctx log.Interface, ttnUp *pb_broker.Deduplicat
 	return nil
 }
 
-// Functions decodes, converts and validates payload using JavaScript functions
-type Functions struct {
+// UplinkFunctions decodes, converts and validates payload using JavaScript functions
+type UplinkFunctions struct {
 	// Decoder is a JavaScript function that accepts the payload as byte array and
 	// returns an object containing the decoded values
 	Decoder string
@@ -59,7 +59,7 @@ type Functions struct {
 var timeOut = 100 * time.Millisecond
 
 // Decode decodes the payload using the Decoder function into a map
-func (f *Functions) Decode(payload []byte) (map[string]interface{}, error) {
+func (f *UplinkFunctions) Decode(payload []byte) (map[string]interface{}, error) {
 	if f.Decoder == "" {
 		return nil, errors.New("Decoder function not set")
 	}
@@ -86,7 +86,7 @@ func (f *Functions) Decode(payload []byte) (map[string]interface{}, error) {
 // Convert converts the values in the specified map to a another map using the
 // Converter function. If the Converter function is not set, this function
 // returns the data as-is
-func (f *Functions) Convert(data map[string]interface{}) (map[string]interface{}, error) {
+func (f *UplinkFunctions) Convert(data map[string]interface{}) (map[string]interface{}, error) {
 	if f.Converter == "" {
 		return data, nil
 	}
@@ -113,7 +113,7 @@ func (f *Functions) Convert(data map[string]interface{}) (map[string]interface{}
 
 // Validate validates the values in the specified map using the Validator
 // function. If the Validator function is not set, this function returns true
-func (f *Functions) Validate(data map[string]interface{}) (bool, error) {
+func (f *UplinkFunctions) Validate(data map[string]interface{}) (bool, error) {
 	if f.Validator == "" {
 		return true, nil
 	}
@@ -133,7 +133,7 @@ func (f *Functions) Validate(data map[string]interface{}) (bool, error) {
 }
 
 // Process decodes the specified payload, converts it and test the validity
-func (f *Functions) Process(payload []byte) (map[string]interface{}, bool, error) {
+func (f *UplinkFunctions) Process(payload []byte) (map[string]interface{}, bool, error) {
 	decoded, err := f.Decode(payload)
 	if err != nil {
 		return nil, false, err
@@ -240,6 +240,11 @@ func (h *handler) ConvertFieldsDown(ctx log.Interface, appDown *mqtt.DownlinkMes
 		return nil
 	}
 
+	// Impossible to have fields and payload at the same time
+	if appDown.Payload != nil {
+		return errors.New("Error processing downlink: both Fields and Payload provided")
+	}
+
 	app, err := h.applications.Get(appDown.AppID)
 	if err != nil {
 		return nil // Do not process if application not found
@@ -247,11 +252,6 @@ func (h *handler) ConvertFieldsDown(ctx log.Interface, appDown *mqtt.DownlinkMes
 
 	functions := &DownlinkFunctions{
 		Encoder: app.Encoder,
-	}
-
-	// Impossible to have fields and payload at the same time
-	if appDown.Payload != nil {
-		return errors.New("Error processing downlink: both Fields and Payload provided")
 	}
 
 	message, _, err := functions.ProcessDownlink(appDown.Fields)

@@ -36,58 +36,56 @@ var downlinkCmd = &cobra.Command{
 		}
 		ctx = ctx.WithField("DevID", devID)
 
-		JSON, err := cmd.Flags().GetBool("json")
+		jsonFlag, err := cmd.Flags().GetBool("json")
 
 		if err != nil {
-			ctx.WithError(err).Fatal("Error: value of the json flag")
+			ctx.WithError(err).Fatal("Failed to read json flag")
 		}
 
-		if JSON {
-			fields := args[1]
-			if fields == "" {
-				ctx.WithError(err).Fatal("No fields or payload provided")
+		fPort, err := cmd.Flags().GetInt("fport")
+
+		if err != nil {
+			ctx.WithError(err).Fatal("Failed to read port flag")
+		}
+
+		message := mqtt.DownlinkMessage{
+			AppID: appID,
+			DevID: devID,
+			FPort: uint8(fPort),
+		}
+
+		if args[1] != "" {
+			if jsonFlag {
+				// Valid payload provided + json flag
+				_, err := types.ParseHEX(args[1], len(args[1])/2)
+				if err == nil {
+					ctx.WithError(err).Fatal("You are providing a valid payload using the --json flag.")
+				}
+
+				err = json.Unmarshal([]byte(args[1]), &message.Fields)
+
+				if err != nil {
+					ctx.WithError(err).Fatal("Invalid Json string")
+					return
+				}
+			} else { // Payload provided
+				payload, err := types.ParseHEX(args[1], len(args[1])/2)
+				if err != nil {
+					ctx.WithError(err).Fatal("Invalid Payload")
+				}
+
+				message.Payload = payload
 			}
-
-			// Valid payload provided + json flag
-			_, err := types.ParseHEX(args[1], len(args[1])/2)
-			if err == nil {
-				ctx.WithError(err).Fatal("You are providing a valid payload using the --json flag.")
-			}
-
-			fPort, _ := cmd.Flags().GetInt("fport")
-
-			token := client.PublishDownlink(mqtt.DownlinkMessage{
-				AppID:  appID,
-				DevID:  devID,
-				FPort:  uint8(fPort),
-				Fields: parseJSON(fields),
-			})
+			token := client.PublishDownlink(message)
 			token.Wait()
 			if token.Error() != nil {
 				ctx.WithError(token.Error()).Fatal("Could not enqueue downlink")
 			}
-
 			ctx.Info("Enqueued downlink")
-		} else { // Payload provided
-			payload, err := types.ParseHEX(args[1], len(args[1])/2)
-			if err != nil {
-				ctx.WithError(err).Fatal("Invalid Payload")
-			}
-
-			fPort, _ := cmd.Flags().GetInt("fport")
-
-			token := client.PublishDownlink(mqtt.DownlinkMessage{
-				AppID:   appID,
-				DevID:   devID,
-				FPort:   uint8(fPort),
-				Payload: payload,
-			})
-			token.Wait()
-			if token.Error() != nil {
-				ctx.WithError(token.Error()).Fatal("Could not enqueue downlink")
-			}
-
-			ctx.Info("Enqueued downlink")
+		} else {
+			ctx.Info("Invalid command")
+			cmd.UsageFunc()(cmd)
+			return
 		}
 	},
 }
@@ -95,12 +93,7 @@ var downlinkCmd = &cobra.Command{
 func init() {
 	RootCmd.AddCommand(downlinkCmd)
 	downlinkCmd.Flags().Int("fport", 1, "FPort for downlink")
-	downlinkCmd.Flags().Bool("json", false, "Send Json to the handler (MQTT)")
+	downlinkCmd.Flags().Bool("json", false, "Send json to the handler (MQTT)")
 }
 
 // Example of json string : "{\"foo\":{\"key\": [1,2,3]}}"
-func parseJSON(s string) map[string]interface{} {
-	var res map[string]interface{}
-	json.Unmarshal([]byte(s), &res)
-	return res
-}

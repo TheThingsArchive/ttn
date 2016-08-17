@@ -83,7 +83,7 @@ func TestConvertFieldsUp(t *testing.T) {
 func TestDecode(t *testing.T) {
 	a := New(t)
 
-	functions := &Functions{
+	functions := &UplinkFunctions{
 		Decoder: `function(payload) {
   return {
     value: (payload[0] << 8) | payload[1]
@@ -103,7 +103,7 @@ func TestDecode(t *testing.T) {
 func TestConvert(t *testing.T) {
 	a := New(t)
 
-	withFunction := &Functions{
+	withFunction := &UplinkFunctions{
 		Converter: `function(data) {
   return {
     celcius: data.temperature * 2
@@ -114,7 +114,7 @@ func TestConvert(t *testing.T) {
 	a.So(err, ShouldBeNil)
 	a.So(data["celcius"], ShouldEqual, 22)
 
-	withoutFunction := &Functions{}
+	withoutFunction := &UplinkFunctions{}
 	data, err = withoutFunction.Convert(map[string]interface{}{"temperature": 11})
 	a.So(err, ShouldBeNil)
 	a.So(data["temperature"], ShouldEqual, 11)
@@ -123,7 +123,7 @@ func TestConvert(t *testing.T) {
 func TestValidate(t *testing.T) {
 	a := New(t)
 
-	withFunction := &Functions{
+	withFunction := &UplinkFunctions{
 		Validator: `function(data) {
       return data.temperature < 20;
     }`,
@@ -135,7 +135,7 @@ func TestValidate(t *testing.T) {
 	a.So(err, ShouldBeNil)
 	a.So(valid, ShouldBeFalse)
 
-	withoutFunction := &Functions{}
+	withoutFunction := &UplinkFunctions{}
 	valid, err = withoutFunction.Validate(map[string]interface{}{"temperature": 10})
 	a.So(err, ShouldBeNil)
 	a.So(valid, ShouldBeTrue)
@@ -144,7 +144,7 @@ func TestValidate(t *testing.T) {
 func TestProcess(t *testing.T) {
 	a := New(t)
 
-	functions := &Functions{
+	functions := &UplinkFunctions{
 		Decoder: `function(payload) {
 	return {
 		temperature: payload[0],
@@ -171,28 +171,28 @@ func TestProcessInvalidFunction(t *testing.T) {
 	a := New(t)
 
 	// Empty Function
-	functions := &Functions{
+	functions := &UplinkFunctions{
 		Decoder: ``,
 	}
 	_, _, err := functions.Process([]byte{40, 110})
 	a.So(err, ShouldNotBeNil)
 
 	// Invalid Function
-	functions = &Functions{
+	functions = &UplinkFunctions{
 		Decoder: `this is not valid JavaScript`,
 	}
 	_, _, err = functions.Process([]byte{40, 110})
 	a.So(err, ShouldNotBeNil)
 
 	// Invalid return
-	functions = &Functions{
+	functions = &UplinkFunctions{
 		Decoder: `function(payload) { return "Hello" }`,
 	}
 	_, _, err = functions.Process([]byte{40, 110})
 	a.So(err, ShouldNotBeNil)
 
 	// Invalid Function
-	functions = &Functions{
+	functions = &UplinkFunctions{
 		Decoder:   `function(payload) { return { temperature: payload[0] } }`,
 		Converter: `this is not valid JavaScript`,
 	}
@@ -200,7 +200,7 @@ func TestProcessInvalidFunction(t *testing.T) {
 	a.So(err, ShouldNotBeNil)
 
 	// Invalid Return
-	functions = &Functions{
+	functions = &UplinkFunctions{
 		Decoder:   `function(payload) { return { temperature: payload[0] } }`,
 		Converter: `function(data) { return "Hello" }`,
 	}
@@ -208,7 +208,7 @@ func TestProcessInvalidFunction(t *testing.T) {
 	a.So(err, ShouldNotBeNil)
 
 	// Invalid Function
-	functions = &Functions{
+	functions = &UplinkFunctions{
 		Decoder:   `function(payload) { return { temperature: payload[0] } }`,
 		Validator: `this is not valid JavaScript`,
 	}
@@ -216,7 +216,7 @@ func TestProcessInvalidFunction(t *testing.T) {
 	a.So(err, ShouldNotBeNil)
 
 	// Invalid Return
-	functions = &Functions{
+	functions = &UplinkFunctions{
 		Decoder:   `function(payload) { return { temperature: payload[0] } }`,
 		Validator: `function(data) { return "Hello" }`,
 	}
@@ -225,7 +225,7 @@ func TestProcessInvalidFunction(t *testing.T) {
 
 	// Invalid Object (Arrays are Objects too, but don't jive well with
 	// map[string]interface{})
-	functions = &Functions{
+	functions = &UplinkFunctions{
 		Decoder: `function(payload) { return [1] }`,
 	}
 	_, _, err = functions.Process([]byte{40, 110})
@@ -233,7 +233,7 @@ func TestProcessInvalidFunction(t *testing.T) {
 
 	// Invalid Object (Arrays are Objects too, but don't jive well with
 	// map[string]interface{})
-	functions = &Functions{
+	functions = &UplinkFunctions{
 		Decoder:   `function(payload) { return { temperature: payload[0] } }`,
 		Converter: `function(payload) { return [1] }`,
 	}
@@ -242,7 +242,7 @@ func TestProcessInvalidFunction(t *testing.T) {
 
 	// Invalid Object (Arrays are Objects too), this should work error because
 	// we're expecting a Boolean
-	functions = &Functions{
+	functions = &UplinkFunctions{
 		Decoder:   `function(payload) { return { temperature: payload[0] } }`,
 		Validator: `function(payload) { return [1] }`,
 	}
@@ -258,7 +258,7 @@ func TestTimeoutExceeded(t *testing.T) {
 	a := New(t)
 	start := time.Now()
 
-	functions := &Functions{
+	functions := &UplinkFunctions{
 		Decoder: `function(payload){ while (true) { } }`,
 	}
 
@@ -273,10 +273,6 @@ func TestTimeoutExceeded(t *testing.T) {
 	<-time.After(200 * time.Millisecond)
 	a.So(interrupted, ShouldHaveLength, 1)
 }
-
-// -------------------------------------- //
-// -------------- Downlink -------------- //
-// -------------------------------------- //
 
 func TestEncode(t *testing.T) {
 	a := New(t)
@@ -342,4 +338,48 @@ func TestConvertFieldsDown(t *testing.T) {
 	a.So(err, ShouldBeNil)
 	// ShouldResemble used for Array, Slices, Map
 	a.So(ttnDown.Payload, ShouldResemble, []byte{1, 2, 3, 4, 5, 6, 7})
+}
+
+func TestProcessDownlinkInvalidFunction(t *testing.T) {
+	a := New(t)
+
+	// Empty Function
+	functions := &DownlinkFunctions{
+		Encoder: ``,
+	}
+	_, _, err := functions.ProcessDownlink(map[string]interface{}{"key": 11})
+	a.So(err, ShouldNotBeNil)
+
+	// Invalid Function
+	functions = &DownlinkFunctions{
+		Encoder: `this is not valid JavaScript`,
+	}
+	_, _, err = functions.ProcessDownlink(map[string]interface{}{"key": 11})
+	a.So(err, ShouldNotBeNil)
+
+	// Invalid return
+	functions = &DownlinkFunctions{
+		Encoder: `function(payload) { return "Hello" }`,
+	}
+	_, _, err = functions.ProcessDownlink(map[string]interface{}{"key": 11})
+	a.So(err, ShouldNotBeNil)
+
+	// Invalid return
+	functions = &DownlinkFunctions{
+		Encoder: `function(payload) { return [ 100, 2256, 7 ] }`,
+	}
+	_, _, err = functions.ProcessDownlink(map[string]interface{}{"key": 11})
+	a.So(err, ShouldNotBeNil)
+
+	// Invalid return
+	functions = &DownlinkFunctions{
+		Encoder: `function(payload) {
+	return {
+		temperature: payload[0],
+		humidity: payload[1]
+	}
+} }`,
+	}
+	_, _, err = functions.ProcessDownlink(map[string]interface{}{"key": 11})
+	a.So(err, ShouldNotBeNil)
 }
