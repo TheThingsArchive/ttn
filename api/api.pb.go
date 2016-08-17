@@ -29,7 +29,9 @@ var _ = math.Inf
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the proto package it is being compiled against.
-const _ = proto.ProtoPackageIsVersion1
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 // message Ack is used to acknowledge a request, without giving a response.
 type Ack struct {
@@ -786,6 +788,8 @@ var (
 	ErrInvalidLengthApi = fmt.Errorf("proto: negative length found during unmarshaling")
 	ErrIntOverflowApi   = fmt.Errorf("proto: integer overflow")
 )
+
+func init() { proto.RegisterFile("github.com/TheThingsNetwork/ttn/api/api.proto", fileDescriptorApi) }
 
 var fileDescriptorApi = []byte{
 	// 263 bytes of a gzipped FileDescriptorProto

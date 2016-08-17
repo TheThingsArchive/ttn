@@ -1103,6 +1103,10 @@ var (
 	ErrIntOverflowLorawan   = fmt.Errorf("proto: integer overflow")
 )
 
+func init() {
+	proto.RegisterFile("github.com/TheThingsNetwork/ttn/api/protocol/lorawan/lorawan.proto", fileDescriptorLorawan)
+}
+
 var fileDescriptorLorawan = []byte{
 	// 566 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xd4, 0x53, 0xcf, 0x4e, 0xdb, 0x30,

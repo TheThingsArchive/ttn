@@ -40,7 +40,9 @@ var _ = math.Inf
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the proto package it is being compiled against.
-const _ = proto.ProtoPackageIsVersion1
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 type DeviceIdentifier struct {
 	AppEui *github_com_TheThingsNetwork_ttn_core_types.AppEUI `protobuf:"bytes,1,opt,name=app_eui,json=appEui,proto3,customtype=github.com/TheThingsNetwork/ttn/core/types.AppEUI" json:"app_eui,omitempty"`
@@ -1105,6 +1107,10 @@ var (
 	ErrInvalidLengthDevice = fmt.Errorf("proto: negative length found during unmarshaling")
 	ErrIntOverflowDevice   = fmt.Errorf("proto: integer overflow")
 )
+
+func init() {
+	proto.RegisterFile("github.com/TheThingsNetwork/ttn/api/protocol/lorawan/device.proto", fileDescriptorDevice)
+}
 
 var fileDescriptorDevice = []byte{
 	// 527 bytes of a gzipped FileDescriptorProto

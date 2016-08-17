@@ -37,6 +37,7 @@ message Application {
   string decoder     = 2;
   string converter   = 3;
   string validator   = 4;
+  string encoder     = 5;
 }
 
 message DeviceIdentifier {

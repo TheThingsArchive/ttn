@@ -47,7 +47,9 @@ var _ = math.Inf
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the proto package it is being compiled against.
-const _ = proto.ProtoPackageIsVersion1
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 type DownlinkOption struct {
 	Identifier     string                                                 `protobuf:"bytes,1,opt,name=identifier,proto3" json:"identifier,omitempty"`
@@ -4148,6 +4150,10 @@ var (
 	ErrInvalidLengthBroker = fmt.Errorf("proto: negative length found during unmarshaling")
 	ErrIntOverflowBroker   = fmt.Errorf("proto: integer overflow")
 )
+
+func init() {
+	proto.RegisterFile("github.com/TheThingsNetwork/ttn/api/broker/broker.proto", fileDescriptorBroker)
+}
 
 var fileDescriptorBroker = []byte{
 	// 1086 bytes of a gzipped FileDescriptorProto

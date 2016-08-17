@@ -32,7 +32,9 @@ var _ = math.Inf
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the proto package it is being compiled against.
-const _ = proto.ProtoPackageIsVersion1
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 type GPSMetadata struct {
 	Time      int64   `protobuf:"varint,1,opt,name=time,proto3" json:"time,omitempty"`
@@ -1574,6 +1576,10 @@ var (
 	ErrInvalidLengthGateway = fmt.Errorf("proto: negative length found during unmarshaling")
 	ErrIntOverflowGateway   = fmt.Errorf("proto: integer overflow")
 )
+
+func init() {
+	proto.RegisterFile("github.com/TheThingsNetwork/ttn/api/gateway/gateway.proto", fileDescriptorGateway)
+}
 
 var fileDescriptorGateway = []byte{
 	// 607 bytes of a gzipped FileDescriptorProto

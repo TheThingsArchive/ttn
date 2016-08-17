@@ -33,7 +33,9 @@ var _ = math.Inf
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the proto package it is being compiled against.
-const _ = proto.ProtoPackageIsVersion1
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ context.Context
@@ -340,6 +342,10 @@ var _Monitoring_serviceDesc = grpc.ServiceDesc{
 		},
 	},
 	Metadata: fileDescriptorNoc,
+}
+
+func init() {
+	proto.RegisterFile("github.com/TheThingsNetwork/ttn/api/noc/noc.proto", fileDescriptorNoc)
 }
 
 var fileDescriptorNoc = []byte{
