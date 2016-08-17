@@ -73,7 +73,6 @@ func (h *handler) HandleDownlink(appDownlink *mqtt.DownlinkMessage, downlink *pb
 		if err == ErrNotNeeded {
 			err = nil
 			return nil
-			// If the payload has to be sent but an error occured while processing
 		} else if err != nil {
 			return err
 		}
