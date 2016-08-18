@@ -372,6 +372,13 @@ func TestProcessDownlinkInvalidFunction(t *testing.T) {
 
 	// Invalid return
 	functions = &DownlinkFunctions{
+		Encoder: `function(payload) { return [0, -1, "blablabla"] }`,
+	}
+	_, _, err = functions.Process(map[string]interface{}{"key": 11})
+	a.So(err, ShouldNotBeNil)
+
+	// Invalid return
+	functions = &DownlinkFunctions{
 		Encoder: `function(payload) {
 	return {
 		temperature: payload[0],
