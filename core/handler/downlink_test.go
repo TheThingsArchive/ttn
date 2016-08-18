@@ -84,19 +84,19 @@ func TestHandleDownlink(t *testing.T) {
 		Payload: []byte{96, 4, 3, 2, 1, 0, 1, 0, 1, 0, 0, 0, 0},
 	})
 	a.So(err, ShouldBeNil)
+
 	h.downlink = make(chan *pb_broker.DownlinkMessage)
 
 	go func() {
 		dl := <-h.downlink
+		select {
+		case <-h.downlink:
+			t.Log("No timeout")
+		case <-time.After(time.Millisecond * 200):
+			err = errors.New("Timeout: can't read in the channel")
+		}
 		a.So(dl.Payload, ShouldNotBeEmpty)
 	}()
-
-	select {
-	case <-h.downlink:
-		t.Log("No timeout")
-	case <-time.After(time.Millisecond * 50):
-		err = errors.New("Timeout: can't write in the channel")
-	}
 
 	// Payload provided
 	err = h.HandleDownlink(&mqtt.DownlinkMessage{
@@ -136,15 +136,14 @@ func TestHandleDownlink(t *testing.T) {
 	go func() {
 		time.Sleep(time.Millisecond * 50)
 		dl := <-h.downlink
+		select {
+		case <-h.downlink:
+			t.Log("No timeout")
+		case <-time.After(time.Millisecond * 200):
+			err = errors.New("Timeout: can't read in the channel")
+		}
 		a.So(dl.Payload, ShouldNotBeEmpty)
 	}()
-
-	select {
-	case <-h.downlink:
-		t.Log("No timeout")
-	case <-time.After(time.Millisecond * 50):
-		err = errors.New("Timeout: can't write in the channel")
-	}
 
 	// Json Fields provided
 	err = h.HandleDownlink(&mqtt.DownlinkMessage{

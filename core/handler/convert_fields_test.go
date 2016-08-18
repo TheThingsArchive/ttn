@@ -328,7 +328,7 @@ func TestConvertFieldsDown(t *testing.T) {
 	// Case2: Normal flow with Encoder
 	h.applications.Set(&application.Application{
 		AppID: appID,
-		// Encoder takes JSON fields as argument and return the payloa as []byte
+		// Encoder takes JSON fields as argument and return the payload as []byte
 		Encoder: `function test(payload){
   		return [ 1, 2, 3, 4, 5, 6, 7 ]
 		}`,
@@ -336,7 +336,6 @@ func TestConvertFieldsDown(t *testing.T) {
 	ttnDown, appDown = buildConversionDownlink()
 	err = h.ConvertFieldsDown(GetLogger(t, "TestConvertFieldsDown"), appDown, ttnDown)
 	a.So(err, ShouldBeNil)
-	// ShouldResemble used for Array, Slices, Map
 	a.So(ttnDown.Payload, ShouldResemble, []byte{1, 2, 3, 4, 5, 6, 7})
 }
 
