@@ -4,8 +4,8 @@
 package handler
 
 import (
+	"sync"
 	"testing"
-	"time"
 
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/core"
@@ -51,6 +51,8 @@ func TestEnqueueDownlink(t *testing.T) {
 
 func TestHandleDownlink(t *testing.T) {
 	a := New(t)
+	var err error
+	var wg sync.WaitGroup
 	appID := "app2"
 	devID := "dev2"
 	appEUI := types.AppEUI([8]byte{1, 2, 3, 4, 5, 6, 7, 8})
@@ -59,9 +61,10 @@ func TestHandleDownlink(t *testing.T) {
 		Component:    &core.Component{Ctx: GetLogger(t, "TestHandleDownlink")},
 		devices:      device.NewDeviceStore(),
 		applications: application.NewApplicationStore(),
+		downlink:     make(chan *pb_broker.DownlinkMessage),
 	}
 	// Neither payload nor Fields provided : ERROR
-	err := h.HandleDownlink(&mqtt.DownlinkMessage{
+	err = h.HandleDownlink(&mqtt.DownlinkMessage{
 		AppID: appID,
 		DevID: devID,
 	}, &pb_broker.DownlinkMessage{
@@ -83,9 +86,14 @@ func TestHandleDownlink(t *testing.T) {
 		Payload: []byte{96, 4, 3, 2, 1, 0, 1, 0, 1, 0, 0, 0, 0},
 	})
 	a.So(err, ShouldBeNil)
-	h.downlink = make(chan *pb_broker.DownlinkMessage, 1)
 
 	// Payload provided
+	wg.Add(1)
+	go func() {
+		dl := <-h.downlink
+		a.So(dl.Payload, ShouldNotBeEmpty)
+		wg.Done()
+	}()
 	err = h.HandleDownlink(&mqtt.DownlinkMessage{
 		AppID:   appID,
 		DevID:   devID,
@@ -96,24 +104,16 @@ func TestHandleDownlink(t *testing.T) {
 		Payload: []byte{96, 4, 3, 2, 1, 0, 1, 0, 1, 0, 0, 0, 0},
 	})
 	a.So(err, ShouldBeNil)
+	wg.Wait()
 
-	select {
-	case dl := <-h.downlink:
-		a.So(dl.Payload, ShouldNotBeEmpty)
-	case <-time.After(time.Millisecond * 50):
-		t.Fatal("Empty channel")
-	}
-
+	// Both Payload and Fields provided
 	h.applications.Set(&application.Application{
 		AppID: appID,
 		Encoder: `function (payload){
 	  		return [96, 4, 3, 2, 1, 0, 1, 0, 1, 0, 0, 0, 0]
 			}`,
 	})
-
 	jsonFields := map[string]interface{}{"temperature": 11}
-
-	// Both Payload and Fields provided : ERROR
 	err = h.HandleDownlink(&mqtt.DownlinkMessage{
 		FPort:   1,
 		AppID:   appID,
@@ -126,7 +126,13 @@ func TestHandleDownlink(t *testing.T) {
 	})
 	a.So(err, ShouldNotBeNil)
 
-	// Json Fields provided
+	// JSON Fields provided
+	wg.Add(1)
+	go func() {
+		dl := <-h.downlink
+		a.So(dl.Payload, ShouldNotBeEmpty)
+		wg.Done()
+	}()
 	err = h.HandleDownlink(&mqtt.DownlinkMessage{
 		FPort:  1,
 		AppID:  appID,
@@ -137,11 +143,5 @@ func TestHandleDownlink(t *testing.T) {
 		DevEui: &devEUI,
 	})
 	a.So(err, ShouldBeNil)
-
-	select {
-	case dl := <-h.downlink:
-		a.So(dl.Payload, ShouldNotBeEmpty)
-	case <-time.After(time.Millisecond * 50):
-		t.Fatal("Empty channel")
-	}
+	wg.Wait()
 }
