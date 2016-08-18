@@ -83,11 +83,8 @@ func TestHandleDownlink(t *testing.T) {
 		Payload: []byte{96, 4, 3, 2, 1, 0, 1, 0, 1, 0, 0, 0, 0},
 	})
 	a.So(err, ShouldBeNil)
-	h.downlink = make(chan *pb_broker.DownlinkMessage)
-	go func() {
-		dl := <-h.downlink
-		a.So(dl.Payload, ShouldNotBeEmpty)
-	}()
+	h.downlink = make(chan *pb_broker.DownlinkMessage, 1)
+
 	// Payload provided
 	err = h.HandleDownlink(&mqtt.DownlinkMessage{
 		AppID:   appID,
@@ -98,6 +95,12 @@ func TestHandleDownlink(t *testing.T) {
 		DevEui:  &devEUI,
 		Payload: []byte{96, 4, 3, 2, 1, 0, 1, 0, 1, 0, 0, 0, 0},
 	})
+	select {
+	case dl := <-h.downlink:
+		a.So(dl.Payload, ShouldNotBeEmpty)
+	case <-time.After(time.Millisecond * 50):
+		t.Fatal("Empty channel")
+	}
 	a.So(err, ShouldBeNil)
 
 	h.applications.Set(&application.Application{
@@ -122,14 +125,6 @@ func TestHandleDownlink(t *testing.T) {
 	})
 	a.So(err, ShouldNotBeNil)
 
-	// Wait for the first goroutine to end
-	time.Sleep(time.Millisecond * 50)
-
-	go func() {
-		dl := <-h.downlink
-		a.So(dl.Payload, ShouldNotBeEmpty)
-	}()
-
 	// Json Fields provided
 	err = h.HandleDownlink(&mqtt.DownlinkMessage{
 		FPort:  1,
@@ -140,5 +135,11 @@ func TestHandleDownlink(t *testing.T) {
 		AppEui: &appEUI,
 		DevEui: &devEUI,
 	})
+	select {
+	case dl := <-h.downlink:
+		a.So(dl.Payload, ShouldNotBeEmpty)
+	case <-time.After(time.Millisecond * 50):
+		t.Fatal("Empty channel")
+	}
 	a.So(err, ShouldBeNil)
 }
