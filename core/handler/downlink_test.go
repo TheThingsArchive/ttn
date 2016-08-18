@@ -4,7 +4,6 @@
 package handler
 
 import (
-	"errors"
 	"testing"
 	"time"
 
@@ -84,20 +83,11 @@ func TestHandleDownlink(t *testing.T) {
 		Payload: []byte{96, 4, 3, 2, 1, 0, 1, 0, 1, 0, 0, 0, 0},
 	})
 	a.So(err, ShouldBeNil)
-
 	h.downlink = make(chan *pb_broker.DownlinkMessage)
-
 	go func() {
 		dl := <-h.downlink
-		select {
-		case <-h.downlink:
-			t.Log("No timeout")
-		case <-time.After(time.Millisecond * 200):
-			err = errors.New("Timeout: can't read in the channel")
-		}
 		a.So(dl.Payload, ShouldNotBeEmpty)
 	}()
-
 	// Payload provided
 	err = h.HandleDownlink(&mqtt.DownlinkMessage{
 		AppID:   appID,
@@ -133,15 +123,11 @@ func TestHandleDownlink(t *testing.T) {
 	a.So(err, ShouldNotBeNil)
 
 	// Wait for the first goroutine to end
+	time.Sleep(time.Millisecond * 50)
+	//Flushchannel(h.downlink)
+
 	go func() {
-		time.Sleep(time.Millisecond * 50)
 		dl := <-h.downlink
-		select {
-		case <-h.downlink:
-			t.Log("No timeout")
-		case <-time.After(time.Millisecond * 200):
-			err = errors.New("Timeout: can't read in the channel")
-		}
 		a.So(dl.Payload, ShouldNotBeEmpty)
 	}()
 
@@ -156,4 +142,15 @@ func TestHandleDownlink(t *testing.T) {
 		DevEui: &devEUI,
 	})
 	a.So(err, ShouldBeNil)
+}
+
+func Flushchannel(channel chan *pb_broker.DownlinkMessage) {
+	for {
+		select {
+		case <-channel:
+			// nothing we are just flushing the channel
+		default:
+			return
+		}
+	}
 }
