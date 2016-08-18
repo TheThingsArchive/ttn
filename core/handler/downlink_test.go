@@ -4,10 +4,12 @@
 package handler
 
 import (
+	"sync"
 	"testing"
 
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/core/handler/application"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/mqtt"
@@ -49,16 +51,20 @@ func TestEnqueueDownlink(t *testing.T) {
 
 func TestHandleDownlink(t *testing.T) {
 	a := New(t)
+	var err error
+	var wg sync.WaitGroup
 	appID := "app2"
 	devID := "dev2"
 	appEUI := types.AppEUI([8]byte{1, 2, 3, 4, 5, 6, 7, 8})
 	devEUI := types.DevEUI([8]byte{1, 2, 3, 4, 5, 6, 7, 8})
 	h := &handler{
-		Component: &core.Component{Ctx: GetLogger(t, "TestHandleDownlink")},
-		devices:   device.NewDeviceStore(),
+		Component:    &core.Component{Ctx: GetLogger(t, "TestHandleDownlink")},
+		devices:      device.NewDeviceStore(),
+		applications: application.NewApplicationStore(),
+		downlink:     make(chan *pb_broker.DownlinkMessage),
 	}
-
-	err := h.HandleDownlink(&mqtt.DownlinkMessage{
+	// Neither payload nor Fields provided : ERROR
+	err = h.HandleDownlink(&mqtt.DownlinkMessage{
 		AppID: appID,
 		DevID: devID,
 	}, &pb_broker.DownlinkMessage{
@@ -66,6 +72,7 @@ func TestHandleDownlink(t *testing.T) {
 		DevEui: &devEUI,
 	})
 	a.So(err, ShouldNotBeNil)
+
 	h.devices.Set(&device.Device{
 		AppID: appID,
 		DevID: devID,
@@ -79,10 +86,13 @@ func TestHandleDownlink(t *testing.T) {
 		Payload: []byte{96, 4, 3, 2, 1, 0, 1, 0, 1, 0, 0, 0, 0},
 	})
 	a.So(err, ShouldBeNil)
-	h.downlink = make(chan *pb_broker.DownlinkMessage)
+
+	// Payload provided
+	wg.Add(1)
 	go func() {
 		dl := <-h.downlink
 		a.So(dl.Payload, ShouldNotBeEmpty)
+		wg.Done()
 	}()
 	err = h.HandleDownlink(&mqtt.DownlinkMessage{
 		AppID:   appID,
@@ -94,4 +104,44 @@ func TestHandleDownlink(t *testing.T) {
 		Payload: []byte{96, 4, 3, 2, 1, 0, 1, 0, 1, 0, 0, 0, 0},
 	})
 	a.So(err, ShouldBeNil)
+	wg.Wait()
+
+	// Both Payload and Fields provided
+	h.applications.Set(&application.Application{
+		AppID: appID,
+		Encoder: `function (payload){
+	  		return [96, 4, 3, 2, 1, 0, 1, 0, 1, 0, 0, 0, 0]
+			}`,
+	})
+	jsonFields := map[string]interface{}{"temperature": 11}
+	err = h.HandleDownlink(&mqtt.DownlinkMessage{
+		FPort:   1,
+		AppID:   appID,
+		DevID:   devID,
+		Fields:  jsonFields,
+		Payload: []byte{0xAA, 0xBC},
+	}, &pb_broker.DownlinkMessage{
+		AppEui: &appEUI,
+		DevEui: &devEUI,
+	})
+	a.So(err, ShouldNotBeNil)
+
+	// JSON Fields provided
+	wg.Add(1)
+	go func() {
+		dl := <-h.downlink
+		a.So(dl.Payload, ShouldNotBeEmpty)
+		wg.Done()
+	}()
+	err = h.HandleDownlink(&mqtt.DownlinkMessage{
+		FPort:  1,
+		AppID:  appID,
+		DevID:  devID,
+		Fields: jsonFields,
+	}, &pb_broker.DownlinkMessage{
+		AppEui: &appEUI,
+		DevEui: &devEUI,
+	})
+	a.So(err, ShouldBeNil)
+	wg.Wait()
 }

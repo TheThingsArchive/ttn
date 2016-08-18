@@ -20,6 +20,9 @@ type Application struct {
 	// Validator is a JavaScript function that validates the data is converted by
 	// Converter and returns a boolean value indicating the validity of the data
 	Validator string
+	// Encoder is a JavaScript function that encode the data send on Downlink messages
+	// Returns an object containing the converted values in []byte
+	Encoder string
 
 	UpdatedAt time.Time
 }
@@ -30,6 +33,7 @@ var ApplicationProperties = []string{
 	"decoder",
 	"converter",
 	"validator",
+	"encoder",
 	"updated_at",
 }
 
@@ -65,6 +69,8 @@ func (application *Application) formatProperty(property string) (formatted strin
 		formatted = application.Converter
 	case "validator":
 		formatted = application.Validator
+	case "encoder":
+		formatted = application.Encoder
 	case "updated_at":
 		if !application.UpdatedAt.IsZero() {
 			formatted = application.UpdatedAt.UTC().Format(time.RFC3339Nano)
@@ -88,6 +94,8 @@ func (application *Application) parseProperty(property string, value string) err
 		application.Converter = value
 	case "validator":
 		application.Validator = value
+	case "encoder":
+		application.Encoder = value
 	case "updated_at":
 		val, err := time.Parse(time.RFC3339Nano, value)
 		if err != nil {

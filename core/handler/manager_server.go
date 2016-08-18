@@ -239,6 +239,7 @@ func (h *handlerManager) GetApplication(ctx context.Context, in *pb.ApplicationI
 		Decoder:   app.Decoder,
 		Converter: app.Converter,
 		Validator: app.Validator,
+		Encoder:   app.Encoder,
 	}, nil
 }
 
@@ -297,6 +298,7 @@ func (h *handlerManager) SetApplication(ctx context.Context, in *pb.Application)
 		Decoder:   in.Decoder,
 		Converter: in.Converter,
 		Validator: in.Validator,
+		Encoder:   in.Encoder,
 	})
 	if err != nil {
 		return nil, err

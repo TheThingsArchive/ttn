@@ -15,11 +15,13 @@ func getTestApplication() (application *Application, dmap map[string]string) {
 			Decoder:   `function (payload) { return { size: payload.length; } }`,
 			Converter: `function (data) { return data; }`,
 			Validator: `function (data) { return data.size % 2 == 0; }`,
+			Encoder:   `function (payload){return [96, 4, 3, 2, 1, 0, 1, 0, 1, 0, 0, 0, 0]; }`,
 		}, map[string]string{
 			"app_id":     "AppID-1",
 			"decoder":    `function (payload) { return { size: payload.length; } }`,
 			"converter":  `function (data) { return data; }`,
 			"validator":  `function (data) { return data.size % 2 == 0; }`,
+			"encoder":    `function (payload){return [96, 4, 3, 2, 1, 0, 1, 0, 1, 0, 0, 0, 0]; }`,
 			"updated_at": "",
 		}
 }

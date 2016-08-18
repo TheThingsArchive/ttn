@@ -15,9 +15,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// applicationsPayloadFunctionsSetCmd represents the `applications pf set` command
 var applicationsPayloadFunctionsSetCmd = &cobra.Command{
-	Use:   "set [decoder/converter/validator] [file.js]",
+	Use:   "set [decoder/converter/validator/encoder] [file.js]",
 	Short: "Set payload functions of an application",
 	Long: `ttnctl pf set can be used to get or set payload functions of an application.
 The functions are read from the supplied file or from STDIN.`,
@@ -54,6 +53,8 @@ The functions are read from the supplied file or from STDIN.`,
 				app.Converter = string(content)
 			case "validator":
 				app.Validator = string(content)
+			case "encoder":
+				app.Encoder = string(content)
 			default:
 				ctx.Fatalf("Function %s does not exist", function)
 			}
@@ -88,6 +89,15 @@ The functions are read from the supplied file or from STDIN.`,
 }
 ########## Write your Validator here and end with Ctrl+D (EOF):`)
 				app.Validator = readFunction()
+			case "encoder":
+				fmt.Println(`function (val) {
+  // val is the output of the encoder function.
+
+  // todo: return an array of numbers
+  return return [96, 4, 3, 2, 1, 0, 1, 0, 1, 0, 0, 0, 0];
+}
+########## Write your Encoder here and end with Ctrl+D (EOF):`)
+				app.Encoder = readFunction()
 			default:
 				ctx.Fatalf("Function %s does not exist", function)
 			}

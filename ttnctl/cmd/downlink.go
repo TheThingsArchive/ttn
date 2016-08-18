@@ -4,6 +4,8 @@
 package cmd
 
 import (
+	"encoding/json"
+
 	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/mqtt"
@@ -11,7 +13,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// downlinkCmd represents the `downlink` command
 var downlinkCmd = &cobra.Command{
 	Use:   "downlink [DevID] [Payload]",
 	Short: "Send a downlink message to a device",
@@ -19,6 +20,12 @@ var downlinkCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		client := util.GetMQTT(ctx)
 		defer client.Disconnect()
+
+		if len(args) < 2 {
+			ctx.Info("Not enough arguments. Please, provide a devId and a Payload")
+			cmd.UsageFunc()(cmd)
+			return
+		}
 
 		appID := util.GetAppID(ctx)
 		ctx = ctx.WithField("AppID", appID)
@@ -29,30 +36,62 @@ var downlinkCmd = &cobra.Command{
 		}
 		ctx = ctx.WithField("DevID", devID)
 
-		payload, err := types.ParseHEX(args[1], len(args[1])/2)
+		jsonflag, err := cmd.Flags().GetBool("json")
+
 		if err != nil {
-			ctx.WithError(err).Fatal("Invalid Payload")
+			ctx.WithError(err).Fatal("Failed to read json flag")
 		}
 
-		fPort, _ := cmd.Flags().GetInt("fport")
+		fPort, err := cmd.Flags().GetInt("fport")
 
-		token := client.PublishDownlink(mqtt.DownlinkMessage{
-			AppID:   appID,
-			DevID:   devID,
-			FPort:   uint8(fPort),
-			Payload: payload,
-		})
+		if err != nil {
+			ctx.WithError(err).Fatal("Failed to read fport flag")
+		}
+
+		message := mqtt.DownlinkMessage{
+			AppID: appID,
+			DevID: devID,
+			FPort: uint8(fPort),
+		}
+
+		if args[1] == "" {
+			ctx.Info("Invalid command")
+			cmd.UsageFunc()(cmd)
+			return
+		}
+
+		if jsonflag {
+			// Valid payload provided + json flag
+			_, err := types.ParseHEX(args[1], len(args[1])/2)
+			if err == nil {
+				ctx.WithError(err).Fatal("You are providing a valid payload using the --json flag.")
+			}
+
+			err = json.Unmarshal([]byte(args[1]), &message.Fields)
+
+			if err != nil {
+				ctx.WithError(err).Fatal("Invalid json string")
+				return
+			}
+		} else { // Payload provided
+			payload, err := types.ParseHEX(args[1], len(args[1])/2)
+			if err != nil {
+				ctx.WithError(err).Fatal("Invalid Payload")
+			}
+
+			message.Payload = payload
+		}
+		token := client.PublishDownlink(message)
 		token.Wait()
 		if token.Error() != nil {
 			ctx.WithError(token.Error()).Fatal("Could not enqueue downlink")
 		}
-
 		ctx.Info("Enqueued downlink")
-
 	},
 }
 
 func init() {
 	RootCmd.AddCommand(downlinkCmd)
 	downlinkCmd.Flags().Int("fport", 1, "FPort for downlink")
+	downlinkCmd.Flags().Bool("json", false, "Send json to the handler (MQTT)")
 }

@@ -51,6 +51,13 @@ converting and validating binary payload.
 		} else {
 			ctx.Info("No validator function")
 		}
+
+		if app.Encoder != "" {
+			ctx.Info("Encoder function")
+			fmt.Println(app.Encoder)
+		} else {
+			ctx.Info("No encoder function")
+		}
 	},
 }
 

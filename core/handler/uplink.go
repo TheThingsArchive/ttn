@@ -39,7 +39,7 @@ func (h *handler) HandleUplink(uplink *pb_broker.DeduplicatedUplinkMessage) erro
 	processors := []UplinkProcessor{
 		h.ConvertFromLoRaWAN,
 		h.ConvertMetadata,
-		h.ConvertFields,
+		h.ConvertFieldsUp,
 	}
 
 	ctx.WithField("NumProcessors", len(processors)).Debug("Running Uplink Processors")

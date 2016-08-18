@@ -14,15 +14,15 @@ import (
 	"github.com/robertkrimen/otto"
 )
 
-// ConvertFields converts the payload to fields using payload functions
-func (h *handler) ConvertFields(ctx log.Interface, ttnUp *pb_broker.DeduplicatedUplinkMessage, appUp *mqtt.UplinkMessage) error {
+// ConvertFieldsUp converts the payload to fields using payload functions
+func (h *handler) ConvertFieldsUp(ctx log.Interface, ttnUp *pb_broker.DeduplicatedUplinkMessage, appUp *mqtt.UplinkMessage) error {
 	// Find Application
 	app, err := h.applications.Get(ttnUp.AppId)
 	if err != nil {
 		return nil // Do not process if application not found
 	}
 
-	functions := &Functions{
+	functions := &UplinkFunctions{
 		Decoder:   app.Decoder,
 		Converter: app.Converter,
 		Validator: app.Validator,
@@ -42,8 +42,8 @@ func (h *handler) ConvertFields(ctx log.Interface, ttnUp *pb_broker.Deduplicated
 	return nil
 }
 
-// Functions decodes, converts and validates payload using JavaScript functions
-type Functions struct {
+// UplinkFunctions decodes, converts and validates payload using JavaScript functions
+type UplinkFunctions struct {
 	// Decoder is a JavaScript function that accepts the payload as byte array and
 	// returns an object containing the decoded values
 	Decoder string
@@ -59,14 +59,14 @@ type Functions struct {
 var timeOut = 100 * time.Millisecond
 
 // Decode decodes the payload using the Decoder function into a map
-func (f *Functions) Decode(payload []byte) (map[string]interface{}, error) {
+func (f *UplinkFunctions) Decode(payload []byte) (map[string]interface{}, error) {
 	if f.Decoder == "" {
 		return nil, errors.New("Decoder function not set")
 	}
 
 	vm := otto.New()
 	vm.Set("payload", payload)
-	value, err := RunUnsafeCode(vm, fmt.Sprintf("(%s)(payload)", f.Decoder), timeOut)
+	value, err := runUnsafeCode(vm, fmt.Sprintf("(%s)(payload)", f.Decoder), timeOut)
 	if err != nil {
 		return nil, err
 	}
@@ -86,14 +86,14 @@ func (f *Functions) Decode(payload []byte) (map[string]interface{}, error) {
 // Convert converts the values in the specified map to a another map using the
 // Converter function. If the Converter function is not set, this function
 // returns the data as-is
-func (f *Functions) Convert(data map[string]interface{}) (map[string]interface{}, error) {
+func (f *UplinkFunctions) Convert(data map[string]interface{}) (map[string]interface{}, error) {
 	if f.Converter == "" {
 		return data, nil
 	}
 
 	vm := otto.New()
 	vm.Set("data", data)
-	value, err := RunUnsafeCode(vm, fmt.Sprintf("(%s)(data)", f.Converter), timeOut)
+	value, err := runUnsafeCode(vm, fmt.Sprintf("(%s)(data)", f.Converter), timeOut)
 	if err != nil {
 		return nil, err
 	}
@@ -113,14 +113,14 @@ func (f *Functions) Convert(data map[string]interface{}) (map[string]interface{}
 
 // Validate validates the values in the specified map using the Validator
 // function. If the Validator function is not set, this function returns true
-func (f *Functions) Validate(data map[string]interface{}) (bool, error) {
+func (f *UplinkFunctions) Validate(data map[string]interface{}) (bool, error) {
 	if f.Validator == "" {
 		return true, nil
 	}
 
 	vm := otto.New()
 	vm.Set("data", data)
-	value, err := RunUnsafeCode(vm, fmt.Sprintf("(%s)(data)", f.Validator), timeOut)
+	value, err := runUnsafeCode(vm, fmt.Sprintf("(%s)(data)", f.Validator), timeOut)
 	if err != nil {
 		return false, err
 	}
@@ -133,7 +133,7 @@ func (f *Functions) Validate(data map[string]interface{}) (bool, error) {
 }
 
 // Process decodes the specified payload, converts it and test the validity
-func (f *Functions) Process(payload []byte) (map[string]interface{}, bool, error) {
+func (f *UplinkFunctions) Process(payload []byte) (map[string]interface{}, bool, error) {
 	decoded, err := f.Decode(payload)
 	if err != nil {
 		return nil, false, err
@@ -148,14 +148,14 @@ func (f *Functions) Process(payload []byte) (map[string]interface{}, bool, error
 	return converted, valid, err
 }
 
-var timeOutExceeded = errors.New("Code has been running to long")
+var errTimeOutExceeded = errors.New("Code has been running to long")
 
-func RunUnsafeCode(vm *otto.Otto, code string, timeOut time.Duration) (value otto.Value, err error) {
+func runUnsafeCode(vm *otto.Otto, code string, timeOut time.Duration) (value otto.Value, err error) {
 	start := time.Now()
 	defer func() {
 		duration := time.Since(start)
 		if caught := recover(); caught != nil {
-			if caught == timeOutExceeded {
+			if caught == errTimeOutExceeded {
 				value = otto.Value{}
 				err = fmt.Errorf("Interrupted javascript execution after %v", duration)
 				return
@@ -171,8 +171,94 @@ func RunUnsafeCode(vm *otto.Otto, code string, timeOut time.Duration) (value ott
 	go func() {
 		time.Sleep(timeOut)
 		vm.Interrupt <- func() {
-			panic(timeOutExceeded)
+			panic(errTimeOutExceeded)
 		}
 	}()
 	return vm.Run(code)
+}
+
+// DownlinkFunctions encodes payload using JavaScript functions
+type DownlinkFunctions struct {
+	// Encoder is a JavaScript function that accepts the payload as JSON and
+	// returns an array of bytes
+	Encoder string
+}
+
+// Encode encodes the map into a byte slice using the encoder payload function
+// If no encoder function is set, this function returns an array.
+func (f *DownlinkFunctions) Encode(payload map[string]interface{}) ([]byte, error) {
+	if f.Encoder == "" {
+		return nil, errors.New("Encoder function not set")
+	}
+
+	vm := otto.New()
+	vm.Set("payload", payload)
+	value, err := runUnsafeCode(vm, fmt.Sprintf("(%s)(payload)", f.Encoder), timeOut)
+	if err != nil {
+		return nil, err
+	}
+
+	if !value.IsObject() {
+		return nil, errors.New("Encoder does not return an object")
+	}
+
+	v, err := value.Export()
+	if err != nil {
+		return nil, err
+	}
+
+	m, ok := v.([]int64)
+	if !ok {
+		return nil, errors.New("Encoder should return an Array of numbers")
+	}
+
+	res := make([]byte, len(m))
+	for i, v := range m {
+		if v < 0 || v > 255 {
+			return nil, errors.New("Numbers in array should be between 0 and 255")
+		}
+		res[i] = byte(v)
+	}
+
+	return res, nil
+}
+
+// Process encode the specified field, converts it into a valid payload
+func (f *DownlinkFunctions) Process(payload map[string]interface{}) ([]byte, bool, error) {
+	encoded, err := f.Encode(payload)
+	if err != nil {
+		return nil, false, err
+	}
+
+	return encoded, true, nil
+}
+
+// ConvertFieldsDown converts the fields into a payload
+func (h *handler) ConvertFieldsDown(ctx log.Interface, appDown *mqtt.DownlinkMessage, ttnDown *pb_broker.DownlinkMessage) error {
+	if appDown.Fields == nil {
+		return nil
+	}
+
+	if appDown.Payload != nil {
+		return errors.New("Both Fields and Payload provided")
+	}
+
+	app, err := h.applications.Get(appDown.AppID)
+	if err != nil {
+		return nil
+	}
+
+	functions := &DownlinkFunctions{
+		Encoder: app.Encoder,
+	}
+
+	message, _, err := functions.Process(appDown.Fields)
+	if err != nil {
+		return err
+	}
+
+	appDown.Payload = message
+	ttnDown.Payload = message
+
+	return nil
 }
