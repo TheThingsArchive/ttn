@@ -124,7 +124,6 @@ func TestHandleDownlink(t *testing.T) {
 
 	// Wait for the first goroutine to end
 	time.Sleep(time.Millisecond * 50)
-	//Flushchannel(h.downlink)
 
 	go func() {
 		dl := <-h.downlink
@@ -142,15 +141,4 @@ func TestHandleDownlink(t *testing.T) {
 		DevEui: &devEUI,
 	})
 	a.So(err, ShouldBeNil)
-}
-
-func Flushchannel(channel chan *pb_broker.DownlinkMessage) {
-	for {
-		select {
-		case <-channel:
-			// nothing we are just flushing the channel
-		default:
-			return
-		}
-	}
 }
