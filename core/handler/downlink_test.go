@@ -4,6 +4,7 @@
 package handler
 
 import (
+	"errors"
 	"testing"
 	"time"
 
@@ -84,10 +85,19 @@ func TestHandleDownlink(t *testing.T) {
 	})
 	a.So(err, ShouldBeNil)
 	h.downlink = make(chan *pb_broker.DownlinkMessage)
+
 	go func() {
 		dl := <-h.downlink
 		a.So(dl.Payload, ShouldNotBeEmpty)
 	}()
+
+	select {
+	case <-h.downlink:
+		t.Log("No timeout")
+	case <-time.After(time.Millisecond * 50):
+		err = errors.New("Timeout: can't write in the channel")
+	}
+
 	// Payload provided
 	err = h.HandleDownlink(&mqtt.DownlinkMessage{
 		AppID:   appID,
@@ -123,12 +133,18 @@ func TestHandleDownlink(t *testing.T) {
 	a.So(err, ShouldNotBeNil)
 
 	// Wait for the first goroutine to end
-	time.Sleep(time.Millisecond * 50)
-
 	go func() {
+		time.Sleep(time.Millisecond * 50)
 		dl := <-h.downlink
 		a.So(dl.Payload, ShouldNotBeEmpty)
 	}()
+
+	select {
+	case <-h.downlink:
+		t.Log("No timeout")
+	case <-time.After(time.Millisecond * 50):
+		err = errors.New("Timeout: can't write in the channel")
+	}
 
 	// Json Fields provided
 	err = h.HandleDownlink(&mqtt.DownlinkMessage{

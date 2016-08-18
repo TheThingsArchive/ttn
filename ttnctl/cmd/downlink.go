@@ -22,7 +22,7 @@ var downlinkCmd = &cobra.Command{
 		defer client.Disconnect()
 
 		if len(args) < 2 {
-			ctx.Info("Not enough arguments. Please, provide a devID and a Payload")
+			ctx.Info("Not enough arguments. Please, provide a devId and a Payload")
 			cmd.UsageFunc()(cmd)
 			return
 		}
@@ -36,16 +36,16 @@ var downlinkCmd = &cobra.Command{
 		}
 		ctx = ctx.WithField("DevID", devID)
 
-		jsonFlag, err := cmd.Flags().GetBool("JSON")
+		jsonflag, err := cmd.Flags().GetBool("json")
 
 		if err != nil {
-			ctx.WithError(err).Fatal("Failed to read JSON flag")
+			ctx.WithError(err).Fatal("Failed to read json flag")
 		}
 
 		fPort, err := cmd.Flags().GetInt("fport")
 
 		if err != nil {
-			ctx.WithError(err).Fatal("Failed to read port flag")
+			ctx.WithError(err).Fatal("Failed to read fport flag")
 		}
 
 		message := mqtt.DownlinkMessage{
@@ -54,46 +54,44 @@ var downlinkCmd = &cobra.Command{
 			FPort: uint8(fPort),
 		}
 
-		if args[1] != "" {
-			if jsonFlag {
-				// Valid payload provided + json flag
-				_, err := types.ParseHEX(args[1], len(args[1])/2)
-				if err == nil {
-					ctx.WithError(err).Fatal("You are providing a valid payload using the --JSON flag.")
-				}
-
-				err = json.Unmarshal([]byte(args[1]), &message.Fields)
-
-				if err != nil {
-					ctx.WithError(err).Fatal("Invalid JSON string")
-					return
-				}
-			} else { // Payload provided
-				payload, err := types.ParseHEX(args[1], len(args[1])/2)
-				if err != nil {
-					ctx.WithError(err).Fatal("Invalid Payload")
-				}
-
-				message.Payload = payload
-			}
-			token := client.PublishDownlink(message)
-			token.Wait()
-			if token.Error() != nil {
-				ctx.WithError(token.Error()).Fatal("Could not enqueue downlink")
-			}
-			ctx.Info("Enqueued downlink")
-		} else {
+		if args[1] == "" {
 			ctx.Info("Invalid command")
 			cmd.UsageFunc()(cmd)
 			return
 		}
+
+		if jsonflag {
+			// Valid payload provided + json flag
+			_, err := types.ParseHEX(args[1], len(args[1])/2)
+			if err == nil {
+				ctx.WithError(err).Fatal("You are providing a valid payload using the --json flag.")
+			}
+
+			err = json.Unmarshal([]byte(args[1]), &message.Fields)
+
+			if err != nil {
+				ctx.WithError(err).Fatal("Invalid json string")
+				return
+			}
+		} else { // Payload provided
+			payload, err := types.ParseHEX(args[1], len(args[1])/2)
+			if err != nil {
+				ctx.WithError(err).Fatal("Invalid Payload")
+			}
+
+			message.Payload = payload
+		}
+		token := client.PublishDownlink(message)
+		token.Wait()
+		if token.Error() != nil {
+			ctx.WithError(token.Error()).Fatal("Could not enqueue downlink")
+		}
+		ctx.Info("Enqueued downlink")
 	},
 }
 
 func init() {
 	RootCmd.AddCommand(downlinkCmd)
 	downlinkCmd.Flags().Int("fport", 1, "FPort for downlink")
-	downlinkCmd.Flags().Bool("JSON", false, "Send JSON to the handler (MQTT)")
+	downlinkCmd.Flags().Bool("json", false, "Send json to the handler (MQTT)")
 }
-
-// Example of json string : "{\"foo\":{\"key\": [1,2,3]}}"

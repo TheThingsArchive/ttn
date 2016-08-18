@@ -28,7 +28,7 @@ func (h *handler) ConvertFieldsUp(ctx log.Interface, ttnUp *pb_broker.Deduplicat
 		Validator: app.Validator,
 	}
 
-	fields, valid, err := functions.ProcessUplink(appUp.Payload)
+	fields, valid, err := functions.Process(appUp.Payload)
 	if err != nil {
 		return nil // Do not set fields if processing failed
 	}
@@ -132,8 +132,8 @@ func (f *UplinkFunctions) Validate(data map[string]interface{}) (bool, error) {
 	return value.ToBoolean()
 }
 
-// ProcessUplink decodes the specified payload, converts it and test the validity
-func (f *UplinkFunctions) ProcessUplink(payload []byte) (map[string]interface{}, bool, error) {
+// Process decodes the specified payload, converts it and test the validity
+func (f *UplinkFunctions) Process(payload []byte) (map[string]interface{}, bool, error) {
 	decoded, err := f.Decode(payload)
 	if err != nil {
 		return nil, false, err
@@ -224,7 +224,9 @@ func (f *DownlinkFunctions) Encode(payload map[string]interface{}) ([]byte, erro
 	return res, nil
 }
 
-func (f *DownlinkFunctions) ProcessDownlink(payload map[string]interface{}) ([]byte, bool, error) {
+
+// Process encode the specified field, converts it into a valid payload
+func (f *DownlinkFunctions) Process(payload map[string]interface{}) ([]byte, bool, error) {
 	encoded, err := f.Encode(payload)
 	if err != nil {
 		return nil, false, err
@@ -233,6 +235,8 @@ func (f *DownlinkFunctions) ProcessDownlink(payload map[string]interface{}) ([]b
 	return encoded, true, nil
 }
 
+
+// ConvertFieldsDown converts the fields into a payload
 func (h *handler) ConvertFieldsDown(ctx log.Interface, appDown *mqtt.DownlinkMessage, ttnDown *pb_broker.DownlinkMessage) error {
 
 	// The validity of the message is the application responsability.
@@ -242,7 +246,7 @@ func (h *handler) ConvertFieldsDown(ctx log.Interface, appDown *mqtt.DownlinkMes
 
 	// Impossible to have fields and payload at the same time
 	if appDown.Payload != nil {
-		return errors.New("Error: both Fields and Payload provided")
+		return errors.New("Both Fields and Payload provided")
 	}
 
 	app, err := h.applications.Get(appDown.AppID)
@@ -254,7 +258,7 @@ func (h *handler) ConvertFieldsDown(ctx log.Interface, appDown *mqtt.DownlinkMes
 		Encoder: app.Encoder,
 	}
 
-	message, _, err := functions.ProcessDownlink(appDown.Fields)
+	message, _, err := functions.Process(appDown.Fields)
 	if err != nil {
 		return err
 	}
