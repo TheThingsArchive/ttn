@@ -66,7 +66,7 @@ func (f *UplinkFunctions) Decode(payload []byte) (map[string]interface{}, error)
 
 	vm := otto.New()
 	vm.Set("payload", payload)
-	value, err := RunUnsafeCode(vm, fmt.Sprintf("(%s)(payload)", f.Decoder), timeOut)
+	value, err := runUnsafeCode(vm, fmt.Sprintf("(%s)(payload)", f.Decoder), timeOut)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +93,7 @@ func (f *UplinkFunctions) Convert(data map[string]interface{}) (map[string]inter
 
 	vm := otto.New()
 	vm.Set("data", data)
-	value, err := RunUnsafeCode(vm, fmt.Sprintf("(%s)(data)", f.Converter), timeOut)
+	value, err := runUnsafeCode(vm, fmt.Sprintf("(%s)(data)", f.Converter), timeOut)
 	if err != nil {
 		return nil, err
 	}
@@ -120,7 +120,7 @@ func (f *UplinkFunctions) Validate(data map[string]interface{}) (bool, error) {
 
 	vm := otto.New()
 	vm.Set("data", data)
-	value, err := RunUnsafeCode(vm, fmt.Sprintf("(%s)(data)", f.Validator), timeOut)
+	value, err := runUnsafeCode(vm, fmt.Sprintf("(%s)(data)", f.Validator), timeOut)
 	if err != nil {
 		return false, err
 	}
@@ -148,14 +148,14 @@ func (f *UplinkFunctions) Process(payload []byte) (map[string]interface{}, bool,
 	return converted, valid, err
 }
 
-var timeOutExceeded = errors.New("Code has been running to long")
+var errTimeOutExceeded = errors.New("Code has been running to long")
 
-func RunUnsafeCode(vm *otto.Otto, code string, timeOut time.Duration) (value otto.Value, err error) {
+func runUnsafeCode(vm *otto.Otto, code string, timeOut time.Duration) (value otto.Value, err error) {
 	start := time.Now()
 	defer func() {
 		duration := time.Since(start)
 		if caught := recover(); caught != nil {
-			if caught == timeOutExceeded {
+			if caught == errTimeOutExceeded {
 				value = otto.Value{}
 				err = fmt.Errorf("Interrupted javascript execution after %v", duration)
 				return
@@ -171,18 +171,21 @@ func RunUnsafeCode(vm *otto.Otto, code string, timeOut time.Duration) (value ott
 	go func() {
 		time.Sleep(timeOut)
 		vm.Interrupt <- func() {
-			panic(timeOutExceeded)
+			panic(errTimeOutExceeded)
 		}
 	}()
 	return vm.Run(code)
 }
 
+// DownlinkFunctions encodes payload using JavaScript functions
 type DownlinkFunctions struct {
 	// Encoder is a JavaScript function that accepts the payload as JSON and
 	// returns an array of bytes
 	Encoder string
 }
 
+// Encode encodes the map into a byte slice using the encoder payload function
+// If no encoder function is set, this function returns an array.
 func (f *DownlinkFunctions) Encode(payload map[string]interface{}) ([]byte, error) {
 	if f.Encoder == "" {
 		return nil, errors.New("Encoder function not set")
@@ -190,17 +193,13 @@ func (f *DownlinkFunctions) Encode(payload map[string]interface{}) ([]byte, erro
 
 	vm := otto.New()
 	vm.Set("payload", payload)
-	value, err := RunUnsafeCode(vm, fmt.Sprintf("(%s)(payload)", f.Encoder), timeOut)
+	value, err := runUnsafeCode(vm, fmt.Sprintf("(%s)(payload)", f.Encoder), timeOut)
 	if err != nil {
 		return nil, err
 	}
 
 	if !value.IsObject() {
 		return nil, errors.New("Encoder does not return an object")
-	}
-
-	if value.Class() != "Array" {
-		return nil, errors.New("Encoder should return an Array.")
 	}
 
 	v, err := value.Export()
@@ -216,7 +215,7 @@ func (f *DownlinkFunctions) Encode(payload map[string]interface{}) ([]byte, erro
 	res := make([]byte, len(m))
 	for i, v := range m {
 		if v < 0 || v > 255 {
-			return nil, errors.New("Encoder error: numbers in array should be between 0 and 255")
+			return nil, errors.New("Numbers in array should be between 0 and 255")
 		}
 		res[i] = byte(v)
 	}
@@ -230,26 +229,23 @@ func (f *DownlinkFunctions) Process(payload map[string]interface{}) ([]byte, boo
 	if err != nil {
 		return nil, false, err
 	}
-	// The handler as just to encode data without checking if it's valid or not.
+
 	return encoded, true, nil
 }
 
 // ConvertFieldsDown converts the fields into a payload
 func (h *handler) ConvertFieldsDown(ctx log.Interface, appDown *mqtt.DownlinkMessage, ttnDown *pb_broker.DownlinkMessage) error {
-
-	// The validity of the message is the application responsability.
 	if appDown.Fields == nil {
 		return nil
 	}
 
-	// Impossible to have fields and payload at the same time
 	if appDown.Payload != nil {
 		return errors.New("Both Fields and Payload provided")
 	}
 
 	app, err := h.applications.Get(appDown.AppID)
 	if err != nil {
-		return nil // Do not process if application not found
+		return nil
 	}
 
 	functions := &DownlinkFunctions{
