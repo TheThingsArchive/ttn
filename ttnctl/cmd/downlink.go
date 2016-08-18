@@ -64,7 +64,7 @@ var downlinkCmd = &cobra.Command{
 			// Valid payload provided + json flag
 			_, err := types.ParseHEX(args[1], len(args[1])/2)
 			if err == nil {
-				ctx.WithError(err).Fatal("You are providing a valid payload using the --json flag.")
+				ctx.WithError(err).Fatal("You are providing a valid HEX payload while sending payload in JSON.")
 			}
 
 			err = json.Unmarshal([]byte(args[1]), &message.Fields)
@@ -93,5 +93,5 @@ var downlinkCmd = &cobra.Command{
 func init() {
 	RootCmd.AddCommand(downlinkCmd)
 	downlinkCmd.Flags().Int("fport", 1, "FPort for downlink")
-	downlinkCmd.Flags().Bool("json", false, "Send json to the handler (MQTT)")
+	downlinkCmd.Flags().Bool("json", false, "Provide the payload as JSON")
 }
