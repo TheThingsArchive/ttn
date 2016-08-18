@@ -224,7 +224,6 @@ func (f *DownlinkFunctions) Encode(payload map[string]interface{}) ([]byte, erro
 	return res, nil
 }
 
-
 // Process encode the specified field, converts it into a valid payload
 func (f *DownlinkFunctions) Process(payload map[string]interface{}) ([]byte, bool, error) {
 	encoded, err := f.Encode(payload)
@@ -234,7 +233,6 @@ func (f *DownlinkFunctions) Process(payload map[string]interface{}) ([]byte, boo
 	// The handler as just to encode data without checking if it's valid or not.
 	return encoded, true, nil
 }
-
 
 // ConvertFieldsDown converts the fields into a payload
 func (h *handler) ConvertFieldsDown(ctx log.Interface, appDown *mqtt.DownlinkMessage, ttnDown *pb_broker.DownlinkMessage) error {
