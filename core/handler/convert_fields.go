@@ -28,7 +28,7 @@ func (h *handler) ConvertFieldsUp(ctx log.Interface, ttnUp *pb_broker.Deduplicat
 		Validator: app.Validator,
 	}
 
-	fields, valid, err := functions.Process(appUp.Payload)
+	fields, valid, err := functions.ProcessUplink(appUp.Payload)
 	if err != nil {
 		return nil // Do not set fields if processing failed
 	}
@@ -132,8 +132,8 @@ func (f *UplinkFunctions) Validate(data map[string]interface{}) (bool, error) {
 	return value.ToBoolean()
 }
 
-// Process decodes the specified payload, converts it and test the validity
-func (f *UplinkFunctions) Process(payload []byte) (map[string]interface{}, bool, error) {
+// ProcessUplink decodes the specified payload, converts it and test the validity
+func (f *UplinkFunctions) ProcessUplink(payload []byte) (map[string]interface{}, bool, error) {
 	decoded, err := f.Decode(payload)
 	if err != nil {
 		return nil, false, err
@@ -242,7 +242,7 @@ func (h *handler) ConvertFieldsDown(ctx log.Interface, appDown *mqtt.DownlinkMes
 
 	// Impossible to have fields and payload at the same time
 	if appDown.Payload != nil {
-		return errors.New("Error processing downlink: both Fields and Payload provided")
+		return errors.New("Error: both Fields and Payload provided")
 	}
 
 	app, err := h.applications.Get(appDown.AppID)

@@ -36,10 +36,10 @@ var downlinkCmd = &cobra.Command{
 		}
 		ctx = ctx.WithField("DevID", devID)
 
-		jsonFlag, err := cmd.Flags().GetBool("json")
+		jsonFlag, err := cmd.Flags().GetBool("JSON")
 
 		if err != nil {
-			ctx.WithError(err).Fatal("Failed to read json flag")
+			ctx.WithError(err).Fatal("Failed to read JSON flag")
 		}
 
 		fPort, err := cmd.Flags().GetInt("fport")
@@ -59,13 +59,13 @@ var downlinkCmd = &cobra.Command{
 				// Valid payload provided + json flag
 				_, err := types.ParseHEX(args[1], len(args[1])/2)
 				if err == nil {
-					ctx.WithError(err).Fatal("You are providing a valid payload using the --json flag.")
+					ctx.WithError(err).Fatal("You are providing a valid payload using the --JSON flag.")
 				}
 
 				err = json.Unmarshal([]byte(args[1]), &message.Fields)
 
 				if err != nil {
-					ctx.WithError(err).Fatal("Invalid Json string")
+					ctx.WithError(err).Fatal("Invalid JSON string")
 					return
 				}
 			} else { // Payload provided
@@ -93,7 +93,7 @@ var downlinkCmd = &cobra.Command{
 func init() {
 	RootCmd.AddCommand(downlinkCmd)
 	downlinkCmd.Flags().Int("fport", 1, "FPort for downlink")
-	downlinkCmd.Flags().Bool("json", false, "Send json to the handler (MQTT)")
+	downlinkCmd.Flags().Bool("JSON", false, "Send JSON to the handler (MQTT)")
 }
 
 // Example of json string : "{\"foo\":{\"key\": [1,2,3]}}"

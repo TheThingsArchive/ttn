@@ -141,7 +141,7 @@ func TestValidate(t *testing.T) {
 	a.So(valid, ShouldBeTrue)
 }
 
-func TestProcess(t *testing.T) {
+func TestProcessUplink(t *testing.T) {
 	a := New(t)
 
 	functions := &UplinkFunctions{
@@ -160,35 +160,35 @@ func TestProcess(t *testing.T) {
 }`,
 	}
 
-	data, valid, err := functions.Process([]byte{40, 110})
+	data, valid, err := functions.ProcessUplink([]byte{40, 110})
 	a.So(err, ShouldBeNil)
 	a.So(valid, ShouldBeFalse)
 	a.So(data["temperature"], ShouldEqual, 20)
 	a.So(data["humidity"], ShouldEqual, 110)
 }
 
-func TestProcessInvalidFunction(t *testing.T) {
+func TestProcessInvalidUplinkFunction(t *testing.T) {
 	a := New(t)
 
 	// Empty Function
 	functions := &UplinkFunctions{
 		Decoder: ``,
 	}
-	_, _, err := functions.Process([]byte{40, 110})
+	_, _, err := functions.ProcessUplink([]byte{40, 110})
 	a.So(err, ShouldNotBeNil)
 
 	// Invalid Function
 	functions = &UplinkFunctions{
 		Decoder: `this is not valid JavaScript`,
 	}
-	_, _, err = functions.Process([]byte{40, 110})
+	_, _, err = functions.ProcessUplink([]byte{40, 110})
 	a.So(err, ShouldNotBeNil)
 
 	// Invalid return
 	functions = &UplinkFunctions{
 		Decoder: `function(payload) { return "Hello" }`,
 	}
-	_, _, err = functions.Process([]byte{40, 110})
+	_, _, err = functions.ProcessUplink([]byte{40, 110})
 	a.So(err, ShouldNotBeNil)
 
 	// Invalid Function
@@ -196,7 +196,7 @@ func TestProcessInvalidFunction(t *testing.T) {
 		Decoder:   `function(payload) { return { temperature: payload[0] } }`,
 		Converter: `this is not valid JavaScript`,
 	}
-	_, _, err = functions.Process([]byte{40, 110})
+	_, _, err = functions.ProcessUplink([]byte{40, 110})
 	a.So(err, ShouldNotBeNil)
 
 	// Invalid Return
@@ -204,7 +204,7 @@ func TestProcessInvalidFunction(t *testing.T) {
 		Decoder:   `function(payload) { return { temperature: payload[0] } }`,
 		Converter: `function(data) { return "Hello" }`,
 	}
-	_, _, err = functions.Process([]byte{40, 110})
+	_, _, err = functions.ProcessUplink([]byte{40, 110})
 	a.So(err, ShouldNotBeNil)
 
 	// Invalid Function
@@ -212,7 +212,7 @@ func TestProcessInvalidFunction(t *testing.T) {
 		Decoder:   `function(payload) { return { temperature: payload[0] } }`,
 		Validator: `this is not valid JavaScript`,
 	}
-	_, _, err = functions.Process([]byte{40, 110})
+	_, _, err = functions.ProcessUplink([]byte{40, 110})
 	a.So(err, ShouldNotBeNil)
 
 	// Invalid Return
@@ -220,7 +220,7 @@ func TestProcessInvalidFunction(t *testing.T) {
 		Decoder:   `function(payload) { return { temperature: payload[0] } }`,
 		Validator: `function(data) { return "Hello" }`,
 	}
-	_, _, err = functions.Process([]byte{40, 110})
+	_, _, err = functions.ProcessUplink([]byte{40, 110})
 	a.So(err, ShouldNotBeNil)
 
 	// Invalid Object (Arrays are Objects too, but don't jive well with
@@ -228,7 +228,7 @@ func TestProcessInvalidFunction(t *testing.T) {
 	functions = &UplinkFunctions{
 		Decoder: `function(payload) { return [1] }`,
 	}
-	_, _, err = functions.Process([]byte{40, 110})
+	_, _, err = functions.ProcessUplink([]byte{40, 110})
 	a.So(err, ShouldNotBeNil)
 
 	// Invalid Object (Arrays are Objects too, but don't jive well with
@@ -237,7 +237,7 @@ func TestProcessInvalidFunction(t *testing.T) {
 		Decoder:   `function(payload) { return { temperature: payload[0] } }`,
 		Converter: `function(payload) { return [1] }`,
 	}
-	_, _, err = functions.Process([]byte{40, 110})
+	_, _, err = functions.ProcessUplink([]byte{40, 110})
 	a.So(err, ShouldNotBeNil)
 
 	// Invalid Object (Arrays are Objects too), this should work error because
@@ -246,7 +246,7 @@ func TestProcessInvalidFunction(t *testing.T) {
 		Decoder:   `function(payload) { return { temperature: payload[0] } }`,
 		Validator: `function(payload) { return [1] }`,
 	}
-	_, _, err = functions.Process([]byte{40, 110})
+	_, _, err = functions.ProcessUplink([]byte{40, 110})
 	a.So(err, ShouldNotBeNil)
 }
 
@@ -264,7 +264,7 @@ func TestTimeoutExceeded(t *testing.T) {
 
 	interrupted := make(chan bool, 2)
 	go func() {
-		_, _, err := functions.Process([]byte{0})
+		_, _, err := functions.ProcessUplink([]byte{0})
 		a.So(time.Since(start), ShouldAlmostEqual, 100*time.Millisecond, 0.5e9)
 		a.So(err, ShouldNotBeNil)
 		interrupted <- true
