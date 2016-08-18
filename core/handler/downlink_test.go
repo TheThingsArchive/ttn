@@ -113,9 +113,7 @@ func TestHandleDownlink(t *testing.T) {
 	  		return [96, 4, 3, 2, 1, 0, 1, 0, 1, 0, 0, 0, 0]
 			}`,
 	})
-	jsonFields := make(map[string]interface{})
-	jsonFields["key"] = "value"
-	jsonFields["key2"] = 11
+	jsonFields := map[string]interface{}{"temperature": 11}
 	err = h.HandleDownlink(&mqtt.DownlinkMessage{
 		FPort:   1,
 		AppID:   appID,
