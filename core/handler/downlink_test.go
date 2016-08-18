@@ -95,13 +95,14 @@ func TestHandleDownlink(t *testing.T) {
 		DevEui:  &devEUI,
 		Payload: []byte{96, 4, 3, 2, 1, 0, 1, 0, 1, 0, 0, 0, 0},
 	})
+	a.So(err, ShouldBeNil)
+
 	select {
 	case dl := <-h.downlink:
 		a.So(dl.Payload, ShouldNotBeEmpty)
 	case <-time.After(time.Millisecond * 50):
 		t.Fatal("Empty channel")
 	}
-	a.So(err, ShouldBeNil)
 
 	h.applications.Set(&application.Application{
 		AppID: appID,
@@ -109,9 +110,9 @@ func TestHandleDownlink(t *testing.T) {
 	  		return [96, 4, 3, 2, 1, 0, 1, 0, 1, 0, 0, 0, 0]
 			}`,
 	})
-	jsonFields := make(map[string]interface{})
-	jsonFields["key"] = "value"
-	jsonFields["key2"] = 11
+
+	jsonFields := map[string]interface{}{"temperature": 11}
+
 	// Both Payload and Fields provided : ERROR
 	err = h.HandleDownlink(&mqtt.DownlinkMessage{
 		FPort:   1,
@@ -135,11 +136,12 @@ func TestHandleDownlink(t *testing.T) {
 		AppEui: &appEUI,
 		DevEui: &devEUI,
 	})
+	a.So(err, ShouldBeNil)
+
 	select {
 	case dl := <-h.downlink:
 		a.So(dl.Payload, ShouldNotBeEmpty)
 	case <-time.After(time.Millisecond * 50):
 		t.Fatal("Empty channel")
 	}
-	a.So(err, ShouldBeNil)
 }
