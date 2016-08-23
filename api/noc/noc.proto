@@ -12,7 +12,7 @@ import "github.com/TheThingsNetwork/ttn/api/handler/handler.proto";
 package noc;
 
 service Monitor {
-  rpc GatewayStatus(stream gateway.Status) returns (google.protobuf.Empty);
+  rpc GatewayLocation(stream gateway.GPSMetadata) returns (google.protobuf.Empty);
   rpc GatewayUplink(stream router.UplinkMessage) returns (google.protobuf.Empty);
 
   rpc RouterStatus(stream router.Status) returns (google.protobuf.Empty);
