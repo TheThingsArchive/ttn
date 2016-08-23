@@ -2,6 +2,25 @@
 // source: github.com/TheThingsNetwork/ttn/api/protocol/lorawan/device_address.proto
 // DO NOT EDIT!
 
+/*
+	Package lorawan is a generated protocol buffer package.
+
+	It is generated from these files:
+		github.com/TheThingsNetwork/ttn/api/protocol/lorawan/device_address.proto
+		github.com/TheThingsNetwork/ttn/api/protocol/lorawan/device.proto
+		github.com/TheThingsNetwork/ttn/api/protocol/lorawan/lorawan.proto
+
+	It has these top-level messages:
+		PrefixesRequest
+		PrefixesResponse
+		DevAddrRequest
+		DevAddrResponse
+		DeviceIdentifier
+		Device
+		Metadata
+		TxConfiguration
+		ActivationMetadata
+*/
 package lorawan
 
 import proto "github.com/golang/protobuf/proto"
@@ -22,6 +41,12 @@ import io "io"
 var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 type PrefixesRequest struct {
 }
