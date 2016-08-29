@@ -57,6 +57,27 @@ message DeviceList {
   repeated Device devices = 1;
 }
 
+message DryDownlinkMessage {
+  bytes  payload  = 1;
+  string fields   = 2;
+  Application app = 3;
+}
+
+message DryUplinkMessage {
+  bytes  payload  = 1;
+  Application app = 2;
+}
+
+message DryUplinkResult {
+  bytes  payload  = 1;
+  string fields   = 2;
+  bool   valid    = 3;
+}
+
+message DryDownlinkResult {
+  bytes  payload  = 1;
+}
+
 service ApplicationManager {
   rpc RegisterApplication(ApplicationIdentifier) returns (api.Ack);
   rpc GetApplication(ApplicationIdentifier) returns (Application);
@@ -66,6 +87,8 @@ service ApplicationManager {
   rpc SetDevice(Device) returns (api.Ack);
   rpc DeleteDevice(DeviceIdentifier) returns (api.Ack);
   rpc GetDevicesForApplication(ApplicationIdentifier) returns (DeviceList);
+  rpc DryDownlink(DryDownlinkMessage) returns (DryDownlinkResult);
+  rpc DryUplink(DryUplinkMessage) returns (DryUplinkResult);
 }
 
 // The HandlerManager service provides configuration and monitoring
