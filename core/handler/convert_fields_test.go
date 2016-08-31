@@ -396,4 +396,10 @@ func TestProcessDownlinkInvalidFunction(t *testing.T) {
 	}
 	_, _, err = functions.Process(map[string]interface{}{"key": 11})
 	a.So(err, ShouldNotBeNil)
+
+	functions = &DownlinkFunctions{
+		Encoder: `function(payload) { return [ 1, 1.5 ] }`,
+	}
+	_, _, err = functions.Process(map[string]interface{}{"key": 11})
+	a.So(err, ShouldNotBeNil)
 }

@@ -234,7 +234,18 @@ func (f *DownlinkFunctions) Encode(payload map[string]interface{}) ([]byte, erro
 			n = int64(t)
 		case uint64:
 			n = int64(t)
+		case float32:
+			n = int64(t)
+			if float32(n) != t {
+				return nil, errors.New("Encoder should return an Array of integer numbers")
+			}
+		case float64:
+			n = int64(t)
+			if float64(n) != t {
+				return nil, errors.New("Encoder should return an Array of integer numbers")
+			}
 		default:
+			fmt.Printf("VAL %v TYPE %T\n", el, el)
 			return nil, errors.New("Encoder should return an Array of integer numbers")
 		}
 
