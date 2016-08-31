@@ -221,7 +221,7 @@ func (f *DownlinkFunctions) Encode(payload map[string]interface{}) ([]byte, erro
 	for i := 0; i < l; i++ {
 		el := s.Index(i).Interface()
 
-		// type switch does not have falltrought so we need
+		// type switch does not have fallthrough so we need
 		// to check every element individually
 		switch t := el.(type) {
 		case byte:
