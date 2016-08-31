@@ -228,9 +228,11 @@ func (f *DownlinkFunctions) Encode(payload map[string]interface{}) ([]byte, erro
 			n = int64(t)
 		case int:
 			n = int64(t)
-		case int64:
+		case int32:
 			n = int64(t)
 		case uint32:
+			n = int64(t)
+		case int64:
 			n = int64(t)
 		case uint64:
 			n = int64(t)
