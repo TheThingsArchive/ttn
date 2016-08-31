@@ -292,6 +292,13 @@ func TestEncode(t *testing.T) {
 
 	a.So(m, ShouldHaveLength, 7)
 	a.So(m, ShouldResemble, []byte{1, 2, 3, 4, 5, 6, 7})
+
+	// Return int type
+	functions = &DownlinkFunctions{
+		Encoder: `function(payload) { var x = [1, 2, 3 ]; return [ x.length || 0 ] }`,
+	}
+	_, _, err = functions.Process(map[string]interface{}{"key": 11})
+	a.So(err, ShouldBeNil)
 }
 
 func buildConversionDownlink() (*pb_broker.DownlinkMessage, *mqtt.DownlinkMessage) {
@@ -333,6 +340,7 @@ func TestConvertFieldsDown(t *testing.T) {
   		return [ 1, 2, 3, 4, 5, 6, 7 ]
 		}`,
 	})
+
 	ttnDown, appDown = buildConversionDownlink()
 	err = h.ConvertFieldsDown(GetLogger(t, "TestConvertFieldsDown"), appDown, ttnDown)
 	a.So(err, ShouldBeNil)
@@ -385,6 +393,12 @@ func TestProcessDownlinkInvalidFunction(t *testing.T) {
 		humidity: payload[1]
 	}
 } }`,
+	}
+	_, _, err = functions.Process(map[string]interface{}{"key": 11})
+	a.So(err, ShouldNotBeNil)
+
+	functions = &DownlinkFunctions{
+		Encoder: `function(payload) { return [ 1, 1.5 ] }`,
 	}
 	_, _, err = functions.Process(map[string]interface{}{"key": 11})
 	a.So(err, ShouldNotBeNil)

@@ -6,6 +6,7 @@ package handler
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"time"
 
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
@@ -207,17 +208,54 @@ func (f *DownlinkFunctions) Encode(payload map[string]interface{}) ([]byte, erro
 		return nil, err
 	}
 
-	m, ok := v.([]int64)
-	if !ok {
-		return nil, errors.New("Encoder should return an Array of numbers")
+	if reflect.TypeOf(v).Kind() != reflect.Slice {
+		return nil, errors.New("Encoder does not return an array")
 	}
 
-	res := make([]byte, len(m))
-	for i, v := range m {
-		if v < 0 || v > 255 {
+	s := reflect.ValueOf(v)
+	l := s.Len()
+
+	res := make([]byte, l)
+
+	var n int64
+	for i := 0; i < l; i++ {
+		el := s.Index(i).Interface()
+
+		// type switch does not have fallthrough so we need
+		// to check every element individually
+		switch t := el.(type) {
+		case byte:
+			n = int64(t)
+		case int:
+			n = int64(t)
+		case int32:
+			n = int64(t)
+		case uint32:
+			n = int64(t)
+		case int64:
+			n = int64(t)
+		case uint64:
+			n = int64(t)
+		case float32:
+			n = int64(t)
+			if float32(n) != t {
+				return nil, errors.New("Encoder should return an Array of integer numbers")
+			}
+		case float64:
+			n = int64(t)
+			if float64(n) != t {
+				return nil, errors.New("Encoder should return an Array of integer numbers")
+			}
+		default:
+			fmt.Printf("VAL %v TYPE %T\n", el, el)
+			return nil, errors.New("Encoder should return an Array of integer numbers")
+		}
+
+		if n < 0 || n > 255 {
 			return nil, errors.New("Numbers in array should be between 0 and 255")
 		}
-		res[i] = byte(v)
+
+		res[i] = byte(n)
 	}
 
 	return res, nil
