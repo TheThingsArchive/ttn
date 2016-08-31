@@ -13,17 +13,6 @@ import (
 	. "github.com/smartystreets/assertions"
 )
 
-// type Store interface {
-// 	// List all applications
-// 	List() ([]*Application, error)
-// 	// Get the full information about a application
-// 	Get(appID string) (*Application, error)
-// 	// Set the given fields of a application. If fields empty, it sets all fields.
-// 	Set(application *Application, fields ...string) error
-// 	// Delete a application
-// 	Delete(appid string) error
-// }
-
 type countingStore struct {
 	store  application.Store
 	counts map[string]int
@@ -71,6 +60,38 @@ func (s *countingStore) Delete(appID string) error {
 	return s.store.Delete(appID)
 }
 
+func TestDryUplinkFields(t *testing.T) {
+	a := New(t)
+
+	store := newCountingStore(application.NewApplicationStore())
+	h := &handler{
+		applications: store,
+	}
+	m := &handlerManager{handler: h}
+
+	dryUplinkMessage := &pb.DryUplinkMessage{
+		Payload: []byte{11, 22, 33},
+		App: &pb.Application{
+			Decoder:   `function (bytes) { return { length: bytes.length }}`,
+			Converter: `function (obj) { return obj }`,
+			Validator: `function (bytes) { return true; }`,
+		},
+	}
+
+	res, err := m.DryUplink(context.TODO(), dryUplinkMessage)
+	a.So(err, ShouldBeNil)
+
+	a.So(res.Payload, ShouldResemble, dryUplinkMessage.Payload)
+	a.So(res.Fields, ShouldEqual, `{"length":3}`)
+	a.So(res.Valid, ShouldBeTrue)
+
+	// make sure no calls to app store were made
+	a.So(store.Count("list"), ShouldEqual, 0)
+	a.So(store.Count("get"), ShouldEqual, 0)
+	a.So(store.Count("set"), ShouldEqual, 0)
+	a.So(store.Count("delete"), ShouldEqual, 0)
+}
+
 func TestDryUplinkEmptyApp(t *testing.T) {
 	a := New(t)
 
@@ -98,7 +119,7 @@ func TestDryUplinkEmptyApp(t *testing.T) {
 	a.So(store.Count("delete"), ShouldEqual, 0)
 }
 
-func TestDryUplinkFields(t *testing.T) {
+func TestDryDownlinkFields(t *testing.T) {
 	a := New(t)
 
 	store := newCountingStore(application.NewApplicationStore())
@@ -107,21 +128,17 @@ func TestDryUplinkFields(t *testing.T) {
 	}
 	m := &handlerManager{handler: h}
 
-	dryUplinkMessage := &pb.DryUplinkMessage{
-		Payload: []byte{11, 22, 33},
+	msg := &pb.DryDownlinkMessage{
+		Fields: `{ "foo": [ 1, 2, 3 ] }`,
 		App: &pb.Application{
-			Decoder:   `function (bytes) { return { length: bytes.length }}`,
-			Converter: `function (obj) { return obj }`,
-			Validator: `function (bytes) { return true; }`,
+			Encoder: `function (fields) { return fields.foo }`,
 		},
 	}
 
-	res, err := m.DryUplink(context.TODO(), dryUplinkMessage)
+	res, err := m.DryDownlink(context.TODO(), msg)
 	a.So(err, ShouldBeNil)
 
-	a.So(res.Payload, ShouldResemble, dryUplinkMessage.Payload)
-	a.So(res.Fields, ShouldEqual, `{"length":3}`)
-	a.So(res.Valid, ShouldBeTrue)
+	a.So(res.Payload, ShouldResemble, []byte{1, 2, 3})
 
 	// make sure no calls to app store were made
 	a.So(store.Count("list"), ShouldEqual, 0)

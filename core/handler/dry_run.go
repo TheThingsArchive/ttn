@@ -64,7 +64,7 @@ func (h *handler) DryDownlink(ctx context.Context, in *pb.DryDownlinkMessage) (*
 		}, nil
 	}
 
-	if in.Fields != "" {
+	if in.Fields == "" {
 		return nil, errors.New("Neither fields or payload provided on downlink message")
 	}
 
