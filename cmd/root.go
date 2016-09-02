@@ -65,7 +65,7 @@ var RootCmd = &cobra.Command{
 			"ComponentID":     viper.GetString("id"),
 			"Description":     viper.GetString("description"),
 			"DiscoveryServer": viper.GetString("discovery-server"),
-			"AuthServer":      viper.GetString("auth-server"),
+			"AuthServers":     viper.GetStringMapString("auth-servers"),
 		}).Info("Initializing The Things Network")
 	},
 	PersistentPostRun: func(cmd *cobra.Command, args []string) {
@@ -106,10 +106,11 @@ func init() {
 	RootCmd.PersistentFlags().String("discovery-server", "discover.thethingsnetwork.org:1900", "The address of the Discovery server")
 	viper.BindPFlag("discovery-server", RootCmd.PersistentFlags().Lookup("discovery-server"))
 
-	RootCmd.PersistentFlags().String("auth-server", "https://account.thethingsnetwork.org", "The address of the OAuth 2.0 server")
-	viper.BindPFlag("auth-server", RootCmd.PersistentFlags().Lookup("auth-server"))
+	viper.SetDefault("auth-servers", map[string]string{
+		"ttn-account": "https://account.thethingsnetwork.org",
+	})
 
-	RootCmd.PersistentFlags().String("auth-token", "", "The auth token signed JWT from the auth-server")
+	RootCmd.PersistentFlags().String("auth-token", "", "The JWT token to be used for the discovery server")
 	viper.BindPFlag("auth-token", RootCmd.PersistentFlags().Lookup("auth-token"))
 
 	RootCmd.PersistentFlags().Int("health-port", 0, "The port number where the health server should be started")

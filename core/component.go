@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"path"
 	"runtime"
 	"sync/atomic"
 	"time"
@@ -73,8 +72,8 @@ func NewComponent(ctx log.Interface, serviceName string, announcedAddress string
 		AccessToken: viper.GetString("auth-token"),
 		Discovery:   discovery,
 		TokenKeyProvider: tokenkey.NewHTTPProvider(
-			fmt.Sprintf("%s/key", viper.GetString("auth-server")),
-			path.Join(viper.GetString("key-dir"), "/auth-server.pub"),
+			viper.GetStringMapString("auth-servers"),
+			viper.GetString("key-dir"),
 		),
 	}
 
@@ -172,11 +171,11 @@ func (c *Component) UpdateTokenKey() error {
 	}
 
 	// Set up Auth Server Token Validation
-	tokenKey, err := c.TokenKeyProvider.Get(true)
+	err := c.TokenKeyProvider.Update()
 	if err != nil {
-		c.Ctx.Warnf("ttn: Failed to refresh public key for token validation: %s", err.Error())
+		c.Ctx.Warnf("ttn: Failed to refresh public keys for token validation: %s", err.Error())
 	} else {
-		c.Ctx.Infof("ttn: Got public key for token validation (%v)", tokenKey.Algorithm)
+		c.Ctx.Info("ttn: Got public keys for token validation")
 	}
 
 	return nil
@@ -281,7 +280,7 @@ func (c *Component) ValidateTTNAuthContext(ctx context.Context) (*TTNClaims, err
 		if c.TokenKeyProvider == nil {
 			return nil, errors.New("No token provider configured")
 		}
-		k, err := c.TokenKeyProvider.Get(false)
+		k, err := c.TokenKeyProvider.Get(ttnClaims.Issuer, false)
 		if err != nil {
 			return nil, err
 		}

@@ -14,7 +14,7 @@ import (
 )
 
 type discoveryServer struct {
-	discovery Discovery
+	discovery *discovery
 }
 
 func (d *discoveryServer) checkMetadataEditRights(ctx context.Context, in *pb.MetadataRequest) error {
@@ -27,6 +27,10 @@ func (d *discoveryServer) checkMetadataEditRights(ctx context.Context, in *pb.Me
 		if in.ServiceName != "broker" {
 			return errors.New("ttn/discovery: Announcement service type should be \"broker\"")
 		}
+		// Only allow prefix announcements if token is issued by the official ttn account server (or if in dev mode)
+		if claims.Issuer != "ttn-account" && d.discovery.Component.Identity.Id != "dev" {
+			return fmt.Errorf("ttn/discovery: Token issuer %s should be ttn-account", claims.Issuer)
+		}
 		if claims.Type != in.ServiceName {
 			return fmt.Errorf("ttn/discovery: Token subject %s does not correspond with announcement ID %s", claims.Subject, in.Id)
 		}
@@ -37,6 +41,10 @@ func (d *discoveryServer) checkMetadataEditRights(ctx context.Context, in *pb.Me
 	case pb.Metadata_APP_EUI:
 		if in.ServiceName != "handler" {
 			return errors.New("ttn/discovery: Announcement service type should be \"handler\"")
+		}
+		// Only allow eui announcements if token is issued by the official ttn account server (or if in dev mode)
+		if claims.Issuer != "ttn-account" && d.discovery.Component.Identity.Id != "dev" {
+			return fmt.Errorf("ttn/discovery: Token issuer %s should be ttn-account", claims.Issuer)
 		}
 		if claims.Type != in.ServiceName {
 			return fmt.Errorf("ttn/discovery: Token subject %s does not correspond with announcement ID %s", claims.Subject, in.Id)
@@ -50,6 +58,7 @@ func (d *discoveryServer) checkMetadataEditRights(ctx context.Context, in *pb.Me
 		if in.ServiceName != "handler" {
 			return errors.New("ttn/discovery: Announcement service type should be \"handler\"")
 		}
+		// Allow APP_ID announcements from all trusted auth servers
 		// When announcing APP_ID, token is user token that contains apps
 		if !claims.CanEditApp(string(in.Metadata.Value)) {
 			return errors.New("ttn/discovery: No access to this application")
@@ -62,6 +71,10 @@ func (d *discoveryServer) Announce(ctx context.Context, announcement *pb.Announc
 	claims, err := d.discovery.ValidateTTNAuthContext(ctx)
 	if err != nil {
 		return nil, err
+	}
+	// Only allow announcements if token is issued by the official ttn account server (or if in dev mode)
+	if claims.Issuer != "ttn-account" && d.discovery.Component.Identity.Id != "dev" {
+		return nil, fmt.Errorf("ttn/discovery: Token issuer %s should be ttn-account", claims.Issuer)
 	}
 	if claims.Subject != announcement.Id {
 		return nil, fmt.Errorf("ttn/discovery: Token subject %s does not correspond with announcement ID %s", claims.Subject, announcement.Id)
