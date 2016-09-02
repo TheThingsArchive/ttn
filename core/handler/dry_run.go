@@ -15,7 +15,7 @@ import (
 // DryUplink converts the uplink message payload by running the payload
 // functions that are provided in the DryUplinkMessage, without actually going to the network.
 // This is helpful for testing the payload functions without having to save them.
-func (h *handler) DryUplink(ctx context.Context, in *pb.DryUplinkMessage) (*pb.DryUplinkResult, error) {
+func (h *handlerManager) DryUplink(ctx context.Context, in *pb.DryUplinkMessage) (*pb.DryUplinkResult, error) {
 	app := in.App
 
 	flds := ""
@@ -52,7 +52,7 @@ func (h *handler) DryUplink(ctx context.Context, in *pb.DryUplinkMessage) (*pb.D
 // DryDownlink converts the downlink message payload by running the payload
 // functions that are provided in the DryDownlinkMessage, without actually going to the network.
 // This is helpful for testing the payload functions without having to save them.
-func (h *handler) DryDownlink(ctx context.Context, in *pb.DryDownlinkMessage) (*pb.DryDownlinkResult, error) {
+func (h *handlerManager) DryDownlink(ctx context.Context, in *pb.DryDownlinkMessage) (*pb.DryDownlinkResult, error) {
 	app := in.App
 
 	if in.Payload != nil {
