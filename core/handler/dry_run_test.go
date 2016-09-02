@@ -146,3 +146,54 @@ func TestDryDownlinkFields(t *testing.T) {
 	a.So(store.Count("set"), ShouldEqual, 0)
 	a.So(store.Count("delete"), ShouldEqual, 0)
 }
+
+func TestDryDownlinkPayload(t *testing.T) {
+	a := New(t)
+
+	store := newCountingStore(application.NewApplicationStore())
+	h := &handler{
+		applications: store,
+	}
+	m := &handlerManager{handler: h}
+
+	msg := &pb.DryDownlinkMessage{
+		Payload: []byte{0x1, 0x2, 0x3},
+		App: &pb.Application{
+			Encoder: `function (fields) { return fields.foo }`,
+		},
+	}
+
+	res, err := m.DryDownlink(context.TODO(), msg)
+	a.So(err, ShouldBeNil)
+
+	a.So(res.Payload, ShouldResemble, []byte{0x1, 0x2, 0x3})
+
+	// make sure no calls to app store were made
+	a.So(store.Count("list"), ShouldEqual, 0)
+	a.So(store.Count("get"), ShouldEqual, 0)
+	a.So(store.Count("set"), ShouldEqual, 0)
+	a.So(store.Count("delete"), ShouldEqual, 0)
+}
+
+func TestDryDownlinkEmptyApp(t *testing.T) {
+	a := New(t)
+
+	store := newCountingStore(application.NewApplicationStore())
+	h := &handler{
+		applications: store,
+	}
+	m := &handlerManager{handler: h}
+
+	msg := &pb.DryDownlinkMessage{
+		Fields: `{ "foo": [ 1, 2, 3 ] }`,
+	}
+
+	_, err := m.DryDownlink(context.TODO(), msg)
+	a.So(err, ShouldNotBeNil)
+
+	// make sure no calls to app store were made
+	a.So(store.Count("list"), ShouldEqual, 0)
+	a.So(store.Count("get"), ShouldEqual, 0)
+	a.So(store.Count("set"), ShouldEqual, 0)
+	a.So(store.Count("delete"), ShouldEqual, 0)
+}

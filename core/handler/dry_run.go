@@ -68,6 +68,10 @@ func (h *handler) DryDownlink(ctx context.Context, in *pb.DryDownlinkMessage) (*
 		return nil, errors.New("Neither fields or payload provided on downlink message")
 	}
 
+	if app == nil || app.Encoder == "" {
+		return nil, errors.New("No encoder specified")
+	}
+
 	functions := &DownlinkFunctions{
 		Encoder: app.Encoder,
 	}
