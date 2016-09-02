@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"os"
 	"os/user"
 	"sync"
@@ -113,6 +114,38 @@ func (h *ManagerClient) GetDevicesForApplication(appID string) (devices []*Devic
 		devices = append(devices, dev)
 	}
 	return
+}
+
+// DryUplink transforms the uplink payload with the payload functions provided
+// in the app..
+func (h *ManagerClient) DryUplink(payload []byte, app *Application) (*DryUplinkResult, error) {
+	return h.applicationManagerClient.DryUplink(h.getContext(), &DryUplinkMessage{
+		App:     app,
+		Payload: payload,
+	})
+}
+
+// DryDownlinkWithPayload transforms the downlink payload with the payload functions
+// provided in app.
+func (h *ManagerClient) DryDownlinkWithPayload(payload []byte, app *Application) (*DryDownlinkResult, error) {
+	return h.applicationManagerClient.DryDownlink(h.getContext(), &DryDownlinkMessage{
+		App:     app,
+		Payload: payload,
+	})
+}
+
+// DryDownlinkWithPayload transforms the downlink fields with the payload functions
+// provided in app.
+func (h *ManagerClient) DryDownlinkWithFields(fields map[string]interface{}, app *Application) (*DryDownlinkResult, error) {
+	marshalled, err := json.Marshal(fields)
+	if err != nil {
+		return nil, err
+	}
+
+	return h.applicationManagerClient.DryDownlink(h.getContext(), &DryDownlinkMessage{
+		App:    app,
+		Fields: string(marshalled),
+	})
 }
 
 // Close closes the client
