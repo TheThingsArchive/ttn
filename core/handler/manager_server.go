@@ -19,7 +19,7 @@ import (
 )
 
 type handlerManager struct {
-	*handler
+	handler *handler
 }
 
 var errf = grpc.Errorf
@@ -28,14 +28,14 @@ func (h *handlerManager) getDevice(ctx context.Context, in *pb.DeviceIdentifier)
 	if !in.Validate() {
 		return nil, grpcErrf(codes.InvalidArgument, "Invalid Device Identifier")
 	}
-	claims, err := h.Component.ValidateTTNAuthContext(ctx)
+	claims, err := h.handler.Component.ValidateTTNAuthContext(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if !claims.CanEditApp(in.AppId) {
 		return nil, errf(codes.Unauthenticated, "No access to this device")
 	}
-	dev, err := h.devices.Get(in.AppId, in.DevId)
+	dev, err := h.handler.devices.Get(in.AppId, in.DevId)
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +51,7 @@ func (h *handlerManager) GetDevice(ctx context.Context, in *pb.DeviceIdentifier)
 		return nil, err
 	}
 
-	nsDev, err := h.ttnDeviceManager.GetDevice(ctx, &pb_lorawan.DeviceIdentifier{
+	nsDev, err := h.handler.ttnDeviceManager.GetDevice(ctx, &pb_lorawan.DeviceIdentifier{
 		AppEui: &dev.AppEUI,
 		DevEui: &dev.DevEUI,
 	})
@@ -98,7 +98,7 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*api.Ack
 	if dev != nil { // When this is an update
 		if dev.AppEUI != *lorawan.AppEui || dev.DevEUI != *lorawan.DevEui {
 			// If the AppEUI or DevEUI is changed, we should remove the device from the NetworkServer and re-add it later
-			_, err = h.ttnDeviceManager.DeleteDevice(ctx, &pb_lorawan.DeviceIdentifier{
+			_, err = h.handler.ttnDeviceManager.DeleteDevice(ctx, &pb_lorawan.DeviceIdentifier{
 				AppEui: &dev.AppEUI,
 				DevEui: &dev.DevEUI,
 			})
@@ -143,12 +143,12 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*api.Ack
 		Uses32BitFCnt:    lorawan.Uses32BitFCnt,
 	}
 
-	_, err = h.ttnDeviceManager.SetDevice(ctx, nsUpdated)
+	_, err = h.handler.ttnDeviceManager.SetDevice(ctx, nsUpdated)
 	if err != nil {
 		return nil, err
 	}
 
-	err = h.devices.Set(updated)
+	err = h.handler.devices.Set(updated)
 	if err != nil {
 		return nil, err
 	}
@@ -161,11 +161,11 @@ func (h *handlerManager) DeleteDevice(ctx context.Context, in *pb.DeviceIdentifi
 	if err != nil {
 		return nil, err
 	}
-	_, err = h.ttnDeviceManager.DeleteDevice(ctx, &pb_lorawan.DeviceIdentifier{AppEui: &dev.AppEUI, DevEui: &dev.DevEUI})
+	_, err = h.handler.ttnDeviceManager.DeleteDevice(ctx, &pb_lorawan.DeviceIdentifier{AppEui: &dev.AppEUI, DevEui: &dev.DevEUI})
 	if err != nil {
 		return nil, err
 	}
-	err = h.devices.Delete(in.AppId, in.DevId)
+	err = h.handler.devices.Delete(in.AppId, in.DevId)
 	if err != nil {
 		return nil, err
 	}
@@ -176,14 +176,14 @@ func (h *handlerManager) GetDevicesForApplication(ctx context.Context, in *pb.Ap
 	if !in.Validate() {
 		return nil, grpcErrf(codes.InvalidArgument, "Invalid Application Identifier")
 	}
-	claims, err := h.Component.ValidateTTNAuthContext(ctx)
+	claims, err := h.handler.Component.ValidateTTNAuthContext(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if !claims.CanEditApp(in.AppId) {
 		return nil, errf(codes.Unauthenticated, "No access to this application")
 	}
-	devices, err := h.devices.ListForApp(in.AppId)
+	devices, err := h.handler.devices.ListForApp(in.AppId)
 	if err != nil {
 		return nil, err
 	}
@@ -211,14 +211,14 @@ func (h *handlerManager) getApplication(ctx context.Context, in *pb.ApplicationI
 	if !in.Validate() {
 		return nil, grpcErrf(codes.InvalidArgument, "Invalid Application Identifier")
 	}
-	claims, err := h.Component.ValidateTTNAuthContext(ctx)
+	claims, err := h.handler.Component.ValidateTTNAuthContext(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if !claims.CanEditApp(in.AppId) {
 		return nil, errf(codes.Unauthenticated, "No access to this application")
 	}
-	app, err := h.applications.Get(in.AppId)
+	app, err := h.handler.applications.Get(in.AppId)
 	if err != nil {
 		return nil, err
 	}
@@ -252,31 +252,31 @@ func (h *handlerManager) RegisterApplication(ctx context.Context, in *pb.Applica
 		return nil, errf(codes.InvalidArgument, "Application already registered")
 	}
 
-	err = h.applications.Set(&application.Application{
+	err = h.handler.applications.Set(&application.Application{
 		AppID: in.AppId,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = h.Discovery.AddMetadata(ctx, &pb_discovery.MetadataRequest{
-		ServiceName: h.Identity.ServiceName,
-		Id:          h.Identity.Id,
+	_, err = h.handler.Discovery.AddMetadata(ctx, &pb_discovery.MetadataRequest{
+		ServiceName: h.handler.Identity.ServiceName,
+		Id:          h.handler.Identity.Id,
 		Metadata: &pb_discovery.Metadata{
 			Key:   pb_discovery.Metadata_APP_ID,
 			Value: []byte(in.AppId),
 		},
 	})
 	if err != nil {
-		h.Ctx.WithField("AppID", in.AppId).WithError(err).Warn("Could not register Application with Discovery")
+		h.handler.Ctx.WithField("AppID", in.AppId).WithError(err).Warn("Could not register Application with Discovery")
 	}
 
-	_, err = h.ttnBrokerManager.RegisterApplicationHandler(ctx, &pb_broker.ApplicationHandlerRegistration{
+	_, err = h.handler.ttnBrokerManager.RegisterApplicationHandler(ctx, &pb_broker.ApplicationHandlerRegistration{
 		AppId:     in.AppId,
-		HandlerId: h.Identity.Id,
+		HandlerId: h.handler.Identity.Id,
 	})
 	if err != nil {
-		h.Ctx.WithField("AppID", in.AppId).WithError(err).Warn("Could not register Application with Broker")
+		h.handler.Ctx.WithField("AppID", in.AppId).WithError(err).Warn("Could not register Application with Broker")
 	}
 
 	return &api.Ack{}, nil
@@ -293,7 +293,7 @@ func (h *handlerManager) SetApplication(ctx context.Context, in *pb.Application)
 		return nil, grpcErrf(codes.InvalidArgument, "Invalid Application")
 	}
 
-	err = h.applications.Set(&application.Application{
+	err = h.handler.applications.Set(&application.Application{
 		AppID:     in.AppId,
 		Decoder:   in.Decoder,
 		Converter: in.Converter,
@@ -314,37 +314,37 @@ func (h *handlerManager) DeleteApplication(ctx context.Context, in *pb.Applicati
 	}
 
 	// Get and delete all devices for this application
-	devices, err := h.devices.ListForApp(in.AppId)
+	devices, err := h.handler.devices.ListForApp(in.AppId)
 	if err != nil {
 		return nil, err
 	}
 	for _, dev := range devices {
-		_, err = h.ttnDeviceManager.DeleteDevice(ctx, &pb_lorawan.DeviceIdentifier{AppEui: &dev.AppEUI, DevEui: &dev.DevEUI})
+		_, err = h.handler.ttnDeviceManager.DeleteDevice(ctx, &pb_lorawan.DeviceIdentifier{AppEui: &dev.AppEUI, DevEui: &dev.DevEUI})
 		if err != nil {
 			return nil, err
 		}
-		err = h.devices.Delete(dev.AppID, dev.DevID)
+		err = h.handler.devices.Delete(dev.AppID, dev.DevID)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	// Delete the Application
-	err = h.applications.Delete(in.AppId)
+	err = h.handler.applications.Delete(in.AppId)
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = h.Discovery.DeleteMetadata(ctx, &pb_discovery.MetadataRequest{
-		ServiceName: h.Identity.ServiceName,
-		Id:          h.Identity.Id,
+	_, err = h.handler.Discovery.DeleteMetadata(ctx, &pb_discovery.MetadataRequest{
+		ServiceName: h.handler.Identity.ServiceName,
+		Id:          h.handler.Identity.Id,
 		Metadata: &pb_discovery.Metadata{
 			Key:   pb_discovery.Metadata_APP_ID,
 			Value: []byte(in.AppId),
 		},
 	})
 	if err != nil {
-		h.Ctx.WithField("AppID", in.AppId).WithError(err).Warn("Could not unregister Application from Discovery")
+		h.handler.Ctx.WithField("AppID", in.AppId).WithError(err).Warn("Could not unregister Application from Discovery")
 	}
 
 	return &api.Ack{}, nil

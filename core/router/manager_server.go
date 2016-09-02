@@ -13,7 +13,7 @@ import (
 )
 
 type routerManager struct {
-	*router
+	router *router
 }
 
 var errf = grpc.Errorf
@@ -22,11 +22,11 @@ func (r *routerManager) GatewayStatus(ctx context.Context, in *pb.GatewayStatusR
 	if in.GatewayEui == nil {
 		return nil, errf(codes.InvalidArgument, "GatewayEUI is required")
 	}
-	_, err := r.ValidateTTNAuthContext(ctx)
+	_, err := r.router.ValidateTTNAuthContext(ctx)
 	if err != nil {
 		return nil, errf(codes.Unauthenticated, "No access")
 	}
-	gtw := r.getGateway(*in.GatewayEui)
+	gtw := r.router.getGateway(*in.GatewayEui)
 	status, err := gtw.Status.Get()
 	if err != nil {
 		return nil, err

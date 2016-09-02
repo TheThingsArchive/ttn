@@ -17,7 +17,7 @@ import (
 )
 
 type networkServerManager struct {
-	*networkServer
+	networkServer *networkServer
 }
 
 var errf = grpc.Errorf
@@ -26,11 +26,11 @@ func (n *networkServerManager) getDevice(ctx context.Context, in *pb_lorawan.Dev
 	if !in.Validate() {
 		return nil, grpcErrf(codes.InvalidArgument, "Invalid Device Identifier")
 	}
-	claims, err := n.Component.ValidateTTNAuthContext(ctx)
+	claims, err := n.networkServer.Component.ValidateTTNAuthContext(ctx)
 	if err != nil {
 		return nil, err
 	}
-	dev, err := n.devices.Get(*in.AppEui, *in.DevEui)
+	dev, err := n.networkServer.devices.Get(*in.AppEui, *in.DevEui)
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +94,7 @@ func (n *networkServerManager) SetDevice(ctx context.Context, in *pb_lorawan.Dev
 		updated.NwkSKey = *in.NwkSKey
 	}
 
-	err = n.devices.Set(updated)
+	err = n.networkServer.devices.Set(updated)
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +107,7 @@ func (n *networkServerManager) DeleteDevice(ctx context.Context, in *pb_lorawan.
 	if err != nil {
 		return nil, err
 	}
-	err = n.devices.Delete(*in.AppEui, *in.DevEui)
+	err = n.networkServer.devices.Delete(*in.AppEui, *in.DevEui)
 	if err != nil {
 		return nil, err
 	}
