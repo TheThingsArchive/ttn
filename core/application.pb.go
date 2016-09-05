@@ -29,6 +29,8 @@
 		ValidateOTAABrokerRes
 		UpsertABPBrokerReq
 		UpsertABPBrokerRes
+		DeleteDeviceBrokerReq
+		DeleteDeviceBrokerRes
 		BrokerDevice
 		ValidateTokenBrokerReq
 		ValidateTokenBrokerRes
@@ -49,8 +51,12 @@
 		JoinHandlerRes
 		UpsertOTAAHandlerReq
 		UpsertOTAAHandlerRes
+		DeleteOTAAHandlerReq
+		DeleteOTAAHandlerRes
 		UpsertABPHandlerReq
 		UpsertABPHandlerRes
+		DeleteABPHandlerReq
+		DeleteABPHandlerRes
 		ListDevicesHandlerReq
 		ListDevicesHandlerRes
 		HandlerABPDevice

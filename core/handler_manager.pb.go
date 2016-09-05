@@ -44,6 +44,29 @@ func (*UpsertOTAAHandlerRes) Descriptor() ([]byte, []int) {
 	return fileDescriptorHandlerManager, []int{1}
 }
 
+type DeleteOTAAHandlerReq struct {
+	Token  string `protobuf:"bytes,1,opt,name=Token,json=token,proto3" json:"Token,omitempty"`
+	AppEUI []byte `protobuf:"bytes,2,opt,name=AppEUI,json=appEUI,proto3" json:"AppEUI,omitempty"`
+	DevEUI []byte `protobuf:"bytes,3,opt,name=DevEUI,json=devEUI,proto3" json:"DevEUI,omitempty"`
+}
+
+func (m *DeleteOTAAHandlerReq) Reset()         { *m = DeleteOTAAHandlerReq{} }
+func (m *DeleteOTAAHandlerReq) String() string { return proto.CompactTextString(m) }
+func (*DeleteOTAAHandlerReq) ProtoMessage()    {}
+func (*DeleteOTAAHandlerReq) Descriptor() ([]byte, []int) {
+	return fileDescriptorHandlerManager, []int{2}
+}
+
+type DeleteOTAAHandlerRes struct {
+}
+
+func (m *DeleteOTAAHandlerRes) Reset()         { *m = DeleteOTAAHandlerRes{} }
+func (m *DeleteOTAAHandlerRes) String() string { return proto.CompactTextString(m) }
+func (*DeleteOTAAHandlerRes) ProtoMessage()    {}
+func (*DeleteOTAAHandlerRes) Descriptor() ([]byte, []int) {
+	return fileDescriptorHandlerManager, []int{3}
+}
+
 type UpsertABPHandlerReq struct {
 	Token   string `protobuf:"bytes,1,opt,name=Token,json=token,proto3" json:"Token,omitempty"`
 	AppEUI  []byte `protobuf:"bytes,2,opt,name=AppEUI,json=appEUI,proto3" json:"AppEUI,omitempty"`
@@ -57,7 +80,7 @@ func (m *UpsertABPHandlerReq) Reset()         { *m = UpsertABPHandlerReq{} }
 func (m *UpsertABPHandlerReq) String() string { return proto.CompactTextString(m) }
 func (*UpsertABPHandlerReq) ProtoMessage()    {}
 func (*UpsertABPHandlerReq) Descriptor() ([]byte, []int) {
-	return fileDescriptorHandlerManager, []int{2}
+	return fileDescriptorHandlerManager, []int{4}
 }
 
 type UpsertABPHandlerRes struct {
@@ -67,7 +90,30 @@ func (m *UpsertABPHandlerRes) Reset()         { *m = UpsertABPHandlerRes{} }
 func (m *UpsertABPHandlerRes) String() string { return proto.CompactTextString(m) }
 func (*UpsertABPHandlerRes) ProtoMessage()    {}
 func (*UpsertABPHandlerRes) Descriptor() ([]byte, []int) {
-	return fileDescriptorHandlerManager, []int{3}
+	return fileDescriptorHandlerManager, []int{5}
+}
+
+type DeleteABPHandlerReq struct {
+	Token   string `protobuf:"bytes,1,opt,name=Token,json=token,proto3" json:"Token,omitempty"`
+	AppEUI  []byte `protobuf:"bytes,2,opt,name=AppEUI,json=appEUI,proto3" json:"AppEUI,omitempty"`
+	DevAddr []byte `protobuf:"bytes,3,opt,name=DevAddr,json=devAddr,proto3" json:"DevAddr,omitempty"`
+}
+
+func (m *DeleteABPHandlerReq) Reset()         { *m = DeleteABPHandlerReq{} }
+func (m *DeleteABPHandlerReq) String() string { return proto.CompactTextString(m) }
+func (*DeleteABPHandlerReq) ProtoMessage()    {}
+func (*DeleteABPHandlerReq) Descriptor() ([]byte, []int) {
+	return fileDescriptorHandlerManager, []int{6}
+}
+
+type DeleteABPHandlerRes struct {
+}
+
+func (m *DeleteABPHandlerRes) Reset()         { *m = DeleteABPHandlerRes{} }
+func (m *DeleteABPHandlerRes) String() string { return proto.CompactTextString(m) }
+func (*DeleteABPHandlerRes) ProtoMessage()    {}
+func (*DeleteABPHandlerRes) Descriptor() ([]byte, []int) {
+	return fileDescriptorHandlerManager, []int{7}
 }
 
 type ListDevicesHandlerReq struct {
@@ -79,7 +125,7 @@ func (m *ListDevicesHandlerReq) Reset()         { *m = ListDevicesHandlerReq{} }
 func (m *ListDevicesHandlerReq) String() string { return proto.CompactTextString(m) }
 func (*ListDevicesHandlerReq) ProtoMessage()    {}
 func (*ListDevicesHandlerReq) Descriptor() ([]byte, []int) {
-	return fileDescriptorHandlerManager, []int{4}
+	return fileDescriptorHandlerManager, []int{8}
 }
 
 type ListDevicesHandlerRes struct {
@@ -91,7 +137,7 @@ func (m *ListDevicesHandlerRes) Reset()         { *m = ListDevicesHandlerRes{} }
 func (m *ListDevicesHandlerRes) String() string { return proto.CompactTextString(m) }
 func (*ListDevicesHandlerRes) ProtoMessage()    {}
 func (*ListDevicesHandlerRes) Descriptor() ([]byte, []int) {
-	return fileDescriptorHandlerManager, []int{5}
+	return fileDescriptorHandlerManager, []int{9}
 }
 
 func (m *ListDevicesHandlerRes) GetOTAA() []*HandlerOTAADevice {
@@ -120,7 +166,7 @@ type HandlerABPDevice struct {
 func (m *HandlerABPDevice) Reset()                    { *m = HandlerABPDevice{} }
 func (m *HandlerABPDevice) String() string            { return proto.CompactTextString(m) }
 func (*HandlerABPDevice) ProtoMessage()               {}
-func (*HandlerABPDevice) Descriptor() ([]byte, []int) { return fileDescriptorHandlerManager, []int{6} }
+func (*HandlerABPDevice) Descriptor() ([]byte, []int) { return fileDescriptorHandlerManager, []int{10} }
 
 type HandlerOTAADevice struct {
 	DevEUI   []byte `protobuf:"bytes,1,opt,name=DevEUI,json=devEUI,proto3" json:"DevEUI,omitempty"`
@@ -135,7 +181,7 @@ type HandlerOTAADevice struct {
 func (m *HandlerOTAADevice) Reset()                    { *m = HandlerOTAADevice{} }
 func (m *HandlerOTAADevice) String() string            { return proto.CompactTextString(m) }
 func (*HandlerOTAADevice) ProtoMessage()               {}
-func (*HandlerOTAADevice) Descriptor() ([]byte, []int) { return fileDescriptorHandlerManager, []int{7} }
+func (*HandlerOTAADevice) Descriptor() ([]byte, []int) { return fileDescriptorHandlerManager, []int{11} }
 
 type GetDefaultDeviceReq struct {
 	Token  string `protobuf:"bytes,1,opt,name=Token,json=token,proto3" json:"Token,omitempty"`
@@ -146,7 +192,7 @@ func (m *GetDefaultDeviceReq) Reset()         { *m = GetDefaultDeviceReq{} }
 func (m *GetDefaultDeviceReq) String() string { return proto.CompactTextString(m) }
 func (*GetDefaultDeviceReq) ProtoMessage()    {}
 func (*GetDefaultDeviceReq) Descriptor() ([]byte, []int) {
-	return fileDescriptorHandlerManager, []int{8}
+	return fileDescriptorHandlerManager, []int{12}
 }
 
 type GetDefaultDeviceRes struct {
@@ -157,7 +203,7 @@ func (m *GetDefaultDeviceRes) Reset()         { *m = GetDefaultDeviceRes{} }
 func (m *GetDefaultDeviceRes) String() string { return proto.CompactTextString(m) }
 func (*GetDefaultDeviceRes) ProtoMessage()    {}
 func (*GetDefaultDeviceRes) Descriptor() ([]byte, []int) {
-	return fileDescriptorHandlerManager, []int{9}
+	return fileDescriptorHandlerManager, []int{13}
 }
 
 type SetDefaultDeviceReq struct {
@@ -170,7 +216,7 @@ func (m *SetDefaultDeviceReq) Reset()         { *m = SetDefaultDeviceReq{} }
 func (m *SetDefaultDeviceReq) String() string { return proto.CompactTextString(m) }
 func (*SetDefaultDeviceReq) ProtoMessage()    {}
 func (*SetDefaultDeviceReq) Descriptor() ([]byte, []int) {
-	return fileDescriptorHandlerManager, []int{10}
+	return fileDescriptorHandlerManager, []int{14}
 }
 
 type GetPayloadFunctionsReq struct {
@@ -182,7 +228,7 @@ func (m *GetPayloadFunctionsReq) Reset()         { *m = GetPayloadFunctionsReq{}
 func (m *GetPayloadFunctionsReq) String() string { return proto.CompactTextString(m) }
 func (*GetPayloadFunctionsReq) ProtoMessage()    {}
 func (*GetPayloadFunctionsReq) Descriptor() ([]byte, []int) {
-	return fileDescriptorHandlerManager, []int{11}
+	return fileDescriptorHandlerManager, []int{15}
 }
 
 type GetPayloadFunctionsRes struct {
@@ -195,7 +241,7 @@ func (m *GetPayloadFunctionsRes) Reset()         { *m = GetPayloadFunctionsRes{}
 func (m *GetPayloadFunctionsRes) String() string { return proto.CompactTextString(m) }
 func (*GetPayloadFunctionsRes) ProtoMessage()    {}
 func (*GetPayloadFunctionsRes) Descriptor() ([]byte, []int) {
-	return fileDescriptorHandlerManager, []int{12}
+	return fileDescriptorHandlerManager, []int{16}
 }
 
 type SetPayloadFunctionsReq struct {
@@ -210,7 +256,7 @@ func (m *SetPayloadFunctionsReq) Reset()         { *m = SetPayloadFunctionsReq{}
 func (m *SetPayloadFunctionsReq) String() string { return proto.CompactTextString(m) }
 func (*SetPayloadFunctionsReq) ProtoMessage()    {}
 func (*SetPayloadFunctionsReq) Descriptor() ([]byte, []int) {
-	return fileDescriptorHandlerManager, []int{13}
+	return fileDescriptorHandlerManager, []int{17}
 }
 
 type SetPayloadFunctionsRes struct {
@@ -220,7 +266,7 @@ func (m *SetPayloadFunctionsRes) Reset()         { *m = SetPayloadFunctionsRes{}
 func (m *SetPayloadFunctionsRes) String() string { return proto.CompactTextString(m) }
 func (*SetPayloadFunctionsRes) ProtoMessage()    {}
 func (*SetPayloadFunctionsRes) Descriptor() ([]byte, []int) {
-	return fileDescriptorHandlerManager, []int{14}
+	return fileDescriptorHandlerManager, []int{18}
 }
 
 type TestPayloadFunctionsReq struct {
@@ -236,7 +282,7 @@ func (m *TestPayloadFunctionsReq) Reset()         { *m = TestPayloadFunctionsReq
 func (m *TestPayloadFunctionsReq) String() string { return proto.CompactTextString(m) }
 func (*TestPayloadFunctionsReq) ProtoMessage()    {}
 func (*TestPayloadFunctionsReq) Descriptor() ([]byte, []int) {
-	return fileDescriptorHandlerManager, []int{15}
+	return fileDescriptorHandlerManager, []int{19}
 }
 
 type TestPayloadFunctionsRes struct {
@@ -248,7 +294,7 @@ func (m *TestPayloadFunctionsRes) Reset()         { *m = TestPayloadFunctionsRes
 func (m *TestPayloadFunctionsRes) String() string { return proto.CompactTextString(m) }
 func (*TestPayloadFunctionsRes) ProtoMessage()    {}
 func (*TestPayloadFunctionsRes) Descriptor() ([]byte, []int) {
-	return fileDescriptorHandlerManager, []int{16}
+	return fileDescriptorHandlerManager, []int{20}
 }
 
 type SetDefaultDeviceRes struct {
@@ -258,14 +304,18 @@ func (m *SetDefaultDeviceRes) Reset()         { *m = SetDefaultDeviceRes{} }
 func (m *SetDefaultDeviceRes) String() string { return proto.CompactTextString(m) }
 func (*SetDefaultDeviceRes) ProtoMessage()    {}
 func (*SetDefaultDeviceRes) Descriptor() ([]byte, []int) {
-	return fileDescriptorHandlerManager, []int{17}
+	return fileDescriptorHandlerManager, []int{21}
 }
 
 func init() {
 	proto.RegisterType((*UpsertOTAAHandlerReq)(nil), "core.UpsertOTAAHandlerReq")
 	proto.RegisterType((*UpsertOTAAHandlerRes)(nil), "core.UpsertOTAAHandlerRes")
+	proto.RegisterType((*DeleteOTAAHandlerReq)(nil), "core.DeleteOTAAHandlerReq")
+	proto.RegisterType((*DeleteOTAAHandlerRes)(nil), "core.DeleteOTAAHandlerRes")
 	proto.RegisterType((*UpsertABPHandlerReq)(nil), "core.UpsertABPHandlerReq")
 	proto.RegisterType((*UpsertABPHandlerRes)(nil), "core.UpsertABPHandlerRes")
+	proto.RegisterType((*DeleteABPHandlerReq)(nil), "core.DeleteABPHandlerReq")
+	proto.RegisterType((*DeleteABPHandlerRes)(nil), "core.DeleteABPHandlerRes")
 	proto.RegisterType((*ListDevicesHandlerReq)(nil), "core.ListDevicesHandlerReq")
 	proto.RegisterType((*ListDevicesHandlerRes)(nil), "core.ListDevicesHandlerRes")
 	proto.RegisterType((*HandlerABPDevice)(nil), "core.HandlerABPDevice")
@@ -296,6 +346,8 @@ type HandlerManagerClient interface {
 	UpsertOTAA(ctx context.Context, in *UpsertOTAAHandlerReq, opts ...grpc.CallOption) (*UpsertOTAAHandlerRes, error)
 	UpsertABP(ctx context.Context, in *UpsertABPHandlerReq, opts ...grpc.CallOption) (*UpsertABPHandlerRes, error)
 	ListDevices(ctx context.Context, in *ListDevicesHandlerReq, opts ...grpc.CallOption) (*ListDevicesHandlerRes, error)
+	DeleteOTAA(ctx context.Context, in *DeleteOTAAHandlerReq, opts ...grpc.CallOption) (*DeleteOTAAHandlerRes, error)
+	DeleteABP(ctx context.Context, in *DeleteABPHandlerReq, opts ...grpc.CallOption) (*DeleteABPHandlerRes, error)
 	GetDefaultDevice(ctx context.Context, in *GetDefaultDeviceReq, opts ...grpc.CallOption) (*GetDefaultDeviceRes, error)
 	SetDefaultDevice(ctx context.Context, in *SetDefaultDeviceReq, opts ...grpc.CallOption) (*SetDefaultDeviceRes, error)
 	GetPayloadFunctions(ctx context.Context, in *GetPayloadFunctionsReq, opts ...grpc.CallOption) (*GetPayloadFunctionsRes, error)
@@ -332,6 +384,24 @@ func (c *handlerManagerClient) UpsertABP(ctx context.Context, in *UpsertABPHandl
 func (c *handlerManagerClient) ListDevices(ctx context.Context, in *ListDevicesHandlerReq, opts ...grpc.CallOption) (*ListDevicesHandlerRes, error) {
 	out := new(ListDevicesHandlerRes)
 	err := grpc.Invoke(ctx, "/core.HandlerManager/ListDevices", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *handlerManagerClient) DeleteOTAA(ctx context.Context, in *DeleteOTAAHandlerReq, opts ...grpc.CallOption) (*DeleteOTAAHandlerRes, error) {
+	out := new(DeleteOTAAHandlerRes)
+	err := grpc.Invoke(ctx, "/core.HandlerManager/DeleteOTAA", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *handlerManagerClient) DeleteABP(ctx context.Context, in *DeleteABPHandlerReq, opts ...grpc.CallOption) (*DeleteABPHandlerRes, error) {
+	out := new(DeleteABPHandlerRes)
+	err := grpc.Invoke(ctx, "/core.HandlerManager/DeleteABP", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -389,6 +459,8 @@ type HandlerManagerServer interface {
 	UpsertOTAA(context.Context, *UpsertOTAAHandlerReq) (*UpsertOTAAHandlerRes, error)
 	UpsertABP(context.Context, *UpsertABPHandlerReq) (*UpsertABPHandlerRes, error)
 	ListDevices(context.Context, *ListDevicesHandlerReq) (*ListDevicesHandlerRes, error)
+	DeleteOTAA(context.Context, *DeleteOTAAHandlerReq) (*DeleteOTAAHandlerRes, error)
+	DeleteABP(context.Context, *DeleteABPHandlerReq) (*DeleteABPHandlerRes, error)
 	GetDefaultDevice(context.Context, *GetDefaultDeviceReq) (*GetDefaultDeviceRes, error)
 	SetDefaultDevice(context.Context, *SetDefaultDeviceReq) (*SetDefaultDeviceRes, error)
 	GetPayloadFunctions(context.Context, *GetPayloadFunctionsReq) (*GetPayloadFunctionsRes, error)
@@ -450,6 +522,42 @@ func _HandlerManager_ListDevices_Handler(srv interface{}, ctx context.Context, d
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(HandlerManagerServer).ListDevices(ctx, req.(*ListDevicesHandlerReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _HandlerManager_DeleteOTAA_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteOTAAHandlerReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(HandlerManagerServer).DeleteOTAA(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/core.HandlerManager/DeleteOTAA",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(HandlerManagerServer).DeleteOTAA(ctx, req.(*DeleteOTAAHandlerReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _HandlerManager_DeleteABP_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteABPHandlerReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(HandlerManagerServer).DeleteABP(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/core.HandlerManager/DeleteABP",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(HandlerManagerServer).DeleteABP(ctx, req.(*DeleteABPHandlerReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -561,6 +669,14 @@ var _HandlerManager_serviceDesc = grpc.ServiceDesc{
 			Handler:    _HandlerManager_ListDevices_Handler,
 		},
 		{
+			MethodName: "DeleteOTAA",
+			Handler:    _HandlerManager_DeleteOTAA_Handler,
+		},
+		{
+			MethodName: "DeleteABP",
+			Handler:    _HandlerManager_DeleteABP_Handler,
+		},
+		{
 			MethodName: "GetDefaultDevice",
 			Handler:    _HandlerManager_GetDefaultDevice_Handler,
 		},
@@ -644,6 +760,60 @@ func (m *UpsertOTAAHandlerRes) MarshalTo(data []byte) (int, error) {
 	return i, nil
 }
 
+func (m *DeleteOTAAHandlerReq) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *DeleteOTAAHandlerReq) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if len(m.Token) > 0 {
+		data[i] = 0xa
+		i++
+		i = encodeVarintHandlerManager(data, i, uint64(len(m.Token)))
+		i += copy(data[i:], m.Token)
+	}
+	if len(m.AppEUI) > 0 {
+		data[i] = 0x12
+		i++
+		i = encodeVarintHandlerManager(data, i, uint64(len(m.AppEUI)))
+		i += copy(data[i:], m.AppEUI)
+	}
+	if len(m.DevEUI) > 0 {
+		data[i] = 0x1a
+		i++
+		i = encodeVarintHandlerManager(data, i, uint64(len(m.DevEUI)))
+		i += copy(data[i:], m.DevEUI)
+	}
+	return i, nil
+}
+
+func (m *DeleteOTAAHandlerRes) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *DeleteOTAAHandlerRes) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	return i, nil
+}
+
 func (m *UpsertABPHandlerReq) Marshal() (data []byte, err error) {
 	size := m.Size()
 	data = make([]byte, size)
@@ -708,6 +878,60 @@ func (m *UpsertABPHandlerRes) Marshal() (data []byte, err error) {
 }
 
 func (m *UpsertABPHandlerRes) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	return i, nil
+}
+
+func (m *DeleteABPHandlerReq) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *DeleteABPHandlerReq) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if len(m.Token) > 0 {
+		data[i] = 0xa
+		i++
+		i = encodeVarintHandlerManager(data, i, uint64(len(m.Token)))
+		i += copy(data[i:], m.Token)
+	}
+	if len(m.AppEUI) > 0 {
+		data[i] = 0x12
+		i++
+		i = encodeVarintHandlerManager(data, i, uint64(len(m.AppEUI)))
+		i += copy(data[i:], m.AppEUI)
+	}
+	if len(m.DevAddr) > 0 {
+		data[i] = 0x1a
+		i++
+		i = encodeVarintHandlerManager(data, i, uint64(len(m.DevAddr)))
+		i += copy(data[i:], m.DevAddr)
+	}
+	return i, nil
+}
+
+func (m *DeleteABPHandlerRes) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *DeleteABPHandlerRes) MarshalTo(data []byte) (int, error) {
 	var i int
 	_ = i
 	var l int
@@ -1285,6 +1509,30 @@ func (m *UpsertOTAAHandlerRes) Size() (n int) {
 	return n
 }
 
+func (m *DeleteOTAAHandlerReq) Size() (n int) {
+	var l int
+	_ = l
+	l = len(m.Token)
+	if l > 0 {
+		n += 1 + l + sovHandlerManager(uint64(l))
+	}
+	l = len(m.AppEUI)
+	if l > 0 {
+		n += 1 + l + sovHandlerManager(uint64(l))
+	}
+	l = len(m.DevEUI)
+	if l > 0 {
+		n += 1 + l + sovHandlerManager(uint64(l))
+	}
+	return n
+}
+
+func (m *DeleteOTAAHandlerRes) Size() (n int) {
+	var l int
+	_ = l
+	return n
+}
+
 func (m *UpsertABPHandlerReq) Size() (n int) {
 	var l int
 	_ = l
@@ -1315,6 +1563,30 @@ func (m *UpsertABPHandlerReq) Size() (n int) {
 }
 
 func (m *UpsertABPHandlerRes) Size() (n int) {
+	var l int
+	_ = l
+	return n
+}
+
+func (m *DeleteABPHandlerReq) Size() (n int) {
+	var l int
+	_ = l
+	l = len(m.Token)
+	if l > 0 {
+		n += 1 + l + sovHandlerManager(uint64(l))
+	}
+	l = len(m.AppEUI)
+	if l > 0 {
+		n += 1 + l + sovHandlerManager(uint64(l))
+	}
+	l = len(m.DevAddr)
+	if l > 0 {
+		n += 1 + l + sovHandlerManager(uint64(l))
+	}
+	return n
+}
+
+func (m *DeleteABPHandlerRes) Size() (n int) {
 	var l int
 	_ = l
 	return n
@@ -1801,6 +2073,197 @@ func (m *UpsertOTAAHandlerRes) Unmarshal(data []byte) error {
 	}
 	return nil
 }
+func (m *DeleteOTAAHandlerReq) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowHandlerManager
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DeleteOTAAHandlerReq: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DeleteOTAAHandlerReq: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Token", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandlerManager
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthHandlerManager
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Token = string(data[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AppEUI", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandlerManager
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthHandlerManager
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AppEUI = append(m.AppEUI[:0], data[iNdEx:postIndex]...)
+			if m.AppEUI == nil {
+				m.AppEUI = []byte{}
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DevEUI", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandlerManager
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthHandlerManager
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.DevEUI = append(m.DevEUI[:0], data[iNdEx:postIndex]...)
+			if m.DevEUI == nil {
+				m.DevEUI = []byte{}
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipHandlerManager(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthHandlerManager
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *DeleteOTAAHandlerRes) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowHandlerManager
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DeleteOTAAHandlerRes: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DeleteOTAAHandlerRes: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipHandlerManager(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthHandlerManager
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func (m *UpsertABPHandlerReq) Unmarshal(data []byte) error {
 	l := len(data)
 	iNdEx := 0
@@ -2050,6 +2513,197 @@ func (m *UpsertABPHandlerRes) Unmarshal(data []byte) error {
 		}
 		if fieldNum <= 0 {
 			return fmt.Errorf("proto: UpsertABPHandlerRes: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipHandlerManager(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthHandlerManager
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *DeleteABPHandlerReq) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowHandlerManager
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DeleteABPHandlerReq: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DeleteABPHandlerReq: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Token", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandlerManager
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthHandlerManager
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Token = string(data[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AppEUI", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandlerManager
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthHandlerManager
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AppEUI = append(m.AppEUI[:0], data[iNdEx:postIndex]...)
+			if m.AppEUI == nil {
+				m.AppEUI = []byte{}
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DevAddr", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandlerManager
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthHandlerManager
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.DevAddr = append(m.DevAddr[:0], data[iNdEx:postIndex]...)
+			if m.DevAddr == nil {
+				m.DevAddr = []byte{}
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipHandlerManager(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthHandlerManager
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *DeleteABPHandlerRes) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowHandlerManager
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DeleteABPHandlerRes: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DeleteABPHandlerRes: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		default:
@@ -4047,50 +4701,53 @@ var (
 )
 
 var fileDescriptorHandlerManager = []byte{
-	// 709 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xac, 0x56, 0xdb, 0x4e, 0xd5, 0x4c,
-	0x14, 0xfe, 0xcb, 0x3e, 0x2f, 0xe0, 0x0f, 0x0e, 0xec, 0x52, 0x2b, 0x12, 0xd3, 0x2b, 0x12, 0x23,
-	0x17, 0xf8, 0x04, 0xe5, 0xb0, 0xc1, 0x78, 0xc2, 0x76, 0xe3, 0x8d, 0x17, 0x66, 0xdc, 0x9d, 0x8d,
-	0x3b, 0xd4, 0xb6, 0x76, 0x0a, 0x84, 0x37, 0xf1, 0xc2, 0x7b, 0x13, 0x5f, 0xc0, 0x27, 0x30, 0xf1,
-	0xd2, 0x47, 0x30, 0xfa, 0x06, 0x3e, 0x81, 0x73, 0x02, 0xda, 0xcd, 0x4c, 0x13, 0x91, 0x8b, 0x9d,
-	0xb0, 0xd6, 0xb7, 0xfa, 0xcd, 0xb7, 0x0e, 0xb3, 0x06, 0xe8, 0xbf, 0xc5, 0x49, 0x14, 0x93, 0xfc,
-	0xf5, 0x3b, 0x9c, 0xe0, 0x43, 0x92, 0xaf, 0x67, 0x79, 0x5a, 0xa4, 0xa8, 0x39, 0x4a, 0x73, 0xe2,
-	0x15, 0xb0, 0x74, 0x90, 0x51, 0x92, 0x17, 0xcf, 0x87, 0xbe, 0xbf, 0x27, 0x03, 0x03, 0xf2, 0x1e,
-	0x2d, 0x41, 0x6b, 0x98, 0x1e, 0x91, 0xc4, 0xb1, 0xee, 0x59, 0x6b, 0xbd, 0xa0, 0x55, 0x70, 0x03,
-	0xd9, 0xd0, 0xf6, 0xb3, 0x6c, 0xe7, 0xe0, 0x91, 0x33, 0xc3, 0xdc, 0x73, 0x41, 0x1b, 0x0b, 0x8b,
-	0xfb, 0xb7, 0xc9, 0x09, 0xf7, 0x37, 0xa4, 0x3f, 0x12, 0x96, 0x8a, 0x7f, 0x4c, 0xce, 0x9c, 0xe6,
-	0x45, 0x3c, 0xb3, 0x3c, 0x5b, 0x7b, 0x2a, 0xf5, 0x3e, 0x59, 0xb0, 0x28, 0x01, 0x7f, 0x73, 0xff,
-	0xda, 0x6a, 0x1c, 0xe8, 0x30, 0x35, 0x7e, 0x14, 0xe5, 0x4a, 0x4e, 0x27, 0x92, 0x26, 0x47, 0x9e,
-	0x9d, 0x1e, 0x85, 0x97, 0x82, 0x3a, 0x89, 0x34, 0x39, 0xc2, 0xb8, 0x04, 0xd2, 0x92, 0x08, 0x96,
-	0x26, 0x3f, 0x7b, 0x10, 0xe3, 0x43, 0xea, 0xb4, 0x99, 0x7f, 0x3e, 0x68, 0x8d, 0xb9, 0xe1, 0xf5,
-	0x75, 0x42, 0xa9, 0xb7, 0x03, 0xfd, 0x27, 0x13, 0x5a, 0xb0, 0xe3, 0x27, 0x23, 0x42, 0xaf, 0x9b,
-	0x81, 0x97, 0xe8, 0x69, 0x28, 0xba, 0x0f, 0x4d, 0x5e, 0x32, 0xc6, 0xd2, 0x58, 0x9b, 0xdd, 0x58,
-	0x5e, 0xe7, 0x3d, 0x5c, 0x57, 0x38, 0x07, 0xe4, 0x17, 0x41, 0x33, 0x65, 0x7f, 0xa3, 0x35, 0x68,
-	0x30, 0x75, 0x8c, 0x9a, 0xc7, 0xda, 0x95, 0x58, 0xe6, 0x57, 0xa1, 0x0d, 0xbc, 0xb9, 0xef, 0x7d,
-	0xb6, 0x60, 0x61, 0x1a, 0x29, 0x97, 0x71, 0xc6, 0x58, 0xc6, 0x86, 0xb1, 0x8c, 0xcd, 0x6a, 0x19,
-	0x59, 0xaa, 0x83, 0xad, 0xa4, 0x38, 0xc8, 0x44, 0x7d, 0xe7, 0x83, 0xf6, 0x58, 0x58, 0xc8, 0x85,
-	0x2e, 0xf7, 0x6f, 0xa7, 0xa7, 0x89, 0xaa, 0x70, 0x77, 0xac, 0xec, 0xcb, 0xd2, 0x77, 0xca, 0xa5,
-	0xff, 0x6a, 0xc1, 0xad, 0x2b, 0x29, 0x97, 0x46, 0xd0, 0xaa, 0x8c, 0xe0, 0x8d, 0x67, 0xa1, 0x06,
-	0xba, 0x55, 0x1e, 0xe8, 0x52, 0x76, 0x1d, 0x63, 0x76, 0xdd, 0x6a, 0x76, 0xde, 0x16, 0x2c, 0xee,
-	0x12, 0xd6, 0xe3, 0x31, 0x3e, 0x8e, 0x55, 0xab, 0xff, 0x7e, 0x52, 0x1e, 0xe8, 0x48, 0x68, 0x49,
-	0xa7, 0x55, 0xb9, 0x78, 0xaf, 0x60, 0x31, 0xfc, 0xd7, 0x33, 0x4b, 0xe4, 0x8d, 0x0a, 0xf9, 0x00,
-	0x6c, 0xa6, 0x65, 0x1f, 0x9f, 0xc5, 0x29, 0x8e, 0x06, 0xc7, 0xc9, 0xa8, 0x98, 0xa4, 0x09, 0xbd,
-	0xce, 0xf4, 0xeb, 0x79, 0xa8, 0x6c, 0xe6, 0x28, 0x8d, 0x48, 0xae, 0x98, 0x58, 0x33, 0x85, 0x89,
-	0x56, 0xa0, 0xb7, 0x95, 0x26, 0x27, 0xec, 0x42, 0x12, 0xd9, 0xe8, 0x5e, 0xd0, 0x1b, 0x9d, 0x3b,
-	0x38, 0xfa, 0x12, 0xc7, 0x93, 0x08, 0x17, 0xa9, 0xdc, 0x09, 0x0c, 0x3d, 0x39, 0x77, 0x78, 0x1f,
-	0x2d, 0xb0, 0xc3, 0x1b, 0x10, 0x5e, 0x96, 0x37, 0x5b, 0x23, 0x6f, 0xae, 0x56, 0xde, 0xfc, 0xb4,
-	0x3c, 0xc7, 0xa0, 0x8e, 0x7a, 0x5f, 0x2c, 0x58, 0x1e, 0x12, 0x7a, 0x33, 0xca, 0x15, 0x89, 0x50,
-	0xce, 0x26, 0x3e, 0x93, 0x66, 0x39, 0xa7, 0x7e, 0x4d, 0x4e, 0x76, 0x6d, 0x4e, 0xcb, 0xd3, 0x39,
-	0xed, 0x9a, 0x84, 0x8b, 0xd1, 0x1d, 0x4c, 0x48, 0x1c, 0x51, 0xa5, 0xbc, 0x3d, 0x16, 0x16, 0x4f,
-	0x48, 0x10, 0x0a, 0xe5, 0xdd, 0xa0, 0x25, 0xc8, 0xf8, 0x1e, 0xbe, 0x3a, 0xd0, 0x74, 0xe3, 0x77,
-	0x13, 0xfe, 0x57, 0x3b, 0xe2, 0xa9, 0x7c, 0xf5, 0xd0, 0x36, 0xc0, 0xe5, 0x9b, 0x83, 0x5c, 0xb9,
-	0x0e, 0x75, 0x6f, 0x9f, 0x6b, 0xc6, 0x28, 0xf2, 0xa1, 0x77, 0xb1, 0xf7, 0xd1, 0xed, 0x72, 0x60,
-	0xe5, 0xc5, 0x72, 0x8d, 0x10, 0x45, 0xbb, 0x30, 0x5b, 0x5a, 0xee, 0xe8, 0x8e, 0x8c, 0xd4, 0x3e,
-	0x1b, 0x6e, 0x0d, 0x48, 0xd1, 0x1e, 0x2c, 0x4c, 0xdf, 0xfd, 0x73, 0x49, 0x9a, 0xc5, 0xe2, 0x1a,
-	0x21, 0xc1, 0x14, 0x1a, 0x98, 0x42, 0x33, 0x93, 0xa6, 0xf0, 0xe8, 0x85, 0xd8, 0x47, 0xd3, 0x7d,
-	0x45, 0x2b, 0x17, 0x67, 0x6b, 0x66, 0xd5, 0xad, 0x43, 0x05, 0x65, 0x68, 0xa6, 0x0c, 0x6b, 0x29,
-	0xf5, 0x17, 0x07, 0x0d, 0x61, 0x49, 0x37, 0x7e, 0xe8, 0xae, 0xfc, 0xca, 0x70, 0xa7, 0xdc, 0x5a,
-	0x98, 0x6e, 0x2e, 0x7c, 0xfb, 0xb9, 0x6a, 0x7d, 0x67, 0xbf, 0x1f, 0xec, 0xf7, 0xe1, 0xd7, 0xea,
-	0x7f, 0x6f, 0xda, 0xe2, 0x5f, 0xad, 0x87, 0x7f, 0x02, 0x00, 0x00, 0xff, 0xff, 0x74, 0xe9, 0xf9,
-	0xf9, 0x83, 0x09, 0x00, 0x00,
+	// 763 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xb4, 0x56, 0xcb, 0x6e, 0xd3, 0x5c,
+	0x10, 0xfe, 0xdd, 0xc4, 0xb9, 0x4c, 0xdb, 0x5f, 0xe5, 0xe4, 0xd2, 0x60, 0x4a, 0x85, 0xbc, 0xaa,
+	0x84, 0xe8, 0xa2, 0x3c, 0x41, 0xda, 0x34, 0x2d, 0xe2, 0x56, 0xec, 0x94, 0x0d, 0x20, 0x64, 0xe2,
+	0x93, 0x12, 0xd5, 0xd8, 0xc6, 0xc7, 0x6d, 0xd5, 0x37, 0x61, 0xc1, 0x1e, 0x89, 0x17, 0xe0, 0x09,
+	0x90, 0x58, 0xf2, 0x08, 0x08, 0x1e, 0x83, 0x0d, 0xe7, 0x96, 0xc4, 0x4e, 0xcf, 0xb1, 0x44, 0x69,
+	0x17, 0x96, 0x32, 0x33, 0xc7, 0xdf, 0x7c, 0x5f, 0x66, 0xce, 0x8c, 0xa1, 0xf5, 0xd6, 0x0b, 0xfd,
+	0x00, 0x27, 0xaf, 0xdf, 0x79, 0xa1, 0x77, 0x84, 0x93, 0xcd, 0x38, 0x89, 0xd2, 0x08, 0x95, 0x87,
+	0x51, 0x82, 0xed, 0x14, 0x9a, 0x87, 0x31, 0xc1, 0x49, 0xfa, 0x74, 0xd0, 0xed, 0xee, 0x8b, 0x83,
+	0x0e, 0x7e, 0x8f, 0x9a, 0x60, 0x0e, 0xa2, 0x63, 0x1c, 0x76, 0x8c, 0x3b, 0xc6, 0x46, 0xdd, 0x31,
+	0x53, 0x66, 0xa0, 0x36, 0x54, 0xba, 0x71, 0xbc, 0x7b, 0xf8, 0xa0, 0xb3, 0x40, 0xdd, 0x4b, 0x4e,
+	0xc5, 0xe3, 0x16, 0xf3, 0xf7, 0xf0, 0x29, 0xf3, 0x97, 0x84, 0xdf, 0xe7, 0x96, 0x3c, 0xff, 0x10,
+	0x9f, 0x77, 0xca, 0xd3, 0xf3, 0xd4, 0xb2, 0xdb, 0xca, 0xac, 0xc4, 0x7e, 0x09, 0xcd, 0x1e, 0x0e,
+	0x70, 0x8a, 0xaf, 0x83, 0x0d, 0xcb, 0xaa, 0x40, 0x27, 0xf6, 0x27, 0x03, 0x1a, 0x82, 0x4e, 0x77,
+	0xfb, 0xe0, 0xd2, 0x59, 0x3b, 0x50, 0xa5, 0x59, 0xbb, 0xbe, 0x9f, 0xc8, 0xb4, 0x55, 0x5f, 0x98,
+	0x2c, 0xf2, 0xe4, 0xec, 0xd8, 0x9d, 0xfd, 0x0d, 0xd5, 0x50, 0x98, 0x2c, 0x42, 0xb1, 0x78, 0xc4,
+	0x14, 0x11, 0x4f, 0x98, 0x2c, 0x77, 0x3f, 0xf0, 0x8e, 0x48, 0xa7, 0x42, 0xfd, 0xcb, 0x8e, 0x39,
+	0x62, 0x86, 0xdd, 0x52, 0x11, 0x25, 0xf6, 0x2b, 0x68, 0x08, 0x61, 0xd7, 0xc2, 0x9f, 0x65, 0xbd,
+	0x08, 0x4f, 0xec, 0x5d, 0x68, 0x3d, 0x1a, 0x93, 0x94, 0xbe, 0x34, 0x1e, 0x62, 0x72, 0xd9, 0xbc,
+	0x76, 0xa8, 0x86, 0x21, 0xe8, 0x2e, 0x94, 0x59, 0xa1, 0x28, 0x4a, 0x69, 0x63, 0x71, 0x6b, 0x75,
+	0x93, 0xf5, 0xeb, 0xa6, 0x8c, 0xb3, 0x80, 0x78, 0xc3, 0x29, 0x47, 0xf4, 0x37, 0xda, 0x80, 0x12,
+	0x65, 0x47, 0xa1, 0xd9, 0xd9, 0x76, 0xee, 0x2c, 0xf5, 0xcb, 0xa3, 0x25, 0x6f, 0xfb, 0xc0, 0xfe,
+	0x6c, 0xc0, 0xca, 0x7c, 0x24, 0x2b, 0x7e, 0x41, 0x5b, 0xbc, 0x92, 0xb6, 0x78, 0xe5, 0x7c, 0xf1,
+	0xa8, 0xd4, 0xfe, 0x4e, 0x98, 0x1e, 0xc6, 0xbc, 0xaa, 0xcb, 0x4e, 0x65, 0xc4, 0x2d, 0x64, 0x41,
+	0x8d, 0xf9, 0x7b, 0xd1, 0x59, 0x28, 0xeb, 0x5a, 0x1b, 0x49, 0x7b, 0x56, 0xf0, 0x6a, 0xb6, 0xe0,
+	0x5f, 0x0d, 0xb8, 0x71, 0x41, 0x72, 0xa6, 0xc1, 0x8d, 0xdc, 0x75, 0xbb, 0x72, 0x15, 0xf2, 0xf2,
+	0x9a, 0xd9, 0xcb, 0x9b, 0x51, 0x57, 0xd5, 0xaa, 0xab, 0xe5, 0xd5, 0xd9, 0x3b, 0xd0, 0xd8, 0xc3,
+	0xb4, 0xc6, 0x23, 0xef, 0x24, 0x90, 0xa5, 0xfe, 0xfb, 0x4e, 0xb9, 0xa7, 0x02, 0x21, 0x19, 0x9e,
+	0x46, 0x6e, 0xc8, 0xbc, 0x80, 0x86, 0xfb, 0xaf, 0x39, 0x33, 0xe0, 0xa5, 0x1c, 0x78, 0x1f, 0xda,
+	0x94, 0xcb, 0x81, 0x77, 0x1e, 0x44, 0x9e, 0xdf, 0x3f, 0x09, 0x87, 0xe9, 0x38, 0x0a, 0xc9, 0x65,
+	0xba, 0x5f, 0x8d, 0x43, 0x44, 0x31, 0x87, 0x91, 0x8f, 0x13, 0x89, 0x44, 0x8b, 0xc9, 0x4d, 0xb4,
+	0x06, 0xf5, 0x9d, 0x28, 0x3c, 0xa5, 0x63, 0x00, 0x8b, 0x42, 0xd7, 0x9d, 0xfa, 0x70, 0xe2, 0x60,
+	0xd1, 0xe7, 0x5e, 0x30, 0xf6, 0xbd, 0x34, 0x12, 0x37, 0x99, 0x46, 0x4f, 0x27, 0x0e, 0xfb, 0xa3,
+	0x01, 0x6d, 0xf7, 0x0a, 0x88, 0x67, 0xe9, 0x2d, 0x16, 0xd0, 0x5b, 0x2a, 0xa4, 0xb7, 0x3c, 0x4f,
+	0xaf, 0xa3, 0x61, 0x47, 0xec, 0x2f, 0x06, 0xac, 0x0e, 0x30, 0xb9, 0x1a, 0xe6, 0x12, 0x84, 0x33,
+	0xa7, 0x1d, 0x1f, 0x0b, 0x33, 0xab, 0xa9, 0x55, 0xa0, 0xa9, 0x5d, 0xa8, 0x69, 0x75, 0x5e, 0xd3,
+	0x9e, 0x8e, 0x38, 0x6f, 0xdd, 0xfe, 0x18, 0x07, 0x3e, 0x91, 0xcc, 0x2b, 0x23, 0x6e, 0x31, 0x41,
+	0x1c, 0x90, 0x33, 0xaf, 0x39, 0x26, 0x07, 0x63, 0x73, 0xf8, 0x62, 0x43, 0x93, 0xad, 0xdf, 0x26,
+	0xfc, 0x2f, 0x67, 0xc4, 0x63, 0xb1, 0xe1, 0x51, 0x0f, 0x60, 0xb6, 0x5f, 0x91, 0x25, 0xc6, 0xa1,
+	0x6a, 0xcf, 0x5b, 0xfa, 0x18, 0x41, 0x5d, 0xa8, 0x4f, 0xb7, 0x0d, 0xba, 0x99, 0x3d, 0x98, 0xdb,
+	0x33, 0x96, 0x36, 0x44, 0xd0, 0x1e, 0x2c, 0x66, 0x86, 0x3b, 0xba, 0x25, 0x4e, 0x2a, 0xd7, 0x86,
+	0x55, 0x10, 0x24, 0x4c, 0xd1, 0x6c, 0x77, 0x4f, 0x14, 0xa9, 0xbe, 0x15, 0x2c, 0x7d, 0x8c, 0x2b,
+	0x9a, 0x6e, 0xb2, 0x89, 0x22, 0xc5, 0xe6, 0xb4, 0xb4, 0x21, 0x82, 0xf6, 0x61, 0x65, 0x7e, 0x08,
+	0x4d, 0x90, 0x14, 0x13, 0xce, 0xd2, 0x86, 0x38, 0x92, 0xab, 0x41, 0x72, 0xf5, 0x48, 0x8a, 0x0e,
+	0x40, 0xcf, 0xf8, 0x60, 0x9c, 0x6f, 0x30, 0xb4, 0x36, 0xcd, 0xad, 0xb8, 0x34, 0x56, 0x51, 0x94,
+	0x43, 0xba, 0x7a, 0x48, 0xb7, 0x10, 0x52, 0x7d, 0x83, 0xd1, 0x00, 0x9a, 0xaa, 0x7b, 0x80, 0x6e,
+	0x8b, 0xb7, 0x34, 0x97, 0xdb, 0x2a, 0x0c, 0x93, 0xed, 0x95, 0x6f, 0x3f, 0xd7, 0x8d, 0xef, 0xf4,
+	0xf9, 0x41, 0x9f, 0x0f, 0xbf, 0xd6, 0xff, 0x7b, 0x53, 0xe1, 0xdf, 0xb7, 0xf7, 0xff, 0x04, 0x00,
+	0x00, 0xff, 0xff, 0xca, 0x5a, 0xb2, 0xad, 0xf8, 0x0a, 0x00, 0x00,
 }
