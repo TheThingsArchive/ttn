@@ -99,6 +99,35 @@ func (b component) UpsertABP(bctx context.Context, req *core.UpsertABPBrokerReq)
 	return new(core.UpsertABPBrokerRes), nil
 }
 
+// DeleteDevice implements the core.BrokerManager interface
+func (b component) DeleteDevice(bctx context.Context, req *core.DeleteDeviceBrokerReq) (*core.DeleteDeviceBrokerRes, error) {
+	b.Ctx.Debug("Handle DeleteDevice request")
+
+	// 1. Validate the request
+	if len(req.AppEUI) != 8 || len(req.DevEUI) != 8 {
+		err := errors.New(errors.Structural, "Invalid request parameters")
+		b.Ctx.WithError(err).Debug("Unable to proceed DeleteDevice request")
+		return new(core.DeleteDeviceBrokerRes), err
+	}
+
+	// 2. Verify and validate the token
+	if err := b.validateToken(bctx, req.Token, req.AppEUI); err != nil {
+		return new(core.DeleteDeviceBrokerRes), err
+	}
+
+	// 3. Update the internal storage
+	b.Ctx.WithField("AppEUI", req.AppEUI).WithField("DevEUI", req.DevEUI).Debug("Request accepted by broker. Deleting device.")
+
+	err := b.NetworkController.delete(req.DevAddr, req.AppEUI, req.DevEUI)
+	if err != nil {
+		b.Ctx.WithError(err).Debug("Error while trying to save valid request")
+		return new(core.DeleteDeviceBrokerRes), errors.New(errors.Operational, err)
+	}
+
+	// 4. Done.
+	return new(core.DeleteDeviceBrokerRes), nil
+}
+
 // validateToken verify an OAuth Bearer token pass through metadata during RPC
 func (b component) validateToken(ctx context.Context, token string, appEUI []byte) error {
 	parsed, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {

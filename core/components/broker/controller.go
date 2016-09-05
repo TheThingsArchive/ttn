@@ -22,6 +22,7 @@ type NetworkController interface {
 	readNonces(appEUI []byte, devEUI []byte) (noncesEntry, error)
 	upsertNonces(entry noncesEntry) error
 	upsert(entry devEntry) error
+	delete(devAddr []byte, appEUI []byte, devEUI []byte) error
 	wholeCounter(devCnt uint32, entryCnt uint32) (uint32, error)
 	done() error
 }
@@ -113,6 +114,30 @@ func (s *controller) upsert(update devEntry) error {
 		newEntries = append(newEntries, update)
 	}
 	return s.db.Update(update.DevAddr, newEntries, dbDevices)
+}
+
+// delete implements the broker.NetworkController interface
+func (s *controller) delete(devAddr []byte, appEUI []byte, devEUI []byte) error {
+	s.Lock()
+	defer s.Unlock()
+	itf, err := s.db.Read(devAddr, &devEntry{}, dbDevices)
+	if err != nil {
+		if err.(errors.Failure).Nature != errors.NotFound {
+			return err
+		}
+		return nil
+	}
+	entries := itf.([]devEntry)
+
+	var newEntries []encoding.BinaryMarshaler
+	for _, e := range entries {
+		entry := new(devEntry)
+		*entry = e
+		if !reflect.DeepEqual(entry.AppEUI, appEUI) || !reflect.DeepEqual(entry.DevEUI, devEUI) {
+			newEntries = append(newEntries, entry)
+		}
+	}
+	return s.db.Update(devAddr, newEntries, dbDevices)
 }
 
 // readNonces implements the broker.NetworkController interface

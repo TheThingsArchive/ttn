@@ -201,6 +201,11 @@ func (m *AuthBrokerClient) ValidateOTAA(ctx context.Context, in *core.ValidateOT
 	return m.OutValidateOTAA.Res, m.Failures["ValidateOTAA"]
 }
 
+// DeleteDevice implements the core.Broker interface
+func (m *AuthBrokerClient) DeleteDevice(ctx context.Context, in *core.DeleteDeviceBrokerReq, opts ...grpc.CallOption) (*core.DeleteDeviceBrokerRes, error) {
+	return new(core.DeleteDeviceBrokerRes), nil
+}
+
 // ValidateToken implements the core.Broker interface
 func (m *AuthBrokerClient) ValidateToken(ctx context.Context, in *core.ValidateTokenBrokerReq, opts ...grpc.CallOption) (*core.ValidateTokenBrokerRes, error) {
 	m.InValidateToken.Ctx = ctx

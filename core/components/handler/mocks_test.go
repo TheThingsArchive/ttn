@@ -65,6 +65,11 @@ func (m *MockDevStorage) upsert(entry devEntry) error {
 	return m.Failures["upsert"]
 }
 
+// delete implements the DevStorage interface
+func (m *MockDevStorage) delete(appEUI []byte, devEUI []byte) error {
+	return nil
+}
+
 // getDefault implements the DevStorage interface
 func (m *MockDevStorage) getDefault(appEUI []byte) (*devDefaultEntry, error) {
 	m.InGetDefault.AppEUI = appEUI
