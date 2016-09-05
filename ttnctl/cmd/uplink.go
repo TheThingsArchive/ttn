@@ -227,6 +227,7 @@ var uplinkCmd = &cobra.Command{
 						Tmst: pointer.Uint32(1),
 						Time: pointer.Time(time.Now().UTC()),
 						Data: &encoded,
+						Stat: pointer.Int32(1),
 					},
 				},
 			},
