@@ -162,6 +162,11 @@ func (m *MockNetworkController) upsert(entry devEntry) error {
 	return m.Failures["upsert"]
 }
 
+// delete implements the NetworkController Interface
+func (m *MockNetworkController) delete(devAddr []byte, appEUI []byte, devEUI []byte) error {
+	return nil
+}
+
 // readNonces implements the NetworkController interface
 func (m *MockNetworkController) readNonces(appEUI, devEUI []byte) (noncesEntry, error) {
 	m.InReadNonces.AppEUI = appEUI

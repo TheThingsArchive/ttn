@@ -452,10 +452,67 @@ register [DevEUI] [AppKey]`,
 	},
 }
 
+// devicesDeleteCmd represents the `devices delete` command
+var devicesDeleteCmd = &cobra.Command{
+	Use:   "delete [DevAddr|DevEUI]",
+	Short: "Delete a device",
+	Long:  `ttnctl devices delete deletes a specific device.`,
+	Run: func(cmd *cobra.Command, args []string) {
+		appEUI := util.GetAppEUI(ctx)
+		ctx = ctx.WithField("AppEUI", appEUI)
+
+		if len(args) != 1 {
+			ctx.Fatal("Missing DevAddr or DevEUI")
+		}
+
+		auth, err := util.LoadAuth(viper.GetString("ttn-account-server"))
+		if err != nil {
+			ctx.WithError(err).Fatal("Failed to load authentication")
+		}
+		if auth == nil {
+			ctx.Fatal("No authentication found. Please login")
+		}
+
+		manager := util.GetHandlerManager(ctx)
+
+		if devEUI, err := types.ParseDevEUI(args[0]); err == nil {
+			ctx = ctx.WithField("DevEUI", devEUI)
+			_, err := manager.DeleteOTAA(context.Background(), &core.DeleteOTAAHandlerReq{
+				Token:  auth.AccessToken,
+				AppEUI: appEUI.Bytes(),
+				DevEUI: devEUI.Bytes(),
+			})
+			if err != nil {
+				ctx.WithError(err).Fatal("Could not delete OTAA device")
+			}
+			ctx.Info("Deleted OTAA device")
+			return
+		} else if devAddr, err := types.ParseDevAddr(args[0]); err == nil {
+			ctx = ctx.WithField("DevAddr", devAddr)
+			_, err := manager.DeleteABP(context.Background(), &core.DeleteABPHandlerReq{
+				Token:   auth.AccessToken,
+				AppEUI:  appEUI.Bytes(),
+				DevAddr: devAddr.Bytes(),
+			})
+			if err != nil {
+				ctx.WithError(err).Fatal("Could not delete ABP device")
+			}
+			ctx.Info("Deleted ABP device")
+			return
+		} else {
+			ctx.Fatal("Invalid DevAddr or DevEUI")
+		}
+
+		ctx.Info("Device not found")
+
+	},
+}
+
 func init() {
 	RootCmd.AddCommand(devicesCmd)
 	devicesCmd.AddCommand(devicesRegisterCmd)
 	devicesCmd.AddCommand(devicesInfoCmd)
+	devicesCmd.AddCommand(devicesDeleteCmd)
 	devicesInfoCmd.Flags().Bool("lmic", false, "Print info for LMiC")
 	devicesRegisterCmd.AddCommand(devicesRegisterPersonalizedCmd)
 	devicesRegisterCmd.AddCommand(devicesRegisterDefaultCmd)

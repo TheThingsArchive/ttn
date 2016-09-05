@@ -218,6 +218,95 @@ func (h component) SetDefaultDevice(bctx context.Context, req *core.SetDefaultDe
 	return new(core.SetDefaultDeviceRes), nil
 }
 
+func (h component) DeleteABP(bctx context.Context, req *core.DeleteABPHandlerReq) (*core.DeleteABPHandlerRes, error) {
+	// 1. Validate the request
+	if len(req.AppEUI) != 8 || len(req.DevAddr) != 4 {
+		err := errors.New(errors.Structural, "Invalid request parameters")
+		h.Ctx.WithError(err).Debug("Unable to handle delete device request")
+		return new(core.DeleteABPHandlerRes), err
+	}
+
+	// 2. Get the device
+	dev, err := h.DevStorage.read(req.AppEUI, append([]byte{0, 0, 0, 0}, req.DevAddr...))
+	if err != nil {
+		h.Ctx.WithError(err).Debug("Unable to handle delete device request")
+		return new(core.DeleteABPHandlerRes), err
+	}
+
+	// 3. Validate the token
+	_, err = h.Broker.DeleteDevice(context.Background(), &core.DeleteDeviceBrokerReq{
+		Token:   req.Token,
+		AppEUI:  req.AppEUI,
+		DevEUI:  append([]byte{0, 0, 0, 0}, req.DevAddr...),
+		DevAddr: dev.DevAddr,
+	})
+
+	if err != nil {
+		h.Ctx.WithError(err).Debug("Broker rejected token")
+		return new(core.DeleteABPHandlerRes), errors.New(errors.Operational, err)
+	}
+
+	// 4. Delete the device from storage
+	h.Ctx.WithField("AppEUI", req.AppEUI).WithField("DevEUI", append([]byte{0, 0, 0, 0}, req.DevAddr...)).Debug("Valid token. Deleting device")
+	err = h.DevStorage.delete(req.AppEUI, append([]byte{0, 0, 0, 0}, req.DevAddr...))
+	if err != nil {
+		h.Ctx.WithError(err).Debug("Storage error")
+		return new(core.DeleteABPHandlerRes), errors.New(errors.Operational, err)
+	}
+
+	return new(core.DeleteABPHandlerRes), nil
+}
+
+func (h component) DeleteOTAA(bctx context.Context, req *core.DeleteOTAAHandlerReq) (*core.DeleteOTAAHandlerRes, error) {
+	// 1. Validate the request
+	if len(req.AppEUI) != 8 || len(req.DevEUI) != 8 {
+		err := errors.New(errors.Structural, "Invalid request parameters")
+		h.Ctx.WithError(err).Debug("Unable to handle delete device request")
+		return new(core.DeleteOTAAHandlerRes), err
+	}
+
+	// 2. Get the device
+	dev, err := h.DevStorage.read(req.AppEUI, req.DevEUI)
+	if err != nil {
+		h.Ctx.WithError(err).Debug("Unable to handle delete device request")
+		return new(core.DeleteOTAAHandlerRes), err
+	}
+
+	// 3. Validate the token
+	_, err = h.Broker.ValidateToken(context.Background(), &core.ValidateTokenBrokerReq{
+		Token:  req.Token,
+		AppEUI: req.AppEUI,
+	})
+	if err != nil {
+		h.Ctx.WithError(err).Debug("Broker rejected token")
+		return new(core.DeleteOTAAHandlerRes), errors.New(errors.Operational, err)
+	}
+
+	// 4. Delete the device from Broker (if active)
+	if dev.DevAddr != nil {
+		_, err = h.Broker.DeleteDevice(context.Background(), &core.DeleteDeviceBrokerReq{
+			Token:   req.Token,
+			AppEUI:  req.AppEUI,
+			DevEUI:  req.DevEUI,
+			DevAddr: dev.DevAddr,
+		})
+		if err != nil {
+			h.Ctx.WithError(err).Debug("Broker rejected delete operation")
+			return new(core.DeleteOTAAHandlerRes), errors.New(errors.Operational, err)
+		}
+	}
+
+	// 5. Delete the device from storage
+	h.Ctx.WithField("AppEUI", req.AppEUI).WithField("DevEUI", req.DevEUI).Debug("Valid token. Deleting device")
+	err = h.DevStorage.delete(req.AppEUI, req.DevEUI)
+	if err != nil {
+		h.Ctx.WithError(err).Debug("Storage error")
+		return new(core.DeleteOTAAHandlerRes), errors.New(errors.Operational, err)
+	}
+
+	return new(core.DeleteOTAAHandlerRes), nil
+}
+
 func (h component) GetPayloadFunctions(ctx context.Context, req *core.GetPayloadFunctionsReq) (*core.GetPayloadFunctionsRes, error) {
 	res := new(core.GetPayloadFunctionsRes)
 

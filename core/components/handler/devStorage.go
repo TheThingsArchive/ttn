@@ -17,6 +17,7 @@ type DevStorage interface {
 	read(appEUI []byte, devEUI []byte) (devEntry, error)
 	readAll(appEUI []byte) ([]devEntry, error)
 	upsert(entry devEntry) error
+	delete(appEUI []byte, devEUI []byte) error
 	setDefault(appEUI []byte, entry *devDefaultEntry) error
 	getDefault(appEUI []byte) (*devDefaultEntry, error)
 	done() error
@@ -72,6 +73,10 @@ func (s *devStorage) readAll(appEUI []byte) ([]devEntry, error) {
 
 func (s *devStorage) upsert(entry devEntry) error {
 	return s.db.Update(entry.DevEUI, []encoding.BinaryMarshaler{entry}, entry.AppEUI)
+}
+
+func (s *devStorage) delete(appEUI []byte, devEUI []byte) error {
+	return s.db.Delete(devEUI, appEUI)
 }
 
 func (s *devStorage) setDefault(appEUI []byte, entry *devDefaultEntry) error {
