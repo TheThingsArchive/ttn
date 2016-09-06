@@ -18,6 +18,20 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
+func (h *handler) getActivationMetadata(ctx log.Interface, activation *pb_broker.DeduplicatedDeviceActivationRequest) (mqtt.Metadata, error) {
+	ttnUp := &pb_broker.DeduplicatedUplinkMessage{
+		ProtocolMetadata: activation.ProtocolMetadata,
+		GatewayMetadata:  activation.GatewayMetadata,
+		ServerTime:       activation.ServerTime,
+	}
+	mqttUp := &mqtt.UplinkMessage{}
+	err := h.ConvertMetadata(ctx, ttnUp, mqttUp)
+	if err != nil {
+		return mqtt.Metadata{}, err
+	}
+	return mqttUp.Metadata, nil
+}
+
 func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActivationRequest) (*pb.DeviceActivationResponse, error) {
 	var appEUI types.AppEUI
 	if activation.AppEui != nil {
@@ -98,12 +112,6 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 
 	ctx.Debug("Accepting Join Request")
 
-	// Publish Activation
-	h.mqttActivation <- &mqtt.Activation{
-		AppEUI: *activation.AppEui,
-		DevEUI: *activation.DevEui,
-	}
-
 	// Prepare Device Activation Response
 	var resPHY lorawan.PHYPayload
 	if err = resPHY.UnmarshalBinary(activation.ResponseTemplate.Payload); err != nil {
@@ -119,6 +127,17 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 		return nil, err
 	}
 	resPHY.MACPayload = joinAccept
+
+	// Publish Activation
+	mqttMetadata, _ := h.getActivationMetadata(ctx, activation)
+	h.mqttActivation <- &mqtt.Activation{
+		AppEUI:   *activation.AppEui,
+		DevEUI:   *activation.DevEui,
+		AppID:    activation.AppId,
+		DevID:    activation.DevId,
+		DevAddr:  types.DevAddr(joinAccept.DevAddr),
+		Metadata: mqttMetadata,
+	}
 
 	// Generate random AppNonce
 	var appNonce device.AppNonce
