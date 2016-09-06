@@ -84,8 +84,9 @@ func (n *networkServerManager) SetDevice(ctx context.Context, in *pb_lorawan.Dev
 		FCntUp:   in.FCntUp,
 		FCntDown: in.FCntDown,
 		Options: device.Options{
-			DisableFCntCheck: in.DisableFCntCheck,
-			Uses32BitFCnt:    in.Uses32BitFCnt,
+			DisableFCntCheck:      in.DisableFCntCheck,
+			Uses32BitFCnt:         in.Uses32BitFCnt,
+			ActivationConstraints: in.ActivationConstraints,
 		},
 	}
 
@@ -114,6 +115,29 @@ func (n *networkServerManager) DeleteDevice(ctx context.Context, in *pb_lorawan.
 	return &api.Ack{}, nil
 }
 
+func (n *networkServerManager) GetPrefixes(ctx context.Context, in *pb_lorawan.PrefixesRequest) (*pb_lorawan.PrefixesResponse, error) {
+	var mapping []*pb_lorawan.PrefixesResponse_PrefixMapping
+	for prefix, usage := range n.networkServer.prefixes {
+		mapping = append(mapping, &pb_lorawan.PrefixesResponse_PrefixMapping{
+			Prefix: prefix.String(),
+			Usage:  usage,
+		})
+	}
+	return &pb_lorawan.PrefixesResponse{
+		Prefixes: mapping,
+	}, nil
+}
+
+func (n *networkServerManager) GetDevAddr(ctx context.Context, in *pb_lorawan.DevAddrRequest) (*pb_lorawan.DevAddrResponse, error) {
+	devAddr, err := n.networkServer.getDevAddr(in.Usage...)
+	if err != nil {
+		return nil, err
+	}
+	return &pb_lorawan.DevAddrResponse{
+		DevAddr: &devAddr,
+	}, nil
+}
+
 func (n *networkServerManager) GetStatus(ctx context.Context, in *pb.StatusRequest) (*pb.Status, error) {
 	return nil, errors.New("Not Implemented")
 }
@@ -123,4 +147,5 @@ func (n *networkServer) RegisterManager(s *grpc.Server) {
 	server := &networkServerManager{n}
 	pb.RegisterNetworkServerManagerServer(s, server)
 	pb_lorawan.RegisterDeviceManagerServer(s, server)
+	pb_lorawan.RegisterDevAddrManagerServer(s, server)
 }

@@ -69,11 +69,15 @@ func (d *brokerDiscovery) Discover(devAddr types.DevAddr) ([]*pb.Announcement, e
 	matches := []*pb.Announcement{}
 	for _, service := range d.cache {
 		for _, meta := range service.Metadata {
-			var prefix types.DevAddr
-			copy(prefix[:], meta.Value[1:])
-			if meta.Key == pb.Metadata_PREFIX && len(meta.Value) == 5 && devAddr.HasPrefix(prefix, int(meta.Value[0])) {
-				matches = append(matches, service)
-				break
+			if meta.Key == pb.Metadata_PREFIX && len(meta.Value) == 5 {
+				var prefix types.DevAddrPrefix
+				copy(prefix.DevAddr[:], meta.Value[1:])
+				prefix.Length = int(meta.Value[0])
+
+				if devAddr.HasPrefix(prefix) {
+					matches = append(matches, service)
+					break
+				}
 			}
 		}
 	}

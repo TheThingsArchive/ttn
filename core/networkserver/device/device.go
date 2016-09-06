@@ -14,8 +14,9 @@ import (
 
 // Options for the specified device
 type Options struct {
-	DisableFCntCheck bool `json:"disable_fcnt_check,omitemtpy"` // Disable Frame counter check (insecure)
-	Uses32BitFCnt    bool `json:"uses_32_bit_fcnt,omitemtpy"`   // Use 32-bit Frame counters
+	ActivationConstraints string `json:"activation_constraints,omitempty"` // Activation Constraints (public/local/private)
+	DisableFCntCheck      bool   `json:"disable_fcnt_check,omitemtpy"`     // Disable Frame counter check (insecure)
+	Uses32BitFCnt         bool   `json:"uses_32_bit_fcnt,omitemtpy"`       // Use 32-bit Frame counters
 }
 
 // Device contains the state of a device

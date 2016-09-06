@@ -1,0 +1,32 @@
+// Copyright © 2016 The Things Network
+// Use of this source code is governed by the MIT license that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+
+package lorawan;
+
+message PrefixesRequest {}
+
+message PrefixesResponse {
+  message PrefixMapping {
+    string          prefix = 1;
+    repeated string usage  = 2;
+  }
+
+  repeated PrefixMapping prefixes = 1;
+}
+
+message DevAddrRequest {
+  repeated string usage = 1;
+}
+
+message DevAddrResponse {
+  bytes  dev_addr = 1 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.DevAddr"];
+}
+
+service DevAddrManager {
+  rpc GetPrefixes(PrefixesRequest) returns (PrefixesResponse);
+  rpc GetDevAddr(DevAddrRequest) returns (DevAddrResponse);
+}

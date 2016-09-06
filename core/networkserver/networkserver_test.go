@@ -51,10 +51,10 @@ func TestUsePrefix(t *testing.T) {
 	var client redis.Client
 	ns := NewRedisNetworkServer(&client, 19)
 
-	a.So(ns.UsePrefix([]byte{}, 0), ShouldNotBeNil)
-	a.So(ns.UsePrefix([]byte{0x14}, 7), ShouldNotBeNil)
-	a.So(ns.UsePrefix([]byte{0x26}, 7), ShouldBeNil)
-	a.So(ns.(*networkServer).prefix, ShouldEqual, [4]byte{0x26, 0x00, 0x00, 0x00})
+	a.So(ns.UsePrefix(types.DevAddrPrefix{DevAddr: types.DevAddr{0, 0, 0, 0}, Length: 0}, []string{"otaa"}), ShouldNotBeNil)
+	a.So(ns.UsePrefix(types.DevAddrPrefix{DevAddr: types.DevAddr{0x14, 0, 0, 0}, Length: 7}, []string{"otaa"}), ShouldNotBeNil)
+	a.So(ns.UsePrefix(types.DevAddrPrefix{DevAddr: types.DevAddr{0x26, 0, 0, 0}, Length: 7}, []string{"otaa"}), ShouldBeNil)
+	a.So(ns.(*networkServer).prefixes, ShouldHaveLength, 1)
 }
 
 func TestHandleGetDevices(t *testing.T) {
@@ -167,10 +167,14 @@ func TestHandleGetDevices(t *testing.T) {
 func TestHandlePrepareActivation(t *testing.T) {
 	a := New(t)
 	ns := &networkServer{
-		netID:        [3]byte{0x00, 0x00, 0x13},
-		prefix:       [4]byte{0x26, 0x00, 0x00, 0x00},
-		prefixLength: 7,
-		devices:      device.NewDeviceStore(),
+		netID: [3]byte{0x00, 0x00, 0x13},
+		prefixes: map[types.DevAddrPrefix][]string{
+			types.DevAddrPrefix{DevAddr: [4]byte{0x26, 0x00, 0x00, 0x00}, Length: 7}: []string{
+				"otaa",
+				"local",
+			},
+		},
+		devices: device.NewDeviceStore(),
 	}
 
 	appEUI := types.AppEUI(getEUI(2, 2, 3, 4, 5, 6, 7, 8))
@@ -178,6 +182,22 @@ func TestHandlePrepareActivation(t *testing.T) {
 
 	// Device not registered
 	resp, err := ns.HandlePrepareActivation(&pb_broker.DeduplicatedDeviceActivationRequest{
+		ActivationMetadata: &pb_protocol.ActivationMetadata{Protocol: &pb_protocol.ActivationMetadata_Lorawan{
+			Lorawan: &pb_lorawan.ActivationMetadata{
+				CfList: []uint64{867100000, 867300000, 867500000, 867700000, 867900000},
+			},
+		}},
+		ResponseTemplate: &pb_broker.DeviceActivationResponse{},
+	})
+	a.So(err, ShouldNotBeNil)
+
+	// Constrained Device
+	ns.devices.Set(&device.Device{AppEUI: appEUI, DevEUI: devEUI, Options: device.Options{
+		ActivationConstraints: "private",
+	}})
+	resp, err = ns.HandlePrepareActivation(&pb_broker.DeduplicatedDeviceActivationRequest{
+		DevEui: &devEUI,
+		AppEui: &appEUI,
 		ActivationMetadata: &pb_protocol.ActivationMetadata{Protocol: &pb_protocol.ActivationMetadata_Lorawan{
 			Lorawan: &pb_lorawan.ActivationMetadata{
 				CfList: []uint64{867100000, 867300000, 867500000, 867700000, 867900000},

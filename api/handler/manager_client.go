@@ -6,6 +6,9 @@ import (
 	"os/user"
 	"sync"
 
+	"github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
+	"github.com/TheThingsNetwork/ttn/core/types"
+
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -114,6 +117,18 @@ func (h *ManagerClient) GetDevicesForApplication(appID string) (devices []*Devic
 		devices = append(devices, dev)
 	}
 	return
+}
+
+// GetDevAddr requests a random device address with the given constraints
+func (h *ManagerClient) GetDevAddr(constraints ...string) (types.DevAddr, error) {
+	devAddrManager := lorawan.NewDevAddrManagerClient(h.conn)
+	resp, err := devAddrManager.GetDevAddr(h.getContext(), &lorawan.DevAddrRequest{
+		Usage: constraints,
+	})
+	if err != nil {
+		return types.DevAddr{}, err
+	}
+	return *resp.DevAddr, nil
 }
 
 // DryUplink transforms the uplink payload with the payload functions provided

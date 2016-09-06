@@ -28,6 +28,7 @@ message Device {
   // Options
   bool   disable_f_cnt_check = 11;
   bool   uses32_bit_f_cnt    = 12;
+  string activation_constraints = 13;
 
   // Other
   int64  last_seen = 21;

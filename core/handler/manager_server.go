@@ -19,7 +19,9 @@ import (
 )
 
 type handlerManager struct {
-	handler *handler
+	handler        *handler
+	deviceManager  pb_lorawan.DeviceManagerClient
+	devAddrManager pb_lorawan.DevAddrManagerClient
 }
 
 var errf = grpc.Errorf
@@ -51,7 +53,7 @@ func (h *handlerManager) GetDevice(ctx context.Context, in *pb.DeviceIdentifier)
 		return nil, err
 	}
 
-	nsDev, err := h.handler.ttnDeviceManager.GetDevice(ctx, &pb_lorawan.DeviceIdentifier{
+	nsDev, err := h.deviceManager.GetDevice(ctx, &pb_lorawan.DeviceIdentifier{
 		AppEui: &dev.AppEUI,
 		DevEui: &dev.DevEUI,
 	})
@@ -98,7 +100,7 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*api.Ack
 	if dev != nil { // When this is an update
 		if dev.AppEUI != *lorawan.AppEui || dev.DevEUI != *lorawan.DevEui {
 			// If the AppEUI or DevEUI is changed, we should remove the device from the NetworkServer and re-add it later
-			_, err = h.handler.ttnDeviceManager.DeleteDevice(ctx, &pb_lorawan.DeviceIdentifier{
+			_, err = h.deviceManager.DeleteDevice(ctx, &pb_lorawan.DeviceIdentifier{
 				AppEui: &dev.AppEUI,
 				DevEui: &dev.DevEUI,
 			})
@@ -131,19 +133,25 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*api.Ack
 	}
 
 	nsUpdated := &pb_lorawan.Device{
-		AppId:            in.AppId,
-		DevId:            in.DevId,
-		AppEui:           lorawan.AppEui,
-		DevEui:           lorawan.DevEui,
-		DevAddr:          lorawan.DevAddr,
-		NwkSKey:          lorawan.NwkSKey,
-		FCntUp:           lorawan.FCntUp,
-		FCntDown:         lorawan.FCntDown,
-		DisableFCntCheck: lorawan.DisableFCntCheck,
-		Uses32BitFCnt:    lorawan.Uses32BitFCnt,
+		AppId:                 in.AppId,
+		DevId:                 in.DevId,
+		AppEui:                lorawan.AppEui,
+		DevEui:                lorawan.DevEui,
+		DevAddr:               lorawan.DevAddr,
+		NwkSKey:               lorawan.NwkSKey,
+		FCntUp:                lorawan.FCntUp,
+		FCntDown:              lorawan.FCntDown,
+		DisableFCntCheck:      lorawan.DisableFCntCheck,
+		Uses32BitFCnt:         lorawan.Uses32BitFCnt,
+		ActivationConstraints: lorawan.ActivationConstraints,
 	}
 
-	_, err = h.handler.ttnDeviceManager.SetDevice(ctx, nsUpdated)
+	// Devices are activated locally by default
+	if nsUpdated.ActivationConstraints == "" {
+		nsUpdated.ActivationConstraints = "local"
+	}
+
+	_, err = h.deviceManager.SetDevice(ctx, nsUpdated)
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +169,7 @@ func (h *handlerManager) DeleteDevice(ctx context.Context, in *pb.DeviceIdentifi
 	if err != nil {
 		return nil, err
 	}
-	_, err = h.handler.ttnDeviceManager.DeleteDevice(ctx, &pb_lorawan.DeviceIdentifier{AppEui: &dev.AppEUI, DevEui: &dev.DevEUI})
+	_, err = h.deviceManager.DeleteDevice(ctx, &pb_lorawan.DeviceIdentifier{AppEui: &dev.AppEUI, DevEui: &dev.DevEUI})
 	if err != nil {
 		return nil, err
 	}
@@ -319,7 +327,7 @@ func (h *handlerManager) DeleteApplication(ctx context.Context, in *pb.Applicati
 		return nil, err
 	}
 	for _, dev := range devices {
-		_, err = h.handler.ttnDeviceManager.DeleteDevice(ctx, &pb_lorawan.DeviceIdentifier{AppEui: &dev.AppEUI, DevEui: &dev.DevEUI})
+		_, err = h.deviceManager.DeleteDevice(ctx, &pb_lorawan.DeviceIdentifier{AppEui: &dev.AppEUI, DevEui: &dev.DevEUI})
 		if err != nil {
 			return nil, err
 		}
@@ -350,12 +358,25 @@ func (h *handlerManager) DeleteApplication(ctx context.Context, in *pb.Applicati
 	return &api.Ack{}, nil
 }
 
+func (h *handlerManager) GetPrefixes(ctx context.Context, in *pb_lorawan.PrefixesRequest) (*pb_lorawan.PrefixesResponse, error) {
+	return h.devAddrManager.GetPrefixes(ctx, in)
+}
+
+func (h *handlerManager) GetDevAddr(ctx context.Context, in *pb_lorawan.DevAddrRequest) (*pb_lorawan.DevAddrResponse, error) {
+	return h.devAddrManager.GetDevAddr(ctx, in)
+}
+
 func (h *handlerManager) GetStatus(ctx context.Context, in *pb.StatusRequest) (*pb.Status, error) {
 	return nil, errors.New("Not Implemented")
 }
 
-func (b *handler) RegisterManager(s *grpc.Server) {
-	server := &handlerManager{b}
+func (h *handler) RegisterManager(s *grpc.Server) {
+	server := &handlerManager{
+		handler:        h,
+		deviceManager:  pb_lorawan.NewDeviceManagerClient(h.ttnBrokerConn),
+		devAddrManager: pb_lorawan.NewDevAddrManagerClient(h.ttnBrokerConn),
+	}
 	pb.RegisterHandlerManagerServer(s, server)
 	pb.RegisterApplicationManagerServer(s, server)
+	pb_lorawan.RegisterDevAddrManagerServer(s, server)
 }

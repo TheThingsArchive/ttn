@@ -5,15 +5,20 @@ package broker
 
 import (
 	"errors"
+	"strings"
 	"sync"
 	"time"
 
+	"google.golang.org/grpc"
+
 	"github.com/TheThingsNetwork/ttn/api"
 	pb "github.com/TheThingsNetwork/ttn/api/broker"
+	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/api/networkserver"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/discovery"
+	"github.com/TheThingsNetwork/ttn/core/types"
 )
 
 type Broker interface {
@@ -57,10 +62,58 @@ type broker struct {
 	nsAddr                 string
 	nsCert                 string
 	nsToken                string
+	nsConn                 *grpc.ClientConn
 	ns                     networkserver.NetworkServerClient
-	nsManager              pb_lorawan.DeviceManagerClient
 	uplinkDeduplicator     Deduplicator
 	activationDeduplicator Deduplicator
+}
+
+func (b *broker) checkPrefixAnnouncements() error {
+	// Get prefixes from NS
+	nsPrefixes := map[types.DevAddrPrefix]string{}
+	devAddrClient := pb_lorawan.NewDevAddrManagerClient(b.nsConn)
+	resp, err := devAddrClient.GetPrefixes(b.GetContext(""), &pb_lorawan.PrefixesRequest{})
+	if err != nil {
+		return err
+	}
+	for _, mapping := range resp.Prefixes {
+		prefix, err := types.ParseDevAddrPrefix(mapping.Prefix)
+		if err != nil {
+			continue
+		}
+		nsPrefixes[prefix] = strings.Join(mapping.Usage, ",")
+	}
+
+	// Get self from Discovery
+	var announcedPrefixes []types.DevAddrPrefix
+	self, err := b.Component.Discover("broker", b.Component.Identity.Id)
+	if err != nil {
+		return err
+	}
+	for _, meta := range self.Metadata {
+		if meta.Key == pb_discovery.Metadata_PREFIX && len(meta.Value) == 5 {
+			var prefix types.DevAddrPrefix
+			copy(prefix.DevAddr[:], meta.Value[1:])
+			prefix.Length = int(meta.Value[0])
+			announcedPrefixes = append(announcedPrefixes, prefix)
+		}
+	}
+
+nextPrefix:
+	for nsPrefix, usage := range nsPrefixes {
+		if !strings.Contains(usage, "world") && !strings.Contains(usage, "local") {
+			continue
+		}
+		for _, announcedPrefix := range announcedPrefixes {
+			if nsPrefix.DevAddr == announcedPrefix.DevAddr && nsPrefix.Length == announcedPrefix.Length {
+				b.Ctx.WithField("NSPrefix", nsPrefix).WithField("DPrefix", announcedPrefix).Info("Prefix found in Discovery")
+				continue nextPrefix
+			}
+		}
+		b.Ctx.WithField("Prefix", nsPrefix).Warn("Prefix not announced in Discovery")
+	}
+
+	return nil
 }
 
 func (b *broker) Init(c *core.Component) error {
@@ -79,8 +132,9 @@ func (b *broker) Init(c *core.Component) error {
 	if err != nil {
 		return err
 	}
+	b.nsConn = conn
 	b.ns = networkserver.NewNetworkServerClient(conn)
-	b.nsManager = pb_lorawan.NewDeviceManagerClient(conn)
+	b.checkPrefixAnnouncements()
 	b.Component.SetStatus(core.StatusHealthy)
 	return nil
 }

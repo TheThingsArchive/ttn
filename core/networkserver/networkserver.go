@@ -5,6 +5,8 @@ package networkserver
 
 import (
 	"errors"
+	"fmt"
+	"strings"
 	"time"
 
 	"gopkg.in/redis.v3"
@@ -27,7 +29,9 @@ type NetworkServer interface {
 	core.ComponentInterface
 	core.ManagementInterface
 
-	UsePrefix(prefixBytes []byte, length int) error
+	UsePrefix(prefix types.DevAddrPrefix, usage []string) error
+	GetPrefixesFor(requiredUsages ...string) []types.DevAddrPrefix
+
 	HandleGetDevices(*pb.DevicesRequest) (*pb.DevicesResponse, error)
 	HandlePrepareActivation(*pb_broker.DeduplicatedDeviceActivationRequest) (*pb_broker.DeduplicatedDeviceActivationRequest, error)
 	HandleActivate(*pb_handler.DeviceActivationResponse) (*pb_handler.DeviceActivationResponse, error)
@@ -38,32 +42,47 @@ type NetworkServer interface {
 // NewRedisNetworkServer creates a new Redis-backed NetworkServer
 func NewRedisNetworkServer(client *redis.Client, netID int) NetworkServer {
 	ns := &networkServer{
-		devices: device.NewRedisDeviceStore(client),
+		devices:  device.NewRedisDeviceStore(client),
+		prefixes: map[types.DevAddrPrefix][]string{},
 	}
 	ns.netID = [3]byte{byte(netID >> 16), byte(netID >> 8), byte(netID)}
-	ns.prefix = [4]byte{ns.netID[2] << 1, 0, 0, 0}
-	ns.prefixLength = 7
 	return ns
 }
 
 type networkServer struct {
 	*core.Component
-	devices      device.Store
-	netID        [3]byte
-	prefix       [4]byte
-	prefixLength int
+	devices  device.Store
+	netID    [3]byte
+	prefixes map[types.DevAddrPrefix][]string
 }
 
-func (n *networkServer) UsePrefix(prefixBytes []byte, length int) error {
-	if length < 7 {
+func (n *networkServer) UsePrefix(prefix types.DevAddrPrefix, usage []string) error {
+	if prefix.Length < 7 {
 		return errors.New("ttn/networkserver: Invalid prefix length")
 	}
-	if prefixBytes[0]>>1 != n.netID[2] {
+	if prefix.DevAddr[0]>>1 != n.netID[2] {
 		return errors.New("ttn/networkserver: Invalid prefix")
 	}
-	copy(n.prefix[:], prefixBytes)
-	n.prefixLength = length
+	n.prefixes[prefix] = usage
 	return nil
+}
+
+func (n *networkServer) GetPrefixesFor(requiredUsages ...string) []types.DevAddrPrefix {
+	var suitablePrefixes []types.DevAddrPrefix
+	for prefix, offeredUsages := range n.prefixes {
+		matches := 0
+		for _, requiredUsage := range requiredUsages {
+			for _, offeredUsage := range offeredUsages {
+				if offeredUsage == requiredUsage {
+					matches++
+				}
+			}
+		}
+		if matches == len(requiredUsages) {
+			suitablePrefixes = append(suitablePrefixes, prefix)
+		}
+	}
+	return suitablePrefixes
 }
 
 func (n *networkServer) Init(c *core.Component) error {
@@ -116,6 +135,29 @@ func (n *networkServer) HandleGetDevices(req *pb.DevicesRequest) (*pb.DevicesRes
 	return res, nil
 }
 
+func (n *networkServer) getDevAddr(constraints ...string) (types.DevAddr, error) {
+	// Instantiate a new random source
+	random := random.New()
+
+	// Generate random DevAddr bytes
+	var devAddr types.DevAddr
+	copy(devAddr[:], random.Bytes(4))
+
+	// Get a random prefix that matches the constraints
+	prefixes := n.GetPrefixesFor(constraints...)
+	if len(prefixes) == 0 {
+		return types.DevAddr{}, fmt.Errorf("ttn/networkserver: No DevAddr prefixes available for constraints %v", constraints)
+	}
+
+	// Select a prefix
+	prefix := prefixes[random.Intn(len(prefixes))]
+
+	// Apply the prefix
+	devAddr = devAddr.WithPrefix(prefix)
+
+	return devAddr, nil
+}
+
 func (n *networkServer) HandlePrepareActivation(activation *pb_broker.DeduplicatedDeviceActivationRequest) (*pb_broker.DeduplicatedDeviceActivationRequest, error) {
 	if activation.AppEui == nil || activation.DevEui == nil {
 		return nil, errors.New("ttn/networkserver: Activation missing AppEUI or DevEUI")
@@ -126,6 +168,13 @@ func (n *networkServer) HandlePrepareActivation(activation *pb_broker.Deduplicat
 	}
 	activation.AppId = dev.AppID
 	activation.DevId = dev.DevID
+
+	// Get activation constraints (for DevAddr prefix selection)
+	activationConstraints := strings.Split(dev.Options.ActivationConstraints, ",")
+	if len(activationConstraints) == 1 && activationConstraints[0] == "" {
+		activationConstraints = []string{}
+	}
+	activationConstraints = append(activationConstraints, "otaa")
 
 	// Build activation metadata if not present
 	if meta := activation.GetActivationMetadata(); meta == nil {
@@ -142,10 +191,11 @@ func (n *networkServer) HandlePrepareActivation(activation *pb_broker.Deduplicat
 	}
 	lorawanMeta := activation.ActivationMetadata.GetLorawan()
 
-	// Generate random DevAddr with prefix
-	var devAddr types.DevAddr
-	copy(devAddr[:], random.New().Bytes(4))
-	devAddr = devAddr.WithPrefix(types.DevAddr(n.prefix), n.prefixLength)
+	// Get a random device address
+	devAddr, err := n.getDevAddr(activationConstraints...)
+	if err != nil {
+		return nil, err
+	}
 
 	// Set the DevAddr in the Activation Metadata
 	lorawanMeta.DevAddr = &devAddr

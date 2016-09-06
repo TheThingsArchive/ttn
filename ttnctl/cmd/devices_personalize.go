@@ -4,6 +4,8 @@
 package cmd
 
 import (
+	"strings"
+
 	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
@@ -14,7 +16,7 @@ import (
 
 // devicesPersonalizeCmd represents the `device personalize` command
 var devicesPersonalizeCmd = &cobra.Command{
-	Use:   "personalize [Device ID] [DevAddr] [NwkSKey] [AppSKey]",
+	Use:   "personalize [Device ID] [NwkSKey] [AppSKey]",
 	Short: "Personalize a device",
 	Long:  `ttnctl devices personalize can be used to personalize a device (ABP).`,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -33,20 +35,8 @@ var devicesPersonalizeCmd = &cobra.Command{
 
 		appID := util.GetAppID(ctx)
 
-		var devAddr types.DevAddr
-		if len(args) > 1 {
-			devAddr, err = types.ParseDevAddr(args[1])
-			if err != nil {
-				ctx.Fatalf("Invalid DevAddr: %s", err)
-			}
-		} else {
-			ctx.Info("Generating random DevAddr...")
-			copy(devAddr[:], random.Bytes(4))
-			devAddr = devAddr.WithPrefix(types.DevAddr([4]byte{0x26, 0x00, 0x10, 0x00}), 20)
-		}
-
 		var nwkSKey types.NwkSKey
-		if len(args) > 2 {
+		if len(args) > 1 {
 			nwkSKey, err = types.ParseNwkSKey(args[2])
 			if err != nil {
 				ctx.Fatalf("Invalid NwkSKey: %s", err)
@@ -57,7 +47,7 @@ var devicesPersonalizeCmd = &cobra.Command{
 		}
 
 		var appSKey types.AppSKey
-		if len(args) > 3 {
+		if len(args) > 2 {
 			appSKey, err = types.ParseAppSKey(args[3])
 			if err != nil {
 				ctx.Fatalf("Invalid AppSKey: %s", err)
@@ -73,6 +63,19 @@ var devicesPersonalizeCmd = &cobra.Command{
 		dev, err := manager.GetDevice(appID, devID)
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not get existing device.")
+		}
+
+		ctx.Info("Requesting DevAddr for device...")
+
+		var constraints []string
+		if lorawan := dev.GetLorawanDevice(); lorawan != nil && lorawan.ActivationConstraints != "" {
+			constraints = strings.Split(lorawan.ActivationConstraints, ",")
+		}
+		constraints = append(constraints, "abp")
+
+		devAddr, err := manager.GetDevAddr(constraints...)
+		if err != nil {
+			ctx.WithError(err).Fatal("Could not request device address")
 		}
 
 		dev.GetLorawanDevice().DevAddr = &devAddr

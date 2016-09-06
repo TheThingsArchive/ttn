@@ -8,11 +8,8 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
-
-	"google.golang.org/grpc"
-
-	"gopkg.in/redis.v3"
 
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/networkserver"
@@ -20,6 +17,8 @@ import (
 	"github.com/apex/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"google.golang.org/grpc"
+	"gopkg.in/redis.v3"
 )
 
 // networkserverCmd represents the networkserver command
@@ -32,7 +31,6 @@ var networkserverCmd = &cobra.Command{
 			"Server":   fmt.Sprintf("%s:%d", viper.GetString("networkserver.server-address"), viper.GetInt("networkserver.server-port")),
 			"Database": fmt.Sprintf("%s/%d", viper.GetString("networkserver.redis-address"), viper.GetInt("networkserver.redis-db")),
 			"NetID":    viper.GetString("networkserver.net-id"),
-			"Prefix":   viper.GetString("networkserver.prefix"),
 		}).Info("Initializing Network Server")
 	},
 	Run: func(cmd *cobra.Command, args []string) {
@@ -55,14 +53,22 @@ var networkserverCmd = &cobra.Command{
 
 		// networkserver Server
 		networkserver := networkserver.NewRedisNetworkServer(client, viper.GetInt("networkserver.net-id"))
-		prefix, length, err := types.ParseDevAddrPrefix(viper.GetString("networkserver.prefix"))
-		if err != nil {
-			ctx.WithError(err).Fatal("Could not initialize networkserver")
+
+		// Register Prefixes
+		for prefix, usage := range viper.GetStringMapString("networkserver.prefixes") {
+			prefix, err := types.ParseDevAddrPrefix(prefix)
+			if err != nil {
+				ctx.WithError(err).Warn("Could not use DevAddr Prefix. Skipping.")
+				continue
+			}
+			err = networkserver.UsePrefix(prefix, strings.Split(usage, ","))
+			if err != nil {
+				ctx.WithError(err).Fatal("Could not initialize networkserver")
+				continue
+			}
+			ctx.Infof("Using DevAddr prefix %s (%v)", prefix, usage)
 		}
-		err = networkserver.UsePrefix(prefix[:], length)
-		if err != nil {
-			ctx.WithError(err).Fatal("Could not initialize networkserver")
-		}
+
 		err = networkserver.Init(component)
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not initialize networkserver")
@@ -99,8 +105,9 @@ func init() {
 	networkserverCmd.Flags().Int("net-id", 19, "LoRaWAN NetID")
 	viper.BindPFlag("networkserver.net-id", networkserverCmd.Flags().Lookup("net-id"))
 
-	networkserverCmd.Flags().String("prefix", "26002000/20", "LoRaWAN DevAddr Prefix that should be used for issuing device addresses")
-	viper.BindPFlag("networkserver.prefix", networkserverCmd.Flags().Lookup("prefix"))
+	viper.SetDefault("networkserver.prefixes", map[string]string{
+		"26000000/20": "otaa,abp,world,local,private,testing",
+	})
 
 	networkserverCmd.Flags().String("server-address", "0.0.0.0", "The IP address to listen for communication")
 	networkserverCmd.Flags().String("server-address-announce", "localhost", "The public IP address to announce")

@@ -61,6 +61,7 @@ var devicesSetCmd = &cobra.Command{
 			if err != nil {
 				ctx.Fatalf("Invalid DevAddr: %s", err)
 			}
+			ctx.Warn("Using a DevAddr that was not issued by the NetworkServer could break connectivity")
 			dev.GetLorawanDevice().DevAddr = &devAddr
 		}
 
