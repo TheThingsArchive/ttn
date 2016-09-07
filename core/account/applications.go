@@ -111,7 +111,7 @@ func (a *Account) GenerateEUI(appID string) (*types.AppEUI, error) {
 	if err != nil {
 		return nil, err
 	}
-	return res.EUI, nil
+	return &res.EUI, nil
 }
 
 // RemoveEUI removes the specified EUI from the application
