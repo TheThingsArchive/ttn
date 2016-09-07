@@ -6,9 +6,9 @@ package broker
 import (
 	"io"
 
-	pb_api "github.com/TheThingsNetwork/ttn/api"
 	pb "github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/golang/protobuf/ptypes/empty"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -98,7 +98,7 @@ func (b *brokerRPC) Publish(stream pb.Broker_PublishServer) error {
 	for {
 		downlink, err := stream.Recv()
 		if err == io.EOF {
-			return stream.SendAndClose(&pb_api.Ack{})
+			return stream.SendAndClose(&empty.Empty{})
 		}
 		if err != nil {
 			return err

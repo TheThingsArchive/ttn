@@ -3,8 +3,8 @@
 
 syntax = "proto3";
 
+import "google/protobuf/empty.proto";
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
-
 import "github.com/TheThingsNetwork/ttn/api/api.proto";
 import "github.com/TheThingsNetwork/ttn/api/protocol/protocol.proto";
 import "github.com/TheThingsNetwork/ttn/api/gateway/gateway.proto";
@@ -95,7 +95,7 @@ service Broker {
   rpc Subscribe(SubscribeRequest) returns (stream DeduplicatedUplinkMessage);
 
   // Handler initiates downlink stream.
-  rpc Publish(stream DownlinkMessage) returns (api.Ack);
+  rpc Publish(stream DownlinkMessage) returns (google.protobuf.Empty);
 
   // Router requests device activation
   rpc Activate(DeviceActivationRequest) returns (DeviceActivationResponse);
@@ -134,7 +134,7 @@ message ApplicationHandlerRegistration {
 // The BrokerManager service provides configuration and monitoring functionality
 service BrokerManager {
   // Handler announces new application to Broker
-  rpc  RegisterApplicationHandler(ApplicationHandlerRegistration) returns (api.Ack);
+  rpc  RegisterApplicationHandler(ApplicationHandlerRegistration) returns (google.protobuf.Empty);
   // Network operator requests Broker status
   rpc  GetStatus(StatusRequest) returns (Status);
 }

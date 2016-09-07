@@ -7,11 +7,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/TheThingsNetwork/ttn/api"
 	pb "github.com/TheThingsNetwork/ttn/api/networkserver"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/networkserver/device"
+	"github.com/golang/protobuf/ptypes/empty"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -65,7 +65,7 @@ func (n *networkServerManager) GetDevice(ctx context.Context, in *pb_lorawan.Dev
 	}, nil
 }
 
-func (n *networkServerManager) SetDevice(ctx context.Context, in *pb_lorawan.Device) (*api.Ack, error) {
+func (n *networkServerManager) SetDevice(ctx context.Context, in *pb_lorawan.Device) (*empty.Empty, error) {
 	_, err := n.getDevice(ctx, &pb_lorawan.DeviceIdentifier{AppEui: in.AppEui, DevEui: in.DevEui})
 	if err != nil && core.GetErrType(err) != core.NotFound {
 		return nil, core.BuildGRPCError(err)
@@ -99,10 +99,10 @@ func (n *networkServerManager) SetDevice(ctx context.Context, in *pb_lorawan.Dev
 		return nil, core.BuildGRPCError(err)
 	}
 
-	return &api.Ack{}, nil
+	return &empty.Empty{}, nil
 }
 
-func (n *networkServerManager) DeleteDevice(ctx context.Context, in *pb_lorawan.DeviceIdentifier) (*api.Ack, error) {
+func (n *networkServerManager) DeleteDevice(ctx context.Context, in *pb_lorawan.DeviceIdentifier) (*empty.Empty, error) {
 	_, err := n.getDevice(ctx, in)
 	if err != nil {
 		return nil, core.BuildGRPCError(err)
@@ -111,7 +111,7 @@ func (n *networkServerManager) DeleteDevice(ctx context.Context, in *pb_lorawan.
 	if err != nil {
 		return nil, core.BuildGRPCError(err)
 	}
-	return &api.Ack{}, nil
+	return &empty.Empty{}, nil
 }
 
 func (n *networkServerManager) GetPrefixes(ctx context.Context, in *pb_lorawan.PrefixesRequest) (*pb_lorawan.PrefixesResponse, error) {

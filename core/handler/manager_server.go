@@ -6,7 +6,6 @@ package handler
 import (
 	"fmt"
 
-	"github.com/TheThingsNetwork/ttn/api"
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	pb "github.com/TheThingsNetwork/ttn/api/handler"
@@ -14,6 +13,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/handler/application"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
+	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -82,7 +82,7 @@ func (h *handlerManager) GetDevice(ctx context.Context, in *pb.DeviceIdentifier)
 	}, nil
 }
 
-func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*api.Ack, error) {
+func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*empty.Empty, error) {
 	dev, err := h.getDevice(ctx, &pb.DeviceIdentifier{AppId: in.AppId, DevId: in.DevId})
 	if err != nil && core.GetErrType(err) != core.NotFound {
 		return nil, core.BuildGRPCError(err)
@@ -161,10 +161,10 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*api.Ack
 		return nil, core.BuildGRPCError(err)
 	}
 
-	return &api.Ack{}, nil
+	return &empty.Empty{}, nil
 }
 
-func (h *handlerManager) DeleteDevice(ctx context.Context, in *pb.DeviceIdentifier) (*api.Ack, error) {
+func (h *handlerManager) DeleteDevice(ctx context.Context, in *pb.DeviceIdentifier) (*empty.Empty, error) {
 	dev, err := h.getDevice(ctx, in)
 	if err != nil {
 		return nil, core.BuildGRPCError(err)
@@ -177,7 +177,7 @@ func (h *handlerManager) DeleteDevice(ctx context.Context, in *pb.DeviceIdentifi
 	if err != nil {
 		return nil, core.BuildGRPCError(err)
 	}
-	return &api.Ack{}, nil
+	return &empty.Empty{}, nil
 }
 
 func (h *handlerManager) GetDevicesForApplication(ctx context.Context, in *pb.ApplicationIdentifier) (*pb.DeviceList, error) {
@@ -251,7 +251,7 @@ func (h *handlerManager) GetApplication(ctx context.Context, in *pb.ApplicationI
 	}, nil
 }
 
-func (h *handlerManager) RegisterApplication(ctx context.Context, in *pb.ApplicationIdentifier) (*api.Ack, error) {
+func (h *handlerManager) RegisterApplication(ctx context.Context, in *pb.ApplicationIdentifier) (*empty.Empty, error) {
 	app, err := h.getApplication(ctx, &pb.ApplicationIdentifier{AppId: in.AppId})
 	if err != nil && core.GetErrType(err) != core.NotFound {
 		return nil, core.BuildGRPCError(err)
@@ -287,11 +287,11 @@ func (h *handlerManager) RegisterApplication(ctx context.Context, in *pb.Applica
 		h.handler.Ctx.WithField("AppID", in.AppId).WithError(err).Warn("Could not register Application with Broker")
 	}
 
-	return &api.Ack{}, nil
+	return &empty.Empty{}, nil
 
 }
 
-func (h *handlerManager) SetApplication(ctx context.Context, in *pb.Application) (*api.Ack, error) {
+func (h *handlerManager) SetApplication(ctx context.Context, in *pb.Application) (*empty.Empty, error) {
 	_, err := h.getApplication(ctx, &pb.ApplicationIdentifier{AppId: in.AppId})
 	if err != nil {
 		return nil, core.BuildGRPCError(err)
@@ -312,10 +312,10 @@ func (h *handlerManager) SetApplication(ctx context.Context, in *pb.Application)
 		return nil, core.BuildGRPCError(err)
 	}
 
-	return &api.Ack{}, nil
+	return &empty.Empty{}, nil
 }
 
-func (h *handlerManager) DeleteApplication(ctx context.Context, in *pb.ApplicationIdentifier) (*api.Ack, error) {
+func (h *handlerManager) DeleteApplication(ctx context.Context, in *pb.ApplicationIdentifier) (*empty.Empty, error) {
 	_, err := h.getApplication(ctx, in)
 	if err != nil {
 		return nil, core.BuildGRPCError(err)
@@ -355,7 +355,7 @@ func (h *handlerManager) DeleteApplication(ctx context.Context, in *pb.Applicati
 		h.handler.Ctx.WithField("AppID", in.AppId).WithError(core.FromGRPCError(err)).Warn("Could not unregister Application from Discovery")
 	}
 
-	return &api.Ack{}, nil
+	return &empty.Empty{}, nil
 }
 
 func (h *handlerManager) GetPrefixes(ctx context.Context, in *pb_lorawan.PrefixesRequest) (*pb_lorawan.PrefixesResponse, error) {

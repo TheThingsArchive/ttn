@@ -3,8 +3,8 @@
 
 syntax = "proto3";
 
+import "google/protobuf/empty.proto";
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
-
 import "github.com/TheThingsNetwork/ttn/api/api.proto";
 import "github.com/TheThingsNetwork/ttn/api/protocol/protocol.proto";
 import "github.com/TheThingsNetwork/ttn/api/gateway/gateway.proto";
@@ -45,10 +45,10 @@ message DeviceActivationResponse {
 // The Router service provides pure network functionality
 service Router {
   // Gateway streams status messages to Router
-  rpc GatewayStatus(stream gateway.Status) returns (api.Ack);
+  rpc GatewayStatus(stream gateway.Status) returns (google.protobuf.Empty);
 
   // Gateway streams uplink messages to Router
-  rpc Uplink(stream UplinkMessage) returns (api.Ack);
+  rpc Uplink(stream UplinkMessage) returns (google.protobuf.Empty);
 
   // Gateway subscribes to downlink messages from Router
   rpc Subscribe(SubscribeRequest) returns (stream DownlinkMessage);

@@ -6,10 +6,10 @@ package router
 import (
 	"io"
 
-	api "github.com/TheThingsNetwork/ttn/api"
 	pb "github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/types"
+	"github.com/golang/protobuf/ptypes/empty"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -60,7 +60,7 @@ func (r *routerRPC) GatewayStatus(stream pb.Router_GatewayStatusServer) error {
 	for {
 		status, err := stream.Recv()
 		if err == io.EOF {
-			return stream.SendAndClose(&api.Ack{})
+			return stream.SendAndClose(&empty.Empty{})
 		}
 		if err != nil {
 			return err
@@ -81,7 +81,7 @@ func (r *routerRPC) Uplink(stream pb.Router_UplinkServer) error {
 	for {
 		uplink, err := stream.Recv()
 		if err == io.EOF {
-			return stream.SendAndClose(&api.Ack{})
+			return stream.SendAndClose(&empty.Empty{})
 		}
 		if err != nil {
 			return err

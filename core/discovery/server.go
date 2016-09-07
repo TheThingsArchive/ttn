@@ -4,9 +4,9 @@
 package discovery
 
 import (
-	"github.com/TheThingsNetwork/ttn/api"
 	pb "github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/golang/protobuf/ptypes/empty"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -72,7 +72,7 @@ func (d *discoveryServer) checkMetadataEditRights(ctx context.Context, in *pb.Me
 	return nil
 }
 
-func (d *discoveryServer) Announce(ctx context.Context, announcement *pb.Announcement) (*api.Ack, error) {
+func (d *discoveryServer) Announce(ctx context.Context, announcement *pb.Announcement) (*empty.Empty, error) {
 	claims, err := d.discovery.ValidateTTNAuthContext(ctx)
 	if err != nil {
 		return nil, err
@@ -93,10 +93,10 @@ func (d *discoveryServer) Announce(ctx context.Context, announcement *pb.Announc
 	if err != nil {
 		return nil, core.BuildGRPCError(err)
 	}
-	return &api.Ack{}, nil
+	return &empty.Empty{}, nil
 }
 
-func (d *discoveryServer) AddMetadata(ctx context.Context, in *pb.MetadataRequest) (*api.Ack, error) {
+func (d *discoveryServer) AddMetadata(ctx context.Context, in *pb.MetadataRequest) (*empty.Empty, error) {
 	err := d.checkMetadataEditRights(ctx, in)
 	if err != nil {
 		return nil, err
@@ -105,10 +105,10 @@ func (d *discoveryServer) AddMetadata(ctx context.Context, in *pb.MetadataReques
 	if err != nil {
 		return nil, core.BuildGRPCError(err)
 	}
-	return &api.Ack{}, nil
+	return &empty.Empty{}, nil
 }
 
-func (d *discoveryServer) DeleteMetadata(ctx context.Context, in *pb.MetadataRequest) (*api.Ack, error) {
+func (d *discoveryServer) DeleteMetadata(ctx context.Context, in *pb.MetadataRequest) (*empty.Empty, error) {
 	err := d.checkMetadataEditRights(ctx, in)
 	if err != nil {
 		return nil, err
@@ -117,7 +117,7 @@ func (d *discoveryServer) DeleteMetadata(ctx context.Context, in *pb.MetadataReq
 	if err != nil {
 		return nil, core.BuildGRPCError(err)
 	}
-	return &api.Ack{}, nil
+	return &empty.Empty{}, nil
 }
 
 func (d *discoveryServer) GetAll(ctx context.Context, req *pb.GetAllRequest) (*pb.AnnouncementsResponse, error) {

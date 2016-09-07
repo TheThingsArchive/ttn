@@ -4,11 +4,11 @@
 package broker
 
 import (
-	"github.com/TheThingsNetwork/ttn/api"
 	pb "github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -29,7 +29,7 @@ func (b *brokerManager) GetDevice(ctx context.Context, in *lorawan.DeviceIdentif
 	return res, nil
 }
 
-func (b *brokerManager) SetDevice(ctx context.Context, in *lorawan.Device) (*api.Ack, error) {
+func (b *brokerManager) SetDevice(ctx context.Context, in *lorawan.Device) (*empty.Empty, error) {
 	res, err := b.deviceManager.SetDevice(ctx, in)
 	if err != nil {
 		return nil, core.BuildGRPCError(errors.Wrap(core.FromGRPCError(err), "NetworkServer did not set device"))
@@ -37,7 +37,7 @@ func (b *brokerManager) SetDevice(ctx context.Context, in *lorawan.Device) (*api
 	return res, nil
 }
 
-func (b *brokerManager) DeleteDevice(ctx context.Context, in *lorawan.DeviceIdentifier) (*api.Ack, error) {
+func (b *brokerManager) DeleteDevice(ctx context.Context, in *lorawan.DeviceIdentifier) (*empty.Empty, error) {
 	res, err := b.deviceManager.DeleteDevice(ctx, in)
 	if err != nil {
 		return nil, core.BuildGRPCError(errors.Wrap(core.FromGRPCError(err), "NetworkServer did not delete device"))
@@ -45,7 +45,7 @@ func (b *brokerManager) DeleteDevice(ctx context.Context, in *lorawan.DeviceIden
 	return res, nil
 }
 
-func (b *brokerManager) RegisterApplicationHandler(ctx context.Context, in *pb.ApplicationHandlerRegistration) (*api.Ack, error) {
+func (b *brokerManager) RegisterApplicationHandler(ctx context.Context, in *pb.ApplicationHandlerRegistration) (*empty.Empty, error) {
 	claims, err := b.broker.Component.ValidateTTNAuthContext(ctx)
 	if err != nil {
 		return nil, core.BuildGRPCError(core.FromGRPCError(err))
@@ -60,7 +60,7 @@ func (b *brokerManager) RegisterApplicationHandler(ctx context.Context, in *pb.A
 	if err != nil {
 		return nil, core.BuildGRPCError(errors.Wrap(core.FromGRPCError(err), "Discovery did not add appID"))
 	}
-	return &api.Ack{}, nil
+	return &empty.Empty{}, nil
 }
 
 func (b *brokerManager) GetPrefixes(ctx context.Context, in *lorawan.PrefixesRequest) (*lorawan.PrefixesResponse, error) {
