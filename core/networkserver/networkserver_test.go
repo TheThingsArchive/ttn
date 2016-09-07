@@ -51,9 +51,9 @@ func TestUsePrefix(t *testing.T) {
 	var client redis.Client
 	ns := NewRedisNetworkServer(&client, 19)
 
-	a.So(ns.UsePrefix(types.DevAddrPrefix{DevAddr: types.DevAddr{0, 0, 0, 0}, Length: 0}, []string{"otaa"}), ShouldNotBeNil)
-	a.So(ns.UsePrefix(types.DevAddrPrefix{DevAddr: types.DevAddr{0x14, 0, 0, 0}, Length: 7}, []string{"otaa"}), ShouldNotBeNil)
-	a.So(ns.UsePrefix(types.DevAddrPrefix{DevAddr: types.DevAddr{0x26, 0, 0, 0}, Length: 7}, []string{"otaa"}), ShouldBeNil)
+	a.So(ns.UsePrefix(types.DevAddrPrefix{DevAddr: types.DevAddr([4]byte{0, 0, 0, 0}), Length: 0}, []string{"otaa"}), ShouldNotBeNil)
+	a.So(ns.UsePrefix(types.DevAddrPrefix{DevAddr: types.DevAddr([4]byte{0x14, 0, 0, 0}), Length: 7}, []string{"otaa"}), ShouldNotBeNil)
+	a.So(ns.UsePrefix(types.DevAddrPrefix{DevAddr: types.DevAddr([4]byte{0x26, 0, 0, 0}), Length: 7}, []string{"otaa"}), ShouldBeNil)
 	a.So(ns.(*networkServer).prefixes, ShouldHaveLength, 1)
 }
 
