@@ -100,9 +100,18 @@ func (a *Account) AddEUI(appID string, eui types.AppEUI) error {
 	return a.put(fmt.Sprintf("/applications/%s/euis/%s", appID, eui.String()), nil, nil)
 }
 
+type genEUIRes struct {
+	EUI types.AppEUI `json:"eui"`
+}
+
 // GenerateEUI creates a new EUI for the application
-func (a *Account) GenerateEUI(appID string) error {
-	return a.post(fmt.Sprintf("/applications/%s/euis", appID), nil, nil)
+func (a *Account) GenerateEUI(appID string) (*types.AppEUI, error) {
+	var res genEUIRes
+	err := a.post(fmt.Sprintf("/applications/%s/euis", appID), nil, &res)
+	if err != nil {
+		return nil, err
+	}
+	return res.EUI, nil
 }
 
 // RemoveEUI removes the specified EUI from the application
