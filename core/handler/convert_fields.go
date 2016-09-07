@@ -4,12 +4,12 @@
 package handler
 
 import (
-	"errors"
 	"fmt"
 	"reflect"
 	"time"
 
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
+	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/mqtt"
 	"github.com/apex/log"
 	"github.com/robertkrimen/otto"
@@ -35,7 +35,7 @@ func (h *handler) ConvertFieldsUp(ctx log.Interface, ttnUp *pb_broker.Deduplicat
 	}
 
 	if !valid {
-		return errors.New("ttn/handler: The processed payload is not valid")
+		return core.NewErrInvalidArgument("Payload", "payload validator function returned false")
 	}
 
 	appUp.Fields = fields
@@ -62,7 +62,7 @@ var timeOut = 100 * time.Millisecond
 // Decode decodes the payload using the Decoder function into a map
 func (f *UplinkFunctions) Decode(payload []byte) (map[string]interface{}, error) {
 	if f.Decoder == "" {
-		return nil, errors.New("Decoder function not set")
+		return nil, core.NewErrInternal("Decoder function not set")
 	}
 
 	vm := otto.New()
@@ -73,13 +73,13 @@ func (f *UplinkFunctions) Decode(payload []byte) (map[string]interface{}, error)
 	}
 
 	if !value.IsObject() {
-		return nil, errors.New("Decoder does not return an object")
+		return nil, core.NewErrInvalidArgument("Decoder", "does not return an object")
 	}
 
 	v, _ := value.Export()
 	m, ok := v.(map[string]interface{})
 	if !ok {
-		return nil, errors.New("Decoder does not return an object")
+		return nil, core.NewErrInvalidArgument("Decoder", "does not return an object")
 	}
 	return m, nil
 }
@@ -100,13 +100,13 @@ func (f *UplinkFunctions) Convert(data map[string]interface{}) (map[string]inter
 	}
 
 	if !value.IsObject() {
-		return nil, errors.New("Converter does not return an object")
+		return nil, core.NewErrInvalidArgument("Converter", "does not return an object")
 	}
 
 	v, _ := value.Export()
 	m, ok := v.(map[string]interface{})
 	if !ok {
-		return nil, errors.New("Decoder does not return an object")
+		return nil, core.NewErrInvalidArgument("Converter", "does not return an object")
 	}
 
 	return m, nil
@@ -127,7 +127,7 @@ func (f *UplinkFunctions) Validate(data map[string]interface{}) (bool, error) {
 	}
 
 	if !value.IsBoolean() {
-		return false, errors.New("Validator does not return a boolean")
+		return false, core.NewErrInvalidArgument("Validator", "does not return a boolean")
 	}
 
 	return value.ToBoolean()
@@ -149,7 +149,7 @@ func (f *UplinkFunctions) Process(payload []byte) (map[string]interface{}, bool,
 	return converted, valid, err
 }
 
-var errTimeOutExceeded = errors.New("Code has been running to long")
+var errTimeOutExceeded = core.NewErrInternal("Code has been running to long")
 
 func runUnsafeCode(vm *otto.Otto, code string, timeOut time.Duration) (value otto.Value, err error) {
 	start := time.Now()
@@ -158,7 +158,7 @@ func runUnsafeCode(vm *otto.Otto, code string, timeOut time.Duration) (value ott
 		if caught := recover(); caught != nil {
 			if caught == errTimeOutExceeded {
 				value = otto.Value{}
-				err = fmt.Errorf("Interrupted javascript execution after %v", duration)
+				err = core.NewErrInternal(fmt.Sprintf("Interrupted javascript execution after %v", duration))
 				return
 			}
 			// if this is not the our timeout interrupt, raise the panic again
@@ -189,7 +189,7 @@ type DownlinkFunctions struct {
 // If no encoder function is set, this function returns an array.
 func (f *DownlinkFunctions) Encode(payload map[string]interface{}) ([]byte, error) {
 	if f.Encoder == "" {
-		return nil, errors.New("Encoder function not set")
+		return nil, core.NewErrInternal("Encoder function not set")
 	}
 
 	vm := otto.New()
@@ -200,7 +200,7 @@ func (f *DownlinkFunctions) Encode(payload map[string]interface{}) ([]byte, erro
 	}
 
 	if !value.IsObject() {
-		return nil, errors.New("Encoder does not return an object")
+		return nil, core.NewErrInvalidArgument("Encoder", "does not return an object")
 	}
 
 	v, err := value.Export()
@@ -209,7 +209,7 @@ func (f *DownlinkFunctions) Encode(payload map[string]interface{}) ([]byte, erro
 	}
 
 	if reflect.TypeOf(v).Kind() != reflect.Slice {
-		return nil, errors.New("Encoder does not return an array")
+		return nil, core.NewErrInvalidArgument("Encoder", "does not return an Array")
 	}
 
 	s := reflect.ValueOf(v)
@@ -239,20 +239,20 @@ func (f *DownlinkFunctions) Encode(payload map[string]interface{}) ([]byte, erro
 		case float32:
 			n = int64(t)
 			if float32(n) != t {
-				return nil, errors.New("Encoder should return an Array of integer numbers")
+				return nil, core.NewErrInvalidArgument("Encoder", "should return an Array of integer numbers")
 			}
 		case float64:
 			n = int64(t)
 			if float64(n) != t {
-				return nil, errors.New("Encoder should return an Array of integer numbers")
+				return nil, core.NewErrInvalidArgument("Encoder", "should return an Array of integer numbers")
 			}
 		default:
 			fmt.Printf("VAL %v TYPE %T\n", el, el)
-			return nil, errors.New("Encoder should return an Array of integer numbers")
+			return nil, core.NewErrInvalidArgument("Encoder", "should return an Array of integer numbers")
 		}
 
 		if n < 0 || n > 255 {
-			return nil, errors.New("Numbers in array should be between 0 and 255")
+			return nil, core.NewErrInvalidArgument("Encoder Output", "Numbers in Array should be between 0 and 255")
 		}
 
 		res[i] = byte(n)
@@ -278,7 +278,7 @@ func (h *handler) ConvertFieldsDown(ctx log.Interface, appDown *mqtt.DownlinkMes
 	}
 
 	if appDown.Payload != nil {
-		return errors.New("Both Fields and Payload provided")
+		return core.NewErrInvalidArgument("Downlink", "Both Fields and Payload provided")
 	}
 
 	app, err := h.applications.Get(appDown.AppID)

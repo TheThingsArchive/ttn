@@ -5,10 +5,9 @@ package handler
 
 import (
 	"encoding/json"
-	"errors"
-	"fmt"
 
 	pb "github.com/TheThingsNetwork/ttn/api/handler"
+	"github.com/TheThingsNetwork/ttn/core"
 	"golang.org/x/net/context"
 )
 
@@ -57,7 +56,7 @@ func (h *handlerManager) DryDownlink(ctx context.Context, in *pb.DryDownlinkMess
 
 	if in.Payload != nil {
 		if in.Fields != "" {
-			return nil, errors.New("Both fields and payload provided on downlink message")
+			return nil, core.NewErrInvalidArgument("Downlink", "Both Fields and Payload provided")
 		}
 		return &pb.DryDownlinkResult{
 			Payload: in.Payload,
@@ -65,11 +64,11 @@ func (h *handlerManager) DryDownlink(ctx context.Context, in *pb.DryDownlinkMess
 	}
 
 	if in.Fields == "" {
-		return nil, errors.New("Neither fields or payload provided on downlink message")
+		return nil, core.NewErrInvalidArgument("Downlink", "Neither Fields nor Payload provided")
 	}
 
 	if app == nil || app.Encoder == "" {
-		return nil, errors.New("No encoder specified")
+		return nil, core.NewErrInvalidArgument("Encoder", "Not specified")
 	}
 
 	functions := &DownlinkFunctions{
@@ -79,7 +78,7 @@ func (h *handlerManager) DryDownlink(ctx context.Context, in *pb.DryDownlinkMess
 	var parsed map[string]interface{}
 	err := json.Unmarshal([]byte(in.Fields), &parsed)
 	if err != nil {
-		return nil, fmt.Errorf("Could not parse fields: %s", err)
+		return nil, core.NewErrInvalidArgument("Fields", err.Error())
 	}
 
 	payload, _, err := functions.Process(parsed)

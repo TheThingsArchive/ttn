@@ -4,12 +4,9 @@
 package networkserver
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 	"time"
-
-	"gopkg.in/redis.v3"
 
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_handler "github.com/TheThingsNetwork/ttn/api/handler"
@@ -22,6 +19,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/random"
 	"github.com/brocaar/lorawan"
+	"gopkg.in/redis.v3"
 )
 
 // NetworkServer implements LoRaWAN-specific functionality for TTN
@@ -58,10 +56,10 @@ type networkServer struct {
 
 func (n *networkServer) UsePrefix(prefix types.DevAddrPrefix, usage []string) error {
 	if prefix.Length < 7 {
-		return errors.New("ttn/networkserver: Invalid prefix length")
+		return core.NewErrInvalidArgument("Prefix", "invalid length")
 	}
 	if prefix.DevAddr[0]>>1 != n.netID[2] {
-		return errors.New("ttn/networkserver: Invalid prefix")
+		return core.NewErrInvalidArgument("Prefix", "invalid netID")
 	}
 	n.prefixes[prefix] = usage
 	return nil
@@ -146,7 +144,7 @@ func (n *networkServer) getDevAddr(constraints ...string) (types.DevAddr, error)
 	// Get a random prefix that matches the constraints
 	prefixes := n.GetPrefixesFor(constraints...)
 	if len(prefixes) == 0 {
-		return types.DevAddr{}, fmt.Errorf("ttn/networkserver: No DevAddr prefixes available for constraints %v", constraints)
+		return types.DevAddr{}, core.NewErrNotFound(fmt.Sprintf("DevAddr prefix with constraints %v", constraints))
 	}
 
 	// Select a prefix
@@ -160,7 +158,7 @@ func (n *networkServer) getDevAddr(constraints ...string) (types.DevAddr, error)
 
 func (n *networkServer) HandlePrepareActivation(activation *pb_broker.DeduplicatedDeviceActivationRequest) (*pb_broker.DeduplicatedDeviceActivationRequest, error) {
 	if activation.AppEui == nil || activation.DevEui == nil {
-		return nil, errors.New("ttn/networkserver: Activation missing AppEUI or DevEUI")
+		return nil, core.NewErrInvalidArgument("Activation", "missing AppEUI or DevEUI")
 	}
 	dev, err := n.devices.Get(*activation.AppEui, *activation.DevEui)
 	if err != nil {
@@ -182,12 +180,12 @@ func (n *networkServer) HandlePrepareActivation(activation *pb_broker.Deduplicat
 	}
 	// Build lorawan metadata if not present
 	if lorawan := activation.ActivationMetadata.GetLorawan(); lorawan == nil {
-		return nil, errors.New("ttn/networkserver: Can only handle LoRaWAN activations")
+		return nil, core.NewErrInvalidArgument("Activation", "missing LoRaWAN metadata")
 	}
 
 	// Build response template if not present
 	if pld := activation.GetResponseTemplate(); pld == nil {
-		return nil, errors.New("ttn/networkserver: Activation does not contain a response template")
+		return nil, core.NewErrInvalidArgument("Activation", "missing response template")
 	}
 	lorawanMeta := activation.ActivationMetadata.GetLorawan()
 
@@ -234,11 +232,11 @@ func (n *networkServer) HandlePrepareActivation(activation *pb_broker.Deduplicat
 func (n *networkServer) HandleActivate(activation *pb_handler.DeviceActivationResponse) (*pb_handler.DeviceActivationResponse, error) {
 	meta := activation.GetActivationMetadata()
 	if meta == nil {
-		return nil, errors.New("ttn/networkserver: invalid ActivationMetadata")
+		return nil, core.NewErrInvalidArgument("Activation", "missing ActivationMetadata")
 	}
 	lorawan := meta.GetLorawan()
 	if lorawan == nil {
-		return nil, errors.New("ttn/networkserver: invalid LoRaWAN ActivationMetadata")
+		return nil, core.NewErrInvalidArgument("Activation", "missing LoRaWAN ActivationMetadata")
 	}
 	err := n.devices.Activate(*lorawan.AppEui, *lorawan.DevEui, *lorawan.DevAddr, *lorawan.NwkSKey)
 	if err != nil {
@@ -262,7 +260,7 @@ func (n *networkServer) HandleUplink(message *pb_broker.DeduplicatedUplinkMessag
 	}
 	macPayload, ok := phyPayload.MACPayload.(*lorawan.MACPayload)
 	if !ok {
-		return nil, errors.New("ttn/networkserver: LoRaWAN message does not contain a MACPayload")
+		return nil, core.NewErrInvalidArgument("Uplink", "does not contain a MAC payload")
 	}
 
 	// Update FCntUp (from metadata if possible, because only 16lsb are marshaled in FHDR)
@@ -335,7 +333,7 @@ func (n *networkServer) HandleDownlink(message *pb_broker.DownlinkMessage) (*pb_
 	}
 	macPayload, ok := phyPayload.MACPayload.(*lorawan.MACPayload)
 	if !ok {
-		return nil, errors.New("ttn/networkserver: LoRaWAN message does not contain a MACPayload")
+		return nil, core.NewErrInvalidArgument("Downlink", "does not contain a MAC payload")
 	}
 
 	// Set DevAddr

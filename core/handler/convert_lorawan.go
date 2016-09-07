@@ -4,14 +4,11 @@
 package handler
 
 import (
-	"errors"
-	"fmt"
-
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
+	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/mqtt"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	"github.com/apex/log"
-
 	"github.com/brocaar/lorawan"
 )
 
@@ -24,7 +21,7 @@ func (h *handler) ConvertFromLoRaWAN(ctx log.Interface, ttnUp *pb_broker.Dedupli
 
 	// Check for LoRaWAN
 	if lorawan := ttnUp.ProtocolMetadata.GetLorawan(); lorawan == nil {
-		return errors.New("ttn/handler: Could not handle uplink for non-LoRaWAN device")
+		return core.NewErrInvalidArgument("Activation", "does not contain LoRaWAN metadata")
 	}
 
 	// LoRaWAN: Unmarshal Uplink
@@ -35,7 +32,7 @@ func (h *handler) ConvertFromLoRaWAN(ctx log.Interface, ttnUp *pb_broker.Dedupli
 	}
 	macPayload, ok := phyPayload.MACPayload.(*lorawan.MACPayload)
 	if !ok {
-		return errors.New("Uplink message does not contain a MAC payload.")
+		return core.NewErrInvalidArgument("Uplink", "does not contain a MAC payload")
 	}
 	macPayload.FHDR.FCnt = ttnUp.ProtocolMetadata.GetLorawan().FCnt
 	appUp.FCnt = macPayload.FHDR.FCnt
@@ -46,8 +43,7 @@ func (h *handler) ConvertFromLoRaWAN(ctx log.Interface, ttnUp *pb_broker.Dedupli
 		return err
 	}
 	if !ok {
-		fmt.Printf("Invalid MIC for %X / NwkSKey %s", ttnUp.Payload, dev.NwkSKey)
-		return errors.New("ttn/handler: Invalid MIC")
+		return core.NewErrNotFound("device that validates MIC")
 	}
 
 	ctx = ctx.WithField("FCnt", appUp.FCnt)
@@ -57,17 +53,17 @@ func (h *handler) ConvertFromLoRaWAN(ctx log.Interface, ttnUp *pb_broker.Dedupli
 		appUp.FPort = *macPayload.FPort
 		ctx = ctx.WithField("FCnt", appUp.FPort)
 		if err := phyPayload.DecryptFRMPayload(lorawan.AES128Key(dev.AppSKey)); err != nil {
-			return errors.New("ttn/handler: Could not decrypt payload")
+			return core.NewErrInternal("Could not decrypt payload")
 		}
 		if len(macPayload.FRMPayload) == 1 {
 			payload, ok := macPayload.FRMPayload[0].(*lorawan.DataPayload)
 			if !ok {
-				return errors.New("FRMPayload must be of type *lorawan.DataPayload")
+				return core.NewErrInvalidArgument("Uplink FRMPayload", "must be of type *lorawan.DataPayload")
 			}
 			appUp.Payload = payload.Bytes
 		}
 	} else {
-		return errors.New("ttn/handler: Could not get frame payload")
+		return core.NewErrInvalidArgument("Uplink MACPayload", "could not get frame payload")
 	}
 
 	return nil
@@ -88,7 +84,7 @@ func (h *handler) ConvertToLoRaWAN(ctx log.Interface, appDown *mqtt.DownlinkMess
 	}
 	macPayload, ok := phyPayload.MACPayload.(*lorawan.MACPayload)
 	if !ok {
-		return errors.New("Downlink message does not contain a MAC payload.")
+		return core.NewErrInvalidArgument("Downlink", "does not contain a MAC payload")
 	}
 	if ttnDown.DownlinkOption != nil {
 		macPayload.FHDR.FCnt = ttnDown.DownlinkOption.ProtocolConfig.GetLorawan().FCnt

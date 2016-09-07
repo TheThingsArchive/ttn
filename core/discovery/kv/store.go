@@ -4,15 +4,10 @@
 package kv
 
 import (
-	"errors"
 	"fmt"
 
+	"github.com/TheThingsNetwork/ttn/core"
 	"gopkg.in/redis.v3"
-)
-
-var (
-	// ErrNotFound is returned when an Key was not found
-	ErrNotFound = errors.New("ttn/discovery: Key not found")
 )
 
 // Store is a simple String/String Key-Value store
@@ -48,7 +43,7 @@ func (s *kvStore) Get(key string) (string, error) {
 	if value, ok := s.data[key]; ok {
 		return value, nil
 	}
-	return "", ErrNotFound
+	return "", core.NewErrNotFound(fmt.Sprintf("Discovery: %s", key))
 }
 
 func (s *kvStore) Set(key, value string) error {
@@ -116,11 +111,11 @@ func (s *redisKVStore) Get(key string) (string, error) {
 	res, err := s.client.Get(fmt.Sprintf("%s:%s", s.prefix, key)).Result()
 	if err != nil {
 		if err == redis.Nil {
-			return "", ErrNotFound
+			return "", core.NewErrNotFound(fmt.Sprintf("Discovery: %s", key))
 		}
 		return "", err
 	} else if res == "" {
-		return "", ErrNotFound
+		return "", core.NewErrNotFound(fmt.Sprintf("Discovery: %s", key))
 	}
 	return res, nil
 }

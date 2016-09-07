@@ -165,7 +165,7 @@ func (r *router) getBroker(brokerAnnouncement *pb_discovery.Announcement) (*brok
 				for {
 					select {
 					case err := <-errChan:
-						r.Ctx.Errorf("ttn/router: Error in Broker associate: %s", err)
+						r.Ctx.WithError(core.FromGRPCError(err)).Error("Error in Broker associate")
 						break associationLoop
 					case uplink := <-brk.uplink:
 						err := association.Send(uplink)

@@ -4,12 +4,12 @@
 package broker
 
 import (
-	"errors"
-
 	"github.com/TheThingsNetwork/ttn/api"
 	pb "github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
+	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/pkg/errors"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -21,48 +21,66 @@ type brokerManager struct {
 	devAddrManager pb_lorawan.DevAddrManagerClient
 }
 
-var errf = grpc.Errorf
-
 func (b *brokerManager) GetDevice(ctx context.Context, in *lorawan.DeviceIdentifier) (*lorawan.Device, error) {
-	return b.deviceManager.GetDevice(ctx, in)
+	res, err := b.deviceManager.GetDevice(ctx, in)
+	if err != nil {
+		return nil, core.BuildGRPCError(errors.Wrap(core.FromGRPCError(err), "NetworkServer did not return device"))
+	}
+	return res, nil
 }
 
 func (b *brokerManager) SetDevice(ctx context.Context, in *lorawan.Device) (*api.Ack, error) {
-	return b.deviceManager.SetDevice(ctx, in)
+	res, err := b.deviceManager.SetDevice(ctx, in)
+	if err != nil {
+		return nil, core.BuildGRPCError(errors.Wrap(core.FromGRPCError(err), "NetworkServer did not set device"))
+	}
+	return res, nil
 }
 
 func (b *brokerManager) DeleteDevice(ctx context.Context, in *lorawan.DeviceIdentifier) (*api.Ack, error) {
-	return b.deviceManager.DeleteDevice(ctx, in)
+	res, err := b.deviceManager.DeleteDevice(ctx, in)
+	if err != nil {
+		return nil, core.BuildGRPCError(errors.Wrap(core.FromGRPCError(err), "NetworkServer did not delete device"))
+	}
+	return res, nil
 }
 
 func (b *brokerManager) RegisterApplicationHandler(ctx context.Context, in *pb.ApplicationHandlerRegistration) (*api.Ack, error) {
 	claims, err := b.broker.Component.ValidateTTNAuthContext(ctx)
 	if err != nil {
-		return nil, err
+		return nil, core.BuildGRPCError(core.FromGRPCError(err))
 	}
 	if !in.Validate() {
 		return nil, grpcErrf(codes.InvalidArgument, "Invalid Application Handler Registration")
 	}
 	if !claims.CanEditApp(in.AppId) {
-		return nil, errf(codes.Unauthenticated, "No access to this application")
+		return nil, grpcErrf(codes.PermissionDenied, "No access to this application")
 	}
 	err = b.broker.handlerDiscovery.AddAppID(in.HandlerId, in.AppId)
 	if err != nil {
-		return nil, err
+		return nil, core.BuildGRPCError(errors.Wrap(core.FromGRPCError(err), "Discovery did not add appID"))
 	}
 	return &api.Ack{}, nil
 }
 
 func (b *brokerManager) GetPrefixes(ctx context.Context, in *lorawan.PrefixesRequest) (*lorawan.PrefixesResponse, error) {
-	return b.devAddrManager.GetPrefixes(ctx, in)
+	res, err := b.devAddrManager.GetPrefixes(ctx, in)
+	if err != nil {
+		return nil, core.BuildGRPCError(errors.Wrap(core.FromGRPCError(err), "NetworkServer did not return prefixes"))
+	}
+	return res, nil
 }
 
 func (b *brokerManager) GetDevAddr(ctx context.Context, in *lorawan.DevAddrRequest) (*lorawan.DevAddrResponse, error) {
-	return b.devAddrManager.GetDevAddr(ctx, in)
+	res, err := b.devAddrManager.GetDevAddr(ctx, in)
+	if err != nil {
+		return nil, core.BuildGRPCError(errors.Wrap(core.FromGRPCError(err), "NetworkServer did not return DevAddr"))
+	}
+	return res, nil
 }
 
 func (b *brokerManager) GetStatus(ctx context.Context, in *pb.StatusRequest) (*pb.Status, error) {
-	return nil, errors.New("Not Implemented")
+	return nil, grpcErrf(codes.Unimplemented, "Not Implemented")
 }
 
 func (b *broker) RegisterManager(s *grpc.Server) {

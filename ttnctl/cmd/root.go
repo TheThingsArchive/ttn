@@ -7,8 +7,14 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/grpclog"
+
+	"github.com/TheThingsNetwork/ttn/api"
 	cliHandler "github.com/TheThingsNetwork/ttn/utils/cli/handler"
+	"github.com/TheThingsNetwork/ttn/utils/logging"
 	"github.com/apex/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -32,6 +38,9 @@ var RootCmd = &cobra.Command{
 			Level:   logLevel,
 			Handler: cliHandler.New(os.Stdout),
 		}
+		api.DialOptions = append(api.DialOptions, grpc.WithBlock())
+		api.DialOptions = append(api.DialOptions, grpc.WithTimeout(2*time.Second))
+		grpclog.SetLogger(logging.NewGRPCLogger(ctx))
 	},
 }
 

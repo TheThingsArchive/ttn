@@ -6,16 +6,17 @@ package broker
 import (
 	"crypto/md5"
 	"encoding/hex"
-	"errors"
+	"fmt"
 	"time"
-
-	"google.golang.org/grpc"
 
 	pb "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/api/gateway"
 	pb_handler "github.com/TheThingsNetwork/ttn/api/handler"
+	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/apex/log"
+	"github.com/pkg/errors"
+	"google.golang.org/grpc"
 )
 
 func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (*pb.DeviceActivationResponse, error) {
@@ -39,7 +40,7 @@ func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (*pb.D
 	// De-duplicate uplink messages
 	duplicates := b.deduplicateActivation(activation)
 	if len(duplicates) == 0 {
-		err = errors.New("ttn/broker: No duplicates")
+		err = core.NewErrInternal("No duplicates")
 		return nil, err
 	}
 
@@ -76,7 +77,7 @@ func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (*pb.D
 	// Send Activate to NS
 	deduplicatedActivationRequest, err = b.ns.PrepareActivation(b.Component.GetContext(b.nsToken), deduplicatedActivationRequest)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(core.FromGRPCError(err), "NetworkServer refused to prepare activation")
 	}
 
 	ctx = ctx.WithFields(log.Fields{
@@ -91,11 +92,11 @@ func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (*pb.D
 		return nil, err
 	}
 	if len(announcements) == 0 {
-		err = errors.New("ttn/broker: No Handler found")
+		err = core.NewErrNotFound(fmt.Sprintf("Handler for AppID %s", deduplicatedActivationRequest.AppId))
 		return nil, err
 	}
 	if len(announcements) > 1 {
-		err = errors.New("ttn/broker: Multiple Handlers found for same AppID")
+		err = core.NewErrInternal(fmt.Sprintf("Multiple Handlers for AppID %s", deduplicatedActivationRequest.AppId))
 		return nil, err
 	}
 	handler := announcements[0]
@@ -112,12 +113,12 @@ func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (*pb.D
 	var handlerResponse *pb_handler.DeviceActivationResponse
 	handlerResponse, err = client.Activate(b.Component.GetContext(""), deduplicatedActivationRequest)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(core.FromGRPCError(err), "Handler refused activation")
 	}
 
 	handlerResponse, err = b.ns.Activate(b.Component.GetContext(b.nsToken), handlerResponse)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(core.FromGRPCError(err), "NetworkServer refused activation")
 	}
 
 	deviceActivationResponse = &pb.DeviceActivationResponse{

@@ -10,6 +10,7 @@ import (
 	pb "github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/types"
+	"github.com/pkg/errors"
 )
 
 // BrokerCacheTime indicates how long the BrokerDiscovery should cache the services
@@ -36,7 +37,7 @@ func NewBrokerDiscovery(component *core.Component) BrokerDiscovery {
 func (d *brokerDiscovery) refreshCache() error {
 	res, err := d.component.Discovery.GetAll(d.component.GetContext(""), &pb.GetAllRequest{ServiceName: "broker"})
 	if err != nil {
-		return err
+		return errors.Wrap(core.FromGRPCError(err), "Failed to refresh brokers from Discovery")
 	}
 	// TODO: validate response
 	d.cacheLock.Lock()

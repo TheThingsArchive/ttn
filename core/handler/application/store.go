@@ -4,16 +4,11 @@
 package application
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
+	"github.com/TheThingsNetwork/ttn/core"
 	"gopkg.in/redis.v3"
-)
-
-var (
-	// ErrNotFound is returned when a application was not found
-	ErrNotFound = errors.New("ttn/handler: Application not found")
 )
 
 // Store is used to store application configurations
@@ -53,7 +48,7 @@ func (s *applicationStore) Get(appID string) (*Application, error) {
 	if app, ok := s.applications[appID]; ok {
 		return app, nil
 	}
-	return nil, ErrNotFound
+	return nil, core.NewErrNotFound(fmt.Sprintf("%s", appID))
 }
 
 func (s *applicationStore) Set(new *Application, fields ...string) error {
@@ -105,11 +100,11 @@ func (s *redisApplicationStore) Get(appID string) (*Application, error) {
 	res, err := s.client.HGetAllMap(fmt.Sprintf("%s:%s", redisApplicationPrefix, appID)).Result()
 	if err != nil {
 		if err == redis.Nil {
-			return nil, ErrNotFound
+			return nil, core.NewErrNotFound(fmt.Sprintf("%s", appID))
 		}
 		return nil, err
 	} else if len(res) == 0 {
-		return nil, ErrNotFound
+		return nil, core.NewErrNotFound(fmt.Sprintf("%s", appID))
 	}
 	application := &Application{}
 	err = application.FromStringStringMap(res)

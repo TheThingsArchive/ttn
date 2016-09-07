@@ -4,11 +4,11 @@
 package router
 
 import (
-	"errors"
 	"io"
 
 	api "github.com/TheThingsNetwork/ttn/api"
 	pb "github.com/TheThingsNetwork/ttn/api/router"
+	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -25,12 +25,12 @@ var grpcErrf = grpc.Errorf // To make go vet stop complaining
 func getGatewayFromMetadata(ctx context.Context) (gatewayEUI types.GatewayEUI, err error) {
 	md, ok := metadata.FromContext(ctx)
 	if !ok {
-		err = errors.New("ttn: Could not get metadata")
+		err = core.NewErrInternal("Could not get metadata from context")
 		return
 	}
 	euiString, ok := md["gateway_eui"]
 	if !ok || len(euiString) < 1 {
-		err = errors.New("ttn/router: Gateway did not provide \"gateway_eui\" in context")
+		err = core.NewErrInvalidArgument("Metadata", "gateway_eui missing")
 		return
 	}
 	gatewayEUI, err = types.ParseGatewayEUI(euiString[0])
@@ -39,12 +39,12 @@ func getGatewayFromMetadata(ctx context.Context) (gatewayEUI types.GatewayEUI, e
 	}
 	token, ok := md["token"]
 	if !ok || len(token) < 1 {
-		err = errors.New("ttn/router: Gateway did not provide \"token\" in context")
+		err = core.NewErrInvalidArgument("Metadata", "token missing")
 		return
 	}
 	if token[0] != "token" {
 		// TODO: Validate Token
-		err = errors.New("ttn/router: Gateway not authorized")
+		err = core.NewErrPermissionDenied("Gateway token not authorized")
 		return
 	}
 

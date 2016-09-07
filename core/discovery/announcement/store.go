@@ -4,16 +4,11 @@
 package announcement
 
 import (
-	"errors"
 	"fmt"
 
 	pb "github.com/TheThingsNetwork/ttn/api/discovery"
+	"github.com/TheThingsNetwork/ttn/core"
 	"gopkg.in/redis.v3"
-)
-
-var (
-	// ErrNotFound is returned when a announcement was not found
-	ErrNotFound = errors.New("ttn/discovery: Announcement not found")
 )
 
 // Store is used to store announcement configurations
@@ -70,7 +65,7 @@ func (s *announcementStore) Get(serviceName, serviceID string) (*pb.Announcement
 			return announcement, nil
 		}
 	}
-	return nil, ErrNotFound
+	return nil, core.NewErrNotFound(fmt.Sprintf("Discovery: %s/%s", serviceName, serviceID))
 }
 
 func (s *announcementStore) Set(new *pb.Announcement) error {
@@ -153,11 +148,11 @@ func (s *redisAnnouncementStore) Get(serviceName, serviceID string) (*pb.Announc
 	res, err := s.client.HGetAllMap(fmt.Sprintf("%s:%s:%s", redisAnnouncementPrefix, serviceName, serviceID)).Result()
 	if err != nil {
 		if err == redis.Nil {
-			return nil, ErrNotFound
+			return nil, core.NewErrNotFound(fmt.Sprintf("Discovery: %s/%s", serviceName, serviceID))
 		}
 		return nil, err
 	} else if len(res) == 0 {
-		return nil, ErrNotFound
+		return nil, core.NewErrNotFound(fmt.Sprintf("Discovery: %s/%s", serviceName, serviceID))
 	}
 	announcement := &pb.Announcement{}
 	err = announcement.FromStringStringMap(res)

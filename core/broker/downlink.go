@@ -4,12 +4,13 @@
 package broker
 
 import (
-	"errors"
 	"strings"
 	"time"
 
 	pb "github.com/TheThingsNetwork/ttn/api/broker"
+	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/apex/log"
+	"github.com/pkg/errors"
 )
 
 // ByScore is used to sort a list of DownlinkOptions based on Score
@@ -36,14 +37,14 @@ func (b *broker) HandleDownlink(downlink *pb.DownlinkMessage) error {
 
 	downlink, err = b.ns.Downlink(b.Component.GetContext(b.nsToken), downlink)
 	if err != nil {
-		return err
+		return errors.Wrap(core.FromGRPCError(err), "NetworkServer did not handle downlink")
 	}
 
 	var routerID string
 	if id := strings.Split(downlink.DownlinkOption.Identifier, ":"); len(id) == 2 {
 		routerID = id[0]
 	} else {
-		return errors.New("ttn/broker: Invalid downlink option")
+		return core.NewErrInvalidArgument("DownlinkOption Identifier", "invalid format")
 	}
 	ctx = ctx.WithField("RouterID", routerID)
 

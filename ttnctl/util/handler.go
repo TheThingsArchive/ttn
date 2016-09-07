@@ -6,6 +6,7 @@ package util
 import (
 	"github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/api/handler"
+	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/apex/log"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
@@ -13,6 +14,7 @@ import (
 
 // GetHandlerManager gets a new HandlerManager for ttnctl
 func GetHandlerManager(ctx log.Interface) (*grpc.ClientConn, *handler.ManagerClient) {
+	ctx.WithField("Handler", viper.GetString("ttn-handler")).Info("Discovering Handler...")
 	dscConn, client := GetDiscovery(ctx)
 	defer dscConn.Close()
 	handlerAnnouncement, err := client.Get(GetContext(ctx), &discovery.GetRequest{
@@ -20,12 +22,13 @@ func GetHandlerManager(ctx log.Interface) (*grpc.ClientConn, *handler.ManagerCli
 		Id:          viper.GetString("ttn-handler"),
 	})
 	if err != nil {
-		ctx.WithError(err).Fatal("Could not find Handler")
+		ctx.WithError(core.FromGRPCError(err)).Fatal("Could not find Handler")
 	}
 	token, err := GetTokenSource(ctx).Token()
 	if err != nil {
 		ctx.WithError(err).Fatal("Could not get token")
 	}
+	ctx.WithField("Handler", handlerAnnouncement.NetAddress).Info("Connecting with Handler...")
 	hdlConn, err := handlerAnnouncement.Dial()
 	if err != nil {
 		ctx.WithError(err).Fatal("Could not connect to Handler")

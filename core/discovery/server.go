@@ -4,17 +4,22 @@
 package discovery
 
 import (
-	"errors"
-	"fmt"
-
 	"github.com/TheThingsNetwork/ttn/api"
 	pb "github.com/TheThingsNetwork/ttn/api/discovery"
+	"github.com/TheThingsNetwork/ttn/core"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 )
 
 type discoveryServer struct {
 	discovery *discovery
+}
+
+var grpcErrf = grpc.Errorf // To make go vet stop complaining
+
+func errPermissionDeniedf(format string, args ...string) error {
+	return grpcErrf(codes.PermissionDenied, "Discovery:"+format, args)
 }
 
 func (d *discoveryServer) checkMetadataEditRights(ctx context.Context, in *pb.MetadataRequest) error {
@@ -25,43 +30,43 @@ func (d *discoveryServer) checkMetadataEditRights(ctx context.Context, in *pb.Me
 	switch in.Metadata.Key {
 	case pb.Metadata_PREFIX:
 		if in.ServiceName != "broker" {
-			return errors.New("ttn/discovery: Announcement service type should be \"broker\"")
+			return errPermissionDeniedf("Announcement service type should be \"broker\"")
 		}
 		// Only allow prefix announcements if token is issued by the official ttn account server (or if in dev mode)
 		if claims.Issuer != "ttn-account" && d.discovery.Component.Identity.Id != "dev" {
-			return fmt.Errorf("ttn/discovery: Token issuer %s should be ttn-account", claims.Issuer)
+			return errPermissionDeniedf("Token issuer %s should be ttn-account", claims.Issuer)
 		}
 		if claims.Type != in.ServiceName {
-			return fmt.Errorf("ttn/discovery: Token subject %s does not correspond with announcement ID %s", claims.Subject, in.Id)
+			return errPermissionDeniedf("Token subject %s does not correspond with announcement ID %s", claims.Subject, in.Id)
 		}
 		if claims.Subject != in.Id {
-			return fmt.Errorf("ttn/discovery: Token type %s does not correspond with announcement service type %s", claims.Type, in.ServiceName)
+			return errPermissionDeniedf("Token type %s does not correspond with announcement service type %s", claims.Type, in.ServiceName)
 		}
 		// TODO: Check if this PREFIX can be announced
 	case pb.Metadata_APP_EUI:
 		if in.ServiceName != "handler" {
-			return errors.New("ttn/discovery: Announcement service type should be \"handler\"")
+			return errPermissionDeniedf("Announcement service type should be \"handler\"")
 		}
 		// Only allow eui announcements if token is issued by the official ttn account server (or if in dev mode)
 		if claims.Issuer != "ttn-account" && d.discovery.Component.Identity.Id != "dev" {
-			return fmt.Errorf("ttn/discovery: Token issuer %s should be ttn-account", claims.Issuer)
+			return errPermissionDeniedf("Token issuer %s should be ttn-account", claims.Issuer)
 		}
 		if claims.Type != in.ServiceName {
-			return fmt.Errorf("ttn/discovery: Token subject %s does not correspond with announcement ID %s", claims.Subject, in.Id)
+			return errPermissionDeniedf("Token subject %s does not correspond with announcement ID %s", claims.Subject, in.Id)
 		}
 		if claims.Subject != in.Id {
-			return fmt.Errorf("ttn/discovery: Token type %s does not correspond with announcement service type %s", claims.Type, in.ServiceName)
+			return errPermissionDeniedf("Token type %s does not correspond with announcement service type %s", claims.Type, in.ServiceName)
 		}
 		// TODO: Check if this APP_EUI can be announced
-		return errors.New("ttn/discovery: Can not announce AppEUIs at this time")
+		return errPermissionDeniedf("Can not announce AppEUIs at this time")
 	case pb.Metadata_APP_ID:
 		if in.ServiceName != "handler" {
-			return errors.New("ttn/discovery: Announcement service type should be \"handler\"")
+			return errPermissionDeniedf("Announcement service type should be \"handler\"")
 		}
 		// Allow APP_ID announcements from all trusted auth servers
 		// When announcing APP_ID, token is user token that contains apps
 		if !claims.CanEditApp(string(in.Metadata.Value)) {
-			return errors.New("ttn/discovery: No access to this application")
+			return errPermissionDeniedf("No access to this application")
 		}
 	}
 	return nil
@@ -74,19 +79,19 @@ func (d *discoveryServer) Announce(ctx context.Context, announcement *pb.Announc
 	}
 	// Only allow announcements if token is issued by the official ttn account server (or if in dev mode)
 	if claims.Issuer != "ttn-account" && d.discovery.Component.Identity.Id != "dev" {
-		return nil, fmt.Errorf("ttn/discovery: Token issuer %s should be ttn-account", claims.Issuer)
+		return nil, errPermissionDeniedf("Token issuer %s should be ttn-account", claims.Issuer)
 	}
 	if claims.Subject != announcement.Id {
-		return nil, fmt.Errorf("ttn/discovery: Token subject %s does not correspond with announcement ID %s", claims.Subject, announcement.Id)
+		return nil, errPermissionDeniedf("Token subject %s does not correspond with announcement ID %s", claims.Subject, announcement.Id)
 	}
 	if claims.Type != announcement.ServiceName {
-		return nil, fmt.Errorf("ttn/discovery: Token type %s does not correspond with announcement service type %s", claims.Type, announcement.ServiceName)
+		return nil, errPermissionDeniedf("Token type %s does not correspond with announcement service type %s", claims.Type, announcement.ServiceName)
 	}
 	announcementCopy := *announcement
 	announcement.Metadata = []*pb.Metadata{} // This will be taken from existing announcement
 	err = d.discovery.Announce(&announcementCopy)
 	if err != nil {
-		return nil, err
+		return nil, core.BuildGRPCError(err)
 	}
 	return &api.Ack{}, nil
 }
@@ -98,7 +103,7 @@ func (d *discoveryServer) AddMetadata(ctx context.Context, in *pb.MetadataReques
 	}
 	err = d.discovery.AddMetadata(in.ServiceName, in.Id, in.Metadata)
 	if err != nil {
-		return nil, err
+		return nil, core.BuildGRPCError(err)
 	}
 	return &api.Ack{}, nil
 }
@@ -110,7 +115,7 @@ func (d *discoveryServer) DeleteMetadata(ctx context.Context, in *pb.MetadataReq
 	}
 	err = d.discovery.DeleteMetadata(in.ServiceName, in.Id, in.Metadata)
 	if err != nil {
-		return nil, err
+		return nil, core.BuildGRPCError(err)
 	}
 	return &api.Ack{}, nil
 }
@@ -118,7 +123,7 @@ func (d *discoveryServer) DeleteMetadata(ctx context.Context, in *pb.MetadataReq
 func (d *discoveryServer) GetAll(ctx context.Context, req *pb.GetAllRequest) (*pb.AnnouncementsResponse, error) {
 	services, err := d.discovery.GetAll(req.ServiceName)
 	if err != nil {
-		return nil, err
+		return nil, core.BuildGRPCError(err)
 	}
 	return &pb.AnnouncementsResponse{
 		Services: services,
@@ -128,7 +133,7 @@ func (d *discoveryServer) GetAll(ctx context.Context, req *pb.GetAllRequest) (*p
 func (d *discoveryServer) Get(ctx context.Context, req *pb.GetRequest) (*pb.Announcement, error) {
 	service, err := d.discovery.Get(req.ServiceName, req.Id)
 	if err != nil {
-		return nil, err
+		return nil, core.BuildGRPCError(err)
 	}
 	return service, nil
 }

@@ -65,7 +65,7 @@ func TestHandleUplink(t *testing.T) {
 		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2, GatewayEui: &gtwEUI},
 		ProtocolMetadata: &protocol.RxMetadata{Protocol: &protocol.RxMetadata_Lorawan{Lorawan: &pb_lorawan.Metadata{}}},
 	})
-	a.So(err, ShouldEqual, ErrNotFound)
+	a.So(err, ShouldHaveSameTypeAs, &core.ErrNotFound{})
 
 	devEUI := types.DevEUI{1, 2, 3, 4, 5, 6, 7, 8}
 	wrongDevEUI := types.DevEUI{1, 2, 3, 4, 5, 6, 7, 9}
@@ -111,7 +111,7 @@ func TestHandleUplink(t *testing.T) {
 		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2, GatewayEui: &gtwEUI},
 		ProtocolMetadata: &protocol.RxMetadata{Protocol: &protocol.RxMetadata_Lorawan{Lorawan: &pb_lorawan.Metadata{}}},
 	})
-	a.So(err, ShouldEqual, ErrNoMatch)
+	a.So(err, ShouldHaveSameTypeAs, &core.ErrNotFound{})
 
 	phy.SetMIC(lorawan.AES128Key{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8})
 	bytes, _ = phy.MarshalBinary()
@@ -123,7 +123,7 @@ func TestHandleUplink(t *testing.T) {
 		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2, GatewayEui: &gtwEUI},
 		ProtocolMetadata: &protocol.RxMetadata{Protocol: &protocol.RxMetadata_Lorawan{Lorawan: &pb_lorawan.Metadata{}}},
 	})
-	a.So(err, ShouldEqual, ErrInvalidFCnt)
+	a.So(err, ShouldHaveSameTypeAs, &core.ErrNotFound{})
 
 	// Disable FCnt Check
 	b.uplinkDeduplicator = NewDeduplicator(10 * time.Millisecond)

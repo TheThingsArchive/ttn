@@ -5,6 +5,7 @@ package router
 
 import (
 	"errors"
+	"fmt"
 	"sync"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 	pb_protocol "github.com/TheThingsNetwork/ttn/api/protocol"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	pb "github.com/TheThingsNetwork/ttn/api/router"
+	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/apex/log"
 )
@@ -46,7 +48,7 @@ func (r *router) HandleActivation(gatewayEUI types.GatewayEUI, activation *pb.De
 	gateway.Utilization.AddRx(uplink)
 
 	if !gateway.Schedule.IsActive() {
-		return nil, errors.New("Gateway not available for response")
+		return nil, core.NewErrInternal(fmt.Sprintf("Gateway %s not available for downlink", gatewayEUI))
 	}
 
 	downlinkOptions := r.buildDownlinkOptions(uplink, true, gateway)
@@ -146,7 +148,7 @@ func (r *router) HandleActivation(gatewayEUI types.GatewayEUI, activation *pb.De
 	// Activation not accepted by any broker
 	if !gotFirst {
 		ctx.Debug("Activation not accepted at this gateway")
-		return nil, errors.New("ttn/router: Activation not accepted at this Gateway")
+		return nil, errors.New("Activation not accepted at this Gateway")
 	}
 
 	// Activation accepted by (at least one) broker

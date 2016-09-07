@@ -4,12 +4,13 @@
 package discovery
 
 import (
-	"errors"
+	"fmt"
 	"sync"
 	"time"
 
 	pb "github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/pkg/errors"
 )
 
 // HandlerCacheTime indicates how long the HandlerDiscovery should cache the services
@@ -40,7 +41,7 @@ func NewHandlerDiscovery(component *core.Component) HandlerDiscovery {
 func (d *handlerDiscovery) refreshCache() error {
 	res, err := d.component.Discovery.GetAll(d.component.GetContext(""), &pb.GetAllRequest{ServiceName: "handler"})
 	if err != nil {
-		return err
+		return errors.Wrap(core.FromGRPCError(err), "Failed to refresh handlers from Discovery")
 	}
 	// TODO: validate response
 	d.cacheLock.Lock()
@@ -91,7 +92,7 @@ func (d *handlerDiscovery) Get(id string) (*pb.Announcement, error) {
 	d.update()
 	match, ok := d.byID[id]
 	if !ok {
-		return nil, errors.New("ttn/discovery: Not found")
+		return nil, core.NewErrNotFound(fmt.Sprintf("handler/%s", id))
 	}
 	return match, nil
 }
@@ -112,14 +113,14 @@ func (d *handlerDiscovery) AddAppID(handlerID, appID string) error {
 	defer d.cacheLock.Unlock()
 	handler, found := d.byID[handlerID]
 	if !found {
-		return errors.New("ttn/discovery: Handler not found")
+		return core.NewErrNotFound(fmt.Sprintf("handler/%s", handlerID))
 	}
 	existing, found := d.byAppID[appID]
 	if found && len(existing) > 0 {
 		if existing[0].Id == handlerID {
 			return nil
 		}
-		return errors.New("ttn/discovery: AppID already registered")
+		return core.NewErrAlreadyExists(fmt.Sprintf("AppID %s already registered", appID))
 	}
 	d.byAppID[appID] = []*pb.Announcement{handler}
 	return nil

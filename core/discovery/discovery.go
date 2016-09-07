@@ -7,12 +7,11 @@ package discovery
 import (
 	"bytes"
 
-	"gopkg.in/redis.v3"
-
 	pb "github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/discovery/announcement"
 	"github.com/TheThingsNetwork/ttn/core/discovery/kv"
+	"gopkg.in/redis.v3"
 )
 
 // Discovery specifies the interface for the TTN Service Discovery component
@@ -44,7 +43,7 @@ func (d *discovery) Init(c *core.Component) error {
 
 func (d *discovery) Announce(in *pb.Announcement) error {
 	existing, err := d.services.Get(in.ServiceName, in.Id)
-	if err == announcement.ErrNotFound {
+	if core.GetErrType(err) == core.NotFound {
 		// Not found; create new
 		existing = &pb.Announcement{}
 	} else if err != nil {

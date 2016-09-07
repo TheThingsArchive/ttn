@@ -4,16 +4,11 @@
 package device
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
+	"github.com/TheThingsNetwork/ttn/core"
 	"gopkg.in/redis.v3"
-)
-
-var (
-	// ErrNotFound is returned when a device was not found
-	ErrNotFound = errors.New("ttn/handler: Device not found")
 )
 
 // Store is used to store device configurations
@@ -69,7 +64,7 @@ func (s *deviceStore) Get(appID, devID string) (*Device, error) {
 			return dev, nil
 		}
 	}
-	return nil, ErrNotFound
+	return nil, core.NewErrNotFound(fmt.Sprintf("%s/%s", appID, devID))
 }
 
 func (s *deviceStore) Set(new *Device, fields ...string) error {
@@ -154,11 +149,11 @@ func (s *redisDeviceStore) Get(appID, devID string) (*Device, error) {
 	res, err := s.client.HGetAllMap(fmt.Sprintf("%s:%s:%s", redisDevicePrefix, appID, devID)).Result()
 	if err != nil {
 		if err == redis.Nil {
-			return nil, ErrNotFound
+			return nil, core.NewErrNotFound(fmt.Sprintf("%s/%s", appID, devID))
 		}
 		return nil, err
 	} else if len(res) == 0 {
-		return nil, ErrNotFound
+		return nil, core.NewErrNotFound(fmt.Sprintf("%s/%s", appID, devID))
 	}
 	device := &Device{}
 	err = device.FromStringStringMap(res)

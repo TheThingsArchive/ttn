@@ -4,13 +4,13 @@
 package gateway
 
 import (
-	"errors"
 	"fmt"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	router_pb "github.com/TheThingsNetwork/ttn/api/router"
+	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/utils/random"
 	"github.com/TheThingsNetwork/ttn/utils/toa"
 	"github.com/apex/log"
@@ -198,7 +198,7 @@ func (s *schedule) Schedule(id string, downlink *router_pb.DownlinkMessage) erro
 
 		return nil
 	}
-	return errors.New("ID not found")
+	return core.NewErrNotFound(id)
 }
 
 func (s *schedule) Stop() {
