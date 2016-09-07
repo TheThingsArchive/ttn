@@ -100,6 +100,11 @@ func (a *Account) AddEUI(appID string, eui types.AppEUI) error {
 	return a.put(fmt.Sprintf("/applications/%s/euis/%s", appID, eui.String()), nil, nil)
 }
 
+// GenerateEUI creates a new EUI for the application
+func (a *Account) GenerateEUI(appID string) error {
+	return a.post(fmt.Sprintf("/applications/%s/euis", appID), nil, nil)
+}
+
 // RemoveEUI removes the specified EUI from the application
 func (a *Account) RemoveEUI(appID string, eui types.AppEUI) error {
 	return a.del(fmt.Sprintf("/applications/%s/euis/%s", appID, eui.String()))
