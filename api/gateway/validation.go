@@ -17,3 +17,12 @@ func (m *TxConfiguration) Validate() bool {
 func (m *Status) Validate() bool {
 	return true
 }
+
+// Validate implements the api.Validator interface
+func (m *GPSMetadata) Validate() bool {
+	return m != nil && !m.IsZero()
+}
+
+func (m GPSMetadata) IsZero() bool {
+	return m.Latitude == 0 && m.Longitude == 0
+}
