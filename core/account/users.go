@@ -6,6 +6,7 @@ package account
 import (
 	"fmt"
 
+	"github.com/TheThingsNetwork/ttn/core/account/auth"
 	"github.com/TheThingsNetwork/ttn/core/account/util"
 )
 
@@ -24,7 +25,7 @@ func RegisterUser(server, username, email, password string) error {
 		Password: password,
 	}
 
-	err := util.POST(server, "", "/api/users", user, nil)
+	err := util.POST(server, auth.Public, "/api/users", user, nil)
 	if err != nil {
 		return fmt.Errorf("Could not register user: %s", err)
 	}

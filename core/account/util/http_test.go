@@ -10,12 +10,14 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/TheThingsNetwork/ttn/core/account/auth"
 	. "github.com/smartystreets/assertions"
 )
 
 var (
-	url   = "/foo"
-	token = "token"
+	url           = "/foo"
+	token         = "token"
+	tokenStrategy = auth.AccessToken(token)
 )
 
 type OKResp struct {
@@ -91,7 +93,7 @@ func TestGET(t *testing.T) {
 	defer server.Close()
 
 	var resp OKResp
-	err := GET(server.URL, token, url, &resp)
+	err := GET(server.URL, tokenStrategy, url, &resp)
 	a.So(err, ShouldBeNil)
 	a.So(resp.OK, ShouldEqual, token)
 }
@@ -101,7 +103,7 @@ func TestGETDropResponse(t *testing.T) {
 	server := httptest.NewServer(OKHandler(a, "GET"))
 	defer server.Close()
 
-	err := GET(server.URL, token, url, nil)
+	err := GET(server.URL, tokenStrategy, url, nil)
 	a.So(err, ShouldBeNil)
 }
 
@@ -111,7 +113,7 @@ func TestGETIllegalResponse(t *testing.T) {
 	defer server.Close()
 
 	var resp FooResp
-	err := GET(server.URL, token, url, &resp)
+	err := GET(server.URL, tokenStrategy, url, &resp)
 	a.So(err, ShouldNotBeNil)
 }
 
@@ -121,7 +123,7 @@ func TestGETIllegalResponseIgnore(t *testing.T) {
 	defer server.Close()
 
 	var resp OKResp
-	err := GET(server.URL, token, url, &resp)
+	err := GET(server.URL, tokenStrategy, url, &resp)
 	a.So(err, ShouldBeNil)
 }
 
@@ -131,7 +133,7 @@ func TestGETRedirect(t *testing.T) {
 	defer server.Close()
 
 	var resp OKResp
-	err := GET(server.URL, token, url, &resp)
+	err := GET(server.URL, tokenStrategy, url, &resp)
 	a.So(err, ShouldBeNil)
 }
 
@@ -144,7 +146,7 @@ func TestPUT(t *testing.T) {
 	body := FooResp{
 		Foo: token,
 	}
-	err := PUT(server.URL, token, url, body, &resp)
+	err := PUT(server.URL, tokenStrategy, url, body, &resp)
 	a.So(err, ShouldBeNil)
 	a.So(resp.Foo, ShouldEqual, body.Foo)
 }
@@ -156,7 +158,7 @@ func TestPUTIllegalRequest(t *testing.T) {
 
 	var resp FooResp
 	body := FooResp{}
-	err := PUT(server.URL, token, url, body, &resp)
+	err := PUT(server.URL, tokenStrategy, url, body, &resp)
 	a.So(err, ShouldNotBeNil)
 }
 
@@ -166,7 +168,7 @@ func TestPUTIllegalResponse(t *testing.T) {
 	defer server.Close()
 
 	var resp FooResp
-	err := PUT(server.URL, token, url, nil, &resp)
+	err := PUT(server.URL, tokenStrategy, url, nil, &resp)
 	a.So(err, ShouldNotBeNil)
 }
 
@@ -176,7 +178,7 @@ func TestPUTRedirect(t *testing.T) {
 	defer server.Close()
 
 	var resp FooResp
-	err := PUT(server.URL, token, url, nil, &resp)
+	err := PUT(server.URL, tokenStrategy, url, nil, &resp)
 	a.So(err, ShouldBeNil)
 	a.So(resp.Foo, ShouldEqual, token)
 }
@@ -190,7 +192,7 @@ func TestPOST(t *testing.T) {
 	body := FooResp{
 		Foo: token,
 	}
-	err := POST(server.URL, token, url, body, &resp)
+	err := POST(server.URL, tokenStrategy, url, body, &resp)
 	a.So(err, ShouldBeNil)
 	a.So(resp.Foo, ShouldEqual, body.Foo)
 }
@@ -202,7 +204,7 @@ func TestPOSTIllegalRequest(t *testing.T) {
 
 	var resp FooResp
 	body := FooResp{}
-	err := POST(server.URL, token, url, body, &resp)
+	err := POST(server.URL, tokenStrategy, url, body, &resp)
 	a.So(err, ShouldNotBeNil)
 }
 
@@ -212,7 +214,7 @@ func TestPOSTIllegalResponse(t *testing.T) {
 	defer server.Close()
 
 	var resp FooResp
-	err := POST(server.URL, token, url, nil, &resp)
+	err := POST(server.URL, tokenStrategy, url, nil, &resp)
 	a.So(err, ShouldNotBeNil)
 }
 
@@ -222,7 +224,7 @@ func TestPOSTRedirect(t *testing.T) {
 	defer server.Close()
 
 	var resp FooResp
-	err := POST(server.URL, token, url, nil, &resp)
+	err := POST(server.URL, tokenStrategy, url, nil, &resp)
 	a.So(err, ShouldBeNil)
 	a.So(resp.Foo, ShouldEqual, token)
 }
@@ -232,7 +234,7 @@ func TestDELETE(t *testing.T) {
 	server := httptest.NewServer(OKHandler(a, "DELETE"))
 	defer server.Close()
 
-	err := DELETE(server.URL, token, url)
+	err := DELETE(server.URL, tokenStrategy, url)
 	a.So(err, ShouldBeNil)
 }
 
@@ -241,6 +243,6 @@ func TestDELETERedirect(t *testing.T) {
 	server := httptest.NewServer(RedirectHandler(a, "DELETE"))
 	defer server.Close()
 
-	err := DELETE(server.URL, token, url)
+	err := DELETE(server.URL, tokenStrategy, url)
 	a.So(err, ShouldBeNil)
 }
