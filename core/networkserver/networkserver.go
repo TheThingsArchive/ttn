@@ -281,6 +281,8 @@ func (n *networkServer) HandleUplink(message *pb_broker.DeduplicatedUplinkMessag
 	}
 	message.ResponseTemplate.AppEui = message.AppEui
 	message.ResponseTemplate.DevEui = message.DevEui
+	message.ResponseTemplate.AppId = message.AppId
+	message.ResponseTemplate.DevId = message.DevId
 
 	// Add Full FCnt (avoiding nil pointer panics)
 	if option := message.ResponseTemplate.DownlinkOption; option != nil {
@@ -323,6 +325,10 @@ func (n *networkServer) HandleDownlink(message *pb_broker.DownlinkMessage) (*pb_
 	dev, err := n.devices.Get(*message.AppEui, *message.DevEui)
 	if err != nil {
 		return nil, err
+	}
+
+	if dev.AppID != message.AppId || dev.DevID != message.DevId {
+		return nil, core.NewErrInvalidArgument("Downlink", "AppID and DevID do not match AppEUI and DevEUI")
 	}
 
 	// Unmarshal LoRaWAN Payload

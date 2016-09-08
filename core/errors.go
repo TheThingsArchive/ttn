@@ -57,7 +57,7 @@ func BuildGRPCError(err error) error {
 	case *ErrPermissionDenied:
 		code = codes.PermissionDenied
 	}
-	return grpcErrf(code, fmt.Sprintf("%+v", err))
+	return grpcErrf(code, err.Error())
 }
 
 // FromGRPCError creates a regular error with the same type as the gRPC error
@@ -73,6 +73,9 @@ func FromGRPCError(err error) error {
 	case codes.Internal:
 		return NewErrInternal(strings.TrimPrefix(desc, "Internal error: "))
 	case codes.InvalidArgument:
+		if split := strings.Split(desc, " not valid: "); len(split) == 2 {
+			return NewErrInvalidArgument(split[0], split[1])
+		}
 		return NewErrInvalidArgument("Argument", desc)
 	case codes.NotFound:
 		return NewErrNotFound(strings.TrimSuffix(desc, " not found"))

@@ -24,6 +24,7 @@ type Handler interface {
 	core.ManagementInterface
 
 	HandleUplink(uplink *pb_broker.DeduplicatedUplinkMessage) error
+	HandleActivationChallenge(challenge *pb_broker.ActivationChallengeRequest) (*pb_broker.ActivationChallengeResponse, error)
 	HandleActivation(activation *pb_broker.DeduplicatedDeviceActivationRequest) (*pb.DeviceActivationResponse, error)
 	EnqueueDownlink(appDownlink *mqtt.DownlinkMessage) error
 }

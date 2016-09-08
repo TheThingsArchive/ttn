@@ -99,6 +99,17 @@ func (m *DeduplicatedDeviceActivationRequest) Validate() bool {
 }
 
 // Validate implements the api.Validator interface
+func (m *ActivationChallengeRequest) Validate() bool {
+	if m.DevEui == nil || m.DevEui.IsEmpty() {
+		return false
+	}
+	if m.AppEui == nil || m.AppEui.IsEmpty() {
+		return false
+	}
+	return true
+}
+
+// Validate implements the api.Validator interface
 func (m *ApplicationHandlerRegistration) Validate() bool {
 	if m.AppId == "" || !api.ValidID(m.AppId) {
 		return false

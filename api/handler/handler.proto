@@ -19,6 +19,7 @@ message DeviceActivationResponse {
 
 // The Handler service provides pure network functionality
 service Handler {
+  rpc ActivationChallenge(broker.ActivationChallengeRequest) returns (broker.ActivationChallengeResponse);
   rpc Activate(broker.DeduplicatedDeviceActivationRequest) returns (DeviceActivationResponse);
 }
 

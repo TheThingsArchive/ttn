@@ -7,6 +7,7 @@ import (
 	"io"
 
 	pb "github.com/TheThingsNetwork/ttn/api/broker"
+	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/golang/protobuf/ptypes/empty"
 	"golang.org/x/net/context"
@@ -15,21 +16,21 @@ import (
 )
 
 type brokerRPC struct {
-	broker Broker
+	broker *broker
 }
 
 var grpcErrf = grpc.Errorf // To make go vet stop complaining
 
 func (b *brokerRPC) Associate(stream pb.Broker_AssociateServer) error {
-	routerID, err := b.broker.ValidateNetworkContext(stream.Context())
+	router, err := b.broker.ValidateNetworkContext(stream.Context())
 	if err != nil {
 		return core.BuildGRPCError(err)
 	}
-	downlinkChannel, err := b.broker.ActivateRouter(routerID)
+	downlinkChannel, err := b.broker.ActivateRouter(router.Id)
 	if err != nil {
 		return core.BuildGRPCError(err)
 	}
-	defer b.broker.DeactivateRouter(routerID)
+	defer b.broker.DeactivateRouter(router.Id)
 	go func() {
 		for {
 			if downlinkChannel == nil {
@@ -64,15 +65,15 @@ func (b *brokerRPC) Associate(stream pb.Broker_AssociateServer) error {
 }
 
 func (b *brokerRPC) Subscribe(req *pb.SubscribeRequest, stream pb.Broker_SubscribeServer) error {
-	handlerID, err := b.broker.ValidateNetworkContext(stream.Context())
+	handler, err := b.broker.ValidateNetworkContext(stream.Context())
 	if err != nil {
 		return core.BuildGRPCError(err)
 	}
-	uplinkChannel, err := b.broker.ActivateHandler(handlerID)
+	uplinkChannel, err := b.broker.ActivateHandler(handler.Id)
 	if err != nil {
 		return core.BuildGRPCError(err)
 	}
-	defer b.broker.DeactivateHandler(handlerID)
+	defer b.broker.DeactivateHandler(handler.Id)
 	for {
 		if uplinkChannel == nil {
 			return nil
@@ -91,7 +92,7 @@ func (b *brokerRPC) Subscribe(req *pb.SubscribeRequest, stream pb.Broker_Subscri
 }
 
 func (b *brokerRPC) Publish(stream pb.Broker_PublishServer) error {
-	handlerID, err := b.broker.ValidateNetworkContext(stream.Context())
+	handler, err := b.broker.ValidateNetworkContext(stream.Context())
 	if err != nil {
 		return core.BuildGRPCError(err)
 	}
@@ -106,9 +107,24 @@ func (b *brokerRPC) Publish(stream pb.Broker_PublishServer) error {
 		if !downlink.Validate() {
 			return grpcErrf(codes.InvalidArgument, "Invalid Downlink")
 		}
-		// TODO: Validate that this handler can publish downlink for the application
-		_ = handlerID
-		go b.broker.HandleDownlink(downlink)
+		go func(downlink *pb.DownlinkMessage) {
+			// Get latest Handler metadata
+			handler, err := b.broker.Component.Discover("handler", handler.Id)
+			if err != nil {
+				return
+			}
+			// Check if this Handler can publish for this AppId
+			for _, meta := range handler.Metadata {
+				switch meta.Key {
+				case pb_discovery.Metadata_APP_ID:
+					announcedID := string(meta.Value)
+					if announcedID == downlink.AppId {
+						b.broker.HandleDownlink(downlink)
+						return
+					}
+				}
+			}
+		}(downlink)
 	}
 }
 

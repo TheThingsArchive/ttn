@@ -18,6 +18,21 @@ type handlerRPC struct {
 
 var grpcErrf = grpc.Errorf // To make go vet stop complaining
 
+func (h *handlerRPC) ActivationChallenge(ctx context.Context, challenge *pb_broker.ActivationChallengeRequest) (*pb_broker.ActivationChallengeResponse, error) {
+	_, err := h.handler.ValidateNetworkContext(ctx)
+	if err != nil {
+		return nil, core.BuildGRPCError(err)
+	}
+	if !challenge.Validate() {
+		return nil, grpcErrf(codes.InvalidArgument, "Invalid Activation Request")
+	}
+	res, err := h.handler.HandleActivationChallenge(challenge)
+	if err != nil {
+		return nil, core.BuildGRPCError(err)
+	}
+	return res, nil
+}
+
 func (h *handlerRPC) Activate(ctx context.Context, activation *pb_broker.DeduplicatedDeviceActivationRequest) (*pb.DeviceActivationResponse, error) {
 	_, err := h.handler.ValidateNetworkContext(ctx)
 	if err != nil {

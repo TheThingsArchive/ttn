@@ -23,9 +23,11 @@ message DownlinkOption {
 // received from the Router
 message UplinkMessage {
   bytes                    payload            = 1;
-  // NOTE: For LoRaWAN, the Router doesn't know the DevEUI and AppEUI
+  // NOTE: For LoRaWAN, the Router doesn't know the DevEUI/ID and AppEUI/ID
   bytes                    dev_eui            = 11 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.DevEUI"];
   bytes                    app_eui            = 12 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.AppEUI"];
+  string                   app_id             = 13;
+  string                   dev_id             = 14;
   protocol.RxMetadata      protocol_metadata  = 21;
   gateway.RxMetadata       gateway_metadata   = 22;
   repeated DownlinkOption  downlink_options   = 31;
@@ -36,6 +38,8 @@ message DownlinkMessage {
   bytes           payload          = 1;
   bytes           dev_eui          = 11 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.DevEUI"];
   bytes           app_eui          = 12 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.AppEUI"];
+  string          app_id           = 13;
+  string          dev_id           = 14;
   DownlinkOption  downlink_option  = 21;
 }
 
@@ -81,6 +85,18 @@ message DeduplicatedDeviceActivationRequest {
   protocol.ActivationMetadata  activation_metadata  = 23;
   int64                        server_time          = 24;
   DeviceActivationResponse     response_template    = 31;
+}
+
+message ActivationChallengeRequest {
+  bytes                        payload              = 1;
+  bytes                        dev_eui              = 11 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.DevEUI"];
+  bytes                        app_eui              = 12 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.AppEUI"];
+  string                       app_id               = 13;
+  string                       dev_id               = 14;
+}
+
+message ActivationChallengeResponse {
+  bytes payload = 1;
 }
 
 // message SubscribeRequest is used by a Handler to subscribe to uplink messages

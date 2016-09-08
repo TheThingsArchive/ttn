@@ -33,6 +33,42 @@ func (h *handler) getActivationMetadata(ctx log.Interface, activation *pb_broker
 	return mqttUp.Metadata, nil
 }
 
+func (h *handler) HandleActivationChallenge(challenge *pb_broker.ActivationChallengeRequest) (*pb_broker.ActivationChallengeResponse, error) {
+
+	// Find Device
+	dev, err := h.devices.Get(challenge.AppId, challenge.DevId)
+	if err != nil {
+		return nil, err
+	}
+
+	if dev.AppKey.IsEmpty() {
+		err = core.NewErrNotFound(fmt.Sprintf("AppKey for device %s", challenge.DevId))
+		return nil, err
+	}
+
+	// Unmarshal LoRaWAN
+	var reqPHY lorawan.PHYPayload
+	if err = reqPHY.UnmarshalBinary(challenge.Payload); err != nil {
+		return nil, err
+	}
+
+	// Set MIC
+	if err := reqPHY.SetMIC(lorawan.AES128Key(dev.AppKey)); err != nil {
+		err = core.NewErrNotFound("Could not set MIC")
+		return nil, err
+	}
+
+	// Marshal
+	bytes, err := reqPHY.MarshalBinary()
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb_broker.ActivationChallengeResponse{
+		Payload: bytes,
+	}, nil
+}
+
 func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActivationRequest) (*pb.DeviceActivationResponse, error) {
 	var appEUI types.AppEUI
 	if activation.AppEui != nil {

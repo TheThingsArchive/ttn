@@ -32,7 +32,7 @@ import (
 type ComponentInterface interface {
 	RegisterRPC(s *grpc.Server)
 	Init(c *Component) error
-	ValidateNetworkContext(ctx context.Context) (string, error)
+	ValidateNetworkContext(ctx context.Context) (*pb_discovery.Announcement, error)
 	ValidateTTNAuthContext(ctx context.Context) (*TTNClaims, error)
 }
 
@@ -213,7 +213,7 @@ func (c *TTNClaims) CanEditApp(appID string) bool {
 }
 
 // ValidateNetworkContext validates the context of a network request (router-broker, broker-handler, etc)
-func (c *Component) ValidateNetworkContext(ctx context.Context) (componentID string, err error) {
+func (c *Component) ValidateNetworkContext(ctx context.Context) (component *pb_discovery.Announcement, err error) {
 	defer func() {
 		if err != nil {
 			time.Sleep(time.Second)
@@ -251,7 +251,7 @@ func (c *Component) ValidateNetworkContext(ctx context.Context) (componentID str
 	}
 
 	if announcement.PublicKey == "" {
-		return id, nil
+		return announcement, nil
 	}
 
 	if token == "" {
@@ -269,7 +269,7 @@ func (c *Component) ValidateNetworkContext(ctx context.Context) (componentID str
 		return
 	}
 
-	return id, nil
+	return announcement, nil
 }
 
 // ValidateTTNAuthContext gets a token from the context and validates it
@@ -334,7 +334,7 @@ func (c *Component) ServerOptions() []grpc.ServerOption {
 		logCtx = logCtx.WithField("Duration", time.Now().Sub(t))
 		if err != nil {
 			err := FromGRPCError(err)
-			logCtx.WithError(err).Warn("Could not handle Request")
+			logCtx.WithField("error", err.Error()).WithField("err-type", fmt.Sprintf("%T", err)).WithField("err-err-type", fmt.Sprintf("%T", err.Error())).Warn("Could not handle Request")
 		} else {
 			logCtx.Info("Handled request")
 		}
