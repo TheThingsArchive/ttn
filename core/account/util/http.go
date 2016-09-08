@@ -59,7 +59,7 @@ func newRequest(server, method string, URI string, body io.Reader) (*http.Reques
 	return req, nil
 }
 
-func performRequest(server string, s auth.Strategy, method, URI string, body, res interface{}, redirects int) (err error) {
+func performRequest(server string, strategy auth.Strategy, method, URI string, body, res interface{}, redirects int) (err error) {
 	var req *http.Request
 
 	if body != nil {
@@ -81,7 +81,7 @@ func performRequest(server string, s auth.Strategy, method, URI string, body, re
 	}
 
 	// decorate the request
-	s.DecorateRequest(req)
+	strategy.DecorateRequest(req)
 
 	if err != nil {
 		return err
@@ -124,7 +124,7 @@ func performRequest(server string, s auth.Strategy, method, URI string, body, re
 	if resp.StatusCode == 307 {
 		if redirects > 0 {
 			location := resp.Header.Get("Location")
-			return performRequest(server, s, method, location, body, res, redirects-1)
+			return performRequest(server, strategy, method, location, body, res, redirects-1)
 		}
 		return fmt.Errorf("Reached maximum number of redirects")
 	}
@@ -150,29 +150,29 @@ func performRequest(server string, s auth.Strategy, method, URI string, body, re
 }
 
 // GET does a get request to the account server,  decoding the result into the object pointed to byres
-func GET(server string, s auth.Strategy, URI string, res interface{}) error {
-	return performRequest(server, s, "GET", URI, nil, res, MaxRedirects)
+func GET(server string, strategy auth.Strategy, URI string, res interface{}) error {
+	return performRequest(server, strategy, "GET", URI, nil, res, MaxRedirects)
 }
 
 // DELETE does a delete request to the account server
-func DELETE(server string, s auth.Strategy, URI string) error {
-	return performRequest(server, s, "DELETE", URI, nil, nil, MaxRedirects)
+func DELETE(server string, strategy auth.Strategy, URI string) error {
+	return performRequest(server, strategy, "DELETE", URI, nil, nil, MaxRedirects)
 }
 
 // POST creates an HTTP Post request to the specified server, with the body
 // encoded as JSON, decoding the result into the object pointed to byres
-func POST(server string, s auth.Strategy, URI string, body, res interface{}) error {
-	return performRequest(server, s, "POST", URI, body, res, MaxRedirects)
+func POST(server string, strategy auth.Strategy, URI string, body, res interface{}) error {
+	return performRequest(server, strategy, "POST", URI, body, res, MaxRedirects)
 }
 
 // PUT creates an HTTP Put request to the specified server, with the body
 // encoded as JSON, decoding the result into the object pointed to byres
-func PUT(server string, s auth.Strategy, URI string, body, res interface{}) error {
-	return performRequest(server, s, "PUT", URI, body, res, MaxRedirects)
+func PUT(server string, strategy auth.Strategy, URI string, body, res interface{}) error {
+	return performRequest(server, strategy, "PUT", URI, body, res, MaxRedirects)
 }
 
 // PATCH creates an HTTP Patch request to the specified server, with the body
 // encoded as JSON, decoding the result into the object pointed to byres
-func PATCH(server string, s auth.Strategy, URI string, body, res interface{}) error {
-	return performRequest(server, s, "PATCH", URI, body, res, MaxRedirects)
+func PATCH(server string, strategy auth.Strategy, URI string, body, res interface{}) error {
+	return performRequest(server, strategy, "PATCH", URI, body, res, MaxRedirects)
 }
