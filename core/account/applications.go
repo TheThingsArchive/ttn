@@ -118,3 +118,14 @@ func (a *Account) GenerateEUI(appID string) (*types.AppEUI, error) {
 func (a *Account) RemoveEUI(appID string, eui types.AppEUI) error {
 	return a.del(fmt.Sprintf("/applications/%s/euis/%s", appID, eui.String()))
 }
+
+// AppRights returns the rights the current account client has to a certain
+// application
+func (a *Account) AppRights(appID string) (rights []types.Right, err error) {
+	err = a.get(fmt.Sprintf("/applications/%s/rights", appID), &rights)
+	if err != nil {
+		return nil, err
+	}
+
+	return rights, nil
+}
