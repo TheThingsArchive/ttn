@@ -10,6 +10,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+
+	"github.com/TheThingsNetwork/ttn/core/account/auth"
 )
 
 var (
@@ -44,21 +46,20 @@ func checkRedirect(req *http.Request, via []*http.Request) error {
 }
 
 // NewRequest creates a new http.Request that has authorization set up
-func newRequest(server string, accessToken string, method string, URI string, body io.Reader) (*http.Request, error) {
+func newRequest(server, method string, URI string, body io.Reader) (*http.Request, error) {
 	URL := fmt.Sprintf("%s%s", server, URI)
 	req, err := http.NewRequest(method, URL, body)
 	if err != nil {
 		return nil, err
 	}
 
-	req.Header.Set("Authorization", fmt.Sprintf("bearer %s", accessToken))
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Content-Type", "application/json")
 
 	return req, nil
 }
 
-func performRequest(server, accessToken, method, URI string, body, res interface{}, redirects int) (err error) {
+func performRequest(server string, s auth.Strategy, method, URI string, body, res interface{}, redirects int) (err error) {
 	var req *http.Request
 
 	if body != nil {
@@ -73,11 +74,14 @@ func performRequest(server, accessToken, method, URI string, body, res interface
 		if err != nil {
 			return err
 		}
-		req, err = newRequest(server, accessToken, method, URI, buf)
+		req, err = newRequest(server, method, URI, buf)
 	} else {
 		// body is nil so create a nil request
-		req, err = newRequest(server, accessToken, method, URI, nil)
+		req, err = newRequest(server, method, URI, nil)
 	}
+
+	// decorate the request
+	s.DecorateRequest(req)
 
 	if err != nil {
 		return err
@@ -120,7 +124,7 @@ func performRequest(server, accessToken, method, URI string, body, res interface
 	if resp.StatusCode == 307 {
 		if redirects > 0 {
 			location := resp.Header.Get("Location")
-			return performRequest(server, accessToken, method, location, body, res, redirects-1)
+			return performRequest(server, s, method, location, body, res, redirects-1)
 		}
 		return fmt.Errorf("Reached maximum number of redirects")
 	}
@@ -146,29 +150,29 @@ func performRequest(server, accessToken, method, URI string, body, res interface
 }
 
 // GET does a get request to the account server,  decoding the result into the object pointed to byres
-func GET(server, accessToken, URI string, res interface{}) error {
-	return performRequest(server, accessToken, "GET", URI, nil, res, MaxRedirects)
+func GET(server string, s auth.Strategy, URI string, res interface{}) error {
+	return performRequest(server, s, "GET", URI, nil, res, MaxRedirects)
 }
 
 // DELETE does a delete request to the account server
-func DELETE(server, accessToken, URI string) error {
-	return performRequest(server, accessToken, "DELETE", URI, nil, nil, MaxRedirects)
+func DELETE(server string, s auth.Strategy, URI string) error {
+	return performRequest(server, s, "DELETE", URI, nil, nil, MaxRedirects)
 }
 
 // POST creates an HTTP Post request to the specified server, with the body
 // encoded as JSON, decoding the result into the object pointed to byres
-func POST(server, accessToken, URI string, body, res interface{}) error {
-	return performRequest(server, accessToken, "POST", URI, body, res, MaxRedirects)
+func POST(server string, s auth.Strategy, URI string, body, res interface{}) error {
+	return performRequest(server, s, "POST", URI, body, res, MaxRedirects)
 }
 
 // PUT creates an HTTP Put request to the specified server, with the body
 // encoded as JSON, decoding the result into the object pointed to byres
-func PUT(server, accessToken, URI string, body, res interface{}) error {
-	return performRequest(server, accessToken, "PUT", URI, body, res, MaxRedirects)
+func PUT(server string, s auth.Strategy, URI string, body, res interface{}) error {
+	return performRequest(server, s, "PUT", URI, body, res, MaxRedirects)
 }
 
 // PATCH creates an HTTP Patch request to the specified server, with the body
 // encoded as JSON, decoding the result into the object pointed to byres
-func PATCH(server, accessToken, URI string, body, res interface{}) error {
-	return performRequest(server, accessToken, "PATCH", URI, body, res, MaxRedirects)
+func PATCH(server string, s auth.Strategy, URI string, body, res interface{}) error {
+	return performRequest(server, s, "PATCH", URI, body, res, MaxRedirects)
 }
