@@ -91,10 +91,12 @@ The functions are read from the supplied file or from STDIN.`,
 				app.Validator = readFunction()
 			case "encoder":
 				fmt.Println(`function (val) {
-  // val is the output of the encoder function.
-
-  // todo: return an array of numbers
-  return return [96, 4, 3, 2, 1, 0, 1, 0, 1, 0, 0, 0, 0];
+	var str = JSON.stringify(val)
+	// val is the JSON payload we want to encode.
+	return Array.prototype.slice.apply(str).map(function (x) {
+		return x.charCodeAt(0)
+		// todo: return an array of numbers
+	})
 }
 ########## Write your Encoder here and end with Ctrl+D (EOF):`)
 				app.Encoder = readFunction()
