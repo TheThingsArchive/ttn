@@ -221,12 +221,20 @@ func (f *DownlinkFunctions) Encode(payload map[string]interface{}) ([]byte, erro
 	for i := 0; i < l; i++ {
 		el := s.Index(i).Interface()
 
+		fmt.Printf("VAL %v TYPE %T\n", el, el)
+
 		// type switch does not have fallthrough so we need
 		// to check every element individually
 		switch t := el.(type) {
 		case byte:
 			n = int64(t)
 		case int:
+			n = int64(t)
+		case int8:
+			n = int64(t)
+		case int16:
+			n = int64(t)
+		case uint16:
 			n = int64(t)
 		case int32:
 			n = int64(t)
@@ -247,7 +255,6 @@ func (f *DownlinkFunctions) Encode(payload map[string]interface{}) ([]byte, erro
 				return nil, core.NewErrInvalidArgument("Encoder", "should return an Array of integer numbers")
 			}
 		default:
-			fmt.Printf("VAL %v TYPE %T\n", el, el)
 			return nil, core.NewErrInvalidArgument("Encoder", "should return an Array of integer numbers")
 		}
 
