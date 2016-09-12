@@ -221,8 +221,6 @@ func (f *DownlinkFunctions) Encode(payload map[string]interface{}) ([]byte, erro
 	for i := 0; i < l; i++ {
 		el := s.Index(i).Interface()
 
-		fmt.Printf("VAL %v TYPE %T\n", el, el)
-
 		// type switch does not have fallthrough so we need
 		// to check every element individually
 		switch t := el.(type) {
