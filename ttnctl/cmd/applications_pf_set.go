@@ -90,13 +90,14 @@ The functions are read from the supplied file or from STDIN.`,
 ########## Write your Validator here and end with Ctrl+D (EOF):`)
 				app.Validator = readFunction()
 			case "encoder":
-				// val is the JSON payload we want to encode.
-				fmt.Println(`function (val) {
-	var str = JSON.stringify(val)
-	return Array.prototype.slice.apply(str).map(function (x) {
-		// todo: return an array of numbers
-		return x.charCodeAt(0)
-	})
+				fmt.Println(`function encoder(jsonPayload) {
+	var str = JSON.stringify(jsonPayload);
+	strTab = Array.prototype.slice.apply(str);
+	var bytePayload = [];
+	for(i=0; i<strTab.length; i++) {
+		bytePayload.push(strTab[i].charCodeAt(0));
+	}
+	return bytePayload;
 }
 ########## Write your Encoder here and end with Ctrl+D (EOF):`)
 				app.Encoder = readFunction()
