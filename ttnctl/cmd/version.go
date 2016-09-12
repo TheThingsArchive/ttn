@@ -18,7 +18,7 @@ var versionCmd = &cobra.Command{
 		ctx.WithFields(log.Fields{
 			"Commit":    viper.GetString("gitCommit"),
 			"BuildDate": viper.GetString("buildDate"),
-		}).Infof("You are running %s of ttnctl.", viper.GetString("version"))
+		}).Infof("You are running version %s of ttnctl.", viper.GetString("version"))
 	},
 }
 
