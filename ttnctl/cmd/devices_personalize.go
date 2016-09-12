@@ -78,6 +78,8 @@ var devicesPersonalizeCmd = &cobra.Command{
 			ctx.WithError(err).Fatal("Could not request device address")
 		}
 
+		var emptyAppKey types.AppKey
+		dev.GetLorawanDevice().AppKey = &emptyAppKey
 		dev.GetLorawanDevice().DevAddr = &devAddr
 		dev.GetLorawanDevice().NwkSKey = &nwkSKey
 		dev.GetLorawanDevice().AppSKey = &appSKey
