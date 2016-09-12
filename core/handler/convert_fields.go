@@ -228,6 +228,12 @@ func (f *DownlinkFunctions) Encode(payload map[string]interface{}) ([]byte, erro
 			n = int64(t)
 		case int:
 			n = int64(t)
+		case int8:
+			n = int64(t)
+		case int16:
+			n = int64(t)
+		case uint16:
+			n = int64(t)
 		case int32:
 			n = int64(t)
 		case uint32:
@@ -247,7 +253,6 @@ func (f *DownlinkFunctions) Encode(payload map[string]interface{}) ([]byte, erro
 				return nil, core.NewErrInvalidArgument("Encoder", "should return an Array of integer numbers")
 			}
 		default:
-			fmt.Printf("VAL %v TYPE %T\n", el, el)
 			return nil, core.NewErrInvalidArgument("Encoder", "should return an Array of integer numbers")
 		}
 
