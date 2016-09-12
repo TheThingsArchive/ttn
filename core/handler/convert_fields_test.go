@@ -4,6 +4,7 @@
 package handler
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -402,4 +403,21 @@ func TestProcessDownlinkInvalidFunction(t *testing.T) {
 	}
 	_, _, err = functions.Process(map[string]interface{}{"key": 11})
 	a.So(err, ShouldNotBeNil)
+}
+
+func TestEncodeCharCode(t *testing.T) {
+	a := New(t)
+
+	// return arr of charcodes
+	functions := &DownlinkFunctions{
+		Encoder: `function Encoder(obj) {
+			return "Hi".split('').map(function(char) {
+				return char.charCodeAt();
+			});
+		}`,
+	}
+	val, _, err := functions.Process(map[string]interface{}{"key": 11})
+	a.So(err, ShouldBeNil)
+
+	fmt.Println("VALUE", val)
 }
