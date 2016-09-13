@@ -6,11 +6,13 @@ package mqtt
 import (
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"github.com/apex/log"
+	MQTT "github.com/eclipse/paho.mqtt.golang"
 	. "github.com/smartystreets/assertions"
 )
 
@@ -128,6 +130,70 @@ func TestPublishUplink(t *testing.T) {
 	token.Wait()
 
 	a.So(token.Error(), ShouldBeNil)
+}
+
+func TestPublishUplinkFields(t *testing.T) {
+	a := New(t)
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s:1883", host))
+	c.Connect()
+	defer c.Disconnect()
+
+	waitChan := make(chan bool, 1)
+	expected := 8
+	c.(*DefaultClient).mqtt.Subscribe("fields-app/devices/fields-dev/up/#", QoS, func(_ MQTT.Client, msg MQTT.Message) {
+
+		switch strings.TrimPrefix(msg.Topic(), "fields-app/devices/fields-dev/up/") {
+		case "battery":
+			a.So(string(msg.Payload()), ShouldEqual, "90")
+		case "sensors/color":
+			a.So(string(msg.Payload()), ShouldEqual, `"blue"`)
+		case "sensors/people":
+			a.So(string(msg.Payload()), ShouldEqual, `["bob","alice"]`)
+		case "sensors/water":
+			a.So(string(msg.Payload()), ShouldEqual, "true")
+		case "sensors/analog":
+			a.So(string(msg.Payload()), ShouldEqual, `[0,255,500,1000]`)
+		case "sensors/history/today":
+			a.So(string(msg.Payload()), ShouldEqual, `"not yet"`)
+		case "sensors/history/yesterday":
+			a.So(string(msg.Payload()), ShouldEqual, `"absolutely"`)
+		case "gps":
+			a.So(string(msg.Payload()), ShouldEqual, "[52.3736735,4.886663]")
+		default:
+			t.Errorf("Should not have received message on topic %s", msg.Topic())
+			t.Fail()
+		}
+
+		expected--
+		if expected == 0 {
+			waitChan <- true
+		}
+	}).Wait()
+
+	fields := map[string]interface{}{
+		"battery": 90,
+		"sensors": map[string]interface{}{
+			"color":  "blue",
+			"people": []string{"bob", "alice"},
+			"water":  true,
+			"analog": []int{0, 255, 500, 1000},
+			"history": map[string]interface{}{
+				"today":     "not yet",
+				"yesterday": "absolutely",
+			},
+		},
+		"gps": []float64{52.3736735, 4.886663},
+	}
+
+	token := c.PublishUplinkFields("fields-app", "fields-dev", fields)
+	token.Wait()
+	a.So(token.Error(), ShouldBeNil)
+
+	select {
+	case <-waitChan:
+	case <-time.After(1 * time.Second):
+		panic("Did not receive fields")
+	}
 }
 
 func TestSubscribeDeviceUplink(t *testing.T) {

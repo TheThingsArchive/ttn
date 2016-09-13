@@ -59,6 +59,32 @@ if err := token.Error(); err != nil {
 }
 ```
 
+### Uplink Fields
+
+Each uplink field will be published to its own topic `my-app-id/devices/my-dev-id/up/<field>`. The payload will be a string with the value in a JSON-style encoding. 
+
+If your fields look like the following:
+
+```js
+{
+  "water": true,
+  "analog": [0, 255, 500, 1000],
+  "gps": {
+    "lat": 52.3736735,
+    "lon": 4.886663
+  },
+  "text": "why are you using text?"
+}
+```
+
+you will see this on MQTT:
+
+* `my-app-id/devices/my-dev-id/up/water`: `true`
+* `my-app-id/devices/my-dev-id/up/analog`: `[0, 255, 500, 1000]`
+* `my-app-id/devices/my-dev-id/up/gps/lat`: `52.3736735`
+* `my-app-id/devices/my-dev-id/up/gps/lon`: `4.886663`
+* `my-app-id/devices/my-dev-id/up/text`: `"why are you using text?"`
+
 ## Downlink Messages
 
 **Topic:** `<AppID>/devices/<DevID>/down`

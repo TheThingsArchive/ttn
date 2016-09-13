@@ -44,16 +44,28 @@ func (h *handler) HandleMQTT(username, password string, mqttBrokers ...string) e
 				"DevID": up.DevID,
 				"AppID": up.AppID,
 			}).Debug("Publish Uplink")
-			token := h.mqttClient.PublishUplink(*up)
+			upToken := h.mqttClient.PublishUplink(*up)
 			go func() {
-				if token.WaitTimeout(MQTTTimeout) {
-					if token.Error() != nil {
-						h.Ctx.WithError(token.Error()).Warn("Could not publish Uplink")
+				if upToken.WaitTimeout(MQTTTimeout) {
+					if upToken.Error() != nil {
+						h.Ctx.WithError(upToken.Error()).Warn("Could not publish Uplink")
 					}
 				} else {
 					h.Ctx.Warn("Uplink publish timeout")
 				}
 			}()
+			if len(up.Fields) > 0 {
+				fieldsToken := h.mqttClient.PublishUplinkFields(up.AppID, up.DevID, up.Fields)
+				go func() {
+					if fieldsToken.WaitTimeout(MQTTTimeout) {
+						if fieldsToken.Error() != nil {
+							h.Ctx.WithError(fieldsToken.Error()).Warn("Could not publish Uplink Fields")
+						}
+					} else {
+						h.Ctx.Warn("Uplink Fields publish timeout")
+					}
+				}()
+			}
 		}
 	}()
 
