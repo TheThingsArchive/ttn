@@ -129,7 +129,7 @@ func (c *DefaultClient) GetAll(serviceName string) ([]*Announcement, error) {
 	// If list initialized, return cached version
 	if list, ok := c.lists[serviceName]; ok && len(list) > 0 {
 		// And update if expired
-		if c.listsUpdated[serviceName].Add(CacheExpiration).After(time.Now()) {
+		if c.listsUpdated[serviceName].Add(CacheExpiration).Before(time.Now()) {
 			go func() {
 				c.Lock()
 				defer c.Unlock()
