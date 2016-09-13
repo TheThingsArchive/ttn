@@ -282,7 +282,7 @@ func (c *DefaultClient) PublishUplinkFields(appID string, devID string, fields m
 				t.err = token.Error()
 			}
 		}
-		t.complete <- true
+		t.flowComplete()
 	}()
 	return t
 }
