@@ -55,15 +55,6 @@ func NewComponent(ctx log.Interface, serviceName string, announcedAddress string
 
 	grpclog.SetLogger(logging.NewGRPCLogger(ctx))
 
-	var discovery pb_discovery.DiscoveryClient
-	if serviceName != "discovery" {
-		discoveryConn, err := grpc.Dial(viper.GetString("discovery-server"), append(api.DialOptions, grpc.WithBlock(), grpc.WithInsecure())...)
-		if err != nil {
-			return nil, err
-		}
-		discovery = pb_discovery.NewDiscoveryClient(discoveryConn)
-	}
-
 	component := &Component{
 		Ctx: ctx,
 		Identity: &pb_discovery.Announcement{
@@ -74,11 +65,21 @@ func NewComponent(ctx log.Interface, serviceName string, announcedAddress string
 			NetAddress:     announcedAddress,
 		},
 		AccessToken: viper.GetString("auth-token"),
-		Discovery:   discovery,
 		TokenKeyProvider: tokenkey.NewHTTPProvider(
 			viper.GetStringMapString("auth-servers"),
 			viper.GetString("key-dir"),
 		),
+	}
+
+	if serviceName != "discovery" {
+		discoveryConn, err := grpc.Dial(viper.GetString("discovery-server"), append(api.DialOptions, grpc.WithBlock(), grpc.WithInsecure())...)
+		if err != nil {
+			return nil, err
+		}
+		component.Discovery = pb_discovery.NewClient(discoveryConn, component.Identity, func() string {
+			token, _ := component.BuildJWT()
+			return token
+		})
 	}
 
 	if pub, priv, cert, err := security.LoadKeys(viper.GetString("key-dir")); err == nil {
@@ -127,7 +128,7 @@ const (
 // Component contains the common attributes for all TTN components
 type Component struct {
 	Identity         *pb_discovery.Announcement
-	Discovery        pb_discovery.DiscoveryClient
+	Discovery        pb_discovery.Client
 	Ctx              log.Interface
 	AccessToken      string
 	privateKey       string
@@ -148,10 +149,7 @@ func (c *Component) SetStatus(status Status) {
 
 // Discover is used to discover another component
 func (c *Component) Discover(serviceName, id string) (*pb_discovery.Announcement, error) {
-	res, err := c.Discovery.Get(c.GetContext(""), &pb_discovery.GetRequest{
-		ServiceName: serviceName,
-		Id:          id,
-	})
+	res, err := c.Discovery.Get(serviceName, id)
 	if err != nil {
 		return nil, errors.Wrapf(FromGRPCError(err), "Failed to discover %s/%s", serviceName, id)
 	}
@@ -163,7 +161,7 @@ func (c *Component) Announce() error {
 	if c.Identity.Id == "" {
 		return NewErrInvalidArgument("Component ID", "can not be empty")
 	}
-	_, err := c.Discovery.Announce(c.GetContext(c.AccessToken), c.Identity)
+	err := c.Discovery.Announce(c.AccessToken)
 	if err != nil {
 		return errors.Wrapf(FromGRPCError(err), "Failed to announce this component to TTN discovery: %s", err.Error())
 	}
@@ -265,8 +263,8 @@ func (c *Component) ValidateNetworkContext(ctx context.Context) (component *pb_d
 	if err != nil {
 		return
 	}
-	if claims.Subject != id {
-		err = NewErrInvalidArgument("Metadata", "token was issued for a different component id")
+	if claims.Issuer != id {
+		err = NewErrInvalidArgument("Metadata", "token was issued by different component id")
 		return
 	}
 

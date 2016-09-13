@@ -54,7 +54,7 @@ func (r *router) HandleActivation(gatewayEUI types.GatewayEUI, activation *pb.De
 	downlinkOptions := r.buildDownlinkOptions(uplink, true, gateway)
 
 	// Find Broker
-	brokers, err := r.brokerDiscovery.All()
+	brokers, err := r.Discovery.GetAll("broker")
 	if err != nil {
 		return nil, err
 	}

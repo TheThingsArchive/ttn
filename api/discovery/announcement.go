@@ -4,6 +4,7 @@
 package discovery
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 )
@@ -101,4 +102,28 @@ func (announcement *Announcement) parseProperty(property string, value string) e
 		return fmt.Errorf("Property %s does not exist in Announcement", property)
 	}
 	return nil
+}
+
+// AddMetadata adds metadata to the announcement if it doesn't exist
+func (announcement *Announcement) AddMetadata(key Metadata_Key, value []byte) {
+	for _, meta := range announcement.Metadata {
+		if meta.Key == key && bytes.Equal(value, meta.Value) {
+			return
+		}
+	}
+	announcement.Metadata = append(announcement.Metadata, &Metadata{
+		Key:   key,
+		Value: value,
+	})
+}
+
+// DeleteMetadata deletes metadata from the announcement if it exists
+func (announcement *Announcement) DeleteMetadata(key Metadata_Key, value []byte) {
+	newMeta := make([]*Metadata, 0, len(announcement.Metadata))
+	for _, meta := range announcement.Metadata {
+		if !(meta.Key == key && bytes.Equal(value, meta.Value)) {
+			newMeta = append(newMeta, meta)
+		}
+	}
+	announcement.Metadata = newMeta
 }

@@ -11,27 +11,20 @@ import (
 	pb "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/api/gateway"
+	pb_networkserver "github.com/TheThingsNetwork/ttn/api/networkserver"
 	"github.com/TheThingsNetwork/ttn/api/protocol"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/types"
-	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"github.com/brocaar/lorawan"
+	"github.com/golang/mock/gomock"
 	. "github.com/smartystreets/assertions"
 )
 
 func TestHandleUplink(t *testing.T) {
 	a := New(t)
 
-	b := &broker{
-		Component: &core.Component{
-			Ctx: GetLogger(t, "TestHandleUplink"),
-		},
-		uplinkDeduplicator: NewDeduplicator(10 * time.Millisecond),
-		ns: &mockNetworkServer{
-			devices: []*pb_lorawan.Device{},
-		},
-	}
+	b := getTestBroker(t)
 
 	gtwEUI := types.GatewayEUI([8]byte{0, 1, 2, 3, 4, 5, 6, 7})
 
@@ -60,6 +53,9 @@ func TestHandleUplink(t *testing.T) {
 
 	// Device not found
 	b.uplinkDeduplicator = NewDeduplicator(10 * time.Millisecond)
+	b.ns.EXPECT().GetDevices(gomock.Any(), gomock.Any()).Return(&pb_networkserver.DevicesResponse{
+		Results: []*pb_lorawan.Device{},
+	}, nil)
 	err = b.HandleUplink(&pb.UplinkMessage{
 		Payload:          bytes,
 		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2, GatewayEui: &gtwEUI},
@@ -70,42 +66,34 @@ func TestHandleUplink(t *testing.T) {
 	devEUI := types.DevEUI{1, 2, 3, 4, 5, 6, 7, 8}
 	wrongDevEUI := types.DevEUI{1, 2, 3, 4, 5, 6, 7, 9}
 	appEUI := types.AppEUI{1, 2, 3, 4, 5, 6, 7, 8}
-	appID := "AppID-1"
+	appID := "appid-1"
 	nwkSKey := types.NwkSKey{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8}
 
 	// Add devices
-	b = &broker{
-		Component: &core.Component{
-			Ctx: GetLogger(t, "TestHandleUplink"),
-		},
-		handlers:           make(map[string]chan *pb.DeduplicatedUplinkMessage),
-		uplinkDeduplicator: NewDeduplicator(10 * time.Millisecond),
-		ns: &mockNetworkServer{
-			devices: []*pb_lorawan.Device{
-				&pb_lorawan.Device{
-					DevEui:  &wrongDevEUI,
-					AppEui:  &appEUI,
-					AppId:   appID,
-					NwkSKey: &nwkSKey,
-					FCntUp:  4,
-				},
-				&pb_lorawan.Device{
-					DevEui:  &devEUI,
-					AppEui:  &appEUI,
-					AppId:   appID,
-					NwkSKey: &nwkSKey,
-					FCntUp:  3,
-				},
+	b = getTestBroker(t)
+	nsResponse := &pb_networkserver.DevicesResponse{
+		Results: []*pb_lorawan.Device{
+			&pb_lorawan.Device{
+				DevEui:  &wrongDevEUI,
+				AppEui:  &appEUI,
+				AppId:   appID,
+				NwkSKey: &nwkSKey,
+				FCntUp:  4,
 			},
-		},
-		handlerDiscovery: &mockHandlerDiscovery{
-			&pb_discovery.Announcement{Id: "handlerID"},
+			&pb_lorawan.Device{
+				DevEui:  &devEUI,
+				AppEui:  &appEUI,
+				AppId:   appID,
+				NwkSKey: &nwkSKey,
+				FCntUp:  3,
+			},
 		},
 	}
 	b.handlers["handlerID"] = make(chan *pb.DeduplicatedUplinkMessage, 10)
 
 	// Device doesn't match
 	b.uplinkDeduplicator = NewDeduplicator(10 * time.Millisecond)
+	b.ns.EXPECT().GetDevices(gomock.Any(), gomock.Any()).Return(nsResponse, nil)
 	err = b.HandleUplink(&pb.UplinkMessage{
 		Payload:          bytes,
 		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2, GatewayEui: &gtwEUI},
@@ -118,6 +106,7 @@ func TestHandleUplink(t *testing.T) {
 
 	// Wrong FCnt
 	b.uplinkDeduplicator = NewDeduplicator(10 * time.Millisecond)
+	b.ns.EXPECT().GetDevices(gomock.Any(), gomock.Any()).Return(nsResponse, nil)
 	err = b.HandleUplink(&pb.UplinkMessage{
 		Payload:          bytes,
 		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2, GatewayEui: &gtwEUI},
@@ -127,7 +116,14 @@ func TestHandleUplink(t *testing.T) {
 
 	// Disable FCnt Check
 	b.uplinkDeduplicator = NewDeduplicator(10 * time.Millisecond)
-	b.ns.(*mockNetworkServer).devices[0].DisableFCntCheck = true
+	nsResponse.Results[0].DisableFCntCheck = true
+	b.ns.EXPECT().GetDevices(gomock.Any(), gomock.Any()).Return(nsResponse, nil)
+	b.ns.EXPECT().Uplink(gomock.Any(), gomock.Any())
+	b.discovery.EXPECT().GetAllHandlersForAppID("appid-1").Return([]*pb_discovery.Announcement{
+		&pb_discovery.Announcement{
+			Id: "handlerID",
+		},
+	}, nil)
 	err = b.HandleUplink(&pb.UplinkMessage{
 		Payload:          bytes,
 		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2, GatewayEui: &gtwEUI},
@@ -137,8 +133,15 @@ func TestHandleUplink(t *testing.T) {
 
 	// OK FCnt
 	b.uplinkDeduplicator = NewDeduplicator(10 * time.Millisecond)
-	b.ns.(*mockNetworkServer).devices[0].FCntUp = 0
-	b.ns.(*mockNetworkServer).devices[0].DisableFCntCheck = false
+	nsResponse.Results[0].FCntUp = 0
+	nsResponse.Results[0].DisableFCntCheck = false
+	b.ns.EXPECT().GetDevices(gomock.Any(), gomock.Any()).Return(nsResponse, nil)
+	b.ns.EXPECT().Uplink(gomock.Any(), gomock.Any())
+	b.discovery.EXPECT().GetAllHandlersForAppID("appid-1").Return([]*pb_discovery.Announcement{
+		&pb_discovery.Announcement{
+			Id: "handlerID",
+		},
+	}, nil)
 	err = b.HandleUplink(&pb.UplinkMessage{
 		Payload:          bytes,
 		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2, GatewayEui: &gtwEUI},
@@ -149,7 +152,6 @@ func TestHandleUplink(t *testing.T) {
 
 func TestDeduplicateUplink(t *testing.T) {
 	a := New(t)
-	d := NewDeduplicator(20 * time.Millisecond).(*deduplicator)
 
 	payload := []byte{0x01, 0x02, 0x03}
 	protocolMetadata := &protocol.RxMetadata{}
@@ -158,7 +160,9 @@ func TestDeduplicateUplink(t *testing.T) {
 	uplink3 := &pb.UplinkMessage{Payload: payload, GatewayMetadata: &gateway.RxMetadata{Snr: 5.6}, ProtocolMetadata: protocolMetadata}
 	uplink4 := &pb.UplinkMessage{Payload: payload, GatewayMetadata: &gateway.RxMetadata{Snr: 7.8}, ProtocolMetadata: protocolMetadata}
 
-	b := &broker{uplinkDeduplicator: d}
+	b := getTestBroker(t)
+	b.uplinkDeduplicator = NewDeduplicator(20 * time.Millisecond).(*deduplicator)
+
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {

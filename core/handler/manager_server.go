@@ -18,6 +18,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 )
 
 type handlerManager struct {
@@ -267,14 +268,9 @@ func (h *handlerManager) RegisterApplication(ctx context.Context, in *pb.Applica
 		return nil, core.BuildGRPCError(err)
 	}
 
-	_, err = h.handler.Discovery.AddMetadata(ctx, &pb_discovery.MetadataRequest{
-		ServiceName: h.handler.Identity.ServiceName,
-		Id:          h.handler.Identity.Id,
-		Metadata: &pb_discovery.Metadata{
-			Key:   pb_discovery.Metadata_APP_ID,
-			Value: []byte(in.AppId),
-		},
-	})
+	md, _ := metadata.FromContext(ctx)
+	token, _ := md["token"]
+	err = h.handler.Discovery.AddMetadata(pb_discovery.Metadata_APP_ID, []byte(in.AppId), token[0])
 	if err != nil {
 		h.handler.Ctx.WithField("AppID", in.AppId).WithError(err).Warn("Could not register Application with Discovery")
 	}
@@ -343,14 +339,9 @@ func (h *handlerManager) DeleteApplication(ctx context.Context, in *pb.Applicati
 		return nil, core.BuildGRPCError(err)
 	}
 
-	_, err = h.handler.Discovery.DeleteMetadata(ctx, &pb_discovery.MetadataRequest{
-		ServiceName: h.handler.Identity.ServiceName,
-		Id:          h.handler.Identity.Id,
-		Metadata: &pb_discovery.Metadata{
-			Key:   pb_discovery.Metadata_APP_ID,
-			Value: []byte(in.AppId),
-		},
-	})
+	md, _ := metadata.FromContext(ctx)
+	token, _ := md["token"]
+	err = h.handler.Discovery.DeleteMetadata(pb_discovery.Metadata_APP_ID, []byte(in.AppId), token[0])
 	if err != nil {
 		h.handler.Ctx.WithField("AppID", in.AppId).WithError(core.FromGRPCError(err)).Warn("Could not unregister Application from Discovery")
 	}

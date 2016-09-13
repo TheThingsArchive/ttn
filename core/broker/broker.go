@@ -15,7 +15,6 @@ import (
 	"github.com/TheThingsNetwork/ttn/api/networkserver"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core"
-	"github.com/TheThingsNetwork/ttn/core/discovery"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"
@@ -56,7 +55,6 @@ type broker struct {
 	*core.Component
 	routers                map[string]chan *pb.DownlinkMessage
 	routersLock            sync.RWMutex
-	handlerDiscovery       discovery.HandlerDiscovery
 	handlers               map[string]chan *pb.DeduplicatedUplinkMessage
 	handlersLock           sync.RWMutex
 	nsAddr                 string
@@ -126,8 +124,7 @@ func (b *broker) Init(c *core.Component) error {
 	if err != nil {
 		return err
 	}
-	b.handlerDiscovery = discovery.NewHandlerDiscovery(b.Component)
-	b.handlerDiscovery.All() // Update cache
+	b.Discovery.GetAll("handler") // Update cache
 	conn, err := api.DialWithCert(b.nsAddr, b.nsCert)
 	if err != nil {
 		return err

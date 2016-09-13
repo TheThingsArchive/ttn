@@ -13,7 +13,6 @@ import (
 	pb_gateway "github.com/TheThingsNetwork/ttn/api/gateway"
 	pb "github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/core"
-	"github.com/TheThingsNetwork/ttn/core/discovery"
 	"github.com/TheThingsNetwork/ttn/core/router/gateway"
 	"github.com/TheThingsNetwork/ttn/core/types"
 )
@@ -53,11 +52,10 @@ func NewRouter() Router {
 
 type router struct {
 	*core.Component
-	gateways        map[types.GatewayEUI]*gateway.Gateway
-	gatewaysLock    sync.RWMutex
-	brokerDiscovery discovery.BrokerDiscovery
-	brokers         map[string]*broker
-	brokersLock     sync.RWMutex
+	gateways     map[types.GatewayEUI]*gateway.Gateway
+	gatewaysLock sync.RWMutex
+	brokers      map[string]*broker
+	brokersLock  sync.RWMutex
 }
 
 func (r *router) tickGateways() {
@@ -78,8 +76,7 @@ func (r *router) Init(c *core.Component) error {
 	if err != nil {
 		return err
 	}
-	r.brokerDiscovery = discovery.NewBrokerDiscovery(r.Component)
-	r.brokerDiscovery.All() // Update cache
+	r.Discovery.GetAll("broker") // Update cache
 	go func() {
 		for range time.Tick(5 * time.Second) {
 			r.tickGateways()

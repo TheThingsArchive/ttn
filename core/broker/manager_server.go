@@ -5,6 +5,7 @@ package broker
 
 import (
 	pb "github.com/TheThingsNetwork/ttn/api/broker"
+	"github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core"
@@ -56,10 +57,12 @@ func (b *brokerManager) RegisterApplicationHandler(ctx context.Context, in *pb.A
 	if !claims.CanEditApp(in.AppId) {
 		return nil, grpcErrf(codes.PermissionDenied, "No access to this application")
 	}
-	err = b.broker.handlerDiscovery.AddAppID(in.HandlerId, in.AppId)
+	// Add Handler in local cache
+	handler, err := b.broker.Discovery.Get("handler", in.HandlerId)
 	if err != nil {
-		return nil, core.BuildGRPCError(errors.Wrap(core.FromGRPCError(err), "Discovery did not add appID"))
+		return nil, grpcErrf(codes.Internal, "Could not get Handler Announcement")
 	}
+	handler.AddMetadata(discovery.Metadata_APP_ID, []byte(in.AppId))
 	return &empty.Empty{}, nil
 }
 

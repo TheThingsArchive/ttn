@@ -163,7 +163,7 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) error {
 	}
 
 	var announcements []*pb_discovery.Announcement
-	announcements, err = b.handlerDiscovery.ForAppID(device.AppId)
+	announcements, err = b.Discovery.GetAllHandlersForAppID(device.AppId)
 	if err != nil {
 		return err
 	}

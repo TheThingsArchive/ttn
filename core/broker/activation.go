@@ -95,7 +95,7 @@ func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (*pb.D
 
 	// Find Handler (based on AppEUI)
 	var announcements []*pb_discovery.Announcement
-	announcements, err = b.handlerDiscovery.ForAppID(deduplicatedActivationRequest.AppId)
+	announcements, err = b.Discovery.GetAllHandlersForAppID(deduplicatedActivationRequest.AppId)
 	if err != nil {
 		return nil, err
 	}

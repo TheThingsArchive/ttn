@@ -31,7 +31,7 @@ ttnctlpkg = ttnctl-$(GOOS)-$(GOARCH)
 ttnbin = $(ttnpkg)$(GOEXE)
 ttnctlbin = $(ttnctlpkg)$(GOEXE)
 
-.PHONY: all clean deps update-deps test-deps proto-deps dev-deps cover-deps proto test fmt vet cover coveralls build install docker package
+.PHONY: all clean deps update-deps test-deps dev-deps cover-deps proto test fmt vet cover coveralls build install docker package
 
 all: clean deps build package
 
@@ -44,11 +44,11 @@ update-deps:
 test-deps:
 	$(GOCMD) get -d -v $(TEST_DEPS)
 
-proto-deps:
-	$(GOCMD) get -v github.com/gogo/protobuf/protoc-gen-gofast
-
-dev-deps: update-deps proto-deps test-deps
-	$(GOCMD) get -v github.com/ddollar/forego
+dev-deps: update-deps test-deps
+	$(GOCMD) get -u -v github.com/gogo/protobuf/protoc-gen-gofast
+	$(GOCMD) get -u -v github.com/golang/mock/gomock
+	$(GOCMD) get -u -v github.com/golang/mock/mockgen
+	$(GOCMD) get -u -v github.com/ddollar/forego
 
 cover-deps:
 	if ! $(GOCMD) get github.com/golang/tools/cmd/cover; then $(GOCMD) get golang.org/x/tools/cmd/cover; fi
@@ -65,6 +65,10 @@ proto:
 	@$(PROTOC)/api/networkserver/networkserver.proto
 	@$(PROTOC)/api/discovery/discovery.proto
 	@$(PROTOC)/api/noc/noc.proto
+
+mocks:
+	mockgen -source=./api/networkserver/networkserver.pb.go -package networkserver NetworkServerClient > api/networkserver/networkserver_mock.go
+	mockgen -source=./api/discovery/client.go -package discovery NetworkServerClient > api/discovery/client_mock.go
 
 test:
 	$(select_pkgs) | xargs $(GOCMD) test

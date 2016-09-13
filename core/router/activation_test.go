@@ -26,7 +26,6 @@ func TestHandleActivation(t *testing.T) {
 		gateways: map[types.GatewayEUI]*gateway.Gateway{
 			gatewayEUI: newReferenceGateway(t, "EU_863_870"),
 		},
-		brokerDiscovery: &mockBrokerDiscovery{},
 	}
 
 	appEUI := types.AppEUI{0, 1, 2, 3, 4, 5, 6, 7}

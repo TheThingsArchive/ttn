@@ -11,7 +11,6 @@ import (
 	pb_protocol "github.com/TheThingsNetwork/ttn/api/protocol"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	pb "github.com/TheThingsNetwork/ttn/api/router"
-	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/router/gateway"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
@@ -63,26 +62,11 @@ func newReferenceUplink() *pb.UplinkMessage {
 	return up
 }
 
-type mockBrokerDiscovery struct{}
-
-func (d *mockBrokerDiscovery) Discover(devAddr types.DevAddr) ([]*discovery.Announcement, error) {
-	return []*discovery.Announcement{}, nil
-}
-
-func (d *mockBrokerDiscovery) All() ([]*discovery.Announcement, error) {
-	return []*discovery.Announcement{}, nil
-}
-
 func TestHandleUplink(t *testing.T) {
 	a := New(t)
 
-	r := &router{
-		Component: &core.Component{
-			Ctx: GetLogger(t, "TestHandleUplink"),
-		},
-		gateways:        map[types.GatewayEUI]*gateway.Gateway{},
-		brokerDiscovery: &mockBrokerDiscovery{},
-	}
+	r := getTestRouter(t)
+	r.discovery.EXPECT().GetAllBrokersForDevAddr(types.DevAddr([4]byte{1, 2, 3, 4})).Return([]*discovery.Announcement{}, nil)
 
 	uplink := newReferenceUplink()
 	gtwEUI := types.GatewayEUI{0, 1, 2, 3, 4, 5, 6, 7}

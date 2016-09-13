@@ -34,13 +34,13 @@ func (d *discoveryServer) checkMetadataEditRights(ctx context.Context, in *pb.Me
 		}
 		// Only allow prefix announcements if token is issued by the official ttn account server (or if in dev mode)
 		if claims.Issuer != "ttn-account" && d.discovery.Component.Identity.Id != "dev" {
-			return errPermissionDeniedf("Token issuer %s should be ttn-account", claims.Issuer)
+			return errPermissionDeniedf("Token issuer \"%s\" should be \"ttn-account\"", claims.Issuer)
 		}
 		if claims.Type != in.ServiceName {
-			return errPermissionDeniedf("Token subject %s does not correspond with announcement ID %s", claims.Subject, in.Id)
+			return errPermissionDeniedf("Token type %s does not correspond with announcement service type %s", claims.Type, in.ServiceName)
 		}
 		if claims.Subject != in.Id {
-			return errPermissionDeniedf("Token type %s does not correspond with announcement service type %s", claims.Type, in.ServiceName)
+			return errPermissionDeniedf("Token subject %s does not correspond with announcement id %s", claims.Subject, in.Id)
 		}
 		// TODO: Check if this PREFIX can be announced
 	case pb.Metadata_APP_EUI:
@@ -52,10 +52,10 @@ func (d *discoveryServer) checkMetadataEditRights(ctx context.Context, in *pb.Me
 			return errPermissionDeniedf("Token issuer %s should be ttn-account", claims.Issuer)
 		}
 		if claims.Type != in.ServiceName {
-			return errPermissionDeniedf("Token subject %s does not correspond with announcement ID %s", claims.Subject, in.Id)
+			return errPermissionDeniedf("Token type %s does not correspond with announcement service type %s", claims.Type, in.ServiceName)
 		}
 		if claims.Subject != in.Id {
-			return errPermissionDeniedf("Token type %s does not correspond with announcement service type %s", claims.Type, in.ServiceName)
+			return errPermissionDeniedf("Token subject %s does not correspond with announcement id %s", claims.Subject, in.Id)
 		}
 		// TODO: Check if this APP_EUI can be announced
 		return errPermissionDeniedf("Can not announce AppEUIs at this time")

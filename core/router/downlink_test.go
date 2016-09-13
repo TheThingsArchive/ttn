@@ -45,8 +45,7 @@ func TestHandleDownlink(t *testing.T) {
 		Component: &core.Component{
 			Ctx: GetLogger(t, "TestHandleDownlink"),
 		},
-		gateways:        map[types.GatewayEUI]*gateway.Gateway{},
-		brokerDiscovery: &mockBrokerDiscovery{},
+		gateways: map[types.GatewayEUI]*gateway.Gateway{},
 	}
 
 	eui := types.GatewayEUI{0, 1, 2, 3, 4, 5, 6, 7}
@@ -71,8 +70,7 @@ func TestSubscribeUnsubscribeDownlink(t *testing.T) {
 		Component: &core.Component{
 			Ctx: GetLogger(t, "TestSubscribeUnsubscribeDownlink"),
 		},
-		gateways:        map[types.GatewayEUI]*gateway.Gateway{},
-		brokerDiscovery: &mockBrokerDiscovery{},
+		gateways: map[types.GatewayEUI]*gateway.Gateway{},
 	}
 
 	eui := types.GatewayEUI{0, 1, 2, 3, 4, 5, 6, 7}
