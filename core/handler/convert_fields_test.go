@@ -331,7 +331,7 @@ func TestConvertFieldsDown(t *testing.T) {
 	ttnDown, appDown := buildConversionDownlink()
 	err := h.ConvertFieldsDown(GetLogger(t, "TestConvertFieldsDown"), appDown, ttnDown)
 	a.So(err, ShouldBeNil)
-	a.So(ttnDown.Payload, ShouldBeEmpty)
+	a.So(appDown.Payload, ShouldBeEmpty)
 
 	// Case2: Normal flow with Encoder
 	h.applications.Set(&application.Application{
@@ -345,7 +345,7 @@ func TestConvertFieldsDown(t *testing.T) {
 	ttnDown, appDown = buildConversionDownlink()
 	err = h.ConvertFieldsDown(GetLogger(t, "TestConvertFieldsDown"), appDown, ttnDown)
 	a.So(err, ShouldBeNil)
-	a.So(ttnDown.Payload, ShouldResemble, []byte{1, 2, 3, 4, 5, 6, 7})
+	a.So(appDown.Payload, ShouldResemble, []byte{1, 2, 3, 4, 5, 6, 7})
 }
 
 func TestProcessDownlinkInvalidFunction(t *testing.T) {
