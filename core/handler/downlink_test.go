@@ -4,8 +4,8 @@
 package handler
 
 import (
-	"sync"
 	"testing"
+	"time"
 
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/core"
@@ -52,7 +52,7 @@ func TestEnqueueDownlink(t *testing.T) {
 func TestHandleDownlink(t *testing.T) {
 	a := New(t)
 	var err error
-	var wg sync.WaitGroup
+	var wg WaitGroup
 	appID := "app2"
 	devID := "dev2"
 	appEUI := types.AppEUI([8]byte{1, 2, 3, 4, 5, 6, 7, 8})
@@ -104,7 +104,7 @@ func TestHandleDownlink(t *testing.T) {
 		Payload: []byte{96, 4, 3, 2, 1, 0, 1, 0, 1, 0, 0, 0, 0},
 	})
 	a.So(err, ShouldBeNil)
-	wg.Wait()
+	wg.WaitFor(100 * time.Millisecond)
 
 	// Both Payload and Fields provided
 	h.applications.Set(&application.Application{
@@ -121,8 +121,9 @@ func TestHandleDownlink(t *testing.T) {
 		Fields:  jsonFields,
 		Payload: []byte{0xAA, 0xBC},
 	}, &pb_broker.DownlinkMessage{
-		AppEui: &appEUI,
-		DevEui: &devEUI,
+		AppEui:  &appEUI,
+		DevEui:  &devEUI,
+		Payload: []byte{96, 4, 3, 2, 1, 0, 1, 0, 1, 0, 0, 0, 0},
 	})
 	a.So(err, ShouldNotBeNil)
 
@@ -139,9 +140,10 @@ func TestHandleDownlink(t *testing.T) {
 		DevID:  devID,
 		Fields: jsonFields,
 	}, &pb_broker.DownlinkMessage{
-		AppEui: &appEUI,
-		DevEui: &devEUI,
+		AppEui:  &appEUI,
+		DevEui:  &devEUI,
+		Payload: []byte{96, 4, 3, 2, 1, 0, 1, 0, 1, 0, 0, 0, 0},
 	})
 	a.So(err, ShouldBeNil)
-	wg.Wait()
+	wg.WaitFor(100 * time.Millisecond)
 }
