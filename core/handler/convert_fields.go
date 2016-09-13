@@ -301,7 +301,6 @@ func (h *handler) ConvertFieldsDown(ctx log.Interface, appDown *mqtt.DownlinkMes
 	}
 
 	appDown.Payload = message
-	ttnDown.Payload = message
 
 	return nil
 }
