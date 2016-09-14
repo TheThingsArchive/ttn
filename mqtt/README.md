@@ -81,6 +81,7 @@ you will see this on MQTT:
 
 * `my-app-id/devices/my-dev-id/up/water`: `true`
 * `my-app-id/devices/my-dev-id/up/analog`: `[0, 255, 500, 1000]`
+* `my-app-id/devices/my-dev-id/up/gps`: `{"lat":52.3736735,"lon":4.886663}`
 * `my-app-id/devices/my-dev-id/up/gps/lat`: `52.3736735`
 * `my-app-id/devices/my-dev-id/up/gps/lon`: `4.886663`
 * `my-app-id/devices/my-dev-id/up/text`: `"why are you using text?"`
