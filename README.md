@@ -23,7 +23,7 @@ When you get started with The Things Network, you'll probably have some question
 3. Install the [protobuf compiler (`protoc`)](https://github.com/google/protobuf/releases)
 4. Make sure you have [Mosquitto](http://mosquitto.org/download/) and [Redis](http://redis.io/download) **installed** and **running**.  
    If you're on a Mac, just run:
-    * `brew install go mosquitto redis`
+    * `brew bundle`
     * `brew services start mosquitto`
     * `brew services start redis`
 
