@@ -15,11 +15,11 @@ BUILD_DATE = `date -u +%Y-%m-%dT%H:%M:%SZ`
 
 LDFLAGS = -ldflags "-w -X main.gitCommit=${GIT_COMMIT} -X main.buildDate=${BUILD_DATE}"
 
-DEPS = `comm -23 <(sort <($(GOCMD) list -f '{{join .Imports "\n"}}' ./...) | uniq) <($(GOCMD) list std) | grep -v TheThingsNetwork`
-TEST_DEPS = `comm -23 <(sort <($(GOCMD) list -f '{{join .TestImports "\n"}}' ./...) | uniq) <($(GOCMD) list std) | grep -v TheThingsNetwork`
-
-select_pkgs = $(GOCMD) list ./... | grep -vE 'vendor|ttnctl'
+select_pkgs = $(GOCMD) list ./... | grep -vE 'ttn/vendor|ttn/ttnctl'
 coverage_pkgs = $(GOCMD) list ./... | grep -vE 'ttn/api|ttn/cmd|ttn/vendor|ttn/ttnctl'
+
+DEPS = `comm -23 <($(GOCMD) list -f '{{join .Deps "\n"}}' . | grep -vE 'github.com/TheThingsNetwork/ttn' | sort | uniq) <($(GOCMD) list std)`
+TEST_DEPS = `comm -23 <($(select_pkgs) | xargs $(GOCMD) list -f '{{join .TestImports "\n"}}' | grep -vE 'github.com/TheThingsNetwork/ttn' | sort | uniq) <($(GOCMD) list std)`
 
 RELEASE_DIR ?= release
 COVER_FILE = coverage.out
