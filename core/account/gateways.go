@@ -29,7 +29,7 @@ type NewGateway struct {
 	ID string `json:"id"`
 
 	// Country is the country code of the new gateway (required)
-	Country string `json:"country"`
+	FrequencyPlan string `json:"frequency_plan"`
 
 	// EUI is the EUI of the new gateway
 	EUI string `json:"eui,omitemtpy"`
@@ -44,11 +44,11 @@ func (a *Account) CreateGateway(opts *NewGateway) (gateway Gateway, err error) {
 		return gateway, errors.New("Cannot create gateway: no ID given")
 	}
 
-	if opts.Country == "" {
-		return gateway, errors.New("Cannot create gateway: no Country given")
+	if opts.FrequencyPlan == "" {
+		return gateway, errors.New("Cannot create gateway: no FrequencyPlan given")
 	}
 
-	err = a.post("/applications", &opts, &gateway)
+	err = a.post("/gateways", &opts, &gateway)
 	return gateway, err
 }
 
