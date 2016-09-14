@@ -49,6 +49,7 @@ dev-deps: update-deps test-deps
 	$(GOCMD) get -u -v github.com/golang/mock/gomock
 	$(GOCMD) get -u -v github.com/golang/mock/mockgen
 	$(GOCMD) get -u -v github.com/ddollar/forego
+	$(GOCMD) get -u -v github.com/kovetskiy/manul
 
 cover-deps:
 	if ! $(GOCMD) get github.com/golang/tools/cmd/cover; then $(GOCMD) get golang.org/x/tools/cmd/cover; fi

@@ -205,7 +205,7 @@ func (r *router) buildDownlinkOptions(uplink *pb.UplinkMessage, isActivation boo
 
 	// Configuration for RX1
 	{
-		uplinkChannel, err := band.GetChannel(int(uplink.GatewayMetadata.Frequency), uplinkDRIndex)
+		uplinkChannel, err := band.GetChannel(int(uplink.GatewayMetadata.Frequency), nil)
 		if err == nil {
 			downlinkChannel := band.DownlinkChannels[band.GetRX1Channel(uplinkChannel)]
 			downlinkDRIndex, err := band.GetRX1DataRateForOffset(uplinkDRIndex, 0)

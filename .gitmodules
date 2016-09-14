@@ -1,6 +1,57 @@
+[submodule "vendor/github.com/asaskevich/govalidator"]
+	path = vendor/github.com/asaskevich/govalidator
+	url = https://github.com/asaskevich/govalidator
+[submodule "vendor/github.com/bluele/gcache"]
+	path = vendor/github.com/bluele/gcache
+	url = https://github.com/bluele/gcache
 [submodule "vendor/github.com/brocaar/lorawan"]
 	path = vendor/github.com/brocaar/lorawan
-	url = https://github.com/brocaar/lorawan.git
+	url = https://github.com/brocaar/lorawan
 [submodule "vendor/github.com/dgrijalva/jwt-go"]
 	path = vendor/github.com/dgrijalva/jwt-go
-	url = https://github.com/dgrijalva/jwt-go.git
+	url = https://github.com/dgrijalva/jwt-go
+[submodule "vendor/github.com/eclipse/paho.mqtt.golang"]
+	path = vendor/github.com/eclipse/paho.mqtt.golang
+	url = https://github.com/eclipse/paho.mqtt.golang
+[submodule "vendor/github.com/golang/mock"]
+	path = vendor/github.com/golang/mock
+	url = https://github.com/golang/mock
+[submodule "vendor/github.com/gosuri/uitable"]
+	path = vendor/github.com/gosuri/uitable
+	url = https://github.com/gosuri/uitable
+[submodule "vendor/github.com/howeyc/gopass"]
+	path = vendor/github.com/howeyc/gopass
+	url = https://github.com/howeyc/gopass
+[submodule "vendor/github.com/jacobsa/crypto"]
+	path = vendor/github.com/jacobsa/crypto
+	url = https://github.com/jacobsa/crypto
+[submodule "vendor/github.com/mitchellh/go-homedir"]
+	path = vendor/github.com/mitchellh/go-homedir
+	url = https://github.com/mitchellh/go-homedir
+[submodule "vendor/github.com/mwitkow/go-grpc-middleware"]
+	path = vendor/github.com/mwitkow/go-grpc-middleware
+	url = https://github.com/mwitkow/go-grpc-middleware
+[submodule "vendor/github.com/pkg/errors"]
+	path = vendor/github.com/pkg/errors
+	url = https://github.com/pkg/errors
+[submodule "vendor/github.com/rcrowley/go-metrics"]
+	path = vendor/github.com/rcrowley/go-metrics
+	url = https://github.com/rcrowley/go-metrics
+[submodule "vendor/github.com/robertkrimen/otto"]
+	path = vendor/github.com/robertkrimen/otto
+	url = https://github.com/robertkrimen/otto
+[submodule "vendor/github.com/spf13/cobra"]
+	path = vendor/github.com/spf13/cobra
+	url = https://github.com/spf13/cobra
+[submodule "vendor/github.com/spf13/viper"]
+	path = vendor/github.com/spf13/viper
+	url = https://github.com/spf13/viper
+[submodule "vendor/github.com/tj/go-elastic"]
+	path = vendor/github.com/tj/go-elastic
+	url = https://github.com/tj/go-elastic
+[submodule "vendor/gopkg.in/redis.v3"]
+	path = vendor/gopkg.in/redis.v3
+	url = https://gopkg.in/redis.v3
+[submodule "vendor/gopkg.in/yaml.v2"]
+	path = vendor/gopkg.in/yaml.v2
+	url = https://gopkg.in/yaml.v2
