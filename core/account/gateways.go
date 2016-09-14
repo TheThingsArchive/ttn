@@ -70,25 +70,43 @@ func (a *Account) RetractGatewayRights(gatewayID string, username string) error 
 	return a.del(fmt.Sprintf("/gateways/%s/collaborators/%s", gatewayID, username))
 }
 
-type editGatewayReq struct {
-	Owner        string        `json:"owner,omitempty"`
-	PublicRights []types.Right `json:"public_rights,omitempty"`
+type GatewayEdits struct {
+	Owner         string        `json:"owner,omitempty"`
+	PublicRights  []types.Right `json:"public_rights,omitempty"`
+	FrequencyPlan string        `json:"frequency_plan,omitempty"`
+	Location      *Location     `json:"location,omitempty"`
+}
+
+// EditGateway edits the fields of a gateway
+func (a *Account) EditGateway(gatewayID string, edits GatewayEdits) (gateway Gateway, err error) {
+	err = a.patch(fmt.Sprintf("/gateways/%s", gatewayID), edits, &gateway)
+	return gateway, err
 }
 
 // TransferOwnership transfers the owenership of the gateway to another user
-func (a *Account) TransferOwnership(gatewayID, username string) error {
-	req := &editGatewayReq{
+func (a *Account) TransferOwnership(gatewayID, username string) (Gateway, error) {
+	return a.EditGateway(gatewayID, GatewayEdits{
 		Owner: username,
-	}
-
-	return a.patch(fmt.Sprintf("/gateways/%s", gatewayID), req, nil)
+	})
 }
 
 // SetPublicRights changes the publicily visible rights of the gateway
-func (a *Account) SetPublicRights(gatewayID string, rights []types.Right) error {
-	req := &editGatewayReq{
+func (a *Account) SetPublicRights(gatewayID string, rights []types.Right) (Gateway, error) {
+	return a.EditGateway(gatewayID, GatewayEdits{
 		PublicRights: rights,
-	}
+	})
+}
 
-	return a.patch(fmt.Sprintf("/gateways/%s", gatewayID), req, nil)
+// ChangeFrequencyPlan changes the requency plan of a gateway
+func (a *Account) ChangeFrequencyPlan(gatewayID, plan string) (Gateway, error) {
+	return a.EditGateway(gatewayID, GatewayEdits{
+		FrequencyPlan: plan,
+	})
+}
+
+// ChangeLocation changes teh location of the gateway
+func (a *Account) ChangeLocation(gatewayID string, location Location) (Gateway, error) {
+	return a.EditGateway(gatewayID, GatewayEdits{
+		Location: &location,
+	})
 }
