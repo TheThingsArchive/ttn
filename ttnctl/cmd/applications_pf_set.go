@@ -61,9 +61,9 @@ The functions are read from the supplied file or from STDIN.`,
 		} else {
 			switch function {
 			case "decoder":
-				fmt.Println(`function (bytes) {
+				fmt.Println(`function Decoder(bytes) {
+  // Here you can decode the payload into json.
   // bytes is of type Buffer.
-
   // todo: return an object
   return {
     payload: bytes,
@@ -72,29 +72,29 @@ The functions are read from the supplied file or from STDIN.`,
 ########## Write your Decoder here and end with Ctrl+D (EOF):`)
 				app.Decoder = readFunction()
 			case "converter":
-				fmt.Println(`function (val) {
+				fmt.Println(`function Converter(val) {
+  // Here you can combine the json values into a more meaningful value.
   // val is the output of the decoder function.
-
   // todo: return an object
   return val;
 }
 ########## Write your Converter here and end with Ctrl+D (EOF):`)
 				app.Converter = readFunction()
 			case "validator":
-				fmt.Println(`function (val) {
+				fmt.Println(`function Validator(val) {
+  // This function defines which values will be propagated.
   // val is the output of the converter function.
-
   // todo: return a boolean
   return true;
 }
 ########## Write your Validator here and end with Ctrl+D (EOF):`)
 				app.Validator = readFunction()
 			case "encoder":
-				fmt.Println(`function (val) {
-  // val is the output of the encoder function.
-
-  // todo: return an array of numbers
-  return return [96, 4, 3, 2, 1, 0, 1, 0, 1, 0, 0, 0, 0];
+				fmt.Println(`function Encoder(obj) {
+  // The encoder encodes application data (a JS object)
+  // into a binary payload that is sent to devices.
+  // todo: return an array of numbers representing the payload
+  return [ 0x1 ];
 }
 ########## Write your Encoder here and end with Ctrl+D (EOF):`)
 				app.Encoder = readFunction()
