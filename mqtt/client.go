@@ -293,10 +293,9 @@ func flatten(prefix, sep string, in, out map[string]interface{}) {
 		if prefix == "" {
 			key = k
 		}
+		out[key] = v
 		if next, ok := v.(map[string]interface{}); ok {
 			flatten(key, sep, next, out)
-		} else {
-			out[key] = v
 		}
 	}
 }

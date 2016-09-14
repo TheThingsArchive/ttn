@@ -145,6 +145,8 @@ func TestPublishUplinkFields(t *testing.T) {
 		switch strings.TrimPrefix(msg.Topic(), "fields-app/devices/fields-dev/up/") {
 		case "battery":
 			a.So(string(msg.Payload()), ShouldEqual, "90")
+		case "sensors":
+			a.So(string(msg.Payload()), ShouldContainSubstring, `people":["`)
 		case "sensors/color":
 			a.So(string(msg.Payload()), ShouldEqual, `"blue"`)
 		case "sensors/people":
@@ -153,6 +155,8 @@ func TestPublishUplinkFields(t *testing.T) {
 			a.So(string(msg.Payload()), ShouldEqual, "true")
 		case "sensors/analog":
 			a.So(string(msg.Payload()), ShouldEqual, `[0,255,500,1000]`)
+		case "sensors/history":
+			a.So(string(msg.Payload()), ShouldContainSubstring, `today":"`)
 		case "sensors/history/today":
 			a.So(string(msg.Payload()), ShouldEqual, `"not yet"`)
 		case "sensors/history/yesterday":
