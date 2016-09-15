@@ -35,7 +35,7 @@ func gatewayFromContext(ctx context.Context) (gatewayID string, err error) {
 		return
 	}
 
-	return getGatewayFromMetadata(md)
+	return gatewayFromMetadata(md)
 }
 
 func gatewayFromMetadata(md metadata.MD) (gatewayID string, err error) {
@@ -47,7 +47,7 @@ func gatewayFromMetadata(md metadata.MD) (gatewayID string, err error) {
 	return id[0], nil
 }
 
-func getTokenFromMetadata(md metadata.MD) (string, error) {
+func tokenFromMetadata(md metadata.MD) (string, error) {
 	token, ok := md["token"]
 	if !ok || len(token) < 1 {
 		return "", errors.NewErrInvalidArgument("Metadata", "token missing")
@@ -64,12 +64,12 @@ func getTokenFromMetadata(md metadata.MD) (string, error) {
 func (r *routerRPC) GatewayStatus(stream pb.Router_GatewayStatusServer) error {
 	md, err := metadataFromContext(stream.Context())
 
-	id, err := getGatewayFromMetadata(md)
+	id, err := gatewayFromMetadata(md)
 	if err != nil {
 		return errors.BuildGRPCError(err)
 	}
 
-	token, err := getTokenFromMetadata(md)
+	token, err := tokenFromMetadata(md)
 	if err != nil {
 		return err
 	}
@@ -98,12 +98,12 @@ func (r *routerRPC) GatewayStatus(stream pb.Router_GatewayStatusServer) error {
 func (r *routerRPC) Uplink(stream pb.Router_UplinkServer) error {
 	md, err := metadataFromContext(stream.Context())
 
-	id, err := getGatewayFromMetadata(md)
+	id, err := gatewayFromMetadata(md)
 	if err != nil {
 		return err
 	}
 
-	token, err := getTokenFromMetadata(md)
+	token, err := tokenFromMetadata(md)
 	if err != nil {
 		return errors.BuildGRPCError(err)
 	}
@@ -132,7 +132,7 @@ func (r *routerRPC) Uplink(stream pb.Router_UplinkServer) error {
 func (r *routerRPC) Subscribe(req *pb.SubscribeRequest, stream pb.Router_SubscribeServer) error {
 	md, err := metadataFromContext(stream.Context())
 
-	id, err := getGatewayFromMetadata(md)
+	id, err := gatewayFromMetadata(md)
 	if err != nil {
 		return err
 	}
@@ -164,7 +164,7 @@ func (r *routerRPC) Subscribe(req *pb.SubscribeRequest, stream pb.Router_Subscri
 func (r *routerRPC) Activate(ctx context.Context, req *pb.DeviceActivationRequest) (*pb.DeviceActivationResponse, error) {
 	md, err := metadataFromContext(ctx)
 
-	id, err := getGatewayFromMetadata(md)
+	id, err := gatewayFromMetadata(md)
 	if err != nil {
 		return nil, err
 	}
