@@ -6,12 +6,12 @@ package util
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"fmt"
 	"io"
 	"net/http"
 
 	"github.com/TheThingsNetwork/ttn/core/account/auth"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 )
 
 var (

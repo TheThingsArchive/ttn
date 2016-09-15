@@ -5,8 +5,8 @@ package types
 
 import (
 	"encoding/hex"
-	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"fmt"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"regexp"
 	"strconv"
 	"strings"
