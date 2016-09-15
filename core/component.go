@@ -333,7 +333,7 @@ func (c *Component) ServerOptions() []grpc.ServerOption {
 		logCtx = logCtx.WithField("Duration", time.Now().Sub(t))
 		if err != nil {
 			err := errors.FromGRPCError(err)
-			logCtx.WithField("error", err.Error()).WithField("err-type", fmt.Sprintf("%T", err)).WithField("err-err-type", fmt.Sprintf("%T", err.Error())).Warn("Could not handle Request")
+			logCtx.WithField("error", err.Error()).Warn("Could not handle Request")
 		} else {
 			logCtx.Info("Handled request")
 		}
