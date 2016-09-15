@@ -8,9 +8,8 @@ import (
 	"github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
-	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/golang/protobuf/ptypes/empty"
-	"github.com/pkg/errors"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -25,7 +24,7 @@ type brokerManager struct {
 func (b *brokerManager) GetDevice(ctx context.Context, in *lorawan.DeviceIdentifier) (*lorawan.Device, error) {
 	res, err := b.deviceManager.GetDevice(ctx, in)
 	if err != nil {
-		return nil, core.BuildGRPCError(errors.Wrap(core.FromGRPCError(err), "NetworkServer did not return device"))
+		return nil, errors.BuildGRPCError(errors.Wrap(errors.FromGRPCError(err), "NetworkServer did not return device"))
 	}
 	return res, nil
 }
@@ -33,7 +32,7 @@ func (b *brokerManager) GetDevice(ctx context.Context, in *lorawan.DeviceIdentif
 func (b *brokerManager) SetDevice(ctx context.Context, in *lorawan.Device) (*empty.Empty, error) {
 	res, err := b.deviceManager.SetDevice(ctx, in)
 	if err != nil {
-		return nil, core.BuildGRPCError(errors.Wrap(core.FromGRPCError(err), "NetworkServer did not set device"))
+		return nil, errors.BuildGRPCError(errors.Wrap(errors.FromGRPCError(err), "NetworkServer did not set device"))
 	}
 	return res, nil
 }
@@ -41,7 +40,7 @@ func (b *brokerManager) SetDevice(ctx context.Context, in *lorawan.Device) (*emp
 func (b *brokerManager) DeleteDevice(ctx context.Context, in *lorawan.DeviceIdentifier) (*empty.Empty, error) {
 	res, err := b.deviceManager.DeleteDevice(ctx, in)
 	if err != nil {
-		return nil, core.BuildGRPCError(errors.Wrap(core.FromGRPCError(err), "NetworkServer did not delete device"))
+		return nil, errors.BuildGRPCError(errors.Wrap(errors.FromGRPCError(err), "NetworkServer did not delete device"))
 	}
 	return res, nil
 }
@@ -49,7 +48,7 @@ func (b *brokerManager) DeleteDevice(ctx context.Context, in *lorawan.DeviceIden
 func (b *brokerManager) RegisterApplicationHandler(ctx context.Context, in *pb.ApplicationHandlerRegistration) (*empty.Empty, error) {
 	claims, err := b.broker.Component.ValidateTTNAuthContext(ctx)
 	if err != nil {
-		return nil, core.BuildGRPCError(core.FromGRPCError(err))
+		return nil, errors.BuildGRPCError(errors.FromGRPCError(err))
 	}
 	if !in.Validate() {
 		return nil, grpcErrf(codes.InvalidArgument, "Invalid Application Handler Registration")
@@ -69,7 +68,7 @@ func (b *brokerManager) RegisterApplicationHandler(ctx context.Context, in *pb.A
 func (b *brokerManager) GetPrefixes(ctx context.Context, in *lorawan.PrefixesRequest) (*lorawan.PrefixesResponse, error) {
 	res, err := b.devAddrManager.GetPrefixes(ctx, in)
 	if err != nil {
-		return nil, core.BuildGRPCError(errors.Wrap(core.FromGRPCError(err), "NetworkServer did not return prefixes"))
+		return nil, errors.BuildGRPCError(errors.Wrap(errors.FromGRPCError(err), "NetworkServer did not return prefixes"))
 	}
 	return res, nil
 }
@@ -77,7 +76,7 @@ func (b *brokerManager) GetPrefixes(ctx context.Context, in *lorawan.PrefixesReq
 func (b *brokerManager) GetDevAddr(ctx context.Context, in *lorawan.DevAddrRequest) (*lorawan.DevAddrResponse, error) {
 	res, err := b.devAddrManager.GetDevAddr(ctx, in)
 	if err != nil {
-		return nil, core.BuildGRPCError(errors.Wrap(core.FromGRPCError(err), "NetworkServer did not return DevAddr"))
+		return nil, errors.BuildGRPCError(errors.Wrap(errors.FromGRPCError(err), "NetworkServer did not return DevAddr"))
 	}
 	return res, nil
 }

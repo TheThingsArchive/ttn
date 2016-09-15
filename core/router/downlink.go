@@ -13,9 +13,9 @@ import (
 	pb_protocol "github.com/TheThingsNetwork/ttn/api/protocol"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	pb "github.com/TheThingsNetwork/ttn/api/router"
-	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/router/gateway"
 	"github.com/TheThingsNetwork/ttn/core/types"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/toa"
 	"github.com/apex/log"
 	lora "github.com/brocaar/lorawan/band"
@@ -41,7 +41,7 @@ func (r *router) SubscribeDownlink(gatewayEUI types.GatewayEUI) (<-chan *pb.Down
 		}()
 		return toGateway, nil
 	}
-	return nil, core.NewErrInternal(fmt.Sprintf("Gateway %s not available for downlink", gatewayEUI))
+	return nil, errors.NewErrInternal(fmt.Sprintf("Gateway %s not available for downlink", gatewayEUI))
 }
 
 func (r *router) UnsubscribeDownlink(gatewayEUI types.GatewayEUI) error {
@@ -105,15 +105,15 @@ func getBand(region string) (band *lora.Band, err error) {
 	case "US_902_928":
 		b, err = lora.GetConfig(lora.US_902_928)
 	case "CN_779_787":
-		err = core.NewErrInternal("China 779-787 MHz band not supported")
+		err = errors.NewErrInternal("China 779-787 MHz band not supported")
 	case "EU_433":
-		err = core.NewErrInternal("Europe 433 MHz band not supported")
+		err = errors.NewErrInternal("Europe 433 MHz band not supported")
 	case "AU_915_928":
 		b, err = lora.GetConfig(lora.AU_915_928)
 	case "CN_470_510":
-		err = core.NewErrInternal("China 470-510 MHz band not supported")
+		err = errors.NewErrInternal("China 470-510 MHz band not supported")
 	default:
-		err = core.NewErrInvalidArgument("Frequency Band", "unknown")
+		err = errors.NewErrInvalidArgument("Frequency Band", "unknown")
 	}
 	if err != nil {
 		return

@@ -14,6 +14,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/handler/application"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
 	"github.com/TheThingsNetwork/ttn/mqtt"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"google.golang.org/grpc"
 	"gopkg.in/redis.v3"
 )
@@ -113,14 +114,14 @@ func (h *handler) associateBroker() error {
 		for {
 			upStream, err := h.ttnBroker.Subscribe(h.GetContext(""), &pb_broker.SubscribeRequest{})
 			if err != nil {
-				h.Ctx.WithError(core.FromGRPCError(err)).Error("Could not start Broker subscribe stream")
+				h.Ctx.WithError(errors.FromGRPCError(err)).Error("Could not start Broker subscribe stream")
 				<-time.After(api.Backoff)
 				continue
 			}
 			for {
 				in, err := upStream.Recv()
 				if err != nil {
-					h.Ctx.WithError(core.FromGRPCError(err)).Error("Error in Broker subscribe stream")
+					h.Ctx.WithError(errors.FromGRPCError(err)).Error("Error in Broker subscribe stream")
 					break
 				}
 				go h.HandleUplink(in)
@@ -132,14 +133,14 @@ func (h *handler) associateBroker() error {
 		for {
 			downStream, err := h.ttnBroker.Publish(h.GetContext(""))
 			if err != nil {
-				h.Ctx.WithError(core.FromGRPCError(err)).Error("Could not start Broker publish stream")
+				h.Ctx.WithError(errors.FromGRPCError(err)).Error("Could not start Broker publish stream")
 				<-time.After(api.Backoff)
 				continue
 			}
 			for downlink := range h.downlink {
 				err := downStream.Send(downlink)
 				if err != nil {
-					h.Ctx.WithError(core.FromGRPCError(err)).Error("Error in Broker publish stream")
+					h.Ctx.WithError(errors.FromGRPCError(err)).Error("Error in Broker publish stream")
 					break
 				}
 			}

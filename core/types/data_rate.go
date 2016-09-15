@@ -4,7 +4,7 @@
 package types
 
 import (
-	"errors"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"fmt"
 	"regexp"
 	"strconv"

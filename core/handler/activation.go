@@ -9,11 +9,11 @@ import (
 
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb "github.com/TheThingsNetwork/ttn/api/handler"
-	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
 	"github.com/TheThingsNetwork/ttn/core/otaa"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/mqtt"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/random"
 	"github.com/apex/log"
 	"github.com/brocaar/lorawan"
@@ -42,7 +42,7 @@ func (h *handler) HandleActivationChallenge(challenge *pb_broker.ActivationChall
 	}
 
 	if dev.AppKey.IsEmpty() {
-		err = core.NewErrNotFound(fmt.Sprintf("AppKey for device %s", challenge.DevId))
+		err = errors.NewErrNotFound(fmt.Sprintf("AppKey for device %s", challenge.DevId))
 		return nil, err
 	}
 
@@ -54,7 +54,7 @@ func (h *handler) HandleActivationChallenge(challenge *pb_broker.ActivationChall
 
 	// Set MIC
 	if err := reqPHY.SetMIC(lorawan.AES128Key(dev.AppKey)); err != nil {
-		err = core.NewErrNotFound("Could not set MIC")
+		err = errors.NewErrNotFound("Could not set MIC")
 		return nil, err
 	}
 
@@ -95,7 +95,7 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 	}()
 
 	if activation.ResponseTemplate == nil {
-		err = core.NewErrInternal("No downlink available")
+		err = errors.NewErrInternal("No downlink available")
 		return nil, err
 	}
 
@@ -107,13 +107,13 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 	}
 
 	if dev.AppKey.IsEmpty() {
-		err = core.NewErrNotFound(fmt.Sprintf("AppKey for device %s", activation.DevId))
+		err = errors.NewErrNotFound(fmt.Sprintf("AppKey for device %s", activation.DevId))
 		return nil, err
 	}
 
 	// Check for LoRaWAN
 	if lorawan := activation.ActivationMetadata.GetLorawan(); lorawan == nil {
-		err = core.NewErrInvalidArgument("Activation", "does not contain LoRaWAN metadata")
+		err = errors.NewErrInvalidArgument("Activation", "does not contain LoRaWAN metadata")
 		return nil, err
 	}
 
@@ -124,13 +124,13 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 	}
 	reqMAC, ok := reqPHY.MACPayload.(*lorawan.JoinRequestPayload)
 	if !ok {
-		err = core.NewErrInvalidArgument("Activation", "does not contain a JoinRequestPayload")
+		err = errors.NewErrInvalidArgument("Activation", "does not contain a JoinRequestPayload")
 		return nil, err
 	}
 
 	// Validate MIC
 	if ok, err = reqPHY.ValidateMIC(lorawan.AES128Key(dev.AppKey)); err != nil || !ok {
-		err = core.NewErrNotFound("MIC does not match device")
+		err = errors.NewErrNotFound("MIC does not match device")
 		return nil, err
 	}
 
@@ -143,7 +143,7 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 		}
 	}
 	if alreadyUsed {
-		err = core.NewErrInvalidArgument("Activation DevNonce", "already used")
+		err = errors.NewErrInvalidArgument("Activation DevNonce", "already used")
 		return nil, err
 	}
 
@@ -156,7 +156,7 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 	}
 	resMAC, ok := resPHY.MACPayload.(*lorawan.DataPayload)
 	if !ok {
-		err = core.NewErrInvalidArgument("Activation ResponseTemplate", "MACPayload must be a *DataPayload")
+		err = errors.NewErrInvalidArgument("Activation ResponseTemplate", "MACPayload must be a *DataPayload")
 		return nil, err
 	}
 	joinAccept := &lorawan.JoinAcceptPayload{}

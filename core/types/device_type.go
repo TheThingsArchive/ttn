@@ -3,7 +3,7 @@
 
 package types
 
-import "errors"
+import "github.com/TheThingsNetwork/ttn/utils/errors"
 
 // DeviceType is the type of a LoRaWAN device.
 type DeviceType byte

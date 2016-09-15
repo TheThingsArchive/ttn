@@ -4,7 +4,7 @@
 package handler
 
 import (
-	"errors"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/mqtt"

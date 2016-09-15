@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/api/router"
-	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -39,7 +39,7 @@ var gatewayStatusCmd = &cobra.Command{
 			GatewayEui: &eui,
 		})
 		if err != nil {
-			ctx.WithError(core.FromGRPCError(err)).Fatal("Could not get status of gateway.")
+			ctx.WithError(errors.FromGRPCError(err)).Fatal("Could not get status of gateway.")
 		}
 
 		ctx.Infof("Received status")

@@ -6,7 +6,7 @@ package util
 import (
 	"github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/api/router"
-	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/apex/log"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
@@ -22,7 +22,7 @@ func GetRouter(ctx log.Interface) (*grpc.ClientConn, router.RouterClient) {
 		Id:          viper.GetString("ttn-router"),
 	})
 	if err != nil {
-		ctx.WithError(core.FromGRPCError(err)).Fatal("Could not get Router from Discovery")
+		ctx.WithError(errors.FromGRPCError(err)).Fatal("Could not get Router from Discovery")
 	}
 	ctx.Info("Connecting with Router...")
 	rtrConn, err := routerAnnouncement.Dial()
@@ -43,7 +43,7 @@ func GetRouterManager(ctx log.Interface) (*grpc.ClientConn, router.RouterManager
 		Id:          viper.GetString("ttn-router"),
 	})
 	if err != nil {
-		ctx.WithError(core.FromGRPCError(err)).Fatal("Could not get Router from Discovery")
+		ctx.WithError(errors.FromGRPCError(err)).Fatal("Could not get Router from Discovery")
 	}
 	ctx.Info("Connecting with Router...")
 	rtrConn, err := routerAnnouncement.Dial()

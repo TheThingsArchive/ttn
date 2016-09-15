@@ -7,9 +7,8 @@ import (
 	"sync"
 
 	"github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
-	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/types"
-	"github.com/pkg/errors"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -72,7 +71,7 @@ func (h *ManagerClient) getContext() context.Context {
 func (h *ManagerClient) GetApplication(appID string) (*Application, error) {
 	res, err := h.applicationManagerClient.GetApplication(h.getContext(), &ApplicationIdentifier{AppId: appID})
 	if err != nil {
-		return nil, errors.Wrap(core.FromGRPCError(err), "Could not get application from Handler")
+		return nil, errors.Wrap(errors.FromGRPCError(err), "Could not get application from Handler")
 	}
 	return res, nil
 }
@@ -80,26 +79,26 @@ func (h *ManagerClient) GetApplication(appID string) (*Application, error) {
 // SetApplication sets an application on the Handler
 func (h *ManagerClient) SetApplication(in *Application) error {
 	_, err := h.applicationManagerClient.SetApplication(h.getContext(), in)
-	return errors.Wrap(core.FromGRPCError(err), "Could not set application on Handler")
+	return errors.Wrap(errors.FromGRPCError(err), "Could not set application on Handler")
 }
 
 // RegisterApplication registers an application on the Handler
 func (h *ManagerClient) RegisterApplication(appID string) error {
 	_, err := h.applicationManagerClient.RegisterApplication(h.getContext(), &ApplicationIdentifier{AppId: appID})
-	return errors.Wrap(core.FromGRPCError(err), "Could not register application on Handler")
+	return errors.Wrap(errors.FromGRPCError(err), "Could not register application on Handler")
 }
 
 // DeleteApplication deletes an application and all its devices from the Handler
 func (h *ManagerClient) DeleteApplication(appID string) error {
 	_, err := h.applicationManagerClient.DeleteApplication(h.getContext(), &ApplicationIdentifier{AppId: appID})
-	return errors.Wrap(core.FromGRPCError(err), "Could not delete application from Handler")
+	return errors.Wrap(errors.FromGRPCError(err), "Could not delete application from Handler")
 }
 
 // GetDevice retrieves a device from the Handler
 func (h *ManagerClient) GetDevice(appID string, devID string) (*Device, error) {
 	res, err := h.applicationManagerClient.GetDevice(h.getContext(), &DeviceIdentifier{AppId: appID, DevId: devID})
 	if err != nil {
-		return nil, errors.Wrap(core.FromGRPCError(err), "Could not get device from Handler")
+		return nil, errors.Wrap(errors.FromGRPCError(err), "Could not get device from Handler")
 	}
 	return res, nil
 }
@@ -107,20 +106,20 @@ func (h *ManagerClient) GetDevice(appID string, devID string) (*Device, error) {
 // SetDevice sets a device on the Handler
 func (h *ManagerClient) SetDevice(in *Device) error {
 	_, err := h.applicationManagerClient.SetDevice(h.getContext(), in)
-	return errors.Wrap(core.FromGRPCError(err), "Could not set device on Handler")
+	return errors.Wrap(errors.FromGRPCError(err), "Could not set device on Handler")
 }
 
 // DeleteDevice deletes a device from the Handler
 func (h *ManagerClient) DeleteDevice(appID string, devID string) error {
 	_, err := h.applicationManagerClient.DeleteDevice(h.getContext(), &DeviceIdentifier{AppId: appID, DevId: devID})
-	return errors.Wrap(core.FromGRPCError(err), "Could not delete device from Handler")
+	return errors.Wrap(errors.FromGRPCError(err), "Could not delete device from Handler")
 }
 
 // GetDevicesForApplication retrieves all devices for an application from the Handler
 func (h *ManagerClient) GetDevicesForApplication(appID string) (devices []*Device, err error) {
 	res, err := h.applicationManagerClient.GetDevicesForApplication(h.getContext(), &ApplicationIdentifier{AppId: appID})
 	if err != nil {
-		return nil, errors.Wrap(core.FromGRPCError(err), "Could not get devices for application from Handler")
+		return nil, errors.Wrap(errors.FromGRPCError(err), "Could not get devices for application from Handler")
 	}
 	for _, dev := range res.Devices {
 		devices = append(devices, dev)
@@ -135,7 +134,7 @@ func (h *ManagerClient) GetDevAddr(constraints ...string) (types.DevAddr, error)
 		Usage: constraints,
 	})
 	if err != nil {
-		return types.DevAddr{}, errors.Wrap(core.FromGRPCError(err), "Could not get DevAddr from Handler")
+		return types.DevAddr{}, errors.Wrap(errors.FromGRPCError(err), "Could not get DevAddr from Handler")
 	}
 	return *resp.DevAddr, nil
 }
@@ -148,7 +147,7 @@ func (h *ManagerClient) DryUplink(payload []byte, app *Application) (*DryUplinkR
 		Payload: payload,
 	})
 	if err != nil {
-		return nil, errors.Wrap(core.FromGRPCError(err), "Could not dry-run uplink on Handler")
+		return nil, errors.Wrap(errors.FromGRPCError(err), "Could not dry-run uplink on Handler")
 	}
 	return res, nil
 }
@@ -161,7 +160,7 @@ func (h *ManagerClient) DryDownlinkWithPayload(payload []byte, app *Application)
 		Payload: payload,
 	})
 	if err != nil {
-		return nil, errors.Wrap(core.FromGRPCError(err), "Could not dry-run downlink with payload on Handler")
+		return nil, errors.Wrap(errors.FromGRPCError(err), "Could not dry-run downlink with payload on Handler")
 	}
 	return res, nil
 }
@@ -179,7 +178,7 @@ func (h *ManagerClient) DryDownlinkWithFields(fields map[string]interface{}, app
 		Fields: string(marshalled),
 	})
 	if err != nil {
-		return nil, errors.Wrap(core.FromGRPCError(err), "Could not dry-run downlink with fields on Handler")
+		return nil, errors.Wrap(errors.FromGRPCError(err), "Could not dry-run downlink with fields on Handler")
 	}
 	return res, nil
 }

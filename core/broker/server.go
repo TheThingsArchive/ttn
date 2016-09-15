@@ -8,7 +8,7 @@ import (
 
 	pb "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
-	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/golang/protobuf/ptypes/empty"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -24,11 +24,11 @@ var grpcErrf = grpc.Errorf // To make go vet stop complaining
 func (b *brokerRPC) Associate(stream pb.Broker_AssociateServer) error {
 	router, err := b.broker.ValidateNetworkContext(stream.Context())
 	if err != nil {
-		return core.BuildGRPCError(err)
+		return errors.BuildGRPCError(err)
 	}
 	downlinkChannel, err := b.broker.ActivateRouter(router.Id)
 	if err != nil {
-		return core.BuildGRPCError(err)
+		return errors.BuildGRPCError(err)
 	}
 	defer b.broker.DeactivateRouter(router.Id)
 	go func() {
@@ -67,11 +67,11 @@ func (b *brokerRPC) Associate(stream pb.Broker_AssociateServer) error {
 func (b *brokerRPC) Subscribe(req *pb.SubscribeRequest, stream pb.Broker_SubscribeServer) error {
 	handler, err := b.broker.ValidateNetworkContext(stream.Context())
 	if err != nil {
-		return core.BuildGRPCError(err)
+		return errors.BuildGRPCError(err)
 	}
 	uplinkChannel, err := b.broker.ActivateHandler(handler.Id)
 	if err != nil {
-		return core.BuildGRPCError(err)
+		return errors.BuildGRPCError(err)
 	}
 	defer b.broker.DeactivateHandler(handler.Id)
 	for {
@@ -94,7 +94,7 @@ func (b *brokerRPC) Subscribe(req *pb.SubscribeRequest, stream pb.Broker_Subscri
 func (b *brokerRPC) Publish(stream pb.Broker_PublishServer) error {
 	handler, err := b.broker.ValidateNetworkContext(stream.Context())
 	if err != nil {
-		return core.BuildGRPCError(err)
+		return errors.BuildGRPCError(err)
 	}
 	for {
 		downlink, err := stream.Recv()
@@ -131,14 +131,14 @@ func (b *brokerRPC) Publish(stream pb.Broker_PublishServer) error {
 func (b *brokerRPC) Activate(ctx context.Context, req *pb.DeviceActivationRequest) (res *pb.DeviceActivationResponse, err error) {
 	_, err = b.broker.ValidateNetworkContext(ctx)
 	if err != nil {
-		return nil, core.BuildGRPCError(err)
+		return nil, errors.BuildGRPCError(err)
 	}
 	if !req.Validate() {
 		return nil, grpcErrf(codes.InvalidArgument, "Invalid Activation Request")
 	}
 	res, err = b.broker.HandleActivation(req)
 	if err != nil {
-		return nil, core.BuildGRPCError(err)
+		return nil, errors.BuildGRPCError(err)
 	}
 	return
 }

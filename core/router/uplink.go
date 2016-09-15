@@ -9,8 +9,8 @@ import (
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	pb "github.com/TheThingsNetwork/ttn/api/router"
-	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/types"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/apex/log"
 	"github.com/brocaar/lorawan"
 )
@@ -37,7 +37,7 @@ func (r *router) HandleUplink(gatewayEUI types.GatewayEUI, uplink *pb.UplinkMess
 	if phyPayload.MHDR.MType == lorawan.JoinRequest {
 		joinRequestPayload, ok := phyPayload.MACPayload.(*lorawan.JoinRequestPayload)
 		if !ok {
-			return core.NewErrInvalidArgument("Join Request", "does not contain a JoinRequest payload")
+			return errors.NewErrInvalidArgument("Join Request", "does not contain a JoinRequest payload")
 		}
 		devEUI := types.DevEUI(joinRequestPayload.DevEUI)
 		appEUI := types.AppEUI(joinRequestPayload.AppEUI)
@@ -74,7 +74,7 @@ func (r *router) HandleUplink(gatewayEUI types.GatewayEUI, uplink *pb.UplinkMess
 
 	macPayload, ok := phyPayload.MACPayload.(*lorawan.MACPayload)
 	if !ok {
-		return core.NewErrInvalidArgument("Uplink", "does not contain a MAC payload")
+		return errors.NewErrInvalidArgument("Uplink", "does not contain a MAC payload")
 	}
 	devAddr := types.DevAddr(macPayload.FHDR.DevAddr)
 

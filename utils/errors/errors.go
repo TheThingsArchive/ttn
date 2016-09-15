@@ -1,4 +1,4 @@
-package core
+package errors
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"github.com/pkg/errors"
+	errs "github.com/pkg/errors"
 )
 
 type ErrType string
@@ -25,7 +25,7 @@ const (
 
 // GetErrType returns the type of err
 func GetErrType(err error) ErrType {
-	switch errors.Cause(err).(type) {
+	switch errs.Cause(err).(type) {
 	case *ErrAlreadyExists:
 		return AlreadyExists
 	case *ErrInternal:
@@ -45,7 +45,7 @@ var grpcErrf = grpc.Errorf
 // BuildGRPCError returns the error with a GRPC code
 func BuildGRPCError(err error) error {
 	code := codes.Unknown
-	switch errors.Cause(err).(type) {
+	switch errs.Cause(err).(type) {
 	case *ErrAlreadyExists:
 		code = codes.AlreadyExists
 	case *ErrInternal:
@@ -82,7 +82,7 @@ func FromGRPCError(err error) error {
 	case codes.PermissionDenied:
 		return NewErrPermissionDenied(strings.TrimPrefix(desc, "permission denied: "))
 	case codes.Unknown: // This also includes all non-gRPC errors
-		return errors.New(err.Error())
+		return errs.New(err.Error())
 	}
 	return NewErrInternal(fmt.Sprintf("[%s] %s", code, desc))
 }
@@ -161,4 +161,22 @@ type ErrPermissionDenied struct {
 // Error implements the error interface
 func (err ErrPermissionDenied) Error() string {
 	return fmt.Sprintf("permission denied: %s", err.reason)
+}
+
+// Wrapf returns an error annotating err with the format specifier.
+// If err is nil, Wrapf returns nil.
+func Wrapf(err error, format string, args ...interface{}) error {
+	return errs.Wrapf(err, format, args...)
+}
+
+// Wrap returns an error annotating err with message.
+// If err is nil, Wrap returns nil.
+func Wrap(err error, message string) error {
+	return errs.Wrap(err, message)
+}
+
+// New returns an error with the supplied message.
+// New also records the stack trace at the point it was called.
+func New(message string) error {
+	return errs.New(message)
 }

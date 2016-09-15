@@ -11,6 +11,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/discovery/announcement"
 	"github.com/TheThingsNetwork/ttn/core/discovery/kv"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"gopkg.in/redis.v3"
 )
 
@@ -43,7 +44,7 @@ func (d *discovery) Init(c *core.Component) error {
 
 func (d *discovery) Announce(in *pb.Announcement) error {
 	existing, err := d.services.Get(in.ServiceName, in.Id)
-	if core.GetErrType(err) == core.NotFound {
+	if errors.GetErrType(err) == errors.NotFound {
 		// Not found; create new
 		existing = &pb.Announcement{}
 	} else if err != nil {

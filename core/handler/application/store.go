@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"gopkg.in/redis.v3"
 )
 
@@ -48,7 +48,7 @@ func (s *applicationStore) Get(appID string) (*Application, error) {
 	if app, ok := s.applications[appID]; ok {
 		return app, nil
 	}
-	return nil, core.NewErrNotFound(fmt.Sprintf("%s", appID))
+	return nil, errors.NewErrNotFound(fmt.Sprintf("%s", appID))
 }
 
 func (s *applicationStore) Set(new *Application, fields ...string) error {
@@ -100,11 +100,11 @@ func (s *redisApplicationStore) Get(appID string) (*Application, error) {
 	res, err := s.client.HGetAllMap(fmt.Sprintf("%s:%s", redisApplicationPrefix, appID)).Result()
 	if err != nil {
 		if err == redis.Nil {
-			return nil, core.NewErrNotFound(fmt.Sprintf("%s", appID))
+			return nil, errors.NewErrNotFound(fmt.Sprintf("%s", appID))
 		}
 		return nil, err
 	} else if len(res) == 0 {
-		return nil, core.NewErrNotFound(fmt.Sprintf("%s", appID))
+		return nil, errors.NewErrNotFound(fmt.Sprintf("%s", appID))
 	}
 	application := &Application{}
 	err = application.FromStringStringMap(res)

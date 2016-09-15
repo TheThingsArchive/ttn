@@ -9,8 +9,8 @@ import (
 
 	pb "github.com/TheThingsNetwork/ttn/api/networkserver"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
-	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/networkserver/device"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/golang/protobuf/ptypes/empty"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -23,7 +23,7 @@ type networkServerManager struct {
 
 func (n *networkServerManager) getDevice(ctx context.Context, in *pb_lorawan.DeviceIdentifier) (*device.Device, error) {
 	if !in.Validate() {
-		return nil, core.NewErrInvalidArgument("Device Identifier", "validation failed")
+		return nil, errors.NewErrInvalidArgument("Device Identifier", "validation failed")
 	}
 	claims, err := n.networkServer.Component.ValidateTTNAuthContext(ctx)
 	if err != nil {
@@ -34,7 +34,7 @@ func (n *networkServerManager) getDevice(ctx context.Context, in *pb_lorawan.Dev
 		return nil, err
 	}
 	if !claims.CanEditApp(dev.AppID) {
-		return nil, core.NewErrPermissionDenied(fmt.Sprintf("No access to Application %s", dev.AppID))
+		return nil, errors.NewErrPermissionDenied(fmt.Sprintf("No access to Application %s", dev.AppID))
 	}
 	return dev, nil
 }
@@ -42,7 +42,7 @@ func (n *networkServerManager) getDevice(ctx context.Context, in *pb_lorawan.Dev
 func (n *networkServerManager) GetDevice(ctx context.Context, in *pb_lorawan.DeviceIdentifier) (*pb_lorawan.Device, error) {
 	dev, err := n.getDevice(ctx, in)
 	if err != nil {
-		return nil, core.BuildGRPCError(err)
+		return nil, errors.BuildGRPCError(err)
 	}
 
 	lastSeen := time.Unix(0, 0)
@@ -67,8 +67,8 @@ func (n *networkServerManager) GetDevice(ctx context.Context, in *pb_lorawan.Dev
 
 func (n *networkServerManager) SetDevice(ctx context.Context, in *pb_lorawan.Device) (*empty.Empty, error) {
 	_, err := n.getDevice(ctx, &pb_lorawan.DeviceIdentifier{AppEui: in.AppEui, DevEui: in.DevEui})
-	if err != nil && core.GetErrType(err) != core.NotFound {
-		return nil, core.BuildGRPCError(err)
+	if err != nil && errors.GetErrType(err) != errors.NotFound {
+		return nil, errors.BuildGRPCError(err)
 	}
 
 	if !in.Validate() {
@@ -96,7 +96,7 @@ func (n *networkServerManager) SetDevice(ctx context.Context, in *pb_lorawan.Dev
 
 	err = n.networkServer.devices.Set(updated)
 	if err != nil {
-		return nil, core.BuildGRPCError(err)
+		return nil, errors.BuildGRPCError(err)
 	}
 
 	return &empty.Empty{}, nil
@@ -105,11 +105,11 @@ func (n *networkServerManager) SetDevice(ctx context.Context, in *pb_lorawan.Dev
 func (n *networkServerManager) DeleteDevice(ctx context.Context, in *pb_lorawan.DeviceIdentifier) (*empty.Empty, error) {
 	_, err := n.getDevice(ctx, in)
 	if err != nil {
-		return nil, core.BuildGRPCError(err)
+		return nil, errors.BuildGRPCError(err)
 	}
 	err = n.networkServer.devices.Delete(*in.AppEui, *in.DevEui)
 	if err != nil {
-		return nil, core.BuildGRPCError(err)
+		return nil, errors.BuildGRPCError(err)
 	}
 	return &empty.Empty{}, nil
 }
@@ -130,7 +130,7 @@ func (n *networkServerManager) GetPrefixes(ctx context.Context, in *pb_lorawan.P
 func (n *networkServerManager) GetDevAddr(ctx context.Context, in *pb_lorawan.DevAddrRequest) (*pb_lorawan.DevAddrResponse, error) {
 	devAddr, err := n.networkServer.getDevAddr(in.Usage...)
 	if err != nil {
-		return nil, core.BuildGRPCError(err)
+		return nil, errors.BuildGRPCError(err)
 	}
 	return &pb_lorawan.DevAddrResponse{
 		DevAddr: &devAddr,

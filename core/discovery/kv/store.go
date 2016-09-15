@@ -6,7 +6,8 @@ package kv
 import (
 	"fmt"
 
-	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
+
 	"gopkg.in/redis.v3"
 )
 
@@ -43,7 +44,7 @@ func (s *kvStore) Get(key string) (string, error) {
 	if value, ok := s.data[key]; ok {
 		return value, nil
 	}
-	return "", core.NewErrNotFound(fmt.Sprintf("Discovery: %s", key))
+	return "", errors.NewErrNotFound(fmt.Sprintf("Discovery: %s", key))
 }
 
 func (s *kvStore) Set(key, value string) error {
@@ -111,11 +112,11 @@ func (s *redisKVStore) Get(key string) (string, error) {
 	res, err := s.client.Get(fmt.Sprintf("%s:%s", s.prefix, key)).Result()
 	if err != nil {
 		if err == redis.Nil {
-			return "", core.NewErrNotFound(fmt.Sprintf("Discovery: %s", key))
+			return "", errors.NewErrNotFound(fmt.Sprintf("Discovery: %s", key))
 		}
 		return "", err
 	} else if res == "" {
-		return "", core.NewErrNotFound(fmt.Sprintf("Discovery: %s", key))
+		return "", errors.NewErrNotFound(fmt.Sprintf("Discovery: %s", key))
 	}
 	return res, nil
 }

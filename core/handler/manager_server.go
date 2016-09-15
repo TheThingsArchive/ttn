@@ -10,11 +10,10 @@ import (
 	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	pb "github.com/TheThingsNetwork/ttn/api/handler"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
-	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/handler/application"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/golang/protobuf/ptypes/empty"
-	"github.com/pkg/errors"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -29,21 +28,21 @@ type handlerManager struct {
 
 func (h *handlerManager) getDevice(ctx context.Context, in *pb.DeviceIdentifier) (*device.Device, error) {
 	if !in.Validate() {
-		return nil, core.NewErrInvalidArgument("Device Identifier", "validation failed")
+		return nil, errors.NewErrInvalidArgument("Device Identifier", "validation failed")
 	}
 	claims, err := h.handler.Component.ValidateTTNAuthContext(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if !claims.CanEditApp(in.AppId) {
-		return nil, core.NewErrPermissionDenied(fmt.Sprintf("No access to Application %s", in.AppId))
+		return nil, errors.NewErrPermissionDenied(fmt.Sprintf("No access to Application %s", in.AppId))
 	}
 	dev, err := h.handler.devices.Get(in.AppId, in.DevId)
 	if err != nil {
 		return nil, err
 	}
 	if !claims.CanEditApp(dev.AppID) {
-		return nil, core.NewErrPermissionDenied(fmt.Sprintf("No access to Application %s", in.AppId))
+		return nil, errors.NewErrPermissionDenied(fmt.Sprintf("No access to Application %s", in.AppId))
 	}
 	return dev, nil
 }
@@ -51,7 +50,7 @@ func (h *handlerManager) getDevice(ctx context.Context, in *pb.DeviceIdentifier)
 func (h *handlerManager) GetDevice(ctx context.Context, in *pb.DeviceIdentifier) (*pb.Device, error) {
 	dev, err := h.getDevice(ctx, in)
 	if err != nil {
-		return nil, core.BuildGRPCError(err)
+		return nil, errors.BuildGRPCError(err)
 	}
 
 	nsDev, err := h.deviceManager.GetDevice(ctx, &pb_lorawan.DeviceIdentifier{
@@ -59,7 +58,7 @@ func (h *handlerManager) GetDevice(ctx context.Context, in *pb.DeviceIdentifier)
 		DevEui: &dev.DevEUI,
 	})
 	if err != nil {
-		return nil, core.BuildGRPCError(errors.Wrap(core.FromGRPCError(err), "Broker did not return device"))
+		return nil, errors.BuildGRPCError(errors.Wrap(errors.FromGRPCError(err), "Broker did not return device"))
 	}
 
 	return &pb.Device{
@@ -85,8 +84,8 @@ func (h *handlerManager) GetDevice(ctx context.Context, in *pb.DeviceIdentifier)
 
 func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*empty.Empty, error) {
 	dev, err := h.getDevice(ctx, &pb.DeviceIdentifier{AppId: in.AppId, DevId: in.DevId})
-	if err != nil && core.GetErrType(err) != core.NotFound {
-		return nil, core.BuildGRPCError(err)
+	if err != nil && errors.GetErrType(err) != errors.NotFound {
+		return nil, errors.BuildGRPCError(err)
 	}
 
 	if !in.Validate() {
@@ -106,7 +105,7 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*empty.E
 				DevEui: &dev.DevEUI,
 			})
 			if err != nil {
-				return nil, core.BuildGRPCError(errors.Wrap(core.FromGRPCError(err), "Broker did not delete device"))
+				return nil, errors.BuildGRPCError(errors.Wrap(errors.FromGRPCError(err), "Broker did not delete device"))
 			}
 		}
 	} else { // When this is a create
@@ -154,12 +153,12 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*empty.E
 
 	_, err = h.deviceManager.SetDevice(ctx, nsUpdated)
 	if err != nil {
-		return nil, core.BuildGRPCError(errors.Wrap(core.FromGRPCError(err), "Broker did not set device"))
+		return nil, errors.BuildGRPCError(errors.Wrap(errors.FromGRPCError(err), "Broker did not set device"))
 	}
 
 	err = h.handler.devices.Set(updated)
 	if err != nil {
-		return nil, core.BuildGRPCError(err)
+		return nil, errors.BuildGRPCError(err)
 	}
 
 	return &empty.Empty{}, nil
@@ -168,15 +167,15 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*empty.E
 func (h *handlerManager) DeleteDevice(ctx context.Context, in *pb.DeviceIdentifier) (*empty.Empty, error) {
 	dev, err := h.getDevice(ctx, in)
 	if err != nil {
-		return nil, core.BuildGRPCError(err)
+		return nil, errors.BuildGRPCError(err)
 	}
 	_, err = h.deviceManager.DeleteDevice(ctx, &pb_lorawan.DeviceIdentifier{AppEui: &dev.AppEUI, DevEui: &dev.DevEUI})
 	if err != nil {
-		return nil, core.BuildGRPCError(errors.Wrap(core.FromGRPCError(err), "Broker did not delete device"))
+		return nil, errors.BuildGRPCError(errors.Wrap(errors.FromGRPCError(err), "Broker did not delete device"))
 	}
 	err = h.handler.devices.Delete(in.AppId, in.DevId)
 	if err != nil {
-		return nil, core.BuildGRPCError(err)
+		return nil, errors.BuildGRPCError(err)
 	}
 	return &empty.Empty{}, nil
 }
@@ -187,14 +186,14 @@ func (h *handlerManager) GetDevicesForApplication(ctx context.Context, in *pb.Ap
 	}
 	claims, err := h.handler.Component.ValidateTTNAuthContext(ctx)
 	if err != nil {
-		return nil, core.BuildGRPCError(err)
+		return nil, errors.BuildGRPCError(err)
 	}
 	if !claims.CanEditApp(in.AppId) {
 		return nil, grpcErrf(codes.PermissionDenied, "No access to this application")
 	}
 	devices, err := h.handler.devices.ListForApp(in.AppId)
 	if err != nil {
-		return nil, core.BuildGRPCError(err)
+		return nil, errors.BuildGRPCError(err)
 	}
 	res := &pb.DeviceList{Devices: []*pb.Device{}}
 	for _, dev := range devices {
@@ -218,21 +217,21 @@ func (h *handlerManager) GetDevicesForApplication(ctx context.Context, in *pb.Ap
 
 func (h *handlerManager) getApplication(ctx context.Context, in *pb.ApplicationIdentifier) (*application.Application, error) {
 	if !in.Validate() {
-		return nil, core.NewErrInvalidArgument("Application Identifier", "validation failed")
+		return nil, errors.NewErrInvalidArgument("Application Identifier", "validation failed")
 	}
 	claims, err := h.handler.Component.ValidateTTNAuthContext(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if !claims.CanEditApp(in.AppId) {
-		return nil, core.NewErrPermissionDenied(fmt.Sprintf("No access to Application %s", in.AppId))
+		return nil, errors.NewErrPermissionDenied(fmt.Sprintf("No access to Application %s", in.AppId))
 	}
 	app, err := h.handler.applications.Get(in.AppId)
 	if err != nil {
 		return nil, err
 	}
 	if !claims.CanEditApp(app.AppID) {
-		return nil, core.NewErrPermissionDenied(fmt.Sprintf("No access to Application %s", in.AppId))
+		return nil, errors.NewErrPermissionDenied(fmt.Sprintf("No access to Application %s", in.AppId))
 	}
 	return app, nil
 }
@@ -240,7 +239,7 @@ func (h *handlerManager) getApplication(ctx context.Context, in *pb.ApplicationI
 func (h *handlerManager) GetApplication(ctx context.Context, in *pb.ApplicationIdentifier) (*pb.Application, error) {
 	app, err := h.getApplication(ctx, in)
 	if err != nil {
-		return nil, core.BuildGRPCError(err)
+		return nil, errors.BuildGRPCError(err)
 	}
 
 	return &pb.Application{
@@ -254,8 +253,8 @@ func (h *handlerManager) GetApplication(ctx context.Context, in *pb.ApplicationI
 
 func (h *handlerManager) RegisterApplication(ctx context.Context, in *pb.ApplicationIdentifier) (*empty.Empty, error) {
 	app, err := h.getApplication(ctx, &pb.ApplicationIdentifier{AppId: in.AppId})
-	if err != nil && core.GetErrType(err) != core.NotFound {
-		return nil, core.BuildGRPCError(err)
+	if err != nil && errors.GetErrType(err) != errors.NotFound {
+		return nil, errors.BuildGRPCError(err)
 	}
 	if app != nil {
 		return nil, grpcErrf(codes.AlreadyExists, "Application already registered")
@@ -265,7 +264,7 @@ func (h *handlerManager) RegisterApplication(ctx context.Context, in *pb.Applica
 		AppID: in.AppId,
 	})
 	if err != nil {
-		return nil, core.BuildGRPCError(err)
+		return nil, errors.BuildGRPCError(err)
 	}
 
 	md, _ := metadata.FromContext(ctx)
@@ -290,7 +289,7 @@ func (h *handlerManager) RegisterApplication(ctx context.Context, in *pb.Applica
 func (h *handlerManager) SetApplication(ctx context.Context, in *pb.Application) (*empty.Empty, error) {
 	_, err := h.getApplication(ctx, &pb.ApplicationIdentifier{AppId: in.AppId})
 	if err != nil {
-		return nil, core.BuildGRPCError(err)
+		return nil, errors.BuildGRPCError(err)
 	}
 
 	if !in.Validate() {
@@ -305,7 +304,7 @@ func (h *handlerManager) SetApplication(ctx context.Context, in *pb.Application)
 		Encoder:   in.Encoder,
 	})
 	if err != nil {
-		return nil, core.BuildGRPCError(err)
+		return nil, errors.BuildGRPCError(err)
 	}
 
 	return &empty.Empty{}, nil
@@ -314,36 +313,36 @@ func (h *handlerManager) SetApplication(ctx context.Context, in *pb.Application)
 func (h *handlerManager) DeleteApplication(ctx context.Context, in *pb.ApplicationIdentifier) (*empty.Empty, error) {
 	_, err := h.getApplication(ctx, in)
 	if err != nil {
-		return nil, core.BuildGRPCError(err)
+		return nil, errors.BuildGRPCError(err)
 	}
 
 	// Get and delete all devices for this application
 	devices, err := h.handler.devices.ListForApp(in.AppId)
 	if err != nil {
-		return nil, core.BuildGRPCError(err)
+		return nil, errors.BuildGRPCError(err)
 	}
 	for _, dev := range devices {
 		_, err = h.deviceManager.DeleteDevice(ctx, &pb_lorawan.DeviceIdentifier{AppEui: &dev.AppEUI, DevEui: &dev.DevEUI})
 		if err != nil {
-			return nil, core.BuildGRPCError(errors.Wrap(core.FromGRPCError(err), "Broker did not delete device"))
+			return nil, errors.BuildGRPCError(errors.Wrap(errors.FromGRPCError(err), "Broker did not delete device"))
 		}
 		err = h.handler.devices.Delete(dev.AppID, dev.DevID)
 		if err != nil {
-			return nil, core.BuildGRPCError(err)
+			return nil, errors.BuildGRPCError(err)
 		}
 	}
 
 	// Delete the Application
 	err = h.handler.applications.Delete(in.AppId)
 	if err != nil {
-		return nil, core.BuildGRPCError(err)
+		return nil, errors.BuildGRPCError(err)
 	}
 
 	md, _ := metadata.FromContext(ctx)
 	token, _ := md["token"]
 	err = h.handler.Discovery.DeleteMetadata(pb_discovery.Metadata_APP_ID, []byte(in.AppId), token[0])
 	if err != nil {
-		h.handler.Ctx.WithField("AppID", in.AppId).WithError(core.FromGRPCError(err)).Warn("Could not unregister Application from Discovery")
+		h.handler.Ctx.WithField("AppID", in.AppId).WithError(errors.FromGRPCError(err)).Warn("Could not unregister Application from Discovery")
 	}
 
 	return &empty.Empty{}, nil
@@ -352,7 +351,7 @@ func (h *handlerManager) DeleteApplication(ctx context.Context, in *pb.Applicati
 func (h *handlerManager) GetPrefixes(ctx context.Context, in *pb_lorawan.PrefixesRequest) (*pb_lorawan.PrefixesResponse, error) {
 	res, err := h.devAddrManager.GetPrefixes(ctx, in)
 	if err != nil {
-		return nil, core.BuildGRPCError(errors.Wrap(core.FromGRPCError(err), "Broker did not return prefixes"))
+		return nil, errors.BuildGRPCError(errors.Wrap(errors.FromGRPCError(err), "Broker did not return prefixes"))
 	}
 	return res, nil
 }
@@ -360,7 +359,7 @@ func (h *handlerManager) GetPrefixes(ctx context.Context, in *pb_lorawan.Prefixe
 func (h *handlerManager) GetDevAddr(ctx context.Context, in *pb_lorawan.DevAddrRequest) (*pb_lorawan.DevAddrResponse, error) {
 	res, err := h.devAddrManager.GetDevAddr(ctx, in)
 	if err != nil {
-		return nil, core.BuildGRPCError(errors.Wrap(core.FromGRPCError(err), "Broker did not return DevAddr"))
+		return nil, errors.BuildGRPCError(errors.Wrap(errors.FromGRPCError(err), "Broker did not return DevAddr"))
 	}
 	return res, nil
 }

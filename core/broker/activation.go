@@ -14,10 +14,9 @@ import (
 	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/api/gateway"
 	pb_handler "github.com/TheThingsNetwork/ttn/api/handler"
-	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/apex/log"
 	"github.com/brocaar/lorawan"
-	"github.com/pkg/errors"
 )
 
 type challengeResponseWithHandler struct {
@@ -47,7 +46,7 @@ func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (*pb.D
 	// De-duplicate uplink messages
 	duplicates := b.deduplicateActivation(activation)
 	if len(duplicates) == 0 {
-		err = core.NewErrInternal("No duplicates")
+		err = errors.NewErrInternal("No duplicates")
 		return nil, err
 	}
 
@@ -84,7 +83,7 @@ func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (*pb.D
 	// Send Activate to NS
 	deduplicatedActivationRequest, err = b.ns.PrepareActivation(b.Component.GetContext(b.nsToken), deduplicatedActivationRequest)
 	if err != nil {
-		err = errors.Wrap(core.FromGRPCError(err), "NetworkServer refused to prepare activation")
+		err = errors.Wrap(errors.FromGRPCError(err), "NetworkServer refused to prepare activation")
 		return nil, err
 	}
 
@@ -100,7 +99,7 @@ func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (*pb.D
 		return nil, err
 	}
 	if len(announcements) == 0 {
-		err = core.NewErrNotFound(fmt.Sprintf("Handler for AppID %s", deduplicatedActivationRequest.AppId))
+		err = errors.NewErrNotFound(fmt.Sprintf("Handler for AppID %s", deduplicatedActivationRequest.AppId))
 		return nil, err
 	}
 
@@ -194,13 +193,13 @@ func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (*pb.D
 	var handlerResponse *pb_handler.DeviceActivationResponse
 	handlerResponse, err = joinHandlerClient.Activate(b.Component.GetContext(""), deduplicatedActivationRequest)
 	if err != nil {
-		err = errors.Wrap(core.FromGRPCError(err), "Handler refused activation")
+		err = errors.Wrap(errors.FromGRPCError(err), "Handler refused activation")
 		return nil, err
 	}
 
 	handlerResponse, err = b.ns.Activate(b.Component.GetContext(b.nsToken), handlerResponse)
 	if err != nil {
-		err = errors.Wrap(core.FromGRPCError(err), "NetworkServer refused activation")
+		err = errors.Wrap(errors.FromGRPCError(err), "NetworkServer refused activation")
 		return nil, err
 	}
 

@@ -6,7 +6,7 @@ package util
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"fmt"
 	"io"
 	"net/http"

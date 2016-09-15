@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/types"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"gopkg.in/redis.v3"
 )
 
@@ -59,7 +59,7 @@ func (s *deviceStore) Get(appEUI types.AppEUI, devEUI types.DevEUI) (*Device, er
 			return dev, nil
 		}
 	}
-	return nil, core.NewErrNotFound(fmt.Sprintf("%s/%s", appEUI, devEUI))
+	return nil, errors.NewErrNotFound(fmt.Sprintf("%s/%s", appEUI, devEUI))
 }
 
 func (s *deviceStore) GetWithAddress(devAddr types.DevAddr) ([]*Device, error) {
@@ -195,11 +195,11 @@ func (s *redisDeviceStore) Get(appEUI types.AppEUI, devEUI types.DevEUI) (*Devic
 	res, err := s.client.HGetAllMap(fmt.Sprintf("%s:%s:%s", redisDevicePrefix, appEUI, devEUI)).Result()
 	if err != nil {
 		if err == redis.Nil {
-			return nil, core.NewErrNotFound(fmt.Sprintf("%s/%s", appEUI, devEUI))
+			return nil, errors.NewErrNotFound(fmt.Sprintf("%s/%s", appEUI, devEUI))
 		}
 		return nil, err
 	} else if len(res) == 0 {
-		return nil, core.NewErrNotFound(fmt.Sprintf("%s/%s", appEUI, devEUI))
+		return nil, errors.NewErrNotFound(fmt.Sprintf("%s/%s", appEUI, devEUI))
 	}
 	device := &Device{}
 	err = device.FromStringStringMap(res)
@@ -290,7 +290,7 @@ func (s *redisDeviceStore) Activate(appEUI types.AppEUI, devEUI types.DevEUI, de
 		return err
 	}
 	if !exists {
-		return core.NewErrNotFound(fmt.Sprintf("%s/%s", appEUI, devEUI))
+		return errors.NewErrNotFound(fmt.Sprintf("%s/%s", appEUI, devEUI))
 	}
 
 	// Check for old DevAddr

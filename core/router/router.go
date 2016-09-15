@@ -15,6 +15,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/router/gateway"
 	"github.com/TheThingsNetwork/ttn/core/types"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 )
 
 // Router component
@@ -133,13 +134,13 @@ func (r *router) getBroker(brokerAnnouncement *pb_discovery.Announcement) (*brok
 		}
 
 		go func() {
-			errors := 0
+			numErrs := 0
 			for {
 				association, err := client.Associate(r.Component.GetContext(""))
 				if err != nil {
-					errors++
+					numErrs++
 					<-time.After(api.Backoff)
-					if errors > 10 {
+					if numErrs > 10 {
 						break
 					}
 					continue
@@ -162,7 +163,7 @@ func (r *router) getBroker(brokerAnnouncement *pb_discovery.Announcement) (*brok
 				for {
 					select {
 					case err := <-errChan:
-						r.Ctx.WithError(core.FromGRPCError(err)).Error("Error in Broker associate")
+						r.Ctx.WithError(errors.FromGRPCError(err)).Error("Error in Broker associate")
 						break associationLoop
 					case uplink := <-brk.uplink:
 						err := association.Send(uplink)

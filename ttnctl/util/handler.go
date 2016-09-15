@@ -6,7 +6,7 @@ package util
 import (
 	"github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/api/handler"
-	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/apex/log"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
@@ -22,7 +22,7 @@ func GetHandlerManager(ctx log.Interface) (*grpc.ClientConn, *handler.ManagerCli
 		Id:          viper.GetString("ttn-handler"),
 	})
 	if err != nil {
-		ctx.WithError(core.FromGRPCError(err)).Fatal("Could not find Handler")
+		ctx.WithError(errors.FromGRPCError(err)).Fatal("Could not find Handler")
 	}
 	token, err := GetTokenSource(ctx).Token()
 	if err != nil {

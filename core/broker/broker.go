@@ -16,7 +16,7 @@ import (
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/types"
-	"github.com/pkg/errors"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"google.golang.org/grpc"
 )
 
@@ -72,7 +72,7 @@ func (b *broker) checkPrefixAnnouncements() error {
 	devAddrClient := pb_lorawan.NewDevAddrManagerClient(b.nsConn)
 	resp, err := devAddrClient.GetPrefixes(b.GetContext(""), &pb_lorawan.PrefixesRequest{})
 	if err != nil {
-		return errors.Wrap(core.FromGRPCError(err), "NetworkServer did not return prefixes")
+		return errors.Wrap(errors.FromGRPCError(err), "NetworkServer did not return prefixes")
 	}
 	for _, mapping := range resp.Prefixes {
 		prefix, err := types.ParseDevAddrPrefix(mapping.Prefix)
@@ -140,7 +140,7 @@ func (b *broker) ActivateRouter(id string) (<-chan *pb.DownlinkMessage, error) {
 	b.routersLock.Lock()
 	defer b.routersLock.Unlock()
 	if existing, ok := b.routers[id]; ok {
-		return existing, core.NewErrInternal(fmt.Sprintf("Router %s already active", id))
+		return existing, errors.NewErrInternal(fmt.Sprintf("Router %s already active", id))
 	}
 	b.routers[id] = make(chan *pb.DownlinkMessage)
 	return b.routers[id], nil
@@ -154,7 +154,7 @@ func (b *broker) DeactivateRouter(id string) error {
 		delete(b.routers, id)
 		return nil
 	}
-	return core.NewErrInternal(fmt.Sprintf("Router %s not active", id))
+	return errors.NewErrInternal(fmt.Sprintf("Router %s not active", id))
 }
 
 func (b *broker) getRouter(id string) (chan<- *pb.DownlinkMessage, error) {
@@ -163,14 +163,14 @@ func (b *broker) getRouter(id string) (chan<- *pb.DownlinkMessage, error) {
 	if router, ok := b.routers[id]; ok {
 		return router, nil
 	}
-	return nil, core.NewErrInternal(fmt.Sprintf("Router %s not active", id))
+	return nil, errors.NewErrInternal(fmt.Sprintf("Router %s not active", id))
 }
 
 func (b *broker) ActivateHandler(id string) (<-chan *pb.DeduplicatedUplinkMessage, error) {
 	b.handlersLock.Lock()
 	defer b.handlersLock.Unlock()
 	if existing, ok := b.handlers[id]; ok {
-		return existing, core.NewErrInternal(fmt.Sprintf("Handler %s already active", id))
+		return existing, errors.NewErrInternal(fmt.Sprintf("Handler %s already active", id))
 	}
 	b.handlers[id] = make(chan *pb.DeduplicatedUplinkMessage)
 	return b.handlers[id], nil
@@ -184,7 +184,7 @@ func (b *broker) DeactivateHandler(id string) error {
 		delete(b.handlers, id)
 		return nil
 	}
-	return core.NewErrInternal(fmt.Sprintf("Handler %s not active", id))
+	return errors.NewErrInternal(fmt.Sprintf("Handler %s not active", id))
 }
 
 func (b *broker) getHandler(id string) (chan<- *pb.DeduplicatedUplinkMessage, error) {
@@ -193,5 +193,5 @@ func (b *broker) getHandler(id string) (chan<- *pb.DeduplicatedUplinkMessage, er
 	if handler, ok := b.handlers[id]; ok {
 		return handler, nil
 	}
-	return nil, core.NewErrInternal(fmt.Sprintf("Handler %s not active", id))
+	return nil, errors.NewErrInternal(fmt.Sprintf("Handler %s not active", id))
 }
