@@ -191,10 +191,11 @@ func (c *Component) UpdateTokenKey() error {
 // TTNClaims contains the claims that are set by the TTN Token Issuer
 type TTNClaims struct {
 	jwt.StandardClaims
-	Type   string              `json:"type"`
-	Client string              `json:"client"`
-	Scopes []string            `json:"scope"`
-	Apps   map[string][]string `json:"apps,omitempty"`
+	Type     string              `json:"type"`
+	Client   string              `json:"client"`
+	Scopes   []string            `json:"scope"`
+	Apps     map[string][]string `json:"apps,omitempty"`
+	Gateways map[string][]string `json:"gateways,omitempty"`
 }
 
 // CanEditApp indicates wheter someone with the claims can manage the given app

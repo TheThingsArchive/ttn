@@ -59,3 +59,22 @@ type Component struct {
 func (n *Name) String() string {
 	return n.First + " " + n.Last
 }
+
+// Gateway represents a gateway on the account server
+type Gateway struct {
+	ID               string           `json:"id" valid:"required"`
+	EUI              types.GatewayEUI `json:"eui" valid:"required"`
+	Activated        bool             `json:"activated"`
+	FrequencyPlan    string           `json:"frequency_plan"`
+	FrequencyPlanURL string           `json:"frequency_plan_url"`
+	PublicLocation   bool             `json:"location_public"`
+	StatusPublic     bool             `json:"status_public"`
+	Location         *Location        `json:"location"`
+	Collaborators    []Collaborator   `json:"collaborator"`
+	Key              string           `json:"key"`
+}
+
+type Location struct {
+	Lng float64 `json:"lng"`
+	Lat float64 `json:"lat"`
+}
