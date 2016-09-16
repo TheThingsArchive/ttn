@@ -104,9 +104,12 @@ func (a *Account) ChangeFrequencyPlan(gatewayID, plan string) (Gateway, error) {
 	})
 }
 
-// ChangeLocation changes teh location of the gateway
-func (a *Account) ChangeLocation(gatewayID string, location Location) (Gateway, error) {
+// ChangeLocation changes the location of the gateway
+func (a *Account) ChangeLocation(gatewayID string, latitude, longitude float64) (Gateway, error) {
 	return a.EditGateway(gatewayID, GatewayEdits{
-		Location: &location,
+		Location: &Location{
+			Longitude: longitude,
+			Latitude:  latitude,
+		},
 	})
 }
