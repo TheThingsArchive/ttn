@@ -75,6 +75,6 @@ type Gateway struct {
 }
 
 type Location struct {
-	Lng float64 `json:"lng"`
-	Lat float64 `json:"lat"`
+	Longitude float64 `json:"lng"`
+	Latitude  float64 `json:"lat"`
 }
