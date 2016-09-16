@@ -67,7 +67,7 @@ type Gateway struct {
 	Activated        bool             `json:"activated"`
 	FrequencyPlan    string           `json:"frequency_plan"`
 	FrequencyPlanURL string           `json:"frequency_plan_url"`
-	PublicLocation   bool             `json:"location_public"`
+	LocationPublic   bool             `json:"location_public"`
 	StatusPublic     bool             `json:"status_public"`
 	Location         *Location        `json:"location"`
 	Collaborators    []Collaborator   `json:"collaborator"`
