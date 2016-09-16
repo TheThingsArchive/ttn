@@ -34,6 +34,8 @@ type Router interface {
 	UnsubscribeDownlink(gatewayID string) error
 	// Handle a device activation
 	HandleActivation(gatewayID string, activation *pb.DeviceActivationRequest) (*pb.DeviceActivationResponse, error)
+
+	getGateway(gatewayID string) *gateway.Gateway
 }
 
 type broker struct {
