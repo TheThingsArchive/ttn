@@ -1,8 +1,9 @@
 package gateway
 
 import (
-	"context"
 	"sync"
+
+	context "golang.org/x/net/context"
 
 	pb_noc "github.com/TheThingsNetwork/ttn/api/noc"
 )
