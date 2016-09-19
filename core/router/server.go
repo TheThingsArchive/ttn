@@ -7,7 +7,6 @@ import (
 	"io"
 
 	pb "github.com/TheThingsNetwork/ttn/api/router"
-	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/golang/protobuf/ptypes/empty"
 	"golang.org/x/net/context"
@@ -22,21 +21,19 @@ type routerRPC struct {
 
 var grpcErrf = grpc.Errorf // To make go vet stop complaining
 
-func getGatewayFromMetadata(ctx context.Context) (gatewayEUI types.GatewayEUI, err error) {
+func getGatewayFromMetadata(ctx context.Context) (gatewayID string, err error) {
 	md, ok := metadata.FromContext(ctx)
 	if !ok {
 		err = errors.NewErrInternal("Could not get metadata from context")
 		return
 	}
-	euiString, ok := md["gateway_eui"]
-	if !ok || len(euiString) < 1 {
-		err = errors.NewErrInvalidArgument("Metadata", "gateway_eui missing")
+	id, ok := md["id"]
+	if !ok || len(id) < 1 {
+		err = errors.NewErrInvalidArgument("Metadata", "id missing")
 		return
 	}
-	gatewayEUI, err = types.ParseGatewayEUI(euiString[0])
-	if err != nil {
-		return
-	}
+	gatewayID = id[0]
+
 	token, ok := md["token"]
 	if !ok || len(token) < 1 {
 		err = errors.NewErrInvalidArgument("Metadata", "token missing")
@@ -53,9 +50,9 @@ func getGatewayFromMetadata(ctx context.Context) (gatewayEUI types.GatewayEUI, e
 
 // GatewayStatus implements RouterServer interface (github.com/TheThingsNetwork/ttn/api/router)
 func (r *routerRPC) GatewayStatus(stream pb.Router_GatewayStatusServer) error {
-	gatewayEUI, err := getGatewayFromMetadata(stream.Context())
+	gatewayID, err := getGatewayFromMetadata(stream.Context())
 	if err != nil {
-		return err
+		return errors.BuildGRPCError(err)
 	}
 	for {
 		status, err := stream.Recv()
@@ -68,15 +65,15 @@ func (r *routerRPC) GatewayStatus(stream pb.Router_GatewayStatusServer) error {
 		if !status.Validate() {
 			return grpcErrf(codes.InvalidArgument, "Invalid Gateway Status")
 		}
-		go r.router.HandleGatewayStatus(gatewayEUI, status)
+		go r.router.HandleGatewayStatus(gatewayID, status)
 	}
 }
 
 // Uplink implements RouterServer interface (github.com/TheThingsNetwork/ttn/api/router)
 func (r *routerRPC) Uplink(stream pb.Router_UplinkServer) error {
-	gatewayEUI, err := getGatewayFromMetadata(stream.Context())
+	gatewayID, err := getGatewayFromMetadata(stream.Context())
 	if err != nil {
-		return err
+		return errors.BuildGRPCError(err)
 	}
 	for {
 		uplink, err := stream.Recv()
@@ -89,21 +86,21 @@ func (r *routerRPC) Uplink(stream pb.Router_UplinkServer) error {
 		if !uplink.Validate() {
 			return grpcErrf(codes.InvalidArgument, "Invalid Uplink")
 		}
-		go r.router.HandleUplink(gatewayEUI, uplink)
+		go r.router.HandleUplink(gatewayID, uplink)
 	}
 }
 
 // Subscribe implements RouterServer interface (github.com/TheThingsNetwork/ttn/api/router)
 func (r *routerRPC) Subscribe(req *pb.SubscribeRequest, stream pb.Router_SubscribeServer) error {
-	gatewayEUI, err := getGatewayFromMetadata(stream.Context())
+	gatewayID, err := getGatewayFromMetadata(stream.Context())
 	if err != nil {
 		return err
 	}
-	downlinkChannel, err := r.router.SubscribeDownlink(gatewayEUI)
+	downlinkChannel, err := r.router.SubscribeDownlink(gatewayID)
 	if err != nil {
 		return err
 	}
-	defer r.router.UnsubscribeDownlink(gatewayEUI)
+	defer r.router.UnsubscribeDownlink(gatewayID)
 	for {
 		if downlinkChannel == nil {
 			return nil
@@ -121,14 +118,14 @@ func (r *routerRPC) Subscribe(req *pb.SubscribeRequest, stream pb.Router_Subscri
 
 // Activate implements RouterServer interface (github.com/TheThingsNetwork/ttn/api/router)
 func (r *routerRPC) Activate(ctx context.Context, req *pb.DeviceActivationRequest) (*pb.DeviceActivationResponse, error) {
-	gatewayEUI, err := getGatewayFromMetadata(ctx)
+	gatewayID, err := getGatewayFromMetadata(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if !req.Validate() {
 		return nil, grpcErrf(codes.InvalidArgument, "Invalid Activation Request")
 	}
-	return r.router.HandleActivation(gatewayEUI, req)
+	return r.router.HandleActivation(gatewayID, req)
 }
 
 // RegisterRPC registers this router as a RouterServer (github.com/TheThingsNetwork/ttn/api/router)

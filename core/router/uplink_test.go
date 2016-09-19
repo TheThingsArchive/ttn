@@ -20,7 +20,7 @@ import (
 
 // newReferenceGateway returns a default gateway
 func newReferenceGateway(t *testing.T, region string) *gateway.Gateway {
-	gtw := gateway.NewGateway(GetLogger(t, "ReferenceGateway"), types.GatewayEUI{0, 1, 2, 3, 4, 5, 6, 7})
+	gtw := gateway.NewGateway(GetLogger(t, "ReferenceGateway"), "eui-0102030405060708")
 	gtw.Status.Update(&pb_gateway.Status{
 		Region: region,
 	})
@@ -29,7 +29,7 @@ func newReferenceGateway(t *testing.T, region string) *gateway.Gateway {
 
 // newReferenceUplink returns a default uplink message
 func newReferenceUplink() *pb.UplinkMessage {
-	gtwEUI := types.GatewayEUI{1, 2, 3, 4, 5, 6, 7, 8}
+	gtwID := "eui-0102030405060708"
 
 	phy := lorawan.PHYPayload{
 		MHDR: lorawan.MHDR{
@@ -52,11 +52,11 @@ func newReferenceUplink() *pb.UplinkMessage {
 			Modulation: pb_lorawan.Modulation_LORA,
 		}}},
 		GatewayMetadata: &pb_gateway.RxMetadata{
-			GatewayEui: &gtwEUI,
-			Timestamp:  100,
-			Frequency:  868100000,
-			Rssi:       -25.0,
-			Snr:        5.0,
+			GatewayId: gtwID,
+			Timestamp: 100,
+			Frequency: 868100000,
+			Rssi:      -25.0,
+			Snr:       5.0,
 		},
 	}
 	return up
@@ -69,11 +69,11 @@ func TestHandleUplink(t *testing.T) {
 	r.discovery.EXPECT().GetAllBrokersForDevAddr(types.DevAddr([4]byte{1, 2, 3, 4})).Return([]*discovery.Announcement{}, nil)
 
 	uplink := newReferenceUplink()
-	gtwEUI := types.GatewayEUI{0, 1, 2, 3, 4, 5, 6, 7}
+	gtwID := "eui-0102030405060708"
 
-	err := r.HandleUplink(gtwEUI, uplink)
+	err := r.HandleUplink(gtwID, uplink)
 	a.So(err, ShouldBeNil)
-	utilization := r.getGateway(gtwEUI).Utilization
+	utilization := r.getGateway(gtwID).Utilization
 	utilization.Tick()
 	rx, _ := utilization.Get()
 	a.So(rx, ShouldBeGreaterThan, 0)

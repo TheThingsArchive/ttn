@@ -17,14 +17,14 @@ type routerManager struct {
 var errf = grpc.Errorf
 
 func (r *routerManager) GatewayStatus(ctx context.Context, in *pb.GatewayStatusRequest) (*pb.GatewayStatusResponse, error) {
-	if in.GatewayEui == nil {
-		return nil, errf(codes.InvalidArgument, "GatewayEUI is required")
+	if in.GatewayId == "" {
+		return nil, errf(codes.InvalidArgument, "GatewayID is required")
 	}
 	_, err := r.router.ValidateTTNAuthContext(ctx)
 	if err != nil {
 		return nil, errf(codes.PermissionDenied, "No access")
 	}
-	gtw := r.router.getGateway(*in.GatewayEui)
+	gtw := r.router.getGateway(in.GatewayId)
 	status, err := gtw.Status.Get()
 	if err != nil {
 		return nil, err

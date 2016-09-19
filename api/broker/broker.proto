@@ -13,7 +13,7 @@ package broker;
 
 message DownlinkOption {
   string  identifier  = 1;
-  bytes   gateway_eui = 2 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.GatewayEUI"];
+  string  gateway_id  = 2;
   uint32  score       = 3; // lower is better, 0 is best
   int64   deadline    = 4; // deadline time at server represented as the number of nanoseconds elapsed since January 1, 1970 UTC
   protocol.TxConfiguration protocol_config = 5;

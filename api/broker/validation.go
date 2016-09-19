@@ -7,7 +7,7 @@ func (m *DownlinkOption) Validate() bool {
 	if m.Identifier == "" {
 		return false
 	}
-	if m.GatewayEui == nil || m.GatewayEui.IsEmpty() {
+	if m.GatewayId == "" {
 		return false
 	}
 	if m.ProtocolConfig == nil || !m.ProtocolConfig.Validate() {

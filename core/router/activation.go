@@ -12,16 +12,15 @@ import (
 	pb_protocol "github.com/TheThingsNetwork/ttn/api/protocol"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	pb "github.com/TheThingsNetwork/ttn/api/router"
-	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/apex/log"
 )
 
-func (r *router) HandleActivation(gatewayEUI types.GatewayEUI, activation *pb.DeviceActivationRequest) (*pb.DeviceActivationResponse, error) {
+func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivationRequest) (*pb.DeviceActivationResponse, error) {
 	ctx := r.Ctx.WithFields(log.Fields{
-		"GatewayEUI": gatewayEUI,
-		"AppEUI":     *activation.AppEui,
-		"DevEUI":     *activation.DevEui,
+		"GatewayID": gatewayID,
+		"AppEUI":    *activation.AppEui,
+		"DevEUI":    *activation.DevEui,
 	})
 	var err error
 	start := time.Now()
@@ -33,7 +32,7 @@ func (r *router) HandleActivation(gatewayEUI types.GatewayEUI, activation *pb.De
 		}
 	}()
 
-	gateway := r.getGateway(gatewayEUI)
+	gateway := r.getGateway(gatewayID)
 	gateway.LastSeen = time.Now()
 
 	uplink := &pb.UplinkMessage{
@@ -47,7 +46,7 @@ func (r *router) HandleActivation(gatewayEUI types.GatewayEUI, activation *pb.De
 	gateway.Utilization.AddRx(uplink)
 
 	if !gateway.Schedule.IsActive() {
-		return nil, errors.NewErrInternal(fmt.Sprintf("Gateway %s not available for downlink", gatewayEUI))
+		return nil, errors.NewErrInternal(fmt.Sprintf("Gateway %s not available for downlink", gatewayID))
 	}
 
 	downlinkOptions := r.buildDownlinkOptions(uplink, true, gateway)

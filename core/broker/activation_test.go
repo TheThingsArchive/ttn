@@ -20,7 +20,7 @@ import (
 func TestHandleActivation(t *testing.T) {
 	a := New(t)
 
-	gtwEUI := types.GatewayEUI([8]byte{0, 1, 2, 3, 4, 5, 6, 7})
+	gtwID := "eui-0102030405060708"
 	devEUI := types.DevEUI([8]byte{0, 1, 2, 3, 4, 5, 6, 7})
 	appEUI := types.AppEUI([8]byte{0, 1, 2, 3, 4, 5, 6, 7})
 
@@ -32,7 +32,7 @@ func TestHandleActivation(t *testing.T) {
 		AppId:   "appid",
 		DevId:   "devid",
 		GatewayMetadata: []*gateway.RxMetadata{
-			&gateway.RxMetadata{Snr: 1.2, GatewayEui: &gtwEUI},
+			&gateway.RxMetadata{Snr: 1.2, GatewayId: gtwID},
 		},
 		ProtocolMetadata: &protocol.RxMetadata{},
 	}, nil)
@@ -42,7 +42,7 @@ func TestHandleActivation(t *testing.T) {
 		Payload:          []byte{},
 		DevEui:           &devEUI,
 		AppEui:           &appEUI,
-		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2, GatewayEui: &gtwEUI},
+		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2, GatewayId: gtwID},
 		ProtocolMetadata: &protocol.RxMetadata{},
 	})
 	a.So(err, ShouldNotBeNil)

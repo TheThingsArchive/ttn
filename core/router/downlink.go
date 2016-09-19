@@ -21,12 +21,12 @@ import (
 	lora "github.com/brocaar/lorawan/band"
 )
 
-func (r *router) SubscribeDownlink(gatewayEUI types.GatewayEUI) (<-chan *pb.DownlinkMessage, error) {
+func (r *router) SubscribeDownlink(gatewayID string) (<-chan *pb.DownlinkMessage, error) {
 	ctx := r.Ctx.WithFields(log.Fields{
-		"GatewayEUI": gatewayEUI,
+		"GatewayID": gatewayID,
 	})
 
-	gateway := r.getGateway(gatewayEUI)
+	gateway := r.getGateway(gatewayID)
 	if fromSchedule := gateway.Schedule.Subscribe(); fromSchedule != nil {
 		toGateway := make(chan *pb.DownlinkMessage)
 		go func() {
@@ -41,21 +41,20 @@ func (r *router) SubscribeDownlink(gatewayEUI types.GatewayEUI) (<-chan *pb.Down
 		}()
 		return toGateway, nil
 	}
-	return nil, errors.NewErrInternal(fmt.Sprintf("Gateway %s not available for downlink", gatewayEUI))
+	return nil, errors.NewErrInternal(fmt.Sprintf("Gateway %s not available for downlink", gatewayID))
 }
 
-func (r *router) UnsubscribeDownlink(gatewayEUI types.GatewayEUI) error {
-	r.getGateway(gatewayEUI).Schedule.Stop()
+func (r *router) UnsubscribeDownlink(gatewayID string) error {
+	r.getGateway(gatewayID).Schedule.Stop()
 	return nil
 }
 
 func (r *router) HandleDownlink(downlink *pb_broker.DownlinkMessage) error {
 	option := downlink.DownlinkOption
 	ctx := r.Ctx.WithFields(log.Fields{
-		"GatewayEUI": *option.GatewayEui,
+		"GatewayID": option.GatewayId,
 	})
-
-	gateway := r.getGateway(*option.GatewayEui)
+	gateway := r.getGateway(option.GatewayId)
 
 	downlinkMessage := &pb.DownlinkMessage{
 		Payload:               downlink.Payload,
@@ -186,7 +185,7 @@ func (r *router) buildDownlinkOptions(uplink *pb.UplinkMessage, isActivation boo
 			delay = band.JoinAcceptDelay2
 		}
 		rx2 := &pb_broker.DownlinkOption{
-			GatewayEui: &gateway.EUI,
+			GatewayId: gateway.ID,
 			ProtocolConfig: &pb_protocol.TxConfiguration{Protocol: &pb_protocol.TxConfiguration_Lorawan{Lorawan: &pb_lorawan.TxConfiguration{
 				Modulation: pb_lorawan.Modulation_LORA, // We only support LoRa
 				DataRate:   dataRate.String(),          // This is default
@@ -216,7 +215,7 @@ func (r *router) buildDownlinkOptions(uplink *pb.UplinkMessage, isActivation boo
 					delay = band.JoinAcceptDelay1
 				}
 				rx1 := &pb_broker.DownlinkOption{
-					GatewayEui: &gateway.EUI,
+					GatewayId: gateway.ID,
 					ProtocolConfig: &pb_protocol.TxConfiguration{Protocol: &pb_protocol.TxConfiguration_Lorawan{Lorawan: &pb_lorawan.TxConfiguration{
 						Modulation: pb_lorawan.Modulation_LORA, // We only support LoRa
 						DataRate:   dataRate.String(),          // This is default

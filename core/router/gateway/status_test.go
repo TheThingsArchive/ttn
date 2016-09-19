@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	pb_gateway "github.com/TheThingsNetwork/ttn/api/gateway"
-	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/smartystreets/assertions"
 
 	"gopkg.in/redis.v3"
@@ -30,8 +29,8 @@ func getRedisClient() *redis.Client {
 func TestNewGatewayStatusStore(t *testing.T) {
 	a := New(t)
 	client := getRedisClient()
-	eui := types.GatewayEUI{0, 0, 0, 0, 0, 0, 0, 0}
-	store := NewRedisStatusStore(client, eui)
+	id := "0000000000000000"
+	store := NewRedisStatusStore(client, id)
 	a.So(store, ShouldNotBeNil)
 	store = NewStatusStore()
 	a.So(store, ShouldNotBeNil)
@@ -61,9 +60,9 @@ func TestStatusGetUpsert(t *testing.T) {
 
 func TestRedisStatusGetUpsert(t *testing.T) {
 	a := New(t)
-	eui := types.GatewayEUI{0, 0, 0, 0, 0, 0, 0, 1}
+	id := "0000000000000001"
 	client := getRedisClient()
-	store := NewRedisStatusStore(client, eui)
+	store := NewRedisStatusStore(client, id)
 
 	// Cleanup before and after
 	client.Del(store.(*redisStatusStore).key)

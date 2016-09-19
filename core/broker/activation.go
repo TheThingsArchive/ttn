@@ -27,9 +27,9 @@ type challengeResponseWithHandler struct {
 
 func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (*pb.DeviceActivationResponse, error) {
 	ctx := b.Ctx.WithFields(log.Fields{
-		"GatewayEUI": *activation.GatewayMetadata.GatewayEui,
-		"AppEUI":     *activation.AppEui,
-		"DevEUI":     *activation.DevEui,
+		"GatewayID": activation.GatewayMetadata.GatewayId,
+		"AppEUI":    *activation.AppEui,
+		"DevEUI":    *activation.DevEui,
 	})
 	var err error
 	start := time.Now()

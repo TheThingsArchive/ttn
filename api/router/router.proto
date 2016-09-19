@@ -60,7 +60,7 @@ service Router {
 // message GatewayStatusRequest is used to request the status of a gateway from
 // this Router
 message GatewayStatusRequest {
-  bytes gateway_eui = 1 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.GatewayEUI"];
+  string gateway_id = 1;
 }
 
 message GatewayStatusResponse {

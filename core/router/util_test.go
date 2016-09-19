@@ -9,7 +9,6 @@ import (
 	"github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/router/gateway"
-	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"github.com/golang/mock/gomock"
 )
@@ -29,7 +28,7 @@ func getTestRouter(t *testing.T) *testRouter {
 				Discovery: discovery,
 				Ctx:       GetLogger(t, "TestRouter"),
 			},
-			gateways: map[types.GatewayEUI]*gateway.Gateway{},
+			gateways: map[string]*gateway.Gateway{},
 		},
 		ctrl:      ctrl,
 		discovery: discovery,

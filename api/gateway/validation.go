@@ -2,7 +2,7 @@ package gateway
 
 // Validate implements the api.Validator interface
 func (m *RxMetadata) Validate() bool {
-	if m.GatewayEui == nil || m.GatewayEui.IsEmpty() {
+	if m.GatewayId == "" {
 		return false
 	}
 	return true

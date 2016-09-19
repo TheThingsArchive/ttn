@@ -15,7 +15,7 @@ message GPSMetadata {
 }
 
 message RxMetadata {
-  bytes   gateway_eui = 1 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.GatewayEUI"];
+  string  gateway_id = 1;
 
   uint32  timestamp  = 11;
   int64   time       = 12;

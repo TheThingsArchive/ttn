@@ -25,7 +25,7 @@ import (
 const maxFCntGap = 16384
 
 func (b *broker) HandleUplink(uplink *pb.UplinkMessage) error {
-	ctx := b.Ctx.WithField("GatewayEUI", *uplink.GatewayMetadata.GatewayEui)
+	ctx := b.Ctx.WithField("GatewayID", uplink.GatewayMetadata.GatewayId)
 	var err error
 	start := time.Now()
 	defer func() {

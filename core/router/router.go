@@ -14,7 +14,6 @@ import (
 	pb "github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/router/gateway"
-	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 )
 
@@ -24,17 +23,17 @@ type Router interface {
 	core.ManagementInterface
 
 	// Handle a status message from a gateway
-	HandleGatewayStatus(gatewayEUI types.GatewayEUI, status *pb_gateway.Status) error
+	HandleGatewayStatus(gatewayID string, status *pb_gateway.Status) error
 	// Handle an uplink message from a gateway
-	HandleUplink(gatewayEUI types.GatewayEUI, uplink *pb.UplinkMessage) error
+	HandleUplink(gatewayID string, uplink *pb.UplinkMessage) error
 	// Handle a downlink message
 	HandleDownlink(message *pb_broker.DownlinkMessage) error
 	// Subscribe to downlink messages
-	SubscribeDownlink(gatewayEUI types.GatewayEUI) (<-chan *pb.DownlinkMessage, error)
+	SubscribeDownlink(gatewayID string) (<-chan *pb.DownlinkMessage, error)
 	// Unsubscribe from downlink messages
-	UnsubscribeDownlink(gatewayEUI types.GatewayEUI) error
+	UnsubscribeDownlink(gatewayID string) error
 	// Handle a device activation
-	HandleActivation(gatewayEUI types.GatewayEUI, activation *pb.DeviceActivationRequest) (*pb.DeviceActivationResponse, error)
+	HandleActivation(gatewayID string, activation *pb.DeviceActivationRequest) (*pb.DeviceActivationResponse, error)
 }
 
 type broker struct {
@@ -46,14 +45,14 @@ type broker struct {
 // NewRouter creates a new Router
 func NewRouter() Router {
 	return &router{
-		gateways: make(map[types.GatewayEUI]*gateway.Gateway),
+		gateways: make(map[string]*gateway.Gateway),
 		brokers:  make(map[string]*broker),
 	}
 }
 
 type router struct {
 	*core.Component
-	gateways     map[types.GatewayEUI]*gateway.Gateway
+	gateways     map[string]*gateway.Gateway
 	gatewaysLock sync.RWMutex
 	brokers      map[string]*broker
 	brokersLock  sync.RWMutex
@@ -88,10 +87,10 @@ func (r *router) Init(c *core.Component) error {
 }
 
 // getGateway gets or creates a Gateway
-func (r *router) getGateway(eui types.GatewayEUI) *gateway.Gateway {
+func (r *router) getGateway(id string) *gateway.Gateway {
 	// We're going to be optimistic and guess that the gateway is already active
 	r.gatewaysLock.RLock()
-	gtw, ok := r.gateways[eui]
+	gtw, ok := r.gateways[id]
 	r.gatewaysLock.RUnlock()
 	if ok {
 		return gtw
@@ -99,10 +98,10 @@ func (r *router) getGateway(eui types.GatewayEUI) *gateway.Gateway {
 	// If it doesn't we still have to lock
 	r.gatewaysLock.Lock()
 	defer r.gatewaysLock.Unlock()
-	if _, ok := r.gateways[eui]; !ok {
-		r.gateways[eui] = gateway.NewGateway(r.Ctx, eui)
+	if _, ok := r.gateways[id]; !ok {
+		r.gateways[id] = gateway.NewGateway(r.Ctx, id)
 	}
-	return r.gateways[eui]
+	return r.gateways[id]
 }
 
 // getBroker gets or creates a broker association and returns the broker

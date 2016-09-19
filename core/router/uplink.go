@@ -15,8 +15,8 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
-func (r *router) HandleUplink(gatewayEUI types.GatewayEUI, uplink *pb.UplinkMessage) error {
-	ctx := r.Ctx.WithField("GatewayEUI", gatewayEUI)
+func (r *router) HandleUplink(gatewayID string, uplink *pb.UplinkMessage) error {
+	ctx := r.Ctx.WithField("GatewayID", gatewayID)
 	var err error
 	start := time.Now()
 	defer func() {
@@ -45,7 +45,7 @@ func (r *router) HandleUplink(gatewayEUI types.GatewayEUI, uplink *pb.UplinkMess
 			"DevEUI": devEUI,
 			"AppEUI": appEUI,
 		}).Debug("Handle Uplink as Activation")
-		_, err := r.HandleActivation(gatewayEUI, &pb.DeviceActivationRequest{
+		_, err := r.HandleActivation(gatewayID, &pb.DeviceActivationRequest{
 			Payload:          uplink.Payload,
 			DevEui:           &devEUI,
 			AppEui:           &appEUI,
@@ -80,7 +80,7 @@ func (r *router) HandleUplink(gatewayEUI types.GatewayEUI, uplink *pb.UplinkMess
 
 	ctx = ctx.WithField("DevAddr", devAddr)
 
-	gateway := r.getGateway(gatewayEUI)
+	gateway := r.getGateway(gatewayID)
 	gateway.LastSeen = time.Now()
 	gateway.Schedule.Sync(uplink.GatewayMetadata.Timestamp)
 	gateway.Utilization.AddRx(uplink)

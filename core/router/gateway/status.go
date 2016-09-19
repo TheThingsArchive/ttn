@@ -8,7 +8,6 @@ import (
 	"sync"
 
 	pb_gateway "github.com/TheThingsNetwork/ttn/api/gateway"
-	"github.com/TheThingsNetwork/ttn/core/types"
 	"gopkg.in/redis.v3"
 )
 
@@ -47,10 +46,10 @@ func (s *statusStore) Get() (*pb_gateway.Status, error) {
 }
 
 // NewRedisStatusStore creates a new Redis-based status store
-func NewRedisStatusStore(client *redis.Client, eui types.GatewayEUI) StatusStore {
+func NewRedisStatusStore(client *redis.Client, id string) StatusStore {
 	return &redisStatusStore{
 		client: client,
-		key:    fmt.Sprintf("router:gateway:%s", eui),
+		key:    fmt.Sprintf("router:gateway:%s", id),
 	}
 }
 

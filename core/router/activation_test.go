@@ -17,14 +17,14 @@ import (
 func TestHandleActivation(t *testing.T) {
 	a := New(t)
 
-	gatewayEUI := types.GatewayEUI{0, 1, 2, 3, 4, 5, 6, 7}
+	gtwID := "eui-0102030405060708"
 
 	r := &router{
 		Component: &core.Component{
 			Ctx: GetLogger(t, "TestHandleActivation"),
 		},
-		gateways: map[types.GatewayEUI]*gateway.Gateway{
-			gatewayEUI: newReferenceGateway(t, "EU_863_870"),
+		gateways: map[string]*gateway.Gateway{
+			gtwID: newReferenceGateway(t, "EU_863_870"),
 		},
 	}
 
@@ -39,12 +39,12 @@ func TestHandleActivation(t *testing.T) {
 		AppEui:           &appEUI,
 		DevEui:           &devEUI,
 	}
-	gtwEUI := types.GatewayEUI{0, 1, 2, 3, 4, 5, 6, 7}
 
-	res, err := r.HandleActivation(gtwEUI, activation)
+	res, err := r.HandleActivation(gtwID, activation)
 	a.So(res, ShouldBeNil)
 	a.So(err, ShouldNotBeNil)
-	utilization := r.getGateway(gtwEUI).Utilization
+
+	utilization := r.getGateway(gtwID).Utilization
 	utilization.Tick()
 	rx, _ := utilization.Get()
 	a.So(rx, ShouldBeGreaterThan, 0)

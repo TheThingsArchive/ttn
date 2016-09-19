@@ -7,15 +7,15 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/api/router"
-	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/spf13/cobra"
 )
 
 var gatewayStatusCmd = &cobra.Command{
-	Use:   "status [GatewayEUI]",
+	Use:   "status [gatewayID]",
 	Short: "Get status of a gateway",
 	Long:  `ttnctl gateway status can be used to get status of gateways.`,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -24,19 +24,17 @@ var gatewayStatusCmd = &cobra.Command{
 			return
 		}
 
-		euiString := args[0]
-		ctx = ctx.WithField("Gateway EUI", euiString)
-
-		eui, err := types.ParseGatewayEUI(euiString)
-		if err != nil {
-			ctx.WithError(err).Fatal("Invalid Gateway EUI")
+		gtwID := args[0]
+		if !api.ValidID(gtwID) {
+			ctx.Fatal("Invalid Gateway ID")
 		}
+		ctx = ctx.WithField("GatewayID", gtwID)
 
 		conn, manager := util.GetRouterManager(ctx)
 		defer conn.Close()
 
 		resp, err := manager.GatewayStatus(util.GetContext(ctx), &router.GatewayStatusRequest{
-			GatewayEui: &eui,
+			GatewayId: gtwID,
 		})
 		if err != nil {
 			ctx.WithError(errors.FromGRPCError(err)).Fatal("Could not get status of gateway.")

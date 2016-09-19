@@ -17,4 +17,5 @@ type UplinkProcessor func(ctx log.Interface, ttnUp *pb_broker.DeduplicatedUplink
 // DownlinkProcessor processes an application-layer downlink message to a downlik protobuf
 type DownlinkProcessor func(ctx log.Interface, appDown *mqtt.DownlinkMessage, ttnDown *pb_broker.DownlinkMessage) error
 
+// ErrNotNeeded indicates that the processing of a message should be aborted
 var ErrNotNeeded = errors.New("Further processing not needed")

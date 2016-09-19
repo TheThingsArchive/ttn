@@ -12,6 +12,7 @@ import (
 	"github.com/apex/log"
 )
 
+// ResponseDeadline indicates how long
 var ResponseDeadline = 100 * time.Millisecond
 
 func (h *handler) HandleUplink(uplink *pb_broker.DeduplicatedUplinkMessage) error {

@@ -65,7 +65,7 @@ var uplinkCmd = &cobra.Command{
 
 		md := metadata.Pairs(
 			"token", "token",
-			"gateway_eui", "0102030405060708",
+			"id", "eui-0102030405060708",
 		)
 		gatewayContext := metadata.NewContext(context.Background(), md)
 
@@ -95,7 +95,7 @@ var uplinkCmd = &cobra.Command{
 
 		err = uplink.Send(&router.UplinkMessage{
 			Payload:          bytes,
-			GatewayMetadata:  util.GetGatewayMetadata(types.GatewayEUI([8]byte{1, 2, 3, 4, 5, 6, 7, 8}), 868100000),
+			GatewayMetadata:  util.GetGatewayMetadata("ttnctl", 868100000),
 			ProtocolMetadata: util.GetProtocolMetadata("SF7BW125"),
 		})
 		if err != nil {

@@ -26,12 +26,12 @@ func TestHandleUplink(t *testing.T) {
 
 	b := getTestBroker(t)
 
-	gtwEUI := types.GatewayEUI([8]byte{0, 1, 2, 3, 4, 5, 6, 7})
+	gtwID := "eui-0102030405060708"
 
 	// Invalid Payload
 	err := b.HandleUplink(&pb.UplinkMessage{
 		Payload:          []byte{0x01, 0x02, 0x03},
-		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2, GatewayEui: &gtwEUI},
+		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2, GatewayId: gtwID},
 		ProtocolMetadata: &protocol.RxMetadata{},
 	})
 	a.So(err, ShouldNotBeNil)
@@ -58,7 +58,7 @@ func TestHandleUplink(t *testing.T) {
 	}, nil)
 	err = b.HandleUplink(&pb.UplinkMessage{
 		Payload:          bytes,
-		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2, GatewayEui: &gtwEUI},
+		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2, GatewayId: gtwID},
 		ProtocolMetadata: &protocol.RxMetadata{Protocol: &protocol.RxMetadata_Lorawan{Lorawan: &pb_lorawan.Metadata{}}},
 	})
 	a.So(err, ShouldHaveSameTypeAs, &errors.ErrNotFound{})
@@ -96,7 +96,7 @@ func TestHandleUplink(t *testing.T) {
 	b.ns.EXPECT().GetDevices(gomock.Any(), gomock.Any()).Return(nsResponse, nil)
 	err = b.HandleUplink(&pb.UplinkMessage{
 		Payload:          bytes,
-		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2, GatewayEui: &gtwEUI},
+		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2, GatewayId: gtwID},
 		ProtocolMetadata: &protocol.RxMetadata{Protocol: &protocol.RxMetadata_Lorawan{Lorawan: &pb_lorawan.Metadata{}}},
 	})
 	a.So(err, ShouldHaveSameTypeAs, &errors.ErrNotFound{})
@@ -109,7 +109,7 @@ func TestHandleUplink(t *testing.T) {
 	b.ns.EXPECT().GetDevices(gomock.Any(), gomock.Any()).Return(nsResponse, nil)
 	err = b.HandleUplink(&pb.UplinkMessage{
 		Payload:          bytes,
-		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2, GatewayEui: &gtwEUI},
+		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2, GatewayId: gtwID},
 		ProtocolMetadata: &protocol.RxMetadata{Protocol: &protocol.RxMetadata_Lorawan{Lorawan: &pb_lorawan.Metadata{}}},
 	})
 	a.So(err, ShouldHaveSameTypeAs, &errors.ErrNotFound{})
@@ -126,7 +126,7 @@ func TestHandleUplink(t *testing.T) {
 	}, nil)
 	err = b.HandleUplink(&pb.UplinkMessage{
 		Payload:          bytes,
-		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2, GatewayEui: &gtwEUI},
+		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2, GatewayId: gtwID},
 		ProtocolMetadata: &protocol.RxMetadata{Protocol: &protocol.RxMetadata_Lorawan{Lorawan: &pb_lorawan.Metadata{}}},
 	})
 	a.So(err, ShouldBeNil)
@@ -144,7 +144,7 @@ func TestHandleUplink(t *testing.T) {
 	}, nil)
 	err = b.HandleUplink(&pb.UplinkMessage{
 		Payload:          bytes,
-		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2, GatewayEui: &gtwEUI},
+		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2, GatewayId: gtwID},
 		ProtocolMetadata: &protocol.RxMetadata{Protocol: &protocol.RxMetadata_Lorawan{Lorawan: &pb_lorawan.Metadata{}}},
 	})
 	a.So(err, ShouldBeNil)
