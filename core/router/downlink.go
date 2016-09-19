@@ -30,13 +30,13 @@ func (r *router) SubscribeDownlink(gatewayID string) (<-chan *pb.DownlinkMessage
 	if fromSchedule := gateway.Schedule.Subscribe(); fromSchedule != nil {
 		toGateway := make(chan *pb.DownlinkMessage)
 		go func() {
-			ctx.Debug("Activate Downlink")
+			ctx.Debug("Activate downlink")
 			for message := range fromSchedule {
 				gateway.Utilization.AddTx(message)
-				ctx.Debug("Send Downlink")
+				ctx.Debug("Send downlink")
 				toGateway <- message
 			}
-			ctx.Debug("Deactivate Downlink")
+			ctx.Debug("Deactivate downlink")
 			close(toGateway)
 		}()
 		return toGateway, nil
