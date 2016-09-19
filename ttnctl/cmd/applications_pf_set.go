@@ -62,39 +62,40 @@ The functions are read from the supplied file or from STDIN.`,
 			switch function {
 			case "decoder":
 				fmt.Println(`function Decoder(bytes) {
-  // Here you can decode the payload into json.
-  // bytes is of type Buffer.
-  // todo: return an object
+  // Decode an uplink message from
+  // a Buffer of bytes to an object.
+
   return {
-    payload: bytes,
+    isLightOn: bytes[0]
   };
 }
 ########## Write your Decoder here and end with Ctrl+D (EOF):`)
 				app.Decoder = readFunction()
 			case "converter":
-				fmt.Println(`function Converter(val) {
-  // Here you can combine the json values into a more meaningful value.
-  // val is the output of the decoder function.
-  // todo: return an object
-  return val;
+				fmt.Println(`function Converter(decodedObj) {
+  // Modify the decoded uplink message.
+  
+  decodedObj.isLightOn = !!decodedObj.isLightOn; 
+
+  return decodedObj;
 }
 ########## Write your Converter here and end with Ctrl+D (EOF):`)
 				app.Converter = readFunction()
 			case "validator":
-				fmt.Println(`function Validator(val) {
-  // This function defines which values will be propagated.
-  // val is the output of the converter function.
-  // todo: return a boolean
+				fmt.Println(`function Validator(convertedObj) {
+  // Return false if the decoded and converted uplink
+  // message is invalid and should be dropped.
+
   return true;
 }
 ########## Write your Validator here and end with Ctrl+D (EOF):`)
 				app.Validator = readFunction()
 			case "encoder":
 				fmt.Println(`function Encoder(obj) {
-  // The encoder encodes application data (a JS object)
-  // into a binary payload that is sent to devices.
-  // todo: return an array of numbers representing the payload
-  return [ 0x1 ];
+  // Convert uplink messages sent as object to
+  // an array of bytes.
+  
+  return [ obj.turnLightOn ? 1 : 0 ];
 }
 ########## Write your Encoder here and end with Ctrl+D (EOF):`)
 				app.Encoder = readFunction()
