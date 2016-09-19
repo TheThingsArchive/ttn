@@ -53,6 +53,11 @@ func (g *Gateway) updateTimestamp() {
 }
 
 func (g *Gateway) HandleStatus(status *pb.Status) (err error) {
+	if err = g.Status.Update(status); err != nil {
+		return err
+	}
+	g.updateTimestamp()
+
 	if g.monitor != nil {
 		go func() {
 			cl, err := g.statusMonitor()
@@ -65,12 +70,16 @@ func (g *Gateway) HandleStatus(status *pb.Status) (err error) {
 			}
 		}()
 	}
-
-	g.updateTimestamp()
-	return g.Status.Update(status)
+	return nil
 }
 
 func (g *Gateway) HandleUplink(uplink *pb_router.UplinkMessage) (err error) {
+	if err = g.Utilization.AddRx(uplink); err != nil {
+		return err
+	}
+	g.Schedule.Sync(uplink.GatewayMetadata.Timestamp)
+	g.updateTimestamp()
+
 	if g.monitor != nil {
 		go func() {
 			cl, err := g.uplinkMonitor()
@@ -83,13 +92,16 @@ func (g *Gateway) HandleUplink(uplink *pb_router.UplinkMessage) (err error) {
 			}
 		}()
 	}
-
-	g.updateTimestamp()
-	g.Schedule.Sync(uplink.GatewayMetadata.Timestamp)
-	return g.Utilization.AddRx(uplink)
+	return nil
 }
 
 func (g *Gateway) HandleDownlink(identifier string, downlink *pb_router.DownlinkMessage) (err error) {
+	ctx := g.Ctx.WithField("Identifier", identifier)
+	if err = g.Schedule.Schedule(identifier, downlink); err != nil {
+		ctx.WithError(err).Warn("Could not schedule downlink")
+		return err
+	}
+
 	if g.monitor != nil {
 		go func() {
 			cl, err := g.downlinkMonitor()
@@ -102,10 +114,5 @@ func (g *Gateway) HandleDownlink(identifier string, downlink *pb_router.Downlink
 			}
 		}()
 	}
-
-	ctx := g.Ctx.WithField("Identifier", identifier)
-	if err = g.Schedule.Schedule(identifier, downlink); err != nil {
-		ctx.WithError(err).Warn("Could not schedule downlink")
-	}
-	return err
+	return nil
 }
