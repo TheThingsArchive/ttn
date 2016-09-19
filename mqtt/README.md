@@ -124,6 +124,23 @@ if err := token.Error(); err != nil {
 }
 ```
 
+### Downlink Fields
+
+Instead of `payload_raw` you can also use `payload_fields` with an object of fields. This requires the application to be configured with an Encoder Payload Function which encodes the fields into a Buffer.
+
+**Message:**
+
+```js
+{
+  "port": 1,                 // LoRaWAN FPort
+  "payload_fields": {
+    "led": true
+  }
+}
+```
+
+**Usage (Mosquitto):** `mosquitto_pub -d -t 'my-app-id/devices/my-dev-id/down' -m '{"port":1,"payload_fields":{"led":true}}'`
+
 ## Device Activations
 
 **Topic:** `<AppID>/devices/<DevID>/activations`
