@@ -1,7 +1,10 @@
-# The Things Network MQTT
+# API Reference
 
-This package contains the code that is used to publish and subscribe to MQTT.
-This README describes the topics and messages that are used 
+* Host: `<Region>.thethings.network`
+* Port: `1883`
+* TLS: Not yet available
+* Username: Application ID
+* Password: Application Access Key
 
 ## Uplink Messages
 
