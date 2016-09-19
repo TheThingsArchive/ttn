@@ -35,11 +35,6 @@ func gatewayFromContext(ctx context.Context) (gatewayID string, err error) {
 		return "", err
 	}
 
-	// validate token
-	if _, err := tokenFromMetadata(md); err != nil {
-		return "", err
-	}
-
 	return gatewayFromMetadata(md)
 }
 
@@ -56,10 +51,6 @@ func tokenFromMetadata(md metadata.MD) (string, error) {
 	if !ok || len(token) < 1 {
 		return "", errors.NewErrInvalidArgument("Metadata", "token missing")
 	}
-	if token != "token" {
-		// TODO: Validate Token
-		return "", errors.NewErrPermissionDenied("Gateway token not authorized")
-	}
 	return token[0], nil
 }
 
@@ -75,6 +66,10 @@ func (r *routerRPC) GatewayStatus(stream pb.Router_GatewayStatusServer) error {
 	token, err := tokenFromMetadata(md)
 	if err != nil {
 		return errors.BuildGRPCError(err)
+	}
+	if token != "token" {
+		// TODO: Validate Token
+		return errors.NewErrPermissionDenied("Gateway token not authorized")
 	}
 
 	//TODO Validate token
@@ -107,6 +102,10 @@ func (r *routerRPC) Uplink(stream pb.Router_UplinkServer) error {
 	token, err := tokenFromMetadata(md)
 	if err != nil {
 		return errors.BuildGRPCError(err)
+	}
+	if token != "token" {
+		// TODO: Validate Token
+		return errors.NewErrPermissionDenied("Gateway token not authorized")
 	}
 
 	//TODO Validate token
@@ -157,7 +156,7 @@ func (r *routerRPC) Subscribe(req *pb.SubscribeRequest, stream pb.Router_Subscri
 
 // Activate implements RouterServer interface (github.com/TheThingsNetwork/ttn/api/router)
 func (r *routerRPC) Activate(ctx context.Context, req *pb.DeviceActivationRequest) (*pb.DeviceActivationResponse, error) {
-	id, err := gatewayFromContext(stream.Context())
+	gatewayID, err := gatewayFromContext(ctx)
 	if err != nil {
 		return nil, errors.BuildGRPCError(err)
 	}
