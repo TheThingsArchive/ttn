@@ -32,7 +32,12 @@ func metadataFromContext(ctx context.Context) (md metadata.MD, err error) {
 func gatewayFromContext(ctx context.Context) (gatewayID string, err error) {
 	md, err := metadataFromContext(ctx)
 	if err != nil {
-		return
+		return "", err
+	}
+
+	// validate token
+	if _, err := tokenFromMetadata(md); err != nil {
+		return "", err
 	}
 
 	return gatewayFromMetadata(md)
@@ -41,8 +46,7 @@ func gatewayFromContext(ctx context.Context) (gatewayID string, err error) {
 func gatewayFromMetadata(md metadata.MD) (gatewayID string, err error) {
 	id, ok := md["id"]
 	if !ok || len(id) < 1 {
-		err = errors.NewErrInvalidArgument("Metadata", "id missing")
-		return
+		return "", errors.NewErrInvalidArgument("Metadata", "id missing")
 	}
 	return id[0], nil
 }
@@ -52,8 +56,7 @@ func tokenFromMetadata(md metadata.MD) (string, error) {
 	if !ok || len(token) < 1 {
 		return "", errors.NewErrInvalidArgument("Metadata", "token missing")
 	}
-
-	if token[0] != "token" {
+	if token != "token" {
 		// TODO: Validate Token
 		return "", errors.NewErrPermissionDenied("Gateway token not authorized")
 	}
@@ -71,13 +74,11 @@ func (r *routerRPC) GatewayStatus(stream pb.Router_GatewayStatusServer) error {
 
 	token, err := tokenFromMetadata(md)
 	if err != nil {
-		return err
+		return errors.BuildGRPCError(err)
 	}
 
 	//TODO Validate token
-
-	//r.router.getGateway(id).Token = token
-	r.router.getGateway(id).Token = token // FIXME
+	r.router.getGateway(id).Token = token
 
 	for {
 		status, err := stream.Recv()
@@ -100,7 +101,7 @@ func (r *routerRPC) Uplink(stream pb.Router_UplinkServer) error {
 
 	id, err := gatewayFromMetadata(md)
 	if err != nil {
-		return err
+		return errors.BuildGRPCError(err)
 	}
 
 	token, err := tokenFromMetadata(md)
@@ -109,9 +110,7 @@ func (r *routerRPC) Uplink(stream pb.Router_UplinkServer) error {
 	}
 
 	//TODO Validate token
-
-	//r.router.getGateway(id).Token = token
-	r.router.getGateway(id).Token = token // FIXME
+	r.router.getGateway(id).Token = token
 
 	for {
 		uplink, err := stream.Recv()
@@ -130,14 +129,10 @@ func (r *routerRPC) Uplink(stream pb.Router_UplinkServer) error {
 
 // Subscribe implements RouterServer interface (github.com/TheThingsNetwork/ttn/api/router)
 func (r *routerRPC) Subscribe(req *pb.SubscribeRequest, stream pb.Router_SubscribeServer) error {
-	md, err := metadataFromContext(stream.Context())
-
-	id, err := gatewayFromMetadata(md)
+	id, err := gatewayFromContext(stream.Context())
 	if err != nil {
-		return err
+		return errors.BuildGRPCError(err)
 	}
-
-	// TODO validate token
 
 	downlinkChannel, err := r.router.SubscribeDownlink(id)
 	if err != nil {
@@ -162,16 +157,15 @@ func (r *routerRPC) Subscribe(req *pb.SubscribeRequest, stream pb.Router_Subscri
 
 // Activate implements RouterServer interface (github.com/TheThingsNetwork/ttn/api/router)
 func (r *routerRPC) Activate(ctx context.Context, req *pb.DeviceActivationRequest) (*pb.DeviceActivationResponse, error) {
-	md, err := metadataFromContext(ctx)
-
-	id, err := gatewayFromMetadata(md)
+	id, err := gatewayFromContext(stream.Context())
 	if err != nil {
-		return nil, err
+		return nil, errors.BuildGRPCError(err)
 	}
+
 	if !req.Validate() {
 		return nil, grpcErrf(codes.InvalidArgument, "Invalid Activation Request")
 	}
-	return r.router.HandleActivation(id, req)
+	return r.router.HandleActivation(gatewayID, req)
 }
 
 // RegisterRPC registers this router as a RouterServer (github.com/TheThingsNetwork/ttn/api/router)
