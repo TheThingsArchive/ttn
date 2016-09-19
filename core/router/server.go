@@ -58,7 +58,7 @@ func tokenFromMetadata(md metadata.MD) (string, error) {
 func (r *routerRPC) GatewayStatus(stream pb.Router_GatewayStatusServer) error {
 	md, err := metadataFromContext(stream.Context())
 
-	id, err := gatewayFromMetadata(md)
+	gatewayID, err := gatewayFromMetadata(md)
 	if err != nil {
 		return errors.BuildGRPCError(err)
 	}
@@ -72,7 +72,7 @@ func (r *routerRPC) GatewayStatus(stream pb.Router_GatewayStatusServer) error {
 		return errors.NewErrPermissionDenied("Gateway token not authorized")
 	}
 
-	r.router.getGateway(id).SetToken(token)
+	r.router.getGateway(gatewayID).SetToken(token)
 
 	for {
 		status, err := stream.Recv()
@@ -85,7 +85,7 @@ func (r *routerRPC) GatewayStatus(stream pb.Router_GatewayStatusServer) error {
 		if !status.Validate() {
 			return grpcErrf(codes.InvalidArgument, "Invalid Gateway Status")
 		}
-		go r.router.HandleGatewayStatus(id, status)
+		go r.router.HandleGatewayStatus(gatewayID, status)
 	}
 }
 
@@ -93,7 +93,7 @@ func (r *routerRPC) GatewayStatus(stream pb.Router_GatewayStatusServer) error {
 func (r *routerRPC) Uplink(stream pb.Router_UplinkServer) error {
 	md, err := metadataFromContext(stream.Context())
 
-	id, err := gatewayFromMetadata(md)
+	gatewayID, err := gatewayFromMetadata(md)
 	if err != nil {
 		return errors.BuildGRPCError(err)
 	}
@@ -107,7 +107,7 @@ func (r *routerRPC) Uplink(stream pb.Router_UplinkServer) error {
 		return errors.NewErrPermissionDenied("Gateway token not authorized")
 	}
 
-	r.router.getGateway(id).SetToken(token)
+	r.router.getGateway(gatewayID).SetToken(token)
 
 	for {
 		uplink, err := stream.Recv()
@@ -120,22 +120,22 @@ func (r *routerRPC) Uplink(stream pb.Router_UplinkServer) error {
 		if !uplink.Validate() {
 			return grpcErrf(codes.InvalidArgument, "Invalid Uplink")
 		}
-		go r.router.HandleUplink(id, uplink)
+		go r.router.HandleUplink(gatewayID, uplink)
 	}
 }
 
 // Subscribe implements RouterServer interface (github.com/TheThingsNetwork/ttn/api/router)
 func (r *routerRPC) Subscribe(req *pb.SubscribeRequest, stream pb.Router_SubscribeServer) error {
-	id, err := gatewayFromContext(stream.Context())
+	gatewayID, err := gatewayFromContext(stream.Context())
 	if err != nil {
 		return errors.BuildGRPCError(err)
 	}
 
-	downlinkChannel, err := r.router.SubscribeDownlink(id)
+	downlinkChannel, err := r.router.SubscribeDownlink(gatewayID)
 	if err != nil {
 		return err
 	}
-	defer r.router.UnsubscribeDownlink(id)
+	defer r.router.UnsubscribeDownlink(gatewayID)
 
 	for {
 		if downlinkChannel == nil {
