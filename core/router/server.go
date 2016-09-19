@@ -72,8 +72,7 @@ func (r *routerRPC) GatewayStatus(stream pb.Router_GatewayStatusServer) error {
 		return errors.NewErrPermissionDenied("Gateway token not authorized")
 	}
 
-	//TODO Validate token
-	r.router.getGateway(id).Token = token
+	r.router.getGateway(id).SetToken(token)
 
 	for {
 		status, err := stream.Recv()
@@ -108,8 +107,7 @@ func (r *routerRPC) Uplink(stream pb.Router_UplinkServer) error {
 		return errors.NewErrPermissionDenied("Gateway token not authorized")
 	}
 
-	//TODO Validate token
-	r.router.getGateway(id).Token = token
+	r.router.getGateway(id).SetToken(token)
 
 	for {
 		uplink, err := stream.Recv()

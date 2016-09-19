@@ -4,6 +4,7 @@
 package gateway
 
 import (
+	"sync"
 	"time"
 
 	pb "github.com/TheThingsNetwork/ttn/api/gateway"
@@ -31,11 +32,20 @@ type Gateway struct {
 	Utilization Utilization
 	Schedule    Schedule
 	LastSeen    time.Time
-	Token       string
+
+	Token     string
+	tokenLock sync.Mutex
 
 	monitor *monitorConn
 
 	Ctx log.Interface
+}
+
+func (g *Gateway) SetToken(token string) {
+	g.tokenLock.Lock()
+	defer g.tokenLock.Unlock()
+
+	g.Token = token
 }
 
 func (g *Gateway) updateTimestamp() {
