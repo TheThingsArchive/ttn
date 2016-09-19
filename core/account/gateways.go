@@ -10,7 +10,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/types"
 )
 
-// ListApplications list all applications
+// ListGateways list all gateways
 func (a *Account) ListGateways() (gateways []Gateway, err error) {
 	err = a.get("/gateways", &gateways)
 	return gateways, err
@@ -57,7 +57,7 @@ func (a *Account) DeleteGateway(gatewayID string) error {
 	return a.del(fmt.Sprintf("/gateways/%s", gatewayID))
 }
 
-// Grant grants rights to a collaborator of the gateway
+// GrantGatewayRights grants rights to a collaborator of the gateway
 func (a *Account) GrantGatewayRights(gatewayID string, username string, rights []types.Right) error {
 	req := grantReq{
 		Rights: rights,
@@ -65,11 +65,12 @@ func (a *Account) GrantGatewayRights(gatewayID string, username string, rights [
 	return a.put(fmt.Sprintf("/gateways/%s/collaborators/%s", gatewayID, username), req, nil)
 }
 
-// Retract removes rights from a collaborator of the gateway
+// RetractGatewayRights removes rights from a collaborator of the gateway
 func (a *Account) RetractGatewayRights(gatewayID string, username string) error {
 	return a.del(fmt.Sprintf("/gateways/%s/collaborators/%s", gatewayID, username))
 }
 
+// GatewayEdits contains editable fields of gateways
 type GatewayEdits struct {
 	Owner         string        `json:"owner,omitempty"`
 	PublicRights  []types.Right `json:"public_rights,omitempty"`

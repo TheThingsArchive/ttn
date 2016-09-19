@@ -32,6 +32,7 @@ func NewWithKey(server, accessKey string) *Account {
 	}
 }
 
+// NewWithPublic creates an account client that does not use authentication
 func NewWithPublic(server string) *Account {
 	return &Account{
 		server: server,

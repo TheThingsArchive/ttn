@@ -62,18 +62,18 @@ func (n *Name) String() string {
 
 // Gateway represents a gateway on the account server
 type Gateway struct {
-	ID               string           `json:"id" valid:"required"`
-	EUI              types.GatewayEUI `json:"eui" valid:"required"`
-	Activated        bool             `json:"activated"`
-	FrequencyPlan    string           `json:"frequency_plan"`
-	FrequencyPlanURL string           `json:"frequency_plan_url"`
-	LocationPublic   bool             `json:"location_public"`
-	StatusPublic     bool             `json:"status_public"`
-	Location         *Location        `json:"location"`
-	Collaborators    []Collaborator   `json:"collaborator"`
-	Key              string           `json:"key"`
+	ID               string         `json:"id" valid:"required"`
+	Activated        bool           `json:"activated"`
+	FrequencyPlan    string         `json:"frequency_plan"`
+	FrequencyPlanURL string         `json:"frequency_plan_url"`
+	LocationPublic   bool           `json:"location_public"`
+	StatusPublic     bool           `json:"status_public"`
+	Location         *Location      `json:"location"`
+	Collaborators    []Collaborator `json:"collaborator"`
+	Key              string         `json:"key"`
 }
 
+// Location is the GPS location of a gateway
 type Location struct {
 	Longitude float64 `json:"lng"`
 	Latitude  float64 `json:"lat"`
