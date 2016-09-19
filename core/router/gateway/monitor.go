@@ -8,7 +8,7 @@ import (
 	pb_noc "github.com/TheThingsNetwork/ttn/api/noc"
 )
 
-func (g Gateway) monitorContext() (ctx context.Context) {
+func (g *Gateway) monitorContext() (ctx context.Context) {
 	ctx = context.WithValue(context.Background(), "id", g.ID)
 	ctx = context.WithValue(ctx, "token", g.Token)
 	return ctx
