@@ -11,11 +11,13 @@ import (
 
 // NewGateway creates a new in-memory Gateway structure
 func NewGateway(ctx log.Interface, id string) *Gateway {
+	ctx = ctx.WithField("GatewayID", id)
 	return &Gateway{
 		ID:          id,
 		Status:      NewStatusStore(),
 		Utilization: NewUtilization(),
-		Schedule:    NewSchedule(ctx.WithField("GatewayID", id)),
+		Schedule:    NewSchedule(ctx),
+		Ctx:         ctx,
 	}
 }
 
@@ -27,4 +29,6 @@ type Gateway struct {
 	Schedule    Schedule
 	LastSeen    time.Time
 	Token       string
+
+	Ctx log.Interface
 }
