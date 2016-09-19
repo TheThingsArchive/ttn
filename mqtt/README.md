@@ -43,13 +43,13 @@
 
 Note: Some values may be omitted if they are `null`, `""` or `0`.
 
-**Usage (Mosquitto):** `mosquitto_sub -d -t 'my-app-id/devices/my-dev-id/up'`
+**Usage (Mosquitto):** `mosquitto_sub -h <Region>.thethings.network:1883 -d -t 'my-app-id/devices/my-dev-id/up'`
 
 **Usage (Go client):**
 
 ```go
 ctx := log.WithField("Example", "Go Client")
-client := NewClient(ctx, "ttnctl", "my-app-id", "my-access-key", "staging.thethingsnetwork.org:1883")
+client := NewClient(ctx, "ttnctl", "my-app-id", "my-access-key", "<Region>.thethings.network:1883")
 if err := client.Connect(); err != nil {
   ctx.WithError(err).Fatal("Could not connect")
 }
@@ -102,13 +102,13 @@ you will see this on MQTT:
 }
 ```
 
-**Usage (Mosquitto):** `mosquitto_pub -d -t 'my-app-id/devices/my-dev-id/down' -m '{"port":1,"payload_raw":"AQIDBA=="}'`
+**Usage (Mosquitto):** `mosquitto_pub -h <Region>.thethings.network:1883 -d -t 'my-app-id/devices/my-dev-id/down' -m '{"port":1,"payload_raw":"AQIDBA=="}'`
 
 **Usage (Go client):**
 
 ```go
 ctx := log.WithField("Example", "Go Client")
-client := NewClient(ctx, "ttnctl", "my-app-id", "my-access-key", "staging.thethingsnetwork.org:1883")
+client := NewClient(ctx, "ttnctl", "my-app-id", "my-access-key", "<Region>.thethings.network:1883")
 if err := client.Connect(); err != nil {
   ctx.WithError(err).Fatal("Could not connect")
 }
@@ -139,7 +139,29 @@ Instead of `payload_raw` you can also use `payload_fields` with an object of fie
 }
 ```
 
-**Usage (Mosquitto):** `mosquitto_pub -d -t 'my-app-id/devices/my-dev-id/down' -m '{"port":1,"payload_fields":{"led":true}}'`
+**Usage (Mosquitto):** `mosquitto_pub -h <Region>.thethings.network:1883 -d -t 'my-app-id/devices/my-dev-id/down' -m '{"port":1,"payload_fields":{"led":true}}'`
+
+**Usage (Go client):**
+
+```go
+ctx := log.WithField("Example", "Go Client")
+client := NewClient(ctx, "ttnctl", "my-app-id", "my-access-key", "<Region>.thethings.network:1883")
+if err := client.Connect(); err != nil {
+  ctx.WithError(err).Fatal("Could not connect")
+}
+token := client.PublishDownlink(DownlinkMessage{
+  AppID:   "my-app-id",
+  DevID:   "my-dev-id",
+  FPort:   1,
+  Fields: map[string]interface{}{
+    "led": true,
+  },
+})
+token.Wait()
+if err := token.Error(); err != nil {
+  ctx.WithError(err).Fatal("Could not publish")
+}
+```
 
 ## Device Activations
 
@@ -158,13 +180,13 @@ Instead of `payload_raw` you can also use `payload_fields` with an object of fie
 }
 ```
 
-**Usage (Mosquitto):** `mosquitto_sub -d -t 'my-app-id/devices/my-dev-id/activations'`
+**Usage (Mosquitto):** `mosquitto_sub -h <Region>.thethings.network:1883 -d -t 'my-app-id/devices/my-dev-id/activations'`
 
 **Usage (Go client):**
 
 ```go
 ctx := log.WithField("Example", "Go Client")
-client := NewClient(ctx, "ttnctl", "my-app-id", "my-access-key", "staging.thethingsnetwork.org:1883")
+client := NewClient(ctx, "ttnctl", "my-app-id", "my-access-key", "<Region>.thethings.network:1883")
 if err := client.Connect(); err != nil {
   ctx.WithError(err).Fatal("Could not connect")
 }
