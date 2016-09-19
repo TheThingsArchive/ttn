@@ -13,6 +13,7 @@ import (
 
 	"github.com/TheThingsNetwork/ttn/api"
 	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
+	pb_noc "github.com/TheThingsNetwork/ttn/api/noc"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/logging"
 	"github.com/TheThingsNetwork/ttn/utils/security"
@@ -129,6 +130,7 @@ const (
 type Component struct {
 	Identity         *pb_discovery.Announcement
 	Discovery        pb_discovery.Client
+	Noc              pb_noc.MonitorClient
 	Ctx              log.Interface
 	AccessToken      string
 	privateKey       string
