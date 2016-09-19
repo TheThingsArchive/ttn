@@ -26,4 +26,5 @@ type Gateway struct {
 	Utilization Utilization
 	Schedule    Schedule
 	LastSeen    time.Time
+	Token       string
 }
