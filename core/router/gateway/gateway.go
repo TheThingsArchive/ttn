@@ -48,7 +48,7 @@ func (g *Gateway) SetToken(token string) {
 	g.Token = token
 }
 
-func (g *Gateway) updateTimestamp() {
+func (g *Gateway) updateLastSeen() {
 	g.LastSeen = time.Now()
 }
 
@@ -56,7 +56,7 @@ func (g *Gateway) HandleStatus(status *pb.Status) (err error) {
 	if err = g.Status.Update(status); err != nil {
 		return err
 	}
-	g.updateTimestamp()
+	g.updateLastSeen()
 
 	if g.monitor != nil {
 		go func() {
@@ -78,7 +78,7 @@ func (g *Gateway) HandleUplink(uplink *pb_router.UplinkMessage) (err error) {
 		return err
 	}
 	g.Schedule.Sync(uplink.GatewayMetadata.Timestamp)
-	g.updateTimestamp()
+	g.updateLastSeen()
 
 	if g.monitor != nil {
 		go func() {
