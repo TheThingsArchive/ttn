@@ -11,7 +11,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/TheThingsNetwork/ttn/api"
 	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/logging"
@@ -72,14 +71,18 @@ func NewComponent(ctx log.Interface, serviceName string, announcedAddress string
 	}
 
 	if serviceName != "discovery" {
-		discoveryConn, err := grpc.Dial(viper.GetString("discovery-server"), append(api.DialOptions, grpc.WithBlock(), grpc.WithInsecure())...)
+		var err error
+		component.Discovery, err = pb_discovery.NewClient(
+			viper.GetString("discovery-server"),
+			component.Identity,
+			func() string {
+				token, _ := component.BuildJWT()
+				return token
+			},
+		)
 		if err != nil {
 			return nil, err
 		}
-		component.Discovery = pb_discovery.NewClient(discoveryConn, component.Identity, func() string {
-			token, _ := component.BuildJWT()
-			return token
-		})
 	}
 
 	if pub, priv, cert, err := security.LoadKeys(viper.GetString("key-dir")); err == nil {

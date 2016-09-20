@@ -113,3 +113,13 @@ func (_m *MockClient) GetAllHandlersForAppID(appID string) ([]*Announcement, err
 func (_mr *_MockClientRecorder) GetAllHandlersForAppID(arg0 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "GetAllHandlersForAppID", arg0)
 }
+
+func (_m *MockClient) Close() error {
+	ret := _m.ctrl.Call(_m, "Close")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+func (_mr *_MockClientRecorder) Close() *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "Close")
+}

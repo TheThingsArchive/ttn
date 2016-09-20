@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/bluele/gcache"
 
@@ -24,6 +25,7 @@ var CacheSize = 1000
 // CacheExpiration indicates the time a cached item is valid
 var CacheExpiration = 5 * time.Minute
 
+// Client is used as the main client to the Discovery server
 type Client interface {
 	Announce(token string) error
 	GetAll(serviceName string) ([]*Announcement, error)
@@ -33,10 +35,15 @@ type Client interface {
 	GetAllForMetadata(serviceName string, key Metadata_Key, matchFunc func(value []byte) bool) ([]*Announcement, error)
 	GetAllBrokersForDevAddr(devAddr types.DevAddr) ([]*Announcement, error)
 	GetAllHandlersForAppID(appID string) ([]*Announcement, error)
+	Close() error
 }
 
 // NewClient returns a new Client
-func NewClient(conn *grpc.ClientConn, announcement *Announcement, tokenFunc func() string) Client {
+func NewClient(server string, announcement *Announcement, tokenFunc func() string) (Client, error) {
+	conn, err := grpc.Dial(server, append(api.DialOptions, grpc.WithBlock(), grpc.WithInsecure())...)
+	if err != nil {
+		return nil, err
+	}
 	client := &DefaultClient{
 		lists:        make(map[string][]*Announcement),
 		listsUpdated: make(map[string]time.Time),
@@ -57,7 +64,7 @@ func NewClient(conn *grpc.ClientConn, announcement *Announcement, tokenFunc func
 			return client.get(key.serviceName, key.id)
 		}).
 		Build()
-	return client
+	return client, nil
 }
 
 // DefaultClient is a wrapper around DiscoveryClient
@@ -215,4 +222,10 @@ func (c *DefaultClient) GetAllHandlersForAppID(appID string) ([]*Announcement, e
 	return c.GetAllForMetadata("handler", Metadata_APP_ID, func(value []byte) bool {
 		return string(value) == appID
 	})
+}
+
+// Close purges the cache and closes the connection with the Discovery server
+func (c *DefaultClient) Close() error {
+	c.cache.Purge()
+	return c.conn.Close()
 }
