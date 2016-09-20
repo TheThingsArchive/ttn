@@ -1,24 +1,6 @@
-## ttnctl
+# API Reference
 
-Control The Things Network from the command line
-
-### Synopsis
-
-
-ttnctl controls The Things Network from the command line.
-
-### Options
-
-```
-      --config string               config file (default is $HOME/.ttnctl.yaml)
-      --discovery-server string     The address of the Discovery server (default "discover.thethingsnetwork.org:1900")
-      --mqtt-broker string          The address of the MQTT broker (default "eu.thethings.network:1883")
-      --ttn-account-server string   The address of the OAuth 2.0 server (default "https://account.thethingsnetwork.org")
-      --ttn-handler string          The ID of the TTN Handler as announced in the Discovery server (default "ttn-handler-eu")
-      --ttn-router string           The ID of the TTN Router as announced in the Discovery server (default "ttn-router-eu")
-```
-
-
+Control The Things Network from the command line.
 ## ttnctl applications
 
 Manage applications

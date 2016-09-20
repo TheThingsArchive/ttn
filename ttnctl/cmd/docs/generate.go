@@ -20,7 +20,14 @@ func (s byName) Less(i, j int) bool { return s[i].CommandPath() < s[j].CommandPa
 func main() {
 	cmds := genCmdList(cmd.RootCmd)
 	sort.Sort(byName(cmds))
+	fmt.Println(`# API Reference
+
+Control The Things Network from the command line.`)
 	for _, cmd := range cmds {
+		if cmd.CommandPath() == "ttnctl" {
+			continue
+		}
+
 		var buf bytes.Buffer
 		doc.GenMarkdownCustom(cmd, &buf, func(s string) string {
 			return "#" + strings.TrimSuffix(s, ".md")
