@@ -106,8 +106,8 @@ func (r *router) getGateway(id string) *gateway.Gateway {
 	if !ok {
 		gtw = gateway.NewGateway(r.Ctx, id)
 
-		if r.Component.NOC != nil {
-			gtw.SetMonitor(r.Component.NOC)
+		if r.Component.Monitor != nil {
+			gtw.SetMonitor(r.Component.Monitor)
 		}
 
 		r.gateways[id] = gtw

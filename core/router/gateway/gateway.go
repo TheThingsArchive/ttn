@@ -62,11 +62,11 @@ func (g *Gateway) HandleStatus(status *pb.Status) (err error) {
 		go func() {
 			cl, err := g.statusMonitor()
 			if err != nil {
-				g.Ctx.WithError(errors.FromGRPCError(err)).Error("Failed to establish status connection to the NOC")
+				g.Ctx.WithError(errors.FromGRPCError(err)).Error("Failed to establish status connection to the monitor")
 			}
 
 			if err = cl.Send(status); err != nil {
-				g.Ctx.WithError(errors.FromGRPCError(err)).Error("NOC status push failed")
+				g.Ctx.WithError(errors.FromGRPCError(err)).Error("Monitor status push failed")
 			}
 		}()
 	}
@@ -84,11 +84,11 @@ func (g *Gateway) HandleUplink(uplink *pb_router.UplinkMessage) (err error) {
 		go func() {
 			cl, err := g.uplinkMonitor()
 			if err != nil {
-				g.Ctx.WithError(errors.FromGRPCError(err)).Error("Failed to establish uplink connection to the NOC")
+				g.Ctx.WithError(errors.FromGRPCError(err)).Error("Failed to establish uplink connection to the monitor")
 			}
 
 			if err = cl.Send(uplink); err != nil {
-				g.Ctx.WithError(errors.FromGRPCError(err)).Error("NOC uplink push failed")
+				g.Ctx.WithError(errors.FromGRPCError(err)).Error("Monitor uplink push failed")
 			}
 		}()
 	}
@@ -106,11 +106,11 @@ func (g *Gateway) HandleDownlink(identifier string, downlink *pb_router.Downlink
 		go func() {
 			cl, err := g.downlinkMonitor()
 			if err != nil {
-				g.Ctx.WithError(errors.FromGRPCError(err)).Error("Failed to establish downlink connection to the NOC")
+				g.Ctx.WithError(errors.FromGRPCError(err)).Error("Failed to establish downlink connection to the monitor")
 			}
 
 			if err = cl.Send(downlink); err != nil {
-				g.Ctx.WithError(errors.FromGRPCError(err)).Error("NOC downlink push failed")
+				g.Ctx.WithError(errors.FromGRPCError(err)).Error("Monitor downlink push failed")
 			}
 		}()
 	}

@@ -130,7 +130,7 @@ const (
 type Component struct {
 	Identity         *pb_discovery.Announcement
 	Discovery        pb_discovery.Client
-	NOC              pb_noc.MonitorClient
+	Monitor          pb_noc.MonitorClient
 	Ctx              log.Interface
 	AccessToken      string
 	privateKey       string
