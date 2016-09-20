@@ -22,33 +22,34 @@ func (a *Account) FindGateway(gatewayID string) (gateway Gateway, err error) {
 	return gateway, err
 }
 
-// NewGateway is used as a paramater to CreateGateway to allow for optional
-// arguments
-type NewGateway struct {
+type registerGatewayReq struct {
 	// ID is the ID of the new gateway (required)
 	ID string `json:"id"`
 
 	// Country is the country code of the new gateway (required)
 	FrequencyPlan string `json:"frequency_plan"`
 
-	// EUI is the EUI of the new gateway
-	EUI string `json:"eui,omitemtpy"`
-
 	// Location is the location of the new gateway
 	Location *Location `json:"location,omitempty"`
 }
 
-// CreateGateway registers a new gateway on the account server
-func (a *Account) CreateGateway(opts *NewGateway) (gateway Gateway, err error) {
-	if opts.ID == "" {
+// RegisterGateway registers a new gateway on the account server
+func (a *Account) RegisterGateway(gatewayID string, frequencyPlan string, location *Location) (gateway Gateway, err error) {
+	if gatewayID == "" {
 		return gateway, errors.New("Cannot create gateway: no ID given")
 	}
 
-	if opts.FrequencyPlan == "" {
+	if frequencyPlan == "" {
 		return gateway, errors.New("Cannot create gateway: no FrequencyPlan given")
 	}
 
-	err = a.post("/gateways", &opts, &gateway)
+	req := registerGatewayReq{
+		ID:            gatewayID,
+		FrequencyPlan: frequencyPlan,
+		Location:      location,
+	}
+
+	err = a.post("/gateways", req, &gateway)
 	return gateway, err
 }
 
