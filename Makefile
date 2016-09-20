@@ -10,7 +10,7 @@ GOBUILD = $(GOCMD) build
 
 PROTOC = protoc --gofast_out=plugins=grpc:$(GOPATH)/src/ --proto_path=$(GOPATH)/src/ $(GOPATH)/src/github.com/TheThingsNetwork/ttn
 
-GIT_COMMIT = `git rev-parse HEAD 2>/dev/null`
+GIT_COMMIT = `git rev-parse --short HEAD 2>/dev/null`
 BUILD_DATE = `date -u +%Y-%m-%dT%H:%M:%SZ`
 
 LDFLAGS = -ldflags "-w -X main.gitCommit=${GIT_COMMIT} -X main.buildDate=${BUILD_DATE}"
