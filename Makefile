@@ -31,7 +31,7 @@ ttnctlpkg = ttnctl-$(GOOS)-$(GOARCH)
 ttnbin = $(ttnpkg)$(GOEXE)
 ttnctlbin = $(ttnctlpkg)$(GOEXE)
 
-.PHONY: all clean deps update-deps test-deps dev-deps cover-deps proto test fmt vet cover coveralls build install docker package
+.PHONY: all clean deps update-deps test-deps dev-deps cover-deps proto test fmt vet cover coveralls docs build install docker package
 
 all: clean deps build package
 
@@ -92,6 +92,10 @@ clean:
 	[ -d $(RELEASE_DIR) ] && rm -rf $(RELEASE_DIR) || [ ! -d $(RELEASE_DIR) ]
 	([ -d $(TEMP_COVER_DIR) ] && rm -rf $(TEMP_COVER_DIR)) || [ ! -d $(TEMP_COVER_DIR) ]
 	([ -f $(COVER_FILE) ] && rm $(COVER_FILE)) || [ ! -d $(COVER_FILE) ]
+
+docs:
+	cd cmd/docs && HOME='$$HOME' $(GOCMD) run generate.go > README.md
+	cd ttnctl/cmd/docs && HOME='$$HOME' $(GOCMD) run generate.go > README.md
 
 build: $(RELEASE_DIR)/$(ttnbin) $(RELEASE_DIR)/$(ttnctlbin)
 

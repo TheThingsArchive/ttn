@@ -19,6 +19,15 @@ var devicesPersonalizeCmd = &cobra.Command{
 	Use:   "personalize [Device ID] [NwkSKey] [AppSKey]",
 	Short: "Personalize a device",
 	Long:  `ttnctl devices personalize can be used to personalize a device (ABP).`,
+	Example: `$ ttnctl devices personalize test
+  INFO Using Application                        AppEUI=70B3D57EF0000024 AppID=test
+  INFO Generating random NwkSKey...
+  INFO Generating random AppSKey...
+  INFO Discovering Handler...                   Handler=ttn-handler-eu
+  INFO Connecting with Handler...               Handler=eu.thethings.network:1904
+  INFO Requesting DevAddr for device...
+  INFO Personalized device                      AppID=test AppSKey=D8DD37B4B709BA76C6FEC62CAD0CCE51 DevAddr=26001ADA DevID=test NwkSKey=3382A3066850293421ED8D392B9BF4DF
+`,
 	Run: func(cmd *cobra.Command, args []string) {
 
 		var err error

@@ -16,6 +16,12 @@ var applicationsListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List applications",
 	Long:  `ttnctl applications list can be used to list applications.`,
+	Example: `$ ttnctl applications list
+  INFO Found one application:
+
+ 	ID  	Description     	EUIs	Access Keys	Collaborators
+1	test	Test application	1   	1          	1
+`,
 	Run: func(cmd *cobra.Command, args []string) {
 		account := util.GetAccount(ctx)
 

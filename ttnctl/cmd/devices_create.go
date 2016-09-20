@@ -19,6 +19,14 @@ var devicesCreateCmd = &cobra.Command{
 	Use:   "create [Device ID] [DevEUI] [AppKey]",
 	Short: "Create a new device",
 	Long:  `ttnctl devices create can be used to create a new device.`,
+	Example: `$ ttnctl devices create test
+  INFO Using Application                        AppEUI=70B3D57EF0000024 AppID=test
+  INFO Generating random DevEUI...
+  INFO Generating random AppKey...
+  INFO Discovering Handler...
+  INFO Connecting with Handler...
+  INFO Created device                           AppEUI=70B3D57EF0000024 AppID=test AppKey=EBD2E2810A4307263FE5EF78E2EF589D DevEUI=0001D544B2936FCE DevID=test
+`,
 	Run: func(cmd *cobra.Command, args []string) {
 
 		var err error

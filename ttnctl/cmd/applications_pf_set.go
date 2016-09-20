@@ -20,6 +20,25 @@ var applicationsPayloadFunctionsSetCmd = &cobra.Command{
 	Short: "Set payload functions of an application",
 	Long: `ttnctl pf set can be used to get or set payload functions of an application.
 The functions are read from the supplied file or from STDIN.`,
+	Example: `$ ttnctl applications pf set decoder
+  INFO Discovering Handler...
+  INFO Connecting with Handler...
+function Decoder(bytes) {
+  // Here you can decode the payload into json.
+  // bytes is of type Buffer.
+  // todo: return an object
+  return {
+    payload: bytes,
+  };
+}
+########## Write your Decoder here and end with Ctrl+D (EOF):
+function Decoder(bytes) {
+  return {
+    payload: bytes,
+  };
+}
+  INFO Updated application                      AppID=test
+`,
 	Run: func(cmd *cobra.Command, args []string) {
 
 		appID := util.GetAppID(ctx)
@@ -74,8 +93,8 @@ The functions are read from the supplied file or from STDIN.`,
 			case "converter":
 				fmt.Println(`function Converter(decodedObj) {
   // Modify the decoded uplink message.
-  
-  decodedObj.isLightOn = !!decodedObj.isLightOn; 
+
+  decodedObj.isLightOn = !!decodedObj.isLightOn;
 
   return decodedObj;
 }
@@ -94,7 +113,7 @@ The functions are read from the supplied file or from STDIN.`,
 				fmt.Println(`function Encoder(obj) {
   // Convert uplink messages sent as object to
   // an array of bytes.
-  
+
   return [ obj.turnLightOn ? 1 : 0 ];
 }
 ########## Write your Encoder here and end with Ctrl+D (EOF):`)

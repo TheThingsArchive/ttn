@@ -14,6 +14,10 @@ var applicationsCreateCmd = &cobra.Command{
 	Use:   "create [AppID] [Description]",
 	Short: "Create a new application",
 	Long:  `ttnctl applications create can be used to create a new application.`,
+	Example: `$ ttnctl applications create test "Test application"
+  INFO Created Application
+  INFO Selected Current Application
+`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) != 2 {
 			cmd.UsageFunc()(cmd)

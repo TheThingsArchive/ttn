@@ -14,6 +14,23 @@ var applicationsInfoCmd = &cobra.Command{
 	Use:   "info [AppID]",
 	Short: "Get information about an application",
 	Long:  `ttnctl applications info can be used to info applications.`,
+	Example: `$ ttnctl applications info
+  INFO Found application
+
+AppID:   test
+Name:    Test application
+EUIs:
+       - 0000000000000000
+
+Access Keys:
+       - Name: default key
+         Key:  FZYr01cUhdhY1KBiMghUl+/gXyqXhrF6y+1ww7+DzHg=
+         Rights: messages:up:r, messages:down:w
+
+Collaborators:
+       - Name: yourname
+         Rights: settings, delete, collaborators
+`,
 	Run: func(cmd *cobra.Command, args []string) {
 		account := util.GetAccount(ctx)
 

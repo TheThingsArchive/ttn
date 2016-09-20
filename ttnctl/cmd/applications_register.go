@@ -14,6 +14,11 @@ var applicationsRegisterCmd = &cobra.Command{
 	Use:   "register",
 	Short: "Register this application with the handler",
 	Long:  `ttnctl register can be used to register this application with the handler.`,
+	Example: `$ ttnctl applications register
+  INFO Discovering Handler...
+  INFO Connecting with Handler...
+  INFO Registered application                   AppID=test
+`,
 	Run: func(cmd *cobra.Command, args []string) {
 
 		appID := util.GetAppID(ctx)

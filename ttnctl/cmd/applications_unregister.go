@@ -16,6 +16,13 @@ var applicationsUnregisterCmd = &cobra.Command{
 	Use:   "unregister",
 	Short: "Unregister this application from the handler",
 	Long:  `ttnctl unregister can be used to unregister this application from the handler.`,
+	Example: `$ ttnctl applications unregister
+Are you sure you want to unregister application test?
+> yes
+  INFO Discovering Handler...
+  INFO Connecting with Handler...
+  INFO Unregistered application                 AppID=test
+`,
 	Run: func(cmd *cobra.Command, args []string) {
 
 		appID := util.GetAppID(ctx)

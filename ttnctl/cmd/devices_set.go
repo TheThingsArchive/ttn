@@ -16,6 +16,12 @@ var devicesSetCmd = &cobra.Command{
 	Use:   "set [Device ID]",
 	Short: "Set properties of a device",
 	Long:  `ttnctl devices set can be used to set properties of a device.`,
+	Example: `$ ttnctl devices set test --fcnt-up 0 --fcnt-down 0
+  INFO Using Application                        AppID=test
+  INFO Discovering Handler...
+  INFO Connecting with Handler...
+  INFO Updated device                           AppID=test DevID=test
+`,
 	Run: func(cmd *cobra.Command, args []string) {
 
 		if len(args) == 0 {

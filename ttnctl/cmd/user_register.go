@@ -16,6 +16,11 @@ var userRegisterCmd = &cobra.Command{
 	Use:   "register [username] [e-mail]",
 	Short: "Register",
 	Long:  `ttnctl user register allows you to register a new user in the account server`,
+	Example: `$ ttnctl user register yourname your@email.org
+Password: <entering password>
+  INFO Registered user
+  WARN You might have to verify your email before you can login
+`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) < 2 {
 			cmd.UsageFunc()(cmd)
