@@ -58,3 +58,6 @@
 [submodule "vendor/golang.org/x/oauth2"]
 	path = vendor/golang.org/x/oauth2
 	url = https://go.googlesource.com/oauth2
+[submodule "vendor/github.com/cpuguy83/go-md2man"]
+	path = vendor/github.com/cpuguy83/go-md2man
+	url = https://github.com/cpuguy83/go-md2man.git
