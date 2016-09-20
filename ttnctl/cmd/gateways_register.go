@@ -8,10 +8,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var gatewayRegisterCmd = &cobra.Command{
+var gatewaysRegisterCmd = &cobra.Command{
 	Use:   "register [GatewayID] [FrequencyPlan]",
 	Short: "Register a gateway",
-	Long:  `ttnctl gateway register can be used to register a gateway`,
+	Long:  `ttnctl gateways register can be used to register a gateway`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) != 2 {
 			cmd.UsageFunc()(cmd)
@@ -34,5 +34,5 @@ var gatewayRegisterCmd = &cobra.Command{
 }
 
 func init() {
-	gatewayCmd.AddCommand(gatewayRegisterCmd)
+	gatewaysCmd.AddCommand(gatewaysRegisterCmd)
 }
