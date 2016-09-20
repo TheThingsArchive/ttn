@@ -24,7 +24,12 @@ func (r *routerManager) GatewayStatus(ctx context.Context, in *pb.GatewayStatusR
 	if err != nil {
 		return nil, errf(codes.PermissionDenied, "No access")
 	}
-	gtw := r.router.getGateway(in.GatewayId)
+	r.router.gatewaysLock.RLock()
+	gtw, ok := r.router.gateways[in.GatewayId]
+	r.router.gatewaysLock.RUnlock()
+	if !ok {
+		return nil, grpcErrf(codes.NotFound, "Gateway %s not found", in.GatewayId)
+	}
 	status, err := gtw.Status.Get()
 	if err != nil {
 		return nil, err
