@@ -1,6 +1,7 @@
 # API Reference
 
 Control The Things Network from the command line.
+
 ## ttnctl applications
 
 Manage applications

@@ -22,7 +22,8 @@ func main() {
 	sort.Sort(byName(cmds))
 	fmt.Println(`# API Reference
 
-Control The Things Network from the command line.`)
+Control The Things Network from the command line.
+`)
 	for _, cmd := range cmds {
 		if cmd.CommandPath() == "ttnctl" {
 			continue
