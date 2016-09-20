@@ -19,6 +19,10 @@ var gatewaysRegisterCmd = &cobra.Command{
 		}
 
 		gatewayID := args[0]
+		if !validID(gatewayID) {
+			ctx.Fatal("Invalid Gateway ID")
+		}
+
 		frequencyPlan := args[1]
 
 		act := util.GetAccount(ctx)
