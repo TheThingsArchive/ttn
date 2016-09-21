@@ -49,7 +49,7 @@ func (r *router) UnsubscribeDownlink(gatewayID string) error {
 	return nil
 }
 
-func (r *router) HandleDownlink(downlink *pb_broker.DownlinkMessage) (err error) {
+func (r *router) HandleDownlink(downlink *pb_broker.DownlinkMessage) error {
 	option := downlink.DownlinkOption
 
 	downlinkMessage := &pb.DownlinkMessage{
