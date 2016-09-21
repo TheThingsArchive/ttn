@@ -4,6 +4,7 @@
 package mqtt
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -32,6 +33,31 @@ func waitForOK(token Token, a *Assertion) {
 }
 
 func TestToken(t *testing.T) {
+	a := New(t)
+
+	okToken := newToken()
+	go func() {
+		time.Sleep(1 * time.Millisecond)
+		okToken.flowComplete()
+	}()
+	okToken.Wait()
+	a.So(okToken.Error(), ShouldBeNil)
+
+	failToken := newToken()
+	go func() {
+		time.Sleep(1 * time.Millisecond)
+		failToken.err = errors.New("Err")
+		failToken.flowComplete()
+	}()
+	failToken.Wait()
+	a.So(failToken.Error(), ShouldNotBeNil)
+
+	timeoutToken := newToken()
+	timeoutTokenDone := timeoutToken.WaitTimeout(5 * time.Millisecond)
+	a.So(timeoutTokenDone, ShouldBeFalse)
+}
+
+func TestSimpleToken(t *testing.T) {
 	a := New(t)
 
 	okToken := simpleToken{}
