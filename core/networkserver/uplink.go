@@ -59,27 +59,39 @@ func (n *networkServer) HandleUplink(message *pb_broker.DeduplicatedUplinkMessag
 		}
 	}
 
+	mac := &lorawan.MACPayload{
+		FHDR: lorawan.FHDR{
+			DevAddr: macPayload.FHDR.DevAddr,
+			FCnt:    dev.FCntDown,
+		},
+	}
+
 	phy := lorawan.PHYPayload{
 		MHDR: lorawan.MHDR{
 			MType: lorawan.UnconfirmedDataDown,
 			Major: lorawan.LoRaWANR1,
 		},
-		MACPayload: &lorawan.MACPayload{
-			FHDR: lorawan.FHDR{
-				DevAddr: macPayload.FHDR.DevAddr,
-				FCtrl: lorawan.FCtrl{
-					ACK: phyPayload.MHDR.MType == lorawan.ConfirmedDataUp,
-				},
-				FCnt: dev.FCntDown,
-			},
-		},
+		MACPayload: mac,
 	}
+
+	// Confirmed Uplink
+	if phyPayload.MHDR.MType == lorawan.ConfirmedDataUp {
+		mac.FHDR.FCtrl.ACK = true
+	}
+
+	// Adaptive DataRate
+	if macPayload.FHDR.FCtrl.ADR {
+		if macPayload.FHDR.FCtrl.ADRACKReq {
+			mac.FHDR.FCtrl.ACK = true
+		}
+	}
+
+	// TODO: We might need to add MAC commands on downlink
+
 	phyBytes, err := phy.MarshalBinary()
 	if err != nil {
 		return nil, err
 	}
-
-	// TODO: Maybe we need to add MAC commands on downlink
 
 	message.ResponseTemplate.Payload = phyBytes
 

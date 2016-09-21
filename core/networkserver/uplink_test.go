@@ -57,6 +57,10 @@ func TestHandleUplink(t *testing.T) {
 			FHDR: lorawan.FHDR{
 				DevAddr: lorawan.DevAddr([4]byte{1, 2, 3, 4}),
 				FCnt:    1,
+				FCtrl: lorawan.FCtrl{
+					ADR:       true,
+					ADRACKReq: true,
+				},
 			},
 		},
 	}
@@ -78,7 +82,11 @@ func TestHandleUplink(t *testing.T) {
 	phyPayload.UnmarshalBinary(res.ResponseTemplate.Payload)
 	macPayload, _ := phyPayload.MACPayload.(*lorawan.MACPayload)
 
+	// ResponseTemplate DevAddr should match
 	a.So([4]byte(macPayload.FHDR.DevAddr), ShouldEqual, [4]byte(devAddr))
+
+	// ResponseTemplate should ACK the ADRACKReq
+	a.So(macPayload.FHDR.FCtrl.ACK, ShouldBeTrue)
 
 	// Frame Counter should have been updated
 	dev, _ := ns.devices.Get(appEUI, devEUI)
