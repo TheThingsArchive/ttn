@@ -10,10 +10,13 @@ import (
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/utils/random"
-	"github.com/apex/log"
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 )
 
+// QoS indicates the MQTT Quality of Service level.
+// 0: The broker/client will deliver the message once, with no confirmation.
+// 1: The broker/client will deliver the message at least once, with confirmation required.
+// 2: The broker/client will deliver the message exactly once by using a four step handshake.
 const QoS = 0x00
 
 // Client connects to the MQTT server and can publish/subscribe on uplink, downlink and activations from devices
@@ -139,12 +142,16 @@ type ActivationHandler func(client Client, appID string, devID string, req Activ
 // DefaultClient is the default MQTT client for The Things Network
 type DefaultClient struct {
 	mqtt          MQTT.Client
-	ctx           log.Interface
+	ctx           Logger
 	subscriptions map[string]MQTT.MessageHandler
 }
 
 // NewClient creates a new DefaultClient
-func NewClient(ctx log.Interface, id, username, password string, brokers ...string) Client {
+func NewClient(ctx Logger, id, username, password string, brokers ...string) Client {
+	if ctx == nil {
+		ctx = &noopLogger{}
+	}
+
 	mqttOpts := MQTT.NewClientOptions()
 
 	for _, broker := range brokers {
@@ -162,13 +169,13 @@ func NewClient(ctx log.Interface, id, username, password string, brokers ...stri
 	mqttOpts.SetCleanSession(true)
 
 	mqttOpts.SetDefaultPublishHandler(func(client MQTT.Client, msg MQTT.Message) {
-		ctx.WithField("message", msg).Warn("Received unhandled message")
+		ctx.Warnf("Received unhandled message: %v", msg)
 	})
 
 	var reconnecting bool
 
 	mqttOpts.SetConnectionLostHandler(func(client MQTT.Client, err error) {
-		ctx.WithError(err).Warn("Disconnected, reconnecting...")
+		ctx.Warnf("Disconnected (%s). Reconnecting...", err.Error())
 		reconnecting = true
 	})
 
@@ -181,7 +188,7 @@ func NewClient(ctx log.Interface, id, username, password string, brokers ...stri
 		ctx.Info("Connected to MQTT")
 		if reconnecting {
 			for topic, handler := range ttnClient.subscriptions {
-				ctx.Infof("Re-subscribing to %s", topic)
+				ctx.Infof("Re-subscribing to topic: %s", topic)
 				ttnClient.subscribe(topic, handler)
 			}
 			reconnecting = false
@@ -217,11 +224,11 @@ func (c *DefaultClient) Connect() error {
 		if err == nil {
 			break
 		}
-		c.ctx.WithError(err).Warn("Could not connect to MQTT Broker. Retrying...")
+		c.ctx.Warnf("Could not connect to MQTT Broker (%s). Retrying...", err.Error())
 		<-time.After(ConnectRetryDelay)
 	}
 	if err != nil {
-		return fmt.Errorf("Could not connect to MQTT Broker: %s", err)
+		return fmt.Errorf("Could not connect to MQTT Broker (%s).", err)
 	}
 	return nil
 }
@@ -307,7 +314,7 @@ func (c *DefaultClient) SubscribeDeviceUplink(appID string, devID string, handle
 		// Determine the actual topic
 		topic, err := ParseDeviceTopic(msg.Topic())
 		if err != nil {
-			c.ctx.WithField("topic", msg.Topic()).WithError(err).Warn("Received message on invalid uplink topic")
+			c.ctx.Warnf("Received message on invalid uplink topic: %s", msg.Topic())
 			return
 		}
 
@@ -318,7 +325,7 @@ func (c *DefaultClient) SubscribeDeviceUplink(appID string, devID string, handle
 		dataUp.DevID = topic.DevID
 
 		if err != nil {
-			c.ctx.WithError(err).Warn("Could not unmarshal uplink")
+			c.ctx.Warnf("Could not unmarshal uplink (%s).", err.Error())
 			return
 		}
 
@@ -372,7 +379,7 @@ func (c *DefaultClient) SubscribeDeviceDownlink(appID string, devID string, hand
 		// Determine the actual topic
 		topic, err := ParseDeviceTopic(msg.Topic())
 		if err != nil {
-			c.ctx.WithField("topic", msg.Topic()).WithError(err).Warn("Received message on invalid Downlink topic")
+			c.ctx.Warnf("Received message on invalid downlink topic: %s", msg.Topic())
 			return
 		}
 
@@ -380,7 +387,7 @@ func (c *DefaultClient) SubscribeDeviceDownlink(appID string, devID string, hand
 		dataDown := &DownlinkMessage{}
 		err = json.Unmarshal(msg.Payload(), dataDown)
 		if err != nil {
-			c.ctx.WithError(err).Warn("Could not unmarshal Downlink")
+			c.ctx.Warnf("Could not unmarshal downlink (%s).", err.Error())
 			return
 		}
 		dataDown.AppID = topic.AppID
@@ -436,7 +443,7 @@ func (c *DefaultClient) SubscribeDeviceActivations(appID string, devID string, h
 		// Determine the actual topic
 		topic, err := ParseDeviceTopic(msg.Topic())
 		if err != nil {
-			c.ctx.WithField("topic", msg.Topic()).WithError(err).Warn("Received message on invalid Activations topic")
+			c.ctx.Warnf("Received message on invalid activations topic: %s", msg.Topic())
 			return
 		}
 
@@ -444,7 +451,7 @@ func (c *DefaultClient) SubscribeDeviceActivations(appID string, devID string, h
 		activation := &Activation{}
 		err = json.Unmarshal(msg.Payload(), activation)
 		if err != nil {
-			c.ctx.WithError(err).Warn("Could not unmarshal Activation")
+			c.ctx.Warnf("Could not unmarshal activation (%s).", err.Error())
 			return
 		}
 		activation.AppID = topic.AppID

@@ -25,6 +25,12 @@ func init() {
 	}
 }
 
+func waitForOK(token Token, a *Assertion) {
+	success := token.WaitTimeout(100 * time.Millisecond)
+	a.So(success, ShouldBeTrue)
+	a.So(token.Error(), ShouldBeNil)
+}
+
 func TestToken(t *testing.T) {
 	a := New(t)
 
@@ -98,14 +104,17 @@ func TestDisconnect(t *testing.T) {
 }
 
 func TestRandomTopicPublish(t *testing.T) {
+	a := New(t)
 	ctx := GetLogger(t, "TestRandomTopicPublish")
 
 	c := NewClient(ctx, "test", "", "", fmt.Sprintf("tcp://%s:1883", host))
 	c.Connect()
 	defer c.Disconnect()
 
-	c.(*DefaultClient).mqtt.Subscribe("randomtopic", QoS, nil).Wait()
-	c.(*DefaultClient).mqtt.Publish("randomtopic", QoS, false, []byte{0x00}).Wait()
+	subToken := c.(*DefaultClient).mqtt.Subscribe("randomtopic", QoS, nil)
+	waitForOK(subToken, a)
+	pubToken := c.(*DefaultClient).mqtt.Publish("randomtopic", QoS, false, []byte{0x00})
+	waitForOK(pubToken, a)
 
 	<-time.After(50 * time.Millisecond)
 
@@ -127,20 +136,20 @@ func TestPublishUplink(t *testing.T) {
 	}
 
 	token := c.PublishUplink(dataUp)
-	token.Wait()
-
-	a.So(token.Error(), ShouldBeNil)
+	waitForOK(token, a)
 }
 
 func TestPublishUplinkFields(t *testing.T) {
 	a := New(t)
-	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s:1883", host))
+	ctx := GetLogger(t, "Test")
+	c := NewClient(ctx, "test", "", "", fmt.Sprintf("tcp://%s:1883", host))
+
 	c.Connect()
 	defer c.Disconnect()
 
 	waitChan := make(chan bool, 1)
 	expected := 8
-	c.(*DefaultClient).mqtt.Subscribe("fields-app/devices/fields-dev/up/#", QoS, func(_ MQTT.Client, msg MQTT.Message) {
+	subToken := c.(*DefaultClient).mqtt.Subscribe("fields-app/devices/fields-dev/up/#", QoS, func(_ MQTT.Client, msg MQTT.Message) {
 
 		switch strings.TrimPrefix(msg.Topic(), "fields-app/devices/fields-dev/up/") {
 		case "battery":
@@ -172,7 +181,8 @@ func TestPublishUplinkFields(t *testing.T) {
 		if expected == 0 {
 			waitChan <- true
 		}
-	}).Wait()
+	})
+	waitForOK(subToken, a)
 
 	fields := map[string]interface{}{
 		"battery": 90,
@@ -189,9 +199,8 @@ func TestPublishUplinkFields(t *testing.T) {
 		"gps": []float64{52.3736735, 4.886663},
 	}
 
-	token := c.PublishUplinkFields("fields-app", "fields-dev", fields)
-	token.Wait()
-	a.So(token.Error(), ShouldBeNil)
+	pubToken := c.PublishUplinkFields("fields-app", "fields-dev", fields)
+	waitForOK(pubToken, a)
 
 	select {
 	case <-waitChan:
@@ -206,15 +215,13 @@ func TestSubscribeDeviceUplink(t *testing.T) {
 	c.Connect()
 	defer c.Disconnect()
 
-	token := c.SubscribeDeviceUplink("someid", "someid", func(client Client, appID string, devID string, req UplinkMessage) {
+	subToken := c.SubscribeDeviceUplink("someid", "someid", func(client Client, appID string, devID string, req UplinkMessage) {
 
 	})
-	token.Wait()
-	a.So(token.Error(), ShouldBeNil)
+	waitForOK(subToken, a)
 
-	token = c.UnsubscribeDeviceUplink("someid", "someid")
-	token.Wait()
-	a.So(token.Error(), ShouldBeNil)
+	unsubToken := c.UnsubscribeDeviceUplink("someid", "someid")
+	waitForOK(unsubToken, a)
 }
 
 func TestSubscribeAppUplink(t *testing.T) {
@@ -223,15 +230,13 @@ func TestSubscribeAppUplink(t *testing.T) {
 	c.Connect()
 	defer c.Disconnect()
 
-	token := c.SubscribeAppUplink("someid", func(client Client, appID string, devID string, req UplinkMessage) {
+	subToken := c.SubscribeAppUplink("someid", func(client Client, appID string, devID string, req UplinkMessage) {
 
 	})
-	token.Wait()
-	a.So(token.Error(), ShouldBeNil)
+	waitForOK(subToken, a)
 
-	token = c.UnsubscribeAppUplink("someid")
-	token.Wait()
-	a.So(token.Error(), ShouldBeNil)
+	unsubToken := c.UnsubscribeAppUplink("someid")
+	waitForOK(unsubToken, a)
 }
 
 func TestSubscribeUplink(t *testing.T) {
@@ -240,15 +245,13 @@ func TestSubscribeUplink(t *testing.T) {
 	c.Connect()
 	defer c.Disconnect()
 
-	token := c.SubscribeUplink(func(client Client, appID string, devID string, req UplinkMessage) {
+	subToken := c.SubscribeUplink(func(client Client, appID string, devID string, req UplinkMessage) {
 
 	})
-	token.Wait()
-	a.So(token.Error(), ShouldBeNil)
+	waitForOK(subToken, a)
 
-	token = c.UnsubscribeUplink()
-	token.Wait()
-	a.So(token.Error(), ShouldBeNil)
+	unsubToken := c.UnsubscribeUplink()
+	waitForOK(unsubToken, a)
 }
 
 func TestPubSubUplink(t *testing.T) {
@@ -259,18 +262,20 @@ func TestPubSubUplink(t *testing.T) {
 
 	waitChan := make(chan bool, 1)
 
-	c.SubscribeDeviceUplink("app1", "dev1", func(client Client, appID string, devID string, req UplinkMessage) {
+	subToken := c.SubscribeDeviceUplink("app1", "dev1", func(client Client, appID string, devID string, req UplinkMessage) {
 		a.So(appID, ShouldResemble, "app1")
 		a.So(devID, ShouldResemble, "dev1")
 
 		waitChan <- true
-	}).Wait()
+	})
+	waitForOK(subToken, a)
 
-	c.PublishUplink(UplinkMessage{
+	pubToken := c.PublishUplink(UplinkMessage{
 		Payload: []byte{0x01, 0x02, 0x03, 0x04},
 		AppID:   "app1",
 		DevID:   "dev1",
-	}).Wait()
+	})
+	waitForOK(pubToken, a)
 
 	select {
 	case <-waitChan:
@@ -278,7 +283,8 @@ func TestPubSubUplink(t *testing.T) {
 		panic("Did not receive Uplink")
 	}
 
-	c.UnsubscribeDeviceUplink("app1", "dev1").Wait()
+	unsubToken := c.UnsubscribeDeviceUplink("app1", "dev1")
+	waitForOK(unsubToken, a)
 }
 
 func TestPubSubAppUplink(t *testing.T) {
@@ -291,26 +297,30 @@ func TestPubSubAppUplink(t *testing.T) {
 
 	wg.Add(2)
 
-	c.SubscribeAppUplink("app2", func(client Client, appID string, devID string, req UplinkMessage) {
+	subToken := c.SubscribeAppUplink("app2", func(client Client, appID string, devID string, req UplinkMessage) {
 		a.So(appID, ShouldResemble, "app2")
 		a.So(req.Payload, ShouldResemble, []byte{0x01, 0x02, 0x03, 0x04})
 		wg.Done()
-	}).Wait()
+	})
+	waitForOK(subToken, a)
 
-	c.PublishUplink(UplinkMessage{
+	pubToken := c.PublishUplink(UplinkMessage{
 		AppID:   "app2",
 		DevID:   "dev1",
 		Payload: []byte{0x01, 0x02, 0x03, 0x04},
-	}).Wait()
-	c.PublishUplink(UplinkMessage{
+	})
+	waitForOK(pubToken, a)
+	pubToken = c.PublishUplink(UplinkMessage{
 		AppID:   "app2",
 		DevID:   "dev2",
 		Payload: []byte{0x01, 0x02, 0x03, 0x04},
-	}).Wait()
+	})
+	waitForOK(pubToken, a)
 
 	a.So(wg.WaitFor(200*time.Millisecond), ShouldBeNil)
 
-	c.UnsubscribeAppUplink("app1").Wait()
+	unsubToken := c.UnsubscribeAppUplink("app1")
+	waitForOK(unsubToken, a)
 }
 
 // Downlink pub/sub
@@ -328,7 +338,7 @@ func TestPublishDownlink(t *testing.T) {
 	}
 
 	token := c.PublishDownlink(dataDown)
-	token.Wait()
+	waitForOK(token, a)
 
 	a.So(token.Error(), ShouldBeNil)
 }
@@ -342,11 +352,11 @@ func TestSubscribeDeviceDownlink(t *testing.T) {
 	token := c.SubscribeDeviceDownlink("someid", "someid", func(client Client, appID string, devID string, req DownlinkMessage) {
 
 	})
-	token.Wait()
+	waitForOK(token, a)
 	a.So(token.Error(), ShouldBeNil)
 
 	token = c.UnsubscribeDeviceDownlink("someid", "someid")
-	token.Wait()
+	waitForOK(token, a)
 	a.So(token.Error(), ShouldBeNil)
 }
 
@@ -359,11 +369,11 @@ func TestSubscribeAppDownlink(t *testing.T) {
 	token := c.SubscribeAppDownlink("someid", func(client Client, appID string, devID string, req DownlinkMessage) {
 
 	})
-	token.Wait()
+	waitForOK(token, a)
 	a.So(token.Error(), ShouldBeNil)
 
 	token = c.UnsubscribeAppDownlink("someid")
-	token.Wait()
+	waitForOK(token, a)
 	a.So(token.Error(), ShouldBeNil)
 }
 
@@ -376,11 +386,11 @@ func TestSubscribeDownlink(t *testing.T) {
 	token := c.SubscribeDownlink(func(client Client, appID string, devID string, req DownlinkMessage) {
 
 	})
-	token.Wait()
+	waitForOK(token, a)
 	a.So(token.Error(), ShouldBeNil)
 
 	token = c.UnsubscribeDownlink()
-	token.Wait()
+	waitForOK(token, a)
 	a.So(token.Error(), ShouldBeNil)
 }
 
@@ -394,22 +404,25 @@ func TestPubSubDownlink(t *testing.T) {
 
 	wg.Add(1)
 
-	c.SubscribeDeviceDownlink("app3", "dev3", func(client Client, appID string, devID string, req DownlinkMessage) {
+	subToken := c.SubscribeDeviceDownlink("app3", "dev3", func(client Client, appID string, devID string, req DownlinkMessage) {
 		a.So(appID, ShouldResemble, "app3")
 		a.So(devID, ShouldResemble, "dev3")
 
 		wg.Done()
-	}).Wait()
+	})
+	waitForOK(subToken, a)
 
-	c.PublishDownlink(DownlinkMessage{
+	pubToken := c.PublishDownlink(DownlinkMessage{
 		AppID:   "app3",
 		DevID:   "dev3",
 		Payload: []byte{0x01, 0x02, 0x03, 0x04},
-	}).Wait()
+	})
+	waitForOK(pubToken, a)
 
 	a.So(wg.WaitFor(200*time.Millisecond), ShouldBeNil)
 
-	c.UnsubscribeDeviceDownlink("app3", "dev3").Wait()
+	unsubToken := c.UnsubscribeDeviceDownlink("app3", "dev3")
+	waitForOK(unsubToken, a)
 }
 
 func TestPubSubAppDownlink(t *testing.T) {
@@ -422,26 +435,30 @@ func TestPubSubAppDownlink(t *testing.T) {
 
 	wg.Add(2)
 
-	c.SubscribeAppDownlink("app4", func(client Client, appID string, devID string, req DownlinkMessage) {
+	subToken := c.SubscribeAppDownlink("app4", func(client Client, appID string, devID string, req DownlinkMessage) {
 		a.So(appID, ShouldResemble, "app4")
 		a.So(req.Payload, ShouldResemble, []byte{0x01, 0x02, 0x03, 0x04})
 		wg.Done()
-	}).Wait()
+	})
+	waitForOK(subToken, a)
 
-	c.PublishDownlink(DownlinkMessage{
+	pubToken := c.PublishDownlink(DownlinkMessage{
 		AppID:   "app4",
 		DevID:   "dev1",
 		Payload: []byte{0x01, 0x02, 0x03, 0x04},
-	}).Wait()
-	c.PublishDownlink(DownlinkMessage{
+	})
+	waitForOK(pubToken, a)
+	pubToken = c.PublishDownlink(DownlinkMessage{
 		AppID:   "app4",
 		DevID:   "dev2",
 		Payload: []byte{0x01, 0x02, 0x03, 0x04},
-	}).Wait()
+	})
+	waitForOK(pubToken, a)
 
 	a.So(wg.WaitFor(200*time.Millisecond), ShouldBeNil)
 
-	c.UnsubscribeAppDownlink("app3").Wait()
+	unsubToken := c.UnsubscribeAppDownlink("app3")
+	waitForOK(unsubToken, a)
 }
 
 // Activations pub/sub
@@ -459,7 +476,7 @@ func TestPublishActivations(t *testing.T) {
 	}
 
 	token := c.PublishActivation(dataActivations)
-	token.Wait()
+	waitForOK(token, a)
 
 	a.So(token.Error(), ShouldBeNil)
 }
@@ -473,11 +490,11 @@ func TestSubscribeDeviceActivations(t *testing.T) {
 	token := c.SubscribeDeviceActivations("someid", "someid", func(client Client, appID string, devID string, req Activation) {
 
 	})
-	token.Wait()
+	waitForOK(token, a)
 	a.So(token.Error(), ShouldBeNil)
 
 	token = c.UnsubscribeDeviceActivations("someid", "someid")
-	token.Wait()
+	waitForOK(token, a)
 	a.So(token.Error(), ShouldBeNil)
 }
 
@@ -490,11 +507,11 @@ func TestSubscribeAppActivations(t *testing.T) {
 	token := c.SubscribeAppActivations("someid", func(client Client, appID string, devID string, req Activation) {
 
 	})
-	token.Wait()
+	waitForOK(token, a)
 	a.So(token.Error(), ShouldBeNil)
 
 	token = c.UnsubscribeAppActivations("someid")
-	token.Wait()
+	waitForOK(token, a)
 	a.So(token.Error(), ShouldBeNil)
 }
 
@@ -507,11 +524,11 @@ func TestSubscribeActivations(t *testing.T) {
 	token := c.SubscribeActivations(func(client Client, appID string, devID string, req Activation) {
 
 	})
-	token.Wait()
+	waitForOK(token, a)
 	a.So(token.Error(), ShouldBeNil)
 
 	token = c.UnsubscribeActivations()
-	token.Wait()
+	waitForOK(token, a)
 	a.So(token.Error(), ShouldBeNil)
 }
 
@@ -525,22 +542,25 @@ func TestPubSubActivations(t *testing.T) {
 
 	wg.Add(1)
 
-	c.SubscribeDeviceActivations("app5", "dev1", func(client Client, appID string, devID string, req Activation) {
+	subToken := c.SubscribeDeviceActivations("app5", "dev1", func(client Client, appID string, devID string, req Activation) {
 		a.So(appID, ShouldResemble, "app5")
 		a.So(devID, ShouldResemble, "dev1")
 
 		wg.Done()
-	}).Wait()
+	})
+	waitForOK(subToken, a)
 
-	c.PublishActivation(Activation{
+	pubToken := c.PublishActivation(Activation{
 		AppID:    "app5",
 		DevID:    "dev1",
 		Metadata: Metadata{DataRate: "SF7BW125"},
-	}).Wait()
+	})
+	waitForOK(pubToken, a)
 
 	a.So(wg.WaitFor(200*time.Millisecond), ShouldBeNil)
 
-	c.UnsubscribeDeviceActivations("app5", "dev1")
+	unsubToken := c.UnsubscribeDeviceActivations("app5", "dev1")
+	waitForOK(unsubToken, a)
 }
 
 func TestPubSubAppActivations(t *testing.T) {
@@ -553,26 +573,30 @@ func TestPubSubAppActivations(t *testing.T) {
 
 	wg.Add(2)
 
-	c.SubscribeAppActivations("app6", func(client Client, appID string, devID string, req Activation) {
+	subToken := c.SubscribeAppActivations("app6", func(client Client, appID string, devID string, req Activation) {
 		a.So(appID, ShouldResemble, "app6")
 		a.So(req.Metadata.DataRate, ShouldEqual, "SF7BW125")
 		wg.Done()
-	}).Wait()
+	})
+	waitForOK(subToken, a)
 
-	c.PublishActivation(Activation{
+	pubToken := c.PublishActivation(Activation{
 		AppID:    "app6",
 		DevID:    "dev1",
 		Metadata: Metadata{DataRate: "SF7BW125"},
-	}).Wait()
-	c.PublishActivation(Activation{
+	})
+	waitForOK(pubToken, a)
+	pubToken = c.PublishActivation(Activation{
 		AppID:    "app6",
 		DevID:    "dev2",
 		Metadata: Metadata{DataRate: "SF7BW125"},
-	}).Wait()
+	})
+	waitForOK(pubToken, a)
 
 	a.So(wg.WaitFor(200*time.Millisecond), ShouldBeNil)
 
-	c.UnsubscribeAppActivations("app6")
+	unsubToken := c.UnsubscribeAppActivations("app6")
+	waitForOK(unsubToken, a)
 }
 
 func ExampleNewClient() {
