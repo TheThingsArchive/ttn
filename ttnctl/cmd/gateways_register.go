@@ -4,6 +4,7 @@
 package cmd
 
 import (
+	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/spf13/cobra"
 )
@@ -19,7 +20,7 @@ var gatewaysRegisterCmd = &cobra.Command{
 		}
 
 		gatewayID := args[0]
-		if !validID(gatewayID) {
+		if !api.ValidID(gatewayID) {
 			ctx.Fatal("Invalid Gateway ID")
 		}
 
