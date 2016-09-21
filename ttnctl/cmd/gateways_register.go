@@ -5,16 +5,17 @@ package cmd
 
 import (
 	"github.com/TheThingsNetwork/ttn/api"
+	"github.com/TheThingsNetwork/ttn/core/account"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/spf13/cobra"
 )
 
 var gatewaysRegisterCmd = &cobra.Command{
-	Use:   "register [GatewayID] [FrequencyPlan]",
+	Use:   "register [GatewayID] [FrequencyPlan] [Location]",
 	Short: "Register a gateway",
 	Long:  `ttnctl gateways register can be used to register a gateway`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) != 2 {
+		if len(args) != 2 && len(args) != 3 {
 			cmd.UsageFunc()(cmd)
 			return
 		}
@@ -26,8 +27,17 @@ var gatewaysRegisterCmd = &cobra.Command{
 
 		frequencyPlan := args[1]
 
+		var err error
+		var location *account.Location
+		if len(args) == 3 {
+			location, err = util.ParseLocation(args[2])
+			if err != nil {
+				ctx.WithError(err).Fatal("Invalid location")
+			}
+		}
+
 		act := util.GetAccount(ctx)
-		gateway, err := act.RegisterGateway(gatewayID, frequencyPlan, nil)
+		gateway, err := act.RegisterGateway(gatewayID, frequencyPlan, location)
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not register gateway")
 		}
