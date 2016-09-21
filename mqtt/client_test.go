@@ -173,10 +173,16 @@ func TestPublishUplinkFields(t *testing.T) {
 	c.Connect()
 	defer c.Disconnect()
 
-	waitChan := make(chan bool, 1)
-	expected := 8
+	subChan := make(chan bool)
+	waitChan := make(chan bool)
+	go func() {
+		for i := 10; i > 0; i-- {
+			<-subChan
+		}
+		close(subChan)
+		waitChan <- true
+	}()
 	subToken := c.(*DefaultClient).mqtt.Subscribe("fields-app/devices/fields-dev/up/#", QoS, func(_ MQTT.Client, msg MQTT.Message) {
-
 		switch strings.TrimPrefix(msg.Topic(), "fields-app/devices/fields-dev/up/") {
 		case "battery":
 			a.So(string(msg.Payload()), ShouldEqual, "90")
@@ -202,11 +208,7 @@ func TestPublishUplinkFields(t *testing.T) {
 			t.Errorf("Should not have received message on topic %s", msg.Topic())
 			t.Fail()
 		}
-
-		expected--
-		if expected == 0 {
-			waitChan <- true
-		}
+		subChan <- true
 	})
 	waitForOK(subToken, a)
 
