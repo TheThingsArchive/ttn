@@ -12,7 +12,7 @@
 	url = https://github.com/dgrijalva/jwt-go
 [submodule "vendor/github.com/eclipse/paho.mqtt.golang"]
 	path = vendor/github.com/eclipse/paho.mqtt.golang
-	url = https://github.com/eclipse/paho.mqtt.golang
+	url = https://github.com/htdvisser/paho.mqtt.golang
 [submodule "vendor/github.com/golang/mock"]
 	path = vendor/github.com/golang/mock
 	url = https://github.com/golang/mock
