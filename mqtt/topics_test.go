@@ -17,7 +17,7 @@ func TestParseDeviceTopic(t *testing.T) {
 	expected := &DeviceTopic{
 		AppID: "appid-1",
 		DevID: "devid-1",
-		Type:  Uplink,
+		Type:  DeviceUplink,
 	}
 
 	got, err := ParseDeviceTopic(topic)
@@ -48,7 +48,7 @@ func TestTopicString(t *testing.T) {
 	topic := &DeviceTopic{
 		AppID: "appid-1",
 		DevID: "devid-1",
-		Type:  Downlink,
+		Type:  DeviceDownlink,
 	}
 
 	expected := "appid-1/devices/devid-1/down"
@@ -64,20 +64,23 @@ func TestTopicParseAndString(t *testing.T) {
 	expectedList := []string{
 		// Uppercase (not lowercase)
 		"0102030405060708/devices/abcdabcd12345678/up",
+		"0102030405060708/devices/abcdabcd12345678/up/value",
 		"0102030405060708/devices/abcdabcd12345678/down",
-		"0102030405060708/devices/abcdabcd12345678/activations",
+		"0102030405060708/devices/abcdabcd12345678/events/activations",
 		// Numbers
 		"0102030405060708/devices/0000000012345678/up",
+		"0102030405060708/devices/0000000012345678/up/value",
 		"0102030405060708/devices/0000000012345678/down",
-		"0102030405060708/devices/0000000012345678/activations",
+		"0102030405060708/devices/0000000012345678/events/activations",
 		// Wildcards
 		"+/devices/+/up",
 		"+/devices/+/down",
-		"+/devices/+/activations",
+		"+/devices/+/events/activations",
 		// Not Wildcard
 		"0102030405060708/devices/0100000000000000/up",
+		"0102030405060708/devices/0100000000000000/up/value",
 		"0102030405060708/devices/0100000000000000/down",
-		"0102030405060708/devices/0100000000000000/activations",
+		"0102030405060708/devices/0100000000000000/events/activations",
 	}
 
 	for _, expected := range expectedList {

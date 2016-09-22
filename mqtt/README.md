@@ -165,7 +165,7 @@ if err := token.Error(); err != nil {
 
 ## Device Activations
 
-**Topic:** `<AppID>/devices/<DevID>/activations`
+**Topic:** `<AppID>/devices/<DevID>/events/activations`
 
 **Message:**
 
@@ -180,7 +180,7 @@ if err := token.Error(); err != nil {
 }
 ```
 
-**Usage (Mosquitto):** `mosquitto_sub -h <Region>.thethings.network:1883 -d -t 'my-app-id/devices/my-dev-id/activations'`
+**Usage (Mosquitto):** `mosquitto_sub -h <Region>.thethings.network:1883 -d -t 'my-app-id/devices/my-dev-id/events/activations'`
 
 **Usage (Go client):**
 
