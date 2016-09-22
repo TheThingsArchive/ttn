@@ -256,7 +256,7 @@ func computeDownlinkScores(gateway *gateway.Gateway, uplink *pb.UplinkMessage, o
 	for _, option := range options {
 
 		// Calculate max ToA
-		time, _ := toa.Compute(
+		time, _ := toa.ComputeLoRa(
 			51+13, // Max MACPayload plus LoRaWAN header, TODO: What is the length we should use?
 			option.GetProtocolConfig().GetLorawan().DataRate,
 			option.GetProtocolConfig().GetLorawan().CodingRate,

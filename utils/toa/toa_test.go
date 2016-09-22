@@ -73,3 +73,11 @@ func TestComputeLoRa(t *testing.T) {
 	}
 
 }
+
+// TODO: (@tftelkamp): Verify this
+func TestComputeFSK(t *testing.T) {
+	a := New(t)
+	toa, err := ComputeFSK(200, 50000)
+	a.So(err, ShouldBeNil)
+	a.So(toa, ShouldAlmostEqual, 33760*time.Microsecond)
+}
