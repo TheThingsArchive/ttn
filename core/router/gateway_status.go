@@ -9,9 +9,8 @@ import (
 	pb_gateway "github.com/TheThingsNetwork/ttn/api/gateway"
 )
 
-func (r *router) HandleGatewayStatus(gatewayID string, status *pb_gateway.Status) error {
+func (r *router) HandleGatewayStatus(gatewayID string, status *pb_gateway.Status) (err error) {
 	ctx := r.Ctx.WithField("GatewayID", gatewayID)
-	var err error
 	start := time.Now()
 	defer func() {
 		if err != nil {
@@ -21,11 +20,5 @@ func (r *router) HandleGatewayStatus(gatewayID string, status *pb_gateway.Status
 		}
 	}()
 
-	gateway := r.getGateway(gatewayID)
-	gateway.LastSeen = time.Now()
-	err = gateway.Status.Update(status)
-	if err != nil {
-		return err
-	}
-	return nil
+	return r.getGateway(gatewayID).HandleStatus(status)
 }

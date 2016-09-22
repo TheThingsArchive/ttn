@@ -15,9 +15,8 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
-func (r *router) HandleUplink(gatewayID string, uplink *pb.UplinkMessage) error {
+func (r *router) HandleUplink(gatewayID string, uplink *pb.UplinkMessage) (err error) {
 	ctx := r.Ctx.WithField("GatewayID", gatewayID)
-	var err error
 	start := time.Now()
 	defer func() {
 		if err != nil {
@@ -81,9 +80,10 @@ func (r *router) HandleUplink(gatewayID string, uplink *pb.UplinkMessage) error 
 	ctx = ctx.WithField("DevAddr", devAddr)
 
 	gateway := r.getGateway(gatewayID)
-	gateway.LastSeen = time.Now()
-	gateway.Schedule.Sync(uplink.GatewayMetadata.Timestamp)
-	gateway.Utilization.AddRx(uplink)
+
+	if err = gateway.HandleUplink(uplink); err != nil {
+		return err
+	}
 
 	var downlinkOptions []*pb_broker.DownlinkOption
 	if gateway.Schedule.IsActive() {

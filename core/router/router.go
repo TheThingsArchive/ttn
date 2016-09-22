@@ -34,6 +34,8 @@ type Router interface {
 	UnsubscribeDownlink(gatewayID string) error
 	// Handle a device activation
 	HandleActivation(gatewayID string, activation *pb.DeviceActivationRequest) (*pb.DeviceActivationResponse, error)
+
+	getGateway(gatewayID string) *gateway.Gateway
 }
 
 type broker struct {
@@ -77,6 +79,7 @@ func (r *router) Init(c *core.Component) error {
 		return err
 	}
 	r.Discovery.GetAll("broker") // Update cache
+
 	go func() {
 		for range time.Tick(5 * time.Second) {
 			r.tickGateways()
@@ -98,10 +101,19 @@ func (r *router) getGateway(id string) *gateway.Gateway {
 	// If it doesn't we still have to lock
 	r.gatewaysLock.Lock()
 	defer r.gatewaysLock.Unlock()
-	if _, ok := r.gateways[id]; !ok {
-		r.gateways[id] = gateway.NewGateway(r.Ctx, id)
+
+	gtw, ok = r.gateways[id]
+	if !ok {
+		gtw = gateway.NewGateway(r.Ctx, id)
+
+		if r.Component.Monitor != nil {
+			gtw.SetMonitor(r.Component.Monitor)
+		}
+
+		r.gateways[id] = gtw
 	}
-	return r.gateways[id]
+
+	return gtw
 }
 
 // getBroker gets or creates a broker association and returns the broker

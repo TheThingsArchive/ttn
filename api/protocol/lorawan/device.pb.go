@@ -2,31 +2,12 @@
 // source: github.com/TheThingsNetwork/ttn/api/protocol/lorawan/device.proto
 // DO NOT EDIT!
 
-/*
-	Package lorawan is a generated protocol buffer package.
-
-	It is generated from these files:
-		github.com/TheThingsNetwork/ttn/api/protocol/lorawan/device.proto
-		github.com/TheThingsNetwork/ttn/api/protocol/lorawan/device_address.proto
-		github.com/TheThingsNetwork/ttn/api/protocol/lorawan/lorawan.proto
-
-	It has these top-level messages:
-		DeviceIdentifier
-		Device
-		PrefixesRequest
-		PrefixesResponse
-		DevAddrRequest
-		DevAddrResponse
-		Metadata
-		TxConfiguration
-		ActivationMetadata
-*/
 package lorawan
 
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import google_protobuf "github.com/golang/protobuf/ptypes/empty"
+import google_protobuf1 "github.com/golang/protobuf/ptypes/empty"
 import _ "github.com/gogo/protobuf/gogoproto"
 
 import github_com_TheThingsNetwork_ttn_core_types "github.com/TheThingsNetwork/ttn/core/types"
@@ -42,12 +23,6 @@ import io "io"
 var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
-
-// This is a compile-time assertion to ensure that this generated file
-// is compatible with the proto package it is being compiled against.
-// A compilation error at this line likely means your copy of the
-// proto package needs to be updated.
-const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 type DeviceIdentifier struct {
 	AppEui *github_com_TheThingsNetwork_ttn_core_types.AppEUI `protobuf:"bytes,1,opt,name=app_eui,json=appEui,proto3,customtype=github.com/TheThingsNetwork/ttn/core/types.AppEUI" json:"app_eui,omitempty"`
@@ -100,8 +75,8 @@ const _ = grpc.SupportPackageIsVersion3
 
 type DeviceManagerClient interface {
 	GetDevice(ctx context.Context, in *DeviceIdentifier, opts ...grpc.CallOption) (*Device, error)
-	SetDevice(ctx context.Context, in *Device, opts ...grpc.CallOption) (*google_protobuf.Empty, error)
-	DeleteDevice(ctx context.Context, in *DeviceIdentifier, opts ...grpc.CallOption) (*google_protobuf.Empty, error)
+	SetDevice(ctx context.Context, in *Device, opts ...grpc.CallOption) (*google_protobuf1.Empty, error)
+	DeleteDevice(ctx context.Context, in *DeviceIdentifier, opts ...grpc.CallOption) (*google_protobuf1.Empty, error)
 }
 
 type deviceManagerClient struct {
@@ -121,8 +96,8 @@ func (c *deviceManagerClient) GetDevice(ctx context.Context, in *DeviceIdentifie
 	return out, nil
 }
 
-func (c *deviceManagerClient) SetDevice(ctx context.Context, in *Device, opts ...grpc.CallOption) (*google_protobuf.Empty, error) {
-	out := new(google_protobuf.Empty)
+func (c *deviceManagerClient) SetDevice(ctx context.Context, in *Device, opts ...grpc.CallOption) (*google_protobuf1.Empty, error) {
+	out := new(google_protobuf1.Empty)
 	err := grpc.Invoke(ctx, "/lorawan.DeviceManager/SetDevice", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
@@ -130,8 +105,8 @@ func (c *deviceManagerClient) SetDevice(ctx context.Context, in *Device, opts ..
 	return out, nil
 }
 
-func (c *deviceManagerClient) DeleteDevice(ctx context.Context, in *DeviceIdentifier, opts ...grpc.CallOption) (*google_protobuf.Empty, error) {
-	out := new(google_protobuf.Empty)
+func (c *deviceManagerClient) DeleteDevice(ctx context.Context, in *DeviceIdentifier, opts ...grpc.CallOption) (*google_protobuf1.Empty, error) {
+	out := new(google_protobuf1.Empty)
 	err := grpc.Invoke(ctx, "/lorawan.DeviceManager/DeleteDevice", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
@@ -143,8 +118,8 @@ func (c *deviceManagerClient) DeleteDevice(ctx context.Context, in *DeviceIdenti
 
 type DeviceManagerServer interface {
 	GetDevice(context.Context, *DeviceIdentifier) (*Device, error)
-	SetDevice(context.Context, *Device) (*google_protobuf.Empty, error)
-	DeleteDevice(context.Context, *DeviceIdentifier) (*google_protobuf.Empty, error)
+	SetDevice(context.Context, *Device) (*google_protobuf1.Empty, error)
+	DeleteDevice(context.Context, *DeviceIdentifier) (*google_protobuf1.Empty, error)
 }
 
 func RegisterDeviceManagerServer(s *grpc.Server, srv DeviceManagerServer) {

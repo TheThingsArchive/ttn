@@ -30,13 +30,13 @@ func (r *router) SubscribeDownlink(gatewayID string) (<-chan *pb.DownlinkMessage
 	if fromSchedule := gateway.Schedule.Subscribe(); fromSchedule != nil {
 		toGateway := make(chan *pb.DownlinkMessage)
 		go func() {
-			ctx.Debug("Activate Downlink")
+			ctx.Debug("Activate downlink")
 			for message := range fromSchedule {
 				gateway.Utilization.AddTx(message)
-				ctx.Debug("Send Downlink")
+				ctx.Debug("Send downlink")
 				toGateway <- message
 			}
-			ctx.Debug("Deactivate Downlink")
+			ctx.Debug("Deactivate downlink")
 			close(toGateway)
 		}()
 		return toGateway, nil
@@ -51,10 +51,6 @@ func (r *router) UnsubscribeDownlink(gatewayID string) error {
 
 func (r *router) HandleDownlink(downlink *pb_broker.DownlinkMessage) error {
 	option := downlink.DownlinkOption
-	ctx := r.Ctx.WithFields(log.Fields{
-		"GatewayID": option.GatewayId,
-	})
-	gateway := r.getGateway(option.GatewayId)
 
 	downlinkMessage := &pb.DownlinkMessage{
 		Payload:               downlink.Payload,
@@ -66,15 +62,8 @@ func (r *router) HandleDownlink(downlink *pb_broker.DownlinkMessage) error {
 	if r.Component != nil && r.Component.Identity != nil {
 		identifier = strings.TrimPrefix(option.Identifier, fmt.Sprintf("%s:", r.Component.Identity.Id))
 	}
-	ctx = ctx.WithField("Identifier", identifier)
 
-	err := gateway.Schedule.Schedule(identifier, downlinkMessage)
-	if err != nil {
-		ctx.WithError(err).Warn("Could not schedule Downlink")
-		return err
-	}
-
-	return nil
+	return r.getGateway(downlink.DownlinkOption.GatewayId).HandleDownlink(identifier, downlinkMessage)
 }
 
 func guessRegion(frequency uint64) string {
