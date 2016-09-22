@@ -5,15 +5,15 @@ package cmd
 
 import "github.com/spf13/cobra"
 
-var gatewayCmd = &cobra.Command{
-	Use:   "gateway",
+var gatewaysCmd = &cobra.Command{
+	Use:   "gateways",
 	Short: "Manage gateways",
-	Long:  `ttnctl applications can be used to manage gateways.`,
+	Long:  `ttnctl gateways can be used to manage gateways.`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		RootCmd.PersistentPreRun(cmd, args)
 	},
 }
 
 func init() {
-	RootCmd.AddCommand(gatewayCmd)
+	RootCmd.AddCommand(gatewaysCmd)
 }

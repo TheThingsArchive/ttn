@@ -14,11 +14,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var gatewayStatusCmd = &cobra.Command{
+var gatewaysStatusCmd = &cobra.Command{
 	Use:   "status [gatewayID]",
 	Short: "Get status of a gateway",
-	Long:  `ttnctl gateway status can be used to get status of gateways.`,
-	Example: `$ ttnctl gateway status eui-0000024b08060030
+	Long:  `ttnctl gateways status can be used to get status of gateways.`,
+	Example: `$ ttnctl gateways status test
   INFO Discovering Router...
   INFO Connecting with Router...
   INFO Connected to Router
@@ -85,5 +85,5 @@ var gatewayStatusCmd = &cobra.Command{
 }
 
 func init() {
-	gatewayCmd.AddCommand(gatewayStatusCmd)
+	gatewaysCmd.AddCommand(gatewaysStatusCmd)
 }
