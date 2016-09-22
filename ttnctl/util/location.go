@@ -22,8 +22,8 @@ func ParseLocation(locationStr string) (*account.Location, error) {
 		return nil, err
 	}
 
-	if lat < 0 || lat > 90 {
-		return nil, errors.New("Latitude should be in range [0, 90]")
+	if lat < -90 || lat > 90 {
+		return nil, errors.New("Latitude should be in range [90, 90]")
 	}
 
 	lng, err := strconv.ParseFloat(parts[1], 64)
@@ -31,8 +31,8 @@ func ParseLocation(locationStr string) (*account.Location, error) {
 		return nil, err
 	}
 
-	if lng < 0 || lng > 180 {
-		return nil, errors.New("Longitude should be in range [0, 180]")
+	if lng < -180 || lng > 180 {
+		return nil, errors.New("Longitude should be in range [-180, 180]")
 	}
 
 	return &account.Location{
