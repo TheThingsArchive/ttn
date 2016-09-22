@@ -40,12 +40,12 @@ func getAccountServerTokenSource(token *oauth2.Token) oauth2.TokenSource {
 func getStoredToken(ctx log.Interface) *oauth2.Token {
 	tokenString := viper.GetString("oauth2-token")
 	if tokenString == "" {
-		ctx.Fatal("No account information found. Please login with ttnctl user login [e-mail]")
+		ctx.Fatal("No account information found. Please login with ttnctl user login [access code]")
 	}
 	token := &oauth2.Token{}
 	err := json.Unmarshal([]byte(tokenString), token)
 	if err != nil {
-		ctx.Fatal("Account information invalid. Please login with ttnctl user login [e-mail]")
+		ctx.Fatal("Account information invalid. Please login with ttnctl user login [access code]")
 	}
 	return token
 }

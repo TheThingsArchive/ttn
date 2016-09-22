@@ -9,7 +9,6 @@ import (
 	"github.com/spf13/viper"
 )
 
-// versionCmd represents the version command
 var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Get build and version information",

@@ -13,7 +13,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// devicesInfoCmd represents the `device info` command
 var devicesInfoCmd = &cobra.Command{
 	Use:   "info [Device ID]",
 	Short: "Get information about a device",

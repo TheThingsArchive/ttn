@@ -12,7 +12,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// devicesListCmd represents the `device list` command
 var devicesListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List al devices for the current application",

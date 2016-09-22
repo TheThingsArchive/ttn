@@ -11,7 +11,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// applicationsListCmd is the entrypoint for handlerctl
 var applicationsListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List applications",

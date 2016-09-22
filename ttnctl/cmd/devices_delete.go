@@ -12,7 +12,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// devicesDeleteCmd represents the `device delete` command
 var devicesDeleteCmd = &cobra.Command{
 	Use:   "delete [Device ID]",
 	Short: "Delete a device",

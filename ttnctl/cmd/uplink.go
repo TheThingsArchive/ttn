@@ -17,7 +17,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// uplinkCmd represents the `uplink` command
 var uplinkCmd = &cobra.Command{
 	Use:   "uplink [DevAddr] [NwkSKey] [AppSKey] [FCnt] [Payload]",
 	Short: "Simulate an uplink message to the network",

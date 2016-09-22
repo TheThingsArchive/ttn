@@ -11,7 +11,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// devicesSetCmd represents the `device set` command
 var devicesSetCmd = &cobra.Command{
 	Use:   "set [Device ID]",
 	Short: "Set properties of a device",

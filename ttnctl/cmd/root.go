@@ -24,7 +24,7 @@ var cfgFile string
 
 var ctx log.Interface
 
-// RootCmd is the entrypoint for handlerctl
+// RootCmd is the entrypoint for ttnctl
 var RootCmd = &cobra.Command{
 	Use:   "ttnctl",
 	Short: "Control The Things Network from the command line",

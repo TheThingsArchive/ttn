@@ -10,7 +10,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// applicationsPayloadFunctionsCmd represents the applicationsPayloadFunctions command
 var applicationsPayloadFunctionsCmd = &cobra.Command{
 	Use:   "pf",
 	Short: "Show the payload functions",

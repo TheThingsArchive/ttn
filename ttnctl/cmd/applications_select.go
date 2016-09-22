@@ -11,7 +11,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// applicationsSelectCmd is the entrypoint for handlerctl
 var applicationsSelectCmd = &cobra.Command{
 	Use:   "select",
 	Short: "select the application to use",

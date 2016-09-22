@@ -14,7 +14,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// userCmd represents the users command
 var userCmd = &cobra.Command{
 	Use:   "user",
 	Short: "Show the current user",

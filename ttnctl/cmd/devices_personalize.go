@@ -14,7 +14,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// devicesPersonalizeCmd represents the `device personalize` command
 var devicesPersonalizeCmd = &cobra.Command{
 	Use:   "personalize [Device ID] [NwkSKey] [AppSKey]",
 	Short: "Personalize a device",

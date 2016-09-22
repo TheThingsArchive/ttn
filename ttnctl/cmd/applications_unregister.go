@@ -11,7 +11,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// applicationsUnregisterCmd represents the `applications unregister` command
 var applicationsUnregisterCmd = &cobra.Command{
 	Use:   "unregister",
 	Short: "Unregister this application from the handler",

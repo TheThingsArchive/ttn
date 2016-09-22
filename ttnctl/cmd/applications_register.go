@@ -9,7 +9,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// applicationsRegisterCmd represents the `applications register` command
 var applicationsRegisterCmd = &cobra.Command{
 	Use:   "register",
 	Short: "Register this application with the handler",
