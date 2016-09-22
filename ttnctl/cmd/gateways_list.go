@@ -20,8 +20,8 @@ var gatewaysListCmd = &cobra.Command{
 1	test	true		US				52.3740     4.8896
 `,
 	Run: func(cmd *cobra.Command, args []string) {
-		act := util.GetAccount(ctx)
-		gateways, err := act.ListGateways()
+		accountt := util.GetAccount(ctx)
+		gateways, err := account.ListGateways()
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not list gateways")
 		}

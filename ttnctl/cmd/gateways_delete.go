@@ -27,8 +27,8 @@ var gatewaysDeleteCmd = &cobra.Command{
 			ctx.Fatal("Invalid Gateway ID")
 		}
 
-		act := util.GetAccount(ctx)
-		err := act.DeleteGateway(gatewayID)
+		account := util.GetAccount(ctx)
+		err := account.DeleteGateway(gatewayID)
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not list gateways")
 		}
