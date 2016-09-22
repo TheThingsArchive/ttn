@@ -165,7 +165,7 @@ func (s *schedule) Schedule(id string, downlink *router_pb.DownlinkMessage) erro
 	if item, ok := s.items[id]; ok {
 		item.payload = downlink
 		if lora := downlink.GetProtocolConfiguration().GetLorawan(); lora != nil {
-			time, _ := toa.Compute(
+			time, _ := toa.ComputeLoRa(
 				uint(len(downlink.Payload)),
 				lora.DataRate,
 				lora.CodingRate,

@@ -66,7 +66,7 @@ func (u *utilization) AddRx(uplink *pb_router.UplinkMessage) error {
 	var t time.Duration
 	var err error
 	if lorawan := uplink.ProtocolMetadata.GetLorawan(); lorawan != nil {
-		t, err = toa.Compute(uint(len(uplink.Payload)), lorawan.DataRate, lorawan.CodingRate)
+		t, err = toa.ComputeLoRa(uint(len(uplink.Payload)), lorawan.DataRate, lorawan.CodingRate)
 		if err != nil {
 			return err
 		}
@@ -89,7 +89,7 @@ func (u *utilization) AddTx(downlink *pb_router.DownlinkMessage) error {
 	var t time.Duration
 	var err error
 	if lorawan := downlink.ProtocolConfiguration.GetLorawan(); lorawan != nil {
-		t, err = toa.Compute(uint(len(downlink.Payload)), lorawan.DataRate, lorawan.CodingRate)
+		t, err = toa.ComputeLoRa(uint(len(downlink.Payload)), lorawan.DataRate, lorawan.CodingRate)
 		if err != nil {
 			return err
 		}
