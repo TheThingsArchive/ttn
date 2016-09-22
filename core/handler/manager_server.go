@@ -257,7 +257,7 @@ func (h *handlerManager) RegisterApplication(ctx context.Context, in *pb.Applica
 		return nil, errors.BuildGRPCError(err)
 	}
 	if app != nil {
-		return nil, grpcErrf(codes.AlreadyExists, "Application already registered")
+		return nil, grpcErrf(codes.AlreadyExists, "Application")
 	}
 
 	err = h.handler.applications.Set(&application.Application{
