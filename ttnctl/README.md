@@ -28,3 +28,7 @@ The following configuration options can be set:
 ## Development
 
 **Configuration for Development:** Copy `../.env/ttnctl.yaml.dev-example` to `~/.ttnctl.yaml`
+
+## License
+
+Source code for The Things Network is released under the MIT License, which can be found in the [LICENSE](../LICENSE) file. A list of authors can be found in the [AUTHORS](../AUTHORS) file.
