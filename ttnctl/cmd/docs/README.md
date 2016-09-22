@@ -23,24 +23,24 @@ ttnctl applications can be used to manage applications.
 ```
 
 
-## ttnctl applications create
+## ttnctl applications add
 
-Create a new application
+Add a new application
 
 ### Synopsis
 
 
-ttnctl applications create can be used to create a new application.
+ttnctl applications add can be used to add a new application to your account.
 
 ```
-ttnctl applications create [AppID] [Description]
+ttnctl applications add [AppID] [Description]
 ```
 
 ### Examples
 
 ```
-$ ttnctl applications create test "Test application"
-  INFO Created Application
+$ ttnctl applications add test "Test application"
+  INFO Added Application
   INFO Selected Current Application
 
 ```
@@ -403,46 +403,6 @@ ttnctl devices can be used to manage devices.
 ```
 
 
-## ttnctl devices create
-
-Create a new device
-
-### Synopsis
-
-
-ttnctl devices create can be used to create a new device.
-
-```
-ttnctl devices create [Device ID] [DevEUI] [AppKey]
-```
-
-### Examples
-
-```
-$ ttnctl devices create test
-  INFO Using Application                        AppEUI=70B3D57EF0000024 AppID=test
-  INFO Generating random DevEUI...
-  INFO Generating random AppKey...
-  INFO Discovering Handler...
-  INFO Connecting with Handler...
-  INFO Created device                           AppEUI=70B3D57EF0000024 AppID=test AppKey=EBD2E2810A4307263FE5EF78E2EF589D DevEUI=0001D544B2936FCE DevID=test
-
-```
-
-### Options inherited from parent commands
-
-```
-      --app-eui string              The app EUI to use
-      --app-id string               The app ID to use
-      --config string               config file (default is $HOME/.ttnctl.yaml)
-      --discovery-server string     The address of the Discovery server (default "discover.thethingsnetwork.org:1900")
-      --mqtt-broker string          The address of the MQTT broker (default "eu.thethings.network:1883")
-      --ttn-account-server string   The address of the OAuth 2.0 server (default "https://account.thethingsnetwork.org")
-      --ttn-handler string          The ID of the TTN Handler as announced in the Discovery server (default "ttn-handler-eu")
-      --ttn-router string           The ID of the TTN Router as announced in the Discovery server (default "ttn-router-eu")
-```
-
-
 ## ttnctl devices delete
 
 Delete a device
@@ -626,6 +586,46 @@ $ ttnctl devices personalize test
 ```
 
 
+## ttnctl devices register
+
+Register a new device
+
+### Synopsis
+
+
+ttnctl devices register can be used to register a new device.
+
+```
+ttnctl devices register [Device ID] [DevEUI] [AppKey]
+```
+
+### Examples
+
+```
+$ ttnctl devices register test
+  INFO Using Application                        AppEUI=70B3D57EF0000024 AppID=test
+  INFO Generating random DevEUI...
+  INFO Generating random AppKey...
+  INFO Discovering Handler...
+  INFO Connecting with Handler...
+  INFO Registered device                        AppEUI=70B3D57EF0000024 AppID=test AppKey=EBD2E2810A4307263FE5EF78E2EF589D DevEUI=0001D544B2936FCE DevID=test
+
+```
+
+### Options inherited from parent commands
+
+```
+      --app-eui string              The app EUI to use
+      --app-id string               The app ID to use
+      --config string               config file (default is $HOME/.ttnctl.yaml)
+      --discovery-server string     The address of the Discovery server (default "discover.thethingsnetwork.org:1900")
+      --mqtt-broker string          The address of the MQTT broker (default "eu.thethings.network:1883")
+      --ttn-account-server string   The address of the OAuth 2.0 server (default "https://account.thethingsnetwork.org")
+      --ttn-handler string          The ID of the TTN Handler as announced in the Discovery server (default "ttn-handler-eu")
+      --ttn-router string           The ID of the TTN Router as announced in the Discovery server (default "ttn-router-eu")
+```
+
+
 ## ttnctl devices set
 
 Set properties of a device
@@ -725,14 +725,14 @@ $ ttnctl downlink test --json '{"led":"on"}'
 ```
 
 
-## ttnctl gateway
+## ttnctl gateways
 
 Manage gateways
 
 ### Synopsis
 
 
-ttnctl applications can be used to manage gateways.
+ttnctl gateways can be used to manage gateways.
 
 ### Options inherited from parent commands
 
@@ -746,23 +746,163 @@ ttnctl applications can be used to manage gateways.
 ```
 
 
-## ttnctl gateway status
+## ttnctl gateways delete
+
+Delete a gateway
+
+### Synopsis
+
+
+ttnctl gateways delete can be used to delete a gateway
+
+```
+ttnctl gateways delete [GatewayID]
+```
+
+### Examples
+
+```
+$ ttnctl gateways delete test
+  INFO Deleted gateway                          Gateway ID=test
+
+```
+
+### Options inherited from parent commands
+
+```
+      --config string               config file (default is $HOME/.ttnctl.yaml)
+      --discovery-server string     The address of the Discovery server (default "discover.thethingsnetwork.org:1900")
+      --mqtt-broker string          The address of the MQTT broker (default "eu.thethings.network:1883")
+      --ttn-account-server string   The address of the OAuth 2.0 server (default "https://account.thethingsnetwork.org")
+      --ttn-handler string          The ID of the TTN Handler as announced in the Discovery server (default "ttn-handler-eu")
+      --ttn-router string           The ID of the TTN Router as announced in the Discovery server (default "ttn-router-eu")
+```
+
+
+## ttnctl gateways edit
+
+edit a gateway
+
+### Synopsis
+
+
+ttnctl gateways edit can be used to edit settings of a gateway
+
+```
+ttnctl gateways edit [GatewayID]
+```
+
+### Examples
+
+```
+$ ttnctl gateways edit test --location 52.37403,4.88968 --frequency-plan EU
+  INFO Edited gateway                          Gateway ID=test
+
+```
+
+### Options
+
+```
+      --frequency-plan string   The frequency plan to use on the gateway
+      --location string         The location of the gateway
+```
+
+### Options inherited from parent commands
+
+```
+      --config string               config file (default is $HOME/.ttnctl.yaml)
+      --discovery-server string     The address of the Discovery server (default "discover.thethingsnetwork.org:1900")
+      --mqtt-broker string          The address of the MQTT broker (default "eu.thethings.network:1883")
+      --ttn-account-server string   The address of the OAuth 2.0 server (default "https://account.thethingsnetwork.org")
+      --ttn-handler string          The ID of the TTN Handler as announced in the Discovery server (default "ttn-handler-eu")
+      --ttn-router string           The ID of the TTN Router as announced in the Discovery server (default "ttn-router-eu")
+```
+
+
+## ttnctl gateways list
+
+List your gateways
+
+### Synopsis
+
+
+ttnctl gateways list can be used to list the gateways you have access to
+
+```
+ttnctl gateways list
+```
+
+### Examples
+
+```
+$ ttnctl gateways list
+ 	ID  	Activated	Frequency Plan	Coordinates
+1	test	true		US				(52.3740, 4.8896)
+
+```
+
+### Options inherited from parent commands
+
+```
+      --config string               config file (default is $HOME/.ttnctl.yaml)
+      --discovery-server string     The address of the Discovery server (default "discover.thethingsnetwork.org:1900")
+      --mqtt-broker string          The address of the MQTT broker (default "eu.thethings.network:1883")
+      --ttn-account-server string   The address of the OAuth 2.0 server (default "https://account.thethingsnetwork.org")
+      --ttn-handler string          The ID of the TTN Handler as announced in the Discovery server (default "ttn-handler-eu")
+      --ttn-router string           The ID of the TTN Router as announced in the Discovery server (default "ttn-router-eu")
+```
+
+
+## ttnctl gateways register
+
+Register a gateway
+
+### Synopsis
+
+
+ttnctl gateways register can be used to register a gateway
+
+```
+ttnctl gateways register [GatewayID] [FrequencyPlan] [Location]
+```
+
+### Examples
+
+```
+$ ttnctl gateways register test US 52.37403,4.88968
+  INFO Registered gateway                          Gateway ID=test
+
+```
+
+### Options inherited from parent commands
+
+```
+      --config string               config file (default is $HOME/.ttnctl.yaml)
+      --discovery-server string     The address of the Discovery server (default "discover.thethingsnetwork.org:1900")
+      --mqtt-broker string          The address of the MQTT broker (default "eu.thethings.network:1883")
+      --ttn-account-server string   The address of the OAuth 2.0 server (default "https://account.thethingsnetwork.org")
+      --ttn-handler string          The ID of the TTN Handler as announced in the Discovery server (default "ttn-handler-eu")
+      --ttn-router string           The ID of the TTN Router as announced in the Discovery server (default "ttn-router-eu")
+```
+
+
+## ttnctl gateways status
 
 Get status of a gateway
 
 ### Synopsis
 
 
-ttnctl gateway status can be used to get status of gateways.
+ttnctl gateways status can be used to get status of gateways.
 
 ```
-ttnctl gateway status [gatewayID]
+ttnctl gateways status [gatewayID]
 ```
 
 ### Examples
 
 ```
-$ ttnctl gateway status eui-0000024b08060030
+$ ttnctl gateways status test
   INFO Discovering Router...
   INFO Connecting with Router...
   INFO Connected to Router
@@ -888,24 +1028,24 @@ $ ttnctl user
 
 ## ttnctl user login
 
-Login
+Log in with your TTN account
 
 ### Synopsis
 
 
-ttnctl user login allows you to login to the account server.
+ttnctl user login allows you to log in to your TTN account.
 
 ```
-ttnctl user login [client code]
+ttnctl user login [access code]
 ```
 
 ### Examples
 
 ```
-First get an access code from your TTN Profile by going to
+First get an access code from your TTN profile by going to
 https://account.thethingsnetwork.org and clicking "ttnctl access code".
 
-$ ttnctl user login 2keK3FTu6e0327cq4ni0wRTMT2mTS-m_FLzFBlNQadwa
+$ ttnctl user login [paste the access code you requested above]
   INFO Successfully logged in as yourname (your@email.org)
 
 ```
