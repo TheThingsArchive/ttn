@@ -12,7 +12,10 @@ import (
 var gatewaysDeleteCmd = &cobra.Command{
 	Use:   "delete [GatewayID]",
 	Short: "Delete a gateway",
-	Long:  `ttnctl gateways deletw can be used to delete a gateway`,
+	Long:  `ttnctl gateways delete can be used to delete a gateway`,
+	Example: `$ ttnctl gateways delete test
+  INFO Deleted gateway                          Gateway ID=test
+`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) != 1 {
 			cmd.UsageFunc()(cmd)

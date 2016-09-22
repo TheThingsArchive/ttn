@@ -15,6 +15,10 @@ var gatewaysListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List your gateways",
 	Long:  `ttnctl gateways list can be used to list the gateways you have access to`,
+	Example: `$ ttnctl gateways list
+ 	ID  	Activated	Frequency Plan	Lat			Lng
+1	test	true		US				52.3740     4.8896
+`,
 	Run: func(cmd *cobra.Command, args []string) {
 		act := util.GetAccount(ctx)
 		gateways, err := act.ListGateways()
