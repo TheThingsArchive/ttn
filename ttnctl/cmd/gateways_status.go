@@ -18,7 +18,7 @@ var gatewaysStatusCmd = &cobra.Command{
 	Use:   "status [gatewayID]",
 	Short: "Get status of a gateway",
 	Long:  `ttnctl gateways status can be used to get status of gateways.`,
-	Example: `$ ttnctl gateways status eui-0000024b08060030
+	Example: `$ ttnctl gateways status test
   INFO Discovering Router...
   INFO Connecting with Router...
   INFO Connected to Router
