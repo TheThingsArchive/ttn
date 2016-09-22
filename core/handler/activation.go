@@ -69,7 +69,8 @@ func (h *handler) HandleActivationChallenge(challenge *pb_broker.ActivationChall
 	}, nil
 }
 
-func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActivationRequest) (*pb.DeviceActivationResponse, error) {
+func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActivationRequest) (res *pb.DeviceActivationResponse, err error) {
+	appID, devID := activation.AppId, activation.DevId
 	var appEUI types.AppEUI
 	if activation.AppEui != nil {
 		appEUI = *activation.AppEui
@@ -81,13 +82,18 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 	ctx := h.Ctx.WithFields(log.Fields{
 		"DevEUI": devEUI,
 		"AppEUI": appEUI,
-		"AppID":  activation.AppId,
-		"DevID":  activation.DevId,
+		"AppID":  appID,
+		"DevID":  devID,
 	})
-	var err error
 	start := time.Now()
 	defer func() {
 		if err != nil {
+			h.mqttEvent <- &mqttEvent{
+				AppID:   appID,
+				DevID:   devID,
+				Type:    "activations/errors",
+				Payload: map[string]string{"error": err.Error()},
+			}
 			ctx.WithError(err).Warn("Could not handle activation")
 		} else {
 			ctx.WithField("Duration", time.Now().Sub(start)).Info("Handled activation")
@@ -101,13 +107,13 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 
 	// Find Device
 	var dev *device.Device
-	dev, err = h.devices.Get(activation.AppId, activation.DevId)
+	dev, err = h.devices.Get(appID, devID)
 	if err != nil {
 		return nil, err
 	}
 
 	if dev.AppKey.IsEmpty() {
-		err = errors.NewErrNotFound(fmt.Sprintf("AppKey for device %s", activation.DevId))
+		err = errors.NewErrNotFound(fmt.Sprintf("AppKey for device %s", devID))
 		return nil, err
 	}
 
@@ -170,8 +176,8 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 	h.mqttActivation <- &mqtt.Activation{
 		AppEUI:   *activation.AppEui,
 		DevEUI:   *activation.DevEui,
-		AppID:    activation.AppId,
-		DevID:    activation.DevId,
+		AppID:    appID,
+		DevID:    devID,
 		DevAddr:  types.DevAddr(joinAccept.DevAddr),
 		Metadata: mqttMetadata,
 	}
@@ -196,9 +202,7 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 	joinAccept.AppNonce = appNonce
 
 	// Calculate session keys
-	var appSKey types.AppSKey
-	var nwkSKey types.NwkSKey
-	appSKey, nwkSKey, err = otaa.CalculateSessionKeys(dev.AppKey, joinAccept.AppNonce, joinAccept.NetID, reqMAC.DevNonce)
+	appSKey, nwkSKey, err := otaa.CalculateSessionKeys(dev.AppKey, joinAccept.AppNonce, joinAccept.NetID, reqMAC.DevNonce)
 	if err != nil {
 		return nil, err
 	}
@@ -230,7 +234,7 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 	metadata := activation.ActivationMetadata
 	metadata.GetLorawan().NwkSKey = &dev.NwkSKey
 	metadata.GetLorawan().DevAddr = &dev.DevAddr
-	res := &pb.DeviceActivationResponse{
+	res = &pb.DeviceActivationResponse{
 		Payload:            resBytes,
 		DownlinkOption:     activation.ResponseTemplate.DownlinkOption,
 		ActivationMetadata: metadata,

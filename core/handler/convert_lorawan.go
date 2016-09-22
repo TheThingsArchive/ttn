@@ -66,6 +66,16 @@ func (h *handler) ConvertFromLoRaWAN(ctx log.Interface, ttnUp *pb_broker.Dedupli
 		return errors.NewErrInvalidArgument("Uplink MACPayload", "could not get frame payload")
 	}
 
+	// LoRaWAN: Publish ACKs as events
+	if macPayload.FHDR.FCtrl.ACK {
+		h.mqttEvent <- &mqttEvent{
+			AppID:   appUp.AppID,
+			DevID:   appUp.DevID,
+			Type:    "down/acks",
+			Payload: map[string]interface{}{},
+		}
+	}
+
 	return nil
 }
 

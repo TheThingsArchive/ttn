@@ -24,6 +24,7 @@ func TestEnqueueDownlink(t *testing.T) {
 	h := &handler{
 		Component: &core.Component{Ctx: GetLogger(t, "TestEnqueueDownlink")},
 		devices:   device.NewDeviceStore(),
+		mqttEvent: make(chan *mqttEvent, 10),
 	}
 	err := h.EnqueueDownlink(&mqtt.DownlinkMessage{
 		AppID: appID,
@@ -62,6 +63,7 @@ func TestHandleDownlink(t *testing.T) {
 		devices:      device.NewDeviceStore(),
 		applications: application.NewApplicationStore(),
 		downlink:     make(chan *pb_broker.DownlinkMessage),
+		mqttEvent:    make(chan *mqttEvent, 10),
 	}
 	// Neither payload nor Fields provided : ERROR
 	err = h.HandleDownlink(&mqtt.DownlinkMessage{

@@ -198,3 +198,21 @@ if err := token.Error(); err != nil {
   ctx.WithError(err).Fatal("Could not subscribe")
 }
 ```
+
+## Device Events
+
+### Downlink Events
+
+* Downlink Scheduled: `<AppID>/devices/<DevID>/events/down/scheduled` (payload: the message - see **Downlink Messages**)
+* Downlink Sent: `<AppID>/devices/<DevID>/events/down/sent` (payload: the message - see **Downlink Messages**)
+* Acknowledgements: `<AppID>/devices/<DevID>/events/ack` (payload: `{}`)
+
+### Error Events
+
+The payload of error events is a JSON object with the error's description.
+
+* Uplink Errors: `<AppID>/devices/<DevID>/events/up/errors`
+* Downlink Errors: `<AppID>/devices/<DevID>/events/down/errors`
+* Activation Errors: `<AppID>/devices/<DevID>/events/activations/errors`
+
+Example: `{"error":"Activation DevNonce not valid: already used"}`

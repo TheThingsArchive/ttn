@@ -16,13 +16,12 @@ import (
 	"github.com/apex/log"
 )
 
-func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivationRequest) (*pb.DeviceActivationResponse, error) {
+func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivationRequest) (res *pb.DeviceActivationResponse, err error) {
 	ctx := r.Ctx.WithFields(log.Fields{
 		"GatewayID": gatewayID,
 		"AppEUI":    *activation.AppEui,
 		"DevEUI":    *activation.DevEui,
 	})
-	var err error
 	start := time.Now()
 	defer func() {
 		if err != nil {

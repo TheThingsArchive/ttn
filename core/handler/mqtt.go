@@ -10,6 +10,13 @@ import (
 	"github.com/apex/log"
 )
 
+type mqttEvent struct {
+	AppID   string
+	DevID   string
+	Type    string
+	Payload interface{}
+}
+
 // MQTTTimeout indicates how long we should wait for an MQTT publish
 var MQTTTimeout = 2 * time.Second
 
@@ -26,6 +33,7 @@ func (h *handler) HandleMQTT(username, password string, mqttBrokers ...string) e
 
 	h.mqttUp = make(chan *mqtt.UplinkMessage, MQTTBufferSize)
 	h.mqttActivation = make(chan *mqtt.Activation, MQTTBufferSize)
+	h.mqttEvent = make(chan *mqttEvent, MQTTBufferSize)
 
 	token := h.mqttClient.SubscribeDownlink(func(client mqtt.Client, appID string, devID string, msg mqtt.DownlinkMessage) {
 		down := &msg
@@ -86,6 +94,30 @@ func (h *handler) HandleMQTT(username, password string, mqttBrokers ...string) e
 					}
 				} else {
 					h.Ctx.Warn("Activation publish timeout")
+				}
+			}()
+		}
+	}()
+
+	go func() {
+		for event := range h.mqttEvent {
+			h.Ctx.WithFields(log.Fields{
+				"DevID": event.DevID,
+				"AppID": event.AppID,
+			}).Debug("Publish Event")
+			var token mqtt.Token
+			if event.DevID == "" {
+				token = h.mqttClient.PublishAppEvent(event.AppID, event.Type, event.Payload)
+			} else {
+				token = h.mqttClient.PublishDeviceEvent(event.AppID, event.DevID, event.Type, event.Payload)
+			}
+			go func() {
+				if token.WaitTimeout(MQTTTimeout) {
+					if token.Error() != nil {
+						h.Ctx.WithError(token.Error()).Warn("Could not publish Event")
+					}
+				} else {
+					h.Ctx.Warn("Event publish timeout")
 				}
 			}()
 		}

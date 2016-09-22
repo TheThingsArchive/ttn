@@ -62,6 +62,7 @@ type handler struct {
 
 	mqttUp         chan *mqtt.UplinkMessage
 	mqttActivation chan *mqtt.Activation
+	mqttEvent      chan *mqttEvent
 }
 
 func (h *handler) Init(c *core.Component) error {
