@@ -14,7 +14,7 @@ var gatewaysRegisterCmd = &cobra.Command{
 	Use:   "register [GatewayID] [FrequencyPlan] [Location]",
 	Short: "Register a gateway",
 	Long:  `ttnctl gateways register can be used to register a gateway`,
-	Example: `$ ttnctl gateways register test US 52.37403:4.88968
+	Example: `$ ttnctl gateways register test US 52.37403,4.88968
   INFO Registered gateway                          Gateway ID=test
 `,
 	Run: func(cmd *cobra.Command, args []string) {

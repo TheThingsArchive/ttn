@@ -14,7 +14,7 @@ var gatewaysEditCmd = &cobra.Command{
 	Use:   "edit [GatewayID]",
 	Short: "edit a gateway",
 	Long:  `ttnctl gateways edit can be used to edit settings of a gateway`,
-	Example: `$ ttnctl gateways edit test --location 52.37403:4.88968 --frequency-plan EU
+	Example: `$ ttnctl gateways edit test --location 52.37403,4.88968 --frequency-plan EU
   INFO Edited gateway                          Gateway ID=test
 `,
 	Run: func(cmd *cobra.Command, args []string) {

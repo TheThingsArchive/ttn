@@ -13,7 +13,7 @@ import (
 func TestParseLocation(t *testing.T) {
 	a := s.New(t)
 
-	str := "10.5:33.4"
+	str := "10.5,33.4"
 	loc := &account.Location{
 		Latitude:  float64(10.5),
 		Longitude: float64(33.4),

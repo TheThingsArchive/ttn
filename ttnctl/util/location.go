@@ -12,9 +12,9 @@ import (
 )
 
 func ParseLocation(locationStr string) (*account.Location, error) {
-	parts := strings.Split(locationStr, ":")
+	parts := strings.Split(locationStr, ",")
 	if len(parts) != 2 {
-		return nil, errors.New("Location should be on the <lat>:<lng> format")
+		return nil, errors.New("Location should be on the <latitude>,<longitude> format")
 	}
 
 	lat, err := strconv.ParseFloat(parts[0], 64)
