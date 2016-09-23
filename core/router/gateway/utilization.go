@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	pb_router "github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/utils/toa"
 	"github.com/rcrowley/go-metrics"
@@ -66,9 +67,17 @@ func (u *utilization) AddRx(uplink *pb_router.UplinkMessage) error {
 	var t time.Duration
 	var err error
 	if lorawan := uplink.ProtocolMetadata.GetLorawan(); lorawan != nil {
-		t, err = toa.ComputeLoRa(uint(len(uplink.Payload)), lorawan.DataRate, lorawan.CodingRate)
-		if err != nil {
-			return err
+		if lorawan.Modulation == pb_lorawan.Modulation_LORA {
+			t, err = toa.ComputeLoRa(uint(len(uplink.Payload)), lorawan.DataRate, lorawan.CodingRate)
+			if err != nil {
+				return err
+			}
+		}
+		if lorawan.Modulation == pb_lorawan.Modulation_FSK {
+			t, err = toa.ComputeFSK(uint(len(uplink.Payload)), int(lorawan.BitRate))
+			if err != nil {
+				return err
+			}
 		}
 	}
 	if t == 0 {
@@ -89,9 +98,17 @@ func (u *utilization) AddTx(downlink *pb_router.DownlinkMessage) error {
 	var t time.Duration
 	var err error
 	if lorawan := downlink.ProtocolConfiguration.GetLorawan(); lorawan != nil {
-		t, err = toa.ComputeLoRa(uint(len(downlink.Payload)), lorawan.DataRate, lorawan.CodingRate)
-		if err != nil {
-			return err
+		if lorawan.Modulation == pb_lorawan.Modulation_LORA {
+			t, err = toa.ComputeLoRa(uint(len(downlink.Payload)), lorawan.DataRate, lorawan.CodingRate)
+			if err != nil {
+				return err
+			}
+		}
+		if lorawan.Modulation == pb_lorawan.Modulation_FSK {
+			t, err = toa.ComputeFSK(uint(len(downlink.Payload)), int(lorawan.BitRate))
+			if err != nil {
+				return err
+			}
 		}
 	}
 	if t == 0 {
