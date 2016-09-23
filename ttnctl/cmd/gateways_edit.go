@@ -4,8 +4,8 @@
 package cmd
 
 import (
+	"github.com/TheThingsNetwork/go-account-lib/account"
 	"github.com/TheThingsNetwork/ttn/api"
-	"github.com/TheThingsNetwork/ttn/core/account"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/spf13/cobra"
 )

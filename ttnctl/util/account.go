@@ -7,8 +7,9 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/TheThingsNetwork/ttn/core/account"
-	accountUtil "github.com/TheThingsNetwork/ttn/core/account/util"
+	"github.com/TheThingsNetwork/go-account-lib/account"
+	"github.com/TheThingsNetwork/go-account-lib/tokens"
+	accountUtil "github.com/TheThingsNetwork/go-account-lib/util"
 	"github.com/apex/log"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/spf13/viper"
@@ -111,7 +112,11 @@ func GetAccount(ctx log.Interface) *account.Account {
 	if err != nil {
 		ctx.WithError(err).Fatal("Could not get access token")
 	}
-	return account.New(viper.GetString("ttn-account-server"), token.AccessToken)
+
+	server := viper.GetString("ttn-account-server")
+	manager := tokens.HTTPManager(server, token.AccessToken, tokens.MemoryStore())
+
+	return account.NewWithManager(server, token.AccessToken, manager)
 }
 
 // Login does a login to the Account server with the given username and password

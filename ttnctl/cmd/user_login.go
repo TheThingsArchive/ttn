@@ -6,7 +6,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/TheThingsNetwork/ttn/core/account"
+	"github.com/TheThingsNetwork/go-account-lib/account"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
