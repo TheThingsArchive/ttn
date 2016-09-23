@@ -11,12 +11,13 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/TheThingsNetwork/go-account-lib/tokenkey"
+	"github.com/TheThingsNetwork/go-account-lib/tokenkey/cache"
 	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	pb_noc "github.com/TheThingsNetwork/ttn/api/noc"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/logging"
 	"github.com/TheThingsNetwork/ttn/utils/security"
-	"github.com/TheThingsNetwork/ttn/utils/tokenkey"
 	"github.com/apex/log"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/mwitkow/go-grpc-middleware"
@@ -65,9 +66,9 @@ func NewComponent(ctx log.Interface, serviceName string, announcedAddress string
 			NetAddress:     announcedAddress,
 		},
 		AccessToken: viper.GetString("auth-token"),
-		TokenKeyProvider: tokenkey.NewHTTPProvider(
+		TokenKeyProvider: tokenkey.HTTPProvider(
 			viper.GetStringMapString("auth-servers"),
-			viper.GetString("key-dir"),
+			cache.WriteTroughCache(viper.GetString("key-dir")),
 		),
 	}
 
