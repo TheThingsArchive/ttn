@@ -73,6 +73,9 @@ func init() {
 
 	RootCmd.PersistentFlags().String("ttn-account-server", "https://account.thethingsnetwork.org", "The address of the OAuth 2.0 server")
 	viper.BindPFlag("ttn-account-server", RootCmd.PersistentFlags().Lookup("ttn-account-server"))
+
+	RootCmd.PersistentFlags().String("token-dir", os.ExpandEnv("$HOME/.ttnctl"), "The location where tokens are stored")
+	viper.BindPFlag("token-dir", RootCmd.PersistentFlags().Lookup("token-dir"))
 }
 
 func printKV(key, t interface{}) {
