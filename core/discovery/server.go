@@ -4,6 +4,7 @@
 package discovery
 
 import (
+	"github.com/TheThingsNetwork/go-account-lib/rights"
 	pb "github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/golang/protobuf/ptypes/empty"
@@ -65,7 +66,7 @@ func (d *discoveryServer) checkMetadataEditRights(ctx context.Context, in *pb.Me
 		}
 		// Allow APP_ID announcements from all trusted auth servers
 		// When announcing APP_ID, token is user token that contains apps
-		if !claims.AppRight(string(in.Metadata.Value), "settings") {
+		if !claims.AppRight(string(in.Metadata.Value), rights.AppSettings) {
 			return errPermissionDeniedf("No access to this application")
 		}
 	}

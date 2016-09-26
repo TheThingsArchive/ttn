@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/TheThingsNetwork/go-account-lib/rights"
 	pb "github.com/TheThingsNetwork/ttn/api/networkserver"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core/networkserver/device"
@@ -33,7 +34,7 @@ func (n *networkServerManager) getDevice(ctx context.Context, in *pb_lorawan.Dev
 	if err != nil {
 		return nil, err
 	}
-	if !claims.AppRight(dev.AppID, "settings") {
+	if !claims.AppRight(dev.AppID, rights.AppSettings) {
 		return nil, errors.NewErrPermissionDenied(fmt.Sprintf("No access to Application %s", dev.AppID))
 	}
 	return dev, nil

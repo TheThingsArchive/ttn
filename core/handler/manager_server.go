@@ -6,6 +6,7 @@ package handler
 import (
 	"fmt"
 
+	"github.com/TheThingsNetwork/go-account-lib/rights"
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	pb "github.com/TheThingsNetwork/ttn/api/handler"
@@ -34,14 +35,14 @@ func (h *handlerManager) getDevice(ctx context.Context, in *pb.DeviceIdentifier)
 	if err != nil {
 		return nil, err
 	}
-	if !claims.AppRight(in.AppId, "settings") {
+	if !claims.AppRight(in.AppId, rights.AppSettings) {
 		return nil, errors.NewErrPermissionDenied(fmt.Sprintf("No access to Application %s", in.AppId))
 	}
 	dev, err := h.handler.devices.Get(in.AppId, in.DevId)
 	if err != nil {
 		return nil, err
 	}
-	if !claims.AppRight(dev.AppID, "settings") {
+	if !claims.AppRight(dev.AppID, rights.AppSettings) {
 		return nil, errors.NewErrPermissionDenied(fmt.Sprintf("No access to Application %s", in.AppId))
 	}
 	return dev, nil
@@ -223,14 +224,14 @@ func (h *handlerManager) getApplication(ctx context.Context, in *pb.ApplicationI
 	if err != nil {
 		return nil, err
 	}
-	if !claims.AppRight(in.AppId, "settings") {
+	if !claims.AppRight(in.AppId, rights.AppSettings) {
 		return nil, errors.NewErrPermissionDenied(fmt.Sprintf("No access to Application %s", in.AppId))
 	}
 	app, err := h.handler.applications.Get(in.AppId)
 	if err != nil {
 		return nil, err
 	}
-	if !claims.AppRight(app.AppID, "settings") {
+	if !claims.AppRight(app.AppID, rights.AppSettings) {
 		return nil, errors.NewErrPermissionDenied(fmt.Sprintf("No access to Application %s", in.AppId))
 	}
 	return app, nil
