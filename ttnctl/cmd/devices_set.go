@@ -35,7 +35,7 @@ var devicesSetCmd = &cobra.Command{
 
 		appID := util.GetAppID(ctx)
 
-		conn, manager := util.GetHandlerManager(ctx)
+		conn, manager := util.GetHandlerManager(ctx, appID)
 		defer conn.Close()
 
 		dev, err := manager.GetDevice(appID, devID)

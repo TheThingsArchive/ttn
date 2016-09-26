@@ -113,6 +113,11 @@ func GetTokenSource(ctx log.Interface) oauth2.TokenSource {
 	return tokenSource
 }
 
+func GetTokenManager(accessToken string) tokens.Manager {
+	server := viper.GetString("ttn-account-server")
+	return tokens.HTTPManager(server, accessToken, tokens.FileStoreWithNameFn(viper.GetString("token-dir"), derivedTokenFilename))
+}
+
 // GetAccount gets a new Account server client for ttnctl
 func GetAccount(ctx log.Interface) *account.Account {
 	token, err := GetTokenSource(ctx).Token()
@@ -121,7 +126,7 @@ func GetAccount(ctx log.Interface) *account.Account {
 	}
 
 	server := viper.GetString("ttn-account-server")
-	manager := tokens.HTTPManager(server, token.AccessToken, tokens.FileStoreWithNameFn(viper.GetString("token-dir"), derivedTokenFilename))
+	manager := GetTokenManager(token.AccessToken)
 
 	return account.NewWithManager(server, token.AccessToken, manager)
 }
@@ -135,4 +140,18 @@ func Login(ctx log.Interface, code string) (*oauth2.Token, error) {
 	}
 	saveToken(ctx, token)
 	return token, nil
+}
+
+func TokenForScope(ctx log.Interface, scope string) string {
+	token, err := GetTokenSource(ctx).Token()
+	if err != nil {
+		ctx.WithError(err).Fatal("Could not get token")
+	}
+
+	restricted, err := GetTokenManager(token.AccessToken).TokenForScope(scope)
+	if err != nil {
+		ctx.WithError(err).Fatal("Could not get correct rights")
+	}
+
+	return restricted
 }

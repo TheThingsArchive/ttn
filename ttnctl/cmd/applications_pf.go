@@ -33,7 +33,7 @@ function Decoder(bytes) {
 
 		appID := util.GetAppID(ctx)
 
-		conn, manager := util.GetHandlerManager(ctx)
+		conn, manager := util.GetHandlerManager(ctx, appID)
 		defer conn.Close()
 
 		app, err := manager.GetApplication(appID)
