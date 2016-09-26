@@ -11,25 +11,10 @@ import (
 	"github.com/TheThingsNetwork/go-account-lib/tokens"
 	accountUtil "github.com/TheThingsNetwork/go-account-lib/util"
 	"github.com/apex/log"
-	"github.com/dgrijalva/jwt-go"
 	"github.com/spf13/viper"
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 )
-
-// AccountClaims are extracted from the access token
-type AccountClaims struct {
-	jwt.StandardClaims
-	Username string `json:"username"`
-	Name     struct {
-		First string `json:"first"`
-		Last  string `json:"last"`
-	} `json:"name"`
-	Email  string              `json:"email"`
-	Client string              `json:"client"`
-	Scopes []string            `json:"scope"`
-	Apps   map[string][]string `json:"apps,omitempty"`
-}
 
 var tokenSource oauth2.TokenSource
 

@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/TheThingsNetwork/go-account-lib/claims"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/spf13/cobra"
@@ -53,7 +54,7 @@ var userCmd = &cobra.Command{
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not decode access token")
 		}
-		var claims util.AccountClaims
+		var claims claims.Claims
 		err = json.Unmarshal(segment, &claims)
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not unmarshal access token")
