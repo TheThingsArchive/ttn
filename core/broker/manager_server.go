@@ -53,7 +53,7 @@ func (b *brokerManager) RegisterApplicationHandler(ctx context.Context, in *pb.A
 	if !in.Validate() {
 		return nil, grpcErrf(codes.InvalidArgument, "Invalid Application Handler Registration")
 	}
-	if !claims.CanEditApp(in.AppId) {
+	if !claims.AppRight(in.AppId, "settings") {
 		return nil, grpcErrf(codes.PermissionDenied, "No access to this application")
 	}
 	// Add Handler in local cache

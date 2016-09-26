@@ -34,14 +34,14 @@ func (h *handlerManager) getDevice(ctx context.Context, in *pb.DeviceIdentifier)
 	if err != nil {
 		return nil, err
 	}
-	if !claims.CanEditApp(in.AppId) {
+	if !claims.AppRight(in.AppId, "settings") {
 		return nil, errors.NewErrPermissionDenied(fmt.Sprintf("No access to Application %s", in.AppId))
 	}
 	dev, err := h.handler.devices.Get(in.AppId, in.DevId)
 	if err != nil {
 		return nil, err
 	}
-	if !claims.CanEditApp(dev.AppID) {
+	if !claims.AppRight(dev.AppID, "settings") {
 		return nil, errors.NewErrPermissionDenied(fmt.Sprintf("No access to Application %s", in.AppId))
 	}
 	return dev, nil
@@ -188,7 +188,7 @@ func (h *handlerManager) GetDevicesForApplication(ctx context.Context, in *pb.Ap
 	if err != nil {
 		return nil, errors.BuildGRPCError(err)
 	}
-	if !claims.CanEditApp(in.AppId) {
+	if !claims.AppRight(in.AppId, "setttings") {
 		return nil, grpcErrf(codes.PermissionDenied, "No access to this application")
 	}
 	devices, err := h.handler.devices.ListForApp(in.AppId)
@@ -223,14 +223,14 @@ func (h *handlerManager) getApplication(ctx context.Context, in *pb.ApplicationI
 	if err != nil {
 		return nil, err
 	}
-	if !claims.CanEditApp(in.AppId) {
+	if !claims.AppRight(in.AppId, "settings") {
 		return nil, errors.NewErrPermissionDenied(fmt.Sprintf("No access to Application %s", in.AppId))
 	}
 	app, err := h.handler.applications.Get(in.AppId)
 	if err != nil {
 		return nil, err
 	}
-	if !claims.CanEditApp(app.AppID) {
+	if !claims.AppRight(app.AppID, "settings") {
 		return nil, errors.NewErrPermissionDenied(fmt.Sprintf("No access to Application %s", in.AppId))
 	}
 	return app, nil

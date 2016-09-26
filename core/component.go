@@ -11,8 +11,9 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/TheThingsNetwork/go-account-lib/cache"
+	"github.com/TheThingsNetwork/go-account-lib/claims"
 	"github.com/TheThingsNetwork/go-account-lib/tokenkey"
-	"github.com/TheThingsNetwork/go-account-lib/tokenkey/cache"
 	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	pb_noc "github.com/TheThingsNetwork/ttn/api/noc"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
@@ -34,7 +35,7 @@ type ComponentInterface interface {
 	RegisterRPC(s *grpc.Server)
 	Init(c *Component) error
 	ValidateNetworkContext(ctx context.Context) (*pb_discovery.Announcement, error)
-	ValidateTTNAuthContext(ctx context.Context) (*TTNClaims, error)
+	ValidateTTNAuthContext(ctx context.Context) (*claims.Claims, error)
 }
 
 type ManagementInterface interface {
@@ -194,30 +195,6 @@ func (c *Component) UpdateTokenKey() error {
 
 }
 
-// TTNClaims contains the claims that are set by the TTN Token Issuer
-type TTNClaims struct {
-	jwt.StandardClaims
-	Type     string              `json:"type"`
-	Client   string              `json:"client"`
-	Scopes   []string            `json:"scope"`
-	Apps     map[string][]string `json:"apps,omitempty"`
-	Gateways map[string][]string `json:"gateways,omitempty"`
-}
-
-// CanEditApp indicates wheter someone with the claims can manage the given app
-func (c *TTNClaims) CanEditApp(appID string) bool {
-	for id, rights := range c.Apps {
-		if appID == id {
-			for _, right := range rights {
-				if right == "settings" {
-					return true
-				}
-			}
-		}
-	}
-	return false
-}
-
 // ValidateNetworkContext validates the context of a network request (router-broker, broker-handler, etc)
 func (c *Component) ValidateNetworkContext(ctx context.Context) (component *pb_discovery.Announcement, err error) {
 	defer func() {
@@ -279,7 +256,7 @@ func (c *Component) ValidateNetworkContext(ctx context.Context) (component *pb_d
 }
 
 // ValidateTTNAuthContext gets a token from the context and validates it
-func (c *Component) ValidateTTNAuthContext(ctx context.Context) (*TTNClaims, error) {
+func (c *Component) ValidateTTNAuthContext(ctx context.Context) (*claims.Claims, error) {
 	md, ok := metadata.FromContext(ctx)
 	if !ok {
 		return nil, errors.NewErrInternal("Could not get metadata from context")
@@ -288,31 +265,17 @@ func (c *Component) ValidateTTNAuthContext(ctx context.Context) (*TTNClaims, err
 	if !ok || len(token) < 1 {
 		return nil, errors.NewErrInvalidArgument("Metadata", "token missing")
 	}
-	ttnClaims := &TTNClaims{}
-	parsed, err := jwt.ParseWithClaims(token[0], ttnClaims, func(token *jwt.Token) (interface{}, error) {
-		if c.TokenKeyProvider == nil {
-			return nil, errors.NewErrInternal("No token provider configured")
-		}
-		k, err := c.TokenKeyProvider.Get(ttnClaims.Issuer, false)
-		if err != nil {
-			return nil, err
-		}
-		if k.Algorithm != token.Header["alg"] {
-			return nil, errors.NewErrInvalidArgument("Token", fmt.Sprintf("expected algorithm %v but got %v", k.Algorithm, token.Header["alg"]))
-		}
-		key, err := jwt.ParseRSAPublicKeyFromPEM([]byte(k.Key))
-		if err != nil {
-			return nil, err
-		}
-		return key, nil
-	})
+
+	if c.TokenKeyProvider == nil {
+		return nil, errors.NewErrInternal("No token provider configured")
+	}
+
+	claims, err := claims.FromToken(c.TokenKeyProvider, token[0])
 	if err != nil {
-		return nil, errors.NewErrInvalidArgument("Token", fmt.Sprintf("unable to parse token: %s", err.Error()))
+		return nil, err
 	}
-	if !parsed.Valid {
-		return nil, errors.NewErrInvalidArgument("Token", "not valid or expired")
-	}
-	return ttnClaims, nil
+
+	return claims, nil
 }
 
 func (c *Component) ServerOptions() []grpc.ServerOption {

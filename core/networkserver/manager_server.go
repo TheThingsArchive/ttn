@@ -33,7 +33,7 @@ func (n *networkServerManager) getDevice(ctx context.Context, in *pb_lorawan.Dev
 	if err != nil {
 		return nil, err
 	}
-	if !claims.CanEditApp(dev.AppID) {
+	if !claims.AppRight(dev.AppID, "settings") {
 		return nil, errors.NewErrPermissionDenied(fmt.Sprintf("No access to Application %s", dev.AppID))
 	}
 	return dev, nil

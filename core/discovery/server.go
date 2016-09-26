@@ -65,7 +65,7 @@ func (d *discoveryServer) checkMetadataEditRights(ctx context.Context, in *pb.Me
 		}
 		// Allow APP_ID announcements from all trusted auth servers
 		// When announcing APP_ID, token is user token that contains apps
-		if !claims.CanEditApp(string(in.Metadata.Value)) {
+		if !claims.AppRight(string(in.Metadata.Value), "settings") {
 			return errPermissionDeniedf("No access to this application")
 		}
 	}
