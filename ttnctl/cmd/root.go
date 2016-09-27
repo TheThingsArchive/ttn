@@ -41,6 +41,7 @@ var RootCmd = &cobra.Command{
 		api.DialOptions = append(api.DialOptions, grpc.WithBlock())
 		api.DialOptions = append(api.DialOptions, grpc.WithTimeout(2*time.Second))
 		grpclog.SetLogger(logging.NewGRPCLogger(ctx))
+		api.SetLogger(ctx)
 	},
 }
 

@@ -13,7 +13,7 @@ import (
 )
 
 // GetRouter starts a connection with the router
-func GetRouter(ctx log.Interface) (*grpc.ClientConn, router.RouterClient) {
+func GetRouter(ctx log.Interface) *router.Client {
 	ctx.Info("Discovering Router...")
 	dscConn, client := GetDiscovery(ctx)
 	defer dscConn.Close()
@@ -25,12 +25,12 @@ func GetRouter(ctx log.Interface) (*grpc.ClientConn, router.RouterClient) {
 		ctx.WithError(errors.FromGRPCError(err)).Fatal("Could not get Router from Discovery")
 	}
 	ctx.Info("Connecting with Router...")
-	rtrConn, err := routerAnnouncement.Dial()
+	router, err := router.NewClient(routerAnnouncement)
 	if err != nil {
 		ctx.WithError(err).Fatal("Could not connect to Router")
 	}
 	ctx.Info("Connected to Router")
-	return rtrConn, router.NewRouterClient(rtrConn)
+	return router
 }
 
 // GetRouterManager starts a management connection with the router

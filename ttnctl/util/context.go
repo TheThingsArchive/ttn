@@ -13,21 +13,26 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-// GetContext returns a new context
-func GetContext(ctx log.Interface) context.Context {
-	id := "client"
+// GetID retrns the ID of this ttnctl
+func GetID() string {
+	id := "ttnctl"
 	if user, err := user.Current(); err == nil {
 		id += "-" + user.Username
 	}
 	if hostname, err := os.Hostname(); err == nil {
 		id += "@" + hostname
 	}
+	return id
+}
+
+// GetContext returns a new context
+func GetContext(ctx log.Interface, extraPairs ...string) context.Context {
 	token, err := GetTokenSource(ctx).Token()
 	if err != nil {
 		ctx.WithError(err).Fatal("Could not get token")
 	}
 	md := metadata.Pairs(
-		"id", id,
+		"id", GetID(),
 		"service-name", "ttnctl",
 		"token", token.AccessToken,
 	)

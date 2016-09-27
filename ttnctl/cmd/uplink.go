@@ -7,9 +7,6 @@ import (
 	"strconv"
 	"time"
 
-	"golang.org/x/net/context"
-	"google.golang.org/grpc/metadata"
-
 	"github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
@@ -59,32 +56,18 @@ var uplinkCmd = &cobra.Command{
 			withDownlink = true
 		}
 
-		rtrConn, rtrClient := util.GetRouter(ctx)
-		defer rtrConn.Close()
+		rtrClient := util.GetRouter(ctx)
+		defer rtrClient.Close()
 
-		md := metadata.Pairs(
-			"token", "token",
-			"id", "eui-0102030405060708",
-		)
-		gatewayContext := metadata.NewContext(context.Background(), md)
+		gtwClient := rtrClient.ForGateway(util.GetID(), func() string { return "token" })
 
-		downlink := make(chan *router.DownlinkMessage)
+		var downlink <-chan *router.DownlinkMessage
+		var errChan <-chan error
 		if withDownlink {
-			downlinkStream, err := rtrClient.Subscribe(gatewayContext, &router.SubscribeRequest{})
+			downlink, errChan, err = gtwClient.Subscribe()
 			if err != nil {
 				ctx.WithError(err).Fatal("Could not start downlink stream")
 			}
-			time.Sleep(100 * time.Millisecond)
-			go func() {
-				if downlinkMessage, err := downlinkStream.Recv(); err == nil {
-					downlink <- downlinkMessage
-				}
-			}()
-		}
-
-		uplink, err := rtrClient.Uplink(gatewayContext)
-		if err != nil {
-			ctx.WithError(err).Fatal("Could not start uplink stream")
 		}
 
 		m := &util.Message{}
@@ -92,7 +75,18 @@ var uplinkCmd = &cobra.Command{
 		m.SetMessage(confirmed, fCnt, payload)
 		bytes := m.Bytes()
 
-		err = uplink.Send(&router.UplinkMessage{
+		err = gtwClient.SendUplink(&router.UplinkMessage{
+			Payload:          bytes,
+			GatewayMetadata:  util.GetGatewayMetadata("ttnctl", 868100000),
+			ProtocolMetadata: util.GetProtocolMetadata("SF7BW125"),
+		})
+		if err != nil {
+			ctx.WithError(err).Fatal("Could not send uplink to Router")
+		}
+
+		time.Sleep(100 * time.Millisecond)
+
+		err = gtwClient.SendUplink(&router.UplinkMessage{
 			Payload:          bytes,
 			GatewayMetadata:  util.GetGatewayMetadata("ttnctl", 868100000),
 			ProtocolMetadata: util.GetProtocolMetadata("SF7BW125"),
@@ -105,8 +99,10 @@ var uplinkCmd = &cobra.Command{
 
 		ctx.Info("Sent uplink to Router")
 
-		if withDownlink {
+		if downlink != nil {
 			select {
+			case err := <-errChan:
+				ctx.WithError(err).Fatal("Error in downlink")
 			case downlinkMessage := <-downlink:
 				if err := m.Unmarshal(downlinkMessage.Payload); err != nil {
 					ctx.WithError(err).Fatal("Could not unmarshal downlink")
