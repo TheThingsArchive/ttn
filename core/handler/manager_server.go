@@ -189,7 +189,7 @@ func (h *handlerManager) GetDevicesForApplication(ctx context.Context, in *pb.Ap
 	if err != nil {
 		return nil, errors.BuildGRPCError(err)
 	}
-	if !claims.AppRight(in.AppId, "setttings") {
+	if !claims.AppRight(in.AppId, rights.AppSettings) {
 		return nil, grpcErrf(codes.PermissionDenied, "No access to this application")
 	}
 	devices, err := h.handler.devices.ListForApp(in.AppId)
