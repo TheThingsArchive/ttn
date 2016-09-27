@@ -3,7 +3,6 @@
 
 package discovery
 
-// Client is used to manage applications and devices on a handler
 import (
 	"fmt"
 	"sync"
