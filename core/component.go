@@ -270,6 +270,10 @@ func (c *Component) ValidateTTNAuthContext(ctx context.Context) (*claims.Claims,
 		return nil, errors.NewErrInternal("No token provider configured")
 	}
 
+	if token[0] == "" {
+		return nil, errors.NewErrInvalidArgument("Metadata", "token is empty")
+	}
+
 	claims, err := claims.FromToken(c.TokenKeyProvider, token[0])
 	if err != nil {
 		return nil, err
