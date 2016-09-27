@@ -6,6 +6,7 @@ package router
 import (
 	"io"
 
+	"github.com/TheThingsNetwork/ttn/api"
 	pb "github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/core/router/gateway"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
@@ -13,7 +14,6 @@ import (
 	context "golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/metadata"
 )
 
 type routerRPC struct {
@@ -23,14 +23,17 @@ type routerRPC struct {
 var grpcErrf = grpc.Errorf // To make go vet stop complaining
 
 func (r *routerRPC) gatewayFromContext(ctx context.Context) (gtw *gateway.Gateway, err error) {
-	md, err := metadataFromContext(ctx)
-
-	gatewayID, err := gatewayIDFromMetadata(md)
+	md, err := api.MetadataFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	token, err := tokenFromMetadata(md)
+	gatewayID, err := api.IDFromMetadata(md)
+	if err != nil {
+		return nil, err
+	}
+
+	token, err := api.TokenFromMetadata(md)
 	if err != nil {
 		return nil, err
 	}
@@ -43,30 +46,6 @@ func (r *routerRPC) gatewayFromContext(ctx context.Context) (gtw *gateway.Gatewa
 	gtw.SetToken(token)
 
 	return gtw, nil
-}
-
-func metadataFromContext(ctx context.Context) (md metadata.MD, err error) {
-	var ok bool
-	if md, ok = metadata.FromContext(ctx); !ok {
-		return md, errors.NewErrInternal("Could not get metadata from context")
-	}
-	return md, nil
-}
-
-func gatewayIDFromMetadata(md metadata.MD) (gatewayID string, err error) {
-	id, ok := md["id"]
-	if !ok || len(id) < 1 {
-		return "", errors.NewErrInvalidArgument("Metadata", "id missing")
-	}
-	return id[0], nil
-}
-
-func tokenFromMetadata(md metadata.MD) (string, error) {
-	token, ok := md["token"]
-	if !ok || len(token) < 1 {
-		return "", errors.NewErrInvalidArgument("Metadata", "token missing")
-	}
-	return token[0], nil
 }
 
 // GatewayStatus implements RouterServer interface (github.com/TheThingsNetwork/ttn/api/router)
