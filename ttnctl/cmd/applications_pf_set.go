@@ -24,17 +24,18 @@ The functions are read from the supplied file or from STDIN.`,
   INFO Discovering Handler...
   INFO Connecting with Handler...
 function Decoder(bytes) {
-  // Here you can decode the payload into json.
-  // bytes is of type Buffer.
-  // todo: return an object
-  return {
-    payload: bytes,
-  };
+  // Decode an uplink message from a buffer
+  // (array) of bytes to an object of fields.
+  var decoded = {};
+
+  decoded.isLightOn = bytes[0];
+
+  return decoded;
 }
 ########## Write your Decoder here and end with Ctrl+D (EOF):
 function Decoder(bytes) {
   return {
-    payload: bytes,
+    isLightOn: bytes[0]
   };
 }
   INFO Updated application                      AppID=test
@@ -81,40 +82,56 @@ function Decoder(bytes) {
 			switch function {
 			case "decoder":
 				fmt.Println(`function Decoder(bytes) {
-  // Decode an uplink message from
-  // a Buffer of bytes to an object.
+  // Decode an uplink message from a buffer
+  // (array) of bytes to an object of fields.
+  var decoded = {};
 
-  return {
-    isLightOn: bytes[0]
-  };
+  decoded.isLightOn = bytes[0];
+
+  return decoded;
 }
 ########## Write your Decoder here and end with Ctrl+D (EOF):`)
 				app.Decoder = readFunction()
 			case "converter":
-				fmt.Println(`function Converter(decodedObj) {
-  // Modify the decoded uplink message.
+				fmt.Println(`function Converter(decoded) {
+  // Merge, split or otherwise
+  // mutate decoded fields.
+  var converted = decoded;
 
-  decodedObj.isLightOn = !!decodedObj.isLightOn;
+  if (converted.isLightOn === 0) {
+    converted.isLightOn = false;
+  }
 
-  return decodedObj;
+  if (converted.isLightOn === 1) {
+    converted.isLightOn = true;
+  }
+
+  return converted;
 }
 ########## Write your Converter here and end with Ctrl+D (EOF):`)
 				app.Converter = readFunction()
 			case "validator":
-				fmt.Println(`function Validator(convertedObj) {
-  // Return false if the decoded and converted uplink
+				fmt.Println(`function Validator(converted) {
+  // Return false if the decoded, converted
   // message is invalid and should be dropped.
+
+  if (converted.isLightOn !== true && converted.isLightOn !== false) {
+    return false;
+  }
 
   return true;
 }
 ########## Write your Validator here and end with Ctrl+D (EOF):`)
 				app.Validator = readFunction()
 			case "encoder":
-				fmt.Println(`function Encoder(obj) {
-  // Convert uplink messages sent as object to
-  // an array of bytes.
+				fmt.Println(`function Encoder(object) {
+  // Encode downlink messages sent as
+  // object to an array or buffer of bytes.
+  var bytes = [];
 
-  return [ obj.turnLightOn ? 1 : 0 ];
+  bytes[0] = object.turnLightOn ? 1 : 0;
+
+  return bytes;
 }
 ########## Write your Encoder here and end with Ctrl+D (EOF):`)
 				app.Encoder = readFunction()
