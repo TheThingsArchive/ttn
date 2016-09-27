@@ -6,23 +6,30 @@ package broker
 import (
 	"crypto/md5"
 	"encoding/hex"
-	"errors"
+	"fmt"
+	"sync"
 	"time"
-
-	"google.golang.org/grpc"
 
 	pb "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/api/gateway"
 	pb_handler "github.com/TheThingsNetwork/ttn/api/handler"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/apex/log"
+	"github.com/brocaar/lorawan"
 )
+
+type challengeResponseWithHandler struct {
+	handler  *pb_discovery.Announcement
+	client   pb_handler.HandlerClient
+	response *pb.ActivationChallengeResponse
+}
 
 func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (*pb.DeviceActivationResponse, error) {
 	ctx := b.Ctx.WithFields(log.Fields{
-		"GatewayEUI": *activation.GatewayMetadata.GatewayEui,
-		"AppEUI":     *activation.AppEui,
-		"DevEUI":     *activation.DevEui,
+		"GatewayID": activation.GatewayMetadata.GatewayId,
+		"AppEUI":    *activation.AppEui,
+		"DevEUI":    *activation.DevEui,
 	})
 	var err error
 	start := time.Now()
@@ -39,7 +46,7 @@ func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (*pb.D
 	// De-duplicate uplink messages
 	duplicates := b.deduplicateActivation(activation)
 	if len(duplicates) == 0 {
-		err = errors.New("ttn/broker: No duplicates")
+		err = errors.NewErrInternal("No duplicates")
 		return nil, err
 	}
 
@@ -76,6 +83,7 @@ func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (*pb.D
 	// Send Activate to NS
 	deduplicatedActivationRequest, err = b.ns.PrepareActivation(b.Component.GetContext(b.nsToken), deduplicatedActivationRequest)
 	if err != nil {
+		err = errors.Wrap(errors.FromGRPCError(err), "NetworkServer refused to prepare activation")
 		return nil, err
 	}
 
@@ -86,37 +94,112 @@ func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (*pb.D
 
 	// Find Handler (based on AppEUI)
 	var announcements []*pb_discovery.Announcement
-	announcements, err = b.handlerDiscovery.ForAppID(deduplicatedActivationRequest.AppId)
+	announcements, err = b.Discovery.GetAllHandlersForAppID(deduplicatedActivationRequest.AppId)
 	if err != nil {
 		return nil, err
 	}
 	if len(announcements) == 0 {
-		err = errors.New("ttn/broker: No Handler found")
+		err = errors.NewErrNotFound(fmt.Sprintf("Handler for AppID %s", deduplicatedActivationRequest.AppId))
 		return nil, err
 	}
-	if len(announcements) > 1 {
-		err = errors.New("ttn/broker: Multiple Handlers found for same AppID")
-		return nil, err
-	}
-	handler := announcements[0]
 
-	ctx.WithField("HandlerID", handler.Id).Debug("Forward Activation")
+	ctx = ctx.WithField("NumHandlers", len(announcements))
 
-	var conn *grpc.ClientConn
-	conn, err = handler.Dial()
-	defer conn.Close()
+	// LoRaWAN: Unmarshal and prepare version without MIC
+	var phyPayload lorawan.PHYPayload
+	err = phyPayload.UnmarshalBinary(deduplicatedActivationRequest.Payload)
 	if err != nil {
 		return nil, err
 	}
-	client := pb_handler.NewHandlerClient(conn)
+	correctMIC := phyPayload.MIC
+	phyPayload.MIC = [4]byte{0, 0, 0, 0}
+	phyPayloadWithoutMIC, err := phyPayload.MarshalBinary()
+	if err != nil {
+		return nil, err
+	}
+
+	// Build Challenge
+	challenge := &pb.ActivationChallengeRequest{
+		Payload: phyPayloadWithoutMIC,
+		AppId:   deduplicatedActivationRequest.AppId,
+		DevId:   deduplicatedActivationRequest.DevId,
+		AppEui:  deduplicatedActivationRequest.AppEui,
+		DevEui:  deduplicatedActivationRequest.DevEui,
+	}
+
+	// Send Challenge to all handlers and collect responses
+	var wg sync.WaitGroup
+	responses := make(chan *challengeResponseWithHandler, len(announcements))
+	for _, announcement := range announcements {
+		conn, err := announcement.Dial()
+		if err != nil {
+			ctx.WithError(err).Warn("Could not dial handler for Activation")
+			continue
+		}
+		client := pb_handler.NewHandlerClient(conn)
+
+		// Do async request
+		wg.Add(1)
+		go func(announcement *pb_discovery.Announcement) {
+			res, err := client.ActivationChallenge(b.Component.GetContext(""), challenge)
+			if err == nil && res != nil {
+				responses <- &challengeResponseWithHandler{
+					handler:  announcement,
+					client:   client,
+					response: res,
+				}
+			}
+			wg.Done()
+		}(announcement)
+	}
+
+	// Make sure to close channel when all requests are done
+	go func() {
+		wg.Wait()
+		close(responses)
+	}()
+
+	var gotFirst bool
+	var joinHandler *pb_discovery.Announcement
+	var joinHandlerClient pb_handler.HandlerClient
+	for res := range responses {
+		var phyPayload lorawan.PHYPayload
+		err = phyPayload.UnmarshalBinary(res.response.Payload)
+		if err != nil {
+			continue
+		}
+		if phyPayload.MIC != correctMIC {
+			continue
+		}
+
+		if gotFirst {
+			ctx.Warn("Duplicate Activation Response")
+		} else {
+			gotFirst = true
+			joinHandler = res.handler
+			joinHandlerClient = res.client
+		}
+	}
+
+	// Activation not accepted by any broker
+	if !gotFirst {
+		ctx.Debug("Activation not accepted by any Handler")
+		err = errors.New("Activation not accepted by any Handler")
+		return nil, err
+	}
+
+	ctx.WithField("HandlerID", joinHandler.Id).Debug("Forward Activation")
+
 	var handlerResponse *pb_handler.DeviceActivationResponse
-	handlerResponse, err = client.Activate(b.Component.GetContext(""), deduplicatedActivationRequest)
+	handlerResponse, err = joinHandlerClient.Activate(b.Component.GetContext(""), deduplicatedActivationRequest)
 	if err != nil {
+		err = errors.Wrap(errors.FromGRPCError(err), "Handler refused activation")
 		return nil, err
 	}
 
 	handlerResponse, err = b.ns.Activate(b.Component.GetContext(b.nsToken), handlerResponse)
 	if err != nil {
+		err = errors.Wrap(errors.FromGRPCError(err), "NetworkServer refused activation")
 		return nil, err
 	}
 

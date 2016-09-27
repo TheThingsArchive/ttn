@@ -7,7 +7,7 @@ func (m *DownlinkOption) Validate() bool {
 	if m.Identifier == "" {
 		return false
 	}
-	if m.GatewayEui == nil || m.GatewayEui.IsEmpty() {
+	if m.GatewayId == "" {
 		return false
 	}
 	if m.ProtocolConfig == nil || !m.ProtocolConfig.Validate() {
@@ -93,6 +93,17 @@ func (m *DeduplicatedDeviceActivationRequest) Validate() bool {
 		return false
 	}
 	if m.ProtocolMetadata == nil || !m.ProtocolMetadata.Validate() {
+		return false
+	}
+	return true
+}
+
+// Validate implements the api.Validator interface
+func (m *ActivationChallengeRequest) Validate() bool {
+	if m.DevEui == nil || m.DevEui.IsEmpty() {
+		return false
+	}
+	if m.AppEui == nil || m.AppEui.IsEmpty() {
 		return false
 	}
 	return true

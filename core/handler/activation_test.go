@@ -72,6 +72,7 @@ func TestHandleActivation(t *testing.T) {
 		devices:      device.NewDeviceStore(),
 	}
 	h.mqttActivation = make(chan *mqtt.Activation)
+	h.mqttEvent = make(chan *mqttEvent, 10)
 	var wg sync.WaitGroup
 
 	appEUI := types.AppEUI{1, 2, 3, 4, 5, 6, 7, 8}

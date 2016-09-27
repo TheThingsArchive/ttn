@@ -3,17 +3,21 @@
 
 syntax = "proto3";
 
-import "github.com/TheThingsNetwork/ttn/api/api.proto";
 import "github.com/TheThingsNetwork/ttn/api/gateway/gateway.proto";
 import "github.com/TheThingsNetwork/ttn/api/router/router.proto";
 import "github.com/TheThingsNetwork/ttn/api/broker/broker.proto";
 import "github.com/TheThingsNetwork/ttn/api/handler/handler.proto";
 
+import "google/protobuf/empty.proto";
+
 package noc;
 
-service Monitoring {
-  rpc GatewayStatus(stream gateway.Status) returns (api.Ack);
-  rpc RouterStatus(stream router.Status) returns (api.Ack);
-  rpc BrokerStatus(stream broker.Status) returns (api.Ack);
-  rpc HandlerStatus(stream handler.Status) returns (api.Ack);
+service Monitor {
+  rpc GatewayStatus(stream gateway.Status) returns (google.protobuf.Empty);
+  rpc GatewayUplink(stream router.UplinkMessage) returns (google.protobuf.Empty);
+  rpc GatewayDownlink(stream router.DownlinkMessage) returns (google.protobuf.Empty);
+
+  rpc RouterStatus(stream router.Status) returns (google.protobuf.Empty);
+  rpc BrokerStatus(stream broker.Status) returns (google.protobuf.Empty);
+  rpc HandlerStatus(stream handler.Status) returns (google.protobuf.Empty);
 }

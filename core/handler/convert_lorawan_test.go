@@ -36,12 +36,13 @@ func TestConvertFromLoRaWAN(t *testing.T) {
 	h := &handler{
 		devices:   device.NewDeviceStore(),
 		Component: &core.Component{Ctx: GetLogger(t, "TestConvertFromLoRaWAN")},
+		mqttEvent: make(chan *mqttEvent, 10),
 	}
 	h.devices.Set(&device.Device{
 		DevID: "devid",
 		AppID: "appid",
 	})
-	ttnUp, appUp := buildLorawanUplink([]byte{0x40, 0x04, 0x03, 0x02, 0x01, 0x00, 0x01, 0x00, 0x01, 0x46, 0x55, 0x23, 0xf4, 0xf8, 0x45})
+	ttnUp, appUp := buildLorawanUplink([]byte{0x40, 0x04, 0x03, 0x02, 0x01, 0x20, 0x01, 0x00, 0x0A, 0x46, 0x55, 0x96, 0x42, 0x92, 0xF2})
 	err := h.ConvertFromLoRaWAN(h.Ctx, ttnUp, appUp)
 	a.So(err, ShouldBeNil)
 	a.So(appUp.Payload, ShouldResemble, []byte{0xaa, 0xbc})

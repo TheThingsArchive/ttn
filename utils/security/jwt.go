@@ -12,7 +12,7 @@ import (
 // BuildJWT builds a JSON Web Token for the given subject and ttl, and signs it with the given private key
 func BuildJWT(subject string, ttl time.Duration, privateKey []byte) (token string, err error) {
 	claims := jwt.StandardClaims{
-		Subject:   subject,
+		Issuer:    subject,
 		IssuedAt:  time.Now().Unix(),
 		NotBefore: time.Now().Unix(),
 	}

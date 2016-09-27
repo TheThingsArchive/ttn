@@ -5,9 +5,6 @@ syntax = "proto3";
 
 package api;
 
-// message Ack is used to acknowledge a request, without giving a response.
-message Ack {}
-
 message Percentiles {
   float percentile1  = 1;
   float percentile5  = 2;

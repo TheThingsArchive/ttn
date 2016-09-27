@@ -1,7 +1,10 @@
-# The Things Network MQTT
+# API Reference
 
-This package contains the code that is used to publish and subscribe to MQTT.
-This README describes the topics and messages that are used 
+* Host: `<Region>.thethings.network`
+* Port: `1883`
+* TLS: Not yet available
+* Username: Application ID
+* Password: Application Access Key
 
 ## Uplink Messages
 
@@ -24,7 +27,7 @@ This README describes the topics and messages that are used
     "coding_rate": "4/5",             // Coding rate that was used
     "gateways": [
       {
-        "eui": "0102030405060708",      // EUI of the gateway
+        "id": "ttn-herengracht-ams",    // EUI of the gateway
         "timestamp": 12345,             // Timestamp when the gateway received the message
         "time": "1970-01-01T00:00:00Z", // Time when the gateway received the message - left out when gateway does not have synchronized time 
         "channel": 0,                   // Channel where the gateway received the message
@@ -40,13 +43,13 @@ This README describes the topics and messages that are used
 
 Note: Some values may be omitted if they are `null`, `""` or `0`.
 
-**Usage (Mosquitto):** `mosquitto_sub -d -t 'my-app-id/devices/my-dev-id/up'`
+**Usage (Mosquitto):** `mosquitto_sub -h <Region>.thethings.network:1883 -d -t 'my-app-id/devices/my-dev-id/up'`
 
 **Usage (Go client):**
 
 ```go
 ctx := log.WithField("Example", "Go Client")
-client := NewClient(ctx, "ttnctl", "my-app-id", "my-access-key", "staging.thethingsnetwork.org:1883")
+client := NewClient(ctx, "ttnctl", "my-app-id", "my-access-key", "<Region>.thethings.network:1883")
 if err := client.Connect(); err != nil {
   ctx.WithError(err).Fatal("Could not connect")
 }
@@ -58,6 +61,33 @@ if err := token.Error(); err != nil {
   ctx.WithError(err).Fatal("Could not subscribe")
 }
 ```
+
+### Uplink Fields
+
+Each uplink field will be published to its own topic `my-app-id/devices/my-dev-id/up/<field>`. The payload will be a string with the value in a JSON-style encoding. 
+
+If your fields look like the following:
+
+```js
+{
+  "water": true,
+  "analog": [0, 255, 500, 1000],
+  "gps": {
+    "lat": 52.3736735,
+    "lon": 4.886663
+  },
+  "text": "why are you using text?"
+}
+```
+
+you will see this on MQTT:
+
+* `my-app-id/devices/my-dev-id/up/water`: `true`
+* `my-app-id/devices/my-dev-id/up/analog`: `[0, 255, 500, 1000]`
+* `my-app-id/devices/my-dev-id/up/gps`: `{"lat":52.3736735,"lon":4.886663}`
+* `my-app-id/devices/my-dev-id/up/gps/lat`: `52.3736735`
+* `my-app-id/devices/my-dev-id/up/gps/lon`: `4.886663`
+* `my-app-id/devices/my-dev-id/up/text`: `"why are you using text?"`
 
 ## Downlink Messages
 
@@ -72,13 +102,13 @@ if err := token.Error(); err != nil {
 }
 ```
 
-**Usage (Mosquitto):** `mosquitto_pub -d -t 'my-app-id/devices/my-dev-id/down' -m '{"port":1,"payload_raw":"AQIDBA=="}'`
+**Usage (Mosquitto):** `mosquitto_pub -h <Region>.thethings.network:1883 -d -t 'my-app-id/devices/my-dev-id/down' -m '{"port":1,"payload_raw":"AQIDBA=="}'`
 
 **Usage (Go client):**
 
 ```go
 ctx := log.WithField("Example", "Go Client")
-client := NewClient(ctx, "ttnctl", "my-app-id", "my-access-key", "staging.thethingsnetwork.org:1883")
+client := NewClient(ctx, "ttnctl", "my-app-id", "my-access-key", "<Region>.thethings.network:1883")
 if err := client.Connect(); err != nil {
   ctx.WithError(err).Fatal("Could not connect")
 }
@@ -94,9 +124,48 @@ if err := token.Error(); err != nil {
 }
 ```
 
+### Downlink Fields
+
+Instead of `payload_raw` you can also use `payload_fields` with an object of fields. This requires the application to be configured with an Encoder Payload Function which encodes the fields into a Buffer.
+
+**Message:**
+
+```js
+{
+  "port": 1,                 // LoRaWAN FPort
+  "payload_fields": {
+    "led": true
+  }
+}
+```
+
+**Usage (Mosquitto):** `mosquitto_pub -h <Region>.thethings.network:1883 -d -t 'my-app-id/devices/my-dev-id/down' -m '{"port":1,"payload_fields":{"led":true}}'`
+
+**Usage (Go client):**
+
+```go
+ctx := log.WithField("Example", "Go Client")
+client := NewClient(ctx, "ttnctl", "my-app-id", "my-access-key", "<Region>.thethings.network:1883")
+if err := client.Connect(); err != nil {
+  ctx.WithError(err).Fatal("Could not connect")
+}
+token := client.PublishDownlink(DownlinkMessage{
+  AppID:   "my-app-id",
+  DevID:   "my-dev-id",
+  FPort:   1,
+  Fields: map[string]interface{}{
+    "led": true,
+  },
+})
+token.Wait()
+if err := token.Error(); err != nil {
+  ctx.WithError(err).Fatal("Could not publish")
+}
+```
+
 ## Device Activations
 
-**Topic:** `<AppID>/devices/<DevID>/activations`
+**Topic:** `<AppID>/devices/<DevID>/events/activations`
 
 **Message:**
 
@@ -111,13 +180,13 @@ if err := token.Error(); err != nil {
 }
 ```
 
-**Usage (Mosquitto):** `mosquitto_sub -d -t 'my-app-id/devices/my-dev-id/activations'`
+**Usage (Mosquitto):** `mosquitto_sub -h <Region>.thethings.network:1883 -d -t 'my-app-id/devices/my-dev-id/events/activations'`
 
 **Usage (Go client):**
 
 ```go
 ctx := log.WithField("Example", "Go Client")
-client := NewClient(ctx, "ttnctl", "my-app-id", "my-access-key", "staging.thethingsnetwork.org:1883")
+client := NewClient(ctx, "ttnctl", "my-app-id", "my-access-key", "<Region>.thethings.network:1883")
 if err := client.Connect(); err != nil {
   ctx.WithError(err).Fatal("Could not connect")
 }
@@ -129,3 +198,21 @@ if err := token.Error(); err != nil {
   ctx.WithError(err).Fatal("Could not subscribe")
 }
 ```
+
+## Device Events
+
+### Downlink Events
+
+* Downlink Scheduled: `<AppID>/devices/<DevID>/events/down/scheduled` (payload: the message - see **Downlink Messages**)
+* Downlink Sent: `<AppID>/devices/<DevID>/events/down/sent` (payload: the message - see **Downlink Messages**)
+* Acknowledgements: `<AppID>/devices/<DevID>/events/ack` (payload: `{}`)
+
+### Error Events
+
+The payload of error events is a JSON object with the error's description.
+
+* Uplink Errors: `<AppID>/devices/<DevID>/events/up/errors`
+* Downlink Errors: `<AppID>/devices/<DevID>/events/down/errors`
+* Activation Errors: `<AppID>/devices/<DevID>/events/activations/errors`
+
+Example: `{"error":"Activation DevNonce not valid: already used"}`

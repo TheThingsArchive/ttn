@@ -32,7 +32,7 @@ func (h *handler) ConvertMetadata(ctx log.Interface, ttnUp *pb_broker.Deduplicat
 		}
 
 		gatewayMetadata := mqtt.GatewayMetadata{
-			EUI:       *in.GatewayEui,
+			GtwID:     in.GatewayId,
 			Timestamp: in.Timestamp,
 			Time:      mqtt.BuildTime(in.Time),
 			Channel:   in.Channel,

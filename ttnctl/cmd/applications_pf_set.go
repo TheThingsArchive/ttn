@@ -20,6 +20,25 @@ var applicationsPayloadFunctionsSetCmd = &cobra.Command{
 	Short: "Set payload functions of an application",
 	Long: `ttnctl pf set can be used to get or set payload functions of an application.
 The functions are read from the supplied file or from STDIN.`,
+	Example: `$ ttnctl applications pf set decoder
+  INFO Discovering Handler...
+  INFO Connecting with Handler...
+function Decoder(bytes) {
+  // Here you can decode the payload into json.
+  // bytes is of type Buffer.
+  // todo: return an object
+  return {
+    payload: bytes,
+  };
+}
+########## Write your Decoder here and end with Ctrl+D (EOF):
+function Decoder(bytes) {
+  return {
+    payload: bytes,
+  };
+}
+  INFO Updated application                      AppID=test
+`,
 	Run: func(cmd *cobra.Command, args []string) {
 
 		appID := util.GetAppID(ctx)
@@ -61,40 +80,41 @@ The functions are read from the supplied file or from STDIN.`,
 		} else {
 			switch function {
 			case "decoder":
-				fmt.Println(`function (bytes) {
-  // bytes is of type Buffer.
+				fmt.Println(`function Decoder(bytes) {
+  // Decode an uplink message from
+  // a Buffer of bytes to an object.
 
-  // todo: return an object
   return {
-    payload: bytes,
+    isLightOn: bytes[0]
   };
 }
 ########## Write your Decoder here and end with Ctrl+D (EOF):`)
 				app.Decoder = readFunction()
 			case "converter":
-				fmt.Println(`function (val) {
-  // val is the output of the decoder function.
+				fmt.Println(`function Converter(decodedObj) {
+  // Modify the decoded uplink message.
 
-  // todo: return an object
-  return val;
+  decodedObj.isLightOn = !!decodedObj.isLightOn;
+
+  return decodedObj;
 }
 ########## Write your Converter here and end with Ctrl+D (EOF):`)
 				app.Converter = readFunction()
 			case "validator":
-				fmt.Println(`function (val) {
-  // val is the output of the converter function.
+				fmt.Println(`function Validator(convertedObj) {
+  // Return false if the decoded and converted uplink
+  // message is invalid and should be dropped.
 
-  // todo: return a boolean
   return true;
 }
 ########## Write your Validator here and end with Ctrl+D (EOF):`)
 				app.Validator = readFunction()
 			case "encoder":
-				fmt.Println(`function (val) {
-  // val is the output of the encoder function.
+				fmt.Println(`function Encoder(obj) {
+  // Convert uplink messages sent as object to
+  // an array of bytes.
 
-  // todo: return an array of numbers
-  return return [96, 4, 3, 2, 1, 0, 1, 0, 1, 0, 0, 0, 0];
+  return [ obj.turnLightOn ? 1 : 0 ];
 }
 ########## Write your Encoder here and end with Ctrl+D (EOF):`)
 				app.Encoder = readFunction()

@@ -4,6 +4,7 @@
 package handler
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -292,6 +293,13 @@ func TestEncode(t *testing.T) {
 
 	a.So(m, ShouldHaveLength, 7)
 	a.So(m, ShouldResemble, []byte{1, 2, 3, 4, 5, 6, 7})
+
+	// Return int type
+	functions = &DownlinkFunctions{
+		Encoder: `function(payload) { var x = [1, 2, 3 ]; return [ x.length || 0 ] }`,
+	}
+	_, _, err = functions.Process(map[string]interface{}{"key": 11})
+	a.So(err, ShouldBeNil)
 }
 
 func buildConversionDownlink() (*pb_broker.DownlinkMessage, *mqtt.DownlinkMessage) {
@@ -323,7 +331,7 @@ func TestConvertFieldsDown(t *testing.T) {
 	ttnDown, appDown := buildConversionDownlink()
 	err := h.ConvertFieldsDown(GetLogger(t, "TestConvertFieldsDown"), appDown, ttnDown)
 	a.So(err, ShouldBeNil)
-	a.So(ttnDown.Payload, ShouldBeEmpty)
+	a.So(appDown.Payload, ShouldBeEmpty)
 
 	// Case2: Normal flow with Encoder
 	h.applications.Set(&application.Application{
@@ -333,10 +341,11 @@ func TestConvertFieldsDown(t *testing.T) {
   		return [ 1, 2, 3, 4, 5, 6, 7 ]
 		}`,
 	})
+
 	ttnDown, appDown = buildConversionDownlink()
 	err = h.ConvertFieldsDown(GetLogger(t, "TestConvertFieldsDown"), appDown, ttnDown)
 	a.So(err, ShouldBeNil)
-	a.So(ttnDown.Payload, ShouldResemble, []byte{1, 2, 3, 4, 5, 6, 7})
+	a.So(appDown.Payload, ShouldResemble, []byte{1, 2, 3, 4, 5, 6, 7})
 }
 
 func TestProcessDownlinkInvalidFunction(t *testing.T) {
@@ -388,4 +397,27 @@ func TestProcessDownlinkInvalidFunction(t *testing.T) {
 	}
 	_, _, err = functions.Process(map[string]interface{}{"key": 11})
 	a.So(err, ShouldNotBeNil)
+
+	functions = &DownlinkFunctions{
+		Encoder: `function(payload) { return [ 1, 1.5 ] }`,
+	}
+	_, _, err = functions.Process(map[string]interface{}{"key": 11})
+	a.So(err, ShouldNotBeNil)
+}
+
+func TestEncodeCharCode(t *testing.T) {
+	a := New(t)
+
+	// return arr of charcodes
+	functions := &DownlinkFunctions{
+		Encoder: `function Encoder(obj) {
+			return "Hi".split('').map(function(char) {
+				return char.charCodeAt();
+			});
+		}`,
+	}
+	val, _, err := functions.Process(map[string]interface{}{"key": 11})
+	a.So(err, ShouldBeNil)
+
+	fmt.Println("VALUE", val)
 }

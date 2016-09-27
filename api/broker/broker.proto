@@ -3,8 +3,8 @@
 
 syntax = "proto3";
 
+import "google/protobuf/empty.proto";
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
-
 import "github.com/TheThingsNetwork/ttn/api/api.proto";
 import "github.com/TheThingsNetwork/ttn/api/protocol/protocol.proto";
 import "github.com/TheThingsNetwork/ttn/api/gateway/gateway.proto";
@@ -13,7 +13,7 @@ package broker;
 
 message DownlinkOption {
   string  identifier  = 1;
-  bytes   gateway_eui = 2 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.GatewayEUI"];
+  string  gateway_id  = 2;
   uint32  score       = 3; // lower is better, 0 is best
   int64   deadline    = 4; // deadline time at server represented as the number of nanoseconds elapsed since January 1, 1970 UTC
   protocol.TxConfiguration protocol_config = 5;
@@ -23,9 +23,11 @@ message DownlinkOption {
 // received from the Router
 message UplinkMessage {
   bytes                    payload            = 1;
-  // NOTE: For LoRaWAN, the Router doesn't know the DevEUI and AppEUI
+  // NOTE: For LoRaWAN, the Router doesn't know the DevEUI/ID and AppEUI/ID
   bytes                    dev_eui            = 11 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.DevEUI"];
   bytes                    app_eui            = 12 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.AppEUI"];
+  string                   app_id             = 13;
+  string                   dev_id             = 14;
   protocol.RxMetadata      protocol_metadata  = 21;
   gateway.RxMetadata       gateway_metadata   = 22;
   repeated DownlinkOption  downlink_options   = 31;
@@ -36,6 +38,8 @@ message DownlinkMessage {
   bytes           payload          = 1;
   bytes           dev_eui          = 11 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.DevEUI"];
   bytes           app_eui          = 12 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.AppEUI"];
+  string          app_id           = 13;
+  string          dev_id           = 14;
   DownlinkOption  downlink_option  = 21;
 }
 
@@ -83,6 +87,18 @@ message DeduplicatedDeviceActivationRequest {
   DeviceActivationResponse     response_template    = 31;
 }
 
+message ActivationChallengeRequest {
+  bytes                        payload              = 1;
+  bytes                        dev_eui              = 11 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.DevEUI"];
+  bytes                        app_eui              = 12 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.AppEUI"];
+  string                       app_id               = 13;
+  string                       dev_id               = 14;
+}
+
+message ActivationChallengeResponse {
+  bytes payload = 1;
+}
+
 // message SubscribeRequest is used by a Handler to subscribe to uplink messages
 message SubscribeRequest {}
 
@@ -95,7 +111,7 @@ service Broker {
   rpc Subscribe(SubscribeRequest) returns (stream DeduplicatedUplinkMessage);
 
   // Handler initiates downlink stream.
-  rpc Publish(stream DownlinkMessage) returns (api.Ack);
+  rpc Publish(stream DownlinkMessage) returns (google.protobuf.Empty);
 
   // Router requests device activation
   rpc Activate(DeviceActivationRequest) returns (DeviceActivationResponse);
@@ -134,7 +150,7 @@ message ApplicationHandlerRegistration {
 // The BrokerManager service provides configuration and monitoring functionality
 service BrokerManager {
   // Handler announces new application to Broker
-  rpc  RegisterApplicationHandler(ApplicationHandlerRegistration) returns (api.Ack);
+  rpc  RegisterApplicationHandler(ApplicationHandlerRegistration) returns (google.protobuf.Empty);
   // Network operator requests Broker status
   rpc  GetStatus(StatusRequest) returns (Status);
 }

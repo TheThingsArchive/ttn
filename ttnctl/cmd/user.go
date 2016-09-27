@@ -14,11 +14,19 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// userCmd represents the users command
 var userCmd = &cobra.Command{
 	Use:   "user",
 	Short: "Show the current user",
 	Long:  `ttnctl user shows the current logged on user's profile`,
+	Example: `$ ttnctl user
+  INFO Found user profile:
+
+            Username: yourname
+                Name: Your Name
+               Email: your@email.org
+
+  INFO Login credentials valid until Sep 20 09:04:12
+`,
 	Run: func(cmd *cobra.Command, args []string) {
 		account := util.GetAccount(ctx)
 		profile, err := account.Profile()

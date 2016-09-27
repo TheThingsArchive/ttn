@@ -3,45 +3,59 @@
 
 package account
 
-import "github.com/TheThingsNetwork/ttn/core/account/util"
+import (
+	"github.com/TheThingsNetwork/ttn/core/account/auth"
+	"github.com/TheThingsNetwork/ttn/core/account/util"
+)
 
 // Account is a client to an account server
 type Account struct {
-	server      string
-	accessToken string
+	server string
+	auth   auth.Strategy
 }
 
-// New creates a new accoun client that will use the
+// New creates a new account client that will use the
 // accessToken to make requests to the specified account server
 func New(server, accessToken string) *Account {
 	return &Account{
-		server:      server,
-		accessToken: accessToken,
+		server: server,
+		auth:   auth.AccessToken(accessToken),
 	}
 }
 
-// SetToken changes the accessToken the account client uses to
-// makes requests.
-func (a *Account) SetToken(accessToken string) {
-	a.accessToken = accessToken
+// NewWithKey creates an account client that uses an accessKey to
+// authenticate
+func NewWithKey(server, accessKey string) *Account {
+	return &Account{
+		server: server,
+		auth:   auth.AccessKey(accessKey),
+	}
+}
+
+// NewWithPublic creates an account client that does not use authentication
+func NewWithPublic(server string) *Account {
+	return &Account{
+		server: server,
+		auth:   auth.Public,
+	}
 }
 
 func (a *Account) get(URI string, res interface{}) error {
-	return util.GET(a.server, a.accessToken, URI, res)
+	return util.GET(a.server, a.auth, URI, res)
 }
 
 func (a *Account) put(URI string, body, res interface{}) error {
-	return util.PUT(a.server, a.accessToken, URI, body, res)
+	return util.PUT(a.server, a.auth, URI, body, res)
 }
 
 func (a *Account) post(URI string, body, res interface{}) error {
-	return util.POST(a.server, a.accessToken, URI, body, res)
+	return util.POST(a.server, a.auth, URI, body, res)
 }
 
 func (a *Account) patch(URI string, body, res interface{}) error {
-	return util.PATCH(a.server, a.accessToken, URI, body, res)
+	return util.PATCH(a.server, a.auth, URI, body, res)
 }
 
 func (a *Account) del(URI string) error {
-	return util.DELETE(a.server, a.accessToken, URI)
+	return util.DELETE(a.server, a.auth, URI)
 }

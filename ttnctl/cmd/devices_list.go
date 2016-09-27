@@ -12,11 +12,20 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// devicesListCmd represents the `device list` command
 var devicesListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List al devices for the current application",
 	Long:  `ttnctl devices list can be used to list all devices for the current application.`,
+	Example: `$ ttnctl devices list
+  INFO Using Application                        AppID=test
+  INFO Discovering Handler...
+  INFO Connecting with Handler...
+
+DevID	AppEUI          	DevEUI          	DevAddr 	Up/Down
+test 	70B3D57EF0000024	0001D544B2936FCE	26001ADA	0/0
+
+  INFO Listed 1 devices                         AppID=test
+`,
 	Run: func(cmd *cobra.Command, args []string) {
 
 		appID := util.GetAppID(ctx)

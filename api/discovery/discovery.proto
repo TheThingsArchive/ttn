@@ -3,7 +3,7 @@
 
 syntax = "proto3";
 
-import "github.com/TheThingsNetwork/ttn/api/api.proto";
+import "google/protobuf/empty.proto";
 
 package discovery;
 
@@ -58,11 +58,11 @@ message AnnouncementsResponse {
 }
 
 service Discovery {
-  rpc Announce(Announcement) returns (api.Ack);
+  rpc Announce(Announcement) returns (google.protobuf.Empty);
   rpc GetAll(GetAllRequest) returns (AnnouncementsResponse);
   rpc Get(GetRequest) returns (Announcement);
-  rpc AddMetadata(MetadataRequest) returns (api.Ack);
-  rpc DeleteMetadata(MetadataRequest) returns (api.Ack);
+  rpc AddMetadata(MetadataRequest) returns (google.protobuf.Empty);
+  rpc DeleteMetadata(MetadataRequest) returns (google.protobuf.Empty);
 }
 
 // The DiscoveryManager service provides configuration and monitoring functionality

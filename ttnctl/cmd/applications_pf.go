@@ -10,12 +10,24 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// applicationsPayloadFunctionsCmd represents the applicationsPayloadFunctions command
 var applicationsPayloadFunctionsCmd = &cobra.Command{
 	Use:   "pf",
 	Short: "Show the payload functions",
 	Long: `ttnctl applications pf shows the payload functions for decoding,
-converting and validating binary payload.
+converting and validating binary payload.`,
+	Example: `$ ttnctl applications pf
+  INFO Discovering Handler...
+  INFO Connecting with Handler...
+  INFO Found Application
+  INFO Decoder function
+function Decoder(bytes) {
+  return {
+    payload: bytes,
+  };
+}
+  INFO No converter function
+  INFO No validator function
+  INFO No encoder function
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 

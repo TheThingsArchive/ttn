@@ -11,12 +11,12 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/types"
 )
 
-// Compute the time-on-air given a PHY payload size in bytes, a datr identifier,
-// an LoRa coding rate identifier. Note that this function operates on the PHY
-// payload size and does not add the LoRaWAN header.
+// ComputeLoRa computes the time-on-air given a PHY payload size in bytes, a datr
+// identifier and LoRa coding rate identifier. Note that this function operates
+// on the PHY payload size and does not add the LoRaWAN header.
 //
 // See http://www.semtech.com/images/datasheet/LoraDesignGuide_STD.pdf, page 7
-func Compute(payloadSize uint, datr string, codr string) (time.Duration, error) {
+func ComputeLoRa(payloadSize uint, datr string, codr string) (time.Duration, error) {
 	// Determine CR
 	var cr float64
 	switch codr {
@@ -52,4 +52,14 @@ func Compute(payloadSize uint, datr string, codr string) (time.Duration, error) 
 	timeOnAir := (payloadNb + 12.25) * tSym * 1000000 // in nanoseconds
 
 	return time.Duration(timeOnAir), nil
+}
+
+// ComputeFSK computes the time-on-air given a PHY payload size in bytes and a
+// bitrate, Note that this function operates on the PHY payload size and does
+// not add the LoRaWAN header.
+//
+// TODO: (@tftelkamp): Verify this
+func ComputeFSK(payloadSize uint, bitrate int) (time.Duration, error) {
+	tPkt := int(time.Second) * (int(payloadSize) + 5 + 3 + 1 + 2) * 8 / bitrate
+	return time.Duration(tPkt), nil
 }

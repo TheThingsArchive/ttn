@@ -4,12 +4,13 @@
 package handler
 
 import (
-	"errors"
 	"fmt"
+	"reflect"
 	"time"
 
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/mqtt"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/apex/log"
 	"github.com/robertkrimen/otto"
 )
@@ -34,7 +35,7 @@ func (h *handler) ConvertFieldsUp(ctx log.Interface, ttnUp *pb_broker.Deduplicat
 	}
 
 	if !valid {
-		return errors.New("ttn/handler: The processed payload is not valid")
+		return errors.NewErrInvalidArgument("Payload", "payload validator function returned false")
 	}
 
 	appUp.Fields = fields
@@ -61,7 +62,7 @@ var timeOut = 100 * time.Millisecond
 // Decode decodes the payload using the Decoder function into a map
 func (f *UplinkFunctions) Decode(payload []byte) (map[string]interface{}, error) {
 	if f.Decoder == "" {
-		return nil, errors.New("Decoder function not set")
+		return nil, errors.NewErrInternal("Decoder function not set")
 	}
 
 	vm := otto.New()
@@ -72,13 +73,13 @@ func (f *UplinkFunctions) Decode(payload []byte) (map[string]interface{}, error)
 	}
 
 	if !value.IsObject() {
-		return nil, errors.New("Decoder does not return an object")
+		return nil, errors.NewErrInvalidArgument("Decoder", "does not return an object")
 	}
 
 	v, _ := value.Export()
 	m, ok := v.(map[string]interface{})
 	if !ok {
-		return nil, errors.New("Decoder does not return an object")
+		return nil, errors.NewErrInvalidArgument("Decoder", "does not return an object")
 	}
 	return m, nil
 }
@@ -99,13 +100,13 @@ func (f *UplinkFunctions) Convert(data map[string]interface{}) (map[string]inter
 	}
 
 	if !value.IsObject() {
-		return nil, errors.New("Converter does not return an object")
+		return nil, errors.NewErrInvalidArgument("Converter", "does not return an object")
 	}
 
 	v, _ := value.Export()
 	m, ok := v.(map[string]interface{})
 	if !ok {
-		return nil, errors.New("Decoder does not return an object")
+		return nil, errors.NewErrInvalidArgument("Converter", "does not return an object")
 	}
 
 	return m, nil
@@ -126,7 +127,7 @@ func (f *UplinkFunctions) Validate(data map[string]interface{}) (bool, error) {
 	}
 
 	if !value.IsBoolean() {
-		return false, errors.New("Validator does not return a boolean")
+		return false, errors.NewErrInvalidArgument("Validator", "does not return a boolean")
 	}
 
 	return value.ToBoolean()
@@ -148,7 +149,7 @@ func (f *UplinkFunctions) Process(payload []byte) (map[string]interface{}, bool,
 	return converted, valid, err
 }
 
-var errTimeOutExceeded = errors.New("Code has been running to long")
+var errTimeOutExceeded = errors.NewErrInternal("Code has been running to long")
 
 func runUnsafeCode(vm *otto.Otto, code string, timeOut time.Duration) (value otto.Value, err error) {
 	start := time.Now()
@@ -157,7 +158,7 @@ func runUnsafeCode(vm *otto.Otto, code string, timeOut time.Duration) (value ott
 		if caught := recover(); caught != nil {
 			if caught == errTimeOutExceeded {
 				value = otto.Value{}
-				err = fmt.Errorf("Interrupted javascript execution after %v", duration)
+				err = errors.NewErrInternal(fmt.Sprintf("Interrupted javascript execution after %v", duration))
 				return
 			}
 			// if this is not the our timeout interrupt, raise the panic again
@@ -188,7 +189,7 @@ type DownlinkFunctions struct {
 // If no encoder function is set, this function returns an array.
 func (f *DownlinkFunctions) Encode(payload map[string]interface{}) ([]byte, error) {
 	if f.Encoder == "" {
-		return nil, errors.New("Encoder function not set")
+		return nil, errors.NewErrInternal("Encoder function not set")
 	}
 
 	vm := otto.New()
@@ -199,7 +200,7 @@ func (f *DownlinkFunctions) Encode(payload map[string]interface{}) ([]byte, erro
 	}
 
 	if !value.IsObject() {
-		return nil, errors.New("Encoder does not return an object")
+		return nil, errors.NewErrInvalidArgument("Encoder", "does not return an object")
 	}
 
 	v, err := value.Export()
@@ -207,17 +208,59 @@ func (f *DownlinkFunctions) Encode(payload map[string]interface{}) ([]byte, erro
 		return nil, err
 	}
 
-	m, ok := v.([]int64)
-	if !ok {
-		return nil, errors.New("Encoder should return an Array of numbers")
+	if reflect.TypeOf(v).Kind() != reflect.Slice {
+		return nil, errors.NewErrInvalidArgument("Encoder", "does not return an Array")
 	}
 
-	res := make([]byte, len(m))
-	for i, v := range m {
-		if v < 0 || v > 255 {
-			return nil, errors.New("Numbers in array should be between 0 and 255")
+	s := reflect.ValueOf(v)
+	l := s.Len()
+
+	res := make([]byte, l)
+
+	var n int64
+	for i := 0; i < l; i++ {
+		el := s.Index(i).Interface()
+
+		// type switch does not have fallthrough so we need
+		// to check every element individually
+		switch t := el.(type) {
+		case byte:
+			n = int64(t)
+		case int:
+			n = int64(t)
+		case int8:
+			n = int64(t)
+		case int16:
+			n = int64(t)
+		case uint16:
+			n = int64(t)
+		case int32:
+			n = int64(t)
+		case uint32:
+			n = int64(t)
+		case int64:
+			n = int64(t)
+		case uint64:
+			n = int64(t)
+		case float32:
+			n = int64(t)
+			if float32(n) != t {
+				return nil, errors.NewErrInvalidArgument("Encoder", "should return an Array of integer numbers")
+			}
+		case float64:
+			n = int64(t)
+			if float64(n) != t {
+				return nil, errors.NewErrInvalidArgument("Encoder", "should return an Array of integer numbers")
+			}
+		default:
+			return nil, errors.NewErrInvalidArgument("Encoder", "should return an Array of integer numbers")
 		}
-		res[i] = byte(v)
+
+		if n < 0 || n > 255 {
+			return nil, errors.NewErrInvalidArgument("Encoder Output", "Numbers in Array should be between 0 and 255")
+		}
+
+		res[i] = byte(n)
 	}
 
 	return res, nil
@@ -240,7 +283,7 @@ func (h *handler) ConvertFieldsDown(ctx log.Interface, appDown *mqtt.DownlinkMes
 	}
 
 	if appDown.Payload != nil {
-		return errors.New("Both Fields and Payload provided")
+		return errors.NewErrInvalidArgument("Downlink", "Both Fields and Payload provided")
 	}
 
 	app, err := h.applications.Get(appDown.AppID)
@@ -258,7 +301,6 @@ func (h *handler) ConvertFieldsDown(ctx log.Interface, appDown *mqtt.DownlinkMes
 	}
 
 	appDown.Payload = message
-	ttnDown.Payload = message
 
 	return nil
 }

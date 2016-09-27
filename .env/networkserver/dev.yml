@@ -1,5 +1,7 @@
 debug: true
 discovery-server: "localhost:1900"
-auth-server: https://staging.account.thethingsnetwork.org
+auth-servers:
+  ttn-account: "https://account.thethingsnetwork.org"
+  ttn-account-staging: "https://staging.account.thethingsnetwork.org"
 tls: true
 key-dir: "./.env/networkserver/"

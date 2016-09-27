@@ -10,16 +10,16 @@ GOBUILD = $(GOCMD) build
 
 PROTOC = protoc --gofast_out=plugins=grpc:$(GOPATH)/src/ --proto_path=$(GOPATH)/src/ $(GOPATH)/src/github.com/TheThingsNetwork/ttn
 
-GIT_COMMIT = `git rev-parse HEAD 2>/dev/null`
+GIT_COMMIT = `git rev-parse --short HEAD 2>/dev/null`
 BUILD_DATE = `date -u +%Y-%m-%dT%H:%M:%SZ`
 
 LDFLAGS = -ldflags "-w -X main.gitCommit=${GIT_COMMIT} -X main.buildDate=${BUILD_DATE}"
 
-DEPS = `comm -23 <(sort <($(GOCMD) list -f '{{join .Imports "\n"}}' ./...) | uniq) <($(GOCMD) list std) | grep -v TheThingsNetwork`
-TEST_DEPS = `comm -23 <(sort <($(GOCMD) list -f '{{join .TestImports "\n"}}' ./...) | uniq) <($(GOCMD) list std) | grep -v TheThingsNetwork`
-
-select_pkgs = $(GOCMD) list ./... | grep -vE 'vendor|ttnctl'
+select_pkgs = $(GOCMD) list ./... | grep -vE 'ttn/vendor|ttn/ttnctl'
 coverage_pkgs = $(GOCMD) list ./... | grep -vE 'ttn/api|ttn/cmd|ttn/vendor|ttn/ttnctl'
+
+DEPS = `comm -23 <($(GOCMD) list -f '{{join .Deps "\n"}}' . | grep -vE 'github.com/TheThingsNetwork/ttn' | sort | uniq) <($(GOCMD) list std)`
+TEST_DEPS = `comm -23 <($(select_pkgs) | xargs $(GOCMD) list -f '{{join .TestImports "\n"}}' | grep -vE 'github.com/TheThingsNetwork/ttn' | sort | uniq) <($(GOCMD) list std)`
 
 RELEASE_DIR ?= release
 COVER_FILE = coverage.out
@@ -31,7 +31,7 @@ ttnctlpkg = ttnctl-$(GOOS)-$(GOARCH)
 ttnbin = $(ttnpkg)$(GOEXE)
 ttnctlbin = $(ttnctlpkg)$(GOEXE)
 
-.PHONY: all clean deps update-deps test-deps proto-deps dev-deps cover-deps proto test fmt vet cover coveralls build install docker package
+.PHONY: all clean deps update-deps test-deps dev-deps cover-deps proto test fmt vet cover coveralls docs build install docker package
 
 all: clean deps build package
 
@@ -44,11 +44,11 @@ update-deps:
 test-deps:
 	$(GOCMD) get -d -v $(TEST_DEPS)
 
-proto-deps:
-	$(GOCMD) get -v github.com/gogo/protobuf/protoc-gen-gofast
-
-dev-deps: update-deps proto-deps test-deps
-	$(GOCMD) get -v github.com/ddollar/forego
+dev-deps: update-deps test-deps
+	$(GOCMD) get -u -v github.com/gogo/protobuf/protoc-gen-gofast
+	$(GOCMD) get -u -v github.com/golang/mock/gomock
+	$(GOCMD) get -u -v github.com/golang/mock/mockgen
+	$(GOCMD) get -u -v github.com/ddollar/forego
 
 cover-deps:
 	if ! $(GOCMD) get github.com/golang/tools/cmd/cover; then $(GOCMD) get golang.org/x/tools/cmd/cover; fi
@@ -65,6 +65,10 @@ proto:
 	@$(PROTOC)/api/networkserver/networkserver.proto
 	@$(PROTOC)/api/discovery/discovery.proto
 	@$(PROTOC)/api/noc/noc.proto
+
+mocks:
+	mockgen -source=./api/networkserver/networkserver.pb.go -package networkserver NetworkServerClient > api/networkserver/networkserver_mock.go
+	mockgen -source=./api/discovery/client.go -package discovery NetworkServerClient > api/discovery/client_mock.go
 
 test:
 	$(select_pkgs) | xargs $(GOCMD) test
@@ -88,6 +92,10 @@ clean:
 	[ -d $(RELEASE_DIR) ] && rm -rf $(RELEASE_DIR) || [ ! -d $(RELEASE_DIR) ]
 	([ -d $(TEMP_COVER_DIR) ] && rm -rf $(TEMP_COVER_DIR)) || [ ! -d $(TEMP_COVER_DIR) ]
 	([ -f $(COVER_FILE) ] && rm $(COVER_FILE)) || [ ! -d $(COVER_FILE) ]
+
+docs:
+	cd cmd/docs && HOME='$$HOME' $(GOCMD) run generate.go > README.md
+	cd ttnctl/cmd/docs && HOME='$$HOME' $(GOCMD) run generate.go > README.md
 
 build: $(RELEASE_DIR)/$(ttnbin) $(RELEASE_DIR)/$(ttnctlbin)
 

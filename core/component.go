@@ -5,34 +5,34 @@ package core
 
 import (
 	"crypto/tls"
-	"errors"
 	"fmt"
 	"net/http"
-	"path"
 	"runtime"
 	"sync/atomic"
 	"time"
 
-	"golang.org/x/net/context"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/metadata"
-	"google.golang.org/grpc/peer"
-
-	"github.com/TheThingsNetwork/ttn/api"
 	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
+	pb_noc "github.com/TheThingsNetwork/ttn/api/noc"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
+	"github.com/TheThingsNetwork/ttn/utils/logging"
 	"github.com/TheThingsNetwork/ttn/utils/security"
 	"github.com/TheThingsNetwork/ttn/utils/tokenkey"
 	"github.com/apex/log"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/mwitkow/go-grpc-middleware"
 	"github.com/spf13/viper"
+	"golang.org/x/net/context"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/grpclog"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/peer"
 )
 
 type ComponentInterface interface {
 	RegisterRPC(s *grpc.Server)
 	Init(c *Component) error
-	ValidateNetworkContext(ctx context.Context) (string, error)
+	ValidateNetworkContext(ctx context.Context) (*pb_discovery.Announcement, error)
 	ValidateTTNAuthContext(ctx context.Context) (*TTNClaims, error)
 }
 
@@ -53,29 +53,37 @@ func NewComponent(ctx log.Interface, serviceName string, announcedAddress string
 		}
 	}()
 
-	var discovery pb_discovery.DiscoveryClient
-	if serviceName != "discovery" {
-		discoveryConn, err := grpc.Dial(viper.GetString("discovery-server"), append(api.DialOptions, grpc.WithBlock(), grpc.WithInsecure())...)
-		if err != nil {
-			return nil, err
-		}
-		discovery = pb_discovery.NewDiscoveryClient(discoveryConn)
-	}
+	grpclog.SetLogger(logging.NewGRPCLogger(ctx))
 
 	component := &Component{
 		Ctx: ctx,
 		Identity: &pb_discovery.Announcement{
-			Id:          viper.GetString("id"),
-			Description: viper.GetString("description"),
-			ServiceName: serviceName,
-			NetAddress:  announcedAddress,
+			Id:             viper.GetString("id"),
+			Description:    viper.GetString("description"),
+			ServiceName:    serviceName,
+			ServiceVersion: fmt.Sprintf("%s-%s (%s)", viper.GetString("version"), viper.GetString("gitCommit"), viper.GetString("buildDate")),
+			NetAddress:     announcedAddress,
 		},
 		AccessToken: viper.GetString("auth-token"),
-		Discovery:   discovery,
 		TokenKeyProvider: tokenkey.NewHTTPProvider(
-			fmt.Sprintf("%s/key", viper.GetString("auth-server")),
-			path.Join(viper.GetString("key-dir"), "/auth-server.pub"),
+			viper.GetStringMapString("auth-servers"),
+			viper.GetString("key-dir"),
 		),
+	}
+
+	if serviceName != "discovery" {
+		var err error
+		component.Discovery, err = pb_discovery.NewClient(
+			viper.GetString("discovery-server"),
+			component.Identity,
+			func() string {
+				token, _ := component.BuildJWT()
+				return token
+			},
+		)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if pub, priv, cert, err := security.LoadKeys(viper.GetString("key-dir")); err == nil {
@@ -124,7 +132,8 @@ const (
 // Component contains the common attributes for all TTN components
 type Component struct {
 	Identity         *pb_discovery.Announcement
-	Discovery        pb_discovery.DiscoveryClient
+	Discovery        pb_discovery.Client
+	Monitor          pb_noc.MonitorClient
 	Ctx              log.Interface
 	AccessToken      string
 	privateKey       string
@@ -145,20 +154,21 @@ func (c *Component) SetStatus(status Status) {
 
 // Discover is used to discover another component
 func (c *Component) Discover(serviceName, id string) (*pb_discovery.Announcement, error) {
-	return c.Discovery.Get(c.GetContext(""), &pb_discovery.GetRequest{
-		ServiceName: serviceName,
-		Id:          id,
-	})
+	res, err := c.Discovery.Get(serviceName, id)
+	if err != nil {
+		return nil, errors.Wrapf(errors.FromGRPCError(err), "Failed to discover %s/%s", serviceName, id)
+	}
+	return res, nil
 }
 
 // Announce the component to TTN discovery
 func (c *Component) Announce() error {
 	if c.Identity.Id == "" {
-		return errors.New("ttn: No ID configured")
+		return errors.NewErrInvalidArgument("Component ID", "can not be empty")
 	}
-	_, err := c.Discovery.Announce(c.GetContext(c.AccessToken), c.Identity)
+	err := c.Discovery.Announce(c.AccessToken)
 	if err != nil {
-		return fmt.Errorf("ttn: Failed to announce this component to TTN discovery: %s", err.Error())
+		return errors.Wrapf(errors.FromGRPCError(err), "Failed to announce this component to TTN discovery: %s", err.Error())
 	}
 	c.Ctx.Info("ttn: Announced to TTN discovery")
 
@@ -168,15 +178,15 @@ func (c *Component) Announce() error {
 // UpdateTokenKey updates the OAuth Bearer token key
 func (c *Component) UpdateTokenKey() error {
 	if c.TokenKeyProvider == nil {
-		return errors.New("ttn: No public key provider configured for token validation")
+		return errors.NewErrInternal("No public key provider configured for token validation")
 	}
 
 	// Set up Auth Server Token Validation
-	tokenKey, err := c.TokenKeyProvider.Get(true)
+	err := c.TokenKeyProvider.Update()
 	if err != nil {
-		c.Ctx.Warnf("ttn: Failed to refresh public key for token validation: %s", err.Error())
+		c.Ctx.Warnf("ttn: Failed to refresh public keys for token validation: %s", err.Error())
 	} else {
-		c.Ctx.Infof("ttn: Got public key for token validation (%v)", tokenKey.Algorithm)
+		c.Ctx.Info("ttn: Got public keys for token validation")
 	}
 
 	return nil
@@ -186,10 +196,11 @@ func (c *Component) UpdateTokenKey() error {
 // TTNClaims contains the claims that are set by the TTN Token Issuer
 type TTNClaims struct {
 	jwt.StandardClaims
-	Type   string              `json:"type"`
-	Client string              `json:"client"`
-	Scopes []string            `json:"scope"`
-	Apps   map[string][]string `json:"apps,omitempty"`
+	Type     string              `json:"type"`
+	Client   string              `json:"client"`
+	Scopes   []string            `json:"scope"`
+	Apps     map[string][]string `json:"apps,omitempty"`
+	Gateways map[string][]string `json:"gateways,omitempty"`
 }
 
 // CanEditApp indicates wheter someone with the claims can manage the given app
@@ -207,7 +218,7 @@ func (c *TTNClaims) CanEditApp(appID string) bool {
 }
 
 // ValidateNetworkContext validates the context of a network request (router-broker, broker-handler, etc)
-func (c *Component) ValidateNetworkContext(ctx context.Context) (componentID string, err error) {
+func (c *Component) ValidateNetworkContext(ctx context.Context) (component *pb_discovery.Announcement, err error) {
 	defer func() {
 		if err != nil {
 			time.Sleep(time.Second)
@@ -216,7 +227,7 @@ func (c *Component) ValidateNetworkContext(ctx context.Context) (componentID str
 
 	md, ok := metadata.FromContext(ctx)
 	if !ok {
-		err = errors.New("ttn: Could not get metadata")
+		err = errors.NewErrInternal("Could not get metadata from context")
 		return
 	}
 	var id, serviceName, token string
@@ -224,14 +235,14 @@ func (c *Component) ValidateNetworkContext(ctx context.Context) (componentID str
 		id = ids[0]
 	}
 	if id == "" {
-		err = errors.New("ttn: Could not get id")
+		err = errors.NewErrInvalidArgument("Metadata", "id missing")
 		return
 	}
 	if serviceNames, ok := md["service-name"]; ok && len(serviceNames) == 1 {
 		serviceName = serviceNames[0]
 	}
 	if serviceName == "" {
-		err = errors.New("ttn: Could not get service name")
+		err = errors.NewErrInvalidArgument("Metadata", "service-name missing")
 		return
 	}
 	if tokens, ok := md["token"]; ok && len(tokens) == 1 {
@@ -245,11 +256,11 @@ func (c *Component) ValidateNetworkContext(ctx context.Context) (componentID str
 	}
 
 	if announcement.PublicKey == "" {
-		return id, nil
+		return announcement, nil
 	}
 
 	if token == "" {
-		err = errors.New("ttn: Could not get token")
+		err = errors.NewErrInvalidArgument("Metadata", "token missing")
 		return
 	}
 
@@ -258,35 +269,35 @@ func (c *Component) ValidateNetworkContext(ctx context.Context) (componentID str
 	if err != nil {
 		return
 	}
-	if claims.Subject != id {
-		err = errors.New("The token was issued for a different component ID")
+	if claims.Issuer != id {
+		err = errors.NewErrInvalidArgument("Metadata", "token was issued by different component id")
 		return
 	}
 
-	return id, nil
+	return announcement, nil
 }
 
 // ValidateTTNAuthContext gets a token from the context and validates it
 func (c *Component) ValidateTTNAuthContext(ctx context.Context) (*TTNClaims, error) {
 	md, ok := metadata.FromContext(ctx)
 	if !ok {
-		return nil, errors.New("ttn: Could not get metadata")
+		return nil, errors.NewErrInternal("Could not get metadata from context")
 	}
 	token, ok := md["token"]
 	if !ok || len(token) < 1 {
-		return nil, errors.New("ttn: Could not get token")
+		return nil, errors.NewErrInvalidArgument("Metadata", "token missing")
 	}
 	ttnClaims := &TTNClaims{}
 	parsed, err := jwt.ParseWithClaims(token[0], ttnClaims, func(token *jwt.Token) (interface{}, error) {
 		if c.TokenKeyProvider == nil {
-			return nil, errors.New("No token provider configured")
+			return nil, errors.NewErrInternal("No token provider configured")
 		}
-		k, err := c.TokenKeyProvider.Get(false)
+		k, err := c.TokenKeyProvider.Get(ttnClaims.Issuer, false)
 		if err != nil {
 			return nil, err
 		}
 		if k.Algorithm != token.Header["alg"] {
-			return nil, fmt.Errorf("Expected algorithm %v but got %v", k.Algorithm, token.Header["alg"])
+			return nil, errors.NewErrInvalidArgument("Token", fmt.Sprintf("expected algorithm %v but got %v", k.Algorithm, token.Header["alg"]))
 		}
 		key, err := jwt.ParseRSAPublicKeyFromPEM([]byte(k.Key))
 		if err != nil {
@@ -295,10 +306,10 @@ func (c *Component) ValidateTTNAuthContext(ctx context.Context) (*TTNClaims, err
 		return key, nil
 	})
 	if err != nil {
-		return nil, fmt.Errorf("Unable to parse token: %s", err.Error())
+		return nil, errors.NewErrInvalidArgument("Token", fmt.Sprintf("unable to parse token: %s", err.Error()))
 	}
 	if !parsed.Valid {
-		return nil, errors.New("The token is not valid or is expired")
+		return nil, errors.NewErrInvalidArgument("Token", "not valid or expired")
 	}
 	return ttnClaims, nil
 }
@@ -327,7 +338,8 @@ func (c *Component) ServerOptions() []grpc.ServerOption {
 		iface, err := handler(ctx, req)
 		logCtx = logCtx.WithField("Duration", time.Now().Sub(t))
 		if err != nil {
-			logCtx.WithError(err).Warn("Could not handle Request")
+			err := errors.FromGRPCError(err)
+			logCtx.WithField("error", err.Error()).Warn("Could not handle Request")
 		} else {
 			logCtx.Info("Handled request")
 		}

@@ -52,13 +52,13 @@ type LocationMetadata struct {
 
 // GatewayMetadata contains metadata for each gateway that received a message
 type GatewayMetadata struct {
-	EUI       types.GatewayEUI `json:"eui,omitempty"`
-	Timestamp uint32           `json:"timestamp,omitempty"`
-	Time      JSONTime         `json:"time,omitempty"`
-	Channel   uint32           `json:"channel,omitempty"`
-	RSSI      float32          `json:"rssi,omitempty"`
-	SNR       float32          `json:"snr,omitempty"`
-	RFChain   uint32           `json:"rf_chain,omitempty"`
+	GtwID     string   `json:"gtw_id,omitempty"`
+	Timestamp uint32   `json:"timestamp,omitempty"`
+	Time      JSONTime `json:"time,omitempty"`
+	Channel   uint32   `json:"channel,omitempty"`
+	RSSI      float32  `json:"rssi,omitempty"`
+	SNR       float32  `json:"snr,omitempty"`
+	RFChain   uint32   `json:"rf_chain,omitempty"`
 	LocationMetadata
 }
 

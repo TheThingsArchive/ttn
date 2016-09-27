@@ -4,7 +4,7 @@
 package handler
 
 import (
-	"errors"
+	"fmt"
 	"time"
 
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
@@ -13,12 +13,64 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/otaa"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/mqtt"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/random"
 	"github.com/apex/log"
 	"github.com/brocaar/lorawan"
 )
 
-func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActivationRequest) (*pb.DeviceActivationResponse, error) {
+func (h *handler) getActivationMetadata(ctx log.Interface, activation *pb_broker.DeduplicatedDeviceActivationRequest) (mqtt.Metadata, error) {
+	ttnUp := &pb_broker.DeduplicatedUplinkMessage{
+		ProtocolMetadata: activation.ProtocolMetadata,
+		GatewayMetadata:  activation.GatewayMetadata,
+		ServerTime:       activation.ServerTime,
+	}
+	mqttUp := &mqtt.UplinkMessage{}
+	err := h.ConvertMetadata(ctx, ttnUp, mqttUp)
+	if err != nil {
+		return mqtt.Metadata{}, err
+	}
+	return mqttUp.Metadata, nil
+}
+
+func (h *handler) HandleActivationChallenge(challenge *pb_broker.ActivationChallengeRequest) (*pb_broker.ActivationChallengeResponse, error) {
+
+	// Find Device
+	dev, err := h.devices.Get(challenge.AppId, challenge.DevId)
+	if err != nil {
+		return nil, err
+	}
+
+	if dev.AppKey.IsEmpty() {
+		err = errors.NewErrNotFound(fmt.Sprintf("AppKey for device %s", challenge.DevId))
+		return nil, err
+	}
+
+	// Unmarshal LoRaWAN
+	var reqPHY lorawan.PHYPayload
+	if err = reqPHY.UnmarshalBinary(challenge.Payload); err != nil {
+		return nil, err
+	}
+
+	// Set MIC
+	if err := reqPHY.SetMIC(lorawan.AES128Key(dev.AppKey)); err != nil {
+		err = errors.NewErrNotFound("Could not set MIC")
+		return nil, err
+	}
+
+	// Marshal
+	bytes, err := reqPHY.MarshalBinary()
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb_broker.ActivationChallengeResponse{
+		Payload: bytes,
+	}, nil
+}
+
+func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActivationRequest) (res *pb.DeviceActivationResponse, err error) {
+	appID, devID := activation.AppId, activation.DevId
 	var appEUI types.AppEUI
 	if activation.AppEui != nil {
 		appEUI = *activation.AppEui
@@ -30,13 +82,18 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 	ctx := h.Ctx.WithFields(log.Fields{
 		"DevEUI": devEUI,
 		"AppEUI": appEUI,
-		"AppID":  activation.AppId,
-		"DevID":  activation.DevId,
+		"AppID":  appID,
+		"DevID":  devID,
 	})
-	var err error
 	start := time.Now()
 	defer func() {
 		if err != nil {
+			h.mqttEvent <- &mqttEvent{
+				AppID:   appID,
+				DevID:   devID,
+				Type:    "activations/errors",
+				Payload: map[string]string{"error": err.Error()},
+			}
 			ctx.WithError(err).Warn("Could not handle activation")
 		} else {
 			ctx.WithField("Duration", time.Now().Sub(start)).Info("Handled activation")
@@ -44,25 +101,25 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 	}()
 
 	if activation.ResponseTemplate == nil {
-		err = errors.New("ttn/handler: No Downlink Available")
+		err = errors.NewErrInternal("No downlink available")
 		return nil, err
 	}
 
 	// Find Device
 	var dev *device.Device
-	dev, err = h.devices.Get(activation.AppId, activation.DevId)
+	dev, err = h.devices.Get(appID, devID)
 	if err != nil {
 		return nil, err
 	}
 
 	if dev.AppKey.IsEmpty() {
-		err = errors.New("ttn/handler: Can not activate device without AppKey")
+		err = errors.NewErrNotFound(fmt.Sprintf("AppKey for device %s", devID))
 		return nil, err
 	}
 
 	// Check for LoRaWAN
 	if lorawan := activation.ActivationMetadata.GetLorawan(); lorawan == nil {
-		err = errors.New("ttn/handler: Can not activate non-LoRaWAN device")
+		err = errors.NewErrInvalidArgument("Activation", "does not contain LoRaWAN metadata")
 		return nil, err
 	}
 
@@ -73,13 +130,13 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 	}
 	reqMAC, ok := reqPHY.MACPayload.(*lorawan.JoinRequestPayload)
 	if !ok {
-		err = errors.New("MACPayload must be a *JoinRequestPayload")
+		err = errors.NewErrInvalidArgument("Activation", "does not contain a JoinRequestPayload")
 		return nil, err
 	}
 
 	// Validate MIC
 	if ok, err = reqPHY.ValidateMIC(lorawan.AES128Key(dev.AppKey)); err != nil || !ok {
-		err = errors.New("ttn/handler: Invalid MIC")
+		err = errors.NewErrNotFound("MIC does not match device")
 		return nil, err
 	}
 
@@ -92,17 +149,11 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 		}
 	}
 	if alreadyUsed {
-		err = errors.New("ttn/handler: DevNonce already used")
+		err = errors.NewErrInvalidArgument("Activation DevNonce", "already used")
 		return nil, err
 	}
 
 	ctx.Debug("Accepting Join Request")
-
-	// Publish Activation
-	h.mqttActivation <- &mqtt.Activation{
-		AppEUI: *activation.AppEui,
-		DevEUI: *activation.DevEui,
-	}
 
 	// Prepare Device Activation Response
 	var resPHY lorawan.PHYPayload
@@ -111,7 +162,7 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 	}
 	resMAC, ok := resPHY.MACPayload.(*lorawan.DataPayload)
 	if !ok {
-		err = errors.New("MACPayload must be a *DataPayload")
+		err = errors.NewErrInvalidArgument("Activation ResponseTemplate", "MACPayload must be a *DataPayload")
 		return nil, err
 	}
 	joinAccept := &lorawan.JoinAcceptPayload{}
@@ -119,6 +170,17 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 		return nil, err
 	}
 	resPHY.MACPayload = joinAccept
+
+	// Publish Activation
+	mqttMetadata, _ := h.getActivationMetadata(ctx, activation)
+	h.mqttActivation <- &mqtt.Activation{
+		AppEUI:   *activation.AppEui,
+		DevEUI:   *activation.DevEui,
+		AppID:    appID,
+		DevID:    devID,
+		DevAddr:  types.DevAddr(joinAccept.DevAddr),
+		Metadata: mqttMetadata,
+	}
 
 	// Generate random AppNonce
 	var appNonce device.AppNonce
@@ -140,9 +202,7 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 	joinAccept.AppNonce = appNonce
 
 	// Calculate session keys
-	var appSKey types.AppSKey
-	var nwkSKey types.NwkSKey
-	appSKey, nwkSKey, err = otaa.CalculateSessionKeys(dev.AppKey, joinAccept.AppNonce, joinAccept.NetID, reqMAC.DevNonce)
+	appSKey, nwkSKey, err := otaa.CalculateSessionKeys(dev.AppKey, joinAccept.AppNonce, joinAccept.NetID, reqMAC.DevNonce)
 	if err != nil {
 		return nil, err
 	}
@@ -174,7 +234,7 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 	metadata := activation.ActivationMetadata
 	metadata.GetLorawan().NwkSKey = &dev.NwkSKey
 	metadata.GetLorawan().DevAddr = &dev.DevAddr
-	res := &pb.DeviceActivationResponse{
+	res = &pb.DeviceActivationResponse{
 		Payload:            resBytes,
 		DownlinkOption:     activation.ResponseTemplate.DownlinkOption,
 		ActivationMetadata: metadata,

@@ -9,11 +9,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// applicationsCreateCmd is the entrypoint for handlerctl
-var applicationsCreateCmd = &cobra.Command{
-	Use:   "create [AppID] [Description]",
-	Short: "Create a new application",
-	Long:  `ttnctl applications create can be used to create a new application.`,
+var applicationsAddCmd = &cobra.Command{
+	Use:   "add [AppID] [Description]",
+	Short: "Add a new application",
+	Long:  `ttnctl applications add can be used to add a new application to your account.`,
+	Example: `$ ttnctl applications add test "Test application"
+  INFO Added Application
+  INFO Selected Current Application
+`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) != 2 {
 			cmd.UsageFunc()(cmd)
@@ -37,12 +40,12 @@ var applicationsCreateCmd = &cobra.Command{
 
 		app, err := account.CreateApplication(args[0], args[1], euis)
 		if err != nil {
-			ctx.WithError(err).Fatal("Could not create application")
+			ctx.WithError(err).Fatal("Could not add application")
 		}
 
 		util.ForceRefreshToken(ctx)
 
-		ctx.Info("Created Application")
+		ctx.Info("Added Application")
 
 		skipSelect, _ := cmd.Flags().GetBool("skip-select")
 		if !skipSelect {
@@ -61,8 +64,8 @@ var applicationsCreateCmd = &cobra.Command{
 }
 
 func init() {
-	applicationsCmd.AddCommand(applicationsCreateCmd)
-	applicationsCreateCmd.Flags().StringSlice("app-eui", []string{}, "LoRaWAN AppEUI to register with application")
-	applicationsCreateCmd.Flags().Bool("skip-select", false, "Do not select this application (also adds --skip-register)")
-	applicationsCreateCmd.Flags().Bool("skip-register", false, "Do not register application with the Handler")
+	applicationsCmd.AddCommand(applicationsAddCmd)
+	applicationsAddCmd.Flags().StringSlice("app-eui", []string{}, "LoRaWAN AppEUI to register with application")
+	applicationsAddCmd.Flags().Bool("skip-select", false, "Do not select this application (also adds --skip-register)")
+	applicationsAddCmd.Flags().Bool("skip-register", false, "Do not register application with the Handler")
 }

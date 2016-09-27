@@ -4,38 +4,37 @@
 package networkserver
 
 import (
-	"errors"
+	"fmt"
 	"time"
 
-	"github.com/TheThingsNetwork/ttn/api"
 	pb "github.com/TheThingsNetwork/ttn/api/networkserver"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core/networkserver/device"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
+	"github.com/golang/protobuf/ptypes/empty"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 )
 
 type networkServerManager struct {
-	*networkServer
+	networkServer *networkServer
 }
-
-var errf = grpc.Errorf
 
 func (n *networkServerManager) getDevice(ctx context.Context, in *pb_lorawan.DeviceIdentifier) (*device.Device, error) {
 	if !in.Validate() {
-		return nil, grpcErrf(codes.InvalidArgument, "Invalid Device Identifier")
+		return nil, errors.NewErrInvalidArgument("Device Identifier", "validation failed")
 	}
-	claims, err := n.Component.ValidateTTNAuthContext(ctx)
+	claims, err := n.networkServer.Component.ValidateTTNAuthContext(ctx)
 	if err != nil {
 		return nil, err
 	}
-	dev, err := n.devices.Get(*in.AppEui, *in.DevEui)
+	dev, err := n.networkServer.devices.Get(*in.AppEui, *in.DevEui)
 	if err != nil {
 		return nil, err
 	}
 	if !claims.CanEditApp(dev.AppID) {
-		return nil, errf(codes.Unauthenticated, "No access to this device")
+		return nil, errors.NewErrPermissionDenied(fmt.Sprintf("No access to Application %s", dev.AppID))
 	}
 	return dev, nil
 }
@@ -43,7 +42,7 @@ func (n *networkServerManager) getDevice(ctx context.Context, in *pb_lorawan.Dev
 func (n *networkServerManager) GetDevice(ctx context.Context, in *pb_lorawan.DeviceIdentifier) (*pb_lorawan.Device, error) {
 	dev, err := n.getDevice(ctx, in)
 	if err != nil {
-		return nil, err
+		return nil, errors.BuildGRPCError(err)
 	}
 
 	lastSeen := time.Unix(0, 0)
@@ -66,10 +65,10 @@ func (n *networkServerManager) GetDevice(ctx context.Context, in *pb_lorawan.Dev
 	}, nil
 }
 
-func (n *networkServerManager) SetDevice(ctx context.Context, in *pb_lorawan.Device) (*api.Ack, error) {
+func (n *networkServerManager) SetDevice(ctx context.Context, in *pb_lorawan.Device) (*empty.Empty, error) {
 	_, err := n.getDevice(ctx, &pb_lorawan.DeviceIdentifier{AppEui: in.AppEui, DevEui: in.DevEui})
-	if err != nil && err != device.ErrNotFound {
-		return nil, err
+	if err != nil && errors.GetErrType(err) != errors.NotFound {
+		return nil, errors.BuildGRPCError(err)
 	}
 
 	if !in.Validate() {
@@ -84,8 +83,9 @@ func (n *networkServerManager) SetDevice(ctx context.Context, in *pb_lorawan.Dev
 		FCntUp:   in.FCntUp,
 		FCntDown: in.FCntDown,
 		Options: device.Options{
-			DisableFCntCheck: in.DisableFCntCheck,
-			Uses32BitFCnt:    in.Uses32BitFCnt,
+			DisableFCntCheck:      in.DisableFCntCheck,
+			Uses32BitFCnt:         in.Uses32BitFCnt,
+			ActivationConstraints: in.ActivationConstraints,
 		},
 	}
 
@@ -94,28 +94,51 @@ func (n *networkServerManager) SetDevice(ctx context.Context, in *pb_lorawan.Dev
 		updated.NwkSKey = *in.NwkSKey
 	}
 
-	err = n.devices.Set(updated)
+	err = n.networkServer.devices.Set(updated)
 	if err != nil {
-		return nil, err
+		return nil, errors.BuildGRPCError(err)
 	}
 
-	return &api.Ack{}, nil
+	return &empty.Empty{}, nil
 }
 
-func (n *networkServerManager) DeleteDevice(ctx context.Context, in *pb_lorawan.DeviceIdentifier) (*api.Ack, error) {
+func (n *networkServerManager) DeleteDevice(ctx context.Context, in *pb_lorawan.DeviceIdentifier) (*empty.Empty, error) {
 	_, err := n.getDevice(ctx, in)
 	if err != nil {
-		return nil, err
+		return nil, errors.BuildGRPCError(err)
 	}
-	err = n.devices.Delete(*in.AppEui, *in.DevEui)
+	err = n.networkServer.devices.Delete(*in.AppEui, *in.DevEui)
 	if err != nil {
-		return nil, err
+		return nil, errors.BuildGRPCError(err)
 	}
-	return &api.Ack{}, nil
+	return &empty.Empty{}, nil
+}
+
+func (n *networkServerManager) GetPrefixes(ctx context.Context, in *pb_lorawan.PrefixesRequest) (*pb_lorawan.PrefixesResponse, error) {
+	var mapping []*pb_lorawan.PrefixesResponse_PrefixMapping
+	for prefix, usage := range n.networkServer.prefixes {
+		mapping = append(mapping, &pb_lorawan.PrefixesResponse_PrefixMapping{
+			Prefix: prefix.String(),
+			Usage:  usage,
+		})
+	}
+	return &pb_lorawan.PrefixesResponse{
+		Prefixes: mapping,
+	}, nil
+}
+
+func (n *networkServerManager) GetDevAddr(ctx context.Context, in *pb_lorawan.DevAddrRequest) (*pb_lorawan.DevAddrResponse, error) {
+	devAddr, err := n.networkServer.getDevAddr(in.Usage...)
+	if err != nil {
+		return nil, errors.BuildGRPCError(err)
+	}
+	return &pb_lorawan.DevAddrResponse{
+		DevAddr: &devAddr,
+	}, nil
 }
 
 func (n *networkServerManager) GetStatus(ctx context.Context, in *pb.StatusRequest) (*pb.Status, error) {
-	return nil, errors.New("Not Implemented")
+	return nil, grpcErrf(codes.Unimplemented, "Not Implemented")
 }
 
 // RegisterManager registers this networkserver as a NetworkServerManagerServer (github.com/TheThingsNetwork/ttn/api/networkserver)
@@ -123,4 +146,5 @@ func (n *networkServer) RegisterManager(s *grpc.Server) {
 	server := &networkServerManager{n}
 	pb.RegisterNetworkServerManagerServer(s, server)
 	pb_lorawan.RegisterDeviceManagerServer(s, server)
+	pb_lorawan.RegisterDevAddrManagerServer(s, server)
 }

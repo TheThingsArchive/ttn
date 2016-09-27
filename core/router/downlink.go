@@ -4,10 +4,10 @@
 package router
 
 import (
-	"errors"
 	"fmt"
 	"math"
 	"strings"
+	"time"
 
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_gateway "github.com/TheThingsNetwork/ttn/api/gateway"
@@ -16,46 +16,42 @@ import (
 	pb "github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/core/router/gateway"
 	"github.com/TheThingsNetwork/ttn/core/types"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/toa"
 	"github.com/apex/log"
 	lora "github.com/brocaar/lorawan/band"
 )
 
-func (r *router) SubscribeDownlink(gatewayEUI types.GatewayEUI) (<-chan *pb.DownlinkMessage, error) {
+func (r *router) SubscribeDownlink(gatewayID string) (<-chan *pb.DownlinkMessage, error) {
 	ctx := r.Ctx.WithFields(log.Fields{
-		"GatewayEUI": gatewayEUI,
+		"GatewayID": gatewayID,
 	})
 
-	gateway := r.getGateway(gatewayEUI)
+	gateway := r.getGateway(gatewayID)
 	if fromSchedule := gateway.Schedule.Subscribe(); fromSchedule != nil {
 		toGateway := make(chan *pb.DownlinkMessage)
 		go func() {
-			ctx.Debug("Activate Downlink")
+			ctx.Debug("Activate downlink")
 			for message := range fromSchedule {
 				gateway.Utilization.AddTx(message)
-				ctx.Debug("Send Downlink")
+				ctx.Debug("Send downlink")
 				toGateway <- message
 			}
-			ctx.Debug("Deactivate Downlink")
+			ctx.Debug("Deactivate downlink")
 			close(toGateway)
 		}()
 		return toGateway, nil
 	}
-	return nil, errors.New("ttn/router: Gateway downlink not available")
+	return nil, errors.NewErrInternal(fmt.Sprintf("Gateway %s not available for downlink", gatewayID))
 }
 
-func (r *router) UnsubscribeDownlink(gatewayEUI types.GatewayEUI) error {
-	r.getGateway(gatewayEUI).Schedule.Stop()
+func (r *router) UnsubscribeDownlink(gatewayID string) error {
+	r.getGateway(gatewayID).Schedule.Stop()
 	return nil
 }
 
 func (r *router) HandleDownlink(downlink *pb_broker.DownlinkMessage) error {
 	option := downlink.DownlinkOption
-	ctx := r.Ctx.WithFields(log.Fields{
-		"GatewayEUI": *option.GatewayEui,
-	})
-
-	gateway := r.getGateway(*option.GatewayEui)
 
 	downlinkMessage := &pb.DownlinkMessage{
 		Payload:               downlink.Payload,
@@ -67,15 +63,8 @@ func (r *router) HandleDownlink(downlink *pb_broker.DownlinkMessage) error {
 	if r.Component != nil && r.Component.Identity != nil {
 		identifier = strings.TrimPrefix(option.Identifier, fmt.Sprintf("%s:", r.Component.Identity.Id))
 	}
-	ctx = ctx.WithField("Identifier", identifier)
 
-	err := gateway.Schedule.Schedule(identifier, downlinkMessage)
-	if err != nil {
-		ctx.WithError(err).Warn("Could not schedule Downlink")
-		return err
-	}
-
-	return nil
+	return r.getGateway(downlink.DownlinkOption.GatewayId).HandleDownlink(identifier, downlinkMessage)
 }
 
 func guessRegion(frequency uint64) string {
@@ -105,15 +94,15 @@ func getBand(region string) (band *lora.Band, err error) {
 	case "US_902_928":
 		b, err = lora.GetConfig(lora.US_902_928)
 	case "CN_779_787":
-		err = errors.New("ttn/router: China 779-787 MHz band not supported")
+		err = errors.NewErrInternal("China 779-787 MHz band not supported")
 	case "EU_433":
-		err = errors.New("ttn/router: Europe 433 MHz band not supported")
+		err = errors.NewErrInternal("Europe 433 MHz band not supported")
 	case "AU_915_928":
 		b, err = lora.GetConfig(lora.AU_915_928)
 	case "CN_470_510":
-		err = errors.New("ttn/router: China 470-510 MHz band not supported")
+		err = errors.NewErrInternal("China 470-510 MHz band not supported")
 	default:
-		err = errors.New("ttn/router: Unknown band")
+		err = errors.NewErrInvalidArgument("Frequency Band", "unknown")
 	}
 	if err != nil {
 		return
@@ -161,11 +150,25 @@ func (r *router) buildDownlinkOptions(uplink *pb.UplinkMessage, isActivation boo
 		return // We can't handle this region
 	}
 
-	dr, err := types.ParseDataRate(lorawanMetadata.DataRate)
-	if err != nil {
-		return // Invalid packet, probably won't happen if the gateway is just doing its job
+	var dataRate lora.DataRate
+
+	// LORA Modulation
+	if lorawanMetadata.Modulation == pb_lorawan.Modulation_LORA {
+		dataRate.Modulation = lora.LoRaModulation
+		dr, err := types.ParseDataRate(lorawanMetadata.DataRate)
+		if err != nil {
+			return // Invalid packet, probably won't happen if the gateway is just doing its job
+		}
+		dataRate.Bandwidth = int(dr.Bandwidth)
+		dataRate.SpreadFactor = int(dr.SpreadingFactor)
 	}
-	uplinkDRIndex, err := band.GetDataRate(lora.DataRate{Modulation: lora.LoRaModulation, SpreadFactor: int(dr.SpreadingFactor), Bandwidth: int(dr.Bandwidth)})
+
+	if lorawanMetadata.Modulation == pb_lorawan.Modulation_FSK {
+		dataRate.Modulation = lora.FSKModulation
+		dataRate.BitRate = int(lorawanMetadata.BitRate)
+	}
+
+	uplinkDRIndex, err := band.GetDataRate(dataRate)
 	if err != nil {
 		return // Invalid packet, probably won't happen if the gateway is just doing its job
 	}
@@ -186,9 +189,9 @@ func (r *router) buildDownlinkOptions(uplink *pb.UplinkMessage, isActivation boo
 			delay = band.JoinAcceptDelay2
 		}
 		rx2 := &pb_broker.DownlinkOption{
-			GatewayEui: &gateway.EUI,
+			GatewayId: gateway.ID,
 			ProtocolConfig: &pb_protocol.TxConfiguration{Protocol: &pb_protocol.TxConfiguration_Lorawan{Lorawan: &pb_lorawan.TxConfiguration{
-				Modulation: pb_lorawan.Modulation_LORA, // We only support LoRa
+				Modulation: pb_lorawan.Modulation_LORA, // RX2 is always LoRa
 				DataRate:   dataRate.String(),          // This is default
 				CodingRate: lorawanMetadata.CodingRate, // Let's just take this from the Rx
 			}}},
@@ -205,21 +208,39 @@ func (r *router) buildDownlinkOptions(uplink *pb.UplinkMessage, isActivation boo
 
 	// Configuration for RX1
 	{
-		uplinkChannel, err := band.GetChannel(int(uplink.GatewayMetadata.Frequency), uplinkDRIndex)
+		uplinkChannel, err := band.GetChannel(int(uplink.GatewayMetadata.Frequency), nil)
 		if err == nil {
 			downlinkChannel := band.DownlinkChannels[band.GetRX1Channel(uplinkChannel)]
 			downlinkDRIndex, err := band.GetRX1DataRateForOffset(uplinkDRIndex, 0)
 			if err == nil {
-				dataRate, _ := types.ConvertDataRate(band.DataRates[downlinkDRIndex])
+				var modulation pb_lorawan.Modulation
+				var dataRateString string
+				var bitRate int
+				var frequencyDeviation int
+
+				dr := band.DataRates[downlinkDRIndex]
+				if dr.Modulation == lora.LoRaModulation {
+					modulation = pb_lorawan.Modulation_LORA
+					dataRate, _ := types.ConvertDataRate(dr)
+					dataRateString = dataRate.String()
+				}
+
+				if dr.Modulation == lora.FSKModulation {
+					modulation = pb_lorawan.Modulation_FSK
+					bitRate = dr.BitRate
+					frequencyDeviation = bitRate / 2
+				}
+
 				delay := band.ReceiveDelay1
 				if isActivation {
 					delay = band.JoinAcceptDelay1
 				}
 				rx1 := &pb_broker.DownlinkOption{
-					GatewayEui: &gateway.EUI,
+					GatewayId: gateway.ID,
 					ProtocolConfig: &pb_protocol.TxConfiguration{Protocol: &pb_protocol.TxConfiguration_Lorawan{Lorawan: &pb_lorawan.TxConfiguration{
-						Modulation: pb_lorawan.Modulation_LORA, // We only support LoRa
-						DataRate:   dataRate.String(),          // This is default
+						Modulation: modulation,
+						DataRate:   dataRateString,
+						BitRate:    uint32(bitRate),
 						CodingRate: lorawanMetadata.CodingRate, // Let's just take this from the Rx
 					}}},
 					GatewayConfig: &pb_gateway.TxConfiguration{
@@ -228,6 +249,7 @@ func (r *router) buildDownlinkOptions(uplink *pb.UplinkMessage, isActivation boo
 						PolarizationInversion: true,
 						Frequency:             uint64(downlinkChannel.Frequency),
 						Power:                 int32(band.DefaultTXPower),
+						FrequencyDeviation:    uint32(frequencyDeviation),
 					},
 				}
 				options = append(options, rx1)
@@ -267,12 +289,37 @@ func computeDownlinkScores(gateway *gateway.Gateway, uplink *pb.UplinkMessage, o
 	gatewayRx, _ := gateway.Utilization.Get()
 	for _, option := range options {
 
-		// Calculate max ToA
-		time, _ := toa.Compute(
-			51+13, // Max MACPayload plus LoRaWAN header, TODO: What is the length we should use?
-			option.GetProtocolConfig().GetLorawan().DataRate,
-			option.GetProtocolConfig().GetLorawan().CodingRate,
-		)
+		// Invalid if no LoRaWAN
+		lorawan := option.GetProtocolConfig().GetLorawan()
+		if lorawan == nil {
+			option.Score = 1000
+			continue
+		}
+
+		var time time.Duration
+
+		if lorawan.Modulation == pb_lorawan.Modulation_LORA {
+			// Calculate max ToA
+			time, _ = toa.ComputeLoRa(
+				51+13, // Max MACPayload plus LoRaWAN header, TODO: What is the length we should use?
+				lorawan.DataRate,
+				lorawan.CodingRate,
+			)
+		}
+
+		if lorawan.Modulation == pb_lorawan.Modulation_FSK {
+			// Calculate max ToA
+			time, _ = toa.ComputeFSK(
+				51+13, // Max MACPayload plus LoRaWAN header, TODO: What is the length we should use?
+				int(lorawan.BitRate),
+			)
+		}
+
+		// Invalid if time is zero
+		if time == 0 {
+			option.Score = 1000
+			continue
+		}
 
 		timeScore := math.Min(time.Seconds()*5, 10) // 2 seconds will be 10 (max)
 

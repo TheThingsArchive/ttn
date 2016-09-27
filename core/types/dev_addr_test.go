@@ -84,36 +84,54 @@ func TestDevAddrWithPrefix(t *testing.T) {
 	a := New(t)
 	addr := DevAddr{0xAA, 0xAA, 0xAA, 0xAA}
 	prefix := DevAddr{0x55, 0x55, 0x55, 0x55}
-	a.So(addr.WithPrefix(prefix, 4), ShouldEqual, DevAddr{0x5A, 0xAA, 0xAA, 0xAA})
-	a.So(addr.WithPrefix(prefix, 8), ShouldEqual, DevAddr{0x55, 0xAA, 0xAA, 0xAA})
-	a.So(addr.WithPrefix(prefix, 12), ShouldEqual, DevAddr{0x55, 0x5A, 0xAA, 0xAA})
-	a.So(addr.WithPrefix(prefix, 16), ShouldEqual, DevAddr{0x55, 0x55, 0xAA, 0xAA})
+	a.So(addr.WithPrefix(DevAddrPrefix{prefix, 4}), ShouldEqual, DevAddr{0x5A, 0xAA, 0xAA, 0xAA})
+	a.So(addr.WithPrefix(DevAddrPrefix{prefix, 8}), ShouldEqual, DevAddr{0x55, 0xAA, 0xAA, 0xAA})
+	a.So(addr.WithPrefix(DevAddrPrefix{prefix, 12}), ShouldEqual, DevAddr{0x55, 0x5A, 0xAA, 0xAA})
+	a.So(addr.WithPrefix(DevAddrPrefix{prefix, 16}), ShouldEqual, DevAddr{0x55, 0x55, 0xAA, 0xAA})
 }
 
 func TestDevAddrHasPrefix(t *testing.T) {
 	a := New(t)
 	addr := DevAddr{1, 2, 3, 4}
-	a.So(addr.HasPrefix(DevAddr{0, 0, 0, 0}, 0), ShouldBeTrue)
-	a.So(addr.HasPrefix(DevAddr{1, 2, 3, 0}, 24), ShouldBeTrue)
-	a.So(addr.HasPrefix(DevAddr{2, 2, 3, 4}, 31), ShouldBeFalse)
-	a.So(addr.HasPrefix(DevAddr{1, 1, 3, 4}, 31), ShouldBeFalse)
-	a.So(addr.HasPrefix(DevAddr{1, 1, 1, 1}, 15), ShouldBeFalse)
+	a.So(addr.HasPrefix(DevAddrPrefix{DevAddr{0, 0, 0, 0}, 0}), ShouldBeTrue)
+	a.So(addr.HasPrefix(DevAddrPrefix{DevAddr{1, 2, 3, 0}, 24}), ShouldBeTrue)
+	a.So(addr.HasPrefix(DevAddrPrefix{DevAddr{2, 2, 3, 4}, 31}), ShouldBeFalse)
+	a.So(addr.HasPrefix(DevAddrPrefix{DevAddr{1, 1, 3, 4}, 31}), ShouldBeFalse)
+	a.So(addr.HasPrefix(DevAddrPrefix{DevAddr{1, 1, 1, 1}, 15}), ShouldBeFalse)
 }
 
 func TestParseDevAddrPrefix(t *testing.T) {
 	a := New(t)
-	addr, length, err := ParseDevAddrPrefix("XYZ")
+	prefix, err := ParseDevAddrPrefix("XYZ")
 	a.So(err, ShouldNotBeNil)
-	addr, length, err = ParseDevAddrPrefix("00/bla")
+	prefix, err = ParseDevAddrPrefix("00/bla")
 	a.So(err, ShouldNotBeNil)
-	addr, length, err = ParseDevAddrPrefix("00/1")
+	prefix, err = ParseDevAddrPrefix("00/1")
 	a.So(err, ShouldNotBeNil)
-	addr, length, err = ParseDevAddrPrefix("01020304/1")
+	prefix, err = ParseDevAddrPrefix("01020304/1")
 	a.So(err, ShouldBeNil)
-	a.So(addr, ShouldEqual, DevAddr{0, 0, 0, 0})
-	a.So(length, ShouldEqual, 1)
-	addr, length, err = ParseDevAddrPrefix("ff020304/1")
+	a.So(prefix.DevAddr, ShouldEqual, DevAddr{0, 0, 0, 0})
+	a.So(prefix.Length, ShouldEqual, 1)
+	prefix, err = ParseDevAddrPrefix("ff020304/1")
 	a.So(err, ShouldBeNil)
-	a.So(addr, ShouldEqual, DevAddr{128, 0, 0, 0})
-	a.So(length, ShouldEqual, 1)
+	a.So(prefix.DevAddr, ShouldEqual, DevAddr{128, 0, 0, 0})
+	a.So(prefix.Length, ShouldEqual, 1)
+}
+
+func TestMarshalUnmarshalTextDevAddrPrefix(t *testing.T) {
+	a := New(t)
+	var prefix DevAddrPrefix
+
+	txt, err := prefix.MarshalText()
+	a.So(err, ShouldBeNil)
+	a.So(string(txt), ShouldEqual, "00000000/0")
+
+	err = prefix.UnmarshalText([]byte("ff556677/1"))
+	a.So(err, ShouldBeNil)
+	a.So(prefix.DevAddr, ShouldEqual, DevAddr{128, 0, 0, 0})
+	a.So(prefix.Length, ShouldEqual, 1)
+
+	txt, err = prefix.MarshalText()
+	a.So(err, ShouldBeNil)
+	a.So(string(txt), ShouldEqual, "80000000/1")
 }

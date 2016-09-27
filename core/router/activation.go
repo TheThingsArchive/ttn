@@ -4,7 +4,7 @@
 package router
 
 import (
-	"errors"
+	"fmt"
 	"sync"
 	"time"
 
@@ -12,17 +12,16 @@ import (
 	pb_protocol "github.com/TheThingsNetwork/ttn/api/protocol"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	pb "github.com/TheThingsNetwork/ttn/api/router"
-	"github.com/TheThingsNetwork/ttn/core/types"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/apex/log"
 )
 
-func (r *router) HandleActivation(gatewayEUI types.GatewayEUI, activation *pb.DeviceActivationRequest) (*pb.DeviceActivationResponse, error) {
+func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivationRequest) (res *pb.DeviceActivationResponse, err error) {
 	ctx := r.Ctx.WithFields(log.Fields{
-		"GatewayEUI": gatewayEUI,
-		"AppEUI":     *activation.AppEui,
-		"DevEUI":     *activation.DevEui,
+		"GatewayID": gatewayID,
+		"AppEUI":    *activation.AppEui,
+		"DevEUI":    *activation.DevEui,
 	})
-	var err error
 	start := time.Now()
 	defer func() {
 		if err != nil {
@@ -32,7 +31,7 @@ func (r *router) HandleActivation(gatewayEUI types.GatewayEUI, activation *pb.De
 		}
 	}()
 
-	gateway := r.getGateway(gatewayEUI)
+	gateway := r.getGateway(gatewayID)
 	gateway.LastSeen = time.Now()
 
 	uplink := &pb.UplinkMessage{
@@ -46,13 +45,13 @@ func (r *router) HandleActivation(gatewayEUI types.GatewayEUI, activation *pb.De
 	gateway.Utilization.AddRx(uplink)
 
 	if !gateway.Schedule.IsActive() {
-		return nil, errors.New("Gateway not available for response")
+		return nil, errors.NewErrInternal(fmt.Sprintf("Gateway %s not available for downlink", gatewayID))
 	}
 
 	downlinkOptions := r.buildDownlinkOptions(uplink, true, gateway)
 
 	// Find Broker
-	brokers, err := r.brokerDiscovery.All()
+	brokers, err := r.Discovery.GetAll("broker")
 	if err != nil {
 		return nil, err
 	}
@@ -146,7 +145,7 @@ func (r *router) HandleActivation(gatewayEUI types.GatewayEUI, activation *pb.De
 	// Activation not accepted by any broker
 	if !gotFirst {
 		ctx.Debug("Activation not accepted at this gateway")
-		return nil, errors.New("ttn/router: Activation not accepted at this Gateway")
+		return nil, errors.New("Activation not accepted at this Gateway")
 	}
 
 	// Activation accepted by (at least one) broker

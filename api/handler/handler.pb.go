@@ -17,13 +17,17 @@
 		DeviceIdentifier
 		Device
 		DeviceList
+		DryDownlinkMessage
+		DryUplinkMessage
+		DryUplinkResult
+		DryDownlinkResult
 */
 package handler
 
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import api "github.com/TheThingsNetwork/ttn/api"
+import google_protobuf "github.com/golang/protobuf/ptypes/empty"
 import broker "github.com/TheThingsNetwork/ttn/api/broker"
 import protocol "github.com/TheThingsNetwork/ttn/api/protocol"
 import lorawan1 "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
@@ -232,6 +236,61 @@ func (m *DeviceList) GetDevices() []*Device {
 	return nil
 }
 
+type DryDownlinkMessage struct {
+	Payload []byte       `protobuf:"bytes,1,opt,name=payload,proto3" json:"payload,omitempty"`
+	Fields  string       `protobuf:"bytes,2,opt,name=fields,proto3" json:"fields,omitempty"`
+	App     *Application `protobuf:"bytes,3,opt,name=app" json:"app,omitempty"`
+}
+
+func (m *DryDownlinkMessage) Reset()                    { *m = DryDownlinkMessage{} }
+func (m *DryDownlinkMessage) String() string            { return proto.CompactTextString(m) }
+func (*DryDownlinkMessage) ProtoMessage()               {}
+func (*DryDownlinkMessage) Descriptor() ([]byte, []int) { return fileDescriptorHandler, []int{8} }
+
+func (m *DryDownlinkMessage) GetApp() *Application {
+	if m != nil {
+		return m.App
+	}
+	return nil
+}
+
+type DryUplinkMessage struct {
+	Payload []byte       `protobuf:"bytes,1,opt,name=payload,proto3" json:"payload,omitempty"`
+	App     *Application `protobuf:"bytes,2,opt,name=app" json:"app,omitempty"`
+}
+
+func (m *DryUplinkMessage) Reset()                    { *m = DryUplinkMessage{} }
+func (m *DryUplinkMessage) String() string            { return proto.CompactTextString(m) }
+func (*DryUplinkMessage) ProtoMessage()               {}
+func (*DryUplinkMessage) Descriptor() ([]byte, []int) { return fileDescriptorHandler, []int{9} }
+
+func (m *DryUplinkMessage) GetApp() *Application {
+	if m != nil {
+		return m.App
+	}
+	return nil
+}
+
+type DryUplinkResult struct {
+	Payload []byte `protobuf:"bytes,1,opt,name=payload,proto3" json:"payload,omitempty"`
+	Fields  string `protobuf:"bytes,2,opt,name=fields,proto3" json:"fields,omitempty"`
+	Valid   bool   `protobuf:"varint,3,opt,name=valid,proto3" json:"valid,omitempty"`
+}
+
+func (m *DryUplinkResult) Reset()                    { *m = DryUplinkResult{} }
+func (m *DryUplinkResult) String() string            { return proto.CompactTextString(m) }
+func (*DryUplinkResult) ProtoMessage()               {}
+func (*DryUplinkResult) Descriptor() ([]byte, []int) { return fileDescriptorHandler, []int{10} }
+
+type DryDownlinkResult struct {
+	Payload []byte `protobuf:"bytes,1,opt,name=payload,proto3" json:"payload,omitempty"`
+}
+
+func (m *DryDownlinkResult) Reset()                    { *m = DryDownlinkResult{} }
+func (m *DryDownlinkResult) String() string            { return proto.CompactTextString(m) }
+func (*DryDownlinkResult) ProtoMessage()               {}
+func (*DryDownlinkResult) Descriptor() ([]byte, []int) { return fileDescriptorHandler, []int{11} }
+
 func init() {
 	proto.RegisterType((*DeviceActivationResponse)(nil), "handler.DeviceActivationResponse")
 	proto.RegisterType((*StatusRequest)(nil), "handler.StatusRequest")
@@ -241,6 +300,10 @@ func init() {
 	proto.RegisterType((*DeviceIdentifier)(nil), "handler.DeviceIdentifier")
 	proto.RegisterType((*Device)(nil), "handler.Device")
 	proto.RegisterType((*DeviceList)(nil), "handler.DeviceList")
+	proto.RegisterType((*DryDownlinkMessage)(nil), "handler.DryDownlinkMessage")
+	proto.RegisterType((*DryUplinkMessage)(nil), "handler.DryUplinkMessage")
+	proto.RegisterType((*DryUplinkResult)(nil), "handler.DryUplinkResult")
+	proto.RegisterType((*DryDownlinkResult)(nil), "handler.DryDownlinkResult")
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -254,6 +317,7 @@ const _ = grpc.SupportPackageIsVersion3
 // Client API for Handler service
 
 type HandlerClient interface {
+	ActivationChallenge(ctx context.Context, in *broker.ActivationChallengeRequest, opts ...grpc.CallOption) (*broker.ActivationChallengeResponse, error)
 	Activate(ctx context.Context, in *broker.DeduplicatedDeviceActivationRequest, opts ...grpc.CallOption) (*DeviceActivationResponse, error)
 }
 
@@ -263,6 +327,15 @@ type handlerClient struct {
 
 func NewHandlerClient(cc *grpc.ClientConn) HandlerClient {
 	return &handlerClient{cc}
+}
+
+func (c *handlerClient) ActivationChallenge(ctx context.Context, in *broker.ActivationChallengeRequest, opts ...grpc.CallOption) (*broker.ActivationChallengeResponse, error) {
+	out := new(broker.ActivationChallengeResponse)
+	err := grpc.Invoke(ctx, "/handler.Handler/ActivationChallenge", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *handlerClient) Activate(ctx context.Context, in *broker.DeduplicatedDeviceActivationRequest, opts ...grpc.CallOption) (*DeviceActivationResponse, error) {
@@ -277,11 +350,30 @@ func (c *handlerClient) Activate(ctx context.Context, in *broker.DeduplicatedDev
 // Server API for Handler service
 
 type HandlerServer interface {
+	ActivationChallenge(context.Context, *broker.ActivationChallengeRequest) (*broker.ActivationChallengeResponse, error)
 	Activate(context.Context, *broker.DeduplicatedDeviceActivationRequest) (*DeviceActivationResponse, error)
 }
 
 func RegisterHandlerServer(s *grpc.Server, srv HandlerServer) {
 	s.RegisterService(&_Handler_serviceDesc, srv)
+}
+
+func _Handler_ActivationChallenge_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(broker.ActivationChallengeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(HandlerServer).ActivationChallenge(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/handler.Handler/ActivationChallenge",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(HandlerServer).ActivationChallenge(ctx, req.(*broker.ActivationChallengeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _Handler_Activate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -307,6 +399,10 @@ var _Handler_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*HandlerServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
+			MethodName: "ActivationChallenge",
+			Handler:    _Handler_ActivationChallenge_Handler,
+		},
+		{
 			MethodName: "Activate",
 			Handler:    _Handler_Activate_Handler,
 		},
@@ -318,14 +414,16 @@ var _Handler_serviceDesc = grpc.ServiceDesc{
 // Client API for ApplicationManager service
 
 type ApplicationManagerClient interface {
-	RegisterApplication(ctx context.Context, in *ApplicationIdentifier, opts ...grpc.CallOption) (*api.Ack, error)
+	RegisterApplication(ctx context.Context, in *ApplicationIdentifier, opts ...grpc.CallOption) (*google_protobuf.Empty, error)
 	GetApplication(ctx context.Context, in *ApplicationIdentifier, opts ...grpc.CallOption) (*Application, error)
-	SetApplication(ctx context.Context, in *Application, opts ...grpc.CallOption) (*api.Ack, error)
-	DeleteApplication(ctx context.Context, in *ApplicationIdentifier, opts ...grpc.CallOption) (*api.Ack, error)
+	SetApplication(ctx context.Context, in *Application, opts ...grpc.CallOption) (*google_protobuf.Empty, error)
+	DeleteApplication(ctx context.Context, in *ApplicationIdentifier, opts ...grpc.CallOption) (*google_protobuf.Empty, error)
 	GetDevice(ctx context.Context, in *DeviceIdentifier, opts ...grpc.CallOption) (*Device, error)
-	SetDevice(ctx context.Context, in *Device, opts ...grpc.CallOption) (*api.Ack, error)
-	DeleteDevice(ctx context.Context, in *DeviceIdentifier, opts ...grpc.CallOption) (*api.Ack, error)
+	SetDevice(ctx context.Context, in *Device, opts ...grpc.CallOption) (*google_protobuf.Empty, error)
+	DeleteDevice(ctx context.Context, in *DeviceIdentifier, opts ...grpc.CallOption) (*google_protobuf.Empty, error)
 	GetDevicesForApplication(ctx context.Context, in *ApplicationIdentifier, opts ...grpc.CallOption) (*DeviceList, error)
+	DryDownlink(ctx context.Context, in *DryDownlinkMessage, opts ...grpc.CallOption) (*DryDownlinkResult, error)
+	DryUplink(ctx context.Context, in *DryUplinkMessage, opts ...grpc.CallOption) (*DryUplinkResult, error)
 }
 
 type applicationManagerClient struct {
@@ -336,8 +434,8 @@ func NewApplicationManagerClient(cc *grpc.ClientConn) ApplicationManagerClient {
 	return &applicationManagerClient{cc}
 }
 
-func (c *applicationManagerClient) RegisterApplication(ctx context.Context, in *ApplicationIdentifier, opts ...grpc.CallOption) (*api.Ack, error) {
-	out := new(api.Ack)
+func (c *applicationManagerClient) RegisterApplication(ctx context.Context, in *ApplicationIdentifier, opts ...grpc.CallOption) (*google_protobuf.Empty, error) {
+	out := new(google_protobuf.Empty)
 	err := grpc.Invoke(ctx, "/handler.ApplicationManager/RegisterApplication", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
@@ -354,8 +452,8 @@ func (c *applicationManagerClient) GetApplication(ctx context.Context, in *Appli
 	return out, nil
 }
 
-func (c *applicationManagerClient) SetApplication(ctx context.Context, in *Application, opts ...grpc.CallOption) (*api.Ack, error) {
-	out := new(api.Ack)
+func (c *applicationManagerClient) SetApplication(ctx context.Context, in *Application, opts ...grpc.CallOption) (*google_protobuf.Empty, error) {
+	out := new(google_protobuf.Empty)
 	err := grpc.Invoke(ctx, "/handler.ApplicationManager/SetApplication", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
@@ -363,8 +461,8 @@ func (c *applicationManagerClient) SetApplication(ctx context.Context, in *Appli
 	return out, nil
 }
 
-func (c *applicationManagerClient) DeleteApplication(ctx context.Context, in *ApplicationIdentifier, opts ...grpc.CallOption) (*api.Ack, error) {
-	out := new(api.Ack)
+func (c *applicationManagerClient) DeleteApplication(ctx context.Context, in *ApplicationIdentifier, opts ...grpc.CallOption) (*google_protobuf.Empty, error) {
+	out := new(google_protobuf.Empty)
 	err := grpc.Invoke(ctx, "/handler.ApplicationManager/DeleteApplication", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
@@ -381,8 +479,8 @@ func (c *applicationManagerClient) GetDevice(ctx context.Context, in *DeviceIden
 	return out, nil
 }
 
-func (c *applicationManagerClient) SetDevice(ctx context.Context, in *Device, opts ...grpc.CallOption) (*api.Ack, error) {
-	out := new(api.Ack)
+func (c *applicationManagerClient) SetDevice(ctx context.Context, in *Device, opts ...grpc.CallOption) (*google_protobuf.Empty, error) {
+	out := new(google_protobuf.Empty)
 	err := grpc.Invoke(ctx, "/handler.ApplicationManager/SetDevice", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
@@ -390,8 +488,8 @@ func (c *applicationManagerClient) SetDevice(ctx context.Context, in *Device, op
 	return out, nil
 }
 
-func (c *applicationManagerClient) DeleteDevice(ctx context.Context, in *DeviceIdentifier, opts ...grpc.CallOption) (*api.Ack, error) {
-	out := new(api.Ack)
+func (c *applicationManagerClient) DeleteDevice(ctx context.Context, in *DeviceIdentifier, opts ...grpc.CallOption) (*google_protobuf.Empty, error) {
+	out := new(google_protobuf.Empty)
 	err := grpc.Invoke(ctx, "/handler.ApplicationManager/DeleteDevice", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
@@ -408,17 +506,37 @@ func (c *applicationManagerClient) GetDevicesForApplication(ctx context.Context,
 	return out, nil
 }
 
+func (c *applicationManagerClient) DryDownlink(ctx context.Context, in *DryDownlinkMessage, opts ...grpc.CallOption) (*DryDownlinkResult, error) {
+	out := new(DryDownlinkResult)
+	err := grpc.Invoke(ctx, "/handler.ApplicationManager/DryDownlink", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *applicationManagerClient) DryUplink(ctx context.Context, in *DryUplinkMessage, opts ...grpc.CallOption) (*DryUplinkResult, error) {
+	out := new(DryUplinkResult)
+	err := grpc.Invoke(ctx, "/handler.ApplicationManager/DryUplink", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // Server API for ApplicationManager service
 
 type ApplicationManagerServer interface {
-	RegisterApplication(context.Context, *ApplicationIdentifier) (*api.Ack, error)
+	RegisterApplication(context.Context, *ApplicationIdentifier) (*google_protobuf.Empty, error)
 	GetApplication(context.Context, *ApplicationIdentifier) (*Application, error)
-	SetApplication(context.Context, *Application) (*api.Ack, error)
-	DeleteApplication(context.Context, *ApplicationIdentifier) (*api.Ack, error)
+	SetApplication(context.Context, *Application) (*google_protobuf.Empty, error)
+	DeleteApplication(context.Context, *ApplicationIdentifier) (*google_protobuf.Empty, error)
 	GetDevice(context.Context, *DeviceIdentifier) (*Device, error)
-	SetDevice(context.Context, *Device) (*api.Ack, error)
-	DeleteDevice(context.Context, *DeviceIdentifier) (*api.Ack, error)
+	SetDevice(context.Context, *Device) (*google_protobuf.Empty, error)
+	DeleteDevice(context.Context, *DeviceIdentifier) (*google_protobuf.Empty, error)
 	GetDevicesForApplication(context.Context, *ApplicationIdentifier) (*DeviceList, error)
+	DryDownlink(context.Context, *DryDownlinkMessage) (*DryDownlinkResult, error)
+	DryUplink(context.Context, *DryUplinkMessage) (*DryUplinkResult, error)
 }
 
 func RegisterApplicationManagerServer(s *grpc.Server, srv ApplicationManagerServer) {
@@ -569,6 +687,42 @@ func _ApplicationManager_GetDevicesForApplication_Handler(srv interface{}, ctx c
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ApplicationManager_DryDownlink_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DryDownlinkMessage)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApplicationManagerServer).DryDownlink(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/handler.ApplicationManager/DryDownlink",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApplicationManagerServer).DryDownlink(ctx, req.(*DryDownlinkMessage))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ApplicationManager_DryUplink_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DryUplinkMessage)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApplicationManagerServer).DryUplink(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/handler.ApplicationManager/DryUplink",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApplicationManagerServer).DryUplink(ctx, req.(*DryUplinkMessage))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _ApplicationManager_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "handler.ApplicationManager",
 	HandlerType: (*ApplicationManagerServer)(nil),
@@ -604,6 +758,14 @@ var _ApplicationManager_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetDevicesForApplication",
 			Handler:    _ApplicationManager_GetDevicesForApplication_Handler,
+		},
+		{
+			MethodName: "DryDownlink",
+			Handler:    _ApplicationManager_DryDownlink_Handler,
+		},
+		{
+			MethodName: "DryUplink",
+			Handler:    _ApplicationManager_DryUplink_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -945,6 +1107,144 @@ func (m *DeviceList) MarshalTo(data []byte) (int, error) {
 	return i, nil
 }
 
+func (m *DryDownlinkMessage) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *DryDownlinkMessage) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if len(m.Payload) > 0 {
+		data[i] = 0xa
+		i++
+		i = encodeVarintHandler(data, i, uint64(len(m.Payload)))
+		i += copy(data[i:], m.Payload)
+	}
+	if len(m.Fields) > 0 {
+		data[i] = 0x12
+		i++
+		i = encodeVarintHandler(data, i, uint64(len(m.Fields)))
+		i += copy(data[i:], m.Fields)
+	}
+	if m.App != nil {
+		data[i] = 0x1a
+		i++
+		i = encodeVarintHandler(data, i, uint64(m.App.Size()))
+		n5, err := m.App.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n5
+	}
+	return i, nil
+}
+
+func (m *DryUplinkMessage) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *DryUplinkMessage) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if len(m.Payload) > 0 {
+		data[i] = 0xa
+		i++
+		i = encodeVarintHandler(data, i, uint64(len(m.Payload)))
+		i += copy(data[i:], m.Payload)
+	}
+	if m.App != nil {
+		data[i] = 0x12
+		i++
+		i = encodeVarintHandler(data, i, uint64(m.App.Size()))
+		n6, err := m.App.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n6
+	}
+	return i, nil
+}
+
+func (m *DryUplinkResult) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *DryUplinkResult) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if len(m.Payload) > 0 {
+		data[i] = 0xa
+		i++
+		i = encodeVarintHandler(data, i, uint64(len(m.Payload)))
+		i += copy(data[i:], m.Payload)
+	}
+	if len(m.Fields) > 0 {
+		data[i] = 0x12
+		i++
+		i = encodeVarintHandler(data, i, uint64(len(m.Fields)))
+		i += copy(data[i:], m.Fields)
+	}
+	if m.Valid {
+		data[i] = 0x18
+		i++
+		if m.Valid {
+			data[i] = 1
+		} else {
+			data[i] = 0
+		}
+		i++
+	}
+	return i, nil
+}
+
+func (m *DryDownlinkResult) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *DryDownlinkResult) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if len(m.Payload) > 0 {
+		data[i] = 0xa
+		i++
+		i = encodeVarintHandler(data, i, uint64(len(m.Payload)))
+		i += copy(data[i:], m.Payload)
+	}
+	return i, nil
+}
+
 func encodeFixed64Handler(data []byte, offset int, v uint64) int {
 	data[offset] = uint8(v)
 	data[offset+1] = uint8(v >> 8)
@@ -1090,6 +1390,65 @@ func (m *DeviceList) Size() (n int) {
 			l = e.Size()
 			n += 1 + l + sovHandler(uint64(l))
 		}
+	}
+	return n
+}
+
+func (m *DryDownlinkMessage) Size() (n int) {
+	var l int
+	_ = l
+	l = len(m.Payload)
+	if l > 0 {
+		n += 1 + l + sovHandler(uint64(l))
+	}
+	l = len(m.Fields)
+	if l > 0 {
+		n += 1 + l + sovHandler(uint64(l))
+	}
+	if m.App != nil {
+		l = m.App.Size()
+		n += 1 + l + sovHandler(uint64(l))
+	}
+	return n
+}
+
+func (m *DryUplinkMessage) Size() (n int) {
+	var l int
+	_ = l
+	l = len(m.Payload)
+	if l > 0 {
+		n += 1 + l + sovHandler(uint64(l))
+	}
+	if m.App != nil {
+		l = m.App.Size()
+		n += 1 + l + sovHandler(uint64(l))
+	}
+	return n
+}
+
+func (m *DryUplinkResult) Size() (n int) {
+	var l int
+	_ = l
+	l = len(m.Payload)
+	if l > 0 {
+		n += 1 + l + sovHandler(uint64(l))
+	}
+	l = len(m.Fields)
+	if l > 0 {
+		n += 1 + l + sovHandler(uint64(l))
+	}
+	if m.Valid {
+		n += 2
+	}
+	return n
+}
+
+func (m *DryDownlinkResult) Size() (n int) {
+	var l int
+	_ = l
+	l = len(m.Payload)
+	if l > 0 {
+		n += 1 + l + sovHandler(uint64(l))
 	}
 	return n
 }
@@ -1986,6 +2345,474 @@ func (m *DeviceList) Unmarshal(data []byte) error {
 	}
 	return nil
 }
+func (m *DryDownlinkMessage) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowHandler
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DryDownlinkMessage: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DryDownlinkMessage: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Payload", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandler
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthHandler
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Payload = append(m.Payload[:0], data[iNdEx:postIndex]...)
+			if m.Payload == nil {
+				m.Payload = []byte{}
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Fields", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandler
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthHandler
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Fields = string(data[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field App", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandler
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthHandler
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.App == nil {
+				m.App = &Application{}
+			}
+			if err := m.App.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipHandler(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthHandler
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *DryUplinkMessage) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowHandler
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DryUplinkMessage: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DryUplinkMessage: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Payload", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandler
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthHandler
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Payload = append(m.Payload[:0], data[iNdEx:postIndex]...)
+			if m.Payload == nil {
+				m.Payload = []byte{}
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field App", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandler
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthHandler
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.App == nil {
+				m.App = &Application{}
+			}
+			if err := m.App.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipHandler(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthHandler
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *DryUplinkResult) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowHandler
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DryUplinkResult: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DryUplinkResult: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Payload", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandler
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthHandler
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Payload = append(m.Payload[:0], data[iNdEx:postIndex]...)
+			if m.Payload == nil {
+				m.Payload = []byte{}
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Fields", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandler
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthHandler
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Fields = string(data[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Valid", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandler
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				v |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Valid = bool(v != 0)
+		default:
+			iNdEx = preIndex
+			skippy, err := skipHandler(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthHandler
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *DryDownlinkResult) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowHandler
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DryDownlinkResult: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DryDownlinkResult: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Payload", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandler
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthHandler
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Payload = append(m.Payload[:0], data[iNdEx:postIndex]...)
+			if m.Payload == nil {
+				m.Payload = []byte{}
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipHandler(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthHandler
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func skipHandler(data []byte) (n int, err error) {
 	l := len(data)
 	iNdEx := 0
@@ -2096,46 +2923,57 @@ func init() {
 }
 
 var fileDescriptorHandler = []byte{
-	// 655 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x9c, 0x54, 0x51, 0x4f, 0x13, 0x41,
-	0x10, 0xa6, 0x22, 0xa5, 0x9d, 0x42, 0xc1, 0x45, 0xf0, 0x6c, 0x08, 0xd1, 0x7b, 0x30, 0x1a, 0xe3,
-	0xd5, 0x14, 0x13, 0x34, 0xc6, 0x60, 0x09, 0x41, 0x48, 0x44, 0x92, 0x83, 0x27, 0x5f, 0x9a, 0xe5,
-	0x76, 0x6c, 0x37, 0x3d, 0x6e, 0xcf, 0xbb, 0x6d, 0x89, 0xfe, 0x0e, 0x1f, 0xfc, 0x49, 0x3e, 0xfa,
-	0xee, 0x8b, 0xd1, 0xdf, 0xe0, 0xbb, 0x7b, 0xbb, 0xdb, 0xe3, 0x28, 0x18, 0xa8, 0x0f, 0x97, 0xbb,
-	0x99, 0x6f, 0xbe, 0x6f, 0x66, 0x76, 0xe6, 0x16, 0x5e, 0x74, 0xb9, 0xec, 0x0d, 0x8e, 0xbd, 0x40,
-	0x9c, 0x34, 0x8f, 0x7a, 0x78, 0xd4, 0xe3, 0x51, 0x37, 0x7d, 0x87, 0xf2, 0x54, 0x24, 0xfd, 0xa6,
-	0x94, 0x51, 0x93, 0xc6, 0xbc, 0xd9, 0xa3, 0x11, 0x0b, 0x31, 0x19, 0xbd, 0xbd, 0x38, 0x11, 0x52,
-	0x90, 0x59, 0x6b, 0x36, 0x9e, 0x5c, 0x47, 0x43, 0x3d, 0x86, 0xd7, 0xd8, 0xb8, 0x4e, 0xf8, 0x71,
-	0x22, 0xfa, 0x2a, 0xa3, 0x79, 0x59, 0xe2, 0xcb, 0xeb, 0x10, 0x75, 0x68, 0x20, 0xc2, 0xfc, 0xc3,
-	0x92, 0xdb, 0x13, 0x91, 0x43, 0x91, 0xd0, 0x53, 0x1a, 0x35, 0x19, 0x0e, 0x79, 0x80, 0x46, 0xc2,
-	0xfd, 0x51, 0x02, 0x67, 0x5b, 0x3b, 0xda, 0x81, 0xe4, 0x43, 0x2a, 0xb9, 0x88, 0x7c, 0x4c, 0x63,
-	0x11, 0xa5, 0x48, 0x1c, 0x98, 0x8d, 0xe9, 0xa7, 0x50, 0x50, 0xe6, 0x94, 0xee, 0x95, 0x1e, 0xce,
-	0xf9, 0x23, 0x93, 0x2c, 0x43, 0x99, 0xc6, 0x71, 0x87, 0x33, 0xe7, 0x86, 0x02, 0xaa, 0xfe, 0x8c,
-	0xb2, 0xf6, 0x18, 0xd9, 0x84, 0x05, 0x26, 0x4e, 0xa3, 0x90, 0x47, 0xfd, 0x8e, 0x88, 0x33, 0x2d,
-	0xa7, 0xa6, 0xf0, 0x5a, 0x6b, 0xc5, 0xb3, 0x5d, 0x6f, 0x5b, 0xf8, 0x40, 0xa3, 0x7e, 0x9d, 0x9d,
-	0xb3, 0xc9, 0x3e, 0x2c, 0xd1, 0xbc, 0x8e, 0xce, 0x09, 0x4a, 0xca, 0xa8, 0xa4, 0xce, 0x1d, 0x2d,
-	0xb2, 0xea, 0xe5, 0xfd, 0x9f, 0x15, 0xbb, 0x6f, 0x63, 0x7c, 0x42, 0x2f, 0xf8, 0xdc, 0x05, 0x98,
-	0x3f, 0x94, 0x54, 0x0e, 0x52, 0x1f, 0x3f, 0x0e, 0x30, 0x95, 0x6e, 0x05, 0xca, 0xc6, 0xe1, 0x7a,
-	0xb0, 0xdc, 0x8e, 0xe3, 0x90, 0x07, 0x9a, 0xb1, 0xc7, 0x30, 0x92, 0xfc, 0x03, 0xc7, 0xa4, 0xd0,
-	0x5a, 0xa9, 0xd0, 0x9a, 0xfb, 0xa5, 0x04, 0xb5, 0x02, 0xe1, 0x1f, 0x61, 0xd9, 0x91, 0x31, 0x0c,
-	0x04, 0xc3, 0xc4, 0x9e, 0xcc, 0xc8, 0x24, 0xab, 0x50, 0x0d, 0x44, 0x34, 0xc4, 0x44, 0x2a, 0x6c,
-	0x5a, 0x63, 0x67, 0x8e, 0x0c, 0x1d, 0xd2, 0x90, 0xab, 0xaa, 0x45, 0xe2, 0xdc, 0x34, 0x68, 0xee,
-	0xc8, 0x54, 0x31, 0x32, 0xaa, 0x33, 0x46, 0xd5, 0x9a, 0xee, 0x6b, 0x58, 0x34, 0xe3, 0xbb, 0xb2,
-	0x83, 0xcc, 0xad, 0x46, 0x5f, 0x98, 0x99, 0xb2, 0x54, 0x63, 0x9f, 0xa1, 0x6c, 0x14, 0x26, 0xe3,
-	0x91, 0xe7, 0x50, 0xb7, 0x1b, 0xd5, 0x31, 0x1b, 0xa5, 0x9b, 0xaa, 0xb5, 0x16, 0x3c, 0xeb, 0xf6,
-	0x8c, 0xec, 0xee, 0x94, 0x3f, 0x6f, 0x3d, 0xc6, 0xb1, 0x55, 0xd1, 0x82, 0xea, 0xcb, 0xdd, 0x00,
-	0x30, 0xbe, 0xb7, 0x3c, 0x95, 0xe4, 0x51, 0x76, 0x76, 0x99, 0x95, 0xaa, 0x02, 0xa6, 0xb5, 0xd4,
-	0xe8, 0xef, 0x34, 0x51, 0xfe, 0x08, 0x6f, 0x21, 0xcc, 0xee, 0x1a, 0x88, 0xbc, 0x87, 0x8a, 0xdd,
-	0x06, 0x24, 0x8f, 0xf3, 0x35, 0x43, 0x36, 0x30, 0xb3, 0x42, 0x76, 0x71, 0xbd, 0xf5, 0x2e, 0x34,
-	0xee, 0x8f, 0xa9, 0x5f, 0xfc, 0x01, 0x5a, 0x7f, 0xa6, 0x81, 0x14, 0x86, 0xbe, 0x4f, 0x23, 0xda,
-	0x55, 0x29, 0x37, 0x61, 0xc9, 0xc7, 0xae, 0x2a, 0x19, 0x93, 0xe2, 0x4a, 0xac, 0xe5, 0x82, 0x97,
-	0x6e, 0x56, 0xa3, 0xe2, 0x65, 0x17, 0x46, 0x3b, 0xe8, 0x93, 0x1d, 0xa8, 0xbf, 0x41, 0x39, 0x09,
-	0xf7, 0xf6, 0x65, 0x38, 0x79, 0x0a, 0xf5, 0xc3, 0xf3, 0x3a, 0x97, 0xc6, 0x15, 0x32, 0xbf, 0x82,
-	0x5b, 0xdb, 0x18, 0xa2, 0xc4, 0xff, 0x2b, 0x7c, 0x03, 0xaa, 0xaa, 0x70, 0xbb, 0x2f, 0x77, 0xc7,
-	0x0e, 0xb0, 0xc0, 0x18, 0x9f, 0x1c, 0x79, 0x00, 0xd5, 0xc3, 0x9c, 0x38, 0x8e, 0x16, 0x12, 0xac,
-	0xc3, 0x9c, 0xa9, 0xef, 0xea, 0x1c, 0x67, 0xa4, 0x03, 0x70, 0xf2, 0xaa, 0xd2, 0x1d, 0x31, 0xd1,
-	0x50, 0x96, 0xc6, 0x12, 0x64, 0x9b, 0xd8, 0x52, 0xf3, 0xb1, 0xeb, 0x35, 0x1a, 0xf9, 0x33, 0xdd,
-	0xb8, 0xb9, 0x3b, 0xc8, 0x4a, 0xce, 0x39, 0x77, 0xbb, 0x14, 0xba, 0x36, 0xfe, 0xad, 0xc5, 0x6f,
-	0xbf, 0xd6, 0x4a, 0xdf, 0xd5, 0xf3, 0x53, 0x3d, 0x5f, 0x7f, 0xaf, 0x4d, 0x1d, 0x97, 0xf5, 0x15,
-	0xb6, 0xfe, 0x37, 0x00, 0x00, 0xff, 0xff, 0xf7, 0x57, 0xba, 0xac, 0xa4, 0x06, 0x00, 0x00,
+	// 827 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xac, 0x55, 0x5d, 0x6f, 0xdb, 0x54,
+	0x18, 0x9e, 0x57, 0x9a, 0x36, 0x6f, 0xb6, 0xa4, 0x3b, 0xdd, 0x82, 0xc9, 0xa6, 0x28, 0x18, 0x09,
+	0x15, 0x21, 0x1c, 0x29, 0x4c, 0x2a, 0x08, 0x09, 0x96, 0x11, 0xb2, 0x55, 0x10, 0x26, 0xb9, 0xe5,
+	0x02, 0x2e, 0x88, 0x4e, 0x7c, 0xde, 0x3a, 0x47, 0x75, 0x7d, 0x8c, 0x7d, 0x92, 0x2a, 0xfc, 0x0e,
+	0x2e, 0xf8, 0x43, 0x93, 0xb8, 0xe4, 0x9e, 0x1b, 0x54, 0xfe, 0x08, 0xb2, 0xcf, 0xb1, 0xe3, 0xe6,
+	0xa3, 0x69, 0x10, 0x57, 0xc9, 0xfb, 0xf5, 0x9c, 0xf7, 0xf3, 0x31, 0x7c, 0xee, 0x71, 0x39, 0x9e,
+	0x8c, 0x6c, 0x57, 0x5c, 0xb6, 0xcf, 0xc6, 0x78, 0x36, 0xe6, 0x81, 0x17, 0x7f, 0x8f, 0xf2, 0x4a,
+	0x44, 0x17, 0x6d, 0x29, 0x83, 0x36, 0x0d, 0x79, 0x7b, 0x4c, 0x03, 0xe6, 0x63, 0x94, 0xfd, 0xda,
+	0x61, 0x24, 0xa4, 0x20, 0x7b, 0x5a, 0x6c, 0x3c, 0xf5, 0x84, 0xf0, 0x7c, 0x6c, 0xa7, 0xea, 0xd1,
+	0xe4, 0xbc, 0x8d, 0x97, 0xa1, 0x9c, 0x29, 0xaf, 0xc6, 0xf1, 0x5d, 0x1e, 0x18, 0x45, 0xe2, 0x02,
+	0x23, 0xfd, 0xa3, 0x03, 0xbf, 0xb8, 0x4b, 0x60, 0xea, 0xea, 0x0a, 0x3f, 0xff, 0xa3, 0x83, 0xbb,
+	0x5b, 0x05, 0xfb, 0x22, 0xa2, 0x57, 0x34, 0x68, 0x33, 0x9c, 0x72, 0x17, 0x15, 0x84, 0xf5, 0x97,
+	0x01, 0x66, 0x2f, 0x55, 0x74, 0x5d, 0xc9, 0xa7, 0x54, 0x72, 0x11, 0x38, 0x18, 0x87, 0x22, 0x88,
+	0x91, 0x98, 0xb0, 0x17, 0xd2, 0x99, 0x2f, 0x28, 0x33, 0x8d, 0x96, 0x71, 0xf4, 0xc0, 0xc9, 0x44,
+	0xf2, 0x04, 0x4a, 0x34, 0x0c, 0x87, 0x9c, 0x99, 0xf7, 0x5b, 0xc6, 0x51, 0xd9, 0xd9, 0xa5, 0x61,
+	0x78, 0xc2, 0xc8, 0x57, 0x50, 0x63, 0xe2, 0x2a, 0xf0, 0x79, 0x70, 0x31, 0x14, 0x61, 0x82, 0x65,
+	0x56, 0x5a, 0xc6, 0x51, 0xa5, 0x53, 0xb7, 0x75, 0xd5, 0x3d, 0x6d, 0x7e, 0x93, 0x5a, 0x9d, 0x2a,
+	0xbb, 0x21, 0x93, 0x01, 0x1c, 0xd2, 0x3c, 0x8f, 0xe1, 0x25, 0x4a, 0xca, 0xa8, 0xa4, 0xe6, 0xbb,
+	0x29, 0xc8, 0x33, 0x3b, 0xaf, 0x7f, 0x9e, 0xec, 0x40, 0xfb, 0x38, 0x84, 0x2e, 0xe9, 0xac, 0x1a,
+	0x3c, 0x3c, 0x95, 0x54, 0x4e, 0x62, 0x07, 0x7f, 0x99, 0x60, 0x2c, 0xad, 0x7d, 0x28, 0x29, 0x85,
+	0x65, 0xc3, 0x93, 0x6e, 0x18, 0xfa, 0xdc, 0x4d, 0x23, 0x4e, 0x18, 0x06, 0x92, 0x9f, 0x73, 0x8c,
+	0x0a, 0xa5, 0x19, 0x85, 0xd2, 0xac, 0xdf, 0x0c, 0xa8, 0x14, 0x02, 0xd6, 0xb8, 0x25, 0x2d, 0x63,
+	0xe8, 0x0a, 0x86, 0x91, 0xee, 0x4c, 0x26, 0x92, 0x67, 0x50, 0x76, 0x45, 0x30, 0xc5, 0x48, 0x62,
+	0x64, 0xee, 0xa4, 0xb6, 0xb9, 0x22, 0xb1, 0x4e, 0xa9, 0xcf, 0x19, 0x95, 0x22, 0x32, 0xdf, 0x51,
+	0xd6, 0x5c, 0x91, 0xa0, 0x62, 0xa0, 0x50, 0x77, 0x15, 0xaa, 0x16, 0xad, 0x17, 0x70, 0xa0, 0xc6,
+	0xb7, 0xb1, 0x82, 0x44, 0xcd, 0x70, 0x5a, 0x98, 0x19, 0xc3, 0xe9, 0x09, 0xb3, 0x7e, 0x85, 0x92,
+	0x42, 0xd8, 0x2e, 0x8e, 0x7c, 0x06, 0x55, 0xbd, 0x51, 0x43, 0xb5, 0x51, 0x69, 0x51, 0x95, 0x4e,
+	0xcd, 0xd6, 0x6a, 0x5b, 0xc1, 0xbe, 0xbe, 0xe7, 0x3c, 0xd4, 0x1a, 0xa5, 0x78, 0xb9, 0x9f, 0x02,
+	0x72, 0x17, 0xad, 0x63, 0x00, 0xa5, 0xfb, 0x8e, 0xc7, 0x92, 0x7c, 0x94, 0xf4, 0x2e, 0x91, 0x62,
+	0xd3, 0x68, 0xed, 0xa4, 0x50, 0xd9, 0x2d, 0x2a, 0x2f, 0x27, 0xb3, 0x5b, 0x01, 0x90, 0x5e, 0x34,
+	0xcb, 0x96, 0x69, 0x80, 0x71, 0x4c, 0xbd, 0xdb, 0xf6, 0xb5, 0x0e, 0xa5, 0x73, 0x8e, 0x3e, 0x8b,
+	0x75, 0x0d, 0x5a, 0x22, 0x1f, 0xc2, 0x0e, 0x0d, 0x43, 0x9d, 0xf9, 0xe3, 0xfc, 0xb9, 0xc2, 0xa0,
+	0x9d, 0xc4, 0xc1, 0x3a, 0x83, 0x83, 0x5e, 0x34, 0xfb, 0x21, 0xbc, 0xdb, 0x6b, 0x1a, 0xf5, 0xfe,
+	0x26, 0xd4, 0x1f, 0xa1, 0x96, 0xa3, 0x3a, 0x18, 0x4f, 0x7c, 0xf9, 0x1f, 0x4a, 0x78, 0x0c, 0xbb,
+	0xe9, 0xa2, 0xa4, 0x45, 0xec, 0x3b, 0x4a, 0xb0, 0x3e, 0x81, 0x47, 0x85, 0x06, 0x6d, 0x02, 0xef,
+	0xbc, 0x35, 0x60, 0xef, 0xb5, 0x4a, 0x93, 0xfc, 0x0c, 0x87, 0xf3, 0xf3, 0xfa, 0x7a, 0x4c, 0x7d,
+	0x1f, 0x03, 0x0f, 0x89, 0x95, 0x9d, 0xf0, 0x0a, 0xa3, 0x3e, 0xaf, 0xc6, 0x07, 0xb7, 0xfa, 0x68,
+	0x56, 0xf9, 0x09, 0xf6, 0xb5, 0x19, 0xc9, 0xc7, 0x39, 0x2f, 0x20, 0x9b, 0xa8, 0xee, 0x20, 0x5b,
+	0xe6, 0x23, 0x85, 0xfe, 0xfe, 0xc2, 0x3a, 0x2c, 0x33, 0x56, 0xe7, 0xed, 0x2e, 0x90, 0x42, 0x9b,
+	0x07, 0x34, 0xa0, 0x1e, 0x46, 0x09, 0xad, 0x38, 0xe8, 0xf1, 0x58, 0x62, 0x54, 0xbc, 0xe1, 0xe6,
+	0xaa, 0xd1, 0xcc, 0x0f, 0xa9, 0x51, 0xb7, 0x15, 0xe7, 0xdb, 0x19, 0xe7, 0xdb, 0xdf, 0x24, 0x9c,
+	0x4f, 0xfa, 0x50, 0x7d, 0x85, 0x72, 0x1b, 0xa4, 0x95, 0x4b, 0x40, 0xbe, 0x84, 0xea, 0xe9, 0x4d,
+	0x9c, 0x95, 0x7e, 0x6b, 0xf3, 0xf8, 0x16, 0x1e, 0xf5, 0xd0, 0x47, 0x89, 0xff, 0x47, 0x51, 0xc7,
+	0x50, 0x7e, 0x85, 0x52, 0x53, 0xc1, 0x7b, 0x0b, 0xad, 0x2e, 0xc4, 0x2f, 0x1e, 0x25, 0x79, 0x0e,
+	0xe5, 0xd3, 0x3c, 0x70, 0xd1, 0xba, 0xf6, 0xb9, 0x2e, 0x3c, 0x50, 0xb9, 0x6f, 0x7e, 0x71, 0x1d,
+	0xc4, 0x1b, 0x30, 0xf3, 0x8c, 0xe3, 0xbe, 0xd8, 0x6a, 0xb4, 0x87, 0x0b, 0xcf, 0xa5, 0x04, 0xd4,
+	0x87, 0x4a, 0xe1, 0x68, 0xc8, 0xd3, 0xb9, 0xcf, 0x12, 0xd7, 0x34, 0x1a, 0xab, 0x8c, 0xfa, 0xce,
+	0x5e, 0x40, 0x39, 0xbf, 0xeb, 0x62, 0x61, 0x0b, 0x0c, 0xd2, 0x30, 0x97, 0x4d, 0x0a, 0xa1, 0xd3,
+	0x87, 0xaa, 0x3e, 0xc7, 0x6c, 0x85, 0x9f, 0xa7, 0xe3, 0x51, 0x1f, 0x2f, 0x52, 0xcf, 0x03, 0x6f,
+	0x7c, 0xde, 0x0a, 0xb3, 0x51, 0xfa, 0x97, 0x07, 0x7f, 0x5c, 0x37, 0x8d, 0x3f, 0xaf, 0x9b, 0xc6,
+	0xdf, 0xd7, 0x4d, 0xe3, 0xf7, 0x7f, 0x9a, 0xf7, 0x46, 0xa5, 0xb4, 0x89, 0x9f, 0xfe, 0x1b, 0x00,
+	0x00, 0xff, 0xff, 0xaf, 0x9b, 0xbd, 0xd5, 0x13, 0x09, 0x00, 0x00,
 }

@@ -9,7 +9,6 @@ import (
 	"github.com/spf13/viper"
 )
 
-// versionCmd represents the version command
 var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Get build and version information",
@@ -18,7 +17,7 @@ var versionCmd = &cobra.Command{
 		ctx.WithFields(log.Fields{
 			"Commit":    viper.GetString("gitCommit"),
 			"BuildDate": viper.GetString("buildDate"),
-		}).Infof("You are running %s of ttnctl.", viper.GetString("version"))
+		}).Infof("You are running version %s of ttnctl.", viper.GetString("version"))
 	},
 }
 

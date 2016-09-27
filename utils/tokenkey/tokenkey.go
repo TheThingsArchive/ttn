@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"path"
 )
 
 // K is the data returned by the token key provider
@@ -19,42 +20,56 @@ type K struct {
 
 // Provider represents a provider of the token key
 type Provider interface {
-	fmt.Stringer
-	Get(renew bool) (*K, error)
+	Get(server string, renew bool) (*K, error)
+	Update() error
 }
 
 type httpProvider struct {
-	url       string
-	cacheFile string
+	servers       map[string]string
+	cache         map[string][]byte
+	cacheLocation string
 }
 
 // NewHTTPProvider returns a new Provider that fetches the key from a HTTP
 // resource
-func NewHTTPProvider(url, cacheFile string) Provider {
-	return &httpProvider{url, cacheFile}
+func NewHTTPProvider(servers map[string]string, cacheLocation string) Provider {
+	return &httpProvider{servers, map[string][]byte{}, cacheLocation}
 }
 
-func (p *httpProvider) String() string {
-	return p.url
-}
-
-func (p *httpProvider) Get(renew bool) (*K, error) {
+func (p *httpProvider) Get(server string, renew bool) (*K, error) {
 	var data []byte
 
-	// Try to read from cache
-	cached, err := ioutil.ReadFile(p.cacheFile)
-	if err == nil {
+	url, ok := p.servers[server]
+	if !ok {
+		return nil, fmt.Errorf("Auth server %s not registered", server)
+	}
+
+	cacheFile := path.Join(p.cacheLocation, fmt.Sprintf("auth-%s.pub", server))
+
+	// Try to read from memory
+	cached, ok := p.cache[server]
+	if ok {
 		data = cached
+	}
+
+	if data == nil {
+		// Try to read from cache file
+		cached, err := ioutil.ReadFile(cacheFile)
+		if err == nil {
+			p.cache[server] = cached
+			data = cached
+		}
 	}
 
 	// Fetch token if there's a renew or if there's no key cached
 	if renew || data == nil {
-		fetched, err := p.fetch()
+		fetched, err := p.fetch(fmt.Sprintf("%s/key", url))
 		if err == nil {
 			data = fetched
 			// Don't care about errors here. It's better to retrieve keys all the time
 			// because they can't be cached than not to be able to verify a token
-			ioutil.WriteFile(p.cacheFile, data, 0644)
+			ioutil.WriteFile(cacheFile, data, 0644)
+			p.cache[server] = data
 		} else if data == nil {
 			return nil, err // We don't have a key here
 		}
@@ -68,8 +83,18 @@ func (p *httpProvider) Get(renew bool) (*K, error) {
 	return &key, nil
 }
 
-func (p *httpProvider) fetch() ([]byte, error) {
-	resp, err := http.Get(p.url)
+func (p *httpProvider) Update() error {
+	for server := range p.servers {
+		_, err := p.Get(server, true)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (p *httpProvider) fetch(url string) ([]byte, error) {
+	resp, err := http.Get(url)
 	if err != nil {
 		return nil, err
 	}

@@ -6,7 +6,7 @@ package broker
 import (
 	"crypto/md5"
 	"encoding/hex"
-	"errors"
+	"fmt"
 	"sort"
 	"time"
 
@@ -17,20 +17,15 @@ import (
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core/fcnt"
 	"github.com/TheThingsNetwork/ttn/core/types"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/apex/log"
 	"github.com/brocaar/lorawan"
 )
 
 const maxFCntGap = 16384
 
-var (
-	ErrNotFound    = errors.New("ttn/broker: Device not found")
-	ErrNoMatch     = errors.New("ttn/broker: No matching device")
-	ErrInvalidFCnt = errors.New("ttn/broker: Invalid Frame Counter")
-)
-
 func (b *broker) HandleUplink(uplink *pb.UplinkMessage) error {
-	ctx := b.Ctx.WithField("GatewayEUI", *uplink.GatewayMetadata.GatewayEui)
+	ctx := b.Ctx.WithField("GatewayID", uplink.GatewayMetadata.GatewayId)
 	var err error
 	start := time.Now()
 	defer func() {
@@ -52,7 +47,7 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) error {
 	base := duplicates[0]
 
 	if base.ProtocolMetadata.GetLorawan() == nil {
-		err = errors.New("ttn/broker: Can not handle uplink from non-LoRaWAN device")
+		err = errors.NewErrInvalidArgument("Uplink", "does not contain LoRaWAN metadata")
 		return err
 	}
 
@@ -64,7 +59,7 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) error {
 	}
 	macPayload, ok := phyPayload.MACPayload.(*lorawan.MACPayload)
 	if !ok {
-		err = errors.New("Uplink message does not contain a MAC payload.")
+		err = errors.NewErrInvalidArgument("Uplink", "does not contain a MAC payload")
 		return err
 	}
 
@@ -77,10 +72,10 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) error {
 		FCnt:    macPayload.FHDR.FCnt,
 	})
 	if err != nil {
-		return err
+		return errors.BuildGRPCError(errors.Wrap(errors.FromGRPCError(err), "NetworkServer did not return devices"))
 	}
 	if len(getDevicesResp.Results) == 0 {
-		err = ErrNotFound
+		err = errors.NewErrNotFound(fmt.Sprintf("Device with DevAddr %s and FCnt <= %d", devAddr, macPayload.FHDR.FCnt))
 		return err
 	}
 	ctx = ctx.WithField("DevAddrResults", len(getDevicesResp.Results))
@@ -94,7 +89,7 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) error {
 	for _, candidate := range getDevicesResp.Results {
 		nwkSKey := lorawan.AES128Key(*candidate.NwkSKey)
 		if candidate.Uses32BitFCnt {
-			macPayload.FHDR.FCnt = fcnt.GetFull(macPayload.FHDR.FCnt, uint16(candidate.FCntUp))
+			macPayload.FHDR.FCnt = fcnt.GetFull(candidate.FCntUp, uint16(macPayload.FHDR.FCnt))
 		}
 		micChecks++
 		ok, err = phyPayload.ValidateMIC(nwkSKey)
@@ -107,7 +102,7 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) error {
 		}
 	}
 	if device == nil {
-		err = ErrNoMatch
+		err = errors.NewErrNotFound("device that validates MIC")
 		return err
 	}
 	ctx = ctx.WithFields(log.Fields{
@@ -124,7 +119,7 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) error {
 
 	} else if macPayload.FHDR.FCnt <= device.FCntUp || macPayload.FHDR.FCnt-device.FCntUp > maxFCntGap {
 		// Replay attack or FCnt gap too big
-		err = ErrInvalidFCnt
+		err = errors.NewErrNotFound("device with matching FCnt")
 		return err
 	}
 
@@ -163,20 +158,20 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) error {
 	// Pass Uplink through NS
 	deduplicatedUplink, err = b.ns.Uplink(b.Component.GetContext(b.nsToken), deduplicatedUplink)
 	if err != nil {
-		return err
+		return errors.BuildGRPCError(errors.Wrap(errors.FromGRPCError(err), "NetworkServer did not handle uplink"))
 	}
 
 	var announcements []*pb_discovery.Announcement
-	announcements, err = b.handlerDiscovery.ForAppID(device.AppId)
+	announcements, err = b.Discovery.GetAllHandlersForAppID(device.AppId)
 	if err != nil {
 		return err
 	}
 	if len(announcements) == 0 {
-		err = errors.New("ttn/broker: No Handlers")
+		err = errors.NewErrNotFound(fmt.Sprintf("Handler for AppID %s", device.AppId))
 		return err
 	}
 	if len(announcements) > 1 {
-		err = errors.New("ttn/broker: Can't forward to multiple Handlers")
+		err = errors.NewErrInternal(fmt.Sprintf("Multiple Handlers for AppID %s", device.AppId))
 		return err
 	}
 

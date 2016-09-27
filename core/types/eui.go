@@ -5,8 +5,9 @@ package types
 
 import (
 	"encoding/hex"
-	"errors"
 	"strings"
+
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 )
 
 // EUI64 is used for AppEUIs and DevEUIs.
@@ -17,9 +18,6 @@ type AppEUI EUI64
 
 // DevEUI is a unique identifier for devices.
 type DevEUI EUI64
-
-// GatewayEUI is a unique identifier for devices.
-type GatewayEUI EUI64
 
 // ParseEUI64 parses a 64-bit hex-encoded string to an EUI64.
 func ParseEUI64(input string) (eui EUI64, err error) {
@@ -257,85 +255,6 @@ func (eui *DevEUI) Unmarshal(data []byte) error {
 	return eui.UnmarshalBinary(data)
 }
 
-// ParseGatewayEUI parses a 64-bit hex-encoded string to an GatewayEUI
-func ParseGatewayEUI(input string) (eui GatewayEUI, err error) {
-	eui64, err := ParseEUI64(input)
-	if err != nil {
-		return
-	}
-	eui = GatewayEUI(eui64)
-	return
-}
-
-// Bytes returns the GatewayEUI as a byte slice
-func (eui GatewayEUI) Bytes() []byte {
-	return EUI64(eui).Bytes()
-}
-
-// String implements the Stringer interface.
-func (eui GatewayEUI) String() string {
-	return EUI64(eui).String()
-}
-
-// GoString implements the GoStringer interface.
-func (eui GatewayEUI) GoString() string {
-	return eui.String()
-}
-
-// MarshalText implements the TextMarshaler interface.
-func (eui GatewayEUI) MarshalText() ([]byte, error) {
-	return EUI64(eui).MarshalText()
-}
-
-// UnmarshalText implements the TextUnmarshaler interface.
-func (eui *GatewayEUI) UnmarshalText(data []byte) error {
-	e := EUI64(*eui)
-	err := e.UnmarshalText(data)
-	if err != nil {
-		return err
-	}
-	*eui = GatewayEUI(e)
-	return nil
-}
-
-// MarshalBinary implements the BinaryMarshaler interface.
-func (eui GatewayEUI) MarshalBinary() ([]byte, error) {
-	return EUI64(eui).MarshalBinary()
-}
-
-// UnmarshalBinary implements the BinaryUnmarshaler interface.
-func (eui *GatewayEUI) UnmarshalBinary(data []byte) error {
-	e := EUI64(*eui)
-	err := e.UnmarshalBinary(data)
-	if err != nil {
-		return err
-	}
-	*eui = GatewayEUI(e)
-	return nil
-}
-
-// MarshalTo is used by Protobuf
-func (eui *GatewayEUI) MarshalTo(b []byte) (int, error) {
-	copy(b, eui.Bytes())
-	return 8, nil
-}
-
-// Size is used by Protobuf
-func (eui *GatewayEUI) Size() int {
-	return 8
-}
-
-// Marshal implements the Marshaler interface.
-func (eui GatewayEUI) Marshal() ([]byte, error) {
-	return eui.MarshalBinary()
-}
-
-// Unmarshal implements the Unmarshaler interface.
-func (eui *GatewayEUI) Unmarshal(data []byte) error {
-	*eui = [8]byte{} // Reset the receiver
-	return eui.UnmarshalBinary(data)
-}
-
 var emptyEUI64 EUI64
 
 func (eui EUI64) IsEmpty() bool {
@@ -347,9 +266,5 @@ func (eui DevEUI) IsEmpty() bool {
 }
 
 func (eui AppEUI) IsEmpty() bool {
-	return EUI64(eui).IsEmpty()
-}
-
-func (eui GatewayEUI) IsEmpty() bool {
 	return EUI64(eui).IsEmpty()
 }

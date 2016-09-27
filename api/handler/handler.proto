@@ -3,7 +3,7 @@
 
 syntax = "proto3";
 
-import "github.com/TheThingsNetwork/ttn/api/api.proto";
+import "google/protobuf/empty.proto";
 import "github.com/TheThingsNetwork/ttn/api/broker/broker.proto";
 import "github.com/TheThingsNetwork/ttn/api/protocol/protocol.proto";
 import "github.com/TheThingsNetwork/ttn/api/protocol/lorawan/device.proto";
@@ -19,6 +19,7 @@ message DeviceActivationResponse {
 
 // The Handler service provides pure network functionality
 service Handler {
+  rpc ActivationChallenge(broker.ActivationChallengeRequest) returns (broker.ActivationChallengeResponse);
   rpc Activate(broker.DeduplicatedDeviceActivationRequest) returns (DeviceActivationResponse);
 }
 
@@ -57,15 +58,38 @@ message DeviceList {
   repeated Device devices = 1;
 }
 
+message DryDownlinkMessage {
+  bytes  payload  = 1;
+  string fields   = 2;
+  Application app = 3;
+}
+
+message DryUplinkMessage {
+  bytes  payload  = 1;
+  Application app = 2;
+}
+
+message DryUplinkResult {
+  bytes  payload  = 1;
+  string fields   = 2;
+  bool   valid    = 3;
+}
+
+message DryDownlinkResult {
+  bytes  payload  = 1;
+}
+
 service ApplicationManager {
-  rpc RegisterApplication(ApplicationIdentifier) returns (api.Ack);
+  rpc RegisterApplication(ApplicationIdentifier) returns (google.protobuf.Empty);
   rpc GetApplication(ApplicationIdentifier) returns (Application);
-  rpc SetApplication(Application) returns (api.Ack);
-  rpc DeleteApplication(ApplicationIdentifier) returns (api.Ack);
+  rpc SetApplication(Application) returns (google.protobuf.Empty);
+  rpc DeleteApplication(ApplicationIdentifier) returns (google.protobuf.Empty);
   rpc GetDevice(DeviceIdentifier) returns (Device);
-  rpc SetDevice(Device) returns (api.Ack);
-  rpc DeleteDevice(DeviceIdentifier) returns (api.Ack);
+  rpc SetDevice(Device) returns (google.protobuf.Empty);
+  rpc DeleteDevice(DeviceIdentifier) returns (google.protobuf.Empty);
   rpc GetDevicesForApplication(ApplicationIdentifier) returns (DeviceList);
+  rpc DryDownlink(DryDownlinkMessage) returns (DryDownlinkResult);
+  rpc DryUplink(DryUplinkMessage) returns (DryUplinkResult);
 }
 
 // The HandlerManager service provides configuration and monitoring

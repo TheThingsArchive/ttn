@@ -23,14 +23,14 @@ When you get started with The Things Network, you'll probably have some question
 3. Install the [protobuf compiler (`protoc`)](https://github.com/google/protobuf/releases)
 4. Make sure you have [Mosquitto](http://mosquitto.org/download/) and [Redis](http://redis.io/download) **installed** and **running**.  
    If you're on a Mac, just run:
-    * `brew install go mosquitto redis`
+    * `brew bundle`
     * `brew services start mosquitto`
     * `brew services start redis`
 
 ## Set up The Things Network's backend for Development
 
 1. Fork this repository
-2. Clone your fork: `git clone --recursive https://github.com/YOURUSERNAME/ttn.git $GOPATH/src/github.com/TheThingsNetwork/ttn`
+2. Clone your fork: `git clone --branch refactor --recursive https://github.com/YOURUSERNAME/ttn.git $GOPATH/src/github.com/TheThingsNetwork/ttn`
 3. `cd $GOPATH/src/github.com/TheThingsNetwork/ttn`
 4. Install the dependencies for development: `make dev-deps`
 5. Run the tests: `make test`

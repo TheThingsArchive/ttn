@@ -16,6 +16,8 @@
 		DeduplicatedUplinkMessage
 		DeviceActivationRequest
 		DeduplicatedDeviceActivationRequest
+		ActivationChallengeRequest
+		ActivationChallengeResponse
 		SubscribeRequest
 		StatusRequest
 		Status
@@ -26,6 +28,7 @@ package broker
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
+import google_protobuf "github.com/golang/protobuf/ptypes/empty"
 import _ "github.com/gogo/protobuf/gogoproto"
 import api "github.com/TheThingsNetwork/ttn/api"
 import protocol "github.com/TheThingsNetwork/ttn/api/protocol"
@@ -52,12 +55,12 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 type DownlinkOption struct {
-	Identifier     string                                                 `protobuf:"bytes,1,opt,name=identifier,proto3" json:"identifier,omitempty"`
-	GatewayEui     *github_com_TheThingsNetwork_ttn_core_types.GatewayEUI `protobuf:"bytes,2,opt,name=gateway_eui,json=gatewayEui,proto3,customtype=github.com/TheThingsNetwork/ttn/core/types.GatewayEUI" json:"gateway_eui,omitempty"`
-	Score          uint32                                                 `protobuf:"varint,3,opt,name=score,proto3" json:"score,omitempty"`
-	Deadline       int64                                                  `protobuf:"varint,4,opt,name=deadline,proto3" json:"deadline,omitempty"`
-	ProtocolConfig *protocol.TxConfiguration                              `protobuf:"bytes,5,opt,name=protocol_config,json=protocolConfig" json:"protocol_config,omitempty"`
-	GatewayConfig  *gateway.TxConfiguration                               `protobuf:"bytes,6,opt,name=gateway_config,json=gatewayConfig" json:"gateway_config,omitempty"`
+	Identifier     string                    `protobuf:"bytes,1,opt,name=identifier,proto3" json:"identifier,omitempty"`
+	GatewayId      string                    `protobuf:"bytes,2,opt,name=gateway_id,json=gatewayId,proto3" json:"gateway_id,omitempty"`
+	Score          uint32                    `protobuf:"varint,3,opt,name=score,proto3" json:"score,omitempty"`
+	Deadline       int64                     `protobuf:"varint,4,opt,name=deadline,proto3" json:"deadline,omitempty"`
+	ProtocolConfig *protocol.TxConfiguration `protobuf:"bytes,5,opt,name=protocol_config,json=protocolConfig" json:"protocol_config,omitempty"`
+	GatewayConfig  *gateway.TxConfiguration  `protobuf:"bytes,6,opt,name=gateway_config,json=gatewayConfig" json:"gateway_config,omitempty"`
 }
 
 func (m *DownlinkOption) Reset()                    { *m = DownlinkOption{} }
@@ -82,9 +85,11 @@ func (m *DownlinkOption) GetGatewayConfig() *gateway.TxConfiguration {
 // received from the Router
 type UplinkMessage struct {
 	Payload []byte `protobuf:"bytes,1,opt,name=payload,proto3" json:"payload,omitempty"`
-	// NOTE: For LoRaWAN, the Router doesn't know the DevEUI and AppEUI
+	// NOTE: For LoRaWAN, the Router doesn't know the DevEUI/ID and AppEUI/ID
 	DevEui           *github_com_TheThingsNetwork_ttn_core_types.DevEUI `protobuf:"bytes,11,opt,name=dev_eui,json=devEui,proto3,customtype=github.com/TheThingsNetwork/ttn/core/types.DevEUI" json:"dev_eui,omitempty"`
 	AppEui           *github_com_TheThingsNetwork_ttn_core_types.AppEUI `protobuf:"bytes,12,opt,name=app_eui,json=appEui,proto3,customtype=github.com/TheThingsNetwork/ttn/core/types.AppEUI" json:"app_eui,omitempty"`
+	AppId            string                                             `protobuf:"bytes,13,opt,name=app_id,json=appId,proto3" json:"app_id,omitempty"`
+	DevId            string                                             `protobuf:"bytes,14,opt,name=dev_id,json=devId,proto3" json:"dev_id,omitempty"`
 	ProtocolMetadata *protocol.RxMetadata                               `protobuf:"bytes,21,opt,name=protocol_metadata,json=protocolMetadata" json:"protocol_metadata,omitempty"`
 	GatewayMetadata  *gateway.RxMetadata                                `protobuf:"bytes,22,opt,name=gateway_metadata,json=gatewayMetadata" json:"gateway_metadata,omitempty"`
 	DownlinkOptions  []*DownlinkOption                                  `protobuf:"bytes,31,rep,name=downlink_options,json=downlinkOptions" json:"downlink_options,omitempty"`
@@ -121,6 +126,8 @@ type DownlinkMessage struct {
 	Payload        []byte                                             `protobuf:"bytes,1,opt,name=payload,proto3" json:"payload,omitempty"`
 	DevEui         *github_com_TheThingsNetwork_ttn_core_types.DevEUI `protobuf:"bytes,11,opt,name=dev_eui,json=devEui,proto3,customtype=github.com/TheThingsNetwork/ttn/core/types.DevEUI" json:"dev_eui,omitempty"`
 	AppEui         *github_com_TheThingsNetwork_ttn_core_types.AppEUI `protobuf:"bytes,12,opt,name=app_eui,json=appEui,proto3,customtype=github.com/TheThingsNetwork/ttn/core/types.AppEUI" json:"app_eui,omitempty"`
+	AppId          string                                             `protobuf:"bytes,13,opt,name=app_id,json=appId,proto3" json:"app_id,omitempty"`
+	DevId          string                                             `protobuf:"bytes,14,opt,name=dev_id,json=devId,proto3" json:"dev_id,omitempty"`
 	DownlinkOption *DownlinkOption                                    `protobuf:"bytes,21,opt,name=downlink_option,json=downlinkOption" json:"downlink_option,omitempty"`
 }
 
@@ -286,6 +293,30 @@ func (m *DeduplicatedDeviceActivationRequest) GetResponseTemplate() *DeviceActiv
 	return nil
 }
 
+type ActivationChallengeRequest struct {
+	Payload []byte                                             `protobuf:"bytes,1,opt,name=payload,proto3" json:"payload,omitempty"`
+	DevEui  *github_com_TheThingsNetwork_ttn_core_types.DevEUI `protobuf:"bytes,11,opt,name=dev_eui,json=devEui,proto3,customtype=github.com/TheThingsNetwork/ttn/core/types.DevEUI" json:"dev_eui,omitempty"`
+	AppEui  *github_com_TheThingsNetwork_ttn_core_types.AppEUI `protobuf:"bytes,12,opt,name=app_eui,json=appEui,proto3,customtype=github.com/TheThingsNetwork/ttn/core/types.AppEUI" json:"app_eui,omitempty"`
+	AppId   string                                             `protobuf:"bytes,13,opt,name=app_id,json=appId,proto3" json:"app_id,omitempty"`
+	DevId   string                                             `protobuf:"bytes,14,opt,name=dev_id,json=devId,proto3" json:"dev_id,omitempty"`
+}
+
+func (m *ActivationChallengeRequest) Reset()                    { *m = ActivationChallengeRequest{} }
+func (m *ActivationChallengeRequest) String() string            { return proto.CompactTextString(m) }
+func (*ActivationChallengeRequest) ProtoMessage()               {}
+func (*ActivationChallengeRequest) Descriptor() ([]byte, []int) { return fileDescriptorBroker, []int{7} }
+
+type ActivationChallengeResponse struct {
+	Payload []byte `protobuf:"bytes,1,opt,name=payload,proto3" json:"payload,omitempty"`
+}
+
+func (m *ActivationChallengeResponse) Reset()         { *m = ActivationChallengeResponse{} }
+func (m *ActivationChallengeResponse) String() string { return proto.CompactTextString(m) }
+func (*ActivationChallengeResponse) ProtoMessage()    {}
+func (*ActivationChallengeResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptorBroker, []int{8}
+}
+
 // message SubscribeRequest is used by a Handler to subscribe to uplink messages
 type SubscribeRequest struct {
 }
@@ -293,7 +324,7 @@ type SubscribeRequest struct {
 func (m *SubscribeRequest) Reset()                    { *m = SubscribeRequest{} }
 func (m *SubscribeRequest) String() string            { return proto.CompactTextString(m) }
 func (*SubscribeRequest) ProtoMessage()               {}
-func (*SubscribeRequest) Descriptor() ([]byte, []int) { return fileDescriptorBroker, []int{7} }
+func (*SubscribeRequest) Descriptor() ([]byte, []int) { return fileDescriptorBroker, []int{9} }
 
 // message StatusRequest is used to request the status of this Broker
 type StatusRequest struct {
@@ -302,7 +333,7 @@ type StatusRequest struct {
 func (m *StatusRequest) Reset()                    { *m = StatusRequest{} }
 func (m *StatusRequest) String() string            { return proto.CompactTextString(m) }
 func (*StatusRequest) ProtoMessage()               {}
-func (*StatusRequest) Descriptor() ([]byte, []int) { return fileDescriptorBroker, []int{8} }
+func (*StatusRequest) Descriptor() ([]byte, []int) { return fileDescriptorBroker, []int{10} }
 
 // message Status is the response to the StatusRequest
 type Status struct {
@@ -325,7 +356,7 @@ type Status struct {
 func (m *Status) Reset()                    { *m = Status{} }
 func (m *Status) String() string            { return proto.CompactTextString(m) }
 func (*Status) ProtoMessage()               {}
-func (*Status) Descriptor() ([]byte, []int) { return fileDescriptorBroker, []int{9} }
+func (*Status) Descriptor() ([]byte, []int) { return fileDescriptorBroker, []int{11} }
 
 func (m *Status) GetUplink() *api.Rates {
 	if m != nil {
@@ -385,7 +416,7 @@ func (m *ApplicationHandlerRegistration) Reset()         { *m = ApplicationHandl
 func (m *ApplicationHandlerRegistration) String() string { return proto.CompactTextString(m) }
 func (*ApplicationHandlerRegistration) ProtoMessage()    {}
 func (*ApplicationHandlerRegistration) Descriptor() ([]byte, []int) {
-	return fileDescriptorBroker, []int{10}
+	return fileDescriptorBroker, []int{12}
 }
 
 func init() {
@@ -396,6 +427,8 @@ func init() {
 	proto.RegisterType((*DeduplicatedUplinkMessage)(nil), "broker.DeduplicatedUplinkMessage")
 	proto.RegisterType((*DeviceActivationRequest)(nil), "broker.DeviceActivationRequest")
 	proto.RegisterType((*DeduplicatedDeviceActivationRequest)(nil), "broker.DeduplicatedDeviceActivationRequest")
+	proto.RegisterType((*ActivationChallengeRequest)(nil), "broker.ActivationChallengeRequest")
+	proto.RegisterType((*ActivationChallengeResponse)(nil), "broker.ActivationChallengeResponse")
 	proto.RegisterType((*SubscribeRequest)(nil), "broker.SubscribeRequest")
 	proto.RegisterType((*StatusRequest)(nil), "broker.StatusRequest")
 	proto.RegisterType((*Status)(nil), "broker.Status")
@@ -505,7 +538,7 @@ func (c *brokerClient) Publish(ctx context.Context, opts ...grpc.CallOption) (Br
 
 type Broker_PublishClient interface {
 	Send(*DownlinkMessage) error
-	CloseAndRecv() (*api.Ack, error)
+	CloseAndRecv() (*google_protobuf.Empty, error)
 	grpc.ClientStream
 }
 
@@ -517,11 +550,11 @@ func (x *brokerPublishClient) Send(m *DownlinkMessage) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *brokerPublishClient) CloseAndRecv() (*api.Ack, error) {
+func (x *brokerPublishClient) CloseAndRecv() (*google_protobuf.Empty, error) {
 	if err := x.ClientStream.CloseSend(); err != nil {
 		return nil, err
 	}
-	m := new(api.Ack)
+	m := new(google_protobuf.Empty)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -606,7 +639,7 @@ func _Broker_Publish_Handler(srv interface{}, stream grpc.ServerStream) error {
 }
 
 type Broker_PublishServer interface {
-	SendAndClose(*api.Ack) error
+	SendAndClose(*google_protobuf.Empty) error
 	Recv() (*DownlinkMessage, error)
 	grpc.ServerStream
 }
@@ -615,7 +648,7 @@ type brokerPublishServer struct {
 	grpc.ServerStream
 }
 
-func (x *brokerPublishServer) SendAndClose(m *api.Ack) error {
+func (x *brokerPublishServer) SendAndClose(m *google_protobuf.Empty) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -679,7 +712,7 @@ var _Broker_serviceDesc = grpc.ServiceDesc{
 
 type BrokerManagerClient interface {
 	// Handler announces new application to Broker
-	RegisterApplicationHandler(ctx context.Context, in *ApplicationHandlerRegistration, opts ...grpc.CallOption) (*api.Ack, error)
+	RegisterApplicationHandler(ctx context.Context, in *ApplicationHandlerRegistration, opts ...grpc.CallOption) (*google_protobuf.Empty, error)
 	// Network operator requests Broker status
 	GetStatus(ctx context.Context, in *StatusRequest, opts ...grpc.CallOption) (*Status, error)
 }
@@ -692,8 +725,8 @@ func NewBrokerManagerClient(cc *grpc.ClientConn) BrokerManagerClient {
 	return &brokerManagerClient{cc}
 }
 
-func (c *brokerManagerClient) RegisterApplicationHandler(ctx context.Context, in *ApplicationHandlerRegistration, opts ...grpc.CallOption) (*api.Ack, error) {
-	out := new(api.Ack)
+func (c *brokerManagerClient) RegisterApplicationHandler(ctx context.Context, in *ApplicationHandlerRegistration, opts ...grpc.CallOption) (*google_protobuf.Empty, error) {
+	out := new(google_protobuf.Empty)
 	err := grpc.Invoke(ctx, "/broker.BrokerManager/RegisterApplicationHandler", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
@@ -714,7 +747,7 @@ func (c *brokerManagerClient) GetStatus(ctx context.Context, in *StatusRequest, 
 
 type BrokerManagerServer interface {
 	// Handler announces new application to Broker
-	RegisterApplicationHandler(context.Context, *ApplicationHandlerRegistration) (*api.Ack, error)
+	RegisterApplicationHandler(context.Context, *ApplicationHandlerRegistration) (*google_protobuf.Empty, error)
 	// Network operator requests Broker status
 	GetStatus(context.Context, *StatusRequest) (*Status, error)
 }
@@ -797,15 +830,11 @@ func (m *DownlinkOption) MarshalTo(data []byte) (int, error) {
 		i = encodeVarintBroker(data, i, uint64(len(m.Identifier)))
 		i += copy(data[i:], m.Identifier)
 	}
-	if m.GatewayEui != nil {
+	if len(m.GatewayId) > 0 {
 		data[i] = 0x12
 		i++
-		i = encodeVarintBroker(data, i, uint64(m.GatewayEui.Size()))
-		n1, err := m.GatewayEui.MarshalTo(data[i:])
-		if err != nil {
-			return 0, err
-		}
-		i += n1
+		i = encodeVarintBroker(data, i, uint64(len(m.GatewayId)))
+		i += copy(data[i:], m.GatewayId)
 	}
 	if m.Score != 0 {
 		data[i] = 0x18
@@ -821,21 +850,21 @@ func (m *DownlinkOption) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x2a
 		i++
 		i = encodeVarintBroker(data, i, uint64(m.ProtocolConfig.Size()))
-		n2, err := m.ProtocolConfig.MarshalTo(data[i:])
+		n1, err := m.ProtocolConfig.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n2
+		i += n1
 	}
 	if m.GatewayConfig != nil {
 		data[i] = 0x32
 		i++
 		i = encodeVarintBroker(data, i, uint64(m.GatewayConfig.Size()))
-		n3, err := m.GatewayConfig.MarshalTo(data[i:])
+		n2, err := m.GatewayConfig.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n3
+		i += n2
 	}
 	return i, nil
 }
@@ -865,21 +894,33 @@ func (m *UplinkMessage) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x5a
 		i++
 		i = encodeVarintBroker(data, i, uint64(m.DevEui.Size()))
-		n4, err := m.DevEui.MarshalTo(data[i:])
+		n3, err := m.DevEui.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n4
+		i += n3
 	}
 	if m.AppEui != nil {
 		data[i] = 0x62
 		i++
 		i = encodeVarintBroker(data, i, uint64(m.AppEui.Size()))
-		n5, err := m.AppEui.MarshalTo(data[i:])
+		n4, err := m.AppEui.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n5
+		i += n4
+	}
+	if len(m.AppId) > 0 {
+		data[i] = 0x6a
+		i++
+		i = encodeVarintBroker(data, i, uint64(len(m.AppId)))
+		i += copy(data[i:], m.AppId)
+	}
+	if len(m.DevId) > 0 {
+		data[i] = 0x72
+		i++
+		i = encodeVarintBroker(data, i, uint64(len(m.DevId)))
+		i += copy(data[i:], m.DevId)
 	}
 	if m.ProtocolMetadata != nil {
 		data[i] = 0xaa
@@ -887,11 +928,11 @@ func (m *UplinkMessage) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x1
 		i++
 		i = encodeVarintBroker(data, i, uint64(m.ProtocolMetadata.Size()))
-		n6, err := m.ProtocolMetadata.MarshalTo(data[i:])
+		n5, err := m.ProtocolMetadata.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n6
+		i += n5
 	}
 	if m.GatewayMetadata != nil {
 		data[i] = 0xb2
@@ -899,11 +940,11 @@ func (m *UplinkMessage) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x1
 		i++
 		i = encodeVarintBroker(data, i, uint64(m.GatewayMetadata.Size()))
-		n7, err := m.GatewayMetadata.MarshalTo(data[i:])
+		n6, err := m.GatewayMetadata.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n7
+		i += n6
 	}
 	if len(m.DownlinkOptions) > 0 {
 		for _, msg := range m.DownlinkOptions {
@@ -947,21 +988,33 @@ func (m *DownlinkMessage) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x5a
 		i++
 		i = encodeVarintBroker(data, i, uint64(m.DevEui.Size()))
-		n8, err := m.DevEui.MarshalTo(data[i:])
+		n7, err := m.DevEui.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n8
+		i += n7
 	}
 	if m.AppEui != nil {
 		data[i] = 0x62
 		i++
 		i = encodeVarintBroker(data, i, uint64(m.AppEui.Size()))
-		n9, err := m.AppEui.MarshalTo(data[i:])
+		n8, err := m.AppEui.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n9
+		i += n8
+	}
+	if len(m.AppId) > 0 {
+		data[i] = 0x6a
+		i++
+		i = encodeVarintBroker(data, i, uint64(len(m.AppId)))
+		i += copy(data[i:], m.AppId)
+	}
+	if len(m.DevId) > 0 {
+		data[i] = 0x72
+		i++
+		i = encodeVarintBroker(data, i, uint64(len(m.DevId)))
+		i += copy(data[i:], m.DevId)
 	}
 	if m.DownlinkOption != nil {
 		data[i] = 0xaa
@@ -969,11 +1022,11 @@ func (m *DownlinkMessage) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x1
 		i++
 		i = encodeVarintBroker(data, i, uint64(m.DownlinkOption.Size()))
-		n10, err := m.DownlinkOption.MarshalTo(data[i:])
+		n9, err := m.DownlinkOption.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n10
+		i += n9
 	}
 	return i, nil
 }
@@ -1003,11 +1056,11 @@ func (m *DeviceActivationResponse) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x5a
 		i++
 		i = encodeVarintBroker(data, i, uint64(m.DownlinkOption.Size()))
-		n11, err := m.DownlinkOption.MarshalTo(data[i:])
+		n10, err := m.DownlinkOption.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n11
+		i += n10
 	}
 	return i, nil
 }
@@ -1037,21 +1090,21 @@ func (m *DeduplicatedUplinkMessage) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x5a
 		i++
 		i = encodeVarintBroker(data, i, uint64(m.DevEui.Size()))
-		n12, err := m.DevEui.MarshalTo(data[i:])
+		n11, err := m.DevEui.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n12
+		i += n11
 	}
 	if m.AppEui != nil {
 		data[i] = 0x62
 		i++
 		i = encodeVarintBroker(data, i, uint64(m.AppEui.Size()))
-		n13, err := m.AppEui.MarshalTo(data[i:])
+		n12, err := m.AppEui.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n13
+		i += n12
 	}
 	if len(m.AppId) > 0 {
 		data[i] = 0x6a
@@ -1071,11 +1124,11 @@ func (m *DeduplicatedUplinkMessage) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x1
 		i++
 		i = encodeVarintBroker(data, i, uint64(m.ProtocolMetadata.Size()))
-		n14, err := m.ProtocolMetadata.MarshalTo(data[i:])
+		n13, err := m.ProtocolMetadata.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n14
+		i += n13
 	}
 	if len(m.GatewayMetadata) > 0 {
 		for _, msg := range m.GatewayMetadata {
@@ -1104,11 +1157,11 @@ func (m *DeduplicatedUplinkMessage) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x1
 		i++
 		i = encodeVarintBroker(data, i, uint64(m.ResponseTemplate.Size()))
-		n15, err := m.ResponseTemplate.MarshalTo(data[i:])
+		n14, err := m.ResponseTemplate.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n15
+		i += n14
 	}
 	return i, nil
 }
@@ -1138,21 +1191,21 @@ func (m *DeviceActivationRequest) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x5a
 		i++
 		i = encodeVarintBroker(data, i, uint64(m.DevEui.Size()))
-		n16, err := m.DevEui.MarshalTo(data[i:])
+		n15, err := m.DevEui.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n16
+		i += n15
 	}
 	if m.AppEui != nil {
 		data[i] = 0x62
 		i++
 		i = encodeVarintBroker(data, i, uint64(m.AppEui.Size()))
-		n17, err := m.AppEui.MarshalTo(data[i:])
+		n16, err := m.AppEui.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n17
+		i += n16
 	}
 	if m.ProtocolMetadata != nil {
 		data[i] = 0xaa
@@ -1160,11 +1213,11 @@ func (m *DeviceActivationRequest) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x1
 		i++
 		i = encodeVarintBroker(data, i, uint64(m.ProtocolMetadata.Size()))
-		n18, err := m.ProtocolMetadata.MarshalTo(data[i:])
+		n17, err := m.ProtocolMetadata.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n18
+		i += n17
 	}
 	if m.GatewayMetadata != nil {
 		data[i] = 0xb2
@@ -1172,11 +1225,11 @@ func (m *DeviceActivationRequest) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x1
 		i++
 		i = encodeVarintBroker(data, i, uint64(m.GatewayMetadata.Size()))
-		n19, err := m.GatewayMetadata.MarshalTo(data[i:])
+		n18, err := m.GatewayMetadata.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n19
+		i += n18
 	}
 	if m.ActivationMetadata != nil {
 		data[i] = 0xba
@@ -1184,11 +1237,11 @@ func (m *DeviceActivationRequest) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x1
 		i++
 		i = encodeVarintBroker(data, i, uint64(m.ActivationMetadata.Size()))
-		n20, err := m.ActivationMetadata.MarshalTo(data[i:])
+		n19, err := m.ActivationMetadata.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n20
+		i += n19
 	}
 	if len(m.DownlinkOptions) > 0 {
 		for _, msg := range m.DownlinkOptions {
@@ -1232,21 +1285,21 @@ func (m *DeduplicatedDeviceActivationRequest) MarshalTo(data []byte) (int, error
 		data[i] = 0x5a
 		i++
 		i = encodeVarintBroker(data, i, uint64(m.DevEui.Size()))
-		n21, err := m.DevEui.MarshalTo(data[i:])
+		n20, err := m.DevEui.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n21
+		i += n20
 	}
 	if m.AppEui != nil {
 		data[i] = 0x62
 		i++
 		i = encodeVarintBroker(data, i, uint64(m.AppEui.Size()))
-		n22, err := m.AppEui.MarshalTo(data[i:])
+		n21, err := m.AppEui.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n22
+		i += n21
 	}
 	if len(m.AppId) > 0 {
 		data[i] = 0x6a
@@ -1266,11 +1319,11 @@ func (m *DeduplicatedDeviceActivationRequest) MarshalTo(data []byte) (int, error
 		data[i] = 0x1
 		i++
 		i = encodeVarintBroker(data, i, uint64(m.ProtocolMetadata.Size()))
-		n23, err := m.ProtocolMetadata.MarshalTo(data[i:])
+		n22, err := m.ProtocolMetadata.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n23
+		i += n22
 	}
 	if len(m.GatewayMetadata) > 0 {
 		for _, msg := range m.GatewayMetadata {
@@ -1292,11 +1345,11 @@ func (m *DeduplicatedDeviceActivationRequest) MarshalTo(data []byte) (int, error
 		data[i] = 0x1
 		i++
 		i = encodeVarintBroker(data, i, uint64(m.ActivationMetadata.Size()))
-		n24, err := m.ActivationMetadata.MarshalTo(data[i:])
+		n23, err := m.ActivationMetadata.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n24
+		i += n23
 	}
 	if m.ServerTime != 0 {
 		data[i] = 0xc0
@@ -1311,11 +1364,91 @@ func (m *DeduplicatedDeviceActivationRequest) MarshalTo(data []byte) (int, error
 		data[i] = 0x1
 		i++
 		i = encodeVarintBroker(data, i, uint64(m.ResponseTemplate.Size()))
-		n25, err := m.ResponseTemplate.MarshalTo(data[i:])
+		n24, err := m.ResponseTemplate.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n24
+	}
+	return i, nil
+}
+
+func (m *ActivationChallengeRequest) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *ActivationChallengeRequest) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if len(m.Payload) > 0 {
+		data[i] = 0xa
+		i++
+		i = encodeVarintBroker(data, i, uint64(len(m.Payload)))
+		i += copy(data[i:], m.Payload)
+	}
+	if m.DevEui != nil {
+		data[i] = 0x5a
+		i++
+		i = encodeVarintBroker(data, i, uint64(m.DevEui.Size()))
+		n25, err := m.DevEui.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += n25
+	}
+	if m.AppEui != nil {
+		data[i] = 0x62
+		i++
+		i = encodeVarintBroker(data, i, uint64(m.AppEui.Size()))
+		n26, err := m.AppEui.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n26
+	}
+	if len(m.AppId) > 0 {
+		data[i] = 0x6a
+		i++
+		i = encodeVarintBroker(data, i, uint64(len(m.AppId)))
+		i += copy(data[i:], m.AppId)
+	}
+	if len(m.DevId) > 0 {
+		data[i] = 0x72
+		i++
+		i = encodeVarintBroker(data, i, uint64(len(m.DevId)))
+		i += copy(data[i:], m.DevId)
+	}
+	return i, nil
+}
+
+func (m *ActivationChallengeResponse) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *ActivationChallengeResponse) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if len(m.Payload) > 0 {
+		data[i] = 0xa
+		i++
+		i = encodeVarintBroker(data, i, uint64(len(m.Payload)))
+		i += copy(data[i:], m.Payload)
 	}
 	return i, nil
 }
@@ -1375,31 +1508,31 @@ func (m *Status) MarshalTo(data []byte) (int, error) {
 		data[i] = 0xa
 		i++
 		i = encodeVarintBroker(data, i, uint64(m.Uplink.Size()))
-		n26, err := m.Uplink.MarshalTo(data[i:])
-		if err != nil {
-			return 0, err
-		}
-		i += n26
-	}
-	if m.UplinkUnique != nil {
-		data[i] = 0x12
-		i++
-		i = encodeVarintBroker(data, i, uint64(m.UplinkUnique.Size()))
-		n27, err := m.UplinkUnique.MarshalTo(data[i:])
+		n27, err := m.Uplink.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += n27
 	}
-	if m.Downlink != nil {
-		data[i] = 0x5a
+	if m.UplinkUnique != nil {
+		data[i] = 0x12
 		i++
-		i = encodeVarintBroker(data, i, uint64(m.Downlink.Size()))
-		n28, err := m.Downlink.MarshalTo(data[i:])
+		i = encodeVarintBroker(data, i, uint64(m.UplinkUnique.Size()))
+		n28, err := m.UplinkUnique.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += n28
+	}
+	if m.Downlink != nil {
+		data[i] = 0x5a
+		i++
+		i = encodeVarintBroker(data, i, uint64(m.Downlink.Size()))
+		n29, err := m.Downlink.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n29
 	}
 	if m.Activations != nil {
 		data[i] = 0xaa
@@ -1407,11 +1540,11 @@ func (m *Status) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x1
 		i++
 		i = encodeVarintBroker(data, i, uint64(m.Activations.Size()))
-		n29, err := m.Activations.MarshalTo(data[i:])
+		n30, err := m.Activations.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n29
+		i += n30
 	}
 	if m.ActivationsUnique != nil {
 		data[i] = 0xb2
@@ -1419,11 +1552,11 @@ func (m *Status) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x1
 		i++
 		i = encodeVarintBroker(data, i, uint64(m.ActivationsUnique.Size()))
-		n30, err := m.ActivationsUnique.MarshalTo(data[i:])
+		n31, err := m.ActivationsUnique.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n30
+		i += n31
 	}
 	if m.ActivationsAccepted != nil {
 		data[i] = 0xba
@@ -1431,11 +1564,11 @@ func (m *Status) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x1
 		i++
 		i = encodeVarintBroker(data, i, uint64(m.ActivationsAccepted.Size()))
-		n31, err := m.ActivationsAccepted.MarshalTo(data[i:])
+		n32, err := m.ActivationsAccepted.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n31
+		i += n32
 	}
 	if m.Deduplication != nil {
 		data[i] = 0xfa
@@ -1443,11 +1576,11 @@ func (m *Status) MarshalTo(data []byte) (int, error) {
 		data[i] = 0x1
 		i++
 		i = encodeVarintBroker(data, i, uint64(m.Deduplication.Size()))
-		n32, err := m.Deduplication.MarshalTo(data[i:])
+		n33, err := m.Deduplication.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n32
+		i += n33
 	}
 	if m.ConnectedRouters != 0 {
 		data[i] = 0xc8
@@ -1530,8 +1663,8 @@ func (m *DownlinkOption) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovBroker(uint64(l))
 	}
-	if m.GatewayEui != nil {
-		l = m.GatewayEui.Size()
+	l = len(m.GatewayId)
+	if l > 0 {
 		n += 1 + l + sovBroker(uint64(l))
 	}
 	if m.Score != 0 {
@@ -1566,6 +1699,14 @@ func (m *UplinkMessage) Size() (n int) {
 		l = m.AppEui.Size()
 		n += 1 + l + sovBroker(uint64(l))
 	}
+	l = len(m.AppId)
+	if l > 0 {
+		n += 1 + l + sovBroker(uint64(l))
+	}
+	l = len(m.DevId)
+	if l > 0 {
+		n += 1 + l + sovBroker(uint64(l))
+	}
 	if m.ProtocolMetadata != nil {
 		l = m.ProtocolMetadata.Size()
 		n += 2 + l + sovBroker(uint64(l))
@@ -1596,6 +1737,14 @@ func (m *DownlinkMessage) Size() (n int) {
 	}
 	if m.AppEui != nil {
 		l = m.AppEui.Size()
+		n += 1 + l + sovBroker(uint64(l))
+	}
+	l = len(m.AppId)
+	if l > 0 {
+		n += 1 + l + sovBroker(uint64(l))
+	}
+	l = len(m.DevId)
+	if l > 0 {
 		n += 1 + l + sovBroker(uint64(l))
 	}
 	if m.DownlinkOption != nil {
@@ -1745,6 +1894,42 @@ func (m *DeduplicatedDeviceActivationRequest) Size() (n int) {
 	return n
 }
 
+func (m *ActivationChallengeRequest) Size() (n int) {
+	var l int
+	_ = l
+	l = len(m.Payload)
+	if l > 0 {
+		n += 1 + l + sovBroker(uint64(l))
+	}
+	if m.DevEui != nil {
+		l = m.DevEui.Size()
+		n += 1 + l + sovBroker(uint64(l))
+	}
+	if m.AppEui != nil {
+		l = m.AppEui.Size()
+		n += 1 + l + sovBroker(uint64(l))
+	}
+	l = len(m.AppId)
+	if l > 0 {
+		n += 1 + l + sovBroker(uint64(l))
+	}
+	l = len(m.DevId)
+	if l > 0 {
+		n += 1 + l + sovBroker(uint64(l))
+	}
+	return n
+}
+
+func (m *ActivationChallengeResponse) Size() (n int) {
+	var l int
+	_ = l
+	l = len(m.Payload)
+	if l > 0 {
+		n += 1 + l + sovBroker(uint64(l))
+	}
+	return n
+}
+
 func (m *SubscribeRequest) Size() (n int) {
 	var l int
 	_ = l
@@ -1884,9 +2069,9 @@ func (m *DownlinkOption) Unmarshal(data []byte) error {
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field GatewayEui", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field GatewayId", wireType)
 			}
-			var byteLen int
+			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowBroker
@@ -1896,23 +2081,20 @@ func (m *DownlinkOption) Unmarshal(data []byte) error {
 				}
 				b := data[iNdEx]
 				iNdEx++
-				byteLen |= (int(b) & 0x7F) << shift
+				stringLen |= (uint64(b) & 0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			if byteLen < 0 {
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
 				return ErrInvalidLengthBroker
 			}
-			postIndex := iNdEx + byteLen
+			postIndex := iNdEx + intStringLen
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			var v github_com_TheThingsNetwork_ttn_core_types.GatewayEUI
-			m.GatewayEui = &v
-			if err := m.GatewayEui.Unmarshal(data[iNdEx:postIndex]); err != nil {
-				return err
-			}
+			m.GatewayId = string(data[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 3:
 			if wireType != 0 {
@@ -2163,6 +2345,64 @@ func (m *UplinkMessage) Unmarshal(data []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 13:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AppId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowBroker
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthBroker
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AppId = string(data[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 14:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DevId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowBroker
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthBroker
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.DevId = string(data[iNdEx:postIndex])
+			iNdEx = postIndex
 		case 21:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ProtocolMetadata", wireType)
@@ -2404,6 +2644,64 @@ func (m *DownlinkMessage) Unmarshal(data []byte) error {
 			if err := m.AppEui.Unmarshal(data[iNdEx:postIndex]); err != nil {
 				return err
 			}
+			iNdEx = postIndex
+		case 13:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AppId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowBroker
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthBroker
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AppId = string(data[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 14:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DevId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowBroker
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthBroker
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.DevId = string(data[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 21:
 			if wireType != 2 {
@@ -3519,6 +3817,290 @@ func (m *DeduplicatedDeviceActivationRequest) Unmarshal(data []byte) error {
 	}
 	return nil
 }
+func (m *ActivationChallengeRequest) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowBroker
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ActivationChallengeRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ActivationChallengeRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Payload", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowBroker
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthBroker
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Payload = append(m.Payload[:0], data[iNdEx:postIndex]...)
+			if m.Payload == nil {
+				m.Payload = []byte{}
+			}
+			iNdEx = postIndex
+		case 11:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DevEui", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowBroker
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthBroker
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var v github_com_TheThingsNetwork_ttn_core_types.DevEUI
+			m.DevEui = &v
+			if err := m.DevEui.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 12:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AppEui", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowBroker
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthBroker
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var v github_com_TheThingsNetwork_ttn_core_types.AppEUI
+			m.AppEui = &v
+			if err := m.AppEui.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 13:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AppId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowBroker
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthBroker
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AppId = string(data[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 14:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DevId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowBroker
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthBroker
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.DevId = string(data[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipBroker(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthBroker
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ActivationChallengeResponse) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowBroker
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ActivationChallengeResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ActivationChallengeResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Payload", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowBroker
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthBroker
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Payload = append(m.Payload[:0], data[iNdEx:postIndex]...)
+			if m.Payload == nil {
+				m.Payload = []byte{}
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipBroker(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthBroker
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func (m *SubscribeRequest) Unmarshal(data []byte) error {
 	l := len(data)
 	iNdEx := 0
@@ -4156,73 +4738,76 @@ func init() {
 }
 
 var fileDescriptorBroker = []byte{
-	// 1086 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xec, 0x56, 0xcd, 0x6f, 0x1b, 0x45,
-	0x14, 0xc7, 0x76, 0xeb, 0xc4, 0xcf, 0xf1, 0x47, 0xa6, 0xf9, 0xd8, 0x5a, 0x90, 0x04, 0x23, 0x55,
-	0xe1, 0xa3, 0x36, 0x18, 0x15, 0x14, 0x21, 0xa8, 0x1c, 0x52, 0x95, 0x20, 0xb9, 0x54, 0x5b, 0x87,
-	0x03, 0x17, 0x6b, 0xbd, 0x3b, 0xb1, 0x47, 0x71, 0x76, 0x97, 0x9d, 0xd9, 0xa4, 0xf9, 0x1f, 0x90,
-	0x38, 0xc0, 0x81, 0x7f, 0x07, 0x71, 0xe1, 0x06, 0x67, 0x0e, 0x08, 0xc1, 0x85, 0x0b, 0xff, 0x03,
-	0x6f, 0x67, 0x66, 0xd7, 0xbb, 0x76, 0xdd, 0xa6, 0x50, 0x0e, 0xad, 0x38, 0xac, 0xbc, 0xf3, 0x3e,
-	0x7e, 0xf3, 0xfc, 0x7b, 0x1f, 0xfb, 0xe0, 0xfd, 0x11, 0x13, 0xe3, 0x70, 0xd8, 0xb2, 0xbd, 0xd3,
-	0x76, 0x7f, 0x4c, 0xfb, 0x63, 0xe6, 0x8e, 0xf8, 0x3d, 0x2a, 0xce, 0xbd, 0xe0, 0xa4, 0x2d, 0x84,
-	0xdb, 0xb6, 0x7c, 0xd6, 0x1e, 0x06, 0xde, 0x09, 0x0d, 0xf4, 0x4f, 0xcb, 0x0f, 0x3c, 0xe1, 0x91,
-	0xa2, 0x3a, 0x35, 0x6e, 0xa6, 0x00, 0x46, 0xde, 0xc8, 0x6b, 0x4b, 0xf5, 0x30, 0x3c, 0x96, 0x27,
-	0x79, 0x90, 0x6f, 0xca, 0x2d, 0x63, 0xbe, 0xf0, 0x3e, 0x7c, 0xb4, 0xf9, 0x07, 0x97, 0x31, 0x97,
-	0xa6, 0xb6, 0x37, 0x49, 0x5e, 0xb4, 0xf3, 0xde, 0x65, 0x9c, 0x47, 0x96, 0xa0, 0xe7, 0xd6, 0x45,
-	0xfc, 0xab, 0x5c, 0x9b, 0x3f, 0xe4, 0xa1, 0x7a, 0xe0, 0x9d, 0xbb, 0x13, 0xe6, 0x9e, 0x7c, 0xe6,
-	0x0b, 0xe6, 0xb9, 0x64, 0x0b, 0x80, 0x39, 0xd4, 0x15, 0xec, 0x98, 0xd1, 0xc0, 0xc8, 0xed, 0xe4,
-	0x76, 0x4b, 0x66, 0x4a, 0x42, 0xbe, 0x80, 0xb2, 0xc6, 0x18, 0xd0, 0x90, 0x19, 0x79, 0x34, 0x58,
-	0xd9, 0xdf, 0xfb, 0xe5, 0xd7, 0xed, 0x5b, 0x4f, 0x0a, 0xc3, 0xf6, 0x02, 0xda, 0x16, 0x17, 0x3e,
-	0xe5, 0xad, 0xbb, 0x0a, 0xe1, 0xce, 0xd1, 0xa1, 0x09, 0x1a, 0xed, 0x4e, 0xc8, 0xc8, 0x1a, 0x5c,
-	0xe5, 0x91, 0x95, 0x51, 0x40, 0xd4, 0x8a, 0xa9, 0x0e, 0xa4, 0x01, 0xcb, 0x0e, 0xb5, 0x1c, 0x8c,
-	0x91, 0x1a, 0x57, 0x50, 0x51, 0x30, 0x93, 0x33, 0xd9, 0x87, 0x5a, 0xcc, 0xc6, 0xc0, 0xf6, 0xdc,
-	0x63, 0x36, 0x32, 0xae, 0xa2, 0x49, 0xb9, 0x73, 0xbd, 0x95, 0xb0, 0xd4, 0x7f, 0xf8, 0xb1, 0xd4,
-	0x84, 0x81, 0x15, 0xfd, 0x43, 0xb3, 0x1a, 0x6b, 0x94, 0x98, 0xdc, 0x86, 0x6a, 0xfc, 0x8f, 0x34,
-	0x44, 0x51, 0x42, 0x18, 0xad, 0x98, 0xac, 0x59, 0x84, 0x8a, 0x56, 0x28, 0x69, 0xf3, 0xeb, 0x02,
-	0x54, 0x8e, 0xfc, 0x88, 0xc3, 0x1e, 0xe5, 0xdc, 0x1a, 0x51, 0x62, 0xc0, 0x92, 0x6f, 0x5d, 0x4c,
-	0x3c, 0xcb, 0x91, 0x0c, 0xae, 0x98, 0xf1, 0x91, 0xdc, 0x83, 0x25, 0x87, 0x9e, 0x49, 0xea, 0xca,
-	0x92, 0xba, 0x5b, 0x48, 0xdd, 0x3b, 0x4f, 0x41, 0xdd, 0x01, 0x3d, 0x8b, 0x68, 0x2b, 0x22, 0x4a,
-	0x44, 0x19, 0xe2, 0x59, 0xbe, 0x2f, 0xf1, 0x56, 0xfe, 0x11, 0x5e, 0xd7, 0xf7, 0x25, 0x1e, 0xa2,
-	0x44, 0x78, 0x5d, 0x58, 0x4d, 0x08, 0x3d, 0xa5, 0xc2, 0x72, 0x2c, 0x61, 0x19, 0xeb, 0x92, 0x8f,
-	0xb5, 0x29, 0xa5, 0xe6, 0xc3, 0x9e, 0xd6, 0x99, 0xf5, 0x58, 0x18, 0x4b, 0xc8, 0x47, 0x50, 0x8f,
-	0xf9, 0x4c, 0x10, 0x36, 0x24, 0xc2, 0xb5, 0x84, 0xd1, 0x14, 0x40, 0x4d, 0xcb, 0x12, 0xff, 0x2e,
-	0xd4, 0x1d, 0x5d, 0x93, 0x03, 0x4f, 0x16, 0x25, 0x37, 0xb6, 0x77, 0x0a, 0xe8, 0xbf, 0xd1, 0xd2,
-	0xbd, 0x99, 0xad, 0x59, 0xb3, 0xe6, 0x64, 0xce, 0xbc, 0xf9, 0x55, 0x1e, 0x6a, 0xb1, 0xcd, 0xf3,
-	0x9f, 0x93, 0xdb, 0x50, 0x9b, 0x21, 0x44, 0x67, 0x64, 0x11, 0x1f, 0xd5, 0x2c, 0x1f, 0xcd, 0x10,
-	0x0c, 0x0c, 0x91, 0xd9, 0xb4, 0x6b, 0x0b, 0x76, 0xa6, 0x6a, 0x98, 0x72, 0x1f, 0x99, 0x7a, 0x1c,
-	0x2d, 0x8f, 0xb8, 0xb6, 0xfc, 0x54, 0xd7, 0xfe, 0x55, 0x80, 0xeb, 0x07, 0xd4, 0x09, 0xb1, 0x35,
-	0x6c, 0xcc, 0xb1, 0xf3, 0xa2, 0xf4, 0xc8, 0x3a, 0x44, 0x6f, 0x03, 0xe6, 0x18, 0x15, 0x39, 0x1e,
-	0xaf, 0xe2, 0xe9, 0xd0, 0x89, 0xc4, 0x51, 0xd8, 0x28, 0xae, 0x2a, 0x31, 0x9e, 0x50, 0xfc, 0x9f,
-	0x75, 0x54, 0xe1, 0xd2, 0x1d, 0xb5, 0x0d, 0x65, 0x4e, 0x83, 0x33, 0x1a, 0x0c, 0x04, 0x3b, 0xa5,
-	0xc6, 0xa6, 0x1c, 0xa2, 0xa0, 0x44, 0x7d, 0x94, 0x90, 0x03, 0x58, 0x0d, 0x74, 0x41, 0x0c, 0x04,
-	0x3d, 0xf5, 0x27, 0x08, 0x80, 0x3d, 0x17, 0xc5, 0xb8, 0x39, 0x9b, 0x6c, 0x9d, 0x3f, 0xb3, 0x1e,
-	0x7b, 0xf4, 0xb5, 0x43, 0xf3, 0xcf, 0x02, 0x6c, 0xce, 0xd7, 0xd9, 0x97, 0x21, 0xe5, 0xe2, 0xff,
-	0x89, 0xf8, 0x6f, 0x26, 0x62, 0x0f, 0xae, 0x59, 0x09, 0xa3, 0x53, 0x88, 0x4d, 0x09, 0xf1, 0xf2,
-	0x34, 0x88, 0x29, 0xed, 0x09, 0x16, 0xb1, 0xe6, 0x64, 0xcf, 0x62, 0xc0, 0xfe, 0x74, 0x05, 0x5e,
-	0x4b, 0xb7, 0xf6, 0x8b, 0x97, 0xf6, 0xe7, 0xae, 0xc9, 0x9f, 0x71, 0x91, 0xcc, 0xcc, 0x0c, 0x63,
-	0x6e, 0x66, 0xf4, 0x16, 0xcf, 0x8c, 0x9d, 0xa4, 0x8c, 0x16, 0x7c, 0x75, 0x1e, 0x31, 0x3c, 0x08,
-	0xd4, 0x1f, 0x84, 0x43, 0x6e, 0x07, 0x6c, 0x48, 0x75, 0xf5, 0x34, 0x6b, 0x50, 0x79, 0x20, 0x2c,
-	0x11, 0xf2, 0x58, 0xf0, 0x7d, 0x01, 0x8a, 0x4a, 0x42, 0x9a, 0x50, 0x0c, 0xe5, 0xf7, 0x44, 0x16,
-	0x56, 0xb9, 0x03, 0xad, 0x68, 0x9d, 0x36, 0x11, 0x8a, 0x9b, 0x5a, 0x43, 0xda, 0x50, 0x51, 0x6f,
-	0x83, 0xd0, 0x65, 0x88, 0x20, 0xb7, 0xd5, 0xac, 0xe9, 0x8a, 0x32, 0x38, 0x92, 0x7a, 0x72, 0x03,
-	0x57, 0x4d, 0x5d, 0xe9, 0xfa, 0x5b, 0x97, 0xb6, 0x4d, 0x74, 0xe4, 0x2d, 0x28, 0x4f, 0x29, 0xe3,
-	0x3a, 0xd1, 0x69, 0xd3, 0xb4, 0x9a, 0xec, 0x41, 0x8a, 0x60, 0x1e, 0xc7, 0xb2, 0x31, 0xe7, 0xb4,
-	0x9a, 0xb2, 0xd2, 0x01, 0x7d, 0x08, 0x6b, 0x69, 0x57, 0xcb, 0xb6, 0xa9, 0x8f, 0xed, 0xa6, 0xb3,
-	0x9a, 0x76, 0x4e, 0x25, 0x9f, 0x77, 0xb5, 0x19, 0x79, 0x0f, 0x2a, 0x4e, 0xd2, 0xa5, 0xd1, 0x07,
-	0x5c, 0xe5, 0xa7, 0x2e, 0xfd, 0xee, 0xd3, 0xc0, 0x8e, 0xd6, 0xfa, 0x09, 0x7a, 0x67, 0xcd, 0xc8,
-	0x9b, 0xb0, 0x8a, 0xab, 0xb0, 0x4b, 0x6d, 0x04, 0x19, 0x04, 0x5e, 0x28, 0x68, 0xc0, 0x8d, 0xd7,
-	0xe5, 0x52, 0x5e, 0x4f, 0x14, 0xa6, 0x92, 0x93, 0x9b, 0x40, 0xa6, 0xc6, 0x63, 0xcb, 0x75, 0x26,
-	0x91, 0xf5, 0x1b, 0xd2, 0x7a, 0x0a, 0xf3, 0x89, 0x56, 0x34, 0x3f, 0x87, 0x2d, 0x6c, 0xb5, 0xf8,
-	0x2a, 0x2d, 0x36, 0xe9, 0x88, 0x71, 0xa1, 0xd6, 0xeb, 0x54, 0xeb, 0xe5, 0xd2, 0xad, 0xf7, 0x0a,
-	0x80, 0x46, 0x8f, 0x54, 0x79, 0xa9, 0x2a, 0x69, 0xc9, 0xa1, 0xd3, 0xf9, 0x36, 0x0f, 0xc5, 0x7d,
-	0x59, 0x76, 0xb8, 0xb9, 0x94, 0xba, 0x9c, 0x7b, 0x36, 0x43, 0x66, 0xc8, 0x7a, 0x5c, 0x8c, 0x99,
-	0xf5, 0xa3, 0xb1, 0xe8, 0xbb, 0xb6, 0x9b, 0x7b, 0x3b, 0x47, 0x3e, 0x85, 0x52, 0x52, 0x8c, 0xc4,
-	0x88, 0x2d, 0x67, 0xeb, 0xb3, 0xf1, 0xea, 0xb4, 0xce, 0x17, 0x6c, 0x39, 0x88, 0xd5, 0x82, 0xa5,
-	0xfb, 0xe1, 0x70, 0xc2, 0xf8, 0x98, 0x2c, 0xba, 0xb3, 0xb1, 0x2c, 0x13, 0xd2, 0xb5, 0x4f, 0x76,
-	0x73, 0xd8, 0x57, 0xcb, 0xba, 0x61, 0x28, 0xd9, 0x5e, 0xdc, 0x48, 0x2a, 0x82, 0x27, 0x76, 0x5a,
-	0xe7, 0x9b, 0x1c, 0x54, 0x14, 0x2d, 0x3d, 0xcb, 0xc5, 0xbb, 0x02, 0x9c, 0x94, 0x0d, 0x45, 0x37,
-	0x0d, 0xe6, 0x13, 0x41, 0x6e, 0xc4, 0x88, 0x8f, 0x4f, 0xd2, 0x34, 0x64, 0xd2, 0x81, 0xd2, 0x5d,
-	0x2a, 0x74, 0x5b, 0x26, 0x6c, 0x67, 0x1a, 0xb7, 0x51, 0xcd, 0x8a, 0xf7, 0xeb, 0x3f, 0xfe, 0xbe,
-	0x95, 0xfb, 0x19, 0x9f, 0xdf, 0xf0, 0xf9, 0xee, 0x8f, 0xad, 0x97, 0x86, 0x45, 0x39, 0xa0, 0xde,
-	0xfd, 0x3b, 0x00, 0x00, 0xff, 0xff, 0x54, 0xb6, 0xf0, 0x3b, 0xaa, 0x0f, 0x00, 0x00,
+	// 1131 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xec, 0x57, 0xcb, 0x6e, 0xdb, 0x46,
+	0x17, 0xfe, 0x69, 0x25, 0xb2, 0x7d, 0x64, 0x5d, 0x3c, 0xf1, 0x85, 0x51, 0xfe, 0xc8, 0xaa, 0x0a,
+	0x04, 0xea, 0x25, 0x52, 0xaa, 0xa2, 0x0d, 0x82, 0x5e, 0x0c, 0x39, 0x36, 0x5a, 0x17, 0x50, 0x1a,
+	0x30, 0x76, 0x57, 0x05, 0x84, 0x11, 0x79, 0x4c, 0x0d, 0x4c, 0x91, 0x0c, 0x67, 0x28, 0xc7, 0xfb,
+	0xa2, 0xcf, 0xd0, 0x6d, 0xfb, 0x18, 0x05, 0xba, 0xe8, 0xae, 0xbb, 0x76, 0xdd, 0x45, 0x51, 0xb8,
+	0x9b, 0x6e, 0xfa, 0x0e, 0x05, 0x87, 0x43, 0x8a, 0xb2, 0xad, 0xd8, 0x2d, 0xbc, 0x68, 0x9a, 0xae,
+	0xc4, 0xf9, 0xce, 0x77, 0x3e, 0x0e, 0xcf, 0x4d, 0x33, 0x70, 0xdf, 0x66, 0x62, 0x18, 0x0e, 0x5a,
+	0xa6, 0x37, 0x6a, 0xef, 0x0d, 0x71, 0x6f, 0xc8, 0x5c, 0x9b, 0x3f, 0x42, 0x71, 0xe4, 0x05, 0x87,
+	0x6d, 0x21, 0xdc, 0x36, 0xf5, 0x59, 0x7b, 0x10, 0x78, 0x87, 0x18, 0xa8, 0x9f, 0x96, 0x1f, 0x78,
+	0xc2, 0x23, 0xf9, 0x78, 0x55, 0xbd, 0x65, 0x7b, 0x9e, 0xed, 0x60, 0x5b, 0xa2, 0x83, 0xf0, 0xa0,
+	0x8d, 0x23, 0x5f, 0x1c, 0xc7, 0xa4, 0xea, 0xdd, 0x8c, 0xba, 0xed, 0xd9, 0xde, 0x84, 0x15, 0xad,
+	0xe4, 0x42, 0x3e, 0x9d, 0x43, 0x9f, 0xb9, 0x19, 0xea, 0x33, 0x45, 0x7f, 0xef, 0x32, 0x74, 0x49,
+	0x35, 0x3d, 0x27, 0x7d, 0x50, 0xce, 0x0f, 0x2e, 0xe3, 0x6c, 0x53, 0x81, 0x47, 0xf4, 0x38, 0xf9,
+	0x8d, 0x5d, 0x1b, 0x5f, 0xce, 0x41, 0x69, 0xdb, 0x3b, 0x72, 0x1d, 0xe6, 0x1e, 0x7e, 0xea, 0x0b,
+	0xe6, 0xb9, 0xa4, 0x06, 0xc0, 0x2c, 0x74, 0x05, 0x3b, 0x60, 0x18, 0xe8, 0x5a, 0x5d, 0x6b, 0x2e,
+	0x1a, 0x19, 0x84, 0xdc, 0x06, 0x50, 0x1a, 0x7d, 0x66, 0xe9, 0x73, 0xd2, 0xbe, 0xa8, 0x90, 0x5d,
+	0x8b, 0xac, 0xc0, 0x75, 0x6e, 0x7a, 0x01, 0xea, 0xb9, 0xba, 0xd6, 0x2c, 0x1a, 0xf1, 0x82, 0x54,
+	0x61, 0xc1, 0x42, 0x6a, 0x39, 0xcc, 0x45, 0xfd, 0x5a, 0x5d, 0x6b, 0xe6, 0x8c, 0x74, 0x4d, 0xb6,
+	0xa0, 0x9c, 0x7c, 0x50, 0xdf, 0xf4, 0xdc, 0x03, 0x66, 0xeb, 0xd7, 0xeb, 0x5a, 0xb3, 0xd0, 0xb9,
+	0xd9, 0x4a, 0x3f, 0x74, 0xef, 0xd9, 0x43, 0x69, 0x09, 0x03, 0x1a, 0x6d, 0xd2, 0x28, 0x25, 0x96,
+	0x18, 0x26, 0x9b, 0x50, 0x4a, 0x36, 0xa5, 0x24, 0xf2, 0x52, 0x42, 0x6f, 0x25, 0xdf, 0x7b, 0x5a,
+	0xa1, 0xa8, 0x0c, 0x31, 0xda, 0xf8, 0x2e, 0x07, 0xc5, 0x7d, 0x3f, 0x0a, 0x43, 0x0f, 0x39, 0xa7,
+	0x36, 0x12, 0x1d, 0xe6, 0x7d, 0x7a, 0xec, 0x78, 0xd4, 0x92, 0x41, 0x58, 0x32, 0x92, 0x25, 0x79,
+	0x04, 0xf3, 0x16, 0x8e, 0xfb, 0x18, 0x32, 0xbd, 0x10, 0x59, 0xb6, 0xde, 0xf9, 0xf9, 0x97, 0x8d,
+	0xb7, 0x2e, 0x4a, 0x42, 0x14, 0x87, 0xb6, 0x38, 0xf6, 0x91, 0xb7, 0xb6, 0x71, 0xbc, 0xb3, 0xbf,
+	0x6b, 0xe4, 0x2d, 0x1c, 0xef, 0x84, 0x2c, 0xd2, 0xa3, 0xbe, 0x2f, 0xf5, 0x96, 0xfe, 0x96, 0x5e,
+	0xd7, 0xf7, 0xa5, 0x1e, 0xf5, 0xfd, 0x48, 0x6f, 0x15, 0xa2, 0xa7, 0x28, 0x3b, 0x45, 0x99, 0x9d,
+	0xeb, 0xd4, 0xf7, 0x77, 0xad, 0x08, 0x8e, 0xb6, 0xcd, 0x2c, 0xbd, 0x14, 0xc3, 0x16, 0x8e, 0x77,
+	0x2d, 0xd2, 0x85, 0xe5, 0x34, 0xfc, 0x23, 0x14, 0xd4, 0xa2, 0x82, 0xea, 0xab, 0x32, 0x7a, 0x2b,
+	0x93, 0x04, 0x18, 0xcf, 0x7a, 0xca, 0x66, 0x54, 0x12, 0x30, 0x41, 0xc8, 0x87, 0x50, 0x49, 0xa2,
+	0x9f, 0x2a, 0xac, 0x49, 0x85, 0x1b, 0x69, 0xfc, 0x33, 0x02, 0x65, 0x85, 0xa5, 0xfe, 0x5d, 0xa8,
+	0x58, 0xaa, 0x08, 0xfb, 0x9e, 0xac, 0x42, 0xae, 0x6f, 0xd4, 0x73, 0xcd, 0x42, 0x67, 0xad, 0xa5,
+	0x3a, 0x75, 0xba, 0x48, 0x8d, 0xb2, 0x35, 0xb5, 0xe6, 0x8d, 0x6f, 0xe7, 0xa0, 0x9c, 0x70, 0x5e,
+	0xb6, 0x0c, 0x6e, 0x42, 0xf9, 0x54, 0xf8, 0x54, 0xfe, 0x66, 0x45, 0xaf, 0x34, 0x1d, 0xbd, 0x46,
+	0x08, 0xfa, 0x36, 0x8e, 0x99, 0x89, 0x5d, 0x53, 0xb0, 0x71, 0xdc, 0x1f, 0xc8, 0x7d, 0xcf, 0xe5,
+	0xcf, 0x0b, 0xe2, 0x39, 0xaf, 0x2d, 0xfc, 0xa5, 0xd7, 0xfe, 0x91, 0x83, 0x9b, 0xdb, 0x68, 0x85,
+	0xbe, 0xc3, 0x4c, 0x2a, 0xd0, 0xfa, 0xaf, 0xff, 0xae, 0xb4, 0xff, 0x72, 0x97, 0xee, 0xbf, 0x0d,
+	0x28, 0x70, 0x0c, 0xc6, 0x18, 0xf4, 0x05, 0x1b, 0xa1, 0xbe, 0x2e, 0x07, 0x34, 0xc4, 0xd0, 0x1e,
+	0x1b, 0x21, 0xd9, 0x86, 0xe5, 0x40, 0x15, 0x44, 0x5f, 0xe0, 0xc8, 0x77, 0xa8, 0x40, 0x7d, 0x43,
+	0xee, 0x71, 0xfd, 0x74, 0xb2, 0x55, 0xfe, 0x8c, 0x4a, 0xe2, 0xb1, 0xa7, 0x1c, 0x1a, 0xbf, 0xe7,
+	0x60, 0xfd, 0x6c, 0x9d, 0x3d, 0x0d, 0x91, 0x8b, 0x17, 0x38, 0xdb, 0xff, 0x80, 0xf9, 0xd9, 0x83,
+	0x1b, 0x34, 0x8d, 0xe8, 0x44, 0x62, 0x5d, 0x4a, 0xfc, 0x7f, 0xb2, 0x89, 0x49, 0xd8, 0x53, 0x2d,
+	0x42, 0xcf, 0x60, 0x57, 0x31, 0x8e, 0x7f, 0xbc, 0x06, 0xaf, 0x66, 0x5b, 0xfb, 0xdf, 0x97, 0xf6,
+	0x17, 0xae, 0xc9, 0xaf, 0xb8, 0x48, 0x4e, 0xcd, 0x0c, 0xfd, 0xcc, 0xcc, 0xe8, 0xcd, 0x9e, 0x19,
+	0xf5, 0xb4, 0x8c, 0x66, 0xfc, 0xeb, 0x9c, 0x33, 0x3c, 0xbe, 0x98, 0x83, 0xea, 0x84, 0xf8, 0x70,
+	0x48, 0x1d, 0x07, 0x5d, 0x1b, 0x5f, 0xb2, 0x42, 0x6a, 0xdc, 0x87, 0x5b, 0xe7, 0x46, 0xe1, 0xa2,
+	0x7f, 0xeb, 0x06, 0x81, 0xca, 0x93, 0x70, 0xc0, 0xcd, 0x80, 0x0d, 0x92, 0xa0, 0x35, 0xca, 0x50,
+	0x7c, 0x22, 0xa8, 0x08, 0x79, 0x02, 0x7c, 0x9f, 0x83, 0x7c, 0x8c, 0x90, 0x06, 0xe4, 0x43, 0xf9,
+	0x7f, 0x2c, 0x85, 0x0a, 0x1d, 0x68, 0x45, 0xb7, 0x15, 0x83, 0x0a, 0xe4, 0x86, 0xb2, 0x90, 0x36,
+	0x14, 0xe3, 0xa7, 0x7e, 0xe8, 0xb2, 0xa7, 0x21, 0xca, 0xdb, 0xc0, 0x34, 0x75, 0x29, 0x26, 0xec,
+	0x4b, 0x3b, 0xb9, 0x03, 0x0b, 0xc9, 0xa4, 0x50, 0x67, 0x85, 0x2c, 0x37, 0xb5, 0x91, 0x37, 0xa1,
+	0x30, 0x29, 0x39, 0xae, 0x1a, 0x25, 0x4b, 0xcd, 0x9a, 0xc9, 0x03, 0xc8, 0x14, 0x28, 0x4f, 0xf6,
+	0xb2, 0x76, 0xc6, 0x69, 0x39, 0xc3, 0x52, 0x1b, 0xfa, 0x00, 0x56, 0xb2, 0xae, 0xd4, 0x34, 0xd1,
+	0x17, 0x68, 0xa9, 0xae, 0xc8, 0x3a, 0x67, 0x9a, 0x87, 0x77, 0x15, 0x8d, 0xbc, 0x0b, 0x45, 0x2b,
+	0x9d, 0x72, 0xd1, 0x01, 0x28, 0xae, 0xef, 0x8a, 0xf4, 0x7b, 0x8c, 0x81, 0x19, 0xdd, 0x9a, 0x1c,
+	0xe4, 0xc6, 0x34, 0x8d, 0xbc, 0x01, 0xcb, 0xa6, 0xe7, 0xba, 0x68, 0x0a, 0xb4, 0xfa, 0x81, 0x17,
+	0x0a, 0x0c, 0xb8, 0xfe, 0x9a, 0xbc, 0x30, 0x55, 0x52, 0x83, 0x11, 0xe3, 0xe4, 0x2e, 0x90, 0x09,
+	0x79, 0x48, 0x5d, 0xcb, 0x89, 0xd8, 0xaf, 0x4b, 0xf6, 0x44, 0xe6, 0x63, 0x65, 0x68, 0x7c, 0x06,
+	0xb5, 0xae, 0x9f, 0xbe, 0x4a, 0xc1, 0x06, 0xda, 0x8c, 0x8b, 0xf8, 0xea, 0x93, 0xa9, 0x38, 0x2d,
+	0x5b, 0x71, 0xb7, 0x01, 0x94, 0x7a, 0xe6, 0x62, 0xa7, 0x90, 0x5d, 0xab, 0xf3, 0xcd, 0x1c, 0xe4,
+	0xb7, 0x64, 0xdb, 0x92, 0x4d, 0x58, 0xec, 0x72, 0xee, 0x99, 0x8c, 0x0a, 0x24, 0xab, 0x49, 0x33,
+	0x4f, 0x1d, 0xdf, 0xaa, 0xb3, 0xce, 0x05, 0x4d, 0xed, 0x9e, 0x46, 0x3e, 0x81, 0xc5, 0xb4, 0x18,
+	0x89, 0x9e, 0x30, 0x4f, 0xd7, 0x67, 0xf5, 0x95, 0xc9, 0x9c, 0x98, 0x71, 0x4a, 0xbc, 0xa7, 0x91,
+	0xf7, 0x61, 0xfe, 0x71, 0x38, 0x70, 0x18, 0x1f, 0x92, 0x59, 0xef, 0xac, 0xae, 0xb5, 0xe2, 0xab,
+	0x7d, 0x2b, 0xb9, 0xb4, 0xb7, 0x76, 0xa2, 0xab, 0x7d, 0x53, 0x23, 0x3d, 0x58, 0x50, 0xfd, 0x84,
+	0x64, 0x63, 0xf6, 0x58, 0x8a, 0xf7, 0x73, 0xe1, 0xdc, 0xea, 0x7c, 0xad, 0x41, 0x31, 0x0e, 0x52,
+	0x8f, 0xba, 0xd4, 0xc6, 0x80, 0x7c, 0x0e, 0xd5, 0x38, 0xf8, 0x18, 0x9c, 0x4d, 0x0b, 0xb9, 0x93,
+	0x28, 0x3e, 0x3f, 0x65, 0xb3, 0x3e, 0x80, 0x74, 0x60, 0xf1, 0x23, 0x14, 0xaa, 0x65, 0xd3, 0x4c,
+	0x4c, 0x35, 0x75, 0xb5, 0x34, 0x0d, 0x6f, 0x55, 0x7e, 0x38, 0xa9, 0x69, 0x3f, 0x9d, 0xd4, 0xb4,
+	0x5f, 0x4f, 0x6a, 0xda, 0x57, 0xbf, 0xd5, 0xfe, 0x37, 0xc8, 0x4b, 0xd5, 0xb7, 0xff, 0x0c, 0x00,
+	0x00, 0xff, 0xff, 0x64, 0x08, 0xa4, 0x66, 0x42, 0x11, 0x00, 0x00,
 }

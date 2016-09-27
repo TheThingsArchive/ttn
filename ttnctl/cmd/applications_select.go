@@ -11,11 +11,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// applicationsSelectCmd is the entrypoint for handlerctl
 var applicationsSelectCmd = &cobra.Command{
 	Use:   "select",
 	Short: "select the application to use",
 	Long:  `ttnctl applications select can be used to select the application to use in next commands.`,
+	Example: `$ ttnctl applications select
+  INFO Found one application "test", selecting that one.
+  INFO Found one EUI "0000000000000000", selecting that one.
+  INFO Updated configuration
+`,
 	Run: func(cmd *cobra.Command, args []string) {
 		account := util.GetAccount(ctx)
 

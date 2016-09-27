@@ -7,44 +7,58 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/api/router"
-	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/spf13/cobra"
 )
 
-var gatewayStatusCmd = &cobra.Command{
-	Use:   "status [GatewayEUI]",
+var gatewaysStatusCmd = &cobra.Command{
+	Use:   "status [gatewayID]",
 	Short: "Get status of a gateway",
-	Long:  `ttnctl gateway status can be used to get status of gateways.`,
+	Long:  `ttnctl gateways status can be used to get status of gateways.`,
+	Example: `$ ttnctl gateways status test
+  INFO Discovering Router...
+  INFO Connecting with Router...
+  INFO Connected to Router
+  INFO Received status
+
+           Last seen: 2016-09-20 08:25:27.94138808 +0200 CEST
+           Timestamp: 0
+       Reported time: 2016-09-20 08:25:26 +0200 CEST
+     GPS coordinates: (52.372791 4.900300)
+                 Rtt: not available
+                  Rx: (in: 0; ok: 0)
+                  Tx: (in: 0; ok: 0)
+`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) != 1 {
 			cmd.UsageFunc()(cmd)
 			return
 		}
 
-		euiString := args[0]
-		ctx = ctx.WithField("Gateway EUI", euiString)
-
-		eui, err := types.ParseGatewayEUI(euiString)
-		if err != nil {
-			ctx.WithError(err).Fatal("Invalid Gateway EUI")
+		gtwID := args[0]
+		if !api.ValidID(gtwID) {
+			ctx.Fatal("Invalid Gateway ID")
 		}
 
 		conn, manager := util.GetRouterManager(ctx)
 		defer conn.Close()
 
+		ctx = ctx.WithField("GatewayID", gtwID)
+
 		resp, err := manager.GatewayStatus(util.GetContext(ctx), &router.GatewayStatusRequest{
-			GatewayEui: &eui,
+			GatewayId: gtwID,
 		})
 		if err != nil {
-			ctx.WithError(err).Fatal("Could not get status of gateway.")
+			ctx.WithError(errors.FromGRPCError(err)).Fatal("Could not get status of gateway.")
 		}
 
 		ctx.Infof("Received status")
 		fmt.Println()
 		printKV("Last seen", time.Unix(0, resp.LastSeen))
-		printKV("Timestamp", time.Duration(resp.Status.Timestamp))
+		printKV("Timestamp", resp.Status.Timestamp)
 		if t := resp.Status.Time; t != 0 {
 			printKV("Reported time", time.Unix(0, t))
 		}
@@ -71,5 +85,5 @@ var gatewayStatusCmd = &cobra.Command{
 }
 
 func init() {
-	gatewayCmd.AddCommand(gatewayStatusCmd)
+	gatewaysCmd.AddCommand(gatewaysStatusCmd)
 }

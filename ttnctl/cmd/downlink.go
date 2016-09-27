@@ -17,6 +17,16 @@ var downlinkCmd = &cobra.Command{
 	Use:   "downlink [DevID] [Payload]",
 	Short: "Send a downlink message to a device",
 	Long:  `ttnctl downlink can be used to send a downlink message to a device.`,
+	Example: `$ ttnctl downlink test aabc
+  INFO Connecting to MQTT...
+  INFO Connected to MQTT
+  INFO Enqueued downlink                        AppID=test DevID=test
+
+$ ttnctl downlink test --json '{"led":"on"}'
+  INFO Connecting to MQTT...
+  INFO Connected to MQTT
+  INFO Enqueued downlink                        AppID=test DevID=test
+`,
 	Run: func(cmd *cobra.Command, args []string) {
 		client := util.GetMQTT(ctx)
 		defer client.Disconnect()

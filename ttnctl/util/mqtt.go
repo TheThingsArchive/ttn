@@ -57,7 +57,12 @@ func GetMQTT(ctx log.Interface) mqtt.Client {
 	}
 	key := app.AccessKeys[keyIdx]
 
-	broker := fmt.Sprintf("tcp://%s", viper.GetString("mqtt-broker"))
+	mqttProto := "tcp"
+	if strings.HasSuffix(viper.GetString("mqtt-broker"), ":8883") {
+		mqttProto = "ssl"
+		ctx.Fatal("TLS connections are not yet supported by ttnctl")
+	}
+	broker := fmt.Sprintf("%s://%s", mqttProto, viper.GetString("mqtt-broker"))
 	client := mqtt.NewClient(ctx, "ttnctl", appID, key.Key, broker)
 
 	ctx.WithField("MQTT Broker", broker).Info("Connecting to MQTT...")

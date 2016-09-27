@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 	"path"
 	"path/filepath"
@@ -15,6 +16,7 @@ import (
 	"gopkg.in/redis.v3"
 
 	cliHandler "github.com/TheThingsNetwork/ttn/utils/cli/handler"
+	esHandler "github.com/TheThingsNetwork/ttn/utils/elasticsearch/handler"
 	"github.com/apex/log"
 	jsonHandler "github.com/apex/log/handlers/json"
 	levelHandler "github.com/apex/log/handlers/level"
@@ -22,6 +24,7 @@ import (
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/tj/go-elastic"
 )
 
 var cfgFile string
@@ -42,7 +45,10 @@ var RootCmd = &cobra.Command{
 		}
 
 		var logHandlers []log.Handler
-		logHandlers = append(logHandlers, levelHandler.New(cliHandler.New(os.Stdout), logLevel))
+
+		if !viper.GetBool("no-cli-logs") {
+			logHandlers = append(logHandlers, levelHandler.New(cliHandler.New(os.Stdout), logLevel))
+		}
 
 		if logFileLocation := viper.GetString("log-file"); logFileLocation != "" {
 			absLogFileLocation, err := filepath.Abs(logFileLocation)
@@ -58,6 +64,18 @@ var RootCmd = &cobra.Command{
 			}
 		}
 
+		if esServer := viper.GetString("elasticsearch"); esServer != "" {
+			esClient := elastic.New(esServer)
+			esClient.HTTPClient = &http.Client{
+				Timeout: 5 * time.Second,
+			}
+			logHandlers = append(logHandlers, levelHandler.New(esHandler.New(&esHandler.Config{
+				Client:     esClient,
+				Prefix:     cmd.Name(),
+				BufferSize: 10,
+			}), logLevel))
+		}
+
 		ctx = &log.Logger{
 			Handler: multiHandler.New(logHandlers...),
 		}
@@ -65,7 +83,7 @@ var RootCmd = &cobra.Command{
 			"ComponentID":     viper.GetString("id"),
 			"Description":     viper.GetString("description"),
 			"DiscoveryServer": viper.GetString("discovery-server"),
-			"AuthServer":      viper.GetString("auth-server"),
+			"AuthServers":     viper.GetStringMapString("auth-servers"),
 		}).Info("Initializing The Things Network")
 	},
 	PersistentPostRun: func(cmd *cobra.Command, args []string) {
@@ -106,10 +124,11 @@ func init() {
 	RootCmd.PersistentFlags().String("discovery-server", "discover.thethingsnetwork.org:1900", "The address of the Discovery server")
 	viper.BindPFlag("discovery-server", RootCmd.PersistentFlags().Lookup("discovery-server"))
 
-	RootCmd.PersistentFlags().String("auth-server", "https://account.thethingsnetwork.org", "The address of the OAuth 2.0 server")
-	viper.BindPFlag("auth-server", RootCmd.PersistentFlags().Lookup("auth-server"))
+	viper.SetDefault("auth-servers", map[string]string{
+		"ttn-account": "https://account.thethingsnetwork.org",
+	})
 
-	RootCmd.PersistentFlags().String("auth-token", "", "The auth token signed JWT from the auth-server")
+	RootCmd.PersistentFlags().String("auth-token", "", "The JWT token to be used for the discovery server")
 	viper.BindPFlag("auth-token", RootCmd.PersistentFlags().Lookup("auth-token"))
 
 	RootCmd.PersistentFlags().Int("health-port", 0, "The port number where the health server should be started")
@@ -132,8 +151,14 @@ func init() {
 	RootCmd.PersistentFlags().String("key-dir", path.Clean(dir+"/.ttn/"), "The directory where public/private keys are stored")
 	viper.BindPFlag("key-dir", RootCmd.PersistentFlags().Lookup("key-dir"))
 
+	RootCmd.PersistentFlags().Bool("no-cli-logs", false, "Disable CLI logs")
+	viper.BindPFlag("no-cli-logs", RootCmd.PersistentFlags().Lookup("no-cli-logs"))
+
 	RootCmd.PersistentFlags().String("log-file", "", "Location of the log file")
 	viper.BindPFlag("log-file", RootCmd.PersistentFlags().Lookup("log-file"))
+
+	RootCmd.PersistentFlags().String("elasticsearch", "", "Location of Elasticsearch server for logging")
+	viper.BindPFlag("elasticsearch", RootCmd.PersistentFlags().Lookup("elasticsearch"))
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -160,7 +185,10 @@ func initConfig() {
 	}
 }
 
+// RedisConnectRetries indicates how many times the Redis connection should be retried
 var RedisConnectRetries = 10
+
+// RedisConnectRetryDelay indicates the time between Redis connection retries
 var RedisConnectRetryDelay = 1 * time.Second
 
 func connectRedis(client *redis.Client) error {

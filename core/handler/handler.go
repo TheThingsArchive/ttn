@@ -7,16 +7,15 @@ import (
 	"fmt"
 	"time"
 
-	"google.golang.org/grpc"
-
 	"github.com/TheThingsNetwork/ttn/api"
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb "github.com/TheThingsNetwork/ttn/api/handler"
-	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/handler/application"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
 	"github.com/TheThingsNetwork/ttn/mqtt"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
+	"google.golang.org/grpc"
 	"gopkg.in/redis.v3"
 )
 
@@ -26,6 +25,7 @@ type Handler interface {
 	core.ManagementInterface
 
 	HandleUplink(uplink *pb_broker.DeduplicatedUplinkMessage) error
+	HandleActivationChallenge(challenge *pb_broker.ActivationChallengeRequest) (*pb_broker.ActivationChallengeResponse, error)
 	HandleActivation(activation *pb_broker.DeduplicatedDeviceActivationRequest) (*pb.DeviceActivationResponse, error)
 	EnqueueDownlink(appDownlink *mqtt.DownlinkMessage) error
 }
@@ -52,7 +52,6 @@ type handler struct {
 	ttnBrokerConn    *grpc.ClientConn
 	ttnBroker        pb_broker.BrokerClient
 	ttnBrokerManager pb_broker.BrokerManagerClient
-	ttnDeviceManager pb_lorawan.DeviceManagerClient
 
 	downlink chan *pb_broker.DownlinkMessage
 
@@ -63,6 +62,7 @@ type handler struct {
 
 	mqttUp         chan *mqtt.UplinkMessage
 	mqttActivation chan *mqtt.Activation
+	mqttEvent      chan *mqttEvent
 }
 
 func (h *handler) Init(c *core.Component) error {
@@ -108,7 +108,6 @@ func (h *handler) associateBroker() error {
 	h.ttnBrokerConn = conn
 	h.ttnBroker = pb_broker.NewBrokerClient(conn)
 	h.ttnBrokerManager = pb_broker.NewBrokerManagerClient(conn)
-	h.ttnDeviceManager = pb_lorawan.NewDeviceManagerClient(conn)
 
 	h.downlink = make(chan *pb_broker.DownlinkMessage)
 
@@ -116,13 +115,14 @@ func (h *handler) associateBroker() error {
 		for {
 			upStream, err := h.ttnBroker.Subscribe(h.GetContext(""), &pb_broker.SubscribeRequest{})
 			if err != nil {
+				h.Ctx.WithError(errors.FromGRPCError(err)).Error("Could not start Broker subscribe stream")
 				<-time.After(api.Backoff)
 				continue
 			}
 			for {
 				in, err := upStream.Recv()
 				if err != nil {
-					h.Ctx.Errorf("ttn/handler: Error in Broker subscribe: %s", err)
+					h.Ctx.WithError(errors.FromGRPCError(err)).Error("Error in Broker subscribe stream")
 					break
 				}
 				go h.HandleUplink(in)
@@ -134,13 +134,14 @@ func (h *handler) associateBroker() error {
 		for {
 			downStream, err := h.ttnBroker.Publish(h.GetContext(""))
 			if err != nil {
+				h.Ctx.WithError(errors.FromGRPCError(err)).Error("Could not start Broker publish stream")
 				<-time.After(api.Backoff)
 				continue
 			}
 			for downlink := range h.downlink {
 				err := downStream.Send(downlink)
 				if err != nil {
-					h.Ctx.Errorf("ttn/handler: Error in Broker publish: %s", err)
+					h.Ctx.WithError(errors.FromGRPCError(err)).Error("Error in Broker publish stream")
 					break
 				}
 			}

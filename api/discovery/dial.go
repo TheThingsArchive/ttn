@@ -1,7 +1,7 @@
 package discovery
 
 import (
-	"errors"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"strings"
 
 	"github.com/TheThingsNetwork/ttn/api"

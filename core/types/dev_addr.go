@@ -5,7 +5,8 @@ package types
 
 import (
 	"encoding/hex"
-	"errors"
+	"fmt"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"regexp"
 	"strconv"
 	"strings"
@@ -99,41 +100,73 @@ func (addr DevAddr) IsEmpty() bool {
 	return addr == empty
 }
 
+// DevAddrPrefix is a DevAddr with a prefix length
+type DevAddrPrefix struct {
+	DevAddr DevAddr
+	Length  int
+}
+
+// ParseDevAddrPrefix parses a DevAddr in prefix notation (01020304/24) to a prefix
+func ParseDevAddrPrefix(prefixString string) (prefix DevAddrPrefix, err error) {
+	pattern := regexp.MustCompile("([[:xdigit:]]{8})/([[:digit:]]+)")
+	matches := pattern.FindStringSubmatch(prefixString)
+	if len(matches) != 3 {
+		err = errors.New("Invalid Prefix")
+		return
+	}
+	addr, _ := ParseDevAddr(matches[1])         // errors handled in regexp
+	prefix.Length, _ = strconv.Atoi(matches[2]) // errors handled in regexp
+	prefix.DevAddr = addr.Mask(prefix.Length)
+	return
+}
+
+// String implements the fmt.Stringer interface
+func (prefix DevAddrPrefix) String() string {
+	var addr string
+	if prefix.DevAddr.IsEmpty() {
+		addr = "00000000"
+	} else {
+		addr = prefix.DevAddr.String()
+	}
+	return fmt.Sprintf("%s/%d", addr, prefix.Length)
+}
+
+// MarshalText implements the TextMarshaler interface.
+func (prefix DevAddrPrefix) MarshalText() ([]byte, error) {
+	return []byte(prefix.String()), nil
+}
+
+// UnmarshalText implements the TextUnmarshaler interface.
+func (prefix *DevAddrPrefix) UnmarshalText(data []byte) error {
+	parsed, err := ParseDevAddrPrefix(string(data))
+	if err != nil {
+		return err
+	}
+	*prefix = DevAddrPrefix(parsed)
+	return nil
+}
+
 // Mask returns a copy of the DevAddr with only the first "bits" bits
 func (addr DevAddr) Mask(bits int) (masked DevAddr) {
-	return empty.WithPrefix(addr, bits)
+	return empty.WithPrefix(DevAddrPrefix{addr, bits})
 }
 
 // WithPrefix returns the DevAddr, but with the first length bits replaced by the Prefix
-func (addr DevAddr) WithPrefix(prefix DevAddr, length int) (prefixed DevAddr) {
-	k := uint(length)
+func (addr DevAddr) WithPrefix(prefix DevAddrPrefix) (prefixed DevAddr) {
+	k := uint(prefix.Length)
 	for i := 0; i < 4; i++ {
 		if k >= 8 {
-			prefixed[i] = prefix[i] & 0xff
+			prefixed[i] = prefix.DevAddr[i] & 0xff
 			k -= 8
 			continue
 		}
-		prefixed[i] = (prefix[i] & ^byte(0xff>>k)) | (addr[i] & byte(0xff>>k))
+		prefixed[i] = (prefix.DevAddr[i] & ^byte(0xff>>k)) | (addr[i] & byte(0xff>>k))
 		k = 0
 	}
 	return
 }
 
 // HasPrefix returns true if the DevAddr has a prefix of given length
-func (addr DevAddr) HasPrefix(prefix DevAddr, length int) bool {
-	return addr.Mask(length) == prefix.Mask(length)
-}
-
-// ParseDevAddrPrefix parses a DevAddr in prefix notation (01020304/24) to a prefix (01020300) and length (24)
-func ParseDevAddrPrefix(prefix string) (addr DevAddr, length int, err error) {
-	pattern := regexp.MustCompile("([[:xdigit:]]{8})/([[:digit:]]+)")
-	matches := pattern.FindStringSubmatch(prefix)
-	if len(matches) != 3 {
-		err = errors.New("Invalid Prefix")
-		return
-	}
-	addr, _ = ParseDevAddr(matches[1])   // errors handled in regexp
-	length, _ = strconv.Atoi(matches[2]) // errors handled in regexp
-	addr = addr.Mask(length)
-	return
+func (addr DevAddr) HasPrefix(prefix DevAddrPrefix) bool {
+	return addr.Mask(prefix.Length) == prefix.DevAddr.Mask(prefix.Length)
 }

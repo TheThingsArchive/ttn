@@ -13,12 +13,6 @@ import (
 	"github.com/TheThingsNetwork/ttn/mqtt"
 )
 
-// Options for the specified device
-type Options struct {
-	DisableFCntCheck bool // Disable Frame counter check (insecure)
-	Uses32BitFCnt    bool // Use 32-bit Frame counters
-}
-
 type DevNonce [2]byte
 type AppNonce [3]byte
 

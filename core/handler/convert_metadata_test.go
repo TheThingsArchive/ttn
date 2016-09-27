@@ -12,7 +12,6 @@ import (
 	pb_protocol "github.com/TheThingsNetwork/ttn/api/protocol"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core"
-	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/mqtt"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/assertions"
@@ -30,13 +29,13 @@ func TestConvertMetadata(t *testing.T) {
 	err := h.ConvertMetadata(h.Ctx, ttnUp, appUp)
 	a.So(err, ShouldBeNil)
 
-	gtwEUI := types.GatewayEUI{1, 2, 3, 4, 5, 6, 7, 8}
+	gtwID := "eui-0102030405060708"
 	ttnUp.GatewayMetadata = []*pb_gateway.RxMetadata{
 		&pb_gateway.RxMetadata{
-			GatewayEui: &gtwEUI,
+			GatewayId: gtwID,
 		},
 		&pb_gateway.RxMetadata{
-			GatewayEui: &gtwEUI,
+			GatewayId: gtwID,
 		},
 	}
 

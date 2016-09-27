@@ -4,20 +4,19 @@
 package router
 
 import (
-	"errors"
 	"time"
 
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	pb "github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/core/types"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/apex/log"
 	"github.com/brocaar/lorawan"
 )
 
-func (r *router) HandleUplink(gatewayEUI types.GatewayEUI, uplink *pb.UplinkMessage) error {
-	ctx := r.Ctx.WithField("GatewayEUI", gatewayEUI)
-	var err error
+func (r *router) HandleUplink(gatewayID string, uplink *pb.UplinkMessage) (err error) {
+	ctx := r.Ctx.WithField("GatewayID", gatewayID)
 	start := time.Now()
 	defer func() {
 		if err != nil {
@@ -37,7 +36,7 @@ func (r *router) HandleUplink(gatewayEUI types.GatewayEUI, uplink *pb.UplinkMess
 	if phyPayload.MHDR.MType == lorawan.JoinRequest {
 		joinRequestPayload, ok := phyPayload.MACPayload.(*lorawan.JoinRequestPayload)
 		if !ok {
-			return errors.New("Join Request message does not contain a join payload.")
+			return errors.NewErrInvalidArgument("Join Request", "does not contain a JoinRequest payload")
 		}
 		devEUI := types.DevEUI(joinRequestPayload.DevEUI)
 		appEUI := types.AppEUI(joinRequestPayload.AppEUI)
@@ -45,7 +44,7 @@ func (r *router) HandleUplink(gatewayEUI types.GatewayEUI, uplink *pb.UplinkMess
 			"DevEUI": devEUI,
 			"AppEUI": appEUI,
 		}).Debug("Handle Uplink as Activation")
-		_, err := r.HandleActivation(gatewayEUI, &pb.DeviceActivationRequest{
+		_, err := r.HandleActivation(gatewayID, &pb.DeviceActivationRequest{
 			Payload:          uplink.Payload,
 			DevEui:           &devEUI,
 			AppEui:           &appEUI,
@@ -74,16 +73,17 @@ func (r *router) HandleUplink(gatewayEUI types.GatewayEUI, uplink *pb.UplinkMess
 
 	macPayload, ok := phyPayload.MACPayload.(*lorawan.MACPayload)
 	if !ok {
-		return errors.New("Uplink message does not contain a MAC payload.")
+		return errors.NewErrInvalidArgument("Uplink", "does not contain a MAC payload")
 	}
 	devAddr := types.DevAddr(macPayload.FHDR.DevAddr)
 
 	ctx = ctx.WithField("DevAddr", devAddr)
 
-	gateway := r.getGateway(gatewayEUI)
-	gateway.LastSeen = time.Now()
-	gateway.Schedule.Sync(uplink.GatewayMetadata.Timestamp)
-	gateway.Utilization.AddRx(uplink)
+	gateway := r.getGateway(gatewayID)
+
+	if err = gateway.HandleUplink(uplink); err != nil {
+		return err
+	}
 
 	var downlinkOptions []*pb_broker.DownlinkOption
 	if gateway.Schedule.IsActive() {
@@ -93,7 +93,7 @@ func (r *router) HandleUplink(gatewayEUI types.GatewayEUI, uplink *pb.UplinkMess
 	ctx = ctx.WithField("DownlinkOptions", len(downlinkOptions))
 
 	// Find Broker
-	brokers, err := r.brokerDiscovery.Discover(devAddr)
+	brokers, err := r.Discovery.GetAllBrokersForDevAddr(devAddr)
 	if err != nil {
 		return err
 	}

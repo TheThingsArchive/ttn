@@ -4,7 +4,7 @@
 package util
 
 import (
-	"errors"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"

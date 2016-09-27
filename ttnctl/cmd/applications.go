@@ -5,7 +5,6 @@ package cmd
 
 import "github.com/spf13/cobra"
 
-// applicationsCmd is the entrypoint for handlerctl
 var applicationsCmd = &cobra.Command{
 	Use:   "applications",
 	Short: "Manage applications",

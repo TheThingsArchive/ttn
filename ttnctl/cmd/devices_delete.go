@@ -12,11 +12,18 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// devicesDeleteCmd represents the `device delete` command
 var devicesDeleteCmd = &cobra.Command{
 	Use:   "delete [Device ID]",
 	Short: "Delete a device",
 	Long:  `ttnctl devices delete can be used to delete a device.`,
+	Example: `$ ttnctl devices delete test
+  INFO Using Application                        AppID=test
+Are you sure you want to delete device test from application test?
+> yes
+  INFO Discovering Handler...
+  INFO Connecting with Handler...
+  INFO Deleted device                           AppID=test DevID=test
+`,
 	Run: func(cmd *cobra.Command, args []string) {
 
 		if len(args) == 0 {

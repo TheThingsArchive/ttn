@@ -23,12 +23,12 @@ const (
 
 type TTNRandom struct {
 	sync.Mutex
-	src *rand.Rand
+	*rand.Rand
 }
 
 func New() *TTNRandom {
 	return &TTNRandom{
-		src: rand.New(rand.NewSource(time.Now().UnixNano())),
+		Rand: rand.New(rand.NewSource(time.Now().UnixNano())),
 	}
 }
 
@@ -39,10 +39,10 @@ func (r *TTNRandom) String(n int) string {
 	r.Lock()
 	defer r.Unlock()
 	b := make([]byte, n)
-	// A src.Int63() generates 63 random bits, enough for letterIdxMax characters!
-	for i, cache, remain := n-1, r.src.Int63(), letterIdxMax; i >= 0; {
+	// A Int63() generates 63 random bits, enough for letterIdxMax characters!
+	for i, cache, remain := n-1, r.Int63(), letterIdxMax; i >= 0; {
 		if remain == 0 {
-			cache, remain = r.src.Int63(), letterIdxMax
+			cache, remain = r.Int63(), letterIdxMax
 		}
 		if idx := int(cache & letterIdxMask); idx < len(letterBytes) {
 			b[i] = letterBytes[idx]
@@ -60,7 +60,7 @@ func (r *TTNRandom) Token() []byte {
 	r.Lock()
 	defer r.Unlock()
 	b := make([]byte, 4)
-	binary.BigEndian.PutUint32(b, r.src.Uint32())
+	binary.BigEndian.PutUint32(b, r.Uint32())
 	return b[0:2]
 }
 
@@ -69,7 +69,7 @@ func (r *TTNRandom) Rssi() int32 {
 	r.Lock()
 	defer r.Unlock()
 	// Generate RSSI. Tend towards generating great signal strength.
-	x := float64(r.src.Int31()) * float64(2e-9)
+	x := float64(r.Int31()) * float64(2e-9)
 	return int32(-1.6 * math.Exp(x))
 }
 
@@ -101,7 +101,7 @@ var usFreqs = []float32{
 func (r *TTNRandom) Freq() float32 {
 	r.Lock()
 	defer r.Unlock()
-	return usFreqs[r.src.Intn(len(usFreqs))]
+	return usFreqs[r.Intn(len(usFreqs))]
 }
 
 // Datr generates Datr for instance: SF4BW125
@@ -109,7 +109,7 @@ func (r *TTNRandom) Datr() string {
 	r.Lock()
 	defer r.Unlock()
 	// Spread Factor from 12 to 7
-	sf := 12 - r.src.Intn(7)
+	sf := 12 - r.Intn(7)
 	var bw int
 	if sf == 6 {
 		// DR6 -> SF7@250Khz
@@ -125,7 +125,7 @@ func (r *TTNRandom) Datr() string {
 func (r *TTNRandom) Codr() string {
 	r.Lock()
 	defer r.Unlock()
-	d := r.src.Intn(4) + 5
+	d := r.Intn(4) + 5
 	return fmt.Sprintf("4/%d", d)
 }
 
@@ -133,7 +133,7 @@ func (r *TTNRandom) Codr() string {
 func (r *TTNRandom) Lsnr() float32 {
 	r.Lock()
 	defer r.Unlock()
-	x := float64(r.src.Int31()) * float64(2e-9)
+	x := float64(r.Int31()) * float64(2e-9)
 	return float32(math.Floor((-0.1*math.Exp(x)+5.5)*10) / 10)
 }
 
@@ -142,7 +142,7 @@ func (r *TTNRandom) Bytes(n int) []byte {
 	r.Lock()
 	defer r.Unlock()
 	p := make([]byte, n)
-	r.src.Read(p)
+	r.Read(p)
 	return p
 }
 

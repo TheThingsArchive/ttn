@@ -10,7 +10,7 @@ import (
 	. "github.com/smartystreets/assertions"
 )
 
-func TestCompute(t *testing.T) {
+func TestComputeLoRa(t *testing.T) {
 	a := New(t)
 
 	var toa time.Duration
@@ -26,7 +26,7 @@ func TestCompute(t *testing.T) {
 		"SF12BW125": 991232,
 	}
 	for dr, us := range sfTests {
-		toa, err = Compute(10, dr, "4/5")
+		toa, err = ComputeLoRa(10, dr, "4/5")
 		a.So(err, ShouldBeNil)
 		a.So(toa, ShouldAlmostEqual, time.Duration(us)*time.Microsecond)
 	}
@@ -38,7 +38,7 @@ func TestCompute(t *testing.T) {
 		"SF7BW500": 10304,
 	}
 	for dr, us := range bwTests {
-		toa, err = Compute(10, dr, "4/5")
+		toa, err = ComputeLoRa(10, dr, "4/5")
 		a.So(err, ShouldBeNil)
 		a.So(toa, ShouldAlmostEqual, time.Duration(us)*time.Microsecond)
 	}
@@ -51,7 +51,7 @@ func TestCompute(t *testing.T) {
 		"4/8": 53504,
 	}
 	for cr, us := range crTests {
-		toa, err = Compute(10, "SF7BW125", cr)
+		toa, err = ComputeLoRa(10, "SF7BW125", cr)
 		a.So(err, ShouldBeNil)
 		a.So(toa, ShouldAlmostEqual, time.Duration(us)*time.Microsecond)
 	}
@@ -67,9 +67,17 @@ func TestCompute(t *testing.T) {
 		19: 51456,
 	}
 	for size, us := range plTests {
-		toa, err = Compute(size, "SF7BW125", "4/5")
+		toa, err = ComputeLoRa(size, "SF7BW125", "4/5")
 		a.So(err, ShouldBeNil)
 		a.So(toa, ShouldAlmostEqual, time.Duration(us)*time.Microsecond)
 	}
 
+}
+
+// TODO: (@tftelkamp): Verify this
+func TestComputeFSK(t *testing.T) {
+	a := New(t)
+	toa, err := ComputeFSK(200, 50000)
+	a.So(err, ShouldBeNil)
+	a.So(toa, ShouldAlmostEqual, 33760*time.Microsecond)
 }

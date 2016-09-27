@@ -4,13 +4,14 @@
 package gateway
 
 import (
-	"errors"
 	"fmt"
 	"sync"
 	"sync/atomic"
 	"time"
 
+	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	router_pb "github.com/TheThingsNetwork/ttn/api/router"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/random"
 	"github.com/TheThingsNetwork/ttn/utils/toa"
 	"github.com/apex/log"
@@ -164,12 +165,24 @@ func (s *schedule) Schedule(id string, downlink *router_pb.DownlinkMessage) erro
 	defer s.Unlock()
 	if item, ok := s.items[id]; ok {
 		item.payload = downlink
-		if lora := downlink.GetProtocolConfiguration().GetLorawan(); lora != nil {
-			time, _ := toa.Compute(
-				uint(len(downlink.Payload)),
-				lora.DataRate,
-				lora.CodingRate,
-			)
+
+		if lorawan := downlink.GetProtocolConfiguration().GetLorawan(); lorawan != nil {
+			var time time.Duration
+			if lorawan.Modulation == pb_lorawan.Modulation_LORA {
+				// Calculate max ToA
+				time, _ = toa.ComputeLoRa(
+					uint(len(downlink.Payload)),
+					lorawan.DataRate,
+					lorawan.CodingRate,
+				)
+			}
+			if lorawan.Modulation == pb_lorawan.Modulation_FSK {
+				// Calculate max ToA
+				time, _ = toa.ComputeFSK(
+					uint(len(downlink.Payload)),
+					int(lorawan.BitRate),
+				)
+			}
 			item.length = uint32(time / 1000)
 		}
 
@@ -198,7 +211,7 @@ func (s *schedule) Schedule(id string, downlink *router_pb.DownlinkMessage) erro
 
 		return nil
 	}
-	return errors.New("ID not found")
+	return errors.NewErrNotFound(id)
 }
 
 func (s *schedule) Stop() {

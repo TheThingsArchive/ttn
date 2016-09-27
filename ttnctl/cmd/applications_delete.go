@@ -10,7 +10,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// applicationsDeleteCmd represents the deletes command
 var applicationsDeleteCmd = &cobra.Command{
 	Use:   "delete",
 	Short: "Delete an application",

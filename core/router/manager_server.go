@@ -4,8 +4,6 @@
 package router
 
 import (
-	"errors"
-
 	pb "github.com/TheThingsNetwork/ttn/api/router"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -13,20 +11,25 @@ import (
 )
 
 type routerManager struct {
-	*router
+	router *router
 }
 
 var errf = grpc.Errorf
 
 func (r *routerManager) GatewayStatus(ctx context.Context, in *pb.GatewayStatusRequest) (*pb.GatewayStatusResponse, error) {
-	if in.GatewayEui == nil {
-		return nil, errf(codes.InvalidArgument, "GatewayEUI is required")
+	if in.GatewayId == "" {
+		return nil, errf(codes.InvalidArgument, "GatewayID is required")
 	}
-	_, err := r.ValidateTTNAuthContext(ctx)
+	_, err := r.router.ValidateTTNAuthContext(ctx)
 	if err != nil {
-		return nil, errf(codes.Unauthenticated, "No access")
+		return nil, errf(codes.PermissionDenied, "No access")
 	}
-	gtw := r.getGateway(*in.GatewayEui)
+	r.router.gatewaysLock.RLock()
+	gtw, ok := r.router.gateways[in.GatewayId]
+	r.router.gatewaysLock.RUnlock()
+	if !ok {
+		return nil, grpcErrf(codes.NotFound, "Gateway %s not found", in.GatewayId)
+	}
 	status, err := gtw.Status.Get()
 	if err != nil {
 		return nil, err
@@ -38,7 +41,7 @@ func (r *routerManager) GatewayStatus(ctx context.Context, in *pb.GatewayStatusR
 }
 
 func (r *routerManager) GetStatus(ctx context.Context, in *pb.StatusRequest) (*pb.Status, error) {
-	return nil, errors.New("Not Implemented")
+	return nil, grpcErrf(codes.Unimplemented, "Not Implemented")
 }
 
 // RegisterManager registers this router as a RouterManagerServer (github.com/TheThingsNetwork/ttn/api/router)

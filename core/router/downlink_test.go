@@ -16,7 +16,6 @@ import (
 	pb "github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/router/gateway"
-	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/assertions"
 )
@@ -45,16 +44,15 @@ func TestHandleDownlink(t *testing.T) {
 		Component: &core.Component{
 			Ctx: GetLogger(t, "TestHandleDownlink"),
 		},
-		gateways:        map[types.GatewayEUI]*gateway.Gateway{},
-		brokerDiscovery: &mockBrokerDiscovery{},
+		gateways: map[string]*gateway.Gateway{},
 	}
 
-	eui := types.GatewayEUI{0, 1, 2, 3, 4, 5, 6, 7}
-	id, _ := r.getGateway(eui).Schedule.GetOption(0, 10*1000)
+	gtwID := "eui-0102030405060708"
+	id, _ := r.getGateway(gtwID).Schedule.GetOption(0, 10*1000)
 	err := r.HandleDownlink(&pb_broker.DownlinkMessage{
 		Payload: []byte{},
 		DownlinkOption: &pb_broker.DownlinkOption{
-			GatewayEui:     &eui,
+			GatewayId:      gtwID,
 			Identifier:     id,
 			ProtocolConfig: &pb_protocol.TxConfiguration{},
 			GatewayConfig:  &pb_gateway.TxConfiguration{},
@@ -71,17 +69,16 @@ func TestSubscribeUnsubscribeDownlink(t *testing.T) {
 		Component: &core.Component{
 			Ctx: GetLogger(t, "TestSubscribeUnsubscribeDownlink"),
 		},
-		gateways:        map[types.GatewayEUI]*gateway.Gateway{},
-		brokerDiscovery: &mockBrokerDiscovery{},
+		gateways: map[string]*gateway.Gateway{},
 	}
 
-	eui := types.GatewayEUI{0, 1, 2, 3, 4, 5, 6, 7}
+	gtwID := "eui-0102030405060708"
 	gateway.Deadline = 1 * time.Millisecond
-	gtw := r.getGateway(eui)
+	gtw := r.getGateway(gtwID)
 	gtw.Schedule.Sync(0)
 	id, _ := gtw.Schedule.GetOption(5000, 10*1000)
 
-	ch, err := r.SubscribeDownlink(eui)
+	ch, err := r.SubscribeDownlink(gtwID)
 	a.So(err, ShouldBeNil)
 
 	var wg sync.WaitGroup
@@ -99,7 +96,7 @@ func TestSubscribeUnsubscribeDownlink(t *testing.T) {
 	r.HandleDownlink(&pb_broker.DownlinkMessage{
 		Payload: []byte{0x02},
 		DownlinkOption: &pb_broker.DownlinkOption{
-			GatewayEui:     &eui,
+			GatewayId:      gtwID,
 			Identifier:     id,
 			ProtocolConfig: &pb_protocol.TxConfiguration{},
 			GatewayConfig:  &pb_gateway.TxConfiguration{},
@@ -109,7 +106,7 @@ func TestSubscribeUnsubscribeDownlink(t *testing.T) {
 	// Wait for the downlink to arrive
 	<-time.After(10 * time.Millisecond)
 
-	err = r.UnsubscribeDownlink(eui)
+	err = r.UnsubscribeDownlink(gtwID)
 	a.So(err, ShouldBeNil)
 
 	wg.Wait()
@@ -122,7 +119,7 @@ func TestUplinkBuildDownlinkOptions(t *testing.T) {
 
 	// If something is incorrect, it just returns an empty list
 	up := &pb.UplinkMessage{}
-	gtw := gateway.NewGateway(GetLogger(t, "TestUplinkBuildDownlinkOptions"), types.GatewayEUI{0, 1, 2, 3, 4, 5, 6, 7})
+	gtw := gateway.NewGateway(GetLogger(t, "TestUplinkBuildDownlinkOptions"), "eui-0102030405060708")
 	options := r.buildDownlinkOptions(up, false, gtw)
 	a.So(options, ShouldBeEmpty)
 

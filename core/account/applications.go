@@ -100,7 +100,32 @@ func (a *Account) AddEUI(appID string, eui types.AppEUI) error {
 	return a.put(fmt.Sprintf("/applications/%s/euis/%s", appID, eui.String()), nil, nil)
 }
 
+type genEUIRes struct {
+	EUI types.AppEUI `json:"eui"`
+}
+
+// GenerateEUI creates a new EUI for the application
+func (a *Account) GenerateEUI(appID string) (*types.AppEUI, error) {
+	var res genEUIRes
+	err := a.post(fmt.Sprintf("/applications/%s/euis", appID), nil, &res)
+	if err != nil {
+		return nil, err
+	}
+	return &res.EUI, nil
+}
+
 // RemoveEUI removes the specified EUI from the application
 func (a *Account) RemoveEUI(appID string, eui types.AppEUI) error {
 	return a.del(fmt.Sprintf("/applications/%s/euis/%s", appID, eui.String()))
+}
+
+// AppRights returns the rights the current account client has to a certain
+// application
+func (a *Account) AppRights(appID string) (rights []types.Right, err error) {
+	err = a.get(fmt.Sprintf("/applications/%s/rights", appID), &rights)
+	if err != nil {
+		return nil, err
+	}
+
+	return rights, nil
 }

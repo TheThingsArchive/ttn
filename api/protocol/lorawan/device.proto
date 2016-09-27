@@ -3,8 +3,8 @@
 
 syntax = "proto3";
 
+import "google/protobuf/empty.proto";
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
-import "github.com/TheThingsNetwork/ttn/api/api.proto";
 
 package lorawan;
 
@@ -28,6 +28,7 @@ message Device {
   // Options
   bool   disable_f_cnt_check = 11;
   bool   uses32_bit_f_cnt    = 12;
+  string activation_constraints = 13;
 
   // Other
   int64  last_seen = 21;
@@ -35,6 +36,6 @@ message Device {
 
 service DeviceManager {
   rpc GetDevice(DeviceIdentifier) returns (Device);
-  rpc SetDevice(Device) returns (api.Ack);
-  rpc DeleteDevice(DeviceIdentifier) returns (api.Ack);
+  rpc SetDevice(Device) returns (google.protobuf.Empty);
+  rpc DeleteDevice(DeviceIdentifier) returns (google.protobuf.Empty);
 }

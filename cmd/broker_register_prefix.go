@@ -39,7 +39,7 @@ var brokerRegisterPrefixCmd = &cobra.Command{
 
 		for _, prefixString := range args {
 			ctx := ctx.WithField("Prefix", prefixString)
-			prefix, length, err := types.ParseDevAddrPrefix(prefixString)
+			prefix, err := types.ParseDevAddrPrefix(prefixString)
 			if err != nil {
 				ctx.WithError(err).Error("Could not register prefix")
 				continue
@@ -49,7 +49,7 @@ var brokerRegisterPrefixCmd = &cobra.Command{
 				Id:          viper.GetString("id"),
 				Metadata: &discovery.Metadata{
 					Key:   discovery.Metadata_PREFIX,
-					Value: []byte{byte(length), prefix[0], prefix[1], prefix[2], prefix[3]},
+					Value: []byte{byte(prefix.Length), prefix.DevAddr[0], prefix.DevAddr[1], prefix.DevAddr[2], prefix.DevAddr[3]},
 				},
 			})
 			if err != nil {

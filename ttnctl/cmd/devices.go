@@ -9,7 +9,6 @@ import (
 	"github.com/spf13/viper"
 )
 
-// devicesCmd is the entrypoint for handlerctl
 var devicesCmd = &cobra.Command{
 	Use:   "devices",
 	Short: "Manage devices",

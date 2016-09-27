@@ -4,7 +4,7 @@
 package broker
 
 import (
-	"errors"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"sync"
 	"testing"
 

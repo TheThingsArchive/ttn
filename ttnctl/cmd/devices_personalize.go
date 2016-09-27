@@ -4,6 +4,8 @@
 package cmd
 
 import (
+	"strings"
+
 	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
@@ -12,11 +14,19 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// devicesPersonalizeCmd represents the `device personalize` command
 var devicesPersonalizeCmd = &cobra.Command{
-	Use:   "personalize [Device ID] [DevAddr] [NwkSKey] [AppSKey]",
+	Use:   "personalize [Device ID] [NwkSKey] [AppSKey]",
 	Short: "Personalize a device",
 	Long:  `ttnctl devices personalize can be used to personalize a device (ABP).`,
+	Example: `$ ttnctl devices personalize test
+  INFO Using Application                        AppEUI=70B3D57EF0000024 AppID=test
+  INFO Generating random NwkSKey...
+  INFO Generating random AppSKey...
+  INFO Discovering Handler...                   Handler=ttn-handler-eu
+  INFO Connecting with Handler...               Handler=eu.thethings.network:1904
+  INFO Requesting DevAddr for device...
+  INFO Personalized device                      AppID=test AppSKey=D8DD37B4B709BA76C6FEC62CAD0CCE51 DevAddr=26001ADA DevID=test NwkSKey=3382A3066850293421ED8D392B9BF4DF
+`,
 	Run: func(cmd *cobra.Command, args []string) {
 
 		var err error
@@ -33,20 +43,8 @@ var devicesPersonalizeCmd = &cobra.Command{
 
 		appID := util.GetAppID(ctx)
 
-		var devAddr types.DevAddr
-		if len(args) > 1 {
-			devAddr, err = types.ParseDevAddr(args[1])
-			if err != nil {
-				ctx.Fatalf("Invalid DevAddr: %s", err)
-			}
-		} else {
-			ctx.Info("Generating random DevAddr...")
-			copy(devAddr[:], random.Bytes(4))
-			devAddr = devAddr.WithPrefix(types.DevAddr([4]byte{0x26, 0x00, 0x10, 0x00}), 20)
-		}
-
 		var nwkSKey types.NwkSKey
-		if len(args) > 2 {
+		if len(args) > 1 {
 			nwkSKey, err = types.ParseNwkSKey(args[2])
 			if err != nil {
 				ctx.Fatalf("Invalid NwkSKey: %s", err)
@@ -57,7 +55,7 @@ var devicesPersonalizeCmd = &cobra.Command{
 		}
 
 		var appSKey types.AppSKey
-		if len(args) > 3 {
+		if len(args) > 2 {
 			appSKey, err = types.ParseAppSKey(args[3])
 			if err != nil {
 				ctx.Fatalf("Invalid AppSKey: %s", err)
@@ -75,6 +73,21 @@ var devicesPersonalizeCmd = &cobra.Command{
 			ctx.WithError(err).Fatal("Could not get existing device.")
 		}
 
+		ctx.Info("Requesting DevAddr for device...")
+
+		var constraints []string
+		if lorawan := dev.GetLorawanDevice(); lorawan != nil && lorawan.ActivationConstraints != "" {
+			constraints = strings.Split(lorawan.ActivationConstraints, ",")
+		}
+		constraints = append(constraints, "abp")
+
+		devAddr, err := manager.GetDevAddr(constraints...)
+		if err != nil {
+			ctx.WithError(err).Fatal("Could not request device address")
+		}
+
+		var emptyAppKey types.AppKey
+		dev.GetLorawanDevice().AppKey = &emptyAppKey
 		dev.GetLorawanDevice().DevAddr = &devAddr
 		dev.GetLorawanDevice().NwkSKey = &nwkSKey
 		dev.GetLorawanDevice().AppSKey = &appSKey

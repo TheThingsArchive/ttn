@@ -13,9 +13,15 @@ import (
 )
 
 var userLoginCmd = &cobra.Command{
-	Use:   "login [client code]",
-	Short: "Login",
-	Long:  `ttnctl user login allows you to login to the account server.`,
+	Use:   "login [access code]",
+	Short: "Log in with your TTN account",
+	Long:  `ttnctl user login allows you to log in to your TTN account.`,
+	Example: `First get an access code from your TTN profile by going to
+https://account.thethingsnetwork.org and clicking "ttnctl access code".
+
+$ ttnctl user login [paste the access code you requested above]
+  INFO Successfully logged in as yourname (your@email.org)
+`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) < 1 {
 			cmd.UsageFunc()(cmd)

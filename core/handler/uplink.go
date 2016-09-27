@@ -4,7 +4,6 @@
 package handler
 
 import (
-	"fmt"
 	"time"
 
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
@@ -12,17 +11,24 @@ import (
 	"github.com/apex/log"
 )
 
+// ResponseDeadline indicates how long
 var ResponseDeadline = 100 * time.Millisecond
 
-func (h *handler) HandleUplink(uplink *pb_broker.DeduplicatedUplinkMessage) error {
+func (h *handler) HandleUplink(uplink *pb_broker.DeduplicatedUplinkMessage) (err error) {
+	appID, devID := uplink.AppId, uplink.DevId
 	ctx := h.Ctx.WithFields(log.Fields{
-		"AppID": uplink.AppId,
-		"DevID": uplink.DevId,
+		"AppID": appID,
+		"DevID": devID,
 	})
-	var err error
 	start := time.Now()
 	defer func() {
 		if err != nil {
+			h.mqttEvent <- &mqttEvent{
+				AppID:   appID,
+				DevID:   devID,
+				Type:    "up/errors",
+				Payload: map[string]string{"error": err.Error()},
+			}
 			ctx.WithError(err).Warn("Could not handle uplink")
 		} else {
 			ctx.WithField("Duration", time.Now().Sub(start)).Info("Handled uplink")
@@ -31,8 +37,8 @@ func (h *handler) HandleUplink(uplink *pb_broker.DeduplicatedUplinkMessage) erro
 
 	// Build AppUplink
 	appUplink := &mqtt.UplinkMessage{
-		AppID: uplink.AppId,
-		DevID: uplink.DevId,
+		AppID: appID,
+		DevID: devID,
 	}
 
 	// Get Uplink Processors
@@ -51,7 +57,6 @@ func (h *handler) HandleUplink(uplink *pb_broker.DeduplicatedUplinkMessage) erro
 			err = nil
 			return nil
 		} else if err != nil {
-			fmt.Println(err)
 			return err
 		}
 	}

@@ -13,11 +13,32 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// devicesInfoCmd represents the `device info` command
 var devicesInfoCmd = &cobra.Command{
 	Use:   "info [Device ID]",
 	Short: "Get information about a device",
 	Long:  `ttnctl devices info can be used to get information about a device.`,
+	Example: `$ ttnctl devices info test
+  INFO Using Application                        AppEUI=70B3D57EF0000024 AppID=test
+  INFO Discovering Handler...
+  INFO Connecting with Handler...
+  INFO Found device
+
+  Application ID: test
+       Device ID: test
+       Last Seen: never
+
+    LoRaWAN Info:
+
+     AppEUI: 70B3D57EF0000024
+     DevEUI: 0001D544B2936FCE
+    DevAddr: 26001ADA
+     AppKey: <nil>
+    AppSKey: D8DD37B4B709BA76C6FEC62CAD0CCE51
+    NwkSKey: 3382A3066850293421ED8D392B9BF4DF
+     FCntUp: 0
+   FCntDown: 0
+    Options:
+`,
 	Run: func(cmd *cobra.Command, args []string) {
 
 		if len(args) == 0 {

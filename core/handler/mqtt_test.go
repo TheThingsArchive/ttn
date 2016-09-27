@@ -60,6 +60,9 @@ func TestHandleMQTT(t *testing.T) {
 		DevID:   devID,
 		AppID:   appID,
 		Payload: []byte{0xAA, 0xBC},
+		Fields: map[string]interface{}{
+			"field": "value",
+		},
 	}
 
 	wg.Add(1)
