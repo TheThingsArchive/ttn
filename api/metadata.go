@@ -12,9 +12,9 @@ var ErrContext = errors.NewErrInternal("Could not get metadata from context")
 var ErrNoToken = errors.NewErrInvalidArgument("Metadata", "token missing")
 var ErrNoID = errors.NewErrInvalidArgument("Metadata", "id missing")
 
-func MetadataFromContext(ctx context.Context) (md metadata.MD, err error) {
-	var ok bool
-	if md, ok = metadata.FromContext(ctx); !ok {
+func MetadataFromContext(ctx context.Context) (metadata.MD, error) {
+	md, ok := metadata.FromContext(ctx)
+	if !ok {
 		return md, ErrContext
 	}
 	return md, nil
