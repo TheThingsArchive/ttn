@@ -117,8 +117,6 @@ func (c *gatewayClient) setupGatewayStatus() error {
 				return
 			default:
 				if err := gatewayStatusClient.RecvMsg(msg); err != nil {
-					defer c.mutex.Unlock()
-					c.mutex.Lock()
 					api.GetLogger().Warnf("Error in gateway status stream for %s: %s", c.id, err.Error())
 					c.teardownGatewayStatus()
 					return
@@ -131,6 +129,8 @@ func (c *gatewayClient) setupGatewayStatus() error {
 }
 
 func (c *gatewayClient) teardownGatewayStatus() {
+	defer c.mutex.Unlock()
+	c.mutex.Lock()
 	if c.gatewayStatus != nil {
 		api.GetLogger().Debugf("Closing gateway status stream for %s...", c.id)
 		close(c.stopGatewayStatus)
@@ -150,7 +150,7 @@ func (c *gatewayClient) SendGatewayStatus(status *gateway.Status) error {
 	if err := c.gatewayStatus.Send(status); err != nil {
 		if err == io.EOF {
 			api.GetLogger().Warnf("Could not send gateway status for %s on closed stream", c.id)
-			c.teardownGatewayStatus()
+			go c.teardownGatewayStatus()
 			return errors.FromGRPCError(err)
 		}
 		api.GetLogger().Warnf("Error sending gateway status for %s: %s", c.id, err.Error())
@@ -175,8 +175,6 @@ func (c *gatewayClient) setupUplink() error {
 				return
 			default:
 				if err := uplinkClient.RecvMsg(msg); err != nil {
-					defer c.mutex.Unlock()
-					c.mutex.Lock()
 					api.GetLogger().Warnf("Error in uplink stream for %s: %s", c.id, err.Error())
 					c.teardownUplink()
 					return
@@ -190,6 +188,8 @@ func (c *gatewayClient) setupUplink() error {
 }
 
 func (c *gatewayClient) teardownUplink() {
+	defer c.mutex.Unlock()
+	c.mutex.Lock()
 	if c.uplink != nil {
 		api.GetLogger().Debugf("Closing uplink stream for %s...", c.id)
 		close(c.stopUplink)
@@ -209,7 +209,7 @@ func (c *gatewayClient) SendUplink(uplink *UplinkMessage) error {
 	if err := c.uplink.Send(uplink); err != nil {
 		if err == io.EOF {
 			api.GetLogger().Warnf("Could not send uplink for %s on closed stream", c.id)
-			c.teardownUplink()
+			go c.teardownUplink()
 			return errors.FromGRPCError(err)
 		}
 		api.GetLogger().Warnf("Error sending uplink for %s: %s", c.id, err.Error())
@@ -235,8 +235,11 @@ func (c *gatewayClient) setupDownlink() error {
 }
 
 func (c *gatewayClient) teardownDownlink() {
+	defer c.mutex.Unlock()
+	c.mutex.Lock()
 	if c.downlink != nil {
 		api.GetLogger().Debugf("Closing downlink stream for %s...", c.id)
+		close(c.stopDownlink)
 		c.downlink.CloseSend()
 		c.downlink = nil
 	}
@@ -256,7 +259,6 @@ func (c *gatewayClient) Subscribe() (<-chan *DownlinkMessage, <-chan error, erro
 		defer func() {
 			close(downChan)
 			close(errChan)
-			c.teardownDownlink()
 		}()
 		for {
 			select {
@@ -265,11 +267,13 @@ func (c *gatewayClient) Subscribe() (<-chan *DownlinkMessage, <-chan error, erro
 			default:
 				downlink, err := c.downlink.Recv()
 				if err != nil {
-					errChan <- errors.FromGRPCError(err)
 					if grpc.Code(err) == codes.Canceled {
-						api.GetLogger().Warnf("Downlink stream for %s was canceled", c.id)
+						api.GetLogger().Debugf("Downlink stream for %s was canceled", c.id)
+						errChan <- nil
+						c.teardownDownlink()
 						return
 					}
+					errChan <- errors.FromGRPCError(err)
 					api.GetLogger().Warnf("Error receiving gateway downlink for %s: %s", c.id, err.Error())
 				} else {
 					downChan <- downlink
@@ -282,7 +286,7 @@ func (c *gatewayClient) Subscribe() (<-chan *DownlinkMessage, <-chan error, erro
 }
 
 func (c *gatewayClient) Unsbscribe() error {
-	close(c.stopDownlink)
+	c.teardownDownlink()
 	return nil
 }
 
@@ -291,17 +295,8 @@ func (c *gatewayClient) Activate(req *DeviceActivationRequest) (*DeviceActivatio
 }
 
 func (c *gatewayClient) Close() error {
-	defer c.mutex.Unlock()
-	c.mutex.Lock()
-	if c.gatewayStatus != nil {
-		c.teardownGatewayStatus()
-	}
-	if c.uplink != nil {
-		c.teardownUplink()
-	}
-	if c.downlink != nil {
-		c.Unsbscribe()
-		c.teardownDownlink()
-	}
+	c.teardownGatewayStatus()
+	c.teardownUplink()
+	c.teardownDownlink()
 	return nil
 }
