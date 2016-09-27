@@ -1,7 +1,8 @@
 package api
 
 import (
-	"context"
+	// TODO change to "context", when protoc supports it
+	context "golang.org/x/net/context"
 
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"google.golang.org/grpc/metadata"
