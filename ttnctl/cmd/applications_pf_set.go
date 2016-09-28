@@ -28,15 +28,17 @@ function Decoder(bytes) {
   // (array) of bytes to an object of fields.
   var decoded = {};
 
-  decoded.isLightOn = bytes[0];
+  // decoded.led = bytes[0];
 
   return decoded;
 }
 ########## Write your Decoder here and end with Ctrl+D (EOF):
 function Decoder(bytes) {
-  return {
-    isLightOn: bytes[0]
-  };
+  var decoded = {};
+
+  decoded.led = bytes[0];
+
+  return decoded;
 }
   INFO Updated application                      AppID=test
 `,
@@ -86,7 +88,7 @@ function Decoder(bytes) {
   // (array) of bytes to an object of fields.
   var decoded = {};
 
-  decoded.isLightOn = bytes[0];
+  // decoded.led = bytes[0];
 
   return decoded;
 }
@@ -98,13 +100,9 @@ function Decoder(bytes) {
   // mutate decoded fields.
   var converted = decoded;
 
-  if (converted.isLightOn === 0) {
-    converted.isLightOn = false;
-  }
-
-  if (converted.isLightOn === 1) {
-    converted.isLightOn = true;
-  }
+  // if (converted.led === 0 || converted.led === 1) {
+  //   converted.led = Boolean(converted.led);
+  // }
 
   return converted;
 }
@@ -115,9 +113,9 @@ function Decoder(bytes) {
   // Return false if the decoded, converted
   // message is invalid and should be dropped.
 
-  if (converted.isLightOn !== true && converted.isLightOn !== false) {
-    return false;
-  }
+  // if (typeof converted.led !== 'boolean') {
+  //   return false;
+  // }
 
   return true;
 }
@@ -129,7 +127,7 @@ function Decoder(bytes) {
   // object to an array or buffer of bytes.
   var bytes = [];
 
-  bytes[0] = object.turnLightOn ? 1 : 0;
+  // bytes[0] = object.led ? 1 : 0;
 
   return bytes;
 }
