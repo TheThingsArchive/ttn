@@ -42,7 +42,7 @@ func (r *router) SubscribeDownlink(gatewayID string) (<-chan *pb.DownlinkMessage
 		}()
 		return toGateway, nil
 	}
-	return nil, errors.NewErrInternal(fmt.Sprintf("Gateway %s not available for downlink", gatewayID))
+	return nil, errors.NewErrInternal(fmt.Sprintf("Already subscribed to downlink for %s", gatewayID))
 }
 
 func (r *router) UnsubscribeDownlink(gatewayID string) error {
