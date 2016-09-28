@@ -24,7 +24,7 @@ type GatewayClient interface {
 	SendGatewayStatus(*gateway.Status) error
 	SendUplink(*UplinkMessage) error
 	Subscribe() (<-chan *DownlinkMessage, <-chan error, error)
-	Unsbscribe() error
+	Unsubscribe() error
 	Activate(*DeviceActivationRequest) (*DeviceActivationResponse, error)
 	Close() error
 }
@@ -284,7 +284,7 @@ func (c *gatewayClient) Subscribe() (<-chan *DownlinkMessage, <-chan error, erro
 	return downChan, errChan, nil
 }
 
-func (c *gatewayClient) Unsbscribe() error {
+func (c *gatewayClient) Unsubscribe() error {
 	c.teardownDownlink()
 	return nil
 }
