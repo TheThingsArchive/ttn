@@ -270,15 +270,14 @@ func (c *gatewayClient) Subscribe() (<-chan *DownlinkMessage, <-chan error, erro
 					if grpc.Code(err) == codes.Canceled {
 						api.GetLogger().Debugf("Downlink stream for %s was canceled", c.id)
 						errChan <- nil
-						c.teardownDownlink()
-						return
+					} else {
+						api.GetLogger().Warnf("Error receiving gateway downlink for %s: %s", c.id, err.Error())
+						errChan <- errors.FromGRPCError(err)
 					}
-					errChan <- errors.FromGRPCError(err)
-					api.GetLogger().Warnf("Error receiving gateway downlink for %s: %s", c.id, err.Error())
-				} else {
-					downChan <- downlink
+					c.teardownDownlink()
+					return
 				}
-
+				downChan <- downlink
 			}
 		}
 	}()
