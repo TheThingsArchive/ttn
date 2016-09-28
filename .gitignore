@@ -24,6 +24,8 @@ _testmain.go
 *.prof
 
 /release
+/vendor/*/
+/.cover
 
 # Generated databases
 *.db

@@ -15,11 +15,8 @@ BUILD_DATE = `date -u +%Y-%m-%dT%H:%M:%SZ`
 
 LDFLAGS = -ldflags "-w -X main.gitCommit=${GIT_COMMIT} -X main.buildDate=${BUILD_DATE}"
 
-select_pkgs = $(GOCMD) list ./... | grep -vE 'ttn/vendor|ttn/ttnctl'
-coverage_pkgs = $(GOCMD) list ./... | grep -vE 'ttn/api|ttn/cmd|ttn/vendor|ttn/ttnctl'
-
-DEPS = `comm -23 <($(GOCMD) list -f '{{join .Deps "\n"}}' . | grep -vE 'github.com/TheThingsNetwork/ttn' | sort | uniq) <($(GOCMD) list std)`
-TEST_DEPS = `comm -23 <($(select_pkgs) | xargs $(GOCMD) list -f '{{join .TestImports "\n"}}' | grep -vE 'github.com/TheThingsNetwork/ttn' | sort | uniq) <($(GOCMD) list std)`
+select_pkgs = govendor list --no-status +local
+coverage_pkgs = $(select_pkgs) | grep -vE 'ttn/api|ttn/cmd|ttn/ttnctl'
 
 RELEASE_DIR ?= release
 COVER_FILE = coverage.out
@@ -31,20 +28,17 @@ ttnctlpkg = ttnctl-$(GOOS)-$(GOARCH)
 ttnbin = $(ttnpkg)$(GOEXE)
 ttnctlbin = $(ttnctlpkg)$(GOEXE)
 
-.PHONY: all clean deps update-deps test-deps dev-deps cover-deps proto test fmt vet cover coveralls docs build install docker package
+.PHONY: all clean build-deps deps dev-deps cover-deps vendor update-vendor proto test fmt vet cover coveralls docs build install docker package
 
 all: clean deps build package
 
-deps:
-	$(GOCMD) get -d -v $(DEPS)
+build-deps:
+	$(GOCMD) get -u "github.com/kardianos/govendor"
 
-update-deps:
-	$(GOCMD) get -u -d -v $(DEPS)
+deps: build-deps
+	govendor sync
 
-test-deps:
-	$(GOCMD) get -d -v $(TEST_DEPS)
-
-dev-deps: update-deps test-deps
+dev-deps: deps
 	$(GOCMD) get -u -v github.com/gogo/protobuf/protoc-gen-gofast
 	$(GOCMD) get -u -v github.com/golang/mock/gomock
 	$(GOCMD) get -u -v github.com/golang/mock/mockgen
@@ -53,6 +47,12 @@ dev-deps: update-deps test-deps
 cover-deps:
 	if ! $(GOCMD) get github.com/golang/tools/cmd/cover; then $(GOCMD) get golang.org/x/tools/cmd/cover; fi
 	$(GOCMD) get github.com/mattn/goveralls
+
+vendor: build-deps
+	govendor add +external
+
+update-vendor: build-deps
+	govendor fetch +external
 
 proto:
 	@$(PROTOC)/api/*.proto

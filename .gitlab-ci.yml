@@ -8,35 +8,23 @@ variables:
   CONTAINER_NAME: thethingsnetwork/ttn
 
 cache:
-    key: "$CI_BUILD_REF_NAME/go_src"
-    paths:
-      - go_src/
-      - vendor/
+  key: "$CI_PIPELINE_ID"
+  paths:
+    - vendor/
 
 before_script:
-  - git submodule update --init
   - rm -rf $GOPATH/src
-  - "if [ -d go_src ]; then mv go_src $GOPATH/src; fi"
   - mkdir -p $GOPATH/src/github.com/TheThingsNetwork/ttn
   - cp -R . $GOPATH/src/github.com/TheThingsNetwork/ttn
-
-after_script:
-  - rm -rf $GOPATH/src/github.com/TheThingsNetwork/ttn
-  - cp -R $GOPATH/src go_src
 
 deps:
   stage: deps
   image: golang:latest
   script:
     - pushd $GOPATH/src/github.com/TheThingsNetwork/ttn
-    - TARGET_PLATFORM=linux-386 make deps
-    - TARGET_PLATFORM=linux-amd64 make deps
-    - TARGET_PLATFORM=linux-arm make deps
-    - TARGET_PLATFORM=darwin-amd64 make deps
-    - TARGET_PLATFORM=windows-386 make deps
-    - TARGET_PLATFORM=windows-amd64 make deps
-    - make test-deps cover-deps
+    - make deps
     - popd
+    - cp -R $GOPATH/src/github.com/TheThingsNetwork/ttn/vendor/* vendor/
 
 tests:
   stage: test
@@ -49,6 +37,7 @@ tests:
     MQTT_HOST: ansi-mosquitto
   script:
     - pushd $GOPATH/src/github.com/TheThingsNetwork/ttn
+    - make deps
     - make test
     - popd
 
@@ -57,6 +46,7 @@ binaries:
   image: golang:latest
   script:
     - pushd $GOPATH/src/github.com/TheThingsNetwork/ttn
+    - make deps
     - TARGET_PLATFORM=linux-386 make build
     - TARGET_PLATFORM=linux-amd64 make build
     - TARGET_PLATFORM=linux-arm make build
@@ -70,7 +60,7 @@ binaries:
     paths:
       - release/
 
-container:
+gitlab-image:
   stage: package
   image: docker:git
   services:
@@ -81,6 +71,18 @@ container:
     - docker login -u "gitlab-ci-token" -p "$CI_BUILD_TOKEN" registry.gitlab.com
     - docker tag ttn registry.gitlab.com/$CONTAINER_NAME:$CI_BUILD_REF_NAME
     - docker push registry.gitlab.com/$CONTAINER_NAME:$CI_BUILD_REF_NAME
+
+dockerhub-image:
+  only:
+    - master@thethingsnetwork/ttn
+    - refactor@thethingsnetwork/ttn
+  stage: package
+  image: docker:git
+  services:
+    - "docker:dind"
+  script:
+    - cd $GOPATH/src/github.com/TheThingsNetwork/ttn
+    - docker build -t ttn .
     - docker login -u "$DOCKERHUB_USER" -p "$DOCKERHUB_PASSWORD"
     - docker tag ttn $CONTAINER_NAME:$CI_BUILD_REF_NAME
     - docker push $CONTAINER_NAME:$CI_BUILD_REF_NAME
