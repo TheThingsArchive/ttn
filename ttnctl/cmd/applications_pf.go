@@ -21,9 +21,9 @@ converting and validating binary payload.`,
   INFO Found Application
   INFO Decoder function
 function Decoder(bytes) {
-  return {
-    payload: bytes,
-  };
+  var decoded = {};
+  decoded.led = bytes[0];
+  return decoded;
 }
   INFO No converter function
   INFO No validator function
