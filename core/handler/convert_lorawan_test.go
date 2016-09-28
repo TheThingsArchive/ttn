@@ -45,15 +45,15 @@ func TestConvertFromLoRaWAN(t *testing.T) {
 	ttnUp, appUp := buildLorawanUplink([]byte{0x40, 0x04, 0x03, 0x02, 0x01, 0x20, 0x01, 0x00, 0x0A, 0x46, 0x55, 0x96, 0x42, 0x92, 0xF2})
 	err := h.ConvertFromLoRaWAN(h.Ctx, ttnUp, appUp)
 	a.So(err, ShouldBeNil)
-	a.So(appUp.Payload, ShouldResemble, []byte{0xaa, 0xbc})
+	a.So(appUp.PayloadRaw, ShouldResemble, []byte{0xaa, 0xbc})
 	a.So(appUp.FCnt, ShouldEqual, 1)
 }
 
 func buildLorawanDownlink(payload []byte) (*mqtt.DownlinkMessage, *pb_broker.DownlinkMessage) {
 	appDown := &mqtt.DownlinkMessage{
-		DevID:   "devid",
-		AppID:   "appid",
-		Payload: []byte{0xaa, 0xbc},
+		DevID:      "devid",
+		AppID:      "appid",
+		PayloadRaw: []byte{0xaa, 0xbc},
 	}
 	ttnDown := &pb_broker.DownlinkMessage{
 		Payload: []byte{96, 4, 3, 2, 1, 0, 1, 0, 1, 0, 0, 0, 0},

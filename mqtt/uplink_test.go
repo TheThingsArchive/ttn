@@ -23,9 +23,9 @@ func TestPublishUplink(t *testing.T) {
 	defer c.Disconnect()
 
 	dataUp := UplinkMessage{
-		AppID:   "someid",
-		DevID:   "someid",
-		Payload: []byte{0x01, 0x02, 0x03, 0x04},
+		AppID:      "someid",
+		DevID:      "someid",
+		PayloadRaw: []byte{0x01, 0x02, 0x03, 0x04},
 	}
 
 	token := c.PublishUplink(dataUp)
@@ -166,9 +166,9 @@ func TestPubSubUplink(t *testing.T) {
 	waitForOK(subToken, a)
 
 	pubToken := c.PublishUplink(UplinkMessage{
-		Payload: []byte{0x01, 0x02, 0x03, 0x04},
-		AppID:   "app1",
-		DevID:   "dev1",
+		PayloadRaw: []byte{0x01, 0x02, 0x03, 0x04},
+		AppID:      "app1",
+		DevID:      "dev1",
 	})
 	waitForOK(pubToken, a)
 
@@ -194,21 +194,21 @@ func TestPubSubAppUplink(t *testing.T) {
 
 	subToken := c.SubscribeAppUplink("app2", func(client Client, appID string, devID string, req UplinkMessage) {
 		a.So(appID, ShouldResemble, "app2")
-		a.So(req.Payload, ShouldResemble, []byte{0x01, 0x02, 0x03, 0x04})
+		a.So(req.PayloadRaw, ShouldResemble, []byte{0x01, 0x02, 0x03, 0x04})
 		wg.Done()
 	})
 	waitForOK(subToken, a)
 
 	pubToken := c.PublishUplink(UplinkMessage{
-		AppID:   "app2",
-		DevID:   "dev1",
-		Payload: []byte{0x01, 0x02, 0x03, 0x04},
+		AppID:      "app2",
+		DevID:      "dev1",
+		PayloadRaw: []byte{0x01, 0x02, 0x03, 0x04},
 	})
 	waitForOK(pubToken, a)
 	pubToken = c.PublishUplink(UplinkMessage{
-		AppID:   "app2",
-		DevID:   "dev2",
-		Payload: []byte{0x01, 0x02, 0x03, 0x04},
+		AppID:      "app2",
+		DevID:      "dev2",
+		PayloadRaw: []byte{0x01, 0x02, 0x03, 0x04},
 	})
 	waitForOK(pubToken, a)
 

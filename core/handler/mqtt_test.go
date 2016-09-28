@@ -40,9 +40,9 @@ func TestHandleMQTT(t *testing.T) {
 	a.So(err, ShouldBeNil)
 
 	c.PublishDownlink(mqtt.DownlinkMessage{
-		AppID:   appID,
-		DevID:   devID,
-		Payload: []byte{0xAA, 0xBC},
+		AppID:      appID,
+		DevID:      devID,
+		PayloadRaw: []byte{0xAA, 0xBC},
 	}).Wait()
 	<-time.After(50 * time.Millisecond)
 	dev, _ := h.devices.Get(appID, devID)
@@ -52,15 +52,15 @@ func TestHandleMQTT(t *testing.T) {
 	c.SubscribeDeviceUplink(appID, devID, func(client mqtt.Client, r_appID string, r_devID string, req mqtt.UplinkMessage) {
 		a.So(r_appID, ShouldEqual, appID)
 		a.So(r_devID, ShouldEqual, devID)
-		a.So(req.Payload, ShouldResemble, []byte{0xAA, 0xBC})
+		a.So(req.PayloadRaw, ShouldResemble, []byte{0xAA, 0xBC})
 		wg.Done()
 	}).Wait()
 
 	h.mqttUp <- &mqtt.UplinkMessage{
-		DevID:   devID,
-		AppID:   appID,
-		Payload: []byte{0xAA, 0xBC},
-		Fields: map[string]interface{}{
+		DevID:      devID,
+		AppID:      appID,
+		PayloadRaw: []byte{0xAA, 0xBC},
+		PayloadFields: map[string]interface{}{
 			"field": "value",
 		},
 	}

@@ -29,7 +29,7 @@ func (h *handler) ConvertFieldsUp(ctx log.Interface, ttnUp *pb_broker.Deduplicat
 		Validator: app.Validator,
 	}
 
-	fields, valid, err := functions.Process(appUp.Payload)
+	fields, valid, err := functions.Process(appUp.PayloadRaw)
 	if err != nil {
 		return nil // Do not set fields if processing failed
 	}
@@ -38,7 +38,7 @@ func (h *handler) ConvertFieldsUp(ctx log.Interface, ttnUp *pb_broker.Deduplicat
 		return errors.NewErrInvalidArgument("Payload", "payload validator function returned false")
 	}
 
-	appUp.Fields = fields
+	appUp.PayloadFields = fields
 
 	return nil
 }
@@ -278,11 +278,11 @@ func (f *DownlinkFunctions) Process(payload map[string]interface{}) ([]byte, boo
 
 // ConvertFieldsDown converts the fields into a payload
 func (h *handler) ConvertFieldsDown(ctx log.Interface, appDown *mqtt.DownlinkMessage, ttnDown *pb_broker.DownlinkMessage) error {
-	if appDown.Fields == nil {
+	if appDown.PayloadFields == nil {
 		return nil
 	}
 
-	if appDown.Payload != nil {
+	if appDown.PayloadRaw != nil {
 		return errors.NewErrInvalidArgument("Downlink", "Both Fields and Payload provided")
 	}
 
@@ -295,12 +295,12 @@ func (h *handler) ConvertFieldsDown(ctx log.Interface, appDown *mqtt.DownlinkMes
 		Encoder: app.Encoder,
 	}
 
-	message, _, err := functions.Process(appDown.Fields)
+	message, _, err := functions.Process(appDown.PayloadFields)
 	if err != nil {
 		return err
 	}
 
-	appDown.Payload = message
+	appDown.PayloadRaw = message
 
 	return nil
 }

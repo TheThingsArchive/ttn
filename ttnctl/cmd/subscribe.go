@@ -43,10 +43,10 @@ var subscribeCmd = &cobra.Command{
 			printKV("DevID", devID)
 			printKV("Port", req.FPort)
 			printKV("FCnt", req.FCnt)
-			printKV("Payload (hex)", req.Payload)
-			if len(req.Fields) > 0 {
+			printKV("Payload (hex)", req.PayloadRaw)
+			if len(req.PayloadFields) > 0 {
 				ctx.Info("Decoded fields")
-				for k, v := range req.Fields {
+				for k, v := range req.PayloadFields {
 					printKV(k, v)
 				}
 			}

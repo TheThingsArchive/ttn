@@ -62,8 +62,8 @@ func (h *handler) HandleMQTT(username, password string, mqttBrokers ...string) e
 					h.Ctx.Warn("Uplink publish timeout")
 				}
 			}()
-			if len(up.Fields) > 0 {
-				fieldsToken := h.mqttClient.PublishUplinkFields(up.AppID, up.DevID, up.Fields)
+			if len(up.PayloadFields) > 0 {
+				fieldsToken := h.mqttClient.PublishUplinkFields(up.AppID, up.DevID, up.PayloadFields)
 				go func() {
 					if fieldsToken.WaitTimeout(MQTTTimeout) {
 						if fieldsToken.Error() != nil {

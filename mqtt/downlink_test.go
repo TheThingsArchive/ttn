@@ -21,9 +21,9 @@ func TestPublishDownlink(t *testing.T) {
 	defer c.Disconnect()
 
 	dataDown := DownlinkMessage{
-		AppID:   "someid",
-		DevID:   "someid",
-		Payload: []byte{0x01, 0x02, 0x03, 0x04},
+		AppID:      "someid",
+		DevID:      "someid",
+		PayloadRaw: []byte{0x01, 0x02, 0x03, 0x04},
 	}
 
 	token := c.PublishDownlink(dataDown)
@@ -102,9 +102,9 @@ func TestPubSubDownlink(t *testing.T) {
 	waitForOK(subToken, a)
 
 	pubToken := c.PublishDownlink(DownlinkMessage{
-		AppID:   "app3",
-		DevID:   "dev3",
-		Payload: []byte{0x01, 0x02, 0x03, 0x04},
+		AppID:      "app3",
+		DevID:      "dev3",
+		PayloadRaw: []byte{0x01, 0x02, 0x03, 0x04},
 	})
 	waitForOK(pubToken, a)
 
@@ -126,21 +126,21 @@ func TestPubSubAppDownlink(t *testing.T) {
 
 	subToken := c.SubscribeAppDownlink("app4", func(client Client, appID string, devID string, req DownlinkMessage) {
 		a.So(appID, ShouldResemble, "app4")
-		a.So(req.Payload, ShouldResemble, []byte{0x01, 0x02, 0x03, 0x04})
+		a.So(req.PayloadRaw, ShouldResemble, []byte{0x01, 0x02, 0x03, 0x04})
 		wg.Done()
 	})
 	waitForOK(subToken, a)
 
 	pubToken := c.PublishDownlink(DownlinkMessage{
-		AppID:   "app4",
-		DevID:   "dev1",
-		Payload: []byte{0x01, 0x02, 0x03, 0x04},
+		AppID:      "app4",
+		DevID:      "dev1",
+		PayloadRaw: []byte{0x01, 0x02, 0x03, 0x04},
 	})
 	waitForOK(pubToken, a)
 	pubToken = c.PublishDownlink(DownlinkMessage{
-		AppID:   "app4",
-		DevID:   "dev2",
-		Payload: []byte{0x01, 0x02, 0x03, 0x04},
+		AppID:      "app4",
+		DevID:      "dev2",
+		PayloadRaw: []byte{0x01, 0x02, 0x03, 0x04},
 	})
 	waitForOK(pubToken, a)
 

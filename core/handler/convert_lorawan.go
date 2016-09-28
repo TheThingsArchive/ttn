@@ -60,7 +60,7 @@ func (h *handler) ConvertFromLoRaWAN(ctx log.Interface, ttnUp *pb_broker.Dedupli
 			if !ok {
 				return errors.NewErrInvalidArgument("Uplink FRMPayload", "must be of type *lorawan.DataPayload")
 			}
-			appUp.Payload = payload.Bytes
+			appUp.PayloadRaw = payload.Bytes
 		}
 	} else {
 		return errors.NewErrInvalidArgument("Uplink MACPayload", "could not get frame payload")
@@ -101,7 +101,7 @@ func (h *handler) ConvertToLoRaWAN(ctx log.Interface, appDown *mqtt.DownlinkMess
 	}
 
 	// Abort when downlink not needed
-	if len(appDown.Payload) == 0 && !macPayload.FHDR.FCtrl.ACK && len(macPayload.FHDR.FOpts) == 0 {
+	if len(appDown.PayloadRaw) == 0 && !macPayload.FHDR.FCtrl.ACK && len(macPayload.FHDR.FOpts) == 0 {
 		return ErrNotNeeded
 	}
 
@@ -111,8 +111,8 @@ func (h *handler) ConvertToLoRaWAN(ctx log.Interface, appDown *mqtt.DownlinkMess
 	}
 
 	// Set Payload
-	if len(appDown.Payload) > 0 {
-		macPayload.FRMPayload = []lorawan.Payload{&lorawan.DataPayload{Bytes: appDown.Payload}}
+	if len(appDown.PayloadRaw) > 0 {
+		macPayload.FRMPayload = []lorawan.Payload{&lorawan.DataPayload{Bytes: appDown.PayloadRaw}}
 		if macPayload.FPort == nil || *macPayload.FPort == 0 {
 			macPayload.FPort = pointer.Uint8(1)
 		}

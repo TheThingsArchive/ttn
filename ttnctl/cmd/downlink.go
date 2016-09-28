@@ -77,7 +77,7 @@ $ ttnctl downlink test --json '{"led":"on"}'
 				ctx.WithError(err).Fatal("You are providing a valid HEX payload while sending payload in JSON.")
 			}
 
-			err = json.Unmarshal([]byte(args[1]), &message.Fields)
+			err = json.Unmarshal([]byte(args[1]), &message.PayloadFields)
 
 			if err != nil {
 				ctx.WithError(err).Fatal("Invalid json string")
@@ -89,7 +89,7 @@ $ ttnctl downlink test --json '{"led":"on"}'
 				ctx.WithError(err).Fatal("Invalid Payload")
 			}
 
-			message.Payload = payload
+			message.PayloadRaw = payload
 		}
 		token := client.PublishDownlink(message)
 		token.Wait()
