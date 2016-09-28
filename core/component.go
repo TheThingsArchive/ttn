@@ -69,7 +69,7 @@ func NewComponent(ctx log.Interface, serviceName string, announcedAddress string
 		AccessToken: viper.GetString("auth-token"),
 		TokenKeyProvider: tokenkey.HTTPProvider(
 			viper.GetStringMapString("auth-servers"),
-			cache.WriteTroughCache(viper.GetString("key-dir")),
+			cache.WriteTroughCacheWithFormat(viper.GetString("key-dir"), "auth-%s.pub"),
 		),
 	}
 
