@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/api"
@@ -66,6 +67,7 @@ var gatewaysStatusCmd = &cobra.Command{
 		printKV("Platform", resp.Status.Platform)
 		printKV("Contact email", resp.Status.ContactEmail)
 		printKV("Region", resp.Status.Region)
+		printKV("IP Address", strings.Join(resp.Status.Ip, ", "))
 		printKV("GPS coordinates", func() interface{} {
 			if gps := resp.Status.Gps; gps != nil && !(gps.Latitude == 0 && gps.Longitude == 0) {
 				return fmt.Sprintf("(%.6f %.6f)", gps.Latitude, gps.Longitude)
