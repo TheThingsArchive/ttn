@@ -7,6 +7,60 @@
 			"revision": ""
 		},
 		{
+			"checksumSHA1": "rniS3263DDVGFj6N2g9DQ1T0Qgk=",
+			"path": "github.com/TheThingsNetwork/go-account-lib/account",
+			"revision": "34de518002e1f51593baeabd670f281f4af90506",
+			"revisionTime": "2016-09-28T13:23:42Z"
+		},
+		{
+			"checksumSHA1": "CwTMKMV1GuWH0cahU1plR3qLk78=",
+			"path": "github.com/TheThingsNetwork/go-account-lib/auth",
+			"revision": "34de518002e1f51593baeabd670f281f4af90506",
+			"revisionTime": "2016-09-28T13:23:42Z"
+		},
+		{
+			"checksumSHA1": "PFL4Ax29rfb/zBV3xOD56m/qUCQ=",
+			"path": "github.com/TheThingsNetwork/go-account-lib/cache",
+			"revision": "34de518002e1f51593baeabd670f281f4af90506",
+			"revisionTime": "2016-09-28T13:23:42Z"
+		},
+		{
+			"checksumSHA1": "8jECnauAWMYPUg48QaAFsLgB6n4=",
+			"path": "github.com/TheThingsNetwork/go-account-lib/claims",
+			"revision": "34de518002e1f51593baeabd670f281f4af90506",
+			"revisionTime": "2016-09-28T13:23:42Z"
+		},
+		{
+			"checksumSHA1": "Tb98SzRS+adY/QZQVO7BdvqMftw=",
+			"path": "github.com/TheThingsNetwork/go-account-lib/rights",
+			"revision": "34de518002e1f51593baeabd670f281f4af90506",
+			"revisionTime": "2016-09-28T13:23:42Z"
+		},
+		{
+			"checksumSHA1": "SvUkgVuVVVssqpXbE8OfeWCm0KU=",
+			"path": "github.com/TheThingsNetwork/go-account-lib/scope",
+			"revision": "34de518002e1f51593baeabd670f281f4af90506",
+			"revisionTime": "2016-09-28T13:23:42Z"
+		},
+		{
+			"checksumSHA1": "M36IFas2KacxiVfNI3McxRzYcGA=",
+			"path": "github.com/TheThingsNetwork/go-account-lib/tokenkey",
+			"revision": "34de518002e1f51593baeabd670f281f4af90506",
+			"revisionTime": "2016-09-28T13:23:42Z"
+		},
+		{
+			"checksumSHA1": "Mtox7znVD1KQGX40T4wtbH60K/w=",
+			"path": "github.com/TheThingsNetwork/go-account-lib/tokens",
+			"revision": "34de518002e1f51593baeabd670f281f4af90506",
+			"revisionTime": "2016-09-28T13:23:42Z"
+		},
+		{
+			"checksumSHA1": "xkcCm3Gn6B23Ca4A34nRJzEAlJo=",
+			"path": "github.com/TheThingsNetwork/go-account-lib/util",
+			"revision": "34de518002e1f51593baeabd670f281f4af90506",
+			"revisionTime": "2016-09-28T13:23:42Z"
+		},
+		{
 			"checksumSHA1": "Ur88QI//9Ue82g83qvBSakGlzVg=",
 			"path": "github.com/apex/log",
 			"revision": "4ea85e918cc8389903d5f12d7ccac5c23ab7d89b",
