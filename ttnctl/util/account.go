@@ -54,7 +54,7 @@ func getStoredToken(ctx log.Interface) *oauth2.Token {
 		ctx.WithError(err).Fatal("Could not read stored token")
 	}
 	if data == nil {
-		ctx.Fatal("No account information found. Please login with ttnctl user login [e-mail]")
+		ctx.Fatal("No account information found. Please login with ttnctl user login [access code]")
 	}
 
 	token := &oauth2.Token{}
