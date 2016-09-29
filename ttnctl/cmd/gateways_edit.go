@@ -53,7 +53,7 @@ var gatewaysEditCmd = &cobra.Command{
 		}
 
 		act := util.GetAccount(ctx)
-		_, err = act.EditGateway(gatewayID, edits)
+		err = act.EditGateway(gatewayID, edits)
 		if err != nil {
 			ctx.WithError(err).Fatal("Failure editing gateway")
 		}
