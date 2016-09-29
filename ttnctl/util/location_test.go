@@ -6,12 +6,12 @@ package util
 import (
 	"testing"
 
-	"github.com/TheThingsNetwork/ttn/core/account"
-	s "github.com/smartystreets/assertions"
+	"github.com/TheThingsNetwork/go-account-lib/account"
+	. "github.com/smartystreets/assertions"
 )
 
 func TestParseLocation(t *testing.T) {
-	a := s.New(t)
+	a := New(t)
 
 	str := "10.5,33.4"
 	loc := &account.Location{
@@ -19,7 +19,7 @@ func TestParseLocation(t *testing.T) {
 		Longitude: float64(33.4),
 	}
 	parsed, err := ParseLocation(str)
-	a.So(err, s.ShouldBeNil)
-	a.So(loc.Latitude, s.ShouldEqual, parsed.Latitude)
-	a.So(loc.Longitude, s.ShouldEqual, parsed.Longitude)
+	a.So(err, ShouldBeNil)
+	a.So(loc.Latitude, ShouldEqual, parsed.Latitude)
+	a.So(loc.Longitude, ShouldEqual, parsed.Longitude)
 }

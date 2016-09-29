@@ -64,7 +64,7 @@ var devicesRegisterCmd = &cobra.Command{
 			copy(appKey[:], random.Bytes(16))
 		}
 
-		conn, manager := util.GetHandlerManager(ctx)
+		conn, manager := util.GetHandlerManager(ctx, appID)
 		defer conn.Close()
 
 		err = manager.SetDevice(&handler.Device{

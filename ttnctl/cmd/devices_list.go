@@ -30,7 +30,7 @@ test 	70B3D57EF0000024	0001D544B2936FCE	26001ADA	0/0
 
 		appID := util.GetAppID(ctx)
 
-		conn, manager := util.GetHandlerManager(ctx)
+		conn, manager := util.GetHandlerManager(ctx, appID)
 		defer conn.Close()
 
 		devices, err := manager.GetDevicesForApplication(appID)

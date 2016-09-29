@@ -43,7 +43,7 @@ Are you sure you want to delete device test from application test?
 			return
 		}
 
-		conn, manager := util.GetHandlerManager(ctx)
+		conn, manager := util.GetHandlerManager(ctx, appID)
 		defer conn.Close()
 
 		err := manager.DeleteDevice(appID, devID)

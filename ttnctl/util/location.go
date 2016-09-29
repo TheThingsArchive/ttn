@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/TheThingsNetwork/ttn/core/account"
+	"github.com/TheThingsNetwork/go-account-lib/account"
 )
 
 func ParseLocation(locationStr string) (*account.Location, error) {

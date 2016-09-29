@@ -5,32 +5,42 @@ package util
 
 import (
 	"encoding/json"
+	"strings"
 	"time"
 
-	"github.com/TheThingsNetwork/ttn/core/account"
-	accountUtil "github.com/TheThingsNetwork/ttn/core/account/util"
+	"github.com/TheThingsNetwork/go-account-lib/account"
+	"github.com/TheThingsNetwork/go-account-lib/cache"
+	"github.com/TheThingsNetwork/go-account-lib/tokens"
+	accountUtil "github.com/TheThingsNetwork/go-account-lib/util"
 	"github.com/apex/log"
-	"github.com/dgrijalva/jwt-go"
 	"github.com/spf13/viper"
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 )
 
-// AccountClaims are extracted from the access token
-type AccountClaims struct {
-	jwt.StandardClaims
-	Username string `json:"username"`
-	Name     struct {
-		First string `json:"first"`
-		Last  string `json:"last"`
-	} `json:"name"`
-	Email  string              `json:"email"`
-	Client string              `json:"client"`
-	Scopes []string            `json:"scope"`
-	Apps   map[string][]string `json:"apps,omitempty"`
+var tokenSource oauth2.TokenSource
+
+func tokenName() string {
+	return viper.GetString("ttn-account-server")
 }
 
-var tokenSource oauth2.TokenSource
+func serverKey() string {
+	replacer := strings.NewReplacer("https:", "", "http:", "", "/", "", ".", "")
+	return replacer.Replace(viper.GetString("ttn-account-server"))
+}
+
+func tokenFilename(name string) string {
+	return serverKey() + ".token"
+}
+
+func derivedTokenFilename(name string) string {
+	return serverKey() + "." + name + ".token"
+}
+
+// GetCache get's the cache that will store our tokens
+func GetTokenCache() cache.Cache {
+	return cache.FileCacheWithNameFn(viper.GetString("token-dir"), tokenFilename)
+}
 
 func getAccountServerTokenSource(token *oauth2.Token) oauth2.TokenSource {
 	config := accountUtil.MakeConfig(viper.GetString("ttn-account-server"), "ttnctl", "", "")
@@ -38,12 +48,17 @@ func getAccountServerTokenSource(token *oauth2.Token) oauth2.TokenSource {
 }
 
 func getStoredToken(ctx log.Interface) *oauth2.Token {
-	tokenString := viper.GetString("oauth2-token")
-	if tokenString == "" {
-		ctx.Fatal("No account information found. Please login with ttnctl user login [access code]")
+	tokenCache := GetTokenCache()
+	data, err := tokenCache.Get(tokenName())
+	if err != nil {
+		ctx.WithError(err).Fatal("Could not read stored token")
 	}
+	if data == nil {
+		ctx.Fatal("No account information found. Please login with ttnctl user login [e-mail]")
+	}
+
 	token := &oauth2.Token{}
-	err := json.Unmarshal([]byte(tokenString), token)
+	err = json.Unmarshal(data, token)
 	if err != nil {
 		ctx.Fatal("Account information invalid. Please login with ttnctl user login [access code]")
 	}
@@ -51,20 +66,13 @@ func getStoredToken(ctx log.Interface) *oauth2.Token {
 }
 
 func saveToken(ctx log.Interface, token *oauth2.Token) {
-	tokenBytes, err := json.Marshal(token)
+	data, err := json.Marshal(token)
 	if err != nil {
 		ctx.WithError(err).Fatal("Could not save access token")
 	}
-	if viper.GetString("oauth2-token") != string(tokenBytes) {
-		config, _ := ReadConfig()
-		if config == nil {
-			config = map[string]interface{}{}
-		}
-		config["oauth2-token"] = string(tokenBytes)
-		err = WriteConfigFile(config)
-		if err != nil {
-			ctx.WithError(err).Fatal("Could not save access token")
-		}
+	err = GetTokenCache().Set(tokenName(), data)
+	if err != nil {
+		ctx.WithError(err).Fatal("Could not save access token")
 	}
 }
 
@@ -105,13 +113,22 @@ func GetTokenSource(ctx log.Interface) oauth2.TokenSource {
 	return tokenSource
 }
 
+func GetTokenManager(accessToken string) tokens.Manager {
+	server := viper.GetString("ttn-account-server")
+	return tokens.HTTPManager(server, accessToken, tokens.FileStoreWithNameFn(viper.GetString("token-dir"), derivedTokenFilename))
+}
+
 // GetAccount gets a new Account server client for ttnctl
 func GetAccount(ctx log.Interface) *account.Account {
 	token, err := GetTokenSource(ctx).Token()
 	if err != nil {
 		ctx.WithError(err).Fatal("Could not get access token")
 	}
-	return account.New(viper.GetString("ttn-account-server"), token.AccessToken)
+
+	server := viper.GetString("ttn-account-server")
+	manager := GetTokenManager(token.AccessToken)
+
+	return account.NewWithManager(server, token.AccessToken, manager)
 }
 
 // Login does a login to the Account server with the given username and password
@@ -123,4 +140,18 @@ func Login(ctx log.Interface, code string) (*oauth2.Token, error) {
 	}
 	saveToken(ctx, token)
 	return token, nil
+}
+
+func TokenForScope(ctx log.Interface, scope string) string {
+	token, err := GetTokenSource(ctx).Token()
+	if err != nil {
+		ctx.WithError(err).Fatal("Could not get token")
+	}
+
+	restricted, err := GetTokenManager(token.AccessToken).TokenForScope(scope)
+	if err != nil {
+		ctx.WithError(err).Fatal("Could not get correct rights")
+	}
+
+	return restricted
 }

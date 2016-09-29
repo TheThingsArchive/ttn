@@ -4,6 +4,7 @@
 package broker
 
 import (
+	"github.com/TheThingsNetwork/go-account-lib/rights"
 	pb "github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
@@ -53,7 +54,7 @@ func (b *brokerManager) RegisterApplicationHandler(ctx context.Context, in *pb.A
 	if !in.Validate() {
 		return nil, grpcErrf(codes.InvalidArgument, "Invalid Application Handler Registration")
 	}
-	if !claims.CanEditApp(in.AppId) {
+	if !claims.AppRight(in.AppId, rights.AppSettings) {
 		return nil, grpcErrf(codes.PermissionDenied, "No access to this application")
 	}
 	// Add Handler in local cache

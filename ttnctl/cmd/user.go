@@ -4,13 +4,11 @@
 package cmd
 
 import (
-	"encoding/json"
 	"fmt"
-	"strings"
 	"time"
 
+	"github.com/TheThingsNetwork/go-account-lib/claims"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
-	"github.com/dgrijalva/jwt-go"
 	"github.com/spf13/cobra"
 )
 
@@ -45,18 +43,10 @@ var userCmd = &cobra.Command{
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not get access token")
 		}
-		tokenParts := strings.Split(token.AccessToken, ".")
-		if len(tokenParts) != 3 {
-			ctx.Fatal("Invalid access token")
-		}
-		segment, err := jwt.DecodeSegment(tokenParts[1])
+
+		claims, err := claims.FromTokenWithoutValidation(token.AccessToken)
 		if err != nil {
-			ctx.WithError(err).Fatal("Could not decode access token")
-		}
-		var claims util.AccountClaims
-		err = json.Unmarshal(segment, &claims)
-		if err != nil {
-			ctx.WithError(err).Fatal("Could not unmarshal access token")
+			ctx.WithError(err).Fatal("Could not parse token")
 		}
 
 		if claims.ExpiresAt != 0 {
