@@ -45,7 +45,7 @@ var devicesPersonalizeCmd = &cobra.Command{
 
 		var nwkSKey types.NwkSKey
 		if len(args) > 1 {
-			nwkSKey, err = types.ParseNwkSKey(args[2])
+			nwkSKey, err = types.ParseNwkSKey(args[1])
 			if err != nil {
 				ctx.Fatalf("Invalid NwkSKey: %s", err)
 			}
@@ -56,7 +56,7 @@ var devicesPersonalizeCmd = &cobra.Command{
 
 		var appSKey types.AppSKey
 		if len(args) > 2 {
-			appSKey, err = types.ParseAppSKey(args[3])
+			appSKey, err = types.ParseAppSKey(args[2])
 			if err != nil {
 				ctx.Fatalf("Invalid AppSKey: %s", err)
 			}
