@@ -102,7 +102,7 @@ func (h *handler) HandleDownlink(appDownlink *mqtt.DownlinkMessage, downlink *pb
 	appDownlinkCopy := *appDownlink
 	appDownlinkCopy.AppID = ""
 	appDownlinkCopy.DevID = ""
-	appDownlinkCopy.Fields = make(map[string]interface{})
+	appDownlinkCopy.PayloadFields = make(map[string]interface{})
 
 	h.mqttEvent <- &mqttEvent{
 		AppID:   appDownlink.AppID,

@@ -23,10 +23,10 @@ func buildConversionUplink() (*pb_broker.DeduplicatedUplinkMessage, *mqtt.Uplink
 		DevId: "DevID-1",
 	}
 	appUp := &mqtt.UplinkMessage{
-		FPort:   1,
-		AppID:   "AppID-1",
-		DevID:   "DevID-1",
-		Payload: []byte{0x08, 0x70},
+		FPort:      1,
+		AppID:      "AppID-1",
+		DevID:      "DevID-1",
+		PayloadRaw: []byte{0x08, 0x70},
 	}
 	return ttnUp, appUp
 }
@@ -43,7 +43,7 @@ func TestConvertFieldsUp(t *testing.T) {
 	ttnUp, appUp := buildConversionUplink()
 	err := h.ConvertFieldsUp(GetLogger(t, "TestConvertFieldsUp"), ttnUp, appUp)
 	a.So(err, ShouldBeNil)
-	a.So(appUp.Fields, ShouldBeEmpty)
+	a.So(appUp.PayloadFields, ShouldBeEmpty)
 
 	// Normal flow
 	h.applications.Set(&application.Application{
@@ -54,7 +54,7 @@ func TestConvertFieldsUp(t *testing.T) {
 	err = h.ConvertFieldsUp(GetLogger(t, "TestConvertFieldsUp"), ttnUp, appUp)
 	a.So(err, ShouldBeNil)
 
-	a.So(appUp.Fields, ShouldResemble, map[string]interface{}{
+	a.So(appUp.PayloadFields, ShouldResemble, map[string]interface{}{
 		"temperature": 21.6,
 	})
 
@@ -67,7 +67,7 @@ func TestConvertFieldsUp(t *testing.T) {
 	ttnUp, appUp = buildConversionUplink()
 	err = h.ConvertFieldsUp(GetLogger(t, "TestConvertFieldsUp"), ttnUp, appUp)
 	a.So(err, ShouldNotBeNil)
-	a.So(appUp.Fields, ShouldBeEmpty)
+	a.So(appUp.PayloadFields, ShouldBeEmpty)
 
 	// Function error
 	h.applications.Set(&application.Application{
@@ -78,7 +78,7 @@ func TestConvertFieldsUp(t *testing.T) {
 	ttnUp, appUp = buildConversionUplink()
 	err = h.ConvertFieldsUp(GetLogger(t, "TestConvertFieldsUp"), ttnUp, appUp)
 	a.So(err, ShouldBeNil)
-	a.So(appUp.Fields, ShouldBeEmpty)
+	a.So(appUp.PayloadFields, ShouldBeEmpty)
 }
 
 func TestDecode(t *testing.T) {
@@ -310,10 +310,10 @@ func buildConversionDownlink() (*pb_broker.DownlinkMessage, *mqtt.DownlinkMessag
 		DevEui: &devEUI,
 	}
 	appDown := &mqtt.DownlinkMessage{
-		FPort:  1,
-		AppID:  "AppID-1",
-		DevID:  "DevID-1",
-		Fields: map[string]interface{}{"temperature": 30},
+		FPort:         1,
+		AppID:         "AppID-1",
+		DevID:         "DevID-1",
+		PayloadFields: map[string]interface{}{"temperature": 30},
 		// We want to "build" the payload with the content of the fields
 	}
 	return ttnDown, appDown
@@ -331,7 +331,7 @@ func TestConvertFieldsDown(t *testing.T) {
 	ttnDown, appDown := buildConversionDownlink()
 	err := h.ConvertFieldsDown(GetLogger(t, "TestConvertFieldsDown"), appDown, ttnDown)
 	a.So(err, ShouldBeNil)
-	a.So(appDown.Payload, ShouldBeEmpty)
+	a.So(appDown.PayloadRaw, ShouldBeEmpty)
 
 	// Case2: Normal flow with Encoder
 	h.applications.Set(&application.Application{
@@ -345,7 +345,7 @@ func TestConvertFieldsDown(t *testing.T) {
 	ttnDown, appDown = buildConversionDownlink()
 	err = h.ConvertFieldsDown(GetLogger(t, "TestConvertFieldsDown"), appDown, ttnDown)
 	a.So(err, ShouldBeNil)
-	a.So(appDown.Payload, ShouldResemble, []byte{1, 2, 3, 4, 5, 6, 7})
+	a.So(appDown.PayloadRaw, ShouldResemble, []byte{1, 2, 3, 4, 5, 6, 7})
 }
 
 func TestProcessDownlinkInvalidFunction(t *testing.T) {

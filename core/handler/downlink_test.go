@@ -38,7 +38,7 @@ func TestEnqueueDownlink(t *testing.T) {
 	err = h.EnqueueDownlink(&mqtt.DownlinkMessage{
 		AppID: appID,
 		DevID: devID,
-		Fields: map[string]interface{}{
+		PayloadFields: map[string]interface{}{
 			"string": "hello!",
 			"int":    42,
 			"bool":   true,
@@ -47,7 +47,7 @@ func TestEnqueueDownlink(t *testing.T) {
 	a.So(err, ShouldBeNil)
 	dev, _ := h.devices.Get(appID, devID)
 	a.So(dev.NextDownlink, ShouldNotBeEmpty)
-	a.So(dev.NextDownlink.Fields, ShouldHaveLength, 3)
+	a.So(dev.NextDownlink.PayloadFields, ShouldHaveLength, 3)
 }
 
 func TestHandleDownlink(t *testing.T) {
@@ -97,9 +97,9 @@ func TestHandleDownlink(t *testing.T) {
 		wg.Done()
 	}()
 	err = h.HandleDownlink(&mqtt.DownlinkMessage{
-		AppID:   appID,
-		DevID:   devID,
-		Payload: []byte{0xAA, 0xBC},
+		AppID:      appID,
+		DevID:      devID,
+		PayloadRaw: []byte{0xAA, 0xBC},
 	}, &pb_broker.DownlinkMessage{
 		AppEui:  &appEUI,
 		DevEui:  &devEUI,
@@ -117,11 +117,11 @@ func TestHandleDownlink(t *testing.T) {
 	})
 	jsonFields := map[string]interface{}{"temperature": 11}
 	err = h.HandleDownlink(&mqtt.DownlinkMessage{
-		FPort:   1,
-		AppID:   appID,
-		DevID:   devID,
-		Fields:  jsonFields,
-		Payload: []byte{0xAA, 0xBC},
+		FPort:         1,
+		AppID:         appID,
+		DevID:         devID,
+		PayloadFields: jsonFields,
+		PayloadRaw:    []byte{0xAA, 0xBC},
 	}, &pb_broker.DownlinkMessage{
 		AppEui:  &appEUI,
 		DevEui:  &devEUI,
@@ -137,10 +137,10 @@ func TestHandleDownlink(t *testing.T) {
 		wg.Done()
 	}()
 	err = h.HandleDownlink(&mqtt.DownlinkMessage{
-		FPort:  1,
-		AppID:  appID,
-		DevID:  devID,
-		Fields: jsonFields,
+		FPort:         1,
+		AppID:         appID,
+		DevID:         devID,
+		PayloadFields: jsonFields,
 	}, &pb_broker.DownlinkMessage{
 		AppEui:  &appEUI,
 		DevEui:  &devEUI,

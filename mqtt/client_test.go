@@ -168,10 +168,10 @@ func ExampleDefaultClient_SubscribeDeviceUplink() {
 
 func ExampleDefaultClient_PublishDownlink() {
 	token := exampleClient.PublishDownlink(DownlinkMessage{
-		AppID:   "my-app-id",
-		DevID:   "my-dev-id",
-		FPort:   1,
-		Payload: []byte{0x01, 0x02, 0x03, 0x04},
+		AppID:      "my-app-id",
+		DevID:      "my-dev-id",
+		FPort:      1,
+		PayloadRaw: []byte{0x01, 0x02, 0x03, 0x04},
 	})
 	token.Wait()
 	if err := token.Error(); err != nil {

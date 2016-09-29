@@ -60,7 +60,7 @@ func TestNextDownlink(t *testing.T) {
 	a := New(t)
 	dev := &Device{
 		NextDownlink: &mqtt.DownlinkMessage{
-			Fields: map[string]interface{}{
+			PayloadFields: map[string]interface{}{
 				"string": "hello!",
 				"int":    42,
 				"bool":   true,
@@ -74,8 +74,8 @@ func TestNextDownlink(t *testing.T) {
 	dev = &Device{}
 	err = dev.parseProperty("next_downlink", `{"payload_fields":{"bool":true,"int":42,"string":"hello!"}}`)
 	a.So(err, ShouldBeNil)
-	a.So(dev.NextDownlink.Fields, ShouldNotBeNil)
-	a.So(dev.NextDownlink.Fields["bool"], ShouldBeTrue)
-	a.So(dev.NextDownlink.Fields["int"], ShouldEqual, 42)
-	a.So(dev.NextDownlink.Fields["string"], ShouldEqual, "hello!")
+	a.So(dev.NextDownlink.PayloadFields, ShouldNotBeNil)
+	a.So(dev.NextDownlink.PayloadFields["bool"], ShouldBeTrue)
+	a.So(dev.NextDownlink.PayloadFields["int"], ShouldEqual, 42)
+	a.So(dev.NextDownlink.PayloadFields["string"], ShouldEqual, "hello!")
 }

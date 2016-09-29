@@ -120,7 +120,7 @@ func TestHandleUplink(t *testing.T) {
 		AppEUI: appEUI,
 		DevEUI: devEUI,
 		NextDownlink: &mqtt.DownlinkMessage{
-			Payload: []byte{0xaa, 0xbc},
+			PayloadRaw: []byte{0xaa, 0xbc},
 		},
 	})
 	wg.Add(2)

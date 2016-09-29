@@ -76,22 +76,22 @@ type Metadata struct {
 
 // UplinkMessage represents an application-layer uplink message
 type UplinkMessage struct {
-	AppID    string                 `json:"app_id,omitempty"`
-	DevID    string                 `json:"dev_id,omitempty"`
-	FPort    uint8                  `json:"port"`
-	FCnt     uint32                 `json:"counter"`
-	Payload  []byte                 `json:"payload_raw"`
-	Fields   map[string]interface{} `json:"payload_fields,omitempty"`
-	Metadata Metadata               `json:"metadata,omitempty"`
+	AppID         string                 `json:"app_id,omitempty"`
+	DevID         string                 `json:"dev_id,omitempty"`
+	FPort         uint8                  `json:"port"`
+	FCnt          uint32                 `json:"counter"`
+	PayloadRaw    []byte                 `json:"payload_raw"`
+	PayloadFields map[string]interface{} `json:"payload_fields,omitempty"`
+	Metadata      Metadata               `json:"metadata,omitempty"`
 }
 
 // DownlinkMessage represents an application-layer downlink message
 type DownlinkMessage struct {
-	AppID   string                 `json:"app_id,omitempty"`
-	DevID   string                 `json:"dev_id,omitempty"`
-	FPort   uint8                  `json:"port"`
-	Payload []byte                 `json:"payload_raw,omitempty"`
-	Fields  map[string]interface{} `json:"payload_fields,omitempty"`
+	AppID         string                 `json:"app_id,omitempty"`
+	DevID         string                 `json:"dev_id,omitempty"`
+	FPort         uint8                  `json:"port"`
+	PayloadRaw    []byte                 `json:"payload_raw,omitempty"`
+	PayloadFields map[string]interface{} `json:"payload_fields,omitempty"`
 }
 
 // Activation messages are used to notify application of a device activation
