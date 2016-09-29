@@ -13,9 +13,7 @@ var userLogoutCmd = &cobra.Command{
 	Short: "Logout the current user",
 	Long:  `ttnctl user logout logs out the current user`,
 	Run: func(cmd *cobra.Command, args []string) {
-		err := util.SetConfig(map[string]interface{}{
-			"oauth2-token": "",
-		})
+		err := util.Logout()
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not delete credentials")
 		}
