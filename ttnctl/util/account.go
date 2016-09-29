@@ -5,6 +5,8 @@ package util
 
 import (
 	"encoding/json"
+	"os"
+	"path"
 	"strings"
 	"time"
 
@@ -20,21 +22,24 @@ import (
 
 var tokenSource oauth2.TokenSource
 
+func tokenFile() string {
+	return getServerKey() + ".token"
+}
+func derivedTokenFile() string {
+	return getServerKey() + ".derived-tokens"
+}
+
 func tokenName() string {
 	return viper.GetString("ttn-account-server")
 }
 
-func serverKey() string {
+func getServerKey() string {
 	replacer := strings.NewReplacer("https:", "", "http:", "", "/", "", ".", "")
 	return replacer.Replace(viper.GetString("ttn-account-server"))
 }
 
 func tokenFilename(name string) string {
-	return serverKey() + ".token"
-}
-
-func derivedTokenFilename(name string) string {
-	return serverKey() + "." + name + ".token"
+	return tokenFile()
 }
 
 // GetCache get's the cache that will store our tokens
@@ -115,7 +120,7 @@ func GetTokenSource(ctx log.Interface) oauth2.TokenSource {
 
 func GetTokenManager(accessToken string) tokens.Manager {
 	server := viper.GetString("ttn-account-server")
-	return tokens.HTTPManager(server, accessToken, tokens.FileStoreWithNameFn(viper.GetString("token-dir"), derivedTokenFilename))
+	return tokens.HTTPManager(server, accessToken, tokens.FileStore(path.Join(viper.GetString("token-dir"), derivedTokenFile())))
 }
 
 // GetAccount gets a new Account server client for ttnctl
@@ -154,4 +159,17 @@ func TokenForScope(ctx log.Interface, scope string) string {
 	}
 
 	return restricted
+}
+
+func Logout() error {
+	err := os.Remove(path.Join(viper.GetString("token-dir"), tokenFile()))
+	if err != nil {
+		return err
+	}
+
+	err = os.Remove(path.Join(viper.GetString("token-dir"), derivedTokenFile()))
+	if err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	return nil
 }
