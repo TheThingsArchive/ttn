@@ -3,62 +3,58 @@
 	"ignore": "test",
 	"package": [
 		{
-			"path": "-v",
-			"revision": ""
-		},
-		{
 			"checksumSHA1": "rniS3263DDVGFj6N2g9DQ1T0Qgk=",
 			"path": "github.com/TheThingsNetwork/go-account-lib/account",
-			"revision": "34de518002e1f51593baeabd670f281f4af90506",
-			"revisionTime": "2016-09-28T13:23:42Z"
+			"revision": "04b26fb148c2039127ce74639f9bba26da1ebcf1",
+			"revisionTime": "2016-09-29T11:56:12Z"
 		},
 		{
 			"checksumSHA1": "CwTMKMV1GuWH0cahU1plR3qLk78=",
 			"path": "github.com/TheThingsNetwork/go-account-lib/auth",
-			"revision": "34de518002e1f51593baeabd670f281f4af90506",
-			"revisionTime": "2016-09-28T13:23:42Z"
+			"revision": "04b26fb148c2039127ce74639f9bba26da1ebcf1",
+			"revisionTime": "2016-09-29T11:56:12Z"
 		},
 		{
 			"checksumSHA1": "PFL4Ax29rfb/zBV3xOD56m/qUCQ=",
 			"path": "github.com/TheThingsNetwork/go-account-lib/cache",
-			"revision": "34de518002e1f51593baeabd670f281f4af90506",
-			"revisionTime": "2016-09-28T13:23:42Z"
+			"revision": "04b26fb148c2039127ce74639f9bba26da1ebcf1",
+			"revisionTime": "2016-09-29T11:56:12Z"
 		},
 		{
 			"checksumSHA1": "8jECnauAWMYPUg48QaAFsLgB6n4=",
 			"path": "github.com/TheThingsNetwork/go-account-lib/claims",
-			"revision": "34de518002e1f51593baeabd670f281f4af90506",
-			"revisionTime": "2016-09-28T13:23:42Z"
+			"revision": "04b26fb148c2039127ce74639f9bba26da1ebcf1",
+			"revisionTime": "2016-09-29T11:56:12Z"
 		},
 		{
 			"checksumSHA1": "Tb98SzRS+adY/QZQVO7BdvqMftw=",
 			"path": "github.com/TheThingsNetwork/go-account-lib/rights",
-			"revision": "34de518002e1f51593baeabd670f281f4af90506",
-			"revisionTime": "2016-09-28T13:23:42Z"
+			"revision": "04b26fb148c2039127ce74639f9bba26da1ebcf1",
+			"revisionTime": "2016-09-29T11:56:12Z"
 		},
 		{
 			"checksumSHA1": "SvUkgVuVVVssqpXbE8OfeWCm0KU=",
 			"path": "github.com/TheThingsNetwork/go-account-lib/scope",
-			"revision": "34de518002e1f51593baeabd670f281f4af90506",
-			"revisionTime": "2016-09-28T13:23:42Z"
+			"revision": "04b26fb148c2039127ce74639f9bba26da1ebcf1",
+			"revisionTime": "2016-09-29T11:56:12Z"
 		},
 		{
 			"checksumSHA1": "M36IFas2KacxiVfNI3McxRzYcGA=",
 			"path": "github.com/TheThingsNetwork/go-account-lib/tokenkey",
-			"revision": "34de518002e1f51593baeabd670f281f4af90506",
-			"revisionTime": "2016-09-28T13:23:42Z"
+			"revision": "04b26fb148c2039127ce74639f9bba26da1ebcf1",
+			"revisionTime": "2016-09-29T11:56:12Z"
 		},
 		{
 			"checksumSHA1": "Mtox7znVD1KQGX40T4wtbH60K/w=",
 			"path": "github.com/TheThingsNetwork/go-account-lib/tokens",
-			"revision": "34de518002e1f51593baeabd670f281f4af90506",
-			"revisionTime": "2016-09-28T13:23:42Z"
+			"revision": "04b26fb148c2039127ce74639f9bba26da1ebcf1",
+			"revisionTime": "2016-09-29T11:56:12Z"
 		},
 		{
-			"checksumSHA1": "xkcCm3Gn6B23Ca4A34nRJzEAlJo=",
+			"checksumSHA1": "BKotLY522RCIk0OHwfZHdOOicOs=",
 			"path": "github.com/TheThingsNetwork/go-account-lib/util",
-			"revision": "34de518002e1f51593baeabd670f281f4af90506",
-			"revisionTime": "2016-09-28T13:23:42Z"
+			"revision": "04b26fb148c2039127ce74639f9bba26da1ebcf1",
+			"revisionTime": "2016-09-29T11:56:12Z"
 		},
 		{
 			"checksumSHA1": "Ur88QI//9Ue82g83qvBSakGlzVg=",
@@ -123,14 +119,14 @@
 		{
 			"checksumSHA1": "Uouj6ZRJ7qieqrCHp6u1cghopIM=",
 			"path": "github.com/eclipse/paho.mqtt.golang",
-			"revision": "b0f0cce24f138f7a1d034f55069883c7dcb6a9d7",
-			"revisionTime": "2016-09-07T14:31:29Z"
+			"revision": "97b6f6bfc5007d4bc6859ea6ef8995079b60adc8",
+			"revisionTime": "2016-09-28T12:59:33Z"
 		},
 		{
-			"checksumSHA1": "0KKFo4Q90AHUBTqNWH3DKZHWals=",
+			"checksumSHA1": "wPreCwXsA/oU2R+lkOGpR6skdA0=",
 			"path": "github.com/eclipse/paho.mqtt.golang/packets",
-			"revision": "b0f0cce24f138f7a1d034f55069883c7dcb6a9d7",
-			"revisionTime": "2016-09-07T14:31:29Z"
+			"revision": "97b6f6bfc5007d4bc6859ea6ef8995079b60adc8",
+			"revisionTime": "2016-09-28T12:59:33Z"
 		},
 		{
 			"checksumSHA1": "xgjI2W3RGiQwNlxsOW2V9fJ9kaM=",
@@ -319,10 +315,10 @@
 			"revisionTime": "2016-09-20T07:07:15Z"
 		},
 		{
-			"checksumSHA1": "Hky3u+8Rqum+wB5BHMj0A8ZmT4g=",
+			"checksumSHA1": "ynJSWoF6v+3zMnh9R0QmmG6iGV8=",
 			"path": "github.com/pkg/errors",
-			"revision": "a887431f7f6ef7687b556dbf718d9f351d4858a0",
-			"revisionTime": "2016-09-16T11:02:12Z"
+			"revision": "645ef00459ed84a119197bfb8d8205042c6df63d",
+			"revisionTime": "2016-09-29T01:48:01Z"
 		},
 		{
 			"checksumSHA1": "v6/DDmWObvEsdMvLe+KfuBVSNtg=",
@@ -491,80 +487,80 @@
 		{
 			"checksumSHA1": "h+pFYiRHBogczS8/F1NoN3Ata44=",
 			"path": "golang.org/x/crypto/curve25519",
-			"revision": "8e06e8ddd9629eb88639aba897641bff8031f1d3",
-			"revisionTime": "2016-09-10T18:59:01Z"
+			"revision": "a20de3fa94e069ec699987416679230d72e030a3",
+			"revisionTime": "2016-09-23T08:39:13Z"
 		},
 		{
 			"checksumSHA1": "wGb//LjBPNxYHqk+dcLo7BjPXK8=",
 			"path": "golang.org/x/crypto/ed25519",
-			"revision": "8e06e8ddd9629eb88639aba897641bff8031f1d3",
-			"revisionTime": "2016-09-10T18:59:01Z"
+			"revision": "a20de3fa94e069ec699987416679230d72e030a3",
+			"revisionTime": "2016-09-23T08:39:13Z"
 		},
 		{
 			"checksumSHA1": "LXFcVx8I587SnWmKycSDEq9yvK8=",
 			"path": "golang.org/x/crypto/ed25519/internal/edwards25519",
-			"revision": "8e06e8ddd9629eb88639aba897641bff8031f1d3",
-			"revisionTime": "2016-09-10T18:59:01Z"
+			"revision": "a20de3fa94e069ec699987416679230d72e030a3",
+			"revisionTime": "2016-09-23T08:39:13Z"
 		},
 		{
-			"checksumSHA1": "mtOqF6Q4ldg801EaT6YTv9LP9bM=",
+			"checksumSHA1": "ueYA012ftzqjyWYYdlt3H3pkixo=",
 			"path": "golang.org/x/crypto/ssh",
-			"revision": "8e06e8ddd9629eb88639aba897641bff8031f1d3",
-			"revisionTime": "2016-09-10T18:59:01Z"
+			"revision": "a20de3fa94e069ec699987416679230d72e030a3",
+			"revisionTime": "2016-09-23T08:39:13Z"
 		},
 		{
 			"checksumSHA1": "y3a1tOZVwKCqG2yJZvAYycnelyM=",
 			"path": "golang.org/x/crypto/ssh/terminal",
-			"revision": "8e06e8ddd9629eb88639aba897641bff8031f1d3",
-			"revisionTime": "2016-09-10T18:59:01Z"
+			"revision": "a20de3fa94e069ec699987416679230d72e030a3",
+			"revisionTime": "2016-09-23T08:39:13Z"
 		},
 		{
 			"checksumSHA1": "9jjO5GjLa0XF/nfWihF02RoH4qc=",
 			"path": "golang.org/x/net/context",
-			"revision": "f09c4662a0bd6bd8943ac7b4931e185df9471da4",
-			"revisionTime": "2016-09-24T00:10:04Z"
+			"revision": "9f0e377a8a39bb99ff03459d77c135a0042878f0",
+			"revisionTime": "2016-09-27T14:53:45Z"
 		},
 		{
 			"checksumSHA1": "yIyismrXLh/RQFDeOtTPAGWsTOw=",
 			"path": "golang.org/x/net/http2",
-			"revision": "f09c4662a0bd6bd8943ac7b4931e185df9471da4",
-			"revisionTime": "2016-09-24T00:10:04Z"
+			"revision": "9f0e377a8a39bb99ff03459d77c135a0042878f0",
+			"revisionTime": "2016-09-27T14:53:45Z"
 		},
 		{
 			"checksumSHA1": "HzuGD7AwgC0p1az1WAQnEFnEk98=",
 			"path": "golang.org/x/net/http2/hpack",
-			"revision": "f09c4662a0bd6bd8943ac7b4931e185df9471da4",
-			"revisionTime": "2016-09-24T00:10:04Z"
+			"revision": "9f0e377a8a39bb99ff03459d77c135a0042878f0",
+			"revisionTime": "2016-09-27T14:53:45Z"
 		},
 		{
 			"checksumSHA1": "GIGmSrYACByf5JDIP9ByBZksY80=",
 			"path": "golang.org/x/net/idna",
-			"revision": "f09c4662a0bd6bd8943ac7b4931e185df9471da4",
-			"revisionTime": "2016-09-24T00:10:04Z"
+			"revision": "9f0e377a8a39bb99ff03459d77c135a0042878f0",
+			"revisionTime": "2016-09-27T14:53:45Z"
 		},
 		{
 			"checksumSHA1": "/k7k6eJDkxXx6K9Zpo/OwNm58XM=",
 			"path": "golang.org/x/net/internal/timeseries",
-			"revision": "f09c4662a0bd6bd8943ac7b4931e185df9471da4",
-			"revisionTime": "2016-09-24T00:10:04Z"
+			"revision": "9f0e377a8a39bb99ff03459d77c135a0042878f0",
+			"revisionTime": "2016-09-27T14:53:45Z"
 		},
 		{
 			"checksumSHA1": "3xyuaSNmClqG4YWC7g0isQIbUTc=",
 			"path": "golang.org/x/net/lex/httplex",
-			"revision": "f09c4662a0bd6bd8943ac7b4931e185df9471da4",
-			"revisionTime": "2016-09-24T00:10:04Z"
+			"revision": "9f0e377a8a39bb99ff03459d77c135a0042878f0",
+			"revisionTime": "2016-09-27T14:53:45Z"
 		},
 		{
 			"checksumSHA1": "WpST9lFOHvWrjDVy0GJNqHe+R3E=",
 			"path": "golang.org/x/net/trace",
-			"revision": "f09c4662a0bd6bd8943ac7b4931e185df9471da4",
-			"revisionTime": "2016-09-24T00:10:04Z"
+			"revision": "9f0e377a8a39bb99ff03459d77c135a0042878f0",
+			"revisionTime": "2016-09-27T14:53:45Z"
 		},
 		{
 			"checksumSHA1": "likOl7O0BJntqagR050kkOBuY4o=",
 			"path": "golang.org/x/net/websocket",
-			"revision": "f09c4662a0bd6bd8943ac7b4931e185df9471da4",
-			"revisionTime": "2016-09-24T00:10:04Z"
+			"revision": "9f0e377a8a39bb99ff03459d77c135a0042878f0",
+			"revisionTime": "2016-09-27T14:53:45Z"
 		},
 		{
 			"checksumSHA1": "XH7CgbL5Z8COUc+MKrYqS3FFosY=",
@@ -699,10 +695,10 @@
 			"revisionTime": "2016-06-02T08:55:44Z"
 		},
 		{
-			"checksumSHA1": "SPMXWeoFQa5z0pLPmqpcFzyHqQQ=",
+			"checksumSHA1": "12GqsW8PiRPnezDDy0v4brZrndM=",
 			"path": "gopkg.in/yaml.v2",
-			"revision": "31c299268d302dd0aa9a0dcf765a3d58971ac83f",
-			"revisionTime": "2016-09-12T16:56:03Z"
+			"revision": "a5b47d31c556af34a302ce5d659e6fea44d90de0",
+			"revisionTime": "2016-09-28T15:37:09Z"
 		}
 	],
 	"rootPath": "github.com/TheThingsNetwork/ttn"
