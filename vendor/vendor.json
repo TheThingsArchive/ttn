@@ -3,6 +3,12 @@
 	"ignore": "test",
 	"package": [
 		{
+			"checksumSHA1": "9NR0rrcAT5J76C5xMS4AVksS9o0=",
+			"path": "github.com/StackExchange/wmi",
+			"revision": "e54cbda6595d7293a7a468ccf9525f6bc8887f99",
+			"revisionTime": "2016-08-11T21:45:55Z"
+		},
+		{
 			"checksumSHA1": "waq4N4OCUwSpA4kjU3abu//ms68=",
 			"path": "github.com/TheThingsNetwork/go-account-lib/account",
 			"revision": "cb9716b4752192112a4bbde4d362c3757c3c2d38",
@@ -133,6 +139,18 @@
 			"path": "github.com/fsnotify/fsnotify",
 			"revision": "f12c6236fe7b5cf6bcf30e5935d08cb079d78334",
 			"revisionTime": "2016-08-16T05:15:41Z"
+		},
+		{
+			"checksumSHA1": "wDZdTaY9JiqqqnF4c3pHP71nWmk=",
+			"path": "github.com/go-ole/go-ole",
+			"revision": "7dfdcf409020452e29b4babcbb22f984d2aa308a",
+			"revisionTime": "2016-07-29T03:38:29Z"
+		},
+		{
+			"checksumSHA1": "qLYVTQDhgrVIeZ2KI9eZV51mmug=",
+			"path": "github.com/go-ole/go-ole/oleutil",
+			"revision": "7dfdcf409020452e29b4babcbb22f984d2aa308a",
+			"revisionTime": "2016-07-29T03:38:29Z"
 		},
 		{
 			"checksumSHA1": "aXC93Lo0MY4HRMSF7ANJ97VtulM=",
@@ -422,6 +440,12 @@
 			"path": "github.com/shirou/gopsutil/process",
 			"revision": "af2b5127ea65bc380b2e07f2f27829aac2640d65",
 			"revisionTime": "2016-09-22T12:59:23Z"
+		},
+		{
+			"checksumSHA1": "Nve7SpDmjsv6+rhkXAkfg/UQx94=",
+			"path": "github.com/shirou/w32",
+			"revision": "bb4de0191aa41b5507caa14b0650cdbddcd9280b",
+			"revisionTime": "2016-09-30T03:27:40Z"
 		},
 		{
 			"checksumSHA1": "XXTR/ftEYSqQn4+Y7wNfiJJmq9U=",
