@@ -6,6 +6,7 @@ package util
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path"
 
 	"github.com/TheThingsNetwork/ttn/core/types"
@@ -104,4 +105,49 @@ func GetAppID(ctx log.Interface) string {
 		ctx.Fatal("Missing AppID. You should select an application to use with \"ttnctl applications select\"")
 	}
 	return appID
+}
+
+// GetConfigFile returns the location of the configuration file.
+// It checks the following (in this order):
+// the --config flag
+// $XDG_CONFIG_HOME/ttnctl/config.yml (if $XDG_CONFIG_HOME is set)
+// $HOME/.ttnctl.yml
+func GetConfigFile() string {
+	file := viper.GetString("config")
+	if file != "" {
+		return file
+	}
+
+	xdg := os.Getenv("XDG_CONFIG_HOME")
+	if xdg != "" {
+		return path.Join(xdg, "ttnctl", "config.yml")
+	}
+
+	return path.Join(os.Getenv("HOME"), ".ttnctl.yml")
+}
+
+// GetDataDir returns the location of the data directory used for
+// sotring data.
+// It checks the following (in this order):
+// the --data flag
+// $XDG_DATA_HOME/ttnctl (if $XDG_DATA_HOME is set)
+// $XDG_CACHE_HOME/ttnctl (if $XDG_CACHE_HOME is set)
+// $HOME/.ttnctl
+func GetDataDir() string {
+	file := viper.GetString("data")
+	if file != "" {
+		return file
+	}
+
+	xdg := os.Getenv("XDG_DATA_HOME")
+	if xdg != "" {
+		return path.Join(xdg, "ttnctl")
+	}
+
+	xdg = os.Getenv("XDG_CACHE_HOME")
+	if xdg != "" {
+		return path.Join(xdg, "ttnctl")
+	}
+
+	return path.Join(os.Getenv("HOME"), ".ttnctl")
 }

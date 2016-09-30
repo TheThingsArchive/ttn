@@ -13,6 +13,7 @@ import (
 	"google.golang.org/grpc/grpclog"
 
 	"github.com/TheThingsNetwork/ttn/api"
+	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	cliHandler "github.com/TheThingsNetwork/ttn/utils/cli/handler"
 	"github.com/TheThingsNetwork/ttn/utils/logging"
 	"github.com/apex/log"
@@ -21,6 +22,8 @@ import (
 )
 
 var cfgFile string
+var dataDir string
+var debug bool
 
 var ctx log.Interface
 
@@ -58,6 +61,8 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.ttnctl.yaml)")
+	RootCmd.PersistentFlags().StringVar(&dataDir, "data", "", "directory where ttnctl stores data (default is $HOME/.ttnctl)")
+	RootCmd.PersistentFlags().BoolVarP(&debug, "debug", "d", false, "Enable debug mode")
 
 	RootCmd.PersistentFlags().String("discovery-server", "discover.thethingsnetwork.org:1900", "The address of the Discovery server")
 	viper.BindPFlag("discovery-server", RootCmd.PersistentFlags().Lookup("discovery-server"))
@@ -74,8 +79,6 @@ func init() {
 	RootCmd.PersistentFlags().String("ttn-account-server", "https://account.thethingsnetwork.org", "The address of the OAuth 2.0 server")
 	viper.BindPFlag("ttn-account-server", RootCmd.PersistentFlags().Lookup("ttn-account-server"))
 
-	RootCmd.PersistentFlags().String("token-dir", os.ExpandEnv("$HOME/.ttnctl"), "The location where tokens are stored")
-	viper.BindPFlag("token-dir", RootCmd.PersistentFlags().Lookup("token-dir"))
 }
 
 func printKV(key, t interface{}) {
@@ -110,16 +113,20 @@ func confirm(prompt string) bool {
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
+	if cfgFile == "" {
+		cfgFile = util.GetConfigFile()
+	}
+
+	if dataDir == "" {
+		dataDir = util.GetDataDir()
+	}
+
 	viper.SetConfigType("yaml")
-	viper.SetConfigName(".ttnctl")
-	viper.AddConfigPath("$HOME")
+	viper.SetConfigFile(cfgFile)
+
 	viper.SetEnvPrefix("ttnctl") // set environment prefix
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
 	viper.AutomaticEnv()
-
-	if cfgFile != "" { // enable ability to specify config file via flag
-		viper.SetConfigFile(cfgFile)
-	}
 
 	// If a config file is found, read it in.
 	err := viper.ReadInConfig()
