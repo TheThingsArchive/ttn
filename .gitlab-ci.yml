@@ -56,6 +56,7 @@ binaries:
     - popd
     - mkdir release
     - cp -R $GOPATH/src/github.com/TheThingsNetwork/ttn/release/* release/
+    - echo $CI_BUILD_REF > release/commit
   artifacts:
     paths:
       - release/
@@ -86,3 +87,14 @@ dockerhub-image:
     - docker login -u "$DOCKERHUB_USER" -p "$DOCKERHUB_PASSWORD"
     - docker tag ttn $CONTAINER_NAME:$CI_BUILD_REF_NAME
     - docker push $CONTAINER_NAME:$CI_BUILD_REF_NAME
+
+azure-binaries:
+  only:
+    - master@thethingsnetwork/ttn
+    - refactor@thethingsnetwork/ttn
+  stage: package
+  image: registry.gitlab.com/thethingsindustries/upload
+  script:
+    - cd release
+    - export STORAGE_CONTAINER=release STORAGE_KEY=$AZURE_STORAGE_KEY ZIP=true TGZ=true PREFIX=$CI_BUILD_REF_NAME/
+    - upload *
