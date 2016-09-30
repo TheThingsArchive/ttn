@@ -44,7 +44,7 @@ func tokenFilename(name string) string {
 
 // GetCache get's the cache that will store our tokens
 func GetTokenCache() cache.Cache {
-	return cache.FileCacheWithNameFn(viper.GetString("token-dir"), tokenFilename)
+	return cache.FileCacheWithNameFn(GetDataDir(), tokenFilename)
 }
 
 func getAccountServerTokenSource(token *oauth2.Token) oauth2.TokenSource {
@@ -120,7 +120,7 @@ func GetTokenSource(ctx log.Interface) oauth2.TokenSource {
 
 func GetTokenManager(accessToken string) tokens.Manager {
 	server := viper.GetString("ttn-account-server")
-	return tokens.HTTPManager(server, accessToken, tokens.FileStore(path.Join(viper.GetString("token-dir"), derivedTokenFile())))
+	return tokens.HTTPManager(server, accessToken, tokens.FileStore(path.Join(GetDataDir(), derivedTokenFile())))
 }
 
 // GetAccount gets a new Account server client for ttnctl
