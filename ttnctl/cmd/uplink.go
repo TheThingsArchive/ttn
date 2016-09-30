@@ -15,9 +15,10 @@ import (
 )
 
 var uplinkCmd = &cobra.Command{
-	Use:   "uplink [DevAddr] [NwkSKey] [AppSKey] [FCnt] [Payload]",
-	Short: "Simulate an uplink message to the network",
-	Long:  `ttnctl uplink simulates an uplink message to the network`,
+	Hidden: true,
+	Use:    "uplink [DevAddr] [NwkSKey] [AppSKey] [FCnt] [Payload]",
+	Short:  "Simulate an uplink message to the network",
+	Long:   `ttnctl uplink simulates an uplink message to the network`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) < 5 {
 			cmd.UsageFunc()(cmd)
