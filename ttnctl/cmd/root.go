@@ -34,13 +34,16 @@ var RootCmd = &cobra.Command{
 	Long:  `ttnctl controls The Things Network from the command line.`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		var logLevel = log.InfoLevel
-		if viper.GetBool("debug") {
+		if debug {
 			logLevel = log.DebugLevel
 		}
 		ctx = &log.Logger{
 			Level:   logLevel,
 			Handler: cliHandler.New(os.Stdout),
 		}
+
+		ctx.WithField("config file", viper.ConfigFileUsed()).WithField("data dir", dataDir).Debug("Using config")
+
 		api.DialOptions = append(api.DialOptions, grpc.WithBlock())
 		api.DialOptions = append(api.DialOptions, grpc.WithTimeout(2*time.Second))
 		grpclog.SetLogger(logging.NewGRPCLogger(ctx))
