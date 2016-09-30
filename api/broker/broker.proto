@@ -120,26 +120,20 @@ service Broker {
 // message StatusRequest is used to request the status of this Broker
 message StatusRequest {}
 
-// message Status is the response to the StatusRequest
 message Status {
-  // Uplink
-  api.Rates uplink        = 1;
-  api.Rates uplink_unique = 2;
+  api.SystemStats    system     = 1;
+  api.ComponentStats component  = 2;
 
-  // Downlink
-  api.Rates downlink = 11;
-
-  // Activations
-  api.Rates activations          = 21;
-  api.Rates activations_unique   = 22;
-  api.Rates activations_accepted = 23;
-
-  // Deduplication histogram percentiles
-  api.Percentiles deduplication = 31;
+  api.Rates uplink              = 11;
+  api.Rates uplink_unique       = 12;
+  api.Rates downlink            = 13;
+  api.Rates activations         = 14;
+  api.Rates activations_unique  = 15;
+  api.Percentiles deduplication = 16;
 
   // Connections
-  uint32  connected_routers  = 41;
-  uint32  connected_handlers = 42;
+  uint32  connected_routers  = 21;
+  uint32  connected_handlers = 22;
 }
 
 message ApplicationHandlerRegistration {

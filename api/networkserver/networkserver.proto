@@ -43,8 +43,14 @@ message StatusRequest {}
 
 // message Status is the response to the StatusRequest
 message Status {
-  // GetDevices histogram percentiles
-  api.Percentiles devices_per_address = 1;
+  api.SystemStats    system    = 1;
+  api.ComponentStats component = 2;
+
+  api.Rates uplink      = 11;
+  api.Rates downlink    = 12;
+  api.Rates activations = 13;
+
+  api.Percentiles devices_per_address = 21;
 }
 
 // The NetworkServerManager service provides configuration and monitoring

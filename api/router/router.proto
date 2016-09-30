@@ -73,23 +73,17 @@ message StatusRequest {}
 
 // message Status is the response to the StatusRequest
 message Status {
-  // Gateways
-  api.Rates gateway_status   = 1;
-  uint32    active_gateways  = 4;
+  api.SystemStats    system    = 1;
+  api.ComponentStats component = 2;
 
-  // Uplink
-  api.Rates uplink = 11;
-
-  // Downlink
-  api.Rates downlink = 21;
-
-  // Activations
-  api.Rates activations = 31;
-  api.Rates activations_accepted = 32;
+  api.Rates gateway_status   = 11;
+  api.Rates uplink           = 12;
+  api.Rates downlink         = 13;
+  api.Rates activations      = 14;
 
   // Connections
-  uint32  connected_gateways  = 41;
-  uint32  connected_brokers   = 42;
+  uint32  connected_gateways  = 21;
+  uint32  connected_brokers   = 22;
 }
 
 // The RouterManager service provides configuration and monitoring functionality

@@ -23,6 +23,40 @@ message Rates {
   float rate15 = 3;
 }
 
-message ServerMetadata {
+message SystemStats {
+  message Loadstats {
+    float load1  = 1;
+    float load5  = 2;
+    float load15 = 3;
+  }
+  Loadstats load = 1;
+  message CPUStats {
+    float user   = 1;
+    float system = 2;
+    float idle   = 3;
+  }
+  CPUStats cpu = 2;
+  message MemoryStats {
+    uint64 total     = 1;
+    uint64 available = 2;
+    uint64 used      = 3;
+  }
+  MemoryStats memory = 3;
+}
 
+message ComponentStats {
+  message CPUStats {
+    float user   = 1;
+    float system = 2;
+    float idle   = 3;
+  }
+  CPUStats cpu = 1;
+  message MemoryStats {
+    uint64 memory = 1;
+    uint64 swap   = 2;
+  }
+  MemoryStats memory = 3;
+
+  uint64 goroutines     = 4;
+  float gc_cpu_fraction = 5;
 }
