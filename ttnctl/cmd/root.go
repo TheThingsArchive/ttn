@@ -133,10 +133,10 @@ func initConfig() {
 	viper.AutomaticEnv()
 
 	// If a config file is found, read it in.
-	err := viper.ReadInConfig()
-	if err != nil {
-		fmt.Println("Error when reading config file:", err)
-	} else if err == nil && viper.GetBool("debug") {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
+	if _, err := os.Stat(cfgFile); err == nil {
+		err := viper.ReadInConfig()
+		if err != nil {
+			fmt.Println("Error when reading config file:", err)
+		}
 	}
 }
