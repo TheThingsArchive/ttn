@@ -382,6 +382,48 @@
 			"revisionTime": "2016-09-04T16:08:59Z"
 		},
 		{
+			"checksumSHA1": "ToLFWWpwBceipBQRASIxs36Glok=",
+			"path": "github.com/shirou/gopsutil/cpu",
+			"revision": "af2b5127ea65bc380b2e07f2f27829aac2640d65",
+			"revisionTime": "2016-09-22T12:59:23Z"
+		},
+		{
+			"checksumSHA1": "NuQpBEPzjTLUqDW2zxChEBpDAkk=",
+			"path": "github.com/shirou/gopsutil/host",
+			"revision": "af2b5127ea65bc380b2e07f2f27829aac2640d65",
+			"revisionTime": "2016-09-22T12:59:23Z"
+		},
+		{
+			"checksumSHA1": "UnT7JW8ZDcUVJUYOPBfW6SToB0k=",
+			"path": "github.com/shirou/gopsutil/internal/common",
+			"revision": "af2b5127ea65bc380b2e07f2f27829aac2640d65",
+			"revisionTime": "2016-09-22T12:59:23Z"
+		},
+		{
+			"checksumSHA1": "4I3yYYZEctqf3foI2+CI92lu5pM=",
+			"path": "github.com/shirou/gopsutil/load",
+			"revision": "af2b5127ea65bc380b2e07f2f27829aac2640d65",
+			"revisionTime": "2016-09-22T12:59:23Z"
+		},
+		{
+			"checksumSHA1": "5HYtuEgPkRvE6I8VFQMAN0rbYRU=",
+			"path": "github.com/shirou/gopsutil/mem",
+			"revision": "af2b5127ea65bc380b2e07f2f27829aac2640d65",
+			"revisionTime": "2016-09-22T12:59:23Z"
+		},
+		{
+			"checksumSHA1": "Fa7lUUadHW9402ifjheuSFDkufo=",
+			"path": "github.com/shirou/gopsutil/net",
+			"revision": "af2b5127ea65bc380b2e07f2f27829aac2640d65",
+			"revisionTime": "2016-09-22T12:59:23Z"
+		},
+		{
+			"checksumSHA1": "k1ug9JDvES8wNqxaQcO7qxgpOKc=",
+			"path": "github.com/shirou/gopsutil/process",
+			"revision": "af2b5127ea65bc380b2e07f2f27829aac2640d65",
+			"revisionTime": "2016-09-22T12:59:23Z"
+		},
+		{
 			"checksumSHA1": "XXTR/ftEYSqQn4+Y7wNfiJJmq9U=",
 			"origin": "github.com/cpuguy83/go-md2man/vendor/github.com/shurcooL/sanitized_anchor_name",
 			"path": "github.com/shurcooL/sanitized_anchor_name",
