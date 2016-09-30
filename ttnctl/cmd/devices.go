@@ -4,6 +4,7 @@
 package cmd
 
 import (
+	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/apex/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -16,8 +17,8 @@ var devicesCmd = &cobra.Command{
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		RootCmd.PersistentPreRun(cmd, args)
 		ctx.WithFields(log.Fields{
-			"AppID":  viper.GetString("app-id"),
-			"AppEUI": viper.GetString("app-eui"),
+			"AppID":  util.GetAppID(ctx),
+			"AppEUI": util.GetAppEUI(ctx),
 		}).Info("Using Application")
 	},
 }
