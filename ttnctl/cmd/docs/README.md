@@ -15,6 +15,8 @@ ttnctl applications can be used to manage applications.
 
 ```
       --config string               config file (default is $HOME/.ttnctl.yaml)
+      --data string                 directory where ttnctl stores data (default is $HOME/.ttnctl)
+  -d, --debug                       Enable debug mode
       --discovery-server string     The address of the Discovery server (default "discover.thethingsnetwork.org:1900")
       --mqtt-broker string          The address of the MQTT broker (default "eu.thethings.network:1883")
       --ttn-account-server string   The address of the OAuth 2.0 server (default "https://account.thethingsnetwork.org")
@@ -57,6 +59,8 @@ $ ttnctl applications add test "Test application"
 
 ```
       --config string               config file (default is $HOME/.ttnctl.yaml)
+      --data string                 directory where ttnctl stores data (default is $HOME/.ttnctl)
+  -d, --debug                       Enable debug mode
       --discovery-server string     The address of the Discovery server (default "discover.thethingsnetwork.org:1900")
       --mqtt-broker string          The address of the MQTT broker (default "eu.thethings.network:1883")
       --ttn-account-server string   The address of the OAuth 2.0 server (default "https://account.thethingsnetwork.org")
@@ -82,6 +86,8 @@ ttnctl applications delete
 
 ```
       --config string               config file (default is $HOME/.ttnctl.yaml)
+      --data string                 directory where ttnctl stores data (default is $HOME/.ttnctl)
+  -d, --debug                       Enable debug mode
       --discovery-server string     The address of the Discovery server (default "discover.thethingsnetwork.org:1900")
       --mqtt-broker string          The address of the MQTT broker (default "eu.thethings.network:1883")
       --ttn-account-server string   The address of the OAuth 2.0 server (default "https://account.thethingsnetwork.org")
@@ -129,6 +135,8 @@ Collaborators:
 
 ```
       --config string               config file (default is $HOME/.ttnctl.yaml)
+      --data string                 directory where ttnctl stores data (default is $HOME/.ttnctl)
+  -d, --debug                       Enable debug mode
       --discovery-server string     The address of the Discovery server (default "discover.thethingsnetwork.org:1900")
       --mqtt-broker string          The address of the MQTT broker (default "eu.thethings.network:1883")
       --ttn-account-server string   The address of the OAuth 2.0 server (default "https://account.thethingsnetwork.org")
@@ -165,6 +173,8 @@ $ ttnctl applications list
 
 ```
       --config string               config file (default is $HOME/.ttnctl.yaml)
+      --data string                 directory where ttnctl stores data (default is $HOME/.ttnctl)
+  -d, --debug                       Enable debug mode
       --discovery-server string     The address of the Discovery server (default "discover.thethingsnetwork.org:1900")
       --mqtt-broker string          The address of the MQTT broker (default "eu.thethings.network:1883")
       --ttn-account-server string   The address of the OAuth 2.0 server (default "https://account.thethingsnetwork.org")
@@ -196,9 +206,9 @@ $ ttnctl applications pf
   INFO Found Application
   INFO Decoder function
 function Decoder(bytes) {
-  return {
-    payload: bytes,
-  };
+  var decoded = {};
+  decoded.led = bytes[0];
+  return decoded;
 }
   INFO No converter function
   INFO No validator function
@@ -210,6 +220,8 @@ function Decoder(bytes) {
 
 ```
       --config string               config file (default is $HOME/.ttnctl.yaml)
+      --data string                 directory where ttnctl stores data (default is $HOME/.ttnctl)
+  -d, --debug                       Enable debug mode
       --discovery-server string     The address of the Discovery server (default "discover.thethingsnetwork.org:1900")
       --mqtt-broker string          The address of the MQTT broker (default "eu.thethings.network:1883")
       --ttn-account-server string   The address of the OAuth 2.0 server (default "https://account.thethingsnetwork.org")
@@ -239,18 +251,21 @@ $ ttnctl applications pf set decoder
   INFO Discovering Handler...
   INFO Connecting with Handler...
 function Decoder(bytes) {
-  // Here you can decode the payload into json.
-  // bytes is of type Buffer.
-  // todo: return an object
-  return {
-    payload: bytes,
-  };
+  // Decode an uplink message from a buffer
+  // (array) of bytes to an object of fields.
+  var decoded = {};
+
+  // decoded.led = bytes[0];
+
+  return decoded;
 }
 ########## Write your Decoder here and end with Ctrl+D (EOF):
 function Decoder(bytes) {
-  return {
-    payload: bytes,
-  };
+  var decoded = {};
+
+  decoded.led = bytes[0];
+
+  return decoded;
 }
   INFO Updated application                      AppID=test
 
@@ -260,6 +275,8 @@ function Decoder(bytes) {
 
 ```
       --config string               config file (default is $HOME/.ttnctl.yaml)
+      --data string                 directory where ttnctl stores data (default is $HOME/.ttnctl)
+  -d, --debug                       Enable debug mode
       --discovery-server string     The address of the Discovery server (default "discover.thethingsnetwork.org:1900")
       --mqtt-broker string          The address of the MQTT broker (default "eu.thethings.network:1883")
       --ttn-account-server string   The address of the OAuth 2.0 server (default "https://account.thethingsnetwork.org")
@@ -295,6 +312,8 @@ $ ttnctl applications register
 
 ```
       --config string               config file (default is $HOME/.ttnctl.yaml)
+      --data string                 directory where ttnctl stores data (default is $HOME/.ttnctl)
+  -d, --debug                       Enable debug mode
       --discovery-server string     The address of the Discovery server (default "discover.thethingsnetwork.org:1900")
       --mqtt-broker string          The address of the MQTT broker (default "eu.thethings.network:1883")
       --ttn-account-server string   The address of the OAuth 2.0 server (default "https://account.thethingsnetwork.org")
@@ -330,6 +349,8 @@ $ ttnctl applications select
 
 ```
       --config string               config file (default is $HOME/.ttnctl.yaml)
+      --data string                 directory where ttnctl stores data (default is $HOME/.ttnctl)
+  -d, --debug                       Enable debug mode
       --discovery-server string     The address of the Discovery server (default "discover.thethingsnetwork.org:1900")
       --mqtt-broker string          The address of the MQTT broker (default "eu.thethings.network:1883")
       --ttn-account-server string   The address of the OAuth 2.0 server (default "https://account.thethingsnetwork.org")
@@ -367,6 +388,8 @@ Are you sure you want to unregister application test?
 
 ```
       --config string               config file (default is $HOME/.ttnctl.yaml)
+      --data string                 directory where ttnctl stores data (default is $HOME/.ttnctl)
+  -d, --debug                       Enable debug mode
       --discovery-server string     The address of the Discovery server (default "discover.thethingsnetwork.org:1900")
       --mqtt-broker string          The address of the MQTT broker (default "eu.thethings.network:1883")
       --ttn-account-server string   The address of the OAuth 2.0 server (default "https://account.thethingsnetwork.org")
@@ -395,6 +418,8 @@ ttnctl devices can be used to manage devices.
 
 ```
       --config string               config file (default is $HOME/.ttnctl.yaml)
+      --data string                 directory where ttnctl stores data (default is $HOME/.ttnctl)
+  -d, --debug                       Enable debug mode
       --discovery-server string     The address of the Discovery server (default "discover.thethingsnetwork.org:1900")
       --mqtt-broker string          The address of the MQTT broker (default "eu.thethings.network:1883")
       --ttn-account-server string   The address of the OAuth 2.0 server (default "https://account.thethingsnetwork.org")
@@ -435,6 +460,8 @@ Are you sure you want to delete device test from application test?
       --app-eui string              The app EUI to use
       --app-id string               The app ID to use
       --config string               config file (default is $HOME/.ttnctl.yaml)
+      --data string                 directory where ttnctl stores data (default is $HOME/.ttnctl)
+  -d, --debug                       Enable debug mode
       --discovery-server string     The address of the Discovery server (default "discover.thethingsnetwork.org:1900")
       --mqtt-broker string          The address of the MQTT broker (default "eu.thethings.network:1883")
       --ttn-account-server string   The address of the OAuth 2.0 server (default "https://account.thethingsnetwork.org")
@@ -495,6 +522,8 @@ $ ttnctl devices info test
       --app-eui string              The app EUI to use
       --app-id string               The app ID to use
       --config string               config file (default is $HOME/.ttnctl.yaml)
+      --data string                 directory where ttnctl stores data (default is $HOME/.ttnctl)
+  -d, --debug                       Enable debug mode
       --discovery-server string     The address of the Discovery server (default "discover.thethingsnetwork.org:1900")
       --mqtt-broker string          The address of the MQTT broker (default "eu.thethings.network:1883")
       --ttn-account-server string   The address of the OAuth 2.0 server (default "https://account.thethingsnetwork.org")
@@ -537,6 +566,8 @@ test 	70B3D57EF0000024	0001D544B2936FCE	26001ADA	0/0
       --app-eui string              The app EUI to use
       --app-id string               The app ID to use
       --config string               config file (default is $HOME/.ttnctl.yaml)
+      --data string                 directory where ttnctl stores data (default is $HOME/.ttnctl)
+  -d, --debug                       Enable debug mode
       --discovery-server string     The address of the Discovery server (default "discover.thethingsnetwork.org:1900")
       --mqtt-broker string          The address of the MQTT broker (default "eu.thethings.network:1883")
       --ttn-account-server string   The address of the OAuth 2.0 server (default "https://account.thethingsnetwork.org")
@@ -578,6 +609,8 @@ $ ttnctl devices personalize test
       --app-eui string              The app EUI to use
       --app-id string               The app ID to use
       --config string               config file (default is $HOME/.ttnctl.yaml)
+      --data string                 directory where ttnctl stores data (default is $HOME/.ttnctl)
+  -d, --debug                       Enable debug mode
       --discovery-server string     The address of the Discovery server (default "discover.thethingsnetwork.org:1900")
       --mqtt-broker string          The address of the MQTT broker (default "eu.thethings.network:1883")
       --ttn-account-server string   The address of the OAuth 2.0 server (default "https://account.thethingsnetwork.org")
@@ -618,6 +651,8 @@ $ ttnctl devices register test
       --app-eui string              The app EUI to use
       --app-id string               The app ID to use
       --config string               config file (default is $HOME/.ttnctl.yaml)
+      --data string                 directory where ttnctl stores data (default is $HOME/.ttnctl)
+  -d, --debug                       Enable debug mode
       --discovery-server string     The address of the Discovery server (default "discover.thethingsnetwork.org:1900")
       --mqtt-broker string          The address of the MQTT broker (default "eu.thethings.network:1883")
       --ttn-account-server string   The address of the OAuth 2.0 server (default "https://account.thethingsnetwork.org")
@@ -670,6 +705,8 @@ $ ttnctl devices set test --fcnt-up 0 --fcnt-down 0
 ```
       --app-id string               The app ID to use
       --config string               config file (default is $HOME/.ttnctl.yaml)
+      --data string                 directory where ttnctl stores data (default is $HOME/.ttnctl)
+  -d, --debug                       Enable debug mode
       --discovery-server string     The address of the Discovery server (default "discover.thethingsnetwork.org:1900")
       --mqtt-broker string          The address of the MQTT broker (default "eu.thethings.network:1883")
       --ttn-account-server string   The address of the OAuth 2.0 server (default "https://account.thethingsnetwork.org")
@@ -717,6 +754,8 @@ $ ttnctl downlink test --json '{"led":"on"}'
 
 ```
       --config string               config file (default is $HOME/.ttnctl.yaml)
+      --data string                 directory where ttnctl stores data (default is $HOME/.ttnctl)
+  -d, --debug                       Enable debug mode
       --discovery-server string     The address of the Discovery server (default "discover.thethingsnetwork.org:1900")
       --mqtt-broker string          The address of the MQTT broker (default "eu.thethings.network:1883")
       --ttn-account-server string   The address of the OAuth 2.0 server (default "https://account.thethingsnetwork.org")
@@ -738,6 +777,8 @@ ttnctl gateways can be used to manage gateways.
 
 ```
       --config string               config file (default is $HOME/.ttnctl.yaml)
+      --data string                 directory where ttnctl stores data (default is $HOME/.ttnctl)
+  -d, --debug                       Enable debug mode
       --discovery-server string     The address of the Discovery server (default "discover.thethingsnetwork.org:1900")
       --mqtt-broker string          The address of the MQTT broker (default "eu.thethings.network:1883")
       --ttn-account-server string   The address of the OAuth 2.0 server (default "https://account.thethingsnetwork.org")
@@ -771,6 +812,8 @@ $ ttnctl gateways delete test
 
 ```
       --config string               config file (default is $HOME/.ttnctl.yaml)
+      --data string                 directory where ttnctl stores data (default is $HOME/.ttnctl)
+  -d, --debug                       Enable debug mode
       --discovery-server string     The address of the Discovery server (default "discover.thethingsnetwork.org:1900")
       --mqtt-broker string          The address of the MQTT broker (default "eu.thethings.network:1883")
       --ttn-account-server string   The address of the OAuth 2.0 server (default "https://account.thethingsnetwork.org")
@@ -811,6 +854,8 @@ $ ttnctl gateways edit test --location 52.37403,4.88968 --frequency-plan EU
 
 ```
       --config string               config file (default is $HOME/.ttnctl.yaml)
+      --data string                 directory where ttnctl stores data (default is $HOME/.ttnctl)
+  -d, --debug                       Enable debug mode
       --discovery-server string     The address of the Discovery server (default "discover.thethingsnetwork.org:1900")
       --mqtt-broker string          The address of the MQTT broker (default "eu.thethings.network:1883")
       --ttn-account-server string   The address of the OAuth 2.0 server (default "https://account.thethingsnetwork.org")
@@ -845,6 +890,8 @@ $ ttnctl gateways list
 
 ```
       --config string               config file (default is $HOME/.ttnctl.yaml)
+      --data string                 directory where ttnctl stores data (default is $HOME/.ttnctl)
+  -d, --debug                       Enable debug mode
       --discovery-server string     The address of the Discovery server (default "discover.thethingsnetwork.org:1900")
       --mqtt-broker string          The address of the MQTT broker (default "eu.thethings.network:1883")
       --ttn-account-server string   The address of the OAuth 2.0 server (default "https://account.thethingsnetwork.org")
@@ -878,6 +925,8 @@ $ ttnctl gateways register test US 52.37403,4.88968
 
 ```
       --config string               config file (default is $HOME/.ttnctl.yaml)
+      --data string                 directory where ttnctl stores data (default is $HOME/.ttnctl)
+  -d, --debug                       Enable debug mode
       --discovery-server string     The address of the Discovery server (default "discover.thethingsnetwork.org:1900")
       --mqtt-broker string          The address of the MQTT broker (default "eu.thethings.network:1883")
       --ttn-account-server string   The address of the OAuth 2.0 server (default "https://account.thethingsnetwork.org")
@@ -922,6 +971,8 @@ $ ttnctl gateways status test
 
 ```
       --config string               config file (default is $HOME/.ttnctl.yaml)
+      --data string                 directory where ttnctl stores data (default is $HOME/.ttnctl)
+  -d, --debug                       Enable debug mode
       --discovery-server string     The address of the Discovery server (default "discover.thethingsnetwork.org:1900")
       --mqtt-broker string          The address of the MQTT broker (default "eu.thethings.network:1883")
       --ttn-account-server string   The address of the OAuth 2.0 server (default "https://account.thethingsnetwork.org")
@@ -947,38 +998,8 @@ ttnctl subscribe
 
 ```
       --config string               config file (default is $HOME/.ttnctl.yaml)
-      --discovery-server string     The address of the Discovery server (default "discover.thethingsnetwork.org:1900")
-      --mqtt-broker string          The address of the MQTT broker (default "eu.thethings.network:1883")
-      --ttn-account-server string   The address of the OAuth 2.0 server (default "https://account.thethingsnetwork.org")
-      --ttn-handler string          The ID of the TTN Handler as announced in the Discovery server (default "ttn-handler-eu")
-      --ttn-router string           The ID of the TTN Router as announced in the Discovery server (default "ttn-router-eu")
-```
-
-
-## ttnctl uplink
-
-Simulate an uplink message to the network
-
-### Synopsis
-
-
-ttnctl uplink simulates an uplink message to the network
-
-```
-ttnctl uplink [DevAddr] [NwkSKey] [AppSKey] [FCnt] [Payload]
-```
-
-### Options
-
-```
-      --confirmed   Use confirmed uplink (this also sets --downlink)
-      --downlink    Also start downlink (unstable)
-```
-
-### Options inherited from parent commands
-
-```
-      --config string               config file (default is $HOME/.ttnctl.yaml)
+      --data string                 directory where ttnctl stores data (default is $HOME/.ttnctl)
+  -d, --debug                       Enable debug mode
       --discovery-server string     The address of the Discovery server (default "discover.thethingsnetwork.org:1900")
       --mqtt-broker string          The address of the MQTT broker (default "eu.thethings.network:1883")
       --ttn-account-server string   The address of the OAuth 2.0 server (default "https://account.thethingsnetwork.org")
@@ -1018,6 +1039,8 @@ $ ttnctl user
 
 ```
       --config string               config file (default is $HOME/.ttnctl.yaml)
+      --data string                 directory where ttnctl stores data (default is $HOME/.ttnctl)
+  -d, --debug                       Enable debug mode
       --discovery-server string     The address of the Discovery server (default "discover.thethingsnetwork.org:1900")
       --mqtt-broker string          The address of the MQTT broker (default "eu.thethings.network:1883")
       --ttn-account-server string   The address of the OAuth 2.0 server (default "https://account.thethingsnetwork.org")
@@ -1054,6 +1077,8 @@ $ ttnctl user login [paste the access code you requested above]
 
 ```
       --config string               config file (default is $HOME/.ttnctl.yaml)
+      --data string                 directory where ttnctl stores data (default is $HOME/.ttnctl)
+  -d, --debug                       Enable debug mode
       --discovery-server string     The address of the Discovery server (default "discover.thethingsnetwork.org:1900")
       --mqtt-broker string          The address of the MQTT broker (default "eu.thethings.network:1883")
       --ttn-account-server string   The address of the OAuth 2.0 server (default "https://account.thethingsnetwork.org")
@@ -1079,6 +1104,8 @@ ttnctl user logout
 
 ```
       --config string               config file (default is $HOME/.ttnctl.yaml)
+      --data string                 directory where ttnctl stores data (default is $HOME/.ttnctl)
+  -d, --debug                       Enable debug mode
       --discovery-server string     The address of the Discovery server (default "discover.thethingsnetwork.org:1900")
       --mqtt-broker string          The address of the MQTT broker (default "eu.thethings.network:1883")
       --ttn-account-server string   The address of the OAuth 2.0 server (default "https://account.thethingsnetwork.org")
@@ -1114,6 +1141,8 @@ Password: <entering password>
 
 ```
       --config string               config file (default is $HOME/.ttnctl.yaml)
+      --data string                 directory where ttnctl stores data (default is $HOME/.ttnctl)
+  -d, --debug                       Enable debug mode
       --discovery-server string     The address of the Discovery server (default "discover.thethingsnetwork.org:1900")
       --mqtt-broker string          The address of the MQTT broker (default "eu.thethings.network:1883")
       --ttn-account-server string   The address of the OAuth 2.0 server (default "https://account.thethingsnetwork.org")
@@ -1139,6 +1168,8 @@ ttnctl version
 
 ```
       --config string               config file (default is $HOME/.ttnctl.yaml)
+      --data string                 directory where ttnctl stores data (default is $HOME/.ttnctl)
+  -d, --debug                       Enable debug mode
       --discovery-server string     The address of the Discovery server (default "discover.thethingsnetwork.org:1900")
       --mqtt-broker string          The address of the MQTT broker (default "eu.thethings.network:1883")
       --ttn-account-server string   The address of the OAuth 2.0 server (default "https://account.thethingsnetwork.org")
