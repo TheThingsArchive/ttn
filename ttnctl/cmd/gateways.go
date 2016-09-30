@@ -3,7 +3,10 @@
 
 package cmd
 
-import "github.com/spf13/cobra"
+import (
+	"github.com/TheThingsNetwork/ttn/ttnctl/util"
+	"github.com/spf13/cobra"
+)
 
 var gatewaysCmd = &cobra.Command{
 	Use:   "gateways",
@@ -11,6 +14,7 @@ var gatewaysCmd = &cobra.Command{
 	Long:  `ttnctl gateways can be used to manage gateways.`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		RootCmd.PersistentPreRun(cmd, args)
+		util.GetAccount(ctx)
 	},
 }
 

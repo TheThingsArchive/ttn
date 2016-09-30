@@ -3,12 +3,19 @@
 
 package cmd
 
-import "github.com/spf13/cobra"
+import (
+	"github.com/TheThingsNetwork/ttn/ttnctl/util"
+	"github.com/spf13/cobra"
+)
 
 var applicationsCmd = &cobra.Command{
 	Use:   "applications",
 	Short: "Manage applications",
 	Long:  `ttnctl applications can be used to manage applications.`,
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		RootCmd.PersistentPreRun(cmd, args)
+		util.GetAccount(ctx)
+	},
 }
 
 func init() {

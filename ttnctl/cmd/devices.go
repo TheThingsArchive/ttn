@@ -16,6 +16,7 @@ var devicesCmd = &cobra.Command{
 	Long:  `ttnctl devices can be used to manage devices.`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		RootCmd.PersistentPreRun(cmd, args)
+		util.GetAccount(ctx)
 		ctx.WithFields(log.Fields{
 			"AppID":  util.GetAppID(ctx),
 			"AppEUI": util.GetAppEUI(ctx),
