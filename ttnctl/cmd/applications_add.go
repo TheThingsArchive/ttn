@@ -49,13 +49,7 @@ var applicationsAddCmd = &cobra.Command{
 
 		skipSelect, _ := cmd.Flags().GetBool("skip-select")
 		if !skipSelect {
-			err = util.SetConfig(map[string]interface{}{
-				"app-id":  app.ID,
-				"app-eui": app.EUIs[0].String(),
-			})
-			if err != nil {
-				ctx.WithError(err).Fatal("Could not update configuration")
-			}
+			util.SetApp(ctx, app.ID, app.EUIs[0])
 		}
 
 		ctx.Info("Selected Current Application")

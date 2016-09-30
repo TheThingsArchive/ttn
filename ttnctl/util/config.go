@@ -9,103 +9,18 @@ import (
 	"os"
 	"path"
 
+	yaml "gopkg.in/yaml.v2"
+
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/apex/log"
-	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/viper"
-	"gopkg.in/yaml.v2"
 )
 
-func getConfigLocation() (string, error) {
-	cFile := viper.ConfigFileUsed()
-	if cFile == "" {
-		dir, err := homedir.Dir()
-		if err != nil {
-			return "", fmt.Errorf("Could not get homedir: %s", err.Error())
-		}
-		expanded, err := homedir.Expand(dir)
-		if err != nil {
-			return "", fmt.Errorf("Could not get homedir: %s", err.Error())
-		}
-		cFile = path.Join(expanded, ".ttnctl.yaml")
-	}
-	return cFile, nil
-}
-
-// ReadConfig reads the config file
-func ReadConfig() (map[string]interface{}, error) {
-	cFile, err := getConfigLocation()
-	if err != nil {
-		return nil, err
-	}
-
-	c := make(map[string]interface{})
-
-	// Read config file
-	bytes, err := ioutil.ReadFile(cFile)
-	if err == nil {
-		err = yaml.Unmarshal(bytes, &c)
-	}
-	if err != nil {
-		return nil, fmt.Errorf("Could not read configuration file: %s", err.Error())
-	}
-
-	return c, nil
-}
-
-// WriteConfigFile writes the config file
-func WriteConfigFile(data map[string]interface{}) error {
-	cFile, err := getConfigLocation()
-	if err != nil {
-		return err
-	}
-
-	// Write config file
-	d, err := yaml.Marshal(&data)
-	if err != nil {
-		return fmt.Errorf("Could not generate configiguration file contents: %s", err.Error())
-	}
-	err = ioutil.WriteFile(cFile, d, 0644)
-	if err != nil {
-		return fmt.Errorf("Could not write configiguration file: %s", err.Error())
-	}
-
-	return nil
-}
-
-// SetConfig sets the specified fields in the config file.
-func SetConfig(data map[string]interface{}) error {
-	config, err := ReadConfig()
-	if err != nil {
-		return err
-	}
-	for key, value := range data {
-		config[key] = value
-	}
-	return WriteConfigFile(config)
-}
-
-// GetAppEUI returns the AppEUI that must be set in the command options or config
-func GetAppEUI(ctx log.Interface) types.AppEUI {
-	appEUIString := viper.GetString("app-eui")
-	if appEUIString == "" {
-		ctx.Fatal("Missing AppEUI. You should select an application to use with \"ttnctl applications select\"")
-	}
-	eui, err := types.ParseAppEUI(appEUIString)
-	if err != nil {
-		ctx.WithError(err).Fatal("Invalid AppEUI")
-	}
-	return eui
-}
-
-// GetAppID returns the AppID that must be set in the command options or config
-func GetAppID(ctx log.Interface) string {
-	appID := viper.GetString("app-id")
-	if appID == "" {
-		ctx.Fatal("Missing AppID. You should select an application to use with \"ttnctl applications select\"")
-	}
-	return appID
-}
+const (
+	appFilename = "app"
+	euiKey      = "eui"
+	idKey       = "id"
+)
 
 // GetConfigFile returns the location of the configuration file.
 // It checks the following (in this order):
@@ -150,4 +65,107 @@ func GetDataDir() string {
 	}
 
 	return path.Join(os.Getenv("HOME"), ".ttnctl")
+}
+
+func readData(file string) map[string]interface{} {
+	fullpath := path.Join(GetDataDir(), file)
+
+	c := make(map[string]interface{})
+
+	// Read config file
+	data, err := ioutil.ReadFile(fullpath)
+	if err != nil {
+		return c
+	}
+
+	err = yaml.Unmarshal(data, &c)
+	if err != nil {
+		return c
+	}
+
+	return c
+}
+
+func writeData(file string, data map[string]interface{}) error {
+	fullpath := path.Join(GetDataDir(), file)
+
+	// Generate yaml contents
+	d, err := yaml.Marshal(&data)
+	if err != nil {
+		return fmt.Errorf("Could not generate configiguration file contents: %s", err.Error())
+	}
+
+	// Write to file
+	err = ioutil.WriteFile(fullpath, d, 0644)
+	if err != nil {
+		return fmt.Errorf("Could not write configuration file: %s", err.Error())
+	}
+
+	return nil
+}
+
+func setData(file, key string, data interface{}) error {
+	config := readData(file)
+	config[key] = data
+	return writeData(file, config)
+}
+
+// GetAppEUI returns the AppEUI that must be set in the command options or config
+func GetAppEUI(ctx log.Interface) types.AppEUI {
+	appEUIString := viper.GetString("app-eui")
+	if appEUIString == "" {
+		appData := readData(appFilename)
+		eui, ok := appData[euiKey].(string)
+		if !ok {
+			ctx.Fatal("Invalid AppEUI in config file")
+		}
+		appEUIString = eui
+	}
+
+	if appEUIString == "" {
+		ctx.Fatal("Missing AppEUI. You should select an application to use with \"ttnctl applications select\"")
+	}
+
+	eui, err := types.ParseAppEUI(appEUIString)
+	if err != nil {
+		ctx.WithError(err).Fatal("Invalid AppEUI")
+	}
+	return eui
+}
+
+// SetApp stores the app EUI preference
+func SetAppEUI(ctx log.Interface, appEUI types.AppEUI) {
+	err := setData(appFilename, euiKey, appEUI.String())
+	if err != nil {
+		ctx.WithError(err).Fatal("Could not save app EUI")
+	}
+}
+
+// GetAppID returns the AppID that must be set in the command options or config
+func GetAppID(ctx log.Interface) string {
+	appID := viper.GetString("app-id")
+	if appID == "" {
+		appData := readData(appFilename)
+		id, ok := appData[idKey].(string)
+		if !ok {
+			ctx.Fatal("Invalid appID in config file.")
+		}
+		appID = id
+	}
+
+	if appID == "" {
+		ctx.Fatal("Missing AppID. You should select an application to use with \"ttnctl applications select\"")
+	}
+	return appID
+}
+
+// SetApp stores the app ID and app EUI preferences
+func SetApp(ctx log.Interface, appID string, appEUI types.AppEUI) {
+	config := readData(appFilename)
+	config[idKey] = appID
+	config[euiKey] = appEUI.String()
+	err := writeData(appFilename, config)
+	if err != nil {
+		ctx.WithError(err).Fatal("Could not save app preference")
+	}
 }

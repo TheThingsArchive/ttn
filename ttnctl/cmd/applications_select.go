@@ -92,16 +92,9 @@ var applicationsSelectCmd = &cobra.Command{
 		}
 		eui := app.EUIs[euiIdx]
 
-		err = util.SetConfig(map[string]interface{}{
-			"app-id":  app.ID,
-			"app-eui": eui.String(),
-		})
-		if err != nil {
-			ctx.WithError(err).Fatal("Could not update configuration")
-		}
+		util.SetApp(ctx, app.ID, eui)
 
 		ctx.Info("Updated configuration")
-
 	},
 }
 
