@@ -11,9 +11,10 @@ import (
 )
 
 var devicesCmd = &cobra.Command{
-	Use:   "devices",
-	Short: "Manage devices",
-	Long:  `ttnctl devices can be used to manage devices.`,
+	Use:     "devices",
+	Aliases: []string{"device"},
+	Short:   "Manage devices",
+	Long:    `ttnctl devices can be used to manage devices.`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		RootCmd.PersistentPreRun(cmd, args)
 		util.GetAccount(ctx)

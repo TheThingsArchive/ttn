@@ -13,9 +13,10 @@ import (
 )
 
 var userCmd = &cobra.Command{
-	Use:   "user",
-	Short: "Show the current user",
-	Long:  `ttnctl user shows the current logged on user's profile`,
+	Use:     "user",
+	Aliases: []string{"users"},
+	Short:   "Show the current user",
+	Long:    `ttnctl user shows the current logged on user's profile`,
 	Example: `$ ttnctl user
   INFO Found user profile:
 

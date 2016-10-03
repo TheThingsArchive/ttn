@@ -9,9 +9,10 @@ import (
 )
 
 var applicationsCmd = &cobra.Command{
-	Use:   "applications",
-	Short: "Manage applications",
-	Long:  `ttnctl applications can be used to manage applications.`,
+	Use:     "applications",
+	Aliases: []string{"application"},
+	Short:   "Manage applications",
+	Long:    `ttnctl applications can be used to manage applications.`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		RootCmd.PersistentPreRun(cmd, args)
 		util.GetAccount(ctx)

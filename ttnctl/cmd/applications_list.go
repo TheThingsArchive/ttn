@@ -12,9 +12,10 @@ import (
 )
 
 var applicationsListCmd = &cobra.Command{
-	Use:   "list",
-	Short: "List applications",
-	Long:  `ttnctl applications list can be used to list applications.`,
+	Use:     "list",
+	Aliases: []string{"ls"},
+	Short:   "List applications",
+	Long:    `ttnctl applications list can be used to list applications.`,
 	Example: `$ ttnctl applications list
   INFO Found one application:
 

@@ -13,9 +13,10 @@ import (
 )
 
 var devicesListCmd = &cobra.Command{
-	Use:   "list",
-	Short: "List al devices for the current application",
-	Long:  `ttnctl devices list can be used to list all devices for the current application.`,
+	Use:     "list",
+	Aliases: []string{"ls"},
+	Short:   "List al devices for the current application",
+	Long:    `ttnctl devices list can be used to list all devices for the current application.`,
 	Example: `$ ttnctl devices list
   INFO Using Application                        AppID=test
   INFO Discovering Handler...

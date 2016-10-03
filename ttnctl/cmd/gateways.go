@@ -9,9 +9,10 @@ import (
 )
 
 var gatewaysCmd = &cobra.Command{
-	Use:   "gateways",
-	Short: "Manage gateways",
-	Long:  `ttnctl gateways can be used to manage gateways.`,
+	Use:     "gateways",
+	Aliases: []string{"gateway"},
+	Short:   "Manage gateways",
+	Long:    `ttnctl gateways can be used to manage gateways.`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		RootCmd.PersistentPreRun(cmd, args)
 		util.GetAccount(ctx)
