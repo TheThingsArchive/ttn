@@ -9,12 +9,15 @@ import (
 )
 
 var (
+	version   = "2.0.0-dev"
+	gitBranch = "unknown"
 	gitCommit = "unknown"
 	buildDate = "unknown"
 )
 
 func main() {
-	viper.Set("version", "2.0.0-dev")
+	viper.Set("version", version)
+	viper.Set("gitBranch", gitBranch)
 	viper.Set("gitCommit", gitCommit)
 	viper.Set("buildDate", buildDate)
 	cmd.Execute()

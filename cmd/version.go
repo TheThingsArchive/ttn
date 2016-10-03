@@ -16,7 +16,8 @@ var versionCmd = &cobra.Command{
 	Long:  `ttn version gets the build and version information of ttn`,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx.WithFields(log.Fields{
-			"Commit":    viper.GetString("gitCommit"),
+			"Branch":    viper.GetString("gitBranch"),
+			"Commit":    viper.GetString("gitCommit")[:7],
 			"BuildDate": viper.GetString("buildDate"),
 		}).Infof("You are running version %s of ttn.", viper.GetString("version"))
 	},
