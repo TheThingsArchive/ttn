@@ -131,6 +131,10 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*empty.E
 	}
 	if lorawan.AppKey != nil {
 		updated.AppKey = *lorawan.AppKey
+		if dev != nil && dev.AppKey != *lorawan.AppKey { // When the AppKey of an existing device is changed
+			updated.UsedAppNonces = []device.AppNonce{}
+			updated.UsedDevNonces = []device.DevNonce{}
+		}
 	}
 
 	nsUpdated := &pb_lorawan.Device{
