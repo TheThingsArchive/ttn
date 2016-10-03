@@ -45,6 +45,9 @@ binaries:
   stage: build
   image: golang:latest
   script:
+    - mkdir release
+    - echo "date $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> release/info
+    - echo "commit $CI_BUILD_REF" >> release/info
     - pushd $GOPATH/src/github.com/TheThingsNetwork/ttn
     - make deps
     - TARGET_PLATFORM=linux-386 make build
@@ -54,9 +57,7 @@ binaries:
     - TARGET_PLATFORM=windows-386 make build
     - TARGET_PLATFORM=windows-amd64 make build
     - popd
-    - mkdir release
     - cp -R $GOPATH/src/github.com/TheThingsNetwork/ttn/release/* release/
-    - echo $CI_BUILD_REF > release/commit
   artifacts:
     paths:
       - release/
