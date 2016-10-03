@@ -46,7 +46,8 @@ binaries:
   image: golang:latest
   script:
     - mkdir release
-    - echo "date $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> release/info
+    - export CI_BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+    - echo "date $CI_BUILD_DATE" >> release/info
     - echo "commit $CI_BUILD_REF" >> release/info
     - pushd $GOPATH/src/github.com/TheThingsNetwork/ttn
     - make deps
