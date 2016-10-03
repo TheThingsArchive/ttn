@@ -16,7 +16,10 @@ import (
 // 0: The broker/client will deliver the message once, with no confirmation.
 // 1: The broker/client will deliver the message at least once, with confirmation required.
 // 2: The broker/client will deliver the message exactly once by using a four step handshake.
-const QoS = 0x00
+var (
+	PublishQoS   byte = 0x00
+	SubscribeQoS byte = 0x00
+)
 
 // Client connects to the MQTT server and can publish/subscribe on uplink, downlink and activations from devices
 type Client interface {
@@ -232,12 +235,12 @@ func (c *DefaultClient) Connect() error {
 }
 
 func (c *DefaultClient) publish(topic string, msg []byte) Token {
-	return c.mqtt.Publish(topic, QoS, false, msg)
+	return c.mqtt.Publish(topic, PublishQoS, false, msg)
 }
 
 func (c *DefaultClient) subscribe(topic string, handler MQTT.MessageHandler) Token {
 	c.subscriptions[topic] = handler
-	return c.mqtt.Subscribe(topic, QoS, handler)
+	return c.mqtt.Subscribe(topic, SubscribeQoS, handler)
 }
 
 func (c *DefaultClient) unsubscribe(topic string) Token {

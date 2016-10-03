@@ -22,7 +22,7 @@ func (c *DefaultClient) PublishDownlink(dataDown DownlinkMessage) Token {
 	if err != nil {
 		return &simpleToken{fmt.Errorf("Unable to marshal the message payload")}
 	}
-	return c.mqtt.Publish(topic.String(), QoS, false, msg)
+	return c.publish(topic.String(), msg)
 }
 
 // SubscribeDeviceDownlink subscribes to all downlink messages for the given application and device

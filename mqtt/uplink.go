@@ -22,7 +22,7 @@ func (c *DefaultClient) PublishUplink(dataUp UplinkMessage) Token {
 	if err != nil {
 		return &simpleToken{fmt.Errorf("Unable to marshal the message payload")}
 	}
-	return c.mqtt.Publish(topic.String(), QoS, false, msg)
+	return c.publish(topic.String(), msg)
 }
 
 // PublishUplinkFields publishes uplink fields to MQTT
@@ -33,7 +33,7 @@ func (c *DefaultClient) PublishUplinkFields(appID string, devID string, fields m
 	for field, value := range flattenedFields {
 		topic := DeviceTopic{appID, devID, DeviceUplink, field}
 		pld, _ := json.Marshal(value)
-		token := c.mqtt.Publish(topic.String(), QoS, false, pld)
+		token := c.publish(topic.String(), pld)
 		tokens = append(tokens, token)
 	}
 	t := newToken()

@@ -135,9 +135,9 @@ func TestRandomTopicPublish(t *testing.T) {
 	c.Connect()
 	defer c.Disconnect()
 
-	subToken := c.(*DefaultClient).mqtt.Subscribe("randomtopic", QoS, nil)
+	subToken := c.(*DefaultClient).mqtt.Subscribe("randomtopic", SubscribeQoS, nil)
 	waitForOK(subToken, a)
-	pubToken := c.(*DefaultClient).mqtt.Publish("randomtopic", QoS, false, []byte{0x00})
+	pubToken := c.(*DefaultClient).mqtt.Publish("randomtopic", PublishQoS, false, []byte{0x00})
 	waitForOK(pubToken, a)
 
 	<-time.After(50 * time.Millisecond)
