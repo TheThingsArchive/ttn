@@ -8,7 +8,6 @@ import (
 
 	"github.com/TheThingsNetwork/ttn/ttnctl/cmd"
 	"github.com/spf13/cobra"
-	"github.com/spf13/cobra/doc"
 )
 
 type byName []*cobra.Command
@@ -26,15 +25,31 @@ Control The Things Network from the command line.
 `)
 	for _, cmd := range cmds {
 		if cmd.CommandPath() == "ttnctl" {
+			fmt.Print("**Options**\n\n")
+			printOptions(cmd)
+			fmt.Println()
 			continue
 		}
 
-		var buf bytes.Buffer
-		doc.GenMarkdownCustom(cmd, &buf, func(s string) string {
-			return "#" + strings.TrimSuffix(s, ".md")
-		})
-		cleaned := strings.Split(buf.String(), "### SEE ALSO")[0]
-		fmt.Println(cleaned)
+		depth := len(strings.Split(cmd.CommandPath(), " "))
+
+		printHeader(depth, cmd.CommandPath())
+
+		fmt.Print(cmd.Long, "\n\n")
+
+		if cmd.Runnable() {
+			fmt.Print("**Usage:** ", "`", cmd.UseLine(), "`", "\n\n")
+		}
+
+		if cmd.HasLocalFlags() || cmd.HasPersistentFlags() {
+			fmt.Print("**Options**\n\n")
+			printOptions(cmd)
+		}
+
+		if cmd.Example != "" {
+			fmt.Print("**Example**\n\n")
+			fmt.Print("```", "\n", cmd.Example, "```", "\n\n")
+		}
 	}
 }
 
@@ -47,4 +62,18 @@ func genCmdList(cmd *cobra.Command) (cmds []*cobra.Command) {
 		cmds = append(cmds, genCmdList(c)...)
 	}
 	return cmds
+}
+
+func printHeader(depth int, header string) {
+	fmt.Print(strings.Repeat("#", depth), " ", header, "\n\n")
+}
+
+func printOptions(cmd *cobra.Command) {
+	fmt.Println("```")
+	var b bytes.Buffer
+	flags := cmd.NonInheritedFlags()
+	flags.SetOutput(&b)
+	flags.PrintDefaults()
+	fmt.Print(b.String())
+	fmt.Println("```")
 }
