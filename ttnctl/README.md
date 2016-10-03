@@ -27,7 +27,7 @@ The following configuration options can be set:
 
 ## Development
 
-**Configuration for Development:** Copy `../.env/ttnctl.yaml.dev-example` to `~/.ttnctl.yaml`
+**Configuration for Development:** Copy `../.env/ttnctl.yml.dev-example` to `~/.ttnctl.yml`
 
 ## License
 
