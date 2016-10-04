@@ -22,10 +22,7 @@ When you get started with The Things Network, you'll probably have some question
 2. Set up your [Go environment](https://golang.org/doc/code.html#GOPATH)
 3. Install the [protobuf compiler (`protoc`)](https://github.com/google/protobuf/releases)
 4. Make sure you have [Mosquitto](http://mosquitto.org/download/) and [Redis](http://redis.io/download) **installed** and **running**.  
-   If you're on a Mac, just run:
-    * `brew bundle`
-    * `brew services start mosquitto`
-    * `brew services start redis`
+   If you're on a Mac, just run `brew bundle`.
 
 ## Set up The Things Network's backend for Development
 
@@ -39,20 +36,23 @@ When you get started with The Things Network, you'll probably have some question
 
 ## Build, install and run The Things Network's backend locally
 
-1. Configure your `ttnctl` with the settings in `.env/ttnctl.yaml.dev-example` by copying that file to `~/.ttnctl.yaml`.
-2. Run `make install`
-3. Run `forego start`
+Additional to setting up the backend for development, you should do the following to build, install and run the backend locally.
+
+1. Configure your `ttnctl` with the settings in `.env/ttnctl.yml.dev-example` by copying that file to `~/.ttnctl.yml`.
+2. Run `make build` to build both `ttn` and `ttnctl` from source. 
+2. Run `make link` to link them to `$GOPATH/bin/` (In order to run the commands, you should have `export PATH="$GOPATH/bin:$PATH"` in your profile).
+3. Run `forego start` to start all backend services at the same time. Make sure that Redis and Mosquitto **are running** on your machine.
 4. First time only (or when Redis is flushed):
   * Run `ttn broker register-prefix 00000000/0 --config ./.env/broker/dev.yml`
-  * Restart the backend
+  * Restart the backend services
 
 ## Build and run The Things Network's backend in Docker
 
-1. Configure your `ttnctl` with the settings in `.env/ttnctl.yaml.dev-example` by copying that file to `~/.ttnctl.yaml`.
+1. Configure your `ttnctl` with the settings in `.env/ttnctl.yml.dev-example` by copying that file to `~/.ttnctl.yml`.
 2. Add the following line to your `/etc/hosts` file:
     `127.0.0.1 router handler`
-3. Run `make install docker`
-4. Run `docker-compose up`
+3. Run `make docker` to build the docker image
+4. Run `docker-compose up` to start all backend services in Docker. Make sure that Redis and Mosquitto **are not running** on your local machine.
 5. First time only (or when Redis is flushed):
   * Run `docker-compose run broker broker register-prefix 00000000/0 --config ./.env/broker/dev.yml`
   * Restart the backend

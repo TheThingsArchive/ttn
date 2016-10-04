@@ -1,6 +1,6 @@
 tap 'homebrew/bundle'
 
 brew 'go'
-brew 'mosquitto', service_restart: true
+brew 'mosquitto', restart_service: true
 brew 'protobuf'
-brew 'redis', service_restart: true
+brew 'redis', restart_service: true
