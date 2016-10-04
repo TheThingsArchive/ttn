@@ -120,22 +120,36 @@ func GetLatest(binary string) ([]byte, error) {
 
 // Selfupdate runs a self-update for the current binary
 func Selfupdate(ctx log.Interface, component string) {
+	if viper.GetString("gitBranch") == "unknown" {
+		ctx.Infof("You are not using an official %s build. Not proceeding with the update", component)
+		return
+	}
+
 	info, err := GetLatestInfo()
 	if err != nil {
 		ctx.WithError(err).Fatal("Could not get version information from the server")
 	}
-	if date, err := time.Parse(time.RFC3339, viper.GetString("buildDate")); err == nil {
-		if date.After(info.Date) {
-			ctx.Infof("Your build is %s newer than the build on the server", date.Sub(info.Date))
-		} else {
-			ctx.Infof("The build on the server is %s newer than yours", info.Date.Sub(date))
-		}
-	}
+
 	if viper.GetString("gitCommit") == info.Commit {
 		ctx.Info("The git commit of the build on the server is the same as yours")
 		ctx.Info("Not proceeding with the update")
 		return
 	}
+
+	if date, err := time.Parse(time.RFC3339, viper.GetString("buildDate")); err == nil {
+		if date.Equal(info.Date) {
+			ctx.Infof("You have the latest version of %s", component)
+			ctx.Info("Nothing to update")
+			return
+		}
+		if date.After(info.Date) {
+			ctx.Infof("Your build is %s newer than the build on the server", date.Sub(info.Date))
+			ctx.Info("Not proceeding with the update")
+			return
+		}
+		ctx.Infof("The build on the server is %s newer than yours", info.Date.Sub(date))
+	}
+
 	ctx.Infof("Downloading the latest %s...", component)
 	binary, err := GetLatest(component)
 	if err != nil {
@@ -159,5 +173,5 @@ func Selfupdate(ctx log.Interface, component string) {
 	if err := os.Rename(filename+".new", filename); err != nil {
 		ctx.WithError(err).Fatal("Could not rename binary")
 	}
-	ctx.Infof("Updated %s to the latest version.", component)
+	ctx.Infof("Updated %s to the latest version", component)
 }
