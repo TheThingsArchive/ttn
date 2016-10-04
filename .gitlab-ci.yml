@@ -51,12 +51,12 @@ binaries:
     - echo "commit $CI_BUILD_REF" >> release/info
     - pushd $GOPATH/src/github.com/TheThingsNetwork/ttn
     - make deps
-    - TARGET_PLATFORM=linux-386 make build
-    - TARGET_PLATFORM=linux-amd64 make build
-    - TARGET_PLATFORM=linux-arm make build
-    - TARGET_PLATFORM=darwin-amd64 make build
-    - TARGET_PLATFORM=windows-386 make build
-    - TARGET_PLATFORM=windows-amd64 make build
+    - GOOS=linux GOARCH=386 make build
+    - GOOS=linux GOARCH=amd64 make build
+    - GOOS=linux GOARCH=arm make build
+    - GOOS=darwin GOARCH=amd64 make build
+    - GOOS=windows GOARCH=386 make build
+    - GOOS=windows GOARCH=amd64 make build
     - popd
     - cp -R $GOPATH/src/github.com/TheThingsNetwork/ttn/release/* release/
   artifacts:

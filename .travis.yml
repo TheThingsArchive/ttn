@@ -22,5 +22,4 @@ script:
     - make vet
 
 after_success:
-    - make cover
     - make coveralls
