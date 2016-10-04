@@ -4,22 +4,55 @@
 package cmd
 
 import (
-	"github.com/apex/log"
+	"time"
+
+	"github.com/TheThingsNetwork/ttn/utils/version"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
-// versionCmd represents the version command
+const unknown = "unknown"
+
 var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Get build and version information",
 	Long:  `ttn version gets the build and version information of ttn`,
 	Run: func(cmd *cobra.Command, args []string) {
-		ctx.WithFields(log.Fields{
-			"Branch":    viper.GetString("gitBranch"),
-			"Commit":    viper.GetString("gitCommit")[:7],
-			"BuildDate": viper.GetString("buildDate"),
-		}).Infof("You are running version %s of ttn.", viper.GetString("version"))
+		ctx = ctx.WithField("Version", viper.GetString("version"))
+
+		gitBranch := viper.GetString("gitBranch")
+		ctx = ctx.WithField("Branch", gitBranch)
+
+		gitCommit := viper.GetString("gitCommit")
+		ctx = ctx.WithField("Commit", gitCommit)
+
+		buildDate := viper.GetString("buildDate")
+		ctx = ctx.WithField("BuildDate", buildDate)
+
+		if gitBranch == unknown || gitCommit == unknown || buildDate == unknown {
+			ctx.Warn("This is not an official ttn build")
+		}
+
+		if gitBranch != unknown {
+			if version, err := version.GetLatestInfo(); err == nil {
+				if version.Commit == gitCommit {
+					ctx.Info("This is an up-to-date ttn build")
+				} else {
+					if buildDate, err := time.Parse(time.RFC3339, buildDate); err == nil {
+						if buildDate.Before(version.Date) {
+							ctx.Warn("This is not an up-to-date ttn build")
+							ctx.Warnf("The newest build is %s newer.", version.Date.Sub(buildDate))
+						} else {
+							ctx.Warn("This is not an official ttn build")
+						}
+					}
+				}
+			} else {
+				ctx.Warn("Could not get latest version information")
+			}
+		}
+
+		ctx.Info("")
 	},
 }
 

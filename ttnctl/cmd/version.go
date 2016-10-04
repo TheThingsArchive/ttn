@@ -24,7 +24,7 @@ var versionCmd = &cobra.Command{
 		ctx = ctx.WithField("Branch", gitBranch)
 
 		gitCommit := viper.GetString("gitCommit")
-		ctx = ctx.WithField("Commit", gitCommit[:7])
+		ctx = ctx.WithField("Commit", gitCommit)
 
 		buildDate := viper.GetString("buildDate")
 		ctx = ctx.WithField("BuildDate", buildDate)
