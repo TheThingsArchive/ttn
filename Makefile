@@ -116,8 +116,8 @@ build: ttn ttnctl
 GOBIN ?= $(GOPATH)/bin
 
 link: ttn
-	rm $(GOBIN)/ttn && ln -s $(PWD)/$(RELEASE_DIR)/ttn-$(GOOS)-$(GOARCH)$(GOEXE) $(GOBIN)/ttn
-	rm $(GOBIN)/ttnctl && ln -s $(PWD)/$(RELEASE_DIR)/ttnctl-$(GOOS)-$(GOARCH)$(GOEXE) $(GOBIN)/ttnctl
+	ln -sf $(PWD)/$(RELEASE_DIR)/ttn-$(GOOS)-$(GOARCH)$(GOEXE) $(GOBIN)/ttn
+	ln -sf $(PWD)/$(RELEASE_DIR)/ttnctl-$(GOOS)-$(GOARCH)$(GOEXE) $(GOBIN)/ttnctl
 
 # Documentation
 
