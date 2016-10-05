@@ -23,6 +23,7 @@ deps: build-deps
 dev-deps: deps
 	@command -v protoc-gen-gofast > /dev/null || go get github.com/gogo/protobuf/protoc-gen-gofast
 	@command -v mockgen > /dev/null || go get github.com/golang/mock/mockgen
+	@command -v golint > /dev/null || github.com/golang/lint/golint
 	@command -v forego > /dev/null || go get github.com/ddollar/forego
 
 # Protobuf
@@ -83,6 +84,9 @@ fmt:
 
 vet:
 	echo $(GO_PACKAGES) | xargs go vet
+
+lint:
+	for pkg in `echo $(GO_PACKAGES)`; do golint $$pkg | grep -vE 'mock|.pb.go'; done
 
 # Go Build
 
