@@ -76,4 +76,5 @@ func printOptions(cmd *cobra.Command) {
 	flags.PrintDefaults()
 	fmt.Print(b.String())
 	fmt.Println("```")
+	fmt.Println("")
 }
