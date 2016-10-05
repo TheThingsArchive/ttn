@@ -15,6 +15,7 @@ Control The Things Network from the command line.
       --ttn-router string           The ID of the TTN Router as announced in the Discovery server (default "ttn-router-eu")
 ```
 
+
 ## ttnctl applications
 
 ttnctl applications can be used to manage applications.
@@ -32,6 +33,7 @@ ttnctl applications add can be used to add a new application to your account.
       --skip-register         Do not register application with the Handler
       --skip-select           Do not select this application (also adds --skip-register)
 ```
+
 **Example**
 
 ```
@@ -194,12 +196,6 @@ Are you sure you want to unregister application test?
   INFO Unregistered application                 AppID=test
 ```
 
-## ttnctl config
-
-ttnctl config gets the config of ttnctl
-
-**Usage:** `ttnctl config`
-
 ## ttnctl devices
 
 ttnctl devices can be used to manage devices.
@@ -210,6 +206,7 @@ ttnctl devices can be used to manage devices.
       --app-eui string   The app EUI to use
       --app-id string    The app ID to use
 ```
+
 ### ttnctl devices delete
 
 ttnctl devices delete can be used to delete a device.
@@ -239,6 +236,7 @@ ttnctl devices info can be used to get information about a device.
 ```
       --format string   Formatting: hex/msb/lsb (default "hex")
 ```
+
 **Example**
 
 ```
@@ -342,6 +340,7 @@ ttnctl devices set can be used to set properties of a device.
       --fcnt-up int          Set FCnt Up (default -1)
       --nwk-s-key string     Set NwkSKey
 ```
+
 **Example**
 
 ```
@@ -351,18 +350,6 @@ $ ttnctl devices set test --fcnt-up 0 --fcnt-down 0
   INFO Connecting with Handler...
   INFO Updated device                           AppID=test DevID=test
 ```
-
-## ttnctl discover
-
-ttnctl discover is used to discover all network components
-
-**Usage:** `ttnctl discover`
-
-### ttnctl discover prefixes
-
-ttnctl discover prefixes is used to discover all prefixes announced by brokers
-
-**Usage:** `ttnctl discover prefixes`
 
 ## ttnctl downlink
 
@@ -376,6 +363,7 @@ ttnctl downlink can be used to send a downlink message to a device.
       --fport int   FPort for downlink (default 1)
       --json        Provide the payload as JSON
 ```
+
 **Example**
 
 ```
@@ -419,6 +407,7 @@ ttnctl gateways edit can be used to edit settings of a gateway
       --frequency-plan string   The frequency plan to use on the gateway
       --location string         The location of the gateway
 ```
+
 **Example**
 
 ```

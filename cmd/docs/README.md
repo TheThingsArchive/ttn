@@ -18,6 +18,7 @@ The Things Network's backend servers.
       --tls                       Use TLS
 ```
 
+
 ## ttn broker
 
 
@@ -35,6 +36,7 @@ The Things Network's backend servers.
       --server-address-announce string   The public IP address to announce (default "localhost")
       --server-port int                  The port for communication (default 1902)
 ```
+
 ### ttn broker genkeys
 
 ttn genkeys generates keys and a TLS certificate for this component
@@ -61,6 +63,7 @@ ttn broker register prefix registers a prefix to this Broker
       --server-address string   The IP address to listen for communication (default "0.0.0.0")
       --server-port int         The port for communication (default 1900)
 ```
+
 ## ttn handler
 
 
@@ -80,6 +83,7 @@ ttn broker register prefix registers a prefix to this Broker
       --server-port int                  The port for communication (default 1904)
       --ttn-broker string                The ID of the TTN Broker as announced in the Discovery server (default "dev")
 ```
+
 ### ttn handler genkeys
 
 ttn genkeys generates keys and a TLS certificate for this component
@@ -102,6 +106,7 @@ ttn genkeys generates keys and a TLS certificate for this component
       --server-address-announce string   The public IP address to announce (default "localhost")
       --server-port int                  The port for communication (default 1903)
 ```
+
 ### ttn networkserver authorize
 
 ttn networkserver authorize generates a token that Brokers should use to connect
@@ -113,6 +118,7 @@ ttn networkserver authorize generates a token that Brokers should use to connect
 ```
       --valid int   The number of days the token is valid
 ```
+
 ### ttn networkserver genkeys
 
 ttn genkeys generates keys and a TLS certificate for this component
@@ -132,6 +138,7 @@ ttn genkeys generates keys and a TLS certificate for this component
       --server-address-announce string   The public IP address to announce (default "localhost")
       --server-port int                  The port for communication (default 1901)
 ```
+
 ### ttn router genkeys
 
 ttn genkeys generates keys and a TLS certificate for this component
