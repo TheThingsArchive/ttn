@@ -93,21 +93,23 @@ lint:
 RELEASE_DIR ?= release
 GOOS ?= $(shell go env GOOS)
 GOARCH ?= $(shell go env GOARCH)
-GO = GOOS=$(GOOS) GOARCH=$(GOARCH) go
-GOEXE = $(shell $(GO) env GOEXE)
+GOEXE = $(shell GOOS=$(GOOS) GOARCH=$(GOARCH) go env GOEXE)
 
+splitfilename = $(subst ., ,$(subst -, ,$(subst $(RELEASE_DIR)/,,$1)))
+GOOSfromfilename = $(word 2, $(call splitfilename, $1))
+GOARCHfromfilename = $(word 3, $(call splitfilename, $1))
 LDFLAGS = -ldflags "-w -X main.gitBranch=${GIT_BRANCH} -X main.gitCommit=${GIT_COMMIT} -X main.buildDate=${BUILD_DATE}"
-GOBUILD = CGO_ENABLED=0 $(GO) build -a -installsuffix cgo ${LDFLAGS}
+GOBUILD = CGO_ENABLED=0 GOOS=$(call GOOSfromfilename, $@) GOARCH=$(call GOARCHfromfilename, $@) go build -a -installsuffix cgo ${LDFLAGS} -o "$@"
 
 ttn: $(RELEASE_DIR)/ttn-$(GOOS)-$(GOARCH)$(GOEXE)
 
 $(RELEASE_DIR)/ttn-%: $(GO_FILES)
-	$(GOBUILD) -o "$@" ./main.go
+	$(GOBUILD) ./main.go
 
 ttnctl: $(RELEASE_DIR)/ttnctl-$(GOOS)-$(GOARCH)$(GOEXE)
 
 $(RELEASE_DIR)/ttnctl-%: $(GO_FILES)
-	$(GOBUILD) -o "$@" ./ttnctl/main.go
+	$(GOBUILD) ./ttnctl/main.go
 
 build: ttn ttnctl
 
@@ -128,5 +130,7 @@ docs:
 clean:
 	[ -d $(RELEASE_DIR) ] && rm -rf $(RELEASE_DIR) || [ ! -d $(RELEASE_DIR) ]
 
+docker: GOOS=linux
+docker: GOARCH=amd64
 docker: $(RELEASE_DIR)/ttn-linux-amd64
 	docker build -t thethingsnetwork/ttn -f Dockerfile .
