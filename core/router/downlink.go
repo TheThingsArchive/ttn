@@ -70,17 +70,21 @@ func (r *router) HandleDownlink(downlink *pb_broker.DownlinkMessage) error {
 func guessRegion(frequency uint64) string {
 	switch {
 	case frequency >= 863000000 && frequency <= 870000000:
-		return "EU_863_870"
+		return pb_lorawan.Region_EU_863_870.String()
 	case frequency >= 902300000 && frequency <= 914900000:
-		return "US_902_928"
+		return pb_lorawan.Region_US_902_928.String()
 	case frequency >= 779500000 && frequency <= 786500000:
-		return "CN_779_787"
+		return pb_lorawan.Region_CN_779_787.String()
 	case frequency >= 433175000 && frequency <= 434665000:
-		return "EU_433"
+		return pb_lorawan.Region_EU_433.String()
+	case frequency == 923200000 || frequency == 923400000:
+		return pb_lorawan.Region_AS_923.String()
+	case frequency >= 920900000 || frequency == 923300000:
+		return pb_lorawan.Region_SK_920_923.String()
 	case frequency >= 915200000 && frequency <= 927800000:
-		return "AU_915_928"
+		return pb_lorawan.Region_AU_915_928.String()
 	case frequency >= 470300000 && frequency <= 489300000:
-		return "CN_470_510"
+		return pb_lorawan.Region_CN_470_510.String()
 	}
 	return ""
 }
@@ -89,18 +93,22 @@ func getBand(region string) (band *lora.Band, err error) {
 	var b lora.Band
 
 	switch region {
-	case "EU_863_870":
+	case pb_lorawan.Region_EU_863_870.String():
 		b, err = lora.GetConfig(lora.EU_863_870)
-	case "US_902_928":
+	case pb_lorawan.Region_US_902_928.String():
 		b, err = lora.GetConfig(lora.US_902_928)
-	case "CN_779_787":
+	case pb_lorawan.Region_CN_779_787.String():
 		err = errors.NewErrInternal("China 779-787 MHz band not supported")
-	case "EU_433":
+	case pb_lorawan.Region_EU_433.String():
 		err = errors.NewErrInternal("Europe 433 MHz band not supported")
-	case "AU_915_928":
+	case pb_lorawan.Region_AU_915_928.String():
 		b, err = lora.GetConfig(lora.AU_915_928)
-	case "CN_470_510":
+	case pb_lorawan.Region_CN_470_510.String():
 		err = errors.NewErrInternal("China 470-510 MHz band not supported")
+	case pb_lorawan.Region_AS_923.String():
+		err = errors.NewErrInternal("Asia 923 MHz band not supported")
+	case pb_lorawan.Region_SK_920_923.String():
+		err = errors.NewErrInternal("South Korea 920-923 MHz band not supported")
 	default:
 		err = errors.NewErrInvalidArgument("Frequency Band", "unknown")
 	}
