@@ -1,7 +1,7 @@
 package api
 
 import (
-	context "golang.org/x/net/context"
+	context "golang.org/x/net/context" //TODO change to "context", when protoc supports it
 	"google.golang.org/grpc/metadata"
 )
 
