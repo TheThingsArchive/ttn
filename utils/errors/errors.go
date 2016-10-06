@@ -44,6 +44,9 @@ var grpcErrf = grpc.Errorf
 
 // BuildGRPCError returns the error with a GRPC code
 func BuildGRPCError(err error) error {
+	if err == nil {
+		return nil
+	}
 	code := codes.Unknown
 	switch errs.Cause(err).(type) {
 	case *ErrAlreadyExists:
