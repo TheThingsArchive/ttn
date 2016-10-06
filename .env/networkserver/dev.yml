@@ -5,3 +5,4 @@ auth-servers:
   ttn-account-staging: "https://staging.account.thethingsnetwork.org"
 tls: true
 key-dir: "./.env/networkserver/"
+noc-server: noc.thethingsnetwork.org:1905
