@@ -10,6 +10,7 @@ import (
 
 var componentsCmd = &cobra.Command{
 	Use:     "components",
+	Hidden:  true,
 	Aliases: []string{"component"},
 	Short:   "Manage network components",
 	Long:    `ttnctl applications can be used to manage network components.`,
