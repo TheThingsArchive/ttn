@@ -45,8 +45,8 @@ func GetConfigFile() string {
 		xdg,
 		home,
 	} {
-		if len(file) > 0 {
-			if _, err := os.Open(file); !os.IsNotExist(err) {
+		if file != "" {
+			if _, err := os.Stat(file); err == nil {
 				return file
 			}
 		}
