@@ -119,7 +119,7 @@ func NewComponent(ctx log.Interface, serviceName string, announcedAddress string
 		go http.ListenAndServe(fmt.Sprintf(":%d", healthPort), nil)
 	}
 
-	if nocAddr := viper.GetString("noc-server"); len(nocAddr) > 0 {
+	if nocAddr := viper.GetString("noc-server"); nocAddr != "" {
 		conn, err := grpc.Dial(nocAddr, append(api.DialOptions, grpc.WithInsecure())...)
 		if err != nil {
 			return nil, err
