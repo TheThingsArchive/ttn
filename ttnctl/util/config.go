@@ -28,17 +28,31 @@ const (
 // $XDG_CONFIG_HOME/ttnctl/config.yml (if $XDG_CONFIG_HOME is set)
 // $HOME/.ttnctl.yml
 func GetConfigFile() string {
-	file := viper.GetString("config")
-	if file != "" {
-		return file
-	}
+	flag := viper.GetString("config")
 
 	xdg := os.Getenv("XDG_CONFIG_HOME")
 	if xdg != "" {
-		return path.Join(xdg, "ttnctl", "config.yml")
+		xdg = path.Join(xdg, "ttnctl", "config.yml")
 	}
 
-	return path.Join(os.Getenv("HOME"), ".ttnctl.yml")
+	home := os.Getenv("HOME")
+	if home != "" {
+		home = path.Join(home, ".ttnctl.yml")
+	}
+
+	for _, file := range []string{
+		flag,
+		xdg,
+		home,
+	} {
+		if file != "" {
+			if _, err := os.Stat(file); err == nil {
+				return file
+			}
+		}
+	}
+
+	return ""
 }
 
 // GetDataDir returns the location of the data directory used for
