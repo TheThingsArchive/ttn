@@ -130,7 +130,7 @@ func init() {
 	RootCmd.PersistentFlags().String("discovery-server", "discover.thethingsnetwork.org:1900", "The address of the Discovery server")
 	viper.BindPFlag("discovery-server", RootCmd.PersistentFlags().Lookup("discovery-server"))
 
-	RootCmd.PersistentFlags().String("noc-server", "noc.thethingsnetwork.org:1905", "The address of the Noc server")
+	RootCmd.PersistentFlags().String("noc-server", "", "The address of the Noc server")
 	viper.BindPFlag("noc-server", RootCmd.PersistentFlags().Lookup("noc-server"))
 
 	viper.SetDefault("auth-servers", map[string]string{
