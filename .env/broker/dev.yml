@@ -12,4 +12,3 @@ auth-token: eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJ0dG4tYWNjb3VudC1zdGF
 broker:
   networkserver-cert: ./.env/broker/networkserver.cert
   networkserver-token: eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE0Njk3OTQzNTksIm5iZiI6MTQ2OTc5NDM1OSwic3ViIjoiZGV2In0.Xj1AFEAblzFLdS5cUiDrG773EqHazARvGdkTHFoPa_c0XGhdKSrevVpTNkzvcXeTQTWnTQrg1t98atNIk7F13Q
-noc-server: noc.thethingsnetwork.org:1905
