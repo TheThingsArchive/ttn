@@ -84,12 +84,11 @@ var RootCmd = &cobra.Command{
 			"Description":     viper.GetString("description"),
 			"DiscoveryServer": viper.GetString("discovery-server"),
 			"AuthServers":     viper.GetStringMapString("auth-servers"),
-
-			"NocServer": func() string {
-				if nocAddr := viper.GetString("noc-server"); len(nocAddr) > 0 {
+			"NOCServer": func() string {
+				if nocAddr := viper.GetString("noc-server"); nocAddr != "" {
 					return nocAddr
 				}
-				return "undefined"
+				return ""
 			}(),
 		}).Info("Initializing The Things Network")
 	},
