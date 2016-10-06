@@ -130,7 +130,7 @@ func NewComponent(ctx log.Interface, serviceName string, announcedAddress string
 	}
 
 	if nocAddr := viper.GetString("noc-server"); len(nocAddr) > 0 {
-		conn, err := grpc.Dial(nocAddr, append(api.DialOptions, grpc.WithBlock(), grpc.WithInsecure())...)
+		conn, err := grpc.Dial(nocAddr, append(api.DialOptions, grpc.WithInsecure())...)
 		if err != nil {
 			return nil, err
 		}
