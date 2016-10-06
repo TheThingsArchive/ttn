@@ -67,6 +67,8 @@ func (g *Gateway) HandleStatus(status *pb.Status) (err error) {
 
 			if err = cl.Send(status); err != nil {
 				g.Ctx.WithError(errors.FromGRPCError(err)).Warn("Monitor status push failed")
+			} else {
+				g.Ctx.Info("Pushed status to monitor")
 			}
 		}()
 	}
@@ -89,6 +91,8 @@ func (g *Gateway) HandleUplink(uplink *pb_router.UplinkMessage) (err error) {
 
 			if err = cl.Send(uplink); err != nil {
 				g.Ctx.WithError(errors.FromGRPCError(err)).Warn("Monitor uplink push failed")
+			} else {
+				g.Ctx.Info("Pushed uplink to monitor")
 			}
 		}()
 	}
@@ -111,6 +115,8 @@ func (g *Gateway) HandleDownlink(identifier string, downlink *pb_router.Downlink
 
 			if err = cl.Send(downlink); err != nil {
 				g.Ctx.WithError(errors.FromGRPCError(err)).Warn("Monitor downlink push failed")
+			} else {
+				g.Ctx.Info("Pushed downlink to monitor")
 			}
 		}()
 	}
