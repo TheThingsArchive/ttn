@@ -84,12 +84,7 @@ var RootCmd = &cobra.Command{
 			"Description":     viper.GetString("description"),
 			"DiscoveryServer": viper.GetString("discovery-server"),
 			"AuthServers":     viper.GetStringMapString("auth-servers"),
-			"NOCServer": func() string {
-				if nocAddr := viper.GetString("noc-server"); nocAddr != "" {
-					return nocAddr
-				}
-				return ""
-			}(),
+			"NOCServer":       viper.GetString("noc-server"),
 		}).Info("Initializing The Things Network")
 	},
 	PersistentPostRun: func(cmd *cobra.Command, args []string) {
