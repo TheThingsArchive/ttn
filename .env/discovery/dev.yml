@@ -6,4 +6,3 @@ auth-servers:
   ttn-account-preview: "https://preview.account.thethingsnetwork.org"
   ttn-account-staging: "https://preview.account.thethingsnetwork.org"
 key-dir: "./.env/discovery/"
-noc-server: noc.thethingsnetwork.org:1905
