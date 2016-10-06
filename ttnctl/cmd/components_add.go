@@ -9,7 +9,7 @@ import (
 )
 
 var componentsAddCmd = &cobra.Command{
-	Use:   "add [type] [ComponentID]",
+	Use:   "add [Type] [ComponentID]",
 	Short: "Add a new network component",
 	Long:  `ttnctl components add can be used to add a new network component.`,
 	Example: `$ ttnctld components add handler test                                                                                                                                             146 !

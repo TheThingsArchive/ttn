@@ -11,9 +11,9 @@ import (
 )
 
 var componentsTokenCmd = &cobra.Command{
-	Use:   "token [type] [ComponentID]",
+	Use:   "token [Type] [ComponentID]",
 	Short: "Get the token for a network component.",
-	Long:  `components token gets a singed token for the component.`,
+	Long:  `components token gets a signed token for the component.`,
 	Example: `$ ttnctld components token handler test                                                                                                                                           146 !
   INFO Got component token                      id=test type=handler
 
@@ -29,7 +29,7 @@ eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJ0dG4tYWNjb3VudCIsInN1YiI6InRlc3Q
 
 		token, err := account.ComponentToken(args[0], args[1])
 		if err != nil {
-			ctx.WithError(err).WithField("type", args[0]).WithField("id", args[1]).Fatal("Could get component token")
+			ctx.WithError(err).WithField("type", args[0]).WithField("id", args[1]).Fatal("Could not get component token")
 		}
 
 		ctx.WithField("type", args[0]).WithField("id", args[1]).Info("Got component token")

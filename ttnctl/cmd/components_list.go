@@ -20,7 +20,7 @@ func plural(n int, name string) string {
 }
 
 var componentsListCmd = &cobra.Command{
-	Use:   "list [type]",
+	Use:   "list [Type]",
 	Short: "Get the token for a network component.",
 	Long:  `components token gets a singed token for the component.`,
 	Example: `$ ttnctld components list                                                                                                                                                         146 !

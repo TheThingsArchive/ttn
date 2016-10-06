@@ -11,9 +11,9 @@ import (
 )
 
 var componentsInfoCmd = &cobra.Command{
-	Use:   "info [type] [ComponentID]",
+	Use:   "info [Type] [ComponentID]",
 	Short: "Get information about a network component.",
-	Long:  `components info can be used to retreive information about a network component.`,
+	Long:  `components info can be used to retrieve information about a network component.`,
 	Example: `$ ttnctl components info handler test
   INFO Found network component
 
