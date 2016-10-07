@@ -1,0 +1,42 @@
+stages:
+  - build
+  - package
+
+variables:
+  CONTAINER_NAME: thethingsnetwork/ttn
+
+binaries:
+  stage: build
+  image: golang:latest
+  script:
+    - mkdir release
+    - export CI_BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+    - echo "date $CI_BUILD_DATE" >> release/info
+    - echo "commit $CI_BUILD_REF" >> release/info
+    - rm -rf $GOPATH/src
+    - mkdir -p $GOPATH/src/github.com/TheThingsNetwork/ttn
+    - cp -R . $GOPATH/src/github.com/TheThingsNetwork/ttn
+    - pushd $GOPATH/src/github.com/TheThingsNetwork/ttn
+    - make deps
+    - TARGET_PLATFORM=linux-386 make deps build
+    - TARGET_PLATFORM=linux-amd64 make deps build
+    - TARGET_PLATFORM=linux-arm make deps build
+    - TARGET_PLATFORM=darwin-amd64 make deps build
+    - TARGET_PLATFORM=windows-386 make deps build
+    - TARGET_PLATFORM=windows-amd64 make deps build
+    - popd
+    - cp -R $GOPATH/src/github.com/TheThingsNetwork/ttn/release/* release/
+  artifacts:
+    paths:
+      - release/
+
+azure-binaries:
+  only:
+    - v1-staging@thethingsnetwork/ttn
+    - v2-preview@thethingsnetwork/ttn
+  stage: package
+  image: registry.gitlab.com/thethingsindustries/upload
+  script:
+    - cd release
+    - export STORAGE_CONTAINER=release STORAGE_KEY=$AZURE_STORAGE_KEY ZIP=true TGZ=true PREFIX=$CI_BUILD_REF_NAME/
+    - upload *
