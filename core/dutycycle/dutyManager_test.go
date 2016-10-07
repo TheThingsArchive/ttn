@@ -63,6 +63,24 @@ func TestGetSubBand(t *testing.T) {
 	// --------------------
 
 	{
+		Desc(t, "Test USIsm")
+		sb, err := GetSubBand(913.56)
+		CheckErrors(t, nil, err)
+		CheckSubBands(t, UsISM, sb)
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Test AuISM")
+		sb, err := GetSubBand(922.98)
+		CheckErrors(t, nil, err)
+		CheckSubBands(t, AuISM, sb)
+	}
+
+	// --------------------
+
+	{
 		Desc(t, "Test Unknown")
 		sb, err := GetSubBand(433.5)
 		CheckErrors(t, pointer.String(string(errors.Structural)), err)
@@ -89,6 +107,36 @@ func TestNewManager(t *testing.T) {
 		Desc(t, "Europe with invalid cycleLength")
 		_, err := NewManager(dutyManagerDB, 0, Europe)
 		CheckErrors(t, pointer.String(string(errors.Structural)), err)
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "US with valid cycleLength")
+		m, err := NewManager(dutyManagerDB, time.Minute, US)
+		CheckErrors(t, nil, err)
+		err = m.Close()
+		CheckErrors(t, nil, err)
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "Australia with valid cycleLength")
+		m, err := NewManager(dutyManagerDB, time.Minute, Australia)
+		CheckErrors(t, nil, err)
+		err = m.Close()
+		CheckErrors(t, nil, err)
+	}
+
+	// --------------------
+
+	{
+		Desc(t, "World with valid cycleLength")
+		m, err := NewManager(dutyManagerDB, time.Minute, World)
+		CheckErrors(t, nil, err)
+		err = m.Close()
+		CheckErrors(t, nil, err)
 	}
 
 	// --------------------

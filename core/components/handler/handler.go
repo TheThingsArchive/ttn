@@ -25,16 +25,6 @@ import (
 // bufferDelay defines the timeframe length during which we bufferize packets
 const bufferDelay time.Duration = time.Millisecond * 300
 
-// dataRates makes correspondance between string datarate identifier and lorawan uint descriptors
-var dataRates = map[string]uint8{
-	"SF12BW125": 0,
-	"SF11BW125": 1,
-	"SF10BW125": 2,
-	"SF9BW125":  3,
-	"SF8BW125":  4,
-	"SF7BW125":  5,
-}
-
 // component implements the core.Component interface
 type component struct {
 	Components
@@ -47,15 +37,8 @@ type component struct {
 		CFList      [5]uint32
 		NetID       [3]byte
 		RX1DROffset uint8
-		RX2DataRate string
-		RX2JoinRate string
-		RX2Freq     float32
-		RXDelay     uint8
-		PowerRX1    uint32
-		PowerRX2    uint32
 		RFChain     uint32
 		InvPolarity bool
-		JoinDelay   uint8
 	}
 }
 
@@ -89,6 +72,7 @@ type bundle struct {
 	Entry    devEntry
 	ID       [21]byte
 	Packet   interface{}
+	Region   dutycycle.Region
 	DataRate string
 	Time     time.Time
 }
@@ -111,13 +95,6 @@ func New(c Components, o Options) Interface {
 	h.Configuration.CFList = [5]uint32{867100000, 867300000, 867500000, 867700000, 867900000}
 	h.Configuration.NetID = [3]byte{14, 14, 14}
 	h.Configuration.RX1DROffset = 0
-	h.Configuration.RX2DataRate = "SF9BW125"
-	h.Configuration.RX2JoinRate = "SF12BW125"
-	h.Configuration.RX2Freq = 869.525
-	h.Configuration.RXDelay = 1
-	h.Configuration.JoinDelay = 5
-	h.Configuration.PowerRX1 = 14
-	h.Configuration.PowerRX2 = 27
 	h.Configuration.RFChain = 0
 	h.Configuration.InvPolarity = true
 
@@ -231,9 +208,15 @@ func (h component) HandleJoin(bctx context.Context, req *core.JoinHandlerReq) (*
 	// 5. Send the actual bundle to the consumer
 	ctx.WithField("BundleID", bundleID).Debug("Define new bundle")
 
+	region, err := dutycycle.GetRegion(req.Metadata.Region)
+	if err != nil {
+		return new(core.JoinHandlerRes), errors.New(errors.Structural, "Invalid Region")
+	}
+
 	h.ChBundles <- bundle{
 		ID:       bundleID,
 		Packet:   req,
+		Region:   region,
 		DataRate: req.Metadata.DataRate,
 		Entry:    entry,
 		Chresp:   chresp,
@@ -346,9 +329,14 @@ func (h component) HandleDataUp(bctx context.Context, req *core.DataUpHandlerReq
 
 	// 4. Send the actual bundle to the consumer
 	ctx.WithField("BundleID", bundleID).Debug("Define new bundle")
+	region, err := dutycycle.GetRegion(req.Metadata.Region)
+	if err != nil {
+		return new(core.DataUpHandlerRes), errors.New(errors.Structural, "Invalid Region")
+	}
 	h.ChBundles <- bundle{
 		ID:       bundleID,
 		Packet:   req,
+		Region:   region,
 		DataRate: req.Metadata.DataRate,
 		Entry:    entry,
 		Chresp:   chresp,
@@ -443,23 +431,23 @@ browseBundles:
 		switch b.Packet.(type) {
 		case *core.DataUpHandlerReq:
 			pkt := b.Packet.(*core.DataUpHandlerReq)
-			go h.consumeDown(pkt.AppEUI, pkt.DevEUI, b.DataRate, bundles)
+			go h.consumeDown(pkt.AppEUI, pkt.DevEUI, b.Region, b.DataRate, bundles)
 		case *core.JoinHandlerReq:
 			pkt := b.Packet.(*core.JoinHandlerReq)
 			// Entry.AppKey not nil, checked before creating any bundles
-			go h.consumeJoin(pkt.AppEUI, pkt.DevEUI, *b.Entry.AppKey, b.DataRate, bundles)
+			go h.consumeJoin(pkt.AppEUI, pkt.DevEUI, *b.Entry.AppKey, b.Region, b.DataRate, bundles)
 		}
 	}
 }
 
 // consume Join actually consumes a set of join-request packets
-func (h component) consumeJoin(appEUI []byte, devEUI []byte, appKey [16]byte, dataRate string, bundles []bundle) {
+func (h component) consumeJoin(appEUI []byte, devEUI []byte, appKey [16]byte, region dutycycle.Region, dataRate string, bundles []bundle) {
 	ctx := h.Ctx.WithField("AppEUI", appEUI).WithField("DevEUI", devEUI)
 	ctx.Debug("Consuming join-request")
 
 	// Compute score while gathering metadata
 	var metadata []*core.Metadata
-	computer, scores, err := dutycycle.NewScoreComputer(dataRate)
+	computer, scores, err := dutycycle.NewScoreComputer(region, dataRate)
 	if err != nil {
 		ctx.WithError(err).Debug("Unable to instantiate score computer")
 		h.abortConsume(err, bundles)
@@ -473,7 +461,7 @@ func (h component) consumeJoin(appEUI []byte, devEUI []byte, appKey [16]byte, da
 	}
 
 	// Check if at least one is available
-	best := computer.Get(scores)
+	best := computer.Get(scores, true)
 	ctx.WithField("Best", best).Debug("Determine best response gateway")
 	if best == nil {
 		h.abortConsume(errors.New(errors.Operational, "No gateway is available for an answer"), bundles)
@@ -519,7 +507,7 @@ func (h component) consumeJoin(appEUI []byte, devEUI []byte, appKey [16]byte, da
 	}
 
 	// Build join-accept and send it
-	joinAccept, err := h.buildJoinAccept(packet, appKey, appNonce[:3], devAddr, best.IsRX2)
+	joinAccept, err := h.buildJoinAccept(packet, appKey, appNonce[:3], devAddr, best)
 	if err != nil {
 		ctx.WithError(err).Debug("Unable to build join accept")
 		h.abortConsume(err, bundles)
@@ -550,7 +538,7 @@ func (h component) consumeJoin(appEUI []byte, devEUI []byte, appKey [16]byte, da
 }
 
 // consume Down actually consumes a set of downlink packets
-func (h component) consumeDown(appEUI []byte, devEUI []byte, dataRate string, bundles []bundle) {
+func (h component) consumeDown(appEUI []byte, devEUI []byte, region dutycycle.Region, dataRate string, bundles []bundle) {
 	stats.UpdateHistogram("handler.uplink.duplicate.count", int64(len(bundles)))
 	var metadata []*core.Metadata
 	var fPort uint32
@@ -558,7 +546,7 @@ func (h component) consumeDown(appEUI []byte, devEUI []byte, dataRate string, bu
 	var payload []byte
 	var firstTime time.Time
 
-	computer, scores, err := dutycycle.NewScoreComputer(dataRate)
+	computer, scores, err := dutycycle.NewScoreComputer(region, dataRate)
 	if err != nil {
 		h.abortConsume(err, bundles)
 		return
@@ -616,7 +604,7 @@ func (h component) consumeDown(appEUI []byte, devEUI []byte, dataRate string, bu
 	stats.MarkMeter("handler.uplink.out")
 
 	// Now handle the downlink and respond to node
-	best := computer.Get(scores)
+	best := computer.Get(scores, false)
 	var downlink pktEntry
 	if best != nil { // Avoid pulling when there's no gateway available for an answer
 		downlink, err = h.PktStorage.dequeue(appEUI, devEUI)
@@ -636,7 +624,7 @@ func (h component) consumeDown(appEUI []byte, devEUI []byte, dataRate string, bu
 			if bundle.Packet.(*core.DataUpHandlerReq).FCntUpReset {
 				bundle.Entry.FCntDown = 0
 			}
-			downlink, err := h.buildDownlink(downlink.Payload, downType, ack, *bundle.Packet.(*core.DataUpHandlerReq), bundle.Entry, best.IsRX2)
+			downlink, err := h.buildDownlink(downlink.Payload, downType, ack, *bundle.Packet.(*core.DataUpHandlerReq), bundle.Entry, best)
 			if err != nil {
 				h.abortConsume(errors.New(errors.Structural, err), bundles)
 				return
@@ -675,7 +663,7 @@ func (h component) abortConsume(err error, bundles []bundle) {
 
 // constructs a downlink packet from something we pulled from the gathered downlink, and, the actual
 // uplink.
-func (h component) buildDownlink(down []byte, mtype lorawan.MType, ack bool, up core.DataUpHandlerReq, entry devEntry, isRX2 bool) (*core.DataUpHandlerRes, error) {
+func (h component) buildDownlink(down []byte, mtype lorawan.MType, ack bool, up core.DataUpHandlerReq, entry devEntry, config *dutycycle.Configuration) (*core.DataUpHandlerRes, error) {
 	macpayload := &lorawan.MACPayload{}
 	macpayload.FHDR = lorawan.FHDR{
 		FCnt: entry.FCntDown + 1,
@@ -715,8 +703,6 @@ func (h component) buildDownlink(down []byte, mtype lorawan.MType, ack bool, up 
 		}
 	}
 
-	metadata := h.buildMetadata(*up.Metadata, uint32(len(data)), 1000000*uint32(h.Configuration.RXDelay), isRX2, false)
-
 	return &core.DataUpHandlerRes{
 		Payload: &core.LoRaWANData{
 			MHDR: &core.LoRaWANMHDR{
@@ -739,27 +725,52 @@ func (h component) buildDownlink(down []byte, mtype lorawan.MType, ack bool, up 
 			},
 			MIC: payload.MIC[:],
 		},
-		Metadata: &metadata,
+		Metadata: &core.Metadata{
+			Frequency:   config.Frequency,
+			CodingRate:  up.Metadata.CodingRate,
+			DataRate:    config.DataRate,
+			Modulation:  up.Metadata.Modulation,
+			RFChain:     h.Configuration.RFChain,
+			InvPolarity: h.Configuration.InvPolarity,
+			Power:       config.Power,
+			PayloadSize: uint32(len(data)),
+			Timestamp:   up.Metadata.Timestamp + config.RXDelay,
+		},
 	}, nil
 }
 
-func (h component) buildJoinAccept(joinReq *core.JoinHandlerReq, appKey [16]byte, appNonce []byte, devAddr [4]byte, isRX2 bool) (*core.JoinHandlerRes, error) {
+func (h component) buildJoinAccept(joinReq *core.JoinHandlerReq, appKey [16]byte, appNonce []byte, devAddr [4]byte, config *dutycycle.Configuration) (*core.JoinHandlerRes, error) {
 	payload := &lorawan.PHYPayload{}
 	payload.MHDR = lorawan.MHDR{
 		MType: lorawan.JoinAccept,
 		Major: lorawan.LoRaWANR1,
 	}
+
+	// TODO: Move this somewhere else
+	var rx2dr uint8
+	switch region, _ := dutycycle.GetRegion(joinReq.Metadata.Region); region {
+	case dutycycle.Europe:
+		rx2dr = 3
+	case dutycycle.US:
+		rx2dr = 8
+	}
+
 	joinAcceptPayload := &lorawan.JoinAcceptPayload{
 		NetID:   lorawan.NetID(h.Configuration.NetID),
 		DevAddr: lorawan.DevAddr(devAddr),
 		DLSettings: lorawan.DLsettings{
-			RX1DRoffset: h.Configuration.RX1DROffset,
-			RX2DataRate: dataRates[h.Configuration.RX2DataRate],
+			RX1DRoffset: 0, // TODO: Configure this per region
+			RX2DataRate: rx2dr,
 		},
-		RXDelay: h.Configuration.RXDelay,
+		RXDelay: 1, // TODO: Configure this per region
 	}
-	cflist := lorawan.CFList(h.Configuration.CFList)
-	joinAcceptPayload.CFList = &cflist
+
+	switch dutycycle.Region(joinReq.Metadata.Region) {
+	case dutycycle.Europe, dutycycle.China:
+		cflist := lorawan.CFList(h.Configuration.CFList)
+		joinAcceptPayload.CFList = &cflist
+	}
+
 	copy(joinAcceptPayload.AppNonce[:], appNonce)
 	payload.MACPayload = joinAcceptPayload
 	if err := payload.SetMIC(lorawan.AES128Key(appKey)); err != nil {
@@ -773,40 +784,20 @@ func (h component) buildJoinAccept(joinReq *core.JoinHandlerReq, appKey [16]byte
 		return nil, errors.New(errors.Structural, err)
 	}
 
-	// force RX2 for testing
-	m := h.buildMetadata(*joinReq.Metadata, uint32(len(data)), 1000000*uint32(h.Configuration.JoinDelay), isRX2, true)
 	return &core.JoinHandlerRes{
 		Payload: &core.LoRaWANJoinAccept{
 			Payload: data,
 		},
-		Metadata: &m,
+		Metadata: &core.Metadata{
+			Frequency:   config.Frequency,
+			CodingRate:  joinReq.Metadata.CodingRate,
+			DataRate:    config.DataRate,
+			Modulation:  joinReq.Metadata.Modulation,
+			RFChain:     h.Configuration.RFChain,
+			InvPolarity: h.Configuration.InvPolarity,
+			Power:       config.Power,
+			PayloadSize: uint32(len(data)),
+			Timestamp:   joinReq.Metadata.Timestamp + config.JoinDelay,
+		},
 	}, nil
-}
-
-// buildMetadata construct a new Metadata
-func (h component) buildMetadata(metadata core.Metadata, size uint32, baseDelay uint32, isRX2 bool, isJoin bool) core.Metadata {
-	m := core.Metadata{
-		Frequency:   metadata.Frequency,
-		CodingRate:  metadata.CodingRate,
-		DataRate:    metadata.DataRate,
-		Modulation:  metadata.Modulation,
-		RFChain:     h.Configuration.RFChain,
-		InvPolarity: h.Configuration.InvPolarity,
-		Power:       h.Configuration.PowerRX1,
-		PayloadSize: size,
-		Timestamp:   metadata.Timestamp + baseDelay,
-	}
-
-	if isRX2 { // Should we reply on RX2, metadata aren't the same
-		// TODO Handle different regions with non hard-coded values
-		m.Frequency = h.Configuration.RX2Freq
-		if isJoin {
-			m.DataRate = h.Configuration.RX2JoinRate
-		} else {
-			m.DataRate = h.Configuration.RX2DataRate
-		}
-		m.Power = h.Configuration.PowerRX2
-		m.Timestamp = metadata.Timestamp + baseDelay + 1000000
-	}
-	return m
 }

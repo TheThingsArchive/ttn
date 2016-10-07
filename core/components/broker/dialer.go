@@ -47,7 +47,7 @@ func NewDialer(netAddr []byte) Dialer {
 
 // Dial implements the Dialer interface
 func (d dialer) Dial() (core.HandlerClient, Closer, error) {
-	conn, err := grpc.Dial(d.NetAddr, grpc.WithInsecure(), grpc.WithTimeout(time.Second*2))
+	conn, err := grpc.Dial(d.NetAddr, grpc.WithInsecure(), grpc.WithBlock(), grpc.WithTimeout(time.Second*2))
 	if err != nil {
 		return nil, nil, errors.New(errors.Operational, err)
 	}

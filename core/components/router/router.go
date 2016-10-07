@@ -31,12 +31,14 @@ type Components struct {
 // Options defines a structure to make the instantiation easier to read
 type Options struct {
 	NetAddr string
+	Region  string
 }
 
 // component implements the core.RouterServer interface
 type component struct {
 	Components
 	NetAddr string
+	Region  string
 }
 
 // Server defines the Router Server interface
@@ -47,7 +49,7 @@ type Server interface {
 
 // New constructs a new router
 func New(c Components, o Options) Server {
-	return component{Components: c, NetAddr: o.NetAddr}
+	return component{Components: c, NetAddr: o.NetAddr, Region: o.Region}
 }
 
 // Start actually runs the component and starts the rpc server
@@ -250,6 +252,22 @@ func (r component) injectMetadata(gid []byte, metadata core.Metadata) (*core.Met
 	if err != nil {
 		ctx.WithError(err).Debug("No duty-cycle metadata available")
 		cycles = make(dutycycle.Cycles)
+	}
+
+	metadata.Region = r.Region
+
+	// If this Router is set to the "world" region, we just guess the actual region based on the frequency.
+	// The protocol proposed for The Things Gateway will provide this information in its "stat" messages.
+	// It's also possible to determine the actual region based on Gateway IP address
+	if metadata.Region == "world" {
+		switch {
+		case metadata.Frequency >= 865.0 && metadata.Frequency < 870:
+			metadata.Region = string(dutycycle.Europe)
+		case metadata.Frequency >= 902 && metadata.Frequency < 915:
+			metadata.Region = string(dutycycle.US)
+		case metadata.Frequency >= 915 && metadata.Frequency < 928:
+			metadata.Region = string(dutycycle.Australia)
+		}
 	}
 
 	sb1, err := dutycycle.GetSubBand(float32(metadata.Frequency))

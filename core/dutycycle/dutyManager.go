@@ -42,6 +42,8 @@ const (
 	EuropeG2         = "europe g2"
 	EuropeG3         = "europe g3"
 	EuropeG4         = "europe g4"
+	UsISM            = "united states"
+	AuISM            = "australia"
 )
 
 type subBand string
@@ -58,12 +60,32 @@ const (
 
 // Available regions for LoRaWAN
 const (
-	Europe region = iota
-	US
-	China
+	Europe    Region = "eu"
+	US               = "us"
+	China            = "cn"
+	Australia        = "au"
+	World            = "world"
 )
 
-type region byte
+type Region string
+
+// GetRegion converts a string to a dutycycle.Region
+func GetRegion(region string) (Region, error) {
+	switch region {
+	case "eu", "europe":
+		return Europe, nil
+	case "us", "united states":
+		return US, nil
+	case "cn", "china":
+		return China, nil
+	case "au", "australia":
+		return Australia, nil
+	case "world":
+		return World, nil
+	default:
+		return "", fmt.Errorf("Region %s not supported", region)
+	}
+}
 
 var bucket = []byte("cycles")
 
@@ -94,11 +116,21 @@ func GetSubBand(freq float32) (subBand, error) {
 		return EuropeG4, nil
 	}
 
+	// UsISM 902 - 915 MHz, 10% duty-cycle
+	if freq >= 902 && freq < 915 {
+		return UsISM, nil
+	}
+
+	// AuISM 915 - 928 MHz, 10% duty-cycle
+	if freq >= 915 && freq < 928 {
+		return AuISM, nil
+	}
+
 	return "", errors.New(errors.Structural, "Unknown frequency")
 }
 
 // NewManager constructs a new gateway manager from
-func NewManager(filepath string, cycleLength time.Duration, r region) (DutyManager, error) {
+func NewManager(filepath string, cycleLength time.Duration, r Region) (DutyManager, error) {
 	var maxDuty map[subBand]float32
 	switch r {
 	case Europe:
@@ -108,6 +140,24 @@ func NewManager(filepath string, cycleLength time.Duration, r region) (DutyManag
 			EuropeG2: 0.001,
 			EuropeG3: 0.1,
 			EuropeG4: 0.01,
+		}
+	case US:
+		maxDuty = map[subBand]float32{
+			UsISM: 0.1,
+		}
+	case Australia:
+		maxDuty = map[subBand]float32{
+			AuISM: 0.1,
+		}
+	case World:
+		maxDuty = map[subBand]float32{
+			EuropeG:  0.01,
+			EuropeG1: 0.01,
+			EuropeG2: 0.001,
+			EuropeG3: 0.1,
+			EuropeG4: 0.01,
+			UsISM:    0.1,
+			AuISM:    0.1,
 		}
 	default:
 		return nil, errors.New(errors.Implementation, "Region not supported")
@@ -240,14 +290,14 @@ func computeTOA(size uint32, datr string, codr string) (time.Duration, error) {
 	}
 
 	// Compute toa, Page 7: http://www.semtech.com/images/datasheet/LoraDesignGuide_STD.pdf
-	payloadNb := 8.0 + math.Max(0, 4*math.Ceil((2*s-sf-6)/(sf-2*de))/rc)
-	timeOnAir := (payloadNb + 12.25) * math.Pow(2, sf) / bw // in ms
+	payloadNb := 8.0 + math.Max(0, 4*math.Ceil((2*s-float64(sf)-6)/(float64(sf)-2*de))/rc)
+	timeOnAir := (payloadNb + 12.25) * math.Pow(2, float64(sf)) / float64(bw) // in ms
 
 	return time.ParseDuration(fmt.Sprintf("%fms", timeOnAir))
 }
 
 // ParseDatr extract the spread factor and the bandwidth from a DataRate identifier
-func ParseDatr(datr string) (float64, float64, error) {
+func ParseDatr(datr string) (int, int, error) {
 	re := regexp.MustCompile("^SF(7|8|9|10|11|12)BW(125|250|500)$")
 	matches := re.FindStringSubmatch(datr)
 
@@ -255,8 +305,8 @@ func ParseDatr(datr string) (float64, float64, error) {
 		return 0, 0, errors.New(errors.Structural, "Invalid Datr")
 	}
 
-	sf, _ := strconv.ParseFloat(matches[1], 64)
-	bw, _ := strconv.ParseFloat(matches[2], 64)
+	sf, _ := strconv.Atoi(matches[1])
+	bw, _ := strconv.Atoi(matches[2])
 
 	return sf, bw, nil
 }

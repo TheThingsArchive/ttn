@@ -4,7 +4,12 @@
 package dutycycle
 
 import (
+	"fmt"
+
 	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/core/band"
+	"github.com/TheThingsNetwork/ttn/core/band/au915_928"
+	"github.com/TheThingsNetwork/ttn/core/band/us902_928"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 )
 
@@ -19,34 +24,41 @@ import (
 // Within RX1 or RX2, the SNR is considered first (the higher the better), then the RSSI on a lower
 // plan.
 type ScoreComputer struct {
-	sf uint
+	sf     uint
+	region Region
 }
 
-// BestTarget represents the best result that has been computed after all updates.
-type BestTarget struct {
-	ID    int  // The ID provided during updates
-	IsRX2 bool // Whether it should use RX2
+// Configuration represents the best result that has been computed after all updates.
+type Configuration struct {
+	ID        int // The ID provided during updates
+	Frequency float32
+	DataRate  string
+	RXDelay   uint32
+	JoinDelay uint32
+	Power     uint32
+	CFList    [5]uint32
+}
+
+type candidate struct {
+	ID        int
+	Score     int
+	Frequency float32
+	DataRate  string
 }
 
 type scores struct {
-	rx1 struct {
-		ID    int
-		Score int
-	}
-	rx2 struct {
-		ID    int
-		Score int
-	}
+	rx1 candidate
+	rx2 candidate
 }
 
 // NewScoreComputer constructs a new ScoreComputer and initiate an empty scores table
-func NewScoreComputer(datr string) (*ScoreComputer, scores, error) {
+func NewScoreComputer(r Region, datr string) (*ScoreComputer, scores, error) {
 	sf, _, err := ParseDatr(datr)
 	if err != nil {
 		return nil, scores{}, errors.New(errors.Structural, err)
 	}
 
-	return &ScoreComputer{sf: uint(sf)}, scores{}, nil
+	return &ScoreComputer{sf: uint(sf), region: r}, scores{}, nil
 }
 
 // Update computes the score associated to the given target and update the internal score
@@ -54,15 +66,16 @@ func NewScoreComputer(datr string) (*ScoreComputer, scores, error) {
 func (c *ScoreComputer) Update(s scores, id int, metadata core.Metadata) scores {
 	dutyRX1, dutyRX2 := metadata.DutyRX1, metadata.DutyRX2
 	lsnr, rssi := float64(metadata.Lsnr), int(metadata.Rssi)
+	freq, datr := metadata.Frequency, metadata.DataRate
 
 	rx1 := computeScore(State(dutyRX1), lsnr, rssi)
 	if rx1 > s.rx1.Score {
-		s.rx1.Score, s.rx1.ID = rx1, id
+		s.rx1.Score, s.rx1.ID, s.rx1.Frequency, s.rx1.DataRate = rx1, id, freq, datr
 	}
 
 	rx2 := computeScore(State(dutyRX2), lsnr, rssi)
 	if rx2 > s.rx2.Score {
-		s.rx2.Score, s.rx2.ID = rx2, id
+		s.rx2.Score, s.rx2.ID, s.rx2.Frequency, s.rx2.DataRate = rx2, id, freq, datr
 	}
 
 	return s
@@ -70,12 +83,110 @@ func (c *ScoreComputer) Update(s scores, id int, metadata core.Metadata) scores 
 
 // Get returns the best score according to the configured spread factor and all updates.
 // It returns nil if none of the target is available for a response
-func (c *ScoreComputer) Get(s scores) *BestTarget {
-	if s.rx1.Score > 0 && (c.sf == 7 || c.sf == 8) { // Favor RX1 on SF7 & SF8
-		return &BestTarget{ID: s.rx1.ID, IsRX2: false}
+func (c *ScoreComputer) Get(s scores, isJoin bool) *Configuration {
+	sf, bw, _ := ParseDatr(s.rx1.DataRate)
+	dataRate := band.DataRate{
+		Modulation:   band.LoRaModulation,
+		SpreadFactor: sf,
+		Bandwidth:    bw,
 	}
-	if s.rx2.Score > 0 {
-		return &BestTarget{ID: s.rx2.ID, IsRX2: true}
+	frequency := int(s.rx1.Frequency*10) * 100000 // Great idea to work with float32
+
+	switch c.region {
+	case Europe:
+		if s.rx1.Score > 0 && (c.sf == 7 || c.sf == 8) { // Favor RX1 on SF7 & SF8
+			return &Configuration{
+				ID:        s.rx1.ID,
+				Frequency: s.rx1.Frequency,
+				DataRate:  s.rx1.DataRate,
+				Power:     14,
+				RXDelay:   1000000,
+				JoinDelay: 5000000,
+				CFList:    [5]uint32{867100000, 867300000, 867500000, 867700000, 867900000},
+			}
+		}
+		if s.rx2.Score > 0 {
+			if isJoin {
+				return &Configuration{
+					ID:        s.rx2.ID,
+					Frequency: 869.525,
+					DataRate:  "SF12BW125",
+					Power:     27,
+					RXDelay:   2000000,
+					JoinDelay: 6000000,
+					CFList:    [5]uint32{867100000, 867300000, 867500000, 867700000, 867900000},
+				}
+			} else {
+				return &Configuration{
+					ID:        s.rx2.ID,
+					Frequency: 869.525,
+					DataRate:  "SF9BW125",
+					Power:     27,
+					RXDelay:   2000000,
+					JoinDelay: 6000000,
+					CFList:    [5]uint32{867100000, 867300000, 867500000, 867700000, 867900000},
+				}
+			}
+		}
+	case US:
+		if s.rx1.Score > 0 {
+			dr, err := us902_928.GetDataRate(dataRate)
+			if err != nil {
+				fmt.Println(err.Error())
+				return nil
+			}
+
+			frequency, err := us902_928.GetRX1Frequency(frequency, dr)
+			if err != nil {
+				fmt.Println(err.Error())
+				return nil
+			}
+
+			rx1Dr := dr + 10
+			if rx1Dr > 13 {
+				rx1Dr = 13
+			}
+			dataRate := us902_928.DataRateConfiguration[rx1Dr]
+
+			return &Configuration{
+				ID:        s.rx1.ID,
+				Frequency: float32(frequency/100000) / 10, // Great idea to work with float32
+				DataRate:  fmt.Sprintf("SF%dBW%d", dataRate.SpreadFactor, dataRate.Bandwidth),
+				Power:     21,
+				RXDelay:   1000000,
+				JoinDelay: 5000000,
+			}
+		}
+	case Australia:
+		if s.rx1.Score > 0 {
+			dr, err := au915_928.GetDataRate(dataRate)
+			if err != nil {
+				fmt.Println(err.Error())
+				return nil
+			}
+
+			frequency, err := au915_928.GetRX1Frequency(frequency, dr)
+			if err != nil {
+				fmt.Println(err.Error())
+				return nil
+			}
+
+			rx1Dr := dr + 10
+			if rx1Dr > 13 {
+				rx1Dr = 13
+			}
+			dataRate := au915_928.DataRateConfiguration[rx1Dr]
+
+			return &Configuration{
+				ID:        s.rx1.ID,
+				Frequency: float32(frequency/100000) / 10, // Great idea to work with float32
+				DataRate:  fmt.Sprintf("SF%dBW%d", dataRate.SpreadFactor, dataRate.Bandwidth),
+				Power:     21,
+				RXDelay:   1000000,
+				JoinDelay: 5000000,
+			}
+		}
+	default:
 	}
 	return nil
 }

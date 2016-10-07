@@ -130,7 +130,8 @@ func (b component) DeleteDevice(bctx context.Context, req *core.DeleteDeviceBrok
 
 // validateToken verify an OAuth Bearer token pass through metadata during RPC
 func (b component) validateToken(ctx context.Context, token string, appEUI []byte) error {
-	parsed, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
+	var claims jwt.MapClaims
+	parsed, err := jwt.ParseWithClaims(token, &claims, func(token *jwt.Token) (interface{}, error) {
 		if b.TokenKeyProvider == nil {
 			return nil, errors.New(errors.Structural, "No token provider configured")
 		}
@@ -150,9 +151,9 @@ func (b component) validateToken(ctx context.Context, token string, appEUI []byt
 		return errors.New(errors.Operational, "The token is not valid or is expired")
 	}
 
-	apps, ok := parsed.Claims["apps"].([]interface{})
+	apps, ok := claims["apps"].([]interface{})
 	if !ok {
-		return fmt.Errorf("Invalid type of apps claim: %T", parsed.Claims["apps"])
+		return fmt.Errorf("Invalid type of apps claim: %T", claims["apps"])
 	}
 
 	for _, a := range apps {

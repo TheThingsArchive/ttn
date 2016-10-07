@@ -3,6 +3,7 @@ syntax = "proto3";
 package core;
 
 message Metadata {
+    string  Region          = 99;
     uint32  DutyRX1         = 1;
     uint32  DutyRX2         = 2;
 

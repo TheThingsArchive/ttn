@@ -15,7 +15,7 @@ import (
 func TestNewScoreComputer(t *testing.T) {
 	{
 		Desc(t, "Invalid datr as argument")
-		_, _, err := NewScoreComputer("TheThingsNetwork")
+		_, _, err := NewScoreComputer(World, "TheThingsNetwork")
 		CheckErrors(t, pointer.String(string(errors.Structural)), err)
 	}
 
@@ -23,7 +23,7 @@ func TestNewScoreComputer(t *testing.T) {
 
 	{
 		Desc(t, "Valid datr")
-		_, _, err := NewScoreComputer("SF8BW250")
+		_, _, err := NewScoreComputer(World, "SF8BW250")
 		CheckErrors(t, nil, err)
 	}
 }
@@ -45,23 +45,28 @@ func TestUpdateGet(t *testing.T) {
 		Desc(t, "SF7 | ...")
 
 		// Build
-		c, s, err := NewScoreComputer("SF7BW125")
+		c, s, err := NewScoreComputer(World, "SF7BW125")
+		join := false
 		CheckErrors(t, nil, err)
 
 		// Operate
-		got := c.Get(s)
+		got := c.Get(s, join)
 
 		// Check
-		CheckBestTargets(t, nil, got)
+		CheckConfiguration(t, nil, got)
 	}
 
 	// --------------------
+
+	rx1cfg := &Configuration{ID: 1, RXDelay: 1000000, JoinDelay: 5000000, Power: 14, CFList: [5]uint32{867100000, 867300000, 867500000, 867700000, 867900000}}
+	rx2cfg := &Configuration{ID: 1, Frequency: 869.525, DataRate: "SF9BW125", RXDelay: 2000000, JoinDelay: 6000000, Power: 27, CFList: [5]uint32{867100000, 867300000, 867500000, 867700000, 867900000}}
 
 	{
 		Desc(t, "SF7 | (1, Av, Bl, -25, 5.0)")
 
 		// Build
-		c, s, err := NewScoreComputer("SF7BW125")
+		c, s, err := NewScoreComputer(Europe, "SF7BW125")
+		join := false
 		CheckErrors(t, nil, err)
 
 		// Operate
@@ -71,10 +76,10 @@ func TestUpdateGet(t *testing.T) {
 			Rssi:    -25,
 			Lsnr:    5.0,
 		})
-		got := c.Get(s)
+		got := c.Get(s, join)
 
 		// Check
-		CheckBestTargets(t, &BestTarget{ID: 1, IsRX2: false}, got)
+		CheckConfiguration(t, rx1cfg, got)
 	}
 
 	// --------------------
@@ -83,7 +88,8 @@ func TestUpdateGet(t *testing.T) {
 		Desc(t, "SF7 | (1, Bl, Ha, -25, 5.0)")
 
 		// Build
-		c, s, err := NewScoreComputer("SF7BW125")
+		c, s, err := NewScoreComputer(Europe, "SF7BW125")
+		join := false
 		CheckErrors(t, nil, err)
 
 		// Operate
@@ -93,10 +99,10 @@ func TestUpdateGet(t *testing.T) {
 			Rssi:    -25,
 			Lsnr:    5.0,
 		})
-		got := c.Get(s)
+		got := c.Get(s, join)
 
 		// Check
-		CheckBestTargets(t, &BestTarget{ID: 1, IsRX2: true}, got)
+		CheckConfiguration(t, rx2cfg, got)
 	}
 
 	// --------------------
@@ -105,7 +111,8 @@ func TestUpdateGet(t *testing.T) {
 		Desc(t, "SF7 | (1, Bl, Bl, -25, 5.0)")
 
 		// Build
-		c, s, err := NewScoreComputer("SF7BW125")
+		c, s, err := NewScoreComputer(Europe, "SF7BW125")
+		join := false
 		CheckErrors(t, nil, err)
 
 		// Operate
@@ -115,10 +122,10 @@ func TestUpdateGet(t *testing.T) {
 			Rssi:    -25,
 			Lsnr:    5.0,
 		})
-		got := c.Get(s)
+		got := c.Get(s, join)
 
 		// Check
-		CheckBestTargets(t, nil, got)
+		CheckConfiguration(t, nil, got)
 	}
 
 	// --------------------
@@ -127,7 +134,8 @@ func TestUpdateGet(t *testing.T) {
 		Desc(t, "SF9 | (1, Av, Av, -25, 5.0) ")
 
 		// Build
-		c, s, err := NewScoreComputer("SF9BW125")
+		c, s, err := NewScoreComputer(Europe, "SF9BW125")
+		join := false
 		CheckErrors(t, nil, err)
 
 		// Operate
@@ -137,10 +145,10 @@ func TestUpdateGet(t *testing.T) {
 			Rssi:    -25,
 			Lsnr:    5.0,
 		})
-		got := c.Get(s)
+		got := c.Get(s, join)
 
 		// Check
-		CheckBestTargets(t, &BestTarget{ID: 1, IsRX2: true}, got)
+		CheckConfiguration(t, rx2cfg, got)
 	}
 
 	// --------------------
@@ -149,7 +157,8 @@ func TestUpdateGet(t *testing.T) {
 		Desc(t, "SF10 | (1, Av, Av, -25, 5.0) :: (2, Av, Av, -25, 3.0)")
 
 		// Build
-		c, s, err := NewScoreComputer("SF10BW125")
+		c, s, err := NewScoreComputer(Europe, "SF10BW125")
+		join := false
 		CheckErrors(t, nil, err)
 
 		// Operate
@@ -165,10 +174,10 @@ func TestUpdateGet(t *testing.T) {
 			Rssi:    -25,
 			Lsnr:    3.0,
 		})
-		got := c.Get(s)
+		got := c.Get(s, join)
 
 		// Check
-		CheckBestTargets(t, &BestTarget{ID: 1, IsRX2: true}, got)
+		CheckConfiguration(t, rx2cfg, got)
 	}
 
 	// --------------------
@@ -177,7 +186,8 @@ func TestUpdateGet(t *testing.T) {
 		Desc(t, "SF10 | (1, Av, Bl, -25, 5.0)")
 
 		// Build
-		c, s, err := NewScoreComputer("SF10BW125")
+		c, s, err := NewScoreComputer(Europe, "SF10BW125")
+		join := false
 		CheckErrors(t, nil, err)
 
 		// Operate
@@ -187,10 +197,10 @@ func TestUpdateGet(t *testing.T) {
 			Rssi:    -25,
 			Lsnr:    5.0,
 		})
-		got := c.Get(s)
+		got := c.Get(s, join)
 
 		// Check
-		CheckBestTargets(t, nil, got)
+		CheckConfiguration(t, nil, got)
 	}
 
 	// --------------------
@@ -199,7 +209,8 @@ func TestUpdateGet(t *testing.T) {
 		Desc(t, "SF8 | (1, Wa, Av, -25, 5.0) :: (2, Av, Av, -25, 5.0)")
 
 		// Build
-		c, s, err := NewScoreComputer("SF8BW125")
+		c, s, err := NewScoreComputer(Europe, "SF8BW125")
+		join := false
 		CheckErrors(t, nil, err)
 
 		// Operate
@@ -215,10 +226,10 @@ func TestUpdateGet(t *testing.T) {
 			Rssi:    -25,
 			Lsnr:    5.0,
 		})
-		got := c.Get(s)
+		got := c.Get(s, join)
 
 		// Check
-		CheckBestTargets(t, &BestTarget{ID: 2, IsRX2: false}, got)
+		CheckConfiguration(t, &Configuration{ID: 2, RXDelay: 1000000, JoinDelay: 5000000, Power: 14, CFList: [5]uint32{867100000, 867300000, 867500000, 867700000, 867900000}}, got)
 	}
 
 	// --------------------
@@ -227,7 +238,8 @@ func TestUpdateGet(t *testing.T) {
 		Desc(t, "SF12 | (1, Av, Av, -25, 5.1) :: (2, Ha, Ha, -25, 3.4)")
 
 		// Build
-		c, s, err := NewScoreComputer("SF12BW125")
+		c, s, err := NewScoreComputer(Europe, "SF12BW125")
+		join := false
 		CheckErrors(t, nil, err)
 
 		// Operate
@@ -243,9 +255,9 @@ func TestUpdateGet(t *testing.T) {
 			Rssi:    -25,
 			Lsnr:    3.4,
 		})
-		got := c.Get(s)
+		got := c.Get(s, join)
 
 		// Check
-		CheckBestTargets(t, &BestTarget{ID: 1, IsRX2: true}, got)
+		CheckConfiguration(t, rx2cfg, got)
 	}
 }
