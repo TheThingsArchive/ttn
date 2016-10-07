@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/utils/security"
+	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -22,7 +23,7 @@ var networkserverAuthorizeCmd = &cobra.Command{
 			cmd.UsageFunc()(cmd)
 		}
 
-		_, priv, _, err := security.LoadKeys(viper.GetString("key-dir"))
+		_, privateKey, _, err := security.LoadKeys(viper.GetString("key-dir"))
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not load security keys")
 		}
@@ -30,9 +31,23 @@ var networkserverAuthorizeCmd = &cobra.Command{
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not read TTL")
 		}
-		token, err := security.BuildJWT(args[0], time.Duration(ttl)*time.Hour*24, priv)
+		claims := jwt.StandardClaims{
+			Subject:   args[0],
+			Issuer:    viper.GetString("id"),
+			IssuedAt:  time.Now().Unix(),
+			NotBefore: time.Now().Unix(),
+		}
+		if ttl > 0 {
+			claims.ExpiresAt = time.Now().Add(time.Duration(ttl) * time.Hour * 24).Unix()
+		}
+		tokenBuilder := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
+		key, err := jwt.ParseECPrivateKeyFromPEM(privateKey)
 		if err != nil {
-			ctx.WithError(err).Fatal("Could not generate a JWT")
+			ctx.WithError(err).Fatal("Could not parse private kay")
+		}
+		token, err := tokenBuilder.SignedString(key)
+		if err != nil {
+			ctx.WithError(err).Fatal("Could not sign JWT")
 		}
 
 		ctx.WithField("ID", args[0]).Info("Generated NS token")
