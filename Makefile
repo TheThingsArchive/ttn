@@ -23,7 +23,7 @@ deps: build-deps
 dev-deps: deps
 	@command -v protoc-gen-gofast > /dev/null || go get github.com/gogo/protobuf/protoc-gen-gofast
 	@command -v mockgen > /dev/null || go get github.com/golang/mock/mockgen
-	@command -v golint > /dev/null || github.com/golang/lint/golint
+	@command -v golint > /dev/null || go get github.com/golang/lint/golint
 	@command -v forego > /dev/null || go get github.com/ddollar/forego
 
 # Protobuf
