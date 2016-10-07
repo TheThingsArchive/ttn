@@ -145,7 +145,7 @@ var uplinkCmd = &cobra.Command{
 				ctx.Fatalf("No payload available in downlink response")
 			}
 
-			data, err := base64.RawStdEncoding.DecodeString(*pkt.Payload.TXPK.Data)
+			data, err := base64.RawStdEncoding.DecodeString(strings.Trim(*pkt.Payload.TXPK.Data, "="))
 			if err != nil {
 				ctx.Fatalf("Unable to decode data payload: %s", err)
 			}
