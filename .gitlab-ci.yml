@@ -8,14 +8,15 @@ variables:
   CONTAINER_NAME: thethingsnetwork/ttn
 
 cache:
-  key: "$CI_PIPELINE_ID"
+  key: "$CI_PROJECT_PATH"
   paths:
-    - vendor/
+    - .govendor
 
 before_script:
-  - rm -rf $GOPATH/src
-  - mkdir -p $GOPATH/src/github.com/TheThingsNetwork/ttn
-  - cp -R . $GOPATH/src/github.com/TheThingsNetwork/ttn
+  - mkdir -p $(pwd)/.govendor
+  - rm -rf $GOPATH
+  - mkdir -p $GOPATH/.cache && ln -s $(pwd)/.govendor $GOPATH/.cache/govendor
+  - mkdir -p $GOPATH/src/github.com/TheThingsNetwork && ln -s $(pwd) $GOPATH/src/github.com/TheThingsNetwork/ttn
 
 deps:
   stage: deps
@@ -24,7 +25,6 @@ deps:
     - pushd $GOPATH/src/github.com/TheThingsNetwork/ttn
     - make deps
     - popd
-    - cp -R $GOPATH/src/github.com/TheThingsNetwork/ttn/vendor/* vendor/
 
 tests:
   stage: test
@@ -58,7 +58,6 @@ binaries:
     - GOOS=windows GOARCH=386 make build
     - GOOS=windows GOARCH=amd64 make build
     - popd
-    - cp -R $GOPATH/src/github.com/TheThingsNetwork/ttn/release/* release/
   artifacts:
     paths:
       - release/
@@ -69,7 +68,6 @@ gitlab-image:
   services:
     - "docker:dind"
   script:
-    - cd $GOPATH/src/github.com/TheThingsNetwork/ttn
     - docker build -t ttn .
     - docker login -u "gitlab-ci-token" -p "$CI_BUILD_TOKEN" registry.gitlab.com
     - docker tag ttn registry.gitlab.com/$CONTAINER_NAME:$CI_BUILD_REF_NAME
@@ -77,14 +75,13 @@ gitlab-image:
 
 dockerhub-image:
   only:
-    - master@thethingsnetwork/ttn
-    - refactor@thethingsnetwork/ttn
+    - v1-staging@thethingsnetwork/ttn
+    - v2-preview@thethingsnetwork/ttn
   stage: package
   image: docker:git
   services:
     - "docker:dind"
   script:
-    - cd $GOPATH/src/github.com/TheThingsNetwork/ttn
     - docker build -t ttn .
     - docker login -u "$DOCKERHUB_USER" -p "$DOCKERHUB_PASSWORD"
     - docker tag ttn $CONTAINER_NAME:$CI_BUILD_REF_NAME
@@ -92,8 +89,8 @@ dockerhub-image:
 
 azure-binaries:
   only:
-    - master@thethingsnetwork/ttn
-    - refactor@thethingsnetwork/ttn
+    - v1-staging@thethingsnetwork/ttn
+    - v2-preview@thethingsnetwork/ttn
   stage: package
   image: registry.gitlab.com/thethingsindustries/upload
   script:
