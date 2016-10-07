@@ -33,14 +33,11 @@ ttnctlbin = $(ttnctlpkg)$(GOEXE)
 
 all: clean deps build package
 
-deps:
-	$(GOCMD) get -d -v $(DEPS)
+build-deps:
+	@command -v govendor > /dev/null || go get "github.com/kardianos/govendor"
 
-update-deps:
-	$(GOCMD) get -u -d -v $(DEPS)
-
-test-deps:
-	$(GOCMD) get -d -v $(TEST_DEPS)
+deps: build-deps
+	govendor sync
 
 dev-deps:
 	$(GOCMD) get -v github.com/ddollar/forego
