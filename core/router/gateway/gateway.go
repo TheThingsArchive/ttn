@@ -58,11 +58,9 @@ func (g *Gateway) HandleStatus(status *pb.Status) (err error) {
 	g.updateLastSeen()
 
 	if g.monitor != nil {
-		g.monitor.RLock()
 		for name := range g.monitor.clients {
 			go g.pushStatusToMonitor(g.Ctx.WithField("monitor", name), name, status)
 		}
-		g.monitor.RUnlock()
 	}
 	return nil
 }
@@ -75,11 +73,9 @@ func (g *Gateway) HandleUplink(uplink *pb_router.UplinkMessage) (err error) {
 	g.updateLastSeen()
 
 	if g.monitor != nil {
-		g.monitor.RLock()
 		for name := range g.monitor.clients {
 			go g.pushUplinkToMonitor(g.Ctx.WithField("monitor", name), name, uplink)
 		}
-		g.monitor.RUnlock()
 	}
 	return nil
 }
@@ -92,11 +88,9 @@ func (g *Gateway) HandleDownlink(identifier string, downlink *pb_router.Downlink
 	}
 
 	if g.monitor != nil {
-		g.monitor.RLock()
 		for name := range g.monitor.clients {
 			go g.pushDownlinkToMonitor(ctx.WithField("monitor", name), name, downlink)
 		}
-		g.monitor.RUnlock()
 	}
 	return nil
 }

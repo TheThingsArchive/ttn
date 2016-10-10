@@ -24,7 +24,6 @@ func (g *Gateway) monitorContext() (ctx context.Context) {
 
 type monitorConn struct {
 	clients map[string]pb_noc.MonitorClient
-	sync.RWMutex
 
 	status struct {
 		streams map[string]pb_noc.Monitor_GatewayStatusClient
@@ -43,9 +42,6 @@ type monitorConn struct {
 }
 
 func (g *Gateway) SetMonitors(clients map[string]pb_noc.MonitorClient) {
-	g.monitor.Lock()
-	defer g.monitor.Unlock()
-
 	g.monitor = NewMonitorConn(clients)
 }
 
@@ -82,7 +78,6 @@ func (g *Gateway) pushStatusToMonitor(ctx log.Interface, name string, status *pb
 	if !ok {
 		g.monitor.status.Lock()
 		if _, ok := g.monitor.status.streams[name]; !ok {
-			g.monitor.RLock()
 			cl, ok := g.monitor.clients[name]
 			if !ok {
 				// Should not happen
@@ -97,8 +92,6 @@ func (g *Gateway) pushStatusToMonitor(ctx log.Interface, name string, status *pb
 			}
 			ctx.Info("Opened new status stream")
 			g.monitor.status.streams[name] = stream
-
-			g.monitor.RUnlock()
 		}
 		g.monitor.status.Unlock()
 	}
@@ -130,12 +123,7 @@ func (g *Gateway) pushUplinkToMonitor(ctx log.Interface, name string, uplink *pb
 
 	if !ok {
 		g.monitor.uplink.Lock()
-		defer g.monitor.uplink.Unlock()
-
 		if _, ok := g.monitor.uplink.streams[name]; !ok {
-			g.monitor.RLock()
-			defer g.monitor.RUnlock()
-
 			cl, ok := g.monitor.clients[name]
 			if !ok {
 				// Should not happen
@@ -149,8 +137,8 @@ func (g *Gateway) pushUplinkToMonitor(ctx log.Interface, name string, uplink *pb
 				return err
 			}
 			g.monitor.uplink.streams[name] = stream
-
 		}
+		g.monitor.uplink.Unlock()
 	}
 
 	return stream.Send(uplink)
@@ -181,7 +169,6 @@ func (g *Gateway) pushDownlinkToMonitor(ctx log.Interface, name string, downlink
 	if !ok {
 		g.monitor.downlink.Lock()
 		if _, ok := g.monitor.downlink.streams[name]; !ok {
-			g.monitor.RLock()
 			cl, ok := g.monitor.clients[name]
 			if !ok {
 				// Should not happen
@@ -196,8 +183,6 @@ func (g *Gateway) pushDownlinkToMonitor(ctx log.Interface, name string, downlink
 			}
 			ctx.Info("Opened new downlink stream")
 			g.monitor.downlink.streams[name] = stream
-
-			g.monitor.RUnlock()
 		}
 		g.monitor.downlink.Unlock()
 	}
