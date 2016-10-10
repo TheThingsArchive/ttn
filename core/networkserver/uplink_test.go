@@ -8,6 +8,9 @@ import (
 	"time"
 
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
+	pb_gateway "github.com/TheThingsNetwork/ttn/api/gateway"
+	pb_protocol "github.com/TheThingsNetwork/ttn/api/protocol"
+	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core/networkserver/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/brocaar/lorawan"
@@ -61,6 +64,9 @@ func TestHandleUplink(t *testing.T) {
 					ADR:       true,
 					ADRACKReq: true,
 				},
+				FOpts: []lorawan.MACCommand{
+					lorawan.MACCommand{CID: lorawan.LinkCheckReq},
+				},
 			},
 		},
 	}
@@ -72,6 +78,14 @@ func TestHandleUplink(t *testing.T) {
 		DevEui:           &devEUI,
 		Payload:          bytes,
 		ResponseTemplate: &pb_broker.DownlinkMessage{},
+		GatewayMetadata: []*pb_gateway.RxMetadata{
+			&pb_gateway.RxMetadata{},
+		},
+		ProtocolMetadata: &pb_protocol.RxMetadata{Protocol: &pb_protocol.RxMetadata_Lorawan{
+			Lorawan: &pb_lorawan.Metadata{
+				DataRate: "SF7BW125",
+			},
+		}},
 	}
 	res, err := ns.HandleUplink(message)
 	a.So(err, ShouldBeNil)
@@ -87,6 +101,8 @@ func TestHandleUplink(t *testing.T) {
 
 	// ResponseTemplate should ACK the ADRACKReq
 	a.So(macPayload.FHDR.FCtrl.ACK, ShouldBeTrue)
+	a.So(macPayload.FHDR.FOpts, ShouldHaveLength, 1)
+	a.So(macPayload.FHDR.FOpts[0].Payload, ShouldResemble, &lorawan.LinkCheckAnsPayload{GwCnt: 1, Margin: 7})
 
 	// Frame Counter should have been updated
 	dev, _ := ns.devices.Get(appEUI, devEUI)

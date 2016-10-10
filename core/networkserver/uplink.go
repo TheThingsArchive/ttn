@@ -30,7 +30,7 @@ func (n *networkServer) HandleUplink(message *pb_broker.DeduplicatedUplinkMessag
 	}
 
 	// Update FCntUp (from metadata if possible, because only 16lsb are marshaled in FHDR)
-	if lorawan := message.GetProtocolMetadata().GetLorawan(); lorawan != nil {
+	if lorawan := message.GetProtocolMetadata().GetLorawan(); lorawan != nil && lorawan.FCnt != 0 {
 		dev.FCntUp = lorawan.FCnt
 	} else {
 		dev.FCntUp = macPayload.FHDR.FCnt
@@ -86,7 +86,20 @@ func (n *networkServer) HandleUplink(message *pb_broker.DeduplicatedUplinkMessag
 		}
 	}
 
-	// TODO: We might need to add MAC commands on downlink
+	// MAC Commands
+	for _, cmd := range macPayload.FHDR.FOpts {
+		switch cmd.CID {
+		case lorawan.LinkCheckReq:
+			mac.FHDR.FOpts = append(mac.FHDR.FOpts, lorawan.MACCommand{
+				CID: lorawan.LinkCheckAns,
+				Payload: &lorawan.LinkCheckAnsPayload{
+					Margin: uint8(linkMargin(message.GetProtocolMetadata().GetLorawan().DataRate, bestSNR(message.GetGatewayMetadata()))),
+					GwCnt:  uint8(len(message.GatewayMetadata)),
+				},
+			})
+		default:
+		}
+	}
 
 	phyBytes, err := phy.MarshalBinary()
 	if err != nil {
