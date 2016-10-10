@@ -4,6 +4,7 @@
 package core
 
 import (
+	"crypto/ecdsa"
 	"crypto/tls"
 	"fmt"
 	"net/http"
@@ -88,13 +89,22 @@ func NewComponent(ctx log.Interface, serviceName string, announcedAddress string
 		}
 	}
 
-	if pub, priv, cert, err := security.LoadKeys(viper.GetString("key-dir")); err == nil {
-		component.Identity.PublicKey = string(pub)
-		component.privateKey = string(priv)
+	if priv, err := security.LoadKeypair(viper.GetString("key-dir")); err == nil {
+		component.privateKey = priv
+
+		pubPEM, _ := security.PublicPEM(priv)
+		component.Identity.PublicKey = string(pubPEM)
+
+		privPEM, _ := security.PrivatePEM(priv)
 
 		if viper.GetBool("tls") {
+			cert, err := security.LoadCert(viper.GetString("key-dir"))
+			if err != nil {
+				return nil, err
+			}
 			component.Identity.Certificate = string(cert)
-			cer, err := tls.X509KeyPair(cert, priv)
+
+			cer, err := tls.X509KeyPair(cert, privPEM)
 			if err != nil {
 				return nil, err
 			}
@@ -138,7 +148,7 @@ type Component struct {
 	Monitor          pb_noc.MonitorClient
 	Ctx              log.Interface
 	AccessToken      string
-	privateKey       string
+	privateKey       *ecdsa.PrivateKey
 	tlsConfig        *tls.Config
 	TokenKeyProvider tokenkey.Provider
 	status           int64
@@ -350,8 +360,12 @@ func (c *Component) ServerOptions() []grpc.ServerOption {
 
 // BuildJWT builds a short-lived JSON Web Token for this component
 func (c *Component) BuildJWT() (string, error) {
-	if c.privateKey != "" {
-		return security.BuildJWT(c.Identity.Id, 10*time.Second, []byte(c.privateKey))
+	if c.privateKey != nil {
+		privPEM, err := security.PrivatePEM(c.privateKey)
+		if err != nil {
+			return "", err
+		}
+		return security.BuildJWT(c.Identity.Id, 10*time.Second, privPEM)
 	}
 	return "", nil
 }

@@ -23,10 +23,11 @@ var networkserverAuthorizeCmd = &cobra.Command{
 			cmd.UsageFunc()(cmd)
 		}
 
-		_, privateKey, _, err := security.LoadKeys(viper.GetString("key-dir"))
+		privKey, err := security.LoadKeypair(viper.GetString("key-dir"))
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not load security keys")
 		}
+
 		ttl, err := cmd.Flags().GetInt("valid")
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not read TTL")
@@ -41,11 +42,7 @@ var networkserverAuthorizeCmd = &cobra.Command{
 			claims.ExpiresAt = time.Now().Add(time.Duration(ttl) * time.Hour * 24).Unix()
 		}
 		tokenBuilder := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
-		key, err := jwt.ParseECPrivateKeyFromPEM(privateKey)
-		if err != nil {
-			ctx.WithError(err).Fatal("Could not parse private kay")
-		}
-		token, err := tokenBuilder.SignedString(key)
+		token, err := tokenBuilder.SignedString(privKey)
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not sign JWT")
 		}

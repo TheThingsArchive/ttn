@@ -9,19 +9,31 @@ import (
 	"github.com/spf13/viper"
 )
 
-// genkeysCmd represents the genkeys command
-func genkeysCmd(component string) *cobra.Command {
+func genKeypairCmd(component string) *cobra.Command {
 	return &cobra.Command{
-		Use:   "genkeys",
-		Short: "Generate keys and certificate",
-		Long:  `ttn genkeys generates keys and a TLS certificate for this component`,
+		Use:   "gen-keypair",
+		Short: "Generate a public/private keypair",
+		Long:  `ttn gen-keypair generates a public/private keypair`,
+		Run: func(cmd *cobra.Command, args []string) {
+			if err := security.GenerateKeypair(viper.GetString("key-dir")); err != nil {
+				ctx.WithError(err).Fatal("Could not generate keypair")
+			}
+			ctx.WithField("TLSDir", viper.GetString("key-dir")).Info("Done")
+		},
+	}
+}
+
+func genCertCmd(component string) *cobra.Command {
+	return &cobra.Command{
+		Use:   "gen-cert",
+		Short: "Generate a TLS certificate",
+		Long:  `ttn gen-cert generates a TLS Certificate`,
 		Run: func(cmd *cobra.Command, args []string) {
 			var names []string
 			names = append(names, viper.GetString(component+".server-address-announce"))
 			names = append(names, args...)
-			err := security.GenerateKeys(viper.GetString("key-dir"), names...)
-			if err != nil {
-				ctx.WithError(err).Fatal("Could not generate keys")
+			if err := security.GenerateCert(viper.GetString("key-dir"), names...); err != nil {
+				ctx.WithError(err).Fatal("Could not generate certificate")
 			}
 			ctx.WithField("TLSDir", viper.GetString("key-dir")).Info("Done")
 		},
@@ -29,8 +41,13 @@ func genkeysCmd(component string) *cobra.Command {
 }
 
 func init() {
-	routerCmd.AddCommand(genkeysCmd("router"))
-	brokerCmd.AddCommand(genkeysCmd("broker"))
-	handlerCmd.AddCommand(genkeysCmd("handler"))
-	networkserverCmd.AddCommand(genkeysCmd("networkserver"))
+	routerCmd.AddCommand(genKeypairCmd("router"))
+	brokerCmd.AddCommand(genKeypairCmd("broker"))
+	handlerCmd.AddCommand(genKeypairCmd("handler"))
+	networkserverCmd.AddCommand(genKeypairCmd("networkserver"))
+
+	routerCmd.AddCommand(genCertCmd("router"))
+	brokerCmd.AddCommand(genCertCmd("broker"))
+	handlerCmd.AddCommand(genCertCmd("handler"))
+	networkserverCmd.AddCommand(genCertCmd("networkserver"))
 }

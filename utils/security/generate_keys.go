@@ -18,28 +18,41 @@ var (
 	validFor = 365 * 24 * time.Hour
 )
 
-func GenerateKeys(location string, hostnames ...string) error {
+// GenerateKeypair generates a new keypair in the given location
+func GenerateKeypair(location string) error {
 	// Generate private key
 	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
 		return err
 	}
-	privBytes, err := x509.MarshalECPrivateKey(key)
+
+	privPEM, err := PrivatePEM(key)
 	if err != nil {
 		return err
 	}
-	privPEM := pem.EncodeToMemory(&pem.Block{
-		Type:  "EC PRIVATE KEY",
-		Bytes: privBytes,
-	})
-	pubBytes, err := x509.MarshalPKIXPublicKey(key.Public())
+	pubPEM, err := PublicPEM(key)
 	if err != nil {
 		return err
 	}
-	pubPEM := pem.EncodeToMemory(&pem.Block{
-		Type:  "PUBLIC KEY",
-		Bytes: pubBytes,
-	})
+
+	err = ioutil.WriteFile(filepath.Clean(location+"/server.pub"), pubPEM, 0644)
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile(filepath.Clean(location+"/server.key"), privPEM, 0600)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// GenerateCert generates a certificate for the given hostnames in the given location
+func GenerateCert(location string, hostnames ...string) error {
+	privKey, err := LoadKeypair(location)
+	if err != nil {
+		return err
+	}
 
 	// Build Certificate
 	notBefore := time.Now()
@@ -57,8 +70,8 @@ func GenerateKeys(location string, hostnames ...string) error {
 		IsCA:                  true,
 		NotBefore:             notBefore,
 		NotAfter:              notAfter,
-		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
-		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth},
 		BasicConstraintsValid: true,
 	}
 	for _, h := range hostnames {
@@ -70,7 +83,7 @@ func GenerateKeys(location string, hostnames ...string) error {
 	}
 
 	// Generate certificate
-	certBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, key.Public(), key)
+	certBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, privKey.Public(), privKey)
 	if err != nil {
 		return err
 	}
@@ -79,14 +92,6 @@ func GenerateKeys(location string, hostnames ...string) error {
 		Bytes: certBytes,
 	})
 
-	err = ioutil.WriteFile(filepath.Clean(location+"/server.pub"), pubPEM, 0644)
-	if err != nil {
-		return err
-	}
-	err = ioutil.WriteFile(filepath.Clean(location+"/server.key"), privPEM, 0600)
-	if err != nil {
-		return err
-	}
 	err = ioutil.WriteFile(filepath.Clean(location+"/server.cert"), certPEM, 0644)
 	if err != nil {
 		return err
