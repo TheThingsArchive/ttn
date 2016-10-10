@@ -162,12 +162,12 @@ func TokenForScope(ctx log.Interface, scope string) string {
 }
 
 func Logout() error {
-	err := os.Remove(path.Join(viper.GetString("token-dir"), tokenFile()))
+	err := os.Remove(path.Join(GetDataDir(), tokenFile()))
 	if err != nil {
 		return err
 	}
 
-	err = os.Remove(path.Join(viper.GetString("token-dir"), derivedTokenFile()))
+	err = os.Remove(path.Join(GetDataDir(), derivedTokenFile()))
 	if err != nil && !os.IsNotExist(err) {
 		return err
 	}

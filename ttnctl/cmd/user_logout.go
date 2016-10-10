@@ -4,6 +4,8 @@
 package cmd
 
 import (
+	"os"
+
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/spf13/cobra"
 )
@@ -15,6 +17,10 @@ var userLogoutCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		err := util.Logout()
 		if err != nil {
+			if os.IsNotExist(err) {
+				ctx.Info("You were not logged in")
+				return
+			}
 			ctx.WithError(err).Fatal("Could not delete credentials")
 		}
 	},
