@@ -15,7 +15,6 @@ import (
 	"github.com/TheThingsNetwork/go-account-lib/cache"
 	"github.com/TheThingsNetwork/go-account-lib/claims"
 	"github.com/TheThingsNetwork/go-account-lib/tokenkey"
-	"github.com/TheThingsNetwork/ttn/api"
 	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	pb_noc "github.com/TheThingsNetwork/ttn/api/noc"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
@@ -129,13 +128,16 @@ func NewComponent(ctx log.Interface, serviceName string, announcedAddress string
 		go http.ListenAndServe(fmt.Sprintf(":%d", healthPort), nil)
 	}
 
-	if nocAddr := viper.GetString("noc-server"); nocAddr != "" {
-		conn, err := grpc.Dial(nocAddr, append(api.DialOptions, grpc.WithInsecure())...)
-		if err != nil {
-			return nil, err
+	if monitors := viper.GetStringMapString("monitor-servers"); len(monitors) != 0 {
+		component.Monitors = map[string]pb_noc.MonitorClient{}
+		for name, addr := range monitors {
+			var err error
+			component.Monitors[name], err = pb_noc.NewClient(addr)
+			if err != nil {
+				// Assuming grpc.WithBlock() is not set
+				return nil, err
+			}
 		}
-
-		component.Monitor = pb_noc.NewMonitorClient(conn)
 	}
 
 	return component, nil
@@ -155,7 +157,7 @@ const (
 type Component struct {
 	Identity         *pb_discovery.Announcement
 	Discovery        pb_discovery.Client
-	Monitor          pb_noc.MonitorClient
+	Monitors         map[string]pb_noc.MonitorClient
 	Ctx              log.Interface
 	AccessToken      string
 	privateKey       *ecdsa.PrivateKey

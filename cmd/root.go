@@ -84,7 +84,7 @@ var RootCmd = &cobra.Command{
 			"Description":     viper.GetString("description"),
 			"DiscoveryServer": viper.GetString("discovery-server"),
 			"AuthServers":     viper.GetStringMapString("auth-servers"),
-			"NOCServer":       viper.GetString("noc-server"),
+			"Monitors":        viper.GetStringMapString("monitor-servers"),
 		}).Info("Initializing The Things Network")
 	},
 	PersistentPostRun: func(cmd *cobra.Command, args []string) {
@@ -124,9 +124,6 @@ func init() {
 
 	RootCmd.PersistentFlags().String("discovery-server", "discover.thethingsnetwork.org:1900", "The address of the Discovery server")
 	viper.BindPFlag("discovery-server", RootCmd.PersistentFlags().Lookup("discovery-server"))
-
-	RootCmd.PersistentFlags().String("noc-server", "", "The address of the NOC server")
-	viper.BindPFlag("noc-server", RootCmd.PersistentFlags().Lookup("noc-server"))
 
 	viper.SetDefault("auth-servers", map[string]string{
 		"ttn-account": "https://account.thethingsnetwork.org",
