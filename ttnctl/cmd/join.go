@@ -116,7 +116,7 @@ var joinCmd = &cobra.Command{
 				ctx.Fatalf("No payload available in downlink response")
 			}
 
-			data, err := base64.RawStdEncoding.DecodeString(*pkt.Payload.TXPK.Data)
+			data, err := base64.RawStdEncoding.DecodeString(strings.Trim(*pkt.Payload.TXPK.Data, "=")) // Padding is optional
 			if err != nil {
 				ctx.Fatalf("Unable to decode data payload: %s", err)
 			}
@@ -166,7 +166,7 @@ var joinCmd = &cobra.Command{
 		if err != nil {
 			ctx.Fatalf("Couldn't construct LoRaWAN physical payload: %s", err)
 		}
-		encoded := strings.Trim(base64.StdEncoding.EncodeToString(data), "=")
+		encoded := base64.StdEncoding.EncodeToString(data) // This must be padded
 		payload := semtech.Packet{
 			Identifier: semtech.PUSH_DATA,
 			Token:      random.Token(),
