@@ -118,19 +118,15 @@ func (g *Gateway) pushUplinkToMonitor(ctx log.Interface, name string, uplink *pb
 		}
 	}()
 
-	ctx.Debug("g.monitor.uplink.RLock")
 	g.monitor.uplink.RLock()
 	stream, ok := g.monitor.uplink.streams[name]
-	ctx.Debug("g.monitor.uplink.RUnlock")
 	g.monitor.uplink.RUnlock()
 
 	if !ok {
-		ctx.Debug("g.monitor.uplink.Lock")
 		g.monitor.uplink.Lock()
 		defer g.monitor.uplink.Unlock()
 
 		if _, ok := g.monitor.uplink.streams[name]; !ok {
-			ctx.Debug("g.monitor.RLock")
 			g.monitor.RLock()
 			defer g.monitor.RUnlock()
 
@@ -140,22 +136,17 @@ func (g *Gateway) pushUplinkToMonitor(ctx log.Interface, name string, uplink *pb
 				return errors.New("Monitor not found")
 			}
 
-			ctx.Debug("cl.GatewayUplink")
 			if stream, err = cl.GatewayUplink(g.monitorContext()); err != nil {
 				// TODO check if err returned is GRPC error
 				err = errors.FromGRPCError(err)
 				ctx.WithError(err).Warn("Failed to open new uplink stream")
 				return err
 			}
-			ctx.Info("Opened new uplink stream")
 			g.monitor.uplink.streams[name] = stream
 
-			ctx.Debug("g.monitor.RUnlock")
 		}
-		ctx.Debug("g.monitor.uplink.RUnlock")
 	}
 
-	ctx.Debug("stream.Send(uplink)")
 	return stream.Send(uplink)
 }
 
