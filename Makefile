@@ -115,7 +115,7 @@ build: ttn ttnctl
 
 GOBIN ?= $(GOPATH)/bin
 
-link: ttn
+link: build
 	ln -sf $(PWD)/$(RELEASE_DIR)/ttn-$(GOOS)-$(GOARCH)$(GOEXE) $(GOBIN)/ttn
 	ln -sf $(PWD)/$(RELEASE_DIR)/ttnctl-$(GOOS)-$(GOARCH)$(GOEXE) $(GOBIN)/ttnctl
 
