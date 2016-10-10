@@ -4,6 +4,8 @@ import (
 	"io"
 	"sync"
 
+	"google.golang.org/grpc/metadata"
+
 	context "golang.org/x/net/context"
 
 	pb "github.com/TheThingsNetwork/ttn/api/gateway"
@@ -14,9 +16,10 @@ import (
 )
 
 func (g *Gateway) monitorContext() (ctx context.Context) {
-	ctx = context.WithValue(context.Background(), "id", g.ID)
-	ctx = context.WithValue(ctx, "token", g.Token)
-	return ctx
+	return metadata.NewContext(context.Background(), metadata.Pairs(
+		"id", g.ID,
+		"token", g.Token,
+	))
 }
 
 type monitorConn struct {
