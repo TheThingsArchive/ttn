@@ -43,6 +43,9 @@ type monitorConn struct {
 }
 
 func (g *Gateway) SetMonitors(clients map[string]pb_noc.MonitorClient) {
+	g.monitor.Lock()
+	defer g.monitor.Unlock()
+
 	g.monitor = NewMonitorConn(clients)
 }
 
