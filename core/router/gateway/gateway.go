@@ -9,7 +9,6 @@ import (
 
 	pb "github.com/TheThingsNetwork/ttn/api/gateway"
 	pb_router "github.com/TheThingsNetwork/ttn/api/router"
-	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/apex/log"
 )
 
@@ -59,18 +58,11 @@ func (g *Gateway) HandleStatus(status *pb.Status) (err error) {
 	g.updateLastSeen()
 
 	if g.monitor != nil {
-		go func() {
-			cl, err := g.statusMonitor()
-			if err != nil {
-				g.Ctx.WithError(errors.FromGRPCError(err)).Warn("Failed to establish status connection to the monitor")
-			}
-
-			if err = cl.Send(status); err != nil {
-				g.Ctx.WithError(errors.FromGRPCError(err)).Warn("Monitor status push failed")
-			} else {
-				g.Ctx.Info("Pushed status to monitor")
-			}
-		}()
+		g.monitor.RLock()
+		for name := range g.monitor.clients {
+			go g.pushStatusToMonitor(g.Ctx.WithField("monitor", name), name, status)
+		}
+		g.monitor.RUnlock()
 	}
 	return nil
 }
@@ -83,18 +75,11 @@ func (g *Gateway) HandleUplink(uplink *pb_router.UplinkMessage) (err error) {
 	g.updateLastSeen()
 
 	if g.monitor != nil {
-		go func() {
-			cl, err := g.uplinkMonitor()
-			if err != nil {
-				g.Ctx.WithError(errors.FromGRPCError(err)).Warn("Failed to establish uplink connection to the monitor")
-			}
-
-			if err = cl.Send(uplink); err != nil {
-				g.Ctx.WithError(errors.FromGRPCError(err)).Warn("Monitor uplink push failed")
-			} else {
-				g.Ctx.Info("Pushed uplink to monitor")
-			}
-		}()
+		g.monitor.RLock()
+		for name := range g.monitor.clients {
+			go g.pushUplinkToMonitor(g.Ctx.WithField("monitor", name), name, uplink)
+		}
+		g.monitor.RUnlock()
 	}
 	return nil
 }
@@ -107,18 +92,11 @@ func (g *Gateway) HandleDownlink(identifier string, downlink *pb_router.Downlink
 	}
 
 	if g.monitor != nil {
-		go func() {
-			cl, err := g.downlinkMonitor()
-			if err != nil {
-				g.Ctx.WithError(errors.FromGRPCError(err)).Warn("Failed to establish downlink connection to the monitor")
-			}
-
-			if err = cl.Send(downlink); err != nil {
-				g.Ctx.WithError(errors.FromGRPCError(err)).Warn("Monitor downlink push failed")
-			} else {
-				g.Ctx.Info("Pushed downlink to monitor")
-			}
-		}()
+		g.monitor.RLock()
+		for name := range g.monitor.clients {
+			go g.pushDownlinkToMonitor(ctx.WithField("monitor", name), name, downlink)
+		}
+		g.monitor.RUnlock()
 	}
 	return nil
 }

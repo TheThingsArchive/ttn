@@ -1,11 +1,16 @@
 package gateway
 
 import (
+	"io"
 	"sync"
 
 	context "golang.org/x/net/context"
 
+	pb "github.com/TheThingsNetwork/ttn/api/gateway"
 	pb_noc "github.com/TheThingsNetwork/ttn/api/noc"
+	pb_router "github.com/TheThingsNetwork/ttn/api/router"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
+	"github.com/apex/log"
 )
 
 func (g *Gateway) monitorContext() (ctx context.Context) {
@@ -15,88 +20,190 @@ func (g *Gateway) monitorContext() (ctx context.Context) {
 }
 
 type monitorConn struct {
-	client pb_noc.MonitorClient
+	clients map[string]pb_noc.MonitorClient
+	sync.RWMutex
+
+	status struct {
+		streams map[string]pb_noc.Monitor_GatewayStatusClient
+		sync.RWMutex
+	}
 
 	uplink struct {
-		client pb_noc.Monitor_GatewayUplinkClient
-		sync.Mutex
+		streams map[string]pb_noc.Monitor_GatewayUplinkClient
+		sync.RWMutex
 	}
+
 	downlink struct {
-		client pb_noc.Monitor_GatewayDownlinkClient
-		sync.Mutex
-	}
-	status struct {
-		client pb_noc.Monitor_GatewayStatusClient
-		sync.Mutex
+		streams map[string]pb_noc.Monitor_GatewayDownlinkClient
+		sync.RWMutex
 	}
 }
 
-func (g *Gateway) SetMonitor(client pb_noc.MonitorClient) {
-	g.monitor = &monitorConn{client: client}
+func (g *Gateway) SetMonitors(clients map[string]pb_noc.MonitorClient) {
+	g.monitor = NewMonitorConn(clients)
 }
 
-func (g *Gateway) uplinkMonitor() (client pb_noc.Monitor_GatewayUplinkClient, err error) {
-	g.monitor.uplink.Lock()
-	defer g.monitor.uplink.Unlock()
+func NewMonitorConn(clients map[string]pb_noc.MonitorClient) (conn *monitorConn) {
+	conn = &monitorConn{clients: clients}
+	conn.uplink.streams = map[string]pb_noc.Monitor_GatewayUplinkClient{}
+	conn.downlink.streams = map[string]pb_noc.Monitor_GatewayDownlinkClient{}
+	conn.status.streams = map[string]pb_noc.Monitor_GatewayStatusClient{}
+	return conn
+}
 
-	if g.monitor.uplink.client != nil {
-		return g.monitor.uplink.client, nil
+func (g *Gateway) pushStatusToMonitor(ctx log.Interface, name string, status *pb.Status) (err error) {
+	defer func() {
+		switch err {
+		case nil:
+			ctx.Info("Pushed status to monitor")
+
+		case io.EOF:
+			ctx.Info("Stream closed, retrying")
+			g.monitor.status.Lock()
+			delete(g.monitor.status.streams, name)
+			g.monitor.status.Unlock()
+			err = g.pushStatusToMonitor(ctx, name, status)
+
+		default:
+			ctx.WithError(errors.FromGRPCError(err)).Warn("Monitor status push failed")
+		}
+	}()
+
+	g.monitor.status.RLock()
+	stream, ok := g.monitor.status.streams[name]
+	g.monitor.status.RUnlock()
+
+	if !ok {
+		g.monitor.status.Lock()
+		if _, ok := g.monitor.status.streams[name]; !ok {
+			g.monitor.RLock()
+			cl, ok := g.monitor.clients[name]
+			if !ok {
+				// Should not happen
+				return errors.New("Monitor not found")
+			}
+
+			if stream, err = cl.GatewayStatus(g.monitorContext()); err != nil {
+				// TODO check if err returned is GRPC error
+				err = errors.FromGRPCError(err)
+				ctx.WithError(err).Warn("Failed to open new status stream")
+				return err
+			}
+			ctx.Info("Opened new status stream")
+			g.monitor.status.streams[name] = stream
+
+			g.monitor.RUnlock()
+		}
+		g.monitor.status.Unlock()
 	}
-	return g.connectUplinkMonitor()
+
+	return stream.Send(status)
 }
 
-func (g *Gateway) downlinkMonitor() (client pb_noc.Monitor_GatewayDownlinkClient, err error) {
-	g.monitor.downlink.Lock()
-	defer g.monitor.downlink.Unlock()
+func (g *Gateway) pushUplinkToMonitor(ctx log.Interface, name string, uplink *pb_router.UplinkMessage) (err error) {
+	defer func() {
+		switch err {
+		case nil:
+			ctx.Info("Pushed uplink to monitor")
 
-	if g.monitor.downlink.client != nil {
-		return g.monitor.downlink.client, nil
+		case io.EOF:
+			ctx.Info("Stream closed, retrying")
+			g.monitor.uplink.Lock()
+			delete(g.monitor.uplink.streams, name)
+			g.monitor.uplink.Unlock()
+			err = g.pushUplinkToMonitor(ctx, name, uplink)
+
+		default:
+			ctx.WithError(errors.FromGRPCError(err)).Warn("Monitor uplink push failed")
+		}
+	}()
+
+	ctx.Debug("g.monitor.uplink.RLock")
+	g.monitor.uplink.RLock()
+	stream, ok := g.monitor.uplink.streams[name]
+	ctx.Debug("g.monitor.uplink.RUnlock")
+	g.monitor.uplink.RUnlock()
+
+	if !ok {
+		ctx.Debug("g.monitor.uplink.Lock")
+		g.monitor.uplink.Lock()
+		defer g.monitor.uplink.Unlock()
+
+		if _, ok := g.monitor.uplink.streams[name]; !ok {
+			ctx.Debug("g.monitor.RLock")
+			g.monitor.RLock()
+			defer g.monitor.RUnlock()
+
+			cl, ok := g.monitor.clients[name]
+			if !ok {
+				// Should not happen
+				return errors.New("Monitor not found")
+			}
+
+			ctx.Debug("cl.GatewayUplink")
+			if stream, err = cl.GatewayUplink(g.monitorContext()); err != nil {
+				// TODO check if err returned is GRPC error
+				err = errors.FromGRPCError(err)
+				ctx.WithError(err).Warn("Failed to open new uplink stream")
+				return err
+			}
+			ctx.Info("Opened new uplink stream")
+			g.monitor.uplink.streams[name] = stream
+
+			ctx.Debug("g.monitor.RUnlock")
+		}
+		ctx.Debug("g.monitor.uplink.RUnlock")
 	}
-	return g.connectDownlinkMonitor()
+
+	ctx.Debug("stream.Send(uplink)")
+	return stream.Send(uplink)
 }
 
-func (g *Gateway) statusMonitor() (client pb_noc.Monitor_GatewayStatusClient, err error) {
-	g.monitor.status.Lock()
-	defer g.monitor.status.Unlock()
+func (g *Gateway) pushDownlinkToMonitor(ctx log.Interface, name string, downlink *pb_router.DownlinkMessage) (err error) {
+	defer func() {
+		switch err {
+		case nil:
+			ctx.Info("Pushed downlink to monitor")
 
-	if g.monitor.status.client != nil {
-		return g.monitor.status.client, nil
+		case io.EOF:
+			ctx.Info("Stream closed, retrying")
+			g.monitor.downlink.Lock()
+			delete(g.monitor.downlink.streams, name)
+			g.monitor.downlink.Unlock()
+			err = g.pushDownlinkToMonitor(ctx, name, downlink)
+
+		default:
+			ctx.WithError(errors.FromGRPCError(err)).Warn("Monitor downlink push failed")
+		}
+	}()
+
+	g.monitor.downlink.RLock()
+	stream, ok := g.monitor.downlink.streams[name]
+	g.monitor.downlink.RUnlock()
+
+	if !ok {
+		g.monitor.downlink.Lock()
+		if _, ok := g.monitor.downlink.streams[name]; !ok {
+			g.monitor.RLock()
+			cl, ok := g.monitor.clients[name]
+			if !ok {
+				// Should not happen
+				return errors.New("Monitor not found")
+			}
+
+			if stream, err = cl.GatewayDownlink(g.monitorContext()); err != nil {
+				// TODO check if err returned is GRPC error
+				err = errors.FromGRPCError(err)
+				ctx.WithError(err).Warn("Failed to open new downlink stream")
+				return err
+			}
+			ctx.Info("Opened new downlink stream")
+			g.monitor.downlink.streams[name] = stream
+
+			g.monitor.RUnlock()
+		}
+		g.monitor.downlink.Unlock()
 	}
-	return g.connectStatusMonitor()
-}
 
-func (g *Gateway) connectUplinkMonitor() (client pb_noc.Monitor_GatewayUplinkClient, err error) {
-	if client, err = connectUplinkMonitor(g.monitorContext(), g.monitor.client); err != nil {
-		return nil, err
-	}
-	g.monitor.uplink.client = client
-	return client, nil
-}
-
-func (g *Gateway) connectDownlinkMonitor() (client pb_noc.Monitor_GatewayDownlinkClient, err error) {
-	if client, err = connectDownlinkMonitor(g.monitorContext(), g.monitor.client); err != nil {
-		return nil, err
-	}
-	g.monitor.downlink.client = client
-	return client, nil
-}
-
-func (g *Gateway) connectStatusMonitor() (client pb_noc.Monitor_GatewayStatusClient, err error) {
-	if client, err = connectStatusMonitor(g.monitorContext(), g.monitor.client); err != nil {
-		return nil, err
-	}
-	g.monitor.status.client = client
-	return client, nil
-}
-
-func connectDownlinkMonitor(ctx context.Context, client pb_noc.MonitorClient) (pb_noc.Monitor_GatewayDownlinkClient, error) {
-	return client.GatewayDownlink(ctx)
-}
-
-func connectUplinkMonitor(ctx context.Context, client pb_noc.MonitorClient) (pb_noc.Monitor_GatewayUplinkClient, error) {
-	return client.GatewayUplink(ctx)
-}
-
-func connectStatusMonitor(ctx context.Context, client pb_noc.MonitorClient) (pb_noc.Monitor_GatewayStatusClient, error) {
-	return client.GatewayStatus(ctx)
+	return stream.Send(downlink)
 }
