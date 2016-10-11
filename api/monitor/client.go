@@ -1,4 +1,4 @@
-package noc
+package monitor
 
 import (
 	"github.com/TheThingsNetwork/ttn/api"

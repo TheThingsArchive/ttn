@@ -9,7 +9,7 @@ import (
 	context "golang.org/x/net/context"
 
 	pb "github.com/TheThingsNetwork/ttn/api/gateway"
-	pb_noc "github.com/TheThingsNetwork/ttn/api/noc"
+	pb_noc "github.com/TheThingsNetwork/ttn/api/monitor"
 	pb_router "github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/apex/log"

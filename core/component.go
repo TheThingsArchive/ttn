@@ -16,7 +16,7 @@ import (
 	"github.com/TheThingsNetwork/go-account-lib/claims"
 	"github.com/TheThingsNetwork/go-account-lib/tokenkey"
 	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
-	pb_noc "github.com/TheThingsNetwork/ttn/api/noc"
+	pb_noc "github.com/TheThingsNetwork/ttn/api/monitor"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/logging"
 	"github.com/TheThingsNetwork/ttn/utils/security"
