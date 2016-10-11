@@ -147,7 +147,7 @@ func TestRandomTopicPublish(t *testing.T) {
 
 func ExampleNewClient() {
 	ctx := log.WithField("Example", "NewClient")
-	exampleClient := NewClient(ctx, "ttnctl", "my-app-id", "my-access-key", "staging.thethingsnetwork.org:1883")
+	exampleClient := NewClient(ctx, "ttnctl", "my-app-id", "my-access-key", "eu.thethings.network:1883")
 	err := exampleClient.Connect()
 	if err != nil {
 		ctx.WithError(err).Fatal("Could not connect")
