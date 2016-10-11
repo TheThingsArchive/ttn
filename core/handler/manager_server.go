@@ -110,6 +110,15 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*empty.E
 			}
 		}
 	} else { // When this is a create
+		existingDevices, err := h.handler.devices.ListForApp(in.AppId)
+		if err != nil {
+			return nil, err
+		}
+		for _, existingDevice := range existingDevices {
+			if existingDevice.AppEUI == *lorawan.AppEui && existingDevice.DevEUI == *lorawan.DevEui {
+				return nil, errors.BuildGRPCError(errors.NewErrAlreadyExists("Device with AppEUI and DevEUI"))
+			}
+		}
 		dev = new(device.Device)
 	}
 	fields := []string{}
