@@ -67,7 +67,7 @@ func (n *networkServerManager) GetDevice(ctx context.Context, in *pb_lorawan.Dev
 }
 
 func (n *networkServerManager) SetDevice(ctx context.Context, in *pb_lorawan.Device) (*empty.Empty, error) {
-	_, err := n.getDevice(ctx, &pb_lorawan.DeviceIdentifier{AppEui: in.AppEui, DevEui: in.DevEui})
+	dev, err := n.getDevice(ctx, &pb_lorawan.DeviceIdentifier{AppEui: in.AppEui, DevEui: in.DevEui})
 	if err != nil && errors.GetErrType(err) != errors.NotFound {
 		return nil, errors.BuildGRPCError(err)
 	}
@@ -76,26 +76,57 @@ func (n *networkServerManager) SetDevice(ctx context.Context, in *pb_lorawan.Dev
 		return nil, grpcErrf(codes.InvalidArgument, "Invalid Device Identifier")
 	}
 
-	updated := &device.Device{
-		AppID:    in.AppId,
-		AppEUI:   *in.AppEui,
-		DevID:    in.DevId,
-		DevEUI:   *in.DevEui,
-		FCntUp:   in.FCntUp,
-		FCntDown: in.FCntDown,
-		Options: device.Options{
+	if dev == nil {
+		dev = new(device.Device)
+	}
+	fields := []string{}
+
+	if dev.AppID != in.AppId {
+		dev.AppID = in.AppId
+		fields = append(fields, "app_id")
+	}
+
+	if dev.AppEUI != *in.AppEui {
+		dev.AppEUI = *in.AppEui
+		fields = append(fields, "app_eui")
+	}
+
+	if dev.DevID != in.DevId {
+		dev.DevID = in.DevId
+		fields = append(fields, "dev_id")
+	}
+
+	if dev.DevEUI != *in.DevEui {
+		dev.DevEUI = *in.DevEui
+		fields = append(fields, "dev_eui")
+	}
+
+	if dev.FCntUp != in.FCntUp {
+		dev.FCntUp = in.FCntUp
+		fields = append(fields, "f_cnt_up")
+	}
+
+	if dev.FCntDown != in.FCntDown {
+		dev.FCntDown = in.FCntDown
+		fields = append(fields, "f_cnt_down")
+	}
+
+	if dev.Options.DisableFCntCheck != in.DisableFCntCheck || dev.Options.Uses32BitFCnt != in.Uses32BitFCnt || dev.Options.ActivationConstraints != in.ActivationConstraints {
+		dev.Options = device.Options{
 			DisableFCntCheck:      in.DisableFCntCheck,
 			Uses32BitFCnt:         in.Uses32BitFCnt,
 			ActivationConstraints: in.ActivationConstraints,
-		},
+		}
+		fields = append(fields, "options")
 	}
 
 	if in.NwkSKey != nil && in.DevAddr != nil {
-		updated.DevAddr = *in.DevAddr
-		updated.NwkSKey = *in.NwkSKey
+		dev.DevAddr = *in.DevAddr
+		dev.NwkSKey = *in.NwkSKey
+		fields = append(fields, "dev_addr", "nwk_s_key")
 	}
 
-	err = n.networkServer.devices.Set(updated)
+	err = n.networkServer.devices.Set(dev, fields...)
 	if err != nil {
 		return nil, errors.BuildGRPCError(err)
 	}

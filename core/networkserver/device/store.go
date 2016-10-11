@@ -120,7 +120,7 @@ func (s *deviceStore) Activate(appEUI types.AppEUI, devEUI types.DevEUI, devAddr
 	dev.NwkSKey = nwkSKey
 	dev.FCntUp = 0
 	dev.FCntDown = 0
-	return s.Set(dev)
+	return s.Set(dev, "last_seen", "dev_addr", "nwk_s_key", "f_cnt_up", "f_cnt_down")
 }
 
 func (s *deviceStore) Delete(appEUI types.AppEUI, devEUI types.DevEUI) error {
@@ -249,32 +249,37 @@ func (s *redisDeviceStore) GetWithAddress(devAddr types.DevAddr) ([]*Device, err
 func (s *redisDeviceStore) Set(new *Device, fields ...string) error {
 	if len(fields) == 0 {
 		fields = DeviceProperties
+	} else {
+		fields = append(fields, "updated_at")
 	}
 
 	key := fmt.Sprintf("%s:%s:%s", redisDevicePrefix, new.AppEUI, new.DevEUI)
 
 	// Check for old DevAddr
-	if devAddr, err := s.client.HGet(key, "dev_addr").Result(); err == nil {
-		// Delete old DevAddr
-		if devAddr != "" {
-			err := s.client.SRem(fmt.Sprintf("%s:%s", redisDevAddrPrefix, devAddr), key).Err()
-			if err != nil {
-				return err
-			}
-		}
+	oldDevAddrStr, err := s.client.HGet(key, "dev_addr").Result()
+	if err != nil && err != redis.Nil {
+		return err
 	}
+	oldDevAddr, _ := types.ParseDevAddr(oldDevAddrStr)
 
 	new.UpdatedAt = time.Now()
 	dmap, err := new.ToStringStringMap(fields...)
 	if err != nil {
 		return err
 	}
-	s.client.HMSetMap(key, dmap)
+	if err := s.client.HMSetMap(key, dmap).Err(); err != nil {
+		return err
+	}
 
-	if !new.DevAddr.IsEmpty() && !new.NwkSKey.IsEmpty() {
-		err := s.client.SAdd(fmt.Sprintf("%s:%s", redisDevAddrPrefix, new.DevAddr), key).Err()
-		if err != nil {
+	// Update DevAddr lookup if needed
+	if new.DevAddr != oldDevAddr {
+		if err := s.client.SRem(fmt.Sprintf("%s:%s", redisDevAddrPrefix, oldDevAddr), key).Err(); err != nil && err != redis.Nil {
 			return err
+		}
+		if !new.DevAddr.IsEmpty() {
+			if err := s.client.SAdd(fmt.Sprintf("%s:%s", redisDevAddrPrefix, new.DevAddr), key).Err(); err != nil {
+				return err
+			}
 		}
 	}
 
