@@ -67,7 +67,7 @@ func (f *UplinkFunctions) Decode(payload []byte) (map[string]interface{}, error)
 
 	vm := otto.New()
 	vm.Set("payload", payload)
-	value, err := runUnsafeCode(vm, fmt.Sprintf("(%s)(payload)", f.Decoder), timeOut)
+	value, err := runUnsafeCode(vm, fmt.Sprintf("(%s)(payload.slice(0))", f.Decoder), timeOut)
 	if err != nil {
 		return nil, err
 	}
