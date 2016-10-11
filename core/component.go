@@ -15,6 +15,7 @@ import (
 	"github.com/TheThingsNetwork/go-account-lib/cache"
 	"github.com/TheThingsNetwork/go-account-lib/claims"
 	"github.com/TheThingsNetwork/go-account-lib/tokenkey"
+	"github.com/TheThingsNetwork/ttn/api"
 	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	pb_noc "github.com/TheThingsNetwork/ttn/api/noc"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
@@ -126,6 +127,15 @@ func NewComponent(ctx log.Interface, serviceName string, announcedAddress string
 			}
 		})
 		go http.ListenAndServe(fmt.Sprintf(":%d", healthPort), nil)
+	}
+
+	if nocAddr := viper.GetString("noc-server"); nocAddr != "" {
+		conn, err := grpc.Dial(nocAddr, append(api.DialOptions, grpc.WithInsecure())...)
+		if err != nil {
+			return nil, err
+		}
+
+		component.Monitor = pb_noc.NewMonitorClient(conn)
 	}
 
 	return component, nil
