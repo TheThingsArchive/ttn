@@ -140,6 +140,10 @@ var devicesSetCmd = &cobra.Command{
 			dev.GetLorawanDevice().Uses32BitFCnt = false
 		}
 
+		if dev.GetLorawanDevice().Uses32BitFCnt && dev.GetLorawanDevice().DisableFCntCheck {
+			ctx.Warn("Using both the DisableFCntCheck and the Uses32BitFCnt options might break routing for this device")
+		}
+
 		err = manager.SetDevice(dev)
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not update Device")

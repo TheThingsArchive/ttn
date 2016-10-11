@@ -96,6 +96,10 @@ var devicesInfoCmd = &cobra.Command{
 				options = append(options, "Uses32BitFCnt")
 			}
 			fmt.Printf("    Options: %s\n", strings.Join(options, ", "))
+
+			if lorawan.Uses32BitFCnt && lorawan.DisableFCntCheck {
+				ctx.Warn("Using both the DisableFCntCheck and the Uses32BitFCnt options might break routing for this device")
+			}
 		}
 
 	},
