@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	pb "github.com/TheThingsNetwork/ttn/api/gateway"
-	pb_noc "github.com/TheThingsNetwork/ttn/api/monitor"
+	pb_monitor "github.com/TheThingsNetwork/ttn/api/monitor"
 	pb_router "github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/apex/log"
@@ -21,33 +21,33 @@ func (g *Gateway) monitorContext() (ctx context.Context) {
 }
 
 type monitorConn struct {
-	clients map[string]pb_noc.MonitorClient
+	clients map[string]pb_monitor.MonitorClient
 
 	status struct {
-		streams map[string]pb_noc.Monitor_GatewayStatusClient
+		streams map[string]pb_monitor.Monitor_GatewayStatusClient
 		sync.RWMutex
 	}
 
 	uplink struct {
-		streams map[string]pb_noc.Monitor_GatewayUplinkClient
+		streams map[string]pb_monitor.Monitor_GatewayUplinkClient
 		sync.RWMutex
 	}
 
 	downlink struct {
-		streams map[string]pb_noc.Monitor_GatewayDownlinkClient
+		streams map[string]pb_monitor.Monitor_GatewayDownlinkClient
 		sync.RWMutex
 	}
 }
 
-func (g *Gateway) SetMonitors(clients map[string]pb_noc.MonitorClient) {
+func (g *Gateway) SetMonitors(clients map[string]pb_monitor.MonitorClient) {
 	g.monitor = NewMonitorConn(clients)
 }
 
-func NewMonitorConn(clients map[string]pb_noc.MonitorClient) (conn *monitorConn) {
+func NewMonitorConn(clients map[string]pb_monitor.MonitorClient) (conn *monitorConn) {
 	conn = &monitorConn{clients: clients}
-	conn.uplink.streams = make(map[string]pb_noc.Monitor_GatewayUplinkClient)
-	conn.downlink.streams = make(map[string]pb_noc.Monitor_GatewayDownlinkClient)
-	conn.status.streams = make(map[string]pb_noc.Monitor_GatewayStatusClient)
+	conn.uplink.streams = make(map[string]pb_monitor.Monitor_GatewayUplinkClient)
+	conn.downlink.streams = make(map[string]pb_monitor.Monitor_GatewayDownlinkClient)
+	conn.status.streams = make(map[string]pb_monitor.Monitor_GatewayStatusClient)
 	return conn
 }
 
