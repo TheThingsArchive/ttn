@@ -124,12 +124,20 @@ var devicesSetCmd = &cobra.Command{
 			dev.GetLorawanDevice().FCntDown = uint32(in)
 		}
 
-		if in, err := cmd.Flags().GetBool("disable-fcnt-check"); err == nil {
-			dev.GetLorawanDevice().DisableFCntCheck = in
+		if in, err := cmd.Flags().GetBool("enable-fcnt-check"); err == nil && in {
+			dev.GetLorawanDevice().DisableFCntCheck = false
 		}
 
-		if in, err := cmd.Flags().GetBool("32-bit-fcnt"); err == nil {
-			dev.GetLorawanDevice().Uses32BitFCnt = in
+		if in, err := cmd.Flags().GetBool("disable-fcnt-check"); err == nil && in {
+			dev.GetLorawanDevice().DisableFCntCheck = true
+		}
+
+		if in, err := cmd.Flags().GetBool("32-bit-fcnt"); err == nil && in {
+			dev.GetLorawanDevice().Uses32BitFCnt = true
+		}
+
+		if in, err := cmd.Flags().GetBool("16-bit-fcnt"); err == nil && in {
+			dev.GetLorawanDevice().Uses32BitFCnt = false
 		}
 
 		err = manager.SetDevice(dev)
@@ -160,5 +168,7 @@ func init() {
 	devicesSetCmd.Flags().Int("fcnt-down", -1, "Set FCnt Down")
 
 	devicesSetCmd.Flags().Bool("disable-fcnt-check", false, "Disable FCnt check")
+	devicesSetCmd.Flags().Bool("enable-fcnt-check", false, "Enable FCnt check (default)")
 	devicesSetCmd.Flags().Bool("32-bit-fcnt", false, "Use 32 bit FCnt")
+	devicesSetCmd.Flags().Bool("16-bit-fcnt", false, "Use 16 bit FCnt (default)")
 }
