@@ -4,6 +4,8 @@
 package cmd
 
 import (
+	"os"
+
 	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
@@ -46,6 +48,13 @@ var devicesSetCmd = &cobra.Command{
 		// Do all updates
 
 		if in, err := cmd.Flags().GetString("app-eui"); err == nil && in != "" {
+
+			ctx.Warn("Manually changing the AppEUI of a device might break routing for this device")
+			if override, _ := cmd.Flags().GetBool("override"); !override {
+				ctx.Warnf("Use the --override flag if you're really sure you want to do this")
+				os.Exit(0)
+			}
+
 			appEUI, err := types.ParseAppEUI(in)
 			if err != nil {
 				ctx.Fatalf("Invalid AppEUI: %s", err)
@@ -54,6 +63,13 @@ var devicesSetCmd = &cobra.Command{
 		}
 
 		if in, err := cmd.Flags().GetString("dev-eui"); err == nil && in != "" {
+
+			ctx.Warn("Manually changing the DevEUI of a device might break routing for this device")
+			if override, _ := cmd.Flags().GetBool("override"); !override {
+				ctx.Warnf("Use the --override flag if you're really sure you want to do this")
+				os.Exit(0)
+			}
+
 			devEUI, err := types.ParseDevEUI(in)
 			if err != nil {
 				ctx.Fatalf("Invalid DevEUI: %s", err)
@@ -62,11 +78,17 @@ var devicesSetCmd = &cobra.Command{
 		}
 
 		if in, err := cmd.Flags().GetString("dev-addr"); err == nil && in != "" {
+
+			ctx.Warn("Manually changing the DevAddr of a device might break routing for this device")
+			if override, _ := cmd.Flags().GetBool("override"); !override {
+				ctx.Warnf("Use the --override flag if you're really sure you want to do this")
+				os.Exit(0)
+			}
+
 			devAddr, err := types.ParseDevAddr(in)
 			if err != nil {
 				ctx.Fatalf("Invalid DevAddr: %s", err)
 			}
-			ctx.Warn("Using a DevAddr that was not issued by the NetworkServer could break connectivity")
 			dev.GetLorawanDevice().DevAddr = &devAddr
 		}
 
@@ -124,6 +146,8 @@ var devicesSetCmd = &cobra.Command{
 
 func init() {
 	devicesCmd.AddCommand(devicesSetCmd)
+
+	devicesSetCmd.Flags().Bool("override", false, "Override protection against breaking changes")
 
 	devicesSetCmd.Flags().String("app-eui", "", "Set AppEUI")
 	devicesSetCmd.Flags().String("dev-eui", "", "Set DevEUI")
