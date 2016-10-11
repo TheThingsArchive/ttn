@@ -73,7 +73,15 @@ func (n *networkServerManager) SetDevice(ctx context.Context, in *pb_lorawan.Dev
 	}
 
 	if !in.Validate() {
-		return nil, grpcErrf(codes.InvalidArgument, "Invalid Device Identifier")
+		return nil, grpcErrf(codes.InvalidArgument, "Invalid Device")
+	}
+
+	claims, err := n.networkServer.Component.ValidateTTNAuthContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if !claims.AppRight(in.AppId, rights.AppSettings) {
+		return nil, errors.NewErrPermissionDenied(fmt.Sprintf("No access to Application %s", dev.AppID))
 	}
 
 	if dev == nil {
