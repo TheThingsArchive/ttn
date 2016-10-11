@@ -166,6 +166,8 @@ func (s *redisDeviceStore) Get(appID, devID string) (*Device, error) {
 func (s *redisDeviceStore) Set(new *Device, fields ...string) error {
 	if len(fields) == 0 {
 		fields = DeviceProperties
+	} else {
+		fields = append(fields, "updated_at")
 	}
 
 	key := fmt.Sprintf("%s:%s:%s", redisDevicePrefix, new.AppID, new.DevID)

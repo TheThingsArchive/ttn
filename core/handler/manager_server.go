@@ -110,31 +110,51 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*empty.E
 			}
 		}
 	} else { // When this is a create
+		dev = new(device.Device)
+	}
+	fields := []string{}
 
+	if dev.AppID != in.AppId {
+		dev.AppID = in.AppId
+		fields = append(fields, "app_id")
 	}
 
-	updated := &device.Device{
-		AppID:  in.AppId,
-		DevID:  in.DevId,
-		AppEUI: *lorawan.AppEui,
-		DevEUI: *lorawan.DevEui,
+	if dev.AppEUI != *lorawan.AppEui {
+		dev.AppEUI = *lorawan.AppEui
+		fields = append(fields, "app_eui")
+	}
+
+	if dev.DevID != in.DevId {
+		dev.DevID = in.DevId
+		fields = append(fields, "dev_id")
+	}
+
+	if dev.DevEUI != *lorawan.DevEui {
+		dev.DevEUI = *lorawan.DevEui
+		fields = append(fields, "dev_eui")
 	}
 
 	if lorawan.DevAddr != nil {
-		updated.DevAddr = *lorawan.DevAddr
+		dev.DevAddr = *lorawan.DevAddr
+		fields = append(fields, "dev_addr")
 	}
 	if lorawan.NwkSKey != nil {
-		updated.NwkSKey = *lorawan.NwkSKey
+		dev.NwkSKey = *lorawan.NwkSKey
+		fields = append(fields, "nwk_s_key")
 	}
 	if lorawan.AppSKey != nil {
-		updated.AppSKey = *lorawan.AppSKey
+		dev.AppSKey = *lorawan.AppSKey
+		fields = append(fields, "app_s_key")
 	}
+
 	if lorawan.AppKey != nil {
-		updated.AppKey = *lorawan.AppKey
-		if dev != nil && dev.AppKey != *lorawan.AppKey { // When the AppKey of an existing device is changed
-			updated.UsedAppNonces = []device.AppNonce{}
-			updated.UsedDevNonces = []device.DevNonce{}
+		if dev.AppKey != *lorawan.AppKey { // When the AppKey of an existing device is changed
+			dev.UsedAppNonces = []device.AppNonce{}
+			dev.UsedDevNonces = []device.DevNonce{}
+			fields = append(fields, "used_dev_nonces", "used_app_nonces")
 		}
+		dev.AppKey = *lorawan.AppKey
+		fields = append(fields, "app_key")
 	}
 
 	nsUpdated := &pb_lorawan.Device{
@@ -161,7 +181,7 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*empty.E
 		return nil, errors.BuildGRPCError(errors.Wrap(errors.FromGRPCError(err), "Broker did not set device"))
 	}
 
-	err = h.handler.devices.Set(updated)
+	err = h.handler.devices.Set(dev, fields...)
 	if err != nil {
 		return nil, errors.BuildGRPCError(err)
 	}
@@ -292,7 +312,7 @@ func (h *handlerManager) RegisterApplication(ctx context.Context, in *pb.Applica
 }
 
 func (h *handlerManager) SetApplication(ctx context.Context, in *pb.Application) (*empty.Empty, error) {
-	_, err := h.getApplication(ctx, &pb.ApplicationIdentifier{AppId: in.AppId})
+	app, err := h.getApplication(ctx, &pb.ApplicationIdentifier{AppId: in.AppId})
 	if err != nil {
 		return nil, errors.BuildGRPCError(err)
 	}
@@ -301,13 +321,29 @@ func (h *handlerManager) SetApplication(ctx context.Context, in *pb.Application)
 		return nil, grpcErrf(codes.InvalidArgument, "Invalid Application")
 	}
 
-	err = h.handler.applications.Set(&application.Application{
-		AppID:     in.AppId,
-		Decoder:   in.Decoder,
-		Converter: in.Converter,
-		Validator: in.Validator,
-		Encoder:   in.Encoder,
-	})
+	fields := []string{}
+
+	if app.Decoder != in.Decoder {
+		app.Decoder = in.Decoder
+		fields = append(fields, "decoder")
+	}
+
+	if app.Converter != in.Converter {
+		app.Converter = in.Converter
+		fields = append(fields, "converter")
+	}
+
+	if app.Validator != in.Validator {
+		app.Validator = in.Validator
+		fields = append(fields, "validator")
+	}
+
+	if app.Encoder != in.Encoder {
+		app.Encoder = in.Encoder
+		fields = append(fields, "encoder")
+	}
+
+	err = h.handler.applications.Set(app)
 	if err != nil {
 		return nil, errors.BuildGRPCError(err)
 	}

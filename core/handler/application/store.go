@@ -117,6 +117,8 @@ func (s *redisApplicationStore) Get(appID string) (*Application, error) {
 func (s *redisApplicationStore) Set(new *Application, fields ...string) error {
 	if len(fields) == 0 {
 		fields = ApplicationProperties
+	} else {
+		fields = append(fields, "updated_at")
 	}
 
 	key := fmt.Sprintf("%s:%s", redisApplicationPrefix, new.AppID)
