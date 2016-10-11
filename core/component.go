@@ -129,7 +129,7 @@ func NewComponent(ctx log.Interface, serviceName string, announcedAddress string
 	}
 
 	if monitors := viper.GetStringMapString("monitor-servers"); len(monitors) != 0 {
-		component.Monitors = map[string]pb_noc.MonitorClient{}
+		component.Monitors = make(map[string]pb_noc.MonitorClient)
 		for name, addr := range monitors {
 			var err error
 			component.Monitors[name], err = pb_noc.NewClient(addr)

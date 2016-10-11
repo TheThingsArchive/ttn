@@ -45,9 +45,9 @@ func (g *Gateway) SetMonitors(clients map[string]pb_noc.MonitorClient) {
 
 func NewMonitorConn(clients map[string]pb_noc.MonitorClient) (conn *monitorConn) {
 	conn = &monitorConn{clients: clients}
-	conn.uplink.streams = map[string]pb_noc.Monitor_GatewayUplinkClient{}
-	conn.downlink.streams = map[string]pb_noc.Monitor_GatewayDownlinkClient{}
-	conn.status.streams = map[string]pb_noc.Monitor_GatewayStatusClient{}
+	conn.uplink.streams = make(map[string]pb_noc.Monitor_GatewayUplinkClient)
+	conn.downlink.streams = make(map[string]pb_noc.Monitor_GatewayDownlinkClient)
+	conn.status.streams = make(map[string]pb_noc.Monitor_GatewayStatusClient)
 	return conn
 }
 
