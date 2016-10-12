@@ -29,22 +29,19 @@ const (
 // $HOME/.ttnctl.yml
 func GetConfigFile() string {
 	flag := viper.GetString("config")
+	xdg := path.Join(os.Getenv("XDG_CONFIG_HOME"), "ttnctl", "config.yml")
+	homeyml := path.Join(os.Getenv("HOME"), ".ttnctl.yml")
+	homeyaml := path.Join(os.Getenv("HOME"), ".ttnctl.yaml")
 
-	xdg := os.Getenv("XDG_CONFIG_HOME")
-	if xdg != "" {
-		xdg = path.Join(xdg, "ttnctl", "config.yml")
-	}
-
-	home := os.Getenv("HOME")
-	if home != "" {
-		home = path.Join(home, ".ttnctl.yml")
-	}
-
-	for _, file := range []string{
+	try_files := []string{
 		flag,
 		xdg,
-		home,
-	} {
+		homeyml,
+		homeyaml,
+	}
+
+	// find a file that exists, and use that
+	for _, file := range try_files {
 		if file != "" {
 			if _, err := os.Stat(file); err == nil {
 				return file
@@ -52,7 +49,12 @@ func GetConfigFile() string {
 		}
 	}
 
-	return ""
+	// no file found, set up correct fallback
+	if os.Getenv("XDG_CONFIG_HOME") != "" {
+		return xdg
+	} else {
+		return homeyml
+	}
 }
 
 // GetDataDir returns the location of the data directory used for
