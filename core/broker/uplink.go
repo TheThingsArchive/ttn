@@ -89,6 +89,19 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) error {
 	for _, candidate := range getDevicesResp.Results {
 		nwkSKey := lorawan.AES128Key(*candidate.NwkSKey)
 		if candidate.Uses32BitFCnt {
+			if candidate.DisableFCntCheck {
+				// We should first check with the 16 bit counter
+				micChecks++
+				ok, err = phyPayload.ValidateMIC(nwkSKey)
+				if err != nil {
+					return err
+				}
+				if ok {
+					device = candidate
+					break
+				}
+			}
+			// Then set the full 32 bit counter and check again
 			macPayload.FHDR.FCnt = fcnt.GetFull(candidate.FCntUp, uint16(macPayload.FHDR.FCnt))
 		}
 		micChecks++
