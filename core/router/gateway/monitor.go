@@ -53,19 +53,10 @@ func NewMonitorConn(clients map[string]pb_monitor.MonitorClient) (conn *monitorC
 
 func (g *Gateway) pushStatusToMonitor(ctx log.Interface, name string, status *pb.Status) (err error) {
 	defer func() {
-		switch err {
-		case nil:
-			ctx.Debug("Pushed status to monitor")
-
-		case io.EOF:
-			ctx.Warn("Stream closed, retrying")
-			g.monitor.status.Lock()
-			delete(g.monitor.status.streams, name)
-			g.monitor.status.Unlock()
-			err = g.pushStatusToMonitor(ctx, name, status)
-
-		default:
+		if err != nil {
 			ctx.WithError(errors.FromGRPCError(err)).Warn("Monitor status push failed")
+		} else {
+			ctx.Debug("Pushed status to monitor")
 		}
 	}()
 
@@ -96,24 +87,23 @@ func (g *Gateway) pushStatusToMonitor(ctx log.Interface, name string, status *pb
 		g.monitor.status.Unlock()
 	}
 
-	return stream.Send(status)
+	if err = stream.Send(status); err == io.EOF {
+		ctx.Warn("Status stream closed")
+		g.monitor.status.Lock()
+		if g.monitor.status.streams[name] == stream {
+			delete(g.monitor.status.streams, name)
+		}
+		g.monitor.status.Unlock()
+	}
+	return err
 }
 
 func (g *Gateway) pushUplinkToMonitor(ctx log.Interface, name string, uplink *pb_router.UplinkMessage) (err error) {
 	defer func() {
-		switch err {
-		case nil:
-			ctx.Debug("Pushed uplink to monitor")
-
-		case io.EOF:
-			ctx.Warn("Stream closed, retrying")
-			g.monitor.uplink.Lock()
-			delete(g.monitor.uplink.streams, name)
-			g.monitor.uplink.Unlock()
-			err = g.pushUplinkToMonitor(ctx, name, uplink)
-
-		default:
+		if err != nil {
 			ctx.WithError(errors.FromGRPCError(err)).Warn("Monitor uplink push failed")
+		} else {
+			ctx.Debug("Pushed uplink to monitor")
 		}
 	}()
 
@@ -144,24 +134,23 @@ func (g *Gateway) pushUplinkToMonitor(ctx log.Interface, name string, uplink *pb
 		g.monitor.uplink.Unlock()
 	}
 
-	return stream.Send(uplink)
+	if err = stream.Send(uplink); err == io.EOF {
+		ctx.Warn("Uplink stream closed")
+		g.monitor.uplink.Lock()
+		if g.monitor.uplink.streams[name] == stream {
+			delete(g.monitor.uplink.streams, name)
+		}
+		g.monitor.uplink.Unlock()
+	}
+	return err
 }
 
 func (g *Gateway) pushDownlinkToMonitor(ctx log.Interface, name string, downlink *pb_router.DownlinkMessage) (err error) {
 	defer func() {
-		switch err {
-		case nil:
-			ctx.Debug("Pushed downlink to monitor")
-
-		case io.EOF:
-			ctx.Warn("Stream closed, retrying")
-			g.monitor.downlink.Lock()
-			delete(g.monitor.downlink.streams, name)
-			g.monitor.downlink.Unlock()
-			err = g.pushDownlinkToMonitor(ctx, name, downlink)
-
-		default:
+		if err != nil {
 			ctx.WithError(errors.FromGRPCError(err)).Warn("Monitor downlink push failed")
+		} else {
+			ctx.Debug("Pushed downlink to monitor")
 		}
 	}()
 
@@ -192,5 +181,13 @@ func (g *Gateway) pushDownlinkToMonitor(ctx log.Interface, name string, downlink
 		g.monitor.downlink.Unlock()
 	}
 
-	return stream.Send(downlink)
+	if err = stream.Send(downlink); err == io.EOF {
+		ctx.Warn("Downlink stream closed")
+		g.monitor.downlink.Lock()
+		if g.monitor.downlink.streams[name] == stream {
+			delete(g.monitor.downlink.streams, name)
+		}
+		g.monitor.downlink.Unlock()
+	}
+	return err
 }
