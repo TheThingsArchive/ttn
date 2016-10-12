@@ -79,7 +79,7 @@ func (s *redisKVStore) getForKeys(keys []string) (map[string]string, error) {
 	// Add all commands to pipeline
 	cmds := make(map[string]*redis.StringCmd)
 	for _, key := range keys {
-		cmds[key] = s.client.Get(key)
+		cmds[key] = pipe.Get(key)
 	}
 
 	// Execute pipeline

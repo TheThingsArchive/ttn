@@ -76,24 +76,40 @@ type redisApplicationStore struct {
 }
 
 func (s *redisApplicationStore) List() ([]*Application, error) {
-	var apps []*Application
 	keys, err := s.client.Keys(fmt.Sprintf("%s:*", redisApplicationPrefix)).Result()
 	if err != nil {
 		return nil, err
 	}
+
+	pipe := s.client.Pipeline()
+	defer pipe.Close()
+
+	// Add all commands to pipeline
+	cmds := make(map[string]*redis.StringStringMapCmd)
 	for _, key := range keys {
-		res, err := s.client.HGetAllMap(key).Result()
-		if err != nil {
-			return nil, err
-		}
-		application := &Application{}
-		err = application.FromStringStringMap(res)
-		if err != nil {
-			return nil, err
-		}
-		apps = append(apps, application)
+		cmds[key] = pipe.HGetAllMap(key)
 	}
-	return apps, nil
+
+	// Execute pipeline
+	_, err = pipe.Exec()
+	if err != nil {
+		return nil, err
+	}
+
+	// Get all results from pipeline
+	applications := make([]*Application, 0, len(keys))
+	for _, cmd := range cmds {
+		dmap, err := cmd.Result()
+		if err == nil {
+			application := &Application{}
+			err := application.FromStringStringMap(dmap)
+			if err == nil {
+				applications = append(applications, application)
+			}
+		}
+	}
+
+	return applications, nil
 }
 
 func (s *redisApplicationStore) Get(appID string) (*Application, error) {

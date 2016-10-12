@@ -166,7 +166,7 @@ func (s *redisDeviceStore) List() ([]*Device, error) {
 	// Add all commands to pipeline
 	cmds := make(map[string]*redis.StringStringMapCmd)
 	for _, key := range keys {
-		cmds[key] = s.client.HGetAllMap(key)
+		cmds[key] = pipe.HGetAllMap(key)
 	}
 
 	// Execute pipeline
@@ -221,7 +221,7 @@ func (s *redisDeviceStore) GetWithAddress(devAddr types.DevAddr) ([]*Device, err
 	// Add all commands to pipeline
 	cmds := make(map[string]*redis.StringStringMapCmd)
 	for _, key := range keys {
-		cmds[key] = s.client.HGetAllMap(key)
+		cmds[key] = pipe.HGetAllMap(key)
 	}
 
 	// Execute pipeline

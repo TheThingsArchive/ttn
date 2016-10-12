@@ -104,7 +104,7 @@ func (s *redisDeviceStore) getForKeys(keys []string) ([]*Device, error) {
 	// Add all commands to pipeline
 	cmds := make(map[string]*redis.StringStringMapCmd)
 	for _, key := range keys {
-		cmds[key] = s.client.HGetAllMap(key)
+		cmds[key] = pipe.HGetAllMap(key)
 	}
 
 	// Execute pipeline

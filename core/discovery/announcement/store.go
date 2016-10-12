@@ -103,7 +103,7 @@ func (s *redisAnnouncementStore) getForKeys(keys []string) ([]*pb.Announcement, 
 	// Add all commands to pipeline
 	cmds := make(map[string]*redis.StringStringMapCmd)
 	for _, key := range keys {
-		cmds[key] = s.client.HGetAllMap(key)
+		cmds[key] = pipe.HGetAllMap(key)
 	}
 
 	// Execute pipeline
