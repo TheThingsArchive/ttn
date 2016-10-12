@@ -55,7 +55,7 @@ type GatewayMetadata struct {
 	GtwID     string   `json:"gtw_id,omitempty"`
 	Timestamp uint32   `json:"timestamp,omitempty"`
 	Time      JSONTime `json:"time,omitempty"`
-	Channel   uint32   `json:"channel,omitempty"`
+	Channel   uint32   `json:"channel"`
 	RSSI      float32  `json:"rssi,omitempty"`
 	SNR       float32  `json:"snr,omitempty"`
 	RFChain   uint32   `json:"rf_chain,omitempty"`
