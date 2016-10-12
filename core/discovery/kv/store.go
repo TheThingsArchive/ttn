@@ -5,6 +5,7 @@ package kv
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 
@@ -73,6 +74,8 @@ type redisKVStore struct {
 }
 
 func (s *redisKVStore) getForKeys(keys []string) (map[string]string, error) {
+	sort.Strings(keys)
+
 	pipe := s.client.Pipeline()
 	defer pipe.Close()
 

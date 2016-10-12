@@ -5,6 +5,7 @@ package device
 
 import (
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/core/types"
@@ -160,6 +161,8 @@ func (s *redisDeviceStore) List() ([]*Device, error) {
 		return nil, err
 	}
 
+	sort.Strings(keys)
+
 	pipe := s.client.Pipeline()
 	defer pipe.Close()
 
@@ -214,6 +217,8 @@ func (s *redisDeviceStore) GetWithAddress(devAddr types.DevAddr) ([]*Device, err
 	if err != nil {
 		return nil, err
 	}
+
+	sort.Strings(keys)
 
 	pipe := s.client.Pipeline()
 	defer pipe.Close()

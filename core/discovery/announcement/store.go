@@ -5,6 +5,7 @@ package announcement
 
 import (
 	"fmt"
+	"sort"
 
 	pb "github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
@@ -97,6 +98,8 @@ type redisAnnouncementStore struct {
 }
 
 func (s *redisAnnouncementStore) getForKeys(keys []string) ([]*pb.Announcement, error) {
+	sort.Strings(keys)
+
 	pipe := s.client.Pipeline()
 	defer pipe.Close()
 

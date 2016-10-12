@@ -5,6 +5,7 @@ package device
 
 import (
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/utils/errors"
@@ -98,6 +99,8 @@ type redisDeviceStore struct {
 }
 
 func (s *redisDeviceStore) getForKeys(keys []string) ([]*Device, error) {
+	sort.Strings(keys)
+
 	pipe := s.client.Pipeline()
 	defer pipe.Close()
 

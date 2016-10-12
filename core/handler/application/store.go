@@ -5,6 +5,7 @@ package application
 
 import (
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/utils/errors"
@@ -80,6 +81,8 @@ func (s *redisApplicationStore) List() ([]*Application, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	sort.Strings(keys)
 
 	pipe := s.client.Pipeline()
 	defer pipe.Close()
