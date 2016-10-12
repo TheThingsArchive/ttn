@@ -70,12 +70,14 @@ func (g *Gateway) pushStatusToMonitor(ctx log.Interface, name string, status *pb
 			cl, ok := g.monitor.clients[name]
 			if !ok {
 				// Should not happen
+				g.monitor.status.Unlock()
 				return errors.New("Monitor not found")
 			}
 
 			stream, err = cl.GatewayStatus(g.monitorContext())
 			if err != nil {
 				ctx.WithError(errors.FromGRPCError(err)).Warn("Failed to open new monitor status stream")
+				g.monitor.status.Unlock()
 				return err
 			}
 			ctx.Debug("Opened new monitor status stream")
@@ -115,12 +117,14 @@ func (g *Gateway) pushUplinkToMonitor(ctx log.Interface, name string, uplink *pb
 			cl, ok := g.monitor.clients[name]
 			if !ok {
 				// Should not happen
+				g.monitor.uplink.Unlock()
 				return errors.New("Monitor not found")
 			}
 
 			stream, err = cl.GatewayUplink(g.monitorContext())
 			if err != nil {
 				ctx.WithError(errors.FromGRPCError(err)).Warn("Failed to open new monitor uplink stream")
+				g.monitor.uplink.Unlock()
 				return err
 			}
 			ctx.Debug("Opened new monitor uplink stream")
@@ -160,12 +164,14 @@ func (g *Gateway) pushDownlinkToMonitor(ctx log.Interface, name string, downlink
 			cl, ok := g.monitor.clients[name]
 			if !ok {
 				// Should not happen
+				g.monitor.downlink.Unlock()
 				return errors.New("Monitor not found")
 			}
 
 			stream, err = cl.GatewayDownlink(g.monitorContext())
 			if err != nil {
 				ctx.WithError(errors.FromGRPCError(err)).Warn("Failed to open new monitor downlink stream")
+				g.monitor.downlink.Unlock()
 				return err
 			}
 			ctx.Debug("Opened new monitor downlink stream")
