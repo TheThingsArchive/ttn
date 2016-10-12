@@ -75,12 +75,10 @@ func (g *Gateway) pushStatusToMonitor(ctx log.Interface, name string, status *pb
 
 			stream, err = cl.GatewayStatus(g.monitorContext())
 			if err != nil {
-				// TODO check if err returned is GRPC error
-				err = errors.FromGRPCError(err)
-				ctx.WithError(err).Warn("Failed to open new status stream")
+				ctx.WithError(errors.FromGRPCError(err)).Warn("Failed to open new monitor status stream")
 				return err
 			}
-			ctx.Debug("Opened new status stream")
+			ctx.Debug("Opened new monitor status stream")
 
 			g.monitor.status.streams[name] = stream
 		}
@@ -88,7 +86,7 @@ func (g *Gateway) pushStatusToMonitor(ctx log.Interface, name string, status *pb
 	}
 
 	if err = stream.Send(status); err == io.EOF {
-		ctx.Warn("Status stream closed")
+		ctx.Warn("Monitor status stream closed")
 		g.monitor.status.Lock()
 		if g.monitor.status.streams[name] == stream {
 			delete(g.monitor.status.streams, name)
@@ -122,12 +120,10 @@ func (g *Gateway) pushUplinkToMonitor(ctx log.Interface, name string, uplink *pb
 
 			stream, err = cl.GatewayUplink(g.monitorContext())
 			if err != nil {
-				// TODO check if err returned is GRPC error
-				err = errors.FromGRPCError(err)
-				ctx.WithError(err).Warn("Failed to open new uplink stream")
+				ctx.WithError(errors.FromGRPCError(err)).Warn("Failed to open new monitor uplink stream")
 				return err
 			}
-			ctx.Debug("Opened new uplink stream")
+			ctx.Debug("Opened new monitor uplink stream")
 
 			g.monitor.uplink.streams[name] = stream
 		}
@@ -135,7 +131,7 @@ func (g *Gateway) pushUplinkToMonitor(ctx log.Interface, name string, uplink *pb
 	}
 
 	if err = stream.Send(uplink); err == io.EOF {
-		ctx.Warn("Uplink stream closed")
+		ctx.Warn("Monitor uplink stream closed")
 		g.monitor.uplink.Lock()
 		if g.monitor.uplink.streams[name] == stream {
 			delete(g.monitor.uplink.streams, name)
@@ -169,12 +165,10 @@ func (g *Gateway) pushDownlinkToMonitor(ctx log.Interface, name string, downlink
 
 			stream, err = cl.GatewayDownlink(g.monitorContext())
 			if err != nil {
-				// TODO check if err returned is GRPC error
-				err = errors.FromGRPCError(err)
-				ctx.WithError(err).Warn("Failed to open new downlink stream")
+				ctx.WithError(errors.FromGRPCError(err)).Warn("Failed to open new monitor downlink stream")
 				return err
 			}
-			ctx.Debug("Opened new downlink stream")
+			ctx.Debug("Opened new monitor downlink stream")
 
 			g.monitor.downlink.streams[name] = stream
 		}
@@ -182,7 +176,7 @@ func (g *Gateway) pushDownlinkToMonitor(ctx log.Interface, name string, downlink
 	}
 
 	if err = stream.Send(downlink); err == io.EOF {
-		ctx.Warn("Downlink stream closed")
+		ctx.Warn("Monitor downlink stream closed")
 		g.monitor.downlink.Lock()
 		if g.monitor.downlink.streams[name] == stream {
 			delete(g.monitor.downlink.streams, name)
