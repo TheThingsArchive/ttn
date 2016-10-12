@@ -62,8 +62,6 @@ func (h *handler) ConvertFromLoRaWAN(ctx log.Interface, ttnUp *pb_broker.Dedupli
 			}
 			appUp.PayloadRaw = payload.Bytes
 		}
-	} else {
-		return errors.NewErrInvalidArgument("Uplink MACPayload", "could not get frame payload")
 	}
 
 	// LoRaWAN: Publish ACKs as events
