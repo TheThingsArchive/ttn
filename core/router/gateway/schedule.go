@@ -91,7 +91,7 @@ func (s *schedule) GoString() (str string) {
 
 // Deadline for sending a downlink back to the gateway
 // TODO: Make configurable
-var Deadline = 200 * time.Millisecond
+var Deadline = 400 * time.Millisecond
 
 const uintmax = 1 << 32
 
