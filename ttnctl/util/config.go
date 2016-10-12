@@ -29,9 +29,20 @@ const (
 // $HOME/.ttnctl.yml
 func GetConfigFile() string {
 	flag := viper.GetString("config")
-	xdg := path.Join(os.Getenv("XDG_CONFIG_HOME"), "ttnctl", "config.yml")
-	homeyml := path.Join(os.Getenv("HOME"), ".ttnctl.yml")
-	homeyaml := path.Join(os.Getenv("HOME"), ".ttnctl.yaml")
+
+	xdg := os.Getenv("XDG_CONFIG_HOME")
+	if xdg != "" {
+		xdg = path.Join(xdg, "ttnctl", "config.yml")
+	}
+
+	home := os.Getenv("HOME")
+	homeyml := ""
+	homeyaml := ""
+
+	if home != "" {
+		homeyml = path.Join(home, ".ttnctl.yml")
+		homeyaml = path.Join(home, ".ttnctl.yaml")
+	}
 
 	try_files := []string{
 		flag,
