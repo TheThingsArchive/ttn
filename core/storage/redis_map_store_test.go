@@ -77,6 +77,14 @@ func TestRedisMapStore(t *testing.T) {
 		a.So(res.(*testRedisStruct).UpdatedAt.Nanosecond(), ShouldEqual, now.Nanosecond())
 	}
 
+	// GetFields
+	{
+		res, err := s.GetFields("test", "name")
+		a.So(err, ShouldBeNil)
+		a.So(res, ShouldNotBeNil)
+		a.So(res.(*testRedisStruct).Name, ShouldEqual, "My Name")
+	}
+
 	for i := 1; i < 10; i++ {
 		// Create Extra
 		{

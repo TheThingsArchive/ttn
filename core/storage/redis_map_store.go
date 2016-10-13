@@ -121,6 +121,31 @@ func (s *RedisMapStore) Get(key string) (interface{}, error) {
 	return i, nil
 }
 
+// GetFields for a record, prepending the prefix to the key if necessary
+func (s *RedisMapStore) GetFields(key string, fields ...string) (interface{}, error) {
+	if !strings.HasPrefix(key, s.prefix) {
+		key = s.prefix + key
+	}
+	result, err := s.client.HMGet(key, fields...).Result()
+	if err == redis.Nil {
+		return nil, errors.NewErrNotFound(key)
+	}
+	if err != nil {
+		return nil, err
+	}
+	res := make(map[string]string)
+	for i, field := range fields {
+		if str, ok := result[i].(string); ok {
+			res[field] = str
+		}
+	}
+	i, err := s.decoder(res)
+	if err != nil {
+		return nil, err
+	}
+	return i, nil
+}
+
 // Create a new record, prepending the prefix to the key if necessary, optionally setting only the given properties
 func (s *RedisMapStore) Create(key string, value interface{}, properties ...string) error {
 	if !strings.HasPrefix(key, s.prefix) {
