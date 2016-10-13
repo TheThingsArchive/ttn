@@ -144,7 +144,6 @@ func buildDefaultStructDecoder(base interface{}) StringStringMapDecoder {
 				}
 
 				if val == nil {
-					fmt.Printf("Could not decode %s to %s\n", str, field.Kind())
 					continue
 				}
 
