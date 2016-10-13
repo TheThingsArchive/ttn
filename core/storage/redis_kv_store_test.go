@@ -6,65 +6,40 @@ package storage
 import (
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	. "github.com/smartystreets/assertions"
 )
 
-type testRedisStruct struct {
-	Name      string `redis:"name,omitempty"`
-	UpdatedAt Time   `redis:"updated_at,omitempty"`
-}
-
-func TestRedisMapStore(t *testing.T) {
+func TestRedisKVStore(t *testing.T) {
 	a := New(t)
 	c := getRedisClient()
-	s := NewRedisMapStore(c, "test-redis-map-store")
+	s := NewRedisKVStore(c, "test-redis-kv-store")
 	a.So(s, ShouldNotBeNil)
-
-	now := time.Now()
-	testRedisStructVal := testRedisStruct{
-		Name:      "My Name",
-		UpdatedAt: Time{now},
-	}
-
-	s.SetBase(testRedisStructVal)
 
 	// Get non-existing
 	{
-		res, err := s.Get("test")
+		_, err := s.Get("test")
 		a.So(err, ShouldNotBeNil)
 		a.So(errors.GetErrType(err), ShouldEqual, errors.NotFound)
-		a.So(res, ShouldBeNil)
-	}
-
-	// Not Create
-	{
-		err := s.Create("test", &testRedisStruct{})
-		a.So(err, ShouldBeNil)
-
-		exists, err := c.Exists("test-redis-map-store:test").Result()
-		a.So(err, ShouldBeNil)
-		a.So(exists, ShouldBeFalse)
 	}
 
 	// Create New
 	{
 		defer func() {
-			c.Del("test-redis-map-store:test").Result()
+			c.Del("test-redis-kv-store:test").Result()
 		}()
-		err := s.Create("test", &testRedisStructVal)
+		err := s.Create("test", "value")
 		a.So(err, ShouldBeNil)
 
-		exists, err := c.Exists("test-redis-map-store:test").Result()
+		exists, err := c.Exists("test-redis-kv-store:test").Result()
 		a.So(err, ShouldBeNil)
 		a.So(exists, ShouldBeTrue)
 	}
 
 	// Create Existing
 	{
-		err := s.Create("test", &testRedisStructVal)
+		err := s.Create("test", "value")
 		a.So(err, ShouldNotBeNil)
 	}
 
@@ -72,9 +47,7 @@ func TestRedisMapStore(t *testing.T) {
 	{
 		res, err := s.Get("test")
 		a.So(err, ShouldBeNil)
-		a.So(res, ShouldNotBeNil)
-		a.So(res.(*testRedisStruct).Name, ShouldEqual, "My Name")
-		a.So(res.(*testRedisStruct).UpdatedAt.Nanosecond(), ShouldEqual, now.Nanosecond())
+		a.So(res, ShouldEqual, "value")
 	}
 
 	for i := 1; i < 10; i++ {
@@ -82,11 +55,9 @@ func TestRedisMapStore(t *testing.T) {
 		{
 			name := fmt.Sprintf("test-%d", i)
 			defer func() {
-				c.Del("test-redis-map-store:" + name).Result()
+				c.Del("test-redis-kv-store:" + name).Result()
 			}()
-			s.Create(name, &testRedisStruct{
-				Name: name,
-			})
+			s.Create(name, name)
 		}
 	}
 
@@ -95,7 +66,7 @@ func TestRedisMapStore(t *testing.T) {
 		res, err := s.GetAll([]string{"test"}, nil)
 		a.So(err, ShouldBeNil)
 		a.So(res, ShouldHaveLength, 1)
-		a.So(res[0].(*testRedisStruct).Name, ShouldEqual, "My Name")
+		a.So(res["test"], ShouldEqual, "value")
 	}
 
 	// List
@@ -103,15 +74,15 @@ func TestRedisMapStore(t *testing.T) {
 		res, err := s.List("", nil)
 		a.So(err, ShouldBeNil)
 		a.So(res, ShouldHaveLength, 10)
-		a.So(res[0].(*testRedisStruct).Name, ShouldEqual, "My Name")
+		a.So(res["test"], ShouldEqual, "value")
 	}
 
 	// List With Options
 	{
 		res, _ := s.List("test-*", &ListOptions{Limit: 2})
 		a.So(res, ShouldHaveLength, 2)
-		a.So(res[0].(*testRedisStruct).Name, ShouldEqual, "test-1")
-		a.So(res[1].(*testRedisStruct).Name, ShouldEqual, "test-2")
+		a.So(res["test-1"], ShouldEqual, "test-1")
+		a.So(res["test-2"], ShouldEqual, "test-2")
 
 		res, _ = s.List("test-*", &ListOptions{Limit: 20})
 		a.So(res, ShouldHaveLength, 9)
@@ -121,8 +92,8 @@ func TestRedisMapStore(t *testing.T) {
 
 		res, _ = s.List("test-*", &ListOptions{Limit: 2, Offset: 1})
 		a.So(res, ShouldHaveLength, 2)
-		a.So(res[0].(*testRedisStruct).Name, ShouldEqual, "test-2")
-		a.So(res[1].(*testRedisStruct).Name, ShouldEqual, "test-3")
+		a.So(res["test-2"], ShouldEqual, "test-2")
+		a.So(res["test-3"], ShouldEqual, "test-3")
 
 		res, _ = s.List("test-*", &ListOptions{Limit: 20, Offset: 1})
 		a.So(res, ShouldHaveLength, 8)
@@ -130,20 +101,18 @@ func TestRedisMapStore(t *testing.T) {
 
 	// Update Non-Existing
 	{
-		err := s.Update("not-there", &testRedisStructVal)
+		err := s.Update("not-there", "value")
 		a.So(err, ShouldNotBeNil)
 	}
 
 	// Update Existing
 	{
-		err := s.Update("test", &testRedisStruct{
-			Name: "New Name",
-		}, "Name")
+		err := s.Update("test", "updated")
 		a.So(err, ShouldBeNil)
 
-		name, err := c.HGet("test-redis-map-store:test", "name").Result()
+		name, err := c.Get("test-redis-kv-store:test").Result()
 		a.So(err, ShouldBeNil)
-		a.So(name, ShouldEqual, "New Name")
+		a.So(name, ShouldEqual, "updated")
 	}
 
 	// Delete Non-Existing
@@ -157,7 +126,7 @@ func TestRedisMapStore(t *testing.T) {
 		err := s.Delete("test")
 		a.So(err, ShouldBeNil)
 
-		exists, err := c.Exists("test-redis-map-store:test").Result()
+		exists, err := c.Exists("test-redis-kv-store:test").Result()
 		a.So(err, ShouldBeNil)
 		a.So(exists, ShouldBeFalse)
 	}
