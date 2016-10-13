@@ -104,10 +104,20 @@ func unmarshalToType(typ reflect.Type, value string) (val interface{}, err error
 
 // buildDefaultStructDecoder is used by the RedisMapStore
 func buildDefaultStructDecoder(base interface{}) StringStringMapDecoder {
-	return func(input map[string]string) (interface{}, error) {
+	return func(input map[string]string) (output interface{}, err error) {
 		baseType := reflect.TypeOf(base)
+		// If we get a pointer in, we'll return a pointer out
+		if baseType.Kind() == reflect.Ptr {
+			output = reflect.New(baseType.Elem()).Interface()
+		} else {
+			output = reflect.New(baseType).Interface()
+		}
+		defer func() {
+			if err == nil && baseType.Kind() != reflect.Ptr {
+				output = reflect.Indirect(reflect.ValueOf(output)).Interface()
+			}
+		}()
 
-		output := reflect.New(baseType).Interface()
 		s := structs.New(output)
 		for _, field := range s.Fields() {
 			if !field.IsExported() {
