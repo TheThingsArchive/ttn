@@ -64,7 +64,7 @@ func TestRedisMapStore(t *testing.T) {
 
 	// Create Existing
 	{
-		err := s.Create("test", &testRedisStructVal)
+		err := s.Create("test", testRedisStructVal)
 		a.So(err, ShouldNotBeNil)
 	}
 
@@ -73,8 +73,8 @@ func TestRedisMapStore(t *testing.T) {
 		res, err := s.Get("test")
 		a.So(err, ShouldBeNil)
 		a.So(res, ShouldNotBeNil)
-		a.So(res.(*testRedisStruct).Name, ShouldEqual, "My Name")
-		a.So(res.(*testRedisStruct).UpdatedAt.Nanosecond(), ShouldEqual, now.Nanosecond())
+		a.So(res.(testRedisStruct).Name, ShouldEqual, "My Name")
+		a.So(res.(testRedisStruct).UpdatedAt.Nanosecond(), ShouldEqual, now.Nanosecond())
 	}
 
 	// GetFields
@@ -82,7 +82,7 @@ func TestRedisMapStore(t *testing.T) {
 		res, err := s.GetFields("test", "name")
 		a.So(err, ShouldBeNil)
 		a.So(res, ShouldNotBeNil)
-		a.So(res.(*testRedisStruct).Name, ShouldEqual, "My Name")
+		a.So(res.(testRedisStruct).Name, ShouldEqual, "My Name")
 	}
 
 	for i := 1; i < 10; i++ {
@@ -92,7 +92,7 @@ func TestRedisMapStore(t *testing.T) {
 			defer func() {
 				c.Del("test-redis-map-store:" + name).Result()
 			}()
-			s.Create(name, &testRedisStruct{
+			s.Create(name, testRedisStruct{
 				Name: name,
 			})
 		}
@@ -103,7 +103,7 @@ func TestRedisMapStore(t *testing.T) {
 		res, err := s.GetAll([]string{"test"}, nil)
 		a.So(err, ShouldBeNil)
 		a.So(res, ShouldHaveLength, 1)
-		a.So(res[0].(*testRedisStruct).Name, ShouldEqual, "My Name")
+		a.So(res[0].(testRedisStruct).Name, ShouldEqual, "My Name")
 	}
 
 	// List
@@ -111,15 +111,15 @@ func TestRedisMapStore(t *testing.T) {
 		res, err := s.List("", nil)
 		a.So(err, ShouldBeNil)
 		a.So(res, ShouldHaveLength, 10)
-		a.So(res[0].(*testRedisStruct).Name, ShouldEqual, "My Name")
+		a.So(res[0].(testRedisStruct).Name, ShouldEqual, "My Name")
 	}
 
 	// List With Options
 	{
 		res, _ := s.List("test-*", &ListOptions{Limit: 2})
 		a.So(res, ShouldHaveLength, 2)
-		a.So(res[0].(*testRedisStruct).Name, ShouldEqual, "test-1")
-		a.So(res[1].(*testRedisStruct).Name, ShouldEqual, "test-2")
+		a.So(res[0].(testRedisStruct).Name, ShouldEqual, "test-1")
+		a.So(res[1].(testRedisStruct).Name, ShouldEqual, "test-2")
 
 		res, _ = s.List("test-*", &ListOptions{Limit: 20})
 		a.So(res, ShouldHaveLength, 9)
@@ -129,8 +129,8 @@ func TestRedisMapStore(t *testing.T) {
 
 		res, _ = s.List("test-*", &ListOptions{Limit: 2, Offset: 1})
 		a.So(res, ShouldHaveLength, 2)
-		a.So(res[0].(*testRedisStruct).Name, ShouldEqual, "test-2")
-		a.So(res[1].(*testRedisStruct).Name, ShouldEqual, "test-3")
+		a.So(res[0].(testRedisStruct).Name, ShouldEqual, "test-2")
+		a.So(res[1].(testRedisStruct).Name, ShouldEqual, "test-3")
 
 		res, _ = s.List("test-*", &ListOptions{Limit: 20, Offset: 1})
 		a.So(res, ShouldHaveLength, 8)
