@@ -12,12 +12,6 @@ import (
 	redis "gopkg.in/redis.v4"
 )
 
-// ListOptions are options for all list commands
-type ListOptions struct {
-	Limit  int
-	Offset int
-}
-
 // RedisMapStore stores structs as HMaps in Redis
 type RedisMapStore struct {
 	prefix  string
@@ -63,21 +57,7 @@ func (s *RedisMapStore) GetAll(keys []string, options *ListOptions) ([]interface
 
 	sort.Strings(keys)
 
-	var start int
-	var end = len(keys)
-	if options != nil {
-		if options.Offset >= len(keys) {
-			return []interface{}{}, nil
-		}
-		start = options.Offset
-		if options.Limit > 0 {
-			if options.Offset+options.Limit > len(keys) {
-				options.Limit = len(keys) - options.Offset
-			}
-			end = options.Offset + options.Limit
-		}
-	}
-	selectedKeys := keys[start:end]
+	selectedKeys := selectKeys(keys, options)
 
 	pipe := s.client.Pipeline()
 	defer pipe.Close()
