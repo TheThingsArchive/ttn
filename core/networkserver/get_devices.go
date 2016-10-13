@@ -10,7 +10,7 @@ import (
 )
 
 func (n *networkServer) HandleGetDevices(req *pb.DevicesRequest) (*pb.DevicesResponse, error) {
-	devices, err := n.devices.GetWithAddress(*req.DevAddr)
+	devices, err := n.devices.ListForAddress(*req.DevAddr)
 	if err != nil {
 		return nil, err
 	}

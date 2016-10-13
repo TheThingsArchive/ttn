@@ -4,198 +4,186 @@
 package device
 
 import (
-	"fmt"
-	"os"
 	"testing"
 
-	"gopkg.in/redis.v3"
-
 	"github.com/TheThingsNetwork/ttn/core/types"
+	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/assertions"
 )
-
-func getRedisClient() *redis.Client {
-	host := os.Getenv("REDIS_HOST")
-	if host == "" {
-		host = "localhost"
-	}
-	return redis.NewClient(&redis.Options{
-		Addr:     fmt.Sprintf("%s:6379", host),
-		Password: "", // no password set
-		DB:       1,  // use default DB
-	})
-}
 
 func TestDeviceStore(t *testing.T) {
 	a := New(t)
 
-	stores := map[string]Store{
-		"local": NewDeviceStore(),
-		"redis": NewRedisDeviceStore(getRedisClient()),
-	}
+	NewRedisDeviceStore(GetRedisClient(), "")
 
-	for name, s := range stores {
+	s := NewRedisDeviceStore(GetRedisClient(), "networkserver-test-device-store")
 
-		t.Logf("Testing %s store", name)
+	// Non-existing App
+	err := s.Set(&Device{
+		DevAddr: types.DevAddr{0, 0, 0, 1},
+		DevEUI:  types.DevEUI{0, 0, 0, 0, 0, 0, 0, 1},
+		AppEUI:  types.AppEUI{0, 0, 0, 0, 0, 0, 0, 1},
+		NwkSKey: types.NwkSKey{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 1},
+	})
+	a.So(err, ShouldBeNil)
 
-		// Non-existing App
-		err := s.Set(&Device{
-			DevAddr: types.DevAddr{0, 0, 0, 1},
-			DevEUI:  types.DevEUI{0, 0, 0, 0, 0, 0, 0, 1},
-			AppEUI:  types.AppEUI{0, 0, 0, 0, 0, 0, 0, 1},
-			NwkSKey: types.NwkSKey{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 1},
-		})
-		a.So(err, ShouldBeNil)
+	dev, err := s.Get(types.AppEUI{0, 0, 0, 0, 0, 0, 0, 1}, types.DevEUI{0, 0, 0, 0, 0, 0, 0, 1})
+	a.So(err, ShouldBeNil)
+	a.So(dev.DevAddr, ShouldEqual, types.DevAddr{0, 0, 0, 1})
 
-		// Existing App
-		err = s.Set(&Device{
-			DevAddr: types.DevAddr{0, 0, 0, 1},
-			DevEUI:  types.DevEUI{0, 0, 0, 0, 0, 0, 0, 2},
-			AppEUI:  types.AppEUI{0, 0, 0, 0, 0, 0, 0, 1},
-			NwkSKey: types.NwkSKey{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 1},
-		})
-		a.So(err, ShouldBeNil)
+	defer func() {
+		s.Delete(types.AppEUI{0, 0, 0, 0, 0, 0, 0, 1}, types.DevEUI{0, 0, 0, 0, 0, 0, 0, 1})
+	}()
 
-		res, err := s.GetWithAddress(types.DevAddr{0, 0, 0, 1})
-		a.So(err, ShouldBeNil)
-		a.So(res, ShouldHaveLength, 2)
-		res, err = s.GetWithAddress(types.DevAddr{0, 0, 0, 2})
-		a.So(err, ShouldBeNil)
-		a.So(res, ShouldHaveLength, 0)
+	// Existing App
+	err = s.Set(&Device{
+		DevAddr: types.DevAddr{0, 0, 0, 1},
+		DevEUI:  types.DevEUI{0, 0, 0, 0, 0, 0, 0, 2},
+		AppEUI:  types.AppEUI{0, 0, 0, 0, 0, 0, 0, 1},
+		NwkSKey: types.NwkSKey{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 1},
+	})
+	a.So(err, ShouldBeNil)
 
-		// Existing Device, New DevAddr
-		err = s.Set(&Device{
-			DevAddr: types.DevAddr{0, 0, 0, 3},
-			DevEUI:  types.DevEUI{0, 0, 0, 0, 0, 0, 0, 2},
-			AppEUI:  types.AppEUI{0, 0, 0, 0, 0, 0, 0, 1},
-			NwkSKey: types.NwkSKey{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 1},
-		})
-		a.So(err, ShouldBeNil)
-
-		res, err = s.GetWithAddress(types.DevAddr{0, 0, 0, 3})
-		a.So(err, ShouldBeNil)
-		a.So(res, ShouldHaveLength, 1)
-		res, err = s.GetWithAddress(types.DevAddr{0, 0, 0, 1})
-		a.So(err, ShouldBeNil)
-		a.So(res, ShouldHaveLength, 1)
-
-		s.Set(&Device{
-			DevAddr: types.DevAddr{0, 0, 0, 3},
-			DevEUI:  types.DevEUI{0, 0, 0, 0, 0, 0, 0, 1},
-			AppEUI:  types.AppEUI{0, 0, 0, 0, 0, 0, 0, 1},
-			NwkSKey: types.NwkSKey{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 2},
-		})
-
-		res, err = s.GetWithAddress(types.DevAddr{0, 0, 0, 1})
-		a.So(err, ShouldBeNil)
-		a.So(res, ShouldHaveLength, 0)
-		res, err = s.GetWithAddress(types.DevAddr{0, 0, 0, 3})
-		a.So(err, ShouldBeNil)
-		a.So(res, ShouldHaveLength, 2)
-
-		dev, err := s.Get(types.AppEUI{0, 0, 0, 0, 0, 0, 0, 2}, types.DevEUI{0, 0, 0, 0, 0, 0, 0, 2})
-		a.So(err, ShouldNotBeNil)
-		a.So(dev, ShouldBeNil)
-
-		dev, err = s.Get(types.AppEUI{0, 0, 0, 0, 0, 0, 0, 1}, types.DevEUI{0, 0, 0, 0, 0, 0, 0, 3})
-		a.So(err, ShouldNotBeNil)
-		a.So(dev, ShouldBeNil)
-
-		dev, err = s.Get(types.AppEUI{0, 0, 0, 0, 0, 0, 0, 1}, types.DevEUI{0, 0, 0, 0, 0, 0, 0, 1})
-		a.So(err, ShouldBeNil)
-		a.So(dev.DevAddr, ShouldEqual, types.DevAddr{0, 0, 0, 3})
-
-		// List
-		devices, err := s.List()
-		a.So(err, ShouldBeNil)
-		a.So(devices, ShouldHaveLength, 2)
-
-		err = s.Delete(types.AppEUI{0, 0, 0, 0, 0, 0, 0, 1}, types.DevEUI{0, 0, 0, 0, 0, 0, 0, 1})
-		a.So(err, ShouldBeNil)
-
-		res, err = s.GetWithAddress(types.DevAddr{0, 0, 0, 3})
-		a.So(err, ShouldBeNil)
-		a.So(res, ShouldHaveLength, 1)
-
-		// Cleanup
+	defer func() {
 		s.Delete(types.AppEUI{0, 0, 0, 0, 0, 0, 0, 1}, types.DevEUI{0, 0, 0, 0, 0, 0, 0, 2})
-	}
+	}()
 
+	res, err := s.ListForAddress(types.DevAddr{0, 0, 0, 1})
+	a.So(err, ShouldBeNil)
+	a.So(res, ShouldHaveLength, 2)
+	res, err = s.ListForAddress(types.DevAddr{0, 0, 0, 2})
+	a.So(err, ShouldBeNil)
+	a.So(res, ShouldHaveLength, 0)
+
+	// Existing Device, New DevAddr
+	err = s.Set(&Device{
+		old: &Device{
+			DevAddr: types.DevAddr{0, 0, 0, 1},
+			DevEUI:  types.DevEUI{0, 0, 0, 0, 0, 0, 0, 2},
+			AppEUI:  types.AppEUI{0, 0, 0, 0, 0, 0, 0, 1},
+		},
+		DevAddr: types.DevAddr{0, 0, 0, 3},
+		DevEUI:  types.DevEUI{0, 0, 0, 0, 0, 0, 0, 2},
+		AppEUI:  types.AppEUI{0, 0, 0, 0, 0, 0, 0, 1},
+		NwkSKey: types.NwkSKey{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 1},
+	})
+	a.So(err, ShouldBeNil)
+
+	res, err = s.ListForAddress(types.DevAddr{0, 0, 0, 3})
+	a.So(err, ShouldBeNil)
+	a.So(res, ShouldHaveLength, 1)
+	res, err = s.ListForAddress(types.DevAddr{0, 0, 0, 1})
+	a.So(err, ShouldBeNil)
+	a.So(res, ShouldHaveLength, 1)
+
+	s.Set(&Device{
+		old: &Device{
+			DevAddr: types.DevAddr{0, 0, 0, 1},
+			DevEUI:  types.DevEUI{0, 0, 0, 0, 0, 0, 0, 1},
+			AppEUI:  types.AppEUI{0, 0, 0, 0, 0, 0, 0, 1},
+		},
+		DevAddr: types.DevAddr{0, 0, 0, 3},
+		DevEUI:  types.DevEUI{0, 0, 0, 0, 0, 0, 0, 1},
+		AppEUI:  types.AppEUI{0, 0, 0, 0, 0, 0, 0, 1},
+		NwkSKey: types.NwkSKey{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 2},
+	})
+
+	res, err = s.ListForAddress(types.DevAddr{0, 0, 0, 1})
+	a.So(err, ShouldBeNil)
+	a.So(res, ShouldHaveLength, 0)
+	res, err = s.ListForAddress(types.DevAddr{0, 0, 0, 3})
+	a.So(err, ShouldBeNil)
+	a.So(res, ShouldHaveLength, 2)
+
+	dev, err = s.Get(types.AppEUI{0, 0, 0, 0, 0, 0, 0, 2}, types.DevEUI{0, 0, 0, 0, 0, 0, 0, 2})
+	a.So(err, ShouldNotBeNil)
+	a.So(dev, ShouldBeNil)
+
+	dev, err = s.Get(types.AppEUI{0, 0, 0, 0, 0, 0, 0, 1}, types.DevEUI{0, 0, 0, 0, 0, 0, 0, 3})
+	a.So(err, ShouldNotBeNil)
+	a.So(dev, ShouldBeNil)
+
+	dev, err = s.Get(types.AppEUI{0, 0, 0, 0, 0, 0, 0, 1}, types.DevEUI{0, 0, 0, 0, 0, 0, 0, 1})
+	a.So(err, ShouldBeNil)
+	a.So(dev.DevAddr, ShouldEqual, types.DevAddr{0, 0, 0, 3})
+
+	// List
+	devices, err := s.List()
+	a.So(err, ShouldBeNil)
+	a.So(devices, ShouldHaveLength, 2)
+
+	err = s.Delete(types.AppEUI{0, 0, 0, 0, 0, 0, 0, 1}, types.DevEUI{0, 0, 0, 0, 0, 0, 0, 1})
+	a.So(err, ShouldBeNil)
+
+	res, err = s.ListForAddress(types.DevAddr{0, 0, 0, 3})
+	a.So(err, ShouldBeNil)
+	a.So(res, ShouldHaveLength, 1)
 }
 
 func TestDeviceActivate(t *testing.T) {
 
 	a := New(t)
 
-	stores := map[string]Store{
-		"local": NewDeviceStore(),
-		"redis": NewRedisDeviceStore(getRedisClient()),
-	}
+	s := NewRedisDeviceStore(GetRedisClient(), "networkserver-test-device-activate")
 
-	for name, s := range stores {
+	// Device not registered
+	err := s.Activate(
+		types.AppEUI{0, 0, 0, 0, 0, 0, 1, 1},
+		types.DevEUI{0, 0, 0, 0, 0, 0, 1, 1},
+		types.DevAddr{0, 0, 1, 1},
+		types.NwkSKey{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1},
+	)
+	a.So(err, ShouldNotBeNil)
 
-		t.Logf("Testing %s store", name)
+	// Device registered
+	s.Set(&Device{
+		AppEUI: types.AppEUI{0, 0, 0, 0, 0, 0, 1, 1},
+		DevEUI: types.DevEUI{0, 0, 0, 0, 0, 0, 1, 1},
+	})
+	err = s.Activate(
+		types.AppEUI{0, 0, 0, 0, 0, 0, 1, 1},
+		types.DevEUI{0, 0, 0, 0, 0, 0, 1, 1},
+		types.DevAddr{0, 0, 1, 1},
+		types.NwkSKey{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1},
+	)
+	a.So(err, ShouldBeNil)
 
-		// Device not registered
-		err := s.Activate(
-			types.AppEUI{0, 0, 0, 0, 0, 0, 1, 1},
-			types.DevEUI{0, 0, 0, 0, 0, 0, 1, 1},
-			types.DevAddr{0, 0, 1, 1},
-			types.NwkSKey{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1},
-		)
-		a.So(err, ShouldNotBeNil)
+	// It should register the device
+	dev, err := s.Get(types.AppEUI{0, 0, 0, 0, 0, 0, 1, 1}, types.DevEUI{0, 0, 0, 0, 0, 0, 1, 1})
+	a.So(err, ShouldBeNil)
+	a.So(dev.DevAddr, ShouldEqual, types.DevAddr{0, 0, 1, 1})
 
-		// Device registered
-		s.Set(&Device{
-			AppEUI: types.AppEUI{0, 0, 0, 0, 0, 0, 1, 1},
-			DevEUI: types.DevEUI{0, 0, 0, 0, 0, 0, 1, 1},
-		})
-		err = s.Activate(
-			types.AppEUI{0, 0, 0, 0, 0, 0, 1, 1},
-			types.DevEUI{0, 0, 0, 0, 0, 0, 1, 1},
-			types.DevAddr{0, 0, 1, 1},
-			types.NwkSKey{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1},
-		)
-		a.So(err, ShouldBeNil)
+	// It should register the DevAddr
+	res, err := s.ListForAddress(types.DevAddr{0, 0, 1, 1})
+	a.So(err, ShouldBeNil)
+	a.So(res, ShouldHaveLength, 1)
 
-		// It should register the device
-		dev, err := s.Get(types.AppEUI{0, 0, 0, 0, 0, 0, 1, 1}, types.DevEUI{0, 0, 0, 0, 0, 0, 1, 1})
-		a.So(err, ShouldBeNil)
-		a.So(dev.DevAddr, ShouldEqual, types.DevAddr{0, 0, 1, 1})
+	s.Set(&Device{
+		DevAddr:  types.DevAddr{0, 0, 1, 1},
+		DevEUI:   types.DevEUI{0, 0, 0, 0, 0, 0, 1, 1},
+		AppEUI:   types.AppEUI{0, 0, 0, 0, 0, 0, 1, 1},
+		FCntUp:   42,
+		FCntDown: 42,
+	})
 
-		// It should register the DevAddr
-		res, err := s.GetWithAddress(types.DevAddr{0, 0, 1, 1})
-		a.So(err, ShouldBeNil)
-		a.So(res, ShouldHaveLength, 1)
+	// Activate the same device again
+	err = s.Activate(
+		types.AppEUI{0, 0, 0, 0, 0, 0, 1, 1},
+		types.DevEUI{0, 0, 0, 0, 0, 0, 1, 1},
+		types.DevAddr{0, 0, 1, 2},
+		types.NwkSKey{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2},
+	)
+	a.So(err, ShouldBeNil)
 
-		s.Set(&Device{
-			DevAddr:  types.DevAddr{0, 0, 1, 1},
-			DevEUI:   types.DevEUI{0, 0, 0, 0, 0, 0, 1, 1},
-			AppEUI:   types.AppEUI{0, 0, 0, 0, 0, 0, 1, 1},
-			FCntUp:   42,
-			FCntDown: 42,
-		})
+	// It should reset the DevAddr, NwkSKey and Frame Counters
+	dev, err = s.Get(types.AppEUI{0, 0, 0, 0, 0, 0, 1, 1}, types.DevEUI{0, 0, 0, 0, 0, 0, 1, 1})
+	a.So(err, ShouldBeNil)
+	a.So(dev.DevAddr, ShouldEqual, types.DevAddr{0, 0, 1, 2})
+	a.So(dev.NwkSKey, ShouldEqual, types.NwkSKey{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2})
+	a.So(dev.FCntUp, ShouldEqual, 0)
+	a.So(dev.FCntDown, ShouldEqual, 0)
 
-		// Activate the same device again
-		err = s.Activate(
-			types.AppEUI{0, 0, 0, 0, 0, 0, 1, 1},
-			types.DevEUI{0, 0, 0, 0, 0, 0, 1, 1},
-			types.DevAddr{0, 0, 1, 2},
-			types.NwkSKey{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2},
-		)
-		a.So(err, ShouldBeNil)
-
-		// It should reset the DevAddr, NwkSKey and Frame Counters
-		dev, err = s.Get(types.AppEUI{0, 0, 0, 0, 0, 0, 1, 1}, types.DevEUI{0, 0, 0, 0, 0, 0, 1, 1})
-		a.So(err, ShouldBeNil)
-		a.So(dev.DevAddr, ShouldEqual, types.DevAddr{0, 0, 1, 2})
-		a.So(dev.NwkSKey, ShouldEqual, types.NwkSKey{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2})
-		a.So(dev.FCntUp, ShouldEqual, 0)
-		a.So(dev.FCntDown, ShouldEqual, 0)
-
-		// Cleanup
-		s.Delete(types.AppEUI{0, 0, 0, 0, 0, 0, 1, 1}, types.DevEUI{0, 0, 0, 0, 0, 0, 1, 1})
-
-	}
+	// Cleanup
+	s.Delete(types.AppEUI{0, 0, 0, 0, 0, 0, 1, 1}, types.DevEUI{0, 0, 0, 0, 0, 0, 1, 1})
 
 }

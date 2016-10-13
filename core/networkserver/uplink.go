@@ -17,6 +17,7 @@ func (n *networkServer) HandleUplink(message *pb_broker.DeduplicatedUplinkMessag
 	if err != nil {
 		return nil, err
 	}
+	dev.StartUpdate()
 
 	// Unmarshal LoRaWAN Payload
 	var phyPayload lorawan.PHYPayload
@@ -36,7 +37,7 @@ func (n *networkServer) HandleUplink(message *pb_broker.DeduplicatedUplinkMessag
 		dev.FCntUp = macPayload.FHDR.FCnt
 	}
 	dev.LastSeen = time.Now()
-	err = n.devices.Set(dev, "f_cnt_up", "last_seen")
+	err = n.devices.Set(dev)
 	if err != nil {
 		return nil, err
 	}

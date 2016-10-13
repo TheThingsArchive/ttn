@@ -16,6 +16,8 @@ func (n *networkServer) HandleDownlink(message *pb_broker.DownlinkMessage) (*pb_
 		return nil, err
 	}
 
+	dev.StartUpdate()
+
 	if dev.AppID != message.AppId || dev.DevID != message.DevId {
 		return nil, errors.NewErrInvalidArgument("Downlink", "AppID and DevID do not match AppEUI and DevEUI")
 	}
@@ -38,7 +40,7 @@ func (n *networkServer) HandleDownlink(message *pb_broker.DownlinkMessage) (*pb_
 	// TODO: For confirmed downlink, FCntDown should be incremented AFTER ACK
 	macPayload.FHDR.FCnt = dev.FCntDown
 	dev.FCntDown++
-	err = n.devices.Set(dev, "f_cnt_down")
+	err = n.devices.Set(dev)
 	if err != nil {
 		return nil, err
 	}

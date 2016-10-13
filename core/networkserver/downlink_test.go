@@ -9,6 +9,7 @@ import (
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/core/networkserver/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
+	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"github.com/brocaar/lorawan"
 	. "github.com/smartystreets/assertions"
 )
@@ -16,7 +17,7 @@ import (
 func TestHandleDownlink(t *testing.T) {
 	a := New(t)
 	ns := &networkServer{
-		devices: device.NewDeviceStore(),
+		devices: device.NewRedisDeviceStore(GetRedisClient(), "test-handle-downlink"),
 	}
 
 	appEUI := types.AppEUI(getEUI(1, 2, 3, 4, 5, 6, 7, 8))
@@ -37,6 +38,9 @@ func TestHandleDownlink(t *testing.T) {
 		AppEUI:  appEUI,
 		DevEUI:  devEUI,
 	})
+	defer func() {
+		ns.devices.Delete(appEUI, devEUI)
+	}()
 
 	// Invalid Payload
 	message = &pb_broker.DownlinkMessage{

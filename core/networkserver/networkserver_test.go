@@ -6,11 +6,9 @@ package networkserver
 import (
 	"testing"
 
-	"gopkg.in/redis.v3"
-
-	. "github.com/smartystreets/assertions"
-
 	"github.com/TheThingsNetwork/ttn/core/types"
+	. "github.com/smartystreets/assertions"
+	"gopkg.in/redis.v4"
 )
 
 func getDevAddr(bytes ...byte) (addr types.DevAddr) {
