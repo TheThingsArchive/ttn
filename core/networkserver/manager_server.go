@@ -86,55 +86,29 @@ func (n *networkServerManager) SetDevice(ctx context.Context, in *pb_lorawan.Dev
 
 	if dev == nil {
 		dev = new(device.Device)
-	}
-	fields := []string{}
-
-	if dev.AppID != in.AppId {
-		dev.AppID = in.AppId
-		fields = append(fields, "app_id")
+	} else {
+		dev.StartUpdate()
 	}
 
-	if dev.AppEUI != *in.AppEui {
-		dev.AppEUI = *in.AppEui
-		fields = append(fields, "app_eui")
-	}
+	dev.AppID = in.AppId
+	dev.AppEUI = *in.AppEui
+	dev.DevID = in.DevId
+	dev.DevEUI = *in.DevEui
+	dev.FCntUp = in.FCntUp
+	dev.FCntDown = in.FCntDown
 
-	if dev.DevID != in.DevId {
-		dev.DevID = in.DevId
-		fields = append(fields, "dev_id")
-	}
-
-	if dev.DevEUI != *in.DevEui {
-		dev.DevEUI = *in.DevEui
-		fields = append(fields, "dev_eui")
-	}
-
-	if dev.FCntUp != in.FCntUp {
-		dev.FCntUp = in.FCntUp
-		fields = append(fields, "f_cnt_up")
-	}
-
-	if dev.FCntDown != in.FCntDown {
-		dev.FCntDown = in.FCntDown
-		fields = append(fields, "f_cnt_down")
-	}
-
-	if dev.Options.DisableFCntCheck != in.DisableFCntCheck || dev.Options.Uses32BitFCnt != in.Uses32BitFCnt || dev.Options.ActivationConstraints != in.ActivationConstraints {
-		dev.Options = device.Options{
-			DisableFCntCheck:      in.DisableFCntCheck,
-			Uses32BitFCnt:         in.Uses32BitFCnt,
-			ActivationConstraints: in.ActivationConstraints,
-		}
-		fields = append(fields, "options")
+	dev.Options = device.Options{
+		DisableFCntCheck:      in.DisableFCntCheck,
+		Uses32BitFCnt:         in.Uses32BitFCnt,
+		ActivationConstraints: in.ActivationConstraints,
 	}
 
 	if in.NwkSKey != nil && in.DevAddr != nil {
 		dev.DevAddr = *in.DevAddr
 		dev.NwkSKey = *in.NwkSKey
-		fields = append(fields, "dev_addr", "nwk_s_key")
 	}
 
-	err = n.networkServer.devices.Set(dev, fields...)
+	err = n.networkServer.devices.Set(dev)
 	if err != nil {
 		return nil, errors.BuildGRPCError(err)
 	}
