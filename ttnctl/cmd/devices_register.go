@@ -71,11 +71,12 @@ var devicesRegisterCmd = &cobra.Command{
 			AppId: appID,
 			DevId: devID,
 			Device: &handler.Device_LorawanDevice{LorawanDevice: &lorawan.Device{
-				AppId:  appID,
-				DevId:  devID,
-				AppEui: &appEUI,
-				DevEui: &devEUI,
-				AppKey: &appKey,
+				AppId:         appID,
+				DevId:         devID,
+				AppEui:        &appEUI,
+				DevEui:        &devEUI,
+				AppKey:        &appKey,
+				Uses32BitFCnt: true,
 			}},
 		})
 		if err != nil {
