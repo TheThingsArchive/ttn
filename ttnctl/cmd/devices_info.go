@@ -90,10 +90,14 @@ var devicesInfoCmd = &cobra.Command{
 			fmt.Printf("   FCntDown: %d\n", lorawan.FCntDown)
 			options := []string{}
 			if lorawan.DisableFCntCheck {
-				options = append(options, "DisableFCntCheck")
+				options = append(options, "FCntCheckDisabled")
+			} else {
+				options = append(options, "FCntCheckEnabled")
 			}
 			if lorawan.Uses32BitFCnt {
-				options = append(options, "Uses32BitFCnt")
+				options = append(options, "32BitFCnt")
+			} else {
+				options = append(options, "16BitFCnt")
 			}
 			fmt.Printf("    Options: %s\n", strings.Join(options, ", "))
 		}
