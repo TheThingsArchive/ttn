@@ -140,10 +140,6 @@ var devicesSetCmd = &cobra.Command{
 			dev.GetLorawanDevice().Uses32BitFCnt = false
 		}
 
-		if dev.GetLorawanDevice().Uses32BitFCnt && dev.GetLorawanDevice().DisableFCntCheck {
-			ctx.Warn("Using both the DisableFCntCheck and the Uses32BitFCnt options might break routing for this device")
-		}
-
 		err = manager.SetDevice(dev)
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not update Device")
@@ -173,6 +169,6 @@ func init() {
 
 	devicesSetCmd.Flags().Bool("disable-fcnt-check", false, "Disable FCnt check")
 	devicesSetCmd.Flags().Bool("enable-fcnt-check", false, "Enable FCnt check (default)")
-	devicesSetCmd.Flags().Bool("32-bit-fcnt", false, "Use 32 bit FCnt")
-	devicesSetCmd.Flags().Bool("16-bit-fcnt", false, "Use 16 bit FCnt (default)")
+	devicesSetCmd.Flags().Bool("32-bit-fcnt", false, "Use 32 bit FCnt (default)")
+	devicesSetCmd.Flags().Bool("16-bit-fcnt", false, "Use 16 bit FCnt")
 }
