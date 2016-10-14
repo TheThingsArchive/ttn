@@ -37,6 +37,8 @@ func (h *handler) ConvertFromLoRaWAN(ctx log.Interface, ttnUp *pb_broker.Dedupli
 	macPayload.FHDR.FCnt = ttnUp.ProtocolMetadata.GetLorawan().FCnt
 	appUp.FCnt = macPayload.FHDR.FCnt
 
+	ctx = ctx.WithField("FCnt", appUp.FCnt)
+
 	// LoRaWAN: Validate MIC
 	ok, err = phyPayload.ValidateMIC(lorawan.AES128Key(dev.NwkSKey))
 	if err != nil {
@@ -45,8 +47,6 @@ func (h *handler) ConvertFromLoRaWAN(ctx log.Interface, ttnUp *pb_broker.Dedupli
 	if !ok {
 		return errors.NewErrNotFound("device that validates MIC")
 	}
-
-	ctx = ctx.WithField("FCnt", appUp.FCnt)
 
 	// LoRaWAN: Decrypt
 	if macPayload.FPort != nil && *macPayload.FPort != 0 && len(macPayload.FRMPayload) == 1 {

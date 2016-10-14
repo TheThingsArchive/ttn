@@ -21,8 +21,6 @@ func (r *router) HandleUplink(gatewayID string, uplink *pb.UplinkMessage) (err e
 	defer func() {
 		if err != nil {
 			ctx.WithError(err).Warn("Could not handle uplink")
-		} else {
-			ctx.WithField("Duration", time.Now().Sub(start)).Info("Handled uplink")
 		}
 	}()
 
@@ -77,7 +75,10 @@ func (r *router) HandleUplink(gatewayID string, uplink *pb.UplinkMessage) (err e
 	}
 	devAddr := types.DevAddr(macPayload.FHDR.DevAddr)
 
-	ctx = ctx.WithField("DevAddr", devAddr)
+	ctx = ctx.WithFields(log.Fields{
+		"DevAddr": devAddr,
+		"FCnt":    macPayload.FHDR.FCnt,
+	})
 
 	gateway := r.getGateway(gatewayID)
 
@@ -98,6 +99,11 @@ func (r *router) HandleUplink(gatewayID string, uplink *pb.UplinkMessage) (err e
 		return err
 	}
 
+	if len(brokers) == 0 {
+		ctx.Debug("No brokers to forward message to")
+		return nil
+	}
+
 	ctx = ctx.WithField("NumBrokers", len(brokers))
 
 	// Forward to all brokers
@@ -113,6 +119,8 @@ func (r *router) HandleUplink(gatewayID string, uplink *pb.UplinkMessage) (err e
 			DownlinkOptions:  downlinkOptions,
 		}
 	}
+
+	ctx.WithField("Duration", time.Now().Sub(start)).Info("Handled uplink")
 
 	return nil
 }

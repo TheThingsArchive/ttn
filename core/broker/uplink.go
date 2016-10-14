@@ -24,9 +24,8 @@ import (
 
 const maxFCntGap = 16384
 
-func (b *broker) HandleUplink(uplink *pb.UplinkMessage) error {
+func (b *broker) HandleUplink(uplink *pb.UplinkMessage) (err error) {
 	ctx := b.Ctx.WithField("GatewayID", uplink.GatewayMetadata.GatewayId)
-	var err error
 	start := time.Now()
 	defer func() {
 		if err != nil {
@@ -44,11 +43,12 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) error {
 		return nil
 	}
 
+	ctx = ctx.WithField("Duplicates", len(duplicates))
+
 	base := duplicates[0]
 
 	if base.ProtocolMetadata.GetLorawan() == nil {
-		err = errors.NewErrInvalidArgument("Uplink", "does not contain LoRaWAN metadata")
-		return err
+		return errors.NewErrInvalidArgument("Uplink", "does not contain LoRaWAN metadata")
 	}
 
 	// LoRaWAN: Unmarshal
@@ -59,13 +59,15 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) error {
 	}
 	macPayload, ok := phyPayload.MACPayload.(*lorawan.MACPayload)
 	if !ok {
-		err = errors.NewErrInvalidArgument("Uplink", "does not contain a MAC payload")
-		return err
+		return errors.NewErrInvalidArgument("Uplink", "does not contain a MAC payload")
 	}
 
 	// Request devices from NS
 	devAddr := types.DevAddr(macPayload.FHDR.DevAddr)
-	ctx = ctx.WithField("DevAddr", devAddr)
+	ctx = ctx.WithFields(log.Fields{
+		"DevAddr": devAddr,
+		"FCnt":    macPayload.FHDR.FCnt,
+	})
 	var getDevicesResp *networkserver.DevicesResponse
 	getDevicesResp, err = b.ns.GetDevices(b.Component.GetContext(b.nsToken), &networkserver.DevicesRequest{
 		DevAddr: &devAddr,
@@ -75,8 +77,7 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) error {
 		return errors.BuildGRPCError(errors.Wrap(errors.FromGRPCError(err), "NetworkServer did not return devices"))
 	}
 	if len(getDevicesResp.Results) == 0 {
-		err = errors.NewErrNotFound(fmt.Sprintf("Device with DevAddr %s and FCnt <= %d", devAddr, macPayload.FHDR.FCnt))
-		return err
+		return errors.NewErrNotFound(fmt.Sprintf("Device with DevAddr %s and FCnt <= %d", devAddr, macPayload.FHDR.FCnt))
 	}
 	ctx = ctx.WithField("DevAddrResults", len(getDevicesResp.Results))
 
@@ -86,11 +87,27 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) error {
 	// Find AppEUI/DevEUI through MIC check
 	var device *pb_lorawan.Device
 	var micChecks int
+	var originalFCnt uint32
 	for _, candidate := range getDevicesResp.Results {
 		nwkSKey := lorawan.AES128Key(*candidate.NwkSKey)
+
+		// First check with the 16 bit counter
+		micChecks++
+		ok, err = phyPayload.ValidateMIC(nwkSKey)
+		if err != nil {
+			return err
+		}
+		if ok {
+			device = candidate
+			break
+		}
+
+		originalFCnt = macPayload.FHDR.FCnt
 		if candidate.Uses32BitFCnt {
-			if candidate.DisableFCntCheck {
-				// We should first check with the 16 bit counter
+			macPayload.FHDR.FCnt = fcnt.GetFull(candidate.FCntUp, uint16(originalFCnt))
+
+			// If 32 bit counter has different value, perform another MIC check
+			if macPayload.FHDR.FCnt != originalFCnt {
 				micChecks++
 				ok, err = phyPayload.ValidateMIC(nwkSKey)
 				if err != nil {
@@ -101,22 +118,9 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) error {
 					break
 				}
 			}
-			// Then set the full 32 bit counter and check again
-			macPayload.FHDR.FCnt = fcnt.GetFull(candidate.FCntUp, uint16(macPayload.FHDR.FCnt))
 		}
-		micChecks++
-		ok, err = phyPayload.ValidateMIC(nwkSKey)
-		if err != nil {
-			return err
-		}
-		if ok {
-			device = candidate
-			break
-		}
-	}
-	if device == nil {
-		err = errors.NewErrNotFound("device that validates MIC")
-		return err
+
+		return errors.NewErrNotFound("device that validates MIC")
 	}
 	ctx = ctx.WithFields(log.Fields{
 		"MICChecks": micChecks,
@@ -124,7 +128,11 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) error {
 		"AppEUI":    device.AppEui,
 		"AppID":     device.AppId,
 		"DevID":     device.DevId,
+		"FCnt":      originalFCnt,
 	})
+	if macPayload.FHDR.FCnt != originalFCnt {
+		ctx = ctx.WithField("RealFCnt", macPayload.FHDR.FCnt)
+	}
 
 	if device.DisableFCntCheck {
 		// TODO: Add warning to message?
@@ -132,8 +140,7 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) error {
 
 	} else if macPayload.FHDR.FCnt <= device.FCntUp || macPayload.FHDR.FCnt-device.FCntUp > maxFCntGap {
 		// Replay attack or FCnt gap too big
-		err = errors.NewErrNotFound("device with matching FCnt")
-		return err
+		return errors.NewErrNotFound("device with matching FCnt")
 	}
 
 	// Add FCnt to Metadata (because it's not marshaled in lorawan payload)
@@ -180,12 +187,10 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) error {
 		return err
 	}
 	if len(announcements) == 0 {
-		err = errors.NewErrNotFound(fmt.Sprintf("Handler for AppID %s", device.AppId))
-		return err
+		return errors.NewErrNotFound(fmt.Sprintf("Handler for AppID %s", device.AppId))
 	}
 	if len(announcements) > 1 {
-		err = errors.NewErrInternal(fmt.Sprintf("Multiple Handlers for AppID %s", device.AppId))
-		return err
+		return errors.NewErrInternal(fmt.Sprintf("Multiple Handlers for AppID %s", device.AppId))
 	}
 
 	var handler chan<- *pb.DeduplicatedUplinkMessage
