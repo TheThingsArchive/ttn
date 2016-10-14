@@ -78,10 +78,20 @@ func (d *discoveryServer) Announce(ctx context.Context, announcement *pb.Announc
 	if err != nil {
 		return nil, err
 	}
-	// Only allow announcements if token is issued by the official ttn account server (or if in dev mode)
-	if claims.Issuer != "ttn-account" && d.discovery.Component.Identity.Id != "dev" {
-		return nil, errPermissionDeniedf("Token issuer %s should be ttn-account", claims.Issuer)
+
+	// If not in development mode
+	if d.discovery.Component.Identity.Id != "dev" {
+		// Tokens must be issued by official ttn account server
+		if claims.Issuer != "ttn-account" {
+			return nil, errPermissionDeniedf("Token issuer %s should be ttn-account", claims.Issuer)
+		}
+
+		// Can't announce development components
+		if claims.Subject == "dev" {
+			return nil, errPermissionDeniedf("Can't announce development components")
+		}
 	}
+
 	if claims.Subject != announcement.Id {
 		return nil, errPermissionDeniedf("Token subject %s does not correspond with announcement ID %s", claims.Subject, announcement.Id)
 	}
