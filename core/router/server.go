@@ -11,13 +11,14 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/router/gateway"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/golang/protobuf/ptypes/empty"
+	"github.com/spf13/viper"
 	context "golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 )
 
 type routerRPC struct {
-	router Router
+	router *router
 }
 
 var grpcErrf = grpc.Errorf // To make go vet stop complaining
@@ -37,9 +38,15 @@ func (r *routerRPC) gatewayFromContext(ctx context.Context) (gtw *gateway.Gatewa
 	if err != nil {
 		return nil, err
 	}
-	if token != "token" {
-		// TODO: Validate Token
-		return nil, errors.NewErrPermissionDenied("Gateway token not authorized")
+
+	if !viper.GetBool("router.skip-verify-gateway-token") {
+		claims, err := r.router.ValidateTTNAuthContext(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if claims.Type != "gateway" || claims.Subject != gatewayID {
+			return nil, errors.NewErrPermissionDenied("Gateway token not authorized")
+		}
 	}
 
 	gtw = r.router.getGateway(gatewayID)
