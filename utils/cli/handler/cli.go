@@ -6,8 +6,9 @@ package handler
 import (
 	"fmt"
 	"io"
-	"runtime"
+	"os"
 	"sort"
+	"strings"
 	"sync"
 
 	"github.com/apex/log"
@@ -56,14 +57,34 @@ func (a byName) Less(i, j int) bool { return a[i].Name < a[j].Name }
 
 // Handler implementation.
 type Handler struct {
-	mu     sync.Mutex
-	Writer io.Writer
+	mu       sync.Mutex
+	Writer   io.Writer
+	UseColor bool
+}
+
+// colorTermSubstrings contains a list of substrings that indicate support for terminal colors
+var colorTermSubstrings = []string{
+	"color",
+	"xterm",
 }
 
 // New handler.
 func New(w io.Writer) *Handler {
+	var useColor bool
+	if os.Getenv("COLORTERM") != "" {
+		useColor = true
+	}
+	if term := os.Getenv("TERM"); term != "" {
+		for _, substring := range colorTermSubstrings {
+			if strings.Contains(term, substring) {
+				useColor = true
+				break
+			}
+		}
+	}
 	return &Handler{
-		Writer: w,
+		Writer:   w,
+		UseColor: useColor,
 	}
 }
 
@@ -83,10 +104,10 @@ func (h *Handler) HandleLog(e *log.Entry) error {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
-	if runtime.GOOS == "windows" {
-		fmt.Fprintf(h.Writer, "%6s %-40s", level, e.Message)
-	} else {
+	if h.UseColor {
 		fmt.Fprintf(h.Writer, "\033[%dm%6s\033[0m %-40s", color, level, e.Message)
+	} else {
+		fmt.Fprintf(h.Writer, "%6s %-40s", level, e.Message)
 	}
 
 	for _, f := range fields {
@@ -100,10 +121,10 @@ func (h *Handler) HandleLog(e *log.Entry) error {
 			value = f.Value
 		}
 
-		if runtime.GOOS == "windows" {
-			fmt.Fprintf(h.Writer, " %s=%v", f.Name, value)
-		} else {
+		if h.UseColor {
 			fmt.Fprintf(h.Writer, " \033[%dm%s\033[0m=%v", color, f.Name, value)
+		} else {
+			fmt.Fprintf(h.Writer, " %s=%v", f.Name, value)
 		}
 
 	}
