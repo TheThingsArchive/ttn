@@ -106,17 +106,6 @@ var uplinkCmd = &cobra.Command{
 
 		time.Sleep(100 * time.Millisecond)
 
-		err = gtwClient.SendUplink(&router.UplinkMessage{
-			Payload:          bytes,
-			GatewayMetadata:  util.GetGatewayMetadata("ttnctl", 868100000),
-			ProtocolMetadata: util.GetProtocolMetadata("SF7BW125"),
-		})
-		if err != nil {
-			ctx.WithError(err).Fatal("Could not send uplink to Router")
-		}
-
-		time.Sleep(100 * time.Millisecond)
-
 		ctx.Info("Sent uplink to Router")
 
 		if downlink != nil {
