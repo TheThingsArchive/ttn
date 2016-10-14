@@ -36,15 +36,23 @@ func GetConfigFile() string {
 	}
 
 	home := os.Getenv("HOME")
+	homeyml := ""
+	homeyaml := ""
+
 	if home != "" {
-		home = path.Join(home, ".ttnctl.yml")
+		homeyml = path.Join(home, ".ttnctl.yml")
+		homeyaml = path.Join(home, ".ttnctl.yaml")
 	}
 
-	for _, file := range []string{
+	try_files := []string{
 		flag,
 		xdg,
-		home,
-	} {
+		homeyml,
+		homeyaml,
+	}
+
+	// find a file that exists, and use that
+	for _, file := range try_files {
 		if file != "" {
 			if _, err := os.Stat(file); err == nil {
 				return file
@@ -52,7 +60,12 @@ func GetConfigFile() string {
 		}
 	}
 
-	return ""
+	// no file found, set up correct fallback
+	if os.Getenv("XDG_CONFIG_HOME") != "" {
+		return xdg
+	} else {
+		return homeyml
+	}
 }
 
 // GetDataDir returns the location of the data directory used for
