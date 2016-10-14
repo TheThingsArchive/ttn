@@ -13,8 +13,8 @@ import (
 func BuildJWT(subject string, ttl time.Duration, privateKey []byte) (token string, err error) {
 	claims := jwt.StandardClaims{
 		Issuer:    subject,
-		IssuedAt:  time.Now().Unix(),
-		NotBefore: time.Now().Unix(),
+		IssuedAt:  time.Now().Add(-20 * time.Second).Unix(),
+		NotBefore: time.Now().Add(-20 * time.Second).Unix(),
 	}
 	if ttl > 0 {
 		claims.ExpiresAt = time.Now().Add(ttl).Unix()

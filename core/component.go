@@ -365,7 +365,7 @@ func (c *Component) BuildJWT() (string, error) {
 		if err != nil {
 			return "", err
 		}
-		return security.BuildJWT(c.Identity.Id, 10*time.Second, privPEM)
+		return security.BuildJWT(c.Identity.Id, 20*time.Second, privPEM)
 	}
 	return "", nil
 }
