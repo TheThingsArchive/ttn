@@ -59,7 +59,7 @@ func (g *Gateway) HandleStatus(status *pb.Status) (err error) {
 
 	if g.monitor != nil {
 		for name := range g.monitor.clients {
-			go g.pushStatusToMonitor(g.Ctx.WithField("monitor", name), name, status)
+			go g.pushStatusToMonitor(g.Ctx.WithField("Monitor", name), name, status)
 		}
 	}
 	return nil
@@ -74,7 +74,7 @@ func (g *Gateway) HandleUplink(uplink *pb_router.UplinkMessage) (err error) {
 
 	if g.monitor != nil {
 		for name := range g.monitor.clients {
-			go g.pushUplinkToMonitor(g.Ctx.WithField("monitor", name), name, uplink)
+			go g.pushUplinkToMonitor(g.Ctx.WithField("Monitor", name), name, uplink)
 		}
 	}
 	return nil
@@ -89,7 +89,7 @@ func (g *Gateway) HandleDownlink(identifier string, downlink *pb_router.Downlink
 
 	if g.monitor != nil {
 		for name := range g.monitor.clients {
-			go g.pushDownlinkToMonitor(ctx.WithField("monitor", name), name, downlink)
+			go g.pushDownlinkToMonitor(ctx.WithField("Monitor", name), name, downlink)
 		}
 	}
 	return nil
