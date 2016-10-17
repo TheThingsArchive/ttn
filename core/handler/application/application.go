@@ -4,104 +4,55 @@
 package application
 
 import (
-	"fmt"
+	"reflect"
 	"time"
+
+	"github.com/fatih/structs"
 )
 
 // Application contains the state of an application
 type Application struct {
-	AppID string
+	old   *Application
+	AppID string `redis:"app_id"`
 	// Decoder is a JavaScript function that accepts the payload as byte array and
 	// returns an object containing the decoded values
-	Decoder string
+	Decoder string `redis:"decoder"`
 	// Converter is a JavaScript function that accepts the data as decoded by
 	// Decoder and returns an object containing the converted values
-	Converter string
+	Converter string `redis:"converter"`
 	// Validator is a JavaScript function that validates the data is converted by
 	// Converter and returns a boolean value indicating the validity of the data
-	Validator string
+	Validator string `redis:"validator"`
 	// Encoder is a JavaScript function that encode the data send on Downlink messages
 	// Returns an object containing the converted values in []byte
-	Encoder string
+	Encoder string `redis:"encoder"`
 
-	UpdatedAt time.Time
+	CreatedAt time.Time `redis:"created_at"`
+	UpdatedAt time.Time `redis:"updated_at"`
 }
 
-// ApplicationProperties contains all properties of a Application that can be stored in Redis.
-var ApplicationProperties = []string{
-	"app_id",
-	"decoder",
-	"converter",
-	"validator",
-	"encoder",
-	"updated_at",
+// StartUpdate stores the state of the device
+func (a *Application) StartUpdate() {
+	old := *a
+	a.old = &old
 }
 
-// ToStringStringMap converts the given properties of an Application to a
-// map[string]string for storage in Redis.
-func (application *Application) ToStringStringMap(properties ...string) (map[string]string, error) {
-	output := make(map[string]string)
-	for _, p := range properties {
-		property, err := application.formatProperty(p)
-		if err != nil {
-			return output, err
-		}
-		output[p] = property
+// ChangedFields returns the names of the changed fields since the last call to StartUpdate
+func (a Application) ChangedFields() (changed []string) {
+	new := structs.New(a)
+	fields := new.Names()
+	if a.old == nil {
+		return fields
 	}
-	return output, nil
-}
+	old := structs.New(*a.old)
 
-// FromStringStringMap imports known values from the input to an Application.
-func (application *Application) FromStringStringMap(input map[string]string) error {
-	for k, v := range input {
-		application.parseProperty(k, v)
-	}
-	return nil
-}
-
-func (application *Application) formatProperty(property string) (formatted string, err error) {
-	switch property {
-	case "app_id":
-		formatted = application.AppID
-	case "decoder":
-		formatted = application.Decoder
-	case "converter":
-		formatted = application.Converter
-	case "validator":
-		formatted = application.Validator
-	case "encoder":
-		formatted = application.Encoder
-	case "updated_at":
-		if !application.UpdatedAt.IsZero() {
-			formatted = application.UpdatedAt.UTC().Format(time.RFC3339Nano)
+	for _, field := range new.Fields() {
+		if !field.IsExported() || field.Name() == "old" {
+			continue
 		}
-	default:
-		err = fmt.Errorf("Property %s does not exist in Application", property)
+		if !reflect.DeepEqual(field.Value(), old.Field(field.Name()).Value()) {
+			changed = append(changed, field.Name())
+		}
 	}
 	return
-}
-
-func (application *Application) parseProperty(property string, value string) error {
-	if value == "" {
-		return nil
-	}
-	switch property {
-	case "app_id":
-		application.AppID = value
-	case "decoder":
-		application.Decoder = value
-	case "converter":
-		application.Converter = value
-	case "validator":
-		application.Validator = value
-	case "encoder":
-		application.Encoder = value
-	case "updated_at":
-		val, err := time.Parse(time.RFC3339Nano, value)
-		if err != nil {
-			return err
-		}
-		application.UpdatedAt = val
-	}
-	return nil
 }

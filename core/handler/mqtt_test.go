@@ -30,12 +30,15 @@ func TestHandleMQTT(t *testing.T) {
 	devID := "handler-mqtt-dev1"
 	h := &handler{
 		Component: &core.Component{Ctx: GetLogger(t, "TestHandleMQTT")},
-		devices:   device.NewDeviceStore(),
+		devices:   device.NewRedisDeviceStore(GetRedisClient(), "handler-test-handle-mqtt"),
 	}
 	h.devices.Set(&device.Device{
 		AppID: appID,
 		DevID: devID,
 	})
+	defer func() {
+		h.devices.Delete(appID, devID)
+	}()
 	err := h.HandleMQTT("", "", fmt.Sprintf("tcp://%s:1883", host))
 	a.So(err, ShouldBeNil)
 
