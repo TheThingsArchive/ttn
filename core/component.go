@@ -56,6 +56,10 @@ func NewComponent(ctx log.Interface, serviceName string, announcedAddress string
 		}
 	}()
 
+	// Disable gRPC tracing
+	// SEE: https://github.com/grpc/grpc-go/issues/695
+	grpc.EnableTracing = false
+
 	grpclog.SetLogger(logging.NewGRPCLogger(ctx))
 
 	component := &Component{
