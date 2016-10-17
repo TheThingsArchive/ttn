@@ -99,7 +99,7 @@ splitfilename = $(subst ., ,$(subst -, ,$(subst $(RELEASE_DIR)/,,$1)))
 GOOSfromfilename = $(word 2, $(call splitfilename, $1))
 GOARCHfromfilename = $(word 3, $(call splitfilename, $1))
 LDFLAGS = -ldflags "-w -X main.gitBranch=${GIT_BRANCH} -X main.gitCommit=${GIT_COMMIT} -X main.buildDate=${BUILD_DATE}"
-GOBUILD = CGO_ENABLED=0 GOOS=$(call GOOSfromfilename, $@) GOARCH=$(call GOARCHfromfilename, $@) go build -a -installsuffix cgo ${LDFLAGS} -o "$@"
+GOBUILD = CGO_ENABLED=0 GOOS=$(call GOOSfromfilename, $@) GOARCH=$(call GOARCHfromfilename, $@) go build -a -installsuffix cgo ${LDFLAGS} -tags "${TAGS}" -o "$@"
 
 ttn: $(RELEASE_DIR)/ttn-$(GOOS)-$(GOARCH)$(GOEXE)
 
