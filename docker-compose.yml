@@ -19,7 +19,8 @@ services:
     depends_on:
       - redis
     environment:
-      TTN_DISCOVERY_REDIS_ADDRESS: redis:6379
+      - TERM
+      - TTN_DISCOVERY_REDIS_ADDRESS=redis:6379
     ports:
       - "1900:1900"
     volumes:
@@ -32,8 +33,9 @@ services:
     depends_on:
       - discovery
     environment:
-      TTN_DISCOVERY_SERVER: discovery:1900
-      TTN_ROUTER_SERVER_ADDRESS_ANNOUNCE: router
+      - TERM
+      - TTN_DISCOVERY_SERVER=discovery:1900
+      - TTN_ROUTER_SERVER_ADDRESS_ANNOUNCE=router
     ports:
       - "1901:1901"
     volumes:
@@ -47,9 +49,10 @@ services:
       - discovery
       - networkserver
     environment:
-      TTN_DISCOVERY_SERVER: discovery:1900
-      TTN_BROKER_SERVER_ADDRESS_ANNOUNCE: broker
-      TTN_BROKER_NETWORKSERVER_ADDRESS: networkserver:1903
+      - TERM
+      - TTN_DISCOVERY_SERVER=discovery:1900
+      - TTN_BROKER_SERVER_ADDRESS_ANNOUNCE=broker
+      - TTN_BROKER_NETWORKSERVER_ADDRESS=networkserver:1903
     ports:
       - "1902:1902"
     volumes:
@@ -62,8 +65,9 @@ services:
     depends_on:
       - redis
     environment:
-      TTN_DISCOVERY_SERVER: discovery:1900
-      TTN_NETWORKSERVER_REDIS_ADDRESS: redis:6379
+      - TERM
+      - TTN_DISCOVERY_SERVER=discovery:1900
+      - TTN_NETWORKSERVER_REDIS_ADDRESS=redis:6379
     ports:
       - "1903:1903"
     volumes:
@@ -78,10 +82,11 @@ services:
       - redis
       - mosquitto
     environment:
-      TTN_DISCOVERY_SERVER: discovery:1900
-      TTN_HANDLER_SERVER_ADDRESS_ANNOUNCE: handler
-      TTN_HANDLER_REDIS_ADDRESS: redis:6379
-      TTN_HANDLER_MQTT_BROKER: mosquitto:1883
+      - TERM
+      - TTN_DISCOVERY_SERVER=discovery:1900
+      - TTN_HANDLER_SERVER_ADDRESS_ANNOUNCE=handler
+      - TTN_HANDLER_REDIS_ADDRESS=redis:6379
+      - TTN_HANDLER_MQTT_BROKER=mosquitto:1883
     ports:
       - "1904:1904"
     volumes:
