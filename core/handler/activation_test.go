@@ -4,8 +4,8 @@
 package handler
 
 import (
-	"sync"
 	"testing"
+	"time"
 
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb "github.com/TheThingsNetwork/ttn/api/handler"
@@ -68,12 +68,12 @@ func TestHandleActivation(t *testing.T) {
 
 	h := &handler{
 		Component:    &core.Component{Ctx: GetLogger(t, "TestHandleActivation")},
-		applications: application.NewApplicationStore(),
-		devices:      device.NewDeviceStore(),
+		applications: application.NewRedisApplicationStore(GetRedisClient(), "handler-test-activation"),
+		devices:      device.NewRedisDeviceStore(GetRedisClient(), "handler-test-activation"),
 	}
 	h.mqttActivation = make(chan *mqtt.Activation)
 	h.mqttEvent = make(chan *mqttEvent, 10)
-	var wg sync.WaitGroup
+	var wg WaitGroup
 
 	appEUI := types.AppEUI{1, 2, 3, 4, 5, 6, 7, 8}
 	appID := appEUI.String()
@@ -86,6 +86,9 @@ func TestHandleActivation(t *testing.T) {
 	h.applications.Set(&application.Application{
 		AppID: appID,
 	})
+	defer func() {
+		h.applications.Delete(appID)
+	}()
 
 	h.devices.Set(&device.Device{
 		AppID:  appID,
@@ -94,6 +97,9 @@ func TestHandleActivation(t *testing.T) {
 		DevEUI: devEUI,
 		AppKey: appKey,
 	})
+	defer func() {
+		h.devices.Delete(appID, devID)
+	}()
 
 	// Unknown
 	res, err := doTestHandleActivation(h,
@@ -131,7 +137,7 @@ func TestHandleActivation(t *testing.T) {
 	a.So(err, ShouldBeNil)
 	a.So(res, ShouldNotBeNil)
 
-	wg.Wait()
+	wg.WaitFor(50 * time.Millisecond)
 
 	// Same DevNonce used twice
 	res, err = doTestHandleActivation(h,
@@ -159,7 +165,7 @@ func TestHandleActivation(t *testing.T) {
 	a.So(err, ShouldBeNil)
 	a.So(res, ShouldNotBeNil)
 
-	wg.Wait()
+	wg.WaitFor(50 * time.Millisecond)
 
 	// TODO: Validate response
 

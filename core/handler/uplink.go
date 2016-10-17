@@ -93,8 +93,9 @@ func (h *handler) HandleUplink(uplink *pb_broker.DeduplicatedUplinkMessage) (err
 	}
 
 	// Clear Downlink
+	dev.StartUpdate()
 	dev.NextDownlink = nil
-	err = h.devices.Set(dev, "next_downlink")
+	err = h.devices.Set(dev)
 	if err != nil {
 		return err
 	}

@@ -9,36 +9,23 @@ import (
 	. "github.com/smartystreets/assertions"
 )
 
-func getTestApplication() (application *Application, dmap map[string]string) {
-	return &Application{
-			AppID:     "AppID-1",
-			Decoder:   `function (payload) { return { size: payload.length; } }`,
-			Converter: `function (data) { return data; }`,
-			Validator: `function (data) { return data.size % 2 == 0; }`,
-			Encoder:   `function (payload){return [96, 4, 3, 2, 1, 0, 1, 0, 1, 0, 0, 0, 0]; }`,
-		}, map[string]string{
-			"app_id":     "AppID-1",
-			"decoder":    `function (payload) { return { size: payload.length; } }`,
-			"converter":  `function (data) { return data; }`,
-			"validator":  `function (data) { return data.size % 2 == 0; }`,
-			"encoder":    `function (payload){return [96, 4, 3, 2, 1, 0, 1, 0, 1, 0, 0, 0, 0]; }`,
-			"updated_at": "",
-		}
+func TestApplicationUpdate(t *testing.T) {
+	a := New(t)
+	application := &Application{
+		AppID: "App",
+	}
+	application.StartUpdate()
+	a.So(application.old.AppID, ShouldEqual, application.AppID)
 }
 
-func TestToStringMap(t *testing.T) {
+func TestApplicationChangedFields(t *testing.T) {
 	a := New(t)
-	application, expected := getTestApplication()
-	dmap, err := application.ToStringStringMap(ApplicationProperties...)
-	a.So(err, ShouldBeNil)
-	a.So(dmap, ShouldResemble, expected)
-}
+	application := &Application{
+		AppID: "Application",
+	}
+	application.StartUpdate()
+	application.AppID = "NewAppID"
 
-func TestFromStringMap(t *testing.T) {
-	a := New(t)
-	application := &Application{}
-	expected, dmap := getTestApplication()
-	err := application.FromStringStringMap(dmap)
-	a.So(err, ShouldBeNil)
-	a.So(application, ShouldResemble, expected)
+	a.So(application.ChangedFields(), ShouldHaveLength, 1)
+	a.So(application.ChangedFields(), ShouldContain, "AppID")
 }
