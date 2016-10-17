@@ -21,28 +21,37 @@ const (
 	letterIdxMax  = 63 / letterIdxBits   // # of letter indices fitting in 63 bits
 )
 
+// TTNRandom is used as a wrapper around math/rand
 type TTNRandom struct {
-	sync.Mutex
-	*rand.Rand
+	mu   sync.Mutex
+	rand *rand.Rand
 }
 
+// New returns a new TTNRandom, in most cases you can just use the global funcs
 func New() *TTNRandom {
 	return &TTNRandom{
-		Rand: rand.New(rand.NewSource(time.Now().UnixNano())),
+		rand: rand.New(rand.NewSource(time.Now().UnixNano())),
 	}
 }
 
 var global = New()
 
+// Intn wraps rand.Intn
+func (r *TTNRandom) Intn(n int) int {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return r.rand.Intn(n)
+}
+
 // String returns random string of length n
 func (r *TTNRandom) String(n int) string {
-	r.Lock()
-	defer r.Unlock()
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	b := make([]byte, n)
 	// A Int63() generates 63 random bits, enough for letterIdxMax characters!
-	for i, cache, remain := n-1, r.Int63(), letterIdxMax; i >= 0; {
+	for i, cache, remain := n-1, r.rand.Int63(), letterIdxMax; i >= 0; {
 		if remain == 0 {
-			cache, remain = r.Int63(), letterIdxMax
+			cache, remain = r.rand.Int63(), letterIdxMax
 		}
 		if idx := int(cache & letterIdxMask); idx < len(letterBytes) {
 			b[i] = letterBytes[idx]
@@ -57,19 +66,19 @@ func (r *TTNRandom) String(n int) string {
 
 // Token generate a random 2-bytes token
 func (r *TTNRandom) Token() []byte {
-	r.Lock()
-	defer r.Unlock()
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	b := make([]byte, 4)
-	binary.BigEndian.PutUint32(b, r.Uint32())
+	binary.BigEndian.PutUint32(b, r.rand.Uint32())
 	return b[0:2]
 }
 
 // Rssi generates RSSI signal between -120 < rssi < 0
 func (r *TTNRandom) Rssi() int32 {
-	r.Lock()
-	defer r.Unlock()
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	// Generate RSSI. Tend towards generating great signal strength.
-	x := float64(r.Int31()) * float64(2e-9)
+	x := float64(r.rand.Int31()) * float64(2e-9)
 	return int32(-1.6 * math.Exp(x))
 }
 
@@ -99,17 +108,17 @@ var usFreqs = []float32{
 
 // Freq generates a frequency between 865.0 and 870.0 Mhz
 func (r *TTNRandom) Freq() float32 {
-	r.Lock()
-	defer r.Unlock()
-	return usFreqs[r.Intn(len(usFreqs))]
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return usFreqs[r.rand.Intn(len(usFreqs))]
 }
 
 // Datr generates Datr for instance: SF4BW125
 func (r *TTNRandom) Datr() string {
-	r.Lock()
-	defer r.Unlock()
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	// Spread Factor from 12 to 7
-	sf := 12 - r.Intn(7)
+	sf := 12 - r.rand.Intn(7)
 	var bw int
 	if sf == 6 {
 		// DR6 -> SF7@250Khz
@@ -123,27 +132,32 @@ func (r *TTNRandom) Datr() string {
 
 // Codr generates Codr for instance: 4/6
 func (r *TTNRandom) Codr() string {
-	r.Lock()
-	defer r.Unlock()
-	d := r.Intn(4) + 5
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	d := r.rand.Intn(4) + 5
 	return fmt.Sprintf("4/%d", d)
 }
 
 // Lsnr generates LoRa SNR ratio in db. Tend towards generating good ratio with low noise
 func (r *TTNRandom) Lsnr() float32 {
-	r.Lock()
-	defer r.Unlock()
-	x := float64(r.Int31()) * float64(2e-9)
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	x := float64(r.rand.Int31()) * float64(2e-9)
 	return float32(math.Floor((-0.1*math.Exp(x)+5.5)*10) / 10)
 }
 
 // Bytes generates a random byte slice of length n
 func (r *TTNRandom) Bytes(n int) []byte {
-	r.Lock()
-	defer r.Unlock()
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	p := make([]byte, n)
-	r.Read(p)
+	r.rand.Read(p)
 	return p
+}
+
+// Intn returns random int with max n
+func Intn(n int) int {
+	return global.Intn(n)
 }
 
 // String returns random string of length n

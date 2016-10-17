@@ -17,9 +17,6 @@ import (
 )
 
 func (n *networkServer) getDevAddr(constraints ...string) (types.DevAddr, error) {
-	// Instantiate a new random source
-	random := random.New()
-
 	// Generate random DevAddr bytes
 	var devAddr types.DevAddr
 	copy(devAddr[:], random.Bytes(4))
