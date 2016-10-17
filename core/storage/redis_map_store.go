@@ -32,9 +32,9 @@ func NewRedisMapStore(client *redis.Client, prefix string) *RedisMapStore {
 }
 
 // SetBase sets the base struct for automatically encoding and decoding to and from Redis format
-func (s *RedisMapStore) SetBase(base interface{}) {
-	s.SetEncoder(defaultStructEncoder)
-	s.SetDecoder(buildDefaultStructDecoder(base))
+func (s *RedisMapStore) SetBase(base interface{}, tagName string) {
+	s.SetEncoder(buildDefaultStructEncoder(tagName))
+	s.SetDecoder(buildDefaultStructDecoder(base, tagName))
 }
 
 // SetEncoder sets the encoder to convert structs to Redis format

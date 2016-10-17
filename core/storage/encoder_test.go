@@ -59,7 +59,7 @@ func TestDefaultStructEncoder(t *testing.T) {
 	var stime = Time{now}
 	var emptySTime Time
 
-	out, err := defaultStructEncoder(&testStruct{
+	out, err := buildDefaultStructEncoder("")(&testStruct{
 		unexported:     "noop",
 		NoRedis:        "noop",
 		DisRedis:       "noop",
@@ -90,7 +90,7 @@ func TestDefaultStructEncoder(t *testing.T) {
 	a.So(out["strings"], ShouldEqual, `["string1","string2"]`)
 	a.So(out["jm"], ShouldEqual, "{cool}")
 
-	out, err = defaultStructEncoder(&testStruct{
+	out, err = buildDefaultStructEncoder("")(&testStruct{
 		String:  "noop",
 		Strings: []string{"string1", "string2"},
 	}, "String")
