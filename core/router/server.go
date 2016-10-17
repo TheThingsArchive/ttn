@@ -4,8 +4,10 @@
 package router
 
 import (
+	"fmt"
 	"io"
 
+	"github.com/TheThingsNetwork/go-account-lib/claims"
 	"github.com/TheThingsNetwork/ttn/api"
 	pb "github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/core/router/gateway"
@@ -34,18 +36,25 @@ func (r *routerRPC) gatewayFromContext(ctx context.Context) (gtw *gateway.Gatewa
 		return nil, err
 	}
 
-	token, err := api.TokenFromMetadata(md)
-	if err != nil {
-		return nil, err
-	}
+	var token string
 
 	if !viper.GetBool("router.skip-verify-gateway-token") {
-		claims, err := r.router.ValidateTTNAuthContext(ctx)
+		token, err = api.TokenFromMetadata(md)
 		if err != nil {
 			return nil, err
 		}
+		if token == "" {
+			return nil, errors.NewErrPermissionDenied("No gateway token supplied")
+		}
+		if r.router.TokenKeyProvider == nil {
+			return nil, errors.NewErrInternal("No token provider configured")
+		}
+		claims, err := claims.FromToken(r.router.TokenKeyProvider, token)
+		if err != nil {
+			return nil, errors.NewErrPermissionDenied(fmt.Sprintf("Gateway token invalid: %s", err.Error()))
+		}
 		if claims.Type != "gateway" || claims.Subject != gatewayID {
-			return nil, errors.NewErrPermissionDenied("Gateway token not authorized")
+			return nil, errors.NewErrPermissionDenied("Gateway token not consistent")
 		}
 	}
 
