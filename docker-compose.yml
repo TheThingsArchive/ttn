@@ -13,6 +13,7 @@ services:
       - "1883:1883"
   discovery:
     image: thethingsnetwork/ttn
+    hostname: discovery
     working_dir: /root
     command: discovery --config ./.env/discovery/dev.yml
     depends_on:
@@ -25,6 +26,7 @@ services:
       - "./.env/:/root/.env/"
   router:
     image: thethingsnetwork/ttn
+    hostname: router
     working_dir: /root
     command: router --config ./.env/router/dev.yml
     depends_on:
@@ -38,6 +40,7 @@ services:
       - "./.env/:/root/.env/"
   broker:
     image: thethingsnetwork/ttn
+    hostname: broker
     working_dir: /root
     command: broker --config ./.env/broker/dev.yml
     depends_on:
@@ -53,6 +56,7 @@ services:
       - "./.env/:/root/.env/"
   networkserver:
     image: thethingsnetwork/ttn
+    hostname: networkserver
     working_dir: /root
     command: networkserver --config ./.env/networkserver/dev.yml
     depends_on:
@@ -66,6 +70,7 @@ services:
       - "./.env/:/root/.env/"
   handler:
     image: thethingsnetwork/ttn
+    hostname: handler
     working_dir: /root
     command: handler --config ./.env/handler/dev.yml
     depends_on:
@@ -83,6 +88,7 @@ services:
       - "./.env/:/root/.env/"
   bridge:
     image: thethingsnetwork/lora-gateway-bridge
+    hostname: bridge
     ports:
       - "1700:1700/udp"
     restart: always
