@@ -5,7 +5,7 @@ package storage
 
 import "strings"
 
-var tagName = "redis"
+var defaultTagName = "redis"
 
 type tagOptions []string
 

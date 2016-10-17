@@ -29,7 +29,7 @@ func TestRedisMapStore(t *testing.T) {
 		UpdatedAt: Time{now},
 	}
 
-	s.SetBase(testRedisStructVal)
+	s.SetBase(testRedisStructVal, "")
 
 	// Get non-existing
 	{
