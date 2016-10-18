@@ -6,6 +6,7 @@ package types
 import (
 	"testing"
 
+	"github.com/brocaar/lorawan/band"
 	. "github.com/smartystreets/assertions"
 )
 
@@ -38,16 +39,38 @@ func TestDataRate(t *testing.T) {
 	a.So(err, ShouldBeNil)
 	a.So(mOut, ShouldResemble, bin)
 
+	// MarshalTo
+	bOut := make([]byte, 8)
+	_, err = datr.MarshalTo(bOut)
+	a.So(err, ShouldBeNil)
+	a.So(bOut, ShouldResemble, bin)
+
+	// Size
+	s := datr.Size()
+	a.So(s, ShouldEqual, 8)
+
 	// Parse
 	pOut, err := ParseDataRate(str)
 	a.So(err, ShouldBeNil)
 	a.So(*pOut, ShouldResemble, datr)
+
+	_, err = ParseDataRate("")
+	a.So(err, ShouldNotBeNil)
+
+	// Convert
+	dr := band.DataRate{Modulation: band.LoRaModulation, SpreadFactor: 7, Bandwidth: 125}
+	cOut, err := ConvertDataRate(dr)
+	a.So(err, ShouldBeNil)
+	a.So(*cOut, ShouldResemble, datr)
 
 	// UnmarshalText
 	utOut := &DataRate{}
 	err = utOut.UnmarshalText([]byte(str))
 	a.So(err, ShouldBeNil)
 	a.So(*utOut, ShouldResemble, datr)
+
+	err = utOut.UnmarshalText([]byte(""))
+	a.So(err, ShouldNotBeNil)
 
 	// UnmarshalBinary
 	ubOut := &DataRate{}
