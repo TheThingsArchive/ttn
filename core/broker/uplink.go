@@ -15,9 +15,9 @@ import (
 	"github.com/TheThingsNetwork/ttn/api/gateway"
 	"github.com/TheThingsNetwork/ttn/api/networkserver"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
-	"github.com/TheThingsNetwork/ttn/core/fcnt"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
+	"github.com/TheThingsNetwork/ttn/utils/fcnt"
 	"github.com/apex/log"
 	"github.com/brocaar/lorawan"
 )
