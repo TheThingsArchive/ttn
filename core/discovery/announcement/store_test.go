@@ -4,84 +4,145 @@
 package announcement
 
 import (
-	"fmt"
-	"os"
 	"testing"
 
-	pb "github.com/TheThingsNetwork/ttn/api/discovery"
+	"github.com/TheThingsNetwork/ttn/core/types"
+	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/assertions"
-	"gopkg.in/redis.v3"
 )
 
-func getRedisClient() *redis.Client {
-	host := os.Getenv("REDIS_HOST")
-	if host == "" {
-		host = "localhost"
-	}
-	return redis.NewClient(&redis.Options{
-		Addr:     fmt.Sprintf("%s:6379", host),
-		Password: "", // no password set
-		DB:       1,  // use default DB
-	})
-}
-
-func TestAnnouncementStore(t *testing.T) {
+func TestRedisAnnouncementStore(t *testing.T) {
 	a := New(t)
 
-	stores := map[string]Store{
-		"local": NewAnnouncementStore(),
-		"redis": NewRedisAnnouncementStore(getRedisClient()),
-	}
+	s := NewRedisAnnouncementStore(GetRedisClient(), "discovery-test-announcement-store")
 
-	for name, s := range stores {
+	// Get non-existing
+	dev, err := s.Get("router", "router1")
+	a.So(err, ShouldNotBeNil)
+	a.So(dev, ShouldBeNil)
 
-		t.Logf("Testing %s store", name)
+	// Create
+	err = s.Set(&Announcement{
+		ServiceName: "router",
+		ID:          "router1",
+	})
+	a.So(err, ShouldBeNil)
 
-		// Get non-existing
-		dev, err := s.Get("router", "router1")
-		a.So(err, ShouldNotBeNil)
-		a.So(dev, ShouldBeNil)
+	defer func() {
+		s.Delete("router", "router1")
+	}()
 
-		// Create
-		err = s.Set(&pb.Announcement{
-			ServiceName: "router",
-			Id:          "router1",
-		})
-		a.So(err, ShouldBeNil)
+	// Get existing
+	dev, err = s.Get("router", "router1")
+	a.So(err, ShouldBeNil)
+	a.So(dev, ShouldNotBeNil)
 
-		// Get existing
-		dev, err = s.Get("router", "router1")
-		a.So(err, ShouldBeNil)
-		a.So(dev, ShouldNotBeNil)
+	// Create extra
+	err = s.Set(&Announcement{
+		ServiceName: "handler",
+		ID:          "handler1",
+	})
+	a.So(err, ShouldBeNil)
 
-		// Create extra
-		err = s.Set(&pb.Announcement{
-			ServiceName: "broker",
-			Id:          "broker1",
-		})
-		a.So(err, ShouldBeNil)
+	defer func() {
+		s.Delete("handler", "handler1")
+	}()
 
-		// List
-		announcements, err := s.List()
-		a.So(err, ShouldBeNil)
-		a.So(announcements, ShouldHaveLength, 2)
+	err = s.Set(&Announcement{
+		ServiceName: "handler",
+		ID:          "handler2",
+	})
+	a.So(err, ShouldBeNil)
 
-		// List
-		announcements, err = s.ListService("router")
-		a.So(err, ShouldBeNil)
-		a.So(announcements, ShouldHaveLength, 1)
+	defer func() {
+		s.Delete("handler", "handler2")
+	}()
 
-		// Delete
-		err = s.Delete("router", "router1")
-		a.So(err, ShouldBeNil)
+	appEUI := types.AppEUI([8]byte{1, 2, 3, 4, 5, 6, 7, 8})
 
-		// Get deleted
-		dev, err = s.Get("router", "router1")
-		a.So(err, ShouldNotBeNil)
-		a.So(dev, ShouldBeNil)
+	err = s.AddMetadata("handler", "handler1",
+		AppEUIMetadata{AppEUI: appEUI},
+		AppIDMetadata{AppID: "AppID"},
+		OtherMetadata{},
+	)
+	a.So(err, ShouldBeNil)
 
-		// Cleanup
-		s.Delete("broker", "broker1")
-	}
+	handler, err := s.GetForAppEUI(appEUI)
+	a.So(err, ShouldBeNil)
+	a.So(handler, ShouldNotBeNil)
+	a.So(handler.ID, ShouldEqual, "handler1")
 
+	handler, err = s.GetForAppID("AppID")
+	a.So(err, ShouldBeNil)
+	a.So(handler, ShouldNotBeNil)
+	a.So(handler.ID, ShouldEqual, "handler1")
+
+	err = s.AddMetadata("handler", "handler2",
+		AppEUIMetadata{AppEUI: appEUI},
+		AppIDMetadata{AppID: "AppID"},
+		AppIDMetadata{AppID: "OtherAppID"},
+		OtherMetadata{},
+	)
+	a.So(err, ShouldBeNil)
+
+	metadata, err := s.GetMetadata("handler", "handler2")
+	a.So(err, ShouldBeNil)
+	a.So(metadata, ShouldHaveLength, 4)
+
+	err = s.AddMetadata("handler", "handler2",
+		AppEUIMetadata{AppEUI: appEUI},
+		AppIDMetadata{AppID: "AppID"},
+	)
+	a.So(err, ShouldBeNil)
+
+	metadata, err = s.GetMetadata("handler", "handler2")
+	a.So(err, ShouldBeNil)
+	a.So(metadata, ShouldHaveLength, 4)
+
+	handler, err = s.GetForAppEUI(appEUI)
+	a.So(err, ShouldBeNil)
+	a.So(handler, ShouldNotBeNil)
+	a.So(handler.ID, ShouldEqual, "handler2")
+
+	handler, err = s.GetForAppID("AppID")
+	a.So(err, ShouldBeNil)
+	a.So(handler, ShouldNotBeNil)
+	a.So(handler.ID, ShouldEqual, "handler2")
+
+	err = s.RemoveMetadata("handler", "handler1",
+		AppEUIMetadata{AppEUI: appEUI},
+		AppIDMetadata{AppID: "AppID"},
+		OtherMetadata{},
+	)
+	a.So(err, ShouldBeNil)
+
+	err = s.RemoveMetadata("handler", "handler2",
+		AppEUIMetadata{AppEUI: appEUI},
+		AppIDMetadata{AppID: "AppID"},
+		OtherMetadata{},
+	)
+	a.So(err, ShouldBeNil)
+
+	// List
+	announcements, err := s.List()
+	a.So(err, ShouldBeNil)
+	a.So(announcements, ShouldHaveLength, 3)
+
+	// List
+	announcements, err = s.ListService("router")
+	a.So(err, ShouldBeNil)
+	a.So(announcements, ShouldHaveLength, 1)
+
+	// Delete
+	err = s.Delete("router", "router1")
+	a.So(err, ShouldBeNil)
+
+	// Get deleted
+	dev, err = s.Get("router", "router1")
+	a.So(err, ShouldNotBeNil)
+	a.So(dev, ShouldBeNil)
+
+	// Delete with Metadata
+	err = s.Delete("handler", "handler2")
+	a.So(err, ShouldBeNil)
 }

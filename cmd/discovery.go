@@ -12,7 +12,7 @@ import (
 
 	"google.golang.org/grpc"
 
-	"gopkg.in/redis.v3"
+	"gopkg.in/redis.v4"
 
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/discovery"
@@ -39,7 +39,7 @@ var discoveryCmd = &cobra.Command{
 		client := redis.NewClient(&redis.Options{
 			Addr:     viper.GetString("discovery.redis-address"),
 			Password: "", // no password set
-			DB:       int64(viper.GetInt("discovery.redis-db")),
+			DB:       viper.GetInt("discovery.redis-db"),
 		})
 
 		connectRedis(client)

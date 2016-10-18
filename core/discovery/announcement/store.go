@@ -5,183 +5,259 @@ package announcement
 
 import (
 	"fmt"
-	"sort"
+	"strings"
+	"time"
 
-	pb "github.com/TheThingsNetwork/ttn/api/discovery"
+	"github.com/TheThingsNetwork/ttn/core/storage"
+	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
-	"gopkg.in/redis.v3"
+	"gopkg.in/redis.v4"
 )
 
-// Store is used to store announcement configurations
+// Store interface for Announcements
 type Store interface {
-	// List all announcements
-	List() ([]*pb.Announcement, error)
-	// List all announcements for a service
-	ListService(serviceName string) ([]*pb.Announcement, error)
-	// Get the full announcement
-	Get(serviceName, serviceID string) (*pb.Announcement, error)
-	// Set the announcement.
-	Set(announcement *pb.Announcement) error
-	// Delete a announcement
+	List() ([]*Announcement, error)
+	ListService(serviceName string) ([]*Announcement, error)
+	Get(serviceName, serviceID string) (*Announcement, error)
+	GetMetadata(serviceName, serviceID string) ([]Metadata, error)
+	GetForAppID(appID string) (*Announcement, error)
+	GetForAppEUI(appEUI types.AppEUI) (*Announcement, error)
+	Set(new *Announcement) error
+	AddMetadata(serviceName, serviceID string, metadata ...Metadata) error
+	RemoveMetadata(serviceName, serviceID string, metadata ...Metadata) error
 	Delete(serviceName, serviceID string) error
 }
 
-// NewAnnouncementStore creates a new in-memory Announcement store
-func NewAnnouncementStore() Store {
-	return &announcementStore{
-		announcements: make(map[string]map[string]*pb.Announcement),
+const defaultRedisPrefix = "discovery"
+
+const redisAnnouncementPrefix = "announcement"
+const redisMetadataPrefix = "metadata"
+const redisAppIDPrefix = "app_id"
+const redisAppEUIPrefix = "app_eui"
+
+// NewRedisAnnouncementStore creates a new Redis-based Announcement store
+func NewRedisAnnouncementStore(client *redis.Client, prefix string) Store {
+	if prefix == "" {
+		prefix = defaultRedisPrefix
+	}
+	store := storage.NewRedisMapStore(client, prefix+":"+redisAnnouncementPrefix)
+	store.SetBase(Announcement{}, "")
+	return &RedisAnnouncementStore{
+		store:    store,
+		metadata: storage.NewRedisSetStore(client, prefix+":"+redisMetadataPrefix),
+		byAppID:  storage.NewRedisKVStore(client, prefix+":"+redisAppIDPrefix),
+		byAppEUI: storage.NewRedisKVStore(client, prefix+":"+redisAppEUIPrefix),
 	}
 }
 
-// announcementStore is an in-memory Announcement store. It should only be used for testing
-// purposes. Use the redisAnnouncementStore for actual deployments.
-type announcementStore struct {
-	announcements map[string]map[string]*pb.Announcement
+// RedisAnnouncementStore stores Announcements in Redis.
+// - Announcements are stored as a Hash
+// - Metadata is stored in a Set
+// - AppIDs and AppEUIs are indexed with key/value pairs
+type RedisAnnouncementStore struct {
+	store    *storage.RedisMapStore
+	metadata *storage.RedisSetStore
+	byAppID  *storage.RedisKVStore
+	byAppEUI *storage.RedisKVStore
 }
 
-func (s *announcementStore) List() ([]*pb.Announcement, error) {
-	announcements := make([]*pb.Announcement, 0, len(s.announcements))
-	for _, service := range s.announcements {
-		for _, announcement := range service {
-			announcements = append(announcements, announcement)
+// List all Announcements
+// The resulting Announcements do *not* include metadata
+func (s *RedisAnnouncementStore) List() ([]*Announcement, error) {
+	announcementsI, err := s.store.List("", nil)
+	if err != nil {
+		return nil, err
+	}
+	announcements := make([]*Announcement, 0, len(announcementsI))
+	for _, announcementI := range announcementsI {
+		if announcement, ok := announcementI.(Announcement); ok {
+			announcements = append(announcements, &announcement)
 		}
 	}
 	return announcements, nil
 }
 
-func (s *announcementStore) ListService(serviceName string) ([]*pb.Announcement, error) {
-	if service, ok := s.announcements[serviceName]; ok {
-		announcements := make([]*pb.Announcement, 0, len(s.announcements))
-		for _, announcement := range service {
-			announcements = append(announcements, announcement)
-		}
-		return announcements, nil
-	}
-	return []*pb.Announcement{}, nil
-}
-
-func (s *announcementStore) Get(serviceName, serviceID string) (*pb.Announcement, error) {
-	if service, ok := s.announcements[serviceName]; ok {
-		if announcement, ok := service[serviceID]; ok {
-			return announcement, nil
-		}
-	}
-	return nil, errors.NewErrNotFound(fmt.Sprintf("Discovery: %s/%s", serviceName, serviceID))
-}
-
-func (s *announcementStore) Set(new *pb.Announcement) error {
-	if _, ok := s.announcements[new.ServiceName]; !ok {
-		s.announcements[new.ServiceName] = map[string]*pb.Announcement{}
-	}
-	s.announcements[new.ServiceName][new.Id] = new
-	return nil
-}
-
-func (s *announcementStore) Delete(serviceName, serviceID string) error {
-	if service, ok := s.announcements[serviceName]; ok {
-		delete(service, serviceID)
-	}
-	return nil
-}
-
-// NewRedisAnnouncementStore creates a new Redis-based status store
-func NewRedisAnnouncementStore(client *redis.Client) Store {
-	return &redisAnnouncementStore{
-		client: client,
-	}
-}
-
-const redisAnnouncementPrefix = "discovery:announcement"
-
-type redisAnnouncementStore struct {
-	client *redis.Client
-}
-
-func (s *redisAnnouncementStore) getForKeys(keys []string) ([]*pb.Announcement, error) {
-	sort.Strings(keys)
-
-	pipe := s.client.Pipeline()
-	defer pipe.Close()
-
-	// Add all commands to pipeline
-	cmds := make(map[string]*redis.StringStringMapCmd)
-	for _, key := range keys {
-		cmds[key] = pipe.HGetAllMap(key)
-	}
-
-	// Execute pipeline
-	_, err := pipe.Exec()
+// ListService lists all Announcements for a given service (router/broker/handler)
+// The resulting Announcements *do* include metadata
+func (s *RedisAnnouncementStore) ListService(serviceName string) ([]*Announcement, error) {
+	announcementsI, err := s.store.List(serviceName+":*", nil)
 	if err != nil {
 		return nil, err
 	}
-
-	// Get all results from pipeline
-	announcements := make([]*pb.Announcement, 0, len(keys))
-	for _, cmd := range cmds {
-		dmap, err := cmd.Result()
-		if err == nil {
-			announcement := &pb.Announcement{}
-			err := announcement.FromStringStringMap(dmap)
-			if err == nil {
-				announcements = append(announcements, announcement)
+	announcements := make([]*Announcement, 0, len(announcementsI))
+	for _, announcementI := range announcementsI {
+		if announcement, ok := announcementI.(Announcement); ok {
+			announcements = append(announcements, &announcement)
+			announcement.Metadata, err = s.GetMetadata(announcement.ServiceName, announcement.ID)
+			if err != nil {
+				return nil, err
 			}
 		}
 	}
-
 	return announcements, nil
 }
 
-func (s *redisAnnouncementStore) List() ([]*pb.Announcement, error) {
-	keys, err := s.client.Keys(fmt.Sprintf("%s:*", redisAnnouncementPrefix)).Result()
+// Get a specific service Announcement
+// The result *does* include metadata
+func (s *RedisAnnouncementStore) Get(serviceName, serviceID string) (*Announcement, error) {
+	announcementI, err := s.store.Get(fmt.Sprintf("%s:%s", serviceName, serviceID))
 	if err != nil {
 		return nil, err
 	}
-	return s.getForKeys(keys)
-}
-
-func (s *redisAnnouncementStore) ListService(serviceName string) ([]*pb.Announcement, error) {
-	keys, err := s.client.Keys(fmt.Sprintf("%s:%s:*", redisAnnouncementPrefix, serviceName)).Result()
+	announcement, ok := announcementI.(Announcement)
+	if !ok {
+		return nil, errors.New("Database did not return an Announcement")
+	}
+	announcement.Metadata, err = s.GetMetadata(serviceName, serviceID)
 	if err != nil {
 		return nil, err
 	}
-	return s.getForKeys(keys)
+	return &announcement, nil
 }
 
-func (s *redisAnnouncementStore) Get(serviceName, serviceID string) (*pb.Announcement, error) {
-	res, err := s.client.HGetAllMap(fmt.Sprintf("%s:%s:%s", redisAnnouncementPrefix, serviceName, serviceID)).Result()
+// GetMetadata returns the metadata of the specified service
+func (s *RedisAnnouncementStore) GetMetadata(serviceName, serviceID string) ([]Metadata, error) {
+	var out []Metadata
+	metadata, err := s.metadata.Get(fmt.Sprintf("%s:%s", serviceName, serviceID))
+	if errors.GetErrType(err) == errors.NotFound {
+		return nil, nil
+	}
 	if err != nil {
-		if err == redis.Nil {
-			return nil, errors.NewErrNotFound(fmt.Sprintf("Discovery: %s/%s", serviceName, serviceID))
+		return nil, err
+	}
+	for _, meta := range metadata {
+		if meta := MetadataFromString(meta); meta != nil {
+			out = append(out, meta)
 		}
-		return nil, err
-	} else if len(res) == 0 {
-		return nil, errors.NewErrNotFound(fmt.Sprintf("Discovery: %s/%s", serviceName, serviceID))
 	}
-	announcement := &pb.Announcement{}
-	err = announcement.FromStringStringMap(res)
-	if err != nil {
-		return nil, err
-	}
-	return announcement, nil
+	return out, nil
 }
 
-func (s *redisAnnouncementStore) Set(new *pb.Announcement) error {
-	key := fmt.Sprintf("%s:%s:%s", redisAnnouncementPrefix, new.ServiceName, new.Id)
-	dmap, err := new.ToStringStringMap(pb.AnnouncementProperties...)
+// GetForAppID returns the last Announcement that contains metadata for the given AppID
+func (s *RedisAnnouncementStore) GetForAppID(appID string) (*Announcement, error) {
+	key, err := s.byAppID.Get(appID)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	err = s.client.HMSetMap(key, dmap).Err()
-	if err != nil {
-		return err
-	}
+	service := strings.Split(key, ":")
+	return s.Get(service[0], service[1])
+}
 
+// GetForAppEUI returns the last Announcement that contains metadata for the given AppEUI
+func (s *RedisAnnouncementStore) GetForAppEUI(appEUI types.AppEUI) (*Announcement, error) {
+	key, err := s.byAppEUI.Get(appEUI.String())
+	if err != nil {
+		return nil, err
+	}
+	service := strings.Split(key, ":")
+	return s.Get(service[0], service[1])
+}
+
+// Set a new Announcement or update an existing one
+// The metadata of the announcement is ignored, as metadata should be managed with AddMetadata and RemoveMetadata
+func (s *RedisAnnouncementStore) Set(new *Announcement) error {
+	key := fmt.Sprintf("%s:%s", new.ServiceName, new.ID)
+	now := time.Now()
+	new.UpdatedAt = now
+	err := s.store.Update(key, *new)
+	if errors.GetErrType(err) == errors.NotFound {
+		new.CreatedAt = now
+		err = s.store.Create(key, *new)
+	}
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
-func (s *redisAnnouncementStore) Delete(serviceName, serviceID string) error {
-	key := fmt.Sprintf("%s:%s:%s", redisAnnouncementPrefix, serviceName, serviceID)
-	err := s.client.Del(key).Err()
+// AddMetadata adds metadata to the announcement of the specified service
+func (s *RedisAnnouncementStore) AddMetadata(serviceName, serviceID string, metadata ...Metadata) error {
+	key := fmt.Sprintf("%s:%s", serviceName, serviceID)
+
+	metadataStrings := make([]string, 0, len(metadata))
+	for _, meta := range metadata {
+		txt, err := meta.MarshalText()
+		if err != nil {
+			return err
+		}
+		metadataStrings = append(metadataStrings, string(txt))
+
+		switch meta := meta.(type) {
+		case AppIDMetadata:
+			existing, err := s.byAppID.Get(meta.AppID)
+			switch {
+			case errors.GetErrType(err) == errors.NotFound:
+				if err := s.byAppID.Create(meta.AppID, key); err != nil {
+					return err
+				}
+			case err != nil:
+				return err
+			case existing == key:
+				continue
+			default:
+				go s.metadata.Remove(existing, string(txt))
+				if err := s.byAppID.Update(meta.AppID, key); err != nil {
+					return err
+				}
+			}
+		case AppEUIMetadata:
+			existing, err := s.byAppEUI.Get(meta.AppEUI.String())
+			switch {
+			case errors.GetErrType(err) == errors.NotFound:
+				if err := s.byAppEUI.Create(meta.AppEUI.String(), key); err != nil {
+					return err
+				}
+			case err != nil:
+				return err
+			case existing == key:
+				continue
+			default:
+				go s.metadata.Remove(existing, string(txt))
+				if err := s.byAppEUI.Update(meta.AppEUI.String(), key); err != nil {
+					return err
+				}
+			}
+		}
+	}
+	err := s.metadata.Add(key, metadataStrings...)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// RemoveMetadata removes metadata from the announcement of the specified service
+func (s *RedisAnnouncementStore) RemoveMetadata(serviceName, serviceID string, metadata ...Metadata) error {
+	metadataStrings := make([]string, 0, len(metadata))
+	for _, meta := range metadata {
+		if txt, err := meta.MarshalText(); err == nil {
+			metadataStrings = append(metadataStrings, string(txt))
+		}
+		switch meta := meta.(type) {
+		case AppIDMetadata:
+			s.byAppID.Delete(meta.AppID)
+		case AppEUIMetadata:
+			s.byAppEUI.Delete(meta.AppEUI.String())
+		}
+	}
+	err := s.metadata.Remove(fmt.Sprintf("%s:%s", serviceName, serviceID), metadataStrings...)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// Delete an Announcement and its metadata
+func (s *RedisAnnouncementStore) Delete(serviceName, serviceID string) error {
+	metadata, err := s.GetMetadata(serviceName, serviceID)
+	if err != nil && errors.GetErrType(err) != errors.NotFound {
+		return err
+	}
+	if len(metadata) > 0 {
+		s.RemoveMetadata(serviceName, serviceID, metadata...)
+	}
+	key := fmt.Sprintf("%s:%s", serviceName, serviceID)
+	err = s.store.Delete(key)
 	if err != nil {
 		return err
 	}
