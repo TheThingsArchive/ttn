@@ -13,8 +13,12 @@ import (
 )
 
 type testRedisStruct struct {
-	Name      string `redis:"name,omitempty"`
-	UpdatedAt Time   `redis:"updated_at,omitempty"`
+	unexported string
+	Skipped    string             `redis:"-"`
+	Name       string             `redis:"name,omitempty"`
+	UpdatedAt  Time               `redis:"updated_at,omitempty"`
+	Empty      *map[string]string `redis:"empty"`
+	NotEmpty   *map[string]string `redis:"not_empty"`
 }
 
 func TestRedisMapStore(t *testing.T) {
@@ -24,9 +28,11 @@ func TestRedisMapStore(t *testing.T) {
 	a.So(s, ShouldNotBeNil)
 
 	now := time.Now()
+	notEmpty := map[string]string{"ab": "cd"}
 	testRedisStructVal := testRedisStruct{
 		Name:      "My Name",
 		UpdatedAt: Time{now},
+		NotEmpty:  &notEmpty,
 	}
 
 	s.SetBase(testRedisStructVal, "")
@@ -37,16 +43,6 @@ func TestRedisMapStore(t *testing.T) {
 		a.So(err, ShouldNotBeNil)
 		a.So(errors.GetErrType(err), ShouldEqual, errors.NotFound)
 		a.So(res, ShouldBeNil)
-	}
-
-	// Not Create
-	{
-		err := s.Create("test", &testRedisStruct{})
-		a.So(err, ShouldBeNil)
-
-		exists, err := c.Exists("test-redis-map-store:test").Result()
-		a.So(err, ShouldBeNil)
-		a.So(exists, ShouldBeFalse)
 	}
 
 	// Create New

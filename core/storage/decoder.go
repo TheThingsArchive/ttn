@@ -137,7 +137,12 @@ func buildDefaultStructDecoder(base interface{}, tagName string) StringStringMap
 
 				var val interface{}
 				switch field.Kind() {
-				case reflect.Struct, reflect.Array, reflect.Interface, reflect.Slice, reflect.Ptr:
+				case reflect.Ptr:
+					if str == "" || str == "null" {
+						continue
+					}
+					fallthrough
+				case reflect.Struct, reflect.Array, reflect.Interface, reflect.Slice:
 					var err error
 					val, err = unmarshalToType(baseField.Type, str)
 					if err != nil {
