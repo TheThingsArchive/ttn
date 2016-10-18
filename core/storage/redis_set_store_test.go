@@ -120,4 +120,14 @@ func TestRedisSetStore(t *testing.T) {
 		a.So(res, ShouldHaveLength, 8)
 	}
 
+	// Delete
+	{
+		err := s.Delete("test-1")
+		a.So(err, ShouldBeNil)
+
+		res, err := s.List("", nil)
+		a.So(err, ShouldBeNil)
+		a.So(res, ShouldHaveLength, 9)
+	}
+
 }

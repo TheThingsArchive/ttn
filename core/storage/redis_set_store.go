@@ -132,3 +132,11 @@ func (s *RedisSetStore) Remove(key string, values ...string) error {
 	}
 	return s.client.SRem(key, valuesI...).Err()
 }
+
+// Delete the entire set
+func (s *RedisSetStore) Delete(key string) error {
+	if !strings.HasPrefix(key, s.prefix) {
+		key = s.prefix + key
+	}
+	return s.client.Del(key).Err()
+}
