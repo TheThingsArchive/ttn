@@ -9,7 +9,6 @@ import (
 
 	pb "github.com/TheThingsNetwork/ttn/api/gateway"
 	pb_router "github.com/TheThingsNetwork/ttn/api/router"
-	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/apex/log"
 )
 
@@ -59,16 +58,9 @@ func (g *Gateway) HandleStatus(status *pb.Status) (err error) {
 	g.updateLastSeen()
 
 	if g.monitor != nil {
-		go func() {
-			cl, err := g.statusMonitor()
-			if err != nil {
-				g.Ctx.WithError(errors.FromGRPCError(err)).Error("Failed to establish status connection to the monitor")
-			}
-
-			if err = cl.Send(status); err != nil {
-				g.Ctx.WithError(errors.FromGRPCError(err)).Error("Monitor status push failed")
-			}
-		}()
+		for name := range g.monitor.clients {
+			go g.pushStatusToMonitor(g.Ctx.WithField("Monitor", name), name, status)
+		}
 	}
 	return nil
 }
@@ -81,16 +73,9 @@ func (g *Gateway) HandleUplink(uplink *pb_router.UplinkMessage) (err error) {
 	g.updateLastSeen()
 
 	if g.monitor != nil {
-		go func() {
-			cl, err := g.uplinkMonitor()
-			if err != nil {
-				g.Ctx.WithError(errors.FromGRPCError(err)).Error("Failed to establish uplink connection to the monitor")
-			}
-
-			if err = cl.Send(uplink); err != nil {
-				g.Ctx.WithError(errors.FromGRPCError(err)).Error("Monitor uplink push failed")
-			}
-		}()
+		for name := range g.monitor.clients {
+			go g.pushUplinkToMonitor(g.Ctx.WithField("Monitor", name), name, uplink)
+		}
 	}
 	return nil
 }
@@ -103,16 +88,9 @@ func (g *Gateway) HandleDownlink(identifier string, downlink *pb_router.Downlink
 	}
 
 	if g.monitor != nil {
-		go func() {
-			cl, err := g.downlinkMonitor()
-			if err != nil {
-				g.Ctx.WithError(errors.FromGRPCError(err)).Error("Failed to establish downlink connection to the monitor")
-			}
-
-			if err = cl.Send(downlink); err != nil {
-				g.Ctx.WithError(errors.FromGRPCError(err)).Error("Monitor downlink push failed")
-			}
-		}()
+		for name := range g.monitor.clients {
+			go g.pushDownlinkToMonitor(ctx.WithField("Monitor", name), name, downlink)
+		}
 	}
 	return nil
 }

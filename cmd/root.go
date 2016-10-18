@@ -83,6 +83,7 @@ var RootCmd = &cobra.Command{
 			"Description":     viper.GetString("description"),
 			"DiscoveryServer": viper.GetString("discovery-server"),
 			"AuthServers":     viper.GetStringMapString("auth-servers"),
+			"Monitors":        viper.GetStringMapString("monitor-servers"),
 		}).Info("Initializing The Things Network")
 	},
 	PersistentPostRun: func(cmd *cobra.Command, args []string) {
