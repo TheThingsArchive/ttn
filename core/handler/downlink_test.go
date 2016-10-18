@@ -23,7 +23,7 @@ func TestEnqueueDownlink(t *testing.T) {
 	devID := "dev1"
 	h := &handler{
 		Component: &core.Component{Ctx: GetLogger(t, "TestEnqueueDownlink")},
-		devices:   device.NewDeviceStore(),
+		devices:   device.NewRedisDeviceStore(GetRedisClient(), "handler-test-enqueue-downlink"),
 		mqttEvent: make(chan *mqttEvent, 10),
 	}
 	err := h.EnqueueDownlink(&mqtt.DownlinkMessage{
@@ -35,6 +35,9 @@ func TestEnqueueDownlink(t *testing.T) {
 		AppID: appID,
 		DevID: devID,
 	})
+	defer func() {
+		h.devices.Delete(appID, devID)
+	}()
 	err = h.EnqueueDownlink(&mqtt.DownlinkMessage{
 		AppID: appID,
 		DevID: devID,
@@ -60,8 +63,8 @@ func TestHandleDownlink(t *testing.T) {
 	devEUI := types.DevEUI([8]byte{1, 2, 3, 4, 5, 6, 7, 8})
 	h := &handler{
 		Component:    &core.Component{Ctx: GetLogger(t, "TestHandleDownlink")},
-		devices:      device.NewDeviceStore(),
-		applications: application.NewApplicationStore(),
+		devices:      device.NewRedisDeviceStore(GetRedisClient(), "handler-test-handle-downlink"),
+		applications: application.NewRedisApplicationStore(GetRedisClient(), "handler-test-enqueue-downlink"),
 		downlink:     make(chan *pb_broker.DownlinkMessage),
 		mqttEvent:    make(chan *mqttEvent, 10),
 	}
@@ -79,6 +82,9 @@ func TestHandleDownlink(t *testing.T) {
 		AppID: appID,
 		DevID: devID,
 	})
+	defer func() {
+		h.devices.Delete(appID, devID)
+	}()
 	err = h.HandleDownlink(&mqtt.DownlinkMessage{
 		AppID: appID,
 		DevID: devID,
@@ -115,6 +121,9 @@ func TestHandleDownlink(t *testing.T) {
 	  		return [96, 4, 3, 2, 1, 0, 1, 0, 1, 0, 0, 0, 0]
 			}`,
 	})
+	defer func() {
+		h.applications.Delete(appID)
+	}()
 	jsonFields := map[string]interface{}{"temperature": 11}
 	err = h.HandleDownlink(&mqtt.DownlinkMessage{
 		FPort:         1,

@@ -12,6 +12,7 @@ import (
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core/networkserver/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
+	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"github.com/brocaar/lorawan"
 	. "github.com/smartystreets/assertions"
 )
@@ -26,7 +27,7 @@ func TestHandlePrepareActivation(t *testing.T) {
 				"local",
 			},
 		},
-		devices: device.NewDeviceStore(),
+		devices: device.NewRedisDeviceStore(GetRedisClient(), "test-handle-prepare-activation"),
 	}
 
 	appEUI := types.AppEUI(getEUI(2, 2, 3, 4, 5, 6, 7, 8))
@@ -43,10 +44,16 @@ func TestHandlePrepareActivation(t *testing.T) {
 	})
 	a.So(err, ShouldNotBeNil)
 
-	// Constrained Device
-	ns.devices.Set(&device.Device{AppEUI: appEUI, DevEUI: devEUI, Options: device.Options{
+	dev := &device.Device{AppEUI: appEUI, DevEUI: devEUI, Options: device.Options{
 		ActivationConstraints: "private",
-	}})
+	}}
+	a.So(ns.devices.Set(dev), ShouldBeNil)
+
+	defer func() {
+		ns.devices.Delete(appEUI, devEUI)
+	}()
+
+	// Constrained Device
 	resp, err = ns.HandlePrepareActivation(&pb_broker.DeduplicatedDeviceActivationRequest{
 		DevEui: &devEUI,
 		AppEui: &appEUI,
@@ -59,8 +66,11 @@ func TestHandlePrepareActivation(t *testing.T) {
 	})
 	a.So(err, ShouldNotBeNil)
 
+	dev.StartUpdate()
+	dev.Options = device.Options{}
+	a.So(ns.devices.Set(dev), ShouldBeNil)
+
 	// Device registered
-	ns.devices.Set(&device.Device{AppEUI: appEUI, DevEUI: devEUI})
 	resp, err = ns.HandlePrepareActivation(&pb_broker.DeduplicatedDeviceActivationRequest{
 		DevEui: &devEUI,
 		AppEui: &appEUI,
@@ -89,12 +99,17 @@ func TestHandlePrepareActivation(t *testing.T) {
 func TestHandleActivate(t *testing.T) {
 	a := New(t)
 	ns := &networkServer{
-		devices: device.NewDeviceStore(),
+		devices: device.NewRedisDeviceStore(GetRedisClient(), "test-handle-activate"),
 	}
-	ns.devices.Set(&device.Device{
+
+	dev := &device.Device{
 		AppEUI: types.AppEUI(getEUI(0, 0, 0, 0, 0, 0, 3, 1)),
 		DevEUI: types.DevEUI(getEUI(0, 0, 0, 0, 0, 0, 3, 1)),
-	})
+	}
+	a.So(ns.devices.Set(dev), ShouldBeNil)
+	defer func() {
+		ns.devices.Delete(types.AppEUI(getEUI(0, 0, 0, 0, 0, 0, 3, 1)), types.DevEUI(getEUI(0, 0, 0, 0, 0, 0, 3, 1)))
+	}()
 
 	_, err := ns.HandleActivate(&pb_handler.DeviceActivationResponse{})
 	a.So(err, ShouldNotBeNil)

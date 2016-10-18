@@ -16,7 +16,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/mqtt"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"google.golang.org/grpc"
-	"gopkg.in/redis.v3"
+	"gopkg.in/redis.v4"
 )
 
 // Handler component
@@ -33,8 +33,8 @@ type Handler interface {
 // NewRedisHandler creates a new Redis-backed Handler
 func NewRedisHandler(client *redis.Client, ttnBrokerID string, mqttUsername string, mqttPassword string, mqttBrokers ...string) Handler {
 	return &handler{
-		devices:      device.NewRedisDeviceStore(client),
-		applications: application.NewRedisApplicationStore(client),
+		devices:      device.NewRedisDeviceStore(client, "handler"),
+		applications: application.NewRedisApplicationStore(client, "handler"),
 		ttnBrokerID:  ttnBrokerID,
 		mqttUsername: mqttUsername,
 		mqttPassword: mqttPassword,

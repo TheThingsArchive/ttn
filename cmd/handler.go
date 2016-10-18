@@ -11,7 +11,7 @@ import (
 	"syscall"
 
 	"google.golang.org/grpc"
-	"gopkg.in/redis.v3"
+	"gopkg.in/redis.v4"
 
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/handler"
@@ -41,7 +41,7 @@ var handlerCmd = &cobra.Command{
 		client := redis.NewClient(&redis.Options{
 			Addr:     viper.GetString("handler.redis-address"),
 			Password: "", // no password set
-			DB:       int64(viper.GetInt("handler.redis-db")),
+			DB:       viper.GetInt("handler.redis-db"),
 		})
 
 		connectRedis(client)

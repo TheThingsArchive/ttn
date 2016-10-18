@@ -135,6 +135,12 @@
 			"revisionTime": "2016-10-04T07:53:38Z"
 		},
 		{
+			"checksumSHA1": "KCWVxG+J8SxHGlGiUghe0KBGsa8=",
+			"path": "github.com/fatih/structs",
+			"revision": "dc3312cb1a4513a366c4c9e622ad55c32df12ed3",
+			"revisionTime": "2016-08-07T23:55:29Z"
+		},
+		{
 			"checksumSHA1": "e2o/P8ZZ8Iz+um6/nyLUEg7S2H8=",
 			"path": "github.com/fsnotify/fsnotify",
 			"revision": "944cff21b3baf3ced9a880365682152ba577d348",
@@ -775,6 +781,48 @@
 			"path": "gopkg.in/redis.v3/internal/pool",
 			"revision": "b5e368500d0a508ef8f16e9c2d4025a8a46bcc29",
 			"revisionTime": "2016-06-27T09:56:34Z"
+		},
+		{
+			"checksumSHA1": "CKEuRia+Qsk0UcWie9f/TxW6zpU=",
+			"path": "gopkg.in/redis.v4",
+			"revision": "5a272d03b960a72c61e5025a7d6e8da5d8815442",
+			"revisionTime": "2016-10-02T13:00:31Z"
+		},
+		{
+			"checksumSHA1": "4HbfnrL1KOz/6nsdBAPeL0oUXzc=",
+			"path": "gopkg.in/redis.v4/internal",
+			"revision": "5a272d03b960a72c61e5025a7d6e8da5d8815442",
+			"revisionTime": "2016-10-02T13:00:31Z"
+		},
+		{
+			"checksumSHA1": "l+1jiOGUyjHP0u0mB+KiT/UHVcY=",
+			"path": "gopkg.in/redis.v4/internal/consistenthash",
+			"revision": "5a272d03b960a72c61e5025a7d6e8da5d8815442",
+			"revisionTime": "2016-10-02T13:00:31Z"
+		},
+		{
+			"checksumSHA1": "XxoAGEMN5ZCJJ3FeDMSTVhvscHg=",
+			"path": "gopkg.in/redis.v4/internal/errors",
+			"revision": "5a272d03b960a72c61e5025a7d6e8da5d8815442",
+			"revisionTime": "2016-10-02T13:00:31Z"
+		},
+		{
+			"checksumSHA1": "6XSNzBg5bzd2TjEfC/q41tPT/Zg=",
+			"path": "gopkg.in/redis.v4/internal/hashtag",
+			"revision": "5a272d03b960a72c61e5025a7d6e8da5d8815442",
+			"revisionTime": "2016-10-02T13:00:31Z"
+		},
+		{
+			"checksumSHA1": "fYkMv2BMIeHKM1VirUzJ7A/jG7w=",
+			"path": "gopkg.in/redis.v4/internal/pool",
+			"revision": "5a272d03b960a72c61e5025a7d6e8da5d8815442",
+			"revisionTime": "2016-10-02T13:00:31Z"
+		},
+		{
+			"checksumSHA1": "BGzuM8ZpMCmTKWnb/3CtrV4OwDU=",
+			"path": "gopkg.in/redis.v4/internal/proto",
+			"revision": "5a272d03b960a72c61e5025a7d6e8da5d8815442",
+			"revisionTime": "2016-10-02T13:00:31Z"
 		},
 		{
 			"checksumSHA1": "omNnn0E5H5b9BuDZN5fUXBnETl8=",

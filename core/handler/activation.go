@@ -208,12 +208,13 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 	}
 
 	// Update Device
+	dev.StartUpdate()
 	dev.DevAddr = types.DevAddr(joinAccept.DevAddr)
 	dev.AppSKey = appSKey
 	dev.NwkSKey = nwkSKey
 	dev.UsedAppNonces = append(dev.UsedAppNonces, appNonce)
 	dev.UsedDevNonces = append(dev.UsedDevNonces, reqMAC.DevNonce)
-	err = h.devices.Set(dev, "dev_addr", "app_key", "app_s_key", "nwk_s_key", "used_app_nonces", "used_dev_nonces") // app_key is only needed when the default app_key is used to activate the device
+	err = h.devices.Set(dev)
 	if err != nil {
 		return nil, err
 	}
