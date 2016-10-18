@@ -13,9 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"gopkg.in/redis.v3"
-
-	cliHandler "github.com/TheThingsNetwork/ttn/utils/cli/handler"
+	cliHandler "github.com/TheThingsNetwork/go-utils/handlers/cli"
 	esHandler "github.com/TheThingsNetwork/ttn/utils/elasticsearch/handler"
 	"github.com/apex/log"
 	jsonHandler "github.com/apex/log/handlers/json"
@@ -25,6 +23,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tj/go-elastic"
+	"gopkg.in/redis.v3"
 )
 
 var cfgFile string

@@ -63,6 +63,12 @@
 			"revisionTime": "2016-10-14T09:56:50Z"
 		},
 		{
+			"checksumSHA1": "klPzXuUi+zvLz4ADQcPzlJsepVc=",
+			"path": "github.com/TheThingsNetwork/go-utils/handlers/cli",
+			"revision": "ca9398a9d975d5c912f87b4869c3bc82091034df",
+			"revisionTime": "2016-10-18T13:04:05Z"
+		},
+		{
 			"checksumSHA1": "Ur88QI//9Ue82g83qvBSakGlzVg=",
 			"path": "github.com/apex/log",
 			"revision": "4ea85e918cc8389903d5f12d7ccac5c23ab7d89b",
