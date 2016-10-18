@@ -146,10 +146,21 @@ func (s *RedisMapStore) GetFields(key string, fields ...string) (interface{}, er
 	return i, nil
 }
 
+// ChangedFielder interface is used to see what fields to update
+type ChangedFielder interface {
+	ChangedFields() []string
+}
+
 // Create a new record, prepending the prefix to the key if necessary, optionally setting only the given properties
 func (s *RedisMapStore) Create(key string, value interface{}, properties ...string) error {
 	if !strings.HasPrefix(key, s.prefix) {
 		key = s.prefix + key
+	}
+
+	if len(properties) == 0 {
+		if i, ok := value.(ChangedFielder); ok {
+			properties = i.ChangedFields()
+		}
 	}
 
 	vmap, err := s.encoder(value, properties...)
@@ -188,6 +199,12 @@ func (s *RedisMapStore) Create(key string, value interface{}, properties ...stri
 func (s *RedisMapStore) Update(key string, value interface{}, properties ...string) error {
 	if !strings.HasPrefix(key, s.prefix) {
 		key = s.prefix + key
+	}
+
+	if len(properties) == 0 {
+		if i, ok := value.(ChangedFielder); ok {
+			properties = i.ChangedFields()
+		}
 	}
 
 	vmap, err := s.encoder(value, properties...)
