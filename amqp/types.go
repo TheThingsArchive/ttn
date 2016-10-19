@@ -1,7 +1,7 @@
 // Copyright © 2016 The Things Network
 // Use of this source code is governed by the MIT license that can be found in the LICENSE file.
 
-package mqtt
+package amqp
 
 import "github.com/TheThingsNetwork/ttn/core/types"
 
@@ -26,7 +26,7 @@ type GatewayMetadata struct {
 
 // Metadata contains metadata of a message
 type Metadata struct {
-	Time       types.JSONTime    `json:"time,omitempty"`
+	Time       types.JSONTime    `json:"time,omitempty,omitempty"`
 	Frequency  float32           `json:"frequency,omitempty"`
 	Modulation string            `json:"modulation,omitempty"`
 	DataRate   string            `json:"data_rate,omitempty"`
@@ -45,23 +45,4 @@ type UplinkMessage struct {
 	PayloadRaw    []byte                 `json:"payload_raw"`
 	PayloadFields map[string]interface{} `json:"payload_fields,omitempty"`
 	Metadata      Metadata               `json:"metadata,omitempty"`
-}
-
-// DownlinkMessage represents an application-layer downlink message
-type DownlinkMessage struct {
-	AppID         string                 `json:"app_id,omitempty"`
-	DevID         string                 `json:"dev_id,omitempty"`
-	FPort         uint8                  `json:"port"`
-	PayloadRaw    []byte                 `json:"payload_raw,omitempty"`
-	PayloadFields map[string]interface{} `json:"payload_fields,omitempty"`
-}
-
-// Activation messages are used to notify application of a device activation
-type Activation struct {
-	AppID    string        `json:"app_id,omitempty"`
-	DevID    string        `json:"dev_id,omitempty"`
-	AppEUI   types.AppEUI  `json:"app_eui,omitempty"`
-	DevEUI   types.DevEUI  `json:"dev_eui,omitempty"`
-	DevAddr  types.DevAddr `json:"dev_addr,omitempty"`
-	Metadata Metadata      `json:"metadata,omitempty"`
 }

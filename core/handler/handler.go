@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/TheThingsNetwork/ttn/amqp"
 	"github.com/TheThingsNetwork/ttn/api"
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb "github.com/TheThingsNetwork/ttn/api/handler"
@@ -55,14 +56,19 @@ type handler struct {
 
 	downlink chan *pb_broker.DownlinkMessage
 
-	mqttClient   mqtt.Client
-	mqttUsername string
-	mqttPassword string
-	mqttBrokers  []string
-
+	mqttClient     mqtt.Client
+	mqttUsername   string
+	mqttPassword   string
+	mqttBrokers    []string
 	mqttUp         chan *mqtt.UplinkMessage
 	mqttActivation chan *mqtt.Activation
 	mqttEvent      chan *mqttEvent
+
+	amqpClient   amqp.Client
+	amqpUsername string
+	amqpPassword string
+	amqpAddress  string
+	amqpUp       chan *amqp.UplinkMessage
 }
 
 func (h *handler) Init(c *core.Component) error {
