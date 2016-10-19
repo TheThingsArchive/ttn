@@ -15,6 +15,7 @@ import (
 // Discovery specifies the interface for the TTN Service Discovery component
 type Discovery interface {
 	core.ComponentInterface
+	WithCache(options announcement.CacheOptions)
 	Announce(announcement *pb.Announcement) error
 	GetAll(serviceName string) ([]*pb.Announcement, error)
 	Get(serviceName string, id string) (*pb.Announcement, error)
@@ -26,6 +27,10 @@ type Discovery interface {
 type discovery struct {
 	*core.Component
 	services announcement.Store
+}
+
+func (d *discovery) WithCache(options announcement.CacheOptions) {
+	d.services = announcement.NewCachedAnnouncementStore(d.services, options)
 }
 
 func (d *discovery) Init(c *core.Component) error {

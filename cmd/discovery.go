@@ -16,6 +16,7 @@ import (
 
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/discovery"
+	"github.com/TheThingsNetwork/ttn/core/discovery/announcement"
 	"github.com/apex/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -52,6 +53,9 @@ var discoveryCmd = &cobra.Command{
 
 		// Discovery Server
 		discovery := discovery.NewRedisDiscovery(client)
+		if viper.GetBool("discovery.cache") {
+			discovery.WithCache(announcement.DefaultCacheOptions)
+		}
 		err = discovery.Init(component)
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not initialize discovery")
@@ -88,4 +92,7 @@ func init() {
 	discoveryCmd.Flags().Int("server-port", 1900, "The port for communication")
 	viper.BindPFlag("discovery.server-address", discoveryCmd.Flags().Lookup("server-address"))
 	viper.BindPFlag("discovery.server-port", discoveryCmd.Flags().Lookup("server-port"))
+
+	discoveryCmd.Flags().Bool("cache", false, "Add a cache in front of the database")
+	viper.BindPFlag("discovery.cache", discoveryCmd.Flags().Lookup("cache"))
 }
