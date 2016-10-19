@@ -38,7 +38,8 @@ func (c *DefaultClient) PublishDeviceEvent(appID string, devID string, eventType
 	return c.publish(topic.String(), msg)
 }
 
-// SubscribeAppEvents subscribes to events of the given type for the given application
+// SubscribeAppEvents subscribes to events of the given type for the given application. In order to subscribe to
+// application events from all applications the user has access to, pass an empty string as appID.
 func (c *DefaultClient) SubscribeAppEvents(appID string, eventType string, handler AppEventHandler) Token {
 	topic := ApplicationTopic{appID, AppEvents, eventType}
 	return c.subscribe(topic.String(), func(mqtt MQTT.Client, msg MQTT.Message) {
@@ -51,7 +52,9 @@ func (c *DefaultClient) SubscribeAppEvents(appID string, eventType string, handl
 	})
 }
 
-// SubscribeDeviceEvents subscribes to events of the given type for the given device
+// SubscribeDeviceEvents subscribes to events of the given type for the given device. In order to subscribe to
+// events from all devices within an application, pass an empty string as devID. In order to subscribe to all
+// events from all devices in all applications the user has access to, pass an empty string as appID.
 func (c *DefaultClient) SubscribeDeviceEvents(appID string, devID string, eventType string, handler DeviceEventHandler) Token {
 	topic := DeviceTopic{appID, devID, DeviceEvents, eventType}
 	return c.subscribe(topic.String(), func(mqtt MQTT.Client, msg MQTT.Message) {
