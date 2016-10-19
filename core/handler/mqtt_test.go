@@ -11,6 +11,7 @@ import (
 
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
+	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/mqtt"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/assertions"
@@ -42,7 +43,7 @@ func TestHandleMQTT(t *testing.T) {
 	err := h.HandleMQTT("", "", fmt.Sprintf("tcp://%s:1883", host))
 	a.So(err, ShouldBeNil)
 
-	c.PublishDownlink(mqtt.DownlinkMessage{
+	c.PublishDownlink(types.DownlinkMessage{
 		AppID:      appID,
 		DevID:      devID,
 		PayloadRaw: []byte{0xAA, 0xBC},
@@ -52,14 +53,14 @@ func TestHandleMQTT(t *testing.T) {
 	a.So(dev.NextDownlink, ShouldNotBeNil)
 
 	wg.Add(1)
-	c.SubscribeDeviceUplink(appID, devID, func(client mqtt.Client, r_appID string, r_devID string, req mqtt.UplinkMessage) {
+	c.SubscribeDeviceUplink(appID, devID, func(client mqtt.Client, r_appID string, r_devID string, req types.UplinkMessage) {
 		a.So(r_appID, ShouldEqual, appID)
 		a.So(r_devID, ShouldEqual, devID)
 		a.So(req.PayloadRaw, ShouldResemble, []byte{0xAA, 0xBC})
 		wg.Done()
 	}).Wait()
 
-	h.mqttUp <- &mqtt.UplinkMessage{
+	h.mqttUp <- &types.UplinkMessage{
 		DevID:      devID,
 		AppID:      appID,
 		PayloadRaw: []byte{0xAA, 0xBC},
@@ -69,13 +70,13 @@ func TestHandleMQTT(t *testing.T) {
 	}
 
 	wg.Add(1)
-	c.SubscribeDeviceActivations(appID, devID, func(client mqtt.Client, r_appID string, r_devID string, req mqtt.Activation) {
+	c.SubscribeDeviceActivations(appID, devID, func(client mqtt.Client, r_appID string, r_devID string, req types.Activation) {
 		a.So(r_appID, ShouldEqual, appID)
 		a.So(r_devID, ShouldEqual, devID)
 		wg.Done()
 	}).Wait()
 
-	h.mqttActivation <- &mqtt.Activation{
+	h.mqttActivation <- &types.Activation{
 		DevID: devID,
 		AppID: appID,
 	}

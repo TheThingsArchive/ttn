@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/TheThingsNetwork/ttn/core/types"
+
 	AMQP "github.com/streadway/amqp"
 )
 
@@ -16,7 +18,7 @@ type Publisher interface {
 	Disconnect()
 	IsConnected() bool
 
-	PublishUplink(payload UplinkMessage) error
+	PublishUplink(payload types.UplinkMessage) error
 }
 
 // DefaultPublisher is the default AMQP client for The Things Network
@@ -36,18 +38,26 @@ var (
 )
 
 // NewPublisher creates a new DefaultPublisher
-func NewPublisher(ctx Logger, url, exchange string) Publisher {
+func NewPublisher(ctx Logger, username, password, host, exchange string) Publisher {
 	if ctx == nil {
 		ctx = &noopLogger{}
 	}
+	credentials := "guest"
+	if username != "" {
+		if password != "" {
+			credentials = fmt.Sprintf("%s:%s", username, password)
+		} else {
+			credentials = username
+		}
+	}
 	return &DefaultPublisher{
 		ctx:      ctx,
-		url:      url,
+		url:      fmt.Sprintf("amqp://%s@%s", credentials, host),
 		exchange: exchange,
 	}
 }
 
-// Connect to the MQTT broker. It will retry for ConnectRetries times with a delay of ConnectRetryDelay between retries
+// Connect to the AMQP server. It will retry for ConnectRetries times with a delay of ConnectRetryDelay between retries
 func (c *DefaultPublisher) Connect() error {
 	if c.IsConnected() {
 		return nil
@@ -59,11 +69,11 @@ func (c *DefaultPublisher) Connect() error {
 		if err == nil {
 			break
 		}
-		c.ctx.Warnf("Could not connect to AMQP Broker (%s). Retrying...", err.Error())
+		c.ctx.Warnf("Could not connect to AMQP server (%s). Retrying...", err.Error())
 		<-time.After(ConnectRetryDelay)
 	}
 	if err != nil {
-		return fmt.Errorf("Could not connect to AMQP Broker (%s).", err)
+		return fmt.Errorf("Could not connect to AMQP server (%s).", err)
 	}
 	channel, err := conn.Channel()
 	if err != nil {
@@ -88,19 +98,23 @@ func (c *DefaultPublisher) publish(key string, msg []byte, timestamp time.Time) 
 	})
 }
 
-// Disconnect from the AMQP broker
+// Disconnect from the AMQP server
 func (c *DefaultPublisher) Disconnect() {
 	if !c.IsConnected() {
 		return
 	}
 	c.ctx.Debug("Disconnecting from AMQP")
-	c.channel.Close()
+	if err := c.channel.Close(); err != nil {
+		c.ctx.Warnf("Could not close AMQP channel (%s)", err)
+	}
 	c.channel = nil
-	c.conn.Close()
+	if err := c.conn.Close(); err != nil {
+		c.ctx.Warnf("Could not close AMQP connection (%s)", err)
+	}
 	c.conn = nil
 }
 
-// IsConnected returns true if there is a connection to the AMQP broker
+// IsConnected returns true if there is a connection to the AMQP server
 func (c *DefaultPublisher) IsConnected() bool {
 	return c.conn != nil
 }

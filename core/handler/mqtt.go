@@ -6,6 +6,7 @@ package handler
 import (
 	"time"
 
+	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/mqtt"
 	"github.com/apex/log"
 )
@@ -31,11 +32,11 @@ func (h *handler) HandleMQTT(username, password string, mqttBrokers ...string) e
 		return err
 	}
 
-	h.mqttUp = make(chan *mqtt.UplinkMessage, MQTTBufferSize)
-	h.mqttActivation = make(chan *mqtt.Activation, MQTTBufferSize)
+	h.mqttUp = make(chan *types.UplinkMessage, MQTTBufferSize)
+	h.mqttActivation = make(chan *types.Activation, MQTTBufferSize)
 	h.mqttEvent = make(chan *mqttEvent, MQTTBufferSize)
 
-	token := h.mqttClient.SubscribeDownlink(func(client mqtt.Client, appID string, devID string, msg mqtt.DownlinkMessage) {
+	token := h.mqttClient.SubscribeDownlink(func(client mqtt.Client, appID string, devID string, msg types.DownlinkMessage) {
 		down := &msg
 		down.DevID = devID
 		down.AppID = appID
@@ -46,9 +47,11 @@ func (h *handler) HandleMQTT(username, password string, mqttBrokers ...string) e
 		return err
 	}
 
+	ctx := h.Ctx.WithField("Protocol", "MQTT")
+
 	go func() {
 		for up := range h.mqttUp {
-			h.Ctx.WithFields(log.Fields{
+			ctx.WithFields(log.Fields{
 				"DevID": up.DevID,
 				"AppID": up.AppID,
 			}).Debug("Publish Uplink")
@@ -56,10 +59,10 @@ func (h *handler) HandleMQTT(username, password string, mqttBrokers ...string) e
 			go func() {
 				if upToken.WaitTimeout(MQTTTimeout) {
 					if upToken.Error() != nil {
-						h.Ctx.WithError(upToken.Error()).Warn("Could not publish Uplink")
+						ctx.WithError(upToken.Error()).Warn("Could not publish Uplink")
 					}
 				} else {
-					h.Ctx.Warn("Uplink publish timeout")
+					ctx.Warn("Uplink publish timeout")
 				}
 			}()
 			if len(up.PayloadFields) > 0 {
@@ -67,10 +70,10 @@ func (h *handler) HandleMQTT(username, password string, mqttBrokers ...string) e
 				go func() {
 					if fieldsToken.WaitTimeout(MQTTTimeout) {
 						if fieldsToken.Error() != nil {
-							h.Ctx.WithError(fieldsToken.Error()).Warn("Could not publish Uplink Fields")
+							ctx.WithError(fieldsToken.Error()).Warn("Could not publish Uplink Fields")
 						}
 					} else {
-						h.Ctx.Warn("Uplink Fields publish timeout")
+						ctx.Warn("Uplink Fields publish timeout")
 					}
 				}()
 			}
@@ -79,7 +82,7 @@ func (h *handler) HandleMQTT(username, password string, mqttBrokers ...string) e
 
 	go func() {
 		for activation := range h.mqttActivation {
-			h.Ctx.WithFields(log.Fields{
+			ctx.WithFields(log.Fields{
 				"DevID":   activation.DevID,
 				"AppID":   activation.AppID,
 				"DevEUI":  activation.DevEUI,
@@ -90,10 +93,10 @@ func (h *handler) HandleMQTT(username, password string, mqttBrokers ...string) e
 			go func() {
 				if token.WaitTimeout(MQTTTimeout) {
 					if token.Error() != nil {
-						h.Ctx.WithError(token.Error()).Warn("Could not publish Activation")
+						ctx.WithError(token.Error()).Warn("Could not publish Activation")
 					}
 				} else {
-					h.Ctx.Warn("Activation publish timeout")
+					ctx.Warn("Activation publish timeout")
 				}
 			}()
 		}

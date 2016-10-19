@@ -9,7 +9,6 @@ import (
 	"time"
 
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
-	"github.com/TheThingsNetwork/ttn/mqtt"
 
 	"github.com/TheThingsNetwork/ttn/core/handler/application"
 	"github.com/TheThingsNetwork/ttn/core/types"
@@ -17,12 +16,12 @@ import (
 	. "github.com/smartystreets/assertions"
 )
 
-func buildConversionUplink(appID string) (*pb_broker.DeduplicatedUplinkMessage, *mqtt.UplinkMessage) {
+func buildConversionUplink(appID string) (*pb_broker.DeduplicatedUplinkMessage, *types.UplinkMessage) {
 	ttnUp := &pb_broker.DeduplicatedUplinkMessage{
 		AppId: appID,
 		DevId: "DevID-1",
 	}
-	appUp := &mqtt.UplinkMessage{
+	appUp := &types.UplinkMessage{
 		FPort:      1,
 		AppID:      appID,
 		DevID:      "DevID-1",
@@ -302,14 +301,14 @@ func TestEncode(t *testing.T) {
 	a.So(err, ShouldBeNil)
 }
 
-func buildConversionDownlink() (*pb_broker.DownlinkMessage, *mqtt.DownlinkMessage) {
+func buildConversionDownlink() (*pb_broker.DownlinkMessage, *types.DownlinkMessage) {
 	appEUI := types.AppEUI([8]byte{1, 2, 3, 4, 5, 6, 7, 8})
 	devEUI := types.DevEUI([8]byte{1, 2, 3, 4, 5, 6, 7, 8})
 	ttnDown := &pb_broker.DownlinkMessage{
 		AppEui: &appEUI,
 		DevEui: &devEUI,
 	}
-	appDown := &mqtt.DownlinkMessage{
+	appDown := &types.DownlinkMessage{
 		FPort:         1,
 		AppID:         "AppID-1",
 		DevID:         "DevID-1",

@@ -84,3 +84,5 @@ func (n *networkServer) Init(c *core.Component) error {
 	n.Component.SetStatus(core.StatusHealthy)
 	return nil
 }
+
+func (n *networkServer) Shutdown() {}

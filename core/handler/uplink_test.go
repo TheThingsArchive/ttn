@@ -14,7 +14,6 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/handler/application"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
-	"github.com/TheThingsNetwork/ttn/mqtt"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/assertions"
 )
@@ -48,7 +47,7 @@ func TestHandleUplink(t *testing.T) {
 	defer func() {
 		h.applications.Delete(appID)
 	}()
-	h.mqttUp = make(chan *mqtt.UplinkMessage)
+	h.mqttUp = make(chan *types.UplinkMessage)
 	h.mqttEvent = make(chan *mqttEvent, 10)
 	h.downlink = make(chan *pb_broker.DownlinkMessage)
 
@@ -121,7 +120,7 @@ func TestHandleUplink(t *testing.T) {
 	wg.WaitFor(50 * time.Millisecond)
 
 	dev.StartUpdate()
-	dev.NextDownlink = &mqtt.DownlinkMessage{
+	dev.NextDownlink = &types.DownlinkMessage{
 		PayloadRaw: []byte{0xaa, 0xbc},
 	}
 

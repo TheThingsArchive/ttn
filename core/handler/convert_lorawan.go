@@ -5,14 +5,14 @@ package handler
 
 import (
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
-	"github.com/TheThingsNetwork/ttn/mqtt"
+	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
 	"github.com/apex/log"
 	"github.com/brocaar/lorawan"
 )
 
-func (h *handler) ConvertFromLoRaWAN(ctx log.Interface, ttnUp *pb_broker.DeduplicatedUplinkMessage, appUp *mqtt.UplinkMessage) error {
+func (h *handler) ConvertFromLoRaWAN(ctx log.Interface, ttnUp *pb_broker.DeduplicatedUplinkMessage, appUp *types.UplinkMessage) error {
 	// Find Device
 	dev, err := h.devices.Get(ttnUp.AppId, ttnUp.DevId)
 	if err != nil {
@@ -77,7 +77,7 @@ func (h *handler) ConvertFromLoRaWAN(ctx log.Interface, ttnUp *pb_broker.Dedupli
 	return nil
 }
 
-func (h *handler) ConvertToLoRaWAN(ctx log.Interface, appDown *mqtt.DownlinkMessage, ttnDown *pb_broker.DownlinkMessage) error {
+func (h *handler) ConvertToLoRaWAN(ctx log.Interface, appDown *types.DownlinkMessage, ttnDown *pb_broker.DownlinkMessage) error {
 	// Find Device
 	dev, err := h.devices.Get(appDown.AppID, appDown.DevID)
 	if err != nil {

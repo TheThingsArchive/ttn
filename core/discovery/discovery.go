@@ -43,6 +43,8 @@ func (d *discovery) Init(c *core.Component) error {
 	return nil
 }
 
+func (d *discovery) Shutdown() {}
+
 func (d *discovery) Announce(in *pb.Announcement) error {
 	service, err := d.services.Get(in.ServiceName, in.Id)
 	if err != nil && errors.GetErrType(err) != errors.NotFound {

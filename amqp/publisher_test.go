@@ -4,7 +4,6 @@
 package amqp
 
 import (
-	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -18,19 +17,19 @@ var host string
 func init() {
 	host = os.Getenv("AMQP_ADDR")
 	if host == "" {
-		host = "localhost"
+		host = "localhost:5672"
 	}
 }
 
 func TestNewPublisher(t *testing.T) {
 	a := New(t)
-	c := NewPublisher(GetLogger(t, "TestNewPublisher"), fmt.Sprintf("amqp://guest:guest@%s:5672/", host), "test")
+	c := NewPublisher(GetLogger(t, "TestNewPublisher"), "guest", "guest", host, "test")
 	a.So(c, ShouldNotBeNil)
 }
 
 func TestConnect(t *testing.T) {
 	a := New(t)
-	c := NewPublisher(GetLogger(t, "TestConnect"), fmt.Sprintf("amqp://guest:guest@%s:5672/", host), "test")
+	c := NewPublisher(GetLogger(t, "TestConnect"), "guest", "guest", host, "test")
 	err := c.Connect()
 	defer c.Disconnect()
 	a.So(err, ShouldBeNil)
@@ -45,7 +44,7 @@ func TestConnectInvalidAddress(t *testing.T) {
 	a := New(t)
 	ConnectRetries = 2
 	ConnectRetryDelay = 50 * time.Millisecond
-	c := NewPublisher(GetLogger(t, "TestConnectInvalidAddress"), fmt.Sprintf("amqp://guest:guest@%s:56720/", host), "test")
+	c := NewPublisher(GetLogger(t, "TestConnectInvalidAddress"), "guest", "guest", "localhost:56720", "test")
 	err := c.Connect()
 	defer c.Disconnect()
 	a.So(err, ShouldNotBeNil)
@@ -53,7 +52,7 @@ func TestConnectInvalidAddress(t *testing.T) {
 
 func TestIsConnected(t *testing.T) {
 	a := New(t)
-	c := NewPublisher(GetLogger(t, "TestIsConnected"), fmt.Sprintf("amqp://guest:guest@%s:5672/", host), "test")
+	c := NewPublisher(GetLogger(t, "TestIsConnected"), "guest", "guest", host, "test")
 
 	a.So(c.IsConnected(), ShouldBeFalse)
 
@@ -65,7 +64,7 @@ func TestIsConnected(t *testing.T) {
 
 func TestDisconnect(t *testing.T) {
 	a := New(t)
-	c := NewPublisher(GetLogger(t, "TestDisconnect"), fmt.Sprintf("amqp://guest:guest@%s:5672/", host), "test")
+	c := NewPublisher(GetLogger(t, "TestDisconnect"), "guest", "guest", host, "test")
 
 	// Disconnecting when not connected should not change anything
 	c.Disconnect()

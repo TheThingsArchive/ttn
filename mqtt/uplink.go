@@ -7,14 +7,15 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/TheThingsNetwork/ttn/core/types"
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 )
 
 // UplinkHandler is called for uplink messages
-type UplinkHandler func(client Client, appID string, devID string, req UplinkMessage)
+type UplinkHandler func(client Client, appID string, devID string, req types.UplinkMessage)
 
 // PublishUplink publishes an uplink message to the MQTT broker
-func (c *DefaultClient) PublishUplink(dataUp UplinkMessage) Token {
+func (c *DefaultClient) PublishUplink(dataUp types.UplinkMessage) Token {
 	topic := DeviceTopic{dataUp.AppID, dataUp.DevID, DeviceUplink, ""}
 	dataUp.AppID = ""
 	dataUp.DevID = ""
@@ -75,7 +76,7 @@ func (c *DefaultClient) SubscribeDeviceUplink(appID string, devID string, handle
 		}
 
 		// Unmarshal the payload
-		dataUp := &UplinkMessage{}
+		dataUp := &types.UplinkMessage{}
 		err = json.Unmarshal(msg.Payload(), dataUp)
 		dataUp.AppID = topic.AppID
 		dataUp.DevID = topic.DevID

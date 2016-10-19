@@ -7,10 +7,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
+
+	"github.com/TheThingsNetwork/ttn/core/types"
 )
 
 // PublishUplink publishes an uplink message to the MQTT broker
-func (c *DefaultPublisher) PublishUplink(dataUp UplinkMessage) error {
+func (c *DefaultPublisher) PublishUplink(dataUp types.UplinkMessage) error {
 	key := DeviceKey{dataUp.AppID, dataUp.DevID, DeviceUplink, ""}
 	msg, err := json.Marshal(dataUp)
 	if err != nil {

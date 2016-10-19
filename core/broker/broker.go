@@ -136,6 +136,8 @@ func (b *broker) Init(c *core.Component) error {
 	return nil
 }
 
+func (b *broker) Shutdown() {}
+
 func (b *broker) ActivateRouter(id string) (<-chan *pb.DownlinkMessage, error) {
 	b.routersLock.Lock()
 	defer b.routersLock.Unlock()

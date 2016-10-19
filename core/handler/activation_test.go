@@ -15,7 +15,6 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/handler/application"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
-	"github.com/TheThingsNetwork/ttn/mqtt"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"github.com/brocaar/lorawan"
 	. "github.com/smartystreets/assertions"
@@ -71,7 +70,7 @@ func TestHandleActivation(t *testing.T) {
 		applications: application.NewRedisApplicationStore(GetRedisClient(), "handler-test-activation"),
 		devices:      device.NewRedisDeviceStore(GetRedisClient(), "handler-test-activation"),
 	}
-	h.mqttActivation = make(chan *mqtt.Activation)
+	h.mqttActivation = make(chan *types.Activation)
 	h.mqttEvent = make(chan *mqttEvent, 10)
 	var wg WaitGroup
 

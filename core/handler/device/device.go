@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/core/types"
-	"github.com/TheThingsNetwork/ttn/mqtt"
 	"github.com/fatih/structs"
 )
 
@@ -18,17 +17,17 @@ type AppNonce [3]byte
 // Device contains the state of a device
 type Device struct {
 	old           *Device
-	DevEUI        types.DevEUI          `redis:"dev_eui"`
-	AppEUI        types.AppEUI          `redis:"app_eui"`
-	AppID         string                `redis:"app_id"`
-	DevID         string                `redis:"dev_id"`
-	DevAddr       types.DevAddr         `redis:"dev_addr"`
-	AppKey        types.AppKey          `redis:"app_key"`
-	UsedDevNonces []DevNonce            `redis:"used_dev_nonces"`
-	UsedAppNonces []AppNonce            `redis:"used_app_nonces"`
-	NwkSKey       types.NwkSKey         `redis:"nwk_s_key"`
-	AppSKey       types.AppSKey         `redis:"app_s_key"`
-	NextDownlink  *mqtt.DownlinkMessage `redis:"next_downlink"`
+	DevEUI        types.DevEUI           `redis:"dev_eui"`
+	AppEUI        types.AppEUI           `redis:"app_eui"`
+	AppID         string                 `redis:"app_id"`
+	DevID         string                 `redis:"dev_id"`
+	DevAddr       types.DevAddr          `redis:"dev_addr"`
+	AppKey        types.AppKey           `redis:"app_key"`
+	UsedDevNonces []DevNonce             `redis:"used_dev_nonces"`
+	UsedAppNonces []AppNonce             `redis:"used_app_nonces"`
+	NwkSKey       types.NwkSKey          `redis:"nwk_s_key"`
+	AppSKey       types.AppSKey          `redis:"app_s_key"`
+	NextDownlink  *types.DownlinkMessage `redis:"next_downlink"`
 
 	CreatedAt time.Time `redis:"created_at"`
 	UpdatedAt time.Time `redis:"updated_at"`

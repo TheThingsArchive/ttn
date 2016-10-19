@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"github.com/apex/log"
 	. "github.com/smartystreets/assertions"
@@ -157,7 +158,7 @@ func ExampleNewClient() {
 var exampleClient Client
 
 func ExampleDefaultClient_SubscribeDeviceUplink() {
-	token := exampleClient.SubscribeDeviceUplink("my-app-id", "my-dev-id", func(client Client, appID string, devID string, req UplinkMessage) {
+	token := exampleClient.SubscribeDeviceUplink("my-app-id", "my-dev-id", func(client Client, appID string, devID string, req types.UplinkMessage) {
 		// Do something with the message
 	})
 	token.Wait()
@@ -167,7 +168,7 @@ func ExampleDefaultClient_SubscribeDeviceUplink() {
 }
 
 func ExampleDefaultClient_PublishDownlink() {
-	token := exampleClient.PublishDownlink(DownlinkMessage{
+	token := exampleClient.PublishDownlink(types.DownlinkMessage{
 		AppID:      "my-app-id",
 		DevID:      "my-dev-id",
 		FPort:      1,

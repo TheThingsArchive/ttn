@@ -3,16 +3,20 @@
 
 package mqtt
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	"github.com/TheThingsNetwork/ttn/core/types"
+)
 
 // ActivationHandler is called for activations
-type ActivationHandler func(client Client, appID string, devID string, req Activation)
+type ActivationHandler func(client Client, appID string, devID string, req types.Activation)
 
 // ActivationEvent for MQTT
 const ActivationEvent = "activations"
 
 // PublishActivation publishes an activation
-func (c *DefaultClient) PublishActivation(activation Activation) Token {
+func (c *DefaultClient) PublishActivation(activation types.Activation) Token {
 	appID := activation.AppID
 	devID := activation.DevID
 	activation.AppID = ""
@@ -23,7 +27,7 @@ func (c *DefaultClient) PublishActivation(activation Activation) Token {
 // SubscribeDeviceActivations subscribes to all activations for the given application and device
 func (c *DefaultClient) SubscribeDeviceActivations(appID string, devID string, handler ActivationHandler) Token {
 	return c.SubscribeDeviceEvents(appID, devID, ActivationEvent, func(_ Client, appID string, devID string, _ string, payload []byte) {
-		activation := Activation{}
+		activation := types.Activation{}
 		if err := json.Unmarshal(payload, &activation); err != nil {
 			c.ctx.Warnf("Could not unmarshal activation (%s).", err.Error())
 			return

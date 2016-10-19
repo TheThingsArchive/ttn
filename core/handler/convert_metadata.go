@@ -5,16 +5,16 @@ package handler
 
 import (
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
-	"github.com/TheThingsNetwork/ttn/mqtt"
+	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/apex/log"
 )
 
 // ConvertMetadata converts the protobuf matadata to application metadata
-func (h *handler) ConvertMetadata(ctx log.Interface, ttnUp *pb_broker.DeduplicatedUplinkMessage, appUp *mqtt.UplinkMessage) error {
+func (h *handler) ConvertMetadata(ctx log.Interface, ttnUp *pb_broker.DeduplicatedUplinkMessage, appUp *types.UplinkMessage) error {
 	ctx = ctx.WithField("NumGateways", len(ttnUp.GatewayMetadata))
 
 	// Transform Metadata
-	appUp.Metadata.Time = mqtt.BuildTime(ttnUp.ServerTime)
+	appUp.Metadata.Time = types.BuildTime(ttnUp.ServerTime)
 	if lorawan := ttnUp.ProtocolMetadata.GetLorawan(); lorawan != nil {
 		appUp.Metadata.Modulation = lorawan.Modulation.String()
 		appUp.Metadata.DataRate = lorawan.DataRate
@@ -23,7 +23,7 @@ func (h *handler) ConvertMetadata(ctx log.Interface, ttnUp *pb_broker.Deduplicat
 	}
 
 	// Transform Gateway Metadata
-	appUp.Metadata.Gateways = make([]mqtt.GatewayMetadata, 0, len(ttnUp.GatewayMetadata))
+	appUp.Metadata.Gateways = make([]types.GatewayMetadata, 0, len(ttnUp.GatewayMetadata))
 	for i, in := range ttnUp.GatewayMetadata {
 
 		// Same for all gateways, take first one
@@ -31,10 +31,10 @@ func (h *handler) ConvertMetadata(ctx log.Interface, ttnUp *pb_broker.Deduplicat
 			appUp.Metadata.Frequency = float32(float64(in.Frequency) / 1000000)
 		}
 
-		gatewayMetadata := mqtt.GatewayMetadata{
+		gatewayMetadata := types.GatewayMetadata{
 			GtwID:     in.GatewayId,
 			Timestamp: in.Timestamp,
-			Time:      mqtt.BuildTime(in.Time),
+			Time:      types.BuildTime(in.Time),
 			Channel:   in.Channel,
 			RFChain:   in.RfChain,
 			RSSI:      in.Rssi,

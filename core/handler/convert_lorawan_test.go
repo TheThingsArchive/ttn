@@ -11,12 +11,12 @@ import (
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
-	"github.com/TheThingsNetwork/ttn/mqtt"
+	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/assertions"
 )
 
-func buildLorawanUplink(payload []byte) (*pb_broker.DeduplicatedUplinkMessage, *mqtt.UplinkMessage) {
+func buildLorawanUplink(payload []byte) (*pb_broker.DeduplicatedUplinkMessage, *types.UplinkMessage) {
 	ttnUp := &pb_broker.DeduplicatedUplinkMessage{
 		DevId:   "devid",
 		AppId:   "appid",
@@ -27,7 +27,7 @@ func buildLorawanUplink(payload []byte) (*pb_broker.DeduplicatedUplinkMessage, *
 			},
 		}},
 	}
-	appUp := &mqtt.UplinkMessage{}
+	appUp := &types.UplinkMessage{}
 	return ttnUp, appUp
 }
 
@@ -52,8 +52,8 @@ func TestConvertFromLoRaWAN(t *testing.T) {
 	a.So(appUp.FCnt, ShouldEqual, 1)
 }
 
-func buildLorawanDownlink(payload []byte) (*mqtt.DownlinkMessage, *pb_broker.DownlinkMessage) {
-	appDown := &mqtt.DownlinkMessage{
+func buildLorawanDownlink(payload []byte) (*types.DownlinkMessage, *pb_broker.DownlinkMessage) {
+	appDown := &types.DownlinkMessage{
 		DevID:      "devid",
 		AppID:      "appid",
 		PayloadRaw: []byte{0xaa, 0xbc},
