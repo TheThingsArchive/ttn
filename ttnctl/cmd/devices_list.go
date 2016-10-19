@@ -22,8 +22,8 @@ var devicesListCmd = &cobra.Command{
   INFO Discovering Handler...
   INFO Connecting with Handler...
 
-DevID	AppEUI          	DevEUI          	DevAddr 	Up/Down
-test 	70B3D57EF0000024	0001D544B2936FCE	26001ADA	0/0
+DevID	AppEUI          	DevEUI          	DevAddr
+test 	70B3D57EF0000024	0001D544B2936FCE	26001ADA
 
   INFO Listed 1 devices                         AppID=test
 `,
@@ -41,14 +41,14 @@ test 	70B3D57EF0000024	0001D544B2936FCE	26001ADA	0/0
 
 		table := uitable.New()
 		table.MaxColWidth = 70
-		table.AddRow("DevID", "AppEUI", "DevEUI", "DevAddr", "Up/Down")
+		table.AddRow("DevID", "AppEUI", "DevEUI", "DevAddr")
 		for _, dev := range devices {
 			if lorawan := dev.GetLorawanDevice(); lorawan != nil {
 				devAddr := lorawan.DevAddr
 				if devAddr.IsEmpty() {
 					devAddr = nil
 				}
-				table.AddRow(dev.DevId, lorawan.AppEui, lorawan.DevEui, devAddr, fmt.Sprintf("%d/%d", lorawan.FCntUp, lorawan.FCntDown))
+				table.AddRow(dev.DevId, lorawan.AppEui, lorawan.DevEui, devAddr)
 			} else {
 				table.AddRow(dev.DevId)
 			}
