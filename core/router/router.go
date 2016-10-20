@@ -11,6 +11,7 @@ import (
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	pb_gateway "github.com/TheThingsNetwork/ttn/api/gateway"
+	pb_monitor "github.com/TheThingsNetwork/ttn/api/monitor"
 	pb "github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/router/gateway"
@@ -107,7 +108,10 @@ func (r *router) getGateway(id string) *gateway.Gateway {
 		gtw = gateway.NewGateway(r.Ctx, id)
 
 		if r.Component.Monitors != nil {
-			gtw.SetMonitors(r.Component.Monitors)
+			gtw.Monitors = make(map[string]pb_monitor.GatewayClient)
+			for name, cl := range r.Component.Monitors {
+				gtw.Monitors[name] = cl.GatewayClient(gtw.ID, gtw.Token)
+			}
 		}
 
 		r.gateways[id] = gtw
