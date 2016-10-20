@@ -77,7 +77,7 @@ const (
 	AppEvents ApplicationKeyType = "events"
 )
 
-// ApplicationKey represents an MQTT topic for applications
+// ApplicationKey represents an AMQP topic for applications
 type ApplicationKey struct {
 	AppID string
 	Type  ApplicationKeyType

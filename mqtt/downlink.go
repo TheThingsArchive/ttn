@@ -8,7 +8,6 @@ import (
 	"fmt"
 
 	"github.com/TheThingsNetwork/ttn/core/types"
-
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 )
 

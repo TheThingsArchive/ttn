@@ -11,7 +11,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/types"
 )
 
-// PublishUplink publishes an uplink message to the MQTT broker
+// PublishUplink publishes an uplink message to the AMQP broker
 func (c *DefaultPublisher) PublishUplink(dataUp types.UplinkMessage) error {
 	key := DeviceKey{dataUp.AppID, dataUp.DevID, DeviceUplink, ""}
 	msg, err := json.Marshal(dataUp)
