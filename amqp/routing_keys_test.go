@@ -42,7 +42,7 @@ func TestParseDeviceKeyInvalid(t *testing.T) {
 	a.So(err, ShouldNotBeNil)
 }
 
-func TestKeyString(t *testing.T) {
+func TestDeviceKeyString(t *testing.T) {
 	a := New(t)
 
 	key := &DeviceKey{
@@ -58,7 +58,7 @@ func TestKeyString(t *testing.T) {
 	a.So(got, ShouldResemble, expected)
 }
 
-func TestKeyParseAndString(t *testing.T) {
+func TestDeviceKeyParseAndString(t *testing.T) {
 	a := New(t)
 
 	expectedList := []string{
@@ -82,6 +82,71 @@ func TestKeyParseAndString(t *testing.T) {
 
 	for _, expected := range expectedList {
 		key, err := ParseDeviceKey(expected)
+		a.So(err, ShouldBeNil)
+		a.So(key.String(), ShouldEqual, expected)
+	}
+}
+
+func TestParseAppKey(t *testing.T) {
+	a := New(t)
+
+	key := "appid-1.devices.devid-1.up"
+
+	expected := &DeviceKey{
+		AppID: "appid-1",
+		DevID: "devid-1",
+		Type:  DeviceUplink,
+	}
+
+	got, err := ParseDeviceKey(key)
+
+	a.So(err, ShouldBeNil)
+	a.So(got, ShouldResemble, expected)
+}
+
+func TestParseAppKeyInvalid(t *testing.T) {
+	a := New(t)
+
+	_, err := ParseApplicationKey("appid:Invalid.events")
+	a.So(err, ShouldNotBeNil)
+
+	_, err = ParseApplicationKey("appid.randomstuff")
+	a.So(err, ShouldNotBeNil)
+}
+
+func TestAppKeyString(t *testing.T) {
+	a := New(t)
+
+	key := &ApplicationKey{
+		AppID: "appid-1",
+		Type:  AppEvents,
+	}
+
+	a.So(key.String(), ShouldResemble, "appid-1.events.#")
+
+	key = &ApplicationKey{
+		AppID: "appid-1",
+		Type:  AppEvents,
+		Field: "err",
+	}
+
+	a.So(key.String(), ShouldResemble, "appid-1.events.err")
+}
+
+func TestAppKeyParseAndString(t *testing.T) {
+	a := New(t)
+
+	expectedList := []string{
+		"*.events.#",
+		"appid.events.#",
+		"*.events.some-event",
+		"appid.events.some-event",
+		"*.events.some.event",
+		"appid.events.some.event",
+	}
+
+	for _, expected := range expectedList {
+		key, err := ParseApplicationKey(expected)
 		a.So(err, ShouldBeNil)
 		a.So(key.String(), ShouldEqual, expected)
 	}

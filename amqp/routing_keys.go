@@ -9,7 +9,8 @@ import (
 	"strings"
 )
 
-const wildcard = "*"
+const simpleWildcard = "*"
+const wildard = "#"
 
 // DeviceKeyType represents the type of a device topic
 type DeviceKeyType string
@@ -37,11 +38,11 @@ func ParseDeviceKey(key string) (*DeviceKey, error) {
 		return nil, fmt.Errorf("Invalid key format")
 	}
 	var appID string
-	if matches[1] != wildcard {
+	if matches[1] != simpleWildcard {
 		appID = matches[1]
 	}
 	var devID string
-	if matches[3] != wildcard {
+	if matches[3] != simpleWildcard {
 		devID = matches[3]
 	}
 	keyType := DeviceKeyType(matches[4])
@@ -54,11 +55,11 @@ func ParseDeviceKey(key string) (*DeviceKey, error) {
 
 // String implements the Stringer interface
 func (t DeviceKey) String() string {
-	appID := wildcard
+	appID := simpleWildcard
 	if t.AppID != "" {
 		appID = t.AppID
 	}
-	devID := wildcard
+	devID := simpleWildcard
 	if t.DevID != "" {
 		devID = t.DevID
 	}
@@ -86,13 +87,13 @@ type ApplicationKey struct {
 
 // ParseApplicationKey parses an AMQP application routing key string to an ApplicationKey struct
 func ParseApplicationKey(key string) (*ApplicationKey, error) {
-	pattern := regexp.MustCompile("^([0-9a-z](?:[_-]?[0-9a-z]){1,35}|\\*)\\.(events)([0-9a-z\\.]+)?$")
+	pattern := regexp.MustCompile("^([0-9a-z](?:[_-]?[0-9a-z]){1,35}|\\*)\\.(events)([0-9a-z\\.-]+|\\.#)?$")
 	matches := pattern.FindStringSubmatch(key)
 	if len(matches) < 2 {
 		return nil, fmt.Errorf("Invalid key format")
 	}
 	var appID string
-	if matches[1] != wildcard {
+	if matches[1] != simpleWildcard {
 		appID = matches[1]
 	}
 	keyType := ApplicationKeyType(matches[2])
@@ -105,12 +106,12 @@ func ParseApplicationKey(key string) (*ApplicationKey, error) {
 
 // String implements the Stringer interface
 func (t ApplicationKey) String() string {
-	appID := wildcard
+	appID := simpleWildcard
 	if t.AppID != "" {
 		appID = t.AppID
 	}
 	if t.Type == AppEvents && t.Field == "" {
-		t.Field = wildcard
+		t.Field = wildard
 	}
 	key := fmt.Sprintf("%s.%s", appID, t.Type)
 	if t.Type == AppEvents && t.Field != "" {
