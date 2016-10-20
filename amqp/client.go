@@ -37,7 +37,7 @@ func NewClient(ctx Logger, username, password, host string) Client {
 	if ctx == nil {
 		ctx = &noopLogger{}
 	}
-	credentials := "guest"
+	credentials := "guest:guest"
 	if username != "" {
 		if password != "" {
 			credentials = fmt.Sprintf("%s:%s", username, password)
