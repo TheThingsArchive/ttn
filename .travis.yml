@@ -14,8 +14,7 @@ install:
 
 before_script:
     - docker run -d -p 127.0.0.1:6379:6379 redis
-    - docker run -d -p 127.0.0.1:1883:1883 ansi/mosquitto
-    - docker run -d -p 127.0.0.1:5672:5672 rabbitmq
+    - docker run -d -p 127.0.0.1:5672:5672 127.0.0.1:1883:1883 rabbitmq
 
 script:
     - make test
