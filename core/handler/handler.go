@@ -67,13 +67,13 @@ type handler struct {
 	mqttActivation chan *types.Activation
 	mqttEvent      chan *mqttEvent
 
-	amqpPublisher amqp.Publisher
-	amqpUsername  string
-	amqpPassword  string
-	amqpHost      string
-	amqpExchange  string
-	amqpEnabled   bool
-	amqpUp        chan *types.UplinkMessage
+	amqpClient   amqp.Client
+	amqpUsername string
+	amqpPassword string
+	amqpHost     string
+	amqpExchange string
+	amqpEnabled  bool
+	amqpUp       chan *types.UplinkMessage
 }
 
 func (h *handler) WithAMQP(username, password, host, exchange string) Handler {
@@ -126,7 +126,7 @@ func (h *handler) Init(c *core.Component) error {
 func (h *handler) Shutdown() {
 	h.mqttClient.Disconnect()
 	if h.amqpEnabled {
-		h.amqpPublisher.Disconnect()
+		h.amqpClient.Disconnect()
 	}
 }
 

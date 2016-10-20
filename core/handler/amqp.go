@@ -10,34 +10,36 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/types"
 )
 
-// AMQPBufferSize indicates the size for uplink channel buffers
-var AMQPBufferSize = 10
-
 func (h *handler) HandleAMQP(username, password, host, exchange string) error {
-	h.amqpPublisher = amqp.NewPublisher(h.Ctx, username, password, host, exchange)
+	h.amqpClient = amqp.NewClient(h.Ctx, username, password, host)
 
-	err := h.amqpPublisher.Connect()
+	err := h.amqpClient.Connect()
 	if err != nil {
 		return err
 	}
 
-	h.amqpUp = make(chan *types.UplinkMessage, AMQPBufferSize)
+	h.amqpUp = make(chan *types.UplinkMessage)
 
 	ctx := h.Ctx.WithField("Protocol", "AMQP")
 
 	go func() {
+		publisher := h.amqpClient.NewPublisher(exchange)
+		err := publisher.Open()
+		if err != nil {
+			ctx.WithError(err).Error("Could not open publisher channel")
+			return
+		}
+		defer publisher.Close()
+
 		for up := range h.amqpUp {
 			ctx.WithFields(log.Fields{
 				"DevID": up.DevID,
 				"AppID": up.AppID,
 			}).Debug("Publish Uplink")
-			msg := *up
-			go func() {
-				err := h.amqpPublisher.PublishUplink(msg)
-				if err != nil {
-					ctx.WithError(err).Warn("Could not publish Uplink")
-				}
-			}()
+			err := publisher.PublishUplink(*up)
+			if err != nil {
+				ctx.WithError(err).Warn("Could not publish Uplink")
+			}
 		}
 	}()
 
