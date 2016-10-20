@@ -8,7 +8,6 @@ import (
 
 	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/core/types"
-	"github.com/TheThingsNetwork/ttn/mqtt"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/spf13/cobra"
 )
@@ -58,7 +57,7 @@ $ ttnctl downlink test --json '{"led":"on"}'
 			ctx.WithError(err).Fatal("Failed to read fport flag")
 		}
 
-		message := mqtt.DownlinkMessage{
+		message := types.DownlinkMessage{
 			AppID: appID,
 			DevID: devID,
 			FPort: uint8(fPort),

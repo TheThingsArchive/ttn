@@ -79,6 +79,7 @@ var brokerCmd = &cobra.Command{
 		ctx.WithField("signal", <-sigChan).Info("signal received")
 
 		grpc.Stop()
+		broker.Shutdown()
 	},
 }
 

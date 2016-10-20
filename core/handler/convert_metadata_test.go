@@ -12,7 +12,7 @@ import (
 	pb_protocol "github.com/TheThingsNetwork/ttn/api/protocol"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core"
-	"github.com/TheThingsNetwork/ttn/mqtt"
+	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/assertions"
 )
@@ -24,7 +24,7 @@ func TestConvertMetadata(t *testing.T) {
 	}
 
 	ttnUp := &pb_broker.DeduplicatedUplinkMessage{}
-	appUp := &mqtt.UplinkMessage{}
+	appUp := &types.UplinkMessage{}
 
 	err := h.ConvertMetadata(h.Ctx, ttnUp, appUp)
 	a.So(err, ShouldBeNil)

@@ -7,12 +7,14 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/TheThingsNetwork/ttn/amqp"
 	"github.com/TheThingsNetwork/ttn/api"
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb "github.com/TheThingsNetwork/ttn/api/handler"
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/handler/application"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
+	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/mqtt"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"google.golang.org/grpc"
@@ -24,10 +26,12 @@ type Handler interface {
 	core.ComponentInterface
 	core.ManagementInterface
 
+	WithAMQP(username, password, host, exchange string) Handler
+
 	HandleUplink(uplink *pb_broker.DeduplicatedUplinkMessage) error
 	HandleActivationChallenge(challenge *pb_broker.ActivationChallengeRequest) (*pb_broker.ActivationChallengeResponse, error)
 	HandleActivation(activation *pb_broker.DeduplicatedDeviceActivationRequest) (*pb.DeviceActivationResponse, error)
-	EnqueueDownlink(appDownlink *mqtt.DownlinkMessage) error
+	EnqueueDownlink(appDownlink *types.DownlinkMessage) error
 }
 
 // NewRedisHandler creates a new Redis-backed Handler
@@ -55,14 +59,30 @@ type handler struct {
 
 	downlink chan *pb_broker.DownlinkMessage
 
-	mqttClient   mqtt.Client
-	mqttUsername string
-	mqttPassword string
-	mqttBrokers  []string
-
-	mqttUp         chan *mqtt.UplinkMessage
-	mqttActivation chan *mqtt.Activation
+	mqttClient     mqtt.Client
+	mqttUsername   string
+	mqttPassword   string
+	mqttBrokers    []string
+	mqttUp         chan *types.UplinkMessage
+	mqttActivation chan *types.Activation
 	mqttEvent      chan *mqttEvent
+
+	amqpClient   amqp.Client
+	amqpUsername string
+	amqpPassword string
+	amqpHost     string
+	amqpExchange string
+	amqpEnabled  bool
+	amqpUp       chan *types.UplinkMessage
+}
+
+func (h *handler) WithAMQP(username, password, host, exchange string) Handler {
+	h.amqpUsername = username
+	h.amqpPassword = password
+	h.amqpHost = host
+	h.amqpExchange = exchange
+	h.amqpEnabled = true
+	return h
 }
 
 func (h *handler) Init(c *core.Component) error {
@@ -86,6 +106,13 @@ func (h *handler) Init(c *core.Component) error {
 		return err
 	}
 
+	if h.amqpEnabled {
+		err = h.HandleAMQP(h.amqpUsername, h.amqpPassword, h.amqpHost, h.amqpExchange)
+		if err != nil {
+			return err
+		}
+	}
+
 	err = h.associateBroker()
 	if err != nil {
 		return err
@@ -94,6 +121,13 @@ func (h *handler) Init(c *core.Component) error {
 	h.Component.SetStatus(core.StatusHealthy)
 
 	return nil
+}
+
+func (h *handler) Shutdown() {
+	h.mqttClient.Disconnect()
+	if h.amqpEnabled {
+		h.amqpClient.Disconnect()
+	}
 }
 
 func (h *handler) associateBroker() error {

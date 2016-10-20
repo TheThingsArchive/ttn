@@ -53,7 +53,7 @@ client := NewClient(ctx, "ttnctl", "my-app-id", "my-access-key", "<Region>.theth
 if err := client.Connect(); err != nil {
   ctx.WithError(err).Fatal("Could not connect")
 }
-token := client.SubscribeDeviceUplink("my-app-id", "my-dev-id", func(client Client, appID string, devID string, req UplinkMessage) {
+token := client.SubscribeDeviceUplink("my-app-id", "my-dev-id", func(client Client, appID string, devID string, req types.UplinkMessage) {
   // Do something with the uplink message
 })
 token.Wait()
@@ -112,7 +112,7 @@ client := NewClient(ctx, "ttnctl", "my-app-id", "my-access-key", "<Region>.theth
 if err := client.Connect(); err != nil {
   ctx.WithError(err).Fatal("Could not connect")
 }
-token := client.PublishDownlink(DownlinkMessage{
+token := client.PublishDownlink(types.DownlinkMessage{
   AppID:   "my-app-id",
   DevID:   "my-dev-id",
   FPort:   1,
@@ -149,7 +149,7 @@ client := NewClient(ctx, "ttnctl", "my-app-id", "my-access-key", "<Region>.theth
 if err := client.Connect(); err != nil {
   ctx.WithError(err).Fatal("Could not connect")
 }
-token := client.PublishDownlink(DownlinkMessage{
+token := client.PublishDownlink(types.DownlinkMessage{
   AppID:   "my-app-id",
   DevID:   "my-dev-id",
   FPort:   1,

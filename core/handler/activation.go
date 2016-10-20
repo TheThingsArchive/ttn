@@ -11,7 +11,6 @@ import (
 	pb "github.com/TheThingsNetwork/ttn/api/handler"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
-	"github.com/TheThingsNetwork/ttn/mqtt"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/otaa"
 	"github.com/TheThingsNetwork/ttn/utils/random"
@@ -19,16 +18,16 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
-func (h *handler) getActivationMetadata(ctx log.Interface, activation *pb_broker.DeduplicatedDeviceActivationRequest) (mqtt.Metadata, error) {
+func (h *handler) getActivationMetadata(ctx log.Interface, activation *pb_broker.DeduplicatedDeviceActivationRequest) (types.Metadata, error) {
 	ttnUp := &pb_broker.DeduplicatedUplinkMessage{
 		ProtocolMetadata: activation.ProtocolMetadata,
 		GatewayMetadata:  activation.GatewayMetadata,
 		ServerTime:       activation.ServerTime,
 	}
-	mqttUp := &mqtt.UplinkMessage{}
+	mqttUp := &types.UplinkMessage{}
 	err := h.ConvertMetadata(ctx, ttnUp, mqttUp)
 	if err != nil {
-		return mqtt.Metadata{}, err
+		return types.Metadata{}, err
 	}
 	return mqttUp.Metadata, nil
 }
@@ -173,7 +172,7 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 
 	// Publish Activation
 	mqttMetadata, _ := h.getActivationMetadata(ctx, activation)
-	h.mqttActivation <- &mqtt.Activation{
+	h.mqttActivation <- &types.Activation{
 		AppEUI:   *activation.AppEui,
 		DevEUI:   *activation.DevEui,
 		AppID:    appID,

@@ -91,6 +91,7 @@ var networkserverCmd = &cobra.Command{
 		ctx.WithField("signal", <-sigChan).Info("signal received")
 
 		grpc.Stop()
+		networkserver.Shutdown()
 	},
 }
 

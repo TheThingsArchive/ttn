@@ -35,6 +35,7 @@ import (
 type ComponentInterface interface {
 	RegisterRPC(s *grpc.Server)
 	Init(c *Component) error
+	Shutdown()
 	ValidateNetworkContext(ctx context.Context) (*pb_discovery.Announcement, error)
 	ValidateTTNAuthContext(ctx context.Context) (*claims.Claims, error)
 }

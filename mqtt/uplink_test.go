@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 	. "github.com/smartystreets/assertions"
@@ -22,7 +23,7 @@ func TestPublishUplink(t *testing.T) {
 	c.Connect()
 	defer c.Disconnect()
 
-	dataUp := UplinkMessage{
+	dataUp := types.UplinkMessage{
 		AppID:      "someid",
 		DevID:      "someid",
 		PayloadRaw: []byte{0x01, 0x02, 0x03, 0x04},
@@ -110,7 +111,7 @@ func TestSubscribeDeviceUplink(t *testing.T) {
 	c.Connect()
 	defer c.Disconnect()
 
-	subToken := c.SubscribeDeviceUplink("someid", "someid", func(client Client, appID string, devID string, req UplinkMessage) {
+	subToken := c.SubscribeDeviceUplink("someid", "someid", func(client Client, appID string, devID string, req types.UplinkMessage) {
 
 	})
 	waitForOK(subToken, a)
@@ -125,7 +126,7 @@ func TestSubscribeAppUplink(t *testing.T) {
 	c.Connect()
 	defer c.Disconnect()
 
-	subToken := c.SubscribeAppUplink("someid", func(client Client, appID string, devID string, req UplinkMessage) {
+	subToken := c.SubscribeAppUplink("someid", func(client Client, appID string, devID string, req types.UplinkMessage) {
 
 	})
 	waitForOK(subToken, a)
@@ -140,7 +141,7 @@ func TestSubscribeUplink(t *testing.T) {
 	c.Connect()
 	defer c.Disconnect()
 
-	subToken := c.SubscribeUplink(func(client Client, appID string, devID string, req UplinkMessage) {
+	subToken := c.SubscribeUplink(func(client Client, appID string, devID string, req types.UplinkMessage) {
 
 	})
 	waitForOK(subToken, a)
@@ -157,7 +158,7 @@ func TestPubSubUplink(t *testing.T) {
 
 	waitChan := make(chan bool, 1)
 
-	subToken := c.SubscribeDeviceUplink("app1", "dev1", func(client Client, appID string, devID string, req UplinkMessage) {
+	subToken := c.SubscribeDeviceUplink("app1", "dev1", func(client Client, appID string, devID string, req types.UplinkMessage) {
 		a.So(appID, ShouldResemble, "app1")
 		a.So(devID, ShouldResemble, "dev1")
 
@@ -165,7 +166,7 @@ func TestPubSubUplink(t *testing.T) {
 	})
 	waitForOK(subToken, a)
 
-	pubToken := c.PublishUplink(UplinkMessage{
+	pubToken := c.PublishUplink(types.UplinkMessage{
 		PayloadRaw: []byte{0x01, 0x02, 0x03, 0x04},
 		AppID:      "app1",
 		DevID:      "dev1",
@@ -192,20 +193,20 @@ func TestPubSubAppUplink(t *testing.T) {
 
 	wg.Add(2)
 
-	subToken := c.SubscribeAppUplink("app2", func(client Client, appID string, devID string, req UplinkMessage) {
+	subToken := c.SubscribeAppUplink("app2", func(client Client, appID string, devID string, req types.UplinkMessage) {
 		a.So(appID, ShouldResemble, "app2")
 		a.So(req.PayloadRaw, ShouldResemble, []byte{0x01, 0x02, 0x03, 0x04})
 		wg.Done()
 	})
 	waitForOK(subToken, a)
 
-	pubToken := c.PublishUplink(UplinkMessage{
+	pubToken := c.PublishUplink(types.UplinkMessage{
 		AppID:      "app2",
 		DevID:      "dev1",
 		PayloadRaw: []byte{0x01, 0x02, 0x03, 0x04},
 	})
 	waitForOK(pubToken, a)
-	pubToken = c.PublishUplink(UplinkMessage{
+	pubToken = c.PublishUplink(types.UplinkMessage{
 		AppID:      "app2",
 		DevID:      "dev2",
 		PayloadRaw: []byte{0x01, 0x02, 0x03, 0x04},
