@@ -31,10 +31,12 @@ tests:
   image: golang:latest
   services:
     - ansi/mosquitto
+    - rabbitmq
     - redis
   variables:
     REDIS_HOST: redis
     MQTT_HOST: ansi-mosquitto
+    AMQP_ADDR: rabbitmq:5672
   script:
     - pushd $GOPATH/src/github.com/TheThingsNetwork/ttn
     - make deps
