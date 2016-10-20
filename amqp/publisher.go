@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/core/types"
-
 	AMQP "github.com/streadway/amqp"
 )
 
