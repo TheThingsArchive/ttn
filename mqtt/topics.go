@@ -9,7 +9,8 @@ import (
 	"strings"
 )
 
-const wildcard = "+"
+const simpleWildcard = "+"
+const wildcard = "#"
 
 // DeviceTopicType represents the type of a device topic
 type DeviceTopicType string
@@ -37,11 +38,11 @@ func ParseDeviceTopic(topic string) (*DeviceTopic, error) {
 		return nil, fmt.Errorf("Invalid topic format")
 	}
 	var appID string
-	if matches[1] != wildcard {
+	if matches[1] != simpleWildcard {
 		appID = matches[1]
 	}
 	var devID string
-	if matches[3] != wildcard {
+	if matches[3] != simpleWildcard {
 		devID = matches[3]
 	}
 	topicType := DeviceTopicType(matches[4])
@@ -54,16 +55,16 @@ func ParseDeviceTopic(topic string) (*DeviceTopic, error) {
 
 // String implements the Stringer interface
 func (t DeviceTopic) String() string {
-	appID := wildcard
+	appID := simpleWildcard
 	if t.AppID != "" {
 		appID = t.AppID
 	}
-	devID := wildcard
+	devID := simpleWildcard
 	if t.DevID != "" {
 		devID = t.DevID
 	}
 	if t.Type == DeviceEvents && t.Field == "" {
-		t.Field = wildcard
+		t.Field = simpleWildcard
 	}
 	topic := fmt.Sprintf("%s/%s/%s/%s", appID, "devices", devID, t.Type)
 	if (t.Type == DeviceUplink || t.Type == DeviceEvents) && t.Field != "" {
@@ -89,13 +90,13 @@ type ApplicationTopic struct {
 
 // ParseApplicationTopic parses an MQTT device topic string to an ApplicationTopic struct
 func ParseApplicationTopic(topic string) (*ApplicationTopic, error) {
-	pattern := regexp.MustCompile("^([0-9a-z](?:[_-]?[0-9a-z]){1,35}|\\+)/(events)([0-9a-z/]+)?$")
+	pattern := regexp.MustCompile("^([0-9a-z](?:[_-]?[0-9a-z]){1,35}|\\+)/(events)([0-9a-z/-]+|/#)?$")
 	matches := pattern.FindStringSubmatch(topic)
 	if len(matches) < 2 {
 		return nil, fmt.Errorf("Invalid topic format")
 	}
 	var appID string
-	if matches[1] != wildcard {
+	if matches[1] != simpleWildcard {
 		appID = matches[1]
 	}
 	topicType := ApplicationTopicType(matches[2])
@@ -108,7 +109,7 @@ func ParseApplicationTopic(topic string) (*ApplicationTopic, error) {
 
 // String implements the Stringer interface
 func (t ApplicationTopic) String() string {
-	appID := wildcard
+	appID := simpleWildcard
 	if t.AppID != "" {
 		appID = t.AppID
 	}
