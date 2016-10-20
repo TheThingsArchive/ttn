@@ -63,6 +63,7 @@ var routerCmd = &cobra.Command{
 		ctx.WithField("signal", <-sigChan).Info("signal received")
 
 		grpc.Stop()
+		router.Shutdown()
 	},
 }
 

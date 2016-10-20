@@ -16,6 +16,12 @@ func TestComputeLoRa(t *testing.T) {
 	var toa time.Duration
 	var err error
 
+	_, err = ComputeLoRa(10, "SFWUT", "4/5")
+	a.So(err, ShouldNotBeNil)
+
+	_, err = ComputeLoRa(10, "SF10BW125", "1/9")
+	a.So(err, ShouldNotBeNil)
+
 	// Test different SFs
 	sfTests := map[string]uint{
 		"SF7BW125":  41216,

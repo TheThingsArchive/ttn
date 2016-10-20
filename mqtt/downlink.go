@@ -7,14 +7,15 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/TheThingsNetwork/ttn/core/types"
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 )
 
 // DownlinkHandler is called for downlink messages
-type DownlinkHandler func(client Client, appID string, devID string, req DownlinkMessage)
+type DownlinkHandler func(client Client, appID string, devID string, req types.DownlinkMessage)
 
 // PublishDownlink publishes a downlink message
-func (c *DefaultClient) PublishDownlink(dataDown DownlinkMessage) Token {
+func (c *DefaultClient) PublishDownlink(dataDown types.DownlinkMessage) Token {
 	topic := DeviceTopic{dataDown.AppID, dataDown.DevID, DeviceDownlink, ""}
 	dataDown.AppID = ""
 	dataDown.DevID = ""
@@ -37,7 +38,7 @@ func (c *DefaultClient) SubscribeDeviceDownlink(appID string, devID string, hand
 		}
 
 		// Unmarshal the payload
-		dataDown := &DownlinkMessage{}
+		dataDown := &types.DownlinkMessage{}
 		err = json.Unmarshal(msg.Payload(), dataDown)
 		if err != nil {
 			c.ctx.Warnf("Could not unmarshal downlink (%s).", err.Error())

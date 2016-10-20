@@ -10,7 +10,7 @@ import "github.com/TheThingsNetwork/ttn/api/handler/handler.proto";
 
 import "google/protobuf/empty.proto";
 
-package noc;
+package monitor;
 
 service Monitor {
   rpc GatewayStatus(stream gateway.Status) returns (google.protobuf.Empty);

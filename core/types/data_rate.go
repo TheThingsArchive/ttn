@@ -5,9 +5,10 @@ package types
 
 import (
 	"fmt"
-	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"regexp"
 	"strconv"
+
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 
 	"github.com/brocaar/lorawan/band"
 )
@@ -36,7 +37,7 @@ func ParseDataRate(input string) (datr *DataRate, err error) {
 
 func ConvertDataRate(input band.DataRate) (datr *DataRate, err error) {
 	if input.Modulation != band.LoRaModulation {
-		err = errors.New("ttn/core: FSK not yet supported")
+		err = errors.New(fmt.Sprintf("ttn/core: %s can not be converted to a LoRa DataRate", input.Modulation))
 	}
 	datr = &DataRate{
 		SpreadingFactor: uint(input.SpreadFactor),

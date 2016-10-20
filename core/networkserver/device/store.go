@@ -5,357 +5,175 @@ package device
 
 import (
 	"fmt"
-	"sort"
 	"time"
 
+	"github.com/TheThingsNetwork/ttn/core/storage"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
-	"gopkg.in/redis.v3"
+	"gopkg.in/redis.v4"
 )
 
-// Store is used to store device configurations
+// Store interface for Devices
 type Store interface {
-	// List all devices
 	List() ([]*Device, error)
-	// Get the full information about a device
+	ListForAddress(devAddr types.DevAddr) ([]*Device, error)
 	Get(appEUI types.AppEUI, devEUI types.DevEUI) (*Device, error)
-	// Get a list of devices matching the DevAddr
-	GetWithAddress(devAddr types.DevAddr) ([]*Device, error)
-	// Set the given fields of a device. If fields empty, it sets all fields.
-	Set(device *Device, fields ...string) error
-	// Activate a device
-	Activate(types.AppEUI, types.DevEUI, types.DevAddr, types.NwkSKey) error
-	// Delete a device
-	Delete(types.AppEUI, types.DevEUI) error
+	Set(new *Device, properties ...string) (err error)
+	Activate(appEUI types.AppEUI, devEUI types.DevEUI, devAddr types.DevAddr, nwkSKey types.NwkSKey) error
+	Delete(appEUI types.AppEUI, devEUI types.DevEUI) error
 }
 
-// NewDeviceStore creates a new in-memory Device store
-func NewDeviceStore() Store {
-	return &deviceStore{
-		devices:   make(map[types.AppEUI]map[types.DevEUI]*Device),
-		byAddress: make(map[types.DevAddr][]*Device),
+const defaultRedisPrefix = "ns"
+
+const redisDevicePrefix = "device"
+const redisDevAddrPrefix = "dev_addr"
+
+// NewRedisDeviceStore creates a new Redis-based status store
+func NewRedisDeviceStore(client *redis.Client, prefix string) Store {
+	if prefix == "" {
+		prefix = defaultRedisPrefix
+	}
+	store := storage.NewRedisMapStore(client, prefix+":"+redisDevicePrefix)
+	store.SetBase(Device{}, "")
+
+	return &RedisDeviceStore{
+		store:        store,
+		devAddrIndex: storage.NewRedisSetStore(client, prefix+":"+redisDevAddrPrefix),
 	}
 }
 
-// deviceStore is an in-memory Device store. It should only be used for testing
-// purposes. Use the redisDeviceStore for actual deployments.
-type deviceStore struct {
-	devices   map[types.AppEUI]map[types.DevEUI]*Device
-	byAddress map[types.DevAddr][]*Device
+// RedisDeviceStore stores Devices in Redis.
+// - Devices are stored as a Hash
+// - DevAddr mappings are indexed in a Set
+type RedisDeviceStore struct {
+	store        *storage.RedisMapStore
+	devAddrIndex *storage.RedisSetStore
 }
 
-func (s *deviceStore) List() ([]*Device, error) {
-	devices := make([]*Device, 0, len(s.devices))
-	for _, app := range s.devices {
-		for _, device := range app {
-			devices = append(devices, device)
+// List all Devices
+func (s *RedisDeviceStore) List() ([]*Device, error) {
+	devicesI, err := s.store.List("", nil)
+	if err != nil {
+		return nil, err
+	}
+	devices := make([]*Device, 0, len(devicesI))
+	for _, deviceI := range devicesI {
+		if device, ok := deviceI.(Device); ok {
+			devices = append(devices, &device)
 		}
 	}
 	return devices, nil
 }
 
-func (s *deviceStore) Get(appEUI types.AppEUI, devEUI types.DevEUI) (*Device, error) {
-	if app, ok := s.devices[appEUI]; ok {
-		if dev, ok := app[devEUI]; ok {
-			return dev, nil
+// ListForAddress lists all devices for a specific DevAddr
+func (s *RedisDeviceStore) ListForAddress(devAddr types.DevAddr) ([]*Device, error) {
+	deviceKeys, err := s.devAddrIndex.Get(devAddr.String())
+	if errors.GetErrType(err) == errors.NotFound {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	devicesI, err := s.store.GetAll(deviceKeys, nil)
+	if err != nil {
+		return nil, err
+	}
+	devices := make([]*Device, 0, len(devicesI))
+	for _, deviceI := range devicesI {
+		if device, ok := deviceI.(Device); ok {
+			devices = append(devices, &device)
 		}
 	}
-	return nil, errors.NewErrNotFound(fmt.Sprintf("%s/%s", appEUI, devEUI))
+	return devices, nil
 }
 
-func (s *deviceStore) GetWithAddress(devAddr types.DevAddr) ([]*Device, error) {
-	if devices, ok := s.byAddress[devAddr]; ok {
-		return devices, nil
+// Get a specific Device
+func (s *RedisDeviceStore) Get(appEUI types.AppEUI, devEUI types.DevEUI) (*Device, error) {
+	deviceI, err := s.store.Get(fmt.Sprintf("%s:%s", appEUI, devEUI))
+	if err != nil {
+		return nil, err
 	}
-	return []*Device{}, nil
+	if device, ok := deviceI.(Device); ok {
+		return &device, nil
+	}
+	return nil, errors.New("Database did not return a Device")
 }
 
-func (s *deviceStore) Set(new *Device, fields ...string) error {
-	// NOTE: We don't care about fields for testing
-	if app, ok := s.devices[new.AppEUI]; ok {
-		if old, ok := app[new.DevEUI]; ok {
-			// DevAddr Updated
-			if new.DevAddr != old.DevAddr && !old.DevAddr.IsEmpty() {
-				// Remove the old DevAddr
-				newList := make([]*Device, 0, len(s.byAddress[old.DevAddr]))
-				for _, candidate := range s.byAddress[old.DevAddr] {
-					if candidate.DevEUI != old.DevEUI || candidate.AppEUI != old.AppEUI {
-						newList = append(newList, candidate)
-					}
-				}
-				s.byAddress[old.DevAddr] = newList
+// Set a new Device or update an existing one
+func (s *RedisDeviceStore) Set(new *Device, properties ...string) (err error) {
+	// If this is an update, check if AppEUI, DevEUI and DevAddr are still the same
+	old := new.old
+	var addrChanged bool
+	if old != nil {
+		addrChanged = new.DevAddr != old.DevAddr || new.DevEUI != old.DevEUI || new.AppEUI != old.AppEUI
+		if addrChanged {
+			if err := s.devAddrIndex.Remove(old.DevAddr.String(), fmt.Sprintf("%s:%s", old.AppEUI, old.DevEUI)); err != nil {
+				return err
 			}
 		}
-		app[new.DevEUI] = new
+	}
+
+	now := time.Now()
+	new.UpdatedAt = now
+
+	key := fmt.Sprintf("%s:%s", new.AppEUI, new.DevEUI)
+	if new.old != nil {
+		err = s.store.Update(key, *new, properties...)
 	} else {
-		s.devices[new.AppEUI] = map[types.DevEUI]*Device{new.DevEUI: new}
+		new.CreatedAt = now
+		err = s.store.Create(key, *new, properties...)
+	}
+	if err != nil {
+		return
 	}
 
-	if !new.DevAddr.IsEmpty() && !new.NwkSKey.IsEmpty() {
-		if devices, ok := s.byAddress[new.DevAddr]; ok {
-			var exists bool
-			for _, candidate := range devices {
-				if candidate.AppEUI == new.AppEUI && candidate.DevEUI == new.DevEUI {
-					exists = true
-					break
-				}
-			}
-			if !exists {
-				s.byAddress[new.DevAddr] = append(devices, new)
-			}
-		} else {
-			s.byAddress[new.DevAddr] = []*Device{new}
+	if (new.old == nil || addrChanged) && !new.DevAddr.IsEmpty() {
+		if err := s.devAddrIndex.Add(new.DevAddr.String(), key); err != nil {
+			return err
 		}
 	}
 
 	return nil
 }
 
-func (s *deviceStore) Activate(appEUI types.AppEUI, devEUI types.DevEUI, devAddr types.DevAddr, nwkSKey types.NwkSKey) error {
+// Activate a Device
+func (s *RedisDeviceStore) Activate(appEUI types.AppEUI, devEUI types.DevEUI, devAddr types.DevAddr, nwkSKey types.NwkSKey) error {
 	dev, err := s.Get(appEUI, devEUI)
 	if err != nil {
 		return err
 	}
+
+	dev.StartUpdate()
+
 	dev.LastSeen = time.Now()
+	dev.UpdatedAt = time.Now()
 	dev.DevAddr = devAddr
 	dev.NwkSKey = nwkSKey
 	dev.FCntUp = 0
 	dev.FCntDown = 0
-	return s.Set(dev, "last_seen", "dev_addr", "nwk_s_key", "f_cnt_up", "f_cnt_down")
+
+	return s.Set(dev)
 }
 
-func (s *deviceStore) Delete(appEUI types.AppEUI, devEUI types.DevEUI) error {
-	if app, ok := s.devices[appEUI]; ok {
-		if old, ok := app[devEUI]; ok {
-			delete(app, devEUI)
-			newList := make([]*Device, 0, len(s.byAddress[old.DevAddr]))
-			for _, candidate := range s.byAddress[old.DevAddr] {
-				if candidate.DevEUI != old.DevEUI || candidate.AppEUI != old.AppEUI {
-					newList = append(newList, candidate)
-				}
-			}
-			s.byAddress[old.DevAddr] = newList
-		}
-	}
+// Delete a Device
+func (s *RedisDeviceStore) Delete(appEUI types.AppEUI, devEUI types.DevEUI) error {
+	key := fmt.Sprintf("%s:%s", appEUI, devEUI)
 
-	return nil
-}
-
-// NewRedisDeviceStore creates a new Redis-based status store
-func NewRedisDeviceStore(client *redis.Client) Store {
-	return &redisDeviceStore{
-		client: client,
-	}
-}
-
-const redisDevicePrefix = "ns:device"
-const redisDevAddrPrefix = "ns:dev_addr"
-
-type redisDeviceStore struct {
-	client *redis.Client
-}
-
-func (s *redisDeviceStore) List() ([]*Device, error) {
-	keys, err := s.client.Keys(fmt.Sprintf("%s:*", redisDevicePrefix)).Result()
-	if err != nil {
-		return nil, err
-	}
-
-	sort.Strings(keys)
-
-	pipe := s.client.Pipeline()
-	defer pipe.Close()
-
-	// Add all commands to pipeline
-	cmds := make(map[string]*redis.StringStringMapCmd)
-	for _, key := range keys {
-		cmds[key] = pipe.HGetAllMap(key)
-	}
-
-	// Execute pipeline
-	_, err = pipe.Exec()
-	if err != nil {
-		return nil, err
-	}
-
-	// Get all results from pipeline
-	devices := make([]*Device, 0, len(keys))
-	for _, cmd := range cmds {
-		dmap, err := cmd.Result()
-		if err == nil {
-			device := &Device{}
-			err := device.FromStringStringMap(dmap)
-			if err == nil {
-				devices = append(devices, device)
-			}
-		}
-	}
-
-	return devices, nil
-}
-
-func (s *redisDeviceStore) Get(appEUI types.AppEUI, devEUI types.DevEUI) (*Device, error) {
-	res, err := s.client.HGetAllMap(fmt.Sprintf("%s:%s:%s", redisDevicePrefix, appEUI, devEUI)).Result()
-	if err != nil {
-		if err == redis.Nil {
-			return nil, errors.NewErrNotFound(fmt.Sprintf("%s/%s", appEUI, devEUI))
-		}
-		return nil, err
-	} else if len(res) == 0 {
-		return nil, errors.NewErrNotFound(fmt.Sprintf("%s/%s", appEUI, devEUI))
-	}
-	device := &Device{}
-	err = device.FromStringStringMap(res)
-	if err != nil {
-		return nil, err
-	}
-	return device, nil
-}
-
-func (s *redisDeviceStore) GetWithAddress(devAddr types.DevAddr) ([]*Device, error) {
-	keys, err := s.client.SMembers(fmt.Sprintf("%s:%s", redisDevAddrPrefix, devAddr)).Result()
-	if err != nil {
-		return nil, err
-	}
-
-	sort.Strings(keys)
-
-	pipe := s.client.Pipeline()
-	defer pipe.Close()
-
-	// Add all commands to pipeline
-	cmds := make(map[string]*redis.StringStringMapCmd)
-	for _, key := range keys {
-		cmds[key] = pipe.HGetAllMap(key)
-	}
-
-	// Execute pipeline
-	_, err = pipe.Exec()
-	if err != nil {
-		return nil, err
-	}
-
-	// Get all results from pipeline
-	devices := make([]*Device, 0, len(keys))
-	for _, cmd := range cmds {
-		dmap, err := cmd.Result()
-		if err == nil {
-			device := &Device{}
-			err := device.FromStringStringMap(dmap)
-			if err == nil {
-				devices = append(devices, device)
-			}
-		}
-	}
-
-	return devices, nil
-}
-
-func (s *redisDeviceStore) Set(new *Device, fields ...string) error {
-	if len(fields) == 0 {
-		fields = DeviceProperties
-	} else {
-		fields = append(fields, "updated_at")
-	}
-
-	key := fmt.Sprintf("%s:%s:%s", redisDevicePrefix, new.AppEUI, new.DevEUI)
-
-	// Check for old DevAddr
-	oldDevAddrStr, err := s.client.HGet(key, "dev_addr").Result()
-	if err != nil && err != redis.Nil {
-		return err
-	}
-	oldDevAddr, _ := types.ParseDevAddr(oldDevAddrStr)
-
-	new.UpdatedAt = time.Now()
-	dmap, err := new.ToStringStringMap(fields...)
+	deviceI, err := s.store.GetFields(key, "dev_addr")
 	if err != nil {
 		return err
 	}
-	if err := s.client.HMSetMap(key, dmap).Err(); err != nil {
-		return err
+
+	device, ok := deviceI.(Device)
+	if !ok {
+		errors.New("Database did not return a Device")
 	}
 
-	// Update DevAddr lookup if needed
-	if new.DevAddr != oldDevAddr {
-		if err := s.client.SRem(fmt.Sprintf("%s:%s", redisDevAddrPrefix, oldDevAddr), key).Err(); err != nil && err != redis.Nil {
+	if !device.DevAddr.IsEmpty() {
+		if err := s.devAddrIndex.Remove(device.DevAddr.String(), key); err != nil {
 			return err
 		}
-		if !new.DevAddr.IsEmpty() {
-			if err := s.client.SAdd(fmt.Sprintf("%s:%s", redisDevAddrPrefix, new.DevAddr), key).Err(); err != nil {
-				return err
-			}
-		}
 	}
 
-	return nil
-}
-
-func (s *redisDeviceStore) Activate(appEUI types.AppEUI, devEUI types.DevEUI, devAddr types.DevAddr, nwkSKey types.NwkSKey) error {
-	key := fmt.Sprintf("%s:%s:%s", redisDevicePrefix, appEUI, devEUI)
-
-	// Find existing device
-	exists, err := s.client.Exists(key).Result()
-	if err != nil {
-		return err
-	}
-	if !exists {
-		return errors.NewErrNotFound(fmt.Sprintf("%s/%s", appEUI, devEUI))
-	}
-
-	// Check for old DevAddr
-	if devAddr, err := s.client.HGet(key, "dev_addr").Result(); err == nil {
-		// Delete old DevAddr
-		if devAddr != "" {
-			err := s.client.SRem(fmt.Sprintf("%s:%s", redisDevAddrPrefix, devAddr), key).Err()
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	// Update Device
-	dev := &Device{
-		LastSeen:  time.Now(),
-		UpdatedAt: time.Now(),
-		DevAddr:   devAddr,
-		NwkSKey:   nwkSKey,
-		FCntUp:    0,
-		FCntDown:  0,
-	}
-
-	// Don't touch Utilization and Options
-	dmap, err := dev.ToStringStringMap("last_seen", "dev_addr", "nwk_s_key", "f_cnt_up", "f_cnt_down", "updated_at")
-
-	// Register Device
-	err = s.client.HMSetMap(key, dmap).Err()
-	if err != nil {
-		return err
-	}
-
-	// Register DevAddr
-	err = s.client.SAdd(fmt.Sprintf("%s:%s", redisDevAddrPrefix, devAddr), key).Err()
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (s *redisDeviceStore) Delete(appEUI types.AppEUI, devEUI types.DevEUI) error {
-	key := fmt.Sprintf("%s:%s:%s", redisDevicePrefix, appEUI, devEUI)
-	if devAddr, err := s.client.HGet(key, "dev_addr").Result(); err == nil {
-		// Delete old DevAddr
-		if devAddr != "" {
-			err := s.client.SRem(fmt.Sprintf("%s:%s", redisDevAddrPrefix, devAddr), key).Err()
-			if err != nil {
-				return err
-			}
-		}
-	}
-	err := s.client.Del(key).Err()
-	if err != nil {
-		return err
-	}
-	return nil
+	return s.store.Delete(key)
 }

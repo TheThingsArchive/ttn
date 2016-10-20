@@ -9,7 +9,6 @@ import (
 	"time"
 
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
-	"github.com/TheThingsNetwork/ttn/mqtt"
 
 	"github.com/TheThingsNetwork/ttn/core/handler/application"
 	"github.com/TheThingsNetwork/ttn/core/types"
@@ -17,14 +16,14 @@ import (
 	. "github.com/smartystreets/assertions"
 )
 
-func buildConversionUplink() (*pb_broker.DeduplicatedUplinkMessage, *mqtt.UplinkMessage) {
+func buildConversionUplink(appID string) (*pb_broker.DeduplicatedUplinkMessage, *types.UplinkMessage) {
 	ttnUp := &pb_broker.DeduplicatedUplinkMessage{
-		AppId: "AppID-1",
+		AppId: appID,
 		DevId: "DevID-1",
 	}
-	appUp := &mqtt.UplinkMessage{
+	appUp := &types.UplinkMessage{
 		FPort:      1,
-		AppID:      "AppID-1",
+		AppID:      appID,
 		DevID:      "DevID-1",
 		PayloadRaw: []byte{0x08, 0x70},
 	}
@@ -36,21 +35,25 @@ func TestConvertFieldsUp(t *testing.T) {
 	appID := "AppID-1"
 
 	h := &handler{
-		applications: application.NewApplicationStore(),
+		applications: application.NewRedisApplicationStore(GetRedisClient(), "handler-test-convert-fields-up"),
 	}
 
 	// No functions
-	ttnUp, appUp := buildConversionUplink()
+	ttnUp, appUp := buildConversionUplink(appID)
 	err := h.ConvertFieldsUp(GetLogger(t, "TestConvertFieldsUp"), ttnUp, appUp)
 	a.So(err, ShouldBeNil)
 	a.So(appUp.PayloadFields, ShouldBeEmpty)
 
 	// Normal flow
-	h.applications.Set(&application.Application{
+	app := &application.Application{
 		AppID:   appID,
 		Decoder: `function(data) { return { temperature: ((data[0] << 8) | data[1]) / 100 }; }`,
-	})
-	ttnUp, appUp = buildConversionUplink()
+	}
+	a.So(h.applications.Set(app), ShouldBeNil)
+	defer func() {
+		h.applications.Delete(appID)
+	}()
+	ttnUp, appUp = buildConversionUplink(appID)
 	err = h.ConvertFieldsUp(GetLogger(t, "TestConvertFieldsUp"), ttnUp, appUp)
 	a.So(err, ShouldBeNil)
 
@@ -59,23 +62,19 @@ func TestConvertFieldsUp(t *testing.T) {
 	})
 
 	// Invalidate data
-	h.applications.Set(&application.Application{
-		AppID:     appID,
-		Decoder:   `function(data) { return { temperature: ((data[0] << 8) | data[1]) / 100 }; }`,
-		Validator: `function(data) { return false; }`,
-	})
-	ttnUp, appUp = buildConversionUplink()
+	app.StartUpdate()
+	app.Validator = `function(data) { return false; }`
+	h.applications.Set(app)
+	ttnUp, appUp = buildConversionUplink(appID)
 	err = h.ConvertFieldsUp(GetLogger(t, "TestConvertFieldsUp"), ttnUp, appUp)
 	a.So(err, ShouldNotBeNil)
 	a.So(appUp.PayloadFields, ShouldBeEmpty)
 
 	// Function error
-	h.applications.Set(&application.Application{
-		AppID:     appID,
-		Decoder:   `function(data) { return { temperature: ((data[0] << 8) | data[1]) / 100 }; }`,
-		Converter: `function(data) { throw "expected"; }`,
-	})
-	ttnUp, appUp = buildConversionUplink()
+	app.StartUpdate()
+	app.Validator = `function(data) { throw "expected"; }`
+	h.applications.Set(app)
+	ttnUp, appUp = buildConversionUplink(appID)
 	err = h.ConvertFieldsUp(GetLogger(t, "TestConvertFieldsUp"), ttnUp, appUp)
 	a.So(err, ShouldBeNil)
 	a.So(appUp.PayloadFields, ShouldBeEmpty)
@@ -302,14 +301,14 @@ func TestEncode(t *testing.T) {
 	a.So(err, ShouldBeNil)
 }
 
-func buildConversionDownlink() (*pb_broker.DownlinkMessage, *mqtt.DownlinkMessage) {
+func buildConversionDownlink() (*pb_broker.DownlinkMessage, *types.DownlinkMessage) {
 	appEUI := types.AppEUI([8]byte{1, 2, 3, 4, 5, 6, 7, 8})
 	devEUI := types.DevEUI([8]byte{1, 2, 3, 4, 5, 6, 7, 8})
 	ttnDown := &pb_broker.DownlinkMessage{
 		AppEui: &appEUI,
 		DevEui: &devEUI,
 	}
-	appDown := &mqtt.DownlinkMessage{
+	appDown := &types.DownlinkMessage{
 		FPort:         1,
 		AppID:         "AppID-1",
 		DevID:         "DevID-1",
@@ -324,7 +323,7 @@ func TestConvertFieldsDown(t *testing.T) {
 	appID := "AppID-1"
 
 	h := &handler{
-		applications: application.NewApplicationStore(),
+		applications: application.NewRedisApplicationStore(GetRedisClient(), "handler-test-convert-fields-down"),
 	}
 
 	// Case1: No Encoder
@@ -341,6 +340,9 @@ func TestConvertFieldsDown(t *testing.T) {
   		return [ 1, 2, 3, 4, 5, 6, 7 ]
 		}`,
 	})
+	defer func() {
+		h.applications.Delete(appID)
+	}()
 
 	ttnDown, appDown = buildConversionDownlink()
 	err = h.ConvertFieldsDown(GetLogger(t, "TestConvertFieldsDown"), appDown, ttnDown)

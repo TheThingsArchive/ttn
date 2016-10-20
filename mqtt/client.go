@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/random"
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 )
@@ -29,7 +30,7 @@ type Client interface {
 	IsConnected() bool
 
 	// Uplink pub/sub
-	PublishUplink(payload UplinkMessage) Token
+	PublishUplink(payload types.UplinkMessage) Token
 	PublishUplinkFields(appID string, devID string, fields map[string]interface{}) Token
 	SubscribeDeviceUplink(appID string, devID string, handler UplinkHandler) Token
 	SubscribeAppUplink(appID string, handler UplinkHandler) Token
@@ -39,7 +40,7 @@ type Client interface {
 	UnsubscribeUplink() Token
 
 	// Downlink pub/sub
-	PublishDownlink(payload DownlinkMessage) Token
+	PublishDownlink(payload types.DownlinkMessage) Token
 	SubscribeDeviceDownlink(appID string, devID string, handler DownlinkHandler) Token
 	SubscribeAppDownlink(appID string, handler DownlinkHandler) Token
 	SubscribeDownlink(handler DownlinkHandler) Token
@@ -56,7 +57,7 @@ type Client interface {
 	UnsubscribeDeviceEvents(appID string, devID string, eventType string) Token
 
 	// Activation pub/sub
-	PublishActivation(payload Activation) Token
+	PublishActivation(payload types.Activation) Token
 	SubscribeDeviceActivations(appID string, devID string, handler ActivationHandler) Token
 	SubscribeAppActivations(appID string, handler ActivationHandler) Token
 	SubscribeActivations(handler ActivationHandler) Token
@@ -229,7 +230,7 @@ func (c *DefaultClient) Connect() error {
 		<-time.After(ConnectRetryDelay)
 	}
 	if err != nil {
-		return fmt.Errorf("Could not connect to MQTT Broker (%s).", err)
+		return fmt.Errorf("Could not connect to MQTT Broker (%s)", err)
 	}
 	return nil
 }

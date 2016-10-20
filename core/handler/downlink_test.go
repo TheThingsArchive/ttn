@@ -12,7 +12,6 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/handler/application"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
-	"github.com/TheThingsNetwork/ttn/mqtt"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/assertions"
 )
@@ -23,10 +22,10 @@ func TestEnqueueDownlink(t *testing.T) {
 	devID := "dev1"
 	h := &handler{
 		Component: &core.Component{Ctx: GetLogger(t, "TestEnqueueDownlink")},
-		devices:   device.NewDeviceStore(),
+		devices:   device.NewRedisDeviceStore(GetRedisClient(), "handler-test-enqueue-downlink"),
 		mqttEvent: make(chan *mqttEvent, 10),
 	}
-	err := h.EnqueueDownlink(&mqtt.DownlinkMessage{
+	err := h.EnqueueDownlink(&types.DownlinkMessage{
 		AppID: appID,
 		DevID: devID,
 	})
@@ -35,7 +34,10 @@ func TestEnqueueDownlink(t *testing.T) {
 		AppID: appID,
 		DevID: devID,
 	})
-	err = h.EnqueueDownlink(&mqtt.DownlinkMessage{
+	defer func() {
+		h.devices.Delete(appID, devID)
+	}()
+	err = h.EnqueueDownlink(&types.DownlinkMessage{
 		AppID: appID,
 		DevID: devID,
 		PayloadFields: map[string]interface{}{
@@ -60,13 +62,13 @@ func TestHandleDownlink(t *testing.T) {
 	devEUI := types.DevEUI([8]byte{1, 2, 3, 4, 5, 6, 7, 8})
 	h := &handler{
 		Component:    &core.Component{Ctx: GetLogger(t, "TestHandleDownlink")},
-		devices:      device.NewDeviceStore(),
-		applications: application.NewApplicationStore(),
+		devices:      device.NewRedisDeviceStore(GetRedisClient(), "handler-test-handle-downlink"),
+		applications: application.NewRedisApplicationStore(GetRedisClient(), "handler-test-enqueue-downlink"),
 		downlink:     make(chan *pb_broker.DownlinkMessage),
 		mqttEvent:    make(chan *mqttEvent, 10),
 	}
 	// Neither payload nor Fields provided : ERROR
-	err = h.HandleDownlink(&mqtt.DownlinkMessage{
+	err = h.HandleDownlink(&types.DownlinkMessage{
 		AppID: appID,
 		DevID: devID,
 	}, &pb_broker.DownlinkMessage{
@@ -79,7 +81,10 @@ func TestHandleDownlink(t *testing.T) {
 		AppID: appID,
 		DevID: devID,
 	})
-	err = h.HandleDownlink(&mqtt.DownlinkMessage{
+	defer func() {
+		h.devices.Delete(appID, devID)
+	}()
+	err = h.HandleDownlink(&types.DownlinkMessage{
 		AppID: appID,
 		DevID: devID,
 	}, &pb_broker.DownlinkMessage{
@@ -96,7 +101,7 @@ func TestHandleDownlink(t *testing.T) {
 		a.So(dl.Payload, ShouldNotBeEmpty)
 		wg.Done()
 	}()
-	err = h.HandleDownlink(&mqtt.DownlinkMessage{
+	err = h.HandleDownlink(&types.DownlinkMessage{
 		AppID:      appID,
 		DevID:      devID,
 		PayloadRaw: []byte{0xAA, 0xBC},
@@ -115,8 +120,11 @@ func TestHandleDownlink(t *testing.T) {
 	  		return [96, 4, 3, 2, 1, 0, 1, 0, 1, 0, 0, 0, 0]
 			}`,
 	})
+	defer func() {
+		h.applications.Delete(appID)
+	}()
 	jsonFields := map[string]interface{}{"temperature": 11}
-	err = h.HandleDownlink(&mqtt.DownlinkMessage{
+	err = h.HandleDownlink(&types.DownlinkMessage{
 		FPort:         1,
 		AppID:         appID,
 		DevID:         devID,
@@ -136,7 +144,7 @@ func TestHandleDownlink(t *testing.T) {
 		a.So(dl.Payload, ShouldNotBeEmpty)
 		wg.Done()
 	}()
-	err = h.HandleDownlink(&mqtt.DownlinkMessage{
+	err = h.HandleDownlink(&types.DownlinkMessage{
 		FPort:         1,
 		AppID:         appID,
 		DevID:         devID,

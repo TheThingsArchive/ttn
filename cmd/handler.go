@@ -11,7 +11,7 @@ import (
 	"syscall"
 
 	"google.golang.org/grpc"
-	"gopkg.in/redis.v3"
+	"gopkg.in/redis.v4"
 
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/handler"
@@ -30,8 +30,9 @@ var handlerCmd = &cobra.Command{
 			"Server":     fmt.Sprintf("%s:%d", viper.GetString("handler.server-address"), viper.GetInt("handler.server-port")),
 			"Announce":   fmt.Sprintf("%s:%d", viper.GetString("handler.server-address-announce"), viper.GetInt("handler.server-port")),
 			"Database":   fmt.Sprintf("%s/%d", viper.GetString("handler.redis-address"), viper.GetInt("handler.redis-db")),
-			"TTNbroker":  viper.GetString("handler.ttn-broker"),
-			"MQTTbroker": viper.GetString("handler.mqtt-broker"),
+			"TTNBroker":  viper.GetString("handler.ttn-broker"),
+			"MQTTBroker": viper.GetString("handler.mqtt-broker"),
+			"AMQPHost":   viper.GetString("handler.amqp-host"),
 		}).Info("Initializing Handler")
 	},
 	Run: func(cmd *cobra.Command, args []string) {
@@ -41,7 +42,7 @@ var handlerCmd = &cobra.Command{
 		client := redis.NewClient(&redis.Options{
 			Addr:     viper.GetString("handler.redis-address"),
 			Password: "", // no password set
-			DB:       int64(viper.GetInt("handler.redis-db")),
+			DB:       viper.GetInt("handler.redis-db"),
 		})
 
 		connectRedis(client)
@@ -52,7 +53,7 @@ var handlerCmd = &cobra.Command{
 			ctx.WithError(err).Fatal("Could not initialize component")
 		}
 
-		// Broker
+		// Handler
 		handler := handler.NewRedisHandler(
 			client,
 			viper.GetString("handler.ttn-broker"),
@@ -60,6 +61,13 @@ var handlerCmd = &cobra.Command{
 			viper.GetString("handler.mqtt-password"),
 			viper.GetString("handler.mqtt-broker"),
 		)
+		if viper.GetString("handler.amqp-host") != "" {
+			handler = handler.WithAMQP(
+				viper.GetString("handler.amqp-username"),
+				viper.GetString("handler.amqp-password"),
+				viper.GetString("handler.amqp-host"),
+				viper.GetString("handler.amqp-exchange"))
+		}
 		err = handler.Init(component)
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not initialize handler")
@@ -82,6 +90,7 @@ var handlerCmd = &cobra.Command{
 		ctx.WithField("signal", <-sigChan).Info("signal received")
 
 		grpc.Stop()
+		handler.Shutdown()
 
 	},
 }
@@ -105,6 +114,18 @@ func init() {
 
 	handlerCmd.Flags().String("mqtt-password", "", "MQTT password")
 	viper.BindPFlag("handler.mqtt-password", handlerCmd.Flags().Lookup("mqtt-password"))
+
+	handlerCmd.Flags().String("amqp-host", "", "AMQP host and port. Leave empty to disable AMQP")
+	viper.BindPFlag("handler.amqp-host", handlerCmd.Flags().Lookup("amqp-host"))
+
+	handlerCmd.Flags().String("amqp-username", "handler", "AMQP username")
+	viper.BindPFlag("handler.amqp-username", handlerCmd.Flags().Lookup("amqp-username"))
+
+	handlerCmd.Flags().String("amqp-password", "", "AMQP password")
+	viper.BindPFlag("handler.amqp-password", handlerCmd.Flags().Lookup("amqp-password"))
+
+	handlerCmd.Flags().String("amqp-exchange", "", "AMQP exchange")
+	viper.BindPFlag("handler.amqp-exchange", handlerCmd.Flags().Lookup("amqp-exchange"))
 
 	handlerCmd.Flags().String("server-address", "0.0.0.0", "The IP address to listen for communication")
 	handlerCmd.Flags().String("server-address-announce", "localhost", "The public IP address to announce")

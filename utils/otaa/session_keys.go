@@ -7,7 +7,6 @@ import (
 	"crypto/aes"
 
 	"github.com/TheThingsNetwork/ttn/core/types"
-	"github.com/TheThingsNetwork/ttn/utils/errors"
 )
 
 // CalculateSessionKeys calculates the AppSKey and NwkSKey
@@ -19,12 +18,7 @@ func CalculateSessionKeys(appKey types.AppKey, appNonce [3]byte, netID [3]byte, 
 	copy(buf[4:7], reverse(netID[:]))
 	copy(buf[7:9], reverse(devNonce[:]))
 
-	block, err := aes.NewCipher(appKey[:])
-
-	if err != nil || block.BlockSize() != 16 {
-		err = errors.NewErrInternal("Unable to create cipher to generate keys")
-		return
-	}
+	block, _ := aes.NewCipher(appKey[:])
 
 	buf[0] = 0x1
 	block.Encrypt(nwkSKey[:], buf)

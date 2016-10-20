@@ -38,6 +38,16 @@ func TestEUI64(t *testing.T) {
 	a.So(err, ShouldBeNil)
 	a.So(mOut, ShouldResemble, bin)
 
+	// MarshalTo
+	bOut := make([]byte, 8)
+	_, err = eui.MarshalTo(bOut)
+	a.So(err, ShouldBeNil)
+	a.So(bOut, ShouldResemble, bin)
+
+	// Size
+	s := eui.Size()
+	a.So(s, ShouldEqual, 8)
+
 	// Parse
 	pOut, err := ParseEUI64(str)
 	a.So(err, ShouldBeNil)
@@ -96,6 +106,16 @@ func TestAppEUI(t *testing.T) {
 	a.So(err, ShouldBeNil)
 	a.So(mOut, ShouldResemble, bin)
 
+	// MarshalTo
+	bOut := make([]byte, 8)
+	_, err = eui.MarshalTo(bOut)
+	a.So(err, ShouldBeNil)
+	a.So(bOut, ShouldResemble, bin)
+
+	// Size
+	s := eui.Size()
+	a.So(s, ShouldEqual, 8)
+
 	// Parse
 	pOut, err := ParseAppEUI(str)
 	a.So(err, ShouldBeNil)
@@ -153,6 +173,16 @@ func TestDevEUI(t *testing.T) {
 	mOut, err := eui.Marshal()
 	a.So(err, ShouldBeNil)
 	a.So(mOut, ShouldResemble, bin)
+
+	// MarshalTo
+	bOut := make([]byte, 8)
+	_, err = eui.MarshalTo(bOut)
+	a.So(err, ShouldBeNil)
+	a.So(bOut, ShouldResemble, bin)
+
+	// Size
+	s := eui.Size()
+	a.So(s, ShouldEqual, 8)
 
 	// Parse
 	pOut, err := ParseDevEUI(str)

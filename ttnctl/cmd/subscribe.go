@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/mqtt"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/spf13/cobra"
@@ -24,7 +25,7 @@ var subscribeCmd = &cobra.Command{
 		client := util.GetMQTT(ctx)
 		defer client.Disconnect()
 
-		token := client.SubscribeActivations(func(client mqtt.Client, appID string, devID string, req mqtt.Activation) {
+		token := client.SubscribeActivations(func(client mqtt.Client, appID string, devID string, req types.Activation) {
 			ctx.Info("Activation")
 			printKV("AppID", appID)
 			printKV("DevID", devID)
@@ -39,7 +40,7 @@ var subscribeCmd = &cobra.Command{
 		}
 		ctx.Info("Subscribed to activations")
 
-		token = client.SubscribeUplink(func(client mqtt.Client, appID string, devID string, req mqtt.UplinkMessage) {
+		token = client.SubscribeUplink(func(client mqtt.Client, appID string, devID string, req types.UplinkMessage) {
 			ctx.Info("Uplink Message")
 			printKV("AppID", appID)
 			printKV("DevID", devID)

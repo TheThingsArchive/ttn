@@ -110,7 +110,7 @@ func (c *gatewayClient) setupGatewayStatus() error {
 	c.gatewayStatus = gatewayStatusClient
 	c.stopGatewayStatus = make(chan bool)
 	go func() {
-		var msg interface{}
+		var msg []byte
 		for {
 			select {
 			case <-c.stopGatewayStatus:
@@ -168,7 +168,7 @@ func (c *gatewayClient) setupUplink() error {
 	c.uplink = uplinkClient
 	c.stopUplink = make(chan bool)
 	go func() {
-		var msg interface{}
+		var msg []byte
 		for {
 			select {
 			case <-c.stopUplink:

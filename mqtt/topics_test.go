@@ -42,7 +42,7 @@ func TestParseDeviceTopicInvalid(t *testing.T) {
 	a.So(err, ShouldNotBeNil)
 }
 
-func TestTopicString(t *testing.T) {
+func TestDeviceTopicString(t *testing.T) {
 	a := New(t)
 
 	topic := &DeviceTopic{
@@ -58,7 +58,7 @@ func TestTopicString(t *testing.T) {
 	a.So(got, ShouldResemble, expected)
 }
 
-func TestTopicParseAndString(t *testing.T) {
+func TestDeviceTopicParseAndString(t *testing.T) {
 	a := New(t)
 
 	expectedList := []string{
@@ -85,6 +85,55 @@ func TestTopicParseAndString(t *testing.T) {
 
 	for _, expected := range expectedList {
 		topic, err := ParseDeviceTopic(expected)
+		a.So(err, ShouldBeNil)
+		a.So(topic.String(), ShouldEqual, expected)
+	}
+
+}
+
+func TestParseAppTopicInvalid(t *testing.T) {
+	a := New(t)
+
+	_, err := ParseApplicationTopic("appid:Invalid/events")
+	a.So(err, ShouldNotBeNil)
+
+	_, err = ParseApplicationTopic("appid/randomstuff")
+	a.So(err, ShouldNotBeNil)
+}
+
+func TestAppTopicString(t *testing.T) {
+	a := New(t)
+
+	topic := &ApplicationTopic{
+		AppID: "appid-1",
+		Type:  AppEvents,
+	}
+
+	a.So(topic.String(), ShouldResemble, "appid-1/events/#")
+
+	topic = &ApplicationTopic{
+		AppID: "appid-1",
+		Type:  AppEvents,
+		Field: "err",
+	}
+
+	a.So(topic.String(), ShouldResemble, "appid-1/events/err")
+}
+
+func TestAppTopicParseAndString(t *testing.T) {
+	a := New(t)
+
+	expectedList := []string{
+		"+/events/#",
+		"appid/events/#",
+		"+/events/some-event",
+		"appid/events/some-event",
+		"+/events/some/event",
+		"appid/events/some/event",
+	}
+
+	for _, expected := range expectedList {
+		topic, err := ParseApplicationTopic(expected)
 		a.So(err, ShouldBeNil)
 		a.So(topic.String(), ShouldEqual, expected)
 	}

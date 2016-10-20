@@ -38,10 +38,23 @@ func TestDevAddr(t *testing.T) {
 	a.So(err, ShouldBeNil)
 	a.So(mOut, ShouldResemble, bin)
 
+	// MarshalTo
+	bOut := make([]byte, 4)
+	_, err = addr.MarshalTo(bOut)
+	a.So(err, ShouldBeNil)
+	a.So(bOut, ShouldResemble, bin)
+
+	// Size
+	s := addr.Size()
+	a.So(s, ShouldEqual, 4)
+
 	// Parse
 	pOut, err := ParseDevAddr(str)
 	a.So(err, ShouldBeNil)
 	a.So(pOut, ShouldEqual, addr)
+
+	_, err = ParseDevAddr("no-dev-addr")
+	a.So(err, ShouldNotBeNil)
 
 	// UnmarshalText
 	utOut := &DevAddr{}
@@ -61,10 +74,11 @@ func TestDevAddr(t *testing.T) {
 	a.So(err, ShouldBeNil)
 	a.So(*uOut, ShouldEqual, addr)
 
-	// IsEmpty
+	// Empty
 	var empty DevAddr
 	a.So(empty.IsEmpty(), ShouldEqual, true)
 	a.So(addr.IsEmpty(), ShouldEqual, false)
+	a.So(empty.String(), ShouldEqual, "")
 }
 
 func TestDevAddrMask(t *testing.T) {

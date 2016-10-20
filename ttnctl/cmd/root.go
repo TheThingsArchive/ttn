@@ -9,16 +9,15 @@ import (
 	"strings"
 	"time"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/grpclog"
-
+	cliHandler "github.com/TheThingsNetwork/go-utils/handlers/cli"
 	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
-	cliHandler "github.com/TheThingsNetwork/ttn/utils/cli/handler"
 	"github.com/TheThingsNetwork/ttn/utils/logging"
 	"github.com/apex/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/grpclog"
 )
 
 var cfgFile string

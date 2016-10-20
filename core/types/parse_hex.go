@@ -15,20 +15,14 @@ func ParseHEX(input string, length int) ([]byte, error) {
 		return make([]byte, length), nil
 	}
 
-	pattern, err := regexp.Compile(fmt.Sprintf("[[:xdigit:]]{%d}", length*2))
-	if err != nil {
-		return nil, fmt.Errorf("Invalid pattern")
-	}
+	pattern := regexp.MustCompile(fmt.Sprintf("^[[:xdigit:]]{%d}$", length*2))
 
 	valid := pattern.MatchString(input)
 	if !valid {
 		return nil, fmt.Errorf("Invalid input: %s", input)
 	}
 
-	slice, err := hex.DecodeString(input)
-	if err != nil {
-		return nil, fmt.Errorf("Could not decode input: %s", input)
-	}
+	slice, _ := hex.DecodeString(input)
 
 	return slice, nil
 }

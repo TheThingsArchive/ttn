@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/assertions"
 )
@@ -20,10 +21,10 @@ func TestPublishActivations(t *testing.T) {
 	c.Connect()
 	defer c.Disconnect()
 
-	dataActivations := Activation{
+	dataActivations := types.Activation{
 		AppID:    "someid",
 		DevID:    "someid",
-		Metadata: Metadata{DataRate: "SF7BW125"},
+		Metadata: types.Metadata{DataRate: "SF7BW125"},
 	}
 
 	token := c.PublishActivation(dataActivations)
@@ -38,7 +39,7 @@ func TestSubscribeDeviceActivations(t *testing.T) {
 	c.Connect()
 	defer c.Disconnect()
 
-	token := c.SubscribeDeviceActivations("someid", "someid", func(client Client, appID string, devID string, req Activation) {
+	token := c.SubscribeDeviceActivations("someid", "someid", func(client Client, appID string, devID string, req types.Activation) {
 
 	})
 	waitForOK(token, a)
@@ -55,7 +56,7 @@ func TestSubscribeAppActivations(t *testing.T) {
 	c.Connect()
 	defer c.Disconnect()
 
-	token := c.SubscribeAppActivations("someid", func(client Client, appID string, devID string, req Activation) {
+	token := c.SubscribeAppActivations("someid", func(client Client, appID string, devID string, req types.Activation) {
 
 	})
 	waitForOK(token, a)
@@ -72,7 +73,7 @@ func TestSubscribeActivations(t *testing.T) {
 	c.Connect()
 	defer c.Disconnect()
 
-	token := c.SubscribeActivations(func(client Client, appID string, devID string, req Activation) {
+	token := c.SubscribeActivations(func(client Client, appID string, devID string, req types.Activation) {
 
 	})
 	waitForOK(token, a)
@@ -93,7 +94,7 @@ func TestPubSubActivations(t *testing.T) {
 
 	wg.Add(1)
 
-	subToken := c.SubscribeDeviceActivations("app5", "dev1", func(client Client, appID string, devID string, req Activation) {
+	subToken := c.SubscribeDeviceActivations("app5", "dev1", func(client Client, appID string, devID string, req types.Activation) {
 		a.So(appID, ShouldResemble, "app5")
 		a.So(devID, ShouldResemble, "dev1")
 
@@ -101,10 +102,10 @@ func TestPubSubActivations(t *testing.T) {
 	})
 	waitForOK(subToken, a)
 
-	pubToken := c.PublishActivation(Activation{
+	pubToken := c.PublishActivation(types.Activation{
 		AppID:    "app5",
 		DevID:    "dev1",
-		Metadata: Metadata{DataRate: "SF7BW125"},
+		Metadata: types.Metadata{DataRate: "SF7BW125"},
 	})
 	waitForOK(pubToken, a)
 
@@ -124,23 +125,23 @@ func TestPubSubAppActivations(t *testing.T) {
 
 	wg.Add(2)
 
-	subToken := c.SubscribeAppActivations("app6", func(client Client, appID string, devID string, req Activation) {
+	subToken := c.SubscribeAppActivations("app6", func(client Client, appID string, devID string, req types.Activation) {
 		a.So(appID, ShouldResemble, "app6")
 		a.So(req.Metadata.DataRate, ShouldEqual, "SF7BW125")
 		wg.Done()
 	})
 	waitForOK(subToken, a)
 
-	pubToken := c.PublishActivation(Activation{
+	pubToken := c.PublishActivation(types.Activation{
 		AppID:    "app6",
 		DevID:    "dev1",
-		Metadata: Metadata{DataRate: "SF7BW125"},
+		Metadata: types.Metadata{DataRate: "SF7BW125"},
 	})
 	waitForOK(pubToken, a)
-	pubToken = c.PublishActivation(Activation{
+	pubToken = c.PublishActivation(types.Activation{
 		AppID:    "app6",
 		DevID:    "dev2",
-		Metadata: Metadata{DataRate: "SF7BW125"},
+		Metadata: types.Metadata{DataRate: "SF7BW125"},
 	})
 	waitForOK(pubToken, a)
 

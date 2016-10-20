@@ -6,10 +6,11 @@ package types
 import (
 	"encoding/hex"
 	"fmt"
-	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 )
 
 // DevAddr is a non-unique address for LoRaWAN devices.

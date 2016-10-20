@@ -9,6 +9,7 @@ import (
 	pb "github.com/TheThingsNetwork/ttn/api/networkserver"
 	"github.com/TheThingsNetwork/ttn/core/networkserver/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
+	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/assertions"
 )
 
@@ -16,7 +17,7 @@ func TestHandleGetDevices(t *testing.T) {
 	a := New(t)
 
 	ns := &networkServer{
-		devices: device.NewDeviceStore(),
+		devices: device.NewRedisDeviceStore(GetRedisClient(), "ns-test-handle-get-devices"),
 	}
 
 	nwkSKey := types.NwkSKey{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8}
@@ -38,6 +39,10 @@ func TestHandleGetDevices(t *testing.T) {
 		NwkSKey: nwkSKey,
 		FCntUp:  5,
 	})
+	defer func() {
+		ns.devices.Delete(types.AppEUI(getEUI(1, 2, 3, 4, 5, 6, 7, 8)), types.DevEUI(getEUI(1, 2, 3, 4, 5, 6, 7, 8)))
+	}()
+
 	res, err = ns.HandleGetDevices(&pb.DevicesRequest{
 		DevAddr: &devAddr1,
 		FCnt:    5,
@@ -73,6 +78,9 @@ func TestHandleGetDevices(t *testing.T) {
 			DisableFCntCheck: true,
 		},
 	})
+	defer func() {
+		ns.devices.Delete(types.AppEUI(getEUI(5, 6, 7, 8, 1, 2, 3, 4)), types.DevEUI(getEUI(5, 6, 7, 8, 1, 2, 3, 4)))
+	}()
 	res, err = ns.HandleGetDevices(&pb.DevicesRequest{
 		DevAddr: &devAddr2,
 		FCnt:    4,
@@ -81,7 +89,6 @@ func TestHandleGetDevices(t *testing.T) {
 	a.So(res.Results, ShouldHaveLength, 1)
 
 	// 32 Bit Frame Counter (A)
-	devAddr3 := getDevAddr(2, 2, 3, 4)
 	ns.devices.Set(&device.Device{
 		DevAddr: getDevAddr(2, 2, 3, 4),
 		AppEUI:  types.AppEUI(getEUI(2, 2, 3, 4, 5, 6, 7, 8)),
@@ -92,6 +99,10 @@ func TestHandleGetDevices(t *testing.T) {
 			Uses32BitFCnt: true,
 		},
 	})
+	defer func() {
+		ns.devices.Delete(types.AppEUI(getEUI(2, 2, 3, 4, 5, 6, 7, 8)), types.DevEUI(getEUI(2, 2, 3, 4, 5, 6, 7, 8)))
+	}()
+	devAddr3 := getDevAddr(2, 2, 3, 4)
 	res, err = ns.HandleGetDevices(&pb.DevicesRequest{
 		DevAddr: &devAddr3,
 		FCnt:    5,
@@ -101,17 +112,21 @@ func TestHandleGetDevices(t *testing.T) {
 
 	// 32 Bit Frame Counter (B)
 	ns.devices.Set(&device.Device{
-		DevAddr: devAddr3,
-		AppEUI:  types.AppEUI(getEUI(2, 2, 3, 4, 5, 6, 7, 8)),
-		DevEUI:  types.DevEUI(getEUI(2, 2, 3, 4, 5, 6, 7, 8)),
+		DevAddr: getDevAddr(2, 2, 3, 5),
+		AppEUI:  types.AppEUI(getEUI(2, 2, 3, 4, 5, 3, 7, 8)),
+		DevEUI:  types.DevEUI(getEUI(2, 2, 3, 4, 5, 3, 7, 8)),
 		NwkSKey: nwkSKey,
 		FCntUp:  (2 << 16) - 1,
 		Options: device.Options{
 			Uses32BitFCnt: true,
 		},
 	})
+	defer func() {
+		ns.devices.Delete(types.AppEUI(getEUI(2, 2, 3, 4, 5, 3, 7, 8)), types.DevEUI(getEUI(2, 2, 3, 4, 5, 3, 7, 8)))
+	}()
+	devAddr4 := getDevAddr(2, 2, 3, 5)
 	res, err = ns.HandleGetDevices(&pb.DevicesRequest{
-		DevAddr: &devAddr3,
+		DevAddr: &devAddr4,
 		FCnt:    5,
 	})
 	a.So(err, ShouldBeNil)

@@ -16,7 +16,7 @@ import (
 	"github.com/TheThingsNetwork/go-account-lib/claims"
 	"github.com/TheThingsNetwork/go-account-lib/tokenkey"
 	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
-	pb_noc "github.com/TheThingsNetwork/ttn/api/noc"
+	pb_monitor "github.com/TheThingsNetwork/ttn/api/monitor"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/logging"
 	"github.com/TheThingsNetwork/ttn/utils/security"
@@ -35,6 +35,7 @@ import (
 type ComponentInterface interface {
 	RegisterRPC(s *grpc.Server)
 	Init(c *Component) error
+	Shutdown()
 	ValidateNetworkContext(ctx context.Context) (*pb_discovery.Announcement, error)
 	ValidateTTNAuthContext(ctx context.Context) (*claims.Claims, error)
 }
@@ -132,6 +133,18 @@ func NewComponent(ctx log.Interface, serviceName string, announcedAddress string
 		go http.ListenAndServe(fmt.Sprintf(":%d", healthPort), nil)
 	}
 
+	if monitors := viper.GetStringMapString("monitor-servers"); len(monitors) != 0 {
+		component.Monitors = make(map[string]pb_monitor.MonitorClient)
+		for name, addr := range monitors {
+			var err error
+			component.Monitors[name], err = pb_monitor.NewClient(addr)
+			if err != nil {
+				// Assuming grpc.WithBlock() is not set
+				return nil, err
+			}
+		}
+	}
+
 	return component, nil
 }
 
@@ -149,7 +162,7 @@ const (
 type Component struct {
 	Identity         *pb_discovery.Announcement
 	Discovery        pb_discovery.Client
-	Monitor          pb_noc.MonitorClient
+	Monitors         map[string]pb_monitor.MonitorClient
 	Ctx              log.Interface
 	AccessToken      string
 	privateKey       *ecdsa.PrivateKey

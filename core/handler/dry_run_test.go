@@ -10,6 +10,7 @@ import (
 
 	pb "github.com/TheThingsNetwork/ttn/api/handler"
 	"github.com/TheThingsNetwork/ttn/core/handler/application"
+	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/assertions"
 )
 
@@ -63,7 +64,7 @@ func (s *countingStore) Delete(appID string) error {
 func TestDryUplinkFields(t *testing.T) {
 	a := New(t)
 
-	store := newCountingStore(application.NewApplicationStore())
+	store := newCountingStore(application.NewRedisApplicationStore(GetRedisClient(), "handler-test-dry-uplink"))
 	h := &handler{
 		applications: store,
 	}
@@ -72,6 +73,7 @@ func TestDryUplinkFields(t *testing.T) {
 	dryUplinkMessage := &pb.DryUplinkMessage{
 		Payload: []byte{11, 22, 33},
 		App: &pb.Application{
+			AppId:     "DryUplinkFields",
 			Decoder:   `function (bytes) { return { length: bytes.length }}`,
 			Converter: `function (obj) { return obj }`,
 			Validator: `function (bytes) { return true; }`,
@@ -95,7 +97,7 @@ func TestDryUplinkFields(t *testing.T) {
 func TestDryUplinkEmptyApp(t *testing.T) {
 	a := New(t)
 
-	store := newCountingStore(application.NewApplicationStore())
+	store := newCountingStore(application.NewRedisApplicationStore(GetRedisClient(), "handler-test-dry-uplink"))
 	h := &handler{
 		applications: store,
 	}
@@ -122,7 +124,7 @@ func TestDryUplinkEmptyApp(t *testing.T) {
 func TestDryDownlinkFields(t *testing.T) {
 	a := New(t)
 
-	store := newCountingStore(application.NewApplicationStore())
+	store := newCountingStore(application.NewRedisApplicationStore(GetRedisClient(), "handler-test-dry-downlink"))
 	h := &handler{
 		applications: store,
 	}
@@ -150,7 +152,7 @@ func TestDryDownlinkFields(t *testing.T) {
 func TestDryDownlinkPayload(t *testing.T) {
 	a := New(t)
 
-	store := newCountingStore(application.NewApplicationStore())
+	store := newCountingStore(application.NewRedisApplicationStore(GetRedisClient(), "handler-test-dry-downlink"))
 	h := &handler{
 		applications: store,
 	}
@@ -178,7 +180,7 @@ func TestDryDownlinkPayload(t *testing.T) {
 func TestDryDownlinkEmptyApp(t *testing.T) {
 	a := New(t)
 
-	store := newCountingStore(application.NewApplicationStore())
+	store := newCountingStore(application.NewRedisApplicationStore(GetRedisClient(), "handler-test-dry-downlink"))
 	h := &handler{
 		applications: store,
 	}

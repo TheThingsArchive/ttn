@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/assertions"
 )
@@ -20,7 +21,7 @@ func TestPublishDownlink(t *testing.T) {
 	c.Connect()
 	defer c.Disconnect()
 
-	dataDown := DownlinkMessage{
+	dataDown := types.DownlinkMessage{
 		AppID:      "someid",
 		DevID:      "someid",
 		PayloadRaw: []byte{0x01, 0x02, 0x03, 0x04},
@@ -38,7 +39,7 @@ func TestSubscribeDeviceDownlink(t *testing.T) {
 	c.Connect()
 	defer c.Disconnect()
 
-	token := c.SubscribeDeviceDownlink("someid", "someid", func(client Client, appID string, devID string, req DownlinkMessage) {
+	token := c.SubscribeDeviceDownlink("someid", "someid", func(client Client, appID string, devID string, req types.DownlinkMessage) {
 
 	})
 	waitForOK(token, a)
@@ -55,7 +56,7 @@ func TestSubscribeAppDownlink(t *testing.T) {
 	c.Connect()
 	defer c.Disconnect()
 
-	token := c.SubscribeAppDownlink("someid", func(client Client, appID string, devID string, req DownlinkMessage) {
+	token := c.SubscribeAppDownlink("someid", func(client Client, appID string, devID string, req types.DownlinkMessage) {
 
 	})
 	waitForOK(token, a)
@@ -72,7 +73,7 @@ func TestSubscribeDownlink(t *testing.T) {
 	c.Connect()
 	defer c.Disconnect()
 
-	token := c.SubscribeDownlink(func(client Client, appID string, devID string, req DownlinkMessage) {
+	token := c.SubscribeDownlink(func(client Client, appID string, devID string, req types.DownlinkMessage) {
 
 	})
 	waitForOK(token, a)
@@ -93,7 +94,7 @@ func TestPubSubDownlink(t *testing.T) {
 
 	wg.Add(1)
 
-	subToken := c.SubscribeDeviceDownlink("app3", "dev3", func(client Client, appID string, devID string, req DownlinkMessage) {
+	subToken := c.SubscribeDeviceDownlink("app3", "dev3", func(client Client, appID string, devID string, req types.DownlinkMessage) {
 		a.So(appID, ShouldResemble, "app3")
 		a.So(devID, ShouldResemble, "dev3")
 
@@ -101,7 +102,7 @@ func TestPubSubDownlink(t *testing.T) {
 	})
 	waitForOK(subToken, a)
 
-	pubToken := c.PublishDownlink(DownlinkMessage{
+	pubToken := c.PublishDownlink(types.DownlinkMessage{
 		AppID:      "app3",
 		DevID:      "dev3",
 		PayloadRaw: []byte{0x01, 0x02, 0x03, 0x04},
@@ -124,20 +125,20 @@ func TestPubSubAppDownlink(t *testing.T) {
 
 	wg.Add(2)
 
-	subToken := c.SubscribeAppDownlink("app4", func(client Client, appID string, devID string, req DownlinkMessage) {
+	subToken := c.SubscribeAppDownlink("app4", func(client Client, appID string, devID string, req types.DownlinkMessage) {
 		a.So(appID, ShouldResemble, "app4")
 		a.So(req.PayloadRaw, ShouldResemble, []byte{0x01, 0x02, 0x03, 0x04})
 		wg.Done()
 	})
 	waitForOK(subToken, a)
 
-	pubToken := c.PublishDownlink(DownlinkMessage{
+	pubToken := c.PublishDownlink(types.DownlinkMessage{
 		AppID:      "app4",
 		DevID:      "dev1",
 		PayloadRaw: []byte{0x01, 0x02, 0x03, 0x04},
 	})
 	waitForOK(pubToken, a)
-	pubToken = c.PublishDownlink(DownlinkMessage{
+	pubToken = c.PublishDownlink(types.DownlinkMessage{
 		AppID:      "app4",
 		DevID:      "dev2",
 		PayloadRaw: []byte{0x01, 0x02, 0x03, 0x04},

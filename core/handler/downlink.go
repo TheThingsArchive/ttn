@@ -7,19 +7,17 @@ import (
 	"time"
 
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
-	"github.com/TheThingsNetwork/ttn/core/handler/device"
-	"github.com/TheThingsNetwork/ttn/mqtt"
+	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/apex/log"
 )
 
-func (h *handler) EnqueueDownlink(appDownlink *mqtt.DownlinkMessage) error {
+func (h *handler) EnqueueDownlink(appDownlink *types.DownlinkMessage) (err error) {
 	appID, devID := appDownlink.AppID, appDownlink.DevID
 
 	ctx := h.Ctx.WithFields(log.Fields{
 		"AppID": appID,
 		"DevID": devID,
 	})
-	var err error
 	start := time.Now()
 	defer func() {
 		if err != nil {
@@ -29,16 +27,18 @@ func (h *handler) EnqueueDownlink(appDownlink *mqtt.DownlinkMessage) error {
 		}
 	}()
 
-	var dev *device.Device
-	dev, err = h.devices.Get(appID, devID)
+	dev, err := h.devices.Get(appID, devID)
 	if err != nil {
 		return err
 	}
+
 	// Clear redundant fields
 	appDownlink.AppID = ""
 	appDownlink.DevID = ""
+
+	dev.StartUpdate()
 	dev.NextDownlink = appDownlink
-	err = h.devices.Set(dev, "next_downlink")
+	err = h.devices.Set(dev)
 	if err != nil {
 		return err
 	}
@@ -53,7 +53,7 @@ func (h *handler) EnqueueDownlink(appDownlink *mqtt.DownlinkMessage) error {
 	return nil
 }
 
-func (h *handler) HandleDownlink(appDownlink *mqtt.DownlinkMessage, downlink *pb_broker.DownlinkMessage) error {
+func (h *handler) HandleDownlink(appDownlink *types.DownlinkMessage, downlink *pb_broker.DownlinkMessage) error {
 	appID, devID := appDownlink.AppID, appDownlink.DevID
 
 	ctx := h.Ctx.WithFields(log.Fields{

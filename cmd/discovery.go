@@ -12,10 +12,11 @@ import (
 
 	"google.golang.org/grpc"
 
-	"gopkg.in/redis.v3"
+	"gopkg.in/redis.v4"
 
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/discovery"
+	"github.com/TheThingsNetwork/ttn/core/discovery/announcement"
 	"github.com/apex/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -39,7 +40,7 @@ var discoveryCmd = &cobra.Command{
 		client := redis.NewClient(&redis.Options{
 			Addr:     viper.GetString("discovery.redis-address"),
 			Password: "", // no password set
-			DB:       int64(viper.GetInt("discovery.redis-db")),
+			DB:       viper.GetInt("discovery.redis-db"),
 		})
 
 		connectRedis(client)
@@ -52,6 +53,9 @@ var discoveryCmd = &cobra.Command{
 
 		// Discovery Server
 		discovery := discovery.NewRedisDiscovery(client)
+		if viper.GetBool("discovery.cache") {
+			discovery.WithCache(announcement.DefaultCacheOptions)
+		}
 		err = discovery.Init(component)
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not initialize discovery")
@@ -88,4 +92,7 @@ func init() {
 	discoveryCmd.Flags().Int("server-port", 1900, "The port for communication")
 	viper.BindPFlag("discovery.server-address", discoveryCmd.Flags().Lookup("server-address"))
 	viper.BindPFlag("discovery.server-port", discoveryCmd.Flags().Lookup("server-port"))
+
+	discoveryCmd.Flags().Bool("cache", false, "Add a cache in front of the database")
+	viper.BindPFlag("discovery.cache", discoveryCmd.Flags().Lookup("cache"))
 }

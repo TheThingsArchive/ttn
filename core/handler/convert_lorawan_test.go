@@ -11,12 +11,12 @@ import (
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
-	"github.com/TheThingsNetwork/ttn/mqtt"
+	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/assertions"
 )
 
-func buildLorawanUplink(payload []byte) (*pb_broker.DeduplicatedUplinkMessage, *mqtt.UplinkMessage) {
+func buildLorawanUplink(payload []byte) (*pb_broker.DeduplicatedUplinkMessage, *types.UplinkMessage) {
 	ttnUp := &pb_broker.DeduplicatedUplinkMessage{
 		DevId:   "devid",
 		AppId:   "appid",
@@ -27,14 +27,14 @@ func buildLorawanUplink(payload []byte) (*pb_broker.DeduplicatedUplinkMessage, *
 			},
 		}},
 	}
-	appUp := &mqtt.UplinkMessage{}
+	appUp := &types.UplinkMessage{}
 	return ttnUp, appUp
 }
 
 func TestConvertFromLoRaWAN(t *testing.T) {
 	a := New(t)
 	h := &handler{
-		devices:   device.NewDeviceStore(),
+		devices:   device.NewRedisDeviceStore(GetRedisClient(), "handler-test-convert-from-lorawan"),
 		Component: &core.Component{Ctx: GetLogger(t, "TestConvertFromLoRaWAN")},
 		mqttEvent: make(chan *mqttEvent, 10),
 	}
@@ -42,6 +42,9 @@ func TestConvertFromLoRaWAN(t *testing.T) {
 		DevID: "devid",
 		AppID: "appid",
 	})
+	defer func() {
+		h.devices.Delete("appid", "devid")
+	}()
 	ttnUp, appUp := buildLorawanUplink([]byte{0x40, 0x04, 0x03, 0x02, 0x01, 0x20, 0x01, 0x00, 0x0A, 0x46, 0x55, 0x96, 0x42, 0x92, 0xF2})
 	err := h.ConvertFromLoRaWAN(h.Ctx, ttnUp, appUp)
 	a.So(err, ShouldBeNil)
@@ -49,8 +52,8 @@ func TestConvertFromLoRaWAN(t *testing.T) {
 	a.So(appUp.FCnt, ShouldEqual, 1)
 }
 
-func buildLorawanDownlink(payload []byte) (*mqtt.DownlinkMessage, *pb_broker.DownlinkMessage) {
-	appDown := &mqtt.DownlinkMessage{
+func buildLorawanDownlink(payload []byte) (*types.DownlinkMessage, *pb_broker.DownlinkMessage) {
+	appDown := &types.DownlinkMessage{
 		DevID:      "devid",
 		AppID:      "appid",
 		PayloadRaw: []byte{0xaa, 0xbc},
@@ -71,13 +74,16 @@ func buildLorawanDownlink(payload []byte) (*mqtt.DownlinkMessage, *pb_broker.Dow
 func TestConvertToLoRaWAN(t *testing.T) {
 	a := New(t)
 	h := &handler{
-		devices:   device.NewDeviceStore(),
+		devices:   device.NewRedisDeviceStore(GetRedisClient(), "handler-test-convert-to-lorawan"),
 		Component: &core.Component{Ctx: GetLogger(t, "TestConvertToLoRaWAN")},
 	}
 	h.devices.Set(&device.Device{
 		DevID: "devid",
 		AppID: "appid",
 	})
+	defer func() {
+		h.devices.Delete("appid", "devid")
+	}()
 	appDown, ttnDown := buildLorawanDownlink([]byte{0xaa, 0xbc})
 	err := h.ConvertToLoRaWAN(h.Ctx, appDown, ttnDown)
 	a.So(err, ShouldBeNil)

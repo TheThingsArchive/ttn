@@ -89,6 +89,8 @@ func (r *router) Init(c *core.Component) error {
 	return nil
 }
 
+func (r *router) Shutdown() {}
+
 // getGateway gets or creates a Gateway
 func (r *router) getGateway(id string) *gateway.Gateway {
 	// We're going to be optimistic and guess that the gateway is already active
@@ -106,8 +108,8 @@ func (r *router) getGateway(id string) *gateway.Gateway {
 	if !ok {
 		gtw = gateway.NewGateway(r.Ctx, id)
 
-		if r.Component.Monitor != nil {
-			gtw.SetMonitor(r.Component.Monitor)
+		if r.Component.Monitors != nil {
+			gtw.SetMonitors(r.Component.Monitors)
 		}
 
 		r.gateways[id] = gtw

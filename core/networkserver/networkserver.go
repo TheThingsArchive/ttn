@@ -11,7 +11,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/networkserver/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
-	"gopkg.in/redis.v3"
+	"gopkg.in/redis.v4"
 )
 
 // NetworkServer implements LoRaWAN-specific functionality for TTN
@@ -32,7 +32,7 @@ type NetworkServer interface {
 // NewRedisNetworkServer creates a new Redis-backed NetworkServer
 func NewRedisNetworkServer(client *redis.Client, netID int) NetworkServer {
 	ns := &networkServer{
-		devices:  device.NewRedisDeviceStore(client),
+		devices:  device.NewRedisDeviceStore(client, "ns"),
 		prefixes: map[types.DevAddrPrefix][]string{},
 	}
 	ns.netID = [3]byte{byte(netID >> 16), byte(netID >> 8), byte(netID)}
@@ -84,3 +84,5 @@ func (n *networkServer) Init(c *core.Component) error {
 	n.Component.SetStatus(core.StatusHealthy)
 	return nil
 }
+
+func (n *networkServer) Shutdown() {}

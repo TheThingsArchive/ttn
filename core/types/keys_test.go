@@ -38,6 +38,16 @@ func TestAES128Key(t *testing.T) {
 	a.So(err, ShouldBeNil)
 	a.So(mOut, ShouldResemble, bin)
 
+	// MarshalTo
+	bOut := make([]byte, 16)
+	_, err = key.MarshalTo(bOut)
+	a.So(err, ShouldBeNil)
+	a.So(bOut, ShouldResemble, bin)
+
+	// Size
+	s := key.Size()
+	a.So(s, ShouldEqual, 16)
+
 	// Parse
 	pOut, err := ParseAES128Key(str)
 	a.So(err, ShouldBeNil)
@@ -95,6 +105,16 @@ func TestAppKey(t *testing.T) {
 	mOut, err := key.Marshal()
 	a.So(err, ShouldBeNil)
 	a.So(mOut, ShouldResemble, bin)
+
+	// MarshalTo
+	bOut := make([]byte, 16)
+	_, err = key.MarshalTo(bOut)
+	a.So(err, ShouldBeNil)
+	a.So(bOut, ShouldResemble, bin)
+
+	// Size
+	s := key.Size()
+	a.So(s, ShouldEqual, 16)
 
 	// Parse
 	pOut, err := ParseAppKey(str)
@@ -154,6 +174,16 @@ func TestNwkSKey(t *testing.T) {
 	a.So(err, ShouldBeNil)
 	a.So(mOut, ShouldResemble, bin)
 
+	// MarshalTo
+	bOut := make([]byte, 16)
+	_, err = key.MarshalTo(bOut)
+	a.So(err, ShouldBeNil)
+	a.So(bOut, ShouldResemble, bin)
+
+	// Size
+	s := key.Size()
+	a.So(s, ShouldEqual, 16)
+
 	// Parse
 	pOut, err := ParseNwkSKey(str)
 	a.So(err, ShouldBeNil)
@@ -211,6 +241,16 @@ func TestAppSKey(t *testing.T) {
 	mOut, err := key.Marshal()
 	a.So(err, ShouldBeNil)
 	a.So(mOut, ShouldResemble, bin)
+
+	// MarshalTo
+	bOut := make([]byte, 16)
+	_, err = key.MarshalTo(bOut)
+	a.So(err, ShouldBeNil)
+	a.So(bOut, ShouldResemble, bin)
+
+	// Size
+	s := key.Size()
+	a.So(s, ShouldEqual, 16)
 
 	// Parse
 	pOut, err := ParseAppSKey(str)

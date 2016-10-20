@@ -7,7 +7,7 @@ import (
 	"time"
 
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
-	"github.com/TheThingsNetwork/ttn/mqtt"
+	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/apex/log"
 )
 
@@ -36,7 +36,7 @@ func (h *handler) HandleUplink(uplink *pb_broker.DeduplicatedUplinkMessage) (err
 	}()
 
 	// Build AppUplink
-	appUplink := &mqtt.UplinkMessage{
+	appUplink := &types.UplinkMessage{
 		AppID: appID,
 		DevID: devID,
 	}
@@ -63,11 +63,14 @@ func (h *handler) HandleUplink(uplink *pb_broker.DeduplicatedUplinkMessage) (err
 
 	// Publish Uplink
 	h.mqttUp <- appUplink
+	if h.amqpEnabled {
+		h.amqpUp <- appUplink
+	}
 
 	<-time.After(ResponseDeadline)
 
 	// Find Device and scheduled downlink
-	var appDownlink mqtt.DownlinkMessage
+	var appDownlink types.DownlinkMessage
 	dev, err := h.devices.Get(uplink.AppId, uplink.DevId)
 	if err != nil {
 		return err
@@ -93,8 +96,9 @@ func (h *handler) HandleUplink(uplink *pb_broker.DeduplicatedUplinkMessage) (err
 	}
 
 	// Clear Downlink
+	dev.StartUpdate()
 	dev.NextDownlink = nil
-	err = h.devices.Set(dev, "next_downlink")
+	err = h.devices.Set(dev)
 	if err != nil {
 		return err
 	}

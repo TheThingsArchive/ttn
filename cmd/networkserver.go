@@ -18,7 +18,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
-	"gopkg.in/redis.v3"
+	"gopkg.in/redis.v4"
 )
 
 // networkserverCmd represents the networkserver command
@@ -40,7 +40,7 @@ var networkserverCmd = &cobra.Command{
 		client := redis.NewClient(&redis.Options{
 			Addr:     viper.GetString("networkserver.redis-address"),
 			Password: "", // no password set
-			DB:       int64(viper.GetInt("networkserver.redis-db")),
+			DB:       viper.GetInt("networkserver.redis-db"),
 		})
 
 		connectRedis(client)
@@ -91,6 +91,7 @@ var networkserverCmd = &cobra.Command{
 		ctx.WithField("signal", <-sigChan).Info("signal received")
 
 		grpc.Stop()
+		networkserver.Shutdown()
 	},
 }
 

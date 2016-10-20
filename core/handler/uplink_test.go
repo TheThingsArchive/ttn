@@ -4,8 +4,8 @@
 package handler
 
 import (
-	"sync"
 	"testing"
+	"time"
 
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_protocol "github.com/TheThingsNetwork/ttn/api/protocol"
@@ -14,7 +14,6 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/handler/application"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
-	"github.com/TheThingsNetwork/ttn/mqtt"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/assertions"
 )
@@ -22,26 +21,33 @@ import (
 func TestHandleUplink(t *testing.T) {
 	a := New(t)
 	var err error
-	var wg sync.WaitGroup
+	var wg WaitGroup
 	appEUI := types.AppEUI([8]byte{1, 2, 3, 4, 5, 6, 7, 8})
 	appID := "appid"
 	devEUI := types.DevEUI([8]byte{1, 2, 3, 4, 5, 6, 7, 8})
 	devID := "devid"
 	h := &handler{
 		Component:    &core.Component{Ctx: GetLogger(t, "TestHandleUplink")},
-		devices:      device.NewDeviceStore(),
-		applications: application.NewApplicationStore(),
+		devices:      device.NewRedisDeviceStore(GetRedisClient(), "handler-test-handle-uplink"),
+		applications: application.NewRedisApplicationStore(GetRedisClient(), "handler-test-handle-uplink"),
 	}
-	h.devices.Set(&device.Device{
+	dev := &device.Device{
 		AppID:  appID,
 		DevID:  devID,
 		AppEUI: appEUI,
 		DevEUI: devEUI,
-	})
+	}
+	h.devices.Set(dev)
+	defer func() {
+		h.devices.Delete(appID, devID)
+	}()
 	h.applications.Set(&application.Application{
 		AppID: appID,
 	})
-	h.mqttUp = make(chan *mqtt.UplinkMessage)
+	defer func() {
+		h.applications.Delete(appID)
+	}()
+	h.mqttUp = make(chan *types.UplinkMessage)
 	h.mqttEvent = make(chan *mqttEvent, 10)
 	h.downlink = make(chan *pb_broker.DownlinkMessage)
 
@@ -68,7 +74,7 @@ func TestHandleUplink(t *testing.T) {
 	}()
 	err = h.HandleUplink(uplink)
 	a.So(err, ShouldBeNil)
-	wg.Wait()
+	wg.WaitFor(50 * time.Millisecond)
 
 	uplink.ResponseTemplate = downlink
 
@@ -81,7 +87,7 @@ func TestHandleUplink(t *testing.T) {
 	downlink.Payload = downlinkEmpty
 	err = h.HandleUplink(uplink)
 	a.So(err, ShouldBeNil)
-	wg.Wait()
+	wg.WaitFor(50 * time.Millisecond)
 
 	// Test Uplink, ACK downlink needed
 	wg.Add(2)
@@ -96,7 +102,7 @@ func TestHandleUplink(t *testing.T) {
 	downlink.Payload = downlinkACK
 	err = h.HandleUplink(uplink)
 	a.So(err, ShouldBeNil)
-	wg.Wait()
+	wg.WaitFor(50 * time.Millisecond)
 
 	// Test Uplink, MAC downlink needed
 	wg.Add(2)
@@ -111,18 +117,15 @@ func TestHandleUplink(t *testing.T) {
 	downlink.Payload = downlinkMAC
 	err = h.HandleUplink(uplink)
 	a.So(err, ShouldBeNil)
-	wg.Wait()
+	wg.WaitFor(50 * time.Millisecond)
+
+	dev.StartUpdate()
+	dev.NextDownlink = &types.DownlinkMessage{
+		PayloadRaw: []byte{0xaa, 0xbc},
+	}
 
 	// Test Uplink, Data downlink needed
-	h.devices.Set(&device.Device{
-		AppID:  appID,
-		DevID:  devID,
-		AppEUI: appEUI,
-		DevEUI: devEUI,
-		NextDownlink: &mqtt.DownlinkMessage{
-			PayloadRaw: []byte{0xaa, 0xbc},
-		},
-	})
+	h.devices.Set(dev)
 	wg.Add(2)
 	go func() {
 		<-h.mqttUp
@@ -136,8 +139,8 @@ func TestHandleUplink(t *testing.T) {
 	downlink.Payload = downlinkEmpty
 	err = h.HandleUplink(uplink)
 	a.So(err, ShouldBeNil)
-	wg.Wait()
+	wg.WaitFor(50 * time.Millisecond)
 
-	dev, _ := h.devices.Get(appID, devID)
+	dev, _ = h.devices.Get(appID, devID)
 	a.So(dev.NextDownlink, ShouldBeNil)
 }

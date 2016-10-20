@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/TheThingsNetwork/go-account-lib/account"
+	"github.com/TheThingsNetwork/go-account-lib/auth"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -34,7 +35,8 @@ $ ttnctl user login [paste the access code you requested above]
 			ctx.WithError(err).Fatal("Login failed")
 		}
 
-		acc := account.New(viper.GetString("ttn-account-server"), token.AccessToken)
+		acc := account.New(viper.GetString("ttn-account-server"))
+		acc.WithAuth(auth.AccessToken(token.AccessToken))
 		profile, err := acc.Profile()
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not get user profile")
