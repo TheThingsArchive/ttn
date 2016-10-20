@@ -15,7 +15,7 @@ func ParseHEX(input string, length int) ([]byte, error) {
 		return make([]byte, length), nil
 	}
 
-	pattern := regexp.MustCompile(fmt.Sprintf("[[:xdigit:]]{%d}", length*2))
+	pattern := regexp.MustCompile(fmt.Sprintf("^[[:xdigit:]]{%d}$", length*2))
 
 	valid := pattern.MatchString(input)
 	if !valid {
