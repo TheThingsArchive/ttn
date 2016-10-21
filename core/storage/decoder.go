@@ -135,10 +135,14 @@ func buildDefaultStructDecoder(base interface{}, tagName string) StringStringMap
 			if str, ok := input[tagName]; ok {
 				baseField, _ := baseType.FieldByName(field.Name())
 
+				if str == "" {
+					continue
+				}
+
 				var val interface{}
 				switch field.Kind() {
 				case reflect.Ptr:
-					if str == "" || str == "null" {
+					if str == "null" {
 						continue
 					}
 					fallthrough

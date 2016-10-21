@@ -16,6 +16,7 @@ type testRedisStruct struct {
 	unexported string
 	Skipped    string             `redis:"-"`
 	Name       string             `redis:"name,omitempty"`
+	EmptyStr   string             `redis:"EmptyStr"`
 	UpdatedAt  Time               `redis:"updated_at,omitempty"`
 	Empty      *map[string]string `redis:"empty"`
 	NotEmpty   *map[string]string `redis:"not_empty"`
