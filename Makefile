@@ -30,7 +30,10 @@ dev-deps: deps
 
 PROTO_FILES = $(shell find api -name "*.proto" -and -not -name ".git")
 COMPILED_PROTO_FILES = $(patsubst api%.proto, api%.pb.go, $(PROTO_FILES))
-PROTOC = protoc --gofast_out=plugins=grpc:$(GOPATH)/src/ --proto_path=$(GOPATH)/src/ $(GOPATH)/src/github.com/TheThingsNetwork/ttn
+PROTOC = protoc -I/usr/local/include -I$(GOPATH)/src -I$(GOPATH)/src/github.com/TheThingsNetwork \
+-I$(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis \
+--gofast_out=Mgoogle/api/annotations.proto=github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis/google/api,plugins=grpc:$(GOPATH)/src \
+--grpc-gateway_out=:. $(GOPATH)/src/github.com/TheThingsNetwork/ttn/
 
 protos-clean:
 	rm -f $(COMPILED_PROTO_FILES)
@@ -38,7 +41,7 @@ protos-clean:
 protos: $(COMPILED_PROTO_FILES)
 
 api/%.pb.go: api/%.proto
-	$(PROTOC)/"$<"
+	$(PROTOC)$<
 
 # Mocks
 

@@ -3,14 +3,16 @@
 
 syntax = "proto3";
 
-import "github.com/TheThingsNetwork/ttn/api/gateway/gateway.proto";
-import "github.com/TheThingsNetwork/ttn/api/router/router.proto";
-import "github.com/TheThingsNetwork/ttn/api/broker/broker.proto";
-import "github.com/TheThingsNetwork/ttn/api/handler/handler.proto";
+import "ttn/api/gateway/gateway.proto";
+import "ttn/api/router/router.proto";
+import "ttn/api/broker/broker.proto";
+import "ttn/api/handler/handler.proto";
 
 import "google/protobuf/empty.proto";
 
 package monitor;
+
+option go_package = "github.com/TheThingsNetwork/ttn/api/monitor";
 
 service Monitor {
   rpc GatewayStatus(stream gateway.Status) returns (google.protobuf.Empty);

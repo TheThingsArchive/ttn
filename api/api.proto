@@ -5,6 +5,8 @@ syntax = "proto3";
 
 package api;
 
+option go_package = "github.com/TheThingsNetwork/ttn/api";
+
 message Percentiles {
   float percentile1  = 1;
   float percentile5  = 2;

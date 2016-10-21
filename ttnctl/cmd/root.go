@@ -41,7 +41,9 @@ var RootCmd = &cobra.Command{
 			Handler: cliHandler.New(os.Stdout),
 		}
 
-		ctx.WithField("config file", viper.ConfigFileUsed()).WithField("data dir", dataDir).Debug("Using config")
+		if debug {
+			util.PrintConfig(ctx, true)
+		}
 
 		api.DialOptions = append(api.DialOptions, grpc.WithBlock())
 		api.DialOptions = append(api.DialOptions, grpc.WithTimeout(2*time.Second))

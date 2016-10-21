@@ -7,6 +7,8 @@ import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 
 package gateway;
 
+option go_package = "github.com/TheThingsNetwork/ttn/api/gateway";
+
 message GPSMetadata {
   int64   time       = 1;
   float   latitude   = 2;
