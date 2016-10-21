@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/utils/version"
+	"github.com/apex/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -18,41 +19,45 @@ var versionCmd = &cobra.Command{
 	Short: "Get build and version information",
 	Long:  `ttn version gets the build and version information of ttn`,
 	Run: func(cmd *cobra.Command, args []string) {
-		ctx = ctx.WithField("Version", viper.GetString("version"))
-
 		gitBranch := viper.GetString("gitBranch")
-		ctx = ctx.WithField("Branch", gitBranch)
-
 		gitCommit := viper.GetString("gitCommit")
-		ctx = ctx.WithField("Commit", gitCommit)
-
 		buildDate := viper.GetString("buildDate")
-		ctx = ctx.WithField("BuildDate", buildDate)
+
+		ctx.WithFields(log.Fields{
+			"Version":   viper.GetString("version"),
+			"Branch":    gitBranch,
+			"Commit":    gitCommit,
+			"BuildDate": buildDate,
+		}).Info("Got build information")
 
 		if gitBranch == unknown || gitCommit == unknown || buildDate == unknown {
 			ctx.Warn("This is not an official ttn build")
+			ctx.Warn("If you're building ttn from source, you should use the Makefile")
+			return
 		}
 
-		if gitBranch != unknown {
-			if version, err := version.GetLatestInfo(); err == nil {
-				if version.Commit == gitCommit {
-					ctx.Info("This is an up-to-date ttn build")
-				} else {
-					if buildDate, err := time.Parse(time.RFC3339, buildDate); err == nil {
-						if buildDate.Before(version.Date) {
-							ctx.Warn("This is not an up-to-date ttn build")
-							ctx.Warnf("The newest build is %s newer.", version.Date.Sub(buildDate))
-						} else {
-							ctx.Warn("This is not an official ttn build")
-						}
-					}
-				}
+		latest, err := version.GetLatestInfo()
+		if err != nil {
+			ctx.WithError(err).Warn("Could not get latest version information")
+			return
+		}
+
+		if latest.Commit == gitCommit {
+			ctx.Info("This is an up-to-date ttn build")
+			return
+		}
+
+		if buildDate, err := time.Parse(time.RFC3339, buildDate); err == nil {
+			ctx.Warn("This is not the latest official ttn build")
+			if buildDate.Before(latest.Date) {
+				ctx.Warnf("The newest ttn build is %s newer.", latest.Date.Sub(buildDate))
 			} else {
-				ctx.Warn("Could not get latest version information")
+				ctx.Warn("Your ttn build is newer than the latest official one, which is fine if you're a developer")
 			}
+		} else {
+			ctx.Warn("This ttn contains invalid build information")
 		}
 
-		ctx.Info("")
 	},
 }
 
