@@ -7,6 +7,8 @@ import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 
 package lorawan;
 
+option go_package = "github.com/TheThingsNetwork/ttn/api/protocol/lorawan";
+
 message PrefixesRequest {}
 
 message PrefixesResponse {

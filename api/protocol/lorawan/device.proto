@@ -8,6 +8,8 @@ import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 
 package lorawan;
 
+option go_package = "github.com/TheThingsNetwork/ttn/api/protocol/lorawan";
+
 message DeviceIdentifier {
   bytes  app_eui  = 1 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.AppEUI"];
   bytes  dev_eui  = 2 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.DevEUI"];

@@ -5,11 +5,13 @@ syntax = "proto3";
 
 import "google/protobuf/empty.proto";
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
-import "github.com/TheThingsNetwork/ttn/api/api.proto";
-import "github.com/TheThingsNetwork/ttn/api/protocol/protocol.proto";
-import "github.com/TheThingsNetwork/ttn/api/gateway/gateway.proto";
+import "ttn/api/api.proto";
+import "ttn/api/protocol/protocol.proto";
+import "ttn/api/gateway/gateway.proto";
 
 package router;
+
+option go_package = "github.com/TheThingsNetwork/ttn/api/router";
 
 message SubscribeRequest {}
 

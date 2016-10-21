@@ -5,12 +5,14 @@ syntax = "proto3";
 
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 
-import "github.com/TheThingsNetwork/ttn/api/api.proto";
-import "github.com/TheThingsNetwork/ttn/api/protocol/lorawan/device.proto";
-import "github.com/TheThingsNetwork/ttn/api/broker/broker.proto";
-import "github.com/TheThingsNetwork/ttn/api/handler/handler.proto";
+import "ttn/api/api.proto";
+import "ttn/api/protocol/lorawan/device.proto";
+import "ttn/api/broker/broker.proto";
+import "ttn/api/handler/handler.proto";
 
 package networkserver;
+
+option go_package = "github.com/TheThingsNetwork/ttn/api/networkserver";
 
 message DevicesRequest {
   bytes  dev_addr = 1 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.DevAddr"];
