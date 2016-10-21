@@ -124,7 +124,7 @@ func init() {
 	handlerCmd.Flags().String("amqp-password", "guest", "AMQP password")
 	viper.BindPFlag("handler.amqp-password", handlerCmd.Flags().Lookup("amqp-password"))
 
-	handlerCmd.Flags().String("amqp-exchange", "ttn-handler", "AMQP exchange")
+	handlerCmd.Flags().String("amqp-exchange", "ttn.handler", "AMQP exchange")
 	viper.BindPFlag("handler.amqp-exchange", handlerCmd.Flags().Lookup("amqp-exchange"))
 
 	handlerCmd.Flags().String("server-address", "0.0.0.0", "The IP address to listen for communication")
