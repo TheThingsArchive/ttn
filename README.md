@@ -32,31 +32,45 @@ When you get started with The Things Network, you'll probably have some question
 3. `cd $GOPATH/src/github.com/TheThingsNetwork/ttn`
 4. Install the dependencies for development: `make dev-deps`
 5. Run the tests: `make test`
+6. Run `make build` to build both `ttn` and `ttnctl` from source. 
+7. Run `make link` to link them to `$GOPATH/bin/` (In order to run the commands, you should have `export PATH="$GOPATH/bin:$PATH"` in your profile).
+8. Configure your `ttnctl` with the settings in `.env/ttnctl.yml.dev-example` by copying that file to `~/.ttnctl.yml`.
+
+You can check your `ttnctl` configuration by running `ttnctl config`. It should look like this:
+
+```
+  INFO Using config:
+
+         config file: /home/your-user/.ttnctl.yml
+            data dir: /home/your-user/.ttnctl
+
+  ttn-account-server: https://preview.account.thethingsnetwork.org
+    discovery-server: localhost:1900
+          ttn-router: dev
+         ttn-handler: dev
+         mqtt-broker: localhost:1883
+```
 
 **NOTE:** From now on you should run all commands from the `$GOPATH/src/github.com/TheThingsNetwork/ttn` directory.
 
-## Build, install and run The Things Network's backend locally
+## Run The Things Network's backend locally
 
-Additional to setting up the backend for development, you should do the following to build, install and run the backend locally.
-
-1. Configure your `ttnctl` with the settings in `.env/ttnctl.yml.dev-example` by copying that file to `~/.ttnctl.yml`.
-2. Run `make build` to build both `ttn` and `ttnctl` from source. 
-2. Run `make link` to link them to `$GOPATH/bin/` (In order to run the commands, you should have `export PATH="$GOPATH/bin:$PATH"` in your profile).
-3. Run `forego start` to start all backend services at the same time. Make sure that Redis and Mosquitto **are running** on your machine.
-4. First time only (or when Redis is flushed):
+- Set up the backend as described [above](#set-up-the-things-networks-backend-for-development).
+- Run `forego start` to start all backend services at the same time. Make sure that Redis and Mosquitto **are running** on your machine.
+- First time only (or when Redis is flushed):
   * Run `ttn broker register-prefix 00000000/0 --config ./.env/broker/dev.yml`
   * Restart the backend services
 
 ## Build and run The Things Network's backend in Docker
 
-1. Configure your `ttnctl` with the settings in `.env/ttnctl.yml.dev-example` by copying that file to `~/.ttnctl.yml`.
-2. Add the following line to your `/etc/hosts` file:
+- Set up the backend as described [above](#set-up-the-things-networks-backend-for-development).
+- Add the following line to your `/etc/hosts` file:
     `127.0.0.1 router handler`
-3. Run `make docker` to build the docker image
-4. Run `docker-compose up` to start all backend services in Docker. Make sure that Redis and Mosquitto **are not running** on your local machine.
-5. First time only (or when Redis is flushed):
+- Run `make docker` to build the docker image
+- Run `docker-compose up` to start all backend services in Docker. Make sure that Redis and Mosquitto **are not running** on your local machine.
+- First time only (or when Redis is flushed):
   * Run `docker-compose run broker broker register-prefix 00000000/0 --config ./.env/broker/dev.yml`
-  * Restart the backend
+  * Restart the backend services
 
 ## Contributing
 
