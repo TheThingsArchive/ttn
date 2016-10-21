@@ -12,19 +12,14 @@ import (
 	AMQP "github.com/streadway/amqp"
 )
 
-// ChannelUser represents a user of an AMQP channel, for example a Publisher
-type ChannelUser interface {
-	Open() error
-	io.Closer
-}
-
 // Client connects to an AMQP server
 type Client interface {
 	Connect() error
 	Disconnect()
 	IsConnected() bool
 
-	NewTopicPublisher(exchange string) Publisher
+	NewPublisher(exchange, exchangeType string) Publisher
+	NewSubscriber(exchange, exchangeType, name string, durable, autoDelete bool) Subscriber
 }
 
 // DefaultClient is the default AMQP client for The Things Network
@@ -34,8 +29,23 @@ type DefaultClient struct {
 	conn         *AMQP.Connection
 	mutex        *sync.Mutex
 	closed       chan *AMQP.Error
-	channels     map[ChannelUser]*AMQP.Channel
+	channels     map[*DefaultChannelClient]*AMQP.Channel
 	reconnecting bool
+}
+
+// ChannelClient represents a AMQP channel client
+type ChannelClient interface {
+	Open() error
+	io.Closer
+}
+
+// DefaultChannelClient represents the default client of an AMQP channel
+type DefaultChannelClient struct {
+	ctx          Logger
+	client       *DefaultClient
+	channel      *AMQP.Channel
+	exchange     string
+	exchangeType string
 }
 
 var (
@@ -62,7 +72,7 @@ func NewClient(ctx Logger, username, password, host string) Client {
 		ctx:      ctx,
 		url:      fmt.Sprintf("amqp://%s@%s", credentials, host),
 		mutex:    &sync.Mutex{},
-		channels: make(map[ChannelUser]*AMQP.Channel),
+		channels: make(map[*DefaultChannelClient]*AMQP.Channel),
 	}
 }
 
@@ -133,7 +143,7 @@ func (c *DefaultClient) IsConnected() bool {
 	return c.conn != nil
 }
 
-func (c *DefaultClient) openChannel(u ChannelUser) (*AMQP.Channel, error) {
+func (c *DefaultClient) openChannel(u *DefaultChannelClient) (*AMQP.Channel, error) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
@@ -146,7 +156,7 @@ func (c *DefaultClient) openChannel(u ChannelUser) (*AMQP.Channel, error) {
 	return channel, nil
 }
 
-func (c *DefaultClient) closeChannel(u ChannelUser) error {
+func (c *DefaultClient) closeChannel(u *DefaultChannelClient) error {
 	channel, ok := c.channels[u]
 	if !ok {
 		return nil
@@ -158,4 +168,26 @@ func (c *DefaultClient) closeChannel(u ChannelUser) error {
 	delete(c.channels, u)
 
 	return err
+}
+
+// Open opens a new channel and declares the exchange
+func (p *DefaultChannelClient) Open() error {
+	channel, err := p.client.openChannel(p)
+	if err != nil {
+		return fmt.Errorf("Could not open AMQP channel (%s)", err)
+	}
+
+	if p.exchange != "" {
+		if err := channel.ExchangeDeclare(p.exchange, p.exchangeType, true, false, false, false, nil); err != nil {
+			return fmt.Errorf("Could not declare AMQP exchange (%s)", err)
+		}
+	}
+
+	p.channel = channel
+	return nil
+}
+
+// Close closes the channel
+func (p *DefaultChannelClient) Close() error {
+	return p.client.closeChannel(p)
 }

@@ -10,15 +10,15 @@ import (
 	. "github.com/smartystreets/assertions"
 )
 
-func TestOpenPublisher(t *testing.T) {
+func TestOpenSubscriber(t *testing.T) {
 	a := New(t)
-	c := NewClient(GetLogger(t, "TestOpenPublisher"), "guest", "guest", host)
+	c := NewClient(GetLogger(t, "TestOpenSubscriber"), "guest", "guest", host)
 	err := c.Connect()
 	a.So(err, ShouldBeNil)
 	defer c.Disconnect()
 
-	p := c.NewPublisher("test", "topic")
-	err = p.Open()
+	s := c.NewSubscriber("test", "topic", "", false, true)
+	err = s.Open()
 	a.So(err, ShouldBeNil)
-	defer p.Close()
+	defer s.Close()
 }
