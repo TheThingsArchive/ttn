@@ -5,7 +5,7 @@ Control The Things Network from the command line.
 **Options**
 
 ```
-      --config string               config file (default is $HOME/.ttnctl.yaml)
+      --config string               config file (default is $HOME/.ttnctl.yml)
       --data string                 directory where ttnctl stores data (default is $HOME/.ttnctl)
   -d, --debug                       Enable debug mode
       --discovery-server string     The address of the Discovery server (default "discover.thethingsnetwork.org:1900")
@@ -196,6 +196,12 @@ Are you sure you want to unregister application test?
   INFO Unregistered application                 AppID=test
 ```
 
+## ttnctl config
+
+ttnctl config prints the configuration that is used
+
+**Usage:** `ttnctl config`
+
 ## ttnctl devices
 
 ttnctl devices can be used to manage devices.
@@ -277,8 +283,8 @@ $ ttnctl devices list
   INFO Discovering Handler...
   INFO Connecting with Handler...
 
-DevID	AppEUI          	DevEUI          	DevAddr 	Up/Down
-test 	70B3D57EF0000024	0001D544B2936FCE	26001ADA	0/0
+DevID	AppEUI          	DevEUI          	DevAddr
+test 	70B3D57EF0000024	0001D544B2936FCE	26001ADA
 
   INFO Listed 1 devices                         AppID=test
 ```
@@ -329,16 +335,19 @@ ttnctl devices set can be used to set properties of a device.
 **Options**
 
 ```
-      --32-bit-fcnt          Use 32 bit FCnt
+      --16-bit-fcnt          Use 16 bit FCnt
+      --32-bit-fcnt          Use 32 bit FCnt (default)
       --app-eui string       Set AppEUI
       --app-key string       Set AppKey
       --app-s-key string     Set AppSKey
       --dev-addr string      Set DevAddr
       --dev-eui string       Set DevEUI
       --disable-fcnt-check   Disable FCnt check
+      --enable-fcnt-check    Enable FCnt check (default)
       --fcnt-down int        Set FCnt Down (default -1)
       --fcnt-up int          Set FCnt Up (default -1)
       --nwk-s-key string     Set NwkSKey
+      --override             Override protection against breaking changes
 ```
 
 **Example**
@@ -414,6 +423,12 @@ ttnctl gateways edit can be used to edit settings of a gateway
 $ ttnctl gateways edit test --location 52.37403,4.88968 --frequency-plan EU
   INFO Edited gateway                          Gateway ID=test
 ```
+
+### ttnctl gateways info
+
+ttnctl gateways info can be used to get information about a gateway
+
+**Usage:** `ttnctl gateways info [GatewayID]`
 
 ### ttnctl gateways list
 
