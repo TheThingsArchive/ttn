@@ -18,7 +18,7 @@ func TestPublishUplink(t *testing.T) {
 	a.So(err, ShouldBeNil)
 	defer c.Disconnect()
 
-	p := c.NewPublisher("test")
+	p := c.NewTopicPublisher("test")
 	err = p.Open()
 	a.So(err, ShouldBeNil)
 	defer p.Close()

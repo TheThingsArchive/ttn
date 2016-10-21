@@ -5,10 +5,12 @@ package amqp
 
 import (
 	"testing"
+	"time"
 
 	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/assertions"
+	AMQP "github.com/streadway/amqp"
 )
 
 func TestOpenPublisher(t *testing.T) {
@@ -18,7 +20,7 @@ func TestOpenPublisher(t *testing.T) {
 	a.So(err, ShouldBeNil)
 	defer c.Disconnect()
 
-	p := c.NewPublisher("test")
+	p := c.NewTopicPublisher("test")
 	err = p.Open()
 	a.So(err, ShouldBeNil)
 	defer p.Close()
@@ -31,7 +33,7 @@ func TestReopenPublisher(t *testing.T) {
 	a.So(err, ShouldBeNil)
 	defer c.Disconnect()
 
-	p := c.NewPublisher("test")
+	p := c.NewTopicPublisher("test")
 	err = p.Open()
 	a.So(err, ShouldBeNil)
 	defer p.Close()
@@ -40,11 +42,16 @@ func TestReopenPublisher(t *testing.T) {
 	err = p.PublishUplink(types.UplinkMessage{})
 	a.So(err, ShouldBeNil)
 
-	// Closing the underlying channel
-	err = p.(*DefaultPublisher).channel.Close()
-	a.So(err, ShouldBeNil)
+	// Make sure that the publisher's old channel is closed
+	p.(*DefaultPublisher).channel.Close()
 
-	// Second attempt should reconnect and be OK as well
+	// Simulate a connection close so a new channel should be opened
+	c.(*DefaultClient).closed <- AMQP.ErrClosed
+
+	// Give the reconnect some time
+	time.Sleep(100 * time.Millisecond)
+
+	// Second attempt should be OK as well and will only work on a new channel
 	err = p.PublishUplink(types.UplinkMessage{})
 	a.So(err, ShouldBeNil)
 }
