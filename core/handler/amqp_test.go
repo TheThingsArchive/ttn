@@ -43,7 +43,7 @@ func TestHandleAMQP(t *testing.T) {
 	defer func() {
 		h.devices.Delete(appID, devID)
 	}()
-	err = h.HandleAMQP("guest", "guest", host, "amq.topic")
+	err = h.HandleAMQP("guest", "guest", host, "amq.topic", "")
 	a.So(err, ShouldBeNil)
 
 	p := c.NewPublisher("amq.topic", "topic")

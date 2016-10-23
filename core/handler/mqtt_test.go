@@ -27,7 +27,7 @@ func TestHandleMQTT(t *testing.T) {
 	var wg WaitGroup
 	c := mqtt.NewClient(GetLogger(t, "TestHandleMQTT"), "test", "", "", fmt.Sprintf("tcp://%s:1883", host))
 	err := c.Connect()
-   a.So(err, ShouldBeNil)
+	a.So(err, ShouldBeNil)
 	appID := "handler-mqtt-app1"
 	devID := "handler-mqtt-dev1"
 	h := &handler{

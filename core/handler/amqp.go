@@ -10,7 +10,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/types"
 )
 
-func (h *handler) HandleAMQP(username, password, host, exchange string) error {
+func (h *handler) HandleAMQP(username, password, host, exchange, name string) error {
 	h.amqpClient = amqp.NewClient(h.Ctx, username, password, host)
 
 	err := h.amqpClient.Connect()
@@ -25,7 +25,7 @@ func (h *handler) HandleAMQP(username, password, host, exchange string) error {
 
 	h.amqpUp = make(chan *types.UplinkMessage)
 
-	subscriber := h.amqpClient.NewSubscriber(h.amqpExchange, "topic", "ttn-handler-downlink", true, false)
+	subscriber := h.amqpClient.NewSubscriber(h.amqpExchange, "topic", name, name != "", name == "")
 	err = subscriber.Open()
 	if err != nil {
 		return err

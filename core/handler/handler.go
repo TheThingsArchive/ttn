@@ -107,7 +107,7 @@ func (h *handler) Init(c *core.Component) error {
 	}
 
 	if h.amqpEnabled {
-		err = h.HandleAMQP(h.amqpUsername, h.amqpPassword, h.amqpHost, h.amqpExchange)
+		err = h.HandleAMQP(h.amqpUsername, h.amqpPassword, h.amqpHost, h.amqpExchange, "ttn-handler-downlink")
 		if err != nil {
 			return err
 		}
