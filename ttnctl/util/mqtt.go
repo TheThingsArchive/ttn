@@ -4,6 +4,7 @@
 package util
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -15,18 +16,51 @@ import (
 
 // GetMQTT connects a new MQTT clients with the specified credentials
 func GetMQTT(ctx log.Interface) mqtt.Client {
+	username, password, err := getMQTTCredentials(ctx)
+	if err != nil {
+		ctx.WithError(err).Fatal("Failed to get MQTT credentials")
+	}
+
+	mqttProto := "tcp"
+	if strings.HasSuffix(viper.GetString("mqtt-broker"), ":8883") {
+		mqttProto = "ssl"
+		ctx.Fatal("TLS connections are not yet supported by ttnctl")
+	}
+	broker := fmt.Sprintf("%s://%s", mqttProto, viper.GetString("mqtt-broker"))
+	client := mqtt.NewClient(ctx, "ttnctl", username, password, broker)
+
+	ctx.WithField("MQTT Broker", broker).Info("Connecting to MQTT...")
+
+	if err := client.Connect(); err != nil {
+		ctx.WithError(err).Fatal("Could not connect")
+	}
+
+	return client
+}
+
+func getMQTTCredentials(ctx log.Interface) (username string, password string, err error) {
+	username = viper.GetString("mqtt-username")
+	password = viper.GetString("mqtt-password")
+	if username != "" {
+		return
+	}
+
+	return getAppMQTTCredentials(ctx)
+}
+
+func getAppMQTTCredentials(ctx log.Interface) (string, string, error) {
 	appID := GetAppID(ctx)
 
 	account := GetAccount(ctx)
 	app, err := account.FindApplication(appID)
 	if err != nil {
-		ctx.WithError(err).Fatal("Failed to get application")
+		return "", "", err
 	}
 
 	var keyIdx int
 	switch len(app.AccessKeys) {
 	case 0:
-		ctx.Fatal("Can not connect to MQTT. Your application does not have any access keys.")
+		return "", "", errors.New("Can not connect to MQTT. Your application does not have any access keys.")
 	case 1:
 	default:
 		ctx.Infof("Found %d access keys for your application:", len(app.AccessKeys))
@@ -53,23 +87,7 @@ func GetMQTT(ctx log.Interface) mqtt.Client {
 	}
 
 	if keyIdx < 0 || keyIdx >= len(app.AccessKeys) {
-		ctx.Fatal("Invalid choice for access key")
+		return "", "", errors.New("Invalid choice for access key")
 	}
-	key := app.AccessKeys[keyIdx]
-
-	mqttProto := "tcp"
-	if strings.HasSuffix(viper.GetString("mqtt-broker"), ":8883") {
-		mqttProto = "ssl"
-		ctx.Fatal("TLS connections are not yet supported by ttnctl")
-	}
-	broker := fmt.Sprintf("%s://%s", mqttProto, viper.GetString("mqtt-broker"))
-	client := mqtt.NewClient(ctx, "ttnctl", appID, key.Key, broker)
-
-	ctx.WithField("MQTT Broker", broker).Info("Connecting to MQTT...")
-
-	if err := client.Connect(); err != nil {
-		ctx.WithError(err).Fatal("Could not connect")
-	}
-
-	return client
+	return appID, app.AccessKeys[keyIdx].Key, nil
 }

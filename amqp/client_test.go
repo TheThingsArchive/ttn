@@ -10,6 +10,7 @@ import (
 
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/assertions"
+	AMQP "github.com/streadway/amqp"
 )
 
 var host string
@@ -75,4 +76,44 @@ func TestDisconnect(t *testing.T) {
 	c.Disconnect()
 
 	a.So(c.IsConnected(), ShouldBeFalse)
+}
+
+func TestReopenChannelClient(t *testing.T) {
+	a := New(t)
+	ctx := GetLogger(t, "TestReopenChannelClient")
+	c := NewClient(ctx, "guest", "guest", host).(*DefaultClient)
+	closed, err := c.connect(false)
+	a.So(err, ShouldBeNil)
+	defer c.Disconnect()
+
+	p := &DefaultChannelClient{
+		ctx:    ctx,
+		client: c,
+	}
+	err = p.Open()
+	a.So(err, ShouldBeNil)
+	defer p.Close()
+
+	test := func() error {
+		return p.channel.Publish("", "test", false, false, AMQP.Publishing{
+			Body: []byte("test"),
+		})
+	}
+
+	// First attempt should be OK
+	err = test()
+	a.So(err, ShouldBeNil)
+
+	// Make sure that the old channel is closed
+	p.channel.Close()
+
+	// Simulate a connection close so a new channel should be opened
+	closed <- AMQP.ErrClosed
+
+	// Give the reconnect some time
+	time.Sleep(100 * time.Millisecond)
+
+	// Second attempt should be OK as well and will only work on a new channel
+	err = test()
+	a.So(err, ShouldBeNil)
 }

@@ -23,7 +23,7 @@ func (h *handler) HandleAMQP(username, password, host, exchange string) error {
 	ctx := h.Ctx.WithField("Protocol", "AMQP")
 
 	go func() {
-		publisher := h.amqpClient.NewPublisher(exchange)
+		publisher := h.amqpClient.NewPublisher(h.amqpExchange, "topic")
 		err := publisher.Open()
 		if err != nil {
 			ctx.WithError(err).Error("Could not open publisher channel")

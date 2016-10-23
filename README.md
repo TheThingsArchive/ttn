@@ -22,7 +22,7 @@ When you get started with The Things Network, you'll probably have some question
 1. Make sure you have [Go](https://golang.org) installed.
 2. Set up your [Go environment](https://golang.org/doc/code.html#GOPATH)
 3. Install the [protobuf compiler (`protoc`)](https://github.com/google/protobuf/releases)
-4. Make sure you have [Mosquitto](http://mosquitto.org/download/) and [Redis](http://redis.io/download) **installed** and **running**.  
+4. Make sure you have [RabbitMQ](https://www.rabbitmq.com/download.html) and [Redis](http://redis.io/download) **installed** and **running**.  
    If you're on Linux, you probably know how to do that. On a Mac, just run `brew bundle`. Windows users are currently on their own (feel free to contribute a guide for Windows).
 
 ## Set up The Things Network's backend for Development
