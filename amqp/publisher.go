@@ -15,6 +15,7 @@ type Publisher interface {
 	ChannelClient
 
 	PublishUplink(dataUp types.UplinkMessage) error
+	PublishDownlink(dataDown types.DownlinkMessage) error
 }
 
 // DefaultPublisher represents the default AMQP publisher

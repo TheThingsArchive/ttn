@@ -19,6 +19,10 @@ type Subscriber interface {
 	SubscribeDeviceUplink(appID, devID string, handler UplinkHandler) error
 	SubscribeAppUplink(appID string, handler UplinkHandler) error
 	SubscribeUplink(handler UplinkHandler) error
+
+	SubscribeDeviceDownlink(appID, devID string, handler DownlinkHandler) error
+	SubscribeAppDownlink(appID string, handler DownlinkHandler) error
+	SubscribeDownlink(handler DownlinkHandler) error
 }
 
 // DefaultSubscriber represents the default AMQP subscriber
