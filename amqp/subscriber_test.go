@@ -17,7 +17,7 @@ func TestOpenSubscriber(t *testing.T) {
 	a.So(err, ShouldBeNil)
 	defer c.Disconnect()
 
-	s := c.NewSubscriber("test", "topic", "", false, true)
+	s := c.NewSubscriber("amq.topic", "topic", "", false, true)
 	err = s.Open()
 	a.So(err, ShouldBeNil)
 	defer s.Close()

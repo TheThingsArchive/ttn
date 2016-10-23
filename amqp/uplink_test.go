@@ -39,12 +39,12 @@ func TestSubscribeUplink(t *testing.T) {
 	a.So(err, ShouldBeNil)
 	defer c.Disconnect()
 
-	p := c.NewPublisher("test", "topic")
+	p := c.NewPublisher("amq.topic", "topic")
 	err = p.Open()
 	a.So(err, ShouldBeNil)
 	defer p.Close()
 
-	s := c.NewSubscriber("test", "topic", "", false, true)
+	s := c.NewSubscriber("amq.topic", "topic", "", false, true)
 	err = s.Open()
 	a.So(err, ShouldBeNil)
 	defer s.Close()
