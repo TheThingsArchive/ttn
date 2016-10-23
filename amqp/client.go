@@ -24,13 +24,11 @@ type Client interface {
 
 // DefaultClient is the default AMQP client for The Things Network
 type DefaultClient struct {
-	url          string
-	ctx          Logger
-	conn         *AMQP.Connection
-	mutex        *sync.Mutex
-	closed       chan *AMQP.Error
-	channels     map[*DefaultChannelClient]*AMQP.Channel
-	reconnecting bool
+	url      string
+	ctx      Logger
+	conn     *AMQP.Connection
+	mutex    *sync.Mutex
+	channels map[*DefaultChannelClient]*AMQP.Channel
 }
 
 // ChannelClient represents a AMQP channel client
@@ -76,46 +74,52 @@ func NewClient(ctx Logger, username, password, host string) Client {
 	}
 }
 
-// Connect to the AMQP server. It will retry for ConnectRetries times with a delay of ConnectRetryDelay between retries
-func (c *DefaultClient) Connect() error {
+func (c *DefaultClient) connect(reconnect bool) (chan *AMQP.Error, error) {
 	var err error
 	var conn *AMQP.Connection
-	for retries := 0; c.reconnecting || retries < ConnectRetries; retries++ {
+	for retries := 0; reconnect || retries < ConnectRetries; retries++ {
 		conn, err = AMQP.Dial(c.url)
 		if err == nil {
 			break
 		}
-		c.ctx.Warnf("Could not connect to AMQP server (%s). Retrying attempt %d, reconnect is %v...", err.Error(), retries+1, c.reconnecting)
+		c.ctx.Warnf("Could not connect to AMQP server (%s). Retry attempt %d, reconnect is %v...", err.Error(), retries+1, reconnect)
 		<-time.After(ConnectRetryDelay)
 	}
 	if err != nil {
-		return fmt.Errorf("Could not connect to AMQP server (%s)", err)
+		return nil, fmt.Errorf("Could not connect to AMQP server (%s)", err)
 	}
 
-	c.closed = make(chan *AMQP.Error)
-	conn.NotifyClose(c.closed)
-	go func(errc chan *AMQP.Error) {
-		err := <-errc
+	closed := make(chan *AMQP.Error)
+	conn.NotifyClose(closed)
+	go func() {
+		err := <-closed
 		if err != nil {
 			c.ctx.Warnf("Connection closed (%s). Reconnecting...", err)
-			c.reconnecting = true
-			c.Connect()
+			c.connect(true)
 		} else {
 			c.ctx.Info("Connection closed")
 		}
-	}(c.closed)
+	}()
 
 	c.conn = conn
-	c.reconnecting = false
+	c.ctx.Info("Connected to AMQP")
 
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-	for user, channel := range c.channels {
-		channel.Close()
-		go user.Open()
+	if reconnect {
+		c.mutex.Lock()
+		defer c.mutex.Unlock()
+		for user, channel := range c.channels {
+			channel.Close()
+			go user.Open()
+		}
 	}
 
-	return nil
+	return closed, nil
+}
+
+// Connect to the AMQP server. It will retry for ConnectRetries times with a delay of ConnectRetryDelay between retries
+func (c *DefaultClient) Connect() error {
+	_, err := c.connect(false)
+	return err
 }
 
 // Disconnect from the AMQP server
@@ -133,7 +137,6 @@ func (c *DefaultClient) Disconnect() {
 		delete(c.channels, user)
 	}
 
-	c.reconnecting = false
 	c.conn.Close()
 	c.conn = nil
 }

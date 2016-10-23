@@ -82,7 +82,7 @@ func TestReopenChannelClient(t *testing.T) {
 	a := New(t)
 	ctx := GetLogger(t, "TestReopenChannelClient")
 	c := NewClient(ctx, "guest", "guest", host).(*DefaultClient)
-	err := c.Connect()
+	closed, err := c.connect(false)
 	a.So(err, ShouldBeNil)
 	defer c.Disconnect()
 
@@ -108,7 +108,7 @@ func TestReopenChannelClient(t *testing.T) {
 	p.channel.Close()
 
 	// Simulate a connection close so a new channel should be opened
-	c.closed <- AMQP.ErrClosed
+	closed <- AMQP.ErrClosed
 
 	// Give the reconnect some time
 	time.Sleep(100 * time.Millisecond)
