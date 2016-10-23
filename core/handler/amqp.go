@@ -17,8 +17,30 @@ func (h *handler) HandleAMQP(username, password, host, exchange string) error {
 	if err != nil {
 		return err
 	}
+	defer func() {
+		if err != nil {
+			h.amqpClient.Disconnect()
+		}
+	}()
 
 	h.amqpUp = make(chan *types.UplinkMessage)
+
+	subscriber := h.amqpClient.NewSubscriber(h.amqpExchange, "topic", "ttn-handler-downlink", true, false)
+	err = subscriber.Open()
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			subscriber.Close()
+		}
+	}()
+	err = subscriber.SubscribeDownlink(func(_ amqp.Subscriber, appID, devID string, req types.DownlinkMessage) {
+		h.EnqueueDownlink(&req)
+	})
+	if err != nil {
+		return err
+	}
 
 	ctx := h.Ctx.WithField("Protocol", "AMQP")
 
