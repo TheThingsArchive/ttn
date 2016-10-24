@@ -4,6 +4,7 @@
 syntax = "proto3";
 
 import "google/protobuf/empty.proto";
+import "google/api/annotations.proto";
 import "ttn/api/api.proto";
 import "ttn/api/broker/broker.proto";
 import "ttn/api/protocol/protocol.proto";
@@ -90,14 +91,53 @@ message DryDownlinkResult {
 }
 
 service ApplicationManager {
-  rpc RegisterApplication(ApplicationIdentifier) returns (google.protobuf.Empty);
-  rpc GetApplication(ApplicationIdentifier) returns (Application);
-  rpc SetApplication(Application) returns (google.protobuf.Empty);
-  rpc DeleteApplication(ApplicationIdentifier) returns (google.protobuf.Empty);
-  rpc GetDevice(DeviceIdentifier) returns (Device);
-  rpc SetDevice(Device) returns (google.protobuf.Empty);
-  rpc DeleteDevice(DeviceIdentifier) returns (google.protobuf.Empty);
-  rpc GetDevicesForApplication(ApplicationIdentifier) returns (DeviceList);
+  rpc RegisterApplication(ApplicationIdentifier) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/applications"
+      body: "*"
+    };
+  }
+  rpc GetApplication(ApplicationIdentifier) returns (Application) {
+    option (google.api.http) = {
+      get: "/applications/{app_id}"
+    };
+  }
+  rpc SetApplication(Application) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/applications/{app_id}"
+      body: "*"
+    };
+  }
+  rpc DeleteApplication(ApplicationIdentifier) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/applications/{app_id}"
+    };
+  }
+  rpc GetDevice(DeviceIdentifier) returns (Device) {
+    option (google.api.http) = {
+      get: "/applications/{app_id}/devices/{dev_id}"
+    };
+  }
+  rpc SetDevice(Device) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/applications/{app_id}/devices/{dev_id}"
+      body: "*"
+      additional_bindings {
+				post: "/applications/{app_id}/devices"
+        body: "*"
+			}
+    };
+  }
+  rpc DeleteDevice(DeviceIdentifier) returns (google.protobuf.Empty)  {
+    option (google.api.http) = {
+      delete: "/applications/{app_id}/devices/{dev_id}"
+    };
+  }
+  rpc GetDevicesForApplication(ApplicationIdentifier) returns (DeviceList) {
+    option (google.api.http) = {
+      get: "/applications/{app_id}/devices"
+    };
+  }
   rpc DryDownlink(DryDownlinkMessage) returns (DryDownlinkResult);
   rpc DryUplink(DryUplinkMessage) returns (DryUplinkResult);
 }

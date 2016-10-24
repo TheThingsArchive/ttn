@@ -49,7 +49,7 @@ func (h *handlerRPC) Activate(ctx context.Context, activation *pb_broker.Dedupli
 }
 
 // RegisterRPC registers this handler as a HandlerServer (github.com/TheThingsNetwork/ttn/api/handler)
-func (r *handler) RegisterRPC(s *grpc.Server) {
-	server := &handlerRPC{r}
+func (h *handler) RegisterRPC(s *grpc.Server) {
+	server := &handlerRPC{h}
 	pb.RegisterHandlerServer(s, server)
 }
