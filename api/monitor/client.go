@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	"github.com/TheThingsNetwork/ttn/api"
-	pb_gateway "github.com/TheThingsNetwork/ttn/api/gateway"
+	"github.com/TheThingsNetwork/ttn/api/gateway"
 	"github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/apex/log"
@@ -181,13 +181,13 @@ type gatewayClient struct {
 
 // GatewayClient is used as the main client for Gateways to communicate with the Router
 type GatewayClient interface {
-	SendStatus(status *pb_gateway.Status) (err error)
+	SendStatus(status *gateway.Status) (err error)
 	SendUplink(msg *router.UplinkMessage) (err error)
 	SendDownlink(msg *router.DownlinkMessage) (err error)
 	Close() (err error)
 }
 
-func (cl *gatewayClient) SendStatus(status *pb_gateway.Status) (err error) {
+func (cl *gatewayClient) SendStatus(status *gateway.Status) (err error) {
 	cl.status.RLock()
 	cl.client.mutex.RLock()
 
