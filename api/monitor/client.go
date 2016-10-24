@@ -23,7 +23,7 @@ type Client struct {
 	conn   *grpc.ClientConn
 	addr   string
 
-	once sync.Once
+	once *sync.Once
 
 	gateways map[string]GatewayClient
 	mutex    sync.RWMutex
@@ -36,6 +36,8 @@ func NewClient(ctx log.Interface, monitorAddr string) (cl *Client, err error) {
 		Ctx:      ctx,
 		addr:     monitorAddr,
 		gateways: make(map[string]GatewayClient),
+
+		once: &sync.Once{},
 	}
 	return cl, cl.Open()
 }
@@ -207,7 +209,7 @@ func (cl *gatewayClient) SendStatus(status *pb_gateway.Status) (err error) {
 					err = cl.client.Reopen()
 
 					cl.client.mutex.Lock()
-					cl.client.once = sync.Once{}
+					cl.client.once = &sync.Once{}
 					cl.client.mutex.Unlock()
 				})
 			}
@@ -260,7 +262,7 @@ func (cl *gatewayClient) SendUplink(uplink *router.UplinkMessage) (err error) {
 					err = cl.client.Reopen()
 
 					cl.client.mutex.Lock()
-					cl.client.once = sync.Once{}
+					cl.client.once = &sync.Once{}
 					cl.client.mutex.Unlock()
 				})
 			}
@@ -312,7 +314,7 @@ func (cl *gatewayClient) SendDownlink(downlink *router.DownlinkMessage) (err err
 					err = cl.client.Reopen()
 
 					cl.client.mutex.Lock()
-					cl.client.once = sync.Once{}
+					cl.client.once = &sync.Once{}
 					cl.client.mutex.Unlock()
 				})
 			}
