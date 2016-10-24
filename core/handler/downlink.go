@@ -98,11 +98,30 @@ func (h *handler) HandleDownlink(appDownlink *types.DownlinkMessage, downlink *p
 
 	h.downlink <- downlink
 
+	downlinkConfig := types.DownlinkEventConfigInfo{}
+
+	if downlink.DownlinkOption.ProtocolConfig != nil {
+		if lorawan := downlink.DownlinkOption.ProtocolConfig.GetLorawan(); lorawan != nil {
+			downlinkConfig.Modulation = lorawan.Modulation.String()
+			downlinkConfig.DataRate = lorawan.DataRate
+			downlinkConfig.BitRate = uint(lorawan.BitRate)
+			downlinkConfig.FCnt = uint(lorawan.FCnt)
+		}
+	}
+	if gateway := downlink.DownlinkOption.GatewayConfig; gateway != nil {
+		downlinkConfig.Frequency = uint(downlink.DownlinkOption.GatewayConfig.Frequency)
+		downlinkConfig.Power = int(downlink.DownlinkOption.GatewayConfig.Power)
+	}
 
 	h.mqttEvent <- &types.DeviceEvent{
 		AppID: appDownlink.AppID,
 		DevID: appDownlink.DevID,
 		Event: types.DownlinkSentEvent,
+		Data: types.DownlinkEventData{
+			Payload:   downlink.Payload,
+			GatewayID: downlink.DownlinkOption.GatewayId,
+			Config:    downlinkConfig,
+		},
 	}
 
 	return nil

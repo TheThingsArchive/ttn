@@ -106,9 +106,10 @@ func TestHandleDownlink(t *testing.T) {
 		DevID:      devID,
 		PayloadRaw: []byte{0xAA, 0xBC},
 	}, &pb_broker.DownlinkMessage{
-		AppEui:  &appEUI,
-		DevEui:  &devEUI,
-		Payload: []byte{96, 4, 3, 2, 1, 0, 1, 0, 1, 0, 0, 0, 0},
+		AppEui:         &appEUI,
+		DevEui:         &devEUI,
+		Payload:        []byte{96, 4, 3, 2, 1, 0, 1, 0, 1, 0, 0, 0, 0},
+		DownlinkOption: &pb_broker.DownlinkOption{},
 	})
 	a.So(err, ShouldBeNil)
 	wg.WaitFor(100 * time.Millisecond)
@@ -150,9 +151,10 @@ func TestHandleDownlink(t *testing.T) {
 		DevID:         devID,
 		PayloadFields: jsonFields,
 	}, &pb_broker.DownlinkMessage{
-		AppEui:  &appEUI,
-		DevEui:  &devEUI,
-		Payload: []byte{96, 4, 3, 2, 1, 0, 1, 0, 1, 0, 0, 0, 0},
+		AppEui:         &appEUI,
+		DevEui:         &devEUI,
+		Payload:        []byte{96, 4, 3, 2, 1, 0, 1, 0, 1, 0, 0, 0, 0},
+		DownlinkOption: &pb_broker.DownlinkOption{},
 	})
 	a.So(err, ShouldBeNil)
 	wg.WaitFor(100 * time.Millisecond)
