@@ -1,9 +1,10 @@
 package monitor
 
 import (
-	"context"
 	"io"
 	"sync"
+
+	"golang.org/x/net/context"
 
 	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/api/gateway"
