@@ -203,9 +203,9 @@ if err := token.Error(); err != nil {
 
 ### Downlink Events
 
-* Downlink Scheduled: `<AppID>/devices/<DevID>/events/down/scheduled` (payload: the message - see **Downlink Messages**)
-* Downlink Sent: `<AppID>/devices/<DevID>/events/down/sent` (payload: the message - see **Downlink Messages**)
-* Acknowledgements: `<AppID>/devices/<DevID>/events/ack` (payload: `{}`)
+* Downlink Scheduled: `<AppID>/devices/<DevID>/events/down/scheduled` (payload: _null_)
+* Downlink Sent: `<AppID>/devices/<DevID>/events/down/sent` (payload: _null_)
+* Acknowledgements: `<AppID>/devices/<DevID>/events/ack` (payload: _null_)
 
 ### Error Events
 

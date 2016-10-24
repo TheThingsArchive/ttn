@@ -11,13 +11,6 @@ import (
 	"github.com/apex/log"
 )
 
-type mqttEvent struct {
-	AppID   string
-	DevID   string
-	Type    string
-	Payload interface{}
-}
-
 // MQTTTimeout indicates how long we should wait for an MQTT publish
 var MQTTTimeout = 2 * time.Second
 
@@ -33,8 +26,7 @@ func (h *handler) HandleMQTT(username, password string, mqttBrokers ...string) e
 	}
 
 	h.mqttUp = make(chan *types.UplinkMessage, MQTTBufferSize)
-	h.mqttActivation = make(chan *types.Activation, MQTTBufferSize)
-	h.mqttEvent = make(chan *mqttEvent, MQTTBufferSize)
+	h.mqttEvent = make(chan *types.DeviceEvent, MQTTBufferSize)
 
 	token := h.mqttClient.SubscribeDownlink(func(client mqtt.Client, appID string, devID string, msg types.DownlinkMessage) {
 		down := &msg
@@ -81,38 +73,17 @@ func (h *handler) HandleMQTT(username, password string, mqttBrokers ...string) e
 	}()
 
 	go func() {
-		for activation := range h.mqttActivation {
-			ctx.WithFields(log.Fields{
-				"DevID":   activation.DevID,
-				"AppID":   activation.AppID,
-				"DevEUI":  activation.DevEUI,
-				"AppEUI":  activation.AppEUI,
-				"DevAddr": activation.DevAddr,
-			}).Debug("Publish Activation")
-			token := h.mqttClient.PublishActivation(*activation)
-			go func() {
-				if token.WaitTimeout(MQTTTimeout) {
-					if token.Error() != nil {
-						ctx.WithError(token.Error()).Warn("Could not publish Activation")
-					}
-				} else {
-					ctx.Warn("Activation publish timeout")
-				}
-			}()
-		}
-	}()
-
-	go func() {
 		for event := range h.mqttEvent {
 			h.Ctx.WithFields(log.Fields{
 				"DevID": event.DevID,
 				"AppID": event.AppID,
+				"Event": event.Event,
 			}).Debug("Publish Event")
 			var token mqtt.Token
 			if event.DevID == "" {
-				token = h.mqttClient.PublishAppEvent(event.AppID, event.Type, event.Payload)
+				token = h.mqttClient.PublishAppEvent(event.AppID, event.Event, event.Data)
 			} else {
-				token = h.mqttClient.PublishDeviceEvent(event.AppID, event.DevID, event.Type, event.Payload)
+				token = h.mqttClient.PublishDeviceEvent(event.AppID, event.DevID, event.Event, event.Data)
 			}
 			go func() {
 				if token.WaitTimeout(MQTTTimeout) {

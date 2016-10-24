@@ -49,12 +49,12 @@ type Client interface {
 	UnsubscribeDownlink() Token
 
 	// Event pub/sub
-	PublishAppEvent(appID string, eventType string, payload interface{}) Token
-	PublishDeviceEvent(appID string, devID string, eventType string, payload interface{}) Token
-	SubscribeAppEvents(appID string, eventType string, handler AppEventHandler) Token
-	SubscribeDeviceEvents(appID string, devID string, eventType string, handler DeviceEventHandler) Token
-	UnsubscribeAppEvents(appID string, eventType string) Token
-	UnsubscribeDeviceEvents(appID string, devID string, eventType string) Token
+	PublishAppEvent(appID string, eventType types.EventType, payload interface{}) Token
+	PublishDeviceEvent(appID string, devID string, eventType types.EventType, payload interface{}) Token
+	SubscribeAppEvents(appID string, eventType types.EventType, handler AppEventHandler) Token
+	SubscribeDeviceEvents(appID string, devID string, eventType types.EventType, handler DeviceEventHandler) Token
+	UnsubscribeAppEvents(appID string, eventType types.EventType) Token
+	UnsubscribeDeviceEvents(appID string, devID string, eventType types.EventType) Token
 
 	// Activation pub/sub
 	PublishActivation(payload types.Activation) Token

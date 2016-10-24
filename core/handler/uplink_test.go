@@ -48,7 +48,7 @@ func TestHandleUplink(t *testing.T) {
 		h.applications.Delete(appID)
 	}()
 	h.mqttUp = make(chan *types.UplinkMessage)
-	h.mqttEvent = make(chan *mqttEvent, 10)
+	h.mqttEvent = make(chan *types.DeviceEvent, 10)
 	h.downlink = make(chan *pb_broker.DownlinkMessage)
 
 	uplink, _ := buildLorawanUplink([]byte{0x40, 0x04, 0x03, 0x02, 0x01, 0x00, 0x01, 0x00, 0x0A, 0x4D, 0xDA, 0x23, 0x99, 0x61, 0xD4})

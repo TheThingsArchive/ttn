@@ -59,13 +59,12 @@ type handler struct {
 
 	downlink chan *pb_broker.DownlinkMessage
 
-	mqttClient     mqtt.Client
-	mqttUsername   string
-	mqttPassword   string
-	mqttBrokers    []string
-	mqttUp         chan *types.UplinkMessage
-	mqttActivation chan *types.Activation
-	mqttEvent      chan *mqttEvent
+	mqttClient   mqtt.Client
+	mqttUsername string
+	mqttPassword string
+	mqttBrokers  []string
+	mqttUp       chan *types.UplinkMessage
+	mqttEvent    chan *types.DeviceEvent
 
 	amqpClient   amqp.Client
 	amqpUsername string
