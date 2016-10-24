@@ -303,7 +303,7 @@ func (c *Component) ValidateTTNAuthContext(ctx context.Context) (*claims.Claims,
 
 	claims, err := claims.FromToken(c.TokenKeyProvider, token[0])
 	if err != nil {
-		return nil, err
+		return nil, errors.NewErrPermissionDenied(err.Error())
 	}
 
 	return claims, nil
