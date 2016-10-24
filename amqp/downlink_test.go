@@ -12,9 +12,9 @@ import (
 	. "github.com/smartystreets/assertions"
 )
 
-func TestPublishUplink(t *testing.T) {
+func TestPublishDownlink(t *testing.T) {
 	a := New(t)
-	c := NewClient(GetLogger(t, "TestPublishUplink"), "guest", "guest", host)
+	c := NewClient(GetLogger(t, "TestPublishDownlink"), "guest", "guest", host)
 	err := c.Connect()
 	a.So(err, ShouldBeNil)
 	defer c.Disconnect()
@@ -24,7 +24,7 @@ func TestPublishUplink(t *testing.T) {
 	a.So(err, ShouldBeNil)
 	defer p.Close()
 
-	err = p.PublishUplink(types.UplinkMessage{
+	err = p.PublishDownlink(types.DownlinkMessage{
 		AppID:      "app",
 		DevID:      "test",
 		PayloadRaw: []byte{0x01, 0x08},
@@ -32,9 +32,9 @@ func TestPublishUplink(t *testing.T) {
 	a.So(err, ShouldBeNil)
 }
 
-func TestSubscribeUplink(t *testing.T) {
+func TestSubscribeDownlink(t *testing.T) {
 	a := New(t)
-	c := NewClient(GetLogger(t, "TestSubscribeUplink"), "guest", "guest", host)
+	c := NewClient(GetLogger(t, "TestSubscribeDownlink"), "guest", "guest", host)
 	err := c.Connect()
 	a.So(err, ShouldBeNil)
 	defer c.Disconnect()
@@ -51,7 +51,7 @@ func TestSubscribeUplink(t *testing.T) {
 
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
-	err = s.SubscribeUplink(func(_ Subscriber, appID, devID string, req types.UplinkMessage) {
+	err = s.SubscribeDownlink(func(_ Subscriber, appID, devID string, req types.DownlinkMessage) {
 		a.So(appID, ShouldEqual, "app")
 		a.So(devID, ShouldEqual, "test")
 		a.So(req.PayloadRaw, ShouldResemble, []byte{0x01, 0x08})
@@ -59,7 +59,7 @@ func TestSubscribeUplink(t *testing.T) {
 	})
 	a.So(err, ShouldBeNil)
 
-	err = p.PublishUplink(types.UplinkMessage{
+	err = p.PublishDownlink(types.DownlinkMessage{
 		AppID:      "app",
 		DevID:      "test",
 		PayloadRaw: []byte{0x01, 0x08},

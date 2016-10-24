@@ -4,36 +4,38 @@
 package handler
 
 import (
-	"fmt"
 	"os"
 	"testing"
 	"time"
 
+	"github.com/TheThingsNetwork/ttn/amqp"
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
-	"github.com/TheThingsNetwork/ttn/mqtt"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/assertions"
 )
 
-func TestHandleMQTT(t *testing.T) {
-	host := os.Getenv("MQTT_HOST")
+func TestHandleAMQP(t *testing.T) {
+	host := os.Getenv("AMQP_HOST")
 	if host == "" {
-		host = "localhost"
+		host = "localhost:5672"
 	}
 
 	a := New(t)
 	var wg WaitGroup
-	c := mqtt.NewClient(GetLogger(t, "TestHandleMQTT"), "test", "", "", fmt.Sprintf("tcp://%s:1883", host))
+	c := amqp.NewClient(GetLogger(t, "TestHandleAMQP"), "guest", "guest", host)
 	err := c.Connect()
 	a.So(err, ShouldBeNil)
-	appID := "handler-mqtt-app1"
-	devID := "handler-mqtt-dev1"
+	defer c.Disconnect()
+
+	appID := "handler-amqp-app1"
+	devID := "handler-amqp-dev1"
 	h := &handler{
-		Component: &core.Component{Ctx: GetLogger(t, "TestHandleMQTT")},
-		devices:   device.NewRedisDeviceStore(GetRedisClient(), "handler-test-handle-mqtt"),
+		Component: &core.Component{Ctx: GetLogger(t, "TestHandleAMQP")},
+		devices:   device.NewRedisDeviceStore(GetRedisClient(), "handler-test-handle-amqp"),
 	}
+	h.WithAMQP("guest", "guest", host, "amq.topic")
 	h.devices.Set(&device.Device{
 		AppID: appID,
 		DevID: devID,
@@ -41,46 +43,43 @@ func TestHandleMQTT(t *testing.T) {
 	defer func() {
 		h.devices.Delete(appID, devID)
 	}()
-	err = h.HandleMQTT("", "", fmt.Sprintf("tcp://%s:1883", host))
+	err = h.HandleAMQP("guest", "guest", host, "amq.topic", "")
 	a.So(err, ShouldBeNil)
 
-	c.PublishDownlink(types.DownlinkMessage{
+	p := c.NewPublisher("amq.topic", "topic")
+	err = p.Open()
+	a.So(err, ShouldBeNil)
+	defer p.Close()
+	err = p.PublishDownlink(types.DownlinkMessage{
 		AppID:      appID,
 		DevID:      devID,
 		PayloadRaw: []byte{0xAA, 0xBC},
-	}).Wait()
+	})
+	a.So(err, ShouldBeNil)
 	<-time.After(50 * time.Millisecond)
 	dev, _ := h.devices.Get(appID, devID)
 	a.So(dev.NextDownlink, ShouldNotBeNil)
 
 	wg.Add(1)
-	c.SubscribeDeviceUplink(appID, devID, func(client mqtt.Client, r_appID string, r_devID string, req types.UplinkMessage) {
+	s := c.NewSubscriber("amq.topic", "topic", "", false, true)
+	err = s.Open()
+	a.So(err, ShouldBeNil)
+	defer s.Close()
+	err = s.SubscribeDeviceUplink(appID, devID, func(_ amqp.Subscriber, r_appID string, r_devID string, req types.UplinkMessage) {
 		a.So(r_appID, ShouldEqual, appID)
 		a.So(r_devID, ShouldEqual, devID)
 		a.So(req.PayloadRaw, ShouldResemble, []byte{0xAA, 0xBC})
 		wg.Done()
-	}).Wait()
+	})
+	a.So(err, ShouldBeNil)
 
-	h.mqttUp <- &types.UplinkMessage{
+	h.amqpUp <- &types.UplinkMessage{
 		DevID:      devID,
 		AppID:      appID,
 		PayloadRaw: []byte{0xAA, 0xBC},
 		PayloadFields: map[string]interface{}{
 			"field": "value",
 		},
-	}
-
-	wg.Add(1)
-	c.SubscribeDeviceActivations(appID, devID, func(client mqtt.Client, r_appID string, r_devID string, req types.Activation) {
-		a.So(r_appID, ShouldEqual, appID)
-		a.So(r_devID, ShouldEqual, devID)
-		wg.Done()
-	}).Wait()
-
-	h.mqttEvent <- &types.DeviceEvent{
-		DevID: devID,
-		AppID: appID,
-		Event: types.ActivationEvent,
 	}
 
 	a.So(wg.WaitFor(200*time.Millisecond), ShouldBeNil)

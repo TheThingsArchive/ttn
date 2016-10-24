@@ -3,7 +3,11 @@
 
 package amqp
 
-import AMQP "github.com/streadway/amqp"
+import (
+	"fmt"
+
+	AMQP "github.com/streadway/amqp"
+)
 
 var (
 	// PrefetchCount represents the number of messages to prefetch before the AMQP server requires acknowledgment
@@ -19,6 +23,10 @@ type Subscriber interface {
 	SubscribeDeviceUplink(appID, devID string, handler UplinkHandler) error
 	SubscribeAppUplink(appID string, handler UplinkHandler) error
 	SubscribeUplink(handler UplinkHandler) error
+
+	SubscribeDeviceDownlink(appID, devID string, handler DownlinkHandler) error
+	SubscribeAppDownlink(appID string, handler DownlinkHandler) error
+	SubscribeDownlink(handler DownlinkHandler) error
 }
 
 // DefaultSubscriber represents the default AMQP subscriber
@@ -48,17 +56,17 @@ func (c *DefaultClient) NewSubscriber(exchange, exchangeType, name string, durab
 func (s *DefaultSubscriber) subscribe(key string) (<-chan AMQP.Delivery, error) {
 	queue, err := s.channel.QueueDeclare(s.name, s.durable, s.autoDelete, false, false, nil)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Failed to declare queue '%s' (%s)", s.name, err)
 	}
 
 	err = s.channel.QueueBind(queue.Name, key, s.exchange, false, nil)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Failed to bind queue %s with key %s on exchange '%s' (%s)", queue.Name, key, s.exchange, err)
 	}
 
 	err = s.channel.Qos(PrefetchCount, PrefetchSize, false)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Failed to set channel QoS (%s)", err)
 	}
 
 	return s.channel.Consume(queue.Name, "", false, false, false, false, nil)
