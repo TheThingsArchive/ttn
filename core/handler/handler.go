@@ -76,6 +76,11 @@ type handler struct {
 	amqpUp       chan *types.UplinkMessage
 }
 
+var (
+	// AMQPDownlinkQueue is the AMQP queue to use for downlink
+	AMQPDownlinkQueue = "ttn-handler-downlink"
+)
+
 func (h *handler) WithAMQP(username, password, host, exchange string) Handler {
 	h.amqpUsername = username
 	h.amqpPassword = password
@@ -107,7 +112,7 @@ func (h *handler) Init(c *core.Component) error {
 	}
 
 	if h.amqpEnabled {
-		err = h.HandleAMQP(h.amqpUsername, h.amqpPassword, h.amqpHost, h.amqpExchange, "ttn-handler-downlink")
+		err = h.HandleAMQP(h.amqpUsername, h.amqpPassword, h.amqpHost, h.amqpExchange, AMQPDownlinkQueue)
 		if err != nil {
 			return err
 		}
