@@ -8,6 +8,7 @@ import (
 	"time"
 
 	pb "github.com/TheThingsNetwork/ttn/api/gateway"
+	pb_monitor "github.com/TheThingsNetwork/ttn/api/monitor"
 	pb_router "github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/apex/log"
 )
@@ -35,7 +36,7 @@ type Gateway struct {
 	Token     string
 	tokenLock sync.Mutex
 
-	monitor *monitorConn
+	Monitors map[string]pb_monitor.GatewayClient
 
 	Ctx log.Interface
 }
@@ -57,9 +58,9 @@ func (g *Gateway) HandleStatus(status *pb.Status) (err error) {
 	}
 	g.updateLastSeen()
 
-	if g.monitor != nil {
-		for name := range g.monitor.clients {
-			go g.pushStatusToMonitor(g.Ctx.WithField("Monitor", name), name, status)
+	if g.Monitors != nil {
+		for _, monitor := range g.Monitors {
+			go monitor.SendStatus(status)
 		}
 	}
 	return nil
@@ -72,9 +73,9 @@ func (g *Gateway) HandleUplink(uplink *pb_router.UplinkMessage) (err error) {
 	g.Schedule.Sync(uplink.GatewayMetadata.Timestamp)
 	g.updateLastSeen()
 
-	if g.monitor != nil {
-		for name := range g.monitor.clients {
-			go g.pushUplinkToMonitor(g.Ctx.WithField("Monitor", name), name, uplink)
+	if g.Monitors != nil {
+		for _, monitor := range g.Monitors {
+			go monitor.SendUplink(uplink)
 		}
 	}
 	return nil
@@ -87,9 +88,9 @@ func (g *Gateway) HandleDownlink(identifier string, downlink *pb_router.Downlink
 		return err
 	}
 
-	if g.monitor != nil {
-		for name := range g.monitor.clients {
-			go g.pushDownlinkToMonitor(ctx.WithField("Monitor", name), name, downlink)
+	if g.Monitors != nil {
+		for _, monitor := range g.Monitors {
+			go monitor.SendDownlink(downlink)
 		}
 	}
 	return nil

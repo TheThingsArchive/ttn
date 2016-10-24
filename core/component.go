@@ -134,10 +134,10 @@ func NewComponent(ctx log.Interface, serviceName string, announcedAddress string
 	}
 
 	if monitors := viper.GetStringMapString("monitor-servers"); len(monitors) != 0 {
-		component.Monitors = make(map[string]pb_monitor.MonitorClient)
+		component.Monitors = make(map[string]*pb_monitor.Client)
 		for name, addr := range monitors {
 			var err error
-			component.Monitors[name], err = pb_monitor.NewClient(addr)
+			component.Monitors[name], err = pb_monitor.NewClient(ctx.WithField("Monitor", name), addr)
 			if err != nil {
 				// Assuming grpc.WithBlock() is not set
 				return nil, err
@@ -162,7 +162,7 @@ const (
 type Component struct {
 	Identity         *pb_discovery.Announcement
 	Discovery        pb_discovery.Client
-	Monitors         map[string]pb_monitor.MonitorClient
+	Monitors         map[string]*pb_monitor.Client
 	Ctx              log.Interface
 	AccessToken      string
 	privateKey       *ecdsa.PrivateKey
