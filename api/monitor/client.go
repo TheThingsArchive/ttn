@@ -42,6 +42,7 @@ func NewClient(ctx log.Interface, monitorAddr string) (cl *Client, err error) {
 	return cl, cl.Open()
 }
 
+// Open opens connection to the monitor
 func (cl *Client) Open() (err error) {
 	cl.mutex.Lock()
 	defer cl.mutex.Unlock()
@@ -108,6 +109,7 @@ func (cl *Client) close() (err error) {
 	return nil
 }
 
+// Reopen reopens connection to the monitor. It first attemts to close already opened connection and then opens a new one. If closing already opened connection fails, Reopen fails too.
 func (cl *Client) Reopen() (err error) {
 	cl.mutex.Lock()
 	defer cl.mutex.Unlock()
@@ -132,10 +134,12 @@ func (cl *Client) reopen() (err error) {
 	return cl.open()
 }
 
+// IsConnected returns whether connection to the monitor had been established or not
 func (cl *Client) IsConnected() bool {
 	return cl.client != nil && cl.conn != nil
 }
 
+// GatewayClient returns monitor GatewayClient for id and token specified
 func (cl *Client) GatewayClient(id, token string) (gtwCl GatewayClient) {
 	cl.mutex.RLock()
 	gtwCl, ok := cl.gateways[id]
@@ -179,7 +183,7 @@ type gatewayClient struct {
 	}
 }
 
-// GatewayClient is used as the main client for Gateways to communicate with the Router
+// GatewayClient is used as the main client for Gateways to communicate with the monitor
 type GatewayClient interface {
 	SendStatus(status *gateway.Status) (err error)
 	SendUplink(msg *router.UplinkMessage) (err error)
@@ -187,6 +191,7 @@ type GatewayClient interface {
 	Close() (err error)
 }
 
+// SendStatus sends status to the monitor
 func (cl *gatewayClient) SendStatus(status *gateway.Status) (err error) {
 	cl.status.RLock()
 	cl.client.mutex.RLock()
@@ -242,6 +247,7 @@ func (cl *gatewayClient) SendStatus(status *gateway.Status) (err error) {
 	return err
 }
 
+// SendUplink sends uplink to the monitor
 func (cl *gatewayClient) SendUplink(uplink *router.UplinkMessage) (err error) {
 	cl.uplink.RLock()
 	cl.client.mutex.RLock()
@@ -295,6 +301,7 @@ func (cl *gatewayClient) SendUplink(uplink *router.UplinkMessage) (err error) {
 	return err
 }
 
+// SendUplink sends downlink to the monitor
 func (cl *gatewayClient) SendDownlink(downlink *router.DownlinkMessage) (err error) {
 	cl.downlink.RLock()
 	cl.client.mutex.RLock()
@@ -347,6 +354,7 @@ func (cl *gatewayClient) SendDownlink(downlink *router.DownlinkMessage) (err err
 	return err
 }
 
+// Close closes all opened monitor streams for the gateway
 func (cl *gatewayClient) Close() (err error) {
 	wg := &sync.WaitGroup{}
 
@@ -400,6 +408,7 @@ func (cl *gatewayClient) Close() (err error) {
 	return err
 }
 
+// Context returns monitor connection context for gateway
 func (cl *gatewayClient) Context() (monitorContext context.Context) {
 	return metadata.NewContext(context.Background(), metadata.Pairs(
 		"id", cl.id,
