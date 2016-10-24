@@ -17,23 +17,23 @@ import (
 
 // Client is a wrapper around MonitorClient
 type Client struct {
-	Log log.Interface
+	Ctx log.Interface
 
 	client MonitorClient
 	conn   *grpc.ClientConn
 	addr   string
 
-	reopening chan struct{}
+	once sync.Once
 
 	gateways map[string]GatewayClient
-	sync.RWMutex
+	mutex    sync.RWMutex
 }
 
 // NewClient is a wrapper for NewMonitorClient, initializes
 // connection to MonitorServer on monitorAddr with default gRPC options
 func NewClient(ctx log.Interface, monitorAddr string) (cl *Client, err error) {
 	cl = &Client{
-		Log:      ctx,
+		Ctx:      ctx,
 		addr:     monitorAddr,
 		gateways: make(map[string]GatewayClient),
 	}
@@ -41,23 +41,30 @@ func NewClient(ctx log.Interface, monitorAddr string) (cl *Client, err error) {
 }
 
 func (cl *Client) Open() (err error) {
-	cl.Lock()
-	defer cl.Unlock()
+	cl.mutex.Lock()
+	defer cl.mutex.Unlock()
 
 	return cl.open()
 }
 func (cl *Client) open() (err error) {
 	addr := cl.addr
+	ctx := cl.Ctx.WithField("addr", addr)
 
-	ctx := cl.Log.WithField("addr", addr)
+	defer func() {
+		if err != nil {
+			ctx.Warn("Failed to open monitor connection")
+		} else {
+			ctx.Info("Monitor connection opened")
+		}
+	}()
+
 	ctx.Debug("Opening monitor connection...")
 
 	cl.conn, err = grpc.Dial(addr, append(api.DialOptions, grpc.WithInsecure())...)
 	if err != nil {
-		ctx.WithError(errors.FromGRPCError(err)).Warn("Failed to establish connection")
+		ctx.WithError(errors.FromGRPCError(err)).Warn("Failed to establish connection to gRPC service")
 		return err
 	}
-	ctx.Debug("Connection established")
 
 	cl.client = NewMonitorClient(cl.conn)
 	return nil
@@ -65,20 +72,31 @@ func (cl *Client) open() (err error) {
 
 // Close closes connection to the monitor
 func (cl *Client) Close() (err error) {
-	cl.Lock()
-	defer cl.Unlock()
+	cl.mutex.Lock()
+	defer cl.mutex.Unlock()
 
 	return cl.close()
 }
 func (cl *Client) close() (err error) {
-	cl.Log.Debug("Closing monitor connection...")
+	defer func() {
+		if err != nil {
+			cl.Ctx.Warn("Failed to close monitor connection")
+		} else {
+			cl.Ctx.Info("Monitor connection closed")
+		}
+	}()
+
 	for _, gtw := range cl.gateways {
+		ctx := cl.Ctx.WithField("GatewayID", gtw.(*gatewayClient).id)
+
+		ctx.Debug("Closing gateway streams...")
 		err = gtw.Close()
 		if err != nil {
-			cl.Log.WithError(err).WithField("GatewayID", gtw.(*gatewayClient).id).Warn("Failed to close streams")
+			ctx.Warn("Failed to close gateway streams")
 		}
 	}
 
+	cl.Ctx.Debug("Closing monitor connection...")
 	err = cl.conn.Close()
 	if err != nil {
 		return err
@@ -89,19 +107,21 @@ func (cl *Client) close() (err error) {
 }
 
 func (cl *Client) Reopen() (err error) {
-	cl.Lock()
-	defer cl.Unlock()
+	cl.mutex.Lock()
+	defer cl.mutex.Unlock()
 
 	return cl.reopen()
 }
 func (cl *Client) reopen() (err error) {
-	cl.Log.Debug("Reopening monitor connection...")
-
-	cl.reopening = make(chan struct{})
 	defer func() {
-		close(cl.reopening)
-		cl.reopening = nil
+		if err != nil {
+			cl.Ctx.Warn("Failed to reopen monitor connection")
+		} else {
+			cl.Ctx.Info("Monitor connection reopened")
+		}
 	}()
+
+	cl.Ctx.Debug("Reopening monitor connection...")
 
 	err = cl.close()
 	if err != nil {
@@ -110,22 +130,18 @@ func (cl *Client) reopen() (err error) {
 	return cl.open()
 }
 
-func (cl *Client) IsReopening() bool {
-	return cl.reopening != nil
-}
-
 func (cl *Client) IsConnected() bool {
 	return cl.client != nil && cl.conn != nil
 }
 
 func (cl *Client) GatewayClient(id, token string) (gtwCl GatewayClient) {
-	cl.RLock()
+	cl.mutex.RLock()
 	gtwCl, ok := cl.gateways[id]
-	cl.RUnlock()
+	cl.mutex.RUnlock()
 	if !ok {
-		cl.Lock()
+		cl.mutex.Lock()
 		gtwCl = &gatewayClient{
-			Log: cl.Log.WithField("GatewayID", id),
+			Log: cl.Ctx.WithField("GatewayID", id),
 
 			client: cl,
 
@@ -133,7 +149,7 @@ func (cl *Client) GatewayClient(id, token string) (gtwCl GatewayClient) {
 			token: token,
 		}
 		cl.gateways[id] = gtwCl
-		cl.Unlock()
+		cl.mutex.Unlock()
 	}
 	return gtwCl
 }
@@ -170,26 +186,35 @@ type GatewayClient interface {
 }
 
 func (cl *gatewayClient) SendStatus(status *pb_gateway.Status) (err error) {
+	cl.status.RLock()
+	cl.client.mutex.RLock()
+
+	once := cl.client.once
+	stream := cl.status.stream
+
+	cl.status.RUnlock()
+	cl.client.mutex.RUnlock()
+
 	defer func() {
 		if err != nil {
 			cl.Log.WithError(errors.FromGRPCError(err)).Warn("Failed to send status to monitor")
 
 			if code := grpc.Code(err); code == codes.Unavailable || code == codes.Internal {
-				cl.client.Lock()
-				defer cl.client.Unlock()
+				cl.client.mutex.Lock()
+				defer cl.client.mutex.Unlock()
 
-				if !cl.client.IsReopening() {
-					err = cl.client.reopen()
-				}
+				once.Do(func() {
+					err = cl.client.Reopen()
+
+					cl.client.mutex.Lock()
+					cl.client.once = sync.Once{}
+					cl.client.mutex.Unlock()
+				})
 			}
 		} else {
 			cl.Log.Debug("Sent status to monitor")
 		}
 	}()
-
-	cl.status.RLock()
-	stream := cl.status.stream
-	cl.status.RUnlock()
 
 	if stream == nil {
 		cl.status.Lock()
@@ -197,11 +222,8 @@ func (cl *gatewayClient) SendStatus(status *pb_gateway.Status) (err error) {
 			stream, err = cl.setupStatus()
 			if err != nil {
 				cl.status.Unlock()
-				cl.Log.WithError(errors.FromGRPCError(err)).Warn("Failed to open new monitor status stream")
 				return err
 			}
-
-			cl.Log.Debug("Opened new monitor status stream")
 		}
 		cl.status.Unlock()
 	}
@@ -219,34 +241,33 @@ func (cl *gatewayClient) SendStatus(status *pb_gateway.Status) (err error) {
 }
 
 func (cl *gatewayClient) SendUplink(uplink *router.UplinkMessage) (err error) {
+	cl.uplink.RLock()
+	cl.client.mutex.RLock()
+
+	once := cl.client.once
+	stream := cl.uplink.stream
+
+	cl.uplink.RUnlock()
+	cl.client.mutex.RUnlock()
+
 	defer func() {
 		if err != nil {
 			cl.Log.WithError(errors.FromGRPCError(err)).Warn("Failed to send uplink to monitor")
 
 			if code := grpc.Code(err); code == codes.Unavailable || code == codes.Internal {
-				cl.Log.Debug("error is internal")
-				cl.Log.Debug("Locking...")
-				cl.client.Lock()
-				cl.Log.Debug("Locked...")
 
-				cl.Log.Debug("Check if reopening...")
-				if !cl.client.IsReopening() {
-					cl.Log.Debug("Not reopening...")
-					err = cl.client.reopen()
-				}
-				cl.Log.Debug("Unlocking...")
-				cl.client.Unlock()
-				cl.Log.Debug("Unlocked...")
-				cl.Log.Debugf("return %s", err)
+				once.Do(func() {
+					err = cl.client.Reopen()
+
+					cl.client.mutex.Lock()
+					cl.client.once = sync.Once{}
+					cl.client.mutex.Unlock()
+				})
 			}
 		} else {
 			cl.Log.Debug("Sent uplink to monitor")
 		}
 	}()
-
-	cl.uplink.RLock()
-	stream := cl.uplink.stream
-	cl.uplink.RUnlock()
 
 	if stream == nil {
 		cl.uplink.Lock()
@@ -254,11 +275,8 @@ func (cl *gatewayClient) SendUplink(uplink *router.UplinkMessage) (err error) {
 			stream, err = cl.setupUplink()
 			if err != nil {
 				cl.uplink.Unlock()
-				cl.Log.WithError(errors.FromGRPCError(err)).Warn("Failed to open new monitor uplink stream")
 				return err
 			}
-
-			cl.Log.Debug("Opened new monitor uplink stream")
 		}
 		cl.uplink.Unlock()
 	}
@@ -276,26 +294,32 @@ func (cl *gatewayClient) SendUplink(uplink *router.UplinkMessage) (err error) {
 }
 
 func (cl *gatewayClient) SendDownlink(downlink *router.DownlinkMessage) (err error) {
+	cl.downlink.RLock()
+	cl.client.mutex.RLock()
+
+	once := cl.client.once
+	stream := cl.downlink.stream
+
+	cl.downlink.RUnlock()
+	cl.client.mutex.RUnlock()
+
 	defer func() {
 		if err != nil {
 			cl.Log.WithError(errors.FromGRPCError(err)).Warn("Failed to send downlink to monitor")
 
 			if code := grpc.Code(err); code == codes.Unavailable || code == codes.Internal {
-				cl.client.Lock()
-				defer cl.client.Unlock()
+				once.Do(func() {
+					err = cl.client.Reopen()
 
-				if !cl.client.IsReopening() {
-					err = cl.client.reopen()
-				}
+					cl.client.mutex.Lock()
+					cl.client.once = sync.Once{}
+					cl.client.mutex.Unlock()
+				})
 			}
 		} else {
 			cl.Log.Debug("Sent downlink to monitor")
 		}
 	}()
-
-	cl.downlink.RLock()
-	stream := cl.downlink.stream
-	cl.downlink.RUnlock()
 
 	if stream == nil {
 		cl.downlink.Lock()
@@ -303,11 +327,8 @@ func (cl *gatewayClient) SendDownlink(downlink *router.DownlinkMessage) (err err
 			stream, err = cl.setupDownlink()
 			if err != nil {
 				cl.downlink.Unlock()
-				cl.Log.WithError(errors.FromGRPCError(err)).Warn("Failed to open new monitor downlink stream")
 				return err
 			}
-
-			cl.Log.Debug("Opened new monitor downlink stream")
 		}
 		cl.downlink.Unlock()
 	}
@@ -331,13 +352,10 @@ func (cl *gatewayClient) Close() (err error) {
 	go func() {
 		defer wg.Done()
 
-		cl.Log.Debug("Status locking...")
 		cl.status.Lock()
-		cl.Log.Debug("Status locked")
 
 		if cl.status.stream != nil {
-			if cerr := cl.status.stream.CloseSend(); cerr != nil {
-				cl.Log.WithError(cerr).Warn("Failed to close status stream")
+			if cerr := cl.closeStatus(); cerr != nil {
 				err = cerr
 			}
 			cl.status.stream = nil
@@ -349,13 +367,10 @@ func (cl *gatewayClient) Close() (err error) {
 	go func() {
 		defer wg.Done()
 
-		cl.Log.Debug("Uplink locking...")
 		cl.uplink.Lock()
-		cl.Log.Debug("Uplink locked")
 
 		if cl.uplink.stream != nil {
-			if cerr := cl.uplink.stream.CloseSend(); cerr != nil {
-				cl.Log.WithError(cerr).Warn("Failed to close uplink stream")
+			if cerr := cl.closeUplink(); cerr != nil {
 				err = cerr
 			}
 			cl.uplink.stream = nil
@@ -370,8 +385,8 @@ func (cl *gatewayClient) Close() (err error) {
 		cl.downlink.Lock()
 
 		if cl.downlink.stream != nil {
-			if cerr := cl.downlink.stream.CloseSend(); cerr != nil {
-				cl.Log.WithError(cerr).Warn("Failed to close downlink stream")
+			cerr := cl.closeDownlink()
+			if cerr != nil {
 				err = cerr
 			}
 			cl.downlink.stream = nil
@@ -393,29 +408,61 @@ func (cl *gatewayClient) Context() (monitorContext context.Context) {
 func (cl *gatewayClient) setupStatus() (stream Monitor_GatewayStatusClient, err error) {
 	stream, err = cl.client.client.GatewayStatus(cl.Context())
 	if err != nil {
+		cl.Log.WithError(errors.FromGRPCError(err)).Warn("Failed to open new monitor status stream")
 		return nil, err
 	}
+	cl.Log.Debug("Opened new monitor status stream")
 
 	cl.status.stream = stream
 	return stream, nil
 }
-
 func (cl *gatewayClient) setupUplink() (stream Monitor_GatewayUplinkClient, err error) {
 	stream, err = cl.client.client.GatewayUplink(cl.Context())
 	if err != nil {
+		cl.Log.WithError(errors.FromGRPCError(err)).Warn("Failed to open new monitor uplink stream")
 		return nil, err
 	}
+	cl.Log.Debug("Opened new monitor uplink stream")
 
 	cl.uplink.stream = stream
 	return stream, nil
 }
-
 func (cl *gatewayClient) setupDownlink() (stream Monitor_GatewayDownlinkClient, err error) {
 	stream, err = cl.client.client.GatewayDownlink(cl.Context())
 	if err != nil {
+		cl.Log.WithError(errors.FromGRPCError(err)).Warn("Failed to open new monitor downlink stream")
 		return nil, err
 	}
+	cl.Log.Debug("Opened new monitor downlink stream")
 
 	cl.downlink.stream = stream
 	return stream, nil
+}
+
+func (cl *gatewayClient) closeStatus() (err error) {
+	err = cl.status.stream.CloseSend()
+	if err != nil {
+		cl.Log.WithError(errors.FromGRPCError(err)).Warn("Failed to close status stream")
+	}
+	cl.Log.Debug("Closed status stream")
+
+	return err
+}
+func (cl *gatewayClient) closeUplink() (err error) {
+	err = cl.uplink.stream.CloseSend()
+	if err != nil {
+		cl.Log.WithError(errors.FromGRPCError(err)).Warn("Failed to close uplink stream")
+	}
+	cl.Log.Debug("Closed uplink stream")
+
+	return err
+}
+func (cl *gatewayClient) closeDownlink() (err error) {
+	err = cl.downlink.stream.CloseSend()
+	if err != nil {
+		cl.Log.WithError(errors.FromGRPCError(err)).Warn("Failed to close downlink stream")
+	}
+	cl.Log.Debug("Closed downlink stream")
+
+	return err
 }
