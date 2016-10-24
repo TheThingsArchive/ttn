@@ -17,6 +17,8 @@ import (
 func (h *handlerManager) DryUplink(ctx context.Context, in *pb.DryUplinkMessage) (*pb.DryUplinkResult, error) {
 	app := in.App
 
+	console := &console{}
+
 	flds := ""
 	valid := true
 	if app != nil && app.Decoder != "" {
@@ -24,6 +26,7 @@ func (h *handlerManager) DryUplink(ctx context.Context, in *pb.DryUplinkMessage)
 			Decoder:   app.Decoder,
 			Converter: app.Converter,
 			Validator: app.Validator,
+			Logger:    console,
 		}
 
 		fields, val, err := functions.Process(in.Payload, uint8(in.Port))
@@ -41,10 +44,20 @@ func (h *handlerManager) DryUplink(ctx context.Context, in *pb.DryUplinkMessage)
 		flds = string(marshalled)
 	}
 
+	logs := make([]string, len(console.Logs))
+	for i, line := range console.Logs {
+		enc, err := json.Marshal(line)
+		if err != nil {
+			return nil, err
+		}
+		logs[i] = string(enc)
+	}
+
 	return &pb.DryUplinkResult{
 		Payload: in.Payload,
 		Fields:  flds,
 		Valid:   valid,
+		Logs:    logs,
 	}, nil
 }
 
@@ -71,8 +84,11 @@ func (h *handlerManager) DryDownlink(ctx context.Context, in *pb.DryDownlinkMess
 		return nil, errors.NewErrInvalidArgument("Encoder", "Not specified")
 	}
 
+	console := &console{}
+
 	functions := &DownlinkFunctions{
 		Encoder: app.Encoder,
+		Logger:  console,
 	}
 
 	var parsed map[string]interface{}
@@ -86,7 +102,17 @@ func (h *handlerManager) DryDownlink(ctx context.Context, in *pb.DryDownlinkMess
 		return nil, err
 	}
 
+	logs := make([]string, len(console.Logs))
+	for i, line := range console.Logs {
+		enc, err := json.Marshal(line)
+		if err != nil {
+			return nil, err
+		}
+		logs[i] = string(enc)
+	}
+
 	return &pb.DryDownlinkResult{
 		Payload: payload,
+		Logs:    logs,
 	}, nil
 }
