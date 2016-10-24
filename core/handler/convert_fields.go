@@ -27,6 +27,7 @@ func (h *handler) ConvertFieldsUp(ctx log.Interface, ttnUp *pb_broker.Deduplicat
 		Decoder:   app.Decoder,
 		Converter: app.Converter,
 		Validator: app.Validator,
+		Logger:    &ignore{},
 	}
 
 	fields, valid, err := functions.Process(appUp.PayloadRaw, appUp.FPort)
@@ -54,6 +55,9 @@ type UplinkFunctions struct {
 	// Validator is a JavaScript function that validates the data is converted by
 	// Converter and returns a boolean value indicating the validity of the data
 	Validator string
+
+	// Logger is the logger that will be used to store logs
+	Logger Logger
 }
 
 // timeOut is the maximum allowed time a payload function is allowed to run
@@ -68,7 +72,7 @@ func (f *UplinkFunctions) Decode(payload []byte, port uint8) (map[string]interfa
 	vm := otto.New()
 	vm.Set("payload", payload)
 	vm.Set("port", port)
-	value, err := runUnsafeCode(vm, fmt.Sprintf("(%s)(payload.slice(0), port)", f.Decoder), timeOut)
+	value, err := runUnsafeCodeWithLogger(vm, fmt.Sprintf("(%s)(payload.slice(0), port)", f.Decoder), timeOut, f.Logger)
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +100,7 @@ func (f *UplinkFunctions) Convert(data map[string]interface{}, port uint8) (map[
 	vm := otto.New()
 	vm.Set("data", data)
 	vm.Set("port", port)
-	value, err := runUnsafeCode(vm, fmt.Sprintf("(%s)(data, port)", f.Converter), timeOut)
+	value, err := runUnsafeCodeWithLogger(vm, fmt.Sprintf("(%s)(data, port)", f.Converter), timeOut, f.Logger)
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +128,7 @@ func (f *UplinkFunctions) Validate(data map[string]interface{}, port uint8) (boo
 	vm := otto.New()
 	vm.Set("data", data)
 	vm.Set("port", port)
-	value, err := runUnsafeCode(vm, fmt.Sprintf("(%s)(data, port)", f.Validator), timeOut)
+	value, err := runUnsafeCodeWithLogger(vm, fmt.Sprintf("(%s)(data, port)", f.Validator), timeOut, f.Logger)
 	if err != nil {
 		return false, err
 	}
@@ -154,38 +158,14 @@ func (f *UplinkFunctions) Process(payload []byte, port uint8) (map[string]interf
 
 var errTimeOutExceeded = errors.NewErrInternal("Code has been running to long")
 
-func runUnsafeCode(vm *otto.Otto, code string, timeOut time.Duration) (value otto.Value, err error) {
-	start := time.Now()
-	defer func() {
-		duration := time.Since(start)
-		if caught := recover(); caught != nil {
-			if caught == errTimeOutExceeded {
-				value = otto.Value{}
-				err = errors.NewErrInternal(fmt.Sprintf("Interrupted javascript execution after %v", duration))
-				return
-			}
-			// if this is not the our timeout interrupt, raise the panic again
-			// so someone else can handle it
-			panic(caught)
-		}
-	}()
-
-	vm.Interrupt = make(chan func(), 1)
-
-	go func() {
-		time.Sleep(timeOut)
-		vm.Interrupt <- func() {
-			panic(errTimeOutExceeded)
-		}
-	}()
-	return vm.Run(code)
-}
-
 // DownlinkFunctions encodes payload using JavaScript functions
 type DownlinkFunctions struct {
 	// Encoder is a JavaScript function that accepts the payload as JSON and
 	// returns an array of bytes
 	Encoder string
+
+	// Logger is the logger that will be used to store logs
+	Logger Logger
 }
 
 // Encode encodes the map into a byte slice using the encoder payload function
@@ -198,7 +178,7 @@ func (f *DownlinkFunctions) Encode(payload map[string]interface{}, port uint8) (
 	vm := otto.New()
 	vm.Set("payload", payload)
 	vm.Set("port", port)
-	value, err := runUnsafeCode(vm, fmt.Sprintf("(%s)(payload, port)", f.Encoder), timeOut)
+	value, err := runUnsafeCodeWithLogger(vm, fmt.Sprintf("(%s)(payload, port)", f.Encoder), timeOut, f.Logger)
 	if err != nil {
 		return nil, err
 	}
