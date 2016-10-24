@@ -260,7 +260,6 @@ func (cl *gatewayClient) SendUplink(uplink *router.UplinkMessage) (err error) {
 			cl.Ctx.WithError(errors.FromGRPCError(err)).Warn("Failed to send uplink to monitor")
 
 			if code := grpc.Code(err); code == codes.Unavailable || code == codes.Internal {
-
 				once.Do(func() {
 					err = cl.client.Reopen()
 
