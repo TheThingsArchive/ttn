@@ -43,11 +43,10 @@ func (h *handler) EnqueueDownlink(appDownlink *types.DownlinkMessage) (err error
 		return err
 	}
 
-	h.mqttEvent <- &mqttEvent{
-		AppID:   appID,
-		DevID:   devID,
-		Type:    "down/scheduled",
-		Payload: appDownlink,
+	h.mqttEvent <- &types.DeviceEvent{
+		AppID: appID,
+		DevID: devID,
+		Event: types.DownlinkScheduledEvent,
 	}
 
 	return nil
@@ -66,11 +65,11 @@ func (h *handler) HandleDownlink(appDownlink *types.DownlinkMessage, downlink *p
 	var err error
 	defer func() {
 		if err != nil {
-			h.mqttEvent <- &mqttEvent{
-				AppID:   appID,
-				DevID:   devID,
-				Type:    "down/errors",
-				Payload: map[string]string{"error": err.Error()},
+			h.mqttEvent <- &types.DeviceEvent{
+				AppID: appID,
+				DevID: devID,
+				Event: types.DownlinkErrorEvent,
+				Data:  types.ErrorEventData{Error: err.Error()},
 			}
 			ctx.WithError(err).Warn("Could not handle downlink")
 		}
@@ -99,16 +98,30 @@ func (h *handler) HandleDownlink(appDownlink *types.DownlinkMessage, downlink *p
 
 	h.downlink <- downlink
 
-	appDownlinkCopy := *appDownlink
-	appDownlinkCopy.AppID = ""
-	appDownlinkCopy.DevID = ""
-	appDownlinkCopy.PayloadFields = make(map[string]interface{})
+	downlinkConfig := types.DownlinkEventConfigInfo{}
 
-	h.mqttEvent <- &mqttEvent{
-		AppID:   appDownlink.AppID,
-		DevID:   appDownlink.DevID,
-		Type:    "down/sent",
-		Payload: appDownlinkCopy,
+	if downlink.DownlinkOption.ProtocolConfig != nil {
+		if lorawan := downlink.DownlinkOption.ProtocolConfig.GetLorawan(); lorawan != nil {
+			downlinkConfig.Modulation = lorawan.Modulation.String()
+			downlinkConfig.DataRate = lorawan.DataRate
+			downlinkConfig.BitRate = uint(lorawan.BitRate)
+			downlinkConfig.FCnt = uint(lorawan.FCnt)
+		}
+	}
+	if gateway := downlink.DownlinkOption.GatewayConfig; gateway != nil {
+		downlinkConfig.Frequency = uint(downlink.DownlinkOption.GatewayConfig.Frequency)
+		downlinkConfig.Power = int(downlink.DownlinkOption.GatewayConfig.Power)
+	}
+
+	h.mqttEvent <- &types.DeviceEvent{
+		AppID: appDownlink.AppID,
+		DevID: appDownlink.DevID,
+		Event: types.DownlinkSentEvent,
+		Data: types.DownlinkEventData{
+			Payload:   downlink.Payload,
+			GatewayID: downlink.DownlinkOption.GatewayId,
+			Config:    downlinkConfig,
+		},
 	}
 
 	return nil

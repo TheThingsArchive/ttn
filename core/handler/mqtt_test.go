@@ -77,9 +77,10 @@ func TestHandleMQTT(t *testing.T) {
 		wg.Done()
 	}).Wait()
 
-	h.mqttActivation <- &types.Activation{
+	h.mqttEvent <- &types.DeviceEvent{
 		DevID: devID,
 		AppID: appID,
+		Event: types.ActivationEvent,
 	}
 
 	a.So(wg.WaitFor(200*time.Millisecond), ShouldBeNil)

@@ -87,11 +87,11 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 	start := time.Now()
 	defer func() {
 		if err != nil {
-			h.mqttEvent <- &mqttEvent{
-				AppID:   appID,
-				DevID:   devID,
-				Type:    "activations/errors",
-				Payload: map[string]string{"error": err.Error()},
+			h.mqttEvent <- &types.DeviceEvent{
+				AppID: appID,
+				DevID: devID,
+				Event: types.ActivationErrorEvent,
+				Data:  types.ErrorEventData{Error: err.Error()},
 			}
 			ctx.WithError(err).Warn("Could not handle activation")
 		} else {
@@ -172,13 +172,16 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 
 	// Publish Activation
 	mqttMetadata, _ := h.getActivationMetadata(ctx, activation)
-	h.mqttActivation <- &types.Activation{
-		AppEUI:   *activation.AppEui,
-		DevEUI:   *activation.DevEui,
-		AppID:    appID,
-		DevID:    devID,
-		DevAddr:  types.DevAddr(joinAccept.DevAddr),
-		Metadata: mqttMetadata,
+	h.mqttEvent <- &types.DeviceEvent{
+		AppID: appID,
+		DevID: devID,
+		Event: types.ActivationEvent,
+		Data: types.ActivationEventData{
+			AppEUI:   *activation.AppEui,
+			DevEUI:   *activation.DevEui,
+			DevAddr:  types.DevAddr(joinAccept.DevAddr),
+			Metadata: mqttMetadata,
+		},
 	}
 
 	// Generate random AppNonce

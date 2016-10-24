@@ -70,8 +70,7 @@ func TestHandleActivation(t *testing.T) {
 		applications: application.NewRedisApplicationStore(GetRedisClient(), "handler-test-activation"),
 		devices:      device.NewRedisDeviceStore(GetRedisClient(), "handler-test-activation"),
 	}
-	h.mqttActivation = make(chan *types.Activation)
-	h.mqttEvent = make(chan *mqttEvent, 10)
+	h.mqttEvent = make(chan *types.DeviceEvent, 10)
 	var wg WaitGroup
 
 	appEUI := types.AppEUI{1, 2, 3, 4, 5, 6, 7, 8}
@@ -122,7 +121,7 @@ func TestHandleActivation(t *testing.T) {
 
 	wg.Add(1)
 	go func() {
-		<-h.mqttActivation
+		<-h.mqttEvent
 		wg.Done()
 	}()
 
@@ -150,7 +149,7 @@ func TestHandleActivation(t *testing.T) {
 
 	wg.Add(1)
 	go func() {
-		<-h.mqttActivation
+		<-h.mqttEvent
 		wg.Done()
 	}()
 

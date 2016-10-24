@@ -12,21 +12,18 @@ import (
 // ActivationHandler is called for activations
 type ActivationHandler func(client Client, appID string, devID string, req types.Activation)
 
-// ActivationEvent for MQTT
-const ActivationEvent = "activations"
-
 // PublishActivation publishes an activation
 func (c *DefaultClient) PublishActivation(activation types.Activation) Token {
 	appID := activation.AppID
 	devID := activation.DevID
 	activation.AppID = ""
 	activation.DevID = ""
-	return c.PublishDeviceEvent(appID, devID, ActivationEvent, activation)
+	return c.PublishDeviceEvent(appID, devID, types.ActivationEvent, activation)
 }
 
 // SubscribeDeviceActivations subscribes to all activations for the given application and device
 func (c *DefaultClient) SubscribeDeviceActivations(appID string, devID string, handler ActivationHandler) Token {
-	return c.SubscribeDeviceEvents(appID, devID, ActivationEvent, func(_ Client, appID string, devID string, _ string, payload []byte) {
+	return c.SubscribeDeviceEvents(appID, devID, types.ActivationEvent, func(_ Client, appID string, devID string, _ types.EventType, payload []byte) {
 		activation := types.Activation{}
 		if err := json.Unmarshal(payload, &activation); err != nil {
 			c.ctx.Warnf("Could not unmarshal activation (%s).", err.Error())
@@ -51,15 +48,15 @@ func (c *DefaultClient) SubscribeActivations(handler ActivationHandler) Token {
 
 // UnsubscribeDeviceActivations unsubscribes from the activations for the given application and device
 func (c *DefaultClient) UnsubscribeDeviceActivations(appID string, devID string) Token {
-	return c.UnsubscribeDeviceEvents(appID, devID, ActivationEvent)
+	return c.UnsubscribeDeviceEvents(appID, devID, types.ActivationEvent)
 }
 
 // UnsubscribeAppActivations unsubscribes from the activations for the given application
 func (c *DefaultClient) UnsubscribeAppActivations(appID string) Token {
-	return c.UnsubscribeDeviceEvents(appID, "", ActivationEvent)
+	return c.UnsubscribeDeviceEvents(appID, "", types.ActivationEvent)
 }
 
 // UnsubscribeActivations unsubscribes from the activations that the current user has access to
 func (c *DefaultClient) UnsubscribeActivations() Token {
-	return c.UnsubscribeDeviceEvents("", "", ActivationEvent)
+	return c.UnsubscribeDeviceEvents("", "", types.ActivationEvent)
 }

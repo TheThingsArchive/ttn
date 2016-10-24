@@ -203,16 +203,34 @@ if err := token.Error(); err != nil {
 
 ### Downlink Events
 
-* Downlink Scheduled: `<AppID>/devices/<DevID>/events/down/scheduled` (payload: the message - see **Downlink Messages**)
-* Downlink Sent: `<AppID>/devices/<DevID>/events/down/sent` (payload: the message - see **Downlink Messages**)
-* Acknowledgements: `<AppID>/devices/<DevID>/events/ack` (payload: `{}`)
+**Downlink Scheduled:** `<AppID>/devices/<DevID>/events/down/scheduled`  
+payload: _null_
+
+**Downlink Sent:** `<AppID>/devices/<DevID>/events/down/sent`  
+
+```js
+{
+  "payload": "Base64 encoded LoRaWAN packet",
+  "gateway_id": "some-gateway",
+  "config": {
+    "modulation": "LORA",
+    "data_rate": "SF7BW125",
+    "counter": 123,
+    "frequency": 868300000,
+    "power": 14
+  }
+}
+```
+
+**Downlink Acknowledgements:** `<AppID>/devices/<DevID>/events/down/acks`   
+payload: _null_
 
 ### Error Events
 
 The payload of error events is a JSON object with the error's description.
 
-* Uplink Errors: `<AppID>/devices/<DevID>/events/up/errors`
-* Downlink Errors: `<AppID>/devices/<DevID>/events/down/errors`
-* Activation Errors: `<AppID>/devices/<DevID>/events/activations/errors`
+**Uplink Errors:** `<AppID>/devices/<DevID>/events/up/errors`  
+**Downlink Errors:** `<AppID>/devices/<DevID>/events/down/errors`  
+**Activation Errors:** `<AppID>/devices/<DevID>/events/activations/errors`  
 
 Example: `{"error":"Activation DevNonce not valid: already used"}`

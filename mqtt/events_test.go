@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/assertions"
 )
@@ -19,7 +20,7 @@ func TestPublishSubscribeAppEvents(t *testing.T) {
 	defer c.Disconnect()
 	var wg WaitGroup
 	wg.Add(1)
-	subToken := c.SubscribeAppEvents("app-id", "", func(_ Client, appID string, eventType string, payload []byte) {
+	subToken := c.SubscribeAppEvents("app-id", "", func(_ Client, appID string, eventType types.EventType, payload []byte) {
 		a.So(appID, ShouldEqual, "app-id")
 		a.So(eventType, ShouldEqual, "some-event")
 		a.So(string(payload), ShouldEqual, `"payload"`)
@@ -40,7 +41,7 @@ func TestPublishSubscribeDeviceEvents(t *testing.T) {
 	defer c.Disconnect()
 	var wg WaitGroup
 	wg.Add(1)
-	subToken := c.SubscribeDeviceEvents("app-id", "dev-id", "", func(_ Client, appID string, devID string, eventType string, payload []byte) {
+	subToken := c.SubscribeDeviceEvents("app-id", "dev-id", "", func(_ Client, appID string, devID string, eventType types.EventType, payload []byte) {
 		a.So(appID, ShouldEqual, "app-id")
 		a.So(devID, ShouldEqual, "dev-id")
 		a.So(eventType, ShouldEqual, "some-event")

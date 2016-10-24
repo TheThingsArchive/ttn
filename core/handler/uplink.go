@@ -23,11 +23,11 @@ func (h *handler) HandleUplink(uplink *pb_broker.DeduplicatedUplinkMessage) (err
 	start := time.Now()
 	defer func() {
 		if err != nil {
-			h.mqttEvent <- &mqttEvent{
-				AppID:   appID,
-				DevID:   devID,
-				Type:    "up/errors",
-				Payload: map[string]string{"error": err.Error()},
+			h.mqttEvent <- &types.DeviceEvent{
+				AppID: appID,
+				DevID: devID,
+				Event: types.UplinkErrorEvent,
+				Data:  types.ErrorEventData{Error: err.Error()},
 			}
 			ctx.WithError(err).Warn("Could not handle uplink")
 		} else {

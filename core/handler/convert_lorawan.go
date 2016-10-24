@@ -66,11 +66,10 @@ func (h *handler) ConvertFromLoRaWAN(ctx log.Interface, ttnUp *pb_broker.Dedupli
 
 	// LoRaWAN: Publish ACKs as events
 	if macPayload.FHDR.FCtrl.ACK {
-		h.mqttEvent <- &mqttEvent{
-			AppID:   appUp.AppID,
-			DevID:   appUp.DevID,
-			Type:    "down/acks",
-			Payload: map[string]interface{}{},
+		h.mqttEvent <- &types.DeviceEvent{
+			AppID: appUp.AppID,
+			DevID: appUp.DevID,
+			Event: types.DownlinkAckEvent,
 		}
 	}
 
@@ -94,7 +93,7 @@ func (h *handler) ConvertToLoRaWAN(ctx log.Interface, appDown *types.DownlinkMes
 	if !ok {
 		return errors.NewErrInvalidArgument("Downlink", "does not contain a MAC payload")
 	}
-	if ttnDown.DownlinkOption != nil {
+	if ttnDown.DownlinkOption != nil && ttnDown.DownlinkOption.ProtocolConfig.GetLorawan() != nil {
 		macPayload.FHDR.FCnt = ttnDown.DownlinkOption.ProtocolConfig.GetLorawan().FCnt
 	}
 
