@@ -109,10 +109,10 @@ func init() {
 	handlerCmd.Flags().String("mqtt-broker", "localhost:1883", "MQTT broker host and port")
 	viper.BindPFlag("handler.mqtt-broker", handlerCmd.Flags().Lookup("mqtt-broker"))
 
-	handlerCmd.Flags().String("mqtt-username", "guest", "MQTT username")
+	handlerCmd.Flags().String("mqtt-username", "", "MQTT username")
 	viper.BindPFlag("handler.mqtt-username", handlerCmd.Flags().Lookup("mqtt-username"))
 
-	handlerCmd.Flags().String("mqtt-password", "guest", "MQTT password")
+	handlerCmd.Flags().String("mqtt-password", "", "MQTT password")
 	viper.BindPFlag("handler.mqtt-password", handlerCmd.Flags().Lookup("mqtt-password"))
 
 	handlerCmd.Flags().String("amqp-host", "", "AMQP host and port. Leave empty to disable AMQP")

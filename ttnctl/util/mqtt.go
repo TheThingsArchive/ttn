@@ -29,7 +29,10 @@ func GetMQTT(ctx log.Interface) mqtt.Client {
 	broker := fmt.Sprintf("%s://%s", mqttProto, viper.GetString("mqtt-broker"))
 	client := mqtt.NewClient(ctx, "ttnctl", username, password, broker)
 
-	ctx.WithField("MQTT Broker", broker).Info("Connecting to MQTT...")
+	ctx.WithFields(log.Fields{
+		"MQTT Broker": broker,
+		"Username":    username,
+	}).Info("Connecting to MQTT...")
 
 	if err := client.Connect(); err != nil {
 		ctx.WithError(err).Fatal("Could not connect")
@@ -42,6 +45,11 @@ func getMQTTCredentials(ctx log.Interface) (username string, password string, er
 	username = viper.GetString("mqtt-username")
 	password = viper.GetString("mqtt-password")
 	if username != "" {
+		return
+	}
+
+	// Do not use authentication on local MQTT
+	if strings.HasPrefix(viper.GetString("mqtt-broker"), "localhost") {
 		return
 	}
 

@@ -82,10 +82,10 @@ func init() {
 	RootCmd.PersistentFlags().String("mqtt-broker", "eu.thethings.network:1883", "The address of the MQTT broker")
 	viper.BindPFlag("mqtt-broker", RootCmd.PersistentFlags().Lookup("mqtt-broker"))
 
-	RootCmd.PersistentFlags().String("mqtt-username", "guest", "The username for the MQTT broker")
+	RootCmd.PersistentFlags().String("mqtt-username", "", "The username for the MQTT broker")
 	viper.BindPFlag("mqtt-username", RootCmd.PersistentFlags().Lookup("mqtt-username"))
 
-	RootCmd.PersistentFlags().String("mqtt-password", "guest", "The password for the MQTT broker")
+	RootCmd.PersistentFlags().String("mqtt-password", "", "The password for the MQTT broker")
 	viper.BindPFlag("mqtt-password", RootCmd.PersistentFlags().Lookup("mqtt-password"))
 
 	RootCmd.PersistentFlags().String("ttn-account-server", "https://account.thethingsnetwork.org", "The address of the OAuth 2.0 server")
