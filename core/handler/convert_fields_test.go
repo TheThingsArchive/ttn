@@ -357,6 +357,38 @@ func TestConvertFieldsDown(t *testing.T) {
 	a.So(appDown.PayloadRaw, ShouldResemble, []byte{byte(appDown.FPort), 1, 2, 3, 4, 5, 6, 7})
 }
 
+func TestConvertFieldsDownNoPort(t *testing.T) {
+	a := New(t)
+	appID := "AppID-1"
+
+	h := &handler{
+		applications: application.NewRedisApplicationStore(GetRedisClient(), "handler-test-convert-fields-down"),
+	}
+
+	// Case1: No Encoder
+	ttnDown, appDown := buildConversionDownlink()
+	err := h.ConvertFieldsDown(GetLogger(t, "TestConvertFieldsDown"), appDown, ttnDown)
+	a.So(err, ShouldBeNil)
+	a.So(appDown.PayloadRaw, ShouldBeEmpty)
+
+	// Case2: Normal flow with Encoder
+	h.applications.Set(&application.Application{
+		AppID: appID,
+		// Encoder takes JSON fields as argument and return the payload as []byte
+		Encoder: `function test(payload){
+  		return [ 1, 2, 3, 4, 5, 6, 7 ]
+		}`,
+	})
+	defer func() {
+		h.applications.Delete(appID)
+	}()
+
+	ttnDown, appDown = buildConversionDownlink()
+	err = h.ConvertFieldsDown(GetLogger(t, "TestConvertFieldsDown"), appDown, ttnDown)
+	a.So(err, ShouldBeNil)
+	a.So(appDown.PayloadRaw, ShouldResemble, []byte{1, 2, 3, 4, 5, 6, 7})
+}
+
 func TestProcessDownlinkInvalidFunction(t *testing.T) {
 	a := New(t)
 
