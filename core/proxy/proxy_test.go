@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/assertions"
 )
 
@@ -46,4 +47,16 @@ func TestTokenProxier(t *testing.T) {
 	req.Header.Add("Authorization", "Bearer token")
 	p.ServeHTTP(httptest.NewRecorder(), req)
 	a.So(hdl.req.Header.Get("Grpc-Metadata-Token"), ShouldEqual, "token")
+}
+
+func TestLogProxier(t *testing.T) {
+	a := New(t)
+
+	hdl := &testHandler{}
+	p := WithLogger(hdl, GetLogger(t, ""))
+
+	req := httptest.NewRequest("GET", "/uri", bytes.NewBuffer([]byte{}))
+	p.ServeHTTP(httptest.NewRecorder(), req)
+	a.So(hdl.req, ShouldNotBeNil)
+	a.So(hdl.res, ShouldNotBeNil)
 }

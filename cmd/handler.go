@@ -101,8 +101,15 @@ var handlerCmd = &cobra.Command{
 			netCtx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 			pb.RegisterApplicationManagerHandler(netCtx, mux, proxyConn)
+
+			prxy := proxy.WithToken(mux)
+			prxy = proxy.WithLogger(prxy, ctx)
+
 			go func() {
-				err := http.ListenAndServe(fmt.Sprintf("%s:%d", viper.GetString("handler.http-address"), viper.GetInt("handler.http-port")), proxy.WithToken(mux))
+				err := http.ListenAndServe(
+					fmt.Sprintf("%s:%d", viper.GetString("handler.http-address"), viper.GetInt("handler.http-port")),
+					prxy,
+				)
 				if err != nil {
 					ctx.WithError(err).Fatal("Error in gRPC proxy")
 				}

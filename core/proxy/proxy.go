@@ -6,6 +6,8 @@ package proxy
 import (
 	"net/http"
 	"strings"
+
+	"github.com/apex/log"
 )
 
 type tokenProxier struct {
@@ -24,4 +26,23 @@ func (p *tokenProxier) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 // WithToken wraps the handler so that each request gets the Bearer token attached
 func WithToken(handler http.Handler) http.Handler {
 	return &tokenProxier{handler}
+}
+
+type logProxier struct {
+	ctx     log.Interface
+	handler http.Handler
+}
+
+func (p *logProxier) ServeHTTP(res http.ResponseWriter, req *http.Request) {
+	p.ctx.WithFields(log.Fields{
+		"RemoteAddress": req.RemoteAddr,
+		"Method":        req.Method,
+		"URI":           req.RequestURI,
+	}).Info("Proxy HTTP request")
+	p.handler.ServeHTTP(res, req)
+}
+
+// WithLogger wraps the handler so that each request gets logged
+func WithLogger(handler http.Handler, ctx log.Interface) http.Handler {
+	return &logProxier{ctx, handler}
 }
