@@ -109,7 +109,8 @@ func (cl *Client) close() (err error) {
 	return nil
 }
 
-// Reopen reopens connection to the monitor. It first attemts to close already opened connection and then opens a new one. If closing already opened connection fails, Reopen fails too.
+// Reopen reopens connection to the monitor. It first attempts to close already opened connection
+// and then opens a new one. If closing already opened connection fails, Reopen fails too.
 func (cl *Client) Reopen() (err error) {
 	cl.mutex.Lock()
 	defer cl.mutex.Unlock()
