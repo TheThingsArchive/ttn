@@ -207,9 +207,6 @@ func (cl *gatewayClient) SendStatus(status *gateway.Status) (err error) {
 			cl.Ctx.WithError(errors.FromGRPCError(err)).Warn("Failed to send status to monitor")
 
 			if code := grpc.Code(err); code == codes.Unavailable || code == codes.Internal {
-				cl.client.mutex.Lock()
-				defer cl.client.mutex.Unlock()
-
 				once.Do(func() {
 					err = cl.client.Reopen()
 
