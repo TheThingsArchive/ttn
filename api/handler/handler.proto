@@ -83,13 +83,15 @@ message DryUplinkMessage {
 }
 
 message DryUplinkResult {
-  bytes  payload  = 1;
-  string fields   = 2;
-  bool   valid    = 3;
+  bytes           payload = 1;
+  string          fields  = 2;
+  bool            valid   = 3;
+  repeated string logs    = 4;
 }
 
 message DryDownlinkResult {
-  bytes  payload  = 1;
+  bytes           payload = 1;
+  repeated string logs    = 2;
 }
 
 service ApplicationManager {
