@@ -141,7 +141,7 @@ func (cl *Client) GatewayClient(id, token string) (gtwCl GatewayClient) {
 	if !ok {
 		cl.mutex.Lock()
 		gtwCl = &gatewayClient{
-			Log: cl.Ctx.WithField("GatewayID", id),
+			Ctx: cl.Ctx.WithField("GatewayID", id),
 
 			client: cl,
 
@@ -157,7 +157,7 @@ func (cl *Client) GatewayClient(id, token string) (gtwCl GatewayClient) {
 type gatewayClient struct {
 	client *Client
 
-	Log log.Interface
+	Ctx log.Interface
 
 	id, token string
 
@@ -197,7 +197,7 @@ func (cl *gatewayClient) SendStatus(status *pb_gateway.Status) (err error) {
 
 	defer func() {
 		if err != nil {
-			cl.Log.WithError(errors.FromGRPCError(err)).Warn("Failed to send status to monitor")
+			cl.Ctx.WithError(errors.FromGRPCError(err)).Warn("Failed to send status to monitor")
 
 			if code := grpc.Code(err); code == codes.Unavailable || code == codes.Internal {
 				cl.client.mutex.Lock()
@@ -212,7 +212,7 @@ func (cl *gatewayClient) SendStatus(status *pb_gateway.Status) (err error) {
 				})
 			}
 		} else {
-			cl.Log.Debug("Sent status to monitor")
+			cl.Ctx.Debug("Sent status to monitor")
 		}
 	}()
 
@@ -229,7 +229,7 @@ func (cl *gatewayClient) SendStatus(status *pb_gateway.Status) (err error) {
 	}
 
 	if err = stream.Send(status); err == io.EOF {
-		cl.Log.Warn("Monitor status stream closed")
+		cl.Ctx.Warn("Monitor status stream closed")
 		cl.status.Lock()
 		if cl.status.stream == stream {
 			cl.status.stream = nil
@@ -252,7 +252,7 @@ func (cl *gatewayClient) SendUplink(uplink *router.UplinkMessage) (err error) {
 
 	defer func() {
 		if err != nil {
-			cl.Log.WithError(errors.FromGRPCError(err)).Warn("Failed to send uplink to monitor")
+			cl.Ctx.WithError(errors.FromGRPCError(err)).Warn("Failed to send uplink to monitor")
 
 			if code := grpc.Code(err); code == codes.Unavailable || code == codes.Internal {
 
@@ -265,7 +265,7 @@ func (cl *gatewayClient) SendUplink(uplink *router.UplinkMessage) (err error) {
 				})
 			}
 		} else {
-			cl.Log.Debug("Sent uplink to monitor")
+			cl.Ctx.Debug("Sent uplink to monitor")
 		}
 	}()
 
@@ -282,7 +282,7 @@ func (cl *gatewayClient) SendUplink(uplink *router.UplinkMessage) (err error) {
 	}
 
 	if err = stream.Send(uplink); err == io.EOF {
-		cl.Log.Warn("Monitor uplink stream closed")
+		cl.Ctx.Warn("Monitor uplink stream closed")
 		cl.uplink.Lock()
 		if cl.uplink.stream == stream {
 			cl.uplink.stream = nil
@@ -305,7 +305,7 @@ func (cl *gatewayClient) SendDownlink(downlink *router.DownlinkMessage) (err err
 
 	defer func() {
 		if err != nil {
-			cl.Log.WithError(errors.FromGRPCError(err)).Warn("Failed to send downlink to monitor")
+			cl.Ctx.WithError(errors.FromGRPCError(err)).Warn("Failed to send downlink to monitor")
 
 			if code := grpc.Code(err); code == codes.Unavailable || code == codes.Internal {
 				once.Do(func() {
@@ -317,7 +317,7 @@ func (cl *gatewayClient) SendDownlink(downlink *router.DownlinkMessage) (err err
 				})
 			}
 		} else {
-			cl.Log.Debug("Sent downlink to monitor")
+			cl.Ctx.Debug("Sent downlink to monitor")
 		}
 	}()
 
@@ -334,7 +334,7 @@ func (cl *gatewayClient) SendDownlink(downlink *router.DownlinkMessage) (err err
 	}
 
 	if err = stream.Send(downlink); err == io.EOF {
-		cl.Log.Warn("Monitor downlink stream closed")
+		cl.Ctx.Warn("Monitor downlink stream closed")
 		cl.downlink.Lock()
 		if cl.downlink.stream == stream {
 			cl.downlink.stream = nil
@@ -408,10 +408,10 @@ func (cl *gatewayClient) Context() (monitorContext context.Context) {
 func (cl *gatewayClient) setupStatus() (stream Monitor_GatewayStatusClient, err error) {
 	stream, err = cl.client.client.GatewayStatus(cl.Context())
 	if err != nil {
-		cl.Log.WithError(errors.FromGRPCError(err)).Warn("Failed to open new monitor status stream")
+		cl.Ctx.WithError(errors.FromGRPCError(err)).Warn("Failed to open new monitor status stream")
 		return nil, err
 	}
-	cl.Log.Debug("Opened new monitor status stream")
+	cl.Ctx.Debug("Opened new monitor status stream")
 
 	cl.status.stream = stream
 	return stream, nil
@@ -419,10 +419,10 @@ func (cl *gatewayClient) setupStatus() (stream Monitor_GatewayStatusClient, err 
 func (cl *gatewayClient) setupUplink() (stream Monitor_GatewayUplinkClient, err error) {
 	stream, err = cl.client.client.GatewayUplink(cl.Context())
 	if err != nil {
-		cl.Log.WithError(errors.FromGRPCError(err)).Warn("Failed to open new monitor uplink stream")
+		cl.Ctx.WithError(errors.FromGRPCError(err)).Warn("Failed to open new monitor uplink stream")
 		return nil, err
 	}
-	cl.Log.Debug("Opened new monitor uplink stream")
+	cl.Ctx.Debug("Opened new monitor uplink stream")
 
 	cl.uplink.stream = stream
 	return stream, nil
@@ -430,10 +430,10 @@ func (cl *gatewayClient) setupUplink() (stream Monitor_GatewayUplinkClient, err 
 func (cl *gatewayClient) setupDownlink() (stream Monitor_GatewayDownlinkClient, err error) {
 	stream, err = cl.client.client.GatewayDownlink(cl.Context())
 	if err != nil {
-		cl.Log.WithError(errors.FromGRPCError(err)).Warn("Failed to open new monitor downlink stream")
+		cl.Ctx.WithError(errors.FromGRPCError(err)).Warn("Failed to open new monitor downlink stream")
 		return nil, err
 	}
-	cl.Log.Debug("Opened new monitor downlink stream")
+	cl.Ctx.Debug("Opened new monitor downlink stream")
 
 	cl.downlink.stream = stream
 	return stream, nil
@@ -442,27 +442,27 @@ func (cl *gatewayClient) setupDownlink() (stream Monitor_GatewayDownlinkClient, 
 func (cl *gatewayClient) closeStatus() (err error) {
 	err = cl.status.stream.CloseSend()
 	if err != nil {
-		cl.Log.WithError(errors.FromGRPCError(err)).Warn("Failed to close status stream")
+		cl.Ctx.WithError(errors.FromGRPCError(err)).Warn("Failed to close status stream")
 	}
-	cl.Log.Debug("Closed status stream")
+	cl.Ctx.Debug("Closed status stream")
 
 	return err
 }
 func (cl *gatewayClient) closeUplink() (err error) {
 	err = cl.uplink.stream.CloseSend()
 	if err != nil {
-		cl.Log.WithError(errors.FromGRPCError(err)).Warn("Failed to close uplink stream")
+		cl.Ctx.WithError(errors.FromGRPCError(err)).Warn("Failed to close uplink stream")
 	}
-	cl.Log.Debug("Closed uplink stream")
+	cl.Ctx.Debug("Closed uplink stream")
 
 	return err
 }
 func (cl *gatewayClient) closeDownlink() (err error) {
 	err = cl.downlink.stream.CloseSend()
 	if err != nil {
-		cl.Log.WithError(errors.FromGRPCError(err)).Warn("Failed to close downlink stream")
+		cl.Ctx.WithError(errors.FromGRPCError(err)).Warn("Failed to close downlink stream")
 	}
-	cl.Log.Debug("Closed downlink stream")
+	cl.Ctx.Debug("Closed downlink stream")
 
 	return err
 }
