@@ -39,13 +39,12 @@ type DefaultSubscriber struct {
 }
 
 // NewSubscriber returns a new topic subscriber on the specified exchange
-func (c *DefaultClient) NewSubscriber(exchange, exchangeType, name string, durable, autoDelete bool) Subscriber {
+func (c *DefaultClient) NewSubscriber(exchange, name string, durable, autoDelete bool) Subscriber {
 	return &DefaultSubscriber{
 		DefaultChannelClient: DefaultChannelClient{
-			ctx:          c.ctx,
-			client:       c,
-			exchange:     exchange,
-			exchangeType: exchangeType,
+			ctx:      c.ctx,
+			client:   c,
+			exchange: exchange,
 		},
 		name:       name,
 		durable:    durable,

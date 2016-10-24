@@ -46,7 +46,7 @@ func TestHandleAMQP(t *testing.T) {
 	err = h.HandleAMQP("guest", "guest", host, "amq.topic", "")
 	a.So(err, ShouldBeNil)
 
-	p := c.NewPublisher("amq.topic", "topic")
+	p := c.NewPublisher("amq.topic")
 	err = p.Open()
 	a.So(err, ShouldBeNil)
 	defer p.Close()
@@ -61,7 +61,7 @@ func TestHandleAMQP(t *testing.T) {
 	a.So(dev.NextDownlink, ShouldNotBeNil)
 
 	wg.Add(1)
-	s := c.NewSubscriber("amq.topic", "topic", "", false, true)
+	s := c.NewSubscriber("amq.topic", "", false, true)
 	err = s.Open()
 	a.So(err, ShouldBeNil)
 	defer s.Close()
