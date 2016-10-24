@@ -5,6 +5,8 @@ SHELL = bash
 GIT_BRANCH = $(or $(CI_BUILD_REF_NAME) ,`git rev-parse --abbrev-ref HEAD 2>/dev/null`)
 GIT_COMMIT = $(or $(CI_BUILD_REF), `git rev-parse HEAD 2>/dev/null`)
 BUILD_DATE = $(or $(CI_BUILD_DATE), `date -u +%Y-%m-%dT%H:%M:%SZ`)
+GO_PATH = `echo $(GOPATH) | awk -F':' '{print $$1}'`
+PARENT_DIRECTORY= `dirname $(PWD)`
 
 # All
 
@@ -30,10 +32,13 @@ dev-deps: deps
 
 PROTO_FILES = $(shell find api -name "*.proto" -and -not -name ".git")
 COMPILED_PROTO_FILES = $(patsubst api%.proto, api%.pb.go, $(PROTO_FILES))
-PROTOC = protoc -I/usr/local/include -I$(GOPATH)/src -I$(GOPATH)/src/github.com/TheThingsNetwork \
--I$(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis \
---gofast_out=Mgoogle/api/annotations.proto=github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis/google/api,plugins=grpc:$(GOPATH)/src \
---grpc-gateway_out=:. $(GOPATH)/src/github.com/TheThingsNetwork/ttn/
+PROTOC = protoc \
+-I/usr/local/include \
+-I$(GO_PATH)/src \
+-I$(PARENT_DIRECTORY) \
+-I$(GO_PATH)/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis \
+--gofast_out=Mgoogle/api/annotations.proto=github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis/google/api,plugins=grpc:$(GO_PATH)/src \
+--grpc-gateway_out=:. `pwd`/
 
 protos-clean:
 	rm -f $(COMPILED_PROTO_FILES)
@@ -116,7 +121,7 @@ $(RELEASE_DIR)/ttnctl-%: $(GO_FILES)
 
 build: ttn ttnctl
 
-GOBIN ?= $(GOPATH)/bin
+GOBIN ?= $(GO_PATH)/bin
 
 link: build
 	ln -sf $(PWD)/$(RELEASE_DIR)/ttn-$(GOOS)-$(GOARCH)$(GOEXE) $(GOBIN)/ttn
