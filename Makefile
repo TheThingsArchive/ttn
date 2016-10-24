@@ -7,6 +7,7 @@ GIT_COMMIT = $(or $(CI_BUILD_REF), `git rev-parse HEAD 2>/dev/null`)
 BUILD_DATE = $(or $(CI_BUILD_DATE), `date -u +%Y-%m-%dT%H:%M:%SZ`)
 GO_PATH = `echo $(GOPATH) | awk -F':' '{print $$1}'`
 PARENT_DIRECTORY= `dirname $(PWD)`
+GO_SRC = `pwd | xargs dirname | xargs dirname | xargs dirname`
 
 # All
 
@@ -37,7 +38,7 @@ PROTOC = protoc \
 -I$(GO_PATH)/src \
 -I$(PARENT_DIRECTORY) \
 -I$(GO_PATH)/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis \
---gofast_out=Mgoogle/api/annotations.proto=github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis/google/api,plugins=grpc:$(GO_PATH)/src \
+--gofast_out=Mgoogle/api/annotations.proto=github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis/google/api,plugins=grpc:$(GO_SRC) \
 --grpc-gateway_out=:. `pwd`/
 
 protos-clean:
