@@ -71,6 +71,7 @@ func NewComponent(ctx log.Interface, serviceName string, announcedAddress string
 			ServiceName:    serviceName,
 			ServiceVersion: fmt.Sprintf("%s-%s (%s)", viper.GetString("version"), viper.GetString("gitCommit"), viper.GetString("buildDate")),
 			NetAddress:     announcedAddress,
+			Public:         viper.GetBool("public"),
 		},
 		AccessToken: viper.GetString("auth-token"),
 		TokenKeyProvider: tokenkey.HTTPProvider(

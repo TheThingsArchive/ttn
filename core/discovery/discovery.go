@@ -60,6 +60,8 @@ func (d *discovery) Announce(in *pb.Announcement) error {
 	service.ServiceName = in.ServiceName
 	service.ServiceVersion = in.ServiceVersion
 	service.Description = in.Description
+	service.URL = in.Url
+	service.Public = in.Public
 	service.NetAddress = in.NetAddress
 	service.PublicKey = in.PublicKey
 	service.Certificate = in.Certificate

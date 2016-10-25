@@ -148,6 +148,8 @@ type Announcement struct {
 	ServiceName    string `redis:"service_name"`
 	ServiceVersion string `redis:"service_version"`
 	Description    string `redis:"description"`
+	URL            string `redis:"url"`
+	Public         bool   `redis:"public"`
 	NetAddress     string `redis:"net_address"`
 	PublicKey      string `redis:"public_key"`
 	Certificate    string `redis:"certificate"`
@@ -194,6 +196,8 @@ func (a Announcement) ToProto() *pb.Announcement {
 		ServiceName:    a.ServiceName,
 		ServiceVersion: a.ServiceVersion,
 		Description:    a.Description,
+		Url:            a.URL,
+		Public:         a.Public,
 		NetAddress:     a.NetAddress,
 		PublicKey:      a.PublicKey,
 		Certificate:    a.Certificate,
@@ -212,6 +216,8 @@ func FromProto(a *pb.Announcement) Announcement {
 		ServiceName:    a.ServiceName,
 		ServiceVersion: a.ServiceVersion,
 		Description:    a.Description,
+		URL:            a.Url,
+		Public:         a.Public,
 		NetAddress:     a.NetAddress,
 		PublicKey:      a.PublicKey,
 		Certificate:    a.Certificate,

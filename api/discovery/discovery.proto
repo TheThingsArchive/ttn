@@ -15,28 +15,30 @@ message Metadata {
 
     // The value for PREFIX consists of 1 byte denoting the number of bits,
     // followed by the prefix and enough trailing bits to fill 4 octets
-    PREFIX = 1;
+    PREFIX = 1; // For Brokers
 
     // APP_EUI is used for announcing join handlers.
     // The value for APP_EUI is the byte slice of the AppEUI string
-    APP_EUI = 2;
+    APP_EUI = 2; // For Handlers
 
     // APP_ID is used for announcing regular handlers
     // The value for APP_ID is the byte slice of the AppID string
-    APP_ID = 3;
+    APP_ID = 3; // For Handlers
   }
   Key key = 1;
   bytes value = 2;
 }
 
 message Announcement {
-  string id = 1;
-  string service_name = 2;
-  string service_version = 3;
-  string description = 4;
-  string net_address = 11;
-  string public_key  = 12;
-  string certificate = 13;
+  string id = 1;              // ID
+  string service_name = 2;    // Service name/type: router/broker/handler
+  string service_version = 3; // Service version in the form "[version]-[commit] ([build date])"
+  string description = 4;     // Description of the component
+  string url         = 5;     // URL with documentation or more information about this component
+  bool   public      = 6;     // Indicates whether this service is part of The Things Network (the public community network)
+  string net_address = 11;    // Network address in the form "[hostname]:[port]"
+  string public_key  = 12;    // ECDSA public key of this component
+  string certificate = 13;    // TLS Certificate (if enabled)
   repeated Metadata metadata = 21;
 }
 

@@ -121,6 +121,9 @@ func init() {
 	RootCmd.PersistentFlags().String("description", "", "The description of this component")
 	viper.BindPFlag("description", RootCmd.PersistentFlags().Lookup("description"))
 
+	RootCmd.PersistentFlags().Bool("public", false, "Announce this component as part of The Things Network (public community network)")
+	viper.BindPFlag("public", RootCmd.PersistentFlags().Lookup("public"))
+
 	RootCmd.PersistentFlags().String("discovery-server", "discover.thethingsnetwork.org:1900", "The address of the Discovery server")
 	viper.BindPFlag("discovery-server", RootCmd.PersistentFlags().Lookup("discovery-server"))
 
