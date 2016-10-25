@@ -17,7 +17,7 @@ import (
 )
 
 func TestHandleAMQP(t *testing.T) {
-	host := os.Getenv("AMQP_HOST")
+	host := os.Getenv("AMQP_ADDR")
 	if host == "" {
 		host = "localhost:5672"
 	}

@@ -25,6 +25,7 @@ deps: build-deps
 
 dev-deps: deps
 	@command -v protoc-gen-gofast > /dev/null || go get github.com/gogo/protobuf/protoc-gen-gofast
+	@command -v protoc-gen-grpc-gateway > /dev/null || go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway
 	@command -v mockgen > /dev/null || go get github.com/golang/mock/mockgen
 	@command -v golint > /dev/null || go get github.com/golang/lint/golint
 	@command -v forego > /dev/null || go get github.com/ddollar/forego
@@ -39,7 +40,7 @@ PROTOC = protoc \
 -I$(PARENT_DIRECTORY) \
 -I$(GO_PATH)/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis \
 --gofast_out=Mgoogle/api/annotations.proto=github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis/google/api,plugins=grpc:$(GO_SRC) \
---grpc-gateway_out=:. `pwd`/
+--grpc-gateway_out=:$(GO_SRC) `pwd`/
 
 protos-clean:
 	rm -f $(COMPILED_PROTO_FILES)

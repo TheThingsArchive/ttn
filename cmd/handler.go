@@ -6,18 +6,22 @@ package cmd
 import (
 	"fmt"
 	"net"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 
-	"google.golang.org/grpc"
-	"gopkg.in/redis.v4"
-
+	pb "github.com/TheThingsNetwork/ttn/api/handler"
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/handler"
+	"github.com/TheThingsNetwork/ttn/core/proxy"
 	"github.com/apex/log"
+	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"golang.org/x/net/context"
+	"google.golang.org/grpc"
+	"gopkg.in/redis.v4"
 )
 
 // handlerCmd represents the handler command
@@ -28,6 +32,7 @@ var handlerCmd = &cobra.Command{
 	PreRun: func(cmd *cobra.Command, args []string) {
 		ctx.WithFields(log.Fields{
 			"Server":     fmt.Sprintf("%s:%d", viper.GetString("handler.server-address"), viper.GetInt("handler.server-port")),
+			"HTTP Proxy": fmt.Sprintf("%s:%d", viper.GetString("handler.http-address"), viper.GetInt("handler.http-port")),
 			"Announce":   fmt.Sprintf("%s:%d", viper.GetString("handler.server-address-announce"), viper.GetInt("handler.server-port")),
 			"Database":   fmt.Sprintf("%s/%d", viper.GetString("handler.redis-address"), viper.GetInt("handler.redis-db")),
 			"TTNBroker":  viper.GetString("handler.ttn-broker"),
@@ -72,6 +77,7 @@ var handlerCmd = &cobra.Command{
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not initialize handler")
 		}
+		defer handler.Shutdown()
 
 		// gRPC Server
 		lis, err := net.Listen("tcp", fmt.Sprintf("%s:%d", viper.GetString("handler.server-address"), viper.GetInt("handler.server-port")))
@@ -84,13 +90,35 @@ var handlerCmd = &cobra.Command{
 		handler.RegisterRPC(grpc)
 		handler.RegisterManager(grpc)
 		go grpc.Serve(lis)
+		defer grpc.Stop()
+
+		if viper.GetString("handler.http-address") != "" && viper.GetInt("handler.http-port") != 0 {
+			proxyConn, err := component.Identity.Dial()
+			if err != nil {
+				ctx.WithError(err).Fatal("Could not start client for gRPC proxy")
+			}
+			mux := runtime.NewServeMux()
+			netCtx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			pb.RegisterApplicationManagerHandler(netCtx, mux, proxyConn)
+
+			prxy := proxy.WithToken(mux)
+			prxy = proxy.WithLogger(prxy, ctx)
+
+			go func() {
+				err := http.ListenAndServe(
+					fmt.Sprintf("%s:%d", viper.GetString("handler.http-address"), viper.GetInt("handler.http-port")),
+					prxy,
+				)
+				if err != nil {
+					ctx.WithError(err).Fatal("Error in gRPC proxy")
+				}
+			}()
+		}
 
 		sigChan := make(chan os.Signal)
 		signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 		ctx.WithField("signal", <-sigChan).Info("signal received")
-
-		grpc.Stop()
-		handler.Shutdown()
 
 	},
 }
@@ -133,4 +161,9 @@ func init() {
 	viper.BindPFlag("handler.server-address", handlerCmd.Flags().Lookup("server-address"))
 	viper.BindPFlag("handler.server-address-announce", handlerCmd.Flags().Lookup("server-address-announce"))
 	viper.BindPFlag("handler.server-port", handlerCmd.Flags().Lookup("server-port"))
+
+	handlerCmd.Flags().String("http-address", "0.0.0.0", "The IP address where the gRPC proxy should listen")
+	handlerCmd.Flags().Int("http-port", 0, "The port where the gRPC proxy should listen")
+	viper.BindPFlag("handler.http-address", handlerCmd.Flags().Lookup("http-address"))
+	viper.BindPFlag("handler.http-port", handlerCmd.Flags().Lookup("http-port"))
 }

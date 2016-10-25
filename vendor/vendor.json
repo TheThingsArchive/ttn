@@ -183,8 +183,20 @@
 			"revisionTime": "2016-01-21T18:51:14Z"
 		},
 		{
+			"checksumSHA1": "+HPilCYNEcR4B/Q13LiW3OF3i64=",
+			"path": "github.com/golang/protobuf/jsonpb",
+			"revision": "98fa357170587e470c5f27d3c3ea0947b71eb455",
+			"revisionTime": "2016-10-12T20:53:35Z"
+		},
+		{
 			"checksumSHA1": "SVXOQdpDBh0ihdZ5aIflgdA+Rpw=",
 			"path": "github.com/golang/protobuf/proto",
+			"revision": "98fa357170587e470c5f27d3c3ea0947b71eb455",
+			"revisionTime": "2016-10-12T20:53:35Z"
+		},
+		{
+			"checksumSHA1": "juNiTc9bfhQYo4BkWc83sW4Z5gw=",
+			"path": "github.com/golang/protobuf/protoc-gen-go/descriptor",
 			"revision": "98fa357170587e470c5f27d3c3ea0947b71eb455",
 			"revisionTime": "2016-10-12T20:53:35Z"
 		},
@@ -211,6 +223,30 @@
 			"path": "github.com/gosuri/uitable/util/wordwrap",
 			"revision": "36ee7e946282a3fb1cfecd476ddc9b35d8847e42",
 			"revisionTime": "2016-04-04T20:39:58Z"
+		},
+		{
+			"checksumSHA1": "+1AwpnM6pIDftpw+iE1/hj/BOXo=",
+			"path": "github.com/grpc-ecosystem/grpc-gateway/runtime",
+			"revision": "1185a73676418404924d2bcd707a2a40ee7176eb",
+			"revisionTime": "2016-10-21T05:32:21Z"
+		},
+		{
+			"checksumSHA1": "GN9lH15GbtcX7xx70TjRYXi23Uk=",
+			"path": "github.com/grpc-ecosystem/grpc-gateway/runtime/internal",
+			"revision": "1185a73676418404924d2bcd707a2a40ee7176eb",
+			"revisionTime": "2016-10-21T05:32:21Z"
+		},
+		{
+			"checksumSHA1": "D+k9iBM97p4RvkjpogAJevV8hmw=",
+			"path": "github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis/google/api",
+			"revision": "1185a73676418404924d2bcd707a2a40ee7176eb",
+			"revisionTime": "2016-10-21T05:32:21Z"
+		},
+		{
+			"checksumSHA1": "vqiK5r5dntV7JNZ+ZsGlD0Samos=",
+			"path": "github.com/grpc-ecosystem/grpc-gateway/utilities",
+			"revision": "1185a73676418404924d2bcd707a2a40ee7176eb",
+			"revisionTime": "2016-10-21T05:32:21Z"
 		},
 		{
 			"checksumSHA1": "8OPDk+bKyRGJoKcS4QNw9F7dpE8=",
