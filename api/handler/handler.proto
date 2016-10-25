@@ -82,16 +82,21 @@ message DryUplinkMessage {
   uint32 port     = 3;
 }
 
+message LogEntry {
+  string          function = 1;
+  repeated string fields   = 2;
+}
+
 message DryUplinkResult {
-  bytes           payload = 1;
-  string          fields  = 2;
-  bool            valid   = 3;
-  repeated string logs    = 4;
+  bytes             payload = 1;
+  string            fields  = 2;
+  bool              valid   = 3;
+  repeated LogEntry logs    = 4;
 }
 
 message DryDownlinkResult {
-  bytes           payload = 1;
-  repeated string logs    = 2;
+  bytes             payload = 1;
+  repeated LogEntry logs    = 2;
 }
 
 service ApplicationManager {
