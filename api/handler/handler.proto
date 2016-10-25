@@ -83,7 +83,10 @@ message DryUplinkMessage {
 }
 
 message LogEntry {
+  // The location where the log was created (what payload function)
   string          function = 1;
+
+  // A list of JSON-encoded fields that were logged
   repeated string fields   = 2;
 }
 

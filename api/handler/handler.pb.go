@@ -317,8 +317,10 @@ func (m *DryUplinkMessage) GetApp() *Application {
 }
 
 type LogEntry struct {
-	Function string   `protobuf:"bytes,1,opt,name=function,proto3" json:"function,omitempty"`
-	Fields   []string `protobuf:"bytes,2,rep,name=fields" json:"fields,omitempty"`
+	// The location where the log was created (what payload function)
+	Function string `protobuf:"bytes,1,opt,name=function,proto3" json:"function,omitempty"`
+	// A list of JSON-encoded fields that were logged
+	Fields []string `protobuf:"bytes,2,rep,name=fields" json:"fields,omitempty"`
 }
 
 func (m *LogEntry) Reset()                    { *m = LogEntry{} }
