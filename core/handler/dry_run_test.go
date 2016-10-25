@@ -73,9 +73,14 @@ func TestDryUplinkFields(t *testing.T) {
 	dryUplinkMessage := &pb.DryUplinkMessage{
 		Payload: []byte{11, 22, 33},
 		App: &pb.Application{
-			AppId:     "DryUplinkFields",
-			Decoder:   `function (bytes) { return { length: bytes.length }}`,
-			Converter: `function (obj) { return obj }`,
+			AppId: "DryUplinkFields",
+			Decoder: `function (bytes) {
+				console.log("hi", 11)
+				return { length: bytes.length }}`,
+			Converter: `function (obj) {
+				console.log("foo")
+				return obj
+			}`,
 			Validator: `function (bytes) { return true; }`,
 		},
 	}
@@ -86,6 +91,16 @@ func TestDryUplinkFields(t *testing.T) {
 	a.So(res.Payload, ShouldResemble, dryUplinkMessage.Payload)
 	a.So(res.Fields, ShouldEqual, `{"length":3}`)
 	a.So(res.Valid, ShouldBeTrue)
+	a.So(res.Logs, ShouldResemble, []*pb.LogEntry{
+		&pb.LogEntry{
+			Function: "decoder",
+			Fields:   []string{`"hi"`, "11"},
+		},
+		&pb.LogEntry{
+			Function: "converter",
+			Fields:   []string{`"foo"`},
+		},
+	})
 
 	// make sure no calls to app store were made
 	a.So(store.Count("list"), ShouldEqual, 0)
@@ -133,7 +148,11 @@ func TestDryDownlinkFields(t *testing.T) {
 	msg := &pb.DryDownlinkMessage{
 		Fields: `{ "foo": [ 1, 2, 3 ] }`,
 		App: &pb.Application{
-			Encoder: `function (fields) { return fields.foo }`,
+			Encoder: `
+				function (fields) {
+					console.log("hello", { foo: 33 })
+					return fields.foo
+				}`,
 		},
 	}
 
@@ -141,6 +160,12 @@ func TestDryDownlinkFields(t *testing.T) {
 	a.So(err, ShouldBeNil)
 
 	a.So(res.Payload, ShouldResemble, []byte{1, 2, 3})
+	a.So(res.Logs, ShouldResemble, []*pb.LogEntry{
+		&pb.LogEntry{
+			Function: "encoder",
+			Fields:   []string{`"hello"`, `{"foo":33}`},
+		},
+	})
 
 	// make sure no calls to app store were made
 	a.So(store.Count("list"), ShouldEqual, 0)
@@ -169,6 +194,7 @@ func TestDryDownlinkPayload(t *testing.T) {
 	a.So(err, ShouldBeNil)
 
 	a.So(res.Payload, ShouldResemble, []byte{0x1, 0x2, 0x3})
+	a.So(res.Logs, ShouldResemble, []*pb.LogEntry(nil))
 
 	// make sure no calls to app store were made
 	a.So(store.Count("list"), ShouldEqual, 0)
@@ -198,4 +224,39 @@ func TestDryDownlinkEmptyApp(t *testing.T) {
 	a.So(store.Count("get"), ShouldEqual, 0)
 	a.So(store.Count("set"), ShouldEqual, 0)
 	a.So(store.Count("delete"), ShouldEqual, 0)
+}
+
+func TestLogs(t *testing.T) {
+	a := New(t)
+
+	store := newCountingStore(application.NewRedisApplicationStore(GetRedisClient(), "handler-test-dry-downlink"))
+	h := &handler{
+		applications: store,
+	}
+	m := &handlerManager{handler: h}
+
+	msg := &pb.DryDownlinkMessage{
+		Fields: `{ "foo": [ 1, 2, 3 ] }`,
+		App: &pb.Application{
+			Encoder: `
+				function (fields) {
+					console.log("foo", 1, "bar", new Date(0))
+					console.log(1, { baz: 10, baa: "foo", bal: { "bar": 10 }})
+					return fields.foo
+				}`,
+		},
+	}
+
+	res, err := m.DryDownlink(context.TODO(), msg)
+	a.So(err, ShouldBeNil)
+	a.So(res.Logs, ShouldResemble, []*pb.LogEntry{
+		&pb.LogEntry{
+			Function: "encoder",
+			Fields:   []string{`"foo"`, "1", `"bar"`, `"1970-01-01T00:00:00.000Z"`},
+		},
+		&pb.LogEntry{
+			Function: "encoder",
+			Fields:   []string{"1", `{"baa":"foo","bal":{"bar":10},"baz":10}`},
+		},
+	})
 }
