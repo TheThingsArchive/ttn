@@ -24,13 +24,12 @@ type DefaultPublisher struct {
 }
 
 // NewPublisher returns a new topic publisher on the specified exchange
-func (c *DefaultClient) NewPublisher(exchange, exchangeType string) Publisher {
+func (c *DefaultClient) NewPublisher(exchange string) Publisher {
 	return &DefaultPublisher{
 		DefaultChannelClient: DefaultChannelClient{
-			ctx:          c.ctx,
-			client:       c,
-			exchange:     exchange,
-			exchangeType: exchangeType,
+			ctx:      c.ctx,
+			client:   c,
+			exchange: exchange,
 		},
 	}
 }

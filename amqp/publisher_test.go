@@ -17,7 +17,7 @@ func TestOpenPublisher(t *testing.T) {
 	a.So(err, ShouldBeNil)
 	defer c.Disconnect()
 
-	p := c.NewPublisher("amq.topic", "topic")
+	p := c.NewPublisher("amq.topic")
 	err = p.Open()
 	a.So(err, ShouldBeNil)
 	defer p.Close()

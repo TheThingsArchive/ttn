@@ -18,8 +18,8 @@ type Client interface {
 	Disconnect()
 	IsConnected() bool
 
-	NewPublisher(exchange, exchangeType string) Publisher
-	NewSubscriber(exchange, exchangeType, name string, durable, autoDelete bool) Subscriber
+	NewPublisher(exchange string) Publisher
+	NewSubscriber(exchange, name string, durable, autoDelete bool) Subscriber
 }
 
 // DefaultClient is the default AMQP client for The Things Network
@@ -178,12 +178,6 @@ func (p *DefaultChannelClient) Open() error {
 	channel, err := p.client.openChannel(p)
 	if err != nil {
 		return fmt.Errorf("Could not open AMQP channel (%s)", err)
-	}
-
-	if p.exchange != "" {
-		if err := channel.ExchangeDeclare(p.exchange, p.exchangeType, true, false, false, false, nil); err != nil {
-			return fmt.Errorf("Could not declare AMQP exchange (%s)", err)
-		}
 	}
 
 	p.channel = channel

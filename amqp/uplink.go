@@ -35,14 +35,14 @@ func (s *DefaultSubscriber) SubscribeDeviceUplink(appID, devID string, handler U
 	go func() {
 		for delivery := range messages {
 			dataUp := &types.UplinkMessage{}
-			err := json.Unmarshal(delivery.Body, dataUp)
-			if err != nil {
-				s.ctx.Warnf("Could not unmarshal uplink %v (%s)", delivery, err)
+			if err := json.Unmarshal(delivery.Body, dataUp); err != nil {
+				s.ctx.Warnf("Could not unmarshal uplink (%s)", err)
 				continue
 			}
 			handler(s, dataUp.AppID, dataUp.DevID, *dataUp)
-			delivery.Ack(false)
-			break
+			if err := delivery.Ack(false); err != nil {
+				s.ctx.Warnf("Could not acknowledge message (%s)", err)
+			}
 		}
 	}()
 

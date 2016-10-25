@@ -24,6 +24,7 @@ When you get started with The Things Network, you'll probably have some question
 3. Install the [protobuf compiler (`protoc`)](https://github.com/google/protobuf/releases)
 4. Make sure you have [RabbitMQ](https://www.rabbitmq.com/download.html) and [Redis](http://redis.io/download) **installed** and **running**.  
    If you're on Linux, you probably know how to do that. On a Mac, just run `brew bundle`. Windows users are currently on their own (feel free to contribute a guide for Windows).
+5. Declare a RabbitMQ exchange `ttn.handler` of type `topic`. Using [the management plugin](http://www.rabbitmq.com/management.html), declare the exchange in the web interface `http://server-name:15672` or using the management cli, run `rabbitmqadmin declare exchange name=ttn.handler type=topic auto_delete=false durable=true`
 
 ## Set up The Things Network's backend for Development
 

@@ -25,7 +25,7 @@ func (h *handler) HandleAMQP(username, password, host, exchange, downlinkQueue s
 
 	h.amqpUp = make(chan *types.UplinkMessage)
 
-	subscriber := h.amqpClient.NewSubscriber(h.amqpExchange, "topic", downlinkQueue, downlinkQueue != "", downlinkQueue == "")
+	subscriber := h.amqpClient.NewSubscriber(h.amqpExchange, downlinkQueue, downlinkQueue != "", downlinkQueue == "")
 	err = subscriber.Open()
 	if err != nil {
 		return err
@@ -45,7 +45,7 @@ func (h *handler) HandleAMQP(username, password, host, exchange, downlinkQueue s
 	ctx := h.Ctx.WithField("Protocol", "AMQP")
 
 	go func() {
-		publisher := h.amqpClient.NewPublisher(h.amqpExchange, "topic")
+		publisher := h.amqpClient.NewPublisher(h.amqpExchange)
 		err := publisher.Open()
 		if err != nil {
 			ctx.WithError(err).Error("Could not open publisher channel")
