@@ -26,7 +26,7 @@ func (h *handlerManager) DryUplink(ctx context.Context, in *pb.DryUplinkMessage)
 			Validator: app.Validator,
 		}
 
-		fields, val, err := functions.Process(in.Payload)
+		fields, val, err := functions.Process(in.Payload, uint8(in.Port))
 		if err != nil {
 			return nil, err
 		}
@@ -81,7 +81,7 @@ func (h *handlerManager) DryDownlink(ctx context.Context, in *pb.DryDownlinkMess
 		return nil, errors.NewErrInvalidArgument("Fields", err.Error())
 	}
 
-	payload, _, err := functions.Process(parsed)
+	payload, _, err := functions.Process(parsed, uint8(in.Port))
 	if err != nil {
 		return nil, err
 	}

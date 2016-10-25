@@ -29,7 +29,7 @@ func (h *handler) ConvertFieldsUp(ctx log.Interface, ttnUp *pb_broker.Deduplicat
 		Validator: app.Validator,
 	}
 
-	fields, valid, err := functions.Process(appUp.PayloadRaw)
+	fields, valid, err := functions.Process(appUp.PayloadRaw, appUp.FPort)
 	if err != nil {
 		return nil // Do not set fields if processing failed
 	}
@@ -60,14 +60,15 @@ type UplinkFunctions struct {
 var timeOut = 100 * time.Millisecond
 
 // Decode decodes the payload using the Decoder function into a map
-func (f *UplinkFunctions) Decode(payload []byte) (map[string]interface{}, error) {
+func (f *UplinkFunctions) Decode(payload []byte, port uint8) (map[string]interface{}, error) {
 	if f.Decoder == "" {
 		return nil, errors.NewErrInternal("Decoder function not set")
 	}
 
 	vm := otto.New()
 	vm.Set("payload", payload)
-	value, err := runUnsafeCode(vm, fmt.Sprintf("(%s)(payload.slice(0))", f.Decoder), timeOut)
+	vm.Set("port", port)
+	value, err := runUnsafeCode(vm, fmt.Sprintf("(%s)(payload.slice(0), port)", f.Decoder), timeOut)
 	if err != nil {
 		return nil, err
 	}
@@ -87,14 +88,15 @@ func (f *UplinkFunctions) Decode(payload []byte) (map[string]interface{}, error)
 // Convert converts the values in the specified map to a another map using the
 // Converter function. If the Converter function is not set, this function
 // returns the data as-is
-func (f *UplinkFunctions) Convert(data map[string]interface{}) (map[string]interface{}, error) {
+func (f *UplinkFunctions) Convert(data map[string]interface{}, port uint8) (map[string]interface{}, error) {
 	if f.Converter == "" {
 		return data, nil
 	}
 
 	vm := otto.New()
 	vm.Set("data", data)
-	value, err := runUnsafeCode(vm, fmt.Sprintf("(%s)(data)", f.Converter), timeOut)
+	vm.Set("port", port)
+	value, err := runUnsafeCode(vm, fmt.Sprintf("(%s)(data, port)", f.Converter), timeOut)
 	if err != nil {
 		return nil, err
 	}
@@ -114,14 +116,15 @@ func (f *UplinkFunctions) Convert(data map[string]interface{}) (map[string]inter
 
 // Validate validates the values in the specified map using the Validator
 // function. If the Validator function is not set, this function returns true
-func (f *UplinkFunctions) Validate(data map[string]interface{}) (bool, error) {
+func (f *UplinkFunctions) Validate(data map[string]interface{}, port uint8) (bool, error) {
 	if f.Validator == "" {
 		return true, nil
 	}
 
 	vm := otto.New()
 	vm.Set("data", data)
-	value, err := runUnsafeCode(vm, fmt.Sprintf("(%s)(data)", f.Validator), timeOut)
+	vm.Set("port", port)
+	value, err := runUnsafeCode(vm, fmt.Sprintf("(%s)(data, port)", f.Validator), timeOut)
 	if err != nil {
 		return false, err
 	}
@@ -134,18 +137,18 @@ func (f *UplinkFunctions) Validate(data map[string]interface{}) (bool, error) {
 }
 
 // Process decodes the specified payload, converts it and test the validity
-func (f *UplinkFunctions) Process(payload []byte) (map[string]interface{}, bool, error) {
-	decoded, err := f.Decode(payload)
+func (f *UplinkFunctions) Process(payload []byte, port uint8) (map[string]interface{}, bool, error) {
+	decoded, err := f.Decode(payload, port)
 	if err != nil {
 		return nil, false, err
 	}
 
-	converted, err := f.Convert(decoded)
+	converted, err := f.Convert(decoded, port)
 	if err != nil {
 		return nil, false, err
 	}
 
-	valid, err := f.Validate(converted)
+	valid, err := f.Validate(converted, port)
 	return converted, valid, err
 }
 
@@ -187,14 +190,15 @@ type DownlinkFunctions struct {
 
 // Encode encodes the map into a byte slice using the encoder payload function
 // If no encoder function is set, this function returns an array.
-func (f *DownlinkFunctions) Encode(payload map[string]interface{}) ([]byte, error) {
+func (f *DownlinkFunctions) Encode(payload map[string]interface{}, port uint8) ([]byte, error) {
 	if f.Encoder == "" {
 		return nil, errors.NewErrInternal("Encoder function not set")
 	}
 
 	vm := otto.New()
 	vm.Set("payload", payload)
-	value, err := runUnsafeCode(vm, fmt.Sprintf("(%s)(payload)", f.Encoder), timeOut)
+	vm.Set("port", port)
+	value, err := runUnsafeCode(vm, fmt.Sprintf("(%s)(payload, port)", f.Encoder), timeOut)
 	if err != nil {
 		return nil, err
 	}
@@ -267,8 +271,8 @@ func (f *DownlinkFunctions) Encode(payload map[string]interface{}) ([]byte, erro
 }
 
 // Process encode the specified field, converts it into a valid payload
-func (f *DownlinkFunctions) Process(payload map[string]interface{}) ([]byte, bool, error) {
-	encoded, err := f.Encode(payload)
+func (f *DownlinkFunctions) Process(payload map[string]interface{}, port uint8) ([]byte, bool, error) {
+	encoded, err := f.Encode(payload, port)
 	if err != nil {
 		return nil, false, err
 	}
@@ -295,7 +299,7 @@ func (h *handler) ConvertFieldsDown(ctx log.Interface, appDown *types.DownlinkMe
 		Encoder: app.Encoder,
 	}
 
-	message, _, err := functions.Process(appDown.PayloadFields)
+	message, _, err := functions.Process(appDown.PayloadFields, appDown.FPort)
 	if err != nil {
 		return err
 	}
