@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 
 	pb "github.com/TheThingsNetwork/ttn/api/handler"
+	"github.com/TheThingsNetwork/ttn/core/handler/functions"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"golang.org/x/net/context"
 )
@@ -17,6 +18,8 @@ import (
 func (h *handlerManager) DryUplink(ctx context.Context, in *pb.DryUplinkMessage) (*pb.DryUplinkResult, error) {
 	app := in.App
 
+	logger := functions.NewEntryLogger()
+
 	flds := ""
 	valid := true
 	if app != nil && app.Decoder != "" {
@@ -24,6 +27,7 @@ func (h *handlerManager) DryUplink(ctx context.Context, in *pb.DryUplinkMessage)
 			Decoder:   app.Decoder,
 			Converter: app.Converter,
 			Validator: app.Validator,
+			Logger:    logger,
 		}
 
 		fields, val, err := functions.Process(in.Payload, uint8(in.Port))
@@ -45,6 +49,7 @@ func (h *handlerManager) DryUplink(ctx context.Context, in *pb.DryUplinkMessage)
 		Payload: in.Payload,
 		Fields:  flds,
 		Valid:   valid,
+		Logs:    logger.Logs,
 	}, nil
 }
 
@@ -71,8 +76,11 @@ func (h *handlerManager) DryDownlink(ctx context.Context, in *pb.DryDownlinkMess
 		return nil, errors.NewErrInvalidArgument("Encoder", "Not specified")
 	}
 
+	logger := functions.NewEntryLogger()
+
 	functions := &DownlinkFunctions{
 		Encoder: app.Encoder,
+		Logger:  logger,
 	}
 
 	var parsed map[string]interface{}
@@ -88,5 +96,6 @@ func (h *handlerManager) DryDownlink(ctx context.Context, in *pb.DryDownlinkMess
 
 	return &pb.DryDownlinkResult{
 		Payload: payload,
+		Logs:    logger.Logs,
 	}, nil
 }

@@ -82,14 +82,24 @@ message DryUplinkMessage {
   uint32 port     = 3;
 }
 
+message LogEntry {
+  // The location where the log was created (what payload function)
+  string          function = 1;
+
+  // A list of JSON-encoded fields that were logged
+  repeated string fields   = 2;
+}
+
 message DryUplinkResult {
-  bytes  payload  = 1;
-  string fields   = 2;
-  bool   valid    = 3;
+  bytes             payload = 1;
+  string            fields  = 2;
+  bool              valid   = 3;
+  repeated LogEntry logs    = 4;
 }
 
 message DryDownlinkResult {
-  bytes  payload  = 1;
+  bytes             payload = 1;
+  repeated LogEntry logs    = 2;
 }
 
 service ApplicationManager {
