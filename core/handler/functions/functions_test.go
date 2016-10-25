@@ -52,3 +52,23 @@ func BenchmarkJSON(b *testing.B) {
 	}
 	result = r
 }
+
+func TestRunInvalidCode(t *testing.T) {
+	a := New(t)
+
+	logger := NewEntryLogger()
+	foo := 10
+	env := map[string]interface{}{
+		"foo": foo,
+		"bar": "baz",
+	}
+
+	code := `
+		(function (foo, bar) {
+			derp
+		})(foo,bar)
+	`
+
+	_, err := RunCode("test", code, env, time.Second, logger)
+	a.So(err, ShouldNotBeNil)
+}
