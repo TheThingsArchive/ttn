@@ -80,7 +80,7 @@ cover: $(GO_COVER_FILE)
 
 $(GO_COVER_FILE): cover-clean $(GO_COVER_FILES)
 	echo "mode: set" > $(GO_COVER_FILE)
-	cat $(GO_COVER_FILES) | grep -v "mode: set" | sort >> $(GO_COVER_FILE)
+	cat $(GO_COVER_FILES) | grep -vE "mode: set|/server.go|/manager_server.go" | sort >> $(GO_COVER_FILE)
 
 $(GO_COVER_DIR)/%.out: %
 	@mkdir -p "$(GO_COVER_DIR)/$<"
