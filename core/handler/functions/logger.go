@@ -30,13 +30,11 @@ func NewEntryLogger() *EntryLogger {
 	}
 }
 
-// vm is used for stringifying values
-var vm = otto.New()
-
 // JSON stringifies a value inside of the otto vm, yielding better
 // results than Export for Object-like class such as Date, but being much
 // slower.
 func JSON(val otto.Value) string {
+	vm := otto.New()
 	vm.Set("value", val)
 	res, _ := vm.Run(`JSON.stringify(value)`)
 	return res.String()
