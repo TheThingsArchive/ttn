@@ -104,12 +104,15 @@ RELEASE_DIR ?= release
 GOOS ?= $(shell go env GOOS)
 GOARCH ?= $(shell go env GOARCH)
 GOEXE = $(shell GOOS=$(GOOS) GOARCH=$(GOARCH) go env GOEXE)
+CGO_ENABLED ?= 0
+
+DIST_FLAGS ?= -a -installsuffix cgo
 
 splitfilename = $(subst ., ,$(subst -, ,$(subst $(RELEASE_DIR)/,,$1)))
 GOOSfromfilename = $(word 2, $(call splitfilename, $1))
 GOARCHfromfilename = $(word 3, $(call splitfilename, $1))
 LDFLAGS = -ldflags "-w -X main.gitBranch=${GIT_BRANCH} -X main.gitCommit=${GIT_COMMIT} -X main.buildDate=${BUILD_DATE}"
-GOBUILD = CGO_ENABLED=0 GOOS=$(call GOOSfromfilename, $@) GOARCH=$(call GOARCHfromfilename, $@) go build -a -installsuffix cgo ${LDFLAGS} -tags "${TAGS}" -o "$@"
+GOBUILD = CGO_ENABLED=$(CGO_ENABLED) GOOS=$(call GOOSfromfilename, $@) GOARCH=$(call GOARCHfromfilename, $@) go build $(DIST_FLAGS) ${LDFLAGS} -tags "${TAGS}" -o "$@"
 
 ttn: $(RELEASE_DIR)/ttn-$(GOOS)-$(GOARCH)$(GOEXE)
 
@@ -122,6 +125,19 @@ $(RELEASE_DIR)/ttnctl-%: $(GO_FILES)
 	$(GOBUILD) ./ttnctl/main.go
 
 build: ttn ttnctl
+
+ttn-dev: DIST_FLAGS=
+ttn-dev: CGO_ENABLED=1
+ttn-dev: $(RELEASE_DIR)/ttn-$(GOOS)-$(GOARCH)$(GOEXE)
+
+ttnctl-dev: DIST_FLAGS=
+ttnctl-dev: CGO_ENABLED=1
+ttnctl-dev: $(RELEASE_DIR)/ttnctl-$(GOOS)-$(GOARCH)$(GOEXE)
+
+install:
+	go install -v
+
+dev: install ttn-dev ttnctl-dev
 
 GOBIN ?= $(GO_PATH)/bin
 
