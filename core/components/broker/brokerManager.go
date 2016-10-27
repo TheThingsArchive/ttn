@@ -142,7 +142,11 @@ func (b component) validateToken(ctx context.Context, token string, appEUI []byt
 		if k.Algorithm != token.Header["alg"] {
 			return nil, errors.New(errors.Structural, fmt.Sprintf("Expected algorithm %v but got %v", k.Algorithm, token.Header["alg"]))
 		}
-		return []byte(k.Key), nil
+		key, err := jwt.ParseRSAPublicKeyFromPEM([]byte(k.Key))
+		if err != nil {
+			return nil, err
+		}
+		return key, nil
 	})
 	if err != nil {
 		return errors.New(errors.Structural, fmt.Sprintf("Unable to parse token: %s", err.Error()))
