@@ -74,14 +74,14 @@ func TestDryUplinkFields(t *testing.T) {
 		Payload: []byte{11, 22, 33},
 		App: &pb.Application{
 			AppId: "DryUplinkFields",
-			Decoder: `function (bytes) {
+			Decoder: `function Decoder (bytes) {
 				console.log("hi", 11)
 				return { length: bytes.length }}`,
-			Converter: `function (obj) {
+			Converter: `function Converter (obj) {
 				console.log("foo")
 				return obj
 			}`,
-			Validator: `function (bytes) { return true; }`,
+			Validator: `function Validator (bytes) { return true; }`,
 		},
 	}
 
@@ -149,7 +149,7 @@ func TestDryDownlinkFields(t *testing.T) {
 		Fields: `{ "foo": [ 1, 2, 3 ] }`,
 		App: &pb.Application{
 			Encoder: `
-				function (fields) {
+				function Encoder (fields) {
 					console.log("hello", { foo: 33 })
 					return fields.foo
 				}`,
@@ -239,7 +239,7 @@ func TestLogs(t *testing.T) {
 		Fields: `{ "foo": [ 1, 2, 3 ] }`,
 		App: &pb.Application{
 			Encoder: `
-				function (fields) {
+				function Encoder (fields) {
 					console.log("foo", 1, "bar", new Date(0))
 					console.log(1, { baz: 10, baa: "foo", bal: { "bar": 10 }})
 					return fields.foo

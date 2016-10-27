@@ -117,7 +117,7 @@ func TestHandleDownlink(t *testing.T) {
 	// Both Payload and Fields provided
 	h.applications.Set(&application.Application{
 		AppID: appID,
-		Encoder: `function (payload){
+		Encoder: `function Encoder (payload){
 	  		return [96, 4, 3, 2, 1, 0, 1, 0, 1, 0, 0, 0, 0]
 			}`,
 	})

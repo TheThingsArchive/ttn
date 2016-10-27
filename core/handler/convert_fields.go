@@ -73,7 +73,10 @@ func (f *UplinkFunctions) Decode(payload []byte, port uint8) (map[string]interfa
 		"payload": payload,
 		"port":    port,
 	}
-	code := fmt.Sprintf("(%s)(payload.slice(0), port)", f.Decoder)
+	code := fmt.Sprintf(`
+		%s;
+		Decoder(payload.slice(0), port);
+	`, f.Decoder)
 
 	value, err := functions.RunCode("decoder", code, env, timeOut, f.Logger)
 	if err != nil {
@@ -105,7 +108,10 @@ func (f *UplinkFunctions) Convert(fields map[string]interface{}, port uint8) (ma
 		"port":   port,
 	}
 
-	code := fmt.Sprintf("(%s)(fields, port)", f.Converter)
+	code := fmt.Sprintf(`
+		%s;
+		Converter(fields, port)
+	`, f.Converter)
 
 	value, err := functions.RunCode("converter", code, env, timeOut, f.Logger)
 	if err != nil {
@@ -136,7 +142,10 @@ func (f *UplinkFunctions) Validate(fields map[string]interface{}, port uint8) (b
 		"fields": fields,
 		"port":   port,
 	}
-	code := fmt.Sprintf("(%s)(fields, port)", f.Validator)
+	code := fmt.Sprintf(`
+		%s;
+		Validator(fields, port)
+	`, f.Validator)
 
 	value, err := functions.RunCode("valdator", code, env, timeOut, f.Logger)
 	if err != nil {
@@ -187,7 +196,10 @@ func (f *DownlinkFunctions) Encode(payload map[string]interface{}, port uint8) (
 		"payload": payload,
 		"port":    port,
 	}
-	code := fmt.Sprintf("(%s)(payload, port)", f.Encoder)
+	code := fmt.Sprintf(`
+		%s;
+		Encoder(payload, port)
+	`, f.Encoder)
 
 	value, err := functions.RunCode("encoder", code, env, timeOut, f.Logger)
 	if err != nil {
