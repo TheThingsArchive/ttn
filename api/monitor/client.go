@@ -231,6 +231,18 @@ func (cl *gatewayClient) SendStatus(status *gateway.Status) (err error) {
 				return err
 			}
 		}
+		go func() {
+			var msg []byte
+			if err := stream.RecvMsg(&msg); err != nil {
+				cl.Ctx.WithError(errors.FromGRPCError(err)).Warn("Received error on monitor status stream, closing...")
+				cl.status.Lock()
+				cl.status.stream.CloseSend()
+				if cl.status.stream == stream {
+					cl.status.stream = nil
+				}
+				cl.status.Unlock()
+			}
+		}()
 		cl.status.Unlock()
 	}
 
@@ -284,6 +296,18 @@ func (cl *gatewayClient) SendUplink(uplink *router.UplinkMessage) (err error) {
 				return err
 			}
 		}
+		go func() {
+			var msg []byte
+			if err := stream.RecvMsg(&msg); err != nil {
+				cl.Ctx.WithError(errors.FromGRPCError(err)).Warn("Received error on monitor uplink stream, closing...")
+				cl.uplink.Lock()
+				cl.uplink.stream.CloseSend()
+				if cl.uplink.stream == stream {
+					cl.uplink.stream = nil
+				}
+				cl.uplink.Unlock()
+			}
+		}()
 		cl.uplink.Unlock()
 	}
 
@@ -337,6 +361,18 @@ func (cl *gatewayClient) SendDownlink(downlink *router.DownlinkMessage) (err err
 				return err
 			}
 		}
+		go func() {
+			var msg []byte
+			if err := stream.RecvMsg(&msg); err != nil {
+				cl.Ctx.WithError(errors.FromGRPCError(err)).Warn("Received error on monitor downlink stream, closing...")
+				cl.downlink.Lock()
+				cl.downlink.stream.CloseSend()
+				if cl.downlink.stream == stream {
+					cl.downlink.stream = nil
+				}
+				cl.downlink.Unlock()
+			}
+		}()
 		cl.downlink.Unlock()
 	}
 
