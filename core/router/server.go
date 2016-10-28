@@ -36,13 +36,9 @@ func (r *routerRPC) gatewayFromContext(ctx context.Context) (gtw *gateway.Gatewa
 		return nil, err
 	}
 
-	var token string
+	token, _ := api.TokenFromMetadata(md)
 
 	if !viper.GetBool("router.skip-verify-gateway-token") {
-		token, err = api.TokenFromMetadata(md)
-		if err != nil {
-			return nil, err
-		}
 		if token == "" {
 			return nil, errors.NewErrPermissionDenied("No gateway token supplied")
 		}
