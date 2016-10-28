@@ -142,19 +142,16 @@ func (cl *Client) IsConnected() bool {
 }
 
 // GatewayClient returns monitor GatewayClient for id and token specified
-func (cl *Client) GatewayClient(id, token string) (gtwCl GatewayClient) {
+func (cl *Client) GatewayClient(id string) (gtwCl GatewayClient) {
 	cl.mutex.RLock()
 	gtwCl, ok := cl.gateways[id]
 	cl.mutex.RUnlock()
 	if !ok {
 		cl.mutex.Lock()
 		gtwCl = &gatewayClient{
-			Ctx: cl.Ctx.WithField("GatewayID", id),
-
+			Ctx:    cl.Ctx.WithField("GatewayID", id),
 			client: cl,
-
-			id:    id,
-			token: token,
+			id:     id,
 		}
 		cl.gateways[id] = gtwCl
 		cl.mutex.Unlock()
@@ -163,6 +160,8 @@ func (cl *Client) GatewayClient(id, token string) (gtwCl GatewayClient) {
 }
 
 type gatewayClient struct {
+	sync.RWMutex
+
 	client *Client
 
 	Ctx log.Interface
@@ -187,14 +186,31 @@ type gatewayClient struct {
 
 // GatewayClient is used as the main client for Gateways to communicate with the monitor
 type GatewayClient interface {
+	SetToken(token string)
 	SendStatus(status *gateway.Status) (err error)
 	SendUplink(msg *router.UplinkMessage) (err error)
 	SendDownlink(msg *router.DownlinkMessage) (err error)
 	Close() (err error)
 }
 
+func (cl *gatewayClient) SetToken(token string) {
+	cl.Lock()
+	defer cl.Unlock()
+	cl.token = token
+}
+
+func (cl *gatewayClient) IsConfigured() bool {
+	cl.RLock()
+	defer cl.RUnlock()
+	return cl.token != ""
+}
+
 // SendStatus sends status to the monitor
 func (cl *gatewayClient) SendStatus(status *gateway.Status) (err error) {
+	if !cl.IsConfigured() {
+		return nil
+	}
+
 	cl.status.RLock()
 	cl.client.mutex.RLock()
 
@@ -260,6 +276,10 @@ func (cl *gatewayClient) SendStatus(status *gateway.Status) (err error) {
 
 // SendUplink sends uplink to the monitor
 func (cl *gatewayClient) SendUplink(uplink *router.UplinkMessage) (err error) {
+	if !cl.IsConfigured() {
+		return nil
+	}
+
 	cl.uplink.RLock()
 	cl.client.mutex.RLock()
 
@@ -325,6 +345,10 @@ func (cl *gatewayClient) SendUplink(uplink *router.UplinkMessage) (err error) {
 
 // SendUplink sends downlink to the monitor
 func (cl *gatewayClient) SendDownlink(downlink *router.DownlinkMessage) (err error) {
+	if !cl.IsConfigured() {
+		return nil
+	}
+
 	cl.downlink.RLock()
 	cl.client.mutex.RLock()
 
@@ -444,6 +468,8 @@ func (cl *gatewayClient) Close() (err error) {
 
 // Context returns monitor connection context for gateway
 func (cl *gatewayClient) Context() (monitorContext context.Context) {
+	cl.RLock()
+	defer cl.RUnlock()
 	return metadata.NewContext(context.Background(), metadata.Pairs(
 		"id", cl.id,
 		"token", cl.token,

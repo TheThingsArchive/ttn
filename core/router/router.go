@@ -112,7 +112,7 @@ func (r *router) getGateway(id string) *gateway.Gateway {
 		if r.Component.Monitors != nil {
 			gtw.Monitors = make(map[string]pb_monitor.GatewayClient)
 			for name, cl := range r.Component.Monitors {
-				gtw.Monitors[name] = cl.GatewayClient(gtw.ID, gtw.Token)
+				gtw.Monitors[name] = cl.GatewayClient(gtw.ID)
 			}
 		}
 

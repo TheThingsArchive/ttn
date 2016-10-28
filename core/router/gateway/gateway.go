@@ -4,7 +4,6 @@
 package gateway
 
 import (
-	"sync"
 	"time"
 
 	pb "github.com/TheThingsNetwork/ttn/api/gateway"
@@ -33,8 +32,7 @@ type Gateway struct {
 	Schedule    Schedule
 	LastSeen    time.Time
 
-	Token     string
-	tokenLock sync.Mutex
+	token string
 
 	Monitors map[string]pb_monitor.GatewayClient
 
@@ -42,10 +40,13 @@ type Gateway struct {
 }
 
 func (g *Gateway) SetToken(token string) {
-	g.tokenLock.Lock()
-	defer g.tokenLock.Unlock()
-
-	g.Token = token
+	if token == g.token {
+		return
+	}
+	g.token = token
+	for _, monitor := range g.Monitors {
+		monitor.SetToken(token)
+	}
 }
 
 func (g *Gateway) updateLastSeen() {
