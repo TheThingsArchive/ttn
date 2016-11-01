@@ -40,5 +40,5 @@ func PrintConfig(ctx log.Interface, debug bool) {
 }
 
 func printKV(key, val interface{}) {
-	fmt.Printf("%20s: %s\n", key, val)
+	fmt.Printf("%20s: %v\n", key, val)
 }
