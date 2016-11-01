@@ -17,22 +17,26 @@ message SubscribeRequest {}
 
 message UplinkMessage {
   bytes                payload            = 1;
+  protocol.Message     message            = 2;
   protocol.RxMetadata  protocol_metadata  = 11;
   gateway.RxMetadata   gateway_metadata   = 12;
 }
 
 message DownlinkMessage {
   bytes                     payload                 = 1;
+  protocol.Message          message                 = 2;
   protocol.TxConfiguration  protocol_configuration  = 11;
   gateway.TxConfiguration   gateway_configuration   = 12;
 }
 
 message DeviceActivationRequest {
-  bytes                payload            = 1;
-  bytes                dev_eui            = 11 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.DevEUI"];
-  bytes                app_eui            = 12 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.AppEUI"];
-  protocol.RxMetadata  protocol_metadata  = 21;
-  gateway.RxMetadata   gateway_metadata   = 22;
+  bytes                        payload              = 1;
+  protocol.Message             message              = 2;
+  bytes                        dev_eui              = 11 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.DevEUI"];
+  bytes                        app_eui              = 12 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.AppEUI"];
+  protocol.RxMetadata          protocol_metadata    = 21;
+  gateway.RxMetadata           gateway_metadata     = 22;
+  protocol.ActivationMetadata  activation_metadata  = 23;
 }
 
 message DeviceActivationResponse {
@@ -40,6 +44,7 @@ message DeviceActivationResponse {
   // this message is just an Ack.
   //
   // bytes                     payload                 = 1;
+  // protocol.Message          message                 = 2;
   // protocol.TxConfiguration  protocol_configuration  = 11;
   // gateway.TxConfiguration   gateway_configuration   = 12;
 }

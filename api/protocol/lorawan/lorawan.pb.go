@@ -12,6 +12,16 @@
 		Metadata
 		TxConfiguration
 		ActivationMetadata
+		Message
+		MHDR
+		MACPayload
+		FHDR
+		FCtrl
+		MACCommand
+		JoinRequestPayload
+		JoinAcceptPayload
+		DLSettings
+		CFList
 */
 package lorawan
 
@@ -95,6 +105,57 @@ func (x Region) String() string {
 }
 func (Region) EnumDescriptor() ([]byte, []int) { return fileDescriptorLorawan, []int{1} }
 
+type Major int32
+
+const (
+	Major_LORAWAN_R1 Major = 0
+)
+
+var Major_name = map[int32]string{
+	0: "LORAWAN_R1",
+}
+var Major_value = map[string]int32{
+	"LORAWAN_R1": 0,
+}
+
+func (x Major) String() string {
+	return proto.EnumName(Major_name, int32(x))
+}
+func (Major) EnumDescriptor() ([]byte, []int) { return fileDescriptorLorawan, []int{2} }
+
+type MType int32
+
+const (
+	MType_JOIN_REQUEST     MType = 0
+	MType_JOIN_ACCEPT      MType = 1
+	MType_UNCONFIRMED_UP   MType = 2
+	MType_UNCONFIRMED_DOWN MType = 3
+	MType_CONFIRMED_UP     MType = 4
+	MType_CONFIRMED_DOWN   MType = 5
+)
+
+var MType_name = map[int32]string{
+	0: "JOIN_REQUEST",
+	1: "JOIN_ACCEPT",
+	2: "UNCONFIRMED_UP",
+	3: "UNCONFIRMED_DOWN",
+	4: "CONFIRMED_UP",
+	5: "CONFIRMED_DOWN",
+}
+var MType_value = map[string]int32{
+	"JOIN_REQUEST":     0,
+	"JOIN_ACCEPT":      1,
+	"UNCONFIRMED_UP":   2,
+	"UNCONFIRMED_DOWN": 3,
+	"CONFIRMED_UP":     4,
+	"CONFIRMED_DOWN":   5,
+}
+
+func (x MType) String() string {
+	return proto.EnumName(MType_name, int32(x))
+}
+func (MType) EnumDescriptor() ([]byte, []int) { return fileDescriptorLorawan, []int{3} }
+
 type Metadata struct {
 	Modulation Modulation `protobuf:"varint,11,opt,name=modulation,proto3,enum=lorawan.Modulation" json:"modulation,omitempty"`
 	DataRate   string     `protobuf:"bytes,12,opt,name=data_rate,json=dataRate,proto3" json:"data_rate,omitempty"`
@@ -129,7 +190,7 @@ type ActivationMetadata struct {
 	Rx1DrOffset uint32                                              `protobuf:"varint,11,opt,name=rx1_dr_offset,json=rx1DrOffset,proto3" json:"rx1_dr_offset,omitempty"`
 	Rx2Dr       uint32                                              `protobuf:"varint,12,opt,name=rx2_dr,json=rx2Dr,proto3" json:"rx2_dr,omitempty"`
 	RxDelay     uint32                                              `protobuf:"varint,13,opt,name=rx_delay,json=rxDelay,proto3" json:"rx_delay,omitempty"`
-	CfList      []uint64                                            `protobuf:"varint,14,rep,packed,name=cf_list,json=cfList" json:"cf_list,omitempty"`
+	CfList      *CFList                                             `protobuf:"bytes,14,opt,name=cf_list,json=cfList" json:"cf_list,omitempty"`
 }
 
 func (m *ActivationMetadata) Reset()                    { *m = ActivationMetadata{} }
@@ -137,12 +198,301 @@ func (m *ActivationMetadata) String() string            { return proto.CompactTe
 func (*ActivationMetadata) ProtoMessage()               {}
 func (*ActivationMetadata) Descriptor() ([]byte, []int) { return fileDescriptorLorawan, []int{2} }
 
+func (m *ActivationMetadata) GetCfList() *CFList {
+	if m != nil {
+		return m.CfList
+	}
+	return nil
+}
+
+type Message struct {
+	MHDR `protobuf:"bytes,1,opt,name=m_hdr,json=mHdr,embedded=m_hdr" json:"m_hdr"`
+	Mic  []byte `protobuf:"bytes,2,opt,name=mic,proto3" json:"mic,omitempty"`
+	// Types that are valid to be assigned to Payload:
+	//	*Message_MacPayload
+	//	*Message_JoinRequestPayload
+	//	*Message_JoinAcceptPayload
+	Payload isMessage_Payload `protobuf_oneof:"Payload"`
+}
+
+func (m *Message) Reset()                    { *m = Message{} }
+func (m *Message) String() string            { return proto.CompactTextString(m) }
+func (*Message) ProtoMessage()               {}
+func (*Message) Descriptor() ([]byte, []int) { return fileDescriptorLorawan, []int{3} }
+
+type isMessage_Payload interface {
+	isMessage_Payload()
+	MarshalTo([]byte) (int, error)
+	Size() int
+}
+
+type Message_MacPayload struct {
+	MacPayload *MACPayload `protobuf:"bytes,3,opt,name=mac_payload,json=macPayload,oneof"`
+}
+type Message_JoinRequestPayload struct {
+	JoinRequestPayload *JoinRequestPayload `protobuf:"bytes,4,opt,name=join_request_payload,json=joinRequestPayload,oneof"`
+}
+type Message_JoinAcceptPayload struct {
+	JoinAcceptPayload *JoinAcceptPayload `protobuf:"bytes,5,opt,name=join_accept_payload,json=joinAcceptPayload,oneof"`
+}
+
+func (*Message_MacPayload) isMessage_Payload()         {}
+func (*Message_JoinRequestPayload) isMessage_Payload() {}
+func (*Message_JoinAcceptPayload) isMessage_Payload()  {}
+
+func (m *Message) GetPayload() isMessage_Payload {
+	if m != nil {
+		return m.Payload
+	}
+	return nil
+}
+
+func (m *Message) GetMacPayload() *MACPayload {
+	if x, ok := m.GetPayload().(*Message_MacPayload); ok {
+		return x.MacPayload
+	}
+	return nil
+}
+
+func (m *Message) GetJoinRequestPayload() *JoinRequestPayload {
+	if x, ok := m.GetPayload().(*Message_JoinRequestPayload); ok {
+		return x.JoinRequestPayload
+	}
+	return nil
+}
+
+func (m *Message) GetJoinAcceptPayload() *JoinAcceptPayload {
+	if x, ok := m.GetPayload().(*Message_JoinAcceptPayload); ok {
+		return x.JoinAcceptPayload
+	}
+	return nil
+}
+
+// XXX_OneofFuncs is for the internal use of the proto package.
+func (*Message) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
+	return _Message_OneofMarshaler, _Message_OneofUnmarshaler, _Message_OneofSizer, []interface{}{
+		(*Message_MacPayload)(nil),
+		(*Message_JoinRequestPayload)(nil),
+		(*Message_JoinAcceptPayload)(nil),
+	}
+}
+
+func _Message_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
+	m := msg.(*Message)
+	// Payload
+	switch x := m.Payload.(type) {
+	case *Message_MacPayload:
+		_ = b.EncodeVarint(3<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.MacPayload); err != nil {
+			return err
+		}
+	case *Message_JoinRequestPayload:
+		_ = b.EncodeVarint(4<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.JoinRequestPayload); err != nil {
+			return err
+		}
+	case *Message_JoinAcceptPayload:
+		_ = b.EncodeVarint(5<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.JoinAcceptPayload); err != nil {
+			return err
+		}
+	case nil:
+	default:
+		return fmt.Errorf("Message.Payload has unexpected type %T", x)
+	}
+	return nil
+}
+
+func _Message_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
+	m := msg.(*Message)
+	switch tag {
+	case 3: // Payload.mac_payload
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(MACPayload)
+		err := b.DecodeMessage(msg)
+		m.Payload = &Message_MacPayload{msg}
+		return true, err
+	case 4: // Payload.join_request_payload
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(JoinRequestPayload)
+		err := b.DecodeMessage(msg)
+		m.Payload = &Message_JoinRequestPayload{msg}
+		return true, err
+	case 5: // Payload.join_accept_payload
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(JoinAcceptPayload)
+		err := b.DecodeMessage(msg)
+		m.Payload = &Message_JoinAcceptPayload{msg}
+		return true, err
+	default:
+		return false, nil
+	}
+}
+
+func _Message_OneofSizer(msg proto.Message) (n int) {
+	m := msg.(*Message)
+	// Payload
+	switch x := m.Payload.(type) {
+	case *Message_MacPayload:
+		s := proto.Size(x.MacPayload)
+		n += proto.SizeVarint(3<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *Message_JoinRequestPayload:
+		s := proto.Size(x.JoinRequestPayload)
+		n += proto.SizeVarint(4<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *Message_JoinAcceptPayload:
+		s := proto.Size(x.JoinAcceptPayload)
+		n += proto.SizeVarint(5<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case nil:
+	default:
+		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
+	}
+	return n
+}
+
+type MHDR struct {
+	MType MType `protobuf:"varint,1,opt,name=m_type,json=mType,proto3,enum=lorawan.MType" json:"m_type,omitempty"`
+	Major Major `protobuf:"varint,2,opt,name=major,proto3,enum=lorawan.Major" json:"major,omitempty"`
+}
+
+func (m *MHDR) Reset()                    { *m = MHDR{} }
+func (m *MHDR) String() string            { return proto.CompactTextString(m) }
+func (*MHDR) ProtoMessage()               {}
+func (*MHDR) Descriptor() ([]byte, []int) { return fileDescriptorLorawan, []int{4} }
+
+type MACPayload struct {
+	FHDR       `protobuf:"bytes,1,opt,name=f_hdr,json=fHdr,embedded=f_hdr" json:"f_hdr"`
+	FPort      int32  `protobuf:"varint,2,opt,name=f_port,json=fPort,proto3" json:"f_port,omitempty"`
+	FrmPayload []byte `protobuf:"bytes,3,opt,name=frm_payload,json=frmPayload,proto3" json:"frm_payload,omitempty"`
+}
+
+func (m *MACPayload) Reset()                    { *m = MACPayload{} }
+func (m *MACPayload) String() string            { return proto.CompactTextString(m) }
+func (*MACPayload) ProtoMessage()               {}
+func (*MACPayload) Descriptor() ([]byte, []int) { return fileDescriptorLorawan, []int{5} }
+
+type FHDR struct {
+	DevAddr github_com_TheThingsNetwork_ttn_core_types.DevAddr `protobuf:"bytes,1,opt,name=dev_addr,json=devAddr,proto3,customtype=github.com/TheThingsNetwork/ttn/core/types.DevAddr" json:"dev_addr"`
+	FCtrl   `protobuf:"bytes,2,opt,name=f_ctrl,json=fCtrl,embedded=f_ctrl" json:"f_ctrl"`
+	FCnt    uint32       `protobuf:"varint,3,opt,name=f_cnt,json=fCnt,proto3" json:"f_cnt,omitempty"`
+	FOpts   []MACCommand `protobuf:"bytes,4,rep,name=f_opts,json=fOpts" json:"f_opts"`
+}
+
+func (m *FHDR) Reset()                    { *m = FHDR{} }
+func (m *FHDR) String() string            { return proto.CompactTextString(m) }
+func (*FHDR) ProtoMessage()               {}
+func (*FHDR) Descriptor() ([]byte, []int) { return fileDescriptorLorawan, []int{6} }
+
+func (m *FHDR) GetFOpts() []MACCommand {
+	if m != nil {
+		return m.FOpts
+	}
+	return nil
+}
+
+type FCtrl struct {
+	Adr       bool `protobuf:"varint,1,opt,name=adr,proto3" json:"adr,omitempty"`
+	AdrAckReq bool `protobuf:"varint,2,opt,name=adr_ack_req,json=adrAckReq,proto3" json:"adr_ack_req,omitempty"`
+	Ack       bool `protobuf:"varint,3,opt,name=ack,proto3" json:"ack,omitempty"`
+	FPending  bool `protobuf:"varint,4,opt,name=f_pending,json=fPending,proto3" json:"f_pending,omitempty"`
+}
+
+func (m *FCtrl) Reset()                    { *m = FCtrl{} }
+func (m *FCtrl) String() string            { return proto.CompactTextString(m) }
+func (*FCtrl) ProtoMessage()               {}
+func (*FCtrl) Descriptor() ([]byte, []int) { return fileDescriptorLorawan, []int{7} }
+
+type MACCommand struct {
+	Cid     uint32 `protobuf:"varint,1,opt,name=cid,proto3" json:"cid,omitempty"`
+	Payload []byte `protobuf:"bytes,2,opt,name=payload,proto3" json:"payload,omitempty"`
+}
+
+func (m *MACCommand) Reset()                    { *m = MACCommand{} }
+func (m *MACCommand) String() string            { return proto.CompactTextString(m) }
+func (*MACCommand) ProtoMessage()               {}
+func (*MACCommand) Descriptor() ([]byte, []int) { return fileDescriptorLorawan, []int{8} }
+
+type JoinRequestPayload struct {
+	AppEui   github_com_TheThingsNetwork_ttn_core_types.AppEUI   `protobuf:"bytes,1,opt,name=app_eui,json=appEui,proto3,customtype=github.com/TheThingsNetwork/ttn/core/types.AppEUI" json:"app_eui"`
+	DevEui   github_com_TheThingsNetwork_ttn_core_types.DevEUI   `protobuf:"bytes,2,opt,name=dev_eui,json=devEui,proto3,customtype=github.com/TheThingsNetwork/ttn/core/types.DevEUI" json:"dev_eui"`
+	DevNonce github_com_TheThingsNetwork_ttn_core_types.DevNonce `protobuf:"bytes,3,opt,name=dev_nonce,json=devNonce,proto3,customtype=github.com/TheThingsNetwork/ttn/core/types.DevNonce" json:"dev_nonce"`
+}
+
+func (m *JoinRequestPayload) Reset()                    { *m = JoinRequestPayload{} }
+func (m *JoinRequestPayload) String() string            { return proto.CompactTextString(m) }
+func (*JoinRequestPayload) ProtoMessage()               {}
+func (*JoinRequestPayload) Descriptor() ([]byte, []int) { return fileDescriptorLorawan, []int{9} }
+
+type JoinAcceptPayload struct {
+	Encrypted  []byte                                              `protobuf:"bytes,1,opt,name=encrypted,proto3" json:"encrypted,omitempty"`
+	AppNonce   github_com_TheThingsNetwork_ttn_core_types.AppNonce `protobuf:"bytes,2,opt,name=app_nonce,json=appNonce,proto3,customtype=github.com/TheThingsNetwork/ttn/core/types.AppNonce" json:"app_nonce"`
+	NetId      github_com_TheThingsNetwork_ttn_core_types.NetID    `protobuf:"bytes,3,opt,name=net_id,json=netId,proto3,customtype=github.com/TheThingsNetwork/ttn/core/types.NetID" json:"net_id"`
+	DevAddr    github_com_TheThingsNetwork_ttn_core_types.DevAddr  `protobuf:"bytes,4,opt,name=dev_addr,json=devAddr,proto3,customtype=github.com/TheThingsNetwork/ttn/core/types.DevAddr" json:"dev_addr"`
+	DLSettings `protobuf:"bytes,5,opt,name=dl_settings,json=dlSettings,embedded=dl_settings" json:"dl_settings"`
+	RxDelay    uint32  `protobuf:"varint,6,opt,name=rx_delay,json=rxDelay,proto3" json:"rx_delay,omitempty"`
+	CfList     *CFList `protobuf:"bytes,7,opt,name=cf_list,json=cfList" json:"cf_list,omitempty"`
+}
+
+func (m *JoinAcceptPayload) Reset()                    { *m = JoinAcceptPayload{} }
+func (m *JoinAcceptPayload) String() string            { return proto.CompactTextString(m) }
+func (*JoinAcceptPayload) ProtoMessage()               {}
+func (*JoinAcceptPayload) Descriptor() ([]byte, []int) { return fileDescriptorLorawan, []int{10} }
+
+func (m *JoinAcceptPayload) GetCfList() *CFList {
+	if m != nil {
+		return m.CfList
+	}
+	return nil
+}
+
+type DLSettings struct {
+	Rx1DrOffset uint32 `protobuf:"varint,1,opt,name=rx1_dr_offset,json=rx1DrOffset,proto3" json:"rx1_dr_offset,omitempty"`
+	Rx2Dr       uint32 `protobuf:"varint,2,opt,name=rx2_dr,json=rx2Dr,proto3" json:"rx2_dr,omitempty"`
+}
+
+func (m *DLSettings) Reset()                    { *m = DLSettings{} }
+func (m *DLSettings) String() string            { return proto.CompactTextString(m) }
+func (*DLSettings) ProtoMessage()               {}
+func (*DLSettings) Descriptor() ([]byte, []int) { return fileDescriptorLorawan, []int{11} }
+
+type CFList struct {
+	Freq []uint32 `protobuf:"varint,1,rep,packed,name=freq" json:"freq,omitempty"`
+}
+
+func (m *CFList) Reset()                    { *m = CFList{} }
+func (m *CFList) String() string            { return proto.CompactTextString(m) }
+func (*CFList) ProtoMessage()               {}
+func (*CFList) Descriptor() ([]byte, []int) { return fileDescriptorLorawan, []int{12} }
+
 func init() {
 	proto.RegisterType((*Metadata)(nil), "lorawan.Metadata")
 	proto.RegisterType((*TxConfiguration)(nil), "lorawan.TxConfiguration")
 	proto.RegisterType((*ActivationMetadata)(nil), "lorawan.ActivationMetadata")
+	proto.RegisterType((*Message)(nil), "lorawan.Message")
+	proto.RegisterType((*MHDR)(nil), "lorawan.MHDR")
+	proto.RegisterType((*MACPayload)(nil), "lorawan.MACPayload")
+	proto.RegisterType((*FHDR)(nil), "lorawan.FHDR")
+	proto.RegisterType((*FCtrl)(nil), "lorawan.FCtrl")
+	proto.RegisterType((*MACCommand)(nil), "lorawan.MACCommand")
+	proto.RegisterType((*JoinRequestPayload)(nil), "lorawan.JoinRequestPayload")
+	proto.RegisterType((*JoinAcceptPayload)(nil), "lorawan.JoinAcceptPayload")
+	proto.RegisterType((*DLSettings)(nil), "lorawan.DLSettings")
+	proto.RegisterType((*CFList)(nil), "lorawan.CFList")
 	proto.RegisterEnum("lorawan.Modulation", Modulation_name, Modulation_value)
 	proto.RegisterEnum("lorawan.Region", Region_name, Region_value)
+	proto.RegisterEnum("lorawan.Major", Major_name, Major_value)
+	proto.RegisterEnum("lorawan.MType", MType_name, MType_value)
 }
 func (m *Metadata) Marshal() (data []byte, err error) {
 	size := m.Size()
@@ -304,22 +654,475 @@ func (m *ActivationMetadata) MarshalTo(data []byte) (int, error) {
 		i++
 		i = encodeVarintLorawan(data, i, uint64(m.RxDelay))
 	}
-	if len(m.CfList) > 0 {
-		data6 := make([]byte, len(m.CfList)*10)
-		var j5 int
-		for _, num := range m.CfList {
-			for num >= 1<<7 {
-				data6[j5] = uint8(uint64(num)&0x7f | 0x80)
-				num >>= 7
-				j5++
-			}
-			data6[j5] = uint8(num)
-			j5++
-		}
+	if m.CfList != nil {
 		data[i] = 0x72
 		i++
-		i = encodeVarintLorawan(data, i, uint64(j5))
-		i += copy(data[i:], data6[:j5])
+		i = encodeVarintLorawan(data, i, uint64(m.CfList.Size()))
+		n5, err := m.CfList.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n5
+	}
+	return i, nil
+}
+
+func (m *Message) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *Message) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	data[i] = 0xa
+	i++
+	i = encodeVarintLorawan(data, i, uint64(m.MHDR.Size()))
+	n6, err := m.MHDR.MarshalTo(data[i:])
+	if err != nil {
+		return 0, err
+	}
+	i += n6
+	if len(m.Mic) > 0 {
+		data[i] = 0x12
+		i++
+		i = encodeVarintLorawan(data, i, uint64(len(m.Mic)))
+		i += copy(data[i:], m.Mic)
+	}
+	if m.Payload != nil {
+		nn7, err := m.Payload.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += nn7
+	}
+	return i, nil
+}
+
+func (m *Message_MacPayload) MarshalTo(data []byte) (int, error) {
+	i := 0
+	if m.MacPayload != nil {
+		data[i] = 0x1a
+		i++
+		i = encodeVarintLorawan(data, i, uint64(m.MacPayload.Size()))
+		n8, err := m.MacPayload.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n8
+	}
+	return i, nil
+}
+func (m *Message_JoinRequestPayload) MarshalTo(data []byte) (int, error) {
+	i := 0
+	if m.JoinRequestPayload != nil {
+		data[i] = 0x22
+		i++
+		i = encodeVarintLorawan(data, i, uint64(m.JoinRequestPayload.Size()))
+		n9, err := m.JoinRequestPayload.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n9
+	}
+	return i, nil
+}
+func (m *Message_JoinAcceptPayload) MarshalTo(data []byte) (int, error) {
+	i := 0
+	if m.JoinAcceptPayload != nil {
+		data[i] = 0x2a
+		i++
+		i = encodeVarintLorawan(data, i, uint64(m.JoinAcceptPayload.Size()))
+		n10, err := m.JoinAcceptPayload.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n10
+	}
+	return i, nil
+}
+func (m *MHDR) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *MHDR) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if m.MType != 0 {
+		data[i] = 0x8
+		i++
+		i = encodeVarintLorawan(data, i, uint64(m.MType))
+	}
+	if m.Major != 0 {
+		data[i] = 0x10
+		i++
+		i = encodeVarintLorawan(data, i, uint64(m.Major))
+	}
+	return i, nil
+}
+
+func (m *MACPayload) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *MACPayload) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	data[i] = 0xa
+	i++
+	i = encodeVarintLorawan(data, i, uint64(m.FHDR.Size()))
+	n11, err := m.FHDR.MarshalTo(data[i:])
+	if err != nil {
+		return 0, err
+	}
+	i += n11
+	if m.FPort != 0 {
+		data[i] = 0x10
+		i++
+		i = encodeVarintLorawan(data, i, uint64(m.FPort))
+	}
+	if len(m.FrmPayload) > 0 {
+		data[i] = 0x1a
+		i++
+		i = encodeVarintLorawan(data, i, uint64(len(m.FrmPayload)))
+		i += copy(data[i:], m.FrmPayload)
+	}
+	return i, nil
+}
+
+func (m *FHDR) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *FHDR) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	data[i] = 0xa
+	i++
+	i = encodeVarintLorawan(data, i, uint64(m.DevAddr.Size()))
+	n12, err := m.DevAddr.MarshalTo(data[i:])
+	if err != nil {
+		return 0, err
+	}
+	i += n12
+	data[i] = 0x12
+	i++
+	i = encodeVarintLorawan(data, i, uint64(m.FCtrl.Size()))
+	n13, err := m.FCtrl.MarshalTo(data[i:])
+	if err != nil {
+		return 0, err
+	}
+	i += n13
+	if m.FCnt != 0 {
+		data[i] = 0x18
+		i++
+		i = encodeVarintLorawan(data, i, uint64(m.FCnt))
+	}
+	if len(m.FOpts) > 0 {
+		for _, msg := range m.FOpts {
+			data[i] = 0x22
+			i++
+			i = encodeVarintLorawan(data, i, uint64(msg.Size()))
+			n, err := msg.MarshalTo(data[i:])
+			if err != nil {
+				return 0, err
+			}
+			i += n
+		}
+	}
+	return i, nil
+}
+
+func (m *FCtrl) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *FCtrl) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if m.Adr {
+		data[i] = 0x8
+		i++
+		if m.Adr {
+			data[i] = 1
+		} else {
+			data[i] = 0
+		}
+		i++
+	}
+	if m.AdrAckReq {
+		data[i] = 0x10
+		i++
+		if m.AdrAckReq {
+			data[i] = 1
+		} else {
+			data[i] = 0
+		}
+		i++
+	}
+	if m.Ack {
+		data[i] = 0x18
+		i++
+		if m.Ack {
+			data[i] = 1
+		} else {
+			data[i] = 0
+		}
+		i++
+	}
+	if m.FPending {
+		data[i] = 0x20
+		i++
+		if m.FPending {
+			data[i] = 1
+		} else {
+			data[i] = 0
+		}
+		i++
+	}
+	return i, nil
+}
+
+func (m *MACCommand) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *MACCommand) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if m.Cid != 0 {
+		data[i] = 0x8
+		i++
+		i = encodeVarintLorawan(data, i, uint64(m.Cid))
+	}
+	if len(m.Payload) > 0 {
+		data[i] = 0x12
+		i++
+		i = encodeVarintLorawan(data, i, uint64(len(m.Payload)))
+		i += copy(data[i:], m.Payload)
+	}
+	return i, nil
+}
+
+func (m *JoinRequestPayload) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *JoinRequestPayload) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	data[i] = 0xa
+	i++
+	i = encodeVarintLorawan(data, i, uint64(m.AppEui.Size()))
+	n14, err := m.AppEui.MarshalTo(data[i:])
+	if err != nil {
+		return 0, err
+	}
+	i += n14
+	data[i] = 0x12
+	i++
+	i = encodeVarintLorawan(data, i, uint64(m.DevEui.Size()))
+	n15, err := m.DevEui.MarshalTo(data[i:])
+	if err != nil {
+		return 0, err
+	}
+	i += n15
+	data[i] = 0x1a
+	i++
+	i = encodeVarintLorawan(data, i, uint64(m.DevNonce.Size()))
+	n16, err := m.DevNonce.MarshalTo(data[i:])
+	if err != nil {
+		return 0, err
+	}
+	i += n16
+	return i, nil
+}
+
+func (m *JoinAcceptPayload) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *JoinAcceptPayload) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if len(m.Encrypted) > 0 {
+		data[i] = 0xa
+		i++
+		i = encodeVarintLorawan(data, i, uint64(len(m.Encrypted)))
+		i += copy(data[i:], m.Encrypted)
+	}
+	data[i] = 0x12
+	i++
+	i = encodeVarintLorawan(data, i, uint64(m.AppNonce.Size()))
+	n17, err := m.AppNonce.MarshalTo(data[i:])
+	if err != nil {
+		return 0, err
+	}
+	i += n17
+	data[i] = 0x1a
+	i++
+	i = encodeVarintLorawan(data, i, uint64(m.NetId.Size()))
+	n18, err := m.NetId.MarshalTo(data[i:])
+	if err != nil {
+		return 0, err
+	}
+	i += n18
+	data[i] = 0x22
+	i++
+	i = encodeVarintLorawan(data, i, uint64(m.DevAddr.Size()))
+	n19, err := m.DevAddr.MarshalTo(data[i:])
+	if err != nil {
+		return 0, err
+	}
+	i += n19
+	data[i] = 0x2a
+	i++
+	i = encodeVarintLorawan(data, i, uint64(m.DLSettings.Size()))
+	n20, err := m.DLSettings.MarshalTo(data[i:])
+	if err != nil {
+		return 0, err
+	}
+	i += n20
+	if m.RxDelay != 0 {
+		data[i] = 0x30
+		i++
+		i = encodeVarintLorawan(data, i, uint64(m.RxDelay))
+	}
+	if m.CfList != nil {
+		data[i] = 0x3a
+		i++
+		i = encodeVarintLorawan(data, i, uint64(m.CfList.Size()))
+		n21, err := m.CfList.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n21
+	}
+	return i, nil
+}
+
+func (m *DLSettings) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *DLSettings) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if m.Rx1DrOffset != 0 {
+		data[i] = 0x8
+		i++
+		i = encodeVarintLorawan(data, i, uint64(m.Rx1DrOffset))
+	}
+	if m.Rx2Dr != 0 {
+		data[i] = 0x10
+		i++
+		i = encodeVarintLorawan(data, i, uint64(m.Rx2Dr))
+	}
+	return i, nil
+}
+
+func (m *CFList) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *CFList) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if len(m.Freq) > 0 {
+		data23 := make([]byte, len(m.Freq)*10)
+		var j22 int
+		for _, num := range m.Freq {
+			for num >= 1<<7 {
+				data23[j22] = uint8(uint64(num)&0x7f | 0x80)
+				num >>= 7
+				j22++
+			}
+			data23[j22] = uint8(num)
+			j22++
+		}
+		data[i] = 0xa
+		i++
+		i = encodeVarintLorawan(data, i, uint64(j22))
+		i += copy(data[i:], data23[:j22])
 	}
 	return i, nil
 }
@@ -425,9 +1228,187 @@ func (m *ActivationMetadata) Size() (n int) {
 	if m.RxDelay != 0 {
 		n += 1 + sovLorawan(uint64(m.RxDelay))
 	}
-	if len(m.CfList) > 0 {
+	if m.CfList != nil {
+		l = m.CfList.Size()
+		n += 1 + l + sovLorawan(uint64(l))
+	}
+	return n
+}
+
+func (m *Message) Size() (n int) {
+	var l int
+	_ = l
+	l = m.MHDR.Size()
+	n += 1 + l + sovLorawan(uint64(l))
+	l = len(m.Mic)
+	if l > 0 {
+		n += 1 + l + sovLorawan(uint64(l))
+	}
+	if m.Payload != nil {
+		n += m.Payload.Size()
+	}
+	return n
+}
+
+func (m *Message_MacPayload) Size() (n int) {
+	var l int
+	_ = l
+	if m.MacPayload != nil {
+		l = m.MacPayload.Size()
+		n += 1 + l + sovLorawan(uint64(l))
+	}
+	return n
+}
+func (m *Message_JoinRequestPayload) Size() (n int) {
+	var l int
+	_ = l
+	if m.JoinRequestPayload != nil {
+		l = m.JoinRequestPayload.Size()
+		n += 1 + l + sovLorawan(uint64(l))
+	}
+	return n
+}
+func (m *Message_JoinAcceptPayload) Size() (n int) {
+	var l int
+	_ = l
+	if m.JoinAcceptPayload != nil {
+		l = m.JoinAcceptPayload.Size()
+		n += 1 + l + sovLorawan(uint64(l))
+	}
+	return n
+}
+func (m *MHDR) Size() (n int) {
+	var l int
+	_ = l
+	if m.MType != 0 {
+		n += 1 + sovLorawan(uint64(m.MType))
+	}
+	if m.Major != 0 {
+		n += 1 + sovLorawan(uint64(m.Major))
+	}
+	return n
+}
+
+func (m *MACPayload) Size() (n int) {
+	var l int
+	_ = l
+	l = m.FHDR.Size()
+	n += 1 + l + sovLorawan(uint64(l))
+	if m.FPort != 0 {
+		n += 1 + sovLorawan(uint64(m.FPort))
+	}
+	l = len(m.FrmPayload)
+	if l > 0 {
+		n += 1 + l + sovLorawan(uint64(l))
+	}
+	return n
+}
+
+func (m *FHDR) Size() (n int) {
+	var l int
+	_ = l
+	l = m.DevAddr.Size()
+	n += 1 + l + sovLorawan(uint64(l))
+	l = m.FCtrl.Size()
+	n += 1 + l + sovLorawan(uint64(l))
+	if m.FCnt != 0 {
+		n += 1 + sovLorawan(uint64(m.FCnt))
+	}
+	if len(m.FOpts) > 0 {
+		for _, e := range m.FOpts {
+			l = e.Size()
+			n += 1 + l + sovLorawan(uint64(l))
+		}
+	}
+	return n
+}
+
+func (m *FCtrl) Size() (n int) {
+	var l int
+	_ = l
+	if m.Adr {
+		n += 2
+	}
+	if m.AdrAckReq {
+		n += 2
+	}
+	if m.Ack {
+		n += 2
+	}
+	if m.FPending {
+		n += 2
+	}
+	return n
+}
+
+func (m *MACCommand) Size() (n int) {
+	var l int
+	_ = l
+	if m.Cid != 0 {
+		n += 1 + sovLorawan(uint64(m.Cid))
+	}
+	l = len(m.Payload)
+	if l > 0 {
+		n += 1 + l + sovLorawan(uint64(l))
+	}
+	return n
+}
+
+func (m *JoinRequestPayload) Size() (n int) {
+	var l int
+	_ = l
+	l = m.AppEui.Size()
+	n += 1 + l + sovLorawan(uint64(l))
+	l = m.DevEui.Size()
+	n += 1 + l + sovLorawan(uint64(l))
+	l = m.DevNonce.Size()
+	n += 1 + l + sovLorawan(uint64(l))
+	return n
+}
+
+func (m *JoinAcceptPayload) Size() (n int) {
+	var l int
+	_ = l
+	l = len(m.Encrypted)
+	if l > 0 {
+		n += 1 + l + sovLorawan(uint64(l))
+	}
+	l = m.AppNonce.Size()
+	n += 1 + l + sovLorawan(uint64(l))
+	l = m.NetId.Size()
+	n += 1 + l + sovLorawan(uint64(l))
+	l = m.DevAddr.Size()
+	n += 1 + l + sovLorawan(uint64(l))
+	l = m.DLSettings.Size()
+	n += 1 + l + sovLorawan(uint64(l))
+	if m.RxDelay != 0 {
+		n += 1 + sovLorawan(uint64(m.RxDelay))
+	}
+	if m.CfList != nil {
+		l = m.CfList.Size()
+		n += 1 + l + sovLorawan(uint64(l))
+	}
+	return n
+}
+
+func (m *DLSettings) Size() (n int) {
+	var l int
+	_ = l
+	if m.Rx1DrOffset != 0 {
+		n += 1 + sovLorawan(uint64(m.Rx1DrOffset))
+	}
+	if m.Rx2Dr != 0 {
+		n += 1 + sovLorawan(uint64(m.Rx2Dr))
+	}
+	return n
+}
+
+func (m *CFList) Size() (n int) {
+	var l int
+	_ = l
+	if len(m.Freq) > 0 {
 		l = 0
-		for _, e := range m.CfList {
+		for _, e := range m.Freq {
 			l += sovLorawan(uint64(e))
 		}
 		n += 1 + sovLorawan(uint64(l)) + l
@@ -993,6 +1974,1385 @@ func (m *ActivationMetadata) Unmarshal(data []byte) error {
 				}
 			}
 		case 14:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CfList", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowLorawan
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthLorawan
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.CfList == nil {
+				m.CfList = &CFList{}
+			}
+			if err := m.CfList.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipLorawan(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthLorawan
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *Message) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowLorawan
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: Message: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: Message: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MHDR", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowLorawan
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthLorawan
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.MHDR.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Mic", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowLorawan
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthLorawan
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Mic = append(m.Mic[:0], data[iNdEx:postIndex]...)
+			if m.Mic == nil {
+				m.Mic = []byte{}
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MacPayload", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowLorawan
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthLorawan
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &MACPayload{}
+			if err := v.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.Payload = &Message_MacPayload{v}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field JoinRequestPayload", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowLorawan
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthLorawan
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &JoinRequestPayload{}
+			if err := v.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.Payload = &Message_JoinRequestPayload{v}
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field JoinAcceptPayload", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowLorawan
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthLorawan
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &JoinAcceptPayload{}
+			if err := v.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.Payload = &Message_JoinAcceptPayload{v}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipLorawan(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthLorawan
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MHDR) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowLorawan
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MHDR: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MHDR: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MType", wireType)
+			}
+			m.MType = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowLorawan
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				m.MType |= (MType(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Major", wireType)
+			}
+			m.Major = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowLorawan
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				m.Major |= (Major(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipLorawan(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthLorawan
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MACPayload) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowLorawan
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MACPayload: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MACPayload: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FHDR", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowLorawan
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthLorawan
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.FHDR.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FPort", wireType)
+			}
+			m.FPort = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowLorawan
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				m.FPort |= (int32(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FrmPayload", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowLorawan
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthLorawan
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.FrmPayload = append(m.FrmPayload[:0], data[iNdEx:postIndex]...)
+			if m.FrmPayload == nil {
+				m.FrmPayload = []byte{}
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipLorawan(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthLorawan
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *FHDR) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowLorawan
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: FHDR: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: FHDR: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DevAddr", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowLorawan
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthLorawan
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.DevAddr.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FCtrl", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowLorawan
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthLorawan
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.FCtrl.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FCnt", wireType)
+			}
+			m.FCnt = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowLorawan
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				m.FCnt |= (uint32(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FOpts", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowLorawan
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthLorawan
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.FOpts = append(m.FOpts, MACCommand{})
+			if err := m.FOpts[len(m.FOpts)-1].Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipLorawan(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthLorawan
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *FCtrl) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowLorawan
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: FCtrl: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: FCtrl: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Adr", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowLorawan
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				v |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Adr = bool(v != 0)
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AdrAckReq", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowLorawan
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				v |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.AdrAckReq = bool(v != 0)
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Ack", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowLorawan
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				v |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Ack = bool(v != 0)
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FPending", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowLorawan
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				v |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.FPending = bool(v != 0)
+		default:
+			iNdEx = preIndex
+			skippy, err := skipLorawan(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthLorawan
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MACCommand) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowLorawan
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MACCommand: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MACCommand: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Cid", wireType)
+			}
+			m.Cid = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowLorawan
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				m.Cid |= (uint32(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Payload", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowLorawan
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthLorawan
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Payload = append(m.Payload[:0], data[iNdEx:postIndex]...)
+			if m.Payload == nil {
+				m.Payload = []byte{}
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipLorawan(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthLorawan
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *JoinRequestPayload) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowLorawan
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: JoinRequestPayload: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: JoinRequestPayload: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AppEui", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowLorawan
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthLorawan
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.AppEui.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DevEui", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowLorawan
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthLorawan
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.DevEui.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DevNonce", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowLorawan
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthLorawan
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.DevNonce.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipLorawan(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthLorawan
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *JoinAcceptPayload) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowLorawan
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: JoinAcceptPayload: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: JoinAcceptPayload: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Encrypted", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowLorawan
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthLorawan
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Encrypted = append(m.Encrypted[:0], data[iNdEx:postIndex]...)
+			if m.Encrypted == nil {
+				m.Encrypted = []byte{}
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AppNonce", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowLorawan
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthLorawan
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.AppNonce.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NetId", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowLorawan
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthLorawan
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.NetId.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DevAddr", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowLorawan
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthLorawan
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.DevAddr.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DLSettings", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowLorawan
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthLorawan
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.DLSettings.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RxDelay", wireType)
+			}
+			m.RxDelay = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowLorawan
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				m.RxDelay |= (uint32(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CfList", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowLorawan
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthLorawan
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.CfList == nil {
+				m.CfList = &CFList{}
+			}
+			if err := m.CfList.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipLorawan(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthLorawan
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *DLSettings) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowLorawan
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DLSettings: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DLSettings: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Rx1DrOffset", wireType)
+			}
+			m.Rx1DrOffset = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowLorawan
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				m.Rx1DrOffset |= (uint32(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Rx2Dr", wireType)
+			}
+			m.Rx2Dr = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowLorawan
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				m.Rx2Dr |= (uint32(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipLorawan(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthLorawan
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *CFList) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowLorawan
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: CFList: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: CFList: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
 			if wireType == 2 {
 				var packedLen int
 				for shift := uint(0); ; shift += 7 {
@@ -1017,7 +3377,7 @@ func (m *ActivationMetadata) Unmarshal(data []byte) error {
 					return io.ErrUnexpectedEOF
 				}
 				for iNdEx < postIndex {
-					var v uint64
+					var v uint32
 					for shift := uint(0); ; shift += 7 {
 						if shift >= 64 {
 							return ErrIntOverflowLorawan
@@ -1027,15 +3387,15 @@ func (m *ActivationMetadata) Unmarshal(data []byte) error {
 						}
 						b := data[iNdEx]
 						iNdEx++
-						v |= (uint64(b) & 0x7F) << shift
+						v |= (uint32(b) & 0x7F) << shift
 						if b < 0x80 {
 							break
 						}
 					}
-					m.CfList = append(m.CfList, v)
+					m.Freq = append(m.Freq, v)
 				}
 			} else if wireType == 0 {
-				var v uint64
+				var v uint32
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return ErrIntOverflowLorawan
@@ -1045,14 +3405,14 @@ func (m *ActivationMetadata) Unmarshal(data []byte) error {
 					}
 					b := data[iNdEx]
 					iNdEx++
-					v |= (uint64(b) & 0x7F) << shift
+					v |= (uint32(b) & 0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
-				m.CfList = append(m.CfList, v)
+				m.Freq = append(m.Freq, v)
 			} else {
-				return fmt.Errorf("proto: wrong wireType = %d for field CfList", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Freq", wireType)
 			}
 		default:
 			iNdEx = preIndex
@@ -1185,43 +3545,86 @@ func init() {
 }
 
 var fileDescriptorLorawan = []byte{
-	// 607 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xd4, 0x94, 0xcf, 0x4e, 0xdb, 0x4e,
-	0x10, 0xc7, 0x31, 0x09, 0x76, 0x18, 0x48, 0xb0, 0x8c, 0x7e, 0xfa, 0xb9, 0xad, 0x94, 0x44, 0x9c,
-	0x22, 0xa4, 0xe6, 0x8f, 0x03, 0x24, 0x39, 0x06, 0x12, 0xa4, 0x0a, 0x08, 0xaa, 0x43, 0x2e, 0xbd,
-	0xac, 0x36, 0xf6, 0xda, 0xac, 0x12, 0xbc, 0xd6, 0x66, 0x93, 0x38, 0xb7, 0x3e, 0x46, 0x5f, 0xa2,
-	0xb7, 0x3e, 0x44, 0xd5, 0x53, 0xcf, 0x1c, 0x50, 0x45, 0x5f, 0xa4, 0xda, 0x35, 0x50, 0x6e, 0x55,
-	0xb9, 0xf5, 0x94, 0xf9, 0xce, 0x77, 0xe6, 0xb3, 0xa3, 0xcc, 0xc8, 0x70, 0x1c, 0x52, 0x71, 0x3d,
-	0x1f, 0x57, 0x3d, 0x76, 0x53, 0xbb, 0xba, 0x26, 0x57, 0xd7, 0x34, 0x0a, 0x67, 0x03, 0x22, 0x96,
-	0x8c, 0x4f, 0x6a, 0x42, 0x44, 0x35, 0x1c, 0xd3, 0x5a, 0xcc, 0x99, 0x60, 0x1e, 0x9b, 0xd6, 0xa6,
-	0x8c, 0xe3, 0x25, 0x8e, 0x1e, 0x7f, 0xab, 0xca, 0xb0, 0x8c, 0x07, 0xf9, 0xfa, 0xed, 0x33, 0x58,
-	0xc8, 0x42, 0x96, 0x36, 0x8e, 0xe7, 0x81, 0x52, 0x4a, 0xa8, 0x28, 0xed, 0xdb, 0xfb, 0xac, 0x41,
-	0xee, 0x82, 0x08, 0xec, 0x63, 0x81, 0xad, 0x26, 0xc0, 0x0d, 0xf3, 0xe7, 0x53, 0x2c, 0x28, 0x8b,
-	0xec, 0xad, 0xb2, 0x56, 0x29, 0x38, 0xbb, 0xd5, 0xc7, 0x87, 0x2e, 0x9e, 0x2c, 0xf7, 0x59, 0x99,
-	0xf5, 0x06, 0x36, 0x65, 0x33, 0xe2, 0x58, 0x10, 0x7b, 0xbb, 0xac, 0x55, 0x36, 0xdd, 0x9c, 0x4c,
-	0xb8, 0x58, 0x10, 0xeb, 0x15, 0xe4, 0xc6, 0x54, 0xa4, 0x5e, 0xbe, 0xac, 0x55, 0xf2, 0xae, 0x31,
-	0xa6, 0x42, 0x59, 0x25, 0xd8, 0xf2, 0x98, 0x4f, 0xa3, 0x30, 0x75, 0x0b, 0xaa, 0x13, 0xd2, 0x94,
-	0x2a, 0xd8, 0x85, 0x8d, 0x00, 0x79, 0x91, 0xb0, 0x77, 0x54, 0x63, 0x36, 0x38, 0x89, 0xc4, 0xde,
-	0x17, 0x0d, 0x76, 0xae, 0x92, 0x13, 0x16, 0x05, 0x34, 0x9c, 0xf3, 0x74, 0x82, 0x7f, 0x60, 0xec,
-	0x6f, 0x19, 0xb0, 0xba, 0x9e, 0xa0, 0x0b, 0xf5, 0xf8, 0xd3, 0x1f, 0x3e, 0x00, 0x03, 0xc7, 0x31,
-	0x22, 0x73, 0x6a, 0x6b, 0x65, 0xad, 0xb2, 0x7d, 0x7c, 0x78, 0x7b, 0x57, 0x6a, 0xfc, 0xe9, 0x1c,
-	0x3c, 0xc6, 0x49, 0x4d, 0xac, 0x62, 0x32, 0xab, 0x76, 0xe3, 0xb8, 0x3f, 0x7a, 0xe7, 0xea, 0x38,
-	0x8e, 0xfb, 0x73, 0x2a, 0x79, 0x3e, 0x59, 0x28, 0xde, 0xfa, 0x8b, 0x78, 0x3d, 0xb2, 0x50, 0x3c,
-	0x9f, 0x2c, 0x24, 0xef, 0x3d, 0xe4, 0x24, 0x0f, 0xfb, 0x3e, 0xb7, 0x33, 0x0a, 0x78, 0x74, 0x7b,
-	0x57, 0x72, 0xfe, 0x0e, 0xd8, 0xf5, 0x7d, 0xee, 0xca, 0xb9, 0x64, 0x60, 0xb9, 0xb0, 0x19, 0x2d,
-	0x27, 0x68, 0x86, 0x26, 0x64, 0x65, 0x67, 0x5f, 0xc4, 0x1c, 0x2c, 0x27, 0xc3, 0x33, 0xb2, 0x72,
-	0x8d, 0x28, 0x0d, 0xac, 0x3d, 0xc8, 0xf3, 0xa4, 0x81, 0x7c, 0x8e, 0x58, 0x10, 0xcc, 0x88, 0x50,
-	0x37, 0x90, 0x77, 0xb7, 0x78, 0xd2, 0xe8, 0xf1, 0x4b, 0x95, 0xb2, 0xfe, 0x03, 0x9d, 0x27, 0x0e,
-	0xf2, 0xb9, 0x5a, 0x76, 0xde, 0xdd, 0xe0, 0x89, 0xd3, 0xe3, 0x72, 0xd3, 0x3c, 0x41, 0x3e, 0x99,
-	0xe2, 0xd5, 0xe3, 0xa6, 0x79, 0xd2, 0x93, 0xd2, 0xfa, 0x1f, 0x0c, 0x2f, 0x40, 0x53, 0x3a, 0x13,
-	0x76, 0xa1, 0x9c, 0xa9, 0x64, 0x5d, 0xdd, 0x0b, 0xce, 0xe9, 0x4c, 0xec, 0x97, 0x00, 0x7e, 0x1f,
-	0x95, 0x95, 0x83, 0xec, 0xf9, 0xa5, 0xdb, 0x35, 0xd7, 0x2c, 0x03, 0x32, 0xa7, 0xc3, 0x33, 0x53,
-	0xdb, 0xff, 0xa8, 0x81, 0xee, 0x92, 0x50, 0xba, 0x05, 0x80, 0xfe, 0x08, 0xb5, 0x8f, 0x9a, 0xa8,
-	0xdd, 0xaa, 0x9b, 0x6b, 0x52, 0x8f, 0x86, 0xa8, 0x53, 0x77, 0x50, 0xc7, 0x69, 0x9b, 0x9a, 0xd4,
-	0x27, 0x03, 0xd4, 0x6a, 0x75, 0x50, 0xab, 0xdd, 0x32, 0xd7, 0x2d, 0x00, 0xbd, 0x3f, 0x42, 0x07,
-	0xcd, 0xa6, 0x99, 0x91, 0x5e, 0x77, 0x84, 0x3a, 0x8d, 0x43, 0x55, 0x9b, 0x7d, 0xa8, 0x3d, 0x68,
-	0xd5, 0xd1, 0x61, 0xa3, 0x6e, 0x6e, 0xc8, 0xda, 0xee, 0x10, 0x75, 0x9c, 0xa6, 0xa9, 0x4b, 0x6f,
-	0x78, 0x86, 0x3a, 0x4e, 0x5d, 0x69, 0xe3, 0xf8, 0xf4, 0xeb, 0x7d, 0x51, 0xfb, 0x7e, 0x5f, 0xd4,
-	0x7e, 0xdc, 0x17, 0xb5, 0x4f, 0x3f, 0x8b, 0x6b, 0x1f, 0x0e, 0x5e, 0xf2, 0x95, 0x19, 0xeb, 0x2a,
-	0xd3, 0xfc, 0x15, 0x00, 0x00, 0xff, 0xff, 0x84, 0xe2, 0x37, 0xdc, 0xa4, 0x04, 0x00, 0x00,
+	// 1281 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xd4, 0x56, 0x4b, 0x6f, 0x1b, 0x45,
+	0x1c, 0xcf, 0xda, 0x5e, 0x3f, 0xfe, 0x8e, 0x93, 0xed, 0xb4, 0x15, 0xa6, 0xad, 0x92, 0xc8, 0x02,
+	0x29, 0x8a, 0x20, 0x76, 0xec, 0xb6, 0x89, 0x41, 0x42, 0xf2, 0x2b, 0x34, 0x6d, 0x62, 0xa7, 0xe3,
+	0x58, 0x45, 0x5c, 0x46, 0x9b, 0xdd, 0x59, 0x67, 0x63, 0xef, 0xa3, 0xe3, 0x71, 0x62, 0x73, 0xe2,
+	0x53, 0x20, 0xbe, 0x03, 0xe2, 0xc6, 0x81, 0x8f, 0xd0, 0x63, 0x2f, 0x5c, 0x8a, 0x14, 0xa1, 0xf2,
+	0x45, 0xd0, 0xcc, 0xae, 0x63, 0xc7, 0x81, 0xa2, 0xa6, 0x5c, 0x38, 0xed, 0xff, 0xf9, 0x9b, 0xff,
+	0xfc, 0x5f, 0xb3, 0x50, 0xed, 0xda, 0xfc, 0x64, 0x78, 0xbc, 0x69, 0x78, 0x4e, 0xfe, 0xe8, 0x84,
+	0x1e, 0x9d, 0xd8, 0x6e, 0x77, 0xd0, 0xa4, 0xfc, 0xdc, 0x63, 0xbd, 0x3c, 0xe7, 0x6e, 0x5e, 0xf7,
+	0xed, 0xbc, 0xcf, 0x3c, 0xee, 0x19, 0x5e, 0x3f, 0xdf, 0xf7, 0x98, 0x7e, 0xae, 0xbb, 0x93, 0xef,
+	0xa6, 0x54, 0xa0, 0x44, 0xc8, 0xde, 0xfb, 0x7c, 0x06, 0xac, 0xeb, 0x75, 0xbd, 0xc0, 0xf1, 0x78,
+	0x68, 0x49, 0x4e, 0x32, 0x92, 0x0a, 0xfc, 0x72, 0x3f, 0x2b, 0x90, 0x3c, 0xa0, 0x5c, 0x37, 0x75,
+	0xae, 0xa3, 0x12, 0x80, 0xe3, 0x99, 0xc3, 0xbe, 0xce, 0x6d, 0xcf, 0xcd, 0xa6, 0xd7, 0x94, 0xf5,
+	0xa5, 0xe2, 0xed, 0xcd, 0xc9, 0x41, 0x07, 0x97, 0x2a, 0x3c, 0x63, 0x86, 0xee, 0x43, 0x4a, 0x38,
+	0x13, 0xa6, 0x73, 0x9a, 0x5d, 0x5c, 0x53, 0xd6, 0x53, 0x38, 0x29, 0x04, 0x58, 0xe7, 0x14, 0x7d,
+	0x0c, 0xc9, 0x63, 0x9b, 0x07, 0xba, 0xcc, 0x9a, 0xb2, 0x9e, 0xc1, 0x89, 0x63, 0x9b, 0x4b, 0xd5,
+	0x2a, 0xa4, 0x0d, 0xcf, 0xb4, 0xdd, 0x6e, 0xa0, 0x5d, 0x92, 0x9e, 0x10, 0x88, 0xa4, 0xc1, 0x6d,
+	0x50, 0x2d, 0x62, 0xb8, 0x3c, 0xbb, 0x2c, 0x1d, 0x63, 0x56, 0xcd, 0xe5, 0xb9, 0x5f, 0x14, 0x58,
+	0x3e, 0x1a, 0xd5, 0x3c, 0xd7, 0xb2, 0xbb, 0x43, 0x16, 0x44, 0xf0, 0x3f, 0x08, 0xfb, 0xf7, 0x28,
+	0xa0, 0x8a, 0xc1, 0xed, 0x33, 0x79, 0xf8, 0x65, 0xc2, 0x9b, 0x90, 0xd0, 0x7d, 0x9f, 0xd0, 0xa1,
+	0x9d, 0x55, 0xd6, 0x94, 0xf5, 0xc5, 0xea, 0xa3, 0x37, 0x17, 0xab, 0x5b, 0xff, 0xd6, 0x0e, 0x86,
+	0xc7, 0x68, 0x9e, 0x8f, 0x7d, 0x3a, 0xd8, 0xac, 0xf8, 0x7e, 0xa3, 0xb3, 0x87, 0xe3, 0xba, 0xef,
+	0x37, 0x86, 0xb6, 0xc0, 0x33, 0xe9, 0x99, 0xc4, 0x8b, 0xdc, 0x08, 0xaf, 0x4e, 0xcf, 0x24, 0x9e,
+	0x49, 0xcf, 0x04, 0xde, 0x73, 0x48, 0x0a, 0x3c, 0xdd, 0x34, 0x59, 0x36, 0x2a, 0x01, 0x1f, 0xbf,
+	0xb9, 0x58, 0x2d, 0xbe, 0x1f, 0x60, 0xc5, 0x34, 0x19, 0x16, 0x71, 0x09, 0x02, 0x61, 0x48, 0xb9,
+	0xe7, 0x3d, 0x32, 0x20, 0x3d, 0x3a, 0xce, 0xc6, 0x6e, 0x84, 0xd9, 0x3c, 0xef, 0xb5, 0x9f, 0xd1,
+	0x31, 0x4e, 0xb8, 0x01, 0x81, 0x72, 0x90, 0x61, 0xa3, 0x2d, 0x62, 0x32, 0xe2, 0x59, 0xd6, 0x80,
+	0x72, 0xd9, 0x03, 0x19, 0x9c, 0x66, 0xa3, 0xad, 0x3a, 0x6b, 0x49, 0x11, 0xba, 0x0b, 0x71, 0x36,
+	0x2a, 0x12, 0x93, 0xc9, 0x62, 0x67, 0xb0, 0xca, 0x46, 0xc5, 0x3a, 0x13, 0x95, 0x66, 0x23, 0x62,
+	0xd2, 0xbe, 0x3e, 0x9e, 0x54, 0x9a, 0x8d, 0xea, 0x82, 0x45, 0xeb, 0x90, 0x30, 0x2c, 0xd2, 0xb7,
+	0x07, 0x5c, 0x56, 0x39, 0x5d, 0x5c, 0xbe, 0xec, 0xa9, 0xda, 0xee, 0xbe, 0x3d, 0xe0, 0x38, 0x6e,
+	0x58, 0xe2, 0x9b, 0xfb, 0x29, 0x02, 0x89, 0x03, 0x3a, 0x18, 0xe8, 0x5d, 0x8a, 0x3e, 0x03, 0xd5,
+	0x21, 0x27, 0x26, 0x93, 0x05, 0x4d, 0x17, 0x33, 0xd3, 0x3e, 0x7c, 0x52, 0xc7, 0xd5, 0xe4, 0xab,
+	0x8b, 0xd5, 0x85, 0xd7, 0x17, 0xab, 0x0a, 0x8e, 0x39, 0x4f, 0x4c, 0x86, 0x34, 0x88, 0x3a, 0xb6,
+	0x11, 0x14, 0x0b, 0x0b, 0x12, 0x3d, 0x86, 0xb4, 0xa3, 0x1b, 0xc4, 0xd7, 0xc7, 0x7d, 0x4f, 0x37,
+	0x65, 0xd6, 0xd3, 0xb3, 0xdd, 0x5c, 0xa9, 0x1d, 0x06, 0xaa, 0x27, 0x0b, 0x18, 0x1c, 0xdd, 0x08,
+	0x39, 0xd4, 0x82, 0x3b, 0xa7, 0x9e, 0xed, 0x12, 0x46, 0x5f, 0x0e, 0xe9, 0x80, 0x5f, 0x02, 0xc4,
+	0x24, 0xc0, 0xfd, 0x4b, 0x80, 0xa7, 0x9e, 0xed, 0xe2, 0xc0, 0x66, 0x0a, 0x84, 0x4e, 0xaf, 0x49,
+	0xd1, 0x3e, 0xdc, 0x96, 0x80, 0xba, 0x61, 0x50, 0x7f, 0x8a, 0xa7, 0x4a, 0xbc, 0x7b, 0x57, 0xf0,
+	0x2a, 0xd2, 0x64, 0x0a, 0x77, 0xeb, 0x74, 0x5e, 0x58, 0x4d, 0x41, 0x22, 0x24, 0x73, 0x6d, 0x88,
+	0x89, 0x5c, 0xa0, 0x4f, 0x21, 0xee, 0x10, 0x51, 0x51, 0x99, 0xaa, 0xa5, 0xe2, 0xd2, 0xf4, 0x92,
+	0x47, 0x63, 0x9f, 0x62, 0xd5, 0x11, 0x1f, 0xf4, 0x09, 0xa8, 0x8e, 0x7e, 0xea, 0x31, 0x99, 0xa4,
+	0x2b, 0x56, 0x42, 0x8a, 0x03, 0x65, 0x8e, 0x01, 0x4c, 0x53, 0x23, 0x8a, 0x60, 0xfd, 0x6d, 0x11,
+	0x76, 0xe7, 0x8a, 0x60, 0x89, 0x22, 0xdc, 0x85, 0xb8, 0x45, 0x7c, 0x8f, 0x71, 0x79, 0x84, 0x8a,
+	0x55, 0xeb, 0xd0, 0x63, 0x5c, 0x4c, 0xba, 0xc5, 0x9c, 0x2b, 0x95, 0x58, 0xc4, 0x60, 0x31, 0x67,
+	0x72, 0x91, 0xdf, 0x14, 0x88, 0x09, 0x40, 0xd4, 0x99, 0x19, 0x93, 0x60, 0x8e, 0xbf, 0x10, 0x47,
+	0x7c, 0xe8, 0xa8, 0xe4, 0x45, 0x5c, 0x06, 0x67, 0x7d, 0x19, 0x57, 0x7a, 0xe6, 0xea, 0xbb, 0x35,
+	0xce, 0xfa, 0x33, 0xf7, 0x50, 0x2d, 0x21, 0x98, 0xae, 0x9e, 0xe8, 0x74, 0xf5, 0xa0, 0x82, 0x40,
+	0xf1, 0x7c, 0x3e, 0xc8, 0xc6, 0xd6, 0xa2, 0xf3, 0xbd, 0x54, 0xf3, 0x1c, 0x47, 0x77, 0xcd, 0x6a,
+	0x4c, 0x40, 0x61, 0xd5, 0x6a, 0xf9, 0x7c, 0x90, 0x3b, 0x01, 0x55, 0x1e, 0x20, 0xba, 0x53, 0x0f,
+	0xaf, 0x94, 0xc4, 0x82, 0x44, 0x2b, 0x90, 0xd6, 0x4d, 0x46, 0x74, 0xa3, 0x27, 0x1a, 0x4d, 0xc6,
+	0x95, 0xc4, 0x29, 0xdd, 0x64, 0x15, 0xa3, 0x87, 0xe9, 0x4b, 0xe9, 0x61, 0xf4, 0xe4, 0xf9, 0xc2,
+	0xc3, 0xe8, 0x89, 0x3d, 0x6b, 0x11, 0x9f, 0xba, 0x62, 0x3f, 0xca, 0x66, 0x4c, 0xe2, 0xa4, 0x75,
+	0x18, 0xf0, 0xb9, 0x1d, 0x59, 0xb5, 0x30, 0x08, 0xe1, 0x6c, 0xd8, 0xa6, 0x3c, 0x2e, 0x83, 0x05,
+	0x89, 0xb2, 0x90, 0x98, 0xa4, 0x3f, 0x18, 0x91, 0x09, 0x9b, 0xfb, 0x21, 0x02, 0xe8, 0x7a, 0x2b,
+	0x23, 0x3c, 0xbf, 0x50, 0xcb, 0x61, 0x21, 0x3e, 0x60, 0xa9, 0xe2, 0xf9, 0xa5, 0x7a, 0x13, 0xcc,
+	0xb9, 0xc5, 0xfa, 0x0d, 0xa4, 0x04, 0xa6, 0xeb, 0xb9, 0x06, 0x0d, 0x37, 0xeb, 0x97, 0x21, 0x6a,
+	0xe9, 0xfd, 0x50, 0x9b, 0x02, 0x02, 0x8b, 0xfe, 0x93, 0x54, 0xee, 0xd7, 0x28, 0xdc, 0xba, 0x36,
+	0x93, 0xe8, 0x01, 0xa4, 0xa8, 0x6b, 0xb0, 0xb1, 0xcf, 0x69, 0x90, 0xe0, 0x45, 0x3c, 0x15, 0x88,
+	0x68, 0x44, 0xd6, 0x82, 0x68, 0x22, 0x37, 0x8e, 0xa6, 0xe2, 0xfb, 0x61, 0x34, 0x7a, 0x48, 0xa1,
+	0x16, 0xc4, 0x5d, 0xca, 0x89, 0x1d, 0x8e, 0x4f, 0x75, 0x27, 0x84, 0x2d, 0xbc, 0xcf, 0xba, 0xa7,
+	0x7c, 0xaf, 0x8e, 0x55, 0x97, 0xf2, 0x3d, 0xf3, 0xca, 0xa8, 0xc5, 0xfe, 0xbb, 0x51, 0xfb, 0x0a,
+	0xd2, 0x66, 0x9f, 0x0c, 0x28, 0xe7, 0xc2, 0x2b, 0x5c, 0x72, 0xd3, 0x49, 0xa9, 0xef, 0xb7, 0x43,
+	0xd5, 0xcc, 0xd0, 0x81, 0xd9, 0x9f, 0x48, 0xaf, 0x3c, 0x23, 0xf1, 0x7f, 0x7c, 0x46, 0x12, 0xef,
+	0x7e, 0x46, 0xbe, 0x06, 0x98, 0x1e, 0x74, 0xfd, 0x51, 0x53, 0xde, 0xf5, 0xa8, 0x45, 0x66, 0x1e,
+	0xb5, 0xdc, 0x03, 0x88, 0x07, 0xd0, 0x08, 0x41, 0xcc, 0x12, 0x83, 0xaa, 0xac, 0x45, 0xe5, 0x42,
+	0x60, 0xf4, 0xe5, 0xc6, 0x2a, 0xc0, 0xf4, 0x9f, 0x08, 0x25, 0x21, 0xb6, 0xdf, 0xc2, 0x15, 0x6d,
+	0x01, 0x25, 0x20, 0xba, 0xdb, 0x7e, 0xa6, 0x29, 0x1b, 0xdf, 0x2b, 0x10, 0xc7, 0xb4, 0x2b, 0xb4,
+	0x4b, 0x00, 0x8d, 0x0e, 0xd9, 0x79, 0x5c, 0x22, 0x3b, 0xdb, 0x05, 0x6d, 0x41, 0xf0, 0x9d, 0x36,
+	0x29, 0x17, 0x8a, 0xa4, 0x5c, 0xdc, 0xd1, 0x14, 0xc1, 0xd7, 0x9a, 0x64, 0x7b, 0xbb, 0x4c, 0xb6,
+	0x77, 0xb6, 0xb5, 0x08, 0x02, 0x88, 0x37, 0x3a, 0xe4, 0x61, 0xa9, 0xa4, 0x45, 0x85, 0xae, 0xd2,
+	0x21, 0xe5, 0xad, 0x47, 0xd2, 0x36, 0x16, 0xda, 0x3e, 0xdc, 0x2e, 0x90, 0x47, 0x5b, 0x05, 0x4d,
+	0x15, 0xb6, 0x95, 0x36, 0x29, 0x17, 0x4b, 0x5a, 0x5c, 0xe8, 0xda, 0xcf, 0x48, 0xb9, 0x58, 0x90,
+	0x7c, 0x62, 0xe3, 0x23, 0x50, 0xe5, 0x7a, 0x17, 0x0a, 0x11, 0xde, 0x8b, 0x4a, 0x93, 0xe0, 0x2d,
+	0x6d, 0x61, 0xe3, 0x3b, 0x50, 0xe5, 0xeb, 0x80, 0x34, 0x58, 0x7c, 0xda, 0xda, 0x6b, 0x12, 0xdc,
+	0x78, 0xde, 0x69, 0xb4, 0x8f, 0xb4, 0x05, 0xb4, 0x0c, 0x69, 0x29, 0xa9, 0xd4, 0x6a, 0x8d, 0xc3,
+	0x23, 0x4d, 0x41, 0x08, 0x96, 0x3a, 0xcd, 0x5a, 0xab, 0xb9, 0xbb, 0x87, 0x0f, 0x1a, 0x75, 0xd2,
+	0x39, 0xd4, 0x22, 0xe8, 0x0e, 0x68, 0xb3, 0xb2, 0x7a, 0xeb, 0x45, 0x53, 0x8b, 0x0a, 0xb0, 0x2b,
+	0x76, 0x31, 0xe1, 0x3b, 0x67, 0xa5, 0x56, 0x77, 0x5f, 0xbd, 0x5d, 0x51, 0x5e, 0xbf, 0x5d, 0x51,
+	0xfe, 0x78, 0xbb, 0xa2, 0xfc, 0xf8, 0xe7, 0xca, 0xc2, 0xb7, 0x0f, 0x6f, 0xf2, 0xe7, 0x7e, 0x1c,
+	0x97, 0x92, 0xd2, 0x5f, 0x01, 0x00, 0x00, 0xff, 0xff, 0x43, 0xc5, 0xba, 0x6a, 0xf8, 0x0b, 0x00,
+	0x00,
 }

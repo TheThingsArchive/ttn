@@ -9,6 +9,7 @@
 		github.com/TheThingsNetwork/ttn/api/protocol/protocol.proto
 
 	It has these top-level messages:
+		Message
 		RxMetadata
 		TxConfiguration
 		ActivationMetadata
@@ -33,6 +34,98 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
+type Message struct {
+	// Types that are valid to be assigned to Protocol:
+	//	*Message_Lorawan
+	Protocol isMessage_Protocol `protobuf_oneof:"protocol"`
+}
+
+func (m *Message) Reset()                    { *m = Message{} }
+func (m *Message) String() string            { return proto.CompactTextString(m) }
+func (*Message) ProtoMessage()               {}
+func (*Message) Descriptor() ([]byte, []int) { return fileDescriptorProtocol, []int{0} }
+
+type isMessage_Protocol interface {
+	isMessage_Protocol()
+	MarshalTo([]byte) (int, error)
+	Size() int
+}
+
+type Message_Lorawan struct {
+	Lorawan *lorawan.Message `protobuf:"bytes,1,opt,name=lorawan,oneof"`
+}
+
+func (*Message_Lorawan) isMessage_Protocol() {}
+
+func (m *Message) GetProtocol() isMessage_Protocol {
+	if m != nil {
+		return m.Protocol
+	}
+	return nil
+}
+
+func (m *Message) GetLorawan() *lorawan.Message {
+	if x, ok := m.GetProtocol().(*Message_Lorawan); ok {
+		return x.Lorawan
+	}
+	return nil
+}
+
+// XXX_OneofFuncs is for the internal use of the proto package.
+func (*Message) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
+	return _Message_OneofMarshaler, _Message_OneofUnmarshaler, _Message_OneofSizer, []interface{}{
+		(*Message_Lorawan)(nil),
+	}
+}
+
+func _Message_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
+	m := msg.(*Message)
+	// protocol
+	switch x := m.Protocol.(type) {
+	case *Message_Lorawan:
+		_ = b.EncodeVarint(1<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.Lorawan); err != nil {
+			return err
+		}
+	case nil:
+	default:
+		return fmt.Errorf("Message.Protocol has unexpected type %T", x)
+	}
+	return nil
+}
+
+func _Message_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
+	m := msg.(*Message)
+	switch tag {
+	case 1: // protocol.lorawan
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(lorawan.Message)
+		err := b.DecodeMessage(msg)
+		m.Protocol = &Message_Lorawan{msg}
+		return true, err
+	default:
+		return false, nil
+	}
+}
+
+func _Message_OneofSizer(msg proto.Message) (n int) {
+	m := msg.(*Message)
+	// protocol
+	switch x := m.Protocol.(type) {
+	case *Message_Lorawan:
+		s := proto.Size(x.Lorawan)
+		n += proto.SizeVarint(1<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case nil:
+	default:
+		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
+	}
+	return n
+}
+
 type RxMetadata struct {
 	// Types that are valid to be assigned to Protocol:
 	//	*RxMetadata_Lorawan
@@ -42,7 +135,7 @@ type RxMetadata struct {
 func (m *RxMetadata) Reset()                    { *m = RxMetadata{} }
 func (m *RxMetadata) String() string            { return proto.CompactTextString(m) }
 func (*RxMetadata) ProtoMessage()               {}
-func (*RxMetadata) Descriptor() ([]byte, []int) { return fileDescriptorProtocol, []int{0} }
+func (*RxMetadata) Descriptor() ([]byte, []int) { return fileDescriptorProtocol, []int{1} }
 
 type isRxMetadata_Protocol interface {
 	isRxMetadata_Protocol()
@@ -134,7 +227,7 @@ type TxConfiguration struct {
 func (m *TxConfiguration) Reset()                    { *m = TxConfiguration{} }
 func (m *TxConfiguration) String() string            { return proto.CompactTextString(m) }
 func (*TxConfiguration) ProtoMessage()               {}
-func (*TxConfiguration) Descriptor() ([]byte, []int) { return fileDescriptorProtocol, []int{1} }
+func (*TxConfiguration) Descriptor() ([]byte, []int) { return fileDescriptorProtocol, []int{2} }
 
 type isTxConfiguration_Protocol interface {
 	isTxConfiguration_Protocol()
@@ -226,7 +319,7 @@ type ActivationMetadata struct {
 func (m *ActivationMetadata) Reset()                    { *m = ActivationMetadata{} }
 func (m *ActivationMetadata) String() string            { return proto.CompactTextString(m) }
 func (*ActivationMetadata) ProtoMessage()               {}
-func (*ActivationMetadata) Descriptor() ([]byte, []int) { return fileDescriptorProtocol, []int{2} }
+func (*ActivationMetadata) Descriptor() ([]byte, []int) { return fileDescriptorProtocol, []int{3} }
 
 type isActivationMetadata_Protocol interface {
 	isActivationMetadata_Protocol()
@@ -310,9 +403,49 @@ func _ActivationMetadata_OneofSizer(msg proto.Message) (n int) {
 }
 
 func init() {
+	proto.RegisterType((*Message)(nil), "protocol.Message")
 	proto.RegisterType((*RxMetadata)(nil), "protocol.RxMetadata")
 	proto.RegisterType((*TxConfiguration)(nil), "protocol.TxConfiguration")
 	proto.RegisterType((*ActivationMetadata)(nil), "protocol.ActivationMetadata")
+}
+func (m *Message) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *Message) MarshalTo(data []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if m.Protocol != nil {
+		nn1, err := m.Protocol.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += nn1
+	}
+	return i, nil
+}
+
+func (m *Message_Lorawan) MarshalTo(data []byte) (int, error) {
+	i := 0
+	if m.Lorawan != nil {
+		data[i] = 0xa
+		i++
+		i = encodeVarintProtocol(data, i, uint64(m.Lorawan.Size()))
+		n2, err := m.Lorawan.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n2
+	}
+	return i, nil
 }
 func (m *RxMetadata) Marshal() (data []byte, err error) {
 	size := m.Size()
@@ -330,11 +463,11 @@ func (m *RxMetadata) MarshalTo(data []byte) (int, error) {
 	var l int
 	_ = l
 	if m.Protocol != nil {
-		nn1, err := m.Protocol.MarshalTo(data[i:])
+		nn3, err := m.Protocol.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += nn1
+		i += nn3
 	}
 	return i, nil
 }
@@ -345,11 +478,11 @@ func (m *RxMetadata_Lorawan) MarshalTo(data []byte) (int, error) {
 		data[i] = 0xa
 		i++
 		i = encodeVarintProtocol(data, i, uint64(m.Lorawan.Size()))
-		n2, err := m.Lorawan.MarshalTo(data[i:])
+		n4, err := m.Lorawan.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n2
+		i += n4
 	}
 	return i, nil
 }
@@ -369,11 +502,11 @@ func (m *TxConfiguration) MarshalTo(data []byte) (int, error) {
 	var l int
 	_ = l
 	if m.Protocol != nil {
-		nn3, err := m.Protocol.MarshalTo(data[i:])
+		nn5, err := m.Protocol.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += nn3
+		i += nn5
 	}
 	return i, nil
 }
@@ -384,11 +517,11 @@ func (m *TxConfiguration_Lorawan) MarshalTo(data []byte) (int, error) {
 		data[i] = 0xa
 		i++
 		i = encodeVarintProtocol(data, i, uint64(m.Lorawan.Size()))
-		n4, err := m.Lorawan.MarshalTo(data[i:])
+		n6, err := m.Lorawan.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n4
+		i += n6
 	}
 	return i, nil
 }
@@ -408,11 +541,11 @@ func (m *ActivationMetadata) MarshalTo(data []byte) (int, error) {
 	var l int
 	_ = l
 	if m.Protocol != nil {
-		nn5, err := m.Protocol.MarshalTo(data[i:])
+		nn7, err := m.Protocol.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += nn5
+		i += nn7
 	}
 	return i, nil
 }
@@ -423,11 +556,11 @@ func (m *ActivationMetadata_Lorawan) MarshalTo(data []byte) (int, error) {
 		data[i] = 0xa
 		i++
 		i = encodeVarintProtocol(data, i, uint64(m.Lorawan.Size()))
-		n6, err := m.Lorawan.MarshalTo(data[i:])
+		n8, err := m.Lorawan.MarshalTo(data[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n6
+		i += n8
 	}
 	return i, nil
 }
@@ -457,6 +590,24 @@ func encodeVarintProtocol(data []byte, offset int, v uint64) int {
 	}
 	data[offset] = uint8(v)
 	return offset + 1
+}
+func (m *Message) Size() (n int) {
+	var l int
+	_ = l
+	if m.Protocol != nil {
+		n += m.Protocol.Size()
+	}
+	return n
+}
+
+func (m *Message_Lorawan) Size() (n int) {
+	var l int
+	_ = l
+	if m.Lorawan != nil {
+		l = m.Lorawan.Size()
+		n += 1 + l + sovProtocol(uint64(l))
+	}
+	return n
 }
 func (m *RxMetadata) Size() (n int) {
 	var l int
@@ -525,6 +676,88 @@ func sovProtocol(x uint64) (n int) {
 }
 func sozProtocol(x uint64) (n int) {
 	return sovProtocol(uint64((x << 1) ^ uint64((int64(x) >> 63))))
+}
+func (m *Message) Unmarshal(data []byte) error {
+	l := len(data)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowProtocol
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: Message: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: Message: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Lorawan", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowProtocol
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthProtocol
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &lorawan.Message{}
+			if err := v.Unmarshal(data[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.Protocol = &Message_Lorawan{v}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipProtocol(data[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthProtocol
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
 }
 func (m *RxMetadata) Unmarshal(data []byte) error {
 	l := len(data)
@@ -882,19 +1115,20 @@ func init() {
 }
 
 var fileDescriptorProtocol = []byte{
-	// 219 bytes of a gzipped FileDescriptorProto
+	// 240 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xe2, 0xb2, 0x4e, 0xcf, 0x2c, 0xc9,
 	0x28, 0x4d, 0xd2, 0x4b, 0xce, 0xcf, 0xd5, 0x0f, 0xc9, 0x48, 0x0d, 0xc9, 0xc8, 0xcc, 0x4b, 0x2f,
 	0xf6, 0x4b, 0x2d, 0x29, 0xcf, 0x2f, 0xca, 0xd6, 0x2f, 0x29, 0xc9, 0xd3, 0x4f, 0x2c, 0xc8, 0xd4,
 	0x2f, 0x28, 0xca, 0x2f, 0xc9, 0x4f, 0xce, 0xcf, 0x81, 0x33, 0xf4, 0xc0, 0x0c, 0x21, 0x0e, 0x18,
 	0x5f, 0x4a, 0x0d, 0x43, 0x69, 0x4e, 0x7e, 0x51, 0x62, 0x79, 0x62, 0x1e, 0x8c, 0x86, 0xe8, 0x50,
-	0x72, 0xe7, 0xe2, 0x0a, 0xaa, 0xf0, 0x4d, 0x2d, 0x49, 0x4c, 0x49, 0x2c, 0x49, 0x14, 0xd2, 0xe5,
-	0x62, 0x87, 0x4a, 0x4b, 0x30, 0x2a, 0x30, 0x6a, 0x70, 0x1b, 0x09, 0xea, 0xc1, 0x94, 0xc3, 0xd4,
-	0x78, 0x30, 0x04, 0xc1, 0xd4, 0x38, 0x71, 0x71, 0xc1, 0x2d, 0x54, 0x0a, 0xe6, 0xe2, 0x0f, 0xa9,
-	0x70, 0xce, 0xcf, 0x4b, 0xcb, 0x4c, 0x2f, 0x2d, 0x4a, 0x2c, 0xc9, 0xcc, 0xcf, 0x13, 0x32, 0x41,
-	0x37, 0x4d, 0x02, 0x6e, 0x1a, 0x9a, 0x52, 0x5c, 0x86, 0x46, 0x72, 0x09, 0x39, 0x26, 0x97, 0x64,
-	0x96, 0x81, 0x15, 0xc1, 0x5d, 0x69, 0x8e, 0x6e, 0xae, 0x34, 0xdc, 0x5c, 0x4c, 0xd5, 0x38, 0x8c,
-	0x76, 0xb2, 0x3b, 0xf1, 0x48, 0x8e, 0xf1, 0xc2, 0x23, 0x39, 0xc6, 0x07, 0x8f, 0xe4, 0x18, 0x67,
-	0x3c, 0x96, 0x63, 0x88, 0xd2, 0x21, 0x25, 0xe4, 0x93, 0xd8, 0xc0, 0x2c, 0x63, 0x40, 0x00, 0x00,
-	0x00, 0xff, 0xff, 0x24, 0x8c, 0x89, 0xc2, 0xb0, 0x01, 0x00, 0x00,
+	0x72, 0xe6, 0x62, 0xf7, 0x4d, 0x2d, 0x2e, 0x4e, 0x4c, 0x4f, 0x15, 0xd2, 0xe1, 0x62, 0x87, 0xca,
+	0x49, 0x30, 0x2a, 0x30, 0x6a, 0x70, 0x1b, 0x09, 0xe8, 0xc1, 0xd4, 0x42, 0x95, 0x78, 0x30, 0x04,
+	0xc1, 0x94, 0x38, 0x71, 0x71, 0xc1, 0x2d, 0x53, 0x72, 0xe7, 0xe2, 0x0a, 0xaa, 0xf0, 0x4d, 0x2d,
+	0x49, 0x4c, 0x49, 0x2c, 0x49, 0x14, 0xd2, 0x45, 0x37, 0x47, 0x10, 0xc9, 0x1c, 0x88, 0x1a, 0x5c,
+	0x06, 0x05, 0x73, 0xf1, 0x87, 0x54, 0x38, 0xe7, 0xe7, 0xa5, 0x65, 0xa6, 0x97, 0x16, 0x25, 0x96,
+	0x64, 0xe6, 0xe7, 0x09, 0x99, 0xa0, 0x9b, 0x26, 0x01, 0x37, 0x0d, 0x4d, 0x29, 0x2e, 0x43, 0x23,
+	0xb9, 0x84, 0x1c, 0x93, 0x4b, 0x32, 0xcb, 0xc0, 0x8a, 0xe0, 0xae, 0x34, 0x47, 0x37, 0x57, 0x1a,
+	0x6e, 0x2e, 0xa6, 0x6a, 0x1c, 0x46, 0x3b, 0xd9, 0x9d, 0x78, 0x24, 0xc7, 0x78, 0xe1, 0x91, 0x1c,
+	0xe3, 0x83, 0x47, 0x72, 0x8c, 0x33, 0x1e, 0xcb, 0x31, 0x44, 0xe9, 0x90, 0x12, 0x7d, 0x49, 0x6c,
+	0x60, 0x96, 0x31, 0x20, 0x00, 0x00, 0xff, 0xff, 0x48, 0xdc, 0x20, 0x24, 0xf5, 0x01, 0x00, 0x00,
 }

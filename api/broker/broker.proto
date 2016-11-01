@@ -25,6 +25,7 @@ message DownlinkOption {
 // received from the Router
 message UplinkMessage {
   bytes                    payload            = 1;
+  protocol.Message         message            = 2;
   // NOTE: For LoRaWAN, the Router doesn't know the DevEUI/ID and AppEUI/ID
   bytes                    dev_eui            = 11 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.DevEUI"];
   bytes                    app_eui            = 12 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.AppEUI"];
@@ -37,23 +38,26 @@ message UplinkMessage {
 
 // received from the Handler, sent to the Router, used as Template
 message DownlinkMessage {
-  bytes           payload          = 1;
-  bytes           dev_eui          = 11 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.DevEUI"];
-  bytes           app_eui          = 12 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.AppEUI"];
-  string          app_id           = 13;
-  string          dev_id           = 14;
-  DownlinkOption  downlink_option  = 21;
+  bytes             payload          = 1;
+  protocol.Message  message          = 2;
+  bytes             dev_eui          = 11 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.DevEUI"];
+  bytes             app_eui          = 12 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.AppEUI"];
+  string            app_id           = 13;
+  string            dev_id           = 14;
+  DownlinkOption    downlink_option  = 21;
 }
 
 //sent to the Router, used as Template
 message DeviceActivationResponse {
-  bytes           payload          = 1;
-  DownlinkOption  downlink_option  = 11;
+  bytes             payload          = 1;
+  protocol.Message  message          = 2;
+  DownlinkOption    downlink_option  = 11;
 }
 
 // sent to the Handler
 message DeduplicatedUplinkMessage {
   bytes                       payload            = 1;
+  protocol.Message            message            = 2;
   bytes                       dev_eui            = 11 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.DevEUI"];
   bytes                       app_eui            = 12 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.AppEUI"];
   string                      app_id             = 13;
@@ -67,6 +71,7 @@ message DeduplicatedUplinkMessage {
 // received from the Router
 message DeviceActivationRequest {
   bytes                        payload              = 1;
+  protocol.Message             message              = 2;
   bytes                        dev_eui              = 11 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.DevEUI"];
   bytes                        app_eui              = 12 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.AppEUI"];
   protocol.RxMetadata          protocol_metadata    = 21;
@@ -78,6 +83,7 @@ message DeviceActivationRequest {
 // sent to the Handler
 message DeduplicatedDeviceActivationRequest {
   bytes                        payload              = 1;
+  protocol.Message             message              = 2;
   bytes                        dev_eui              = 11 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.DevEUI"];
   bytes                        app_eui              = 12 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.AppEUI"];
   string                       app_id               = 13;
@@ -91,6 +97,7 @@ message DeduplicatedDeviceActivationRequest {
 
 message ActivationChallengeRequest {
   bytes                        payload              = 1;
+  protocol.Message             message              = 2;
   bytes                        dev_eui              = 11 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.DevEUI"];
   bytes                        app_eui              = 12 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.AppEUI"];
   string                       app_id               = 13;
@@ -98,7 +105,8 @@ message ActivationChallengeRequest {
 }
 
 message ActivationChallengeResponse {
-  bytes payload = 1;
+  bytes             payload = 1;
+  protocol.Message  message = 2;
 }
 
 // message SubscribeRequest is used by a Handler to subscribe to uplink messages

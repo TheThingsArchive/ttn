@@ -41,7 +41,7 @@ message ActivationMetadata {
   uint32 rx1_dr_offset    = 11;
   uint32 rx2_dr           = 12;
   uint32 rx_delay         = 13;
-  repeated uint64 cf_list = 14;
+  CFList cf_list          = 14;
 }
 
 enum Region {
@@ -53,4 +53,83 @@ enum Region {
   CN_470_510 = 5;
   AS_923     = 6;
   SK_920_923 = 7;
+}
+
+message Message {
+  MHDR  m_hdr = 1 [(gogoproto.embed) = true, (gogoproto.nullable) = false];
+  bytes mic   = 2;
+
+  oneof Payload {
+    MACPayload          mac_payload           = 3;
+    JoinRequestPayload  join_request_payload  = 4;
+    JoinAcceptPayload   join_accept_payload   = 5;
+  }
+}
+
+enum Major {
+  LORAWAN_R1 = 0;
+}
+
+enum MType {
+  JOIN_REQUEST      = 0;
+  JOIN_ACCEPT       = 1;
+  UNCONFIRMED_UP    = 2;
+  UNCONFIRMED_DOWN  = 3;
+  CONFIRMED_UP      = 4;
+  CONFIRMED_DOWN    = 5;
+}
+
+message MHDR {
+  MType m_type  = 1;
+  Major major   = 2;
+}
+
+message MACPayload {
+  FHDR  f_hdr       = 1 [(gogoproto.embed) = true, (gogoproto.nullable) = false];
+  int32 f_port      = 2;
+  bytes frm_payload = 3;
+}
+
+message FHDR {
+  bytes dev_addr  = 1 [(gogoproto.nullable) = false, (gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.DevAddr"];
+  FCtrl f_ctrl    = 2 [(gogoproto.embed) = true, (gogoproto.nullable) = false];
+  uint32 f_cnt    = 3;
+  repeated MACCommand f_opts = 4 [(gogoproto.nullable) = false];
+}
+
+message FCtrl {
+  bool    adr         = 1;
+  bool    adr_ack_req = 2;
+  bool    ack         = 3;
+  bool    f_pending   = 4;
+}
+
+message MACCommand {
+  uint32 cid     = 1;
+  bytes  payload = 2;
+}
+
+message JoinRequestPayload {
+  bytes app_eui   = 1 [(gogoproto.nullable) = false, (gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.AppEUI"];
+  bytes dev_eui   = 2 [(gogoproto.nullable) = false, (gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.DevEUI"];
+  bytes dev_nonce = 3 [(gogoproto.nullable) = false, (gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.DevNonce"];
+}
+
+message JoinAcceptPayload {
+  bytes       encrypted   = 1;
+  bytes       app_nonce   = 2 [(gogoproto.nullable) = false, (gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.AppNonce"];
+  bytes       net_id      = 3 [(gogoproto.nullable) = false, (gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.NetID"];
+  bytes       dev_addr    = 4 [(gogoproto.nullable) = false, (gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.DevAddr"];
+  DLSettings  dl_settings = 5 [(gogoproto.embed) = true, (gogoproto.nullable) = false];
+  uint32      rx_delay    = 6;
+  CFList      cf_list     = 7;
+}
+
+message DLSettings {
+  uint32 rx1_dr_offset = 1;
+  uint32 rx2_dr = 2;
+}
+
+message CFList {
+  repeated uint32 freq = 1;
 }

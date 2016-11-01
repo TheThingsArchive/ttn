@@ -241,7 +241,6 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 		Payload:            resBytes,
 		DownlinkOption:     activation.ResponseTemplate.DownlinkOption,
 		ActivationMetadata: metadata,
-		AppId:              dev.AppID,
 	}
 
 	return res, nil

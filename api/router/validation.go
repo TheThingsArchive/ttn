@@ -24,12 +24,6 @@ func (m *DownlinkMessage) Validate() bool {
 
 // Validate implements the api.Validator interface
 func (m *DeviceActivationRequest) Validate() bool {
-	if m.AppEui == nil || m.AppEui.IsEmpty() {
-		return false
-	}
-	if m.DevEui == nil || m.DevEui.IsEmpty() {
-		return false
-	}
 	if m.GatewayMetadata == nil || !m.GatewayMetadata.Validate() {
 		return false
 	}

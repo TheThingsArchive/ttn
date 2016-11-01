@@ -32,10 +32,10 @@ func (m *UplinkMessage) Validate() bool {
 
 // Validate implements the api.Validator interface
 func (m *DownlinkMessage) Validate() bool {
-	if m.DevEui == nil || m.DevEui.IsEmpty() {
+	if m.DevId == "" || !api.ValidID(m.DevId) {
 		return false
 	}
-	if m.AppEui == nil || m.AppEui.IsEmpty() {
+	if m.AppId == "" || !api.ValidID(m.AppId) {
 		return false
 	}
 	if m.DownlinkOption == nil || !m.DownlinkOption.Validate() {
@@ -46,12 +46,6 @@ func (m *DownlinkMessage) Validate() bool {
 
 // Validate implements the api.Validator interface
 func (m *DeduplicatedUplinkMessage) Validate() bool {
-	if m.DevEui == nil || m.DevEui.IsEmpty() {
-		return false
-	}
-	if m.AppEui == nil || m.AppEui.IsEmpty() {
-		return false
-	}
 	if m.DevId == "" || !api.ValidID(m.DevId) {
 		return false
 	}
@@ -61,17 +55,14 @@ func (m *DeduplicatedUplinkMessage) Validate() bool {
 	if m.ProtocolMetadata == nil || !m.ProtocolMetadata.Validate() {
 		return false
 	}
+	if m.ResponseTemplate != nil && !m.ResponseTemplate.Validate() {
+		return false
+	}
 	return true
 }
 
 // Validate implements the api.Validator interface
 func (m *DeviceActivationRequest) Validate() bool {
-	if m.DevEui == nil || m.DevEui.IsEmpty() {
-		return false
-	}
-	if m.AppEui == nil || m.AppEui.IsEmpty() {
-		return false
-	}
 	if m.ProtocolMetadata == nil || !m.ProtocolMetadata.Validate() {
 		return false
 	}
@@ -86,12 +77,6 @@ func (m *DeviceActivationRequest) Validate() bool {
 
 // Validate implements the api.Validator interface
 func (m *DeduplicatedDeviceActivationRequest) Validate() bool {
-	if m.DevEui == nil || m.DevEui.IsEmpty() {
-		return false
-	}
-	if m.AppEui == nil || m.AppEui.IsEmpty() {
-		return false
-	}
 	if m.ProtocolMetadata == nil || !m.ProtocolMetadata.Validate() {
 		return false
 	}
@@ -100,12 +85,6 @@ func (m *DeduplicatedDeviceActivationRequest) Validate() bool {
 
 // Validate implements the api.Validator interface
 func (m *ActivationChallengeRequest) Validate() bool {
-	if m.DevEui == nil || m.DevEui.IsEmpty() {
-		return false
-	}
-	if m.AppEui == nil || m.AppEui.IsEmpty() {
-		return false
-	}
 	return true
 }
 

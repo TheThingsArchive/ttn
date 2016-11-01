@@ -91,10 +91,10 @@ func (n *networkServer) HandlePrepareActivation(activation *pb_broker.Deduplicat
 			DevAddr:    lorawan.DevAddr(devAddr),
 		},
 	}
-	if len(lorawanMeta.CfList) == 5 {
+	if lorawanMeta.CfList != nil {
 		var cfList lorawan.CFList
-		for i, cfListItem := range lorawanMeta.CfList {
-			cfList[i] = uint32(cfListItem)
+		for i, cfListItem := range lorawanMeta.CfList.Freq {
+			cfList[i] = cfListItem
 		}
 		phy.MACPayload.(*lorawan.JoinAcceptPayload).CFList = &cfList
 	}

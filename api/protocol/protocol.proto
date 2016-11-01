@@ -9,6 +9,12 @@ option go_package = "github.com/TheThingsNetwork/ttn/api/protocol";
 
 package protocol;
 
+message Message {
+  oneof protocol {
+    lorawan.Message lorawan = 1;
+  }
+}
+
 message RxMetadata {
   oneof protocol {
     lorawan.Metadata lorawan = 1;

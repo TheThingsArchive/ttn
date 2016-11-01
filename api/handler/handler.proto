@@ -16,7 +16,7 @@ option go_package = "github.com/TheThingsNetwork/ttn/api/handler";
 
 message DeviceActivationResponse {
   bytes                        payload              = 1;
-  string                       app_id               = 2;
+  protocol.Message             message              = 2;
   broker.DownlinkOption        downlink_option      = 11;
   protocol.ActivationMetadata  activation_metadata  = 23;
 }

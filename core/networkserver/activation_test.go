@@ -37,7 +37,7 @@ func TestHandlePrepareActivation(t *testing.T) {
 	resp, err := ns.HandlePrepareActivation(&pb_broker.DeduplicatedDeviceActivationRequest{
 		ActivationMetadata: &pb_protocol.ActivationMetadata{Protocol: &pb_protocol.ActivationMetadata_Lorawan{
 			Lorawan: &pb_lorawan.ActivationMetadata{
-				CfList: []uint64{867100000, 867300000, 867500000, 867700000, 867900000},
+				CfList: &pb_lorawan.CFList{Freq: []uint32{867100000, 867300000, 867500000, 867700000, 867900000}},
 			},
 		}},
 		ResponseTemplate: &pb_broker.DeviceActivationResponse{},
@@ -59,7 +59,7 @@ func TestHandlePrepareActivation(t *testing.T) {
 		AppEui: &appEUI,
 		ActivationMetadata: &pb_protocol.ActivationMetadata{Protocol: &pb_protocol.ActivationMetadata_Lorawan{
 			Lorawan: &pb_lorawan.ActivationMetadata{
-				CfList: []uint64{867100000, 867300000, 867500000, 867700000, 867900000},
+				CfList: &pb_lorawan.CFList{Freq: []uint32{867100000, 867300000, 867500000, 867700000, 867900000}},
 			},
 		}},
 		ResponseTemplate: &pb_broker.DeviceActivationResponse{},
@@ -76,7 +76,7 @@ func TestHandlePrepareActivation(t *testing.T) {
 		AppEui: &appEUI,
 		ActivationMetadata: &pb_protocol.ActivationMetadata{Protocol: &pb_protocol.ActivationMetadata_Lorawan{
 			Lorawan: &pb_lorawan.ActivationMetadata{
-				CfList: []uint64{867100000, 867300000, 867500000, 867700000, 867900000},
+				CfList: &pb_lorawan.CFList{Freq: []uint32{867100000, 867300000, 867500000, 867700000, 867900000}},
 			},
 		}},
 		ResponseTemplate: &pb_broker.DeviceActivationResponse{},

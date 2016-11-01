@@ -82,3 +82,40 @@ func (m *ActivationMetadata) Validate() bool {
 	}
 	return true
 }
+
+// Validate implements the api.Validator interface
+func (m *Message) Validate() bool {
+	if m.Major != Major_LORAWAN_R1 {
+		return false
+	}
+	switch m.MType {
+	case MType_JOIN_REQUEST:
+		return m.GetJoinRequestPayload() != nil && m.GetJoinRequestPayload().Validate()
+	case MType_JOIN_ACCEPT:
+		return m.GetJoinAcceptPayload() != nil && m.GetJoinAcceptPayload().Validate()
+	case MType_UNCONFIRMED_UP, MType_UNCONFIRMED_DOWN, MType_CONFIRMED_UP, MType_CONFIRMED_DOWN:
+		return m.GetMacPayload() != nil && m.GetMacPayload().Validate()
+	}
+	return false
+}
+
+// Validate implements the api.Validator interface
+func (m *JoinRequestPayload) Validate() bool {
+	return len(m.AppEui) == 8 && len(m.DevEui) == 8 && len(m.DevNonce) == 2
+}
+
+// Validate implements the api.Validator interface
+func (m *JoinAcceptPayload) Validate() bool {
+	if len(m.Encrypted) != 0 {
+		return true
+	}
+	if m.CfList != nil && len(m.CfList.Freq) != 5 {
+		return false
+	}
+	return len(m.DevAddr) == 4 && len(m.AppNonce) == 3 && len(m.NetId) == 3
+}
+
+// Validate implements the api.Validator interface
+func (m *MACPayload) Validate() bool {
+	return len(m.DevAddr) == 4
+}

@@ -93,7 +93,7 @@ func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivat
 	lorawan.RxDelay = uint32(band.ReceiveDelay1.Seconds())
 	switch region {
 	case "EU_863_870":
-		lorawan.CfList = []uint64{867100000, 867300000, 867500000, 867700000, 867900000}
+		lorawan.CfList = &pb_lorawan.CFList{Freq: []uint32{867100000, 867300000, 867500000, 867700000, 867900000}}
 	}
 
 	ctx = ctx.WithField("NumBrokers", len(brokers))
