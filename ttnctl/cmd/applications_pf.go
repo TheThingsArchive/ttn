@@ -20,9 +20,11 @@ converting and validating binary payload.`,
   INFO Connecting with Handler...
   INFO Found Application
   INFO Decoder function
-function Decoder(bytes) {
+function Decoder(bytes, port) {
   var decoded = {};
-  decoded.led = bytes[0];
+  if (port === 1) {
+    decoded.led = bytes[0];
+  }
   return decoded;
 }
   INFO No converter function
