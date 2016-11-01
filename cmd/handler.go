@@ -69,6 +69,8 @@ var handlerCmd = &cobra.Command{
 				viper.GetString("handler.mqtt-password"),
 				viper.GetString("handler.mqtt-address"),
 			)
+		} else {
+			ctx.Warn("MQTT is not enabled in your configuration")
 		}
 		if viper.GetString("handler.amqp-address") != "" {
 			handler = handler.WithAMQP(
@@ -76,6 +78,8 @@ var handlerCmd = &cobra.Command{
 				viper.GetString("handler.amqp-password"),
 				viper.GetString("handler.amqp-address"),
 				viper.GetString("handler.amqp-exchange"))
+		} else {
+			ctx.Warn("AMQP is not enabled in your configuration")
 		}
 		err = handler.Init(component)
 		if err != nil {
