@@ -22,9 +22,7 @@ converting and validating binary payload.`,
   INFO Decoder function
 function Decoder(bytes, port) {
   var decoded = {};
-  if (port === 1) {
-    decoded.led = bytes[0];
-  }
+  if (port === 1) decoded.led = bytes[0];
   return decoded;
 }
   INFO No converter function
