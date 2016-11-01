@@ -62,10 +62,14 @@ var handlerCmd = &cobra.Command{
 		handler := handler.NewRedisHandler(
 			client,
 			viper.GetString("handler.broker-id"),
-			viper.GetString("handler.mqtt-username"),
-			viper.GetString("handler.mqtt-password"),
-			viper.GetString("handler.mqtt-address"),
 		)
+		if viper.GetString("handler.mqtt-address") != "" {
+			handler = handler.WithMQTT(
+				viper.GetString("handler.mqtt-username"),
+				viper.GetString("handler.mqtt-password"),
+				viper.GetString("handler.mqtt-address"),
+			)
+		}
 		if viper.GetString("handler.amqp-address") != "" {
 			handler = handler.WithAMQP(
 				viper.GetString("handler.amqp-username"),
@@ -134,7 +138,7 @@ func init() {
 	handlerCmd.Flags().String("broker-id", "dev", "The ID of the TTN Broker as announced in the Discovery server")
 	viper.BindPFlag("handler.broker-id", handlerCmd.Flags().Lookup("broker-id"))
 
-	handlerCmd.Flags().String("mqtt-address", "", "MQTT host and port")
+	handlerCmd.Flags().String("mqtt-address", "", "MQTT host and port. Leave empty to disable MQTT")
 	viper.BindPFlag("handler.mqtt-address", handlerCmd.Flags().Lookup("mqtt-address"))
 
 	handlerCmd.Flags().String("mqtt-username", "", "MQTT username")

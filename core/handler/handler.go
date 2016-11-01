@@ -26,6 +26,7 @@ type Handler interface {
 	core.ComponentInterface
 	core.ManagementInterface
 
+	WithMQTT(username, password string, brokers ...string) Handler
 	WithAMQP(username, password, host, exchange string) Handler
 
 	HandleUplink(uplink *pb_broker.DeduplicatedUplinkMessage) error
@@ -35,14 +36,11 @@ type Handler interface {
 }
 
 // NewRedisHandler creates a new Redis-backed Handler
-func NewRedisHandler(client *redis.Client, ttnBrokerID string, mqttUsername string, mqttPassword string, mqttBrokers ...string) Handler {
+func NewRedisHandler(client *redis.Client, ttnBrokerID string) Handler {
 	return &handler{
 		devices:      device.NewRedisDeviceStore(client, "handler"),
 		applications: application.NewRedisApplicationStore(client, "handler"),
 		ttnBrokerID:  ttnBrokerID,
-		mqttUsername: mqttUsername,
-		mqttPassword: mqttPassword,
-		mqttBrokers:  mqttBrokers,
 	}
 }
 
@@ -63,6 +61,7 @@ type handler struct {
 	mqttUsername string
 	mqttPassword string
 	mqttBrokers  []string
+	mqttEnabled  bool
 	mqttUp       chan *types.UplinkMessage
 	mqttEvent    chan *types.DeviceEvent
 
@@ -79,6 +78,14 @@ var (
 	// AMQPDownlinkQueue is the AMQP queue to use for downlink
 	AMQPDownlinkQueue = "ttn-handler-downlink"
 )
+
+func (h *handler) WithMQTT(username, password string, brokers ...string) Handler {
+	h.mqttUsername = username
+	h.mqttPassword = password
+	h.mqttBrokers = brokers
+	h.mqttEnabled = true
+	return h
+}
 
 func (h *handler) WithAMQP(username, password, host, exchange string) Handler {
 	h.amqpUsername = username
@@ -101,13 +108,15 @@ func (h *handler) Init(c *core.Component) error {
 		return err
 	}
 
-	var brokers []string
-	for _, broker := range h.mqttBrokers {
-		brokers = append(brokers, fmt.Sprintf("tcp://%s", broker))
-	}
-	err = h.HandleMQTT(h.mqttUsername, h.mqttPassword, brokers...)
-	if err != nil {
-		return err
+	if h.mqttEnabled {
+		var brokers []string
+		for _, broker := range h.mqttBrokers {
+			brokers = append(brokers, fmt.Sprintf("tcp://%s", broker))
+		}
+		err = h.HandleMQTT(h.mqttUsername, h.mqttPassword, brokers...)
+		if err != nil {
+			return err
+		}
 	}
 
 	if h.amqpEnabled {
@@ -128,7 +137,9 @@ func (h *handler) Init(c *core.Component) error {
 }
 
 func (h *handler) Shutdown() {
-	h.mqttClient.Disconnect()
+	if h.mqttEnabled {
+		h.mqttClient.Disconnect()
+	}
 	if h.amqpEnabled {
 		h.amqpClient.Disconnect()
 	}
