@@ -22,11 +22,11 @@ func GetMQTT(ctx log.Interface) mqtt.Client {
 	}
 
 	mqttProto := "tcp"
-	if strings.HasSuffix(viper.GetString("mqtt-broker"), ":8883") {
+	if strings.HasSuffix(viper.GetString("mqtt-address"), ":8883") {
 		mqttProto = "ssl"
 		ctx.Fatal("TLS connections are not yet supported by ttnctl")
 	}
-	broker := fmt.Sprintf("%s://%s", mqttProto, viper.GetString("mqtt-broker"))
+	broker := fmt.Sprintf("%s://%s", mqttProto, viper.GetString("mqtt-address"))
 	client := mqtt.NewClient(ctx, "ttnctl", username, password, broker)
 
 	ctx.WithFields(log.Fields{
@@ -49,7 +49,7 @@ func getMQTTCredentials(ctx log.Interface) (username string, password string, er
 	}
 
 	// Do not use authentication on local MQTT
-	if strings.HasPrefix(viper.GetString("mqtt-broker"), "localhost") {
+	if strings.HasPrefix(viper.GetString("mqtt-address"), "localhost") {
 		return
 	}
 

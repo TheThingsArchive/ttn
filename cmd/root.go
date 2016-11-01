@@ -79,11 +79,11 @@ var RootCmd = &cobra.Command{
 			Handler: multiHandler.New(logHandlers...),
 		}
 		ctx.WithFields(log.Fields{
-			"ComponentID":     viper.GetString("id"),
-			"Description":     viper.GetString("description"),
-			"DiscoveryServer": viper.GetString("discovery-server"),
-			"AuthServers":     viper.GetStringMapString("auth-servers"),
-			"Monitors":        viper.GetStringMapString("monitor-servers"),
+			"ComponentID":              viper.GetString("id"),
+			"Description":              viper.GetString("description"),
+			"Discovery Server Address": viper.GetString("discovery-address"),
+			"Auth Servers":             viper.GetStringMapString("auth-servers"),
+			"Monitors":                 viper.GetStringMapString("monitor-servers"),
 		}).Info("Initializing The Things Network")
 	},
 	PersistentPostRun: func(cmd *cobra.Command, args []string) {
@@ -124,8 +124,8 @@ func init() {
 	RootCmd.PersistentFlags().Bool("public", false, "Announce this component as part of The Things Network (public community network)")
 	viper.BindPFlag("public", RootCmd.PersistentFlags().Lookup("public"))
 
-	RootCmd.PersistentFlags().String("discovery-server", "discover.thethingsnetwork.org:1900", "The address of the Discovery server")
-	viper.BindPFlag("discovery-server", RootCmd.PersistentFlags().Lookup("discovery-server"))
+	RootCmd.PersistentFlags().String("discovery-address", "discover.thethingsnetwork.org:1900", "The address of the Discovery server")
+	viper.BindPFlag("discovery-address", RootCmd.PersistentFlags().Lookup("discovery-address"))
 
 	viper.SetDefault("auth-servers", map[string]string{
 		"ttn-account": "https://account.thethingsnetwork.org",

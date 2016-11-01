@@ -70,17 +70,17 @@ func init() {
 	RootCmd.PersistentFlags().StringVar(&dataDir, "data", "", "directory where ttnctl stores data (default is $HOME/.ttnctl)")
 	viper.BindPFlag("data", RootCmd.PersistentFlags().Lookup("data"))
 
-	RootCmd.PersistentFlags().String("discovery-server", "discover.thethingsnetwork.org:1900", "The address of the Discovery server")
-	viper.BindPFlag("discovery-server", RootCmd.PersistentFlags().Lookup("discovery-server"))
+	RootCmd.PersistentFlags().String("discovery-address", "discover.thethingsnetwork.org:1900", "The address of the Discovery server")
+	viper.BindPFlag("discovery-address", RootCmd.PersistentFlags().Lookup("discovery-address"))
 
-	RootCmd.PersistentFlags().String("ttn-router", "ttn-router-eu", "The ID of the TTN Router as announced in the Discovery server")
-	viper.BindPFlag("ttn-router", RootCmd.PersistentFlags().Lookup("ttn-router"))
+	RootCmd.PersistentFlags().String("router-id", "ttn-router-eu", "The ID of the TTN Router as announced in the Discovery server")
+	viper.BindPFlag("router-id", RootCmd.PersistentFlags().Lookup("router-id"))
 
-	RootCmd.PersistentFlags().String("ttn-handler", "ttn-handler-eu", "The ID of the TTN Handler as announced in the Discovery server")
-	viper.BindPFlag("ttn-handler", RootCmd.PersistentFlags().Lookup("ttn-handler"))
+	RootCmd.PersistentFlags().String("handler-id", "ttn-handler-eu", "The ID of the TTN Handler as announced in the Discovery server")
+	viper.BindPFlag("handler-id", RootCmd.PersistentFlags().Lookup("handler-id"))
 
-	RootCmd.PersistentFlags().String("mqtt-broker", "eu.thethings.network:1883", "The address of the MQTT broker")
-	viper.BindPFlag("mqtt-broker", RootCmd.PersistentFlags().Lookup("mqtt-broker"))
+	RootCmd.PersistentFlags().String("mqtt-address", "eu.thethings.network:1883", "The address of the MQTT broker")
+	viper.BindPFlag("mqtt-address", RootCmd.PersistentFlags().Lookup("mqtt-address"))
 
 	RootCmd.PersistentFlags().String("mqtt-username", "", "The username for the MQTT broker")
 	viper.BindPFlag("mqtt-username", RootCmd.PersistentFlags().Lookup("mqtt-username"))
@@ -88,8 +88,8 @@ func init() {
 	RootCmd.PersistentFlags().String("mqtt-password", "", "The password for the MQTT broker")
 	viper.BindPFlag("mqtt-password", RootCmd.PersistentFlags().Lookup("mqtt-password"))
 
-	RootCmd.PersistentFlags().String("ttn-account-server", "https://account.thethingsnetwork.org", "The address of the OAuth 2.0 server")
-	viper.BindPFlag("ttn-account-server", RootCmd.PersistentFlags().Lookup("ttn-account-server"))
+	RootCmd.PersistentFlags().String("auth-server", "https://account.thethingsnetwork.org", "The address of the OAuth 2.0 server")
+	viper.BindPFlag("auth-server", RootCmd.PersistentFlags().Lookup("auth-server"))
 }
 
 func printKV(key, t interface{}) {

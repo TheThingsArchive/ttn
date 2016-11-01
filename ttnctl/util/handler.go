@@ -15,12 +15,12 @@ import (
 
 // GetHandlerManager gets a new HandlerManager for ttnctl
 func GetHandlerManager(ctx log.Interface, appID string) (*grpc.ClientConn, *handler.ManagerClient) {
-	ctx.WithField("Handler", viper.GetString("ttn-handler")).Info("Discovering Handler...")
+	ctx.WithField("Handler", viper.GetString("handler-id")).Info("Discovering Handler...")
 	dscConn, client := GetDiscovery(ctx)
 	defer dscConn.Close()
 	handlerAnnouncement, err := client.Get(GetContext(ctx), &discovery.GetRequest{
 		ServiceName: "handler",
-		Id:          viper.GetString("ttn-handler"),
+		Id:          viper.GetString("handler-id"),
 	})
 	if err != nil {
 		ctx.WithError(errors.FromGRPCError(err)).Fatal("Could not find Handler")

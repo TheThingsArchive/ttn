@@ -5,14 +5,16 @@ Control The Things Network from the command line.
 **Options**
 
 ```
-      --config string               config file (default is $HOME/.ttnctl.yml)
-      --data string                 directory where ttnctl stores data (default is $HOME/.ttnctl)
-  -d, --debug                       Enable debug mode
-      --discovery-server string     The address of the Discovery server (default "discover.thethingsnetwork.org:1900")
-      --mqtt-broker string          The address of the MQTT broker (default "eu.thethings.network:1883")
-      --ttn-account-server string   The address of the OAuth 2.0 server (default "https://account.thethingsnetwork.org")
-      --ttn-handler string          The ID of the TTN Handler as announced in the Discovery server (default "ttn-handler-eu")
-      --ttn-router string           The ID of the TTN Router as announced in the Discovery server (default "ttn-router-eu")
+      --auth-server string         The address of the OAuth 2.0 server (default "https://account.thethingsnetwork.org")
+      --config string              config file (default is $HOME/.ttnctl.yml)
+      --data string                directory where ttnctl stores data (default is $HOME/.ttnctl)
+  -d, --debug                      Enable debug mode
+      --discovery-address string   The address of the Discovery server (default "discover.thethingsnetwork.org:1900")
+      --handler-id string          The ID of the TTN Handler as announced in the Discovery server (default "ttn-handler-eu")
+      --mqtt-address string        The address of the MQTT broker (default "eu.thethings.network:1883")
+      --mqtt-password string       The password for the MQTT broker
+      --mqtt-username string       The username for the MQTT broker
+      --router-id string           The ID of the TTN Router as announced in the Discovery server (default "ttn-router-eu")
 ```
 
 

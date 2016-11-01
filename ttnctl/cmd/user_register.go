@@ -33,7 +33,7 @@ Password: <entering password>
 		if err != nil {
 			ctx.Fatal(err.Error())
 		}
-		acc := account.New(viper.GetString("ttn-account-server"))
+		acc := account.New(viper.GetString("auth-server"))
 		err = acc.RegisterUser(username, email, string(password))
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not register user")

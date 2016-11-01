@@ -19,7 +19,7 @@ func GetRouter(ctx log.Interface) *router.Client {
 	defer dscConn.Close()
 	routerAnnouncement, err := client.Get(GetContext(ctx), &discovery.GetRequest{
 		ServiceName: "router",
-		Id:          viper.GetString("ttn-router"),
+		Id:          viper.GetString("router-id"),
 	})
 	if err != nil {
 		ctx.WithError(errors.FromGRPCError(err)).Fatal("Could not get Router from Discovery")
@@ -40,7 +40,7 @@ func GetRouterManager(ctx log.Interface) (*grpc.ClientConn, router.RouterManager
 	defer dscConn.Close()
 	routerAnnouncement, err := client.Get(GetContext(ctx), &discovery.GetRequest{
 		ServiceName: "router",
-		Id:          viper.GetString("ttn-router"),
+		Id:          viper.GetString("router-id"),
 	})
 	if err != nil {
 		ctx.WithError(errors.FromGRPCError(err)).Fatal("Could not get Router from Discovery")

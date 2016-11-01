@@ -1,6 +1,6 @@
 id: dev
 debug: true
-discovery-server: "localhost:1900"
+discovery-address: "localhost:1900"
 auth-servers:
   ttn-account: "https://account.thethingsnetwork.org"
   ttn-account-preview: "https://preview.account.thethingsnetwork.org"

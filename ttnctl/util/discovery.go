@@ -13,7 +13,7 @@ import (
 
 // GetDiscovery gets the Discovery client for ttnctl
 func GetDiscovery(ctx log.Interface) (*grpc.ClientConn, discovery.DiscoveryClient) {
-	conn, err := grpc.Dial(viper.GetString("discovery-server"), append(api.DialOptions, grpc.WithInsecure())...)
+	conn, err := grpc.Dial(viper.GetString("discovery-address"), append(api.DialOptions, grpc.WithInsecure())...)
 	if err != nil {
 		ctx.WithError(err).Fatal("Could not connect to Discovery server")
 	}

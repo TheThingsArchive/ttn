@@ -83,7 +83,7 @@ func NewComponent(ctx log.Interface, serviceName string, announcedAddress string
 	if serviceName != "discovery" {
 		var err error
 		component.Discovery, err = pb_discovery.NewClient(
-			viper.GetString("discovery-server"),
+			viper.GetString("discovery-address"),
 			component.Identity,
 			func() string {
 				token, _ := component.BuildJWT()

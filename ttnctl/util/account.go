@@ -30,12 +30,12 @@ func derivedTokenFile() string {
 }
 
 func tokenName() string {
-	return viper.GetString("ttn-account-server")
+	return viper.GetString("auth-server")
 }
 
 func getServerKey() string {
 	replacer := strings.NewReplacer("https:", "", "http:", "", "/", "", ".", "")
-	return replacer.Replace(viper.GetString("ttn-account-server"))
+	return replacer.Replace(viper.GetString("auth-server"))
 }
 
 func tokenFilename(name string) string {
@@ -48,7 +48,7 @@ func GetTokenCache() cache.Cache {
 }
 
 func getAccountServerTokenSource(token *oauth2.Token) oauth2.TokenSource {
-	config := accountUtil.MakeConfig(viper.GetString("ttn-account-server"), "ttnctl", "", "")
+	config := accountUtil.MakeConfig(viper.GetString("auth-server"), "ttnctl", "", "")
 	return config.TokenSource(context.Background(), token)
 }
 
@@ -119,7 +119,7 @@ func GetTokenSource(ctx log.Interface) oauth2.TokenSource {
 }
 
 func GetTokenManager(accessToken string) tokens.Manager {
-	server := viper.GetString("ttn-account-server")
+	server := viper.GetString("auth-server")
 	return tokens.HTTPManager(server, accessToken, tokens.FileStore(path.Join(GetDataDir(), derivedTokenFile())))
 }
 
@@ -130,7 +130,7 @@ func GetAccount(ctx log.Interface) *account.Account {
 		ctx.WithError(err).Fatal("Could not get access token")
 	}
 
-	server := viper.GetString("ttn-account-server")
+	server := viper.GetString("auth-server")
 	manager := GetTokenManager(token.AccessToken)
 
 	return account.NewWithManager(server, token.AccessToken, manager)
@@ -138,7 +138,7 @@ func GetAccount(ctx log.Interface) *account.Account {
 
 // Login does a login to the Account server with the given username and password
 func Login(ctx log.Interface, code string) (*oauth2.Token, error) {
-	config := accountUtil.MakeConfig(viper.GetString("ttn-account-server"), "ttnctl", "", "")
+	config := accountUtil.MakeConfig(viper.GetString("auth-server"), "ttnctl", "", "")
 	token, err := config.Exchange(context.Background(), code)
 	if err != nil {
 		return nil, err

@@ -24,7 +24,7 @@ var brokerRegisterPrefixCmd = &cobra.Command{
 			cmd.UsageFunc()(cmd)
 		}
 
-		conn, err := grpc.Dial(viper.GetString("discovery-server"), append(api.DialOptions, grpc.WithInsecure())...)
+		conn, err := grpc.Dial(viper.GetString("discovery-address"), append(api.DialOptions, grpc.WithInsecure())...)
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not connect to Discovery server")
 		}

@@ -22,7 +22,7 @@ When you get started with The Things Network, you'll probably have some question
 1. Make sure you have [Go](https://golang.org) installed.
 2. Set up your [Go environment](https://golang.org/doc/code.html#GOPATH)
 3. Install the [protobuf compiler (`protoc`)](https://github.com/google/protobuf/releases)
-4. Make sure you have [RabbitMQ](https://www.rabbitmq.com/download.html) and [Redis](http://redis.io/download) **installed** and **running**.  
+4. Make sure you have [Redis](http://redis.io/download) and [RabbitMQ](https://www.rabbitmq.com/download.html) with the MQTT plugin **installed** and **running**.  
    If you're on Linux, you probably know how to do that. On a Mac, just run `brew bundle`. Windows users are currently on their own (feel free to contribute a guide for Windows).
 5. Declare a RabbitMQ exchange `ttn.handler` of type `topic`. Using [the management plugin](http://www.rabbitmq.com/management.html), declare the exchange in the web interface `http://server-name:15672` or using the management cli, run `rabbitmqadmin declare exchange name=ttn.handler type=topic auto_delete=false durable=true`
 
@@ -45,11 +45,11 @@ You can check your `ttnctl` configuration by running `ttnctl config`. It should 
          config file: /home/your-user/.ttnctl.yml
             data dir: /home/your-user/.ttnctl
 
-  ttn-account-server: https://preview.account.thethingsnetwork.org
-    discovery-server: localhost:1900
-          ttn-router: dev
-         ttn-handler: dev
-         mqtt-broker: localhost:1883
+         auth-server: https://preview.account.thethingsnetwork.org
+   discovery-address: localhost:1900
+           router-id: dev
+          handler-id: dev
+        mqtt-address: localhost:1883
 ```
 
 **NOTE:** From now on you should run all commands from the `$GOPATH/src/github.com/TheThingsNetwork/ttn` directory.
@@ -57,7 +57,7 @@ You can check your `ttnctl` configuration by running `ttnctl config`. It should 
 ## Run The Things Network's backend locally
 
 - Set up the backend as described [above](#set-up-the-things-networks-backend-for-development).
-- Run `forego start` to start all backend services at the same time. Make sure that Redis and Mosquitto **are running** on your machine.
+- Run `forego start` to start all backend services at the same time. Make sure that Redis and RabbitMQ **are running** on your machine.
 - First time only (or when Redis is flushed):
   * Run `ttn broker register-prefix 00000000/0 --config ./.env/broker/dev.yml`
   * Restart the backend services
@@ -68,7 +68,7 @@ You can check your `ttnctl` configuration by running `ttnctl config`. It should 
 - Add the following line to your `/etc/hosts` file:
     `127.0.0.1 router handler`
 - Run `make docker` to build the docker image
-- Run `docker-compose up` to start all backend services in Docker. Make sure that Redis and Mosquitto **are not running** on your local machine.
+- Run `docker-compose up` to start all backend services in Docker. Make sure that Redis and RabbitMQ **are not running** on your local machine, because they will be started by `docker-compose`.
 - First time only (or when Redis is flushed):
   * Run `docker-compose run broker broker register-prefix 00000000/0 --config ./.env/broker/dev.yml`
   * Restart the backend services

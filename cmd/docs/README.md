@@ -5,17 +5,18 @@ The Things Network's backend servers.
 **Options**
 
 ```
-      --auth-token string         The JWT token to be used for the discovery server
-      --config string             config file (default "$HOME/.ttn.yml")
-      --description string        The description of this component
-      --discovery-server string   The address of the Discovery server (default "discover.thethingsnetwork.org:1900")
-      --elasticsearch string      Location of Elasticsearch server for logging
-      --health-port int           The port number where the health server should be started
-      --id string                 The id of this component
-      --key-dir string            The directory where public/private keys are stored (default "$HOME/.ttn")
-      --log-file string           Location of the log file
-      --no-cli-logs               Disable CLI logs
-      --tls                       Use TLS
+      --auth-token string          The JWT token to be used for the discovery server
+      --config string              config file (default "$HOME/.ttn.yml")
+      --description string         The description of this component
+      --discovery-address string   The address of the Discovery server (default "discover.thethingsnetwork.org:1900")
+      --elasticsearch string       Location of Elasticsearch server for logging
+      --health-port int            The port number where the health server should be started
+      --id string                  The id of this component
+      --key-dir string             The directory where public/private keys are stored (default "$HOME/.ttn")
+      --log-file string            Location of the log file
+      --no-cli-logs                Disable CLI logs
+      --public                     Announce this component as part of The Things Network (public community network)
+      --tls                        Use TLS
 ```
 
 
@@ -80,19 +81,21 @@ ttn broker register prefix registers a prefix to this Broker
 **Options**
 
 ```
-      --amqp-exchange string             AMQP exchange
-      --amqp-host string                 AMQP host and port. Leave empty to disable AMQP
-      --amqp-password string             AMQP password
-      --amqp-username string             AMQP username (default "handler")
-      --mqtt-broker string               MQTT broker host and port (default "localhost:1883")
+      --amqp-address string              AMQP host and port. Leave empty to disable AMQP
+      --amqp-exchange string             AMQP exchange (default "ttn.handler")
+      --amqp-password string             AMQP password (default "guest")
+      --amqp-username string             AMQP username (default "guest")
+      --broker-id string                 The ID of the TTN Broker as announced in the Discovery server (default "dev")
+      --http-address string              The IP address where the gRPC proxy should listen (default "0.0.0.0")
+      --http-port int                    The port where the gRPC proxy should listen
+      --mqtt-address string              MQTT host and port
       --mqtt-password string             MQTT password
-      --mqtt-username string             MQTT username (default "handler")
+      --mqtt-username string             MQTT username
       --redis-address string             Redis host and port (default "localhost:6379")
       --redis-db int                     Redis database
       --server-address string            The IP address to listen for communication (default "0.0.0.0")
       --server-address-announce string   The public IP address to announce (default "localhost")
       --server-port int                  The port for communication (default 1904)
-      --ttn-broker string                The ID of the TTN Broker as announced in the Discovery server (default "dev")
 ```
 
 ### ttn handler gen-cert

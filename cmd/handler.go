@@ -31,13 +31,13 @@ var handlerCmd = &cobra.Command{
 	Long:  ``,
 	PreRun: func(cmd *cobra.Command, args []string) {
 		ctx.WithFields(log.Fields{
-			"Server":     fmt.Sprintf("%s:%d", viper.GetString("handler.server-address"), viper.GetInt("handler.server-port")),
-			"HTTP Proxy": fmt.Sprintf("%s:%d", viper.GetString("handler.http-address"), viper.GetInt("handler.http-port")),
-			"Announce":   fmt.Sprintf("%s:%d", viper.GetString("handler.server-address-announce"), viper.GetInt("handler.server-port")),
-			"Database":   fmt.Sprintf("%s/%d", viper.GetString("handler.redis-address"), viper.GetInt("handler.redis-db")),
-			"TTNBroker":  viper.GetString("handler.ttn-broker"),
-			"MQTTBroker": viper.GetString("handler.mqtt-broker"),
-			"AMQPHost":   viper.GetString("handler.amqp-host"),
+			"Server":        fmt.Sprintf("%s:%d", viper.GetString("handler.server-address"), viper.GetInt("handler.server-port")),
+			"HTTP Proxy":    fmt.Sprintf("%s:%d", viper.GetString("handler.http-address"), viper.GetInt("handler.http-port")),
+			"Announce":      fmt.Sprintf("%s:%d", viper.GetString("handler.server-address-announce"), viper.GetInt("handler.server-port")),
+			"Database":      fmt.Sprintf("%s/%d", viper.GetString("handler.redis-address"), viper.GetInt("handler.redis-db")),
+			"TTN Broker ID": viper.GetString("handler.broker-id"),
+			"MQTT":          viper.GetString("handler.mqtt-address"),
+			"AMQP":          viper.GetString("handler.amqp-address"),
 		}).Info("Initializing Handler")
 	},
 	Run: func(cmd *cobra.Command, args []string) {
@@ -61,16 +61,16 @@ var handlerCmd = &cobra.Command{
 		// Handler
 		handler := handler.NewRedisHandler(
 			client,
-			viper.GetString("handler.ttn-broker"),
+			viper.GetString("handler.broker-id"),
 			viper.GetString("handler.mqtt-username"),
 			viper.GetString("handler.mqtt-password"),
-			viper.GetString("handler.mqtt-broker"),
+			viper.GetString("handler.mqtt-address"),
 		)
-		if viper.GetString("handler.amqp-host") != "" {
+		if viper.GetString("handler.amqp-address") != "" {
 			handler = handler.WithAMQP(
 				viper.GetString("handler.amqp-username"),
 				viper.GetString("handler.amqp-password"),
-				viper.GetString("handler.amqp-host"),
+				viper.GetString("handler.amqp-address"),
 				viper.GetString("handler.amqp-exchange"))
 		}
 		err = handler.Init(component)
@@ -131,11 +131,11 @@ func init() {
 	handlerCmd.Flags().Int("redis-db", 0, "Redis database")
 	viper.BindPFlag("handler.redis-db", handlerCmd.Flags().Lookup("redis-db"))
 
-	handlerCmd.Flags().String("ttn-broker", "dev", "The ID of the TTN Broker as announced in the Discovery server")
-	viper.BindPFlag("handler.ttn-broker", handlerCmd.Flags().Lookup("ttn-broker"))
+	handlerCmd.Flags().String("broker-id", "dev", "The ID of the TTN Broker as announced in the Discovery server")
+	viper.BindPFlag("handler.broker-id", handlerCmd.Flags().Lookup("broker-id"))
 
-	handlerCmd.Flags().String("mqtt-broker", "localhost:1883", "MQTT broker host and port")
-	viper.BindPFlag("handler.mqtt-broker", handlerCmd.Flags().Lookup("mqtt-broker"))
+	handlerCmd.Flags().String("mqtt-address", "", "MQTT host and port")
+	viper.BindPFlag("handler.mqtt-address", handlerCmd.Flags().Lookup("mqtt-address"))
 
 	handlerCmd.Flags().String("mqtt-username", "", "MQTT username")
 	viper.BindPFlag("handler.mqtt-username", handlerCmd.Flags().Lookup("mqtt-username"))
@@ -143,8 +143,8 @@ func init() {
 	handlerCmd.Flags().String("mqtt-password", "", "MQTT password")
 	viper.BindPFlag("handler.mqtt-password", handlerCmd.Flags().Lookup("mqtt-password"))
 
-	handlerCmd.Flags().String("amqp-host", "", "AMQP host and port. Leave empty to disable AMQP")
-	viper.BindPFlag("handler.amqp-host", handlerCmd.Flags().Lookup("amqp-host"))
+	handlerCmd.Flags().String("amqp-address", "", "AMQP host and port. Leave empty to disable AMQP")
+	viper.BindPFlag("handler.amqp-address", handlerCmd.Flags().Lookup("amqp-address"))
 
 	handlerCmd.Flags().String("amqp-username", "guest", "AMQP username")
 	viper.BindPFlag("handler.amqp-username", handlerCmd.Flags().Lookup("amqp-username"))
