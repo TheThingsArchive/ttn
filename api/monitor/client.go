@@ -202,7 +202,7 @@ func (cl *gatewayClient) SetToken(token string) {
 func (cl *gatewayClient) IsConfigured() bool {
 	cl.RLock()
 	defer cl.RUnlock()
-	return cl.token != ""
+	return cl.token != "" && cl.token != "token"
 }
 
 // SendStatus sends status to the monitor
