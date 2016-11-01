@@ -15,7 +15,7 @@ import (
 
 func TestPublishSubscribeAppEvents(t *testing.T) {
 	a := New(t)
-	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s:1883", host))
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s", host))
 	c.Connect()
 	defer c.Disconnect()
 	var wg WaitGroup
@@ -36,7 +36,7 @@ func TestPublishSubscribeAppEvents(t *testing.T) {
 
 func TestPublishSubscribeDeviceEvents(t *testing.T) {
 	a := New(t)
-	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s:1883", host))
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s", host))
 	c.Connect()
 	defer c.Disconnect()
 	var wg WaitGroup

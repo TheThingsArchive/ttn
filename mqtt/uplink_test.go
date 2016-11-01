@@ -19,7 +19,7 @@ import (
 
 func TestPublishUplink(t *testing.T) {
 	a := New(t)
-	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s:1883", host))
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s", host))
 	c.Connect()
 	defer c.Disconnect()
 
@@ -36,7 +36,7 @@ func TestPublishUplink(t *testing.T) {
 func TestPublishUplinkFields(t *testing.T) {
 	a := New(t)
 	ctx := GetLogger(t, "Test")
-	c := NewClient(ctx, "test", "", "", fmt.Sprintf("tcp://%s:1883", host))
+	c := NewClient(ctx, "test", "", "", fmt.Sprintf("tcp://%s", host))
 
 	c.Connect()
 	defer c.Disconnect()
@@ -107,7 +107,7 @@ func TestPublishUplinkFields(t *testing.T) {
 
 func TestSubscribeDeviceUplink(t *testing.T) {
 	a := New(t)
-	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s:1883", host))
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s", host))
 	c.Connect()
 	defer c.Disconnect()
 
@@ -122,7 +122,7 @@ func TestSubscribeDeviceUplink(t *testing.T) {
 
 func TestSubscribeAppUplink(t *testing.T) {
 	a := New(t)
-	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s:1883", host))
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s", host))
 	c.Connect()
 	defer c.Disconnect()
 
@@ -137,7 +137,7 @@ func TestSubscribeAppUplink(t *testing.T) {
 
 func TestSubscribeUplink(t *testing.T) {
 	a := New(t)
-	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s:1883", host))
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s", host))
 	c.Connect()
 	defer c.Disconnect()
 
@@ -152,7 +152,7 @@ func TestSubscribeUplink(t *testing.T) {
 
 func TestPubSubUplink(t *testing.T) {
 	a := New(t)
-	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s:1883", host))
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s", host))
 	c.Connect()
 	defer c.Disconnect()
 
@@ -185,7 +185,7 @@ func TestPubSubUplink(t *testing.T) {
 
 func TestPubSubAppUplink(t *testing.T) {
 	a := New(t)
-	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s:1883", host))
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s", host))
 	c.Connect()
 	defer c.Disconnect()
 
