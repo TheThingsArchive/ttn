@@ -30,6 +30,7 @@ func (c *DefaultClient) NewPublisher(exchange string) Publisher {
 			ctx:      c.ctx,
 			client:   c,
 			exchange: exchange,
+			name:     "Publisher",
 		},
 	}
 }

@@ -95,6 +95,7 @@ func TestReopenChannelClient(t *testing.T) {
 	defer p.Close()
 
 	test := func() error {
+		ctx.Debug("Testing publish")
 		return p.channel.Publish("", "test", false, false, AMQP.Publishing{
 			Body: []byte("test"),
 		})
