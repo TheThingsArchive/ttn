@@ -31,7 +31,7 @@ type DefaultClient struct {
 	channels map[*DefaultChannelClient]*AMQP.Channel
 }
 
-// ChannelClient represents a AMQP channel client
+// ChannelClient represents an AMQP channel client
 type ChannelClient interface {
 	Open() error
 	io.Closer
@@ -42,6 +42,7 @@ type DefaultChannelClient struct {
 	ctx          Logger
 	client       *DefaultClient
 	channel      *AMQP.Channel
+	name         string
 	exchange     string
 	exchangeType string
 }
@@ -109,7 +110,14 @@ func (c *DefaultClient) connect(reconnect bool) (chan *AMQP.Error, error) {
 		defer c.mutex.Unlock()
 		for user, channel := range c.channels {
 			channel.Close()
-			go user.Open()
+			channel, err = c.conn.Channel()
+			if err != nil {
+				c.ctx.Warnf("Failed to reopen channel %s for %s (%s)", user.name, user.exchange, err)
+				continue
+			}
+			c.ctx.Infof("Reopened channel %s for %s", user.name, user.exchange)
+			user.channel = channel
+			c.channels[user] = channel
 		}
 	}
 

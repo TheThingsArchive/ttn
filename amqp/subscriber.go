@@ -45,6 +45,7 @@ func (c *DefaultClient) NewSubscriber(exchange, name string, durable, autoDelete
 			ctx:      c.ctx,
 			client:   c,
 			exchange: exchange,
+			name:     "Subscriber",
 		},
 		name:       name,
 		durable:    durable,
