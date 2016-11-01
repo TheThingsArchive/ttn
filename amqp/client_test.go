@@ -16,7 +16,7 @@ import (
 var host string
 
 func init() {
-	host = os.Getenv("AMQP_ADDR")
+	host = os.Getenv("AMQP_ADDRESS")
 	if host == "" {
 		host = "localhost:5672"
 	}

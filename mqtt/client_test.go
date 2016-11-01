@@ -19,9 +19,9 @@ import (
 var host string
 
 func init() {
-	host = os.Getenv("MQTT_HOST")
+	host = os.Getenv("MQTT_ADDRESS")
 	if host == "" {
-		host = "localhost"
+		host = "localhost:1883"
 	}
 }
 
@@ -70,13 +70,13 @@ func TestSimpleToken(t *testing.T) {
 
 func TestNewClient(t *testing.T) {
 	a := New(t)
-	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s:1883", host))
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s", host))
 	a.So(c.(*DefaultClient).mqtt, ShouldNotBeNil)
 }
 
 func TestConnect(t *testing.T) {
 	a := New(t)
-	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s:1883", host))
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s", host))
 	err := c.Connect()
 	defer c.Disconnect()
 	a.So(err, ShouldBeNil)
@@ -103,7 +103,7 @@ func TestConnectInvalidCredentials(t *testing.T) {
 
 func TestIsConnected(t *testing.T) {
 	a := New(t)
-	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s:1883", host))
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s", host))
 
 	a.So(c.IsConnected(), ShouldBeFalse)
 
@@ -115,7 +115,7 @@ func TestIsConnected(t *testing.T) {
 
 func TestDisconnect(t *testing.T) {
 	a := New(t)
-	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s:1883", host))
+	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s", host))
 
 	// Disconnecting when not connected should not change anything
 	c.Disconnect()
@@ -132,7 +132,7 @@ func TestRandomTopicPublish(t *testing.T) {
 	a := New(t)
 	ctx := GetLogger(t, "TestRandomTopicPublish")
 
-	c := NewClient(ctx, "test", "", "", fmt.Sprintf("tcp://%s:1883", host))
+	c := NewClient(ctx, "test", "", "", fmt.Sprintf("tcp://%s", host))
 	c.Connect()
 	defer c.Disconnect()
 

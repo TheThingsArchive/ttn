@@ -35,8 +35,8 @@ tests:
     - redis
   variables:
     REDIS_HOST: redis
-    MQTT_HOST: robertobarreda__rabbitmq
-    AMQP_ADDR: robertobarreda__rabbitmq:5672
+    MQTT_ADDRESS: robertobarreda__rabbitmq:1883
+    AMQP_ADDRESS: robertobarreda__rabbitmq:5672
   script:
     - pushd $GOPATH/src/github.com/TheThingsNetwork/ttn
     - make deps

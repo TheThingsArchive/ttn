@@ -18,14 +18,14 @@ import (
 )
 
 func TestHandleMQTT(t *testing.T) {
-	host := os.Getenv("MQTT_HOST")
+	host := os.Getenv("MQTT_ADDRESS")
 	if host == "" {
-		host = "localhost"
+		host = "localhost:1883"
 	}
 
 	a := New(t)
 	var wg WaitGroup
-	c := mqtt.NewClient(GetLogger(t, "TestHandleMQTT"), "test", "", "", fmt.Sprintf("tcp://%s:1883", host))
+	c := mqtt.NewClient(GetLogger(t, "TestHandleMQTT"), "test", "", "", fmt.Sprintf("tcp://%s", host))
 	err := c.Connect()
 	a.So(err, ShouldBeNil)
 	appID := "handler-mqtt-app1"
@@ -41,7 +41,7 @@ func TestHandleMQTT(t *testing.T) {
 	defer func() {
 		h.devices.Delete(appID, devID)
 	}()
-	err = h.HandleMQTT("", "", fmt.Sprintf("tcp://%s:1883", host))
+	err = h.HandleMQTT("", "", fmt.Sprintf("tcp://%s", host))
 	a.So(err, ShouldBeNil)
 
 	c.PublishDownlink(types.DownlinkMessage{
