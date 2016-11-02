@@ -60,6 +60,9 @@ binaries:
     - GOOS=windows GOARCH=386 make build
     - GOOS=windows GOARCH=amd64 make build
     - popd
+    - pushd release
+    - shasum -a 256 $(ls ttn*) | awk '{print "sha256 " $2 " " $1}' >> info
+    - popd
   artifacts:
     paths:
       - release/

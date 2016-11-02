@@ -65,8 +65,6 @@ func GetLatestInfo() (*Info, error) {
 			if date, err := time.Parse(time.RFC3339, infoLine[1]); err == nil {
 				info.Date = date
 			}
-		default:
-			fmt.Printf("Can't handle %s", infoLine[0])
 		}
 	}
 
