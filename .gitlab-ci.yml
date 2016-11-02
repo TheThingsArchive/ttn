@@ -2,6 +2,7 @@ stages:
   - deps
   - test
   - build
+  - sign
   - package
 
 variables:
@@ -60,12 +61,26 @@ binaries:
     - GOOS=windows GOARCH=386 make build
     - GOOS=windows GOARCH=amd64 make build
     - popd
-    - pushd release
-    - shasum -a 256 $(ls ttn*) | awk '{print "sha256 " $2 " " $1}' >> info
-    - popd
   artifacts:
     paths:
       - release/
+
+sign:
+  only:
+    - v1-staging@thethingsnetwork/ttn
+    - v2-preview@thethingsnetwork/ttn
+  stage: sign
+  image: golang:latest
+  script:
+    - pushd release
+    - shasum -a 256 $(ls) > checksums
+    - gpg --no-tty --batch --import /gpg/signing.ci.gpg-key
+    - gpg --no-tty --batch --no-use-agent --passphrase $GPG_PASSPHRASE --detach-sign checksums
+    - popd
+  artifacts:
+    paths:
+      - release/checksums
+      - release/checksums.sig
 
 gitlab-image:
   stage: package
