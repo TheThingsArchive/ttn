@@ -28,7 +28,9 @@ function Decoder(bytes, port) {
   // (array) of bytes to an object of fields.
   var decoded = {};
 
-  // if (port === 1) decoded.led = bytes[0];
+  // if (port === 1) {
+  //   decoded.led = bytes[0];
+  // }
 
   return decoded;
 }
@@ -36,7 +38,9 @@ function Decoder(bytes, port) {
 function Decoder(bytes, port) {
   var decoded = {};
 
-  if (port === 1) decoded.led = bytes[0];
+  // if (port === 1) {
+  //   decoded.led = bytes[0];
+  // }
 
   return decoded;
 }
@@ -88,7 +92,9 @@ function Decoder(bytes, port) {
   // (array) of bytes to an object of fields.
   var decoded = {};
 
-  // if (port === 1) decoded.led = bytes[0];
+  // if (port === 1) {
+  //   decoded.led = bytes[0];
+  // }
 
   return decoded;
 }
@@ -127,7 +133,9 @@ function Decoder(bytes, port) {
   // object to an array or buffer of bytes.
   var bytes = [];
 
-  // if (port === 1) bytes[0] = object.led ? 1 : 0;
+  // if (port === 1) {
+  //   bytes[0] = object.led ? 1 : 0;
+  // }
 
   return bytes;
 }
