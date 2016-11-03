@@ -23,20 +23,24 @@ The functions are read from the supplied file or from STDIN.`,
 	Example: `$ ttnctl applications pf set decoder
   INFO Discovering Handler...
   INFO Connecting with Handler...
-function Decoder(bytes) {
+function Decoder(bytes, port) {
   // Decode an uplink message from a buffer
   // (array) of bytes to an object of fields.
   var decoded = {};
 
-  // decoded.led = bytes[0];
+  // if (port === 1) {
+  //   decoded.led = bytes[0];
+  // }
 
   return decoded;
 }
 ########## Write your Decoder here and end with Ctrl+D (EOF):
-function Decoder(bytes) {
+function Decoder(bytes, port) {
   var decoded = {};
 
-  decoded.led = bytes[0];
+  // if (port === 1) {
+  //   decoded.led = bytes[0];
+  // }
 
   return decoded;
 }
@@ -83,24 +87,26 @@ function Decoder(bytes) {
 		} else {
 			switch function {
 			case "decoder":
-				fmt.Println(`function Decoder(bytes) {
+				fmt.Println(`function Decoder(bytes, port) {
   // Decode an uplink message from a buffer
   // (array) of bytes to an object of fields.
   var decoded = {};
 
-  // decoded.led = bytes[0];
+  // if (port === 1) {
+  //   decoded.led = bytes[0];
+  // }
 
   return decoded;
 }
 ########## Write your Decoder here and end with Ctrl+D (EOF):`)
 				app.Decoder = readFunction()
 			case "converter":
-				fmt.Println(`function Converter(decoded) {
+				fmt.Println(`function Converter(decoded, port) {
   // Merge, split or otherwise
   // mutate decoded fields.
   var converted = decoded;
 
-  // if (converted.led === 0 || converted.led === 1) {
+  // if (port === 1 && (converted.led === 0 || converted.led === 1)) {
   //   converted.led = Boolean(converted.led);
   // }
 
@@ -109,11 +115,11 @@ function Decoder(bytes) {
 ########## Write your Converter here and end with Ctrl+D (EOF):`)
 				app.Converter = readFunction()
 			case "validator":
-				fmt.Println(`function Validator(converted) {
+				fmt.Println(`function Validator(converted, port) {
   // Return false if the decoded, converted
   // message is invalid and should be dropped.
 
-  // if (typeof converted.led !== 'boolean') {
+  // if (port === 1 && typeof converted.led !== 'boolean') {
   //   return false;
   // }
 
@@ -122,12 +128,14 @@ function Decoder(bytes) {
 ########## Write your Validator here and end with Ctrl+D (EOF):`)
 				app.Validator = readFunction()
 			case "encoder":
-				fmt.Println(`function Encoder(object) {
+				fmt.Println(`function Encoder(object, port) {
   // Encode downlink messages sent as
   // object to an array or buffer of bytes.
   var bytes = [];
 
-  // bytes[0] = object.led ? 1 : 0;
+  // if (port === 1) {
+  //   bytes[0] = object.led ? 1 : 0;
+  // }
 
   return bytes;
 }
