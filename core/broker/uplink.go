@@ -158,6 +158,10 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) (err error) {
 	// Select best DownlinkOption
 	if len(downlinkOptions) > 0 {
 		downlinkMessage = &pb.DownlinkMessage{
+			DevEui:         device.DevEui,
+			AppEui:         device.AppEui,
+			AppId:          device.AppId,
+			DevId:          device.DevId,
 			DownlinkOption: selectBestDownlink(downlinkOptions),
 		}
 	}
