@@ -141,10 +141,11 @@ func (h *ManagerClient) GetDevAddr(constraints ...string) (types.DevAddr, error)
 
 // DryUplink transforms the uplink payload with the payload functions provided
 // in the app..
-func (h *ManagerClient) DryUplink(payload []byte, app *Application) (*DryUplinkResult, error) {
+func (h *ManagerClient) DryUplink(payload []byte, app *Application, port uint32) (*DryUplinkResult, error) {
 	res, err := h.applicationManagerClient.DryUplink(h.getContext(), &DryUplinkMessage{
 		App:     app,
 		Payload: payload,
+		Port:    port,
 	})
 	if err != nil {
 		return nil, errors.Wrap(errors.FromGRPCError(err), "Could not dry-run uplink on Handler")
@@ -154,10 +155,11 @@ func (h *ManagerClient) DryUplink(payload []byte, app *Application) (*DryUplinkR
 
 // DryDownlinkWithPayload transforms the downlink payload with the payload functions
 // provided in app.
-func (h *ManagerClient) DryDownlinkWithPayload(payload []byte, app *Application) (*DryDownlinkResult, error) {
+func (h *ManagerClient) DryDownlinkWithPayload(payload []byte, app *Application, port uint32) (*DryDownlinkResult, error) {
 	res, err := h.applicationManagerClient.DryDownlink(h.getContext(), &DryDownlinkMessage{
 		App:     app,
 		Payload: payload,
+		Port:    port,
 	})
 	if err != nil {
 		return nil, errors.Wrap(errors.FromGRPCError(err), "Could not dry-run downlink with payload on Handler")
@@ -167,7 +169,7 @@ func (h *ManagerClient) DryDownlinkWithPayload(payload []byte, app *Application)
 
 // DryDownlinkWithFields transforms the downlink fields with the payload functions
 // provided in app.
-func (h *ManagerClient) DryDownlinkWithFields(fields map[string]interface{}, app *Application) (*DryDownlinkResult, error) {
+func (h *ManagerClient) DryDownlinkWithFields(fields map[string]interface{}, app *Application, port uint32) (*DryDownlinkResult, error) {
 	marshalled, err := json.Marshal(fields)
 	if err != nil {
 		return nil, err
@@ -176,6 +178,7 @@ func (h *ManagerClient) DryDownlinkWithFields(fields map[string]interface{}, app
 	res, err := h.applicationManagerClient.DryDownlink(h.getContext(), &DryDownlinkMessage{
 		App:    app,
 		Fields: string(marshalled),
+		Port:   port,
 	})
 	if err != nil {
 		return nil, errors.Wrap(errors.FromGRPCError(err), "Could not dry-run downlink with fields on Handler")
