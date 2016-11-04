@@ -74,10 +74,10 @@ func (m *ActivationMetadata) Validate() bool {
 	if m.DevEui == nil || m.DevEui.IsEmpty() {
 		return false
 	}
-	if m.DevAddr == nil || m.DevAddr.IsEmpty() {
+	if m.DevAddr != nil && m.DevAddr.IsEmpty() {
 		return false
 	}
-	if m.NwkSKey == nil || m.NwkSKey.IsEmpty() {
+	if m.NwkSKey != nil && m.NwkSKey.IsEmpty() {
 		return false
 	}
 	return true
