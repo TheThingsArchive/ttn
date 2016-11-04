@@ -135,6 +135,7 @@ func (msg *Message_JoinAcceptPayload) Payload() lorawan.Payload {
 // JoinAcceptPayloadFromPayload creates a new JoinAcceptPayload from a lorawan.Payload
 func JoinAcceptPayloadFromPayload(payload lorawan.Payload) (accept JoinAcceptPayload) {
 	if dataPayload, ok := payload.(*lorawan.DataPayload); ok {
+		accept.Encrypted = dataPayload.Bytes
 		joinAccept := &lorawan.JoinAcceptPayload{}
 		joinAccept.UnmarshalBinary(false, dataPayload.Bytes)
 		payload = joinAccept
@@ -152,9 +153,6 @@ func JoinAcceptPayloadFromPayload(payload lorawan.Payload) (accept JoinAcceptPay
 				Freq: payload.CFList[:],
 			}
 		}
-	}
-	if encrypted, ok := payload.(*lorawan.DataPayload); ok {
-		accept.Encrypted = encrypted.Bytes
 	}
 	return
 }
