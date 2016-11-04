@@ -5,7 +5,7 @@ package types
 
 // LocationMetadata contains GPS coordinates
 type LocationMetadata struct {
-	Altitude  int32   `json:"altitude,omitempty"`
-	Longitude float32 `json:"longitude,omitempty"`
 	Latitude  float32 `json:"latitude,omitempty"`
+	Longitude float32 `json:"longitude,omitempty"`
+	Altitude  int32   `json:"altitude,omitempty"`
 }
