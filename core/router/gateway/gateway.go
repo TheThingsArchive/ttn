@@ -74,6 +74,13 @@ func (g *Gateway) HandleUplink(uplink *pb_router.UplinkMessage) (err error) {
 	g.Schedule.Sync(uplink.GatewayMetadata.Timestamp)
 	g.updateLastSeen()
 
+	// Inject Gateway location
+	if uplink.GatewayMetadata.Gps == nil {
+		if status, err := g.Status.Get(); err == nil {
+			uplink.GatewayMetadata.Gps = status.GetGps()
+		}
+	}
+
 	if g.Monitors != nil {
 		for _, monitor := range g.Monitors {
 			go monitor.SendUplink(uplink)

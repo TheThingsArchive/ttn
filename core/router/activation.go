@@ -40,9 +40,9 @@ func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivat
 		GatewayMetadata:  activation.GatewayMetadata,
 	}
 
-	// Only for LoRaWAN
-	gateway.Schedule.Sync(uplink.GatewayMetadata.Timestamp)
-	gateway.Utilization.AddRx(uplink)
+	if err = gateway.HandleUplink(uplink); err != nil {
+		return nil, err
+	}
 
 	if !gateway.Schedule.IsActive() {
 		return nil, errors.NewErrInternal(fmt.Sprintf("Gateway %s not available for downlink", gatewayID))
