@@ -508,7 +508,7 @@ var _ grpc.ClientConn
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion3
+const _ = grpc.SupportPackageIsVersion4
 
 // Client API for Broker service
 
@@ -772,7 +772,7 @@ var _Broker_serviceDesc = grpc.ServiceDesc{
 			ClientStreams: true,
 		},
 	},
-	Metadata: fileDescriptorBroker,
+	Metadata: "github.com/TheThingsNetwork/ttn/api/broker/broker.proto",
 }
 
 // Client API for BrokerManager service
@@ -873,61 +873,61 @@ var _BrokerManager_serviceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: fileDescriptorBroker,
+	Metadata: "github.com/TheThingsNetwork/ttn/api/broker/broker.proto",
 }
 
-func (m *DownlinkOption) Marshal() (data []byte, err error) {
+func (m *DownlinkOption) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
+	dAtA = make([]byte, size)
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
-	return data[:n], nil
+	return dAtA[:n], nil
 }
 
-func (m *DownlinkOption) MarshalTo(data []byte) (int, error) {
+func (m *DownlinkOption) MarshalTo(dAtA []byte) (int, error) {
 	var i int
 	_ = i
 	var l int
 	_ = l
 	if len(m.Identifier) > 0 {
-		data[i] = 0xa
+		dAtA[i] = 0xa
 		i++
-		i = encodeVarintBroker(data, i, uint64(len(m.Identifier)))
-		i += copy(data[i:], m.Identifier)
+		i = encodeVarintBroker(dAtA, i, uint64(len(m.Identifier)))
+		i += copy(dAtA[i:], m.Identifier)
 	}
 	if len(m.GatewayId) > 0 {
-		data[i] = 0x12
+		dAtA[i] = 0x12
 		i++
-		i = encodeVarintBroker(data, i, uint64(len(m.GatewayId)))
-		i += copy(data[i:], m.GatewayId)
+		i = encodeVarintBroker(dAtA, i, uint64(len(m.GatewayId)))
+		i += copy(dAtA[i:], m.GatewayId)
 	}
 	if m.Score != 0 {
-		data[i] = 0x18
+		dAtA[i] = 0x18
 		i++
-		i = encodeVarintBroker(data, i, uint64(m.Score))
+		i = encodeVarintBroker(dAtA, i, uint64(m.Score))
 	}
 	if m.Deadline != 0 {
-		data[i] = 0x20
+		dAtA[i] = 0x20
 		i++
-		i = encodeVarintBroker(data, i, uint64(m.Deadline))
+		i = encodeVarintBroker(dAtA, i, uint64(m.Deadline))
 	}
 	if m.ProtocolConfig != nil {
-		data[i] = 0x2a
+		dAtA[i] = 0x2a
 		i++
-		i = encodeVarintBroker(data, i, uint64(m.ProtocolConfig.Size()))
-		n1, err := m.ProtocolConfig.MarshalTo(data[i:])
+		i = encodeVarintBroker(dAtA, i, uint64(m.ProtocolConfig.Size()))
+		n1, err := m.ProtocolConfig.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += n1
 	}
 	if m.GatewayConfig != nil {
-		data[i] = 0x32
+		dAtA[i] = 0x32
 		i++
-		i = encodeVarintBroker(data, i, uint64(m.GatewayConfig.Size()))
-		n2, err := m.GatewayConfig.MarshalTo(data[i:])
+		i = encodeVarintBroker(dAtA, i, uint64(m.GatewayConfig.Size()))
+		n2, err := m.GatewayConfig.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
@@ -936,88 +936,88 @@ func (m *DownlinkOption) MarshalTo(data []byte) (int, error) {
 	return i, nil
 }
 
-func (m *UplinkMessage) Marshal() (data []byte, err error) {
+func (m *UplinkMessage) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
+	dAtA = make([]byte, size)
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
-	return data[:n], nil
+	return dAtA[:n], nil
 }
 
-func (m *UplinkMessage) MarshalTo(data []byte) (int, error) {
+func (m *UplinkMessage) MarshalTo(dAtA []byte) (int, error) {
 	var i int
 	_ = i
 	var l int
 	_ = l
 	if len(m.Payload) > 0 {
-		data[i] = 0xa
+		dAtA[i] = 0xa
 		i++
-		i = encodeVarintBroker(data, i, uint64(len(m.Payload)))
-		i += copy(data[i:], m.Payload)
+		i = encodeVarintBroker(dAtA, i, uint64(len(m.Payload)))
+		i += copy(dAtA[i:], m.Payload)
 	}
 	if m.Message != nil {
-		data[i] = 0x12
+		dAtA[i] = 0x12
 		i++
-		i = encodeVarintBroker(data, i, uint64(m.Message.Size()))
-		n3, err := m.Message.MarshalTo(data[i:])
+		i = encodeVarintBroker(dAtA, i, uint64(m.Message.Size()))
+		n3, err := m.Message.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += n3
 	}
 	if m.DevEui != nil {
-		data[i] = 0x5a
+		dAtA[i] = 0x5a
 		i++
-		i = encodeVarintBroker(data, i, uint64(m.DevEui.Size()))
-		n4, err := m.DevEui.MarshalTo(data[i:])
+		i = encodeVarintBroker(dAtA, i, uint64(m.DevEui.Size()))
+		n4, err := m.DevEui.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += n4
 	}
 	if m.AppEui != nil {
-		data[i] = 0x62
+		dAtA[i] = 0x62
 		i++
-		i = encodeVarintBroker(data, i, uint64(m.AppEui.Size()))
-		n5, err := m.AppEui.MarshalTo(data[i:])
+		i = encodeVarintBroker(dAtA, i, uint64(m.AppEui.Size()))
+		n5, err := m.AppEui.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += n5
 	}
 	if len(m.AppId) > 0 {
-		data[i] = 0x6a
+		dAtA[i] = 0x6a
 		i++
-		i = encodeVarintBroker(data, i, uint64(len(m.AppId)))
-		i += copy(data[i:], m.AppId)
+		i = encodeVarintBroker(dAtA, i, uint64(len(m.AppId)))
+		i += copy(dAtA[i:], m.AppId)
 	}
 	if len(m.DevId) > 0 {
-		data[i] = 0x72
+		dAtA[i] = 0x72
 		i++
-		i = encodeVarintBroker(data, i, uint64(len(m.DevId)))
-		i += copy(data[i:], m.DevId)
+		i = encodeVarintBroker(dAtA, i, uint64(len(m.DevId)))
+		i += copy(dAtA[i:], m.DevId)
 	}
 	if m.ProtocolMetadata != nil {
-		data[i] = 0xaa
+		dAtA[i] = 0xaa
 		i++
-		data[i] = 0x1
+		dAtA[i] = 0x1
 		i++
-		i = encodeVarintBroker(data, i, uint64(m.ProtocolMetadata.Size()))
-		n6, err := m.ProtocolMetadata.MarshalTo(data[i:])
+		i = encodeVarintBroker(dAtA, i, uint64(m.ProtocolMetadata.Size()))
+		n6, err := m.ProtocolMetadata.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += n6
 	}
 	if m.GatewayMetadata != nil {
-		data[i] = 0xb2
+		dAtA[i] = 0xb2
 		i++
-		data[i] = 0x1
+		dAtA[i] = 0x1
 		i++
-		i = encodeVarintBroker(data, i, uint64(m.GatewayMetadata.Size()))
-		n7, err := m.GatewayMetadata.MarshalTo(data[i:])
+		i = encodeVarintBroker(dAtA, i, uint64(m.GatewayMetadata.Size()))
+		n7, err := m.GatewayMetadata.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
@@ -1025,12 +1025,12 @@ func (m *UplinkMessage) MarshalTo(data []byte) (int, error) {
 	}
 	if len(m.DownlinkOptions) > 0 {
 		for _, msg := range m.DownlinkOptions {
-			data[i] = 0xfa
+			dAtA[i] = 0xfa
 			i++
-			data[i] = 0x1
+			dAtA[i] = 0x1
 			i++
-			i = encodeVarintBroker(data, i, uint64(msg.Size()))
-			n, err := msg.MarshalTo(data[i:])
+			i = encodeVarintBroker(dAtA, i, uint64(msg.Size()))
+			n, err := msg.MarshalTo(dAtA[i:])
 			if err != nil {
 				return 0, err
 			}
@@ -1040,76 +1040,76 @@ func (m *UplinkMessage) MarshalTo(data []byte) (int, error) {
 	return i, nil
 }
 
-func (m *DownlinkMessage) Marshal() (data []byte, err error) {
+func (m *DownlinkMessage) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
+	dAtA = make([]byte, size)
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
-	return data[:n], nil
+	return dAtA[:n], nil
 }
 
-func (m *DownlinkMessage) MarshalTo(data []byte) (int, error) {
+func (m *DownlinkMessage) MarshalTo(dAtA []byte) (int, error) {
 	var i int
 	_ = i
 	var l int
 	_ = l
 	if len(m.Payload) > 0 {
-		data[i] = 0xa
+		dAtA[i] = 0xa
 		i++
-		i = encodeVarintBroker(data, i, uint64(len(m.Payload)))
-		i += copy(data[i:], m.Payload)
+		i = encodeVarintBroker(dAtA, i, uint64(len(m.Payload)))
+		i += copy(dAtA[i:], m.Payload)
 	}
 	if m.Message != nil {
-		data[i] = 0x12
+		dAtA[i] = 0x12
 		i++
-		i = encodeVarintBroker(data, i, uint64(m.Message.Size()))
-		n8, err := m.Message.MarshalTo(data[i:])
+		i = encodeVarintBroker(dAtA, i, uint64(m.Message.Size()))
+		n8, err := m.Message.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += n8
 	}
 	if m.DevEui != nil {
-		data[i] = 0x5a
+		dAtA[i] = 0x5a
 		i++
-		i = encodeVarintBroker(data, i, uint64(m.DevEui.Size()))
-		n9, err := m.DevEui.MarshalTo(data[i:])
+		i = encodeVarintBroker(dAtA, i, uint64(m.DevEui.Size()))
+		n9, err := m.DevEui.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += n9
 	}
 	if m.AppEui != nil {
-		data[i] = 0x62
+		dAtA[i] = 0x62
 		i++
-		i = encodeVarintBroker(data, i, uint64(m.AppEui.Size()))
-		n10, err := m.AppEui.MarshalTo(data[i:])
+		i = encodeVarintBroker(dAtA, i, uint64(m.AppEui.Size()))
+		n10, err := m.AppEui.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += n10
 	}
 	if len(m.AppId) > 0 {
-		data[i] = 0x6a
+		dAtA[i] = 0x6a
 		i++
-		i = encodeVarintBroker(data, i, uint64(len(m.AppId)))
-		i += copy(data[i:], m.AppId)
+		i = encodeVarintBroker(dAtA, i, uint64(len(m.AppId)))
+		i += copy(dAtA[i:], m.AppId)
 	}
 	if len(m.DevId) > 0 {
-		data[i] = 0x72
+		dAtA[i] = 0x72
 		i++
-		i = encodeVarintBroker(data, i, uint64(len(m.DevId)))
-		i += copy(data[i:], m.DevId)
+		i = encodeVarintBroker(dAtA, i, uint64(len(m.DevId)))
+		i += copy(dAtA[i:], m.DevId)
 	}
 	if m.DownlinkOption != nil {
-		data[i] = 0xaa
+		dAtA[i] = 0xaa
 		i++
-		data[i] = 0x1
+		dAtA[i] = 0x1
 		i++
-		i = encodeVarintBroker(data, i, uint64(m.DownlinkOption.Size()))
-		n11, err := m.DownlinkOption.MarshalTo(data[i:])
+		i = encodeVarintBroker(dAtA, i, uint64(m.DownlinkOption.Size()))
+		n11, err := m.DownlinkOption.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
@@ -1118,42 +1118,42 @@ func (m *DownlinkMessage) MarshalTo(data []byte) (int, error) {
 	return i, nil
 }
 
-func (m *DeviceActivationResponse) Marshal() (data []byte, err error) {
+func (m *DeviceActivationResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
+	dAtA = make([]byte, size)
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
-	return data[:n], nil
+	return dAtA[:n], nil
 }
 
-func (m *DeviceActivationResponse) MarshalTo(data []byte) (int, error) {
+func (m *DeviceActivationResponse) MarshalTo(dAtA []byte) (int, error) {
 	var i int
 	_ = i
 	var l int
 	_ = l
 	if len(m.Payload) > 0 {
-		data[i] = 0xa
+		dAtA[i] = 0xa
 		i++
-		i = encodeVarintBroker(data, i, uint64(len(m.Payload)))
-		i += copy(data[i:], m.Payload)
+		i = encodeVarintBroker(dAtA, i, uint64(len(m.Payload)))
+		i += copy(dAtA[i:], m.Payload)
 	}
 	if m.Message != nil {
-		data[i] = 0x12
+		dAtA[i] = 0x12
 		i++
-		i = encodeVarintBroker(data, i, uint64(m.Message.Size()))
-		n12, err := m.Message.MarshalTo(data[i:])
+		i = encodeVarintBroker(dAtA, i, uint64(m.Message.Size()))
+		n12, err := m.Message.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += n12
 	}
 	if m.DownlinkOption != nil {
-		data[i] = 0x5a
+		dAtA[i] = 0x5a
 		i++
-		i = encodeVarintBroker(data, i, uint64(m.DownlinkOption.Size()))
-		n13, err := m.DownlinkOption.MarshalTo(data[i:])
+		i = encodeVarintBroker(dAtA, i, uint64(m.DownlinkOption.Size()))
+		n13, err := m.DownlinkOption.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
@@ -1162,76 +1162,76 @@ func (m *DeviceActivationResponse) MarshalTo(data []byte) (int, error) {
 	return i, nil
 }
 
-func (m *DeduplicatedUplinkMessage) Marshal() (data []byte, err error) {
+func (m *DeduplicatedUplinkMessage) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
+	dAtA = make([]byte, size)
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
-	return data[:n], nil
+	return dAtA[:n], nil
 }
 
-func (m *DeduplicatedUplinkMessage) MarshalTo(data []byte) (int, error) {
+func (m *DeduplicatedUplinkMessage) MarshalTo(dAtA []byte) (int, error) {
 	var i int
 	_ = i
 	var l int
 	_ = l
 	if len(m.Payload) > 0 {
-		data[i] = 0xa
+		dAtA[i] = 0xa
 		i++
-		i = encodeVarintBroker(data, i, uint64(len(m.Payload)))
-		i += copy(data[i:], m.Payload)
+		i = encodeVarintBroker(dAtA, i, uint64(len(m.Payload)))
+		i += copy(dAtA[i:], m.Payload)
 	}
 	if m.Message != nil {
-		data[i] = 0x12
+		dAtA[i] = 0x12
 		i++
-		i = encodeVarintBroker(data, i, uint64(m.Message.Size()))
-		n14, err := m.Message.MarshalTo(data[i:])
+		i = encodeVarintBroker(dAtA, i, uint64(m.Message.Size()))
+		n14, err := m.Message.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += n14
 	}
 	if m.DevEui != nil {
-		data[i] = 0x5a
+		dAtA[i] = 0x5a
 		i++
-		i = encodeVarintBroker(data, i, uint64(m.DevEui.Size()))
-		n15, err := m.DevEui.MarshalTo(data[i:])
+		i = encodeVarintBroker(dAtA, i, uint64(m.DevEui.Size()))
+		n15, err := m.DevEui.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += n15
 	}
 	if m.AppEui != nil {
-		data[i] = 0x62
+		dAtA[i] = 0x62
 		i++
-		i = encodeVarintBroker(data, i, uint64(m.AppEui.Size()))
-		n16, err := m.AppEui.MarshalTo(data[i:])
+		i = encodeVarintBroker(dAtA, i, uint64(m.AppEui.Size()))
+		n16, err := m.AppEui.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += n16
 	}
 	if len(m.AppId) > 0 {
-		data[i] = 0x6a
+		dAtA[i] = 0x6a
 		i++
-		i = encodeVarintBroker(data, i, uint64(len(m.AppId)))
-		i += copy(data[i:], m.AppId)
+		i = encodeVarintBroker(dAtA, i, uint64(len(m.AppId)))
+		i += copy(dAtA[i:], m.AppId)
 	}
 	if len(m.DevId) > 0 {
-		data[i] = 0x72
+		dAtA[i] = 0x72
 		i++
-		i = encodeVarintBroker(data, i, uint64(len(m.DevId)))
-		i += copy(data[i:], m.DevId)
+		i = encodeVarintBroker(dAtA, i, uint64(len(m.DevId)))
+		i += copy(dAtA[i:], m.DevId)
 	}
 	if m.ProtocolMetadata != nil {
-		data[i] = 0xaa
+		dAtA[i] = 0xaa
 		i++
-		data[i] = 0x1
+		dAtA[i] = 0x1
 		i++
-		i = encodeVarintBroker(data, i, uint64(m.ProtocolMetadata.Size()))
-		n17, err := m.ProtocolMetadata.MarshalTo(data[i:])
+		i = encodeVarintBroker(dAtA, i, uint64(m.ProtocolMetadata.Size()))
+		n17, err := m.ProtocolMetadata.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
@@ -1239,12 +1239,12 @@ func (m *DeduplicatedUplinkMessage) MarshalTo(data []byte) (int, error) {
 	}
 	if len(m.GatewayMetadata) > 0 {
 		for _, msg := range m.GatewayMetadata {
-			data[i] = 0xb2
+			dAtA[i] = 0xb2
 			i++
-			data[i] = 0x1
+			dAtA[i] = 0x1
 			i++
-			i = encodeVarintBroker(data, i, uint64(msg.Size()))
-			n, err := msg.MarshalTo(data[i:])
+			i = encodeVarintBroker(dAtA, i, uint64(msg.Size()))
+			n, err := msg.MarshalTo(dAtA[i:])
 			if err != nil {
 				return 0, err
 			}
@@ -1252,19 +1252,19 @@ func (m *DeduplicatedUplinkMessage) MarshalTo(data []byte) (int, error) {
 		}
 	}
 	if m.ServerTime != 0 {
-		data[i] = 0xb8
+		dAtA[i] = 0xb8
 		i++
-		data[i] = 0x1
+		dAtA[i] = 0x1
 		i++
-		i = encodeVarintBroker(data, i, uint64(m.ServerTime))
+		i = encodeVarintBroker(dAtA, i, uint64(m.ServerTime))
 	}
 	if m.ResponseTemplate != nil {
-		data[i] = 0xfa
+		dAtA[i] = 0xfa
 		i++
-		data[i] = 0x1
+		dAtA[i] = 0x1
 		i++
-		i = encodeVarintBroker(data, i, uint64(m.ResponseTemplate.Size()))
-		n18, err := m.ResponseTemplate.MarshalTo(data[i:])
+		i = encodeVarintBroker(dAtA, i, uint64(m.ResponseTemplate.Size()))
+		n18, err := m.ResponseTemplate.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
@@ -1273,88 +1273,88 @@ func (m *DeduplicatedUplinkMessage) MarshalTo(data []byte) (int, error) {
 	return i, nil
 }
 
-func (m *DeviceActivationRequest) Marshal() (data []byte, err error) {
+func (m *DeviceActivationRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
+	dAtA = make([]byte, size)
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
-	return data[:n], nil
+	return dAtA[:n], nil
 }
 
-func (m *DeviceActivationRequest) MarshalTo(data []byte) (int, error) {
+func (m *DeviceActivationRequest) MarshalTo(dAtA []byte) (int, error) {
 	var i int
 	_ = i
 	var l int
 	_ = l
 	if len(m.Payload) > 0 {
-		data[i] = 0xa
+		dAtA[i] = 0xa
 		i++
-		i = encodeVarintBroker(data, i, uint64(len(m.Payload)))
-		i += copy(data[i:], m.Payload)
+		i = encodeVarintBroker(dAtA, i, uint64(len(m.Payload)))
+		i += copy(dAtA[i:], m.Payload)
 	}
 	if m.Message != nil {
-		data[i] = 0x12
+		dAtA[i] = 0x12
 		i++
-		i = encodeVarintBroker(data, i, uint64(m.Message.Size()))
-		n19, err := m.Message.MarshalTo(data[i:])
+		i = encodeVarintBroker(dAtA, i, uint64(m.Message.Size()))
+		n19, err := m.Message.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += n19
 	}
 	if m.DevEui != nil {
-		data[i] = 0x5a
+		dAtA[i] = 0x5a
 		i++
-		i = encodeVarintBroker(data, i, uint64(m.DevEui.Size()))
-		n20, err := m.DevEui.MarshalTo(data[i:])
+		i = encodeVarintBroker(dAtA, i, uint64(m.DevEui.Size()))
+		n20, err := m.DevEui.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += n20
 	}
 	if m.AppEui != nil {
-		data[i] = 0x62
+		dAtA[i] = 0x62
 		i++
-		i = encodeVarintBroker(data, i, uint64(m.AppEui.Size()))
-		n21, err := m.AppEui.MarshalTo(data[i:])
+		i = encodeVarintBroker(dAtA, i, uint64(m.AppEui.Size()))
+		n21, err := m.AppEui.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += n21
 	}
 	if m.ProtocolMetadata != nil {
-		data[i] = 0xaa
+		dAtA[i] = 0xaa
 		i++
-		data[i] = 0x1
+		dAtA[i] = 0x1
 		i++
-		i = encodeVarintBroker(data, i, uint64(m.ProtocolMetadata.Size()))
-		n22, err := m.ProtocolMetadata.MarshalTo(data[i:])
+		i = encodeVarintBroker(dAtA, i, uint64(m.ProtocolMetadata.Size()))
+		n22, err := m.ProtocolMetadata.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += n22
 	}
 	if m.GatewayMetadata != nil {
-		data[i] = 0xb2
+		dAtA[i] = 0xb2
 		i++
-		data[i] = 0x1
+		dAtA[i] = 0x1
 		i++
-		i = encodeVarintBroker(data, i, uint64(m.GatewayMetadata.Size()))
-		n23, err := m.GatewayMetadata.MarshalTo(data[i:])
+		i = encodeVarintBroker(dAtA, i, uint64(m.GatewayMetadata.Size()))
+		n23, err := m.GatewayMetadata.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += n23
 	}
 	if m.ActivationMetadata != nil {
-		data[i] = 0xba
+		dAtA[i] = 0xba
 		i++
-		data[i] = 0x1
+		dAtA[i] = 0x1
 		i++
-		i = encodeVarintBroker(data, i, uint64(m.ActivationMetadata.Size()))
-		n24, err := m.ActivationMetadata.MarshalTo(data[i:])
+		i = encodeVarintBroker(dAtA, i, uint64(m.ActivationMetadata.Size()))
+		n24, err := m.ActivationMetadata.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
@@ -1362,12 +1362,12 @@ func (m *DeviceActivationRequest) MarshalTo(data []byte) (int, error) {
 	}
 	if len(m.DownlinkOptions) > 0 {
 		for _, msg := range m.DownlinkOptions {
-			data[i] = 0xfa
+			dAtA[i] = 0xfa
 			i++
-			data[i] = 0x1
+			dAtA[i] = 0x1
 			i++
-			i = encodeVarintBroker(data, i, uint64(msg.Size()))
-			n, err := msg.MarshalTo(data[i:])
+			i = encodeVarintBroker(dAtA, i, uint64(msg.Size()))
+			n, err := msg.MarshalTo(dAtA[i:])
 			if err != nil {
 				return 0, err
 			}
@@ -1377,76 +1377,76 @@ func (m *DeviceActivationRequest) MarshalTo(data []byte) (int, error) {
 	return i, nil
 }
 
-func (m *DeduplicatedDeviceActivationRequest) Marshal() (data []byte, err error) {
+func (m *DeduplicatedDeviceActivationRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
+	dAtA = make([]byte, size)
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
-	return data[:n], nil
+	return dAtA[:n], nil
 }
 
-func (m *DeduplicatedDeviceActivationRequest) MarshalTo(data []byte) (int, error) {
+func (m *DeduplicatedDeviceActivationRequest) MarshalTo(dAtA []byte) (int, error) {
 	var i int
 	_ = i
 	var l int
 	_ = l
 	if len(m.Payload) > 0 {
-		data[i] = 0xa
+		dAtA[i] = 0xa
 		i++
-		i = encodeVarintBroker(data, i, uint64(len(m.Payload)))
-		i += copy(data[i:], m.Payload)
+		i = encodeVarintBroker(dAtA, i, uint64(len(m.Payload)))
+		i += copy(dAtA[i:], m.Payload)
 	}
 	if m.Message != nil {
-		data[i] = 0x12
+		dAtA[i] = 0x12
 		i++
-		i = encodeVarintBroker(data, i, uint64(m.Message.Size()))
-		n25, err := m.Message.MarshalTo(data[i:])
+		i = encodeVarintBroker(dAtA, i, uint64(m.Message.Size()))
+		n25, err := m.Message.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += n25
 	}
 	if m.DevEui != nil {
-		data[i] = 0x5a
+		dAtA[i] = 0x5a
 		i++
-		i = encodeVarintBroker(data, i, uint64(m.DevEui.Size()))
-		n26, err := m.DevEui.MarshalTo(data[i:])
+		i = encodeVarintBroker(dAtA, i, uint64(m.DevEui.Size()))
+		n26, err := m.DevEui.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += n26
 	}
 	if m.AppEui != nil {
-		data[i] = 0x62
+		dAtA[i] = 0x62
 		i++
-		i = encodeVarintBroker(data, i, uint64(m.AppEui.Size()))
-		n27, err := m.AppEui.MarshalTo(data[i:])
+		i = encodeVarintBroker(dAtA, i, uint64(m.AppEui.Size()))
+		n27, err := m.AppEui.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += n27
 	}
 	if len(m.AppId) > 0 {
-		data[i] = 0x6a
+		dAtA[i] = 0x6a
 		i++
-		i = encodeVarintBroker(data, i, uint64(len(m.AppId)))
-		i += copy(data[i:], m.AppId)
+		i = encodeVarintBroker(dAtA, i, uint64(len(m.AppId)))
+		i += copy(dAtA[i:], m.AppId)
 	}
 	if len(m.DevId) > 0 {
-		data[i] = 0x72
+		dAtA[i] = 0x72
 		i++
-		i = encodeVarintBroker(data, i, uint64(len(m.DevId)))
-		i += copy(data[i:], m.DevId)
+		i = encodeVarintBroker(dAtA, i, uint64(len(m.DevId)))
+		i += copy(dAtA[i:], m.DevId)
 	}
 	if m.ProtocolMetadata != nil {
-		data[i] = 0xaa
+		dAtA[i] = 0xaa
 		i++
-		data[i] = 0x1
+		dAtA[i] = 0x1
 		i++
-		i = encodeVarintBroker(data, i, uint64(m.ProtocolMetadata.Size()))
-		n28, err := m.ProtocolMetadata.MarshalTo(data[i:])
+		i = encodeVarintBroker(dAtA, i, uint64(m.ProtocolMetadata.Size()))
+		n28, err := m.ProtocolMetadata.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
@@ -1454,12 +1454,12 @@ func (m *DeduplicatedDeviceActivationRequest) MarshalTo(data []byte) (int, error
 	}
 	if len(m.GatewayMetadata) > 0 {
 		for _, msg := range m.GatewayMetadata {
-			data[i] = 0xb2
+			dAtA[i] = 0xb2
 			i++
-			data[i] = 0x1
+			dAtA[i] = 0x1
 			i++
-			i = encodeVarintBroker(data, i, uint64(msg.Size()))
-			n, err := msg.MarshalTo(data[i:])
+			i = encodeVarintBroker(dAtA, i, uint64(msg.Size()))
+			n, err := msg.MarshalTo(dAtA[i:])
 			if err != nil {
 				return 0, err
 			}
@@ -1467,31 +1467,31 @@ func (m *DeduplicatedDeviceActivationRequest) MarshalTo(data []byte) (int, error
 		}
 	}
 	if m.ActivationMetadata != nil {
-		data[i] = 0xba
+		dAtA[i] = 0xba
 		i++
-		data[i] = 0x1
+		dAtA[i] = 0x1
 		i++
-		i = encodeVarintBroker(data, i, uint64(m.ActivationMetadata.Size()))
-		n29, err := m.ActivationMetadata.MarshalTo(data[i:])
+		i = encodeVarintBroker(dAtA, i, uint64(m.ActivationMetadata.Size()))
+		n29, err := m.ActivationMetadata.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += n29
 	}
 	if m.ServerTime != 0 {
-		data[i] = 0xc0
+		dAtA[i] = 0xc0
 		i++
-		data[i] = 0x1
+		dAtA[i] = 0x1
 		i++
-		i = encodeVarintBroker(data, i, uint64(m.ServerTime))
+		i = encodeVarintBroker(dAtA, i, uint64(m.ServerTime))
 	}
 	if m.ResponseTemplate != nil {
-		data[i] = 0xfa
+		dAtA[i] = 0xfa
 		i++
-		data[i] = 0x1
+		dAtA[i] = 0x1
 		i++
-		i = encodeVarintBroker(data, i, uint64(m.ResponseTemplate.Size()))
-		n30, err := m.ResponseTemplate.MarshalTo(data[i:])
+		i = encodeVarintBroker(dAtA, i, uint64(m.ResponseTemplate.Size()))
+		n30, err := m.ResponseTemplate.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
@@ -1500,98 +1500,98 @@ func (m *DeduplicatedDeviceActivationRequest) MarshalTo(data []byte) (int, error
 	return i, nil
 }
 
-func (m *ActivationChallengeRequest) Marshal() (data []byte, err error) {
+func (m *ActivationChallengeRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
+	dAtA = make([]byte, size)
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
-	return data[:n], nil
+	return dAtA[:n], nil
 }
 
-func (m *ActivationChallengeRequest) MarshalTo(data []byte) (int, error) {
+func (m *ActivationChallengeRequest) MarshalTo(dAtA []byte) (int, error) {
 	var i int
 	_ = i
 	var l int
 	_ = l
 	if len(m.Payload) > 0 {
-		data[i] = 0xa
+		dAtA[i] = 0xa
 		i++
-		i = encodeVarintBroker(data, i, uint64(len(m.Payload)))
-		i += copy(data[i:], m.Payload)
+		i = encodeVarintBroker(dAtA, i, uint64(len(m.Payload)))
+		i += copy(dAtA[i:], m.Payload)
 	}
 	if m.Message != nil {
-		data[i] = 0x12
+		dAtA[i] = 0x12
 		i++
-		i = encodeVarintBroker(data, i, uint64(m.Message.Size()))
-		n31, err := m.Message.MarshalTo(data[i:])
+		i = encodeVarintBroker(dAtA, i, uint64(m.Message.Size()))
+		n31, err := m.Message.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += n31
 	}
 	if m.DevEui != nil {
-		data[i] = 0x5a
+		dAtA[i] = 0x5a
 		i++
-		i = encodeVarintBroker(data, i, uint64(m.DevEui.Size()))
-		n32, err := m.DevEui.MarshalTo(data[i:])
+		i = encodeVarintBroker(dAtA, i, uint64(m.DevEui.Size()))
+		n32, err := m.DevEui.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += n32
 	}
 	if m.AppEui != nil {
-		data[i] = 0x62
+		dAtA[i] = 0x62
 		i++
-		i = encodeVarintBroker(data, i, uint64(m.AppEui.Size()))
-		n33, err := m.AppEui.MarshalTo(data[i:])
+		i = encodeVarintBroker(dAtA, i, uint64(m.AppEui.Size()))
+		n33, err := m.AppEui.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += n33
 	}
 	if len(m.AppId) > 0 {
-		data[i] = 0x6a
+		dAtA[i] = 0x6a
 		i++
-		i = encodeVarintBroker(data, i, uint64(len(m.AppId)))
-		i += copy(data[i:], m.AppId)
+		i = encodeVarintBroker(dAtA, i, uint64(len(m.AppId)))
+		i += copy(dAtA[i:], m.AppId)
 	}
 	if len(m.DevId) > 0 {
-		data[i] = 0x72
+		dAtA[i] = 0x72
 		i++
-		i = encodeVarintBroker(data, i, uint64(len(m.DevId)))
-		i += copy(data[i:], m.DevId)
+		i = encodeVarintBroker(dAtA, i, uint64(len(m.DevId)))
+		i += copy(dAtA[i:], m.DevId)
 	}
 	return i, nil
 }
 
-func (m *ActivationChallengeResponse) Marshal() (data []byte, err error) {
+func (m *ActivationChallengeResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
+	dAtA = make([]byte, size)
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
-	return data[:n], nil
+	return dAtA[:n], nil
 }
 
-func (m *ActivationChallengeResponse) MarshalTo(data []byte) (int, error) {
+func (m *ActivationChallengeResponse) MarshalTo(dAtA []byte) (int, error) {
 	var i int
 	_ = i
 	var l int
 	_ = l
 	if len(m.Payload) > 0 {
-		data[i] = 0xa
+		dAtA[i] = 0xa
 		i++
-		i = encodeVarintBroker(data, i, uint64(len(m.Payload)))
-		i += copy(data[i:], m.Payload)
+		i = encodeVarintBroker(dAtA, i, uint64(len(m.Payload)))
+		i += copy(dAtA[i:], m.Payload)
 	}
 	if m.Message != nil {
-		data[i] = 0x12
+		dAtA[i] = 0x12
 		i++
-		i = encodeVarintBroker(data, i, uint64(m.Message.Size()))
-		n34, err := m.Message.MarshalTo(data[i:])
+		i = encodeVarintBroker(dAtA, i, uint64(m.Message.Size()))
+		n34, err := m.Message.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
@@ -1600,17 +1600,17 @@ func (m *ActivationChallengeResponse) MarshalTo(data []byte) (int, error) {
 	return i, nil
 }
 
-func (m *SubscribeRequest) Marshal() (data []byte, err error) {
+func (m *SubscribeRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
+	dAtA = make([]byte, size)
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
-	return data[:n], nil
+	return dAtA[:n], nil
 }
 
-func (m *SubscribeRequest) MarshalTo(data []byte) (int, error) {
+func (m *SubscribeRequest) MarshalTo(dAtA []byte) (int, error) {
 	var i int
 	_ = i
 	var l int
@@ -1618,17 +1618,17 @@ func (m *SubscribeRequest) MarshalTo(data []byte) (int, error) {
 	return i, nil
 }
 
-func (m *StatusRequest) Marshal() (data []byte, err error) {
+func (m *StatusRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
+	dAtA = make([]byte, size)
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
-	return data[:n], nil
+	return dAtA[:n], nil
 }
 
-func (m *StatusRequest) MarshalTo(data []byte) (int, error) {
+func (m *StatusRequest) MarshalTo(dAtA []byte) (int, error) {
 	var i int
 	_ = i
 	var l int
@@ -1636,175 +1636,175 @@ func (m *StatusRequest) MarshalTo(data []byte) (int, error) {
 	return i, nil
 }
 
-func (m *Status) Marshal() (data []byte, err error) {
+func (m *Status) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
+	dAtA = make([]byte, size)
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
-	return data[:n], nil
+	return dAtA[:n], nil
 }
 
-func (m *Status) MarshalTo(data []byte) (int, error) {
+func (m *Status) MarshalTo(dAtA []byte) (int, error) {
 	var i int
 	_ = i
 	var l int
 	_ = l
 	if m.System != nil {
-		data[i] = 0xa
+		dAtA[i] = 0xa
 		i++
-		i = encodeVarintBroker(data, i, uint64(m.System.Size()))
-		n35, err := m.System.MarshalTo(data[i:])
+		i = encodeVarintBroker(dAtA, i, uint64(m.System.Size()))
+		n35, err := m.System.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += n35
 	}
 	if m.Component != nil {
-		data[i] = 0x12
+		dAtA[i] = 0x12
 		i++
-		i = encodeVarintBroker(data, i, uint64(m.Component.Size()))
-		n36, err := m.Component.MarshalTo(data[i:])
+		i = encodeVarintBroker(dAtA, i, uint64(m.Component.Size()))
+		n36, err := m.Component.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += n36
 	}
 	if m.Uplink != nil {
-		data[i] = 0x5a
+		dAtA[i] = 0x5a
 		i++
-		i = encodeVarintBroker(data, i, uint64(m.Uplink.Size()))
-		n37, err := m.Uplink.MarshalTo(data[i:])
+		i = encodeVarintBroker(dAtA, i, uint64(m.Uplink.Size()))
+		n37, err := m.Uplink.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += n37
 	}
 	if m.UplinkUnique != nil {
-		data[i] = 0x62
+		dAtA[i] = 0x62
 		i++
-		i = encodeVarintBroker(data, i, uint64(m.UplinkUnique.Size()))
-		n38, err := m.UplinkUnique.MarshalTo(data[i:])
+		i = encodeVarintBroker(dAtA, i, uint64(m.UplinkUnique.Size()))
+		n38, err := m.UplinkUnique.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += n38
 	}
 	if m.Downlink != nil {
-		data[i] = 0x6a
+		dAtA[i] = 0x6a
 		i++
-		i = encodeVarintBroker(data, i, uint64(m.Downlink.Size()))
-		n39, err := m.Downlink.MarshalTo(data[i:])
+		i = encodeVarintBroker(dAtA, i, uint64(m.Downlink.Size()))
+		n39, err := m.Downlink.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += n39
 	}
 	if m.Activations != nil {
-		data[i] = 0x72
+		dAtA[i] = 0x72
 		i++
-		i = encodeVarintBroker(data, i, uint64(m.Activations.Size()))
-		n40, err := m.Activations.MarshalTo(data[i:])
+		i = encodeVarintBroker(dAtA, i, uint64(m.Activations.Size()))
+		n40, err := m.Activations.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += n40
 	}
 	if m.ActivationsUnique != nil {
-		data[i] = 0x7a
+		dAtA[i] = 0x7a
 		i++
-		i = encodeVarintBroker(data, i, uint64(m.ActivationsUnique.Size()))
-		n41, err := m.ActivationsUnique.MarshalTo(data[i:])
+		i = encodeVarintBroker(dAtA, i, uint64(m.ActivationsUnique.Size()))
+		n41, err := m.ActivationsUnique.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += n41
 	}
 	if m.Deduplication != nil {
-		data[i] = 0x82
+		dAtA[i] = 0x82
 		i++
-		data[i] = 0x1
+		dAtA[i] = 0x1
 		i++
-		i = encodeVarintBroker(data, i, uint64(m.Deduplication.Size()))
-		n42, err := m.Deduplication.MarshalTo(data[i:])
+		i = encodeVarintBroker(dAtA, i, uint64(m.Deduplication.Size()))
+		n42, err := m.Deduplication.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += n42
 	}
 	if m.ConnectedRouters != 0 {
-		data[i] = 0xa8
+		dAtA[i] = 0xa8
 		i++
-		data[i] = 0x1
+		dAtA[i] = 0x1
 		i++
-		i = encodeVarintBroker(data, i, uint64(m.ConnectedRouters))
+		i = encodeVarintBroker(dAtA, i, uint64(m.ConnectedRouters))
 	}
 	if m.ConnectedHandlers != 0 {
-		data[i] = 0xb0
+		dAtA[i] = 0xb0
 		i++
-		data[i] = 0x1
+		dAtA[i] = 0x1
 		i++
-		i = encodeVarintBroker(data, i, uint64(m.ConnectedHandlers))
+		i = encodeVarintBroker(dAtA, i, uint64(m.ConnectedHandlers))
 	}
 	return i, nil
 }
 
-func (m *ApplicationHandlerRegistration) Marshal() (data []byte, err error) {
+func (m *ApplicationHandlerRegistration) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
+	dAtA = make([]byte, size)
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
-	return data[:n], nil
+	return dAtA[:n], nil
 }
 
-func (m *ApplicationHandlerRegistration) MarshalTo(data []byte) (int, error) {
+func (m *ApplicationHandlerRegistration) MarshalTo(dAtA []byte) (int, error) {
 	var i int
 	_ = i
 	var l int
 	_ = l
 	if len(m.AppId) > 0 {
-		data[i] = 0xa
+		dAtA[i] = 0xa
 		i++
-		i = encodeVarintBroker(data, i, uint64(len(m.AppId)))
-		i += copy(data[i:], m.AppId)
+		i = encodeVarintBroker(dAtA, i, uint64(len(m.AppId)))
+		i += copy(dAtA[i:], m.AppId)
 	}
 	if len(m.HandlerId) > 0 {
-		data[i] = 0x12
+		dAtA[i] = 0x12
 		i++
-		i = encodeVarintBroker(data, i, uint64(len(m.HandlerId)))
-		i += copy(data[i:], m.HandlerId)
+		i = encodeVarintBroker(dAtA, i, uint64(len(m.HandlerId)))
+		i += copy(dAtA[i:], m.HandlerId)
 	}
 	return i, nil
 }
 
-func encodeFixed64Broker(data []byte, offset int, v uint64) int {
-	data[offset] = uint8(v)
-	data[offset+1] = uint8(v >> 8)
-	data[offset+2] = uint8(v >> 16)
-	data[offset+3] = uint8(v >> 24)
-	data[offset+4] = uint8(v >> 32)
-	data[offset+5] = uint8(v >> 40)
-	data[offset+6] = uint8(v >> 48)
-	data[offset+7] = uint8(v >> 56)
+func encodeFixed64Broker(dAtA []byte, offset int, v uint64) int {
+	dAtA[offset] = uint8(v)
+	dAtA[offset+1] = uint8(v >> 8)
+	dAtA[offset+2] = uint8(v >> 16)
+	dAtA[offset+3] = uint8(v >> 24)
+	dAtA[offset+4] = uint8(v >> 32)
+	dAtA[offset+5] = uint8(v >> 40)
+	dAtA[offset+6] = uint8(v >> 48)
+	dAtA[offset+7] = uint8(v >> 56)
 	return offset + 8
 }
-func encodeFixed32Broker(data []byte, offset int, v uint32) int {
-	data[offset] = uint8(v)
-	data[offset+1] = uint8(v >> 8)
-	data[offset+2] = uint8(v >> 16)
-	data[offset+3] = uint8(v >> 24)
+func encodeFixed32Broker(dAtA []byte, offset int, v uint32) int {
+	dAtA[offset] = uint8(v)
+	dAtA[offset+1] = uint8(v >> 8)
+	dAtA[offset+2] = uint8(v >> 16)
+	dAtA[offset+3] = uint8(v >> 24)
 	return offset + 4
 }
-func encodeVarintBroker(data []byte, offset int, v uint64) int {
+func encodeVarintBroker(dAtA []byte, offset int, v uint64) int {
 	for v >= 1<<7 {
-		data[offset] = uint8(v&0x7f | 0x80)
+		dAtA[offset] = uint8(v&0x7f | 0x80)
 		v >>= 7
 		offset++
 	}
-	data[offset] = uint8(v)
+	dAtA[offset] = uint8(v)
 	return offset + 1
 }
 func (m *DownlinkOption) Size() (n int) {
@@ -2196,8 +2196,8 @@ func sovBroker(x uint64) (n int) {
 func sozBroker(x uint64) (n int) {
 	return sovBroker(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *DownlinkOption) Unmarshal(data []byte) error {
-	l := len(data)
+func (m *DownlinkOption) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
 		preIndex := iNdEx
@@ -2209,7 +2209,7 @@ func (m *DownlinkOption) Unmarshal(data []byte) error {
 			if iNdEx >= l {
 				return io.ErrUnexpectedEOF
 			}
-			b := data[iNdEx]
+			b := dAtA[iNdEx]
 			iNdEx++
 			wire |= (uint64(b) & 0x7F) << shift
 			if b < 0x80 {
@@ -2237,7 +2237,7 @@ func (m *DownlinkOption) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				stringLen |= (uint64(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -2252,7 +2252,7 @@ func (m *DownlinkOption) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Identifier = string(data[iNdEx:postIndex])
+			m.Identifier = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
@@ -2266,7 +2266,7 @@ func (m *DownlinkOption) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				stringLen |= (uint64(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -2281,7 +2281,7 @@ func (m *DownlinkOption) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.GatewayId = string(data[iNdEx:postIndex])
+			m.GatewayId = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 3:
 			if wireType != 0 {
@@ -2295,7 +2295,7 @@ func (m *DownlinkOption) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				m.Score |= (uint32(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -2314,7 +2314,7 @@ func (m *DownlinkOption) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				m.Deadline |= (int64(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -2333,7 +2333,7 @@ func (m *DownlinkOption) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				msglen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -2350,7 +2350,7 @@ func (m *DownlinkOption) Unmarshal(data []byte) error {
 			if m.ProtocolConfig == nil {
 				m.ProtocolConfig = &protocol.TxConfiguration{}
 			}
-			if err := m.ProtocolConfig.Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.ProtocolConfig.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2366,7 +2366,7 @@ func (m *DownlinkOption) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				msglen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -2383,13 +2383,13 @@ func (m *DownlinkOption) Unmarshal(data []byte) error {
 			if m.GatewayConfig == nil {
 				m.GatewayConfig = &gateway.TxConfiguration{}
 			}
-			if err := m.GatewayConfig.Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.GatewayConfig.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
-			skippy, err := skipBroker(data[iNdEx:])
+			skippy, err := skipBroker(dAtA[iNdEx:])
 			if err != nil {
 				return err
 			}
@@ -2408,8 +2408,8 @@ func (m *DownlinkOption) Unmarshal(data []byte) error {
 	}
 	return nil
 }
-func (m *UplinkMessage) Unmarshal(data []byte) error {
-	l := len(data)
+func (m *UplinkMessage) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
 		preIndex := iNdEx
@@ -2421,7 +2421,7 @@ func (m *UplinkMessage) Unmarshal(data []byte) error {
 			if iNdEx >= l {
 				return io.ErrUnexpectedEOF
 			}
-			b := data[iNdEx]
+			b := dAtA[iNdEx]
 			iNdEx++
 			wire |= (uint64(b) & 0x7F) << shift
 			if b < 0x80 {
@@ -2449,7 +2449,7 @@ func (m *UplinkMessage) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				byteLen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -2463,7 +2463,7 @@ func (m *UplinkMessage) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Payload = append(m.Payload[:0], data[iNdEx:postIndex]...)
+			m.Payload = append(m.Payload[:0], dAtA[iNdEx:postIndex]...)
 			if m.Payload == nil {
 				m.Payload = []byte{}
 			}
@@ -2480,7 +2480,7 @@ func (m *UplinkMessage) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				msglen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -2497,7 +2497,7 @@ func (m *UplinkMessage) Unmarshal(data []byte) error {
 			if m.Message == nil {
 				m.Message = &protocol.Message{}
 			}
-			if err := m.Message.Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.Message.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2513,7 +2513,7 @@ func (m *UplinkMessage) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				byteLen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -2529,7 +2529,7 @@ func (m *UplinkMessage) Unmarshal(data []byte) error {
 			}
 			var v github_com_TheThingsNetwork_ttn_core_types.DevEUI
 			m.DevEui = &v
-			if err := m.DevEui.Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.DevEui.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2545,7 +2545,7 @@ func (m *UplinkMessage) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				byteLen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -2561,7 +2561,7 @@ func (m *UplinkMessage) Unmarshal(data []byte) error {
 			}
 			var v github_com_TheThingsNetwork_ttn_core_types.AppEUI
 			m.AppEui = &v
-			if err := m.AppEui.Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.AppEui.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2577,7 +2577,7 @@ func (m *UplinkMessage) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				stringLen |= (uint64(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -2592,7 +2592,7 @@ func (m *UplinkMessage) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.AppId = string(data[iNdEx:postIndex])
+			m.AppId = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 14:
 			if wireType != 2 {
@@ -2606,7 +2606,7 @@ func (m *UplinkMessage) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				stringLen |= (uint64(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -2621,7 +2621,7 @@ func (m *UplinkMessage) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.DevId = string(data[iNdEx:postIndex])
+			m.DevId = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 21:
 			if wireType != 2 {
@@ -2635,7 +2635,7 @@ func (m *UplinkMessage) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				msglen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -2652,7 +2652,7 @@ func (m *UplinkMessage) Unmarshal(data []byte) error {
 			if m.ProtocolMetadata == nil {
 				m.ProtocolMetadata = &protocol.RxMetadata{}
 			}
-			if err := m.ProtocolMetadata.Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.ProtocolMetadata.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2668,7 +2668,7 @@ func (m *UplinkMessage) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				msglen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -2685,7 +2685,7 @@ func (m *UplinkMessage) Unmarshal(data []byte) error {
 			if m.GatewayMetadata == nil {
 				m.GatewayMetadata = &gateway.RxMetadata{}
 			}
-			if err := m.GatewayMetadata.Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.GatewayMetadata.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2701,7 +2701,7 @@ func (m *UplinkMessage) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				msglen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -2716,13 +2716,13 @@ func (m *UplinkMessage) Unmarshal(data []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.DownlinkOptions = append(m.DownlinkOptions, &DownlinkOption{})
-			if err := m.DownlinkOptions[len(m.DownlinkOptions)-1].Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.DownlinkOptions[len(m.DownlinkOptions)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
-			skippy, err := skipBroker(data[iNdEx:])
+			skippy, err := skipBroker(dAtA[iNdEx:])
 			if err != nil {
 				return err
 			}
@@ -2741,8 +2741,8 @@ func (m *UplinkMessage) Unmarshal(data []byte) error {
 	}
 	return nil
 }
-func (m *DownlinkMessage) Unmarshal(data []byte) error {
-	l := len(data)
+func (m *DownlinkMessage) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
 		preIndex := iNdEx
@@ -2754,7 +2754,7 @@ func (m *DownlinkMessage) Unmarshal(data []byte) error {
 			if iNdEx >= l {
 				return io.ErrUnexpectedEOF
 			}
-			b := data[iNdEx]
+			b := dAtA[iNdEx]
 			iNdEx++
 			wire |= (uint64(b) & 0x7F) << shift
 			if b < 0x80 {
@@ -2782,7 +2782,7 @@ func (m *DownlinkMessage) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				byteLen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -2796,7 +2796,7 @@ func (m *DownlinkMessage) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Payload = append(m.Payload[:0], data[iNdEx:postIndex]...)
+			m.Payload = append(m.Payload[:0], dAtA[iNdEx:postIndex]...)
 			if m.Payload == nil {
 				m.Payload = []byte{}
 			}
@@ -2813,7 +2813,7 @@ func (m *DownlinkMessage) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				msglen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -2830,7 +2830,7 @@ func (m *DownlinkMessage) Unmarshal(data []byte) error {
 			if m.Message == nil {
 				m.Message = &protocol.Message{}
 			}
-			if err := m.Message.Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.Message.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2846,7 +2846,7 @@ func (m *DownlinkMessage) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				byteLen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -2862,7 +2862,7 @@ func (m *DownlinkMessage) Unmarshal(data []byte) error {
 			}
 			var v github_com_TheThingsNetwork_ttn_core_types.DevEUI
 			m.DevEui = &v
-			if err := m.DevEui.Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.DevEui.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2878,7 +2878,7 @@ func (m *DownlinkMessage) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				byteLen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -2894,7 +2894,7 @@ func (m *DownlinkMessage) Unmarshal(data []byte) error {
 			}
 			var v github_com_TheThingsNetwork_ttn_core_types.AppEUI
 			m.AppEui = &v
-			if err := m.AppEui.Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.AppEui.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2910,7 +2910,7 @@ func (m *DownlinkMessage) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				stringLen |= (uint64(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -2925,7 +2925,7 @@ func (m *DownlinkMessage) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.AppId = string(data[iNdEx:postIndex])
+			m.AppId = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 14:
 			if wireType != 2 {
@@ -2939,7 +2939,7 @@ func (m *DownlinkMessage) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				stringLen |= (uint64(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -2954,7 +2954,7 @@ func (m *DownlinkMessage) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.DevId = string(data[iNdEx:postIndex])
+			m.DevId = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 21:
 			if wireType != 2 {
@@ -2968,7 +2968,7 @@ func (m *DownlinkMessage) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				msglen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -2985,13 +2985,13 @@ func (m *DownlinkMessage) Unmarshal(data []byte) error {
 			if m.DownlinkOption == nil {
 				m.DownlinkOption = &DownlinkOption{}
 			}
-			if err := m.DownlinkOption.Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.DownlinkOption.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
-			skippy, err := skipBroker(data[iNdEx:])
+			skippy, err := skipBroker(dAtA[iNdEx:])
 			if err != nil {
 				return err
 			}
@@ -3010,8 +3010,8 @@ func (m *DownlinkMessage) Unmarshal(data []byte) error {
 	}
 	return nil
 }
-func (m *DeviceActivationResponse) Unmarshal(data []byte) error {
-	l := len(data)
+func (m *DeviceActivationResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
 		preIndex := iNdEx
@@ -3023,7 +3023,7 @@ func (m *DeviceActivationResponse) Unmarshal(data []byte) error {
 			if iNdEx >= l {
 				return io.ErrUnexpectedEOF
 			}
-			b := data[iNdEx]
+			b := dAtA[iNdEx]
 			iNdEx++
 			wire |= (uint64(b) & 0x7F) << shift
 			if b < 0x80 {
@@ -3051,7 +3051,7 @@ func (m *DeviceActivationResponse) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				byteLen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -3065,7 +3065,7 @@ func (m *DeviceActivationResponse) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Payload = append(m.Payload[:0], data[iNdEx:postIndex]...)
+			m.Payload = append(m.Payload[:0], dAtA[iNdEx:postIndex]...)
 			if m.Payload == nil {
 				m.Payload = []byte{}
 			}
@@ -3082,7 +3082,7 @@ func (m *DeviceActivationResponse) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				msglen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -3099,7 +3099,7 @@ func (m *DeviceActivationResponse) Unmarshal(data []byte) error {
 			if m.Message == nil {
 				m.Message = &protocol.Message{}
 			}
-			if err := m.Message.Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.Message.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3115,7 +3115,7 @@ func (m *DeviceActivationResponse) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				msglen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -3132,13 +3132,13 @@ func (m *DeviceActivationResponse) Unmarshal(data []byte) error {
 			if m.DownlinkOption == nil {
 				m.DownlinkOption = &DownlinkOption{}
 			}
-			if err := m.DownlinkOption.Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.DownlinkOption.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
-			skippy, err := skipBroker(data[iNdEx:])
+			skippy, err := skipBroker(dAtA[iNdEx:])
 			if err != nil {
 				return err
 			}
@@ -3157,8 +3157,8 @@ func (m *DeviceActivationResponse) Unmarshal(data []byte) error {
 	}
 	return nil
 }
-func (m *DeduplicatedUplinkMessage) Unmarshal(data []byte) error {
-	l := len(data)
+func (m *DeduplicatedUplinkMessage) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
 		preIndex := iNdEx
@@ -3170,7 +3170,7 @@ func (m *DeduplicatedUplinkMessage) Unmarshal(data []byte) error {
 			if iNdEx >= l {
 				return io.ErrUnexpectedEOF
 			}
-			b := data[iNdEx]
+			b := dAtA[iNdEx]
 			iNdEx++
 			wire |= (uint64(b) & 0x7F) << shift
 			if b < 0x80 {
@@ -3198,7 +3198,7 @@ func (m *DeduplicatedUplinkMessage) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				byteLen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -3212,7 +3212,7 @@ func (m *DeduplicatedUplinkMessage) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Payload = append(m.Payload[:0], data[iNdEx:postIndex]...)
+			m.Payload = append(m.Payload[:0], dAtA[iNdEx:postIndex]...)
 			if m.Payload == nil {
 				m.Payload = []byte{}
 			}
@@ -3229,7 +3229,7 @@ func (m *DeduplicatedUplinkMessage) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				msglen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -3246,7 +3246,7 @@ func (m *DeduplicatedUplinkMessage) Unmarshal(data []byte) error {
 			if m.Message == nil {
 				m.Message = &protocol.Message{}
 			}
-			if err := m.Message.Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.Message.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3262,7 +3262,7 @@ func (m *DeduplicatedUplinkMessage) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				byteLen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -3278,7 +3278,7 @@ func (m *DeduplicatedUplinkMessage) Unmarshal(data []byte) error {
 			}
 			var v github_com_TheThingsNetwork_ttn_core_types.DevEUI
 			m.DevEui = &v
-			if err := m.DevEui.Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.DevEui.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3294,7 +3294,7 @@ func (m *DeduplicatedUplinkMessage) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				byteLen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -3310,7 +3310,7 @@ func (m *DeduplicatedUplinkMessage) Unmarshal(data []byte) error {
 			}
 			var v github_com_TheThingsNetwork_ttn_core_types.AppEUI
 			m.AppEui = &v
-			if err := m.AppEui.Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.AppEui.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3326,7 +3326,7 @@ func (m *DeduplicatedUplinkMessage) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				stringLen |= (uint64(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -3341,7 +3341,7 @@ func (m *DeduplicatedUplinkMessage) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.AppId = string(data[iNdEx:postIndex])
+			m.AppId = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 14:
 			if wireType != 2 {
@@ -3355,7 +3355,7 @@ func (m *DeduplicatedUplinkMessage) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				stringLen |= (uint64(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -3370,7 +3370,7 @@ func (m *DeduplicatedUplinkMessage) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.DevId = string(data[iNdEx:postIndex])
+			m.DevId = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 21:
 			if wireType != 2 {
@@ -3384,7 +3384,7 @@ func (m *DeduplicatedUplinkMessage) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				msglen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -3401,7 +3401,7 @@ func (m *DeduplicatedUplinkMessage) Unmarshal(data []byte) error {
 			if m.ProtocolMetadata == nil {
 				m.ProtocolMetadata = &protocol.RxMetadata{}
 			}
-			if err := m.ProtocolMetadata.Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.ProtocolMetadata.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3417,7 +3417,7 @@ func (m *DeduplicatedUplinkMessage) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				msglen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -3432,7 +3432,7 @@ func (m *DeduplicatedUplinkMessage) Unmarshal(data []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.GatewayMetadata = append(m.GatewayMetadata, &gateway.RxMetadata{})
-			if err := m.GatewayMetadata[len(m.GatewayMetadata)-1].Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.GatewayMetadata[len(m.GatewayMetadata)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3448,7 +3448,7 @@ func (m *DeduplicatedUplinkMessage) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				m.ServerTime |= (int64(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -3467,7 +3467,7 @@ func (m *DeduplicatedUplinkMessage) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				msglen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -3484,13 +3484,13 @@ func (m *DeduplicatedUplinkMessage) Unmarshal(data []byte) error {
 			if m.ResponseTemplate == nil {
 				m.ResponseTemplate = &DownlinkMessage{}
 			}
-			if err := m.ResponseTemplate.Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.ResponseTemplate.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
-			skippy, err := skipBroker(data[iNdEx:])
+			skippy, err := skipBroker(dAtA[iNdEx:])
 			if err != nil {
 				return err
 			}
@@ -3509,8 +3509,8 @@ func (m *DeduplicatedUplinkMessage) Unmarshal(data []byte) error {
 	}
 	return nil
 }
-func (m *DeviceActivationRequest) Unmarshal(data []byte) error {
-	l := len(data)
+func (m *DeviceActivationRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
 		preIndex := iNdEx
@@ -3522,7 +3522,7 @@ func (m *DeviceActivationRequest) Unmarshal(data []byte) error {
 			if iNdEx >= l {
 				return io.ErrUnexpectedEOF
 			}
-			b := data[iNdEx]
+			b := dAtA[iNdEx]
 			iNdEx++
 			wire |= (uint64(b) & 0x7F) << shift
 			if b < 0x80 {
@@ -3550,7 +3550,7 @@ func (m *DeviceActivationRequest) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				byteLen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -3564,7 +3564,7 @@ func (m *DeviceActivationRequest) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Payload = append(m.Payload[:0], data[iNdEx:postIndex]...)
+			m.Payload = append(m.Payload[:0], dAtA[iNdEx:postIndex]...)
 			if m.Payload == nil {
 				m.Payload = []byte{}
 			}
@@ -3581,7 +3581,7 @@ func (m *DeviceActivationRequest) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				msglen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -3598,7 +3598,7 @@ func (m *DeviceActivationRequest) Unmarshal(data []byte) error {
 			if m.Message == nil {
 				m.Message = &protocol.Message{}
 			}
-			if err := m.Message.Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.Message.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3614,7 +3614,7 @@ func (m *DeviceActivationRequest) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				byteLen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -3630,7 +3630,7 @@ func (m *DeviceActivationRequest) Unmarshal(data []byte) error {
 			}
 			var v github_com_TheThingsNetwork_ttn_core_types.DevEUI
 			m.DevEui = &v
-			if err := m.DevEui.Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.DevEui.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3646,7 +3646,7 @@ func (m *DeviceActivationRequest) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				byteLen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -3662,7 +3662,7 @@ func (m *DeviceActivationRequest) Unmarshal(data []byte) error {
 			}
 			var v github_com_TheThingsNetwork_ttn_core_types.AppEUI
 			m.AppEui = &v
-			if err := m.AppEui.Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.AppEui.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3678,7 +3678,7 @@ func (m *DeviceActivationRequest) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				msglen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -3695,7 +3695,7 @@ func (m *DeviceActivationRequest) Unmarshal(data []byte) error {
 			if m.ProtocolMetadata == nil {
 				m.ProtocolMetadata = &protocol.RxMetadata{}
 			}
-			if err := m.ProtocolMetadata.Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.ProtocolMetadata.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3711,7 +3711,7 @@ func (m *DeviceActivationRequest) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				msglen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -3728,7 +3728,7 @@ func (m *DeviceActivationRequest) Unmarshal(data []byte) error {
 			if m.GatewayMetadata == nil {
 				m.GatewayMetadata = &gateway.RxMetadata{}
 			}
-			if err := m.GatewayMetadata.Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.GatewayMetadata.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3744,7 +3744,7 @@ func (m *DeviceActivationRequest) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				msglen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -3761,7 +3761,7 @@ func (m *DeviceActivationRequest) Unmarshal(data []byte) error {
 			if m.ActivationMetadata == nil {
 				m.ActivationMetadata = &protocol.ActivationMetadata{}
 			}
-			if err := m.ActivationMetadata.Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.ActivationMetadata.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3777,7 +3777,7 @@ func (m *DeviceActivationRequest) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				msglen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -3792,13 +3792,13 @@ func (m *DeviceActivationRequest) Unmarshal(data []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.DownlinkOptions = append(m.DownlinkOptions, &DownlinkOption{})
-			if err := m.DownlinkOptions[len(m.DownlinkOptions)-1].Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.DownlinkOptions[len(m.DownlinkOptions)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
-			skippy, err := skipBroker(data[iNdEx:])
+			skippy, err := skipBroker(dAtA[iNdEx:])
 			if err != nil {
 				return err
 			}
@@ -3817,8 +3817,8 @@ func (m *DeviceActivationRequest) Unmarshal(data []byte) error {
 	}
 	return nil
 }
-func (m *DeduplicatedDeviceActivationRequest) Unmarshal(data []byte) error {
-	l := len(data)
+func (m *DeduplicatedDeviceActivationRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
 		preIndex := iNdEx
@@ -3830,7 +3830,7 @@ func (m *DeduplicatedDeviceActivationRequest) Unmarshal(data []byte) error {
 			if iNdEx >= l {
 				return io.ErrUnexpectedEOF
 			}
-			b := data[iNdEx]
+			b := dAtA[iNdEx]
 			iNdEx++
 			wire |= (uint64(b) & 0x7F) << shift
 			if b < 0x80 {
@@ -3858,7 +3858,7 @@ func (m *DeduplicatedDeviceActivationRequest) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				byteLen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -3872,7 +3872,7 @@ func (m *DeduplicatedDeviceActivationRequest) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Payload = append(m.Payload[:0], data[iNdEx:postIndex]...)
+			m.Payload = append(m.Payload[:0], dAtA[iNdEx:postIndex]...)
 			if m.Payload == nil {
 				m.Payload = []byte{}
 			}
@@ -3889,7 +3889,7 @@ func (m *DeduplicatedDeviceActivationRequest) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				msglen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -3906,7 +3906,7 @@ func (m *DeduplicatedDeviceActivationRequest) Unmarshal(data []byte) error {
 			if m.Message == nil {
 				m.Message = &protocol.Message{}
 			}
-			if err := m.Message.Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.Message.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3922,7 +3922,7 @@ func (m *DeduplicatedDeviceActivationRequest) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				byteLen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -3938,7 +3938,7 @@ func (m *DeduplicatedDeviceActivationRequest) Unmarshal(data []byte) error {
 			}
 			var v github_com_TheThingsNetwork_ttn_core_types.DevEUI
 			m.DevEui = &v
-			if err := m.DevEui.Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.DevEui.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3954,7 +3954,7 @@ func (m *DeduplicatedDeviceActivationRequest) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				byteLen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -3970,7 +3970,7 @@ func (m *DeduplicatedDeviceActivationRequest) Unmarshal(data []byte) error {
 			}
 			var v github_com_TheThingsNetwork_ttn_core_types.AppEUI
 			m.AppEui = &v
-			if err := m.AppEui.Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.AppEui.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3986,7 +3986,7 @@ func (m *DeduplicatedDeviceActivationRequest) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				stringLen |= (uint64(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -4001,7 +4001,7 @@ func (m *DeduplicatedDeviceActivationRequest) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.AppId = string(data[iNdEx:postIndex])
+			m.AppId = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 14:
 			if wireType != 2 {
@@ -4015,7 +4015,7 @@ func (m *DeduplicatedDeviceActivationRequest) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				stringLen |= (uint64(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -4030,7 +4030,7 @@ func (m *DeduplicatedDeviceActivationRequest) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.DevId = string(data[iNdEx:postIndex])
+			m.DevId = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 21:
 			if wireType != 2 {
@@ -4044,7 +4044,7 @@ func (m *DeduplicatedDeviceActivationRequest) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				msglen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -4061,7 +4061,7 @@ func (m *DeduplicatedDeviceActivationRequest) Unmarshal(data []byte) error {
 			if m.ProtocolMetadata == nil {
 				m.ProtocolMetadata = &protocol.RxMetadata{}
 			}
-			if err := m.ProtocolMetadata.Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.ProtocolMetadata.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4077,7 +4077,7 @@ func (m *DeduplicatedDeviceActivationRequest) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				msglen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -4092,7 +4092,7 @@ func (m *DeduplicatedDeviceActivationRequest) Unmarshal(data []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.GatewayMetadata = append(m.GatewayMetadata, &gateway.RxMetadata{})
-			if err := m.GatewayMetadata[len(m.GatewayMetadata)-1].Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.GatewayMetadata[len(m.GatewayMetadata)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4108,7 +4108,7 @@ func (m *DeduplicatedDeviceActivationRequest) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				msglen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -4125,7 +4125,7 @@ func (m *DeduplicatedDeviceActivationRequest) Unmarshal(data []byte) error {
 			if m.ActivationMetadata == nil {
 				m.ActivationMetadata = &protocol.ActivationMetadata{}
 			}
-			if err := m.ActivationMetadata.Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.ActivationMetadata.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4141,7 +4141,7 @@ func (m *DeduplicatedDeviceActivationRequest) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				m.ServerTime |= (int64(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -4160,7 +4160,7 @@ func (m *DeduplicatedDeviceActivationRequest) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				msglen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -4177,13 +4177,13 @@ func (m *DeduplicatedDeviceActivationRequest) Unmarshal(data []byte) error {
 			if m.ResponseTemplate == nil {
 				m.ResponseTemplate = &DeviceActivationResponse{}
 			}
-			if err := m.ResponseTemplate.Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.ResponseTemplate.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
-			skippy, err := skipBroker(data[iNdEx:])
+			skippy, err := skipBroker(dAtA[iNdEx:])
 			if err != nil {
 				return err
 			}
@@ -4202,8 +4202,8 @@ func (m *DeduplicatedDeviceActivationRequest) Unmarshal(data []byte) error {
 	}
 	return nil
 }
-func (m *ActivationChallengeRequest) Unmarshal(data []byte) error {
-	l := len(data)
+func (m *ActivationChallengeRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
 		preIndex := iNdEx
@@ -4215,7 +4215,7 @@ func (m *ActivationChallengeRequest) Unmarshal(data []byte) error {
 			if iNdEx >= l {
 				return io.ErrUnexpectedEOF
 			}
-			b := data[iNdEx]
+			b := dAtA[iNdEx]
 			iNdEx++
 			wire |= (uint64(b) & 0x7F) << shift
 			if b < 0x80 {
@@ -4243,7 +4243,7 @@ func (m *ActivationChallengeRequest) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				byteLen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -4257,7 +4257,7 @@ func (m *ActivationChallengeRequest) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Payload = append(m.Payload[:0], data[iNdEx:postIndex]...)
+			m.Payload = append(m.Payload[:0], dAtA[iNdEx:postIndex]...)
 			if m.Payload == nil {
 				m.Payload = []byte{}
 			}
@@ -4274,7 +4274,7 @@ func (m *ActivationChallengeRequest) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				msglen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -4291,7 +4291,7 @@ func (m *ActivationChallengeRequest) Unmarshal(data []byte) error {
 			if m.Message == nil {
 				m.Message = &protocol.Message{}
 			}
-			if err := m.Message.Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.Message.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4307,7 +4307,7 @@ func (m *ActivationChallengeRequest) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				byteLen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -4323,7 +4323,7 @@ func (m *ActivationChallengeRequest) Unmarshal(data []byte) error {
 			}
 			var v github_com_TheThingsNetwork_ttn_core_types.DevEUI
 			m.DevEui = &v
-			if err := m.DevEui.Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.DevEui.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4339,7 +4339,7 @@ func (m *ActivationChallengeRequest) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				byteLen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -4355,7 +4355,7 @@ func (m *ActivationChallengeRequest) Unmarshal(data []byte) error {
 			}
 			var v github_com_TheThingsNetwork_ttn_core_types.AppEUI
 			m.AppEui = &v
-			if err := m.AppEui.Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.AppEui.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4371,7 +4371,7 @@ func (m *ActivationChallengeRequest) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				stringLen |= (uint64(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -4386,7 +4386,7 @@ func (m *ActivationChallengeRequest) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.AppId = string(data[iNdEx:postIndex])
+			m.AppId = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 14:
 			if wireType != 2 {
@@ -4400,7 +4400,7 @@ func (m *ActivationChallengeRequest) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				stringLen |= (uint64(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -4415,11 +4415,11 @@ func (m *ActivationChallengeRequest) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.DevId = string(data[iNdEx:postIndex])
+			m.DevId = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
-			skippy, err := skipBroker(data[iNdEx:])
+			skippy, err := skipBroker(dAtA[iNdEx:])
 			if err != nil {
 				return err
 			}
@@ -4438,8 +4438,8 @@ func (m *ActivationChallengeRequest) Unmarshal(data []byte) error {
 	}
 	return nil
 }
-func (m *ActivationChallengeResponse) Unmarshal(data []byte) error {
-	l := len(data)
+func (m *ActivationChallengeResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
 		preIndex := iNdEx
@@ -4451,7 +4451,7 @@ func (m *ActivationChallengeResponse) Unmarshal(data []byte) error {
 			if iNdEx >= l {
 				return io.ErrUnexpectedEOF
 			}
-			b := data[iNdEx]
+			b := dAtA[iNdEx]
 			iNdEx++
 			wire |= (uint64(b) & 0x7F) << shift
 			if b < 0x80 {
@@ -4479,7 +4479,7 @@ func (m *ActivationChallengeResponse) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				byteLen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -4493,7 +4493,7 @@ func (m *ActivationChallengeResponse) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Payload = append(m.Payload[:0], data[iNdEx:postIndex]...)
+			m.Payload = append(m.Payload[:0], dAtA[iNdEx:postIndex]...)
 			if m.Payload == nil {
 				m.Payload = []byte{}
 			}
@@ -4510,7 +4510,7 @@ func (m *ActivationChallengeResponse) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				msglen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -4527,13 +4527,13 @@ func (m *ActivationChallengeResponse) Unmarshal(data []byte) error {
 			if m.Message == nil {
 				m.Message = &protocol.Message{}
 			}
-			if err := m.Message.Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.Message.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
-			skippy, err := skipBroker(data[iNdEx:])
+			skippy, err := skipBroker(dAtA[iNdEx:])
 			if err != nil {
 				return err
 			}
@@ -4552,8 +4552,8 @@ func (m *ActivationChallengeResponse) Unmarshal(data []byte) error {
 	}
 	return nil
 }
-func (m *SubscribeRequest) Unmarshal(data []byte) error {
-	l := len(data)
+func (m *SubscribeRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
 		preIndex := iNdEx
@@ -4565,7 +4565,7 @@ func (m *SubscribeRequest) Unmarshal(data []byte) error {
 			if iNdEx >= l {
 				return io.ErrUnexpectedEOF
 			}
-			b := data[iNdEx]
+			b := dAtA[iNdEx]
 			iNdEx++
 			wire |= (uint64(b) & 0x7F) << shift
 			if b < 0x80 {
@@ -4583,7 +4583,7 @@ func (m *SubscribeRequest) Unmarshal(data []byte) error {
 		switch fieldNum {
 		default:
 			iNdEx = preIndex
-			skippy, err := skipBroker(data[iNdEx:])
+			skippy, err := skipBroker(dAtA[iNdEx:])
 			if err != nil {
 				return err
 			}
@@ -4602,8 +4602,8 @@ func (m *SubscribeRequest) Unmarshal(data []byte) error {
 	}
 	return nil
 }
-func (m *StatusRequest) Unmarshal(data []byte) error {
-	l := len(data)
+func (m *StatusRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
 		preIndex := iNdEx
@@ -4615,7 +4615,7 @@ func (m *StatusRequest) Unmarshal(data []byte) error {
 			if iNdEx >= l {
 				return io.ErrUnexpectedEOF
 			}
-			b := data[iNdEx]
+			b := dAtA[iNdEx]
 			iNdEx++
 			wire |= (uint64(b) & 0x7F) << shift
 			if b < 0x80 {
@@ -4633,7 +4633,7 @@ func (m *StatusRequest) Unmarshal(data []byte) error {
 		switch fieldNum {
 		default:
 			iNdEx = preIndex
-			skippy, err := skipBroker(data[iNdEx:])
+			skippy, err := skipBroker(dAtA[iNdEx:])
 			if err != nil {
 				return err
 			}
@@ -4652,8 +4652,8 @@ func (m *StatusRequest) Unmarshal(data []byte) error {
 	}
 	return nil
 }
-func (m *Status) Unmarshal(data []byte) error {
-	l := len(data)
+func (m *Status) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
 		preIndex := iNdEx
@@ -4665,7 +4665,7 @@ func (m *Status) Unmarshal(data []byte) error {
 			if iNdEx >= l {
 				return io.ErrUnexpectedEOF
 			}
-			b := data[iNdEx]
+			b := dAtA[iNdEx]
 			iNdEx++
 			wire |= (uint64(b) & 0x7F) << shift
 			if b < 0x80 {
@@ -4693,7 +4693,7 @@ func (m *Status) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				msglen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -4710,7 +4710,7 @@ func (m *Status) Unmarshal(data []byte) error {
 			if m.System == nil {
 				m.System = &api.SystemStats{}
 			}
-			if err := m.System.Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.System.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4726,7 +4726,7 @@ func (m *Status) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				msglen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -4743,7 +4743,7 @@ func (m *Status) Unmarshal(data []byte) error {
 			if m.Component == nil {
 				m.Component = &api.ComponentStats{}
 			}
-			if err := m.Component.Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.Component.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4759,7 +4759,7 @@ func (m *Status) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				msglen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -4776,7 +4776,7 @@ func (m *Status) Unmarshal(data []byte) error {
 			if m.Uplink == nil {
 				m.Uplink = &api.Rates{}
 			}
-			if err := m.Uplink.Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.Uplink.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4792,7 +4792,7 @@ func (m *Status) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				msglen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -4809,7 +4809,7 @@ func (m *Status) Unmarshal(data []byte) error {
 			if m.UplinkUnique == nil {
 				m.UplinkUnique = &api.Rates{}
 			}
-			if err := m.UplinkUnique.Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.UplinkUnique.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4825,7 +4825,7 @@ func (m *Status) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				msglen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -4842,7 +4842,7 @@ func (m *Status) Unmarshal(data []byte) error {
 			if m.Downlink == nil {
 				m.Downlink = &api.Rates{}
 			}
-			if err := m.Downlink.Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.Downlink.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4858,7 +4858,7 @@ func (m *Status) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				msglen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -4875,7 +4875,7 @@ func (m *Status) Unmarshal(data []byte) error {
 			if m.Activations == nil {
 				m.Activations = &api.Rates{}
 			}
-			if err := m.Activations.Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.Activations.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4891,7 +4891,7 @@ func (m *Status) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				msglen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -4908,7 +4908,7 @@ func (m *Status) Unmarshal(data []byte) error {
 			if m.ActivationsUnique == nil {
 				m.ActivationsUnique = &api.Rates{}
 			}
-			if err := m.ActivationsUnique.Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.ActivationsUnique.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4924,7 +4924,7 @@ func (m *Status) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				msglen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -4941,7 +4941,7 @@ func (m *Status) Unmarshal(data []byte) error {
 			if m.Deduplication == nil {
 				m.Deduplication = &api.Percentiles{}
 			}
-			if err := m.Deduplication.Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.Deduplication.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4957,7 +4957,7 @@ func (m *Status) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				m.ConnectedRouters |= (uint32(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -4976,7 +4976,7 @@ func (m *Status) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				m.ConnectedHandlers |= (uint32(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -4985,7 +4985,7 @@ func (m *Status) Unmarshal(data []byte) error {
 			}
 		default:
 			iNdEx = preIndex
-			skippy, err := skipBroker(data[iNdEx:])
+			skippy, err := skipBroker(dAtA[iNdEx:])
 			if err != nil {
 				return err
 			}
@@ -5004,8 +5004,8 @@ func (m *Status) Unmarshal(data []byte) error {
 	}
 	return nil
 }
-func (m *ApplicationHandlerRegistration) Unmarshal(data []byte) error {
-	l := len(data)
+func (m *ApplicationHandlerRegistration) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
 		preIndex := iNdEx
@@ -5017,7 +5017,7 @@ func (m *ApplicationHandlerRegistration) Unmarshal(data []byte) error {
 			if iNdEx >= l {
 				return io.ErrUnexpectedEOF
 			}
-			b := data[iNdEx]
+			b := dAtA[iNdEx]
 			iNdEx++
 			wire |= (uint64(b) & 0x7F) << shift
 			if b < 0x80 {
@@ -5045,7 +5045,7 @@ func (m *ApplicationHandlerRegistration) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				stringLen |= (uint64(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -5060,7 +5060,7 @@ func (m *ApplicationHandlerRegistration) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.AppId = string(data[iNdEx:postIndex])
+			m.AppId = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
@@ -5074,7 +5074,7 @@ func (m *ApplicationHandlerRegistration) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				stringLen |= (uint64(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -5089,11 +5089,11 @@ func (m *ApplicationHandlerRegistration) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.HandlerId = string(data[iNdEx:postIndex])
+			m.HandlerId = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
-			skippy, err := skipBroker(data[iNdEx:])
+			skippy, err := skipBroker(dAtA[iNdEx:])
 			if err != nil {
 				return err
 			}
@@ -5112,8 +5112,8 @@ func (m *ApplicationHandlerRegistration) Unmarshal(data []byte) error {
 	}
 	return nil
 }
-func skipBroker(data []byte) (n int, err error) {
-	l := len(data)
+func skipBroker(dAtA []byte) (n int, err error) {
+	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
 		var wire uint64
@@ -5124,7 +5124,7 @@ func skipBroker(data []byte) (n int, err error) {
 			if iNdEx >= l {
 				return 0, io.ErrUnexpectedEOF
 			}
-			b := data[iNdEx]
+			b := dAtA[iNdEx]
 			iNdEx++
 			wire |= (uint64(b) & 0x7F) << shift
 			if b < 0x80 {
@@ -5142,7 +5142,7 @@ func skipBroker(data []byte) (n int, err error) {
 					return 0, io.ErrUnexpectedEOF
 				}
 				iNdEx++
-				if data[iNdEx-1] < 0x80 {
+				if dAtA[iNdEx-1] < 0x80 {
 					break
 				}
 			}
@@ -5159,7 +5159,7 @@ func skipBroker(data []byte) (n int, err error) {
 				if iNdEx >= l {
 					return 0, io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				length |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -5182,7 +5182,7 @@ func skipBroker(data []byte) (n int, err error) {
 					if iNdEx >= l {
 						return 0, io.ErrUnexpectedEOF
 					}
-					b := data[iNdEx]
+					b := dAtA[iNdEx]
 					iNdEx++
 					innerWire |= (uint64(b) & 0x7F) << shift
 					if b < 0x80 {
@@ -5193,7 +5193,7 @@ func skipBroker(data []byte) (n int, err error) {
 				if innerWireType == 4 {
 					break
 				}
-				next, err := skipBroker(data[start:])
+				next, err := skipBroker(dAtA[start:])
 				if err != nil {
 					return 0, err
 				}

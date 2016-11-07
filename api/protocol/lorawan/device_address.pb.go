@@ -109,7 +109,7 @@ var _ grpc.ClientConn
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion3
+const _ = grpc.SupportPackageIsVersion4
 
 // Client API for DevAddrManager service
 
@@ -205,20 +205,20 @@ var _DevAddrManager_serviceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: fileDescriptorDeviceAddress,
+	Metadata: "github.com/TheThingsNetwork/ttn/api/protocol/lorawan/device_address.proto",
 }
 
-func (m *PrefixesRequest) Marshal() (data []byte, err error) {
+func (m *PrefixesRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
+	dAtA = make([]byte, size)
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
-	return data[:n], nil
+	return dAtA[:n], nil
 }
 
-func (m *PrefixesRequest) MarshalTo(data []byte) (int, error) {
+func (m *PrefixesRequest) MarshalTo(dAtA []byte) (int, error) {
 	var i int
 	_ = i
 	var l int
@@ -226,27 +226,27 @@ func (m *PrefixesRequest) MarshalTo(data []byte) (int, error) {
 	return i, nil
 }
 
-func (m *PrefixesResponse) Marshal() (data []byte, err error) {
+func (m *PrefixesResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
+	dAtA = make([]byte, size)
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
-	return data[:n], nil
+	return dAtA[:n], nil
 }
 
-func (m *PrefixesResponse) MarshalTo(data []byte) (int, error) {
+func (m *PrefixesResponse) MarshalTo(dAtA []byte) (int, error) {
 	var i int
 	_ = i
 	var l int
 	_ = l
 	if len(m.Prefixes) > 0 {
 		for _, msg := range m.Prefixes {
-			data[i] = 0xa
+			dAtA[i] = 0xa
 			i++
-			i = encodeVarintDeviceAddress(data, i, uint64(msg.Size()))
-			n, err := msg.MarshalTo(data[i:])
+			i = encodeVarintDeviceAddress(dAtA, i, uint64(msg.Size()))
+			n, err := msg.MarshalTo(dAtA[i:])
 			if err != nil {
 				return 0, err
 			}
@@ -256,98 +256,98 @@ func (m *PrefixesResponse) MarshalTo(data []byte) (int, error) {
 	return i, nil
 }
 
-func (m *PrefixesResponse_PrefixMapping) Marshal() (data []byte, err error) {
+func (m *PrefixesResponse_PrefixMapping) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
+	dAtA = make([]byte, size)
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
-	return data[:n], nil
+	return dAtA[:n], nil
 }
 
-func (m *PrefixesResponse_PrefixMapping) MarshalTo(data []byte) (int, error) {
+func (m *PrefixesResponse_PrefixMapping) MarshalTo(dAtA []byte) (int, error) {
 	var i int
 	_ = i
 	var l int
 	_ = l
 	if len(m.Prefix) > 0 {
-		data[i] = 0xa
+		dAtA[i] = 0xa
 		i++
-		i = encodeVarintDeviceAddress(data, i, uint64(len(m.Prefix)))
-		i += copy(data[i:], m.Prefix)
+		i = encodeVarintDeviceAddress(dAtA, i, uint64(len(m.Prefix)))
+		i += copy(dAtA[i:], m.Prefix)
 	}
 	if len(m.Usage) > 0 {
 		for _, s := range m.Usage {
-			data[i] = 0x12
+			dAtA[i] = 0x12
 			i++
 			l = len(s)
 			for l >= 1<<7 {
-				data[i] = uint8(uint64(l)&0x7f | 0x80)
+				dAtA[i] = uint8(uint64(l)&0x7f | 0x80)
 				l >>= 7
 				i++
 			}
-			data[i] = uint8(l)
+			dAtA[i] = uint8(l)
 			i++
-			i += copy(data[i:], s)
+			i += copy(dAtA[i:], s)
 		}
 	}
 	return i, nil
 }
 
-func (m *DevAddrRequest) Marshal() (data []byte, err error) {
+func (m *DevAddrRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
+	dAtA = make([]byte, size)
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
-	return data[:n], nil
+	return dAtA[:n], nil
 }
 
-func (m *DevAddrRequest) MarshalTo(data []byte) (int, error) {
+func (m *DevAddrRequest) MarshalTo(dAtA []byte) (int, error) {
 	var i int
 	_ = i
 	var l int
 	_ = l
 	if len(m.Usage) > 0 {
 		for _, s := range m.Usage {
-			data[i] = 0xa
+			dAtA[i] = 0xa
 			i++
 			l = len(s)
 			for l >= 1<<7 {
-				data[i] = uint8(uint64(l)&0x7f | 0x80)
+				dAtA[i] = uint8(uint64(l)&0x7f | 0x80)
 				l >>= 7
 				i++
 			}
-			data[i] = uint8(l)
+			dAtA[i] = uint8(l)
 			i++
-			i += copy(data[i:], s)
+			i += copy(dAtA[i:], s)
 		}
 	}
 	return i, nil
 }
 
-func (m *DevAddrResponse) Marshal() (data []byte, err error) {
+func (m *DevAddrResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
+	dAtA = make([]byte, size)
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
-	return data[:n], nil
+	return dAtA[:n], nil
 }
 
-func (m *DevAddrResponse) MarshalTo(data []byte) (int, error) {
+func (m *DevAddrResponse) MarshalTo(dAtA []byte) (int, error) {
 	var i int
 	_ = i
 	var l int
 	_ = l
 	if m.DevAddr != nil {
-		data[i] = 0xa
+		dAtA[i] = 0xa
 		i++
-		i = encodeVarintDeviceAddress(data, i, uint64(m.DevAddr.Size()))
-		n1, err := m.DevAddr.MarshalTo(data[i:])
+		i = encodeVarintDeviceAddress(dAtA, i, uint64(m.DevAddr.Size()))
+		n1, err := m.DevAddr.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
@@ -356,31 +356,31 @@ func (m *DevAddrResponse) MarshalTo(data []byte) (int, error) {
 	return i, nil
 }
 
-func encodeFixed64DeviceAddress(data []byte, offset int, v uint64) int {
-	data[offset] = uint8(v)
-	data[offset+1] = uint8(v >> 8)
-	data[offset+2] = uint8(v >> 16)
-	data[offset+3] = uint8(v >> 24)
-	data[offset+4] = uint8(v >> 32)
-	data[offset+5] = uint8(v >> 40)
-	data[offset+6] = uint8(v >> 48)
-	data[offset+7] = uint8(v >> 56)
+func encodeFixed64DeviceAddress(dAtA []byte, offset int, v uint64) int {
+	dAtA[offset] = uint8(v)
+	dAtA[offset+1] = uint8(v >> 8)
+	dAtA[offset+2] = uint8(v >> 16)
+	dAtA[offset+3] = uint8(v >> 24)
+	dAtA[offset+4] = uint8(v >> 32)
+	dAtA[offset+5] = uint8(v >> 40)
+	dAtA[offset+6] = uint8(v >> 48)
+	dAtA[offset+7] = uint8(v >> 56)
 	return offset + 8
 }
-func encodeFixed32DeviceAddress(data []byte, offset int, v uint32) int {
-	data[offset] = uint8(v)
-	data[offset+1] = uint8(v >> 8)
-	data[offset+2] = uint8(v >> 16)
-	data[offset+3] = uint8(v >> 24)
+func encodeFixed32DeviceAddress(dAtA []byte, offset int, v uint32) int {
+	dAtA[offset] = uint8(v)
+	dAtA[offset+1] = uint8(v >> 8)
+	dAtA[offset+2] = uint8(v >> 16)
+	dAtA[offset+3] = uint8(v >> 24)
 	return offset + 4
 }
-func encodeVarintDeviceAddress(data []byte, offset int, v uint64) int {
+func encodeVarintDeviceAddress(dAtA []byte, offset int, v uint64) int {
 	for v >= 1<<7 {
-		data[offset] = uint8(v&0x7f | 0x80)
+		dAtA[offset] = uint8(v&0x7f | 0x80)
 		v >>= 7
 		offset++
 	}
-	data[offset] = uint8(v)
+	dAtA[offset] = uint8(v)
 	return offset + 1
 }
 func (m *PrefixesRequest) Size() (n int) {
@@ -452,8 +452,8 @@ func sovDeviceAddress(x uint64) (n int) {
 func sozDeviceAddress(x uint64) (n int) {
 	return sovDeviceAddress(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *PrefixesRequest) Unmarshal(data []byte) error {
-	l := len(data)
+func (m *PrefixesRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
 		preIndex := iNdEx
@@ -465,7 +465,7 @@ func (m *PrefixesRequest) Unmarshal(data []byte) error {
 			if iNdEx >= l {
 				return io.ErrUnexpectedEOF
 			}
-			b := data[iNdEx]
+			b := dAtA[iNdEx]
 			iNdEx++
 			wire |= (uint64(b) & 0x7F) << shift
 			if b < 0x80 {
@@ -483,7 +483,7 @@ func (m *PrefixesRequest) Unmarshal(data []byte) error {
 		switch fieldNum {
 		default:
 			iNdEx = preIndex
-			skippy, err := skipDeviceAddress(data[iNdEx:])
+			skippy, err := skipDeviceAddress(dAtA[iNdEx:])
 			if err != nil {
 				return err
 			}
@@ -502,8 +502,8 @@ func (m *PrefixesRequest) Unmarshal(data []byte) error {
 	}
 	return nil
 }
-func (m *PrefixesResponse) Unmarshal(data []byte) error {
-	l := len(data)
+func (m *PrefixesResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
 		preIndex := iNdEx
@@ -515,7 +515,7 @@ func (m *PrefixesResponse) Unmarshal(data []byte) error {
 			if iNdEx >= l {
 				return io.ErrUnexpectedEOF
 			}
-			b := data[iNdEx]
+			b := dAtA[iNdEx]
 			iNdEx++
 			wire |= (uint64(b) & 0x7F) << shift
 			if b < 0x80 {
@@ -543,7 +543,7 @@ func (m *PrefixesResponse) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				msglen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -558,13 +558,13 @@ func (m *PrefixesResponse) Unmarshal(data []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Prefixes = append(m.Prefixes, &PrefixesResponse_PrefixMapping{})
-			if err := m.Prefixes[len(m.Prefixes)-1].Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.Prefixes[len(m.Prefixes)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
-			skippy, err := skipDeviceAddress(data[iNdEx:])
+			skippy, err := skipDeviceAddress(dAtA[iNdEx:])
 			if err != nil {
 				return err
 			}
@@ -583,8 +583,8 @@ func (m *PrefixesResponse) Unmarshal(data []byte) error {
 	}
 	return nil
 }
-func (m *PrefixesResponse_PrefixMapping) Unmarshal(data []byte) error {
-	l := len(data)
+func (m *PrefixesResponse_PrefixMapping) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
 		preIndex := iNdEx
@@ -596,7 +596,7 @@ func (m *PrefixesResponse_PrefixMapping) Unmarshal(data []byte) error {
 			if iNdEx >= l {
 				return io.ErrUnexpectedEOF
 			}
-			b := data[iNdEx]
+			b := dAtA[iNdEx]
 			iNdEx++
 			wire |= (uint64(b) & 0x7F) << shift
 			if b < 0x80 {
@@ -624,7 +624,7 @@ func (m *PrefixesResponse_PrefixMapping) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				stringLen |= (uint64(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -639,7 +639,7 @@ func (m *PrefixesResponse_PrefixMapping) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Prefix = string(data[iNdEx:postIndex])
+			m.Prefix = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
@@ -653,7 +653,7 @@ func (m *PrefixesResponse_PrefixMapping) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				stringLen |= (uint64(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -668,11 +668,11 @@ func (m *PrefixesResponse_PrefixMapping) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Usage = append(m.Usage, string(data[iNdEx:postIndex]))
+			m.Usage = append(m.Usage, string(dAtA[iNdEx:postIndex]))
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
-			skippy, err := skipDeviceAddress(data[iNdEx:])
+			skippy, err := skipDeviceAddress(dAtA[iNdEx:])
 			if err != nil {
 				return err
 			}
@@ -691,8 +691,8 @@ func (m *PrefixesResponse_PrefixMapping) Unmarshal(data []byte) error {
 	}
 	return nil
 }
-func (m *DevAddrRequest) Unmarshal(data []byte) error {
-	l := len(data)
+func (m *DevAddrRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
 		preIndex := iNdEx
@@ -704,7 +704,7 @@ func (m *DevAddrRequest) Unmarshal(data []byte) error {
 			if iNdEx >= l {
 				return io.ErrUnexpectedEOF
 			}
-			b := data[iNdEx]
+			b := dAtA[iNdEx]
 			iNdEx++
 			wire |= (uint64(b) & 0x7F) << shift
 			if b < 0x80 {
@@ -732,7 +732,7 @@ func (m *DevAddrRequest) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				stringLen |= (uint64(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -747,11 +747,11 @@ func (m *DevAddrRequest) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Usage = append(m.Usage, string(data[iNdEx:postIndex]))
+			m.Usage = append(m.Usage, string(dAtA[iNdEx:postIndex]))
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
-			skippy, err := skipDeviceAddress(data[iNdEx:])
+			skippy, err := skipDeviceAddress(dAtA[iNdEx:])
 			if err != nil {
 				return err
 			}
@@ -770,8 +770,8 @@ func (m *DevAddrRequest) Unmarshal(data []byte) error {
 	}
 	return nil
 }
-func (m *DevAddrResponse) Unmarshal(data []byte) error {
-	l := len(data)
+func (m *DevAddrResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
 		preIndex := iNdEx
@@ -783,7 +783,7 @@ func (m *DevAddrResponse) Unmarshal(data []byte) error {
 			if iNdEx >= l {
 				return io.ErrUnexpectedEOF
 			}
-			b := data[iNdEx]
+			b := dAtA[iNdEx]
 			iNdEx++
 			wire |= (uint64(b) & 0x7F) << shift
 			if b < 0x80 {
@@ -811,7 +811,7 @@ func (m *DevAddrResponse) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				byteLen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -827,13 +827,13 @@ func (m *DevAddrResponse) Unmarshal(data []byte) error {
 			}
 			var v github_com_TheThingsNetwork_ttn_core_types.DevAddr
 			m.DevAddr = &v
-			if err := m.DevAddr.Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.DevAddr.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
-			skippy, err := skipDeviceAddress(data[iNdEx:])
+			skippy, err := skipDeviceAddress(dAtA[iNdEx:])
 			if err != nil {
 				return err
 			}
@@ -852,8 +852,8 @@ func (m *DevAddrResponse) Unmarshal(data []byte) error {
 	}
 	return nil
 }
-func skipDeviceAddress(data []byte) (n int, err error) {
-	l := len(data)
+func skipDeviceAddress(dAtA []byte) (n int, err error) {
+	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
 		var wire uint64
@@ -864,7 +864,7 @@ func skipDeviceAddress(data []byte) (n int, err error) {
 			if iNdEx >= l {
 				return 0, io.ErrUnexpectedEOF
 			}
-			b := data[iNdEx]
+			b := dAtA[iNdEx]
 			iNdEx++
 			wire |= (uint64(b) & 0x7F) << shift
 			if b < 0x80 {
@@ -882,7 +882,7 @@ func skipDeviceAddress(data []byte) (n int, err error) {
 					return 0, io.ErrUnexpectedEOF
 				}
 				iNdEx++
-				if data[iNdEx-1] < 0x80 {
+				if dAtA[iNdEx-1] < 0x80 {
 					break
 				}
 			}
@@ -899,7 +899,7 @@ func skipDeviceAddress(data []byte) (n int, err error) {
 				if iNdEx >= l {
 					return 0, io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				length |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -922,7 +922,7 @@ func skipDeviceAddress(data []byte) (n int, err error) {
 					if iNdEx >= l {
 						return 0, io.ErrUnexpectedEOF
 					}
-					b := data[iNdEx]
+					b := dAtA[iNdEx]
 					iNdEx++
 					innerWire |= (uint64(b) & 0x7F) << shift
 					if b < 0x80 {
@@ -933,7 +933,7 @@ func skipDeviceAddress(data []byte) (n int, err error) {
 				if innerWireType == 4 {
 					break
 				}
-				next, err := skipDeviceAddress(data[start:])
+				next, err := skipDeviceAddress(dAtA[start:])
 				if err != nil {
 					return 0, err
 				}

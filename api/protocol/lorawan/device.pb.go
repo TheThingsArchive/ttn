@@ -85,7 +85,7 @@ var _ grpc.ClientConn
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion3
+const _ = grpc.SupportPackageIsVersion4
 
 // Client API for DeviceManager service
 
@@ -214,39 +214,39 @@ var _DeviceManager_serviceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: fileDescriptorDevice,
+	Metadata: "github.com/TheThingsNetwork/ttn/api/protocol/lorawan/device.proto",
 }
 
-func (m *DeviceIdentifier) Marshal() (data []byte, err error) {
+func (m *DeviceIdentifier) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
+	dAtA = make([]byte, size)
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
-	return data[:n], nil
+	return dAtA[:n], nil
 }
 
-func (m *DeviceIdentifier) MarshalTo(data []byte) (int, error) {
+func (m *DeviceIdentifier) MarshalTo(dAtA []byte) (int, error) {
 	var i int
 	_ = i
 	var l int
 	_ = l
 	if m.AppEui != nil {
-		data[i] = 0xa
+		dAtA[i] = 0xa
 		i++
-		i = encodeVarintDevice(data, i, uint64(m.AppEui.Size()))
-		n1, err := m.AppEui.MarshalTo(data[i:])
+		i = encodeVarintDevice(dAtA, i, uint64(m.AppEui.Size()))
+		n1, err := m.AppEui.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += n1
 	}
 	if m.DevEui != nil {
-		data[i] = 0x12
+		dAtA[i] = 0x12
 		i++
-		i = encodeVarintDevice(data, i, uint64(m.DevEui.Size()))
-		n2, err := m.DevEui.MarshalTo(data[i:])
+		i = encodeVarintDevice(dAtA, i, uint64(m.DevEui.Size()))
+		n2, err := m.DevEui.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
@@ -255,164 +255,164 @@ func (m *DeviceIdentifier) MarshalTo(data []byte) (int, error) {
 	return i, nil
 }
 
-func (m *Device) Marshal() (data []byte, err error) {
+func (m *Device) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
-	data = make([]byte, size)
-	n, err := m.MarshalTo(data)
+	dAtA = make([]byte, size)
+	n, err := m.MarshalTo(dAtA)
 	if err != nil {
 		return nil, err
 	}
-	return data[:n], nil
+	return dAtA[:n], nil
 }
 
-func (m *Device) MarshalTo(data []byte) (int, error) {
+func (m *Device) MarshalTo(dAtA []byte) (int, error) {
 	var i int
 	_ = i
 	var l int
 	_ = l
 	if m.AppEui != nil {
-		data[i] = 0xa
+		dAtA[i] = 0xa
 		i++
-		i = encodeVarintDevice(data, i, uint64(m.AppEui.Size()))
-		n3, err := m.AppEui.MarshalTo(data[i:])
+		i = encodeVarintDevice(dAtA, i, uint64(m.AppEui.Size()))
+		n3, err := m.AppEui.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += n3
 	}
 	if m.DevEui != nil {
-		data[i] = 0x12
+		dAtA[i] = 0x12
 		i++
-		i = encodeVarintDevice(data, i, uint64(m.DevEui.Size()))
-		n4, err := m.DevEui.MarshalTo(data[i:])
+		i = encodeVarintDevice(dAtA, i, uint64(m.DevEui.Size()))
+		n4, err := m.DevEui.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += n4
 	}
 	if len(m.AppId) > 0 {
-		data[i] = 0x1a
+		dAtA[i] = 0x1a
 		i++
-		i = encodeVarintDevice(data, i, uint64(len(m.AppId)))
-		i += copy(data[i:], m.AppId)
+		i = encodeVarintDevice(dAtA, i, uint64(len(m.AppId)))
+		i += copy(dAtA[i:], m.AppId)
 	}
 	if len(m.DevId) > 0 {
-		data[i] = 0x22
+		dAtA[i] = 0x22
 		i++
-		i = encodeVarintDevice(data, i, uint64(len(m.DevId)))
-		i += copy(data[i:], m.DevId)
+		i = encodeVarintDevice(dAtA, i, uint64(len(m.DevId)))
+		i += copy(dAtA[i:], m.DevId)
 	}
 	if m.DevAddr != nil {
-		data[i] = 0x2a
+		dAtA[i] = 0x2a
 		i++
-		i = encodeVarintDevice(data, i, uint64(m.DevAddr.Size()))
-		n5, err := m.DevAddr.MarshalTo(data[i:])
+		i = encodeVarintDevice(dAtA, i, uint64(m.DevAddr.Size()))
+		n5, err := m.DevAddr.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += n5
 	}
 	if m.NwkSKey != nil {
-		data[i] = 0x32
+		dAtA[i] = 0x32
 		i++
-		i = encodeVarintDevice(data, i, uint64(m.NwkSKey.Size()))
-		n6, err := m.NwkSKey.MarshalTo(data[i:])
+		i = encodeVarintDevice(dAtA, i, uint64(m.NwkSKey.Size()))
+		n6, err := m.NwkSKey.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += n6
 	}
 	if m.AppSKey != nil {
-		data[i] = 0x3a
+		dAtA[i] = 0x3a
 		i++
-		i = encodeVarintDevice(data, i, uint64(m.AppSKey.Size()))
-		n7, err := m.AppSKey.MarshalTo(data[i:])
+		i = encodeVarintDevice(dAtA, i, uint64(m.AppSKey.Size()))
+		n7, err := m.AppSKey.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += n7
 	}
 	if m.AppKey != nil {
-		data[i] = 0x42
+		dAtA[i] = 0x42
 		i++
-		i = encodeVarintDevice(data, i, uint64(m.AppKey.Size()))
-		n8, err := m.AppKey.MarshalTo(data[i:])
+		i = encodeVarintDevice(dAtA, i, uint64(m.AppKey.Size()))
+		n8, err := m.AppKey.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += n8
 	}
 	if m.FCntUp != 0 {
-		data[i] = 0x48
+		dAtA[i] = 0x48
 		i++
-		i = encodeVarintDevice(data, i, uint64(m.FCntUp))
+		i = encodeVarintDevice(dAtA, i, uint64(m.FCntUp))
 	}
 	if m.FCntDown != 0 {
-		data[i] = 0x50
+		dAtA[i] = 0x50
 		i++
-		i = encodeVarintDevice(data, i, uint64(m.FCntDown))
+		i = encodeVarintDevice(dAtA, i, uint64(m.FCntDown))
 	}
 	if m.DisableFCntCheck {
-		data[i] = 0x58
+		dAtA[i] = 0x58
 		i++
 		if m.DisableFCntCheck {
-			data[i] = 1
+			dAtA[i] = 1
 		} else {
-			data[i] = 0
+			dAtA[i] = 0
 		}
 		i++
 	}
 	if m.Uses32BitFCnt {
-		data[i] = 0x60
+		dAtA[i] = 0x60
 		i++
 		if m.Uses32BitFCnt {
-			data[i] = 1
+			dAtA[i] = 1
 		} else {
-			data[i] = 0
+			dAtA[i] = 0
 		}
 		i++
 	}
 	if len(m.ActivationConstraints) > 0 {
-		data[i] = 0x6a
+		dAtA[i] = 0x6a
 		i++
-		i = encodeVarintDevice(data, i, uint64(len(m.ActivationConstraints)))
-		i += copy(data[i:], m.ActivationConstraints)
+		i = encodeVarintDevice(dAtA, i, uint64(len(m.ActivationConstraints)))
+		i += copy(dAtA[i:], m.ActivationConstraints)
 	}
 	if m.LastSeen != 0 {
-		data[i] = 0xa8
+		dAtA[i] = 0xa8
 		i++
-		data[i] = 0x1
+		dAtA[i] = 0x1
 		i++
-		i = encodeVarintDevice(data, i, uint64(m.LastSeen))
+		i = encodeVarintDevice(dAtA, i, uint64(m.LastSeen))
 	}
 	return i, nil
 }
 
-func encodeFixed64Device(data []byte, offset int, v uint64) int {
-	data[offset] = uint8(v)
-	data[offset+1] = uint8(v >> 8)
-	data[offset+2] = uint8(v >> 16)
-	data[offset+3] = uint8(v >> 24)
-	data[offset+4] = uint8(v >> 32)
-	data[offset+5] = uint8(v >> 40)
-	data[offset+6] = uint8(v >> 48)
-	data[offset+7] = uint8(v >> 56)
+func encodeFixed64Device(dAtA []byte, offset int, v uint64) int {
+	dAtA[offset] = uint8(v)
+	dAtA[offset+1] = uint8(v >> 8)
+	dAtA[offset+2] = uint8(v >> 16)
+	dAtA[offset+3] = uint8(v >> 24)
+	dAtA[offset+4] = uint8(v >> 32)
+	dAtA[offset+5] = uint8(v >> 40)
+	dAtA[offset+6] = uint8(v >> 48)
+	dAtA[offset+7] = uint8(v >> 56)
 	return offset + 8
 }
-func encodeFixed32Device(data []byte, offset int, v uint32) int {
-	data[offset] = uint8(v)
-	data[offset+1] = uint8(v >> 8)
-	data[offset+2] = uint8(v >> 16)
-	data[offset+3] = uint8(v >> 24)
+func encodeFixed32Device(dAtA []byte, offset int, v uint32) int {
+	dAtA[offset] = uint8(v)
+	dAtA[offset+1] = uint8(v >> 8)
+	dAtA[offset+2] = uint8(v >> 16)
+	dAtA[offset+3] = uint8(v >> 24)
 	return offset + 4
 }
-func encodeVarintDevice(data []byte, offset int, v uint64) int {
+func encodeVarintDevice(dAtA []byte, offset int, v uint64) int {
 	for v >= 1<<7 {
-		data[offset] = uint8(v&0x7f | 0x80)
+		dAtA[offset] = uint8(v&0x7f | 0x80)
 		v >>= 7
 		offset++
 	}
-	data[offset] = uint8(v)
+	dAtA[offset] = uint8(v)
 	return offset + 1
 }
 func (m *DeviceIdentifier) Size() (n int) {
@@ -499,8 +499,8 @@ func sovDevice(x uint64) (n int) {
 func sozDevice(x uint64) (n int) {
 	return sovDevice(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *DeviceIdentifier) Unmarshal(data []byte) error {
-	l := len(data)
+func (m *DeviceIdentifier) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
 		preIndex := iNdEx
@@ -512,7 +512,7 @@ func (m *DeviceIdentifier) Unmarshal(data []byte) error {
 			if iNdEx >= l {
 				return io.ErrUnexpectedEOF
 			}
-			b := data[iNdEx]
+			b := dAtA[iNdEx]
 			iNdEx++
 			wire |= (uint64(b) & 0x7F) << shift
 			if b < 0x80 {
@@ -540,7 +540,7 @@ func (m *DeviceIdentifier) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				byteLen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -556,7 +556,7 @@ func (m *DeviceIdentifier) Unmarshal(data []byte) error {
 			}
 			var v github_com_TheThingsNetwork_ttn_core_types.AppEUI
 			m.AppEui = &v
-			if err := m.AppEui.Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.AppEui.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -572,7 +572,7 @@ func (m *DeviceIdentifier) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				byteLen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -588,13 +588,13 @@ func (m *DeviceIdentifier) Unmarshal(data []byte) error {
 			}
 			var v github_com_TheThingsNetwork_ttn_core_types.DevEUI
 			m.DevEui = &v
-			if err := m.DevEui.Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.DevEui.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
-			skippy, err := skipDevice(data[iNdEx:])
+			skippy, err := skipDevice(dAtA[iNdEx:])
 			if err != nil {
 				return err
 			}
@@ -613,8 +613,8 @@ func (m *DeviceIdentifier) Unmarshal(data []byte) error {
 	}
 	return nil
 }
-func (m *Device) Unmarshal(data []byte) error {
-	l := len(data)
+func (m *Device) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
 		preIndex := iNdEx
@@ -626,7 +626,7 @@ func (m *Device) Unmarshal(data []byte) error {
 			if iNdEx >= l {
 				return io.ErrUnexpectedEOF
 			}
-			b := data[iNdEx]
+			b := dAtA[iNdEx]
 			iNdEx++
 			wire |= (uint64(b) & 0x7F) << shift
 			if b < 0x80 {
@@ -654,7 +654,7 @@ func (m *Device) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				byteLen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -670,7 +670,7 @@ func (m *Device) Unmarshal(data []byte) error {
 			}
 			var v github_com_TheThingsNetwork_ttn_core_types.AppEUI
 			m.AppEui = &v
-			if err := m.AppEui.Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.AppEui.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -686,7 +686,7 @@ func (m *Device) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				byteLen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -702,7 +702,7 @@ func (m *Device) Unmarshal(data []byte) error {
 			}
 			var v github_com_TheThingsNetwork_ttn_core_types.DevEUI
 			m.DevEui = &v
-			if err := m.DevEui.Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.DevEui.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -718,7 +718,7 @@ func (m *Device) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				stringLen |= (uint64(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -733,7 +733,7 @@ func (m *Device) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.AppId = string(data[iNdEx:postIndex])
+			m.AppId = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 4:
 			if wireType != 2 {
@@ -747,7 +747,7 @@ func (m *Device) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				stringLen |= (uint64(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -762,7 +762,7 @@ func (m *Device) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.DevId = string(data[iNdEx:postIndex])
+			m.DevId = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 5:
 			if wireType != 2 {
@@ -776,7 +776,7 @@ func (m *Device) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				byteLen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -792,7 +792,7 @@ func (m *Device) Unmarshal(data []byte) error {
 			}
 			var v github_com_TheThingsNetwork_ttn_core_types.DevAddr
 			m.DevAddr = &v
-			if err := m.DevAddr.Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.DevAddr.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -808,7 +808,7 @@ func (m *Device) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				byteLen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -824,7 +824,7 @@ func (m *Device) Unmarshal(data []byte) error {
 			}
 			var v github_com_TheThingsNetwork_ttn_core_types.NwkSKey
 			m.NwkSKey = &v
-			if err := m.NwkSKey.Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.NwkSKey.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -840,7 +840,7 @@ func (m *Device) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				byteLen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -856,7 +856,7 @@ func (m *Device) Unmarshal(data []byte) error {
 			}
 			var v github_com_TheThingsNetwork_ttn_core_types.AppSKey
 			m.AppSKey = &v
-			if err := m.AppSKey.Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.AppSKey.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -872,7 +872,7 @@ func (m *Device) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				byteLen |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -888,7 +888,7 @@ func (m *Device) Unmarshal(data []byte) error {
 			}
 			var v github_com_TheThingsNetwork_ttn_core_types.AppKey
 			m.AppKey = &v
-			if err := m.AppKey.Unmarshal(data[iNdEx:postIndex]); err != nil {
+			if err := m.AppKey.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -904,7 +904,7 @@ func (m *Device) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				m.FCntUp |= (uint32(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -923,7 +923,7 @@ func (m *Device) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				m.FCntDown |= (uint32(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -942,7 +942,7 @@ func (m *Device) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				v |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -962,7 +962,7 @@ func (m *Device) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				v |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -982,7 +982,7 @@ func (m *Device) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				stringLen |= (uint64(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -997,7 +997,7 @@ func (m *Device) Unmarshal(data []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ActivationConstraints = string(data[iNdEx:postIndex])
+			m.ActivationConstraints = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 21:
 			if wireType != 0 {
@@ -1011,7 +1011,7 @@ func (m *Device) Unmarshal(data []byte) error {
 				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				m.LastSeen |= (int64(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -1020,7 +1020,7 @@ func (m *Device) Unmarshal(data []byte) error {
 			}
 		default:
 			iNdEx = preIndex
-			skippy, err := skipDevice(data[iNdEx:])
+			skippy, err := skipDevice(dAtA[iNdEx:])
 			if err != nil {
 				return err
 			}
@@ -1039,8 +1039,8 @@ func (m *Device) Unmarshal(data []byte) error {
 	}
 	return nil
 }
-func skipDevice(data []byte) (n int, err error) {
-	l := len(data)
+func skipDevice(dAtA []byte) (n int, err error) {
+	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
 		var wire uint64
@@ -1051,7 +1051,7 @@ func skipDevice(data []byte) (n int, err error) {
 			if iNdEx >= l {
 				return 0, io.ErrUnexpectedEOF
 			}
-			b := data[iNdEx]
+			b := dAtA[iNdEx]
 			iNdEx++
 			wire |= (uint64(b) & 0x7F) << shift
 			if b < 0x80 {
@@ -1069,7 +1069,7 @@ func skipDevice(data []byte) (n int, err error) {
 					return 0, io.ErrUnexpectedEOF
 				}
 				iNdEx++
-				if data[iNdEx-1] < 0x80 {
+				if dAtA[iNdEx-1] < 0x80 {
 					break
 				}
 			}
@@ -1086,7 +1086,7 @@ func skipDevice(data []byte) (n int, err error) {
 				if iNdEx >= l {
 					return 0, io.ErrUnexpectedEOF
 				}
-				b := data[iNdEx]
+				b := dAtA[iNdEx]
 				iNdEx++
 				length |= (int(b) & 0x7F) << shift
 				if b < 0x80 {
@@ -1109,7 +1109,7 @@ func skipDevice(data []byte) (n int, err error) {
 					if iNdEx >= l {
 						return 0, io.ErrUnexpectedEOF
 					}
-					b := data[iNdEx]
+					b := dAtA[iNdEx]
 					iNdEx++
 					innerWire |= (uint64(b) & 0x7F) << shift
 					if b < 0x80 {
@@ -1120,7 +1120,7 @@ func skipDevice(data []byte) (n int, err error) {
 				if innerWireType == 4 {
 					break
 				}
-				next, err := skipDevice(data[start:])
+				next, err := skipDevice(dAtA[start:])
 				if err != nil {
 					return 0, err
 				}
