@@ -44,10 +44,12 @@ func init() {
 	routerCmd.AddCommand(genKeypairCmd("router"))
 	brokerCmd.AddCommand(genKeypairCmd("broker"))
 	handlerCmd.AddCommand(genKeypairCmd("handler"))
+	discoveryCmd.AddCommand(genKeypairCmd("discovery"))
 	networkserverCmd.AddCommand(genKeypairCmd("networkserver"))
 
 	routerCmd.AddCommand(genCertCmd("router"))
 	brokerCmd.AddCommand(genCertCmd("broker"))
 	handlerCmd.AddCommand(genCertCmd("handler"))
+	discoveryCmd.AddCommand(genCertCmd("discovery"))
 	networkserverCmd.AddCommand(genCertCmd("networkserver"))
 }
