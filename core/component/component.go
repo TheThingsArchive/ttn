@@ -1,6 +1,7 @@
 // Copyright © 2016 The Things Network
 // Use of this source code is governed by the MIT license that can be found in the LICENSE file.
 
+// Package component contains code that is shared by all components (discovery, router, broker, networkserver, handler)
 package component
 
 import (
@@ -11,20 +12,31 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/TheThingsNetwork/go-account-lib/cache"
 	"github.com/TheThingsNetwork/go-account-lib/claims"
 	"github.com/TheThingsNetwork/go-account-lib/tokenkey"
 	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	pb_monitor "github.com/TheThingsNetwork/ttn/api/monitor"
-	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/logging"
-	"github.com/TheThingsNetwork/ttn/utils/security"
 	"github.com/apex/log"
 	"github.com/spf13/viper"
 	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/grpclog"
 )
+
+// Component contains the common attributes for all TTN components
+type Component struct {
+	Config           Config
+	Identity         *pb_discovery.Announcement
+	Discovery        pb_discovery.Client
+	Monitors         map[string]*pb_monitor.Client
+	Ctx              log.Interface
+	AccessToken      string
+	privateKey       *ecdsa.PrivateKey
+	tlsConfig        *tls.Config
+	TokenKeyProvider tokenkey.Provider
+	status           int64
+}
 
 type Interface interface {
 	RegisterRPC(s *grpc.Server)
@@ -58,7 +70,8 @@ func New(ctx log.Interface, serviceName string, announcedAddress string) (*Compo
 	grpclog.SetLogger(logging.NewGRPCLogger(ctx))
 
 	component := &Component{
-		Ctx: ctx,
+		Config: ConfigFromViper(),
+		Ctx:    ctx,
 		Identity: &pb_discovery.Announcement{
 			Id:             viper.GetString("id"),
 			Description:    viper.GetString("description"),
@@ -68,10 +81,10 @@ func New(ctx log.Interface, serviceName string, announcedAddress string) (*Compo
 			Public:         viper.GetBool("public"),
 		},
 		AccessToken: viper.GetString("auth-token"),
-		TokenKeyProvider: tokenkey.HTTPProvider(
-			viper.GetStringMapString("auth-servers"),
-			cache.WriteTroughCacheWithFormat(viper.GetString("key-dir"), "auth-%s.pub"),
-		),
+	}
+
+	if err := component.InitAuth(); err != nil {
+		return nil, err
 	}
 
 	if serviceName != "discovery" {
@@ -86,29 +99,6 @@ func New(ctx log.Interface, serviceName string, announcedAddress string) (*Compo
 		)
 		if err != nil {
 			return nil, err
-		}
-	}
-
-	if priv, err := security.LoadKeypair(viper.GetString("key-dir")); err == nil {
-		component.privateKey = priv
-
-		pubPEM, _ := security.PublicPEM(priv)
-		component.Identity.PublicKey = string(pubPEM)
-
-		privPEM, _ := security.PrivatePEM(priv)
-
-		if viper.GetBool("tls") {
-			cert, err := security.LoadCert(viper.GetString("key-dir"))
-			if err != nil {
-				return nil, err
-			}
-			component.Identity.Certificate = string(cert)
-
-			cer, err := tls.X509KeyPair(cert, privPEM)
-			if err != nil {
-				return nil, err
-			}
-			component.tlsConfig = &tls.Config{Certificates: []tls.Certificate{cer}}
 		}
 	}
 
@@ -141,35 +131,4 @@ func New(ctx log.Interface, serviceName string, announcedAddress string) (*Compo
 	}
 
 	return component, nil
-}
-
-// Component contains the common attributes for all TTN components
-type Component struct {
-	Identity         *pb_discovery.Announcement
-	Discovery        pb_discovery.Client
-	Monitors         map[string]*pb_monitor.Client
-	Ctx              log.Interface
-	AccessToken      string
-	privateKey       *ecdsa.PrivateKey
-	tlsConfig        *tls.Config
-	TokenKeyProvider tokenkey.Provider
-	status           int64
-}
-
-// UpdateTokenKey updates the OAuth Bearer token key
-func (c *Component) UpdateTokenKey() error {
-	if c.TokenKeyProvider == nil {
-		return errors.NewErrInternal("No public key provider configured for token validation")
-	}
-
-	// Set up Auth Server Token Validation
-	err := c.TokenKeyProvider.Update()
-	if err != nil {
-		c.Ctx.Warnf("ttn: Failed to refresh public keys for token validation: %s", err.Error())
-	} else {
-		c.Ctx.Info("ttn: Got public keys for token validation")
-	}
-
-	return nil
-
 }
