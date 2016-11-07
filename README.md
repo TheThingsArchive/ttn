@@ -19,7 +19,7 @@ When you get started with The Things Network, you'll probably have some question
 
 ## Prepare your Development Environment
 
-1. Make sure you have [Go](https://golang.org) installed.
+1. Make sure you have [Go](https://golang.org) installed (version 1.7 or later).
 2. Set up your [Go environment](https://golang.org/doc/code.html#GOPATH)
 3. Install the [protobuf compiler (`protoc`)](https://github.com/google/protobuf/releases)
 4. Make sure you have [Redis](http://redis.io/download) and [RabbitMQ](https://www.rabbitmq.com/download.html) **installed** and **running**.  
