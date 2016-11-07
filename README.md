@@ -35,7 +35,8 @@ When you get started with The Things Network, you'll probably have some question
 4. Install the dependencies for development: `make dev-deps`
 5. Run the tests: `make test`
 6. Run `make build` to build both `ttn` and `ttnctl` from source. 
-7. Run `make link` to link them to `$GOPATH/bin/` (In order to run the commands, you should have `export PATH="$GOPATH/bin:$PATH"` in your profile).
+7. Run `make dev` to install the go binaries into `$GOPATH/bin/`
+    * Optionally on Linux or Mac you can use `make link` to link them to `$GOPATH/bin/` (In order to run the commands, you should have `export PATH="$GOPATH/bin:$PATH"` in your profile).
 8. Configure your `ttnctl` with the settings in `.env/ttnctl.yml.dev-example` by copying that file to `~/.ttnctl.yml`.
 
 You can check your `ttnctl` configuration by running `ttnctl config`. It should look like this:
