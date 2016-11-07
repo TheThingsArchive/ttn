@@ -9,7 +9,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"golang.org/x/net/context"
+	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )

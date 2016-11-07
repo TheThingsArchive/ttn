@@ -9,7 +9,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/utils/backoff"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
-	"golang.org/x/net/context"
+	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
 )
 
 func (cl *gatewayClient) initUplink() {

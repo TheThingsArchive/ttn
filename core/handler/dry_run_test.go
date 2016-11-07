@@ -6,12 +6,11 @@ package handler
 import (
 	"testing"
 
-	"golang.org/x/net/context"
-
 	pb "github.com/TheThingsNetwork/ttn/api/handler"
 	"github.com/TheThingsNetwork/ttn/core/handler/application"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/assertions"
+	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
 )
 
 type countingStore struct {

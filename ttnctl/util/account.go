@@ -16,7 +16,7 @@ import (
 	accountUtil "github.com/TheThingsNetwork/go-account-lib/util"
 	"github.com/apex/log"
 	"github.com/spf13/viper"
-	"golang.org/x/net/context"
+	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
 	"golang.org/x/oauth2"
 )
 

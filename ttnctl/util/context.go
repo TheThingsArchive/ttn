@@ -8,8 +8,7 @@ import (
 	"os/user"
 
 	"github.com/apex/log"
-
-	"golang.org/x/net/context"
+	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
 	"google.golang.org/grpc/metadata"
 )
 
