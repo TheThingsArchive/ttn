@@ -14,7 +14,7 @@ import (
 	pb_protocol "github.com/TheThingsNetwork/ttn/api/protocol"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	pb "github.com/TheThingsNetwork/ttn/api/router"
-	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/router/gateway"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/assertions"
@@ -41,7 +41,7 @@ func TestHandleDownlink(t *testing.T) {
 	a := New(t)
 
 	r := &router{
-		Component: &core.Component{
+		Component: &component.Component{
 			Ctx: GetLogger(t, "TestHandleDownlink"),
 		},
 		gateways: map[string]*gateway.Gateway{},
@@ -66,7 +66,7 @@ func TestSubscribeUnsubscribeDownlink(t *testing.T) {
 	a := New(t)
 
 	r := &router{
-		Component: &core.Component{
+		Component: &component.Component{
 			Ctx: GetLogger(t, "TestSubscribeUnsubscribeDownlink"),
 		},
 		gateways: map[string]*gateway.Gateway{},

@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	pb "github.com/TheThingsNetwork/ttn/api/router"
-	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/router/gateway"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
@@ -20,7 +20,7 @@ func TestHandleActivation(t *testing.T) {
 	gtwID := "eui-0102030405060708"
 
 	r := &router{
-		Component: &core.Component{
+		Component: &component.Component{
 			Ctx: GetLogger(t, "TestHandleActivation"),
 		},
 		gateways: map[string]*gateway.Gateway{

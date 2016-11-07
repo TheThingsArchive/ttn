@@ -8,7 +8,7 @@ import (
 	"time"
 
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
-	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/handler/application"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
@@ -21,7 +21,7 @@ func TestEnqueueDownlink(t *testing.T) {
 	appID := "app1"
 	devID := "dev1"
 	h := &handler{
-		Component: &core.Component{Ctx: GetLogger(t, "TestEnqueueDownlink")},
+		Component: &component.Component{Ctx: GetLogger(t, "TestEnqueueDownlink")},
 		devices:   device.NewRedisDeviceStore(GetRedisClient(), "handler-test-enqueue-downlink"),
 		mqttEvent: make(chan *types.DeviceEvent, 10),
 	}
@@ -61,7 +61,7 @@ func TestHandleDownlink(t *testing.T) {
 	appEUI := types.AppEUI([8]byte{1, 2, 3, 4, 5, 6, 7, 8})
 	devEUI := types.DevEUI([8]byte{1, 2, 3, 4, 5, 6, 7, 8})
 	h := &handler{
-		Component:    &core.Component{Ctx: GetLogger(t, "TestHandleDownlink")},
+		Component:    &component.Component{Ctx: GetLogger(t, "TestHandleDownlink")},
 		devices:      device.NewRedisDeviceStore(GetRedisClient(), "handler-test-handle-downlink"),
 		applications: application.NewRedisApplicationStore(GetRedisClient(), "handler-test-enqueue-downlink"),
 		downlink:     make(chan *pb_broker.DownlinkMessage),

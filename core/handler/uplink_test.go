@@ -10,7 +10,7 @@ import (
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_protocol "github.com/TheThingsNetwork/ttn/api/protocol"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
-	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/handler/application"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
@@ -27,7 +27,7 @@ func TestHandleUplink(t *testing.T) {
 	devEUI := types.DevEUI([8]byte{1, 2, 3, 4, 5, 6, 7, 8})
 	devID := "devid"
 	h := &handler{
-		Component:    &core.Component{Ctx: GetLogger(t, "TestHandleUplink")},
+		Component:    &component.Component{Ctx: GetLogger(t, "TestHandleUplink")},
 		devices:      device.NewRedisDeviceStore(GetRedisClient(), "handler-test-handle-uplink"),
 		applications: application.NewRedisApplicationStore(GetRedisClient(), "handler-test-handle-uplink"),
 	}

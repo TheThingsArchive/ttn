@@ -10,7 +10,7 @@ import (
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	pb_networkserver "github.com/TheThingsNetwork/ttn/api/networkserver"
-	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/core/component"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"github.com/golang/mock/gomock"
 )
@@ -28,7 +28,7 @@ func getTestBroker(t *testing.T) *testBroker {
 	ns := pb_networkserver.NewMockNetworkServerClient(ctrl)
 	return &testBroker{
 		broker: &broker{
-			Component: &core.Component{
+			Component: &component.Component{
 				Discovery: discovery,
 				Ctx:       GetLogger(t, "TestBroker"),
 			},

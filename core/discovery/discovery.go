@@ -6,7 +6,7 @@ package discovery
 
 import (
 	pb "github.com/TheThingsNetwork/ttn/api/discovery"
-	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/discovery/announcement"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"gopkg.in/redis.v5"
@@ -14,7 +14,7 @@ import (
 
 // Discovery specifies the interface for the TTN Service Discovery component
 type Discovery interface {
-	core.ComponentInterface
+	component.Interface
 	WithCache(options announcement.CacheOptions)
 	Announce(announcement *pb.Announcement) error
 	GetAll(serviceName string) ([]*pb.Announcement, error)
@@ -25,7 +25,7 @@ type Discovery interface {
 
 // discovery is a reference implementation for a TTN Service Discovery component.
 type discovery struct {
-	*core.Component
+	*component.Component
 	services announcement.Store
 }
 
@@ -33,13 +33,13 @@ func (d *discovery) WithCache(options announcement.CacheOptions) {
 	d.services = announcement.NewCachedAnnouncementStore(d.services, options)
 }
 
-func (d *discovery) Init(c *core.Component) error {
+func (d *discovery) Init(c *component.Component) error {
 	d.Component = c
 	err := d.Component.UpdateTokenKey()
 	if err != nil {
 		return err
 	}
-	d.Component.SetStatus(core.StatusHealthy)
+	d.Component.SetStatus(component.StatusHealthy)
 	return nil
 }
 

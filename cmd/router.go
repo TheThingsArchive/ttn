@@ -10,13 +10,12 @@ import (
 	"os/signal"
 	"syscall"
 
-	"google.golang.org/grpc"
-
-	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/router"
 	"github.com/apex/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"google.golang.org/grpc"
 )
 
 // routerCmd represents the router command
@@ -34,7 +33,7 @@ var routerCmd = &cobra.Command{
 		ctx.Info("Starting")
 
 		// Component
-		component, err := core.NewComponent(ctx, "router", fmt.Sprintf("%s:%d", viper.GetString("router.server-address-announce"), viper.GetInt("router.server-port")))
+		component, err := component.New(ctx, "router", fmt.Sprintf("%s:%d", viper.GetString("router.server-address-announce"), viper.GetInt("router.server-port")))
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not initialize component")
 		}

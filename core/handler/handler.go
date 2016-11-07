@@ -11,7 +11,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/api"
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb "github.com/TheThingsNetwork/ttn/api/handler"
-	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/handler/application"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
@@ -23,8 +23,8 @@ import (
 
 // Handler component
 type Handler interface {
-	core.ComponentInterface
-	core.ManagementInterface
+	component.Interface
+	component.ManagementInterface
 
 	WithMQTT(username, password string, brokers ...string) Handler
 	WithAMQP(username, password, host, exchange string) Handler
@@ -45,7 +45,7 @@ func NewRedisHandler(client *redis.Client, ttnBrokerID string) Handler {
 }
 
 type handler struct {
-	*core.Component
+	*component.Component
 
 	devices      device.Store
 	applications application.Store
@@ -96,7 +96,7 @@ func (h *handler) WithAMQP(username, password, host, exchange string) Handler {
 	return h
 }
 
-func (h *handler) Init(c *core.Component) error {
+func (h *handler) Init(c *component.Component) error {
 	h.Component = c
 	err := h.Component.UpdateTokenKey()
 	if err != nil {
@@ -131,7 +131,7 @@ func (h *handler) Init(c *core.Component) error {
 		return err
 	}
 
-	h.Component.SetStatus(core.StatusHealthy)
+	h.Component.SetStatus(component.StatusHealthy)
 
 	return nil
 }

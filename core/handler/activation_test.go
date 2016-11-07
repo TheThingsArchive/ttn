@@ -11,7 +11,7 @@ import (
 	pb "github.com/TheThingsNetwork/ttn/api/handler"
 	pb_protocol "github.com/TheThingsNetwork/ttn/api/protocol"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
-	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/handler/application"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
@@ -66,7 +66,7 @@ func TestHandleActivation(t *testing.T) {
 	a := New(t)
 
 	h := &handler{
-		Component:    &core.Component{Ctx: GetLogger(t, "TestHandleActivation")},
+		Component:    &component.Component{Ctx: GetLogger(t, "TestHandleActivation")},
 		applications: application.NewRedisApplicationStore(GetRedisClient(), "handler-test-activation"),
 		devices:      device.NewRedisDeviceStore(GetRedisClient(), "handler-test-activation"),
 	}

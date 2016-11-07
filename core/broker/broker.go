@@ -14,15 +14,15 @@ import (
 	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/api/networkserver"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
-	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"google.golang.org/grpc"
 )
 
 type Broker interface {
-	core.ComponentInterface
-	core.ManagementInterface
+	component.Interface
+	component.ManagementInterface
 
 	SetNetworkServer(addr, cert, token string)
 
@@ -52,7 +52,7 @@ func (b *broker) SetNetworkServer(addr, cert, token string) {
 }
 
 type broker struct {
-	*core.Component
+	*component.Component
 	routers                map[string]chan *pb.DownlinkMessage
 	routersLock            sync.RWMutex
 	handlers               map[string]chan *pb.DeduplicatedUplinkMessage
@@ -114,7 +114,7 @@ nextPrefix:
 	return nil
 }
 
-func (b *broker) Init(c *core.Component) error {
+func (b *broker) Init(c *component.Component) error {
 	b.Component = c
 	err := b.Component.UpdateTokenKey()
 	if err != nil {
@@ -132,7 +132,7 @@ func (b *broker) Init(c *core.Component) error {
 	b.nsConn = conn
 	b.ns = networkserver.NewNetworkServerClient(conn)
 	b.checkPrefixAnnouncements()
-	b.Component.SetStatus(core.StatusHealthy)
+	b.Component.SetStatus(component.StatusHealthy)
 	return nil
 }
 

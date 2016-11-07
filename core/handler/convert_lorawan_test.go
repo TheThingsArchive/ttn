@@ -9,7 +9,7 @@ import (
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_protocol "github.com/TheThingsNetwork/ttn/api/protocol"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
-	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
@@ -35,7 +35,7 @@ func TestConvertFromLoRaWAN(t *testing.T) {
 	a := New(t)
 	h := &handler{
 		devices:   device.NewRedisDeviceStore(GetRedisClient(), "handler-test-convert-from-lorawan"),
-		Component: &core.Component{Ctx: GetLogger(t, "TestConvertFromLoRaWAN")},
+		Component: &component.Component{Ctx: GetLogger(t, "TestConvertFromLoRaWAN")},
 		mqttEvent: make(chan *types.DeviceEvent, 10),
 	}
 	h.devices.Set(&device.Device{
@@ -75,7 +75,7 @@ func TestConvertToLoRaWAN(t *testing.T) {
 	a := New(t)
 	h := &handler{
 		devices:   device.NewRedisDeviceStore(GetRedisClient(), "handler-test-convert-to-lorawan"),
-		Component: &core.Component{Ctx: GetLogger(t, "TestConvertToLoRaWAN")},
+		Component: &component.Component{Ctx: GetLogger(t, "TestConvertToLoRaWAN")},
 	}
 	h.devices.Set(&device.Device{
 		DevID: "devid",

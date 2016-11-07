@@ -13,15 +13,15 @@ import (
 	pb_gateway "github.com/TheThingsNetwork/ttn/api/gateway"
 	pb_monitor "github.com/TheThingsNetwork/ttn/api/monitor"
 	pb "github.com/TheThingsNetwork/ttn/api/router"
-	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/router/gateway"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 )
 
 // Router component
 type Router interface {
-	core.ComponentInterface
-	core.ManagementInterface
+	component.Interface
+	component.ManagementInterface
 
 	// Handle a status message from a gateway
 	HandleGatewayStatus(gatewayID string, status *pb_gateway.Status) error
@@ -54,7 +54,7 @@ func NewRouter() Router {
 }
 
 type router struct {
-	*core.Component
+	*component.Component
 	gateways     map[string]*gateway.Gateway
 	gatewaysLock sync.RWMutex
 	brokers      map[string]*broker
@@ -69,7 +69,7 @@ func (r *router) tickGateways() {
 	}
 }
 
-func (r *router) Init(c *core.Component) error {
+func (r *router) Init(c *component.Component) error {
 	r.Component = c
 	err := r.Component.UpdateTokenKey()
 	if err != nil {
@@ -86,7 +86,7 @@ func (r *router) Init(c *core.Component) error {
 			r.tickGateways()
 		}
 	}()
-	r.Component.SetStatus(core.StatusHealthy)
+	r.Component.SetStatus(component.StatusHealthy)
 	return nil
 }
 

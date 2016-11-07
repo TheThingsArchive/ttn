@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/amqp"
-	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
@@ -32,7 +32,7 @@ func TestHandleAMQP(t *testing.T) {
 	appID := "handler-amqp-app1"
 	devID := "handler-amqp-dev1"
 	h := &handler{
-		Component: &core.Component{Ctx: GetLogger(t, "TestHandleAMQP")},
+		Component: &component.Component{Ctx: GetLogger(t, "TestHandleAMQP")},
 		devices:   device.NewRedisDeviceStore(GetRedisClient(), "handler-test-handle-amqp"),
 	}
 	h.WithAMQP("guest", "guest", host, "amq.topic")

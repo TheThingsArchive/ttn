@@ -14,8 +14,8 @@ import (
 
 	"google.golang.org/grpc"
 
-	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/broker"
+	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/apex/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -38,7 +38,7 @@ var brokerCmd = &cobra.Command{
 		ctx.Info("Starting")
 
 		// Component
-		component, err := core.NewComponent(ctx, "broker", fmt.Sprintf("%s:%d", viper.GetString("broker.server-address-announce"), viper.GetInt("broker.server-port")))
+		component, err := component.New(ctx, "broker", fmt.Sprintf("%s:%d", viper.GetString("broker.server-address-announce"), viper.GetInt("broker.server-port")))
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not initialize component")
 		}

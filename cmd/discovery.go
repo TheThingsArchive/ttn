@@ -10,16 +10,14 @@ import (
 	"os/signal"
 	"syscall"
 
-	"google.golang.org/grpc"
-
-	"gopkg.in/redis.v5"
-
-	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/discovery"
 	"github.com/TheThingsNetwork/ttn/core/discovery/announcement"
 	"github.com/apex/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"google.golang.org/grpc"
+	"gopkg.in/redis.v5"
 )
 
 // discoveryCmd represents the discovery command
@@ -46,7 +44,7 @@ var discoveryCmd = &cobra.Command{
 		connectRedis(client)
 
 		// Component
-		component, err := core.NewComponent(ctx, "discovery", fmt.Sprintf("%s:%d", viper.GetString("discovery.server-address-announce"), viper.GetInt("discovery.server-port")))
+		component, err := component.New(ctx, "discovery", fmt.Sprintf("%s:%d", viper.GetString("discovery.server-address-announce"), viper.GetInt("discovery.server-port")))
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not initialize component")
 		}

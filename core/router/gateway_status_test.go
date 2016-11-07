@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	pb_gateway "github.com/TheThingsNetwork/ttn/api/gateway"
-	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/router/gateway"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/assertions"
@@ -18,7 +18,7 @@ func TestHandleGatewayStatus(t *testing.T) {
 	gtwID := "eui-0102030405060708"
 
 	router := &router{
-		Component: &core.Component{
+		Component: &component.Component{
 			Ctx: GetLogger(t, "TestHandleGatewayStatus"),
 		},
 		gateways: map[string]*gateway.Gateway{},

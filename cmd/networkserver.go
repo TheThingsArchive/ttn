@@ -11,7 +11,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/networkserver"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/apex/log"
@@ -46,7 +46,7 @@ var networkserverCmd = &cobra.Command{
 		connectRedis(client)
 
 		// Component
-		component, err := core.NewComponent(ctx, "networkserver", fmt.Sprintf("%s:%d", viper.GetString("networkserver.server-address-announce"), viper.GetInt("networkserver.server-port")))
+		component, err := component.New(ctx, "networkserver", fmt.Sprintf("%s:%d", viper.GetString("networkserver.server-address-announce"), viper.GetInt("networkserver.server-port")))
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not initialize component")
 		}

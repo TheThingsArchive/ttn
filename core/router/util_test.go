@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/TheThingsNetwork/ttn/api/discovery"
-	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/router/gateway"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"github.com/golang/mock/gomock"
@@ -24,7 +24,7 @@ func getTestRouter(t *testing.T) *testRouter {
 	discovery := discovery.NewMockClient(ctrl)
 	return &testRouter{
 		router: &router{
-			Component: &core.Component{
+			Component: &component.Component{
 				Discovery: discovery,
 				Ctx:       GetLogger(t, "TestRouter"),
 			},

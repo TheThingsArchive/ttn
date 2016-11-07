@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/mqtt"
@@ -31,7 +31,7 @@ func TestHandleMQTT(t *testing.T) {
 	appID := "handler-mqtt-app1"
 	devID := "handler-mqtt-dev1"
 	h := &handler{
-		Component: &core.Component{Ctx: GetLogger(t, "TestHandleMQTT")},
+		Component: &component.Component{Ctx: GetLogger(t, "TestHandleMQTT")},
 		devices:   device.NewRedisDeviceStore(GetRedisClient(), "handler-test-handle-mqtt"),
 	}
 	h.devices.Set(&device.Device{

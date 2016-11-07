@@ -7,7 +7,7 @@ import (
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_handler "github.com/TheThingsNetwork/ttn/api/handler"
 	pb "github.com/TheThingsNetwork/ttn/api/networkserver"
-	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/networkserver/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
@@ -16,8 +16,8 @@ import (
 
 // NetworkServer implements LoRaWAN-specific functionality for TTN
 type NetworkServer interface {
-	core.ComponentInterface
-	core.ManagementInterface
+	component.Interface
+	component.ManagementInterface
 
 	UsePrefix(prefix types.DevAddrPrefix, usage []string) error
 	GetPrefixesFor(requiredUsages ...string) []types.DevAddrPrefix
@@ -40,7 +40,7 @@ func NewRedisNetworkServer(client *redis.Client, netID int) NetworkServer {
 }
 
 type networkServer struct {
-	*core.Component
+	*component.Component
 	devices  device.Store
 	netID    [3]byte
 	prefixes map[types.DevAddrPrefix][]string
@@ -75,13 +75,13 @@ func (n *networkServer) GetPrefixesFor(requiredUsages ...string) []types.DevAddr
 	return suitablePrefixes
 }
 
-func (n *networkServer) Init(c *core.Component) error {
+func (n *networkServer) Init(c *component.Component) error {
 	n.Component = c
 	err := n.Component.UpdateTokenKey()
 	if err != nil {
 		return err
 	}
-	n.Component.SetStatus(core.StatusHealthy)
+	n.Component.SetStatus(component.StatusHealthy)
 	return nil
 }
 

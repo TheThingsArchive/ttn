@@ -11,7 +11,7 @@ import (
 	pb_gateway "github.com/TheThingsNetwork/ttn/api/gateway"
 	pb_protocol "github.com/TheThingsNetwork/ttn/api/protocol"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
-	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/assertions"
@@ -20,7 +20,7 @@ import (
 func TestConvertMetadata(t *testing.T) {
 	a := New(t)
 	h := &handler{
-		Component: &core.Component{Ctx: GetLogger(t, "TestConvertMetadata")},
+		Component: &component.Component{Ctx: GetLogger(t, "TestConvertMetadata")},
 	}
 
 	ttnUp := &pb_broker.DeduplicatedUplinkMessage{}

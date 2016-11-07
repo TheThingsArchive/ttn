@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	pb "github.com/TheThingsNetwork/ttn/api/broker"
-	"github.com/TheThingsNetwork/ttn/core"
+	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/assertions"
@@ -22,7 +22,7 @@ func TestDownlink(t *testing.T) {
 	dlch := make(chan *pb.DownlinkMessage, 2)
 
 	b := &broker{
-		Component: &core.Component{
+		Component: &component.Component{
 			Ctx: GetLogger(t, "TestDownlink"),
 		},
 		ns: &mockNetworkServer{},
