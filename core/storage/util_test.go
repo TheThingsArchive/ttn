@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"os"
 
-	redis "gopkg.in/redis.v4"
+	redis "gopkg.in/redis.v5"
 )
 
 func getRedisClient() *redis.Client {

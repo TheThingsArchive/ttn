@@ -9,7 +9,7 @@ import (
 
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 
-	redis "gopkg.in/redis.v4"
+	redis "gopkg.in/redis.v5"
 )
 
 // RedisMapStore stores structs as HMaps in Redis
@@ -179,8 +179,8 @@ func (s *RedisMapStore) Create(key string, value interface{}, properties ...stri
 		if exists {
 			return errors.NewErrAlreadyExists(key)
 		}
-		_, err = tx.MultiExec(func() error {
-			tx.HMSet(key, vmap)
+		_, err = tx.Pipelined(func(pipe *redis.Pipeline) error {
+			pipe.HMSet(key, vmap)
 			return nil
 		})
 		if err != nil {
@@ -223,8 +223,8 @@ func (s *RedisMapStore) Update(key string, value interface{}, properties ...stri
 		if !exists {
 			return errors.NewErrNotFound(key)
 		}
-		_, err = tx.MultiExec(func() error {
-			tx.HMSet(key, vmap)
+		_, err = tx.Pipelined(func(pipe *redis.Pipeline) error {
+			pipe.HMSet(key, vmap)
 			return nil
 		})
 		if err != nil {
@@ -253,8 +253,8 @@ func (s *RedisMapStore) Delete(key string) error {
 		if !exists {
 			return errors.NewErrNotFound(key)
 		}
-		_, err = tx.MultiExec(func() error {
-			tx.Del(key)
+		_, err = tx.Pipelined(func(pipe *redis.Pipeline) error {
+			pipe.Del(key)
 			return nil
 		})
 		if err != nil {

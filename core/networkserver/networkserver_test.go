@@ -8,7 +8,7 @@ import (
 
 	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/smartystreets/assertions"
-	"gopkg.in/redis.v4"
+	"gopkg.in/redis.v5"
 )
 
 func getDevAddr(bytes ...byte) (addr types.DevAddr) {

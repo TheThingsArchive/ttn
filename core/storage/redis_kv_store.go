@@ -9,7 +9,7 @@ import (
 
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 
-	"gopkg.in/redis.v4"
+	"gopkg.in/redis.v5"
 )
 
 // RedisKVStore stores arbitrary data in Redis
@@ -112,8 +112,8 @@ func (s *RedisKVStore) Create(key string, value string) error {
 		if exists {
 			return errors.NewErrAlreadyExists(key)
 		}
-		_, err = tx.MultiExec(func() error {
-			tx.Set(key, value, 0)
+		_, err = tx.Pipelined(func(pipe *redis.Pipeline) error {
+			pipe.Set(key, value, 0)
 			return nil
 		})
 		if err != nil {
@@ -142,8 +142,8 @@ func (s *RedisKVStore) Update(key string, value string) error {
 		if !exists {
 			return errors.NewErrNotFound(key)
 		}
-		_, err = tx.MultiExec(func() error {
-			tx.Set(key, value, 0)
+		_, err = tx.Pipelined(func(pipe *redis.Pipeline) error {
+			pipe.Set(key, value, 0)
 			return nil
 		})
 		if err != nil {
@@ -172,8 +172,8 @@ func (s *RedisKVStore) Delete(key string) error {
 		if !exists {
 			return errors.NewErrNotFound(key)
 		}
-		_, err = tx.MultiExec(func() error {
-			tx.Del(key)
+		_, err = tx.Pipelined(func(pipe *redis.Pipeline) error {
+			pipe.Del(key)
 			return nil
 		})
 		if err != nil {

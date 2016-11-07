@@ -21,7 +21,7 @@ import (
 	"github.com/spf13/viper"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
-	"gopkg.in/redis.v4"
+	"gopkg.in/redis.v5"
 )
 
 // handlerCmd represents the handler command

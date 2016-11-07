@@ -18,7 +18,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/mqtt"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"google.golang.org/grpc"
-	"gopkg.in/redis.v4"
+	"gopkg.in/redis.v5"
 )
 
 // Handler component

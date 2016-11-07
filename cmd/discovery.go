@@ -12,7 +12,7 @@ import (
 
 	"google.golang.org/grpc"
 
-	"gopkg.in/redis.v4"
+	"gopkg.in/redis.v5"
 
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/discovery"

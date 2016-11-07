@@ -9,7 +9,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/core"
 	"github.com/TheThingsNetwork/ttn/core/discovery/announcement"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
-	"gopkg.in/redis.v4"
+	"gopkg.in/redis.v5"
 )
 
 // Discovery specifies the interface for the TTN Service Discovery component

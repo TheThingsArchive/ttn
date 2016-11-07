@@ -23,7 +23,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tj/go-elastic"
-	"gopkg.in/redis.v4"
+	"gopkg.in/redis.v5"
 )
 
 var cfgFile string

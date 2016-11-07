@@ -11,7 +11,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/networkserver/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
-	"gopkg.in/redis.v4"
+	"gopkg.in/redis.v5"
 )
 
 // NetworkServer implements LoRaWAN-specific functionality for TTN

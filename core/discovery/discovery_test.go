@@ -8,7 +8,7 @@ import (
 	"os"
 	"testing"
 
-	"gopkg.in/redis.v4"
+	"gopkg.in/redis.v5"
 
 	pb "github.com/TheThingsNetwork/ttn/api/discovery"
 	. "github.com/smartystreets/assertions"
