@@ -12,11 +12,10 @@ import (
 
 	"github.com/TheThingsNetwork/go-account-lib/account"
 	"github.com/TheThingsNetwork/go-account-lib/cache"
+	"github.com/TheThingsNetwork/go-account-lib/oauth"
 	"github.com/TheThingsNetwork/go-account-lib/tokens"
-	accountUtil "github.com/TheThingsNetwork/go-account-lib/util"
 	"github.com/apex/log"
 	"github.com/spf13/viper"
-	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 )
 
@@ -47,9 +46,15 @@ func GetTokenCache() cache.Cache {
 	return cache.FileCacheWithNameFn(GetDataDir(), tokenFilename)
 }
 
+// getOAuth gets the OAuth client
+func getOAuth() *oauth.Config {
+	return oauth.OAuth(viper.GetString("auth-server"), &oauth.Client{
+		ID: "ttnctl",
+	})
+}
+
 func getAccountServerTokenSource(token *oauth2.Token) oauth2.TokenSource {
-	config := accountUtil.MakeConfig(viper.GetString("auth-server"), "ttnctl", "", "")
-	return config.TokenSource(context.Background(), token)
+	return getOAuth().TokenSource(token)
 }
 
 func getStoredToken(ctx log.Interface) *oauth2.Token {
@@ -138,8 +143,8 @@ func GetAccount(ctx log.Interface) *account.Account {
 
 // Login does a login to the Account server with the given username and password
 func Login(ctx log.Interface, code string) (*oauth2.Token, error) {
-	config := accountUtil.MakeConfig(viper.GetString("auth-server"), "ttnctl", "", "")
-	token, err := config.Exchange(context.Background(), code)
+	config := getOAuth()
+	token, err := config.Exchange(code)
 	if err != nil {
 		return nil, err
 	}
