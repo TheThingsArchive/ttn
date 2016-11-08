@@ -6,10 +6,13 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-var ErrContext = errors.NewErrInternal("Could not get metadata from context")
-
-var ErrNoToken = errors.NewErrInvalidArgument("Metadata", "token missing")
-var ErrNoID = errors.NewErrInvalidArgument("Metadata", "id missing")
+// Errors that are returned when an item could not be retrieved
+var (
+	ErrContext = errors.NewErrInternal("Could not get metadata from context")
+	ErrNoToken = errors.NewErrInvalidArgument("Metadata", "token missing")
+	ErrNoKey   = errors.NewErrInvalidArgument("Metadata", "key missing")
+	ErrNoID    = errors.NewErrInvalidArgument("Metadata", "id missing")
+)
 
 func MetadataFromContext(ctx context.Context) (metadata.MD, error) {
 	md, ok := metadata.FromContext(ctx)
@@ -33,4 +36,12 @@ func TokenFromMetadata(md metadata.MD) (string, error) {
 		return "", ErrNoToken
 	}
 	return token[0], nil
+}
+
+func KeyFromMetadata(md metadata.MD) (string, error) {
+	key, ok := md["key"]
+	if !ok || len(key) == 0 {
+		return "", ErrNoKey
+	}
+	return key[0], nil
 }
