@@ -6,7 +6,9 @@ package handler
 import (
 	"fmt"
 
+	"github.com/TheThingsNetwork/go-account-lib/claims"
 	"github.com/TheThingsNetwork/go-account-lib/rights"
+	"github.com/TheThingsNetwork/ttn/api"
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	pb "github.com/TheThingsNetwork/ttn/api/handler"
@@ -27,29 +29,46 @@ type handlerManager struct {
 	devAddrManager pb_lorawan.DevAddrManagerClient
 }
 
-func (h *handlerManager) getDevice(ctx context.Context, in *pb.DeviceIdentifier) (*device.Device, error) {
-	if !in.Validate() {
-		return nil, errors.NewErrInvalidArgument("Device Identifier", "validation failed")
+func (h *handlerManager) validateTTNAuthAppContext(ctx context.Context, appID string) (context.Context, *claims.Claims, error) {
+	md, err := api.MetadataFromContext(ctx)
+	if err != nil {
+		return ctx, nil, err
+	}
+	// If token is empty, try to get the access key and convert it into a token
+	token, err := api.TokenFromMetadata(md)
+	if err != nil || token == "" {
+		key, err := api.KeyFromMetadata(md)
+		if err != nil {
+			return ctx, nil, errors.NewErrInvalidArgument("Metadata", "neither token nor key present")
+		}
+		token, err := h.handler.Component.ExchangeAppKeyForToken(appID, key)
+		if err != nil {
+			return ctx, nil, err
+		}
+		md = metadata.Join(md, metadata.Pairs("token", token))
+		ctx = metadata.NewContext(ctx, md)
 	}
 	claims, err := h.handler.Component.ValidateTTNAuthContext(ctx)
 	if err != nil {
-		return nil, err
+		return ctx, nil, err
 	}
-	if !claims.AppRight(in.AppId, rights.AppSettings) {
-		return nil, errors.NewErrPermissionDenied(fmt.Sprintf("No access to Application %s", in.AppId))
-	}
-	dev, err := h.handler.devices.Get(in.AppId, in.DevId)
-	if err != nil {
-		return nil, err
-	}
-	if !claims.AppRight(dev.AppID, rights.AppSettings) {
-		return nil, errors.NewErrPermissionDenied(fmt.Sprintf("No access to Application %s", in.AppId))
-	}
-	return dev, nil
+	return ctx, claims, nil
 }
 
 func (h *handlerManager) GetDevice(ctx context.Context, in *pb.DeviceIdentifier) (*pb.Device, error) {
-	dev, err := h.getDevice(ctx, in)
+	if !in.Validate() {
+		return nil, errors.BuildGRPCError(errors.NewErrInvalidArgument("Device Identifier", "validation failed"))
+	}
+
+	ctx, claims, err := h.validateTTNAuthAppContext(ctx, in.AppId)
+	if err != nil {
+		return nil, errors.BuildGRPCError(err)
+	}
+	if !claims.AppRight(in.AppId, rights.Devices) {
+		return nil, errors.BuildGRPCError(errors.NewErrPermissionDenied(fmt.Sprintf(`No "devices" rights to application "%s"`, in.AppId)))
+	}
+
+	dev, err := h.handler.devices.Get(in.AppId, in.DevId)
 	if err != nil {
 		return nil, errors.BuildGRPCError(err)
 	}
@@ -84,13 +103,21 @@ func (h *handlerManager) GetDevice(ctx context.Context, in *pb.DeviceIdentifier)
 }
 
 func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*empty.Empty, error) {
-	dev, err := h.getDevice(ctx, &pb.DeviceIdentifier{AppId: in.AppId, DevId: in.DevId})
-	if err != nil && errors.GetErrType(err) != errors.NotFound {
-		return nil, errors.BuildGRPCError(err)
+	if !in.Validate() {
+		return nil, errors.BuildGRPCError(errors.NewErrInvalidArgument("Device", "validation failed"))
 	}
 
-	if !in.Validate() {
-		return nil, grpcErrf(codes.InvalidArgument, "Invalid Device")
+	ctx, claims, err := h.validateTTNAuthAppContext(ctx, in.AppId)
+	if err != nil {
+		return nil, errors.BuildGRPCError(err)
+	}
+	if !claims.AppRight(in.AppId, rights.Devices) {
+		return nil, errors.BuildGRPCError(errors.NewErrPermissionDenied(fmt.Sprintf(`No "devices" rights to application "%s"`, in.AppId)))
+	}
+
+	dev, err := h.handler.devices.Get(in.AppId, in.DevId)
+	if err != nil && errors.GetErrType(err) != errors.NotFound {
+		return nil, errors.BuildGRPCError(err)
 	}
 
 	lorawan := in.GetLorawanDevice()
@@ -178,7 +205,17 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*empty.E
 }
 
 func (h *handlerManager) DeleteDevice(ctx context.Context, in *pb.DeviceIdentifier) (*empty.Empty, error) {
-	dev, err := h.getDevice(ctx, in)
+	if !in.Validate() {
+		return nil, errors.BuildGRPCError(errors.NewErrInvalidArgument("Device Identifier", "validation failed"))
+	}
+	ctx, claims, err := h.validateTTNAuthAppContext(ctx, in.AppId)
+	if err != nil {
+		return nil, errors.BuildGRPCError(err)
+	}
+	if !claims.AppRight(in.AppId, rights.Devices) {
+		return nil, errors.BuildGRPCError(errors.NewErrPermissionDenied(fmt.Sprintf(`No "devices" rights to application "%s"`, in.AppId)))
+	}
+	dev, err := h.handler.devices.Get(in.AppId, in.DevId)
 	if err != nil {
 		return nil, errors.BuildGRPCError(err)
 	}
@@ -197,12 +234,12 @@ func (h *handlerManager) GetDevicesForApplication(ctx context.Context, in *pb.Ap
 	if !in.Validate() {
 		return nil, grpcErrf(codes.InvalidArgument, "Invalid Application Identifier")
 	}
-	claims, err := h.handler.Component.ValidateTTNAuthContext(ctx)
+	ctx, claims, err := h.validateTTNAuthAppContext(ctx, in.AppId)
 	if err != nil {
 		return nil, errors.BuildGRPCError(err)
 	}
-	if !claims.AppRight(in.AppId, rights.AppSettings) {
-		return nil, grpcErrf(codes.PermissionDenied, "No access to this application")
+	if !claims.AppRight(in.AppId, rights.Devices) {
+		return nil, errors.BuildGRPCError(errors.NewErrPermissionDenied(fmt.Sprintf(`No "devices" rights to application "%s"`, in.AppId)))
 	}
 	devices, err := h.handler.devices.ListForApp(in.AppId)
 	if err != nil {
@@ -228,29 +265,18 @@ func (h *handlerManager) GetDevicesForApplication(ctx context.Context, in *pb.Ap
 	return res, nil
 }
 
-func (h *handlerManager) getApplication(ctx context.Context, in *pb.ApplicationIdentifier) (*application.Application, error) {
+func (h *handlerManager) GetApplication(ctx context.Context, in *pb.ApplicationIdentifier) (*pb.Application, error) {
 	if !in.Validate() {
-		return nil, errors.NewErrInvalidArgument("Application Identifier", "validation failed")
+		return nil, errors.BuildGRPCError(errors.NewErrInvalidArgument("Application Identifier", "validation failed"))
 	}
-	claims, err := h.handler.Component.ValidateTTNAuthContext(ctx)
+	ctx, claims, err := h.validateTTNAuthAppContext(ctx, in.AppId)
 	if err != nil {
-		return nil, err
+		return nil, errors.BuildGRPCError(err)
 	}
 	if !claims.AppRight(in.AppId, rights.AppSettings) {
-		return nil, errors.NewErrPermissionDenied(fmt.Sprintf("No access to Application %s", in.AppId))
+		return nil, errors.BuildGRPCError(errors.NewErrPermissionDenied(`No "settings" rights to application`))
 	}
 	app, err := h.handler.applications.Get(in.AppId)
-	if err != nil {
-		return nil, err
-	}
-	if !claims.AppRight(app.AppID, rights.AppSettings) {
-		return nil, errors.NewErrPermissionDenied(fmt.Sprintf("No access to Application %s", in.AppId))
-	}
-	return app, nil
-}
-
-func (h *handlerManager) GetApplication(ctx context.Context, in *pb.ApplicationIdentifier) (*pb.Application, error) {
-	app, err := h.getApplication(ctx, in)
 	if err != nil {
 		return nil, errors.BuildGRPCError(err)
 	}
@@ -265,7 +291,17 @@ func (h *handlerManager) GetApplication(ctx context.Context, in *pb.ApplicationI
 }
 
 func (h *handlerManager) RegisterApplication(ctx context.Context, in *pb.ApplicationIdentifier) (*empty.Empty, error) {
-	app, err := h.getApplication(ctx, &pb.ApplicationIdentifier{AppId: in.AppId})
+	if !in.Validate() {
+		return nil, errors.BuildGRPCError(errors.NewErrInvalidArgument("Application Identifier", "validation failed"))
+	}
+	ctx, claims, err := h.validateTTNAuthAppContext(ctx, in.AppId)
+	if err != nil {
+		return nil, errors.BuildGRPCError(err)
+	}
+	if !claims.AppRight(in.AppId, rights.AppSettings) {
+		return nil, errors.BuildGRPCError(errors.NewErrPermissionDenied(`No "settings" rights to application`))
+	}
+	app, err := h.handler.applications.Get(in.AppId)
 	if err != nil && errors.GetErrType(err) != errors.NotFound {
 		return nil, errors.BuildGRPCError(err)
 	}
@@ -300,13 +336,19 @@ func (h *handlerManager) RegisterApplication(ctx context.Context, in *pb.Applica
 }
 
 func (h *handlerManager) SetApplication(ctx context.Context, in *pb.Application) (*empty.Empty, error) {
-	app, err := h.getApplication(ctx, &pb.ApplicationIdentifier{AppId: in.AppId})
+	if !in.Validate() {
+		return nil, errors.BuildGRPCError(errors.NewErrInvalidArgument("Application", "validation failed"))
+	}
+	ctx, claims, err := h.validateTTNAuthAppContext(ctx, in.AppId)
 	if err != nil {
 		return nil, errors.BuildGRPCError(err)
 	}
-
-	if !in.Validate() {
-		return nil, grpcErrf(codes.InvalidArgument, "Invalid Application")
+	if !claims.AppRight(in.AppId, rights.AppSettings) {
+		return nil, errors.BuildGRPCError(errors.NewErrPermissionDenied(`No "settings" rights to application`))
+	}
+	app, err := h.handler.applications.Get(in.AppId)
+	if err != nil {
+		return nil, errors.BuildGRPCError(err)
 	}
 
 	app.StartUpdate()
@@ -325,12 +367,23 @@ func (h *handlerManager) SetApplication(ctx context.Context, in *pb.Application)
 }
 
 func (h *handlerManager) DeleteApplication(ctx context.Context, in *pb.ApplicationIdentifier) (*empty.Empty, error) {
-	_, err := h.getApplication(ctx, in)
+	if !in.Validate() {
+		return nil, errors.BuildGRPCError(errors.NewErrInvalidArgument("Application Identifier", "validation failed"))
+	}
+	ctx, claims, err := h.validateTTNAuthAppContext(ctx, in.AppId)
+	if err != nil {
+		return nil, errors.BuildGRPCError(err)
+	}
+	if !claims.AppRight(in.AppId, rights.AppSettings) {
+		return nil, errors.BuildGRPCError(errors.NewErrPermissionDenied(`No "settings" rights to application`))
+	}
+	_, err = h.handler.applications.Get(in.AppId)
 	if err != nil {
 		return nil, errors.BuildGRPCError(err)
 	}
 
 	// Get and delete all devices for this application
+	// TODO: add "app:devices:r" and "app:devices:w" check
 	devices, err := h.handler.devices.ListForApp(in.AppId)
 	if err != nil {
 		return nil, errors.BuildGRPCError(err)
