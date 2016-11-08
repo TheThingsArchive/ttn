@@ -135,7 +135,7 @@ ttnctl-dev: CGO_ENABLED=1
 ttnctl-dev: $(RELEASE_DIR)/ttnctl-$(GOOS)-$(GOARCH)$(GOEXE)
 
 install:
-	go install -v
+	go install -v . ./ttnctl
 
 dev: install ttn-dev ttnctl-dev
 
