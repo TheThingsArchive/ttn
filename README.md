@@ -22,7 +22,7 @@ When you get started with The Things Network, you'll probably have some question
 1. Make sure you have [Go](https://golang.org) installed (version 1.7 or later).
 2. Set up your [Go environment](https://golang.org/doc/code.html#GOPATH)
 3. Install the [protobuf compiler (`protoc`)](https://github.com/google/protobuf/releases)
-4. Install `make`. On Linux install `build-essential`. On MacOS, make comes with XCode or the developer tools. On Windows you can get make from [https://gnuarmeclipse.github.io/windows-build-tools/](https://gnuarmeclipse.github.io/windows-build-tools/)
+4. Install `make`. On Linux install `build-essential`. On macOS, `make` comes with XCode or the developer tools. On Windows you can get `make` from [https://gnuarmeclipse.github.io/windows-build-tools/](https://gnuarmeclipse.github.io/windows-build-tools/)
 5. Make sure you have [Redis](http://redis.io/download) and [RabbitMQ](https://www.rabbitmq.com/download.html) **installed** and **running**.  
   On a fresh installation you might need to install the [MQTT plugin](https://www.rabbitmq.com/mqtt.html).  
   If you're on Linux, you probably know how to do that. On a Mac, just run `brew bundle`. The Windows installer will setup and start RabbitMQ as a service. Use the `RabbitMQ Command Prompt (sbin dir)` to run commands, i.e. to enable plugins.
