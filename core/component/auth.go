@@ -2,12 +2,14 @@ package component
 
 import (
 	"crypto/tls"
-	"time"
-
+	"fmt"
 	"regexp"
+	"time"
 
 	"github.com/TheThingsNetwork/go-account-lib/cache"
 	"github.com/TheThingsNetwork/go-account-lib/claims"
+	"github.com/TheThingsNetwork/go-account-lib/keys"
+	"github.com/TheThingsNetwork/go-account-lib/oauth"
 	"github.com/TheThingsNetwork/go-account-lib/tokenkey"
 	"github.com/TheThingsNetwork/ttn/api"
 	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
@@ -37,6 +39,24 @@ func (c *Component) InitAuth() error {
 	return nil
 }
 
+type authServer struct {
+	url      string
+	username string
+	password string
+}
+
+func parseAuthServer(str string) (srv authServer, err error) {
+	matches := AuthServerRegex.FindStringSubmatch(str)
+	if len(matches) != 5 || matches[4] == "" {
+		return srv, ErrNoAuthServerRegexMatch
+	}
+	return authServer{
+		url:      matches[1] + matches[4],
+		username: matches[2],
+		password: matches[3],
+	}, nil
+}
+
 // AuthServerRegex gives the format of auth server configuration.
 // Format: [username[:password]@]domain
 // - usernames can contain lowercase letters, numbers, underscores and dashes
@@ -50,11 +70,11 @@ var ErrNoAuthServerRegexMatch = errors.New("Account server did not match AuthSer
 func (c *Component) initAuthServers() error {
 	urlMap := make(map[string]string)
 	for id, url := range c.Config.AuthServers {
-		matches := AuthServerRegex.FindStringSubmatch(url)
-		if len(matches) == 0 {
-			return ErrNoAuthServerRegexMatch
+		srv, err := parseAuthServer(url)
+		if err != nil {
+			return err
 		}
-		urlMap[id] = matches[1] + matches[4]
+		urlMap[id] = srv.url
 	}
 	c.TokenKeyProvider = tokenkey.HTTPProvider(
 		urlMap,
@@ -141,6 +161,37 @@ func (c *Component) GetContext(token string) context.Context {
 	)
 	ctx := metadata.NewContext(context.Background(), md)
 	return ctx
+}
+
+// ExchangeAppKeyForToken enables authentication with the App Access Key
+func (c *Component) ExchangeAppKeyForToken(appID, key string) (string, error) {
+	issuerID := keys.KeyIssuer(key)
+	if issuerID == "" {
+		// Take the first configured auth server
+		for k := range c.Config.AuthServers {
+			issuerID = k
+			break
+		}
+		key = fmt.Sprintf("%s.%s", issuerID, key)
+	}
+	issuer, ok := c.Config.AuthServers[issuerID]
+	if !ok {
+		return "", fmt.Errorf("Auth server %s not registered", issuer)
+	}
+
+	srv, _ := parseAuthServer(issuer)
+
+	oauth := oauth.OAuth(srv.url, &oauth.Client{
+		ID:     srv.username,
+		Secret: srv.password,
+	})
+
+	token, err := oauth.ExchangeAppKeyForToken(appID, key)
+	if err != nil {
+		return "", err
+	}
+
+	return token.AccessToken, nil
 }
 
 // ValidateNetworkContext validates the context of a network request (router-broker, broker-handler, etc)

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -16,20 +17,33 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-func TestAuthServerRegex(t *testing.T) {
+func TestParseAuthServer(t *testing.T) {
 	a := assertions.New(t)
-	var matches []string
-	matches = AuthServerRegex.FindStringSubmatch("https://user:pass@account.thethingsnetwork.org/")
-	a.So(matches, assertions.ShouldResemble, []string{"https://user:pass@account.thethingsnetwork.org/", "https://", "user", "pass", "account.thethingsnetwork.org"})
-	matches = AuthServerRegex.FindStringSubmatch("https://user@account.thethingsnetwork.org/")
-	a.So(matches, assertions.ShouldResemble, []string{"https://user@account.thethingsnetwork.org/", "https://", "user", "", "account.thethingsnetwork.org"})
-	matches = AuthServerRegex.FindStringSubmatch("https://account.thethingsnetwork.org/")
-	a.So(matches, assertions.ShouldResemble, []string{"https://account.thethingsnetwork.org/", "https://", "", "", "account.thethingsnetwork.org"})
+	{
+		srv, err := parseAuthServer("https://user:pass@account.thethingsnetwork.org/")
+		a.So(err, assertions.ShouldBeNil)
+		a.So(srv.url, assertions.ShouldEqual, "https://account.thethingsnetwork.org")
+		a.So(srv.username, assertions.ShouldEqual, "user")
+		a.So(srv.password, assertions.ShouldEqual, "pass")
+	}
+	{
+		srv, err := parseAuthServer("https://user@account.thethingsnetwork.org/")
+		a.So(err, assertions.ShouldBeNil)
+		a.So(srv.url, assertions.ShouldEqual, "https://account.thethingsnetwork.org")
+		a.So(srv.username, assertions.ShouldEqual, "user")
+	}
+	{
+		srv, err := parseAuthServer("http://account.thethingsnetwork.org/")
+		a.So(err, assertions.ShouldBeNil)
+		a.So(srv.url, assertions.ShouldEqual, "http://account.thethingsnetwork.org")
+	}
 }
 
 func TestInitAuthServers(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping test in short mode")
+	for _, env := range strings.Split("ACCOUNT_SERVER_PROTO ACCOUNT_SERVER_USERNAME ACCOUNT_SERVER_PASSWORD ACCOUNT_SERVER_URL", " ") {
+		if os.Getenv(env) == "" {
+			t.Skipf("Skipping auth server test: %s configured", env)
+		}
 	}
 
 	a := assertions.New(t)
@@ -37,9 +51,21 @@ func TestInitAuthServers(t *testing.T) {
 	c.Config.KeyDir = os.TempDir()
 	c.Ctx = GetLogger(t, "TestInitAuthServers")
 	c.Config.AuthServers = map[string]string{
-		"ttn":           "https://account.thethingsnetwork.org/",
-		"ttn-user":      "https://user@account.thethingsnetwork.org/",
-		"ttn-user-pass": "https://user:pass@account.thethingsnetwork.org/",
+		"ttn": fmt.Sprintf("%s://%s",
+			os.Getenv("ACCOUNT_SERVER_PROTO"),
+			os.Getenv("ACCOUNT_SERVER_URL"),
+		),
+		"ttn-user": fmt.Sprintf("%s://%s@%s",
+			os.Getenv("ACCOUNT_SERVER_PROTO"),
+			os.Getenv("ACCOUNT_SERVER_USERNAME"),
+			os.Getenv("ACCOUNT_SERVER_URL"),
+		),
+		"ttn-user-pass": fmt.Sprintf("%s://%s:%s@%s",
+			os.Getenv("ACCOUNT_SERVER_PROTO"),
+			os.Getenv("ACCOUNT_SERVER_USERNAME"),
+			os.Getenv("ACCOUNT_SERVER_PASSWORD"),
+			os.Getenv("ACCOUNT_SERVER_URL"),
+		),
 	}
 	err := c.initAuthServers()
 	a.So(err, assertions.ShouldBeNil)
@@ -66,11 +92,21 @@ func TestInitAuthServers(t *testing.T) {
 }
 
 func TestValidateTTNAuthContext(t *testing.T) {
+	for _, env := range strings.Split("ACCOUNT_SERVER_PROTO ACCOUNT_SERVER_URL", " ") {
+		if os.Getenv(env) == "" {
+			t.Skipf("Skipping auth server test: %s configured", env)
+		}
+	}
+	accountServer := fmt.Sprintf("%s://%s",
+		os.Getenv("ACCOUNT_SERVER_PROTO"),
+		os.Getenv("ACCOUNT_SERVER_URL"),
+	)
+
 	a := assertions.New(t)
 	c := new(Component)
 	c.Config.KeyDir = os.TempDir()
 	c.Config.AuthServers = map[string]string{
-		"ttn-account-preview": "https://preview.account.thethingsnetwork.org/",
+		"ttn-account-preview": accountServer,
 	}
 	err := c.initAuthServers()
 	a.So(err, assertions.ShouldBeNil)
@@ -105,6 +141,39 @@ func TestValidateTTNAuthContext(t *testing.T) {
 		ctx := metadata.NewContext(context.Background(), md)
 		_, err = c.ValidateTTNAuthContext(ctx)
 		a.So(err, assertions.ShouldBeNil)
+	}
+}
+
+func TestExchangeAppKeyForToken(t *testing.T) {
+	for _, env := range strings.Split("ACCOUNT_SERVER_PROTO ACCOUNT_SERVER_USERNAME ACCOUNT_SERVER_PASSWORD ACCOUNT_SERVER_URL APP_ID APP_TOKEN", " ") {
+		if os.Getenv(env) == "" {
+			t.Skipf("Skipping auth server test: %s configured", env)
+		}
+	}
+
+	a := assertions.New(t)
+	c := new(Component)
+	c.Config.KeyDir = os.TempDir()
+	c.Config.AuthServers = map[string]string{
+		"ttn-account-preview": fmt.Sprintf("%s://%s:%s@%s",
+			os.Getenv("ACCOUNT_SERVER_PROTO"),
+			os.Getenv("ACCOUNT_SERVER_USERNAME"),
+			os.Getenv("ACCOUNT_SERVER_PASSWORD"),
+			os.Getenv("ACCOUNT_SERVER_URL"),
+		),
+	}
+	c.initAuthServers()
+
+	{
+		token, err := c.ExchangeAppKeyForToken(os.Getenv("APP_ID"), "ttn-account-preview."+os.Getenv("APP_TOKEN"))
+		a.So(err, assertions.ShouldBeNil)
+		a.So(token, assertions.ShouldNotBeEmpty)
+	}
+
+	{
+		token, err := c.ExchangeAppKeyForToken(os.Getenv("APP_ID"), os.Getenv("APP_TOKEN"))
+		a.So(err, assertions.ShouldBeNil)
+		a.So(token, assertions.ShouldNotBeEmpty)
 	}
 }
 
