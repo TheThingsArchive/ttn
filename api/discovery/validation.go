@@ -13,7 +13,7 @@ func (m *Announcement) Validate() error {
 	switch m.ServiceName {
 	case "router", "broker", "handler":
 	default:
-		return errors.NewErrInvalidArgument("ServiceName", "expected one of router, broker, handler but was " + m.ServiceName)
+		return errors.NewErrInvalidArgument("ServiceName", "expected one of router, broker, handler but was "+m.ServiceName)
 	}
 	return nil
 }
