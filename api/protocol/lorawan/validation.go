@@ -122,14 +122,11 @@ func (m *Message) Validate() error {
 
 // Validate implements the api.Validator interface
 func (m *JoinRequestPayload) Validate() error {
-	if len(m.AppEui) != 8 {
-		return errors.NewErrInvalidArgument("AppEui", "length must be 8")
+	if m.AppEui.IsEmpty() {
+		return errors.NewErrInvalidArgument("AppEui", "can not be empty")
 	}
-	if len(m.DevEui) != 8 {
-		return errors.NewErrInvalidArgument("DevEui", "length must be 8")
-	}
-	if len(m.DevNonce) != 2 {
-		return errors.NewErrInvalidArgument("DevNonce", "length must be 2")
+	if m.DevEui.IsEmpty() {
+		return errors.NewErrInvalidArgument("DevEui", "can not be empty")
 	}
 
 	return nil
@@ -145,14 +142,11 @@ func (m *JoinAcceptPayload) Validate() error {
 		return errors.NewErrInvalidArgument("CfList.Freq", "length must be 5")
 	}
 
-	if len(m.DevAddr) != 4 {
-		return errors.NewErrInvalidArgument("DevAddr", "length must be 4")
+	if m.DevAddr.IsEmpty() {
+		return errors.NewErrInvalidArgument("DevAddr", "can not be empty")
 	}
-	if len(m.AppNonce) != 3 {
-		return errors.NewErrInvalidArgument("AppNonce", "length must be 3")
-	}
-	if len(m.NetId) != 3 {
-		return errors.NewErrInvalidArgument("NetId", "length must be 3")
+	if m.NetId.IsEmpty() {
+		return errors.NewErrInvalidArgument("NetId", "can not be empty")
 	}
 
 	return nil
@@ -160,8 +154,8 @@ func (m *JoinAcceptPayload) Validate() error {
 
 // Validate implements the api.Validator interface
 func (m *MACPayload) Validate() error {
-	if len(m.DevAddr) != 4 {
-		return errors.NewErrInvalidArgument("DevAddr", "length must be 4")
+	if m.DevAddr.IsEmpty() {
+		return errors.NewErrInvalidArgument("DevAddr", "can not be empty")
 	}
 	return nil
 }

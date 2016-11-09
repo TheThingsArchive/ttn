@@ -22,8 +22,6 @@ type routerRPC struct {
 	router *router
 }
 
-var grpcErrf = grpc.Errorf // To make go vet stop complaining
-
 func (r *routerRPC) gatewayFromContext(ctx context.Context) (gtw *gateway.Gateway, err error) {
 	md, err := api.MetadataFromContext(ctx)
 	if err != nil {
@@ -97,7 +95,7 @@ func (r *routerRPC) Uplink(stream pb.Router_UplinkServer) error {
 			return err
 		}
 		if err := uplink.Validate(); err != nil {
-			return errors.BuildGRPCError(errors.Wrap(err, "Invalid Uplink"))
+			return errors.BuildGRPCError(errors.NewErrInvalidArgument("Uplink", err.Error()))
 		}
 		go r.router.HandleUplink(gateway.ID, uplink)
 	}

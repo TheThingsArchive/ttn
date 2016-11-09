@@ -15,8 +15,6 @@ type handlerRPC struct {
 	handler Handler
 }
 
-var grpcErrf = grpc.Errorf // To make go vet stop complaining
-
 func (h *handlerRPC) ActivationChallenge(ctx context.Context, challenge *pb_broker.ActivationChallengeRequest) (*pb_broker.ActivationChallengeResponse, error) {
 	_, err := h.handler.ValidateNetworkContext(ctx)
 	if err != nil {

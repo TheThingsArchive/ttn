@@ -98,7 +98,7 @@ func (s *networkServerRPC) Uplink(ctx context.Context, message *broker.Deduplica
 		return nil, errors.BuildGRPCError(err)
 	}
 	if err := message.Validate(); err != nil {
-		return nil, errors.BuildGRPCError(errors.Wrap(err, "Invalid Uplink"))
+		return nil, errors.BuildGRPCError(errors.NewErrInvalidArgument("Uplink", err.Error()))
 	}
 	res, err := s.networkServer.HandleUplink(message)
 	if err != nil {

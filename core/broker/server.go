@@ -18,8 +18,6 @@ type brokerRPC struct {
 	broker *broker
 }
 
-var grpcErrf = grpc.Errorf // To make go vet stop complaining
-
 func (b *brokerRPC) Associate(stream pb.Broker_AssociateServer) error {
 	router, err := b.broker.ValidateNetworkContext(stream.Context())
 	if err != nil {
@@ -57,7 +55,7 @@ func (b *brokerRPC) Associate(stream pb.Broker_AssociateServer) error {
 			return err
 		}
 		if err := uplink.Validate(); err != nil {
-			return errors.BuildGRPCError(errors.Wrap(err, "Invalid Uplink"))
+			return errors.BuildGRPCError(errors.NewErrInvalidArgument("Uplink", err.Error()))
 		}
 		go b.broker.HandleUplink(uplink)
 	}

@@ -35,18 +35,13 @@ func (m *UplinkMessage) Validate() error {
 
 // Validate implements the api.Validator interface
 func (m *DownlinkMessage) Validate() error {
-	if m.DevId == "" {
-		return errors.NewErrInvalidArgument("DevId", "can not be empty")
+	if err := api.NotEmptyAndValidId(m.DevId, "DevId"); err != nil {
+		return err
 	}
-	if api.ValidID(m.DevId) {
-		return errors.NewErrInvalidArgument("DevId", "has wrong format "+m.DevId)
+	if err := api.NotEmptyAndValidId(m.AppId, "AppId"); err != nil {
+		return err
 	}
-	if m.AppId == "" {
-		return errors.NewErrInvalidArgument("AppId", "can not be empty")
-	}
-	if api.ValidID(m.AppId) {
-		return errors.NewErrInvalidArgument("AppId", "has wrong format "+m.AppId)
-	}
+
 	if err := api.NotNilAndValid(m.DownlinkOption, "DownlinkOption"); err != nil {
 		return err
 	}

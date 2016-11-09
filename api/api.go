@@ -13,8 +13,9 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-// Validator interface is used to validate protos, nil if validation is successful
+// Validator interface is used to validate protos
 type Validator interface {
+	// Returns the validation error or nil if valid
 	Validate() error
 }
 

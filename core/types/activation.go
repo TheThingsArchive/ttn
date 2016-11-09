@@ -164,6 +164,8 @@ func (n *AppNonce) Unmarshal(data []byte) error {
 // NetID for LoRaWAN
 type NetID [3]byte
 
+var emptyNetID NetID
+
 // Bytes returns the NetID as a byte slice
 func (n NetID) Bytes() []byte {
 	return n[:]
@@ -174,6 +176,10 @@ func (n NetID) String() string {
 		return ""
 	}
 	return strings.ToUpper(hex.EncodeToString(n.Bytes()))
+}
+
+func (n NetID) IsEmpty() bool {
+	return n == emptyNetID
 }
 
 // GoString implements the GoStringer interface.

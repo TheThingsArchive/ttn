@@ -1,16 +1,19 @@
 package discovery
 
-import "github.com/TheThingsNetwork/ttn/api"
+import (
+	"github.com/TheThingsNetwork/ttn/api"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
+)
 
 // Validate implements the api.Validator interface
-func (m *Announcement) Validate() bool {
-	if m.Id == "" || !api.ValidID(m.Id) {
-		return false
+func (m *Announcement) Validate() error {
+	if err := api.NotEmptyAndValidId(m.Id, "Id"); err != nil {
+		return err
 	}
 	switch m.ServiceName {
 	case "router", "broker", "handler":
 	default:
-		return false
+		return errors.InvalidArgument("ServiceName", "expected one of router, broker, handler but was "+m.ServiceName)
 	}
-	return true
+	return nil
 }
