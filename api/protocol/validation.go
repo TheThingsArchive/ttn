@@ -7,7 +7,7 @@ import (
 
 // Validate implements the api.Validator interface
 func (m *RxMetadata) Validate() error {
-	if m.Protocol == nil  {
+	if m.Protocol == nil {
 		return errors.NewErrInvalidArgument("Protocol", "can not be empty")
 	}
 	if err := api.Validate(m.Protocol); err != nil {

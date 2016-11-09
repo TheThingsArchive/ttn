@@ -89,7 +89,7 @@ func (m *ActivationMetadata) Validate() error {
 // Validate implements the api.Validator interface
 func (m *Message) Validate() error {
 	if m.Major != Major_LORAWAN_R1 {
-		return errors.NewErrInvalidArgument("Major", "invalid value " + Major_LORAWAN_R1.String())
+		return errors.NewErrInvalidArgument("Major", "invalid value "+Major_LORAWAN_R1.String())
 	}
 	switch m.MType {
 	case MType_JOIN_REQUEST:
@@ -114,7 +114,7 @@ func (m *Message) Validate() error {
 			return errors.NewErrInvalidArgument("MacPayload", err.Error())
 		}
 	default:
-		return errors.NewErrInvalidArgument("MType", "unknown type " + m.MType.String())
+		return errors.NewErrInvalidArgument("MType", "unknown type "+m.MType.String())
 	}
 
 	return nil
@@ -142,7 +142,7 @@ func (m *JoinAcceptPayload) Validate() error {
 	}
 
 	if m.CfList != nil && len(m.CfList.Freq) != 5 {
-		return errors.NewErrInvalidArgument("CfList.Freq", "length must be 5");
+		return errors.NewErrInvalidArgument("CfList.Freq", "length must be 5")
 	}
 
 	if len(m.DevAddr) != 4 {

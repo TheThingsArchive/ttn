@@ -39,13 +39,13 @@ func (m *DownlinkMessage) Validate() error {
 		return errors.NewErrInvalidArgument("DevId", "can not be empty")
 	}
 	if api.ValidID(m.DevId) {
-		return errors.NewErrInvalidArgument("DevId", "has wrong format " + m.DevId)
+		return errors.NewErrInvalidArgument("DevId", "has wrong format "+m.DevId)
 	}
 	if m.AppId == "" {
 		return errors.NewErrInvalidArgument("AppId", "can not be empty")
 	}
 	if api.ValidID(m.AppId) {
-		return errors.NewErrInvalidArgument("AppId", "has wrong format " + m.AppId)
+		return errors.NewErrInvalidArgument("AppId", "has wrong format "+m.AppId)
 	}
 	if err := api.NotNilAndValid(m.DownlinkOption, "DownlinkOption"); err != nil {
 		return err

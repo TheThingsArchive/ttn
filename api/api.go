@@ -19,6 +19,7 @@ type Validator interface {
 }
 
 // Validate the given object if it implements the Validator interface
+// Must not be called with nil values!
 func Validate(in interface{}) error {
 	if v, ok := in.(Validator); ok {
 		return v.Validate()
