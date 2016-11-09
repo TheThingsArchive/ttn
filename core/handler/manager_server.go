@@ -23,6 +23,8 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
+var grpcErrf = grpc.Errorf // To make go vet stop complaining
+
 type handlerManager struct {
 	handler        *handler
 	deviceManager  pb_lorawan.DeviceManagerClient

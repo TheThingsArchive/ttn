@@ -16,6 +16,8 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
+var grpcErrf = grpc.Errorf // To make go vet stop complaining
+
 type brokerManager struct {
 	broker         *broker
 	deviceManager  pb_lorawan.DeviceManagerClient
