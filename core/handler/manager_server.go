@@ -56,8 +56,8 @@ func (h *handlerManager) validateTTNAuthAppContext(ctx context.Context, appID st
 }
 
 func (h *handlerManager) GetDevice(ctx context.Context, in *pb.DeviceIdentifier) (*pb.Device, error) {
-	if !in.Validate() {
-		return nil, errors.BuildGRPCError(errors.NewErrInvalidArgument("Device Identifier", "validation failed"))
+	if err := in.Validate(); err != nil {
+		return nil, errors.BuildGRPCError(errors.NewErrInvalidArgument("Device Identifier", err.Error()))
 	}
 
 	ctx, claims, err := h.validateTTNAuthAppContext(ctx, in.AppId)
@@ -103,8 +103,8 @@ func (h *handlerManager) GetDevice(ctx context.Context, in *pb.DeviceIdentifier)
 }
 
 func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*empty.Empty, error) {
-	if !in.Validate() {
-		return nil, errors.BuildGRPCError(errors.NewErrInvalidArgument("Device", "validation failed"))
+	if err := in.Validate(); err != nil {
+		return nil, errors.BuildGRPCError(errors.NewErrInvalidArgument("Device", err.Error()))
 	}
 
 	ctx, claims, err := h.validateTTNAuthAppContext(ctx, in.AppId)
@@ -205,8 +205,8 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*empty.E
 }
 
 func (h *handlerManager) DeleteDevice(ctx context.Context, in *pb.DeviceIdentifier) (*empty.Empty, error) {
-	if !in.Validate() {
-		return nil, errors.BuildGRPCError(errors.NewErrInvalidArgument("Device Identifier", "validation failed"))
+	if err := in.Validate(); err != nil {
+		return nil, errors.BuildGRPCError(errors.NewErrInvalidArgument("Device Identifier", err.Error()))
 	}
 	ctx, claims, err := h.validateTTNAuthAppContext(ctx, in.AppId)
 	if err != nil {
@@ -231,8 +231,8 @@ func (h *handlerManager) DeleteDevice(ctx context.Context, in *pb.DeviceIdentifi
 }
 
 func (h *handlerManager) GetDevicesForApplication(ctx context.Context, in *pb.ApplicationIdentifier) (*pb.DeviceList, error) {
-	if !in.Validate() {
-		return nil, grpcErrf(codes.InvalidArgument, "Invalid Application Identifier")
+	if err := in.Validate(); err != nil {
+		return nil, errors.BuildGRPCError(errors.Wrap(err, "Invalid Application Identifier"))
 	}
 	ctx, claims, err := h.validateTTNAuthAppContext(ctx, in.AppId)
 	if err != nil {
@@ -266,8 +266,8 @@ func (h *handlerManager) GetDevicesForApplication(ctx context.Context, in *pb.Ap
 }
 
 func (h *handlerManager) GetApplication(ctx context.Context, in *pb.ApplicationIdentifier) (*pb.Application, error) {
-	if !in.Validate() {
-		return nil, errors.BuildGRPCError(errors.NewErrInvalidArgument("Application Identifier", "validation failed"))
+	if err := in.Validate(); err != nil {
+		return nil, errors.NewErrInvalidArgument("Application Identifier", err.Error())
 	}
 	ctx, claims, err := h.validateTTNAuthAppContext(ctx, in.AppId)
 	if err != nil {
@@ -291,8 +291,8 @@ func (h *handlerManager) GetApplication(ctx context.Context, in *pb.ApplicationI
 }
 
 func (h *handlerManager) RegisterApplication(ctx context.Context, in *pb.ApplicationIdentifier) (*empty.Empty, error) {
-	if !in.Validate() {
-		return nil, errors.BuildGRPCError(errors.NewErrInvalidArgument("Application Identifier", "validation failed"))
+	if err := in.Validate(); err != nil {
+		return nil, errors.BuildGRPCError(errors.NewErrInvalidArgument("Application Identifier", err.Error()))
 	}
 	ctx, claims, err := h.validateTTNAuthAppContext(ctx, in.AppId)
 	if err != nil {
@@ -336,8 +336,8 @@ func (h *handlerManager) RegisterApplication(ctx context.Context, in *pb.Applica
 }
 
 func (h *handlerManager) SetApplication(ctx context.Context, in *pb.Application) (*empty.Empty, error) {
-	if !in.Validate() {
-		return nil, errors.BuildGRPCError(errors.NewErrInvalidArgument("Application", "validation failed"))
+	if err := in.Validate(); err != nil {
+		return nil, errors.BuildGRPCError(errors.NewErrInvalidArgument("Application", err.Error()))
 	}
 	ctx, claims, err := h.validateTTNAuthAppContext(ctx, in.AppId)
 	if err != nil {
@@ -367,8 +367,8 @@ func (h *handlerManager) SetApplication(ctx context.Context, in *pb.Application)
 }
 
 func (h *handlerManager) DeleteApplication(ctx context.Context, in *pb.ApplicationIdentifier) (*empty.Empty, error) {
-	if !in.Validate() {
-		return nil, errors.BuildGRPCError(errors.NewErrInvalidArgument("Application Identifier", "validation failed"))
+	if err := in.Validate(); err != nil {
+		return nil, errors.BuildGRPCError(errors.NewErrInvalidArgument("Application Identifier", err.Error()))
 	}
 	ctx, claims, err := h.validateTTNAuthAppContext(ctx, in.AppId)
 	if err != nil {

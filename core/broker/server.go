@@ -12,7 +12,6 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 )
 
 type brokerRPC struct {
@@ -57,8 +56,8 @@ func (b *brokerRPC) Associate(stream pb.Broker_AssociateServer) error {
 		if err != nil {
 			return err
 		}
-		if !uplink.Validate() {
-			return grpcErrf(codes.InvalidArgument, "Invalid Uplink")
+		if err := uplink.Validate(); err != nil {
+			return errors.BuildGRPCError(errors.Wrap(err, "Invalid Uplink"))
 		}
 		go b.broker.HandleUplink(uplink)
 	}
@@ -104,8 +103,8 @@ func (b *brokerRPC) Publish(stream pb.Broker_PublishServer) error {
 		if err != nil {
 			return err
 		}
-		if !downlink.Validate() {
-			return grpcErrf(codes.InvalidArgument, "Invalid Downlink")
+		if err := downlink.Validate(); err != nil {
+			return errors.BuildGRPCError(errors.Wrap(err, "Invalid Downlink"))
 		}
 		go func(downlink *pb.DownlinkMessage) {
 			// Get latest Handler metadata
@@ -133,8 +132,8 @@ func (b *brokerRPC) Activate(ctx context.Context, req *pb.DeviceActivationReques
 	if err != nil {
 		return nil, errors.BuildGRPCError(err)
 	}
-	if !req.Validate() {
-		return nil, grpcErrf(codes.InvalidArgument, "Invalid Activation Request")
+	if err := req.Validate(); err != nil {
+		return nil, errors.BuildGRPCError(errors.Wrap(err, "Invalid Activation Request"))
 	}
 	res, err = b.broker.HandleActivation(req)
 	if err != nil {

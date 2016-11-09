@@ -13,17 +13,17 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-// Validator interface is used to validate protos
+// Validator interface is used to validate protos, nil if validation is successful
 type Validator interface {
-	Validate() bool
+	Validate() error
 }
 
 // Validate the given object if it implements the Validator interface
-func Validate(in interface{}) bool {
+func Validate(in interface{}) error {
 	if v, ok := in.(Validator); ok {
 		return v.Validate()
 	}
-	return true
+	return nil
 }
 
 // Backoff indicates how long a client should wait between failed requests
