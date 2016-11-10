@@ -59,9 +59,12 @@ func (m *DeduplicatedUplinkMessage) Validate() error {
 	if err := api.NotNilAndValid(m.ProtocolMetadata, "ProtocolMetadata"); err != nil {
 		return err
 	}
-	if err := api.NotNilAndValid(m.ResponseTemplate, "ResponseTemplate"); err != nil {
-		return err
+	if m.ResponseTemplate != nil {
+		if err := m.ResponseTemplate.Validate(); err != nil {
+			return errors.NewErrInvalidArgument("ResponseTemplate", err.Error())
+		}
 	}
+
 	return nil
 }
 
