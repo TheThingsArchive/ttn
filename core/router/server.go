@@ -95,7 +95,7 @@ func (r *routerRPC) Uplink(stream pb.Router_UplinkServer) error {
 			return err
 		}
 		if err := uplink.Validate(); err != nil {
-			return errors.BuildGRPCError(errors.NewErrInvalidArgument("Uplink", err.Error()))
+			return errors.BuildGRPCError(errors.Wrap(err, "Invalid Uplink"))
 		}
 		go r.router.HandleUplink(gateway.ID, uplink)
 	}

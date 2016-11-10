@@ -24,6 +24,13 @@ func NotEmptyAndValidId(id string, argument string) error {
 }
 
 func NotNilAndValid(in interface{}, argument string) error {
+	// Structs can not be nil and reflect.ValueOf(in).IsNil() would panic
+	if reflect.ValueOf(in).Kind() == reflect.Struct {
+		return Validate(in)
+	}
+
+	// We need to check for the interface to be nil and the value of the interface
+	// See: https://stackoverflow.com/questions/13476349/check-for-nil-and-nil-interface-in-go
 	if in == nil || reflect.ValueOf(in).IsNil() {
 		return errors.NewErrInvalidArgument(argument, "can not be empty")
 	}

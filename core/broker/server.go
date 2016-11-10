@@ -55,7 +55,7 @@ func (b *brokerRPC) Associate(stream pb.Broker_AssociateServer) error {
 			return err
 		}
 		if err := uplink.Validate(); err != nil {
-			return errors.BuildGRPCError(errors.NewErrInvalidArgument("Uplink", err.Error()))
+			return errors.BuildGRPCError(errors.Wrap(err, "Invalid Uplink"))
 		}
 		go b.broker.HandleUplink(uplink)
 	}
