@@ -51,6 +51,9 @@ var gatewaysInfoCmd = &cobra.Command{
 		} else {
 			fmt.Print("Status Info:    private\n")
 		}
+		if gateway.Key != "" {
+			fmt.Printf("Access Key    : %s\n", gateway.Key)
+		}
 
 		fmt.Println()
 	},
