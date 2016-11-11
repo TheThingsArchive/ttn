@@ -12,7 +12,6 @@ cache:
   key: "$CI_PROJECT_PATH"
   paths:
     - .govendor
-    - vendor/
 
 before_script:
   - mkdir -p $(pwd)/.govendor

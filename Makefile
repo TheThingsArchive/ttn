@@ -21,7 +21,7 @@ build-deps:
 	@command -v govendor > /dev/null || go get "github.com/kardianos/govendor"
 
 deps: build-deps
-	govendor sync
+	govendor sync -v
 
 dev-deps: deps
 	@command -v protoc-gen-gofast > /dev/null || go get github.com/gogo/protobuf/protoc-gen-gofast
