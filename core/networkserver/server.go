@@ -12,15 +12,12 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 )
 
 type networkServerRPC struct {
 	networkServer NetworkServer
 }
-
-var grpcErrf = grpc.Errorf // To make go vet stop complaining
 
 func (s *networkServerRPC) ValidateContext(ctx context.Context) error {
 	md, ok := metadata.FromContext(ctx)
@@ -55,8 +52,8 @@ func (s *networkServerRPC) GetDevices(ctx context.Context, req *pb.DevicesReques
 	if err := s.ValidateContext(ctx); err != nil {
 		return nil, errors.BuildGRPCError(err)
 	}
-	if !req.Validate() {
-		return nil, grpcErrf(codes.InvalidArgument, "Invalid Devices Request")
+	if err := req.Validate(); err != nil {
+		return nil, errors.BuildGRPCError(errors.Wrap(err, "Invalid Devices Request"))
 	}
 	res, err := s.networkServer.HandleGetDevices(req)
 	if err != nil {
