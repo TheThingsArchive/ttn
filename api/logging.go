@@ -1,6 +1,9 @@
 package api
 
-import "github.com/apex/log"
+import (
+	logrus "github.com/Sirupsen/logrus"
+	apex "github.com/apex/log"
+)
 
 // Logger used in mqtt package
 type Logger interface {
@@ -15,24 +18,72 @@ type Logger interface {
 	Errorf(msg string, v ...interface{})
 	Fatalf(msg string, v ...interface{})
 	WithField(string, interface{}) Logger
-	WithFields(log.Fielder) Logger
+	WithFields(apex.Fielder) Logger
 	WithError(error) Logger
 }
 
+// StandardLogrus wraps the standard Logrus Logger into a Logger
+func StandardLogrus() Logger {
+	return Logrus(logrus.StandardLogger())
+}
+
+// Logrus wraps logrus into a Logger
+func Logrus(logger *logrus.Logger) Logger {
+	return &logrusEntryWrapper{logrus.NewEntry(logger)}
+}
+
+type logrusEntryWrapper struct {
+	*logrus.Entry
+}
+
+func (w *logrusEntryWrapper) Debug(msg string) {
+	w.Entry.Debug(msg)
+}
+
+func (w *logrusEntryWrapper) Info(msg string) {
+	w.Entry.Info(msg)
+}
+
+func (w *logrusEntryWrapper) Warn(msg string) {
+	w.Entry.Warn(msg)
+}
+
+func (w *logrusEntryWrapper) Error(msg string) {
+	w.Entry.Error(msg)
+}
+
+func (w *logrusEntryWrapper) Fatal(msg string) {
+	w.Entry.Fatal(msg)
+}
+
+func (w *logrusEntryWrapper) WithError(err error) Logger {
+	return &logrusEntryWrapper{w.Entry.WithError(err)}
+}
+
+func (w *logrusEntryWrapper) WithField(k string, v interface{}) Logger {
+	return &logrusEntryWrapper{w.Entry.WithField(k, v)}
+}
+
+func (w *logrusEntryWrapper) WithFields(fields apex.Fielder) Logger {
+	return &logrusEntryWrapper{w.Entry.WithFields(
+		map[string]interface{}(fields.Fields()),
+	)}
+}
+
 // Apex wraps apex/log
-func Apex(ctx log.Interface) Logger {
+func Apex(ctx apex.Interface) Logger {
 	return &apexInterfaceWrapper{ctx}
 }
 
 type apexInterfaceWrapper struct {
-	log.Interface
+	apex.Interface
 }
 
 func (w *apexInterfaceWrapper) WithField(k string, v interface{}) Logger {
 	return &apexEntryWrapper{w.Interface.WithField(k, v)}
 }
 
-func (w *apexInterfaceWrapper) WithFields(fields log.Fielder) Logger {
+func (w *apexInterfaceWrapper) WithFields(fields apex.Fielder) Logger {
 	return &apexEntryWrapper{w.Interface.WithFields(fields)}
 }
 
@@ -41,14 +92,14 @@ func (w *apexInterfaceWrapper) WithError(err error) Logger {
 }
 
 type apexEntryWrapper struct {
-	*log.Entry
+	*apex.Entry
 }
 
 func (w *apexEntryWrapper) WithField(k string, v interface{}) Logger {
 	return &apexEntryWrapper{w.Entry.WithField(k, v)}
 }
 
-func (w *apexEntryWrapper) WithFields(fields log.Fielder) Logger {
+func (w *apexEntryWrapper) WithFields(fields apex.Fielder) Logger {
 	return &apexEntryWrapper{w.Entry.WithFields(fields)}
 }
 
@@ -82,5 +133,5 @@ func (l noopLogger) Warnf(msg string, v ...interface{})   {}
 func (l noopLogger) Errorf(msg string, v ...interface{})  {}
 func (l noopLogger) Fatalf(msg string, v ...interface{})  {}
 func (l noopLogger) WithField(string, interface{}) Logger { return l }
-func (l noopLogger) WithFields(log.Fielder) Logger        { return l }
+func (l noopLogger) WithFields(apex.Fielder) Logger       { return l }
 func (l noopLogger) WithError(error) Logger               { return l }
