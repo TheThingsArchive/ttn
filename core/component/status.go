@@ -1,6 +1,12 @@
 package component
 
-import "sync/atomic"
+import (
+	"sync/atomic"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/health"
+	healthpb "google.golang.org/grpc/health/grpc_health_v1"
+)
 
 // Status indicates the health status of this component
 type Status int
@@ -20,4 +26,18 @@ func (c *Component) GetStatus() Status {
 // SetStatus sets the health status of the component
 func (c *Component) SetStatus(status Status) {
 	atomic.StoreInt64(&c.status, int64(status))
+	if c.healthServer != nil {
+		switch status {
+		case StatusHealthy:
+			c.healthServer.SetServingStatus("", healthpb.HealthCheckResponse_SERVING)
+		case StatusUnhealthy:
+			c.healthServer.SetServingStatus("", healthpb.HealthCheckResponse_NOT_SERVING)
+		}
+	}
+}
+
+// RegisterHealthServer registers the component's health status to the gRPC server
+func (c *Component) RegisterHealthServer(srv *grpc.Server) {
+	c.healthServer = health.NewServer()
+	healthpb.RegisterHealthServer(srv, c.healthServer)
 }

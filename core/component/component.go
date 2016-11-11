@@ -22,6 +22,7 @@ import (
 	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/grpclog"
+	"google.golang.org/grpc/health"
 )
 
 // Component contains the common attributes for all TTN components
@@ -36,6 +37,7 @@ type Component struct {
 	tlsConfig        *tls.Config
 	TokenKeyProvider tokenkey.Provider
 	status           int64
+	healthServer     *health.Server
 }
 
 type Interface interface {

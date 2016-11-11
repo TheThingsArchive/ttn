@@ -82,6 +82,7 @@ var networkserverCmd = &cobra.Command{
 		grpc := grpc.NewServer(component.ServerOptions()...)
 
 		// Register and Listen
+		component.RegisterHealthServer(grpc)
 		networkserver.RegisterRPC(grpc)
 		networkserver.RegisterManager(grpc)
 		go grpc.Serve(lis)

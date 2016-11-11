@@ -67,6 +67,7 @@ var discoveryCmd = &cobra.Command{
 		grpc := grpc.NewServer(component.ServerOptions()...)
 
 		// Register and Listen
+		component.RegisterHealthServer(grpc)
 		discovery.RegisterRPC(grpc)
 		go grpc.Serve(lis)
 

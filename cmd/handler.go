@@ -95,6 +95,7 @@ var handlerCmd = &cobra.Command{
 		grpc := grpc.NewServer(component.ServerOptions()...)
 
 		// Register and Listen
+		component.RegisterHealthServer(grpc)
 		handler.RegisterRPC(grpc)
 		handler.RegisterManager(grpc)
 		go grpc.Serve(lis)

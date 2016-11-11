@@ -53,6 +53,7 @@ var routerCmd = &cobra.Command{
 		grpc := grpc.NewServer(component.ServerOptions()...)
 
 		// Register and Listen
+		component.RegisterHealthServer(grpc)
 		router.RegisterRPC(grpc)
 		router.RegisterManager(grpc)
 		go grpc.Serve(lis)

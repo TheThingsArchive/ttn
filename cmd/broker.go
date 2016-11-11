@@ -70,6 +70,7 @@ var brokerCmd = &cobra.Command{
 		grpc := grpc.NewServer(component.ServerOptions()...)
 
 		// Register and Listen
+		component.RegisterHealthServer(grpc)
 		broker.RegisterRPC(grpc)
 		broker.RegisterManager(grpc)
 		go grpc.Serve(lis)
