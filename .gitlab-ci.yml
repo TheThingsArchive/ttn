@@ -31,12 +31,12 @@ tests:
   stage: test
   image: golang:latest
   services:
-    - robertobarreda/rabbitmq:mqtt
+    - thethingsnetwork/rabbitmq
     - redis
   variables:
     REDIS_HOST: redis
-    MQTT_ADDRESS: robertobarreda__rabbitmq:1883
-    AMQP_ADDRESS: robertobarreda__rabbitmq:5672
+    MQTT_ADDRESS: thethingsnetwork__rabbitmq:1883
+    AMQP_ADDRESS: thethingsnetwork__rabbitmq:5672
   script:
     - pushd $GOPATH/src/github.com/TheThingsNetwork/ttn
     - make deps
