@@ -9,6 +9,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/api/gateway"
 	"github.com/TheThingsNetwork/ttn/utils/backoff"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
+	"github.com/golang/protobuf/ptypes/empty"
 	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
 )
 
@@ -53,7 +54,7 @@ newStream:
 			}
 		}()
 
-		var msg []byte
+		msg := new(empty.Empty)
 		for {
 			if err := stream.RecvMsg(&msg); err != nil {
 				cl.Ctx.WithError(errors.FromGRPCError(err)).Warn("Received error on monitor status stream, closing...")

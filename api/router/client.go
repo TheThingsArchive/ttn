@@ -11,6 +11,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/api/gateway"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
+	"github.com/golang/protobuf/ptypes/empty"
 	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -108,7 +109,7 @@ func (c *gatewayClient) setupGatewayStatus() error {
 	c.gatewayStatus = gatewayStatusClient
 	c.stopGatewayStatus = make(chan bool)
 	go func() {
-		var msg []byte
+		msg := new(empty.Empty)
 		for {
 			select {
 			case <-c.stopGatewayStatus:
@@ -166,7 +167,7 @@ func (c *gatewayClient) setupUplink() error {
 	c.uplink = uplinkClient
 	c.stopUplink = make(chan bool)
 	go func() {
-		var msg []byte
+		msg := new(empty.Empty)
 		for {
 			select {
 			case <-c.stopUplink:
