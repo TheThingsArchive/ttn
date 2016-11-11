@@ -30,6 +30,11 @@ func (m *UplinkMessage) Validate() error {
 	if err := api.NotNilAndValid(m.GatewayMetadata, "GatewayMetadata"); err != nil {
 		return err
 	}
+	if m.Message != nil {
+		if err := m.Message.Validate(); err != nil {
+			return errors.NewErrInvalidArgument("Message", err.Error())
+		}
+	}
 	return nil
 }
 
@@ -44,6 +49,11 @@ func (m *DownlinkMessage) Validate() error {
 
 	if err := api.NotNilAndValid(m.DownlinkOption, "DownlinkOption"); err != nil {
 		return err
+	}
+	if m.Message != nil {
+		if err := m.Message.Validate(); err != nil {
+			return errors.NewErrInvalidArgument("Message", err.Error())
+		}
 	}
 	return nil
 }
@@ -64,7 +74,11 @@ func (m *DeduplicatedUplinkMessage) Validate() error {
 			return errors.NewErrInvalidArgument("ResponseTemplate", err.Error())
 		}
 	}
-
+	if m.Message != nil {
+		if err := m.Message.Validate(); err != nil {
+			return errors.NewErrInvalidArgument("Message", err.Error())
+		}
+	}
 	return nil
 }
 
@@ -79,7 +93,11 @@ func (m *DeviceActivationRequest) Validate() error {
 	if err := api.NotNilAndValid(m.ActivationMetadata, "ActivationMetadata"); err != nil {
 		return err
 	}
-
+	if m.Message != nil {
+		if err := m.Message.Validate(); err != nil {
+			return errors.NewErrInvalidArgument("Message", err.Error())
+		}
+	}
 	return nil
 }
 
@@ -87,6 +105,11 @@ func (m *DeviceActivationRequest) Validate() error {
 func (m *DeduplicatedDeviceActivationRequest) Validate() error {
 	if err := api.NotNilAndValid(m.ProtocolMetadata, "ProtocolMetadata"); err != nil {
 		return err
+	}
+	if m.Message != nil {
+		if err := m.Message.Validate(); err != nil {
+			return errors.NewErrInvalidArgument("Message", err.Error())
+		}
 	}
 	return nil
 }

@@ -1,6 +1,9 @@
 package handler
 
-import "github.com/TheThingsNetwork/ttn/api"
+import (
+	"github.com/TheThingsNetwork/ttn/api"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
+)
 
 // Validate implements the api.Validator interface
 func (m *DeviceActivationResponse) Validate() error {
@@ -10,8 +13,10 @@ func (m *DeviceActivationResponse) Validate() error {
 	if err := api.NotNilAndValid(m.ActivationMetadata, "ActivationMetadata"); err != nil {
 		return err
 	}
-	if err := api.NotNilAndValid(m.Message, "Message"); err != nil {
-		return err
+	if m.Message != nil {
+		if err := m.Message.Validate(); err != nil {
+			return errors.NewErrInvalidArgument("Message", err.Error())
+		}
 	}
 	return nil
 }
