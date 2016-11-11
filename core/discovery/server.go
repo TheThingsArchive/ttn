@@ -4,23 +4,22 @@
 package discovery
 
 import (
+	"fmt"
+
 	"github.com/TheThingsNetwork/go-account-lib/rights"
 	pb "github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/golang/protobuf/ptypes/empty"
 	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 )
 
 type discoveryServer struct {
 	discovery *discovery
 }
 
-var grpcErrf = grpc.Errorf // To make go vet stop complaining
-
 func errPermissionDeniedf(format string, args ...string) error {
-	return grpcErrf(codes.PermissionDenied, "Discovery:"+format, args)
+	return errors.BuildGRPCError(errors.NewErrPermissionDenied(fmt.Sprintf("Discovery:"+format, args)))
 }
 
 func (d *discoveryServer) checkMetadataEditRights(ctx context.Context, in *pb.MetadataRequest) error {

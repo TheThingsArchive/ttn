@@ -40,8 +40,6 @@ func GetErrType(err error) ErrType {
 	return Unknown
 }
 
-var grpcErrf = grpc.Errorf
-
 // BuildGRPCError returns the error with a GRPC code
 func BuildGRPCError(err error) error {
 	if err == nil {
@@ -60,7 +58,7 @@ func BuildGRPCError(err error) error {
 	case *ErrPermissionDenied:
 		code = codes.PermissionDenied
 	}
-	return grpcErrf(code, err.Error())
+	return grpc.Errorf(code, err.Error())
 }
 
 // FromGRPCError creates a regular error with the same type as the gRPC error

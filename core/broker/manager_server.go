@@ -16,8 +16,6 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
-var grpcErrf = grpc.Errorf // To make go vet stop complaining
-
 type brokerManager struct {
 	broker         *broker
 	deviceManager  pb_lorawan.DeviceManagerClient
@@ -57,12 +55,12 @@ func (b *brokerManager) RegisterApplicationHandler(ctx context.Context, in *pb.A
 		return nil, errors.BuildGRPCError(errors.Wrap(err, "Invalid Application Handler Registration"))
 	}
 	if !claims.AppRight(in.AppId, rights.AppSettings) {
-		return nil, grpcErrf(codes.PermissionDenied, "No access to this application")
+		return nil, errors.BuildGRPCError(errors.NewErrPermissionDenied("No access to this application"))
 	}
 	// Add Handler in local cache
 	handler, err := b.broker.Discovery.Get("handler", in.HandlerId)
 	if err != nil {
-		return nil, grpcErrf(codes.Internal, "Could not get Handler Announcement")
+		return nil, errors.BuildGRPCError(errors.NewErrInternal("Could not get Handler Announcement"))
 	}
 	handler.AddMetadata(discovery.Metadata_APP_ID, []byte(in.AppId))
 	return &empty.Empty{}, nil
@@ -85,7 +83,7 @@ func (b *brokerManager) GetDevAddr(ctx context.Context, in *lorawan.DevAddrReque
 }
 
 func (b *brokerManager) GetStatus(ctx context.Context, in *pb.StatusRequest) (*pb.Status, error) {
-	return nil, grpcErrf(codes.Unimplemented, "Not Implemented")
+	return nil, grpc.Errorf(codes.Unimplemented, "Not Implemented")
 }
 
 func (b *broker) RegisterManager(s *grpc.Server) {

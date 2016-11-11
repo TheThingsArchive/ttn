@@ -23,8 +23,6 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-var grpcErrf = grpc.Errorf // To make go vet stop complaining
-
 type handlerManager struct {
 	handler        *handler
 	deviceManager  pb_lorawan.DeviceManagerClient
@@ -124,7 +122,7 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*empty.E
 
 	lorawan := in.GetLorawanDevice()
 	if lorawan == nil {
-		return nil, grpcErrf(codes.InvalidArgument, "No LoRaWAN Device")
+		return nil, errors.BuildGRPCError(errors.NewErrInvalidArgument("Device", "No LoRaWAN Device"))
 	}
 
 	if dev != nil { // When this is an update
@@ -308,7 +306,7 @@ func (h *handlerManager) RegisterApplication(ctx context.Context, in *pb.Applica
 		return nil, errors.BuildGRPCError(err)
 	}
 	if app != nil {
-		return nil, grpcErrf(codes.AlreadyExists, "Application already exists")
+		return nil, errors.BuildGRPCError(errors.NewErrAlreadyExists("Application"))
 	}
 
 	err = h.handler.applications.Set(&application.Application{
@@ -434,7 +432,7 @@ func (h *handlerManager) GetDevAddr(ctx context.Context, in *pb_lorawan.DevAddrR
 }
 
 func (h *handlerManager) GetStatus(ctx context.Context, in *pb.StatusRequest) (*pb.Status, error) {
-	return nil, grpcErrf(codes.Unimplemented, "Not Implemented")
+	return nil, grpc.Errorf(codes.Unimplemented, "Not Implemented")
 }
 
 func (h *handler) RegisterManager(s *grpc.Server) {
