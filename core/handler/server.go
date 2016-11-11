@@ -9,22 +9,19 @@ import (
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 )
 
 type handlerRPC struct {
 	handler Handler
 }
 
-var grpcErrf = grpc.Errorf // To make go vet stop complaining
-
 func (h *handlerRPC) ActivationChallenge(ctx context.Context, challenge *pb_broker.ActivationChallengeRequest) (*pb_broker.ActivationChallengeResponse, error) {
 	_, err := h.handler.ValidateNetworkContext(ctx)
 	if err != nil {
 		return nil, errors.BuildGRPCError(err)
 	}
-	if !challenge.Validate() {
-		return nil, grpcErrf(codes.InvalidArgument, "Invalid Activation Request")
+	if err := challenge.Validate(); err != nil {
+		return nil, errors.BuildGRPCError(errors.Wrap(err, "Invalid Activation Challenge Request"))
 	}
 	res, err := h.handler.HandleActivationChallenge(challenge)
 	if err != nil {
@@ -38,8 +35,8 @@ func (h *handlerRPC) Activate(ctx context.Context, activation *pb_broker.Dedupli
 	if err != nil {
 		return nil, errors.BuildGRPCError(err)
 	}
-	if !activation.Validate() {
-		return nil, grpcErrf(codes.InvalidArgument, "Invalid Activation Request")
+	if err := activation.Validate(); err != nil {
+		return nil, errors.BuildGRPCError(errors.Wrap(err, "Invalid Activation Request"))
 	}
 	res, err := h.handler.HandleActivation(activation)
 	if err != nil {

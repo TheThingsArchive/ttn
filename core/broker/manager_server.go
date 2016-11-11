@@ -16,6 +16,8 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
+var grpcErrf = grpc.Errorf // To make go vet stop complaining
+
 type brokerManager struct {
 	broker         *broker
 	deviceManager  pb_lorawan.DeviceManagerClient
@@ -51,8 +53,8 @@ func (b *brokerManager) RegisterApplicationHandler(ctx context.Context, in *pb.A
 	if err != nil {
 		return nil, errors.BuildGRPCError(errors.FromGRPCError(err))
 	}
-	if !in.Validate() {
-		return nil, grpcErrf(codes.InvalidArgument, "Invalid Application Handler Registration")
+	if err := in.Validate(); err != nil {
+		return nil, errors.BuildGRPCError(errors.Wrap(err, "Invalid Application Handler Registration"))
 	}
 	if !claims.AppRight(in.AppId, rights.AppSettings) {
 		return nil, grpcErrf(codes.PermissionDenied, "No access to this application")

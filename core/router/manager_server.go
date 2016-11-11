@@ -10,6 +10,8 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
+var grpcErrf = grpc.Errorf // To make go vet stop complaining
+
 type routerManager struct {
 	router *router
 }

@@ -1,34 +1,36 @@
 package router
 
+import "github.com/TheThingsNetwork/ttn/api"
+
 // Validate implements the api.Validator interface
-func (m *UplinkMessage) Validate() bool {
-	if m.GatewayMetadata == nil || !m.GatewayMetadata.Validate() {
-		return false
+func (m *UplinkMessage) Validate() error {
+	if err := api.NotNilAndValid(m.GatewayMetadata, "GatewayMetadata"); err != nil {
+		return err
 	}
-	if m.ProtocolMetadata == nil || !m.ProtocolMetadata.Validate() {
-		return false
+	if err := api.NotNilAndValid(m.ProtocolMetadata, "ProtocolMetadata"); err != nil {
+		return err
 	}
-	return true
+	return nil
 }
 
 // Validate implements the api.Validator interface
-func (m *DownlinkMessage) Validate() bool {
-	if m.ProtocolConfiguration == nil || !m.ProtocolConfiguration.Validate() {
-		return false
+func (m *DownlinkMessage) Validate() error {
+	if err := api.NotNilAndValid(m.ProtocolConfiguration, "ProtocolConfiguration"); err != nil {
+		return err
 	}
-	if m.GatewayConfiguration == nil || !m.GatewayConfiguration.Validate() {
-		return false
+	if err := api.NotNilAndValid(m.GatewayConfiguration, "GatewayConfiguration"); err != nil {
+		return err
 	}
-	return true
+	return nil
 }
 
 // Validate implements the api.Validator interface
-func (m *DeviceActivationRequest) Validate() bool {
-	if m.GatewayMetadata == nil || !m.GatewayMetadata.Validate() {
-		return false
+func (m *DeviceActivationRequest) Validate() error {
+	if err := api.NotNilAndValid(m.GatewayMetadata, "GatewayMetadata"); err != nil {
+		return err
 	}
-	if m.ProtocolMetadata == nil || !m.ProtocolMetadata.Validate() {
-		return false
+	if err := api.NotNilAndValid(m.ProtocolMetadata, "ProtocolMetadata"); err != nil {
+		return err
 	}
-	return true
+	return nil
 }

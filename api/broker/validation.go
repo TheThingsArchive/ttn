@@ -1,100 +1,108 @@
 package broker
 
-import "github.com/TheThingsNetwork/ttn/api"
+import (
+	"github.com/TheThingsNetwork/ttn/api"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
+)
 
 // Validate implements the api.Validator interface
-func (m *DownlinkOption) Validate() bool {
+func (m *DownlinkOption) Validate() error {
 	if m.Identifier == "" {
-		return false
+		return errors.NewErrInvalidArgument("Identifier", "can not be empty")
 	}
 	if m.GatewayId == "" {
-		return false
+		return errors.NewErrInvalidArgument("GatewayId", "can not be empty")
 	}
-	if m.ProtocolConfig == nil || !m.ProtocolConfig.Validate() {
-		return false
+	if err := api.NotNilAndValid(m.ProtocolConfig, "ProtocolConfig"); err != nil {
+		return err
 	}
-	if m.GatewayConfig == nil || !m.GatewayConfig.Validate() {
-		return false
+	if err := api.NotNilAndValid(m.GatewayConfig, "GatewayConfig"); err != nil {
+		return err
 	}
-	return true
+	return nil
 }
 
 // Validate implements the api.Validator interface
-func (m *UplinkMessage) Validate() bool {
-	if m.ProtocolMetadata == nil || !m.ProtocolMetadata.Validate() {
-		return false
+func (m *UplinkMessage) Validate() error {
+	if err := api.NotNilAndValid(m.ProtocolMetadata, "ProtocolMetadata"); err != nil {
+		return err
 	}
-	if m.GatewayMetadata == nil || !m.GatewayMetadata.Validate() {
-		return false
+	if err := api.NotNilAndValid(m.GatewayMetadata, "GatewayMetadata"); err != nil {
+		return err
 	}
-	return true
+	return nil
 }
 
 // Validate implements the api.Validator interface
-func (m *DownlinkMessage) Validate() bool {
-	if m.DevId == "" || !api.ValidID(m.DevId) {
-		return false
+func (m *DownlinkMessage) Validate() error {
+	if err := api.NotEmptyAndValidId(m.DevId, "DevId"); err != nil {
+		return err
 	}
-	if m.AppId == "" || !api.ValidID(m.AppId) {
-		return false
+	if err := api.NotEmptyAndValidId(m.AppId, "AppId"); err != nil {
+		return err
 	}
-	if m.DownlinkOption == nil || !m.DownlinkOption.Validate() {
-		return false
+
+	if err := api.NotNilAndValid(m.DownlinkOption, "DownlinkOption"); err != nil {
+		return err
 	}
-	return true
+	return nil
 }
 
 // Validate implements the api.Validator interface
-func (m *DeduplicatedUplinkMessage) Validate() bool {
-	if m.DevId == "" || !api.ValidID(m.DevId) {
-		return false
+func (m *DeduplicatedUplinkMessage) Validate() error {
+	if err := api.NotEmptyAndValidId(m.AppId, "AppId"); err != nil {
+		return err
 	}
-	if m.AppId == "" || !api.ValidID(m.AppId) {
-		return false
+	if err := api.NotEmptyAndValidId(m.DevId, "DevId"); err != nil {
+		return err
 	}
-	if m.ProtocolMetadata == nil || !m.ProtocolMetadata.Validate() {
-		return false
+	if err := api.NotNilAndValid(m.ProtocolMetadata, "ProtocolMetadata"); err != nil {
+		return err
 	}
-	if m.ResponseTemplate != nil && !m.ResponseTemplate.Validate() {
-		return false
+	if m.ResponseTemplate != nil {
+		if err := m.ResponseTemplate.Validate(); err != nil {
+			return errors.NewErrInvalidArgument("ResponseTemplate", err.Error())
+		}
 	}
-	return true
+
+	return nil
 }
 
 // Validate implements the api.Validator interface
-func (m *DeviceActivationRequest) Validate() bool {
-	if m.ProtocolMetadata == nil || !m.ProtocolMetadata.Validate() {
-		return false
+func (m *DeviceActivationRequest) Validate() error {
+	if err := api.NotNilAndValid(m.ProtocolMetadata, "ProtocolMetadata"); err != nil {
+		return err
 	}
-	if m.GatewayMetadata == nil || !m.GatewayMetadata.Validate() {
-		return false
+	if err := api.NotNilAndValid(m.GatewayMetadata, "GatewayMetadata"); err != nil {
+		return err
 	}
-	if m.ActivationMetadata == nil || !m.ActivationMetadata.Validate() {
-		return false
+	if err := api.NotNilAndValid(m.ActivationMetadata, "ActivationMetadata"); err != nil {
+		return err
 	}
-	return true
+
+	return nil
 }
 
 // Validate implements the api.Validator interface
-func (m *DeduplicatedDeviceActivationRequest) Validate() bool {
-	if m.ProtocolMetadata == nil || !m.ProtocolMetadata.Validate() {
-		return false
+func (m *DeduplicatedDeviceActivationRequest) Validate() error {
+	if err := api.NotNilAndValid(m.ProtocolMetadata, "ProtocolMetadata"); err != nil {
+		return err
 	}
-	return true
+	return nil
 }
 
 // Validate implements the api.Validator interface
-func (m *ActivationChallengeRequest) Validate() bool {
-	return true
+func (m *ActivationChallengeRequest) Validate() error {
+	return nil
 }
 
 // Validate implements the api.Validator interface
-func (m *ApplicationHandlerRegistration) Validate() bool {
-	if m.AppId == "" || !api.ValidID(m.AppId) {
-		return false
+func (m *ApplicationHandlerRegistration) Validate() error {
+	if err := api.NotEmptyAndValidId(m.AppId, "AppId"); err != nil {
+		return err
 	}
 	if m.HandlerId == "" {
-		return false
+		return errors.NewErrInvalidArgument("HandlerId", "can not be empty")
 	}
-	return true
+	return nil
 }

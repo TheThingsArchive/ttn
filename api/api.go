@@ -15,15 +15,17 @@ import (
 
 // Validator interface is used to validate protos
 type Validator interface {
-	Validate() bool
+	// Returns the validation error or nil if valid
+	Validate() error
 }
 
 // Validate the given object if it implements the Validator interface
-func Validate(in interface{}) bool {
+// Must not be called with nil values!
+func Validate(in interface{}) error {
 	if v, ok := in.(Validator); ok {
 		return v.Validate()
 	}
-	return true
+	return nil
 }
 
 // Backoff indicates how long a client should wait between failed requests

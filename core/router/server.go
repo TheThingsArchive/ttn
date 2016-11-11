@@ -16,14 +16,11 @@ import (
 	"github.com/spf13/viper"
 	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 )
 
 type routerRPC struct {
 	router *router
 }
-
-var grpcErrf = grpc.Errorf // To make go vet stop complaining
 
 func (r *routerRPC) gatewayFromContext(ctx context.Context) (gtw *gateway.Gateway, err error) {
 	md, err := api.MetadataFromContext(ctx)
@@ -75,8 +72,8 @@ func (r *routerRPC) GatewayStatus(stream pb.Router_GatewayStatusServer) error {
 		if err != nil {
 			return err
 		}
-		if !status.Validate() {
-			return grpcErrf(codes.InvalidArgument, "Invalid Gateway Status")
+		if err := status.Validate(); err != nil {
+			return errors.BuildGRPCError(errors.Wrap(err, "Invalid Gateway Status"))
 		}
 		go r.router.HandleGatewayStatus(gateway.ID, status)
 	}
@@ -97,8 +94,8 @@ func (r *routerRPC) Uplink(stream pb.Router_UplinkServer) error {
 		if err != nil {
 			return err
 		}
-		if !uplink.Validate() {
-			return grpcErrf(codes.InvalidArgument, "Invalid Uplink")
+		if err := uplink.Validate(); err != nil {
+			return errors.BuildGRPCError(errors.Wrap(err, "Invalid Uplink"))
 		}
 		go r.router.HandleUplink(gateway.ID, uplink)
 	}
@@ -138,9 +135,8 @@ func (r *routerRPC) Activate(ctx context.Context, req *pb.DeviceActivationReques
 	if err != nil {
 		return nil, errors.BuildGRPCError(err)
 	}
-
-	if !req.Validate() {
-		return nil, grpcErrf(codes.InvalidArgument, "Invalid Activation Request")
+	if err := req.Validate(); err != nil {
+		return nil, errors.BuildGRPCError(errors.Wrap(err, "Invalid Activation Request"))
 	}
 	return r.router.HandleActivation(gateway.ID, req)
 }

@@ -23,8 +23,8 @@ type networkServerManager struct {
 }
 
 func (n *networkServerManager) getDevice(ctx context.Context, in *pb_lorawan.DeviceIdentifier) (*device.Device, error) {
-	if !in.Validate() {
-		return nil, errors.NewErrInvalidArgument("Device Identifier", "validation failed")
+	if err := in.Validate(); err != nil {
+		return nil, errors.BuildGRPCError(errors.Wrap(err, "Invalid Device Identifier"))
 	}
 	claims, err := n.networkServer.Component.ValidateTTNAuthContext(ctx)
 	if err != nil {
@@ -72,8 +72,8 @@ func (n *networkServerManager) SetDevice(ctx context.Context, in *pb_lorawan.Dev
 		return nil, errors.BuildGRPCError(err)
 	}
 
-	if !in.Validate() {
-		return nil, grpcErrf(codes.InvalidArgument, "Invalid Device")
+	if err := in.Validate(); err != nil {
+		return nil, errors.BuildGRPCError(errors.Wrap(err, "Invalid Device"))
 	}
 
 	claims, err := n.networkServer.Component.ValidateTTNAuthContext(ctx)

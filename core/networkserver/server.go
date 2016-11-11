@@ -69,8 +69,8 @@ func (s *networkServerRPC) PrepareActivation(ctx context.Context, activation *br
 	if err := s.ValidateContext(ctx); err != nil {
 		return nil, errors.BuildGRPCError(err)
 	}
-	if !activation.Validate() {
-		return nil, grpcErrf(codes.InvalidArgument, "Invalid Activation Request")
+	if err := activation.Validate(); err != nil {
+		return nil, errors.BuildGRPCError(errors.Wrap(err, "Invalid Activation Request"))
 	}
 	res, err := s.networkServer.HandlePrepareActivation(activation)
 	if err != nil {
@@ -83,8 +83,8 @@ func (s *networkServerRPC) Activate(ctx context.Context, activation *handler.Dev
 	if err := s.ValidateContext(ctx); err != nil {
 		return nil, errors.BuildGRPCError(err)
 	}
-	if !activation.Validate() {
-		return nil, grpcErrf(codes.InvalidArgument, "Invalid Activation Request")
+	if err := activation.Validate(); err != nil {
+		return nil, errors.BuildGRPCError(errors.Wrap(err, "Invalid Activation Request"))
 	}
 	res, err := s.networkServer.HandleActivate(activation)
 	if err != nil {
@@ -97,8 +97,8 @@ func (s *networkServerRPC) Uplink(ctx context.Context, message *broker.Deduplica
 	if err := s.ValidateContext(ctx); err != nil {
 		return nil, errors.BuildGRPCError(err)
 	}
-	if !message.Validate() {
-		return nil, grpcErrf(codes.InvalidArgument, "Invalid Uplink")
+	if err := message.Validate(); err != nil {
+		return nil, errors.BuildGRPCError(errors.Wrap(err, "Invalid Uplink"))
 	}
 	res, err := s.networkServer.HandleUplink(message)
 	if err != nil {
@@ -111,8 +111,8 @@ func (s *networkServerRPC) Downlink(ctx context.Context, message *broker.Downlin
 	if err := s.ValidateContext(ctx); err != nil {
 		return nil, errors.BuildGRPCError(err)
 	}
-	if !message.Validate() {
-		return nil, grpcErrf(codes.InvalidArgument, "Invalid Downlink")
+	if err := message.Validate(); err != nil {
+		return nil, errors.BuildGRPCError(errors.Wrap(err, "Invalid Downlink"))
 	}
 	res, err := s.networkServer.HandleDownlink(message)
 	if err != nil {

@@ -1,26 +1,31 @@
 package gateway
 
+import "github.com/TheThingsNetwork/ttn/utils/errors"
+
 // Validate implements the api.Validator interface
-func (m *RxMetadata) Validate() bool {
+func (m *RxMetadata) Validate() error {
 	if m.GatewayId == "" {
-		return false
+		return errors.NewErrInvalidArgument("GatewayId", "can not be empty")
 	}
-	return true
+	return nil
 }
 
 // Validate implements the api.Validator interface
-func (m *TxConfiguration) Validate() bool {
-	return true
+func (m *TxConfiguration) Validate() error {
+	return nil
 }
 
 // Validate implements the api.Validator interface
-func (m *Status) Validate() bool {
-	return true
+func (m *Status) Validate() error {
+	return nil
 }
 
 // Validate implements the api.Validator interface
-func (m *GPSMetadata) Validate() bool {
-	return m != nil && !m.IsZero()
+func (m *GPSMetadata) Validate() error {
+	if m == nil || m.IsZero() {
+		return errors.NewErrInvalidArgument("GPSMetadata", "can not be empty")
+	}
+	return nil
 }
 
 func (m GPSMetadata) IsZero() bool {
