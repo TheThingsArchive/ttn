@@ -1,9 +1,10 @@
 package api
 
 import (
-	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"reflect"
 	"regexp"
+
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 )
 
 var idRegexp = regexp.MustCompile("^[0-9a-z](?:[_-]?[0-9a-z]){1,35}$")
@@ -26,7 +27,7 @@ func NotEmptyAndValidId(id string, argument string) error {
 func NotNilAndValid(in interface{}, argument string) error {
 	// Structs can not be nil and reflect.ValueOf(in).IsNil() would panic
 	if reflect.ValueOf(in).Kind() == reflect.Struct {
-		return Validate(in)
+		return errors.Wrap(Validate(in), "Invalid "+argument)
 	}
 
 	// We need to check for the interface to be nil and the value of the interface
@@ -34,5 +35,10 @@ func NotNilAndValid(in interface{}, argument string) error {
 	if in == nil || reflect.ValueOf(in).IsNil() {
 		return errors.NewErrInvalidArgument(argument, "can not be empty")
 	}
-	return Validate(in)
+
+	if err := Validate(in); err != nil {
+		return errors.Wrap(Validate(in), "Invalid "+argument)
+	}
+
+	return nil
 }
