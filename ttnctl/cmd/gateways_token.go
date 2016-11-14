@@ -12,7 +12,7 @@ import (
 )
 
 var gatewaysTokenCmd = &cobra.Command{
-	Use:    "token [Type] [gatewayID]",
+	Use:    "token [GatewayID]",
 	Hidden: true,
 	Short:  "Get the token for a gateway.",
 	Long:   `gateways token gets a signed token for the gateway.`,
