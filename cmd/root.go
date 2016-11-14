@@ -14,6 +14,7 @@ import (
 	"time"
 
 	cliHandler "github.com/TheThingsNetwork/go-utils/handlers/cli"
+	"github.com/TheThingsNetwork/ttn/api"
 	esHandler "github.com/TheThingsNetwork/ttn/utils/elasticsearch/handler"
 	"github.com/apex/log"
 	jsonHandler "github.com/apex/log/handlers/json"
@@ -78,6 +79,10 @@ var RootCmd = &cobra.Command{
 		ctx = &log.Logger{
 			Handler: multiHandler.New(logHandlers...),
 		}
+
+		// Set the API/gRPC logger
+		api.SetLogger(api.Apex(ctx))
+
 		ctx.WithFields(log.Fields{
 			"ComponentID":              viper.GetString("id"),
 			"Description":              viper.GetString("description"),

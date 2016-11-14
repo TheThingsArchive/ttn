@@ -16,12 +16,10 @@ import (
 	"github.com/TheThingsNetwork/go-account-lib/tokenkey"
 	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	pb_monitor "github.com/TheThingsNetwork/ttn/api/monitor"
-	"github.com/TheThingsNetwork/ttn/utils/logging"
 	"github.com/apex/log"
 	"github.com/spf13/viper"
 	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/grpclog"
 	"google.golang.org/grpc/health"
 )
 
@@ -68,8 +66,6 @@ func New(ctx log.Interface, serviceName string, announcedAddress string) (*Compo
 	// Disable gRPC tracing
 	// SEE: https://github.com/grpc/grpc-go/issues/695
 	grpc.EnableTracing = false
-
-	grpclog.SetLogger(logging.NewGRPCLogger(ctx))
 
 	component := &Component{
 		Config: ConfigFromViper(),

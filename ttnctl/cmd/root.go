@@ -12,12 +12,10 @@ import (
 	cliHandler "github.com/TheThingsNetwork/go-utils/handlers/cli"
 	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
-	"github.com/TheThingsNetwork/ttn/utils/logging"
 	"github.com/apex/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/grpclog"
 )
 
 var cfgFile string
@@ -47,8 +45,9 @@ var RootCmd = &cobra.Command{
 
 		api.DialOptions = append(api.DialOptions, grpc.WithBlock())
 		api.DialOptions = append(api.DialOptions, grpc.WithTimeout(2*time.Second))
-		grpclog.SetLogger(logging.NewGRPCLogger(ctx))
+
 		api.SetLogger(api.Apex(ctx))
+
 	},
 }
 

@@ -1,8 +1,11 @@
 package api
 
 import (
+	"fmt"
+
 	logrus "github.com/Sirupsen/logrus"
 	apex "github.com/apex/log"
+	"google.golang.org/grpc/grpclog"
 )
 
 // Logger used in mqtt package
@@ -20,6 +23,31 @@ type Logger interface {
 	WithField(string, interface{}) Logger
 	WithFields(apex.Fielder) Logger
 	WithError(error) Logger
+}
+
+// GRPC logger
+func GRPC() grpclog.Logger {
+	return &grpcWrapper{GetLogger()}
+}
+
+type grpcWrapper struct {
+	Logger
+}
+
+func (w *grpcWrapper) Fatal(args ...interface{}) {
+	w.Logger.Fatal(fmt.Sprint(args...))
+}
+func (w *grpcWrapper) Fatalln(args ...interface{}) {
+	w.Fatal(args...)
+}
+func (w *grpcWrapper) Print(args ...interface{}) {
+	w.Logger.Debug(fmt.Sprint(args...))
+}
+func (w *grpcWrapper) Printf(format string, args ...interface{}) {
+	w.Logger.Debugf(format, args...)
+}
+func (w *grpcWrapper) Println(args ...interface{}) {
+	w.Print(args...)
 }
 
 // StandardLogrus wraps the standard Logrus Logger into a Logger
@@ -114,9 +142,10 @@ func GetLogger() Logger {
 	return logger
 }
 
-// SetLogger returns the API Logger
+// SetLogger sets the API and gRPC Logger
 func SetLogger(log Logger) {
 	logger = log
+	grpclog.SetLogger(GRPC())
 }
 
 // noopLogger just does nothing
