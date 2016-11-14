@@ -20,16 +20,16 @@ func TestNotNilAndValidStruct(t *testing.T) {
 	subject := invalid{}
 
 	err := NotNilAndValid(subject, "subject")
-	if err == nil || err.Error() != "nestedPtr not valid: can not be empty" {
-		t.Error("Expected validation error: 'nestedPtr not valid: can not be empty' but found", err)
+	if err == nil || err.Error() != "Invalid subject: nestedPtr not valid: can not be empty" {
+		t.Error("Expected validation error: 'Invalid subject: nestedPtr not valid: can not be empty", err)
 	}
 }
 
 func TestNotNilAndValidPtr(t *testing.T) {
 	subject := &invalid{}
 	err := NotNilAndValid(subject, "subject")
-	if err == nil || err.Error() != "nestedPtr not valid: can not be empty" {
-		t.Error("Expected validation error: 'nestedPtr not valid: can not be empty' but found", err)
+	if err == nil || err.Error() != "Invalid subject: nestedPtr not valid: can not be empty" {
+		t.Error("Expected validation error: 'Invalid subject: nestedPtr not valid: can not be empty", err)
 	}
 }
 
