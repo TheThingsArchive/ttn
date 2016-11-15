@@ -383,7 +383,6 @@ func (h *handlerManager) DeleteApplication(ctx context.Context, in *pb.Applicati
 	}
 
 	// Get and delete all devices for this application
-	// TODO: add "app:devices:r" and "app:devices:w" check
 	devices, err := h.handler.devices.ListForApp(in.AppId)
 	if err != nil {
 		return nil, errors.BuildGRPCError(err)

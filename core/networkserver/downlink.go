@@ -45,8 +45,6 @@ func (n *networkServer) HandleDownlink(message *pb_broker.DownlinkMessage) (*pb_
 		return nil, err
 	}
 
-	// TODO: Maybe we need to add MAC commands on downlink
-
 	// Sign MIC
 	phyPayload.SetMIC(lorawan.AES128Key(dev.NwkSKey))
 

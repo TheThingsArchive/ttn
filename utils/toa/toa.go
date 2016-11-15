@@ -57,8 +57,6 @@ func ComputeLoRa(payloadSize uint, datr string, codr string) (time.Duration, err
 // ComputeFSK computes the time-on-air given a PHY payload size in bytes and a
 // bitrate, Note that this function operates on the PHY payload size and does
 // not add the LoRaWAN header.
-//
-// TODO: (@tftelkamp): Verify this
 func ComputeFSK(payloadSize uint, bitrate int) (time.Duration, error) {
 	tPkt := int(time.Second) * (int(payloadSize) + 5 + 3 + 1 + 2) * 8 / bitrate
 	return time.Duration(tPkt), nil
