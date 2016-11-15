@@ -54,6 +54,7 @@ var discoveryCmd = &cobra.Command{
 		if viper.GetBool("discovery.cache") {
 			discovery.WithCache(announcement.DefaultCacheOptions)
 		}
+		discovery.WithMasterAuthServers(viper.GetStringSlice("discovery.master-auth-servers")...)
 		err = discovery.Init(component)
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not initialize discovery")
@@ -94,4 +95,7 @@ func init() {
 
 	discoveryCmd.Flags().Bool("cache", false, "Add a cache in front of the database")
 	viper.BindPFlag("discovery.cache", discoveryCmd.Flags().Lookup("cache"))
+
+	discoveryCmd.Flags().StringSlice("master-auth-servers", []string{"ttn-account"}, "Auth servers that are allowed to manage this network")
+	viper.BindPFlag("discovery.master-auth-servers", discoveryCmd.Flags().Lookup("master-auth-servers"))
 }

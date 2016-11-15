@@ -16,6 +16,7 @@ import (
 type Discovery interface {
 	component.Interface
 	WithCache(options announcement.CacheOptions)
+	WithMasterAuthServers(serverID ...string)
 	Announce(announcement *pb.Announcement) error
 	GetAll(serviceName string) ([]*pb.Announcement, error)
 	Get(serviceName string, id string) (*pb.Announcement, error)
@@ -26,11 +27,23 @@ type Discovery interface {
 // discovery is a reference implementation for a TTN Service Discovery component.
 type discovery struct {
 	*component.Component
-	services announcement.Store
+	services          announcement.Store
+	masterAuthServers map[string]struct{}
 }
 
 func (d *discovery) WithCache(options announcement.CacheOptions) {
 	d.services = announcement.NewCachedAnnouncementStore(d.services, options)
+}
+
+func (d *discovery) WithMasterAuthServers(serverID ...string) {
+	for _, serverID := range serverID {
+		d.masterAuthServers[serverID] = struct{}{}
+	}
+}
+
+func (d *discovery) IsMasterAuthServer(serverID string) bool {
+	_, ok := d.masterAuthServers[serverID]
+	return ok
 }
 
 func (d *discovery) Init(c *component.Component) error {
@@ -102,6 +115,7 @@ func (d *discovery) DeleteMetadata(serviceName string, id string, in *pb.Metadat
 // NewRedisDiscovery creates a new Redis-based discovery service
 func NewRedisDiscovery(client *redis.Client) Discovery {
 	return &discovery{
-		services: announcement.NewRedisAnnouncementStore(client, "discovery"),
+		services:          announcement.NewRedisAnnouncementStore(client, "discovery"),
+		masterAuthServers: make(map[string]struct{}),
 	}
 }

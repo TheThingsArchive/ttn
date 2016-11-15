@@ -32,9 +32,9 @@ func (d *discoveryServer) checkMetadataEditRights(ctx context.Context, in *pb.Me
 		if in.ServiceName != "broker" {
 			return errPermissionDeniedf("Announcement service type should be \"broker\"")
 		}
-		// Only allow prefix announcements if token is issued by the official ttn account server (or if in dev mode)
-		if claims.Issuer != "ttn-account" && d.discovery.Component.Identity.Id != "dev" {
-			return errPermissionDeniedf("Token issuer \"%s\" should be \"ttn-account\"", claims.Issuer)
+		// Only allow prefix announcements if token is issued by a master auth server (or if in dev mode)
+		if d.discovery.Component.Identity.Id != "dev" && !d.discovery.IsMasterAuthServer(claims.Issuer) {
+			return errPermissionDeniedf("Token issuer \"%s\" is not allowed to make changes to the network settings", claims.Issuer)
 		}
 		if claims.Type != in.ServiceName {
 			return errPermissionDeniedf("Token type %s does not correspond with announcement service type %s", claims.Type, in.ServiceName)
@@ -47,9 +47,9 @@ func (d *discoveryServer) checkMetadataEditRights(ctx context.Context, in *pb.Me
 		if in.ServiceName != "handler" {
 			return errPermissionDeniedf("Announcement service type should be \"handler\"")
 		}
-		// Only allow eui announcements if token is issued by the official ttn account server (or if in dev mode)
-		if claims.Issuer != "ttn-account" && d.discovery.Component.Identity.Id != "dev" {
-			return errPermissionDeniedf("Token issuer %s should be ttn-account", claims.Issuer)
+		// Only allow eui announcements if token is issued by a master auth server (or if in dev mode)
+		if d.discovery.Component.Identity.Id != "dev" && !d.discovery.IsMasterAuthServer(claims.Issuer) {
+			return errPermissionDeniedf("Token issuer %s is not allowed to make changes to the network settings", claims.Issuer)
 		}
 		if claims.Type != in.ServiceName {
 			return errPermissionDeniedf("Token type %s does not correspond with announcement service type %s", claims.Type, in.ServiceName)
@@ -80,14 +80,13 @@ func (d *discoveryServer) Announce(ctx context.Context, announcement *pb.Announc
 
 	// If not in development mode
 	if d.discovery.Component.Identity.Id != "dev" {
-		// Tokens must be issued by official ttn account server
-		if claims.Issuer != "ttn-account" {
-			return nil, errPermissionDeniedf("Token issuer %s should be ttn-account", claims.Issuer)
+		if !d.discovery.IsMasterAuthServer(claims.Issuer) {
+			return nil, errPermissionDeniedf("Token issuer %s is not allowed to make changes to the network settings", claims.Issuer)
 		}
 
 		// Can't announce development components
 		if claims.Subject == "dev" {
-			return nil, errPermissionDeniedf("Can't announce development components")
+			return nil, errPermissionDeniedf("Can't announce development components to production networks")
 		}
 	}
 
