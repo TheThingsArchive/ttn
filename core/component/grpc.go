@@ -3,7 +3,6 @@ package component
 import (
 	"time"
 
-	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/apex/log"
 	"github.com/mwitkow/go-grpc-middleware"
 	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
@@ -37,10 +36,9 @@ func (c *Component) ServerOptions() []grpc.ServerOption {
 		iface, err := handler(ctx, req)
 		logCtx = logCtx.WithField("Duration", time.Now().Sub(t))
 		if err != nil {
-			err := errors.FromGRPCError(err)
-			logCtx.WithField("error", err.Error()).Warn("Could not handle Request")
+			logCtx.WithField("ErrCode", grpc.Code(err)).WithError(err).Warn("Could not handle Request")
 		} else {
-			logCtx.Info("Handled request")
+			logCtx.Debug("Handled request")
 		}
 		return iface, err
 	}
@@ -59,12 +57,22 @@ func (c *Component) ServerOptions() []grpc.ServerOption {
 				peerID = id[0]
 			}
 		}
-		c.Ctx.WithFields(log.Fields{
+		logCtx := c.Ctx.WithFields(log.Fields{
 			"CallerID": peerID,
 			"CallerIP": peerAddr,
 			"Method":   info.FullMethod,
-		}).Info("Start stream")
-		return handler(srv, stream)
+		})
+		t := time.Now()
+		logCtx.Debug("Start stream")
+		err := handler(srv, stream)
+		logCtx = logCtx.WithField("Duration", time.Now().Sub(t))
+		switch err {
+		case nil, context.Canceled:
+			logCtx.Debug("End stream")
+		default:
+			logCtx.WithField("ErrCode", grpc.Code(err)).WithError(err).Warn("End stream")
+		}
+		return err
 	}
 
 	opts := []grpc.ServerOption{
