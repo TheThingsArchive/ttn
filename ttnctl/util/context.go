@@ -4,10 +4,12 @@
 package util
 
 import (
+	"fmt"
 	"os"
 	"os/user"
 
 	"github.com/apex/log"
+	"github.com/spf13/viper"
 	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
 	"google.golang.org/grpc/metadata"
 )
@@ -33,6 +35,7 @@ func GetContext(ctx log.Interface, extraPairs ...string) context.Context {
 	md := metadata.Pairs(
 		"id", GetID(),
 		"service-name", "ttnctl",
+		"service-version", fmt.Sprintf("%s-%s (%s)", viper.GetString("version"), viper.GetString("gitCommit"), viper.GetString("buildDate")),
 		"token", token.AccessToken,
 	)
 	return metadata.NewContext(context.Background(), md)

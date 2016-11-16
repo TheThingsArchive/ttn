@@ -144,17 +144,19 @@ func (c *Component) BuildJWT() (string, error) {
 
 // GetContext returns a context for outgoing RPC request. If token is "", this function will generate a short lived token from the component
 func (c *Component) GetContext(token string) context.Context {
-	var serviceName, id, netAddress string
+	var serviceName, serviceVersion, id, netAddress string
 	if c.Identity != nil {
 		serviceName = c.Identity.ServiceName
 		id = c.Identity.Id
 		if token == "" {
 			token, _ = c.BuildJWT()
 		}
+		serviceVersion = c.Identity.ServiceVersion
 		netAddress = c.Identity.NetAddress
 	}
 	md := metadata.Pairs(
 		"service-name", serviceName,
+		"service-version", serviceVersion,
 		"id", id,
 		"token", token,
 		"net-address", netAddress,
