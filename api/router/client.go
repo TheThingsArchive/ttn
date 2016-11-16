@@ -7,6 +7,8 @@ import (
 	"io"
 	"sync"
 
+	"time"
+
 	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/api/gateway"
@@ -58,13 +60,14 @@ func (c *Client) ForGateway(gatewayID string, tokenFunc func() string) GatewayCl
 	return gatewayClient
 }
 
-// Close purges the cache and closes the connection with the Router
+// Close closes all gateway connections and then closes the connection with the Router
 func (c *Client) Close() error {
 	defer c.mutex.Unlock()
 	c.mutex.Lock()
 	for _, gateway := range c.gateways {
 		gateway.Close()
 	}
+	time.Sleep(200 * time.Millisecond)
 	return c.conn.Close()
 }
 
