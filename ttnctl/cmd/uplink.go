@@ -12,6 +12,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/apex/log"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var uplinkCmd = &cobra.Command{
@@ -60,14 +61,10 @@ var uplinkCmd = &cobra.Command{
 		rtrClient := util.GetRouter(ctx)
 		defer rtrClient.Close()
 
-		gatewayID, _ := cmd.Flags().GetString("gateway-id")
-		var gatewayToken string
+		gatewayID := viper.GetString("gateway-id")
+		gatewayToken := viper.GetString("gateway-token")
 
-		if gatewayID == "" {
-			gatewayID = "dev"
-			// This token is valid for the "dev" gateway:
-			gatewayToken = `eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJ0dG4tYWNjb3VudC1wcmV2aWV3Iiwic3ViIjoiZGV2IiwidHlwZSI6ImdhdGV3YXkiLCJpYXQiOjE0NzY0Mzk0Mzh9.kEOiLe9j4qRElZOt_bAXmZlva1nV6duIL0MDVa3bx2SEWC3qredaBWXWq4FmV4PKeI_zndovQtOoValH0B_6MW6vXuWL1wYzV6foTH5gQdxmn-iuQ1AmAIYbZeyHl9a-NPqDgkXLwKmo2iB1hUi9wV6HXfIOalguDtGJbmMfJ2tommsgmuNCXd-2zqhStSy8ArpROFXPm7voGDTcgm4hfchr7zhn-Er76R-eJa3RZ1Seo9BsiWrQ0N3VDSuh7ycCakZtkaLD4OTutAemcbzbrNJSOCvvZr8Asn-RmMkjKUdTN4Bgn3qlacIQ9iZikPLT8XyjFkj-8xjs3KAobWg40A`
-		} else {
+		if gatewayID != "dev" {
 			account := util.GetAccount(ctx)
 			token, err := account.GetGatewayToken(gatewayID)
 			if err != nil {
@@ -80,6 +77,7 @@ var uplinkCmd = &cobra.Command{
 		}
 
 		gtwClient := rtrClient.ForGateway(gatewayID, func() string { return gatewayToken })
+		defer gtwClient.Close()
 
 		var downlink <-chan *router.DownlinkMessage
 		var errChan <-chan error
@@ -132,5 +130,7 @@ func init() {
 	RootCmd.AddCommand(uplinkCmd)
 	uplinkCmd.Flags().Bool("downlink", false, "Also start downlink (unstable)")
 	uplinkCmd.Flags().Bool("confirmed", false, "Use confirmed uplink (this also sets --downlink)")
+
 	uplinkCmd.Flags().String("gateway-id", "", "The ID of the gateway that you are faking (you can only fake gateways that you own)")
+	viper.BindPFlag("gateway-id", uplinkCmd.Flags().Lookup("gateway-id"))
 }
