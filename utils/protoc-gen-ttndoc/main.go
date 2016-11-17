@@ -93,107 +93,113 @@ func main() {
 
 		content := new(bytes.Buffer)
 
-		fmt.Fprintf(content, "# %s\n\n", service.GetName())
+		fmt.Fprintf(content, "# %s API Reference\n\n", service.GetName())
 		if service.comment != "" {
 			fmt.Fprintf(content, "%s\n\n", service.comment)
 		}
 
-		for _, method := range service.methods {
-			fmt.Fprintf(content, "## %s\n\n", method.GetName())
-			if method.comment != "" {
-				fmt.Fprintf(content, "%s\n\n", method.comment)
-			}
-			if method.inputStream {
-				fmt.Fprintf(content, "- Client stream of [`%s`](#%s)\n", method.input.GetName(), heading(method.input.key))
-			} else {
-				fmt.Fprintf(content, "- Request: [`%s`](#%s)\n", method.input.GetName(), heading(method.input.key))
-			}
-			useMessage(tree, method.input, usedMessages, usedEnums)
-			if method.outputStream {
-				fmt.Fprintf(content, "- Server stream of [`%s`](#%s)\n", method.output.GetName(), heading(method.input.key))
-			} else {
-				fmt.Fprintf(content, "- Response: [`%s`](#%s)\n", method.output.GetName(), heading(method.input.key))
-			}
-			useMessage(tree, method.output, usedMessages, usedEnums)
+		if len(service.methods) > 0 {
+			fmt.Fprint(content, "## Methods\n\n")
 
-			fmt.Fprintln(content)
-
-			if len(method.endpoints) != 0 {
-				if len(method.endpoints) == 1 {
-					fmt.Fprint(content, "### HTTP Endpoint\n\n")
+			for _, method := range service.methods {
+				fmt.Fprintf(content, "### `%s`\n\n", method.GetName())
+				if method.comment != "" {
+					fmt.Fprintf(content, "%s\n\n", method.comment)
+				}
+				if method.inputStream {
+					fmt.Fprintf(content, "- Client stream of [`%s`](#%s)\n", method.input.GetName(), heading(method.input.key))
 				} else {
-					fmt.Fprint(content, "### HTTP Endpoints\n\n")
+					fmt.Fprintf(content, "- Request: [`%s`](#%s)\n", method.input.GetName(), heading(method.input.key))
 				}
-				for _, endpoint := range method.endpoints {
-					fmt.Fprintf(content, "- `%s` `%s`\n", endpoint.method, endpoint.url)
+				useMessage(tree, method.input, usedMessages, usedEnums)
+				if method.outputStream {
+					fmt.Fprintf(content, "- Server stream of [`%s`](#%s)\n", method.output.GetName(), heading(method.input.key))
+				} else {
+					fmt.Fprintf(content, "- Response: [`%s`](#%s)\n", method.output.GetName(), heading(method.input.key))
 				}
+				useMessage(tree, method.output, usedMessages, usedEnums)
+
 				fmt.Fprintln(content)
-			}
-		}
 
-		fmt.Fprint(content, "# Used Messages\n\n")
-
-		var messageKeys []string
-		for key := range usedMessages {
-			messageKeys = append(messageKeys, key)
-		}
-		sort.Strings(messageKeys)
-
-		for _, messageKey := range messageKeys {
-			message := usedMessages[messageKey]
-			fmt.Fprintf(content, "## `%s`\n\n", message.key)
-			if strings.HasPrefix(messageKey, ".google") {
-				fmt.Fprintf(content, "%s\n\n", strings.SplitAfter(message.comment, ".")[0])
-			} else if message.comment != "" {
-				fmt.Fprintf(content, "%s\n\n", message.comment)
-			}
-			if len(message.fields) > 0 {
-				fmt.Fprintln(content, "| Field Name | Type | Description |")
-				fmt.Fprintln(content, "| ---------- | ---- | ----------- |")
-				for idx, field := range message.fields {
-					if field.isOneOf {
-						if idx == 0 || !message.fields[idx-1].isOneOf || message.fields[idx-1].GetOneofIndex() != field.GetOneofIndex() {
-							oneof := message.GetOneof(field.GetOneofIndex())
-							if len(oneof.fields) > 1 {
-								fmt.Fprintf(content, "| **%s** | **oneof %d** | one of the following %d |\n", oneof.GetName(), len(oneof.fields), len(oneof.fields))
-							}
-						}
+				if len(method.endpoints) != 0 {
+					if len(method.endpoints) == 1 {
+						fmt.Fprint(content, "### HTTP Endpoint\n\n")
 					} else {
-						if idx > 0 && message.fields[idx-1].isOneOf {
-							oneof := message.GetOneof(message.fields[idx-1].GetOneofIndex())
-							if len(oneof.fields) > 1 {
-								fmt.Fprintf(content, "| **%s** | **end oneof %d** |  |\n", oneof.GetName(), len(oneof.fields))
+						fmt.Fprint(content, "### HTTP Endpoints\n\n")
+					}
+					for _, endpoint := range method.endpoints {
+						fmt.Fprintf(content, "- `%s` `%s`\n", endpoint.method, endpoint.url)
+					}
+					fmt.Fprintln(content)
+				}
+			}
+		}
+
+		if len(usedMessages) > 0 {
+			fmt.Fprint(content, "## Messages\n\n")
+
+			var messageKeys []string
+			for key := range usedMessages {
+				messageKeys = append(messageKeys, key)
+			}
+			sort.Strings(messageKeys)
+
+			for _, messageKey := range messageKeys {
+				message := usedMessages[messageKey]
+				fmt.Fprintf(content, "### `%s`\n\n", message.key)
+				if strings.HasPrefix(messageKey, ".google") {
+					fmt.Fprintf(content, "%s\n\n", strings.SplitAfter(message.comment, ".")[0])
+				} else if message.comment != "" {
+					fmt.Fprintf(content, "%s\n\n", message.comment)
+				}
+				if len(message.fields) > 0 {
+					fmt.Fprintln(content, "| Field Name | Type | Description |")
+					fmt.Fprintln(content, "| ---------- | ---- | ----------- |")
+					for idx, field := range message.fields {
+						if field.isOneOf {
+							if idx == 0 || !message.fields[idx-1].isOneOf || message.fields[idx-1].GetOneofIndex() != field.GetOneofIndex() {
+								oneof := message.GetOneof(field.GetOneofIndex())
+								if len(oneof.fields) > 1 {
+									fmt.Fprintf(content, "| **%s** | **oneof %d** | one of the following %d |\n", oneof.GetName(), len(oneof.fields), len(oneof.fields))
+								}
+							}
+						} else {
+							if idx > 0 && message.fields[idx-1].isOneOf {
+								oneof := message.GetOneof(message.fields[idx-1].GetOneofIndex())
+								if len(oneof.fields) > 1 {
+									fmt.Fprintf(content, "| **%s** | **end oneof %d** |  |\n", oneof.GetName(), len(oneof.fields))
+								}
 							}
 						}
-					}
 
-					var fieldType string
-					if field.repeated {
-						fieldType += "_repeated_ "
-					}
-					typ := strings.ToLower(strings.TrimPrefix(field.GetType().String(), "TYPE_"))
-					switch typ {
-					case "message":
-						friendlyType := field.GetTypeName()[strings.LastIndex(field.GetTypeName(), ".")+1:]
-						fieldType += fmt.Sprintf("[`%s`](#%s)", friendlyType, heading(field.GetTypeName()))
-					case "enum":
-						// TODO(htdvisser): test this
-						if enum, ok := tree.enums[field.GetTypeName()]; ok {
-							usedEnums[field.GetTypeName()] = enum
+						var fieldType string
+						if field.repeated {
+							fieldType += "_repeated_ "
 						}
-						friendlyType := field.GetTypeName()[strings.LastIndex(field.GetTypeName(), ".")+1:]
-						fieldType += fmt.Sprintf("[`%s`](#%s)", friendlyType, heading(field.GetTypeName()))
-					default:
-						fieldType += fmt.Sprintf("`%s`", typ)
+						typ := strings.ToLower(strings.TrimPrefix(field.GetType().String(), "TYPE_"))
+						switch typ {
+						case "message":
+							friendlyType := field.GetTypeName()[strings.LastIndex(field.GetTypeName(), ".")+1:]
+							fieldType += fmt.Sprintf("[`%s`](#%s)", friendlyType, heading(field.GetTypeName()))
+						case "enum":
+							// TODO(htdvisser): test this
+							if enum, ok := tree.enums[field.GetTypeName()]; ok {
+								usedEnums[field.GetTypeName()] = enum
+							}
+							friendlyType := field.GetTypeName()[strings.LastIndex(field.GetTypeName(), ".")+1:]
+							fieldType += fmt.Sprintf("[`%s`](#%s)", friendlyType, heading(field.GetTypeName()))
+						default:
+							fieldType += fmt.Sprintf("`%s`", typ)
+						}
+						fmt.Fprintf(content, "| `%s` | %s | %s |\n", field.GetName(), fieldType, strings.Replace(field.comment, "\n", " ", -1))
 					}
-					fmt.Fprintf(content, "| %s | %s | %s |\n", field.GetName(), fieldType, strings.Replace(field.comment, "\n", " ", -1))
+					fmt.Fprintln(content)
 				}
-				fmt.Fprintln(content)
 			}
 		}
 
 		if len(usedEnums) > 0 {
-			fmt.Fprint(content, "# Used Enums\n\n")
+			fmt.Fprint(content, "## Used Enums\n\n")
 
 			var enumKeys []string
 			for key := range usedEnums {
@@ -204,7 +210,7 @@ func main() {
 			for _, enumKey := range enumKeys {
 				enum := usedEnums[enumKey]
 
-				fmt.Fprintf(content, "## `%s`\n\n", enum.key)
+				fmt.Fprintf(content, "### `%s`\n\n", enum.key)
 				if enum.comment != "" {
 					fmt.Fprintf(content, "%s\n\n", enum.comment)
 				}
@@ -213,7 +219,7 @@ func main() {
 					fmt.Fprintln(content, "| Value | Description |")
 					fmt.Fprintln(content, "| ----- | ----------- |")
 					for _, value := range enum.values {
-						fmt.Fprintf(content, "| %s | %s |\n", value.GetName(), strings.Replace(value.comment, "\n", " ", -1))
+						fmt.Fprintf(content, "| `%s` | %s |\n", value.GetName(), strings.Replace(value.comment, "\n", " ", -1))
 					}
 					fmt.Fprintln(content)
 				}
@@ -233,60 +239,6 @@ func main() {
 			Content: &contentString,
 		})
 	}
-
-	// for k, v := range tree.services {
-	// 	if v.comment != "" {
-	// 		debug("//", v.comment)
-	// 	}
-	// 	debug("Service", k, v.GoString())
-	// 	for _, v := range v.methods {
-	// 		if v.comment != "" {
-	// 			debug("//", v.comment)
-	// 		}
-	// 		debug("Method", v.GoString())
-	// 		for _, v := range v.endpoints {
-	// 			debug("Endpoint", v.GoString())
-	// 		}
-	// 	}
-	// }
-
-	// for k, v := range tree.messages {
-	// 	if v.comment != "" {
-	// 		debug("//", v.comment)
-	// 	}
-	// 	debug("Message", k, v.GoString())
-	// 	for _, v := range v.oneofs {
-	// 		debug("Oneof", v.GoString())
-	// 		for _, v := range v.fields {
-	// 			if v.comment != "" {
-	// 				debug("//", v.comment)
-	// 			}
-	// 			debug("Field", v.GoString())
-	// 		}
-	// 	}
-	// 	for _, v := range v.fields {
-	// 		if v.isOneOf {
-	// 			continue
-	// 		}
-	// 		if v.comment != "" {
-	// 			debug("//", v.comment)
-	// 		}
-	// 		debug("Field", v.GoString())
-	// 	}
-	// }
-
-	// for k, v := range tree.enums {
-	// 	if v.comment != "" {
-	// 		debug("//", v.comment)
-	// 	}
-	// 	debug("Enum", k, v.GoString())
-	// 	for _, v := range v.values {
-	// 		if v.comment != "" {
-	// 			debug("//", v.comment)
-	// 		}
-	// 		debug("Value", v.GoString())
-	// 	}
-	// }
 
 	// Send back the results.
 	data, err = proto.Marshal(g.Response)
