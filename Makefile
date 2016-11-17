@@ -5,9 +5,9 @@ SHELL = bash
 GIT_BRANCH = $(or $(CI_BUILD_REF_NAME) ,`git rev-parse --abbrev-ref HEAD 2>/dev/null`)
 GIT_COMMIT = $(or $(CI_BUILD_REF), `git rev-parse HEAD 2>/dev/null`)
 BUILD_DATE = $(or $(CI_BUILD_DATE), `date -u +%Y-%m-%dT%H:%M:%SZ`)
-GO_PATH = `echo $(GOPATH) | awk -F':' '{print $$1}'`
-PARENT_DIRECTORY= `dirname $(PWD)`
-GO_SRC = `pwd | xargs dirname | xargs dirname | xargs dirname`
+GO_PATH = $(shell echo $(GOPATH) | awk -F':' '{print $$1}')
+PARENT_DIRECTORY= $(shell dirname $(PWD))
+GO_SRC = $(shell pwd | xargs dirname | xargs dirname | xargs dirname)
 
 # All
 
