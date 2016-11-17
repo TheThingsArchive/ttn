@@ -41,7 +41,9 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 type DeviceIdentifier struct {
+	// The AppEUI is a unique, 8 byte identifier for the application a device belongs to.
 	AppEui *github_com_TheThingsNetwork_ttn_core_types.AppEUI `protobuf:"bytes,1,opt,name=app_eui,json=appEui,proto3,customtype=github.com/TheThingsNetwork/ttn/core/types.AppEUI" json:"app_eui,omitempty"`
+	// The DevEUI is a unique, 8 byte identifier for the device.
 	DevEui *github_com_TheThingsNetwork_ttn_core_types.DevEUI `protobuf:"bytes,2,opt,name=dev_eui,json=devEui,proto3,customtype=github.com/TheThingsNetwork/ttn/core/types.DevEUI" json:"dev_eui,omitempty"`
 }
 
@@ -51,21 +53,36 @@ func (*DeviceIdentifier) ProtoMessage()               {}
 func (*DeviceIdentifier) Descriptor() ([]byte, []int) { return fileDescriptorDevice, []int{0} }
 
 type Device struct {
-	AppEui   *github_com_TheThingsNetwork_ttn_core_types.AppEUI  `protobuf:"bytes,1,opt,name=app_eui,json=appEui,proto3,customtype=github.com/TheThingsNetwork/ttn/core/types.AppEUI" json:"app_eui,omitempty"`
-	DevEui   *github_com_TheThingsNetwork_ttn_core_types.DevEUI  `protobuf:"bytes,2,opt,name=dev_eui,json=devEui,proto3,customtype=github.com/TheThingsNetwork/ttn/core/types.DevEUI" json:"dev_eui,omitempty"`
-	AppId    string                                              `protobuf:"bytes,3,opt,name=app_id,json=appId,proto3" json:"app_id,omitempty"`
-	DevId    string                                              `protobuf:"bytes,4,opt,name=dev_id,json=devId,proto3" json:"dev_id,omitempty"`
-	DevAddr  *github_com_TheThingsNetwork_ttn_core_types.DevAddr `protobuf:"bytes,5,opt,name=dev_addr,json=devAddr,proto3,customtype=github.com/TheThingsNetwork/ttn/core/types.DevAddr" json:"dev_addr,omitempty"`
-	NwkSKey  *github_com_TheThingsNetwork_ttn_core_types.NwkSKey `protobuf:"bytes,6,opt,name=nwk_s_key,json=nwkSKey,proto3,customtype=github.com/TheThingsNetwork/ttn/core/types.NwkSKey" json:"nwk_s_key,omitempty"`
-	AppSKey  *github_com_TheThingsNetwork_ttn_core_types.AppSKey `protobuf:"bytes,7,opt,name=app_s_key,json=appSKey,proto3,customtype=github.com/TheThingsNetwork/ttn/core/types.AppSKey" json:"app_s_key,omitempty"`
-	AppKey   *github_com_TheThingsNetwork_ttn_core_types.AppKey  `protobuf:"bytes,8,opt,name=app_key,json=appKey,proto3,customtype=github.com/TheThingsNetwork/ttn/core/types.AppKey" json:"app_key,omitempty"`
-	FCntUp   uint32                                              `protobuf:"varint,9,opt,name=f_cnt_up,json=fCntUp,proto3" json:"f_cnt_up,omitempty"`
-	FCntDown uint32                                              `protobuf:"varint,10,opt,name=f_cnt_down,json=fCntDown,proto3" json:"f_cnt_down,omitempty"`
-	// Options
-	DisableFCntCheck      bool   `protobuf:"varint,11,opt,name=disable_f_cnt_check,json=disableFCntCheck,proto3" json:"disable_f_cnt_check,omitempty"`
-	Uses32BitFCnt         bool   `protobuf:"varint,12,opt,name=uses32_bit_f_cnt,json=uses32BitFCnt,proto3" json:"uses32_bit_f_cnt,omitempty"`
+	// The AppEUI is a unique, 8 byte identifier for the application a device belongs to.
+	AppEui *github_com_TheThingsNetwork_ttn_core_types.AppEUI `protobuf:"bytes,1,opt,name=app_eui,json=appEui,proto3,customtype=github.com/TheThingsNetwork/ttn/core/types.AppEUI" json:"app_eui,omitempty"`
+	// The DevEUI is a unique, 8 byte identifier for the device.
+	DevEui *github_com_TheThingsNetwork_ttn_core_types.DevEUI `protobuf:"bytes,2,opt,name=dev_eui,json=devEui,proto3,customtype=github.com/TheThingsNetwork/ttn/core/types.DevEUI" json:"dev_eui,omitempty"`
+	// The AppID is a unique identifier for the application a device belongs to. It can contain lowercase letters, numbers, - and _.
+	AppId string `protobuf:"bytes,3,opt,name=app_id,json=appId,proto3" json:"app_id,omitempty"`
+	// The DevID is a unique identifier for the device. It can contain lowercase letters, numbers, - and _.
+	DevId string `protobuf:"bytes,4,opt,name=dev_id,json=devId,proto3" json:"dev_id,omitempty"`
+	// The DevAddr is a dynamic, 4 byte session address for the device.
+	DevAddr *github_com_TheThingsNetwork_ttn_core_types.DevAddr `protobuf:"bytes,5,opt,name=dev_addr,json=devAddr,proto3,customtype=github.com/TheThingsNetwork/ttn/core/types.DevAddr" json:"dev_addr,omitempty"`
+	// The NwkSKey is a 16 byte session key that is known by the device and the network. It is used for routing and MAC related functionality.
+	// This key is negotiated during the OTAA join procedure, or statically configured using ABP.
+	NwkSKey *github_com_TheThingsNetwork_ttn_core_types.NwkSKey `protobuf:"bytes,6,opt,name=nwk_s_key,json=nwkSKey,proto3,customtype=github.com/TheThingsNetwork/ttn/core/types.NwkSKey" json:"nwk_s_key,omitempty"`
+	// The AppSKey is a 16 byte session key that is known by the device and the application. It is used for payload encryption.
+	// This key is negotiated during the OTAA join procedure, or statically configured using ABP.
+	AppSKey *github_com_TheThingsNetwork_ttn_core_types.AppSKey `protobuf:"bytes,7,opt,name=app_s_key,json=appSKey,proto3,customtype=github.com/TheThingsNetwork/ttn/core/types.AppSKey" json:"app_s_key,omitempty"`
+	// The AppKey is a 16 byte static key that is known by the device and the application. It is used for negotiating session keys (OTAA).
+	AppKey *github_com_TheThingsNetwork_ttn_core_types.AppKey `protobuf:"bytes,8,opt,name=app_key,json=appKey,proto3,customtype=github.com/TheThingsNetwork/ttn/core/types.AppKey" json:"app_key,omitempty"`
+	// FCntUp is the uplink frame counter for a device session.
+	FCntUp uint32 `protobuf:"varint,9,opt,name=f_cnt_up,json=fCntUp,proto3" json:"f_cnt_up,omitempty"`
+	// FCntDown is the downlink frame counter for a device session.
+	FCntDown uint32 `protobuf:"varint,10,opt,name=f_cnt_down,json=fCntDown,proto3" json:"f_cnt_down,omitempty"`
+	// The DisableFCntCheck option disables the frame counter check. Disabling this makes the device vulnerable to replay attacks, but makes ABP slightly easier.
+	DisableFCntCheck bool `protobuf:"varint,11,opt,name=disable_f_cnt_check,json=disableFCntCheck,proto3" json:"disable_f_cnt_check,omitempty"`
+	// The Uses32BitFCnt option indicates that the device keeps track of full 32 bit frame counters. As only the 16 lsb are actually transmitted, the 16 msb will have to be inferred.
+	Uses32BitFCnt bool `protobuf:"varint,12,opt,name=uses32_bit_f_cnt,json=uses32BitFCnt,proto3" json:"uses32_bit_f_cnt,omitempty"`
+	// The ActivationContstraints are used to allocate a device address for a device.
+	// There are different prefixes for `otaa`, `abp`, `world`, `local`, `private`, `testing`.
 	ActivationConstraints string `protobuf:"bytes,13,opt,name=activation_constraints,json=activationConstraints,proto3" json:"activation_constraints,omitempty"`
-	// Other
+	// When the device was last seen (Unix nanoseconds)
 	LastSeen int64 `protobuf:"varint,21,opt,name=last_seen,json=lastSeen,proto3" json:"last_seen,omitempty"`
 }
 

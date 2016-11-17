@@ -153,12 +153,21 @@ func (m *ApplicationIdentifier) String() string            { return proto.Compac
 func (*ApplicationIdentifier) ProtoMessage()               {}
 func (*ApplicationIdentifier) Descriptor() ([]byte, []int) { return fileDescriptorHandler, []int{3} }
 
+// The Application settings
 type Application struct {
-	AppId     string `protobuf:"bytes,1,opt,name=app_id,json=appId,proto3" json:"app_id,omitempty"`
-	Decoder   string `protobuf:"bytes,2,opt,name=decoder,proto3" json:"decoder,omitempty"`
+	AppId string `protobuf:"bytes,1,opt,name=app_id,json=appId,proto3" json:"app_id,omitempty"`
+	// The decoder is a JavaScript function that decodes a byte array to an object.
+	Decoder string `protobuf:"bytes,2,opt,name=decoder,proto3" json:"decoder,omitempty"`
+	// The converter is a JavaScript function that can be used to convert values
+	// in the object returned from the decoder. This can for example be useful to
+	// convert a voltage to a temperature.
 	Converter string `protobuf:"bytes,3,opt,name=converter,proto3" json:"converter,omitempty"`
+	// The validator is a JavaScript function that checks the validity of the
+	// object returned by the decoder or converter. If validation fails, the
+	// message is dropped.
 	Validator string `protobuf:"bytes,4,opt,name=validator,proto3" json:"validator,omitempty"`
-	Encoder   string `protobuf:"bytes,5,opt,name=encoder,proto3" json:"encoder,omitempty"`
+	// The encoder is a JavaScript function that encodes an object to a byte array.
+	Encoder string `protobuf:"bytes,5,opt,name=encoder,proto3" json:"encoder,omitempty"`
 }
 
 func (m *Application) Reset()                    { *m = Application{} }
@@ -176,9 +185,12 @@ func (m *DeviceIdentifier) String() string            { return proto.CompactText
 func (*DeviceIdentifier) ProtoMessage()               {}
 func (*DeviceIdentifier) Descriptor() ([]byte, []int) { return fileDescriptorHandler, []int{5} }
 
+// The Device settings
 type Device struct {
 	AppId string `protobuf:"bytes,1,opt,name=app_id,json=appId,proto3" json:"app_id,omitempty"`
 	DevId string `protobuf:"bytes,2,opt,name=dev_id,json=devId,proto3" json:"dev_id,omitempty"`
+	// The device can be of different kinds
+	//
 	// Types that are valid to be assigned to Device:
 	//	*Device_LorawanDevice
 	Device isDevice_Device `protobuf_oneof:"device"`
@@ -286,11 +298,16 @@ func (m *DeviceList) GetDevices() []*Device {
 	return nil
 }
 
+// DryDownlinkMessage is a simulated message to test downlink processing
 type DryDownlinkMessage struct {
-	Payload []byte       `protobuf:"bytes,1,opt,name=payload,proto3" json:"payload,omitempty"`
-	Fields  string       `protobuf:"bytes,2,opt,name=fields,proto3" json:"fields,omitempty"`
-	App     *Application `protobuf:"bytes,3,opt,name=app" json:"app,omitempty"`
-	Port    uint32       `protobuf:"varint,4,opt,name=port,proto3" json:"port,omitempty"`
+	// The binary payload to use
+	Payload []byte `protobuf:"bytes,1,opt,name=payload,proto3" json:"payload,omitempty"`
+	// JSON-encoded object with fields to encode
+	Fields string `protobuf:"bytes,2,opt,name=fields,proto3" json:"fields,omitempty"`
+	// The Application containing the payload functions that should be executed
+	App *Application `protobuf:"bytes,3,opt,name=app" json:"app,omitempty"`
+	// The port number that should be passed to the payload function
+	Port uint32 `protobuf:"varint,4,opt,name=port,proto3" json:"port,omitempty"`
 }
 
 func (m *DryDownlinkMessage) Reset()                    { *m = DryDownlinkMessage{} }
@@ -305,10 +322,14 @@ func (m *DryDownlinkMessage) GetApp() *Application {
 	return nil
 }
 
+// DryUplinkMessage is a simulated message to test uplink processing
 type DryUplinkMessage struct {
-	Payload []byte       `protobuf:"bytes,1,opt,name=payload,proto3" json:"payload,omitempty"`
-	App     *Application `protobuf:"bytes,2,opt,name=app" json:"app,omitempty"`
-	Port    uint32       `protobuf:"varint,3,opt,name=port,proto3" json:"port,omitempty"`
+	// The binary payload to use
+	Payload []byte `protobuf:"bytes,1,opt,name=payload,proto3" json:"payload,omitempty"`
+	// The Application containing the payload functions that should be executed
+	App *Application `protobuf:"bytes,2,opt,name=app" json:"app,omitempty"`
+	// The port number that should be passed to the payload function
+	Port uint32 `protobuf:"varint,3,opt,name=port,proto3" json:"port,omitempty"`
 }
 
 func (m *DryUplinkMessage) Reset()                    { *m = DryUplinkMessage{} }
@@ -335,11 +356,16 @@ func (m *LogEntry) String() string            { return proto.CompactTextString(m
 func (*LogEntry) ProtoMessage()               {}
 func (*LogEntry) Descriptor() ([]byte, []int) { return fileDescriptorHandler, []int{10} }
 
+// DryUplinkResult is the result from an uplink simulation
 type DryUplinkResult struct {
-	Payload []byte      `protobuf:"bytes,1,opt,name=payload,proto3" json:"payload,omitempty"`
-	Fields  string      `protobuf:"bytes,2,opt,name=fields,proto3" json:"fields,omitempty"`
-	Valid   bool        `protobuf:"varint,3,opt,name=valid,proto3" json:"valid,omitempty"`
-	Logs    []*LogEntry `protobuf:"bytes,4,rep,name=logs" json:"logs,omitempty"`
+	// The binary payload
+	Payload []byte `protobuf:"bytes,1,opt,name=payload,proto3" json:"payload,omitempty"`
+	// The decoded fields
+	Fields string `protobuf:"bytes,2,opt,name=fields,proto3" json:"fields,omitempty"`
+	// Was validation of the message successful
+	Valid bool `protobuf:"varint,3,opt,name=valid,proto3" json:"valid,omitempty"`
+	// Logs that have been generated while processing
+	Logs []*LogEntry `protobuf:"bytes,4,rep,name=logs" json:"logs,omitempty"`
 }
 
 func (m *DryUplinkResult) Reset()                    { *m = DryUplinkResult{} }
@@ -354,9 +380,12 @@ func (m *DryUplinkResult) GetLogs() []*LogEntry {
 	return nil
 }
 
+// DryDownlinkResult is the result from a downlink simulation
 type DryDownlinkResult struct {
-	Payload []byte      `protobuf:"bytes,1,opt,name=payload,proto3" json:"payload,omitempty"`
-	Logs    []*LogEntry `protobuf:"bytes,2,rep,name=logs" json:"logs,omitempty"`
+	// The payload that was encoded
+	Payload []byte `protobuf:"bytes,1,opt,name=payload,proto3" json:"payload,omitempty"`
+	// Logs that have been generated while processing
+	Logs []*LogEntry `protobuf:"bytes,2,rep,name=logs" json:"logs,omitempty"`
 }
 
 func (m *DryDownlinkResult) Reset()                    { *m = DryDownlinkResult{} }
@@ -495,15 +524,25 @@ var _Handler_serviceDesc = grpc.ServiceDesc{
 // Client API for ApplicationManager service
 
 type ApplicationManagerClient interface {
+	// Applications should first be registered to the Handler with the `RegisterApplication` method
 	RegisterApplication(ctx context.Context, in *ApplicationIdentifier, opts ...grpc.CallOption) (*google_protobuf.Empty, error)
+	// GetApplication returns the application with the given identifier (app_id)
 	GetApplication(ctx context.Context, in *ApplicationIdentifier, opts ...grpc.CallOption) (*Application, error)
+	// SetApplication updates the settings for the application. All fields must be supplied.
 	SetApplication(ctx context.Context, in *Application, opts ...grpc.CallOption) (*google_protobuf.Empty, error)
+	// DeleteApplication deletes the application with the given identifier (app_id)
 	DeleteApplication(ctx context.Context, in *ApplicationIdentifier, opts ...grpc.CallOption) (*google_protobuf.Empty, error)
+	// GetDevice returns the device with the given identifier (app_id and dev_id)
 	GetDevice(ctx context.Context, in *DeviceIdentifier, opts ...grpc.CallOption) (*Device, error)
+	// SetDevice creates or updates a device. All fields must be supplied.
 	SetDevice(ctx context.Context, in *Device, opts ...grpc.CallOption) (*google_protobuf.Empty, error)
+	// DeleteDevice deletes the device with the given identifier (app_id and dev_id)
 	DeleteDevice(ctx context.Context, in *DeviceIdentifier, opts ...grpc.CallOption) (*google_protobuf.Empty, error)
+	// GetDevicesForApplication returns all devices that belong to the application with the given identifier (app_id)
 	GetDevicesForApplication(ctx context.Context, in *ApplicationIdentifier, opts ...grpc.CallOption) (*DeviceList, error)
+	// DryUplink simulates processing an uplink message and returns the result
 	DryDownlink(ctx context.Context, in *DryDownlinkMessage, opts ...grpc.CallOption) (*DryDownlinkResult, error)
+	// DryUplink simulates processing a downlink message and returns the result
 	DryUplink(ctx context.Context, in *DryUplinkMessage, opts ...grpc.CallOption) (*DryUplinkResult, error)
 }
 
@@ -608,15 +647,25 @@ func (c *applicationManagerClient) DryUplink(ctx context.Context, in *DryUplinkM
 // Server API for ApplicationManager service
 
 type ApplicationManagerServer interface {
+	// Applications should first be registered to the Handler with the `RegisterApplication` method
 	RegisterApplication(context.Context, *ApplicationIdentifier) (*google_protobuf.Empty, error)
+	// GetApplication returns the application with the given identifier (app_id)
 	GetApplication(context.Context, *ApplicationIdentifier) (*Application, error)
+	// SetApplication updates the settings for the application. All fields must be supplied.
 	SetApplication(context.Context, *Application) (*google_protobuf.Empty, error)
+	// DeleteApplication deletes the application with the given identifier (app_id)
 	DeleteApplication(context.Context, *ApplicationIdentifier) (*google_protobuf.Empty, error)
+	// GetDevice returns the device with the given identifier (app_id and dev_id)
 	GetDevice(context.Context, *DeviceIdentifier) (*Device, error)
+	// SetDevice creates or updates a device. All fields must be supplied.
 	SetDevice(context.Context, *Device) (*google_protobuf.Empty, error)
+	// DeleteDevice deletes the device with the given identifier (app_id and dev_id)
 	DeleteDevice(context.Context, *DeviceIdentifier) (*google_protobuf.Empty, error)
+	// GetDevicesForApplication returns all devices that belong to the application with the given identifier (app_id)
 	GetDevicesForApplication(context.Context, *ApplicationIdentifier) (*DeviceList, error)
+	// DryUplink simulates processing an uplink message and returns the result
 	DryDownlink(context.Context, *DryDownlinkMessage) (*DryDownlinkResult, error)
+	// DryUplink simulates processing a downlink message and returns the result
 	DryUplink(context.Context, *DryUplinkMessage) (*DryUplinkResult, error)
 }
 
