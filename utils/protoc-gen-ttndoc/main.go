@@ -93,13 +93,13 @@ func main() {
 
 		content := new(bytes.Buffer)
 
-		fmt.Fprintf(content, "## %s\n\n", service.GetName())
+		fmt.Fprintf(content, "# %s\n\n", service.GetName())
 		if service.comment != "" {
 			fmt.Fprintf(content, "%s\n\n", service.comment)
 		}
 
 		for _, method := range service.methods {
-			fmt.Fprintf(content, "### %s\n\n", method.GetName())
+			fmt.Fprintf(content, "## %s\n\n", method.GetName())
 			if method.comment != "" {
 				fmt.Fprintf(content, "%s\n\n", method.comment)
 			}
@@ -120,9 +120,9 @@ func main() {
 
 			if len(method.endpoints) != 0 {
 				if len(method.endpoints) == 1 {
-					fmt.Fprint(content, "#### HTTP Endpoint\n\n")
+					fmt.Fprint(content, "### HTTP Endpoint\n\n")
 				} else {
-					fmt.Fprint(content, "#### HTTP Endpoints\n\n")
+					fmt.Fprint(content, "### HTTP Endpoints\n\n")
 				}
 				for _, endpoint := range method.endpoints {
 					fmt.Fprintf(content, "- `%s` `%s`\n", endpoint.method, endpoint.url)
@@ -131,7 +131,7 @@ func main() {
 			}
 		}
 
-		fmt.Fprint(content, "## Used Messages\n\n")
+		fmt.Fprint(content, "# Used Messages\n\n")
 
 		var messageKeys []string
 		for key := range usedMessages {
@@ -141,7 +141,7 @@ func main() {
 
 		for _, messageKey := range messageKeys {
 			message := usedMessages[messageKey]
-			fmt.Fprintf(content, "### `%s`\n\n", message.key)
+			fmt.Fprintf(content, "## `%s`\n\n", message.key)
 			if strings.HasPrefix(messageKey, ".google") {
 				fmt.Fprintf(content, "%s\n\n", strings.SplitAfter(message.comment, ".")[0])
 			} else if message.comment != "" {
@@ -193,7 +193,7 @@ func main() {
 		}
 
 		if len(usedEnums) > 0 {
-			fmt.Fprint(content, "## Used Enums\n\n")
+			fmt.Fprint(content, "# Used Enums\n\n")
 
 			var enumKeys []string
 			for key := range usedEnums {
@@ -204,7 +204,7 @@ func main() {
 			for _, enumKey := range enumKeys {
 				enum := usedEnums[enumKey]
 
-				fmt.Fprintf(content, "### `%s`\n\n", enum.key)
+				fmt.Fprintf(content, "## `%s`\n\n", enum.key)
 				if enum.comment != "" {
 					fmt.Fprintf(content, "%s\n\n", enum.comment)
 				}

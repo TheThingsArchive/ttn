@@ -1,45 +1,45 @@
-## Discovery
+# Discovery
 
 The Discovery service is used to discover services within The Things Network.
 
-### Announce
+## Announce
 
 Announce your component to the Discovery server
 
 - Request: [`Announcement`](#discoveryannouncement)
 - Response: [`Empty`](#discoveryannouncement)
 
-### GetAll
+## GetAll
 
 Get all announcements for a specific service
 
 - Request: [`GetAllRequest`](#discoverygetallrequest)
 - Response: [`AnnouncementsResponse`](#discoverygetallrequest)
 
-### Get
+## Get
 
 Get a specific announcement
 
 - Request: [`GetRequest`](#discoverygetrequest)
 - Response: [`Announcement`](#discoverygetrequest)
 
-### AddMetadata
+## AddMetadata
 
 Add metadata to an announement
 
 - Request: [`MetadataRequest`](#discoverymetadatarequest)
 - Response: [`Empty`](#discoverymetadatarequest)
 
-### DeleteMetadata
+## DeleteMetadata
 
 Delete metadata from an announcement
 
 - Request: [`MetadataRequest`](#discoverymetadatarequest)
 - Response: [`Empty`](#discoverymetadatarequest)
 
-## Used Messages
+# Used Messages
 
-### `.discovery.Announcement`
+## `.discovery.Announcement`
 
 The Announcement of a service (also called component)
 
@@ -56,7 +56,7 @@ The Announcement of a service (also called component)
 | certificate | `string` | TLS Certificate (if TLS is enabled) |
 | metadata | _repeated_ [`Metadata`](#discoverymetadata) | Metadata for this component |
 
-### `.discovery.AnnouncementsResponse`
+## `.discovery.AnnouncementsResponse`
 
 A list of announcements
 
@@ -64,13 +64,13 @@ A list of announcements
 | ---------- | ---- | ----------- |
 | services | _repeated_ [`Announcement`](#discoveryannouncement) |  |
 
-### `.discovery.GetAllRequest`
+## `.discovery.GetAllRequest`
 
 | Field Name | Type | Description |
 | ---------- | ---- | ----------- |
 | service_name | `string` | The name of the service (router/broker/handler) |
 
-### `.discovery.GetRequest`
+## `.discovery.GetRequest`
 
 The identifier of the service that should be returned
 
@@ -79,7 +79,7 @@ The identifier of the service that should be returned
 | id | `string` | The ID of the service |
 | service_name | `string` | The name of the service (router/broker/handler) |
 
-### `.discovery.Metadata`
+## `.discovery.Metadata`
 
 Announcements have a list of Metadata
 
@@ -88,7 +88,7 @@ Announcements have a list of Metadata
 | key | [`Key`](#discoverymetadatakey) | The key indicates the metadata type |
 | value | `bytes` | The value depends on the key type |
 
-### `.discovery.MetadataRequest`
+## `.discovery.MetadataRequest`
 
 The metadata to add or remove from an announement
 
@@ -98,14 +98,14 @@ The metadata to add or remove from an announement
 | service_name | `string` | The name of the service (router/broker/handler) that should be modified |
 | metadata | [`Metadata`](#discoverymetadata) |  |
 
-### `.google.protobuf.Empty`
+## `.google.protobuf.Empty`
 
 A generic empty message that you can re-use to avoid defining duplicated
 empty messages in your APIs.
 
-## Used Enums
+# Used Enums
 
-### `.discovery.Metadata.Key`
+## `.discovery.Metadata.Key`
 
 The Key indicates the metadata type
 

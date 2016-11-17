@@ -1,118 +1,118 @@
-## ApplicationManager
+# ApplicationManager
 
 ApplicationManager manages application and device registrations on the Handler
 
-### RegisterApplication
+## RegisterApplication
 
 Applications should first be registered to the Handler with the `RegisterApplication` method
 
 - Request: [`ApplicationIdentifier`](#handlerapplicationidentifier)
 - Response: [`Empty`](#handlerapplicationidentifier)
 
-#### HTTP Endpoint
+### HTTP Endpoint
 
 - `POST` `/applications`
 
-### GetApplication
+## GetApplication
 
 GetApplication returns the application with the given identifier (app_id)
 
 - Request: [`ApplicationIdentifier`](#handlerapplicationidentifier)
 - Response: [`Application`](#handlerapplicationidentifier)
 
-#### HTTP Endpoint
+### HTTP Endpoint
 
 - `GET` `/applications/{app_id}`
 
-### SetApplication
+## SetApplication
 
 SetApplication updates the settings for the application. All fields must be supplied.
 
 - Request: [`Application`](#handlerapplication)
 - Response: [`Empty`](#handlerapplication)
 
-#### HTTP Endpoint
+### HTTP Endpoint
 
 - `POST` `/applications/{app_id}`
 
-### DeleteApplication
+## DeleteApplication
 
 DeleteApplication deletes the application with the given identifier (app_id)
 
 - Request: [`ApplicationIdentifier`](#handlerapplicationidentifier)
 - Response: [`Empty`](#handlerapplicationidentifier)
 
-#### HTTP Endpoint
+### HTTP Endpoint
 
 - `DELETE` `/applications/{app_id}`
 
-### GetDevice
+## GetDevice
 
 GetDevice returns the device with the given identifier (app_id and dev_id)
 
 - Request: [`DeviceIdentifier`](#handlerdeviceidentifier)
 - Response: [`Device`](#handlerdeviceidentifier)
 
-#### HTTP Endpoint
+### HTTP Endpoint
 
 - `GET` `/applications/{app_id}/devices/{dev_id}`
 
-### SetDevice
+## SetDevice
 
 SetDevice creates or updates a device. All fields must be supplied.
 
 - Request: [`Device`](#handlerdevice)
 - Response: [`Empty`](#handlerdevice)
 
-#### HTTP Endpoints
+### HTTP Endpoints
 
 - `POST` `/applications/{app_id}/devices/{dev_id}`
 - `POST` `/applications/{app_id}/devices`
 
-### DeleteDevice
+## DeleteDevice
 
 DeleteDevice deletes the device with the given identifier (app_id and dev_id)
 
 - Request: [`DeviceIdentifier`](#handlerdeviceidentifier)
 - Response: [`Empty`](#handlerdeviceidentifier)
 
-#### HTTP Endpoint
+### HTTP Endpoint
 
 - `DELETE` `/applications/{app_id}/devices/{dev_id}`
 
-### GetDevicesForApplication
+## GetDevicesForApplication
 
 GetDevicesForApplication returns all devices that belong to the application with the given identifier (app_id)
 
 - Request: [`ApplicationIdentifier`](#handlerapplicationidentifier)
 - Response: [`DeviceList`](#handlerapplicationidentifier)
 
-#### HTTP Endpoint
+### HTTP Endpoint
 
 - `GET` `/applications/{app_id}/devices`
 
-### DryDownlink
+## DryDownlink
 
 DryUplink simulates processing an uplink message and returns the result
 
 - Request: [`DryDownlinkMessage`](#handlerdrydownlinkmessage)
 - Response: [`DryDownlinkResult`](#handlerdrydownlinkmessage)
 
-### DryUplink
+## DryUplink
 
 DryUplink simulates processing a downlink message and returns the result
 
 - Request: [`DryUplinkMessage`](#handlerdryuplinkmessage)
 - Response: [`DryUplinkResult`](#handlerdryuplinkmessage)
 
-## Used Messages
+# Used Messages
 
-### `.google.protobuf.Empty`
+## `.google.protobuf.Empty`
 
 A generic empty message that you can re-use to avoid defining duplicated
 empty messages in your APIs.
 
-### `.handler.Application`
+## `.handler.Application`
 
 The Application settings
 
@@ -124,13 +124,13 @@ The Application settings
 | validator | `string` | The validator is a JavaScript function that checks the validity of the object returned by the decoder or converter. If validation fails, the message is dropped. |
 | encoder | `string` | The encoder is a JavaScript function that encodes an object to a byte array. |
 
-### `.handler.ApplicationIdentifier`
+## `.handler.ApplicationIdentifier`
 
 | Field Name | Type | Description |
 | ---------- | ---- | ----------- |
 | app_id | `string` |  |
 
-### `.handler.Device`
+## `.handler.Device`
 
 The Device settings
 
@@ -140,20 +140,20 @@ The Device settings
 | dev_id | `string` |  |
 | lorawan_device | [`Device`](#lorawandevice) |  |
 
-### `.handler.DeviceIdentifier`
+## `.handler.DeviceIdentifier`
 
 | Field Name | Type | Description |
 | ---------- | ---- | ----------- |
 | app_id | `string` |  |
 | dev_id | `string` |  |
 
-### `.handler.DeviceList`
+## `.handler.DeviceList`
 
 | Field Name | Type | Description |
 | ---------- | ---- | ----------- |
 | devices | _repeated_ [`Device`](#handlerdevice) |  |
 
-### `.handler.DryDownlinkMessage`
+## `.handler.DryDownlinkMessage`
 
 DryDownlinkMessage is a simulated message to test downlink processing
 
@@ -164,7 +164,7 @@ DryDownlinkMessage is a simulated message to test downlink processing
 | app | [`Application`](#handlerapplication) | The Application containing the payload functions that should be executed |
 | port | `uint32` | The port number that should be passed to the payload function |
 
-### `.handler.DryDownlinkResult`
+## `.handler.DryDownlinkResult`
 
 DryDownlinkResult is the result from a downlink simulation
 
@@ -173,7 +173,7 @@ DryDownlinkResult is the result from a downlink simulation
 | payload | `bytes` | The payload that was encoded |
 | logs | _repeated_ [`LogEntry`](#handlerlogentry) | Logs that have been generated while processing |
 
-### `.handler.DryUplinkMessage`
+## `.handler.DryUplinkMessage`
 
 DryUplinkMessage is a simulated message to test uplink processing
 
@@ -183,7 +183,7 @@ DryUplinkMessage is a simulated message to test uplink processing
 | app | [`Application`](#handlerapplication) | The Application containing the payload functions that should be executed |
 | port | `uint32` | The port number that should be passed to the payload function |
 
-### `.handler.DryUplinkResult`
+## `.handler.DryUplinkResult`
 
 DryUplinkResult is the result from an uplink simulation
 
@@ -194,14 +194,14 @@ DryUplinkResult is the result from an uplink simulation
 | valid | `bool` | Was validation of the message successful |
 | logs | _repeated_ [`LogEntry`](#handlerlogentry) | Logs that have been generated while processing |
 
-### `.handler.LogEntry`
+## `.handler.LogEntry`
 
 | Field Name | Type | Description |
 | ---------- | ---- | ----------- |
 | function | `string` | The location where the log was created (what payload function) |
 | fields | _repeated_ `string` | A list of JSON-encoded fields that were logged |
 
-### `.lorawan.Device`
+## `.lorawan.Device`
 
 | Field Name | Type | Description |
 | ---------- | ---- | ----------- |
