@@ -13,6 +13,8 @@ import (
 	"sort"
 	"strings"
 
+	"regexp"
+
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/protoc-gen-go/generator"
 	plugin "github.com/golang/protobuf/protoc-gen-go/plugin"
@@ -123,14 +125,30 @@ func main() {
 
 				if len(method.endpoints) != 0 {
 					if len(method.endpoints) == 1 {
-						fmt.Fprint(content, "### HTTP Endpoint\n\n")
+						fmt.Fprint(content, "#### HTTP Endpoint\n\n")
 					} else {
-						fmt.Fprint(content, "### HTTP Endpoints\n\n")
+						fmt.Fprint(content, "#### HTTP Endpoints\n\n")
 					}
 					for _, endpoint := range method.endpoints {
-						fmt.Fprintf(content, "- `%s` `%s`\n", endpoint.method, endpoint.url)
+						fmt.Fprintf(content, "- `%s` `%s`", endpoint.method, endpoint.url)
+						var params []string
+						for _, match := range regexp.MustCompile(`\{([a-z_]+)\}`).FindAllStringSubmatch(endpoint.url, -1) {
+							if match != nil && len(match) == 2 && match[1] != "" {
+								params = append(params, fmt.Sprintf("`%s`", match[1]))
+							}
+						}
+						if len(params) > 0 {
+							fmt.Fprintf(content, "(%s can be left out of the request)", strings.Join(params, ", "))
+						}
+						fmt.Fprintln(content)
 					}
 					fmt.Fprintln(content)
+
+					fmt.Fprint(content, "#### JSON Request Format\n\n")
+					fmt.Fprintf(content, "```json\n%s\n```\n\n", method.input.JSONExample(tree))
+
+					fmt.Fprint(content, "#### JSON Response Format\n\n")
+					fmt.Fprintf(content, "```json\n%s\n```\n\n", method.output.JSONExample(tree))
 				}
 			}
 		}

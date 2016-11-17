@@ -11,9 +11,23 @@ Applications should first be registered to the Handler with the `RegisterApplica
 - Request: [`ApplicationIdentifier`](#handlerapplicationidentifier)
 - Response: [`Empty`](#handlerapplicationidentifier)
 
-### HTTP Endpoint
+#### HTTP Endpoint
 
 - `POST` `/applications`
+
+#### JSON Request Format
+
+```json
+{
+  "app_id": "some-app-id"
+}
+```
+
+#### JSON Response Format
+
+```json
+{}
+```
 
 ### `GetApplication`
 
@@ -22,9 +36,29 @@ GetApplication returns the application with the given identifier (app_id)
 - Request: [`ApplicationIdentifier`](#handlerapplicationidentifier)
 - Response: [`Application`](#handlerapplicationidentifier)
 
-### HTTP Endpoint
+#### HTTP Endpoint
 
-- `GET` `/applications/{app_id}`
+- `GET` `/applications/{app_id}`(`app_id` can be left out of the request)
+
+#### JSON Request Format
+
+```json
+{
+  "app_id": "some-app-id"
+}
+```
+
+#### JSON Response Format
+
+```json
+{
+  "app_id": "some-app-id",
+  "converter": "function Converter(decoded, port) {...",
+  "decoder": "function Decoder(bytes, port) {...",
+  "encoder": "Encoder(object, port) {...",
+  "validator": "Validator(converted, port) {..."
+}
+```
 
 ### `SetApplication`
 
@@ -33,9 +67,27 @@ SetApplication updates the settings for the application. All fields must be supp
 - Request: [`Application`](#handlerapplication)
 - Response: [`Empty`](#handlerapplication)
 
-### HTTP Endpoint
+#### HTTP Endpoint
 
-- `POST` `/applications/{app_id}`
+- `POST` `/applications/{app_id}`(`app_id` can be left out of the request)
+
+#### JSON Request Format
+
+```json
+{
+  "app_id": "some-app-id",
+  "converter": "function Converter(decoded, port) {...",
+  "decoder": "function Decoder(bytes, port) {...",
+  "encoder": "Encoder(object, port) {...",
+  "validator": "Validator(converted, port) {..."
+}
+```
+
+#### JSON Response Format
+
+```json
+{}
+```
 
 ### `DeleteApplication`
 
@@ -44,9 +96,23 @@ DeleteApplication deletes the application with the given identifier (app_id)
 - Request: [`ApplicationIdentifier`](#handlerapplicationidentifier)
 - Response: [`Empty`](#handlerapplicationidentifier)
 
-### HTTP Endpoint
+#### HTTP Endpoint
 
-- `DELETE` `/applications/{app_id}`
+- `DELETE` `/applications/{app_id}`(`app_id` can be left out of the request)
+
+#### JSON Request Format
+
+```json
+{
+  "app_id": "some-app-id"
+}
+```
+
+#### JSON Response Format
+
+```json
+{}
+```
 
 ### `GetDevice`
 
@@ -55,9 +121,43 @@ GetDevice returns the device with the given identifier (app_id and dev_id)
 - Request: [`DeviceIdentifier`](#handlerdeviceidentifier)
 - Response: [`Device`](#handlerdeviceidentifier)
 
-### HTTP Endpoint
+#### HTTP Endpoint
 
-- `GET` `/applications/{app_id}/devices/{dev_id}`
+- `GET` `/applications/{app_id}/devices/{dev_id}`(`app_id`, `dev_id` can be left out of the request)
+
+#### JSON Request Format
+
+```json
+{
+  "app_id": "some-app-id",
+  "dev_id": "some-dev-id"
+}
+```
+
+#### JSON Response Format
+
+```json
+{
+  "app_id": "some-app-id",
+  "dev_id": "some-dev-id",
+  "lorawan_device": {
+    "activation_constraints": "local",
+    "app_eui": "0102030405060708",
+    "app_id": "some-app-id",
+    "app_key": "01020304050607080102030405060708",
+    "app_s_key": "01020304050607080102030405060708",
+    "dev_addr": "01020304",
+    "dev_eui": "0102030405060708",
+    "dev_id": "some-dev-id",
+    "disable_f_cnt_check": false,
+    "f_cnt_down": 0,
+    "f_cnt_up": 0,
+    "last_seen": 0,
+    "nwk_s_key": "01020304050607080102030405060708",
+    "uses32_bit_f_cnt": true
+  }
+}
+```
 
 ### `SetDevice`
 
@@ -66,10 +166,41 @@ SetDevice creates or updates a device. All fields must be supplied.
 - Request: [`Device`](#handlerdevice)
 - Response: [`Empty`](#handlerdevice)
 
-### HTTP Endpoints
+#### HTTP Endpoints
 
-- `POST` `/applications/{app_id}/devices/{dev_id}`
-- `POST` `/applications/{app_id}/devices`
+- `POST` `/applications/{app_id}/devices/{dev_id}`(`app_id`, `dev_id` can be left out of the request)
+- `POST` `/applications/{app_id}/devices`(`app_id` can be left out of the request)
+
+#### JSON Request Format
+
+```json
+{
+  "app_id": "some-app-id",
+  "dev_id": "some-dev-id",
+  "lorawan_device": {
+    "activation_constraints": "local",
+    "app_eui": "0102030405060708",
+    "app_id": "some-app-id",
+    "app_key": "01020304050607080102030405060708",
+    "app_s_key": "01020304050607080102030405060708",
+    "dev_addr": "01020304",
+    "dev_eui": "0102030405060708",
+    "dev_id": "some-dev-id",
+    "disable_f_cnt_check": false,
+    "f_cnt_down": 0,
+    "f_cnt_up": 0,
+    "last_seen": 0,
+    "nwk_s_key": "01020304050607080102030405060708",
+    "uses32_bit_f_cnt": true
+  }
+}
+```
+
+#### JSON Response Format
+
+```json
+{}
+```
 
 ### `DeleteDevice`
 
@@ -78,9 +209,24 @@ DeleteDevice deletes the device with the given identifier (app_id and dev_id)
 - Request: [`DeviceIdentifier`](#handlerdeviceidentifier)
 - Response: [`Empty`](#handlerdeviceidentifier)
 
-### HTTP Endpoint
+#### HTTP Endpoint
 
-- `DELETE` `/applications/{app_id}/devices/{dev_id}`
+- `DELETE` `/applications/{app_id}/devices/{dev_id}`(`app_id`, `dev_id` can be left out of the request)
+
+#### JSON Request Format
+
+```json
+{
+  "app_id": "some-app-id",
+  "dev_id": "some-dev-id"
+}
+```
+
+#### JSON Response Format
+
+```json
+{}
+```
 
 ### `GetDevicesForApplication`
 
@@ -89,9 +235,46 @@ GetDevicesForApplication returns all devices that belong to the application with
 - Request: [`ApplicationIdentifier`](#handlerapplicationidentifier)
 - Response: [`DeviceList`](#handlerapplicationidentifier)
 
-### HTTP Endpoint
+#### HTTP Endpoint
 
-- `GET` `/applications/{app_id}/devices`
+- `GET` `/applications/{app_id}/devices`(`app_id` can be left out of the request)
+
+#### JSON Request Format
+
+```json
+{
+  "app_id": "some-app-id"
+}
+```
+
+#### JSON Response Format
+
+```json
+{
+  "devices": [
+    {
+      "app_id": "some-app-id",
+      "dev_id": "some-dev-id",
+      "lorawan_device": {
+        "activation_constraints": "local",
+        "app_eui": "0102030405060708",
+        "app_id": "some-app-id",
+        "app_key": "01020304050607080102030405060708",
+        "app_s_key": "01020304050607080102030405060708",
+        "dev_addr": "01020304",
+        "dev_eui": "0102030405060708",
+        "dev_id": "some-dev-id",
+        "disable_f_cnt_check": false,
+        "f_cnt_down": 0,
+        "f_cnt_up": 0,
+        "last_seen": 0,
+        "nwk_s_key": "01020304050607080102030405060708",
+        "uses32_bit_f_cnt": true
+      }
+    }
+  ]
+}
+```
 
 ### `DryDownlink`
 
