@@ -26,10 +26,10 @@ type CacheOptions struct {
 
 // DefaultCacheOptions are the default CacheOptions
 var DefaultCacheOptions = CacheOptions{
-	ServiceCacheSize:       100,
-	ServiceCacheExpiration: 10 * time.Minute,
-	ListCacheSize:          100,
-	ListCacheExpiration:    10 * time.Second,
+	ServiceCacheSize:       1000,             // Total number of announcements to cache, thousand should be enough for now
+	ServiceCacheExpiration: 10 * time.Minute, // Items be updated by ListCache fetch anyway
+	ListCacheSize:          10,               // We actually only need 3: router/broker/handler
+	ListCacheExpiration:    10 * time.Second, // We can afford to fetch every 10 seconds
 }
 
 type serviceCacheKey struct {
