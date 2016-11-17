@@ -158,6 +158,10 @@ service ApplicationManager {
     option (google.api.http) = {
       post: "/applications/{app_id}"
       body: "*"
+      additional_bindings {
+				put: "/applications/{app_id}"
+        body: "*"
+			}
     };
   }
 
@@ -181,7 +185,15 @@ service ApplicationManager {
       post: "/applications/{app_id}/devices/{dev_id}"
       body: "*"
       additional_bindings {
+				put: "/applications/{app_id}/devices/{dev_id}"
+        body: "*"
+			}
+      additional_bindings {
 				post: "/applications/{app_id}/devices"
+        body: "*"
+			}
+      additional_bindings {
+				put: "/applications/{app_id}/devices"
         body: "*"
 			}
     };

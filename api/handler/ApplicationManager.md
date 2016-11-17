@@ -67,9 +67,10 @@ SetApplication updates the settings for the application. All fields must be supp
 - Request: [`Application`](#handlerapplication)
 - Response: [`Empty`](#handlerapplication)
 
-#### HTTP Endpoint
+#### HTTP Endpoints
 
 - `POST` `/applications/{app_id}`(`app_id` can be left out of the request)
+- `PUT` `/applications/{app_id}`(`app_id` can be left out of the request)
 
 #### JSON Request Format
 
@@ -169,7 +170,9 @@ SetDevice creates or updates a device. All fields must be supplied.
 #### HTTP Endpoints
 
 - `POST` `/applications/{app_id}/devices/{dev_id}`(`app_id`, `dev_id` can be left out of the request)
+- `PUT` `/applications/{app_id}/devices/{dev_id}`(`app_id`, `dev_id` can be left out of the request)
 - `POST` `/applications/{app_id}/devices`(`app_id` can be left out of the request)
+- `PUT` `/applications/{app_id}/devices`(`app_id` can be left out of the request)
 
 #### JSON Request Format
 
