@@ -213,7 +213,7 @@ func main() {
 					fmt.Fprintln(content, "| Value | Description |")
 					fmt.Fprintln(content, "| ----- | ----------- |")
 					for _, value := range enum.values {
-						fmt.Fprintf(content, "| %s | %s |\n", value.GetName(), value.comment)
+						fmt.Fprintf(content, "| %s | %s |\n", value.GetName(), strings.Replace(value.comment, "\n", " ", -1))
 					}
 					fmt.Fprintln(content)
 				}
