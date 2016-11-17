@@ -138,7 +138,7 @@ func main() {
 							}
 						}
 						if len(params) > 0 {
-							fmt.Fprintf(content, "(%s can be left out of the request)", strings.Join(params, ", "))
+							fmt.Fprintf(content, "(%s can be left out of the request body)", strings.Join(params, ", "))
 						}
 						fmt.Fprintln(content)
 					}

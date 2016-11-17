@@ -38,7 +38,7 @@ GetApplication returns the application with the given identifier (app_id)
 
 #### HTTP Endpoint
 
-- `GET` `/applications/{app_id}`(`app_id` can be left out of the request)
+- `GET` `/applications/{app_id}`(`app_id` can be left out of the request body)
 
 #### JSON Request Format
 
@@ -69,8 +69,8 @@ SetApplication updates the settings for the application. All fields must be supp
 
 #### HTTP Endpoints
 
-- `POST` `/applications/{app_id}`(`app_id` can be left out of the request)
-- `PUT` `/applications/{app_id}`(`app_id` can be left out of the request)
+- `POST` `/applications/{app_id}`(`app_id` can be left out of the request body)
+- `PUT` `/applications/{app_id}`(`app_id` can be left out of the request body)
 
 #### JSON Request Format
 
@@ -99,7 +99,7 @@ DeleteApplication deletes the application with the given identifier (app_id)
 
 #### HTTP Endpoint
 
-- `DELETE` `/applications/{app_id}`(`app_id` can be left out of the request)
+- `DELETE` `/applications/{app_id}`(`app_id` can be left out of the request body)
 
 #### JSON Request Format
 
@@ -124,7 +124,7 @@ GetDevice returns the device with the given identifier (app_id and dev_id)
 
 #### HTTP Endpoint
 
-- `GET` `/applications/{app_id}/devices/{dev_id}`(`app_id`, `dev_id` can be left out of the request)
+- `GET` `/applications/{app_id}/devices/{dev_id}`(`app_id`, `dev_id` can be left out of the request body)
 
 #### JSON Request Format
 
@@ -169,10 +169,10 @@ SetDevice creates or updates a device. All fields must be supplied.
 
 #### HTTP Endpoints
 
-- `POST` `/applications/{app_id}/devices/{dev_id}`(`app_id`, `dev_id` can be left out of the request)
-- `PUT` `/applications/{app_id}/devices/{dev_id}`(`app_id`, `dev_id` can be left out of the request)
-- `POST` `/applications/{app_id}/devices`(`app_id` can be left out of the request)
-- `PUT` `/applications/{app_id}/devices`(`app_id` can be left out of the request)
+- `POST` `/applications/{app_id}/devices/{dev_id}`(`app_id`, `dev_id` can be left out of the request body)
+- `PUT` `/applications/{app_id}/devices/{dev_id}`(`app_id`, `dev_id` can be left out of the request body)
+- `POST` `/applications/{app_id}/devices`(`app_id` can be left out of the request body)
+- `PUT` `/applications/{app_id}/devices`(`app_id` can be left out of the request body)
 
 #### JSON Request Format
 
@@ -214,7 +214,7 @@ DeleteDevice deletes the device with the given identifier (app_id and dev_id)
 
 #### HTTP Endpoint
 
-- `DELETE` `/applications/{app_id}/devices/{dev_id}`(`app_id`, `dev_id` can be left out of the request)
+- `DELETE` `/applications/{app_id}/devices/{dev_id}`(`app_id`, `dev_id` can be left out of the request body)
 
 #### JSON Request Format
 
@@ -240,7 +240,7 @@ GetDevicesForApplication returns all devices that belong to the application with
 
 #### HTTP Endpoint
 
-- `GET` `/applications/{app_id}/devices`(`app_id` can be left out of the request)
+- `GET` `/applications/{app_id}/devices`(`app_id` can be left out of the request body)
 
 #### JSON Request Format
 

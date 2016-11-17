@@ -20,7 +20,7 @@ Get all announcements for a specific service
 
 #### HTTP Endpoint
 
-- `GET` `/announcements/{service_name}`(`service_name` can be left out of the request)
+- `GET` `/announcements/{service_name}`(`service_name` can be left out of the request body)
 
 #### JSON Request Format
 
@@ -65,7 +65,7 @@ Get a specific announcement
 
 #### HTTP Endpoint
 
-- `GET` `/announcements/{service_name}/{id}`(`service_name`, `id` can be left out of the request)
+- `GET` `/announcements/{service_name}/{id}`(`service_name`, `id` can be left out of the request body)
 
 #### JSON Request Format
 
