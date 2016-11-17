@@ -9,63 +9,103 @@ package discovery;
 
 option go_package = "github.com/TheThingsNetwork/ttn/api/discovery";
 
+// Announcements have a list of Metadata
 message Metadata {
+
+  // In the future we will have to change this message to use a oneof.
+
+  // The Key indicates the metadata type
   enum Key {
+    // OTHER indicates arbitrary metadata. We currently don't allow this.
     OTHER = 0;
 
     // The value for PREFIX consists of 1 byte denoting the number of bits,
-    // followed by the prefix and enough trailing bits to fill 4 octets
-    PREFIX = 1; // For Brokers
+    // followed by the prefix and enough trailing bits to fill 4 octets.
+    // Only authorized brokers can announce PREFIX metadata.
+    PREFIX = 1;
 
-    // APP_EUI is used for announcing join handlers.
-    // The value for APP_EUI is the byte slice of the AppEUI string
-    APP_EUI = 2; // For Handlers
+    // APP_EUI is used for announcing join handlers. The value for APP_EUI
+    // is the byte slice of the AppEUI.
+    // Only authorized join handlers can announce APP_EUI metadata (and we
+    // don't have any of those yet).
+    APP_EUI = 2;
 
-    // APP_ID is used for announcing regular handlers
-    // The value for APP_ID is the byte slice of the AppID string
-    APP_ID = 3; // For Handlers
+    // APP_ID is used for announcing that this handler is responsible for
+    // a certain AppID. The value for APP_ID is the byte slice of the AppID
+    // string. This metadata can only be added if the requesting client is
+    // authorized to manage this AppID.
+    APP_ID = 3;
   }
+
+  // The key indicates the metadata type
   Key key = 1;
+
+  // The value depends on the key type
   bytes value = 2;
 }
 
+// The Announcement of a service (also called component)
 message Announcement {
-  string id = 1;              // ID
-  string service_name = 2;    // Service name/type: router/broker/handler
-  string service_version = 3; // Service version in the form "[version]-[commit] ([build date])"
-  string description = 4;     // Description of the component
-  string url         = 5;     // URL with documentation or more information about this component
-  bool   public      = 6;     // Indicates whether this service is part of The Things Network (the public community network)
-  string net_address = 11;    // Network address in the form "[hostname]:[port]"
-  string public_key  = 12;    // ECDSA public key of this component
-  string certificate = 13;    // TLS Certificate (if enabled)
+  // The ID of the component
+  string id = 1;
+  // The name of the component (router/broker/handler)
+  string service_name = 2;
+  // Service version in the form "[version]-[commit] ([build date])"
+  string service_version = 3;
+  // Description of the component
+  string description = 4;
+  // URL with documentation or more information about this component
+  string url         = 5;
+  // Indicates whether this service is part of The Things Network (the public community network)
+  bool   public      = 6;
+  // Comma-separated network addresses in the form "[hostname]:[port]" (currently we only use the first)
+  string net_address = 11;
+  // ECDSA public key of this component
+  string public_key  = 12;
+  // TLS Certificate (if TLS is enabled)
+  string certificate = 13;
+  // Metadata for this component
   repeated Metadata metadata = 21;
 }
 
 message GetAllRequest {
+  // The name of the service (router/broker/handler)
   string service_name = 1;
 }
 
+// The identifier of the service that should be returned
 message GetRequest {
+  // The ID of the service
   string id = 1;
+  // The name of the service (router/broker/handler)
   string service_name = 2;
 }
 
+// The metadata to add or remove from an announement
 message MetadataRequest {
+  // The ID of the service that should be modified
   string id = 1;
+  // The name of the service (router/broker/handler) that should be modified
   string service_name = 2;
   Metadata metadata = 11;
 }
 
+// A list of announcements
 message AnnouncementsResponse {
   repeated Announcement services = 1;
 }
 
+// The Discovery service is used to discover services within The Things Network.
 service Discovery {
+  // Announce your component to the Discovery server
   rpc Announce(Announcement) returns (google.protobuf.Empty);
+  // Get all announcements for a specific service
   rpc GetAll(GetAllRequest) returns (AnnouncementsResponse);
+  // Get a specific announcement
   rpc Get(GetRequest) returns (Announcement);
+  // Add metadata to an announement
   rpc AddMetadata(MetadataRequest) returns (google.protobuf.Empty);
+  // Delete metadata from an announcement
   rpc DeleteMetadata(MetadataRequest) returns (google.protobuf.Empty);
 }
 

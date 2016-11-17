@@ -1,0 +1,118 @@
+## Discovery
+
+The Discovery service is used to discover services within The Things Network.
+
+### Announce
+
+Announce your component to the Discovery server
+
+- Request: [`Announcement`](#discoveryannouncement)
+- Response: [`Empty`](#discoveryannouncement)
+
+### GetAll
+
+Get all announcements for a specific service
+
+- Request: [`GetAllRequest`](#discoverygetallrequest)
+- Response: [`AnnouncementsResponse`](#discoverygetallrequest)
+
+### Get
+
+Get a specific announcement
+
+- Request: [`GetRequest`](#discoverygetrequest)
+- Response: [`Announcement`](#discoverygetrequest)
+
+### AddMetadata
+
+Add metadata to an announement
+
+- Request: [`MetadataRequest`](#discoverymetadatarequest)
+- Response: [`Empty`](#discoverymetadatarequest)
+
+### DeleteMetadata
+
+Delete metadata from an announcement
+
+- Request: [`MetadataRequest`](#discoverymetadatarequest)
+- Response: [`Empty`](#discoverymetadatarequest)
+
+## Used Messages
+
+### `.discovery.Announcement`
+
+The Announcement of a service (also called component)
+
+| Field Name | Type | Description |
+| ---------- | ---- | ----------- |
+| id | `string` | The ID of the component |
+| service_name | `string` | The name of the component (router/broker/handler) |
+| service_version | `string` | Service version in the form "[version]-[commit] ([build date])" |
+| description | `string` | Description of the component |
+| url | `string` | URL with documentation or more information about this component |
+| public | `bool` | Indicates whether this service is part of The Things Network (the public community network) |
+| net_address | `string` | Comma-separated network addresses in the form "[hostname]:[port]" (currently we only use the first) |
+| public_key | `string` | ECDSA public key of this component |
+| certificate | `string` | TLS Certificate (if TLS is enabled) |
+| metadata | _repeated_ [`Metadata`](#discoverymetadata) | Metadata for this component |
+
+### `.discovery.AnnouncementsResponse`
+
+A list of announcements
+
+| Field Name | Type | Description |
+| ---------- | ---- | ----------- |
+| services | _repeated_ [`Announcement`](#discoveryannouncement) |  |
+
+### `.discovery.GetAllRequest`
+
+| Field Name | Type | Description |
+| ---------- | ---- | ----------- |
+| service_name | `string` | The name of the service (router/broker/handler) |
+
+### `.discovery.GetRequest`
+
+The identifier of the service that should be returned
+
+| Field Name | Type | Description |
+| ---------- | ---- | ----------- |
+| id | `string` | The ID of the service |
+| service_name | `string` | The name of the service (router/broker/handler) |
+
+### `.discovery.Metadata`
+
+Announcements have a list of Metadata
+
+| Field Name | Type | Description |
+| ---------- | ---- | ----------- |
+| key | [`Key`](#discoverymetadatakey) | The key indicates the metadata type |
+| value | `bytes` | The value depends on the key type |
+
+### `.discovery.MetadataRequest`
+
+The metadata to add or remove from an announement
+
+| Field Name | Type | Description |
+| ---------- | ---- | ----------- |
+| id | `string` | The ID of the service that should be modified |
+| service_name | `string` | The name of the service (router/broker/handler) that should be modified |
+| metadata | [`Metadata`](#discoverymetadata) |  |
+
+### `.google.protobuf.Empty`
+
+A generic empty message that you can re-use to avoid defining duplicated
+empty messages in your APIs.
+
+## Used Enums
+
+### `.discovery.Metadata.Key`
+
+The Key indicates the metadata type
+
+| Value | Description |
+| ----- | ----------- |
+| OTHER | OTHER indicates arbitrary metadata. We currently don't allow this. |
+| PREFIX | The value for PREFIX consists of 1 byte denoting the number of bits, followed by the prefix and enough trailing bits to fill 4 octets. Only authorized brokers can announce PREFIX metadata. |
+| APP_EUI | APP_EUI is used for announcing join handlers. The value for APP_EUI is the byte slice of the AppEUI. Only authorized join handlers can announce APP_EUI metadata (and we don't have any of those yet). |
+| APP_ID | APP_ID is used for announcing that this handler is responsible for a certain AppID. The value for APP_ID is the byte slice of the AppID string. This metadata can only be added if the requesting client is authorized to manage this AppID. |
+

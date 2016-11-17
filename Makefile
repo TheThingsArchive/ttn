@@ -51,6 +51,7 @@ api/%.pb.go: api/%.proto
 
 protodoc: $(PROTO_FILES)
 	protoc $(PROTOC_IMPORTS) --ttndoc_out=logtostderr=true,.handler.ApplicationManager=all:$(GO_SRC) `pwd`/api/handler/handler.proto
+	protoc $(PROTOC_IMPORTS) --ttndoc_out=logtostderr=true,.discovery.Discovery=all:$(GO_SRC) `pwd`/api/discovery/discovery.proto
 
 # Mocks
 
