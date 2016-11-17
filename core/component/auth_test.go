@@ -37,6 +37,11 @@ func TestParseAuthServer(t *testing.T) {
 		a.So(err, assertions.ShouldBeNil)
 		a.So(srv.url, assertions.ShouldEqual, "http://account.thethingsnetwork.org")
 	}
+	{
+		srv, err := parseAuthServer("http://localhost:9090/")
+		a.So(err, assertions.ShouldBeNil)
+		a.So(srv.url, assertions.ShouldEqual, "http://localhost:9090")
+	}
 }
 
 func TestInitAuthServers(t *testing.T) {

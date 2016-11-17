@@ -3,7 +3,7 @@ package component
 import (
 	"crypto/tls"
 	"fmt"
-	"regexp"
+	"net/url"
 	"time"
 
 	"github.com/TheThingsNetwork/go-account-lib/cache"
@@ -46,26 +46,17 @@ type authServer struct {
 }
 
 func parseAuthServer(str string) (srv authServer, err error) {
-	matches := AuthServerRegex.FindStringSubmatch(str)
-	if len(matches) != 5 || matches[4] == "" {
-		return srv, ErrNoAuthServerRegexMatch
+	url, err := url.Parse(str)
+	if err != nil {
+		return srv, err
 	}
-	return authServer{
-		url:      matches[1] + matches[4],
-		username: matches[2],
-		password: matches[3],
-	}, nil
+	srv.url = fmt.Sprintf("%s://%s", url.Scheme, url.Host)
+	if url.User != nil {
+		srv.username = url.User.Username()
+		srv.password, _ = url.User.Password()
+	}
+	return srv, nil
 }
-
-// AuthServerRegex gives the format of auth server configuration.
-// Format: [username[:password]@]domain
-// - usernames can contain lowercase letters, numbers, underscores and dashes
-// - passwords can contain uppercase and lowercase letters, numbers, and special characters
-// - domains can be http/https and can contain lowercase letters, numbers, dashes and dots
-var AuthServerRegex = regexp.MustCompile(`^(http[s]?://)(?:([0-9a-z_-]+)(?::([0-9A-Za-z-!"#$%&'()*+,.:;<=>?@[\]^_{|}~]+))?@)?([0-9a-z.-]+)/?$`)
-
-// ErrNoAuthServerRegexMatch is returned when an auth server
-var ErrNoAuthServerRegexMatch = errors.New("Account server did not match AuthServerRegex")
 
 func (c *Component) initAuthServers() error {
 	urlMap := make(map[string]string)
