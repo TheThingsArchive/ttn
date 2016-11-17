@@ -11,7 +11,7 @@ GO_SRC = $(shell pwd | xargs dirname | xargs dirname | xargs dirname)
 
 # All
 
-.PHONY: all build-deps deps dev-deps protos-clean protos mocks test cover-clean cover-deps cover coveralls fmt vet ttn ttnctl build link docs clean docker
+.PHONY: all build-deps deps dev-deps protos-clean protos protodoc mocks test cover-clean cover-deps cover coveralls fmt vet ttn ttnctl build link docs clean docker
 
 all: deps build
 
@@ -26,6 +26,7 @@ deps: build-deps
 dev-deps: deps
 	@command -v protoc-gen-gofast > /dev/null || go get github.com/gogo/protobuf/protoc-gen-gofast
 	@command -v protoc-gen-grpc-gateway > /dev/null || go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway
+	@command -v protoc-gen-ttndoc > /dev/null || go install github.com/TheThingsNetwork/ttn/utils/protoc-gen-ttndoc
 	@command -v mockgen > /dev/null || go get github.com/golang/mock/mockgen
 	@command -v golint > /dev/null || go get github.com/golang/lint/golint
 	@command -v forego > /dev/null || go get github.com/ddollar/forego
@@ -34,11 +35,9 @@ dev-deps: deps
 
 PROTO_FILES = $(shell find api -name "*.proto" -and -not -name ".git")
 COMPILED_PROTO_FILES = $(patsubst api%.proto, api%.pb.go, $(PROTO_FILES))
-PROTOC = protoc \
--I/usr/local/include \
--I$(GO_PATH)/src \
--I$(PARENT_DIRECTORY) \
--I$(GO_PATH)/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis \
+PROTOC_IMPORTS= -I/usr/local/include -I$(GO_PATH)/src -I$(PARENT_DIRECTORY) \
+-I$(GO_PATH)/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis
+PROTOC = protoc $(PROTOC_IMPORTS) \
 --gofast_out=Mgoogle/api/annotations.proto=github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis/google/api,plugins=grpc:$(GO_SRC) \
 --grpc-gateway_out=:$(GO_SRC) `pwd`/
 
@@ -49,6 +48,9 @@ protos: $(COMPILED_PROTO_FILES)
 
 api/%.pb.go: api/%.proto
 	$(PROTOC)$<
+
+protodoc: $(PROTO_FILES)
+	protoc $(PROTOC_IMPORTS) --ttndoc_out=logtostderr=true,.handler.ApplicationManager=all:$(GO_SRC) `pwd`/api/handler/handler.proto
 
 # Mocks
 
