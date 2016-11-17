@@ -1,6 +1,6 @@
 # Authentication
 
-Currently, there are two methods of authenticating to the gRPC APIs:
+Currently, there are two methods of authenticating to the gRPC and HTTP APIs:
 
 - Bearer token: OAuth 2.0 Bearer JSON Web Tokens (preferred)
 - Access keys: Application access keys (only for `ApplicationManager` API)
@@ -53,7 +53,7 @@ ctx := metadata.NewContext(context.Background(), md)
 
 For HTTP Endpoints, you should supply the `Authorization` header: `Authorization: Key <key>`.
 
-**Exampele:**
+**Example:**
 
 ```
 Authorization: Key ttn-account-preview.n4BAoKOGuK2hj7MXg_OVtpLO0BTJI8lLzt66UsvTlUvZPsi6FADOptnmSH3e3PuQzbLLEUhXxYhkxr34xyUqBQ
