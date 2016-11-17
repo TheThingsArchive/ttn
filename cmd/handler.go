@@ -58,6 +58,11 @@ var handlerCmd = &cobra.Command{
 			ctx.WithError(err).Fatal("Could not initialize component")
 		}
 
+		httpActive := viper.GetString("handler.http-address") != "" && viper.GetInt("handler.http-port") != 0
+		if httpActive && component.Identity.ApiAddress == "" {
+			component.Identity.ApiAddress = fmt.Sprintf("http://%s:%d", viper.GetString("handler.server-address-announce"), viper.GetInt("handler.http-port"))
+		}
+
 		// Handler
 		handler := handler.NewRedisHandler(
 			client,
@@ -101,7 +106,7 @@ var handlerCmd = &cobra.Command{
 		go grpc.Serve(lis)
 		defer grpc.Stop()
 
-		if viper.GetString("handler.http-address") != "" && viper.GetInt("handler.http-port") != 0 {
+		if httpActive {
 			proxyConn, err := component.Identity.Dial()
 			if err != nil {
 				ctx.WithError(err).Fatal("Could not start client for gRPC proxy")

@@ -36,6 +36,7 @@ Get all announcements for a specific service
 {
   "services": [
     {
+      "api_address": "http://eu.thethings.network:8084",
       "certificate": "-----BEGIN CERTIFICATE-----\n...",
       "description": "",
       "id": "ttn-handler-eu",
@@ -80,6 +81,7 @@ Get a specific announcement
 
 ```json
 {
+  "api_address": "http://eu.thethings.network:8084",
   "certificate": "-----BEGIN CERTIFICATE-----\n...",
   "description": "",
   "id": "ttn-handler-eu",
@@ -129,6 +131,7 @@ The Announcement of a service (also called component)
 | `net_address` | `string` | Comma-separated network addresses in the form "[hostname]:[port]" (currently we only use the first) |
 | `public_key` | `string` | ECDSA public key of this component |
 | `certificate` | `string` | TLS Certificate (if TLS is enabled) |
+| `api_address` | `string` | Contains the address where the HTTP API is exposed (if there is one) |
 | `metadata` | _repeated_ [`Metadata`](#discoverymetadata) | Metadata for this component |
 
 ### `.discovery.AnnouncementsResponse`

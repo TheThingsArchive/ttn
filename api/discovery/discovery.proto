@@ -65,6 +65,8 @@ message Announcement {
   string public_key  = 12;
   // TLS Certificate (if TLS is enabled)
   string certificate = 13;
+  // Contains the address where the HTTP API is exposed (if there is one)
+  string api_address = 14;
   // Metadata for this component
   repeated Metadata metadata = 21;
 }

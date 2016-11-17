@@ -11,6 +11,7 @@ import (
 var exampleValues = map[string]interface{}{
 	".discovery.*.id":                         "ttn-handler-eu",
 	".discovery.*.service_name":               "handler",
+	".discovery.Announcement.api_address":     "http://eu.thethings.network:8084",
 	".discovery.Announcement.certificate":     "-----BEGIN CERTIFICATE-----\n...",
 	".discovery.Announcement.net_address":     "eu.thethings.network:1904",
 	".discovery.Announcement.public_key":      "-----BEGIN PUBLIC KEY-----\n...",
@@ -20,10 +21,16 @@ var exampleValues = map[string]interface{}{
 	".discovery.Metadata.value":               "some-app-id",
 	".handler.*.app_id":                       "some-app-id",
 	".handler.*.dev_id":                       "some-dev-id",
+	".handler.*.fields":                       `{"light":100}`,
+	".handler.*.payload":                      "ZA==",
+	".handler.*.port":                         1,
 	".handler.Application.converter":          "function Converter(decoded, port) {...",
 	".handler.Application.decoder":            "function Decoder(bytes, port) {...",
 	".handler.Application.encoder":            "Encoder(object, port) {...",
 	".handler.Application.validator":          "Validator(converted, port) {...",
+	".handler.DryDownlinkMessage.payload":     "",
+	".handler.LogEntry.fields":                `["TTN",123]`,
+	".handler.LogEntry.function":              "decoder",
 	".lorawan.Device.activation_constraints":  "local",
 	".lorawan.Device.app_eui":                 "0102030405060708",
 	".lorawan.Device.app_id":                  "some-app-id",
@@ -34,12 +41,6 @@ var exampleValues = map[string]interface{}{
 	".lorawan.Device.dev_id":                  "some-dev-id",
 	".lorawan.Device.nwk_s_key":               "01020304050607080102030405060708",
 	".lorawan.Device.uses32_bit_f_cnt":        true,
-	".handler.*.port":                         1,
-	".handler.*.fields":                       `{"light":100}`,
-	".handler.LogEntry.function":              "decoder",
-	".handler.LogEntry.fields":                `["TTN",123]`,
-	".handler.*.payload":                      "ZA==",
-	".handler.DryDownlinkMessage.payload":     "",
 }
 
 func (m *message) MapExample(tree *tree) map[string]interface{} {

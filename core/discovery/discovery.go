@@ -78,6 +78,7 @@ func (d *discovery) Announce(in *pb.Announcement) error {
 	service.NetAddress = in.NetAddress
 	service.PublicKey = in.PublicKey
 	service.Certificate = in.Certificate
+	service.APIAddress = in.ApiAddress
 
 	return d.services.Set(service)
 }

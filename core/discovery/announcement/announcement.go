@@ -153,6 +153,7 @@ type Announcement struct {
 	NetAddress     string `redis:"net_address"`
 	PublicKey      string `redis:"public_key"`
 	Certificate    string `redis:"certificate"`
+	APIAddress     string `redis:"api_address"`
 	Metadata       []Metadata
 
 	CreatedAt time.Time `redis:"created_at"`
@@ -201,6 +202,7 @@ func (a Announcement) ToProto() *pb.Announcement {
 		NetAddress:     a.NetAddress,
 		PublicKey:      a.PublicKey,
 		Certificate:    a.Certificate,
+		ApiAddress:     a.APIAddress,
 		Metadata:       metadata,
 	}
 }
@@ -221,6 +223,7 @@ func FromProto(a *pb.Announcement) Announcement {
 		NetAddress:     a.NetAddress,
 		PublicKey:      a.PublicKey,
 		Certificate:    a.Certificate,
+		APIAddress:     a.ApiAddress,
 		Metadata:       metadata,
 	}
 }
