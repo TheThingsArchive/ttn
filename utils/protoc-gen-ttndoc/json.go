@@ -5,7 +5,6 @@ package main
 
 import (
 	"encoding/json"
-	"os"
 	"strings"
 )
 
@@ -54,7 +53,6 @@ func (m *message) MapExample(tree *tree) map[string]interface{} {
 		} else if exampleValue, ok := exampleValues[field.key[:strings.Index(field.key[1:], ".")+1]+".*."+field.GetName()]; ok {
 			val = exampleValue
 		} else {
-			os.Stderr.WriteString(field.key + "\n")
 			switch typ {
 			case "message":
 				if message, ok := tree.messages[field.GetTypeName()]; ok {
@@ -69,11 +67,12 @@ func (m *message) MapExample(tree *tree) map[string]interface{} {
 			case "bool":
 				val = false
 			case "bytes":
-				val = []byte{}
-			case "int64", "uint32":
+				val = ""
+			case "int64", "int32", "uint64", "uint32", "sint64", "sint32", "fixed64", "fixed32", "sfixed32", "sfixed64":
 				val = 0
+			case "double", "float":
+				val = 0.0
 			default:
-				os.Stderr.WriteString(typ + "\n")
 			}
 		}
 		if field.repeated {
