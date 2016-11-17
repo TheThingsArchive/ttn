@@ -28,6 +28,7 @@ services:
       - TTN_DISCOVERY_REDIS_ADDRESS=redis:6379
     ports:
       - "1900:1900"
+      - "8080:8080"
     volumes:
       - "./.env/:/root/.env/"
   router:
@@ -95,6 +96,7 @@ services:
       - TTN_HANDLER_AMQP_ADDRESS=rabbitmq:5672
     ports:
       - "1904:1904"
+      - "8084:8084"
     volumes:
       - "./.env/:/root/.env/"
   bridge:

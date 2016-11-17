@@ -172,7 +172,7 @@ func init() {
 	viper.BindPFlag("handler.server-port", handlerCmd.Flags().Lookup("server-port"))
 
 	handlerCmd.Flags().String("http-address", "0.0.0.0", "The IP address where the gRPC proxy should listen")
-	handlerCmd.Flags().Int("http-port", 0, "The port where the gRPC proxy should listen")
+	handlerCmd.Flags().Int("http-port", 8084, "The port where the gRPC proxy should listen")
 	viper.BindPFlag("handler.http-address", handlerCmd.Flags().Lookup("http-address"))
 	viper.BindPFlag("handler.http-port", handlerCmd.Flags().Lookup("http-port"))
 }

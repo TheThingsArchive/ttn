@@ -129,7 +129,7 @@ func init() {
 	viper.BindPFlag("discovery.master-auth-servers", discoveryCmd.Flags().Lookup("master-auth-servers"))
 
 	discoveryCmd.Flags().String("http-address", "0.0.0.0", "The IP address where the gRPC proxy should listen")
-	discoveryCmd.Flags().Int("http-port", 0, "The port where the gRPC proxy should listen")
+	discoveryCmd.Flags().Int("http-port", 8080, "The port where the gRPC proxy should listen")
 	viper.BindPFlag("discovery.http-address", discoveryCmd.Flags().Lookup("http-address"))
 	viper.BindPFlag("discovery.http-port", discoveryCmd.Flags().Lookup("http-port"))
 }
