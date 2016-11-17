@@ -219,6 +219,18 @@
 			"revisionTime": "2016-11-03T22:44:32Z"
 		},
 		{
+			"checksumSHA1": "lPJ5a2uV2CPHch++4zKkJ1au0sw=",
+			"path": "github.com/golang/protobuf/protoc-gen-go/generator",
+			"revision": "4bd1920723d7b7c925de087aa32e2187708897f7",
+			"revisionTime": "2016-11-09T07:27:36Z"
+		},
+		{
+			"checksumSHA1": "zps2+aJoFhpFf2F8TsU9zCGXL2c=",
+			"path": "github.com/golang/protobuf/protoc-gen-go/plugin",
+			"revision": "4bd1920723d7b7c925de087aa32e2187708897f7",
+			"revisionTime": "2016-11-09T07:27:36Z"
+		},
+		{
 			"checksumSHA1": "9wOTz0iWfOSTSTmUkoq0WYkiMdY=",
 			"path": "github.com/golang/protobuf/ptypes/empty",
 			"revision": "2bc9827a78f95c6665b5fe0abd1fd66b496ae2d8",
