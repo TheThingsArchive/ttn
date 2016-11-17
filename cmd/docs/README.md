@@ -65,12 +65,27 @@ ttn broker register prefix registers a prefix to this Broker
 **Options**
 
 ```
-      --cache                   Add a cache in front of the database
-      --redis-address string    Redis server and port (default "localhost:6379")
-      --redis-db int            Redis database
-      --server-address string   The IP address to listen for communication (default "0.0.0.0")
-      --server-port int         The port for communication (default 1900)
+      --cache                             Add a cache in front of the database
+      --http-address string               The IP address where the gRPC proxy should listen (default "0.0.0.0")
+      --http-port int                     The port where the gRPC proxy should listen (default 8080)
+      --master-auth-servers stringSlice   Auth servers that are allowed to manage this network (default [ttn-account])
+      --redis-address string              Redis server and port (default "localhost:6379")
+      --redis-db int                      Redis database
+      --server-address string             The IP address to listen for communication (default "0.0.0.0")
+      --server-port int                   The port for communication (default 1900)
 ```
+
+### ttn discovery gen-cert
+
+ttn gen-cert generates a TLS Certificate
+
+**Usage:** `ttn discovery gen-cert`
+
+### ttn discovery gen-keypair
+
+ttn gen-keypair generates a public/private keypair
+
+**Usage:** `ttn discovery gen-keypair`
 
 ## ttn handler
 
@@ -87,8 +102,8 @@ ttn broker register prefix registers a prefix to this Broker
       --amqp-username string             AMQP username (default "guest")
       --broker-id string                 The ID of the TTN Broker as announced in the Discovery server (default "dev")
       --http-address string              The IP address where the gRPC proxy should listen (default "0.0.0.0")
-      --http-port int                    The port where the gRPC proxy should listen
-      --mqtt-address string              MQTT host and port
+      --http-port int                    The port where the gRPC proxy should listen (default 8084)
+      --mqtt-address string              MQTT host and port. Leave empty to disable MQTT
       --mqtt-password string             MQTT password
       --mqtt-username string             MQTT username
       --redis-address string             Redis host and port (default "localhost:6379")

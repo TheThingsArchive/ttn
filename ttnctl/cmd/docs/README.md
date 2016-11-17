@@ -108,9 +108,11 @@ $ ttnctl applications pf
   INFO Connecting with Handler...
   INFO Found Application
   INFO Decoder function
-function Decoder(bytes) {
+function Decoder(bytes, port) {
   var decoded = {};
-  decoded.led = bytes[0];
+  if (port === 1) {
+    decoded.led = bytes[0];
+  }
   return decoded;
 }
   INFO No converter function
@@ -131,20 +133,24 @@ The functions are read from the supplied file or from STDIN.
 $ ttnctl applications pf set decoder
   INFO Discovering Handler...
   INFO Connecting with Handler...
-function Decoder(bytes) {
+function Decoder(bytes, port) {
   // Decode an uplink message from a buffer
   // (array) of bytes to an object of fields.
   var decoded = {};
 
-  // decoded.led = bytes[0];
+  // if (port === 1) {
+  //   decoded.led = bytes[0];
+  // }
 
   return decoded;
 }
 ########## Write your Decoder here and end with Ctrl+D (EOF):
-function Decoder(bytes) {
+function Decoder(bytes, port) {
   var decoded = {};
 
-  decoded.led = bytes[0];
+  // if (port === 1) {
+  //   decoded.led = bytes[0];
+  // }
 
   return decoded;
 }
