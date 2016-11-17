@@ -4,6 +4,7 @@
 syntax = "proto3";
 
 import "google/protobuf/empty.proto";
+import "google/api/annotations.proto";
 
 package discovery;
 
@@ -100,9 +101,17 @@ service Discovery {
   // Announce your component to the Discovery server
   rpc Announce(Announcement) returns (google.protobuf.Empty);
   // Get all announcements for a specific service
-  rpc GetAll(GetAllRequest) returns (AnnouncementsResponse);
+  rpc GetAll(GetAllRequest) returns (AnnouncementsResponse) {
+    option (google.api.http) = {
+      get: "/announcements/{service_name}"
+    };
+  }
   // Get a specific announcement
-  rpc Get(GetRequest) returns (Announcement);
+  rpc Get(GetRequest) returns (Announcement)  {
+    option (google.api.http) = {
+      get: "/announcements/{service_name}/{id}"
+    };
+  }
   // Add metadata to an announement
   rpc AddMetadata(MetadataRequest) returns (google.protobuf.Empty);
   // Delete metadata from an announcement

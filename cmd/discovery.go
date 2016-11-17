@@ -4,16 +4,21 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"net"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 
+	pb "github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/discovery"
 	"github.com/TheThingsNetwork/ttn/core/discovery/announcement"
+	"github.com/TheThingsNetwork/ttn/core/proxy"
 	"github.com/apex/log"
+	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
@@ -27,8 +32,9 @@ var discoveryCmd = &cobra.Command{
 	Long:  ``,
 	PreRun: func(cmd *cobra.Command, args []string) {
 		ctx.WithFields(log.Fields{
-			"Server":   fmt.Sprintf("%s:%d", viper.GetString("discovery.server-address"), viper.GetInt("discovery.server-port")),
-			"Database": fmt.Sprintf("%s/%d", viper.GetString("discovery.redis-address"), viper.GetInt("discovery.redis-db")),
+			"Server":     fmt.Sprintf("%s:%d", viper.GetString("discovery.server-address"), viper.GetInt("discovery.server-port")),
+			"HTTP Proxy": fmt.Sprintf("%s:%d", viper.GetString("discovery.http-address"), viper.GetInt("discovery.http-port")),
+			"Database":   fmt.Sprintf("%s/%d", viper.GetString("discovery.redis-address"), viper.GetInt("discovery.redis-db")),
 		}).Info("Initializing Discovery")
 	},
 	Run: func(cmd *cobra.Command, args []string) {
@@ -72,6 +78,29 @@ var discoveryCmd = &cobra.Command{
 		discovery.RegisterRPC(grpc)
 		go grpc.Serve(lis)
 
+		if viper.GetString("discovery.http-address") != "" && viper.GetInt("discovery.http-port") != 0 {
+			proxyConn, err := component.Identity.Dial()
+			if err != nil {
+				ctx.WithError(err).Fatal("Could not start client for gRPC proxy")
+			}
+			mux := runtime.NewServeMux()
+			netCtx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			pb.RegisterDiscoveryHandler(netCtx, mux, proxyConn)
+
+			prxy := proxy.WithLogger(mux, ctx)
+
+			go func() {
+				err := http.ListenAndServe(
+					fmt.Sprintf("%s:%d", viper.GetString("discovery.http-address"), viper.GetInt("discovery.http-port")),
+					prxy,
+				)
+				if err != nil {
+					ctx.WithError(err).Fatal("Error in gRPC proxy")
+				}
+			}()
+		}
+
 		sigChan := make(chan os.Signal)
 		signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 		ctx.WithField("signal", <-sigChan).Info("signal received")
@@ -98,4 +127,9 @@ func init() {
 
 	discoveryCmd.Flags().StringSlice("master-auth-servers", []string{"ttn-account"}, "Auth servers that are allowed to manage this network")
 	viper.BindPFlag("discovery.master-auth-servers", discoveryCmd.Flags().Lookup("master-auth-servers"))
+
+	discoveryCmd.Flags().String("http-address", "0.0.0.0", "The IP address where the gRPC proxy should listen")
+	discoveryCmd.Flags().Int("http-port", 0, "The port where the gRPC proxy should listen")
+	viper.BindPFlag("discovery.http-address", discoveryCmd.Flags().Lookup("http-address"))
+	viper.BindPFlag("discovery.http-port", discoveryCmd.Flags().Lookup("http-port"))
 }

@@ -18,12 +18,85 @@ Get all announcements for a specific service
 - Request: [`GetAllRequest`](#discoverygetallrequest)
 - Response: [`AnnouncementsResponse`](#discoverygetallrequest)
 
+#### HTTP Endpoint
+
+- `GET` `/announcements/{service_name}`(`service_name` can be left out of the request)
+
+#### JSON Request Format
+
+```json
+{
+  "service_name": "handler"
+}
+```
+
+#### JSON Response Format
+
+```json
+{
+  "services": [
+    {
+      "certificate": "-----BEGIN CERTIFICATE-----\n...",
+      "description": "",
+      "id": "ttn-handler-eu",
+      "metadata": [
+        {
+          "key": "APP_ID",
+          "value": "some-app-id"
+        }
+      ],
+      "net_address": "eu.thethings.network:1904",
+      "public": true,
+      "public_key": "-----BEGIN PUBLIC KEY-----\n...",
+      "service_name": "handler",
+      "service_version": "2.0.0-dev-abcdef...",
+      "url": ""
+    }
+  ]
+}
+```
+
 ### `Get`
 
 Get a specific announcement
 
 - Request: [`GetRequest`](#discoverygetrequest)
 - Response: [`Announcement`](#discoverygetrequest)
+
+#### HTTP Endpoint
+
+- `GET` `/announcements/{service_name}/{id}`(`service_name`, `id` can be left out of the request)
+
+#### JSON Request Format
+
+```json
+{
+  "id": "ttn-handler-eu",
+  "service_name": "handler"
+}
+```
+
+#### JSON Response Format
+
+```json
+{
+  "certificate": "-----BEGIN CERTIFICATE-----\n...",
+  "description": "",
+  "id": "ttn-handler-eu",
+  "metadata": [
+    {
+      "key": "APP_ID",
+      "value": "some-app-id"
+    }
+  ],
+  "net_address": "eu.thethings.network:1904",
+  "public": true,
+  "public_key": "-----BEGIN PUBLIC KEY-----\n...",
+  "service_name": "handler",
+  "service_version": "2.0.0-dev-abcdef...",
+  "url": ""
+}
+```
 
 ### `AddMetadata`
 
