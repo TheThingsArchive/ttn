@@ -49,8 +49,8 @@ var joinCmd = &cobra.Command{
 		}
 		devNonce := [2]byte{devNonceSlice[0], devNonceSlice[1]}
 
-		rtrClient := util.GetRouter(ctx)
-		defer rtrClient.Close()
+		rtrConn, rtrClient := util.GetRouter(ctx)
+		defer rtrConn.Close()
 
 		gatewayID := viper.GetString("gateway-id")
 		gatewayToken := viper.GetString("gateway-token")
@@ -67,13 +67,11 @@ var joinCmd = &cobra.Command{
 			}
 		}
 
-		gtwClient := rtrClient.ForGateway(gatewayID, func() string { return gatewayToken })
+		gtwClient := router.NewRouterClientForGateway(rtrClient, gatewayID, gatewayToken)
 		defer gtwClient.Close()
 
-		downlink, errChan, err := gtwClient.Subscribe()
-		if err != nil {
-			ctx.WithError(err).Fatal("Could not start downlink stream")
-		}
+		downlinkStream := router.NewMonitoredDownlinkStream(gtwClient)
+		defer downlinkStream.Close()
 
 		joinReq := &pb_lorawan.Message{
 			MHDR: pb_lorawan.MHDR{MType: pb_lorawan.MType_JOIN_REQUEST, Major: pb_lorawan.Major_LORAWAN_R1},
@@ -93,7 +91,10 @@ var joinCmd = &cobra.Command{
 		}
 		uplink.UnmarshalPayload()
 
-		err = gtwClient.SendUplink(uplink)
+		uplinkStream := router.NewMonitoredUplinkStream(gtwClient)
+		defer uplinkStream.Close()
+
+		err = uplinkStream.Send(uplink)
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not send uplink to Router")
 		}
@@ -103,10 +104,7 @@ var joinCmd = &cobra.Command{
 		ctx.Info("Sent uplink to Router")
 
 		select {
-		case err := <-errChan:
-			ctx.WithError(err).Fatal("Error in downlink")
-		case downlinkMessage := <-downlink:
-
+		case downlinkMessage := <-downlinkStream.Channel():
 			downlinkMessage.UnmarshalPayload()
 			resPhy := downlinkMessage.Message.GetLorawan().PHYPayload()
 			resPhy.DecryptJoinAcceptPayload(lorawan.AES128Key(appKey))

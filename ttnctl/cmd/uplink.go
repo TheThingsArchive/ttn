@@ -58,8 +58,8 @@ var uplinkCmd = &cobra.Command{
 			withDownlink = true
 		}
 
-		rtrClient := util.GetRouter(ctx)
-		defer rtrClient.Close()
+		rtrConn, rtrClient := util.GetRouter(ctx)
+		defer rtrConn.Close()
 
 		gatewayID := viper.GetString("gateway-id")
 		gatewayToken := viper.GetString("gateway-token")
@@ -76,16 +76,13 @@ var uplinkCmd = &cobra.Command{
 			}
 		}
 
-		gtwClient := rtrClient.ForGateway(gatewayID, func() string { return gatewayToken })
+		gtwClient := router.NewRouterClientForGateway(rtrClient, gatewayID, gatewayToken)
 		defer gtwClient.Close()
 
-		var downlink <-chan *router.DownlinkMessage
-		var errChan <-chan error
+		var downlinkStream router.DownlinkStream
 		if withDownlink {
-			downlink, errChan, err = gtwClient.Subscribe()
-			if err != nil {
-				ctx.WithError(err).Fatal("Could not start downlink stream")
-			}
+			downlinkStream = router.NewMonitoredDownlinkStream(gtwClient)
+			defer downlinkStream.Close()
 		}
 
 		m := &util.Message{}
@@ -93,7 +90,10 @@ var uplinkCmd = &cobra.Command{
 		m.SetMessage(confirmed, fCnt, payload)
 		bytes := m.Bytes()
 
-		err = gtwClient.SendUplink(&router.UplinkMessage{
+		uplinkStream := router.NewMonitoredUplinkStream(gtwClient)
+		defer uplinkStream.Close()
+
+		err = uplinkStream.Send(&router.UplinkMessage{
 			Payload:          bytes,
 			GatewayMetadata:  util.GetGatewayMetadata("ttnctl", 868100000),
 			ProtocolMetadata: util.GetProtocolMetadata("SF7BW125"),
@@ -106,11 +106,9 @@ var uplinkCmd = &cobra.Command{
 
 		ctx.Info("Sent uplink to Router")
 
-		if downlink != nil {
+		if downlinkStream != nil {
 			select {
-			case err := <-errChan:
-				ctx.WithError(err).Fatal("Error in downlink")
-			case downlinkMessage := <-downlink:
+			case downlinkMessage := <-downlinkStream.Channel():
 				if err := m.Unmarshal(downlinkMessage.Payload); err != nil {
 					ctx.WithError(err).Fatal("Could not unmarshal downlink")
 				}

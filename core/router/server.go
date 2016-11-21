@@ -5,29 +5,25 @@ package router
 
 import (
 	"fmt"
-	"io"
 
 	"github.com/TheThingsNetwork/go-account-lib/claims"
 	"github.com/TheThingsNetwork/ttn/api"
+	pb_gateway "github.com/TheThingsNetwork/ttn/api/gateway"
 	pb "github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/core/router/gateway"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/spf13/viper"
 	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 )
 
 type routerRPC struct {
 	router *router
+	pb.RouterStreamServer
 }
 
-func (r *routerRPC) gatewayFromContext(ctx context.Context) (gtw *gateway.Gateway, err error) {
-	md, err := api.MetadataFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
+func (r *routerRPC) gatewayFromMetadata(md metadata.MD) (gtw *gateway.Gateway, err error) {
 	gatewayID, err := api.IDFromMetadata(md)
 	if err != nil {
 		return nil, err
@@ -57,76 +53,56 @@ func (r *routerRPC) gatewayFromContext(ctx context.Context) (gtw *gateway.Gatewa
 	return gtw, nil
 }
 
-// GatewayStatus implements RouterServer interface (github.com/TheThingsNetwork/ttn/api/router)
-func (r *routerRPC) GatewayStatus(stream pb.Router_GatewayStatusServer) error {
-	gateway, err := r.gatewayFromContext(stream.Context())
+func (r *routerRPC) gatewayFromContext(ctx context.Context) (gtw *gateway.Gateway, err error) {
+	md, err := api.MetadataFromContext(ctx)
 	if err != nil {
-		return errors.BuildGRPCError(err)
+		return nil, err
 	}
-
-	for {
-		status, err := stream.Recv()
-		if err == io.EOF {
-			return stream.SendAndClose(&empty.Empty{})
-		}
-		if err != nil {
-			return err
-		}
-		if err := status.Validate(); err != nil {
-			return errors.BuildGRPCError(errors.Wrap(err, "Invalid Gateway Status"))
-		}
-		go r.router.HandleGatewayStatus(gateway.ID, status)
-	}
+	return r.gatewayFromMetadata(md)
 }
 
-// Uplink implements RouterServer interface (github.com/TheThingsNetwork/ttn/api/router)
-func (r *routerRPC) Uplink(stream pb.Router_UplinkServer) error {
-	gateway, err := r.gatewayFromContext(stream.Context())
+func (r *routerRPC) getUplink(md metadata.MD) (ch chan *pb.UplinkMessage, err error) {
+	gateway, err := r.gatewayFromMetadata(md)
 	if err != nil {
-		return errors.BuildGRPCError(err)
+		return nil, err
 	}
-
-	for {
-		uplink, err := stream.Recv()
-		if err == io.EOF {
-			return stream.SendAndClose(&empty.Empty{})
+	ch = make(chan *pb.UplinkMessage)
+	go func() {
+		for uplink := range ch {
+			r.router.HandleUplink(gateway.ID, uplink)
 		}
-		if err != nil {
-			return err
-		}
-		if err := uplink.Validate(); err != nil {
-			return errors.BuildGRPCError(errors.Wrap(err, "Invalid Uplink"))
-		}
-		go r.router.HandleUplink(gateway.ID, uplink)
-	}
+	}()
+	return
 }
 
-// Subscribe implements RouterServer interface (github.com/TheThingsNetwork/ttn/api/router)
-func (r *routerRPC) Subscribe(req *pb.SubscribeRequest, stream pb.Router_SubscribeServer) error {
-	gateway, err := r.gatewayFromContext(stream.Context())
+func (r *routerRPC) getGatewayStatus(md metadata.MD) (ch chan *pb_gateway.Status, err error) {
+	gateway, err := r.gatewayFromMetadata(md)
 	if err != nil {
-		return errors.BuildGRPCError(err)
+		return nil, err
 	}
+	ch = make(chan *pb_gateway.Status)
+	go func() {
+		for status := range ch {
+			r.router.HandleGatewayStatus(gateway.ID, status)
+		}
+	}()
+	return
+}
 
+func (r *routerRPC) getDownlink(md metadata.MD) (ch <-chan *pb.DownlinkMessage, cancel func(), err error) {
+	gateway, err := r.gatewayFromMetadata(md)
+	if err != nil {
+		return nil, nil, err
+	}
+	ch = make(chan *pb.DownlinkMessage)
+	cancel = func() {
+		r.router.UnsubscribeDownlink(gateway.ID)
+	}
 	downlinkChannel, err := r.router.SubscribeDownlink(gateway.ID)
 	if err != nil {
-		return errors.BuildGRPCError(err)
+		return nil, nil, err
 	}
-	defer r.router.UnsubscribeDownlink(gateway.ID)
-
-	for {
-		if downlinkChannel == nil {
-			return nil
-		}
-		select {
-		case <-stream.Context().Done():
-			return stream.Context().Err()
-		case downlink := <-downlinkChannel:
-			if err := stream.Send(downlink); err != nil {
-				return err
-			}
-		}
-	}
+	return downlinkChannel, cancel, nil
 }
 
 // Activate implements RouterServer interface (github.com/TheThingsNetwork/ttn/api/router)
@@ -143,6 +119,10 @@ func (r *routerRPC) Activate(ctx context.Context, req *pb.DeviceActivationReques
 
 // RegisterRPC registers this router as a RouterServer (github.com/TheThingsNetwork/ttn/api/router)
 func (r *router) RegisterRPC(s *grpc.Server) {
-	server := &routerRPC{r}
+	server := &routerRPC{router: r}
+	server.SetLogger(api.Apex(r.Ctx))
+	server.UplinkChanFunc = server.getUplink
+	server.DownlinkChanFunc = server.getDownlink
+	server.GatewayStatusChanFunc = server.getGatewayStatus
 	pb.RegisterRouterServer(s, server)
 }
