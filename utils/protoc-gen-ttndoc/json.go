@@ -18,7 +18,7 @@ var exampleValues = map[string]interface{}{
 	".discovery.Announcement.public":          true,
 	".discovery.Announcement.service_version": "2.0.0-dev-abcdef...",
 	".discovery.Metadata.key":                 "APP_ID",
-	".discovery.Metadata.value":               "some-app-id",
+	".discovery.Metadata.value":               "c29tZS1hcHAtaWQ=",
 	".handler.*.app_id":                       "some-app-id",
 	".handler.*.dev_id":                       "some-dev-id",
 	".handler.*.fields":                       `{"light":100}`,
