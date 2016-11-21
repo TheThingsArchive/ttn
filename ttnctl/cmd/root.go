@@ -31,7 +31,7 @@ var RootCmd = &cobra.Command{
 	Long:  `ttnctl controls The Things Network from the command line.`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		var logLevel = log.InfoLevel
-		if debug {
+		if viper.GetBool("debug") {
 			logLevel = log.DebugLevel
 		}
 		ctx = &log.Logger{
@@ -39,7 +39,7 @@ var RootCmd = &cobra.Command{
 			Handler: cliHandler.New(os.Stdout),
 		}
 
-		if debug {
+		if viper.GetBool("debug") {
 			util.PrintConfig(ctx, true)
 		}
 
@@ -64,7 +64,6 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.ttnctl.yml)")
-	RootCmd.PersistentFlags().BoolVarP(&debug, "debug", "d", false, "Enable debug mode")
 
 	RootCmd.PersistentFlags().StringVar(&dataDir, "data", "", "directory where ttnctl stores data (default is $HOME/.ttnctl)")
 	viper.BindPFlag("data", RootCmd.PersistentFlags().Lookup("data"))
@@ -140,6 +139,8 @@ func initConfig() {
 	viper.SetEnvPrefix("ttnctl") // set environment prefix
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
 	viper.AutomaticEnv()
+
+	viper.BindEnv("debug")
 
 	// If a config file is found, read it in.
 	if _, err := os.Stat(cfgFile); err == nil {
