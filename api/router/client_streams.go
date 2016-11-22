@@ -102,16 +102,18 @@ func NewMonitoredGatewayStatusStream(client RouterClientForGateway) GatewayStatu
 			}
 
 			close(ch)
-			_, mErr = client.CloseAndRecv()
+			client.CloseAndRecv()
 
 			if mErr == nil || mErr == io.EOF || grpc.Code(mErr) == codes.Canceled {
 				s.ctx.Debug("Stopped GatewayStatus stream")
-				if s.closing {
-					break
-				}
 			} else {
 				s.ctx.WithError(mErr).Warn("Error in GatewayStatus stream")
 			}
+
+			if s.closing {
+				break
+			}
+
 			time.Sleep(backoff.Backoff(retries))
 			retries++
 		}
@@ -212,16 +214,18 @@ func NewMonitoredUplinkStream(client RouterClientForGateway) UplinkStream {
 			}
 
 			close(ch)
-			_, mErr = client.CloseAndRecv()
+			client.CloseAndRecv()
 
 			if mErr == nil || mErr == io.EOF || grpc.Code(mErr) == codes.Canceled {
 				s.ctx.Debug("Stopped Uplink stream")
-				if s.closing {
-					break
-				}
 			} else {
 				s.ctx.WithError(mErr).Warn("Error in Uplink stream")
 			}
+
+			if s.closing {
+				break
+			}
+
 			time.Sleep(backoff.Backoff(retries))
 			retries++
 		}
@@ -300,12 +304,14 @@ func NewMonitoredDownlinkStream(client RouterClientForGateway) DownlinkStream {
 
 			if err == nil || err == io.EOF || grpc.Code(err) == codes.Canceled {
 				s.ctx.Debug("Stopped Downlink stream")
-				if s.closing {
-					break
-				}
 			} else {
 				s.ctx.WithError(err).Warn("Error in Downlink stream")
 			}
+
+			if s.closing {
+				break
+			}
+
 			time.Sleep(backoff.Backoff(retries))
 			retries++
 		}
