@@ -52,7 +52,7 @@ enum Region {
   AU_915_928 = 4;
   CN_470_510 = 5;
   AS_923     = 6;
-  SK_920_923 = 7;
+  KR_920_923 = 7;
 }
 
 message Message {

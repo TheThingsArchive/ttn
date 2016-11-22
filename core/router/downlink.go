@@ -80,7 +80,7 @@ func guessRegion(frequency uint64) string {
 	case frequency == 923200000 || frequency == 923400000:
 		return pb_lorawan.Region_AS_923.String()
 	case frequency >= 920900000 || frequency == 923300000:
-		return pb_lorawan.Region_SK_920_923.String()
+		return pb_lorawan.Region_KR_920_923.String()
 	case frequency >= 915200000 && frequency <= 927800000:
 		return pb_lorawan.Region_AU_915_928.String()
 	case frequency >= 470300000 && frequency <= 489300000:
@@ -107,7 +107,7 @@ func getBand(region string) (band *lora.Band, err error) {
 		err = errors.NewErrInternal("China 470-510 MHz band not supported")
 	case pb_lorawan.Region_AS_923.String():
 		err = errors.NewErrInternal("Asia 923 MHz band not supported")
-	case pb_lorawan.Region_SK_920_923.String():
+	case pb_lorawan.Region_KR_920_923.String():
 		err = errors.NewErrInternal("South Korea 920-923 MHz band not supported")
 	default:
 		err = errors.NewErrInvalidArgument("Frequency Band", "unknown")
