@@ -43,7 +43,7 @@ Get all announcements for a specific service
       "metadata": [
         {
           "key": "APP_ID",
-          "value": "some-app-id"
+          "value": "c29tZS1hcHAtaWQ="
         }
       ],
       "net_address": "eu.thethings.network:1904",
@@ -88,7 +88,7 @@ Get a specific announcement
   "metadata": [
     {
       "key": "APP_ID",
-      "value": "some-app-id"
+      "value": "c29tZS1hcHAtaWQ="
     }
   ],
   "net_address": "eu.thethings.network:1904",
