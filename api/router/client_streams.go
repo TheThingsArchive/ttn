@@ -56,6 +56,10 @@ func NewMonitoredGatewayStatusStream(client RouterClientForGateway) GatewayStatu
 			// Session client
 			client, err := s.client.GatewayStatus()
 			if err != nil {
+				if grpc.Code(err) == codes.Canceled {
+					s.ctx.Debug("Stopped GatewayStatus stream")
+					break
+				}
 				s.ctx.WithError(err).Warn("Could not start GatewayStatus stream, retrying...")
 				time.Sleep(backoff.Backoff(retries))
 				retries++
@@ -168,6 +172,10 @@ func NewMonitoredUplinkStream(client RouterClientForGateway) UplinkStream {
 			// Session client
 			client, err := s.client.Uplink()
 			if err != nil {
+				if grpc.Code(err) == codes.Canceled {
+					s.ctx.Debug("Stopped Uplink stream")
+					break
+				}
 				s.ctx.WithError(err).Warn("Could not start Uplink stream, retrying...")
 				time.Sleep(backoff.Backoff(retries))
 				retries++
@@ -278,6 +286,10 @@ func NewMonitoredDownlinkStream(client RouterClientForGateway) DownlinkStream {
 		for {
 			client, s.cancel, err = s.client.Subscribe()
 			if err != nil {
+				if grpc.Code(err) == codes.Canceled {
+					s.ctx.Debug("Stopped Downlink stream")
+					break
+				}
 				s.ctx.WithError(err).Warn("Could not start Downlink stream, retrying...")
 				time.Sleep(backoff.Backoff(retries))
 				retries++
