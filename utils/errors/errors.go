@@ -2,6 +2,7 @@ package errors
 
 import (
 	"fmt"
+	"io"
 	"strings"
 
 	"google.golang.org/grpc"
@@ -83,7 +84,10 @@ func FromGRPCError(err error) error {
 	case codes.PermissionDenied:
 		return NewErrPermissionDenied(strings.TrimPrefix(desc, "permission denied: "))
 	case codes.Unknown: // This also includes all non-gRPC errors
-		return errs.New(err.Error())
+		if desc == "EOF" {
+			return io.EOF
+		}
+		return errs.New(desc)
 	}
 	return NewErrInternal(fmt.Sprintf("[%s] %s", code, desc))
 }
