@@ -5,6 +5,7 @@ package router
 
 import (
 	"io"
+	"sync"
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/api"
@@ -23,6 +24,7 @@ type GatewayStream interface {
 
 type gatewayStream struct {
 	closing bool
+	setup   sync.WaitGroup
 	ctx     api.Logger
 	client  RouterClientForGateway
 }
@@ -42,6 +44,7 @@ func NewMonitoredGatewayStatusStream(client RouterClientForGateway) GatewayStatu
 		ch:  make(chan *gateway.Status, DefaultBufferSize),
 		err: make(chan error),
 	}
+	s.setup.Add(1)
 	s.client = client
 	s.ctx = client.GetLogger()
 
@@ -55,19 +58,21 @@ func NewMonitoredGatewayStatusStream(client RouterClientForGateway) GatewayStatu
 
 			// Session client
 			client, err := s.client.GatewayStatus()
+			s.setup.Done()
 			if err != nil {
 				if grpc.Code(err) == codes.Canceled {
 					s.ctx.Debug("Stopped GatewayStatus stream")
 					break
 				}
 				s.ctx.WithError(err).Warn("Could not start GatewayStatus stream, retrying...")
+				s.setup.Add(1)
 				time.Sleep(backoff.Backoff(retries))
 				retries++
 				continue
 			}
 			retries = 0
 
-			s.ctx.Debug("Started GatewayStatus stream")
+			s.ctx.Info("Started GatewayStatus stream")
 
 			// Receive errors
 			go func() {
@@ -118,6 +123,7 @@ func NewMonitoredGatewayStatusStream(client RouterClientForGateway) GatewayStatu
 				break
 			}
 
+			s.setup.Add(1)
 			time.Sleep(backoff.Backoff(retries))
 			retries++
 		}
@@ -142,6 +148,8 @@ func (s *gatewayStatusStream) Send(status *gateway.Status) error {
 }
 
 func (s *gatewayStatusStream) Close() {
+	s.setup.Wait()
+	s.ctx.Debug("Closing GatewayStatus stream")
 	s.closing = true
 	close(s.ch)
 }
@@ -158,6 +166,7 @@ func NewMonitoredUplinkStream(client RouterClientForGateway) UplinkStream {
 		ch:  make(chan *UplinkMessage, DefaultBufferSize),
 		err: make(chan error),
 	}
+	s.setup.Add(1)
 	s.client = client
 	s.ctx = client.GetLogger()
 
@@ -171,19 +180,21 @@ func NewMonitoredUplinkStream(client RouterClientForGateway) UplinkStream {
 
 			// Session client
 			client, err := s.client.Uplink()
+			s.setup.Done()
 			if err != nil {
 				if grpc.Code(err) == codes.Canceled {
 					s.ctx.Debug("Stopped Uplink stream")
 					break
 				}
 				s.ctx.WithError(err).Warn("Could not start Uplink stream, retrying...")
+				s.setup.Add(1)
 				time.Sleep(backoff.Backoff(retries))
 				retries++
 				continue
 			}
 			retries = 0
 
-			s.ctx.Debug("Started Uplink stream")
+			s.ctx.Info("Started Uplink stream")
 
 			// Receive errors
 			go func() {
@@ -234,6 +245,7 @@ func NewMonitoredUplinkStream(client RouterClientForGateway) UplinkStream {
 				break
 			}
 
+			s.setup.Add(1)
 			time.Sleep(backoff.Backoff(retries))
 			retries++
 		}
@@ -258,6 +270,8 @@ func (s *uplinkStream) Send(message *UplinkMessage) error {
 }
 
 func (s *uplinkStream) Close() {
+	s.setup.Wait()
+	s.ctx.Debug("Closing Uplink stream")
 	s.closing = true
 	close(s.ch)
 }
@@ -274,6 +288,7 @@ func NewMonitoredDownlinkStream(client RouterClientForGateway) DownlinkStream {
 		ch:  make(chan *DownlinkMessage, DefaultBufferSize),
 		err: make(chan error),
 	}
+	s.setup.Add(1)
 	s.client = client
 	s.ctx = client.GetLogger()
 
@@ -285,19 +300,21 @@ func NewMonitoredDownlinkStream(client RouterClientForGateway) DownlinkStream {
 
 		for {
 			client, s.cancel, err = s.client.Subscribe()
+			s.setup.Done()
 			if err != nil {
 				if grpc.Code(err) == codes.Canceled {
 					s.ctx.Debug("Stopped Downlink stream")
 					break
 				}
 				s.ctx.WithError(err).Warn("Could not start Downlink stream, retrying...")
+				s.setup.Add(1)
 				time.Sleep(backoff.Backoff(retries))
 				retries++
 				continue
 			}
 			retries = 0
 
-			s.ctx.Debug("Started Downlink stream")
+			s.ctx.Info("Started Downlink stream")
 
 			for {
 				message, err = client.Recv()
@@ -324,6 +341,7 @@ func NewMonitoredDownlinkStream(client RouterClientForGateway) DownlinkStream {
 				break
 			}
 
+			s.setup.Add(1)
 			time.Sleep(backoff.Backoff(retries))
 			retries++
 		}
@@ -341,6 +359,8 @@ type downlinkStream struct {
 }
 
 func (s *downlinkStream) Close() {
+	s.setup.Wait()
+	s.ctx.Debug("Closing Downlink stream")
 	s.closing = true
 	if s.cancel != nil {
 		s.cancel()
