@@ -276,7 +276,7 @@ func (s *uplinkStream) Close() {
 	close(s.ch)
 }
 
-// DownlinkStream for sending downlink messages
+// DownlinkStream for receiving downlink messages
 type DownlinkStream interface {
 	GatewayStream
 	Channel() <-chan *DownlinkMessage
