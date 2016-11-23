@@ -4,125 +4,96 @@
 package broker
 
 import (
-	"io"
-
+	"github.com/TheThingsNetwork/ttn/api"
 	pb "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
-	"github.com/golang/protobuf/ptypes/empty"
 	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 )
 
 type brokerRPC struct {
 	broker *broker
+	pb.BrokerStreamServer
 }
 
-func (b *brokerRPC) Associate(stream pb.Broker_AssociateServer) error {
-	router, err := b.broker.ValidateNetworkContext(stream.Context())
+func (b *brokerRPC) associateRouter(md metadata.MD) (chan *pb.UplinkMessage, <-chan *pb.DownlinkMessage, func(), error) {
+	ctx := metadata.NewContext(context.Background(), md)
+	router, err := b.broker.ValidateNetworkContext(ctx)
 	if err != nil {
-		return errors.BuildGRPCError(err)
+		return nil, nil, nil, errors.BuildGRPCError(err)
 	}
-	downlinkChannel, err := b.broker.ActivateRouter(router.Id)
+	down, err := b.broker.ActivateRouter(router.Id)
 	if err != nil {
-		return errors.BuildGRPCError(err)
+		return nil, nil, nil, errors.BuildGRPCError(err)
 	}
-	defer b.broker.DeactivateRouter(router.Id)
+
+	up := make(chan *pb.UplinkMessage, 1)
+
+	cancel := func() {
+		b.broker.DeactivateRouter(router.Id)
+	}
+
 	go func() {
-		for {
-			if downlinkChannel == nil {
-				return
-			}
-			select {
-			case <-stream.Context().Done():
-				return
-			case downlink := <-downlinkChannel:
-				if downlink != nil {
-					if err := stream.Send(downlink); err != nil {
-						// TODO: Check if the stream should be closed here
-						return
-					}
-				}
-			}
+		for message := range up {
+			go b.broker.HandleUplink(message)
 		}
 	}()
-	for {
-		uplink, err := stream.Recv()
-		if err == io.EOF {
-			return nil
-		}
-		if err != nil {
-			return err
-		}
-		if err := uplink.Validate(); err != nil {
-			return errors.BuildGRPCError(errors.Wrap(err, "Invalid Uplink"))
-		}
-		go b.broker.HandleUplink(uplink)
-	}
+
+	return up, down, cancel, nil
 }
 
-func (b *brokerRPC) Subscribe(req *pb.SubscribeRequest, stream pb.Broker_SubscribeServer) error {
-	handler, err := b.broker.ValidateNetworkContext(stream.Context())
+func (b *brokerRPC) getHandlerSubscribe(md metadata.MD) (<-chan *pb.DeduplicatedUplinkMessage, func(), error) {
+	ctx := metadata.NewContext(context.Background(), md)
+	handler, err := b.broker.ValidateNetworkContext(ctx)
 	if err != nil {
-		return errors.BuildGRPCError(err)
+		return nil, nil, errors.BuildGRPCError(err)
 	}
-	uplinkChannel, err := b.broker.ActivateHandler(handler.Id)
+
+	ch, err := b.broker.ActivateHandler(handler.Id)
 	if err != nil {
-		return errors.BuildGRPCError(err)
+		return nil, nil, errors.BuildGRPCError(err)
 	}
-	defer b.broker.DeactivateHandler(handler.Id)
-	for {
-		if uplinkChannel == nil {
-			return nil
-		}
-		select {
-		case <-stream.Context().Done():
-			return stream.Context().Err()
-		case uplink := <-uplinkChannel:
-			if uplink != nil {
-				if err := stream.Send(uplink); err != nil {
-					return err
+
+	cancel := func() {
+		b.broker.DeactivateHandler(handler.Id)
+	}
+
+	return ch, cancel, nil
+}
+
+func (b *brokerRPC) getHandlerPublish(md metadata.MD) (chan *pb.DownlinkMessage, error) {
+	ctx := metadata.NewContext(context.Background(), md)
+	handler, err := b.broker.ValidateNetworkContext(ctx)
+	if err != nil {
+		return nil, errors.BuildGRPCError(err)
+	}
+
+	ch := make(chan *pb.DownlinkMessage, 1)
+	go func() {
+		for message := range ch {
+			go func(downlink *pb.DownlinkMessage) {
+				// Get latest Handler metadata
+				handler, err := b.broker.Component.Discover("handler", handler.Id)
+				if err != nil {
+					return
 				}
-			}
-		}
-	}
-}
-
-func (b *brokerRPC) Publish(stream pb.Broker_PublishServer) error {
-	handler, err := b.broker.ValidateNetworkContext(stream.Context())
-	if err != nil {
-		return errors.BuildGRPCError(err)
-	}
-	for {
-		downlink, err := stream.Recv()
-		if err == io.EOF {
-			return stream.SendAndClose(&empty.Empty{})
-		}
-		if err != nil {
-			return err
-		}
-		if err := downlink.Validate(); err != nil {
-			return errors.BuildGRPCError(errors.Wrap(err, "Invalid Downlink"))
-		}
-		go func(downlink *pb.DownlinkMessage) {
-			// Get latest Handler metadata
-			handler, err := b.broker.Component.Discover("handler", handler.Id)
-			if err != nil {
-				return
-			}
-			// Check if this Handler can publish for this AppId
-			for _, meta := range handler.Metadata {
-				switch meta.Key {
-				case pb_discovery.Metadata_APP_ID:
-					announcedID := string(meta.Value)
-					if announcedID == downlink.AppId {
-						b.broker.HandleDownlink(downlink)
-						return
+				// Check if this Handler can publish for this AppId
+				for _, meta := range handler.Metadata {
+					switch meta.Key {
+					case pb_discovery.Metadata_APP_ID:
+						announcedID := string(meta.Value)
+						if announcedID == downlink.AppId {
+							b.broker.HandleDownlink(downlink)
+							return
+						}
 					}
 				}
-			}
-		}(downlink)
-	}
+			}(message)
+		}
+	}()
+	return ch, nil
 }
 
 func (b *brokerRPC) Activate(ctx context.Context, req *pb.DeviceActivationRequest) (res *pb.DeviceActivationResponse, err error) {
@@ -141,6 +112,10 @@ func (b *brokerRPC) Activate(ctx context.Context, req *pb.DeviceActivationReques
 }
 
 func (b *broker) RegisterRPC(s *grpc.Server) {
-	server := &brokerRPC{b}
+	server := &brokerRPC{broker: b}
+	server.SetLogger(api.Apex(b.Ctx))
+	server.RouterAssociateChanFunc = server.associateRouter
+	server.HandlerPublishChanFunc = server.getHandlerPublish
+	server.HandlerSubscribeChanFunc = server.getHandlerSubscribe
 	pb.RegisterBrokerServer(s, server)
 }

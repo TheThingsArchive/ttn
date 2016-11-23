@@ -5,10 +5,8 @@ package handler
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/TheThingsNetwork/ttn/amqp"
-	"github.com/TheThingsNetwork/ttn/api"
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb "github.com/TheThingsNetwork/ttn/api/handler"
 	"github.com/TheThingsNetwork/ttn/core/component"
@@ -16,7 +14,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/mqtt"
-	"github.com/TheThingsNetwork/ttn/utils/errors"
+	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"gopkg.in/redis.v5"
 )
@@ -160,39 +158,21 @@ func (h *handler) associateBroker() error {
 
 	h.downlink = make(chan *pb_broker.DownlinkMessage)
 
+	contextFunc := func() context.Context { return h.GetContext("") }
+
+	upStream := pb_broker.NewMonitoredHandlerSubscribeStream(h.ttnBroker, contextFunc)
+	downStream := pb_broker.NewMonitoredHandlerPublishStream(h.ttnBroker, contextFunc)
+
 	go func() {
-		for {
-			upStream, err := h.ttnBroker.Subscribe(h.GetContext(""), &pb_broker.SubscribeRequest{})
-			if err != nil {
-				h.Ctx.WithError(errors.FromGRPCError(err)).Error("Could not start Broker subscribe stream")
-				<-time.After(api.Backoff)
-				continue
-			}
-			for {
-				in, err := upStream.Recv()
-				if err != nil {
-					h.Ctx.WithError(errors.FromGRPCError(err)).Error("Error in Broker subscribe stream")
-					break
-				}
-				go h.HandleUplink(in)
-			}
+		for message := range upStream.Channel() {
+			go h.HandleUplink(message)
 		}
 	}()
 
 	go func() {
-		for {
-			downStream, err := h.ttnBroker.Publish(h.GetContext(""))
-			if err != nil {
-				h.Ctx.WithError(errors.FromGRPCError(err)).Error("Could not start Broker publish stream")
-				<-time.After(api.Backoff)
-				continue
-			}
-			for downlink := range h.downlink {
-				err := downStream.Send(downlink)
-				if err != nil {
-					h.Ctx.WithError(errors.FromGRPCError(err)).Error("Error in Broker publish stream")
-					break
-				}
+		for message := range h.downlink {
+			if err := downStream.Send(message); err != nil {
+				h.Ctx.WithError(err).Warn("Could not send downlink to Broker")
 			}
 		}
 	}()

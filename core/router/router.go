@@ -7,7 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/TheThingsNetwork/ttn/api"
+	"google.golang.org/grpc"
+
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	pb_gateway "github.com/TheThingsNetwork/ttn/api/gateway"
@@ -15,7 +16,7 @@ import (
 	pb "github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/router/gateway"
-	"github.com/TheThingsNetwork/ttn/utils/errors"
+	"golang.org/x/net/context"
 )
 
 // Router component
@@ -40,9 +41,11 @@ type Router interface {
 }
 
 type broker struct {
-	client   pb_broker.BrokerClient
-	uplink   chan *pb_broker.UplinkMessage
-	downlink chan *pb_broker.DownlinkMessage
+	conn        *grpc.ClientConn
+	association pb_broker.RouterStream
+	client      pb_broker.BrokerClient
+	uplink      chan *pb_broker.UplinkMessage
+	downlink    chan *pb_broker.DownlinkMessage
 }
 
 // NewRouter creates a new Router
@@ -90,7 +93,14 @@ func (r *router) Init(c *component.Component) error {
 	return nil
 }
 
-func (r *router) Shutdown() {}
+func (r *router) Shutdown() {
+	r.brokersLock.Lock()
+	defer r.brokersLock.Unlock()
+	for _, broker := range r.brokers {
+		broker.association.Close()
+		broker.conn.Close()
+	}
+}
 
 // getGateway gets or creates a Gateway
 func (r *router) getGateway(id string) *gateway.Gateway {
@@ -132,6 +142,7 @@ func (r *router) getBroker(brokerAnnouncement *pb_discovery.Announcement) (*brok
 	if ok {
 		return brk, nil
 	}
+
 	// If it doesn't we still have to lock
 	r.brokersLock.Lock()
 	defer r.brokersLock.Unlock()
@@ -144,59 +155,26 @@ func (r *router) getBroker(brokerAnnouncement *pb_discovery.Announcement) (*brok
 		}
 		client := pb_broker.NewBrokerClient(conn)
 
+		association := pb_broker.NewMonitoredRouterStream(client, func() context.Context {
+			return r.GetContext("")
+		})
+		downlink := association.Channel()
+
 		brk := &broker{
-			client:   client,
-			uplink:   make(chan *pb_broker.UplinkMessage),
-			downlink: make(chan *pb_broker.DownlinkMessage),
+			conn:        conn,
+			association: association,
+			uplink:      make(chan *pb_broker.UplinkMessage),
 		}
 
 		go func() {
-			numErrs := 0
 			for {
-				association, err := client.Associate(r.Component.GetContext(""))
-				if err != nil {
-					numErrs++
-					<-time.After(api.Backoff)
-					if numErrs > 10 {
-						break
-					}
-					continue
+				select {
+				case message := <-brk.uplink:
+					association.Send(message)
+				case message := <-downlink:
+					go r.HandleDownlink(message)
 				}
-
-				errChan := make(chan error)
-
-				go func() {
-					for {
-						downlink, err := association.Recv()
-						if err != nil {
-							errChan <- err
-							return
-						}
-						brk.downlink <- downlink
-					}
-				}()
-
-			associationLoop:
-				for {
-					select {
-					case err := <-errChan:
-						r.Ctx.WithError(errors.FromGRPCError(err)).Error("Error in Broker associate")
-						break associationLoop
-					case uplink := <-brk.uplink:
-						err := association.Send(uplink)
-						if err != nil {
-							errChan <- err
-						}
-					case downlink := <-brk.downlink:
-						go r.HandleDownlink(downlink)
-					}
-				}
-
 			}
-			conn.Close()
-			r.brokersLock.Lock()
-			defer r.brokersLock.Unlock()
-			delete(r.brokers, brokerAnnouncement.Id)
 		}()
 
 		r.brokers[brokerAnnouncement.Id] = brk
