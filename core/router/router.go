@@ -163,6 +163,7 @@ func (r *router) getBroker(brokerAnnouncement *pb_discovery.Announcement) (*brok
 		brk := &broker{
 			conn:        conn,
 			association: association,
+			client:      client,
 			uplink:      make(chan *pb_broker.UplinkMessage),
 		}
 
