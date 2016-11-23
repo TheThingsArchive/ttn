@@ -1,5 +1,4 @@
 stages:
-  - deps
   - test
   - build
   - sign
@@ -18,14 +17,6 @@ before_script:
   - rm -rf $GOPATH
   - mkdir -p $GOPATH/.cache && ln -s $(pwd)/.govendor $GOPATH/.cache/govendor
   - mkdir -p $GOPATH/src/github.com/TheThingsNetwork && ln -s $(pwd) $GOPATH/src/github.com/TheThingsNetwork/ttn
-
-deps:
-  stage: deps
-  image: golang:latest
-  script:
-    - pushd $GOPATH/src/github.com/TheThingsNetwork/ttn
-    - make deps
-    - popd
 
 tests:
   stage: test
