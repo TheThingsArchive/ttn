@@ -76,13 +76,17 @@ func (s *RouterStreamServer) Subscribe(req *SubscribeRequest, stream Router_Subs
 	if err != nil {
 		return err
 	}
-	defer cancel()
+	go func() {
+		<-stream.Context().Done()
+		err = stream.Context().Err()
+		cancel()
+	}()
 	for downlink := range ch {
 		if err := stream.Send(downlink); err != nil {
 			return err
 		}
 	}
-	return nil
+	return
 }
 
 // GatewayStatus handles gateway status streams
