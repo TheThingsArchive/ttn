@@ -1,12 +1,14 @@
 package component
 
 import (
+	"io"
 	"time"
 
 	"github.com/apex/log"
 	"github.com/mwitkow/go-grpc-middleware"
 	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
@@ -66,8 +68,8 @@ func (c *Component) ServerOptions() []grpc.ServerOption {
 		logCtx.Debug("Start stream")
 		err := handler(srv, stream)
 		logCtx = logCtx.WithField("Duration", time.Now().Sub(t))
-		switch err {
-		case nil, context.Canceled:
+		switch {
+		case err == nil || err == io.EOF || grpc.Code(err) == codes.Canceled:
 			logCtx.Debug("End stream")
 		default:
 			logCtx.WithField("ErrCode", grpc.Code(err)).WithError(err).Warn("End stream")

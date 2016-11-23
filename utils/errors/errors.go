@@ -9,6 +9,7 @@ import (
 	"google.golang.org/grpc/codes"
 
 	errs "github.com/pkg/errors"
+	"golang.org/x/net/context"
 )
 
 type ErrType string
@@ -58,6 +59,9 @@ func BuildGRPCError(err error) error {
 		code = codes.NotFound
 	case *ErrPermissionDenied:
 		code = codes.PermissionDenied
+	}
+	if err == context.Canceled {
+		code = codes.Canceled
 	}
 	return grpc.Errorf(code, err.Error())
 }

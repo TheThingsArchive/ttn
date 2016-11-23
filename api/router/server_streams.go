@@ -78,7 +78,7 @@ func (s *RouterStreamServer) Subscribe(req *SubscribeRequest, stream Router_Subs
 	}
 	go func() {
 		<-stream.Context().Done()
-		err = stream.Context().Err()
+		err = errors.BuildGRPCError(stream.Context().Err())
 		cancel()
 	}()
 	for downlink := range ch {
