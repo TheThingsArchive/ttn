@@ -5,7 +5,6 @@ package broker
 
 import (
 	"errors"
-	"fmt"
 
 	pb_protocol "github.com/TheThingsNetwork/ttn/api/protocol"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
@@ -126,7 +125,6 @@ func payloadFromMsg(msg *pb_protocol.Message) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(bin)
 	return bin, nil
 }
 
