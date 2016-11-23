@@ -153,7 +153,8 @@ message ApplicationHandlerRegistration {
 
 // The BrokerManager service provides configuration and monitoring functionality
 service BrokerManager {
-  // Handler announces new application to Broker
+  // Handler announces a new application to Broker. This is a temporary method that will be removed
+  // when we can push updates from the Discovery service to the routing services.
   rpc  RegisterApplicationHandler(ApplicationHandlerRegistration) returns (google.protobuf.Empty);
   // Network operator requests Broker status
   rpc  GetStatus(StatusRequest) returns (Status);
