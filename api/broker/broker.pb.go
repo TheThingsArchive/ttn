@@ -778,7 +778,8 @@ var _Broker_serviceDesc = grpc.ServiceDesc{
 // Client API for BrokerManager service
 
 type BrokerManagerClient interface {
-	// Handler announces new application to Broker
+	// Handler announces a new application to Broker. This is a temporary method that will be removed
+	// when we can push updates from the Discovery service to the routing services.
 	RegisterApplicationHandler(ctx context.Context, in *ApplicationHandlerRegistration, opts ...grpc.CallOption) (*google_protobuf.Empty, error)
 	// Network operator requests Broker status
 	GetStatus(ctx context.Context, in *StatusRequest, opts ...grpc.CallOption) (*Status, error)
@@ -813,7 +814,8 @@ func (c *brokerManagerClient) GetStatus(ctx context.Context, in *StatusRequest, 
 // Server API for BrokerManager service
 
 type BrokerManagerServer interface {
-	// Handler announces new application to Broker
+	// Handler announces a new application to Broker. This is a temporary method that will be removed
+	// when we can push updates from the Discovery service to the routing services.
 	RegisterApplicationHandler(context.Context, *ApplicationHandlerRegistration) (*google_protobuf.Empty, error)
 	// Network operator requests Broker status
 	GetStatus(context.Context, *StatusRequest) (*Status, error)

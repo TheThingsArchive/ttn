@@ -49,24 +49,34 @@ message Metadata {
 message Announcement {
   // The ID of the component
   string id = 1;
+
   // The name of the component (router/broker/handler)
   string service_name = 2;
+
   // Service version in the form "[version]-[commit] ([build date])"
   string service_version = 3;
+
   // Description of the component
   string description = 4;
+
   // URL with documentation or more information about this component
   string url         = 5;
+
   // Indicates whether this service is part of The Things Network (the public community network)
   bool   public      = 6;
+
   // Comma-separated network addresses in the form "[hostname]:[port]" (currently we only use the first)
   string net_address = 11;
+
   // ECDSA public key of this component
   string public_key  = 12;
+
   // TLS Certificate (if TLS is enabled)
   string certificate = 13;
+
   // Contains the address where the HTTP API is exposed (if there is one)
   string api_address = 14;
+
   // Metadata for this component
   repeated Metadata metadata = 21;
 }
@@ -80,6 +90,7 @@ message GetAllRequest {
 message GetRequest {
   // The ID of the service
   string id = 1;
+
   // The name of the service (router/broker/handler)
   string service_name = 2;
 }
@@ -88,8 +99,10 @@ message GetRequest {
 message MetadataRequest {
   // The ID of the service that should be modified
   string id = 1;
+
   // The name of the service (router/broker/handler) that should be modified
   string service_name = 2;
+
   Metadata metadata = 11;
 }
 
@@ -100,22 +113,28 @@ message AnnouncementsResponse {
 
 // The Discovery service is used to discover services within The Things Network.
 service Discovery {
-  // Announce your component to the Discovery server
+  // Announce a component to the Discovery server.
+  // A call to `Announce` does not processes the `metadata` field, so you can safely leave this field empty.
+  // Adding or removing Metadata should be done with the `AddMetadata` and `DeleteMetadata` methods.
   rpc Announce(Announcement) returns (google.protobuf.Empty);
+
   // Get all announcements for a specific service
   rpc GetAll(GetAllRequest) returns (AnnouncementsResponse) {
     option (google.api.http) = {
       get: "/announcements/{service_name}"
     };
   }
+
   // Get a specific announcement
   rpc Get(GetRequest) returns (Announcement)  {
     option (google.api.http) = {
       get: "/announcements/{service_name}/{id}"
     };
   }
+
   // Add metadata to an announement
   rpc AddMetadata(MetadataRequest) returns (google.protobuf.Empty);
+
   // Delete metadata from an announcement
   rpc DeleteMetadata(MetadataRequest) returns (google.protobuf.Empty);
 }

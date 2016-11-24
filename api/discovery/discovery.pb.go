@@ -215,7 +215,9 @@ const _ = grpc.SupportPackageIsVersion4
 // Client API for Discovery service
 
 type DiscoveryClient interface {
-	// Announce your component to the Discovery server
+	// Announce a component to the Discovery server.
+	// A call to `Announce` does not processes the `metadata` field, so you can safely leave this field empty.
+	// Adding or removing Metadata should be done with the `AddMetadata` and `DeleteMetadata` methods.
 	Announce(ctx context.Context, in *Announcement, opts ...grpc.CallOption) (*google_protobuf.Empty, error)
 	// Get all announcements for a specific service
 	GetAll(ctx context.Context, in *GetAllRequest, opts ...grpc.CallOption) (*AnnouncementsResponse, error)
@@ -283,7 +285,9 @@ func (c *discoveryClient) DeleteMetadata(ctx context.Context, in *MetadataReques
 // Server API for Discovery service
 
 type DiscoveryServer interface {
-	// Announce your component to the Discovery server
+	// Announce a component to the Discovery server.
+	// A call to `Announce` does not processes the `metadata` field, so you can safely leave this field empty.
+	// Adding or removing Metadata should be done with the `AddMetadata` and `DeleteMetadata` methods.
 	Announce(context.Context, *Announcement) (*google_protobuf.Empty, error)
 	// Get all announcements for a specific service
 	GetAll(context.Context, *GetAllRequest) (*AnnouncementsResponse, error)

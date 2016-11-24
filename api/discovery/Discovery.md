@@ -6,7 +6,9 @@ The Discovery service is used to discover services within The Things Network.
 
 ### `Announce`
 
-Announce your component to the Discovery server
+Announce a component to the Discovery server.
+A call to `Announce` does not processes the `metadata` field, so you can safely leave this field empty.
+Adding or removing Metadata should be done with the `AddMetadata` and `DeleteMetadata` methods.
 
 - Request: [`Announcement`](#discoveryannouncement)
 - Response: [`Empty`](#discoveryannouncement)
