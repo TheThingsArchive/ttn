@@ -6,6 +6,7 @@ package router
 import (
 	"testing"
 
+	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	pb_gateway "github.com/TheThingsNetwork/ttn/api/gateway"
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/router/gateway"
@@ -19,7 +20,8 @@ func TestHandleGatewayStatus(t *testing.T) {
 
 	router := &router{
 		Component: &component.Component{
-			Ctx: GetLogger(t, "TestHandleGatewayStatus"),
+			Ctx:      GetLogger(t, "TestHandleGatewayStatus"),
+			Identity: &pb_discovery.Announcement{},
 		},
 		gateways: map[string]*gateway.Gateway{},
 	}
