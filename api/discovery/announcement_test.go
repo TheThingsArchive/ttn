@@ -9,48 +9,21 @@ import (
 	. "github.com/smartystreets/assertions"
 )
 
-func getTestAnnouncement() (announcement *Announcement, dmap map[string]string) {
-	return &Announcement{
-			Id:             "abcdef",
-			Description:    "Test Description",
-			ServiceName:    "router",
-			ServiceVersion: "1.0-preview build abcdef",
-			NetAddress:     "localhost:1234",
-			Metadata: []*Metadata{
-				&Metadata{
-					Key:   Metadata_PREFIX,
-					Value: []byte("38"),
-				},
-				&Metadata{
-					Key:   Metadata_PREFIX,
-					Value: []byte("39"),
-				},
-			},
-		}, map[string]string{
-			"id":              "abcdef",
-			"description":     "Test Description",
-			"service_name":    "router",
-			"service_version": "1.0-preview build abcdef",
-			"net_address":     "localhost:1234",
-			"public_key":      "",
-			"certificate":     "",
-			"metadata":        `[{"key":1,"value":"Mzg="},{"key":1,"value":"Mzk="}]`,
-		}
-}
-
-func TestToStringMap(t *testing.T) {
+func TestAnnouncementAddDeleteMetadata(t *testing.T) {
 	a := New(t)
-	announcement, expected := getTestAnnouncement()
-	dmap, err := announcement.ToStringStringMap(AnnouncementProperties...)
-	a.So(err, ShouldBeNil)
-	a.So(dmap, ShouldResemble, expected)
-}
+	announcement := new(Announcement)
 
-func TestFromStringMap(t *testing.T) {
-	a := New(t)
-	announcement := &Announcement{}
-	expected, dmap := getTestAnnouncement()
-	err := announcement.FromStringStringMap(dmap)
-	a.So(err, ShouldBeNil)
-	a.So(announcement, ShouldResemble, expected)
+	announcement.AddMetadata(Metadata_APP_ID, []byte("app-id"))
+	a.So(announcement.Metadata, ShouldHaveLength, 1)
+	a.So(announcement.Metadata[0], ShouldResemble, &Metadata{Key: Metadata_APP_ID, Value: []byte("app-id")})
+
+	announcement.AddMetadata(Metadata_APP_ID, []byte("app-id"))
+	a.So(announcement.Metadata, ShouldHaveLength, 1)
+
+	announcement.AddMetadata(Metadata_APP_ID, []byte("other-app-id"))
+	a.So(announcement.Metadata, ShouldHaveLength, 2)
+
+	announcement.DeleteMetadata(Metadata_APP_ID, []byte("app-id"))
+	a.So(announcement.Metadata, ShouldHaveLength, 1)
+
 }
