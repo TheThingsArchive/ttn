@@ -20,5 +20,7 @@ func (r *router) HandleGatewayStatus(gatewayID string, status *pb_gateway.Status
 		}
 	}()
 
+	status.Router = r.Identity.Id
+
 	return r.getGateway(gatewayID).HandleStatus(status)
 }

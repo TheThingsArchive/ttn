@@ -54,6 +54,8 @@ message Status {
   string  contact_email  = 13;
   string  description    = 14;
   string  region         = 15;
+  string  bridge         = 16;
+  string  router         = 17;
 
   GPSMetadata  gps       = 21;
 
