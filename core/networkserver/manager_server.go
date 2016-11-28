@@ -10,6 +10,7 @@ import (
 	"github.com/TheThingsNetwork/go-account-lib/rights"
 	pb "github.com/TheThingsNetwork/ttn/api/networkserver"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
+	"github.com/TheThingsNetwork/ttn/api/ratelimit"
 	"github.com/TheThingsNetwork/ttn/core/networkserver/device"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/golang/protobuf/ptypes/empty"
@@ -20,6 +21,7 @@ import (
 
 type networkServerManager struct {
 	networkServer *networkServer
+	clientRate    *ratelimit.Registry
 }
 
 func (n *networkServerManager) getDevice(ctx context.Context, in *pb_lorawan.DeviceIdentifier) (*device.Device, error) {
@@ -29,6 +31,9 @@ func (n *networkServerManager) getDevice(ctx context.Context, in *pb_lorawan.Dev
 	claims, err := n.networkServer.Component.ValidateTTNAuthContext(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if n.clientRate.Limit(claims.Subject) {
+		return nil, grpc.Errorf(codes.ResourceExhausted, "Rate limit for client reached")
 	}
 	dev, err := n.networkServer.devices.Get(*in.AppEui, *in.DevEui)
 	if err != nil {
@@ -157,7 +162,10 @@ func (n *networkServerManager) GetStatus(ctx context.Context, in *pb.StatusReque
 
 // RegisterManager registers this networkserver as a NetworkServerManagerServer (github.com/TheThingsNetwork/ttn/api/networkserver)
 func (n *networkServer) RegisterManager(s *grpc.Server) {
-	server := &networkServerManager{n}
+	server := &networkServerManager{networkServer: n}
+
+	server.clientRate = ratelimit.NewRegistry(5000, time.Hour)
+
 	pb.RegisterNetworkServerManagerServer(s, server)
 	pb_lorawan.RegisterDeviceManagerServer(s, server)
 	pb_lorawan.RegisterDevAddrManagerServer(s, server)

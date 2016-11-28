@@ -47,7 +47,10 @@ func BuildGRPCError(err error) error {
 	if err == nil {
 		return nil
 	}
-	code := codes.Unknown
+	code := grpc.Code(err)
+	if code != codes.Unknown {
+		return err // it already is a gRPC error
+	}
 	switch errs.Cause(err).(type) {
 	case *ErrAlreadyExists:
 		code = codes.AlreadyExists

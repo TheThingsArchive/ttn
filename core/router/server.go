@@ -5,22 +5,28 @@ package router
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/TheThingsNetwork/go-account-lib/claims"
 	"github.com/TheThingsNetwork/ttn/api"
 	pb_gateway "github.com/TheThingsNetwork/ttn/api/gateway"
+	"github.com/TheThingsNetwork/ttn/api/ratelimit"
 	pb "github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/core/router/gateway"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/spf13/viper"
 	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 )
 
 type routerRPC struct {
 	router *router
 	pb.RouterStreamServer
+
+	uplinkRate *ratelimit.Registry
+	statusRate *ratelimit.Registry
 }
 
 func (r *routerRPC) gatewayFromMetadata(md metadata.MD) (gtw *gateway.Gateway, err error) {
@@ -69,7 +75,12 @@ func (r *routerRPC) getUplink(md metadata.MD) (ch chan *pb.UplinkMessage, err er
 	ch = make(chan *pb.UplinkMessage)
 	go func() {
 		for uplink := range ch {
+			if r.uplinkRate.Limit(gateway.ID) {
+				r.router.Ctx.WithField("GatewayID", gateway.ID).Warn("Gateway reached uplink rate limit, 1s penalty")
+				time.Sleep(time.Second)
+			}
 			r.router.HandleUplink(gateway.ID, uplink)
+
 		}
 	}()
 	return
@@ -83,6 +94,10 @@ func (r *routerRPC) getGatewayStatus(md metadata.MD) (ch chan *pb_gateway.Status
 	ch = make(chan *pb_gateway.Status)
 	go func() {
 		for status := range ch {
+			if r.statusRate.Limit(gateway.ID) {
+				r.router.Ctx.WithField("GatewayID", gateway.ID).Warn("Gateway reached status rate limit, 1s penalty")
+				time.Sleep(time.Second)
+			}
 			r.router.HandleGatewayStatus(gateway.ID, status)
 		}
 	}()
@@ -114,6 +129,9 @@ func (r *routerRPC) Activate(ctx context.Context, req *pb.DeviceActivationReques
 	if err := req.Validate(); err != nil {
 		return nil, errors.BuildGRPCError(errors.Wrap(err, "Invalid Activation Request"))
 	}
+	if r.uplinkRate.Limit(gateway.ID) {
+		return nil, grpc.Errorf(codes.ResourceExhausted, "Gateway reached uplink rate limit, 1s penalty")
+	}
 	return r.router.HandleActivation(gateway.ID, req)
 }
 
@@ -124,5 +142,16 @@ func (r *router) RegisterRPC(s *grpc.Server) {
 	server.UplinkChanFunc = server.getUplink
 	server.DownlinkChanFunc = server.getDownlink
 	server.GatewayStatusChanFunc = server.getGatewayStatus
+
+	// TODO: Monitor actual rates and configure sensible limits
+	//
+	// The current values are based on the following:
+	// - 20 byte messages on all 6 orthogonal SFs at the same time -> ~1500 msgs/minute
+	// - 8 channels at 5% utilization: 600 msgs/minute
+	// - let's double that and round it to 1500/minute
+
+	server.uplinkRate = ratelimit.NewRegistry(1500, time.Minute) // includes activations
+	server.statusRate = ratelimit.NewRegistry(10, time.Minute)   // 10 per minute (pkt fwd default is 2 per minute)
+
 	pb.RegisterRouterServer(s, server)
 }

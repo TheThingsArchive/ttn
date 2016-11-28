@@ -4,9 +4,12 @@
 package broker
 
 import (
+	"time"
+
 	"github.com/TheThingsNetwork/ttn/api"
 	pb "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
+	"github.com/TheThingsNetwork/ttn/api/ratelimit"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
 	"google.golang.org/grpc"
@@ -16,6 +19,9 @@ import (
 type brokerRPC struct {
 	broker *broker
 	pb.BrokerStreamServer
+
+	routerUpRate    *ratelimit.Registry
+	handlerDownRate *ratelimit.Registry
 }
 
 func (b *brokerRPC) associateRouter(md metadata.MD) (chan *pb.UplinkMessage, <-chan *pb.DownlinkMessage, func(), error) {
@@ -37,6 +43,10 @@ func (b *brokerRPC) associateRouter(md metadata.MD) (chan *pb.UplinkMessage, <-c
 
 	go func() {
 		for message := range up {
+			if b.routerUpRate.Limit(router.Id) {
+				b.broker.Ctx.WithField("RouterID", router.Id).Warn("Router reached uplink rate limit, 1s penalty")
+				time.Sleep(time.Second)
+			}
 			go b.broker.HandleUplink(message)
 		}
 	}()
@@ -85,6 +95,10 @@ func (b *brokerRPC) getHandlerPublish(md metadata.MD) (chan *pb.DownlinkMessage,
 					case pb_discovery.Metadata_APP_ID:
 						announcedID := string(meta.Value)
 						if announcedID == downlink.AppId {
+							if b.handlerDownRate.Limit(handler.Id) {
+								b.broker.Ctx.WithField("HandlerID", handler.Id).Warn("Handler reached downlink rate limit, 1s penalty")
+								time.Sleep(time.Second)
+							}
 							b.broker.HandleDownlink(downlink)
 							return
 						}
@@ -117,5 +131,10 @@ func (b *broker) RegisterRPC(s *grpc.Server) {
 	server.RouterAssociateChanFunc = server.associateRouter
 	server.HandlerPublishChanFunc = server.getHandlerPublish
 	server.HandlerSubscribeChanFunc = server.getHandlerSubscribe
+
+	// TODO: Monitor actual rates and configure sensible limits
+	server.routerUpRate = ratelimit.NewRegistry(1000, time.Second)
+	server.handlerDownRate = ratelimit.NewRegistry(125, time.Second) // one eight of uplink
+
 	pb.RegisterBrokerServer(s, server)
 }

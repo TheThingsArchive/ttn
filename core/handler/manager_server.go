@@ -5,6 +5,7 @@ package handler
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/TheThingsNetwork/go-account-lib/claims"
 	"github.com/TheThingsNetwork/go-account-lib/rights"
@@ -13,6 +14,7 @@ import (
 	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	pb "github.com/TheThingsNetwork/ttn/api/handler"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
+	"github.com/TheThingsNetwork/ttn/api/ratelimit"
 	"github.com/TheThingsNetwork/ttn/core/handler/application"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
@@ -24,9 +26,11 @@ import (
 )
 
 type handlerManager struct {
-	handler        *handler
-	deviceManager  pb_lorawan.DeviceManagerClient
-	devAddrManager pb_lorawan.DevAddrManagerClient
+	handler         *handler
+	deviceManager   pb_lorawan.DeviceManagerClient
+	devAddrManager  pb_lorawan.DevAddrManagerClient
+	applicationRate *ratelimit.Registry
+	clientRate      *ratelimit.Registry
 }
 
 func (h *handlerManager) validateTTNAuthAppContext(ctx context.Context, appID string) (context.Context, *claims.Claims, error) {
@@ -51,6 +55,12 @@ func (h *handlerManager) validateTTNAuthAppContext(ctx context.Context, appID st
 	claims, err := h.handler.Component.ValidateTTNAuthContext(ctx)
 	if err != nil {
 		return ctx, nil, err
+	}
+	if h.clientRate.Limit(claims.Subject) {
+		return ctx, claims, grpc.Errorf(codes.ResourceExhausted, "Rate limit for client reached")
+	}
+	if h.applicationRate.Limit(appID) {
+		return ctx, claims, grpc.Errorf(codes.ResourceExhausted, "Rate limit for application reached")
 	}
 	return ctx, claims, nil
 }
@@ -440,6 +450,10 @@ func (h *handler) RegisterManager(s *grpc.Server) {
 		deviceManager:  pb_lorawan.NewDeviceManagerClient(h.ttnBrokerConn),
 		devAddrManager: pb_lorawan.NewDevAddrManagerClient(h.ttnBrokerConn),
 	}
+
+	server.applicationRate = ratelimit.NewRegistry(5000, time.Hour)
+	server.clientRate = ratelimit.NewRegistry(5000, time.Hour)
+
 	pb.RegisterHandlerManagerServer(s, server)
 	pb.RegisterApplicationManagerServer(s, server)
 	pb_lorawan.RegisterDevAddrManagerServer(s, server)
