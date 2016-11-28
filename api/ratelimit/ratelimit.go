@@ -16,6 +16,8 @@ type Registry struct {
 func NewRegistry(rate int, per time.Duration) *Registry {
 	return &Registry{
 		entities: make(map[string]*ratelimit.RateLimiter),
+		rate:     rate,
+		per:      per,
 	}
 }
 
