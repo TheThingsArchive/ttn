@@ -6,6 +6,7 @@ package lorawan
 import (
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/brocaar/lorawan"
+	"github.com/brocaar/lorawan/band"
 )
 
 type payloader interface {
@@ -187,4 +188,39 @@ func MessageFromPHYPayload(phy lorawan.PHYPayload) Message {
 		m.Payload = &Message_MacPayload{MacPayload: &payload}
 	}
 	return m
+}
+
+// GetDataRate returns the band.Datarate for the current Metadata
+func (m *Metadata) GetDataRate() (dataRate band.DataRate, err error) {
+	switch m.Modulation {
+	case Modulation_LORA:
+		dataRate.Modulation = band.LoRaModulation
+		dr, err := types.ParseDataRate(m.DataRate)
+		if err != nil {
+			return dataRate, err
+		}
+		dataRate.Bandwidth = int(dr.Bandwidth)
+		dataRate.SpreadFactor = int(dr.SpreadingFactor)
+	case Modulation_FSK:
+		dataRate.Modulation = band.FSKModulation
+		dataRate.BitRate = int(m.BitRate)
+	}
+	return
+}
+
+// SetDataRate sets the dataRate for the current Metadata based from a band.Datarate
+func (c *TxConfiguration) SetDataRate(dataRate band.DataRate) error {
+	switch dataRate.Modulation {
+	case band.LoRaModulation:
+		c.Modulation = Modulation_LORA
+		datr, err := types.ConvertDataRate(dataRate)
+		if err != nil {
+			return err
+		}
+		c.DataRate = datr.String()
+	case band.FSKModulation:
+		c.Modulation = Modulation_FSK
+		c.BitRate = uint32(dataRate.BitRate)
+	}
+	return nil
 }

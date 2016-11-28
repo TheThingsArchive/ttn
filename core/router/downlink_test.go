@@ -4,7 +4,6 @@
 package router
 
 import (
-	"fmt"
 	"sync"
 	"testing"
 	"time"
@@ -313,6 +312,76 @@ func TestUplinkBuildDownlinkOptionsDataRate(t *testing.T) {
 		a.So(options, ShouldHaveLength, 2)
 		a.So(options[1].ProtocolConfig.GetLorawan().DataRate, ShouldEqual, drDown)
 	}
+
+	gtw = newReferenceGateway(t, "CN_470_510")
+
+	// Supported datarates use RX1 (on the same datarate) for downlink
+	ttnCNDataRates := []string{
+		"SF7BW125",
+		"SF8BW125",
+		"SF9BW125",
+		"SF10BW125",
+		"SF11BW125",
+		"SF12BW125",
+	}
+	for _, dr := range ttnCNDataRates {
+		up := newReferenceUplink()
+		up.GatewayMetadata.Frequency = 470300000
+		up.ProtocolMetadata.GetLorawan().DataRate = dr
+		options := r.buildDownlinkOptions(up, false, gtw)
+		a.So(options, ShouldHaveLength, 2)
+		a.So(options[1].ProtocolConfig.GetLorawan().DataRate, ShouldEqual, dr)
+		a.So(options[1].GatewayConfig.Frequency, ShouldEqual, 500300000)
+		a.So(options[0].ProtocolConfig.GetLorawan().DataRate, ShouldEqual, "SF12BW125")
+		a.So(options[0].GatewayConfig.Frequency, ShouldEqual, 505300000)
+	}
+
+	gtw = newReferenceGateway(t, "AS_923")
+
+	// Supported datarates use RX1 (on the same datarate) for downlink
+	ttnASDataRates := map[string]string{
+		"SF7BW125":  "SF7BW125",
+		"SF8BW125":  "SF8BW125",
+		"SF9BW125":  "SF9BW125",
+		"SF10BW125": "SF10BW125",
+		"SF11BW125": "SF10BW125", // MinDR = 2
+		"SF12BW125": "SF10BW125", // MinDR = 2
+	}
+	for drUp, drDown := range ttnASDataRates {
+		up := newReferenceUplink()
+		up.GatewayMetadata.Frequency = 923200000
+		up.ProtocolMetadata.GetLorawan().DataRate = drUp
+		options := r.buildDownlinkOptions(up, false, gtw)
+		a.So(options, ShouldHaveLength, 2)
+		a.So(options[1].ProtocolConfig.GetLorawan().DataRate, ShouldEqual, drDown)
+		a.So(options[1].GatewayConfig.Frequency, ShouldEqual, 923200000)
+		a.So(options[0].ProtocolConfig.GetLorawan().DataRate, ShouldEqual, "SF10BW125")
+		a.So(options[0].GatewayConfig.Frequency, ShouldEqual, 923200000)
+	}
+
+	gtw = newReferenceGateway(t, "KR_920_923")
+
+	// Supported datarates use RX1 (on the same datarate) for downlink
+	ttnKRDataRates := []string{
+		"SF7BW125",
+		"SF8BW125",
+		"SF9BW125",
+		"SF10BW125",
+		"SF11BW125",
+		"SF12BW125",
+	}
+	for _, dr := range ttnKRDataRates {
+		up := newReferenceUplink()
+		up.GatewayMetadata.Frequency = 922100000
+		up.ProtocolMetadata.GetLorawan().DataRate = dr
+		options := r.buildDownlinkOptions(up, false, gtw)
+		a.So(options, ShouldHaveLength, 2)
+		a.So(options[1].ProtocolConfig.GetLorawan().DataRate, ShouldEqual, dr)
+		a.So(options[1].GatewayConfig.Frequency, ShouldEqual, 922100000)
+		a.So(options[0].ProtocolConfig.GetLorawan().DataRate, ShouldEqual, "SF12BW125")
+		a.So(options[0].GatewayConfig.Frequency, ShouldEqual, 921900000)
+	}
+
 }
 
 // Note: This test uses r.buildDownlinkOptions which in turn calls computeDownlinkScores
@@ -378,8 +447,6 @@ func TestComputeDownlinkScores(t *testing.T) {
 	options = r.buildDownlinkOptions(testSubject, false, testSubjectgtw)
 	a.So(options, ShouldHaveLength, 1) // RX1 Removed
 	a.So(options[0].GatewayConfig.Frequency, ShouldNotEqual, 868100000)
-
-	fmt.Println()
 
 	// European Duty-cycle Preferences - Prefer RX1 for low SF
 	testSubject = newReferenceUplink()

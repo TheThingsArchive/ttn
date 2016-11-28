@@ -12,6 +12,7 @@ import (
 	pb_protocol "github.com/TheThingsNetwork/ttn/api/protocol"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	pb "github.com/TheThingsNetwork/ttn/api/router"
+	"github.com/TheThingsNetwork/ttn/core/band"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/apex/log"
 )
@@ -81,9 +82,9 @@ func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivat
 	}
 	region := status.Region
 	if region == "" {
-		region = guessRegion(uplink.GatewayMetadata.Frequency)
+		region = band.Guess(uplink.GatewayMetadata.Frequency)
 	}
-	band, err := getBand(region)
+	band, err := band.Get(region)
 	if err != nil {
 		return nil, err
 	}
@@ -91,9 +92,11 @@ func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivat
 	lorawan.Rx1DrOffset = 0
 	lorawan.Rx2Dr = uint32(band.RX2DataRate)
 	lorawan.RxDelay = uint32(band.ReceiveDelay1.Seconds())
-	switch region {
-	case "EU_863_870":
-		lorawan.CfList = &pb_lorawan.CFList{Freq: []uint32{867100000, 867300000, 867500000, 867700000, 867900000}}
+	if band.CFList != nil {
+		lorawan.CfList = new(pb_lorawan.CFList)
+		for _, freq := range band.CFList {
+			lorawan.CfList.Freq = append(lorawan.CfList.Freq, freq)
+		}
 	}
 
 	ctx = ctx.WithField("NumBrokers", len(brokers))

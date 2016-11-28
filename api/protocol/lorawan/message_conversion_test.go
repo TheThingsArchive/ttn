@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/brocaar/lorawan"
+	"github.com/brocaar/lorawan/band"
 	. "github.com/smartystreets/assertions"
 )
 
@@ -53,6 +54,47 @@ func TestConvertPHYPayload(t *testing.T) {
 		m3 := MessageFromPHYPayload(phy)
 
 		phy = m3.PHYPayload()
+	}
+
+}
+
+func TestConvertDataRate(t *testing.T) {
+	a := New(t)
+
+	{
+		md := &Metadata{
+			Modulation: Modulation_LORA,
+			DataRate:   "SF7BW125",
+		}
+		dr, err := md.GetDataRate()
+		a.So(err, ShouldBeNil)
+		a.So(dr, ShouldResemble, band.DataRate{Modulation: band.LoRaModulation, SpreadFactor: 7, Bandwidth: 125})
+	}
+
+	{
+		md := &Metadata{
+			Modulation: Modulation_FSK,
+			BitRate:    50000,
+		}
+		dr, err := md.GetDataRate()
+		a.So(err, ShouldBeNil)
+		a.So(dr, ShouldResemble, band.DataRate{Modulation: band.FSKModulation, BitRate: 50000})
+	}
+
+	{
+		tx := new(TxConfiguration)
+		err := tx.SetDataRate(band.DataRate{Modulation: band.LoRaModulation, SpreadFactor: 7, Bandwidth: 125})
+		a.So(err, ShouldBeNil)
+		a.So(tx.Modulation, ShouldEqual, Modulation_LORA)
+		a.So(tx.DataRate, ShouldEqual, "SF7BW125")
+	}
+
+	{
+		tx := new(TxConfiguration)
+		err := tx.SetDataRate(band.DataRate{Modulation: band.FSKModulation, BitRate: 50000})
+		a.So(err, ShouldBeNil)
+		a.So(tx.Modulation, ShouldEqual, Modulation_FSK)
+		a.So(tx.BitRate, ShouldEqual, 50000)
 	}
 
 }

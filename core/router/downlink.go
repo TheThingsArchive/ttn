@@ -14,12 +14,12 @@ import (
 	pb_protocol "github.com/TheThingsNetwork/ttn/api/protocol"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	pb "github.com/TheThingsNetwork/ttn/api/router"
+	"github.com/TheThingsNetwork/ttn/core/band"
 	"github.com/TheThingsNetwork/ttn/core/router/gateway"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/toa"
 	"github.com/apex/log"
-	lora "github.com/brocaar/lorawan/band"
 )
 
 func (r *router) SubscribeDownlink(gatewayID string) (<-chan *pb.DownlinkMessage, error) {
@@ -67,76 +67,23 @@ func (r *router) HandleDownlink(downlink *pb_broker.DownlinkMessage) error {
 	return r.getGateway(downlink.DownlinkOption.GatewayId).HandleDownlink(identifier, downlinkMessage)
 }
 
-func guessRegion(frequency uint64) string {
-	switch {
-	case frequency >= 863000000 && frequency <= 870000000:
-		return pb_lorawan.Region_EU_863_870.String()
-	case frequency >= 902300000 && frequency <= 914900000:
-		return pb_lorawan.Region_US_902_928.String()
-	case frequency >= 779500000 && frequency <= 786500000:
-		return pb_lorawan.Region_CN_779_787.String()
-	case frequency >= 433175000 && frequency <= 434665000:
-		return pb_lorawan.Region_EU_433.String()
-	case frequency == 923200000 || frequency == 923400000:
-		return pb_lorawan.Region_AS_923.String()
-	case frequency >= 920900000 || frequency == 923300000:
-		return pb_lorawan.Region_KR_920_923.String()
-	case frequency >= 915200000 && frequency <= 927800000:
-		return pb_lorawan.Region_AU_915_928.String()
-	case frequency >= 470300000 && frequency <= 489300000:
-		return pb_lorawan.Region_CN_470_510.String()
+// buildDownlinkOption builds a DownlinkOption with default values
+func (r *router) buildDownlinkOption(gatewayID string, band band.FrequencyPlan) *pb_broker.DownlinkOption {
+	dataRate, _ := types.ConvertDataRate(band.DataRates[band.RX2DataRate])
+	return &pb_broker.DownlinkOption{
+		GatewayId: gatewayID,
+		ProtocolConfig: &pb_protocol.TxConfiguration{Protocol: &pb_protocol.TxConfiguration_Lorawan{Lorawan: &pb_lorawan.TxConfiguration{
+			Modulation: pb_lorawan.Modulation_LORA,
+			DataRate:   dataRate.String(),
+			CodingRate: "4/5",
+		}}},
+		GatewayConfig: &pb_gateway.TxConfiguration{
+			RfChain:               0,
+			PolarizationInversion: true,
+			Frequency:             uint64(band.RX2Frequency),
+			Power:                 int32(band.DefaultTXPower),
+		},
 	}
-	return ""
-}
-
-func getBand(region string) (band *lora.Band, err error) {
-	var b lora.Band
-
-	switch region {
-	case pb_lorawan.Region_EU_863_870.String():
-		b, err = lora.GetConfig(lora.EU_863_870)
-	case pb_lorawan.Region_US_902_928.String():
-		b, err = lora.GetConfig(lora.US_902_928)
-	case pb_lorawan.Region_CN_779_787.String():
-		err = errors.NewErrInternal("China 779-787 MHz band not supported")
-	case pb_lorawan.Region_EU_433.String():
-		err = errors.NewErrInternal("Europe 433 MHz band not supported")
-	case pb_lorawan.Region_AU_915_928.String():
-		b, err = lora.GetConfig(lora.AU_915_928)
-	case pb_lorawan.Region_CN_470_510.String():
-		err = errors.NewErrInternal("China 470-510 MHz band not supported")
-	case pb_lorawan.Region_AS_923.String():
-		err = errors.NewErrInternal("Asia 923 MHz band not supported")
-	case pb_lorawan.Region_KR_920_923.String():
-		err = errors.NewErrInternal("South Korea 920-923 MHz band not supported")
-	default:
-		err = errors.NewErrInvalidArgument("Frequency Band", "unknown")
-	}
-	if err != nil {
-		return
-	}
-	band = &b
-
-	// TTN-specific configuration
-	if region == "EU_863_870" {
-		// TTN uses SF9BW125 in RX2
-		band.RX2DataRate = 3
-		// TTN frequency plan includes extra channels next to the default channels:
-		band.UplinkChannels = []lora.Channel{
-			lora.Channel{Frequency: 868100000, DataRates: []int{0, 1, 2, 3, 4, 5}},
-			lora.Channel{Frequency: 868300000, DataRates: []int{0, 1, 2, 3, 4, 5, 6}}, // Also SF7BW250
-			lora.Channel{Frequency: 868500000, DataRates: []int{0, 1, 2, 3, 4, 5}},
-			lora.Channel{Frequency: 868800000, DataRates: []int{7}}, // FSK 50kbps
-			lora.Channel{Frequency: 867100000, DataRates: []int{0, 1, 2, 3, 4, 5}},
-			lora.Channel{Frequency: 867300000, DataRates: []int{0, 1, 2, 3, 4, 5}},
-			lora.Channel{Frequency: 867500000, DataRates: []int{0, 1, 2, 3, 4, 5}},
-			lora.Channel{Frequency: 867700000, DataRates: []int{0, 1, 2, 3, 4, 5}},
-			lora.Channel{Frequency: 867900000, DataRates: []int{0, 1, 2, 3, 4, 5}},
-		}
-		band.DownlinkChannels = band.UplinkChannels
-	}
-
-	return
 }
 
 func (r *router) buildDownlinkOptions(uplink *pb.UplinkMessage, isActivation bool, gateway *gateway.Gateway) (downlinkOptions []*pb_broker.DownlinkOption) {
@@ -151,118 +98,75 @@ func (r *router) buildDownlinkOptions(uplink *pb.UplinkMessage, isActivation boo
 
 	region := gatewayStatus.Region
 	if region == "" {
-		region = guessRegion(uplink.GatewayMetadata.Frequency)
+		region = band.Guess(uplink.GatewayMetadata.Frequency)
 	}
-	band, err := getBand(region)
+	band, err := band.Get(region)
 	if err != nil {
 		return // We can't handle this region
 	}
-
-	var dataRate lora.DataRate
-
-	// LORA Modulation
-	if lorawanMetadata.Modulation == pb_lorawan.Modulation_LORA {
-		dataRate.Modulation = lora.LoRaModulation
-		dr, err := types.ParseDataRate(lorawanMetadata.DataRate)
-		if err != nil {
-			return // Invalid packet, probably won't happen if the gateway is just doing its job
-		}
-		dataRate.Bandwidth = int(dr.Bandwidth)
-		dataRate.SpreadFactor = int(dr.SpreadingFactor)
+	if region == "EU_863_870" && isActivation {
+		band.RX2DataRate = 0
 	}
 
-	if lorawanMetadata.Modulation == pb_lorawan.Modulation_FSK {
-		dataRate.Modulation = lora.FSKModulation
-		dataRate.BitRate = int(lorawanMetadata.BitRate)
-	}
-
-	uplinkDRIndex, err := band.GetDataRate(dataRate)
+	dataRate, err := lorawanMetadata.GetDataRate()
 	if err != nil {
-		return // Invalid packet, probably won't happen if the gateway is just doing its job
+		return
 	}
 
 	// Configuration for RX2
-	{
-		power := int32(band.DefaultTXPower)
+	buildRX2 := func() (*pb_broker.DownlinkOption, error) {
+		option := r.buildDownlinkOption(gateway.ID, band)
 		if region == "EU_863_870" {
-			power = 27 // The EU Downlink frequency allows up to 27dBm
-			if isActivation {
-				// TTN uses SF9BW125 in RX2, we have to reset this for joins
-				band.RX2DataRate = 0
-			}
+			option.GatewayConfig.Power = 27 // The EU RX2 frequency allows up to 27dBm
 		}
-		dataRate, _ := types.ConvertDataRate(band.DataRates[band.RX2DataRate])
-		delay := band.ReceiveDelay2
 		if isActivation {
-			delay = band.JoinAcceptDelay2
+			option.GatewayConfig.Timestamp = uplink.GatewayMetadata.Timestamp + uint32(band.JoinAcceptDelay2/1000)
+		} else {
+			option.GatewayConfig.Timestamp = uplink.GatewayMetadata.Timestamp + uint32(band.ReceiveDelay2/1000)
 		}
-		rx2 := &pb_broker.DownlinkOption{
-			GatewayId: gateway.ID,
-			ProtocolConfig: &pb_protocol.TxConfiguration{Protocol: &pb_protocol.TxConfiguration_Lorawan{Lorawan: &pb_lorawan.TxConfiguration{
-				Modulation: pb_lorawan.Modulation_LORA, // RX2 is always LoRa
-				DataRate:   dataRate.String(),          // This is default
-				CodingRate: lorawanMetadata.CodingRate, // Let's just take this from the Rx
-			}}},
-			GatewayConfig: &pb_gateway.TxConfiguration{
-				Timestamp:             uplink.GatewayMetadata.Timestamp + uint32(delay/1000),
-				RfChain:               0,
-				PolarizationInversion: true,
-				Frequency:             uint64(band.RX2Frequency),
-				Power:                 power,
-			},
-		}
-		options = append(options, rx2)
+		option.ProtocolConfig.GetLorawan().CodingRate = lorawanMetadata.CodingRate
+		return option, nil
+	}
+
+	if option, err := buildRX2(); err == nil {
+		options = append(options, option)
 	}
 
 	// Configuration for RX1
-	{
-		uplinkChannel, err := band.GetChannel(int(uplink.GatewayMetadata.Frequency), nil)
-		if err == nil {
-			downlinkChannel := band.DownlinkChannels[band.GetRX1Channel(uplinkChannel)]
-			downlinkDRIndex, err := band.GetRX1DataRateForOffset(uplinkDRIndex, 0)
-			if err == nil {
-				var modulation pb_lorawan.Modulation
-				var dataRateString string
-				var bitRate int
-				var frequencyDeviation int
-
-				dr := band.DataRates[downlinkDRIndex]
-				if dr.Modulation == lora.LoRaModulation {
-					modulation = pb_lorawan.Modulation_LORA
-					dataRate, _ := types.ConvertDataRate(dr)
-					dataRateString = dataRate.String()
-				}
-
-				if dr.Modulation == lora.FSKModulation {
-					modulation = pb_lorawan.Modulation_FSK
-					bitRate = dr.BitRate
-					frequencyDeviation = bitRate / 2
-				}
-
-				delay := band.ReceiveDelay1
-				if isActivation {
-					delay = band.JoinAcceptDelay1
-				}
-				rx1 := &pb_broker.DownlinkOption{
-					GatewayId: gateway.ID,
-					ProtocolConfig: &pb_protocol.TxConfiguration{Protocol: &pb_protocol.TxConfiguration_Lorawan{Lorawan: &pb_lorawan.TxConfiguration{
-						Modulation: modulation,
-						DataRate:   dataRateString,
-						BitRate:    uint32(bitRate),
-						CodingRate: lorawanMetadata.CodingRate, // Let's just take this from the Rx
-					}}},
-					GatewayConfig: &pb_gateway.TxConfiguration{
-						Timestamp:             uplink.GatewayMetadata.Timestamp + uint32(delay/1000),
-						RfChain:               0,
-						PolarizationInversion: true,
-						Frequency:             uint64(downlinkChannel.Frequency),
-						Power:                 int32(band.DefaultTXPower),
-						FrequencyDeviation:    uint32(frequencyDeviation),
-					},
-				}
-				options = append(options, rx1)
-			}
+	buildRX1 := func() (*pb_broker.DownlinkOption, error) {
+		option := r.buildDownlinkOption(gateway.ID, band)
+		if isActivation {
+			option.GatewayConfig.Timestamp = uplink.GatewayMetadata.Timestamp + uint32(band.JoinAcceptDelay1/1000)
+		} else {
+			option.GatewayConfig.Timestamp = uplink.GatewayMetadata.Timestamp + uint32(band.ReceiveDelay1/1000)
 		}
+		option.ProtocolConfig.GetLorawan().CodingRate = lorawanMetadata.CodingRate
+
+		freq, err := band.GetRX1Frequency(int(uplink.GatewayMetadata.Frequency))
+		if err != nil {
+			return nil, err
+		}
+		option.GatewayConfig.Frequency = uint64(freq)
+
+		upDR, err := band.GetDataRate(dataRate)
+		if err != nil {
+			return nil, err
+		}
+		downDR, err := band.GetRX1DataRate(upDR, 0)
+		if err != nil {
+			return nil, err
+		}
+
+		if err := option.ProtocolConfig.GetLorawan().SetDataRate(band.DataRates[downDR]); err != nil {
+			return nil, err
+		}
+		option.GatewayConfig.FrequencyDeviation = uint32(option.ProtocolConfig.GetLorawan().BitRate / 2)
+
+		return option, nil
+	}
+
+	if option, err := buildRX1(); err == nil {
+		options = append(options, option)
 	}
 
 	computeDownlinkScores(gateway, uplink, options)
@@ -291,7 +195,7 @@ func computeDownlinkScores(gateway *gateway.Gateway, uplink *pb.UplinkMessage, o
 
 	region := gatewayStatus.Region
 	if region == "" {
-		region = guessRegion(uplink.GatewayMetadata.Frequency)
+		region = band.Guess(uplink.GatewayMetadata.Frequency)
 	}
 
 	gatewayRx, _ := gateway.Utilization.Get()
