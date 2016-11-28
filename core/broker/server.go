@@ -43,9 +43,9 @@ func (b *brokerRPC) associateRouter(md metadata.MD) (chan *pb.UplinkMessage, <-c
 
 	go func() {
 		for message := range up {
-			if b.routerUpRate.Limit(router.Id) {
-				b.broker.Ctx.WithField("RouterID", router.Id).Warn("Router reached uplink rate limit, 1s penalty")
-				time.Sleep(time.Second)
+			if waitTime := b.routerUpRate.Wait(router.Id); waitTime != 0 {
+				b.broker.Ctx.WithField("RouterID", router.Id).WithField("Wait", waitTime).Warn("Router reached uplink rate limit")
+				time.Sleep(waitTime)
 			}
 			go b.broker.HandleUplink(message)
 		}
@@ -95,9 +95,9 @@ func (b *brokerRPC) getHandlerPublish(md metadata.MD) (chan *pb.DownlinkMessage,
 					case pb_discovery.Metadata_APP_ID:
 						announcedID := string(meta.Value)
 						if announcedID == downlink.AppId {
-							if b.handlerDownRate.Limit(handler.Id) {
-								b.broker.Ctx.WithField("HandlerID", handler.Id).Warn("Handler reached downlink rate limit, 1s penalty")
-								time.Sleep(time.Second)
+							if waitTime := b.handlerDownRate.Wait(handler.Id); waitTime != 0 {
+								b.broker.Ctx.WithField("HandlerID", handler.Id).WithField("Wait", waitTime).Warn("Handler reached downlink rate limit")
+								time.Sleep(waitTime)
 							}
 							b.broker.HandleDownlink(downlink)
 							return

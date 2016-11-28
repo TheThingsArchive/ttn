@@ -75,9 +75,9 @@ func (r *routerRPC) getUplink(md metadata.MD) (ch chan *pb.UplinkMessage, err er
 	ch = make(chan *pb.UplinkMessage)
 	go func() {
 		for uplink := range ch {
-			if r.uplinkRate.Limit(gateway.ID) {
-				r.router.Ctx.WithField("GatewayID", gateway.ID).Warn("Gateway reached uplink rate limit, 1s penalty")
-				time.Sleep(time.Second)
+			if waitTime := r.uplinkRate.Wait(gateway.ID); waitTime != 0 {
+				r.router.Ctx.WithField("GatewayID", gateway.ID).WithField("Wait", waitTime).Warn("Gateway reached uplink rate limit")
+				time.Sleep(waitTime)
 			}
 			r.router.HandleUplink(gateway.ID, uplink)
 
@@ -94,9 +94,9 @@ func (r *routerRPC) getGatewayStatus(md metadata.MD) (ch chan *pb_gateway.Status
 	ch = make(chan *pb_gateway.Status)
 	go func() {
 		for status := range ch {
-			if r.statusRate.Limit(gateway.ID) {
-				r.router.Ctx.WithField("GatewayID", gateway.ID).Warn("Gateway reached status rate limit, 1s penalty")
-				time.Sleep(time.Second)
+			if waitTime := r.statusRate.Wait(gateway.ID); waitTime != 0 {
+				r.router.Ctx.WithField("GatewayID", gateway.ID).WithField("Wait", waitTime).Warn("Gateway reached status rate limit")
+				time.Sleep(waitTime)
 			}
 			r.router.HandleGatewayStatus(gateway.ID, status)
 		}
@@ -130,7 +130,7 @@ func (r *routerRPC) Activate(ctx context.Context, req *pb.DeviceActivationReques
 		return nil, errors.BuildGRPCError(errors.Wrap(err, "Invalid Activation Request"))
 	}
 	if r.uplinkRate.Limit(gateway.ID) {
-		return nil, grpc.Errorf(codes.ResourceExhausted, "Gateway reached uplink rate limit, 1s penalty")
+		return nil, grpc.Errorf(codes.ResourceExhausted, "Gateway reached uplink rate limit")
 	}
 	return r.router.HandleActivation(gateway.ID, req)
 }
