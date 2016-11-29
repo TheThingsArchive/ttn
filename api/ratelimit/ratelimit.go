@@ -1,7 +1,6 @@
 package ratelimit
 
 import (
-	"fmt"
 	"sync"
 	"time"
 
@@ -40,7 +39,6 @@ func (r *Registry) getOrCreate(id string, createFunc func() *ratelimit.Bucket) *
 }
 
 func (r *Registry) newFunc() *ratelimit.Bucket {
-	fmt.Println(r.per, r.rate)
 	return ratelimit.NewBucket(r.per, int64(r.rate))
 }
 

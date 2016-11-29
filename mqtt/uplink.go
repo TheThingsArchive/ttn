@@ -42,7 +42,7 @@ func (c *DefaultClient) PublishUplinkFields(appID string, devID string, fields m
 		for _, token := range tokens {
 			token.Wait()
 			if token.Error() != nil {
-				fmt.Println(token.Error())
+				c.ctx.Warnf("Error publishing uplink fields: %s", token.Error().Error())
 				t.err = token.Error()
 			}
 		}
