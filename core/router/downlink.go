@@ -22,13 +22,13 @@ import (
 	"github.com/apex/log"
 )
 
-func (r *router) SubscribeDownlink(gatewayID string) (<-chan *pb.DownlinkMessage, error) {
+func (r *router) SubscribeDownlink(gatewayID string, subscriptionID string) (<-chan *pb.DownlinkMessage, error) {
 	ctx := r.Ctx.WithFields(log.Fields{
 		"GatewayID": gatewayID,
 	})
 
 	gateway := r.getGateway(gatewayID)
-	if fromSchedule := gateway.Schedule.Subscribe(); fromSchedule != nil {
+	if fromSchedule := gateway.Schedule.Subscribe(subscriptionID); fromSchedule != nil {
 		toGateway := make(chan *pb.DownlinkMessage)
 		go func() {
 			ctx.Debug("Activate downlink")
@@ -45,8 +45,8 @@ func (r *router) SubscribeDownlink(gatewayID string) (<-chan *pb.DownlinkMessage
 	return nil, errors.NewErrInternal(fmt.Sprintf("Already subscribed to downlink for %s", gatewayID))
 }
 
-func (r *router) UnsubscribeDownlink(gatewayID string) error {
-	r.getGateway(gatewayID).Schedule.Stop()
+func (r *router) UnsubscribeDownlink(gatewayID string, subscriptionID string) error {
+	r.getGateway(gatewayID).Schedule.Stop(subscriptionID)
 	return nil
 }
 

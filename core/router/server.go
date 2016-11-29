@@ -14,6 +14,7 @@ import (
 	pb "github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/core/router/gateway"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
+	"github.com/TheThingsNetwork/ttn/utils/random"
 	"github.com/spf13/viper"
 	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
 	"google.golang.org/grpc"
@@ -109,11 +110,12 @@ func (r *routerRPC) getDownlink(md metadata.MD) (ch <-chan *pb.DownlinkMessage, 
 	if err != nil {
 		return nil, nil, err
 	}
+	subscriptionID := random.String(10)
 	ch = make(chan *pb.DownlinkMessage)
 	cancel = func() {
-		r.router.UnsubscribeDownlink(gateway.ID)
+		r.router.UnsubscribeDownlink(gateway.ID, subscriptionID)
 	}
-	downlinkChannel, err := r.router.SubscribeDownlink(gateway.ID)
+	downlinkChannel, err := r.router.SubscribeDownlink(gateway.ID, subscriptionID)
 	if err != nil {
 		return nil, nil, err
 	}

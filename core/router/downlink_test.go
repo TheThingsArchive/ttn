@@ -77,7 +77,7 @@ func TestSubscribeUnsubscribeDownlink(t *testing.T) {
 	gtw.Schedule.Sync(0)
 	id, _ := gtw.Schedule.GetOption(5000, 10*1000)
 
-	ch, err := r.SubscribeDownlink(gtwID)
+	ch, err := r.SubscribeDownlink(gtwID, "")
 	a.So(err, ShouldBeNil)
 
 	var wg sync.WaitGroup
@@ -105,7 +105,7 @@ func TestSubscribeUnsubscribeDownlink(t *testing.T) {
 	// Wait for the downlink to arrive
 	<-time.After(10 * time.Millisecond)
 
-	err = r.UnsubscribeDownlink(gtwID)
+	err = r.UnsubscribeDownlink(gtwID, "")
 	a.So(err, ShouldBeNil)
 
 	wg.Wait()

@@ -31,9 +31,9 @@ type Router interface {
 	// Handle a downlink message
 	HandleDownlink(message *pb_broker.DownlinkMessage) error
 	// Subscribe to downlink messages
-	SubscribeDownlink(gatewayID string) (<-chan *pb.DownlinkMessage, error)
+	SubscribeDownlink(gatewayID string, subscriptionID string) (<-chan *pb.DownlinkMessage, error)
 	// Unsubscribe from downlink messages
-	UnsubscribeDownlink(gatewayID string) error
+	UnsubscribeDownlink(gatewayID string, subscriptionID string) error
 	// Handle a device activation
 	HandleActivation(gatewayID string, activation *pb.DeviceActivationRequest) (*pb.DeviceActivationResponse, error)
 

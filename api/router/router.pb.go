@@ -300,6 +300,8 @@ type RouterClient interface {
 	// Gateway streams uplink messages to Router
 	Uplink(ctx context.Context, opts ...grpc.CallOption) (Router_UplinkClient, error)
 	// Gateway subscribes to downlink messages from Router
+	// It is possible to open multiple subscriptions (but not recommended).
+	// If you do this, you are responsible for de-duplication of downlink messages.
 	Subscribe(ctx context.Context, in *SubscribeRequest, opts ...grpc.CallOption) (Router_SubscribeClient, error)
 	// Gateway requests device activation
 	Activate(ctx context.Context, in *DeviceActivationRequest, opts ...grpc.CallOption) (*DeviceActivationResponse, error)
@@ -430,6 +432,8 @@ type RouterServer interface {
 	// Gateway streams uplink messages to Router
 	Uplink(Router_UplinkServer) error
 	// Gateway subscribes to downlink messages from Router
+	// It is possible to open multiple subscriptions (but not recommended).
+	// If you do this, you are responsible for de-duplication of downlink messages.
 	Subscribe(*SubscribeRequest, Router_SubscribeServer) error
 	// Gateway requests device activation
 	Activate(context.Context, *DeviceActivationRequest) (*DeviceActivationResponse, error)
