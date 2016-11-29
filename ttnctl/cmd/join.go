@@ -72,6 +72,7 @@ var joinCmd = &cobra.Command{
 
 		downlinkStream := router.NewMonitoredDownlinkStream(gtwClient)
 		defer downlinkStream.Close()
+		time.Sleep(100 * time.Millisecond)
 
 		joinReq := &pb_lorawan.Message{
 			MHDR: pb_lorawan.MHDR{MType: pb_lorawan.MType_JOIN_REQUEST, Major: pb_lorawan.Major_LORAWAN_R1},
@@ -104,7 +105,11 @@ var joinCmd = &cobra.Command{
 		ctx.Info("Sent uplink to Router")
 
 		select {
-		case downlinkMessage := <-downlinkStream.Channel():
+		case downlinkMessage, ok := <-downlinkStream.Channel():
+			if !ok {
+				ctx.Info("Did not receive downlink")
+				break
+			}
 			downlinkMessage.UnmarshalPayload()
 			resPhy := downlinkMessage.Message.GetLorawan().PHYPayload()
 			resPhy.DecryptJoinAcceptPayload(lorawan.AES128Key(appKey))

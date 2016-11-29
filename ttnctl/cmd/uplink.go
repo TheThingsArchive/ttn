@@ -83,6 +83,7 @@ var uplinkCmd = &cobra.Command{
 		if withDownlink {
 			downlinkStream = router.NewMonitoredDownlinkStream(gtwClient)
 			defer downlinkStream.Close()
+			time.Sleep(100 * time.Millisecond)
 		}
 
 		m := &util.Message{}
@@ -108,7 +109,11 @@ var uplinkCmd = &cobra.Command{
 
 		if downlinkStream != nil {
 			select {
-			case downlinkMessage := <-downlinkStream.Channel():
+			case downlinkMessage, ok := <-downlinkStream.Channel():
+				if !ok {
+					ctx.Info("Did not receive downlink")
+					break
+				}
 				if err := m.Unmarshal(downlinkMessage.Payload); err != nil {
 					ctx.WithError(err).Fatal("Could not unmarshal downlink")
 				}
