@@ -39,7 +39,7 @@ func (r *Registry) getOrCreate(id string, createFunc func() *ratelimit.Bucket) *
 }
 
 func (r *Registry) newFunc() *ratelimit.Bucket {
-	return ratelimit.NewBucket(r.per, int64(r.rate))
+	return ratelimit.NewBucketWithQuantum(r.per, int64(r.rate), int64(r.rate))
 }
 
 // Limit returns true if the ratelimit for the given entity has been reached
