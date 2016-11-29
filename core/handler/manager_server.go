@@ -18,6 +18,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/handler/application"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
+	"github.com/apex/log"
 	"github.com/golang/protobuf/ptypes/empty"
 	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
 	"google.golang.org/grpc"
@@ -83,33 +84,50 @@ func (h *handlerManager) GetDevice(ctx context.Context, in *pb.DeviceIdentifier)
 		return nil, err
 	}
 
+	pbDev := &pb.Device{
+		AppId: dev.AppID,
+		DevId: dev.DevID,
+		Device: &pb.Device_LorawanDevice{LorawanDevice: &pb_lorawan.Device{
+			AppId:                 dev.AppID,
+			AppEui:                &dev.AppEUI,
+			DevId:                 dev.DevID,
+			DevEui:                &dev.DevEUI,
+			DevAddr:               &dev.DevAddr,
+			NwkSKey:               &dev.NwkSKey,
+			AppSKey:               &dev.AppSKey,
+			AppKey:                &dev.AppKey,
+			DisableFCntCheck:      dev.Options.DisableFCntCheck,
+			Uses32BitFCnt:         dev.Options.Uses32BitFCnt,
+			ActivationConstraints: dev.Options.ActivationConstraints,
+		}},
+	}
+
 	nsDev, err := h.deviceManager.GetDevice(ctx, &pb_lorawan.DeviceIdentifier{
 		AppEui: &dev.AppEUI,
 		DevEui: &dev.DevEUI,
 	})
-	if err != nil {
-		return nil, errors.Wrap(errors.FromGRPCError(err), "Broker did not return device")
+	if errors.GetErrType(errors.FromGRPCError(err)) == errors.NotFound {
+		// Re-register the device in the Broker (NetworkServer)
+		h.handler.Ctx.WithFields(log.Fields{
+			"AppID":  dev.AppID,
+			"DevID":  dev.DevID,
+			"AppEUI": dev.AppEUI,
+			"DevEUI": dev.DevEUI,
+		}).Warn("Re-registering missing device to Broker")
+		nsDev = dev.GetLoRaWAN()
+		_, err = h.deviceManager.SetDevice(ctx, nsDev)
+		if err != nil {
+			return nil, errors.Wrap(errors.FromGRPCError(err), "Could not re-register missing device to Broker")
+		}
+	} else if err != nil {
+		return pbDev, errors.Wrap(errors.FromGRPCError(err), "Broker did not return device")
 	}
 
-	return &pb.Device{
-		AppId: dev.AppID,
-		DevId: dev.DevID,
-		Device: &pb.Device_LorawanDevice{LorawanDevice: &pb_lorawan.Device{
-			AppId:            dev.AppID,
-			AppEui:           nsDev.AppEui,
-			DevId:            dev.DevID,
-			DevEui:           nsDev.DevEui,
-			DevAddr:          nsDev.DevAddr,
-			NwkSKey:          nsDev.NwkSKey,
-			AppSKey:          &dev.AppSKey,
-			AppKey:           &dev.AppKey,
-			FCntUp:           nsDev.FCntUp,
-			FCntDown:         nsDev.FCntDown,
-			DisableFCntCheck: nsDev.DisableFCntCheck,
-			Uses32BitFCnt:    nsDev.Uses32BitFCnt,
-			LastSeen:         nsDev.LastSeen,
-		}},
-	}, nil
+	pbDev.GetLorawanDevice().FCntUp = nsDev.FCntUp
+	pbDev.GetLorawanDevice().FCntDown = nsDev.FCntDown
+	pbDev.GetLorawanDevice().LastSeen = nsDev.LastSeen
+
+	return pbDev, nil
 }
 
 func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*empty.Empty, error) {
@@ -164,6 +182,16 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*empty.E
 	dev.AppEUI = *lorawan.AppEui
 	dev.DevID = in.DevId
 	dev.DevEUI = *lorawan.DevEui
+
+	dev.Options = device.Options{
+		DisableFCntCheck:      lorawan.DisableFCntCheck,
+		Uses32BitFCnt:         lorawan.Uses32BitFCnt,
+		ActivationConstraints: lorawan.ActivationConstraints,
+	}
+	if dev.Options.ActivationConstraints == "" {
+		dev.Options.ActivationConstraints = "local"
+	}
+
 	if lorawan.DevAddr != nil {
 		dev.DevAddr = *lorawan.DevAddr
 	}
@@ -182,24 +210,10 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*empty.E
 		dev.AppKey = *lorawan.AppKey
 	}
 
-	nsUpdated := &pb_lorawan.Device{
-		AppId:                 in.AppId,
-		DevId:                 in.DevId,
-		AppEui:                lorawan.AppEui,
-		DevEui:                lorawan.DevEui,
-		DevAddr:               lorawan.DevAddr,
-		NwkSKey:               lorawan.NwkSKey,
-		FCntUp:                lorawan.FCntUp,
-		FCntDown:              lorawan.FCntDown,
-		DisableFCntCheck:      lorawan.DisableFCntCheck,
-		Uses32BitFCnt:         lorawan.Uses32BitFCnt,
-		ActivationConstraints: lorawan.ActivationConstraints,
-	}
-
-	// Devices are activated locally by default
-	if nsUpdated.ActivationConstraints == "" {
-		nsUpdated.ActivationConstraints = "local"
-	}
+	// Update the device in the Broker (NetworkServer)
+	nsUpdated := dev.GetLoRaWAN()
+	nsUpdated.FCntUp = lorawan.FCntUp
+	nsUpdated.FCntDown = lorawan.FCntDown
 
 	_, err = h.deviceManager.SetDevice(ctx, nsUpdated)
 	if err != nil {
@@ -230,7 +244,7 @@ func (h *handlerManager) DeleteDevice(ctx context.Context, in *pb.DeviceIdentifi
 		return nil, err
 	}
 	_, err = h.deviceManager.DeleteDevice(ctx, &pb_lorawan.DeviceIdentifier{AppEui: &dev.AppEUI, DevEui: &dev.DevEUI})
-	if err != nil {
+	if err != nil && errors.GetErrType(errors.FromGRPCError(err)) != errors.NotFound {
 		return nil, errors.Wrap(errors.FromGRPCError(err), "Broker did not delete device")
 	}
 	err = h.handler.devices.Delete(in.AppId, in.DevId)
