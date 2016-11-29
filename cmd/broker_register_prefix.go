@@ -24,11 +24,13 @@ var brokerRegisterPrefixCmd = &cobra.Command{
 			cmd.UsageFunc()(cmd)
 		}
 
-		conn, err := grpc.Dial(viper.GetString("discovery-address"), append(api.DialOptions, grpc.WithInsecure())...)
+		conn, err := grpc.Dial(viper.GetString("discovery-address"), append(api.DialOptions, grpc.WithInsecure(), grpc.WithBlock())...)
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not connect to Discovery server")
 		}
 		client := discovery.NewDiscoveryClient(conn)
+
+		client.GetAll(context.Background(), &discovery.GetServiceRequest{})
 
 		md := metadata.Pairs(
 			"service-name", "broker",
@@ -47,10 +49,9 @@ var brokerRegisterPrefixCmd = &cobra.Command{
 			_, err = client.AddMetadata(dscContext, &discovery.MetadataRequest{
 				ServiceName: "broker",
 				Id:          viper.GetString("id"),
-				Metadata: &discovery.Metadata{
-					Key:   discovery.Metadata_PREFIX,
-					Value: []byte{byte(prefix.Length), prefix.DevAddr[0], prefix.DevAddr[1], prefix.DevAddr[2], prefix.DevAddr[3]},
-				},
+				Metadata: &discovery.Metadata{Metadata: &discovery.Metadata_DevAddrPrefix{
+					DevAddrPrefix: prefix.Bytes(),
+				}},
 			})
 			if err != nil {
 				ctx.WithError(err).Error("Could not register prefix")

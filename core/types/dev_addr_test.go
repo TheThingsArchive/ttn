@@ -132,7 +132,7 @@ func TestParseDevAddrPrefix(t *testing.T) {
 	a.So(prefix.Length, ShouldEqual, 1)
 }
 
-func TestMarshalUnmarshalTextDevAddrPrefix(t *testing.T) {
+func TestMarshalUnmarshalDevAddrPrefix(t *testing.T) {
 	a := New(t)
 	var prefix DevAddrPrefix
 
@@ -148,4 +148,30 @@ func TestMarshalUnmarshalTextDevAddrPrefix(t *testing.T) {
 	txt, err = prefix.MarshalText()
 	a.So(err, ShouldBeNil)
 	a.So(string(txt), ShouldEqual, "80000000/1")
+
+	prefix = DevAddrPrefix{}
+
+	bin, err := prefix.MarshalBinary()
+	a.So(err, ShouldBeNil)
+	a.So(bin, ShouldResemble, []byte{0x00, 0x00, 0x00, 0x00, 0x00})
+
+	err = prefix.UnmarshalBinary([]byte{0x01, 0xff, 0x55, 0x66, 0x77})
+	a.So(err, ShouldBeNil)
+	a.So(prefix.DevAddr, ShouldEqual, DevAddr{128, 0, 0, 0})
+	a.So(prefix.Length, ShouldEqual, 1)
+
+	bin, err = prefix.MarshalBinary()
+	a.So(err, ShouldBeNil)
+	a.So(bin, ShouldResemble, []byte{0x01, 0x80, 0x00, 0x00, 0x00})
+
+	prefix = DevAddrPrefix{}
+
+	bin, err = prefix.Marshal()
+	a.So(err, ShouldBeNil)
+	a.So(bin, ShouldResemble, []byte{0x00, 0x00, 0x00, 0x00, 0x00})
+
+	err = prefix.Unmarshal([]byte{0x01, 0x80, 0x00, 0x00, 0x00})
+	a.So(err, ShouldBeNil)
+	a.So(prefix.DevAddr, ShouldEqual, DevAddr{128, 0, 0, 0})
+	a.So(prefix.Length, ShouldEqual, 1)
 }

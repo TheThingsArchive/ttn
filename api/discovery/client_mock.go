@@ -61,35 +61,44 @@ func (_mr *_MockClientRecorder) Get(arg0, arg1 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "Get", arg0, arg1)
 }
 
-func (_m *MockClient) AddMetadata(key Metadata_Key, value []byte, token string) error {
-	ret := _m.ctrl.Call(_m, "AddMetadata", key, value, token)
+func (_m *MockClient) AddDevAddrPrefix(prefix types.DevAddrPrefix) error {
+	ret := _m.ctrl.Call(_m, "AddDevAddrPrefix", prefix)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-func (_mr *_MockClientRecorder) AddMetadata(arg0, arg1, arg2 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "AddMetadata", arg0, arg1, arg2)
+func (_mr *_MockClientRecorder) AddDevAddrPrefix(arg0 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "AddDevAddrPrefix", arg0)
 }
 
-func (_m *MockClient) DeleteMetadata(key Metadata_Key, value []byte, token string) error {
-	ret := _m.ctrl.Call(_m, "DeleteMetadata", key, value, token)
+func (_m *MockClient) AddAppID(appID string, token string) error {
+	ret := _m.ctrl.Call(_m, "AddAppID", appID, token)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-func (_mr *_MockClientRecorder) DeleteMetadata(arg0, arg1, arg2 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "DeleteMetadata", arg0, arg1, arg2)
+func (_mr *_MockClientRecorder) AddAppID(arg0, arg1 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "AddAppID", arg0, arg1)
 }
 
-func (_m *MockClient) GetAllForMetadata(serviceName string, key Metadata_Key, matchFunc func([]byte) bool) ([]*Announcement, error) {
-	ret := _m.ctrl.Call(_m, "GetAllForMetadata", serviceName, key, matchFunc)
-	ret0, _ := ret[0].([]*Announcement)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+func (_m *MockClient) RemoveDevAddrPrefix(prefix types.DevAddrPrefix) error {
+	ret := _m.ctrl.Call(_m, "RemoveDevAddrPrefix", prefix)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
-func (_mr *_MockClientRecorder) GetAllForMetadata(arg0, arg1, arg2 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "GetAllForMetadata", arg0, arg1, arg2)
+func (_mr *_MockClientRecorder) RemoveDevAddrPrefix(arg0 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "RemoveDevAddrPrefix", arg0)
+}
+
+func (_m *MockClient) RemoveAppID(appID string, token string) error {
+	ret := _m.ctrl.Call(_m, "RemoveAppID", appID, token)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+func (_mr *_MockClientRecorder) RemoveAppID(arg0, arg1 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "RemoveAppID", arg0, arg1)
 }
 
 func (_m *MockClient) GetAllBrokersForDevAddr(devAddr types.DevAddr) ([]*Announcement, error) {

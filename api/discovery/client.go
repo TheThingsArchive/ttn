@@ -27,9 +27,10 @@ type Client interface {
 	Announce(token string) error
 	GetAll(serviceName string) ([]*Announcement, error)
 	Get(serviceName, id string) (*Announcement, error)
-	AddMetadata(key Metadata_Key, value []byte, token string) error
-	DeleteMetadata(key Metadata_Key, value []byte, token string) error
-	GetAllForMetadata(serviceName string, key Metadata_Key, matchFunc func(value []byte) bool) ([]*Announcement, error)
+	AddDevAddrPrefix(prefix types.DevAddrPrefix) error
+	AddAppID(appID string, token string) error
+	RemoveDevAddrPrefix(prefix types.DevAddrPrefix) error
+	RemoveAppID(appID string, token string) error
 	GetAllBrokersForDevAddr(devAddr types.DevAddr) ([]*Announcement, error)
 	GetAllHandlersForAppID(appID string) ([]*Announcement, error)
 	Close() error
@@ -107,7 +108,7 @@ func (c *DefaultClient) get(serviceName, id string) (*Announcement, error) {
 }
 
 func (c *DefaultClient) getAll(serviceName string) ([]*Announcement, error) {
-	res, err := c.client.GetAll(c.getContext(""), &GetAllRequest{ServiceName: serviceName})
+	res, err := c.client.GetAll(c.getContext(""), &GetServiceRequest{ServiceName: serviceName})
 	if err != nil {
 		return nil, err
 	}
@@ -156,69 +157,88 @@ func (c *DefaultClient) Get(serviceName, id string) (*Announcement, error) {
 	return res.(*Announcement), nil
 }
 
-// AddMetadata publishes metadata for the current component to the Discovery server
-func (c *DefaultClient) AddMetadata(key Metadata_Key, value []byte, token string) error {
+// AddDevAddrPrefix adds a DevAddrPrefix to the current component
+func (c *DefaultClient) AddDevAddrPrefix(prefix types.DevAddrPrefix) error {
+	_, err := c.client.AddMetadata(c.getContext(""), &MetadataRequest{
+		ServiceName: c.self.ServiceName,
+		Id:          c.self.Id,
+		Metadata: &Metadata{Metadata: &Metadata_DevAddrPrefix{
+			DevAddrPrefix: prefix.Bytes(),
+		}},
+	})
+	return err
+}
+
+// AddAppID adds an AppID to the current component
+func (c *DefaultClient) AddAppID(appID string, token string) error {
 	_, err := c.client.AddMetadata(c.getContext(token), &MetadataRequest{
 		ServiceName: c.self.ServiceName,
 		Id:          c.self.Id,
-		Metadata: &Metadata{
-			Key:   key,
-			Value: value,
-		},
+		Metadata: &Metadata{Metadata: &Metadata_AppId{
+			AppId: appID,
+		}},
 	})
 	return err
 }
 
-// DeleteMetadata deletes metadata for the current component from the Discovery server
-func (c *DefaultClient) DeleteMetadata(key Metadata_Key, value []byte, token string) error {
+// RemoveDevAddrPrefix removes a DevAddrPrefix from the current component
+func (c *DefaultClient) RemoveDevAddrPrefix(prefix types.DevAddrPrefix) error {
+	_, err := c.client.DeleteMetadata(c.getContext(""), &MetadataRequest{
+		ServiceName: c.self.ServiceName,
+		Id:          c.self.Id,
+		Metadata: &Metadata{Metadata: &Metadata_DevAddrPrefix{
+			DevAddrPrefix: prefix.Bytes(),
+		}},
+	})
+	return err
+}
+
+// RemoveAppID removes an AppID from the current component
+func (c *DefaultClient) RemoveAppID(appID string, token string) error {
 	_, err := c.client.DeleteMetadata(c.getContext(token), &MetadataRequest{
 		ServiceName: c.self.ServiceName,
 		Id:          c.self.Id,
-		Metadata: &Metadata{
-			Key:   key,
-			Value: value,
-		},
+		Metadata: &Metadata{Metadata: &Metadata_AppId{
+			AppId: appID,
+		}},
 	})
 	return err
 }
 
-// GetAllForMetadata returns all annoucements of given type that contain given metadata and match the given function
-func (c *DefaultClient) GetAllForMetadata(serviceName string, key Metadata_Key, matchFunc func(value []byte) bool) ([]*Announcement, error) {
-	announcements, err := c.GetAll(serviceName)
+// GetAllBrokersForDevAddr returns all brokers that can handle the given DevAddr
+func (c *DefaultClient) GetAllBrokersForDevAddr(devAddr types.DevAddr) (announcements []*Announcement, err error) {
+	brokers, err := c.GetAll("broker")
 	if err != nil {
 		return nil, err
 	}
-	res := make([]*Announcement, 0, len(announcements))
-nextAnnouncement:
-	for _, announcement := range announcements {
-		for _, meta := range announcement.Metadata {
-			if meta.Key == key && matchFunc(meta.Value) {
-				res = append(res, announcement)
-				continue nextAnnouncement
+next:
+	for _, broker := range brokers {
+		for _, prefix := range broker.DevAddrPrefixes() {
+			if devAddr.HasPrefix(prefix) {
+				announcements = append(announcements, broker)
+				continue next
 			}
 		}
 	}
-	return res, nil
-}
-
-// GetAllBrokersForDevAddr returns all brokers that can handle the given DevAddr
-func (c *DefaultClient) GetAllBrokersForDevAddr(devAddr types.DevAddr) ([]*Announcement, error) {
-	return c.GetAllForMetadata("broker", Metadata_PREFIX, func(value []byte) bool {
-		if len(value) != 5 {
-			return false
-		}
-		var prefix types.DevAddrPrefix
-		copy(prefix.DevAddr[:], value[1:])
-		prefix.Length = int(value[0])
-		return devAddr.HasPrefix(prefix)
-	})
+	return
 }
 
 // GetAllHandlersForAppID returns all handlers that can handle the given AppID
-func (c *DefaultClient) GetAllHandlersForAppID(appID string) ([]*Announcement, error) {
-	return c.GetAllForMetadata("handler", Metadata_APP_ID, func(value []byte) bool {
-		return string(value) == appID
-	})
+func (c *DefaultClient) GetAllHandlersForAppID(appID string) (announcements []*Announcement, err error) {
+	handlers, err := c.GetAll("handler")
+	if err != nil {
+		return nil, err
+	}
+next:
+	for _, handler := range handlers {
+		for _, handlerAppID := range handler.AppIDs() {
+			if handlerAppID == appID {
+				announcements = append(announcements, handler)
+				continue next
+			}
+		}
+	}
+	return
 }
 
 // Close purges the cache and closes the connection with the Discovery server

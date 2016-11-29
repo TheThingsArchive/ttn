@@ -27,45 +27,59 @@ func (d *discoveryServer) checkMetadataEditRights(ctx context.Context, in *pb.Me
 	if err != nil {
 		return err
 	}
-	switch in.Metadata.Key {
-	case pb.Metadata_PREFIX:
-		if in.ServiceName != "broker" {
-			return errPermissionDeniedf("Announcement service type should be \"broker\"")
+
+	appEUI := in.Metadata.GetAppEui()
+	appID := in.Metadata.GetAppId()
+	prefix := in.Metadata.GetDevAddrPrefix()
+
+	if appEUI == nil && appID == "" && prefix == nil {
+		return errPermissionDeniedf("Unknown Metadata type")
+	}
+
+	// AppEUI and AppID can only be added to Handlers
+	if (appEUI != nil || appID != "") && in.ServiceName != "handler" {
+		return errPermissionDeniedf("Announcement service type should be \"handler\"")
+	}
+
+	// DevAddrPrefix can only be added to Brokers
+	if prefix != nil && in.ServiceName != "broker" {
+		return errPermissionDeniedf("Announcement service type should be \"broker\"")
+	}
+
+	// DevAddrPrefix and AppEUI are network level changes
+	if prefix != nil || appEUI != nil {
+
+		// If not in develop mode
+		if d.discovery.Component.Identity.Id != "dev" {
+
+			// We require a signature from a master auth server
+			if !d.discovery.IsMasterAuthServer(claims.Issuer) {
+				return errPermissionDeniedf("Token issuer \"%s\" is not allowed to make changes to the network settings", claims.Issuer)
+			}
+
+			// DevAddrPrefixes can not be announced yet
+			if prefix != nil {
+				return errPermissionDeniedf("Can not announce DevAddrPrefixes at this time")
+			}
+
+			// AppEUI can not be announced yet
+			if appEUI != nil {
+				return errPermissionDeniedf("Can not announce AppEUIs at this time")
+			}
 		}
-		// Only allow prefix announcements if token is issued by a master auth server (or if in dev mode)
-		if d.discovery.Component.Identity.Id != "dev" && !d.discovery.IsMasterAuthServer(claims.Issuer) {
-			return errPermissionDeniedf("Token issuer \"%s\" is not allowed to make changes to the network settings", claims.Issuer)
-		}
+
+		// Can only be announced to "self"
 		if claims.Type != in.ServiceName {
 			return errPermissionDeniedf("Token type %s does not correspond with announcement service type %s", claims.Type, in.ServiceName)
 		}
 		if claims.Subject != in.Id {
 			return errPermissionDeniedf("Token subject %s does not correspond with announcement id %s", claims.Subject, in.Id)
 		}
-		// TODO: Check if this PREFIX can be announced
-	case pb.Metadata_APP_EUI:
-		if in.ServiceName != "handler" {
-			return errPermissionDeniedf("Announcement service type should be \"handler\"")
-		}
-		// Only allow eui announcements if token is issued by a master auth server (or if in dev mode)
-		if d.discovery.Component.Identity.Id != "dev" && !d.discovery.IsMasterAuthServer(claims.Issuer) {
-			return errPermissionDeniedf("Token issuer %s is not allowed to make changes to the network settings", claims.Issuer)
-		}
-		if claims.Type != in.ServiceName {
-			return errPermissionDeniedf("Token type %s does not correspond with announcement service type %s", claims.Type, in.ServiceName)
-		}
-		if claims.Subject != in.Id {
-			return errPermissionDeniedf("Token subject %s does not correspond with announcement id %s", claims.Subject, in.Id)
-		}
-		// TODO: Check if this APP_EUI can be announced
-		return errPermissionDeniedf("Can not announce AppEUIs at this time")
-	case pb.Metadata_APP_ID:
-		if in.ServiceName != "handler" {
-			return errPermissionDeniedf("Announcement service type should be \"handler\"")
-		}
-		// Allow APP_ID announcements from all trusted auth servers
-		// When announcing APP_ID, token is user token that contains apps
-		if !claims.AppRight(string(in.Metadata.Value), rights.AppSettings) {
+	}
+
+	// Check claims for AppID
+	if appID != "" {
+		if !claims.AppRight(appID, rights.AppSettings) {
 			return errPermissionDeniedf("No access to this application")
 		}
 	}
@@ -129,7 +143,7 @@ func (d *discoveryServer) DeleteMetadata(ctx context.Context, in *pb.MetadataReq
 	return &empty.Empty{}, nil
 }
 
-func (d *discoveryServer) GetAll(ctx context.Context, req *pb.GetAllRequest) (*pb.AnnouncementsResponse, error) {
+func (d *discoveryServer) GetAll(ctx context.Context, req *pb.GetServiceRequest) (*pb.AnnouncementsResponse, error) {
 	services, err := d.discovery.GetAll(req.ServiceName)
 	if err != nil {
 		return nil, err

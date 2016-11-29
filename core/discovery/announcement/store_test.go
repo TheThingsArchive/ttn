@@ -63,7 +63,6 @@ func TestRedisAnnouncementStore(t *testing.T) {
 	err = s.AddMetadata("handler", "handler1",
 		AppEUIMetadata{AppEUI: appEUI},
 		AppIDMetadata{AppID: "AppID"},
-		OtherMetadata{},
 	)
 	a.So(err, ShouldBeNil)
 
@@ -81,13 +80,12 @@ func TestRedisAnnouncementStore(t *testing.T) {
 		AppEUIMetadata{AppEUI: appEUI},
 		AppIDMetadata{AppID: "AppID"},
 		AppIDMetadata{AppID: "OtherAppID"},
-		OtherMetadata{},
 	)
 	a.So(err, ShouldBeNil)
 
 	metadata, err := s.GetMetadata("handler", "handler2")
 	a.So(err, ShouldBeNil)
-	a.So(metadata, ShouldHaveLength, 4)
+	a.So(metadata, ShouldHaveLength, 3)
 
 	err = s.AddMetadata("handler", "handler2",
 		AppEUIMetadata{AppEUI: appEUI},
@@ -97,7 +95,7 @@ func TestRedisAnnouncementStore(t *testing.T) {
 
 	metadata, err = s.GetMetadata("handler", "handler2")
 	a.So(err, ShouldBeNil)
-	a.So(metadata, ShouldHaveLength, 4)
+	a.So(metadata, ShouldHaveLength, 3)
 
 	handler, err = s.GetForAppEUI(appEUI)
 	a.So(err, ShouldBeNil)
@@ -112,14 +110,12 @@ func TestRedisAnnouncementStore(t *testing.T) {
 	err = s.RemoveMetadata("handler", "handler1",
 		AppEUIMetadata{AppEUI: appEUI},
 		AppIDMetadata{AppID: "AppID"},
-		OtherMetadata{},
 	)
 	a.So(err, ShouldBeNil)
 
 	err = s.RemoveMetadata("handler", "handler2",
 		AppEUIMetadata{AppEUI: appEUI},
 		AppIDMetadata{AppID: "AppID"},
-		OtherMetadata{},
 	)
 	a.So(err, ShouldBeNil)
 

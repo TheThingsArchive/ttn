@@ -15,10 +15,10 @@ Adding or removing Metadata should be done with the `AddMetadata` and `DeleteMet
 
 ### `GetAll`
 
-Get all announcements for a specific service
+Get all announcements for a specific service type
 
-- Request: [`GetAllRequest`](#discoverygetallrequest)
-- Response: [`AnnouncementsResponse`](#discoverygetallrequest)
+- Request: [`GetServiceRequest`](#discoverygetservicerequest)
+- Response: [`AnnouncementsResponse`](#discoverygetservicerequest)
 
 #### HTTP Endpoint
 
@@ -44,8 +44,9 @@ Get all announcements for a specific service
       "id": "ttn-handler-eu",
       "metadata": [
         {
-          "key": "APP_ID",
-          "value": "c29tZS1hcHAtaWQ="
+          "app_eui": "",
+          "app_id": "some-app-id",
+          "dev_addr_prefix": "AAAAAAA="
         }
       ],
       "net_address": "eu.thethings.network:1904",
@@ -89,8 +90,9 @@ Get a specific announcement
   "id": "ttn-handler-eu",
   "metadata": [
     {
-      "key": "APP_ID",
-      "value": "c29tZS1hcHAtaWQ="
+      "app_eui": "",
+      "app_id": "some-app-id",
+      "dev_addr_prefix": "AAAAAAA="
     }
   ],
   "net_address": "eu.thethings.network:1904",
@@ -144,12 +146,6 @@ A list of announcements
 | ---------- | ---- | ----------- |
 | `services` | _repeated_ [`Announcement`](#discoveryannouncement) |  |
 
-### `.discovery.GetAllRequest`
-
-| Field Name | Type | Description |
-| ---------- | ---- | ----------- |
-| `service_name` | `string` | The name of the service (router/broker/handler) |
-
 ### `.discovery.GetRequest`
 
 The identifier of the service that should be returned
@@ -159,14 +155,20 @@ The identifier of the service that should be returned
 | `id` | `string` | The ID of the service |
 | `service_name` | `string` | The name of the service (router/broker/handler) |
 
-### `.discovery.Metadata`
-
-Announcements have a list of Metadata
+### `.discovery.GetServiceRequest`
 
 | Field Name | Type | Description |
 | ---------- | ---- | ----------- |
-| `key` | [`Key`](#discoverymetadatakey) | The key indicates the metadata type |
-| `value` | `bytes` | The value depends on the key type |
+| `service_name` | `string` | The name of the service (router/broker/handler) |
+
+### `.discovery.Metadata`
+
+| Field Name | Type | Description |
+| ---------- | ---- | ----------- |
+| **metadata** | **oneof 3** | one of the following 3 |
+| `dev_addr_prefix` | `bytes` | DevAddr prefix that is routed by this Broker 5 bytes; the first byte is the prefix length, the following 4 bytes are the address. Only authorized Brokers can announce PREFIX metadata. |
+| `app_id` | `string` | AppID that is registered to this Handler This metadata can only be added if the requesting client is authorized to manage this AppID. |
+| `app_eui` | `bytes` | AppEUI that is registered to this Join Handler Only authorized Join Handlers can announce APP_EUI metadata (and we don't have any of those yet). |
 
 ### `.discovery.MetadataRequest`
 
@@ -176,23 +178,10 @@ The metadata to add or remove from an announement
 | ---------- | ---- | ----------- |
 | `id` | `string` | The ID of the service that should be modified |
 | `service_name` | `string` | The name of the service (router/broker/handler) that should be modified |
-| `metadata` | [`Metadata`](#discoverymetadata) |  |
+| `metadata` | [`Metadata`](#discoverymetadata) | Metadata to add or remove |
 
 ### `.google.protobuf.Empty`
 
 A generic empty message that you can re-use to avoid defining duplicated
 empty messages in your APIs.
-
-## Used Enums
-
-### `.discovery.Metadata.Key`
-
-The Key indicates the metadata type
-
-| Value | Description |
-| ----- | ----------- |
-| `OTHER` | OTHER indicates arbitrary metadata. We currently don't allow this. |
-| `PREFIX` | The value for PREFIX consists of 1 byte denoting the number of bits, followed by the prefix and enough trailing bits to fill 4 octets. Only authorized brokers can announce PREFIX metadata. |
-| `APP_EUI` | APP_EUI is used for announcing join handlers. The value for APP_EUI is the byte slice of the AppEUI. Only authorized join handlers can announce APP_EUI metadata (and we don't have any of those yet). |
-| `APP_ID` | APP_ID is used for announcing that this handler is responsible for a certain AppID. The value for APP_ID is the byte slice of the AppID string. This metadata can only be added if the requesting client is authorized to manage this AppID. |
 

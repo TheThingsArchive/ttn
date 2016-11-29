@@ -108,12 +108,10 @@ func TestDiscoveryMetadata(t *testing.T) {
 	}()
 
 	broker3 := &pb.Announcement{ServiceName: "broker", Id: "broker3", Metadata: []*pb.Metadata{&pb.Metadata{
-		Key:   pb.Metadata_APP_ID,
-		Value: []byte("app-id-1"),
+		Metadata: &pb.Metadata_AppId{AppId: "app-id-1"},
 	}}}
 	broker4 := &pb.Announcement{ServiceName: "broker", Id: "broker4", Metadata: []*pb.Metadata{&pb.Metadata{
-		Key:   pb.Metadata_APP_ID,
-		Value: []byte("app-id-2"),
+		Metadata: &pb.Metadata_AppId{AppId: "app-id-2"},
 	}}}
 
 	// Announce should not change metadata
@@ -127,8 +125,7 @@ func TestDiscoveryMetadata(t *testing.T) {
 
 	// AddMetadata should add one
 	err = d.AddMetadata("broker", "broker3", &pb.Metadata{
-		Key:   pb.Metadata_APP_ID,
-		Value: []byte("app-id-2"),
+		Metadata: &pb.Metadata_AppId{AppId: "app-id-2"},
 	})
 	a.So(err, ShouldBeNil)
 	service, err = d.Get("broker", "broker3")
@@ -142,8 +139,7 @@ func TestDiscoveryMetadata(t *testing.T) {
 
 	// AddMetadata again should not add one
 	err = d.AddMetadata("broker", "broker3", &pb.Metadata{
-		Key:   pb.Metadata_APP_ID,
-		Value: []byte("app-id-2"),
+		Metadata: &pb.Metadata_AppId{AppId: "app-id-2"},
 	})
 	service, err = d.Get("broker", "broker3")
 	a.So(err, ShouldBeNil)
@@ -151,8 +147,7 @@ func TestDiscoveryMetadata(t *testing.T) {
 
 	// DeleteMetadata for non-existing should not delete one
 	err = d.DeleteMetadata("broker", "broker3", &pb.Metadata{
-		Key:   pb.Metadata_APP_ID,
-		Value: []byte("app-id-3"),
+		Metadata: &pb.Metadata_AppId{AppId: "app-id-3"},
 	})
 	a.So(err, ShouldBeNil)
 	service, err = d.Get("broker", "broker3")
@@ -168,8 +163,7 @@ func TestDiscoveryMetadata(t *testing.T) {
 
 	// DeleteMetadata should delete one
 	err = d.DeleteMetadata("broker", "broker3", &pb.Metadata{
-		Key:   pb.Metadata_APP_ID,
-		Value: []byte("app-id-2"),
+		Metadata: &pb.Metadata_AppId{AppId: "app-id-2"},
 	})
 	a.So(err, ShouldBeNil)
 	service, err = d.Get("broker", "broker3")

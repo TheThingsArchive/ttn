@@ -11,7 +11,6 @@ import (
 
 	"github.com/TheThingsNetwork/ttn/api"
 	pb "github.com/TheThingsNetwork/ttn/api/broker"
-	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/api/networkserver"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core/component"
@@ -83,19 +82,11 @@ func (b *broker) checkPrefixAnnouncements() error {
 	}
 
 	// Get self from Discovery
-	var announcedPrefixes []types.DevAddrPrefix
 	self, err := b.Component.Discover("broker", b.Component.Identity.Id)
 	if err != nil {
 		return err
 	}
-	for _, meta := range self.Metadata {
-		if meta.Key == pb_discovery.Metadata_PREFIX && len(meta.Value) == 5 {
-			var prefix types.DevAddrPrefix
-			copy(prefix.DevAddr[:], meta.Value[1:])
-			prefix.Length = int(meta.Value[0])
-			announcedPrefixes = append(announcedPrefixes, prefix)
-		}
-	}
+	announcedPrefixes := self.DevAddrPrefixes()
 
 nextPrefix:
 	for nsPrefix, usage := range nsPrefixes {
