@@ -70,7 +70,6 @@ func NewMonitoredGatewayStatusStream(client RouterClientForGateway) GatewayStatu
 				retries++
 				continue
 			}
-			retries = 0
 
 			s.ctx.Info("Started GatewayStatus stream")
 
@@ -100,6 +99,8 @@ func NewMonitoredGatewayStatusStream(client RouterClientForGateway) GatewayStatu
 		monitor:
 			for {
 				select {
+				case <-time.After(10 * time.Second):
+					retries = 0
 				case mErr = <-errCh:
 					break monitor
 				case msg, ok := <-s.ch:
@@ -192,7 +193,6 @@ func NewMonitoredUplinkStream(client RouterClientForGateway) UplinkStream {
 				retries++
 				continue
 			}
-			retries = 0
 
 			s.ctx.Info("Started Uplink stream")
 
@@ -222,6 +222,8 @@ func NewMonitoredUplinkStream(client RouterClientForGateway) UplinkStream {
 		monitor:
 			for {
 				select {
+				case <-time.After(10 * time.Second):
+					retries = 0
 				case mErr = <-errCh:
 					break monitor
 				case msg, ok := <-s.ch:
@@ -312,7 +314,6 @@ func NewMonitoredDownlinkStream(client RouterClientForGateway) DownlinkStream {
 				retries++
 				continue
 			}
-			retries = 0
 
 			s.ctx.Info("Started Downlink stream")
 
@@ -329,6 +330,7 @@ func NewMonitoredDownlinkStream(client RouterClientForGateway) DownlinkStream {
 				if err != nil {
 					break
 				}
+				retries = 0
 			}
 
 			if err == nil || err == io.EOF || grpc.Code(err) == codes.Canceled {
