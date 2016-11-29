@@ -69,7 +69,7 @@ func (s *BrokerStreamServer) Associate(stream Broker_AssociateServer) (err error
 				return err
 			}
 			if err := uplink.Validate(); err != nil {
-				return errors.BuildGRPCError(errors.Wrap(err, "Invalid Uplink"))
+				return errors.Wrap(err, "Invalid Uplink")
 			}
 			upChan <- uplink
 		}
@@ -105,7 +105,7 @@ func (s *BrokerStreamServer) Subscribe(req *SubscribeRequest, stream Broker_Subs
 	}
 	go func() {
 		<-stream.Context().Done()
-		err = errors.BuildGRPCError(stream.Context().Err())
+		err = stream.Context().Err()
 		cancel()
 	}()
 	for uplink := range ch {
@@ -138,7 +138,7 @@ func (s *BrokerStreamServer) Publish(stream Broker_PublishServer) error {
 			return err
 		}
 		if err := downlink.Validate(); err != nil {
-			return errors.BuildGRPCError(errors.Wrap(err, "Invalid Downlink"))
+			return errors.Wrap(err, "Invalid Downlink")
 		}
 		ch <- downlink
 	}

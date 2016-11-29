@@ -13,6 +13,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -28,11 +29,11 @@ func (b *brokerRPC) associateRouter(md metadata.MD) (chan *pb.UplinkMessage, <-c
 	ctx := metadata.NewContext(context.Background(), md)
 	router, err := b.broker.ValidateNetworkContext(ctx)
 	if err != nil {
-		return nil, nil, nil, errors.BuildGRPCError(err)
+		return nil, nil, nil, err
 	}
 	down, err := b.broker.ActivateRouter(router.Id)
 	if err != nil {
-		return nil, nil, nil, errors.BuildGRPCError(err)
+		return nil, nil, nil, err
 	}
 
 	up := make(chan *pb.UplinkMessage, 1)
@@ -58,12 +59,12 @@ func (b *brokerRPC) getHandlerSubscribe(md metadata.MD) (<-chan *pb.Deduplicated
 	ctx := metadata.NewContext(context.Background(), md)
 	handler, err := b.broker.ValidateNetworkContext(ctx)
 	if err != nil {
-		return nil, nil, errors.BuildGRPCError(err)
+		return nil, nil, err
 	}
 
 	ch, err := b.broker.ActivateHandler(handler.Id)
 	if err != nil {
-		return nil, nil, errors.BuildGRPCError(err)
+		return nil, nil, err
 	}
 
 	cancel := func() {
@@ -77,7 +78,7 @@ func (b *brokerRPC) getHandlerPublish(md metadata.MD) (chan *pb.DownlinkMessage,
 	ctx := metadata.NewContext(context.Background(), md)
 	handler, err := b.broker.ValidateNetworkContext(ctx)
 	if err != nil {
-		return nil, errors.BuildGRPCError(err)
+		return nil, err
 	}
 
 	ch := make(chan *pb.DownlinkMessage, 1)
@@ -113,14 +114,17 @@ func (b *brokerRPC) getHandlerPublish(md metadata.MD) (chan *pb.DownlinkMessage,
 func (b *brokerRPC) Activate(ctx context.Context, req *pb.DeviceActivationRequest) (res *pb.DeviceActivationResponse, err error) {
 	_, err = b.broker.ValidateNetworkContext(ctx)
 	if err != nil {
-		return nil, errors.BuildGRPCError(err)
+		return nil, err
 	}
 	if err := req.Validate(); err != nil {
-		return nil, errors.BuildGRPCError(errors.Wrap(err, "Invalid Activation Request"))
+		return nil, errors.Wrap(err, "Invalid Activation Request")
 	}
 	res, err = b.broker.HandleActivation(req)
+	if err == errDuplicateActivation {
+		return nil, grpc.Errorf(codes.OutOfRange, err.Error())
+	}
 	if err != nil {
-		return nil, errors.BuildGRPCError(err)
+		return nil, err
 	}
 	return
 }

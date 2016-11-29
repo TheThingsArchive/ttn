@@ -44,7 +44,7 @@ func (b *brokerManager) GetDevice(ctx context.Context, in *lorawan.DeviceIdentif
 	}
 	res, err := b.deviceManager.GetDevice(ctx, in)
 	if err != nil {
-		return nil, errors.BuildGRPCError(errors.Wrap(errors.FromGRPCError(err), "NetworkServer did not return device"))
+		return nil, errors.Wrap(errors.FromGRPCError(err), "NetworkServer did not return device")
 	}
 	return res, nil
 }
@@ -55,7 +55,7 @@ func (b *brokerManager) SetDevice(ctx context.Context, in *lorawan.Device) (*emp
 	}
 	res, err := b.deviceManager.SetDevice(ctx, in)
 	if err != nil {
-		return nil, errors.BuildGRPCError(errors.Wrap(errors.FromGRPCError(err), "NetworkServer did not set device"))
+		return nil, errors.Wrap(errors.FromGRPCError(err), "NetworkServer did not set device")
 	}
 	return res, nil
 }
@@ -66,7 +66,7 @@ func (b *brokerManager) DeleteDevice(ctx context.Context, in *lorawan.DeviceIden
 	}
 	res, err := b.deviceManager.DeleteDevice(ctx, in)
 	if err != nil {
-		return nil, errors.BuildGRPCError(errors.Wrap(errors.FromGRPCError(err), "NetworkServer did not delete device"))
+		return nil, errors.Wrap(errors.FromGRPCError(err), "NetworkServer did not delete device")
 	}
 	return res, nil
 }
@@ -74,18 +74,18 @@ func (b *brokerManager) DeleteDevice(ctx context.Context, in *lorawan.DeviceIden
 func (b *brokerManager) RegisterApplicationHandler(ctx context.Context, in *pb.ApplicationHandlerRegistration) (*empty.Empty, error) {
 	claims, err := b.broker.Component.ValidateTTNAuthContext(ctx)
 	if err != nil {
-		return nil, errors.BuildGRPCError(errors.FromGRPCError(err))
+		return nil, err
 	}
 	if err := in.Validate(); err != nil {
-		return nil, errors.BuildGRPCError(errors.Wrap(err, "Invalid Application Handler Registration"))
+		return nil, errors.Wrap(err, "Invalid Application Handler Registration")
 	}
 	if !claims.AppRight(in.AppId, rights.AppSettings) {
-		return nil, errors.BuildGRPCError(errors.NewErrPermissionDenied("No access to this application"))
+		return nil, errors.NewErrPermissionDenied("No access to this application")
 	}
 	// Add Handler in local cache
 	handler, err := b.broker.Discovery.Get("handler", in.HandlerId)
 	if err != nil {
-		return nil, errors.BuildGRPCError(errors.NewErrInternal("Could not get Handler Announcement"))
+		return nil, errors.NewErrInternal("Could not get Handler Announcement")
 	}
 	handler.AddMetadata(discovery.Metadata_APP_ID, []byte(in.AppId))
 	return &empty.Empty{}, nil
@@ -94,7 +94,7 @@ func (b *brokerManager) RegisterApplicationHandler(ctx context.Context, in *pb.A
 func (b *brokerManager) GetPrefixes(ctx context.Context, in *lorawan.PrefixesRequest) (*lorawan.PrefixesResponse, error) {
 	res, err := b.devAddrManager.GetPrefixes(ctx, in)
 	if err != nil {
-		return nil, errors.BuildGRPCError(errors.Wrap(errors.FromGRPCError(err), "NetworkServer did not return prefixes"))
+		return nil, errors.Wrap(errors.FromGRPCError(err), "NetworkServer did not return prefixes")
 	}
 	return res, nil
 }
@@ -102,7 +102,7 @@ func (b *brokerManager) GetPrefixes(ctx context.Context, in *lorawan.PrefixesReq
 func (b *brokerManager) GetDevAddr(ctx context.Context, in *lorawan.DevAddrRequest) (*lorawan.DevAddrResponse, error) {
 	res, err := b.devAddrManager.GetDevAddr(ctx, in)
 	if err != nil {
-		return nil, errors.BuildGRPCError(errors.Wrap(errors.FromGRPCError(err), "NetworkServer did not return DevAddr"))
+		return nil, errors.Wrap(errors.FromGRPCError(err), "NetworkServer did not return DevAddr")
 	}
 	return res, nil
 }

@@ -74,7 +74,7 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) (err error) {
 		FCnt:    macPayload.FHDR.FCnt,
 	})
 	if err != nil {
-		return errors.BuildGRPCError(errors.Wrap(errors.FromGRPCError(err), "NetworkServer did not return devices"))
+		return errors.Wrap(errors.FromGRPCError(err), "NetworkServer did not return devices")
 	}
 	if len(getDevicesResp.Results) == 0 {
 		return errors.NewErrNotFound(fmt.Sprintf("Device with DevAddr %s and FCnt <= %d", devAddr, macPayload.FHDR.FCnt))
@@ -182,7 +182,7 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) (err error) {
 	// Pass Uplink through NS
 	deduplicatedUplink, err = b.ns.Uplink(b.Component.GetContext(b.nsToken), deduplicatedUplink)
 	if err != nil {
-		return errors.BuildGRPCError(errors.Wrap(errors.FromGRPCError(err), "NetworkServer did not handle uplink"))
+		return errors.Wrap(errors.FromGRPCError(err), "NetworkServer did not handle uplink")
 	}
 
 	var announcements []*pb_discovery.Announcement

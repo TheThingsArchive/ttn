@@ -19,17 +19,17 @@ type routerManager struct {
 
 func (r *routerManager) GatewayStatus(ctx context.Context, in *pb.GatewayStatusRequest) (*pb.GatewayStatusResponse, error) {
 	if in.GatewayId == "" {
-		return nil, errors.BuildGRPCError(errors.NewErrInvalidArgument("Gateway Status Request", "ID is required"))
+		return nil, errors.NewErrInvalidArgument("Gateway Status Request", "ID is required")
 	}
 	_, err := r.router.ValidateTTNAuthContext(ctx)
 	if err != nil {
-		return nil, errors.BuildGRPCError(errors.NewErrPermissionDenied("No access"))
+		return nil, errors.NewErrPermissionDenied("No access")
 	}
 	r.router.gatewaysLock.RLock()
 	gtw, ok := r.router.gateways[in.GatewayId]
 	r.router.gatewaysLock.RUnlock()
 	if !ok {
-		return nil, errors.BuildGRPCError(errors.NewErrNotFound(fmt.Sprintf("Gateway %s", in.GatewayId)))
+		return nil, errors.NewErrNotFound(fmt.Sprintf("Gateway %s", in.GatewayId))
 	}
 	status, err := gtw.Status.Get()
 	if err != nil {

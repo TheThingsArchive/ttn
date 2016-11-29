@@ -60,7 +60,7 @@ func (s *RouterStreamServer) Uplink(stream Router_UplinkServer) (err error) {
 			return err
 		}
 		if err := uplink.Validate(); err != nil {
-			return errors.BuildGRPCError(errors.Wrap(err, "Invalid Uplink"))
+			return errors.Wrap(err, "Invalid Uplink")
 		}
 		ch <- uplink
 	}
@@ -78,7 +78,7 @@ func (s *RouterStreamServer) Subscribe(req *SubscribeRequest, stream Router_Subs
 	}
 	go func() {
 		<-stream.Context().Done()
-		err = errors.BuildGRPCError(stream.Context().Err())
+		err = stream.Context().Err()
 		cancel()
 	}()
 	for downlink := range ch {
@@ -111,7 +111,7 @@ func (s *RouterStreamServer) GatewayStatus(stream Router_GatewayStatusServer) er
 			return err
 		}
 		if err := status.Validate(); err != nil {
-			return errors.BuildGRPCError(errors.Wrap(err, "Invalid Gateway Status"))
+			return errors.Wrap(err, "Invalid Gateway Status")
 		}
 		ch <- status
 	}

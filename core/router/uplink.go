@@ -42,14 +42,14 @@ func (r *router) HandleUplink(gatewayID string, uplink *pb.UplinkMessage) (err e
 			"DevEUI": devEUI,
 			"AppEUI": appEUI,
 		}).Debug("Handle Uplink as Activation")
-		_, err := r.HandleActivation(gatewayID, &pb.DeviceActivationRequest{
+		r.HandleActivation(gatewayID, &pb.DeviceActivationRequest{
 			Payload:          uplink.Payload,
 			DevEui:           &devEUI,
 			AppEui:           &appEUI,
 			ProtocolMetadata: uplink.ProtocolMetadata,
 			GatewayMetadata:  uplink.GatewayMetadata,
 		})
-		return err
+		return nil
 	}
 
 	if lorawan := uplink.ProtocolMetadata.GetLorawan(); lorawan != nil {

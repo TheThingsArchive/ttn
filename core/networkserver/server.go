@@ -50,70 +50,70 @@ func (s *networkServerRPC) ValidateContext(ctx context.Context) error {
 
 func (s *networkServerRPC) GetDevices(ctx context.Context, req *pb.DevicesRequest) (*pb.DevicesResponse, error) {
 	if err := s.ValidateContext(ctx); err != nil {
-		return nil, errors.BuildGRPCError(err)
+		return nil, err
 	}
 	if err := req.Validate(); err != nil {
-		return nil, errors.BuildGRPCError(errors.Wrap(err, "Invalid Devices Request"))
+		return nil, errors.Wrap(err, "Invalid Devices Request")
 	}
 	res, err := s.networkServer.HandleGetDevices(req)
 	if err != nil {
-		return nil, errors.BuildGRPCError(err)
+		return nil, err
 	}
 	return res, nil
 }
 
 func (s *networkServerRPC) PrepareActivation(ctx context.Context, activation *broker.DeduplicatedDeviceActivationRequest) (*broker.DeduplicatedDeviceActivationRequest, error) {
 	if err := s.ValidateContext(ctx); err != nil {
-		return nil, errors.BuildGRPCError(err)
+		return nil, err
 	}
 	if err := activation.Validate(); err != nil {
-		return nil, errors.BuildGRPCError(errors.Wrap(err, "Invalid Activation Request"))
+		return nil, errors.Wrap(err, "Invalid Activation Request")
 	}
 	res, err := s.networkServer.HandlePrepareActivation(activation)
 	if err != nil {
-		return nil, errors.BuildGRPCError(err)
+		return nil, err
 	}
 	return res, nil
 }
 
 func (s *networkServerRPC) Activate(ctx context.Context, activation *handler.DeviceActivationResponse) (*handler.DeviceActivationResponse, error) {
 	if err := s.ValidateContext(ctx); err != nil {
-		return nil, errors.BuildGRPCError(err)
+		return nil, err
 	}
 	if err := activation.Validate(); err != nil {
-		return nil, errors.BuildGRPCError(errors.Wrap(err, "Invalid Activation Request"))
+		return nil, errors.Wrap(err, "Invalid Activation Request")
 	}
 	res, err := s.networkServer.HandleActivate(activation)
 	if err != nil {
-		return nil, errors.BuildGRPCError(err)
+		return nil, err
 	}
 	return res, nil
 }
 
 func (s *networkServerRPC) Uplink(ctx context.Context, message *broker.DeduplicatedUplinkMessage) (*broker.DeduplicatedUplinkMessage, error) {
 	if err := s.ValidateContext(ctx); err != nil {
-		return nil, errors.BuildGRPCError(err)
+		return nil, err
 	}
 	if err := message.Validate(); err != nil {
-		return nil, errors.BuildGRPCError(errors.Wrap(err, "Invalid Uplink"))
+		return nil, errors.Wrap(err, "Invalid Uplink")
 	}
 	res, err := s.networkServer.HandleUplink(message)
 	if err != nil {
-		return nil, errors.BuildGRPCError(err)
+		return nil, err
 	}
 	return res, nil
 }
 
 func (s *networkServerRPC) Downlink(ctx context.Context, message *broker.DownlinkMessage) (*broker.DownlinkMessage, error) {
 	if err := s.ValidateContext(ctx); err != nil {
-		return nil, errors.BuildGRPCError(err)
+		return nil, err
 	}
 	if err := message.Validate(); err != nil {
-		return nil, errors.BuildGRPCError(errors.Wrap(err, "Invalid Downlink"))
+		return nil, errors.Wrap(err, "Invalid Downlink")
 	}
 	res, err := s.networkServer.HandleDownlink(message)
 	if err != nil {
-		return nil, errors.BuildGRPCError(err)
+		return nil, err
 	}
 	return res, nil
 }

@@ -19,7 +19,7 @@ type discoveryServer struct {
 }
 
 func errPermissionDeniedf(format string, args ...string) error {
-	return errors.BuildGRPCError(errors.NewErrPermissionDenied(fmt.Sprintf("Discovery:"+format, args)))
+	return errors.NewErrPermissionDenied(fmt.Sprintf("Discovery:"+format, args))
 }
 
 func (d *discoveryServer) checkMetadataEditRights(ctx context.Context, in *pb.MetadataRequest) error {
@@ -100,7 +100,7 @@ func (d *discoveryServer) Announce(ctx context.Context, announcement *pb.Announc
 	announcement.Metadata = []*pb.Metadata{} // This will be taken from existing announcement
 	err = d.discovery.Announce(&announcementCopy)
 	if err != nil {
-		return nil, errors.BuildGRPCError(err)
+		return nil, err
 	}
 	return &empty.Empty{}, nil
 }
@@ -112,7 +112,7 @@ func (d *discoveryServer) AddMetadata(ctx context.Context, in *pb.MetadataReques
 	}
 	err = d.discovery.AddMetadata(in.ServiceName, in.Id, in.Metadata)
 	if err != nil {
-		return nil, errors.BuildGRPCError(err)
+		return nil, err
 	}
 	return &empty.Empty{}, nil
 }
@@ -124,7 +124,7 @@ func (d *discoveryServer) DeleteMetadata(ctx context.Context, in *pb.MetadataReq
 	}
 	err = d.discovery.DeleteMetadata(in.ServiceName, in.Id, in.Metadata)
 	if err != nil {
-		return nil, errors.BuildGRPCError(err)
+		return nil, err
 	}
 	return &empty.Empty{}, nil
 }
@@ -132,7 +132,7 @@ func (d *discoveryServer) DeleteMetadata(ctx context.Context, in *pb.MetadataReq
 func (d *discoveryServer) GetAll(ctx context.Context, req *pb.GetAllRequest) (*pb.AnnouncementsResponse, error) {
 	services, err := d.discovery.GetAll(req.ServiceName)
 	if err != nil {
-		return nil, errors.BuildGRPCError(err)
+		return nil, err
 	}
 	return &pb.AnnouncementsResponse{
 		Services: services,
@@ -142,7 +142,7 @@ func (d *discoveryServer) GetAll(ctx context.Context, req *pb.GetAllRequest) (*p
 func (d *discoveryServer) Get(ctx context.Context, req *pb.GetRequest) (*pb.Announcement, error) {
 	service, err := d.discovery.Get(req.ServiceName, req.Id)
 	if err != nil {
-		return nil, errors.BuildGRPCError(err)
+		return nil, err
 	}
 	return service, nil
 }

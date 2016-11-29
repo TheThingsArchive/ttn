@@ -63,8 +63,11 @@ func BuildGRPCError(err error) error {
 	case *ErrPermissionDenied:
 		code = codes.PermissionDenied
 	}
-	if err == context.Canceled {
+	switch err {
+	case context.Canceled:
 		code = codes.Canceled
+	case io.EOF:
+		code = codes.OutOfRange
 	}
 	return grpc.Errorf(code, err.Error())
 }

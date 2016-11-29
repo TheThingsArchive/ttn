@@ -26,7 +26,7 @@ type networkServerManager struct {
 
 func (n *networkServerManager) getDevice(ctx context.Context, in *pb_lorawan.DeviceIdentifier) (*device.Device, error) {
 	if err := in.Validate(); err != nil {
-		return nil, errors.BuildGRPCError(errors.Wrap(err, "Invalid Device Identifier"))
+		return nil, errors.Wrap(err, "Invalid Device Identifier")
 	}
 	claims, err := n.networkServer.Component.ValidateTTNAuthContext(ctx)
 	if err != nil {
@@ -48,7 +48,7 @@ func (n *networkServerManager) getDevice(ctx context.Context, in *pb_lorawan.Dev
 func (n *networkServerManager) GetDevice(ctx context.Context, in *pb_lorawan.DeviceIdentifier) (*pb_lorawan.Device, error) {
 	dev, err := n.getDevice(ctx, in)
 	if err != nil {
-		return nil, errors.BuildGRPCError(err)
+		return nil, err
 	}
 
 	lastSeen := time.Unix(0, 0)
@@ -74,11 +74,11 @@ func (n *networkServerManager) GetDevice(ctx context.Context, in *pb_lorawan.Dev
 func (n *networkServerManager) SetDevice(ctx context.Context, in *pb_lorawan.Device) (*empty.Empty, error) {
 	dev, err := n.getDevice(ctx, &pb_lorawan.DeviceIdentifier{AppEui: in.AppEui, DevEui: in.DevEui})
 	if err != nil && errors.GetErrType(err) != errors.NotFound {
-		return nil, errors.BuildGRPCError(err)
+		return nil, err
 	}
 
 	if err := in.Validate(); err != nil {
-		return nil, errors.BuildGRPCError(errors.Wrap(err, "Invalid Device"))
+		return nil, errors.Wrap(err, "Invalid Device")
 	}
 
 	claims, err := n.networkServer.Component.ValidateTTNAuthContext(ctx)
@@ -115,7 +115,7 @@ func (n *networkServerManager) SetDevice(ctx context.Context, in *pb_lorawan.Dev
 
 	err = n.networkServer.devices.Set(dev)
 	if err != nil {
-		return nil, errors.BuildGRPCError(err)
+		return nil, err
 	}
 
 	return &empty.Empty{}, nil
@@ -124,11 +124,11 @@ func (n *networkServerManager) SetDevice(ctx context.Context, in *pb_lorawan.Dev
 func (n *networkServerManager) DeleteDevice(ctx context.Context, in *pb_lorawan.DeviceIdentifier) (*empty.Empty, error) {
 	_, err := n.getDevice(ctx, in)
 	if err != nil {
-		return nil, errors.BuildGRPCError(err)
+		return nil, err
 	}
 	err = n.networkServer.devices.Delete(*in.AppEui, *in.DevEui)
 	if err != nil {
-		return nil, errors.BuildGRPCError(err)
+		return nil, err
 	}
 	return &empty.Empty{}, nil
 }
@@ -149,7 +149,7 @@ func (n *networkServerManager) GetPrefixes(ctx context.Context, in *pb_lorawan.P
 func (n *networkServerManager) GetDevAddr(ctx context.Context, in *pb_lorawan.DevAddrRequest) (*pb_lorawan.DevAddrResponse, error) {
 	devAddr, err := n.networkServer.getDevAddr(in.Usage...)
 	if err != nil {
-		return nil, errors.BuildGRPCError(err)
+		return nil, err
 	}
 	return &pb_lorawan.DevAddrResponse{
 		DevAddr: &devAddr,

@@ -67,20 +67,20 @@ func (h *handlerManager) validateTTNAuthAppContext(ctx context.Context, appID st
 
 func (h *handlerManager) GetDevice(ctx context.Context, in *pb.DeviceIdentifier) (*pb.Device, error) {
 	if err := in.Validate(); err != nil {
-		return nil, errors.BuildGRPCError(errors.Wrap(err, "Invalid Device Identifier"))
+		return nil, errors.Wrap(err, "Invalid Device Identifier")
 	}
 
 	ctx, claims, err := h.validateTTNAuthAppContext(ctx, in.AppId)
 	if err != nil {
-		return nil, errors.BuildGRPCError(err)
+		return nil, err
 	}
 	if !claims.AppRight(in.AppId, rights.Devices) {
-		return nil, errors.BuildGRPCError(errors.NewErrPermissionDenied(fmt.Sprintf(`No "devices" rights to application "%s"`, in.AppId)))
+		return nil, errors.NewErrPermissionDenied(fmt.Sprintf(`No "devices" rights to application "%s"`, in.AppId))
 	}
 
 	dev, err := h.handler.devices.Get(in.AppId, in.DevId)
 	if err != nil {
-		return nil, errors.BuildGRPCError(err)
+		return nil, err
 	}
 
 	nsDev, err := h.deviceManager.GetDevice(ctx, &pb_lorawan.DeviceIdentifier{
@@ -88,7 +88,7 @@ func (h *handlerManager) GetDevice(ctx context.Context, in *pb.DeviceIdentifier)
 		DevEui: &dev.DevEUI,
 	})
 	if err != nil {
-		return nil, errors.BuildGRPCError(errors.Wrap(errors.FromGRPCError(err), "Broker did not return device"))
+		return nil, errors.Wrap(errors.FromGRPCError(err), "Broker did not return device")
 	}
 
 	return &pb.Device{
@@ -114,25 +114,25 @@ func (h *handlerManager) GetDevice(ctx context.Context, in *pb.DeviceIdentifier)
 
 func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*empty.Empty, error) {
 	if err := in.Validate(); err != nil {
-		return nil, errors.BuildGRPCError(errors.Wrap(err, "Invalid Device"))
+		return nil, errors.Wrap(err, "Invalid Device")
 	}
 
 	ctx, claims, err := h.validateTTNAuthAppContext(ctx, in.AppId)
 	if err != nil {
-		return nil, errors.BuildGRPCError(err)
+		return nil, err
 	}
 	if !claims.AppRight(in.AppId, rights.Devices) {
-		return nil, errors.BuildGRPCError(errors.NewErrPermissionDenied(fmt.Sprintf(`No "devices" rights to application "%s"`, in.AppId)))
+		return nil, errors.NewErrPermissionDenied(fmt.Sprintf(`No "devices" rights to application "%s"`, in.AppId))
 	}
 
 	dev, err := h.handler.devices.Get(in.AppId, in.DevId)
 	if err != nil && errors.GetErrType(err) != errors.NotFound {
-		return nil, errors.BuildGRPCError(err)
+		return nil, err
 	}
 
 	lorawan := in.GetLorawanDevice()
 	if lorawan == nil {
-		return nil, errors.BuildGRPCError(errors.NewErrInvalidArgument("Device", "No LoRaWAN Device"))
+		return nil, errors.NewErrInvalidArgument("Device", "No LoRaWAN Device")
 	}
 
 	if dev != nil { // When this is an update
@@ -143,7 +143,7 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*empty.E
 				DevEui: &dev.DevEUI,
 			})
 			if err != nil {
-				return nil, errors.BuildGRPCError(errors.Wrap(errors.FromGRPCError(err), "Broker did not delete device"))
+				return nil, errors.Wrap(errors.FromGRPCError(err), "Broker did not delete device")
 			}
 		}
 		dev.StartUpdate()
@@ -154,7 +154,7 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*empty.E
 		}
 		for _, existingDevice := range existingDevices {
 			if existingDevice.AppEUI == *lorawan.AppEui && existingDevice.DevEUI == *lorawan.DevEui {
-				return nil, errors.BuildGRPCError(errors.NewErrAlreadyExists("Device with AppEUI and DevEUI"))
+				return nil, errors.NewErrAlreadyExists("Device with AppEUI and DevEUI")
 			}
 		}
 		dev = new(device.Device)
@@ -203,12 +203,12 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*empty.E
 
 	_, err = h.deviceManager.SetDevice(ctx, nsUpdated)
 	if err != nil {
-		return nil, errors.BuildGRPCError(errors.Wrap(errors.FromGRPCError(err), "Broker did not set device"))
+		return nil, errors.Wrap(errors.FromGRPCError(err), "Broker did not set device")
 	}
 
 	err = h.handler.devices.Set(dev)
 	if err != nil {
-		return nil, errors.BuildGRPCError(err)
+		return nil, err
 	}
 
 	return &empty.Empty{}, nil
@@ -216,44 +216,44 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*empty.E
 
 func (h *handlerManager) DeleteDevice(ctx context.Context, in *pb.DeviceIdentifier) (*empty.Empty, error) {
 	if err := in.Validate(); err != nil {
-		return nil, errors.BuildGRPCError(errors.Wrap(err, "Invalid Device Identifier"))
+		return nil, errors.Wrap(err, "Invalid Device Identifier")
 	}
 	ctx, claims, err := h.validateTTNAuthAppContext(ctx, in.AppId)
 	if err != nil {
-		return nil, errors.BuildGRPCError(err)
+		return nil, err
 	}
 	if !claims.AppRight(in.AppId, rights.Devices) {
-		return nil, errors.BuildGRPCError(errors.NewErrPermissionDenied(fmt.Sprintf(`No "devices" rights to application "%s"`, in.AppId)))
+		return nil, errors.NewErrPermissionDenied(fmt.Sprintf(`No "devices" rights to application "%s"`, in.AppId))
 	}
 	dev, err := h.handler.devices.Get(in.AppId, in.DevId)
 	if err != nil {
-		return nil, errors.BuildGRPCError(err)
+		return nil, err
 	}
 	_, err = h.deviceManager.DeleteDevice(ctx, &pb_lorawan.DeviceIdentifier{AppEui: &dev.AppEUI, DevEui: &dev.DevEUI})
 	if err != nil {
-		return nil, errors.BuildGRPCError(errors.Wrap(errors.FromGRPCError(err), "Broker did not delete device"))
+		return nil, errors.Wrap(errors.FromGRPCError(err), "Broker did not delete device")
 	}
 	err = h.handler.devices.Delete(in.AppId, in.DevId)
 	if err != nil {
-		return nil, errors.BuildGRPCError(err)
+		return nil, err
 	}
 	return &empty.Empty{}, nil
 }
 
 func (h *handlerManager) GetDevicesForApplication(ctx context.Context, in *pb.ApplicationIdentifier) (*pb.DeviceList, error) {
 	if err := in.Validate(); err != nil {
-		return nil, errors.BuildGRPCError(errors.Wrap(err, "Invalid Application Identifier"))
+		return nil, errors.Wrap(err, "Invalid Application Identifier")
 	}
 	ctx, claims, err := h.validateTTNAuthAppContext(ctx, in.AppId)
 	if err != nil {
-		return nil, errors.BuildGRPCError(err)
+		return nil, err
 	}
 	if !claims.AppRight(in.AppId, rights.Devices) {
-		return nil, errors.BuildGRPCError(errors.NewErrPermissionDenied(fmt.Sprintf(`No "devices" rights to application "%s"`, in.AppId)))
+		return nil, errors.NewErrPermissionDenied(fmt.Sprintf(`No "devices" rights to application "%s"`, in.AppId))
 	}
 	devices, err := h.handler.devices.ListForApp(in.AppId)
 	if err != nil {
-		return nil, errors.BuildGRPCError(err)
+		return nil, err
 	}
 	res := &pb.DeviceList{Devices: []*pb.Device{}}
 	for _, dev := range devices {
@@ -281,14 +281,14 @@ func (h *handlerManager) GetApplication(ctx context.Context, in *pb.ApplicationI
 	}
 	ctx, claims, err := h.validateTTNAuthAppContext(ctx, in.AppId)
 	if err != nil {
-		return nil, errors.BuildGRPCError(err)
+		return nil, err
 	}
 	if !claims.AppRight(in.AppId, rights.AppSettings) {
-		return nil, errors.BuildGRPCError(errors.NewErrPermissionDenied(`No "settings" rights to application`))
+		return nil, errors.NewErrPermissionDenied(`No "settings" rights to application`)
 	}
 	app, err := h.handler.applications.Get(in.AppId)
 	if err != nil {
-		return nil, errors.BuildGRPCError(err)
+		return nil, err
 	}
 
 	return &pb.Application{
@@ -302,28 +302,28 @@ func (h *handlerManager) GetApplication(ctx context.Context, in *pb.ApplicationI
 
 func (h *handlerManager) RegisterApplication(ctx context.Context, in *pb.ApplicationIdentifier) (*empty.Empty, error) {
 	if err := in.Validate(); err != nil {
-		return nil, errors.BuildGRPCError(errors.Wrap(err, "Invalid Application Identifier"))
+		return nil, errors.Wrap(err, "Invalid Application Identifier")
 	}
 	ctx, claims, err := h.validateTTNAuthAppContext(ctx, in.AppId)
 	if err != nil {
-		return nil, errors.BuildGRPCError(err)
+		return nil, err
 	}
 	if !claims.AppRight(in.AppId, rights.AppSettings) {
-		return nil, errors.BuildGRPCError(errors.NewErrPermissionDenied(`No "settings" rights to application`))
+		return nil, errors.NewErrPermissionDenied(`No "settings" rights to application`)
 	}
 	app, err := h.handler.applications.Get(in.AppId)
 	if err != nil && errors.GetErrType(err) != errors.NotFound {
-		return nil, errors.BuildGRPCError(err)
+		return nil, err
 	}
 	if app != nil {
-		return nil, errors.BuildGRPCError(errors.NewErrAlreadyExists("Application"))
+		return nil, errors.NewErrAlreadyExists("Application")
 	}
 
 	err = h.handler.applications.Set(&application.Application{
 		AppID: in.AppId,
 	})
 	if err != nil {
-		return nil, errors.BuildGRPCError(err)
+		return nil, err
 	}
 
 	md, _ := metadata.FromContext(ctx)
@@ -347,18 +347,18 @@ func (h *handlerManager) RegisterApplication(ctx context.Context, in *pb.Applica
 
 func (h *handlerManager) SetApplication(ctx context.Context, in *pb.Application) (*empty.Empty, error) {
 	if err := in.Validate(); err != nil {
-		return nil, errors.BuildGRPCError(errors.Wrap(err, "Invalid Application"))
+		return nil, errors.Wrap(err, "Invalid Application")
 	}
 	ctx, claims, err := h.validateTTNAuthAppContext(ctx, in.AppId)
 	if err != nil {
-		return nil, errors.BuildGRPCError(err)
+		return nil, err
 	}
 	if !claims.AppRight(in.AppId, rights.AppSettings) {
-		return nil, errors.BuildGRPCError(errors.NewErrPermissionDenied(`No "settings" rights to application`))
+		return nil, errors.NewErrPermissionDenied(`No "settings" rights to application`)
 	}
 	app, err := h.handler.applications.Get(in.AppId)
 	if err != nil {
-		return nil, errors.BuildGRPCError(err)
+		return nil, err
 	}
 
 	app.StartUpdate()
@@ -370,7 +370,7 @@ func (h *handlerManager) SetApplication(ctx context.Context, in *pb.Application)
 
 	err = h.handler.applications.Set(app)
 	if err != nil {
-		return nil, errors.BuildGRPCError(err)
+		return nil, err
 	}
 
 	return &empty.Empty{}, nil
@@ -378,40 +378,40 @@ func (h *handlerManager) SetApplication(ctx context.Context, in *pb.Application)
 
 func (h *handlerManager) DeleteApplication(ctx context.Context, in *pb.ApplicationIdentifier) (*empty.Empty, error) {
 	if err := in.Validate(); err != nil {
-		return nil, errors.BuildGRPCError(errors.Wrap(err, "Invalid Application Identifier"))
+		return nil, errors.Wrap(err, "Invalid Application Identifier")
 	}
 	ctx, claims, err := h.validateTTNAuthAppContext(ctx, in.AppId)
 	if err != nil {
-		return nil, errors.BuildGRPCError(err)
+		return nil, err
 	}
 	if !claims.AppRight(in.AppId, rights.AppSettings) {
-		return nil, errors.BuildGRPCError(errors.NewErrPermissionDenied(`No "settings" rights to application`))
+		return nil, errors.NewErrPermissionDenied(`No "settings" rights to application`)
 	}
 	_, err = h.handler.applications.Get(in.AppId)
 	if err != nil {
-		return nil, errors.BuildGRPCError(err)
+		return nil, err
 	}
 
 	// Get and delete all devices for this application
 	devices, err := h.handler.devices.ListForApp(in.AppId)
 	if err != nil {
-		return nil, errors.BuildGRPCError(err)
+		return nil, err
 	}
 	for _, dev := range devices {
 		_, err = h.deviceManager.DeleteDevice(ctx, &pb_lorawan.DeviceIdentifier{AppEui: &dev.AppEUI, DevEui: &dev.DevEUI})
 		if err != nil {
-			return nil, errors.BuildGRPCError(errors.Wrap(errors.FromGRPCError(err), "Broker did not delete device"))
+			return nil, errors.Wrap(errors.FromGRPCError(err), "Broker did not delete device")
 		}
 		err = h.handler.devices.Delete(dev.AppID, dev.DevID)
 		if err != nil {
-			return nil, errors.BuildGRPCError(err)
+			return nil, err
 		}
 	}
 
 	// Delete the Application
 	err = h.handler.applications.Delete(in.AppId)
 	if err != nil {
-		return nil, errors.BuildGRPCError(err)
+		return nil, err
 	}
 
 	md, _ := metadata.FromContext(ctx)
@@ -427,7 +427,7 @@ func (h *handlerManager) DeleteApplication(ctx context.Context, in *pb.Applicati
 func (h *handlerManager) GetPrefixes(ctx context.Context, in *pb_lorawan.PrefixesRequest) (*pb_lorawan.PrefixesResponse, error) {
 	res, err := h.devAddrManager.GetPrefixes(ctx, in)
 	if err != nil {
-		return nil, errors.BuildGRPCError(errors.Wrap(errors.FromGRPCError(err), "Broker did not return prefixes"))
+		return nil, errors.Wrap(errors.FromGRPCError(err), "Broker did not return prefixes")
 	}
 	return res, nil
 }
@@ -435,7 +435,7 @@ func (h *handlerManager) GetPrefixes(ctx context.Context, in *pb_lorawan.Prefixe
 func (h *handlerManager) GetDevAddr(ctx context.Context, in *pb_lorawan.DevAddrRequest) (*pb_lorawan.DevAddrResponse, error) {
 	res, err := h.devAddrManager.GetDevAddr(ctx, in)
 	if err != nil {
-		return nil, errors.BuildGRPCError(errors.Wrap(errors.FromGRPCError(err), "Broker did not return DevAddr"))
+		return nil, errors.Wrap(errors.FromGRPCError(err), "Broker did not return DevAddr")
 	}
 	return res, nil
 }

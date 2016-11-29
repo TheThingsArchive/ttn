@@ -1,9 +1,9 @@
 package component
 
 import (
-	"io"
 	"time"
 
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/apex/log"
 	"github.com/mwitkow/go-grpc-middleware"
 	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
@@ -36,11 +36,12 @@ func (c *Component) ServerOptions() []grpc.ServerOption {
 		})
 		t := time.Now()
 		iface, err := handler(ctx, req)
+		err = errors.BuildGRPCError(err)
 		logCtx = logCtx.WithField("Duration", time.Now().Sub(t))
-		if err != nil {
-			logCtx.WithField("ErrCode", grpc.Code(err)).WithError(err).Warn("Could not handle Request")
-		} else {
+		if grpc.Code(err) == codes.OK || grpc.Code(err) == codes.Canceled {
 			logCtx.Debug("Handled request")
+		} else {
+			logCtx.WithField("ErrCode", grpc.Code(err)).WithError(err).Debug("Handled request with error")
 		}
 		return iface, err
 	}
@@ -67,12 +68,12 @@ func (c *Component) ServerOptions() []grpc.ServerOption {
 		t := time.Now()
 		logCtx.Debug("Start stream")
 		err := handler(srv, stream)
+		err = errors.BuildGRPCError(err)
 		logCtx = logCtx.WithField("Duration", time.Now().Sub(t))
-		switch {
-		case err == nil || err == io.EOF || grpc.Code(err) == codes.Canceled:
+		if grpc.Code(err) == codes.OK || grpc.Code(err) == codes.Canceled {
 			logCtx.Debug("End stream")
-		default:
-			logCtx.WithField("ErrCode", grpc.Code(err)).WithError(err).Warn("End stream")
+		} else {
+			logCtx.WithField("ErrCode", grpc.Code(err)).WithError(err).Debug("End stream with error")
 		}
 		return err
 	}

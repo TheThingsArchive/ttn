@@ -124,10 +124,10 @@ func (r *routerRPC) getDownlink(md metadata.MD) (ch <-chan *pb.DownlinkMessage, 
 func (r *routerRPC) Activate(ctx context.Context, req *pb.DeviceActivationRequest) (*pb.DeviceActivationResponse, error) {
 	gateway, err := r.gatewayFromContext(ctx)
 	if err != nil {
-		return nil, errors.BuildGRPCError(err)
+		return nil, err
 	}
 	if err := req.Validate(); err != nil {
-		return nil, errors.BuildGRPCError(errors.Wrap(err, "Invalid Activation Request"))
+		return nil, errors.Wrap(err, "Invalid Activation Request")
 	}
 	if r.uplinkRate.Limit(gateway.ID) {
 		return nil, grpc.Errorf(codes.ResourceExhausted, "Gateway reached uplink rate limit")

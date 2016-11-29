@@ -25,13 +25,14 @@ type challengeResponseWithHandler struct {
 	response *pb.ActivationChallengeResponse
 }
 
-func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (*pb.DeviceActivationResponse, error) {
+var errDuplicateActivation = errors.New("Not handling duplicate activation on this gateway")
+
+func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (res *pb.DeviceActivationResponse, err error) {
 	ctx := b.Ctx.WithFields(log.Fields{
 		"GatewayID": activation.GatewayMetadata.GatewayId,
 		"AppEUI":    *activation.AppEui,
 		"DevEUI":    *activation.DevEui,
 	})
-	var err error
 	start := time.Now()
 	defer func() {
 		if err != nil {
@@ -46,8 +47,7 @@ func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (*pb.D
 	// De-duplicate uplink messages
 	duplicates := b.deduplicateActivation(activation)
 	if len(duplicates) == 0 {
-		err = errors.NewErrInternal("No duplicates")
-		return nil, err
+		return nil, errDuplicateActivation
 	}
 
 	base := duplicates[0]
@@ -83,8 +83,7 @@ func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (*pb.D
 	// Send Activate to NS
 	deduplicatedActivationRequest, err = b.ns.PrepareActivation(b.Component.GetContext(b.nsToken), deduplicatedActivationRequest)
 	if err != nil {
-		err = errors.Wrap(errors.FromGRPCError(err), "NetworkServer refused to prepare activation")
-		return nil, err
+		return nil, errors.Wrap(errors.FromGRPCError(err), "NetworkServer refused to prepare activation")
 	}
 
 	ctx = ctx.WithFields(log.Fields{
@@ -99,8 +98,7 @@ func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (*pb.D
 		return nil, err
 	}
 	if len(announcements) == 0 {
-		err = errors.NewErrNotFound(fmt.Sprintf("Handler for AppID %s", deduplicatedActivationRequest.AppId))
-		return nil, err
+		return nil, errors.NewErrNotFound(fmt.Sprintf("Handler for AppID %s", deduplicatedActivationRequest.AppId))
 	}
 
 	ctx = ctx.WithField("NumHandlers", len(announcements))
@@ -184,31 +182,27 @@ func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (*pb.D
 	// Activation not accepted by any broker
 	if !gotFirst {
 		ctx.Debug("Activation not accepted by any Handler")
-		err = errors.New("Activation not accepted by any Handler")
-		return nil, err
+		return nil, errors.New("Activation not accepted by any Handler")
 	}
 
 	ctx.WithField("HandlerID", joinHandler.Id).Debug("Forward Activation")
 
-	var handlerResponse *pb_handler.DeviceActivationResponse
-	handlerResponse, err = joinHandlerClient.Activate(b.Component.GetContext(""), deduplicatedActivationRequest)
+	handlerResponse, err := joinHandlerClient.Activate(b.Component.GetContext(""), deduplicatedActivationRequest)
 	if err != nil {
-		err = errors.Wrap(errors.FromGRPCError(err), "Handler refused activation")
-		return nil, err
+		return nil, errors.Wrap(errors.FromGRPCError(err), "Handler refused activation")
 	}
-
 	handlerResponse, err = b.ns.Activate(b.Component.GetContext(b.nsToken), handlerResponse)
 	if err != nil {
-		err = errors.Wrap(errors.FromGRPCError(err), "NetworkServer refused activation")
-		return nil, err
+		return nil, errors.Wrap(errors.FromGRPCError(err), "NetworkServer refused activation")
 	}
 
-	deviceActivationResponse = &pb.DeviceActivationResponse{
+	res = &pb.DeviceActivationResponse{
 		Payload:        handlerResponse.Payload,
+		Message:        handlerResponse.Message,
 		DownlinkOption: handlerResponse.DownlinkOption,
 	}
 
-	return deviceActivationResponse, nil
+	return res, nil
 }
 
 func (b *broker) deduplicateActivation(duplicate *pb.DeviceActivationRequest) (activations []*pb.DeviceActivationRequest) {

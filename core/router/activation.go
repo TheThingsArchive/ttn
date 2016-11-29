@@ -135,6 +135,7 @@ func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivat
 			gotFirst = true
 			downlink := &pb_broker.DownlinkMessage{
 				Payload:        res.Payload,
+				Message:        res.Message,
 				DownlinkOption: res.DownlinkOption,
 			}
 			err := r.HandleDownlink(downlink)
