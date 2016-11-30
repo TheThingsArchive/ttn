@@ -49,7 +49,8 @@ func GetTokenCache() cache.Cache {
 // getOAuth gets the OAuth client
 func getOAuth() *oauth.Config {
 	return oauth.OAuth(viper.GetString("auth-server"), &oauth.Client{
-		ID: "ttnctl",
+		ID:     "ttnctl",
+		Secret: "ttnctl",
 	})
 }
 
