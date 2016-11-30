@@ -8,7 +8,6 @@ import (
 
 	"github.com/TheThingsNetwork/ttn/api"
 	pb "github.com/TheThingsNetwork/ttn/api/broker"
-	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/api/ratelimit"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
@@ -90,19 +89,14 @@ func (b *brokerRPC) getHandlerPublish(md metadata.MD) (chan *pb.DownlinkMessage,
 				if err != nil {
 					return
 				}
-				// Check if this Handler can publish for this AppId
-				for _, meta := range handler.Metadata {
-					switch meta.Key {
-					case pb_discovery.Metadata_APP_ID:
-						announcedID := string(meta.Value)
-						if announcedID == downlink.AppId {
-							if waitTime := b.handlerDownRate.Wait(handler.Id); waitTime != 0 {
-								b.broker.Ctx.WithField("HandlerID", handler.Id).WithField("Wait", waitTime).Warn("Handler reached downlink rate limit")
-								time.Sleep(waitTime)
-							}
-							b.broker.HandleDownlink(downlink)
-							return
+				for _, announcedID := range handler.AppIDs() {
+					if announcedID == downlink.AppId {
+						if waitTime := b.handlerDownRate.Wait(handler.Id); waitTime != 0 {
+							b.broker.Ctx.WithField("HandlerID", handler.Id).WithField("Wait", waitTime).Warn("Handler reached downlink rate limit")
+							time.Sleep(waitTime)
 						}
+						b.broker.HandleDownlink(downlink)
+						return
 					}
 				}
 			}(message)

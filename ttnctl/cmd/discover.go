@@ -23,33 +23,6 @@ func crop(in string, length int) string {
 	return in
 }
 
-func listDevAddrPrefixes(in []*discovery.Metadata) (prefixes []types.DevAddrPrefix) {
-	for _, meta := range in {
-		if meta.Key != discovery.Metadata_PREFIX || len(meta.Value) != 5 {
-			continue
-		}
-		prefix := types.DevAddrPrefix{
-			Length: int(meta.Value[0]),
-		}
-		prefix.DevAddr[0] = meta.Value[1]
-		prefix.DevAddr[1] = meta.Value[2]
-		prefix.DevAddr[2] = meta.Value[3]
-		prefix.DevAddr[3] = meta.Value[4]
-		prefixes = append(prefixes, prefix)
-	}
-	return
-}
-
-func listAppIDs(in []*discovery.Metadata) (appIDs []string) {
-	for _, meta := range in {
-		if meta.Key != discovery.Metadata_APP_ID {
-			continue
-		}
-		appIDs = append(appIDs, string(meta.Value))
-	}
-	return
-}
-
 var discoverCmd = &cobra.Command{
 	Use:    "discover [ServiceType]",
 	Short:  "Discover routing services",
@@ -77,7 +50,7 @@ var discoverCmd = &cobra.Command{
 		conn, client := util.GetDiscovery(ctx)
 		defer conn.Close()
 
-		res, err := client.GetAll(util.GetContext(ctx), &discovery.GetAllRequest{
+		res, err := client.GetAll(util.GetContext(ctx), &discovery.GetServiceRequest{
 			ServiceName: serviceType,
 		})
 		if err != nil {
@@ -95,14 +68,14 @@ var discoverCmd = &cobra.Command{
 				switch serviceType {
 				case "broker":
 					fmt.Println("  DevAddr Prefixes:")
-					for _, prefix := range listDevAddrPrefixes(service.Metadata) {
+					for _, prefix := range service.DevAddrPrefixes() {
 						min := types.DevAddr{0x00, 0x00, 0x00, 0x00}.WithPrefix(prefix)
 						max := types.DevAddr{0xff, 0xff, 0xff, 0xff}.WithPrefix(prefix)
 						fmt.Printf("   %s (%s-%s)\n", prefix, min, max)
 					}
 				case "handler":
 					fmt.Println("  AppIDs:")
-					for _, appID := range listAppIDs(service.Metadata) {
+					for _, appID := range service.AppIDs() {
 						fmt.Println("   ", appID)
 					}
 				}

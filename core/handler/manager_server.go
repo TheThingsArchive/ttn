@@ -11,7 +11,6 @@ import (
 	"github.com/TheThingsNetwork/go-account-lib/rights"
 	"github.com/TheThingsNetwork/ttn/api"
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
-	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	pb "github.com/TheThingsNetwork/ttn/api/handler"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/api/ratelimit"
@@ -340,9 +339,8 @@ func (h *handlerManager) RegisterApplication(ctx context.Context, in *pb.Applica
 		return nil, err
 	}
 
-	md, _ := metadata.FromContext(ctx)
-	token, _ := md["token"]
-	err = h.handler.Discovery.AddMetadata(pb_discovery.Metadata_APP_ID, []byte(in.AppId), token[0])
+	token, _ := api.TokenFromContext(ctx)
+	err = h.handler.Discovery.AddAppID(in.AppId, token)
 	if err != nil {
 		h.handler.Ctx.WithField("AppID", in.AppId).WithError(err).Warn("Could not register Application with Discovery")
 	}
@@ -428,9 +426,8 @@ func (h *handlerManager) DeleteApplication(ctx context.Context, in *pb.Applicati
 		return nil, err
 	}
 
-	md, _ := metadata.FromContext(ctx)
-	token, _ := md["token"]
-	err = h.handler.Discovery.DeleteMetadata(pb_discovery.Metadata_APP_ID, []byte(in.AppId), token[0])
+	token, _ := api.TokenFromContext(ctx)
+	err = h.handler.Discovery.RemoveAppID(in.AppId, token)
 	if err != nil {
 		h.handler.Ctx.WithField("AppID", in.AppId).WithError(errors.FromGRPCError(err)).Warn("Could not unregister Application from Discovery")
 	}

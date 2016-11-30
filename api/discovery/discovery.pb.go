@@ -11,7 +11,7 @@
 	It has these top-level messages:
 		Metadata
 		Announcement
-		GetAllRequest
+		GetServiceRequest
 		GetRequest
 		MetadataRequest
 		AnnouncementsResponse
@@ -42,58 +42,147 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
-// The Key indicates the metadata type
-type Metadata_Key int32
-
-const (
-	// OTHER indicates arbitrary metadata. We currently don't allow this.
-	Metadata_OTHER Metadata_Key = 0
-	// The value for PREFIX consists of 1 byte denoting the number of bits,
-	// followed by the prefix and enough trailing bits to fill 4 octets.
-	// Only authorized brokers can announce PREFIX metadata.
-	Metadata_PREFIX Metadata_Key = 1
-	// APP_EUI is used for announcing join handlers. The value for APP_EUI
-	// is the byte slice of the AppEUI.
-	// Only authorized join handlers can announce APP_EUI metadata (and we
-	// don't have any of those yet).
-	Metadata_APP_EUI Metadata_Key = 2
-	// APP_ID is used for announcing that this handler is responsible for
-	// a certain AppID. The value for APP_ID is the byte slice of the AppID
-	// string. This metadata can only be added if the requesting client is
-	// authorized to manage this AppID.
-	Metadata_APP_ID Metadata_Key = 3
-)
-
-var Metadata_Key_name = map[int32]string{
-	0: "OTHER",
-	1: "PREFIX",
-	2: "APP_EUI",
-	3: "APP_ID",
-}
-var Metadata_Key_value = map[string]int32{
-	"OTHER":   0,
-	"PREFIX":  1,
-	"APP_EUI": 2,
-	"APP_ID":  3,
-}
-
-func (x Metadata_Key) String() string {
-	return proto.EnumName(Metadata_Key_name, int32(x))
-}
-func (Metadata_Key) EnumDescriptor() ([]byte, []int) { return fileDescriptorDiscovery, []int{0, 0} }
-
-// Announcements have a list of Metadata
 type Metadata struct {
-	// The key indicates the metadata type
-	Key Metadata_Key `protobuf:"varint,1,opt,name=key,proto3,enum=discovery.Metadata_Key" json:"key,omitempty"`
-	// The value depends on the key type
-	Value []byte `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
+	// Types that are valid to be assigned to Metadata:
+	//	*Metadata_DevAddrPrefix
+	//	*Metadata_AppId
+	//	*Metadata_AppEui
+	Metadata isMetadata_Metadata `protobuf_oneof:"metadata"`
 }
 
 func (m *Metadata) Reset()                    { *m = Metadata{} }
 func (m *Metadata) String() string            { return proto.CompactTextString(m) }
 func (*Metadata) ProtoMessage()               {}
 func (*Metadata) Descriptor() ([]byte, []int) { return fileDescriptorDiscovery, []int{0} }
+
+type isMetadata_Metadata interface {
+	isMetadata_Metadata()
+	MarshalTo([]byte) (int, error)
+	Size() int
+}
+
+type Metadata_DevAddrPrefix struct {
+	DevAddrPrefix []byte `protobuf:"bytes,20,opt,name=dev_addr_prefix,json=devAddrPrefix,proto3,oneof"`
+}
+type Metadata_AppId struct {
+	AppId string `protobuf:"bytes,30,opt,name=app_id,json=appId,proto3,oneof"`
+}
+type Metadata_AppEui struct {
+	AppEui []byte `protobuf:"bytes,31,opt,name=app_eui,json=appEui,proto3,oneof"`
+}
+
+func (*Metadata_DevAddrPrefix) isMetadata_Metadata() {}
+func (*Metadata_AppId) isMetadata_Metadata()         {}
+func (*Metadata_AppEui) isMetadata_Metadata()        {}
+
+func (m *Metadata) GetMetadata() isMetadata_Metadata {
+	if m != nil {
+		return m.Metadata
+	}
+	return nil
+}
+
+func (m *Metadata) GetDevAddrPrefix() []byte {
+	if x, ok := m.GetMetadata().(*Metadata_DevAddrPrefix); ok {
+		return x.DevAddrPrefix
+	}
+	return nil
+}
+
+func (m *Metadata) GetAppId() string {
+	if x, ok := m.GetMetadata().(*Metadata_AppId); ok {
+		return x.AppId
+	}
+	return ""
+}
+
+func (m *Metadata) GetAppEui() []byte {
+	if x, ok := m.GetMetadata().(*Metadata_AppEui); ok {
+		return x.AppEui
+	}
+	return nil
+}
+
+// XXX_OneofFuncs is for the internal use of the proto package.
+func (*Metadata) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
+	return _Metadata_OneofMarshaler, _Metadata_OneofUnmarshaler, _Metadata_OneofSizer, []interface{}{
+		(*Metadata_DevAddrPrefix)(nil),
+		(*Metadata_AppId)(nil),
+		(*Metadata_AppEui)(nil),
+	}
+}
+
+func _Metadata_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
+	m := msg.(*Metadata)
+	// metadata
+	switch x := m.Metadata.(type) {
+	case *Metadata_DevAddrPrefix:
+		_ = b.EncodeVarint(20<<3 | proto.WireBytes)
+		_ = b.EncodeRawBytes(x.DevAddrPrefix)
+	case *Metadata_AppId:
+		_ = b.EncodeVarint(30<<3 | proto.WireBytes)
+		_ = b.EncodeStringBytes(x.AppId)
+	case *Metadata_AppEui:
+		_ = b.EncodeVarint(31<<3 | proto.WireBytes)
+		_ = b.EncodeRawBytes(x.AppEui)
+	case nil:
+	default:
+		return fmt.Errorf("Metadata.Metadata has unexpected type %T", x)
+	}
+	return nil
+}
+
+func _Metadata_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
+	m := msg.(*Metadata)
+	switch tag {
+	case 20: // metadata.dev_addr_prefix
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		x, err := b.DecodeRawBytes(true)
+		m.Metadata = &Metadata_DevAddrPrefix{x}
+		return true, err
+	case 30: // metadata.app_id
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		x, err := b.DecodeStringBytes()
+		m.Metadata = &Metadata_AppId{x}
+		return true, err
+	case 31: // metadata.app_eui
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		x, err := b.DecodeRawBytes(true)
+		m.Metadata = &Metadata_AppEui{x}
+		return true, err
+	default:
+		return false, nil
+	}
+}
+
+func _Metadata_OneofSizer(msg proto.Message) (n int) {
+	m := msg.(*Metadata)
+	// metadata
+	switch x := m.Metadata.(type) {
+	case *Metadata_DevAddrPrefix:
+		n += proto.SizeVarint(20<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(len(x.DevAddrPrefix)))
+		n += len(x.DevAddrPrefix)
+	case *Metadata_AppId:
+		n += proto.SizeVarint(30<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(len(x.AppId)))
+		n += len(x.AppId)
+	case *Metadata_AppEui:
+		n += proto.SizeVarint(31<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(len(x.AppEui)))
+		n += len(x.AppEui)
+	case nil:
+	default:
+		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
+	}
+	return n
+}
 
 // The Announcement of a service (also called component)
 type Announcement struct {
@@ -118,7 +207,7 @@ type Announcement struct {
 	// Contains the address where the HTTP API is exposed (if there is one)
 	ApiAddress string `protobuf:"bytes,14,opt,name=api_address,json=apiAddress,proto3" json:"api_address,omitempty"`
 	// Metadata for this component
-	Metadata []*Metadata `protobuf:"bytes,21,rep,name=metadata" json:"metadata,omitempty"`
+	Metadata []*Metadata `protobuf:"bytes,22,rep,name=metadata" json:"metadata,omitempty"`
 }
 
 func (m *Announcement) Reset()                    { *m = Announcement{} }
@@ -133,15 +222,15 @@ func (m *Announcement) GetMetadata() []*Metadata {
 	return nil
 }
 
-type GetAllRequest struct {
+type GetServiceRequest struct {
 	// The name of the service (router/broker/handler)
 	ServiceName string `protobuf:"bytes,1,opt,name=service_name,json=serviceName,proto3" json:"service_name,omitempty"`
 }
 
-func (m *GetAllRequest) Reset()                    { *m = GetAllRequest{} }
-func (m *GetAllRequest) String() string            { return proto.CompactTextString(m) }
-func (*GetAllRequest) ProtoMessage()               {}
-func (*GetAllRequest) Descriptor() ([]byte, []int) { return fileDescriptorDiscovery, []int{2} }
+func (m *GetServiceRequest) Reset()                    { *m = GetServiceRequest{} }
+func (m *GetServiceRequest) String() string            { return proto.CompactTextString(m) }
+func (*GetServiceRequest) ProtoMessage()               {}
+func (*GetServiceRequest) Descriptor() ([]byte, []int) { return fileDescriptorDiscovery, []int{2} }
 
 // The identifier of the service that should be returned
 type GetRequest struct {
@@ -161,8 +250,9 @@ type MetadataRequest struct {
 	// The ID of the service that should be modified
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// The name of the service (router/broker/handler) that should be modified
-	ServiceName string    `protobuf:"bytes,2,opt,name=service_name,json=serviceName,proto3" json:"service_name,omitempty"`
-	Metadata    *Metadata `protobuf:"bytes,11,opt,name=metadata" json:"metadata,omitempty"`
+	ServiceName string `protobuf:"bytes,2,opt,name=service_name,json=serviceName,proto3" json:"service_name,omitempty"`
+	// Metadata to add or remove
+	Metadata *Metadata `protobuf:"bytes,12,opt,name=metadata" json:"metadata,omitempty"`
 }
 
 func (m *MetadataRequest) Reset()                    { *m = MetadataRequest{} }
@@ -197,11 +287,10 @@ func (m *AnnouncementsResponse) GetServices() []*Announcement {
 func init() {
 	proto.RegisterType((*Metadata)(nil), "discovery.Metadata")
 	proto.RegisterType((*Announcement)(nil), "discovery.Announcement")
-	proto.RegisterType((*GetAllRequest)(nil), "discovery.GetAllRequest")
+	proto.RegisterType((*GetServiceRequest)(nil), "discovery.GetServiceRequest")
 	proto.RegisterType((*GetRequest)(nil), "discovery.GetRequest")
 	proto.RegisterType((*MetadataRequest)(nil), "discovery.MetadataRequest")
 	proto.RegisterType((*AnnouncementsResponse)(nil), "discovery.AnnouncementsResponse")
-	proto.RegisterEnum("discovery.Metadata_Key", Metadata_Key_name, Metadata_Key_value)
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -219,8 +308,8 @@ type DiscoveryClient interface {
 	// A call to `Announce` does not processes the `metadata` field, so you can safely leave this field empty.
 	// Adding or removing Metadata should be done with the `AddMetadata` and `DeleteMetadata` methods.
 	Announce(ctx context.Context, in *Announcement, opts ...grpc.CallOption) (*google_protobuf.Empty, error)
-	// Get all announcements for a specific service
-	GetAll(ctx context.Context, in *GetAllRequest, opts ...grpc.CallOption) (*AnnouncementsResponse, error)
+	// Get all announcements for a specific service type
+	GetAll(ctx context.Context, in *GetServiceRequest, opts ...grpc.CallOption) (*AnnouncementsResponse, error)
 	// Get a specific announcement
 	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*Announcement, error)
 	// Add metadata to an announement
@@ -246,7 +335,7 @@ func (c *discoveryClient) Announce(ctx context.Context, in *Announcement, opts .
 	return out, nil
 }
 
-func (c *discoveryClient) GetAll(ctx context.Context, in *GetAllRequest, opts ...grpc.CallOption) (*AnnouncementsResponse, error) {
+func (c *discoveryClient) GetAll(ctx context.Context, in *GetServiceRequest, opts ...grpc.CallOption) (*AnnouncementsResponse, error) {
 	out := new(AnnouncementsResponse)
 	err := grpc.Invoke(ctx, "/discovery.Discovery/GetAll", in, out, c.cc, opts...)
 	if err != nil {
@@ -289,8 +378,8 @@ type DiscoveryServer interface {
 	// A call to `Announce` does not processes the `metadata` field, so you can safely leave this field empty.
 	// Adding or removing Metadata should be done with the `AddMetadata` and `DeleteMetadata` methods.
 	Announce(context.Context, *Announcement) (*google_protobuf.Empty, error)
-	// Get all announcements for a specific service
-	GetAll(context.Context, *GetAllRequest) (*AnnouncementsResponse, error)
+	// Get all announcements for a specific service type
+	GetAll(context.Context, *GetServiceRequest) (*AnnouncementsResponse, error)
 	// Get a specific announcement
 	Get(context.Context, *GetRequest) (*Announcement, error)
 	// Add metadata to an announement
@@ -322,7 +411,7 @@ func _Discovery_Announce_Handler(srv interface{}, ctx context.Context, dec func(
 }
 
 func _Discovery_GetAll_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetAllRequest)
+	in := new(GetServiceRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -334,7 +423,7 @@ func _Discovery_GetAll_Handler(srv interface{}, ctx context.Context, dec func(in
 		FullMethod: "/discovery.Discovery/GetAll",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DiscoveryServer).GetAll(ctx, req.(*GetAllRequest))
+		return srv.(DiscoveryServer).GetAll(ctx, req.(*GetServiceRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -467,20 +556,50 @@ func (m *Metadata) MarshalTo(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.Key != 0 {
-		dAtA[i] = 0x8
-		i++
-		i = encodeVarintDiscovery(dAtA, i, uint64(m.Key))
-	}
-	if len(m.Value) > 0 {
-		dAtA[i] = 0x12
-		i++
-		i = encodeVarintDiscovery(dAtA, i, uint64(len(m.Value)))
-		i += copy(dAtA[i:], m.Value)
+	if m.Metadata != nil {
+		nn1, err := m.Metadata.MarshalTo(dAtA[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += nn1
 	}
 	return i, nil
 }
 
+func (m *Metadata_DevAddrPrefix) MarshalTo(dAtA []byte) (int, error) {
+	i := 0
+	if m.DevAddrPrefix != nil {
+		dAtA[i] = 0xa2
+		i++
+		dAtA[i] = 0x1
+		i++
+		i = encodeVarintDiscovery(dAtA, i, uint64(len(m.DevAddrPrefix)))
+		i += copy(dAtA[i:], m.DevAddrPrefix)
+	}
+	return i, nil
+}
+func (m *Metadata_AppId) MarshalTo(dAtA []byte) (int, error) {
+	i := 0
+	dAtA[i] = 0xf2
+	i++
+	dAtA[i] = 0x1
+	i++
+	i = encodeVarintDiscovery(dAtA, i, uint64(len(m.AppId)))
+	i += copy(dAtA[i:], m.AppId)
+	return i, nil
+}
+func (m *Metadata_AppEui) MarshalTo(dAtA []byte) (int, error) {
+	i := 0
+	if m.AppEui != nil {
+		dAtA[i] = 0xfa
+		i++
+		dAtA[i] = 0x1
+		i++
+		i = encodeVarintDiscovery(dAtA, i, uint64(len(m.AppEui)))
+		i += copy(dAtA[i:], m.AppEui)
+	}
+	return i, nil
+}
 func (m *Announcement) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -562,7 +681,7 @@ func (m *Announcement) MarshalTo(dAtA []byte) (int, error) {
 	}
 	if len(m.Metadata) > 0 {
 		for _, msg := range m.Metadata {
-			dAtA[i] = 0xaa
+			dAtA[i] = 0xb2
 			i++
 			dAtA[i] = 0x1
 			i++
@@ -577,7 +696,7 @@ func (m *Announcement) MarshalTo(dAtA []byte) (int, error) {
 	return i, nil
 }
 
-func (m *GetAllRequest) Marshal() (dAtA []byte, err error) {
+func (m *GetServiceRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalTo(dAtA)
@@ -587,7 +706,7 @@ func (m *GetAllRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GetAllRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetServiceRequest) MarshalTo(dAtA []byte) (int, error) {
 	var i int
 	_ = i
 	var l int
@@ -659,14 +778,14 @@ func (m *MetadataRequest) MarshalTo(dAtA []byte) (int, error) {
 		i += copy(dAtA[i:], m.ServiceName)
 	}
 	if m.Metadata != nil {
-		dAtA[i] = 0x5a
+		dAtA[i] = 0x62
 		i++
 		i = encodeVarintDiscovery(dAtA, i, uint64(m.Metadata.Size()))
-		n1, err := m.Metadata.MarshalTo(dAtA[i:])
+		n2, err := m.Metadata.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
-		i += n1
+		i += n2
 	}
 	return i, nil
 }
@@ -731,16 +850,37 @@ func encodeVarintDiscovery(dAtA []byte, offset int, v uint64) int {
 func (m *Metadata) Size() (n int) {
 	var l int
 	_ = l
-	if m.Key != 0 {
-		n += 1 + sovDiscovery(uint64(m.Key))
-	}
-	l = len(m.Value)
-	if l > 0 {
-		n += 1 + l + sovDiscovery(uint64(l))
+	if m.Metadata != nil {
+		n += m.Metadata.Size()
 	}
 	return n
 }
 
+func (m *Metadata_DevAddrPrefix) Size() (n int) {
+	var l int
+	_ = l
+	if m.DevAddrPrefix != nil {
+		l = len(m.DevAddrPrefix)
+		n += 2 + l + sovDiscovery(uint64(l))
+	}
+	return n
+}
+func (m *Metadata_AppId) Size() (n int) {
+	var l int
+	_ = l
+	l = len(m.AppId)
+	n += 2 + l + sovDiscovery(uint64(l))
+	return n
+}
+func (m *Metadata_AppEui) Size() (n int) {
+	var l int
+	_ = l
+	if m.AppEui != nil {
+		l = len(m.AppEui)
+		n += 2 + l + sovDiscovery(uint64(l))
+	}
+	return n
+}
 func (m *Announcement) Size() (n int) {
 	var l int
 	_ = l
@@ -792,7 +932,7 @@ func (m *Announcement) Size() (n int) {
 	return n
 }
 
-func (m *GetAllRequest) Size() (n int) {
+func (m *GetServiceRequest) Size() (n int) {
 	var l int
 	_ = l
 	l = len(m.ServiceName)
@@ -888,28 +1028,9 @@ func (m *Metadata) Unmarshal(dAtA []byte) error {
 			return fmt.Errorf("proto: Metadata: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
-		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Key", wireType)
-			}
-			m.Key = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowDiscovery
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Key |= (Metadata_Key(b) & 0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 2:
+		case 20:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Value", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field DevAddrPrefix", wireType)
 			}
 			var byteLen int
 			for shift := uint(0); ; shift += 7 {
@@ -933,10 +1054,68 @@ func (m *Metadata) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Value = append(m.Value[:0], dAtA[iNdEx:postIndex]...)
-			if m.Value == nil {
-				m.Value = []byte{}
+			v := make([]byte, postIndex-iNdEx)
+			copy(v, dAtA[iNdEx:postIndex])
+			m.Metadata = &Metadata_DevAddrPrefix{v}
+			iNdEx = postIndex
+		case 30:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AppId", wireType)
 			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDiscovery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthDiscovery
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Metadata = &Metadata_AppId{string(dAtA[iNdEx:postIndex])}
+			iNdEx = postIndex
+		case 31:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AppEui", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowDiscovery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthDiscovery
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := make([]byte, postIndex-iNdEx)
+			copy(v, dAtA[iNdEx:postIndex])
+			m.Metadata = &Metadata_AppEui{v}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -1269,7 +1448,7 @@ func (m *Announcement) Unmarshal(dAtA []byte) error {
 			}
 			m.ApiAddress = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 21:
+		case 22:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Metadata", wireType)
 			}
@@ -1321,7 +1500,7 @@ func (m *Announcement) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *GetAllRequest) Unmarshal(dAtA []byte) error {
+func (m *GetServiceRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1344,10 +1523,10 @@ func (m *GetAllRequest) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: GetAllRequest: wiretype end group for non-group")
+			return fmt.Errorf("proto: GetServiceRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: GetAllRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: GetServiceRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -1595,7 +1774,7 @@ func (m *MetadataRequest) Unmarshal(dAtA []byte) error {
 			}
 			m.ServiceName = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 11:
+		case 12:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Metadata", wireType)
 			}
@@ -1840,47 +2019,47 @@ func init() {
 }
 
 var fileDescriptorDiscovery = []byte{
-	// 666 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xa4, 0x54, 0xcd, 0x6e, 0xd3, 0x4c,
-	0x14, 0xad, 0xe3, 0xaf, 0xf9, 0x92, 0xeb, 0x34, 0x8d, 0x06, 0x5a, 0xac, 0x40, 0xd3, 0x60, 0x81,
-	0x08, 0x48, 0xc4, 0x52, 0x2a, 0x56, 0x08, 0x55, 0x41, 0x09, 0xa5, 0x2a, 0x2d, 0x95, 0x55, 0x10,
-	0x62, 0x13, 0x4d, 0xec, 0xdb, 0x74, 0x54, 0x67, 0x6c, 0xec, 0x71, 0x50, 0x54, 0x75, 0xd3, 0x57,
-	0x60, 0xc3, 0x96, 0xb7, 0x61, 0x89, 0xc4, 0x0b, 0xa0, 0xc2, 0x8a, 0xa7, 0x40, 0xfe, 0xad, 0xab,
-	0x36, 0xa0, 0xc2, 0xce, 0x73, 0xee, 0xb9, 0xe7, 0xcc, 0x9c, 0xeb, 0x19, 0x78, 0x32, 0x62, 0xe2,
-	0x20, 0x18, 0xb6, 0x4d, 0x67, 0xac, 0xef, 0x1d, 0xe0, 0xde, 0x01, 0xe3, 0x23, 0x7f, 0x07, 0xc5,
-	0x7b, 0xc7, 0x3b, 0xd4, 0x85, 0xe0, 0x3a, 0x75, 0x99, 0x6e, 0x31, 0xdf, 0x74, 0x26, 0xe8, 0x4d,
-	0xcf, 0xbe, 0xda, 0xae, 0xe7, 0x08, 0x87, 0x94, 0x33, 0xa0, 0x7e, 0x73, 0xe4, 0x38, 0x23, 0x1b,
-	0xf5, 0xa8, 0x30, 0x0c, 0xf6, 0x75, 0x1c, 0xbb, 0x22, 0xe1, 0xd5, 0x6f, 0x25, 0xc5, 0x50, 0x8d,
-	0x72, 0xee, 0x08, 0x2a, 0x98, 0xc3, 0xfd, 0xb8, 0xaa, 0x9d, 0x48, 0x50, 0xda, 0x46, 0x41, 0x2d,
-	0x2a, 0x28, 0xb9, 0x0f, 0xf2, 0x21, 0x4e, 0x55, 0xa9, 0x29, 0xb5, 0xaa, 0x9d, 0x1b, 0xed, 0x33,
-	0xc7, 0x94, 0xd1, 0xde, 0xc2, 0xa9, 0x11, 0x72, 0xc8, 0x75, 0x98, 0x9f, 0x50, 0x3b, 0x40, 0xb5,
-	0xd0, 0x94, 0x5a, 0x15, 0x23, 0x5e, 0x68, 0x8f, 0x40, 0xde, 0xc2, 0x29, 0x29, 0xc3, 0xfc, 0xcb,
-	0xbd, 0xe7, 0x7d, 0xa3, 0x36, 0x47, 0x00, 0x8a, 0xbb, 0x46, 0xff, 0xd9, 0xe6, 0x9b, 0x9a, 0x44,
-	0x14, 0xf8, 0xbf, 0xbb, 0xbb, 0x3b, 0xe8, 0xbf, 0xda, 0xac, 0x15, 0xc2, 0x42, 0xb8, 0xd8, 0xec,
-	0xd5, 0x64, 0xed, 0x67, 0x01, 0x2a, 0x5d, 0xce, 0x9d, 0x80, 0x9b, 0x38, 0x46, 0x2e, 0x48, 0x15,
-	0x0a, 0xcc, 0x8a, 0xf6, 0x51, 0x36, 0x0a, 0xcc, 0x22, 0xb7, 0xa1, 0xe2, 0xa3, 0x37, 0x61, 0x26,
-	0x0e, 0x38, 0x1d, 0xc7, 0xa6, 0x65, 0x43, 0x49, 0xb0, 0x1d, 0x3a, 0x46, 0x72, 0x0f, 0x16, 0x53,
-	0xca, 0x04, 0x3d, 0x9f, 0x39, 0x5c, 0x95, 0x23, 0x56, 0x35, 0x81, 0x5f, 0xc7, 0x28, 0x69, 0x82,
-	0x62, 0xa1, 0x6f, 0x7a, 0xcc, 0x0d, 0x73, 0x50, 0xff, 0x8b, 0xa5, 0x72, 0x10, 0xa9, 0x81, 0x1c,
-	0x78, 0xb6, 0x3a, 0x1f, 0x55, 0xc2, 0x4f, 0xb2, 0x0c, 0x45, 0x37, 0x18, 0xda, 0xcc, 0x54, 0x8b,
-	0x4d, 0xa9, 0x55, 0x32, 0x92, 0x15, 0x59, 0x05, 0x85, 0xa3, 0x18, 0x50, 0xcb, 0xf2, 0xd0, 0xf7,
-	0x55, 0x25, 0xea, 0x00, 0x8e, 0xa2, 0x1b, 0x23, 0x64, 0x05, 0x20, 0xa6, 0x0e, 0xc2, 0x60, 0x2b,
-	0x51, 0xbd, 0x1c, 0x23, 0x61, 0x50, 0x4d, 0x50, 0x4c, 0xf4, 0x04, 0xdb, 0x67, 0x26, 0x15, 0xa8,
-	0x2e, 0xc4, 0x7b, 0xc9, 0x41, 0xa1, 0x03, 0x75, 0x59, 0xe6, 0x50, 0x8d, 0x1d, 0xa8, 0xcb, 0x52,
-	0x07, 0x1d, 0x4a, 0xe3, 0x64, 0x3a, 0xea, 0x52, 0x53, 0x6e, 0x29, 0x9d, 0x6b, 0x97, 0x0c, 0xce,
-	0xc8, 0x48, 0x5a, 0x07, 0x16, 0x36, 0x50, 0x74, 0x6d, 0xdb, 0xc0, 0x77, 0x01, 0xfa, 0xe2, 0x42,
-	0xb8, 0xd2, 0x85, 0x70, 0xb5, 0x75, 0x80, 0x0d, 0x14, 0x69, 0xc3, 0xd5, 0xa7, 0xa3, 0x05, 0xb0,
-	0x98, 0x6d, 0xe5, 0xaf, 0x55, 0xce, 0x9d, 0x35, 0xcc, 0xfa, 0x8f, 0x67, 0x7d, 0x01, 0x4b, 0xf9,
-	0xff, 0xca, 0x37, 0xd0, 0x77, 0x1d, 0xee, 0x23, 0x59, 0x83, 0x52, 0x22, 0xec, 0xab, 0x52, 0x94,
-	0x5a, 0xfe, 0x77, 0xcf, 0xf7, 0x18, 0x19, 0xb1, 0xf3, 0x49, 0x86, 0x72, 0x2f, 0x25, 0x91, 0xc7,
-	0x50, 0x4a, 0x79, 0x64, 0x56, 0x73, 0x7d, 0xb9, 0x1d, 0xdf, 0xbe, 0x76, 0x7a, 0x35, 0xdb, 0xfd,
-	0xf0, 0x6a, 0x92, 0x43, 0x28, 0xc6, 0x43, 0x20, 0x6a, 0xae, 0xf5, 0xdc, 0x5c, 0xea, 0xcd, 0x19,
-	0xa2, 0xd9, 0x29, 0xb4, 0xbb, 0x27, 0x5f, 0x7f, 0x7c, 0x28, 0xac, 0x92, 0x95, 0xe8, 0x62, 0x67,
-	0x75, 0xfd, 0x28, 0x1f, 0xe4, 0x31, 0xa1, 0x20, 0x6f, 0xa0, 0x20, 0x4b, 0xe7, 0x9d, 0x52, 0x9b,
-	0x59, 0x7b, 0xd7, 0x1e, 0x44, 0xea, 0x77, 0x88, 0xf6, 0x5b, 0x75, 0xfd, 0x88, 0x59, 0xc7, 0xa4,
-	0x0b, 0x4a, 0xd7, 0xb2, 0xb2, 0x87, 0xa4, 0x7e, 0xd9, 0x58, 0x12, 0xbf, 0x59, 0x91, 0xf4, 0xa0,
-	0xda, 0x43, 0x1b, 0x05, 0xfe, 0x8b, 0x4a, 0x87, 0x40, 0x2d, 0x1b, 0xd1, 0x36, 0xe5, 0x74, 0x84,
-	0xde, 0xd3, 0xf5, 0xcf, 0xa7, 0x0d, 0xe9, 0xcb, 0x69, 0x43, 0xfa, 0x76, 0xda, 0x90, 0x3e, 0x7e,
-	0x6f, 0xcc, 0xbd, 0x7d, 0x78, 0xa5, 0xa7, 0x77, 0x58, 0x8c, 0x4c, 0xd6, 0x7e, 0x05, 0x00, 0x00,
-	0xff, 0xff, 0x7a, 0x2d, 0x85, 0xda, 0xb2, 0x05, 0x00, 0x00,
+	// 660 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xa4, 0x54, 0xdf, 0x4e, 0x13, 0x4f,
+	0x14, 0x66, 0xdb, 0x1f, 0xfd, 0xb5, 0xa7, 0xa5, 0xe0, 0x28, 0x30, 0x56, 0x28, 0xb5, 0xd1, 0xd8,
+	0x98, 0xd8, 0x4d, 0x20, 0xf1, 0xc6, 0x18, 0x52, 0x02, 0x29, 0x46, 0x21, 0x66, 0x25, 0x5e, 0x78,
+	0xd3, 0x4c, 0x77, 0x0e, 0x65, 0x42, 0x3b, 0xbb, 0xee, 0xcc, 0x56, 0x09, 0xe1, 0xc6, 0x57, 0xf0,
+	0xc6, 0x17, 0xf0, 0x5d, 0xbc, 0x34, 0xf1, 0x05, 0x0c, 0x7a, 0xe5, 0x53, 0x98, 0xfd, 0xdb, 0x25,
+	0x58, 0x0d, 0x7a, 0xb7, 0xfb, 0x9d, 0xef, 0x7c, 0xdf, 0xcc, 0x77, 0xf6, 0x2c, 0x3c, 0x1e, 0x08,
+	0x7d, 0xe4, 0xf7, 0xdb, 0xb6, 0x33, 0x32, 0x0f, 0x8e, 0xf0, 0xe0, 0x48, 0xc8, 0x81, 0xda, 0x47,
+	0xfd, 0xc6, 0xf1, 0x8e, 0x4d, 0xad, 0xa5, 0xc9, 0x5c, 0x61, 0x72, 0xa1, 0x6c, 0x67, 0x8c, 0xde,
+	0xc9, 0xe4, 0xa9, 0xed, 0x7a, 0x8e, 0x76, 0x48, 0x29, 0x05, 0x6a, 0xb7, 0x06, 0x8e, 0x33, 0x18,
+	0xa2, 0x19, 0x16, 0xfa, 0xfe, 0xa1, 0x89, 0x23, 0x57, 0xc7, 0xbc, 0xda, 0x4a, 0x5c, 0x0c, 0xd4,
+	0x98, 0x94, 0x8e, 0x66, 0x5a, 0x38, 0x52, 0x45, 0xd5, 0xa6, 0x86, 0xe2, 0x1e, 0x6a, 0xc6, 0x99,
+	0x66, 0xa4, 0x05, 0xf3, 0x1c, 0xc7, 0x3d, 0xc6, 0xb9, 0xd7, 0x73, 0x3d, 0x3c, 0x14, 0x6f, 0xe9,
+	0x8d, 0x86, 0xd1, 0xaa, 0xec, 0xce, 0x58, 0x73, 0x1c, 0xc7, 0x1d, 0xce, 0xbd, 0xe7, 0x21, 0x4c,
+	0x96, 0xa1, 0xc0, 0x5c, 0xb7, 0x27, 0x38, 0xad, 0x37, 0x8c, 0x56, 0x69, 0x77, 0xc6, 0x9a, 0x65,
+	0xae, 0xfb, 0x84, 0x93, 0x9b, 0xf0, 0x7f, 0x50, 0x40, 0x5f, 0xd0, 0xb5, 0xb8, 0x35, 0x60, 0xee,
+	0xf8, 0x62, 0x0b, 0xa0, 0x38, 0x8a, 0x9d, 0x9a, 0x3f, 0x72, 0x50, 0xe9, 0x48, 0xe9, 0xf8, 0xd2,
+	0xc6, 0x11, 0x4a, 0x4d, 0xaa, 0x90, 0x13, 0x9c, 0x1a, 0x81, 0x98, 0x95, 0x13, 0x9c, 0xdc, 0x86,
+	0x8a, 0x42, 0x6f, 0x2c, 0x6c, 0xec, 0x49, 0x36, 0x42, 0x9a, 0x0b, 0x2b, 0xe5, 0x18, 0xdb, 0x67,
+	0x23, 0x24, 0xf7, 0x60, 0x3e, 0xa1, 0x8c, 0xd1, 0x53, 0xc2, 0x91, 0x34, 0x1f, 0xb2, 0xaa, 0x31,
+	0xfc, 0x32, 0x42, 0x49, 0x03, 0xca, 0x1c, 0x95, 0xed, 0x09, 0x37, 0xb8, 0x38, 0xfd, 0x2f, 0x92,
+	0xca, 0x40, 0x64, 0x01, 0xf2, 0xbe, 0x37, 0xa4, 0xb3, 0x61, 0x25, 0x78, 0x24, 0x4b, 0x50, 0x70,
+	0xfd, 0xfe, 0x50, 0xd8, 0xb4, 0xd0, 0x30, 0x5a, 0x45, 0x2b, 0x7e, 0x23, 0x6b, 0x50, 0x96, 0xa8,
+	0xc3, 0x88, 0x50, 0x29, 0x5a, 0x0e, 0x3b, 0x40, 0xa2, 0xee, 0x44, 0x08, 0x59, 0x05, 0x88, 0xa8,
+	0xbd, 0x63, 0x3c, 0xa1, 0x95, 0xb0, 0x5e, 0x8a, 0x90, 0xa7, 0x78, 0x12, 0x9c, 0xc5, 0x46, 0x4f,
+	0x8b, 0x43, 0x61, 0x33, 0x8d, 0x74, 0x2e, 0x3a, 0x4b, 0x06, 0x0a, 0x1c, 0x98, 0x2b, 0x52, 0x87,
+	0x6a, 0xe4, 0xc0, 0x5c, 0x91, 0x38, 0x98, 0x93, 0x1c, 0xe9, 0x52, 0x23, 0xdf, 0x2a, 0xaf, 0x5f,
+	0x6f, 0x4f, 0xbe, 0x8d, 0x64, 0x98, 0xd6, 0x24, 0xec, 0x87, 0x70, 0xad, 0x8b, 0xfa, 0x45, 0x14,
+	0x8a, 0x85, 0xaf, 0x7d, 0x54, 0xfa, 0x52, 0xc0, 0xc6, 0xa5, 0x80, 0x9b, 0x9b, 0x00, 0x5d, 0xd4,
+	0x49, 0xc3, 0xd5, 0x27, 0xd4, 0xf4, 0x61, 0x3e, 0x3d, 0xce, 0x5f, 0xab, 0x5c, 0xb8, 0x6f, 0x90,
+	0xe7, 0x1f, 0xef, 0xfb, 0x0c, 0x16, 0xb3, 0xdf, 0x96, 0xb2, 0x50, 0xb9, 0x8e, 0x54, 0x48, 0x36,
+	0xa0, 0x18, 0x0b, 0x2b, 0x6a, 0x84, 0xc9, 0x2d, 0x67, 0x94, 0xb2, 0x3d, 0x56, 0x4a, 0x5c, 0xff,
+	0x98, 0x87, 0xd2, 0x76, 0x42, 0x22, 0x8f, 0xa0, 0x98, 0xf0, 0xc8, 0xb4, 0xe6, 0xda, 0x52, 0x3b,
+	0x5a, 0xb9, 0x76, 0xb2, 0x8f, 0xed, 0x9d, 0x60, 0x1f, 0x89, 0x03, 0x85, 0x2e, 0xea, 0xce, 0x70,
+	0x48, 0x56, 0x32, 0xad, 0x97, 0x66, 0x53, 0x6b, 0x4c, 0x11, 0x4e, 0x6f, 0xd2, 0xbc, 0xfb, 0xee,
+	0xcb, 0xf7, 0xf7, 0xb9, 0x35, 0xb2, 0x1a, 0x6e, 0x74, 0x5a, 0x37, 0x4f, 0xb3, 0x61, 0x9e, 0x11,
+	0x06, 0xf9, 0x2e, 0x6a, 0xb2, 0x78, 0xd1, 0x2d, 0xb1, 0x99, 0x76, 0xfe, 0xe6, 0xfd, 0x50, 0xfd,
+	0x0e, 0x69, 0xfe, 0x56, 0xdd, 0x3c, 0x15, 0xfc, 0x8c, 0x74, 0xa0, 0xdc, 0xe1, 0x3c, 0xfd, 0x85,
+	0xd4, 0x7e, 0x35, 0x9a, 0xd8, 0x6f, 0x5a, 0x2c, 0xdb, 0x50, 0xdd, 0xc6, 0x21, 0x6a, 0xfc, 0x17,
+	0x95, 0x75, 0x02, 0x0b, 0xe9, 0x98, 0xf6, 0x98, 0x64, 0x03, 0xf4, 0xb6, 0x36, 0x3f, 0x9d, 0xd7,
+	0x8d, 0xcf, 0xe7, 0x75, 0xe3, 0xeb, 0x79, 0xdd, 0xf8, 0xf0, 0xad, 0x3e, 0xf3, 0xea, 0xc1, 0x95,
+	0xfe, 0xb9, 0xfd, 0x42, 0x68, 0xb2, 0xf1, 0x33, 0x00, 0x00, 0xff, 0xff, 0x1f, 0xc1, 0x3f, 0xec,
+	0xab, 0x05, 0x00, 0x00,
 }

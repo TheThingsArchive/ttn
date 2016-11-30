@@ -28,7 +28,7 @@ var _ = runtime.String
 var _ = utilities.NewDoubleArray
 
 func request_Discovery_GetAll_0(ctx context.Context, marshaler runtime.Marshaler, client DiscoveryClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GetAllRequest
+	var protoReq GetServiceRequest
 	var metadata runtime.ServerMetadata
 
 	var (

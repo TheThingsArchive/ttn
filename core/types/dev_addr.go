@@ -121,6 +121,13 @@ func ParseDevAddrPrefix(prefixString string) (prefix DevAddrPrefix, err error) {
 	return
 }
 
+// Bytes returns the DevAddrPrefix as a byte slice
+func (prefix DevAddrPrefix) Bytes() (bytes []byte) {
+	bytes = append(bytes, byte(prefix.Length))
+	bytes = append(bytes, prefix.DevAddr.Bytes()...)
+	return bytes
+}
+
 // String implements the fmt.Stringer interface
 func (prefix DevAddrPrefix) String() string {
 	var addr string
@@ -145,6 +152,45 @@ func (prefix *DevAddrPrefix) UnmarshalText(data []byte) error {
 	}
 	*prefix = DevAddrPrefix(parsed)
 	return nil
+}
+
+// MarshalBinary implements the BinaryMarshaler interface.
+func (prefix DevAddrPrefix) MarshalBinary() ([]byte, error) {
+	return prefix.Bytes(), nil
+}
+
+// UnmarshalBinary implements the BinaryUnmarshaler interface.
+func (prefix *DevAddrPrefix) UnmarshalBinary(data []byte) error {
+	if len(data) != 5 {
+		return errors.New("ttn/core: Invalid length for DevAddrPrefix")
+	}
+	copy(prefix.DevAddr[:], data[1:])
+	prefix.Length = int(data[0])
+	prefix.DevAddr = prefix.DevAddr.Mask(prefix.Length)
+	return nil
+}
+
+// MarshalTo is used by Protobuf
+func (prefix DevAddrPrefix) MarshalTo(b []byte) (int, error) {
+	copy(b, prefix.Bytes())
+	return 4, nil
+}
+
+// Size is used by Protobuf
+func (prefix DevAddrPrefix) Size() int {
+	return 5
+}
+
+// Marshal implements the Marshaler interface.
+func (prefix DevAddrPrefix) Marshal() ([]byte, error) {
+	return prefix.MarshalBinary()
+}
+
+// Unmarshal implements the Unmarshaler interface.
+func (prefix *DevAddrPrefix) Unmarshal(data []byte) error {
+	prefix.DevAddr = [4]byte{} // Reset the receiver
+	prefix.Length = 0
+	return prefix.UnmarshalBinary(data)
 }
 
 // Mask returns a copy of the DevAddr with only the first "bits" bits

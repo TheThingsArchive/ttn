@@ -87,7 +87,9 @@ func (b *brokerManager) RegisterApplicationHandler(ctx context.Context, in *pb.A
 	if err != nil {
 		return nil, errors.NewErrInternal("Could not get Handler Announcement")
 	}
-	handler.AddMetadata(discovery.Metadata_APP_ID, []byte(in.AppId))
+	handler.Metadata = append(handler.Metadata, &discovery.Metadata{Metadata: &discovery.Metadata_AppId{
+		AppId: in.AppId,
+	}})
 	return &empty.Empty{}, nil
 }
 

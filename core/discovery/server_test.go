@@ -57,7 +57,7 @@ func (d *mockDiscoveryServer) Announce(ctx context.Context, announcement *pb.Ann
 	<-time.After(5 * time.Millisecond)
 	return &empty.Empty{}, nil
 }
-func (d *mockDiscoveryServer) GetAll(ctx context.Context, req *pb.GetAllRequest) (*pb.AnnouncementsResponse, error) {
+func (d *mockDiscoveryServer) GetAll(ctx context.Context, req *pb.GetServiceRequest) (*pb.AnnouncementsResponse, error) {
 	d.discover++
 	<-time.After(5 * time.Millisecond)
 	return &pb.AnnouncementsResponse{
