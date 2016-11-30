@@ -44,10 +44,11 @@ message TxConfiguration {
 }
 
 // message Status represents a status update from a Gateway.
-// See https://gist.github.com/htdvisser/b2b1078005ed770233278a366430f992#stat
 message Status {
   uint32  timestamp      = 1;
   int64   time           = 2;
+
+  // Configuration and relatively static stuff
 
   repeated string ip     = 11;
   string  platform       = 12;
@@ -59,10 +60,29 @@ message Status {
 
   GPSMetadata  gps       = 21;
 
+  // Network (internet) stuff
+
   uint32  rtt            = 31;
+
+  // Rx and Tx stuff
 
   uint32  rx_in          = 41;
   uint32  rx_ok          = 42;
   uint32  tx_in          = 43;
   uint32  tx_ok          = 44;
+
+  // Additional metrics from the operating system
+  message OSMetrics {
+    float   load_1            = 1;
+    float   load_5            = 2;
+    float   load_15           = 3;
+
+    float   cpu_percentage    = 11;
+
+    float   memory_percentage = 21;
+
+    float   temperature       = 31;
+  }
+
+  OSMetrics os = 51;
 }
