@@ -78,6 +78,10 @@ func (h *handlerManager) GetDevice(ctx context.Context, in *pb.DeviceIdentifier)
 		return nil, errors.NewErrPermissionDenied(fmt.Sprintf(`No "devices" rights to application "%s"`, in.AppId))
 	}
 
+	if _, err := h.handler.applications.Get(in.AppId); err != nil {
+		return nil, errors.Wrap(err, "Application not registered to this Handler")
+	}
+
 	dev, err := h.handler.devices.Get(in.AppId, in.DevId)
 	if err != nil {
 		return nil, err
@@ -140,6 +144,10 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*empty.E
 	}
 	if !claims.AppRight(in.AppId, rights.Devices) {
 		return nil, errors.NewErrPermissionDenied(fmt.Sprintf(`No "devices" rights to application "%s"`, in.AppId))
+	}
+
+	if _, err := h.handler.applications.Get(in.AppId); err != nil {
+		return nil, errors.Wrap(err, "Application not registered to this Handler")
 	}
 
 	dev, err := h.handler.devices.Get(in.AppId, in.DevId)
@@ -238,6 +246,11 @@ func (h *handlerManager) DeleteDevice(ctx context.Context, in *pb.DeviceIdentifi
 	if !claims.AppRight(in.AppId, rights.Devices) {
 		return nil, errors.NewErrPermissionDenied(fmt.Sprintf(`No "devices" rights to application "%s"`, in.AppId))
 	}
+
+	if _, err := h.handler.applications.Get(in.AppId); err != nil {
+		return nil, errors.Wrap(err, "Application not registered to this Handler")
+	}
+
 	dev, err := h.handler.devices.Get(in.AppId, in.DevId)
 	if err != nil {
 		return nil, err
@@ -264,6 +277,11 @@ func (h *handlerManager) GetDevicesForApplication(ctx context.Context, in *pb.Ap
 	if !claims.AppRight(in.AppId, rights.Devices) {
 		return nil, errors.NewErrPermissionDenied(fmt.Sprintf(`No "devices" rights to application "%s"`, in.AppId))
 	}
+
+	if _, err := h.handler.applications.Get(in.AppId); err != nil {
+		return nil, errors.Wrap(err, "Application not registered to this Handler")
+	}
+
 	devices, err := h.handler.devices.ListForApp(in.AppId)
 	if err != nil {
 		return nil, err
