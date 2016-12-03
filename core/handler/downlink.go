@@ -94,6 +94,8 @@ func (h *handler) HandleDownlink(appDownlink *types.DownlinkMessage, downlink *p
 		}
 	}
 
+	h.status.downlink.Mark(1)
+
 	ctx.Debug("Send Downlink")
 
 	h.downlink <- downlink

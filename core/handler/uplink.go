@@ -34,6 +34,7 @@ func (h *handler) HandleUplink(uplink *pb_broker.DeduplicatedUplinkMessage) (err
 			ctx.WithField("Duration", time.Now().Sub(start)).Info("Handled uplink")
 		}
 	}()
+	h.status.uplink.Mark(1)
 
 	// Build AppUplink
 	appUplink := &types.UplinkMessage{

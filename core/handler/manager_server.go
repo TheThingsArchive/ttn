@@ -470,7 +470,17 @@ func (h *handlerManager) GetDevAddr(ctx context.Context, in *pb_lorawan.DevAddrR
 }
 
 func (h *handlerManager) GetStatus(ctx context.Context, in *pb.StatusRequest) (*pb.Status, error) {
-	return nil, grpc.Errorf(codes.Unimplemented, "Not Implemented")
+	if h.handler.Identity.Id != "dev" {
+		claims, err := h.handler.ValidateTTNAuthContext(ctx)
+		if err != nil || !claims.ComponentAccess(h.handler.Identity.Id) {
+			return nil, errors.NewErrPermissionDenied("No access")
+		}
+	}
+	status := h.handler.GetStatus()
+	if status == nil {
+		return new(pb.Status), nil
+	}
+	return status, nil
 }
 
 func (h *handler) RegisterManager(s *grpc.Server) {

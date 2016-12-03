@@ -70,6 +70,7 @@ func TestHandleActivation(t *testing.T) {
 		applications: application.NewRedisApplicationStore(GetRedisClient(), "handler-test-activation"),
 		devices:      device.NewRedisDeviceStore(GetRedisClient(), "handler-test-activation"),
 	}
+	h.InitStatus()
 	h.mqttEvent = make(chan *types.DeviceEvent, 10)
 	var wg WaitGroup
 

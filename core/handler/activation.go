@@ -98,6 +98,7 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 			ctx.WithField("Duration", time.Now().Sub(start)).Info("Handled activation")
 		}
 	}()
+	h.status.activations.Mark(1)
 
 	if activation.ResponseTemplate == nil {
 		err = errors.NewErrInternal("No downlink available")

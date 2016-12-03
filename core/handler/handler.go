@@ -70,6 +70,8 @@ type handler struct {
 	amqpExchange string
 	amqpEnabled  bool
 	amqpUp       chan *types.UplinkMessage
+
+	status *status
 }
 
 var (
@@ -96,6 +98,7 @@ func (h *handler) WithAMQP(username, password, host, exchange string) Handler {
 
 func (h *handler) Init(c *component.Component) error {
 	h.Component = c
+	h.InitStatus()
 	err := h.Component.UpdateTokenKey()
 	if err != nil {
 		return err

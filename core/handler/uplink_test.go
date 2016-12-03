@@ -31,6 +31,7 @@ func TestHandleUplink(t *testing.T) {
 		devices:      device.NewRedisDeviceStore(GetRedisClient(), "handler-test-handle-uplink"),
 		applications: application.NewRedisApplicationStore(GetRedisClient(), "handler-test-handle-uplink"),
 	}
+	h.InitStatus()
 	dev := &device.Device{
 		AppID:  appID,
 		DevID:  devID,

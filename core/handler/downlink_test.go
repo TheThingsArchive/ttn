@@ -67,6 +67,7 @@ func TestHandleDownlink(t *testing.T) {
 		downlink:     make(chan *pb_broker.DownlinkMessage),
 		mqttEvent:    make(chan *types.DeviceEvent, 10),
 	}
+	h.InitStatus()
 	// Neither payload nor Fields provided : ERROR
 	err = h.HandleDownlink(&types.DownlinkMessage{
 		AppID: appID,
