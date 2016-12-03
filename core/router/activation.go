@@ -31,6 +31,7 @@ func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivat
 			ctx.WithField("Duration", time.Now().Sub(start)).Info("Handled activation")
 		}
 	}()
+	r.status.activations.Mark(1)
 
 	gateway := r.getGateway(gatewayID)
 	gateway.LastSeen = time.Now()

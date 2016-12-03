@@ -45,6 +45,7 @@ func TestHandleDownlink(t *testing.T) {
 		},
 		gateways: map[string]*gateway.Gateway{},
 	}
+	r.InitStatus()
 
 	gtwID := "eui-0102030405060708"
 	id, _ := r.getGateway(gtwID).Schedule.GetOption(0, 10*1000)
@@ -70,6 +71,7 @@ func TestSubscribeUnsubscribeDownlink(t *testing.T) {
 		},
 		gateways: map[string]*gateway.Gateway{},
 	}
+	r.InitStatus()
 
 	gtwID := "eui-0102030405060708"
 	gateway.Deadline = 1 * time.Millisecond

@@ -27,6 +27,7 @@ func TestHandleActivation(t *testing.T) {
 			gtwID: newReferenceGateway(t, "EU_863_870"),
 		},
 	}
+	r.InitStatus()
 
 	appEUI := types.AppEUI{0, 1, 2, 3, 4, 5, 6, 7}
 	devEUI := types.DevEUI{0, 1, 2, 3, 4, 5, 6, 7}

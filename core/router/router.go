@@ -62,6 +62,7 @@ type router struct {
 	gatewaysLock sync.RWMutex
 	brokers      map[string]*broker
 	brokersLock  sync.RWMutex
+	status       *status
 }
 
 func (r *router) tickGateways() {
@@ -74,6 +75,7 @@ func (r *router) tickGateways() {
 
 func (r *router) Init(c *component.Component) error {
 	r.Component = c
+	r.InitStatus()
 	err := r.Component.UpdateTokenKey()
 	if err != nil {
 		return err

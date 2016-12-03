@@ -22,7 +22,7 @@ type testRouter struct {
 func getTestRouter(t *testing.T) *testRouter {
 	ctrl := gomock.NewController(t)
 	discovery := discovery.NewMockClient(ctrl)
-	return &testRouter{
+	r := &testRouter{
 		router: &router{
 			Component: &component.Component{
 				Discovery: discovery,
@@ -33,4 +33,6 @@ func getTestRouter(t *testing.T) *testRouter {
 		ctrl:      ctrl,
 		discovery: discovery,
 	}
+	r.InitStatus()
+	return r
 }

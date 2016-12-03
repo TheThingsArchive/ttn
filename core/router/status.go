@@ -1,0 +1,61 @@
+// Copyright © 2016 The Things Network
+// Use of this source code is governed by the MIT license that can be found in the LICENSE file.
+
+package router
+
+import (
+	"github.com/TheThingsNetwork/ttn/api"
+	pb "github.com/TheThingsNetwork/ttn/api/router"
+	"github.com/TheThingsNetwork/ttn/api/stats"
+	"github.com/rcrowley/go-metrics"
+)
+
+type status struct {
+	uplink        metrics.Meter
+	downlink      metrics.Meter
+	activations   metrics.Meter
+	gatewayStatus metrics.Meter
+}
+
+func (r *router) InitStatus() {
+	r.status = &status{
+		uplink:        metrics.NewMeter(),
+		downlink:      metrics.NewMeter(),
+		activations:   metrics.NewMeter(),
+		gatewayStatus: metrics.NewMeter(),
+	}
+}
+
+func (r *router) GetStatus() *pb.Status {
+	status := new(pb.Status)
+	if r.status == nil {
+		return status
+	}
+	status.System = stats.GetSystem()
+	status.Component = stats.GetComponent()
+	uplink := r.status.uplink.Snapshot()
+	status.Uplink = &api.Rates{
+		Rate1:  float32(uplink.Rate1()),
+		Rate5:  float32(uplink.Rate5()),
+		Rate15: float32(uplink.Rate15()),
+	}
+	downlink := r.status.downlink.Snapshot()
+	status.Downlink = &api.Rates{
+		Rate1:  float32(downlink.Rate1()),
+		Rate5:  float32(downlink.Rate5()),
+		Rate15: float32(downlink.Rate15()),
+	}
+	activations := r.status.activations.Snapshot()
+	status.Activations = &api.Rates{
+		Rate1:  float32(activations.Rate1()),
+		Rate5:  float32(activations.Rate5()),
+		Rate15: float32(activations.Rate15()),
+	}
+	gatewayStatus := r.status.gatewayStatus.Snapshot()
+	status.GatewayStatus = &api.Rates{
+		Rate1:  float32(gatewayStatus.Rate1()),
+		Rate5:  float32(gatewayStatus.Rate5()),
+		Rate15: float32(gatewayStatus.Rate15()),
+	}
+	return status
+}

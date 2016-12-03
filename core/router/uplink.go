@@ -23,6 +23,7 @@ func (r *router) HandleUplink(gatewayID string, uplink *pb.UplinkMessage) (err e
 			ctx.WithError(err).Warn("Could not handle uplink")
 		}
 	}()
+	r.status.uplink.Mark(1)
 
 	// LoRaWAN: Unmarshal
 	var phyPayload lorawan.PHYPayload

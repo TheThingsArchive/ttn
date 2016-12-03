@@ -51,6 +51,7 @@ func (r *router) UnsubscribeDownlink(gatewayID string, subscriptionID string) er
 }
 
 func (r *router) HandleDownlink(downlink *pb_broker.DownlinkMessage) error {
+	r.status.downlink.Mark(1)
 	option := downlink.DownlinkOption
 
 	downlinkMessage := &pb.DownlinkMessage{

@@ -10,7 +10,6 @@ import (
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 )
 
 type routerManager struct {
@@ -42,7 +41,17 @@ func (r *routerManager) GatewayStatus(ctx context.Context, in *pb.GatewayStatusR
 }
 
 func (r *routerManager) GetStatus(ctx context.Context, in *pb.StatusRequest) (*pb.Status, error) {
-	return nil, grpc.Errorf(codes.Unimplemented, "Not Implemented")
+	if r.router.Identity.Id != "dev" {
+		claims, err := r.router.ValidateTTNAuthContext(ctx)
+		if err != nil || !claims.ComponentAccess(r.router.Identity.Id) {
+			return nil, errors.NewErrPermissionDenied("No access")
+		}
+	}
+	status := r.router.GetStatus()
+	if status == nil {
+		return new(pb.Status), nil
+	}
+	return status, nil
 }
 
 // RegisterManager registers this router as a RouterManagerServer (github.com/TheThingsNetwork/ttn/api/router)
