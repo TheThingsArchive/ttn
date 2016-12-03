@@ -30,6 +30,7 @@ func TestDownlink(t *testing.T) {
 			"routerID": dlch,
 		},
 	}
+	b.InitStatus()
 
 	err := b.HandleDownlink(&pb.DownlinkMessage{
 		DevEui: &devEUI,

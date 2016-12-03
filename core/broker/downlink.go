@@ -34,6 +34,8 @@ func (b *broker) HandleDownlink(downlink *pb.DownlinkMessage) error {
 		}
 	}()
 
+	b.status.downlink.Mark(1)
+
 	downlink, err = b.ns.Downlink(b.Component.GetContext(b.nsToken), downlink)
 	if err != nil {
 		return errors.Wrap(errors.FromGRPCError(err), "NetworkServer did not handle downlink")

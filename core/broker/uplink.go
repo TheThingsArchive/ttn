@@ -37,11 +37,15 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) (err error) {
 
 	time := time.Now()
 
+	b.status.uplink.Mark(1)
+
 	// De-duplicate uplink messages
 	duplicates := b.deduplicateUplink(uplink)
 	if len(duplicates) == 0 {
 		return nil
 	}
+
+	b.status.uplinkUnique.Mark(1)
 
 	ctx = ctx.WithField("Duplicates", len(duplicates))
 
@@ -76,6 +80,7 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) (err error) {
 	if err != nil {
 		return errors.Wrap(errors.FromGRPCError(err), "NetworkServer did not return devices")
 	}
+	b.status.deduplication.Update(int64(len(getDevicesResp.Results)))
 	if len(getDevicesResp.Results) == 0 {
 		return errors.NewErrNotFound(fmt.Sprintf("Device with DevAddr %s and FCnt <= %d", devAddr, macPayload.FHDR.FCnt))
 	}

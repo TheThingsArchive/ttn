@@ -63,6 +63,7 @@ type broker struct {
 	ns                     networkserver.NetworkServerClient
 	uplinkDeduplicator     Deduplicator
 	activationDeduplicator Deduplicator
+	status                 *status
 }
 
 func (b *broker) checkPrefixAnnouncements() error {
@@ -107,6 +108,7 @@ nextPrefix:
 
 func (b *broker) Init(c *component.Component) error {
 	b.Component = c
+	b.InitStatus()
 	err := b.Component.UpdateTokenKey()
 	if err != nil {
 		return err

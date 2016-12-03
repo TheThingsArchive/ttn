@@ -44,11 +44,15 @@ func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (res *
 
 	time := time.Now()
 
+	b.status.activations.Mark(1)
+
 	// De-duplicate uplink messages
 	duplicates := b.deduplicateActivation(activation)
 	if len(duplicates) == 0 {
 		return nil, errDuplicateActivation
 	}
+
+	b.status.activationsUnique.Mark(1)
 
 	base := duplicates[0]
 

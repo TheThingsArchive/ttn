@@ -110,7 +110,17 @@ func (b *brokerManager) GetDevAddr(ctx context.Context, in *lorawan.DevAddrReque
 }
 
 func (b *brokerManager) GetStatus(ctx context.Context, in *pb.StatusRequest) (*pb.Status, error) {
-	return nil, grpc.Errorf(codes.Unimplemented, "Not Implemented")
+	if b.broker.Identity.Id != "dev" {
+		claims, err := b.broker.ValidateTTNAuthContext(ctx)
+		if err != nil || !claims.ComponentAccess(b.broker.Identity.Id) {
+			return nil, errors.NewErrPermissionDenied("No access")
+		}
+	}
+	status := b.broker.GetStatus()
+	if status == nil {
+		return new(pb.Status), nil
+	}
+	return status, nil
 }
 
 func (b *broker) RegisterManager(s *grpc.Server) {

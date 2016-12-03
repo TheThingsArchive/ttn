@@ -26,7 +26,7 @@ func getTestBroker(t *testing.T) *testBroker {
 	ctrl := gomock.NewController(t)
 	discovery := pb_discovery.NewMockClient(ctrl)
 	ns := pb_networkserver.NewMockNetworkServerClient(ctrl)
-	return &testBroker{
+	b := &testBroker{
 		broker: &broker{
 			Component: &component.Component{
 				Discovery: discovery,
@@ -41,4 +41,6 @@ func getTestBroker(t *testing.T) *testBroker {
 		ctrl:      ctrl,
 		discovery: discovery,
 	}
+	b.InitStatus()
+	return b
 }
