@@ -23,6 +23,7 @@ func TestHandleUplink(t *testing.T) {
 	ns := &networkServer{
 		devices: device.NewRedisDeviceStore(GetRedisClient(), "ns-test-handle-uplink"),
 	}
+	ns.InitStatus()
 
 	appEUI := types.AppEUI(getEUI(1, 2, 3, 4, 5, 6, 7, 8))
 	devEUI := types.DevEUI(getEUI(1, 2, 3, 4, 5, 6, 7, 8))

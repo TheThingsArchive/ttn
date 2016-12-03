@@ -17,6 +17,9 @@ func (n *networkServer) HandleUplink(message *pb_broker.DeduplicatedUplinkMessag
 	if err != nil {
 		return nil, err
 	}
+
+	n.status.uplink.Mark(1)
+
 	dev.StartUpdate()
 
 	// Unmarshal LoRaWAN Payload

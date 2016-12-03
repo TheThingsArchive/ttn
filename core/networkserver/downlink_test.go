@@ -19,6 +19,7 @@ func TestHandleDownlink(t *testing.T) {
 	ns := &networkServer{
 		devices: device.NewRedisDeviceStore(GetRedisClient(), "test-handle-downlink"),
 	}
+	ns.InitStatus()
 
 	appEUI := types.AppEUI(getEUI(1, 2, 3, 4, 5, 6, 7, 8))
 	devEUI := types.DevEUI(getEUI(1, 2, 3, 4, 5, 6, 7, 8))

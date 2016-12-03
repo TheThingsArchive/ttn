@@ -118,6 +118,7 @@ func (n *networkServer) HandleActivate(activation *pb_handler.DeviceActivationRe
 	if lorawan == nil {
 		return nil, errors.NewErrInvalidArgument("Activation", "missing LoRaWAN ActivationMetadata")
 	}
+	n.status.activations.Mark(1)
 	err := n.devices.Activate(*lorawan.AppEui, *lorawan.DevEui, *lorawan.DevAddr, *lorawan.NwkSKey)
 	if err != nil {
 		return nil, err

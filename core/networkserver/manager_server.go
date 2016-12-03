@@ -157,7 +157,17 @@ func (n *networkServerManager) GetDevAddr(ctx context.Context, in *pb_lorawan.De
 }
 
 func (n *networkServerManager) GetStatus(ctx context.Context, in *pb.StatusRequest) (*pb.Status, error) {
-	return nil, grpc.Errorf(codes.Unimplemented, "Not Implemented")
+	if n.networkServer.Identity.Id != "dev" {
+		_, err := n.networkServer.ValidateTTNAuthContext(ctx)
+		if err != nil {
+			return nil, errors.NewErrPermissionDenied("No access")
+		}
+	}
+	status := n.networkServer.GetStatus()
+	if status == nil {
+		return new(pb.Status), nil
+	}
+	return status, nil
 }
 
 // RegisterManager registers this networkserver as a NetworkServerManagerServer (github.com/TheThingsNetwork/ttn/api/networkserver)

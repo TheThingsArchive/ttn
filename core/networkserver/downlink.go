@@ -16,6 +16,8 @@ func (n *networkServer) HandleDownlink(message *pb_broker.DownlinkMessage) (*pb_
 		return nil, err
 	}
 
+	n.status.downlink.Mark(1)
+
 	dev.StartUpdate()
 
 	if dev.AppID != message.AppId || dev.DevID != message.DevId {

@@ -101,6 +101,7 @@ func TestHandleActivate(t *testing.T) {
 	ns := &networkServer{
 		devices: device.NewRedisDeviceStore(GetRedisClient(), "test-handle-activate"),
 	}
+	ns.InitStatus()
 
 	dev := &device.Device{
 		AppEUI: types.AppEUI(getEUI(0, 0, 0, 0, 0, 0, 3, 1)),
