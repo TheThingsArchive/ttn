@@ -47,12 +47,13 @@ message SystemStats {
 }
 
 message ComponentStats {
+  uint64  uptime = 1;
   message CPUStats {
     float user   = 1;
     float system = 2;
     float idle   = 3;
   }
-  CPUStats cpu = 1;
+  CPUStats cpu = 2;
   message MemoryStats {
     uint64 memory = 1;
     uint64 swap   = 2;
