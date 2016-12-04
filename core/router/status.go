@@ -11,10 +11,12 @@ import (
 )
 
 type status struct {
-	uplink        metrics.Meter
-	downlink      metrics.Meter
-	activations   metrics.Meter
-	gatewayStatus metrics.Meter
+	uplink            metrics.Meter
+	downlink          metrics.Meter
+	activations       metrics.Meter
+	gatewayStatus     metrics.Meter
+	connectedGateways metrics.Gauge
+	connectedBrokers  metrics.Gauge
 }
 
 func (r *router) InitStatus() {
@@ -23,6 +25,16 @@ func (r *router) InitStatus() {
 		downlink:      metrics.NewMeter(),
 		activations:   metrics.NewMeter(),
 		gatewayStatus: metrics.NewMeter(),
+		connectedGateways: metrics.NewFunctionalGauge(func() int64 {
+			r.gatewaysLock.RLock()
+			defer r.gatewaysLock.RUnlock()
+			return int64(len(r.gateways))
+		}),
+		connectedBrokers: metrics.NewFunctionalGauge(func() int64 {
+			r.brokersLock.RLock()
+			defer r.brokersLock.RUnlock()
+			return int64(len(r.brokers))
+		}),
 	}
 }
 
@@ -57,5 +69,7 @@ func (r *router) GetStatus() *pb.Status {
 		Rate5:  float32(gatewayStatus.Rate5()),
 		Rate15: float32(gatewayStatus.Rate15()),
 	}
+	status.ConnectedGateways = uint32(r.status.connectedGateways.Snapshot().Value())
+	status.ConnectedBrokers = uint32(r.status.connectedBrokers.Snapshot().Value())
 	return status
 }
