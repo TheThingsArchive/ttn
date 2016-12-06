@@ -75,13 +75,13 @@ func TestValidID(t *testing.T) {
 	}
 }
 
-func TestNotEmptyAndValidId(t *testing.T) {
-	err := NotEmptyAndValidId("", "subject")
+func TestNotEmptyAndValidID(t *testing.T) {
+	err := NotEmptyAndValidID("", "subject")
 	if err == nil || err.Error() != "subject not valid: can not be empty" {
 		t.Error("Expected validation error: 'subject not valid: can not be empty' but found", err)
 	}
 
-	err = NotEmptyAndValidId("a", "subject")
+	err = NotEmptyAndValidID("a", "subject")
 	if err == nil || err.Error() != "subject not valid: has wrong format a" {
 		t.Error("Expected validation error: 'subject not valid: has wrong format a' but found", err)
 	}

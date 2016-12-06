@@ -24,10 +24,10 @@ func (m *Device) Validate() error {
 	if m.DevEui == nil || m.DevEui.IsEmpty() {
 		return errors.NewErrInvalidArgument("DevEui", "can not be empty")
 	}
-	if err := api.NotEmptyAndValidId(m.AppId, "AppId"); err != nil {
+	if err := api.NotEmptyAndValidID(m.AppId, "AppId"); err != nil {
 		return err
 	}
-	if err := api.NotEmptyAndValidId(m.DevId, "DevId"); err != nil {
+	if err := api.NotEmptyAndValidID(m.DevId, "DevId"); err != nil {
 		return err
 	}
 	return nil

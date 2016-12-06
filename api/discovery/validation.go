@@ -7,7 +7,7 @@ import (
 
 // Validate implements the api.Validator interface
 func (m *Announcement) Validate() error {
-	if err := api.NotEmptyAndValidId(m.Id, "Id"); err != nil {
+	if err := api.NotEmptyAndValidID(m.Id, "Id"); err != nil {
 		return err
 	}
 	switch m.ServiceName {

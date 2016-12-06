@@ -40,10 +40,10 @@ func (m *UplinkMessage) Validate() error {
 
 // Validate implements the api.Validator interface
 func (m *DownlinkMessage) Validate() error {
-	if err := api.NotEmptyAndValidId(m.DevId, "DevId"); err != nil {
+	if err := api.NotEmptyAndValidID(m.DevId, "DevId"); err != nil {
 		return err
 	}
-	if err := api.NotEmptyAndValidId(m.AppId, "AppId"); err != nil {
+	if err := api.NotEmptyAndValidID(m.AppId, "AppId"); err != nil {
 		return err
 	}
 
@@ -60,10 +60,10 @@ func (m *DownlinkMessage) Validate() error {
 
 // Validate implements the api.Validator interface
 func (m *DeduplicatedUplinkMessage) Validate() error {
-	if err := api.NotEmptyAndValidId(m.AppId, "AppId"); err != nil {
+	if err := api.NotEmptyAndValidID(m.AppId, "AppId"); err != nil {
 		return err
 	}
-	if err := api.NotEmptyAndValidId(m.DevId, "DevId"); err != nil {
+	if err := api.NotEmptyAndValidID(m.DevId, "DevId"); err != nil {
 		return err
 	}
 	if err := api.NotNilAndValid(m.ProtocolMetadata, "ProtocolMetadata"); err != nil {
@@ -121,7 +121,7 @@ func (m *ActivationChallengeRequest) Validate() error {
 
 // Validate implements the api.Validator interface
 func (m *ApplicationHandlerRegistration) Validate() error {
-	if err := api.NotEmptyAndValidId(m.AppId, "AppId"); err != nil {
+	if err := api.NotEmptyAndValidID(m.AppId, "AppId"); err != nil {
 		return err
 	}
 	if m.HandlerId == "" {

@@ -23,7 +23,7 @@ func (m *DeviceActivationResponse) Validate() error {
 
 // Validate implements the api.Validator interface
 func (m *ApplicationIdentifier) Validate() error {
-	if err := api.NotEmptyAndValidId(m.AppId, "AppId"); err != nil {
+	if err := api.NotEmptyAndValidID(m.AppId, "AppId"); err != nil {
 		return err
 	}
 	return nil
@@ -31,7 +31,7 @@ func (m *ApplicationIdentifier) Validate() error {
 
 // Validate implements the api.Validator interface
 func (m *Application) Validate() error {
-	if err := api.NotEmptyAndValidId(m.AppId, "AppId"); err != nil {
+	if err := api.NotEmptyAndValidID(m.AppId, "AppId"); err != nil {
 		return err
 	}
 	return nil
@@ -39,10 +39,10 @@ func (m *Application) Validate() error {
 
 // Validate implements the api.Validator interface
 func (m *DeviceIdentifier) Validate() error {
-	if err := api.NotEmptyAndValidId(m.AppId, "AppId"); err != nil {
+	if err := api.NotEmptyAndValidID(m.AppId, "AppId"); err != nil {
 		return err
 	}
-	if err := api.NotEmptyAndValidId(m.DevId, "DevId"); err != nil {
+	if err := api.NotEmptyAndValidID(m.DevId, "DevId"); err != nil {
 		return err
 	}
 	return nil
@@ -50,10 +50,10 @@ func (m *DeviceIdentifier) Validate() error {
 
 // Validate implements the api.Validator interface
 func (m *Device) Validate() error {
-	if err := api.NotEmptyAndValidId(m.AppId, "AppId"); err != nil {
+	if err := api.NotEmptyAndValidID(m.AppId, "AppId"); err != nil {
 		return err
 	}
-	if err := api.NotEmptyAndValidId(m.DevId, "DevId"); err != nil {
+	if err := api.NotEmptyAndValidID(m.DevId, "DevId"); err != nil {
 		return err
 	}
 	if err := api.NotNilAndValid(m.Device, "Device"); err != nil {
