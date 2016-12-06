@@ -120,27 +120,22 @@ func init() {
 
 	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default \"$HOME/.ttn.yml\")")
 
+	RootCmd.PersistentFlags().Bool("no-cli-logs", false, "Disable CLI logs")
+	RootCmd.PersistentFlags().String("log-file", "", "Location of the log file")
+	RootCmd.PersistentFlags().String("elasticsearch", "", "Location of Elasticsearch server for logging")
+
 	RootCmd.PersistentFlags().String("id", "", "The id of this component")
-	viper.BindPFlag("id", RootCmd.PersistentFlags().Lookup("id"))
-
 	RootCmd.PersistentFlags().String("description", "", "The description of this component")
-	viper.BindPFlag("description", RootCmd.PersistentFlags().Lookup("description"))
-
 	RootCmd.PersistentFlags().Bool("public", false, "Announce this component as part of The Things Network (public community network)")
-	viper.BindPFlag("public", RootCmd.PersistentFlags().Lookup("public"))
 
 	RootCmd.PersistentFlags().String("discovery-address", "discover.thethingsnetwork.org:1900", "The address of the Discovery server")
-	viper.BindPFlag("discovery-address", RootCmd.PersistentFlags().Lookup("discovery-address"))
+	RootCmd.PersistentFlags().String("auth-token", "", "The JWT token to be used for the discovery server")
+
+	RootCmd.PersistentFlags().Int("health-port", 0, "The port number where the health server should be started")
 
 	viper.SetDefault("auth-servers", map[string]string{
 		"ttn-account": "https://account.thethingsnetwork.org",
 	})
-
-	RootCmd.PersistentFlags().String("auth-token", "", "The JWT token to be used for the discovery server")
-	viper.BindPFlag("auth-token", RootCmd.PersistentFlags().Lookup("auth-token"))
-
-	RootCmd.PersistentFlags().Int("health-port", 0, "The port number where the health server should be started")
-	viper.BindPFlag("health-port", RootCmd.PersistentFlags().Lookup("health-port"))
 
 	dir, err := homedir.Dir()
 	if err == nil {
@@ -154,19 +149,9 @@ func init() {
 	}
 
 	RootCmd.PersistentFlags().Bool("tls", false, "Use TLS")
-	viper.BindPFlag("tls", RootCmd.PersistentFlags().Lookup("tls"))
-
 	RootCmd.PersistentFlags().String("key-dir", path.Clean(dir+"/.ttn/"), "The directory where public/private keys are stored")
-	viper.BindPFlag("key-dir", RootCmd.PersistentFlags().Lookup("key-dir"))
 
-	RootCmd.PersistentFlags().Bool("no-cli-logs", false, "Disable CLI logs")
-	viper.BindPFlag("no-cli-logs", RootCmd.PersistentFlags().Lookup("no-cli-logs"))
-
-	RootCmd.PersistentFlags().String("log-file", "", "Location of the log file")
-	viper.BindPFlag("log-file", RootCmd.PersistentFlags().Lookup("log-file"))
-
-	RootCmd.PersistentFlags().String("elasticsearch", "", "Location of Elasticsearch server for logging")
-	viper.BindPFlag("elasticsearch", RootCmd.PersistentFlags().Lookup("elasticsearch"))
+	viper.BindPFlags(RootCmd.PersistentFlags())
 }
 
 // initConfig reads in config file and ENV variables if set.
