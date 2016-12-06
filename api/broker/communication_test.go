@@ -56,7 +56,7 @@ func TestHandlerBrokerCommunication(t *testing.T) {
 	port := rand.Intn(1000) + 10000
 	go brk.Serve(port)
 
-	conn, _ := grpc.Dial(fmt.Sprintf("localhost:%d", port), grpc.WithBlock(), grpc.WithInsecure())
+	conn, _ := api.Dial(fmt.Sprintf("localhost:%d", port))
 
 	{
 		brk.HandlerPublishChanFunc = func(md metadata.MD) (chan *DownlinkMessage, error) {
@@ -150,7 +150,7 @@ func TestRouterBrokerCommunication(t *testing.T) {
 	port := rand.Intn(1000) + 10000
 	go brk.Serve(port)
 
-	conn, _ := grpc.Dial(fmt.Sprintf("localhost:%d", port), grpc.WithBlock(), grpc.WithInsecure())
+	conn, _ := api.Dial(fmt.Sprintf("localhost:%d", port))
 
 	{
 		brk.RouterAssociateChanFunc = func(md metadata.MD) (chan *UplinkMessage, <-chan *DownlinkMessage, func(), error) {

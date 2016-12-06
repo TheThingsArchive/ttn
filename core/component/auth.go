@@ -3,7 +3,9 @@ package component
 import (
 	"crypto/tls"
 	"fmt"
+	"io/ioutil"
 	"net/url"
+	"path/filepath"
 	"time"
 
 	"github.com/TheThingsNetwork/go-account-lib/cache"
@@ -25,6 +27,7 @@ func (c *Component) InitAuth() error {
 	inits := []func() error{
 		c.initAuthServers,
 		c.initKeyPair,
+		c.initRoots,
 	}
 	if c.Config.UseTLS {
 		inits = append(inits, c.initTLS)
@@ -118,6 +121,18 @@ func (c *Component) initTLS() error {
 	}
 
 	c.tlsConfig = &tls.Config{Certificates: []tls.Certificate{cer}}
+	return nil
+}
+
+func (c *Component) initRoots() error {
+	path := filepath.Clean(c.Config.KeyDir + "/ca.cert")
+	cert, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil
+	}
+	if !api.RootCAs.AppendCertsFromPEM(cert) {
+		return fmt.Errorf("Could not add root certificates from %s", path)
+	}
 	return nil
 }
 

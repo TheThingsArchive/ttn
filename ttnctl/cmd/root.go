@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"time"
 
 	cliHandler "github.com/TheThingsNetwork/go-utils/handlers/cli"
 	"github.com/TheThingsNetwork/ttn/api"
@@ -15,7 +14,6 @@ import (
 	"github.com/apex/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"google.golang.org/grpc"
 )
 
 var cfgFile string
@@ -42,9 +40,6 @@ var RootCmd = &cobra.Command{
 		if viper.GetBool("debug") {
 			util.PrintConfig(ctx, true)
 		}
-
-		api.DialOptions = append(api.DialOptions, grpc.WithBlock())
-		api.DialOptions = append(api.DialOptions, grpc.WithTimeout(2*time.Second))
 
 		api.SetLogger(api.Apex(ctx))
 

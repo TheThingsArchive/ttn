@@ -151,6 +151,7 @@ func (r *router) getBroker(brokerAnnouncement *pb_discovery.Announcement) (*brok
 	if _, ok := r.brokers[brokerAnnouncement.Id]; !ok {
 
 		// Connect to the server
+		// TODO(htdvisser): This is blocking
 		conn, err := brokerAnnouncement.Dial()
 		if err != nil {
 			return nil, err

@@ -63,7 +63,7 @@ func (cl *Client) open() (err error) {
 
 	ctx.Debug("Opening monitor connection...")
 
-	cl.conn, err = grpc.Dial(addr, append(api.DialOptions, grpc.WithInsecure())...)
+	cl.conn, err = api.Dial(addr)
 	if err != nil {
 		ctx.WithError(errors.FromGRPCError(err)).Warn("Failed to establish connection to gRPC service")
 		return err

@@ -25,7 +25,7 @@ func TestClient(t *testing.T) {
 	go startExampleServer(2, port)
 
 	{
-		client, err := NewClient(ctx, fmt.Sprintf(":%d", port))
+		client, err := NewClient(ctx, fmt.Sprintf("localhost:%d", port))
 		a.So(err, ShouldBeNil)
 		a.So(client.IsConnected(), ShouldBeTrue)
 		a.So(client.Reopen(), ShouldBeNil)
@@ -34,7 +34,7 @@ func TestClient(t *testing.T) {
 	}
 
 	{
-		client, _ := NewClient(ctx, fmt.Sprintf(":%d", port))
+		client, _ := NewClient(ctx, fmt.Sprintf("localhost:%d", port))
 		gtw := client.GatewayClient("dev")
 		a.So(gtw.IsConfigured(), ShouldBeFalse)
 		gtw.SetToken("SOME.AWESOME.JWT")
@@ -50,7 +50,7 @@ func TestClient(t *testing.T) {
 	}
 
 	{
-		client, _ := NewClient(ctx, fmt.Sprintf(":%d", port))
+		client, _ := NewClient(ctx, fmt.Sprintf("localhost:%d", port))
 		defer client.Close()
 		gtw := client.GatewayClient("dev")
 
@@ -83,7 +83,7 @@ func TestClient(t *testing.T) {
 	}
 
 	{
-		client, _ := NewClient(ctx, fmt.Sprintf(":%d", port))
+		client, _ := NewClient(ctx, fmt.Sprintf("localhost:%d", port))
 		defer client.Close()
 		gtw := client.GatewayClient("dev")
 
@@ -116,7 +116,7 @@ func TestClient(t *testing.T) {
 	}
 
 	{
-		client, _ := NewClient(ctx, fmt.Sprintf(":%d", port))
+		client, _ := NewClient(ctx, fmt.Sprintf("localhost:%d", port))
 		defer client.Close()
 		gtw := client.GatewayClient("dev")
 

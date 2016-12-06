@@ -118,7 +118,12 @@ func (b *broker) Init(c *component.Component) error {
 		return err
 	}
 	b.Discovery.GetAll("handler") // Update cache
-	conn, err := api.DialWithCert(b.nsAddr, b.nsCert)
+	var conn *grpc.ClientConn
+	if b.nsCert == "" {
+		conn, err = api.Dial(b.nsAddr)
+	} else {
+		conn, err = api.DialWithCert(b.nsAddr, b.nsCert)
+	}
 	if err != nil {
 		return err
 	}

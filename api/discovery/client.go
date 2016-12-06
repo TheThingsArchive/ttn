@@ -38,7 +38,7 @@ type Client interface {
 
 // NewClient returns a new Client
 func NewClient(server string, announcement *Announcement, tokenFunc func() string) (Client, error) {
-	conn, err := grpc.Dial(server, append(api.DialOptions, grpc.WithBlock(), grpc.WithInsecure())...)
+	conn, err := api.Dial(server)
 	if err != nil {
 		return nil, err
 	}

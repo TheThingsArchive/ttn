@@ -10,7 +10,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -24,7 +23,7 @@ var brokerRegisterPrefixCmd = &cobra.Command{
 			cmd.UsageFunc()(cmd)
 		}
 
-		conn, err := grpc.Dial(viper.GetString("discovery-address"), append(api.DialOptions, grpc.WithInsecure(), grpc.WithBlock())...)
+		conn, err := api.Dial(viper.GetString("discovery-address"))
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not connect to Discovery server")
 		}

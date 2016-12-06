@@ -85,7 +85,7 @@ func New(ctx log.Interface, serviceName string, announcedAddress string) (*Compo
 		return nil, err
 	}
 
-	if serviceName != "discovery" {
+	if serviceName != "discovery" && serviceName != "networkserver" {
 		var err error
 		component.Discovery, err = pb_discovery.NewClient(
 			viper.GetString("discovery-address"),
@@ -122,7 +122,6 @@ func New(ctx log.Interface, serviceName string, announcedAddress string) (*Compo
 			var err error
 			component.Monitors[name], err = pb_monitor.NewClient(ctx.WithField("Monitor", name), addr)
 			if err != nil {
-				// Assuming grpc.WithBlock() is not set
 				return nil, err
 			}
 		}

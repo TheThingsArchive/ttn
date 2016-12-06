@@ -1,7 +1,7 @@
 package discovery
 
 import (
-	"github.com/TheThingsNetwork/ttn/utils/errors"
+	"errors"
 	"strings"
 
 	"github.com/TheThingsNetwork/ttn/api"
@@ -12,6 +12,9 @@ import (
 func (a *Announcement) Dial() (*grpc.ClientConn, error) {
 	if a.NetAddress == "" {
 		return nil, errors.New("Can not dial this component")
+	}
+	if a.Certificate == "" {
+		return api.Dial(strings.Split(a.NetAddress, ",")[0])
 	}
 	return api.DialWithCert(strings.Split(a.NetAddress, ",")[0], a.Certificate)
 }
