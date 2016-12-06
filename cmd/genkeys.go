@@ -30,7 +30,9 @@ func genCertCmd(component string) *cobra.Command {
 		Long:  `ttn gen-cert generates a TLS Certificate`,
 		Run: func(cmd *cobra.Command, args []string) {
 			var names []string
-			names = append(names, viper.GetString(component+".server-address-announce"))
+			if announcedName := viper.GetString(component + ".server-address-announce"); announcedName != "" {
+				names = append(names, announcedName)
+			}
 			names = append(names, args...)
 			if err := security.GenerateCert(viper.GetString("key-dir"), names...); err != nil {
 				ctx.WithError(err).Fatal("Could not generate certificate")
