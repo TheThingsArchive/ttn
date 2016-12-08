@@ -57,10 +57,7 @@ func (d *discoveryServer) checkMetadataEditRights(ctx context.Context, in *pb.Me
 				return errPermissionDeniedf("Token issuer \"%s\" is not allowed to make changes to the network settings", claims.Issuer)
 			}
 
-			// DevAddrPrefixes can not be announced yet
-			if prefix != nil {
-				return errPermissionDeniedf("Can not announce DevAddrPrefixes at this time")
-			}
+			// TODO: Check if claims allow DevAddrPrefix to be announced
 
 			// AppEUI can not be announced yet
 			if appEUI != nil {
