@@ -49,6 +49,10 @@ func (s *RedisMapStore) SetDecoder(decoder StringStringMapDecoder) {
 
 // GetAll returns all results for the given keys, prepending the prefix to the keys if necessary
 func (s *RedisMapStore) GetAll(keys []string, options *ListOptions) ([]interface{}, error) {
+	if len(keys) == 0 {
+		return []interface{}{}, nil
+	}
+
 	for i, key := range keys {
 		if !strings.HasPrefix(key, s.prefix) {
 			keys[i] = s.prefix + key

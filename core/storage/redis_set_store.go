@@ -31,6 +31,10 @@ func NewRedisSetStore(client *redis.Client, prefix string) *RedisSetStore {
 
 // GetAll returns all results for the given keys, prepending the prefix to the keys if necessary
 func (s *RedisSetStore) GetAll(keys []string, options *ListOptions) (map[string][]string, error) {
+	if len(keys) == 0 {
+		return map[string][]string{}, nil
+	}
+
 	for i, key := range keys {
 		if !strings.HasPrefix(key, s.prefix) {
 			keys[i] = s.prefix + key
