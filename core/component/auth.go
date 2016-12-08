@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/url"
+	"path"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/TheThingsNetwork/go-account-lib/cache"
@@ -63,17 +65,34 @@ func parseAuthServer(str string) (srv authServer, err error) {
 
 func (c *Component) initAuthServers() error {
 	urlMap := make(map[string]string)
+	funcMap := make(map[string]tokenkey.TokenFunc)
+	var httpProvider tokenkey.Provider
 	for id, url := range c.Config.AuthServers {
+		if strings.HasPrefix(url, "file://") {
+			file := strings.TrimPrefix(url, "file://")
+			contents, err := ioutil.ReadFile(path.Clean(file))
+			if err != nil {
+				return err
+			}
+			funcMap[id] = func(renew bool) (*tokenkey.TokenKey, error) {
+				return &tokenkey.TokenKey{Algorithm: "ES256", Key: string(contents)}, nil
+			}
+			continue
+		}
 		srv, err := parseAuthServer(url)
 		if err != nil {
 			return err
 		}
 		urlMap[id] = srv.url
+		funcMap[id] = func(renew bool) (*tokenkey.TokenKey, error) {
+			return httpProvider.Get(id, renew)
+		}
 	}
-	c.TokenKeyProvider = tokenkey.HTTPProvider(
+	httpProvider = tokenkey.HTTPProvider(
 		urlMap,
 		cache.WriteTroughCacheWithFormat(c.Config.KeyDir, "auth-%s.pub"),
 	)
+	c.TokenKeyProvider = tokenkey.FuncProvider(funcMap)
 	return nil
 }
 
