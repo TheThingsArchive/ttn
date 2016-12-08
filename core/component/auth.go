@@ -68,6 +68,7 @@ func (c *Component) initAuthServers() error {
 	funcMap := make(map[string]tokenkey.TokenFunc)
 	var httpProvider tokenkey.Provider
 	for id, url := range c.Config.AuthServers {
+		id, url := id, url // deliberately shadow these
 		if strings.HasPrefix(url, "file://") {
 			file := strings.TrimPrefix(url, "file://")
 			contents, err := ioutil.ReadFile(path.Clean(file))
