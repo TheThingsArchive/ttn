@@ -22,15 +22,11 @@ var KeepAlive = 10 * time.Second
 // MaxRetries indicates how often clients should retry dialing a component
 var MaxRetries = 100
 
-// Timeout for connections
-var Timeout = 2 * time.Second
-
 // DialOptions to use in TTN gRPC
 var DialOptions = []grpc.DialOption{
 	WithTTNDialer(),
 	grpc.WithBlock(),
 	grpc.FailOnNonTempDialError(true),
-	grpc.WithTimeout(Timeout),
 }
 
 func dial(address string, tlsConfig *tls.Config, fallback bool) (conn *grpc.ClientConn, err error) {
