@@ -4,6 +4,9 @@
 package cmd
 
 import (
+	"io/ioutil"
+	"path/filepath"
+
 	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/core/types"
@@ -21,6 +24,12 @@ var brokerRegisterPrefixCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 0 {
 			cmd.UsageFunc()(cmd)
+		}
+
+		path := filepath.Clean(viper.GetString("key-dir") + "/ca.cert")
+		cert, err := ioutil.ReadFile(path)
+		if err == nil && !api.RootCAs.AppendCertsFromPEM(cert) {
+			ctx.Warnf("Could not add root certificates from %s", path)
 		}
 
 		conn, err := api.Dial(viper.GetString("discovery-address"))

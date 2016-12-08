@@ -4,6 +4,9 @@
 package util
 
 import (
+	"io/ioutil"
+	"path"
+
 	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/apex/log"
@@ -13,6 +16,12 @@ import (
 
 // GetDiscovery gets the Discovery client for ttnctl
 func GetDiscovery(ctx log.Interface) (*grpc.ClientConn, discovery.DiscoveryClient) {
+	path := path.Join(GetDataDir(), "/ca.cert")
+	cert, err := ioutil.ReadFile(path)
+	if err == nil && !api.RootCAs.AppendCertsFromPEM(cert) {
+		ctx.Warnf("Could not add root certificates from %s", path)
+	}
+
 	conn, err := api.Dial(viper.GetString("discovery-address"))
 	if err != nil {
 		ctx.WithError(err).Fatal("Could not connect to Discovery server")
