@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"io/ioutil"
+	"os"
 	"path/filepath"
 
 	"github.com/TheThingsNetwork/ttn/api"
@@ -48,11 +49,13 @@ var brokerRegisterPrefixCmd = &cobra.Command{
 		)
 		dscContext := metadata.NewContext(context.Background(), md)
 
+		success := true
 		for _, prefixString := range args {
 			ctx := ctx.WithField("Prefix", prefixString)
 			prefix, err := types.ParseDevAddrPrefix(prefixString)
 			if err != nil {
 				ctx.WithError(err).Error("Could not register prefix")
+				success = false
 				continue
 			}
 			_, err = client.AddMetadata(dscContext, &discovery.MetadataRequest{
@@ -64,8 +67,14 @@ var brokerRegisterPrefixCmd = &cobra.Command{
 			})
 			if err != nil {
 				ctx.WithError(err).Error("Could not register prefix")
+				success = false
+				continue
 			}
 			ctx.Info("Registered prefix")
+		}
+
+		if !success {
+			os.Exit(1)
 		}
 	},
 }
