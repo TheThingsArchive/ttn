@@ -24,6 +24,7 @@ var brokerRegisterPrefixCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 0 {
 			cmd.UsageFunc()(cmd)
+			return
 		}
 
 		path := filepath.Clean(viper.GetString("key-dir") + "/ca.cert")

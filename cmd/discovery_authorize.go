@@ -22,6 +22,7 @@ var discoveryAuthorizeCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) != 2 {
 			cmd.UsageFunc()(cmd)
+			return
 		}
 
 		privKey, err := security.LoadKeypair(viper.GetString("key-dir"))
