@@ -18,8 +18,8 @@ type discoveryServer struct {
 	discovery *discovery
 }
 
-func errPermissionDeniedf(format string, args ...string) error {
-	return errors.NewErrPermissionDenied(fmt.Sprintf("Discovery:"+format, args))
+func errPermissionDeniedf(format string, args ...interface{}) error {
+	return errors.NewErrPermissionDenied(fmt.Sprintf("Discovery:"+format, args...))
 }
 
 func (d *discoveryServer) checkMetadataEditRights(ctx context.Context, in *pb.MetadataRequest) error {
