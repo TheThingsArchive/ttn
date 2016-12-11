@@ -12,7 +12,7 @@
 
 **Message:**
 
-```js
+```plaintext
 {
   "port": 1,                          // LoRaWAN FPort
   "counter": 2,                       // LoRaWAN frame counter
@@ -68,7 +68,7 @@ Each uplink field will be published to its own topic `my-app-id/devices/my-dev-i
 
 If your fields look like the following:
 
-```js
+```plaintext
 {
   "water": true,
   "analog": [0, 255, 500, 1000],
@@ -95,7 +95,7 @@ you will see this on MQTT:
 
 **Message:**
 
-```js
+```plaintext
 {
   "port": 1,                 // LoRaWAN FPort
   "payload_raw": "AQIDBA==", // Base64 encoded payload: [0x01, 0x02, 0x03, 0x04]
@@ -130,7 +130,7 @@ Instead of `payload_raw` you can also use `payload_fields` with an object of fie
 
 **Message:**
 
-```js
+```plaintext
 {
   "port": 1,                 // LoRaWAN FPort
   "payload_fields": {
@@ -169,7 +169,7 @@ if err := token.Error(); err != nil {
 
 **Message:**
 
-```js
+```plaintext
 {
   "app_eui": "0102030405060708", // EUI of the application
   "dev_eui": "0102030405060708", // EUI of the device
@@ -208,7 +208,7 @@ payload: _null_
 
 **Downlink Sent:** `<AppID>/devices/<DevID>/events/down/sent`  
 
-```js
+```plaintext
 {
   "payload": "Base64 encoded LoRaWAN packet",
   "gateway_id": "some-gateway",
