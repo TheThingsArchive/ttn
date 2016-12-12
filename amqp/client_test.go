@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/assertions"
 	AMQP "github.com/streadway/amqp"
 )
@@ -24,13 +23,13 @@ func init() {
 
 func TestNewClient(t *testing.T) {
 	a := New(t)
-	c := NewClient(GetLogger(t, "TestNewClient"), "guest", "guest", host)
+	c := NewClient(getLogger(t, "TestNewClient"), "guest", "guest", host)
 	a.So(c, ShouldNotBeNil)
 }
 
 func TestConnect(t *testing.T) {
 	a := New(t)
-	c := NewClient(GetLogger(t, "TestConnect"), "guest", "guest", host)
+	c := NewClient(getLogger(t, "TestConnect"), "guest", "guest", host)
 	err := c.Connect()
 	defer c.Disconnect()
 	a.So(err, ShouldBeNil)
@@ -45,7 +44,7 @@ func TestConnectInvalidAddress(t *testing.T) {
 	a := New(t)
 	ConnectRetries = 2
 	ConnectRetryDelay = 50 * time.Millisecond
-	c := NewClient(GetLogger(t, "TestConnectInvalidAddress"), "guest", "guest", "localhost:56720")
+	c := NewClient(getLogger(t, "TestConnectInvalidAddress"), "guest", "guest", "localhost:56720")
 	err := c.Connect()
 	defer c.Disconnect()
 	a.So(err, ShouldNotBeNil)
@@ -53,7 +52,7 @@ func TestConnectInvalidAddress(t *testing.T) {
 
 func TestIsConnected(t *testing.T) {
 	a := New(t)
-	c := NewClient(GetLogger(t, "TestIsConnected"), "guest", "guest", host)
+	c := NewClient(getLogger(t, "TestIsConnected"), "guest", "guest", host)
 
 	a.So(c.IsConnected(), ShouldBeFalse)
 
@@ -65,7 +64,7 @@ func TestIsConnected(t *testing.T) {
 
 func TestDisconnect(t *testing.T) {
 	a := New(t)
-	c := NewClient(GetLogger(t, "TestDisconnect"), "guest", "guest", host)
+	c := NewClient(getLogger(t, "TestDisconnect"), "guest", "guest", host)
 
 	// Disconnecting when not connected should not change anything
 	c.Disconnect()
@@ -80,7 +79,7 @@ func TestDisconnect(t *testing.T) {
 
 func TestReopenChannelClient(t *testing.T) {
 	a := New(t)
-	ctx := GetLogger(t, "TestReopenChannelClient")
+	ctx := getLogger(t, "TestReopenChannelClient")
 	c := NewClient(ctx, "guest", "guest", host).(*DefaultClient)
 	closed, err := c.connect(false)
 	a.So(err, ShouldBeNil)

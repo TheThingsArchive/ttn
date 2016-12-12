@@ -8,13 +8,12 @@ import (
 	"testing"
 
 	"github.com/TheThingsNetwork/ttn/core/types"
-	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/assertions"
 )
 
 func TestPublishUplink(t *testing.T) {
 	a := New(t)
-	c := NewClient(GetLogger(t, "TestPublishUplink"), "guest", "guest", host)
+	c := NewClient(getLogger(t, "TestPublishUplink"), "guest", "guest", host)
 	err := c.Connect()
 	a.So(err, ShouldBeNil)
 	defer c.Disconnect()
@@ -34,7 +33,7 @@ func TestPublishUplink(t *testing.T) {
 
 func TestSubscribeUplink(t *testing.T) {
 	a := New(t)
-	c := NewClient(GetLogger(t, "TestSubscribeUplink"), "guest", "guest", host)
+	c := NewClient(getLogger(t, "TestSubscribeUplink"), "guest", "guest", host)
 	err := c.Connect()
 	a.So(err, ShouldBeNil)
 	defer c.Disconnect()

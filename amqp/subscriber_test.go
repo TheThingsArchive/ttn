@@ -6,13 +6,12 @@ package amqp
 import (
 	"testing"
 
-	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/assertions"
 )
 
 func TestOpenSubscriber(t *testing.T) {
 	a := New(t)
-	c := NewClient(GetLogger(t, "TestOpenSubscriber"), "guest", "guest", host)
+	c := NewClient(getLogger(t, "TestOpenSubscriber"), "guest", "guest", host)
 	err := c.Connect()
 	a.So(err, ShouldBeNil)
 	defer c.Disconnect()

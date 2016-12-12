@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/TheThingsNetwork/go-utils/log"
 	AMQP "github.com/streadway/amqp"
 )
 
@@ -25,7 +26,7 @@ type Client interface {
 // DefaultClient is the default AMQP client for The Things Network
 type DefaultClient struct {
 	url      string
-	ctx      Logger
+	ctx      log.Interface
 	conn     *AMQP.Connection
 	mutex    *sync.Mutex
 	channels map[*DefaultChannelClient]*AMQP.Channel
@@ -39,7 +40,7 @@ type ChannelClient interface {
 
 // DefaultChannelClient represents the default client of an AMQP channel
 type DefaultChannelClient struct {
-	ctx          Logger
+	ctx          log.Interface
 	client       *DefaultClient
 	channel      *AMQP.Channel
 	name         string
@@ -55,9 +56,9 @@ var (
 )
 
 // NewClient creates a new DefaultClient
-func NewClient(ctx Logger, username, password, host string) Client {
+func NewClient(ctx log.Interface, username, password, host string) Client {
 	if ctx == nil {
-		ctx = &noopLogger{}
+		ctx = log.Get()
 	}
 	credentials := "guest:guest"
 	if username != "" {
