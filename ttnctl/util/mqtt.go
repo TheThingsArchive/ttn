@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/TheThingsNetwork/go-utils/log/apex"
 	"github.com/TheThingsNetwork/ttn/mqtt"
 	"github.com/apex/log"
 	"github.com/gosuri/uitable"
@@ -27,7 +28,7 @@ func GetMQTT(ctx log.Interface) mqtt.Client {
 		ctx.Fatal("TLS connections are not yet supported by ttnctl")
 	}
 	broker := fmt.Sprintf("%s://%s", mqttProto, viper.GetString("mqtt-address"))
-	client := mqtt.NewClient(ctx, "ttnctl", username, password, broker)
+	client := mqtt.NewClient(apex.Wrap(ctx), "ttnctl", username, password, broker)
 
 	ctx.WithFields(log.Fields{
 		"MQTT Broker": broker,

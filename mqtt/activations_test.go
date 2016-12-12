@@ -17,7 +17,7 @@ import (
 
 func TestPublishActivations(t *testing.T) {
 	a := New(t)
-	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s", host))
+	c := NewClient(getLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s", host))
 	c.Connect()
 	defer c.Disconnect()
 
@@ -35,7 +35,7 @@ func TestPublishActivations(t *testing.T) {
 
 func TestSubscribeDeviceActivations(t *testing.T) {
 	a := New(t)
-	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s", host))
+	c := NewClient(getLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s", host))
 	c.Connect()
 	defer c.Disconnect()
 
@@ -52,7 +52,7 @@ func TestSubscribeDeviceActivations(t *testing.T) {
 
 func TestSubscribeAppActivations(t *testing.T) {
 	a := New(t)
-	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s", host))
+	c := NewClient(getLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s", host))
 	c.Connect()
 	defer c.Disconnect()
 
@@ -69,7 +69,7 @@ func TestSubscribeAppActivations(t *testing.T) {
 
 func TestSubscribeActivations(t *testing.T) {
 	a := New(t)
-	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s", host))
+	c := NewClient(getLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s", host))
 	c.Connect()
 	defer c.Disconnect()
 
@@ -86,7 +86,7 @@ func TestSubscribeActivations(t *testing.T) {
 
 func TestPubSubActivations(t *testing.T) {
 	a := New(t)
-	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s", host))
+	c := NewClient(getLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s", host))
 	c.Connect()
 	defer c.Disconnect()
 
@@ -117,7 +117,7 @@ func TestPubSubActivations(t *testing.T) {
 
 func TestPubSubAppActivations(t *testing.T) {
 	a := New(t)
-	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s", host))
+	c := NewClient(getLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s", host))
 	c.Connect()
 	defer c.Disconnect()
 

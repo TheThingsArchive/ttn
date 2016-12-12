@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/random"
 	MQTT "github.com/eclipse/paho.mqtt.golang"
@@ -144,14 +145,14 @@ func (t *token) Error() error {
 // DefaultClient is the default MQTT client for The Things Network
 type DefaultClient struct {
 	mqtt          MQTT.Client
-	ctx           Logger
+	ctx           log.Interface
 	subscriptions map[string]MQTT.MessageHandler
 }
 
 // NewClient creates a new DefaultClient
-func NewClient(ctx Logger, id, username, password string, brokers ...string) Client {
+func NewClient(ctx log.Interface, id, username, password string, brokers ...string) Client {
 	if ctx == nil {
-		ctx = &noopLogger{}
+		ctx = log.Get()
 	}
 
 	mqttOpts := MQTT.NewClientOptions()

@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/TheThingsNetwork/go-utils/log/apex"
 	"github.com/TheThingsNetwork/ttn/core/types"
-	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"github.com/apex/log"
 	. "github.com/smartystreets/assertions"
 )
@@ -70,13 +70,13 @@ func TestSimpleToken(t *testing.T) {
 
 func TestNewClient(t *testing.T) {
 	a := New(t)
-	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s", host))
+	c := NewClient(getLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s", host))
 	a.So(c.(*DefaultClient).mqtt, ShouldNotBeNil)
 }
 
 func TestConnect(t *testing.T) {
 	a := New(t)
-	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s", host))
+	c := NewClient(getLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s", host))
 	err := c.Connect()
 	defer c.Disconnect()
 	a.So(err, ShouldBeNil)
@@ -91,7 +91,7 @@ func TestConnectInvalidAddress(t *testing.T) {
 	a := New(t)
 	ConnectRetries = 2
 	ConnectRetryDelay = 50 * time.Millisecond
-	c := NewClient(GetLogger(t, "Test"), "test", "", "", "tcp://localhost:18830") // No MQTT on 18830
+	c := NewClient(getLogger(t, "Test"), "test", "", "", "tcp://localhost:18830") // No MQTT on 18830
 	err := c.Connect()
 	defer c.Disconnect()
 	a.So(err, ShouldNotBeNil)
@@ -103,7 +103,7 @@ func TestConnectInvalidCredentials(t *testing.T) {
 
 func TestIsConnected(t *testing.T) {
 	a := New(t)
-	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s", host))
+	c := NewClient(getLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s", host))
 
 	a.So(c.IsConnected(), ShouldBeFalse)
 
@@ -115,7 +115,7 @@ func TestIsConnected(t *testing.T) {
 
 func TestDisconnect(t *testing.T) {
 	a := New(t)
-	c := NewClient(GetLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s", host))
+	c := NewClient(getLogger(t, "Test"), "test", "", "", fmt.Sprintf("tcp://%s", host))
 
 	// Disconnecting when not connected should not change anything
 	c.Disconnect()
@@ -130,7 +130,7 @@ func TestDisconnect(t *testing.T) {
 
 func TestRandomTopicPublish(t *testing.T) {
 	a := New(t)
-	ctx := GetLogger(t, "TestRandomTopicPublish")
+	ctx := getLogger(t, "TestRandomTopicPublish")
 
 	c := NewClient(ctx, "test", "", "", fmt.Sprintf("tcp://%s", host))
 	c.Connect()
@@ -147,7 +147,7 @@ func TestRandomTopicPublish(t *testing.T) {
 }
 
 func ExampleNewClient() {
-	ctx := log.WithField("Example", "NewClient")
+	ctx := apex.Wrap(log.WithField("Example", "NewClient"))
 	exampleClient := NewClient(ctx, "ttnctl", "my-app-id", "my-access-key", "eu.thethings.network:1883")
 	err := exampleClient.Connect()
 	if err != nil {

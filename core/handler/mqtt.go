@@ -6,6 +6,7 @@ package handler
 import (
 	"time"
 
+	"github.com/TheThingsNetwork/go-utils/log/apex"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/mqtt"
 	"github.com/apex/log"
@@ -18,7 +19,7 @@ var MQTTTimeout = 2 * time.Second
 var MQTTBufferSize = 10
 
 func (h *handler) HandleMQTT(username, password string, mqttBrokers ...string) error {
-	h.mqttClient = mqtt.NewClient(h.Ctx, "ttnhdl", username, password, mqttBrokers...)
+	h.mqttClient = mqtt.NewClient(apex.Wrap(h.Ctx), "ttnhdl", username, password, mqttBrokers...)
 
 	err := h.mqttClient.Connect()
 	if err != nil {
