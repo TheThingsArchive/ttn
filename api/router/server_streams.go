@@ -6,6 +6,7 @@ package router
 import (
 	"io"
 
+	"github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/api/gateway"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
@@ -15,7 +16,7 @@ import (
 
 // RouterStreamServer handles gRPC streams as channels
 type RouterStreamServer struct {
-	ctx                   api.Logger
+	ctx                   log.Interface
 	UplinkChanFunc        func(md metadata.MD) (ch chan *UplinkMessage, err error)
 	GatewayStatusChanFunc func(md metadata.MD) (ch chan *gateway.Status, err error)
 	DownlinkChanFunc      func(md metadata.MD) (ch <-chan *DownlinkMessage, cancel func(), err error)
@@ -24,12 +25,12 @@ type RouterStreamServer struct {
 // NewRouterStreamServer returns a new RouterStreamServer
 func NewRouterStreamServer() *RouterStreamServer {
 	return &RouterStreamServer{
-		ctx: api.GetLogger(),
+		ctx: log.Get(),
 	}
 }
 
 // SetLogger sets the logger
-func (s *RouterStreamServer) SetLogger(logger api.Logger) {
+func (s *RouterStreamServer) SetLogger(logger log.Interface) {
 	s.ctx = logger
 }
 

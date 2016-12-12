@@ -99,6 +99,12 @@
 			"revisionTime": "2016-12-02T10:08:08Z"
 		},
 		{
+			"checksumSHA1": "sQ0vy3MCGY1WgK9xldn1V6pMeZk=",
+			"path": "github.com/TheThingsNetwork/go-utils/log/grpc",
+			"revision": "5149dd739482dd5efd18c0b5ce99baecba96668e",
+			"revisionTime": "2016-12-02T10:08:08Z"
+		},
+		{
 			"checksumSHA1": "Ur88QI//9Ue82g83qvBSakGlzVg=",
 			"path": "github.com/apex/log",
 			"revision": "4ea85e918cc8389903d5f12d7ccac5c23ab7d89b",

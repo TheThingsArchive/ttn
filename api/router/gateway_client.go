@@ -6,7 +6,7 @@ package router
 import (
 	"sync"
 
-	"github.com/TheThingsNetwork/ttn/api"
+	"github.com/TheThingsNetwork/go-utils/log"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/metadata"
 )
@@ -15,8 +15,8 @@ import (
 type RouterClientForGateway interface {
 	Close()
 
-	GetLogger() api.Logger
-	SetLogger(api.Logger)
+	GetLogger() log.Interface
+	SetLogger(log.Interface)
 
 	SetToken(token string)
 
@@ -30,7 +30,7 @@ type RouterClientForGateway interface {
 func NewRouterClientForGateway(client RouterClient, gatewayID, token string) RouterClientForGateway {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &routerClientForGateway{
-		ctx:       api.GetLogger().WithField("GatewayID", gatewayID),
+		ctx:       log.Get().WithField("GatewayID", gatewayID),
 		client:    client,
 		gatewayID: gatewayID,
 		token:     token,
@@ -40,7 +40,7 @@ func NewRouterClientForGateway(client RouterClient, gatewayID, token string) Rou
 }
 
 type routerClientForGateway struct {
-	ctx       api.Logger
+	ctx       log.Interface
 	client    RouterClient
 	gatewayID string
 	token     string
@@ -53,11 +53,11 @@ func (c *routerClientForGateway) Close() {
 	c.cancel()
 }
 
-func (c *routerClientForGateway) GetLogger() api.Logger {
+func (c *routerClientForGateway) GetLogger() log.Interface {
 	return c.ctx
 }
 
-func (c *routerClientForGateway) SetLogger(logger api.Logger) {
+func (c *routerClientForGateway) SetLogger(logger log.Interface) {
 	c.ctx = logger
 }
 

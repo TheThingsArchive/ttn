@@ -6,7 +6,7 @@ package broker
 import (
 	"time"
 
-	"github.com/TheThingsNetwork/ttn/api"
+	"github.com/TheThingsNetwork/go-utils/log/apex"
 	pb "github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/api/ratelimit"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
@@ -125,7 +125,7 @@ func (b *brokerRPC) Activate(ctx context.Context, req *pb.DeviceActivationReques
 
 func (b *broker) RegisterRPC(s *grpc.Server) {
 	server := &brokerRPC{broker: b}
-	server.SetLogger(api.Apex(b.Ctx))
+	server.SetLogger(apex.Wrap(b.Ctx))
 	server.RouterAssociateChanFunc = server.associateRouter
 	server.HandlerPublishChanFunc = server.getHandlerPublish
 	server.HandlerSubscribeChanFunc = server.getHandlerSubscribe

@@ -14,7 +14,9 @@ import (
 	"time"
 
 	cliHandler "github.com/TheThingsNetwork/go-utils/handlers/cli"
-	"github.com/TheThingsNetwork/ttn/api"
+	ttnlog "github.com/TheThingsNetwork/go-utils/log"
+	"github.com/TheThingsNetwork/go-utils/log/apex"
+	"github.com/TheThingsNetwork/go-utils/log/grpc"
 	esHandler "github.com/TheThingsNetwork/ttn/utils/elasticsearch/handler"
 	"github.com/apex/log"
 	jsonHandler "github.com/apex/log/handlers/json"
@@ -24,6 +26,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tj/go-elastic"
+	"google.golang.org/grpc/grpclog"
 	"gopkg.in/redis.v5"
 )
 
@@ -81,7 +84,8 @@ var RootCmd = &cobra.Command{
 		}
 
 		// Set the API/gRPC logger
-		api.SetLogger(api.Apex(ctx))
+		ttnlog.Set(apex.Wrap(ctx))
+		grpclog.SetLogger(grpc.Wrap(ttnlog.Get()))
 
 		ctx.WithFields(log.Fields{
 			"ComponentID":              viper.GetString("id"),

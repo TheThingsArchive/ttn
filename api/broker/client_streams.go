@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/TheThingsNetwork/ttn/api"
+	"github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/utils/backoff"
 	"github.com/golang/protobuf/ptypes/empty"
 	"golang.org/x/net/context"
@@ -18,18 +18,18 @@ import (
 
 // Stream interface
 type Stream interface {
-	SetLogger(api.Logger)
+	SetLogger(log.Interface)
 	Close()
 }
 
 type stream struct {
 	closing bool
 	setup   sync.WaitGroup
-	ctx     api.Logger
+	ctx     log.Interface
 	client  BrokerClient
 }
 
-func (s *stream) SetLogger(logger api.Logger) {
+func (s *stream) SetLogger(logger log.Interface) {
 	s.ctx = logger
 }
 
@@ -52,7 +52,7 @@ func NewMonitoredRouterStream(client BrokerClient, getContextFunc func() context
 	}
 	s.setup.Add(1)
 	s.client = client
-	s.ctx = api.GetLogger()
+	s.ctx = log.Get()
 
 	go func() {
 		var retries int
@@ -190,7 +190,7 @@ func NewMonitoredHandlerPublishStream(client BrokerClient, getContextFunc func()
 	}
 	s.setup.Add(1)
 	s.client = client
-	s.ctx = api.GetLogger()
+	s.ctx = log.Get()
 
 	go func() {
 		var retries int
@@ -312,7 +312,7 @@ func NewMonitoredHandlerSubscribeStream(client BrokerClient, getContextFunc func
 	}
 	s.setup.Add(1)
 	s.client = client
-	s.ctx = api.GetLogger()
+	s.ctx = log.Get()
 
 	go func() {
 		var client Broker_SubscribeClient

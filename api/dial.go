@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/utils/backoff"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -30,7 +31,7 @@ var DialOptions = []grpc.DialOption{
 }
 
 func dial(address string, tlsConfig *tls.Config, fallback bool) (conn *grpc.ClientConn, err error) {
-	ctx := GetLogger().WithField("Address", address)
+	ctx := log.Get().WithField("Address", address)
 	opts := DialOptions
 	if tlsConfig != nil {
 		tlsConfig.ServerName = strings.SplitN(address, ":", 2)[0] // trim the port
@@ -64,7 +65,7 @@ func dial(address string, tlsConfig *tls.Config, fallback bool) (conn *grpc.Clie
 		return nil, err
 	}
 
-	GetLogger().WithField("ErrType", fmt.Sprintf("%T", err)).WithError(err).Error("Unhandled dial error [please create issue on Github]")
+	log.Get().WithField("ErrType", fmt.Sprintf("%T", err)).WithError(err).Error("Unhandled dial error [please create issue on Github]")
 	return nil, err
 }
 
@@ -95,7 +96,7 @@ func DialWithCert(address string, cert string) (*grpc.ClientConn, error) {
 // WithTTNDialer creates a dialer for TTN
 func WithTTNDialer() grpc.DialOption {
 	return grpc.WithDialer(func(addr string, timeout time.Duration) (net.Conn, error) {
-		ctx := GetLogger().WithField("Address", addr)
+		ctx := log.Get().WithField("Address", addr)
 		d := net.Dialer{Timeout: timeout, KeepAlive: KeepAlive}
 		var retries int
 		for {

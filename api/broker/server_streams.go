@@ -6,6 +6,7 @@ package broker
 import (
 	"io"
 
+	"github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/golang/protobuf/ptypes/empty"
@@ -14,7 +15,7 @@ import (
 
 // BrokerStreamServer handles gRPC streams as channels
 type BrokerStreamServer struct {
-	ctx                      api.Logger
+	ctx                      log.Interface
 	RouterAssociateChanFunc  func(md metadata.MD) (up chan *UplinkMessage, down <-chan *DownlinkMessage, cancel func(), err error)
 	HandlerSubscribeChanFunc func(md metadata.MD) (ch <-chan *DeduplicatedUplinkMessage, cancel func(), err error)
 	HandlerPublishChanFunc   func(md metadata.MD) (ch chan *DownlinkMessage, err error)
@@ -23,12 +24,12 @@ type BrokerStreamServer struct {
 // NewBrokerStreamServer returns a new BrokerStreamServer
 func NewBrokerStreamServer() *BrokerStreamServer {
 	return &BrokerStreamServer{
-		ctx: api.GetLogger(),
+		ctx: log.Get(),
 	}
 }
 
 // SetLogger sets the logger
-func (s *BrokerStreamServer) SetLogger(logger api.Logger) {
+func (s *BrokerStreamServer) SetLogger(logger log.Interface) {
 	s.ctx = logger
 }
 

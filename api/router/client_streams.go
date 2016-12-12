@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/TheThingsNetwork/ttn/api"
+	"github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/api/gateway"
 	"github.com/TheThingsNetwork/ttn/utils/backoff"
 	"github.com/golang/protobuf/ptypes/empty"
@@ -25,7 +25,7 @@ type GatewayStream interface {
 type gatewayStream struct {
 	closing bool
 	setup   sync.WaitGroup
-	ctx     api.Logger
+	ctx     log.Interface
 	client  RouterClientForGateway
 }
 

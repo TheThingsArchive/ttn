@@ -9,11 +9,14 @@ import (
 	"strings"
 
 	cliHandler "github.com/TheThingsNetwork/go-utils/handlers/cli"
-	"github.com/TheThingsNetwork/ttn/api"
+	ttnlog "github.com/TheThingsNetwork/go-utils/log"
+	"github.com/TheThingsNetwork/go-utils/log/apex"
+	"github.com/TheThingsNetwork/go-utils/log/grpc"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/apex/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"google.golang.org/grpc/grpclog"
 )
 
 var cfgFile string
@@ -41,7 +44,8 @@ var RootCmd = &cobra.Command{
 			util.PrintConfig(ctx, true)
 		}
 
-		api.SetLogger(api.Apex(ctx))
+		ttnlog.Set(apex.Wrap(ctx))
+		grpclog.SetLogger(grpc.Wrap(ttnlog.Get()))
 
 	},
 }
