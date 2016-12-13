@@ -5,8 +5,10 @@ package util
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path"
+	"runtime"
 	"strings"
 	"time"
 
@@ -46,11 +48,25 @@ func GetTokenCache() cache.Cache {
 	return cache.FileCacheWithNameFn(GetDataDir(), tokenFilename)
 }
 
+func GetUserAgent() string {
+	return fmt.Sprintf(
+		"ttnctl/%s-%s (%s-%s) (%s)",
+		viper.GetString("version"),
+		viper.GetString("gitCommit"),
+		runtime.GOOS,
+		runtime.GOARCH,
+		GetID(),
+	)
+}
+
 // getOAuth gets the OAuth client
 func getOAuth() *oauth.Config {
 	return oauth.OAuth(viper.GetString("auth-server"), &oauth.Client{
 		ID:     "ttnctl",
 		Secret: "ttnctl",
+		ExtraHeaders: map[string]string{
+			"User-Agent": GetUserAgent(),
+		},
 	})
 }
 
@@ -139,7 +155,7 @@ func GetAccount(ctx log.Interface) *account.Account {
 	server := viper.GetString("auth-server")
 	manager := GetTokenManager(token.AccessToken)
 
-	return account.NewWithManager(server, token.AccessToken, manager)
+	return account.NewWithManager(server, token.AccessToken, manager).WithHeader("User-Agent", GetUserAgent())
 }
 
 // Login does a login to the Account server with the given username and password

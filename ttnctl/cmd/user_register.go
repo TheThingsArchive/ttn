@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/TheThingsNetwork/go-account-lib/account"
+	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/howeyc/gopass"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -33,7 +34,7 @@ Password: <entering password>
 		if err != nil {
 			ctx.Fatal(err.Error())
 		}
-		acc := account.New(viper.GetString("auth-server"))
+		acc := account.New(viper.GetString("auth-server")).WithHeader("User-Agent", util.GetUserAgent())
 		err = acc.RegisterUser(username, email, string(password))
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not register user")

@@ -35,7 +35,7 @@ $ ttnctl user login [paste the access code you requested above]
 			ctx.WithError(err).Fatal("Login failed")
 		}
 
-		acc := account.New(viper.GetString("auth-server"))
+		acc := account.New(viper.GetString("auth-server")).WithHeader("User-Agent", util.GetUserAgent())
 		acc.WithAuth(auth.AccessToken(token.AccessToken))
 		profile, err := acc.Profile()
 		if err != nil {
