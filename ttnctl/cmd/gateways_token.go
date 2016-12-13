@@ -34,17 +34,17 @@ var gatewaysTokenCmd = &cobra.Command{
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not get gateway token")
 		}
-		if token.Token == "" {
+		if token.AccessToken == "" {
 			ctx.Fatal("Gateway token was empty")
 		}
 
 		ctx.Info("Got gateway token")
 
 		fmt.Println()
-		fmt.Println(token.Token)
+		fmt.Println(token.AccessToken)
 		fmt.Println()
-		if !token.Expires.IsZero() {
-			fmt.Printf("Expires %s\n", token.Expires)
+		if !token.Expiry.IsZero() {
+			fmt.Printf("Expires %s\n", token.Expiry)
 			fmt.Println()
 		}
 	},

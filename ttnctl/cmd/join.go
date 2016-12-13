@@ -62,8 +62,8 @@ var joinCmd = &cobra.Command{
 				ctx.WithError(err).Warn("Could not get gateway token")
 				ctx.Warn("Trying without token. Your message may not be processed by the router")
 				gatewayToken = ""
-			} else if token != nil && token.Token != "" {
-				gatewayToken = token.Token
+			} else if token != nil && token.AccessToken != "" {
+				gatewayToken = token.AccessToken
 			}
 		}
 
