@@ -57,6 +57,7 @@ binaries:
 
 sign:
   only:
+    - tags
     - v1-staging@thethingsnetwork/ttn
     - v2-preview@thethingsnetwork/ttn
     - master@thethingsnetwork/ttn
@@ -86,6 +87,7 @@ gitlab-image:
 
 dockerhub-image:
   only:
+    - tags
     - v1-staging@thethingsnetwork/ttn
     - v2-preview@thethingsnetwork/ttn
     - master@thethingsnetwork/ttn
@@ -101,6 +103,7 @@ dockerhub-image:
 
 azure-binaries:
   only:
+    - tags
     - v1-staging@thethingsnetwork/ttn
     - v2-preview@thethingsnetwork/ttn
     - master@thethingsnetwork/ttn
