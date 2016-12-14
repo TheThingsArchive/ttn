@@ -53,7 +53,7 @@ Get all announcements for a specific service type
       "public": true,
       "public_key": "-----BEGIN PUBLIC KEY-----\n...",
       "service_name": "handler",
-      "service_version": "2.0.0-dev-abcdef...",
+      "service_version": "2.0.0-abcdef...",
       "url": ""
     }
   ]
@@ -99,7 +99,7 @@ Get a specific announcement
   "public": true,
   "public_key": "-----BEGIN PUBLIC KEY-----\n...",
   "service_name": "handler",
-  "service_version": "2.0.0-dev-abcdef...",
+  "service_version": "2.0.0-abcdef...",
   "url": ""
 }
 ```
