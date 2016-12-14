@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/api"
+	"github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/api/gateway"
 	"github.com/TheThingsNetwork/ttn/api/router"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
@@ -148,4 +149,67 @@ func TestClient(t *testing.T) {
 		time.Sleep(100 * time.Millisecond)
 	}
 
+	{
+		client, _ := NewClient(ctx, fmt.Sprintf("localhost:%d", port))
+		defer client.Close()
+
+		err := client.BrokerClient.SendUplink(&broker.DeduplicatedUplinkMessage{})
+		a.So(err, ShouldBeNil)
+
+		client.BrokerClient.SetToken("SOME.AWESOME.JWT")
+
+		// The first two messages are OK
+		for i := 0; i < 2; i++ {
+			err = client.BrokerClient.SendUplink(&broker.DeduplicatedUplinkMessage{})
+			a.So(err, ShouldBeNil)
+		}
+
+		// The next one will cause an error on the test server
+		err = client.BrokerClient.SendUplink(&broker.DeduplicatedUplinkMessage{})
+		time.Sleep(10 * time.Millisecond)
+
+		// Then, we are going to buffer 10 messages locally
+		for i := 0; i < 10; i++ {
+			err = client.BrokerClient.SendUplink(&broker.DeduplicatedUplinkMessage{})
+			a.So(err, ShouldBeNil)
+		}
+
+		// After which messages will get dropped
+		err = client.BrokerClient.SendUplink(&broker.DeduplicatedUplinkMessage{})
+		a.So(err, ShouldNotBeNil)
+
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	{
+		client, _ := NewClient(ctx, fmt.Sprintf("localhost:%d", port))
+		defer client.Close()
+
+		err := client.BrokerClient.SendDownlink(&broker.DownlinkMessage{})
+		a.So(err, ShouldBeNil)
+
+		client.BrokerClient.SetToken("SOME.AWESOME.JWT")
+
+		// The first two messages are OK
+		for i := 0; i < 2; i++ {
+			err = client.BrokerClient.SendDownlink(&broker.DownlinkMessage{})
+			a.So(err, ShouldBeNil)
+		}
+
+		// The next one will cause an error on the test server
+		err = client.BrokerClient.SendDownlink(&broker.DownlinkMessage{})
+		time.Sleep(10 * time.Millisecond)
+
+		// Then, we are going to buffer 10 messages locally
+		for i := 0; i < 10; i++ {
+			err = client.BrokerClient.SendDownlink(&broker.DownlinkMessage{})
+			a.So(err, ShouldBeNil)
+		}
+
+		// After which messages will get dropped
+		err = client.BrokerClient.SendDownlink(&broker.DownlinkMessage{})
+		a.So(err, ShouldNotBeNil)
+
+		time.Sleep(100 * time.Millisecond)
+	}
 }

@@ -27,8 +27,10 @@ type Client struct {
 	conn   *grpc.ClientConn
 	addr   string
 
-	gateways map[string]GatewayClient
-	mutex    sync.RWMutex
+	gateways     map[string]GatewayClient
+	BrokerClient BrokerClient
+
+	mutex sync.RWMutex
 }
 
 // NewClient is a wrapper for NewMonitorClient, initializes
@@ -70,6 +72,11 @@ func (cl *Client) open() (err error) {
 	}
 
 	cl.client = NewMonitorClient(cl.conn)
+
+	cl.BrokerClient = &brokerClient{
+		Ctx:    cl.Ctx.WithField("component", "broker"),
+		client: cl,
+	}
 	return nil
 }
 
