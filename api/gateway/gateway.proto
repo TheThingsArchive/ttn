@@ -1,0 +1,88 @@
+// Copyright © 2016 The Things Network
+// Use of this source code is governed by the MIT license that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+
+package gateway;
+
+option go_package = "github.com/TheThingsNetwork/ttn/api/gateway";
+
+message GPSMetadata {
+  int64   time       = 1;
+  float   latitude   = 2;
+  float   longitude  = 3;
+  int32   altitude   = 4;
+}
+
+message RxMetadata {
+  string  gateway_id = 1;
+
+  uint32  timestamp  = 11;
+  int64   time       = 12;
+
+  uint32  rf_chain   = 21;
+  uint32  channel    = 22;
+
+  uint64  frequency  = 31; // frequency in Hz
+  float   rssi       = 32; // received signal strength in dBm
+  float   snr        = 33; // signal-to-noise-ratio in dB
+
+  GPSMetadata  gps   = 41;
+}
+
+message TxConfiguration {
+  uint32 timestamp   = 11;
+
+  uint32  rf_chain   = 21;
+  uint64  frequency  = 22; // frequency in Hz
+  int32   power      = 23; // transmit power in dBm
+
+  bool polarization_inversion = 31; // LoRa polarization inversion (basically always true)
+  uint32 frequency_deviation = 32; // FSK frequency deviation in Hz
+}
+
+// message Status represents a status update from a Gateway.
+message Status {
+  uint32  timestamp      = 1;
+  int64   time           = 2;
+
+  // Configuration and relatively static stuff
+
+  repeated string ip     = 11;
+  string  platform       = 12;
+  string  contact_email  = 13;
+  string  description    = 14;
+  string  region         = 15;
+  string  bridge         = 16;
+  string  router         = 17;
+
+  GPSMetadata  gps       = 21;
+
+  // Network (internet) stuff
+
+  uint32  rtt            = 31;
+
+  // Rx and Tx stuff
+
+  uint32  rx_in          = 41;
+  uint32  rx_ok          = 42;
+  uint32  tx_in          = 43;
+  uint32  tx_ok          = 44;
+
+  // Additional metrics from the operating system
+  message OSMetrics {
+    float   load_1            = 1;
+    float   load_5            = 2;
+    float   load_15           = 3;
+
+    float   cpu_percentage    = 11;
+
+    float   memory_percentage = 21;
+
+    float   temperature       = 31;
+  }
+
+  OSMetrics os = 51;
+}

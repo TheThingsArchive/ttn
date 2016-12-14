@@ -22,3 +22,13 @@ _testmain.go
 *.exe
 *.test
 *.prof
+
+/release
+/vendor/*/
+/.cover
+
+# Generated databases
+*.db
+
+# Generate coverage profile
+coverage.out

@@ -1,0 +1,116 @@
+stages:
+  - test
+  - build
+  - sign
+  - package
+
+variables:
+  CONTAINER_NAME: thethingsnetwork/ttn
+
+cache:
+  key: "$CI_PROJECT_PATH"
+  paths:
+    - .govendor
+
+before_script:
+  - mkdir -p $(pwd)/.govendor
+  - rm -rf $GOPATH
+  - mkdir -p $GOPATH/.cache && ln -s $(pwd)/.govendor $GOPATH/.cache/govendor
+  - mkdir -p $GOPATH/src/github.com/TheThingsNetwork && ln -s $(pwd) $GOPATH/src/github.com/TheThingsNetwork/ttn
+
+tests:
+  stage: test
+  image: golang:latest
+  services:
+    - thethingsnetwork/rabbitmq
+    - redis
+  variables:
+    REDIS_HOST: redis
+    MQTT_ADDRESS: thethingsnetwork__rabbitmq:1883
+    AMQP_ADDRESS: thethingsnetwork__rabbitmq:5672
+  script:
+    - pushd $GOPATH/src/github.com/TheThingsNetwork/ttn
+    - make deps
+    - make test
+    - popd
+
+binaries:
+  stage: build
+  image: golang:latest
+  script:
+    - mkdir release
+    - export CI_BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+    - echo "date $CI_BUILD_DATE" >> release/info
+    - echo "commit $CI_BUILD_REF" >> release/info
+    - pushd $GOPATH/src/github.com/TheThingsNetwork/ttn
+    - make deps
+    - GOOS=linux GOARCH=386 make build
+    - GOOS=linux GOARCH=amd64 make build
+    - GOOS=linux GOARCH=arm make build
+    - GOOS=darwin GOARCH=amd64 make build
+    - GOOS=windows GOARCH=386 make build
+    - GOOS=windows GOARCH=amd64 make build
+    - popd
+  artifacts:
+    paths:
+      - release/
+
+sign:
+  only:
+    - tags
+    - v1-staging@thethingsnetwork/ttn
+    - v2-preview@thethingsnetwork/ttn
+    - master@thethingsnetwork/ttn
+  stage: sign
+  image: golang:latest
+  script:
+    - pushd release
+    - shasum -a 256 $(ls) > checksums
+    - gpg --no-tty --batch --import /gpg/signing.ci.gpg-key
+    - gpg --no-tty --batch --no-use-agent --passphrase $GPG_PASSPHRASE --detach-sign checksums
+    - popd
+  artifacts:
+    paths:
+      - release/checksums
+      - release/checksums.sig
+
+gitlab-image:
+  stage: package
+  image: docker:git
+  services:
+    - "docker:dind"
+  script:
+    - docker build -t ttn .
+    - docker login -u "gitlab-ci-token" -p "$CI_BUILD_TOKEN" registry.gitlab.com
+    - docker tag ttn registry.gitlab.com/$CONTAINER_NAME:$CI_BUILD_REF_NAME
+    - docker push registry.gitlab.com/$CONTAINER_NAME:$CI_BUILD_REF_NAME
+
+dockerhub-image:
+  only:
+    - tags
+    - v1-staging@thethingsnetwork/ttn
+    - v2-preview@thethingsnetwork/ttn
+    - master@thethingsnetwork/ttn
+  stage: package
+  image: docker:git
+  services:
+    - "docker:dind"
+  script:
+    - docker build -t ttn .
+    - docker login -u "$DOCKERHUB_USER" -p "$DOCKERHUB_PASSWORD"
+    - docker tag ttn $CONTAINER_NAME:$CI_BUILD_REF_NAME
+    - docker push $CONTAINER_NAME:$CI_BUILD_REF_NAME
+    - if [[ "$CI_BUILD_REF_NAME" == "master" ]]; then docker tag ttn $CONTAINER_NAME:latest && docker push $CONTAINER_NAME:latest; fi
+
+azure-binaries:
+  only:
+    - tags
+    - v1-staging@thethingsnetwork/ttn
+    - v2-preview@thethingsnetwork/ttn
+    - master@thethingsnetwork/ttn
+  stage: package
+  image: registry.gitlab.com/thethingsindustries/upload
+  script:
+    - cd release
+    - export STORAGE_CONTAINER=release STORAGE_KEY=$AZURE_STORAGE_KEY ZIP=true TGZ=true PREFIX=$CI_BUILD_REF_NAME/
+    - upload *

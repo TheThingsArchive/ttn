@@ -1,0 +1,7 @@
+debug: true
+discovery-address: "localhost:1900"
+auth-servers:
+  ttn-account: "https://account.thethingsnetwork.org"
+  ttn-account-preview: "https://preview.account.thethingsnetwork.org"
+tls: true
+key-dir: "./.env/networkserver/"
