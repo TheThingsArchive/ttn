@@ -2,8 +2,7 @@ id: dev
 debug: true
 discovery-address: "localhost:1900"
 auth-servers:
-  ttn-account: "https://account.thethingsnetwork.org"
-  ttn-account-preview: "https://preview.account.thethingsnetwork.org"
+  ttn-account-v2: "https://account.thethingsnetwork.org"
 tls: true
 key-dir: "./.env/handler/"
 handler:

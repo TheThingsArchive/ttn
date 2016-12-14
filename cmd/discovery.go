@@ -125,7 +125,7 @@ func init() {
 	discoveryCmd.Flags().Bool("cache", false, "Add a cache in front of the database")
 	viper.BindPFlag("discovery.cache", discoveryCmd.Flags().Lookup("cache"))
 
-	discoveryCmd.Flags().StringSlice("master-auth-servers", []string{"ttn-account"}, "Auth servers that are allowed to manage this network")
+	discoveryCmd.Flags().StringSlice("master-auth-servers", []string{"ttn-account-v2"}, "Auth servers that are allowed to manage this network")
 	viper.BindPFlag("discovery.master-auth-servers", discoveryCmd.Flags().Lookup("master-auth-servers"))
 
 	discoveryCmd.Flags().String("http-address", "0.0.0.0", "The IP address where the gRPC proxy should listen")

@@ -68,7 +68,7 @@ ttn broker register prefix registers a prefix to this Broker
       --cache                             Add a cache in front of the database
       --http-address string               The IP address where the gRPC proxy should listen (default "0.0.0.0")
       --http-port int                     The port where the gRPC proxy should listen (default 8080)
-      --master-auth-servers stringSlice   Auth servers that are allowed to manage this network (default [ttn-account])
+      --master-auth-servers stringSlice   Auth servers that are allowed to manage this network (default [ttn-account-v2])
       --redis-address string              Redis server and port (default "localhost:6379")
       --redis-db int                      Redis database
       --server-address string             The IP address to listen for communication (default "0.0.0.0")
