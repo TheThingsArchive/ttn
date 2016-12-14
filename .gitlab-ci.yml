@@ -59,7 +59,6 @@ sign:
   only:
     - tags
     - v1-staging@thethingsnetwork/ttn
-    - v2-preview@thethingsnetwork/ttn
     - master@thethingsnetwork/ttn
   stage: sign
   image: golang:latest
@@ -89,7 +88,6 @@ dockerhub-image:
   only:
     - tags
     - v1-staging@thethingsnetwork/ttn
-    - v2-preview@thethingsnetwork/ttn
     - master@thethingsnetwork/ttn
   stage: package
   image: docker:git
@@ -106,7 +104,6 @@ azure-binaries:
   only:
     - tags
     - v1-staging@thethingsnetwork/ttn
-    - v2-preview@thethingsnetwork/ttn
     - master@thethingsnetwork/ttn
   stage: package
   image: registry.gitlab.com/thethingsindustries/upload

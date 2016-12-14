@@ -1,7 +1,7 @@
 The Things Network
 ==================
 
-[![Build Status](https://travis-ci.org/TheThingsNetwork/ttn.svg?branch=develop)](https://travis-ci.org/TheThingsNetwork/ttn) [![Slack Status](https://slack.thethingsnetwork.org/badge.svg)](https://slack.thethingsnetwork.org/) [![Coverage Status](https://coveralls.io/repos/github/TheThingsNetwork/ttn/badge.svg?branch=develop)](https://coveralls.io/github/TheThingsNetwork/ttn?branch=develop)
+[![Build Status](https://travis-ci.org/TheThingsNetwork/ttn.svg?branch=master)](https://travis-ci.org/TheThingsNetwork/ttn) [![Slack Status](https://slack.thethingsnetwork.org/badge.svg)](https://slack.thethingsnetwork.org/) [![Coverage Status](https://coveralls.io/repos/github/TheThingsNetwork/ttn/badge.svg?branch=master)](https://coveralls.io/github/TheThingsNetwork/ttn?branch=master)
 
 ![The Things Network](http://thethingsnetwork.org/static/ttn/media/The%20Things%20Uitlijning.svg)
 
@@ -31,7 +31,7 @@ When you get started with The Things Network, you'll probably have some question
 ## Set up The Things Network's backend for Development
 
 1. Fork this repository
-2. Clone your fork: `git clone --branch v2-preview --recursive https://github.com/YOURUSERNAME/ttn.git $GOPATH/src/github.com/TheThingsNetwork/ttn`
+2. Clone your fork: `git clone https://github.com/YOURUSERNAME/ttn.git $GOPATH/src/github.com/TheThingsNetwork/ttn`
 3. `cd $GOPATH/src/github.com/TheThingsNetwork/ttn`
 4. Install the dependencies for development: `make dev-deps`
 5. Run the tests: `make test`
