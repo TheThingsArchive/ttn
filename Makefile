@@ -4,6 +4,7 @@ SHELL = bash
 
 GIT_BRANCH = $(or $(CI_BUILD_REF_NAME) ,`git rev-parse --abbrev-ref HEAD 2>/dev/null`)
 GIT_COMMIT = $(or $(CI_BUILD_REF), `git rev-parse HEAD 2>/dev/null`)
+GIT_TAG = $(shell git describe --abbrev=0 --tags)
 BUILD_DATE = $(or $(CI_BUILD_DATE), `date -u +%Y-%m-%dT%H:%M:%SZ`)
 GO_PATH = $(shell echo $(GOPATH) | awk -F':' '{print $$1}')
 PARENT_DIRECTORY= $(shell dirname $(PWD))
@@ -109,12 +110,18 @@ GOARCH ?= $(shell go env GOARCH)
 GOEXE = $(shell GOOS=$(GOOS) GOARCH=$(GOARCH) go env GOEXE)
 CGO_ENABLED ?= 0
 
+ifeq ($(GIT_BRANCH), $(GIT_TAG))
+	TTN_VERSION = $(GIT_TAG)
+else
+	TTN_VERSION = $(GIT_TAG)-dev
+endif
+
 DIST_FLAGS ?= -a -installsuffix cgo
 
 splitfilename = $(subst ., ,$(subst -, ,$(subst $(RELEASE_DIR)/,,$1)))
 GOOSfromfilename = $(word 2, $(call splitfilename, $1))
 GOARCHfromfilename = $(word 3, $(call splitfilename, $1))
-LDFLAGS = -ldflags "-w -X main.gitBranch=${GIT_BRANCH} -X main.gitCommit=${GIT_COMMIT} -X main.buildDate=${BUILD_DATE}"
+LDFLAGS = -ldflags "-w -X main.version=${TTN_VERSION} -X main.gitBranch=${GIT_BRANCH} -X main.gitCommit=${GIT_COMMIT} -X main.buildDate=${BUILD_DATE}"
 GOBUILD = CGO_ENABLED=$(CGO_ENABLED) GOOS=$(call GOOSfromfilename, $@) GOARCH=$(call GOARCHfromfilename, $@) go build $(DIST_FLAGS) ${LDFLAGS} -tags "${TAGS}" -o "$@"
 
 ttn: $(RELEASE_DIR)/ttn-$(GOOS)-$(GOARCH)$(GOEXE)
