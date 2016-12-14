@@ -100,6 +100,7 @@ dockerhub-image:
     - docker login -u "$DOCKERHUB_USER" -p "$DOCKERHUB_PASSWORD"
     - docker tag ttn $CONTAINER_NAME:$CI_BUILD_REF_NAME
     - docker push $CONTAINER_NAME:$CI_BUILD_REF_NAME
+    - if [[ "$CI_BUILD_REF_NAME" == "master" ]]; then docker tag ttn $CONTAINER_NAME:latest && docker push $CONTAINER_NAME:latest; fi
 
 azure-binaries:
   only:
