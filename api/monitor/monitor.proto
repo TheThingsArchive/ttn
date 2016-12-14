@@ -1,0 +1,25 @@
+// Copyright © 2016 The Things Network
+// Use of this source code is governed by the MIT license that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+import "ttn/api/gateway/gateway.proto";
+import "ttn/api/router/router.proto";
+import "ttn/api/broker/broker.proto";
+import "ttn/api/handler/handler.proto";
+
+import "google/protobuf/empty.proto";
+
+package monitor;
+
+option go_package = "github.com/TheThingsNetwork/ttn/api/monitor";
+
+service Monitor {
+  rpc GatewayStatus(stream gateway.Status) returns (google.protobuf.Empty);
+  rpc GatewayUplink(stream router.UplinkMessage) returns (google.protobuf.Empty);
+  rpc GatewayDownlink(stream router.DownlinkMessage) returns (google.protobuf.Empty);
+
+  rpc RouterStatus(stream router.Status) returns (google.protobuf.Empty);
+  rpc BrokerStatus(stream broker.Status) returns (google.protobuf.Empty);
+  rpc HandlerStatus(stream handler.Status) returns (google.protobuf.Empty);
+}

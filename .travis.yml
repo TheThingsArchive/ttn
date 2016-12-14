@@ -1,0 +1,25 @@
+language: go
+
+sudo: required
+
+services:
+    - docker
+
+go:
+    - 1.7
+
+install:
+    - make deps
+    - make cover-deps
+
+before_script:
+    - docker run -d -p 127.0.0.1:6379:6379 redis
+    - docker run -d -p 127.0.0.1:5672:5672 -p 127.0.0.1:1883:1883 thethingsnetwork/rabbitmq
+
+script:
+    - make test
+    - make fmt
+    - make vet
+
+after_success:
+    - make coveralls
