@@ -53,7 +53,7 @@ func NewClient(server string, announcement *Announcement, tokenFunc func() strin
 	client.cache = gcache.
 		New(CacheSize).
 		Expiration(CacheExpiration).
-		ARC().
+		LRU().
 		LoaderFunc(func(k interface{}) (interface{}, error) {
 			key, ok := k.(cacheKey)
 			if !ok {
