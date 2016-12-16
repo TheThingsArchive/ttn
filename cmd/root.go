@@ -138,7 +138,7 @@ func init() {
 	RootCmd.PersistentFlags().Int("health-port", 0, "The port number where the health server should be started")
 
 	viper.SetDefault("auth-servers", map[string]string{
-		"ttn-account": "https://account.thethingsnetwork.org",
+		"ttn-account-v2": "https://account.thethingsnetwork.org",
 	})
 
 	dir, err := homedir.Dir()

@@ -189,7 +189,7 @@ type DownlinkFunctions struct {
 // If no encoder function is set, this function returns an array.
 func (f *DownlinkFunctions) Encode(payload map[string]interface{}, port uint8) ([]byte, error) {
 	if f.Encoder == "" {
-		return nil, errors.NewErrInternal("Encoder function not set")
+		return nil, errors.NewErrInvalidArgument("Downlink Payload", "fields supplied, but no Encoder function set")
 	}
 
 	env := map[string]interface{}{
@@ -285,7 +285,7 @@ func (f *DownlinkFunctions) Process(payload map[string]interface{}, port uint8) 
 
 // ConvertFieldsDown converts the fields into a payload
 func (h *handler) ConvertFieldsDown(ctx log.Interface, appDown *types.DownlinkMessage, ttnDown *pb_broker.DownlinkMessage) error {
-	if appDown.PayloadFields == nil {
+	if appDown.PayloadFields == nil || len(appDown.PayloadFields) == 0 {
 		return nil
 	}
 
