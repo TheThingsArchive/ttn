@@ -4,6 +4,7 @@
 package broker
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/TheThingsNetwork/go-account-lib/claims"
@@ -112,8 +113,11 @@ func (b *brokerManager) GetDevAddr(ctx context.Context, in *lorawan.DevAddrReque
 func (b *brokerManager) GetStatus(ctx context.Context, in *pb.StatusRequest) (*pb.Status, error) {
 	if b.broker.Identity.Id != "dev" {
 		claims, err := b.broker.ValidateTTNAuthContext(ctx)
-		if err != nil || !claims.ComponentAccess(b.broker.Identity.Id) {
-			return nil, errors.NewErrPermissionDenied("No access")
+		if err != nil {
+			return nil, errors.Wrap(err, "No access")
+		}
+		if !claims.ComponentAccess(b.broker.Identity.Id) {
+			return nil, errors.NewErrPermissionDenied(fmt.Sprintf("Claims do not grant access to %s", b.broker.Identity.Id))
 		}
 	}
 	status := b.broker.GetStatus()

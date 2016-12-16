@@ -472,8 +472,11 @@ func (h *handlerManager) GetDevAddr(ctx context.Context, in *pb_lorawan.DevAddrR
 func (h *handlerManager) GetStatus(ctx context.Context, in *pb.StatusRequest) (*pb.Status, error) {
 	if h.handler.Identity.Id != "dev" {
 		claims, err := h.handler.ValidateTTNAuthContext(ctx)
-		if err != nil || !claims.ComponentAccess(h.handler.Identity.Id) {
-			return nil, errors.NewErrPermissionDenied("No access")
+		if err != nil {
+			return nil, errors.Wrap(err, "No access")
+		}
+		if !claims.ComponentAccess(h.handler.Identity.Id) {
+			return nil, errors.NewErrPermissionDenied(fmt.Sprintf("Claims do not grant access to %s", h.handler.Identity.Id))
 		}
 	}
 	status := h.handler.GetStatus()
