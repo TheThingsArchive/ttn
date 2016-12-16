@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/TheThingsNetwork/ttn/api"
+	"github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/api/gateway"
 	"github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
@@ -234,4 +235,46 @@ func (cl *gatewayClient) Context() (monitorContext context.Context) {
 		"id", cl.id,
 		"token", cl.token,
 	))
+}
+
+type brokerClient struct {
+	sync.RWMutex
+
+	client *Client
+
+	Ctx log.Interface
+
+	uplink struct {
+		init   sync.Once
+		ch     chan *broker.DeduplicatedUplinkMessage
+		cancel func()
+		sync.Mutex
+	}
+
+	downlink struct {
+		init   sync.Once
+		ch     chan *broker.DownlinkMessage
+		cancel func()
+		sync.RWMutex
+	}
+}
+
+// BrokerClient is used as the main client for Brokers to communicate with the monitor
+type BrokerClient interface {
+	SendUplink(msg *broker.DeduplicatedUplinkMessage) (err error)
+	SendDownlink(msg *broker.DownlinkMessage) (err error)
+	Close() (err error)
+}
+
+// Close closes all opened monitor streams for the broker
+func (cl *brokerClient) Close() (err error) {
+	cl.closeUplink()
+	cl.closeDownlink()
+	return err
+}
+
+// Context returns monitor connection context for broker
+func (cl *brokerClient) Context() (monitorContext context.Context) {
+	//TODO add auth
+	return context.Background()
 }

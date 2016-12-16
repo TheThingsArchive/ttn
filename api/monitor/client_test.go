@@ -156,8 +156,6 @@ func TestClient(t *testing.T) {
 		err := client.BrokerClient.SendUplink(&broker.DeduplicatedUplinkMessage{})
 		a.So(err, ShouldBeNil)
 
-		client.BrokerClient.SetToken("SOME.AWESOME.JWT")
-
 		// The first two messages are OK
 		for i := 0; i < 2; i++ {
 			err = client.BrokerClient.SendUplink(&broker.DeduplicatedUplinkMessage{})
@@ -187,8 +185,6 @@ func TestClient(t *testing.T) {
 
 		err := client.BrokerClient.SendDownlink(&broker.DownlinkMessage{})
 		a.So(err, ShouldBeNil)
-
-		client.BrokerClient.SetToken("SOME.AWESOME.JWT")
 
 		// The first two messages are OK
 		for i := 0; i < 2; i++ {
