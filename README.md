@@ -23,8 +23,8 @@ When you get started with The Things Network, you'll probably have some question
 2. Set up your [Go environment](https://golang.org/doc/code.html#GOPATH)
 3. Install the [protobuf compiler (`protoc`)](https://github.com/google/protobuf/releases)
 4. Install `make`. On Linux install `build-essential`. On macOS, `make` comes with XCode or the developer tools. On Windows you can get `make` from [https://gnuarmeclipse.github.io/windows-build-tools/](https://gnuarmeclipse.github.io/windows-build-tools/)
-5. Make sure you have [Redis](http://redis.io/download) and [RabbitMQ](https://www.rabbitmq.com/download.html) **installed** and **running**.  
-  On a fresh installation you might need to install the [MQTT plugin for RabbitMQ](https://www.rabbitmq.com/mqtt.html).  
+5. Make sure you have [Redis](http://redis.io/download) and [RabbitMQ](https://www.rabbitmq.com/download.html) **installed** and **running**.
+  On a fresh installation you might need to install the [MQTT plugin for RabbitMQ](https://www.rabbitmq.com/mqtt.html).
   If you're on Linux, you probably know how to do that. On a Mac, just run `brew bundle`. The Windows installer will setup and start RabbitMQ as a service. Use the `RabbitMQ Command Prompt (sbin dir)` to run commands, i.e. to enable plugins.
 6. Declare a RabbitMQ exchange `ttn.handler` of type `topic`. Using [the management plugin](http://www.rabbitmq.com/management.html), declare the exchange in the web interface `http://server-name:15672` or using the management cli, run `rabbitmqadmin declare exchange name=ttn.handler type=topic auto_delete=false durable=true`
 
@@ -33,12 +33,13 @@ When you get started with The Things Network, you'll probably have some question
 1. Fork this repository
 2. Clone your fork: `git clone --branch develop https://github.com/YOURUSERNAME/ttn.git $GOPATH/src/github.com/TheThingsNetwork/ttn`
 3. `cd $GOPATH/src/github.com/TheThingsNetwork/ttn`
-4. Install the dependencies for development: `make dev-deps`
-5. Run the tests: `make test`
-6. Run `make build` to build both `ttn` and `ttnctl` from source. 
-7. Run `make dev` to install the go binaries into `$GOPATH/bin/`
+4. Install the govendor utility using: `go get -u github.com/kardianos/govendor`
+5. Install the dependencies for development: `make dev-deps`
+6. Run the tests: `make test`
+7. Run `make build` to build both `ttn` and `ttnctl` from source.
+8. Run `make dev` to install the go binaries into `$GOPATH/bin/`
     * Optionally on Linux or Mac you can use `make link` to link them to `$GOPATH/bin/` (In order to run the commands, you should have `export PATH="$GOPATH/bin:$PATH"` in your profile).
-8. Configure your `ttnctl` with the settings in `.env/ttnctl.yml.dev-example` by copying that file to `~/.ttnctl.yml`.
+9. Configure your `ttnctl` with the settings in `.env/ttnctl.yml.dev-example` by copying that file to `~/.ttnctl.yml`.
 
 You can check your `ttnctl` configuration by running `ttnctl config`. It should look like this:
 
