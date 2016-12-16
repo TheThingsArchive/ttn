@@ -5,6 +5,7 @@ package proxy
 
 import (
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/apex/log"
@@ -48,4 +49,30 @@ func (p *logProxier) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 // WithLogger wraps the handler so that each request gets logged
 func WithLogger(handler http.Handler, ctx log.Interface) http.Handler {
 	return &logProxier{ctx, handler}
+}
+
+type paginatedHandler struct {
+	handler http.Handler
+}
+
+func (h *paginatedHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
+	var b struct {
+		pageQuery string
+		page      int
+		err       error
+	}
+
+	if b.pageQuery = req.URL.Query().Get("page"); b.pageQuery != "" {
+		if b.page, b.err = strconv.Atoi(b.pageQuery); b.err != nil {
+			http.Error(res, b.err.Error(), http.StatusBadRequest)
+			return
+		}
+	}
+	req.Header.Set("Grpc-Metadata-Page", strconv.Itoa(b.page))
+	h.handler.ServeHTTP(res, req)
+}
+
+// WithPagination wraps the handler so that each request gets the Page value attached
+func WithPagination(h http.Handler) http.Handler {
+	return &paginatedHandler{h}
 }
