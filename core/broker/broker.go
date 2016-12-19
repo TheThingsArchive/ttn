@@ -31,14 +31,14 @@ type Broker interface {
 
 	ActivateRouter(id string) (<-chan *pb.DownlinkMessage, error)
 	DeactivateRouter(id string) error
-	ActivateHandler(id string) (<-chan *pb.DeduplicatedUplinkMessage, error)
-	DeactivateHandler(id string) error
+	ActivateHandlerUplink(id string) (<-chan *pb.DeduplicatedUplinkMessage, error)
+	DeactivateHandlerUplink(id string) error
 }
 
 func NewBroker(timeout time.Duration) Broker {
 	return &broker{
 		routers:                make(map[string]chan *pb.DownlinkMessage),
-		handlers:               make(map[string]chan *pb.DeduplicatedUplinkMessage),
+		handlers:               make(map[string]*handler),
 		uplinkDeduplicator:     NewDeduplicator(timeout),
 		activationDeduplicator: NewDeduplicator(timeout),
 	}
@@ -54,7 +54,7 @@ type broker struct {
 	*component.Component
 	routers                map[string]chan *pb.DownlinkMessage
 	routersLock            sync.RWMutex
-	handlers               map[string]chan *pb.DeduplicatedUplinkMessage
+	handlers               map[string]*handler
 	handlersLock           sync.RWMutex
 	nsAddr                 string
 	nsCert                 string
@@ -166,32 +166,70 @@ func (b *broker) getRouter(id string) (chan<- *pb.DownlinkMessage, error) {
 	return nil, errors.NewErrInternal(fmt.Sprintf("Router %s not active", id))
 }
 
-func (b *broker) ActivateHandler(id string) (<-chan *pb.DeduplicatedUplinkMessage, error) {
+type handler struct {
+	conn   *grpc.ClientConn
+	uplink chan *pb.DeduplicatedUplinkMessage
+	sync.Mutex
+}
+
+func (b *broker) getHandler(id string) *handler {
 	b.handlersLock.Lock()
 	defer b.handlersLock.Unlock()
 	if existing, ok := b.handlers[id]; ok {
-		return existing, errors.NewErrInternal(fmt.Sprintf("Handler %s already active", id))
+		return existing
 	}
-	b.handlers[id] = make(chan *pb.DeduplicatedUplinkMessage)
-	return b.handlers[id], nil
+	b.handlers[id] = new(handler)
+	return b.handlers[id]
 }
 
-func (b *broker) DeactivateHandler(id string) error {
-	b.handlersLock.Lock()
-	defer b.handlersLock.Unlock()
-	if channel, ok := b.handlers[id]; ok {
-		close(channel)
-		delete(b.handlers, id)
-		return nil
+func (b *broker) ActivateHandlerUplink(id string) (<-chan *pb.DeduplicatedUplinkMessage, error) {
+	hdl := b.getHandler(id)
+	hdl.Lock()
+	defer hdl.Unlock()
+	if hdl.uplink != nil {
+		return hdl.uplink, errors.NewErrInternal(fmt.Sprintf("Handler %s already active", id))
 	}
-	return errors.NewErrInternal(fmt.Sprintf("Handler %s not active", id))
+	hdl.uplink = make(chan *pb.DeduplicatedUplinkMessage)
+	return hdl.uplink, nil
 }
 
-func (b *broker) getHandler(id string) (chan<- *pb.DeduplicatedUplinkMessage, error) {
-	b.handlersLock.RLock()
-	defer b.handlersLock.RUnlock()
-	if handler, ok := b.handlers[id]; ok {
-		return handler, nil
+func (b *broker) DeactivateHandlerUplink(id string) error {
+	hdl := b.getHandler(id)
+	hdl.Lock()
+	defer hdl.Unlock()
+	if hdl.uplink == nil {
+		return errors.NewErrInternal(fmt.Sprintf("Handler %s not active", id))
 	}
-	return nil, errors.NewErrInternal(fmt.Sprintf("Handler %s not active", id))
+	close(hdl.uplink)
+	hdl.uplink = nil
+	return nil
+}
+
+func (b *broker) getHandlerUplink(id string) (chan<- *pb.DeduplicatedUplinkMessage, error) {
+	hdl := b.getHandler(id)
+	hdl.Lock()
+	defer hdl.Unlock()
+	if hdl.uplink == nil {
+		return nil, errors.NewErrInternal(fmt.Sprintf("Handler %s not active", id))
+	}
+	return hdl.uplink, nil
+}
+
+func (b *broker) getHandlerConn(id string) (*grpc.ClientConn, error) {
+	hdl := b.getHandler(id)
+	hdl.Lock()
+	defer hdl.Unlock()
+	if hdl.conn != nil {
+		return hdl.conn, nil
+	}
+	announcement, err := b.Discover("handler", id)
+	if err != nil {
+		return nil, err
+	}
+	conn, err := announcement.Dial()
+	if err != nil {
+		return nil, err
+	}
+	hdl.conn = conn
+	return hdl.conn, nil
 }
