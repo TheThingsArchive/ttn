@@ -69,20 +69,56 @@ func TestPaginatedProxier(t *testing.T) {
 	req := httptest.NewRequest("GET", "/uri", nil)
 	w := httptest.NewRecorder()
 	p.ServeHTTP(w, req)
-	a.So(hdl.req.Header.Get("Grpc-Metadata-Page"), ShouldEqual, "0")
+	a.So(hdl.req.Header.Get("Grpc-Metadata-Offset"), ShouldEqual, "0")
+	a.So(hdl.req.Header.Get("Grpc-Metadata-Limit"), ShouldEqual, "0")
 	a.So(w.Code, ShouldEqual, http.StatusOK)
 
 	hdl = &testHandler{}
 	p = WithPagination(hdl)
-	req = httptest.NewRequest("GET", "/uri?page=42", nil)
+	req = httptest.NewRequest("GET", "/uri?offset=42", nil)
 	w = httptest.NewRecorder()
 	p.ServeHTTP(w, req)
-	a.So(hdl.req.Header.Get("Grpc-Metadata-Page"), ShouldEqual, "42")
+	a.So(hdl.req.Header.Get("Grpc-Metadata-Offset"), ShouldEqual, "42")
+	a.So(hdl.req.Header.Get("Grpc-Metadata-Limit"), ShouldEqual, "0")
 	a.So(w.Code, ShouldEqual, http.StatusOK)
 
 	hdl = &testHandler{}
 	p = WithPagination(hdl)
-	req = httptest.NewRequest("GET", "/uri?page=test", nil)
+	req = httptest.NewRequest("GET", "/uri?limit=42", nil)
+	w = httptest.NewRecorder()
+	p.ServeHTTP(w, req)
+	a.So(hdl.req.Header.Get("Grpc-Metadata-Offset"), ShouldEqual, "0")
+	a.So(hdl.req.Header.Get("Grpc-Metadata-Limit"), ShouldEqual, "42")
+	a.So(w.Code, ShouldEqual, http.StatusOK)
+
+	hdl = &testHandler{}
+	p = WithPagination(hdl)
+	req = httptest.NewRequest("GET", "/uri?offset=42&limit=42", nil)
+	w = httptest.NewRecorder()
+	p.ServeHTTP(w, req)
+	a.So(hdl.req.Header.Get("Grpc-Metadata-Offset"), ShouldEqual, "42")
+	a.So(hdl.req.Header.Get("Grpc-Metadata-Limit"), ShouldEqual, "42")
+	a.So(w.Code, ShouldEqual, http.StatusOK)
+
+	hdl = &testHandler{}
+	p = WithPagination(hdl)
+	req = httptest.NewRequest("GET", "/uri?offset=test", nil)
+	w = httptest.NewRecorder()
+	p.ServeHTTP(w, req)
+	a.So(hdl.req, ShouldBeNil)
+	a.So(w.Code, ShouldEqual, http.StatusBadRequest)
+
+	hdl = &testHandler{}
+	p = WithPagination(hdl)
+	req = httptest.NewRequest("GET", "/uri?limit=test", nil)
+	w = httptest.NewRecorder()
+	p.ServeHTTP(w, req)
+	a.So(hdl.req, ShouldBeNil)
+	a.So(w.Code, ShouldEqual, http.StatusBadRequest)
+
+	hdl = &testHandler{}
+	p = WithPagination(hdl)
+	req = httptest.NewRequest("GET", "/uri?offset=test&limit=test", nil)
 	w = httptest.NewRecorder()
 	p.ServeHTTP(w, req)
 	a.So(hdl.req, ShouldBeNil)

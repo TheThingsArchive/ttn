@@ -57,18 +57,32 @@ type paginatedHandler struct {
 
 func (h *paginatedHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	var b struct {
-		pageQuery string
-		page      int
-		err       error
+		offsetQuery string
+		offset      int
+
+		limitQuery string
+		limit      int
+
+		err error
 	}
 
-	if b.pageQuery = req.URL.Query().Get("page"); b.pageQuery != "" {
-		if b.page, b.err = strconv.Atoi(b.pageQuery); b.err != nil {
+	if b.offsetQuery = req.URL.Query().Get("offset"); b.offsetQuery != "" {
+		if b.offset, b.err = strconv.Atoi(b.offsetQuery); b.err != nil {
 			http.Error(res, b.err.Error(), http.StatusBadRequest)
 			return
 		}
 	}
-	req.Header.Set("Grpc-Metadata-Page", strconv.Itoa(b.page))
+
+	if b.limitQuery = req.URL.Query().Get("limit"); b.limitQuery != "" {
+		if b.limit, b.err = strconv.Atoi(b.limitQuery); b.err != nil {
+			http.Error(res, b.err.Error(), http.StatusBadRequest)
+			return
+		}
+	}
+
+	req.Header.Set("Grpc-Metadata-Offset", strconv.Itoa(b.offset))
+	req.Header.Set("Grpc-Metadata-Limit", strconv.Itoa(b.limit))
+
 	h.handler.ServeHTTP(res, req)
 }
 
