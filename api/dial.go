@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/TheThingsNetwork/go-utils/log"
+	"github.com/TheThingsNetwork/go-utils/roots"
 	"github.com/TheThingsNetwork/ttn/utils/backoff"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -73,7 +74,11 @@ func dial(address string, tlsConfig *tls.Config, fallback bool) (conn *grpc.Clie
 var RootCAs *x509.CertPool
 
 func init() {
-	RootCAs, _ = x509.SystemCertPool()
+	var err error
+	RootCAs, err = x509.SystemCertPool()
+	if err != nil {
+		RootCAs = roots.MozillaRootCAs
+	}
 }
 
 // Dial an address
