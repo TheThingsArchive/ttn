@@ -89,7 +89,7 @@ func TestHandleUplink(t *testing.T) {
 			},
 		},
 	}
-	b.handlers["handlerID"] = make(chan *pb.DeduplicatedUplinkMessage, 10)
+	b.handlers["handlerID"] = &handler{uplink: make(chan *pb.DeduplicatedUplinkMessage, 10)}
 
 	// Device doesn't match
 	b.uplinkDeduplicator = NewDeduplicator(10 * time.Millisecond)
