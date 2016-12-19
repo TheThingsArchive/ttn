@@ -61,13 +61,13 @@ func (b *brokerRPC) getHandlerSubscribe(md metadata.MD) (<-chan *pb.Deduplicated
 		return nil, nil, err
 	}
 
-	ch, err := b.broker.ActivateHandler(handler.Id)
+	ch, err := b.broker.ActivateHandlerUplink(handler.Id)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	cancel := func() {
-		b.broker.DeactivateHandler(handler.Id)
+		b.broker.DeactivateHandlerUplink(handler.Id)
 	}
 
 	return ch, cancel, nil

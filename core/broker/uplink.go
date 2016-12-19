@@ -203,7 +203,7 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) (err error) {
 	}
 
 	var handler chan<- *pb.DeduplicatedUplinkMessage
-	handler, err = b.getHandler(announcements[0].Id)
+	handler, err = b.getHandlerUplink(announcements[0].Id)
 	if err != nil {
 		return err
 	}
