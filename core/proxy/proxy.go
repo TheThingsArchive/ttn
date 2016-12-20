@@ -56,34 +56,27 @@ type paginatedHandler struct {
 }
 
 func (h *paginatedHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
-	var b struct {
-		offsetQuery string
-		offset      int
-
-		limitQuery string
-		limit      int
-
-		err error
-	}
-
-	if b.offsetQuery = req.URL.Query().Get("offset"); b.offsetQuery != "" {
-		b.offset, b.err = strconv.Atoi(b.offsetQuery)
-		if b.err != nil {
-			http.Error(res, b.err.Error(), http.StatusBadRequest)
+	if offsetQuery := req.URL.Query().Get("offset"); offsetQuery != "" {
+		offset, err := strconv.Atoi(offsetQuery)
+		if err != nil {
+			http.Error(res, err.Error(), http.StatusBadRequest)
 			return
+		}
+		if offset > 0 {
+			req.Header.Set("Grpc-Metadata-Offset", strconv.Itoa(offset))
 		}
 	}
 
-	if b.limitQuery = req.URL.Query().Get("limit"); b.limitQuery != "" {
-		b.limit, b.err = strconv.Atoi(b.limitQuery)
-		if b.err != nil {
-			http.Error(res, b.err.Error(), http.StatusBadRequest)
+	if limitQuery := req.URL.Query().Get("limit"); limitQuery != "" {
+		limit, err := strconv.Atoi(limitQuery)
+		if err != nil {
+			http.Error(res, err.Error(), http.StatusBadRequest)
 			return
 		}
+		if limit > 0 {
+			req.Header.Set("Grpc-Metadata-Limit", strconv.Itoa(limit))
+		}
 	}
-
-	req.Header.Set("Grpc-Metadata-Offset", strconv.Itoa(b.offset))
-	req.Header.Set("Grpc-Metadata-Limit", strconv.Itoa(b.limit))
 
 	h.handler.ServeHTTP(res, req)
 }

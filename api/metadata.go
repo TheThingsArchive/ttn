@@ -10,12 +10,10 @@ import (
 
 // Errors that are returned when an item could not be retrieved
 var (
-	ErrContext  = errors.NewErrInternal("Could not get metadata from context")
-	ErrNoOffset = errors.NewErrInvalidArgument("Metadata", "offset missing")
-	ErrNoLimit  = errors.NewErrInvalidArgument("Metadata", "limit missing")
-	ErrNoToken  = errors.NewErrInvalidArgument("Metadata", "token missing")
-	ErrNoKey    = errors.NewErrInvalidArgument("Metadata", "key missing")
-	ErrNoID     = errors.NewErrInvalidArgument("Metadata", "id missing")
+	ErrContext = errors.NewErrInternal("Could not get metadata from context")
+	ErrNoToken = errors.NewErrInvalidArgument("Metadata", "token missing")
+	ErrNoKey   = errors.NewErrInvalidArgument("Metadata", "key missing")
+	ErrNoID    = errors.NewErrInvalidArgument("Metadata", "id missing")
 )
 
 func MetadataFromContext(ctx context.Context) (metadata.MD, error) {
@@ -53,7 +51,7 @@ func KeyFromMetadata(md metadata.MD) (string, error) {
 func OffsetFromMetadata(md metadata.MD) (int, error) {
 	offset, ok := md["offset"]
 	if !ok || len(offset) == 0 {
-		return 0, ErrNoOffset
+		return 0, nil
 	}
 	return strconv.Atoi(offset[0])
 }
@@ -61,7 +59,7 @@ func OffsetFromMetadata(md metadata.MD) (int, error) {
 func LimitFromMetadata(md metadata.MD) (int, error) {
 	limit, ok := md["limit"]
 	if !ok || len(limit) == 0 {
-		return 0, ErrNoLimit
+		return 0, nil
 	}
 	return strconv.Atoi(limit[0])
 }

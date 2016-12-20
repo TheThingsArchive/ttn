@@ -69,8 +69,8 @@ func TestPaginatedProxier(t *testing.T) {
 	req := httptest.NewRequest("GET", "/uri", nil)
 	w := httptest.NewRecorder()
 	p.ServeHTTP(w, req)
-	a.So(hdl.req.Header.Get("Grpc-Metadata-Offset"), ShouldEqual, "0")
-	a.So(hdl.req.Header.Get("Grpc-Metadata-Limit"), ShouldEqual, "0")
+	a.So(hdl.req.Header.Get("Grpc-Metadata-Offset"), ShouldEqual, "")
+	a.So(hdl.req.Header.Get("Grpc-Metadata-Limit"), ShouldEqual, "")
 	a.So(w.Code, ShouldEqual, http.StatusOK)
 
 	hdl = &testHandler{}
@@ -79,7 +79,7 @@ func TestPaginatedProxier(t *testing.T) {
 	w = httptest.NewRecorder()
 	p.ServeHTTP(w, req)
 	a.So(hdl.req.Header.Get("Grpc-Metadata-Offset"), ShouldEqual, "42")
-	a.So(hdl.req.Header.Get("Grpc-Metadata-Limit"), ShouldEqual, "0")
+	a.So(hdl.req.Header.Get("Grpc-Metadata-Limit"), ShouldEqual, "")
 	a.So(w.Code, ShouldEqual, http.StatusOK)
 
 	hdl = &testHandler{}
@@ -87,7 +87,7 @@ func TestPaginatedProxier(t *testing.T) {
 	req = httptest.NewRequest("GET", "/uri?limit=42", nil)
 	w = httptest.NewRecorder()
 	p.ServeHTTP(w, req)
-	a.So(hdl.req.Header.Get("Grpc-Metadata-Offset"), ShouldEqual, "0")
+	a.So(hdl.req.Header.Get("Grpc-Metadata-Offset"), ShouldEqual, "")
 	a.So(hdl.req.Header.Get("Grpc-Metadata-Limit"), ShouldEqual, "42")
 	a.So(w.Code, ShouldEqual, http.StatusOK)
 
