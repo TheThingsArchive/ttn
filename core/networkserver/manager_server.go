@@ -160,7 +160,7 @@ func (n *networkServerManager) GetStatus(ctx context.Context, in *pb.StatusReque
 	if n.networkServer.Identity.Id != "dev" {
 		_, err := n.networkServer.ValidateTTNAuthContext(ctx)
 		if err != nil {
-			return nil, errors.NewErrPermissionDenied("No access")
+			return nil, errors.Wrap(err, "No access")
 		}
 	}
 	status := n.networkServer.GetStatus()

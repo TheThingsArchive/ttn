@@ -43,8 +43,11 @@ func (r *routerManager) GatewayStatus(ctx context.Context, in *pb.GatewayStatusR
 func (r *routerManager) GetStatus(ctx context.Context, in *pb.StatusRequest) (*pb.Status, error) {
 	if r.router.Identity.Id != "dev" {
 		claims, err := r.router.ValidateTTNAuthContext(ctx)
-		if err != nil || !claims.ComponentAccess(r.router.Identity.Id) {
-			return nil, errors.NewErrPermissionDenied("No access")
+		if err != nil {
+			return nil, errors.Wrap(err, "No access")
+		}
+		if !claims.ComponentAccess(r.router.Identity.Id) {
+			return nil, errors.NewErrPermissionDenied(fmt.Sprintf("Claims do not grant access to %s", r.router.Identity.Id))
 		}
 	}
 	status := r.router.GetStatus()

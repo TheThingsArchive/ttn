@@ -60,6 +60,7 @@ sign:
     - tags
     - v1-staging@thethingsnetwork/ttn
     - master@thethingsnetwork/ttn
+    - develop@thethingsnetwork/ttn
   stage: sign
   image: golang:latest
   script:
@@ -89,6 +90,7 @@ dockerhub-image:
     - tags
     - v1-staging@thethingsnetwork/ttn
     - master@thethingsnetwork/ttn
+    - develop@thethingsnetwork/ttn
   stage: package
   image: docker:git
   services:
@@ -105,6 +107,7 @@ azure-binaries:
     - tags
     - v1-staging@thethingsnetwork/ttn
     - master@thethingsnetwork/ttn
+    - develop@thethingsnetwork/ttn
   stage: package
   image: registry.gitlab.com/thethingsindustries/upload
   script:

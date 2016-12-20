@@ -133,7 +133,7 @@ func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (res *
 	var wg sync.WaitGroup
 	responses := make(chan *challengeResponseWithHandler, len(announcements))
 	for _, announcement := range announcements {
-		conn, err := announcement.Dial()
+		conn, err := b.getHandlerConn(announcement.Id)
 		if err != nil {
 			ctx.WithError(err).Warn("Could not dial handler for Activation")
 			continue
