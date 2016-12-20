@@ -67,14 +67,16 @@ func (h *paginatedHandler) ServeHTTP(res http.ResponseWriter, req *http.Request)
 	}
 
 	if b.offsetQuery = req.URL.Query().Get("offset"); b.offsetQuery != "" {
-		if b.offset, b.err = strconv.Atoi(b.offsetQuery); b.err != nil {
+		b.offset, b.err = strconv.Atoi(b.offsetQuery)
+		if b.err != nil {
 			http.Error(res, b.err.Error(), http.StatusBadRequest)
 			return
 		}
 	}
 
 	if b.limitQuery = req.URL.Query().Get("limit"); b.limitQuery != "" {
-		if b.limit, b.err = strconv.Atoi(b.limitQuery); b.err != nil {
+		b.limit, b.err = strconv.Atoi(b.limitQuery)
+		if b.err != nil {
 			http.Error(res, b.err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -86,7 +88,7 @@ func (h *paginatedHandler) ServeHTTP(res http.ResponseWriter, req *http.Request)
 	h.handler.ServeHTTP(res, req)
 }
 
-// WithPagination wraps the handler so that each request gets the Page value attached
+// WithPagination wraps the handler so that each request gets the Limit and Offset values attached
 func WithPagination(h http.Handler) http.Handler {
 	return &paginatedHandler{h}
 }
