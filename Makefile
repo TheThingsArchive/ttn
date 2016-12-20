@@ -112,8 +112,10 @@ CGO_ENABLED ?= 0
 
 ifeq ($(GIT_BRANCH), $(GIT_TAG))
 	TTN_VERSION = $(GIT_TAG)
+	TAGS += prod
 else
 	TTN_VERSION = $(GIT_TAG)-dev
+	TAGS += dev
 endif
 
 DIST_FLAGS ?= -a -installsuffix cgo

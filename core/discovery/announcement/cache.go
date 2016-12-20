@@ -40,13 +40,13 @@ func serviceCacheKey(serviceName, serviceID string) string {
 
 // NewCachedAnnouncementStore returns a cache wrapper around the existing store
 func NewCachedAnnouncementStore(store Store, options CacheOptions) Store {
-	serviceCache := gcache.New(options.ServiceCacheSize).Expiration(options.ServiceCacheExpiration).LFU().
+	serviceCache := gcache.New(options.ServiceCacheSize).Expiration(options.ServiceCacheExpiration).LRU().
 		LoaderFunc(func(k interface{}) (interface{}, error) {
 			key := strings.Split(k.(string), ":")
 			return store.Get(key[0], key[1])
 		}).Build()
 
-	listCache := gcache.New(options.ListCacheSize).Expiration(options.ListCacheExpiration).LFU().
+	listCache := gcache.New(options.ListCacheSize).Expiration(options.ListCacheExpiration).LRU().
 		LoaderFunc(func(k interface{}) (interface{}, error) {
 			key := k.(string)
 			announcements, err := store.ListService(key)

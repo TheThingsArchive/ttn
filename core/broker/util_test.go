@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	pb_networkserver "github.com/TheThingsNetwork/ttn/api/networkserver"
 	"github.com/TheThingsNetwork/ttn/core/component"
@@ -32,7 +31,7 @@ func getTestBroker(t *testing.T) *testBroker {
 				Discovery: discovery,
 				Ctx:       GetLogger(t, "TestBroker"),
 			},
-			handlers:               make(map[string]chan *pb_broker.DeduplicatedUplinkMessage),
+			handlers:               make(map[string]*handler),
 			activationDeduplicator: NewDeduplicator(10 * time.Millisecond),
 			uplinkDeduplicator:     NewDeduplicator(10 * time.Millisecond),
 			ns:                     ns,

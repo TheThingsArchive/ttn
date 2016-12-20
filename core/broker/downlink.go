@@ -57,5 +57,10 @@ func (b *broker) HandleDownlink(downlink *pb.DownlinkMessage) error {
 
 	router <- downlink
 
+	for _, monitor := range b.Monitors {
+		ctx.Debug("Sending downlink to monitor")
+		go monitor.SendDownlink(downlink)
+	}
+
 	return nil
 }
