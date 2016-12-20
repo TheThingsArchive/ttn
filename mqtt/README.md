@@ -48,17 +48,28 @@ Note: Some values may be omitted if they are `null`, `""` or `0`.
 **Usage (Go client):**
 
 ```go
-ctx := log.WithField("Example", "Go Client")
-client := NewClient(ctx, "ttnctl", "my-app-id", "my-access-key", "<Region>.thethings.network:1883")
-if err := client.Connect(); err != nil {
-  ctx.WithError(err).Fatal("Could not connect")
-}
-token := client.SubscribeDeviceUplink("my-app-id", "my-dev-id", func(client Client, appID string, devID string, req types.UplinkMessage) {
-  // Do something with the uplink message
-})
-token.Wait()
-if err := token.Error(); err != nil {
-  ctx.WithError(err).Fatal("Could not subscribe")
+import (
+	"github.com/TheThingsNetwork/go-utils/log"
+	"github.com/TheThingsNetwork/go-utils/log/apex"
+	"github.com/TheThingsNetwork/ttn/core/types"
+	"github.com/TheThingsNetwork/ttn/mqtt"
+)
+
+func main() {
+	ctx := apex.Stdout().WithField("Example", "Go Client")
+	log.Set(ctx)
+
+	client := mqtt.NewClient(ctx, "ttnctl", "my-app-id", "my-access-key", "<Region>.thethings.network:1883")
+	if err := client.Connect(); err != nil {
+		ctx.WithError(err).Fatal("Could not connect")
+	}
+	token := client.SubscribeDeviceUplink("my-app-id", "my-dev-id", func(client mqtt.Client, appID string, devID string, req types.UplinkMessage) {
+		// Do something with the uplink message
+	})
+	token.Wait()
+	if err := token.Error(); err != nil {
+		ctx.WithError(err).Fatal("Could not subscribe")
+	}
 }
 ```
 
@@ -106,12 +117,9 @@ you will see this on MQTT:
 
 **Usage (Go client):**
 
+_for setup, see **Uplink Messages**_
+
 ```go
-ctx := log.WithField("Example", "Go Client")
-client := NewClient(ctx, "ttnctl", "my-app-id", "my-access-key", "<Region>.thethings.network:1883")
-if err := client.Connect(); err != nil {
-  ctx.WithError(err).Fatal("Could not connect")
-}
 token := client.PublishDownlink(types.DownlinkMessage{
   AppID:   "my-app-id",
   DevID:   "my-dev-id",
@@ -143,12 +151,9 @@ Instead of `payload_raw` you can also use `payload_fields` with an object of fie
 
 **Usage (Go client):**
 
+_for setup, see **Uplink Messages**_
+
 ```go
-ctx := log.WithField("Example", "Go Client")
-client := NewClient(ctx, "ttnctl", "my-app-id", "my-access-key", "<Region>.thethings.network:1883")
-if err := client.Connect(); err != nil {
-  ctx.WithError(err).Fatal("Could not connect")
-}
 token := client.PublishDownlink(types.DownlinkMessage{
   AppID:   "my-app-id",
   DevID:   "my-dev-id",
@@ -184,12 +189,9 @@ if err := token.Error(); err != nil {
 
 **Usage (Go client):**
 
+_for setup, see **Uplink Messages**_
+
 ```go
-ctx := log.WithField("Example", "Go Client")
-client := NewClient(ctx, "ttnctl", "my-app-id", "my-access-key", "<Region>.thethings.network:1883")
-if err := client.Connect(); err != nil {
-  ctx.WithError(err).Fatal("Could not connect")
-}
 token := client.SubscribeDeviceActivations("my-app-id", "my-dev-id", func(client Client, appID string, devID string, req Activation) {
   // Do something with the activation
 })
