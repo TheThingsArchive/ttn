@@ -216,7 +216,7 @@ func (cl *gatewayClient) SetToken(token string) {
 func (cl *gatewayClient) IsConfigured() bool {
 	cl.RLock()
 	defer cl.RUnlock()
-	return cl.token != "" && cl.token != "token"
+	return cl.token != ""
 }
 
 // Close closes all opened monitor streams for the gateway
