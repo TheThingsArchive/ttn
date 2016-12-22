@@ -8,6 +8,7 @@ import (
 	"io"
 	"net"
 
+	"github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/api/gateway"
 	"github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/golang/protobuf/ptypes/empty"
@@ -30,6 +31,9 @@ type exampleServer struct {
 	gatewayStatuses  chan *gateway.Status
 	uplinkMessages   chan *router.UplinkMessage
 	downlinkMessages chan *router.DownlinkMessage
+
+	brokerUplinkMessages   chan *broker.DeduplicatedUplinkMessage
+	brokerDownlinkMessages chan *broker.DownlinkMessage
 }
 
 func (s *exampleServer) GatewayStatus(stream Monitor_GatewayStatusServer) error {
@@ -89,16 +93,42 @@ func (s *exampleServer) GatewayDownlink(stream Monitor_GatewayDownlinkServer) er
 	}
 }
 
-func (s *exampleServer) RouterStatus(stream Monitor_RouterStatusServer) error {
-	return errNotImplemented
+func (s *exampleServer) BrokerUplink(stream Monitor_BrokerUplinkServer) error {
+	for {
+		uplink, err := stream.Recv()
+		if err == io.EOF {
+			return stream.SendAndClose(&empty.Empty{})
+		}
+		if err != nil {
+			return err
+		}
+		select {
+		case s.brokerUplinkMessages <- uplink:
+			fmt.Println("Saving uplink to database and doing something cool")
+		default:
+			fmt.Println("Warning: Dropping uplink [full buffer]")
+			return errBufferFull
+		}
+	}
 }
 
-func (s *exampleServer) BrokerStatus(stream Monitor_BrokerStatusServer) error {
-	return errNotImplemented
-}
-
-func (s *exampleServer) HandlerStatus(stream Monitor_HandlerStatusServer) error {
-	return errNotImplemented
+func (s *exampleServer) BrokerDownlink(stream Monitor_BrokerDownlinkServer) error {
+	for {
+		downlink, err := stream.Recv()
+		if err == io.EOF {
+			return stream.SendAndClose(&empty.Empty{})
+		}
+		if err != nil {
+			return err
+		}
+		select {
+		case s.brokerDownlinkMessages <- downlink:
+			fmt.Println("Saving downlink to database and doing something cool")
+		default:
+			fmt.Println("Warning: Dropping downlink [full buffer]")
+			return errBufferFull
+		}
+	}
 }
 
 func (s *exampleServer) Serve(port int) {

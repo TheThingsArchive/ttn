@@ -5,6 +5,7 @@ package proxy
 
 import (
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/apex/log"
@@ -48,4 +49,39 @@ func (p *logProxier) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 // WithLogger wraps the handler so that each request gets logged
 func WithLogger(handler http.Handler, ctx log.Interface) http.Handler {
 	return &logProxier{ctx, handler}
+}
+
+type paginatedHandler struct {
+	handler http.Handler
+}
+
+func (h *paginatedHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
+	if offsetQuery := req.URL.Query().Get("offset"); offsetQuery != "" {
+		offset, err := strconv.Atoi(offsetQuery)
+		if err != nil {
+			http.Error(res, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if offset > 0 {
+			req.Header.Set("Grpc-Metadata-Offset", strconv.Itoa(offset))
+		}
+	}
+
+	if limitQuery := req.URL.Query().Get("limit"); limitQuery != "" {
+		limit, err := strconv.Atoi(limitQuery)
+		if err != nil {
+			http.Error(res, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if limit > 0 {
+			req.Header.Set("Grpc-Metadata-Limit", strconv.Itoa(limit))
+		}
+	}
+
+	h.handler.ServeHTTP(res, req)
+}
+
+// WithPagination wraps the handler so that each request gets the Limit and Offset values attached
+func WithPagination(h http.Handler) http.Handler {
+	return &paginatedHandler{h}
 }

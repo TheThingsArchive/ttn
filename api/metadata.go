@@ -1,6 +1,8 @@
 package api
 
 import (
+	"strconv"
+
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
 	"google.golang.org/grpc/metadata"
@@ -44,4 +46,20 @@ func KeyFromMetadata(md metadata.MD) (string, error) {
 		return "", ErrNoKey
 	}
 	return key[0], nil
+}
+
+func OffsetFromMetadata(md metadata.MD) (int, error) {
+	offset, ok := md["offset"]
+	if !ok || len(offset) == 0 {
+		return 0, nil
+	}
+	return strconv.Atoi(offset[0])
+}
+
+func LimitFromMetadata(md metadata.MD) (int, error) {
+	limit, ok := md["limit"]
+	if !ok || len(limit) == 0 {
+		return 0, nil
+	}
+	return strconv.Atoi(limit[0])
 }

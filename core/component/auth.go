@@ -191,6 +191,8 @@ func (c *Component) GetContext(token string) context.Context {
 	return ctx
 }
 
+var oauthCache = cache.MemoryCache()
+
 // ExchangeAppKeyForToken enables authentication with the App Access Key
 func (c *Component) ExchangeAppKeyForToken(appID, key string) (string, error) {
 	issuerID := keys.KeyIssuer(key)
@@ -209,10 +211,10 @@ func (c *Component) ExchangeAppKeyForToken(appID, key string) (string, error) {
 
 	srv, _ := parseAuthServer(issuer)
 
-	oauth := oauth.OAuth(srv.url, &oauth.Client{
+	oauth := oauth.OAuthWithCache(srv.url, &oauth.Client{
 		ID:     srv.username,
 		Secret: srv.password,
-	})
+	}, oauthCache)
 
 	token, err := oauth.ExchangeAppKeyForToken(appID, key)
 	if err != nil {

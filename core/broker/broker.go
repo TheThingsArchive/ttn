@@ -11,6 +11,7 @@ import (
 
 	"github.com/TheThingsNetwork/ttn/api"
 	pb "github.com/TheThingsNetwork/ttn/api/broker"
+	pb_monitor "github.com/TheThingsNetwork/ttn/api/monitor"
 	"github.com/TheThingsNetwork/ttn/api/networkserver"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core/component"
@@ -41,6 +42,8 @@ func NewBroker(timeout time.Duration) Broker {
 		handlers:               make(map[string]*handler),
 		uplinkDeduplicator:     NewDeduplicator(timeout),
 		activationDeduplicator: NewDeduplicator(timeout),
+
+		Monitors: make(map[string]pb_monitor.BrokerClient),
 	}
 }
 
@@ -64,6 +67,8 @@ type broker struct {
 	uplinkDeduplicator     Deduplicator
 	activationDeduplicator Deduplicator
 	status                 *status
+
+	Monitors map[string]pb_monitor.BrokerClient
 }
 
 func (b *broker) checkPrefixAnnouncements() error {
@@ -131,6 +136,10 @@ func (b *broker) Init(c *component.Component) error {
 	b.ns = networkserver.NewNetworkServerClient(conn)
 	b.checkPrefixAnnouncements()
 	b.Component.SetStatus(component.StatusHealthy)
+
+	for name, monitor := range b.Component.Monitors {
+		b.Monitors[name] = monitor.BrokerClient
+	}
 	return nil
 }
 
