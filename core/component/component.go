@@ -16,6 +16,7 @@ import (
 	"github.com/TheThingsNetwork/go-account-lib/tokenkey"
 	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	pb_monitor "github.com/TheThingsNetwork/ttn/api/monitor"
+	"github.com/TheThingsNetwork/ttn/api/trace"
 	"github.com/apex/log"
 	"github.com/spf13/viper"
 	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
@@ -80,6 +81,8 @@ func New(ctx log.Interface, serviceName string, announcedAddress string) (*Compo
 		},
 		AccessToken: viper.GetString("auth-token"),
 	}
+
+	trace.SetIdentifierPrefix(fmt.Sprintf("%s %s ", component.Identity.ServiceName, component.Identity.Id))
 
 	if err := component.InitAuth(); err != nil {
 		return nil, err
