@@ -111,7 +111,7 @@ func TestValidateTTNAuthContext(t *testing.T) {
 	c := new(Component)
 	c.Config.KeyDir = os.TempDir()
 	c.Config.AuthServers = map[string]string{
-		"ttn-account-preview": accountServer,
+		"ttn-account-v2": accountServer,
 	}
 	err := c.initAuthServers()
 	a.So(err, assertions.ShouldBeNil)
@@ -141,7 +141,7 @@ func TestValidateTTNAuthContext(t *testing.T) {
 	{
 		md := metadata.Pairs(
 			"id", "dev",
-			"token", "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJ0dG4tYWNjb3VudC1wcmV2aWV3Iiwic3ViIjoiZGV2IiwidHlwZSI6InJvdXRlciIsImlhdCI6MTQ3NjQzOTQzOH0.Duz-E5aMYEPY_Nf5Pky7Qmjbs1dMp9PN9nMqbSzoU079b8TPL4DH2SKcRHrrMqieB3yhJb3YaQBfY6dKWfgVz8BmTeKlGXfFrqEj91y30J7r9_VsHRzgDMJedlqXryvf0S_yD27TsJ7TMbGYyE00T4tAX3Uf6wQZDhdyHNGtdf4jtoAjzOxVAodNtXZp26LR7fFk56UstBxOxztBMzyzmAdiTG4lSyEqq7zsuJcFjmHB9MfEoD4ZT-iTRL1ohFjGuj2HN49oPyYlZAVPP7QajLyNsLnv-nDqXE_QecOjAcEq4PLNJ3DpXtX-lo8I_F1eV9yQnDdQQi4EUvxmxZWeBA",
+			"token", "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ0dG4tYWNjb3VudC12MiIsInN1YiI6ImRldiIsInR5cGUiOiJnYXRld2F5IiwiaWF0IjoxNDgyNDIxMTEyfQ.obhobeREK9bOpi-YO5lZ8rpW4CkXZUSrRBRIjbFThhvAsj_IjkFmCovIVLsGlaDVEKciZmXmWnY-6ZEgUEu6H6_GG4AD6HNHXnT0o0XSPgf5_Bc6dpzuI5FCEpcELihpBMaW3vPUt29NecLo4LvZGAuOllUYKHsZi34GYnR6PFlOgi40drN_iU_8aMCxFxm6ki83QlcyHEmDAh5GAGIym0qnUDh5_L1VE_upmoR72j8_l5lSuUA2_w8CH5_Z9CrXlTKQ2XQXsQXprkhbmOKKC8rfbTjRsB_nxObu0qcTWLH9tMd4KGFkJ20mdMw38fg2Vt7eLrkU1R1kl6a65eo6LZi0JvRSsboVZFWLwI02Azkwsm903K5n1r25Wq2oiwPJpNq5vsYLdYlb-WdAPsEDnfQGLPaqxd5we8tDcHsF4C1JHTwLsKy2Sqj8WNVmLgXiFER0DNfISDgS5SYdOxd9dUf5lTlIYdJU6aG1yYLSEhq80QOcdhCqNMVu1uRIucn_BhHbKo_LCMmD7TGppaXcQ2tCL3qHQaW8GCoun_UPo4C67LIMYUMfwd_h6CaykzlZvDlLa64ZiQ3XPmMcT_gVT7MJS2jGPbtJmcLHAVa5NZLv2d6WZfutPAocl3bYrY-sQmaSwJrzakIb2D-DNsg0qBJAZcm2o021By8U4bKAAFQ",
 		)
 		ctx := metadata.NewContext(context.Background(), md)
 		_, err = c.ValidateTTNAuthContext(ctx)
@@ -160,7 +160,7 @@ func TestExchangeAppKeyForToken(t *testing.T) {
 	c := new(Component)
 	c.Config.KeyDir = os.TempDir()
 	c.Config.AuthServers = map[string]string{
-		"ttn-account-preview": fmt.Sprintf("%s://%s:%s@%s",
+		"ttn-account-v2": fmt.Sprintf("%s://%s:%s@%s",
 			os.Getenv("ACCOUNT_SERVER_PROTO"),
 			os.Getenv("ACCOUNT_SERVER_USERNAME"),
 			os.Getenv("ACCOUNT_SERVER_PASSWORD"),
@@ -170,7 +170,7 @@ func TestExchangeAppKeyForToken(t *testing.T) {
 	c.initAuthServers()
 
 	{
-		token, err := c.ExchangeAppKeyForToken(os.Getenv("APP_ID"), "ttn-account-preview."+os.Getenv("APP_TOKEN"))
+		token, err := c.ExchangeAppKeyForToken(os.Getenv("APP_ID"), "ttn-account-v2."+os.Getenv("APP_TOKEN"))
 		a.So(err, assertions.ShouldBeNil)
 		a.So(token, assertions.ShouldNotBeEmpty)
 	}

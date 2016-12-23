@@ -1,5 +1,4 @@
 discovery-address: localhost:1900
-auth-server: https://preview.account.thethingsnetwork.org
 router-id: dev
 handler-id: dev
 mqtt-address: localhost:1883

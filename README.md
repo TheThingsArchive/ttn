@@ -48,7 +48,7 @@ You can check your `ttnctl` configuration by running `ttnctl config`. It should 
          config file: /home/your-user/.ttnctl.yml
             data dir: /home/your-user/.ttnctl
 
-         auth-server: https://preview.account.thethingsnetwork.org
+         auth-server: https://account.thethingsnetwork.org
    discovery-address: localhost:1900
            router-id: dev
           handler-id: dev
