@@ -4,6 +4,7 @@
 package router
 
 import (
+	"fmt"
 	"time"
 
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
@@ -20,10 +21,15 @@ func (r *router) HandleUplink(gatewayID string, uplink *pb.UplinkMessage) (err e
 	start := time.Now()
 	defer func() {
 		if err != nil {
+			uplink.Trace = uplink.Trace.WithEvent("could not handle uplink", map[string]string{
+				"error": err.Error(),
+			})
 			ctx.WithError(err).Warn("Could not handle uplink")
 		}
 	}()
 	r.status.uplink.Mark(1)
+
+	uplink.Trace = uplink.Trace.WithEvent("receive uplink", nil)
 
 	// LoRaWAN: Unmarshal
 	var phyPayload lorawan.PHYPayload
@@ -49,6 +55,7 @@ func (r *router) HandleUplink(gatewayID string, uplink *pb.UplinkMessage) (err e
 			AppEui:           &appEUI,
 			ProtocolMetadata: uplink.ProtocolMetadata,
 			GatewayMetadata:  uplink.GatewayMetadata,
+			Trace:            uplink.Trace.WithEvent("handle uplink as activation", nil),
 		})
 		return nil
 	}
@@ -90,6 +97,9 @@ func (r *router) HandleUplink(gatewayID string, uplink *pb.UplinkMessage) (err e
 	var downlinkOptions []*pb_broker.DownlinkOption
 	if gateway.Schedule.IsActive() {
 		downlinkOptions = r.buildDownlinkOptions(uplink, false, gateway)
+		uplink.Trace = uplink.Trace.WithEvent("built downlink options", map[string]string{
+			"downlink options": fmt.Sprint(len(downlinkOptions)),
+		})
 	}
 
 	ctx = ctx.WithField("DownlinkOptions", len(downlinkOptions))
@@ -102,10 +112,15 @@ func (r *router) HandleUplink(gatewayID string, uplink *pb.UplinkMessage) (err e
 
 	if len(brokers) == 0 {
 		ctx.Debug("No brokers to forward message to")
+		uplink.Trace = uplink.Trace.WithEvent("no brokers", nil)
 		return nil
 	}
 
 	ctx = ctx.WithField("NumBrokers", len(brokers))
+
+	uplink.Trace = uplink.Trace.WithEvent("forward to brokers", map[string]string{
+		"brokers": fmt.Sprint(len(brokers)),
+	})
 
 	// Forward to all brokers
 	for _, broker := range brokers {
@@ -118,6 +133,7 @@ func (r *router) HandleUplink(gatewayID string, uplink *pb.UplinkMessage) (err e
 			ProtocolMetadata: uplink.ProtocolMetadata,
 			GatewayMetadata:  uplink.GatewayMetadata,
 			DownlinkOptions:  downlinkOptions,
+			Trace:            uplink.Trace,
 		}
 	}
 

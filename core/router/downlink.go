@@ -35,6 +35,7 @@ func (r *router) SubscribeDownlink(gatewayID string, subscriptionID string) (<-c
 			for message := range fromSchedule {
 				gateway.Utilization.AddTx(message)
 				ctx.Debug("Send downlink")
+				message.Trace = message.Trace.WithEvent("send downlink", nil)
 				toGateway <- message
 			}
 			ctx.Debug("Deactivate downlink")
@@ -52,12 +53,16 @@ func (r *router) UnsubscribeDownlink(gatewayID string, subscriptionID string) er
 
 func (r *router) HandleDownlink(downlink *pb_broker.DownlinkMessage) error {
 	r.status.downlink.Mark(1)
+
+	downlink.Trace = downlink.Trace.WithEvent("receive downlink", nil)
+
 	option := downlink.DownlinkOption
 
 	downlinkMessage := &pb.DownlinkMessage{
 		Payload:               downlink.Payload,
 		ProtocolConfiguration: option.ProtocolConfig,
 		GatewayConfiguration:  option.GatewayConfig,
+		Trace:                 downlink.Trace,
 	}
 
 	identifier := option.Identifier

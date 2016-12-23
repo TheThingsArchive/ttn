@@ -33,6 +33,8 @@ func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivat
 	}()
 	r.status.activations.Mark(1)
 
+	activation.Trace = activation.Trace.WithEvent("receive activation", nil)
+
 	gateway := r.getGateway(gatewayID)
 	gateway.LastSeen = time.Now()
 
@@ -40,6 +42,7 @@ func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivat
 		Payload:          activation.Payload,
 		ProtocolMetadata: activation.ProtocolMetadata,
 		GatewayMetadata:  activation.GatewayMetadata,
+		Trace:            activation.Trace,
 	}
 
 	if err = gateway.HandleUplink(uplink); err != nil {
@@ -51,6 +54,9 @@ func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivat
 	}
 
 	downlinkOptions := r.buildDownlinkOptions(uplink, true, gateway)
+	activation.Trace = uplink.Trace.WithEvent("built downlink options", map[string]string{
+		"downlink options": fmt.Sprint(len(downlinkOptions)),
+	})
 
 	// Find Broker
 	brokers, err := r.Discovery.GetAll("broker")
@@ -74,6 +80,7 @@ func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivat
 			},
 		},
 		DownlinkOptions: downlinkOptions,
+		Trace:           activation.Trace,
 	}
 
 	// Prepare LoRaWAN activation
@@ -101,6 +108,9 @@ func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivat
 	}
 
 	ctx = ctx.WithField("NumBrokers", len(brokers))
+	request.Trace = request.Trace.WithEvent("forward to brokers", map[string]string{
+		"brokers": fmt.Sprint(len(brokers)),
+	})
 
 	// Forward to all brokers and collect responses
 	var wg sync.WaitGroup
@@ -138,6 +148,7 @@ func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivat
 				Payload:        res.Payload,
 				Message:        res.Message,
 				DownlinkOption: res.DownlinkOption,
+				Trace:          res.Trace,
 			}
 			err := r.HandleDownlink(downlink)
 			if err != nil {
