@@ -409,6 +409,6 @@ DryUplinkResult is the result from an uplink simulation
 | `f_cnt_down` | `uint32` | FCntDown is the downlink frame counter for a device session. |
 | `disable_f_cnt_check` | `bool` | The DisableFCntCheck option disables the frame counter check. Disabling this makes the device vulnerable to replay attacks, but makes ABP slightly easier. |
 | `uses32_bit_f_cnt` | `bool` | The Uses32BitFCnt option indicates that the device keeps track of full 32 bit frame counters. As only the 16 lsb are actually transmitted, the 16 msb will have to be inferred. |
-| `activation_constraints` | `string` | The ActivationContstraints are used to allocate a device address for a device. There are different prefixes for `otaa`, `abp`, `world`, `local`, `private`, `testing`. |
+| `activation_constraints` | `string` | The ActivationContstraints are used to allocate a device address for a device (comma-separated). There are different prefixes for `otaa`, `abp`, `world`, `local`, `private`, `testing`. |
 | `last_seen` | `int64` | When the device was last seen (Unix nanoseconds) |
 

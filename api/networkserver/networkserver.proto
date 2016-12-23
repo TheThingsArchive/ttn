@@ -15,7 +15,9 @@ package networkserver;
 option go_package = "github.com/TheThingsNetwork/ttn/api/networkserver";
 
 message DevicesRequest {
+  // Device address from the uplink message
   bytes  dev_addr = 1 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.DevAddr"];
+  // Frame counter from the uplink message
   uint32 f_cnt    = 2;
 }
 
@@ -24,19 +26,19 @@ message DevicesResponse {
 }
 
 service NetworkServer {
-  // Broker requests devices with DevAddr for MIC check
+  // Broker requests devices with DevAddr and matching FCnt (or disabled FCnt check)
   rpc GetDevices(DevicesRequest) returns (DevicesResponse);
 
   // Broker requests device activation "template" from Network Server
   rpc PrepareActivation(broker.DeduplicatedDeviceActivationRequest) returns (broker.DeduplicatedDeviceActivationRequest);
 
-  // Broker confirms device activation
+  // Broker confirms device activation (after response from Handler)
   rpc Activate(handler.DeviceActivationResponse) returns (handler.DeviceActivationResponse);
 
   // Broker informs Network Server about Uplink
   rpc Uplink(broker.DeduplicatedUplinkMessage) returns (broker.DeduplicatedUplinkMessage);
 
-  // Broker informs Network Server about Downlink, NetworkServer should sign, add MIC, ...
+  // Broker informs Network Server about Downlink, NetworkServer may add MAC commands and re-set MIC
   rpc Downlink(broker.DownlinkMessage) returns (broker.DownlinkMessage);
 }
 

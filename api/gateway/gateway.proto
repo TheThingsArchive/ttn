@@ -10,7 +10,9 @@ package gateway;
 option go_package = "github.com/TheThingsNetwork/ttn/api/gateway";
 
 message GPSMetadata {
+  // Time in Unix nanoseconds
   int64   time       = 1;
+
   float   latitude   = 2;
   float   longitude  = 3;
   int32   altitude   = 4;
@@ -19,56 +21,80 @@ message GPSMetadata {
 message RxMetadata {
   string  gateway_id = 1;
 
+  // Timestamp (uptime of LoRa module) in microseconds with rollover
   uint32  timestamp  = 11;
+  // Time in Unix nanoseconds
   int64   time       = 12;
 
   uint32  rf_chain   = 21;
   uint32  channel    = 22;
 
-  uint64  frequency  = 31; // frequency in Hz
-  float   rssi       = 32; // received signal strength in dBm
-  float   snr        = 33; // signal-to-noise-ratio in dB
+  // Frequency in Hz
+  uint64  frequency  = 31;
+  // Received signal strength in dBm
+  float   rssi       = 32;
+  // Signal-to-noise-ratio in dB
+  float   snr        = 33;
 
   GPSMetadata  gps   = 41;
 }
 
 message TxConfiguration {
+  // Timestamp (uptime of LoRa module) in microseconds with rollover
   uint32 timestamp   = 11;
 
   uint32  rf_chain   = 21;
-  uint64  frequency  = 22; // frequency in Hz
-  int32   power      = 23; // transmit power in dBm
 
-  bool polarization_inversion = 31; // LoRa polarization inversion (basically always true)
-  uint32 frequency_deviation = 32; // FSK frequency deviation in Hz
+  // Frequency in Hz
+  uint64  frequency  = 22;
+  // Transmit power in dBm
+  int32   power      = 23;
+
+  // LoRa polarization inversion (basically always true for messages from gateway to node)
+  bool polarization_inversion = 31;
+  // FSK frequency deviation in Hz
+  uint32 frequency_deviation = 32;
 }
 
 // message Status represents a status update from a Gateway.
 message Status {
+  // Timestamp (uptime of gateway) in microseconds with rollover
   uint32  timestamp      = 1;
+  // Time in Unix nanoseconds
   int64   time           = 2;
 
   // Configuration and relatively static stuff
+  // These values may be left out if they don't change
+  // Reset using "-"
 
   repeated string ip     = 11;
   string  platform       = 12;
   string  contact_email  = 13;
   string  description    = 14;
+
+  // The gateway's region: one of EU_863_870, US_902_928, CN_779_787, EU_433, AU_915_928, CN_470_510, AS_923, KR_920_923
   string  region         = 15;
+  // The value of Bridge is set by the Bridge
   string  bridge         = 16;
+  // The value of Router is set by the Router
   string  router         = 17;
 
   GPSMetadata  gps       = 21;
 
   // Network (internet) stuff
 
+  // Round-trip time to the server in milliseconds
   uint32  rtt            = 31;
 
   // Rx and Tx stuff
 
+  // Total number of received uplink packets since boot
   uint32  rx_in          = 41;
+  // Total number of successful (correct) uplink packets since boot
   uint32  rx_ok          = 42;
+  // Total number of received downlink packets since boot
   uint32  tx_in          = 43;
+  // Total number of successfully sent downlink packets since boot
   uint32  tx_ok          = 44;
 
   // Additional metrics from the operating system

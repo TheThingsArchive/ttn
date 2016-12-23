@@ -45,7 +45,7 @@ message Device {
   bool   disable_f_cnt_check = 11;
   // The Uses32BitFCnt option indicates that the device keeps track of full 32 bit frame counters. As only the 16 lsb are actually transmitted, the 16 msb will have to be inferred.
   bool   uses32_bit_f_cnt    = 12;
-  // The ActivationContstraints are used to allocate a device address for a device.
+  // The ActivationContstraints are used to allocate a device address for a device (comma-separated).
   // There are different prefixes for `otaa`, `abp`, `world`, `local`, `private`, `testing`.
   string activation_constraints = 13;
 

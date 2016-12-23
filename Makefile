@@ -51,6 +51,7 @@ api/%.pb.go: api/%.proto
 	$(PROTOC)$<
 
 protodoc: $(PROTO_FILES)
+	protoc $(PROTOC_IMPORTS) --ttndoc_out=logtostderr=true,.lorawan.DevAddrManager=all:$(GO_SRC) `pwd`/api/protocol/lorawan/device_address.proto
 	protoc $(PROTOC_IMPORTS) --ttndoc_out=logtostderr=true,.handler.ApplicationManager=all:$(GO_SRC) `pwd`/api/handler/handler.proto
 	protoc $(PROTOC_IMPORTS) --ttndoc_out=logtostderr=true,.discovery.Discovery=all:$(GO_SRC) `pwd`/api/discovery/discovery.proto
 

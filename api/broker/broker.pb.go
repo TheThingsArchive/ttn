@@ -55,9 +55,13 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 type DownlinkOption struct {
-	Identifier     string                    `protobuf:"bytes,1,opt,name=identifier,proto3" json:"identifier,omitempty"`
-	GatewayId      string                    `protobuf:"bytes,2,opt,name=gateway_id,json=gatewayId,proto3" json:"gateway_id,omitempty"`
-	Score          uint32                    `protobuf:"varint,3,opt,name=score,proto3" json:"score,omitempty"`
+	// String that identifies this downlink option in the Router
+	Identifier string `protobuf:"bytes,1,opt,name=identifier,proto3" json:"identifier,omitempty"`
+	// ID of the gateway where this downlink should be sent
+	GatewayId string `protobuf:"bytes,2,opt,name=gateway_id,json=gatewayId,proto3" json:"gateway_id,omitempty"`
+	// Score of this downlink option. Lower is better.
+	Score uint32 `protobuf:"varint,3,opt,name=score,proto3" json:"score,omitempty"`
+	// deadline time at server represented as Unix nanoseconds
 	Deadline       int64                     `protobuf:"varint,4,opt,name=deadline,proto3" json:"deadline,omitempty"`
 	ProtocolConfig *protocol.TxConfiguration `protobuf:"bytes,5,opt,name=protocol_config,json=protocolConfig" json:"protocol_config,omitempty"`
 	GatewayConfig  *gateway.TxConfiguration  `protobuf:"bytes,6,opt,name=gateway_config,json=gatewayConfig" json:"gateway_config,omitempty"`
@@ -84,9 +88,8 @@ func (m *DownlinkOption) GetGatewayConfig() *gateway.TxConfiguration {
 
 // received from the Router
 type UplinkMessage struct {
-	Payload []byte            `protobuf:"bytes,1,opt,name=payload,proto3" json:"payload,omitempty"`
-	Message *protocol.Message `protobuf:"bytes,2,opt,name=message" json:"message,omitempty"`
-	// NOTE: For LoRaWAN, the Router doesn't know the DevEUI/ID and AppEUI/ID
+	Payload          []byte                                             `protobuf:"bytes,1,opt,name=payload,proto3" json:"payload,omitempty"`
+	Message          *protocol.Message                                  `protobuf:"bytes,2,opt,name=message" json:"message,omitempty"`
 	DevEui           *github_com_TheThingsNetwork_ttn_core_types.DevEUI `protobuf:"bytes,11,opt,name=dev_eui,json=devEui,proto3,customtype=github.com/TheThingsNetwork/ttn/core/types.DevEUI" json:"dev_eui,omitempty"`
 	AppEui           *github_com_TheThingsNetwork_ttn_core_types.AppEUI `protobuf:"bytes,12,opt,name=app_eui,json=appEui,proto3,customtype=github.com/TheThingsNetwork/ttn/core/types.AppEUI" json:"app_eui,omitempty"`
 	AppId            string                                             `protobuf:"bytes,13,opt,name=app_id,json=appId,proto3" json:"app_id,omitempty"`

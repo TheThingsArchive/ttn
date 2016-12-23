@@ -16,20 +16,28 @@ enum Modulation {
 
 message Metadata {
   Modulation  modulation   = 11;
-  string      data_rate    = 12; // LoRa data rate - SF{spreadingfactor}BW{bandwidth}
-  uint32      bit_rate     = 13; // FSK bit rate in bit/s
-  string      coding_rate  = 14; // LoRa coding rate
+  // LoRa data rate - SF{spreadingfactor}BW{bandwidth}
+  string      data_rate    = 12;
+  // FSK bit rate in bit/s
+  uint32      bit_rate     = 13;
+  // LoRa coding rate
+  string      coding_rate  = 14;
 
-  uint32      f_cnt = 15; // Store the full 32 bit FCnt
+  // Store the full 32 bit FCnt (deprecated; do not use)
+  uint32      f_cnt = 15;
 }
 
 message TxConfiguration {
   Modulation  modulation   = 11;
-  string      data_rate    = 12; // LoRa data rate - SF{spreadingfactor}BW{bandwidth}
-  uint32      bit_rate     = 13; // FSK bit rate in bit/s
-  string      coding_rate  = 14; // LoRa coding rate
+  // LoRa data rate - SF{spreadingfactor}BW{bandwidth}
+  string      data_rate    = 12;
+  // FSK bit rate in bit/s
+  uint32      bit_rate     = 13;
+  // LoRa coding rate
+  string      coding_rate  = 14;
 
-  uint32      f_cnt = 15; // Store the full 32 bit FCnt
+  // Store the full 32 bit FCnt (deprecated; do not use)
+  uint32      f_cnt = 15;
 }
 
 message ActivationMetadata {

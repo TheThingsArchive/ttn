@@ -13,14 +13,17 @@ message PrefixesRequest {}
 
 message PrefixesResponse {
   message PrefixMapping {
+    // The prefix that can be used
     string          prefix = 1;
+    // Usage constraints of this prefix (see activation_constraints in device.proto)
     repeated string usage  = 2;
   }
-
+  // The prefixes that are in use or available
   repeated PrefixMapping prefixes = 1;
 }
 
 message DevAddrRequest {
+  // The usage constraints (see activation_constraints in device.proto)
   repeated string usage = 1;
 }
 
@@ -28,7 +31,10 @@ message DevAddrResponse {
   bytes  dev_addr = 1 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.DevAddr"];
 }
 
+// The Device Addresses in the network are issued by the NetworkServer
 service DevAddrManager {
+  // Get all prefixes that are in use or available
   rpc GetPrefixes(PrefixesRequest) returns (PrefixesResponse);
+  // Request a device address
   rpc GetDevAddr(DevAddrRequest) returns (DevAddrResponse);
 }

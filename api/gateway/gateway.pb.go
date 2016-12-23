@@ -35,6 +35,7 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 type GPSMetadata struct {
+	// Time in Unix nanoseconds
 	Time      int64   `protobuf:"varint,1,opt,name=time,proto3" json:"time,omitempty"`
 	Latitude  float32 `protobuf:"fixed32,2,opt,name=latitude,proto3" json:"latitude,omitempty"`
 	Longitude float32 `protobuf:"fixed32,3,opt,name=longitude,proto3" json:"longitude,omitempty"`
@@ -47,15 +48,20 @@ func (*GPSMetadata) ProtoMessage()               {}
 func (*GPSMetadata) Descriptor() ([]byte, []int) { return fileDescriptorGateway, []int{0} }
 
 type RxMetadata struct {
-	GatewayId string       `protobuf:"bytes,1,opt,name=gateway_id,json=gatewayId,proto3" json:"gateway_id,omitempty"`
-	Timestamp uint32       `protobuf:"varint,11,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	Time      int64        `protobuf:"varint,12,opt,name=time,proto3" json:"time,omitempty"`
-	RfChain   uint32       `protobuf:"varint,21,opt,name=rf_chain,json=rfChain,proto3" json:"rf_chain,omitempty"`
-	Channel   uint32       `protobuf:"varint,22,opt,name=channel,proto3" json:"channel,omitempty"`
-	Frequency uint64       `protobuf:"varint,31,opt,name=frequency,proto3" json:"frequency,omitempty"`
-	Rssi      float32      `protobuf:"fixed32,32,opt,name=rssi,proto3" json:"rssi,omitempty"`
-	Snr       float32      `protobuf:"fixed32,33,opt,name=snr,proto3" json:"snr,omitempty"`
-	Gps       *GPSMetadata `protobuf:"bytes,41,opt,name=gps" json:"gps,omitempty"`
+	GatewayId string `protobuf:"bytes,1,opt,name=gateway_id,json=gatewayId,proto3" json:"gateway_id,omitempty"`
+	// Timestamp (uptime of LoRa module) in microseconds with rollover
+	Timestamp uint32 `protobuf:"varint,11,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	// Time in Unix nanoseconds
+	Time    int64  `protobuf:"varint,12,opt,name=time,proto3" json:"time,omitempty"`
+	RfChain uint32 `protobuf:"varint,21,opt,name=rf_chain,json=rfChain,proto3" json:"rf_chain,omitempty"`
+	Channel uint32 `protobuf:"varint,22,opt,name=channel,proto3" json:"channel,omitempty"`
+	// Frequency in Hz
+	Frequency uint64 `protobuf:"varint,31,opt,name=frequency,proto3" json:"frequency,omitempty"`
+	// Received signal strength in dBm
+	Rssi float32 `protobuf:"fixed32,32,opt,name=rssi,proto3" json:"rssi,omitempty"`
+	// Signal-to-noise-ratio in dB
+	Snr float32      `protobuf:"fixed32,33,opt,name=snr,proto3" json:"snr,omitempty"`
+	Gps *GPSMetadata `protobuf:"bytes,41,opt,name=gps" json:"gps,omitempty"`
 }
 
 func (m *RxMetadata) Reset()                    { *m = RxMetadata{} }
@@ -71,12 +77,17 @@ func (m *RxMetadata) GetGps() *GPSMetadata {
 }
 
 type TxConfiguration struct {
-	Timestamp             uint32 `protobuf:"varint,11,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	RfChain               uint32 `protobuf:"varint,21,opt,name=rf_chain,json=rfChain,proto3" json:"rf_chain,omitempty"`
-	Frequency             uint64 `protobuf:"varint,22,opt,name=frequency,proto3" json:"frequency,omitempty"`
-	Power                 int32  `protobuf:"varint,23,opt,name=power,proto3" json:"power,omitempty"`
-	PolarizationInversion bool   `protobuf:"varint,31,opt,name=polarization_inversion,json=polarizationInversion,proto3" json:"polarization_inversion,omitempty"`
-	FrequencyDeviation    uint32 `protobuf:"varint,32,opt,name=frequency_deviation,json=frequencyDeviation,proto3" json:"frequency_deviation,omitempty"`
+	// Timestamp (uptime of LoRa module) in microseconds with rollover
+	Timestamp uint32 `protobuf:"varint,11,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	RfChain   uint32 `protobuf:"varint,21,opt,name=rf_chain,json=rfChain,proto3" json:"rf_chain,omitempty"`
+	// Frequency in Hz
+	Frequency uint64 `protobuf:"varint,22,opt,name=frequency,proto3" json:"frequency,omitempty"`
+	// Transmit power in dBm
+	Power int32 `protobuf:"varint,23,opt,name=power,proto3" json:"power,omitempty"`
+	// LoRa polarization inversion (basically always true for messages from gateway to node)
+	PolarizationInversion bool `protobuf:"varint,31,opt,name=polarization_inversion,json=polarizationInversion,proto3" json:"polarization_inversion,omitempty"`
+	// FSK frequency deviation in Hz
+	FrequencyDeviation uint32 `protobuf:"varint,32,opt,name=frequency_deviation,json=frequencyDeviation,proto3" json:"frequency_deviation,omitempty"`
 }
 
 func (m *TxConfiguration) Reset()                    { *m = TxConfiguration{} }
@@ -86,22 +97,32 @@ func (*TxConfiguration) Descriptor() ([]byte, []int) { return fileDescriptorGate
 
 // message Status represents a status update from a Gateway.
 type Status struct {
-	Timestamp    uint32            `protobuf:"varint,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	Time         int64             `protobuf:"varint,2,opt,name=time,proto3" json:"time,omitempty"`
-	Ip           []string          `protobuf:"bytes,11,rep,name=ip" json:"ip,omitempty"`
-	Platform     string            `protobuf:"bytes,12,opt,name=platform,proto3" json:"platform,omitempty"`
-	ContactEmail string            `protobuf:"bytes,13,opt,name=contact_email,json=contactEmail,proto3" json:"contact_email,omitempty"`
-	Description  string            `protobuf:"bytes,14,opt,name=description,proto3" json:"description,omitempty"`
-	Region       string            `protobuf:"bytes,15,opt,name=region,proto3" json:"region,omitempty"`
-	Bridge       string            `protobuf:"bytes,16,opt,name=bridge,proto3" json:"bridge,omitempty"`
-	Router       string            `protobuf:"bytes,17,opt,name=router,proto3" json:"router,omitempty"`
-	Gps          *GPSMetadata      `protobuf:"bytes,21,opt,name=gps" json:"gps,omitempty"`
-	Rtt          uint32            `protobuf:"varint,31,opt,name=rtt,proto3" json:"rtt,omitempty"`
-	RxIn         uint32            `protobuf:"varint,41,opt,name=rx_in,json=rxIn,proto3" json:"rx_in,omitempty"`
-	RxOk         uint32            `protobuf:"varint,42,opt,name=rx_ok,json=rxOk,proto3" json:"rx_ok,omitempty"`
-	TxIn         uint32            `protobuf:"varint,43,opt,name=tx_in,json=txIn,proto3" json:"tx_in,omitempty"`
-	TxOk         uint32            `protobuf:"varint,44,opt,name=tx_ok,json=txOk,proto3" json:"tx_ok,omitempty"`
-	Os           *Status_OSMetrics `protobuf:"bytes,51,opt,name=os" json:"os,omitempty"`
+	// Timestamp (uptime of gateway) in microseconds with rollover
+	Timestamp uint32 `protobuf:"varint,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	// Time in Unix nanoseconds
+	Time         int64    `protobuf:"varint,2,opt,name=time,proto3" json:"time,omitempty"`
+	Ip           []string `protobuf:"bytes,11,rep,name=ip" json:"ip,omitempty"`
+	Platform     string   `protobuf:"bytes,12,opt,name=platform,proto3" json:"platform,omitempty"`
+	ContactEmail string   `protobuf:"bytes,13,opt,name=contact_email,json=contactEmail,proto3" json:"contact_email,omitempty"`
+	Description  string   `protobuf:"bytes,14,opt,name=description,proto3" json:"description,omitempty"`
+	// The gateway's region: one of EU_863_870, US_902_928, CN_779_787, EU_433, AU_915_928, CN_470_510, AS_923, KR_920_923
+	Region string `protobuf:"bytes,15,opt,name=region,proto3" json:"region,omitempty"`
+	// The value of Bridge is set by the Bridge
+	Bridge string `protobuf:"bytes,16,opt,name=bridge,proto3" json:"bridge,omitempty"`
+	// The value of Router is set by the Router
+	Router string       `protobuf:"bytes,17,opt,name=router,proto3" json:"router,omitempty"`
+	Gps    *GPSMetadata `protobuf:"bytes,21,opt,name=gps" json:"gps,omitempty"`
+	// Round-trip time to the server in milliseconds
+	Rtt uint32 `protobuf:"varint,31,opt,name=rtt,proto3" json:"rtt,omitempty"`
+	// Total number of received uplink packets since boot
+	RxIn uint32 `protobuf:"varint,41,opt,name=rx_in,json=rxIn,proto3" json:"rx_in,omitempty"`
+	// Total number of successful (correct) uplink packets since boot
+	RxOk uint32 `protobuf:"varint,42,opt,name=rx_ok,json=rxOk,proto3" json:"rx_ok,omitempty"`
+	// Total number of received downlink packets since boot
+	TxIn uint32 `protobuf:"varint,43,opt,name=tx_in,json=txIn,proto3" json:"tx_in,omitempty"`
+	// Total number of successfully sent downlink packets since boot
+	TxOk uint32            `protobuf:"varint,44,opt,name=tx_ok,json=txOk,proto3" json:"tx_ok,omitempty"`
+	Os   *Status_OSMetrics `protobuf:"bytes,51,opt,name=os" json:"os,omitempty"`
 }
 
 func (m *Status) Reset()                    { *m = Status{} }
