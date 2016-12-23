@@ -176,7 +176,7 @@ $ ttnctl applications register
 
 ttnctl applications select can be used to select the application to use in next commands.
 
-**Usage:** `ttnctl applications select`
+**Usage:** `ttnctl applications select [AppID [AppEUI]]`
 
 **Example**
 
