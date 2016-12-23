@@ -79,6 +79,8 @@ func (d *discovery) Announce(in *pb.Announcement) error {
 	service.PublicKey = in.PublicKey
 	service.Certificate = in.Certificate
 	service.APIAddress = in.ApiAddress
+	service.MQTTAddress = in.MqttAddress
+	service.AMQPAddress = in.AmqpAddress
 
 	return d.services.Set(service)
 }
