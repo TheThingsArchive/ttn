@@ -4,6 +4,7 @@
 package gateway
 
 import (
+	"sync"
 	"time"
 
 	pb "github.com/TheThingsNetwork/ttn/api/gateway"
@@ -32,14 +33,19 @@ type Gateway struct {
 	Schedule    Schedule
 	LastSeen    time.Time
 
-	token string
+	mu            sync.RWMutex
+	token         string
+	Authenticated bool
 
 	Monitors map[string]pb_monitor.GatewayClient
 
 	Ctx log.Interface
 }
 
-func (g *Gateway) SetToken(token string) {
+func (g *Gateway) SetAuth(token string, authenticated bool) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	g.Authenticated = authenticated
 	if token == g.token {
 		return
 	}
@@ -54,6 +60,9 @@ func (g *Gateway) updateLastSeen() {
 }
 
 func (g *Gateway) HandleStatus(status *pb.Status) (err error) {
+	g.mu.RLock()
+	defer g.mu.RUnlock()
+	status.GatewayTrusted = g.Authenticated
 	if err = g.Status.Update(status); err != nil {
 		return err
 	}
@@ -80,6 +89,11 @@ func (g *Gateway) HandleUplink(uplink *pb_router.UplinkMessage) (err error) {
 			uplink.GatewayMetadata.Gps = status.GetGps()
 		}
 	}
+
+	// Inject Authenticated
+	g.mu.RLock()
+	defer g.mu.RUnlock()
+	uplink.GatewayMetadata.GatewayTrusted = g.Authenticated
 
 	if g.Monitors != nil {
 		for _, monitor := range g.Monitors {

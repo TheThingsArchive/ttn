@@ -37,26 +37,33 @@ func (r *routerRPC) gatewayFromMetadata(md metadata.MD) (gtw *gateway.Gateway, e
 		return nil, err
 	}
 
+	authErr := errors.NewErrPermissionDenied("Gateway not authenticated")
+	authenticated := false
 	token, _ := api.TokenFromMetadata(md)
 
-	if !viper.GetBool("router.skip-verify-gateway-token") {
-		if token == "" {
-			return nil, errors.NewErrPermissionDenied("No gateway token supplied")
-		}
+	if token != "" {
 		if r.router.TokenKeyProvider == nil {
 			return nil, errors.NewErrInternal("No token provider configured")
 		}
 		claims, err := claims.FromToken(r.router.TokenKeyProvider, token)
 		if err != nil {
-			return nil, errors.NewErrPermissionDenied(fmt.Sprintf("Gateway token invalid: %s", err.Error()))
-		}
-		if claims.Type != "gateway" || claims.Subject != gatewayID {
-			return nil, errors.NewErrPermissionDenied("Gateway token not consistent")
+			authErr = errors.NewErrPermissionDenied(fmt.Sprintf("Gateway token invalid: %s", err.Error()))
+		} else {
+			if claims.Type != "gateway" || claims.Subject != gatewayID {
+				authErr = errors.NewErrPermissionDenied("Gateway token not consistent")
+			} else {
+				authErr = nil
+				authenticated = true
+			}
 		}
 	}
 
+	if authErr != nil && !viper.GetBool("router.skip-verify-gateway-token") {
+		return nil, authErr
+	}
+
 	gtw = r.router.getGateway(gatewayID)
-	gtw.SetToken(token)
+	gtw.SetAuth(token, authenticated)
 
 	return gtw, nil
 }
