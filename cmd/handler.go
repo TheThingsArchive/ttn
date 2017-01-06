@@ -160,7 +160,7 @@ func init() {
 	viper.BindPFlag("handler.broker-id", handlerCmd.Flags().Lookup("broker-id"))
 
 	handlerCmd.Flags().String("mqtt-address", "", "MQTT host and port. Leave empty to disable MQTT")
-	handlerCmd.Flags().String("mqtt-address-announce", "", "MQTT address to announce")
+	handlerCmd.Flags().String("mqtt-address-announce", "", "MQTT address to announce (takes value of server-address-announce if empty while enabled)")
 	handlerCmd.Flags().String("mqtt-username", "", "MQTT username")
 	handlerCmd.Flags().String("mqtt-password", "", "MQTT password")
 	viper.BindPFlag("handler.mqtt-address", handlerCmd.Flags().Lookup("mqtt-address"))
@@ -169,7 +169,7 @@ func init() {
 	viper.BindPFlag("handler.mqtt-password", handlerCmd.Flags().Lookup("mqtt-password"))
 
 	handlerCmd.Flags().String("amqp-address", "", "AMQP host and port. Leave empty to disable AMQP")
-	handlerCmd.Flags().String("amqp-address-announce", "", "AMQP address to announce")
+	handlerCmd.Flags().String("amqp-address-announce", "", "AMQP address to announce (takes value of server-address-announce if empty while enabled)")
 	handlerCmd.Flags().String("amqp-username", "guest", "AMQP username")
 	handlerCmd.Flags().String("amqp-password", "guest", "AMQP password")
 	handlerCmd.Flags().String("amqp-exchange", "ttn.handler", "AMQP exchange")
