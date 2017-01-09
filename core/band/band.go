@@ -74,6 +74,18 @@ func Get(region string) (frequencyPlan FrequencyPlan, err error) {
 		frequencyPlan.Band, err = lora.GetConfig(lora.AS_923, false, lorawan.DwellTime400ms)
 	case pb_lorawan.Region_KR_920_923.String():
 		frequencyPlan.Band, err = lora.GetConfig(lora.KR_920_923, false, lorawan.DwellTimeNoLimit)
+		// TTN frequency plan includes extra channels next to the default channels:
+		frequencyPlan.UplinkChannels = []lora.Channel{
+			lora.Channel{Frequency: 922100000, DataRates: []int{0, 1, 2, 3, 4, 5}},
+			lora.Channel{Frequency: 922300000, DataRates: []int{0, 1, 2, 3, 4, 5}},
+			lora.Channel{Frequency: 922500000, DataRates: []int{0, 1, 2, 3, 4, 5}},
+			lora.Channel{Frequency: 922700000, DataRates: []int{0, 1, 2, 3, 4, 5}},
+			lora.Channel{Frequency: 922900000, DataRates: []int{0, 1, 2, 3, 4, 5}},
+			lora.Channel{Frequency: 923100000, DataRates: []int{0, 1, 2, 3, 4, 5}},
+			lora.Channel{Frequency: 923300000, DataRates: []int{0, 1, 2, 3, 4, 5}},
+		}
+		frequencyPlan.DownlinkChannels = frequencyPlan.UplinkChannels
+		frequencyPlan.CFList = &lorawan.CFList{922700000, 922900000, 923100000, 923300000, 0}
 	default:
 		err = errors.NewErrInvalidArgument("Frequency Band", "unknown")
 	}
