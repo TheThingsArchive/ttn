@@ -6,7 +6,7 @@ package types
 // GatewayMetadata contains metadata for each gateway that received a message
 type GatewayMetadata struct {
 	GtwID      string   `json:"gtw_id,omitempty"`
-	GtwTrusted bool     `json:"gtw_trusted"`
+	GtwTrusted bool     `json:"gtw_trusted,omitempty"`
 	Timestamp  uint32   `json:"timestamp,omitempty"`
 	Time       JSONTime `json:"time,omitempty"`
 	Channel    uint32   `json:"channel"`
