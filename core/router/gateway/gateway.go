@@ -33,9 +33,9 @@ type Gateway struct {
 	Schedule    Schedule
 	LastSeen    time.Time
 
-	mu            sync.RWMutex
+	mu            sync.RWMutex // Protect token and Authenticated
 	token         string
-	Authenticated bool
+	authenticated bool
 
 	Monitors map[string]pb_monitor.GatewayClient
 
@@ -45,7 +45,7 @@ type Gateway struct {
 func (g *Gateway) SetAuth(token string, authenticated bool) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
-	g.Authenticated = authenticated
+	g.authenticated = authenticated
 	if token == g.token {
 		return
 	}
@@ -62,7 +62,7 @@ func (g *Gateway) updateLastSeen() {
 func (g *Gateway) HandleStatus(status *pb.Status) (err error) {
 	g.mu.RLock()
 	defer g.mu.RUnlock()
-	status.GatewayTrusted = g.Authenticated
+	status.GatewayTrusted = g.authenticated
 	if err = g.Status.Update(status); err != nil {
 		return err
 	}
@@ -93,7 +93,7 @@ func (g *Gateway) HandleUplink(uplink *pb_router.UplinkMessage) (err error) {
 	// Inject Authenticated
 	g.mu.RLock()
 	defer g.mu.RUnlock()
-	uplink.GatewayMetadata.GatewayTrusted = g.Authenticated
+	uplink.GatewayMetadata.GatewayTrusted = g.authenticated
 
 	if g.Monitors != nil {
 		for _, monitor := range g.Monitors {
