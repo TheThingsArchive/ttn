@@ -74,6 +74,11 @@ var handlerCmd = &cobra.Command{
 				viper.GetString("handler.mqtt-password"),
 				viper.GetString("handler.mqtt-address"),
 			)
+			if announceAddr := viper.GetString("handler.mqtt-address-announce"); announceAddr != "" {
+				component.Identity.MqttAddress = fmt.Sprintf("%s:%d", announceAddr, viper.GetInt("handler.mqtt-port"))
+			} else {
+				component.Identity.MqttAddress = fmt.Sprintf("%s:%d", viper.GetString("handler.server-address-announce"), viper.GetInt("handler.mqtt-port"))
+			}
 		} else {
 			ctx.Warn("MQTT is not enabled in your configuration")
 		}
@@ -82,7 +87,13 @@ var handlerCmd = &cobra.Command{
 				viper.GetString("handler.amqp-username"),
 				viper.GetString("handler.amqp-password"),
 				viper.GetString("handler.amqp-address"),
-				viper.GetString("handler.amqp-exchange"))
+				viper.GetString("handler.amqp-exchange"),
+			)
+			if announceAddr := viper.GetString("handler.amqp-address-announce"); announceAddr != "" {
+				component.Identity.AmqpAddress = fmt.Sprintf("%s:%d", announceAddr, viper.GetInt("handler.amqp-port"))
+			} else {
+				component.Identity.AmqpAddress = fmt.Sprintf("%s:%d", viper.GetString("handler.server-address-announce"), viper.GetInt("handler.amqp-port"))
+			}
 		} else {
 			ctx.Warn("AMQP is not enabled in your configuration")
 		}
@@ -149,24 +160,23 @@ func init() {
 	viper.BindPFlag("handler.broker-id", handlerCmd.Flags().Lookup("broker-id"))
 
 	handlerCmd.Flags().String("mqtt-address", "", "MQTT host and port. Leave empty to disable MQTT")
-	viper.BindPFlag("handler.mqtt-address", handlerCmd.Flags().Lookup("mqtt-address"))
-
+	handlerCmd.Flags().String("mqtt-address-announce", "", "MQTT address to announce (takes value of server-address-announce if empty while enabled)")
 	handlerCmd.Flags().String("mqtt-username", "", "MQTT username")
-	viper.BindPFlag("handler.mqtt-username", handlerCmd.Flags().Lookup("mqtt-username"))
-
 	handlerCmd.Flags().String("mqtt-password", "", "MQTT password")
+	viper.BindPFlag("handler.mqtt-address", handlerCmd.Flags().Lookup("mqtt-address"))
+	viper.BindPFlag("handler.mqtt-address-announce", handlerCmd.Flags().Lookup("mqtt-address-announce"))
+	viper.BindPFlag("handler.mqtt-username", handlerCmd.Flags().Lookup("mqtt-username"))
 	viper.BindPFlag("handler.mqtt-password", handlerCmd.Flags().Lookup("mqtt-password"))
 
 	handlerCmd.Flags().String("amqp-address", "", "AMQP host and port. Leave empty to disable AMQP")
-	viper.BindPFlag("handler.amqp-address", handlerCmd.Flags().Lookup("amqp-address"))
-
+	handlerCmd.Flags().String("amqp-address-announce", "", "AMQP address to announce (takes value of server-address-announce if empty while enabled)")
 	handlerCmd.Flags().String("amqp-username", "guest", "AMQP username")
-	viper.BindPFlag("handler.amqp-username", handlerCmd.Flags().Lookup("amqp-username"))
-
 	handlerCmd.Flags().String("amqp-password", "guest", "AMQP password")
-	viper.BindPFlag("handler.amqp-password", handlerCmd.Flags().Lookup("amqp-password"))
-
 	handlerCmd.Flags().String("amqp-exchange", "ttn.handler", "AMQP exchange")
+	viper.BindPFlag("handler.amqp-address", handlerCmd.Flags().Lookup("amqp-address"))
+	viper.BindPFlag("handler.amqp-address-announce", handlerCmd.Flags().Lookup("amqp-address-announce"))
+	viper.BindPFlag("handler.amqp-username", handlerCmd.Flags().Lookup("amqp-username"))
+	viper.BindPFlag("handler.amqp-password", handlerCmd.Flags().Lookup("amqp-password"))
 	viper.BindPFlag("handler.amqp-exchange", handlerCmd.Flags().Lookup("amqp-exchange"))
 
 	handlerCmd.Flags().String("server-address", "0.0.0.0", "The IP address to listen for communication")

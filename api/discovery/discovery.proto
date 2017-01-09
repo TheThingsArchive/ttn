@@ -70,6 +70,10 @@ message Announcement {
 
   // Contains the address where the HTTP API is exposed (if there is one)
   string api_address = 14;
+  // Contains the address where the MQTT API is exposed (if there is one)
+  string mqtt_address = 15;
+  // Contains the address where the AMQP API is exposed (if there is one)
+  string amqp_address = 16;
 
   // Metadata for this component
   repeated Metadata metadata = 22;

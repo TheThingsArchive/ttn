@@ -97,6 +97,7 @@ ttn gen-keypair generates a public/private keypair
 
 ```
       --amqp-address string              AMQP host and port. Leave empty to disable AMQP
+      --amqp-address-announce string     AMQP address to announce (takes value of server-address-announce if empty while enabled)
       --amqp-exchange string             AMQP exchange (default "ttn.handler")
       --amqp-password string             AMQP password (default "guest")
       --amqp-username string             AMQP username (default "guest")
@@ -104,6 +105,7 @@ ttn gen-keypair generates a public/private keypair
       --http-address string              The IP address where the gRPC proxy should listen (default "0.0.0.0")
       --http-port int                    The port where the gRPC proxy should listen (default 8084)
       --mqtt-address string              MQTT host and port. Leave empty to disable MQTT
+      --mqtt-address-announce string     MQTT address to announce (takes value of server-address-announce if empty while enabled)
       --mqtt-password string             MQTT password
       --mqtt-username string             MQTT username
       --redis-address string             Redis host and port (default "localhost:6379")
