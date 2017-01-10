@@ -21,6 +21,9 @@ message GPSMetadata {
 message RxMetadata {
   string  gateway_id = 1;
 
+  // Indicates whether the gateway is trusted. Components that are able to verify gateway trust MUST do so and set this value accordingly
+  bool    gateway_trusted = 2;
+
   // Timestamp (uptime of LoRa module) in microseconds with rollover
   uint32  timestamp  = 11;
   // Time in Unix nanoseconds
@@ -62,6 +65,9 @@ message Status {
   uint32  timestamp      = 1;
   // Time in Unix nanoseconds
   int64   time           = 2;
+
+  // Indicates whether the gateway is trusted. Components that are able to verify gateway trust MUST do so and set this value accordingly
+  bool    gateway_trusted = 3;
 
   // Configuration and relatively static stuff
   // These values may be left out if they don't change
