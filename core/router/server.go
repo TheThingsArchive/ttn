@@ -45,12 +45,12 @@ func (r *routerRPC) gatewayFromMetadata(md metadata.MD) (gtw *gateway.Gateway, e
 		if r.router.TokenKeyProvider == nil {
 			return nil, errors.NewErrInternal("No token provider configured")
 		}
-		claims, err := claims.FromToken(r.router.TokenKeyProvider, token)
+		claims, err := claims.FromGatewayToken(r.router.TokenKeyProvider, token)
 		if err != nil {
-			authErr = errors.NewErrPermissionDenied(fmt.Sprintf("Gateway token invalid: %s", err.Error()))
+			authErr = errors.NewErrPermissionDenied(fmt.Sprintf("Gateway token invalid: %s", err))
 		} else {
-			if claims.Type != "gateway" || claims.Subject != gatewayID {
-				authErr = errors.NewErrPermissionDenied("Gateway token not consistent")
+			if claims.Subject != gatewayID {
+				authErr = errors.NewErrPermissionDenied(fmt.Sprintf("Token subject \"%s\" not consistent with gateway ID \"%s\"", claims.Subject, gatewayID))
 			} else {
 				authErr = nil
 				authenticated = true

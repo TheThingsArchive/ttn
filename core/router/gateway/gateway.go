@@ -33,7 +33,7 @@ type Gateway struct {
 	Schedule    Schedule
 	LastSeen    time.Time
 
-	mu            sync.RWMutex // Protect token and Authenticated
+	mu            sync.RWMutex // Protect token and authenticated
 	token         string
 	authenticated bool
 
@@ -90,7 +90,7 @@ func (g *Gateway) HandleUplink(uplink *pb_router.UplinkMessage) (err error) {
 		}
 	}
 
-	// Inject Authenticated
+	// Inject authenticated as GatewayTrusted
 	g.mu.RLock()
 	defer g.mu.RUnlock()
 	uplink.GatewayMetadata.GatewayTrusted = g.authenticated
