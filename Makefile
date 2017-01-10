@@ -4,7 +4,7 @@ SHELL = bash
 
 GIT_BRANCH = $(or $(CI_BUILD_REF_NAME) ,`git rev-parse --abbrev-ref HEAD 2>/dev/null`)
 GIT_COMMIT = $(or $(CI_BUILD_REF), `git rev-parse HEAD 2>/dev/null`)
-GIT_TAG = $(shell git describe --abbrev=0 --tags)
+GIT_TAG = $(shell git describe --abbrev=0 --tags 2>/dev/null)
 BUILD_DATE = $(or $(CI_BUILD_DATE), `date -u +%Y-%m-%dT%H:%M:%SZ`)
 GO_PATH = $(shell echo $(GOPATH) | awk -F':' '{print $$1}')
 PARENT_DIRECTORY= $(shell dirname $(PWD))
@@ -51,6 +51,7 @@ api/%.pb.go: api/%.proto
 	$(PROTOC)$<
 
 protodoc: $(PROTO_FILES)
+	protoc $(PROTOC_IMPORTS) --ttndoc_out=logtostderr=true,.lorawan.DevAddrManager=all:$(GO_SRC) `pwd`/api/protocol/lorawan/device_address.proto
 	protoc $(PROTOC_IMPORTS) --ttndoc_out=logtostderr=true,.handler.ApplicationManager=all:$(GO_SRC) `pwd`/api/handler/handler.proto
 	protoc $(PROTOC_IMPORTS) --ttndoc_out=logtostderr=true,.discovery.Discovery=all:$(GO_SRC) `pwd`/api/discovery/discovery.proto
 

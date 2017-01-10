@@ -1,3 +1,6 @@
+// Copyright © 2017 The Things Network
+// Use of this source code is governed by the MIT license that can be found in the LICENSE file.
+
 package errors
 
 import (
@@ -5,11 +8,10 @@ import (
 	"io"
 	"strings"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-
 	errs "github.com/pkg/errors"
 	"golang.org/x/net/context"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 )
 
 type ErrType string

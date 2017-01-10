@@ -567,6 +567,7 @@ var _Router_serviceDesc = grpc.ServiceDesc{
 
 type RouterManagerClient interface {
 	// Gateway owner or network operator requests Gateway status from Router Manager
+	// Deprecated: Use monitor API (NOC) instead of this
 	GatewayStatus(ctx context.Context, in *GatewayStatusRequest, opts ...grpc.CallOption) (*GatewayStatusResponse, error)
 	// Network operator requests Router status
 	GetStatus(ctx context.Context, in *StatusRequest, opts ...grpc.CallOption) (*Status, error)
@@ -602,6 +603,7 @@ func (c *routerManagerClient) GetStatus(ctx context.Context, in *StatusRequest, 
 
 type RouterManagerServer interface {
 	// Gateway owner or network operator requests Gateway status from Router Manager
+	// Deprecated: Use monitor API (NOC) instead of this
 	GatewayStatus(context.Context, *GatewayStatusRequest) (*GatewayStatusResponse, error)
 	// Network operator requests Router status
 	GetStatus(context.Context, *StatusRequest) (*Status, error)

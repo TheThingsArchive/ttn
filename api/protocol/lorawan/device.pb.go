@@ -79,7 +79,7 @@ type Device struct {
 	DisableFCntCheck bool `protobuf:"varint,11,opt,name=disable_f_cnt_check,json=disableFCntCheck,proto3" json:"disable_f_cnt_check,omitempty"`
 	// The Uses32BitFCnt option indicates that the device keeps track of full 32 bit frame counters. As only the 16 lsb are actually transmitted, the 16 msb will have to be inferred.
 	Uses32BitFCnt bool `protobuf:"varint,12,opt,name=uses32_bit_f_cnt,json=uses32BitFCnt,proto3" json:"uses32_bit_f_cnt,omitempty"`
-	// The ActivationContstraints are used to allocate a device address for a device.
+	// The ActivationContstraints are used to allocate a device address for a device (comma-separated).
 	// There are different prefixes for `otaa`, `abp`, `world`, `local`, `private`, `testing`.
 	ActivationConstraints string `protobuf:"bytes,13,opt,name=activation_constraints,json=activationConstraints,proto3" json:"activation_constraints,omitempty"`
 	// When the device was last seen (Unix nanoseconds)

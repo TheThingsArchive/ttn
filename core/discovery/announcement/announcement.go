@@ -1,3 +1,6 @@
+// Copyright © 2017 The Things Network
+// Use of this source code is governed by the MIT license that can be found in the LICENSE file.
+
 package announcement
 
 import (
@@ -132,6 +135,8 @@ type Announcement struct {
 	PublicKey      string `redis:"public_key"`
 	Certificate    string `redis:"certificate"`
 	APIAddress     string `redis:"api_address"`
+	MQTTAddress    string `redis:"mqtt_address"`
+	AMQPAddress    string `redis:"amqp_address"`
 	Metadata       []Metadata
 
 	CreatedAt time.Time `redis:"created_at"`
@@ -181,6 +186,8 @@ func (a Announcement) ToProto() *pb.Announcement {
 		PublicKey:      a.PublicKey,
 		Certificate:    a.Certificate,
 		ApiAddress:     a.APIAddress,
+		MqttAddress:    a.MQTTAddress,
+		AmqpAddress:    a.AMQPAddress,
 		Metadata:       metadata,
 	}
 }
@@ -202,6 +209,8 @@ func FromProto(a *pb.Announcement) Announcement {
 		PublicKey:      a.PublicKey,
 		Certificate:    a.Certificate,
 		APIAddress:     a.ApiAddress,
+		MQTTAddress:    a.MqttAddress,
+		AMQPAddress:    a.AmqpAddress,
 		Metadata:       metadata,
 	}
 }

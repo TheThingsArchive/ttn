@@ -1,4 +1,4 @@
-// Copyright © 2016 The Things Network
+// Copyright © 2017 The Things Network
 // Use of this source code is governed by the MIT license that can be found in the LICENSE file.
 
 syntax = "proto3";
@@ -70,6 +70,10 @@ message Announcement {
 
   // Contains the address where the HTTP API is exposed (if there is one)
   string api_address = 14;
+  // Contains the address where the MQTT API is exposed (if there is one)
+  string mqtt_address = 15;
+  // Contains the address where the AMQP API is exposed (if there is one)
+  string amqp_address = 16;
 
   // Metadata for this component
   repeated Metadata metadata = 22;

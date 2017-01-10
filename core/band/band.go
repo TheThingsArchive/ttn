@@ -1,3 +1,6 @@
+// Copyright © 2017 The Things Network
+// Use of this source code is governed by the MIT license that can be found in the LICENSE file.
+
 package band
 
 import (
@@ -60,9 +63,9 @@ func Get(region string) (frequencyPlan FrequencyPlan, err error) {
 	case pb_lorawan.Region_US_902_928.String():
 		frequencyPlan.Band, err = lora.GetConfig(lora.US_902_928, false, lorawan.DwellTime400ms)
 	case pb_lorawan.Region_CN_779_787.String():
-		err = errors.NewErrInternal("China 779-787 MHz band not supported")
+		frequencyPlan.Band, err = lora.GetConfig(lora.CN_779_787, false, lorawan.DwellTimeNoLimit)
 	case pb_lorawan.Region_EU_433.String():
-		err = errors.NewErrInternal("Europe 433 MHz band not supported")
+		frequencyPlan.Band, err = lora.GetConfig(lora.EU_433, false, lorawan.DwellTimeNoLimit)
 	case pb_lorawan.Region_AU_915_928.String():
 		frequencyPlan.Band, err = lora.GetConfig(lora.AU_915_928, false, lorawan.DwellTime400ms)
 	case pb_lorawan.Region_CN_470_510.String():
@@ -71,6 +74,18 @@ func Get(region string) (frequencyPlan FrequencyPlan, err error) {
 		frequencyPlan.Band, err = lora.GetConfig(lora.AS_923, false, lorawan.DwellTime400ms)
 	case pb_lorawan.Region_KR_920_923.String():
 		frequencyPlan.Band, err = lora.GetConfig(lora.KR_920_923, false, lorawan.DwellTimeNoLimit)
+		// TTN frequency plan includes extra channels next to the default channels:
+		frequencyPlan.UplinkChannels = []lora.Channel{
+			lora.Channel{Frequency: 922100000, DataRates: []int{0, 1, 2, 3, 4, 5}},
+			lora.Channel{Frequency: 922300000, DataRates: []int{0, 1, 2, 3, 4, 5}},
+			lora.Channel{Frequency: 922500000, DataRates: []int{0, 1, 2, 3, 4, 5}},
+			lora.Channel{Frequency: 922700000, DataRates: []int{0, 1, 2, 3, 4, 5}},
+			lora.Channel{Frequency: 922900000, DataRates: []int{0, 1, 2, 3, 4, 5}},
+			lora.Channel{Frequency: 923100000, DataRates: []int{0, 1, 2, 3, 4, 5}},
+			lora.Channel{Frequency: 923300000, DataRates: []int{0, 1, 2, 3, 4, 5}},
+		}
+		frequencyPlan.DownlinkChannels = frequencyPlan.UplinkChannels
+		frequencyPlan.CFList = &lorawan.CFList{922700000, 922900000, 923100000, 923300000, 0}
 	default:
 		err = errors.NewErrInvalidArgument("Frequency Band", "unknown")
 	}

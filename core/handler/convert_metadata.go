@@ -1,4 +1,4 @@
-// Copyright © 2016 The Things Network
+// Copyright © 2017 The Things Network
 // Use of this source code is governed by the MIT license that can be found in the LICENSE file.
 
 package handler
@@ -32,13 +32,14 @@ func (h *handler) ConvertMetadata(ctx log.Interface, ttnUp *pb_broker.Deduplicat
 		}
 
 		gatewayMetadata := types.GatewayMetadata{
-			GtwID:     in.GatewayId,
-			Timestamp: in.Timestamp,
-			Time:      types.BuildTime(in.Time),
-			Channel:   in.Channel,
-			RFChain:   in.RfChain,
-			RSSI:      in.Rssi,
-			SNR:       in.Snr,
+			GtwID:      in.GatewayId,
+			GtwTrusted: in.GatewayTrusted,
+			Timestamp:  in.Timestamp,
+			Time:       types.BuildTime(in.Time),
+			Channel:    in.Channel,
+			RFChain:    in.RfChain,
+			RSSI:       in.Rssi,
+			SNR:        in.Snr,
 		}
 
 		if gps := in.GetGps(); gps != nil {

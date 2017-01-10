@@ -1,4 +1,4 @@
-// Copyright © 2016 The Things Network
+// Copyright © 2017 The Things Network
 // Use of this source code is governed by the MIT license that can be found in the LICENSE file.
 
 syntax = "proto3";
@@ -14,10 +14,15 @@ package broker;
 option go_package = "github.com/TheThingsNetwork/ttn/api/broker";
 
 message DownlinkOption {
+  // String that identifies this downlink option in the Router
   string  identifier  = 1;
+  // ID of the gateway where this downlink should be sent
   string  gateway_id  = 2;
-  uint32  score       = 3; // lower is better, 0 is best
-  int64   deadline    = 4; // deadline time at server represented as the number of nanoseconds elapsed since January 1, 1970 UTC
+  // Score of this downlink option. Lower is better.
+  uint32  score       = 3;
+  // deadline time at server represented as Unix nanoseconds
+  int64   deadline    = 4;
+
   protocol.TxConfiguration protocol_config = 5;
   gateway.TxConfiguration  gateway_config = 6;
 }
@@ -26,11 +31,14 @@ message DownlinkOption {
 message UplinkMessage {
   bytes                    payload            = 1;
   protocol.Message         message            = 2;
+
   // NOTE: For LoRaWAN, the Router doesn't know the DevEUI/ID and AppEUI/ID
+
   bytes                    dev_eui            = 11 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.DevEUI"];
   bytes                    app_eui            = 12 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.AppEUI"];
   string                   app_id             = 13;
   string                   dev_id             = 14;
+
   protocol.RxMetadata      protocol_metadata  = 21;
   gateway.RxMetadata       gateway_metadata   = 22;
   repeated DownlinkOption  downlink_options   = 31;
@@ -40,17 +48,20 @@ message UplinkMessage {
 message DownlinkMessage {
   bytes             payload          = 1;
   protocol.Message  message          = 2;
+
   bytes             dev_eui          = 11 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.DevEUI"];
   bytes             app_eui          = 12 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.AppEUI"];
   string            app_id           = 13;
   string            dev_id           = 14;
+
   DownlinkOption    downlink_option  = 21;
 }
 
-//sent to the Router, used as Template
+// sent to the Router, used as Template
 message DeviceActivationResponse {
   bytes             payload          = 1;
   protocol.Message  message          = 2;
+
   DownlinkOption    downlink_option  = 11;
 }
 
@@ -58,13 +69,17 @@ message DeviceActivationResponse {
 message DeduplicatedUplinkMessage {
   bytes                       payload            = 1;
   protocol.Message            message            = 2;
+
   bytes                       dev_eui            = 11 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.DevEUI"];
   bytes                       app_eui            = 12 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.AppEUI"];
   string                      app_id             = 13;
   string                      dev_id             = 14;
+
   protocol.RxMetadata         protocol_metadata  = 21;
   repeated gateway.RxMetadata gateway_metadata   = 22;
+
   int64                       server_time        = 23;
+
   DownlinkMessage             response_template  = 31;
 }
 
@@ -72,8 +87,10 @@ message DeduplicatedUplinkMessage {
 message DeviceActivationRequest {
   bytes                        payload              = 1;
   protocol.Message             message              = 2;
+
   bytes                        dev_eui              = 11 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.DevEUI"];
   bytes                        app_eui              = 12 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.AppEUI"];
+
   protocol.RxMetadata          protocol_metadata    = 21;
   gateway.RxMetadata           gateway_metadata     = 22;
   protocol.ActivationMetadata  activation_metadata  = 23;
@@ -84,20 +101,25 @@ message DeviceActivationRequest {
 message DeduplicatedDeviceActivationRequest {
   bytes                        payload              = 1;
   protocol.Message             message              = 2;
+
   bytes                        dev_eui              = 11 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.DevEUI"];
   bytes                        app_eui              = 12 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.AppEUI"];
   string                       app_id               = 13;
   string                       dev_id               = 14;
+
   protocol.RxMetadata          protocol_metadata    = 21;
   repeated gateway.RxMetadata  gateway_metadata     = 22;
   protocol.ActivationMetadata  activation_metadata  = 23;
+
   int64                        server_time          = 24;
+
   DeviceActivationResponse     response_template    = 31;
 }
 
 message ActivationChallengeRequest {
   bytes                        payload              = 1;
   protocol.Message             message              = 2;
+
   bytes                        dev_eui              = 11 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.DevEUI"];
   bytes                        app_eui              = 12 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.AppEUI"];
   string                       app_id               = 13;

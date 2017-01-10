@@ -158,10 +158,14 @@ func (MType) EnumDescriptor() ([]byte, []int) { return fileDescriptorLorawan, []
 
 type Metadata struct {
 	Modulation Modulation `protobuf:"varint,11,opt,name=modulation,proto3,enum=lorawan.Modulation" json:"modulation,omitempty"`
-	DataRate   string     `protobuf:"bytes,12,opt,name=data_rate,json=dataRate,proto3" json:"data_rate,omitempty"`
-	BitRate    uint32     `protobuf:"varint,13,opt,name=bit_rate,json=bitRate,proto3" json:"bit_rate,omitempty"`
-	CodingRate string     `protobuf:"bytes,14,opt,name=coding_rate,json=codingRate,proto3" json:"coding_rate,omitempty"`
-	FCnt       uint32     `protobuf:"varint,15,opt,name=f_cnt,json=fCnt,proto3" json:"f_cnt,omitempty"`
+	// LoRa data rate - SF{spreadingfactor}BW{bandwidth}
+	DataRate string `protobuf:"bytes,12,opt,name=data_rate,json=dataRate,proto3" json:"data_rate,omitempty"`
+	// FSK bit rate in bit/s
+	BitRate uint32 `protobuf:"varint,13,opt,name=bit_rate,json=bitRate,proto3" json:"bit_rate,omitempty"`
+	// LoRa coding rate
+	CodingRate string `protobuf:"bytes,14,opt,name=coding_rate,json=codingRate,proto3" json:"coding_rate,omitempty"`
+	// Store the full 32 bit FCnt (deprecated; do not use)
+	FCnt uint32 `protobuf:"varint,15,opt,name=f_cnt,json=fCnt,proto3" json:"f_cnt,omitempty"`
 }
 
 func (m *Metadata) Reset()                    { *m = Metadata{} }
@@ -171,10 +175,14 @@ func (*Metadata) Descriptor() ([]byte, []int) { return fileDescriptorLorawan, []
 
 type TxConfiguration struct {
 	Modulation Modulation `protobuf:"varint,11,opt,name=modulation,proto3,enum=lorawan.Modulation" json:"modulation,omitempty"`
-	DataRate   string     `protobuf:"bytes,12,opt,name=data_rate,json=dataRate,proto3" json:"data_rate,omitempty"`
-	BitRate    uint32     `protobuf:"varint,13,opt,name=bit_rate,json=bitRate,proto3" json:"bit_rate,omitempty"`
-	CodingRate string     `protobuf:"bytes,14,opt,name=coding_rate,json=codingRate,proto3" json:"coding_rate,omitempty"`
-	FCnt       uint32     `protobuf:"varint,15,opt,name=f_cnt,json=fCnt,proto3" json:"f_cnt,omitempty"`
+	// LoRa data rate - SF{spreadingfactor}BW{bandwidth}
+	DataRate string `protobuf:"bytes,12,opt,name=data_rate,json=dataRate,proto3" json:"data_rate,omitempty"`
+	// FSK bit rate in bit/s
+	BitRate uint32 `protobuf:"varint,13,opt,name=bit_rate,json=bitRate,proto3" json:"bit_rate,omitempty"`
+	// LoRa coding rate
+	CodingRate string `protobuf:"bytes,14,opt,name=coding_rate,json=codingRate,proto3" json:"coding_rate,omitempty"`
+	// Store the full 32 bit FCnt (deprecated; do not use)
+	FCnt uint32 `protobuf:"varint,15,opt,name=f_cnt,json=fCnt,proto3" json:"f_cnt,omitempty"`
 }
 
 func (m *TxConfiguration) Reset()                    { *m = TxConfiguration{} }

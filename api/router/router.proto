@@ -1,4 +1,4 @@
-// Copyright © 2016 The Things Network
+// Copyright © 2017 The Things Network
 // Use of this source code is governed by the MIT license that can be found in the LICENSE file.
 
 syntax = "proto3";
@@ -98,6 +98,7 @@ message Status {
 // The RouterManager service provides configuration and monitoring functionality
 service RouterManager {
   // Gateway owner or network operator requests Gateway status from Router Manager
+  // Deprecated: Use monitor API (NOC) instead of this
   rpc GatewayStatus(GatewayStatusRequest) returns (GatewayStatusResponse);
 
   // Network operator requests Router status

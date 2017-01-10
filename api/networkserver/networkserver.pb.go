@@ -46,8 +46,10 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 type DevicesRequest struct {
+	// Device address from the uplink message
 	DevAddr *github_com_TheThingsNetwork_ttn_core_types.DevAddr `protobuf:"bytes,1,opt,name=dev_addr,json=devAddr,proto3,customtype=github.com/TheThingsNetwork/ttn/core/types.DevAddr" json:"dev_addr,omitempty"`
-	FCnt    uint32                                              `protobuf:"varint,2,opt,name=f_cnt,json=fCnt,proto3" json:"f_cnt,omitempty"`
+	// Frame counter from the uplink message
+	FCnt uint32 `protobuf:"varint,2,opt,name=f_cnt,json=fCnt,proto3" json:"f_cnt,omitempty"`
 }
 
 func (m *DevicesRequest) Reset()                    { *m = DevicesRequest{} }
@@ -155,15 +157,15 @@ const _ = grpc.SupportPackageIsVersion4
 // Client API for NetworkServer service
 
 type NetworkServerClient interface {
-	// Broker requests devices with DevAddr for MIC check
+	// Broker requests devices with DevAddr and matching FCnt (or disabled FCnt check)
 	GetDevices(ctx context.Context, in *DevicesRequest, opts ...grpc.CallOption) (*DevicesResponse, error)
 	// Broker requests device activation "template" from Network Server
 	PrepareActivation(ctx context.Context, in *broker.DeduplicatedDeviceActivationRequest, opts ...grpc.CallOption) (*broker.DeduplicatedDeviceActivationRequest, error)
-	// Broker confirms device activation
+	// Broker confirms device activation (after response from Handler)
 	Activate(ctx context.Context, in *handler.DeviceActivationResponse, opts ...grpc.CallOption) (*handler.DeviceActivationResponse, error)
 	// Broker informs Network Server about Uplink
 	Uplink(ctx context.Context, in *broker.DeduplicatedUplinkMessage, opts ...grpc.CallOption) (*broker.DeduplicatedUplinkMessage, error)
-	// Broker informs Network Server about Downlink, NetworkServer should sign, add MIC, ...
+	// Broker informs Network Server about Downlink, NetworkServer may add MAC commands and re-set MIC
 	Downlink(ctx context.Context, in *broker.DownlinkMessage, opts ...grpc.CallOption) (*broker.DownlinkMessage, error)
 }
 
@@ -223,15 +225,15 @@ func (c *networkServerClient) Downlink(ctx context.Context, in *broker.DownlinkM
 // Server API for NetworkServer service
 
 type NetworkServerServer interface {
-	// Broker requests devices with DevAddr for MIC check
+	// Broker requests devices with DevAddr and matching FCnt (or disabled FCnt check)
 	GetDevices(context.Context, *DevicesRequest) (*DevicesResponse, error)
 	// Broker requests device activation "template" from Network Server
 	PrepareActivation(context.Context, *broker.DeduplicatedDeviceActivationRequest) (*broker.DeduplicatedDeviceActivationRequest, error)
-	// Broker confirms device activation
+	// Broker confirms device activation (after response from Handler)
 	Activate(context.Context, *handler.DeviceActivationResponse) (*handler.DeviceActivationResponse, error)
 	// Broker informs Network Server about Uplink
 	Uplink(context.Context, *broker.DeduplicatedUplinkMessage) (*broker.DeduplicatedUplinkMessage, error)
-	// Broker informs Network Server about Downlink, NetworkServer should sign, add MIC, ...
+	// Broker informs Network Server about Downlink, NetworkServer may add MAC commands and re-set MIC
 	Downlink(context.Context, *broker.DownlinkMessage) (*broker.DownlinkMessage, error)
 }
 
