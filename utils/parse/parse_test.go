@@ -32,4 +32,8 @@ func TestPort(t *testing.T) {
 	p, err = Port("127.0.0.1:1234")
 	a.So(p, ShouldEqual, 1234)
 	a.So(err, ShouldBeNil)
+
+	p, err = Port("user:pass@host:1234")
+	a.So(p, ShouldEqual, 1234)
+	a.So(err, ShouldBeNil)
 }
