@@ -4,6 +4,7 @@
 package api
 
 import (
+	"fmt"
 	"reflect"
 	"regexp"
 
@@ -38,7 +39,7 @@ func NotEmptyAndValidID(id string, argument string) error {
 		return errors.NewErrInvalidArgument(argument, "can not be empty")
 	}
 	if !ValidID(id) {
-		return errors.NewErrInvalidArgument(argument, "has wrong format "+id)
+		return errors.NewErrInvalidArgument(argument, fmt.Sprintf("has wrong format (got '%s' want '%s')", id, idRegexp.String()))
 	}
 	return nil
 }
