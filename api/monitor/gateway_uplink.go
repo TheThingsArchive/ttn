@@ -20,7 +20,7 @@ func (cl *gatewayClient) initUplink() {
 
 func (cl *gatewayClient) monitorUplink() {
 	var retries int
-newStream:
+
 	for {
 		ctx, cancel := context.WithCancel(cl.Context())
 		cl.uplink.Lock()
@@ -39,39 +39,43 @@ newStream:
 		retries = 0
 		cl.Ctx.Debug("Opened new monitor uplink stream")
 
-		// The actual stream
-		go func() {
-			for {
-				select {
-				case <-ctx.Done():
-					return
-				case uplink, ok := <-cl.uplink.ch:
-					if ok {
-						stream.Send(uplink)
-						cl.Ctx.Debug("Sent uplink to monitor")
-					}
-				}
-			}
-		}()
+		var tokenChanged bool
 
-		msg := new(empty.Empty)
-		for {
-			if err := stream.RecvMsg(&msg); err != nil {
-				cl.Ctx.WithError(errors.FromGRPCError(err)).Warn("Received error on monitor uplink stream, closing...")
-				stream.CloseSend()
+		go func() {
+			if err := stream.RecvMsg(&empty.Empty{}); err != nil {
+				if !tokenChanged {
+					cl.Ctx.WithError(errors.FromGRPCError(err)).Warn("Received error on monitor uplink stream, closing...")
+					stream.CloseSend()
+				}
 				cl.Ctx.Debug("Closed monitor uplink stream")
 
 				cl.uplink.Lock()
 				cl.uplink.cancel()
 				cl.uplink.cancel = nil
 				cl.uplink.Unlock()
+			}
+		}()
 
-				retries++
-				time.Sleep(backoff.Backoff(retries))
-
-				continue newStream
+		for {
+			select {
+			case <-ctx.Done():
+				break
+			case <-cl.TokenChanged():
+				cl.Ctx.Debug("Restarting uplink stream with new token")
+				tokenChanged = true
+				stream.CloseSend()
+				break
+			case uplink, ok := <-cl.uplink.ch:
+				if ok {
+					if err := stream.Send(uplink); err == nil {
+						cl.Ctx.Debug("Sent uplink to monitor")
+					}
+				}
 			}
 		}
+
+		retries++
+		time.Sleep(backoff.Backoff(retries))
 	}
 }
 

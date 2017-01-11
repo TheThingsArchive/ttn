@@ -20,7 +20,7 @@ func (cl *gatewayClient) initDownlink() {
 
 func (cl *gatewayClient) monitorDownlink() {
 	var retries int
-newStream:
+
 	for {
 		ctx, cancel := context.WithCancel(cl.Context())
 		cl.downlink.Lock()
@@ -39,39 +39,43 @@ newStream:
 		retries = 0
 		cl.Ctx.Debug("Opened new monitor downlink stream")
 
-		// The actual stream
-		go func() {
-			for {
-				select {
-				case <-ctx.Done():
-					return
-				case downlink, ok := <-cl.downlink.ch:
-					if ok {
-						stream.Send(downlink)
-						cl.Ctx.Debug("Sent downlink to monitor")
-					}
-				}
-			}
-		}()
+		var tokenChanged bool
 
-		msg := new(empty.Empty)
-		for {
-			if err := stream.RecvMsg(&msg); err != nil {
-				cl.Ctx.WithError(errors.FromGRPCError(err)).Warn("Received error on monitor downlink stream, closing...")
-				stream.CloseSend()
+		go func() {
+			if err := stream.RecvMsg(&empty.Empty{}); err != nil {
+				if !tokenChanged {
+					cl.Ctx.WithError(errors.FromGRPCError(err)).Warn("Received error on monitor downlink stream, closing...")
+					stream.CloseSend()
+				}
 				cl.Ctx.Debug("Closed monitor downlink stream")
 
 				cl.downlink.Lock()
 				cl.downlink.cancel()
 				cl.downlink.cancel = nil
 				cl.downlink.Unlock()
+			}
+		}()
 
-				retries++
-				time.Sleep(backoff.Backoff(retries))
-
-				continue newStream
+		for {
+			select {
+			case <-ctx.Done():
+				break
+			case <-cl.TokenChanged():
+				cl.Ctx.Debug("Restarting downlink stream with new token")
+				tokenChanged = true
+				stream.CloseSend()
+				break
+			case downlink, ok := <-cl.downlink.ch:
+				if ok {
+					if err := stream.Send(downlink); err == nil {
+						cl.Ctx.Debug("Sent downlink to monitor")
+					}
+				}
 			}
 		}
+
+		retries++
+		time.Sleep(backoff.Backoff(retries))
 	}
 }
 
