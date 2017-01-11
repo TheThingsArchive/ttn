@@ -19,6 +19,7 @@ type RouterClientForGateway interface {
 	SetLogger(log.Interface)
 
 	SetToken(token string)
+	TokenChange() <-chan struct{}
 
 	GatewayStatus() (Router_GatewayStatusClient, error)
 	Uplink() (Router_UplinkClient, error)
@@ -30,23 +31,25 @@ type RouterClientForGateway interface {
 func NewRouterClientForGateway(client RouterClient, gatewayID, token string) RouterClientForGateway {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &routerClientForGateway{
-		ctx:       log.Get().WithField("GatewayID", gatewayID),
-		client:    client,
-		gatewayID: gatewayID,
-		token:     token,
-		bgCtx:     ctx,
-		cancel:    cancel,
+		ctx:         log.Get().WithField("GatewayID", gatewayID),
+		client:      client,
+		gatewayID:   gatewayID,
+		token:       token,
+		tokenChange: make(chan struct{}),
+		bgCtx:       ctx,
+		cancel:      cancel,
 	}
 }
 
 type routerClientForGateway struct {
-	ctx       log.Interface
-	client    RouterClient
-	gatewayID string
-	token     string
-	bgCtx     context.Context
-	cancel    context.CancelFunc
-	mu        sync.RWMutex
+	ctx         log.Interface
+	client      RouterClient
+	gatewayID   string
+	token       string
+	tokenChange chan struct{}
+	bgCtx       context.Context
+	cancel      context.CancelFunc
+	mu          sync.RWMutex
 }
 
 func (c *routerClientForGateway) Close() {
@@ -75,6 +78,14 @@ func (c *routerClientForGateway) SetToken(token string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.token = token
+	close(c.tokenChange)
+	c.tokenChange = make(chan struct{})
+}
+
+func (c *routerClientForGateway) TokenChange() <-chan struct{} {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.tokenChange
 }
 
 func (c *routerClientForGateway) GatewayStatus() (Router_GatewayStatusClient, error) {
