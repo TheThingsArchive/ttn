@@ -7,6 +7,7 @@ import (
 	"time"
 
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
+	"github.com/TheThingsNetwork/ttn/api/trace"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/apex/log"
 )
@@ -36,6 +37,8 @@ func (h *handler) HandleUplink(uplink *pb_broker.DeduplicatedUplinkMessage) (err
 	}()
 	h.status.uplink.Mark(1)
 
+	uplink.Trace = uplink.Trace.WithEvent(trace.ReceiveEvent)
+
 	// Build AppUplink
 	appUplink := &types.UplinkMessage{
 		AppID: appID,
@@ -50,6 +53,7 @@ func (h *handler) HandleUplink(uplink *pb_broker.DeduplicatedUplinkMessage) (err
 	}
 
 	ctx.WithField("NumProcessors", len(processors)).Debug("Running Uplink Processors")
+	uplink.Trace = uplink.Trace.WithEvent("process uplink")
 
 	// Run Uplink Processors
 	for _, processor := range processors {
@@ -87,6 +91,7 @@ func (h *handler) HandleUplink(uplink *pb_broker.DeduplicatedUplinkMessage) (err
 
 	// Prepare Downlink
 	downlink := uplink.ResponseTemplate
+	downlink.Trace = uplink.Trace.WithEvent("prepare downlink")
 	appDownlink.AppID = uplink.AppId
 	appDownlink.DevID = uplink.DevId
 

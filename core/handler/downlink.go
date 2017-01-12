@@ -7,6 +7,7 @@ import (
 	"time"
 
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
+	"github.com/TheThingsNetwork/ttn/api/trace"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/apex/log"
 )
@@ -82,6 +83,7 @@ func (h *handler) HandleDownlink(appDownlink *types.DownlinkMessage, downlink *p
 	}
 
 	ctx.WithField("NumProcessors", len(processors)).Debug("Running Downlink Processors")
+	downlink.Trace = downlink.Trace.WithEvent("process downlink")
 
 	// Run Processors
 	for _, processor := range processors {
@@ -97,6 +99,8 @@ func (h *handler) HandleDownlink(appDownlink *types.DownlinkMessage, downlink *p
 	h.status.downlink.Mark(1)
 
 	ctx.Debug("Send Downlink")
+
+	downlink.Trace = downlink.Trace.WithEvent(trace.ForwardEvent, "broker", h.ttnBrokerID)
 
 	h.downlink <- downlink
 
