@@ -14,6 +14,7 @@ import (
 	pb_protocol "github.com/TheThingsNetwork/ttn/api/protocol"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	pb "github.com/TheThingsNetwork/ttn/api/router"
+	"github.com/TheThingsNetwork/ttn/api/trace"
 	"github.com/TheThingsNetwork/ttn/core/band"
 	"github.com/TheThingsNetwork/ttn/core/router/gateway"
 	"github.com/TheThingsNetwork/ttn/core/types"
@@ -35,7 +36,7 @@ func (r *router) SubscribeDownlink(gatewayID string, subscriptionID string) (<-c
 			for message := range fromSchedule {
 				gateway.Utilization.AddTx(message)
 				ctx.Debug("Send downlink")
-				message.Trace = message.Trace.WithEvent("send downlink", nil)
+				message.Trace = message.Trace.WithEvent(trace.SendEvent)
 				toGateway <- message
 			}
 			ctx.Debug("Deactivate downlink")
@@ -54,7 +55,7 @@ func (r *router) UnsubscribeDownlink(gatewayID string, subscriptionID string) er
 func (r *router) HandleDownlink(downlink *pb_broker.DownlinkMessage) error {
 	r.status.downlink.Mark(1)
 
-	downlink.Trace = downlink.Trace.WithEvent("receive downlink", nil)
+	downlink.Trace = downlink.Trace.WithEvent(trace.ReceiveEvent)
 
 	option := downlink.DownlinkOption
 

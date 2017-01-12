@@ -1,16 +1,13 @@
-// Copyright © 2016 The Things Network
+// Copyright © 2017 The Things Network
 // Use of this source code is governed by the MIT license that can be found in the LICENSE file.
 
 package trace
 
 import (
-	"encoding/base64"
 	"fmt"
 	"sort"
 	"strings"
 	"time"
-
-	"github.com/TheThingsNetwork/ttn/utils/random"
 )
 
 var _serviceID = ""
@@ -23,17 +20,29 @@ func SetComponent(serviceName, serviceID string) {
 }
 
 // WithEvent returns a new Trace for the event and its metadata, with the original trace as its parent
-func (m *Trace) WithEvent(event string, metadata map[string]string) *Trace {
+func (m *Trace) WithEvent(event string, keyvalue ...interface{}) *Trace {
 	t := &Trace{
-		Id:          base64.RawURLEncoding.EncodeToString(random.Bytes(24)), // Generate a random ID by default
 		ServiceName: _serviceName,
 		ServiceId:   _serviceID,
 		Time:        time.Now().UnixNano(),
 		Event:       event,
-		Metadata:    metadata,
 	}
 	if m != nil {
 		t.Parents = append(t.Parents, m)
+	}
+	if len(keyvalue) > 0 {
+		if len(keyvalue)%2 == 1 {
+			panic("Got an odd number of key-value pairs")
+		}
+		t.Metadata = make(map[string]string)
+		var k string
+		for i, s := range keyvalue {
+			if i%2 == 0 {
+				k = fmt.Sprint(s) // it's a key
+				continue
+			}
+			t.Metadata[k] = fmt.Sprint(s) // it's a value
+		}
 	}
 	return t
 }

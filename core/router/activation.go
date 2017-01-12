@@ -12,6 +12,7 @@ import (
 	pb_protocol "github.com/TheThingsNetwork/ttn/api/protocol"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	pb "github.com/TheThingsNetwork/ttn/api/router"
+	"github.com/TheThingsNetwork/ttn/api/trace"
 	"github.com/TheThingsNetwork/ttn/core/band"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/apex/log"
@@ -26,6 +27,7 @@ func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivat
 	start := time.Now()
 	defer func() {
 		if err != nil {
+			activation.Trace = activation.Trace.WithEvent(trace.DropEvent, "error", err)
 			ctx.WithError(err).Warn("Could not handle activation")
 		} else {
 			ctx.WithField("Duration", time.Now().Sub(start)).Info("Handled activation")
@@ -33,7 +35,7 @@ func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivat
 	}()
 	r.status.activations.Mark(1)
 
-	activation.Trace = activation.Trace.WithEvent("receive activation", nil)
+	activation.Trace = activation.Trace.WithEvent(trace.ReceiveEvent)
 
 	gateway := r.getGateway(gatewayID)
 	gateway.LastSeen = time.Now()
@@ -54,9 +56,9 @@ func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivat
 	}
 
 	downlinkOptions := r.buildDownlinkOptions(uplink, true, gateway)
-	activation.Trace = uplink.Trace.WithEvent("built downlink options", map[string]string{
-		"downlink options": fmt.Sprint(len(downlinkOptions)),
-	})
+	activation.Trace = uplink.Trace.WithEvent("build downlink",
+		"options", len(downlinkOptions),
+	)
 
 	// Find Broker
 	brokers, err := r.Discovery.GetAll("broker")
@@ -108,9 +110,9 @@ func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivat
 	}
 
 	ctx = ctx.WithField("NumBrokers", len(brokers))
-	request.Trace = request.Trace.WithEvent("forward to brokers", map[string]string{
-		"brokers": fmt.Sprint(len(brokers)),
-	})
+	request.Trace = request.Trace.WithEvent(trace.ForwardEvent,
+		"brokers", len(brokers),
+	)
 
 	// Forward to all brokers and collect responses
 	var wg sync.WaitGroup
