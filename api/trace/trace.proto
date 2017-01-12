@@ -7,10 +7,26 @@ option go_package = "github.com/TheThingsNetwork/ttn/api/trace";
 
 package trace;
 
+// Trace information
 message Trace {
-  string              identifier = 1;
-  int64               time       = 2;
-  string              event      = 3;
-  map<string, string> metadata   = 4;
-  repeated Trace      parents    = 11;
+  // Generated ID
+  string id = 1;
+
+  // Time in Unix nanoseconds
+  int64 time = 2;
+
+  // The ID of the component
+  string service_id = 3;
+
+  // The name of the component (router/broker/handler)
+  string service_name = 4;
+
+  // Short event name
+  string event = 5;
+
+  // metadata for the event
+  map<string, string> metadata = 6;
+
+  // Parents of the event
+  repeated Trace parents = 11;
 }

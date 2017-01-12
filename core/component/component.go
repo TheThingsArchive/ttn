@@ -82,7 +82,7 @@ func New(ctx log.Interface, serviceName string, announcedAddress string) (*Compo
 		AccessToken: viper.GetString("auth-token"),
 	}
 
-	trace.SetIdentifierPrefix(fmt.Sprintf("%s %s ", component.Identity.ServiceName, component.Identity.Id))
+	trace.SetComponent(component.Identity.ServiceName, component.Identity.Id)
 
 	if err := component.InitAuth(); err != nil {
 		return nil, err

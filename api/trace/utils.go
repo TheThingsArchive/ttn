@@ -10,25 +10,24 @@ import (
 	"github.com/TheThingsNetwork/ttn/utils/random"
 )
 
-var identifierPrefix = ""
+var _serviceID = ""
+var _serviceName = ""
 
-// SetIdentifierPrefix sets the prefix that should be included in generated Trace identifiers
-func SetIdentifierPrefix(prefix string) {
-	identifierPrefix = prefix
-}
-
-func getIdentifier() string {
-	rnd := base64.RawURLEncoding.EncodeToString(random.Bytes(24))
-	return identifierPrefix + rnd
+// SetComponent sets the component information
+func SetComponent(serviceName, serviceID string) {
+	_serviceName = serviceName
+	_serviceID = serviceID
 }
 
 // WithEvent returns a new Trace for the event and its metadata, with the original trace as its parent
 func (m *Trace) WithEvent(event string, metadata map[string]string) *Trace {
 	t := &Trace{
-		Identifier: getIdentifier(),
-		Time:       time.Now().UnixNano(),
-		Event:      event,
-		Metadata:   metadata,
+		Id:          base64.RawURLEncoding.EncodeToString(random.Bytes(24)), // Generate a random ID by default
+		ServiceName: _serviceName,
+		ServiceId:   _serviceID,
+		Time:        time.Now().UnixNano(),
+		Event:       event,
+		Metadata:    metadata,
 	}
 	if m != nil {
 		t.Parents = append(t.Parents, m)
