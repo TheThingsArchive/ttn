@@ -12,8 +12,8 @@ import (
 
 	pb "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
-	"github.com/TheThingsNetwork/ttn/api/gateway"
 	pb_handler "github.com/TheThingsNetwork/ttn/api/handler"
+	"github.com/TheThingsNetwork/ttn/api/trace"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/apex/log"
 	"github.com/brocaar/lorawan"
@@ -34,54 +34,59 @@ func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (res *
 		"DevEUI":    *activation.DevEui,
 	})
 	start := time.Now()
+	deduplicatedActivationRequest := new(pb.DeduplicatedDeviceActivationRequest)
+	deduplicatedActivationRequest.Trace = activation.Trace
+	deduplicatedActivationRequest.ServerTime = start.UnixNano()
+
 	defer func() {
 		if err != nil {
+			deduplicatedActivationRequest.Trace = deduplicatedActivationRequest.Trace.WithEvent(trace.DropEvent, "error", err)
 			ctx.WithError(err).Warn("Could not handle activation")
 		} else {
 			ctx.WithField("Duration", time.Now().Sub(start)).Info("Handled activation")
 		}
 	}()
 
-	time := time.Now()
-
 	b.status.activations.Mark(1)
+
+	deduplicatedActivationRequest.Trace = deduplicatedActivationRequest.Trace.WithEvent(trace.ReceiveEvent)
 
 	// De-duplicate uplink messages
 	duplicates := b.deduplicateActivation(activation)
 	if len(duplicates) == 0 {
 		return nil, errDuplicateActivation
 	}
+	ctx = ctx.WithField("Duplicates", len(duplicates))
 
 	b.status.activationsUnique.Mark(1)
 
-	base := duplicates[0]
+	deduplicatedActivationRequest.Payload = duplicates[0].Payload
+	deduplicatedActivationRequest.DevEui = duplicates[0].DevEui
+	deduplicatedActivationRequest.AppEui = duplicates[0].AppEui
+	deduplicatedActivationRequest.ProtocolMetadata = duplicates[0].ProtocolMetadata
+	deduplicatedActivationRequest.ActivationMetadata = duplicates[0].ActivationMetadata
+	deduplicatedActivationRequest.Trace = deduplicatedActivationRequest.Trace.WithEvent(trace.DeduplicateEvent,
+		"duplicates", len(duplicates),
+	)
+	for _, duplicate := range duplicates {
+		if duplicate == activation {
+			continue
+		}
+		deduplicatedActivationRequest.Trace.Parents = append(deduplicatedActivationRequest.Trace.Parents, duplicate.Trace)
+	}
 
 	// Collect GatewayMetadata and DownlinkOptions
-	var gatewayMetadata []*gateway.RxMetadata
 	var downlinkOptions []*pb.DownlinkOption
-	var deviceActivationResponse *pb.DeviceActivationResponse
 	for _, duplicate := range duplicates {
-		gatewayMetadata = append(gatewayMetadata, duplicate.GatewayMetadata)
+		deduplicatedActivationRequest.GatewayMetadata = append(deduplicatedActivationRequest.GatewayMetadata, duplicate.GatewayMetadata)
 		downlinkOptions = append(downlinkOptions, duplicate.DownlinkOptions...)
 	}
 
 	// Select best DownlinkOption
 	if len(downlinkOptions) > 0 {
-		deviceActivationResponse = &pb.DeviceActivationResponse{
+		deduplicatedActivationRequest.ResponseTemplate = &pb.DeviceActivationResponse{
 			DownlinkOption: selectBestDownlink(downlinkOptions),
 		}
-	}
-
-	// Build Uplink
-	deduplicatedActivationRequest := &pb.DeduplicatedDeviceActivationRequest{
-		Payload:            base.Payload,
-		DevEui:             base.DevEui,
-		AppEui:             base.AppEui,
-		ProtocolMetadata:   base.ProtocolMetadata,
-		GatewayMetadata:    gatewayMetadata,
-		ActivationMetadata: base.ActivationMetadata,
-		ServerTime:         time.UnixNano(),
-		ResponseTemplate:   deviceActivationResponse,
 	}
 
 	// Send Activate to NS
@@ -190,20 +195,29 @@ func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (res *
 	}
 
 	ctx.WithField("HandlerID", joinHandler.Id).Debug("Forward Activation")
+	deduplicatedActivationRequest.Trace = deduplicatedActivationRequest.Trace.WithEvent(trace.ForwardEvent,
+		"handler", joinHandler.Id,
+	)
 
 	handlerResponse, err := joinHandlerClient.Activate(b.Component.GetContext(""), deduplicatedActivationRequest)
 	if err != nil {
 		return nil, errors.Wrap(errors.FromGRPCError(err), "Handler refused activation")
 	}
+
+	handlerResponse.Trace = handlerResponse.Trace.WithEvent(trace.ReceiveEvent)
+
 	handlerResponse, err = b.ns.Activate(b.Component.GetContext(b.nsToken), handlerResponse)
 	if err != nil {
 		return nil, errors.Wrap(errors.FromGRPCError(err), "NetworkServer refused activation")
 	}
 
+	handlerResponse.Trace = handlerResponse.Trace.WithEvent(trace.ForwardEvent)
+
 	res = &pb.DeviceActivationResponse{
 		Payload:        handlerResponse.Payload,
 		Message:        handlerResponse.Message,
 		DownlinkOption: handlerResponse.DownlinkOption,
+		Trace:          handlerResponse.Trace,
 	}
 
 	return res, nil

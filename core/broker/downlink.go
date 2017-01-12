@@ -8,6 +8,7 @@ import (
 	"time"
 
 	pb "github.com/TheThingsNetwork/ttn/api/broker"
+	"github.com/TheThingsNetwork/ttn/api/trace"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/apex/log"
 )
@@ -36,6 +37,8 @@ func (b *broker) HandleDownlink(downlink *pb.DownlinkMessage) error {
 
 	b.status.downlink.Mark(1)
 
+	downlink.Trace = downlink.Trace.WithEvent(trace.ReceiveEvent)
+
 	downlink, err = b.ns.Downlink(b.Component.GetContext(b.nsToken), downlink)
 	if err != nil {
 		return errors.Wrap(errors.FromGRPCError(err), "NetworkServer did not handle downlink")
@@ -49,11 +52,12 @@ func (b *broker) HandleDownlink(downlink *pb.DownlinkMessage) error {
 	}
 	ctx = ctx.WithField("RouterID", routerID)
 
-	var router chan<- *pb.DownlinkMessage
-	router, err = b.getRouter(routerID)
+	router, err := b.getRouter(routerID)
 	if err != nil {
 		return err
 	}
+
+	downlink.Trace = downlink.Trace.WithEvent(trace.ForwardEvent, "router", routerID)
 
 	router <- downlink
 
