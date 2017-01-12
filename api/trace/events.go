@@ -5,9 +5,12 @@ package trace
 
 // Event types
 const (
-	SendEvent        = "send"
-	ReceiveEvent     = "receive"
-	ForwardEvent     = "forward"
-	DropEvent        = "drop"
+	SendEvent    = "send"
+	ReceiveEvent = "receive"
+	ForwardEvent = "forward"
+	DropEvent    = "drop"
+
 	DeduplicateEvent = "deduplicate"
+
+	UpdateStateEvent = "update state"
 )

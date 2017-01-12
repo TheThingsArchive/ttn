@@ -10,6 +10,7 @@ import (
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_handler "github.com/TheThingsNetwork/ttn/api/handler"
 	pb_protocol "github.com/TheThingsNetwork/ttn/api/protocol"
+	"github.com/TheThingsNetwork/ttn/api/trace"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/random"
@@ -69,7 +70,8 @@ func (n *networkServer) HandlePrepareActivation(activation *pb_broker.Deduplicat
 	}
 	lorawanMeta := activation.ActivationMetadata.GetLorawan()
 
-	// Get a random device address
+	// Allocate a  device address
+	activation.Trace = activation.Trace.WithEvent("allocate devaddr")
 	devAddr, err := n.getDevAddr(activationConstraints...)
 	if err != nil {
 		return nil, err
@@ -119,6 +121,7 @@ func (n *networkServer) HandleActivate(activation *pb_handler.DeviceActivationRe
 		return nil, errors.NewErrInvalidArgument("Activation", "missing LoRaWAN ActivationMetadata")
 	}
 	n.status.activations.Mark(1)
+	activation.Trace = activation.Trace.WithEvent(trace.UpdateStateEvent)
 	err := n.devices.Activate(*lorawan.AppEui, *lorawan.DevEui, *lorawan.DevAddr, *lorawan.NwkSKey)
 	if err != nil {
 		return nil, err
