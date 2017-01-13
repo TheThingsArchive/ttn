@@ -6,7 +6,6 @@ package cmd
 import (
 	"fmt"
 	"io/ioutil"
-	"os"
 	"strings"
 
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
@@ -21,31 +20,31 @@ var applicationsPayloadFunctionsSetCmd = &cobra.Command{
 	Long: `ttnctl pf set can be used to get or set payload functions of an application.
 The functions are read from the supplied file or from STDIN.`,
 	Example: `$ ttnctl applications pf set decoder
-  INFO Discovering Handler...
-  INFO Connecting with Handler...
-function Decoder(bytes, port) {
-  // Decode an uplink message from a buffer
-  // (array) of bytes to an object of fields.
-  var decoded = {};
+	  INFO Discovering Handler...
+	  INFO Connecting with Handler...
+	function Decoder(bytes, port) {
+	  // Decode an uplink message from a buffer
+	  // (array) of bytes to an object of fields.
+	  var decoded = {};
 
-  // if (port === 1) {
-  //   decoded.led = bytes[0];
-  // }
+	  // if (port === 1) {
+	  //   decoded.led = bytes[0];
+	  // }
 
-  return decoded;
-}
+	  return decoded;
+	}
 ########## Write your Decoder here and end with Ctrl+D (EOF):
-function Decoder(bytes, port) {
-  var decoded = {};
+	function Decoder(bytes, port) {
+	  var decoded = {};
 
-  // if (port === 1) {
-  //   decoded.led = bytes[0];
-  // }
+	  // if (port === 1) {
+	  //   decoded.led = bytes[0];
+	  // }
 
-  return decoded;
-}
-  INFO Updated application                      AppID=test
-`,
+	  return decoded;
+	}
+	  INFO Updated application                      AppID=test
+	`,
 	Run: func(cmd *cobra.Command, args []string) {
 
 		appID := util.GetAppID(ctx)
@@ -72,75 +71,105 @@ function Decoder(bytes, port) {
 			if err != nil {
 				ctx.WithError(err).Fatal("Could not read function file")
 			}
+			fmt.Println(fmt.Sprintf(`
+Function read from %s:
+
+%s
+`, args[1], string(content)))
+
+			code, err := util.ValidatePayload(ctx, string(content), function)
+			if err != nil {
+				ctx.WithError(err).Fatal("Could not validate the function.")
+			}
 			switch function {
 			case "decoder":
-				app.Decoder = string(content)
+				app.Decoder = code
 			case "converter":
-				app.Converter = string(content)
-			case "validator":
-				app.Validator = string(content)
+				app.Decoder = code
 			case "encoder":
-				app.Encoder = string(content)
+				app.Encoder = code
+			case "validator":
+				app.Validator = code
 			default:
 				ctx.Fatalf("Function %s does not exist", function)
 			}
 		} else {
 			switch function {
 			case "decoder":
-				fmt.Println(`function Decoder(bytes, port) {
-  // Decode an uplink message from a buffer
-  // (array) of bytes to an object of fields.
-  var decoded = {};
+				fmt.Println(`
+function Decoder(bytes, port) {
+// Decode an uplink message from a buffer
+// (array) of bytes to an object of fields.
+var decoded = {};
 
-  // if (port === 1) {
-  //   decoded.led = bytes[0];
-  // }
+// if (port === 1) {
+//   decoded.led = bytes[0];
+// }
 
-  return decoded;
+return decoded;
 }
 ########## Write your Decoder here and end with Ctrl+D (EOF):`)
-				app.Decoder = readFunction()
+				code, err := util.ValidatePayload(ctx, util.ReadFunction(ctx), function)
+				if err != nil {
+					ctx.WithError(err).Fatal("Could not validate the function")
+				}
+				app.Decoder = code
 			case "converter":
-				fmt.Println(`function Converter(decoded, port) {
-  // Merge, split or otherwise
-  // mutate decoded fields.
-  var converted = decoded;
+				fmt.Println(`
+function Converter(decoded, port) {
+// Merge, split or otherwise
+// mutate decoded fields.
+var converted = decoded;
 
-  // if (port === 1 && (converted.led === 0 || converted.led === 1)) {
-  //   converted.led = Boolean(converted.led);
-  // }
+// if (port === 1 && (converted.led === 0 || converted.led === 1)) {
+//   converted.led = Boolean(converted.led);
+// }
 
-  return converted;
+return converted;
 }
 ########## Write your Converter here and end with Ctrl+D (EOF):`)
-				app.Converter = readFunction()
+				code, err := util.ValidatePayload(ctx, util.ReadFunction(ctx), function)
+				if err != nil {
+					ctx.WithError(err).Fatal("Could not validate the function")
+				}
+				app.Converter = code
 			case "validator":
-				fmt.Println(`function Validator(converted, port) {
-  // Return false if the decoded, converted
-  // message is invalid and should be dropped.
+				fmt.Println(`
+function Validator(converted, port) {
+// Return false if the decoded, converted
+// message is invalid and should be dropped.
 
-  // if (port === 1 && typeof converted.led !== 'boolean') {
-  //   return false;
-  // }
+// if (port === 1 && typeof converted.led !== 'boolean') {
+//   return false;
+// }
 
-  return true;
+return true;
 }
 ########## Write your Validator here and end with Ctrl+D (EOF):`)
-				app.Validator = readFunction()
+				code, err := util.ValidatePayload(ctx, util.ReadFunction(ctx), function)
+				if err != nil {
+					ctx.WithError(err).Fatal("Could not validate the function")
+				}
+				app.Validator = code
 			case "encoder":
-				fmt.Println(`function Encoder(object, port) {
-  // Encode downlink messages sent as
-  // object to an array or buffer of bytes.
-  var bytes = [];
+				fmt.Println(`
+function Encoder(object, port) {
+// Encode downlink messages sent as
+// object to an array or buffer of bytes.
+var bytes = [];
 
-  // if (port === 1) {
-  //   bytes[0] = object.led ? 1 : 0;
-  // }
+// if (port === 1) {
+//   bytes[0] = object.led ? 1 : 0;
+// }
 
-  return bytes;
+return bytes;
 }
 ########## Write your Encoder here and end with Ctrl+D (EOF):`)
-				app.Encoder = readFunction()
+				code, err := util.ValidatePayload(ctx, util.ReadFunction(ctx), function)
+				if err != nil {
+					ctx.WithError(err).Fatal("Could not validate the function")
+				}
+				app.Encoder = code
 			default:
 				ctx.Fatalf("Function %s does not exist", function)
 			}
@@ -155,14 +184,6 @@ function Decoder(bytes, port) {
 			"AppID": appID,
 		}).Infof("Updated application")
 	},
-}
-
-func readFunction() string {
-	content, err := ioutil.ReadAll(os.Stdin)
-	if err != nil {
-		ctx.WithError(err).Fatal("Could not read function from STDIN.")
-	}
-	return strings.TrimSpace(string(content))
 }
 
 func init() {
