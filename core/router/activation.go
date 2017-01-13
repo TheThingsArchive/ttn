@@ -12,6 +12,7 @@ import (
 	pb_protocol "github.com/TheThingsNetwork/ttn/api/protocol"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	pb "github.com/TheThingsNetwork/ttn/api/router"
+	"github.com/TheThingsNetwork/ttn/api/trace"
 	"github.com/TheThingsNetwork/ttn/core/band"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/apex/log"
@@ -26,12 +27,15 @@ func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivat
 	start := time.Now()
 	defer func() {
 		if err != nil {
+			activation.Trace = activation.Trace.WithEvent(trace.DropEvent, "reason", err)
 			ctx.WithError(err).Warn("Could not handle activation")
 		} else {
 			ctx.WithField("Duration", time.Now().Sub(start)).Info("Handled activation")
 		}
 	}()
 	r.status.activations.Mark(1)
+
+	activation.Trace = activation.Trace.WithEvent(trace.ReceiveEvent)
 
 	gateway := r.getGateway(gatewayID)
 	gateway.LastSeen = time.Now()
@@ -40,6 +44,7 @@ func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivat
 		Payload:          activation.Payload,
 		ProtocolMetadata: activation.ProtocolMetadata,
 		GatewayMetadata:  activation.GatewayMetadata,
+		Trace:            activation.Trace,
 	}
 
 	if err = gateway.HandleUplink(uplink); err != nil {
@@ -51,6 +56,9 @@ func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivat
 	}
 
 	downlinkOptions := r.buildDownlinkOptions(uplink, true, gateway)
+	activation.Trace = uplink.Trace.WithEvent(trace.BuildDownlinkEvent,
+		"options", len(downlinkOptions),
+	)
 
 	// Find Broker
 	brokers, err := r.Discovery.GetAll("broker")
@@ -74,6 +82,7 @@ func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivat
 			},
 		},
 		DownlinkOptions: downlinkOptions,
+		Trace:           activation.Trace,
 	}
 
 	// Prepare LoRaWAN activation
@@ -101,6 +110,9 @@ func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivat
 	}
 
 	ctx = ctx.WithField("NumBrokers", len(brokers))
+	request.Trace = request.Trace.WithEvent(trace.ForwardEvent,
+		"brokers", len(brokers),
+	)
 
 	// Forward to all brokers and collect responses
 	var wg sync.WaitGroup
@@ -138,6 +150,7 @@ func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivat
 				Payload:        res.Payload,
 				Message:        res.Message,
 				DownlinkOption: res.DownlinkOption,
+				Trace:          res.Trace,
 			}
 			err := r.HandleDownlink(downlink)
 			if err != nil {

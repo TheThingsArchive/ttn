@@ -8,6 +8,7 @@ import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 import "ttn/api/api.proto";
 import "ttn/api/protocol/protocol.proto";
 import "ttn/api/gateway/gateway.proto";
+import "ttn/api/trace/trace.proto";
 
 package router;
 
@@ -20,6 +21,7 @@ message UplinkMessage {
   protocol.Message     message            = 2;
   protocol.RxMetadata  protocol_metadata  = 11;
   gateway.RxMetadata   gateway_metadata   = 12;
+  trace.Trace          trace              = 21;
 }
 
 message DownlinkMessage {
@@ -27,6 +29,7 @@ message DownlinkMessage {
   protocol.Message          message                 = 2;
   protocol.TxConfiguration  protocol_configuration  = 11;
   gateway.TxConfiguration   gateway_configuration   = 12;
+  trace.Trace               trace                   = 21;
 }
 
 message DeviceActivationRequest {
@@ -37,6 +40,7 @@ message DeviceActivationRequest {
   protocol.RxMetadata          protocol_metadata    = 21;
   gateway.RxMetadata           gateway_metadata     = 22;
   protocol.ActivationMetadata  activation_metadata  = 23;
+  trace.Trace                  trace                = 31;
 }
 
 message DeviceActivationResponse {
@@ -47,6 +51,7 @@ message DeviceActivationResponse {
   // protocol.Message          message                 = 2;
   // protocol.TxConfiguration  protocol_configuration  = 11;
   // gateway.TxConfiguration   gateway_configuration   = 12;
+  // trace.Trace               trace                   = 21;
 }
 
 // The Router service provides pure network functionality

@@ -9,6 +9,7 @@ import "ttn/api/api.proto";
 import "ttn/api/broker/broker.proto";
 import "ttn/api/protocol/protocol.proto";
 import "ttn/api/protocol/lorawan/device.proto";
+import "ttn/api/trace/trace.proto";
 
 package handler;
 
@@ -19,6 +20,8 @@ message DeviceActivationResponse {
   protocol.Message             message              = 2;
   broker.DownlinkOption        downlink_option      = 11;
   protocol.ActivationMetadata  activation_metadata  = 23;
+
+  trace.Trace                  trace                = 31;
 }
 
 // The Handler service provides pure network functionality

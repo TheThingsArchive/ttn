@@ -9,6 +9,7 @@ import (
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	pb "github.com/TheThingsNetwork/ttn/api/router"
+	"github.com/TheThingsNetwork/ttn/api/trace"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/apex/log"
@@ -20,10 +21,13 @@ func (r *router) HandleUplink(gatewayID string, uplink *pb.UplinkMessage) (err e
 	start := time.Now()
 	defer func() {
 		if err != nil {
+			uplink.Trace = uplink.Trace.WithEvent(trace.DropEvent, "reason", err)
 			ctx.WithError(err).Warn("Could not handle uplink")
 		}
 	}()
 	r.status.uplink.Mark(1)
+
+	uplink.Trace = uplink.Trace.WithEvent(trace.ReceiveEvent)
 
 	// LoRaWAN: Unmarshal
 	var phyPayload lorawan.PHYPayload
@@ -49,6 +53,7 @@ func (r *router) HandleUplink(gatewayID string, uplink *pb.UplinkMessage) (err e
 			AppEui:           &appEUI,
 			ProtocolMetadata: uplink.ProtocolMetadata,
 			GatewayMetadata:  uplink.GatewayMetadata,
+			Trace:            uplink.Trace.WithEvent("handle uplink as activation"),
 		})
 		return nil
 	}
@@ -90,6 +95,9 @@ func (r *router) HandleUplink(gatewayID string, uplink *pb.UplinkMessage) (err e
 	var downlinkOptions []*pb_broker.DownlinkOption
 	if gateway.Schedule.IsActive() {
 		downlinkOptions = r.buildDownlinkOptions(uplink, false, gateway)
+		uplink.Trace = uplink.Trace.WithEvent(trace.BuildDownlinkEvent,
+			"options", len(downlinkOptions),
+		)
 	}
 
 	ctx = ctx.WithField("DownlinkOptions", len(downlinkOptions))
@@ -102,10 +110,15 @@ func (r *router) HandleUplink(gatewayID string, uplink *pb.UplinkMessage) (err e
 
 	if len(brokers) == 0 {
 		ctx.Debug("No brokers to forward message to")
+		uplink.Trace = uplink.Trace.WithEvent(trace.DropEvent, "reason", "no brokers")
 		return nil
 	}
 
 	ctx = ctx.WithField("NumBrokers", len(brokers))
+
+	uplink.Trace = uplink.Trace.WithEvent(trace.ForwardEvent,
+		"brokers", len(brokers),
+	)
 
 	// Forward to all brokers
 	for _, broker := range brokers {
@@ -118,6 +131,7 @@ func (r *router) HandleUplink(gatewayID string, uplink *pb.UplinkMessage) (err e
 			ProtocolMetadata: uplink.ProtocolMetadata,
 			GatewayMetadata:  uplink.GatewayMetadata,
 			DownlinkOptions:  downlinkOptions,
+			Trace:            uplink.Trace,
 		}
 	}
 

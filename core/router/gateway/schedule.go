@@ -192,6 +192,7 @@ func (s *schedule) Schedule(id string, downlink *router_pb.DownlinkMessage) erro
 			go func() {
 				waitTime := item.deadlineAt.Sub(time.Now())
 				ctx.WithField("Remaining", waitTime).Info("Scheduled downlink")
+				downlink.Trace = downlink.Trace.WithEvent("schedule")
 				<-time.After(waitTime)
 				s.RLock()
 				defer s.RUnlock()

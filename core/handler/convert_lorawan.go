@@ -5,6 +5,7 @@ package handler
 
 import (
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
+	"github.com/TheThingsNetwork/ttn/api/trace"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
@@ -40,6 +41,7 @@ func (h *handler) ConvertFromLoRaWAN(ctx log.Interface, ttnUp *pb_broker.Dedupli
 	ctx = ctx.WithField("FCnt", appUp.FCnt)
 
 	// LoRaWAN: Validate MIC
+	ttnUp.Trace = ttnUp.Trace.WithEvent(trace.CheckMICEvent)
 	ok, err = phyPayload.ValidateMIC(lorawan.AES128Key(dev.NwkSKey))
 	if err != nil {
 		return err
