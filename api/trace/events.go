@@ -5,12 +5,14 @@ package trace
 
 // Event types
 const (
-	SendEvent    = "send"
-	ReceiveEvent = "receive"
-	ForwardEvent = "forward"
-	DropEvent    = "drop"
-
-	DeduplicateEvent = "deduplicate"
-
-	UpdateStateEvent = "update state"
+	AcceptEvent        = "accept"
+	BuildDownlinkEvent = "build downlink"
+	CheckMICEvent      = "check mic"
+	DeduplicateEvent   = "deduplicate"
+	DropEvent          = "drop"
+	ForwardEvent       = "forward"
+	HandleMACEvent     = "handle mac command"
+	ReceiveEvent       = "receive"
+	SendEvent          = "send"
+	UpdateStateEvent   = "update state"
 )

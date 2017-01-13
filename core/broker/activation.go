@@ -40,7 +40,7 @@ func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (res *
 
 	defer func() {
 		if err != nil {
-			deduplicatedActivationRequest.Trace = deduplicatedActivationRequest.Trace.WithEvent(trace.DropEvent, "error", err)
+			deduplicatedActivationRequest.Trace = deduplicatedActivationRequest.Trace.WithEvent(trace.DropEvent, "reason", err)
 			ctx.WithError(err).Warn("Could not handle activation")
 		} else {
 			ctx.WithField("Duration", time.Now().Sub(start)).Info("Handled activation")

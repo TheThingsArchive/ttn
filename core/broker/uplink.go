@@ -32,7 +32,7 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) (err error) {
 	deduplicatedUplink.ServerTime = start.UnixNano()
 	defer func() {
 		if err != nil {
-			deduplicatedUplink.Trace = deduplicatedUplink.Trace.WithEvent(trace.DropEvent, "error", err)
+			deduplicatedUplink.Trace = deduplicatedUplink.Trace.WithEvent(trace.DropEvent, "reason", err)
 			ctx.WithError(err).Warn("Could not handle uplink")
 		} else {
 			ctx.WithField("Duration", time.Now().Sub(start)).Info("Handled uplink")
@@ -154,9 +154,7 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) (err error) {
 	deduplicatedUplink.AppEui = device.AppEui
 	deduplicatedUplink.AppId = device.AppId
 	deduplicatedUplink.DevId = device.DevId
-	deduplicatedUplink.Trace = deduplicatedUplink.Trace.WithEvent("mic checked",
-		"mic checks", micChecks,
-	)
+	deduplicatedUplink.Trace = deduplicatedUplink.Trace.WithEvent(trace.CheckMICEvent, "mic checks", micChecks)
 	if macPayload.FHDR.FCnt != originalFCnt {
 		ctx = ctx.WithField("RealFCnt", macPayload.FHDR.FCnt)
 	}

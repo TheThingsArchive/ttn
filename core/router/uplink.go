@@ -21,7 +21,7 @@ func (r *router) HandleUplink(gatewayID string, uplink *pb.UplinkMessage) (err e
 	start := time.Now()
 	defer func() {
 		if err != nil {
-			uplink.Trace = uplink.Trace.WithEvent(trace.DropEvent, "error", err)
+			uplink.Trace = uplink.Trace.WithEvent(trace.DropEvent, "reason", err)
 			ctx.WithError(err).Warn("Could not handle uplink")
 		}
 	}()
@@ -95,7 +95,7 @@ func (r *router) HandleUplink(gatewayID string, uplink *pb.UplinkMessage) (err e
 	var downlinkOptions []*pb_broker.DownlinkOption
 	if gateway.Schedule.IsActive() {
 		downlinkOptions = r.buildDownlinkOptions(uplink, false, gateway)
-		uplink.Trace = uplink.Trace.WithEvent("build downlink",
+		uplink.Trace = uplink.Trace.WithEvent(trace.BuildDownlinkEvent,
 			"options", len(downlinkOptions),
 		)
 	}

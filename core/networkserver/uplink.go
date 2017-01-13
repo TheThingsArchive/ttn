@@ -104,9 +104,7 @@ func (n *networkServer) HandleUplink(message *pb_broker.DeduplicatedUplinkMessag
 					GwCnt:  uint8(len(message.GatewayMetadata)),
 				},
 			})
-			message.Trace = message.Trace.WithEvent("handle mac",
-				"cmd", "link-check",
-			)
+			message.Trace = message.Trace.WithEvent(trace.HandleMACEvent, macCMD, "link-check")
 		default:
 		}
 	}

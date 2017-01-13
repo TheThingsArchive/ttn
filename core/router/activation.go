@@ -27,7 +27,7 @@ func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivat
 	start := time.Now()
 	defer func() {
 		if err != nil {
-			activation.Trace = activation.Trace.WithEvent(trace.DropEvent, "error", err)
+			activation.Trace = activation.Trace.WithEvent(trace.DropEvent, "reason", err)
 			ctx.WithError(err).Warn("Could not handle activation")
 		} else {
 			ctx.WithField("Duration", time.Now().Sub(start)).Info("Handled activation")
@@ -56,7 +56,7 @@ func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivat
 	}
 
 	downlinkOptions := r.buildDownlinkOptions(uplink, true, gateway)
-	activation.Trace = uplink.Trace.WithEvent("build downlink",
+	activation.Trace = uplink.Trace.WithEvent(trace.BuildDownlinkEvent,
 		"options", len(downlinkOptions),
 	)
 

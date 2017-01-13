@@ -138,6 +138,7 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 	}
 
 	// Validate MIC
+	activation.Trace = activation.Trace.WithEvent(trace.CheckMICEvent)
 	if ok, err = reqPHY.ValidateMIC(lorawan.AES128Key(dev.AppKey)); err != nil || !ok {
 		err = errors.NewErrNotFound("MIC does not match device")
 		return nil, err
@@ -157,7 +158,7 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 	}
 
 	ctx.Debug("Accepting Join Request")
-	activation.Trace = activation.Trace.WithEvent("accept")
+	activation.Trace = activation.Trace.WithEvent(trace.AcceptEvent)
 
 	// Prepare Device Activation Response
 	var resPHY lorawan.PHYPayload
