@@ -13,10 +13,12 @@ import (
 )
 
 var (
-	ErrInvalidDecoderReturn   = errors.New("The decoder should return an object of fields")
-	ErrInvalidValidatorReturn = errors.New("The validator should return a boolean")
-	ErrInvalidEncoderReturn   = errors.New("The encoder should return an array of a buffer of bytes")
-	ErrInvalidConverterReturn = errors.New("The converter should return an object")
+	ErrInvalidDecoderReturn       = errors.New("The decoder should return an object of fields")
+	ErrInvalidValidatorReturn     = errors.New("The validator should return a boolean")
+	ErrInvalidEncoderReturn       = errors.New("The encoder should return an array of a buffer of bytes")
+	ErrInvalidConverterReturn     = errors.New("The converter should return an object")
+	ErrInvalidPayloadFunctionType = errors.New("This type of payload function is not supported")
+	ErrUndefinedReturn            = errors.New("The function returned an undefined value")
 )
 
 func ValidatePayload(ctx log.Interface, code, payloadType string) (string, error) {
@@ -29,7 +31,7 @@ func ValidatePayload(ctx log.Interface, code, payloadType string) (string, error
 	ctx.Info("Function parsed successfully: syntax checked")
 
 	fmt.Printf("\n Test the function to detect runtime errors \n")
-	fmt.Println("Provide the signature of the payload function that you want to test")
+	fmt.Println("Provide the signature of the payload function with test values")
 	fmt.Println(`
 Note:
 1) Use single quotes for strings: E.g: 'this is a valid string'
@@ -53,7 +55,8 @@ Note:
 
 func testPayload(ctx log.Interface, code, testSignature, payloadType string) error {
 	// testEnvironment puts the test entry after the function declaration
-	// to be able to run the function with the provided values
+	// to be able to run the function with the provided values. That way we don't have to do data conversion
+	// function definition and test call are placed in a js environment and executed directly.
 	testEnvironment := fmt.Sprintf(`
     %s
 
@@ -85,12 +88,12 @@ func testPayload(ctx log.Interface, code, testSignature, payloadType string) err
 				return ErrInvalidEncoderReturn
 			}
 		default:
-			return errors.New("Payload function type not supported")
+			return ErrInvalidPayloadFunctionType
 		}
 		return nil
 	}
 
-	return errors.New("The function returned an undefined value. Payload not valid")
+	return ErrUndefinedReturn
 }
 
 func ReadFunction(ctx log.Interface) string {

@@ -33,7 +33,7 @@ The functions are read from the supplied file or from STDIN.`,
 
 	  return decoded;
 	}
-########## Write your Decoder here and end with Ctrl+D (EOF):
+	########## Write your Decoder here and end with Ctrl+D (EOF):
 	function Decoder(bytes, port) {
 	  var decoded = {};
 
@@ -43,6 +43,20 @@ The functions are read from the supplied file or from STDIN.`,
 
 	  return decoded;
 	}
+	Parsing function...
+
+	Test the function to detect runtime errors
+	Provide the signature of the payload function with test values
+
+	Note:
+	1) Use single quotes for strings: E.g: 'this is a valid string'
+	2) Use the built-in function JSON.stringify() to provide json objects parameters: E.g: JSON.stingify({ valid: argument })
+	3) The provided signature should match the previous function declaration: E.g: MyFunc('entry', 123) will allow us to test the function called MyFunc() and which takes 2 arguments.
+	########## Write your testing entry here and end with Ctrl+D (EOF):
+	Decoder([10, 32], 3)
+	  INFO Testing...
+
+	The test is successful, the given function is a valid payload
 	  INFO Updated application                      AppID=test
 	`,
 	Run: func(cmd *cobra.Command, args []string) {
