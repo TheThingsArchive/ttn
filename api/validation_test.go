@@ -85,7 +85,7 @@ func TestNotEmptyAndValidID(t *testing.T) {
 	}
 
 	err = NotEmptyAndValidID("a", "subject")
-	if err == nil || err.Error() != "subject not valid: has wrong format (got 'a' want '^[0-9a-z](?:[_-]?[0-9a-z]){1,35}$')" {
+	if err == nil || err.Error() != "subject not valid: has wrong format. IDs can contain lowercase letters, numbers, dashes and underscores and should have a maximum length of 36" {
 		t.Error("Expected validation error: 'subject not valid: has wrong format a' but found", err)
 	}
 }
