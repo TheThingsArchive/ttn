@@ -331,4 +331,38 @@ func TestTestPayload(t *testing.T) {
 		err = testPayload(ctx, function, testSignature, "validator")
 		a.So(err, ShouldBeNil)
 	}
+
+	// Test Invalid payload function type
+	{
+		function := `
+			function InvalidFunction(bytes, port) {
+				var test = true;
+				return test;
+			}
+		`
+
+		testSignature := `
+			InvalidFunction(12, 'test')
+		`
+
+		err := testPayload(ctx, function, testSignature, "invalid")
+		a.So(err, ShouldResemble, ErrInvalidPayloadFunctionType)
+	}
+
+	// Test Undefined return
+	{
+		function := `
+			function Encoder(bytes, port) {
+				var test = true;
+				return undefined;
+			}
+		`
+
+		testSignature := `
+			Encoder(12, 'test')
+		`
+
+		err := testPayload(ctx, function, testSignature, "encoder")
+		a.So(err, ShouldResemble, ErrUndefinedReturn)
+	}
 }
