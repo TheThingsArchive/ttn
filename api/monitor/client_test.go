@@ -38,14 +38,28 @@ func TestClient(t *testing.T) {
 		client, _ := NewClient(ctx, fmt.Sprintf("localhost:%d", port))
 		gtw := client.GatewayClient("dev")
 		a.So(gtw.IsConfigured(), ShouldBeFalse)
-		gtw.SetToken("SOME.AWESOME.JWT")
-		a.So(gtw.IsConfigured(), ShouldBeTrue)
 
-		ctx := gtw.(*gatewayClient).Context()
-		id, _ := api.IDFromContext(ctx)
-		a.So(id, ShouldEqual, "dev")
-		token, _ := api.TokenFromContext(ctx)
-		a.So(token, ShouldEqual, "SOME.AWESOME.JWT")
+		gtwCl := gtw.(*gatewayClient)
+
+		for _, token := range []string{
+			"SOME.AWESOME.JWT", "SOME.COOLER.JWT",
+		} {
+
+			time.AfterFunc(100*time.Millisecond, func() { gtw.SetToken(token) })
+			select {
+			case <-gtw.TokenChanged():
+			case <-time.After(200 * time.Millisecond):
+				t.Error("Token failed to update")
+			}
+
+			a.So(gtw.IsConfigured(), ShouldBeTrue)
+
+			ctx := gtwCl.Context()
+			id, _ := api.IDFromContext(ctx)
+			a.So(id, ShouldEqual, "dev")
+			ctxToken, _ := api.TokenFromContext(ctx)
+			a.So(ctxToken, ShouldEqual, token)
+		}
 
 		a.So(client.Close(), ShouldBeNil)
 	}
