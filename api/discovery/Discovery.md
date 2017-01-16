@@ -38,6 +38,7 @@ Get all announcements for a specific service type
 {
   "services": [
     {
+      "amqp_address": "",
       "api_address": "http://eu.thethings.network:8084",
       "certificate": "-----BEGIN CERTIFICATE-----\n...",
       "description": "",
@@ -49,6 +50,7 @@ Get all announcements for a specific service type
           "dev_addr_prefix": "AAAAAAA="
         }
       ],
+      "mqtt_address": "",
       "net_address": "eu.thethings.network:1904",
       "public": true,
       "public_key": "-----BEGIN PUBLIC KEY-----\n...",
@@ -84,6 +86,7 @@ Get a specific announcement
 
 ```json
 {
+  "amqp_address": "",
   "api_address": "http://eu.thethings.network:8084",
   "certificate": "-----BEGIN CERTIFICATE-----\n...",
   "description": "",
@@ -95,6 +98,7 @@ Get a specific announcement
       "dev_addr_prefix": "AAAAAAA="
     }
   ],
+  "mqtt_address": "",
   "net_address": "eu.thethings.network:1904",
   "public": true,
   "public_key": "-----BEGIN PUBLIC KEY-----\n...",
@@ -136,6 +140,8 @@ The Announcement of a service (also called component)
 | `public_key` | `string` | ECDSA public key of this component |
 | `certificate` | `string` | TLS Certificate (if TLS is enabled) |
 | `api_address` | `string` | Contains the address where the HTTP API is exposed (if there is one) |
+| `mqtt_address` | `string` | Contains the address where the MQTT API is exposed (if there is one) |
+| `amqp_address` | `string` | Contains the address where the AMQP API is exposed (if there is one) |
 | `metadata` | _repeated_ [`Metadata`](#discoverymetadata) | Metadata for this component |
 
 ### `.discovery.AnnouncementsResponse`
