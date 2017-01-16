@@ -69,8 +69,9 @@ func (g *Gateway) HandleStatus(status *pb.Status) (err error) {
 	g.updateLastSeen()
 
 	if g.Monitors != nil {
+		clone := *status // Avoid race conditions
 		for _, monitor := range g.Monitors {
-			go monitor.SendStatus(status)
+			go monitor.SendStatus(&clone)
 		}
 	}
 	return nil
@@ -97,8 +98,9 @@ func (g *Gateway) HandleUplink(uplink *pb_router.UplinkMessage) (err error) {
 	uplink.GatewayMetadata.GatewayId = g.ID
 
 	if g.Monitors != nil {
+		clone := *uplink // Avoid race conditions
 		for _, monitor := range g.Monitors {
-			go monitor.SendUplink(uplink)
+			go monitor.SendUplink(&clone)
 		}
 	}
 	return nil
@@ -112,8 +114,9 @@ func (g *Gateway) HandleDownlink(identifier string, downlink *pb_router.Downlink
 	}
 
 	if g.Monitors != nil {
+		clone := *downlink // Avoid race conditions
 		for _, monitor := range g.Monitors {
-			go monitor.SendDownlink(downlink)
+			go monitor.SendDownlink(&clone)
 		}
 	}
 	return nil
