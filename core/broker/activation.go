@@ -74,7 +74,9 @@ func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (res *
 		if duplicate == activation {
 			continue
 		}
-		deduplicatedActivationRequest.Trace.Parents = append(deduplicatedActivationRequest.Trace.Parents, duplicate.Trace)
+		if duplicate.Trace != nil {
+			deduplicatedActivationRequest.Trace.Parents = append(deduplicatedActivationRequest.Trace.Parents, duplicate.Trace)
+		}
 	}
 
 	// Collect GatewayMetadata and DownlinkOptions

@@ -63,7 +63,9 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) (err error) {
 		if duplicate == uplink {
 			continue
 		}
-		deduplicatedUplink.Trace.Parents = append(deduplicatedUplink.Trace.Parents, duplicate.Trace)
+		if duplicate.Trace != nil {
+			deduplicatedUplink.Trace.Parents = append(deduplicatedUplink.Trace.Parents, duplicate.Trace)
+		}
 	}
 
 	if deduplicatedUplink.ProtocolMetadata.GetLorawan() == nil {
