@@ -77,6 +77,7 @@ func TestClient(t *testing.T) {
 		}
 
 		// After which statuses will get dropped
+		gtw.SendStatus(&gateway.Status{})
 		err = gtw.SendStatus(&gateway.Status{})
 		a.So(err, ShouldNotBeNil)
 
@@ -110,6 +111,7 @@ func TestClient(t *testing.T) {
 		}
 
 		// After which messages will get dropped
+		gtw.SendUplink(&router.UplinkMessage{})
 		err = gtw.SendUplink(&router.UplinkMessage{})
 		a.So(err, ShouldNotBeNil)
 
@@ -143,6 +145,7 @@ func TestClient(t *testing.T) {
 		}
 
 		// After which messages will get dropped
+		gtw.SendDownlink(&router.DownlinkMessage{})
 		err = gtw.SendDownlink(&router.DownlinkMessage{})
 		a.So(err, ShouldNotBeNil)
 
@@ -173,6 +176,7 @@ func TestClient(t *testing.T) {
 		}
 
 		// After which messages will get dropped
+		client.BrokerClient.SendUplink(&broker.DeduplicatedUplinkMessage{})
 		err = client.BrokerClient.SendUplink(&broker.DeduplicatedUplinkMessage{})
 		a.So(err, ShouldNotBeNil)
 
@@ -203,6 +207,7 @@ func TestClient(t *testing.T) {
 		}
 
 		// After which messages will get dropped
+		client.BrokerClient.SendDownlink(&broker.DownlinkMessage{})
 		err = client.BrokerClient.SendDownlink(&broker.DownlinkMessage{})
 		a.So(err, ShouldNotBeNil)
 
