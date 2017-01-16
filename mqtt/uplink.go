@@ -17,8 +17,6 @@ type UplinkHandler func(client Client, appID string, devID string, req types.Upl
 // PublishUplink publishes an uplink message to the MQTT broker
 func (c *DefaultClient) PublishUplink(dataUp types.UplinkMessage) Token {
 	topic := DeviceTopic{dataUp.AppID, dataUp.DevID, DeviceUplink, ""}
-	dataUp.AppID = ""
-	dataUp.DevID = ""
 	msg, err := json.Marshal(dataUp)
 	if err != nil {
 		return &simpleToken{fmt.Errorf("Unable to marshal the message payload")}

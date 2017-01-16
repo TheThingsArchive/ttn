@@ -20,6 +20,8 @@ func (h *handler) ConvertFromLoRaWAN(ctx log.Interface, ttnUp *pb_broker.Dedupli
 		return err
 	}
 
+	appUp.HardwareSerial = dev.DevEUI.String()
+
 	// Check for LoRaWAN
 	if lorawan := ttnUp.ProtocolMetadata.GetLorawan(); lorawan == nil {
 		return errors.NewErrInvalidArgument("Activation", "does not contain LoRaWAN metadata")
