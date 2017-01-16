@@ -82,6 +82,10 @@ message Device {
   oneof device {
     lorawan.Device lorawan_device = 3;
   }
+
+  float latitude  = 10;
+  float longitude = 11;
+  int32 altitude  = 12;
 }
 
 message DeviceList {
