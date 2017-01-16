@@ -14,6 +14,9 @@
 
 ```js
 {
+  "app_id": "my-app-id",              // Same as in the topic
+  "dev_id": "my-dev-id",              // Same as in the topic
+  "hardware_serial": "0102030405060708", // In case of LoRaWAN: the DevEUI
   "port": 1,                          // LoRaWAN FPort
   "counter": 2,                       // LoRaWAN frame counter
   "payload_raw": "AQIDBA==",          // Base64 encoded payload: [0x01, 0x02, 0x03, 0x04]
@@ -21,7 +24,7 @@
   "metadata": {
     "time": "1970-01-01T00:00:00Z",   // Time when the server received the message
     "frequency": 868.1,               // Frequency at which the message was sent
-    "modulation": "LORA",             // Modulation that was used - currently only LORA. In the future we will support FSK as well
+    "modulation": "LORA",             // Modulation that was used - LORA or FSK
     "data_rate": "SF7BW125",          // Data rate that was used - if LORA modulation
     "bit_rate": 50000,                // Bit rate that was used - if FSK modulation
     "coding_rate": "4/5",             // Coding rate that was used
