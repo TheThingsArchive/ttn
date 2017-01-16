@@ -15,7 +15,7 @@ import (
 )
 
 var devicesRegisterCmd = &cobra.Command{
-	Use:   "register [Device ID] [DevEUI] [AppKey]",
+	Use:   "register [Device ID] [DevEUI] [AppKey] [Lat,Long]",
 	Short: "Register a new device",
 	Long:  `ttnctl devices register can be used to register a new device.`,
 	Example: `$ ttnctl devices register test
@@ -64,10 +64,7 @@ var devicesRegisterCmd = &cobra.Command{
 			copy(appKey[:], random.Bytes(16))
 		}
 
-		conn, manager := util.GetHandlerManager(ctx, appID)
-		defer conn.Close()
-
-		err = manager.SetDevice(&handler.Device{
+		device := &handler.Device{
 			AppId: appID,
 			DevId: devID,
 			Device: &handler.Device_LorawanDevice{LorawanDevice: &lorawan.Device{
@@ -78,7 +75,21 @@ var devicesRegisterCmd = &cobra.Command{
 				AppKey:        &appKey,
 				Uses32BitFCnt: true,
 			}},
-		})
+		}
+
+		if len(args) > 3 {
+			location, err := util.ParseLocation(args[3])
+			if err != nil {
+				ctx.WithError(err).Fatal("Invalid location")
+			}
+			device.Latitude = float32(location.Latitude)
+			device.Longitude = float32(location.Longitude)
+		}
+
+		conn, manager := util.GetHandlerManager(ctx, appID)
+		defer conn.Close()
+
+		err = manager.SetDevice(device)
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not register Device")
 		}

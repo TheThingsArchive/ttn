@@ -140,6 +140,18 @@ var devicesSetCmd = &cobra.Command{
 			dev.GetLorawanDevice().Uses32BitFCnt = false
 		}
 
+		if in, err := cmd.Flags().GetFloat32("latitude"); err == nil && in != 0 {
+			dev.Latitude = in
+		}
+
+		if in, err := cmd.Flags().GetFloat32("longitude"); err == nil && in != 0 {
+			dev.Longitude = in
+		}
+
+		if in, err := cmd.Flags().GetInt32("altitude"); err == nil && in != 0 {
+			dev.Altitude = in
+		}
+
 		err = manager.SetDevice(dev)
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not update Device")
@@ -171,4 +183,8 @@ func init() {
 	devicesSetCmd.Flags().Bool("enable-fcnt-check", false, "Enable FCnt check (default)")
 	devicesSetCmd.Flags().Bool("32-bit-fcnt", false, "Use 32 bit FCnt (default)")
 	devicesSetCmd.Flags().Bool("16-bit-fcnt", false, "Use 16 bit FCnt")
+
+	devicesSetCmd.Flags().Float32("latitude", 0, "Set Latitude")
+	devicesSetCmd.Flags().Float32("longitude", 0, "Set Longitude")
+	devicesSetCmd.Flags().Int32("altitude", 0, "Set altitude")
 }
