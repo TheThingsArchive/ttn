@@ -52,5 +52,10 @@ func (h *handler) ConvertMetadata(ctx log.Interface, ttnUp *pb_broker.Deduplicat
 		appUp.Metadata.Gateways = append(appUp.Metadata.Gateways, gatewayMetadata)
 	}
 
+	// Inject Device Metadata
+	appUp.Metadata.LocationMetadata.Latitude = dev.Latitude
+	appUp.Metadata.LocationMetadata.Longitude = dev.Longitude
+	appUp.Metadata.LocationMetadata.Altitude = dev.Altitude
+
 	return nil
 }

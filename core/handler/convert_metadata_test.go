@@ -27,10 +27,12 @@ func TestConvertMetadata(t *testing.T) {
 	ttnUp := &pb_broker.DeduplicatedUplinkMessage{}
 	appUp := &types.UplinkMessage{}
 	device := &device.Device{
+		Latitude: 12.34,
 	}
 
 	err := h.ConvertMetadata(h.Ctx, ttnUp, appUp, device)
 	a.So(err, ShouldBeNil)
+	a.So(appUp.Metadata.Latitude, ShouldEqual, 12.34)
 
 	gtwID := "eui-0102030405060708"
 	ttnUp.GatewayMetadata = []*pb_gateway.RxMetadata{
