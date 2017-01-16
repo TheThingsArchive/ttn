@@ -184,7 +184,7 @@ func init() {
 	devicesSetCmd.Flags().Bool("32-bit-fcnt", false, "Use 32 bit FCnt (default)")
 	devicesSetCmd.Flags().Bool("16-bit-fcnt", false, "Use 16 bit FCnt")
 
-	devicesSetCmd.Flags().Float32("latitude", 0, "Set Latitude")
-	devicesSetCmd.Flags().Float32("longitude", 0, "Set Longitude")
+	devicesSetCmd.Flags().Float32("latitude", 0, "Set latitude")
+	devicesSetCmd.Flags().Float32("longitude", 0, "Set longitude")
 	devicesSetCmd.Flags().Int32("altitude", 0, "Set altitude")
 }
