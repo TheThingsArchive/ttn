@@ -31,14 +31,47 @@ func ValidatePayload(ctx log.Interface, code, payloadType string) (string, error
 	ctx.Info("Function parsed successfully: syntax checked")
 
 	fmt.Printf("\n Test the function to detect runtime errors \n")
-	fmt.Println("Provide the signature of the payload function with test values")
-	fmt.Println(`
-Note:
-1) Use single quotes for strings: E.g: 'this is a valid string'
-2) Use the built-in function JSON.stringify() to provide json objects parameters: E.g: JSON.stingify({ valid: argument })
-3) The provided signature should match the previous function declaration: E.g: MyFunc('entry', 123) will allow us to test the function called MyFunc() and which takes 2 arguments.
+	fmt.Println("Write your function call and provide arguments to test it")
+	fmt.Println("Note: Use the built-in function JSON.stringify() to provide json objects as parameters: E.g: JSON.stingify({ valid: argument })")
 
-########## Write your testing entry here and end with Ctrl+D (EOF):`)
+	switch payloadType {
+	case "decoder":
+		fmt.Println(`
+function Decoder(bytes, port) {
+  // Instructions
+}
+
+// The function call to test the Decoder
+Decoder([10, 23, 35], 3)`)
+	case "converter":
+		fmt.Println(`
+function Converter(decoded, port) {
+  // Instructions
+}
+
+// The function call to test the Converter
+Converter(JSON.stringify({ foo: bar }), 3)`)
+	case "validator":
+		fmt.Println(`
+function Validator(converted, port) {
+  // Instructions
+}
+
+// The function call to test the Validator
+Validator(JSON.stringify({ foo: bar }), 3)`)
+	case "encoder":
+		fmt.Println(`
+function Encoder(object, port) {
+  // Instructions
+}
+
+// The function call to test the Encoder
+Encoder(JSON.stringify({ foo: bar }), 3)`)
+	default:
+		return "", ErrInvalidPayloadFunctionType
+	}
+
+	fmt.Println("########## Write your testing function call here and end with Ctrl+D (EOF):")
 
 	testSignature := ReadFunction(ctx)
 
@@ -49,7 +82,7 @@ Note:
 		return "", err
 	}
 
-	ctx.Info("The test is successful, the given function is a valid payload")
+	ctx.Info("The test is successful, the given function is valid")
 	return code, nil
 }
 
