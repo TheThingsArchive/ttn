@@ -69,6 +69,11 @@ var devicesInfoCmd = &cobra.Command{
 
 		fmt.Printf("  Application ID: %s\n", dev.AppId)
 		fmt.Printf("       Device ID: %s\n", dev.DevId)
+
+		if dev.Latitude != 0 || dev.Longitude != 0 {
+			fmt.Printf("        Location: %f,%f\n", dev.Latitude, dev.Longitude)
+		}
+
 		if lorawan := dev.GetLorawanDevice(); lorawan != nil {
 			lastSeen := "never"
 			if lorawan.LastSeen > 0 {

@@ -94,6 +94,7 @@ func (g *Gateway) HandleUplink(uplink *pb_router.UplinkMessage) (err error) {
 	g.mu.RLock()
 	defer g.mu.RUnlock()
 	uplink.GatewayMetadata.GatewayTrusted = g.authenticated
+	uplink.GatewayMetadata.GatewayId = g.ID
 
 	if g.Monitors != nil {
 		for _, monitor := range g.Monitors {

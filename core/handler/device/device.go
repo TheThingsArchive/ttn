@@ -24,18 +24,26 @@ type Options struct {
 
 // Device contains the state of a device
 type Device struct {
-	old           *Device
-	DevEUI        types.DevEUI  `redis:"dev_eui"`
-	AppEUI        types.AppEUI  `redis:"app_eui"`
-	AppID         string        `redis:"app_id"`
-	DevID         string        `redis:"dev_id"`
-	DevAddr       types.DevAddr `redis:"dev_addr"`
-	AppKey        types.AppKey  `redis:"app_key"`
-	UsedDevNonces []DevNonce    `redis:"used_dev_nonces"`
-	UsedAppNonces []AppNonce    `redis:"used_app_nonces"`
-	NwkSKey       types.NwkSKey `redis:"nwk_s_key"`
-	AppSKey       types.AppSKey `redis:"app_s_key"`
-	Options       Options       `redis:"options"`
+	old *Device
+
+	DevEUI types.DevEUI `redis:"dev_eui"`
+	AppEUI types.AppEUI `redis:"app_eui"`
+	AppID  string       `redis:"app_id"`
+	DevID  string       `redis:"dev_id"`
+
+	Latitude  float32 `redis:"latitude"`
+	Longitude float32 `redis:"longitude"`
+	Altitude  int32   `redis:"altitude"`
+
+	Options Options `redis:"options"`
+
+	AppKey        types.AppKey `redis:"app_key"`
+	UsedDevNonces []DevNonce   `redis:"used_dev_nonces"`
+	UsedAppNonces []AppNonce   `redis:"used_app_nonces"`
+
+	DevAddr types.DevAddr `redis:"dev_addr"`
+	NwkSKey types.NwkSKey `redis:"nwk_s_key"`
+	AppSKey types.AppSKey `redis:"app_s_key"`
 
 	NextDownlink *types.DownlinkMessage `redis:"next_downlink"`
 

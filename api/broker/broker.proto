@@ -8,6 +8,7 @@ import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 import "ttn/api/api.proto";
 import "ttn/api/protocol/protocol.proto";
 import "ttn/api/gateway/gateway.proto";
+import "ttn/api/trace/trace.proto";
 
 package broker;
 
@@ -42,6 +43,8 @@ message UplinkMessage {
   protocol.RxMetadata      protocol_metadata  = 21;
   gateway.RxMetadata       gateway_metadata   = 22;
   repeated DownlinkOption  downlink_options   = 31;
+
+  trace.Trace              trace              = 41;
 }
 
 // received from the Handler, sent to the Router, used as Template
@@ -55,6 +58,8 @@ message DownlinkMessage {
   string            dev_id           = 14;
 
   DownlinkOption    downlink_option  = 21;
+
+  trace.Trace       trace            = 31;
 }
 
 // sent to the Router, used as Template
@@ -63,6 +68,8 @@ message DeviceActivationResponse {
   protocol.Message  message          = 2;
 
   DownlinkOption    downlink_option  = 11;
+
+  trace.Trace       trace            = 21;
 }
 
 // sent to the Handler
@@ -81,6 +88,8 @@ message DeduplicatedUplinkMessage {
   int64                       server_time        = 23;
 
   DownlinkMessage             response_template  = 31;
+
+  trace.Trace                 trace              = 41;
 }
 
 // received from the Router
@@ -95,6 +104,8 @@ message DeviceActivationRequest {
   gateway.RxMetadata           gateway_metadata     = 22;
   protocol.ActivationMetadata  activation_metadata  = 23;
   repeated DownlinkOption      downlink_options     = 31;
+
+  trace.Trace                  trace                = 41;
 }
 
 // sent to the Handler
@@ -114,6 +125,8 @@ message DeduplicatedDeviceActivationRequest {
   int64                        server_time          = 24;
 
   DeviceActivationResponse     response_template    = 31;
+
+  trace.Trace                  trace                = 41;
 }
 
 message ActivationChallengeRequest {

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
+	"github.com/TheThingsNetwork/ttn/api/trace"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/apex/log"
 )
@@ -36,6 +37,13 @@ func (h *handler) HandleUplink(uplink *pb_broker.DeduplicatedUplinkMessage) (err
 	}()
 	h.status.uplink.Mark(1)
 
+	uplink.Trace = uplink.Trace.WithEvent(trace.ReceiveEvent)
+
+	dev, err := h.devices.Get(appID, devID)
+	if err != nil {
+		return err
+	}
+
 	// Build AppUplink
 	appUplink := &types.UplinkMessage{
 		AppID: appID,
@@ -50,10 +58,11 @@ func (h *handler) HandleUplink(uplink *pb_broker.DeduplicatedUplinkMessage) (err
 	}
 
 	ctx.WithField("NumProcessors", len(processors)).Debug("Running Uplink Processors")
+	uplink.Trace = uplink.Trace.WithEvent("process uplink")
 
 	// Run Uplink Processors
 	for _, processor := range processors {
-		err = processor(ctx, uplink, appUplink)
+		err = processor(ctx, uplink, appUplink, dev)
 		if err == ErrNotNeeded {
 			err = nil
 			return nil
@@ -68,11 +77,16 @@ func (h *handler) HandleUplink(uplink *pb_broker.DeduplicatedUplinkMessage) (err
 		h.amqpUp <- appUplink
 	}
 
+	if uplink.ResponseTemplate == nil {
+		ctx.Debug("No Downlink Available")
+		return nil
+	}
+
 	<-time.After(ResponseDeadline)
 
-	// Find Device and scheduled downlink
+	// Find scheduled downlink
 	var appDownlink types.DownlinkMessage
-	dev, err := h.devices.Get(uplink.AppId, uplink.DevId)
+	dev, err = h.devices.Get(appID, devID)
 	if err != nil {
 		return err
 	}
@@ -80,13 +94,9 @@ func (h *handler) HandleUplink(uplink *pb_broker.DeduplicatedUplinkMessage) (err
 		appDownlink = *dev.NextDownlink
 	}
 
-	if uplink.ResponseTemplate == nil {
-		ctx.Debug("No Downlink Available")
-		return nil
-	}
-
 	// Prepare Downlink
 	downlink := uplink.ResponseTemplate
+	downlink.Trace = uplink.Trace.WithEvent("prepare downlink")
 	appDownlink.AppID = uplink.AppId
 	appDownlink.DevID = uplink.DevId
 

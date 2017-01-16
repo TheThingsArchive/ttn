@@ -4,6 +4,7 @@
 package handler
 
 import (
+	"github.com/TheThingsNetwork/ttn/core/handler/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 
@@ -12,10 +13,10 @@ import (
 )
 
 // UplinkProcessor processes an uplink protobuf to an application-layer uplink message
-type UplinkProcessor func(ctx log.Interface, ttnUp *pb_broker.DeduplicatedUplinkMessage, appUp *types.UplinkMessage) error
+type UplinkProcessor func(ctx log.Interface, ttnUp *pb_broker.DeduplicatedUplinkMessage, appUp *types.UplinkMessage, device *device.Device) error
 
 // DownlinkProcessor processes an application-layer downlink message to a downlik protobuf
-type DownlinkProcessor func(ctx log.Interface, appDown *types.DownlinkMessage, ttnDown *pb_broker.DownlinkMessage) error
+type DownlinkProcessor func(ctx log.Interface, appDown *types.DownlinkMessage, ttnDown *pb_broker.DownlinkMessage, device *device.Device) error
 
 // ErrNotNeeded indicates that the processing of a message should be aborted
 var ErrNotNeeded = errors.New("Further processing not needed")

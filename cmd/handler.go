@@ -15,6 +15,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/handler"
 	"github.com/TheThingsNetwork/ttn/core/proxy"
+	"github.com/TheThingsNetwork/ttn/utils/parse"
 	"github.com/apex/log"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
@@ -74,10 +75,15 @@ var handlerCmd = &cobra.Command{
 				viper.GetString("handler.mqtt-password"),
 				viper.GetString("handler.mqtt-address"),
 			)
+
+			mqttPort, err := parse.Port(viper.GetString("handler.mqtt-address"))
+			if err != nil {
+				ctx.WithError(err).Error("Could not announce the handler")
+			}
 			if announceAddr := viper.GetString("handler.mqtt-address-announce"); announceAddr != "" {
-				component.Identity.MqttAddress = fmt.Sprintf("%s:%d", announceAddr, viper.GetInt("handler.mqtt-port"))
+				component.Identity.MqttAddress = fmt.Sprintf("%s:%d", announceAddr, mqttPort)
 			} else {
-				component.Identity.MqttAddress = fmt.Sprintf("%s:%d", viper.GetString("handler.server-address-announce"), viper.GetInt("handler.mqtt-port"))
+				component.Identity.MqttAddress = fmt.Sprintf("%s:%d", viper.GetString("handler.server-address-announce"), mqttPort)
 			}
 		} else {
 			ctx.Warn("MQTT is not enabled in your configuration")
@@ -89,10 +95,15 @@ var handlerCmd = &cobra.Command{
 				viper.GetString("handler.amqp-address"),
 				viper.GetString("handler.amqp-exchange"),
 			)
+
+			amqpPort, err := parse.Port(viper.GetString("handler.amqp-address"))
+			if err != nil {
+				ctx.WithError(err).Error("Could not announce the handler")
+			}
 			if announceAddr := viper.GetString("handler.amqp-address-announce"); announceAddr != "" {
-				component.Identity.AmqpAddress = fmt.Sprintf("%s:%d", announceAddr, viper.GetInt("handler.amqp-port"))
+				component.Identity.AmqpAddress = fmt.Sprintf("%s:%d", announceAddr, amqpPort)
 			} else {
-				component.Identity.AmqpAddress = fmt.Sprintf("%s:%d", viper.GetString("handler.server-address-announce"), viper.GetInt("handler.amqp-port"))
+				component.Identity.AmqpAddress = fmt.Sprintf("%s:%d", viper.GetString("handler.server-address-announce"), amqpPort)
 			}
 		} else {
 			ctx.Warn("AMQP is not enabled in your configuration")

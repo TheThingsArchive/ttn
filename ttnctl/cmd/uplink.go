@@ -96,7 +96,7 @@ var uplinkCmd = &cobra.Command{
 
 		err = uplinkStream.Send(&router.UplinkMessage{
 			Payload:          bytes,
-			GatewayMetadata:  util.GetGatewayMetadata("ttnctl", 868100000),
+			GatewayMetadata:  util.GetGatewayMetadata(gatewayID, 868100000),
 			ProtocolMetadata: util.GetProtocolMetadata("SF7BW125"),
 		})
 		if err != nil {

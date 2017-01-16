@@ -48,7 +48,7 @@ $ ttnctl applications add test "Test application"
 
 ttnctl devices delete can be used to delete an application.
 
-**Usage:** `ttnctl applications delete`
+**Usage:** `ttnctl applications delete [AppID]`
 
 ### ttnctl applications info
 

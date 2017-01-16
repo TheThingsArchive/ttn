@@ -16,8 +16,6 @@ type ActivationHandler func(client Client, appID string, devID string, req types
 func (c *DefaultClient) PublishActivation(activation types.Activation) Token {
 	appID := activation.AppID
 	devID := activation.DevID
-	activation.AppID = ""
-	activation.DevID = ""
 	return c.PublishDeviceEvent(appID, devID, types.ActivationEvent, activation)
 }
 

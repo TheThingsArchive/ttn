@@ -5,6 +5,7 @@ package networkserver
 
 import (
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
+	"github.com/TheThingsNetwork/ttn/api/trace"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/brocaar/lorawan"
 )
@@ -17,6 +18,8 @@ func (n *networkServer) HandleDownlink(message *pb_broker.DownlinkMessage) (*pb_
 	}
 
 	n.status.downlink.Mark(1)
+
+	message.Trace = message.Trace.WithEvent(trace.UpdateStateEvent)
 
 	dev.StartUpdate()
 

@@ -9,6 +9,7 @@ import (
 
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb "github.com/TheThingsNetwork/ttn/api/handler"
+	"github.com/TheThingsNetwork/ttn/api/trace"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
@@ -18,14 +19,14 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
-func (h *handler) getActivationMetadata(ctx log.Interface, activation *pb_broker.DeduplicatedDeviceActivationRequest) (types.Metadata, error) {
+func (h *handler) getActivationMetadata(ctx log.Interface, activation *pb_broker.DeduplicatedDeviceActivationRequest, device *device.Device) (types.Metadata, error) {
 	ttnUp := &pb_broker.DeduplicatedUplinkMessage{
 		ProtocolMetadata: activation.ProtocolMetadata,
 		GatewayMetadata:  activation.GatewayMetadata,
 		ServerTime:       activation.ServerTime,
 	}
 	mqttUp := &types.UplinkMessage{}
-	err := h.ConvertMetadata(ctx, ttnUp, mqttUp)
+	err := h.ConvertMetadata(ctx, ttnUp, mqttUp, device)
 	if err != nil {
 		return types.Metadata{}, err
 	}
@@ -100,6 +101,8 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 	}()
 	h.status.activations.Mark(1)
 
+	activation.Trace = activation.Trace.WithEvent(trace.ReceiveEvent)
+
 	if activation.ResponseTemplate == nil {
 		err = errors.NewErrInternal("No downlink available")
 		return nil, err
@@ -135,6 +138,7 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 	}
 
 	// Validate MIC
+	activation.Trace = activation.Trace.WithEvent(trace.CheckMICEvent)
 	if ok, err = reqPHY.ValidateMIC(lorawan.AES128Key(dev.AppKey)); err != nil || !ok {
 		err = errors.NewErrNotFound("MIC does not match device")
 		return nil, err
@@ -154,6 +158,7 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 	}
 
 	ctx.Debug("Accepting Join Request")
+	activation.Trace = activation.Trace.WithEvent(trace.AcceptEvent)
 
 	// Prepare Device Activation Response
 	var resPHY lorawan.PHYPayload
@@ -172,7 +177,7 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 	resPHY.MACPayload = joinAccept
 
 	// Publish Activation
-	mqttMetadata, _ := h.getActivationMetadata(ctx, activation)
+	mqttMetadata, _ := h.getActivationMetadata(ctx, activation, dev)
 	h.mqttEvent <- &types.DeviceEvent{
 		AppID: appID,
 		DevID: devID,
@@ -242,6 +247,7 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 		Payload:            resBytes,
 		DownlinkOption:     activation.ResponseTemplate.DownlinkOption,
 		ActivationMetadata: metadata,
+		Trace:              activation.Trace,
 	}
 
 	return res, nil

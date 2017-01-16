@@ -9,6 +9,8 @@ import (
 	pb_gateway "github.com/TheThingsNetwork/ttn/api/gateway"
 )
 
+const macCMD = "cmd" // For Tracing
+
 type bySNR []*pb_gateway.RxMetadata
 
 func (a bySNR) Len() int           { return len(a) }

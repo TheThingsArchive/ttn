@@ -9,6 +9,7 @@ import (
 	"time"
 
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
+	"github.com/TheThingsNetwork/ttn/core/handler/device"
 	"github.com/TheThingsNetwork/ttn/core/handler/functions"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
@@ -16,7 +17,7 @@ import (
 )
 
 // ConvertFieldsUp converts the payload to fields using payload functions
-func (h *handler) ConvertFieldsUp(ctx log.Interface, ttnUp *pb_broker.DeduplicatedUplinkMessage, appUp *types.UplinkMessage) error {
+func (h *handler) ConvertFieldsUp(ctx log.Interface, ttnUp *pb_broker.DeduplicatedUplinkMessage, appUp *types.UplinkMessage, _ *device.Device) error {
 	// Find Application
 	app, err := h.applications.Get(ttnUp.AppId)
 	if err != nil {
@@ -284,7 +285,7 @@ func (f *DownlinkFunctions) Process(payload map[string]interface{}, port uint8) 
 }
 
 // ConvertFieldsDown converts the fields into a payload
-func (h *handler) ConvertFieldsDown(ctx log.Interface, appDown *types.DownlinkMessage, ttnDown *pb_broker.DownlinkMessage) error {
+func (h *handler) ConvertFieldsDown(ctx log.Interface, appDown *types.DownlinkMessage, ttnDown *pb_broker.DownlinkMessage, _ *device.Device) error {
 	if appDown.PayloadFields == nil || len(appDown.PayloadFields) == 0 {
 		return nil
 	}

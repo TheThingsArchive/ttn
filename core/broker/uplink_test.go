@@ -118,7 +118,7 @@ func TestHandleUplink(t *testing.T) {
 	b.uplinkDeduplicator = NewDeduplicator(10 * time.Millisecond)
 	nsResponse.Results[0].DisableFCntCheck = true
 	b.ns.EXPECT().GetDevices(gomock.Any(), gomock.Any()).Return(nsResponse, nil)
-	b.ns.EXPECT().Uplink(gomock.Any(), gomock.Any())
+	b.ns.EXPECT().Uplink(gomock.Any(), gomock.Any()).Return(&pb.DeduplicatedUplinkMessage{}, nil)
 	b.discovery.EXPECT().GetAllHandlersForAppID("appid-1").Return([]*pb_discovery.Announcement{
 		&pb_discovery.Announcement{
 			Id: "handlerID",
@@ -136,7 +136,7 @@ func TestHandleUplink(t *testing.T) {
 	nsResponse.Results[0].FCntUp = 0
 	nsResponse.Results[0].DisableFCntCheck = false
 	b.ns.EXPECT().GetDevices(gomock.Any(), gomock.Any()).Return(nsResponse, nil)
-	b.ns.EXPECT().Uplink(gomock.Any(), gomock.Any())
+	b.ns.EXPECT().Uplink(gomock.Any(), gomock.Any()).Return(&pb.DeduplicatedUplinkMessage{}, nil)
 	b.discovery.EXPECT().GetAllHandlersForAppID("appid-1").Return([]*pb_discovery.Announcement{
 		&pb_discovery.Announcement{
 			Id: "handlerID",

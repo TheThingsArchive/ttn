@@ -7,6 +7,7 @@ import (
 	"time"
 
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
+	"github.com/TheThingsNetwork/ttn/api/trace"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/brocaar/lorawan"
 )
@@ -19,6 +20,8 @@ func (n *networkServer) HandleUplink(message *pb_broker.DeduplicatedUplinkMessag
 	}
 
 	n.status.uplink.Mark(1)
+
+	message.Trace = message.Trace.WithEvent(trace.UpdateStateEvent)
 
 	dev.StartUpdate()
 
@@ -101,6 +104,7 @@ func (n *networkServer) HandleUplink(message *pb_broker.DeduplicatedUplinkMessag
 					GwCnt:  uint8(len(message.GatewayMetadata)),
 				},
 			})
+			message.Trace = message.Trace.WithEvent(trace.HandleMACEvent, macCMD, "link-check")
 		default:
 		}
 	}

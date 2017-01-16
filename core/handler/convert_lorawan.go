@@ -5,6 +5,8 @@ package handler
 
 import (
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
+	"github.com/TheThingsNetwork/ttn/api/trace"
+	"github.com/TheThingsNetwork/ttn/core/handler/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
@@ -12,21 +14,17 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
-func (h *handler) ConvertFromLoRaWAN(ctx log.Interface, ttnUp *pb_broker.DeduplicatedUplinkMessage, appUp *types.UplinkMessage) error {
-	// Find Device
-	dev, err := h.devices.Get(ttnUp.AppId, ttnUp.DevId)
-	if err != nil {
-		return err
-	}
-
+func (h *handler) ConvertFromLoRaWAN(ctx log.Interface, ttnUp *pb_broker.DeduplicatedUplinkMessage, appUp *types.UplinkMessage, dev *device.Device) error {
 	// Check for LoRaWAN
 	if lorawan := ttnUp.ProtocolMetadata.GetLorawan(); lorawan == nil {
-		return errors.NewErrInvalidArgument("Activation", "does not contain LoRaWAN metadata")
+		return errors.NewErrInvalidArgument("Uplink", "does not contain LoRaWAN metadata")
 	}
+
+	appUp.HardwareSerial = dev.DevEUI.String()
 
 	// LoRaWAN: Unmarshal Uplink
 	var phyPayload lorawan.PHYPayload
-	err = phyPayload.UnmarshalBinary(ttnUp.Payload)
+	err := phyPayload.UnmarshalBinary(ttnUp.Payload)
 	if err != nil {
 		return err
 	}
@@ -40,6 +38,7 @@ func (h *handler) ConvertFromLoRaWAN(ctx log.Interface, ttnUp *pb_broker.Dedupli
 	ctx = ctx.WithField("FCnt", appUp.FCnt)
 
 	// LoRaWAN: Validate MIC
+	ttnUp.Trace = ttnUp.Trace.WithEvent(trace.CheckMICEvent)
 	ok, err = phyPayload.ValidateMIC(lorawan.AES128Key(dev.NwkSKey))
 	if err != nil {
 		return err
@@ -76,16 +75,10 @@ func (h *handler) ConvertFromLoRaWAN(ctx log.Interface, ttnUp *pb_broker.Dedupli
 	return nil
 }
 
-func (h *handler) ConvertToLoRaWAN(ctx log.Interface, appDown *types.DownlinkMessage, ttnDown *pb_broker.DownlinkMessage) error {
-	// Find Device
-	dev, err := h.devices.Get(appDown.AppID, appDown.DevID)
-	if err != nil {
-		return err
-	}
-
+func (h *handler) ConvertToLoRaWAN(ctx log.Interface, appDown *types.DownlinkMessage, ttnDown *pb_broker.DownlinkMessage, dev *device.Device) error {
 	// LoRaWAN: Unmarshal Downlink
 	var phyPayload lorawan.PHYPayload
-	err = phyPayload.UnmarshalBinary(ttnDown.Payload)
+	err := phyPayload.UnmarshalBinary(ttnDown.Payload)
 	if err != nil {
 		return err
 	}
