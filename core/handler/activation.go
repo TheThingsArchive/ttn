@@ -19,14 +19,14 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
-func (h *handler) getActivationMetadata(ctx log.Interface, activation *pb_broker.DeduplicatedDeviceActivationRequest) (types.Metadata, error) {
+func (h *handler) getActivationMetadata(ctx log.Interface, activation *pb_broker.DeduplicatedDeviceActivationRequest, device *device.Device) (types.Metadata, error) {
 	ttnUp := &pb_broker.DeduplicatedUplinkMessage{
 		ProtocolMetadata: activation.ProtocolMetadata,
 		GatewayMetadata:  activation.GatewayMetadata,
 		ServerTime:       activation.ServerTime,
 	}
 	mqttUp := &types.UplinkMessage{}
-	err := h.ConvertMetadata(ctx, ttnUp, mqttUp)
+	err := h.ConvertMetadata(ctx, ttnUp, mqttUp, device)
 	if err != nil {
 		return types.Metadata{}, err
 	}
@@ -177,7 +177,7 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 	resPHY.MACPayload = joinAccept
 
 	// Publish Activation
-	mqttMetadata, _ := h.getActivationMetadata(ctx, activation)
+	mqttMetadata, _ := h.getActivationMetadata(ctx, activation, dev)
 	h.mqttEvent <- &types.DeviceEvent{
 		AppID: appID,
 		DevID: devID,
