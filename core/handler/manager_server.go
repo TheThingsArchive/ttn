@@ -103,6 +103,9 @@ func (h *handlerManager) GetDevice(ctx context.Context, in *pb.DeviceIdentifier)
 			Uses32BitFCnt:         dev.Options.Uses32BitFCnt,
 			ActivationConstraints: dev.Options.ActivationConstraints,
 		}},
+		Latitude:  dev.Latitude,
+		Longitude: dev.Longitude,
+		Altitude:  dev.Altitude,
 	}
 
 	nsDev, err := h.deviceManager.GetDevice(ctx, &pb_lorawan.DeviceIdentifier{
@@ -217,6 +220,10 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*empty.E
 		dev.AppKey = *lorawan.AppKey
 	}
 
+	dev.Latitude = in.Latitude
+	dev.Longitude = in.Longitude
+	dev.Altitude = in.Altitude
+
 	// Update the device in the Broker (NetworkServer)
 	nsUpdated := dev.GetLoRaWAN()
 	nsUpdated.FCntUp = lorawan.FCntUp
@@ -301,6 +308,9 @@ func (h *handlerManager) GetDevicesForApplication(ctx context.Context, in *pb.Ap
 				AppSKey: &dev.AppSKey,
 				AppKey:  &dev.AppKey,
 			}},
+			Latitude:  dev.Latitude,
+			Longitude: dev.Longitude,
+			Altitude:  dev.Altitude,
 		})
 	}
 	return res, nil

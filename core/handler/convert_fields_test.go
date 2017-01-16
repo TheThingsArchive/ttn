@@ -40,7 +40,7 @@ func TestConvertFieldsUp(t *testing.T) {
 
 	// No functions
 	ttnUp, appUp := buildConversionUplink(appID)
-	err := h.ConvertFieldsUp(GetLogger(t, "TestConvertFieldsUp"), ttnUp, appUp)
+	err := h.ConvertFieldsUp(GetLogger(t, "TestConvertFieldsUp"), ttnUp, appUp, nil)
 	a.So(err, ShouldBeNil)
 	a.So(appUp.PayloadFields, ShouldBeEmpty)
 
@@ -54,7 +54,7 @@ func TestConvertFieldsUp(t *testing.T) {
 		h.applications.Delete(appID)
 	}()
 	ttnUp, appUp = buildConversionUplink(appID)
-	err = h.ConvertFieldsUp(GetLogger(t, "TestConvertFieldsUp"), ttnUp, appUp)
+	err = h.ConvertFieldsUp(GetLogger(t, "TestConvertFieldsUp"), ttnUp, appUp, nil)
 	a.So(err, ShouldBeNil)
 
 	a.So(appUp.PayloadFields, ShouldResemble, map[string]interface{}{
@@ -66,7 +66,7 @@ func TestConvertFieldsUp(t *testing.T) {
 	app.Validator = `function Validator (data) { return false; }`
 	h.applications.Set(app)
 	ttnUp, appUp = buildConversionUplink(appID)
-	err = h.ConvertFieldsUp(GetLogger(t, "TestConvertFieldsUp"), ttnUp, appUp)
+	err = h.ConvertFieldsUp(GetLogger(t, "TestConvertFieldsUp"), ttnUp, appUp, nil)
 	a.So(err, ShouldNotBeNil)
 	a.So(appUp.PayloadFields, ShouldBeEmpty)
 
@@ -75,7 +75,7 @@ func TestConvertFieldsUp(t *testing.T) {
 	app.Validator = `function Validator (data) { throw "expected"; }`
 	h.applications.Set(app)
 	ttnUp, appUp = buildConversionUplink(appID)
-	err = h.ConvertFieldsUp(GetLogger(t, "TestConvertFieldsUp"), ttnUp, appUp)
+	err = h.ConvertFieldsUp(GetLogger(t, "TestConvertFieldsUp"), ttnUp, appUp, nil)
 	a.So(err, ShouldBeNil)
 	a.So(appUp.PayloadFields, ShouldBeEmpty)
 }
@@ -335,7 +335,7 @@ func TestConvertFieldsDown(t *testing.T) {
 
 	// Case1: No Encoder
 	ttnDown, appDown := buildConversionDownlink()
-	err := h.ConvertFieldsDown(GetLogger(t, "TestConvertFieldsDown"), appDown, ttnDown)
+	err := h.ConvertFieldsDown(GetLogger(t, "TestConvertFieldsDown"), appDown, ttnDown, nil)
 	a.So(err, ShouldBeNil)
 	a.So(appDown.PayloadRaw, ShouldBeEmpty)
 
@@ -352,7 +352,7 @@ func TestConvertFieldsDown(t *testing.T) {
 	}()
 
 	ttnDown, appDown = buildConversionDownlink()
-	err = h.ConvertFieldsDown(GetLogger(t, "TestConvertFieldsDown"), appDown, ttnDown)
+	err = h.ConvertFieldsDown(GetLogger(t, "TestConvertFieldsDown"), appDown, ttnDown, nil)
 	a.So(err, ShouldBeNil)
 	a.So(appDown.PayloadRaw, ShouldResemble, []byte{byte(appDown.FPort), 1, 2, 3, 4, 5, 6, 7})
 }
@@ -367,7 +367,7 @@ func TestConvertFieldsDownNoPort(t *testing.T) {
 
 	// Case1: No Encoder
 	ttnDown, appDown := buildConversionDownlink()
-	err := h.ConvertFieldsDown(GetLogger(t, "TestConvertFieldsDown"), appDown, ttnDown)
+	err := h.ConvertFieldsDown(GetLogger(t, "TestConvertFieldsDown"), appDown, ttnDown, nil)
 	a.So(err, ShouldBeNil)
 	a.So(appDown.PayloadRaw, ShouldBeEmpty)
 
@@ -384,7 +384,7 @@ func TestConvertFieldsDownNoPort(t *testing.T) {
 	}()
 
 	ttnDown, appDown = buildConversionDownlink()
-	err = h.ConvertFieldsDown(GetLogger(t, "TestConvertFieldsDown"), appDown, ttnDown)
+	err = h.ConvertFieldsDown(GetLogger(t, "TestConvertFieldsDown"), appDown, ttnDown, nil)
 	a.So(err, ShouldBeNil)
 	a.So(appDown.PayloadRaw, ShouldResemble, []byte{1, 2, 3, 4, 5, 6, 7})
 }

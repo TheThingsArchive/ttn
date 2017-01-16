@@ -76,6 +76,11 @@ func (h *handler) HandleDownlink(appDownlink *types.DownlinkMessage, downlink *p
 		}
 	}()
 
+	dev, err := h.devices.Get(appID, devID)
+	if err != nil {
+		return err
+	}
+
 	// Get Processors
 	processors := []DownlinkProcessor{
 		h.ConvertFieldsDown,
@@ -87,7 +92,7 @@ func (h *handler) HandleDownlink(appDownlink *types.DownlinkMessage, downlink *p
 
 	// Run Processors
 	for _, processor := range processors {
-		err = processor(ctx, appDownlink, downlink)
+		err = processor(ctx, appDownlink, downlink, dev)
 		if err == ErrNotNeeded {
 			err = nil
 			return nil
