@@ -1,5 +1,18 @@
 # History
 
+## 2.2.0 (2017-01-16)
+
+The 2.2.0 release contains the following API Changes:
+
+- Add Trace to Uplink/Downlink/Activations
+- Add AppID,DevID,HardwareSerial to MQTT Uplink
+- Add Latitude,Longitude,Altitude to Device (Handler) and Uplink
+- Add Create/Update/Delete events for Devices
+
+Furthermore it adds the following functionality:
+
+- Restarting Gateway-Router streams if auth info changes
+
 ## 2.1.0 (2017-01-10)
 
 The 2.1.0 release contains the following API Changes:
@@ -12,8 +25,6 @@ Furthermore it adds the following functionality:
 - Monitoring (NOC) of the Broker components
 - Support for the China 779-787 and Europe 433 bands
 - The Korea 920-923 channel plan
-
-And as always, several bugs have been fixed.
 
 ## 2.0.0 (2016-12-14)
 
