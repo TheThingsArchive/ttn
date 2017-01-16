@@ -73,9 +73,6 @@ func (cl *gatewayClient) monitorUplink() {
 				}
 			}
 		}
-
-		retries++
-		time.Sleep(backoff.Backoff(retries))
 	}
 }
 

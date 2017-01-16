@@ -73,9 +73,6 @@ func (cl *gatewayClient) monitorStatus() {
 				}
 			}
 		}
-
-		retries++
-		time.Sleep(backoff.Backoff(retries))
 	}
 }
 
