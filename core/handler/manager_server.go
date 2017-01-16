@@ -16,6 +16,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/api/ratelimit"
 	"github.com/TheThingsNetwork/ttn/core/handler/application"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
+	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/apex/log"
 	"github.com/golang/protobuf/ptypes/empty"
@@ -160,7 +161,9 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*empty.E
 		return nil, errors.NewErrInvalidArgument("Device", "No LoRaWAN Device")
 	}
 
-	if dev != nil { // When this is an update
+	var eventType types.EventType
+	if dev != nil {
+		eventType = types.UpdateEvent
 		if dev.AppEUI != *lorawan.AppEui || dev.DevEUI != *lorawan.DevEui {
 			// If the AppEUI or DevEUI is changed, we should remove the device from the NetworkServer and re-add it later
 			_, err = h.deviceManager.DeleteDevice(ctx, &pb_lorawan.DeviceIdentifier{
@@ -172,7 +175,8 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*empty.E
 			}
 		}
 		dev.StartUpdate()
-	} else { // When this is a create
+	} else {
+		eventType = types.CreateEvent
 		existingDevices, err := h.handler.devices.ListForApp(in.AppId)
 		if err != nil {
 			return nil, err
@@ -232,6 +236,13 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*empty.E
 		return nil, err
 	}
 
+	h.handler.mqttEvent <- &types.DeviceEvent{
+		AppID: dev.AppID,
+		DevID: dev.DevID,
+		Event: eventType,
+		Data:  nil, // Don't send potentially sensitive details over MQTT
+	}
+
 	return &empty.Empty{}, nil
 }
 
@@ -262,6 +273,11 @@ func (h *handlerManager) DeleteDevice(ctx context.Context, in *pb.DeviceIdentifi
 	err = h.handler.devices.Delete(in.AppId, in.DevId)
 	if err != nil {
 		return nil, err
+	}
+	h.handler.mqttEvent <- &types.DeviceEvent{
+		AppID: in.AppId,
+		DevID: in.DevId,
+		Event: types.DeleteEvent,
 	}
 	return &empty.Empty{}, nil
 }

@@ -8,13 +8,19 @@ type EventType string
 
 // Event types
 const (
-	UplinkErrorEvent       EventType = "up/errors"
+	UplinkErrorEvent EventType = "up/errors"
+
 	DownlinkScheduledEvent EventType = "down/scheduled"
 	DownlinkSentEvent      EventType = "down/sent"
 	DownlinkErrorEvent     EventType = "down/errors"
 	DownlinkAckEvent       EventType = "down/acks"
-	ActivationEvent        EventType = "activations"
-	ActivationErrorEvent   EventType = "activations/errors"
+
+	ActivationEvent      EventType = "activations"
+	ActivationErrorEvent EventType = "activations/errors"
+
+	CreateEvent EventType = "create"
+	UpdateEvent EventType = "update"
+	DeleteEvent EventType = "delete"
 )
 
 // DeviceEvent represents an application-layer event message for a device event

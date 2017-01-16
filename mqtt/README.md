@@ -206,6 +206,12 @@ if err := token.Error(); err != nil {
 
 ## Device Events
 
+### Management Events
+
+**Created:** `<AppID>/devices/<DevID>/events/create`
+**Updated:** `<AppID>/devices/<DevID>/events/update`
+**Deleted:** `<AppID>/devices/<DevID>/events/delete`
+
 ### Downlink Events
 
 **Downlink Scheduled:** `<AppID>/devices/<DevID>/events/down/scheduled`  
