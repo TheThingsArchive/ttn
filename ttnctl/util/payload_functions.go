@@ -30,7 +30,13 @@ func ValidatePayload(ctx log.Interface, code, payloadType string) (string, error
 	}
 	ctx.Info("Function parsed successfully: syntax checked")
 
-	fmt.Printf("\n Test the function to detect runtime errors \n")
+	fmt.Printf("\nDo you want to test the function to detect runtime errors ?\n")
+	var response string
+	fmt.Scanln(&response)
+	if strings.ToLower(response) != "y" && strings.ToLower(response) != "yes" {
+		return code, nil
+	}
+
 	fmt.Println("Write your function call and provide arguments to test it")
 	fmt.Println("Note: Use the built-in function JSON.stringify() to provide json objects as parameters: E.g: JSON.stingify({ valid: argument })")
 
