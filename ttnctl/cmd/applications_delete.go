@@ -11,12 +11,18 @@ import (
 )
 
 var applicationsDeleteCmd = &cobra.Command{
-	Use:   "delete",
+	Use:   "delete [AppID]",
 	Short: "Delete an application",
 	Long:  `ttnctl devices delete can be used to delete an application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		account := util.GetAccount(ctx)
-		appID := util.GetAppID(ctx)
+
+		var appID string
+		if len(args) > 0 {
+			appID = args[0]
+		} else {
+			appID = util.GetAppID(ctx)
+		}
 
 		if !confirm(fmt.Sprintf("Are you sure you want to delete application %s?", appID)) {
 			ctx.Info("Not doing anything")
