@@ -32,7 +32,9 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) (err error) {
 	deduplicatedUplink.ServerTime = start.UnixNano()
 	defer func() {
 		if err != nil {
-			deduplicatedUplink.Trace = deduplicatedUplink.Trace.WithEvent(trace.DropEvent, "reason", err)
+			if deduplicatedUplink != nil {
+				deduplicatedUplink.Trace = deduplicatedUplink.Trace.WithEvent(trace.DropEvent, "reason", err)
+			}
 			ctx.WithError(err).Warn("Could not handle uplink")
 		} else {
 			ctx.WithField("Duration", time.Now().Sub(start)).Info("Handled uplink")
