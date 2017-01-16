@@ -67,7 +67,9 @@ func (cl *gatewayClient) monitorStatus() {
 				break
 			case status, ok := <-cl.status.ch:
 				if ok {
-					if err := stream.Send(status); err == nil {
+					if err := stream.Send(status); err != nil {
+						cl.Ctx.WithError(errors.FromGRPCError(err)).Debug("Error sending status to monitor")
+					} else {
 						cl.Ctx.Debug("Sent status to monitor")
 					}
 				}

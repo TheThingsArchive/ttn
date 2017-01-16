@@ -67,7 +67,9 @@ func (cl *gatewayClient) monitorUplink() {
 				break
 			case uplink, ok := <-cl.uplink.ch:
 				if ok {
-					if err := stream.Send(uplink); err == nil {
+					if err := stream.Send(uplink); err != nil {
+						cl.Ctx.WithError(errors.FromGRPCError(err)).Debug("Error sending uplink to monitor")
+					} else {
 						cl.Ctx.Debug("Sent uplink to monitor")
 					}
 				}

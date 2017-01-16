@@ -67,7 +67,9 @@ func (cl *gatewayClient) monitorDownlink() {
 				break
 			case downlink, ok := <-cl.downlink.ch:
 				if ok {
-					if err := stream.Send(downlink); err == nil {
+					if err := stream.Send(downlink); err != nil {
+						cl.Ctx.WithError(errors.FromGRPCError(err)).Debug("Error sending downlink to monitor")
+					} else {
 						cl.Ctx.Debug("Sent downlink to monitor")
 					}
 				}
