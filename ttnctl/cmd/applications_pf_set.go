@@ -20,45 +20,52 @@ var applicationsPayloadFunctionsSetCmd = &cobra.Command{
 	Long: `ttnctl pf set can be used to get or set payload functions of an application.
 The functions are read from the supplied file or from STDIN.`,
 	Example: `$ ttnctl applications pf set decoder
-	  INFO Discovering Handler...
-	  INFO Connecting with Handler...
-	function Decoder(bytes, port) {
-	  // Decode an uplink message from a buffer
-	  // (array) of bytes to an object of fields.
-	  var decoded = {};
+  INFO Discovering Handler...
+  INFO Connecting with Handler...
+function Decoder(bytes, port) {
+  // Decode an uplink message from a buffer
+  // (array) of bytes to an object of fields.
+  var decoded = {};
 
-	  // if (port === 1) {
-	  //   decoded.led = bytes[0];
-	  // }
+  // if (port === 1) {
+  //   decoded.led = bytes[0];
+  // }
 
-	  return decoded;
-	}
-	########## Write your Decoder here and end with Ctrl+D (EOF):
-	function Decoder(bytes, port) {
-	  var decoded = {};
+  return decoded;
+}
+########## Write your Decoder here and end with Ctrl+D (EOF):
+function Decoder(bytes, port) {
+  var decoded = {};
 
-	  // if (port === 1) {
-	  //   decoded.led = bytes[0];
-	  // }
+  // if (port === 1) {
+  //   decoded.led = bytes[0];
+  // }
 
-	  return decoded;
-	}
-	Parsing function...
+  return decoded;
+}
+Parsing function...
+  INFO Function parsed successfully: syntax checked
 
-	Test the function to detect runtime errors
-	Provide the signature of the payload function with test values
+Test the function to detect runtime errors
 
-	Note:
-	1) Use single quotes for strings: E.g: 'this is a valid string'
-	2) Use the built-in function JSON.stringify() to provide json objects parameters: E.g: JSON.stingify({ valid: argument })
-	3) The provided signature should match the previous function declaration: E.g: MyFunc('entry', 123) will allow us to test the function called MyFunc() and which takes 2 arguments.
-	########## Write your testing entry here and end with Ctrl+D (EOF):
-	Decoder([10, 32], 3)
-	  INFO Testing...
+Write your function call and provide arguments to test it
+Note: Use the built-in function JSON.stringify() to provide json objects parameters: E.g: JSON.stingify({ valid: argument })
 
-	The test is successful, the given function is a valid payload
-	  INFO Updated application                      AppID=test
-	`,
+function Decoder(bytes, port) {
+  // Instructions
+}
+
+// The function call to test the Decoder
+Decoder([10, 23, 35], 3)
+########## Write your testing function call here and end with Ctrl+D (EOF):
+
+
+Decoder([10, 32], 3)
+  INFO Testing...
+
+The test is successful, the given function is valid
+  INFO Updated application                      AppID=test
+`,
 	Run: func(cmd *cobra.Command, args []string) {
 
 		appID := util.GetAppID(ctx)
@@ -99,28 +106,27 @@ Function read from %s:
 			case "decoder":
 				app.Decoder = code
 			case "converter":
-				app.Decoder = code
-			case "encoder":
-				app.Encoder = code
+				app.Converter = code
 			case "validator":
 				app.Validator = code
+			case "encoder":
+				app.Encoder = code
 			default:
 				ctx.Fatalf("Function %s does not exist", function)
 			}
 		} else {
 			switch function {
 			case "decoder":
-				fmt.Println(`
-function Decoder(bytes, port) {
-// Decode an uplink message from a buffer
-// (array) of bytes to an object of fields.
-var decoded = {};
+				fmt.Println(`function Decoder(bytes, port) {
+  // Decode an uplink message from a buffer
+  // (array) of bytes to an object of fields.
+  var decoded = {};
 
-// if (port === 1) {
-//   decoded.led = bytes[0];
-// }
+  // if (port === 1) {
+  //   decoded.led = bytes[0];
+  // }
 
-return decoded;
+  return decoded;
 }
 ########## Write your Decoder here and end with Ctrl+D (EOF):`)
 				code, err := util.ValidatePayload(ctx, util.ReadFunction(ctx), function)
@@ -129,17 +135,16 @@ return decoded;
 				}
 				app.Decoder = code
 			case "converter":
-				fmt.Println(`
-function Converter(decoded, port) {
-// Merge, split or otherwise
-// mutate decoded fields.
-var converted = decoded;
+				fmt.Println(`function Converter(decoded, port) {
+  // Merge, split or otherwise
+  // mutate decoded fields.
+  var converted = decoded;
 
-// if (port === 1 && (converted.led === 0 || converted.led === 1)) {
-//   converted.led = Boolean(converted.led);
-// }
+  // if (port === 1 && (converted.led === 0 || converted.led === 1)) {
+  //   converted.led = Boolean(converted.led);
+  // }
 
-return converted;
+  return converted;
 }
 ########## Write your Converter here and end with Ctrl+D (EOF):`)
 				code, err := util.ValidatePayload(ctx, util.ReadFunction(ctx), function)
@@ -148,16 +153,15 @@ return converted;
 				}
 				app.Converter = code
 			case "validator":
-				fmt.Println(`
-function Validator(converted, port) {
-// Return false if the decoded, converted
-// message is invalid and should be dropped.
+				fmt.Println(`function Validator(converted, port) {
+  // Return false if the decoded, converted
+  // message is invalid and should be dropped.
 
-// if (port === 1 && typeof converted.led !== 'boolean') {
-//   return false;
-// }
+  // if (port === 1 && typeof converted.led !== 'boolean') {
+  //   return false;
+  // }
 
-return true;
+  return true;
 }
 ########## Write your Validator here and end with Ctrl+D (EOF):`)
 				code, err := util.ValidatePayload(ctx, util.ReadFunction(ctx), function)
@@ -166,17 +170,16 @@ return true;
 				}
 				app.Validator = code
 			case "encoder":
-				fmt.Println(`
-function Encoder(object, port) {
-// Encode downlink messages sent as
-// object to an array or buffer of bytes.
-var bytes = [];
+				fmt.Println(`function Encoder(object, port) {
+  // Encode downlink messages sent as
+  // object to an array or buffer of bytes.
+  var bytes = [];
 
-// if (port === 1) {
-//   bytes[0] = object.led ? 1 : 0;
-// }
+  // if (port === 1) {
+  //   bytes[0] = object.led ? 1 : 0;
+  // }
 
-return bytes;
+  return bytes;
 }
 ########## Write your Encoder here and end with Ctrl+D (EOF):`)
 				code, err := util.ValidatePayload(ctx, util.ReadFunction(ctx), function)
