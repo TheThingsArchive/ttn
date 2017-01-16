@@ -33,6 +33,10 @@ func (b *broker) HandleDownlink(downlink *pb.DownlinkMessage) error {
 		} else {
 			ctx.WithField("Duration", time.Now().Sub(start)).Info("Handled downlink")
 		}
+		for _, monitor := range b.Monitors {
+			ctx.Debug("Sending downlink to monitor")
+			go monitor.SendDownlink(downlink)
+		}
 	}()
 
 	b.status.downlink.Mark(1)
@@ -60,11 +64,6 @@ func (b *broker) HandleDownlink(downlink *pb.DownlinkMessage) error {
 	downlink.Trace = downlink.Trace.WithEvent(trace.ForwardEvent, "router", routerID)
 
 	router <- downlink
-
-	for _, monitor := range b.Monitors {
-		ctx.Debug("Sending downlink to monitor")
-		go monitor.SendDownlink(downlink)
-	}
 
 	return nil
 }
