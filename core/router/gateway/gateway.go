@@ -16,13 +16,15 @@ import (
 // NewGateway creates a new in-memory Gateway structure
 func NewGateway(ctx log.Interface, id string) *Gateway {
 	ctx = ctx.WithField("GatewayID", id)
-	return &Gateway{
+	gtw := &Gateway{
 		ID:          id,
 		Status:      NewStatusStore(),
 		Utilization: NewUtilization(),
 		Schedule:    NewSchedule(ctx),
 		Ctx:         ctx,
 	}
+	gtw.Schedule.(*schedule).gateway = gtw // FIXME: Issue #420
+	return gtw
 }
 
 // Gateway contains the state of a gateway
