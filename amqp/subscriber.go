@@ -27,6 +27,7 @@ type Subscriber interface {
 	SubscribeDeviceUplink(appID, devID string, handler UplinkHandler) error
 	SubscribeAppUplink(appID string, handler UplinkHandler) error
 	SubscribeUplink(handler UplinkHandler) error
+	ConsumeUplink(queue string, handler UplinkHandler) error
 
 	SubscribeDeviceDownlink(appID, devID string, handler DownlinkHandler) error
 	SubscribeAppDownlink(appID string, handler DownlinkHandler) error
@@ -84,6 +85,14 @@ func (s *DefaultSubscriber) QueueUnbind(name, key string) error {
 	return nil
 }
 
+func (s *DefaultSubscriber) consume(queue string) (<-chan AMQP.Delivery, error) {
+	err := s.channel.Qos(PrefetchCount, PrefetchSize, false)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to set channel QoS (%s)", err)
+	}
+	return s.channel.Consume(queue, "", false, false, false, false, nil)
+}
+
 func (s *DefaultSubscriber) subscribe(key string) (<-chan AMQP.Delivery, error) {
 	queue, err := s.QueueDeclare()
 	if err != nil {
@@ -93,10 +102,5 @@ func (s *DefaultSubscriber) subscribe(key string) (<-chan AMQP.Delivery, error) 
 	if err != nil {
 		return nil, err
 	}
-	err = s.channel.Qos(PrefetchCount, PrefetchSize, false)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to set channel QoS (%s)", err)
-	}
-
-	return s.channel.Consume(queue, "", false, false, false, false, nil)
+	return s.consume(queue)
 }
