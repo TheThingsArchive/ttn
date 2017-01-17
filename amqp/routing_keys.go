@@ -10,7 +10,7 @@ import (
 )
 
 const simpleWildcard = "*"
-const wildard = "#"
+const wildcard = "#"
 
 // DeviceKeyType represents the type of a device topic
 type DeviceKeyType string
@@ -63,6 +63,9 @@ func (t DeviceKey) String() string {
 	if t.DevID != "" {
 		devID = t.DevID
 	}
+	if t.Type == DeviceEvents && t.Field == "" {
+		t.Field = wildcard
+	}
 	key := fmt.Sprintf("%s.%s.%s.%s", appID, "devices", devID, t.Type)
 	if t.Type == DeviceEvents && t.Field != "" {
 		key += "." + t.Field
@@ -111,7 +114,7 @@ func (t ApplicationKey) String() string {
 		appID = t.AppID
 	}
 	if t.Type == AppEvents && t.Field == "" {
-		t.Field = wildard
+		t.Field = wildcard
 	}
 	key := fmt.Sprintf("%s.%s", appID, t.Type)
 	if t.Type == AppEvents && t.Field != "" {
