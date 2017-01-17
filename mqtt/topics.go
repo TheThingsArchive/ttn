@@ -34,7 +34,7 @@ type DeviceTopic struct {
 func ParseDeviceTopic(topic string) (*DeviceTopic, error) {
 	pattern := regexp.MustCompile("^([0-9a-z](?:[_-]?[0-9a-z]){1,35}|\\+)/(devices)/([0-9a-z](?:[_-]?[0-9a-z]){1,35}|\\+)/(events|up|down)([0-9a-z/]+)?$")
 	matches := pattern.FindStringSubmatch(topic)
-	if len(matches) < 4 {
+	if len(matches) < 5 {
 		return nil, fmt.Errorf("Invalid topic format")
 	}
 	var appID string
@@ -47,7 +47,7 @@ func ParseDeviceTopic(topic string) (*DeviceTopic, error) {
 	}
 	topicType := DeviceTopicType(matches[4])
 	deviceTopic := &DeviceTopic{appID, devID, topicType, ""}
-	if (topicType == DeviceUplink || topicType == DeviceEvents) && len(matches) > 4 {
+	if (topicType == DeviceUplink || topicType == DeviceEvents) && len(matches) > 5 {
 		deviceTopic.Field = strings.Trim(matches[5], "/")
 	}
 	return deviceTopic, nil
@@ -92,7 +92,7 @@ type ApplicationTopic struct {
 func ParseApplicationTopic(topic string) (*ApplicationTopic, error) {
 	pattern := regexp.MustCompile("^([0-9a-z](?:[_-]?[0-9a-z]){1,35}|\\+)/(events)([0-9a-z/-]+|/#)?$")
 	matches := pattern.FindStringSubmatch(topic)
-	if len(matches) < 2 {
+	if len(matches) < 3 {
 		return nil, fmt.Errorf("Invalid topic format")
 	}
 	var appID string
@@ -101,7 +101,7 @@ func ParseApplicationTopic(topic string) (*ApplicationTopic, error) {
 	}
 	topicType := ApplicationTopicType(matches[2])
 	appTopic := &ApplicationTopic{appID, topicType, ""}
-	if topicType == AppEvents && len(matches) > 2 {
+	if topicType == AppEvents && len(matches) > 3 {
 		appTopic.Field = strings.Trim(matches[3], "/")
 	}
 	return appTopic, nil
