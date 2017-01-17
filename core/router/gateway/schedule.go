@@ -11,6 +11,7 @@ import (
 
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	router_pb "github.com/TheThingsNetwork/ttn/api/router"
+	"github.com/TheThingsNetwork/ttn/api/trace"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/random"
 	"github.com/TheThingsNetwork/ttn/utils/toa"
@@ -79,6 +80,7 @@ type schedule struct {
 	downlink                  chan *router_pb.DownlinkMessage
 	downlinkSubscriptionsLock sync.RWMutex
 	downlinkSubscriptions     map[string]chan *router_pb.DownlinkMessage
+	gateway                   *Gateway
 }
 
 func (s *schedule) GoString() (str string) {
@@ -245,6 +247,10 @@ func (s *schedule) Subscribe(subscriptionID string) <-chan *router_pb.DownlinkMe
 		s.downlink = make(chan *router_pb.DownlinkMessage)
 		go func() {
 			for downlink := range s.downlink {
+				if s.gateway != nil && s.gateway.Utilization != nil {
+					s.gateway.Utilization.AddTx(downlink) // FIXME: Issue #420
+				}
+				downlink.Trace = downlink.Trace.WithEvent(trace.SendEvent)
 				s.downlinkSubscriptionsLock.RLock()
 				for _, ch := range s.downlinkSubscriptions {
 					select {
