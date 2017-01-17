@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	AMQP "github.com/streadway/amqp"
+
 	"github.com/TheThingsNetwork/ttn/core/types"
 )
 
@@ -24,6 +26,20 @@ func (c *DefaultPublisher) PublishUplink(dataUp types.UplinkMessage) error {
 	return c.publish(key.String(), msg, time.Time(dataUp.Metadata.Time))
 }
 
+func (s *DefaultSubscriber) handleUplink(messages <-chan AMQP.Delivery, handler UplinkHandler) {
+	for delivery := range messages {
+		dataUp := &types.UplinkMessage{}
+		if err := json.Unmarshal(delivery.Body, dataUp); err != nil {
+			s.ctx.Warnf("Could not unmarshal uplink (%s)", err)
+			continue
+		}
+		handler(s, dataUp.AppID, dataUp.DevID, *dataUp)
+		if err := delivery.Ack(false); err != nil {
+			s.ctx.Warnf("Could not acknowledge message (%s)", err)
+		}
+	}
+}
+
 // SubscribeDeviceUplink subscribes to all uplink messages for the given application and device
 func (s *DefaultSubscriber) SubscribeDeviceUplink(appID, devID string, handler UplinkHandler) error {
 	key := DeviceKey{appID, devID, DeviceUplink, ""}
@@ -32,20 +48,18 @@ func (s *DefaultSubscriber) SubscribeDeviceUplink(appID, devID string, handler U
 		return err
 	}
 
-	go func() {
-		for delivery := range messages {
-			dataUp := &types.UplinkMessage{}
-			if err := json.Unmarshal(delivery.Body, dataUp); err != nil {
-				s.ctx.Warnf("Could not unmarshal uplink (%s)", err)
-				continue
-			}
-			handler(s, dataUp.AppID, dataUp.DevID, *dataUp)
-			if err := delivery.Ack(false); err != nil {
-				s.ctx.Warnf("Could not acknowledge message (%s)", err)
-			}
-		}
-	}()
+	go s.handleUplink(messages, handler)
+	return nil
+}
 
+// ConsumeUplink consumes uplink messages in a specific queue
+func (s *DefaultSubscriber) ConsumeUplink(queue string, handler UplinkHandler) error {
+	messages, err := s.consume(s.name)
+	if err != nil {
+		return err
+	}
+
+	go s.handleUplink(messages, handler)
 	return nil
 }
 
