@@ -34,7 +34,7 @@ type DeviceKey struct {
 func ParseDeviceKey(key string) (*DeviceKey, error) {
 	pattern := regexp.MustCompile("^([0-9a-z](?:[_-]?[0-9a-z]){1,35}|\\*)\\.(devices)\\.([0-9a-z](?:[_-]?[0-9a-z]){1,35}|\\*)\\.(events|up|down)([0-9a-z\\.]+)?$")
 	matches := pattern.FindStringSubmatch(key)
-	if len(matches) < 4 {
+	if len(matches) < 5 {
 		return nil, fmt.Errorf("Invalid key format")
 	}
 	var appID string
@@ -47,7 +47,7 @@ func ParseDeviceKey(key string) (*DeviceKey, error) {
 	}
 	keyType := DeviceKeyType(matches[4])
 	deviceKey := &DeviceKey{appID, devID, keyType, ""}
-	if keyType == DeviceEvents && len(matches) > 4 {
+	if keyType == DeviceEvents && len(matches) > 5 {
 		deviceKey.Field = strings.Trim(matches[5], ".")
 	}
 	return deviceKey, nil
@@ -89,7 +89,7 @@ type ApplicationKey struct {
 func ParseApplicationKey(key string) (*ApplicationKey, error) {
 	pattern := regexp.MustCompile("^([0-9a-z](?:[_-]?[0-9a-z]){1,35}|\\*)\\.(events)([0-9a-z\\.-]+|\\.#)?$")
 	matches := pattern.FindStringSubmatch(key)
-	if len(matches) < 2 {
+	if len(matches) < 3 {
 		return nil, fmt.Errorf("Invalid key format")
 	}
 	var appID string
@@ -98,7 +98,7 @@ func ParseApplicationKey(key string) (*ApplicationKey, error) {
 	}
 	keyType := ApplicationKeyType(matches[2])
 	appKey := &ApplicationKey{appID, keyType, ""}
-	if keyType == AppEvents && len(matches) > 2 {
+	if keyType == AppEvents && len(matches) > 3 {
 		appKey.Field = strings.Trim(matches[3], ".")
 	}
 	return appKey, nil
