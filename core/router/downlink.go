@@ -34,9 +34,7 @@ func (r *router) SubscribeDownlink(gatewayID string, subscriptionID string) (<-c
 		go func() {
 			ctx.Debug("Activate downlink")
 			for message := range fromSchedule {
-				gateway.Utilization.AddTx(message)
 				ctx.Debug("Send downlink")
-				message.Trace = message.Trace.WithEvent(trace.SendEvent)
 				toGateway <- message
 			}
 			ctx.Debug("Deactivate downlink")
