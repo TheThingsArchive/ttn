@@ -27,7 +27,7 @@ func (r *router) HandleUplink(gatewayID string, uplink *pb.UplinkMessage) (err e
 	}()
 	r.status.uplink.Mark(1)
 
-	uplink.Trace = uplink.Trace.WithEvent(trace.ReceiveEvent)
+	uplink.Trace = uplink.Trace.WithEvent(trace.ReceiveEvent, "gateway", gatewayID)
 
 	// LoRaWAN: Unmarshal
 	var phyPayload lorawan.PHYPayload

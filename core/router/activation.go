@@ -35,7 +35,7 @@ func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivat
 	}()
 	r.status.activations.Mark(1)
 
-	activation.Trace = activation.Trace.WithEvent(trace.ReceiveEvent)
+	activation.Trace = activation.Trace.WithEvent(trace.ReceiveEvent, "gateway", gatewayID)
 
 	gateway := r.getGateway(gatewayID)
 	gateway.LastSeen = time.Now()
