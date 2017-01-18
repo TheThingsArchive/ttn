@@ -102,11 +102,13 @@ func (h *handler) ConvertToLoRaWAN(ctx log.Interface, appDown *types.DownlinkMes
 
 	// Set Payload
 	if len(appDown.PayloadRaw) > 0 {
+		ttnDown.Trace = ttnDown.Trace.WithEvent("set payload")
 		macPayload.FRMPayload = []lorawan.Payload{&lorawan.DataPayload{Bytes: appDown.PayloadRaw}}
 		if macPayload.FPort == nil || *macPayload.FPort == 0 {
 			macPayload.FPort = pointer.Uint8(1)
 		}
 	} else {
+		ttnDown.Trace = ttnDown.Trace.WithEvent("set empty payload")
 		macPayload.FRMPayload = []lorawan.Payload{}
 	}
 
