@@ -8,7 +8,6 @@ Control The Things Network from the command line.
       --auth-server string         The address of the OAuth 2.0 server (default "https://account.thethingsnetwork.org")
       --config string              config file (default is $HOME/.ttnctl.yml)
       --data string                directory where ttnctl stores data (default is $HOME/.ttnctl)
-  -d, --debug                      Enable debug mode
       --discovery-address string   The address of the Discovery server (default "discover.thethingsnetwork.org:1900")
       --handler-id string          The ID of the TTN Handler as announced in the Discovery server (default "ttn-handler-eu")
       --mqtt-address string        The address of the MQTT broker (default "eu.thethings.network:1883")
@@ -320,7 +319,7 @@ $ ttnctl devices personalize test
 
 ttnctl devices register can be used to register a new device.
 
-**Usage:** `ttnctl devices register [Device ID] [DevEUI] [AppKey]`
+**Usage:** `ttnctl devices register [Device ID] [DevEUI] [AppKey] [Lat,Long]`
 
 **Example**
 
@@ -345,6 +344,7 @@ ttnctl devices set can be used to set properties of a device.
 ```
       --16-bit-fcnt          Use 16 bit FCnt
       --32-bit-fcnt          Use 32 bit FCnt (default)
+      --altitude int32       Set altitude
       --app-eui string       Set AppEUI
       --app-key string       Set AppKey
       --app-s-key string     Set AppSKey
@@ -354,6 +354,8 @@ ttnctl devices set can be used to set properties of a device.
       --enable-fcnt-check    Enable FCnt check (default)
       --fcnt-down int        Set FCnt Down (default -1)
       --fcnt-up int          Set FCnt Up (default -1)
+      --latitude float32     Set latitude
+      --longitude float32    Set longitude
       --nwk-s-key string     Set NwkSKey
       --override             Override protection against breaking changes
 ```

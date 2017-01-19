@@ -57,6 +57,13 @@ func (m *DevicesRequest) String() string            { return proto.CompactTextSt
 func (*DevicesRequest) ProtoMessage()               {}
 func (*DevicesRequest) Descriptor() ([]byte, []int) { return fileDescriptorNetworkserver, []int{0} }
 
+func (m *DevicesRequest) GetFCnt() uint32 {
+	if m != nil {
+		return m.FCnt
+	}
+	return 0
+}
+
 type DevicesResponse struct {
 	Results []*lorawan.Device `protobuf:"bytes,1,rep,name=results" json:"results,omitempty"`
 }

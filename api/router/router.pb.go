@@ -72,6 +72,13 @@ func (m *UplinkMessage) String() string            { return proto.CompactTextStr
 func (*UplinkMessage) ProtoMessage()               {}
 func (*UplinkMessage) Descriptor() ([]byte, []int) { return fileDescriptorRouter, []int{1} }
 
+func (m *UplinkMessage) GetPayload() []byte {
+	if m != nil {
+		return m.Payload
+	}
+	return nil
+}
+
 func (m *UplinkMessage) GetMessage() *protocol.Message {
 	if m != nil {
 		return m.Message
@@ -112,6 +119,13 @@ func (m *DownlinkMessage) Reset()                    { *m = DownlinkMessage{} }
 func (m *DownlinkMessage) String() string            { return proto.CompactTextString(m) }
 func (*DownlinkMessage) ProtoMessage()               {}
 func (*DownlinkMessage) Descriptor() ([]byte, []int) { return fileDescriptorRouter, []int{2} }
+
+func (m *DownlinkMessage) GetPayload() []byte {
+	if m != nil {
+		return m.Payload
+	}
+	return nil
+}
 
 func (m *DownlinkMessage) GetMessage() *protocol.Message {
 	if m != nil {
@@ -156,6 +170,13 @@ func (m *DeviceActivationRequest) Reset()                    { *m = DeviceActiva
 func (m *DeviceActivationRequest) String() string            { return proto.CompactTextString(m) }
 func (*DeviceActivationRequest) ProtoMessage()               {}
 func (*DeviceActivationRequest) Descriptor() ([]byte, []int) { return fileDescriptorRouter, []int{3} }
+
+func (m *DeviceActivationRequest) GetPayload() []byte {
+	if m != nil {
+		return m.Payload
+	}
+	return nil
+}
 
 func (m *DeviceActivationRequest) GetMessage() *protocol.Message {
 	if m != nil {
@@ -211,6 +232,13 @@ func (m *GatewayStatusRequest) String() string            { return proto.Compact
 func (*GatewayStatusRequest) ProtoMessage()               {}
 func (*GatewayStatusRequest) Descriptor() ([]byte, []int) { return fileDescriptorRouter, []int{5} }
 
+func (m *GatewayStatusRequest) GetGatewayId() string {
+	if m != nil {
+		return m.GatewayId
+	}
+	return ""
+}
+
 type GatewayStatusResponse struct {
 	LastSeen int64           `protobuf:"varint,1,opt,name=last_seen,json=lastSeen,proto3" json:"last_seen,omitempty"`
 	Status   *gateway.Status `protobuf:"bytes,2,opt,name=status" json:"status,omitempty"`
@@ -220,6 +248,13 @@ func (m *GatewayStatusResponse) Reset()                    { *m = GatewayStatusR
 func (m *GatewayStatusResponse) String() string            { return proto.CompactTextString(m) }
 func (*GatewayStatusResponse) ProtoMessage()               {}
 func (*GatewayStatusResponse) Descriptor() ([]byte, []int) { return fileDescriptorRouter, []int{6} }
+
+func (m *GatewayStatusResponse) GetLastSeen() int64 {
+	if m != nil {
+		return m.LastSeen
+	}
+	return 0
+}
 
 func (m *GatewayStatusResponse) GetStatus() *gateway.Status {
 	if m != nil {
@@ -295,6 +330,20 @@ func (m *Status) GetActivations() *api.Rates {
 		return m.Activations
 	}
 	return nil
+}
+
+func (m *Status) GetConnectedGateways() uint32 {
+	if m != nil {
+		return m.ConnectedGateways
+	}
+	return 0
+}
+
+func (m *Status) GetConnectedBrokers() uint32 {
+	if m != nil {
+		return m.ConnectedBrokers
+	}
+	return 0
 }
 
 func init() {

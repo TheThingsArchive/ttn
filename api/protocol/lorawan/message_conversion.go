@@ -190,8 +190,8 @@ func MessageFromPHYPayload(phy lorawan.PHYPayload) Message {
 	return m
 }
 
-// GetDataRate returns the band.Datarate for the current Metadata
-func (m *Metadata) GetDataRate() (dataRate band.DataRate, err error) {
+// GetLoRaWANDataRate returns the band.Datarate for the current Metadata
+func (m *Metadata) GetLoRaWANDataRate() (dataRate band.DataRate, err error) {
 	switch m.Modulation {
 	case Modulation_LORA:
 		dataRate.Modulation = band.LoRaModulation

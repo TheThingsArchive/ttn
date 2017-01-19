@@ -66,7 +66,7 @@ func TestConvertDataRate(t *testing.T) {
 			Modulation: Modulation_LORA,
 			DataRate:   "SF7BW125",
 		}
-		dr, err := md.GetDataRate()
+		dr, err := md.GetLoRaWANDataRate()
 		a.So(err, ShouldBeNil)
 		a.So(dr, ShouldResemble, band.DataRate{Modulation: band.LoRaModulation, SpreadFactor: 7, Bandwidth: 125})
 	}
@@ -76,7 +76,7 @@ func TestConvertDataRate(t *testing.T) {
 			Modulation: Modulation_FSK,
 			BitRate:    50000,
 		}
-		dr, err := md.GetDataRate()
+		dr, err := md.GetLoRaWANDataRate()
 		a.So(err, ShouldBeNil)
 		a.So(dr, ShouldResemble, band.DataRate{Modulation: band.FSKModulation, BitRate: 50000})
 	}

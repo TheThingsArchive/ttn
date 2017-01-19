@@ -91,6 +91,62 @@ func (m *Device) String() string            { return proto.CompactTextString(m) 
 func (*Device) ProtoMessage()               {}
 func (*Device) Descriptor() ([]byte, []int) { return fileDescriptorDevice, []int{1} }
 
+func (m *Device) GetAppId() string {
+	if m != nil {
+		return m.AppId
+	}
+	return ""
+}
+
+func (m *Device) GetDevId() string {
+	if m != nil {
+		return m.DevId
+	}
+	return ""
+}
+
+func (m *Device) GetFCntUp() uint32 {
+	if m != nil {
+		return m.FCntUp
+	}
+	return 0
+}
+
+func (m *Device) GetFCntDown() uint32 {
+	if m != nil {
+		return m.FCntDown
+	}
+	return 0
+}
+
+func (m *Device) GetDisableFCntCheck() bool {
+	if m != nil {
+		return m.DisableFCntCheck
+	}
+	return false
+}
+
+func (m *Device) GetUses32BitFCnt() bool {
+	if m != nil {
+		return m.Uses32BitFCnt
+	}
+	return false
+}
+
+func (m *Device) GetActivationConstraints() string {
+	if m != nil {
+		return m.ActivationConstraints
+	}
+	return ""
+}
+
+func (m *Device) GetLastSeen() int64 {
+	if m != nil {
+		return m.LastSeen
+	}
+	return 0
+}
+
 func init() {
 	proto.RegisterType((*DeviceIdentifier)(nil), "lorawan.DeviceIdentifier")
 	proto.RegisterType((*Device)(nil), "lorawan.Device")

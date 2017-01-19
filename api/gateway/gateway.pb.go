@@ -47,6 +47,34 @@ func (m *GPSMetadata) String() string            { return proto.CompactTextStrin
 func (*GPSMetadata) ProtoMessage()               {}
 func (*GPSMetadata) Descriptor() ([]byte, []int) { return fileDescriptorGateway, []int{0} }
 
+func (m *GPSMetadata) GetTime() int64 {
+	if m != nil {
+		return m.Time
+	}
+	return 0
+}
+
+func (m *GPSMetadata) GetLatitude() float32 {
+	if m != nil {
+		return m.Latitude
+	}
+	return 0
+}
+
+func (m *GPSMetadata) GetLongitude() float32 {
+	if m != nil {
+		return m.Longitude
+	}
+	return 0
+}
+
+func (m *GPSMetadata) GetAltitude() int32 {
+	if m != nil {
+		return m.Altitude
+	}
+	return 0
+}
+
 type RxMetadata struct {
 	GatewayId string `protobuf:"bytes,1,opt,name=gateway_id,json=gatewayId,proto3" json:"gateway_id,omitempty"`
 	// Indicates whether the gateway is trusted. Components that are able to verify gateway trust MUST do so and set this value accordingly
@@ -70,6 +98,69 @@ func (m *RxMetadata) Reset()                    { *m = RxMetadata{} }
 func (m *RxMetadata) String() string            { return proto.CompactTextString(m) }
 func (*RxMetadata) ProtoMessage()               {}
 func (*RxMetadata) Descriptor() ([]byte, []int) { return fileDescriptorGateway, []int{1} }
+
+func (m *RxMetadata) GetGatewayId() string {
+	if m != nil {
+		return m.GatewayId
+	}
+	return ""
+}
+
+func (m *RxMetadata) GetGatewayTrusted() bool {
+	if m != nil {
+		return m.GatewayTrusted
+	}
+	return false
+}
+
+func (m *RxMetadata) GetTimestamp() uint32 {
+	if m != nil {
+		return m.Timestamp
+	}
+	return 0
+}
+
+func (m *RxMetadata) GetTime() int64 {
+	if m != nil {
+		return m.Time
+	}
+	return 0
+}
+
+func (m *RxMetadata) GetRfChain() uint32 {
+	if m != nil {
+		return m.RfChain
+	}
+	return 0
+}
+
+func (m *RxMetadata) GetChannel() uint32 {
+	if m != nil {
+		return m.Channel
+	}
+	return 0
+}
+
+func (m *RxMetadata) GetFrequency() uint64 {
+	if m != nil {
+		return m.Frequency
+	}
+	return 0
+}
+
+func (m *RxMetadata) GetRssi() float32 {
+	if m != nil {
+		return m.Rssi
+	}
+	return 0
+}
+
+func (m *RxMetadata) GetSnr() float32 {
+	if m != nil {
+		return m.Snr
+	}
+	return 0
+}
 
 func (m *RxMetadata) GetGps() *GPSMetadata {
 	if m != nil {
@@ -96,6 +187,48 @@ func (m *TxConfiguration) Reset()                    { *m = TxConfiguration{} }
 func (m *TxConfiguration) String() string            { return proto.CompactTextString(m) }
 func (*TxConfiguration) ProtoMessage()               {}
 func (*TxConfiguration) Descriptor() ([]byte, []int) { return fileDescriptorGateway, []int{2} }
+
+func (m *TxConfiguration) GetTimestamp() uint32 {
+	if m != nil {
+		return m.Timestamp
+	}
+	return 0
+}
+
+func (m *TxConfiguration) GetRfChain() uint32 {
+	if m != nil {
+		return m.RfChain
+	}
+	return 0
+}
+
+func (m *TxConfiguration) GetFrequency() uint64 {
+	if m != nil {
+		return m.Frequency
+	}
+	return 0
+}
+
+func (m *TxConfiguration) GetPower() int32 {
+	if m != nil {
+		return m.Power
+	}
+	return 0
+}
+
+func (m *TxConfiguration) GetPolarizationInversion() bool {
+	if m != nil {
+		return m.PolarizationInversion
+	}
+	return false
+}
+
+func (m *TxConfiguration) GetFrequencyDeviation() uint32 {
+	if m != nil {
+		return m.FrequencyDeviation
+	}
+	return 0
+}
 
 // message Status represents a status update from a Gateway.
 type Status struct {
@@ -134,11 +267,116 @@ func (m *Status) String() string            { return proto.CompactTextString(m) 
 func (*Status) ProtoMessage()               {}
 func (*Status) Descriptor() ([]byte, []int) { return fileDescriptorGateway, []int{3} }
 
+func (m *Status) GetTimestamp() uint32 {
+	if m != nil {
+		return m.Timestamp
+	}
+	return 0
+}
+
+func (m *Status) GetTime() int64 {
+	if m != nil {
+		return m.Time
+	}
+	return 0
+}
+
+func (m *Status) GetGatewayTrusted() bool {
+	if m != nil {
+		return m.GatewayTrusted
+	}
+	return false
+}
+
+func (m *Status) GetIp() []string {
+	if m != nil {
+		return m.Ip
+	}
+	return nil
+}
+
+func (m *Status) GetPlatform() string {
+	if m != nil {
+		return m.Platform
+	}
+	return ""
+}
+
+func (m *Status) GetContactEmail() string {
+	if m != nil {
+		return m.ContactEmail
+	}
+	return ""
+}
+
+func (m *Status) GetDescription() string {
+	if m != nil {
+		return m.Description
+	}
+	return ""
+}
+
+func (m *Status) GetRegion() string {
+	if m != nil {
+		return m.Region
+	}
+	return ""
+}
+
+func (m *Status) GetBridge() string {
+	if m != nil {
+		return m.Bridge
+	}
+	return ""
+}
+
+func (m *Status) GetRouter() string {
+	if m != nil {
+		return m.Router
+	}
+	return ""
+}
+
 func (m *Status) GetGps() *GPSMetadata {
 	if m != nil {
 		return m.Gps
 	}
 	return nil
+}
+
+func (m *Status) GetRtt() uint32 {
+	if m != nil {
+		return m.Rtt
+	}
+	return 0
+}
+
+func (m *Status) GetRxIn() uint32 {
+	if m != nil {
+		return m.RxIn
+	}
+	return 0
+}
+
+func (m *Status) GetRxOk() uint32 {
+	if m != nil {
+		return m.RxOk
+	}
+	return 0
+}
+
+func (m *Status) GetTxIn() uint32 {
+	if m != nil {
+		return m.TxIn
+	}
+	return 0
+}
+
+func (m *Status) GetTxOk() uint32 {
+	if m != nil {
+		return m.TxOk
+	}
+	return 0
 }
 
 func (m *Status) GetOs() *Status_OSMetrics {
@@ -162,6 +400,48 @@ func (m *Status_OSMetrics) Reset()                    { *m = Status_OSMetrics{} 
 func (m *Status_OSMetrics) String() string            { return proto.CompactTextString(m) }
 func (*Status_OSMetrics) ProtoMessage()               {}
 func (*Status_OSMetrics) Descriptor() ([]byte, []int) { return fileDescriptorGateway, []int{3, 0} }
+
+func (m *Status_OSMetrics) GetLoad_1() float32 {
+	if m != nil {
+		return m.Load_1
+	}
+	return 0
+}
+
+func (m *Status_OSMetrics) GetLoad_5() float32 {
+	if m != nil {
+		return m.Load_5
+	}
+	return 0
+}
+
+func (m *Status_OSMetrics) GetLoad_15() float32 {
+	if m != nil {
+		return m.Load_15
+	}
+	return 0
+}
+
+func (m *Status_OSMetrics) GetCpuPercentage() float32 {
+	if m != nil {
+		return m.CpuPercentage
+	}
+	return 0
+}
+
+func (m *Status_OSMetrics) GetMemoryPercentage() float32 {
+	if m != nil {
+		return m.MemoryPercentage
+	}
+	return 0
+}
+
+func (m *Status_OSMetrics) GetTemperature() float32 {
+	if m != nil {
+		return m.Temperature
+	}
+	return 0
+}
 
 func init() {
 	proto.RegisterType((*GPSMetadata)(nil), "gateway.GPSMetadata")

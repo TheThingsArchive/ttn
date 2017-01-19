@@ -73,6 +73,34 @@ func (m *DownlinkOption) String() string            { return proto.CompactTextSt
 func (*DownlinkOption) ProtoMessage()               {}
 func (*DownlinkOption) Descriptor() ([]byte, []int) { return fileDescriptorBroker, []int{0} }
 
+func (m *DownlinkOption) GetIdentifier() string {
+	if m != nil {
+		return m.Identifier
+	}
+	return ""
+}
+
+func (m *DownlinkOption) GetGatewayId() string {
+	if m != nil {
+		return m.GatewayId
+	}
+	return ""
+}
+
+func (m *DownlinkOption) GetScore() uint32 {
+	if m != nil {
+		return m.Score
+	}
+	return 0
+}
+
+func (m *DownlinkOption) GetDeadline() int64 {
+	if m != nil {
+		return m.Deadline
+	}
+	return 0
+}
+
 func (m *DownlinkOption) GetProtocolConfig() *protocol.TxConfiguration {
 	if m != nil {
 		return m.ProtocolConfig
@@ -106,11 +134,32 @@ func (m *UplinkMessage) String() string            { return proto.CompactTextStr
 func (*UplinkMessage) ProtoMessage()               {}
 func (*UplinkMessage) Descriptor() ([]byte, []int) { return fileDescriptorBroker, []int{1} }
 
+func (m *UplinkMessage) GetPayload() []byte {
+	if m != nil {
+		return m.Payload
+	}
+	return nil
+}
+
 func (m *UplinkMessage) GetMessage() *protocol.Message {
 	if m != nil {
 		return m.Message
 	}
 	return nil
+}
+
+func (m *UplinkMessage) GetAppId() string {
+	if m != nil {
+		return m.AppId
+	}
+	return ""
+}
+
+func (m *UplinkMessage) GetDevId() string {
+	if m != nil {
+		return m.DevId
+	}
+	return ""
 }
 
 func (m *UplinkMessage) GetProtocolMetadata() *protocol.RxMetadata {
@@ -158,11 +207,32 @@ func (m *DownlinkMessage) String() string            { return proto.CompactTextS
 func (*DownlinkMessage) ProtoMessage()               {}
 func (*DownlinkMessage) Descriptor() ([]byte, []int) { return fileDescriptorBroker, []int{2} }
 
+func (m *DownlinkMessage) GetPayload() []byte {
+	if m != nil {
+		return m.Payload
+	}
+	return nil
+}
+
 func (m *DownlinkMessage) GetMessage() *protocol.Message {
 	if m != nil {
 		return m.Message
 	}
 	return nil
+}
+
+func (m *DownlinkMessage) GetAppId() string {
+	if m != nil {
+		return m.AppId
+	}
+	return ""
+}
+
+func (m *DownlinkMessage) GetDevId() string {
+	if m != nil {
+		return m.DevId
+	}
+	return ""
 }
 
 func (m *DownlinkMessage) GetDownlinkOption() *DownlinkOption {
@@ -191,6 +261,13 @@ func (m *DeviceActivationResponse) Reset()                    { *m = DeviceActiv
 func (m *DeviceActivationResponse) String() string            { return proto.CompactTextString(m) }
 func (*DeviceActivationResponse) ProtoMessage()               {}
 func (*DeviceActivationResponse) Descriptor() ([]byte, []int) { return fileDescriptorBroker, []int{3} }
+
+func (m *DeviceActivationResponse) GetPayload() []byte {
+	if m != nil {
+		return m.Payload
+	}
+	return nil
+}
 
 func (m *DeviceActivationResponse) GetMessage() *protocol.Message {
 	if m != nil {
@@ -233,11 +310,32 @@ func (m *DeduplicatedUplinkMessage) String() string            { return proto.Co
 func (*DeduplicatedUplinkMessage) ProtoMessage()               {}
 func (*DeduplicatedUplinkMessage) Descriptor() ([]byte, []int) { return fileDescriptorBroker, []int{4} }
 
+func (m *DeduplicatedUplinkMessage) GetPayload() []byte {
+	if m != nil {
+		return m.Payload
+	}
+	return nil
+}
+
 func (m *DeduplicatedUplinkMessage) GetMessage() *protocol.Message {
 	if m != nil {
 		return m.Message
 	}
 	return nil
+}
+
+func (m *DeduplicatedUplinkMessage) GetAppId() string {
+	if m != nil {
+		return m.AppId
+	}
+	return ""
+}
+
+func (m *DeduplicatedUplinkMessage) GetDevId() string {
+	if m != nil {
+		return m.DevId
+	}
+	return ""
 }
 
 func (m *DeduplicatedUplinkMessage) GetProtocolMetadata() *protocol.RxMetadata {
@@ -252,6 +350,13 @@ func (m *DeduplicatedUplinkMessage) GetGatewayMetadata() []*gateway.RxMetadata {
 		return m.GatewayMetadata
 	}
 	return nil
+}
+
+func (m *DeduplicatedUplinkMessage) GetServerTime() int64 {
+	if m != nil {
+		return m.ServerTime
+	}
+	return 0
 }
 
 func (m *DeduplicatedUplinkMessage) GetResponseTemplate() *DownlinkMessage {
@@ -285,6 +390,13 @@ func (m *DeviceActivationRequest) Reset()                    { *m = DeviceActiva
 func (m *DeviceActivationRequest) String() string            { return proto.CompactTextString(m) }
 func (*DeviceActivationRequest) ProtoMessage()               {}
 func (*DeviceActivationRequest) Descriptor() ([]byte, []int) { return fileDescriptorBroker, []int{5} }
+
+func (m *DeviceActivationRequest) GetPayload() []byte {
+	if m != nil {
+		return m.Payload
+	}
+	return nil
+}
 
 func (m *DeviceActivationRequest) GetMessage() *protocol.Message {
 	if m != nil {
@@ -351,11 +463,32 @@ func (*DeduplicatedDeviceActivationRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptorBroker, []int{6}
 }
 
+func (m *DeduplicatedDeviceActivationRequest) GetPayload() []byte {
+	if m != nil {
+		return m.Payload
+	}
+	return nil
+}
+
 func (m *DeduplicatedDeviceActivationRequest) GetMessage() *protocol.Message {
 	if m != nil {
 		return m.Message
 	}
 	return nil
+}
+
+func (m *DeduplicatedDeviceActivationRequest) GetAppId() string {
+	if m != nil {
+		return m.AppId
+	}
+	return ""
+}
+
+func (m *DeduplicatedDeviceActivationRequest) GetDevId() string {
+	if m != nil {
+		return m.DevId
+	}
+	return ""
 }
 
 func (m *DeduplicatedDeviceActivationRequest) GetProtocolMetadata() *protocol.RxMetadata {
@@ -377,6 +510,13 @@ func (m *DeduplicatedDeviceActivationRequest) GetActivationMetadata() *protocol.
 		return m.ActivationMetadata
 	}
 	return nil
+}
+
+func (m *DeduplicatedDeviceActivationRequest) GetServerTime() int64 {
+	if m != nil {
+		return m.ServerTime
+	}
+	return 0
 }
 
 func (m *DeduplicatedDeviceActivationRequest) GetResponseTemplate() *DeviceActivationResponse {
@@ -407,11 +547,32 @@ func (m *ActivationChallengeRequest) String() string            { return proto.C
 func (*ActivationChallengeRequest) ProtoMessage()               {}
 func (*ActivationChallengeRequest) Descriptor() ([]byte, []int) { return fileDescriptorBroker, []int{7} }
 
+func (m *ActivationChallengeRequest) GetPayload() []byte {
+	if m != nil {
+		return m.Payload
+	}
+	return nil
+}
+
 func (m *ActivationChallengeRequest) GetMessage() *protocol.Message {
 	if m != nil {
 		return m.Message
 	}
 	return nil
+}
+
+func (m *ActivationChallengeRequest) GetAppId() string {
+	if m != nil {
+		return m.AppId
+	}
+	return ""
+}
+
+func (m *ActivationChallengeRequest) GetDevId() string {
+	if m != nil {
+		return m.DevId
+	}
+	return ""
 }
 
 type ActivationChallengeResponse struct {
@@ -424,6 +585,13 @@ func (m *ActivationChallengeResponse) String() string { return proto.CompactText
 func (*ActivationChallengeResponse) ProtoMessage()    {}
 func (*ActivationChallengeResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptorBroker, []int{8}
+}
+
+func (m *ActivationChallengeResponse) GetPayload() []byte {
+	if m != nil {
+		return m.Payload
+	}
+	return nil
 }
 
 func (m *ActivationChallengeResponse) GetMessage() *protocol.Message {
@@ -526,6 +694,20 @@ func (m *Status) GetDeduplication() *api.Percentiles {
 	return nil
 }
 
+func (m *Status) GetConnectedRouters() uint32 {
+	if m != nil {
+		return m.ConnectedRouters
+	}
+	return 0
+}
+
+func (m *Status) GetConnectedHandlers() uint32 {
+	if m != nil {
+		return m.ConnectedHandlers
+	}
+	return 0
+}
+
 type ApplicationHandlerRegistration struct {
 	AppId     string `protobuf:"bytes,1,opt,name=app_id,json=appId,proto3" json:"app_id,omitempty"`
 	HandlerId string `protobuf:"bytes,2,opt,name=handler_id,json=handlerId,proto3" json:"handler_id,omitempty"`
@@ -536,6 +718,20 @@ func (m *ApplicationHandlerRegistration) String() string { return proto.CompactT
 func (*ApplicationHandlerRegistration) ProtoMessage()    {}
 func (*ApplicationHandlerRegistration) Descriptor() ([]byte, []int) {
 	return fileDescriptorBroker, []int{12}
+}
+
+func (m *ApplicationHandlerRegistration) GetAppId() string {
+	if m != nil {
+		return m.AppId
+	}
+	return ""
+}
+
+func (m *ApplicationHandlerRegistration) GetHandlerId() string {
+	if m != nil {
+		return m.HandlerId
+	}
+	return ""
 }
 
 func init() {

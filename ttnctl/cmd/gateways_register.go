@@ -39,8 +39,12 @@ var gatewaysRegisterCmd = &cobra.Command{
 			}
 		}
 
+		settings := account.GatewaySettings{
+			Location: location,
+		}
+
 		act := util.GetAccount(ctx)
-		gateway, err := act.RegisterGateway(gatewayID, frequencyPlan, location)
+		gateway, err := act.RegisterGateway(gatewayID, frequencyPlan, settings)
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not register gateway")
 		}

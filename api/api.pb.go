@@ -50,6 +50,69 @@ func (m *Percentiles) String() string            { return proto.CompactTextStrin
 func (*Percentiles) ProtoMessage()               {}
 func (*Percentiles) Descriptor() ([]byte, []int) { return fileDescriptorApi, []int{0} }
 
+func (m *Percentiles) GetPercentile1() float32 {
+	if m != nil {
+		return m.Percentile1
+	}
+	return 0
+}
+
+func (m *Percentiles) GetPercentile5() float32 {
+	if m != nil {
+		return m.Percentile5
+	}
+	return 0
+}
+
+func (m *Percentiles) GetPercentile10() float32 {
+	if m != nil {
+		return m.Percentile10
+	}
+	return 0
+}
+
+func (m *Percentiles) GetPercentile25() float32 {
+	if m != nil {
+		return m.Percentile25
+	}
+	return 0
+}
+
+func (m *Percentiles) GetPercentile50() float32 {
+	if m != nil {
+		return m.Percentile50
+	}
+	return 0
+}
+
+func (m *Percentiles) GetPercentile75() float32 {
+	if m != nil {
+		return m.Percentile75
+	}
+	return 0
+}
+
+func (m *Percentiles) GetPercentile90() float32 {
+	if m != nil {
+		return m.Percentile90
+	}
+	return 0
+}
+
+func (m *Percentiles) GetPercentile95() float32 {
+	if m != nil {
+		return m.Percentile95
+	}
+	return 0
+}
+
+func (m *Percentiles) GetPercentile99() float32 {
+	if m != nil {
+		return m.Percentile99
+	}
+	return 0
+}
+
 type Rates struct {
 	Rate1  float32 `protobuf:"fixed32,1,opt,name=rate1,proto3" json:"rate1,omitempty"`
 	Rate5  float32 `protobuf:"fixed32,2,opt,name=rate5,proto3" json:"rate5,omitempty"`
@@ -60,6 +123,27 @@ func (m *Rates) Reset()                    { *m = Rates{} }
 func (m *Rates) String() string            { return proto.CompactTextString(m) }
 func (*Rates) ProtoMessage()               {}
 func (*Rates) Descriptor() ([]byte, []int) { return fileDescriptorApi, []int{1} }
+
+func (m *Rates) GetRate1() float32 {
+	if m != nil {
+		return m.Rate1
+	}
+	return 0
+}
+
+func (m *Rates) GetRate5() float32 {
+	if m != nil {
+		return m.Rate5
+	}
+	return 0
+}
+
+func (m *Rates) GetRate15() float32 {
+	if m != nil {
+		return m.Rate15
+	}
+	return 0
+}
 
 type SystemStats struct {
 	Load   *SystemStats_Loadstats   `protobuf:"bytes,1,opt,name=load" json:"load,omitempty"`
@@ -104,6 +188,27 @@ func (m *SystemStats_Loadstats) String() string            { return proto.Compac
 func (*SystemStats_Loadstats) ProtoMessage()               {}
 func (*SystemStats_Loadstats) Descriptor() ([]byte, []int) { return fileDescriptorApi, []int{2, 0} }
 
+func (m *SystemStats_Loadstats) GetLoad1() float32 {
+	if m != nil {
+		return m.Load1
+	}
+	return 0
+}
+
+func (m *SystemStats_Loadstats) GetLoad5() float32 {
+	if m != nil {
+		return m.Load5
+	}
+	return 0
+}
+
+func (m *SystemStats_Loadstats) GetLoad15() float32 {
+	if m != nil {
+		return m.Load15
+	}
+	return 0
+}
+
 type SystemStats_CPUStats struct {
 	User   float32 `protobuf:"fixed32,1,opt,name=user,proto3" json:"user,omitempty"`
 	System float32 `protobuf:"fixed32,2,opt,name=system,proto3" json:"system,omitempty"`
@@ -115,6 +220,27 @@ func (m *SystemStats_CPUStats) String() string            { return proto.Compact
 func (*SystemStats_CPUStats) ProtoMessage()               {}
 func (*SystemStats_CPUStats) Descriptor() ([]byte, []int) { return fileDescriptorApi, []int{2, 1} }
 
+func (m *SystemStats_CPUStats) GetUser() float32 {
+	if m != nil {
+		return m.User
+	}
+	return 0
+}
+
+func (m *SystemStats_CPUStats) GetSystem() float32 {
+	if m != nil {
+		return m.System
+	}
+	return 0
+}
+
+func (m *SystemStats_CPUStats) GetIdle() float32 {
+	if m != nil {
+		return m.Idle
+	}
+	return 0
+}
+
 type SystemStats_MemoryStats struct {
 	Total     uint64 `protobuf:"varint,1,opt,name=total,proto3" json:"total,omitempty"`
 	Available uint64 `protobuf:"varint,2,opt,name=available,proto3" json:"available,omitempty"`
@@ -125,6 +251,27 @@ func (m *SystemStats_MemoryStats) Reset()                    { *m = SystemStats_
 func (m *SystemStats_MemoryStats) String() string            { return proto.CompactTextString(m) }
 func (*SystemStats_MemoryStats) ProtoMessage()               {}
 func (*SystemStats_MemoryStats) Descriptor() ([]byte, []int) { return fileDescriptorApi, []int{2, 2} }
+
+func (m *SystemStats_MemoryStats) GetTotal() uint64 {
+	if m != nil {
+		return m.Total
+	}
+	return 0
+}
+
+func (m *SystemStats_MemoryStats) GetAvailable() uint64 {
+	if m != nil {
+		return m.Available
+	}
+	return 0
+}
+
+func (m *SystemStats_MemoryStats) GetUsed() uint64 {
+	if m != nil {
+		return m.Used
+	}
+	return 0
+}
 
 type ComponentStats struct {
 	Uptime        uint64                      `protobuf:"varint,1,opt,name=uptime,proto3" json:"uptime,omitempty"`
@@ -138,6 +285,13 @@ func (m *ComponentStats) Reset()                    { *m = ComponentStats{} }
 func (m *ComponentStats) String() string            { return proto.CompactTextString(m) }
 func (*ComponentStats) ProtoMessage()               {}
 func (*ComponentStats) Descriptor() ([]byte, []int) { return fileDescriptorApi, []int{3} }
+
+func (m *ComponentStats) GetUptime() uint64 {
+	if m != nil {
+		return m.Uptime
+	}
+	return 0
+}
 
 func (m *ComponentStats) GetCpu() *ComponentStats_CPUStats {
 	if m != nil {
@@ -153,6 +307,20 @@ func (m *ComponentStats) GetMemory() *ComponentStats_MemoryStats {
 	return nil
 }
 
+func (m *ComponentStats) GetGoroutines() uint64 {
+	if m != nil {
+		return m.Goroutines
+	}
+	return 0
+}
+
+func (m *ComponentStats) GetGcCpuFraction() float32 {
+	if m != nil {
+		return m.GcCpuFraction
+	}
+	return 0
+}
+
 type ComponentStats_CPUStats struct {
 	User   float32 `protobuf:"fixed32,1,opt,name=user,proto3" json:"user,omitempty"`
 	System float32 `protobuf:"fixed32,2,opt,name=system,proto3" json:"system,omitempty"`
@@ -164,6 +332,27 @@ func (m *ComponentStats_CPUStats) String() string            { return proto.Comp
 func (*ComponentStats_CPUStats) ProtoMessage()               {}
 func (*ComponentStats_CPUStats) Descriptor() ([]byte, []int) { return fileDescriptorApi, []int{3, 0} }
 
+func (m *ComponentStats_CPUStats) GetUser() float32 {
+	if m != nil {
+		return m.User
+	}
+	return 0
+}
+
+func (m *ComponentStats_CPUStats) GetSystem() float32 {
+	if m != nil {
+		return m.System
+	}
+	return 0
+}
+
+func (m *ComponentStats_CPUStats) GetIdle() float32 {
+	if m != nil {
+		return m.Idle
+	}
+	return 0
+}
+
 type ComponentStats_MemoryStats struct {
 	Memory uint64 `protobuf:"varint,1,opt,name=memory,proto3" json:"memory,omitempty"`
 	Swap   uint64 `protobuf:"varint,2,opt,name=swap,proto3" json:"swap,omitempty"`
@@ -173,6 +362,20 @@ func (m *ComponentStats_MemoryStats) Reset()                    { *m = Component
 func (m *ComponentStats_MemoryStats) String() string            { return proto.CompactTextString(m) }
 func (*ComponentStats_MemoryStats) ProtoMessage()               {}
 func (*ComponentStats_MemoryStats) Descriptor() ([]byte, []int) { return fileDescriptorApi, []int{3, 1} }
+
+func (m *ComponentStats_MemoryStats) GetMemory() uint64 {
+	if m != nil {
+		return m.Memory
+	}
+	return 0
+}
+
+func (m *ComponentStats_MemoryStats) GetSwap() uint64 {
+	if m != nil {
+		return m.Swap
+	}
+	return 0
+}
 
 func init() {
 	proto.RegisterType((*Percentiles)(nil), "api.Percentiles")
