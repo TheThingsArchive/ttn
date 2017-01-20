@@ -5,10 +5,11 @@ package monitor
 
 import (
 	"errors"
+	"testing"
+
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"github.com/apex/log"
 	. "github.com/smartystreets/assertions"
-	"testing"
 )
 
 func TestNewRegistry(t *testing.T) {

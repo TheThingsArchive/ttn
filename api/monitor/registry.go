@@ -1,8 +1,12 @@
+// Copyright © 2017 The Things Network
+// Use of this source code is governed by the MIT license that can be found in the LICENSE file.
+
 package monitor
 
 import (
-	"github.com/apex/log"
 	"sync"
+
+	"github.com/apex/log"
 )
 
 // Registry encapsulates dealing with monitor servers that might be down during startup.
