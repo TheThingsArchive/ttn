@@ -28,7 +28,6 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) (err error) {
 	ctx := b.Ctx.WithField("GatewayID", uplink.GatewayMetadata.GatewayId)
 	start := time.Now()
 	deduplicatedUplink := new(pb.DeduplicatedUplinkMessage)
-	deduplicatedUplink.Trace = uplink.Trace
 	deduplicatedUplink.ServerTime = start.UnixNano()
 	defer func() {
 		if err != nil {
@@ -47,7 +46,7 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) (err error) {
 
 	b.status.uplink.Mark(1)
 
-	deduplicatedUplink.Trace = deduplicatedUplink.Trace.WithEvent(trace.ReceiveEvent)
+	uplink.Trace = uplink.Trace.WithEvent(trace.ReceiveEvent)
 
 	// De-duplicate uplink messages
 	duplicates := b.deduplicateUplink(uplink)
@@ -64,9 +63,6 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) (err error) {
 		"duplicates", len(duplicates),
 	)
 	for _, duplicate := range duplicates {
-		if duplicate == uplink {
-			continue
-		}
 		if duplicate.Trace != nil {
 			deduplicatedUplink.Trace.Parents = append(deduplicatedUplink.Trace.Parents, duplicate.Trace)
 		}
