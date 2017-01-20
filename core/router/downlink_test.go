@@ -10,6 +10,7 @@ import (
 
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_gateway "github.com/TheThingsNetwork/ttn/api/gateway"
+	"github.com/TheThingsNetwork/ttn/api/monitor"
 	pb_protocol "github.com/TheThingsNetwork/ttn/api/protocol"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	pb "github.com/TheThingsNetwork/ttn/api/router"
@@ -39,9 +40,11 @@ func newReferenceDownlink() *pb.DownlinkMessage {
 func TestHandleDownlink(t *testing.T) {
 	a := New(t)
 
+	logger := GetLogger(t, "TestHandleDownlink")
 	r := &router{
 		Component: &component.Component{
-			Ctx: GetLogger(t, "TestHandleDownlink"),
+			Ctx:      logger,
+			Monitors: monitor.NewRegistry(logger),
 		},
 		gateways: map[string]*gateway.Gateway{},
 	}
@@ -65,9 +68,11 @@ func TestHandleDownlink(t *testing.T) {
 func TestSubscribeUnsubscribeDownlink(t *testing.T) {
 	a := New(t)
 
+	logger := GetLogger(t, "TestSubscribeUnsubscribeDownlink")
 	r := &router{
 		Component: &component.Component{
-			Ctx: GetLogger(t, "TestSubscribeUnsubscribeDownlink"),
+			Ctx:      logger,
+			Monitors: monitor.NewRegistry(logger),
 		},
 		gateways: map[string]*gateway.Gateway{},
 	}

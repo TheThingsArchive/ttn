@@ -29,7 +29,7 @@ type Component struct {
 	Config           Config
 	Identity         *pb_discovery.Announcement
 	Discovery        pb_discovery.Client
-	Monitors         map[string]*pb_monitor.Client
+	Monitors         pb_monitor.Registry
 	Ctx              log.Interface
 	AccessToken      string
 	privateKey       *ecdsa.PrivateKey
@@ -119,15 +119,9 @@ func New(ctx log.Interface, serviceName string, announcedAddress string) (*Compo
 		go http.ListenAndServe(fmt.Sprintf(":%d", healthPort), nil)
 	}
 
-	if monitors := viper.GetStringMapString("monitor-servers"); len(monitors) != 0 {
-		component.Monitors = make(map[string]*pb_monitor.Client)
-		for name, addr := range monitors {
-			var err error
-			component.Monitors[name], err = pb_monitor.NewClient(ctx.WithField("Monitor", name), addr)
-			if err != nil {
-				return nil, err
-			}
-		}
+	component.Monitors = pb_monitor.NewRegistry(ctx)
+	for name, addr := range viper.GetStringMapString("monitor-servers") {
+		go component.Monitors.InitClient(name, addr)
 	}
 
 	return component, nil

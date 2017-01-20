@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	pb "github.com/TheThingsNetwork/ttn/api/broker"
+	pb_monitor "github.com/TheThingsNetwork/ttn/api/monitor"
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
@@ -20,10 +21,11 @@ func TestDownlink(t *testing.T) {
 	devEUI := types.DevEUI{0, 1, 2, 3, 4, 5, 6, 7}
 
 	dlch := make(chan *pb.DownlinkMessage, 2)
-
+	logger := GetLogger(t, "TestDownlink")
 	b := &broker{
 		Component: &component.Component{
-			Ctx: GetLogger(t, "TestDownlink"),
+			Ctx:      logger,
+			Monitors: pb_monitor.NewRegistry(logger),
 		},
 		ns: &mockNetworkServer{},
 		routers: map[string]chan *pb.DownlinkMessage{

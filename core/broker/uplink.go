@@ -39,7 +39,7 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) (err error) {
 		} else {
 			ctx.WithField("Duration", time.Now().Sub(start)).Info("Handled uplink")
 		}
-		for _, monitor := range b.Monitors {
+		for _, monitor := range b.Monitors.BrokerClients() {
 			ctx.Debug("Sending uplink to monitor")
 			go monitor.SendUplink(deduplicatedUplink)
 		}
