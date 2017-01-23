@@ -58,6 +58,22 @@ func TestDeviceKeyString(t *testing.T) {
 	a.So(got, ShouldResemble, expected)
 }
 
+func TestDeviceEventsKeyString(t *testing.T) {
+	a := New(t)
+
+	key := &DeviceKey{
+		AppID: "appid-1",
+		DevID: "devid-1",
+		Type:  DeviceEvents,
+	}
+
+	expected := "appid-1.devices.devid-1.events.#"
+
+	got := key.String()
+
+	a.So(got, ShouldResemble, expected)
+}
+
 func TestDeviceKeyParseAndString(t *testing.T) {
 	a := New(t)
 

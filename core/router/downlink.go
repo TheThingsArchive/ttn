@@ -113,7 +113,7 @@ func (r *router) buildDownlinkOptions(uplink *pb.UplinkMessage, isActivation boo
 		band.RX2DataRate = 0
 	}
 
-	dataRate, err := lorawanMetadata.GetDataRate()
+	dataRate, err := lorawanMetadata.GetLoRaWANDataRate()
 	if err != nil {
 		return
 	}

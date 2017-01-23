@@ -67,6 +67,13 @@ func (m *DeviceActivationResponse) String() string            { return proto.Com
 func (*DeviceActivationResponse) ProtoMessage()               {}
 func (*DeviceActivationResponse) Descriptor() ([]byte, []int) { return fileDescriptorHandler, []int{0} }
 
+func (m *DeviceActivationResponse) GetPayload() []byte {
+	if m != nil {
+		return m.Payload
+	}
+	return nil
+}
+
 func (m *DeviceActivationResponse) GetMessage() *protocol.Message {
 	if m != nil {
 		return m.Message
@@ -162,6 +169,13 @@ func (m *ApplicationIdentifier) String() string            { return proto.Compac
 func (*ApplicationIdentifier) ProtoMessage()               {}
 func (*ApplicationIdentifier) Descriptor() ([]byte, []int) { return fileDescriptorHandler, []int{3} }
 
+func (m *ApplicationIdentifier) GetAppId() string {
+	if m != nil {
+		return m.AppId
+	}
+	return ""
+}
+
 // The Application settings
 type Application struct {
 	AppId string `protobuf:"bytes,1,opt,name=app_id,json=appId,proto3" json:"app_id,omitempty"`
@@ -184,6 +198,41 @@ func (m *Application) String() string            { return proto.CompactTextStrin
 func (*Application) ProtoMessage()               {}
 func (*Application) Descriptor() ([]byte, []int) { return fileDescriptorHandler, []int{4} }
 
+func (m *Application) GetAppId() string {
+	if m != nil {
+		return m.AppId
+	}
+	return ""
+}
+
+func (m *Application) GetDecoder() string {
+	if m != nil {
+		return m.Decoder
+	}
+	return ""
+}
+
+func (m *Application) GetConverter() string {
+	if m != nil {
+		return m.Converter
+	}
+	return ""
+}
+
+func (m *Application) GetValidator() string {
+	if m != nil {
+		return m.Validator
+	}
+	return ""
+}
+
+func (m *Application) GetEncoder() string {
+	if m != nil {
+		return m.Encoder
+	}
+	return ""
+}
+
 type DeviceIdentifier struct {
 	AppId string `protobuf:"bytes,1,opt,name=app_id,json=appId,proto3" json:"app_id,omitempty"`
 	DevId string `protobuf:"bytes,2,opt,name=dev_id,json=devId,proto3" json:"dev_id,omitempty"`
@@ -193,6 +242,20 @@ func (m *DeviceIdentifier) Reset()                    { *m = DeviceIdentifier{} 
 func (m *DeviceIdentifier) String() string            { return proto.CompactTextString(m) }
 func (*DeviceIdentifier) ProtoMessage()               {}
 func (*DeviceIdentifier) Descriptor() ([]byte, []int) { return fileDescriptorHandler, []int{5} }
+
+func (m *DeviceIdentifier) GetAppId() string {
+	if m != nil {
+		return m.AppId
+	}
+	return ""
+}
+
+func (m *DeviceIdentifier) GetDevId() string {
+	if m != nil {
+		return m.DevId
+	}
+	return ""
+}
 
 // The Device settings
 type Device struct {
@@ -232,11 +295,46 @@ func (m *Device) GetDevice() isDevice_Device {
 	return nil
 }
 
+func (m *Device) GetAppId() string {
+	if m != nil {
+		return m.AppId
+	}
+	return ""
+}
+
+func (m *Device) GetDevId() string {
+	if m != nil {
+		return m.DevId
+	}
+	return ""
+}
+
 func (m *Device) GetLorawanDevice() *lorawan1.Device {
 	if x, ok := m.GetDevice().(*Device_LorawanDevice); ok {
 		return x.LorawanDevice
 	}
 	return nil
+}
+
+func (m *Device) GetLatitude() float32 {
+	if m != nil {
+		return m.Latitude
+	}
+	return 0
+}
+
+func (m *Device) GetLongitude() float32 {
+	if m != nil {
+		return m.Longitude
+	}
+	return 0
+}
+
+func (m *Device) GetAltitude() int32 {
+	if m != nil {
+		return m.Altitude
+	}
+	return 0
 }
 
 // XXX_OneofFuncs is for the internal use of the proto package.
@@ -327,11 +425,32 @@ func (m *DryDownlinkMessage) String() string            { return proto.CompactTe
 func (*DryDownlinkMessage) ProtoMessage()               {}
 func (*DryDownlinkMessage) Descriptor() ([]byte, []int) { return fileDescriptorHandler, []int{8} }
 
+func (m *DryDownlinkMessage) GetPayload() []byte {
+	if m != nil {
+		return m.Payload
+	}
+	return nil
+}
+
+func (m *DryDownlinkMessage) GetFields() string {
+	if m != nil {
+		return m.Fields
+	}
+	return ""
+}
+
 func (m *DryDownlinkMessage) GetApp() *Application {
 	if m != nil {
 		return m.App
 	}
 	return nil
+}
+
+func (m *DryDownlinkMessage) GetPort() uint32 {
+	if m != nil {
+		return m.Port
+	}
+	return 0
 }
 
 // DryUplinkMessage is a simulated message to test uplink processing
@@ -349,11 +468,25 @@ func (m *DryUplinkMessage) String() string            { return proto.CompactText
 func (*DryUplinkMessage) ProtoMessage()               {}
 func (*DryUplinkMessage) Descriptor() ([]byte, []int) { return fileDescriptorHandler, []int{9} }
 
+func (m *DryUplinkMessage) GetPayload() []byte {
+	if m != nil {
+		return m.Payload
+	}
+	return nil
+}
+
 func (m *DryUplinkMessage) GetApp() *Application {
 	if m != nil {
 		return m.App
 	}
 	return nil
+}
+
+func (m *DryUplinkMessage) GetPort() uint32 {
+	if m != nil {
+		return m.Port
+	}
+	return 0
 }
 
 type LogEntry struct {
@@ -367,6 +500,20 @@ func (m *LogEntry) Reset()                    { *m = LogEntry{} }
 func (m *LogEntry) String() string            { return proto.CompactTextString(m) }
 func (*LogEntry) ProtoMessage()               {}
 func (*LogEntry) Descriptor() ([]byte, []int) { return fileDescriptorHandler, []int{10} }
+
+func (m *LogEntry) GetFunction() string {
+	if m != nil {
+		return m.Function
+	}
+	return ""
+}
+
+func (m *LogEntry) GetFields() []string {
+	if m != nil {
+		return m.Fields
+	}
+	return nil
+}
 
 // DryUplinkResult is the result from an uplink simulation
 type DryUplinkResult struct {
@@ -384,6 +531,27 @@ func (m *DryUplinkResult) Reset()                    { *m = DryUplinkResult{} }
 func (m *DryUplinkResult) String() string            { return proto.CompactTextString(m) }
 func (*DryUplinkResult) ProtoMessage()               {}
 func (*DryUplinkResult) Descriptor() ([]byte, []int) { return fileDescriptorHandler, []int{11} }
+
+func (m *DryUplinkResult) GetPayload() []byte {
+	if m != nil {
+		return m.Payload
+	}
+	return nil
+}
+
+func (m *DryUplinkResult) GetFields() string {
+	if m != nil {
+		return m.Fields
+	}
+	return ""
+}
+
+func (m *DryUplinkResult) GetValid() bool {
+	if m != nil {
+		return m.Valid
+	}
+	return false
+}
 
 func (m *DryUplinkResult) GetLogs() []*LogEntry {
 	if m != nil {
@@ -404,6 +572,13 @@ func (m *DryDownlinkResult) Reset()                    { *m = DryDownlinkResult{
 func (m *DryDownlinkResult) String() string            { return proto.CompactTextString(m) }
 func (*DryDownlinkResult) ProtoMessage()               {}
 func (*DryDownlinkResult) Descriptor() ([]byte, []int) { return fileDescriptorHandler, []int{12} }
+
+func (m *DryDownlinkResult) GetPayload() []byte {
+	if m != nil {
+		return m.Payload
+	}
+	return nil
+}
 
 func (m *DryDownlinkResult) GetLogs() []*LogEntry {
 	if m != nil {

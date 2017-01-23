@@ -8,6 +8,7 @@ import (
 
 	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	pb_gateway "github.com/TheThingsNetwork/ttn/api/gateway"
+	"github.com/TheThingsNetwork/ttn/api/monitor"
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/router/gateway"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
@@ -18,10 +19,12 @@ func TestHandleGatewayStatus(t *testing.T) {
 	a := New(t)
 	gtwID := "eui-0102030405060708"
 
+	logger := GetLogger(t, "TestHandleGatewayStatus")
 	router := &router{
 		Component: &component.Component{
-			Ctx:      GetLogger(t, "TestHandleGatewayStatus"),
+			Ctx:      logger,
 			Identity: &pb_discovery.Announcement{},
+			Monitors: monitor.NewRegistry(logger),
 		},
 		gateways: map[string]*gateway.Gateway{},
 	}

@@ -83,12 +83,14 @@ func (n *networkServer) HandleUplink(message *pb_broker.DeduplicatedUplinkMessag
 
 	// Confirmed Uplink
 	if phyPayload.MHDR.MType == lorawan.ConfirmedDataUp {
+		message.Trace = message.Trace.WithEvent("set ack")
 		mac.FHDR.FCtrl.ACK = true
 	}
 
 	// Adaptive DataRate
 	if macPayload.FHDR.FCtrl.ADR {
 		if macPayload.FHDR.FCtrl.ADRACKReq {
+			message.Trace = message.Trace.WithEvent("set adr ack")
 			mac.FHDR.FCtrl.ACK = true
 		}
 	}

@@ -28,7 +28,6 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) (err error) {
 	ctx := b.Ctx.WithField("GatewayID", uplink.GatewayMetadata.GatewayId)
 	start := time.Now()
 	deduplicatedUplink := new(pb.DeduplicatedUplinkMessage)
-	deduplicatedUplink.Trace = uplink.Trace
 	deduplicatedUplink.ServerTime = start.UnixNano()
 	defer func() {
 		if err != nil {
@@ -39,7 +38,7 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) (err error) {
 		} else {
 			ctx.WithField("Duration", time.Now().Sub(start)).Info("Handled uplink")
 		}
-		for _, monitor := range b.Monitors {
+		for _, monitor := range b.Monitors.BrokerClients() {
 			ctx.Debug("Sending uplink to monitor")
 			go monitor.SendUplink(deduplicatedUplink)
 		}
@@ -47,7 +46,7 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) (err error) {
 
 	b.status.uplink.Mark(1)
 
-	deduplicatedUplink.Trace = deduplicatedUplink.Trace.WithEvent(trace.ReceiveEvent)
+	uplink.Trace = uplink.Trace.WithEvent(trace.ReceiveEvent)
 
 	// De-duplicate uplink messages
 	duplicates := b.deduplicateUplink(uplink)
@@ -64,9 +63,6 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) (err error) {
 		"duplicates", len(duplicates),
 	)
 	for _, duplicate := range duplicates {
-		if duplicate == uplink {
-			continue
-		}
 		if duplicate.Trace != nil {
 			deduplicatedUplink.Trace.Parents = append(deduplicatedUplink.Trace.Parents, duplicate.Trace)
 		}
@@ -147,9 +143,11 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) (err error) {
 				}
 			}
 		}
-
+	}
+	if device == nil {
 		return errors.NewErrNotFound("device that validates MIC")
 	}
+
 	ctx = ctx.WithFields(log.Fields{
 		"MICChecks": micChecks,
 		"DevEUI":    device.DevEui,

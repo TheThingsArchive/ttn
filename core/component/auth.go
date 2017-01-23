@@ -214,7 +214,7 @@ func (c *Component) ExchangeAppKeyForToken(appID, key string) (string, error) {
 
 	srv, _ := parseAuthServer(issuer)
 
-	oauth := oauth.OAuthWithCache(srv.url, &oauth.Client{
+	oauth := oauth.NewWithCache(srv.url, &oauth.Client{
 		ID:     srv.username,
 		Secret: srv.password,
 	}, oauthCache)

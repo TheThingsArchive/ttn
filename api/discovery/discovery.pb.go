@@ -219,6 +219,90 @@ func (m *Announcement) String() string            { return proto.CompactTextStri
 func (*Announcement) ProtoMessage()               {}
 func (*Announcement) Descriptor() ([]byte, []int) { return fileDescriptorDiscovery, []int{1} }
 
+func (m *Announcement) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *Announcement) GetServiceName() string {
+	if m != nil {
+		return m.ServiceName
+	}
+	return ""
+}
+
+func (m *Announcement) GetServiceVersion() string {
+	if m != nil {
+		return m.ServiceVersion
+	}
+	return ""
+}
+
+func (m *Announcement) GetDescription() string {
+	if m != nil {
+		return m.Description
+	}
+	return ""
+}
+
+func (m *Announcement) GetUrl() string {
+	if m != nil {
+		return m.Url
+	}
+	return ""
+}
+
+func (m *Announcement) GetPublic() bool {
+	if m != nil {
+		return m.Public
+	}
+	return false
+}
+
+func (m *Announcement) GetNetAddress() string {
+	if m != nil {
+		return m.NetAddress
+	}
+	return ""
+}
+
+func (m *Announcement) GetPublicKey() string {
+	if m != nil {
+		return m.PublicKey
+	}
+	return ""
+}
+
+func (m *Announcement) GetCertificate() string {
+	if m != nil {
+		return m.Certificate
+	}
+	return ""
+}
+
+func (m *Announcement) GetApiAddress() string {
+	if m != nil {
+		return m.ApiAddress
+	}
+	return ""
+}
+
+func (m *Announcement) GetMqttAddress() string {
+	if m != nil {
+		return m.MqttAddress
+	}
+	return ""
+}
+
+func (m *Announcement) GetAmqpAddress() string {
+	if m != nil {
+		return m.AmqpAddress
+	}
+	return ""
+}
+
 func (m *Announcement) GetMetadata() []*Metadata {
 	if m != nil {
 		return m.Metadata
@@ -236,6 +320,13 @@ func (m *GetServiceRequest) String() string            { return proto.CompactTex
 func (*GetServiceRequest) ProtoMessage()               {}
 func (*GetServiceRequest) Descriptor() ([]byte, []int) { return fileDescriptorDiscovery, []int{2} }
 
+func (m *GetServiceRequest) GetServiceName() string {
+	if m != nil {
+		return m.ServiceName
+	}
+	return ""
+}
+
 // The identifier of the service that should be returned
 type GetRequest struct {
 	// The ID of the service
@@ -248,6 +339,20 @@ func (m *GetRequest) Reset()                    { *m = GetRequest{} }
 func (m *GetRequest) String() string            { return proto.CompactTextString(m) }
 func (*GetRequest) ProtoMessage()               {}
 func (*GetRequest) Descriptor() ([]byte, []int) { return fileDescriptorDiscovery, []int{3} }
+
+func (m *GetRequest) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *GetRequest) GetServiceName() string {
+	if m != nil {
+		return m.ServiceName
+	}
+	return ""
+}
 
 // The metadata to add or remove from an announement
 type MetadataRequest struct {
@@ -263,6 +368,20 @@ func (m *MetadataRequest) Reset()                    { *m = MetadataRequest{} }
 func (m *MetadataRequest) String() string            { return proto.CompactTextString(m) }
 func (*MetadataRequest) ProtoMessage()               {}
 func (*MetadataRequest) Descriptor() ([]byte, []int) { return fileDescriptorDiscovery, []int{4} }
+
+func (m *MetadataRequest) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *MetadataRequest) GetServiceName() string {
+	if m != nil {
+		return m.ServiceName
+	}
+	return ""
+}
 
 func (m *MetadataRequest) GetMetadata() *Metadata {
 	if m != nil {

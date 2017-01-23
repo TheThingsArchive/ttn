@@ -80,6 +80,20 @@ func (*PrefixesResponse_PrefixMapping) Descriptor() ([]byte, []int) {
 	return fileDescriptorDeviceAddress, []int{1, 0}
 }
 
+func (m *PrefixesResponse_PrefixMapping) GetPrefix() string {
+	if m != nil {
+		return m.Prefix
+	}
+	return ""
+}
+
+func (m *PrefixesResponse_PrefixMapping) GetUsage() []string {
+	if m != nil {
+		return m.Usage
+	}
+	return nil
+}
+
 type DevAddrRequest struct {
 	// The usage constraints (see activation_constraints in device.proto)
 	Usage []string `protobuf:"bytes,1,rep,name=usage" json:"usage,omitempty"`
@@ -89,6 +103,13 @@ func (m *DevAddrRequest) Reset()                    { *m = DevAddrRequest{} }
 func (m *DevAddrRequest) String() string            { return proto.CompactTextString(m) }
 func (*DevAddrRequest) ProtoMessage()               {}
 func (*DevAddrRequest) Descriptor() ([]byte, []int) { return fileDescriptorDeviceAddress, []int{2} }
+
+func (m *DevAddrRequest) GetUsage() []string {
+	if m != nil {
+		return m.Usage
+	}
+	return nil
+}
 
 type DevAddrResponse struct {
 	DevAddr *github_com_TheThingsNetwork_ttn_core_types.DevAddr `protobuf:"bytes,1,opt,name=dev_addr,json=devAddr,proto3,customtype=github.com/TheThingsNetwork/ttn/core/types.DevAddr" json:"dev_addr,omitempty"`

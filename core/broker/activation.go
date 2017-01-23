@@ -35,7 +35,6 @@ func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (res *
 	})
 	start := time.Now()
 	deduplicatedActivationRequest := new(pb.DeduplicatedDeviceActivationRequest)
-	deduplicatedActivationRequest.Trace = activation.Trace
 	deduplicatedActivationRequest.ServerTime = start.UnixNano()
 
 	defer func() {
@@ -51,7 +50,7 @@ func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (res *
 
 	b.status.activations.Mark(1)
 
-	deduplicatedActivationRequest.Trace = deduplicatedActivationRequest.Trace.WithEvent(trace.ReceiveEvent)
+	activation.Trace = activation.Trace.WithEvent(trace.ReceiveEvent)
 
 	// De-duplicate uplink messages
 	duplicates := b.deduplicateActivation(activation)
@@ -71,9 +70,6 @@ func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (res *
 		"duplicates", len(duplicates),
 	)
 	for _, duplicate := range duplicates {
-		if duplicate == activation {
-			continue
-		}
 		if duplicate.Trace != nil {
 			deduplicatedActivationRequest.Trace.Parents = append(deduplicatedActivationRequest.Trace.Parents, duplicate.Trace)
 		}
