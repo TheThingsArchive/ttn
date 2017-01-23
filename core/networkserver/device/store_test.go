@@ -187,3 +187,57 @@ func TestDeviceActivate(t *testing.T) {
 	s.Delete(types.AppEUI{0, 0, 0, 0, 0, 0, 1, 1}, types.DevEUI{0, 0, 0, 0, 0, 0, 1, 1})
 
 }
+
+func TestFramesStore(t *testing.T) {
+	a := New(t)
+	s := NewRedisDeviceStore(GetRedisClient(), "networkserver-test-frames-store")
+
+	appEUI := types.AppEUI{0, 0, 0, 0, 0, 0, 0, 1}
+	devEUI := types.DevEUI{0, 0, 0, 0, 0, 0, 0, 1}
+
+	defer s.ClearFrames(appEUI, devEUI)
+
+	{
+		err := s.PushFrame(appEUI, devEUI, &Frame{
+			SNR:          -10.5,
+			GatewayCount: 2,
+		})
+		a.So(err, ShouldBeNil)
+	}
+
+	{
+		frames, err := s.GetFrames(appEUI, devEUI)
+		a.So(err, ShouldBeNil)
+		a.So(frames, ShouldHaveLength, 1)
+		a.So(frames[0].SNR, ShouldEqual, -10.5)
+		a.So(frames[0].GatewayCount, ShouldEqual, 2)
+	}
+
+	{
+		err := s.ClearFrames(appEUI, devEUI)
+		a.So(err, ShouldBeNil)
+	}
+
+	{
+		frames, err := s.GetFrames(appEUI, devEUI)
+		a.So(err, ShouldBeNil)
+		a.So(frames, ShouldBeEmpty)
+	}
+
+	{
+		defer s.ClearFrames(appEUI, devEUI)
+		for i := 0; i < 25; i++ {
+			s.PushFrame(appEUI, devEUI, &Frame{
+				GatewayCount: uint32(i + 1),
+			})
+		}
+		{
+			frames, err := s.GetFrames(appEUI, devEUI)
+			a.So(err, ShouldBeNil)
+			a.So(frames, ShouldHaveLength, 20)
+			a.So(frames[0].GatewayCount, ShouldEqual, 25)
+		}
+
+	}
+
+}

@@ -39,6 +39,13 @@ type Device struct {
 	UpdatedAt time.Time `redis:"updated_at"`
 }
 
+// Frame collected for ADR
+type Frame struct {
+	FCnt         uint32  `json:"f_cnt"`
+	SNR          float32 `json:"snr"`
+	GatewayCount uint32  `json:"gw_cnt"`
+}
+
 // StartUpdate stores the state of the device
 func (d *Device) StartUpdate() {
 	old := *d
