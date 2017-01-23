@@ -40,6 +40,13 @@ func (m *DownlinkMessage) UnmarshalPayload() error {
 			return err
 		}
 		m.Message = msg
+		if lorawan := m.GetDownlinkOption().GetProtocolConfig().GetLorawan(); lorawan != nil {
+			if lorawan.FCnt != 0 {
+				if mac := m.Message.GetLorawan().GetMacPayload(); mac != nil {
+					mac.FHDR.FCnt = lorawan.FCnt
+				}
+			}
+		}
 	}
 	return nil
 }
@@ -64,6 +71,13 @@ func (m *DeduplicatedUplinkMessage) UnmarshalPayload() error {
 			return err
 		}
 		m.Message = msg
+		if lorawan := m.GetProtocolMetadata().GetLorawan(); lorawan != nil {
+			if lorawan.FCnt != 0 {
+				if mac := m.Message.GetLorawan().GetMacPayload(); mac != nil {
+					mac.FHDR.FCnt = lorawan.FCnt
+				}
+			}
+		}
 	}
 	return nil
 }
