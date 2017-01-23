@@ -56,7 +56,5 @@ func RunCode(name, code string, env map[string]interface{}, timeout time.Duratio
 		}
 	}()
 
-	val, err = vm.Run(code)
-
-	return val, err
+	return vm.Run(code)
 }
