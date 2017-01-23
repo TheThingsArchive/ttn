@@ -7,8 +7,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/TheThingsNetwork/go-utils/encoding"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
-
 	redis "gopkg.in/redis.v5"
 )
 
@@ -16,8 +16,8 @@ import (
 type RedisMapStore struct {
 	prefix  string
 	client  *redis.Client
-	encoder StringStringMapEncoder
-	decoder StringStringMapDecoder
+	encoder func(input interface{}, properties ...string) (map[string]string, error)
+	decoder func(input map[string]string) (output interface{}, err error)
 }
 
 // NewRedisMapStore returns a new RedisMapStore that talks to the given Redis client and respects the given prefix
@@ -33,17 +33,24 @@ func NewRedisMapStore(client *redis.Client, prefix string) *RedisMapStore {
 
 // SetBase sets the base struct for automatically encoding and decoding to and from Redis format
 func (s *RedisMapStore) SetBase(base interface{}, tagName string) {
-	s.SetEncoder(buildDefaultStructEncoder(tagName))
-	s.SetDecoder(buildDefaultStructDecoder(base, tagName))
+	if tagName == "" {
+		tagName = "redis"
+	}
+	s.SetEncoder(func(input interface{}, properties ...string) (map[string]string, error) {
+		return encoding.ToStringStringMap(tagName, input, properties...)
+	})
+	s.SetDecoder(func(input map[string]string) (output interface{}, err error) {
+		return encoding.FromStringStringMap(tagName, base, input)
+	})
 }
 
 // SetEncoder sets the encoder to convert structs to Redis format
-func (s *RedisMapStore) SetEncoder(encoder StringStringMapEncoder) {
+func (s *RedisMapStore) SetEncoder(encoder func(input interface{}, properties ...string) (map[string]string, error)) {
 	s.encoder = encoder
 }
 
 // SetDecoder sets the decoder to convert structs from Redis format
-func (s *RedisMapStore) SetDecoder(decoder StringStringMapDecoder) {
+func (s *RedisMapStore) SetDecoder(decoder func(input map[string]string) (output interface{}, err error)) {
 	s.decoder = decoder
 }
 
