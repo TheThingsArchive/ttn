@@ -13,7 +13,7 @@ import (
 
 var errTimeOutExceeded = errors.NewErrInternal("Code has been running to long")
 
-func RunCode(name, code string, env map[string]interface{}, timeout time.Duration, logger Logger) (otto.Value, error) {
+func RunCode(name, code string, env map[string]interface{}, timeout time.Duration, logger Logger) (val otto.Value, err error) {
 	vm := otto.New()
 
 	// load the environment
@@ -32,22 +32,18 @@ func RunCode(name, code string, env map[string]interface{}, timeout time.Duratio
 	})
 	vm.Run("console.log = __log")
 
-	var value otto.Value
-	var err error
-
 	start := time.Now()
 
 	defer func() {
 		duration := time.Since(start)
 		if caught := recover(); caught != nil {
+			val = otto.Value{}
 			if caught == errTimeOutExceeded {
-				value = otto.Value{}
 				err = errors.NewErrInternal(fmt.Sprintf("Interrupted javascript execution after %v", duration))
 				return
+			} else {
+				err = errors.NewErrInternal(fmt.Sprintf("Fatal error in payload function: %s", caught))
 			}
-			// if this is not the our timeout interrupt, raise the panic again
-			// so someone else can handle it
-			panic(caught)
 		}
 	}()
 
@@ -59,7 +55,6 @@ func RunCode(name, code string, env map[string]interface{}, timeout time.Duratio
 			panic(errTimeOutExceeded)
 		}
 	}()
-	val, err := vm.Run(code)
 
-	return val, err
+	return vm.Run(code)
 }
