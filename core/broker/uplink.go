@@ -143,9 +143,11 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) (err error) {
 				}
 			}
 		}
-
+	}
+	if device == nil {
 		return errors.NewErrNotFound("device that validates MIC")
 	}
+
 	ctx = ctx.WithFields(log.Fields{
 		"MICChecks": micChecks,
 		"DevEUI":    device.DevEui,
