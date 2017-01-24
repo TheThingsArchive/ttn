@@ -82,3 +82,31 @@ func TestGet(t *testing.T) {
 	}
 
 }
+
+func TestGetDataRate(t *testing.T) {
+	a := New(t)
+
+	eu, _ := Get("EU_863_870")
+	euRates := []string{"SF12BW125", "SF11BW125", "SF10BW125", "SF9BW125", "SF8BW125", "SF7BW125", "SF7BW250"}
+	for expIdx, expRate := range euRates {
+		idx, err := eu.GetDataRateIndexFor(expRate)
+		a.So(err, ShouldBeNil)
+		a.So(idx, ShouldEqual, expIdx)
+
+		rate, err := eu.GetDataRateStringForIndex(expIdx)
+		a.So(err, ShouldBeNil)
+		a.So(rate, ShouldEqual, expRate)
+	}
+}
+
+func TestGetTxPower(t *testing.T) {
+	a := New(t)
+
+	eu, _ := Get("EU_863_870")
+	euPowers := []int{20, 14, 11, 8, 5, 2}
+	for expIdx, expPower := range euPowers {
+		idx, err := eu.GetTxPowerIndexFor(expPower)
+		a.So(err, ShouldBeNil)
+		a.So(idx, ShouldEqual, expIdx)
+	}
+}

@@ -3,12 +3,7 @@
 
 package band
 
-import (
-	"errors"
-
-	"github.com/TheThingsNetwork/ttn/core/types"
-	"github.com/brocaar/lorawan/band"
-)
+import "errors"
 
 var demodulationFloor = map[string]float32{
 	"SF7BW125":  -7.5,
@@ -35,17 +30,16 @@ type ADRConfig struct {
 	MaxTXPower  int
 }
 
+// ErrADRUnavailable is returned when ADR is not available
+var ErrADRUnavailable = errors.New("ADR Unavailable")
+
 // ADRSettings gets the ADR settings given a dataRate, txPower, SNR and device margin
 func (f *FrequencyPlan) ADRSettings(dataRate string, txPower int, snr float32, deviceMargin float32) (desiredDataRate string, desiredTxPower int, err error) {
 	if f.ADR == nil {
-		return dataRate, txPower, errors.New("ADR Unavailable")
+		return dataRate, txPower, ErrADRUnavailable
 	}
 	margin := linkMargin(dataRate, snr) - deviceMargin
-	dr, err := types.ParseDataRate(dataRate)
-	if err != nil {
-		return dataRate, txPower, err
-	}
-	drIdx, err := f.GetDataRate(band.DataRate{Modulation: band.LoRaModulation, SpreadFactor: int(dr.SpreadingFactor), Bandwidth: int(dr.Bandwidth)})
+	drIdx, err := f.GetDataRateIndexFor(dataRate)
 	if err != nil {
 		return dataRate, txPower, err
 	}
@@ -74,10 +68,9 @@ func (f *FrequencyPlan) ADRSettings(dataRate string, txPower int, snr float32, d
 		txPower = f.ADR.MaxTXPower
 	}
 
-	newDR, err := types.ConvertDataRate(f.DataRates[drIdx])
+	desiredDataRate, err = f.GetDataRateStringForIndex(drIdx)
 	if err != nil {
 		return dataRate, txPower, err // This should maybe panic; it means that f.ADR is incosistent with f.DataRates
 	}
-	desiredDataRate = newDR.String()
 	return desiredDataRate, txPower, nil
 }
