@@ -76,8 +76,8 @@ func (d *discoveryServer) checkMetadataEditRights(ctx context.Context, in *pb.Me
 
 	// Check claims for AppID
 	if appID != "" {
-		if !claims.AppRight(appID, rights.AppSettings) {
-			return errPermissionDeniedf("No access to this application")
+		if !claims.AppRight(appID, rights.AppDelete) {
+			return errPermissionDeniedf(`No "%s" rights to Application "%s"`, rights.AppDelete, appID)
 		}
 	}
 	return nil

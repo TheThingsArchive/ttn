@@ -34,6 +34,13 @@ type handlerManager struct {
 	clientRate      *ratelimit.Registry
 }
 
+func checkAppRights(claims *claims.Claims, appID string, right rights.Right) error {
+	if !claims.AppRight(appID, right) {
+		return errors.NewErrPermissionDenied(fmt.Sprintf(`No "%s" rights to Application "%s"`, right, appID))
+	}
+	return nil
+}
+
 func (h *handlerManager) validateTTNAuthAppContext(ctx context.Context, appID string) (context.Context, *claims.Claims, error) {
 	md, err := api.MetadataFromContext(ctx)
 	if err != nil {
@@ -75,8 +82,9 @@ func (h *handlerManager) GetDevice(ctx context.Context, in *pb.DeviceIdentifier)
 	if err != nil {
 		return nil, err
 	}
-	if !claims.AppRight(in.AppId, rights.Devices) {
-		return nil, errors.NewErrPermissionDenied(fmt.Sprintf(`No "devices" rights to application "%s"`, in.AppId))
+	err = checkAppRights(claims, in.AppId, rights.Devices)
+	if err != nil {
+		return nil, err
 	}
 
 	if _, err := h.handler.applications.Get(in.AppId); err != nil {
@@ -146,8 +154,9 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*empty.E
 	if err != nil {
 		return nil, err
 	}
-	if !claims.AppRight(in.AppId, rights.Devices) {
-		return nil, errors.NewErrPermissionDenied(fmt.Sprintf(`No "devices" rights to application "%s"`, in.AppId))
+	err = checkAppRights(claims, in.AppId, rights.Devices)
+	if err != nil {
+		return nil, err
 	}
 
 	if _, err := h.handler.applications.Get(in.AppId); err != nil {
@@ -261,8 +270,9 @@ func (h *handlerManager) DeleteDevice(ctx context.Context, in *pb.DeviceIdentifi
 	if err != nil {
 		return nil, err
 	}
-	if !claims.AppRight(in.AppId, rights.Devices) {
-		return nil, errors.NewErrPermissionDenied(fmt.Sprintf(`No "devices" rights to application "%s"`, in.AppId))
+	err = checkAppRights(claims, in.AppId, rights.Devices)
+	if err != nil {
+		return nil, err
 	}
 
 	if _, err := h.handler.applications.Get(in.AppId); err != nil {
@@ -297,8 +307,9 @@ func (h *handlerManager) GetDevicesForApplication(ctx context.Context, in *pb.Ap
 	if err != nil {
 		return nil, err
 	}
-	if !claims.AppRight(in.AppId, rights.Devices) {
-		return nil, errors.NewErrPermissionDenied(fmt.Sprintf(`No "devices" rights to application "%s"`, in.AppId))
+	err = checkAppRights(claims, in.AppId, rights.Devices)
+	if err != nil {
+		return nil, err
 	}
 
 	if _, err := h.handler.applications.Get(in.AppId); err != nil {
@@ -340,8 +351,9 @@ func (h *handlerManager) GetApplication(ctx context.Context, in *pb.ApplicationI
 	if err != nil {
 		return nil, err
 	}
-	if !claims.AppRight(in.AppId, rights.AppSettings) {
-		return nil, errors.NewErrPermissionDenied(`No "settings" rights to application`)
+	err = checkAppRights(claims, in.AppId, rights.AppSettings)
+	if err != nil {
+		return nil, err
 	}
 	app, err := h.handler.applications.Get(in.AppId)
 	if err != nil {
@@ -365,8 +377,9 @@ func (h *handlerManager) RegisterApplication(ctx context.Context, in *pb.Applica
 	if err != nil {
 		return nil, err
 	}
-	if !claims.AppRight(in.AppId, rights.AppSettings) {
-		return nil, errors.NewErrPermissionDenied(`No "settings" rights to application`)
+	err = checkAppRights(claims, in.AppId, rights.AppSettings)
+	if err != nil {
+		return nil, err
 	}
 	app, err := h.handler.applications.Get(in.AppId)
 	if err != nil && errors.GetErrType(err) != errors.NotFound {
@@ -409,8 +422,9 @@ func (h *handlerManager) SetApplication(ctx context.Context, in *pb.Application)
 	if err != nil {
 		return nil, err
 	}
-	if !claims.AppRight(in.AppId, rights.AppSettings) {
-		return nil, errors.NewErrPermissionDenied(`No "settings" rights to application`)
+	err = checkAppRights(claims, in.AppId, rights.AppSettings)
+	if err != nil {
+		return nil, err
 	}
 	app, err := h.handler.applications.Get(in.AppId)
 	if err != nil {
@@ -440,9 +454,11 @@ func (h *handlerManager) DeleteApplication(ctx context.Context, in *pb.Applicati
 	if err != nil {
 		return nil, err
 	}
-	if !claims.AppRight(in.AppId, rights.AppSettings) {
-		return nil, errors.NewErrPermissionDenied(`No "settings" rights to application`)
+	err = checkAppRights(claims, in.AppId, rights.AppDelete)
+	if err != nil {
+		return nil, err
 	}
+
 	_, err = h.handler.applications.Get(in.AppId)
 	if err != nil {
 		return nil, err
