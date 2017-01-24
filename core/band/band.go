@@ -13,6 +13,7 @@ import (
 // FrequencyPlan includes band configuration and CFList
 type FrequencyPlan struct {
 	lora.Band
+	ADR    *ADRConfig
 	CFList *lorawan.CFList
 }
 
@@ -60,6 +61,7 @@ func Get(region string) (frequencyPlan FrequencyPlan, err error) {
 		}
 		frequencyPlan.DownlinkChannels = frequencyPlan.UplinkChannels
 		frequencyPlan.CFList = &lorawan.CFList{867100000, 867300000, 867500000, 867700000, 867900000}
+		frequencyPlan.ADR = &ADRConfig{MinDataRate: 0, MaxDataRate: 5, MinTXPower: 2, MaxTXPower: 14}
 	case pb_lorawan.Region_US_902_928.String():
 		frequencyPlan.Band, err = lora.GetConfig(lora.US_902_928, false, lorawan.DwellTime400ms)
 	case pb_lorawan.Region_CN_779_787.String():
@@ -88,9 +90,6 @@ func Get(region string) (frequencyPlan FrequencyPlan, err error) {
 		frequencyPlan.CFList = &lorawan.CFList{922700000, 922900000, 923100000, 923300000, 0}
 	default:
 		err = errors.NewErrInvalidArgument("Frequency Band", "unknown")
-	}
-	if err != nil {
-		return
 	}
 	return
 }
