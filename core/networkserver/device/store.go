@@ -21,7 +21,6 @@ type Store interface {
 	ListForAddress(devAddr types.DevAddr) ([]*Device, error)
 	Get(appEUI types.AppEUI, devEUI types.DevEUI) (*Device, error)
 	Set(new *Device, properties ...string) (err error)
-	Activate(appEUI types.AppEUI, devEUI types.DevEUI, devAddr types.DevAddr, nwkSKey types.NwkSKey) error
 	Delete(appEUI types.AppEUI, devEUI types.DevEUI) error
 
 	PushFrame(appEUI types.AppEUI, devEUI types.DevEUI, frame *Frame) error
@@ -150,25 +149,6 @@ func (s *RedisDeviceStore) Set(new *Device, properties ...string) (err error) {
 	}
 
 	return nil
-}
-
-// Activate a Device
-func (s *RedisDeviceStore) Activate(appEUI types.AppEUI, devEUI types.DevEUI, devAddr types.DevAddr, nwkSKey types.NwkSKey) error {
-	dev, err := s.Get(appEUI, devEUI)
-	if err != nil {
-		return err
-	}
-
-	dev.StartUpdate()
-
-	dev.LastSeen = time.Now()
-	dev.UpdatedAt = time.Now()
-	dev.DevAddr = devAddr
-	dev.NwkSKey = nwkSKey
-	dev.FCntUp = 0
-	dev.FCntDown = 0
-
-	return s.Set(dev)
 }
 
 // Delete a Device
