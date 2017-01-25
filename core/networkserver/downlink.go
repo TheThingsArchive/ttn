@@ -11,49 +11,51 @@ import (
 )
 
 func (n *networkServer) HandleDownlink(message *pb_broker.DownlinkMessage) (*pb_broker.DownlinkMessage, error) {
+	err := message.UnmarshalPayload()
+	if err != nil {
+		return nil, err
+	}
+	lorawanDownlinkMac := message.Message.GetLorawan().GetMacPayload()
+	if lorawanDownlinkMac == nil {
+		return nil, errors.NewErrInvalidArgument("Downlink", "does not contain a MAC payload")
+	}
+
+	n.status.downlink.Mark(1)
+
 	// Get Device
 	dev, err := n.devices.Get(*message.AppEui, *message.DevEui)
 	if err != nil {
 		return nil, err
 	}
 
-	n.status.downlink.Mark(1)
-
-	message.Trace = message.Trace.WithEvent(trace.UpdateStateEvent)
-
-	dev.StartUpdate()
-
 	if dev.AppID != message.AppId || dev.DevID != message.DevId {
 		return nil, errors.NewErrInvalidArgument("Downlink", "AppID and DevID do not match AppEUI and DevEUI")
 	}
 
-	// Unmarshal LoRaWAN Payload
-	var phyPayload lorawan.PHYPayload
-	err = phyPayload.UnmarshalBinary(message.Payload)
-	if err != nil {
-		return nil, err
-	}
-	macPayload, ok := phyPayload.MACPayload.(*lorawan.MACPayload)
-	if !ok {
-		return nil, errors.NewErrInvalidArgument("Downlink", "does not contain a MAC payload")
+	message.Trace = message.Trace.WithEvent(trace.UpdateStateEvent)
+
+	dev.StartUpdate()
+	defer func() {
+		err = n.devices.Set(dev)
+		if err != nil {
+			n.Ctx.WithError(err).Error("Could not update device state")
+		}
+	}()
+
+	if lorawanDownlinkMac.DevAddr != dev.DevAddr {
+		return nil, errors.NewErrInvalidArgument("Downlink", "DevAddr does not match device")
 	}
 
-	// Set DevAddr
-	macPayload.FHDR.DevAddr = lorawan.DevAddr(dev.DevAddr)
-
-	// FIRST set and THEN increment FCntDown
-	// TODO: For confirmed downlink, FCntDown should be incremented AFTER ACK
-	macPayload.FHDR.FCnt = dev.FCntDown
-	dev.FCntDown++
-	err = n.devices.Set(dev)
+	err = n.handleDownlinkMAC(message, dev)
 	if err != nil {
 		return nil, err
 	}
 
-	// Sign MIC
+	lorawanDownlinkMac.FCnt = dev.FCntDown // Use full 32-bit FCnt for setting MIC
+	dev.FCntDown++                         // TODO: For confirmed downlink, FCntDown should be incremented AFTER ACK
+
+	phyPayload := message.Message.GetLorawan().PHYPayload()
 	phyPayload.SetMIC(lorawan.AES128Key(dev.NwkSKey))
-
-	// Update message
 	bytes, err := phyPayload.MarshalBinary()
 	if err != nil {
 		return nil, err
