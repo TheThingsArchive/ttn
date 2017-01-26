@@ -28,3 +28,19 @@ func IDFromContext(ctx context.Context) (token string, err error) {
 	}
 	return IDFromMetadata(md)
 }
+
+func LimitAndOffsetFromContext(ctx context.Context) (limit, offset int, err error) {
+	md, err := MetadataFromContext(ctx)
+	if err != nil {
+		return 0, 0, err
+	}
+	limit, err = LimitFromMetadata(md)
+	if err != nil {
+		return 0, 0, err
+	}
+	offset, err = OffsetFromMetadata(md)
+	if err != nil {
+		return 0, 0, err
+	}
+	return limit, offset, nil
+}

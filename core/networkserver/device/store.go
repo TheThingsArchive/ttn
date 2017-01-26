@@ -15,7 +15,7 @@ import (
 
 // Store interface for Devices
 type Store interface {
-	List() ([]*Device, error)
+	List(opts *storage.ListOptions) ([]*Device, error)
 	ListForAddress(devAddr types.DevAddr) ([]*Device, error)
 	Get(appEUI types.AppEUI, devEUI types.DevEUI) (*Device, error)
 	Set(new *Device, properties ...string) (err error)
@@ -51,8 +51,8 @@ type RedisDeviceStore struct {
 }
 
 // List all Devices
-func (s *RedisDeviceStore) List() ([]*Device, error) {
-	devicesI, err := s.store.List("", nil)
+func (s *RedisDeviceStore) List(opts *storage.ListOptions) ([]*Device, error) {
+	devicesI, err := s.store.List("", opts)
 	if err != nil {
 		return nil, err
 	}

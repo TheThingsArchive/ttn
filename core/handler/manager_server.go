@@ -16,6 +16,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/api/ratelimit"
 	"github.com/TheThingsNetwork/ttn/core/handler/application"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
+	"github.com/TheThingsNetwork/ttn/core/storage"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/apex/log"
@@ -189,7 +190,7 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*empty.E
 		dev.StartUpdate()
 	} else {
 		eventType = types.CreateEvent
-		existingDevices, err := h.handler.devices.ListForApp(in.AppId)
+		existingDevices, err := h.handler.devices.ListForApp(in.AppId, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -316,7 +317,12 @@ func (h *handlerManager) GetDevicesForApplication(ctx context.Context, in *pb.Ap
 		return nil, errors.Wrap(err, "Application not registered to this Handler")
 	}
 
-	devices, err := h.handler.devices.ListForApp(in.AppId)
+	limit, offset, err := api.LimitAndOffsetFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	devices, err := h.handler.devices.ListForApp(in.AppId, &storage.ListOptions{Limit: limit, Offset: offset})
 	if err != nil {
 		return nil, err
 	}
@@ -465,7 +471,7 @@ func (h *handlerManager) DeleteApplication(ctx context.Context, in *pb.Applicati
 	}
 
 	// Get and delete all devices for this application
-	devices, err := h.handler.devices.ListForApp(in.AppId)
+	devices, err := h.handler.devices.ListForApp(in.AppId, nil)
 	if err != nil {
 		return nil, err
 	}

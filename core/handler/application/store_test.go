@@ -56,7 +56,7 @@ func TestApplicationStore(t *testing.T) {
 	a.So(app.Encoder, ShouldEqual, "new encoder")
 
 	// List
-	apps, err := s.List()
+	apps, err := s.List(nil)
 	a.So(err, ShouldBeNil)
 	a.So(apps, ShouldHaveLength, 1)
 

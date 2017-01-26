@@ -23,7 +23,7 @@ func TestDeviceStore(t *testing.T) {
 	a.So(err, ShouldNotBeNil)
 	a.So(dev, ShouldBeNil)
 
-	devs, err := s.ListForApp("AppID-1")
+	devs, err := s.ListForApp("AppID-1", nil)
 	a.So(err, ShouldBeNil)
 	a.So(devs, ShouldHaveLength, 0)
 
@@ -46,7 +46,7 @@ func TestDeviceStore(t *testing.T) {
 	a.So(err, ShouldBeNil)
 	a.So(dev, ShouldNotBeNil)
 
-	devs, err = s.ListForApp("AppID-1")
+	devs, err = s.ListForApp("AppID-1", nil)
 	a.So(err, ShouldBeNil)
 	a.So(devs, ShouldHaveLength, 1)
 
@@ -81,7 +81,7 @@ func TestDeviceStore(t *testing.T) {
 	}()
 
 	// List
-	devices, err := s.List()
+	devices, err := s.List(nil)
 	a.So(err, ShouldBeNil)
 	a.So(devices, ShouldHaveLength, 2)
 
@@ -94,7 +94,7 @@ func TestDeviceStore(t *testing.T) {
 	a.So(err, ShouldNotBeNil)
 	a.So(dev, ShouldBeNil)
 
-	devs, err = s.ListForApp("AppID-1")
+	devs, err = s.ListForApp("AppID-1", nil)
 	a.So(err, ShouldBeNil)
 	a.So(devs, ShouldHaveLength, 1)
 

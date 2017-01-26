@@ -8,6 +8,7 @@ import (
 
 	pb "github.com/TheThingsNetwork/ttn/api/handler"
 	"github.com/TheThingsNetwork/ttn/core/handler/application"
+	"github.com/TheThingsNetwork/ttn/core/storage"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/assertions"
 	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
@@ -40,9 +41,9 @@ func (s *countingStore) Count(name string) int {
 	return val
 }
 
-func (s *countingStore) List() ([]*application.Application, error) {
+func (s *countingStore) List(opts *storage.ListOptions) ([]*application.Application, error) {
 	s.inc("list")
-	return s.store.List()
+	return s.store.List(opts)
 }
 
 func (s *countingStore) Get(appID string) (*application.Application, error) {
