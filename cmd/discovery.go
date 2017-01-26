@@ -18,7 +18,6 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/discovery"
 	"github.com/TheThingsNetwork/ttn/core/discovery/announcement"
 	"github.com/TheThingsNetwork/ttn/core/proxy"
-	"github.com/apex/log"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -32,7 +31,7 @@ var discoveryCmd = &cobra.Command{
 	Short: "The Things Network discovery",
 	Long:  ``,
 	PreRun: func(cmd *cobra.Command, args []string) {
-		ctx.WithFields(log.Fields{
+		ctx.WithFields(ttnlog.Fields{
 			"Server":     fmt.Sprintf("%s:%d", viper.GetString("discovery.server-address"), viper.GetInt("discovery.server-port")),
 			"HTTP Proxy": fmt.Sprintf("%s:%d", viper.GetString("discovery.http-address"), viper.GetInt("discovery.http-port")),
 			"Database":   fmt.Sprintf("%s/%d", viper.GetString("discovery.redis-address"), viper.GetInt("discovery.redis-db")),

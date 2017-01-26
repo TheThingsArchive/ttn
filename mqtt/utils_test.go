@@ -7,10 +7,9 @@ import (
 	"testing"
 
 	"github.com/TheThingsNetwork/go-utils/log"
-	"github.com/TheThingsNetwork/go-utils/log/apex"
 	tt "github.com/TheThingsNetwork/ttn/utils/testing"
 )
 
 func getLogger(t *testing.T, tag string) log.Interface {
-	return apex.Wrap(tt.GetLogger(t, tag))
+	return tt.GetLogger(t, tag)
 }

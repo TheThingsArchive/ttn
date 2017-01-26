@@ -7,7 +7,7 @@ import (
 	"errors"
 	"testing"
 
-	ttnlog "github.com/TheThingsNetwork/ttn/go-utils/log"
+	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/assertions"
 )

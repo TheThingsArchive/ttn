@@ -6,8 +6,8 @@ package cmd
 import (
 	"fmt"
 
+	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/core/types"
-	ttnlog "github.com/TheThingsNetwork/ttn/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/gosuri/uitable"
 	"github.com/spf13/cobra"

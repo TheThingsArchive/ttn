@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"strings"
 
+	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/mqtt"
 	"github.com/gosuri/uitable"
 	"github.com/spf13/viper"

@@ -86,7 +86,7 @@ var RootCmd = &cobra.Command{
 		ttnlog.Set(ctx)
 		grpclog.SetLogger(grpc.Wrap(ttnlog.Get()))
 
-		ctx.WithFields(log.Fields{
+		ctx.WithFields(ttnlog.Fields{
 			"ComponentID":              viper.GetString("id"),
 			"Description":              viper.GetString("description"),
 			"Discovery Server Address": viper.GetString("discovery-address"),

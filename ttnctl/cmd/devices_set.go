@@ -6,9 +6,9 @@ package cmd
 import (
 	"os"
 
+	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/core/types"
-	ttnlog "github.com/TheThingsNetwork/ttn/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/spf13/cobra"
 )
