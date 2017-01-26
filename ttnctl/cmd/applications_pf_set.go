@@ -51,7 +51,7 @@ Y
 Payload: 12 34
 Port: 1
 
-  INFO Test successful
+  INFO Function tested successfully
 
   INFO Updated application                      AppID=test
 `,
@@ -188,9 +188,9 @@ Function read from %s:
 				}
 
 				if !result.Valid {
-					ctx.Fatal("Could not set the payload function. Invalid result")
+					ctx.Fatal("Could not set the payload function: Invalid result")
 				}
-				ctx.Infof("Test successful")
+				ctx.Info("Function tested successfully")
 			case "encoder":
 				fields, err := util.ReadFields()
 				if err != nil {
@@ -206,7 +206,7 @@ Function read from %s:
 				if err != nil {
 					ctx.WithError(err).Fatal("Could not set the payload function")
 				}
-				ctx.Infof("Test successful, resulting payload: %s", result.Payload)
+				ctx.Info("Function tested successfully")
 			default:
 				ctx.Fatalf("Function %s does not exist", function)
 			}
