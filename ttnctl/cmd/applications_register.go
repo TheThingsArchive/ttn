@@ -4,8 +4,8 @@
 package cmd
 
 import (
+	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
-	"github.com/apex/log"
 	"github.com/spf13/cobra"
 )
 
@@ -30,7 +30,7 @@ var applicationsRegisterCmd = &cobra.Command{
 			ctx.WithError(err).Fatal("Could not register application")
 		}
 
-		ctx.WithFields(log.Fields{
+		ctx.WithFields(ttnlog.Fields{
 			"AppID": appID,
 		}).Infof("Registered application")
 	},

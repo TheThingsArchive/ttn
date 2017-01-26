@@ -6,7 +6,7 @@
 package cmd
 
 import (
-	"github.com/apex/log"
+	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -18,7 +18,7 @@ var versionCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		gitCommit := viper.GetString("gitCommit")
 		buildDate := viper.GetString("buildDate")
-		ctx.WithFields(log.Fields{
+		ctx.WithFields(ttnlog.Fields{
 			"Version":   viper.GetString("version") + "-homebrew",
 			"Commit":    gitCommit,
 			"BuildDate": buildDate,

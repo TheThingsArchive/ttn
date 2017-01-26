@@ -8,8 +8,8 @@ import (
 
 	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/core/types"
+	ttnlog "github.com/TheThingsNetwork/ttn/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
-	"github.com/apex/log"
 	"github.com/spf13/cobra"
 )
 
@@ -157,7 +157,7 @@ var devicesSetCmd = &cobra.Command{
 			ctx.WithError(err).Fatal("Could not update Device")
 		}
 
-		ctx.WithFields(log.Fields{
+		ctx.WithFields(ttnlog.Fields{
 			"AppID": appID,
 			"DevID": devID,
 		}).Info("Updated device")

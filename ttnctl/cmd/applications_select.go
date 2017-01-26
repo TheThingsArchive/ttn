@@ -7,8 +7,8 @@ import (
 	"fmt"
 
 	"github.com/TheThingsNetwork/ttn/core/types"
+	ttnlog "github.com/TheThingsNetwork/ttn/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
-	"github.com/apex/log"
 	"github.com/gosuri/uitable"
 	"github.com/spf13/cobra"
 )
@@ -116,7 +116,7 @@ var applicationsSelectCmd = &cobra.Command{
 
 		util.SetApp(ctx, app.ID, eui)
 
-		ctx.WithFields(log.Fields{
+		ctx.WithFields(ttnlog.Fields{
 			"AppID":  app.ID,
 			"AppEUI": eui,
 		}).Info("Updated configuration")
