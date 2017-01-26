@@ -139,6 +139,7 @@ var handlerCmd = &cobra.Command{
 			pb.RegisterApplicationManagerHandler(netCtx, mux, proxyConn)
 
 			prxy := proxy.WithToken(mux)
+			prxy = proxy.WithPagination(prxy)
 			prxy = proxy.WithLogger(prxy, ctx)
 
 			go func() {

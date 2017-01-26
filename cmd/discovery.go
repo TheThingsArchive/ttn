@@ -89,6 +89,7 @@ var discoveryCmd = &cobra.Command{
 			pb.RegisterDiscoveryHandler(netCtx, mux, proxyConn)
 
 			prxy := proxy.WithLogger(mux, ctx)
+			prxy = proxy.WithPagination(prxy)
 
 			go func() {
 				err := http.ListenAndServe(
