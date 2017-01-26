@@ -207,7 +207,7 @@
 			"revisionTime": "2017-01-18T11:17:54Z"
 		},
 		{
-			"checksumSHA1": "XwDm1VMyZA/MLAK4Fst0yI7lyCE=",
+			"checksumSHA1": "6ZxSmrIx3Jd15aou16oG0HPylP4=",
 			"path": "github.com/gogo/protobuf/proto",
 			"revision": "6e505820968158ec7ac58ea92bba501a82b41171",
 			"revisionTime": "2017-01-18T11:17:54Z"
@@ -231,7 +231,7 @@
 			"revisionTime": "2016-11-17T03:31:26Z"
 		},
 		{
-			"checksumSHA1": "q3Bc7JpLWBqhZ4M7oreGo34RSkc=",
+			"checksumSHA1": "kBeNcaKk56FguvPSUCEaH6AxpRc=",
 			"path": "github.com/golang/protobuf/proto",
 			"revision": "8ee79997227bf9b34611aee7946ae64735e6fd93",
 			"revisionTime": "2016-11-17T03:31:26Z"
@@ -681,7 +681,7 @@
 			"revisionTime": "2017-01-14T04:22:49Z"
 		},
 		{
-			"checksumSHA1": "hyK05cmzm+vPH1OO+F1AkvES3sw=",
+			"checksumSHA1": "XH7CgbL5Z8COUc+MKrYqS3FFosY=",
 			"path": "golang.org/x/oauth2",
 			"revision": "314dd2c0bf3ebd592ec0d20847d27e79d0dbe8dd",
 			"revisionTime": "2016-12-14T09:25:55Z"
@@ -795,7 +795,7 @@
 			"revisionTime": "2017-01-16T08:01:07Z"
 		},
 		{
-			"checksumSHA1": "M1xjRvZ0RQod9w9UcIttyk/4EuU=",
+			"checksumSHA1": "MQyhe1N+NO0+uyJiEc6M2WGfb3s=",
 			"path": "gopkg.in/redis.v5/internal",
 			"revision": "8829ddcd8bdb333e477cc845946c4b9b2ef66280",
 			"revisionTime": "2017-01-16T08:01:07Z"
