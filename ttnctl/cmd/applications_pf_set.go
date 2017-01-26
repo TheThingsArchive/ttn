@@ -6,7 +6,6 @@ package cmd
 import (
 	"fmt"
 	"io/ioutil"
-	"os"
 	"strings"
 
 	"github.com/TheThingsNetwork/ttn/api/handler"
@@ -44,6 +43,27 @@ function Decoder(bytes, port) {
 
   return decoded;
 }
+Parsing function...
+  INFO Function parsed successfully: syntax checked
+
+Test the function to detect runtime errors
+
+Write your function call and provide arguments to test it
+Note: Use the built-in function JSON.stringify() to provide json objects parameters: E.g: JSON.stingify({ valid: argument })
+
+function Decoder(bytes, port) {
+  // Instructions
+}
+
+// The function call to test the Decoder
+Decoder([10, 23, 35], 3)
+########## Write your testing function call here and end with Ctrl+D (EOF):
+
+
+Decoder([10, 32], 3)
+  INFO Testing...
+
+The test is successful, the given function is valid
   INFO Updated application                      AppID=test
 `,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -72,15 +92,25 @@ function Decoder(bytes, port) {
 			if err != nil {
 				ctx.WithError(err).Fatal("Could not read function file")
 			}
+			fmt.Println(fmt.Sprintf(`
+Function read from %s:
+
+%s
+`, args[1], string(content)))
+
+			code, err := util.ValidatePayload(ctx, string(content), function)
+			if err != nil {
+				ctx.WithError(err).Fatal("Could not validate the function.")
+			}
 			switch function {
 			case "decoder":
-				app.Decoder = string(content)
+				app.Decoder = code
 			case "converter":
-				app.Converter = string(content)
+				app.Converter = code
 			case "validator":
-				app.Validator = string(content)
+				app.Validator = code
 			case "encoder":
-				app.Encoder = string(content)
+				app.Encoder = code
 			default:
 				ctx.Fatalf("Function %s does not exist", function)
 			}
@@ -99,7 +129,11 @@ function Decoder(bytes, port) {
   return decoded;
 }
 ########## Write your Decoder here and end with Ctrl+D (EOF):`)
-				app.Decoder = readFunction()
+				code, err := util.ValidatePayload(ctx, util.ReadFunction(ctx), function)
+				if err != nil {
+					ctx.WithError(err).Fatal("Could not validate the function")
+				}
+				app.Decoder = code
 			case "converter":
 				fmt.Println(`function Converter(decoded, port) {
   // Merge, split or otherwise
@@ -113,7 +147,11 @@ function Decoder(bytes, port) {
   return converted;
 }
 ########## Write your Converter here and end with Ctrl+D (EOF):`)
-				app.Converter = readFunction()
+				code, err := util.ValidatePayload(ctx, util.ReadFunction(ctx), function)
+				if err != nil {
+					ctx.WithError(err).Fatal("Could not validate the function")
+				}
+				app.Converter = code
 			case "validator":
 				fmt.Println(`function Validator(converted, port) {
   // Return false if the decoded, converted
@@ -126,7 +164,11 @@ function Decoder(bytes, port) {
   return true;
 }
 ########## Write your Validator here and end with Ctrl+D (EOF):`)
-				app.Validator = readFunction()
+				code, err := util.ValidatePayload(ctx, util.ReadFunction(ctx), function)
+				if err != nil {
+					ctx.WithError(err).Fatal("Could not validate the function")
+				}
+				app.Validator = code
 			case "encoder":
 				fmt.Println(`function Encoder(object, port) {
   // Encode downlink messages sent as
@@ -140,7 +182,11 @@ function Decoder(bytes, port) {
   return bytes;
 }
 ########## Write your Encoder here and end with Ctrl+D (EOF):`)
-				app.Encoder = readFunction()
+				code, err := util.ValidatePayload(ctx, util.ReadFunction(ctx), function)
+				if err != nil {
+					ctx.WithError(err).Fatal("Could not validate the function")
+				}
+				app.Encoder = code
 			default:
 				ctx.Fatalf("Function %s does not exist", function)
 			}
@@ -155,14 +201,6 @@ function Decoder(bytes, port) {
 			"AppID": appID,
 		}).Infof("Updated application")
 	},
-}
-
-func readFunction() string {
-	content, err := ioutil.ReadAll(os.Stdin)
-	if err != nil {
-		ctx.WithError(err).Fatal("Could not read function from STDIN.")
-	}
-	return strings.TrimSpace(string(content))
 }
 
 func init() {
