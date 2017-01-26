@@ -6,10 +6,10 @@ package handler
 import (
 	"time"
 
+	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/api/trace"
 	"github.com/TheThingsNetwork/ttn/core/types"
-	"github.com/apex/log"
 )
 
 // ResponseDeadline indicates how long
@@ -17,7 +17,7 @@ var ResponseDeadline = 100 * time.Millisecond
 
 func (h *handler) HandleUplink(uplink *pb_broker.DeduplicatedUplinkMessage) (err error) {
 	appID, devID := uplink.AppId, uplink.DevId
-	ctx := h.Ctx.WithFields(log.Fields{
+	ctx := h.Ctx.WithFields(ttnlog.Fields{
 		"AppID": appID,
 		"DevID": devID,
 	})

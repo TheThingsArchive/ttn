@@ -6,8 +6,8 @@ package component
 import (
 	"time"
 
+	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
-	"github.com/apex/log"
 	"github.com/mwitkow/go-grpc-middleware"
 	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
 	"google.golang.org/grpc"
@@ -32,7 +32,7 @@ func (c *Component) ServerOptions() []grpc.ServerOption {
 				peerID = id[0]
 			}
 		}
-		logCtx := c.Ctx.WithFields(log.Fields{
+		logCtx := c.Ctx.WithFields(ttnlog.Fields{
 			"CallerID": peerID,
 			"CallerIP": peerAddr,
 			"Method":   info.FullMethod,
@@ -63,7 +63,7 @@ func (c *Component) ServerOptions() []grpc.ServerOption {
 				peerID = id[0]
 			}
 		}
-		logCtx := c.Ctx.WithFields(log.Fields{
+		logCtx := c.Ctx.WithFields(ttnlog.Fields{
 			"CallerID": peerID,
 			"CallerIP": peerAddr,
 			"Method":   info.FullMethod,

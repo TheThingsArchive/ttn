@@ -7,14 +7,14 @@ import (
 	"sync"
 	"time"
 
+	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	pb "github.com/TheThingsNetwork/ttn/api/gateway"
 	pb_monitor "github.com/TheThingsNetwork/ttn/api/monitor"
 	pb_router "github.com/TheThingsNetwork/ttn/api/router"
-	"github.com/apex/log"
 )
 
 // NewGateway creates a new in-memory Gateway structure
-func NewGateway(ctx log.Interface, id string) *Gateway {
+func NewGateway(ctx ttnlog.Interface, id string) *Gateway {
 	ctx = ctx.WithField("GatewayID", id)
 	gtw := &Gateway{
 		ID:          id,
@@ -42,7 +42,7 @@ type Gateway struct {
 
 	Monitors pb_monitor.Registry
 
-	Ctx log.Interface
+	Ctx ttnlog.Interface
 }
 
 func (g *Gateway) SetAuth(token string, authenticated bool) {

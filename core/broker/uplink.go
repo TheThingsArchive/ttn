@@ -10,6 +10,7 @@ import (
 	"sort"
 	"time"
 
+	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	pb "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/api/networkserver"
@@ -18,7 +19,6 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/fcnt"
-	"github.com/apex/log"
 	"github.com/brocaar/lorawan"
 )
 
@@ -87,7 +87,7 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) (err error) {
 
 	// Request devices from NS
 	devAddr := types.DevAddr(macPayload.FHDR.DevAddr)
-	ctx = ctx.WithFields(log.Fields{
+	ctx = ctx.WithFields(ttnlog.Fields{
 		"DevAddr": devAddr,
 		"FCnt":    macPayload.FHDR.FCnt,
 	})
@@ -150,7 +150,7 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) (err error) {
 		return errors.NewErrNotFound("device that validates MIC")
 	}
 
-	ctx = ctx.WithFields(log.Fields{
+	ctx = ctx.WithFields(ttnlog.Fields{
 		"MICChecks": micChecks,
 		"DevEUI":    device.DevEui,
 		"AppEUI":    device.AppEui,

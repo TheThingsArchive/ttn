@@ -6,10 +6,9 @@ package handler
 import (
 	"time"
 
-	"github.com/TheThingsNetwork/go-utils/log/apex"
+	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/mqtt"
-	"github.com/apex/log"
 )
 
 // MQTTTimeout indicates how long we should wait for an MQTT publish
@@ -19,7 +18,7 @@ var MQTTTimeout = 2 * time.Second
 var MQTTBufferSize = 10
 
 func (h *handler) HandleMQTT(username, password string, mqttBrokers ...string) error {
-	h.mqttClient = mqtt.NewClient(apex.Wrap(h.Ctx), "ttnhdl", username, password, mqttBrokers...)
+	h.mqttClient = mqtt.NewClient(h.Ctx, "ttnhdl", username, password, mqttBrokers...)
 
 	err := h.mqttClient.Connect()
 	if err != nil {
@@ -44,7 +43,7 @@ func (h *handler) HandleMQTT(username, password string, mqttBrokers ...string) e
 
 	go func() {
 		for up := range h.mqttUp {
-			ctx.WithFields(log.Fields{
+			ctx.WithFields(ttnlog.Fields{
 				"DevID": up.DevID,
 				"AppID": up.AppID,
 			}).Debug("Publish Uplink")
@@ -75,7 +74,7 @@ func (h *handler) HandleMQTT(username, password string, mqttBrokers ...string) e
 
 	go func() {
 		for event := range h.mqttEvent {
-			h.Ctx.WithFields(log.Fields{
+			h.Ctx.WithFields(ttnlog.Fields{
 				"DevID": event.DevID,
 				"AppID": event.AppID,
 				"Event": event.Event,

@@ -8,15 +8,15 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 
+	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
-	"github.com/apex/log"
 )
 
 // UplinkProcessor processes an uplink protobuf to an application-layer uplink message
-type UplinkProcessor func(ctx log.Interface, ttnUp *pb_broker.DeduplicatedUplinkMessage, appUp *types.UplinkMessage, device *device.Device) error
+type UplinkProcessor func(ctx ttnlog.Interface, ttnUp *pb_broker.DeduplicatedUplinkMessage, appUp *types.UplinkMessage, device *device.Device) error
 
 // DownlinkProcessor processes an application-layer downlink message to a downlik protobuf
-type DownlinkProcessor func(ctx log.Interface, appDown *types.DownlinkMessage, ttnDown *pb_broker.DownlinkMessage, device *device.Device) error
+type DownlinkProcessor func(ctx ttnlog.Interface, appDown *types.DownlinkMessage, ttnDown *pb_broker.DownlinkMessage, device *device.Device) error
 
 // ErrNotNeeded indicates that the processing of a message should be aborted
 var ErrNotNeeded = errors.New("Further processing not needed")

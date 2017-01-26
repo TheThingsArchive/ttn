@@ -14,10 +14,10 @@ import (
 
 	"github.com/TheThingsNetwork/go-account-lib/claims"
 	"github.com/TheThingsNetwork/go-account-lib/tokenkey"
+	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	pb_monitor "github.com/TheThingsNetwork/ttn/api/monitor"
 	"github.com/TheThingsNetwork/ttn/api/trace"
-	"github.com/apex/log"
 	"github.com/spf13/viper"
 	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
 	"google.golang.org/grpc"
@@ -30,7 +30,7 @@ type Component struct {
 	Identity         *pb_discovery.Announcement
 	Discovery        pb_discovery.Client
 	Monitors         pb_monitor.Registry
-	Ctx              log.Interface
+	Ctx              ttnlog.Interface
 	AccessToken      string
 	privateKey       *ecdsa.PrivateKey
 	tlsConfig        *tls.Config
@@ -52,12 +52,12 @@ type ManagementInterface interface {
 }
 
 // New creates a new Component
-func New(ctx log.Interface, serviceName string, announcedAddress string) (*Component, error) {
+func New(ctx ttnlog.Interface, serviceName string, announcedAddress string) (*Component, error) {
 	go func() {
 		memstats := new(runtime.MemStats)
 		for range time.Tick(time.Minute) {
 			runtime.ReadMemStats(memstats)
-			ctx.WithFields(log.Fields{
+			ctx.WithFields(ttnlog.Fields{
 				"Goroutines": runtime.NumGoroutine(),
 				"Memory":     float64(memstats.Alloc) / 1000000,
 			}).Debugf("Stats")
