@@ -14,8 +14,8 @@ import (
 
 // Store interface for Devices
 type Store interface {
-	List() ([]*Device, error)
-	ListForApp(appID string) ([]*Device, error)
+	List(opts *storage.ListOptions) ([]*Device, error)
+	ListForApp(appID string, opts *storage.ListOptions) ([]*Device, error)
 	Get(appID, devID string) (*Device, error)
 	Set(new *Device, properties ...string) (err error)
 	Delete(appID, devID string) error
@@ -43,8 +43,8 @@ type RedisDeviceStore struct {
 }
 
 // List all Devices
-func (s *RedisDeviceStore) List() ([]*Device, error) {
-	devicesI, err := s.store.List("", nil)
+func (s *RedisDeviceStore) List(opts *storage.ListOptions) ([]*Device, error) {
+	devicesI, err := s.store.List("", opts)
 	if err != nil {
 		return nil, err
 	}
@@ -58,8 +58,8 @@ func (s *RedisDeviceStore) List() ([]*Device, error) {
 }
 
 // ListForApp lists all devices for a specific Application
-func (s *RedisDeviceStore) ListForApp(appID string) ([]*Device, error) {
-	devicesI, err := s.store.List(fmt.Sprintf("%s:*", appID), nil)
+func (s *RedisDeviceStore) ListForApp(appID string, opts *storage.ListOptions) ([]*Device, error) {
+	devicesI, err := s.store.List(fmt.Sprintf("%s:*", appID), opts)
 	if err != nil {
 		return nil, err
 	}

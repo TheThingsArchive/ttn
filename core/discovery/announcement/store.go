@@ -16,8 +16,8 @@ import (
 
 // Store interface for Announcements
 type Store interface {
-	List() ([]*Announcement, error)
-	ListService(serviceName string) ([]*Announcement, error)
+	List(opts *storage.ListOptions) ([]*Announcement, error)
+	ListService(serviceName string, opts *storage.ListOptions) ([]*Announcement, error)
 	Get(serviceName, serviceID string) (*Announcement, error)
 	GetMetadata(serviceName, serviceID string) ([]Metadata, error)
 	GetForAppID(appID string) (*Announcement, error)
@@ -63,8 +63,8 @@ type RedisAnnouncementStore struct {
 
 // List all Announcements
 // The resulting Announcements do *not* include metadata
-func (s *RedisAnnouncementStore) List() ([]*Announcement, error) {
-	announcementsI, err := s.store.List("", nil)
+func (s *RedisAnnouncementStore) List(opts *storage.ListOptions) ([]*Announcement, error) {
+	announcementsI, err := s.store.List("", opts)
 	if err != nil {
 		return nil, err
 	}
@@ -79,8 +79,8 @@ func (s *RedisAnnouncementStore) List() ([]*Announcement, error) {
 
 // ListService lists all Announcements for a given service (router/broker/handler)
 // The resulting Announcements *do* include metadata
-func (s *RedisAnnouncementStore) ListService(serviceName string) ([]*Announcement, error) {
-	announcementsI, err := s.store.List(serviceName+":*", nil)
+func (s *RedisAnnouncementStore) ListService(serviceName string, opts *storage.ListOptions) ([]*Announcement, error) {
+	announcementsI, err := s.store.List(serviceName+":*", opts)
 	if err != nil {
 		return nil, err
 	}

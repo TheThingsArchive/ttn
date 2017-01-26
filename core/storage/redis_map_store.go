@@ -69,6 +69,9 @@ func (s *RedisMapStore) GetAll(keys []string, options *ListOptions) ([]interface
 	sort.Strings(keys)
 
 	selectedKeys := selectKeys(keys, options)
+	if len(selectedKeys) == 0 {
+		return []interface{}{}, nil
+	}
 
 	pipe := s.client.Pipeline()
 	defer pipe.Close()

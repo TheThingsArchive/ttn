@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/TheThingsNetwork/ttn/core/storage"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/bluele/gcache"
 )
@@ -49,7 +50,7 @@ func NewCachedAnnouncementStore(store Store, options CacheOptions) Store {
 	listCache := gcache.New(options.ListCacheSize).Expiration(options.ListCacheExpiration).LRU().
 		LoaderFunc(func(k interface{}) (interface{}, error) {
 			key := k.(string)
-			announcements, err := store.ListService(key)
+			announcements, err := store.ListService(key, nil)
 			if err != nil {
 				return nil, err
 			}
@@ -68,12 +69,12 @@ func NewCachedAnnouncementStore(store Store, options CacheOptions) Store {
 	}
 }
 
-func (s *cachedAnnouncementStore) List() ([]*Announcement, error) {
+func (s *cachedAnnouncementStore) List(opts *storage.ListOptions) ([]*Announcement, error) {
 	// TODO: We're not using this function. Implement cache when we start using it.
-	return s.backingStore.List()
+	return s.backingStore.List(nil)
 }
 
-func (s *cachedAnnouncementStore) ListService(serviceName string) ([]*Announcement, error) {
+func (s *cachedAnnouncementStore) ListService(serviceName string, opts *storage.ListOptions) ([]*Announcement, error) {
 	l, err := s.listCache.Get(serviceName)
 	if err != nil {
 		return nil, err
