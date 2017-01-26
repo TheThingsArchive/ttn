@@ -4,8 +4,10 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"strings"
 
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
@@ -98,19 +100,15 @@ Function read from %s:
 %s
 `, args[1], string(content)))
 
-			code, err := util.ValidatePayload(ctx, string(content), function)
-			if err != nil {
-				ctx.WithError(err).Fatal("Could not validate the function.")
-			}
 			switch function {
 			case "decoder":
-				app.Decoder = code
+				app.Decoder = string(content)
 			case "converter":
-				app.Converter = code
+				app.Converter = string(content)
 			case "validator":
-				app.Validator = code
+				app.Validator = string(content)
 			case "encoder":
-				app.Encoder = code
+				app.Encoder = string(content)
 			default:
 				ctx.Fatalf("Function %s does not exist", function)
 			}
@@ -129,11 +127,7 @@ Function read from %s:
   return decoded;
 }
 ########## Write your Decoder here and end with Ctrl+D (EOF):`)
-				code, err := util.ValidatePayload(ctx, util.ReadFunction(ctx), function)
-				if err != nil {
-					ctx.WithError(err).Fatal("Could not validate the function")
-				}
-				app.Decoder = code
+				app.Decoder = readFunction(ctx)
 			case "converter":
 				fmt.Println(`function Converter(decoded, port) {
   // Merge, split or otherwise
@@ -147,11 +141,7 @@ Function read from %s:
   return converted;
 }
 ########## Write your Converter here and end with Ctrl+D (EOF):`)
-				code, err := util.ValidatePayload(ctx, util.ReadFunction(ctx), function)
-				if err != nil {
-					ctx.WithError(err).Fatal("Could not validate the function")
-				}
-				app.Converter = code
+				app.Converter = readFunction(ctx)
 			case "validator":
 				fmt.Println(`function Validator(converted, port) {
   // Return false if the decoded, converted
@@ -164,11 +154,7 @@ Function read from %s:
   return true;
 }
 ########## Write your Validator here and end with Ctrl+D (EOF):`)
-				code, err := util.ValidatePayload(ctx, util.ReadFunction(ctx), function)
-				if err != nil {
-					ctx.WithError(err).Fatal("Could not validate the function")
-				}
-				app.Validator = code
+				app.Validator = readFunction(ctx)
 			case "encoder":
 				fmt.Println(`function Encoder(object, port) {
   // Encode downlink messages sent as
@@ -182,11 +168,54 @@ Function read from %s:
   return bytes;
 }
 ########## Write your Encoder here and end with Ctrl+D (EOF):`)
-				code, err := util.ValidatePayload(ctx, util.ReadFunction(ctx), function)
+				app.Encoder = readFunction(ctx)
+			default:
+				ctx.Fatalf("Function %s does not exist", function)
+			}
+		}
+
+		fmt.Printf("\nDo you want to test the payload function ?(Y/n)\n")
+		var response string
+		fmt.Scanln(&response)
+
+		if strings.ToLower(response) == "y" && strings.ToLower(response) == "yes" {
+			switch function {
+			case "decoder":
+				fallthrough
+			case "converter":
+				fallthrough
+			case "validator":
+				var payload string
+				fmt.Print("Payload: ")
+				fmt.Scanln(&payload)
+
+				var port int
+				fmt.Print("Port: ")
+				fmt.Scanln(&port)
+
+				result, err := manager.DryUplink([]byte(payload), app, uint32(port))
 				if err != nil {
-					ctx.WithError(err).Fatal("Could not validate the function")
+					ctx.WithError(err).Fatal("Could not set the payload function")
 				}
-				app.Encoder = code
+			case "encoder":
+				var port int
+				fmt.Print("Port: ")
+				fmt.Scanln(&port)
+
+				var fields string
+				fmt.Print("Fields: ")
+				fmt.Scanln(&fields)
+
+				parsedFields := make(map[string]interface{})
+				err = json.Unmarshal([]byte(fields), &parsedFields)
+				if err != nil {
+					ctx.WithError(err).Fatal("Could not parse the fields")
+				}
+
+				result, err := manager.DryDownlinkWithFields(parsedFields, app, uint32(port))
+				if err != nil {
+					ctx.WithError(err).Fatal("Could not set the payload function")
+				}
 			default:
 				ctx.Fatalf("Function %s does not exist", function)
 			}
@@ -205,4 +234,12 @@ Function read from %s:
 
 func init() {
 	applicationsPayloadFunctionsCmd.AddCommand(applicationsPayloadFunctionsSetCmd)
+}
+
+func readFunction(ctx log.Interface) string {
+	content, err := ioutil.ReadAll(os.Stdin)
+	if err != nil {
+		ctx.WithError(err).Fatal("Could not read function from STDIN.")
+	}
+	return strings.TrimSpace(string(content))
 }
