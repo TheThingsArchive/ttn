@@ -106,11 +106,20 @@ func (s *RedisMapStore) List(selector string, options *ListOptions) ([]interface
 	if !strings.HasPrefix(selector, s.prefix) {
 		selector = s.prefix + selector
 	}
-	keys, err := s.client.Keys(selector).Result()
-	if err != nil {
-		return nil, err
+	var allKeys []string
+	var cursor uint64
+	for {
+		keys, next, err := s.client.Scan(cursor, selector, 0).Result()
+		if err != nil {
+			return nil, err
+		}
+		allKeys = append(allKeys, keys...)
+		cursor = next
+		if cursor == 0 {
+			break
+		}
 	}
-	return s.GetAll(keys, options)
+	return s.GetAll(allKeys, options)
 }
 
 // Get one result, prepending the prefix to the key if necessary
