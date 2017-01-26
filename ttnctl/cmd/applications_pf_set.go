@@ -4,7 +4,6 @@
 package cmd
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -174,48 +173,52 @@ Function read from %s:
 			}
 		}
 
-		fmt.Printf("\nDo you want to test the payload function ?(Y/n)\n")
+		fmt.Printf("\nDo you want to test the payload function ? (Y/n)\n")
 		var response string
 		fmt.Scanln(&response)
 
-		if strings.ToLower(response) == "y" && strings.ToLower(response) == "yes" {
+		if strings.ToLower(response) == "y" || strings.ToLower(response) == "yes" {
 			switch function {
 			case "decoder":
 				fallthrough
 			case "converter":
 				fallthrough
 			case "validator":
-				var payload string
-				fmt.Print("Payload: ")
-				fmt.Scanln(&payload)
+				payload, err := util.ReadPayload()
+				if err != nil {
+					ctx.WithError(err).Fatal("Could not parse the payload")
+				}
 
-				var port int
-				fmt.Print("Port: ")
-				fmt.Scanln(&port)
+				port, err := util.ReadPort()
+				if err != nil {
+					ctx.WithError(err).Fatal("Could not parse the port")
+				}
 
-				result, err := manager.DryUplink([]byte(payload), app, uint32(port))
+				result, err := manager.DryUplink(payload, app, uint32(port))
 				if err != nil {
 					ctx.WithError(err).Fatal("Could not set the payload function")
 				}
+
+				if !result.Valid {
+					ctx.Fatal("Could not set the payload function. Invalid result")
+				}
+				ctx.Infof("Test successful")
 			case "encoder":
-				var port int
-				fmt.Print("Port: ")
-				fmt.Scanln(&port)
-
-				var fields string
-				fmt.Print("Fields: ")
-				fmt.Scanln(&fields)
-
-				parsedFields := make(map[string]interface{})
-				err = json.Unmarshal([]byte(fields), &parsedFields)
+				fields, err := util.ReadFields()
 				if err != nil {
 					ctx.WithError(err).Fatal("Could not parse the fields")
 				}
 
-				result, err := manager.DryDownlinkWithFields(parsedFields, app, uint32(port))
+				port, err := util.ReadPort()
+				if err != nil {
+					ctx.WithError(err).Fatal("Could not parse the port")
+				}
+
+				result, err := manager.DryDownlinkWithFields(fields, app, uint32(port))
 				if err != nil {
 					ctx.WithError(err).Fatal("Could not set the payload function")
 				}
+				ctx.Infof("Test successful, resulting payload: %s", result.Payload)
 			default:
 				ctx.Fatalf("Function %s does not exist", function)
 			}
