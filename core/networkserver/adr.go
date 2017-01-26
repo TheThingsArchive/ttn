@@ -4,6 +4,8 @@
 package networkserver
 
 import (
+	"math"
+
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core/band"
@@ -25,6 +27,15 @@ func maxSNR(frames []*device.Frame) float32 {
 		}
 	}
 	return max
+}
+
+func lossPercentage(frames []*device.Frame) int {
+	if len(frames) == 0 {
+		return 0
+	}
+	sentPackets := frames[0].FCnt - frames[len(frames)-1].FCnt + 1
+	loss := sentPackets - uint32(len(frames))
+	return int(math.Floor((float64(loss) / float64(sentPackets) * 100) + .5))
 }
 
 func (n *networkServer) handleUplinkADR(message *pb_broker.DeduplicatedUplinkMessage, dev *device.Device) error {
@@ -71,6 +82,7 @@ func (n *networkServer) handleDownlinkADR(message *pb_broker.DownlinkMessage, de
 		return err
 	}
 	if len(frames) >= device.FramesHistorySize {
+		frames = frames[:device.FramesHistorySize]
 		// Check settings
 		if dev.ADR.DataRate == "" {
 			return nil
@@ -87,6 +99,9 @@ func (n *networkServer) handleDownlinkADR(message *pb_broker.DownlinkMessage, de
 		}
 		if dev.ADR.TxPower == 0 {
 			dev.ADR.TxPower = fp.DefaultTXPower
+		}
+		if dev.ADR.NbTrans == 0 {
+			dev.ADR.NbTrans = 1
 		}
 
 		// Calculate ADR settings
@@ -106,6 +121,29 @@ func (n *networkServer) handleDownlinkADR(message *pb_broker.DownlinkMessage, de
 			powerIdx, _ = fp.GetTxPowerIndexFor(fp.DefaultTXPower)
 		}
 
+		if dev.ADR.DataRate == dataRate && dev.ADR.TxPower == txPower {
+			lossPercentage := lossPercentage(frames)
+			switch {
+			case lossPercentage <= 5:
+				dev.ADR.NbTrans--
+			case lossPercentage <= 10:
+				// don't change
+			case lossPercentage <= 30:
+				dev.ADR.NbTrans++
+			default:
+				dev.ADR.NbTrans += 2
+			}
+			if dev.ADR.NbTrans < 1 {
+				dev.ADR.NbTrans = 1
+			}
+			if dev.ADR.NbTrans > 3 {
+				dev.ADR.NbTrans = 3
+			}
+		}
+
+		dev.ADR.DataRate = dataRate
+		dev.ADR.TxPower = txPower
+
 		// Set MAC command
 		lorawanDownlinkMac := message.GetMessage().GetLorawan().GetMacPayload()
 		response := &lorawan.LinkADRReqPayload{
@@ -113,7 +151,7 @@ func (n *networkServer) handleDownlinkADR(message *pb_broker.DownlinkMessage, de
 			TXPower:  uint8(powerIdx),
 			Redundancy: lorawan.Redundancy{
 				ChMaskCntl: 0, // Different for US/AU
-				NbRep:      1,
+				NbRep:      uint8(dev.ADR.NbTrans),
 			},
 		}
 		for i, ch := range fp.UplinkChannels { // Different for US/AU

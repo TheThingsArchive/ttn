@@ -4,7 +4,9 @@
 package networkserver
 
 import (
+	"math"
 	"runtime"
+	"sort"
 	"testing"
 
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
@@ -45,6 +47,33 @@ func adrInitDownlinkMessage() *pb_broker.DownlinkMessage {
 	}
 	message.Message.InitLoRaWAN().InitDownlink()
 	return message
+}
+
+func buildFrames(fCnts ...int) []*device.Frame {
+	sort.Sort(sort.Reverse(sort.IntSlice(fCnts)))
+	frames := make([]*device.Frame, 0, len(fCnts))
+	for _, fCnt := range fCnts {
+		frames = append(frames, &device.Frame{
+			FCnt: uint32(fCnt),
+			SNR:  float32(math.Floor(math.Sin(float64(fCnt))*100) / 10),
+		})
+	}
+	return frames
+}
+
+func TestMaxSNR(t *testing.T) {
+	a := New(t)
+	a.So(maxSNR(buildFrames()), ShouldEqual, 0)
+	a.So(maxSNR(buildFrames(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)), ShouldEqual, 9.8)
+}
+
+func TestLossPercentage(t *testing.T) {
+	a := New(t)
+	a.So(lossPercentage(buildFrames()), ShouldEqual, 0)
+	a.So(lossPercentage(buildFrames(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)), ShouldEqual, 0)
+	a.So(lossPercentage(buildFrames(1, 2, 3, 4, 5, 6, 7, 8, 9, 11)), ShouldEqual, 9)    // 1/11 missing
+	a.So(lossPercentage(buildFrames(1, 2, 3, 4, 5, 6, 7, 8, 9, 12)), ShouldEqual, 17)   // 2/12 missing
+	a.So(lossPercentage(buildFrames(1, 2, 3, 6, 7, 8, 9, 12, 13, 14)), ShouldEqual, 29) // 4/14 missing
 }
 
 func TestHandleUplinkADR(t *testing.T) {
@@ -115,6 +144,7 @@ func TestHandleDownlinkADR(t *testing.T) {
 
 	message := adrInitDownlinkMessage()
 	var shouldReturnError = func() {
+		a := New(t)
 		err := ns.handleDownlinkADR(message, dev)
 		a.So(err, ShouldNotBeNil)
 		a.So(message.Message.GetLorawan().GetMacPayload().FOpts, ShouldBeEmpty)
@@ -124,6 +154,7 @@ func TestHandleDownlinkADR(t *testing.T) {
 		}
 	}
 	var nothingShouldHappen = func() {
+		a := New(t)
 		err := ns.handleDownlinkADR(message, dev)
 		a.So(err, ShouldBeNil)
 		a.So(message.Message.GetLorawan().GetMacPayload().FOpts, ShouldBeEmpty)
@@ -139,9 +170,14 @@ func TestHandleDownlinkADR(t *testing.T) {
 	dev.ADR.SendReq = true
 	nothingShouldHappen()
 
-	for i := 0; i < 20; i++ {
-		ns.devices.PushFrame(dev.AppEUI, dev.DevEUI, &device.Frame{SNR: 10, GatewayCount: 3, FCnt: uint32(i)})
+	var resetFrames = func(appEUI types.AppEUI, devEUI types.DevEUI) {
+		ns.devices.ClearFrames(appEUI, devEUI)
+		for i := 0; i < 20; i++ {
+			ns.devices.PushFrame(appEUI, devEUI, &device.Frame{SNR: 10, GatewayCount: 3, FCnt: uint32(i)})
+		}
 	}
+	resetFrames(dev.AppEUI, dev.DevEUI)
+
 	nothingShouldHappen()
 
 	dev.ADR.DataRate = "SF8BW125"
@@ -159,7 +195,7 @@ func TestHandleDownlinkADR(t *testing.T) {
 	fOpts := message.Message.GetLorawan().GetMacPayload().FOpts
 	a.So(fOpts, ShouldHaveLength, 1)
 	a.So(fOpts[0].Cid, ShouldEqual, lorawan.LinkADRReq)
-	var payload lorawan.LinkADRReqPayload
+	payload := new(lorawan.LinkADRReqPayload)
 	payload.UnmarshalBinary(fOpts[0].Payload)
 	a.So(payload.DataRate, ShouldEqual, 5) // SF7BW125
 	a.So(payload.TXPower, ShouldEqual, 1)  // 14
@@ -167,6 +203,40 @@ func TestHandleDownlinkADR(t *testing.T) {
 		a.So(payload.ChMask[i], ShouldBeTrue)
 	}
 	a.So(payload.ChMask[8], ShouldBeFalse) // 9th channel (FSK) disabled
+
+	shouldHaveNbTrans := func(nbTrans int) {
+		a := New(t)
+		message := adrInitDownlinkMessage()
+		err := ns.handleDownlinkADR(message, dev)
+		a.So(err, ShouldBeNil)
+		fOpts := message.Message.GetLorawan().GetMacPayload().FOpts
+		a.So(fOpts, ShouldHaveLength, 1)
+		a.So(fOpts[0].Cid, ShouldEqual, lorawan.LinkADRReq)
+		payload := new(lorawan.LinkADRReqPayload)
+		payload.UnmarshalBinary(fOpts[0].Payload)
+		a.So(payload.DataRate, ShouldEqual, 5) // SF7BW125
+		a.So(payload.TXPower, ShouldEqual, 1)  // 14
+		a.So(payload.Redundancy.NbRep, ShouldEqual, nbTrans)
+		if a.Failed() {
+			_, file, line, _ := runtime.Caller(1)
+			t.Errorf("\n%s:%d", file, line)
+		}
+	}
+
+	tests := map[int]map[int]int{
+		1: map[int]int{0: 1, 1: 1, 2: 1, 4: 2, 10: 3},
+		2: map[int]int{0: 1, 1: 1, 2: 2, 4: 3, 10: 3},
+		3: map[int]int{0: 2, 1: 2, 2: 3, 4: 3, 10: 3},
+	}
+
+	for nbTrans, test := range tests {
+		for loss, exp := range test {
+			dev.ADR.NbTrans = nbTrans
+			resetFrames(dev.AppEUI, dev.DevEUI)
+			ns.devices.PushFrame(dev.AppEUI, dev.DevEUI, &device.Frame{SNR: 10, GatewayCount: 3, FCnt: uint32(20 + loss)})
+			shouldHaveNbTrans(exp)
+		}
+	}
 
 	// Invalid case
 	message = adrInitDownlinkMessage()
