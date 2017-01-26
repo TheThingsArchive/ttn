@@ -6,12 +6,12 @@ package monitor
 import (
 	"sync"
 
+	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/api/gateway"
 	"github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
-	"github.com/apex/log"
 	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -22,7 +22,7 @@ const BufferSize = 10
 
 // Client is a wrapper around MonitorClient
 type Client struct {
-	Ctx log.Interface
+	Ctx ttnlog.Interface
 
 	client MonitorClient
 	conn   *grpc.ClientConn
@@ -36,7 +36,7 @@ type Client struct {
 
 // NewClient is a wrapper for NewMonitorClient, initializes
 // connection to MonitorServer on monitorAddr with default gRPC options
-func NewClient(ctx log.Interface, monitorAddr string) (cl *Client, err error) {
+func NewClient(ctx ttnlog.Interface, monitorAddr string) (cl *Client, err error) {
 	cl = &Client{
 		Ctx:      ctx,
 		addr:     monitorAddr,
@@ -171,7 +171,7 @@ type gatewayClient struct {
 
 	client *Client
 
-	Ctx log.Interface
+	Ctx ttnlog.Interface
 
 	id, token string
 
@@ -242,7 +242,7 @@ type brokerClient struct {
 
 	client *Client
 
-	Ctx log.Interface
+	Ctx ttnlog.Interface
 
 	uplink struct {
 		init   sync.Once
