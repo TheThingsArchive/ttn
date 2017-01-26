@@ -44,27 +44,15 @@ function Decoder(bytes, port) {
 
   return decoded;
 }
-Parsing function...
-  INFO Function parsed successfully: syntax checked
 
-Test the function to detect runtime errors
+Do you want to test the payload function ? (Y/n)
+Y
 
-Write your function call and provide arguments to test it
-Note: Use the built-in function JSON.stringify() to provide json objects parameters: E.g: JSON.stingify({ valid: argument })
+Payload: 12 34
+Port: 1
 
-function Decoder(bytes, port) {
-  // Instructions
-}
+  INFO Test successful
 
-// The function call to test the Decoder
-Decoder([10, 23, 35], 3)
-########## Write your testing function call here and end with Ctrl+D (EOF):
-
-
-Decoder([10, 32], 3)
-  INFO Testing...
-
-The test is successful, the given function is valid
   INFO Updated application                      AppID=test
 `,
 	Run: func(cmd *cobra.Command, args []string) {

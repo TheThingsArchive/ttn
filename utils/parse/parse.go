@@ -2,11 +2,8 @@ package parse
 
 import (
 	"errors"
-	"fmt"
 	"strconv"
 	"strings"
-
-	"github.com/robertkrimen/otto/parser"
 )
 
 // Port returns the port from an address
@@ -27,13 +24,4 @@ func Port(address string) (uint, error) {
 	}
 
 	return uint(port), nil
-}
-
-// PayloadFunction parses the given js code an verify that the syntax is valid
-func PayloadFunction(code string) error {
-	_, err := parser.ParseFunction("", code)
-	if err != nil {
-		return fmt.Errorf("Syntax Error: %s", err.Error())
-	}
-	return nil
 }
