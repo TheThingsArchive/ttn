@@ -44,6 +44,9 @@ func (s *RedisKVStore) GetAll(keys []string, options *ListOptions) (map[string]s
 	sort.Strings(keys)
 
 	selectedKeys := selectKeys(keys, options)
+	if len(selectedKeys) == 0 {
+		return map[string]string{}, nil
+	}
 
 	pipe := s.client.Pipeline()
 	defer pipe.Close()
