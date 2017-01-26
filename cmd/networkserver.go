@@ -11,6 +11,7 @@ import (
 	"strings"
 	"syscall"
 
+	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/networkserver"
 	"github.com/TheThingsNetwork/ttn/core/types"
@@ -46,7 +47,7 @@ var networkserverCmd = &cobra.Command{
 		connectRedis(client)
 
 		// Component
-		component, err := component.New(ctx, "networkserver", fmt.Sprintf("%s:%d", viper.GetString("networkserver.server-address-announce"), viper.GetInt("networkserver.server-port")))
+		component, err := component.New(ttnlog.Get(), "networkserver", fmt.Sprintf("%s:%d", viper.GetString("networkserver.server-address-announce"), viper.GetInt("networkserver.server-port")))
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not initialize component")
 		}

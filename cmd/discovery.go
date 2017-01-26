@@ -12,6 +12,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	pb "github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/discovery"
@@ -50,7 +51,7 @@ var discoveryCmd = &cobra.Command{
 		connectRedis(client)
 
 		// Component
-		component, err := component.New(ctx, "discovery", fmt.Sprintf("%s:%d", "localhost", viper.GetInt("discovery.server-port")))
+		component, err := component.New(ttnlog.Get(), "discovery", fmt.Sprintf("%s:%d", "localhost", viper.GetInt("discovery.server-port")))
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not initialize component")
 		}

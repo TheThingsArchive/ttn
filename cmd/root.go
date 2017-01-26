@@ -34,7 +34,7 @@ var cfgFile string
 
 var logFile *os.File
 
-var ctx log.Interface
+var ctx ttnlog.Interface
 
 // RootCmd is executed when ttn is executed without a subcommand
 var RootCmd = &cobra.Command{
@@ -79,12 +79,11 @@ var RootCmd = &cobra.Command{
 			}), logLevel))
 		}
 
-		ctx = &log.Logger{
-			Handler: multiHandler.New(logHandlers...),
-		}
-
 		// Set the API/gRPC logger
-		ttnlog.Set(apex.Wrap(ctx))
+		ctx = apex.Wrap(&log.Logger{
+			Handler: multiHandler.New(logHandlers...),
+		})
+		ttnlog.Set(ctx)
 		grpclog.SetLogger(grpc.Wrap(ttnlog.Get()))
 
 		ctx.WithFields(log.Fields{

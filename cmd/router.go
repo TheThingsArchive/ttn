@@ -10,6 +10,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/router"
 	"github.com/apex/log"
@@ -33,7 +34,7 @@ var routerCmd = &cobra.Command{
 		ctx.Info("Starting")
 
 		// Component
-		component, err := component.New(ctx, "router", fmt.Sprintf("%s:%d", viper.GetString("router.server-address-announce"), viper.GetInt("router.server-port")))
+		component, err := component.New(ttnlog.Get(), "router", fmt.Sprintf("%s:%d", viper.GetString("router.server-address-announce"), viper.GetInt("router.server-port")))
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not initialize component")
 		}
