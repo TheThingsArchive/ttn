@@ -165,13 +165,9 @@ Function read from %s:
 		var response string
 		fmt.Scanln(&response)
 
-		if strings.ToLower(response) == "y" || strings.ToLower(response) == "yes" {
+		if strings.ToLower(response) == "y" || strings.ToLower(response) == "yes" || response == "" {
 			switch function {
-			case "decoder":
-				fallthrough
-			case "converter":
-				fallthrough
-			case "validator":
+			case "decoder", "converter", "validator":
 				payload, err := util.ReadPayload()
 				if err != nil {
 					ctx.WithError(err).Fatal("Could not parse the payload")
