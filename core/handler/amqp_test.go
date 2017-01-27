@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/TheThingsNetwork/go-utils/log/apex"
 	"github.com/TheThingsNetwork/ttn/amqp"
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
@@ -25,7 +24,7 @@ func TestHandleAMQP(t *testing.T) {
 
 	a := New(t)
 	var wg WaitGroup
-	c := amqp.NewClient(apex.Wrap(GetLogger(t, "TestHandleAMQP")), "guest", "guest", host)
+	c := amqp.NewClient(GetLogger(t, "TestHandleAMQP"), "guest", "guest", host)
 	err := c.Connect()
 	a.So(err, ShouldBeNil)
 	defer c.Disconnect()

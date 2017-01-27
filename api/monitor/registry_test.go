@@ -7,8 +7,8 @@ import (
 	"errors"
 	"testing"
 
+	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
-	"github.com/apex/log"
 	. "github.com/smartystreets/assertions"
 )
 
@@ -140,7 +140,7 @@ func TestGatewayClients(t *testing.T) {
 	})
 }
 
-var returnClient = func(ctx log.Interface, addr string) (*Client, error) {
+var returnClient = func(ctx ttnlog.Interface, addr string) (*Client, error) {
 	return &Client{
 		Ctx:          ctx,
 		BrokerClient: &brokerClient{},
@@ -148,6 +148,6 @@ var returnClient = func(ctx log.Interface, addr string) (*Client, error) {
 	}, nil
 }
 
-var returnError = func(ctx log.Interface, addr string) (*Client, error) {
+var returnError = func(ctx ttnlog.Interface, addr string) (*Client, error) {
 	return nil, errors.New("")
 }

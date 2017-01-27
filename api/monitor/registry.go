@@ -6,7 +6,7 @@ package monitor
 import (
 	"sync"
 
-	"github.com/apex/log"
+	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 )
 
 // Registry encapsulates dealing with monitor servers that might be down during startup.
@@ -25,7 +25,7 @@ type Registry interface {
 }
 
 // NewRegistry creates a monitor client registry.
-func NewRegistry(ctx log.Interface) Registry {
+func NewRegistry(ctx ttnlog.Interface) Registry {
 	return &registry{
 		ctx:              ctx,
 		monitorClients:   make(map[string]*Client),
@@ -37,12 +37,12 @@ func NewRegistry(ctx log.Interface) Registry {
 }
 
 type registry struct {
-	ctx              log.Interface
+	ctx              ttnlog.Interface
 	monitorClients   map[string]*Client
 	brokerClients    []BrokerClient
 	gatewayClients   map[string][]GatewayClient
 	gatewayTokens    map[string]string
-	newMonitorClient func(ctx log.Interface, addr string) (*Client, error)
+	newMonitorClient func(ctx ttnlog.Interface, addr string) (*Client, error)
 	sync.RWMutex
 }
 

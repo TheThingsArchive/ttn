@@ -8,15 +8,14 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/TheThingsNetwork/go-utils/log/apex"
+	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/mqtt"
-	"github.com/apex/log"
 	"github.com/gosuri/uitable"
 	"github.com/spf13/viper"
 )
 
 // GetMQTT connects a new MQTT clients with the specified credentials
-func GetMQTT(ctx log.Interface) mqtt.Client {
+func GetMQTT(ctx ttnlog.Interface) mqtt.Client {
 	username, password, err := getMQTTCredentials(ctx)
 	if err != nil {
 		ctx.WithError(err).Fatal("Failed to get MQTT credentials")
@@ -28,9 +27,9 @@ func GetMQTT(ctx log.Interface) mqtt.Client {
 		ctx.Fatal("TLS connections are not yet supported by ttnctl")
 	}
 	broker := fmt.Sprintf("%s://%s", mqttProto, viper.GetString("mqtt-address"))
-	client := mqtt.NewClient(apex.Wrap(ctx), "ttnctl", username, password, broker)
+	client := mqtt.NewClient(ctx, "ttnctl", username, password, broker)
 
-	ctx.WithFields(log.Fields{
+	ctx.WithFields(ttnlog.Fields{
 		"MQTT Broker": broker,
 		"Username":    username,
 	}).Info("Connecting to MQTT...")
@@ -42,7 +41,7 @@ func GetMQTT(ctx log.Interface) mqtt.Client {
 	return client
 }
 
-func getMQTTCredentials(ctx log.Interface) (username string, password string, err error) {
+func getMQTTCredentials(ctx ttnlog.Interface) (username string, password string, err error) {
 	username = viper.GetString("mqtt-username")
 	password = viper.GetString("mqtt-password")
 	if username != "" {
@@ -57,7 +56,7 @@ func getMQTTCredentials(ctx log.Interface) (username string, password string, er
 	return getAppMQTTCredentials(ctx)
 }
 
-func getAppMQTTCredentials(ctx log.Interface) (string, string, error) {
+func getAppMQTTCredentials(ctx ttnlog.Interface) (string, string, error) {
 	appID := GetAppID(ctx)
 
 	account := GetAccount(ctx)

@@ -4,15 +4,13 @@
 package handler
 
 import (
-	"github.com/apex/log"
-
-	"github.com/TheThingsNetwork/go-utils/log/apex"
+	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/amqp"
 	"github.com/TheThingsNetwork/ttn/core/types"
 )
 
 func (h *handler) HandleAMQP(username, password, host, exchange, downlinkQueue string) error {
-	h.amqpClient = amqp.NewClient(apex.Wrap(h.Ctx), username, password, host)
+	h.amqpClient = amqp.NewClient(h.Ctx, username, password, host)
 
 	err := h.amqpClient.Connect()
 	if err != nil {
@@ -55,7 +53,7 @@ func (h *handler) HandleAMQP(username, password, host, exchange, downlinkQueue s
 		defer publisher.Close()
 
 		for up := range h.amqpUp {
-			ctx.WithFields(log.Fields{
+			ctx.WithFields(ttnlog.Fields{
 				"DevID": up.DevID,
 				"AppID": up.AppID,
 			}).Debug("Publish Uplink")

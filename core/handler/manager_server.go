@@ -9,6 +9,7 @@ import (
 
 	"github.com/TheThingsNetwork/go-account-lib/claims"
 	"github.com/TheThingsNetwork/go-account-lib/rights"
+	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/api"
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb "github.com/TheThingsNetwork/ttn/api/handler"
@@ -19,7 +20,6 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/storage"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
-	"github.com/apex/log"
 	"github.com/golang/protobuf/ptypes/empty"
 	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
 	"google.golang.org/grpc"
@@ -124,7 +124,7 @@ func (h *handlerManager) GetDevice(ctx context.Context, in *pb.DeviceIdentifier)
 	})
 	if errors.GetErrType(errors.FromGRPCError(err)) == errors.NotFound {
 		// Re-register the device in the Broker (NetworkServer)
-		h.handler.Ctx.WithFields(log.Fields{
+		h.handler.Ctx.WithFields(ttnlog.Fields{
 			"AppID":  dev.AppID,
 			"DevID":  dev.DevID,
 			"AppEUI": dev.AppEUI,

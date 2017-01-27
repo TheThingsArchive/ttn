@@ -6,12 +6,12 @@ package cmd
 import (
 	"time"
 
+	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/TheThingsNetwork/ttn/utils/otaa"
-	"github.com/apex/log"
 	"github.com/brocaar/lorawan"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -118,7 +118,7 @@ var joinCmd = &cobra.Command{
 
 			appSKey, nwkSKey, _ := otaa.CalculateSessionKeys(appKey, accept.AppNonce, accept.NetId, devNonce)
 
-			ctx.WithFields(log.Fields{
+			ctx.WithFields(ttnlog.Fields{
 				"DevAddr": accept.DevAddr,
 				"NwkSKey": nwkSKey,
 				"AppSKey": appSKey,

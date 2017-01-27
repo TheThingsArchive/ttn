@@ -6,11 +6,11 @@ package cmd
 import (
 	"strings"
 
+	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/TheThingsNetwork/ttn/utils/random"
-	"github.com/apex/log"
 	"github.com/spf13/cobra"
 )
 
@@ -99,7 +99,7 @@ var devicesPersonalizeCmd = &cobra.Command{
 			ctx.WithError(err).Fatal("Could not update Device")
 		}
 
-		ctx.WithFields(log.Fields{
+		ctx.WithFields(ttnlog.Fields{
 			"AppID":   appID,
 			"DevID":   devID,
 			"DevAddr": devAddr,

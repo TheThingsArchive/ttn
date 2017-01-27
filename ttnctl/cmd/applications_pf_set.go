@@ -9,9 +9,9 @@ import (
 	"os"
 	"strings"
 
+	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/api/handler"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
-	"github.com/apex/log"
 	"github.com/spf13/cobra"
 )
 
@@ -151,7 +151,7 @@ function Decoder(bytes, port) {
 			ctx.WithError(err).Fatal("Could not update application")
 		}
 
-		ctx.WithFields(log.Fields{
+		ctx.WithFields(ttnlog.Fields{
 			"AppID": appID,
 		}).Infof("Updated application")
 	},

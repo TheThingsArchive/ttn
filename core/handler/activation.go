@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb "github.com/TheThingsNetwork/ttn/api/handler"
 	"github.com/TheThingsNetwork/ttn/api/trace"
@@ -15,11 +16,10 @@ import (
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/otaa"
 	"github.com/TheThingsNetwork/ttn/utils/random"
-	"github.com/apex/log"
 	"github.com/brocaar/lorawan"
 )
 
-func (h *handler) getActivationMetadata(ctx log.Interface, activation *pb_broker.DeduplicatedDeviceActivationRequest, device *device.Device) (types.Metadata, error) {
+func (h *handler) getActivationMetadata(ctx ttnlog.Interface, activation *pb_broker.DeduplicatedDeviceActivationRequest, device *device.Device) (types.Metadata, error) {
 	ttnUp := &pb_broker.DeduplicatedUplinkMessage{
 		ProtocolMetadata: activation.ProtocolMetadata,
 		GatewayMetadata:  activation.GatewayMetadata,
@@ -79,7 +79,7 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 	if activation.DevEui != nil {
 		devEUI = *activation.DevEui
 	}
-	ctx := h.Ctx.WithFields(log.Fields{
+	ctx := h.Ctx.WithFields(ttnlog.Fields{
 		"DevEUI": devEUI,
 		"AppEUI": appEUI,
 		"AppID":  appID,

@@ -77,44 +77,44 @@
 		{
 			"checksumSHA1": "FCeptJpMzjDNGH+vammILeR7MsI=",
 			"path": "github.com/TheThingsNetwork/go-utils/encoding",
-			"revision": "2e60fd62f549ba4a873d04646d075b3dc8ea7a88",
-			"revisionTime": "2017-01-26T12:20:14Z"
+			"revision": "e15b5ceb87979c39b9170a3ec1864fec09e2e392",
+			"revisionTime": "2017-01-27T08:51:05Z"
 		},
 		{
-			"checksumSHA1": "aIQ6yc+D1VSpYJHAf8vLg8ouHd0=",
+			"checksumSHA1": "r2PGxRMFTm0RQ2xLFN5epifTbOM=",
 			"path": "github.com/TheThingsNetwork/go-utils/grpc/interceptor",
-			"revision": "2e60fd62f549ba4a873d04646d075b3dc8ea7a88",
-			"revisionTime": "2017-01-26T12:20:14Z"
+			"revision": "e15b5ceb87979c39b9170a3ec1864fec09e2e392",
+			"revisionTime": "2017-01-27T08:51:05Z"
 		},
 		{
 			"checksumSHA1": "T7iFQUlCUAv4cJNDZC0//46Nbio=",
 			"path": "github.com/TheThingsNetwork/go-utils/handlers/cli",
-			"revision": "2e60fd62f549ba4a873d04646d075b3dc8ea7a88",
-			"revisionTime": "2017-01-26T12:20:14Z"
+			"revision": "e15b5ceb87979c39b9170a3ec1864fec09e2e392",
+			"revisionTime": "2017-01-27T08:51:05Z"
 		},
 		{
 			"checksumSHA1": "aXt7ZSqIfsHWBbJPgHFjqtyxyQ0=",
 			"path": "github.com/TheThingsNetwork/go-utils/log",
-			"revision": "2e60fd62f549ba4a873d04646d075b3dc8ea7a88",
-			"revisionTime": "2017-01-26T12:20:14Z"
+			"revision": "e15b5ceb87979c39b9170a3ec1864fec09e2e392",
+			"revisionTime": "2017-01-27T08:51:05Z"
 		},
 		{
 			"checksumSHA1": "RdI5upcV6MHSjr5Y9zogYvbeURw=",
 			"path": "github.com/TheThingsNetwork/go-utils/log/apex",
-			"revision": "2e60fd62f549ba4a873d04646d075b3dc8ea7a88",
-			"revisionTime": "2017-01-26T12:20:14Z"
+			"revision": "e15b5ceb87979c39b9170a3ec1864fec09e2e392",
+			"revisionTime": "2017-01-27T08:51:05Z"
 		},
 		{
 			"checksumSHA1": "sQ0vy3MCGY1WgK9xldn1V6pMeZk=",
 			"path": "github.com/TheThingsNetwork/go-utils/log/grpc",
-			"revision": "2e60fd62f549ba4a873d04646d075b3dc8ea7a88",
-			"revisionTime": "2017-01-26T12:20:14Z"
+			"revision": "e15b5ceb87979c39b9170a3ec1864fec09e2e392",
+			"revisionTime": "2017-01-27T08:51:05Z"
 		},
 		{
 			"checksumSHA1": "kLFTtAVcjZbHXybodGAqJ8wxflY=",
 			"path": "github.com/TheThingsNetwork/go-utils/roots",
-			"revision": "2e60fd62f549ba4a873d04646d075b3dc8ea7a88",
-			"revisionTime": "2017-01-26T12:20:14Z"
+			"revision": "e15b5ceb87979c39b9170a3ec1864fec09e2e392",
+			"revisionTime": "2017-01-27T08:51:05Z"
 		},
 		{
 			"checksumSHA1": "nV/tpqju2PSPowf3Pq2RCOUESFY=",
@@ -213,7 +213,7 @@
 			"revisionTime": "2017-01-18T11:17:54Z"
 		},
 		{
-			"checksumSHA1": "XwDm1VMyZA/MLAK4Fst0yI7lyCE=",
+			"checksumSHA1": "6ZxSmrIx3Jd15aou16oG0HPylP4=",
 			"path": "github.com/gogo/protobuf/proto",
 			"revision": "6e505820968158ec7ac58ea92bba501a82b41171",
 			"revisionTime": "2017-01-18T11:17:54Z"
@@ -237,7 +237,7 @@
 			"revisionTime": "2016-11-17T03:31:26Z"
 		},
 		{
-			"checksumSHA1": "q3Bc7JpLWBqhZ4M7oreGo34RSkc=",
+			"checksumSHA1": "kBeNcaKk56FguvPSUCEaH6AxpRc=",
 			"path": "github.com/golang/protobuf/proto",
 			"revision": "8ee79997227bf9b34611aee7946ae64735e6fd93",
 			"revisionTime": "2016-11-17T03:31:26Z"
@@ -687,7 +687,7 @@
 			"revisionTime": "2017-01-14T04:22:49Z"
 		},
 		{
-			"checksumSHA1": "hyK05cmzm+vPH1OO+F1AkvES3sw=",
+			"checksumSHA1": "XH7CgbL5Z8COUc+MKrYqS3FFosY=",
 			"path": "golang.org/x/oauth2",
 			"revision": "314dd2c0bf3ebd592ec0d20847d27e79d0dbe8dd",
 			"revisionTime": "2016-12-14T09:25:55Z"
@@ -801,7 +801,7 @@
 			"revisionTime": "2017-01-16T08:01:07Z"
 		},
 		{
-			"checksumSHA1": "M1xjRvZ0RQod9w9UcIttyk/4EuU=",
+			"checksumSHA1": "MQyhe1N+NO0+uyJiEc6M2WGfb3s=",
 			"path": "gopkg.in/redis.v5/internal",
 			"revision": "8829ddcd8bdb333e477cc845946c4b9b2ef66280",
 			"revisionTime": "2017-01-16T08:01:07Z"

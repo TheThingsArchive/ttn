@@ -17,7 +17,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/apex/log"
+	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	"github.com/kardianos/osext"
 	"github.com/spf13/viper"
 )
@@ -117,7 +117,7 @@ func GetLatest(binary string) ([]byte, error) {
 }
 
 // Selfupdate runs a self-update for the current binary
-func Selfupdate(ctx log.Interface, component string) {
+func Selfupdate(ctx ttnlog.Interface, component string) {
 	if viper.GetString("gitBranch") == "unknown" {
 		ctx.Infof("You are not using an official %s build. Not proceeding with the update", component)
 		return

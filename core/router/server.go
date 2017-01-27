@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/TheThingsNetwork/go-account-lib/claims"
-	"github.com/TheThingsNetwork/go-utils/log/apex"
 	"github.com/TheThingsNetwork/ttn/api"
 	pb_gateway "github.com/TheThingsNetwork/ttn/api/gateway"
 	"github.com/TheThingsNetwork/ttn/api/ratelimit"
@@ -148,7 +147,7 @@ func (r *routerRPC) Activate(ctx context.Context, req *pb.DeviceActivationReques
 // RegisterRPC registers this router as a RouterServer (github.com/TheThingsNetwork/ttn/api/router)
 func (r *router) RegisterRPC(s *grpc.Server) {
 	server := &routerRPC{router: r}
-	server.SetLogger(apex.Wrap(r.Ctx))
+	server.SetLogger(r.Ctx)
 	server.UplinkChanFunc = server.getUplink
 	server.DownlinkChanFunc = server.getDownlink
 	server.GatewayStatusChanFunc = server.getGatewayStatus

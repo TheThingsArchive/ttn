@@ -11,12 +11,12 @@ import (
 	"os/signal"
 	"syscall"
 
+	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	pb "github.com/TheThingsNetwork/ttn/api/handler"
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/handler"
 	"github.com/TheThingsNetwork/ttn/core/proxy"
 	"github.com/TheThingsNetwork/ttn/utils/parse"
-	"github.com/apex/log"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -31,7 +31,7 @@ var handlerCmd = &cobra.Command{
 	Short: "The Things Network handler",
 	Long:  ``,
 	PreRun: func(cmd *cobra.Command, args []string) {
-		ctx.WithFields(log.Fields{
+		ctx.WithFields(ttnlog.Fields{
 			"Server":        fmt.Sprintf("%s:%d", viper.GetString("handler.server-address"), viper.GetInt("handler.server-port")),
 			"HTTP Proxy":    fmt.Sprintf("%s:%d", viper.GetString("handler.http-address"), viper.GetInt("handler.http-port")),
 			"Announce":      fmt.Sprintf("%s:%d", viper.GetString("handler.server-address-announce"), viper.GetInt("handler.server-port")),
@@ -54,7 +54,7 @@ var handlerCmd = &cobra.Command{
 		connectRedis(client)
 
 		// Component
-		component, err := component.New(ctx, "handler", fmt.Sprintf("%s:%d", viper.GetString("handler.server-address-announce"), viper.GetInt("handler.server-port")))
+		component, err := component.New(ttnlog.Get(), "handler", fmt.Sprintf("%s:%d", viper.GetString("handler.server-address-announce"), viper.GetInt("handler.server-port")))
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not initialize component")
 		}

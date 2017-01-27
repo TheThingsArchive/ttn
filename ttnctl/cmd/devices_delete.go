@@ -6,9 +6,9 @@ package cmd
 import (
 	"fmt"
 
+	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
-	"github.com/apex/log"
 	"github.com/spf13/cobra"
 )
 
@@ -51,7 +51,7 @@ Are you sure you want to delete device test from application test?
 			ctx.WithError(err).Fatal("Could not delete device.")
 		}
 
-		ctx.WithFields(log.Fields{
+		ctx.WithFields(ttnlog.Fields{
 			"AppID": appID,
 			"DevID": devID,
 		}).Info("Deleted device")
