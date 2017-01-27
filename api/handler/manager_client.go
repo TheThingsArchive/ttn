@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"os"
 	"os/user"
+	"strconv"
 	"sync"
 
 	"github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
@@ -70,6 +71,18 @@ func (h *ManagerClient) getContext() context.Context {
 	return metadata.NewContext(context.Background(), md)
 }
 
+func (h *ManagerClient) getContextWithLimitAndOffset(limit, offset int) context.Context {
+	h.RLock()
+	defer h.RUnlock()
+	md := metadata.Pairs(
+		"id", h.id,
+		"token", h.accessToken,
+		"limit", strconv.Itoa(limit),
+		"offset", strconv.Itoa(offset),
+	)
+	return metadata.NewContext(context.Background(), md)
+}
+
 // GetApplication retrieves an application from the Handler
 func (h *ManagerClient) GetApplication(appID string) (*Application, error) {
 	res, err := h.applicationManagerClient.GetApplication(h.getContext(), &ApplicationIdentifier{AppId: appID})
@@ -118,9 +131,10 @@ func (h *ManagerClient) DeleteDevice(appID string, devID string) error {
 	return errors.Wrap(errors.FromGRPCError(err), "Could not delete device from Handler")
 }
 
-// GetDevicesForApplication retrieves all devices for an application from the Handler
-func (h *ManagerClient) GetDevicesForApplication(appID string) (devices []*Device, err error) {
-	res, err := h.applicationManagerClient.GetDevicesForApplication(h.getContext(), &ApplicationIdentifier{AppId: appID})
+// GetDevicesForApplication retrieves all devices for an application from the Handler.
+// Pass a limit to indicate the maximum number of results you want to receive, and the offset to indicate how many results should be skipped.
+func (h *ManagerClient) GetDevicesForApplication(appID string, limit, offset int) (devices []*Device, err error) {
+	res, err := h.applicationManagerClient.GetDevicesForApplication(h.getContextWithLimitAndOffset(limit, offset), &ApplicationIdentifier{AppId: appID})
 	if err != nil {
 		return nil, errors.Wrap(errors.FromGRPCError(err), "Could not get devices for application from Handler")
 	}
