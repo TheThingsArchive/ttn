@@ -45,7 +45,7 @@ function Decoder(bytes, port) {
   return decoded;
 }
 
-Do you want to test the payload function ? (Y/n)
+Do you want to test the payload functions? (Y/n)
 Y
 
 Payload: 12 34
@@ -161,7 +161,7 @@ Function read from %s:
 			}
 		}
 
-		fmt.Printf("\nDo you want to test the payload function ? (Y/n)\n")
+		fmt.Printf("\nDo you want to test the payload functions? (Y/n)\n")
 		var response string
 		fmt.Scanln(&response)
 
