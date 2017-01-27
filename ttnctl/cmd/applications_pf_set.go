@@ -186,7 +186,7 @@ Function read from %s:
 				if !result.Valid {
 					ctx.Fatal("Could not set the payload function: Invalid result")
 				}
-				ctx.Info("Function tested successfully")
+				ctx.Infof("Function tested successfully. Object returned by the converter: %s", result.Fields)
 			case "encoder":
 				fields, err := util.ReadFields()
 				if err != nil {
@@ -202,7 +202,7 @@ Function read from %s:
 				if err != nil {
 					ctx.WithError(err).Fatal("Could not set the payload function")
 				}
-				ctx.Info("Function tested successfully")
+				ctx.Infof("Function tested successfully. Encoded message: %v", result.Payload)
 			default:
 				ctx.Fatalf("Function %s does not exist", function)
 			}
