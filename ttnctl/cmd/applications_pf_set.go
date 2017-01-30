@@ -9,7 +9,7 @@ import (
 	"os"
 	"strings"
 
-	ttnlog "github.com/TheThingsNetwork/go-utils/log"
+	"github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/api/handler"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/spf13/cobra"
@@ -213,7 +213,7 @@ Function read from %s:
 			ctx.WithError(err).Fatal("Could not update application")
 		}
 
-		ctx.WithFields(ttnlog.Fields{
+		ctx.WithFields(log.Fields{
 			"AppID": appID,
 		}).Infof("Updated application")
 	},
