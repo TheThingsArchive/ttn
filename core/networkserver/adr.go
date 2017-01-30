@@ -80,6 +80,10 @@ func (n *networkServer) handleDownlinkADR(message *pb_broker.DownlinkMessage, de
 		return nil
 	}
 
+	if dev.ADR.Failed > 0 {
+		return nil
+	}
+
 	frames, err := n.devices.GetFrames(dev.AppEUI, dev.DevEUI)
 	if err != nil {
 		return err

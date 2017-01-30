@@ -46,12 +46,13 @@ type ADRSettings struct {
 	Margin int    `redis:"margin"`
 
 	// Indicates whether the NetworkServer should send a LinkADRReq when possible
-	SendReq bool `redis:"send_req"`
+	SendReq bool `redis:"send_req,omitempty"`
+	Failed  int  `redis:"failed,omitempty"` // number of failed ADR attempts
 
 	// Desired Settings:
-	DataRate string `redis:"data_rate"`
-	TxPower  int    `redis:"tx_power"`
-	NbTrans  int    `redis:"nb_trans"`
+	DataRate string `redis:"data_rate,omitempty"`
+	TxPower  int    `redis:"tx_power,omitempty"`
+	NbTrans  int    `redis:"nb_trans,omitempty"`
 }
 
 // Frame collected for ADR

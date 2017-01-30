@@ -62,12 +62,15 @@ func (n *networkServer) handleUplinkMAC(message *pb_broker.DeduplicatedUplinkMes
 				"power-ack", answer.PowerACK,
 				"channel-mask-ack", answer.ChannelMaskACK,
 			)
-			if !answer.DataRateACK || !answer.PowerACK || !answer.ChannelMaskACK {
+			if answer.DataRateACK && answer.PowerACK && answer.ChannelMaskACK {
+				dev.ADR.Failed = 0
+				dev.ADR.SendReq = false
+			} else {
+				dev.ADR.Failed++
 				ctx.
 					WithField("Answer", fmt.Sprintf("%v/%v/%v", answer.DataRateACK, answer.PowerACK, answer.ChannelMaskACK)).
 					Warn("Negative LinkADRAns")
 			}
-			dev.ADR.SendReq = false
 		default:
 		}
 	}
