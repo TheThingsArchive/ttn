@@ -7,22 +7,32 @@ package storage
 type ListOptions struct {
 	Limit  int
 	Offset int
+
+	total    int
+	selected int
+}
+
+// GetTotalAndSelected returns the total number of items, along with the number of selected items
+func (o ListOptions) GetTotalAndSelected() (total, selected int) {
+	return o.total, o.selected
 }
 
 func selectKeys(keys []string, options *ListOptions) []string {
 	var start int
 	var end = len(keys)
 	if options != nil {
-		if options.Offset >= len(keys) {
+		options.total = end
+		if options.Offset >= options.total {
 			return []string{}
 		}
 		start = options.Offset
 		if options.Limit > 0 {
-			if options.Offset+options.Limit > len(keys) {
-				options.Limit = len(keys) - options.Offset
+			if options.Offset+options.Limit > options.total {
+				options.Limit = options.total - options.Offset
 			}
 			end = options.Offset + options.Limit
 		}
+		options.selected = end - start
 	}
 	return keys[start:end]
 }

@@ -5,6 +5,7 @@ package handler
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/TheThingsNetwork/go-account-lib/claims"
@@ -322,7 +323,8 @@ func (h *handlerManager) GetDevicesForApplication(ctx context.Context, in *pb.Ap
 		return nil, err
 	}
 
-	devices, err := h.handler.devices.ListForApp(in.AppId, &storage.ListOptions{Limit: limit, Offset: offset})
+	opts := &storage.ListOptions{Limit: limit, Offset: offset}
+	devices, err := h.handler.devices.ListForApp(in.AppId, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -349,6 +351,14 @@ func (h *handlerManager) GetDevicesForApplication(ctx context.Context, in *pb.Ap
 			Altitude:  dev.Altitude,
 		})
 	}
+
+	total, selected := opts.GetTotalAndSelected()
+	header := metadata.Pairs(
+		"total", strconv.Itoa(total),
+		"selected", strconv.Itoa(selected),
+	)
+	grpc.SendHeader(ctx, header)
+
 	return res, nil
 }
 
