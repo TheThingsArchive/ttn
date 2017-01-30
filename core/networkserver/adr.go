@@ -53,12 +53,15 @@ func (n *networkServer) handleUplinkADR(message *pb_broker.DeduplicatedUplinkMes
 		if dev.ADR.Band == "" {
 			dev.ADR.Band = message.GetProtocolMetadata().GetLorawan().GetRegion().String()
 		}
-		dev.ADR.DataRate = message.GetProtocolMetadata().GetLorawan().GetDataRate()
+
+		dataRate := message.GetProtocolMetadata().GetLorawan().GetDataRate()
+		if dev.ADR.DataRate != dataRate {
+			dev.ADR.DataRate = dataRate
+			dev.ADR.SendReq = true // schedule a LinkADRReq
+		}
 		if lorawanUplinkMac.AdrAckReq {
-			dev.ADR.SendReq = true
-			lorawanDownlinkMac.Ack = true
-		} else {
-			dev.ADR.SendReq = false
+			dev.ADR.SendReq = true        // schedule a LinkADRReq
+			lorawanDownlinkMac.Ack = true // force a downlink
 		}
 	} else {
 		// Clear history and reset settings
@@ -81,92 +84,94 @@ func (n *networkServer) handleDownlinkADR(message *pb_broker.DownlinkMessage, de
 	if err != nil {
 		return err
 	}
-	if len(frames) >= device.FramesHistorySize {
-		frames = frames[:device.FramesHistorySize]
-		// Check settings
-		if dev.ADR.DataRate == "" {
-			return nil
+	if len(frames) < device.FramesHistorySize {
+		return nil
+	}
+
+	frames = frames[:device.FramesHistorySize]
+	// Check settings
+	if dev.ADR.DataRate == "" {
+		return nil
+	}
+	if dev.ADR.Margin == 0 {
+		dev.ADR.Margin = DefaultADRMargin
+	}
+	if dev.ADR.Band == "" {
+		return nil
+	}
+	fp, err := band.Get(dev.ADR.Band)
+	if err != nil {
+		return err
+	}
+	if dev.ADR.TxPower == 0 {
+		dev.ADR.TxPower = fp.DefaultTXPower
+	}
+	if dev.ADR.NbTrans == 0 {
+		dev.ADR.NbTrans = 1
+	}
+
+	// Calculate ADR settings
+	dataRate, txPower, err := fp.ADRSettings(dev.ADR.DataRate, dev.ADR.TxPower, maxSNR(frames), float32(dev.ADR.Margin))
+	if err == band.ErrADRUnavailable {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	drIdx, err := fp.GetDataRateIndexFor(dataRate)
+	if err != nil {
+		return err
+	}
+	powerIdx, err := fp.GetTxPowerIndexFor(txPower)
+	if err != nil {
+		powerIdx, _ = fp.GetTxPowerIndexFor(fp.DefaultTXPower)
+	}
+
+	if dev.ADR.DataRate == dataRate && dev.ADR.TxPower == txPower {
+		lossPercentage := lossPercentage(frames)
+		switch {
+		case lossPercentage <= 5:
+			dev.ADR.NbTrans--
+		case lossPercentage <= 10:
+			// don't change
+		case lossPercentage <= 30:
+			dev.ADR.NbTrans++
+		default:
+			dev.ADR.NbTrans += 2
 		}
-		if dev.ADR.Margin == 0 {
-			dev.ADR.Margin = DefaultADRMargin
-		}
-		if dev.ADR.Band == "" {
-			return nil
-		}
-		fp, err := band.Get(dev.ADR.Band)
-		if err != nil {
-			return err
-		}
-		if dev.ADR.TxPower == 0 {
-			dev.ADR.TxPower = fp.DefaultTXPower
-		}
-		if dev.ADR.NbTrans == 0 {
+		if dev.ADR.NbTrans < 1 {
 			dev.ADR.NbTrans = 1
 		}
-
-		// Calculate ADR settings
-		dataRate, txPower, err := fp.ADRSettings(dev.ADR.DataRate, dev.ADR.TxPower, maxSNR(frames), float32(dev.ADR.Margin))
-		if err == band.ErrADRUnavailable {
-			return nil
+		if dev.ADR.NbTrans > 3 {
+			dev.ADR.NbTrans = 3
 		}
-		if err != nil {
-			return err
-		}
-		drIdx, err := fp.GetDataRateIndexFor(dataRate)
-		if err != nil {
-			return err
-		}
-		powerIdx, err := fp.GetTxPowerIndexFor(txPower)
-		if err != nil {
-			powerIdx, _ = fp.GetTxPowerIndexFor(fp.DefaultTXPower)
-		}
-
-		if dev.ADR.DataRate == dataRate && dev.ADR.TxPower == txPower {
-			lossPercentage := lossPercentage(frames)
-			switch {
-			case lossPercentage <= 5:
-				dev.ADR.NbTrans--
-			case lossPercentage <= 10:
-				// don't change
-			case lossPercentage <= 30:
-				dev.ADR.NbTrans++
-			default:
-				dev.ADR.NbTrans += 2
-			}
-			if dev.ADR.NbTrans < 1 {
-				dev.ADR.NbTrans = 1
-			}
-			if dev.ADR.NbTrans > 3 {
-				dev.ADR.NbTrans = 3
-			}
-		}
-
-		dev.ADR.DataRate = dataRate
-		dev.ADR.TxPower = txPower
-
-		// Set MAC command
-		lorawanDownlinkMac := message.GetMessage().GetLorawan().GetMacPayload()
-		response := &lorawan.LinkADRReqPayload{
-			DataRate: uint8(drIdx),
-			TXPower:  uint8(powerIdx),
-			Redundancy: lorawan.Redundancy{
-				ChMaskCntl: 0, // Different for US/AU
-				NbRep:      uint8(dev.ADR.NbTrans),
-			},
-		}
-		for i, ch := range fp.UplinkChannels { // Different for US/AU
-			for _, dr := range ch.DataRates {
-				if dr == drIdx {
-					response.ChMask[i] = true
-				}
-			}
-		}
-		responsePayload, _ := response.MarshalBinary()
-		lorawanDownlinkMac.FOpts = append(lorawanDownlinkMac.FOpts, pb_lorawan.MACCommand{
-			Cid:     uint32(lorawan.LinkADRReq),
-			Payload: responsePayload,
-		})
 	}
+
+	dev.ADR.DataRate = dataRate
+	dev.ADR.TxPower = txPower
+
+	// Set MAC command
+	lorawanDownlinkMac := message.GetMessage().GetLorawan().GetMacPayload()
+	response := &lorawan.LinkADRReqPayload{
+		DataRate: uint8(drIdx),
+		TXPower:  uint8(powerIdx),
+		Redundancy: lorawan.Redundancy{
+			ChMaskCntl: 0, // Different for US/AU
+			NbRep:      uint8(dev.ADR.NbTrans),
+		},
+	}
+	for i, ch := range fp.UplinkChannels { // Different for US/AU
+		for _, dr := range ch.DataRates {
+			if dr == drIdx {
+				response.ChMask[i] = true
+			}
+		}
+	}
+	responsePayload, _ := response.MarshalBinary()
+	lorawanDownlinkMac.FOpts = append(lorawanDownlinkMac.FOpts, pb_lorawan.MACCommand{
+		Cid:     uint32(lorawan.LinkADRReq),
+		Payload: responsePayload,
+	})
 
 	return nil
 }
