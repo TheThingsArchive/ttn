@@ -328,6 +328,9 @@ func (h *handlerManager) GetDevicesForApplication(ctx context.Context, in *pb.Ap
 	}
 	res := &pb.DeviceList{Devices: []*pb.Device{}}
 	for _, dev := range devices {
+		if dev == nil {
+			continue
+		}
 		res.Devices = append(res.Devices, &pb.Device{
 			AppId: dev.AppID,
 			DevId: dev.DevID,

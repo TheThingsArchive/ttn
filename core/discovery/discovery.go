@@ -104,6 +104,9 @@ func (d *discovery) GetAll(serviceName string, limit, offset int) ([]*pb.Announc
 	}
 	serviceCopies := make([]*pb.Announcement, 0, len(services))
 	for _, service := range services {
+		if service == nil {
+			continue
+		}
 		serviceCopies = append(serviceCopies, service.ToProto())
 	}
 	return serviceCopies, nil
