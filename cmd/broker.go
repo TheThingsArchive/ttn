@@ -14,9 +14,9 @@ import (
 
 	"google.golang.org/grpc"
 
+	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/core/broker"
 	"github.com/TheThingsNetwork/ttn/core/component"
-	"github.com/apex/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -27,7 +27,7 @@ var brokerCmd = &cobra.Command{
 	Short: "The Things Network broker",
 	Long:  ``,
 	PreRun: func(cmd *cobra.Command, args []string) {
-		ctx.WithFields(log.Fields{
+		ctx.WithFields(ttnlog.Fields{
 			"Server":             fmt.Sprintf("%s:%d", viper.GetString("broker.server-address"), viper.GetInt("broker.server-port")),
 			"Announce":           fmt.Sprintf("%s:%d", viper.GetString("broker.server-address-announce"), viper.GetInt("broker.server-port")),
 			"NetworkServer":      viper.GetString("broker.networkserver-address"),
@@ -38,7 +38,7 @@ var brokerCmd = &cobra.Command{
 		ctx.Info("Starting")
 
 		// Component
-		component, err := component.New(ctx, "broker", fmt.Sprintf("%s:%d", viper.GetString("broker.server-address-announce"), viper.GetInt("broker.server-port")))
+		component, err := component.New(ttnlog.Get(), "broker", fmt.Sprintf("%s:%d", viper.GetString("broker.server-address-announce"), viper.GetInt("broker.server-port")))
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not initialize component")
 		}

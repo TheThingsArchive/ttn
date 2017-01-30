@@ -44,6 +44,9 @@ func (s *RedisKVStore) GetAll(keys []string, options *ListOptions) (map[string]s
 	sort.Strings(keys)
 
 	selectedKeys := selectKeys(keys, options)
+	if len(selectedKeys) == 0 {
+		return map[string]string{}, nil
+	}
 
 	pipe := s.client.Pipeline()
 	defer pipe.Close()
@@ -80,11 +83,20 @@ func (s *RedisKVStore) List(selector string, options *ListOptions) (map[string]s
 	if !strings.HasPrefix(selector, s.prefix) {
 		selector = s.prefix + selector
 	}
-	keys, err := s.client.Keys(selector).Result()
-	if err != nil {
-		return nil, err
+	var allKeys []string
+	var cursor uint64
+	for {
+		keys, next, err := s.client.Scan(cursor, selector, 0).Result()
+		if err != nil {
+			return nil, err
+		}
+		allKeys = append(allKeys, keys...)
+		cursor = next
+		if cursor == 0 {
+			break
+		}
 	}
-	return s.GetAll(keys, options)
+	return s.GetAll(allKeys, options)
 }
 
 // Get one result, prepending the prefix to the key if necessary

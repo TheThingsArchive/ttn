@@ -13,7 +13,7 @@ import (
 
 // Store interface for Applications
 type Store interface {
-	List() ([]*Application, error)
+	List(opts *storage.ListOptions) ([]*Application, error)
 	Get(appID string) (*Application, error)
 	Set(new *Application, properties ...string) (err error)
 	Delete(appID string) error
@@ -42,15 +42,15 @@ type RedisApplicationStore struct {
 }
 
 // List all Applications
-func (s *RedisApplicationStore) List() ([]*Application, error) {
-	applicationsI, err := s.store.List("", nil)
+func (s *RedisApplicationStore) List(opts *storage.ListOptions) ([]*Application, error) {
+	applicationsI, err := s.store.List("", opts)
 	if err != nil {
 		return nil, err
 	}
-	applications := make([]*Application, 0, len(applicationsI))
-	for _, applicationI := range applicationsI {
+	applications := make([]*Application, len(applicationsI))
+	for i, applicationI := range applicationsI {
 		if application, ok := applicationI.(Application); ok {
-			applications = append(applications, &application)
+			applications[i] = &application
 		}
 	}
 	return applications, nil

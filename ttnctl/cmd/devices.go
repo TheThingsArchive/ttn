@@ -4,8 +4,8 @@
 package cmd
 
 import (
+	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
-	"github.com/apex/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -18,7 +18,7 @@ var devicesCmd = &cobra.Command{
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		RootCmd.PersistentPreRun(cmd, args)
 		util.GetAccount(ctx)
-		ctx.WithFields(log.Fields{
+		ctx.WithFields(ttnlog.Fields{
 			"AppID":  util.GetAppID(ctx),
 			"AppEUI": util.GetAppEUI(ctx),
 		}).Info("Using Application")

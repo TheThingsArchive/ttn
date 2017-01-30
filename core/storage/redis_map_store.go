@@ -7,8 +7,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/TheThingsNetwork/go-utils/encoding"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
-
 	redis "gopkg.in/redis.v5"
 )
 
@@ -16,8 +16,8 @@ import (
 type RedisMapStore struct {
 	prefix  string
 	client  *redis.Client
-	encoder StringStringMapEncoder
-	decoder StringStringMapDecoder
+	encoder func(input interface{}, properties ...string) (map[string]string, error)
+	decoder func(input map[string]string) (output interface{}, err error)
 }
 
 // NewRedisMapStore returns a new RedisMapStore that talks to the given Redis client and respects the given prefix
@@ -33,17 +33,24 @@ func NewRedisMapStore(client *redis.Client, prefix string) *RedisMapStore {
 
 // SetBase sets the base struct for automatically encoding and decoding to and from Redis format
 func (s *RedisMapStore) SetBase(base interface{}, tagName string) {
-	s.SetEncoder(buildDefaultStructEncoder(tagName))
-	s.SetDecoder(buildDefaultStructDecoder(base, tagName))
+	if tagName == "" {
+		tagName = "redis"
+	}
+	s.SetEncoder(func(input interface{}, properties ...string) (map[string]string, error) {
+		return encoding.ToStringStringMap(tagName, input, properties...)
+	})
+	s.SetDecoder(func(input map[string]string) (output interface{}, err error) {
+		return encoding.FromStringStringMap(tagName, base, input)
+	})
 }
 
 // SetEncoder sets the encoder to convert structs to Redis format
-func (s *RedisMapStore) SetEncoder(encoder StringStringMapEncoder) {
+func (s *RedisMapStore) SetEncoder(encoder func(input interface{}, properties ...string) (map[string]string, error)) {
 	s.encoder = encoder
 }
 
 // SetDecoder sets the decoder to convert structs from Redis format
-func (s *RedisMapStore) SetDecoder(decoder StringStringMapDecoder) {
+func (s *RedisMapStore) SetDecoder(decoder func(input map[string]string) (output interface{}, err error)) {
 	s.decoder = decoder
 }
 
@@ -62,6 +69,9 @@ func (s *RedisMapStore) GetAll(keys []string, options *ListOptions) ([]interface
 	sort.Strings(keys)
 
 	selectedKeys := selectKeys(keys, options)
+	if len(selectedKeys) == 0 {
+		return []interface{}{}, nil
+	}
 
 	pipe := s.client.Pipeline()
 	defer pipe.Close()
@@ -79,11 +89,11 @@ func (s *RedisMapStore) GetAll(keys []string, options *ListOptions) ([]interface
 	}
 
 	// Get all results from pipeline
-	results := make([]interface{}, 0, len(selectedKeys))
-	for _, key := range selectedKeys {
+	results := make([]interface{}, len(selectedKeys))
+	for i, key := range selectedKeys {
 		if result, err := cmds[key].Result(); err == nil {
 			if result, err := s.decoder(result); err == nil {
-				results = append(results, result)
+				results[i] = result
 			}
 		}
 	}
@@ -99,11 +109,20 @@ func (s *RedisMapStore) List(selector string, options *ListOptions) ([]interface
 	if !strings.HasPrefix(selector, s.prefix) {
 		selector = s.prefix + selector
 	}
-	keys, err := s.client.Keys(selector).Result()
-	if err != nil {
-		return nil, err
+	var allKeys []string
+	var cursor uint64
+	for {
+		keys, next, err := s.client.Scan(cursor, selector, 0).Result()
+		if err != nil {
+			return nil, err
+		}
+		allKeys = append(allKeys, keys...)
+		cursor = next
+		if cursor == 0 {
+			break
+		}
 	}
-	return s.GetAll(keys, options)
+	return s.GetAll(allKeys, options)
 }
 
 // Get one result, prepending the prefix to the key if necessary

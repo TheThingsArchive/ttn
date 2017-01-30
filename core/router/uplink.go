@@ -6,13 +6,13 @@ package router
 import (
 	"time"
 
+	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	pb "github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/api/trace"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
-	"github.com/apex/log"
 	"github.com/brocaar/lorawan"
 )
 
@@ -43,7 +43,7 @@ func (r *router) HandleUplink(gatewayID string, uplink *pb.UplinkMessage) (err e
 		}
 		devEUI := types.DevEUI(joinRequestPayload.DevEUI)
 		appEUI := types.AppEUI(joinRequestPayload.AppEUI)
-		ctx.WithFields(log.Fields{
+		ctx.WithFields(ttnlog.Fields{
 			"DevEUI": devEUI,
 			"AppEUI": appEUI,
 		}).Debug("Handle Uplink as Activation")
@@ -68,7 +68,7 @@ func (r *router) HandleUplink(gatewayID string, uplink *pb.UplinkMessage) (err e
 	}
 
 	if gateway := uplink.GatewayMetadata; gateway != nil {
-		ctx = ctx.WithFields(log.Fields{
+		ctx = ctx.WithFields(ttnlog.Fields{
 			"Frequency": gateway.Frequency,
 			"RSSI":      gateway.Rssi,
 			"SNR":       gateway.Snr,
@@ -81,7 +81,7 @@ func (r *router) HandleUplink(gatewayID string, uplink *pb.UplinkMessage) (err e
 	}
 	devAddr := types.DevAddr(macPayload.FHDR.DevAddr)
 
-	ctx = ctx.WithFields(log.Fields{
+	ctx = ctx.WithFields(ttnlog.Fields{
 		"DevAddr": devAddr,
 		"FCnt":    macPayload.FHDR.FCnt,
 	})

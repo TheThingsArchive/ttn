@@ -8,7 +8,7 @@ import (
 	"os"
 	"os/user"
 
-	"github.com/apex/log"
+	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	"github.com/spf13/viper"
 	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
 	"google.golang.org/grpc/metadata"
@@ -27,7 +27,7 @@ func GetID() string {
 }
 
 // GetContext returns a new context
-func GetContext(ctx log.Interface, extraPairs ...string) context.Context {
+func GetContext(ctx ttnlog.Interface, extraPairs ...string) context.Context {
 	token, err := GetTokenSource(ctx).Token()
 	if err != nil {
 		ctx.WithError(err).Fatal("Could not get token")

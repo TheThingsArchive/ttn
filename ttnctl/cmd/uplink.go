@@ -7,10 +7,10 @@ import (
 	"strconv"
 	"time"
 
+	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
-	"github.com/apex/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -117,7 +117,7 @@ var uplinkCmd = &cobra.Command{
 				if err := m.Unmarshal(downlinkMessage.Payload); err != nil {
 					ctx.WithError(err).Fatal("Could not unmarshal downlink")
 				}
-				ctx.WithFields(log.Fields{
+				ctx.WithFields(ttnlog.Fields{
 					"Payload": m.Payload,
 					"FCnt":    m.FCnt,
 					"FPort":   m.FPort,

@@ -4,16 +4,16 @@
 package util
 
 import (
+	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
-	"github.com/apex/log"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
 )
 
 // GetRouter starts a connection with the router
-func GetRouter(ctx log.Interface) (*grpc.ClientConn, router.RouterClient) {
+func GetRouter(ctx ttnlog.Interface) (*grpc.ClientConn, router.RouterClient) {
 	ctx.Info("Discovering Router...")
 	dscConn, client := GetDiscovery(ctx)
 	defer dscConn.Close()
@@ -32,7 +32,7 @@ func GetRouter(ctx log.Interface) (*grpc.ClientConn, router.RouterClient) {
 }
 
 // GetRouterManager starts a management connection with the router
-func GetRouterManager(ctx log.Interface) (*grpc.ClientConn, router.RouterManagerClient) {
+func GetRouterManager(ctx ttnlog.Interface) (*grpc.ClientConn, router.RouterManagerClient) {
 	ctx.Info("Discovering Router...")
 	dscConn, client := GetDiscovery(ctx)
 	defer dscConn.Close()

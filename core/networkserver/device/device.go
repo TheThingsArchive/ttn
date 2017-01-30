@@ -20,18 +20,17 @@ type Options struct {
 
 // Device contains the state of a device
 type Device struct {
-	old         *Device
-	DevEUI      types.DevEUI  `redis:"dev_eui"`
-	AppEUI      types.AppEUI  `redis:"app_eui"`
-	AppID       string        `redis:"app_id"`
-	DevID       string        `redis:"dev_id"`
-	DevAddr     types.DevAddr `redis:"dev_addr"`
-	NwkSKey     types.NwkSKey `redis:"nwk_s_key"`
-	FCntUp      uint32        `redis:"f_cnt_up"`
-	FCntDown    uint32        `redis:"f_cnt_down"`
-	LastSeen    time.Time     `redis:"last_seen"`
-	Options     Options       `redis:"options"`
-	Utilization Utilization   `redis:"utilization"`
+	old      *Device
+	DevEUI   types.DevEUI  `redis:"dev_eui"`
+	AppEUI   types.AppEUI  `redis:"app_eui"`
+	AppID    string        `redis:"app_id"`
+	DevID    string        `redis:"dev_id"`
+	DevAddr  types.DevAddr `redis:"dev_addr"`
+	NwkSKey  types.NwkSKey `redis:"nwk_s_key"`
+	FCntUp   uint32        `redis:"f_cnt_up"`
+	FCntDown uint32        `redis:"f_cnt_down"`
+	LastSeen time.Time     `redis:"last_seen"`
+	Options  Options       `redis:"options"`
 
 	CreatedAt time.Time `redis:"created_at"`
 	UpdatedAt time.Time `redis:"updated_at"`

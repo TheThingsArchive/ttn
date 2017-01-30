@@ -4,17 +4,17 @@
 package handler
 
 import (
+	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/api/trace"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/pointer"
-	"github.com/apex/log"
 	"github.com/brocaar/lorawan"
 )
 
-func (h *handler) ConvertFromLoRaWAN(ctx log.Interface, ttnUp *pb_broker.DeduplicatedUplinkMessage, appUp *types.UplinkMessage, dev *device.Device) error {
+func (h *handler) ConvertFromLoRaWAN(ctx ttnlog.Interface, ttnUp *pb_broker.DeduplicatedUplinkMessage, appUp *types.UplinkMessage, dev *device.Device) error {
 	// Check for LoRaWAN
 	if lorawan := ttnUp.ProtocolMetadata.GetLorawan(); lorawan == nil {
 		return errors.NewErrInvalidArgument("Uplink", "does not contain LoRaWAN metadata")
@@ -75,7 +75,7 @@ func (h *handler) ConvertFromLoRaWAN(ctx log.Interface, ttnUp *pb_broker.Dedupli
 	return nil
 }
 
-func (h *handler) ConvertToLoRaWAN(ctx log.Interface, appDown *types.DownlinkMessage, ttnDown *pb_broker.DownlinkMessage, dev *device.Device) error {
+func (h *handler) ConvertToLoRaWAN(ctx ttnlog.Interface, appDown *types.DownlinkMessage, ttnDown *pb_broker.DownlinkMessage, dev *device.Device) error {
 	// LoRaWAN: Unmarshal Downlink
 	var phyPayload lorawan.PHYPayload
 	err := phyPayload.UnmarshalBinary(ttnDown.Payload)

@@ -4,14 +4,14 @@
 package handler
 
 import (
+	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
-	"github.com/apex/log"
 )
 
 // ConvertMetadata converts the protobuf matadata to application metadata
-func (h *handler) ConvertMetadata(ctx log.Interface, ttnUp *pb_broker.DeduplicatedUplinkMessage, appUp *types.UplinkMessage, dev *device.Device) error {
+func (h *handler) ConvertMetadata(ctx ttnlog.Interface, ttnUp *pb_broker.DeduplicatedUplinkMessage, appUp *types.UplinkMessage, dev *device.Device) error {
 	ctx = ctx.WithField("NumGateways", len(ttnUp.GatewayMetadata))
 
 	// Transform Metadata

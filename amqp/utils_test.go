@@ -6,11 +6,10 @@ package amqp
 import (
 	"testing"
 
-	"github.com/TheThingsNetwork/go-utils/log"
-	"github.com/TheThingsNetwork/go-utils/log/apex"
+	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	tt "github.com/TheThingsNetwork/ttn/utils/testing"
 )
 
-func getLogger(t *testing.T, tag string) log.Interface {
-	return apex.Wrap(tt.GetLogger(t, tag))
+func getLogger(t *testing.T, tag string) ttnlog.Interface {
+	return tt.GetLogger(t, tag)
 }

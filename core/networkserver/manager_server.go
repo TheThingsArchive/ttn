@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/TheThingsNetwork/go-account-lib/claims"
 	"github.com/TheThingsNetwork/go-account-lib/rights"
 	pb "github.com/TheThingsNetwork/ttn/api/networkserver"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
@@ -24,6 +25,13 @@ type networkServerManager struct {
 	clientRate    *ratelimit.Registry
 }
 
+func checkAppRights(claims *claims.Claims, appID string, right rights.Right) error {
+	if !claims.AppRight(appID, right) {
+		return errors.NewErrPermissionDenied(fmt.Sprintf(`No "%s" rights to Application "%s"`, right, appID))
+	}
+	return nil
+}
+
 func (n *networkServerManager) getDevice(ctx context.Context, in *pb_lorawan.DeviceIdentifier) (*device.Device, error) {
 	if err := in.Validate(); err != nil {
 		return nil, errors.Wrap(err, "Invalid Device Identifier")
@@ -39,8 +47,9 @@ func (n *networkServerManager) getDevice(ctx context.Context, in *pb_lorawan.Dev
 	if err != nil {
 		return nil, err
 	}
-	if !claims.AppRight(dev.AppID, rights.AppSettings) {
-		return nil, errors.NewErrPermissionDenied(fmt.Sprintf("No access to Application %s", dev.AppID))
+	err = checkAppRights(claims, dev.AppID, rights.Devices)
+	if err != nil {
+		return nil, err
 	}
 	return dev, nil
 }
@@ -72,11 +81,6 @@ func (n *networkServerManager) GetDevice(ctx context.Context, in *pb_lorawan.Dev
 }
 
 func (n *networkServerManager) SetDevice(ctx context.Context, in *pb_lorawan.Device) (*empty.Empty, error) {
-	dev, err := n.getDevice(ctx, &pb_lorawan.DeviceIdentifier{AppEui: in.AppEui, DevEui: in.DevEui})
-	if err != nil && errors.GetErrType(err) != errors.NotFound {
-		return nil, err
-	}
-
 	if err := in.Validate(); err != nil {
 		return nil, errors.Wrap(err, "Invalid Device")
 	}
@@ -85,8 +89,14 @@ func (n *networkServerManager) SetDevice(ctx context.Context, in *pb_lorawan.Dev
 	if err != nil {
 		return nil, err
 	}
-	if !claims.AppRight(in.AppId, rights.AppSettings) {
-		return nil, errors.NewErrPermissionDenied(fmt.Sprintf("No access to Application %s", dev.AppID))
+	err = checkAppRights(claims, in.AppId, rights.Devices)
+	if err != nil {
+		return nil, err
+	}
+
+	dev, err := n.getDevice(ctx, &pb_lorawan.DeviceIdentifier{AppEui: in.AppEui, DevEui: in.DevEui})
+	if err != nil && errors.GetErrType(err) != errors.NotFound {
+		return nil, err
 	}
 
 	if dev == nil {

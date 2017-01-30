@@ -12,12 +12,12 @@ import (
 	"os/signal"
 	"syscall"
 
+	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	pb "github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/discovery"
 	"github.com/TheThingsNetwork/ttn/core/discovery/announcement"
 	"github.com/TheThingsNetwork/ttn/core/proxy"
-	"github.com/apex/log"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -31,7 +31,7 @@ var discoveryCmd = &cobra.Command{
 	Short: "The Things Network discovery",
 	Long:  ``,
 	PreRun: func(cmd *cobra.Command, args []string) {
-		ctx.WithFields(log.Fields{
+		ctx.WithFields(ttnlog.Fields{
 			"Server":     fmt.Sprintf("%s:%d", viper.GetString("discovery.server-address"), viper.GetInt("discovery.server-port")),
 			"HTTP Proxy": fmt.Sprintf("%s:%d", viper.GetString("discovery.http-address"), viper.GetInt("discovery.http-port")),
 			"Database":   fmt.Sprintf("%s/%d", viper.GetString("discovery.redis-address"), viper.GetInt("discovery.redis-db")),
@@ -50,7 +50,7 @@ var discoveryCmd = &cobra.Command{
 		connectRedis(client)
 
 		// Component
-		component, err := component.New(ctx, "discovery", fmt.Sprintf("%s:%d", "localhost", viper.GetInt("discovery.server-port")))
+		component, err := component.New(ttnlog.Get(), "discovery", fmt.Sprintf("%s:%d", "localhost", viper.GetInt("discovery.server-port")))
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not initialize component")
 		}
@@ -89,6 +89,7 @@ var discoveryCmd = &cobra.Command{
 			pb.RegisterDiscoveryHandler(netCtx, mux, proxyConn)
 
 			prxy := proxy.WithLogger(mux, ctx)
+			prxy = proxy.WithPagination(prxy)
 
 			go func() {
 				err := http.ListenAndServe(

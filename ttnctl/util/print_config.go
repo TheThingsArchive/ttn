@@ -6,11 +6,11 @@ package util
 import (
 	"fmt"
 
-	"github.com/apex/log"
+	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	"github.com/spf13/viper"
 )
 
-func PrintConfig(ctx log.Interface, debug bool) {
+func PrintConfig(ctx ttnlog.Interface, debug bool) {
 	prt := ctx.Infof
 	if debug {
 		prt = ctx.Debugf

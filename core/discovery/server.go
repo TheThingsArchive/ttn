@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/TheThingsNetwork/go-account-lib/rights"
+	"github.com/TheThingsNetwork/ttn/api"
 	pb "github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/golang/protobuf/ptypes/empty"
@@ -76,8 +77,8 @@ func (d *discoveryServer) checkMetadataEditRights(ctx context.Context, in *pb.Me
 
 	// Check claims for AppID
 	if appID != "" {
-		if !claims.AppRight(appID, rights.AppSettings) {
-			return errPermissionDeniedf("No access to this application")
+		if !claims.AppRight(appID, rights.AppDelete) {
+			return errPermissionDeniedf(`No "%s" rights to Application "%s"`, rights.AppDelete, appID)
 		}
 	}
 	return nil
@@ -141,7 +142,11 @@ func (d *discoveryServer) DeleteMetadata(ctx context.Context, in *pb.MetadataReq
 }
 
 func (d *discoveryServer) GetAll(ctx context.Context, req *pb.GetServiceRequest) (*pb.AnnouncementsResponse, error) {
-	services, err := d.discovery.GetAll(req.ServiceName)
+	limit, offset, err := api.LimitAndOffsetFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	services, err := d.discovery.GetAll(req.ServiceName, limit, offset)
 	if err != nil {
 		return nil, err
 	}

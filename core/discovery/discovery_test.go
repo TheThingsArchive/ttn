@@ -43,7 +43,7 @@ func TestDiscoveryAnnounce(t *testing.T) {
 	err := d.Announce(broker1a)
 	a.So(err, ShouldBeNil)
 
-	services, err := d.GetAll("broker")
+	services, err := d.GetAll("broker", 0, 0)
 	a.So(err, ShouldBeNil)
 	a.So(services, ShouldHaveLength, 1)
 	a.So(services[0].NetAddress, ShouldEqual, "current address")
@@ -51,7 +51,7 @@ func TestDiscoveryAnnounce(t *testing.T) {
 	err = d.Announce(broker1b)
 	a.So(err, ShouldBeNil)
 
-	services, err = d.GetAll("broker")
+	services, err = d.GetAll("broker", 0, 0)
 	a.So(err, ShouldBeNil)
 	a.So(services, ShouldHaveLength, 1)
 	a.So(services[0].NetAddress, ShouldEqual, "updated address")
@@ -59,7 +59,7 @@ func TestDiscoveryAnnounce(t *testing.T) {
 	err = d.Announce(broker2)
 	a.So(err, ShouldBeNil)
 
-	services, err = d.GetAll("broker")
+	services, err = d.GetAll("broker", 0, 0)
 	a.So(err, ShouldBeNil)
 	a.So(services, ShouldHaveLength, 2)
 
@@ -81,16 +81,16 @@ func TestDiscoveryDiscover(t *testing.T) {
 	d.Announce(&pb.Announcement{ServiceName: "broker", Id: "broker2.1"})
 	d.Announce(&pb.Announcement{ServiceName: "broker", Id: "broker2.2"})
 
-	services, err := d.GetAll("random")
+	services, err := d.GetAll("random", 0, 0)
 	a.So(err, ShouldBeNil)
 	a.So(services, ShouldBeEmpty)
 
-	services, err = d.GetAll("router")
+	services, err = d.GetAll("router", 0, 0)
 	a.So(err, ShouldBeNil)
 	a.So(services, ShouldHaveLength, 1)
 	a.So(services[0].Id, ShouldEqual, "router2.0")
 
-	services, err = d.GetAll("broker")
+	services, err = d.GetAll("broker", 0, 0)
 	a.So(err, ShouldBeNil)
 	a.So(services, ShouldHaveLength, 2)
 

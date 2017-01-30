@@ -11,15 +11,18 @@ import (
 	"testing"
 	"time"
 
-	"github.com/apex/log"
+	ttnlog "github.com/TheThingsNetwork/go-utils/log"
+	ttnapex "github.com/TheThingsNetwork/go-utils/log/apex"
+	apexlog "github.com/apex/log"
 )
 
-func GetLogger(t *testing.T, tag string) log.Interface {
-	logger := &log.Logger{
+func GetLogger(t *testing.T, tag string) ttnlog.Interface {
+	logger := &apexlog.Logger{
 		Handler: NewLogHandler(t),
-		Level:   log.DebugLevel,
+		Level:   apexlog.DebugLevel,
 	}
-	return logger.WithField("tag", tag)
+	ctx := logger.WithField("tag", tag)
+	return ttnapex.Wrap(ctx)
 }
 
 // WaitGroup is an extension of sync.WaitGroup with a WaitFor function for testing

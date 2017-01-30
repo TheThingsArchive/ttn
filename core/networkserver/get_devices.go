@@ -22,6 +22,9 @@ func (n *networkServer) HandleGetDevices(req *pb.DevicesRequest) (*pb.DevicesRes
 	}
 
 	for _, device := range devices {
+		if device == nil {
+			continue
+		}
 		fullFCnt := fcnt.GetFull(device.FCntUp, uint16(req.FCnt))
 		dev := &pb_lorawan.Device{
 			AppEui:           &device.AppEUI,

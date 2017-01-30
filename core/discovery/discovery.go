@@ -8,6 +8,7 @@ import (
 	pb "github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/discovery/announcement"
+	"github.com/TheThingsNetwork/ttn/core/storage"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"gopkg.in/redis.v5"
 )
@@ -18,7 +19,7 @@ type Discovery interface {
 	WithCache(options announcement.CacheOptions)
 	WithMasterAuthServers(serverID ...string)
 	Announce(announcement *pb.Announcement) error
-	GetAll(serviceName string) ([]*pb.Announcement, error)
+	GetAll(serviceName string, limit, offest int) ([]*pb.Announcement, error)
 	Get(serviceName string, id string) (*pb.Announcement, error)
 	AddMetadata(serviceName string, id string, metadata *pb.Metadata) error
 	DeleteMetadata(serviceName string, id string, metadata *pb.Metadata) error
@@ -93,13 +94,19 @@ func (d *discovery) Get(serviceName string, id string) (*pb.Announcement, error)
 	return service.ToProto(), nil
 }
 
-func (d *discovery) GetAll(serviceName string) ([]*pb.Announcement, error) {
-	services, err := d.services.ListService(serviceName)
+func (d *discovery) GetAll(serviceName string, limit, offset int) ([]*pb.Announcement, error) {
+	services, err := d.services.ListService(serviceName, &storage.ListOptions{
+		Limit:  limit,
+		Offset: offset,
+	})
 	if err != nil {
 		return nil, err
 	}
 	serviceCopies := make([]*pb.Announcement, 0, len(services))
 	for _, service := range services {
+		if service == nil {
+			continue
+		}
 		serviceCopies = append(serviceCopies, service.ToProto())
 	}
 	return serviceCopies, nil

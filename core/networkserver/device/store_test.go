@@ -108,7 +108,7 @@ func TestDeviceStore(t *testing.T) {
 	a.So(dev.DevAddr, ShouldEqual, types.DevAddr{0, 0, 0, 3})
 
 	// List
-	devices, err := s.List()
+	devices, err := s.List(nil)
 	a.So(err, ShouldBeNil)
 	a.So(devices, ShouldHaveLength, 2)
 

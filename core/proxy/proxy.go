@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/apex/log"
+	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 )
 
 type tokenProxier struct {
@@ -33,12 +33,12 @@ func WithToken(handler http.Handler) http.Handler {
 }
 
 type logProxier struct {
-	ctx     log.Interface
+	ctx     ttnlog.Interface
 	handler http.Handler
 }
 
 func (p *logProxier) ServeHTTP(res http.ResponseWriter, req *http.Request) {
-	p.ctx.WithFields(log.Fields{
+	p.ctx.WithFields(ttnlog.Fields{
 		"RemoteAddress": req.RemoteAddr,
 		"Method":        req.Method,
 		"URI":           req.RequestURI,
@@ -47,7 +47,7 @@ func (p *logProxier) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 }
 
 // WithLogger wraps the handler so that each request gets logged
-func WithLogger(handler http.Handler, ctx log.Interface) http.Handler {
+func WithLogger(handler http.Handler, ctx ttnlog.Interface) http.Handler {
 	return &logProxier{ctx, handler}
 }
 

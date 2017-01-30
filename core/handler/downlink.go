@@ -6,16 +6,16 @@ package handler
 import (
 	"time"
 
+	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/api/trace"
 	"github.com/TheThingsNetwork/ttn/core/types"
-	"github.com/apex/log"
 )
 
 func (h *handler) EnqueueDownlink(appDownlink *types.DownlinkMessage) (err error) {
 	appID, devID := appDownlink.AppID, appDownlink.DevID
 
-	ctx := h.Ctx.WithFields(log.Fields{
+	ctx := h.Ctx.WithFields(ttnlog.Fields{
 		"AppID": appID,
 		"DevID": devID,
 	})
@@ -56,7 +56,7 @@ func (h *handler) EnqueueDownlink(appDownlink *types.DownlinkMessage) (err error
 func (h *handler) HandleDownlink(appDownlink *types.DownlinkMessage, downlink *pb_broker.DownlinkMessage) error {
 	appID, devID := appDownlink.AppID, appDownlink.DevID
 
-	ctx := h.Ctx.WithFields(log.Fields{
+	ctx := h.Ctx.WithFields(ttnlog.Fields{
 		"AppID":  appID,
 		"DevID":  devID,
 		"AppEUI": downlink.AppEui,

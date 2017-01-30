@@ -23,7 +23,7 @@ var cfgFile string
 var dataDir string
 var debug bool
 
-var ctx log.Interface
+var ctx ttnlog.Interface
 
 // RootCmd is the entrypoint for ttnctl
 var RootCmd = &cobra.Command{
@@ -35,18 +35,18 @@ var RootCmd = &cobra.Command{
 		if viper.GetBool("debug") {
 			logLevel = log.DebugLevel
 		}
-		ctx = &log.Logger{
+
+		ctx = apex.Wrap(&log.Logger{
 			Level:   logLevel,
 			Handler: cliHandler.New(os.Stdout),
-		}
+		})
 
 		if viper.GetBool("debug") {
 			util.PrintConfig(ctx, true)
 		}
 
-		ttnlog.Set(apex.Wrap(ctx))
+		ttnlog.Set(ctx)
 		grpclog.SetLogger(grpc.Wrap(ttnlog.Get()))
-
 	},
 }
 

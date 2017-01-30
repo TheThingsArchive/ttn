@@ -42,7 +42,6 @@ func (s *DefaultSubscriber) SubscribeDeviceDownlink(appID, devID string, handler
 			}
 			handler(s, dataDown.AppID, dataDown.DevID, *dataDown)
 			delivery.Ack(false)
-			break
 		}
 	}()
 

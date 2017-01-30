@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_protocol "github.com/TheThingsNetwork/ttn/api/protocol"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
@@ -15,11 +16,10 @@ import (
 	"github.com/TheThingsNetwork/ttn/api/trace"
 	"github.com/TheThingsNetwork/ttn/core/band"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
-	"github.com/apex/log"
 )
 
 func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivationRequest) (res *pb.DeviceActivationResponse, err error) {
-	ctx := r.Ctx.WithFields(log.Fields{
+	ctx := r.Ctx.WithFields(ttnlog.Fields{
 		"GatewayID": gatewayID,
 		"AppEUI":    *activation.AppEui,
 		"DevEUI":    *activation.DevEui,

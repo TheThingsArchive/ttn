@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
+	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	pb "github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/api/trace"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
-	"github.com/apex/log"
 )
 
 // ByScore is used to sort a list of DownlinkOptions based on Score
@@ -21,7 +21,7 @@ func (a ByScore) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a ByScore) Less(i, j int) bool { return a[i].Score < a[j].Score }
 
 func (b *broker) HandleDownlink(downlink *pb.DownlinkMessage) error {
-	ctx := b.Ctx.WithFields(log.Fields{
+	ctx := b.Ctx.WithFields(ttnlog.Fields{
 		"DevEUI": *downlink.DevEui,
 		"AppEUI": *downlink.AppEui,
 	})
@@ -33,9 +33,11 @@ func (b *broker) HandleDownlink(downlink *pb.DownlinkMessage) error {
 		} else {
 			ctx.WithField("Duration", time.Now().Sub(start)).Info("Handled downlink")
 		}
-		for _, monitor := range b.Monitors.BrokerClients() {
-			ctx.Debug("Sending downlink to monitor")
-			go monitor.SendDownlink(downlink)
+		if downlink != nil {
+			for _, monitor := range b.Monitors.BrokerClients() {
+				ctx.Debug("Sending downlink to monitor")
+				go monitor.SendDownlink(downlink)
+			}
 		}
 	}()
 

@@ -9,13 +9,13 @@ import (
 	"sync/atomic"
 	"time"
 
+	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	router_pb "github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/api/trace"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/random"
 	"github.com/TheThingsNetwork/ttn/utils/toa"
-	"github.com/apex/log"
 )
 
 // Schedule is used to schedule downlink transmissions
@@ -36,7 +36,7 @@ type Schedule interface {
 }
 
 // NewSchedule creates a new Schedule
-func NewSchedule(ctx log.Interface) Schedule {
+func NewSchedule(ctx ttnlog.Interface) Schedule {
 	s := &schedule{
 		ctx:   ctx,
 		items: make(map[string]*scheduledItem),
@@ -74,7 +74,7 @@ type scheduledItem struct {
 
 type schedule struct {
 	sync.RWMutex
-	ctx                       log.Interface
+	ctx                       ttnlog.Interface
 	offset                    int64
 	items                     map[string]*scheduledItem
 	downlink                  chan *router_pb.DownlinkMessage

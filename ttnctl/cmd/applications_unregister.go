@@ -6,8 +6,8 @@ package cmd
 import (
 	"fmt"
 
+	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
-	"github.com/apex/log"
 	"github.com/spf13/cobra"
 )
 
@@ -39,7 +39,7 @@ Are you sure you want to unregister application test?
 			ctx.WithError(err).Fatal("Could not unregister application")
 		}
 
-		ctx.WithFields(log.Fields{
+		ctx.WithFields(ttnlog.Fields{
 			"AppID": appID,
 		}).Infof("Unregistered application")
 	},

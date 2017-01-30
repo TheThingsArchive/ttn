@@ -120,12 +120,12 @@ func TestRedisAnnouncementStore(t *testing.T) {
 	a.So(err, ShouldBeNil)
 
 	// List
-	announcements, err := s.List()
+	announcements, err := s.List(nil)
 	a.So(err, ShouldBeNil)
 	a.So(announcements, ShouldHaveLength, 3)
 
 	// List
-	announcements, err = s.ListService("router")
+	announcements, err = s.ListService("router", nil)
 	a.So(err, ShouldBeNil)
 	a.So(announcements, ShouldHaveLength, 1)
 

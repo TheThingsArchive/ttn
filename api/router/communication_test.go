@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/TheThingsNetwork/go-utils/log"
-	"github.com/TheThingsNetwork/go-utils/log/apex"
 	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/api/gateway"
 	"github.com/TheThingsNetwork/ttn/api/protocol"
@@ -52,7 +51,7 @@ func TestRouterCommunication(t *testing.T) {
 	a := New(t)
 
 	ctx := GetLogger(t, "TestRouterCommunication")
-	log.Set(apex.Wrap(ctx))
+	log.Set(ctx)
 
 	rtr := newTestRouter()
 	rand.Seed(time.Now().UnixNano())

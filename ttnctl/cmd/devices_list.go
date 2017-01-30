@@ -6,8 +6,8 @@ package cmd
 import (
 	"fmt"
 
+	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
-	"github.com/apex/log"
 	"github.com/gosuri/uitable"
 	"github.com/spf13/cobra"
 )
@@ -34,7 +34,7 @@ test 	70B3D57EF0000024	0001D544B2936FCE	26001ADA
 		conn, manager := util.GetHandlerManager(ctx, appID)
 		defer conn.Close()
 
-		devices, err := manager.GetDevicesForApplication(appID)
+		devices, err := manager.GetDevicesForApplication(appID, 0, 0)
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not get devices.")
 		}
@@ -58,7 +58,7 @@ test 	70B3D57EF0000024	0001D544B2936FCE	26001ADA
 		fmt.Println(table)
 		fmt.Println()
 
-		ctx.WithFields(log.Fields{
+		ctx.WithFields(ttnlog.Fields{
 			"AppID": appID,
 		}).Infof("Listed %d devices", len(devices))
 	},

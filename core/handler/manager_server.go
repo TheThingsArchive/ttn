@@ -5,10 +5,12 @@ package handler
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/TheThingsNetwork/go-account-lib/claims"
 	"github.com/TheThingsNetwork/go-account-lib/rights"
+	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/api"
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb "github.com/TheThingsNetwork/ttn/api/handler"
@@ -16,9 +18,9 @@ import (
 	"github.com/TheThingsNetwork/ttn/api/ratelimit"
 	"github.com/TheThingsNetwork/ttn/core/handler/application"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
+	"github.com/TheThingsNetwork/ttn/core/storage"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
-	"github.com/apex/log"
 	"github.com/golang/protobuf/ptypes/empty"
 	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
 	"google.golang.org/grpc"
@@ -32,6 +34,13 @@ type handlerManager struct {
 	devAddrManager  pb_lorawan.DevAddrManagerClient
 	applicationRate *ratelimit.Registry
 	clientRate      *ratelimit.Registry
+}
+
+func checkAppRights(claims *claims.Claims, appID string, right rights.Right) error {
+	if !claims.AppRight(appID, right) {
+		return errors.NewErrPermissionDenied(fmt.Sprintf(`No "%s" rights to Application "%s"`, right, appID))
+	}
+	return nil
 }
 
 func (h *handlerManager) validateTTNAuthAppContext(ctx context.Context, appID string) (context.Context, *claims.Claims, error) {
@@ -75,8 +84,9 @@ func (h *handlerManager) GetDevice(ctx context.Context, in *pb.DeviceIdentifier)
 	if err != nil {
 		return nil, err
 	}
-	if !claims.AppRight(in.AppId, rights.Devices) {
-		return nil, errors.NewErrPermissionDenied(fmt.Sprintf(`No "devices" rights to application "%s"`, in.AppId))
+	err = checkAppRights(claims, in.AppId, rights.Devices)
+	if err != nil {
+		return nil, err
 	}
 
 	if _, err := h.handler.applications.Get(in.AppId); err != nil {
@@ -115,7 +125,7 @@ func (h *handlerManager) GetDevice(ctx context.Context, in *pb.DeviceIdentifier)
 	})
 	if errors.GetErrType(errors.FromGRPCError(err)) == errors.NotFound {
 		// Re-register the device in the Broker (NetworkServer)
-		h.handler.Ctx.WithFields(log.Fields{
+		h.handler.Ctx.WithFields(ttnlog.Fields{
 			"AppID":  dev.AppID,
 			"DevID":  dev.DevID,
 			"AppEUI": dev.AppEUI,
@@ -146,8 +156,9 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*empty.E
 	if err != nil {
 		return nil, err
 	}
-	if !claims.AppRight(in.AppId, rights.Devices) {
-		return nil, errors.NewErrPermissionDenied(fmt.Sprintf(`No "devices" rights to application "%s"`, in.AppId))
+	err = checkAppRights(claims, in.AppId, rights.Devices)
+	if err != nil {
+		return nil, err
 	}
 
 	if _, err := h.handler.applications.Get(in.AppId); err != nil {
@@ -180,7 +191,7 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*empty.E
 		dev.StartUpdate()
 	} else {
 		eventType = types.CreateEvent
-		existingDevices, err := h.handler.devices.ListForApp(in.AppId)
+		existingDevices, err := h.handler.devices.ListForApp(in.AppId, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -261,8 +272,9 @@ func (h *handlerManager) DeleteDevice(ctx context.Context, in *pb.DeviceIdentifi
 	if err != nil {
 		return nil, err
 	}
-	if !claims.AppRight(in.AppId, rights.Devices) {
-		return nil, errors.NewErrPermissionDenied(fmt.Sprintf(`No "devices" rights to application "%s"`, in.AppId))
+	err = checkAppRights(claims, in.AppId, rights.Devices)
+	if err != nil {
+		return nil, err
 	}
 
 	if _, err := h.handler.applications.Get(in.AppId); err != nil {
@@ -297,20 +309,30 @@ func (h *handlerManager) GetDevicesForApplication(ctx context.Context, in *pb.Ap
 	if err != nil {
 		return nil, err
 	}
-	if !claims.AppRight(in.AppId, rights.Devices) {
-		return nil, errors.NewErrPermissionDenied(fmt.Sprintf(`No "devices" rights to application "%s"`, in.AppId))
+	err = checkAppRights(claims, in.AppId, rights.Devices)
+	if err != nil {
+		return nil, err
 	}
 
 	if _, err := h.handler.applications.Get(in.AppId); err != nil {
 		return nil, errors.Wrap(err, "Application not registered to this Handler")
 	}
 
-	devices, err := h.handler.devices.ListForApp(in.AppId)
+	limit, offset, err := api.LimitAndOffsetFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	opts := &storage.ListOptions{Limit: limit, Offset: offset}
+	devices, err := h.handler.devices.ListForApp(in.AppId, opts)
 	if err != nil {
 		return nil, err
 	}
 	res := &pb.DeviceList{Devices: []*pb.Device{}}
 	for _, dev := range devices {
+		if dev == nil {
+			continue
+		}
 		res.Devices = append(res.Devices, &pb.Device{
 			AppId: dev.AppID,
 			DevId: dev.DevID,
@@ -329,6 +351,14 @@ func (h *handlerManager) GetDevicesForApplication(ctx context.Context, in *pb.Ap
 			Altitude:  dev.Altitude,
 		})
 	}
+
+	total, selected := opts.GetTotalAndSelected()
+	header := metadata.Pairs(
+		"total", strconv.Itoa(total),
+		"selected", strconv.Itoa(selected),
+	)
+	grpc.SendHeader(ctx, header)
+
 	return res, nil
 }
 
@@ -340,8 +370,9 @@ func (h *handlerManager) GetApplication(ctx context.Context, in *pb.ApplicationI
 	if err != nil {
 		return nil, err
 	}
-	if !claims.AppRight(in.AppId, rights.AppSettings) {
-		return nil, errors.NewErrPermissionDenied(`No "settings" rights to application`)
+	err = checkAppRights(claims, in.AppId, rights.AppSettings)
+	if err != nil {
+		return nil, err
 	}
 	app, err := h.handler.applications.Get(in.AppId)
 	if err != nil {
@@ -365,8 +396,9 @@ func (h *handlerManager) RegisterApplication(ctx context.Context, in *pb.Applica
 	if err != nil {
 		return nil, err
 	}
-	if !claims.AppRight(in.AppId, rights.AppSettings) {
-		return nil, errors.NewErrPermissionDenied(`No "settings" rights to application`)
+	err = checkAppRights(claims, in.AppId, rights.AppSettings)
+	if err != nil {
+		return nil, err
 	}
 	app, err := h.handler.applications.Get(in.AppId)
 	if err != nil && errors.GetErrType(err) != errors.NotFound {
@@ -409,8 +441,9 @@ func (h *handlerManager) SetApplication(ctx context.Context, in *pb.Application)
 	if err != nil {
 		return nil, err
 	}
-	if !claims.AppRight(in.AppId, rights.AppSettings) {
-		return nil, errors.NewErrPermissionDenied(`No "settings" rights to application`)
+	err = checkAppRights(claims, in.AppId, rights.AppSettings)
+	if err != nil {
+		return nil, err
 	}
 	app, err := h.handler.applications.Get(in.AppId)
 	if err != nil {
@@ -440,16 +473,18 @@ func (h *handlerManager) DeleteApplication(ctx context.Context, in *pb.Applicati
 	if err != nil {
 		return nil, err
 	}
-	if !claims.AppRight(in.AppId, rights.AppSettings) {
-		return nil, errors.NewErrPermissionDenied(`No "settings" rights to application`)
+	err = checkAppRights(claims, in.AppId, rights.AppDelete)
+	if err != nil {
+		return nil, err
 	}
+
 	_, err = h.handler.applications.Get(in.AppId)
 	if err != nil {
 		return nil, err
 	}
 
 	// Get and delete all devices for this application
-	devices, err := h.handler.devices.ListForApp(in.AppId)
+	devices, err := h.handler.devices.ListForApp(in.AppId, nil)
 	if err != nil {
 		return nil, err
 	}

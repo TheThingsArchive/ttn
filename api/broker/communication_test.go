@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/TheThingsNetwork/go-utils/log"
-	"github.com/TheThingsNetwork/go-utils/log/apex"
 	"github.com/TheThingsNetwork/ttn/api"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/assertions"
@@ -51,7 +50,7 @@ func TestHandlerBrokerCommunication(t *testing.T) {
 	a := New(t)
 
 	ctx := GetLogger(t, "TestHandlerBrokerCommunication")
-	log.Set(apex.Wrap(ctx))
+	log.Set(ctx)
 
 	brk := newTestBroker()
 	rand.Seed(time.Now().UnixNano())
@@ -145,7 +144,7 @@ func TestRouterBrokerCommunication(t *testing.T) {
 	a := New(t)
 
 	ctx := GetLogger(t, "TestRouterBrokerCommunication")
-	log.Set(apex.Wrap(ctx))
+	log.Set(ctx)
 
 	brk := newTestBroker()
 	rand.Seed(time.Now().UnixNano())

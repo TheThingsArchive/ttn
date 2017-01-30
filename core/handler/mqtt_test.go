@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/TheThingsNetwork/go-utils/log/apex"
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
@@ -26,7 +25,7 @@ func TestHandleMQTT(t *testing.T) {
 
 	a := New(t)
 	var wg WaitGroup
-	c := mqtt.NewClient(apex.Wrap(GetLogger(t, "TestHandleMQTT")), "test", "", "", fmt.Sprintf("tcp://%s", host))
+	c := mqtt.NewClient(GetLogger(t, "TestHandleMQTT"), "test", "", "", fmt.Sprintf("tcp://%s", host))
 	err := c.Connect()
 	a.So(err, ShouldBeNil)
 	appID := "handler-mqtt-app1"
