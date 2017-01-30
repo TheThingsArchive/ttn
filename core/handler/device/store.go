@@ -48,10 +48,10 @@ func (s *RedisDeviceStore) List(opts *storage.ListOptions) ([]*Device, error) {
 	if err != nil {
 		return nil, err
 	}
-	devices := make([]*Device, 0, len(devicesI))
-	for _, deviceI := range devicesI {
+	devices := make([]*Device, len(devicesI))
+	for i, deviceI := range devicesI {
 		if device, ok := deviceI.(Device); ok {
-			devices = append(devices, &device)
+			devices[i] = &device
 		}
 	}
 	return devices, nil
@@ -63,10 +63,10 @@ func (s *RedisDeviceStore) ListForApp(appID string, opts *storage.ListOptions) (
 	if err != nil {
 		return nil, err
 	}
-	devices := make([]*Device, 0, len(devicesI))
-	for _, deviceI := range devicesI {
+	devices := make([]*Device, len(devicesI))
+	for i, deviceI := range devicesI {
 		if device, ok := deviceI.(Device); ok {
-			devices = append(devices, &device)
+			devices[i] = &device
 		}
 	}
 	return devices, nil

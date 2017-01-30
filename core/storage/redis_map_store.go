@@ -89,11 +89,11 @@ func (s *RedisMapStore) GetAll(keys []string, options *ListOptions) ([]interface
 	}
 
 	// Get all results from pipeline
-	results := make([]interface{}, 0, len(selectedKeys))
-	for _, key := range selectedKeys {
+	results := make([]interface{}, len(selectedKeys))
+	for i, key := range selectedKeys {
 		if result, err := cmds[key].Result(); err == nil {
 			if result, err := s.decoder(result); err == nil {
-				results = append(results, result)
+				results[i] = result
 			}
 		}
 	}

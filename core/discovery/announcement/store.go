@@ -68,10 +68,10 @@ func (s *RedisAnnouncementStore) List(opts *storage.ListOptions) ([]*Announcemen
 	if err != nil {
 		return nil, err
 	}
-	announcements := make([]*Announcement, 0, len(announcementsI))
-	for _, announcementI := range announcementsI {
+	announcements := make([]*Announcement, len(announcementsI))
+	for i, announcementI := range announcementsI {
 		if announcement, ok := announcementI.(Announcement); ok {
-			announcements = append(announcements, &announcement)
+			announcements[i] = &announcement
 		}
 	}
 	return announcements, nil
@@ -84,10 +84,10 @@ func (s *RedisAnnouncementStore) ListService(serviceName string, opts *storage.L
 	if err != nil {
 		return nil, err
 	}
-	announcements := make([]*Announcement, 0, len(announcementsI))
-	for _, announcementI := range announcementsI {
+	announcements := make([]*Announcement, len(announcementsI))
+	for i, announcementI := range announcementsI {
 		if announcement, ok := announcementI.(Announcement); ok {
-			announcements = append(announcements, &announcement)
+			announcements[i] = &announcement
 			announcement.Metadata, err = s.GetMetadata(announcement.ServiceName, announcement.ID)
 			if err != nil {
 				return nil, err

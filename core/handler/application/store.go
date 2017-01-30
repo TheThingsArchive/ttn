@@ -47,10 +47,10 @@ func (s *RedisApplicationStore) List(opts *storage.ListOptions) ([]*Application,
 	if err != nil {
 		return nil, err
 	}
-	applications := make([]*Application, 0, len(applicationsI))
-	for _, applicationI := range applicationsI {
+	applications := make([]*Application, len(applicationsI))
+	for i, applicationI := range applicationsI {
 		if application, ok := applicationI.(Application); ok {
-			applications = append(applications, &application)
+			applications[i] = &application
 		}
 	}
 	return applications, nil

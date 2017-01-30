@@ -130,9 +130,9 @@ func (s *RedisSetStore) Add(key string, values ...string) error {
 	if !strings.HasPrefix(key, s.prefix) {
 		key = s.prefix + key
 	}
-	var valuesI []interface{}
-	for _, v := range values {
-		valuesI = append(valuesI, v)
+	valuesI := make([]interface{}, len(values))
+	for i, v := range values {
+		valuesI[i] = v
 	}
 	return s.client.SAdd(key, valuesI...).Err()
 }
@@ -142,9 +142,9 @@ func (s *RedisSetStore) Remove(key string, values ...string) error {
 	if !strings.HasPrefix(key, s.prefix) {
 		key = s.prefix + key
 	}
-	var valuesI []interface{}
-	for _, v := range values {
-		valuesI = append(valuesI, v)
+	valuesI := make([]interface{}, len(values))
+	for i, v := range values {
+		valuesI[i] = v
 	}
 	return s.client.SRem(key, valuesI...).Err()
 }
