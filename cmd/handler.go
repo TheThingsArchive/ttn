@@ -16,6 +16,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/handler"
 	"github.com/TheThingsNetwork/ttn/core/proxy"
+	"github.com/TheThingsNetwork/ttn/core/proxy/jsonpb"
 	"github.com/TheThingsNetwork/ttn/utils/parse"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
@@ -133,7 +134,9 @@ var handlerCmd = &cobra.Command{
 			if err != nil {
 				ctx.WithError(err).Fatal("Could not start client for gRPC proxy")
 			}
-			mux := runtime.NewServeMux()
+			mux := runtime.NewServeMux(runtime.WithMarshalerOption("*", &jsonpb.GoGoJSONPb{
+				OrigName: true,
+			}))
 			netCtx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 			pb.RegisterApplicationManagerHandler(netCtx, mux, proxyConn)

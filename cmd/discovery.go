@@ -18,6 +18,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/discovery"
 	"github.com/TheThingsNetwork/ttn/core/discovery/announcement"
 	"github.com/TheThingsNetwork/ttn/core/proxy"
+	"github.com/TheThingsNetwork/ttn/core/proxy/jsonpb"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -83,7 +84,9 @@ var discoveryCmd = &cobra.Command{
 			if err != nil {
 				ctx.WithError(err).Fatal("Could not start client for gRPC proxy")
 			}
-			mux := runtime.NewServeMux()
+			mux := runtime.NewServeMux(runtime.WithMarshalerOption("*", &jsonpb.GoGoJSONPb{
+				OrigName: true,
+			}))
 			netCtx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 			pb.RegisterDiscoveryHandler(netCtx, mux, proxyConn)
