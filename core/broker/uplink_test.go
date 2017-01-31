@@ -112,7 +112,7 @@ func TestHandleUplink(t *testing.T) {
 		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2, GatewayId: gtwID},
 		ProtocolMetadata: &protocol.RxMetadata{Protocol: &protocol.RxMetadata_Lorawan{Lorawan: &pb_lorawan.Metadata{}}},
 	})
-	a.So(err, ShouldHaveSameTypeAs, &errors.ErrNotFound{})
+	a.So(err, ShouldHaveSameTypeAs, &errors.ErrInvalidArgument{})
 
 	// Disable FCnt Check
 	b.uplinkDeduplicator = NewDeduplicator(10 * time.Millisecond)
