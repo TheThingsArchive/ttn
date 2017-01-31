@@ -33,9 +33,12 @@ func (n *networkServer) HandleUplink(message *pb_broker.DeduplicatedUplinkMessag
 
 	dev.StartUpdate()
 	defer func() {
-		err = n.devices.Set(dev)
-		if err != nil {
+		setErr := n.devices.Set(dev)
+		if setErr != nil {
 			n.Ctx.WithError(err).Error("Could not update device state")
+		}
+		if err == nil {
+			err = setErr
 		}
 	}()
 
