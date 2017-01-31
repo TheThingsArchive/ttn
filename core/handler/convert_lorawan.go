@@ -55,13 +55,11 @@ func (h *handler) ConvertFromLoRaWAN(ctx ttnlog.Interface, ttnUp *pb_broker.Dedu
 			if err := phyPayload.DecryptFRMPayload(lorawan.AES128Key(dev.AppSKey)); err != nil {
 				return errors.NewErrInternal("Could not decrypt payload")
 			}
-			if len(macPayload.FRMPayload) == 1 {
-				payload, ok := macPayload.FRMPayload[0].(*lorawan.DataPayload)
-				if !ok {
-					return errors.NewErrInvalidArgument("Uplink FRMPayload", "must be of type *lorawan.DataPayload")
-				}
-				appUp.PayloadRaw = payload.Bytes
+			payload, ok := macPayload.FRMPayload[0].(*lorawan.DataPayload)
+			if !ok {
+				return errors.NewErrInvalidArgument("Uplink FRMPayload", "must be of type *lorawan.DataPayload")
 			}
+			appUp.PayloadRaw = payload.Bytes
 		}
 	}
 
