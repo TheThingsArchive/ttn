@@ -43,6 +43,7 @@ func (h *handler) HandleUplink(uplink *pb_broker.DeduplicatedUplinkMessage) (err
 	if err != nil {
 		return err
 	}
+	dev.StartUpdate()
 
 	// Build AppUplink
 	appUplink := &types.UplinkMessage{
@@ -69,6 +70,11 @@ func (h *handler) HandleUplink(uplink *pb_broker.DeduplicatedUplinkMessage) (err
 		} else if err != nil {
 			return err
 		}
+	}
+
+	err = h.devices.Set(dev)
+	if err != nil {
+		return err
 	}
 
 	// Publish Uplink
@@ -106,12 +112,15 @@ func (h *handler) HandleUplink(uplink *pb_broker.DeduplicatedUplinkMessage) (err
 		return err
 	}
 
-	// Clear Downlink
-	dev.StartUpdate()
-	dev.NextDownlink = nil
-	err = h.devices.Set(dev)
-	if err != nil {
-		return err
+	// Clear Downlink if unconfirmed
+	// For confirmed, downlink is cleared on ACK
+	if !appDownlink.Confirmed {
+		dev.StartUpdate()
+		dev.NextDownlink = nil
+		err = h.devices.Set(dev)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

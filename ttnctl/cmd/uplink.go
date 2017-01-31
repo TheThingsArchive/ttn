@@ -21,7 +21,7 @@ var uplinkCmd = &cobra.Command{
 	Short:  "Simulate an uplink message to the network",
 	Long:   `ttnctl uplink simulates an uplink message to the network`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) < 5 {
+		if len(args) < 4 {
 			cmd.UsageFunc()(cmd)
 			return
 		}
@@ -46,9 +46,12 @@ var uplinkCmd = &cobra.Command{
 			ctx.WithError(err).Fatal("Invalid FCnt")
 		}
 
-		payload, err := types.ParseHEX(args[4], len(args[4])/2)
-		if err != nil {
-			ctx.WithError(err).Fatal("Invalid Payload")
+		var payload []byte
+		if len(args) >= 5 {
+			payload, err = types.ParseHEX(args[4], len(args[4])/2)
+			if err != nil {
+				ctx.WithError(err).Fatal("Invalid Payload")
+			}
 		}
 
 		withDownlink, _ := cmd.Flags().GetBool("downlink")
@@ -57,6 +60,8 @@ var uplinkCmd = &cobra.Command{
 		if confirmed {
 			withDownlink = true
 		}
+
+		ack, _ := cmd.Flags().GetBool("ack")
 
 		rtrConn, rtrClient := util.GetRouter(ctx)
 		defer rtrConn.Close()
@@ -88,7 +93,7 @@ var uplinkCmd = &cobra.Command{
 
 		m := &util.Message{}
 		m.SetDevice(devAddr, nwkSKey, appSKey)
-		m.SetMessage(confirmed, fCnt, payload)
+		m.SetMessage(confirmed, ack, fCnt, payload)
 		bytes := m.Bytes()
 
 		uplinkStream := router.NewMonitoredUplinkStream(gtwClient)
@@ -133,6 +138,7 @@ func init() {
 	RootCmd.AddCommand(uplinkCmd)
 	uplinkCmd.Flags().Bool("downlink", false, "Also start downlink (unstable)")
 	uplinkCmd.Flags().Bool("confirmed", false, "Use confirmed uplink (this also sets --downlink)")
+	uplinkCmd.Flags().Bool("ack", false, "Set ACK bit")
 
 	uplinkCmd.Flags().String("gateway-id", "", "The ID of the gateway that you are faking (you can only fake gateways that you own)")
 	viper.BindPFlag("gateway-id", uplinkCmd.Flags().Lookup("gateway-id"))
