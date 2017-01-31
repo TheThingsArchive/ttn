@@ -25,7 +25,7 @@ deps: build-deps
 	govendor sync -v
 
 dev-deps: deps
-	@command -v protoc-gen-gofast > /dev/null || go get github.com/gogo/protobuf/protoc-gen-gofast
+	@command -v protoc-gen-gogofast > /dev/null || go get github.com/gogo/protobuf/protoc-gen-gogofast
 	@command -v protoc-gen-grpc-gateway > /dev/null || go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway
 	@command -v protoc-gen-ttndoc > /dev/null || go install github.com/TheThingsNetwork/ttn/utils/protoc-gen-ttndoc
 	@command -v mockgen > /dev/null || go get github.com/golang/mock/mockgen
@@ -39,7 +39,7 @@ COMPILED_PROTO_FILES = $(patsubst api%.proto, api%.pb.go, $(PROTO_FILES))
 PROTOC_IMPORTS= -I/usr/local/include -I$(GO_PATH)/src -I$(PARENT_DIRECTORY) \
 -I$(GO_PATH)/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis
 PROTOC = protoc $(PROTOC_IMPORTS) \
---gofast_out=Mgoogle/api/annotations.proto=github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis/google/api,plugins=grpc:$(GO_SRC) \
+--gogofast_out=Mgoogle/api/annotations.proto=github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis/google/api,plugins=grpc:$(GO_SRC) \
 --grpc-gateway_out=:$(GO_SRC) `pwd`/
 
 protos-clean:
