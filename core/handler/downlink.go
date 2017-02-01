@@ -53,7 +53,7 @@ func (h *handler) EnqueueDownlink(appDownlink *types.DownlinkMessage) (err error
 	return nil
 }
 
-func (h *handler) HandleDownlink(appDownlink *types.DownlinkMessage, downlink *pb_broker.DownlinkMessage) error {
+func (h *handler) HandleDownlink(appDownlink *types.DownlinkMessage, downlink *pb_broker.DownlinkMessage) (err error) {
 	appID, devID := appDownlink.AppID, appDownlink.DevID
 
 	ctx := h.Ctx.WithFields(ttnlog.Fields{
@@ -63,7 +63,6 @@ func (h *handler) HandleDownlink(appDownlink *types.DownlinkMessage, downlink *p
 		"DevEUI": downlink.DevEui,
 	})
 
-	var err error
 	defer func() {
 		if err != nil {
 			h.mqttEvent <- &types.DeviceEvent{
@@ -80,6 +79,13 @@ func (h *handler) HandleDownlink(appDownlink *types.DownlinkMessage, downlink *p
 	if err != nil {
 		return err
 	}
+	dev.StartUpdate()
+	defer func() {
+		setErr := h.devices.Set(dev)
+		if err == nil {
+			err = setErr
+		}
+	}()
 
 	// Get Processors
 	processors := []DownlinkProcessor{

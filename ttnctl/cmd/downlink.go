@@ -46,21 +46,25 @@ $ ttnctl downlink test --json '{"led":"on"}'
 		ctx = ctx.WithField("DevID", devID)
 
 		jsonflag, err := cmd.Flags().GetBool("json")
-
 		if err != nil {
 			ctx.WithError(err).Fatal("Failed to read json flag")
 		}
 
 		fPort, err := cmd.Flags().GetInt("fport")
-
 		if err != nil {
 			ctx.WithError(err).Fatal("Failed to read fport flag")
 		}
 
+		confirmed, err := cmd.Flags().GetBool("confirmed")
+		if err != nil {
+			ctx.WithError(err).Fatal("Failed to read confirmed flag")
+		}
+
 		message := types.DownlinkMessage{
-			AppID: appID,
-			DevID: devID,
-			FPort: uint8(fPort),
+			AppID:     appID,
+			DevID:     devID,
+			FPort:     uint8(fPort),
+			Confirmed: confirmed,
 		}
 
 		if args[1] == "" {
@@ -102,5 +106,6 @@ $ ttnctl downlink test --json '{"led":"on"}'
 func init() {
 	RootCmd.AddCommand(downlinkCmd)
 	downlinkCmd.Flags().Int("fport", 1, "FPort for downlink")
+	downlinkCmd.Flags().Bool("confirmed", false, "Confirmed downlink")
 	downlinkCmd.Flags().Bool("json", false, "Provide the payload as JSON")
 }

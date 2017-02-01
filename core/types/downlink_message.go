@@ -8,6 +8,7 @@ type DownlinkMessage struct {
 	AppID         string                 `json:"app_id,omitempty"`
 	DevID         string                 `json:"dev_id,omitempty"`
 	FPort         uint8                  `json:"port"`
+	Confirmed     bool                   `json:"confirmed,omitempty"`
 	PayloadRaw    []byte                 `json:"payload_raw,omitempty"`
 	PayloadFields map[string]interface{} `json:"payload_fields,omitempty"`
 }

@@ -48,13 +48,13 @@ func (h *handler) ConvertFromLoRaWAN(ctx ttnlog.Interface, ttnUp *pb_broker.Dedu
 	}
 
 	// LoRaWAN: Decrypt
-	if macPayload.FPort != nil && *macPayload.FPort != 0 && len(macPayload.FRMPayload) == 1 {
+	if macPayload.FPort != nil {
 		appUp.FPort = *macPayload.FPort
-		ctx = ctx.WithField("FCnt", appUp.FPort)
-		if err := phyPayload.DecryptFRMPayload(lorawan.AES128Key(dev.AppSKey)); err != nil {
-			return errors.NewErrInternal("Could not decrypt payload")
-		}
-		if len(macPayload.FRMPayload) == 1 {
+		if *macPayload.FPort != 0 && len(macPayload.FRMPayload) == 1 {
+			ctx = ctx.WithField("FCnt", appUp.FPort)
+			if err := phyPayload.DecryptFRMPayload(lorawan.AES128Key(dev.AppSKey)); err != nil {
+				return errors.NewErrInternal("Could not decrypt payload")
+			}
 			payload, ok := macPayload.FRMPayload[0].(*lorawan.DataPayload)
 			if !ok {
 				return errors.NewErrInvalidArgument("Uplink FRMPayload", "must be of type *lorawan.DataPayload")
@@ -63,12 +63,23 @@ func (h *handler) ConvertFromLoRaWAN(ctx ttnlog.Interface, ttnUp *pb_broker.Dedu
 		}
 	}
 
-	// LoRaWAN: Publish ACKs as events
-	if macPayload.FHDR.FCtrl.ACK {
-		h.mqttEvent <- &types.DeviceEvent{
-			AppID: appUp.AppID,
-			DevID: appUp.DevID,
-			Event: types.DownlinkAckEvent,
+	if dev.CurrentDownlink != nil {
+		// We have a downlink pending
+		if dev.CurrentDownlink.Confirmed {
+			// If it's confirmed, we can only unset it if we receive an ack.
+			if macPayload.FHDR.FCtrl.ACK {
+				dev.CurrentDownlink = nil
+
+				// Send event over MQTT
+				h.mqttEvent <- &types.DeviceEvent{
+					AppID: appUp.AppID,
+					DevID: appUp.DevID,
+					Event: types.DownlinkAckEvent,
+				}
+			}
+		} else {
+			// If it's unconfirmed, we can unset it.
+			dev.CurrentDownlink = nil
 		}
 	}
 
@@ -98,6 +109,10 @@ func (h *handler) ConvertToLoRaWAN(ctx ttnlog.Interface, appDown *types.Downlink
 	// Set FPort
 	if appDown.FPort != 0 {
 		macPayload.FPort = &appDown.FPort
+	}
+
+	if appDown.Confirmed {
+		phyPayload.MHDR.MType = lorawan.ConfirmedDataDown
 	}
 
 	// Set Payload
