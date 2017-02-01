@@ -162,8 +162,28 @@ func JoinAcceptPayloadFromPayload(payload lorawan.Payload) (accept JoinAcceptPay
 func (m *Message) PHYPayload() (phy lorawan.PHYPayload) {
 	phy.MHDR.Major = lorawan.Major(m.Major)
 	phy.MHDR.MType = lorawan.MType(m.MType)
-	phy.MACPayload = m.Payload.(payloader).Payload()
+	if m.Payload != nil {
+		phy.MACPayload = m.Payload.(payloader).Payload()
+	}
 	copy(phy.MIC[:], m.Mic)
+	return
+}
+
+// PHYPayloadBytes converts the Message to a lorawan.PHYPayload, marshals it and returns the bytes
+func (m *Message) PHYPayloadBytes() []byte {
+	phy := m.PHYPayload()
+	bytes, _ := phy.MarshalBinary()
+	return bytes
+}
+
+// MessageFromPHYPayloadBytes converts lorawan.PHYPayload bytes to a Message
+func MessageFromPHYPayloadBytes(payload []byte) (msg Message, err error) {
+	var phy lorawan.PHYPayload
+	err = phy.UnmarshalBinary(payload)
+	if err != nil {
+		return
+	}
+	msg = MessageFromPHYPayload(phy)
 	return
 }
 

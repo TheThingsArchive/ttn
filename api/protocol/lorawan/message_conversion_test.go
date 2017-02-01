@@ -6,10 +6,37 @@ package lorawan
 import (
 	"testing"
 
+	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/band"
 	. "github.com/smartystreets/assertions"
 )
+
+func TestConvertBytes(t *testing.T) {
+	a := New(t)
+	var err error
+	var in, out Message
+	mac := in.InitDownlink()
+	in.Mic = []byte{1, 2, 3, 4}
+	mac.Ack = true
+	mac.Adr = true
+	mac.AdrAckReq = true
+	mac.DevAddr = types.DevAddr([4]byte{1, 2, 3, 4})
+	mac.FCnt = 1
+	mac.FOpts = []MACCommand{MACCommand{Cid: 0x02, Payload: []byte{0x00, 0x00}}}
+	mac.FPending = true
+	mac.FPort = 1
+	mac.FrmPayload = []byte{1, 2, 3, 4}
+
+	bytes := in.PHYPayloadBytes()
+
+	a.So(bytes, ShouldResemble, []byte{0x60, 0x4, 0x3, 0x2, 0x1, 0xf3, 0x1, 0x0, 0x2, 0x0, 0x0, 0x1, 0x1, 0x2, 0x3, 0x4, 0x1, 0x2, 0x3, 0x4})
+
+	out, err = MessageFromPHYPayloadBytes(bytes)
+
+	a.So(err, ShouldBeNil)
+	a.So(out, ShouldResemble, in)
+}
 
 func TestConvertPHYPayload(t *testing.T) {
 	a := New(t)
