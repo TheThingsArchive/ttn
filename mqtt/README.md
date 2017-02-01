@@ -112,6 +112,7 @@ you will see this on MQTT:
 ```js
 {
   "port": 1,                 // LoRaWAN FPort
+  "confirmed": false,        // Whether the downlink should be confirmed by the device
   "payload_raw": "AQIDBA==", // Base64 encoded payload: [0x01, 0x02, 0x03, 0x04]
 }
 ```
@@ -144,6 +145,7 @@ Instead of `payload_raw` you can also use `payload_fields` with an object of fie
 ```js
 {
   "port": 1,                 // LoRaWAN FPort
+  "confirmed": false,        // Whether the downlink should be confirmed by the device
   "payload_fields": {
     "led": true
   }
