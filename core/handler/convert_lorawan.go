@@ -20,8 +20,6 @@ func (h *handler) ConvertFromLoRaWAN(ctx ttnlog.Interface, ttnUp *pb_broker.Dedu
 		return errors.NewErrInvalidArgument("Uplink", "does not contain LoRaWAN metadata")
 	}
 
-	appUp.HardwareSerial = dev.DevEUI.String()
-
 	// LoRaWAN: Unmarshal Uplink
 	var phyPayload lorawan.PHYPayload
 	err := phyPayload.UnmarshalBinary(ttnUp.Payload)
@@ -32,12 +30,9 @@ func (h *handler) ConvertFromLoRaWAN(ctx ttnlog.Interface, ttnUp *pb_broker.Dedu
 	if !ok {
 		return errors.NewErrInvalidArgument("Uplink", "does not contain a MAC payload")
 	}
-	macPayload.FHDR.FCnt = ttnUp.ProtocolMetadata.GetLorawan().FCnt
-	appUp.FCnt = macPayload.FHDR.FCnt
-
-	ctx = ctx.WithField("FCnt", appUp.FCnt)
 
 	// LoRaWAN: Validate MIC
+	macPayload.FHDR.FCnt = ttnUp.ProtocolMetadata.GetLorawan().FCnt
 	ttnUp.Trace = ttnUp.Trace.WithEvent(trace.CheckMICEvent)
 	ok, err = phyPayload.ValidateMIC(lorawan.AES128Key(dev.NwkSKey))
 	if err != nil {
@@ -46,6 +41,14 @@ func (h *handler) ConvertFromLoRaWAN(ctx ttnlog.Interface, ttnUp *pb_broker.Dedu
 	if !ok {
 		return errors.NewErrNotFound("device that validates MIC")
 	}
+
+	appUp.HardwareSerial = dev.DevEUI.String()
+	appUp.FCnt = macPayload.FHDR.FCnt
+	ctx = ctx.WithField("FCnt", appUp.FCnt)
+	if dev.FCntUp == appUp.FCnt {
+		appUp.IsRetry = true
+	}
+	dev.FCntUp = appUp.FCnt
 
 	// LoRaWAN: Decrypt
 	if macPayload.FPort != nil {
@@ -77,8 +80,8 @@ func (h *handler) ConvertFromLoRaWAN(ctx ttnlog.Interface, ttnUp *pb_broker.Dedu
 					Event: types.DownlinkAckEvent,
 				}
 			}
-		} else {
-			// If it's unconfirmed, we can unset it.
+		} else if !appUp.IsRetry {
+			// If it's unconfirmed (and the uplink is not a retry), we can unset it.
 			dev.CurrentDownlink = nil
 		}
 	}

@@ -44,6 +44,7 @@ type Device struct {
 	DevAddr types.DevAddr `redis:"dev_addr"`
 	NwkSKey types.NwkSKey `redis:"nwk_s_key"`
 	AppSKey types.AppSKey `redis:"app_s_key"`
+	FCntUp  uint32        `redis:"f_cnt_up"` // Only used to detect retries
 
 	CurrentDownlink *types.DownlinkMessage `redis:"current_downlink"`
 	NextDownlink    *types.DownlinkMessage `redis:"next_downlink"`
