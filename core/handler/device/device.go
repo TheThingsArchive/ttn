@@ -45,7 +45,8 @@ type Device struct {
 	NwkSKey types.NwkSKey `redis:"nwk_s_key"`
 	AppSKey types.AppSKey `redis:"app_s_key"`
 
-	NextDownlink *types.DownlinkMessage `redis:"next_downlink"`
+	CurrentDownlink *types.DownlinkMessage `redis:"current_downlink"`
+	NextDownlink    *types.DownlinkMessage `redis:"next_downlink"`
 
 	CreatedAt time.Time `redis:"created_at"`
 	UpdatedAt time.Time `redis:"updated_at"`

@@ -63,15 +63,23 @@ func (h *handler) ConvertFromLoRaWAN(ctx ttnlog.Interface, ttnUp *pb_broker.Dedu
 		}
 	}
 
-	if macPayload.FHDR.FCtrl.ACK {
-		// Clear downlink
-		dev.NextDownlink = nil
+	if dev.CurrentDownlink != nil {
+		// We have a downlink pending
+		if dev.CurrentDownlink.Confirmed {
+			// If it's confirmed, we can only unset it if we receive an ack.
+			if macPayload.FHDR.FCtrl.ACK {
+				dev.CurrentDownlink = nil
 
-		// Send event over MQTT
-		h.mqttEvent <- &types.DeviceEvent{
-			AppID: appUp.AppID,
-			DevID: appUp.DevID,
-			Event: types.DownlinkAckEvent,
+				// Send event over MQTT
+				h.mqttEvent <- &types.DeviceEvent{
+					AppID: appUp.AppID,
+					DevID: appUp.DevID,
+					Event: types.DownlinkAckEvent,
+				}
+			}
+		} else {
+			// If it's unconfirmed, we can unset it.
+			dev.CurrentDownlink = nil
 		}
 	}
 

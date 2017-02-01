@@ -76,6 +76,7 @@ func (h *handler) HandleUplink(uplink *pb_broker.DeduplicatedUplinkMessage) (err
 	if err != nil {
 		return err
 	}
+	dev.StartUpdate()
 
 	// Publish Uplink
 	h.mqttUp <- appUplink
@@ -88,39 +89,40 @@ func (h *handler) HandleUplink(uplink *pb_broker.DeduplicatedUplinkMessage) (err
 		return nil
 	}
 
-	<-time.After(ResponseDeadline)
+	if dev.CurrentDownlink == nil {
+		<-time.After(ResponseDeadline)
 
-	// Find scheduled downlink
-	var appDownlink types.DownlinkMessage
-	dev, err = h.devices.Get(appID, devID)
+		// Find scheduled downlink
+		dev, err = h.devices.Get(appID, devID)
+		if err != nil {
+			return err
+		}
+		dev.StartUpdate()
+
+		dev.CurrentDownlink = dev.NextDownlink
+		dev.NextDownlink = nil
+	}
+
+	// Save changes (if any)
+	err = h.devices.Set(dev)
 	if err != nil {
 		return err
 	}
-	if dev.NextDownlink != nil {
-		appDownlink = *dev.NextDownlink
-	}
 
 	// Prepare Downlink
-	downlink := uplink.ResponseTemplate
-	downlink.Trace = uplink.Trace.WithEvent("prepare downlink")
+	var appDownlink types.DownlinkMessage
+	if dev.CurrentDownlink != nil {
+		appDownlink = *dev.CurrentDownlink
+	}
 	appDownlink.AppID = uplink.AppId
 	appDownlink.DevID = uplink.DevId
+	downlink := uplink.ResponseTemplate
+	downlink.Trace = uplink.Trace.WithEvent("prepare downlink")
 
 	// Handle Downlink
 	err = h.HandleDownlink(&appDownlink, downlink)
 	if err != nil {
 		return err
-	}
-
-	// Clear Downlink if unconfirmed
-	// For confirmed, downlink is cleared on ACK
-	if !appDownlink.Confirmed {
-		dev.StartUpdate()
-		dev.NextDownlink = nil
-		err = h.devices.Set(dev)
-		if err != nil {
-			return err
-		}
 	}
 
 	return nil
