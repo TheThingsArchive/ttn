@@ -19,7 +19,7 @@ func ParseHEX(input string, length int) ([]byte, error) {
 
 	valid := pattern.MatchString(input)
 	if !valid {
-		return nil, fmt.Errorf("Invalid input: %s", input)
+		return nil, fmt.Errorf("Invalid input: %s is not hex", input)
 	}
 
 	slice, _ := hex.DecodeString(input)

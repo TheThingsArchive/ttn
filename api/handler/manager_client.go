@@ -205,6 +205,20 @@ func (h *ManagerClient) DryDownlinkWithFields(fields map[string]interface{}, app
 	return res, nil
 }
 
+// SimulateUplink simulates an uplink message
+func (h *ManagerClient) SimulateUplink(appID string, devID string, port uint32, payload []byte) error {
+	_, err := h.applicationManagerClient.SimulateUplink(h.GetContext(), &SimulatedUplinkMessage{
+		AppId:   appID,
+		DevId:   devID,
+		Port:    port,
+		Payload: payload,
+	})
+	if err != nil {
+		return errors.Wrap(errors.FromGRPCError(err), "Could not simulate uplink")
+	}
+	return nil
+}
+
 // Close closes the client
 func (h *ManagerClient) Close() error {
 	return h.conn.Close()

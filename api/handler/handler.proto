@@ -114,6 +114,17 @@ message DryUplinkMessage {
   uint32 port     = 3;
 }
 
+// SimulatedUplinkMessage is a simulated uplink message
+message SimulatedUplinkMessage {
+  string app_id       = 1;
+  string dev_id       = 2;
+
+  // The binary payload to use
+  bytes  payload      = 3;
+  // The port number
+  uint32 port         = 4;
+}
+
 message LogEntry {
   // The location where the log was created (what payload function)
   string          function = 1;
@@ -224,11 +235,14 @@ service ApplicationManager {
     };
   }
 
-  // DryUplink simulates processing an uplink message and returns the result
+  // DryUplink simulates processing a downlink message and returns the result
   rpc DryDownlink(DryDownlinkMessage) returns (DryDownlinkResult);
 
-  // DryUplink simulates processing a downlink message and returns the result
+  // DryUplink simulates processing an uplink message and returns the result
   rpc DryUplink(DryUplinkMessage) returns (DryUplinkResult);
+
+  // SimulateUplink simulates an uplink message
+  rpc SimulateUplink(SimulatedUplinkMessage) returns (google.protobuf.Empty);
 }
 
 // The HandlerManager service provides configuration and monitoring
