@@ -144,6 +144,7 @@ func (t *token) Error() error {
 
 // DefaultClient is the default MQTT client for The Things Network
 type DefaultClient struct {
+	opts          *MQTT.ClientOptions
 	mqtt          MQTT.Client
 	ctx           log.Interface
 	subscriptions map[string]MQTT.MessageHandler
@@ -155,39 +156,38 @@ func NewClient(ctx log.Interface, id, username, password string, brokers ...stri
 		ctx = log.Get()
 	}
 
-	mqttOpts := MQTT.NewClientOptions()
-
-	for _, broker := range brokers {
-		mqttOpts.AddBroker(broker)
+	ttnClient := &DefaultClient{
+		opts:          MQTT.NewClientOptions(),
+		ctx:           ctx,
+		subscriptions: make(map[string]MQTT.MessageHandler),
 	}
 
-	mqttOpts.SetClientID(fmt.Sprintf("%s-%s", id, random.String(16)))
-	mqttOpts.SetUsername(username)
-	mqttOpts.SetPassword(password)
+	for _, broker := range brokers {
+		ttnClient.opts.AddBroker(broker)
+	}
+
+	ttnClient.opts.SetClientID(fmt.Sprintf("%s-%s", id, random.String(16)))
+	ttnClient.opts.SetUsername(username)
+	ttnClient.opts.SetPassword(password)
 
 	// TODO: Some tuning of these values probably won't hurt:
-	mqttOpts.SetKeepAlive(30 * time.Second)
-	mqttOpts.SetPingTimeout(10 * time.Second)
+	ttnClient.opts.SetKeepAlive(30 * time.Second)
+	ttnClient.opts.SetPingTimeout(10 * time.Second)
 
-	mqttOpts.SetCleanSession(true)
+	ttnClient.opts.SetCleanSession(true)
 
-	mqttOpts.SetDefaultPublishHandler(func(client MQTT.Client, msg MQTT.Message) {
+	ttnClient.opts.SetDefaultPublishHandler(func(client MQTT.Client, msg MQTT.Message) {
 		ctx.Warnf("Received unhandled message: %v", msg)
 	})
 
 	var reconnecting bool
 
-	mqttOpts.SetConnectionLostHandler(func(client MQTT.Client, err error) {
+	ttnClient.opts.SetConnectionLostHandler(func(client MQTT.Client, err error) {
 		ctx.Warnf("Disconnected (%s). Reconnecting...", err.Error())
 		reconnecting = true
 	})
 
-	ttnClient := &DefaultClient{
-		ctx:           ctx,
-		subscriptions: make(map[string]MQTT.MessageHandler),
-	}
-
-	mqttOpts.SetOnConnectHandler(func(client MQTT.Client) {
+	ttnClient.opts.SetOnConnectHandler(func(client MQTT.Client) {
 		ctx.Info("Connected to MQTT")
 		if reconnecting {
 			for topic, handler := range ttnClient.subscriptions {
@@ -198,7 +198,7 @@ func NewClient(ctx log.Interface, id, username, password string, brokers ...stri
 		}
 	})
 
-	ttnClient.mqtt = MQTT.NewClient(mqttOpts)
+	ttnClient.mqtt = MQTT.NewClient(ttnClient.opts)
 
 	return ttnClient
 }
