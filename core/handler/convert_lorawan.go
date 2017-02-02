@@ -66,7 +66,7 @@ func (h *handler) ConvertFromLoRaWAN(ctx ttnlog.Interface, ttnUp *pb_broker.Dedu
 		}
 	}
 
-	if dev.CurrentDownlink != nil {
+	if dev.CurrentDownlink != nil && !appUp.IsRetry {
 		// We have a downlink pending
 		if dev.CurrentDownlink.Confirmed {
 			// If it's confirmed, we can only unset it if we receive an ack.
@@ -80,8 +80,8 @@ func (h *handler) ConvertFromLoRaWAN(ctx ttnlog.Interface, ttnUp *pb_broker.Dedu
 					Event: types.DownlinkAckEvent,
 				}
 			}
-		} else if !appUp.IsRetry {
-			// If it's unconfirmed (and the uplink is not a retry), we can unset it.
+		} else {
+			// If it's unconfirmed, we can unset it.
 			dev.CurrentDownlink = nil
 		}
 	}
