@@ -9,6 +9,7 @@ type DownlinkMessage struct {
 	DevID         string                 `json:"dev_id,omitempty"`
 	FPort         uint8                  `json:"port"`
 	Confirmed     bool                   `json:"confirmed,omitempty"`
+	Schedule      string                 `json:"schedule,omitempty"` // allowed values: "replace" (default), "first", "last"
 	PayloadRaw    []byte                 `json:"payload_raw,omitempty"`
 	PayloadFields map[string]interface{} `json:"payload_fields,omitempty"`
 }
