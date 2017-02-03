@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
+	"github.com/TheThingsNetwork/ttn/api/fields"
 	pb_protocol "github.com/TheThingsNetwork/ttn/api/protocol"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	pb "github.com/TheThingsNetwork/ttn/api/router"
@@ -19,11 +19,7 @@ import (
 )
 
 func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivationRequest) (res *pb.DeviceActivationResponse, err error) {
-	ctx := r.Ctx.WithFields(ttnlog.Fields{
-		"GatewayID": gatewayID,
-		"AppEUI":    *activation.AppEui,
-		"DevEUI":    *activation.DevEui,
-	})
+	ctx := r.Ctx.WithField("GatewayID", gatewayID).WithFields(fields.Get(activation))
 	start := time.Now()
 	defer func() {
 		if err != nil {

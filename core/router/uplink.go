@@ -8,6 +8,7 @@ import (
 
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
+	"github.com/TheThingsNetwork/ttn/api/fields"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	pb "github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/api/trace"
@@ -17,7 +18,7 @@ import (
 )
 
 func (r *router) HandleUplink(gatewayID string, uplink *pb.UplinkMessage) (err error) {
-	ctx := r.Ctx.WithField("GatewayID", gatewayID)
+	ctx := r.Ctx.WithField("GatewayID", gatewayID).WithFields(fields.Get(uplink))
 	start := time.Now()
 	defer func() {
 		if err != nil {

@@ -6,6 +6,7 @@ package component
 import (
 	"github.com/TheThingsNetwork/go-utils/grpc/interceptor"
 	"github.com/TheThingsNetwork/go-utils/log"
+	"github.com/TheThingsNetwork/ttn/api/fields"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/mwitkow/go-grpc-middleware"
 	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
@@ -16,7 +17,7 @@ import (
 func (c *Component) ServerOptions() []grpc.ServerOption {
 
 	unaryLog := interceptor.Unary(func(req interface{}, info *grpc.UnaryServerInfo) (log.Interface, string) {
-		return c.Ctx, "Request"
+		return c.Ctx.WithFields(fields.Get(req)), "Request"
 	})
 
 	unaryErr := func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
@@ -25,7 +26,7 @@ func (c *Component) ServerOptions() []grpc.ServerOption {
 		return iface, err
 	}
 
-	streamLog := interceptor.Stream(func(req interface{}, info *grpc.StreamServerInfo) (log.Interface, string) {
+	streamLog := interceptor.Stream(func(srv interface{}, info *grpc.StreamServerInfo) (log.Interface, string) {
 		return c.Ctx, "Stream"
 	})
 
