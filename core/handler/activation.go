@@ -80,7 +80,11 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 				AppID: appID,
 				DevID: devID,
 				Event: types.ActivationErrorEvent,
-				Data:  types.ErrorEventData{Error: err.Error()},
+				Data: types.ActivationEventData{
+					AppEUI:         *activation.AppEui,
+					DevEUI:         *activation.DevEui,
+					ErrorEventData: types.ErrorEventData{Error: err.Error()},
+				},
 			}
 			ctx.WithError(err).Warn("Could not handle activation")
 		} else {
