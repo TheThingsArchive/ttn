@@ -70,6 +70,10 @@ var devicesInfoCmd = &cobra.Command{
 		fmt.Printf("  Application ID: %s\n", dev.AppId)
 		fmt.Printf("       Device ID: %s\n", dev.DevId)
 
+		if dev.Description != "" {
+			fmt.Printf("     Description: %s\n", dev.Description)
+		}
+
 		if dev.Latitude != 0 || dev.Longitude != 0 {
 			fmt.Printf("        Location: %f,%f\n", dev.Latitude, dev.Longitude)
 		}

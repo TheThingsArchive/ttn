@@ -16,13 +16,6 @@ import (
 
 const serviceFmt = "%-36s %-36s %-20s %-6s\n"
 
-func crop(in string, length int) string {
-	if len(in) > length {
-		return in[:length]
-	}
-	return in
-}
-
 var discoverCmd = &cobra.Command{
 	Use:    "discover [ServiceType]",
 	Short:  "Discover routing services",

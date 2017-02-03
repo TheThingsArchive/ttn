@@ -106,6 +106,13 @@ func printKV(key, t interface{}) {
 	}
 }
 
+func crop(in string, length int) string {
+	if len(in) > length {
+		return in[:length]
+	}
+	return in
+}
+
 func confirm(prompt string) bool {
 	fmt.Println(prompt)
 	fmt.Print("> ")
