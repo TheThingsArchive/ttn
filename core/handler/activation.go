@@ -9,6 +9,7 @@ import (
 
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
+	"github.com/TheThingsNetwork/ttn/api/fields"
 	pb "github.com/TheThingsNetwork/ttn/api/handler"
 	"github.com/TheThingsNetwork/ttn/api/trace"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
@@ -71,20 +72,7 @@ func (h *handler) HandleActivationChallenge(challenge *pb_broker.ActivationChall
 
 func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActivationRequest) (res *pb.DeviceActivationResponse, err error) {
 	appID, devID := activation.AppId, activation.DevId
-	var appEUI types.AppEUI
-	if activation.AppEui != nil {
-		appEUI = *activation.AppEui
-	}
-	var devEUI types.DevEUI
-	if activation.DevEui != nil {
-		devEUI = *activation.DevEui
-	}
-	ctx := h.Ctx.WithFields(ttnlog.Fields{
-		"DevEUI": devEUI,
-		"AppEUI": appEUI,
-		"AppID":  appID,
-		"DevID":  devID,
-	})
+	ctx := h.Ctx.WithFields(fields.Get(activation))
 	start := time.Now()
 	defer func() {
 		if err != nil {

@@ -13,6 +13,7 @@ import (
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	pb "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
+	"github.com/TheThingsNetwork/ttn/api/fields"
 	"github.com/TheThingsNetwork/ttn/api/networkserver"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/api/trace"
@@ -25,7 +26,7 @@ import (
 const maxFCntGap = 16384
 
 func (b *broker) HandleUplink(uplink *pb.UplinkMessage) (err error) {
-	ctx := b.Ctx.WithField("GatewayID", uplink.GatewayMetadata.GatewayId)
+	ctx := b.Ctx.WithFields(fields.Get(uplink))
 	start := time.Now()
 	deduplicatedUplink := new(pb.DeduplicatedUplinkMessage)
 	deduplicatedUplink.ServerTime = start.UnixNano()
