@@ -28,6 +28,13 @@ func (m *UplinkMessage) UnmarshalPayload() error {
 			return err
 		}
 		m.Message = msg
+		if lorawan := m.GetProtocolMetadata().GetLorawan(); lorawan != nil {
+			if lorawan.FCnt != 0 {
+				if mac := m.Message.GetLorawan().GetMacPayload(); mac != nil {
+					mac.FHDR.FCnt = lorawan.FCnt
+				}
+			}
+		}
 	}
 	return nil
 }
@@ -40,6 +47,13 @@ func (m *DownlinkMessage) UnmarshalPayload() error {
 			return err
 		}
 		m.Message = msg
+		if lorawan := m.GetProtocolConfiguration().GetLorawan(); lorawan != nil {
+			if lorawan.FCnt != 0 {
+				if mac := m.Message.GetLorawan().GetMacPayload(); mac != nil {
+					mac.FHDR.FCnt = lorawan.FCnt
+				}
+			}
+		}
 	}
 	return nil
 }

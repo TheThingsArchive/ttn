@@ -294,17 +294,24 @@ GetDevicesForApplication returns all devices that belong to the application with
 
 ### `DryDownlink`
 
-DryUplink simulates processing an uplink message and returns the result
+DryUplink simulates processing a downlink message and returns the result
 
 - Request: [`DryDownlinkMessage`](#handlerdrydownlinkmessage)
 - Response: [`DryDownlinkResult`](#handlerdrydownlinkmessage)
 
 ### `DryUplink`
 
-DryUplink simulates processing a downlink message and returns the result
+DryUplink simulates processing an uplink message and returns the result
 
 - Request: [`DryUplinkMessage`](#handlerdryuplinkmessage)
 - Response: [`DryUplinkResult`](#handlerdryuplinkmessage)
+
+### `SimulateUplink`
+
+SimulateUplink simulates an uplink message
+
+- Request: [`SimulatedUplinkMessage`](#handlersimulateduplinkmessage)
+- Response: [`Empty`](#handlersimulateduplinkmessage)
 
 ## Messages
 
@@ -404,6 +411,17 @@ DryUplinkResult is the result from an uplink simulation
 | ---------- | ---- | ----------- |
 | `function` | `string` | The location where the log was created (what payload function) |
 | `fields` | _repeated_ `string` | A list of JSON-encoded fields that were logged |
+
+### `.handler.SimulatedUplinkMessage`
+
+SimulatedUplinkMessage is a simulated uplink message
+
+| Field Name | Type | Description |
+| ---------- | ---- | ----------- |
+| `app_id` | `string` |  |
+| `dev_id` | `string` |  |
+| `payload` | `bytes` | The binary payload to use |
+| `port` | `uint32` | The port number |
 
 ### `.lorawan.Device`
 

@@ -72,3 +72,14 @@ func (m *Device_LorawanDevice) Validate() error {
 	}
 	return nil
 }
+
+// Validate implements the api.Validator interface
+func (m *SimulatedUplinkMessage) Validate() error {
+	if err := api.NotEmptyAndValidID(m.AppId, "AppId"); err != nil {
+		return err
+	}
+	if err := api.NotEmptyAndValidID(m.DevId, "DevId"); err != nil {
+		return err
+	}
+	return nil
+}

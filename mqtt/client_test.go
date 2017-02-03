@@ -87,6 +87,16 @@ func TestConnect(t *testing.T) {
 	a.So(err, ShouldBeNil)
 }
 
+func TestConnectWithTLS(t *testing.T) {
+	a := New(t)
+
+	c := NewTLSClient(getLogger(t, "Test"), "test", "", "", nil, fmt.Sprintf("ssl://iot.eclipse.org:8883"))
+
+	err := c.Connect()
+	defer c.Disconnect()
+	a.So(err, ShouldBeNil)
+}
+
 func TestConnectInvalidAddress(t *testing.T) {
 	a := New(t)
 	ConnectRetries = 2

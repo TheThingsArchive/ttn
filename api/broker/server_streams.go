@@ -8,7 +8,6 @@ import (
 
 	"github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/api"
-	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc/metadata"
 )
@@ -70,7 +69,11 @@ func (s *BrokerStreamServer) Associate(stream Broker_AssociateServer) (err error
 				return err
 			}
 			if err := uplink.Validate(); err != nil {
-				return errors.Wrap(err, "Invalid Uplink")
+				s.ctx.WithError(err).Warn("Invalid Uplink")
+				continue
+			}
+			if err := uplink.UnmarshalPayload(); err != nil {
+				s.ctx.Warn("Could not unmarshal uplink payload")
 			}
 			upChan <- uplink
 		}
@@ -139,7 +142,11 @@ func (s *BrokerStreamServer) Publish(stream Broker_PublishServer) error {
 			return err
 		}
 		if err := downlink.Validate(); err != nil {
-			return errors.Wrap(err, "Invalid Downlink")
+			s.ctx.WithError(err).Warn("Invalid Downlink")
+			continue
+		}
+		if err := downlink.UnmarshalPayload(); err != nil {
+			s.ctx.Warn("Could not unmarshal downlink payload")
 		}
 		ch <- downlink
 	}

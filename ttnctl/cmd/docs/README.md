@@ -370,6 +370,18 @@ $ ttnctl devices set test --fcnt-up 0 --fcnt-down 0
   INFO Updated device                           AppID=test DevID=test
 ```
 
+### ttnctl devices simulate
+
+ttnctl devices simulate can be used to simulate an uplink message for a device.
+
+**Usage:** `ttnctl devices simulate [Device ID] [Payload]`
+
+**Options**
+
+```
+      --port uint32   Port number (default 1)
+```
+
 ## ttnctl downlink
 
 ttnctl downlink can be used to send a downlink message to a device.

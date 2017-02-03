@@ -333,6 +333,13 @@ func NewMonitoredDownlinkStream(client RouterClientForGateway) DownlinkStream {
 				message, err = client.Recv()
 				if message != nil {
 					s.ctx.Debug("Receiving Downlink message")
+					if err := message.Validate(); err != nil {
+						s.ctx.WithError(err).Warn("Invalid Downlink")
+						continue
+					}
+					if err := message.UnmarshalPayload(); err != nil {
+						s.ctx.Warn("Could not unmarshal Downlink payload")
+					}
 					select {
 					case s.ch <- message:
 					default:

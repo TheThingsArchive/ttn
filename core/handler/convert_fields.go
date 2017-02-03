@@ -17,9 +17,9 @@ import (
 )
 
 // ConvertFieldsUp converts the payload to fields using payload functions
-func (h *handler) ConvertFieldsUp(ctx ttnlog.Interface, ttnUp *pb_broker.DeduplicatedUplinkMessage, appUp *types.UplinkMessage, _ *device.Device) error {
+func (h *handler) ConvertFieldsUp(ctx ttnlog.Interface, _ *pb_broker.DeduplicatedUplinkMessage, appUp *types.UplinkMessage, _ *device.Device) error {
 	// Find Application
-	app, err := h.applications.Get(ttnUp.AppId)
+	app, err := h.applications.Get(appUp.AppID)
 	if err != nil {
 		return nil // Do not process if application not found
 	}

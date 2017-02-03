@@ -125,6 +125,11 @@ func (c *DefaultClient) connect(reconnect bool) (chan *AMQP.Error, error) {
 	return closed, nil
 }
 
+// GetChannel gets a new AMQP channel
+func (c *DefaultClient) GetChannel() (*AMQP.Channel, error) {
+	return c.conn.Channel()
+}
+
 // Connect to the AMQP server. It will retry for ConnectRetries times with a delay of ConnectRetryDelay between retries
 func (c *DefaultClient) Connect() error {
 	_, err := c.connect(false)

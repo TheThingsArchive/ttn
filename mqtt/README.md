@@ -19,6 +19,7 @@
   "hardware_serial": "0102030405060708", // In case of LoRaWAN: the DevEUI
   "port": 1,                          // LoRaWAN FPort
   "counter": 2,                       // LoRaWAN frame counter
+  "is_retry": false,                  // Is set to true if this message is a retry (you could also detect this from the counter)
   "payload_raw": "AQIDBA==",          // Base64 encoded payload: [0x01, 0x02, 0x03, 0x04]
   "payload_fields": {},               // Object containing the results from the payload functions - left out when empty
   "metadata": {
@@ -44,7 +45,7 @@
 }
 ```
 
-Note: Some values may be omitted if they are `null`, `""` or `0`.
+Note: Some values may be omitted if they are `null`, `false`, `""` or `0`.
 
 **Usage (Mosquitto):** `mosquitto_sub -h <Region>.thethings.network:1883 -d -t 'my-app-id/devices/my-dev-id/up'`
 
@@ -112,6 +113,7 @@ you will see this on MQTT:
 ```js
 {
   "port": 1,                 // LoRaWAN FPort
+  "confirmed": false,        // Whether the downlink should be confirmed by the device
   "payload_raw": "AQIDBA==", // Base64 encoded payload: [0x01, 0x02, 0x03, 0x04]
 }
 ```
@@ -144,6 +146,7 @@ Instead of `payload_raw` you can also use `payload_fields` with an object of fie
 ```js
 {
   "port": 1,                 // LoRaWAN FPort
+  "confirmed": false,        // Whether the downlink should be confirmed by the device
   "payload_fields": {
     "led": true
   }
