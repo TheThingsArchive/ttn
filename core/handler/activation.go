@@ -92,7 +92,7 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 	activation.Trace = activation.Trace.WithEvent(trace.ReceiveEvent)
 
 	if activation.ResponseTemplate == nil {
-		err = errors.NewErrInternal("No downlink available")
+		err = errors.NewErrInvalidArgument("Activation", "No gateways available for downlink")
 		return nil, err
 	}
 

@@ -9,7 +9,6 @@ import (
 
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_handler "github.com/TheThingsNetwork/ttn/api/handler"
-	pb_protocol "github.com/TheThingsNetwork/ttn/api/protocol"
 	"github.com/TheThingsNetwork/ttn/api/trace"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
@@ -48,6 +47,11 @@ func (n *networkServer) HandlePrepareActivation(activation *pb_broker.Deduplicat
 	activation.AppId = dev.AppID
 	activation.DevId = dev.DevID
 
+	// Don't take any action if there is no response possible
+	if pld := activation.GetResponseTemplate(); pld == nil {
+		return activation, nil
+	}
+
 	// Get activation constraints (for DevAddr prefix selection)
 	activationConstraints := strings.Split(dev.Options.ActivationConstraints, ",")
 	if len(activationConstraints) == 1 && activationConstraints[0] == "" {
@@ -55,20 +59,11 @@ func (n *networkServer) HandlePrepareActivation(activation *pb_broker.Deduplicat
 	}
 	activationConstraints = append(activationConstraints, "otaa")
 
-	// Build activation metadata if not present
-	if meta := activation.GetActivationMetadata(); meta == nil {
-		activation.ActivationMetadata = &pb_protocol.ActivationMetadata{}
-	}
-	// Build lorawan metadata if not present
-	if lorawan := activation.ActivationMetadata.GetLorawan(); lorawan == nil {
+	// We can only activate LoRaWAN devices
+	lorawanMeta := activation.GetActivationMetadata().GetLorawan()
+	if lorawanMeta == nil {
 		return nil, errors.NewErrInvalidArgument("Activation", "missing LoRaWAN metadata")
 	}
-
-	// Build response template if not present
-	if pld := activation.GetResponseTemplate(); pld == nil {
-		return nil, errors.NewErrInvalidArgument("Activation", "missing response template")
-	}
-	lorawanMeta := activation.ActivationMetadata.GetLorawan()
 
 	// Allocate a  device address
 	activation.Trace = activation.Trace.WithEvent("allocate devaddr")
