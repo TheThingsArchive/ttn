@@ -23,10 +23,7 @@ var joinCmd = &cobra.Command{
 	Short:  "Simulate an join message to the network",
 	Long:   `ttnctl join simulates an join message to the network`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) != 4 {
-			cmd.UsageFunc()(cmd)
-			return
-		}
+		assertArgsLength(cmd, args, 4, 4)
 
 		appEUI, err := types.ParseAppEUI(args[0])
 		if err != nil {

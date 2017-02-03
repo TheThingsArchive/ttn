@@ -56,6 +56,7 @@ Port: 1
   INFO Updated application                      AppID=test
 `,
 	Run: func(cmd *cobra.Command, args []string) {
+		assertArgsLength(cmd, args, 1, 2)
 
 		appID := util.GetAppID(ctx)
 
@@ -67,11 +68,6 @@ Port: 1
 			app = &handler.Application{AppId: appID}
 		} else if err != nil {
 			ctx.WithError(err).Fatal("Could not get existing application.")
-		}
-
-		if len(args) == 0 {
-			cmd.UsageFunc()(cmd)
-			return
 		}
 
 		function := args[0]

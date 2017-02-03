@@ -15,6 +15,7 @@ var selfUpdateCmd = &cobra.Command{
 	Short: "Update ttnctl to the latest version",
 	Long:  `ttnctl selfupdate updates the current ttnctl to the latest version`,
 	Run: func(cmd *cobra.Command, args []string) {
+		assertArgsLength(cmd, args, 0, 0)
 		version.Selfupdate(ctx, "ttnctl")
 	},
 }

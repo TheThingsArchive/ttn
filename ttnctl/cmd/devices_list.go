@@ -28,6 +28,7 @@ test 	70B3D57EF0000024	0001D544B2936FCE	26001ADA
   INFO Listed 1 devices                         AppID=test
 `,
 	Run: func(cmd *cobra.Command, args []string) {
+		assertArgsLength(cmd, args, 0, 0)
 
 		appID := util.GetAppID(ctx)
 

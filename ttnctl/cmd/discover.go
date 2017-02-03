@@ -29,10 +29,7 @@ var discoverCmd = &cobra.Command{
 	Long:   `ttnctl discover is used to discover routing services`,
 	Hidden: true,
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) == 0 {
-			cmd.UsageFunc()(cmd)
-			return
-		}
+		assertArgsLength(cmd, args, 1, 1)
 
 		serviceType := strings.TrimRight(args[0], "s") // Allow both singular and plural
 

@@ -24,11 +24,7 @@ var devicesSetCmd = &cobra.Command{
   INFO Updated device                           AppID=test DevID=test
 `,
 	Run: func(cmd *cobra.Command, args []string) {
-
-		if len(args) == 0 {
-			cmd.UsageFunc()(cmd)
-			return
-		}
+		assertArgsLength(cmd, args, 1, 1)
 
 		devID := args[0]
 		if !api.ValidID(devID) {

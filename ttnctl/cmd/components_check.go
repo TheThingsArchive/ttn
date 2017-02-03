@@ -19,10 +19,7 @@ var checkCmd = &cobra.Command{
 	Short: "Check routing services",
 	Long:  `ttnctl components check is used to check the status of routing services`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) != 2 {
-			cmd.UsageFunc()(cmd)
-			return
-		}
+		assertArgsLength(cmd, args, 2, 2)
 
 		serviceType := args[0]
 		switch serviceType {

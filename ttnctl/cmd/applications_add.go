@@ -18,10 +18,7 @@ var applicationsAddCmd = &cobra.Command{
   INFO Selected Current Application
 `,
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) != 2 {
-			cmd.UsageFunc()(cmd)
-			return
-		}
+		assertArgsLength(cmd, args, 2, 2)
 
 		var euis []types.AppEUI
 		euiStrings, err := cmd.Flags().GetStringSlice("app-eui")

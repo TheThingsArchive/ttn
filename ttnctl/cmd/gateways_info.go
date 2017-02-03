@@ -16,10 +16,7 @@ var gatewaysInfoCmd = &cobra.Command{
 	Short: "Get info about a gateway",
 	Long:  `ttnctl gateways info can be used to get information about a gateway`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) != 1 {
-			cmd.UsageFunc()(cmd)
-			return
-		}
+		assertArgsLength(cmd, args, 1, 1)
 
 		gatewayID := args[0]
 		if !api.ValidID(gatewayID) {

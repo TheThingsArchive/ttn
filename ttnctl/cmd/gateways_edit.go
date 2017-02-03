@@ -18,10 +18,7 @@ var gatewaysEditCmd = &cobra.Command{
   INFO Edited gateway                          Gateway ID=test
 `,
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) != 1 {
-			cmd.UsageFunc()(cmd)
-			return
-		}
+		assertArgsLength(cmd, args, 1, 1)
 
 		gatewayID := args[0]
 		if !api.ValidID(gatewayID) {
