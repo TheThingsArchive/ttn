@@ -5,6 +5,7 @@ package lorawan
 
 import (
 	"github.com/TheThingsNetwork/ttn/api"
+	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 )
 
@@ -43,6 +44,9 @@ func (m *Metadata) Validate() error {
 		if m.DataRate == "" {
 			return errors.NewErrInvalidArgument("DataRate", "can not be empty")
 		}
+		if _, err := types.ParseDataRate(m.DataRate); err != nil {
+			return errors.NewErrInvalidArgument("DataRate", err.Error())
+		}
 	case Modulation_FSK:
 		if m.BitRate == 0 {
 			return errors.NewErrInvalidArgument("BitRate", "can not be empty")
@@ -60,6 +64,9 @@ func (m *TxConfiguration) Validate() error {
 	case Modulation_LORA:
 		if m.DataRate == "" {
 			return errors.NewErrInvalidArgument("DataRate", "can not be empty")
+		}
+		if _, err := types.ParseDataRate(m.DataRate); err != nil {
+			return errors.NewErrInvalidArgument("DataRate", err.Error())
 		}
 	case Modulation_FSK:
 		if m.BitRate == 0 {
