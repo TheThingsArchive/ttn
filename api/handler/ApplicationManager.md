@@ -145,9 +145,10 @@ GetDevice returns the device with the given identifier (app_id and dev_id)
 {
   "altitude": 0,
   "app_id": "some-app-id",
+  "description": "Some description of the device",
   "dev_id": "some-dev-id",
-  "latitude": 0,
-  "longitude": 0,
+  "latitude": 52.375,
+  "longitude": 4.887,
   "lorawan_device": {
     "activation_constraints": "local",
     "app_eui": "0102030405060708",
@@ -187,9 +188,10 @@ SetDevice creates or updates a device. All fields must be supplied.
 {
   "altitude": 0,
   "app_id": "some-app-id",
+  "description": "Some description of the device",
   "dev_id": "some-dev-id",
-  "latitude": 0,
-  "longitude": 0,
+  "latitude": 52.375,
+  "longitude": 4.887,
   "lorawan_device": {
     "activation_constraints": "local",
     "app_eui": "0102030405060708",
@@ -268,9 +270,10 @@ GetDevicesForApplication returns all devices that belong to the application with
     {
       "altitude": 0,
       "app_id": "some-app-id",
+      "description": "Some description of the device",
       "dev_id": "some-dev-id",
-      "latitude": 0,
-      "longitude": 0,
+      "latitude": 52.375,
+      "longitude": 4.887,
       "lorawan_device": {
         "activation_constraints": "local",
         "app_eui": "0102030405060708",
@@ -350,6 +353,7 @@ The Device settings
 | `latitude` | `float` |  |
 | `longitude` | `float` |  |
 | `altitude` | `int32` |  |
+| `description` | `string` |  |
 
 ### `.handler.DeviceIdentifier`
 
