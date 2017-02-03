@@ -33,11 +33,12 @@ type DeviceEvent struct {
 
 // ErrorEventData is added to error events
 type ErrorEventData struct {
-	Error string `json:"error"`
+	Error string `json:"error,omitempty"`
 }
 
 // ActivationEventData is added to activation events
 type ActivationEventData struct {
+	ErrorEventData
 	AppEUI   AppEUI   `json:"app_eui"`
 	DevEUI   DevEUI   `json:"dev_eui"`
 	DevAddr  DevAddr  `json:"dev_addr"`
@@ -56,7 +57,9 @@ type DownlinkEventConfigInfo struct {
 
 // DownlinkEventData is added to downlink events
 type DownlinkEventData struct {
-	Payload   []byte                  `json:"payload"`
-	GatewayID string                  `json:"gateway_id"`
-	Config    DownlinkEventConfigInfo `json:"config"`
+	ErrorEventData
+	Payload   []byte                  `json:"payload,omitempty"`
+	Message   *DownlinkMessage        `json:"message,omitempty"`
+	GatewayID string                  `json:"gateway_id,omitempty"`
+	Config    DownlinkEventConfigInfo `json:"config,omitempty"`
 }

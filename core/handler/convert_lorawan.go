@@ -71,14 +71,16 @@ func (h *handler) ConvertFromLoRaWAN(ctx ttnlog.Interface, ttnUp *pb_broker.Dedu
 		if dev.CurrentDownlink.Confirmed {
 			// If it's confirmed, we can only unset it if we receive an ack.
 			if macPayload.FHDR.FCtrl.ACK {
-				dev.CurrentDownlink = nil
-
 				// Send event over MQTT
 				h.mqttEvent <- &types.DeviceEvent{
 					AppID: appUp.AppID,
 					DevID: appUp.DevID,
 					Event: types.DownlinkAckEvent,
+					Data: types.DownlinkEventData{
+						Message: dev.CurrentDownlink,
+					},
 				}
+				dev.CurrentDownlink = nil
 			}
 		} else {
 			// If it's unconfirmed, we can unset it.

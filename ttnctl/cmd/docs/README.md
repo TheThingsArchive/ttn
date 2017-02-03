@@ -153,12 +153,21 @@ function Decoder(bytes, port) {
 
   return decoded;
 }
+
+Do you want to test the payload functions? (Y/n)
+Y
+
+Payload: 12 34
+Port: 1
+
+  INFO Function tested successfully
+
   INFO Updated application                      AppID=test
 ```
 
 ### ttnctl applications register
 
-ttnctl register can be used to register this application with the handler.
+ttnctl applications register can be used to register this application with the handler.
 
 **Usage:** `ttnctl applications register`
 
@@ -391,6 +400,7 @@ ttnctl downlink can be used to send a downlink message to a device.
 **Options**
 
 ```
+      --confirmed   Confirmed downlink
       --fport int   FPort for downlink (default 1)
       --json        Provide the payload as JSON
 ```

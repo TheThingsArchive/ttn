@@ -48,6 +48,9 @@ func (h *handler) EnqueueDownlink(appDownlink *types.DownlinkMessage) (err error
 		AppID: appID,
 		DevID: devID,
 		Event: types.DownlinkScheduledEvent,
+		Data: types.DownlinkEventData{
+			Message: appDownlink,
+		},
 	}
 
 	return nil
@@ -69,7 +72,10 @@ func (h *handler) HandleDownlink(appDownlink *types.DownlinkMessage, downlink *p
 				AppID: appID,
 				DevID: devID,
 				Event: types.DownlinkErrorEvent,
-				Data:  types.ErrorEventData{Error: err.Error()},
+				Data: types.DownlinkEventData{
+					ErrorEventData: types.ErrorEventData{Error: err.Error()},
+					Message:        appDownlink,
+				},
 			}
 			ctx.WithError(err).Warn("Could not handle downlink")
 		}
@@ -136,6 +142,7 @@ func (h *handler) HandleDownlink(appDownlink *types.DownlinkMessage, downlink *p
 		Event: types.DownlinkSentEvent,
 		Data: types.DownlinkEventData{
 			Payload:   downlink.Payload,
+			Message:   appDownlink,
 			GatewayID: downlink.DownlinkOption.GatewayId,
 			Config:    downlinkConfig,
 		},
