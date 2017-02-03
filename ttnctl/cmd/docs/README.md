@@ -167,7 +167,7 @@ Port: 1
 
 ### ttnctl applications register
 
-ttnctl register can be used to register this application with the handler.
+ttnctl applications register can be used to register this application with the handler.
 
 **Usage:** `ttnctl applications register`
 
