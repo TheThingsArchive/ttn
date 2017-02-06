@@ -31,6 +31,8 @@ type Device struct {
 	AppID  string       `redis:"app_id"`
 	DevID  string       `redis:"dev_id"`
 
+	Description string `redis:"description"`
+
 	Latitude  float32 `redis:"latitude"`
 	Longitude float32 `redis:"longitude"`
 	Altitude  int32   `redis:"altitude"`

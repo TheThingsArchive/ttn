@@ -99,8 +99,9 @@ func (h *handlerManager) GetDevice(ctx context.Context, in *pb.DeviceIdentifier)
 	}
 
 	pbDev := &pb.Device{
-		AppId: dev.AppID,
-		DevId: dev.DevID,
+		AppId:       dev.AppID,
+		DevId:       dev.DevID,
+		Description: dev.Description,
 		Device: &pb.Device_LorawanDevice{LorawanDevice: &pb_lorawan.Device{
 			AppId:                 dev.AppID,
 			AppEui:                &dev.AppEUI,
@@ -207,6 +208,8 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*empty.E
 	dev.AppEUI = *lorawan.AppEui
 	dev.DevID = in.DevId
 	dev.DevEUI = *lorawan.DevEui
+
+	dev.Description = in.Description
 
 	dev.Options = device.Options{
 		DisableFCntCheck:      lorawan.DisableFCntCheck,
@@ -334,8 +337,9 @@ func (h *handlerManager) GetDevicesForApplication(ctx context.Context, in *pb.Ap
 			continue
 		}
 		res.Devices = append(res.Devices, &pb.Device{
-			AppId: dev.AppID,
-			DevId: dev.DevID,
+			AppId:       dev.AppID,
+			DevId:       dev.DevID,
+			Description: dev.Description,
 			Device: &pb.Device_LorawanDevice{LorawanDevice: &pb_lorawan.Device{
 				AppId:   dev.AppID,
 				AppEui:  &dev.AppEUI,

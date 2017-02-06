@@ -148,6 +148,10 @@ var devicesSetCmd = &cobra.Command{
 			dev.Altitude = in
 		}
 
+		if in, err := cmd.Flags().GetString("description"); err == nil && in != "" {
+			dev.Description = in
+		}
+
 		err = manager.SetDevice(dev)
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not update Device")
@@ -183,4 +187,6 @@ func init() {
 	devicesSetCmd.Flags().Float32("latitude", 0, "Set latitude")
 	devicesSetCmd.Flags().Float32("longitude", 0, "Set longitude")
 	devicesSetCmd.Flags().Int32("altitude", 0, "Set altitude")
+
+	devicesSetCmd.Flags().String("description", "", "Set Description")
 }
