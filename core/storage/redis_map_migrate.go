@@ -108,7 +108,9 @@ func (s *RedisMapStore) migrate(key string, obj map[string]string) (map[string]s
 		// Commit the new version
 		_, err := tx.Pipelined(func(pipe *redis.Pipeline) error {
 			pipe.HMSet(key, obj)
-			pipe.HDel(key, deletedFields...)
+			if len(deletedFields) > 0 {
+				pipe.HDel(key, deletedFields...)
+			}
 			return nil
 		})
 
