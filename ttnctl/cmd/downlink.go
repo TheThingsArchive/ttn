@@ -27,14 +27,10 @@ $ ttnctl downlink test --json '{"led":"on"}'
   INFO Enqueued downlink                        AppID=test DevID=test
 `,
 	Run: func(cmd *cobra.Command, args []string) {
+		assertArgsLength(cmd, args, 2, 2)
+
 		client := util.GetMQTT(ctx)
 		defer client.Disconnect()
-
-		if len(args) < 2 {
-			ctx.Info("Not enough arguments. Please, provide a devId and a Payload")
-			cmd.UsageFunc()(cmd)
-			return
-		}
 
 		appID := util.GetAppID(ctx)
 		ctx = ctx.WithField("AppID", appID)

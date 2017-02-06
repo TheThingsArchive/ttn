@@ -16,10 +16,7 @@ var componentsAddCmd = &cobra.Command{
   INFO Added network component                  id=test type=handler
 `,
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) != 2 {
-			cmd.UsageFunc()(cmd)
-			return
-		}
+		assertArgsLength(cmd, args, 2, 2)
 
 		account := util.GetAccount(ctx)
 

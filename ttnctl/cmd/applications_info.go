@@ -32,6 +32,8 @@ Collaborators:
          Rights: settings, delete, collaborators
 `,
 	Run: func(cmd *cobra.Command, args []string) {
+		assertArgsLength(cmd, args, 0, 1)
+
 		account := util.GetAccount(ctx)
 
 		var appID string

@@ -23,6 +23,8 @@ var applicationsSelectCmd = &cobra.Command{
   INFO Updated configuration
 `,
 	Run: func(cmd *cobra.Command, args []string) {
+		assertArgsLength(cmd, args, 0, 2)
+
 		account := util.GetAccount(ctx)
 
 		apps, err := account.ListApplications()

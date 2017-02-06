@@ -15,11 +15,7 @@ var devicesSimulateCmd = &cobra.Command{
 	Short: "Simulate uplink for a device",
 	Long:  `ttnctl devices simulate can be used to simulate an uplink message for a device.`,
 	Run: func(cmd *cobra.Command, args []string) {
-
-		if len(args) < 2 {
-			cmd.UsageFunc()(cmd)
-			return
-		}
+		assertArgsLength(cmd, args, 2, 2)
 
 		devID := args[0]
 		if !api.ValidID(devID) {

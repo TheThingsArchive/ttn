@@ -17,10 +17,7 @@ var gatewaysTokenCmd = &cobra.Command{
 	Short:  "Get the token for a gateway.",
 	Long:   `gateways token gets a signed token for the gateway.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) != 1 {
-			cmd.UsageFunc()(cmd)
-			return
-		}
+		assertArgsLength(cmd, args, 1, 1)
 
 		gatewayID := args[0]
 		if !api.ValidID(gatewayID) {

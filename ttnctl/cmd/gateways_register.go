@@ -18,10 +18,7 @@ var gatewaysRegisterCmd = &cobra.Command{
   INFO Registered gateway                          Gateway ID=test
 `,
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) != 2 && len(args) != 3 {
-			cmd.UsageFunc()(cmd)
-			return
-		}
+		assertArgsLength(cmd, args, 2, 3)
 
 		gatewayID := args[0]
 		if !api.ValidID(gatewayID) {

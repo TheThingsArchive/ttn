@@ -28,13 +28,9 @@ var devicesPersonalizeCmd = &cobra.Command{
   INFO Personalized device                      AppID=test AppSKey=D8DD37B4B709BA76C6FEC62CAD0CCE51 DevAddr=26001ADA DevID=test NwkSKey=3382A3066850293421ED8D392B9BF4DF
 `,
 	Run: func(cmd *cobra.Command, args []string) {
+		assertArgsLength(cmd, args, 1, 3)
 
 		var err error
-
-		if len(args) == 0 {
-			cmd.UsageFunc()(cmd)
-			return
-		}
 
 		devID := args[0]
 		if !api.ValidID(devID) {

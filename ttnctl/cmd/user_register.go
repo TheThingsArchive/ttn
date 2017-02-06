@@ -23,10 +23,8 @@ Password: <entering password>
   WARN You might have to verify your email before you can login
 `,
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) < 2 {
-			cmd.UsageFunc()(cmd)
-			return
-		}
+		assertArgsLength(cmd, args, 2, 2)
+
 		username := args[0]
 		email := args[1]
 		fmt.Print("Password: ")

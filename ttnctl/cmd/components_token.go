@@ -20,10 +20,7 @@ var componentsTokenCmd = &cobra.Command{
 eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJ0dG4tYWNjb3VudCIsInN1YiI6InRlc3QxyzJ0eXBlIjoiaGFuZGxlciIsImlhdCI6MTQ3NTc0NzY3MywiZXhwIjoxNDgzNzgyODczfQ.Bf6Gy6xTE2m7fkYSd4WHs3UgRaAEXkox2jjJeaBahVNU365n_wI4_oWX_B3mkMOa1ZL3IB2JagAybo50mTApPtnGiRjDczGjqkkbBiXPcwA8SvmyKTKNkPkrpzGIioq9itjpYDuMJixgLh4gYlK0B_1jkH23ZFoslzn7WfYYe3AKC0JZAhePgQygJ2Zn3w6cGZOqgRvblIIcGynSEqqP3aKyKRhtnwofao-w-jzWqINGvAcMt1iW7JN3hX9yW4IXRicB4_-L0Aaq1sqvRpoh8z9SmpkkE8oBmWqPsUAXTECuoYc4kezjGcDg4YnBfBQtT-itPTfdb8-vq2izxyztsw
 `,
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) != 2 {
-			cmd.UsageFunc()(cmd)
-			return
-		}
+		assertArgsLength(cmd, args, 2, 2)
 
 		account := util.GetAccount(ctx)
 
