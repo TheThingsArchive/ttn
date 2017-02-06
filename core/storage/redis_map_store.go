@@ -14,10 +14,11 @@ import (
 
 // RedisMapStore stores structs as HMaps in Redis
 type RedisMapStore struct {
-	prefix  string
-	client  *redis.Client
-	encoder func(input interface{}, properties ...string) (map[string]string, error)
-	decoder func(input map[string]string) (output interface{}, err error)
+	prefix     string
+	client     *redis.Client
+	encoder    func(input interface{}, properties ...string) (map[string]string, error)
+	decoder    func(input map[string]string) (output interface{}, err error)
+	migrations map[string]MigrateFunction
 }
 
 // NewRedisMapStore returns a new RedisMapStore that talks to the given Redis client and respects the given prefix
@@ -26,8 +27,9 @@ func NewRedisMapStore(client *redis.Client, prefix string) *RedisMapStore {
 		prefix += ":"
 	}
 	return &RedisMapStore{
-		client: client,
-		prefix: prefix,
+		client:     client,
+		prefix:     prefix,
+		migrations: make(map[string]MigrateFunction),
 	}
 }
 
@@ -137,6 +139,7 @@ func (s *RedisMapStore) Get(key string) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
+	result, _ = s.migrate(key, result)
 	i, err := s.decoder(result)
 	if err != nil {
 		return nil, err
@@ -194,6 +197,10 @@ func (s *RedisMapStore) Create(key string, value interface{}, properties ...stri
 		return nil
 	}
 
+	if v, ok := value.(hasDBVersion); ok {
+		vmap[VersionKey] = v.DBVersion()
+	}
+
 	err = s.client.Watch(func(tx *redis.Tx) error {
 		exists, err := tx.Exists(key).Result()
 		if err != nil {
@@ -236,6 +243,10 @@ func (s *RedisMapStore) Update(key string, value interface{}, properties ...stri
 	}
 	if len(vmap) == 0 {
 		return nil
+	}
+
+	if v, ok := value.(hasDBVersion); ok {
+		vmap[VersionKey] = v.DBVersion()
 	}
 
 	err = s.client.Watch(func(tx *redis.Tx) error {
