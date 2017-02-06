@@ -10,11 +10,18 @@ services:
   rabbitmq:
     image: thethingsnetwork/rabbitmq
     hostname: rabbitserver
+    environment:
+      - RABBITMQ_SSL_CERTFILE=/var/lib/rabbitmq/tls/server.cert
+      - RABBITMQ_SSL_KEYFILE=/var/lib/rabbitmq/tls/server.key
+      - RABBITMQ_SSL_CACERTFILE=/var/lib/rabbitmq/tls/ca.cert
     ports:
       - "1883:1883"
+      - "8883:8883"
+      - "5671:5671"
       - "5672:5672"
-      - "15672:15672"
+      - "15671:15671"
     volumes:
+      - "./.env/mqtt:/var/lib/rabbitmq/tls"
       - /var/lib/rabbitmq
   discovery:
     image: thethingsnetwork/ttn

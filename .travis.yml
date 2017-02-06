@@ -14,7 +14,7 @@ install:
 
 before_script:
     - docker run -d -p 127.0.0.1:6379:6379 redis
-    - docker run -d -p 127.0.0.1:5672:5672 -p 127.0.0.1:1883:1883 thethingsnetwork/rabbitmq
+    - docker run -d -p 127.0.0.1:5672:5672 -p 127.0.0.1:1883:1883 -p 127.0.0.1:8883:8883 -v $(pwd)/.env/mqtt:/var/lib/rabbitmq/tls -e RABBITMQ_SSL_CERTFILE=/var/lib/rabbitmq/tls/server.cert -e RABBITMQ_SSL_KEYFILE=/var/lib/rabbitmq/tls/server.key -e RABBITMQ_SSL_CACERTFILE=/var/lib/rabbitmq/tls/ca.cert thethingsnetwork/rabbitmq
 
 script:
     - make test

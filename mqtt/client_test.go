@@ -6,6 +6,7 @@ package mqtt
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"testing"
 	"time"
@@ -17,11 +18,16 @@ import (
 )
 
 var host string
+var sslHost string
 
 func init() {
 	host = os.Getenv("MQTT_ADDRESS")
 	if host == "" {
 		host = "localhost:1883"
+	}
+	sslHost = os.Getenv("MQTT_SSL_ADDRESS")
+	if sslHost == "" {
+		sslHost = "iot.eclipse.org:8883"
 	}
 }
 
@@ -90,9 +96,16 @@ func TestConnect(t *testing.T) {
 func TestConnectWithTLS(t *testing.T) {
 	a := New(t)
 
-	c := NewTLSClient(getLogger(t, "Test"), "test", "", "", nil, fmt.Sprintf("ssl://iot.eclipse.org:8883"))
+	cert, err := ioutil.ReadFile("../.env/mqtt/ca.cert")
+	if err != nil {
+		t.Errorf("MQTT CA Cert could not be loaded")
+	}
 
-	err := c.Connect()
+	RootCAs.AppendCertsFromPEM(cert)
+
+	c := NewTLSClient(getLogger(t, "Test"), "test", "", "", nil, fmt.Sprintf("ssl://%s", sslHost))
+
+	err = c.Connect()
 	defer c.Disconnect()
 	a.So(err, ShouldBeNil)
 }
