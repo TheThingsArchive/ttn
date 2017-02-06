@@ -51,7 +51,6 @@ type Device struct {
 	FCntUp  uint32        `redis:"f_cnt_up"` // Only used to detect retries
 
 	CurrentDownlink *types.DownlinkMessage `redis:"current_downlink"`
-	NextDownlink    *types.DownlinkMessage `redis:"next_downlink"`
 
 	CreatedAt time.Time `redis:"created_at"`
 	UpdatedAt time.Time `redis:"updated_at"`
