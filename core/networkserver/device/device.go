@@ -11,6 +11,8 @@ import (
 	"github.com/fatih/structs"
 )
 
+const currentDBVersion = "2.4.1"
+
 // Options for the specified device
 type Options struct {
 	ActivationConstraints string `json:"activation_constraints,omitempty"` // Activation Constraints (public/local/private)
@@ -20,7 +22,8 @@ type Options struct {
 
 // Device contains the state of a device
 type Device struct {
-	old      *Device
+	old *Device
+
 	DevEUI   types.DevEUI  `redis:"dev_eui"`
 	AppEUI   types.AppEUI  `redis:"app_eui"`
 	AppID    string        `redis:"app_id"`
@@ -40,6 +43,11 @@ type Device struct {
 func (d *Device) StartUpdate() {
 	old := *d
 	d.old = &old
+}
+
+// DBVersion of the model
+func (d *Device) DBVersion() string {
+	return currentDBVersion
 }
 
 // ChangedFields returns the names of the changed fields since the last call to StartUpdate

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/TheThingsNetwork/ttn/core/handler/device/migrate"
 	"github.com/TheThingsNetwork/ttn/core/storage"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"gopkg.in/redis.v5"
@@ -31,6 +32,9 @@ func NewRedisDeviceStore(client *redis.Client, prefix string) *RedisDeviceStore 
 	}
 	store := storage.NewRedisMapStore(client, prefix+":"+redisDevicePrefix)
 	store.SetBase(Device{}, "")
+	for v, f := range migrate.DeviceMigrations(prefix) {
+		store.AddMigration(v, f)
+	}
 	return &RedisDeviceStore{
 		store: store,
 	}

@@ -12,6 +12,8 @@ import (
 	"github.com/fatih/structs"
 )
 
+const currentDBVersion = "2.4.1"
+
 type DevNonce [2]byte
 type AppNonce [3]byte
 
@@ -59,6 +61,11 @@ type Device struct {
 func (d *Device) StartUpdate() {
 	old := *d
 	d.old = &old
+}
+
+// DBVersion of the model
+func (d *Device) DBVersion() string {
+	return currentDBVersion
 }
 
 // ChangedFields returns the names of the changed fields since the last call to StartUpdate

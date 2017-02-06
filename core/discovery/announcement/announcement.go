@@ -15,6 +15,8 @@ import (
 	"github.com/fatih/structs"
 )
 
+const currentDBVersion = "2.4.1"
+
 // Metadata represents metadata that is stored with an Announcement
 type Metadata interface {
 	encoding.TextMarshaler
@@ -124,7 +126,8 @@ func MetadataFromString(str string) Metadata {
 
 // Announcement of a network component
 type Announcement struct {
-	old            *Announcement
+	old *Announcement
+
 	ID             string `redis:"id"`
 	ServiceName    string `redis:"service_name"`
 	ServiceVersion string `redis:"service_version"`
@@ -147,6 +150,11 @@ type Announcement struct {
 func (a *Announcement) StartUpdate() {
 	old := *a
 	a.old = &old
+}
+
+// DBVersion of the model
+func (a *Announcement) DBVersion() string {
+	return currentDBVersion
 }
 
 // ChangedFields returns the names of the changed fields since the last call to StartUpdate
