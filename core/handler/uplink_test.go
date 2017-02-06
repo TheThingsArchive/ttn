@@ -159,7 +159,7 @@ func TestHandleUplink(t *testing.T) {
 	}()
 	go func() {
 		dl := <-h.downlink
-		a.So(dl.Payload, ShouldResemble, []byte{160, 4, 3, 2, 1, 0, 0, 0, 10, 102, 230, 42, 116, 222, 58}) // The confirmed downlink
+		a.So(dl.Payload, ShouldResemble, []byte{160, 4, 3, 2, 1, 16, 0, 0, 10, 102, 230, 154, 218, 17, 187}) // The confirmed downlink with FPending on
 		wg.Done()
 	}()
 	downlink.Payload = downlinkEmpty

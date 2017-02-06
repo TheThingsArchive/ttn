@@ -120,6 +120,12 @@ func (h *handler) ConvertToLoRaWAN(ctx ttnlog.Interface, appDown *types.Downlink
 		phyPayload.MHDR.MType = lorawan.ConfirmedDataDown
 	}
 
+	if queue, err := h.devices.DownlinkQueue(dev.AppID, dev.DevID); err == nil {
+		if length, _ := queue.Length(); length > 0 {
+			macPayload.FHDR.FCtrl.FPending = true
+		}
+	}
+
 	// Set Payload
 	if len(appDown.PayloadRaw) > 0 {
 		ttnDown.Trace = ttnDown.Trace.WithEvent("set payload")
