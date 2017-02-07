@@ -85,12 +85,46 @@ func (s *DefaultSubscriber) QueueUnbind(name, key string) error {
 	return nil
 }
 
-func (s *DefaultSubscriber) consume(queue string) (<-chan AMQP.Delivery, error) {
-	err := s.channel.Qos(PrefetchCount, PrefetchSize, false)
+type consumer struct {
+	queue      string
+	deliveries chan AMQP.Delivery
+}
+
+func (c *consumer) use(channel *AMQP.Channel) error {
+	err := channel.Qos(PrefetchCount, PrefetchSize, false)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to set channel QoS (%s)", err)
+		return fmt.Errorf("Failed to set channel QoS (%s)", err)
 	}
-	return s.channel.Consume(queue, "", false, false, false, false, nil)
+	deliveries, err := channel.Consume(c.queue, "", false, false, false, false, nil)
+	if err != nil {
+		return err
+	}
+	go func() {
+		for delivery := range deliveries {
+			c.deliveries <- delivery
+		}
+	}()
+	return nil
+}
+
+func (c *consumer) close() {
+	if c.deliveries != nil {
+		close(c.deliveries)
+		c.deliveries = nil
+	}
+}
+
+func (s *DefaultSubscriber) consume(queue string) (<-chan AMQP.Delivery, error) {
+	deliveries := make(chan AMQP.Delivery)
+	c := &consumer{
+		queue:      queue,
+		deliveries: deliveries,
+	}
+	if err := c.use(s.channel); err != nil {
+		return nil, err
+	}
+	s.addUser(c)
+	return deliveries, nil
 }
 
 func (s *DefaultSubscriber) subscribe(key string) (<-chan AMQP.Delivery, error) {
