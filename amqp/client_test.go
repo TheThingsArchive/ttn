@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/smartystreets/assertions"
 	AMQP "github.com/streadway/amqp"
 )
@@ -85,18 +86,15 @@ func TestReopenChannelClient(t *testing.T) {
 	a.So(err, ShouldBeNil)
 	defer c.Disconnect()
 
-	p := &DefaultChannelClient{
-		ctx:    ctx,
-		client: c,
-	}
-	err = p.Open()
+	publisher := c.NewPublisher("")
+	err = publisher.Open()
 	a.So(err, ShouldBeNil)
-	defer p.Close()
+	defer publisher.Close()
 
 	test := func() error {
 		ctx.Debug("Testing publish")
-		return p.channel.Publish("", "test", false, false, AMQP.Publishing{
-			Body: []byte("test"),
+		return publisher.PublishDownlink(types.DownlinkMessage{
+			AppID: "app",
 		})
 	}
 
@@ -105,7 +103,7 @@ func TestReopenChannelClient(t *testing.T) {
 	a.So(err, ShouldBeNil)
 
 	// Make sure that the old channel is closed
-	p.channel.Close()
+	publisher.(*DefaultPublisher).channel.Close()
 
 	// Simulate a connection close so a new channel should be opened
 	closed <- AMQP.ErrClosed
