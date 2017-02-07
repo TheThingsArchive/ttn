@@ -20,6 +20,8 @@ var subscribeCmd = &cobra.Command{
 	Short: "Subscribe to events for this application",
 	Long:  `ttnctl subscribe can be used to subscribe to events for this application.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		assertArgsLength(cmd, args, 0, 0)
+
 		util.GetAccount(ctx)
 
 		client := util.GetMQTT(ctx)

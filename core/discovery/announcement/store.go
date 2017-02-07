@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/TheThingsNetwork/ttn/core/discovery/announcement/migrate"
 	"github.com/TheThingsNetwork/ttn/core/storage"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
@@ -42,6 +43,9 @@ func NewRedisAnnouncementStore(client *redis.Client, prefix string) Store {
 	}
 	store := storage.NewRedisMapStore(client, prefix+":"+redisAnnouncementPrefix)
 	store.SetBase(Announcement{}, "")
+	for v, f := range migrate.AnnouncementMigrations(prefix) {
+		store.AddMigration(v, f)
+	}
 	return &RedisAnnouncementStore{
 		store:    store,
 		metadata: storage.NewRedisSetStore(client, prefix+":"+redisMetadataPrefix),

@@ -24,11 +24,7 @@ var devicesSetCmd = &cobra.Command{
   INFO Updated device                           AppID=test DevID=test
 `,
 	Run: func(cmd *cobra.Command, args []string) {
-
-		if len(args) == 0 {
-			cmd.UsageFunc()(cmd)
-			return
-		}
+		assertArgsLength(cmd, args, 1, 1)
 
 		devID := args[0]
 		if !api.ValidID(devID) {
@@ -152,6 +148,10 @@ var devicesSetCmd = &cobra.Command{
 			dev.Altitude = in
 		}
 
+		if in, err := cmd.Flags().GetString("description"); err == nil && in != "" {
+			dev.Description = in
+		}
+
 		err = manager.SetDevice(dev)
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not update Device")
@@ -187,4 +187,6 @@ func init() {
 	devicesSetCmd.Flags().Float32("latitude", 0, "Set latitude")
 	devicesSetCmd.Flags().Float32("longitude", 0, "Set longitude")
 	devicesSetCmd.Flags().Int32("altitude", 0, "Set altitude")
+
+	devicesSetCmd.Flags().String("description", "", "Set Description")
 }

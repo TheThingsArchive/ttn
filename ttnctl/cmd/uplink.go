@@ -21,10 +21,7 @@ var uplinkCmd = &cobra.Command{
 	Short:  "Simulate an uplink message to the network",
 	Long:   `ttnctl uplink simulates an uplink message to the network`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) < 4 {
-			cmd.UsageFunc()(cmd)
-			return
-		}
+		assertArgsLength(cmd, args, 4, 5)
 
 		devAddr, err := types.ParseDevAddr(args[0])
 		if err != nil {

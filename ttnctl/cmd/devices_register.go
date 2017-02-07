@@ -27,12 +27,9 @@ var devicesRegisterCmd = &cobra.Command{
   INFO Registered device                        AppEUI=70B3D57EF0000024 AppID=test AppKey=EBD2E2810A4307263FE5EF78E2EF589D DevEUI=0001D544B2936FCE DevID=test
 `,
 	Run: func(cmd *cobra.Command, args []string) {
+		assertArgsLength(cmd, args, 1, 4)
 
 		var err error
-
-		if len(args) == 0 {
-			ctx.Fatalf("Device ID is required")
-		}
 
 		devID := args[0]
 		if !api.ValidID(devID) {

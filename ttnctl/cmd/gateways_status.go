@@ -34,10 +34,7 @@ var gatewaysStatusCmd = &cobra.Command{
                   Tx: (in: 0; ok: 0)
 `,
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) != 1 {
-			cmd.UsageFunc()(cmd)
-			return
-		}
+		assertArgsLength(cmd, args, 1, 1)
 
 		gtwID := args[0]
 		if !api.ValidID(gtwID) {

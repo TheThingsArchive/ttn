@@ -6,6 +6,7 @@ package application
 import (
 	"time"
 
+	"github.com/TheThingsNetwork/ttn/core/handler/application/migrate"
 	"github.com/TheThingsNetwork/ttn/core/storage"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"gopkg.in/redis.v5"
@@ -30,6 +31,9 @@ func NewRedisApplicationStore(client *redis.Client, prefix string) Store {
 	}
 	store := storage.NewRedisMapStore(client, prefix+":"+redisApplicationPrefix)
 	store.SetBase(Application{}, "")
+	for v, f := range migrate.ApplicationMigrations(prefix) {
+		store.AddMigration(v, f)
+	}
 	return &RedisApplicationStore{
 		store: store,
 	}

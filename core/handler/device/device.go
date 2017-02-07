@@ -12,6 +12,8 @@ import (
 	"github.com/fatih/structs"
 )
 
+const currentDBVersion = "2.4.1"
+
 type DevNonce [2]byte
 type AppNonce [3]byte
 
@@ -31,6 +33,8 @@ type Device struct {
 	AppID  string       `redis:"app_id"`
 	DevID  string       `redis:"dev_id"`
 
+	Description string `redis:"description"`
+
 	Latitude  float32 `redis:"latitude"`
 	Longitude float32 `redis:"longitude"`
 	Altitude  int32   `redis:"altitude"`
@@ -47,7 +51,6 @@ type Device struct {
 	FCntUp  uint32        `redis:"f_cnt_up"` // Only used to detect retries
 
 	CurrentDownlink *types.DownlinkMessage `redis:"current_downlink"`
-	NextDownlink    *types.DownlinkMessage `redis:"next_downlink"`
 
 	CreatedAt time.Time `redis:"created_at"`
 	UpdatedAt time.Time `redis:"updated_at"`
@@ -57,6 +60,11 @@ type Device struct {
 func (d *Device) StartUpdate() {
 	old := *d
 	d.old = &old
+}
+
+// DBVersion of the model
+func (d *Device) DBVersion() string {
+	return currentDBVersion
 }
 
 // ChangedFields returns the names of the changed fields since the last call to StartUpdate

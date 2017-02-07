@@ -92,6 +92,16 @@ func init() {
 	viper.SetDefault("gateway-token", "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ0dG4tYWNjb3VudC12MiIsInN1YiI6ImRldiIsInR5cGUiOiJnYXRld2F5IiwiaWF0IjoxNDgyNDIxMTEyfQ.obhobeREK9bOpi-YO5lZ8rpW4CkXZUSrRBRIjbFThhvAsj_IjkFmCovIVLsGlaDVEKciZmXmWnY-6ZEgUEu6H6_GG4AD6HNHXnT0o0XSPgf5_Bc6dpzuI5FCEpcELihpBMaW3vPUt29NecLo4LvZGAuOllUYKHsZi34GYnR6PFlOgi40drN_iU_8aMCxFxm6ki83QlcyHEmDAh5GAGIym0qnUDh5_L1VE_upmoR72j8_l5lSuUA2_w8CH5_Z9CrXlTKQ2XQXsQXprkhbmOKKC8rfbTjRsB_nxObu0qcTWLH9tMd4KGFkJ20mdMw38fg2Vt7eLrkU1R1kl6a65eo6LZi0JvRSsboVZFWLwI02Azkwsm903K5n1r25Wq2oiwPJpNq5vsYLdYlb-WdAPsEDnfQGLPaqxd5we8tDcHsF4C1JHTwLsKy2Sqj8WNVmLgXiFER0DNfISDgS5SYdOxd9dUf5lTlIYdJU6aG1yYLSEhq80QOcdhCqNMVu1uRIucn_BhHbKo_LCMmD7TGppaXcQ2tCL3qHQaW8GCoun_UPo4C67LIMYUMfwd_h6CaykzlZvDlLa64ZiQ3XPmMcT_gVT7MJS2jGPbtJmcLHAVa5NZLv2d6WZfutPAocl3bYrY-sQmaSwJrzakIb2D-DNsg0qBJAZcm2o021By8U4bKAAFQ")
 }
 
+func assertArgsLength(cmd *cobra.Command, args []string, min, max int) {
+	if len(args) < min || len(args) > max {
+		ctx.Errorf(`Invalid number of arguments to command "%s"`, cmd.CommandPath())
+		fmt.Println()
+		cmd.Example = ""
+		cmd.UsageFunc()(cmd)
+		os.Exit(1)
+	}
+}
+
 func printKV(key, t interface{}) {
 	var val string
 	switch t := t.(type) {
@@ -104,6 +114,13 @@ func printKV(key, t interface{}) {
 	if val != "" {
 		fmt.Printf("%20s: %s\n", key, val)
 	}
+}
+
+func crop(in string, length int) string {
+	if len(in) > length {
+		return in[:length]
+	}
+	return in
 }
 
 func confirm(prompt string) bool {

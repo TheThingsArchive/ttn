@@ -25,6 +25,8 @@ message Metadata {
 
   // Store the full 32 bit FCnt (deprecated; do not use)
   uint32      f_cnt = 15;
+
+  Region region     = 16;
 }
 
 message TxConfiguration {
@@ -50,6 +52,7 @@ message ActivationMetadata {
   uint32 rx2_dr           = 12;
   uint32 rx_delay         = 13;
   CFList cf_list          = 14;
+  Region region           = 15;
 }
 
 enum Region {

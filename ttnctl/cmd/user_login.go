@@ -24,10 +24,7 @@ $ ttnctl user login [paste the access code you requested above]
   INFO Successfully logged in as yourname (your@email.org)
 `,
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) < 1 {
-			cmd.UsageFunc()(cmd)
-			return
-		}
+		assertArgsLength(cmd, args, 1, 1)
 
 		code := args[0]
 		token, err := util.Login(ctx, code)

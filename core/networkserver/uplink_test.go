@@ -11,6 +11,7 @@ import (
 	pb_gateway "github.com/TheThingsNetwork/ttn/api/gateway"
 	pb_protocol "github.com/TheThingsNetwork/ttn/api/protocol"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
+	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/networkserver/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
@@ -21,6 +22,9 @@ import (
 func TestHandleUplink(t *testing.T) {
 	a := New(t)
 	ns := &networkServer{
+		Component: &component.Component{
+			Ctx: GetLogger(t, "TestHandleUplink"),
+		},
 		devices: device.NewRedisDeviceStore(GetRedisClient(), "ns-test-handle-uplink"),
 	}
 	ns.InitStatus()
@@ -82,7 +86,7 @@ func TestHandleUplink(t *testing.T) {
 		AppEui:           &appEUI,
 		DevEui:           &devEUI,
 		Payload:          bytes,
-		ResponseTemplate: &pb_broker.DownlinkMessage{},
+		ResponseTemplate: &pb_broker.DownlinkMessage{DownlinkOption: &pb_broker.DownlinkOption{}},
 		GatewayMetadata: []*pb_gateway.RxMetadata{
 			&pb_gateway.RxMetadata{},
 		},

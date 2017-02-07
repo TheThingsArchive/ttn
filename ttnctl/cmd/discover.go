@@ -16,23 +16,13 @@ import (
 
 const serviceFmt = "%-36s %-36s %-20s %-6s\n"
 
-func crop(in string, length int) string {
-	if len(in) > length {
-		return in[:length]
-	}
-	return in
-}
-
 var discoverCmd = &cobra.Command{
 	Use:    "discover [ServiceType]",
 	Short:  "Discover routing services",
 	Long:   `ttnctl discover is used to discover routing services`,
 	Hidden: true,
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) == 0 {
-			cmd.UsageFunc()(cmd)
-			return
-		}
+		assertArgsLength(cmd, args, 1, 1)
 
 		serviceType := strings.TrimRight(args[0], "s") // Allow both singular and plural
 

@@ -28,6 +28,7 @@ test 	70B3D57EF0000024	0001D544B2936FCE	26001ADA
   INFO Listed 1 devices                         AppID=test
 `,
 	Run: func(cmd *cobra.Command, args []string) {
+		assertArgsLength(cmd, args, 0, 0)
 
 		appID := util.GetAppID(ctx)
 
@@ -41,14 +42,14 @@ test 	70B3D57EF0000024	0001D544B2936FCE	26001ADA
 
 		table := uitable.New()
 		table.MaxColWidth = 70
-		table.AddRow("DevID", "AppEUI", "DevEUI", "DevAddr")
+		table.AddRow("DevID", "AppEUI", "DevEUI", "DevAddr", "Description")
 		for _, dev := range devices {
 			if lorawan := dev.GetLorawanDevice(); lorawan != nil {
 				devAddr := lorawan.DevAddr
 				if devAddr.IsEmpty() {
 					devAddr = nil
 				}
-				table.AddRow(dev.DevId, lorawan.AppEui, lorawan.DevEui, devAddr)
+				table.AddRow(dev.DevId, lorawan.AppEui, lorawan.DevEui, devAddr, crop(dev.Description, 20))
 			} else {
 				table.AddRow(dev.DevId)
 			}

@@ -57,8 +57,9 @@ func TestHandleAMQP(t *testing.T) {
 	})
 	a.So(err, ShouldBeNil)
 	<-time.After(50 * time.Millisecond)
-	dev, _ := h.devices.Get(appID, devID)
-	a.So(dev.NextDownlink, ShouldNotBeNil)
+	q, _ := h.devices.DownlinkQueue(appID, devID)
+	downlink, _ := q.Next()
+	a.So(downlink, ShouldNotBeNil)
 
 	wg.Add(1)
 	s := c.NewSubscriber("amq.topic", "", false, true)

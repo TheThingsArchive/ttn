@@ -37,9 +37,39 @@ func TestEnqueueDownlink(t *testing.T) {
 	defer func() {
 		h.devices.Delete(appID, devID)
 	}()
+	queue, _ := h.devices.DownlinkQueue(appID, devID)
+
 	err = h.EnqueueDownlink(&types.DownlinkMessage{
-		AppID: appID,
-		DevID: devID,
+		AppID:      appID,
+		DevID:      devID,
+		PayloadRaw: []byte{0x01},
+		Schedule:   "last",
+	})
+	a.So(err, ShouldBeNil)
+	qLen, _ := queue.Length()
+	a.So(qLen, ShouldEqual, 1)
+
+	err = h.EnqueueDownlink(&types.DownlinkMessage{
+		AppID:      appID,
+		DevID:      devID,
+		PayloadRaw: []byte{0x02},
+		Schedule:   "first",
+	})
+	a.So(err, ShouldBeNil)
+	qLen, _ = queue.Length()
+	a.So(qLen, ShouldEqual, 2)
+
+	err = h.EnqueueDownlink(&types.DownlinkMessage{
+		AppID:    appID,
+		DevID:    devID,
+		Schedule: "random",
+	})
+	a.So(err, ShouldNotBeNil)
+
+	err = h.EnqueueDownlink(&types.DownlinkMessage{
+		AppID:    appID,
+		DevID:    devID,
+		Schedule: "replace",
 		PayloadFields: map[string]interface{}{
 			"string": "hello!",
 			"int":    42,
@@ -47,9 +77,12 @@ func TestEnqueueDownlink(t *testing.T) {
 		},
 	})
 	a.So(err, ShouldBeNil)
-	dev, _ := h.devices.Get(appID, devID)
-	a.So(dev.NextDownlink, ShouldNotBeEmpty)
-	a.So(dev.NextDownlink.PayloadFields, ShouldHaveLength, 3)
+	qLen, _ = queue.Length()
+	a.So(qLen, ShouldEqual, 1)
+
+	downlink, _ := queue.Next()
+	a.So(downlink, ShouldNotBeNil)
+	a.So(downlink.PayloadFields, ShouldHaveLength, 3)
 }
 
 func TestHandleDownlink(t *testing.T) {

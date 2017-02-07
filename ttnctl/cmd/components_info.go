@@ -22,10 +22,7 @@ Type:           handler
 Created:        2016-10-06 09:52:28.766 +0000 UTC
 `,
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) != 2 {
-			cmd.UsageFunc()(cmd)
-			return
-		}
+		assertArgsLength(cmd, args, 2, 2)
 
 		account := util.GetAccount(ctx)
 

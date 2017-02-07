@@ -15,6 +15,8 @@ var applicationsDeleteCmd = &cobra.Command{
 	Short: "Delete an application",
 	Long:  `ttnctl devices delete can be used to delete an application.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		assertArgsLength(cmd, args, 0, 1)
+
 		account := util.GetAccount(ctx)
 
 		var appID string

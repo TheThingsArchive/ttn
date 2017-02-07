@@ -14,10 +14,11 @@ import (
 
 // RedisMapStore stores structs as HMaps in Redis
 type RedisMapStore struct {
-	prefix  string
-	client  *redis.Client
-	encoder func(input interface{}, properties ...string) (map[string]string, error)
-	decoder func(input map[string]string) (output interface{}, err error)
+	prefix     string
+	client     *redis.Client
+	encoder    func(input interface{}, properties ...string) (map[string]string, error)
+	decoder    func(input map[string]string) (output interface{}, err error)
+	migrations map[string]MigrateFunction
 }
 
 // NewRedisMapStore returns a new RedisMapStore that talks to the given Redis client and respects the given prefix
@@ -26,8 +27,9 @@ func NewRedisMapStore(client *redis.Client, prefix string) *RedisMapStore {
 		prefix += ":"
 	}
 	return &RedisMapStore{
-		client: client,
-		prefix: prefix,
+		client:     client,
+		prefix:     prefix,
+		migrations: make(map[string]MigrateFunction),
 	}
 }
 
@@ -55,6 +57,7 @@ func (s *RedisMapStore) SetDecoder(decoder func(input map[string]string) (output
 }
 
 // GetAll returns all results for the given keys, prepending the prefix to the keys if necessary
+// This function will migrate outdated results to newer versions if migrations are set
 func (s *RedisMapStore) GetAll(keys []string, options *ListOptions) ([]interface{}, error) {
 	if len(keys) == 0 {
 		return []interface{}{}, nil
@@ -92,6 +95,7 @@ func (s *RedisMapStore) GetAll(keys []string, options *ListOptions) ([]interface
 	results := make([]interface{}, len(selectedKeys))
 	for i, key := range selectedKeys {
 		if result, err := cmds[key].Result(); err == nil {
+			result, _ = s.migrate(key, result)
 			if result, err := s.decoder(result); err == nil {
 				results[i] = result
 			}
@@ -126,6 +130,7 @@ func (s *RedisMapStore) List(selector string, options *ListOptions) ([]interface
 }
 
 // Get one result, prepending the prefix to the key if necessary
+// This function will migrate outdated results to newer versions if migrations are set
 func (s *RedisMapStore) Get(key string) (interface{}, error) {
 	if !strings.HasPrefix(key, s.prefix) {
 		key = s.prefix + key
@@ -137,6 +142,7 @@ func (s *RedisMapStore) Get(key string) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
+	result, _ = s.migrate(key, result)
 	i, err := s.decoder(result)
 	if err != nil {
 		return nil, err
@@ -145,6 +151,7 @@ func (s *RedisMapStore) Get(key string) (interface{}, error) {
 }
 
 // GetFields for a record, prepending the prefix to the key if necessary
+// This function does *not* migrate outdated results to newer versions
 func (s *RedisMapStore) GetFields(key string, fields ...string) (interface{}, error) {
 	if !strings.HasPrefix(key, s.prefix) {
 		key = s.prefix + key
@@ -194,6 +201,10 @@ func (s *RedisMapStore) Create(key string, value interface{}, properties ...stri
 		return nil
 	}
 
+	if v, ok := value.(hasDBVersion); ok {
+		vmap[VersionKey] = v.DBVersion()
+	}
+
 	err = s.client.Watch(func(tx *redis.Tx) error {
 		exists, err := tx.Exists(key).Result()
 		if err != nil {
@@ -236,6 +247,10 @@ func (s *RedisMapStore) Update(key string, value interface{}, properties ...stri
 	}
 	if len(vmap) == 0 {
 		return nil
+	}
+
+	if v, ok := value.(hasDBVersion); ok {
+		vmap[VersionKey] = v.DBVersion()
 	}
 
 	err = s.client.Watch(func(tx *redis.Tx) error {

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/TheThingsNetwork/ttn/core/handler/device/migrate"
 	"github.com/TheThingsNetwork/ttn/core/storage"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"gopkg.in/redis.v5"
@@ -17,12 +18,14 @@ type Store interface {
 	List(opts *storage.ListOptions) ([]*Device, error)
 	ListForApp(appID string, opts *storage.ListOptions) ([]*Device, error)
 	Get(appID, devID string) (*Device, error)
+	DownlinkQueue(appID, devID string) (DownlinkQueue, error)
 	Set(new *Device, properties ...string) (err error)
 	Delete(appID, devID string) error
 }
 
 const defaultRedisPrefix = "handler"
 const redisDevicePrefix = "device"
+const redisDownlinkQueuePrefix = "downlink"
 
 // NewRedisDeviceStore creates a new Redis-based Device store
 func NewRedisDeviceStore(client *redis.Client, prefix string) *RedisDeviceStore {
@@ -31,15 +34,21 @@ func NewRedisDeviceStore(client *redis.Client, prefix string) *RedisDeviceStore 
 	}
 	store := storage.NewRedisMapStore(client, prefix+":"+redisDevicePrefix)
 	store.SetBase(Device{}, "")
+	for v, f := range migrate.DeviceMigrations(prefix) {
+		store.AddMigration(v, f)
+	}
+	queues := storage.NewRedisQueueStore(client, prefix+":"+redisDownlinkQueuePrefix)
 	return &RedisDeviceStore{
-		store: store,
+		store:  store,
+		queues: queues,
 	}
 }
 
 // RedisDeviceStore stores Devices in Redis.
 // - Devices are stored as a Hash
 type RedisDeviceStore struct {
-	store *storage.RedisMapStore
+	store  *storage.RedisMapStore
+	queues *storage.RedisQueueStore
 }
 
 // List all Devices
@@ -84,6 +93,15 @@ func (s *RedisDeviceStore) Get(appID, devID string) (*Device, error) {
 	return nil, errors.New("Database did not return a Device")
 }
 
+// DownlinkQueue for a specific Device
+func (s *RedisDeviceStore) DownlinkQueue(appID, devID string) (DownlinkQueue, error) {
+	return &RedisDownlinkQueue{
+		appID:  appID,
+		devID:  devID,
+		queues: s.queues,
+	}, nil
+}
+
 // Set a new Device or update an existing one
 func (s *RedisDeviceStore) Set(new *Device, properties ...string) (err error) {
 
@@ -107,5 +125,8 @@ func (s *RedisDeviceStore) Set(new *Device, properties ...string) (err error) {
 // Delete a Device
 func (s *RedisDeviceStore) Delete(appID, devID string) error {
 	key := fmt.Sprintf("%s:%s", appID, devID)
+	if err := s.queues.Delete(key); err != nil {
+		return err
+	}
 	return s.store.Delete(key)
 }

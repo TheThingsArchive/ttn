@@ -15,6 +15,8 @@ var userLogoutCmd = &cobra.Command{
 	Short: "Logout the current user",
 	Long:  `ttnctl user logout logs out the current user`,
 	Run: func(cmd *cobra.Command, args []string) {
+		assertArgsLength(cmd, args, 0, 0)
+
 		err := util.Logout()
 		if err != nil {
 			if os.IsNotExist(err) {

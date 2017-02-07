@@ -10,9 +10,12 @@ import (
 	"github.com/fatih/structs"
 )
 
+const currentDBVersion = "2.4.1"
+
 // Application contains the state of an application
 type Application struct {
-	old   *Application
+	old *Application
+
 	AppID string `redis:"app_id"`
 	// Decoder is a JavaScript function that accepts the payload as byte array and
 	// returns an object containing the decoded values
@@ -35,6 +38,11 @@ type Application struct {
 func (a *Application) StartUpdate() {
 	old := *a
 	a.old = &old
+}
+
+// DBVersion of the model
+func (a *Application) DBVersion() string {
+	return currentDBVersion
 }
 
 // ChangedFields returns the names of the changed fields since the last call to StartUpdate

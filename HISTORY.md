@@ -1,5 +1,33 @@
 # History
 
+## 2.5.0 (2017-02-07)
+
+The 2.5.0 release contains the following new features:
+
+- Adaptive Data Rate for `EU_863_870` band
+- Downlink Queue
+- Device Descriptions
+- TLS support in MQTT Client
+
+API Changes:
+
+- Add `description` to device (Handler)
+- Add `region` to Uplink and Activation Metadata (gRPC)
+- Add `schedule` field to Downlink Message (MQTT)
+
+Database changes (migration):
+
+- Implemented data migration functionality (Discovery, Networkserver, Handler)
+- Add `_version` to all models (Discovery, Networkserver, Handler)
+- Use downlink queue instead of `next_downlink` (Handler)
+
+Other changes:
+
+- Add more metadata to log messages
+- Publish more event metadata to MQTT
+- Publish more (error) events to MQTT
+- Check arguments in `ttnctl`
+
 ## 2.4.0 (2017-02-03)
 
 The 2.4.0 release contains the following API Changes:
