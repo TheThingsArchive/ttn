@@ -128,6 +128,15 @@ func (n *networkServerManager) SetDevice(ctx context.Context, in *pb_lorawan.Dev
 		return nil, err
 	}
 
+	frames, err := n.networkServer.devices.Frames(dev.AppEUI, dev.DevEUI)
+	if err != nil {
+		return nil, err
+	}
+	err = frames.Clear()
+	if err != nil {
+		return nil, err
+	}
+
 	return &empty.Empty{}, nil
 }
 

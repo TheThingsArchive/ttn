@@ -141,5 +141,15 @@ func (n *networkServer) HandleActivate(activation *pb_handler.DeviceActivationRe
 	if err != nil {
 		return nil, err
 	}
+
+	frames, err := n.devices.Frames(dev.AppEUI, dev.DevEUI)
+	if err != nil {
+		return nil, err
+	}
+	err = frames.Clear()
+	if err != nil {
+		return nil, err
+	}
+
 	return activation, nil
 }
