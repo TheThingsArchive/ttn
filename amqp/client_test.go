@@ -8,8 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"sync"
-
 	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/smartystreets/assertions"
 	AMQP "github.com/streadway/amqp"
@@ -98,29 +96,34 @@ func TestReopenChannelClient(t *testing.T) {
 	a.So(err, ShouldBeNil)
 	defer subscriber.Close()
 
-	wg := sync.WaitGroup{}
-	err = subscriber.SubscribeDownlink(func(_ Subscriber, appID string, _ string, _ types.DownlinkMessage) {
+	downs := make(chan types.DownlinkMessage, 1)
+	err = subscriber.SubscribeDownlink(func(_ Subscriber, appID string, _ string, msg types.DownlinkMessage) {
 		a.So(appID, ShouldEqual, "app")
 		ctx.Debugf("Got downlink message")
-		wg.Done()
+		downs <- msg
 	})
 	a.So(err, ShouldBeNil)
 
-	test := func() error {
+	test := func() {
 		ctx.Debug("Testing publish")
-		return publisher.PublishDownlink(types.DownlinkMessage{
+		err := publisher.PublishDownlink(types.DownlinkMessage{
 			AppID: "app",
 		})
+		a.So(err, ShouldBeNil)
+		select {
+		case <-downs:
+		case <-time.After(100 * time.Millisecond):
+			panic("Published message didn't come in in time")
+		}
+		return
 	}
 
 	// First attempt should be OK
-	wg.Add(1)
-	err = test()
-	a.So(err, ShouldBeNil)
-	wg.Wait()
+	test()
 
 	// Make sure that the old channel is closed
 	publisher.(*DefaultPublisher).channel.Close()
+	subscriber.(*DefaultSubscriber).channel.Close()
 
 	// Simulate a connection close so a new channel should be opened
 	closed <- AMQP.ErrClosed
@@ -129,6 +132,6 @@ func TestReopenChannelClient(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 
 	// Second attempt should be OK as well and will only work on a new channel
-	err = test()
+	test()
 	a.So(err, ShouldBeNil)
 }
