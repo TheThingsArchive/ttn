@@ -4,7 +4,6 @@
 package device
 
 import (
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -22,10 +21,7 @@ type Store interface {
 	Get(appEUI types.AppEUI, devEUI types.DevEUI) (*Device, error)
 	Set(new *Device, properties ...string) (err error)
 	Delete(appEUI types.AppEUI, devEUI types.DevEUI) error
-
-	PushFrame(appEUI types.AppEUI, devEUI types.DevEUI, frame *Frame) error
-	GetFrames(appEUI types.AppEUI, devEUI types.DevEUI) ([]*Frame, error)
-	ClearFrames(appEUI types.AppEUI, devEUI types.DevEUI) error
+	Frames(appEUI types.AppEUI, devEUI types.DevEUI) (FrameHistory, error)
 }
 
 const defaultRedisPrefix = "ns"
@@ -33,9 +29,6 @@ const defaultRedisPrefix = "ns"
 const redisDevicePrefix = "device"
 const redisDevAddrPrefix = "dev_addr"
 const redisFramesPrefix = "frames"
-
-// FramesHistorySize for ADR
-const FramesHistorySize = 20
 
 // NewRedisDeviceStore creates a new Redis-based status store
 func NewRedisDeviceStore(client *redis.Client, prefix string) Store {
@@ -47,10 +40,12 @@ func NewRedisDeviceStore(client *redis.Client, prefix string) Store {
 	for v, f := range migrate.DeviceMigrations(prefix) {
 		store.AddMigration(v, f)
 	}
+	frameStore := storage.NewRedisQueueStore(client, prefix+":"+redisFramesPrefix)
 	return &RedisDeviceStore{
 		client:       client,
 		prefix:       prefix,
 		store:        store,
+		frameStore:   frameStore,
 		devAddrIndex: storage.NewRedisSetStore(client, prefix+":"+redisDevAddrPrefix),
 	}
 }
@@ -62,6 +57,7 @@ type RedisDeviceStore struct {
 	client       *redis.Client
 	prefix       string
 	store        *storage.RedisMapStore
+	frameStore   *storage.RedisQueueStore
 	devAddrIndex *storage.RedisSetStore
 }
 
@@ -174,45 +170,11 @@ func (s *RedisDeviceStore) Delete(appEUI types.AppEUI, devEUI types.DevEUI) erro
 	return s.store.Delete(key)
 }
 
-func (s *RedisDeviceStore) framesKey(appEUI types.AppEUI, devEUI types.DevEUI) string {
-	return fmt.Sprintf("%s:%s:%s:%s", s.prefix, redisFramesPrefix, appEUI, devEUI)
-}
-
-// PushFrame pushes a Frame to the device's history
-func (s *RedisDeviceStore) PushFrame(appEUI types.AppEUI, devEUI types.DevEUI, frame *Frame) error {
-	frameBytes, err := json.Marshal(frame)
-	if err != nil {
-		return err
-	}
-	key := s.framesKey(appEUI, devEUI)
-	pipe := s.client.Pipeline()
-	defer pipe.Close()
-	pipe.LPush(key, frameBytes)
-	pipe.LTrim(key, 0, FramesHistorySize-1)
-	_, err = pipe.Exec()
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-// GetFrames retrieves the last frames from the device's history
-func (s *RedisDeviceStore) GetFrames(appEUI types.AppEUI, devEUI types.DevEUI) (out []*Frame, err error) {
-	frames, err := s.client.LRange(s.framesKey(appEUI, devEUI), 0, -1).Result()
-	if err != nil && err != redis.Nil {
-		return nil, err
-	}
-	for _, frameStr := range frames {
-		frame := new(Frame)
-		if err := json.Unmarshal([]byte(frameStr), frame); err != nil {
-			return nil, err
-		}
-		out = append(out, frame)
-	}
-	return
-}
-
-// ClearFrames clears the frames in the device's history
-func (s *RedisDeviceStore) ClearFrames(appEUI types.AppEUI, devEUI types.DevEUI) error {
-	return s.client.Del(s.framesKey(appEUI, devEUI)).Err()
+// Frames history for a specific Device
+func (s *RedisDeviceStore) Frames(appEUI types.AppEUI, devEUI types.DevEUI) (FrameHistory, error) {
+	return &RedisFrameHistory{
+		appEUI: appEUI,
+		devEUI: devEUI,
+		store:  s.frameStore,
+	}, nil
 }

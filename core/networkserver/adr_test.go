@@ -90,31 +90,35 @@ func TestHandleUplinkADR(t *testing.T) {
 		}
 	}()
 
+	appEUI := types.AppEUI([8]byte{1})
+	devEUI := types.DevEUI([8]byte{1})
+	history, _ := ns.devices.Frames(appEUI, devEUI)
+
 	// Setting ADR to true should start collecting frames
 	{
-		dev := &device.Device{AppEUI: types.AppEUI([8]byte{1}), DevEUI: types.DevEUI([8]byte{1})}
+		dev := &device.Device{AppEUI: appEUI, DevEUI: devEUI}
 		message := adrInitUplinkMessage()
 		message.Message.GetLorawan().GetMacPayload().Adr = true
 		err := ns.handleUplinkADR(message, dev)
 		a.So(err, ShouldBeNil)
-		frames, _ := ns.devices.GetFrames(dev.AppEUI, dev.DevEUI)
+		frames, _ := history.Get()
 		a.So(frames, ShouldHaveLength, 1)
 		a.So(dev.ADR.DataRate, ShouldEqual, "SF8BW125")
 	}
 
 	// Resetting ADR to false should empty the frames
 	{
-		dev := &device.Device{AppEUI: types.AppEUI([8]byte{1}), DevEUI: types.DevEUI([8]byte{1})}
+		dev := &device.Device{AppEUI: appEUI, DevEUI: devEUI}
 		message := adrInitUplinkMessage()
 		err := ns.handleUplinkADR(message, dev)
 		a.So(err, ShouldBeNil)
-		frames, _ := ns.devices.GetFrames(dev.AppEUI, dev.DevEUI)
+		frames, _ := history.Get()
 		a.So(frames, ShouldBeEmpty)
 	}
 
 	// Setting ADRAckReq to true should set the ACK and schedule a LinkADRReq
 	{
-		dev := &device.Device{AppEUI: types.AppEUI([8]byte{1}), DevEUI: types.DevEUI([8]byte{1})}
+		dev := &device.Device{AppEUI: appEUI, DevEUI: devEUI}
 		message := adrInitUplinkMessage()
 		message.Message.GetLorawan().GetMacPayload().Adr = true
 		message.Message.GetLorawan().GetMacPayload().AdrAckReq = true
@@ -140,7 +144,10 @@ func TestHandleDownlinkADR(t *testing.T) {
 		}
 	}()
 
-	dev := &device.Device{AppEUI: types.AppEUI([8]byte{1}), DevEUI: types.DevEUI([8]byte{1})}
+	appEUI := types.AppEUI([8]byte{1})
+	devEUI := types.DevEUI([8]byte{1})
+	history, _ := ns.devices.Frames(appEUI, devEUI)
+	dev := &device.Device{AppEUI: appEUI, DevEUI: devEUI}
 
 	message := adrInitDownlinkMessage()
 	var shouldReturnError = func() {
@@ -171,9 +178,9 @@ func TestHandleDownlinkADR(t *testing.T) {
 	nothingShouldHappen()
 
 	var resetFrames = func(appEUI types.AppEUI, devEUI types.DevEUI) {
-		ns.devices.ClearFrames(appEUI, devEUI)
+		history.Clear()
 		for i := 0; i < 20; i++ {
-			ns.devices.PushFrame(appEUI, devEUI, &device.Frame{SNR: 10, GatewayCount: 3, FCnt: uint32(i)})
+			history.Push(&device.Frame{SNR: 10, GatewayCount: 3, FCnt: uint32(i)})
 		}
 	}
 	resetFrames(dev.AppEUI, dev.DevEUI)
@@ -233,7 +240,7 @@ func TestHandleDownlinkADR(t *testing.T) {
 		for loss, exp := range test {
 			dev.ADR.NbTrans = nbTrans
 			resetFrames(dev.AppEUI, dev.DevEUI)
-			ns.devices.PushFrame(dev.AppEUI, dev.DevEUI, &device.Frame{SNR: 10, GatewayCount: 3, FCnt: uint32(20 + loss)})
+			history.Push(&device.Frame{SNR: 10, GatewayCount: 3, FCnt: uint32(20 + loss)})
 			shouldHaveNbTrans(exp)
 		}
 	}

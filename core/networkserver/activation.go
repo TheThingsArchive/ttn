@@ -133,7 +133,9 @@ func (n *networkServer) HandleActivate(activation *pb_handler.DeviceActivationRe
 	dev.FCntUp = 0
 	dev.FCntDown = 0
 
-	dev.ADR.Band = meta.GetLorawan().GetRegion().String()
+	if band := meta.GetLorawan().GetRegion().String(); band != "" {
+		dev.ADR.Band = band
+	}
 
 	err = n.devices.Set(dev)
 	if err != nil {

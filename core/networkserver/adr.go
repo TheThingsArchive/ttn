@@ -42,8 +42,13 @@ func (n *networkServer) handleUplinkADR(message *pb_broker.DeduplicatedUplinkMes
 	lorawanUplinkMac := message.GetMessage().GetLorawan().GetMacPayload()
 	lorawanDownlinkMac := message.GetResponseTemplate().GetMessage().GetLorawan().GetMacPayload()
 
+	history, err := n.devices.Frames(dev.AppEUI, dev.DevEUI)
+	if err != nil {
+		return err
+	}
+
 	if lorawanUplinkMac.Adr {
-		if err := n.devices.PushFrame(dev.AppEUI, dev.DevEUI, &device.Frame{
+		if err := history.Push(&device.Frame{
 			FCnt:         lorawanUplinkMac.FCnt,
 			SNR:          bestSNR(message.GetGatewayMetadata()),
 			GatewayCount: uint32(len(message.GatewayMetadata)),
@@ -65,7 +70,9 @@ func (n *networkServer) handleUplinkADR(message *pb_broker.DeduplicatedUplinkMes
 		}
 	} else {
 		// Clear history and reset settings
-		n.devices.ClearFrames(dev.AppEUI, dev.DevEUI)
+		if err := history.Clear(); err != nil {
+			return err
+		}
 		dev.ADR.SendReq = false
 		dev.ADR.DataRate = ""
 		dev.ADR.TxPower = 0
@@ -84,7 +91,9 @@ func (n *networkServer) handleDownlinkADR(message *pb_broker.DownlinkMessage, de
 		return nil
 	}
 
-	frames, err := n.devices.GetFrames(dev.AppEUI, dev.DevEUI)
+	history, err := n.devices.Frames(dev.AppEUI, dev.DevEUI)
+
+	frames, err := history.Get()
 	if err != nil {
 		return err
 	}
