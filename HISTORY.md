@@ -1,6 +1,6 @@
 # History
 
-## 2.4.0 (2017-02-07)
+## 2.5.0 (2017-02-07)
 
 The 2.5.0 release contains the following new features:
 
