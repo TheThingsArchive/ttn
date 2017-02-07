@@ -91,7 +91,7 @@ func TestReopenChannelClient(t *testing.T) {
 	a.So(err, ShouldBeNil)
 	defer publisher.Close()
 
-	subscriber := c.NewSubscriber("amq.topic", "", false, true)
+	subscriber := c.NewSubscriber("amq.topic", "", false, false)
 	err = subscriber.Open()
 	a.So(err, ShouldBeNil)
 	defer subscriber.Close()
