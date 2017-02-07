@@ -6,6 +6,7 @@ package storage
 import (
 	"strings"
 
+	"github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	redis "gopkg.in/redis.v5"
 )
@@ -74,6 +75,13 @@ func (s *RedisMapStore) Migrate(selector string) error {
 
 func (s *RedisMapStore) migrate(key string, obj map[string]string) (map[string]string, error) {
 	var err error
+
+	defer func() {
+		if err != nil {
+			log.Get().WithField("Key", key).WithError(err).Warn("Data migration failed")
+		}
+	}()
+
 	version, _ := obj[VersionKey]
 	migration, ok := s.migrations[version]
 
