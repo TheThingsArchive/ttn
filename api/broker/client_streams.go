@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/TheThingsNetwork/go-utils/log"
+	"github.com/TheThingsNetwork/ttn/api/fields"
 	"github.com/TheThingsNetwork/ttn/utils/backoff"
 	"github.com/golang/protobuf/ptypes/empty"
 	"golang.org/x/net/context"
@@ -83,7 +84,7 @@ func NewMonitoredRouterStream(client BrokerClient, getContextFunc func() context
 				for {
 					message, err := client.Recv()
 					if message != nil {
-						s.ctx.Debug("Receiving Downlink message")
+						s.ctx.WithFields(fields.Get(message)).Debug("Receiving Downlink message")
 						if err := message.Validate(); err != nil {
 							s.ctx.WithError(err).Warn("Invalid Downlink")
 							continue
@@ -108,7 +109,7 @@ func NewMonitoredRouterStream(client BrokerClient, getContextFunc func() context
 			// Send uplink
 			go func() {
 				for message := range up {
-					s.ctx.Debug("Sending Uplink message")
+					s.ctx.WithFields(fields.Get(message)).Debug("Sending Uplink message")
 					if err := client.Send(message); err != nil {
 						s.ctx.WithError(err).Warn("Error sending Uplink message")
 						break
@@ -237,7 +238,7 @@ func NewMonitoredHandlerPublishStream(client BrokerClient, getContextFunc func()
 			// Send
 			go func() {
 				for message := range ch {
-					s.ctx.Debug("Sending Downlink message")
+					s.ctx.WithFields(fields.Get(message)).Debug("Sending Downlink message")
 					if err := client.Send(message); err != nil {
 						s.ctx.WithError(err).Warn("Error sending Downlink message")
 						break
@@ -351,7 +352,7 @@ func NewMonitoredHandlerSubscribeStream(client BrokerClient, getContextFunc func
 			for {
 				message, err = client.Recv()
 				if message != nil {
-					s.ctx.Debug("Receiving Uplink message")
+					s.ctx.WithFields(fields.Get(message)).Debug("Receiving Uplink message")
 					if err := message.Validate(); err != nil {
 						s.ctx.WithError(err).Warn("Invalid Uplink")
 						continue
