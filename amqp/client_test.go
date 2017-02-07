@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"sync"
+
 	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/smartystreets/assertions"
 	AMQP "github.com/streadway/amqp"
@@ -86,10 +88,23 @@ func TestReopenChannelClient(t *testing.T) {
 	a.So(err, ShouldBeNil)
 	defer c.Disconnect()
 
-	publisher := c.NewPublisher("")
+	publisher := c.NewPublisher("amq.topic")
 	err = publisher.Open()
 	a.So(err, ShouldBeNil)
 	defer publisher.Close()
+
+	subscriber := c.NewSubscriber("amq.topic", "", false, true)
+	err = subscriber.Open()
+	a.So(err, ShouldBeNil)
+	defer subscriber.Close()
+
+	wg := sync.WaitGroup{}
+	err = subscriber.SubscribeDownlink(func(_ Subscriber, appID string, _ string, _ types.DownlinkMessage) {
+		a.So(appID, ShouldEqual, "app")
+		ctx.Debugf("Got downlink message")
+		wg.Done()
+	})
+	a.So(err, ShouldBeNil)
 
 	test := func() error {
 		ctx.Debug("Testing publish")
@@ -99,8 +114,10 @@ func TestReopenChannelClient(t *testing.T) {
 	}
 
 	// First attempt should be OK
+	wg.Add(1)
 	err = test()
 	a.So(err, ShouldBeNil)
+	wg.Wait()
 
 	// Make sure that the old channel is closed
 	publisher.(*DefaultPublisher).channel.Close()
