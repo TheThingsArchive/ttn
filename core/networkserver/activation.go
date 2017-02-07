@@ -6,6 +6,7 @@ package networkserver
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_handler "github.com/TheThingsNetwork/ttn/api/handler"
@@ -116,8 +117,27 @@ func (n *networkServer) HandleActivate(activation *pb_handler.DeviceActivationRe
 		return nil, errors.NewErrInvalidArgument("Activation", "missing LoRaWAN ActivationMetadata")
 	}
 	n.status.activations.Mark(1)
+
+	dev, err := n.devices.Get(*lorawan.AppEui, *lorawan.DevEui)
+	if err != nil {
+		return nil, err
+	}
+
 	activation.Trace = activation.Trace.WithEvent(trace.UpdateStateEvent)
-	err := n.devices.Activate(*lorawan.AppEui, *lorawan.DevEui, *lorawan.DevAddr, *lorawan.NwkSKey)
+	dev.StartUpdate()
+
+	dev.LastSeen = time.Now()
+	dev.UpdatedAt = time.Now()
+	dev.DevAddr = *lorawan.DevAddr
+	dev.NwkSKey = *lorawan.NwkSKey
+	dev.FCntUp = 0
+	dev.FCntDown = 0
+
+	if band := meta.GetLorawan().GetRegion().String(); band != "" {
+		dev.ADR.Band = band
+	}
+
+	err = n.devices.Set(dev)
 	if err != nil {
 		return nil, err
 	}

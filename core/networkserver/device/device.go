@@ -34,9 +34,25 @@ type Device struct {
 	FCntDown uint32        `redis:"f_cnt_down"`
 	LastSeen time.Time     `redis:"last_seen"`
 	Options  Options       `redis:"options"`
+	ADR      ADRSettings   `redis:"adr,include"`
 
 	CreatedAt time.Time `redis:"created_at"`
 	UpdatedAt time.Time `redis:"updated_at"`
+}
+
+// ADRSettings contains the (desired) settings for a device that uses ADR
+type ADRSettings struct {
+	Band   string `redis:"band"`
+	Margin int    `redis:"margin"`
+
+	// Indicates whether the NetworkServer should send a LinkADRReq when possible
+	SendReq bool `redis:"send_req,omitempty"`
+	Failed  int  `redis:"failed,omitempty"` // number of failed ADR attempts
+
+	// Desired Settings:
+	DataRate string `redis:"data_rate,omitempty"`
+	TxPower  int    `redis:"tx_power,omitempty"`
+	NbTrans  int    `redis:"nb_trans,omitempty"`
 }
 
 // StartUpdate stores the state of the device

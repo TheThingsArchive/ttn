@@ -5,6 +5,7 @@ package band
 
 import (
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
+	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/brocaar/lorawan"
 	lora "github.com/brocaar/lorawan/band"
@@ -13,7 +14,33 @@ import (
 // FrequencyPlan includes band configuration and CFList
 type FrequencyPlan struct {
 	lora.Band
+	ADR    *ADRConfig
 	CFList *lorawan.CFList
+}
+
+func (f *FrequencyPlan) GetDataRateStringForIndex(drIdx int) (string, error) {
+	dr, err := types.ConvertDataRate(f.DataRates[drIdx])
+	if err != nil {
+		return "", err
+	}
+	return dr.String(), nil
+}
+
+func (f *FrequencyPlan) GetDataRateIndexFor(dataRate string) (int, error) {
+	dr, err := types.ParseDataRate(dataRate)
+	if err != nil {
+		return 0, err
+	}
+	return f.Band.GetDataRate(lora.DataRate{Modulation: lora.LoRaModulation, SpreadFactor: int(dr.SpreadingFactor), Bandwidth: int(dr.Bandwidth)})
+}
+
+func (f *FrequencyPlan) GetTxPowerIndexFor(txPower int) (int, error) {
+	for i, power := range f.TXPower {
+		if power == txPower {
+			return i, nil
+		}
+	}
+	return 0, errors.New("core/band: the given tx-power does not exist")
 }
 
 // Guess the region based on frequency
@@ -51,15 +78,16 @@ func Get(region string) (frequencyPlan FrequencyPlan, err error) {
 			lora.Channel{Frequency: 868100000, DataRates: []int{0, 1, 2, 3, 4, 5}},
 			lora.Channel{Frequency: 868300000, DataRates: []int{0, 1, 2, 3, 4, 5, 6}}, // Also SF7BW250
 			lora.Channel{Frequency: 868500000, DataRates: []int{0, 1, 2, 3, 4, 5}},
-			lora.Channel{Frequency: 868800000, DataRates: []int{7}}, // FSK 50kbps
 			lora.Channel{Frequency: 867100000, DataRates: []int{0, 1, 2, 3, 4, 5}},
 			lora.Channel{Frequency: 867300000, DataRates: []int{0, 1, 2, 3, 4, 5}},
 			lora.Channel{Frequency: 867500000, DataRates: []int{0, 1, 2, 3, 4, 5}},
 			lora.Channel{Frequency: 867700000, DataRates: []int{0, 1, 2, 3, 4, 5}},
 			lora.Channel{Frequency: 867900000, DataRates: []int{0, 1, 2, 3, 4, 5}},
+			lora.Channel{Frequency: 868800000, DataRates: []int{7}}, // FSK 50kbps
 		}
 		frequencyPlan.DownlinkChannels = frequencyPlan.UplinkChannels
 		frequencyPlan.CFList = &lorawan.CFList{867100000, 867300000, 867500000, 867700000, 867900000}
+		frequencyPlan.ADR = &ADRConfig{MinDataRate: 0, MaxDataRate: 5, MinTXPower: 2, MaxTXPower: 14}
 	case pb_lorawan.Region_US_902_928.String():
 		frequencyPlan.Band, err = lora.GetConfig(lora.US_902_928, false, lorawan.DwellTime400ms)
 	case pb_lorawan.Region_CN_779_787.String():
@@ -88,9 +116,6 @@ func Get(region string) (frequencyPlan FrequencyPlan, err error) {
 		frequencyPlan.CFList = &lorawan.CFList{922700000, 922900000, 923100000, 923300000, 0}
 	default:
 		err = errors.NewErrInvalidArgument("Frequency Band", "unknown")
-	}
-	if err != nil {
-		return
 	}
 	return
 }

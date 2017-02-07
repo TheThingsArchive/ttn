@@ -11,6 +11,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/api/fields"
 	pb "github.com/TheThingsNetwork/ttn/api/gateway"
 	pb_monitor "github.com/TheThingsNetwork/ttn/api/monitor"
+	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	pb_router "github.com/TheThingsNetwork/ttn/api/router"
 )
 
@@ -85,10 +86,17 @@ func (g *Gateway) HandleUplink(uplink *pb_router.UplinkMessage) (err error) {
 	g.Schedule.Sync(uplink.GatewayMetadata.Timestamp)
 	g.updateLastSeen()
 
-	// Inject Gateway location
-	if uplink.GatewayMetadata.Gps == nil {
-		if status, err := g.Status.Get(); err == nil {
+	status, err := g.Status.Get()
+	if err == nil {
+		// Inject Gateway location
+		if uplink.GatewayMetadata.Gps == nil {
 			uplink.GatewayMetadata.Gps = status.GetGps()
+		}
+		// Inject Gateway region
+		if region, ok := pb_lorawan.Region_value[status.Region]; ok {
+			if lorawan := uplink.GetProtocolMetadata().GetLorawan(); lorawan != nil {
+				lorawan.Region = pb_lorawan.Region(region)
+			}
 		}
 	}
 

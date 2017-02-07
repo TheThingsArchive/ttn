@@ -98,6 +98,7 @@ func (s *RedisQueueStore) List(selector string, options *ListOptions) (map[strin
 }
 
 // Get one result, prepending the prefix to the key if necessary
+// The items remain in the queue after the Get operation
 func (s *RedisQueueStore) Get(key string) (res []string, err error) {
 	if !strings.HasPrefix(key, s.prefix) {
 		key = s.prefix + key
@@ -134,6 +135,19 @@ func (s *RedisQueueStore) AddFront(key string, values ...string) error {
 	return s.client.LPush(key, valuesI...).Err()
 }
 
+// GetFront gets <length> items from the front of the queue, prepending the prefix to the key if necessary
+// The items remain in the queue after the Get operation
+func (s *RedisQueueStore) GetFront(key string, length int) (res []string, err error) {
+	if !strings.HasPrefix(key, s.prefix) {
+		key = s.prefix + key
+	}
+	res, err = s.client.LRange(key, 0, int64(length-1)).Result()
+	if err == redis.Nil {
+		return res, nil
+	}
+	return res, err
+}
+
 // AddEnd adds one or more values to the end of the queue, prepending the prefix to the key if necessary
 // If you add AddEnd("value1", "value2") to an empty queue, then the Next(key) will return "value1".
 func (s *RedisQueueStore) AddEnd(key string, values ...string) error {
@@ -147,7 +161,20 @@ func (s *RedisQueueStore) AddEnd(key string, values ...string) error {
 	return s.client.RPush(key, valuesI...).Err()
 }
 
-// Next the first element from the queue, prepending the prefix to the key if necessary
+// GetEnd gets <length> items from the end of the queue, prepending the prefix to the key if necessary
+// The items remain in the queue after the Get operation
+func (s *RedisQueueStore) GetEnd(key string, length int) (res []string, err error) {
+	if !strings.HasPrefix(key, s.prefix) {
+		key = s.prefix + key
+	}
+	res, err = s.client.LRange(key, int64(-length), -1).Result()
+	if err == redis.Nil {
+		return res, nil
+	}
+	return res, err
+}
+
+// Next removes the first element from the queue and returns it, prepending the prefix to the key if necessary
 func (s *RedisQueueStore) Next(key string) (string, error) {
 	if !strings.HasPrefix(key, s.prefix) {
 		key = s.prefix + key
@@ -157,6 +184,18 @@ func (s *RedisQueueStore) Next(key string) (string, error) {
 		return "", nil
 	}
 	return res, err
+}
+
+// Trim the length of the queue
+func (s *RedisQueueStore) Trim(key string, length int) error {
+	if !strings.HasPrefix(key, s.prefix) {
+		key = s.prefix + key
+	}
+	err := s.client.LTrim(key, 0, int64(length-1)).Err()
+	if err == redis.Nil {
+		return nil
+	}
+	return err
 }
 
 // Delete the entire queue

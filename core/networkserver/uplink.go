@@ -9,114 +9,67 @@ import (
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/api/trace"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
-	"github.com/brocaar/lorawan"
 )
 
 func (n *networkServer) HandleUplink(message *pb_broker.DeduplicatedUplinkMessage) (*pb_broker.DeduplicatedUplinkMessage, error) {
+	err := message.UnmarshalPayload()
+	if err != nil {
+		return nil, err
+	}
+	lorawanUplinkMac := message.Message.GetLorawan().GetMacPayload()
+	if lorawanUplinkMac == nil {
+		return nil, errors.NewErrInvalidArgument("Uplink", "does not contain a MAC payload")
+	}
+
+	n.status.uplink.Mark(1)
+
 	// Get Device
 	dev, err := n.devices.Get(*message.AppEui, *message.DevEui)
 	if err != nil {
 		return nil, err
 	}
 
-	n.status.uplink.Mark(1)
-
 	message.Trace = message.Trace.WithEvent(trace.UpdateStateEvent)
 
 	dev.StartUpdate()
+	defer func() {
+		setErr := n.devices.Set(dev)
+		if setErr != nil {
+			n.Ctx.WithError(err).Error("Could not update device state")
+		}
+		if err == nil {
+			err = setErr
+		}
+	}()
 
-	// Unmarshal LoRaWAN Payload
-	var phyPayload lorawan.PHYPayload
-	err = phyPayload.UnmarshalBinary(message.Payload)
-	if err != nil {
-		return nil, err
-	}
-	macPayload, ok := phyPayload.MACPayload.(*lorawan.MACPayload)
-	if !ok {
-		return nil, errors.NewErrInvalidArgument("Uplink", "does not contain a MAC payload")
-	}
-
-	// Update FCntUp (from metadata if possible, because only 16lsb are marshaled in FHDR)
-	if lorawan := message.GetProtocolMetadata().GetLorawan(); lorawan != nil && lorawan.FCnt != 0 {
-		dev.FCntUp = lorawan.FCnt
-	} else {
-		dev.FCntUp = macPayload.FHDR.FCnt
-	}
+	dev.FCntUp = lorawanUplinkMac.FCnt
 	dev.LastSeen = time.Now()
-	err = n.devices.Set(dev)
-	if err != nil {
-		return nil, err
-	}
 
 	// Prepare Downlink
-	if message.ResponseTemplate == nil {
-		return message, nil
-	}
-	message.ResponseTemplate.AppEui = message.AppEui
-	message.ResponseTemplate.DevEui = message.DevEui
-	message.ResponseTemplate.AppId = message.AppId
-	message.ResponseTemplate.DevId = message.DevId
-
-	// Add Full FCnt (avoiding nil pointer panics)
-	if option := message.ResponseTemplate.DownlinkOption; option != nil {
-		if protocol := option.ProtocolConfig; protocol != nil {
-			if lorawan := protocol.GetLorawan(); lorawan != nil {
-				lorawan.FCnt = dev.FCntDown
-			}
-		}
+	message.InitResponseTemplate()
+	lorawanDownlinkMsg := message.ResponseTemplate.Message.InitLoRaWAN()
+	lorawanDownlinkMac := lorawanDownlinkMsg.InitDownlink()
+	lorawanDownlinkMac.FPort = lorawanUplinkMac.FPort
+	lorawanDownlinkMac.DevAddr = lorawanUplinkMac.DevAddr
+	lorawanDownlinkMac.FCnt = dev.FCntDown
+	if lorawan := message.ResponseTemplate.GetDownlinkOption().GetProtocolConfig().GetLorawan(); lorawan != nil {
+		lorawan.FCnt = dev.FCntDown
 	}
 
-	mac := &lorawan.MACPayload{
-		FHDR: lorawan.FHDR{
-			DevAddr: macPayload.FHDR.DevAddr,
-			FCnt:    dev.FCntDown,
-		},
-	}
-
-	phy := lorawan.PHYPayload{
-		MHDR: lorawan.MHDR{
-			MType: lorawan.UnconfirmedDataDown,
-			Major: lorawan.LoRaWANR1,
-		},
-		MACPayload: mac,
-	}
-
-	// Confirmed Uplink
-	if phyPayload.MHDR.MType == lorawan.ConfirmedDataUp {
-		message.Trace = message.Trace.WithEvent("set ack")
-		mac.FHDR.FCtrl.ACK = true
-	}
-
-	// Adaptive DataRate
-	if macPayload.FHDR.FCtrl.ADR {
-		if macPayload.FHDR.FCtrl.ADRACKReq {
-			message.Trace = message.Trace.WithEvent("set adr ack")
-			mac.FHDR.FCtrl.ACK = true
-		}
-	}
-
-	// MAC Commands
-	for _, cmd := range macPayload.FHDR.FOpts {
-		switch cmd.CID {
-		case lorawan.LinkCheckReq:
-			mac.FHDR.FOpts = append(mac.FHDR.FOpts, lorawan.MACCommand{
-				CID: lorawan.LinkCheckAns,
-				Payload: &lorawan.LinkCheckAnsPayload{
-					Margin: uint8(linkMargin(message.GetProtocolMetadata().GetLorawan().DataRate, bestSNR(message.GetGatewayMetadata()))),
-					GwCnt:  uint8(len(message.GatewayMetadata)),
-				},
-			})
-			message.Trace = message.Trace.WithEvent(trace.HandleMACEvent, macCMD, "link-check")
-		default:
-		}
-	}
-
-	phyBytes, err := phy.MarshalBinary()
+	err = n.handleUplinkMAC(message, dev)
 	if err != nil {
 		return nil, err
 	}
 
-	message.ResponseTemplate.Payload = phyBytes
+	message.ResponseTemplate.Payload, err = lorawanDownlinkMsg.PHYPayload().MarshalBinary()
+	if err != nil {
+		return nil, err
+	}
+
+	// Unset response if no downlink option
+	if message.ResponseTemplate.DownlinkOption == nil {
+		message.ResponseTemplate = nil
+	}
 
 	return message, nil
 }

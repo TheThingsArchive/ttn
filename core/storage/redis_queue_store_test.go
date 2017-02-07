@@ -55,6 +55,14 @@ func TestRedisQueueStore(t *testing.T) {
 	a.So(err, ShouldBeNil)
 	a.So(res, ShouldResemble, []string{"value2", "value1", "value3", "value4"})
 
+	front, err := s.GetFront("test", 2)
+	a.So(err, ShouldBeNil)
+	a.So(front, ShouldResemble, []string{"value2", "value1"})
+
+	end, err := s.GetEnd("test", 2)
+	a.So(err, ShouldBeNil)
+	a.So(end, ShouldResemble, []string{"value3", "value4"})
+
 	next, err = s.Next("test")
 	a.So(err, ShouldBeNil)
 	a.So(next, ShouldEqual, "value2")
@@ -66,6 +74,17 @@ func TestRedisQueueStore(t *testing.T) {
 	res, err = s.Get("test")
 	a.So(err, ShouldBeNil)
 	a.So(res, ShouldResemble, []string{"value1", "value3", "value4"})
+
+	err = s.Trim("test", 2)
+	a.So(err, ShouldBeNil)
+
+	length, err = s.Length("test")
+	a.So(err, ShouldBeNil)
+	a.So(length, ShouldEqual, 2)
+
+	res, err = s.Get("test")
+	a.So(err, ShouldBeNil)
+	a.So(res, ShouldResemble, []string{"value1", "value3"})
 
 	err = s.Delete("test")
 	a.So(err, ShouldBeNil)
