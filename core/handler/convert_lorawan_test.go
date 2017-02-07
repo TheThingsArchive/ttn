@@ -35,6 +35,7 @@ func TestConvertFromLoRaWAN(t *testing.T) {
 	a := New(t)
 	h := &handler{
 		Component: &component.Component{Ctx: GetLogger(t, "TestConvertFromLoRaWAN")},
+		devices:   device.NewRedisDeviceStore(GetRedisClient(), "handler-test-convert-from-lorawan"),
 		mqttEvent: make(chan *types.DeviceEvent, 10),
 	}
 	device := &device.Device{
@@ -71,6 +72,7 @@ func TestConvertToLoRaWAN(t *testing.T) {
 	a := New(t)
 	h := &handler{
 		Component: &component.Component{Ctx: GetLogger(t, "TestConvertToLoRaWAN")},
+		devices:   device.NewRedisDeviceStore(GetRedisClient(), "handler-test-convert-to-lorawan"),
 	}
 	device := &device.Device{
 		DevID: "devid",

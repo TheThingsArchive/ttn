@@ -120,10 +120,8 @@ func TestHandleUplink(t *testing.T) {
 	a.So(err, ShouldBeNil)
 	wg.WaitFor(50 * time.Millisecond)
 
-	dev.StartUpdate()
-	dev.NextDownlink = &types.DownlinkMessage{
-		PayloadRaw: []byte{0xaa, 0xbc},
-	}
+	queue, _ := h.devices.DownlinkQueue(appID, devID)
+	queue.PushFirst(&types.DownlinkMessage{PayloadRaw: []byte{0xaa, 0xbc}})
 
 	// Test Uplink, Data downlink needed
 	h.devices.Set(dev)
@@ -143,13 +141,14 @@ func TestHandleUplink(t *testing.T) {
 	wg.WaitFor(50 * time.Millisecond)
 
 	dev, _ = h.devices.Get(appID, devID)
-	a.So(dev.NextDownlink, ShouldBeNil)
+	qLen, _ := queue.Length()
+	a.So(qLen, ShouldEqual, 0)
 	a.So(dev.CurrentDownlink, ShouldNotBeNil)
 	a.So(dev.CurrentDownlink.PayloadRaw, ShouldResemble, []byte{0xaa, 0xbc})
 
 	dev.StartUpdate()
 	dev.CurrentDownlink = &types.DownlinkMessage{PayloadRaw: []byte{0xaa, 0xbc}, Confirmed: true}
-	dev.NextDownlink = &types.DownlinkMessage{PayloadRaw: []byte{0x12, 0x34}}
+	queue.PushFirst(&types.DownlinkMessage{PayloadRaw: []byte{0x12, 0x34}})
 
 	// Test Uplink, Data downlink needed
 	h.devices.Set(dev)
@@ -160,7 +159,7 @@ func TestHandleUplink(t *testing.T) {
 	}()
 	go func() {
 		dl := <-h.downlink
-		a.So(dl.Payload, ShouldResemble, []byte{160, 4, 3, 2, 1, 0, 0, 0, 10, 102, 230, 42, 116, 222, 58}) // The confirmed downlink
+		a.So(dl.Payload, ShouldResemble, []byte{160, 4, 3, 2, 1, 16, 0, 0, 10, 102, 230, 154, 218, 17, 187}) // The confirmed downlink with FPending on
 		wg.Done()
 	}()
 	downlink.Payload = downlinkEmpty
@@ -169,8 +168,9 @@ func TestHandleUplink(t *testing.T) {
 	wg.WaitFor(50 * time.Millisecond)
 
 	dev, _ = h.devices.Get(appID, devID)
-	a.So(dev.NextDownlink, ShouldNotBeNil)
-	a.So(dev.NextDownlink.PayloadRaw, ShouldResemble, []byte{0x12, 0x34})
+	next, _ := queue.Next()
+	a.So(next, ShouldNotBeNil)
+	a.So(next.PayloadRaw, ShouldResemble, []byte{0x12, 0x34})
 	a.So(dev.CurrentDownlink, ShouldNotBeNil)
 	a.So(dev.CurrentDownlink.PayloadRaw, ShouldResemble, []byte{0xaa, 0xbc})
 }

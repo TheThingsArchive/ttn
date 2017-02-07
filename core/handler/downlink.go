@@ -10,15 +10,16 @@ import (
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/api/trace"
 	"github.com/TheThingsNetwork/ttn/core/types"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 )
 
 func (h *handler) EnqueueDownlink(appDownlink *types.DownlinkMessage) (err error) {
 	appID, devID := appDownlink.AppID, appDownlink.DevID
-
 	ctx := h.Ctx.WithFields(ttnlog.Fields{
 		"AppID": appID,
 		"DevID": devID,
 	})
+
 	start := time.Now()
 	defer func() {
 		if err != nil {
@@ -28,18 +29,46 @@ func (h *handler) EnqueueDownlink(appDownlink *types.DownlinkMessage) (err error
 		}
 	}()
 
-	dev, err := h.devices.Get(appID, devID)
+	// Check if device exists
+	_, err = h.devices.Get(appID, devID)
 	if err != nil {
 		return err
 	}
+
+	defer func() {
+		if err != nil {
+			h.mqttEvent <- &types.DeviceEvent{
+				AppID: appID,
+				DevID: devID,
+				Event: types.DownlinkErrorEvent,
+				Data: types.DownlinkEventData{
+					ErrorEventData: types.ErrorEventData{Error: err.Error()},
+					Message:        appDownlink,
+				},
+			}
+		}
+	}()
 
 	// Clear redundant fields
 	appDownlink.AppID = ""
 	appDownlink.DevID = ""
 
-	dev.StartUpdate()
-	dev.NextDownlink = appDownlink
-	err = h.devices.Set(dev)
+	queue, err := h.devices.DownlinkQueue(appID, devID)
+	if err != nil {
+		return err
+	}
+
+	switch appDownlink.Schedule {
+	case types.ScheduleReplace, "": // Empty string for default
+		err = queue.Replace(appDownlink)
+	case types.ScheduleFirst:
+		err = queue.PushFirst(appDownlink)
+	case types.ScheduleLast:
+		err = queue.PushLast(appDownlink)
+	default:
+		return errors.NewErrInvalidArgument("ScheduleType", "unknown")
+	}
+
 	if err != nil {
 		return err
 	}

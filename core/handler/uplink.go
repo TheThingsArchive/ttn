@@ -89,15 +89,17 @@ func (h *handler) HandleUplink(uplink *pb_broker.DeduplicatedUplinkMessage) (err
 	if dev.CurrentDownlink == nil {
 		<-time.After(ResponseDeadline)
 
-		// Find scheduled downlink
-		dev, err = h.devices.Get(appID, devID)
+		queue, err := h.devices.DownlinkQueue(appID, devID)
 		if err != nil {
 			return err
 		}
-		dev.StartUpdate()
 
-		dev.CurrentDownlink = dev.NextDownlink
-		dev.NextDownlink = nil
+		next, err := queue.Next()
+		if err != nil {
+			return err
+		}
+
+		dev.CurrentDownlink = next
 	}
 
 	// Save changes (if any)
