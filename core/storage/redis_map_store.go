@@ -57,6 +57,7 @@ func (s *RedisMapStore) SetDecoder(decoder func(input map[string]string) (output
 }
 
 // GetAll returns all results for the given keys, prepending the prefix to the keys if necessary
+// This function will migrate outdated results to newer versions if migrations are set
 func (s *RedisMapStore) GetAll(keys []string, options *ListOptions) ([]interface{}, error) {
 	if len(keys) == 0 {
 		return []interface{}{}, nil
@@ -94,6 +95,7 @@ func (s *RedisMapStore) GetAll(keys []string, options *ListOptions) ([]interface
 	results := make([]interface{}, len(selectedKeys))
 	for i, key := range selectedKeys {
 		if result, err := cmds[key].Result(); err == nil {
+			result, _ = s.migrate(key, result)
 			if result, err := s.decoder(result); err == nil {
 				results[i] = result
 			}
@@ -128,6 +130,7 @@ func (s *RedisMapStore) List(selector string, options *ListOptions) ([]interface
 }
 
 // Get one result, prepending the prefix to the key if necessary
+// This function will migrate outdated results to newer versions if migrations are set
 func (s *RedisMapStore) Get(key string) (interface{}, error) {
 	if !strings.HasPrefix(key, s.prefix) {
 		key = s.prefix + key
@@ -148,6 +151,7 @@ func (s *RedisMapStore) Get(key string) (interface{}, error) {
 }
 
 // GetFields for a record, prepending the prefix to the key if necessary
+// This function does *not* migrate outdated results to newer versions
 func (s *RedisMapStore) GetFields(key string, fields ...string) (interface{}, error) {
 	if !strings.HasPrefix(key, s.prefix) {
 		key = s.prefix + key
