@@ -357,6 +357,7 @@ ttnctl devices set can be used to set properties of a device.
       --app-eui string       Set AppEUI
       --app-key string       Set AppKey
       --app-s-key string     Set AppSKey
+      --description string   Set Description
       --dev-addr string      Set DevAddr
       --dev-eui string       Set DevEUI
       --disable-fcnt-check   Disable FCnt check
