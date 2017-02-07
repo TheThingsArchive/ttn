@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/TheThingsNetwork/go-utils/log"
+	"github.com/TheThingsNetwork/ttn/api/fields"
 	"github.com/TheThingsNetwork/ttn/api/gateway"
 	"github.com/TheThingsNetwork/ttn/utils/backoff"
 	"github.com/golang/protobuf/ptypes/empty"
@@ -211,7 +212,7 @@ func NewMonitoredUplinkStream(client RouterClientForGateway) UplinkStream {
 			// Send
 			go func() {
 				for message := range ch {
-					s.ctx.Debug("Sending Uplink message")
+					s.ctx.WithFields(fields.Get(message)).Debug("Sending Uplink message")
 					if err := client.Send(message); err != nil {
 						s.ctx.WithError(err).Warn("Error sending Uplink message")
 						break
@@ -332,7 +333,7 @@ func NewMonitoredDownlinkStream(client RouterClientForGateway) DownlinkStream {
 			for {
 				message, err = client.Recv()
 				if message != nil {
-					s.ctx.Debug("Receiving Downlink message")
+					s.ctx.WithFields(fields.Get(message)).Debug("Receiving Downlink message")
 					if err := message.Validate(); err != nil {
 						s.ctx.WithError(err).Warn("Invalid Downlink")
 						continue

@@ -128,10 +128,14 @@ func fillProtocol(m interface{}, f log.Fields) {
 		}
 	}
 	if m, ok := m.(hasProtocolConfiguration); ok {
-		fillProtocolConfig(m.GetProtocolConfiguration(), f)
+		if cfg := m.GetProtocolConfiguration(); cfg != nil {
+			fillProtocolConfig(cfg, f)
+		}
 	}
 	if m, ok := m.(hasProtocolConfig); ok {
-		fillProtocolConfig(m.GetProtocolConfig(), f)
+		if cfg := m.GetProtocolConfig(); cfg != nil {
+			fillProtocolConfig(cfg, f)
+		}
 	}
 }
 
@@ -183,10 +187,14 @@ func fillGateway(m interface{}, f log.Fields) {
 		}
 	}
 	if m, ok := m.(hasGatewayConfiguration); ok {
-		fillGatewayConfig(m.GetGatewayConfiguration(), f)
+		if cfg := m.GetGatewayConfiguration(); cfg != nil {
+			fillGatewayConfig(cfg, f)
+		}
 	}
 	if m, ok := m.(hasGatewayConfig); ok {
-		fillGatewayConfig(m.GetGatewayConfig(), f)
+		if cfg := m.GetGatewayConfig(); cfg != nil {
+			fillGatewayConfig(cfg, f)
+		}
 	}
 }
 

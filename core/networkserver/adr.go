@@ -140,7 +140,7 @@ func (n *networkServer) handleDownlinkADR(message *pb_broker.DownlinkMessage, de
 		powerIdx, _ = fp.GetTxPowerIndexFor(fp.DefaultTXPower)
 	}
 
-	if dev.ADR.DataRate == dataRate && dev.ADR.TxPower == txPower {
+	if dev.ADR.DataRate == dataRate && dev.ADR.TxPower == txPower && !dev.Options.DisableFCntCheck {
 		lossPercentage := lossPercentage(frames)
 		switch {
 		case lossPercentage <= 5:

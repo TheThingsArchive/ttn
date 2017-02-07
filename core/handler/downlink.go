@@ -142,6 +142,9 @@ func (h *handler) HandleDownlink(appDownlink *types.DownlinkMessage, downlink *p
 		}
 	}
 
+	downlink.Message = nil
+	downlink.UnmarshalPayload()
+
 	h.status.downlink.Mark(1)
 
 	ctx.Debug("Send Downlink")
