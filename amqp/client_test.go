@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/smartystreets/assertions"
 	AMQP "github.com/streadway/amqp"
 )
@@ -85,27 +86,44 @@ func TestReopenChannelClient(t *testing.T) {
 	a.So(err, ShouldBeNil)
 	defer c.Disconnect()
 
-	p := &DefaultChannelClient{
-		ctx:    ctx,
-		client: c,
-	}
-	err = p.Open()
+	publisher := c.NewPublisher("amq.topic")
+	err = publisher.Open()
 	a.So(err, ShouldBeNil)
-	defer p.Close()
+	defer publisher.Close()
 
-	test := func() error {
+	subscriber := c.NewSubscriber("amq.topic", "", false, false)
+	err = subscriber.Open()
+	a.So(err, ShouldBeNil)
+	defer subscriber.Close()
+
+	downs := make(chan types.DownlinkMessage, 1)
+	err = subscriber.SubscribeDownlink(func(_ Subscriber, appID string, _ string, msg types.DownlinkMessage) {
+		a.So(appID, ShouldEqual, "app")
+		ctx.Debugf("Got downlink message")
+		downs <- msg
+	})
+	a.So(err, ShouldBeNil)
+
+	test := func() {
 		ctx.Debug("Testing publish")
-		return p.channel.Publish("", "test", false, false, AMQP.Publishing{
-			Body: []byte("test"),
+		err := publisher.PublishDownlink(types.DownlinkMessage{
+			AppID: "app",
 		})
+		a.So(err, ShouldBeNil)
+		select {
+		case <-downs:
+		case <-time.After(100 * time.Millisecond):
+			panic("Published message didn't come in in time")
+		}
+		return
 	}
 
 	// First attempt should be OK
-	err = test()
-	a.So(err, ShouldBeNil)
+	test()
 
 	// Make sure that the old channel is closed
-	p.channel.Close()
+	publisher.(*DefaultPublisher).channel.Close()
+	subscriber.(*DefaultSubscriber).channel.Close()
 
 	// Simulate a connection close so a new channel should be opened
 	closed <- AMQP.ErrClosed
@@ -114,6 +132,6 @@ func TestReopenChannelClient(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 
 	// Second attempt should be OK as well and will only work on a new channel
-	err = test()
+	test()
 	a.So(err, ShouldBeNil)
 }
