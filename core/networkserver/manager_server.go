@@ -111,6 +111,7 @@ func (n *networkServerManager) SetDevice(ctx context.Context, in *pb_lorawan.Dev
 	dev.DevEUI = *in.DevEui
 	dev.FCntUp = in.FCntUp
 	dev.FCntDown = in.FCntDown
+	dev.ADR = device.ADRSettings{Band: dev.ADR.Band, Margin: dev.ADR.Margin}
 
 	dev.Options = device.Options{
 		DisableFCntCheck:      in.DisableFCntCheck,
