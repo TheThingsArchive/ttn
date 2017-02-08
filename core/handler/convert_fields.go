@@ -148,7 +148,7 @@ func (f *UplinkFunctions) Validate(fields map[string]interface{}, port uint8) (b
 		Validator(fields, port)
 	`, f.Validator)
 
-	value, err := functions.RunCode("valdator", code, env, timeOut, f.Logger)
+	value, err := functions.RunCode("validator", code, env, timeOut, f.Logger)
 	if err != nil {
 		return false, err
 	}
