@@ -36,6 +36,7 @@ func TestConvertFieldsUp(t *testing.T) {
 
 	h := &handler{
 		applications: application.NewRedisApplicationStore(GetRedisClient(), "handler-test-convert-fields-up"),
+		mqttEvent:    make(chan *types.DeviceEvent, 1),
 	}
 
 	// No functions
@@ -72,12 +73,18 @@ func TestConvertFieldsUp(t *testing.T) {
 
 	// Function error
 	app.StartUpdate()
-	app.Validator = `function Validator (data) { throw "expected"; }`
+	app.Validator = `function Validator (data) { throw new Error("expected"); }`
 	h.applications.Set(app)
 	ttnUp, appUp = buildConversionUplink(appID)
 	err = h.ConvertFieldsUp(GetLogger(t, "TestConvertFieldsUp"), ttnUp, appUp, nil)
 	a.So(err, ShouldBeNil)
 	a.So(appUp.PayloadFields, ShouldBeEmpty)
+
+	a.So(len(h.mqttEvent), ShouldEqual, 1)
+	evt := <-h.mqttEvent
+	data, ok := evt.Data.(types.ErrorEventData)
+	a.So(ok, ShouldBeTrue)
+	fmt.Println(data.Error)
 }
 
 func TestDecode(t *testing.T) {
