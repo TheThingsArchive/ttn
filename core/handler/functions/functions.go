@@ -39,10 +39,10 @@ func RunCode(name, code string, env map[string]interface{}, timeout time.Duratio
 		if caught := recover(); caught != nil {
 			val = otto.Value{}
 			if caught == errTimeOutExceeded {
-				err = errors.NewErrInternal(fmt.Sprintf("Interrupted javascript execution after %v", duration))
+				err = errors.NewErrInternal(fmt.Sprintf("Interrupted javascript execution for %s after %v", name, duration))
 				return
 			} else {
-				err = errors.NewErrInternal(fmt.Sprintf("Fatal error in payload function: %s", caught))
+				err = errors.NewErrInternal(fmt.Sprintf("Fatal error in %s: %s", name, caught))
 			}
 		}
 	}()
@@ -56,5 +56,10 @@ func RunCode(name, code string, env map[string]interface{}, timeout time.Duratio
 		}
 	}()
 
-	return vm.Run(code)
+	val, err = vm.Run(code)
+	if err != nil {
+		return val, errors.NewErrInternal(fmt.Sprintf("%s threw error: %s", name, err))
+	}
+
+	return val, nil
 }

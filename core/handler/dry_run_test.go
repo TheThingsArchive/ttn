@@ -93,11 +93,11 @@ func TestDryUplinkFields(t *testing.T) {
 	a.So(res.Valid, ShouldBeTrue)
 	a.So(res.Logs, ShouldResemble, []*pb.LogEntry{
 		&pb.LogEntry{
-			Function: "decoder",
+			Function: "Decoder",
 			Fields:   []string{`"hi"`, "11"},
 		},
 		&pb.LogEntry{
-			Function: "converter",
+			Function: "Converter",
 			Fields:   []string{`"foo"`},
 		},
 	})
@@ -162,7 +162,7 @@ func TestDryDownlinkFields(t *testing.T) {
 	a.So(res.Payload, ShouldResemble, []byte{1, 2, 3})
 	a.So(res.Logs, ShouldResemble, []*pb.LogEntry{
 		&pb.LogEntry{
-			Function: "encoder",
+			Function: "Encoder",
 			Fields:   []string{`"hello"`, `{"foo":33}`},
 		},
 	})
@@ -251,11 +251,11 @@ func TestLogs(t *testing.T) {
 	a.So(err, ShouldBeNil)
 	a.So(res.Logs, ShouldResemble, []*pb.LogEntry{
 		&pb.LogEntry{
-			Function: "encoder",
+			Function: "Encoder",
 			Fields:   []string{`"foo"`, "1", `"bar"`, `"1970-01-01T00:00:00.000Z"`},
 		},
 		&pb.LogEntry{
-			Function: "encoder",
+			Function: "Encoder",
 			Fields:   []string{"1", `{"baa":"foo","bal":{"bar":10},"baz":10}`},
 		},
 	})

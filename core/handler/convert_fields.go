@@ -90,9 +90,9 @@ func (f *UplinkFunctions) Decode(payload []byte, port uint8) (map[string]interfa
 		Decoder(payload.slice(0), port);
 	`, f.Decoder)
 
-	value, err := functions.RunCode("decoder", code, env, timeOut, f.Logger)
+	value, err := functions.RunCode("Decoder", code, env, timeOut, f.Logger)
 	if err != nil {
-		return nil, errors.NewErrInternal(fmt.Sprintf("Decoder threw error: %s", err))
+		return nil, err
 	}
 
 	if !value.IsObject() {
@@ -125,9 +125,9 @@ func (f *UplinkFunctions) Convert(fields map[string]interface{}, port uint8) (ma
 		Converter(fields, port)
 	`, f.Converter)
 
-	value, err := functions.RunCode("converter", code, env, timeOut, f.Logger)
+	value, err := functions.RunCode("Converter", code, env, timeOut, f.Logger)
 	if err != nil {
-		return nil, errors.NewErrInternal(fmt.Sprintf("Convertor threw error: %s", err))
+		return nil, err
 	}
 
 	if !value.IsObject() {
@@ -159,9 +159,9 @@ func (f *UplinkFunctions) Validate(fields map[string]interface{}, port uint8) (b
 		Validator(fields, port)
 	`, f.Validator)
 
-	value, err := functions.RunCode("validator", code, env, timeOut, f.Logger)
+	value, err := functions.RunCode("Validator", code, env, timeOut, f.Logger)
 	if err != nil {
-		return false, errors.NewErrInternal(fmt.Sprintf("Validator threw error: %s", err))
+		return false, err
 	}
 
 	if !value.IsBoolean() {
@@ -213,7 +213,7 @@ func (f *DownlinkFunctions) Encode(payload map[string]interface{}, port uint8) (
 		Encoder(payload, port)
 	`, f.Encoder)
 
-	value, err := functions.RunCode("encoder", code, env, timeOut, f.Logger)
+	value, err := functions.RunCode("Encoder", code, env, timeOut, f.Logger)
 	if err != nil {
 		return nil, err
 	}
