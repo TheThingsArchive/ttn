@@ -150,8 +150,10 @@ func TestHandleDownlinkADR(t *testing.T) {
 	dev := &device.Device{AppEUI: appEUI, DevEUI: devEUI}
 
 	message := adrInitDownlinkMessage()
+
 	var shouldReturnError = func() {
 		a := New(t)
+		message = adrInitDownlinkMessage()
 		err := ns.handleDownlinkADR(message, dev)
 		a.So(err, ShouldNotBeNil)
 		a.So(message.Message.GetLorawan().GetMacPayload().FOpts, ShouldBeEmpty)
@@ -162,6 +164,7 @@ func TestHandleDownlinkADR(t *testing.T) {
 	}
 	var nothingShouldHappen = func() {
 		a := New(t)
+		message = adrInitDownlinkMessage()
 		err := ns.handleDownlinkADR(message, dev)
 		a.So(err, ShouldBeNil)
 		a.So(message.Message.GetLorawan().GetMacPayload().FOpts, ShouldBeEmpty)
@@ -197,6 +200,7 @@ func TestHandleDownlinkADR(t *testing.T) {
 	nothingShouldHappen()
 
 	dev.ADR.Band = "EU_863_870"
+
 	err := ns.handleDownlinkADR(message, dev)
 	a.So(err, ShouldBeNil)
 	fOpts := message.Message.GetLorawan().GetMacPayload().FOpts
@@ -241,7 +245,11 @@ func TestHandleDownlinkADR(t *testing.T) {
 			dev.ADR.NbTrans = nbTrans
 			resetFrames(dev.AppEUI, dev.DevEUI)
 			history.Push(&device.Frame{SNR: 10, GatewayCount: 3, FCnt: uint32(20 + loss)})
-			shouldHaveNbTrans(exp)
+			if nbTrans == exp {
+				nothingShouldHappen()
+			} else {
+				shouldHaveNbTrans(exp)
+			}
 		}
 	}
 

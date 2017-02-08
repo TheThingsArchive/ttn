@@ -28,7 +28,7 @@ type DefaultClient struct {
 	url      string
 	ctx      log.Interface
 	conn     *AMQP.Connection
-	mutex    *sync.Mutex
+	mutex    sync.Mutex
 	channels map[*DefaultChannelClient]*AMQP.Channel
 }
 
@@ -38,11 +38,19 @@ type ChannelClient interface {
 	io.Closer
 }
 
+// ChannelClientUser is a user of a channel, e.g. a publisher or consumer
+type channelClientUser interface {
+	use(*AMQP.Channel) error
+	close()
+}
+
 // DefaultChannelClient represents the default client of an AMQP channel
 type DefaultChannelClient struct {
 	ctx          log.Interface
 	client       *DefaultClient
 	channel      *AMQP.Channel
+	usersMutex   sync.RWMutex
+	users        []channelClientUser
 	name         string
 	exchange     string
 	exchangeType string
@@ -71,7 +79,6 @@ func NewClient(ctx log.Interface, username, password, host string) Client {
 	return &DefaultClient{
 		ctx:      ctx,
 		url:      fmt.Sprintf("amqp://%s@%s", credentials, host),
-		mutex:    &sync.Mutex{},
 		channels: make(map[*DefaultChannelClient]*AMQP.Channel),
 	}
 }
@@ -118,6 +125,13 @@ func (c *DefaultClient) connect(reconnect bool) (chan *AMQP.Error, error) {
 			}
 			c.ctx.Infof("Reopened channel %s for %s", user.name, user.exchange)
 			user.channel = channel
+			user.usersMutex.RLock()
+			defer user.usersMutex.RUnlock()
+			for _, channelUser := range user.users {
+				if err := channelUser.use(channel); err != nil {
+					c.ctx.WithError(err).Warnf("Failed to use channel (%s)", err)
+				}
+			}
 			c.channels[user] = channel
 		}
 	}
@@ -200,5 +214,16 @@ func (p *DefaultChannelClient) Open() error {
 
 // Close closes the channel
 func (p *DefaultChannelClient) Close() error {
+	p.usersMutex.RLock()
+	defer p.usersMutex.RUnlock()
+	for _, user := range p.users {
+		user.close()
+	}
 	return p.client.closeChannel(p)
+}
+
+func (p *DefaultChannelClient) addUser(u channelClientUser) {
+	p.usersMutex.Lock()
+	defer p.usersMutex.Unlock()
+	p.users = append(p.users, u)
 }

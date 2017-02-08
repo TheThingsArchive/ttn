@@ -140,28 +140,31 @@ func (n *networkServer) handleDownlinkADR(message *pb_broker.DownlinkMessage, de
 		powerIdx, _ = fp.GetTxPowerIndexFor(fp.DefaultTXPower)
 	}
 
+	var nbTrans = dev.ADR.NbTrans
 	if dev.ADR.DataRate == dataRate && dev.ADR.TxPower == txPower && !dev.Options.DisableFCntCheck {
 		lossPercentage := lossPercentage(frames)
 		switch {
 		case lossPercentage <= 5:
-			dev.ADR.NbTrans--
+			nbTrans--
 		case lossPercentage <= 10:
 			// don't change
 		case lossPercentage <= 30:
-			dev.ADR.NbTrans++
+			nbTrans++
 		default:
-			dev.ADR.NbTrans += 2
+			nbTrans += 2
 		}
-		if dev.ADR.NbTrans < 1 {
-			dev.ADR.NbTrans = 1
+		if nbTrans < 1 {
+			nbTrans = 1
 		}
-		if dev.ADR.NbTrans > 3 {
-			dev.ADR.NbTrans = 3
+		if nbTrans > 3 {
+			nbTrans = 3
 		}
 	}
 
-	dev.ADR.DataRate = dataRate
-	dev.ADR.TxPower = txPower
+	if dev.ADR.DataRate == dataRate && dev.ADR.TxPower == txPower && dev.ADR.NbTrans == nbTrans {
+		return nil
+	}
+	dev.ADR.DataRate, dev.ADR.TxPower, dev.ADR.NbTrans = dataRate, txPower, nbTrans
 
 	// Set MAC command
 	lorawanDownlinkMac := message.GetMessage().GetLorawan().GetMacPayload()

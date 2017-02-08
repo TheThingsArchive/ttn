@@ -11,6 +11,7 @@ import (
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_handler "github.com/TheThingsNetwork/ttn/api/handler"
 	"github.com/TheThingsNetwork/ttn/api/trace"
+	"github.com/TheThingsNetwork/ttn/core/networkserver/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/random"
@@ -132,6 +133,7 @@ func (n *networkServer) HandleActivate(activation *pb_handler.DeviceActivationRe
 	dev.NwkSKey = *lorawan.NwkSKey
 	dev.FCntUp = 0
 	dev.FCntDown = 0
+	dev.ADR = device.ADRSettings{Band: dev.ADR.Band, Margin: dev.ADR.Margin}
 
 	if band := meta.GetLorawan().GetRegion().String(); band != "" {
 		dev.ADR.Band = band

@@ -33,7 +33,18 @@ func (h *handler) ConvertFieldsUp(ctx ttnlog.Interface, _ *pb_broker.Deduplicate
 
 	fields, valid, err := functions.Process(appUp.PayloadRaw, appUp.FPort)
 	if err != nil {
-		return nil // Do not set fields if processing failed
+
+		// Emit the error
+		h.mqttEvent <- &types.DeviceEvent{
+			AppID: appUp.AppID,
+			DevID: appUp.DevID,
+			Event: types.UplinkErrorEvent,
+			Data:  types.ErrorEventData{Error: err.Error()},
+		}
+
+		// Do not set fields if processing failed, but allow the handler to continue processing
+		// without payload functions
+		return nil
 	}
 
 	if !valid {
@@ -79,7 +90,7 @@ func (f *UplinkFunctions) Decode(payload []byte, port uint8) (map[string]interfa
 		Decoder(payload.slice(0), port);
 	`, f.Decoder)
 
-	value, err := functions.RunCode("decoder", code, env, timeOut, f.Logger)
+	value, err := functions.RunCode("Decoder", code, env, timeOut, f.Logger)
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +125,7 @@ func (f *UplinkFunctions) Convert(fields map[string]interface{}, port uint8) (ma
 		Converter(fields, port)
 	`, f.Converter)
 
-	value, err := functions.RunCode("converter", code, env, timeOut, f.Logger)
+	value, err := functions.RunCode("Converter", code, env, timeOut, f.Logger)
 	if err != nil {
 		return nil, err
 	}
@@ -148,7 +159,7 @@ func (f *UplinkFunctions) Validate(fields map[string]interface{}, port uint8) (b
 		Validator(fields, port)
 	`, f.Validator)
 
-	value, err := functions.RunCode("valdator", code, env, timeOut, f.Logger)
+	value, err := functions.RunCode("Validator", code, env, timeOut, f.Logger)
 	if err != nil {
 		return false, err
 	}
@@ -202,7 +213,7 @@ func (f *DownlinkFunctions) Encode(payload map[string]interface{}, port uint8) (
 		Encoder(payload, port)
 	`, f.Encoder)
 
-	value, err := functions.RunCode("encoder", code, env, timeOut, f.Logger)
+	value, err := functions.RunCode("Encoder", code, env, timeOut, f.Logger)
 	if err != nil {
 		return nil, err
 	}
