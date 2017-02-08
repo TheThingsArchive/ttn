@@ -42,6 +42,23 @@ func TestRunCode(t *testing.T) {
 	})
 }
 
+func TestRunCodeThrow(t *testing.T) {
+	a := New(t)
+
+	logger := NewEntryLogger()
+	env := map[string]interface{}{}
+
+	code := `
+		(function () {
+			throw new Error("This is an error")
+			return 10
+		})()
+	`
+
+	_, err := RunCode("test", code, env, time.Second, logger)
+	a.So(err, ShouldNotBeNil)
+}
+
 var result string
 
 func BenchmarkJSON(b *testing.B) {
