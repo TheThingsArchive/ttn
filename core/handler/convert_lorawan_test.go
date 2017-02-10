@@ -55,7 +55,7 @@ func TestConvertFromLoRaWAN(t *testing.T) {
 
 	err = h.ConvertFromLoRaWAN(h.Ctx, ttnUp, appUp, device)
 	a.So(err, ShouldBeNil)
-	a.So(appUp.IsConfirmed, ShouldBeTrue)
+	a.So(appUp.Confirmed, ShouldBeTrue)
 
 }
 
