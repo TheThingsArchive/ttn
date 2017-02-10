@@ -50,7 +50,7 @@ func TestParseAuthServer(t *testing.T) {
 func TestInitAuthServers(t *testing.T) {
 	for _, env := range strings.Split("ACCOUNT_SERVER_PROTO ACCOUNT_SERVER_USERNAME ACCOUNT_SERVER_PASSWORD ACCOUNT_SERVER_URL", " ") {
 		if os.Getenv(env) == "" {
-			t.Skipf("Skipping auth server test: %s configured", env)
+			t.Skipf("Skipping auth server test: %s not configured", env)
 		}
 	}
 
@@ -102,7 +102,7 @@ func TestInitAuthServers(t *testing.T) {
 func TestValidateTTNAuthContext(t *testing.T) {
 	for _, env := range strings.Split("ACCOUNT_SERVER_PROTO ACCOUNT_SERVER_URL", " ") {
 		if os.Getenv(env) == "" {
-			t.Skipf("Skipping auth server test: %s configured", env)
+			t.Skipf("Skipping auth server test: %s not configured", env)
 		}
 	}
 	accountServer := fmt.Sprintf("%s://%s",
@@ -155,33 +155,61 @@ func TestValidateTTNAuthContext(t *testing.T) {
 func TestExchangeAppKeyForToken(t *testing.T) {
 	for _, env := range strings.Split("ACCOUNT_SERVER_PROTO ACCOUNT_SERVER_USERNAME ACCOUNT_SERVER_PASSWORD ACCOUNT_SERVER_URL APP_ID APP_TOKEN", " ") {
 		if os.Getenv(env) == "" {
-			t.Skipf("Skipping auth server test: %s configured", env)
+			t.Skipf("Skipping auth server test: %s not configured", env)
 		}
 	}
 
 	a := assertions.New(t)
-	c := new(Component)
-	c.Config.KeyDir = os.TempDir()
-	c.Config.AuthServers = map[string]string{
-		"ttn-account-v2": fmt.Sprintf("%s://%s:%s@%s",
-			os.Getenv("ACCOUNT_SERVER_PROTO"),
-			os.Getenv("ACCOUNT_SERVER_USERNAME"),
-			os.Getenv("ACCOUNT_SERVER_PASSWORD"),
-			os.Getenv("ACCOUNT_SERVER_URL"),
-		),
-	}
-	c.initAuthServers()
 
 	{
-		token, err := c.ExchangeAppKeyForToken(os.Getenv("APP_ID"), "ttn-account-v2."+os.Getenv("APP_TOKEN"))
-		a.So(err, assertions.ShouldBeNil)
-		a.So(token, assertions.ShouldNotBeEmpty)
+		c := new(Component)
+		c.Config.KeyDir = os.TempDir()
+		c.Config.AuthServers = map[string]string{
+			"ttn-account-v2": fmt.Sprintf("%s://%s:%s@%s",
+				os.Getenv("ACCOUNT_SERVER_PROTO"),
+				os.Getenv("ACCOUNT_SERVER_USERNAME"),
+				os.Getenv("ACCOUNT_SERVER_PASSWORD"),
+				os.Getenv("ACCOUNT_SERVER_URL"),
+			),
+		}
+		c.initAuthServers()
+
+		{
+			token, err := c.ExchangeAppKeyForToken(os.Getenv("APP_ID"), "ttn-account-v2."+os.Getenv("APP_TOKEN"))
+			a.So(err, assertions.ShouldBeNil)
+			a.So(token, assertions.ShouldNotBeEmpty)
+		}
+
+		{
+			token, err := c.ExchangeAppKeyForToken(os.Getenv("APP_ID"), os.Getenv("APP_TOKEN"))
+			a.So(err, assertions.ShouldBeNil)
+			a.So(token, assertions.ShouldNotBeEmpty)
+		}
 	}
 
-	{
-		token, err := c.ExchangeAppKeyForToken(os.Getenv("APP_ID"), os.Getenv("APP_TOKEN"))
-		a.So(err, assertions.ShouldBeNil)
-		a.So(token, assertions.ShouldNotBeEmpty)
+	if componentToken := os.Getenv("COMPONENT_TOKEN"); componentToken != "" {
+		c := new(Component)
+		c.Config.KeyDir = os.TempDir()
+		c.Config.AuthServers = map[string]string{
+			"ttn-account-v2": fmt.Sprintf("%s://%s",
+				os.Getenv("ACCOUNT_SERVER_PROTO"),
+				os.Getenv("ACCOUNT_SERVER_URL"),
+			),
+		}
+		c.AccessToken = componentToken
+		c.initAuthServers()
+
+		{
+			token, err := c.ExchangeAppKeyForToken(os.Getenv("APP_ID"), "ttn-account-v2."+os.Getenv("APP_TOKEN"))
+			a.So(err, assertions.ShouldBeNil)
+			a.So(token, assertions.ShouldNotBeEmpty)
+		}
+
+		{
+			token, err := c.ExchangeAppKeyForToken(os.Getenv("APP_ID"), os.Getenv("APP_TOKEN"))
+			a.So(err, assertions.ShouldBeNil)
+			a.So(token, assertions.ShouldNotBeEmpty)
+		}
 	}
 }
 

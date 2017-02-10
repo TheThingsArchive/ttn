@@ -13,10 +13,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/TheThingsNetwork/go-account-lib/account"
+	"github.com/TheThingsNetwork/go-account-lib/auth"
 	"github.com/TheThingsNetwork/go-account-lib/cache"
 	"github.com/TheThingsNetwork/go-account-lib/claims"
 	"github.com/TheThingsNetwork/go-account-lib/keys"
-	"github.com/TheThingsNetwork/go-account-lib/oauth"
 	"github.com/TheThingsNetwork/go-account-lib/tokenkey"
 	"github.com/TheThingsNetwork/ttn/api"
 	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
@@ -212,17 +213,30 @@ func (c *Component) ExchangeAppKeyForToken(appID, key string) (string, error) {
 		return "", fmt.Errorf("Auth server %s not registered", issuer)
 	}
 
-	srv, _ := parseAuthServer(issuer)
-
-	oauth := oauth.NewWithCache(srv.url, &oauth.Client{
-		ID:     srv.username,
-		Secret: srv.password,
-	}, oauthCache)
-
-	token, err := oauth.ExchangeAppKeyForToken(appID, key)
+	token, err := getTokenFromCache(oauthCache, appID, key)
 	if err != nil {
 		return "", err
 	}
+
+	if token != nil {
+		return token.AccessToken, nil
+	}
+
+	srv, _ := parseAuthServer(issuer)
+	acc := account.New(srv.url)
+
+	if srv.username != "" {
+		acc = acc.WithAuth(auth.BasicAuth(srv.username, srv.password))
+	} else {
+		acc = acc.WithAuth(auth.AccessToken(c.AccessToken))
+	}
+
+	token, err = acc.ExchangeAppKeyForToken(appID, key)
+	if err != nil {
+		return "", err
+	}
+
+	saveTokenToCache(oauthCache, appID, key, token)
 
 	return token.AccessToken, nil
 }
