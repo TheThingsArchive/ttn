@@ -19,7 +19,7 @@
   "hardware_serial": "0102030405060708", // In case of LoRaWAN: the DevEUI
   "port": 1,                          // LoRaWAN FPort
   "counter": 2,                       // LoRaWAN frame counter
-  "is_retry": false,                  // Is set to true if this message is a retry (you could also detect this from the counter) - could be left out
+  "is_retry": false,                  // Is set to true if this message is a retry (you could also detect this from the counter)
   "payload_raw": "AQIDBA==",          // Base64 encoded payload: [0x01, 0x02, 0x03, 0x04]
   "payload_fields": {},               // Object containing the results from the payload functions - left out when empty
   "metadata": {
@@ -38,9 +38,9 @@
         "rssi": -25,                    // Signal strength of the received message
         "snr": 5,                       // Signal to noise ratio of the received message
         "rf_chain": 0,                  // RF chain where the gateway received the message
-        "latitude":52.1234,             // Latitude of the gateway reported in its status updates
-        "longitude":6.1234,             // Longitude of the gateway
-        "altitude":6                    // Altitude of the gateway
+        "latitude": 52.1234,            // Latitude of the gateway reported in its status updates
+        "longitude": 6.1234,            // Longitude of the gateway
+        "altitude": 6                   // Altitude of the gateway
       },
       //...more if received by more gateways...
     ]
