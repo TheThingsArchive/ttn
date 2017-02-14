@@ -4,6 +4,7 @@
 package random
 
 import (
+	crypto "crypto/rand"
 	"encoding/binary"
 	"fmt"
 	"math"
@@ -146,15 +147,6 @@ func (r *TTNRandom) Lsnr() float32 {
 	return float32(math.Floor((-0.1*math.Exp(x)+5.5)*10) / 10)
 }
 
-// Bytes generates a random byte slice of length n
-func (r *TTNRandom) Bytes(n int) []byte {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	p := make([]byte, n)
-	r.rand.Read(p)
-	return p
-}
-
 // Intn returns random int with max n
 func Intn(n int) int {
 	return global.Intn(n)
@@ -197,5 +189,10 @@ func Lsnr() float32 {
 
 // Bytes generates a random byte slice of length n
 func Bytes(n int) []byte {
-	return global.Bytes(n)
+	p := make([]byte, n)
+	_, err := crypto.Read(p)
+	if err != nil {
+		panic(fmt.Errorf("random.Bytes: %s", err))
+	}
+	return p
 }
