@@ -87,6 +87,12 @@ func Dial(address string) (*grpc.ClientConn, error) {
 	return dial(address, tlsConfig, true)
 }
 
+// DialSafely dials an address with TLS only and fails if the server is not using TLS with a known CA
+func DialSafely(address string) (*grpc.ClientConn, error) {
+	tlsConfig := &tls.Config{RootCAs: RootCAs}
+	return dial(address, tlsConfig, false)
+}
+
 // DialWithCert dials the address using the given TLS cert
 func DialWithCert(address string, cert string) (*grpc.ClientConn, error) {
 	rootCAs := x509.NewCertPool()
