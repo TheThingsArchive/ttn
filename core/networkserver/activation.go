@@ -21,7 +21,7 @@ import (
 func (n *networkServer) getDevAddr(constraints ...string) (types.DevAddr, error) {
 	// Generate random DevAddr bytes
 	var devAddr types.DevAddr
-	copy(devAddr[:], random.Bytes(4))
+	random.FillBytes(devAddr[:])
 
 	// Get a random prefix that matches the constraints
 	prefixes := n.GetPrefixesFor(constraints...)

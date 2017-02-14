@@ -47,7 +47,7 @@ var devicesRegisterCmd = &cobra.Command{
 			}
 		} else {
 			ctx.Info("Generating random DevEUI...")
-			copy(devEUI[1:], random.Bytes(7))
+			random.FillBytes(devEUI[1:])
 		}
 
 		var appKey types.AppKey
@@ -58,7 +58,7 @@ var devicesRegisterCmd = &cobra.Command{
 			}
 		} else {
 			ctx.Info("Generating random AppKey...")
-			copy(appKey[:], random.Bytes(16))
+			random.FillBytes(appKey[:])
 		}
 
 		device := &handler.Device{

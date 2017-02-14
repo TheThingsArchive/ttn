@@ -190,9 +190,15 @@ func Lsnr() float32 {
 // Bytes generates a random byte slice of length n
 func Bytes(n int) []byte {
 	p := make([]byte, n)
+	FillBytes(p)
+	return p
+}
+
+// FillBytes fills the byte slice with random bytes. It does not use an
+// intermediate buffer
+func FillBytes(p []byte) {
 	_, err := crypto.Read(p)
 	if err != nil {
 		panic(fmt.Errorf("random.Bytes: %s", err))
 	}
-	return p
 }
