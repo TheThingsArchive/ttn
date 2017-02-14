@@ -5,6 +5,7 @@ package random
 
 import (
 	crypto "crypto/rand"
+	"encoding/base64"
 	"encoding/binary"
 	"fmt"
 	"math"
@@ -63,6 +64,14 @@ func (r *TTNRandom) String(n int) string {
 	}
 
 	return string(b)
+}
+
+// StrongString creates a cryptographically strong random string
+// of length n, it uses the characters of base64.URLEncoding
+func StrongString(n int) string {
+	l := base64.RawURLEncoding.DecodedLen(n)
+	b := Bytes(l + 2)
+	return base64.RawURLEncoding.EncodeToString(b)
 }
 
 // Token generate a random 2-bytes token
