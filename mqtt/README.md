@@ -31,13 +31,13 @@
     "coding_rate": "4/5",             // Coding rate that was used
     "gateways": [
       {
-        "id": "ttn-herengracht-ams",    // EUI of the gateway
-        "timestamp": 12345,             // Timestamp when the gateway received the message
-        "time": "1970-01-01T00:00:00Z", // Time when the gateway received the message - left out when gateway does not have synchronized time 
-        "channel": 0,                   // Channel where the gateway received the message
-        "rssi": -25,                    // Signal strength of the received message
-        "snr": 5,                       // Signal to noise ratio of the received message
-        "rf_chain": 0,                  // RF chain where the gateway received the message
+        "gtw_id": "ttn-herengracht-ams", // EUI of the gateway
+        "timestamp": 12345,              // Timestamp when the gateway received the message
+        "time": "1970-01-01T00:00:00Z",  // Time when the gateway received the message - left out when gateway does not have synchronized time
+        "channel": 0,                    // Channel where the gateway received the message
+        "rssi": -25,                     // Signal strength of the received message
+        "snr": 5,                        // Signal to noise ratio of the received message
+        "rf_chain": 0,                   // RF chain where the gateway received the message
       },
       //...more if received by more gateways...
     ]
