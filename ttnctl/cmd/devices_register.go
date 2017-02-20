@@ -5,12 +5,13 @@ package cmd
 
 import (
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
+	"github.com/TheThingsNetwork/go-utils/pseudorandom"
+	"github.com/TheThingsNetwork/go-utils/random"
 	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/api/handler"
 	"github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
-	"github.com/TheThingsNetwork/ttn/utils/random"
 	"github.com/spf13/cobra"
 )
 
@@ -47,7 +48,7 @@ var devicesRegisterCmd = &cobra.Command{
 			}
 		} else {
 			ctx.Info("Generating random DevEUI...")
-			copy(devEUI[1:], random.Bytes(7))
+			pseudorandom.FillBytes(devEUI[1:])
 		}
 
 		var appKey types.AppKey
@@ -58,7 +59,7 @@ var devicesRegisterCmd = &cobra.Command{
 			}
 		} else {
 			ctx.Info("Generating random AppKey...")
-			copy(appKey[:], random.Bytes(16))
+			random.FillBytes(appKey[:])
 		}
 
 		device := &handler.Device{

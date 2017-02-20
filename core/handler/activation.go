@@ -8,6 +8,7 @@ import (
 	"time"
 
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
+	"github.com/TheThingsNetwork/go-utils/random"
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/api/fields"
 	pb "github.com/TheThingsNetwork/ttn/api/handler"
@@ -16,7 +17,6 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/otaa"
-	"github.com/TheThingsNetwork/ttn/utils/random"
 	"github.com/brocaar/lorawan"
 )
 
@@ -188,7 +188,7 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 		// NOTE: As DevNonces are only 2 bytes, we will start rejecting those before we run out of AppNonces.
 		// It might just take some time to get one we didn't use yet...
 		alreadyUsed = false
-		copy(appNonce[:], random.Bytes(3))
+		random.FillBytes(appNonce[:])
 		for _, usedNonce := range dev.UsedAppNonces {
 			if usedNonce == appNonce {
 				alreadyUsed = true
