@@ -38,6 +38,9 @@
         "rssi": -25,                     // Signal strength of the received message
         "snr": 5,                        // Signal to noise ratio of the received message
         "rf_chain": 0,                   // RF chain where the gateway received the message
+        "latitude": 52.1234,             // Latitude of the gateway reported in its status updates
+        "longitude": 6.1234,             // Longitude of the gateway
+        "altitude": 6                    // Altitude of the gateway
       },
       //...more if received by more gateways...
     ]
