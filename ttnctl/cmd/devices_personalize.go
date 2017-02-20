@@ -47,7 +47,7 @@ var devicesPersonalizeCmd = &cobra.Command{
 			}
 		} else {
 			ctx.Info("Generating random NwkSKey...")
-			copy(nwkSKey[:], random.Bytes(16))
+			random.FillBytes(nwkSKey[:])
 		}
 
 		var appSKey types.AppSKey
@@ -58,7 +58,7 @@ var devicesPersonalizeCmd = &cobra.Command{
 			}
 		} else {
 			ctx.Info("Generating random AppSKey...")
-			copy(appSKey[:], random.Bytes(16))
+			random.FillBytes(appSKey[:])
 		}
 
 		conn, manager := util.GetHandlerManager(ctx, appID)
