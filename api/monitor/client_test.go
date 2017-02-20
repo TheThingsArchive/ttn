@@ -38,14 +38,28 @@ func TestClient(t *testing.T) {
 		client, _ := NewClient(ctx, fmt.Sprintf("localhost:%d", port))
 		gtw := client.GatewayClient("dev")
 		a.So(gtw.IsConfigured(), ShouldBeFalse)
-		gtw.SetToken("SOME.AWESOME.JWT")
-		a.So(gtw.IsConfigured(), ShouldBeTrue)
 
-		ctx := gtw.(*gatewayClient).Context()
-		id, _ := api.IDFromContext(ctx)
-		a.So(id, ShouldEqual, "dev")
-		token, _ := api.TokenFromContext(ctx)
-		a.So(token, ShouldEqual, "SOME.AWESOME.JWT")
+		gtwCl := gtw.(*gatewayClient)
+
+		for _, token := range []string{
+			"SOME.AWESOME.JWT", "SOME.COOLER.JWT",
+		} {
+
+			time.AfterFunc(100*time.Millisecond, func() { gtw.SetToken(token) })
+			select {
+			case <-gtw.TokenChanged():
+			case <-time.After(200 * time.Millisecond):
+				t.Error("Token failed to update")
+			}
+
+			a.So(gtw.IsConfigured(), ShouldBeTrue)
+
+			ctx := gtwCl.Context()
+			id, _ := api.IDFromContext(ctx)
+			a.So(id, ShouldEqual, "dev")
+			ctxToken, _ := api.TokenFromContext(ctx)
+			a.So(ctxToken, ShouldEqual, token)
+		}
 
 		a.So(client.Close(), ShouldBeNil)
 	}
@@ -77,6 +91,7 @@ func TestClient(t *testing.T) {
 		}
 
 		// After which statuses will get dropped
+		gtw.SendStatus(&gateway.Status{})
 		err = gtw.SendStatus(&gateway.Status{})
 		a.So(err, ShouldNotBeNil)
 
@@ -110,6 +125,7 @@ func TestClient(t *testing.T) {
 		}
 
 		// After which messages will get dropped
+		gtw.SendUplink(&router.UplinkMessage{})
 		err = gtw.SendUplink(&router.UplinkMessage{})
 		a.So(err, ShouldNotBeNil)
 
@@ -143,6 +159,7 @@ func TestClient(t *testing.T) {
 		}
 
 		// After which messages will get dropped
+		gtw.SendDownlink(&router.DownlinkMessage{})
 		err = gtw.SendDownlink(&router.DownlinkMessage{})
 		a.So(err, ShouldNotBeNil)
 
@@ -173,6 +190,7 @@ func TestClient(t *testing.T) {
 		}
 
 		// After which messages will get dropped
+		client.BrokerClient.SendUplink(&broker.DeduplicatedUplinkMessage{})
 		err = client.BrokerClient.SendUplink(&broker.DeduplicatedUplinkMessage{})
 		a.So(err, ShouldNotBeNil)
 
@@ -203,6 +221,7 @@ func TestClient(t *testing.T) {
 		}
 
 		// After which messages will get dropped
+		client.BrokerClient.SendDownlink(&broker.DownlinkMessage{})
 		err = client.BrokerClient.SendDownlink(&broker.DownlinkMessage{})
 		a.So(err, ShouldNotBeNil)
 

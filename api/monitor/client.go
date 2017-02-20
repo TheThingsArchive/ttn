@@ -156,9 +156,10 @@ func (cl *Client) GatewayClient(id string) (gtwCl GatewayClient) {
 	if !ok {
 		cl.mutex.Lock()
 		gtwCl = &gatewayClient{
-			Ctx:    cl.Ctx.WithField("GatewayID", id),
-			client: cl,
-			id:     id,
+			Ctx:          cl.Ctx.WithField("GatewayID", id),
+			client:       cl,
+			id:           id,
+			tokenChanged: make(chan struct{}),
 		}
 		cl.gateways[id] = gtwCl
 		cl.mutex.Unlock()
@@ -173,7 +174,8 @@ type gatewayClient struct {
 
 	Ctx ttnlog.Interface
 
-	id, token string
+	id, token    string
+	tokenChanged chan struct{}
 
 	status struct {
 		init   sync.Once
@@ -199,18 +201,32 @@ type gatewayClient struct {
 
 // GatewayClient is used as the main client for Gateways to communicate with the monitor
 type GatewayClient interface {
-	SetToken(token string)
+	Close() (err error)
+
 	IsConfigured() bool
+
+	SetToken(token string)
+	TokenChanged() <-chan struct{}
+
 	SendStatus(status *gateway.Status) (err error)
 	SendUplink(msg *router.UplinkMessage) (err error)
 	SendDownlink(msg *router.DownlinkMessage) (err error)
-	Close() (err error)
 }
 
 func (cl *gatewayClient) SetToken(token string) {
 	cl.Lock()
 	defer cl.Unlock()
 	cl.token = token
+
+	close(cl.tokenChanged)
+	cl.tokenChanged = make(chan struct{})
+}
+
+func (cl *gatewayClient) TokenChanged() <-chan struct{} {
+	cl.RLock()
+	defer cl.RUnlock()
+
+	return cl.tokenChanged
 }
 
 func (cl *gatewayClient) IsConfigured() bool {

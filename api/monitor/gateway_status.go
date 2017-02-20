@@ -20,7 +20,7 @@ func (cl *gatewayClient) initStatus() {
 
 func (cl *gatewayClient) monitorStatus() {
 	var retries int
-newStream:
+
 	for {
 		ctx, cancel := context.WithCancel(cl.Context())
 		cl.status.Lock()
@@ -39,37 +39,40 @@ newStream:
 		retries = 0
 		cl.Ctx.Debug("Opened new monitor status stream")
 
-		// The actual stream
-		go func() {
-			for {
-				select {
-				case <-ctx.Done():
-					return
-				case status, ok := <-cl.status.ch:
-					if ok {
-						stream.Send(status)
-						cl.Ctx.Debug("Sent status to monitor")
-					}
-				}
-			}
-		}()
+		var tokenChanged bool
 
-		msg := new(empty.Empty)
-		for {
-			if err := stream.RecvMsg(&msg); err != nil {
-				cl.Ctx.WithError(errors.FromGRPCError(err)).Warn("Received error on monitor status stream, closing...")
-				stream.CloseSend()
+		go func() {
+			if err := stream.RecvMsg(&empty.Empty{}); err != nil {
+				if !tokenChanged {
+					cl.Ctx.WithError(errors.FromGRPCError(err)).Warn("Received error on monitor status stream, closing...")
+					stream.CloseSend()
+				}
 				cl.Ctx.Debug("Closed monitor status stream")
 
 				cl.status.Lock()
 				cl.status.cancel()
 				cl.status.cancel = nil
 				cl.status.Unlock()
+			}
+		}()
 
-				retries++
-				time.Sleep(backoff.Backoff(retries))
-
-				continue newStream
+		for {
+			select {
+			case <-ctx.Done():
+				break
+			case <-cl.TokenChanged():
+				cl.Ctx.Debug("Restarting status stream with new token")
+				tokenChanged = true
+				stream.CloseSend()
+				break
+			case status, ok := <-cl.status.ch:
+				if ok {
+					if err := stream.Send(status); err != nil {
+						cl.Ctx.WithError(errors.FromGRPCError(err)).Debug("Error sending status to monitor")
+					} else {
+						cl.Ctx.Debug("Sent status to monitor")
+					}
+				}
 			}
 		}
 	}

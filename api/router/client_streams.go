@@ -109,7 +109,7 @@ func NewMonitoredGatewayStatusStream(client RouterClientForGateway) GatewayStatu
 						break monitor // channel closed
 					}
 					ch <- msg
-				case <-s.client.TokenChange():
+				case <-s.client.TokenChanged():
 					s.ctx.Debug("Restarting GatewayStatus stream with new token")
 					break monitor
 				}
@@ -235,7 +235,7 @@ func NewMonitoredUplinkStream(client RouterClientForGateway) UplinkStream {
 						break monitor // channel closed
 					}
 					ch <- msg
-				case <-s.client.TokenChange():
+				case <-s.client.TokenChanged():
 					s.ctx.Debug("Restarting Uplink stream with new token")
 					break monitor
 				}
@@ -323,7 +323,7 @@ func NewMonitoredDownlinkStream(client RouterClientForGateway) DownlinkStream {
 			}
 
 			go func() {
-				<-s.client.TokenChange()
+				<-s.client.TokenChanged()
 				s.ctx.Debug("Restarting Downlink stream with new token")
 				s.cancel()
 			}()
