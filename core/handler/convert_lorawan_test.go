@@ -47,6 +47,16 @@ func TestConvertFromLoRaWAN(t *testing.T) {
 	a.So(err, ShouldBeNil)
 	a.So(appUp.PayloadRaw, ShouldResemble, []byte{0xaa, 0xbc})
 	a.So(appUp.FCnt, ShouldEqual, 1)
+
+	ttnUp.UnmarshalPayload()
+	ttnUp.Message.GetLorawan().MType = pb_lorawan.MType_CONFIRMED_UP
+	ttnUp.Message.GetLorawan().SetMIC(types.NwkSKey([16]byte{}))
+	ttnUp.Payload = ttnUp.Message.GetLorawan().PHYPayloadBytes()
+
+	err = h.ConvertFromLoRaWAN(h.Ctx, ttnUp, appUp, device)
+	a.So(err, ShouldBeNil)
+	a.So(appUp.Confirmed, ShouldBeTrue)
+
 }
 
 func buildLorawanDownlink(payload []byte) (*types.DownlinkMessage, *pb_broker.DownlinkMessage) {
