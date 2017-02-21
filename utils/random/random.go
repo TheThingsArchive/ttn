@@ -32,6 +32,11 @@ func (r *TTNRandom) ID() string {
 	return r.Interface.String(2 + r.Interface.Intn(61))
 }
 
+// Bool return randomly generated bool value
+func (r *TTNRandom) Bool() bool {
+	return r.Interface.Intn(1) == 0
+}
+
 // Rssi generates RSSI signal between -120 < rssi < 0
 func (r *TTNRandom) Rssi() int32 {
 	// Generate RSSI. Tend towards generating great signal strength.
