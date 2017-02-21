@@ -7,7 +7,8 @@ import (
 	"github.com/TheThingsNetwork/ttn/utils/random"
 )
 
-// RandomLocation returns randomly generated gateway location
+// RandomLocation returns randomly generated gateway location.
+// Used for testing.
 func RandomLocation() (gps *GPSMetadata) {
 	return &GPSMetadata{
 		Longitude: rand.Float32(),
@@ -16,7 +17,8 @@ func RandomLocation() (gps *GPSMetadata) {
 	}
 }
 
-// RandomRxMetadata returns randomly generated gateway rx metadata
+// RandomRxMetadata returns randomly generated gateway rx metadata.
+// Used for testing.
 func RandomRxMetadata() *RxMetadata {
 	return &RxMetadata{
 		GatewayId:      random.ID(),
@@ -32,7 +34,8 @@ func RandomRxMetadata() *RxMetadata {
 	}
 }
 
-// RandomTxConfiguration returns randomly generated gateway tx configuration
+// RandomTxConfiguration returns randomly generated gateway tx configuration.
+// Used for testing.
 func RandomTxConfiguration() *TxConfiguration {
 	return &TxConfiguration{
 		Timestamp:             rand.Uint32(),
@@ -44,8 +47,9 @@ func RandomTxConfiguration() *TxConfiguration {
 	}
 }
 
-// RandomStatus returns randomly generated gateway status
-func RandomStatus() (st *Status) {
+// RandomStatus returns randomly generated gateway status.
+// Used for testing.
+func RandomStatus() *Status {
 	return &Status{
 		Gps:            RandomLocation(),
 		Timestamp:      rand.Uint32(),

@@ -8,8 +8,8 @@ import (
 	"github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 )
 
-// RandomLorawanJoinRequest returns randomly generated lorawan join request
-// Used for testing
+// RandomLorawanJoinRequest returns randomly generated lorawan join request.
+// Used for testing.
 func RandomLorawanJoinRequest(modulation ...lorawan.Modulation) *UplinkMessage {
 	return &UplinkMessage{
 		GatewayMetadata:  gateway.RandomRxMetadata(),
@@ -18,8 +18,8 @@ func RandomLorawanJoinRequest(modulation ...lorawan.Modulation) *UplinkMessage {
 	}
 }
 
-// RandomLorawanConfirmedUplink returns randomly generated confirmed lorawan uplink message
-// Used for testing
+// RandomLorawanConfirmedUplink returns randomly generated confirmed lorawan uplink message.
+// Used for testing.
 func RandomLorawanConfirmedUplink(modulation ...lorawan.Modulation) *UplinkMessage {
 	return &UplinkMessage{
 		GatewayMetadata:  gateway.RandomRxMetadata(),
@@ -28,8 +28,8 @@ func RandomLorawanConfirmedUplink(modulation ...lorawan.Modulation) *UplinkMessa
 	}
 }
 
-// RandomLorawanUnconfirmedUplink returns randomly generated unconfirmed lorawan uplink message
-// Used for testing
+// RandomLorawanUnconfirmedUplink returns randomly generated unconfirmed lorawan uplink message.
+// Used for testing.
 func RandomLorawanUnconfirmedUplink(modulation ...lorawan.Modulation) *UplinkMessage {
 	return &UplinkMessage{
 		GatewayMetadata:  gateway.RandomRxMetadata(),
@@ -38,8 +38,8 @@ func RandomLorawanUnconfirmedUplink(modulation ...lorawan.Modulation) *UplinkMes
 	}
 }
 
-// RandomLorawanUplinkMessage returns randomly generated lorawan uplink message(join request, confirmed or unconfirmed uplink)
-// Used for testing
+// RandomLorawanUplinkMessage returns randomly generated lorawan uplink message(join request, confirmed or unconfirmed uplink).
+// Used for testing.
 func RandomLorawanUplinkMessage(modulation ...lorawan.Modulation) *UplinkMessage {
 	switch rand.Intn(3) {
 	case 0:
@@ -51,8 +51,8 @@ func RandomLorawanUplinkMessage(modulation ...lorawan.Modulation) *UplinkMessage
 	}
 }
 
-// RandomLorawanJoinAccept returns randomly generated lorawan join request
-// Used for testing
+// RandomLorawanJoinAccept returns randomly generated lorawan join request.
+// Used for testing.
 func RandomLorawanJoinAccept(modulation ...lorawan.Modulation) *DownlinkMessage {
 	return &DownlinkMessage{
 		GatewayConfiguration:  gateway.RandomTxConfiguration(),
@@ -61,8 +61,8 @@ func RandomLorawanJoinAccept(modulation ...lorawan.Modulation) *DownlinkMessage 
 	}
 }
 
-// RandomLorawanConfirmedDownlink returns randomly generated confirmed lorawan uplink message
-// Used for testing
+// RandomLorawanConfirmedDownlink returns randomly generated confirmed lorawan uplink message.
+// Used for testing.
 func RandomLorawanConfirmedDownlink(modulation ...lorawan.Modulation) *DownlinkMessage {
 	return &DownlinkMessage{
 		GatewayConfiguration:  gateway.RandomTxConfiguration(),
@@ -71,8 +71,8 @@ func RandomLorawanConfirmedDownlink(modulation ...lorawan.Modulation) *DownlinkM
 	}
 }
 
-// RandomLorawanUnconfirmedDownlink returns randomly generated unconfirmed lorawan uplink message
-// Used for testing
+// RandomLorawanUnconfirmedDownlink returns randomly generated unconfirmed lorawan uplink message.
+// Used for testing.
 func RandomLorawanUnconfirmedDownlink(modulation ...lorawan.Modulation) *DownlinkMessage {
 	return &DownlinkMessage{
 		GatewayConfiguration:  gateway.RandomTxConfiguration(),
@@ -81,8 +81,8 @@ func RandomLorawanUnconfirmedDownlink(modulation ...lorawan.Modulation) *Downlin
 	}
 }
 
-// RandomLorawanDownlinkMessage returns randomly generated lorawan downlink message(join request, confirmed or unconfirmed downlink)
-// Used for testing
+// RandomLorawanDownlinkMessage returns randomly generated lorawan downlink message(join request, confirmed or unconfirmed downlink).
+// Used for testing.
 func RandomLorawanDownlinkMessage(modulation ...lorawan.Modulation) *DownlinkMessage {
 	switch rand.Intn(3) {
 	case 0:
@@ -94,14 +94,14 @@ func RandomLorawanDownlinkMessage(modulation ...lorawan.Modulation) *DownlinkMes
 	}
 }
 
-// RandomUplinkMessage returns randomly generated uplink message
-// Used for testing
+// RandomUplinkMessage returns randomly generated uplink message.
+// Used for testing.
 func RandomUplinkMessage() *UplinkMessage {
 	return RandomLorawanUplinkMessage()
 }
 
-// RandomDownlinkMessage returns randomly generated downlink message
-// Used for testing
+// RandomDownlinkMessage returns randomly generated downlink message.
+// Used for testing.
 func RandomDownlinkMessage() *DownlinkMessage {
 	return RandomLorawanDownlinkMessage()
 }

@@ -29,9 +29,11 @@ func randomAppEUI() lorawan.EUI64 {
 	return randomEUI64()
 }
 
+// RandomPayload returns randomly generated payload.
+// Used for testing.
 func RandomPayload(mType ...MType) []byte {
-	m := &Message{}
-	m.initMACPayload()
+	msg := &Message{}
+	msg.initMACPayload()
 
 	var mTypeVal MType
 
@@ -54,16 +56,16 @@ func RandomPayload(mType ...MType) []byte {
 		}
 	}
 
-	m.MHDR.MType = mTypeVal
+	msg.MHDR.MType = mTypeVal
 
-	switch m.MHDR.MType {
+	switch msg.MHDR.MType {
 	case MType_JOIN_REQUEST:
 		payload := JoinRequestPayloadFromPayload(&lorawan.JoinRequestPayload{
 			AppEUI:   randomAppEUI(),
 			DevEUI:   randomDevEUI(),
 			DevNonce: randomDevNonce(),
 		})
-		m.Payload = &Message_JoinRequestPayload{&payload}
+		msg.Payload = &Message_JoinRequestPayload{&payload}
 	case MType_JOIN_ACCEPT:
 		payload := JoinAcceptPayloadFromPayload(&lorawan.JoinAcceptPayload{
 			AppNonce: randomAppNonce(),
@@ -75,7 +77,7 @@ func RandomPayload(mType ...MType) []byte {
 				RX2DataRate: uint8(rand.Intn(15)),
 			},
 		})
-		m.Payload = &Message_JoinAcceptPayload{&payload}
+		msg.Payload = &Message_JoinAcceptPayload{&payload}
 	default:
 		payload := MACPayloadFromPayload(&lorawan.MACPayload{
 			FHDR: lorawan.FHDR{
@@ -89,12 +91,14 @@ func RandomPayload(mType ...MType) []byte {
 				FCnt: rand.Uint32(),
 			},
 		})
-		m.Payload = &Message_MacPayload{&payload}
+		msg.Payload = &Message_MacPayload{&payload}
 	}
 
-	return m.PHYPayloadBytes()
+	return msg.PHYPayloadBytes()
 }
 
+// RandomUplinkPayload returns randomly generated uplink payload.
+// Used for testing.
 func RandomUplinkPayload() []byte {
 	switch rand.Intn(3) {
 	case 0:
@@ -106,6 +110,8 @@ func RandomUplinkPayload() []byte {
 	}
 }
 
+// RandomDownlinkPayload returns randomly generated downlink payload.
+// Used for testing.
 func RandomDownlinkPayload() []byte {
 	switch rand.Intn(3) {
 	case 0:
@@ -117,6 +123,8 @@ func RandomDownlinkPayload() []byte {
 	}
 }
 
+// RandomMetadata returns randomly generated Metadata.
+// Used for testing.
 func RandomMetadata(modulation ...Modulation) *Metadata {
 	md := &Metadata{
 		FCnt:       rand.Uint32(),
@@ -142,6 +150,8 @@ func RandomMetadata(modulation ...Modulation) *Metadata {
 	return md
 }
 
+// RandomTxConfiguration returns randomly generated TxConfiguration.
+// Used for testing.
 func RandomTxConfiguration(modulation ...Modulation) *TxConfiguration {
 	conf := &TxConfiguration{
 		FCnt:       rand.Uint32(),
