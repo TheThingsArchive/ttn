@@ -43,20 +43,7 @@ func RandomPayload(mType ...MType) []byte {
 	if len(mType) > 0 {
 		mTypeVal = mType[0]
 	} else {
-		switch rand.Intn(6) {
-		case 0:
-			mTypeVal = MType_JOIN_ACCEPT
-		case 1:
-			mTypeVal = MType_JOIN_REQUEST
-		case 2:
-			mTypeVal = MType_UNCONFIRMED_UP
-		case 3:
-			mTypeVal = MType_UNCONFIRMED_DOWN
-		case 4:
-			mTypeVal = MType_CONFIRMED_UP
-		case 5:
-			mTypeVal = MType_CONFIRMED_DOWN
-		}
+		mTypeVal = MType(rand.Intn(6))
 	}
 
 	msg.MHDR.MType = mTypeVal
