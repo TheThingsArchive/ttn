@@ -45,7 +45,10 @@ func adrInitDownlinkMessage() *pb_broker.DownlinkMessage {
 	message := &pb_broker.DownlinkMessage{
 		Message: new(pb_protocol.Message),
 	}
-	message.Message.InitLoRaWAN().InitDownlink()
+	dl := message.Message.InitLoRaWAN().InitDownlink()
+	dl.FOpts = []pb_lorawan.MACCommand{
+		pb_lorawan.MACCommand{Cid: uint32(lorawan.LinkCheckAns)},
+	}
 	return message
 }
 
@@ -156,7 +159,7 @@ func TestHandleDownlinkADR(t *testing.T) {
 		message = adrInitDownlinkMessage()
 		err := ns.handleDownlinkADR(message, dev)
 		a.So(err, ShouldNotBeNil)
-		a.So(message.Message.GetLorawan().GetMacPayload().FOpts, ShouldBeEmpty)
+		a.So(message.Message.GetLorawan().GetMacPayload().FOpts, ShouldHaveLength, 1)
 		if a.Failed() {
 			_, file, line, _ := runtime.Caller(1)
 			t.Errorf("\n%s:%d", file, line)
@@ -167,7 +170,7 @@ func TestHandleDownlinkADR(t *testing.T) {
 		message = adrInitDownlinkMessage()
 		err := ns.handleDownlinkADR(message, dev)
 		a.So(err, ShouldBeNil)
-		a.So(message.Message.GetLorawan().GetMacPayload().FOpts, ShouldBeEmpty)
+		a.So(message.Message.GetLorawan().GetMacPayload().FOpts, ShouldHaveLength, 1)
 		if a.Failed() {
 			_, file, line, _ := runtime.Caller(1)
 			t.Errorf("\n%s:%d", file, line)
@@ -204,10 +207,10 @@ func TestHandleDownlinkADR(t *testing.T) {
 	err := ns.handleDownlinkADR(message, dev)
 	a.So(err, ShouldBeNil)
 	fOpts := message.Message.GetLorawan().GetMacPayload().FOpts
-	a.So(fOpts, ShouldHaveLength, 1)
-	a.So(fOpts[0].Cid, ShouldEqual, lorawan.LinkADRReq)
+	a.So(fOpts, ShouldHaveLength, 2)
+	a.So(fOpts[1].Cid, ShouldEqual, lorawan.LinkADRReq)
 	payload := new(lorawan.LinkADRReqPayload)
-	payload.UnmarshalBinary(fOpts[0].Payload)
+	payload.UnmarshalBinary(fOpts[1].Payload)
 	a.So(payload.DataRate, ShouldEqual, 5) // SF7BW125
 	a.So(payload.TXPower, ShouldEqual, 1)  // 14
 	for i := 0; i < 8; i++ {               // First 8 channels enabled
@@ -221,10 +224,10 @@ func TestHandleDownlinkADR(t *testing.T) {
 		err := ns.handleDownlinkADR(message, dev)
 		a.So(err, ShouldBeNil)
 		fOpts := message.Message.GetLorawan().GetMacPayload().FOpts
-		a.So(fOpts, ShouldHaveLength, 1)
-		a.So(fOpts[0].Cid, ShouldEqual, lorawan.LinkADRReq)
+		a.So(fOpts, ShouldHaveLength, 2)
+		a.So(fOpts[1].Cid, ShouldEqual, lorawan.LinkADRReq)
 		payload := new(lorawan.LinkADRReqPayload)
-		payload.UnmarshalBinary(fOpts[0].Payload)
+		payload.UnmarshalBinary(fOpts[1].Payload)
 		a.So(payload.DataRate, ShouldEqual, 5) // SF7BW125
 		a.So(payload.TXPower, ShouldEqual, 1)  // 14
 		a.So(payload.Redundancy.NbRep, ShouldEqual, nbTrans)

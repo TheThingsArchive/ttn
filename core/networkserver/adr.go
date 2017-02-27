@@ -184,10 +184,20 @@ func (n *networkServer) handleDownlinkADR(message *pb_broker.DownlinkMessage, de
 		}
 	}
 	responsePayload, _ := response.MarshalBinary()
-	lorawanDownlinkMac.FOpts = append(lorawanDownlinkMac.FOpts, pb_lorawan.MACCommand{
+
+	// Remove LinkADRReq if already added
+	fOpts := make([]pb_lorawan.MACCommand, 0, len(lorawanDownlinkMac.FOpts)+1)
+	for _, existing := range lorawanDownlinkMac.FOpts {
+		if existing.Cid != uint32(lorawan.LinkADRReq) {
+			fOpts = append(fOpts, existing)
+		}
+	}
+	fOpts = append(fOpts, pb_lorawan.MACCommand{
 		Cid:     uint32(lorawan.LinkADRReq),
 		Payload: responsePayload,
 	})
+
+	lorawanDownlinkMac.FOpts = fOpts
 
 	return nil
 }
