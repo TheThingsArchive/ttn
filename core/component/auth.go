@@ -280,7 +280,11 @@ func (c *Component) ValidateNetworkContext(ctx context.Context) (component *pb_d
 		return
 	}
 	if claims.Issuer != id {
-		err = errors.NewErrInvalidArgument("Metadata", "token was issued by different component id")
+		err = errors.NewErrPermissionDenied(fmt.Sprintf("Token was issued by %s, not by %s", claims.Issuer, id))
+		return
+	}
+	if claims.Subject != "" && claims.Subject != claims.Issuer && claims.Subject != c.Identity.Id {
+		err = errors.NewErrPermissionDenied(fmt.Sprintf("Token was issued to connect with %s, not with %s", claims.Subject, c.Identity.Id))
 		return
 	}
 
