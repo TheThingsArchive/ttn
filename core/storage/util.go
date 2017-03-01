@@ -5,21 +5,21 @@ package storage
 
 // ListOptions are options for all list commands
 type ListOptions struct {
-	Limit  int
-	Offset int
+	Limit  uint64
+	Offset uint64
 
-	total    int
-	selected int
+	total    uint64
+	selected uint64
 }
 
 // GetTotalAndSelected returns the total number of items, along with the number of selected items
-func (o ListOptions) GetTotalAndSelected() (total, selected int) {
+func (o ListOptions) GetTotalAndSelected() (total, selected uint64) {
 	return o.total, o.selected
 }
 
 func selectKeys(keys []string, options *ListOptions) []string {
-	var start int
-	var end = len(keys)
+	var start uint64
+	end := uint64(len(keys))
 	if options != nil {
 		options.total = end
 		if options.Offset >= options.total {

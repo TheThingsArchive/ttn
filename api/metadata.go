@@ -51,21 +51,21 @@ func KeyFromMetadata(md metadata.MD) (string, error) {
 	return key[0], nil
 }
 
-func parseInt64(s string) (int64, error) {
-	return strconv.ParseInt(s, 0, 64)
+func parseUint64(s string) (uint64, error) {
+	return strconv.ParseUint(s, 0, 64)
 }
-func OffsetFromMetadata(md metadata.MD) (int64, error) {
+func OffsetFromMetadata(md metadata.MD) (uint64, error) {
 	offset, ok := md["offset"]
 	if !ok || len(offset) == 0 {
 		return 0, nil
 	}
-	return parseInt64(offset[0])
+	return parseUint64(offset[0])
 }
 
-func LimitFromMetadata(md metadata.MD) (int64, error) {
+func LimitFromMetadata(md metadata.MD) (uint64, error) {
 	limit, ok := md["limit"]
 	if !ok || len(limit) == 0 {
 		return 0, nil
 	}
-	return parseInt64(limit[0])
+	return parseUint64(limit[0])
 }

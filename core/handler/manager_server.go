@@ -358,8 +358,8 @@ func (h *handlerManager) GetDevicesForApplication(ctx context.Context, in *pb.Ap
 
 	total, selected := opts.GetTotalAndSelected()
 	header := metadata.Pairs(
-		"total", strconv.Itoa(total),
-		"selected", strconv.Itoa(selected),
+		"total", strconv.FormatUint(total, 10),
+		"selected", strconv.FormatUint(selected, 10),
 	)
 	grpc.SendHeader(ctx, header)
 
