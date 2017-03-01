@@ -34,10 +34,7 @@ func (s *BrokerStreamServer) SetLogger(logger log.Interface) {
 
 // Associate handles uplink streams from and downlink streams to the router
 func (s *BrokerStreamServer) Associate(stream Broker_AssociateServer) (err error) {
-	md, err := api.MetadataFromContext(stream.Context())
-	if err != nil {
-		return err
-	}
+	md := api.MetadataFromContext(stream.Context())
 	upChan, downChan, downCancel, err := s.RouterAssociateChanFunc(md)
 	if err != nil {
 		return err
@@ -99,10 +96,7 @@ func (s *BrokerStreamServer) Associate(stream Broker_AssociateServer) (err error
 
 // Subscribe handles uplink streams towards the handler
 func (s *BrokerStreamServer) Subscribe(req *SubscribeRequest, stream Broker_SubscribeServer) (err error) {
-	md, err := api.MetadataFromContext(stream.Context())
-	if err != nil {
-		return err
-	}
+	md := api.MetadataFromContext(stream.Context())
 	ch, cancel, err := s.HandlerSubscribeChanFunc(md)
 	if err != nil {
 		return err
@@ -122,10 +116,7 @@ func (s *BrokerStreamServer) Subscribe(req *SubscribeRequest, stream Broker_Subs
 
 // Publish handles downlink streams from the handler
 func (s *BrokerStreamServer) Publish(stream Broker_PublishServer) error {
-	md, err := api.MetadataFromContext(stream.Context())
-	if err != nil {
-		return err
-	}
+	md := api.MetadataFromContext(stream.Context())
 	ch, err := s.HandlerPublishChanFunc(md)
 	if err != nil {
 		return err
