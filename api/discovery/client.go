@@ -13,7 +13,6 @@ import (
 	"github.com/bluele/gcache"
 	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/metadata"
 )
 
 // CacheSize indicates the number of components that are cached
@@ -86,13 +85,10 @@ func (c *DefaultClient) getContext(token string) context.Context {
 	if token == "" {
 		token = c.tokenFunc()
 	}
-	md := metadata.Pairs(
-		"service-name", c.self.ServiceName,
-		"id", c.self.Id,
-		"token", token,
-		"net-address", c.self.NetAddress,
-	)
-	ctx := metadata.NewContext(context.Background(), md)
+	ctx := context.Background()
+	ctx = api.ContextWithID(ctx, c.self.Id)
+	ctx = api.ContextWithServiceInfo(ctx, c.self.ServiceName, c.self.ServiceVersion, c.self.NetAddress)
+	ctx = api.ContextWithToken(ctx, token)
 	return ctx
 }
 

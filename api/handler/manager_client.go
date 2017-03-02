@@ -7,15 +7,14 @@ import (
 	"encoding/json"
 	"os"
 	"os/user"
-	"strconv"
 	"sync"
 
+	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/metadata"
 )
 
 // ManagerClient is used to manage applications and devices on a handler
@@ -65,24 +64,19 @@ func (h *ManagerClient) UpdateAccessToken(accessToken string) {
 func (h *ManagerClient) GetContext() context.Context {
 	h.RLock()
 	defer h.RUnlock()
-	md := metadata.Pairs(
-		"id", h.id,
-		"token", h.accessToken,
-	)
-	return metadata.NewContext(context.Background(), md)
+	ctx := context.Background()
+	ctx = api.ContextWithID(ctx, h.id)
+	ctx = api.ContextWithToken(ctx, h.accessToken)
+	return ctx
 }
 
 // GetContext returns a new context with authentication, plus limit and offset for pagination
 func (h *ManagerClient) GetContextWithLimitAndOffset(limit, offset int) context.Context {
 	h.RLock()
 	defer h.RUnlock()
-	md := metadata.Pairs(
-		"id", h.id,
-		"token", h.accessToken,
-		"limit", strconv.Itoa(limit),
-		"offset", strconv.Itoa(offset),
-	)
-	return metadata.NewContext(context.Background(), md)
+	ctx := h.GetContext()
+	ctx = api.ContextWithLimitAndOffset(ctx, uint64(limit), uint64(offset))
+	return ctx
 }
 
 // GetApplication retrieves an application from the Handler
