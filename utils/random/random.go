@@ -4,85 +4,48 @@
 package random
 
 import (
-	"encoding/binary"
 	"fmt"
 	"math"
-	"math/rand"
-	"sync"
 	"time"
-)
 
-// Source: http://stackoverflow.com/a/31832326
-
-const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-const (
-	letterIdxBits = 6                    // 6 bits to represent a letter index
-	letterIdxMask = 1<<letterIdxBits - 1 // All 1-bits, as many as letterIdxBits
-	letterIdxMax  = 63 / letterIdxBits   // # of letter indices fitting in 63 bits
+	"github.com/TheThingsNetwork/go-utils/pseudorandom"
+	"github.com/TheThingsNetwork/go-utils/random"
+	"github.com/TheThingsNetwork/ttn/core/types"
 )
 
 // TTNRandom is used as a wrapper around math/rand
 type TTNRandom struct {
-	mu   sync.Mutex
-	rand *rand.Rand
+	random.Interface
 }
 
 // New returns a new TTNRandom, in most cases you can just use the global funcs
 func New() *TTNRandom {
 	return &TTNRandom{
-		rand: rand.New(rand.NewSource(time.Now().UnixNano())),
+		Interface: pseudorandom.New(time.Now().UnixNano()),
 	}
 }
 
 var global = New()
 
-// Intn wraps rand.Intn
-func (r *TTNRandom) Intn(n int) int {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	return r.rand.Intn(n)
+// ID returns randomly generated ID
+func (r *TTNRandom) ID() string {
+	return r.Interface.String(2 + r.Interface.Intn(61))
 }
 
-// String returns random string of length n
-func (r *TTNRandom) String(n int) string {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	b := make([]byte, n)
-	// A Int63() generates 63 random bits, enough for letterIdxMax characters!
-	for i, cache, remain := n-1, r.rand.Int63(), letterIdxMax; i >= 0; {
-		if remain == 0 {
-			cache, remain = r.rand.Int63(), letterIdxMax
-		}
-		if idx := int(cache & letterIdxMask); idx < len(letterBytes) {
-			b[i] = letterBytes[idx]
-			i--
-		}
-		cache >>= letterIdxBits
-		remain--
-	}
-
-	return string(b)
-}
-
-// Token generate a random 2-bytes token
-func (r *TTNRandom) Token() []byte {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	b := make([]byte, 4)
-	binary.BigEndian.PutUint32(b, r.rand.Uint32())
-	return b[0:2]
+// Bool return randomly generated bool value
+func (r *TTNRandom) Bool() bool {
+	return r.Interface.Intn(1) == 0
 }
 
 // Rssi generates RSSI signal between -120 < rssi < 0
 func (r *TTNRandom) Rssi() int32 {
-	r.mu.Lock()
-	defer r.mu.Unlock()
 	// Generate RSSI. Tend towards generating great signal strength.
-	x := float64(r.rand.Int31()) * float64(2e-9)
+	x := float64(r.Interface.Intn(math.MaxInt32)) * float64(2e-9)
 	return int32(-1.6 * math.Exp(x))
 }
 
-var euFreqs = []float32{
+var freqs = []float32{
+	// EU
 	868.1,
 	868.3,
 	868.5,
@@ -92,9 +55,8 @@ var euFreqs = []float32{
 	867.5,
 	867.7,
 	867.9,
-}
 
-var usFreqs = []float32{
+	// US
 	903.9,
 	904.1,
 	904.3,
@@ -106,19 +68,15 @@ var usFreqs = []float32{
 	904.6,
 }
 
-// Freq generates a frequency between 865.0 and 870.0 Mhz
+// Freq generates a frequency between 867.1 and 905.3 Mhz
 func (r *TTNRandom) Freq() float32 {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	return usFreqs[r.rand.Intn(len(usFreqs))]
+	return freqs[r.Interface.Intn(len(freqs))]
 }
 
 // Datr generates Datr for instance: SF4BW125
 func (r *TTNRandom) Datr() string {
-	r.mu.Lock()
-	defer r.mu.Unlock()
 	// Spread Factor from 12 to 7
-	sf := 12 - r.rand.Intn(7)
+	sf := 12 - r.Interface.Intn(7)
 	var bw int
 	if sf == 6 {
 		// DR6 -> SF7@250Khz
@@ -132,42 +90,41 @@ func (r *TTNRandom) Datr() string {
 
 // Codr generates Codr for instance: 4/6
 func (r *TTNRandom) Codr() string {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	d := r.rand.Intn(4) + 5
+	d := r.Interface.Intn(4) + 5
 	return fmt.Sprintf("4/%d", d)
 }
 
 // Lsnr generates LoRa SNR ratio in db. Tend towards generating good ratio with low noise
 func (r *TTNRandom) Lsnr() float32 {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	x := float64(r.rand.Int31()) * float64(2e-9)
+	x := float64(r.Interface.Intn(math.MaxInt32)) * float64(2e-9)
 	return float32(math.Floor((-0.1*math.Exp(x)+5.5)*10) / 10)
 }
 
-// Bytes generates a random byte slice of length n
-func (r *TTNRandom) Bytes(n int) []byte {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	p := make([]byte, n)
-	r.rand.Read(p)
-	return p
+func (r *TTNRandom) DevNonce() (devNonce types.DevNonce) {
+	r.Interface.FillBytes(devNonce[:])
+	return
 }
-
-// Intn returns random int with max n
-func Intn(n int) int {
-	return global.Intn(n)
+func (r *TTNRandom) AppNonce() (appNonce types.AppNonce) {
+	r.Interface.FillBytes(appNonce[:])
+	return
 }
-
-// String returns random string of length n
-func String(n int) string {
-	return global.String(n)
+func (r *TTNRandom) NetID() (netID types.NetID) {
+	r.Interface.FillBytes(netID[:])
+	return
 }
-
-// Token generate a random 2-bytes token
-func Token() []byte {
-	return global.Token()
+func (r *TTNRandom) DevAddr() (devAddr types.DevAddr) {
+	r.Interface.FillBytes(devAddr[:])
+	return
+}
+func (r *TTNRandom) EUI64() (eui types.EUI64) {
+	r.Interface.FillBytes(eui[:])
+	return
+}
+func (r *TTNRandom) DevEUI() (eui types.DevEUI) {
+	return types.DevEUI(r.EUI64())
+}
+func (r *TTNRandom) AppEUI() (eui types.AppEUI) {
+	return types.AppEUI(r.EUI64())
 }
 
 // Rssi generates RSSI signal between -120 < rssi < 0
@@ -195,7 +152,48 @@ func Lsnr() float32 {
 	return global.Lsnr()
 }
 
+// Intn returns random int with max n
+func Intn(n int) int {
+	return global.Intn(n)
+}
+
+// String returns a random string of length n
+func String(n int) string {
+	return global.String(n)
+}
+
 // Bytes generates a random byte slice of length n
 func Bytes(n int) []byte {
 	return global.Bytes(n)
+}
+
+// Bool generates a random boolean
+func Bool() bool {
+	return global.Bool()
+}
+
+func ID() string {
+	return global.ID()
+}
+
+func DevNonce() types.DevNonce {
+	return global.DevNonce()
+}
+func AppNonce() types.AppNonce {
+	return global.AppNonce()
+}
+func NetID() types.NetID {
+	return global.NetID()
+}
+func DevAddr() types.DevAddr {
+	return global.DevAddr()
+}
+func EUI64() types.EUI64 {
+	return global.EUI64()
+}
+func DevEUI() types.DevEUI {
+	return global.DevEUI()
+}
+func AppEUI() types.AppEUI {
+	return global.AppEUI()
 }

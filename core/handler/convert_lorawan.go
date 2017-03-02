@@ -48,6 +48,9 @@ func (h *handler) ConvertFromLoRaWAN(ctx ttnlog.Interface, ttnUp *pb_broker.Dedu
 	if dev.FCntUp == appUp.FCnt {
 		appUp.IsRetry = true
 	}
+	if phyPayload.MHDR.MType == lorawan.ConfirmedDataUp {
+		appUp.Confirmed = true
+	}
 	dev.FCntUp = appUp.FCnt
 
 	// LoRaWAN: Decrypt

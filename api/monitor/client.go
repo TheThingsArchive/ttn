@@ -14,7 +14,6 @@ import (
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/metadata"
 )
 
 // BufferSize gives the size for the monitor buffers
@@ -231,10 +230,10 @@ func (cl *gatewayClient) Close() (err error) {
 func (cl *gatewayClient) Context() (monitorContext context.Context) {
 	cl.RLock()
 	defer cl.RUnlock()
-	return metadata.NewContext(context.Background(), metadata.Pairs(
-		"id", cl.id,
-		"token", cl.token,
-	))
+	ctx := context.Background()
+	ctx = api.ContextWithID(ctx, cl.id)
+	ctx = api.ContextWithToken(ctx, cl.token)
+	return ctx
 }
 
 type brokerClient struct {

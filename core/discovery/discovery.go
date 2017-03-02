@@ -19,7 +19,7 @@ type Discovery interface {
 	WithCache(options announcement.CacheOptions)
 	WithMasterAuthServers(serverID ...string)
 	Announce(announcement *pb.Announcement) error
-	GetAll(serviceName string, limit, offest int) ([]*pb.Announcement, error)
+	GetAll(serviceName string, limit, offset uint64) ([]*pb.Announcement, error)
 	Get(serviceName string, id string) (*pb.Announcement, error)
 	AddMetadata(serviceName string, id string, metadata *pb.Metadata) error
 	DeleteMetadata(serviceName string, id string, metadata *pb.Metadata) error
@@ -94,7 +94,7 @@ func (d *discovery) Get(serviceName string, id string) (*pb.Announcement, error)
 	return service.ToProto(), nil
 }
 
-func (d *discovery) GetAll(serviceName string, limit, offset int) ([]*pb.Announcement, error) {
+func (d *discovery) GetAll(serviceName string, limit, offset uint64) ([]*pb.Announcement, error) {
 	services, err := d.services.ListService(serviceName, &storage.ListOptions{
 		Limit:  limit,
 		Offset: offset,

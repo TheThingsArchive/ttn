@@ -68,10 +68,7 @@ func (r *routerRPC) gatewayFromMetadata(md metadata.MD) (gtw *gateway.Gateway, e
 }
 
 func (r *routerRPC) gatewayFromContext(ctx context.Context) (gtw *gateway.Gateway, err error) {
-	md, err := api.MetadataFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
+	md := api.MetadataFromContext(ctx)
 	return r.gatewayFromMetadata(md)
 }
 

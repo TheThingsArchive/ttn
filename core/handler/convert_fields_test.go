@@ -189,7 +189,7 @@ func TestProcessInvalidUplinkFunction(t *testing.T) {
 		Decoder: ``,
 	}
 	_, _, err := functions.Process([]byte{40, 110}, 1)
-	a.So(err, ShouldNotBeNil)
+	a.So(err, ShouldBeNil)
 
 	// Invalid Function
 	functions = &UplinkFunctions{

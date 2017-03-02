@@ -7,10 +7,10 @@ import (
 	"strings"
 
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
+	"github.com/TheThingsNetwork/go-utils/random"
 	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
-	"github.com/TheThingsNetwork/ttn/utils/random"
 	"github.com/spf13/cobra"
 )
 
@@ -47,7 +47,7 @@ var devicesPersonalizeCmd = &cobra.Command{
 			}
 		} else {
 			ctx.Info("Generating random NwkSKey...")
-			copy(nwkSKey[:], random.Bytes(16))
+			random.FillBytes(nwkSKey[:])
 		}
 
 		var appSKey types.AppSKey
@@ -58,7 +58,7 @@ var devicesPersonalizeCmd = &cobra.Command{
 			}
 		} else {
 			ctx.Info("Generating random AppSKey...")
-			copy(appSKey[:], random.Bytes(16))
+			random.FillBytes(appSKey[:])
 		}
 
 		conn, manager := util.GetHandlerManager(ctx, appID)

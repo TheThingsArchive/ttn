@@ -78,7 +78,7 @@ var timeOut = 100 * time.Millisecond
 // Decode decodes the payload using the Decoder function into a map
 func (f *UplinkFunctions) Decode(payload []byte, port uint8) (map[string]interface{}, error) {
 	if f.Decoder == "" {
-		return nil, errors.NewErrInternal("Decoder function not set")
+		return nil, nil
 	}
 
 	env := map[string]interface{}{

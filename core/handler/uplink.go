@@ -81,9 +81,11 @@ func (h *handler) HandleUplink(uplink *pb_broker.DeduplicatedUplinkMessage) (err
 		h.amqpUp <- appUplink
 	}
 
-	if uplink.ResponseTemplate == nil {
-		ctx.Debug("No Downlink Available")
-		return nil
+	noDownlinkErrEvent := &types.DeviceEvent{
+		AppID: appID,
+		DevID: devID,
+		Event: types.DownlinkErrorEvent,
+		Data:  types.ErrorEventData{Error: "No gateways available for downlink"},
 	}
 
 	if dev.CurrentDownlink == nil {
@@ -94,12 +96,25 @@ func (h *handler) HandleUplink(uplink *pb_broker.DeduplicatedUplinkMessage) (err
 			return err
 		}
 
-		next, err := queue.Next()
-		if err != nil {
-			return err
+		if len, _ := queue.Length(); len > 0 {
+			if uplink.ResponseTemplate != nil {
+				next, err := queue.Next()
+				if err != nil {
+					return err
+				}
+				dev.CurrentDownlink = next
+			} else {
+				h.mqttEvent <- noDownlinkErrEvent
+				return nil
+			}
 		}
+	}
 
-		dev.CurrentDownlink = next
+	if uplink.ResponseTemplate == nil {
+		if dev.CurrentDownlink != nil {
+			h.mqttEvent <- noDownlinkErrEvent
+		}
+		return nil
 	}
 
 	// Save changes (if any)

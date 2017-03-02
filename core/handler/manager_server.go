@@ -36,7 +36,7 @@ type handlerManager struct {
 	clientRate      *ratelimit.Registry
 }
 
-func checkAppRights(claims *claims.Claims, appID string, right rights.Right) error {
+func checkAppRights(claims *claims.Claims, appID string, right types.Right) error {
 	if !claims.AppRight(appID, right) {
 		return errors.NewErrPermissionDenied(fmt.Sprintf(`No "%s" rights to Application "%s"`, right, appID))
 	}
@@ -44,10 +44,8 @@ func checkAppRights(claims *claims.Claims, appID string, right rights.Right) err
 }
 
 func (h *handlerManager) validateTTNAuthAppContext(ctx context.Context, appID string) (context.Context, *claims.Claims, error) {
-	md, err := api.MetadataFromContext(ctx)
-	if err != nil {
-		return ctx, nil, err
-	}
+	md := api.MetadataFromContext(ctx)
+
 	// If token is empty, try to get the access key and convert it into a token
 	token, err := api.TokenFromMetadata(md)
 	if err != nil || token == "" {
@@ -358,8 +356,8 @@ func (h *handlerManager) GetDevicesForApplication(ctx context.Context, in *pb.Ap
 
 	total, selected := opts.GetTotalAndSelected()
 	header := metadata.Pairs(
-		"total", strconv.Itoa(total),
-		"selected", strconv.Itoa(selected),
+		"total", strconv.FormatUint(total, 10),
+		"selected", strconv.FormatUint(selected, 10),
 	)
 	grpc.SendHeader(ctx, header)
 

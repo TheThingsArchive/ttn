@@ -8,20 +8,20 @@ import (
 	"strings"
 	"time"
 
+	"github.com/TheThingsNetwork/go-utils/pseudorandom"
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_handler "github.com/TheThingsNetwork/ttn/api/handler"
 	"github.com/TheThingsNetwork/ttn/api/trace"
 	"github.com/TheThingsNetwork/ttn/core/networkserver/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
-	"github.com/TheThingsNetwork/ttn/utils/random"
 	"github.com/brocaar/lorawan"
 )
 
 func (n *networkServer) getDevAddr(constraints ...string) (types.DevAddr, error) {
 	// Generate random DevAddr bytes
 	var devAddr types.DevAddr
-	copy(devAddr[:], random.Bytes(4))
+	pseudorandom.FillBytes(devAddr[:])
 
 	// Get a random prefix that matches the constraints
 	prefixes := n.GetPrefixesFor(constraints...)
@@ -30,7 +30,7 @@ func (n *networkServer) getDevAddr(constraints ...string) (types.DevAddr, error)
 	}
 
 	// Select a prefix
-	prefix := prefixes[random.Intn(len(prefixes))]
+	prefix := prefixes[pseudorandom.Intn(len(prefixes))]
 
 	// Apply the prefix
 	devAddr = devAddr.WithPrefix(prefix)
