@@ -36,7 +36,7 @@ type handlerManager struct {
 	clientRate      *ratelimit.Registry
 }
 
-func checkAppRights(claims *claims.Claims, appID string, right rights.Right) error {
+func checkAppRights(claims *claims.Claims, appID string, right types.Right) error {
 	if !claims.AppRight(appID, right) {
 		return errors.NewErrPermissionDenied(fmt.Sprintf(`No "%s" rights to Application "%s"`, right, appID))
 	}

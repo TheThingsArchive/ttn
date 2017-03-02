@@ -13,6 +13,7 @@ import (
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/api/ratelimit"
 	"github.com/TheThingsNetwork/ttn/core/networkserver/device"
+	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/golang/protobuf/ptypes/empty"
 	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
@@ -25,7 +26,7 @@ type networkServerManager struct {
 	clientRate    *ratelimit.Registry
 }
 
-func checkAppRights(claims *claims.Claims, appID string, right rights.Right) error {
+func checkAppRights(claims *claims.Claims, appID string, right types.Right) error {
 	if !claims.AppRight(appID, right) {
 		return errors.NewErrPermissionDenied(fmt.Sprintf(`No "%s" rights to Application "%s"`, right, appID))
 	}
