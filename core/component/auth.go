@@ -174,6 +174,9 @@ func (c *Component) BuildJWT() (string, error) {
 // GetContext returns a context for outgoing RPC request. If token is "", this function will generate a short lived token from the component
 func (c *Component) GetContext(token string) context.Context {
 	ctx := context.Background()
+	if token != "" {
+		ctx = api.ContextWithToken(ctx, token)
+	}
 	if c.Identity != nil {
 		ctx = api.ContextWithID(ctx, c.Identity.Id)
 		ctx = api.ContextWithServiceInfo(ctx, c.Identity.ServiceName, c.Identity.ServiceVersion, c.Identity.NetAddress)
