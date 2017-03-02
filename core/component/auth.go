@@ -25,7 +25,6 @@ import (
 	"github.com/TheThingsNetwork/ttn/utils/security"
 	jwt "github.com/dgrijalva/jwt-go"
 	"golang.org/x/net/context"
-	"google.golang.org/grpc/metadata"
 )
 
 // InitAuth initializes Auth functionality
@@ -174,24 +173,15 @@ func (c *Component) BuildJWT() (string, error) {
 
 // GetContext returns a context for outgoing RPC request. If token is "", this function will generate a short lived token from the component
 func (c *Component) GetContext(token string) context.Context {
-	var serviceName, serviceVersion, id, netAddress string
+	ctx := context.Background()
 	if c.Identity != nil {
-		serviceName = c.Identity.ServiceName
-		id = c.Identity.Id
+		ctx = api.ContextWithID(ctx, c.Identity.Id)
+		ctx = api.ContextWithServiceInfo(ctx, c.Identity.ServiceName, c.Identity.ServiceVersion, c.Identity.NetAddress)
 		if token == "" {
-			token, _ = c.BuildJWT()
+			token, _ := c.BuildJWT()
+			ctx = api.ContextWithToken(ctx, token)
 		}
-		serviceVersion = c.Identity.ServiceVersion
-		netAddress = c.Identity.NetAddress
 	}
-	md := metadata.Pairs(
-		"service-name", serviceName,
-		"service-version", serviceVersion,
-		"id", id,
-		"token", token,
-		"net-address", netAddress,
-	)
-	ctx := metadata.NewContext(context.Background(), md)
 	return ctx
 }
 
@@ -249,43 +239,28 @@ func (c *Component) ValidateNetworkContext(ctx context.Context) (component *pb_d
 		}
 	}()
 
-	md, ok := metadata.FromContext(ctx)
-	if !ok {
-		err = errors.NewErrInternal("Could not get metadata from context")
-		return
-	}
-	var id, serviceName, token string
-	if ids, ok := md["id"]; ok && len(ids) == 1 {
-		id = ids[0]
-	}
-	if id == "" {
-		err = errors.NewErrInvalidArgument("Metadata", "id missing")
-		return
-	}
-	if serviceNames, ok := md["service-name"]; ok && len(serviceNames) == 1 {
-		serviceName = serviceNames[0]
-	}
-	if serviceName == "" {
-		err = errors.NewErrInvalidArgument("Metadata", "service-name missing")
-		return
-	}
-	if tokens, ok := md["token"]; ok && len(tokens) == 1 {
-		token = tokens[0]
+	id, err := api.IDFromContext(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	var announcement *pb_discovery.Announcement
-	announcement, err = c.Discover(serviceName, id)
+	serviceName, _, _, _ := api.ServiceInfoFromContext(ctx)
+	if serviceName == "" {
+		return nil, errors.NewErrInvalidArgument("Metadata", "service-name missing")
+	}
+
+	announcement, err := c.Discover(serviceName, id)
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	if announcement.PublicKey == "" {
 		return announcement, nil
 	}
 
-	if token == "" {
-		err = errors.NewErrInvalidArgument("Metadata", "token missing")
-		return
+	token, err := api.TokenFromContext(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	var claims *jwt.StandardClaims
@@ -294,7 +269,11 @@ func (c *Component) ValidateNetworkContext(ctx context.Context) (component *pb_d
 		return
 	}
 	if claims.Issuer != id {
-		err = errors.NewErrInvalidArgument("Metadata", "token was issued by different component id")
+		err = errors.NewErrPermissionDenied(fmt.Sprintf("Token was issued by %s, not by %s", claims.Issuer, id))
+		return
+	}
+	if claims.Subject != "" && claims.Subject != claims.Issuer && claims.Subject != c.Identity.Id {
+		err = errors.NewErrPermissionDenied(fmt.Sprintf("Token was issued to connect with %s, not with %s", claims.Subject, c.Identity.Id))
 		return
 	}
 

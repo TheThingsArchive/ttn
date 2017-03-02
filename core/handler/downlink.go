@@ -30,10 +30,11 @@ func (h *handler) EnqueueDownlink(appDownlink *types.DownlinkMessage) (err error
 	}()
 
 	// Check if device exists
-	_, err = h.devices.Get(appID, devID)
+	dev, err := h.devices.Get(appID, devID)
 	if err != nil {
 		return err
 	}
+	dev.StartUpdate()
 
 	defer func() {
 		if err != nil {
@@ -58,8 +59,12 @@ func (h *handler) EnqueueDownlink(appDownlink *types.DownlinkMessage) (err error
 		return err
 	}
 
-	switch appDownlink.Schedule {
+	schedule := appDownlink.Schedule
+	appDownlink.Schedule = ""
+
+	switch schedule {
 	case types.ScheduleReplace, "": // Empty string for default
+		dev.CurrentDownlink = nil
 		err = queue.Replace(appDownlink)
 	case types.ScheduleFirst:
 		err = queue.PushFirst(appDownlink)
@@ -70,6 +75,10 @@ func (h *handler) EnqueueDownlink(appDownlink *types.DownlinkMessage) (err error
 	}
 
 	if err != nil {
+		return err
+	}
+
+	if err := h.devices.Set(dev); err != nil {
 		return err
 	}
 

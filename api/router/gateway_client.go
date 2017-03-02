@@ -7,8 +7,8 @@ import (
 	"sync"
 
 	"github.com/TheThingsNetwork/go-utils/log"
+	"github.com/TheThingsNetwork/ttn/api"
 	"golang.org/x/net/context"
-	"google.golang.org/grpc/metadata"
 )
 
 // RouterClientForGateway is a RouterClient for a specific gateway
@@ -67,11 +67,9 @@ func (c *routerClientForGateway) SetLogger(logger log.Interface) {
 func (c *routerClientForGateway) getContext() context.Context {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	md := metadata.Pairs(
-		"id", c.gatewayID,
-		"token", c.token,
-	)
-	return metadata.NewContext(c.bgCtx, md)
+	ctx := api.ContextWithID(c.bgCtx, c.gatewayID)
+	ctx = api.ContextWithToken(ctx, c.token)
+	return ctx
 }
 
 func (c *routerClientForGateway) SetToken(token string) {

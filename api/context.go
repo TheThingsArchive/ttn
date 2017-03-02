@@ -33,7 +33,7 @@ func TokenFromMetadata(md metadata.MD) (string, error) {
 }
 
 // TokenFromContext gets the token from the context or returns ErrNoToken
-func TokenFromContext(ctx context.Context) (token string, err error) {
+func TokenFromContext(ctx context.Context) (string, error) {
 	md := MetadataFromContext(ctx)
 	return TokenFromMetadata(md)
 }
@@ -53,7 +53,7 @@ func KeyFromMetadata(md metadata.MD) (string, error) {
 }
 
 // KeyFromContext gets the key from the context or returns ErrNoKey
-func KeyFromContext(ctx context.Context) (key string, err error) {
+func KeyFromContext(ctx context.Context) (string, error) {
 	md := MetadataFromContext(ctx)
 	return KeyFromMetadata(md)
 }
@@ -73,7 +73,7 @@ func IDFromMetadata(md metadata.MD) (string, error) {
 }
 
 // IDFromContext gets the key from the context or returns ErrNoID
-func IDFromContext(ctx context.Context) (token string, err error) {
+func IDFromContext(ctx context.Context) (string, error) {
 	md := MetadataFromContext(ctx)
 	return IDFromMetadata(md)
 }
@@ -144,7 +144,7 @@ func LimitAndOffsetFromContext(ctx context.Context) (limit, offset uint64, err e
 }
 
 // ContextWithLimitAndOffset returns a context with the limit and offset
-func ContextWithLimitAndOffset(ctx context.Context, limit uint64, offset uint64) context.Context {
+func ContextWithLimitAndOffset(ctx context.Context, limit, offset uint64) context.Context {
 	var pairs []string
 	if limit != 0 {
 		pairs = append(pairs, "limit", strconv.FormatUint(limit, 10))
