@@ -4,144 +4,294 @@
 package monitor
 
 import (
-	"fmt"
+	"context"
 	"io"
-	"net"
+	"sync/atomic"
 
+	"github.com/TheThingsNetwork/go-utils/log"
+	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/api/gateway"
 	"github.com/TheThingsNetwork/ttn/api/router"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/golang/protobuf/ptypes/empty"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 )
 
-var errNotImplemented = grpc.Errorf(codes.Unimplemented, "That's not implemented yet")
-var errBufferFull = grpc.Errorf(codes.ResourceExhausted, "Take it easy, dude! My buffers are full")
+func NewExampleMonitorServer(bufferSize int) *ExampleMonitorServer {
+	s := &ExampleMonitorServer{
+		ctx: log.Get(),
 
-func newExampleServer(channelSize int) *exampleServer {
-	return &exampleServer{
-		gatewayStatuses:  make(chan *gateway.Status, channelSize),
-		uplinkMessages:   make(chan *router.UplinkMessage, channelSize),
-		downlinkMessages: make(chan *router.DownlinkMessage, channelSize),
+		gatewayStatuses:  make(chan *gateway.Status, bufferSize),
+		uplinkMessages:   make(chan *router.UplinkMessage, bufferSize),
+		downlinkMessages: make(chan *router.DownlinkMessage, bufferSize),
+
+		brokerUplinkMessages:   make(chan *broker.DeduplicatedUplinkMessage, bufferSize),
+		brokerDownlinkMessages: make(chan *broker.DownlinkMessage, bufferSize),
 	}
+	go func() {
+		for {
+			select {
+			case <-s.gatewayStatuses:
+				s.metrics.gatewayStatuses++
+			case <-s.uplinkMessages:
+				s.metrics.uplinkMessages++
+			case <-s.downlinkMessages:
+				s.metrics.downlinkMessages++
+			case <-s.brokerUplinkMessages:
+				s.metrics.brokerUplinkMessages++
+			case <-s.brokerDownlinkMessages:
+				s.metrics.brokerDownlinkMessages++
+			}
+		}
+	}()
+	return s
 }
 
-type exampleServer struct {
+type metrics struct {
+	gatewayStatuses        int
+	uplinkMessages         int
+	downlinkMessages       int
+	brokerUplinkMessages   int
+	brokerDownlinkMessages int
+}
+
+type ExampleMonitorServer struct {
+	ctx log.Interface
+
 	gatewayStatuses  chan *gateway.Status
 	uplinkMessages   chan *router.UplinkMessage
 	downlinkMessages chan *router.DownlinkMessage
 
 	brokerUplinkMessages   chan *broker.DeduplicatedUplinkMessage
 	brokerDownlinkMessages chan *broker.DownlinkMessage
+
+	metrics metrics
 }
 
-func (s *exampleServer) GatewayStatus(stream Monitor_GatewayStatusServer) error {
-	for {
-		status, err := stream.Recv()
-		if err == io.EOF {
-			return stream.SendAndClose(&empty.Empty{})
-		}
-		if err != nil {
-			return err
-		}
-		select {
-		case s.gatewayStatuses <- status:
-			fmt.Println("Saving gateway status to database and doing something cool")
-		default:
-			fmt.Println("Warning: Dropping gateway status [full buffer]")
-			return errBufferFull
-		}
-	}
-}
-
-func (s *exampleServer) GatewayUplink(stream Monitor_GatewayUplinkServer) error {
-	for {
-		uplink, err := stream.Recv()
-		if err == io.EOF {
-			return stream.SendAndClose(&empty.Empty{})
-		}
-		if err != nil {
-			return err
-		}
-		select {
-		case s.uplinkMessages <- uplink:
-			fmt.Println("Saving uplink to database and doing something cool")
-		default:
-			fmt.Println("Warning: Dropping uplink [full buffer]")
-			return errBufferFull
-		}
-	}
-}
-
-func (s *exampleServer) GatewayDownlink(stream Monitor_GatewayDownlinkServer) error {
-	for {
-		downlink, err := stream.Recv()
-		if err == io.EOF {
-			return stream.SendAndClose(&empty.Empty{})
-		}
-		if err != nil {
-			return err
-		}
-		select {
-		case s.downlinkMessages <- downlink:
-			fmt.Println("Saving downlink to database and doing something cool")
-		default:
-			fmt.Println("Warning: Dropping downlink [full buffer]")
-			return errBufferFull
-		}
-	}
-}
-
-func (s *exampleServer) BrokerUplink(stream Monitor_BrokerUplinkServer) error {
-	for {
-		uplink, err := stream.Recv()
-		if err == io.EOF {
-			return stream.SendAndClose(&empty.Empty{})
-		}
-		if err != nil {
-			return err
-		}
-		select {
-		case s.brokerUplinkMessages <- uplink:
-			fmt.Println("Saving uplink to database and doing something cool")
-		default:
-			fmt.Println("Warning: Dropping uplink [full buffer]")
-			return errBufferFull
-		}
-	}
-}
-
-func (s *exampleServer) BrokerDownlink(stream Monitor_BrokerDownlinkServer) error {
-	for {
-		downlink, err := stream.Recv()
-		if err == io.EOF {
-			return stream.SendAndClose(&empty.Empty{})
-		}
-		if err != nil {
-			return err
-		}
-		select {
-		case s.brokerDownlinkMessages <- downlink:
-			fmt.Println("Saving downlink to database and doing something cool")
-		default:
-			fmt.Println("Warning: Dropping downlink [full buffer]")
-			return errBufferFull
-		}
-	}
-}
-
-func (s *exampleServer) Serve(port int) {
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+func (s *ExampleMonitorServer) getAndAuthGateway(ctx context.Context) (string, error) {
+	id, err := api.IDFromContext(ctx)
 	if err != nil {
-		panic(err)
+		return "", err
 	}
-	srv := grpc.NewServer()
-	RegisterMonitorServer(srv, s)
-	srv.Serve(lis)
+	token, err := api.TokenFromContext(ctx)
+	if err != nil {
+		return "", err
+	}
+	// TODO: Validate token
+	s.ctx.WithFields(log.Fields{"ID": id, "Token": token}).Info("Gateway Authenticated")
+	return id, nil
 }
 
-func startExampleServer(channelSize, port int) {
-	s := newExampleServer(channelSize)
-	s.Serve(port)
+func (s *ExampleMonitorServer) GatewayStatus(stream Monitor_GatewayStatusServer) (err error) {
+	gatewayID, err := s.getAndAuthGateway(stream.Context())
+	if err != nil {
+		return errors.NewErrPermissionDenied(err.Error())
+	}
+	ctx := s.ctx.WithField("GatewayID", gatewayID)
+	ctx.Info("GatewayStatus stream started")
+	defer func() {
+		if err != nil {
+			ctx.WithError(err).Info("GatewayStatus stream ended")
+		} else {
+			ctx.Info("GatewayStatus stream ended")
+		}
+	}()
+	var streamErr atomic.Value
+	go func() {
+		<-stream.Context().Done()
+		streamErr.Store(stream.Context().Err())
+	}()
+	for {
+		streamErr := streamErr.Load()
+		if streamErr != nil {
+			return streamErr.(error)
+		}
+		msg, err := stream.Recv()
+		if err == io.EOF {
+			return stream.SendAndClose(&empty.Empty{})
+		}
+		if err != nil {
+			return err
+		}
+		ctx.Info("Received GatewayStatus")
+		select {
+		case s.gatewayStatuses <- msg:
+		default:
+			ctx.Warn("Dropping Status")
+		}
+	}
+}
+
+func (s *ExampleMonitorServer) GatewayUplink(stream Monitor_GatewayUplinkServer) error {
+	gatewayID, err := s.getAndAuthGateway(stream.Context())
+	if err != nil {
+		return errors.NewErrPermissionDenied(err.Error())
+	}
+	ctx := s.ctx.WithField("GatewayID", gatewayID)
+	ctx.Info("GatewayUplink stream started")
+	defer func() {
+		if err != nil {
+			ctx.WithError(err).Info("GatewayUplink stream ended")
+		} else {
+			ctx.Info("GatewayUplink stream ended")
+		}
+	}()
+	var streamErr atomic.Value
+	go func() {
+		<-stream.Context().Done()
+		streamErr.Store(stream.Context().Err())
+	}()
+	for {
+		streamErr := streamErr.Load()
+		if streamErr != nil {
+			return streamErr.(error)
+		}
+		msg, err := stream.Recv()
+		if err == io.EOF {
+			return stream.SendAndClose(&empty.Empty{})
+		}
+		if err != nil {
+			return err
+		}
+		ctx.Info("Received UplinkMessage")
+		select {
+		case s.uplinkMessages <- msg:
+		default:
+			ctx.Warn("Dropping UplinkMessage")
+		}
+	}
+}
+
+func (s *ExampleMonitorServer) GatewayDownlink(stream Monitor_GatewayDownlinkServer) error {
+	gatewayID, err := s.getAndAuthGateway(stream.Context())
+	if err != nil {
+		return errors.NewErrPermissionDenied(err.Error())
+	}
+	ctx := s.ctx.WithField("GatewayID", gatewayID)
+	ctx.Info("GatewayDownlink stream started")
+	defer func() {
+		if err != nil {
+			ctx.WithError(err).Info("GatewayDownlink stream ended")
+		} else {
+			ctx.Info("GatewayDownlink stream ended")
+		}
+	}()
+	var streamErr atomic.Value
+	go func() {
+		<-stream.Context().Done()
+		streamErr.Store(stream.Context().Err())
+	}()
+	for {
+		streamErr := streamErr.Load()
+		if streamErr != nil {
+			return streamErr.(error)
+		}
+		msg, err := stream.Recv()
+		if err == io.EOF {
+			return stream.SendAndClose(&empty.Empty{})
+		}
+		if err != nil {
+			return err
+		}
+		ctx.Info("Received DownlinkMessage")
+		select {
+		case s.downlinkMessages <- msg:
+		default:
+			ctx.Warn("Dropping DownlinkMessage")
+		}
+	}
+}
+
+func (s *ExampleMonitorServer) getAndAuthBroker(ctx context.Context) (string, error) {
+	id, err := api.IDFromContext(ctx)
+	if err != nil {
+		return "", err
+	}
+	token, err := api.TokenFromContext(ctx)
+	if err != nil {
+		return "", err
+	}
+	// TODO: Validate token
+	s.ctx.WithFields(log.Fields{"ID": id, "Token": token}).Info("Broker Authenticated")
+	return id, nil
+}
+
+func (s *ExampleMonitorServer) BrokerUplink(stream Monitor_BrokerUplinkServer) error {
+	brokerID, err := s.getAndAuthBroker(stream.Context())
+	if err != nil {
+		return errors.NewErrPermissionDenied(err.Error())
+	}
+	ctx := s.ctx.WithField("BrokerID", brokerID)
+	ctx.Info("BrokerUplink stream started")
+	defer func() {
+		if err != nil {
+			ctx.WithError(err).Info("BrokerUplink stream ended")
+		} else {
+			ctx.Info("BrokerUplink stream ended")
+		}
+	}()
+	var streamErr atomic.Value
+	go func() {
+		<-stream.Context().Done()
+		streamErr.Store(stream.Context().Err())
+	}()
+	for {
+		streamErr := streamErr.Load()
+		if streamErr != nil {
+			return streamErr.(error)
+		}
+		msg, err := stream.Recv()
+		if err == io.EOF {
+			return stream.SendAndClose(&empty.Empty{})
+		}
+		if err != nil {
+			return err
+		}
+		ctx.Info("Received DeduplicatedUplinkMessage")
+		select {
+		case s.brokerUplinkMessages <- msg:
+		default:
+			ctx.Warn("Dropping DeduplicatedUplinkMessage")
+		}
+	}
+}
+
+func (s *ExampleMonitorServer) BrokerDownlink(stream Monitor_BrokerDownlinkServer) error {
+	brokerID, err := s.getAndAuthBroker(stream.Context())
+	if err != nil {
+		return errors.NewErrPermissionDenied(err.Error())
+	}
+	ctx := s.ctx.WithField("BrokerID", brokerID)
+	ctx.Info("BrokerUplink stream started")
+	defer func() {
+		if err != nil {
+			ctx.WithError(err).Info("BrokerUplink stream ended")
+		} else {
+			ctx.Info("BrokerUplink stream ended")
+		}
+	}()
+	var streamErr atomic.Value
+	go func() {
+		<-stream.Context().Done()
+		streamErr.Store(stream.Context().Err())
+	}()
+	for {
+		streamErr := streamErr.Load()
+		if streamErr != nil {
+			return streamErr.(error)
+		}
+		msg, err := stream.Recv()
+		if err == io.EOF {
+			return stream.SendAndClose(&empty.Empty{})
+		}
+		if err != nil {
+			return err
+		}
+		ctx.Info("Received DownlinkMessage")
+		select {
+		case s.brokerDownlinkMessages <- msg:
+		default:
+			ctx.Warn("Dropping DownlinkMessage")
+		}
+	}
 }
