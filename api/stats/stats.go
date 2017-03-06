@@ -68,5 +68,10 @@ func GetComponent() *api.ComponentStats {
 	memstats := new(runtime.MemStats)
 	runtime.ReadMemStats(memstats)
 	status.GcCpuFraction = float32(memstats.GCCPUFraction)
+	if status.Memory == nil {
+		status.Memory = new(api.ComponentStats_MemoryStats)
+	}
+	status.Memory.Heap = memstats.HeapInuse
+	status.Memory.Stack = memstats.StackInuse
 	return status
 }
