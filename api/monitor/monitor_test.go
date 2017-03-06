@@ -16,6 +16,8 @@ import (
 )
 
 func TestMonitor(t *testing.T) {
+	waitTime := 10 * time.Millisecond
+
 	a := New(t)
 
 	testLogger := test.NewLogger()
@@ -38,36 +40,36 @@ func TestMonitor(t *testing.T) {
 	cli.AddServer("invalid-config", lis.Addr().String())
 
 	cli.AddServer("test", lis.Addr().String(), grpc.WithInsecure())
-	time.Sleep(50 * time.Millisecond)
+	time.Sleep(waitTime)
 	defer func() {
 		cli.Close()
-		time.Sleep(50 * time.Millisecond)
+		time.Sleep(waitTime)
 		s.Stop()
 	}()
 
 	gtw := cli.NewGatewayStreams("test", "token")
-	time.Sleep(50 * time.Millisecond)
+	time.Sleep(waitTime)
 	for i := 0; i < 20; i++ {
 		gtw.Send(&router.UplinkMessage{})
 		gtw.Send(&router.DownlinkMessage{})
 		gtw.Send(&gateway.Status{})
 		time.Sleep(time.Millisecond)
 	}
-	time.Sleep(50 * time.Millisecond)
+	time.Sleep(waitTime)
 	gtw.Close()
-	time.Sleep(50 * time.Millisecond)
+	time.Sleep(waitTime)
 
 	a.So(server.metrics.uplinkMessages, ShouldEqual, 20)
 	a.So(server.metrics.downlinkMessages, ShouldEqual, 20)
 	a.So(server.metrics.gatewayStatuses, ShouldEqual, 20)
 
 	brk := cli.NewBrokerStreams("test", "token")
-	time.Sleep(50 * time.Millisecond)
+	time.Sleep(waitTime)
 	brk.Send(&broker.DeduplicatedUplinkMessage{})
 	brk.Send(&broker.DownlinkMessage{})
-	time.Sleep(50 * time.Millisecond)
+	time.Sleep(waitTime)
 	brk.Close()
-	time.Sleep(50 * time.Millisecond)
+	time.Sleep(waitTime)
 
 	a.So(server.metrics.brokerUplinkMessages, ShouldEqual, 1)
 	a.So(server.metrics.brokerDownlinkMessages, ShouldEqual, 1)
