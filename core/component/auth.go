@@ -159,32 +159,41 @@ func (c *Component) initRoots() error {
 	return nil
 }
 
+func (c *Component) initBgCtx() error {
+	ctx := context.Background()
+	if c.Identity != nil {
+		ctx = api.ContextWithID(ctx, c.Identity.Id)
+		ctx = api.ContextWithServiceInfo(ctx, c.Identity.ServiceName, c.Identity.ServiceVersion, c.Identity.NetAddress)
+	}
+	c.bgCtx = ctx
+	return nil
+}
+
 // BuildJWT builds a short-lived JSON Web Token for this component
 func (c *Component) BuildJWT() (string, error) {
-	if c.privateKey != nil {
-		privPEM, err := security.PrivatePEM(c.privateKey)
-		if err != nil {
-			return "", err
-		}
-		return security.BuildJWT(c.Identity.Id, 20*time.Second, privPEM)
+	if c.privateKey == nil {
+		return "", nil
 	}
-	return "", nil
+	if c.Identity == nil {
+		return "", nil
+	}
+	privPEM, err := security.PrivatePEM(c.privateKey)
+	if err != nil {
+		return "", err
+	}
+	return security.BuildJWT(c.Identity.Id, 20*time.Second, privPEM)
 }
 
 // GetContext returns a context for outgoing RPC request. If token is "", this function will generate a short lived token from the component
 func (c *Component) GetContext(token string) context.Context {
-	ctx := context.Background()
-	if token != "" {
-		ctx = api.ContextWithToken(ctx, token)
+	if c.bgCtx == nil {
+		c.initBgCtx()
 	}
-	if c.Identity != nil {
-		ctx = api.ContextWithID(ctx, c.Identity.Id)
-		ctx = api.ContextWithServiceInfo(ctx, c.Identity.ServiceName, c.Identity.ServiceVersion, c.Identity.NetAddress)
-		if token == "" {
-			token, _ := c.BuildJWT()
-			ctx = api.ContextWithToken(ctx, token)
-		}
+	ctx := c.bgCtx
+	if token == "" && c.Identity != nil {
+		token, _ = c.BuildJWT()
 	}
+	ctx = api.ContextWithToken(ctx, token)
 	return ctx
 }
 
