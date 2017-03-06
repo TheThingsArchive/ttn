@@ -65,7 +65,7 @@ type broker struct {
 	uplinkDeduplicator     Deduplicator
 	activationDeduplicator Deduplicator
 	status                 *status
-	monitorStream          pb_monitor.MonitorStream
+	monitorStream          pb_monitor.GenericStream
 }
 
 func (b *broker) checkPrefixAnnouncements() error {

@@ -42,7 +42,7 @@ type Gateway struct {
 	authenticated bool
 
 	Monitor       *pb_monitor.Client
-	MonitorStream pb_monitor.MonitorStream
+	MonitorStream pb_monitor.GenericStream
 
 	Ctx ttnlog.Interface
 }

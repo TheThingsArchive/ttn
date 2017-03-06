@@ -17,6 +17,7 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 )
 
+// NewExampleMonitorServer creates a new reference monitor server
 func NewExampleMonitorServer(bufferSize int) *ExampleMonitorServer {
 	s := &ExampleMonitorServer{
 		ctx: log.Get(),
@@ -55,6 +56,7 @@ type metrics struct {
 	brokerDownlinkMessages int
 }
 
+// ExampleMonitorServer is a new reference monitor server
 type ExampleMonitorServer struct {
 	ctx log.Interface
 
@@ -82,6 +84,7 @@ func (s *ExampleMonitorServer) getAndAuthGateway(ctx context.Context) (string, e
 	return id, nil
 }
 
+// GatewayStatus RPC
 func (s *ExampleMonitorServer) GatewayStatus(stream Monitor_GatewayStatusServer) (err error) {
 	gatewayID, err := s.getAndAuthGateway(stream.Context())
 	if err != nil {
@@ -122,6 +125,7 @@ func (s *ExampleMonitorServer) GatewayStatus(stream Monitor_GatewayStatusServer)
 	}
 }
 
+// GatewayUplink RPC
 func (s *ExampleMonitorServer) GatewayUplink(stream Monitor_GatewayUplinkServer) error {
 	gatewayID, err := s.getAndAuthGateway(stream.Context())
 	if err != nil {
@@ -162,6 +166,7 @@ func (s *ExampleMonitorServer) GatewayUplink(stream Monitor_GatewayUplinkServer)
 	}
 }
 
+// GatewayDownlink RPC
 func (s *ExampleMonitorServer) GatewayDownlink(stream Monitor_GatewayDownlinkServer) error {
 	gatewayID, err := s.getAndAuthGateway(stream.Context())
 	if err != nil {
@@ -216,6 +221,7 @@ func (s *ExampleMonitorServer) getAndAuthBroker(ctx context.Context) (string, er
 	return id, nil
 }
 
+// BrokerUplink RPC
 func (s *ExampleMonitorServer) BrokerUplink(stream Monitor_BrokerUplinkServer) error {
 	brokerID, err := s.getAndAuthBroker(stream.Context())
 	if err != nil {
@@ -256,6 +262,7 @@ func (s *ExampleMonitorServer) BrokerUplink(stream Monitor_BrokerUplinkServer) e
 	}
 }
 
+// BrokerDownlink RPC
 func (s *ExampleMonitorServer) BrokerDownlink(stream Monitor_BrokerDownlinkServer) error {
 	brokerID, err := s.getAndAuthBroker(stream.Context())
 	if err != nil {

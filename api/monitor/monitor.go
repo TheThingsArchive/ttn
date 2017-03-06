@@ -20,7 +20,14 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
-type MonitorStream interface {
+// GenericStream is used for sending anything to the monitor.
+// Depending on the context, this can be
+// - *router.UplinkMessage
+// - *router.DownlinkMessage
+// - *gateway.Status
+// - *broker.DeduplicatedUplinkMessage
+// - *broker.DownlinkMessage
+type GenericStream interface {
 	Send(interface{})
 	Close()
 }
@@ -167,7 +174,7 @@ func (s *gatewayStreams) Close() {
 }
 
 // NewGatewayStreams returns new streams using the given gateway ID and token
-func (c *Client) NewGatewayStreams(id string, token string) MonitorStream {
+func (c *Client) NewGatewayStreams(id string, token string) GenericStream {
 	log := c.log.WithField("GatewayID", id)
 	ctx, cancel := context.WithCancel(c.ctx)
 	ctx = api.ContextWithID(ctx, id)
@@ -320,7 +327,7 @@ func (s *brokerStreams) Close() {
 }
 
 // NewBrokerStreams returns new streams using the given broker ID and token
-func (c *Client) NewBrokerStreams(id string, token string) MonitorStream {
+func (c *Client) NewBrokerStreams(id string, token string) GenericStream {
 	log := c.log
 	ctx, cancel := context.WithCancel(c.ctx)
 	ctx = api.ContextWithID(ctx, id)
