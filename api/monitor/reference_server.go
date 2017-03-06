@@ -17,9 +17,9 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 )
 
-// NewExampleMonitorServer creates a new reference monitor server
-func NewExampleMonitorServer(bufferSize int) *ExampleMonitorServer {
-	s := &ExampleMonitorServer{
+// NewReferenceMonitorServer creates a new reference monitor server
+func NewReferenceMonitorServer(bufferSize int) *ReferenceMonitorServer {
+	s := &ReferenceMonitorServer{
 		ctx: log.Get(),
 
 		gatewayStatuses:  make(chan *gateway.Status, bufferSize),
@@ -29,35 +29,37 @@ func NewExampleMonitorServer(bufferSize int) *ExampleMonitorServer {
 		brokerUplinkMessages:   make(chan *broker.DeduplicatedUplinkMessage, bufferSize),
 		brokerDownlinkMessages: make(chan *broker.DownlinkMessage, bufferSize),
 	}
-	go func() {
-		for {
-			select {
-			case <-s.gatewayStatuses:
-				s.metrics.gatewayStatuses++
-			case <-s.uplinkMessages:
-				s.metrics.uplinkMessages++
-			case <-s.downlinkMessages:
-				s.metrics.downlinkMessages++
-			case <-s.brokerUplinkMessages:
-				s.metrics.brokerUplinkMessages++
-			case <-s.brokerDownlinkMessages:
-				s.metrics.brokerDownlinkMessages++
+	for i := 0; i < bufferSize; i++ {
+		go func() {
+			for {
+				select {
+				case <-s.gatewayStatuses:
+					atomic.AddUint64(&s.metrics.gatewayStatuses, 1)
+				case <-s.uplinkMessages:
+					atomic.AddUint64(&s.metrics.uplinkMessages, 1)
+				case <-s.downlinkMessages:
+					atomic.AddUint64(&s.metrics.downlinkMessages, 1)
+				case <-s.brokerUplinkMessages:
+					atomic.AddUint64(&s.metrics.brokerUplinkMessages, 1)
+				case <-s.brokerDownlinkMessages:
+					atomic.AddUint64(&s.metrics.brokerDownlinkMessages, 1)
+				}
 			}
-		}
-	}()
+		}()
+	}
 	return s
 }
 
 type metrics struct {
-	gatewayStatuses        int
-	uplinkMessages         int
-	downlinkMessages       int
-	brokerUplinkMessages   int
-	brokerDownlinkMessages int
+	gatewayStatuses        uint64
+	uplinkMessages         uint64
+	downlinkMessages       uint64
+	brokerUplinkMessages   uint64
+	brokerDownlinkMessages uint64
 }
 
-// ExampleMonitorServer is a new reference monitor server
-type ExampleMonitorServer struct {
+// ReferenceMonitorServer is a new reference monitor server
+type ReferenceMonitorServer struct {
 	ctx log.Interface
 
 	gatewayStatuses  chan *gateway.Status
@@ -70,7 +72,7 @@ type ExampleMonitorServer struct {
 	metrics metrics
 }
 
-func (s *ExampleMonitorServer) getAndAuthGateway(ctx context.Context) (string, error) {
+func (s *ReferenceMonitorServer) getAndAuthGateway(ctx context.Context) (string, error) {
 	id, err := api.IDFromContext(ctx)
 	if err != nil {
 		return "", err
@@ -79,13 +81,13 @@ func (s *ExampleMonitorServer) getAndAuthGateway(ctx context.Context) (string, e
 	if err != nil {
 		return "", err
 	}
-	// TODO: Validate token
+	// Actually validate token here, if failed: return nil, grpc.Errorf(codes.Unauthenticated, "Gateway Authentication Failed")
 	s.ctx.WithFields(log.Fields{"ID": id, "Token": token}).Info("Gateway Authenticated")
 	return id, nil
 }
 
 // GatewayStatus RPC
-func (s *ExampleMonitorServer) GatewayStatus(stream Monitor_GatewayStatusServer) (err error) {
+func (s *ReferenceMonitorServer) GatewayStatus(stream Monitor_GatewayStatusServer) (err error) {
 	gatewayID, err := s.getAndAuthGateway(stream.Context())
 	if err != nil {
 		return errors.NewErrPermissionDenied(err.Error())
@@ -126,7 +128,7 @@ func (s *ExampleMonitorServer) GatewayStatus(stream Monitor_GatewayStatusServer)
 }
 
 // GatewayUplink RPC
-func (s *ExampleMonitorServer) GatewayUplink(stream Monitor_GatewayUplinkServer) error {
+func (s *ReferenceMonitorServer) GatewayUplink(stream Monitor_GatewayUplinkServer) error {
 	gatewayID, err := s.getAndAuthGateway(stream.Context())
 	if err != nil {
 		return errors.NewErrPermissionDenied(err.Error())
@@ -167,7 +169,7 @@ func (s *ExampleMonitorServer) GatewayUplink(stream Monitor_GatewayUplinkServer)
 }
 
 // GatewayDownlink RPC
-func (s *ExampleMonitorServer) GatewayDownlink(stream Monitor_GatewayDownlinkServer) error {
+func (s *ReferenceMonitorServer) GatewayDownlink(stream Monitor_GatewayDownlinkServer) error {
 	gatewayID, err := s.getAndAuthGateway(stream.Context())
 	if err != nil {
 		return errors.NewErrPermissionDenied(err.Error())
@@ -207,7 +209,7 @@ func (s *ExampleMonitorServer) GatewayDownlink(stream Monitor_GatewayDownlinkSer
 	}
 }
 
-func (s *ExampleMonitorServer) getAndAuthBroker(ctx context.Context) (string, error) {
+func (s *ReferenceMonitorServer) getAndAuthBroker(ctx context.Context) (string, error) {
 	id, err := api.IDFromContext(ctx)
 	if err != nil {
 		return "", err
@@ -216,13 +218,13 @@ func (s *ExampleMonitorServer) getAndAuthBroker(ctx context.Context) (string, er
 	if err != nil {
 		return "", err
 	}
-	// TODO: Validate token
+	// Actually validate token here, if failed: return nil, grpc.Errorf(codes.Unauthenticated, "Broker Authentication Failed")
 	s.ctx.WithFields(log.Fields{"ID": id, "Token": token}).Info("Broker Authenticated")
 	return id, nil
 }
 
 // BrokerUplink RPC
-func (s *ExampleMonitorServer) BrokerUplink(stream Monitor_BrokerUplinkServer) error {
+func (s *ReferenceMonitorServer) BrokerUplink(stream Monitor_BrokerUplinkServer) error {
 	brokerID, err := s.getAndAuthBroker(stream.Context())
 	if err != nil {
 		return errors.NewErrPermissionDenied(err.Error())
@@ -263,7 +265,7 @@ func (s *ExampleMonitorServer) BrokerUplink(stream Monitor_BrokerUplinkServer) e
 }
 
 // BrokerDownlink RPC
-func (s *ExampleMonitorServer) BrokerDownlink(stream Monitor_BrokerDownlinkServer) error {
+func (s *ReferenceMonitorServer) BrokerDownlink(stream Monitor_BrokerDownlinkServer) error {
 	brokerID, err := s.getAndAuthBroker(stream.Context())
 	if err != nil {
 		return errors.NewErrPermissionDenied(err.Error())

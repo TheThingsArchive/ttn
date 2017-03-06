@@ -30,7 +30,7 @@ func main() {
 		ctx.WithError(err).Fatal("Failed to listen")
 	}
 	s := grpc.NewServer(grpc.MaxConcurrentStreams(math.MaxUint16))
-	server := monitor.NewExampleMonitorServer(10)
+	server := monitor.NewReferenceMonitorServer(10)
 	monitor.RegisterMonitorServer(s, server)
 	go s.Serve(lis)
 	ctx.Infof("Listening on %s", lis.Addr().String())

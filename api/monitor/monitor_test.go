@@ -27,7 +27,7 @@ func TestMonitor(t *testing.T) {
 		t.Fatalf("Failed to listen: %v", err)
 	}
 	s := grpc.NewServer()
-	server := NewExampleMonitorServer(10)
+	server := NewReferenceMonitorServer(10)
 
 	RegisterMonitorServer(s, server)
 	go s.Serve(lis)
