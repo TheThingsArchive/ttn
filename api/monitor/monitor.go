@@ -5,7 +5,6 @@ package monitor
 
 import (
 	"io"
-
 	"sync"
 
 	"github.com/TheThingsNetwork/go-utils/grpc/restartstream"
