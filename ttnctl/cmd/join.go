@@ -48,6 +48,7 @@ var joinCmd = &cobra.Command{
 
 		rtrConn, rtrClient := util.GetRouter(ctx)
 		defer rtrConn.Close()
+		defer rtrClient.Close()
 
 		gatewayID := viper.GetString("gateway-id")
 		gatewayToken := viper.GetString("gateway-token")
@@ -64,11 +65,9 @@ var joinCmd = &cobra.Command{
 			}
 		}
 
-		gtwClient := router.NewRouterClientForGateway(rtrClient, gatewayID, gatewayToken)
+		gtwClient := rtrClient.NewGatewayStreams(gatewayID, gatewayToken)
 		defer gtwClient.Close()
 
-		downlinkStream := router.NewMonitoredDownlinkStream(gtwClient)
-		defer downlinkStream.Close()
 		time.Sleep(100 * time.Millisecond)
 
 		joinReq := &pb_lorawan.Message{
@@ -89,20 +88,14 @@ var joinCmd = &cobra.Command{
 		}
 		uplink.UnmarshalPayload()
 
-		uplinkStream := router.NewMonitoredUplinkStream(gtwClient)
-		defer uplinkStream.Close()
-
-		err = uplinkStream.Send(uplink)
-		if err != nil {
-			ctx.WithError(err).Fatal("Could not send uplink to Router")
-		}
+		gtwClient.Uplink(uplink)
 
 		time.Sleep(100 * time.Millisecond)
 
 		ctx.Info("Sent uplink to Router")
 
 		select {
-		case downlinkMessage, ok := <-downlinkStream.Channel():
+		case downlinkMessage, ok := <-gtwClient.Downlink():
 			if !ok {
 				ctx.Info("Did not receive downlink")
 				break

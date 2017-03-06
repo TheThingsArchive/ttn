@@ -13,7 +13,7 @@ import (
 )
 
 // GetRouter starts a connection with the router
-func GetRouter(ctx ttnlog.Interface) (*grpc.ClientConn, router.RouterClient) {
+func GetRouter(ctx ttnlog.Interface) (*grpc.ClientConn, *router.Client) {
 	ctx.Info("Discovering Router...")
 	dscConn, client := GetDiscovery(ctx)
 	defer dscConn.Close()
@@ -27,7 +27,8 @@ func GetRouter(ctx ttnlog.Interface) (*grpc.ClientConn, router.RouterClient) {
 	ctx.Info("Connecting with Router...")
 	rtrConn, err := routerAnnouncement.Dial()
 	ctx.Info("Connected to Router")
-	rtrClient := router.NewRouterClient(rtrConn)
+	rtrClient := router.NewClient(router.DefaultClientConfig)
+	rtrClient.AddServer(viper.GetString("router-id"), rtrConn)
 	return rtrConn, rtrClient
 }
 
