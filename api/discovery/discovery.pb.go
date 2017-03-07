@@ -198,17 +198,17 @@ type Announcement struct {
 	Url string `protobuf:"bytes,5,opt,name=url,proto3" json:"url,omitempty"`
 	// Indicates whether this service is part of The Things Network (the public community network)
 	Public bool `protobuf:"varint,6,opt,name=public,proto3" json:"public,omitempty"`
-	// Comma-separated network addresses in the form "[hostname]:[port]" (currently we only use the first)
+	// Comma-separated network addresses in the form "domain1:port,domain2:port,domain3:port" (currently we only use the first)
 	NetAddress string `protobuf:"bytes,11,opt,name=net_address,json=netAddress,proto3" json:"net_address,omitempty"`
 	// ECDSA public key of this component
 	PublicKey string `protobuf:"bytes,12,opt,name=public_key,json=publicKey,proto3" json:"public_key,omitempty"`
-	// TLS Certificate (if TLS is enabled)
+	// TLS Certificate for gRPC on net_address (if TLS is enabled)
 	Certificate string `protobuf:"bytes,13,opt,name=certificate,proto3" json:"certificate,omitempty"`
-	// Contains the address where the HTTP API is exposed (if there is one)
+	// Contains the address where the HTTP API is exposed (if there is one). Format: "http(s)://domain(:port)"; default http port is 80, default https port is 443.
 	ApiAddress string `protobuf:"bytes,14,opt,name=api_address,json=apiAddress,proto3" json:"api_address,omitempty"`
-	// Contains the address where the MQTT API is exposed (if there is one)
+	// Contains the address where the MQTT API is exposed (if there is one). Format: "domain(:port)"; if no port supplied, mqtt is on 1883, mqtts is on 8883.
 	MqttAddress string `protobuf:"bytes,15,opt,name=mqtt_address,json=mqttAddress,proto3" json:"mqtt_address,omitempty"`
-	// Contains the address where the AMQP API is exposed (if there is one)
+	// Contains the address where the AMQP API is exposed (if there is one). Format: "domain(:port)"; if no port supplied, amqp is on 5672, amqps is on 5671.
 	AmqpAddress string `protobuf:"bytes,16,opt,name=amqp_address,json=amqpAddress,proto3" json:"amqp_address,omitempty"`
 	// Metadata for this component
 	Metadata []*Metadata `protobuf:"bytes,22,rep,name=metadata" json:"metadata,omitempty"`

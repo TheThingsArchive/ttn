@@ -136,12 +136,12 @@ The Announcement of a service (also called component)
 | `description` | `string` | Description of the component |
 | `url` | `string` | URL with documentation or more information about this component |
 | `public` | `bool` | Indicates whether this service is part of The Things Network (the public community network) |
-| `net_address` | `string` | Comma-separated network addresses in the form "[hostname]:[port]" (currently we only use the first) |
+| `net_address` | `string` | Comma-separated network addresses in the form "domain1:port,domain2:port,domain3:port" (currently we only use the first) |
 | `public_key` | `string` | ECDSA public key of this component |
-| `certificate` | `string` | TLS Certificate (if TLS is enabled) |
-| `api_address` | `string` | Contains the address where the HTTP API is exposed (if there is one) |
-| `mqtt_address` | `string` | Contains the address where the MQTT API is exposed (if there is one) |
-| `amqp_address` | `string` | Contains the address where the AMQP API is exposed (if there is one) |
+| `certificate` | `string` | TLS Certificate for gRPC on net_address (if TLS is enabled) |
+| `api_address` | `string` | Contains the address where the HTTP API is exposed (if there is one). Format: "http(s)://domain(:port)"; default http port is 80, default https port is 443. |
+| `mqtt_address` | `string` | Contains the address where the MQTT API is exposed (if there is one). Format: "domain(:port)"; if no port supplied, mqtt is on 1883, mqtts is on 8883. |
+| `amqp_address` | `string` | Contains the address where the AMQP API is exposed (if there is one). Format: "domain(:port)"; if no port supplied, amqp is on 5672, amqps is on 5671. |
 | `metadata` | _repeated_ [`Metadata`](#discoverymetadata) | Metadata for this component |
 
 ### `.discovery.AnnouncementsResponse`
