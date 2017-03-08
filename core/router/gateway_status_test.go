@@ -24,7 +24,7 @@ func TestHandleGatewayStatus(t *testing.T) {
 		Component: &component.Component{
 			Ctx:      logger,
 			Identity: &pb_discovery.Announcement{},
-			Monitors: monitor.NewRegistry(logger),
+			Monitor:  monitor.NewClient(monitor.DefaultClientConfig),
 		},
 		gateways: map[string]*gateway.Gateway{},
 	}

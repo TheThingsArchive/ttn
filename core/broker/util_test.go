@@ -32,7 +32,7 @@ func getTestBroker(t *testing.T) *testBroker {
 			Component: &component.Component{
 				Discovery: discovery,
 				Ctx:       logger,
-				Monitors:  monitor.NewRegistry(logger),
+				Monitor:   monitor.NewClient(monitor.DefaultClientConfig),
 			},
 			handlers:               make(map[string]*handler),
 			activationDeduplicator: NewDeduplicator(10 * time.Millisecond),
