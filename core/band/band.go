@@ -45,29 +45,29 @@ func (f *FrequencyPlan) GetTxPowerIndexFor(txPower int) (int, error) {
 
 // Guess the region based on frequency
 func Guess(frequency uint64) string {
+	// Join frequencies
 	switch {
-	case frequency >= 863000000 && frequency <= 870000000:
-		return pb_lorawan.Region_EU_863_870.String()
-	case frequency >= 902300000 && frequency <= 914900000:
-		return pb_lorawan.Region_US_902_928.String()
-	case frequency >= 779500000 && frequency <= 786500000:
-		return pb_lorawan.Region_CN_779_787.String()
-	case frequency >= 433175000 && frequency <= 434665000:
-		return pb_lorawan.Region_EU_433.String()
-	case frequency == 923200000 || frequency == 923400000:
+	case frequency == 923200000 && frequency <= 923400000:
+		// not considering AS_920_923 and AS_923_925 because we're not sure
 		return pb_lorawan.Region_AS_923.String()
-	case frequency >= 920900000 || frequency == 923300000:
+	case frequency == 922100000 || frequency == 922300000 || frequency == 922500000:
 		return pb_lorawan.Region_KR_920_923.String()
-	case frequency >= 915200000 && frequency <= 927800000:
-		return pb_lorawan.Region_AU_915_928.String()
-	case frequency >= 470300000 && frequency <= 489300000:
-		return pb_lorawan.Region_CN_470_510.String()
 	}
+
+	// Existing Channels
+	if region, ok := channels[int(frequency)]; ok {
+		return region
+	}
+
+	// Everything Else: not allowed
 	return ""
 }
 
 // Get the frequency plan for the given region
 func Get(region string) (frequencyPlan FrequencyPlan, err error) {
+	if fp, ok := frequencyPlans[region]; ok {
+		return fp, nil
+	}
 	switch region {
 	case pb_lorawan.Region_EU_863_870.String():
 		frequencyPlan.Band, err = lora.GetConfig(lora.EU_863_870, false, lorawan.DwellTimeNoLimit)
@@ -100,6 +100,38 @@ func Get(region string) (frequencyPlan FrequencyPlan, err error) {
 		frequencyPlan.Band, err = lora.GetConfig(lora.CN_470_510, false, lorawan.DwellTimeNoLimit)
 	case pb_lorawan.Region_AS_923.String():
 		frequencyPlan.Band, err = lora.GetConfig(lora.AS_923, false, lorawan.DwellTime400ms)
+	case pb_lorawan.Region_AS_920_923.String():
+		frequencyPlan.Band, err = lora.GetConfig(lora.AS_923, false, lorawan.DwellTime400ms)
+		frequencyPlan.UplinkChannels = []lora.Channel{
+			lora.Channel{Frequency: 923200000, DataRates: []int{0, 1, 2, 3, 4, 5}},
+			lora.Channel{Frequency: 923400000, DataRates: []int{0, 1, 2, 3, 4, 5}},
+			lora.Channel{Frequency: 922200000, DataRates: []int{0, 1, 2, 3, 4, 5}},
+			lora.Channel{Frequency: 922400000, DataRates: []int{0, 1, 2, 3, 4, 5}},
+			lora.Channel{Frequency: 922600000, DataRates: []int{0, 1, 2, 3, 4, 5}},
+			lora.Channel{Frequency: 922800000, DataRates: []int{0, 1, 2, 3, 4, 5}},
+			lora.Channel{Frequency: 923000000, DataRates: []int{0, 1, 2, 3, 4, 5}},
+			lora.Channel{Frequency: 922000000, DataRates: []int{0, 1, 2, 3, 4, 5}},
+			lora.Channel{Frequency: 922100000, DataRates: []int{6}},
+			lora.Channel{Frequency: 921800000, DataRates: []int{7}},
+		}
+		frequencyPlan.DownlinkChannels = frequencyPlan.UplinkChannels
+		frequencyPlan.CFList = &lorawan.CFList{922200000, 922400000, 922600000, 922800000, 923000000}
+	case pb_lorawan.Region_AS_923_925.String():
+		frequencyPlan.Band, err = lora.GetConfig(lora.AS_923, false, lorawan.DwellTime400ms)
+		frequencyPlan.UplinkChannels = []lora.Channel{
+			lora.Channel{Frequency: 923200000, DataRates: []int{0, 1, 2, 3, 4, 5}},
+			lora.Channel{Frequency: 923400000, DataRates: []int{0, 1, 2, 3, 4, 5}},
+			lora.Channel{Frequency: 923600000, DataRates: []int{0, 1, 2, 3, 4, 5}},
+			lora.Channel{Frequency: 923800000, DataRates: []int{0, 1, 2, 3, 4, 5}},
+			lora.Channel{Frequency: 924000000, DataRates: []int{0, 1, 2, 3, 4, 5}},
+			lora.Channel{Frequency: 924200000, DataRates: []int{0, 1, 2, 3, 4, 5}},
+			lora.Channel{Frequency: 924400000, DataRates: []int{0, 1, 2, 3, 4, 5}},
+			lora.Channel{Frequency: 924600000, DataRates: []int{0, 1, 2, 3, 4, 5}},
+			lora.Channel{Frequency: 924500000, DataRates: []int{6}},
+			lora.Channel{Frequency: 924800000, DataRates: []int{7}},
+		}
+		frequencyPlan.DownlinkChannels = frequencyPlan.UplinkChannels
+		frequencyPlan.CFList = &lorawan.CFList{923600000, 923800000, 924000000, 924200000, 924400000}
 	case pb_lorawan.Region_KR_920_923.String():
 		frequencyPlan.Band, err = lora.GetConfig(lora.KR_920_923, false, lorawan.DwellTimeNoLimit)
 		// TTN frequency plan includes extra channels next to the default channels:
@@ -118,4 +150,34 @@ func Get(region string) (frequencyPlan FrequencyPlan, err error) {
 		err = errors.NewErrInvalidArgument("Frequency Band", "unknown")
 	}
 	return
+}
+
+var frequencyPlans map[string]FrequencyPlan
+var channels map[int]string
+
+func init() {
+	frequencyPlans = make(map[string]FrequencyPlan)
+	channels = make(map[int]string)
+	for _, r := range []pb_lorawan.Region{ // ordering is important here
+		pb_lorawan.Region_EU_863_870,
+		pb_lorawan.Region_US_902_928,
+		pb_lorawan.Region_CN_779_787,
+		pb_lorawan.Region_EU_433,
+		pb_lorawan.Region_AS_923,
+		pb_lorawan.Region_AS_920_923,
+		pb_lorawan.Region_AS_923_925,
+		pb_lorawan.Region_KR_920_923,
+		pb_lorawan.Region_AU_915_928,
+		pb_lorawan.Region_CN_470_510,
+	} {
+		region := r.String()
+		frequencyPlans[region], _ = Get(region)
+		for _, ch := range frequencyPlans[region].UplinkChannels {
+			if len(ch.DataRates) > 1 { // ignore FSK channels
+				if _, ok := channels[ch.Frequency]; !ok { // ordering indicates priority
+					channels[ch.Frequency] = region
+				}
+			}
+		}
+	}
 }
