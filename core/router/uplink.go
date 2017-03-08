@@ -59,6 +59,11 @@ func (r *router) HandleUplink(gatewayID string, uplink *pb.UplinkMessage) (err e
 		return nil
 	}
 
+	if phyPayload.MHDR.MType != lorawan.UnconfirmedDataUp && phyPayload.MHDR.MType != lorawan.ConfirmedDataUp {
+		ctx.Warn("Accidentally received non-uplink message")
+		return nil
+	}
+
 	if lorawan := uplink.ProtocolMetadata.GetLorawan(); lorawan != nil {
 		ctx = ctx.WithField("Modulation", lorawan.Modulation.String())
 		if lorawan.Modulation == pb_lorawan.Modulation_LORA {
