@@ -62,7 +62,7 @@ func (s *RouterStreamServer) Uplink(stream Router_UplinkServer) (err error) {
 			continue
 		}
 		if err := uplink.UnmarshalPayload(); err != nil {
-			s.ctx.Warn("Could not unmarshal Uplink payload")
+			s.ctx.WithError(err).Warn("Could not unmarshal Uplink payload")
 		}
 		ch <- uplink
 	}

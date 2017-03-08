@@ -339,7 +339,7 @@ func NewMonitoredDownlinkStream(client RouterClientForGateway) DownlinkStream {
 						continue
 					}
 					if err := message.UnmarshalPayload(); err != nil {
-						s.ctx.Warn("Could not unmarshal Downlink payload")
+						s.ctx.WithError(err).Warn("Could not unmarshal Downlink payload")
 					}
 					select {
 					case s.ch <- message:
