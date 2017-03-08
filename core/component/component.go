@@ -122,7 +122,7 @@ func New(ctx ttnlog.Interface, serviceName string, announcedAddress string) (*Co
 
 	component.Monitor = pb_monitor.NewClient(pb_monitor.DefaultClientConfig)
 	for name, addr := range viper.GetStringMapString("monitor-servers") {
-		component.Monitor.AddServer(name, addr, grpc.WithInsecure())
+		component.Monitor.AddServer(name, addr)
 	}
 
 	return component, nil

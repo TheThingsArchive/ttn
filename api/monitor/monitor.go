@@ -4,7 +4,9 @@
 package monitor
 
 import (
+	"crypto/tls"
 	"io"
+	"strings"
 	"sync"
 
 	"github.com/TheThingsNetwork/go-utils/grpc/restartstream"
@@ -17,6 +19,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials"
 )
 
 // GenericStream is used for sending anything to the monitor.
@@ -41,6 +44,9 @@ var DefaultClientConfig = ClientConfig{
 	BufferSize: 10,
 }
 
+// TLSConfig to use
+var TLSConfig *tls.Config
+
 // NewClient creates a new Client with the given configuration
 func NewClient(config ClientConfig) *Client {
 	ctx, cancel := context.WithCancel(context.Background())
@@ -64,13 +70,16 @@ type Client struct {
 	serverConns []*serverConn
 }
 
-var defaultDialOptions = []grpc.DialOption{
+// DefaultDialOptions for connecting with a monitor server
+var DefaultDialOptions = []grpc.DialOption{
 	grpc.WithBlock(),
 	grpc.FailOnNonTempDialError(false),
 	grpc.WithStreamInterceptor(restartstream.Interceptor(restartstream.DefaultSettings)),
 }
 
-// AddServer adds a new monitor server
+// AddServer adds a new monitor server. Supplying DialOptions overrides the default dial options.
+// If the default DialOptions are used, TLS will be used to connect to monitors with a "-tls" suffix in their name.
+// This function should not be called after streams have been started
 func (c *Client) AddServer(name, address string, opts ...grpc.DialOption) {
 	log := c.log.WithFields(log.Fields{"Monitor": name, "Address": address})
 	log.Info("Adding Monitor server")
@@ -81,12 +90,19 @@ func (c *Client) AddServer(name, address string, opts ...grpc.DialOption) {
 		ready: make(chan struct{}),
 	}
 	c.serverConns = append(c.serverConns, s)
+	if len(opts) == 0 {
+		if strings.HasSuffix(name, "-tls") {
+			opts = append(DefaultDialOptions, grpc.WithTransportCredentials(credentials.NewTLS(TLSConfig)))
+		} else {
+			opts = append(DefaultDialOptions, grpc.WithInsecure())
+		}
+	}
 
 	go func() {
 		conn, err := grpc.DialContext(
 			c.ctx,
 			address,
-			append(defaultDialOptions, opts...)...,
+			opts...,
 		)
 		if err != nil {
 			log.WithError(err).Error("Could not connect to Monitor server")
@@ -96,6 +112,18 @@ func (c *Client) AddServer(name, address string, opts ...grpc.DialOption) {
 		s.conn = conn
 		close(s.ready)
 	}()
+}
+
+// AddConn adds a new monitor server on an existing connection
+// This function should not be called after streams have been started
+func (c *Client) AddConn(name string, conn *grpc.ClientConn) {
+	log := c.log.WithFields(log.Fields{"Monitor": name})
+	log.Info("Adding Monitor connection")
+	c.serverConns = append(c.serverConns, &serverConn{
+		ctx:  log,
+		name: name,
+		conn: conn,
+	})
 }
 
 // Close the client and all its connections

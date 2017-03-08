@@ -38,10 +38,9 @@ func TestMonitor(t *testing.T) {
 
 	cli := NewClient(DefaultClientConfig)
 
-	log.Get().Info("Expect err about grpc.WithInsecure()")
-	cli.AddServer("invalid-config", lis.Addr().String())
+	cli.AddServer("tls-without-tls", lis.Addr().String())
 
-	cli.AddServer("test", lis.Addr().String(), grpc.WithInsecure())
+	cli.AddServer("test", lis.Addr().String())
 	time.Sleep(waitTime)
 	defer func() {
 		cli.Close()
@@ -75,5 +74,16 @@ func TestMonitor(t *testing.T) {
 
 	a.So(server.metrics.brokerUplinkMessages, ShouldEqual, 1)
 	a.So(server.metrics.brokerDownlinkMessages, ShouldEqual, 1)
+
+	cli.AddConn("test2", cli.serverConns[1].conn)
+
+	brk = cli.NewBrokerStreams("test", "token")
+	time.Sleep(waitTime)
+	brk.Send(&broker.DeduplicatedUplinkMessage{})
+	time.Sleep(waitTime)
+	brk.Close()
+	time.Sleep(waitTime)
+
+	a.So(server.metrics.brokerUplinkMessages, ShouldEqual, 3)
 
 }
