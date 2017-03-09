@@ -78,6 +78,8 @@ func (s *BrokerStreamServer) Associate(stream Broker_AssociateServer) (err error
 
 	for {
 		select {
+		case <-stream.Context().Done():
+			return stream.Context().Err()
 		case err, errPresent := <-upErr:
 			if !errPresent {
 				return nil // stream closed
