@@ -437,12 +437,28 @@ func (c *Client) NewBrokerStreams(id string, token string) GenericStream {
 				}
 			}
 
+			chUplink := make(chan *broker.DeduplicatedUplinkMessage, c.config.BufferSize)
+			chDownlink := make(chan *broker.DownlinkMessage, c.config.BufferSize)
+
+			defer func() {
+				close(chUplink)
+				close(chDownlink)
+			}()
+
 			// Uplink stream
 			uplink, err := cli.BrokerUplink(ctx)
 			if err != nil {
 				log.WithError(err).Warn("Could not set up BrokerUplink stream")
 			} else {
-				go monitor("BrokerUplink", uplink)
+				s.mu.Lock()
+				s.uplink[server.name] = chUplink
+				s.mu.Unlock()
+				go func() {
+					monitor("BrokerUplink", uplink)
+					s.mu.Lock()
+					defer s.mu.Unlock()
+					delete(s.uplink, server.name)
+				}()
 			}
 
 			// Downlink stream
@@ -450,16 +466,16 @@ func (c *Client) NewBrokerStreams(id string, token string) GenericStream {
 			if err != nil {
 				log.WithError(err).Warn("Could not set up BrokerDownlink stream")
 			} else {
-				go monitor("BrokerDownlink", downlink)
+				s.mu.Lock()
+				s.downlink[server.name] = chDownlink
+				s.mu.Unlock()
+				go func() {
+					monitor("BrokerDownlink", downlink)
+					s.mu.Lock()
+					defer s.mu.Unlock()
+					delete(s.downlink, server.name)
+				}()
 			}
-
-			chUplink := make(chan *broker.DeduplicatedUplinkMessage, c.config.BufferSize)
-			chDownlink := make(chan *broker.DownlinkMessage, c.config.BufferSize)
-
-			s.mu.Lock()
-			s.uplink[server.name] = chUplink
-			s.downlink[server.name] = chDownlink
-			s.mu.Unlock()
 
 			log.Debug("Start handling Broker streams")
 			defer log.Debug("Done handling Broker streams")

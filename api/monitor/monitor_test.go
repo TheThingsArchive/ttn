@@ -40,6 +40,8 @@ func TestMonitor(t *testing.T) {
 
 	cli.AddServer("tls-without-tls", lis.Addr().String())
 
+	testLogger.Print(t)
+
 	cli.AddServer("test", lis.Addr().String())
 	time.Sleep(waitTime)
 	defer func() {
@@ -47,6 +49,8 @@ func TestMonitor(t *testing.T) {
 		time.Sleep(waitTime)
 		s.Stop()
 	}()
+
+	testLogger.Print(t)
 
 	gtw := cli.NewGatewayStreams("test", "token")
 	time.Sleep(waitTime)
@@ -64,6 +68,8 @@ func TestMonitor(t *testing.T) {
 	a.So(server.metrics.downlinkMessages, ShouldEqual, 20)
 	a.So(server.metrics.gatewayStatuses, ShouldEqual, 20)
 
+	testLogger.Print(t)
+
 	brk := cli.NewBrokerStreams("test", "token")
 	time.Sleep(waitTime)
 	brk.Send(&broker.DeduplicatedUplinkMessage{})
@@ -74,6 +80,8 @@ func TestMonitor(t *testing.T) {
 
 	a.So(server.metrics.brokerUplinkMessages, ShouldEqual, 1)
 	a.So(server.metrics.brokerDownlinkMessages, ShouldEqual, 1)
+
+	testLogger.Print(t)
 
 	cli.AddConn("test2", cli.serverConns[1].conn)
 
