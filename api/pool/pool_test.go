@@ -91,7 +91,7 @@ func TestPool(t *testing.T) {
 
 	pool = NewPool([]grpc.DialOption{}) // Without the grpc.WithBlock()
 
-	conn4, err := pool.Get(addr, grpc.WithInsecure())
+	conn4, err := pool.Get(addr, append(DefaultDialOptions, grpc.WithInsecure())...)
 	a.So(err, ShouldBeNil)
 	a.So(conn4, ShouldNotBeNil)
 

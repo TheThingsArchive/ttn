@@ -5,8 +5,10 @@ package pool
 
 import (
 	"context"
+	"net"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/TheThingsNetwork/go-utils/grpc/restartstream"
 	"google.golang.org/grpc"
@@ -31,9 +33,15 @@ type conn struct {
 	err  error
 }
 
+// KeepAliveDialer is a dialer that adds a 10 second TCP KeepAlive
+func KeepAliveDialer(addr string, timeout time.Duration) (net.Conn, error) {
+	return (&net.Dialer{Timeout: timeout, KeepAlive: 10 * time.Second}).Dial("tcp", addr)
+}
+
 // DefaultDialOptions for connecting with servers
 var DefaultDialOptions = []grpc.DialOption{
 	grpc.WithStreamInterceptor(restartstream.Interceptor(restartstream.DefaultSettings)),
+	grpc.WithDialer(KeepAliveDialer),
 }
 
 // Global pool with connections
