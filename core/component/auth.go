@@ -33,6 +33,7 @@ func (c *Component) InitAuth() error {
 		c.initAuthServers,
 		c.initKeyPair,
 		c.initRoots,
+		c.initBgCtx,
 	}
 	if c.Config.UseTLS {
 		inits = append(inits, c.initTLS)
@@ -165,7 +166,7 @@ func (c *Component) initBgCtx() error {
 		ctx = api.ContextWithID(ctx, c.Identity.Id)
 		ctx = api.ContextWithServiceInfo(ctx, c.Identity.ServiceName, c.Identity.ServiceVersion, c.Identity.NetAddress)
 	}
-	c.bgCtx = ctx
+	c.Context = ctx
 	return nil
 }
 
@@ -186,10 +187,10 @@ func (c *Component) BuildJWT() (string, error) {
 
 // GetContext returns a context for outgoing RPC request. If token is "", this function will generate a short lived token from the component
 func (c *Component) GetContext(token string) context.Context {
-	if c.bgCtx == nil {
+	if c.Context == nil {
 		c.initBgCtx()
 	}
-	ctx := c.bgCtx
+	ctx := c.Context
 	if token == "" && c.Identity != nil {
 		token, _ = c.BuildJWT()
 	}

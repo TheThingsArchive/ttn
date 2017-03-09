@@ -31,7 +31,7 @@ type Component struct {
 	Discovery        pb_discovery.Client
 	Monitor          *pb_monitor.Client
 	Ctx              ttnlog.Interface
-	bgCtx            context.Context
+	Context          context.Context
 	AccessToken      string
 	privateKey       *ecdsa.PrivateKey
 	tlsConfig        *tls.Config
