@@ -63,7 +63,9 @@ func (p *Pool) Close(target ...string) {
 		// This force-closes all connections
 		for _, c := range p.conns {
 			c.cancel()
-			c.conn.Close()
+			if c.conn != nil {
+				c.conn.Close()
+			}
 		}
 		p.conns = make(map[string]*conn)
 	}
@@ -72,24 +74,25 @@ func (p *Pool) Close(target ...string) {
 			new := atomic.AddInt32(&c.users, -1)
 			if new < 1 {
 				c.cancel()
-				c.conn.Close()
+				if c.conn != nil {
+					c.conn.Close()
+				}
 				delete(p.conns, target)
 			}
 		}
 	}
 }
 
-// Get a connection from the pool or create a new one
-// This function is blocking if grpc.WithBlock() is used (default: yes)
-func (p *Pool) Get(target string, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
+// DialContext gets a connection from the pool or creates a new one
+// This function is blocking if grpc.WithBlock() is used
+func (p *Pool) DialContext(ctx context.Context, target string, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
 	p.mu.Lock()
 	if _, ok := p.conns[target]; !ok {
 		c := new(conn)
 		c.Add(1)
 		p.conns[target] = c
 		go func() {
-			var ctx context.Context
-			ctx, c.cancel = context.WithCancel(context.Background())
+			ctx, c.cancel = context.WithCancel(ctx)
 			opts = append(p.dialOptions, opts...)
 			c.conn, c.err = grpc.DialContext(ctx, target, opts...)
 			c.Done()
@@ -102,4 +105,10 @@ func (p *Pool) Get(target string, opts ...grpc.DialOption) (*grpc.ClientConn, er
 
 	c.Wait()
 	return c.conn, c.err
+}
+
+// Dial gets a connection from the pool or creates a new one
+// This function is blocking if grpc.WithBlock() is used
+func (p *Pool) Dial(target string, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
+	return p.DialContext(context.Background(), target, opts...)
 }

@@ -34,11 +34,11 @@ func TestPool(t *testing.T) {
 
 	pool := NewPool([]grpc.DialOption{grpc.WithBlock()})
 
-	conn1, err := pool.Get(addr, grpc.WithInsecure())
+	conn1, err := pool.Dial(addr, grpc.WithInsecure())
 	a.So(err, ShouldBeNil)
 	a.So(conn1, ShouldNotBeNil)
 
-	conn2, err := pool.Get(addr, grpc.WithInsecure())
+	conn2, err := pool.Dial(addr, grpc.WithInsecure())
 	a.So(err, ShouldBeNil)
 	a.So(conn2, ShouldEqual, conn1)
 
@@ -83,7 +83,7 @@ func TestPool(t *testing.T) {
 	pool.Close(addr)
 	pool.Close(addr)
 
-	conn3, err := pool.Get(addr, grpc.WithInsecure())
+	conn3, err := pool.Dial(addr, grpc.WithInsecure())
 	a.So(err, ShouldBeNil)
 	a.So(conn3, ShouldNotEqual, conn1) // the connection was closed, because there were no more users
 
@@ -91,7 +91,7 @@ func TestPool(t *testing.T) {
 
 	pool = NewPool([]grpc.DialOption{}) // Without the grpc.WithBlock()
 
-	conn4, err := pool.Get(addr, append(DefaultDialOptions, grpc.WithInsecure())...)
+	conn4, err := pool.Dial(addr, append(DefaultDialOptions, grpc.WithInsecure())...)
 	a.So(err, ShouldBeNil)
 	a.So(conn4, ShouldNotBeNil)
 
