@@ -48,7 +48,9 @@ var discoveryCmd = &cobra.Command{
 			DB:       viper.GetInt("discovery.redis-db"),
 		})
 
-		connectRedis(client)
+		if err := connectRedis(client); err != nil {
+			ctx.WithError(err).Fatal("Could not initialize database connection")
+		}
 
 		// Component
 		component, err := component.New(ttnlog.Get(), "discovery", fmt.Sprintf("%s:%d", "localhost", viper.GetInt("discovery.server-port")))

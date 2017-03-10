@@ -52,7 +52,9 @@ var handlerCmd = &cobra.Command{
 			DB:       viper.GetInt("handler.redis-db"),
 		})
 
-		connectRedis(client)
+		if err := connectRedis(client); err != nil {
+			ctx.WithError(err).Fatal("Could not initialize database connection")
+		}
 
 		// Component
 		component, err := component.New(ttnlog.Get(), "handler", fmt.Sprintf("%s:%d", viper.GetString("handler.server-address-announce"), viper.GetInt("handler.server-port")))
