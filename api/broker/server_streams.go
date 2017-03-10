@@ -70,7 +70,7 @@ func (s *BrokerStreamServer) Associate(stream Broker_AssociateServer) (err error
 				continue
 			}
 			if err := uplink.UnmarshalPayload(); err != nil {
-				s.ctx.Warn("Could not unmarshal uplink payload")
+				s.ctx.WithError(err).Warn("Could not unmarshal uplink payload")
 			}
 			upChan <- uplink
 		}
@@ -78,6 +78,8 @@ func (s *BrokerStreamServer) Associate(stream Broker_AssociateServer) (err error
 
 	for {
 		select {
+		case <-stream.Context().Done():
+			return stream.Context().Err()
 		case err, errPresent := <-upErr:
 			if !errPresent {
 				return nil // stream closed
@@ -137,7 +139,7 @@ func (s *BrokerStreamServer) Publish(stream Broker_PublishServer) error {
 			continue
 		}
 		if err := downlink.UnmarshalPayload(); err != nil {
-			s.ctx.Warn("Could not unmarshal downlink payload")
+			s.ctx.WithError(err).Warn("Could not unmarshal downlink payload")
 		}
 		ch <- downlink
 	}

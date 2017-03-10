@@ -11,6 +11,7 @@ import (
 
 	"github.com/TheThingsNetwork/ttn/api"
 	pb "github.com/TheThingsNetwork/ttn/api/broker"
+	pb_monitor "github.com/TheThingsNetwork/ttn/api/monitor"
 	"github.com/TheThingsNetwork/ttn/api/networkserver"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core/component"
@@ -64,6 +65,7 @@ type broker struct {
 	uplinkDeduplicator     Deduplicator
 	activationDeduplicator Deduplicator
 	status                 *status
+	monitorStream          pb_monitor.GenericStream
 }
 
 func (b *broker) checkPrefixAnnouncements() error {
@@ -131,7 +133,9 @@ func (b *broker) Init(c *component.Component) error {
 	b.ns = networkserver.NewNetworkServerClient(conn)
 	b.checkPrefixAnnouncements()
 	b.Component.SetStatus(component.StatusHealthy)
-
+	if b.Component.Monitor != nil {
+		b.monitorStream = b.Component.Monitor.NewBrokerStreams(b.Identity.Id, b.AccessToken)
+	}
 	return nil
 }
 

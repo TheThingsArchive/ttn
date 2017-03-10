@@ -30,11 +30,8 @@ func (b *broker) HandleDownlink(downlink *pb.DownlinkMessage) error {
 		} else {
 			ctx.WithField("Duration", time.Now().Sub(start)).Info("Handled downlink")
 		}
-		if downlink != nil {
-			for _, monitor := range b.Monitors.BrokerClients() {
-				ctx.Debug("Sending downlink to monitor")
-				go monitor.SendDownlink(downlink)
-			}
+		if downlink != nil && b.monitorStream != nil {
+			b.monitorStream.Send(downlink)
 		}
 	}()
 

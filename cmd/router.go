@@ -38,6 +38,10 @@ var routerCmd = &cobra.Command{
 			ctx.WithError(err).Fatal("Could not initialize component")
 		}
 
+		if mqttAddress := viper.GetString("router.mqtt-address-announce"); mqttAddress != "" {
+			component.Identity.MqttAddress = mqttAddress
+		}
+
 		// Router
 		router := router.NewRouter()
 		err = router.Init(component)
@@ -72,9 +76,11 @@ func init() {
 	routerCmd.Flags().String("server-address", "0.0.0.0", "The IP address to listen for communication")
 	routerCmd.Flags().String("server-address-announce", "localhost", "The public IP address to announce")
 	routerCmd.Flags().Int("server-port", 1901, "The port for communication")
+	routerCmd.Flags().String("mqtt-address-announce", "", "MQTT address to announce")
 	routerCmd.Flags().Bool("skip-verify-gateway-token", false, "Skip verification of the gateway token")
 	viper.BindPFlag("router.server-address", routerCmd.Flags().Lookup("server-address"))
 	viper.BindPFlag("router.server-address-announce", routerCmd.Flags().Lookup("server-address-announce"))
 	viper.BindPFlag("router.server-port", routerCmd.Flags().Lookup("server-port"))
+	viper.BindPFlag("router.mqtt-address-announce", routerCmd.Flags().Lookup("mqtt-address-announce"))
 	viper.BindPFlag("router.skip-verify-gateway-token", routerCmd.Flags().Lookup("skip-verify-gateway-token"))
 }

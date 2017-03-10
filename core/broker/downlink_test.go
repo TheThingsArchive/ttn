@@ -24,8 +24,8 @@ func TestDownlink(t *testing.T) {
 	logger := GetLogger(t, "TestDownlink")
 	b := &broker{
 		Component: &component.Component{
-			Ctx:      logger,
-			Monitors: pb_monitor.NewRegistry(logger),
+			Ctx:     logger,
+			Monitor: pb_monitor.NewClient(pb_monitor.DefaultClientConfig),
 		},
 		ns: &mockNetworkServer{},
 		routers: map[string]chan *pb.DownlinkMessage{

@@ -23,7 +23,6 @@ func NewGateway(ctx ttnlog.Interface, id string) *Gateway {
 		Status:      NewStatusStore(),
 		Utilization: NewUtilization(),
 		Schedule:    NewSchedule(ctx),
-		Monitors:    pb_monitor.NewRegistry(ctx),
 		Ctx:         ctx,
 	}
 	gtw.Schedule.(*schedule).gateway = gtw // FIXME: Issue #420
@@ -42,7 +41,8 @@ type Gateway struct {
 	token         string
 	authenticated bool
 
-	Monitors pb_monitor.Registry
+	Monitor       *pb_monitor.Client
+	MonitorStream pb_monitor.GenericStream
 
 	Ctx ttnlog.Interface
 }
@@ -55,7 +55,12 @@ func (g *Gateway) SetAuth(token string, authenticated bool) {
 		return
 	}
 	g.token = token
-	g.Monitors.SetGatewayToken(g.ID, g.token)
+	if g.MonitorStream != nil {
+		g.MonitorStream.Close()
+	}
+	if g.Monitor != nil {
+		g.MonitorStream = g.Monitor.NewGatewayStreams(g.ID, token)
+	}
 }
 
 func (g *Gateway) updateLastSeen() {
@@ -70,12 +75,10 @@ func (g *Gateway) HandleStatus(status *pb.Status) (err error) {
 		return err
 	}
 	g.updateLastSeen()
-
-	clone := *status // Avoid race conditions
-	for _, monitor := range g.Monitors.GatewayClients(g.ID) {
-		go monitor.SendStatus(&clone)
+	if g.MonitorStream != nil {
+		clone := *status // Avoid race conditions
+		g.MonitorStream.Send(&clone)
 	}
-
 	return nil
 }
 
@@ -105,10 +108,9 @@ func (g *Gateway) HandleUplink(uplink *pb_router.UplinkMessage) (err error) {
 	defer g.mu.RUnlock()
 	uplink.GatewayMetadata.GatewayTrusted = g.authenticated
 	uplink.GatewayMetadata.GatewayId = g.ID
-
-	clone := *uplink
-	for _, monitor := range g.Monitors.GatewayClients(g.ID) {
-		go monitor.SendUplink(&clone)
+	if g.MonitorStream != nil {
+		clone := *uplink // Avoid race conditions
+		g.MonitorStream.Send(&clone)
 	}
 	return nil
 }
@@ -120,10 +122,9 @@ func (g *Gateway) HandleDownlink(identifier string, downlink *pb_router.Downlink
 		return err
 	}
 	ctx.Debug("Scheduled downlink")
-
-	clone := *downlink // Avoid race conditions
-	for _, monitor := range g.Monitors.GatewayClients(g.ID) {
-		go monitor.SendDownlink(&clone)
+	if g.MonitorStream != nil {
+		clone := *downlink // Avoid race conditions
+		g.MonitorStream.Send(&clone)
 	}
 	return nil
 }

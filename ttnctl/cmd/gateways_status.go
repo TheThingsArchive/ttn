@@ -64,6 +64,7 @@ var gatewaysStatusCmd = &cobra.Command{
 		printKV("Platform", resp.Status.Platform)
 		printKV("Contact email", resp.Status.ContactEmail)
 		printKV("Region", resp.Status.Region)
+		printKV("Bridge", resp.Status.Bridge)
 		printKV("IP Address", strings.Join(resp.Status.Ip, ", "))
 		printKV("GPS coordinates", func() interface{} {
 			if gps := resp.Status.Gps; gps != nil && !(gps.Latitude == 0 && gps.Longitude == 0) {

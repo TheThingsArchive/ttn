@@ -59,20 +59,20 @@ message Announcement {
   // Indicates whether this service is part of The Things Network (the public community network)
   bool   public      = 6;
 
-  // Comma-separated network addresses in the form "[hostname]:[port]" (currently we only use the first)
+  // Comma-separated network addresses in the form "domain1:port,domain2:port,domain3:port" (currently we only use the first)
   string net_address = 11;
 
   // ECDSA public key of this component
   string public_key  = 12;
 
-  // TLS Certificate (if TLS is enabled)
+  // TLS Certificate for gRPC on net_address (if TLS is enabled)
   string certificate = 13;
 
-  // Contains the address where the HTTP API is exposed (if there is one)
+  // Contains the address where the HTTP API is exposed (if there is one). Format: "http(s)://domain(:port)"; default http port is 80, default https port is 443.
   string api_address = 14;
-  // Contains the address where the MQTT API is exposed (if there is one)
+  // Contains the address where the MQTT API is exposed (if there is one). Format: "domain(:port)"; if no port supplied, mqtt is on 1883, mqtts is on 8883.
   string mqtt_address = 15;
-  // Contains the address where the AMQP API is exposed (if there is one)
+  // Contains the address where the AMQP API is exposed (if there is one). Format: "domain(:port)"; if no port supplied, amqp is on 5672, amqps is on 5671.
   string amqp_address = 16;
 
   // Metadata for this component

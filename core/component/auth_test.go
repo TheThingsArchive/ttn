@@ -304,6 +304,8 @@ func TestGetAndVerifyContext(t *testing.T) {
 
 	c.Identity.ServiceName = "test-service"
 
+	c.initBgCtx()
+
 	ctrl := gomock.NewController(t)
 	discoveryClient := discovery.NewMockClient(ctrl)
 	c.Discovery = discoveryClient

@@ -29,7 +29,7 @@ func getTestRouter(t *testing.T) *testRouter {
 			Component: &component.Component{
 				Discovery: discovery,
 				Ctx:       logger,
-				Monitors:  monitor.NewRegistry(logger),
+				Monitor:   monitor.NewClient(monitor.DefaultClientConfig),
 			},
 			gateways: map[string]*gateway.Gateway{},
 		},

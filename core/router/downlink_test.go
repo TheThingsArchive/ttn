@@ -43,8 +43,8 @@ func TestHandleDownlink(t *testing.T) {
 	logger := GetLogger(t, "TestHandleDownlink")
 	r := &router{
 		Component: &component.Component{
-			Ctx:      logger,
-			Monitors: monitor.NewRegistry(logger),
+			Ctx:     logger,
+			Monitor: monitor.NewClient(monitor.DefaultClientConfig),
 		},
 		gateways: map[string]*gateway.Gateway{},
 	}
@@ -71,8 +71,8 @@ func TestSubscribeUnsubscribeDownlink(t *testing.T) {
 	logger := GetLogger(t, "TestSubscribeUnsubscribeDownlink")
 	r := &router{
 		Component: &component.Component{
-			Ctx:      logger,
-			Monitors: monitor.NewRegistry(logger),
+			Ctx:     logger,
+			Monitor: monitor.NewClient(monitor.DefaultClientConfig),
 		},
 		gateways: map[string]*gateway.Gateway{},
 	}

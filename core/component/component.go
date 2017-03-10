@@ -29,8 +29,9 @@ type Component struct {
 	Config           Config
 	Identity         *pb_discovery.Announcement
 	Discovery        pb_discovery.Client
-	Monitors         pb_monitor.Registry
+	Monitor          *pb_monitor.Client
 	Ctx              ttnlog.Interface
+	bgCtx            context.Context
 	AccessToken      string
 	privateKey       *ecdsa.PrivateKey
 	tlsConfig        *tls.Config
@@ -119,9 +120,9 @@ func New(ctx ttnlog.Interface, serviceName string, announcedAddress string) (*Co
 		go http.ListenAndServe(fmt.Sprintf(":%d", healthPort), nil)
 	}
 
-	component.Monitors = pb_monitor.NewRegistry(ctx)
+	component.Monitor = pb_monitor.NewClient(pb_monitor.DefaultClientConfig)
 	for name, addr := range viper.GetStringMapString("monitor-servers") {
-		go component.Monitors.InitClient(name, addr)
+		component.Monitor.AddServer(name, addr)
 	}
 
 	return component, nil

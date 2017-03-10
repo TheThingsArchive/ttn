@@ -119,7 +119,7 @@ func (r *router) getGateway(id string) *gateway.Gateway {
 	gtw, ok = r.gateways[id]
 	if !ok {
 		gtw = gateway.NewGateway(r.Ctx, id)
-		gtw.Monitors = r.Component.Monitors
+		gtw.Monitor = r.Component.Monitor
 
 		r.gateways[id] = gtw
 	}

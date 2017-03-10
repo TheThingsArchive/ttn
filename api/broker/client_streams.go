@@ -90,7 +90,7 @@ func NewMonitoredRouterStream(client BrokerClient, getContextFunc func() context
 							continue
 						}
 						if err := message.UnmarshalPayload(); err != nil {
-							s.ctx.Warn("Could not unmarshal Downlink payload")
+							s.ctx.WithError(err).Warn("Could not unmarshal Downlink payload")
 						}
 						select {
 						case s.down <- message:
@@ -358,7 +358,7 @@ func NewMonitoredHandlerSubscribeStream(client BrokerClient, getContextFunc func
 						continue
 					}
 					if err := message.UnmarshalPayload(); err != nil {
-						s.ctx.Warn("Could not unmarshal Uplink payload")
+						s.ctx.WithError(err).Warn("Could not unmarshal Uplink payload")
 					}
 					select {
 					case s.ch <- message:
