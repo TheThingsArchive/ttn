@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/TheThingsNetwork/ttn/amqp"
+	"github.com/TheThingsNetwork/ttn/api/auth"
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb "github.com/TheThingsNetwork/ttn/api/handler"
 	"github.com/TheThingsNetwork/ttn/core/component"
@@ -14,7 +15,6 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/mqtt"
-	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"gopkg.in/redis.v5"
 )
@@ -147,11 +147,16 @@ func (h *handler) Shutdown() {
 }
 
 func (h *handler) associateBroker() error {
+	auth := auth.WithTokenFunc(func(_ string) string {
+		token, _ := h.Component.BuildJWT()
+		return token
+	})
+
 	broker, err := h.Discover("broker", h.ttnBrokerID)
 	if err != nil {
 		return err
 	}
-	conn, err := broker.Dial()
+	conn, err := broker.Dial(auth.DialOption())
 	if err != nil {
 		return err
 	}
@@ -161,21 +166,21 @@ func (h *handler) associateBroker() error {
 
 	h.downlink = make(chan *pb_broker.DownlinkMessage)
 
-	contextFunc := func() context.Context { return h.GetContext("") }
-
-	upStream := pb_broker.NewMonitoredHandlerSubscribeStream(h.ttnBroker, contextFunc)
-	downStream := pb_broker.NewMonitoredHandlerPublishStream(h.ttnBroker, contextFunc)
-
-	go func() {
-		for message := range upStream.Channel() {
-			go h.HandleUplink(message)
-		}
-	}()
+	config := pb_broker.DefaultClientConfig
+	config.BackgroundContext = h.Component.Context
+	cli := pb_broker.NewClient(config)
+	cli.AddServer(h.ttnBrokerID, h.ttnBrokerConn)
+	association := cli.NewHandlerStreams(h.Identity.Id, "")
 
 	go func() {
-		for message := range h.downlink {
-			if err := downStream.Send(message); err != nil {
-				h.Ctx.WithError(err).Warn("Could not send downlink to Broker")
+		for {
+			select {
+			case message := <-h.downlink:
+				association.Downlink(message)
+			case message, ok := <-association.Uplink():
+				if ok {
+					go h.HandleUplink(message)
+				}
 			}
 		}
 	}()
