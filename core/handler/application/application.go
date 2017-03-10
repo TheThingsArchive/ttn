@@ -62,5 +62,10 @@ func (a Application) ChangedFields() (changed []string) {
 			changed = append(changed, field.Name())
 		}
 	}
+
+	if len(changed) == 1 && changed[0] == "UpdatedAt" {
+		return []string{}
+	}
+
 	return
 }

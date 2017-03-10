@@ -238,6 +238,9 @@ func (s *RedisMapStore) Update(key string, value interface{}, properties ...stri
 	if len(properties) == 0 {
 		if i, ok := value.(ChangedFielder); ok {
 			properties = i.ChangedFields()
+			if len(properties) == 0 {
+				return nil
+			}
 		}
 	}
 
