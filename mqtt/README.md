@@ -44,7 +44,10 @@
         "altitude": 6                    // Altitude of the gateway
       },
       //...more if received by more gateways...
-    ]
+    ],
+    "latitude": 52.2345,              // Latitude of the device
+    "longitude": 6.2345,              // Longitude of the device
+    "altitude": 2                     // Altitude of the device
   }
 }
 ```
