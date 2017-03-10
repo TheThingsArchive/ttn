@@ -255,6 +255,11 @@ func (c *Client) NewGatewayStreams(id string, token string) GenericStream {
 			chStatus := make(chan *gateway.Status, c.config.BufferSize)
 
 			defer func() {
+				s.mu.Lock()
+				defer s.mu.Unlock()
+				delete(s.uplink, server.name)
+				delete(s.downlink, server.name)
+				delete(s.status, server.name)
 				close(chUplink)
 				close(chDownlink)
 				close(chStatus)
@@ -317,17 +322,23 @@ func (c *Client) NewGatewayStreams(id string, token string) GenericStream {
 				case msg := <-chStatus:
 					if err := status.Send(msg); err != nil {
 						log.WithError(err).Warn("Could not send GatewayStatus to monitor")
-						return
+						if err == restartstream.ErrStreamClosed {
+							return
+						}
 					}
 				case msg := <-chUplink:
 					if err := uplink.Send(msg); err != nil {
 						log.WithError(err).Warn("Could not send UplinkMessage to monitor")
-						return
+						if err == restartstream.ErrStreamClosed {
+							return
+						}
 					}
 				case msg := <-chDownlink:
 					if err := downlink.Send(msg); err != nil {
 						log.WithError(err).Warn("Could not send DownlinkMessage to monitor")
-						return
+						if err == restartstream.ErrStreamClosed {
+							return
+						}
 					}
 				}
 			}
