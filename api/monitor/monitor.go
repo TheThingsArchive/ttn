@@ -36,12 +36,14 @@ type GenericStream interface {
 
 // ClientConfig for monitor Client
 type ClientConfig struct {
-	BufferSize int
+	BackgroundContext context.Context
+	BufferSize        int
 }
 
 // DefaultClientConfig for monitor Client
 var DefaultClientConfig = ClientConfig{
-	BufferSize: 10,
+	BackgroundContext: context.Background(),
+	BufferSize:        10,
 }
 
 // TLSConfig to use
@@ -49,7 +51,7 @@ var TLSConfig *tls.Config
 
 // NewClient creates a new Client with the given configuration
 func NewClient(config ClientConfig) *Client {
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(config.BackgroundContext)
 
 	return &Client{
 		log:    log.Get(),
