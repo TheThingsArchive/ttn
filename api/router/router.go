@@ -112,7 +112,7 @@ type gatewayStreams struct {
 func (s *gatewayStreams) Uplink(msg *UplinkMessage) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	s.log.Debug("Sending UplinkMessage to router")
+	s.log.WithField("Routers", len(s.uplink)).Debug("Sending UplinkMessage to router")
 	for serverName, ch := range s.uplink {
 		select {
 		case ch <- msg:
@@ -125,7 +125,7 @@ func (s *gatewayStreams) Uplink(msg *UplinkMessage) {
 func (s *gatewayStreams) Status(msg *gateway.Status) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	s.log.Debug("Sending Status to router")
+	s.log.WithField("Routers", len(s.status)).Debug("Sending Status to router")
 	for serverName, ch := range s.status {
 		select {
 		case ch <- msg:

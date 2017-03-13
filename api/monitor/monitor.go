@@ -169,7 +169,7 @@ func (s *gatewayStreams) Send(msg interface{}) {
 	defer s.mu.RUnlock()
 	switch msg := msg.(type) {
 	case *router.UplinkMessage:
-		s.log.Debug("Sending UplinkMessage to monitor")
+		s.log.WithField("Monitors", len(s.uplink)).Debug("Sending UplinkMessage to monitor")
 		for serverName, ch := range s.uplink {
 			select {
 			case ch <- msg:
@@ -178,7 +178,7 @@ func (s *gatewayStreams) Send(msg interface{}) {
 			}
 		}
 	case *router.DownlinkMessage:
-		s.log.Debug("Sending DownlinkMessage to monitor")
+		s.log.WithField("Monitors", len(s.downlink)).Debug("Sending DownlinkMessage to monitor")
 		for serverName, ch := range s.downlink {
 			select {
 			case ch <- msg:
@@ -187,7 +187,7 @@ func (s *gatewayStreams) Send(msg interface{}) {
 			}
 		}
 	case *gateway.Status:
-		s.log.Debug("Sending Status to monitor")
+		s.log.WithField("Monitors", len(s.status)).Debug("Sending Status to monitor")
 		for serverName, ch := range s.status {
 			select {
 			case ch <- msg:
@@ -365,7 +365,7 @@ func (s *brokerStreams) Send(msg interface{}) {
 	defer s.mu.RUnlock()
 	switch msg := msg.(type) {
 	case *broker.DeduplicatedUplinkMessage:
-		s.log.Debug("Sending DeduplicatedUplinkMessage to monitor")
+		s.log.WithField("Monitors", len(s.uplink)).Debug("Sending DeduplicatedUplinkMessage to monitor")
 		for serverName, ch := range s.uplink {
 			select {
 			case ch <- msg:
@@ -374,7 +374,7 @@ func (s *brokerStreams) Send(msg interface{}) {
 			}
 		}
 	case *broker.DownlinkMessage:
-		s.log.Debug("Sending DownlinkMessage to monitor")
+		s.log.WithField("Monitors", len(s.downlink)).Debug("Sending DownlinkMessage to monitor")
 		for serverName, ch := range s.downlink {
 			select {
 			case ch <- msg:

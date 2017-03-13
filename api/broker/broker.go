@@ -132,7 +132,7 @@ type routerStreams struct {
 func (s *routerStreams) Uplink(msg *UplinkMessage) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	s.log.Debug("Sending UplinkMessage to broker")
+	s.log.WithField("Brokers", len(s.uplink)).Debug("Sending UplinkMessage to broker")
 	for serverName, ch := range s.uplink {
 		select {
 		case ch <- msg:
@@ -265,7 +265,7 @@ type handlerStreams struct {
 func (s *handlerStreams) Downlink(msg *DownlinkMessage) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	s.log.Debug("Sending DownlinkMessage to broker")
+	s.log.WithField("Brokers", len(s.downlink)).Debug("Sending DownlinkMessage to broker")
 	for serverName, ch := range s.downlink {
 		select {
 		case ch <- msg:
