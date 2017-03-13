@@ -13,6 +13,7 @@ import (
 
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	pb "github.com/TheThingsNetwork/ttn/api/handler"
+	"github.com/TheThingsNetwork/ttn/api/pool"
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/handler"
 	"github.com/TheThingsNetwork/ttn/core/proxy"
@@ -132,7 +133,7 @@ var handlerCmd = &cobra.Command{
 		defer grpc.Stop()
 
 		if httpActive {
-			proxyConn, err := component.Identity.Dial(component.Pool)
+			proxyConn, err := component.Identity.Dial(pool.Global)
 			if err != nil {
 				ctx.WithError(err).Fatal("Could not start client for gRPC proxy")
 			}

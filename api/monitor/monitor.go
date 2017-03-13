@@ -15,6 +15,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/api/gateway"
+	"github.com/TheThingsNetwork/ttn/api/pool"
 	"github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/utils"
 	"github.com/golang/protobuf/ptypes/empty"
@@ -74,17 +75,10 @@ type Client struct {
 	serverConns []*serverConn
 }
 
-// DefaultDialOptions for connecting with a monitor server
-var DefaultDialOptions = []grpc.DialOption{
-	grpc.WithBlock(),
-	grpc.FailOnNonTempDialError(false),
-	grpc.WithStreamInterceptor(restartstream.Interceptor(restartstream.DefaultSettings)),
-}
-
 // AddServer adds a new monitor server. Supplying DialOptions overrides the default dial options.
 // If the default DialOptions are used, TLS will be used to connect to monitors with a "-tls" suffix in their name.
 // This function should not be called after streams have been started
-func (c *Client) AddServer(name, address string, opts ...grpc.DialOption) {
+func (c *Client) AddServer(name, address string) {
 	log := c.log.WithFields(log.Fields{"Monitor": name, "Address": address})
 	log.Info("Adding Monitor server")
 
@@ -94,26 +88,17 @@ func (c *Client) AddServer(name, address string, opts ...grpc.DialOption) {
 		ready: make(chan struct{}),
 	}
 	c.serverConns = append(c.serverConns, s)
-	if len(opts) == 0 {
-		if strings.HasSuffix(name, "-tls") {
-			opts = append(DefaultDialOptions, grpc.WithTransportCredentials(credentials.NewTLS(TLSConfig)))
-		} else {
-			opts = append(DefaultDialOptions, grpc.WithInsecure())
-		}
-	}
 
 	go func() {
-		conn, err := grpc.DialContext(
-			c.ctx,
-			address,
-			opts...,
-		)
+		var err error
+		if strings.HasSuffix(name, "-tls") {
+			s.conn, err = pool.Global.DialSecure(address, credentials.NewTLS(nil))
+		} else {
+			s.conn, err = pool.Global.DialInsecure(address)
+		}
 		if err != nil {
 			log.WithError(err).Error("Could not connect to Monitor server")
-			close(s.ready)
-			return
 		}
-		s.conn = conn
 		close(s.ready)
 	}()
 }
