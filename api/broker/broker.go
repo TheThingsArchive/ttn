@@ -7,10 +7,12 @@ import (
 	"context"
 	"io"
 	"sync"
+	"time"
 
 	"github.com/TheThingsNetwork/go-utils/grpc/restartstream"
 	"github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/api"
+	"github.com/TheThingsNetwork/ttn/utils"
 	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -173,8 +175,11 @@ func (c *Client) NewRouterStreams(id string, token string) RouterStream {
 		close(s.downlink)
 	}()
 
+	var wg utils.WaitGroup
+
 	// Hook up the broker servers
 	for _, server := range c.serverConns {
+		wg.Add(1)
 		wgDown.Add(1)
 		go func(server *serverConn) {
 			if server.ready != nil {
@@ -230,6 +235,7 @@ func (c *Client) NewRouterStreams(id string, token string) RouterStream {
 				}()
 			}
 
+			wg.Done()
 			log.Debug("Start handling Associate stream")
 			defer log.Debug("Done handling Associate stream")
 			for {
@@ -248,6 +254,8 @@ func (c *Client) NewRouterStreams(id string, token string) RouterStream {
 
 		}(server)
 	}
+
+	wg.WaitForMax(100 * time.Millisecond)
 
 	return s
 }
@@ -306,8 +314,11 @@ func (c *Client) NewHandlerStreams(id string, token string) HandlerStream {
 		close(s.uplink)
 	}()
 
+	var wg utils.WaitGroup
+
 	// Hook up the broker servers
 	for _, server := range c.serverConns {
+		wg.Add(1)
 		wgUp.Add(1)
 		go func(server *serverConn) {
 			if server.ready != nil {
@@ -375,6 +386,7 @@ func (c *Client) NewHandlerStreams(id string, token string) HandlerStream {
 				}()
 			}
 
+			wg.Done()
 			log.Debug("Start handling Publish/Subscribe streams")
 			defer log.Debug("Done handling Publish/Subscribe streams")
 			for {
@@ -393,6 +405,8 @@ func (c *Client) NewHandlerStreams(id string, token string) HandlerStream {
 
 		}(server)
 	}
+
+	wg.WaitForMax(100 * time.Millisecond)
 
 	return s
 }

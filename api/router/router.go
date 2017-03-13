@@ -7,11 +7,13 @@ import (
 	"context"
 	"io"
 	"sync"
+	"time"
 
 	"github.com/TheThingsNetwork/go-utils/grpc/restartstream"
 	"github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/api/gateway"
+	"github.com/TheThingsNetwork/ttn/utils"
 	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -168,8 +170,11 @@ func (c *Client) NewGatewayStreams(id string, token string) GenericStream {
 		close(s.downlink)
 	}()
 
+	var wg utils.WaitGroup
+
 	// Hook up the router servers
 	for _, server := range c.serverConns {
+		wg.Add(1)
 		wgDown.Add(1)
 		go func(server *serverConn) {
 			if server.ready != nil {
@@ -274,6 +279,7 @@ func (c *Client) NewGatewayStreams(id string, token string) GenericStream {
 				}()
 			}
 
+			wg.Done()
 			log.Debug("Start handling Gateway streams")
 			defer log.Debug("Done handling Gateway streams")
 			for {
@@ -299,6 +305,8 @@ func (c *Client) NewGatewayStreams(id string, token string) GenericStream {
 
 		}(server)
 	}
+
+	wg.WaitForMax(100 * time.Millisecond)
 
 	return s
 }

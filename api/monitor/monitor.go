@@ -8,6 +8,7 @@ import (
 	"io"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/TheThingsNetwork/go-utils/grpc/restartstream"
 	"github.com/TheThingsNetwork/go-utils/log"
@@ -15,6 +16,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/api/gateway"
 	"github.com/TheThingsNetwork/ttn/api/router"
+	"github.com/TheThingsNetwork/ttn/utils"
 	"github.com/golang/protobuf/ptypes/empty"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -218,8 +220,11 @@ func (c *Client) NewGatewayStreams(id string, token string) GenericStream {
 		status:   make(map[string]chan *gateway.Status),
 	}
 
+	var wg utils.WaitGroup
+
 	// Hook up the monitor servers
 	for _, server := range c.serverConns {
+		wg.Add(1)
 		go func(server *serverConn) {
 			if server.ready != nil {
 				select {
@@ -315,6 +320,7 @@ func (c *Client) NewGatewayStreams(id string, token string) GenericStream {
 				}()
 			}
 
+			wg.Done()
 			log.Debug("Start handling Gateway streams")
 			defer log.Debug("Done handling Gateway streams")
 			for {
@@ -346,6 +352,8 @@ func (c *Client) NewGatewayStreams(id string, token string) GenericStream {
 			}
 		}(server)
 	}
+
+	wg.WaitForMax(100 * time.Millisecond)
 
 	return s
 }
