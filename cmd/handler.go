@@ -132,7 +132,7 @@ var handlerCmd = &cobra.Command{
 		defer grpc.Stop()
 
 		if httpActive {
-			proxyConn, err := component.Identity.Dial()
+			proxyConn, err := component.Identity.Dial(component.Pool)
 			if err != nil {
 				ctx.WithError(err).Fatal("Could not start client for gRPC proxy")
 			}

@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/TheThingsNetwork/ttn/api/pool"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
@@ -39,14 +40,19 @@ func (a *Announcement) WithSecure() grpc.DialOption {
 	return grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig))
 }
 
-// Dial the component represented by this Announcement. We use the global connection pool here
-func (a *Announcement) Dial(opts ...grpc.DialOption) (*grpc.ClientConn, error) {
+// Dial the component represented by this Announcement.
+// This function is blocking if the pool uses grpc.WithBlock()
+func (a *Announcement) Dial(p *pool.Pool) (*grpc.ClientConn, error) {
+	if p == nil {
+		p = pool.Global
+	}
 	if a.NetAddress == "" {
 		return nil, errors.New("No address known for this component")
 	}
 	netAddress := strings.Split(a.NetAddress, ",")[0]
 	if a.Certificate == "" {
-		return pool.Global.Dial(netAddress, append(opts, grpc.WithInsecure())...)
+		return p.DialInsecure(netAddress)
 	}
-	return pool.Global.Dial(netAddress, append(opts, a.WithSecure())...)
+	tlsConfig, _ := a.TLSConfig()
+	return p.DialSecure(netAddress, credentials.NewTLS(tlsConfig))
 }

@@ -44,7 +44,7 @@ var checkCmd = &cobra.Command{
 			ctx.WithError(errors.FromGRPCError(err)).Fatalf("Could not get %s %s", serviceType, serviceID)
 		}
 
-		conn, err := res.Dial()
+		conn, err := res.Dial(nil)
 		if err != nil {
 			ctx.WithError(errors.FromGRPCError(err)).Fatalf("Could not dial %s %s", serviceType, serviceID)
 		}

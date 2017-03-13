@@ -7,11 +7,11 @@ import (
 	"context"
 	"net"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/TheThingsNetwork/go-utils/grpc/restartstream"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
 // Pool with connections
@@ -25,12 +25,20 @@ type Pool struct {
 
 type conn struct {
 	sync.WaitGroup
+	target string
+	opts   []grpc.DialOption
 	cancel context.CancelFunc
+	conn   *grpc.ClientConn
+	err    error
+}
 
-	users int32
-
-	conn *grpc.ClientConn
-	err  error
+func (c *conn) dial(ctx context.Context, opts ...grpc.DialOption) {
+	c.Add(1)
+	go func() {
+		ctx, c.cancel = context.WithCancel(ctx)
+		c.conn, c.err = grpc.DialContext(ctx, c.target, opts...)
+		c.Done()
+	}()
 }
 
 // KeepAliveDialer is a dialer that adds a 10 second TCP KeepAlive
@@ -42,73 +50,76 @@ func KeepAliveDialer(addr string, timeout time.Duration) (net.Conn, error) {
 var DefaultDialOptions = []grpc.DialOption{
 	grpc.WithStreamInterceptor(restartstream.Interceptor(restartstream.DefaultSettings)),
 	grpc.WithDialer(KeepAliveDialer),
+	grpc.WithBlock(),
 }
 
 // Global pool with connections
-var Global = NewPool(DefaultDialOptions)
+var Global = NewPool(context.Background(), DefaultDialOptions...)
 
 // NewPool returns a new connection pool that uses the given DialOptions
-func NewPool(dialOptions []grpc.DialOption) *Pool {
+func NewPool(ctx context.Context, dialOptions ...grpc.DialOption) *Pool {
 	return &Pool{
+		bgCtx:       ctx,
 		dialOptions: dialOptions,
 		conns:       make(map[string]*conn),
 	}
 }
 
-// Close connections. If target names supplied, considers the other users. Otherwise just closes all.
+// SetContext sets a new background context for the pool. Only new connections will use this new context
+func (p *Pool) SetContext(ctx context.Context) {
+	p.bgCtx = ctx
+}
+
+// AddDialOption adds DialOption for the pool. Only new connections will use these new DialOptions
+func (p *Pool) AddDialOption(opts ...grpc.DialOption) {
+	p.dialOptions = append(p.dialOptions, opts...)
+}
+
+// Close connections. If no target names supplied. just closes all.
 func (p *Pool) Close(target ...string) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if len(target) == 0 {
-		// This force-closes all connections
-		for _, c := range p.conns {
+		// Select all
+		for name := range p.conns {
+			target = append(target, name)
+		}
+	}
+	for _, target := range target {
+		if c, ok := p.conns[target]; ok {
 			c.cancel()
 			if c.conn != nil {
 				c.conn.Close()
 			}
-		}
-		p.conns = make(map[string]*conn)
-	}
-	for _, target := range target {
-		if c, ok := p.conns[target]; ok {
-			new := atomic.AddInt32(&c.users, -1)
-			if new < 1 {
-				c.cancel()
-				if c.conn != nil {
-					c.conn.Close()
-				}
-				delete(p.conns, target)
-			}
+			delete(p.conns, target)
 		}
 	}
 }
 
-// DialContext gets a connection from the pool or creates a new one
-// This function is blocking if grpc.WithBlock() is used
-func (p *Pool) DialContext(ctx context.Context, target string, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
+func (p *Pool) dial(target string, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
 	p.mu.Lock()
 	if _, ok := p.conns[target]; !ok {
-		c := new(conn)
-		c.Add(1)
+		c := &conn{
+			target: target,
+			opts:   opts,
+		}
+		c.dial(p.bgCtx, append(p.dialOptions, c.opts...)...)
 		p.conns[target] = c
-		go func() {
-			ctx, c.cancel = context.WithCancel(ctx)
-			opts = append(p.dialOptions, opts...)
-			c.conn, c.err = grpc.DialContext(ctx, target, opts...)
-			c.Done()
-		}()
 	}
 	c := p.conns[target]
 	p.mu.Unlock()
-
-	atomic.AddInt32(&c.users, 1)
-
 	c.Wait()
 	return c.conn, c.err
 }
 
-// Dial gets a connection from the pool or creates a new one
+// DialInsecure gets a connection from the pool or creates a new one
 // This function is blocking if grpc.WithBlock() is used
-func (p *Pool) Dial(target string, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
-	return p.DialContext(context.Background(), target, opts...)
+func (p *Pool) DialInsecure(target string) (*grpc.ClientConn, error) {
+	return p.dial(target, grpc.WithInsecure())
+}
+
+// DialSecure gets a connection from the pool or creates a new one
+// This function is blocking if grpc.WithBlock() is used
+func (p *Pool) DialSecure(target string, creds credentials.TransportCredentials) (*grpc.ClientConn, error) {
+	return p.dial(target, grpc.WithTransportCredentials(creds))
 }

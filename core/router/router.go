@@ -9,7 +9,6 @@ import (
 
 	"google.golang.org/grpc"
 
-	"github.com/TheThingsNetwork/ttn/api/auth"
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	pb_gateway "github.com/TheThingsNetwork/ttn/api/gateway"
@@ -148,13 +147,8 @@ func (r *router) getBroker(brokerAnnouncement *pb_discovery.Announcement) (*brok
 			uplink: make(chan *pb_broker.UplinkMessage),
 		}
 
-		auth := auth.WithTokenFunc(func(_ string) string {
-			token, _ := r.Component.BuildJWT()
-			return token
-		})
-
 		// Connect to the server
-		brk.conn, err = brokerAnnouncement.Dial(auth.DialOption())
+		brk.conn, err = brokerAnnouncement.Dial(r.Pool)
 		if err != nil {
 			return nil, err
 		}

@@ -25,7 +25,7 @@ func GetRouter(ctx ttnlog.Interface) (*grpc.ClientConn, *router.Client) {
 		ctx.WithError(errors.FromGRPCError(err)).Fatal("Could not get Router from Discovery")
 	}
 	ctx.Info("Connecting with Router...")
-	rtrConn, err := routerAnnouncement.Dial()
+	rtrConn, err := routerAnnouncement.Dial(nil)
 	ctx.Info("Connected to Router")
 	rtrClient := router.NewClient(router.DefaultClientConfig)
 	rtrClient.AddServer(viper.GetString("router-id"), rtrConn)
@@ -45,7 +45,7 @@ func GetRouterManager(ctx ttnlog.Interface) (*grpc.ClientConn, router.RouterMana
 		ctx.WithError(errors.FromGRPCError(err)).Fatal("Could not get Router from Discovery")
 	}
 	ctx.Info("Connecting with Router...")
-	rtrConn, err := routerAnnouncement.Dial()
+	rtrConn, err := routerAnnouncement.Dial(nil)
 	if err != nil {
 		ctx.WithError(err).Fatal("Could not connect to Router")
 	}

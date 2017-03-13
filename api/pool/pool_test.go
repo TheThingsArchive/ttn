@@ -4,6 +4,7 @@
 package pool
 
 import (
+	"context"
 	"net"
 	"testing"
 	"time"
@@ -32,13 +33,13 @@ func TestPool(t *testing.T) {
 
 	addr := lis.Addr().String()
 
-	pool := NewPool([]grpc.DialOption{grpc.WithBlock()})
+	pool := NewPool(context.Background(), grpc.WithBlock())
 
-	conn1, err := pool.Dial(addr, grpc.WithInsecure())
+	conn1, err := pool.DialInsecure(addr)
 	a.So(err, ShouldBeNil)
 	a.So(conn1, ShouldNotBeNil)
 
-	conn2, err := pool.Dial(addr, grpc.WithInsecure())
+	conn2, err := pool.DialInsecure(addr)
 	a.So(err, ShouldBeNil)
 	a.So(conn2, ShouldEqual, conn1)
 
@@ -83,15 +84,15 @@ func TestPool(t *testing.T) {
 	pool.Close(addr)
 	pool.Close(addr)
 
-	conn3, err := pool.Dial(addr, grpc.WithInsecure())
+	conn3, err := pool.DialInsecure(addr)
 	a.So(err, ShouldBeNil)
 	a.So(conn3, ShouldNotEqual, conn1) // the connection was closed, because there were no more users
 
 	pool.Close()
 
-	pool = NewPool([]grpc.DialOption{}) // Without the grpc.WithBlock()
+	pool = NewPool(context.Background(), grpc.WithInsecure()) // Without the grpc.WithBlock()
 
-	conn4, err := pool.Dial(addr, append(DefaultDialOptions, grpc.WithInsecure())...)
+	conn4, err := pool.DialInsecure(addr)
 	a.So(err, ShouldBeNil)
 	a.So(conn4, ShouldNotBeNil)
 

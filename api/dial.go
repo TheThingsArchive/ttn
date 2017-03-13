@@ -33,15 +33,14 @@ var TLSConfig *tls.Config
 
 // Dial an address with default TLS config
 func Dial(target string) (*grpc.ClientConn, error) {
-	conn, err := pool.Global.Dial(target, grpc.WithBlock(), grpc.WithTransportCredentials(credentials.NewClientTLSFromCert(RootCAs, "")))
+	conn, err := pool.Global.DialSecure(target, credentials.NewClientTLSFromCert(RootCAs, ""))
 	if err == nil {
 		return conn, nil
 	}
-	pool.Global.Close(target)
 	if _, ok := err.(tls.RecordHeaderError); ok && AllowInsecureFallback {
 		log.Get().Warn("Could not connect to gRPC server with TLS, will reconnect without TLS")
 		log.Get().Warnf("This is a security risk, you should enable TLS on %s", target)
-		conn, err = pool.Global.Dial(target, grpc.WithBlock(), grpc.WithInsecure())
+		conn, err = pool.Global.DialInsecure(target)
 	}
 	return conn, err
 }
@@ -53,5 +52,5 @@ func DialWithCert(target string, cert string) (*grpc.ClientConn, error) {
 	if !ok {
 		panic("failed to parse root certificate")
 	}
-	return pool.Global.Dial(target, grpc.WithBlock(), grpc.WithTransportCredentials(credentials.NewClientTLSFromCert(certPool, "")))
+	return pool.Global.DialSecure(target, credentials.NewClientTLSFromCert(certPool, ""))
 }

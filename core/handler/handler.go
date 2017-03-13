@@ -7,7 +7,6 @@ import (
 	"fmt"
 
 	"github.com/TheThingsNetwork/ttn/amqp"
-	"github.com/TheThingsNetwork/ttn/api/auth"
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb "github.com/TheThingsNetwork/ttn/api/handler"
 	"github.com/TheThingsNetwork/ttn/core/component"
@@ -147,16 +146,11 @@ func (h *handler) Shutdown() {
 }
 
 func (h *handler) associateBroker() error {
-	auth := auth.WithTokenFunc(func(_ string) string {
-		token, _ := h.Component.BuildJWT()
-		return token
-	})
-
 	broker, err := h.Discover("broker", h.ttnBrokerID)
 	if err != nil {
 		return err
 	}
-	conn, err := broker.Dial(auth.DialOption())
+	conn, err := broker.Dial(h.Pool)
 	if err != nil {
 		return err
 	}

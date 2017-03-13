@@ -82,7 +82,7 @@ var discoveryCmd = &cobra.Command{
 		go grpc.Serve(lis)
 
 		if viper.GetString("discovery.http-address") != "" && viper.GetInt("discovery.http-port") != 0 {
-			proxyConn, err := component.Identity.Dial()
+			proxyConn, err := component.Identity.Dial(component.Pool)
 			if err != nil {
 				ctx.WithError(err).Fatal("Could not start client for gRPC proxy")
 			}

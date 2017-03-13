@@ -5,13 +5,11 @@ package discovery
 
 import (
 	"crypto/tls"
+	"io/ioutil"
 	"net"
+	"os"
 	"path"
 	"testing"
-
-	"os"
-
-	"io/ioutil"
 
 	"github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/api/health"
@@ -64,12 +62,12 @@ func TestDialInsecure(t *testing.T) {
 
 	svc := new(Announcement)
 
-	_, err = svc.Dial()
+	_, err = svc.Dial(nil)
 	a.So(err, ShouldNotBeNil)
 
 	svc.NetAddress = lis.Addr().String()
 
-	conn, err := svc.Dial()
+	conn, err := svc.Dial(nil)
 	a.So(err, ShouldBeNil)
 
 	{
@@ -111,13 +109,13 @@ func TestDialSecure(t *testing.T) {
 
 	svc := new(Announcement)
 
-	_, err = svc.Dial()
+	_, err = svc.Dial(nil)
 	a.So(err, ShouldNotBeNil)
 
 	svc.NetAddress = lis.Addr().String()
 	svc.Certificate = string(cert)
 
-	conn, err := svc.Dial()
+	conn, err := svc.Dial(nil)
 	a.So(err, ShouldBeNil)
 
 	{

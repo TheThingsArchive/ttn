@@ -37,7 +37,7 @@ func TestRouter(t *testing.T) {
 
 	cli := NewClient(DefaultClientConfig)
 
-	conn, err := pool.Global.Dial(lis.Addr().String(), grpc.WithInsecure())
+	conn, err := pool.Global.DialInsecure(lis.Addr().String())
 	if err != nil {
 		t.Fatalf("Failed to connect to server: %v", err)
 	}
