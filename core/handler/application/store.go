@@ -76,17 +76,13 @@ func (s *RedisApplicationStore) Get(appID string) (*Application, error) {
 func (s *RedisApplicationStore) Set(new *Application, properties ...string) (err error) {
 	now := time.Now()
 	new.UpdatedAt = now
-
-	if new.old != nil {
-		err = s.store.Update(new.AppID, *new, properties...)
-	} else {
+	if new.old == nil {
 		new.CreatedAt = now
-		err = s.store.Create(new.AppID, *new, properties...)
 	}
+	err = s.store.Set(new.AppID, *new, properties...)
 	if err != nil {
 		return
 	}
-
 	return nil
 }
 

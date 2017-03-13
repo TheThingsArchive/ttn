@@ -160,14 +160,13 @@ func (s *RedisAnnouncementStore) GetForAppEUI(appEUI types.AppEUI) (*Announcemen
 // Set a new Announcement or update an existing one
 // The metadata of the announcement is ignored, as metadata should be managed with AddMetadata and RemoveMetadata
 func (s *RedisAnnouncementStore) Set(new *Announcement) error {
-	key := fmt.Sprintf("%s:%s", new.ServiceName, new.ID)
 	now := time.Now()
 	new.UpdatedAt = now
-	err := s.store.Update(key, *new)
-	if errors.GetErrType(err) == errors.NotFound {
+	key := fmt.Sprintf("%s:%s", new.ServiceName, new.ID)
+	if new.old == nil {
 		new.CreatedAt = now
-		err = s.store.Create(key, *new)
 	}
+	err := s.store.Set(key, *new)
 	if err != nil {
 		return err
 	}
