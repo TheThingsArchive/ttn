@@ -139,6 +139,18 @@ func TestRedisMapStore(t *testing.T) {
 		a.So(err, ShouldNotBeNil)
 	}
 
+	// Set
+	{
+		err := s.Set("test", &testRedisStruct{
+			Name: "Other Name",
+		}, "Name")
+		a.So(err, ShouldBeNil)
+
+		name, err := c.HGet("test-redis-map-store:test", "name").Result()
+		a.So(err, ShouldBeNil)
+		a.So(name, ShouldEqual, "Other Name")
+	}
+
 	// Update Existing
 	{
 		err := s.Update("test", &testRedisStruct{
@@ -151,13 +163,7 @@ func TestRedisMapStore(t *testing.T) {
 		a.So(name, ShouldEqual, "New Name")
 	}
 
-	// Delete Non-Existing
-	{
-		err := s.Delete("not-there")
-		a.So(err, ShouldNotBeNil)
-	}
-
-	// Delete Existing
+	// Delete
 	{
 		err := s.Delete("test")
 		a.So(err, ShouldBeNil)

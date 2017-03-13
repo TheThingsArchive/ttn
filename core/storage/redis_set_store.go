@@ -14,8 +14,7 @@ import (
 
 // RedisSetStore stores sets in Redis
 type RedisSetStore struct {
-	prefix string
-	client *redis.Client
+	*RedisStore
 }
 
 // NewRedisSetStore creates a new RedisSetStore
@@ -24,8 +23,7 @@ func NewRedisSetStore(client *redis.Client, prefix string) *RedisSetStore {
 		prefix += ":"
 	}
 	return &RedisSetStore{
-		client: client,
-		prefix: prefix,
+		RedisStore: NewRedisStore(client, prefix),
 	}
 }
 
@@ -78,24 +76,9 @@ func (s *RedisSetStore) GetAll(keys []string, options *ListOptions) (map[string]
 
 // List all results matching the selector, prepending the prefix to the selector if necessary
 func (s *RedisSetStore) List(selector string, options *ListOptions) (map[string][]string, error) {
-	if selector == "" {
-		selector = "*"
-	}
-	if !strings.HasPrefix(selector, s.prefix) {
-		selector = s.prefix + selector
-	}
-	var allKeys []string
-	var cursor uint64
-	for {
-		keys, next, err := s.client.Scan(cursor, selector, 0).Result()
-		if err != nil {
-			return nil, err
-		}
-		allKeys = append(allKeys, keys...)
-		cursor = next
-		if cursor == 0 {
-			break
-		}
+	allKeys, err := s.Keys(selector)
+	if err != nil {
+		return nil, err
 	}
 	return s.GetAll(allKeys, options)
 }
@@ -147,12 +130,4 @@ func (s *RedisSetStore) Remove(key string, values ...string) error {
 		valuesI[i] = v
 	}
 	return s.client.SRem(key, valuesI...).Err()
-}
-
-// Delete the entire set
-func (s *RedisSetStore) Delete(key string) error {
-	if !strings.HasPrefix(key, s.prefix) {
-		key = s.prefix + key
-	}
-	return s.client.Del(key).Err()
 }
