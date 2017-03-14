@@ -14,8 +14,7 @@ import (
 
 // RedisMapStore stores structs as HMaps in Redis
 type RedisMapStore struct {
-	prefix     string
-	client     *redis.Client
+	*RedisStore
 	encoder    func(input interface{}, properties ...string) (map[string]string, error)
 	decoder    func(input map[string]string) (output interface{}, err error)
 	migrations map[string]MigrateFunction
@@ -27,8 +26,7 @@ func NewRedisMapStore(client *redis.Client, prefix string) *RedisMapStore {
 		prefix += ":"
 	}
 	return &RedisMapStore{
-		client:     client,
-		prefix:     prefix,
+		RedisStore: NewRedisStore(client, prefix),
 		migrations: make(map[string]MigrateFunction),
 	}
 }
@@ -107,24 +105,9 @@ func (s *RedisMapStore) GetAll(keys []string, options *ListOptions) ([]interface
 
 // List all results matching the selector, prepending the prefix to the selector if necessary
 func (s *RedisMapStore) List(selector string, options *ListOptions) ([]interface{}, error) {
-	if selector == "" {
-		selector = "*"
-	}
-	if !strings.HasPrefix(selector, s.prefix) {
-		selector = s.prefix + selector
-	}
-	var allKeys []string
-	var cursor uint64
-	for {
-		keys, next, err := s.client.Scan(cursor, selector, 0).Result()
-		if err != nil {
-			return nil, err
-		}
-		allKeys = append(allKeys, keys...)
-		cursor = next
-		if cursor == 0 {
-			break
-		}
+	allKeys, err := s.Keys(selector)
+	if err != nil {
+		return nil, err
 	}
 	return s.GetAll(allKeys, options)
 }
@@ -181,30 +164,53 @@ type ChangedFielder interface {
 	ChangedFields() []string
 }
 
-// Create a new record, prepending the prefix to the key if necessary, optionally setting only the given properties
-func (s *RedisMapStore) Create(key string, value interface{}, properties ...string) error {
+func (s *RedisMapStore) prepare(key string, value interface{}, properties ...string) (fullKey string, vmap map[string]string, err error) {
 	if !strings.HasPrefix(key, s.prefix) {
-		key = s.prefix + key
+		fullKey = s.prefix + key
 	}
-
 	if len(properties) == 0 {
 		if i, ok := value.(ChangedFielder); ok {
 			properties = i.ChangedFields()
+			if len(properties) == 0 {
+				return
+			}
 		}
 	}
+	vmap, err = s.encoder(value, properties...)
+	if err != nil {
+		return
+	}
+	if len(vmap) == 0 {
+		return
+	}
+	if v, ok := value.(hasDBVersion); ok {
+		vmap[VersionKey] = v.DBVersion()
+	}
+	return
+}
 
-	vmap, err := s.encoder(value, properties...)
+// Set a record, prepending the prefix to the key if necessary, optionally setting only the given properties
+func (s *RedisMapStore) Set(key string, value interface{}, properties ...string) error {
+	key, vmap, err := s.prepare(key, value, properties...)
 	if err != nil {
 		return err
 	}
 	if len(vmap) == 0 {
 		return nil
 	}
+	return s.client.HMSet(key, vmap).Err()
+}
 
-	if v, ok := value.(hasDBVersion); ok {
-		vmap[VersionKey] = v.DBVersion()
+// Create a new record, prepending the prefix to the key if necessary, optionally setting only the given properties
+// This function returns an error if the record already exists
+func (s *RedisMapStore) Create(key string, value interface{}, properties ...string) error {
+	key, vmap, err := s.prepare(key, value, properties...)
+	if err != nil {
+		return err
 	}
-
+	if len(vmap) == 0 {
+		return nil
+	}
 	err = s.client.Watch(func(tx *redis.Tx) error {
 		exists, err := tx.Exists(key).Result()
 		if err != nil {
@@ -225,37 +231,19 @@ func (s *RedisMapStore) Create(key string, value interface{}, properties ...stri
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
 
 // Update an existing record, prepending the prefix to the key if necessary, optionally setting only the given properties
+// This function returns an error if the record does not exist
 func (s *RedisMapStore) Update(key string, value interface{}, properties ...string) error {
-	if !strings.HasPrefix(key, s.prefix) {
-		key = s.prefix + key
-	}
-
-	if len(properties) == 0 {
-		if i, ok := value.(ChangedFielder); ok {
-			properties = i.ChangedFields()
-			if len(properties) == 0 {
-				return nil
-			}
-		}
-	}
-
-	vmap, err := s.encoder(value, properties...)
+	key, vmap, err := s.prepare(key, value, properties...)
 	if err != nil {
 		return err
 	}
 	if len(vmap) == 0 {
 		return nil
 	}
-
-	if v, ok := value.(hasDBVersion); ok {
-		vmap[VersionKey] = v.DBVersion()
-	}
-
 	err = s.client.Watch(func(tx *redis.Tx) error {
 		exists, err := tx.Exists(key).Result()
 		if err != nil {
@@ -276,36 +264,5 @@ func (s *RedisMapStore) Update(key string, value interface{}, properties ...stri
 	if err != nil {
 		return err
 	}
-
-	return nil
-}
-
-// Delete an existing record, prepending the prefix to the key if necessary
-func (s *RedisMapStore) Delete(key string) error {
-	if !strings.HasPrefix(key, s.prefix) {
-		key = s.prefix + key
-	}
-
-	err := s.client.Watch(func(tx *redis.Tx) error {
-		exists, err := tx.Exists(key).Result()
-		if err != nil {
-			return err
-		}
-		if !exists {
-			return errors.NewErrNotFound(key)
-		}
-		_, err = tx.Pipelined(func(pipe *redis.Pipeline) error {
-			pipe.Del(key)
-			return nil
-		})
-		if err != nil {
-			return err
-		}
-		return nil
-	}, key)
-	if err != nil {
-		return err
-	}
-
 	return nil
 }

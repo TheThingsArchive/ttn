@@ -8,14 +8,12 @@ import (
 	"strings"
 
 	"github.com/TheThingsNetwork/ttn/utils/errors"
-
 	"gopkg.in/redis.v5"
 )
 
 // RedisKVStore stores arbitrary data in Redis
 type RedisKVStore struct {
-	prefix string
-	client *redis.Client
+	*RedisStore
 }
 
 // NewRedisKVStore creates a new RedisKVStore
@@ -24,8 +22,7 @@ func NewRedisKVStore(client *redis.Client, prefix string) *RedisKVStore {
 		prefix += ":"
 	}
 	return &RedisKVStore{
-		client: client,
-		prefix: prefix,
+		RedisStore: NewRedisStore(client, prefix),
 	}
 }
 
@@ -77,24 +74,9 @@ func (s *RedisKVStore) GetAll(keys []string, options *ListOptions) (map[string]s
 
 // List all results matching the selector, prepending the prefix to the selector if necessary
 func (s *RedisKVStore) List(selector string, options *ListOptions) (map[string]string, error) {
-	if selector == "" {
-		selector = "*"
-	}
-	if !strings.HasPrefix(selector, s.prefix) {
-		selector = s.prefix + selector
-	}
-	var allKeys []string
-	var cursor uint64
-	for {
-		keys, next, err := s.client.Scan(cursor, selector, 0).Result()
-		if err != nil {
-			return nil, err
-		}
-		allKeys = append(allKeys, keys...)
-		cursor = next
-		if cursor == 0 {
-			break
-		}
+	allKeys, err := s.Keys(selector)
+	if err != nil {
+		return nil, err
 	}
 	return s.GetAll(allKeys, options)
 }
@@ -114,12 +96,20 @@ func (s *RedisKVStore) Get(key string) (string, error) {
 	return result, nil
 }
 
+// Set a record, prepending the prefix to the key if necessary
+func (s *RedisKVStore) Set(key string, value string) error {
+	if !strings.HasPrefix(key, s.prefix) {
+		key = s.prefix + key
+	}
+	return s.client.Set(key, value, 0).Err()
+}
+
 // Create a new record, prepending the prefix to the key if necessary
+// This function returns an error if the record already exists
 func (s *RedisKVStore) Create(key string, value string) error {
 	if !strings.HasPrefix(key, s.prefix) {
 		key = s.prefix + key
 	}
-
 	err := s.client.Watch(func(tx *redis.Tx) error {
 		exists, err := tx.Exists(key).Result()
 		if err != nil {
@@ -140,16 +130,15 @@ func (s *RedisKVStore) Create(key string, value string) error {
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
 
 // Update an existing record, prepending the prefix to the key if necessary
+// This function returns an error if the record does not exist
 func (s *RedisKVStore) Update(key string, value string) error {
 	if !strings.HasPrefix(key, s.prefix) {
 		key = s.prefix + key
 	}
-
 	err := s.client.Watch(func(tx *redis.Tx) error {
 		exists, err := tx.Exists(key).Result()
 		if err != nil {
@@ -170,36 +159,5 @@ func (s *RedisKVStore) Update(key string, value string) error {
 	if err != nil {
 		return err
 	}
-
-	return nil
-}
-
-// Delete an existing record, prepending the prefix to the key if necessary
-func (s *RedisKVStore) Delete(key string) error {
-	if !strings.HasPrefix(key, s.prefix) {
-		key = s.prefix + key
-	}
-
-	err := s.client.Watch(func(tx *redis.Tx) error {
-		exists, err := tx.Exists(key).Result()
-		if err != nil {
-			return err
-		}
-		if !exists {
-			return errors.NewErrNotFound(key)
-		}
-		_, err = tx.Pipelined(func(pipe *redis.Pipeline) error {
-			pipe.Del(key)
-			return nil
-		})
-		if err != nil {
-			return err
-		}
-		return nil
-	}, key)
-	if err != nil {
-		return err
-	}
-
 	return nil
 }

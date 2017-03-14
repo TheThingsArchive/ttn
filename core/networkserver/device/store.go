@@ -126,14 +126,11 @@ func (s *RedisDeviceStore) Set(new *Device, properties ...string) (err error) {
 
 	now := time.Now()
 	new.UpdatedAt = now
-
 	key := fmt.Sprintf("%s:%s", new.AppEUI, new.DevEUI)
-	if new.old != nil {
-		err = s.store.Update(key, *new, properties...)
-	} else {
+	if new.old == nil {
 		new.CreatedAt = now
-		err = s.store.Create(key, *new, properties...)
 	}
+	err = s.store.Set(key, *new, properties...)
 	if err != nil {
 		return
 	}

@@ -12,8 +12,7 @@ import (
 
 // RedisQueueStore stores queues in Redis
 type RedisQueueStore struct {
-	prefix string
-	client *redis.Client
+	*RedisStore
 }
 
 // NewRedisQueueStore creates a new RedisQueueStore
@@ -22,8 +21,7 @@ func NewRedisQueueStore(client *redis.Client, prefix string) *RedisQueueStore {
 		prefix += ":"
 	}
 	return &RedisQueueStore{
-		client: client,
-		prefix: prefix,
+		RedisStore: NewRedisStore(client, prefix),
 	}
 }
 
@@ -75,24 +73,9 @@ func (s *RedisQueueStore) GetAll(keys []string, options *ListOptions) (map[strin
 
 // List all results matching the selector, prepending the prefix to the selector if necessary
 func (s *RedisQueueStore) List(selector string, options *ListOptions) (map[string][]string, error) {
-	if selector == "" {
-		selector = "*"
-	}
-	if !strings.HasPrefix(selector, s.prefix) {
-		selector = s.prefix + selector
-	}
-	var allKeys []string
-	var cursor uint64
-	for {
-		keys, next, err := s.client.Scan(cursor, selector, 0).Result()
-		if err != nil {
-			return nil, err
-		}
-		allKeys = append(allKeys, keys...)
-		cursor = next
-		if cursor == 0 {
-			break
-		}
+	allKeys, err := s.Keys(selector)
+	if err != nil {
+		return nil, err
 	}
 	return s.GetAll(allKeys, options)
 }
@@ -196,12 +179,4 @@ func (s *RedisQueueStore) Trim(key string, length int) error {
 		return nil
 	}
 	return err
-}
-
-// Delete the entire queue
-func (s *RedisQueueStore) Delete(key string) error {
-	if !strings.HasPrefix(key, s.prefix) {
-		key = s.prefix + key
-	}
-	return s.client.Del(key).Err()
 }
