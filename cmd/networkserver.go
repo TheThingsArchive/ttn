@@ -43,7 +43,9 @@ var networkserverCmd = &cobra.Command{
 			DB:       viper.GetInt("networkserver.redis-db"),
 		})
 
-		connectRedis(client)
+		if err := connectRedis(client); err != nil {
+			ctx.WithError(err).Fatal("Could not initialize database connection")
+		}
 
 		// Component
 		component, err := component.New(ttnlog.Get(), "networkserver", fmt.Sprintf("%s:%d", viper.GetString("networkserver.server-address-announce"), viper.GetInt("networkserver.server-port")))

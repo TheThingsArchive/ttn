@@ -1,12 +1,18 @@
 language: go
 
+go_import_path: github.com/TheThingsNetwork/ttn
+
 sudo: required
 
 services:
     - docker
 
 go:
-    - 1.7
+    - 1.8
+
+cache:
+  directories:
+    - vendor
 
 install:
     - make deps
