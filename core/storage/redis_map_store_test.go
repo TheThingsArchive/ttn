@@ -20,6 +20,11 @@ type testRedisStruct struct {
 	UpdatedAt  Time               `redis:"updated_at,omitempty"`
 	Empty      *map[string]string `redis:"empty"`
 	NotEmpty   *map[string]string `redis:"not_empty"`
+	changed    []string
+}
+
+func (a testRedisStruct) ChangedFields() (changed []string) {
+	return a.changed
 }
 
 func TestRedisMapStore(t *testing.T) {
@@ -34,6 +39,7 @@ func TestRedisMapStore(t *testing.T) {
 		Name:      "My Name",
 		UpdatedAt: Time{now},
 		NotEmpty:  &notEmpty,
+		changed:   []string{"Name", "UpdatedAt", "NotEmpty"},
 	}
 
 	s.SetBase(testRedisStructVal, "")
@@ -90,7 +96,8 @@ func TestRedisMapStore(t *testing.T) {
 				c.Del("test-redis-map-store:" + name).Result()
 			}()
 			s.Create(name, testRedisStruct{
-				Name: name,
+				Name:    name,
+				changed: []string{"Name"},
 			})
 		}
 	}
@@ -137,6 +144,28 @@ func TestRedisMapStore(t *testing.T) {
 	{
 		err := s.Update("not-there", &testRedisStructVal)
 		a.So(err, ShouldNotBeNil)
+	}
+
+	// Create/Update/Set using ChangedFields
+	{
+		err := s.Create("test", &testRedisStruct{})
+		a.So(err, ShouldBeNil) // Create not executed, so we don't know it's already there
+		exists, _ := c.Exists("test-redis-map-store:new").Result()
+		a.So(exists, ShouldBeFalse)
+
+		err = s.Update("not-there", &testRedisStruct{})
+		a.So(err, ShouldBeNil) // Update not executed, so we don't know it's not there
+		exists, _ = c.Exists("test-redis-map-store:new").Result()
+		a.So(exists, ShouldBeFalse)
+
+		err = s.Set("test", &testRedisStruct{
+			Name: "Not-changed Name",
+		})
+		a.So(err, ShouldBeNil)
+
+		name, err := c.HGet("test-redis-map-store:test", "name").Result()
+		a.So(err, ShouldBeNil)
+		a.So(name, ShouldEqual, "My Name")
 	}
 
 	// Set
