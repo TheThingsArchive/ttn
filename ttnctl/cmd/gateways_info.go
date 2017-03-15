@@ -6,6 +6,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/TheThingsNetwork/go-account-lib/rights"
 	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/spf13/cobra"
@@ -36,14 +37,21 @@ var gatewaysInfoCmd = &cobra.Command{
 		fmt.Printf("Gateway ID:     %s\n", gateway.ID)
 		fmt.Printf("Activated:      %v\n", gateway.Activated)
 		fmt.Printf("Frequency Plan: %s\n", gateway.FrequencyPlan)
+
 		locationAccess := "private"
-		if gateway.LocationPublic {
+		if gateway.IsPublic(rights.GatewayLocation) {
 			locationAccess = "public"
 		}
-		if gateway.Location != nil {
-			fmt.Printf("Location Info  : (%f, %f) (%s) \n", gateway.Location.Latitude, gateway.Location.Longitude, locationAccess)
+
+		if gateway.AntennaLocation != nil && gateway.AntennaLocation.Latitude != nil {
+			fmt.Printf("Location Info  : (%f, %f) (%s) \n", *gateway.AntennaLocation.Latitude, *gateway.AntennaLocation.Longitude, locationAccess)
 		}
-		if gateway.StatusPublic {
+
+		if gateway.AntennaLocation != nil && gateway.AntennaLocation.Altitude != nil {
+			fmt.Printf("Altitude       : %fm \n", *gateway.AntennaLocation.Altitude)
+		}
+
+		if gateway.IsPublic(rights.GatewayStatus) {
 			fmt.Printf("Status Info:    public (see ttnctl gateways status %s)\n", gatewayID)
 		} else {
 			fmt.Print("Status Info:    private\n")

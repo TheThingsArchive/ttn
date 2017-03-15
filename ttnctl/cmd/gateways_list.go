@@ -35,9 +35,9 @@ var gatewaysListCmd = &cobra.Command{
 		for i, gateway := range gateways {
 			var lat float64
 			var lng float64
-			if gateway.Location != nil {
-				lat = gateway.Location.Latitude
-				lng = gateway.Location.Longitude
+			if gateway.AntennaLocation != nil && gateway.AntennaLocation.Latitude != nil && gateway.AntennaLocation.Longitude != nil {
+				lat = *gateway.AntennaLocation.Latitude
+				lng = *gateway.AntennaLocation.Longitude
 			}
 			table.AddRow(i+1, gateway.ID, gateway.Activated, gateway.FrequencyPlan, fmt.Sprintf("(%f, %f)", lat, lng))
 		}
