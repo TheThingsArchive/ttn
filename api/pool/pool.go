@@ -5,14 +5,33 @@ package pool
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"net"
 	"sync"
 	"time"
 
 	"github.com/TheThingsNetwork/go-utils/grpc/restartstream"
+	"github.com/TheThingsNetwork/go-utils/roots"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
+
+// RootCAs to use in API connections
+var RootCAs *x509.CertPool
+
+func init() {
+	var err error
+	RootCAs, err = x509.SystemCertPool()
+	if err != nil {
+		RootCAs = roots.MozillaRootCAs
+	}
+}
+
+// TLSConfig that will be used when dialing securely without supplying TransportCredentials
+func TLSConfig(serverName string) *tls.Config {
+	return &tls.Config{ServerName: serverName, RootCAs: RootCAs}
+}
 
 // Pool with connections
 type Pool struct {
@@ -121,5 +140,9 @@ func (p *Pool) DialInsecure(target string) (*grpc.ClientConn, error) {
 // DialSecure gets a connection from the pool or creates a new one
 // This function is blocking if grpc.WithBlock() is used
 func (p *Pool) DialSecure(target string, creds credentials.TransportCredentials) (*grpc.ClientConn, error) {
+	if creds == nil {
+		netHost, _, _ := net.SplitHostPort(target)
+		creds = credentials.NewTLS(TLSConfig(netHost))
+	}
 	return p.dial(target, grpc.WithTransportCredentials(creds))
 }

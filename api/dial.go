@@ -8,32 +8,17 @@ import (
 	"crypto/x509"
 
 	"github.com/TheThingsNetwork/go-utils/log"
-	"github.com/TheThingsNetwork/go-utils/roots"
 	"github.com/TheThingsNetwork/ttn/api/pool"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
 
-// RootCAs to use in API connections
-var RootCAs *x509.CertPool
-
-func init() {
-	var err error
-	RootCAs, err = x509.SystemCertPool()
-	if err != nil {
-		RootCAs = roots.MozillaRootCAs
-	}
-}
-
 // AllowInsecureFallback can be set to true if you need to connect with a server that does not use TLS
 var AllowInsecureFallback = false
 
-// TLSConfig to use when connecting to servers
-var TLSConfig *tls.Config
-
 // Dial an address with default TLS config
 func Dial(target string) (*grpc.ClientConn, error) {
-	conn, err := pool.Global.DialSecure(target, credentials.NewClientTLSFromCert(RootCAs, ""))
+	conn, err := pool.Global.DialSecure(target, nil)
 	if err == nil {
 		return conn, nil
 	}

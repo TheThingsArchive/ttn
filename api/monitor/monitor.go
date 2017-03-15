@@ -22,7 +22,6 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/credentials"
 )
 
 // GenericStream is used for sending anything to the monitor.
@@ -92,7 +91,7 @@ func (c *Client) AddServer(name, address string) {
 	go func() {
 		var err error
 		if strings.HasSuffix(name, "-tls") {
-			s.conn, err = pool.Global.DialSecure(address, credentials.NewTLS(nil))
+			s.conn, err = pool.Global.DialSecure(address, nil)
 		} else {
 			s.conn, err = pool.Global.DialInsecure(address)
 		}

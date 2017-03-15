@@ -21,6 +21,7 @@ import (
 	"github.com/TheThingsNetwork/go-account-lib/tokenkey"
 	"github.com/TheThingsNetwork/ttn/api"
 	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
+	"github.com/TheThingsNetwork/ttn/api/pool"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/security"
 	jwt "github.com/dgrijalva/jwt-go"
@@ -154,7 +155,7 @@ func (c *Component) initRoots() error {
 	if err != nil {
 		return nil
 	}
-	if !api.RootCAs.AppendCertsFromPEM(cert) {
+	if !pool.RootCAs.AppendCertsFromPEM(cert) {
 		return fmt.Errorf("Could not add root certificates from %s", path)
 	}
 	return nil
