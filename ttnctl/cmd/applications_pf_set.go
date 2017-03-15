@@ -15,6 +15,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var omitTests bool
+
 var applicationsPayloadFunctionsSetCmd = &cobra.Command{
 	Use:   "set [decoder/converter/validator/encoder] [file.js]",
 	Short: "Set payload functions of an application",
@@ -157,50 +159,52 @@ Function read from %s:
 			}
 		}
 
-		fmt.Printf("\nDo you want to test the payload functions? (Y/n)\n")
-		var response string
-		fmt.Scanln(&response)
+		if !omitTests {
+			fmt.Printf("\nDo you want to test the payload functions? (Y/n)\n")
+			var response string
+			fmt.Scanln(&response)
 
-		if strings.ToLower(response) == "y" || strings.ToLower(response) == "yes" || response == "" {
-			switch function {
-			case "decoder", "converter", "validator":
-				payload, err := util.ReadPayload()
-				if err != nil {
-					ctx.WithError(err).Fatal("Could not parse the payload")
-				}
+			if strings.ToLower(response) == "y" || strings.ToLower(response) == "yes" || response == "" {
+				switch function {
+				case "decoder", "converter", "validator":
+					payload, err := util.ReadPayload()
+					if err != nil {
+						ctx.WithError(err).Fatal("Could not parse the payload")
+					}
 
-				port, err := util.ReadPort()
-				if err != nil {
-					ctx.WithError(err).Fatal("Could not parse the port")
-				}
+					port, err := util.ReadPort()
+					if err != nil {
+						ctx.WithError(err).Fatal("Could not parse the port")
+					}
 
-				result, err := manager.DryUplink(payload, app, uint32(port))
-				if err != nil {
-					ctx.WithError(err).Fatal("Could not set the payload function")
-				}
+					result, err := manager.DryUplink(payload, app, uint32(port))
+					if err != nil {
+						ctx.WithError(err).Fatal("Could not set the payload function")
+					}
 
-				if !result.Valid {
-					ctx.Fatal("Could not set the payload function: Invalid result")
-				}
-				ctx.Infof("Function tested successfully. Object returned by the converter: %s", result.Fields)
-			case "encoder":
-				fields, err := util.ReadFields()
-				if err != nil {
-					ctx.WithError(err).Fatal("Could not parse the fields")
-				}
+					if !result.Valid {
+						ctx.Fatal("Could not set the payload function: Invalid result")
+					}
+					ctx.Infof("Function tested successfully. Object returned by the converter: %s", result.Fields)
+				case "encoder":
+					fields, err := util.ReadFields()
+					if err != nil {
+						ctx.WithError(err).Fatal("Could not parse the fields")
+					}
 
-				port, err := util.ReadPort()
-				if err != nil {
-					ctx.WithError(err).Fatal("Could not parse the port")
-				}
+					port, err := util.ReadPort()
+					if err != nil {
+						ctx.WithError(err).Fatal("Could not parse the port")
+					}
 
-				result, err := manager.DryDownlinkWithFields(fields, app, uint32(port))
-				if err != nil {
-					ctx.WithError(err).Fatal("Could not set the payload function")
+					result, err := manager.DryDownlinkWithFields(fields, app, uint32(port))
+					if err != nil {
+						ctx.WithError(err).Fatal("Could not set the payload function")
+					}
+					ctx.Infof("Function tested successfully. Encoded message: %v", result.Payload)
+				default:
+					ctx.Fatalf("Function %s does not exist", function)
 				}
-				ctx.Infof("Function tested successfully. Encoded message: %v", result.Payload)
-			default:
-				ctx.Fatalf("Function %s does not exist", function)
 			}
 		}
 
@@ -216,6 +220,7 @@ Function read from %s:
 }
 
 func init() {
+	applicationsPayloadFunctionsSetCmd.Flags().BoolVarP(&omitTests, "no-tests", "N", false, "omit the tests")
 	applicationsPayloadFunctionsCmd.AddCommand(applicationsPayloadFunctionsSetCmd)
 }
 
