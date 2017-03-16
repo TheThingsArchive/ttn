@@ -44,6 +44,22 @@ func GetErrType(err error) ErrType {
 	return Unknown
 }
 
+func IsPermissionDenied(err error) bool {
+	return GetErrType(err) == PermissionDenied
+}
+func IsNotFound(err error) bool {
+	return GetErrType(err) == NotFound
+}
+func IsInvalidArgument(err error) bool {
+	return GetErrType(err) == InvalidArgument
+}
+func IsInternal(err error) bool {
+	return GetErrType(err) == Internal
+}
+func IsAlreadyExists(err error) bool {
+	return GetErrType(err) == AlreadyExists
+}
+
 // BuildGRPCError returns the error with a GRPC code
 func BuildGRPCError(err error) error {
 	if err == nil {
