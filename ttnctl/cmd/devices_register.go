@@ -80,10 +80,8 @@ var devicesRegisterCmd = &cobra.Command{
 			if err != nil {
 				ctx.WithError(err).Fatal("Invalid location")
 			}
-			if location.Latitude != nil && location.Longitude != nil {
-				device.Latitude = float32(*location.Latitude)
-				device.Longitude = float32(*location.Longitude)
-			}
+			device.Latitude = float32(location.Latitude)
+			device.Longitude = float32(location.Longitude)
 		}
 
 		conn, manager := util.GetHandlerManager(ctx, appID)

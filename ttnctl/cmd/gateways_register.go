@@ -28,7 +28,7 @@ var gatewaysRegisterCmd = &cobra.Command{
 		frequencyPlan := args[1]
 
 		var err error
-		var location *account.AntennaLocation
+		var location *account.Location
 		if len(args) == 3 {
 			location, err = util.ParseLocation(args[2])
 			if err != nil {

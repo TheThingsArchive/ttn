@@ -14,14 +14,12 @@ func TestParseLocation(t *testing.T) {
 	a := New(t)
 
 	str := "10.5,33.4"
-	lat := float64(10.5)
-	lng := float64(33.4)
-	loc := &account.AntennaLocation{
-		Latitude:  &lat,
-		Longitude: &lng,
+	loc := &account.Location{
+		Latitude:  float64(10.5),
+		Longitude: float64(33.4),
 	}
 	parsed, err := ParseLocation(str)
 	a.So(err, ShouldBeNil)
-	a.So(*loc.Latitude, ShouldEqual, *parsed.Latitude)
-	a.So(*loc.Longitude, ShouldEqual, *parsed.Longitude)
+	a.So(loc.Latitude, ShouldEqual, parsed.Latitude)
+	a.So(loc.Longitude, ShouldEqual, parsed.Longitude)
 }

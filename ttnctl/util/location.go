@@ -11,7 +11,7 @@ import (
 	"github.com/TheThingsNetwork/go-account-lib/account"
 )
 
-func ParseLocation(locationStr string) (*account.AntennaLocation, error) {
+func ParseLocation(locationStr string) (*account.Location, error) {
 	parts := strings.Split(locationStr, ",")
 	if len(parts) != 2 {
 		return nil, errors.New("Location should be on the <latitude>,<longitude> format")
@@ -35,8 +35,8 @@ func ParseLocation(locationStr string) (*account.AntennaLocation, error) {
 		return nil, errors.New("Longitude should be in range [-180, 180]")
 	}
 
-	return &account.AntennaLocation{
-		Latitude:  &lat,
-		Longitude: &lng,
+	return &account.Location{
+		Latitude:  lat,
+		Longitude: lng,
 	}, nil
 }

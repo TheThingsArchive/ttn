@@ -43,12 +43,8 @@ var gatewaysInfoCmd = &cobra.Command{
 			locationAccess = "public"
 		}
 
-		if gateway.AntennaLocation != nil && gateway.AntennaLocation.Latitude != nil {
-			fmt.Printf("Location Info  : (%f, %f) (%s) \n", *gateway.AntennaLocation.Latitude, *gateway.AntennaLocation.Longitude, locationAccess)
-		}
-
-		if gateway.AntennaLocation != nil && gateway.AntennaLocation.Altitude != nil {
-			fmt.Printf("Altitude       : %fm \n", *gateway.AntennaLocation.Altitude)
+		if gateway.AntennaLocation != nil {
+			fmt.Printf("Location Info  : (%f, %f, %f) (%s) \n", gateway.AntennaLocation.Latitude, gateway.AntennaLocation.Longitude, gateway.AntennaLocation.Altitude, locationAccess)
 		}
 
 		if gateway.IsPublic(rights.GatewayStatus) {
