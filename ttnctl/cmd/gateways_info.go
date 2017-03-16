@@ -6,7 +6,6 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/TheThingsNetwork/go-account-lib/rights"
 	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/spf13/cobra"
@@ -39,7 +38,7 @@ var gatewaysInfoCmd = &cobra.Command{
 		fmt.Printf("Frequency Plan: %s\n", gateway.FrequencyPlan)
 
 		locationAccess := "private"
-		if gateway.IsPublic(rights.GatewayLocation) {
+		if gateway.LocationPublic {
 			locationAccess = "public"
 		}
 
@@ -47,7 +46,7 @@ var gatewaysInfoCmd = &cobra.Command{
 			fmt.Printf("Location Info  : (%f, %f, %f) (%s) \n", gateway.AntennaLocation.Latitude, gateway.AntennaLocation.Longitude, gateway.AntennaLocation.Altitude, locationAccess)
 		}
 
-		if gateway.IsPublic(rights.GatewayStatus) {
+		if gateway.StatusPublic {
 			fmt.Printf("Status Info:    public (see ttnctl gateways status %s)\n", gatewayID)
 		} else {
 			fmt.Print("Status Info:    private\n")
