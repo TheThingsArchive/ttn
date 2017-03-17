@@ -9,10 +9,16 @@
 			"revisionTime": "2017-02-20T21:12:21Z"
 		},
 		{
-			"checksumSHA1": "Mq9f3LBEs4SMMIQHdPa9U9EWEv8=",
+			"checksumSHA1": "MBoJo9G+PWFsRRIkb55n+9WCcDo=",
+			"path": "github.com/TheThingsNetwork/go-account-lib",
+			"revision": "c3634eb20045e94abd340fac873c3be17e506e36",
+			"revisionTime": "2017-03-15T15:57:52Z"
+		},
+		{
+			"checksumSHA1": "EyqK2NXpCzuD58zuZaSJ43jwvYI=",
 			"path": "github.com/TheThingsNetwork/go-account-lib/account",
-			"revision": "90ce9cacdb918a924728960a7e40784573c8de25",
-			"revisionTime": "2017-02-28T11:03:51Z"
+			"revision": "25435ec2cfb8b5d6d7734d6ec3f86ef6bf0e53f5",
+			"revisionTime": "2017-03-16T12:34:39Z"
 		},
 		{
 			"checksumSHA1": "b6pCShOzSh4N9LujOUFzQDzqhz8=",

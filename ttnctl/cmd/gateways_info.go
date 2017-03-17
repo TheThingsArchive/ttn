@@ -36,13 +36,16 @@ var gatewaysInfoCmd = &cobra.Command{
 		fmt.Printf("Gateway ID:     %s\n", gateway.ID)
 		fmt.Printf("Activated:      %v\n", gateway.Activated)
 		fmt.Printf("Frequency Plan: %s\n", gateway.FrequencyPlan)
+
 		locationAccess := "private"
 		if gateway.LocationPublic {
 			locationAccess = "public"
 		}
-		if gateway.Location != nil {
-			fmt.Printf("Location Info  : (%f, %f) (%s) \n", gateway.Location.Latitude, gateway.Location.Longitude, locationAccess)
+
+		if gateway.AntennaLocation != nil {
+			fmt.Printf("Location Info  : (%f, %f, %f) (%s) \n", gateway.AntennaLocation.Latitude, gateway.AntennaLocation.Longitude, gateway.AntennaLocation.Altitude, locationAccess)
 		}
+
 		if gateway.StatusPublic {
 			fmt.Printf("Status Info:    public (see ttnctl gateways status %s)\n", gatewayID)
 		} else {
