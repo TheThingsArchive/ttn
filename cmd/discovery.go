@@ -44,7 +44,7 @@ var discoveryCmd = &cobra.Command{
 		// Redis Client
 		client := redis.NewClient(&redis.Options{
 			Addr:     viper.GetString("discovery.redis-address"),
-			Password: "", // no password set
+			Password: viper.GetString("discovery.redis-password"),
 			DB:       viper.GetInt("discovery.redis-db"),
 		})
 
@@ -120,6 +120,8 @@ func init() {
 
 	discoveryCmd.Flags().String("redis-address", "localhost:6379", "Redis server and port")
 	viper.BindPFlag("discovery.redis-address", discoveryCmd.Flags().Lookup("redis-address"))
+	discoveryCmd.Flags().String("redis-password", "", "Redis password")
+	viper.BindPFlag("discovery.redis-password", discoveryCmd.Flags().Lookup("redis-password"))
 	discoveryCmd.Flags().Int("redis-db", 0, "Redis database")
 	viper.BindPFlag("discovery.redis-db", discoveryCmd.Flags().Lookup("redis-db"))
 
