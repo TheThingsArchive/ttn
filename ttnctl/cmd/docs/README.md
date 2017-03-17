@@ -126,6 +126,12 @@ The functions are read from the supplied file or from STDIN.
 
 **Usage:** `ttnctl applications pf set [decoder/converter/validator/encoder] [file.js]`
 
+**Options**
+
+```
+  -N, --no-tests   omit the tests
+```
+
 **Example**
 
 ```
