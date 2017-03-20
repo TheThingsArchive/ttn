@@ -51,15 +51,17 @@ func (g *Gateway) SetAuth(token string, authenticated bool) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	g.authenticated = authenticated
-	if token == g.token {
-		return
-	}
-	g.token = token
 	if g.MonitorStream != nil {
+		if token == g.token {
+			return
+		}
+		g.Ctx.Debug("Stopping Monitor stream (token changed)")
 		g.MonitorStream.Close()
 	}
+	g.token = token
 	if g.Monitor != nil {
-		g.MonitorStream = g.Monitor.NewGatewayStreams(g.ID, token)
+		g.Ctx.Debug("Starting Gateway Monitor Stream")
+		g.MonitorStream = g.Monitor.NewGatewayStreams(g.ID, g.token)
 	}
 }
 
