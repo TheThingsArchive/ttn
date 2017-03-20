@@ -509,3 +509,165 @@ func (c *Client) NewBrokerStreams(id string, token string) GenericStream {
 
 	return s
 }
+
+type handlerStreams struct {
+	log    log.Interface
+	ctx    context.Context
+	cancel context.CancelFunc
+
+	mu       sync.RWMutex
+	uplink   map[string]chan *broker.DeduplicatedUplinkMessage
+	downlink map[string]chan *broker.DownlinkMessage
+}
+
+func (s *handlerStreams) Send(msg interface{}) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	switch msg := msg.(type) {
+	case *broker.DeduplicatedUplinkMessage:
+		s.log.Debug("Sending DeduplicatedUplinkMessage to monitor")
+		for serverName, ch := range s.uplink {
+			select {
+			case ch <- msg:
+			default:
+				s.log.WithField("Monitor", serverName).Warn("DeduplicatedUplinkMessage buffer full")
+			}
+		}
+	case *broker.DownlinkMessage:
+		s.log.Debug("Sending DownlinkMessage to monitor")
+		for serverName, ch := range s.downlink {
+			select {
+			case ch <- msg:
+			default:
+				s.log.WithField("Monitor", serverName).Warn("DownlinkMessage buffer full")
+			}
+		}
+	}
+}
+
+func (s *handlerStreams) Close() {
+	s.cancel()
+}
+
+// NewHandlerStreams returns new streams using the given handler ID and token
+func (c *Client) NewHandlerStreams(id string, token string) GenericStream {
+	log := c.log
+	ctx, cancel := context.WithCancel(c.ctx)
+	ctx = api.ContextWithID(ctx, id)
+	ctx = api.ContextWithToken(ctx, token)
+	s := &handlerStreams{
+		log:    log,
+		ctx:    ctx,
+		cancel: cancel,
+
+		uplink:   make(map[string]chan *broker.DeduplicatedUplinkMessage),
+		downlink: make(map[string]chan *broker.DownlinkMessage),
+	}
+
+	// Hook up the monitor servers
+	for _, server := range c.serverConns {
+		go func(server *serverConn) {
+			if server.ready != nil {
+				select {
+				case <-ctx.Done():
+					return
+				case <-server.ready:
+				}
+			}
+			if server.conn == nil {
+				return
+			}
+
+			log := log.WithField("Monitor", server.name)
+			cli := NewMonitorClient(server.conn)
+
+			monitor := func(streamName string, stream grpc.ClientStream) {
+				err := stream.RecvMsg(new(empty.Empty))
+				switch {
+				case err == nil:
+					log.Debugf("%s stream closed", streamName)
+				case err == io.EOF:
+					log.WithError(err).Debugf("%s stream ended", streamName)
+				case err == context.Canceled || grpc.Code(err) == codes.Canceled:
+					log.WithError(err).Debugf("%s stream canceled", streamName)
+				case err == context.DeadlineExceeded || grpc.Code(err) == codes.DeadlineExceeded:
+					log.WithError(err).Debugf("%s stream deadline exceeded", streamName)
+				case grpc.ErrorDesc(err) == grpc.ErrClientConnClosing.Error():
+					log.WithError(err).Debugf("%s stream connection closed", streamName)
+				default:
+					log.WithError(err).Warnf("%s stream closed unexpectedly", streamName)
+				}
+			}
+
+			chUplink := make(chan *broker.DeduplicatedUplinkMessage, c.config.BufferSize)
+			chDownlink := make(chan *broker.DownlinkMessage, c.config.BufferSize)
+
+			defer func() {
+				s.mu.Lock()
+				defer s.mu.Unlock()
+				delete(s.uplink, server.name)
+				delete(s.downlink, server.name)
+				close(chUplink)
+				close(chDownlink)
+			}()
+
+			// Uplink stream
+			uplink, err := cli.HandlerUplink(ctx)
+			if err != nil {
+				log.WithError(err).Warn("Could not set up HandlerUplink stream")
+			} else {
+				s.mu.Lock()
+				s.uplink[server.name] = chUplink
+				s.mu.Unlock()
+				go func() {
+					monitor("HandlerUplink", uplink)
+					s.mu.Lock()
+					defer s.mu.Unlock()
+					delete(s.uplink, server.name)
+				}()
+			}
+
+			// Downlink stream
+			downlink, err := cli.HandlerDownlink(ctx)
+			if err != nil {
+				log.WithError(err).Warn("Could not set up HandlerDownlink stream")
+			} else {
+				s.mu.Lock()
+				s.downlink[server.name] = chDownlink
+				s.mu.Unlock()
+				go func() {
+					monitor("HandlerDownlink", downlink)
+					s.mu.Lock()
+					defer s.mu.Unlock()
+					delete(s.downlink, server.name)
+				}()
+			}
+
+			log.Debug("Start handling Handler streams")
+			defer log.Debug("Done handling Handler streams")
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case msg := <-chUplink:
+					if err := uplink.Send(msg); err != nil {
+						log.WithError(err).Warn("Could not send UplinkMessage to monitor")
+						if err == restartstream.ErrStreamClosed {
+							return
+						}
+					}
+				case msg := <-chDownlink:
+					if err := downlink.Send(msg); err != nil {
+						log.WithError(err).Warn("Could not send DownlinkMessage to monitor")
+						if err == restartstream.ErrStreamClosed {
+							return
+						}
+					}
+				}
+			}
+
+		}(server)
+	}
+
+	return s
+}

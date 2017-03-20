@@ -9,6 +9,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/amqp"
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb "github.com/TheThingsNetwork/ttn/api/handler"
+	pb_monitor "github.com/TheThingsNetwork/ttn/api/monitor"
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/handler/application"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
@@ -71,7 +72,8 @@ type handler struct {
 	amqpEnabled  bool
 	amqpUp       chan *types.UplinkMessage
 
-	status *status
+	status        *status
+	monitorStream pb_monitor.GenericStream
 }
 
 var (
@@ -133,6 +135,9 @@ func (h *handler) Init(c *component.Component) error {
 	}
 
 	h.Component.SetStatus(component.StatusHealthy)
+	if h.Component.Monitor != nil {
+		h.monitorStream = h.Component.Monitor.NewHandlerStreams(h.Identity.Id, h.AccessToken)
+	}
 
 	return nil
 }

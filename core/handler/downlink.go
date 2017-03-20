@@ -117,6 +117,9 @@ func (h *handler) HandleDownlink(appDownlink *types.DownlinkMessage, downlink *p
 			}
 			ctx.WithError(err).Warn("Could not handle downlink")
 		}
+		if downlink != nil && h.monitorStream != nil {
+			h.monitorStream.Send(downlink)
+		}
 	}()
 
 	dev, err := h.devices.Get(appID, devID)
