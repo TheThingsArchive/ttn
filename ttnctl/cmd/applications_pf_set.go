@@ -15,8 +15,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var omitTests bool
-
 var applicationsPayloadFunctionsSetCmd = &cobra.Command{
 	Use:   "set [decoder/converter/validator/encoder] [file.js]",
 	Short: "Set payload functions of an application",
@@ -159,7 +157,7 @@ Function read from %s:
 			}
 		}
 
-		if !omitTests {
+		if skipTest, _ := cmd.Flags().GetBool("skip-test"); !skipTest {
 			fmt.Printf("\nDo you want to test the payload functions? (Y/n)\n")
 			var response string
 			fmt.Scanln(&response)
@@ -220,7 +218,7 @@ Function read from %s:
 }
 
 func init() {
-	applicationsPayloadFunctionsSetCmd.Flags().BoolVarP(&omitTests, "no-tests", "N", false, "omit the tests")
+	applicationsPayloadFunctionsSetCmd.Flags().Bool("skip-test", false, "skip payload function test")
 	applicationsPayloadFunctionsCmd.AddCommand(applicationsPayloadFunctionsSetCmd)
 }
 

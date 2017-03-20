@@ -129,7 +129,7 @@ The functions are read from the supplied file or from STDIN.
 **Options**
 
 ```
-  -N, --no-tests   omit the tests
+      --skip-test   skip payload function test
 ```
 
 **Example**
