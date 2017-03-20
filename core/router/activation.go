@@ -86,7 +86,7 @@ func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivat
 	if err != nil {
 		return nil, err
 	}
-	region := status.Region
+	region := status.FrequencyPlan
 	if region == "" {
 		region = band.Guess(uplink.GatewayMetadata.Frequency)
 	}
@@ -95,7 +95,7 @@ func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivat
 		return nil, err
 	}
 	lorawan := request.ActivationMetadata.GetLorawan()
-	lorawan.Region = pb_lorawan.Region(pb_lorawan.Region_value[region])
+	lorawan.FrequencyPlan = pb_lorawan.FrequencyPlan(pb_lorawan.FrequencyPlan_value[region])
 	lorawan.Rx1DrOffset = 0
 	lorawan.Rx2Dr = uint32(band.RX2DataRate)
 	lorawan.RxDelay = uint32(band.ReceiveDelay1.Seconds())

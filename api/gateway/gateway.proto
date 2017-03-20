@@ -78,8 +78,8 @@ message Status {
   string  contact_email  = 13;
   string  description    = 14;
 
-  // The gateway's region: one of EU_863_870, US_902_928, CN_779_787, EU_433, AU_915_928, CN_470_510, AS_923, KR_920_923
-  string  region         = 15;
+  // The gateway's frequency plan: one of EU_863_870, US_902_928, CN_779_787, EU_433, AU_915_928, CN_470_510, AS_923, AS_920_923, AS_923_925, KR_920_923
+  string  frequency_plan = 15;
   // The value of Bridge is set by the Bridge
   string  bridge         = 16;
   // The value of Router is set by the Router

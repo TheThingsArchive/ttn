@@ -19,10 +19,10 @@ import (
 )
 
 // newReferenceGateway returns a default gateway
-func newReferenceGateway(t *testing.T, region string) *gateway.Gateway {
+func newReferenceGateway(t *testing.T, frequencyPlan string) *gateway.Gateway {
 	gtw := gateway.NewGateway(GetLogger(t, "ReferenceGateway"), "eui-0102030405060708")
 	gtw.Status.Update(&pb_gateway.Status{
-		Region: region,
+		FrequencyPlan: frequencyPlan,
 	})
 	return gtw
 }

@@ -102,15 +102,15 @@ func (r *router) buildDownlinkOptions(uplink *pb.UplinkMessage, isActivation boo
 		return // We can't handle any other protocols than LoRaWAN yet
 	}
 
-	region := gatewayStatus.Region
-	if region == "" {
-		region = band.Guess(uplink.GatewayMetadata.Frequency)
+	frequencyPlan := gatewayStatus.FrequencyPlan
+	if frequencyPlan == "" {
+		frequencyPlan = band.Guess(uplink.GatewayMetadata.Frequency)
 	}
-	band, err := band.Get(region)
+	band, err := band.Get(frequencyPlan)
 	if err != nil {
-		return // We can't handle this region
+		return // We can't handle this frequency plan
 	}
-	if region == "EU_863_870" && isActivation {
+	if frequencyPlan == "EU_863_870" && isActivation {
 		band.RX2DataRate = 0
 	}
 
@@ -122,7 +122,7 @@ func (r *router) buildDownlinkOptions(uplink *pb.UplinkMessage, isActivation boo
 	// Configuration for RX2
 	buildRX2 := func() (*pb_broker.DownlinkOption, error) {
 		option := r.buildDownlinkOption(gateway.ID, band)
-		if region == "EU_863_870" {
+		if frequencyPlan == "EU_863_870" {
 			option.GatewayConfig.Power = 27 // The EU RX2 frequency allows up to 27dBm
 		}
 		if isActivation {
@@ -199,9 +199,9 @@ func (r *router) buildDownlinkOptions(uplink *pb.UplinkMessage, isActivation boo
 func computeDownlinkScores(gateway *gateway.Gateway, uplink *pb.UplinkMessage, options []*pb_broker.DownlinkOption) {
 	gatewayStatus, _ := gateway.Status.Get() // This just returns empty if non-existing
 
-	region := gatewayStatus.Region
-	if region == "" {
-		region = band.Guess(uplink.GatewayMetadata.Frequency)
+	frequencyPlan := gatewayStatus.FrequencyPlan
+	if frequencyPlan == "" {
+		frequencyPlan = band.Guess(uplink.GatewayMetadata.Frequency)
 	}
 
 	gatewayRx, _ := gateway.Utilization.Get()
@@ -262,7 +262,7 @@ func computeDownlinkScores(gateway *gateway.Gateway, uplink *pb.UplinkMessage, o
 			utilizationScore += math.Min((channelTx+channelRx)*200, 20) / 2 // 10% utilization = 10 (max)
 
 			// European Duty Cycle
-			if region == "EU_863_870" {
+			if frequencyPlan == "EU_863_870" {
 				var duty float64
 				switch {
 				case freq >= 863000000 && freq < 868000000:
