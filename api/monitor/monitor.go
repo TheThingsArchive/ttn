@@ -8,18 +8,20 @@ import (
 	"io"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/TheThingsNetwork/go-utils/grpc/restartstream"
 	"github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/api/gateway"
+	"github.com/TheThingsNetwork/ttn/api/pool"
 	"github.com/TheThingsNetwork/ttn/api/router"
+	"github.com/TheThingsNetwork/ttn/utils"
 	"github.com/golang/protobuf/ptypes/empty"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/credentials"
 )
 
 // GenericStream is used for sending anything to the monitor.
@@ -36,12 +38,14 @@ type GenericStream interface {
 
 // ClientConfig for monitor Client
 type ClientConfig struct {
-	BufferSize int
+	BackgroundContext context.Context
+	BufferSize        int
 }
 
 // DefaultClientConfig for monitor Client
 var DefaultClientConfig = ClientConfig{
-	BufferSize: 10,
+	BackgroundContext: context.Background(),
+	BufferSize:        10,
 }
 
 // TLSConfig to use
@@ -49,7 +53,7 @@ var TLSConfig *tls.Config
 
 // NewClient creates a new Client with the given configuration
 func NewClient(config ClientConfig) *Client {
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(config.BackgroundContext)
 
 	return &Client{
 		log:    log.Get(),
@@ -70,17 +74,10 @@ type Client struct {
 	serverConns []*serverConn
 }
 
-// DefaultDialOptions for connecting with a monitor server
-var DefaultDialOptions = []grpc.DialOption{
-	grpc.WithBlock(),
-	grpc.FailOnNonTempDialError(false),
-	grpc.WithStreamInterceptor(restartstream.Interceptor(restartstream.DefaultSettings)),
-}
-
 // AddServer adds a new monitor server. Supplying DialOptions overrides the default dial options.
 // If the default DialOptions are used, TLS will be used to connect to monitors with a "-tls" suffix in their name.
 // This function should not be called after streams have been started
-func (c *Client) AddServer(name, address string, opts ...grpc.DialOption) {
+func (c *Client) AddServer(name, address string) {
 	log := c.log.WithFields(log.Fields{"Monitor": name, "Address": address})
 	log.Info("Adding Monitor server")
 
@@ -90,26 +87,17 @@ func (c *Client) AddServer(name, address string, opts ...grpc.DialOption) {
 		ready: make(chan struct{}),
 	}
 	c.serverConns = append(c.serverConns, s)
-	if len(opts) == 0 {
-		if strings.HasSuffix(name, "-tls") {
-			opts = append(DefaultDialOptions, grpc.WithTransportCredentials(credentials.NewTLS(TLSConfig)))
-		} else {
-			opts = append(DefaultDialOptions, grpc.WithInsecure())
-		}
-	}
 
 	go func() {
-		conn, err := grpc.DialContext(
-			c.ctx,
-			address,
-			opts...,
-		)
+		var err error
+		if strings.HasSuffix(name, "-tls") {
+			s.conn, err = pool.Global.DialSecure(address, nil)
+		} else {
+			s.conn, err = pool.Global.DialInsecure(address)
+		}
 		if err != nil {
 			log.WithError(err).Error("Could not connect to Monitor server")
-			close(s.ready)
-			return
 		}
-		s.conn = conn
 		close(s.ready)
 	}()
 }
@@ -167,7 +155,7 @@ func (s *gatewayStreams) Send(msg interface{}) {
 	defer s.mu.RUnlock()
 	switch msg := msg.(type) {
 	case *router.UplinkMessage:
-		s.log.Debug("Sending UplinkMessage to monitor")
+		s.log.WithField("Monitors", len(s.uplink)).Debug("Sending UplinkMessage to monitor")
 		for serverName, ch := range s.uplink {
 			select {
 			case ch <- msg:
@@ -176,7 +164,7 @@ func (s *gatewayStreams) Send(msg interface{}) {
 			}
 		}
 	case *router.DownlinkMessage:
-		s.log.Debug("Sending DownlinkMessage to monitor")
+		s.log.WithField("Monitors", len(s.downlink)).Debug("Sending DownlinkMessage to monitor")
 		for serverName, ch := range s.downlink {
 			select {
 			case ch <- msg:
@@ -185,7 +173,7 @@ func (s *gatewayStreams) Send(msg interface{}) {
 			}
 		}
 	case *gateway.Status:
-		s.log.Debug("Sending Status to monitor")
+		s.log.WithField("Monitors", len(s.status)).Debug("Sending Status to monitor")
 		for serverName, ch := range s.status {
 			select {
 			case ch <- msg:
@@ -216,8 +204,11 @@ func (c *Client) NewGatewayStreams(id string, token string) GenericStream {
 		status:   make(map[string]chan *gateway.Status),
 	}
 
+	var wg utils.WaitGroup
+
 	// Hook up the monitor servers
 	for _, server := range c.serverConns {
+		wg.Add(1)
 		go func(server *serverConn) {
 			if server.ready != nil {
 				select {
@@ -313,6 +304,7 @@ func (c *Client) NewGatewayStreams(id string, token string) GenericStream {
 				}()
 			}
 
+			wg.Done()
 			log.Debug("Start handling Gateway streams")
 			defer log.Debug("Done handling Gateway streams")
 			for {
@@ -345,6 +337,8 @@ func (c *Client) NewGatewayStreams(id string, token string) GenericStream {
 		}(server)
 	}
 
+	wg.WaitForMax(100 * time.Millisecond)
+
 	return s
 }
 
@@ -363,7 +357,7 @@ func (s *brokerStreams) Send(msg interface{}) {
 	defer s.mu.RUnlock()
 	switch msg := msg.(type) {
 	case *broker.DeduplicatedUplinkMessage:
-		s.log.Debug("Sending DeduplicatedUplinkMessage to monitor")
+		s.log.WithField("Monitors", len(s.uplink)).Debug("Sending DeduplicatedUplinkMessage to monitor")
 		for serverName, ch := range s.uplink {
 			select {
 			case ch <- msg:
@@ -372,7 +366,7 @@ func (s *brokerStreams) Send(msg interface{}) {
 			}
 		}
 	case *broker.DownlinkMessage:
-		s.log.Debug("Sending DownlinkMessage to monitor")
+		s.log.WithField("Monitors", len(s.downlink)).Debug("Sending DownlinkMessage to monitor")
 		for serverName, ch := range s.downlink {
 			select {
 			case ch <- msg:

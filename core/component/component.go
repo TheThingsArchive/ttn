@@ -15,8 +15,10 @@ import (
 	"github.com/TheThingsNetwork/go-account-lib/claims"
 	"github.com/TheThingsNetwork/go-account-lib/tokenkey"
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
+	"github.com/TheThingsNetwork/ttn/api/auth"
 	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	pb_monitor "github.com/TheThingsNetwork/ttn/api/monitor"
+	"github.com/TheThingsNetwork/ttn/api/pool"
 	"github.com/TheThingsNetwork/ttn/api/trace"
 	"github.com/spf13/viper"
 	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
@@ -27,11 +29,12 @@ import (
 // Component contains the common attributes for all TTN components
 type Component struct {
 	Config           Config
+	Pool             *pool.Pool
 	Identity         *pb_discovery.Announcement
 	Discovery        pb_discovery.Client
 	Monitor          *pb_monitor.Client
 	Ctx              ttnlog.Interface
-	bgCtx            context.Context
+	Context          context.Context
 	AccessToken      string
 	privateKey       *ecdsa.PrivateKey
 	tlsConfig        *tls.Config
@@ -88,6 +91,12 @@ func New(ctx ttnlog.Interface, serviceName string, announcedAddress string) (*Co
 	if err := component.InitAuth(); err != nil {
 		return nil, err
 	}
+
+	auth := auth.WithTokenFunc(func(_ string) string {
+		token, _ := component.BuildJWT()
+		return token
+	})
+	component.Pool = pool.NewPool(component.Context, append(pool.DefaultDialOptions, auth.DialOption())...)
 
 	if serviceName != "discovery" && serviceName != "networkserver" {
 		var err error

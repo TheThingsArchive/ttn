@@ -231,7 +231,7 @@ func (b *broker) getHandlerConn(id string) (*grpc.ClientConn, error) {
 	if err != nil {
 		return nil, err
 	}
-	conn, err := announcement.Dial()
+	conn, err := announcement.Dial(b.Pool)
 	if err != nil {
 		return nil, err
 	}

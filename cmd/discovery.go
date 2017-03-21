@@ -14,6 +14,7 @@ import (
 
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	pb "github.com/TheThingsNetwork/ttn/api/discovery"
+	"github.com/TheThingsNetwork/ttn/api/pool"
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/discovery"
 	"github.com/TheThingsNetwork/ttn/core/discovery/announcement"
@@ -82,7 +83,7 @@ var discoveryCmd = &cobra.Command{
 		go grpc.Serve(lis)
 
 		if viper.GetString("discovery.http-address") != "" && viper.GetInt("discovery.http-port") != 0 {
-			proxyConn, err := component.Identity.Dial()
+			proxyConn, err := component.Identity.Dial(pool.Global)
 			if err != nil {
 				ctx.WithError(err).Fatal("Could not start client for gRPC proxy")
 			}

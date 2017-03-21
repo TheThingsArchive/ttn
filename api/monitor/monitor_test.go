@@ -11,6 +11,7 @@ import (
 	"github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/api/gateway"
+	"github.com/TheThingsNetwork/ttn/api/pool"
 	"github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/htdvisser/grpc-testing/test"
 	. "github.com/smartystreets/assertions"
@@ -40,7 +41,9 @@ func TestMonitor(t *testing.T) {
 
 	cli.AddServer("tls-without-tls", lis.Addr().String())
 
+	time.Sleep(50 * time.Millisecond)
 	testLogger.Print(t)
+	pool.Global.Close(lis.Addr().String())
 
 	cli.AddServer("test", lis.Addr().String())
 	time.Sleep(waitTime)

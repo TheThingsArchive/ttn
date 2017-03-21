@@ -4,6 +4,7 @@ discovery-address: "localhost:1900"
 auth-servers:
   ttn-account-v2: "https://account.thethingsnetwork.org"
   local: "file://.env/discovery/server.pub"
+tls: true
 key-dir: "./.env/discovery/"
 discovery:
   master-auth-servers:

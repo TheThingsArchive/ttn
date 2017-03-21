@@ -51,17 +51,13 @@ var uplinkCmd = &cobra.Command{
 			}
 		}
 
-		withDownlink, _ := cmd.Flags().GetBool("downlink")
-
 		confirmed, _ := cmd.Flags().GetBool("confirmed")
-		if confirmed {
-			withDownlink = true
-		}
 
 		ack, _ := cmd.Flags().GetBool("ack")
 
 		rtrConn, rtrClient := util.GetRouter(ctx)
 		defer rtrConn.Close()
+		defer rtrClient.Close()
 
 		gatewayID := viper.GetString("gateway-id")
 		gatewayToken := viper.GetString("gateway-token")
@@ -78,25 +74,17 @@ var uplinkCmd = &cobra.Command{
 			}
 		}
 
-		gtwClient := router.NewRouterClientForGateway(rtrClient, gatewayID, gatewayToken)
+		gtwClient := rtrClient.NewGatewayStreams(gatewayID, gatewayToken)
 		defer gtwClient.Close()
 
-		var downlinkStream router.DownlinkStream
-		if withDownlink {
-			downlinkStream = router.NewMonitoredDownlinkStream(gtwClient)
-			defer downlinkStream.Close()
-			time.Sleep(100 * time.Millisecond)
-		}
+		time.Sleep(100 * time.Millisecond)
 
 		m := &util.Message{}
 		m.SetDevice(devAddr, nwkSKey, appSKey)
 		m.SetMessage(confirmed, ack, fCnt, payload)
 		bytes := m.Bytes()
 
-		uplinkStream := router.NewMonitoredUplinkStream(gtwClient)
-		defer uplinkStream.Close()
-
-		err = uplinkStream.Send(&router.UplinkMessage{
+		gtwClient.Uplink(&router.UplinkMessage{
 			Payload:          bytes,
 			GatewayMetadata:  util.GetGatewayMetadata(gatewayID, 868100000),
 			ProtocolMetadata: util.GetProtocolMetadata("SF7BW125"),
@@ -109,32 +97,29 @@ var uplinkCmd = &cobra.Command{
 
 		ctx.Info("Sent uplink to Router")
 
-		if downlinkStream != nil {
-			select {
-			case downlinkMessage, ok := <-downlinkStream.Channel():
-				if !ok {
-					ctx.Info("Did not receive downlink")
-					break
-				}
-				if err := m.Unmarshal(downlinkMessage.Payload); err != nil {
-					ctx.WithError(err).Fatal("Could not unmarshal downlink")
-				}
-				ctx.WithFields(ttnlog.Fields{
-					"Payload": m.Payload,
-					"FCnt":    m.FCnt,
-					"FPort":   m.FPort,
-				}).Info("Received Downlink")
-			case <-time.After(2 * time.Second):
+		select {
+		case downlinkMessage, ok := <-gtwClient.Downlink():
+			if !ok {
 				ctx.Info("Did not receive downlink")
+				break
 			}
+			if err := m.Unmarshal(downlinkMessage.Payload); err != nil {
+				ctx.WithError(err).Fatal("Could not unmarshal downlink")
+			}
+			ctx.WithFields(ttnlog.Fields{
+				"Payload": m.Payload,
+				"FCnt":    m.FCnt,
+				"FPort":   m.FPort,
+			}).Info("Received Downlink")
+		case <-time.After(2 * time.Second):
+			ctx.Info("Did not receive downlink")
 		}
 	},
 }
 
 func init() {
 	RootCmd.AddCommand(uplinkCmd)
-	uplinkCmd.Flags().Bool("downlink", false, "Also start downlink (unstable)")
-	uplinkCmd.Flags().Bool("confirmed", false, "Use confirmed uplink (this also sets --downlink)")
+	uplinkCmd.Flags().Bool("confirmed", false, "Use confirmed uplink")
 	uplinkCmd.Flags().Bool("ack", false, "Set ACK bit")
 
 	uplinkCmd.Flags().String("gateway-id", "", "The ID of the gateway that you are faking (you can only fake gateways that you own)")
