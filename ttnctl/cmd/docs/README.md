@@ -5,6 +5,7 @@ Control The Things Network from the command line.
 **Options**
 
 ```
+      --allow-insecure             Allow insecure fallback if TLS unavailable
       --auth-server string         The address of the OAuth 2.0 server (default "https://account.thethingsnetwork.org")
       --config string              config file (default is $HOME/.ttnctl.yml)
       --data string                directory where ttnctl stores data (default is $HOME/.ttnctl)
