@@ -843,6 +843,12 @@
 			"revisionTime": "2017-03-07T23:55:54Z"
 		},
 		{
+			"checksumSHA1": "kGGAT2jr6A8fgFrrpP3c3BYmnpY=",
+			"path": "google.golang.org/genproto/googleapis/api/annotations",
+			"revision": "de9f5e90fe9b278809363f08c2072d2f2a429de7",
+			"revisionTime": "2017-03-17T11:18:29Z"
+		},
+		{
 			"checksumSHA1": "e1bhDjvqgxsItONMBJSDt3PRVJY=",
 			"path": "google.golang.org/grpc",
 			"revision": "cdee119ee21e61eef7093a41ba148fa83585e143",
