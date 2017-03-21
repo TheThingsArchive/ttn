@@ -88,6 +88,9 @@ message Status {
   // Indicates whether the gateway is trusted. Components that are able to verify gateway trust MUST do so and set this value accordingly
   bool    gateway_trusted = 3;
 
+  // Boot time in Unix nanoseconds
+  int64   boot_time      = 4;
+
   // Configuration and relatively static stuff
   // These values may be left out if they don't change
   // Reset using "-"
@@ -103,6 +106,12 @@ message Status {
   string  bridge         = 16;
   // The value of Router is set by the Router
   string  router         = 17;
+  // Version of Gateway FPGA
+  uint32  fpga           = 18;
+  // Version of Gateway DSP software
+  uint32  dsp            = 19;
+  // Version of gateway driver (in X.X.X format)
+  string  hal            = 20;
 
   GPSMetadata  gps       = 21;
 
@@ -121,6 +130,14 @@ message Status {
   uint32  tx_in          = 43;
   // Total number of successfully sent downlink packets since boot
   uint32  tx_ok          = 44;
+  // Total number of packets received from link testing mote, with CRC OK 
+  uint32  lm_ok          = 45;
+  // Sequence number of the first packet received from the link testing mote
+  uint32  lm_st          = 46;
+  // Sequence number of the last packet received from the link testing mote
+  uint32  lm_nw          = 47;
+  // Number of lost PPS pulses
+  uint32  l_pps          = 48;
 
   // Additional metrics from the operating system
   message OSMetrics {
