@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math/rand"
 
+	"github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/utils/random"
 )
 
@@ -61,7 +62,7 @@ func RandomStatus() *Status {
 		Platform:       random.String(rand.Intn(10)),
 		ContactEmail:   fmt.Sprintf("%s@%s.%s", random.String(rand.Intn(10)), random.String(rand.Intn(10)), random.String(rand.Intn(3))),
 		Description:    random.String(rand.Intn(10)),
-		Region:         random.String(rand.Intn(10)),
+		FrequencyPlan:  lorawan.FrequencyPlan(rand.Intn(4)).String(),
 		Bridge:         random.String(rand.Intn(10)),
 		Router:         random.ID(),
 		Rtt:            rand.Uint32(),

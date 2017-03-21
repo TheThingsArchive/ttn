@@ -310,8 +310,8 @@ type Status struct {
 	Platform       string   `protobuf:"bytes,12,opt,name=platform,proto3" json:"platform,omitempty"`
 	ContactEmail   string   `protobuf:"bytes,13,opt,name=contact_email,json=contactEmail,proto3" json:"contact_email,omitempty"`
 	Description    string   `protobuf:"bytes,14,opt,name=description,proto3" json:"description,omitempty"`
-	// The gateway's region: one of EU_863_870, US_902_928, CN_779_787, EU_433, AU_915_928, CN_470_510, AS_923, KR_920_923
-	Region string `protobuf:"bytes,15,opt,name=region,proto3" json:"region,omitempty"`
+	// The gateway's frequency plan: one of EU_863_870, US_902_928, CN_779_787, EU_433, AU_915_928, CN_470_510, AS_923, AS_920_923, AS_923_925, KR_920_923
+	FrequencyPlan string `protobuf:"bytes,15,opt,name=frequency_plan,json=frequencyPlan,proto3" json:"frequency_plan,omitempty"`
 	// The value of Bridge is set by the Bridge
 	Bridge string `protobuf:"bytes,16,opt,name=bridge,proto3" json:"bridge,omitempty"`
 	// The value of Router is set by the Router
@@ -384,9 +384,9 @@ func (m *Status) GetDescription() string {
 	return ""
 }
 
-func (m *Status) GetRegion() string {
+func (m *Status) GetFrequencyPlan() string {
 	if m != nil {
-		return m.Region
+		return m.FrequencyPlan
 	}
 	return ""
 }
@@ -843,11 +843,11 @@ func (m *Status) MarshalTo(dAtA []byte) (int, error) {
 		i = encodeVarintGateway(dAtA, i, uint64(len(m.Description)))
 		i += copy(dAtA[i:], m.Description)
 	}
-	if len(m.Region) > 0 {
+	if len(m.FrequencyPlan) > 0 {
 		dAtA[i] = 0x7a
 		i++
-		i = encodeVarintGateway(dAtA, i, uint64(len(m.Region)))
-		i += copy(dAtA[i:], m.Region)
+		i = encodeVarintGateway(dAtA, i, uint64(len(m.FrequencyPlan)))
+		i += copy(dAtA[i:], m.FrequencyPlan)
 	}
 	if len(m.Bridge) > 0 {
 		dAtA[i] = 0x82
@@ -1148,7 +1148,7 @@ func (m *Status) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovGateway(uint64(l))
 	}
-	l = len(m.Region)
+	l = len(m.FrequencyPlan)
 	if l > 0 {
 		n += 1 + l + sovGateway(uint64(l))
 	}
@@ -2173,7 +2173,7 @@ func (m *Status) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 15:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Region", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field FrequencyPlan", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -2198,7 +2198,7 @@ func (m *Status) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Region = string(dAtA[iNdEx:postIndex])
+			m.FrequencyPlan = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 16:
 			if wireType != 2 {

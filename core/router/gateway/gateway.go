@@ -97,10 +97,10 @@ func (g *Gateway) HandleUplink(uplink *pb_router.UplinkMessage) (err error) {
 		if uplink.GatewayMetadata.Gps == nil {
 			uplink.GatewayMetadata.Gps = status.GetGps()
 		}
-		// Inject Gateway region
-		if region, ok := pb_lorawan.Region_value[status.Region]; ok {
+		// Inject Gateway frequency plan
+		if frequencyPlan, ok := pb_lorawan.FrequencyPlan_value[status.FrequencyPlan]; ok {
 			if lorawan := uplink.GetProtocolMetadata().GetLorawan(); lorawan != nil {
-				lorawan.Region = pb_lorawan.Region(region)
+				lorawan.FrequencyPlan = pb_lorawan.FrequencyPlan(frequencyPlan)
 			}
 		}
 	}
