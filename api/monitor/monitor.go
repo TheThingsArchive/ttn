@@ -151,6 +151,9 @@ type gatewayStreams struct {
 }
 
 func (s *gatewayStreams) Send(msg interface{}) {
+	if msg == nil {
+		return
+	}
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	switch msg := msg.(type) {
@@ -159,6 +162,21 @@ func (s *gatewayStreams) Send(msg interface{}) {
 		for serverName, ch := range s.uplink {
 			select {
 			case ch <- msg:
+			default:
+				s.log.WithField("Monitor", serverName).Warn("UplinkMessage buffer full")
+			}
+		}
+	case *router.DeviceActivationRequest:
+		s.log.WithField("Monitors", len(s.uplink)).Debug("Sending DeviceActivationRequest->UplinkMessage to monitor")
+		for serverName, ch := range s.uplink {
+			select {
+			case ch <- &router.UplinkMessage{
+				Payload:          msg.Payload,
+				Message:          msg.Message,
+				ProtocolMetadata: msg.ProtocolMetadata,
+				GatewayMetadata:  msg.GatewayMetadata,
+				Trace:            msg.Trace,
+			}:
 			default:
 				s.log.WithField("Monitor", serverName).Warn("UplinkMessage buffer full")
 			}
@@ -353,6 +371,9 @@ type brokerStreams struct {
 }
 
 func (s *brokerStreams) Send(msg interface{}) {
+	if msg == nil {
+		return
+	}
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	switch msg := msg.(type) {
@@ -361,6 +382,26 @@ func (s *brokerStreams) Send(msg interface{}) {
 		for serverName, ch := range s.uplink {
 			select {
 			case ch <- msg:
+			default:
+				s.log.WithField("Monitor", serverName).Warn("DeduplicatedUplinkMessage buffer full")
+			}
+		}
+	case *broker.DeduplicatedDeviceActivationRequest:
+		s.log.WithField("Monitors", len(s.uplink)).Debug("Sending DeduplicatedDeviceActivationRequest->DeduplicatedUplinkMessage to monitor")
+		for serverName, ch := range s.uplink {
+			select {
+			case ch <- &broker.DeduplicatedUplinkMessage{
+				Payload:          msg.Payload,
+				Message:          msg.Message,
+				DevEui:           msg.DevEui,
+				AppEui:           msg.AppEui,
+				AppId:            msg.AppId,
+				DevId:            msg.DevId,
+				ProtocolMetadata: msg.ProtocolMetadata,
+				GatewayMetadata:  msg.GatewayMetadata,
+				ServerTime:       msg.ServerTime,
+				Trace:            msg.Trace,
+			}:
 			default:
 				s.log.WithField("Monitor", serverName).Warn("DeduplicatedUplinkMessage buffer full")
 			}
@@ -515,6 +556,9 @@ type handlerStreams struct {
 }
 
 func (s *handlerStreams) Send(msg interface{}) {
+	if msg == nil {
+		return
+	}
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	switch msg := msg.(type) {
@@ -523,6 +567,26 @@ func (s *handlerStreams) Send(msg interface{}) {
 		for serverName, ch := range s.uplink {
 			select {
 			case ch <- msg:
+			default:
+				s.log.WithField("Monitor", serverName).Warn("DeduplicatedUplinkMessage buffer full")
+			}
+		}
+	case *broker.DeduplicatedDeviceActivationRequest:
+		s.log.WithField("Monitors", len(s.uplink)).Debug("Sending DeduplicatedDeviceActivationRequest->DeduplicatedUplinkMessage to monitor")
+		for serverName, ch := range s.uplink {
+			select {
+			case ch <- &broker.DeduplicatedUplinkMessage{
+				Payload:          msg.Payload,
+				Message:          msg.Message,
+				DevEui:           msg.DevEui,
+				AppEui:           msg.AppEui,
+				AppId:            msg.AppId,
+				DevId:            msg.DevId,
+				ProtocolMetadata: msg.ProtocolMetadata,
+				GatewayMetadata:  msg.GatewayMetadata,
+				ServerTime:       msg.ServerTime,
+				Trace:            msg.Trace,
+			}:
 			default:
 				s.log.WithField("Monitor", serverName).Warn("DeduplicatedUplinkMessage buffer full")
 			}
