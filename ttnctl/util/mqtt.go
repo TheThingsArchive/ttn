@@ -15,8 +15,8 @@ import (
 )
 
 // GetMQTT connects a new MQTT clients with the specified credentials
-func GetMQTT(ctx ttnlog.Interface) mqtt.Client {
-	username, password, err := getMQTTCredentials(ctx)
+func GetMQTT(ctx ttnlog.Interface, accessKey string) mqtt.Client {
+	username, password, err := getMQTTCredentials(ctx, accessKey)
 	if err != nil {
 		ctx.WithError(err).Fatal("Failed to get MQTT credentials")
 	}
@@ -41,7 +41,7 @@ func GetMQTT(ctx ttnlog.Interface) mqtt.Client {
 	return client
 }
 
-func getMQTTCredentials(ctx ttnlog.Interface) (username string, password string, err error) {
+func getMQTTCredentials(ctx ttnlog.Interface, accessKey string) (username string, password string, err error) {
 	username = viper.GetString("mqtt-username")
 	password = viper.GetString("mqtt-password")
 	if username != "" {
@@ -53,16 +53,26 @@ func getMQTTCredentials(ctx ttnlog.Interface) (username string, password string,
 		return
 	}
 
-	return getAppMQTTCredentials(ctx)
+	return getAppMQTTCredentials(ctx, accessKey)
 }
 
-func getAppMQTTCredentials(ctx ttnlog.Interface) (string, string, error) {
+func getAppMQTTCredentials(ctx ttnlog.Interface, accessKey string) (string, string, error) {
 	appID := GetAppID(ctx)
 
 	account := GetAccount(ctx)
 	app, err := account.FindApplication(appID)
 	if err != nil {
 		return "", "", err
+	}
+
+	if accessKey != "" {
+		for _, key := range app.AccessKeys {
+			if key.Name == accessKey {
+				return appID, key.Key, nil
+			}
+		}
+
+		return "", "", fmt.Errorf("Access key with name %s does not exist", accessKey)
 	}
 
 	var keyIdx int

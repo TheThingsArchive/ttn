@@ -29,9 +29,6 @@ $ ttnctl downlink test --json '{"led":"on"}'
 	Run: func(cmd *cobra.Command, args []string) {
 		assertArgsLength(cmd, args, 2, 2)
 
-		client := util.GetMQTT(ctx)
-		defer client.Disconnect()
-
 		appID := util.GetAppID(ctx)
 		ctx = ctx.WithField("AppID", appID)
 
@@ -55,6 +52,14 @@ $ ttnctl downlink test --json '{"led":"on"}'
 		if err != nil {
 			ctx.WithError(err).Fatal("Failed to read confirmed flag")
 		}
+
+		accessKey, err := cmd.Flags().GetString("access-key")
+		if err != nil {
+			ctx.WithError(err).Fatal("Failed to read access-key flag")
+		}
+
+		client := util.GetMQTT(ctx, accessKey)
+		defer client.Disconnect()
 
 		message := types.DownlinkMessage{
 			AppID:     appID,
@@ -104,4 +109,5 @@ func init() {
 	downlinkCmd.Flags().Int("fport", 1, "FPort for downlink")
 	downlinkCmd.Flags().Bool("confirmed", false, "Confirmed downlink")
 	downlinkCmd.Flags().Bool("json", false, "Provide the payload as JSON")
+	downlinkCmd.Flags().String("access-key", "", "The access key to use")
 }
