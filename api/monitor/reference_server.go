@@ -11,6 +11,7 @@ import (
 	"github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/api/broker"
+	"github.com/TheThingsNetwork/ttn/api/fields"
 	"github.com/TheThingsNetwork/ttn/api/gateway"
 	"github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
@@ -19,6 +20,7 @@ import (
 
 // NewReferenceMonitorServer creates a new reference monitor server
 func NewReferenceMonitorServer(bufferSize int) *ReferenceMonitorServer {
+	fields.Debug = true
 	s := &ReferenceMonitorServer{
 		ctx: log.Get(),
 
@@ -130,7 +132,7 @@ func (s *ReferenceMonitorServer) GatewayStatus(stream Monitor_GatewayStatusServe
 		if err != nil {
 			return err
 		}
-		ctx.Info("Received GatewayStatus")
+		ctx.WithFields(fields.Get(msg)).Info("Received GatewayStatus")
 		select {
 		case s.gatewayStatuses <- msg:
 		default:
@@ -171,7 +173,7 @@ func (s *ReferenceMonitorServer) GatewayUplink(stream Monitor_GatewayUplinkServe
 		if err != nil {
 			return err
 		}
-		ctx.Info("Received UplinkMessage")
+		ctx.WithFields(fields.Get(msg)).Info("Received UplinkMessage")
 		select {
 		case s.uplinkMessages <- msg:
 		default:
@@ -212,7 +214,7 @@ func (s *ReferenceMonitorServer) GatewayDownlink(stream Monitor_GatewayDownlinkS
 		if err != nil {
 			return err
 		}
-		ctx.Info("Received DownlinkMessage")
+		ctx.WithFields(fields.Get(msg)).Info("Received DownlinkMessage")
 		select {
 		case s.downlinkMessages <- msg:
 		default:
@@ -267,7 +269,7 @@ func (s *ReferenceMonitorServer) BrokerUplink(stream Monitor_BrokerUplinkServer)
 		if err != nil {
 			return err
 		}
-		ctx.Info("Received DeduplicatedUplinkMessage")
+		ctx.WithFields(fields.Get(msg)).Info("Received DeduplicatedUplinkMessage")
 		select {
 		case s.brokerUplinkMessages <- msg:
 		default:
@@ -308,7 +310,7 @@ func (s *ReferenceMonitorServer) BrokerDownlink(stream Monitor_BrokerDownlinkSer
 		if err != nil {
 			return err
 		}
-		ctx.Info("Received DownlinkMessage")
+		ctx.WithFields(fields.Get(msg)).Info("Received DownlinkMessage")
 		select {
 		case s.brokerDownlinkMessages <- msg:
 		default:
@@ -363,7 +365,7 @@ func (s *ReferenceMonitorServer) HandlerUplink(stream Monitor_HandlerUplinkServe
 		if err != nil {
 			return err
 		}
-		ctx.Info("Received DeduplicatedUplinkMessage")
+		ctx.WithFields(fields.Get(msg)).Info("Received DeduplicatedUplinkMessage")
 		select {
 		case s.handlerUplinkMessages <- msg:
 		default:
@@ -404,7 +406,7 @@ func (s *ReferenceMonitorServer) HandlerDownlink(stream Monitor_HandlerDownlinkS
 		if err != nil {
 			return err
 		}
-		ctx.Info("Received DownlinkMessage")
+		ctx.WithFields(fields.Get(msg)).Info("Received DownlinkMessage")
 		select {
 		case s.handlerDownlinkMessages <- msg:
 		default:
