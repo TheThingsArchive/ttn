@@ -4,11 +4,16 @@
 package trace
 
 import (
+	"encoding/base64"
 	"fmt"
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/TheThingsNetwork/go-utils/pseudorandom"
 )
+
+var rand = pseudorandom.New(time.Now().UnixNano())
 
 var _serviceID = ""
 var _serviceName = ""
@@ -17,6 +22,27 @@ var _serviceName = ""
 func SetComponent(serviceName, serviceID string) {
 	_serviceName = serviceName
 	_serviceID = serviceID
+}
+
+// GetIDs gets the IDs of this Trace
+func (m *Trace) GetIDs() (uids []string) {
+	if m == nil {
+		return
+	}
+	for _, p := range m.Parents {
+		uids = append(uids, p.GetIDs()...)
+	}
+	if m.Id != "" {
+		uids = append(uids, m.Id)
+	}
+	return
+}
+
+// GenID generates a random ID
+func (m *Trace) GenID() {
+	id := make([]byte, 16)
+	rand.FillBytes(id)
+	m.Id = base64.RawURLEncoding.EncodeToString(id)
 }
 
 // WithEvent returns a new Trace for the event and its metadata, with the original trace as its parent
@@ -29,6 +55,9 @@ func (m *Trace) WithEvent(event string, keyvalue ...interface{}) *Trace {
 	}
 	if m != nil {
 		t.Parents = append(t.Parents, m)
+	}
+	if len(t.GetIDs()) == 0 {
+		t.GenID()
 	}
 	if len(keyvalue) > 0 {
 		if len(keyvalue)%2 == 1 {
