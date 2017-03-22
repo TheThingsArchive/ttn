@@ -77,10 +77,6 @@ func (g *Gateway) HandleStatus(status *pb.Status) (err error) {
 		return err
 	}
 	g.updateLastSeen()
-	if g.MonitorStream != nil {
-		clone := *status // Avoid race conditions
-		g.MonitorStream.Send(&clone)
-	}
 	return nil
 }
 
@@ -110,10 +106,6 @@ func (g *Gateway) HandleUplink(uplink *pb_router.UplinkMessage) (err error) {
 	defer g.mu.RUnlock()
 	uplink.GatewayMetadata.GatewayTrusted = g.authenticated
 	uplink.GatewayMetadata.GatewayId = g.ID
-	if g.MonitorStream != nil {
-		clone := *uplink // Avoid race conditions
-		g.MonitorStream.Send(&clone)
-	}
 	return nil
 }
 
@@ -124,9 +116,5 @@ func (g *Gateway) HandleDownlink(identifier string, downlink *pb_router.Downlink
 		return err
 	}
 	ctx.Debug("Scheduled downlink")
-	if g.MonitorStream != nil {
-		clone := *downlink // Avoid race conditions
-		g.MonitorStream.Send(&clone)
-	}
 	return nil
 }

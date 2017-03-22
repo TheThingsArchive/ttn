@@ -15,12 +15,14 @@ import (
 	pb "github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/api/trace"
 	"github.com/TheThingsNetwork/ttn/core/band"
+	"github.com/TheThingsNetwork/ttn/core/router/gateway"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 )
 
 func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivationRequest) (res *pb.DeviceActivationResponse, err error) {
 	ctx := r.Ctx.WithField("GatewayID", gatewayID).WithFields(fields.Get(activation))
 	start := time.Now()
+	var gateway *gateway.Gateway
 	defer func() {
 		if err != nil {
 			activation.Trace = activation.Trace.WithEvent(trace.DropEvent, "reason", err)
@@ -28,12 +30,15 @@ func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivat
 		} else {
 			ctx.WithField("Duration", time.Now().Sub(start)).Info("Handled activation")
 		}
+		if gateway != nil && gateway.MonitorStream != nil {
+			gateway.MonitorStream.Send(activation)
+		}
 	}()
 	r.status.activations.Mark(1)
 
 	activation.Trace = activation.Trace.WithEvent(trace.ReceiveEvent, "gateway", gatewayID)
 
-	gateway := r.getGateway(gatewayID)
+	gateway = r.getGateway(gatewayID)
 	gateway.LastSeen = time.Now()
 
 	uplink := &pb.UplinkMessage{

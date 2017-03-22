@@ -37,6 +37,11 @@ func (r *router) SubscribeDownlink(gatewayID string, subscriptionID string) (<-c
 			for message := range fromSchedule {
 				ctx.WithFields(fields.Get(message)).Debug("Send downlink")
 				toGateway <- message
+				if gateway.MonitorStream != nil {
+					clone := *message // There can be multiple subscribers
+					clone.Trace = clone.Trace.WithEvent(trace.SendEvent)
+					gateway.MonitorStream.Send(&clone)
+				}
 			}
 			ctx.Debug("Deactivate downlink")
 			close(toGateway)
@@ -51,7 +56,16 @@ func (r *router) UnsubscribeDownlink(gatewayID string, subscriptionID string) er
 	return nil
 }
 
-func (r *router) HandleDownlink(downlink *pb_broker.DownlinkMessage) error {
+func (r *router) HandleDownlink(downlink *pb_broker.DownlinkMessage) (err error) {
+	var gateway *gateway.Gateway
+	defer func() {
+		if err != nil {
+			downlink.Trace = downlink.Trace.WithEvent(trace.DropEvent, "reason", err)
+			if gateway != nil && gateway.MonitorStream != nil {
+				gateway.MonitorStream.Send(downlink)
+			}
+		}
+	}()
 	r.status.downlink.Mark(1)
 
 	downlink.Trace = downlink.Trace.WithEvent(trace.ReceiveEvent)
@@ -70,7 +84,8 @@ func (r *router) HandleDownlink(downlink *pb_broker.DownlinkMessage) error {
 		identifier = strings.TrimPrefix(option.Identifier, fmt.Sprintf("%s:", r.Component.Identity.Id))
 	}
 
-	return r.getGateway(downlink.DownlinkOption.GatewayId).HandleDownlink(identifier, downlinkMessage)
+	gateway = r.getGateway(downlink.DownlinkOption.GatewayId)
+	return gateway.HandleDownlink(identifier, downlinkMessage)
 }
 
 // buildDownlinkOption builds a DownlinkOption with default values

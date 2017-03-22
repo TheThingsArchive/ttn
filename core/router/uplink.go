@@ -12,6 +12,7 @@ import (
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	pb "github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/api/trace"
+	"github.com/TheThingsNetwork/ttn/core/router/gateway"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/brocaar/lorawan"
@@ -20,10 +21,14 @@ import (
 func (r *router) HandleUplink(gatewayID string, uplink *pb.UplinkMessage) (err error) {
 	ctx := r.Ctx.WithField("GatewayID", gatewayID).WithFields(fields.Get(uplink))
 	start := time.Now()
+	var gateway *gateway.Gateway
 	defer func() {
 		if err != nil {
 			uplink.Trace = uplink.Trace.WithEvent(trace.DropEvent, "reason", err)
 			ctx.WithError(err).Warn("Could not handle uplink")
+		}
+		if gateway != nil && gateway.MonitorStream != nil {
+			gateway.MonitorStream.Send(uplink)
 		}
 	}()
 	r.status.uplink.Mark(1)
@@ -92,7 +97,7 @@ func (r *router) HandleUplink(gatewayID string, uplink *pb.UplinkMessage) (err e
 		"FCnt":    macPayload.FHDR.FCnt,
 	})
 
-	gateway := r.getGateway(gatewayID)
+	gateway = r.getGateway(gatewayID)
 
 	if err = gateway.HandleUplink(uplink); err != nil {
 		return err

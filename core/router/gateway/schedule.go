@@ -12,7 +12,6 @@ import (
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	router_pb "github.com/TheThingsNetwork/ttn/api/router"
-	"github.com/TheThingsNetwork/ttn/api/trace"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/random"
 	"github.com/TheThingsNetwork/ttn/utils/toa"
@@ -194,7 +193,7 @@ func (s *schedule) Schedule(id string, downlink *router_pb.DownlinkMessage) erro
 			go func() {
 				waitTime := item.deadlineAt.Sub(time.Now())
 				ctx.WithField("Remaining", waitTime).Info("Scheduled downlink")
-				downlink.Trace = downlink.Trace.WithEvent("schedule")
+				downlink.Trace = downlink.Trace.WithEvent("schedule", "duration", waitTime)
 				<-time.After(waitTime)
 				s.RLock()
 				defer s.RUnlock()
@@ -250,7 +249,6 @@ func (s *schedule) Subscribe(subscriptionID string) <-chan *router_pb.DownlinkMe
 				if s.gateway != nil && s.gateway.Utilization != nil {
 					s.gateway.Utilization.AddTx(downlink) // FIXME: Issue #420
 				}
-				downlink.Trace = downlink.Trace.WithEvent(trace.SendEvent)
 				s.downlinkSubscriptionsLock.RLock()
 				for _, ch := range s.downlinkSubscriptions {
 					select {
