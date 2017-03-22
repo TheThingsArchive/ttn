@@ -173,7 +173,12 @@ func (s *ReferenceMonitorServer) GatewayUplink(stream Monitor_GatewayUplinkServe
 		if err != nil {
 			return err
 		}
-		ctx.WithFields(fields.Get(msg)).Info("Received UplinkMessage")
+		msg.UnmarshalPayload()
+		if msg.GetMessage().GetLorawan().GetJoinRequestPayload() != nil {
+			ctx.WithFields(fields.Get(msg)).Info("Received ActivationRequest")
+		} else {
+			ctx.WithFields(fields.Get(msg)).Info("Received UplinkMessage")
+		}
 		select {
 		case s.uplinkMessages <- msg:
 		default:
@@ -214,7 +219,12 @@ func (s *ReferenceMonitorServer) GatewayDownlink(stream Monitor_GatewayDownlinkS
 		if err != nil {
 			return err
 		}
-		ctx.WithFields(fields.Get(msg)).Info("Received DownlinkMessage")
+		msg.UnmarshalPayload()
+		if msg.GetMessage().GetLorawan().GetJoinAcceptPayload() != nil {
+			ctx.WithFields(fields.Get(msg)).Info("Received ActivationResponse")
+		} else {
+			ctx.WithFields(fields.Get(msg)).Info("Received DownlinkMessage")
+		}
 		select {
 		case s.downlinkMessages <- msg:
 		default:
@@ -269,7 +279,12 @@ func (s *ReferenceMonitorServer) BrokerUplink(stream Monitor_BrokerUplinkServer)
 		if err != nil {
 			return err
 		}
-		ctx.WithFields(fields.Get(msg)).Info("Received DeduplicatedUplinkMessage")
+		msg.UnmarshalPayload()
+		if msg.GetMessage().GetLorawan().GetJoinRequestPayload() != nil {
+			ctx.WithFields(fields.Get(msg)).Info("Received DeduplicatedActivationRequest")
+		} else {
+			ctx.WithFields(fields.Get(msg)).Info("Received DeduplicatedUplinkMessage")
+		}
 		select {
 		case s.brokerUplinkMessages <- msg:
 		default:
@@ -310,7 +325,12 @@ func (s *ReferenceMonitorServer) BrokerDownlink(stream Monitor_BrokerDownlinkSer
 		if err != nil {
 			return err
 		}
-		ctx.WithFields(fields.Get(msg)).Info("Received DownlinkMessage")
+		msg.UnmarshalPayload()
+		if msg.GetMessage().GetLorawan().GetJoinAcceptPayload() != nil {
+			ctx.WithFields(fields.Get(msg)).Info("Received ActivationResponse")
+		} else {
+			ctx.WithFields(fields.Get(msg)).Info("Received DownlinkMessage")
+		}
 		select {
 		case s.brokerDownlinkMessages <- msg:
 		default:
@@ -365,7 +385,12 @@ func (s *ReferenceMonitorServer) HandlerUplink(stream Monitor_HandlerUplinkServe
 		if err != nil {
 			return err
 		}
-		ctx.WithFields(fields.Get(msg)).Info("Received DeduplicatedUplinkMessage")
+		msg.UnmarshalPayload()
+		if msg.GetMessage().GetLorawan().GetJoinRequestPayload() != nil {
+			ctx.WithFields(fields.Get(msg)).Info("Received DeduplicatedActivationRequest")
+		} else {
+			ctx.WithFields(fields.Get(msg)).Info("Received DeduplicatedUplinkMessage")
+		}
 		select {
 		case s.handlerUplinkMessages <- msg:
 		default:
@@ -406,7 +431,12 @@ func (s *ReferenceMonitorServer) HandlerDownlink(stream Monitor_HandlerDownlinkS
 		if err != nil {
 			return err
 		}
-		ctx.WithFields(fields.Get(msg)).Info("Received DownlinkMessage")
+		msg.UnmarshalPayload()
+		if msg.GetMessage().GetLorawan().GetJoinAcceptPayload() != nil {
+			ctx.WithFields(fields.Get(msg)).Info("Received ActivationResponse")
+		} else {
+			ctx.WithFields(fields.Get(msg)).Info("Received DownlinkMessage")
+		}
 		select {
 		case s.handlerDownlinkMessages <- msg:
 		default:
