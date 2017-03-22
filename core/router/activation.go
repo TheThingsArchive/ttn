@@ -4,6 +4,7 @@
 package router
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"time"
@@ -23,15 +24,18 @@ func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivat
 	ctx := r.Ctx.WithField("GatewayID", gatewayID).WithFields(fields.Get(activation))
 	start := time.Now()
 	var gateway *gateway.Gateway
+	var forwarded bool
 	defer func() {
 		if err != nil {
 			activation.Trace = activation.Trace.WithEvent(trace.DropEvent, "reason", err)
-			ctx.WithError(err).Warn("Could not handle activation")
+			if forwarded {
+				ctx.WithError(err).Debug("Did not handle activation")
+			} else if gateway != nil && gateway.MonitorStream != nil {
+				ctx.WithError(err).Warn("Could not handle activation")
+				gateway.MonitorStream.Send(activation)
+			}
 		} else {
 			ctx.WithField("Duration", time.Now().Sub(start)).Info("Handled activation")
-		}
-		if gateway != nil && gateway.MonitorStream != nil {
-			gateway.MonitorStream.Send(activation)
 		}
 	}()
 	r.status.activations.Mark(1)
@@ -116,6 +120,11 @@ func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivat
 		"brokers", len(brokers),
 	)
 
+	if gateway != nil && gateway.MonitorStream != nil {
+		forwarded = true
+		gateway.MonitorStream.Send(activation)
+	}
+
 	// Forward to all brokers and collect responses
 	var wg sync.WaitGroup
 	responses := make(chan *pb_broker.DeviceActivationResponse, len(brokers))
@@ -128,7 +137,9 @@ func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivat
 		// Do async request
 		wg.Add(1)
 		go func() {
-			res, err := broker.client.Activate(r.Component.GetContext(""), request)
+			ctx, cancel := context.WithTimeout(r.Component.GetContext(""), 5*time.Second)
+			defer cancel()
+			res, err := broker.client.Activate(ctx, request)
 			if err == nil && res != nil {
 				responses <- res
 			}
