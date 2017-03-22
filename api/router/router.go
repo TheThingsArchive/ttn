@@ -7,7 +7,6 @@ import (
 	"context"
 	"io"
 	"sync"
-	"time"
 
 	"github.com/TheThingsNetwork/go-utils/grpc/restartstream"
 	"github.com/TheThingsNetwork/go-utils/log"
@@ -306,7 +305,9 @@ func (c *Client) NewGatewayStreams(id string, token string) GenericStream {
 		}(server)
 	}
 
-	wg.WaitForMax(100 * time.Millisecond)
+	if api.WaitForStreams > 0 {
+		wg.WaitForMax(api.WaitForStreams)
+	}
 
 	return s
 }

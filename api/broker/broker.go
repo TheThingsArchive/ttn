@@ -7,7 +7,6 @@ import (
 	"context"
 	"io"
 	"sync"
-	"time"
 
 	"github.com/TheThingsNetwork/go-utils/grpc/restartstream"
 	"github.com/TheThingsNetwork/go-utils/log"
@@ -255,7 +254,9 @@ func (c *Client) NewRouterStreams(id string, token string) RouterStream {
 		}(server)
 	}
 
-	wg.WaitForMax(100 * time.Millisecond)
+	if api.WaitForStreams > 0 {
+		wg.WaitForMax(api.WaitForStreams)
+	}
 
 	return s
 }
@@ -406,7 +407,9 @@ func (c *Client) NewHandlerStreams(id string, token string) HandlerStream {
 		}(server)
 	}
 
-	wg.WaitForMax(100 * time.Millisecond)
+	if api.WaitForStreams > 0 {
+		wg.WaitForMax(api.WaitForStreams)
+	}
 
 	return s
 }
