@@ -28,6 +28,7 @@ func (h *handler) HandleUplink(uplink *pb_broker.DeduplicatedUplinkMessage) (err
 				Data:  types.ErrorEventData{Error: err.Error()},
 			}
 			ctx.WithError(err).Warn("Could not handle uplink")
+			uplink.Trace = uplink.Trace.WithEvent(trace.DropEvent, "reason", err)
 		} else {
 			ctx.WithField("Duration", time.Now().Sub(start)).Info("Handled uplink")
 		}
