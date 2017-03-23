@@ -181,6 +181,20 @@ if err := token.Error(); err != nil {
 }
 ```
 
+### Downlink Scheduling
+
+By default, the downlink will _replace_ the currently scheduled downlink, if any. It is also possible to schedule the
+downlink as the _first_ or _last_ item in a the downlink queue.
+
+```js
+{
+  "port": 1,
+  "confirmed": false,
+  // payload_raw or payload_fields
+  "schedule": "replace", // allowed values: "replace" (default), "first", "last"
+}
+```
+
 ## Device Activations
 
 **Topic:** `<AppID>/devices/<DevID>/events/activations`
