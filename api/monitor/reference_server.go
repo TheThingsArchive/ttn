@@ -11,6 +11,7 @@ import (
 	"github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/api/broker"
+	"github.com/TheThingsNetwork/ttn/api/fields"
 	"github.com/TheThingsNetwork/ttn/api/gateway"
 	"github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
@@ -19,6 +20,7 @@ import (
 
 // NewReferenceMonitorServer creates a new reference monitor server
 func NewReferenceMonitorServer(bufferSize int) *ReferenceMonitorServer {
+	fields.Debug = true
 	s := &ReferenceMonitorServer{
 		ctx: log.Get(),
 
@@ -28,6 +30,9 @@ func NewReferenceMonitorServer(bufferSize int) *ReferenceMonitorServer {
 
 		brokerUplinkMessages:   make(chan *broker.DeduplicatedUplinkMessage, bufferSize),
 		brokerDownlinkMessages: make(chan *broker.DownlinkMessage, bufferSize),
+
+		handlerUplinkMessages:   make(chan *broker.DeduplicatedUplinkMessage, bufferSize),
+		handlerDownlinkMessages: make(chan *broker.DownlinkMessage, bufferSize),
 	}
 	for i := 0; i < bufferSize; i++ {
 		go func() {
@@ -43,6 +48,10 @@ func NewReferenceMonitorServer(bufferSize int) *ReferenceMonitorServer {
 					atomic.AddUint64(&s.metrics.brokerUplinkMessages, 1)
 				case <-s.brokerDownlinkMessages:
 					atomic.AddUint64(&s.metrics.brokerDownlinkMessages, 1)
+				case <-s.handlerUplinkMessages:
+					atomic.AddUint64(&s.metrics.handlerUplinkMessages, 1)
+				case <-s.handlerDownlinkMessages:
+					atomic.AddUint64(&s.metrics.handlerDownlinkMessages, 1)
 				}
 			}
 		}()
@@ -51,11 +60,13 @@ func NewReferenceMonitorServer(bufferSize int) *ReferenceMonitorServer {
 }
 
 type metrics struct {
-	gatewayStatuses        uint64
-	uplinkMessages         uint64
-	downlinkMessages       uint64
-	brokerUplinkMessages   uint64
-	brokerDownlinkMessages uint64
+	gatewayStatuses         uint64
+	uplinkMessages          uint64
+	downlinkMessages        uint64
+	brokerUplinkMessages    uint64
+	brokerDownlinkMessages  uint64
+	handlerUplinkMessages   uint64
+	handlerDownlinkMessages uint64
 }
 
 // ReferenceMonitorServer is a new reference monitor server
@@ -68,6 +79,9 @@ type ReferenceMonitorServer struct {
 
 	brokerUplinkMessages   chan *broker.DeduplicatedUplinkMessage
 	brokerDownlinkMessages chan *broker.DownlinkMessage
+
+	handlerUplinkMessages   chan *broker.DeduplicatedUplinkMessage
+	handlerDownlinkMessages chan *broker.DownlinkMessage
 
 	metrics metrics
 }
@@ -118,7 +132,7 @@ func (s *ReferenceMonitorServer) GatewayStatus(stream Monitor_GatewayStatusServe
 		if err != nil {
 			return err
 		}
-		ctx.Info("Received GatewayStatus")
+		ctx.WithFields(fields.Get(msg)).Info("Received GatewayStatus")
 		select {
 		case s.gatewayStatuses <- msg:
 		default:
@@ -159,7 +173,12 @@ func (s *ReferenceMonitorServer) GatewayUplink(stream Monitor_GatewayUplinkServe
 		if err != nil {
 			return err
 		}
-		ctx.Info("Received UplinkMessage")
+		msg.UnmarshalPayload()
+		if msg.GetMessage().GetLorawan().GetJoinRequestPayload() != nil {
+			ctx.WithFields(fields.Get(msg)).Info("Received ActivationRequest")
+		} else {
+			ctx.WithFields(fields.Get(msg)).Info("Received UplinkMessage")
+		}
 		select {
 		case s.uplinkMessages <- msg:
 		default:
@@ -200,7 +219,12 @@ func (s *ReferenceMonitorServer) GatewayDownlink(stream Monitor_GatewayDownlinkS
 		if err != nil {
 			return err
 		}
-		ctx.Info("Received DownlinkMessage")
+		msg.UnmarshalPayload()
+		if msg.GetMessage().GetLorawan().GetJoinAcceptPayload() != nil {
+			ctx.WithFields(fields.Get(msg)).Info("Received ActivationResponse")
+		} else {
+			ctx.WithFields(fields.Get(msg)).Info("Received DownlinkMessage")
+		}
 		select {
 		case s.downlinkMessages <- msg:
 		default:
@@ -255,7 +279,12 @@ func (s *ReferenceMonitorServer) BrokerUplink(stream Monitor_BrokerUplinkServer)
 		if err != nil {
 			return err
 		}
-		ctx.Info("Received DeduplicatedUplinkMessage")
+		msg.UnmarshalPayload()
+		if msg.GetMessage().GetLorawan().GetJoinRequestPayload() != nil {
+			ctx.WithFields(fields.Get(msg)).Info("Received DeduplicatedActivationRequest")
+		} else {
+			ctx.WithFields(fields.Get(msg)).Info("Received DeduplicatedUplinkMessage")
+		}
 		select {
 		case s.brokerUplinkMessages <- msg:
 		default:
@@ -296,9 +325,120 @@ func (s *ReferenceMonitorServer) BrokerDownlink(stream Monitor_BrokerDownlinkSer
 		if err != nil {
 			return err
 		}
-		ctx.Info("Received DownlinkMessage")
+		msg.UnmarshalPayload()
+		if msg.GetMessage().GetLorawan().GetJoinAcceptPayload() != nil {
+			ctx.WithFields(fields.Get(msg)).Info("Received ActivationResponse")
+		} else {
+			ctx.WithFields(fields.Get(msg)).Info("Received DownlinkMessage")
+		}
 		select {
 		case s.brokerDownlinkMessages <- msg:
+		default:
+			ctx.Warn("Dropping DownlinkMessage")
+		}
+	}
+}
+
+func (s *ReferenceMonitorServer) getAndAuthHandler(ctx context.Context) (string, error) {
+	id, err := api.IDFromContext(ctx)
+	if err != nil {
+		return "", err
+	}
+	token, err := api.TokenFromContext(ctx)
+	if err != nil {
+		return "", err
+	}
+	// Actually validate token here, if failed: return nil, grpc.Errorf(codes.Unauthenticated, "Handler Authentication Failed")
+	s.ctx.WithFields(log.Fields{"ID": id, "Token": token}).Info("Handler Authenticated")
+	return id, nil
+}
+
+// HandlerUplink RPC
+func (s *ReferenceMonitorServer) HandlerUplink(stream Monitor_HandlerUplinkServer) error {
+	handlerID, err := s.getAndAuthHandler(stream.Context())
+	if err != nil {
+		return errors.NewErrPermissionDenied(err.Error())
+	}
+	ctx := s.ctx.WithField("HandlerID", handlerID)
+	ctx.Info("HandlerUplink stream started")
+	defer func() {
+		if err != nil {
+			ctx.WithError(err).Info("HandlerUplink stream ended")
+		} else {
+			ctx.Info("HandlerUplink stream ended")
+		}
+	}()
+	var streamErr atomic.Value
+	go func() {
+		<-stream.Context().Done()
+		streamErr.Store(stream.Context().Err())
+	}()
+	for {
+		streamErr := streamErr.Load()
+		if streamErr != nil {
+			return streamErr.(error)
+		}
+		msg, err := stream.Recv()
+		if err == io.EOF {
+			return stream.SendAndClose(&empty.Empty{})
+		}
+		if err != nil {
+			return err
+		}
+		msg.UnmarshalPayload()
+		if msg.GetMessage().GetLorawan().GetJoinRequestPayload() != nil {
+			ctx.WithFields(fields.Get(msg)).Info("Received DeduplicatedActivationRequest")
+		} else {
+			ctx.WithFields(fields.Get(msg)).Info("Received DeduplicatedUplinkMessage")
+		}
+		select {
+		case s.handlerUplinkMessages <- msg:
+		default:
+			ctx.Warn("Dropping DeduplicatedUplinkMessage")
+		}
+	}
+}
+
+// HandlerDownlink RPC
+func (s *ReferenceMonitorServer) HandlerDownlink(stream Monitor_HandlerDownlinkServer) error {
+	handlerID, err := s.getAndAuthHandler(stream.Context())
+	if err != nil {
+		return errors.NewErrPermissionDenied(err.Error())
+	}
+	ctx := s.ctx.WithField("HandlerID", handlerID)
+	ctx.Info("HandlerUplink stream started")
+	defer func() {
+		if err != nil {
+			ctx.WithError(err).Info("HandlerUplink stream ended")
+		} else {
+			ctx.Info("HandlerUplink stream ended")
+		}
+	}()
+	var streamErr atomic.Value
+	go func() {
+		<-stream.Context().Done()
+		streamErr.Store(stream.Context().Err())
+	}()
+	for {
+		streamErr := streamErr.Load()
+		if streamErr != nil {
+			return streamErr.(error)
+		}
+		msg, err := stream.Recv()
+		if err == io.EOF {
+			return stream.SendAndClose(&empty.Empty{})
+		}
+		if err != nil {
+			return err
+		}
+		msg.UnmarshalPayload()
+		if msg.GetMessage().GetLorawan().GetJoinAcceptPayload() != nil {
+			ctx.WithFields(fields.Get(msg)).Info("Received ActivationResponse")
+		} else {
+			ctx.WithFields(fields.Get(msg)).Info("Received DownlinkMessage")
+		}
+		select {
+		case s.handlerDownlinkMessages <- msg:
 		default:
 			ctx.Warn("Dropping DownlinkMessage")
 		}

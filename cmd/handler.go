@@ -13,6 +13,7 @@ import (
 
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	pb "github.com/TheThingsNetwork/ttn/api/handler"
+	"github.com/TheThingsNetwork/ttn/api/pool"
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/handler"
 	"github.com/TheThingsNetwork/ttn/core/proxy"
@@ -48,7 +49,7 @@ var handlerCmd = &cobra.Command{
 		// Redis Client
 		client := redis.NewClient(&redis.Options{
 			Addr:     viper.GetString("handler.redis-address"),
-			Password: "", // no password set
+			Password: viper.GetString("handler.redis-password"),
 			DB:       viper.GetInt("handler.redis-db"),
 		})
 
@@ -132,7 +133,7 @@ var handlerCmd = &cobra.Command{
 		defer grpc.Stop()
 
 		if httpActive {
-			proxyConn, err := component.Identity.Dial()
+			proxyConn, err := component.Identity.Dial(pool.Global)
 			if err != nil {
 				ctx.WithError(err).Fatal("Could not start client for gRPC proxy")
 			}
@@ -170,6 +171,8 @@ func init() {
 
 	handlerCmd.Flags().String("redis-address", "localhost:6379", "Redis host and port")
 	viper.BindPFlag("handler.redis-address", handlerCmd.Flags().Lookup("redis-address"))
+	handlerCmd.Flags().String("redis-password", "", "Redis password")
+	viper.BindPFlag("handler.redis-password", handlerCmd.Flags().Lookup("redis-password"))
 	handlerCmd.Flags().Int("redis-db", 0, "Redis database")
 	viper.BindPFlag("handler.redis-db", handlerCmd.Flags().Lookup("redis-db"))
 

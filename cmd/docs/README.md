@@ -5,6 +5,7 @@ The Things Network's backend servers.
 **Options**
 
 ```
+      --allow-insecure             Allow insecure fallback if TLS unavailable
       --auth-token string          The JWT token to be used for the discovery server
       --config string              config file (default "$HOME/.ttn.yml")
       --description string         The description of this component
@@ -16,7 +17,7 @@ The Things Network's backend servers.
       --log-file string            Location of the log file
       --no-cli-logs                Disable CLI logs
       --public                     Announce this component as part of The Things Network (public community network)
-      --tls                        Use TLS
+      --tls                        Use TLS (default true)
 ```
 
 
@@ -71,6 +72,7 @@ ttn broker register prefix registers a prefix to this Broker
       --master-auth-servers stringSlice   Auth servers that are allowed to manage this network (default [ttn-account-v2])
       --redis-address string              Redis server and port (default "localhost:6379")
       --redis-db int                      Redis database
+      --redis-password string             Redis password
       --server-address string             The IP address to listen for communication (default "0.0.0.0")
       --server-port int                   The port for communication (default 1900)
 ```
@@ -110,6 +112,7 @@ ttn gen-keypair generates a public/private keypair
       --mqtt-username string             MQTT username
       --redis-address string             Redis host and port (default "localhost:6379")
       --redis-db int                     Redis database
+      --redis-password string            Redis password
       --server-address string            The IP address to listen for communication (default "0.0.0.0")
       --server-address-announce string   The public IP address to announce (default "localhost")
       --server-port int                  The port for communication (default 1904)
@@ -139,6 +142,7 @@ ttn gen-keypair generates a public/private keypair
       --net-id int                       LoRaWAN NetID (default 19)
       --redis-address string             Redis server and port (default "localhost:6379")
       --redis-db int                     Redis database
+      --redis-password string            Redis password
       --server-address string            The IP address to listen for communication (default "0.0.0.0")
       --server-address-announce string   The public IP address to announce (default "localhost")
       --server-port int                  The port for communication (default 1903)
@@ -177,6 +181,7 @@ ttn gen-keypair generates a public/private keypair
 **Options**
 
 ```
+      --mqtt-address-announce string     MQTT address to announce
       --server-address string            The IP address to listen for communication (default "0.0.0.0")
       --server-address-announce string   The public IP address to announce (default "localhost")
       --server-port int                  The port for communication (default 1901)

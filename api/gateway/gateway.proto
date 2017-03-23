@@ -29,8 +29,13 @@ message RxMetadata {
   // Time in Unix nanoseconds
   int64   time       = 12;
 
+  // Encrypted time from the Gateway FPGA
+  bytes   encrypted_time = 13;
+
   uint32  rf_chain   = 21;
   uint32  channel    = 22;
+
+  repeated Antenna antennas = 30;
 
   // Frequency in Hz
   uint64  frequency  = 31;
@@ -38,6 +43,20 @@ message RxMetadata {
   float   rssi       = 32;
   // Signal-to-noise-ratio in dB
   float   snr        = 33;
+
+  message Antenna {
+    uint32 antenna = 1;
+    uint32 channel = 2;
+
+    // Received signal strength in dBm
+    float  rssi    = 3;
+
+    // Signal-to-noise-ratio in dB
+    float  snr     = 4;
+
+    // Encrypted time from the Gateway FPGA
+    bytes encrypted_time = 10;
+  }
 
   GPSMetadata  gps   = 41;
 }
@@ -69,6 +88,9 @@ message Status {
   // Indicates whether the gateway is trusted. Components that are able to verify gateway trust MUST do so and set this value accordingly
   bool    gateway_trusted = 3;
 
+  // Boot time in Unix nanoseconds
+  int64   boot_time      = 4;
+
   // Configuration and relatively static stuff
   // These values may be left out if they don't change
   // Reset using "-"
@@ -78,12 +100,18 @@ message Status {
   string  contact_email  = 13;
   string  description    = 14;
 
-  // The gateway's region: one of EU_863_870, US_902_928, CN_779_787, EU_433, AU_915_928, CN_470_510, AS_923, KR_920_923
-  string  region         = 15;
+  // The gateway's frequency plan: one of EU_863_870, US_902_928, CN_779_787, EU_433, AU_915_928, CN_470_510, AS_923, AS_920_923, AS_923_925, KR_920_923
+  string  frequency_plan = 15;
   // The value of Bridge is set by the Bridge
   string  bridge         = 16;
   // The value of Router is set by the Router
   string  router         = 17;
+  // Version of Gateway FPGA
+  uint32  fpga           = 18;
+  // Version of Gateway DSP software
+  uint32  dsp            = 19;
+  // Version of gateway driver (in X.X.X format)
+  string  hal            = 20;
 
   GPSMetadata  gps       = 21;
 
@@ -102,6 +130,14 @@ message Status {
   uint32  tx_in          = 43;
   // Total number of successfully sent downlink packets since boot
   uint32  tx_ok          = 44;
+  // Total number of packets received from link testing mote, with CRC OK 
+  uint32  lm_ok          = 45;
+  // Sequence number of the first packet received from the link testing mote
+  uint32  lm_st          = 46;
+  // Sequence number of the last packet received from the link testing mote
+  uint32  lm_nw          = 47;
+  // Number of lost PPS pulses
+  uint32  l_pps          = 48;
 
   // Additional metrics from the operating system
   message OSMetrics {

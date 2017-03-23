@@ -10,7 +10,7 @@ import (
 
 	protobuf "github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
-	gateway "github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis/google/api"
+	"google.golang.org/genproto/googleapis/api/annotations"
 )
 
 func buildTree(files []*descriptor.FileDescriptorProto) *tree {
@@ -85,10 +85,10 @@ func fillTreeWithMethod(tree *tree, key string, proto *descriptor.MethodDescript
 	if proto.GetServerStreaming() {
 		tree.methods[key].outputStream = true
 	}
-	if proto.Options != nil && protobuf.HasExtension(proto.Options, gateway.E_Http) {
-		ext, err := protobuf.GetExtension(proto.Options, gateway.E_Http)
+	if proto.Options != nil && protobuf.HasExtension(proto.Options, annotations.E_Http) {
+		ext, err := protobuf.GetExtension(proto.Options, annotations.E_Http)
 		if err == nil {
-			if opts, ok := ext.(*gateway.HttpRule); ok {
+			if opts, ok := ext.(*annotations.HttpRule); ok {
 				if endpoint := newEndpoint(opts); endpoint != nil {
 					tree.methods[key].endpoints = append(tree.methods[key].endpoints, endpoint)
 				}

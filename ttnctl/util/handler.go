@@ -29,7 +29,7 @@ func GetHandlerManager(ctx ttnlog.Interface, appID string) (*grpc.ClientConn, *h
 	token := TokenForScope(ctx, scope.App(appID))
 
 	ctx.WithField("Handler", handlerAnnouncement.NetAddress).Info("Connecting with Handler...")
-	hdlConn, err := handlerAnnouncement.Dial()
+	hdlConn, err := handlerAnnouncement.Dial(nil)
 	if err != nil {
 		ctx.WithError(err).Fatal("Could not connect to Handler")
 	}

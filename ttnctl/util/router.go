@@ -13,7 +13,7 @@ import (
 )
 
 // GetRouter starts a connection with the router
-func GetRouter(ctx ttnlog.Interface) (*grpc.ClientConn, router.RouterClient) {
+func GetRouter(ctx ttnlog.Interface) (*grpc.ClientConn, *router.Client) {
 	ctx.Info("Discovering Router...")
 	dscConn, client := GetDiscovery(ctx)
 	defer dscConn.Close()
@@ -25,9 +25,10 @@ func GetRouter(ctx ttnlog.Interface) (*grpc.ClientConn, router.RouterClient) {
 		ctx.WithError(errors.FromGRPCError(err)).Fatal("Could not get Router from Discovery")
 	}
 	ctx.Info("Connecting with Router...")
-	rtrConn, err := routerAnnouncement.Dial()
+	rtrConn, err := routerAnnouncement.Dial(nil)
 	ctx.Info("Connected to Router")
-	rtrClient := router.NewRouterClient(rtrConn)
+	rtrClient := router.NewClient(router.DefaultClientConfig)
+	rtrClient.AddServer(viper.GetString("router-id"), rtrConn)
 	return rtrConn, rtrClient
 }
 
@@ -44,7 +45,7 @@ func GetRouterManager(ctx ttnlog.Interface) (*grpc.ClientConn, router.RouterMana
 		ctx.WithError(errors.FromGRPCError(err)).Fatal("Could not get Router from Discovery")
 	}
 	ctx.Info("Connecting with Router...")
-	rtrConn, err := routerAnnouncement.Dial()
+	rtrConn, err := routerAnnouncement.Dial(nil)
 	if err != nil {
 		ctx.WithError(err).Fatal("Could not connect to Router")
 	}

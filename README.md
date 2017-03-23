@@ -39,6 +39,7 @@ When you get started with The Things Network, you'll probably have some question
 7. Run `make dev` to install the go binaries into `$GOPATH/bin/`
     * Optionally on Linux or Mac you can use `make link` to link them to `$GOPATH/bin/` (In order to run the commands, you should have `export PATH="$GOPATH/bin:$PATH"` in your profile).
 8. Configure your `ttnctl` with the settings in `.env/ttnctl.yml.dev-example` by copying that file to `~/.ttnctl.yml`.
+9. Trust the CA certificate of your local discovery server by copying `.env/discovery/server.cert` to `~/.ttnctl/ca.cert`.
 
 You can check your `ttnctl` configuration by running `ttnctl config`. It should look like this:
 

@@ -56,7 +56,7 @@ func (n *networkServer) handleUplinkADR(message *pb_broker.DeduplicatedUplinkMes
 			n.Ctx.WithError(err).Error("Could not push frame for device")
 		}
 		if dev.ADR.Band == "" {
-			dev.ADR.Band = message.GetProtocolMetadata().GetLorawan().GetRegion().String()
+			dev.ADR.Band = message.GetProtocolMetadata().GetLorawan().GetFrequencyPlan().String()
 		}
 
 		dataRate := message.GetProtocolMetadata().GetLorawan().GetDataRate()

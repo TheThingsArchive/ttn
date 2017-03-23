@@ -63,7 +63,7 @@ var gatewaysStatusCmd = &cobra.Command{
 		printKV("Description", resp.Status.Description)
 		printKV("Platform", resp.Status.Platform)
 		printKV("Contact email", resp.Status.ContactEmail)
-		printKV("Region", resp.Status.Region)
+		printKV("Frequency Plan", resp.Status.FrequencyPlan)
 		printKV("Bridge", resp.Status.Bridge)
 		printKV("IP Address", strings.Join(resp.Status.Ip, ", "))
 		printKV("GPS coordinates", func() interface{} {

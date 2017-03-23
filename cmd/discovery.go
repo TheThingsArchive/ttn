@@ -14,6 +14,7 @@ import (
 
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	pb "github.com/TheThingsNetwork/ttn/api/discovery"
+	"github.com/TheThingsNetwork/ttn/api/pool"
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/discovery"
 	"github.com/TheThingsNetwork/ttn/core/discovery/announcement"
@@ -44,7 +45,7 @@ var discoveryCmd = &cobra.Command{
 		// Redis Client
 		client := redis.NewClient(&redis.Options{
 			Addr:     viper.GetString("discovery.redis-address"),
-			Password: "", // no password set
+			Password: viper.GetString("discovery.redis-password"),
 			DB:       viper.GetInt("discovery.redis-db"),
 		})
 
@@ -82,7 +83,7 @@ var discoveryCmd = &cobra.Command{
 		go grpc.Serve(lis)
 
 		if viper.GetString("discovery.http-address") != "" && viper.GetInt("discovery.http-port") != 0 {
-			proxyConn, err := component.Identity.Dial()
+			proxyConn, err := component.Identity.Dial(pool.Global)
 			if err != nil {
 				ctx.WithError(err).Fatal("Could not start client for gRPC proxy")
 			}
@@ -120,6 +121,8 @@ func init() {
 
 	discoveryCmd.Flags().String("redis-address", "localhost:6379", "Redis server and port")
 	viper.BindPFlag("discovery.redis-address", discoveryCmd.Flags().Lookup("redis-address"))
+	discoveryCmd.Flags().String("redis-password", "", "Redis password")
+	viper.BindPFlag("discovery.redis-password", discoveryCmd.Flags().Lookup("redis-password"))
 	discoveryCmd.Flags().Int("redis-db", 0, "Redis database")
 	viper.BindPFlag("discovery.redis-db", discoveryCmd.Flags().Lookup("redis-db"))
 

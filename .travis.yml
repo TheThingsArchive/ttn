@@ -10,10 +10,6 @@ services:
 go:
     - 1.8
 
-cache:
-  directories:
-    - vendor
-
 install:
     - make deps
     - make cover-deps

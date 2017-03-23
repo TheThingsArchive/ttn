@@ -37,6 +37,11 @@ func (r *router) SubscribeDownlink(gatewayID string, subscriptionID string) (<-c
 			for message := range fromSchedule {
 				ctx.WithFields(fields.Get(message)).Debug("Send downlink")
 				toGateway <- message
+				if gateway.MonitorStream != nil {
+					clone := *message // There can be multiple subscribers
+					clone.Trace = clone.Trace.WithEvent(trace.SendEvent)
+					gateway.MonitorStream.Send(&clone)
+				}
 			}
 			ctx.Debug("Deactivate downlink")
 			close(toGateway)
@@ -51,7 +56,16 @@ func (r *router) UnsubscribeDownlink(gatewayID string, subscriptionID string) er
 	return nil
 }
 
-func (r *router) HandleDownlink(downlink *pb_broker.DownlinkMessage) error {
+func (r *router) HandleDownlink(downlink *pb_broker.DownlinkMessage) (err error) {
+	var gateway *gateway.Gateway
+	defer func() {
+		if err != nil {
+			downlink.Trace = downlink.Trace.WithEvent(trace.DropEvent, "reason", err)
+			if gateway != nil && gateway.MonitorStream != nil {
+				gateway.MonitorStream.Send(downlink)
+			}
+		}
+	}()
 	r.status.downlink.Mark(1)
 
 	downlink.Trace = downlink.Trace.WithEvent(trace.ReceiveEvent)
@@ -70,7 +84,8 @@ func (r *router) HandleDownlink(downlink *pb_broker.DownlinkMessage) error {
 		identifier = strings.TrimPrefix(option.Identifier, fmt.Sprintf("%s:", r.Component.Identity.Id))
 	}
 
-	return r.getGateway(downlink.DownlinkOption.GatewayId).HandleDownlink(identifier, downlinkMessage)
+	gateway = r.getGateway(downlink.DownlinkOption.GatewayId)
+	return gateway.HandleDownlink(identifier, downlinkMessage)
 }
 
 // buildDownlinkOption builds a DownlinkOption with default values
@@ -102,15 +117,15 @@ func (r *router) buildDownlinkOptions(uplink *pb.UplinkMessage, isActivation boo
 		return // We can't handle any other protocols than LoRaWAN yet
 	}
 
-	region := gatewayStatus.Region
-	if region == "" {
-		region = band.Guess(uplink.GatewayMetadata.Frequency)
+	frequencyPlan := gatewayStatus.FrequencyPlan
+	if frequencyPlan == "" {
+		frequencyPlan = band.Guess(uplink.GatewayMetadata.Frequency)
 	}
-	band, err := band.Get(region)
+	band, err := band.Get(frequencyPlan)
 	if err != nil {
-		return // We can't handle this region
+		return // We can't handle this frequency plan
 	}
-	if region == "EU_863_870" && isActivation {
+	if frequencyPlan == "EU_863_870" && isActivation {
 		band.RX2DataRate = 0
 	}
 
@@ -122,7 +137,7 @@ func (r *router) buildDownlinkOptions(uplink *pb.UplinkMessage, isActivation boo
 	// Configuration for RX2
 	buildRX2 := func() (*pb_broker.DownlinkOption, error) {
 		option := r.buildDownlinkOption(gateway.ID, band)
-		if region == "EU_863_870" {
+		if frequencyPlan == "EU_863_870" {
 			option.GatewayConfig.Power = 27 // The EU RX2 frequency allows up to 27dBm
 		}
 		if isActivation {
@@ -199,9 +214,9 @@ func (r *router) buildDownlinkOptions(uplink *pb.UplinkMessage, isActivation boo
 func computeDownlinkScores(gateway *gateway.Gateway, uplink *pb.UplinkMessage, options []*pb_broker.DownlinkOption) {
 	gatewayStatus, _ := gateway.Status.Get() // This just returns empty if non-existing
 
-	region := gatewayStatus.Region
-	if region == "" {
-		region = band.Guess(uplink.GatewayMetadata.Frequency)
+	frequencyPlan := gatewayStatus.FrequencyPlan
+	if frequencyPlan == "" {
+		frequencyPlan = band.Guess(uplink.GatewayMetadata.Frequency)
 	}
 
 	gatewayRx, _ := gateway.Utilization.Get()
@@ -262,7 +277,7 @@ func computeDownlinkScores(gateway *gateway.Gateway, uplink *pb.UplinkMessage, o
 			utilizationScore += math.Min((channelTx+channelRx)*200, 20) / 2 // 10% utilization = 10 (max)
 
 			// European Duty Cycle
-			if region == "EU_863_870" {
+			if frequencyPlan == "EU_863_870" {
 				var duty float64
 				switch {
 				case freq >= 863000000 && freq < 868000000:

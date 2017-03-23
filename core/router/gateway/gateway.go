@@ -51,15 +51,17 @@ func (g *Gateway) SetAuth(token string, authenticated bool) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	g.authenticated = authenticated
-	if token == g.token {
-		return
-	}
-	g.token = token
 	if g.MonitorStream != nil {
+		if token == g.token {
+			return
+		}
+		g.Ctx.Debug("Stopping Monitor stream (token changed)")
 		g.MonitorStream.Close()
 	}
+	g.token = token
 	if g.Monitor != nil {
-		g.MonitorStream = g.Monitor.NewGatewayStreams(g.ID, token)
+		g.Ctx.Debug("Starting Gateway Monitor Stream")
+		g.MonitorStream = g.Monitor.NewGatewayStreams(g.ID, g.token)
 	}
 }
 
@@ -75,10 +77,6 @@ func (g *Gateway) HandleStatus(status *pb.Status) (err error) {
 		return err
 	}
 	g.updateLastSeen()
-	if g.MonitorStream != nil {
-		clone := *status // Avoid race conditions
-		g.MonitorStream.Send(&clone)
-	}
 	return nil
 }
 
@@ -95,10 +93,10 @@ func (g *Gateway) HandleUplink(uplink *pb_router.UplinkMessage) (err error) {
 		if uplink.GatewayMetadata.Gps == nil {
 			uplink.GatewayMetadata.Gps = status.GetGps()
 		}
-		// Inject Gateway region
-		if region, ok := pb_lorawan.Region_value[status.Region]; ok {
+		// Inject Gateway frequency plan
+		if frequencyPlan, ok := pb_lorawan.FrequencyPlan_value[status.FrequencyPlan]; ok {
 			if lorawan := uplink.GetProtocolMetadata().GetLorawan(); lorawan != nil {
-				lorawan.Region = pb_lorawan.Region(region)
+				lorawan.FrequencyPlan = pb_lorawan.FrequencyPlan(frequencyPlan)
 			}
 		}
 	}
@@ -108,10 +106,6 @@ func (g *Gateway) HandleUplink(uplink *pb_router.UplinkMessage) (err error) {
 	defer g.mu.RUnlock()
 	uplink.GatewayMetadata.GatewayTrusted = g.authenticated
 	uplink.GatewayMetadata.GatewayId = g.ID
-	if g.MonitorStream != nil {
-		clone := *uplink // Avoid race conditions
-		g.MonitorStream.Send(&clone)
-	}
 	return nil
 }
 
@@ -122,9 +116,5 @@ func (g *Gateway) HandleDownlink(identifier string, downlink *pb_router.Downlink
 		return err
 	}
 	ctx.Debug("Scheduled downlink")
-	if g.MonitorStream != nil {
-		clone := *downlink // Avoid race conditions
-		g.MonitorStream.Send(&clone)
-	}
 	return nil
 }

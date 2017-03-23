@@ -4,20 +4,55 @@
 package discovery
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"errors"
+	"net"
 	"strings"
 
-	"github.com/TheThingsNetwork/ttn/api"
+	"github.com/TheThingsNetwork/ttn/api/pool"
+
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
-// Dial dials the component represented by this Announcement
-func (a *Announcement) Dial() (*grpc.ClientConn, error) {
+// TLSConfig for securely connecting with this component
+func (a *Announcement) TLSConfig() (*tls.Config, error) {
 	if a.NetAddress == "" {
-		return nil, errors.New("Can not dial this component")
+		return nil, errors.New("No address known for this component")
 	}
+	netAddress := strings.Split(a.NetAddress, ",")[0]
+	netHost, _, _ := net.SplitHostPort(netAddress)
 	if a.Certificate == "" {
-		return api.Dial(strings.Split(a.NetAddress, ",")[0])
+		return nil, nil
 	}
-	return api.DialWithCert(strings.Split(a.NetAddress, ",")[0], a.Certificate)
+	rootCAs := x509.NewCertPool()
+	ok := rootCAs.AppendCertsFromPEM([]byte(a.Certificate))
+	if !ok {
+		return nil, errors.New("Could not read component certificate")
+	}
+	return &tls.Config{ServerName: netHost, RootCAs: rootCAs}, nil
+}
+
+// WithSecure returns a gRPC DialOption with TLS
+func (a *Announcement) WithSecure() grpc.DialOption {
+	tlsConfig, _ := a.TLSConfig()
+	return grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig))
+}
+
+// Dial the component represented by this Announcement.
+// This function is blocking if the pool uses grpc.WithBlock()
+func (a *Announcement) Dial(p *pool.Pool) (*grpc.ClientConn, error) {
+	if p == nil {
+		p = pool.Global
+	}
+	if a.NetAddress == "" {
+		return nil, errors.New("No address known for this component")
+	}
+	netAddress := strings.Split(a.NetAddress, ",")[0]
+	if a.Certificate == "" {
+		return p.DialInsecure(netAddress)
+	}
+	tlsConfig, _ := a.TLSConfig()
+	return p.DialSecure(netAddress, credentials.NewTLS(tlsConfig))
 }

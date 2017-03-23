@@ -116,6 +116,10 @@ func (h *handler) HandleDownlink(appDownlink *types.DownlinkMessage, downlink *p
 				},
 			}
 			ctx.WithError(err).Warn("Could not handle downlink")
+			downlink.Trace = downlink.Trace.WithEvent(trace.DropEvent, "reason", err)
+		}
+		if downlink != nil && h.monitorStream != nil {
+			h.monitorStream.Send(downlink)
 		}
 	}()
 

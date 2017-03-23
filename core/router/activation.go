@@ -4,6 +4,7 @@
 package router
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"time"
@@ -15,16 +16,24 @@ import (
 	pb "github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/api/trace"
 	"github.com/TheThingsNetwork/ttn/core/band"
+	"github.com/TheThingsNetwork/ttn/core/router/gateway"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 )
 
 func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivationRequest) (res *pb.DeviceActivationResponse, err error) {
 	ctx := r.Ctx.WithField("GatewayID", gatewayID).WithFields(fields.Get(activation))
 	start := time.Now()
+	var gateway *gateway.Gateway
+	var forwarded bool
 	defer func() {
 		if err != nil {
 			activation.Trace = activation.Trace.WithEvent(trace.DropEvent, "reason", err)
-			ctx.WithError(err).Warn("Could not handle activation")
+			if forwarded {
+				ctx.WithError(err).Debug("Did not handle activation")
+			} else if gateway != nil && gateway.MonitorStream != nil {
+				ctx.WithError(err).Warn("Could not handle activation")
+				gateway.MonitorStream.Send(activation)
+			}
 		} else {
 			ctx.WithField("Duration", time.Now().Sub(start)).Info("Handled activation")
 		}
@@ -33,7 +42,7 @@ func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivat
 
 	activation.Trace = activation.Trace.WithEvent(trace.ReceiveEvent, "gateway", gatewayID)
 
-	gateway := r.getGateway(gatewayID)
+	gateway = r.getGateway(gatewayID)
 	gateway.LastSeen = time.Now()
 
 	uplink := &pb.UplinkMessage{
@@ -86,7 +95,7 @@ func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivat
 	if err != nil {
 		return nil, err
 	}
-	region := status.Region
+	region := status.FrequencyPlan
 	if region == "" {
 		region = band.Guess(uplink.GatewayMetadata.Frequency)
 	}
@@ -95,7 +104,7 @@ func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivat
 		return nil, err
 	}
 	lorawan := request.ActivationMetadata.GetLorawan()
-	lorawan.Region = pb_lorawan.Region(pb_lorawan.Region_value[region])
+	lorawan.FrequencyPlan = pb_lorawan.FrequencyPlan(pb_lorawan.FrequencyPlan_value[region])
 	lorawan.Rx1DrOffset = 0
 	lorawan.Rx2Dr = uint32(band.RX2DataRate)
 	lorawan.RxDelay = uint32(band.ReceiveDelay1.Seconds())
@@ -111,6 +120,11 @@ func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivat
 		"brokers", len(brokers),
 	)
 
+	if gateway != nil && gateway.MonitorStream != nil {
+		forwarded = true
+		gateway.MonitorStream.Send(activation)
+	}
+
 	// Forward to all brokers and collect responses
 	var wg sync.WaitGroup
 	responses := make(chan *pb_broker.DeviceActivationResponse, len(brokers))
@@ -123,7 +137,9 @@ func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivat
 		// Do async request
 		wg.Add(1)
 		go func() {
-			res, err := broker.client.Activate(r.Component.GetContext(""), request)
+			ctx, cancel := context.WithTimeout(r.Component.GetContext(""), 5*time.Second)
+			defer cancel()
+			res, err := broker.client.Activate(ctx, request)
 			if err == nil && res != nil {
 				responses <- res
 			}

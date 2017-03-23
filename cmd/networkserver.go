@@ -39,7 +39,7 @@ var networkserverCmd = &cobra.Command{
 		// Redis Client
 		client := redis.NewClient(&redis.Options{
 			Addr:     viper.GetString("networkserver.redis-address"),
-			Password: "", // no password set
+			Password: viper.GetString("networkserver.redis-password"),
 			DB:       viper.GetInt("networkserver.redis-db"),
 		})
 
@@ -103,6 +103,8 @@ func init() {
 
 	networkserverCmd.Flags().String("redis-address", "localhost:6379", "Redis server and port")
 	viper.BindPFlag("networkserver.redis-address", networkserverCmd.Flags().Lookup("redis-address"))
+	networkserverCmd.Flags().String("redis-password", "", "Redis password")
+	viper.BindPFlag("networkserver.redis-password", networkserverCmd.Flags().Lookup("redis-password"))
 	networkserverCmd.Flags().Int("redis-db", 0, "Redis database")
 	viper.BindPFlag("networkserver.redis-db", networkserverCmd.Flags().Lookup("redis-db"))
 

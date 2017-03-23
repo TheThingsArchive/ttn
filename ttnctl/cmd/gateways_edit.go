@@ -46,7 +46,7 @@ var gatewaysEditCmd = &cobra.Command{
 			if err != nil {
 				ctx.WithError(err).Fatal("Invalid location")
 			}
-			edits.Location = location
+			edits.AntennaLocation = location
 		}
 
 		act := util.GetAccount(ctx)

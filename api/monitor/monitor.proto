@@ -20,4 +20,7 @@ service Monitor {
 
   rpc BrokerUplink(stream broker.DeduplicatedUplinkMessage) returns (google.protobuf.Empty);
   rpc BrokerDownlink(stream broker.DownlinkMessage) returns (google.protobuf.Empty);
+
+  rpc HandlerUplink(stream broker.DeduplicatedUplinkMessage) returns (google.protobuf.Empty);
+  rpc HandlerDownlink(stream broker.DownlinkMessage) returns (google.protobuf.Empty);
 }

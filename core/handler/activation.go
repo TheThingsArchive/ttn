@@ -86,9 +86,13 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 					ErrorEventData: types.ErrorEventData{Error: err.Error()},
 				},
 			}
+			activation.Trace = activation.Trace.WithEvent(trace.DropEvent, "reason", err)
 			ctx.WithError(err).Warn("Could not handle activation")
 		} else {
 			ctx.WithField("Duration", time.Now().Sub(start)).Info("Handled activation")
+		}
+		if activation != nil && h.monitorStream != nil {
+			h.monitorStream.Send(activation)
 		}
 	}()
 	h.status.activations.Mark(1)

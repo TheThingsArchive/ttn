@@ -99,7 +99,7 @@ func (m *ActivationMetadata) Validate() error {
 // Validate implements the api.Validator interface
 func (m *Message) Validate() error {
 	if m.Major != Major_LORAWAN_R1 {
-		return errors.NewErrInvalidArgument("Major", "invalid value "+Major_LORAWAN_R1.String())
+		return errors.NewErrInvalidArgument("Major", "invalid value "+m.Major.String())
 	}
 	switch m.MType {
 	case MType_JOIN_REQUEST:

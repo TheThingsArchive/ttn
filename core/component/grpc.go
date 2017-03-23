@@ -4,6 +4,8 @@
 package component
 
 import (
+	"math"
+
 	"github.com/TheThingsNetwork/go-utils/grpc/interceptor"
 	"github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/api/fields"
@@ -37,6 +39,7 @@ func (c *Component) ServerOptions() []grpc.ServerOption {
 	}
 
 	opts := []grpc.ServerOption{
+		grpc.MaxConcurrentStreams(math.MaxUint16),
 		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(unaryErr, unaryLog)),
 		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(streamErr, streamLog)),
 	}

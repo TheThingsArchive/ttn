@@ -15,7 +15,6 @@ import (
 	pb "github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/router/gateway"
-	"golang.org/x/net/context"
 )
 
 // Router component
@@ -142,34 +141,37 @@ func (r *router) getBroker(brokerAnnouncement *pb_discovery.Announcement) (*brok
 	r.brokersLock.Lock()
 	defer r.brokersLock.Unlock()
 	if _, ok := r.brokers[brokerAnnouncement.Id]; !ok {
+		var err error
+
+		brk := &broker{
+			uplink: make(chan *pb_broker.UplinkMessage),
+		}
 
 		// Connect to the server
-		// TODO(htdvisser): This is blocking
-		conn, err := brokerAnnouncement.Dial()
+		brk.conn, err = brokerAnnouncement.Dial(r.Pool)
 		if err != nil {
 			return nil, err
 		}
-		client := pb_broker.NewBrokerClient(conn)
 
-		association := pb_broker.NewMonitoredRouterStream(client, func() context.Context {
-			return r.GetContext("")
-		})
-		downlink := association.Channel()
+		// Set up the non-streaming client
+		brk.client = pb_broker.NewBrokerClient(brk.conn)
 
-		brk := &broker{
-			conn:        conn,
-			association: association,
-			client:      client,
-			uplink:      make(chan *pb_broker.UplinkMessage),
-		}
+		// Set up the streaming client
+		config := pb_broker.DefaultClientConfig
+		config.BackgroundContext = r.Component.Context
+		cli := pb_broker.NewClient(config)
+		cli.AddServer(brokerAnnouncement.Id, brk.conn)
+		brk.association = cli.NewRouterStreams(r.Identity.Id, "")
 
 		go func() {
 			for {
 				select {
 				case message := <-brk.uplink:
-					association.Send(message)
-				case message := <-downlink:
-					go r.HandleDownlink(message)
+					brk.association.Uplink(message)
+				case message, ok := <-brk.association.Downlink():
+					if ok {
+						go r.HandleDownlink(message)
+					}
 				}
 			}
 		}()

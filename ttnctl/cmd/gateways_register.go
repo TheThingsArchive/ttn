@@ -37,7 +37,7 @@ var gatewaysRegisterCmd = &cobra.Command{
 		}
 
 		settings := account.GatewaySettings{
-			Location: location,
+			AntennaLocation: location,
 		}
 
 		act := util.GetAccount(ctx)
