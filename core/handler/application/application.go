@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/fatih/structs"
 )
 
@@ -45,6 +46,12 @@ type Application struct {
 	// Returns an object containing the converted values in []byte when the PayloadFormat is
 	// set to PayloadFormatCustom
 	CustomEncoder string `redis:"custom_encoder"`
+
+	OnJoinRegistration              bool         `redis:"on_join_registration"`
+	OnJoinRegistrationAppEui        types.AppEUI `redis:"on_join_registration_eui"`
+	OnJoinRegistrationAppKey        types.AppKey `redis:"on_join_registration_key"`
+	OnJoinRegistrationAccessKey     string       `redis:"on_join_registration_access_key"`
+	OnJoinRegistrationAccessKeyName string       `redis:"on_join_registration_access_key_name"`
 
 	CreatedAt time.Time `redis:"created_at"`
 	UpdatedAt time.Time `redis:"updated_at"`

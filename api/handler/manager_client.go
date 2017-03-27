@@ -94,6 +94,12 @@ func (h *ManagerClient) SetApplication(in *Application) error {
 	return errors.Wrap(errors.FromGRPCError(err), "Could not set application on Handler")
 }
 
+// SetRegisterOnJoin configures the on-join registration setting of an app
+func (h *ManagerClient) SetRegisterOnJoin(in *lorawan.SetRegisterOnJoinMessage) error {
+	_, err := h.applicationManagerClient.SetRegisterOnJoin(h.GetContext(), in)
+	return errors.Wrap(errors.FromGRPCError(err), "Could not set on-join registration setting on Handler")
+}
+
 // RegisterApplication registers an application on the Handler
 func (h *ManagerClient) RegisterApplication(appID string) error {
 	_, err := h.applicationManagerClient.RegisterApplication(h.GetContext(), &ApplicationIdentifier{AppId: appID})

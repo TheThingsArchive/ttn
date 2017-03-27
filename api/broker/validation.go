@@ -132,3 +132,17 @@ func (m *ApplicationHandlerRegistration) Validate() error {
 	}
 	return nil
 }
+
+// Validate implements the api.Validator interface
+func (m *OnJoinRegistrationRequest) Validate() error {
+	if err := api.NotEmptyAndValidID(m.AppId, "AppId"); err != nil {
+		return err
+	}
+	if m.AppEui.IsEmpty() {
+		return errors.NewErrInvalidArgument("AppEui", "can not be empty")
+	}
+	if m.DevEui.IsEmpty() {
+		return errors.NewErrInvalidArgument("DevEui", "can not be empty")
+	}
+	return nil
+}

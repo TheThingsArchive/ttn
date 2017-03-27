@@ -119,7 +119,8 @@ func (s *RedisDeviceStore) Get(appEUI types.AppEUI, devEUI types.DevEUI) (*Devic
 	if device, ok := deviceI.(Device); ok {
 		return &device, nil
 	}
-	return nil, errors.New("Database did not return a Device")
+	// No device found
+	return nil, errors.NewErrNotFound("device")
 }
 
 // Set a new Device or update an existing one

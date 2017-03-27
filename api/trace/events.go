@@ -15,4 +15,7 @@ const (
 	ReceiveEvent       = "receive"
 	SendEvent          = "send"
 	UpdateStateEvent   = "update state"
+
+	DeviceNotRegisteredEvent = "device not registered"
+	DeviceRegistrationEvent  = "device created"
 )

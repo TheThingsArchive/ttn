@@ -144,6 +144,16 @@ message ActivationChallengeResponse {
   protocol.Message  message = 2;
 }
 
+message OnJoinRegistrationRequest {
+  string app_id  = 1;
+  bytes  app_eui = 2 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.AppEUI"];
+  bytes  dev_eui = 3 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.DevEUI"];
+}
+
+message OnJoinRegistrationResponse {
+  string dev_id  = 1;
+}
+
 // message SubscribeRequest is used by a Handler to subscribe to uplink messages
 message SubscribeRequest {}
 
