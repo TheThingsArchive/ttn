@@ -5,6 +5,7 @@ package router
 
 import (
 	"context"
+	"errors"
 	"io"
 	"sync"
 
@@ -22,7 +23,7 @@ import (
 type GenericStream interface {
 	Uplink(*UplinkMessage)
 	Status(*gateway.Status)
-	Downlink() <-chan *DownlinkMessage
+	Downlink() (<-chan *DownlinkMessage, error)
 	Close()
 }
 
@@ -136,10 +137,16 @@ func (s *gatewayStreams) Status(msg *gateway.Status) {
 	}
 }
 
-func (s *gatewayStreams) Downlink() <-chan *DownlinkMessage {
+// ErrDownlinkInactive is returned by the Downlink func if downlink is inactive
+var ErrDownlinkInactive = errors.New("Downlink stream not active")
+
+func (s *gatewayStreams) Downlink() (<-chan *DownlinkMessage, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	return s.downlink
+	if s.downlink == nil {
+		return nil, ErrDownlinkInactive
+	}
+	return s.downlink, nil
 }
 
 func (s *gatewayStreams) Close() {
@@ -147,7 +154,7 @@ func (s *gatewayStreams) Close() {
 }
 
 // NewGatewayStreams returns new streams using the given gateway ID and token
-func (c *Client) NewGatewayStreams(id string, token string) GenericStream {
+func (c *Client) NewGatewayStreams(id string, token string, downlinkActive bool) GenericStream {
 	log := c.log.WithField("GatewayID", id)
 	ctx, cancel := context.WithCancel(c.ctx)
 	ctx = api.ContextWithID(ctx, id)
@@ -159,22 +166,13 @@ func (c *Client) NewGatewayStreams(id string, token string) GenericStream {
 
 		uplink: make(map[string]chan *UplinkMessage),
 		status: make(map[string]chan *gateway.Status),
-
-		downlink: make(chan *DownlinkMessage, c.config.BufferSize),
 	}
-
-	var wgDown sync.WaitGroup
-	go func() {
-		wgDown.Wait()
-		close(s.downlink)
-	}()
 
 	var wg utils.WaitGroup
 
 	// Hook up the router servers
 	for _, server := range c.serverConns {
 		wg.Add(1)
-		wgDown.Add(1)
 		go func(server *serverConn) {
 			if server.ready != nil {
 				select {
@@ -237,28 +235,37 @@ func (c *Client) NewGatewayStreams(id string, token string) GenericStream {
 			}
 
 			// Downlink stream
-			downlink, err := cli.Subscribe(ctx, &SubscribeRequest{})
-			if err != nil {
-				log.WithError(err).Warn("Could not set up Subscribe stream")
-				wgDown.Done()
-			} else {
+			if downlinkActive {
+				s.downlink = make(chan *DownlinkMessage, c.config.BufferSize)
+				var wgDown sync.WaitGroup
 				go func() {
-					defer func() {
-						wgDown.Done()
-					}()
-					for {
-						msg, err := downlink.Recv()
-						if err != nil {
-							logStreamErr("Subscribe", err)
-							return
-						}
-						select {
-						case s.downlink <- msg:
-						default:
-							log.Warn("Downlink buffer full")
-						}
-					}
+					wgDown.Wait()
+					close(s.downlink)
 				}()
+				wgDown.Add(1)
+				downlink, err := cli.Subscribe(ctx, &SubscribeRequest{})
+				if err != nil {
+					log.WithError(err).Warn("Could not set up Subscribe stream")
+					wgDown.Done()
+				} else {
+					go func() {
+						defer func() {
+							wgDown.Done()
+						}()
+						for {
+							msg, err := downlink.Recv()
+							if err != nil {
+								logStreamErr("Subscribe", err)
+								return
+							}
+							select {
+							case s.downlink <- msg:
+							default:
+								log.Warn("Downlink buffer full")
+							}
+						}
+					}()
+				}
 			}
 
 			// Status stream

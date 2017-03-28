@@ -52,7 +52,7 @@ func TestRouter(t *testing.T) {
 
 	testLogger.Print(t)
 
-	gtw := cli.NewGatewayStreams("test", "token")
+	gtw := cli.NewGatewayStreams("test", "token", true)
 	time.Sleep(waitTime)
 	for i := 0; i < 20; i++ {
 		gtw.Uplink(&UplinkMessage{})
@@ -66,7 +66,7 @@ func TestRouter(t *testing.T) {
 
 	testLogger.Print(t)
 
-	downlink := gtw.Downlink()
+	downlink, _ := gtw.Downlink()
 	recvDownlink := []*DownlinkMessage{}
 	var downlinkClosed bool
 	go func() {
