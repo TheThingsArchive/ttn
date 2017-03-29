@@ -173,9 +173,12 @@ func (c *Client) NewGatewayStreams(id string, token string, downlinkActive bool)
 	var wgDown sync.WaitGroup
 	if downlinkActive {
 		s.downlink = make(chan *DownlinkMessage, c.config.BufferSize)
-		go func() {
-			wgDown.Wait()
-			close(s.downlink)
+		defer func() {
+			go func() {
+				wgDown.Wait()
+				log.Warn("Closing s.downlink")
+				close(s.downlink)
+			}()
 		}()
 	}
 
