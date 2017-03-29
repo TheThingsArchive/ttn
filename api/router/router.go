@@ -170,6 +170,15 @@ func (c *Client) NewGatewayStreams(id string, token string, downlinkActive bool)
 
 	var wg utils.WaitGroup
 
+	var wgDown sync.WaitGroup
+	if downlinkActive {
+		s.downlink = make(chan *DownlinkMessage, c.config.BufferSize)
+		go func() {
+			wgDown.Wait()
+			close(s.downlink)
+		}()
+	}
+
 	// Hook up the router servers
 	for _, server := range c.serverConns {
 		wg.Add(1)
@@ -236,12 +245,6 @@ func (c *Client) NewGatewayStreams(id string, token string, downlinkActive bool)
 
 			// Downlink stream
 			if downlinkActive {
-				s.downlink = make(chan *DownlinkMessage, c.config.BufferSize)
-				var wgDown sync.WaitGroup
-				go func() {
-					wgDown.Wait()
-					close(s.downlink)
-				}()
 				wgDown.Add(1)
 				downlink, err := cli.Subscribe(ctx, &SubscribeRequest{})
 				if err != nil {
