@@ -176,7 +176,6 @@ func (c *Client) NewGatewayStreams(id string, token string, downlinkActive bool)
 		defer func() {
 			go func() {
 				wgDown.Wait()
-				log.Warn("Closing s.downlink")
 				close(s.downlink)
 			}()
 		}()
