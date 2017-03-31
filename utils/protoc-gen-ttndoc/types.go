@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
-	gateway "github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis/google/api"
+	options "google.golang.org/genproto/googleapis/api/annotations"
 )
 
 type service struct {
@@ -52,20 +52,20 @@ type endpoint struct {
 	url    string
 }
 
-func newEndpoint(opts *gateway.HttpRule) *endpoint {
+func newEndpoint(opts *options.HttpRule) *endpoint {
 	if opts == nil {
 		return nil
 	}
 	switch opt := opts.GetPattern().(type) {
-	case *gateway.HttpRule_Get:
+	case *options.HttpRule_Get:
 		return &endpoint{"GET", opt.Get}
-	case *gateway.HttpRule_Put:
+	case *options.HttpRule_Put:
 		return &endpoint{"PUT", opt.Put}
-	case *gateway.HttpRule_Post:
+	case *options.HttpRule_Post:
 		return &endpoint{"POST", opt.Post}
-	case *gateway.HttpRule_Delete:
+	case *options.HttpRule_Delete:
 		return &endpoint{"DELETE", opt.Delete}
-	case *gateway.HttpRule_Patch:
+	case *options.HttpRule_Patch:
 		return &endpoint{"PATCH", opt.Patch}
 	}
 	return nil
