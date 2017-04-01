@@ -6,6 +6,7 @@ package random
 import (
 	"fmt"
 	"math"
+	"strings"
 	"time"
 
 	"github.com/TheThingsNetwork/go-utils/pseudorandom"
@@ -27,14 +28,50 @@ func New() *TTNRandom {
 
 var global = New()
 
+func (r *TTNRandom) randomChar() byte {
+	return byte('a' + r.Intn('z'-'a'))
+}
+func (r *TTNRandom) randomCharString() string {
+	return string(r.randomChar())
+}
+
+func (r *TTNRandom) formatID(s string) string {
+	switch {
+	case strings.HasPrefix(s, "-"):
+		s = strings.TrimPrefix(s, "-") + r.randomCharString()
+	case strings.HasPrefix(s, "_"):
+		s = strings.TrimPrefix(s, "_") + r.randomCharString()
+	case strings.HasSuffix(s, "-"):
+		s = strings.TrimSuffix(s, "-") + r.randomCharString()
+	case strings.HasSuffix(s, "_"):
+		s = strings.TrimSuffix(s, "_") + r.randomCharString()
+	}
+	return strings.ToLower(strings.NewReplacer(
+		"_-", r.randomCharString()+r.randomCharString(),
+		"-_", r.randomCharString()+r.randomCharString(),
+		"__", r.randomCharString()+r.randomCharString(),
+		"--", r.randomCharString()+r.randomCharString(),
+	).Replace(s))
+}
+
 // ID returns randomly generated ID
 func (r *TTNRandom) ID() string {
-	return r.Interface.String(2 + r.Interface.Intn(61))
+	return r.formatID(r.Interface.String(2 + r.Interface.Intn(61)))
+}
+
+// AppID returns randomly generated AppID
+func (r *TTNRandom) AppID() string {
+	return r.formatID(r.Interface.String(2 + r.Interface.Intn(34)))
+}
+
+// DevID returns randomly generated DevID
+func (r *TTNRandom) DevID() string {
+	return r.formatID(r.Interface.String(2 + r.Interface.Intn(34)))
 }
 
 // Bool return randomly generated bool value
 func (r *TTNRandom) Bool() bool {
-	return r.Interface.Intn(1) == 0
+	return r.Interface.Intn(2) == 0
 }
 
 // Rssi generates RSSI signal between -120 < rssi < 0
@@ -174,6 +211,12 @@ func Bool() bool {
 
 func ID() string {
 	return global.ID()
+}
+func AppID() string {
+	return global.AppID()
+}
+func DevID() string {
+	return global.DevID()
 }
 
 func DevNonce() types.DevNonce {
