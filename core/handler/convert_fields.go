@@ -7,6 +7,7 @@ import (
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/core/handler/application"
+	"github.com/TheThingsNetwork/ttn/core/handler/cayennelpp"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
 	"github.com/TheThingsNetwork/ttn/core/handler/functions"
 	"github.com/TheThingsNetwork/ttn/core/types"
@@ -40,6 +41,8 @@ func (h *handler) ConvertFieldsUp(ctx ttnlog.Interface, _ *pb_broker.Deduplicate
 			Validator: app.CustomValidator,
 			Logger:    functions.Ignore,
 		}
+	case application.PayloadFormatCayenneLPP:
+		decoder = &cayennelpp.Decoder{}
 	default:
 		return nil
 	}
@@ -90,6 +93,8 @@ func (h *handler) ConvertFieldsDown(ctx ttnlog.Interface, appDown *types.Downlin
 			Encoder: app.CustomEncoder,
 			Logger:  functions.Ignore,
 		}
+	case application.PayloadFormatCayenneLPP:
+		encoder = &cayennelpp.Encoder{}
 	default:
 		return nil
 	}
