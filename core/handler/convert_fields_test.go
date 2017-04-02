@@ -135,10 +135,10 @@ func TestConvertFieldsUpCayenneLPP(t *testing.T) {
 			h.applications.Delete(appID)
 		}()
 		ttnUp, appUp := buildCayenneLPPUplink(appID)
-		err = h.ConvertFieldsUp(ctx, ttnUp, appUp, nil)
+		err := h.ConvertFieldsUp(ctx, ttnUp, appUp, nil)
 		a.So(err, ShouldBeNil)
 		a.So(appUp.PayloadFields, ShouldResemble, map[string]interface{}{
-			"barometric_pressure_10": 1073.5,
+			"barometric_pressure_10": float32(1073.5),
 		})
 	}
 }
@@ -240,7 +240,7 @@ func buildCayenneLPPDownlink() (*pb_broker.DownlinkMessage, *types.DownlinkMessa
 		FPort:         1,
 		AppID:         "AppID-1",
 		DevID:         "DevID-1",
-		PayloadFields: map[string]interface{}{"temperature_0": -15.6},
+		PayloadFields: map[string]interface{}{"temperature_7": -15.6},
 	}
 	return ttnDown, appDown
 }

@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/assertions"
 )
 
@@ -75,7 +74,7 @@ func TestCustomValidate(t *testing.T) {
 	a.So(valid, ShouldBeFalse)
 
 	withoutFunction := &CustomUplinkFunctions{}
-	valid, err = withoutFunction.Validate(map[string]interface{}{"temperature": 10}, 1)
+	valid, err = withoutFunction.validate(map[string]interface{}{"temperature": 10}, 1)
 	a.So(err, ShouldBeNil)
 	a.So(valid, ShouldBeTrue)
 }
@@ -236,7 +235,7 @@ func TestCustomEncode(t *testing.T) {
 	functions = &CustomDownlinkFunctions{
 		Encoder: `function Encoder (payload, port) { var x = [1, 2, 3 ]; return [ x.length || 0 ] }`,
 	}
-	_, _, err = functions.Decode(map[string]interface{}{"key": 11}, 1)
+	_, _, err = functions.Encode(map[string]interface{}{"key": 11}, 1)
 	a.So(err, ShouldBeNil)
 }
 

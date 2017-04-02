@@ -42,13 +42,14 @@ func TestEncode(t *testing.T) {
 			"altitude":  21.54,
 		}
 
-		payload, err := encoder.Encode(fields, 1)
+		payload, valid, err := encoder.Encode(fields, 1)
 		a.So(err, ShouldBeNil)
+		a.So(valid, ShouldBeTrue)
 
 		// Cannot test bytes here as the order is random, so testing roundtrip
 
 		decoder := new(Decoder)
-		fields, valid, err := decoder.Decode(payload, 1)
+		fields, valid, err = decoder.Decode(payload, 1)
 		a.So(err, ShouldBeNil)
 		a.So(valid, ShouldBeTrue)
 		a.So(fields, ShouldHaveLength, 12)
@@ -85,8 +86,9 @@ func TestEncode(t *testing.T) {
 			"digital_in_8": "shouldn't be a string",
 			"custom_5":     5,
 		}
-		payload, err := encoder.Encode(fields, 1)
+		payload, valid, err := encoder.Encode(fields, 1)
 		a.So(err, ShouldBeNil)
+		a.So(valid, ShouldBeTrue)
 		a.So(payload, ShouldHaveLength, 0)
 	}
 }

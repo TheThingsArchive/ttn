@@ -83,7 +83,7 @@ func (h *handler) ConvertFieldsDown(ctx ttnlog.Interface, appDown *types.Downlin
 
 	app, err := h.applications.Get(appDown.AppID)
 	if err != nil {
-		return err
+		return nil
 	}
 
 	var encoder PayloadEncoder
