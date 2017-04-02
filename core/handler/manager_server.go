@@ -458,6 +458,9 @@ func (h *handlerManager) SetApplication(ctx context.Context, in *pb.Application)
 	app.CustomConverter = in.Converter
 	app.CustomValidator = in.Validator
 	app.CustomEncoder = in.Encoder
+	if app.CustomDecoder != "" || app.CustomConverter != "" || app.CustomValidator != "" || app.CustomEncoder != "" {
+		app.PayloadFormat = application.PayloadFormatCustom
+	}
 
 	err = h.handler.applications.Set(app)
 	if err != nil {
