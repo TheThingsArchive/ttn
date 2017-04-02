@@ -328,7 +328,6 @@ func buildConversionDownlink() (*pb_broker.DownlinkMessage, *types.DownlinkMessa
 		AppID:         "AppID-1",
 		DevID:         "DevID-1",
 		PayloadFields: map[string]interface{}{"temperature": 30},
-		// We want to "build" the payload with the content of the fields
 	}
 	return ttnDown, appDown
 }
@@ -341,13 +340,13 @@ func TestConvertFieldsDown(t *testing.T) {
 		applications: application.NewRedisApplicationStore(GetRedisClient(), "handler-test-convert-fields-down"),
 	}
 
-	// Case1: No Encoder
+	// No Encoder
 	ttnDown, appDown := buildConversionDownlink()
 	err := h.ConvertFieldsDown(GetLogger(t, "TestConvertFieldsDown"), appDown, ttnDown, nil)
 	a.So(err, ShouldBeNil)
 	a.So(appDown.PayloadRaw, ShouldBeEmpty)
 
-	// Case2: Normal flow with Encoder
+	// Normal flow with Encoder
 	h.applications.Set(&application.Application{
 		AppID:         appID,
 		PayloadFormat: application.PayloadFormatCustom,
@@ -373,13 +372,13 @@ func TestConvertFieldsDownNoPort(t *testing.T) {
 		applications: application.NewRedisApplicationStore(GetRedisClient(), "handler-test-convert-fields-down"),
 	}
 
-	// Case1: No Encoder
+	// No Encoder
 	ttnDown, appDown := buildConversionDownlink()
 	err := h.ConvertFieldsDown(GetLogger(t, "TestConvertFieldsDown"), appDown, ttnDown, nil)
 	a.So(err, ShouldBeNil)
 	a.So(appDown.PayloadRaw, ShouldBeEmpty)
 
-	// Case2: Normal flow with Encoder
+	// Normal flow with Encoder
 	h.applications.Set(&application.Application{
 		AppID:         appID,
 		PayloadFormat: application.PayloadFormatCustom,
@@ -457,7 +456,7 @@ func TestProcessDownlinkInvalidFunction(t *testing.T) {
 func TestEncodeCharCode(t *testing.T) {
 	a := New(t)
 
-	// return arr of charcodes
+	// Return array of character codes
 	functions := &CustomDownlinkFunctions{
 		Encoder: `function Encoder(obj) {
 			return "Hi".split('').map(function(char) {
