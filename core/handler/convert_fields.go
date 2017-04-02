@@ -21,7 +21,7 @@ type PayloadDecoder interface {
 
 // PayloadEncoder encodes fields to raw payload
 type PayloadEncoder interface {
-	Encode(fields map[string]interface{}, fPort uint8) ([]byte, error)
+	Encode(fields map[string]interface{}, fPort uint8) ([]byte, bool, error)
 }
 
 // ConvertFieldsUp converts the payload to fields using the application's payload formatter

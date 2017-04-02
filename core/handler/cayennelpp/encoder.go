@@ -8,7 +8,7 @@ import protocol "github.com/TheThingsNetwork/go-cayenne-lib/cayennelpp"
 type Encoder struct {
 }
 
-func (e *Encoder) Encode(fields map[string]interface{}, fPort uint8) ([]byte, error) {
+func (e *Encoder) Encode(fields map[string]interface{}, fPort uint8) ([]byte, bool, error) {
 	encoder := protocol.NewEncoder()
 	for name, value := range fields {
 		key, channel, err := parseName(name)
@@ -75,5 +75,5 @@ func (e *Encoder) Encode(fields map[string]interface{}, fPort uint8) ([]byte, er
 			}
 		}
 	}
-	return encoder.Bytes(), nil
+	return encoder.Bytes(), true, nil
 }
