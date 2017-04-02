@@ -4,7 +4,6 @@
 package handler
 
 import (
-	"fmt"
 	"testing"
 
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
@@ -15,7 +14,7 @@ import (
 	. "github.com/smartystreets/assertions"
 )
 
-func buildConversionUplink(appID string) (*pb_broker.DeduplicatedUplinkMessage, *types.UplinkMessage) {
+func buildCustomUplink(appID string) (*pb_broker.DeduplicatedUplinkMessage, *types.UplinkMessage) {
 	ttnUp := &pb_broker.DeduplicatedUplinkMessage{
 		AppId: appID,
 		DevId: "DevID-1",
@@ -39,7 +38,7 @@ func TestConvertFieldsUpCustom(t *testing.T) {
 	}
 
 	// No functions
-	ttnUp, appUp := buildConversionUplink(appID)
+	ttnUp, appUp := buildCustomUplink(appID)
 	err := h.ConvertFieldsUp(GetLogger(t, "TestConvertFieldsUpCustom"), ttnUp, appUp, nil)
 	a.So(err, ShouldBeNil)
 	a.So(appUp.PayloadFields, ShouldBeEmpty)
@@ -54,7 +53,7 @@ func TestConvertFieldsUpCustom(t *testing.T) {
 	defer func() {
 		h.applications.Delete(appID)
 	}()
-	ttnUp, appUp = buildConversionUplink(appID)
+	ttnUp, appUp = buildCustomUplink(appID)
 	err = h.ConvertFieldsUp(GetLogger(t, "TestConvertFieldsUpCustom"), ttnUp, appUp, nil)
 	a.So(err, ShouldBeNil)
 
@@ -66,7 +65,7 @@ func TestConvertFieldsUpCustom(t *testing.T) {
 	app.StartUpdate()
 	app.CustomValidator = `function Validator (data) { return false; }`
 	h.applications.Set(app)
-	ttnUp, appUp = buildConversionUplink(appID)
+	ttnUp, appUp = buildCustomUplink(appID)
 	err = h.ConvertFieldsUp(GetLogger(t, "TestConvertFieldsUpCustom"), ttnUp, appUp, nil)
 	a.So(err, ShouldNotBeNil)
 	a.So(appUp.PayloadFields, ShouldBeEmpty)
@@ -75,19 +74,18 @@ func TestConvertFieldsUpCustom(t *testing.T) {
 	app.StartUpdate()
 	app.CustomValidator = `function Validator (data) { throw new Error("expected"); }`
 	h.applications.Set(app)
-	ttnUp, appUp = buildConversionUplink(appID)
+	ttnUp, appUp = buildCustomUplink(appID)
 	err = h.ConvertFieldsUp(GetLogger(t, "TestConvertFieldsUpCustom"), ttnUp, appUp, nil)
 	a.So(err, ShouldBeNil)
 	a.So(appUp.PayloadFields, ShouldBeEmpty)
 
 	a.So(len(h.mqttEvent), ShouldEqual, 1)
 	evt := <-h.mqttEvent
-	data, ok := evt.Data.(types.ErrorEventData)
+	_, ok := evt.Data.(types.ErrorEventData)
 	a.So(ok, ShouldBeTrue)
-	fmt.Println(data.Error)
 }
 
-func buildConversionDownlink() (*pb_broker.DownlinkMessage, *types.DownlinkMessage) {
+func buildCustomDownlink() (*pb_broker.DownlinkMessage, *types.DownlinkMessage) {
 	appEUI := types.AppEUI([8]byte{1, 2, 3, 4, 5, 6, 7, 8})
 	devEUI := types.DevEUI([8]byte{1, 2, 3, 4, 5, 6, 7, 8})
 	ttnDown := &pb_broker.DownlinkMessage{
@@ -112,7 +110,7 @@ func TestConvertFieldsDownCustom(t *testing.T) {
 	}
 
 	// No Encoder
-	ttnDown, appDown := buildConversionDownlink()
+	ttnDown, appDown := buildCustomDownlink()
 	err := h.ConvertFieldsDown(GetLogger(t, "TestConvertFieldsDownCustom"), appDown, ttnDown, nil)
 	a.So(err, ShouldBeNil)
 	a.So(appDown.PayloadRaw, ShouldBeEmpty)
@@ -129,7 +127,7 @@ func TestConvertFieldsDownCustom(t *testing.T) {
 		h.applications.Delete(appID)
 	}()
 
-	ttnDown, appDown = buildConversionDownlink()
+	ttnDown, appDown = buildCustomDownlink()
 	err = h.ConvertFieldsDown(GetLogger(t, "TestConvertFieldsDownCustom"), appDown, ttnDown, nil)
 	a.So(err, ShouldBeNil)
 	a.So(appDown.PayloadRaw, ShouldResemble, []byte{byte(appDown.FPort), 1, 2, 3, 4, 5, 6, 7})
@@ -144,7 +142,7 @@ func TestConvertFieldsDownCustomNoPort(t *testing.T) {
 	}
 
 	// No Encoder
-	ttnDown, appDown := buildConversionDownlink()
+	ttnDown, appDown := buildCustomDownlink()
 	err := h.ConvertFieldsDown(GetLogger(t, "TestConvertFieldsDownCustomNoPort"), appDown, ttnDown, nil)
 	a.So(err, ShouldBeNil)
 	a.So(appDown.PayloadRaw, ShouldBeEmpty)
@@ -161,7 +159,7 @@ func TestConvertFieldsDownCustomNoPort(t *testing.T) {
 		h.applications.Delete(appID)
 	}()
 
-	ttnDown, appDown = buildConversionDownlink()
+	ttnDown, appDown = buildCustomDownlink()
 	err = h.ConvertFieldsDown(GetLogger(t, "TestConvertFieldsDownCustomNoPort"), appDown, ttnDown, nil)
 	a.So(err, ShouldBeNil)
 	a.So(appDown.PayloadRaw, ShouldResemble, []byte{1, 2, 3, 4, 5, 6, 7})
