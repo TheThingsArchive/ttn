@@ -34,7 +34,7 @@ func (h *handler) ConvertFieldsUp(ctx ttnlog.Interface, _ *pb_broker.Deduplicate
 
 	var decoder PayloadDecoder
 	switch app.PayloadFormat {
-	case "", application.PayloadFormatCustom:
+	case application.PayloadFormatCustom:
 		decoder = &CustomUplinkFunctions{
 			Decoder:   app.CustomDecoder,
 			Converter: app.CustomConverter,
@@ -88,7 +88,7 @@ func (h *handler) ConvertFieldsDown(ctx ttnlog.Interface, appDown *types.Downlin
 
 	var encoder PayloadEncoder
 	switch app.PayloadFormat {
-	case "", application.PayloadFormatCustom:
+	case application.PayloadFormatCustom:
 		encoder = &CustomDownlinkFunctions{
 			Encoder: app.CustomEncoder,
 			Logger:  functions.Ignore,
