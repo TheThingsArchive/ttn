@@ -22,15 +22,16 @@ func (h *handlerManager) DryUplink(ctx context.Context, in *pb.DryUplinkMessage)
 
 	flds := ""
 	valid := true
-	if app != nil && app.Decoder != "" {
-		functions := &UplinkFunctions{
+	if app != nil {
+		var decoder PayloadDecoder
+		decoder = &CustomUplinkFunctions{
 			Decoder:   app.Decoder,
 			Converter: app.Converter,
 			Validator: app.Validator,
 			Logger:    logger,
 		}
 
-		fields, val, err := functions.Process(in.Payload, uint8(in.Port))
+		fields, val, err := decoder.Decode(in.Payload, uint8(in.Port))
 		if err != nil {
 			return nil, err
 		}
@@ -78,7 +79,8 @@ func (h *handlerManager) DryDownlink(ctx context.Context, in *pb.DryDownlinkMess
 
 	logger := functions.NewEntryLogger()
 
-	functions := &DownlinkFunctions{
+	var encoder PayloadEncoder
+	encoder = &CustomDownlinkFunctions{
 		Encoder: app.Encoder,
 		Logger:  logger,
 	}
@@ -89,7 +91,7 @@ func (h *handlerManager) DryDownlink(ctx context.Context, in *pb.DryDownlinkMess
 		return nil, errors.NewErrInvalidArgument("Fields", err.Error())
 	}
 
-	payload, _, err := functions.Process(parsed, uint8(in.Port))
+	payload, _, err := encoder.Encode(parsed, uint8(in.Port))
 	if err != nil {
 		return nil, err
 	}
