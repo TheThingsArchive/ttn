@@ -31,8 +31,8 @@ type CustomUplinkFunctions struct {
 // timeOut is the maximum allowed time a payload function is allowed to run
 var timeOut = 100 * time.Millisecond
 
-// Decode decodes the payload using the Decoder function into a map
-func (f *UplinkFunctions) Decode(payload []byte, port uint8) (map[string]interface{}, error) {
+// decode decodes the payload using the Decoder function into a map
+func (f *UplinkFunctions) decode(payload []byte, port uint8) (map[string]interface{}, error) {
 	if f.Decoder == "" {
 		return nil, nil
 	}
@@ -63,10 +63,10 @@ func (f *UplinkFunctions) Decode(payload []byte, port uint8) (map[string]interfa
 	return m, nil
 }
 
-// Convert converts the values in the specified map to a another map using the
+// convert converts the values in the specified map to a another map using the
 // Converter function. If the Converter function is not set, this function
 // returns the data as-is
-func (f *UplinkFunctions) Convert(fields map[string]interface{}, port uint8) (map[string]interface{}, error) {
+func (f *UplinkFunctions) convert(fields map[string]interface{}, port uint8) (map[string]interface{}, error) {
 	if f.Converter == "" {
 		return fields, nil
 	}
@@ -99,9 +99,9 @@ func (f *UplinkFunctions) Convert(fields map[string]interface{}, port uint8) (ma
 	return m, nil
 }
 
-// Validate validates the values in the specified map using the Validator
+// validate validates the values in the specified map using the Validator
 // function. If the Validator function is not set, this function returns true
-func (f *UplinkFunctions) Validate(fields map[string]interface{}, port uint8) (bool, error) {
+func (f *UplinkFunctions) validate(fields map[string]interface{}, port uint8) (bool, error) {
 	if f.Validator == "" {
 		return true, nil
 	}
@@ -129,17 +129,17 @@ func (f *UplinkFunctions) Validate(fields map[string]interface{}, port uint8) (b
 
 // Decode decodes the specified payload, converts it and tests the validity
 func (f *UplinkFunctions) Decode(payload []byte, port uint8) (map[string]interface{}, bool, error) {
-	decoded, err := f.Decode(payload, port)
+	decoded, err := f.decode(payload, port)
 	if err != nil {
 		return nil, false, err
 	}
 
-	converted, err := f.Convert(decoded, port)
+	converted, err := f.convert(decoded, port)
 	if err != nil {
 		return nil, false, err
 	}
 
-	valid, err := f.Validate(converted, port)
+	valid, err := f.validate(converted, port)
 	return converted, valid, err
 }
 
@@ -153,9 +153,9 @@ type CustomDownlinkFunctions struct {
 	Logger functions.Logger
 }
 
-// Encode encodes the map into a byte slice using the encoder payload function
+// encode encodes the map into a byte slice using the encoder payload function
 // If no encoder function is set, this function returns an array.
-func (f *DownlinkFunctions) Encode(payload map[string]interface{}, port uint8) ([]byte, error) {
+func (f *DownlinkFunctions) encode(payload map[string]interface{}, port uint8) ([]byte, error) {
 	if f.Encoder == "" {
 		return nil, errors.NewErrInvalidArgument("Downlink Payload", "fields supplied, but no Encoder function set")
 	}
@@ -243,7 +243,7 @@ func (f *DownlinkFunctions) Encode(payload map[string]interface{}, port uint8) (
 
 // Encode encodes the specified field, converts it into a valid payload
 func (f *DownlinkFunctions) Encode(payload map[string]interface{}, port uint8) ([]byte, bool, error) {
-	encoded, err := f.Encode(payload, port)
+	encoded, err := f.encode(payload, port)
 	if err != nil {
 		return nil, false, err
 	}

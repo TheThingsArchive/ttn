@@ -8,87 +8,11 @@ import (
 	"testing"
 	"time"
 
-	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
-
-	"github.com/TheThingsNetwork/ttn/core/handler/application"
-	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/assertions"
 )
 
-func buildConversionUplink(appID string) (*pb_broker.DeduplicatedUplinkMessage, *types.UplinkMessage) {
-	ttnUp := &pb_broker.DeduplicatedUplinkMessage{
-		AppId: appID,
-		DevId: "DevID-1",
-	}
-	appUp := &types.UplinkMessage{
-		FPort:      1,
-		AppID:      appID,
-		DevID:      "DevID-1",
-		PayloadRaw: []byte{0x08, 0x70},
-	}
-	return ttnUp, appUp
-}
-
-func TestConvertFieldsUp(t *testing.T) {
-	a := New(t)
-	appID := "AppID-1"
-
-	h := &handler{
-		applications: application.NewRedisApplicationStore(GetRedisClient(), "handler-test-convert-fields-up"),
-		mqttEvent:    make(chan *types.DeviceEvent, 1),
-	}
-
-	// No functions
-	ttnUp, appUp := buildConversionUplink(appID)
-	err := h.ConvertFieldsUp(GetLogger(t, "TestConvertFieldsUp"), ttnUp, appUp, nil)
-	a.So(err, ShouldBeNil)
-	a.So(appUp.PayloadFields, ShouldBeEmpty)
-
-	// Normal flow
-	app := &application.Application{
-		AppID:         appID,
-		PayloadFormat: application.PayloadFormatCustom,
-		CustomDecoder: `function Decoder (data) { return { temperature: ((data[0] << 8) | data[1]) / 100 }; }`,
-	}
-	a.So(h.applications.Set(app), ShouldBeNil)
-	defer func() {
-		h.applications.Delete(appID)
-	}()
-	ttnUp, appUp = buildConversionUplink(appID)
-	err = h.ConvertFieldsUp(GetLogger(t, "TestConvertFieldsUp"), ttnUp, appUp, nil)
-	a.So(err, ShouldBeNil)
-
-	a.So(appUp.PayloadFields, ShouldResemble, map[string]interface{}{
-		"temperature": 21.6,
-	})
-
-	// Invalidate data
-	app.StartUpdate()
-	app.CustomValidator = `function Validator (data) { return false; }`
-	h.applications.Set(app)
-	ttnUp, appUp = buildConversionUplink(appID)
-	err = h.ConvertFieldsUp(GetLogger(t, "TestConvertFieldsUp"), ttnUp, appUp, nil)
-	a.So(err, ShouldNotBeNil)
-	a.So(appUp.PayloadFields, ShouldBeEmpty)
-
-	// Function error
-	app.StartUpdate()
-	app.CustomValidator = `function Validator (data) { throw new Error("expected"); }`
-	h.applications.Set(app)
-	ttnUp, appUp = buildConversionUplink(appID)
-	err = h.ConvertFieldsUp(GetLogger(t, "TestConvertFieldsUp"), ttnUp, appUp, nil)
-	a.So(err, ShouldBeNil)
-	a.So(appUp.PayloadFields, ShouldBeEmpty)
-
-	a.So(len(h.mqttEvent), ShouldEqual, 1)
-	evt := <-h.mqttEvent
-	data, ok := evt.Data.(types.ErrorEventData)
-	a.So(ok, ShouldBeTrue)
-	fmt.Println(data.Error)
-}
-
-func TestDecode(t *testing.T) {
+func TestCustomDecode(t *testing.T) {
 	a := New(t)
 
 	functions := &CustomUplinkFunctions{
@@ -101,7 +25,7 @@ func TestDecode(t *testing.T) {
 	}
 	payload := []byte{0x48, 0x65}
 
-	m, err := functions.CustomDecode(payload, 12)
+	m, err := functions.decode(payload, 12)
 	a.So(err, ShouldBeNil)
 
 	size, ok := m["value"]
@@ -113,7 +37,7 @@ func TestDecode(t *testing.T) {
 	a.So(port, ShouldEqual, 12)
 }
 
-func TestConvert(t *testing.T) {
+func TestCustomConvert(t *testing.T) {
 	a := New(t)
 
 	withFunction := &CustomUplinkFunctions{
@@ -124,18 +48,18 @@ func TestConvert(t *testing.T) {
   };
 }`,
 	}
-	data, err := withFunction.Convert(map[string]interface{}{"temperature": 11}, 33)
+	data, err := withFunction.convert(map[string]interface{}{"temperature": 11}, 33)
 	a.So(err, ShouldBeNil)
 	a.So(data["celcius"], ShouldEqual, 22)
 	a.So(data["port"], ShouldEqual, 33)
 
 	withoutFunction := &CustomUplinkFunctions{}
-	data, err = withoutFunction.Convert(map[string]interface{}{"temperature": 11}, 33)
+	data, err = withoutFunction.convert(map[string]interface{}{"temperature": 11}, 33)
 	a.So(err, ShouldBeNil)
 	a.So(data["temperature"], ShouldEqual, 11)
 }
 
-func TestValidate(t *testing.T) {
+func TestCustomValidate(t *testing.T) {
 	a := New(t)
 
 	withFunction := &CustomUplinkFunctions{
@@ -143,10 +67,10 @@ func TestValidate(t *testing.T) {
       return data.temperature < 20;
     }`,
 	}
-	valid, err := withFunction.Validate(map[string]interface{}{"temperature": 10}, 1)
+	valid, err := withFunction.validate(map[string]interface{}{"temperature": 10}, 1)
 	a.So(err, ShouldBeNil)
 	a.So(valid, ShouldBeTrue)
-	valid, err = withFunction.Validate(map[string]interface{}{"temperature": 30}, 1)
+	valid, err = withFunction.validate(map[string]interface{}{"temperature": 30}, 1)
 	a.So(err, ShouldBeNil)
 	a.So(valid, ShouldBeFalse)
 
@@ -156,7 +80,7 @@ func TestValidate(t *testing.T) {
 	a.So(valid, ShouldBeTrue)
 }
 
-func TestProcessUplink(t *testing.T) {
+func TestCustomDecodeUplink(t *testing.T) {
 	a := New(t)
 
 	functions := &CustomUplinkFunctions{
@@ -175,35 +99,35 @@ func TestProcessUplink(t *testing.T) {
 }`,
 	}
 
-	data, valid, err := functions.Process([]byte{40, 110}, 1)
+	data, valid, err := functions.Decode([]byte{40, 110}, 1)
 	a.So(err, ShouldBeNil)
 	a.So(valid, ShouldBeFalse)
 	a.So(data["temperature"], ShouldEqual, 20)
 	a.So(data["humidity"], ShouldEqual, 110)
 }
 
-func TestProcessInvalidUplinkFunction(t *testing.T) {
+func TestCustomDecodeInvalidUplinkFunction(t *testing.T) {
 	a := New(t)
 
 	// Empty Function
 	functions := &CustomUplinkFunctions{
 		Decoder: ``,
 	}
-	_, _, err := functions.Process([]byte{40, 110}, 1)
+	_, _, err := functions.Decode([]byte{40, 110}, 1)
 	a.So(err, ShouldBeNil)
 
 	// Invalid Function
 	functions = &CustomUplinkFunctions{
 		Decoder: `this is not valid JavaScript`,
 	}
-	_, _, err = functions.Process([]byte{40, 110}, 1)
+	_, _, err = functions.Decode([]byte{40, 110}, 1)
 	a.So(err, ShouldNotBeNil)
 
 	// Invalid return
 	functions = &CustomUplinkFunctions{
 		Decoder: `function Decoder (payload) { return "Hello" }`,
 	}
-	_, _, err = functions.Process([]byte{40, 110}, 1)
+	_, _, err = functions.Decode([]byte{40, 110}, 1)
 	a.So(err, ShouldNotBeNil)
 
 	// Invalid Function
@@ -211,7 +135,7 @@ func TestProcessInvalidUplinkFunction(t *testing.T) {
 		Decoder:   `function Decoder (payload) { return { temperature: payload[0] } }`,
 		Converter: `this is not valid JavaScript`,
 	}
-	_, _, err = functions.Process([]byte{40, 110}, 1)
+	_, _, err = functions.Decode([]byte{40, 110}, 1)
 	a.So(err, ShouldNotBeNil)
 
 	// Invalid Return
@@ -219,7 +143,7 @@ func TestProcessInvalidUplinkFunction(t *testing.T) {
 		Decoder:   `function Decoder (payload) { return { temperature: payload[0] } }`,
 		Converter: `function Converter (data) { return "Hello" }`,
 	}
-	_, _, err = functions.Process([]byte{40, 110}, 1)
+	_, _, err = functions.Decode([]byte{40, 110}, 1)
 	a.So(err, ShouldNotBeNil)
 
 	// Invalid Function
@@ -227,7 +151,7 @@ func TestProcessInvalidUplinkFunction(t *testing.T) {
 		Decoder:   `function Decoder (payload) { return { temperature: payload[0] } }`,
 		Validator: `this is not valid JavaScript`,
 	}
-	_, _, err = functions.Process([]byte{40, 110}, 1)
+	_, _, err = functions.Decode([]byte{40, 110}, 1)
 	a.So(err, ShouldNotBeNil)
 
 	// Invalid Return
@@ -235,7 +159,7 @@ func TestProcessInvalidUplinkFunction(t *testing.T) {
 		Decoder:   `function Decoder (payload) { return { temperature: payload[0] } }`,
 		Validator: `function Validator (data) { return "Hello" }`,
 	}
-	_, _, err = functions.Process([]byte{40, 110}, 1)
+	_, _, err = functions.Decode([]byte{40, 110}, 1)
 	a.So(err, ShouldNotBeNil)
 
 	// Invalid Object (Arrays are Objects too, but don't jive well with
@@ -243,7 +167,7 @@ func TestProcessInvalidUplinkFunction(t *testing.T) {
 	functions = &CustomUplinkFunctions{
 		Decoder: `function Decoder (payload) { return [1] }`,
 	}
-	_, _, err = functions.Process([]byte{40, 110}, 1)
+	_, _, err = functions.Decode([]byte{40, 110}, 1)
 	a.So(err, ShouldNotBeNil)
 
 	// Invalid Object (Arrays are Objects too, but don't jive well with
@@ -252,7 +176,7 @@ func TestProcessInvalidUplinkFunction(t *testing.T) {
 		Decoder:   `function Decoder (payload) { return { temperature: payload[0] } }`,
 		Converter: `function Converter (payload) { return [1] }`,
 	}
-	_, _, err = functions.Process([]byte{40, 110}, 1)
+	_, _, err = functions.Decode([]byte{40, 110}, 1)
 	a.So(err, ShouldNotBeNil)
 
 	// Invalid Object (Arrays are Objects too), this should work error because
@@ -261,11 +185,11 @@ func TestProcessInvalidUplinkFunction(t *testing.T) {
 		Decoder:   `function Decoder (payload) { return { temperature: payload[0] } }`,
 		Validator: `function Validator (payload) { return [1] }`,
 	}
-	_, _, err = functions.Process([]byte{40, 110}, 1)
+	_, _, err = functions.Decode([]byte{40, 110}, 1)
 	a.So(err, ShouldNotBeNil)
 }
 
-func TestTimeoutExceeded(t *testing.T) {
+func TestCustomTimeoutExceeded(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
 	}
@@ -279,7 +203,7 @@ func TestTimeoutExceeded(t *testing.T) {
 
 	interrupted := make(chan bool, 2)
 	go func() {
-		_, _, err := functions.Process([]byte{0}, 1)
+		_, _, err := functions.Decode([]byte{0}, 1)
 		a.So(time.Since(start), ShouldAlmostEqual, 100*time.Millisecond, 0.5e9)
 		a.So(err, ShouldNotBeNil)
 		interrupted <- true
@@ -289,7 +213,7 @@ func TestTimeoutExceeded(t *testing.T) {
 	a.So(interrupted, ShouldHaveLength, 1)
 }
 
-func TestEncode(t *testing.T) {
+func TestCustomEncode(t *testing.T) {
 	a := New(t)
 
 	// This function return an array of bytes (random)
@@ -302,7 +226,7 @@ func TestEncode(t *testing.T) {
 	// The payload is a JSON structure
 	payload := map[string]interface{}{"temperature": 11}
 
-	m, err := functions.Encode(payload, 1)
+	m, err := functions.encode(payload, 1)
 	a.So(err, ShouldBeNil)
 
 	a.So(m, ShouldHaveLength, 7)
@@ -312,126 +236,46 @@ func TestEncode(t *testing.T) {
 	functions = &CustomDownlinkFunctions{
 		Encoder: `function Encoder (payload, port) { var x = [1, 2, 3 ]; return [ x.length || 0 ] }`,
 	}
-	_, _, err = functions.Process(map[string]interface{}{"key": 11}, 1)
+	_, _, err = functions.Decode(map[string]interface{}{"key": 11}, 1)
 	a.So(err, ShouldBeNil)
 }
 
-func buildConversionDownlink() (*pb_broker.DownlinkMessage, *types.DownlinkMessage) {
-	appEUI := types.AppEUI([8]byte{1, 2, 3, 4, 5, 6, 7, 8})
-	devEUI := types.DevEUI([8]byte{1, 2, 3, 4, 5, 6, 7, 8})
-	ttnDown := &pb_broker.DownlinkMessage{
-		AppEui: &appEUI,
-		DevEui: &devEUI,
-	}
-	appDown := &types.DownlinkMessage{
-		FPort:         1,
-		AppID:         "AppID-1",
-		DevID:         "DevID-1",
-		PayloadFields: map[string]interface{}{"temperature": 30},
-	}
-	return ttnDown, appDown
-}
-
-func TestConvertFieldsDown(t *testing.T) {
-	a := New(t)
-	appID := "AppID-1"
-
-	h := &handler{
-		applications: application.NewRedisApplicationStore(GetRedisClient(), "handler-test-convert-fields-down"),
-	}
-
-	// No Encoder
-	ttnDown, appDown := buildConversionDownlink()
-	err := h.ConvertFieldsDown(GetLogger(t, "TestConvertFieldsDown"), appDown, ttnDown, nil)
-	a.So(err, ShouldBeNil)
-	a.So(appDown.PayloadRaw, ShouldBeEmpty)
-
-	// Normal flow with Encoder
-	h.applications.Set(&application.Application{
-		AppID:         appID,
-		PayloadFormat: application.PayloadFormatCustom,
-		CustomEncoder: `function Encoder (payload, port){
-  		return [ port, 1, 2, 3, 4, 5, 6, 7 ]
-		}`,
-	})
-	defer func() {
-		h.applications.Delete(appID)
-	}()
-
-	ttnDown, appDown = buildConversionDownlink()
-	err = h.ConvertFieldsDown(GetLogger(t, "TestConvertFieldsDown"), appDown, ttnDown, nil)
-	a.So(err, ShouldBeNil)
-	a.So(appDown.PayloadRaw, ShouldResemble, []byte{byte(appDown.FPort), 1, 2, 3, 4, 5, 6, 7})
-}
-
-func TestConvertFieldsDownNoPort(t *testing.T) {
-	a := New(t)
-	appID := "AppID-1"
-
-	h := &handler{
-		applications: application.NewRedisApplicationStore(GetRedisClient(), "handler-test-convert-fields-down"),
-	}
-
-	// No Encoder
-	ttnDown, appDown := buildConversionDownlink()
-	err := h.ConvertFieldsDown(GetLogger(t, "TestConvertFieldsDown"), appDown, ttnDown, nil)
-	a.So(err, ShouldBeNil)
-	a.So(appDown.PayloadRaw, ShouldBeEmpty)
-
-	// Normal flow with Encoder
-	h.applications.Set(&application.Application{
-		AppID:         appID,
-		PayloadFormat: application.PayloadFormatCustom,
-		CustomEncoder: `function Encoder (payload){
-  		return [ 1, 2, 3, 4, 5, 6, 7 ]
-		}`,
-	})
-	defer func() {
-		h.applications.Delete(appID)
-	}()
-
-	ttnDown, appDown = buildConversionDownlink()
-	err = h.ConvertFieldsDown(GetLogger(t, "TestConvertFieldsDown"), appDown, ttnDown, nil)
-	a.So(err, ShouldBeNil)
-	a.So(appDown.PayloadRaw, ShouldResemble, []byte{1, 2, 3, 4, 5, 6, 7})
-}
-
-func TestProcessDownlinkInvalidFunction(t *testing.T) {
+func TestCustomProcessDownlinkInvalidFunction(t *testing.T) {
 	a := New(t)
 
 	// Empty Function
 	functions := &CustomDownlinkFunctions{
 		Encoder: ``,
 	}
-	_, _, err := functions.Process(map[string]interface{}{"key": 11}, 1)
+	_, _, err := functions.Encode(map[string]interface{}{"key": 11}, 1)
 	a.So(err, ShouldNotBeNil)
 
 	// Invalid Function
 	functions = &CustomDownlinkFunctions{
 		Encoder: `this is not valid JavaScript`,
 	}
-	_, _, err = functions.Process(map[string]interface{}{"key": 11}, 1)
+	_, _, err = functions.Encode(map[string]interface{}{"key": 11}, 1)
 	a.So(err, ShouldNotBeNil)
 
 	// Invalid return
 	functions = &CustomDownlinkFunctions{
 		Encoder: `function Encoder (payload) { return "Hello" }`,
 	}
-	_, _, err = functions.Process(map[string]interface{}{"key": 11}, 1)
+	_, _, err = functions.Encode(map[string]interface{}{"key": 11}, 1)
 	a.So(err, ShouldNotBeNil)
 
 	// Invalid return
 	functions = &CustomDownlinkFunctions{
 		Encoder: `function Encoder (payload) { return [ 100, 2256, 7 ] }`,
 	}
-	_, _, err = functions.Process(map[string]interface{}{"key": 11}, 1)
+	_, _, err = functions.Encode(map[string]interface{}{"key": 11}, 1)
 	a.So(err, ShouldNotBeNil)
 
 	// Invalid return
 	functions = &CustomDownlinkFunctions{
 		Encoder: `function Encoder (payload) { return [0, -1, "blablabla"] }`,
 	}
-	_, _, err = functions.Process(map[string]interface{}{"key": 11}, 1)
+	_, _, err = functions.Encode(map[string]interface{}{"key": 11}, 1)
 	a.So(err, ShouldNotBeNil)
 
 	// Invalid return
@@ -443,13 +287,13 @@ func TestProcessDownlinkInvalidFunction(t *testing.T) {
 	}
 } }`,
 	}
-	_, _, err = functions.Process(map[string]interface{}{"key": 11}, 1)
+	_, _, err = functions.Encode(map[string]interface{}{"key": 11}, 1)
 	a.So(err, ShouldNotBeNil)
 
 	functions = &CustomDownlinkFunctions{
 		Encoder: `function Encoder (payload) { return [ 1, 1.5 ] }`,
 	}
-	_, _, err = functions.Process(map[string]interface{}{"key": 11}, 1)
+	_, _, err = functions.Encode(map[string]interface{}{"key": 11}, 1)
 	a.So(err, ShouldNotBeNil)
 }
 
@@ -464,7 +308,7 @@ func TestEncodeCharCode(t *testing.T) {
 			});
 		}`,
 	}
-	val, _, err := functions.Process(map[string]interface{}{"key": 11}, 1)
+	val, _, err := functions.Encode(map[string]interface{}{"key": 11}, 1)
 	a.So(err, ShouldBeNil)
 
 	fmt.Println("VALUE", val)
