@@ -383,10 +383,10 @@ func (h *handlerManager) GetApplication(ctx context.Context, in *pb.ApplicationI
 
 	return &pb.Application{
 		AppId:     app.AppID,
-		Decoder:   app.Decoder,
-		Converter: app.Converter,
-		Validator: app.Validator,
-		Encoder:   app.Encoder,
+		Decoder:   app.CustomDecoder,
+		Converter: app.CustomConverter,
+		Validator: app.CustomValidator,
+		Encoder:   app.CustomEncoder,
 	}, nil
 }
 
@@ -454,10 +454,10 @@ func (h *handlerManager) SetApplication(ctx context.Context, in *pb.Application)
 
 	app.StartUpdate()
 
-	app.Decoder = in.Decoder
-	app.Converter = in.Converter
-	app.Validator = in.Validator
-	app.Encoder = in.Encoder
+	app.CustomDecoder = in.Decoder
+	app.CustomConverter = in.Converter
+	app.CustomValidator = in.Validator
+	app.CustomEncoder = in.Encoder
 
 	err = h.handler.applications.Set(app)
 	if err != nil {

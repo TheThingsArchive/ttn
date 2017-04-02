@@ -26,8 +26,8 @@ func TestApplicationStore(t *testing.T) {
 
 	// Create
 	app = &Application{
-		AppID:   appID,
-		Encoder: "encoder",
+		AppID:         appID,
+		CustomEncoder: "custom encoder",
 	}
 	err = s.Set(app)
 	defer func() {
@@ -39,13 +39,13 @@ func TestApplicationStore(t *testing.T) {
 	app, err = s.Get(appID)
 	a.So(err, ShouldBeNil)
 	a.So(app, ShouldNotBeNil)
-	a.So(app.Encoder, ShouldEqual, "encoder")
+	a.So(app.CustomEncoder, ShouldEqual, "custom encoder")
 
 	// Update
 	err = s.Set(&Application{
-		old:     app,
-		AppID:   appID,
-		Encoder: "new encoder",
+		old:           app,
+		AppID:         appID,
+		CustomEncoder: "new encoder",
 	})
 	a.So(err, ShouldBeNil)
 
@@ -53,7 +53,7 @@ func TestApplicationStore(t *testing.T) {
 	app, err = s.Get(appID)
 	a.So(err, ShouldBeNil)
 	a.So(app, ShouldNotBeNil)
-	a.So(app.Encoder, ShouldEqual, "new encoder")
+	a.So(app.CustomEncoder, ShouldEqual, "new encoder")
 
 	// List
 	apps, err := s.List(nil)

@@ -47,8 +47,8 @@ func TestConvertFieldsUp(t *testing.T) {
 
 	// Normal flow
 	app := &application.Application{
-		AppID:   appID,
-		Decoder: `function Decoder (data) { return { temperature: ((data[0] << 8) | data[1]) / 100 }; }`,
+		AppID:         appID,
+		CustomDecoder: `function Decoder (data) { return { temperature: ((data[0] << 8) | data[1]) / 100 }; }`,
 	}
 	a.So(h.applications.Set(app), ShouldBeNil)
 	defer func() {
@@ -64,7 +64,7 @@ func TestConvertFieldsUp(t *testing.T) {
 
 	// Invalidate data
 	app.StartUpdate()
-	app.Validator = `function Validator (data) { return false; }`
+	app.CustomValidator = `function Validator (data) { return false; }`
 	h.applications.Set(app)
 	ttnUp, appUp = buildConversionUplink(appID)
 	err = h.ConvertFieldsUp(GetLogger(t, "TestConvertFieldsUp"), ttnUp, appUp, nil)
@@ -73,7 +73,7 @@ func TestConvertFieldsUp(t *testing.T) {
 
 	// Function error
 	app.StartUpdate()
-	app.Validator = `function Validator (data) { throw new Error("expected"); }`
+	app.CustomValidator = `function Validator (data) { throw new Error("expected"); }`
 	h.applications.Set(app)
 	ttnUp, appUp = buildConversionUplink(appID)
 	err = h.ConvertFieldsUp(GetLogger(t, "TestConvertFieldsUp"), ttnUp, appUp, nil)
@@ -350,7 +350,7 @@ func TestConvertFieldsDown(t *testing.T) {
 	h.applications.Set(&application.Application{
 		AppID: appID,
 		// Encoder takes JSON fields as argument and return the payload as []byte
-		Encoder: `function Encoder (payload, port){
+		CustomEncoder: `function Encoder (payload, port){
   		return [ port, 1, 2, 3, 4, 5, 6, 7 ]
 		}`,
 	})
@@ -382,7 +382,7 @@ func TestConvertFieldsDownNoPort(t *testing.T) {
 	h.applications.Set(&application.Application{
 		AppID: appID,
 		// Encoder takes JSON fields as argument and return the payload as []byte
-		Encoder: `function Encoder (payload){
+		CustomEncoder: `function Encoder (payload){
   		return [ 1, 2, 3, 4, 5, 6, 7 ]
 		}`,
 	})

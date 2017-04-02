@@ -25,9 +25,9 @@ func (h *handler) ConvertFieldsUp(ctx ttnlog.Interface, _ *pb_broker.Deduplicate
 	}
 
 	functions := &UplinkFunctions{
-		Decoder:   app.Decoder,
-		Converter: app.Converter,
-		Validator: app.Validator,
+		Decoder:   app.CustomDecoder,
+		Converter: app.CustomConverter,
+		Validator: app.CustomValidator,
 		Logger:    functions.Ignore,
 	}
 
@@ -311,7 +311,7 @@ func (h *handler) ConvertFieldsDown(ctx ttnlog.Interface, appDown *types.Downlin
 	}
 
 	functions := &DownlinkFunctions{
-		Encoder: app.Encoder,
+		Encoder: app.CustomEncoder,
 		Logger:  functions.Ignore,
 	}
 
