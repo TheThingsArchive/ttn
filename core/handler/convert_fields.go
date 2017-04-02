@@ -6,13 +6,24 @@ package handler
 import (
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
+	"github.com/TheThingsNetwork/ttn/core/handler/application"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
 	"github.com/TheThingsNetwork/ttn/core/handler/functions"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 )
 
-// ConvertFieldsUp converts the payload to fields using payload functions
+// PayloadDecoder decodes raw payload to fields
+type PayloadDecoder interface {
+	Decode(payload []byte, fPort uint8) (map[string]interface{}, bool, error)
+}
+
+// PayloadEncoder encodes fields to raw payload
+type PayloadEncoder interface {
+	Encode(fields map[string]interface{}, fPort uint8) ([]byte, error)
+}
+
+// ConvertFieldsUp converts the payload to fields using the application's payload formatter
 func (h *handler) ConvertFieldsUp(ctx ttnlog.Interface, _ *pb_broker.DeduplicatedUplinkMessage, appUp *types.UplinkMessage, _ *device.Device) error {
 	// Find Application
 	app, err := h.applications.Get(appUp.AppID)
@@ -20,16 +31,21 @@ func (h *handler) ConvertFieldsUp(ctx ttnlog.Interface, _ *pb_broker.Deduplicate
 		return nil // Do not process if application not found
 	}
 
-	functions := &CustomUplinkFunctions{
-		Decoder:   app.CustomDecoder,
-		Converter: app.CustomConverter,
-		Validator: app.CustomValidator,
-		Logger:    functions.Ignore,
+	var decoder PayloadDecoder
+	switch app.PayloadFormat {
+	case "", application.PayloadFormatCustom:
+		decoder = &CustomUplinkFunctions{
+			Decoder:   app.CustomDecoder,
+			Converter: app.CustomConverter,
+			Validator: app.CustomValidator,
+			Logger:    functions.Ignore,
+		}
+	default:
+		return nil
 	}
 
-	fields, valid, err := functions.Process(appUp.PayloadRaw, appUp.FPort)
+	fields, valid, err := decoder.Decode(appUp.PayloadRaw, appUp.FPort)
 	if err != nil {
-
 		// Emit the error
 		h.mqttEvent <- &types.DeviceEvent{
 			AppID: appUp.AppID,
@@ -39,7 +55,7 @@ func (h *handler) ConvertFieldsUp(ctx ttnlog.Interface, _ *pb_broker.Deduplicate
 		}
 
 		// Do not set fields if processing failed, but allow the handler to continue processing
-		// without payload functions
+		// without payload formatting
 		return nil
 	}
 
@@ -64,20 +80,26 @@ func (h *handler) ConvertFieldsDown(ctx ttnlog.Interface, appDown *types.Downlin
 
 	app, err := h.applications.Get(appDown.AppID)
 	if err != nil {
+		return err
+	}
+
+	var encoder PayloadEncoder
+	switch app.PayloadFormat {
+	case "", application.PayloadFormatCustom:
+		encoder = &CustomDownlinkFunctions{
+			Encoder: app.CustomEncoder,
+			Logger:  functions.Ignore,
+		}
+	default:
 		return nil
 	}
 
-	functions := &CustomDownlinkFunctions{
-		Encoder: app.CustomEncoder,
-		Logger:  functions.Ignore,
-	}
-
-	message, _, err := functions.Process(appDown.PayloadFields, appDown.FPort)
+	raw, _, err := encoder.Encode(appDown.PayloadFields, appDown.FPort)
 	if err != nil {
 		return err
 	}
 
-	appDown.PayloadRaw = message
+	appDown.PayloadRaw = raw
 
 	return nil
 }

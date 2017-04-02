@@ -127,8 +127,8 @@ func (f *UplinkFunctions) Validate(fields map[string]interface{}, port uint8) (b
 	return value.ToBoolean()
 }
 
-// Process decodes the specified payload, converts it and test the validity
-func (f *UplinkFunctions) Process(payload []byte, port uint8) (map[string]interface{}, bool, error) {
+// Decode decodes the specified payload, converts it and tests the validity
+func (f *UplinkFunctions) Decode(payload []byte, port uint8) (map[string]interface{}, bool, error) {
 	decoded, err := f.Decode(payload, port)
 	if err != nil {
 		return nil, false, err
@@ -241,8 +241,8 @@ func (f *DownlinkFunctions) Encode(payload map[string]interface{}, port uint8) (
 	return res, nil
 }
 
-// Process encode the specified field, converts it into a valid payload
-func (f *DownlinkFunctions) Process(payload map[string]interface{}, port uint8) ([]byte, bool, error) {
+// Encode encodes the specified field, converts it into a valid payload
+func (f *DownlinkFunctions) Encode(payload map[string]interface{}, port uint8) ([]byte, bool, error) {
 	encoded, err := f.Encode(payload, port)
 	if err != nil {
 		return nil, false, err
