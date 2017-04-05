@@ -8,7 +8,7 @@ import (
 	redis "gopkg.in/redis.v5"
 )
 
-// AddPayloadFormat migration from 2.4.1 to 2.6.1
+// AddPayloadFormat migration from 2.0.0 to 2.6.1
 func AddPayloadFormat(prefix string) storage.MigrateFunction {
 	return func(client *redis.Client, key string, obj map[string]string) (string, map[string]string, error) {
 		any := false
@@ -40,5 +40,5 @@ func AddPayloadFormat(prefix string) storage.MigrateFunction {
 }
 
 func init() {
-	applicationMigrations["2.6.1"] = AddVersion
+	applicationMigrations["2.4.1"] = AddPayloadFormat
 }

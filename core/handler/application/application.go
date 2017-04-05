@@ -10,7 +10,7 @@ import (
 	"github.com/fatih/structs"
 )
 
-const currentDBVersion = "2.4.1"
+const currentDBVersion = "2.6.1"
 
 // PayloadFormat indicates how payload is binary formatted
 type PayloadFormat string
