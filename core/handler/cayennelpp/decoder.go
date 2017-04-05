@@ -7,12 +7,15 @@ import (
 	"bytes"
 
 	protocol "github.com/TheThingsNetwork/go-cayenne-lib/cayennelpp"
+	pb_handler "github.com/TheThingsNetwork/ttn/api/handler"
 )
 
+// Decoder is a CayenneLPP PayloadDecoder
 type Decoder struct {
 	result map[string]interface{}
 }
 
+// Decodes decodes the CayenneLPP payload to fields
 func (d *Decoder) Decode(payload []byte, fPort uint8) (map[string]interface{}, bool, error) {
 	decoder := protocol.NewDecoder(bytes.NewBuffer(payload))
 	d.result = make(map[string]interface{})
@@ -20,6 +23,11 @@ func (d *Decoder) Decode(payload []byte, fPort uint8) (map[string]interface{}, b
 		return nil, false, err
 	}
 	return d.result, true, nil
+}
+
+// Log returns the log
+func (d *Decoder) Log() []*pb_handler.LogEntry {
+	return nil
 }
 
 func (d *Decoder) DigitalInput(channel, value uint8) {
