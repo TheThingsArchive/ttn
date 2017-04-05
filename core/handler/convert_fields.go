@@ -6,6 +6,7 @@ package handler
 import (
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
+	pb_handler "github.com/TheThingsNetwork/ttn/api/handler"
 	"github.com/TheThingsNetwork/ttn/core/handler/application"
 	"github.com/TheThingsNetwork/ttn/core/handler/cayennelpp"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
@@ -17,11 +18,13 @@ import (
 // PayloadDecoder decodes raw payload to fields
 type PayloadDecoder interface {
 	Decode(payload []byte, fPort uint8) (map[string]interface{}, bool, error)
+	Log() []*pb_handler.LogEntry
 }
 
 // PayloadEncoder encodes fields to raw payload
 type PayloadEncoder interface {
 	Encode(fields map[string]interface{}, fPort uint8) ([]byte, bool, error)
+	Log() []*pb_handler.LogEntry
 }
 
 // ConvertFieldsUp converts the payload to fields using the application's payload formatter

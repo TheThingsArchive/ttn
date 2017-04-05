@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"time"
 
+	pb_handler "github.com/TheThingsNetwork/ttn/api/handler"
 	"github.com/TheThingsNetwork/ttn/core/handler/functions"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 )
@@ -143,6 +144,11 @@ func (f *CustomUplinkFunctions) Decode(payload []byte, port uint8) (map[string]i
 	return converted, valid, err
 }
 
+// Log returns the log
+func (f *CustomUplinkFunctions) Log() []*pb_handler.LogEntry {
+	return f.Logger.Entries()
+}
+
 // CustomDownlinkFunctions encodes payload using JavaScript functions
 type CustomDownlinkFunctions struct {
 	// Encoder is a JavaScript function that accepts the payload as JSON and
@@ -249,4 +255,9 @@ func (f *CustomDownlinkFunctions) Encode(payload map[string]interface{}, port ui
 	}
 
 	return encoded, true, nil
+}
+
+// Log returns the log
+func (f *CustomDownlinkFunctions) Log() []*pb_handler.LogEntry {
+	return f.Logger.Entries()
 }

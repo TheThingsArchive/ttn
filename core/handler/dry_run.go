@@ -7,6 +7,8 @@ import (
 	"encoding/json"
 
 	pb "github.com/TheThingsNetwork/ttn/api/handler"
+	"github.com/TheThingsNetwork/ttn/core/handler/application"
+	"github.com/TheThingsNetwork/ttn/core/handler/cayennelpp"
 	"github.com/TheThingsNetwork/ttn/core/handler/functions"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
@@ -18,17 +20,23 @@ import (
 func (h *handlerManager) DryUplink(ctx context.Context, in *pb.DryUplinkMessage) (*pb.DryUplinkResult, error) {
 	app := in.App
 
-	logger := functions.NewEntryLogger()
-
 	flds := ""
 	valid := true
+	var logs []*pb.LogEntry
 	if app != nil {
 		var decoder PayloadDecoder
-		decoder = &CustomUplinkFunctions{
-			Decoder:   app.Decoder,
-			Converter: app.Converter,
-			Validator: app.Validator,
-			Logger:    logger,
+		switch application.PayloadFormat(in.App.PayloadFormat) {
+		case "", application.PayloadFormatCustom:
+			decoder = &CustomUplinkFunctions{
+				Decoder:   app.Decoder,
+				Converter: app.Converter,
+				Validator: app.Validator,
+				Logger:    functions.NewEntryLogger(),
+			}
+		case application.PayloadFormatCayenneLPP:
+			decoder = &cayennelpp.Decoder{}
+		default:
+			return nil, errors.NewErrInvalidArgument("App", "unknown payload format")
 		}
 
 		fields, val, err := decoder.Decode(in.Payload, uint8(in.Port))
@@ -37,6 +45,7 @@ func (h *handlerManager) DryUplink(ctx context.Context, in *pb.DryUplinkMessage)
 		}
 
 		valid = val
+		logs = decoder.Log()
 
 		marshalled, err := json.Marshal(fields)
 		if err != nil {
@@ -50,7 +59,7 @@ func (h *handlerManager) DryUplink(ctx context.Context, in *pb.DryUplinkMessage)
 		Payload: in.Payload,
 		Fields:  flds,
 		Valid:   valid,
-		Logs:    logger.Logs,
+		Logs:    logs,
 	}, nil
 }
 
@@ -73,16 +82,21 @@ func (h *handlerManager) DryDownlink(ctx context.Context, in *pb.DryDownlinkMess
 		return nil, errors.NewErrInvalidArgument("Downlink", "Neither Fields nor Payload provided")
 	}
 
-	if app == nil || app.Encoder == "" {
-		return nil, errors.NewErrInvalidArgument("Encoder", "Not specified")
+	if app == nil {
+		return nil, errors.NewErrInvalidArgument("App", "Not specified")
 	}
 
-	logger := functions.NewEntryLogger()
-
 	var encoder PayloadEncoder
-	encoder = &CustomDownlinkFunctions{
-		Encoder: app.Encoder,
-		Logger:  logger,
+	switch application.PayloadFormat(in.App.PayloadFormat) {
+	case "", application.PayloadFormatCustom:
+		encoder = &CustomDownlinkFunctions{
+			Encoder: app.Encoder,
+			Logger:  functions.NewEntryLogger(),
+		}
+	case application.PayloadFormatCayenneLPP:
+		encoder = &cayennelpp.Encoder{}
+	default:
+		return nil, errors.NewErrInvalidArgument("App", "unknown payload format")
 	}
 
 	var parsed map[string]interface{}
@@ -98,6 +112,6 @@ func (h *handlerManager) DryDownlink(ctx context.Context, in *pb.DryDownlinkMess
 
 	return &pb.DryDownlinkResult{
 		Payload: payload,
-		Logs:    logger.Logs,
+		Logs:    encoder.Log(),
 	}, nil
 }
