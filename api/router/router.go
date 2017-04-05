@@ -184,6 +184,7 @@ func (c *Client) NewGatewayStreams(id string, token string, downlinkActive bool)
 	// Hook up the router servers
 	for _, server := range c.serverConns {
 		wg.Add(1)
+		wgDown.Add(1)
 		go func(server *serverConn) {
 			if server.ready != nil {
 				select {
@@ -247,7 +248,6 @@ func (c *Client) NewGatewayStreams(id string, token string, downlinkActive bool)
 
 			// Downlink stream
 			if downlinkActive {
-				wgDown.Add(1)
 				downlink, err := cli.Subscribe(ctx, &SubscribeRequest{})
 				if err != nil {
 					log.WithError(err).Warn("Could not set up Subscribe stream")
