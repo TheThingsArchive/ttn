@@ -185,7 +185,26 @@ func (c *Client) NewGatewayStreams(id string, token string, downlinkActive bool)
 	for _, server := range c.serverConns {
 		wg.Add(1)
 		wgDown.Add(1)
+
+		// Stream channels
+		chUplink := make(chan *UplinkMessage, c.config.BufferSize)
+		chStatus := make(chan *gateway.Status, c.config.BufferSize)
+
+		s.mu.Lock()
+		s.uplink[server.name] = chUplink
+		s.status[server.name] = chStatus
+		s.mu.Unlock()
+
 		go func(server *serverConn) {
+			defer func() {
+				s.mu.Lock()
+				defer s.mu.Unlock()
+				delete(s.uplink, server.name)
+				delete(s.status, server.name)
+				close(chUplink)
+				close(chStatus)
+			}()
+
 			if server.ready != nil {
 				select {
 				case <-ctx.Done():
@@ -216,27 +235,14 @@ func (c *Client) NewGatewayStreams(id string, token string, downlinkActive bool)
 				}
 			}
 
-			// Stream channels
-			chUplink := make(chan *UplinkMessage, c.config.BufferSize)
-			chStatus := make(chan *gateway.Status, c.config.BufferSize)
-
-			defer func() {
-				s.mu.Lock()
-				defer s.mu.Unlock()
-				delete(s.uplink, server.name)
-				delete(s.status, server.name)
-				close(chUplink)
-				close(chStatus)
-			}()
-
 			// Uplink stream
 			uplink, err := cli.Uplink(ctx)
 			if err != nil {
 				log.WithError(err).Warn("Could not set up Uplink stream")
-			} else {
 				s.mu.Lock()
-				s.uplink[server.name] = chUplink
+				delete(s.uplink, server.name)
 				s.mu.Unlock()
+			} else {
 				go func() {
 					err := uplink.RecvMsg(new(empty.Empty))
 					logStreamErr("Uplink", err)
@@ -277,10 +283,10 @@ func (c *Client) NewGatewayStreams(id string, token string, downlinkActive bool)
 			status, err := cli.GatewayStatus(ctx)
 			if err != nil {
 				log.WithError(err).Warn("Could not set up GatewayStatus stream")
-			} else {
 				s.mu.Lock()
-				s.status[server.name] = chStatus
+				delete(s.status, server.name)
 				s.mu.Unlock()
+			} else {
 				go func() {
 					err := status.RecvMsg(new(empty.Empty))
 					logStreamErr("GatewayStatus", err)
