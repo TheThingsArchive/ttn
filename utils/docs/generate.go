@@ -60,7 +60,7 @@ func Generate(cmd *cobra.Command) string {
 func genCmdList(cmd *cobra.Command) (cmds []*cobra.Command) {
 	cmds = append(cmds, cmd)
 	for _, c := range cmd.Commands() {
-		if !c.IsAvailableCommand() || c.IsHelpCommand() {
+		if !c.IsAvailableCommand() || c.IsAdditionalHelpTopicCommand() {
 			continue
 		}
 		cmds = append(cmds, genCmdList(c)...)
