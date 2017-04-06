@@ -17,9 +17,9 @@ type PayloadFormat string
 
 const (
 	// PayloadFormatCustom indicates that the payload has a custom binary format
-	PayloadFormatCustom = PayloadFormat("custom")
+	PayloadFormatCustom PayloadFormat = "custom"
 	// PayloadFormatCayenneLPP indicates that the payload is formatted as CayenneLPP
-	PayloadFormatCayenneLPP = PayloadFormat("cayennelpp")
+	PayloadFormatCayenneLPP PayloadFormat = "cayennelpp"
 )
 
 // Application contains the state of an application

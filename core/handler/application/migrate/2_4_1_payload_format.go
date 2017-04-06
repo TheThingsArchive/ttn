@@ -8,34 +8,34 @@ import (
 	redis "gopkg.in/redis.v5"
 )
 
-// AddPayloadFormat migration from 2.0.0 to 2.6.1
+// AddPayloadFormat migration from 2.4.1 to 2.6.1
 func AddPayloadFormat(prefix string) storage.MigrateFunction {
 	return func(client *redis.Client, key string, obj map[string]string) (string, map[string]string, error) {
-		any := false
+		usesCustom := false
 		if decoder, ok := obj["decoder"]; ok {
 			delete(obj, "decoder")
 			obj["custom_decoder"] = decoder
-			any = true
+			usesCustom = true
 		}
 		if converter, ok := obj["converter"]; ok {
 			delete(obj, "converter")
 			obj["custom_converter"] = converter
-			any = true
+			usesCustom = true
 		}
 		if validator, ok := obj["validator"]; ok {
 			delete(obj, "validator")
 			obj["custom_validator"] = validator
-			any = true
+			usesCustom = true
 		}
 		if encoder, ok := obj["encoder"]; ok {
 			delete(obj, "encoder")
 			obj["custom_encoder"] = encoder
-			any = true
+			usesCustom = true
 		}
-		if any {
+		if usesCustom {
 			obj["payload_format"] = "custom"
 		}
-		return "2.6.2", obj, nil
+		return "2.6.1", obj, nil
 	}
 }
 
