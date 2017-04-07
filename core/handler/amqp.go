@@ -70,11 +70,10 @@ func (h *handler) HandleAMQP(username, password, host, exchange, downlinkQueue s
 	if err != nil {
 		return err
 	}
-	go h.amqp()
-	return nil
+	return h.ampq()
 }
 
-func (h *handler) amqp() error {
+func (h *handler) ampq() error {
 	ctx := h.Ctx.WithField("Protocol", "AMQP")
 	publisher := h.amqpClient.NewPublisher(h.amqpExchange)
 	err := publisher.Open()
