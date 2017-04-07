@@ -70,6 +70,7 @@ type handler struct {
 	amqpExchange string
 	amqpEnabled  bool
 	amqpUp       chan *types.UplinkMessage
+	amqpEvent    chan *types.DeviceEvent
 
 	status        *status
 	monitorStream pb_monitor.GenericStream

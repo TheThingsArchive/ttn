@@ -49,6 +49,7 @@ func (h *handler) HandleAMQP(username, password, host, exchange, downlinkQueue s
 	}
 
 	h.amqpUp = make(chan *types.UplinkMessage)
+	h.amqpEvent = make(chan *types.DeviceEvent)
 
 	subscriber := h.amqpClient.NewSubscriber(h.amqpExchange, downlinkQueue, downlinkQueue != "", downlinkQueue == "")
 	err = subscriber.Open()
@@ -66,29 +67,49 @@ func (h *handler) HandleAMQP(username, password, host, exchange, downlinkQueue s
 	if err != nil {
 		return err
 	}
+	return h.ampq()
+}
 
+func (h *handler) ampq() error {
 	ctx := h.Ctx.WithField("Protocol", "AMQP")
-
-	go func() {
-		publisher := h.amqpClient.NewPublisher(h.amqpExchange)
-		err := publisher.Open()
-		if err != nil {
-			ctx.WithError(err).Error("Could not open publisher channel")
-			return
-		}
-		defer publisher.Close()
-
-		for up := range h.amqpUp {
-			ctx.WithFields(ttnlog.Fields{
-				"DevID": up.DevID,
-				"AppID": up.AppID,
-			}).Debug("Publish Uplink")
-			err := publisher.PublishUplink(*up)
-			if err != nil {
-				ctx.WithError(err).Warn("Could not publish Uplink")
-			}
-		}
-	}()
-
+	publisher := h.amqpClient.NewPublisher(h.amqpExchange)
+	err := publisher.Open()
+	if err != nil {
+		ctx.WithError(err).Error("Could not open publisher channel")
+		return err
+	}
+	defer publisher.Close()
+	go h.amqpUplink(ctx, publisher)
+	h.amqpEvt(ctx, publisher)
 	return nil
+}
+
+func (h *handler) amqpUplink(ctx ttnlog.Interface, publisher amqp.Publisher) {
+
+	for up := range h.amqpUp {
+		ctx.WithFields(ttnlog.Fields{
+			"DevID": up.DevID,
+			"AppID": up.AppID,
+		}).Debug("Publish Uplink")
+		err := publisher.PublishUplink(*up)
+		if err != nil {
+			ctx.WithError(err).Warn("Could not publish Uplink")
+		}
+	}
+}
+
+func (h *handler) amqpEvt(ctx ttnlog.Interface, publisher amqp.Publisher) {
+
+	for event := range h.amqpEvent {
+		h.Ctx.WithFields(ttnlog.Fields{
+			"DevID": event.DevID,
+			"AppID": event.AppID,
+			"Event": event.Event,
+		}).Debug("Publish Event on AMQP")
+		if event.DevID == "" {
+			publisher.PublishAppEvent(event.AppID, event.Event, event.Data)
+		} else {
+			publisher.PublishDeviceEvent(event.AppID, event.DevID, event.Event, event.Data)
+		}
+	}
 }

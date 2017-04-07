@@ -6,6 +6,7 @@ package amqp
 import (
 	"fmt"
 
+	"github.com/TheThingsNetwork/ttn/core/types"
 	AMQP "github.com/streadway/amqp"
 )
 
@@ -32,6 +33,9 @@ type Subscriber interface {
 	SubscribeDeviceDownlink(appID, devID string, handler DownlinkHandler) error
 	SubscribeAppDownlink(appID string, handler DownlinkHandler) error
 	SubscribeDownlink(handler DownlinkHandler) error
+
+	SubscribeDeviceEvents(appID string, devID string, eventType types.EventType, handler DeviceEventHandler) error
+	SubscribeAppEvents(appID string, eventType types.EventType, handler AppEventHandler) error
 }
 
 // DefaultSubscriber represents the default AMQP subscriber
