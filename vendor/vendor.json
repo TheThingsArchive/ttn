@@ -81,10 +81,10 @@
 			"revisionTime": "2017-03-16T12:49:24Z"
 		},
 		{
-			"checksumSHA1": "siLZloo1RL8UkJkdLa0RwhGBO+8=",
+			"checksumSHA1": "VH6wzyJQZ7HqAzsw3rzn6b9QlKE=",
 			"path": "github.com/TheThingsNetwork/go-cayenne-lib/cayennelpp",
-			"revision": "0a0558681eb97eaaf72ca58aca0c0aad6a34a2c2",
-			"revisionTime": "2017-04-02T18:05:12Z"
+			"revision": "a55c4ace96e99ae2d5e2b962192c489f081e493c",
+			"revisionTime": "2017-04-07T12:33:01Z"
 		},
 		{
 			"checksumSHA1": "x795Q87cyvAAeuxXxft5iwd1Los=",
