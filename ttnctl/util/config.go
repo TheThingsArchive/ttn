@@ -9,11 +9,11 @@ import (
 	"os"
 	"path"
 
-	yaml "gopkg.in/yaml.v2"
-
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
+	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/spf13/viper"
+	yaml "gopkg.in/yaml.v2"
 )
 
 const (
@@ -160,7 +160,7 @@ func GetAppEUI(ctx ttnlog.Interface) types.AppEUI {
 	return eui
 }
 
-// SetApp stores the app EUI preference
+// SetAppEUI stores the app EUI preference
 func SetAppEUI(ctx ttnlog.Interface, appEUI types.AppEUI) {
 	err := setData(appFilename, euiKey, appEUI.String())
 	if err != nil {
@@ -181,8 +181,13 @@ func GetAppID(ctx ttnlog.Interface) string {
 	}
 
 	if appID == "" {
-		ctx.Fatal("Missing AppID. You should select an application to use with \"ttnctl applications select\"")
+		ctx.Fatal("Missing Application ID. You should select an application to use with \"ttnctl applications select\"")
 	}
+
+	if err := api.NotEmptyAndValidID(appID, "Application ID"); err != nil {
+		ctx.Fatal(err.Error())
+	}
+
 	return appID
 }
 

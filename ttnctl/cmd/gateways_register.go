@@ -4,6 +4,8 @@
 package cmd
 
 import (
+	"strings"
+
 	"github.com/TheThingsNetwork/go-account-lib/account"
 	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
@@ -20,9 +22,9 @@ var gatewaysRegisterCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		assertArgsLength(cmd, args, 2, 3)
 
-		gatewayID := args[0]
-		if !api.ValidID(gatewayID) {
-			ctx.Fatal("Invalid Gateway ID")
+		gatewayID := strings.ToLower(args[0])
+		if err := api.NotEmptyAndValidID(gatewayID, "Gateway ID"); err != nil {
+			ctx.Fatal(err.Error())
 		}
 
 		frequencyPlan := args[1]

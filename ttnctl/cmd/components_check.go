@@ -4,6 +4,7 @@
 package cmd
 
 import (
+	"strings"
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/api"
@@ -21,16 +22,16 @@ var checkCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		assertArgsLength(cmd, args, 2, 2)
 
-		serviceType := args[0]
+		serviceType := strings.ToLower(args[0])
 		switch serviceType {
 		case "router", "broker", "handler":
 		default:
 			ctx.Fatalf("Service type %s unknown", serviceType)
 		}
 
-		serviceID := args[1]
-		if !api.ValidID(serviceID) {
-			ctx.Fatalf("Service ID %s invalid", serviceID)
+		serviceID := strings.ToLower(args[1])
+		if err := api.NotEmptyAndValidID(serviceID, "Service ID"); err != nil {
+			ctx.Fatal(err.Error())
 		}
 
 		dscConn, client := util.GetDiscovery(ctx)
