@@ -18,8 +18,14 @@ type DeviceEventHandler func(sub Subscriber, appID string, devID string, eventTy
 
 // PublishAppEvent publishes an event to the topic for application events of the given type
 // it will marshal the payload to json
-func (c *DefaultPublisher) PublishAppEvent(appID string, eventType types.EventType, payload interface{}) {
-	c.ctx.Info("APP EVENT")
+func (c *DefaultPublisher) PublishAppEvent(appID string, eventType types.EventType, payload interface{}) error {
+	key := ApplicationKey{appID, AppEvents, string(eventType)}
+	msg, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("Unable to marshal the message payload")
+	}
+	c.publish(key.String(), msg, time.Now())
+	return nil
 }
 
 // PublishDeviceEvent publishes an event to the topic for device events of the given type

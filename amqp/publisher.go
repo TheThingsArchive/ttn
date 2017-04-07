@@ -17,7 +17,7 @@ type Publisher interface {
 	PublishUplink(dataUp types.UplinkMessage) error
 	PublishDownlink(dataDown types.DownlinkMessage) error
 	PublishDeviceEvent(appID string, devID string, eventType types.EventType, payload interface{}) error
-	PublishAppEvent(appID string, eventType types.EventType, payload interface{})
+	PublishAppEvent(appID string, eventType types.EventType, payload interface{}) error
 }
 
 // DefaultPublisher represents the default AMQP publisher

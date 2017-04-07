@@ -38,8 +38,9 @@ func TestPublishSubscribeAppEvents(t *testing.T) {
 			wg.Done()
 		})
 	a.So(err, ShouldBeNil)
-	p.PublishDeviceEvent("app-id", "dev-id", "some-event", "payload")
-	wg.WaitFor(time.Millisecond * 100)
+	p.PublishAppEvent("app-id", "some-event", "payload")
+	err = wg.WaitFor(time.Millisecond * 100)
+	a.So(err, ShouldBeNil)
 }
 
 func TestPublishSubscribeDeviceEvents(t *testing.T) {
@@ -71,5 +72,6 @@ func TestPublishSubscribeDeviceEvents(t *testing.T) {
 		})
 	a.So(err, ShouldBeNil)
 	p.PublishDeviceEvent("app-id", "dev-id", "some-event", "payload")
-	wg.WaitFor(time.Millisecond * 100)
+	err = wg.WaitFor(time.Millisecond * 200)
+	a.So(err, ShouldBeNil)
 }

@@ -70,10 +70,11 @@ func (h *handler) HandleAMQP(username, password, host, exchange, downlinkQueue s
 	if err != nil {
 		return err
 	}
-	return h.ampq()
+	go h.amqp()
+	return nil
 }
 
-func (h *handler) ampq() error {
+func (h *handler) amqp() error {
 	ctx := h.Ctx.WithField("Protocol", "AMQP")
 	publisher := h.amqpClient.NewPublisher(h.amqpExchange)
 	err := publisher.Open()
@@ -82,37 +83,43 @@ func (h *handler) ampq() error {
 		return err
 	}
 	defer publisher.Close()
-	go h.amqpUplink(ctx, publisher)
-	h.amqpEvt(ctx, publisher)
+	for {
+		select {
+		case up := <-h.amqpUp:
+			{
+				h.amqpUplink(ctx, publisher, up)
+			}
+		case evt := <-h.amqpEvent:
+			{
+				h.amqpEvt(ctx, publisher, evt)
+			}
+		}
+	}
 	return nil
 }
 
-func (h *handler) amqpUplink(ctx ttnlog.Interface, publisher amqp.Publisher) {
+func (h *handler) amqpUplink(ctx ttnlog.Interface, publisher amqp.Publisher, up *types.UplinkMessage) {
 
-	for up := range h.amqpUp {
-		ctx.WithFields(ttnlog.Fields{
-			"DevID": up.DevID,
-			"AppID": up.AppID,
-		}).Debug("Publish Uplink")
-		err := publisher.PublishUplink(*up)
-		if err != nil {
-			ctx.WithError(err).Warn("Could not publish Uplink")
-		}
+	ctx.WithFields(ttnlog.Fields{
+		"DevID": up.DevID,
+		"AppID": up.AppID,
+	}).Debug("Publish Uplink")
+	err := publisher.PublishUplink(*up)
+	if err != nil {
+		ctx.WithError(err).Warn("Could not publish Uplink")
 	}
 }
 
-func (h *handler) amqpEvt(ctx ttnlog.Interface, publisher amqp.Publisher) {
+func (h *handler) amqpEvt(ctx ttnlog.Interface, publisher amqp.Publisher, event *types.DeviceEvent) {
 
-	for event := range h.amqpEvent {
-		h.Ctx.WithFields(ttnlog.Fields{
-			"DevID": event.DevID,
-			"AppID": event.AppID,
-			"Event": event.Event,
-		}).Debug("Publish Event on AMQP")
-		if event.DevID == "" {
-			publisher.PublishAppEvent(event.AppID, event.Event, event.Data)
-		} else {
-			publisher.PublishDeviceEvent(event.AppID, event.DevID, event.Event, event.Data)
-		}
+	h.Ctx.WithFields(ttnlog.Fields{
+		"DevID": event.DevID,
+		"AppID": event.AppID,
+		"Event": event.Event,
+	}).Debug("Publish Event on AMQP")
+	if event.DevID == "" {
+		publisher.PublishAppEvent(event.AppID, event.Event, event.Data)
+	} else {
+		publisher.PublishDeviceEvent(event.AppID, event.DevID, event.Event, event.Data)
 	}
 }
