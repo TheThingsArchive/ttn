@@ -6,6 +6,7 @@ package stats
 import (
 	"os"
 	"runtime"
+	"sync"
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/api"
@@ -17,6 +18,35 @@ import (
 
 var startTime = time.Now()
 
+var percentMu sync.RWMutex
+var cpuPercentage float64
+var processPercentage float64
+
+func init() {
+	go func() {
+		for {
+			if cpu, err := cpu.Percent(10*time.Second, false); err == nil && len(cpu) == 1 {
+				percentMu.Lock()
+				cpuPercentage = cpu[0]
+				percentMu.Unlock()
+			}
+		}
+	}()
+	go func() {
+		process, err := process.NewProcess(int32(os.Getpid()))
+		if err != nil {
+			return
+		}
+		for {
+			if cpu, err := process.Percent(10 * time.Second); err == nil {
+				percentMu.Lock()
+				processPercentage = cpu
+				percentMu.Unlock()
+			}
+		}
+	}()
+}
+
 // GetSystem gets statistics about the system
 func GetSystem() *api.SystemStats {
 	status := new(api.SystemStats)
@@ -27,12 +57,13 @@ func GetSystem() *api.SystemStats {
 			Load15: float32(load.Load15),
 		}
 	}
+	status.Cpu = &api.SystemStats_CPUStats{
+		Percentage: float32(cpuPercentage),
+	}
 	if cpu, err := cpu.Times(false); err == nil && len(cpu) == 1 {
-		status.Cpu = &api.SystemStats_CPUStats{
-			User:   float32(cpu[0].User),
-			System: float32(cpu[0].System),
-			Idle:   float32(cpu[0].Idle),
-		}
+		status.Cpu.User = float32(cpu[0].User)
+		status.Cpu.System = float32(cpu[0].System)
+		status.Cpu.Idle = float32(cpu[0].Idle)
 	}
 	if mem, err := mem.VirtualMemory(); err == nil {
 		status.Memory = &api.SystemStats_MemoryStats{
@@ -56,12 +87,13 @@ func GetComponent() *api.ComponentStats {
 				Swap:   memory.Swap,
 			}
 		}
+		status.Cpu = &api.ComponentStats_CPUStats{
+			Percentage: float32(processPercentage),
+		}
 		if cpu, err := process.Times(); err == nil {
-			status.Cpu = &api.ComponentStats_CPUStats{
-				User:   float32(cpu.User),
-				System: float32(cpu.System),
-				Idle:   float32(cpu.Idle),
-			}
+			status.Cpu.User = float32(cpu.User)
+			status.Cpu.System = float32(cpu.System)
+			status.Cpu.Idle = float32(cpu.Idle)
 		}
 	}
 	status.Goroutines = uint64(runtime.NumGoroutine())

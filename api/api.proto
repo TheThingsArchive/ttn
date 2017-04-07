@@ -36,6 +36,7 @@ message SystemStats {
     float user   = 1;
     float system = 2;
     float idle   = 3;
+    float percentage = 4;
   }
   CPUStats cpu = 2;
   message MemoryStats {
@@ -52,6 +53,7 @@ message ComponentStats {
     float user   = 1;
     float system = 2;
     float idle   = 3;
+    float percentage = 4;
   }
   CPUStats cpu = 2;
   message MemoryStats {

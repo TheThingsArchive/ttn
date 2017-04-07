@@ -13,6 +13,7 @@ import (
 	"runtime/pprof"
 	"time"
 
+	"github.com/TheThingsNetwork/ttn/api/stats"
 	"github.com/spf13/cobra"
 )
 
@@ -32,6 +33,9 @@ func initPprof() {
 			}
 			ioutil.WriteFile("/tmp/ttn.mem.prof", buf.Bytes(), 0644)
 			buf.Reset()
+
+			ctx.WithField("ComponentStats", stats.GetComponent()).Debug("Stats")
+
 			time.Sleep(time.Minute)
 		}
 	}()
