@@ -19,7 +19,7 @@ type hasDBVersion interface {
 }
 
 // MigrateFunction migrates data from its old version to the latest
-type MigrateFunction func(client *redis.Client, key string, input map[string]string) (version string, output map[string]string, err error)
+type MigrateFunction func(client *redis.Client, key string, input map[string]string) (nextVersion string, output map[string]string, err error)
 
 // AddMigration adds a data migration for a version
 func (s *RedisMapStore) AddMigration(version string, migrate MigrateFunction) {

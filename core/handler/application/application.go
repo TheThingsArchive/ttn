@@ -10,25 +10,41 @@ import (
 	"github.com/fatih/structs"
 )
 
-const currentDBVersion = "2.4.1"
+const currentDBVersion = "2.6.1"
+
+// PayloadFormat indicates how payload is binary formatted
+type PayloadFormat string
+
+const (
+	// PayloadFormatCustom indicates that the payload has a custom binary format
+	PayloadFormatCustom PayloadFormat = "custom"
+	// PayloadFormatCayenneLPP indicates that the payload is formatted as CayenneLPP
+	PayloadFormatCayenneLPP PayloadFormat = "cayennelpp"
+)
 
 // Application contains the state of an application
 type Application struct {
 	old *Application
 
 	AppID string `redis:"app_id"`
-	// Decoder is a JavaScript function that accepts the payload as byte array and
-	// returns an object containing the decoded values
-	Decoder string `redis:"decoder"`
-	// Converter is a JavaScript function that accepts the data as decoded by
-	// Decoder and returns an object containing the converted values
-	Converter string `redis:"converter"`
-	// Validator is a JavaScript function that validates the data is converted by
-	// Converter and returns a boolean value indicating the validity of the data
-	Validator string `redis:"validator"`
-	// Encoder is a JavaScript function that encode the data send on Downlink messages
-	// Returns an object containing the converted values in []byte
-	Encoder string `redis:"encoder"`
+	// PayloadFormat indicates how payload is binary formatted
+	PayloadFormat PayloadFormat `redis:"payload_format"`
+	// CustomDecoder is a JavaScript function that accepts the payload as byte array and
+	// returns an object containing the decoded values when the PayloadFormat is set to
+	// PayloadFormatCustom
+	CustomDecoder string `redis:"custom_decoder"`
+	// CustomConverter is a JavaScript function that accepts the data as decoded by
+	// Decoder and returns an object containing the converted values when the PayloadFormat
+	// is set to PayloadFormatCustom
+	CustomConverter string `redis:"custom_converter"`
+	// CustomValidator is a JavaScript function that validates the data is converted by
+	// Converter and returns a boolean value indicating the validity of the data when the
+	// PayloadFormat is set to PayloadFormatCustom
+	CustomValidator string `redis:"custom_validator"`
+	// CustomEncoder is a JavaScript function that encode the data send on Downlink messages
+	// Returns an object containing the converted values in []byte when the PayloadFormat is
+	// set to PayloadFormatCustom
+	CustomEncoder string `redis:"custom_encoder"`
 
 	CreatedAt time.Time `redis:"created_at"`
 	UpdatedAt time.Time `redis:"updated_at"`

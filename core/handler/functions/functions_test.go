@@ -34,7 +34,7 @@ func TestRunCode(t *testing.T) {
 	a.So(err, ShouldBeNil)
 	e, _ := val.Export()
 	a.So(e, ShouldEqual, foo)
-	a.So(logger.Logs, ShouldResemble, []*pb_handler.LogEntry{
+	a.So(logger.Entries(), ShouldResemble, []*pb_handler.LogEntry{
 		&pb_handler.LogEntry{
 			Function: "test",
 			Fields:   []string{`"hello"`, "10", `"baz"`},

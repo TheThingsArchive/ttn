@@ -10,16 +10,16 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var applicationsPayloadFunctionsCmd = &cobra.Command{
+var applicationsPayloadFormatCmd = &cobra.Command{
 	Use:   "pf",
-	Short: "Show the payload functions",
-	Long: `ttnctl applications pf shows the payload functions for decoding,
-converting and validating binary payload.`,
+	Short: "Show the payload format",
+	Long: `ttnctl applications pf shows the payload format to handle
+binary payload.`,
 	Example: `$ ttnctl applications pf
   INFO Discovering Handler...
   INFO Connecting with Handler...
-  INFO Found Application
-  INFO Decoder function
+  INFO Found application
+  INFO Custom decoder function
 function Decoder(bytes, port) {
   var decoded = {};
   if (port === 1) {
@@ -27,9 +27,9 @@ function Decoder(bytes, port) {
   }
   return decoded;
 }
-  INFO No converter function
-  INFO No validator function
-  INFO No encoder function
+  INFO No custom converter function
+  INFO No custom validator function
+  INFO No custom encoder function
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		assertArgsLength(cmd, args, 0, 0)
@@ -44,38 +44,43 @@ function Decoder(bytes, port) {
 			ctx.WithError(err).Fatal("Could not get application.")
 		}
 
-		ctx.Info("Found Application")
+		ctx.Info("Found application")
 
-		if app.Decoder != "" {
-			ctx.Info("Decoder function")
-			fmt.Println(app.Decoder)
-		} else {
-			ctx.Info("No decoder function")
-		}
+		switch app.PayloadFormat {
+		case "custom":
+			if app.Decoder != "" {
+				ctx.Info("Custom decoder function")
+				fmt.Println(app.Decoder)
+			} else {
+				ctx.Info("No custom decoder function")
+			}
 
-		if app.Converter != "" {
-			ctx.Info("Converter function")
-			fmt.Println(app.Converter)
-		} else {
-			ctx.Info("No converter function")
-		}
+			if app.Converter != "" {
+				ctx.Info("Custom converter function")
+				fmt.Println(app.Converter)
+			} else {
+				ctx.Info("No custom converter function")
+			}
 
-		if app.Validator != "" {
-			ctx.Info("Validator function")
-			fmt.Println(app.Validator)
-		} else {
-			ctx.Info("No validator function")
-		}
+			if app.Validator != "" {
+				ctx.Info("Custom validator function")
+				fmt.Println(app.Validator)
+			} else {
+				ctx.Info("No custom validator function")
+			}
 
-		if app.Encoder != "" {
-			ctx.Info("Encoder function")
-			fmt.Println(app.Encoder)
-		} else {
-			ctx.Info("No encoder function")
+			if app.Encoder != "" {
+				ctx.Info("Custom encoder function")
+				fmt.Println(app.Encoder)
+			} else {
+				ctx.Info("No custom encoder function")
+			}
+		default:
+			ctx.Infof("Payload format set to %s", app.PayloadFormat)
 		}
 	},
 }
 
 func init() {
-	applicationsCmd.AddCommand(applicationsPayloadFunctionsCmd)
+	applicationsCmd.AddCommand(applicationsPayloadFormatCmd)
 }

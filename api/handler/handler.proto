@@ -49,23 +49,28 @@ message ApplicationIdentifier {
 
 // The Application settings
 message Application {
-  string app_id      = 1;
+  string app_id         = 1;
+
+  // The payload format indicates how payload is formatted.
+  string payload_format = 6;
 
   // The decoder is a JavaScript function that decodes a byte array to an object.
-  string decoder     = 2;
+  // This function is used when the payload format is set to custom.
+  string decoder        = 2;
 
   // The converter is a JavaScript function that can be used to convert values
   // in the object returned from the decoder. This can for example be useful to
-  // convert a voltage to a temperature.
-  string converter   = 3;
+  // convert a voltage to a temperature. This function is used when the payload format is set to custom.
+  string converter      = 3;
 
   // The validator is a JavaScript function that checks the validity of the
   // object returned by the decoder or converter. If validation fails, the
-  // message is dropped.
-  string validator   = 4;
+  // message is dropped. This function is used when the payload format is set to custom.
+  string validator      = 4;
 
   // The encoder is a JavaScript function that encodes an object to a byte array.
-  string encoder     = 5;
+  // This function is used when the payload format is set to custom.
+  string encoder        = 5;
 }
 
 message DeviceIdentifier {

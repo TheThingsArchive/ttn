@@ -81,6 +81,12 @@
 			"revisionTime": "2017-03-16T12:49:24Z"
 		},
 		{
+			"checksumSHA1": "VH6wzyJQZ7HqAzsw3rzn6b9QlKE=",
+			"path": "github.com/TheThingsNetwork/go-cayenne-lib/cayennelpp",
+			"revision": "a55c4ace96e99ae2d5e2b962192c489f081e493c",
+			"revisionTime": "2017-04-07T12:33:01Z"
+		},
+		{
 			"checksumSHA1": "x795Q87cyvAAeuxXxft5iwd1Los=",
 			"path": "github.com/TheThingsNetwork/go-utils/backoff",
 			"revision": "f81a36ea68c3a11be75c537d7be25603417b2fb5",
