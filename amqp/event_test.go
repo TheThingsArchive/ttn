@@ -26,7 +26,6 @@ func TestPublishSubscribeAppEvents(t *testing.T) {
 	defer s.Close()
 
 	var wg WaitGroup
-	wg.Add(1)
 	err = s.SubscribeAppEvents("app-id", "some-event",
 		func(_ Subscriber, appID string, eventType types.EventType, payload []byte) {
 			a.So(appID, ShouldEqual, "app-id")
@@ -36,7 +35,8 @@ func TestPublishSubscribeAppEvents(t *testing.T) {
 		})
 	a.So(err, ShouldBeNil)
 	p.PublishDeviceEvent("app-id", "dev-id", "some-event", "payload")
-	wg.WaitFor(time.Millisecond * 100)
+	err = wg.WaitFor(time.Millisecond * 200)
+	a.So(err, ShouldBeNil)
 }
 
 func TestPublishSubscribeDeviceEvents(t *testing.T) {
@@ -68,5 +68,6 @@ func TestPublishSubscribeDeviceEvents(t *testing.T) {
 		})
 	a.So(err, ShouldBeNil)
 	p.PublishDeviceEvent("app-id", "dev-id", "some-event", "payload")
-	wg.WaitFor(time.Millisecond * 100)
+	err = wg.WaitFor(time.Millisecond * 200)
+	a.So(err, ShouldBeNil)
 }

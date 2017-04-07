@@ -9,6 +9,9 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/types"
 )
 
+// AMQPBufferSize indicates the size for uplink channel buffers
+var AMQPBufferSize = 10
+
 func (h *handler) assertAMQPExchange() error {
 	ch, err := h.amqpClient.(*amqp.DefaultClient).GetChannel()
 	if err != nil {
@@ -48,8 +51,8 @@ func (h *handler) HandleAMQP(username, password, host, exchange, downlinkQueue s
 		return err
 	}
 
-	h.amqpUp = make(chan *types.UplinkMessage)
-	h.amqpEvent = make(chan *types.DeviceEvent)
+	h.amqpUp = make(chan *types.UplinkMessage, AMQPBufferSize)
+	h.amqpEvent = make(chan *types.DeviceEvent, AMQPBufferSize)
 
 	subscriber := h.amqpClient.NewSubscriber(h.amqpExchange, downlinkQueue, downlinkQueue != "", downlinkQueue == "")
 	err = subscriber.Open()
@@ -67,10 +70,11 @@ func (h *handler) HandleAMQP(username, password, host, exchange, downlinkQueue s
 	if err != nil {
 		return err
 	}
-	return h.ampq()
+	go h.amqp()
+	return nil
 }
 
-func (h *handler) ampq() error {
+func (h *handler) amqp() error {
 	ctx := h.Ctx.WithField("Protocol", "AMQP")
 	publisher := h.amqpClient.NewPublisher(h.amqpExchange)
 	err := publisher.Open()
