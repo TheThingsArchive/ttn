@@ -83,43 +83,37 @@ func (h *handler) amqp() error {
 		return err
 	}
 	defer publisher.Close()
-	for {
-		select {
-		case up := <-h.amqpUp:
-			{
-				h.amqpUplink(ctx, publisher, up)
-			}
-		case evt := <-h.amqpEvent:
-			{
-				h.amqpEvt(ctx, publisher, evt)
-			}
-		}
-	}
+	go h.amqpUplink(ctx, publisher)
+	h.amqpEvt(ctx, publisher)
 	return nil
 }
 
-func (h *handler) amqpUplink(ctx ttnlog.Interface, publisher amqp.Publisher, up *types.UplinkMessage) {
+func (h *handler) amqpUplink(ctx ttnlog.Interface, publisher amqp.Publisher) {
 
-	ctx.WithFields(ttnlog.Fields{
-		"DevID": up.DevID,
-		"AppID": up.AppID,
-	}).Debug("Publish Uplink")
-	err := publisher.PublishUplink(*up)
-	if err != nil {
-		ctx.WithError(err).Warn("Could not publish Uplink")
+	for up := range h.amqpUp {
+		ctx.WithFields(ttnlog.Fields{
+			"DevID": up.DevID,
+			"AppID": up.AppID,
+		}).Debug("Publish Uplink")
+		err := publisher.PublishUplink(*up)
+		if err != nil {
+			ctx.WithError(err).Warn("Could not publish Uplink")
+		}
 	}
 }
 
-func (h *handler) amqpEvt(ctx ttnlog.Interface, publisher amqp.Publisher, event *types.DeviceEvent) {
+func (h *handler) amqpEvt(ctx ttnlog.Interface, publisher amqp.Publisher) {
 
-	h.Ctx.WithFields(ttnlog.Fields{
-		"DevID": event.DevID,
-		"AppID": event.AppID,
-		"Event": event.Event,
-	}).Debug("Publish Event on AMQP")
-	if event.DevID == "" {
-		publisher.PublishAppEvent(event.AppID, event.Event, event.Data)
-	} else {
-		publisher.PublishDeviceEvent(event.AppID, event.DevID, event.Event, event.Data)
+	for event := range h.amqpEvent {
+		h.Ctx.WithFields(ttnlog.Fields{
+			"DevID": event.DevID,
+			"AppID": event.AppID,
+			"Event": event.Event,
+		}).Debug("Publish Event on AMQP")
+		if event.DevID == "" {
+			publisher.PublishAppEvent(event.AppID, event.Event, event.Data)
+		} else {
+			publisher.PublishDeviceEvent(event.AppID, event.DevID, event.Event, event.Data)
+		}
 	}
 }
