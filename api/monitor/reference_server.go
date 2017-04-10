@@ -33,6 +33,8 @@ func NewReferenceMonitorServer(bufferSize int) *ReferenceMonitorServer {
 
 		handlerUplinkMessages:   make(chan *broker.DeduplicatedUplinkMessage, bufferSize),
 		handlerDownlinkMessages: make(chan *broker.DownlinkMessage, bufferSize),
+
+		metrics: new(metrics),
 	}
 	for i := 0; i < bufferSize; i++ {
 		go func() {
@@ -83,7 +85,7 @@ type ReferenceMonitorServer struct {
 	handlerUplinkMessages   chan *broker.DeduplicatedUplinkMessage
 	handlerDownlinkMessages chan *broker.DownlinkMessage
 
-	metrics metrics
+	metrics *metrics
 }
 
 func (s *ReferenceMonitorServer) getAndAuthGateway(ctx context.Context) (string, error) {

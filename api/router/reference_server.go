@@ -28,6 +28,8 @@ func NewReferenceRouterServer(bufferSize int) *ReferenceRouterServer {
 		gatewayStatuses: make(chan *gateway.Status, bufferSize),
 		uplinkMessages:  make(chan *UplinkMessage, bufferSize),
 		downlink:        make(map[string]*downlinkSubscription),
+
+		metrics: new(metrics),
 	}
 	for i := 0; i < bufferSize; i++ {
 		go func() {
@@ -61,7 +63,7 @@ type ReferenceRouterServer struct {
 	mu       sync.RWMutex
 	downlink map[string]*downlinkSubscription
 
-	metrics metrics
+	metrics *metrics
 }
 
 type downlinkSubscription struct {

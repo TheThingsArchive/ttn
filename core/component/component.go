@@ -37,7 +37,7 @@ type Component struct {
 	privateKey       *ecdsa.PrivateKey
 	tlsConfig        *tls.Config
 	TokenKeyProvider tokenkey.Provider
-	status           int64
+	status           int32
 	healthServer     *health.Server
 }
 

@@ -23,12 +23,12 @@ const (
 
 // GetStatus gets the health status of the component
 func (c *Component) GetStatus() Status {
-	return Status(atomic.LoadInt64(&c.status))
+	return Status(atomic.LoadInt32(&c.status))
 }
 
 // SetStatus sets the health status of the component
 func (c *Component) SetStatus(status Status) {
-	atomic.StoreInt64(&c.status, int64(status))
+	atomic.StoreInt32(&c.status, int32(status))
 	if c.healthServer != nil {
 		switch status {
 		case StatusHealthy:
