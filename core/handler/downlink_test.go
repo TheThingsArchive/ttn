@@ -24,6 +24,7 @@ func TestEnqueueDownlink(t *testing.T) {
 		Component: &component.Component{Ctx: GetLogger(t, "TestEnqueueDownlink")},
 		devices:   device.NewRedisDeviceStore(GetRedisClient(), "handler-test-enqueue-downlink"),
 		mqttEvent: make(chan *types.DeviceEvent, 10),
+		amqpEvent: make(chan *types.DeviceEvent, 10),
 	}
 	err := h.EnqueueDownlink(&types.DownlinkMessage{
 		AppID: appID,
@@ -107,6 +108,7 @@ func TestHandleDownlink(t *testing.T) {
 		applications: application.NewRedisApplicationStore(GetRedisClient(), "handler-test-enqueue-downlink"),
 		downlink:     make(chan *pb_broker.DownlinkMessage),
 		mqttEvent:    make(chan *types.DeviceEvent, 10),
+		amqpEvent:    make(chan *types.DeviceEvent, 10),
 	}
 	h.InitStatus()
 	// Neither payload nor Fields provided : ERROR
