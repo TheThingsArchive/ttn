@@ -25,6 +25,8 @@ func initPprof() {
 	var buf bytes.Buffer
 	go func() {
 		for {
+			time.Sleep(time.Minute)
+
 			runtime.GC()
 			if err := pprof.WriteHeapProfile(&buf); err != nil {
 				if ctx != nil {
@@ -35,8 +37,6 @@ func initPprof() {
 			buf.Reset()
 
 			ctx.WithField("ComponentStats", stats.GetComponent()).Debug("Stats")
-
-			time.Sleep(time.Minute)
 		}
 	}()
 }
