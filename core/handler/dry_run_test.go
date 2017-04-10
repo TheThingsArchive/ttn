@@ -33,12 +33,16 @@ func (s *countingStore) inc(name string) {
 	s.counts[name] = val + 1
 }
 
-func (s *countingStore) Count(name string) int {
+func (s *countingStore) count(name string) int {
 	val, ok := s.counts[name]
 	if !ok {
 		val = 0
 	}
 	return val
+}
+
+func (s *countingStore) Count() (int, error) {
+	return s.store.Count()
 }
 
 func (s *countingStore) List(opts *storage.ListOptions) ([]*application.Application, error) {
@@ -104,10 +108,10 @@ func TestDryUplinkFieldsCustom(t *testing.T) {
 	})
 
 	// make sure no calls to app store were made
-	a.So(store.Count("list"), ShouldEqual, 0)
-	a.So(store.Count("get"), ShouldEqual, 0)
-	a.So(store.Count("set"), ShouldEqual, 0)
-	a.So(store.Count("delete"), ShouldEqual, 0)
+	a.So(store.count("list"), ShouldEqual, 0)
+	a.So(store.count("get"), ShouldEqual, 0)
+	a.So(store.count("set"), ShouldEqual, 0)
+	a.So(store.count("delete"), ShouldEqual, 0)
 }
 
 func TestDryUplinkFieldsCayenneLPP(t *testing.T) {
@@ -156,10 +160,10 @@ func TestDryUplinkEmptyApp(t *testing.T) {
 	a.So(res.Valid, ShouldBeTrue)
 
 	// make sure no calls to app store were made
-	a.So(store.Count("list"), ShouldEqual, 0)
-	a.So(store.Count("get"), ShouldEqual, 0)
-	a.So(store.Count("set"), ShouldEqual, 0)
-	a.So(store.Count("delete"), ShouldEqual, 0)
+	a.So(store.count("list"), ShouldEqual, 0)
+	a.So(store.count("get"), ShouldEqual, 0)
+	a.So(store.count("set"), ShouldEqual, 0)
+	a.So(store.count("delete"), ShouldEqual, 0)
 }
 
 func TestDryDownlinkFieldsCustom(t *testing.T) {
@@ -195,10 +199,10 @@ func TestDryDownlinkFieldsCustom(t *testing.T) {
 	})
 
 	// make sure no calls to app store were made
-	a.So(store.Count("list"), ShouldEqual, 0)
-	a.So(store.Count("get"), ShouldEqual, 0)
-	a.So(store.Count("set"), ShouldEqual, 0)
-	a.So(store.Count("delete"), ShouldEqual, 0)
+	a.So(store.count("list"), ShouldEqual, 0)
+	a.So(store.count("get"), ShouldEqual, 0)
+	a.So(store.count("set"), ShouldEqual, 0)
+	a.So(store.count("delete"), ShouldEqual, 0)
 }
 
 func TestDryDownlinkFieldsCayenneLPP(t *testing.T) {
@@ -246,10 +250,10 @@ func TestDryDownlinkPayload(t *testing.T) {
 	a.So(res.Logs, ShouldResemble, []*pb.LogEntry(nil))
 
 	// make sure no calls to app store were made
-	a.So(store.Count("list"), ShouldEqual, 0)
-	a.So(store.Count("get"), ShouldEqual, 0)
-	a.So(store.Count("set"), ShouldEqual, 0)
-	a.So(store.Count("delete"), ShouldEqual, 0)
+	a.So(store.count("list"), ShouldEqual, 0)
+	a.So(store.count("get"), ShouldEqual, 0)
+	a.So(store.count("set"), ShouldEqual, 0)
+	a.So(store.count("delete"), ShouldEqual, 0)
 }
 
 func TestDryDownlinkEmptyApp(t *testing.T) {
@@ -269,10 +273,10 @@ func TestDryDownlinkEmptyApp(t *testing.T) {
 	a.So(err, ShouldNotBeNil)
 
 	// make sure no calls to app store were made
-	a.So(store.Count("list"), ShouldEqual, 0)
-	a.So(store.Count("get"), ShouldEqual, 0)
-	a.So(store.Count("set"), ShouldEqual, 0)
-	a.So(store.Count("delete"), ShouldEqual, 0)
+	a.So(store.count("list"), ShouldEqual, 0)
+	a.So(store.count("get"), ShouldEqual, 0)
+	a.So(store.count("set"), ShouldEqual, 0)
+	a.So(store.count("delete"), ShouldEqual, 0)
 }
 
 func TestLogs(t *testing.T) {

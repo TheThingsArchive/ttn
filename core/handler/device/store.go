@@ -15,6 +15,8 @@ import (
 
 // Store interface for Devices
 type Store interface {
+	Count() (int, error)
+	CountForApp(appID string) (int, error)
 	List(opts *storage.ListOptions) ([]*Device, error)
 	ListForApp(appID string, opts *storage.ListOptions) ([]*Device, error)
 	Get(appID, devID string) (*Device, error)
@@ -49,6 +51,16 @@ func NewRedisDeviceStore(client *redis.Client, prefix string) *RedisDeviceStore 
 type RedisDeviceStore struct {
 	store  *storage.RedisMapStore
 	queues *storage.RedisQueueStore
+}
+
+// Count all devices in the store
+func (s *RedisDeviceStore) Count() (int, error) {
+	return s.store.Count("")
+}
+
+// CountForApp counts all devices for an Application
+func (s *RedisDeviceStore) CountForApp(appID string) (int, error) {
+	return s.store.Count(fmt.Sprintf("%s:*", appID))
 }
 
 // List all Devices

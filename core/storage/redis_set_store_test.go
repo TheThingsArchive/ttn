@@ -51,6 +51,10 @@ func TestRedisSetStore(t *testing.T) {
 		res, err := s.Get("test")
 		a.So(err, ShouldBeNil)
 		a.So(res, ShouldHaveLength, 1)
+
+		count, err := s.Count("test")
+		a.So(err, ShouldBeNil)
+		a.So(count, ShouldEqual, 1)
 	}
 
 	// Get More
@@ -60,6 +64,10 @@ func TestRedisSetStore(t *testing.T) {
 		res, err := s.Get("test")
 		a.So(err, ShouldBeNil)
 		a.So(res, ShouldHaveLength, 2)
+
+		count, err := s.Count("test")
+		a.So(err, ShouldBeNil)
+		a.So(count, ShouldEqual, 2)
 	}
 
 	// Remove
@@ -69,6 +77,10 @@ func TestRedisSetStore(t *testing.T) {
 		res, err := s.Get("test")
 		a.So(err, ShouldBeNil)
 		a.So(res, ShouldHaveLength, 1)
+
+		count, err := s.Count("test")
+		a.So(err, ShouldBeNil)
+		a.So(count, ShouldEqual, 1)
 	}
 
 	for i := 1; i < 10; i++ {

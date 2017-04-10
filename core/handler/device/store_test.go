@@ -50,6 +50,14 @@ func TestDeviceStore(t *testing.T) {
 	a.So(err, ShouldBeNil)
 	a.So(devs, ShouldHaveLength, 1)
 
+	count, err := s.CountForApp("AppID-1")
+	a.So(err, ShouldBeNil)
+	a.So(count, ShouldEqual, 1)
+
+	count, err = s.Count()
+	a.So(err, ShouldBeNil)
+	a.So(count, ShouldEqual, 1)
+
 	// Create extra and update
 	dev = &Device{
 		DevAddr: types.DevAddr([4]byte{0, 0, 0, 2}),
@@ -85,6 +93,10 @@ func TestDeviceStore(t *testing.T) {
 	a.So(err, ShouldBeNil)
 	a.So(devices, ShouldHaveLength, 2)
 
+	count, err = s.Count()
+	a.So(err, ShouldBeNil)
+	a.So(count, ShouldEqual, 2)
+
 	// Delete
 	err = s.Delete("AppID-1", "DevID-1")
 	a.So(err, ShouldBeNil)
@@ -97,5 +109,13 @@ func TestDeviceStore(t *testing.T) {
 	devs, err = s.ListForApp("AppID-1", nil)
 	a.So(err, ShouldBeNil)
 	a.So(devs, ShouldHaveLength, 1)
+
+	count, err = s.CountForApp("AppID-1")
+	a.So(err, ShouldBeNil)
+	a.So(count, ShouldEqual, 1)
+
+	count, err = s.Count()
+	a.So(err, ShouldBeNil)
+	a.So(count, ShouldEqual, 1)
 
 }
