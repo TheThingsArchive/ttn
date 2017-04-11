@@ -81,6 +81,12 @@
 			"revisionTime": "2017-03-16T12:49:24Z"
 		},
 		{
+			"checksumSHA1": "VH6wzyJQZ7HqAzsw3rzn6b9QlKE=",
+			"path": "github.com/TheThingsNetwork/go-cayenne-lib/cayennelpp",
+			"revision": "a55c4ace96e99ae2d5e2b962192c489f081e493c",
+			"revisionTime": "2017-04-07T12:33:01Z"
+		},
+		{
 			"checksumSHA1": "x795Q87cyvAAeuxXxft5iwd1Los=",
 			"path": "github.com/TheThingsNetwork/go-utils/backoff",
 			"revision": "f81a36ea68c3a11be75c537d7be25603417b2fb5",
@@ -141,7 +147,7 @@
 			"revisionTime": "2017-03-22T07:18:41Z"
 		},
 		{
-			"checksumSHA1": "gqxUqqHQnCd8Nmdb4FU8vtxibag=",
+			"checksumSHA1": "kLFTtAVcjZbHXybodGAqJ8wxflY=",
 			"path": "github.com/TheThingsNetwork/go-utils/roots",
 			"revision": "f81a36ea68c3a11be75c537d7be25603417b2fb5",
 			"revisionTime": "2017-03-22T07:18:41Z"
@@ -287,38 +293,38 @@
 		{
 			"checksumSHA1": "APDDi2ohrU7OkChQCekD9tSVUhs=",
 			"path": "github.com/golang/protobuf/jsonpb",
-			"revision": "c9c7427a2a70d2eb3bafa0ab2dc163e45f143317",
-			"revisionTime": "2017-03-07T00:15:33Z"
+			"revision": "e514ff57e81961e29ca4d63ea13e7e300a01fb53",
+			"revisionTime": "2017-03-30T23:11:32Z"
 		},
 		{
 			"checksumSHA1": "kBeNcaKk56FguvPSUCEaH6AxpRc=",
 			"path": "github.com/golang/protobuf/proto",
-			"revision": "c9c7427a2a70d2eb3bafa0ab2dc163e45f143317",
-			"revisionTime": "2017-03-07T00:15:33Z"
+			"revision": "e514ff57e81961e29ca4d63ea13e7e300a01fb53",
+			"revisionTime": "2017-03-30T23:11:32Z"
 		},
 		{
 			"checksumSHA1": "AjyXQ5eohrCPS/jSWZFPn5E8wnQ=",
 			"path": "github.com/golang/protobuf/protoc-gen-go/descriptor",
-			"revision": "c9c7427a2a70d2eb3bafa0ab2dc163e45f143317",
-			"revisionTime": "2017-03-07T00:15:33Z"
+			"revision": "e514ff57e81961e29ca4d63ea13e7e300a01fb53",
+			"revisionTime": "2017-03-30T23:11:32Z"
 		},
 		{
 			"checksumSHA1": "T/EqMkqzvjQUL1c+yN32kketgfE=",
 			"path": "github.com/golang/protobuf/protoc-gen-go/generator",
-			"revision": "c9c7427a2a70d2eb3bafa0ab2dc163e45f143317",
-			"revisionTime": "2017-03-07T00:15:33Z"
+			"revision": "e514ff57e81961e29ca4d63ea13e7e300a01fb53",
+			"revisionTime": "2017-03-30T23:11:32Z"
 		},
 		{
 			"checksumSHA1": "zps2+aJoFhpFf2F8TsU9zCGXL2c=",
 			"path": "github.com/golang/protobuf/protoc-gen-go/plugin",
-			"revision": "c9c7427a2a70d2eb3bafa0ab2dc163e45f143317",
-			"revisionTime": "2017-03-07T00:15:33Z"
+			"revision": "e514ff57e81961e29ca4d63ea13e7e300a01fb53",
+			"revisionTime": "2017-03-30T23:11:32Z"
 		},
 		{
 			"checksumSHA1": "9wOTz0iWfOSTSTmUkoq0WYkiMdY=",
 			"path": "github.com/golang/protobuf/ptypes/empty",
-			"revision": "c9c7427a2a70d2eb3bafa0ab2dc163e45f143317",
-			"revisionTime": "2017-03-07T00:15:33Z"
+			"revision": "e514ff57e81961e29ca4d63ea13e7e300a01fb53",
+			"revisionTime": "2017-03-30T23:11:32Z"
 		},
 		{
 			"checksumSHA1": "cACEkFM7kIL+NVF6jSJPY2tW4d8=",
@@ -707,14 +713,14 @@
 		{
 			"checksumSHA1": "cdT+oqPhYKGf3r+HkPo51IauZnA=",
 			"path": "golang.org/x/net/http2",
-			"revision": "a6577fac2d73be281a500b310739095313165611",
-			"revisionTime": "2017-03-08T20:54:49Z"
+			"revision": "ffcf1bedda3b04ebb15a168a59800a73d6dc0f4d",
+			"revisionTime": "2017-03-29T01:43:45Z"
 		},
 		{
-			"checksumSHA1": "kyClpesDqa6LA7CFPGgKrX9NKkA=",
+			"checksumSHA1": "CBoO1DFToP49Ezph60yZ4J4PBBs=",
 			"path": "golang.org/x/net/http2/hpack",
-			"revision": "a6577fac2d73be281a500b310739095313165611",
-			"revisionTime": "2017-03-08T20:54:49Z"
+			"revision": "ffcf1bedda3b04ebb15a168a59800a73d6dc0f4d",
+			"revisionTime": "2017-03-29T01:43:45Z"
 		},
 		{
 			"checksumSHA1": "GIGmSrYACByf5JDIP9ByBZksY80=",

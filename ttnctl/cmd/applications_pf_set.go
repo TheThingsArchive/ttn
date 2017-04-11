@@ -15,11 +15,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var applicationsPayloadFunctionsSetCmd = &cobra.Command{
-	Use:   "set [decoder/converter/validator/encoder] [file.js]",
-	Short: "Set payload functions of an application",
-	Long: `ttnctl pf set can be used to get or set payload functions of an application.
-The functions are read from the supplied file or from STDIN.`,
+var applicationsPayloadFormatSetCmd = &cobra.Command{
+	Use:   "set [decoder/converter/validator/encoder/cayennelpp] [file.js]",
+	Short: "Set payload format of an application",
+	Long: `ttnctl pf set can be used to get or set the payload format and functions of an application.
+When using payload functions, you can load a file or provide them through stdin.`,
 	Example: `$ ttnctl applications pf set decoder
   INFO Discovering Handler...
   INFO Connecting with Handler...
@@ -70,35 +70,38 @@ Port: 1
 			ctx.WithError(err).Fatal("Could not get existing application.")
 		}
 
-		function := args[0]
+		format := args[0]
 
-		if len(args) == 2 {
-			content, err := ioutil.ReadFile(args[1])
-			if err != nil {
-				ctx.WithError(err).Fatal("Could not read function file")
-			}
-			fmt.Println(fmt.Sprintf(`
+		switch format {
+		case "decoder", "converter", "validator", "encoder":
+			app.PayloadFormat = "custom"
+			if len(args) == 2 {
+				content, err := ioutil.ReadFile(args[1])
+				if err != nil {
+					ctx.WithError(err).Fatal("Could not read function file")
+				}
+				fmt.Println(fmt.Sprintf(`
 Function read from %s:
 
 %s
 `, args[1], string(content)))
 
-			switch function {
-			case "decoder":
-				app.Decoder = string(content)
-			case "converter":
-				app.Converter = string(content)
-			case "validator":
-				app.Validator = string(content)
-			case "encoder":
-				app.Encoder = string(content)
-			default:
-				ctx.Fatalf("Function %s does not exist", function)
-			}
-		} else {
-			switch function {
-			case "decoder":
-				fmt.Println(`function Decoder(bytes, port) {
+				switch format {
+				case "decoder":
+					app.Decoder = string(content)
+				case "converter":
+					app.Converter = string(content)
+				case "validator":
+					app.Validator = string(content)
+				case "encoder":
+					app.Encoder = string(content)
+				default:
+					ctx.Fatalf("Function %s does not exist", format)
+				}
+			} else {
+				switch format {
+				case "decoder":
+					fmt.Println(`function Decoder(bytes, port) {
   // Decode an uplink message from a buffer
   // (array) of bytes to an object of fields.
   var decoded = {};
@@ -110,9 +113,9 @@ Function read from %s:
   return decoded;
 }
 ########## Write your Decoder here and end with Ctrl+D (EOF):`)
-				app.Decoder = readFunction(ctx)
-			case "converter":
-				fmt.Println(`function Converter(decoded, port) {
+					app.Decoder = readFunction(ctx)
+				case "converter":
+					fmt.Println(`function Converter(decoded, port) {
   // Merge, split or otherwise
   // mutate decoded fields.
   var converted = decoded;
@@ -124,9 +127,9 @@ Function read from %s:
   return converted;
 }
 ########## Write your Converter here and end with Ctrl+D (EOF):`)
-				app.Converter = readFunction(ctx)
-			case "validator":
-				fmt.Println(`function Validator(converted, port) {
+					app.Converter = readFunction(ctx)
+				case "validator":
+					fmt.Println(`function Validator(converted, port) {
   // Return false if the decoded, converted
   // message is invalid and should be dropped.
 
@@ -137,9 +140,9 @@ Function read from %s:
   return true;
 }
 ########## Write your Validator here and end with Ctrl+D (EOF):`)
-				app.Validator = readFunction(ctx)
-			case "encoder":
-				fmt.Println(`function Encoder(object, port) {
+					app.Validator = readFunction(ctx)
+				case "encoder":
+					fmt.Println(`function Encoder(object, port) {
   // Encode downlink messages sent as
   // object to an array or buffer of bytes.
   var bytes = [];
@@ -151,59 +154,61 @@ Function read from %s:
   return bytes;
 }
 ########## Write your Encoder here and end with Ctrl+D (EOF):`)
-				app.Encoder = readFunction(ctx)
-			default:
-				ctx.Fatalf("Function %s does not exist", function)
-			}
-		}
+					app.Encoder = readFunction(ctx)
+					if skipTest, _ := cmd.Flags().GetBool("skip-test"); !skipTest {
+						fmt.Printf("\nDo you want to test the payload format? (Y/n)\n")
+						var response string
+						fmt.Scanln(&response)
 
-		if skipTest, _ := cmd.Flags().GetBool("skip-test"); !skipTest {
-			fmt.Printf("\nDo you want to test the payload functions? (Y/n)\n")
-			var response string
-			fmt.Scanln(&response)
+						if strings.ToLower(response) == "y" || strings.ToLower(response) == "yes" || response == "" {
+							switch format {
+							case "decoder", "converter", "validator":
+								payload, err := util.ReadPayload()
+								if err != nil {
+									ctx.WithError(err).Fatal("Could not parse the payload")
+								}
 
-			if strings.ToLower(response) == "y" || strings.ToLower(response) == "yes" || response == "" {
-				switch function {
-				case "decoder", "converter", "validator":
-					payload, err := util.ReadPayload()
-					if err != nil {
-						ctx.WithError(err).Fatal("Could not parse the payload")
-					}
+								port, err := util.ReadPort()
+								if err != nil {
+									ctx.WithError(err).Fatal("Could not parse the port")
+								}
 
-					port, err := util.ReadPort()
-					if err != nil {
-						ctx.WithError(err).Fatal("Could not parse the port")
-					}
+								result, err := manager.DryUplink(payload, app, uint32(port))
+								if err != nil {
+									ctx.WithError(err).Fatal("Could not set the payload function")
+								}
 
-					result, err := manager.DryUplink(payload, app, uint32(port))
-					if err != nil {
-						ctx.WithError(err).Fatal("Could not set the payload function")
-					}
+								if !result.Valid {
+									ctx.Fatal("Could not set the payload function: Invalid result")
+								}
+								ctx.Infof("Function tested successfully. Object returned by the converter: %s", result.Fields)
+							case "encoder":
+								fields, err := util.ReadFields()
+								if err != nil {
+									ctx.WithError(err).Fatal("Could not parse the fields")
+								}
 
-					if !result.Valid {
-						ctx.Fatal("Could not set the payload function: Invalid result")
-					}
-					ctx.Infof("Function tested successfully. Object returned by the converter: %s", result.Fields)
-				case "encoder":
-					fields, err := util.ReadFields()
-					if err != nil {
-						ctx.WithError(err).Fatal("Could not parse the fields")
-					}
+								port, err := util.ReadPort()
+								if err != nil {
+									ctx.WithError(err).Fatal("Could not parse the port")
+								}
 
-					port, err := util.ReadPort()
-					if err != nil {
-						ctx.WithError(err).Fatal("Could not parse the port")
+								result, err := manager.DryDownlinkWithFields(fields, app, uint32(port))
+								if err != nil {
+									ctx.WithError(err).Fatal("Could not set the payload function")
+								}
+								ctx.Infof("Function tested successfully. Encoded message: %v", result.Payload)
+							default:
+								ctx.Fatalf("Function %s does not exist", format)
+							}
+						}
 					}
-
-					result, err := manager.DryDownlinkWithFields(fields, app, uint32(port))
-					if err != nil {
-						ctx.WithError(err).Fatal("Could not set the payload function")
-					}
-					ctx.Infof("Function tested successfully. Encoded message: %v", result.Payload)
 				default:
-					ctx.Fatalf("Function %s does not exist", function)
+					ctx.Fatalf("Function %s does not exist", format)
 				}
 			}
+		default:
+			app.PayloadFormat = format
 		}
 
 		err = manager.SetApplication(app)
@@ -218,8 +223,8 @@ Function read from %s:
 }
 
 func init() {
-	applicationsPayloadFunctionsSetCmd.Flags().Bool("skip-test", false, "skip payload function test")
-	applicationsPayloadFunctionsCmd.AddCommand(applicationsPayloadFunctionsSetCmd)
+	applicationsPayloadFormatSetCmd.Flags().Bool("skip-test", false, "skip payload format test")
+	applicationsPayloadFormatCmd.AddCommand(applicationsPayloadFormatSetCmd)
 }
 
 func readFunction(ctx log.Interface) string {

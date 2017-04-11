@@ -72,9 +72,10 @@ type scheduledItem struct {
 }
 
 type schedule struct {
+	offset int64 // should be on top to ensure memory alignment needed for sync/atomic
+
 	sync.RWMutex
 	ctx                       ttnlog.Interface
-	offset                    int64
 	items                     map[string]*scheduledItem
 	downlink                  chan *router_pb.DownlinkMessage
 	downlinkSubscriptionsLock sync.RWMutex

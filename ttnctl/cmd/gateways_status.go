@@ -36,18 +36,18 @@ var gatewaysStatusCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		assertArgsLength(cmd, args, 1, 1)
 
-		gtwID := args[0]
-		if !api.ValidID(gtwID) {
-			ctx.Fatal("Invalid Gateway ID")
+		gatewayID := strings.ToLower(args[0])
+		if err := api.NotEmptyAndValidID(gatewayID, "Gateway ID"); err != nil {
+			ctx.Fatal(err.Error())
 		}
 
 		conn, manager := util.GetRouterManager(ctx)
 		defer conn.Close()
 
-		ctx = ctx.WithField("GatewayID", gtwID)
+		ctx = ctx.WithField("GatewayID", gatewayID)
 
 		resp, err := manager.GatewayStatus(util.GetContext(ctx), &router.GatewayStatusRequest{
-			GatewayId: gtwID,
+			GatewayId: gatewayID,
 		})
 		if err != nil {
 			ctx.WithError(errors.FromGRPCError(err)).Fatal("Could not get status of gateway.")

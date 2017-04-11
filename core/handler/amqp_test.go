@@ -61,26 +61,68 @@ func TestHandleAMQP(t *testing.T) {
 	downlink, _ := q.Next()
 	a.So(downlink, ShouldNotBeNil)
 
-	wg.Add(1)
-	s := c.NewSubscriber("amq.topic", "", false, true)
-	err = s.Open()
-	a.So(err, ShouldBeNil)
-	defer s.Close()
-	err = s.SubscribeDeviceUplink(appID, devID, func(_ amqp.Subscriber, r_appID string, r_devID string, req types.UplinkMessage) {
-		a.So(r_appID, ShouldEqual, appID)
-		a.So(r_devID, ShouldEqual, devID)
-		a.So(req.PayloadRaw, ShouldResemble, []byte{0xAA, 0xBC})
-		wg.Done()
-	})
-	a.So(err, ShouldBeNil)
+	{
+		wg.Add(1)
+		s := c.NewSubscriber("amq.topic", "", false, true)
+		err = s.Open()
+		a.So(err, ShouldBeNil)
+		defer s.Close()
+		err = s.SubscribeDeviceUplink(appID, devID, func(_ amqp.Subscriber, r_appID string, r_devID string, req types.UplinkMessage) {
+			a.So(r_appID, ShouldEqual, appID)
+			a.So(r_devID, ShouldEqual, devID)
+			a.So(req.PayloadRaw, ShouldResemble, []byte{0xAA, 0xBC})
+			wg.Done()
+		})
+		a.So(err, ShouldBeNil)
 
-	h.amqpUp <- &types.UplinkMessage{
-		DevID:      devID,
-		AppID:      appID,
-		PayloadRaw: []byte{0xAA, 0xBC},
-		PayloadFields: map[string]interface{}{
-			"field": "value",
-		},
+		h.amqpUp <- &types.UplinkMessage{
+			DevID:      devID,
+			AppID:      appID,
+			PayloadRaw: []byte{0xAA, 0xBC},
+			PayloadFields: map[string]interface{}{
+				"field": "value",
+			},
+		}
+	}
+
+	// App Events
+	{
+		wg.Add(1)
+		s := c.NewSubscriber("amq.topic", "", false, true)
+		err = s.Open()
+		a.So(err, ShouldBeNil)
+		defer s.Close()
+		err = s.SubscribeDeviceEvents(appID, devID, "", func(_ amqp.Subscriber, r_appID string, r_devID string, r_event types.EventType, evt []byte) {
+			a.So(r_appID, ShouldEqual, appID)
+			a.So(r_devID, ShouldEqual, devID)
+			wg.Done()
+		})
+		a.So(err, ShouldBeNil)
+
+		h.amqpEvent <- &types.DeviceEvent{
+			DevID: devID,
+			AppID: appID,
+			Event: types.UplinkErrorEvent,
+		}
+	}
+
+	// Device Events
+	{
+		wg.Add(1)
+		s := c.NewSubscriber("amq.topic", "", false, true)
+		err = s.Open()
+		a.So(err, ShouldBeNil)
+		defer s.Close()
+		err = s.SubscribeAppEvents(appID, "", func(_ amqp.Subscriber, r_appID string, r_event types.EventType, evt []byte) {
+			a.So(r_appID, ShouldEqual, appID)
+			wg.Done()
+		})
+		a.So(err, ShouldBeNil)
+
+		h.amqpEvent <- &types.DeviceEvent{
+			AppID: appID,
+			Event: types.UplinkErrorEvent,
+		}
 	}
 
 	a.So(wg.WaitFor(200*time.Millisecond), ShouldBeNil)

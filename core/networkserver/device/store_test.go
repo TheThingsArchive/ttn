@@ -48,6 +48,17 @@ func TestDeviceStore(t *testing.T) {
 		s.Delete(types.AppEUI{0, 0, 0, 0, 0, 0, 0, 1}, types.DevEUI{0, 0, 0, 0, 0, 0, 0, 2})
 	}()
 
+	count, err := s.Count()
+	a.So(err, ShouldBeNil)
+	a.So(count, ShouldEqual, 2)
+
+	count, err = s.CountForAddress(types.DevAddr{0, 0, 0, 1})
+	a.So(err, ShouldBeNil)
+	a.So(count, ShouldEqual, 2)
+	count, err = s.CountForAddress(types.DevAddr{0, 0, 0, 2})
+	a.So(err, ShouldBeNil)
+	a.So(count, ShouldEqual, 0)
+
 	res, err := s.ListForAddress(types.DevAddr{0, 0, 0, 1})
 	a.So(err, ShouldBeNil)
 	a.So(res, ShouldHaveLength, 2)
@@ -68,6 +79,13 @@ func TestDeviceStore(t *testing.T) {
 		NwkSKey: types.NwkSKey{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 1},
 	})
 	a.So(err, ShouldBeNil)
+
+	count, err = s.CountForAddress(types.DevAddr{0, 0, 0, 3})
+	a.So(err, ShouldBeNil)
+	a.So(count, ShouldEqual, 1)
+	count, err = s.CountForAddress(types.DevAddr{0, 0, 0, 1})
+	a.So(err, ShouldBeNil)
+	a.So(count, ShouldEqual, 1)
 
 	res, err = s.ListForAddress(types.DevAddr{0, 0, 0, 3})
 	a.So(err, ShouldBeNil)

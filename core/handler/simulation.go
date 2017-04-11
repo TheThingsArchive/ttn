@@ -60,10 +60,7 @@ func (h *handlerManager) SimulateUplink(ctx context.Context, in *pb.SimulatedUpl
 		return nil, err
 	}
 
-	h.handler.mqttUp <- uplink
-	if h.handler.amqpEnabled {
-		h.handler.amqpUp <- uplink
-	}
+	h.handler.qUp <- uplink
 
 	return new(empty.Empty), nil
 }

@@ -204,11 +204,29 @@ type Announcement struct {
 	PublicKey string `protobuf:"bytes,12,opt,name=public_key,json=publicKey,proto3" json:"public_key,omitempty"`
 	// TLS Certificate for gRPC on net_address (if TLS is enabled)
 	Certificate string `protobuf:"bytes,13,opt,name=certificate,proto3" json:"certificate,omitempty"`
-	// Contains the address where the HTTP API is exposed (if there is one). Format: "http(s)://domain(:port)"; default http port is 80, default https port is 443.
+	// Contains the address where the HTTP API is exposed (if there is one).
+	// Format of api_address: `http(s)://domain(:port)`
+	// default http port is 80, default https port is 443.
 	ApiAddress string `protobuf:"bytes,14,opt,name=api_address,json=apiAddress,proto3" json:"api_address,omitempty"`
-	// Contains the address where the MQTT API is exposed (if there is one). Format: "domain(:port)"; if no port supplied, mqtt is on 1883, mqtts is on 8883.
+	// Contains the address where the MQTT API is exposed (if there is one)
+	// Format of mqtt_address: `(mqtt(s)://)host(:port)`
+	// default mqtt port is 1883, default mqtts port is 8883.
+	// Examples:
+	// if `host:port` then `mqtt://host:port`
+	// if `host:8883` then `mqtts://host:8883`
+	// if `host` then `mqtt://host:1883` and `mqtts://host:8883`
+	// if `mqtt://host` then `mqtt://host:1883`
+	// if `mqtts://host` then `mqtt://host:1883` and `mqtts://host:8883`
 	MqttAddress string `protobuf:"bytes,15,opt,name=mqtt_address,json=mqttAddress,proto3" json:"mqtt_address,omitempty"`
-	// Contains the address where the AMQP API is exposed (if there is one). Format: "domain(:port)"; if no port supplied, amqp is on 5672, amqps is on 5671.
+	// Contains the address where the AMQP API is exposed (if there is one)
+	// Format of amqp_address: `(amqp(s)://)host(:port)`
+	// default amqp port is 5672, default amqps port is 5671.
+	// Examples:
+	// if `host:port` then `amqp://host:port`
+	// if `host:5671` then `amqps://host:5671`
+	// if `host` then `amqp://host:5672` and `amqps://host:5671`
+	// if `amqp://host` then `amqp://host:5672`
+	// if `amqps://host` then `amqp://host:5672` and `amqps://host:5671`
 	AmqpAddress string `protobuf:"bytes,16,opt,name=amqp_address,json=amqpAddress,proto3" json:"amqp_address,omitempty"`
 	// Metadata for this component
 	Metadata []*Metadata `protobuf:"bytes,22,rep,name=metadata" json:"metadata,omitempty"`

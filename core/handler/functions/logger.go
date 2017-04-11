@@ -15,18 +15,21 @@ type Logger interface {
 
 	// Enter tells the Logger what function it is currently in
 	Enter(function string)
+
+	// Entries returns the log
+	Entries() []*pb_handler.LogEntry
 }
 
 // console is a Logger that saves the logs as LogEntries
 type EntryLogger struct {
-	Logs     []*pb_handler.LogEntry
+	logs     []*pb_handler.LogEntry
 	function string
 }
 
 // Console returns a new Logger that save the logs to
 func NewEntryLogger() *EntryLogger {
 	return &EntryLogger{
-		Logs: make([]*pb_handler.LogEntry, 0),
+		logs: make([]*pb_handler.LogEntry, 0),
 	}
 }
 
@@ -46,7 +49,7 @@ func (c *EntryLogger) Log(call otto.FunctionCall) {
 		fields = append(fields, JSON(field))
 	}
 
-	c.Logs = append(c.Logs, &pb_handler.LogEntry{
+	c.logs = append(c.logs, &pb_handler.LogEntry{
 		Function: c.function,
 		Fields:   fields,
 	})
@@ -56,9 +59,14 @@ func (c *EntryLogger) Enter(function string) {
 	c.function = function
 }
 
+func (c *EntryLogger) Entries() []*pb_handler.LogEntry {
+	return c.logs
+}
+
 type IgnoreLogger struct{}
 
 var Ignore = &IgnoreLogger{}
 
-func (c *IgnoreLogger) Log(call otto.FunctionCall) {}
-func (c *IgnoreLogger) Enter(function string)      {}
+func (c *IgnoreLogger) Log(call otto.FunctionCall)      {}
+func (c *IgnoreLogger) Enter(function string)           {}
+func (c *IgnoreLogger) Entries() []*pb_handler.LogEntry { return nil }

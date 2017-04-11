@@ -408,9 +408,10 @@ ttnctl downlink can be used to send a downlink message to a device.
 **Options**
 
 ```
-      --confirmed   Confirmed downlink
-      --fport int   FPort for downlink (default 1)
-      --json        Provide the payload as JSON
+      --access-key string   The access key to use
+      --confirmed           Confirmed downlink
+      --fport int           FPort for downlink (default 1)
+      --json                Provide the payload as JSON
 ```
 
 **Example**
@@ -532,6 +533,12 @@ ttnctl selfupdate updates the current ttnctl to the latest version
 ttnctl subscribe can be used to subscribe to events for this application.
 
 **Usage:** `ttnctl subscribe`
+
+**Options**
+
+```
+      --access-key string   The access key to use
+```
 
 ## ttnctl user
 

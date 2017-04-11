@@ -9,8 +9,6 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net/http"
-	"runtime"
-	"time"
 
 	"github.com/TheThingsNetwork/go-account-lib/claims"
 	"github.com/TheThingsNetwork/go-account-lib/tokenkey"
@@ -39,7 +37,7 @@ type Component struct {
 	privateKey       *ecdsa.PrivateKey
 	tlsConfig        *tls.Config
 	TokenKeyProvider tokenkey.Provider
-	status           int64
+	status           int32
 	healthServer     *health.Server
 }
 
@@ -57,17 +55,6 @@ type ManagementInterface interface {
 
 // New creates a new Component
 func New(ctx ttnlog.Interface, serviceName string, announcedAddress string) (*Component, error) {
-	go func() {
-		memstats := new(runtime.MemStats)
-		for range time.Tick(time.Minute) {
-			runtime.ReadMemStats(memstats)
-			ctx.WithFields(ttnlog.Fields{
-				"Goroutines": runtime.NumGoroutine(),
-				"Memory":     float64(memstats.Alloc) / 1000000,
-			}).Debugf("Stats")
-		}
-	}()
-
 	// Disable gRPC tracing
 	// SEE: https://github.com/grpc/grpc-go/issues/695
 	grpc.EnableTracing = false

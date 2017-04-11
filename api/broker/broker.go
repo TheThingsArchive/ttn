@@ -165,13 +165,15 @@ func (c *Client) NewRouterStreams(id string, token string) RouterStream {
 		cancel: cancel,
 
 		uplink:   make(map[string]chan *UplinkMessage),
-		downlink: make(chan *DownlinkMessage),
+		downlink: make(chan *DownlinkMessage, c.config.BufferSize),
 	}
 
 	var wgDown sync.WaitGroup
-	go func() {
-		wgDown.Wait()
-		close(s.downlink)
+	defer func() {
+		go func() {
+			wgDown.Wait()
+			close(s.downlink)
+		}()
 	}()
 
 	var wg utils.WaitGroup
@@ -306,13 +308,15 @@ func (c *Client) NewHandlerStreams(id string, token string) HandlerStream {
 		cancel: cancel,
 
 		downlink: make(map[string]chan *DownlinkMessage),
-		uplink:   make(chan *DeduplicatedUplinkMessage),
+		uplink:   make(chan *DeduplicatedUplinkMessage, c.config.BufferSize),
 	}
 
 	var wgUp sync.WaitGroup
-	go func() {
-		wgUp.Wait()
-		close(s.uplink)
+	defer func() {
+		go func() {
+			wgUp.Wait()
+			close(s.uplink)
+		}()
 	}()
 
 	var wg utils.WaitGroup

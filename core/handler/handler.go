@@ -39,6 +39,8 @@ func NewRedisHandler(client *redis.Client, ttnBrokerID string) Handler {
 		devices:      device.NewRedisDeviceStore(client, "handler"),
 		applications: application.NewRedisApplicationStore(client, "handler"),
 		ttnBrokerID:  ttnBrokerID,
+		qUp:          make(chan *types.UplinkMessage),
+		qEvent:       make(chan *types.DeviceEvent),
 	}
 }
 
@@ -70,6 +72,10 @@ type handler struct {
 	amqpExchange string
 	amqpEnabled  bool
 	amqpUp       chan *types.UplinkMessage
+	amqpEvent    chan *types.DeviceEvent
+
+	qUp    chan *types.UplinkMessage
+	qEvent chan *types.DeviceEvent
 
 	status        *status
 	monitorStream pb_monitor.GenericStream
@@ -127,6 +133,27 @@ func (h *handler) Init(c *component.Component) error {
 			return err
 		}
 	}
+
+	go func() {
+		for {
+			select {
+			case up := <-h.qUp:
+				if h.mqttEnabled {
+					h.mqttUp <- up
+				}
+				if h.amqpEnabled {
+					h.amqpUp <- up
+				}
+			case event := <-h.qEvent:
+				if h.mqttEnabled {
+					h.mqttEvent <- event
+				}
+				if h.amqpEnabled {
+					h.amqpEvent <- event
+				}
+			}
+		}
+	}()
 
 	err = h.associateBroker()
 	if err != nil {

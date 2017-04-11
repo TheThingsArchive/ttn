@@ -48,8 +48,8 @@ func TestHandleUplink(t *testing.T) {
 	defer func() {
 		h.applications.Delete(appID)
 	}()
-	h.mqttUp = make(chan *types.UplinkMessage)
-	h.mqttEvent = make(chan *types.DeviceEvent, 10)
+	h.qUp = make(chan *types.UplinkMessage, 10)
+	h.qEvent = make(chan *types.DeviceEvent, 10)
 	h.downlink = make(chan *pb_broker.DownlinkMessage)
 
 	uplink, _ := buildLorawanUplink([]byte{0x40, 0x04, 0x03, 0x02, 0x01, 0x00, 0x01, 0x00, 0x0A, 0x4D, 0xDA, 0x23, 0x99, 0x61, 0xD4})
@@ -70,7 +70,7 @@ func TestHandleUplink(t *testing.T) {
 	// Test Uplink, no downlink option available
 	wg.Add(1)
 	go func() {
-		<-h.mqttUp
+		<-h.qUp
 		wg.Done()
 	}()
 	err = h.HandleUplink(uplink)
@@ -82,7 +82,7 @@ func TestHandleUplink(t *testing.T) {
 	// Test Uplink, no downlink needed
 	wg.Add(1)
 	go func() {
-		<-h.mqttUp
+		<-h.qUp
 		wg.Done()
 	}()
 	downlink.Payload = downlinkEmpty
@@ -93,7 +93,7 @@ func TestHandleUplink(t *testing.T) {
 	// Test Uplink, ACK downlink needed
 	wg.Add(2)
 	go func() {
-		<-h.mqttUp
+		<-h.qUp
 		wg.Done()
 	}()
 	go func() {
@@ -108,7 +108,7 @@ func TestHandleUplink(t *testing.T) {
 	// Test Uplink, MAC downlink needed
 	wg.Add(2)
 	go func() {
-		<-h.mqttUp
+		<-h.qUp
 		wg.Done()
 	}()
 	go func() {
@@ -127,7 +127,7 @@ func TestHandleUplink(t *testing.T) {
 	h.devices.Set(dev)
 	wg.Add(2)
 	go func() {
-		<-h.mqttUp
+		<-h.qUp
 		wg.Done()
 	}()
 	go func() {
@@ -154,7 +154,7 @@ func TestHandleUplink(t *testing.T) {
 	h.devices.Set(dev)
 	wg.Add(2)
 	go func() {
-		<-h.mqttUp
+		<-h.qUp
 		wg.Done()
 	}()
 	go func() {

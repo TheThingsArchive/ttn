@@ -33,12 +33,16 @@ func (s *countingStore) inc(name string) {
 	s.counts[name] = val + 1
 }
 
-func (s *countingStore) Count(name string) int {
+func (s *countingStore) count(name string) int {
 	val, ok := s.counts[name]
 	if !ok {
 		val = 0
 	}
 	return val
+}
+
+func (s *countingStore) Count() (int, error) {
+	return s.store.Count()
 }
 
 func (s *countingStore) List(opts *storage.ListOptions) ([]*application.Application, error) {
@@ -61,7 +65,7 @@ func (s *countingStore) Delete(appID string) error {
 	return s.store.Delete(appID)
 }
 
-func TestDryUplinkFields(t *testing.T) {
+func TestDryUplinkFieldsCustom(t *testing.T) {
 	a := New(t)
 
 	store := newCountingStore(application.NewRedisApplicationStore(GetRedisClient(), "handler-test-dry-uplink"))
@@ -73,7 +77,8 @@ func TestDryUplinkFields(t *testing.T) {
 	dryUplinkMessage := &pb.DryUplinkMessage{
 		Payload: []byte{11, 22, 33},
 		App: &pb.Application{
-			AppId: "DryUplinkFields",
+			AppId:         "DryUplinkFields",
+			PayloadFormat: "custom",
 			Decoder: `function Decoder (bytes) {
 				console.log("hi", 11)
 				return { length: bytes.length }}`,
@@ -103,10 +108,35 @@ func TestDryUplinkFields(t *testing.T) {
 	})
 
 	// make sure no calls to app store were made
-	a.So(store.Count("list"), ShouldEqual, 0)
-	a.So(store.Count("get"), ShouldEqual, 0)
-	a.So(store.Count("set"), ShouldEqual, 0)
-	a.So(store.Count("delete"), ShouldEqual, 0)
+	a.So(store.count("list"), ShouldEqual, 0)
+	a.So(store.count("get"), ShouldEqual, 0)
+	a.So(store.count("set"), ShouldEqual, 0)
+	a.So(store.count("delete"), ShouldEqual, 0)
+}
+
+func TestDryUplinkFieldsCayenneLPP(t *testing.T) {
+	a := New(t)
+
+	store := newCountingStore(application.NewRedisApplicationStore(GetRedisClient(), "handler-test-dry-uplink"))
+	h := &handler{
+		applications: store,
+	}
+	m := &handlerManager{handler: h}
+
+	dryUplinkMessage := &pb.DryUplinkMessage{
+		Payload: []byte{7, 103, 0, 245},
+		App: &pb.Application{
+			AppId:         "DryUplinkFields",
+			PayloadFormat: "cayennelpp",
+		},
+	}
+
+	res, err := m.DryUplink(context.TODO(), dryUplinkMessage)
+	a.So(err, ShouldBeNil)
+
+	a.So(res.Payload, ShouldResemble, dryUplinkMessage.Payload)
+	a.So(res.Fields, ShouldEqual, `{"temperature_7":24.5}`)
+	a.So(res.Valid, ShouldBeTrue)
 }
 
 func TestDryUplinkEmptyApp(t *testing.T) {
@@ -130,13 +160,13 @@ func TestDryUplinkEmptyApp(t *testing.T) {
 	a.So(res.Valid, ShouldBeTrue)
 
 	// make sure no calls to app store were made
-	a.So(store.Count("list"), ShouldEqual, 0)
-	a.So(store.Count("get"), ShouldEqual, 0)
-	a.So(store.Count("set"), ShouldEqual, 0)
-	a.So(store.Count("delete"), ShouldEqual, 0)
+	a.So(store.count("list"), ShouldEqual, 0)
+	a.So(store.count("get"), ShouldEqual, 0)
+	a.So(store.count("set"), ShouldEqual, 0)
+	a.So(store.count("delete"), ShouldEqual, 0)
 }
 
-func TestDryDownlinkFields(t *testing.T) {
+func TestDryDownlinkFieldsCustom(t *testing.T) {
 	a := New(t)
 
 	store := newCountingStore(application.NewRedisApplicationStore(GetRedisClient(), "handler-test-dry-downlink"))
@@ -148,6 +178,7 @@ func TestDryDownlinkFields(t *testing.T) {
 	msg := &pb.DryDownlinkMessage{
 		Fields: `{ "foo": [ 1, 2, 3 ] }`,
 		App: &pb.Application{
+			PayloadFormat: "custom",
 			Encoder: `
 				function Encoder (fields) {
 					console.log("hello", { foo: 33 })
@@ -168,10 +199,32 @@ func TestDryDownlinkFields(t *testing.T) {
 	})
 
 	// make sure no calls to app store were made
-	a.So(store.Count("list"), ShouldEqual, 0)
-	a.So(store.Count("get"), ShouldEqual, 0)
-	a.So(store.Count("set"), ShouldEqual, 0)
-	a.So(store.Count("delete"), ShouldEqual, 0)
+	a.So(store.count("list"), ShouldEqual, 0)
+	a.So(store.count("get"), ShouldEqual, 0)
+	a.So(store.count("set"), ShouldEqual, 0)
+	a.So(store.count("delete"), ShouldEqual, 0)
+}
+
+func TestDryDownlinkFieldsCayenneLPP(t *testing.T) {
+	a := New(t)
+
+	store := newCountingStore(application.NewRedisApplicationStore(GetRedisClient(), "handler-test-dry-downlink"))
+	h := &handler{
+		applications: store,
+	}
+	m := &handlerManager{handler: h}
+
+	msg := &pb.DryDownlinkMessage{
+		Fields: `{ "accelerometer_1": { "x": -0.5, "y": 0.2, "z": 0 } }`,
+		App: &pb.Application{
+			PayloadFormat: "cayennelpp",
+		},
+	}
+
+	res, err := m.DryDownlink(context.TODO(), msg)
+	a.So(err, ShouldBeNil)
+
+	a.So(res.Payload, ShouldResemble, []byte{1, 113, 254, 12, 0, 200, 0, 0})
 }
 
 func TestDryDownlinkPayload(t *testing.T) {
@@ -197,10 +250,10 @@ func TestDryDownlinkPayload(t *testing.T) {
 	a.So(res.Logs, ShouldResemble, []*pb.LogEntry(nil))
 
 	// make sure no calls to app store were made
-	a.So(store.Count("list"), ShouldEqual, 0)
-	a.So(store.Count("get"), ShouldEqual, 0)
-	a.So(store.Count("set"), ShouldEqual, 0)
-	a.So(store.Count("delete"), ShouldEqual, 0)
+	a.So(store.count("list"), ShouldEqual, 0)
+	a.So(store.count("get"), ShouldEqual, 0)
+	a.So(store.count("set"), ShouldEqual, 0)
+	a.So(store.count("delete"), ShouldEqual, 0)
 }
 
 func TestDryDownlinkEmptyApp(t *testing.T) {
@@ -220,10 +273,10 @@ func TestDryDownlinkEmptyApp(t *testing.T) {
 	a.So(err, ShouldNotBeNil)
 
 	// make sure no calls to app store were made
-	a.So(store.Count("list"), ShouldEqual, 0)
-	a.So(store.Count("get"), ShouldEqual, 0)
-	a.So(store.Count("set"), ShouldEqual, 0)
-	a.So(store.Count("delete"), ShouldEqual, 0)
+	a.So(store.count("list"), ShouldEqual, 0)
+	a.So(store.count("get"), ShouldEqual, 0)
+	a.So(store.count("set"), ShouldEqual, 0)
+	a.So(store.count("delete"), ShouldEqual, 0)
 }
 
 func TestLogs(t *testing.T) {
@@ -238,6 +291,7 @@ func TestLogs(t *testing.T) {
 	msg := &pb.DryDownlinkMessage{
 		Fields: `{ "foo": [ 1, 2, 3 ] }`,
 		App: &pb.Application{
+			PayloadFormat: "custom",
 			Encoder: `
 				function Encoder (fields) {
 					console.log("foo", 1, "bar", new Date(0))

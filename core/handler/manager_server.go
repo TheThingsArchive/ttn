@@ -255,7 +255,7 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*empty.E
 		return nil, err
 	}
 
-	h.handler.mqttEvent <- &types.DeviceEvent{
+	h.handler.qEvent <- &types.DeviceEvent{
 		AppID: dev.AppID,
 		DevID: dev.DevID,
 		Event: eventType,
@@ -294,7 +294,7 @@ func (h *handlerManager) DeleteDevice(ctx context.Context, in *pb.DeviceIdentifi
 	if err != nil {
 		return nil, err
 	}
-	h.handler.mqttEvent <- &types.DeviceEvent{
+	h.handler.qEvent <- &types.DeviceEvent{
 		AppID: in.AppId,
 		DevID: in.DevId,
 		Event: types.DeleteEvent,
@@ -382,11 +382,12 @@ func (h *handlerManager) GetApplication(ctx context.Context, in *pb.ApplicationI
 	}
 
 	return &pb.Application{
-		AppId:     app.AppID,
-		Decoder:   app.Decoder,
-		Converter: app.Converter,
-		Validator: app.Validator,
-		Encoder:   app.Encoder,
+		AppId:         app.AppID,
+		PayloadFormat: string(app.PayloadFormat),
+		Decoder:       app.CustomDecoder,
+		Converter:     app.CustomConverter,
+		Validator:     app.CustomValidator,
+		Encoder:       app.CustomEncoder,
 	}, nil
 }
 
@@ -454,10 +455,14 @@ func (h *handlerManager) SetApplication(ctx context.Context, in *pb.Application)
 
 	app.StartUpdate()
 
-	app.Decoder = in.Decoder
-	app.Converter = in.Converter
-	app.Validator = in.Validator
-	app.Encoder = in.Encoder
+	app.PayloadFormat = application.PayloadFormat(in.PayloadFormat)
+	app.CustomDecoder = in.Decoder
+	app.CustomConverter = in.Converter
+	app.CustomValidator = in.Validator
+	app.CustomEncoder = in.Encoder
+	if app.PayloadFormat == "" && (app.CustomDecoder != "" || app.CustomConverter != "" || app.CustomValidator != "" || app.CustomEncoder != "") {
+		app.PayloadFormat = application.PayloadFormatCustom
+	}
 
 	err = h.handler.applications.Set(app)
 	if err != nil {

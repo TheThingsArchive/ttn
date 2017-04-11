@@ -74,7 +74,7 @@ var uplinkCmd = &cobra.Command{
 			}
 		}
 
-		gtwClient := rtrClient.NewGatewayStreams(gatewayID, gatewayToken)
+		gtwClient := rtrClient.NewGatewayStreams(gatewayID, gatewayToken, true)
 		defer gtwClient.Close()
 
 		time.Sleep(100 * time.Millisecond)
@@ -97,8 +97,9 @@ var uplinkCmd = &cobra.Command{
 
 		ctx.Info("Sent uplink to Router")
 
+		downlink, _ := gtwClient.Downlink()
 		select {
-		case downlinkMessage, ok := <-gtwClient.Downlink():
+		case downlinkMessage, ok := <-downlink:
 			if !ok {
 				ctx.Info("Did not receive downlink")
 				break

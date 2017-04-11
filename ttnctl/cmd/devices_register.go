@@ -4,6 +4,8 @@
 package cmd
 
 import (
+	"strings"
+
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/go-utils/pseudorandom"
 	"github.com/TheThingsNetwork/go-utils/random"
@@ -32,9 +34,9 @@ var devicesRegisterCmd = &cobra.Command{
 
 		var err error
 
-		devID := args[0]
-		if !api.ValidID(devID) {
-			ctx.Fatalf("Invalid Device ID") // TODO: Add link to wiki explaining device IDs
+		devID := strings.ToLower(args[0])
+		if err := api.NotEmptyAndValidID(devID, "Device ID"); err != nil {
+			ctx.Fatal(err.Error())
 		}
 
 		appID := util.GetAppID(ctx)

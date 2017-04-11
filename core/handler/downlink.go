@@ -38,7 +38,7 @@ func (h *handler) EnqueueDownlink(appDownlink *types.DownlinkMessage) (err error
 
 	defer func() {
 		if err != nil {
-			h.mqttEvent <- &types.DeviceEvent{
+			t := &types.DeviceEvent{
 				AppID: appID,
 				DevID: devID,
 				Event: types.DownlinkErrorEvent,
@@ -47,6 +47,7 @@ func (h *handler) EnqueueDownlink(appDownlink *types.DownlinkMessage) (err error
 					Message:        appDownlink,
 				},
 			}
+			h.qEvent <- t
 		}
 	}()
 
@@ -82,7 +83,7 @@ func (h *handler) EnqueueDownlink(appDownlink *types.DownlinkMessage) (err error
 		return err
 	}
 
-	h.mqttEvent <- &types.DeviceEvent{
+	t := &types.DeviceEvent{
 		AppID: appID,
 		DevID: devID,
 		Event: types.DownlinkScheduledEvent,
@@ -90,7 +91,7 @@ func (h *handler) EnqueueDownlink(appDownlink *types.DownlinkMessage) (err error
 			Message: appDownlink,
 		},
 	}
-
+	h.qEvent <- t
 	return nil
 }
 
@@ -106,7 +107,7 @@ func (h *handler) HandleDownlink(appDownlink *types.DownlinkMessage, downlink *p
 
 	defer func() {
 		if err != nil {
-			h.mqttEvent <- &types.DeviceEvent{
+			t := &types.DeviceEvent{
 				AppID: appID,
 				DevID: devID,
 				Event: types.DownlinkErrorEvent,
@@ -115,6 +116,7 @@ func (h *handler) HandleDownlink(appDownlink *types.DownlinkMessage, downlink *p
 					Message:        appDownlink,
 				},
 			}
+			h.qEvent <- t
 			ctx.WithError(err).Warn("Could not handle downlink")
 			downlink.Trace = downlink.Trace.WithEvent(trace.DropEvent, "reason", err)
 		}
@@ -181,7 +183,7 @@ func (h *handler) HandleDownlink(appDownlink *types.DownlinkMessage, downlink *p
 		downlinkConfig.Power = int(downlink.DownlinkOption.GatewayConfig.Power)
 	}
 
-	h.mqttEvent <- &types.DeviceEvent{
+	t := &types.DeviceEvent{
 		AppID: appDownlink.AppID,
 		DevID: appDownlink.DevID,
 		Event: types.DownlinkSentEvent,
@@ -192,6 +194,6 @@ func (h *handler) HandleDownlink(appDownlink *types.DownlinkMessage, downlink *p
 			Config:    downlinkConfig,
 		},
 	}
-
+	h.qEvent <- t
 	return nil
 }

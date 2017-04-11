@@ -48,7 +48,7 @@ func (h *handler) HandleMQTT(username, password string, mqttBrokers ...string) e
 				"AppID": up.AppID,
 			}).Debug("Publish Uplink")
 			upToken := h.mqttClient.PublishUplink(*up)
-			go func() {
+			go func(ctx ttnlog.Interface) {
 				if upToken.WaitTimeout(MQTTTimeout) {
 					if upToken.Error() != nil {
 						ctx.WithError(upToken.Error()).Warn("Could not publish Uplink")
@@ -56,10 +56,10 @@ func (h *handler) HandleMQTT(username, password string, mqttBrokers ...string) e
 				} else {
 					ctx.Warn("Uplink publish timeout")
 				}
-			}()
+			}(ctx)
 			if len(up.PayloadFields) > 0 {
 				fieldsToken := h.mqttClient.PublishUplinkFields(up.AppID, up.DevID, up.PayloadFields)
-				go func() {
+				go func(ctx ttnlog.Interface) {
 					if fieldsToken.WaitTimeout(MQTTTimeout) {
 						if fieldsToken.Error() != nil {
 							ctx.WithError(fieldsToken.Error()).Warn("Could not publish Uplink Fields")
@@ -67,14 +67,14 @@ func (h *handler) HandleMQTT(username, password string, mqttBrokers ...string) e
 					} else {
 						ctx.Warn("Uplink Fields publish timeout")
 					}
-				}()
+				}(ctx)
 			}
 		}
 	}()
 
 	go func() {
 		for event := range h.mqttEvent {
-			h.Ctx.WithFields(ttnlog.Fields{
+			ctx.WithFields(ttnlog.Fields{
 				"DevID": event.DevID,
 				"AppID": event.AppID,
 				"Event": event.Event,

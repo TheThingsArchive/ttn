@@ -74,6 +74,15 @@ func (s *RedisSetStore) GetAll(keys []string, options *ListOptions) (map[string]
 	return data, nil
 }
 
+// Count the number of items for the given key
+func (s *RedisSetStore) Count(key string) (int, error) {
+	if !strings.HasPrefix(key, s.prefix) {
+		key = s.prefix + key
+	}
+	res, err := s.client.SCard(key).Result()
+	return int(res), err
+}
+
 // List all results matching the selector, prepending the prefix to the selector if necessary
 func (s *RedisSetStore) List(selector string, options *ListOptions) (map[string][]string, error) {
 	allKeys, err := s.Keys(selector)

@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"encoding/json"
+	"strings"
 
 	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/core/types"
@@ -32,9 +33,9 @@ $ ttnctl downlink test --json '{"led":"on"}'
 		appID := util.GetAppID(ctx)
 		ctx = ctx.WithField("AppID", appID)
 
-		devID := args[0]
-		if !api.ValidID(devID) {
-			ctx.Fatalf("Invalid Device ID") // TODO: Add link to wiki explaining device IDs
+		devID := strings.ToLower(args[0])
+		if err := api.NotEmptyAndValidID(devID, "Device ID"); err != nil {
+			ctx.Fatal(err.Error())
 		}
 		ctx = ctx.WithField("DevID", devID)
 

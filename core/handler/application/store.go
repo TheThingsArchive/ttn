@@ -14,6 +14,7 @@ import (
 
 // Store interface for Applications
 type Store interface {
+	Count() (int, error)
 	List(opts *storage.ListOptions) ([]*Application, error)
 	Get(appID string) (*Application, error)
 	Set(new *Application, properties ...string) (err error)
@@ -43,6 +44,11 @@ func NewRedisApplicationStore(client *redis.Client, prefix string) Store {
 // - Applications are stored as a Hash
 type RedisApplicationStore struct {
 	store *storage.RedisMapStore
+}
+
+// Count all applications in the store
+func (s *RedisApplicationStore) Count() (int, error) {
+	return s.store.Count("")
 }
 
 // List all Applications

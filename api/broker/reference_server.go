@@ -29,6 +29,8 @@ func NewReferenceBrokerServer(bufferSize int) *ReferenceBrokerServer {
 
 		downlinkIn: make(chan *DownlinkMessage, bufferSize),
 		uplinkOut:  make(map[string]*uplinkSubscription),
+
+		metrics: new(metrics),
 	}
 	for i := 0; i < bufferSize; i++ {
 		go func() {
@@ -63,7 +65,7 @@ type ReferenceBrokerServer struct {
 	downlinkOut map[string]*downlinkSubscription
 	uplinkOut   map[string]*uplinkSubscription
 
-	metrics metrics
+	metrics *metrics
 }
 
 type downlinkSubscription struct {

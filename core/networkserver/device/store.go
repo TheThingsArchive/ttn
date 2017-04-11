@@ -16,7 +16,9 @@ import (
 
 // Store interface for Devices
 type Store interface {
+	Count() (int, error)
 	List(opts *storage.ListOptions) ([]*Device, error)
+	CountForAddress(devAddr types.DevAddr) (int, error)
 	ListForAddress(devAddr types.DevAddr) ([]*Device, error)
 	Get(appEUI types.AppEUI, devEUI types.DevEUI) (*Device, error)
 	Set(new *Device, properties ...string) (err error)
@@ -61,6 +63,11 @@ type RedisDeviceStore struct {
 	devAddrIndex *storage.RedisSetStore
 }
 
+// Count all Devices
+func (s *RedisDeviceStore) Count() (int, error) {
+	return s.store.Count("")
+}
+
 // List all Devices
 func (s *RedisDeviceStore) List(opts *storage.ListOptions) ([]*Device, error) {
 	devicesI, err := s.store.List("", opts)
@@ -74,6 +81,11 @@ func (s *RedisDeviceStore) List(opts *storage.ListOptions) ([]*Device, error) {
 		}
 	}
 	return devices, nil
+}
+
+// CountForAddress counts all devices for a specific DevAddr
+func (s *RedisDeviceStore) CountForAddress(devAddr types.DevAddr) (int, error) {
+	return s.devAddrIndex.Count(devAddr.String())
 }
 
 // ListForAddress lists all devices for a specific DevAddr

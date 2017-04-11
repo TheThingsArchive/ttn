@@ -4,6 +4,8 @@
 package cmd
 
 import (
+	"strings"
+
 	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/spf13/cobra"
@@ -19,9 +21,9 @@ var gatewaysDeleteCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		assertArgsLength(cmd, args, 1, 1)
 
-		gatewayID := args[0]
-		if !api.ValidID(gatewayID) {
-			ctx.Fatal("Invalid Gateway ID")
+		gatewayID := strings.ToLower(args[0])
+		if err := api.NotEmptyAndValidID(gatewayID, "Gateway ID"); err != nil {
+			ctx.Fatal(err.Error())
 		}
 
 		account := util.GetAccount(ctx)
