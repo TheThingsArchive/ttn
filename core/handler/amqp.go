@@ -4,10 +4,15 @@
 package handler
 
 import (
+	"sync"
+
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/amqp"
 	"github.com/TheThingsNetwork/ttn/core/types"
 )
+
+// AMQPBufferSize indicates the size for uplink channel buffers
+var AMQPBufferSize = 10
 
 func (h *handler) assertAMQPExchange() error {
 	ch, err := h.amqpClient.(*amqp.DefaultClient).GetChannel()
@@ -48,7 +53,8 @@ func (h *handler) HandleAMQP(username, password, host, exchange, downlinkQueue s
 		return err
 	}
 
-	h.amqpUp = make(chan *types.UplinkMessage)
+	h.amqpUp = make(chan *types.UplinkMessage, AMQPBufferSize)
+	h.amqpEvent = make(chan *types.DeviceEvent, AMQPBufferSize)
 
 	subscriber := h.amqpClient.NewSubscriber(h.amqpExchange, downlinkQueue, downlinkQueue != "", downlinkQueue == "")
 	err = subscriber.Open()
@@ -68,16 +74,24 @@ func (h *handler) HandleAMQP(username, password, host, exchange, downlinkQueue s
 	}
 
 	ctx := h.Ctx.WithField("Protocol", "AMQP")
+	publisher := h.amqpClient.NewPublisher(h.amqpExchange)
+	err = publisher.Open()
+	if err != nil {
+		ctx.WithError(err).Error("Could not open publisher channel")
+		return err
+	}
+
+	var pubWait sync.WaitGroup
+	pubWait.Add(2)
+	defer func() {
+		go func() {
+			pubWait.Wait()
+			publisher.Close()
+		}()
+	}()
 
 	go func() {
-		publisher := h.amqpClient.NewPublisher(h.amqpExchange)
-		err := publisher.Open()
-		if err != nil {
-			ctx.WithError(err).Error("Could not open publisher channel")
-			return
-		}
-		defer publisher.Close()
-
+		defer pubWait.Done()
 		for up := range h.amqpUp {
 			ctx.WithFields(ttnlog.Fields{
 				"DevID": up.DevID,
@@ -86,6 +100,22 @@ func (h *handler) HandleAMQP(username, password, host, exchange, downlinkQueue s
 			err := publisher.PublishUplink(*up)
 			if err != nil {
 				ctx.WithError(err).Warn("Could not publish Uplink")
+			}
+		}
+	}()
+
+	go func() {
+		defer pubWait.Done()
+		for event := range h.amqpEvent {
+			ctx.WithFields(ttnlog.Fields{
+				"DevID": event.DevID,
+				"AppID": event.AppID,
+				"Event": event.Event,
+			}).Debug("Publish Event")
+			if event.DevID == "" {
+				publisher.PublishAppEvent(event.AppID, event.Event, event.Data)
+			} else {
+				publisher.PublishDeviceEvent(event.AppID, event.DevID, event.Event, event.Data)
 			}
 		}
 	}()

@@ -255,7 +255,7 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*empty.E
 		return nil, err
 	}
 
-	h.handler.mqttEvent <- &types.DeviceEvent{
+	h.handler.qEvent <- &types.DeviceEvent{
 		AppID: dev.AppID,
 		DevID: dev.DevID,
 		Event: eventType,
@@ -294,7 +294,7 @@ func (h *handlerManager) DeleteDevice(ctx context.Context, in *pb.DeviceIdentifi
 	if err != nil {
 		return nil, err
 	}
-	h.handler.mqttEvent <- &types.DeviceEvent{
+	h.handler.qEvent <- &types.DeviceEvent{
 		AppID: in.AppId,
 		DevID: in.DevId,
 		Event: types.DeleteEvent,

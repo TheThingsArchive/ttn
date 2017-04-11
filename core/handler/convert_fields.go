@@ -53,7 +53,7 @@ func (h *handler) ConvertFieldsUp(ctx ttnlog.Interface, _ *pb_broker.Deduplicate
 	fields, valid, err := decoder.Decode(appUp.PayloadRaw, appUp.FPort)
 	if err != nil {
 		// Emit the error
-		h.mqttEvent <- &types.DeviceEvent{
+		h.qEvent <- &types.DeviceEvent{
 			AppID: appUp.AppID,
 			DevID: appUp.DevID,
 			Event: types.UplinkErrorEvent,

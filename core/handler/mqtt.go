@@ -74,7 +74,7 @@ func (h *handler) HandleMQTT(username, password string, mqttBrokers ...string) e
 
 	go func() {
 		for event := range h.mqttEvent {
-			h.Ctx.WithFields(ttnlog.Fields{
+			ctx.WithFields(ttnlog.Fields{
 				"DevID": event.DevID,
 				"AppID": event.AppID,
 				"Event": event.Event,
