@@ -47,8 +47,7 @@ func (h *handler) EnqueueDownlink(appDownlink *types.DownlinkMessage) (err error
 					Message:        appDownlink,
 				},
 			}
-			h.mqttEvent <- t
-			h.amqpEvent <- t
+			h.qEvent <- t
 		}
 	}()
 
@@ -92,8 +91,7 @@ func (h *handler) EnqueueDownlink(appDownlink *types.DownlinkMessage) (err error
 			Message: appDownlink,
 		},
 	}
-	h.mqttEvent <- t
-	h.amqpEvent <- t
+	h.qEvent <- t
 	return nil
 }
 
@@ -118,8 +116,7 @@ func (h *handler) HandleDownlink(appDownlink *types.DownlinkMessage, downlink *p
 					Message:        appDownlink,
 				},
 			}
-			h.mqttEvent <- t
-			h.amqpEvent <- t
+			h.qEvent <- t
 			ctx.WithError(err).Warn("Could not handle downlink")
 			downlink.Trace = downlink.Trace.WithEvent(trace.DropEvent, "reason", err)
 		}
@@ -197,7 +194,6 @@ func (h *handler) HandleDownlink(appDownlink *types.DownlinkMessage, downlink *p
 			Config:    downlinkConfig,
 		},
 	}
-	h.mqttEvent <- t
-	h.amqpEvent <- t
+	h.qEvent <- t
 	return nil
 }

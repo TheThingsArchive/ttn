@@ -26,12 +26,12 @@ func (h *handler) getActivationMetadata(ctx ttnlog.Interface, activation *pb_bro
 		GatewayMetadata:  activation.GatewayMetadata,
 		ServerTime:       activation.ServerTime,
 	}
-	mqttUp := &types.UplinkMessage{}
-	err := h.ConvertMetadata(ctx, ttnUp, mqttUp, device)
+	appUp := &types.UplinkMessage{}
+	err := h.ConvertMetadata(ctx, ttnUp, appUp, device)
 	if err != nil {
 		return types.Metadata{}, err
 	}
-	return mqttUp.Metadata, nil
+	return appUp.Metadata, nil
 }
 
 func (h *handler) HandleActivationChallenge(challenge *pb_broker.ActivationChallengeRequest) (*pb_broker.ActivationChallengeResponse, error) {
@@ -76,7 +76,7 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 	start := time.Now()
 	defer func() {
 		if err != nil {
-			h.mqttEvent <- &types.DeviceEvent{
+			h.qEvent <- &types.DeviceEvent{
 				AppID: appID,
 				DevID: devID,
 				Event: types.ActivationErrorEvent,
@@ -174,7 +174,7 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 
 	// Publish Activation
 	mqttMetadata, _ := h.getActivationMetadata(ctx, activation, dev)
-	h.mqttEvent <- &types.DeviceEvent{
+	h.qEvent <- &types.DeviceEvent{
 		AppID: appID,
 		DevID: devID,
 		Event: types.ActivationEvent,

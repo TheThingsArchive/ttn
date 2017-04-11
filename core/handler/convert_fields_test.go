@@ -34,7 +34,7 @@ func TestConvertFieldsUpCustom(t *testing.T) {
 
 	h := &handler{
 		applications: application.NewRedisApplicationStore(GetRedisClient(), "handler-test-convert-fields-up"),
-		mqttEvent:    make(chan *types.DeviceEvent, 1),
+		qEvent:       make(chan *types.DeviceEvent, 1),
 	}
 
 	// No functions
@@ -85,8 +85,8 @@ func TestConvertFieldsUpCustom(t *testing.T) {
 		err := h.ConvertFieldsUp(GetLogger(t, "TestConvertFieldsUpCustom"), ttnUp, appUp, nil)
 		a.So(err, ShouldBeNil)
 		a.So(appUp.PayloadFields, ShouldBeEmpty)
-		a.So(len(h.mqttEvent), ShouldEqual, 1)
-		evt := <-h.mqttEvent
+		a.So(len(h.qEvent), ShouldEqual, 1)
+		evt := <-h.qEvent
 		_, ok := evt.Data.(types.ErrorEventData)
 		a.So(ok, ShouldBeTrue)
 	}
@@ -113,7 +113,7 @@ func TestConvertFieldsUpCayenneLPP(t *testing.T) {
 
 	h := &handler{
 		applications: application.NewRedisApplicationStore(GetRedisClient(), "handler-test-convert-fields-up"),
-		mqttEvent:    make(chan *types.DeviceEvent, 1),
+		qEvent:       make(chan *types.DeviceEvent, 1),
 	}
 
 	// No application
