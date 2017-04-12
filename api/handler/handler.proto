@@ -68,15 +68,12 @@ message Application {
   // message is dropped. This function is used when the payload format is set to custom.
   string validator      = 4;
 
+  // The encoder is a JavaScript function that encodes an object to a byte array.
   // This function is used when the payload format is set to custom.
   string encoder        = 5;
 
   // Flag that is set if on-join registration is activated on that application.
-  bool   on_join_registration = 7;
-
-  // If on-join registration is activated, contains the name of the access key to interact
-  // with the account server.
-  string on_join_registration_access_key_name = 8;
+  bool   on_join_registration_enabled = 7;
 }
 
 message DeviceIdentifier {

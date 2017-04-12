@@ -82,7 +82,6 @@ func (n *networkServerManager) getDevice(ctx context.Context, in *pb_lorawan.Dev
 			return nil, err
 		}
 		if dev == nil {
-			// No empty device either => throwing No Device Found error
 			return nil, errors.New("Storage did not return a Device")
 		}
 	}
@@ -204,12 +203,12 @@ func (n *networkServerManager) SetRegisterOnJoin(ctx context.Context, in *pb_lor
 		settingSet = true
 	}
 
-	if settingSet == in.Val {
+	if settingSet == in.Enabled {
 		// Setting is already set
 		return &empty.Empty{}, nil
 	}
 
-	if !in.Val {
+	if !in.Enabled {
 		// User asking for on-join registration deactivation
 		err := n.networkServer.devices.Delete(*in.AppEui, emptyDevEUI)
 		if err != nil {

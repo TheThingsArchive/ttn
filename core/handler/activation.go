@@ -41,7 +41,7 @@ func (h *handler) getActivationMetadata(ctx ttnlog.Interface, activation *pb_bro
 
 // registerDeviceAtActivation serves the purpose of registering a new device that isn't registered yet,
 // but that has the right IDs to be registered
-func (h *handler) registerDeviceAtActivation(challenge *pb_broker.ActivationChallengeRequest) (*pb_broker.ActivationChallengeRequest, error) {
+func (h *handler) registerDeviceOnJoin(challenge *pb_broker.ActivationChallengeRequest) (*pb_broker.ActivationChallengeRequest, error) {
 	app, err := h.applications.Get(challenge.AppId)
 	if err != nil {
 		return nil, errors.Wrap(err, "Application not registered to this Handler")
@@ -103,7 +103,7 @@ func (h *handler) HandleActivationChallenge(challenge *pb_broker.ActivationChall
 			"AppEUI": challenge.AppEui.String(),
 			"DevEUI": challenge.DevEui.String(),
 		}).Debug("Device not registered requested for activation")
-		h.registerDeviceAtActivation(challenge)
+		h.registerDeviceOnJoin(challenge)
 	}
 
 	// Find Device

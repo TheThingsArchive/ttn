@@ -60,13 +60,14 @@ level, caution should be exercised.
 		conn, manager := util.GetHandlerManager(ctx, appID)
 		defer conn.Close()
 
-		var onJoinSetting bool
+		var enabled bool
 		settingStr := args[0]
-		if settingStr == "on" {
-			onJoinSetting = true
-		} else if settingStr == "off" {
-			onJoinSetting = false
-		} else {
+		switch settingStr {
+		case "on":
+			enabled = true
+		case "off":
+			enabled = false
+		default:
 			// Incorrect string
 			ctx.Fatal("Please choose \"on\" or \"off\" for the On-Join Registration setting.")
 		}
@@ -77,11 +78,11 @@ level, caution should be exercised.
 		if err != nil {
 			resultCtx.WithError(err).Fatal("Couldn't retrieve application information")
 		}
-		if app.OnJoinRegistration == onJoinSetting {
+		if app.OnJoinRegistration == enabled {
 			resultCtx.Fatal("On-join registration setting is already set")
 		}
 
-		if onJoinSetting {
+		if enabled {
 			ctx.Info("Generating handler-stored access key")
 			accessKeyName = fmt.Sprintf("%s-%s-%s", onJoinRegistrationAccessKeyName, appID, randStr(30))
 			accessKey, err = account.AddAccessKey(appID, accessKeyName, []types.Right{rights.Devices})
@@ -171,20 +172,20 @@ level, caution should be exercised.
 			}()
 		}
 
-		resultCtx.Info("Configuring On-Join Registration setting...")
+		resultCtx.Info("Configuring on-join registration setting...")
 		err = manager.SetRegisterOnJoin(&lorawan.SetRegisterOnJoinMessage{
 			AppId:         appID,
-			Val:           onJoinSetting,
+			Val:           enabled,
 			AppEui:        eui,
 			AppKey:        appKey,
 			AccessKey:     accessKey.Key,
 			AccessKeyName: accessKeyName,
 		})
 		if err != nil {
-			resultCtx.WithError(err).Fatal("Could not configure On-Join Registration setting")
+			resultCtx.WithError(err).Fatal("Could not configure on-join registration setting")
 		}
 
-		resultCtx.Info("On-Join Registration setting configured")
+		resultCtx.Info("On-join registration setting configured")
 		success = true
 	},
 }

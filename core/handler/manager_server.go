@@ -93,8 +93,8 @@ func (h *handlerManager) SetRegisterOnJoin(ctx context.Context, in *pb_lorawan.S
 
 	app.StartUpdate()
 
-	app.OnJoinRegistration = in.Val
-	if in.Val {
+	app.OnJoinRegistration = in.Enabled
+	if in.Enabled {
 		app.OnJoinRegistrationAppEui = *in.AppEui
 		app.OnJoinRegistrationAppKey = *in.AppKey
 		app.OnJoinRegistrationAccessKey = in.AccessKey
@@ -102,26 +102,30 @@ func (h *handlerManager) SetRegisterOnJoin(ctx context.Context, in *pb_lorawan.S
 	} else {
 		in.AppEui = &app.OnJoinRegistrationAppEui
 	}
+
+	// Removing keys before sending the message to other components
+	brokerMessage := *in
+	brokerMessage.AccessKey = ""
+	brokerMessage.AppKey = &types.AppKey{}
+
 	h.handler.Ctx.WithFields(ttnlog.Fields{
 		"AppEui":        app.OnJoinRegistrationAppEui,
-		"AppKey":        app.OnJoinRegistrationAppKey,
-		"AccessKey":     app.OnJoinRegistrationAccessKey,
 		"AccessKeyName": app.OnJoinRegistrationAccessKeyName,
-	}).Debug("Registering on-join parameters...")
+	}).Debug("Registering on-join parameters")
+
+	_, err = h.deviceManager.SetRegisterOnJoin(ctx, &brokerMessage)
+	if err != nil {
+		return nil, errors.New("Broker did not set on-join registration setting")
+	}
 
 	err = h.handler.applications.Set(app)
 	if err != nil {
-		return nil, err
-	}
-
-	_, err = h.deviceManager.SetRegisterOnJoin(ctx, in)
-	if err != nil {
 		// Try to revert the changes
-		app.OnJoinRegistration = !in.Val
-		if err := h.handler.applications.Set(app); err != nil {
-			h.handler.Ctx.WithField("AppID", app.AppID).Error("Failed to revert the changes at the handler level when SetRegisterOnJoin failed")
+		brokerMessage.Enabled = !brokerMessage.Enabled
+		if _, err := h.deviceManager.SetRegisterOnJoin(ctx, &brokerMessage); err != nil {
+			h.handler.Ctx.WithField("AppID", app.AppID).WithError(err).Error("Failed to revert SetRegisterOnJoin operation when storage failed")
 		}
-		return nil, errors.New("Broker did not set on-join registration setting")
+		return nil, err
 	}
 
 	return &empty.Empty{}, nil
@@ -436,15 +440,13 @@ func (h *handlerManager) GetApplication(ctx context.Context, in *pb.ApplicationI
 	}
 
 	return &pb.Application{
-		AppId:         app.AppID,
-		PayloadFormat: string(app.PayloadFormat),
-		Decoder:       app.CustomDecoder,
-		Converter:     app.CustomConverter,
-		Validator:     app.CustomValidator,
-		Encoder:       app.CustomEncoder,
-		// On-join registration settings
-		OnJoinRegistration:              app.OnJoinRegistration,
-		OnJoinRegistrationAccessKeyName: app.OnJoinRegistrationAccessKeyName,
+		AppId:                     app.AppID,
+		PayloadFormat:             string(app.PayloadFormat),
+		Decoder:                   app.CustomDecoder,
+		Converter:                 app.CustomConverter,
+		Validator:                 app.CustomValidator,
+		Encoder:                   app.CustomEncoder,
+		OnJoinRegistrationEnabled: app.OnJoinRegistration,
 	}, nil
 }
 
