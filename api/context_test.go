@@ -51,12 +51,12 @@ func TestContext(t *testing.T) {
 
 	// Errors if the context has wrong metadata
 	{
-		_, _, err := LimitAndOffsetFromContext(metadata.NewContext(context.Background(), metadata.Pairs(
+		_, _, err := LimitAndOffsetFromContext(metadata.NewIncomingContext(context.Background(), metadata.Pairs(
 			"limit", "wut",
 		)))
 		a.So(err, ShouldNotBeNil)
 
-		_, _, err = LimitAndOffsetFromContext(metadata.NewContext(context.Background(), metadata.Pairs(
+		_, _, err = LimitAndOffsetFromContext(metadata.NewIncomingContext(context.Background(), metadata.Pairs(
 			"offset", "wut",
 		)))
 		a.So(err, ShouldNotBeNil)
