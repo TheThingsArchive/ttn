@@ -39,9 +39,10 @@ func (h *handler) getActivationMetadata(ctx ttnlog.Interface, activation *pb_bro
 	return appUp.Metadata, nil
 }
 
-func (h *handler) OnJoinRegistration(registrationRequest *pb_broker.OnJoinRegistrationRequest) (*pb_broker.OnJoinRegistrationResponse, error) {
-	// Find application
-	app, err := h.applications.Get(registrationRequest.AppId)
+// registerDeviceAtActivation serves the purpose of registering a new device that isn't registered yet,
+// but that has the right IDs to be registered
+func (h *handler) registerDeviceAtActivation(challenge *pb_broker.ActivationChallengeRequest) (*pb_broker.ActivationChallengeRequest, error) {
+	app, err := h.applications.Get(challenge.AppId)
 	if err != nil {
 		return nil, errors.Wrap(err, "Application not registered to this Handler")
 	}
@@ -49,15 +50,15 @@ func (h *handler) OnJoinRegistration(registrationRequest *pb_broker.OnJoinRegist
 	if !app.OnJoinRegistration {
 		return nil, errors.New("Application not set to accept on-join registration")
 	}
-	if app.OnJoinRegistrationAppEui != *registrationRequest.AppEui {
+	if app.OnJoinRegistrationAppEui != *challenge.AppEui {
 		return nil, errors.New("AppEui not set to accept on-join registration")
 	}
 
 	device := &device.Device{
-		AppID:  registrationRequest.AppId,
-		AppEUI: *registrationRequest.AppEui,
-		DevEUI: *registrationRequest.DevEui,
-		DevID:  fmt.Sprintf("%s-%s", strings.ToLower(registrationRequest.AppEui.String()), strings.ToLower(registrationRequest.DevEui.String())),
+		AppID:  challenge.AppId,
+		AppEUI: *challenge.AppEui,
+		DevEUI: *challenge.DevEui,
+		DevID:  fmt.Sprintf("%s-%s", strings.ToLower(challenge.AppEui.String()), strings.ToLower(challenge.DevEui.String())),
 
 		Description: fmt.Sprintf("Device registered onjoin on %s", time.Now().UTC().Format(time.UnixDate)),
 
@@ -89,10 +90,21 @@ func (h *handler) OnJoinRegistration(registrationRequest *pb_broker.OnJoinRegist
 		Data:  nil, // Don't send sensitive details over MQTT
 	}
 
-	return &pb_broker.OnJoinRegistrationResponse{DevId: device.DevID}, nil
+	challenge.DevId = device.DevID
+
+	return challenge, nil
 }
 
 func (h *handler) HandleActivationChallenge(challenge *pb_broker.ActivationChallengeRequest) (*pb_broker.ActivationChallengeResponse, error) {
+	// Check if the device is yet to be registered
+	if challenge.DevId == "" {
+		h.Ctx.WithFields(ttnlog.Fields{
+			"AppID":  challenge.AppId,
+			"AppEUI": challenge.AppEui.String(),
+			"DevEUI": challenge.DevEui.String(),
+		}).Debug("Device not registered requested for activation")
+		h.registerDeviceAtActivation(challenge)
+	}
 
 	// Find Device
 	dev, err := h.devices.Get(challenge.AppId, challenge.DevId)

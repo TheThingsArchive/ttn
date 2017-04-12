@@ -16,7 +16,6 @@ import (
 	"github.com/TheThingsNetwork/ttn/api/fields"
 	pb_handler "github.com/TheThingsNetwork/ttn/api/handler"
 	"github.com/TheThingsNetwork/ttn/api/trace"
-	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/brocaar/lorawan"
 )
@@ -27,70 +26,7 @@ type challengeResponseWithHandler struct {
 	response *pb.ActivationChallengeResponse
 }
 
-var (
-	emptyDevEUI            = types.DevEUI{}
-	errDuplicateActivation = errors.New("Not handling duplicate activation on this gateway")
-)
-
-func (b *broker) registerNewDevice(activation *pb.DeduplicatedDeviceActivationRequest) (*pb.DeduplicatedDeviceActivationRequest, error) {
-	ctx := b.Ctx
-
-	// Find Handler (based on AppEUI)
-	var announcements []*pb_discovery.Announcement
-	announcements, err := b.Discovery.GetAllHandlersForAppID(activation.AppId)
-	if err != nil {
-		return nil, err
-	}
-	if len(announcements) == 0 {
-		return nil, errors.NewErrNotFound(fmt.Sprintf("Handler for AppID %s", activation.AppId))
-	}
-
-	registrationReq := &pb.OnJoinRegistrationRequest{
-		AppId:  activation.AppId,
-		AppEui: activation.AppEui,
-		DevEui: activation.DevEui,
-	}
-
-	var wg sync.WaitGroup
-	responses := make(chan *pb.OnJoinRegistrationResponse, len(announcements))
-	for _, announcement := range announcements {
-		conn, err := b.getHandlerConn(announcement.Id)
-		if err != nil {
-			ctx.WithError(err).Warn("Could not dial handler for registration")
-			continue
-		}
-		client := pb_handler.NewHandlerClient(conn)
-
-		// Do async request
-		wg.Add(1)
-		go func(announcement *pb_discovery.Announcement) {
-			res, err := client.OnJoinRegistration(b.Component.GetContext(""), registrationReq)
-			if err == nil && res != nil {
-				responses <- res
-			}
-			wg.Done()
-		}(announcement)
-	}
-
-	// Make sure to close channel when all requests are done
-	go func() {
-		wg.Wait()
-		close(responses)
-	}()
-
-	var deviceCreationComplete bool
-	for _ = range responses {
-		deviceCreationComplete = true
-	}
-
-	if !deviceCreationComplete {
-		return nil, errors.New("Handlers refused registration of device")
-	}
-
-	activation.Trace = activation.Trace.WithEvent(trace.DeviceRegistrationEvent)
-
-	return activation, nil
-}
+var errDuplicateActivation = errors.New("Not handling duplicate activation on this gateway")
 
 func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (res *pb.DeviceActivationResponse, err error) {
 	ctx := b.Ctx.WithFields(fields.Get(activation))
@@ -157,17 +93,6 @@ func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (res *
 	deduplicatedActivationRequest, err = b.ns.PrepareActivation(b.Component.GetContext(b.nsToken), deduplicatedActivationRequest)
 	if err != nil {
 		return nil, errors.Wrap(errors.FromGRPCError(err), "NetworkServer refused to prepare activation")
-	}
-	if deduplicatedActivationRequest.Trace.HasEventInTrace(trace.DeviceNotRegisteredEvent) {
-		// Device not yet registered, but on-join registration is allowed since no error was thrown
-		deduplicatedActivationRequest, err = b.registerNewDevice(deduplicatedActivationRequest)
-		if err != nil {
-			return nil, errors.Wrap(err, "On-join device registration failed")
-		}
-		deduplicatedActivationRequest, err = b.ns.PrepareActivation(b.Component.GetContext(b.nsToken), deduplicatedActivationRequest)
-		if err != nil {
-			return nil, errors.Wrap(errors.FromGRPCError(err), "NetworkServer refused to prepare activation")
-		}
 	}
 
 	ctx = ctx.WithFields(ttnlog.Fields{

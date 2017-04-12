@@ -56,11 +56,12 @@ func (n *networkServer) HandlePrepareActivation(activation *pb_broker.Deduplicat
 
 		// If a device with an empty EUI has been found, we want to send that device, with the app it's associated with
 		activation.AppId = dev.AppID
+		activation.DevId = ""
 		activation.Trace = activation.Trace.WithEvent(trace.DeviceNotRegisteredEvent)
-		return activation, nil
+	} else {
+		activation.AppId = dev.AppID
+		activation.DevId = dev.DevID
 	}
-	activation.AppId = dev.AppID
-	activation.DevId = dev.DevID
 
 	// Don't take any action if there is no response possible
 	if pld := activation.GetResponseTemplate(); pld == nil {

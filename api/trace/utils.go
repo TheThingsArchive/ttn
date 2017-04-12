@@ -76,27 +76,6 @@ func (m *Trace) WithEvent(event string, keyvalue ...interface{}) *Trace {
 	return t
 }
 
-// HasEventInTrace checks if an event has occured for a trace, and returns true if it has
-func (m *Trace) HasEventInTrace(event string) bool {
-	if m == nil {
-		return false
-	}
-
-	// Checking if the trace contains the event itself
-	if m.Event == event {
-		return true
-	}
-
-	// For every parent, recursively: if one of the parents has this event, then the event has occured in the trace
-	for _, parent := range m.Parents {
-		if parent.HasEventInTrace(event) {
-			return true
-		}
-	}
-
-	return false
-}
-
 type byTime []*Trace
 
 func (a byTime) Len() int           { return len(a) }

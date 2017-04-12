@@ -28,7 +28,6 @@ message DeviceActivationResponse {
 service Handler {
   rpc ActivationChallenge(broker.ActivationChallengeRequest) returns (broker.ActivationChallengeResponse);
   rpc Activate(broker.DeduplicatedDeviceActivationRequest) returns (DeviceActivationResponse);
-  rpc OnJoinRegistration(broker.OnJoinRegistrationRequest) returns (broker.OnJoinRegistrationResponse);
 }
 
 // message StatusRequest is used to request the status of this Handler

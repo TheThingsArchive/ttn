@@ -45,18 +45,6 @@ func (h *handlerRPC) Activate(ctx context.Context, activation *pb_broker.Dedupli
 	return res, nil
 }
 
-func (h *handlerRPC) OnJoinRegistration(ctx context.Context, registrationRequest *pb_broker.OnJoinRegistrationRequest) (*pb_broker.OnJoinRegistrationResponse, error) {
-	_, err := h.handler.ValidateNetworkContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if err := registrationRequest.Validate(); err != nil {
-		return nil, errors.Wrap(err, "Invalid Activation Request")
-	}
-
-	return h.handler.OnJoinRegistration(registrationRequest)
-}
-
 // RegisterRPC registers this handler as a HandlerServer (github.com/TheThingsNetwork/ttn/api/handler)
 func (h *handler) RegisterRPC(s *grpc.Server) {
 	server := &handlerRPC{h}
