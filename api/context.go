@@ -17,7 +17,7 @@ func MetadataFromIncomingContext(ctx context.Context) metadata.MD {
 	return md
 }
 
-// MetadataFromOutgoingContext gets the metadata from the given incoming context
+// MetadataFromOutgoingContext gets the metadata from the given outgoing context
 func MetadataFromOutgoingContext(ctx context.Context) metadata.MD {
 	md, _ := metadata.FromOutgoingContext(ctx)
 	return md
