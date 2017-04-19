@@ -4,6 +4,8 @@
 package handler
 
 import (
+	"fmt"
+
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_handler "github.com/TheThingsNetwork/ttn/api/handler"
@@ -57,7 +59,7 @@ func (h *handler) ConvertFieldsUp(ctx ttnlog.Interface, _ *pb_broker.Deduplicate
 			AppID: appUp.AppID,
 			DevID: appUp.DevID,
 			Event: types.UplinkErrorEvent,
-			Data:  types.ErrorEventData{Error: err.Error()},
+			Data:  types.ErrorEventData{Error: fmt.Sprintf("Unable to decode payload fields: %s", err)},
 		}
 
 		// Do not set fields if processing failed, but allow the handler to continue processing
