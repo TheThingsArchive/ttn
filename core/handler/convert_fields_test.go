@@ -240,7 +240,7 @@ func buildCayenneLPPDownlink() (*pb_broker.DownlinkMessage, *types.DownlinkMessa
 		FPort:         1,
 		AppID:         "AppID-1",
 		DevID:         "DevID-1",
-		PayloadFields: map[string]interface{}{"temperature_7": -15.6},
+		PayloadFields: map[string]interface{}{"value_7": -15.6},
 	}
 	return ttnDown, appDown
 }
@@ -274,6 +274,6 @@ func TestConvertFieldsDownCayenneLPP(t *testing.T) {
 		ttnDown, appDown := buildCayenneLPPDownlink()
 		err := h.ConvertFieldsDown(ctx, appDown, ttnDown, nil)
 		a.So(err, ShouldBeNil)
-		a.So(appDown.PayloadRaw, ShouldResemble, []byte{7, 103, 255, 100})
+		a.So(appDown.PayloadRaw, ShouldResemble, []byte{7, 249, 232})
 	}
 }

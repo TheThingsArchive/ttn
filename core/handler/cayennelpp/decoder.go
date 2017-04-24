@@ -19,7 +19,7 @@ type Decoder struct {
 func (d *Decoder) Decode(payload []byte, fPort uint8) (map[string]interface{}, bool, error) {
 	decoder := protocol.NewDecoder(bytes.NewBuffer(payload))
 	d.result = make(map[string]interface{})
-	if err := decoder.Decode(d); err != nil {
+	if err := decoder.DecodeUplink(d); err != nil {
 		return nil, false, err
 	}
 	return d.result, true, nil
