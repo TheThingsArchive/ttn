@@ -63,6 +63,7 @@ func (f *FrequencyPlan) ADRSettings(dataRate string, txPower int, snr float32, d
 	// Increase the Tx power by 3 for each step, until max reached
 	for nStep < 0 && txPower < f.ADR.MaxTXPower {
 		txPower += 3
+		nStep++
 	}
 	if txPower > f.ADR.MaxTXPower {
 		txPower = f.ADR.MaxTXPower
