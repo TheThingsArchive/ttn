@@ -24,6 +24,7 @@ Example:
 
 ## Uplink
 
+
 **Routing key:** `<App_ID>.devices.<Dev_ID>.up`
 
 **Message**
@@ -68,20 +69,165 @@ Example:
 ```
 Note: Some values may be omitted if they are null, false, "" or 0.
 
-**Usages**
+#### **Usages**
 
-* **ttn:** `ttn devices simulate <dev_id> '{"app_id":"<App_ID>",...}'`
-
-Note: You will have to register your application in the handler first and
+* **Publish**
+  * **ttn:** `ttn devices simulate <dev_id> '{"app_id":"<App_ID>",...}'`  
+  _Note_: You will have to register your application in the handler first and
 create the device.
 
-* **RabbitMQ:** `rabbitmqadmin publish exchange=ttn.handler routing_key=fiware-dev.devices.test.up payload='{"app_id":"<App_iD"",...}'`
+  * **RabbitMQ:** `rabbitmqadmin publish exchange=ttn.handler routing_key=<app-id>.devices.<dev-id>.up payload='{"app_id":"<App_iD"",...}'`  
  *Only work if your are running rabbitmq on your host*
  
-* **go:**
+* **Subscribe**
+
+  * **go:**
+
 ```go
+package main
 
+import (
+	"github.com/TheThingsNetwork/go-utils/log/apex"
+	"github.com/TheThingsNetwork/ttn/amqp"
+	"github.com/TheThingsNetwork/ttn/core/types"
+)
 
+func main() {
+
+	ctx := apex.Stdout().WithField("test", "test")
+	c := amqp.NewClient(ctx, "guest", "guest", "localhost:5672")
+	c.Connect()
+	s := c.NewSubscriber("amq.topic", "", false, true)
+	s.Open()
+	s.SubscribeDeviceUplink("app-id", "dev-id",
+		func(_ amqp.Subscriber, appID string, devID string, req types.UplinkMessage) {
+			ctx.Info("Uplink received")
+			//...
+		})
+	//...
+}
 ```
 
+## Downlink
 
+**Routing key:** `<App_ID>.devices.<Dev_ID>.down`
+
+**Message:**
+```json
+{
+  "port": 1,                 // LoRaWAN FPort
+  "confirmed": false,        // Whether the downlink should be confirmed by the device
+  "payload_raw": "AQIDBA==", // Base64 encoded payload: [0x01, 0x02, 0x03, 0x04]
+}
+```
+
+**Usages**
+
+* **rabbitMQ:** `'rabbitmqadmin publish exchange=ttn.handler routing_key=app-id.devices.dev-id.down payload={"port":1,"payload_raw":"AQIDBA=="}'`
+
+* **go:**
+```go
+package main
+
+import (
+	"github.com/TheThingsNetwork/go-utils/log/apex"
+	"github.com/TheThingsNetwork/ttn/amqp"
+	"github.com/TheThingsNetwork/ttn/core/types"
+)
+
+func main() {
+
+	ctx := apex.Stdout().WithField("test", "test")
+	c := amqp.NewClient(ctx, "guest", "guest", "localhost:5672")
+	c.Connect()
+	p := c.NewPublisher("amq.topic")
+  if err := p.Open(); err != nil {
+    ctx.WithError(err).Error("Could not open publishing channel")
+  }
+  defer p.Close()
+	d := types.DownlinkMessage{
+    AppID:      "app-id",
+    DevID:      "dev-id",
+    FPort:      1,
+    PayloadRaw: []byte{0x01, 0x02, 0x03, 0x04}}
+  p.PublishDownlink(d)
+	//...
+}
+```
+
+## Events
+
+**Routing key:** `<App_ID>.devices.<Dev_ID>.<event>`
+
+**Message:**
+```json
+{
+  "payload": "Base64 encoded LoRaWAN packet",
+  "gateway_id": "some-gateway",
+  "config": {
+    "modulation": "LORA",
+    "data_rate": "SF7BW125",
+    "counter": 123,
+    "frequency": 868300000,
+    "power": 14
+  }
+}
+```
+
+**Usages (GO)**
+
+*Subscription:*
+```go
+package main
+
+import (
+	"github.com/TheThingsNetwork/go-utils/log/apex"
+	"github.com/TheThingsNetwork/ttn/amqp"
+	"github.com/TheThingsNetwork/ttn/core/types"
+)
+
+func main() {
+
+  ctx := apex.Stdout().WithField("test", "test")
+  c := amqp.NewClient(ctx, "guest", "guest", "localhost:5672")
+  if err := c.Connect(); err != nil {
+    ctx.WithError(err).Error("Could not connect")
+  }
+  s := c.NewSubscriber("amq.topic", "", true, false)
+  if err := s.Open(); err != nil {
+    ctx.WithError(err).Error("Could not open subcription channel")
+  }
+	err = s.SubscribeAppEvents("app-id", "some-event",
+			func(_ Subscriber, appID string, eventType types.EventType, payload []byte) {
+			  // Do your stuff
+			})
+	//...
+}
+```
+
+*Publish:*
+```go
+package main
+
+import (
+	"github.com/TheThingsNetwork/go-utils/log/apex"
+	"github.com/TheThingsNetwork/ttn/amqp"
+	"github.com/TheThingsNetwork/ttn/core/types"
+)
+
+func main() {
+
+  ctx := apex.Stdout().WithField("test", "test")
+  c := amqp.NewClient(ctx, "guest", "guest", "localhost:5672")
+  if err := c.Connect(); err != nil {
+    ctx.WithError(err).Error("Could not connect")
+  }
+  p := c.NewPublisher("amq.topic")
+  if err := p.Open(); err != nil {
+    ctx.WithError(err).Error("Could not open publishing channel")
+  }
+  defer p.Close()
+  p.PublishAppEvent("app-id", "some-event", "payload")
+	//...
+}
+```
