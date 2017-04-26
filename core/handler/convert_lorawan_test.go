@@ -128,4 +128,14 @@ func TestConvertToLoRaWAN(t *testing.T) {
 	err = h.ConvertToLoRaWAN(h.Ctx, appDown, ttnDown, device)
 	a.So(err, ShouldBeNil)
 	a.So(ttnDown.Payload, ShouldResemble, []byte{0x60, 0x04, 0x03, 0x02, 0x01, 0x00, 0x01, 0x00, 0x08, 0xa1, 0x33, 0x41, 0xA9, 0xFA, 0x03})
+
+	appDown, ttnDown = buildLorawanDownlink([]byte{})
+	appDown.FPort = 0
+	ttnDown.UnmarshalPayload()
+	ttnDown.GetMessage().GetLorawan().GetMacPayload().Ack = true
+	ttnDown.Payload = ttnDown.GetMessage().GetLorawan().PHYPayloadBytes()
+
+	err = h.ConvertToLoRaWAN(h.Ctx, appDown, ttnDown, device)
+	a.So(err, ShouldBeNil)
+	a.So(ttnDown.Payload, ShouldResemble, []byte{0x60, 0x04, 0x03, 0x02, 0x01, 0x20, 0x01, 0x00, 0x94, 0xf8, 0xcf, 0x0d})
 }
