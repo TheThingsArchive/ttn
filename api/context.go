@@ -11,16 +11,32 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-// MetadataFromContext gets the metadata from the given context
+// MetadataFromIncomingContext gets the metadata from the given incoming context
+func MetadataFromIncomingContext(ctx context.Context) metadata.MD {
+	md, _ := metadata.FromIncomingContext(ctx)
+	return md
+}
+
+// MetadataFromOutgoingContext gets the metadata from the given outgoing context
+func MetadataFromOutgoingContext(ctx context.Context) metadata.MD {
+	md, _ := metadata.FromOutgoingContext(ctx)
+	return md
+}
+
+// MetadataFromContext gets the metadata from the given context. It first tries to get
+// incoming metadata and if that is not found, returns the result of getting the outgoing one.
 func MetadataFromContext(ctx context.Context) metadata.MD {
-	md, _ := metadata.FromContext(ctx)
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		md, _ = metadata.FromOutgoingContext(ctx)
+	}
 	return md
 }
 
 func contextWithMergedMetadata(ctx context.Context, kv ...string) context.Context {
 	md := MetadataFromContext(ctx)
 	md = metadata.Join(metadata.Pairs(kv...), md)
-	return metadata.NewContext(ctx, md)
+	return metadata.NewOutgoingContext(ctx, md)
 }
 
 // TokenFromMetadata gets the token from the metadata or returns ErrNoToken
