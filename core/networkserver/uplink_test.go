@@ -49,6 +49,8 @@ func TestHandleUplink(t *testing.T) {
 	})
 	defer func() {
 		ns.devices.Delete(appEUI, devEUI)
+		frames, _ := ns.devices.Frames(appEUI, devEUI)
+		frames.Clear()
 	}()
 
 	// Invalid Payload
