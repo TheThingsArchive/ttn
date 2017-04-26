@@ -93,7 +93,7 @@ func buildLorawanDownlink(payload []byte) (*types.DownlinkMessage, *pb_broker.Do
 	appDown := &types.DownlinkMessage{
 		DevID:      "devid",
 		AppID:      "appid",
-		PayloadRaw: []byte{0xaa, 0xbc},
+		PayloadRaw: payload,
 	}
 	ttnDown := &pb_broker.DownlinkMessage{
 		Payload: []byte{96, 4, 3, 2, 1, 0, 1, 0, 1, 0, 0, 0, 0},
