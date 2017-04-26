@@ -33,30 +33,60 @@ func buildLorawanUplink(payload []byte) (*pb_broker.DeduplicatedUplinkMessage, *
 
 func TestConvertFromLoRaWAN(t *testing.T) {
 	a := New(t)
+	var wg WaitGroup
 	h := &handler{
 		Component: &component.Component{Ctx: GetLogger(t, "TestConvertFromLoRaWAN")},
 		devices:   device.NewRedisDeviceStore(GetRedisClient(), "handler-test-convert-from-lorawan"),
 		qEvent:    make(chan *types.DeviceEvent, 10),
 	}
 	device := &device.Device{
-		DevID: "devid",
-		AppID: "appid",
+		DevID:           "devid",
+		AppID:           "appid",
+		CurrentDownlink: &types.DownlinkMessage{},
 	}
 	ttnUp, appUp := buildLorawanUplink([]byte{0x40, 0x04, 0x03, 0x02, 0x01, 0x20, 0x01, 0x00, 0x0A, 0x46, 0x55, 0x96, 0x42, 0x92, 0xF2})
 	err := h.ConvertFromLoRaWAN(h.Ctx, ttnUp, appUp, device)
 	a.So(err, ShouldBeNil)
 	a.So(appUp.PayloadRaw, ShouldResemble, []byte{0xaa, 0xbc})
 	a.So(appUp.FCnt, ShouldEqual, 1)
+	a.So(device.CurrentDownlink, ShouldBeNil)
+
+	device.CurrentDownlink = &types.DownlinkMessage{Confirmed: true}
 
 	ttnUp.UnmarshalPayload()
 	ttnUp.Message.GetLorawan().MType = pb_lorawan.MType_CONFIRMED_UP
-	ttnUp.Message.GetLorawan().SetMIC(types.NwkSKey([16]byte{}))
+	ttnUp.Message.GetLorawan().GetMacPayload().FCnt++
+	ttnUp.GetProtocolMetadata().GetLorawan().FCnt = ttnUp.Message.GetLorawan().GetMacPayload().FCnt
+	ttnUp.Message.GetLorawan().GetMacPayload().Ack = false
+	ttnUp.Message.GetLorawan().SetMIC(device.NwkSKey)
+	ttnUp.Payload = ttnUp.Message.GetLorawan().PHYPayloadBytes()
+
+	err = h.ConvertFromLoRaWAN(h.Ctx, ttnUp, appUp, device)
+	a.So(err, ShouldBeNil)
+	a.So(appUp.Confirmed, ShouldBeTrue)
+	a.So(device.CurrentDownlink, ShouldNotBeNil)
+
+	device.CurrentDownlink = &types.DownlinkMessage{Confirmed: true}
+
+	wg.Add(1)
+	go func() {
+		<-h.qEvent
+		wg.Done()
+	}()
+
+	ttnUp.UnmarshalPayload()
+	ttnUp.Message.GetLorawan().MType = pb_lorawan.MType_CONFIRMED_UP
+	ttnUp.Message.GetLorawan().GetMacPayload().FCnt++
+	ttnUp.GetProtocolMetadata().GetLorawan().FCnt = ttnUp.Message.GetLorawan().GetMacPayload().FCnt
+	ttnUp.Message.GetLorawan().GetMacPayload().Ack = true
+	ttnUp.Message.GetLorawan().SetMIC(device.NwkSKey)
 	ttnUp.Payload = ttnUp.Message.GetLorawan().PHYPayloadBytes()
 
 	err = h.ConvertFromLoRaWAN(h.Ctx, ttnUp, appUp, device)
 	a.So(err, ShouldBeNil)
 	a.So(appUp.Confirmed, ShouldBeTrue)
 
+	wg.Wait()
 }
 
 func buildLorawanDownlink(payload []byte) (*types.DownlinkMessage, *pb_broker.DownlinkMessage) {
