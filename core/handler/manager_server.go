@@ -6,6 +6,7 @@ package handler
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/TheThingsNetwork/go-account-lib/claims"
@@ -380,14 +381,25 @@ func (h *handlerManager) GetApplication(ctx context.Context, in *pb.ApplicationI
 		return nil, err
 	}
 
-	return &pb.Application{
+	res := &pb.Application{
 		AppId:         app.AppID,
 		PayloadFormat: string(app.PayloadFormat),
 		Decoder:       app.CustomDecoder,
 		Converter:     app.CustomConverter,
 		Validator:     app.CustomValidator,
 		Encoder:       app.CustomEncoder,
-	}, nil
+	}
+	if err := checkAppRights(claims, in.AppId, rights.Devices); err == nil {
+		res.RegisterOnJoinAccessKey = app.RegisterOnJoinAccessKey
+	} else if app.RegisterOnJoinAccessKey != "" {
+		parts := strings.Split(app.RegisterOnJoinAccessKey, ".")
+		if len(parts) == 2 {
+			res.RegisterOnJoinAccessKey = parts[1] + "." + "<...>"
+		} else {
+			res.RegisterOnJoinAccessKey = "..."
+		}
+	}
+	return res, nil
 }
 
 func (h *handlerManager) RegisterApplication(ctx context.Context, in *pb.ApplicationIdentifier) (*empty.Empty, error) {
@@ -459,6 +471,9 @@ func (h *handlerManager) SetApplication(ctx context.Context, in *pb.Application)
 	app.CustomConverter = in.Converter
 	app.CustomValidator = in.Validator
 	app.CustomEncoder = in.Encoder
+	if in.RegisterOnJoinAccessKey != "" && !strings.HasSuffix(in.RegisterOnJoinAccessKey, "...") {
+		app.RegisterOnJoinAccessKey = in.RegisterOnJoinAccessKey
+	}
 	if app.PayloadFormat == "" && (app.CustomDecoder != "" || app.CustomConverter != "" || app.CustomValidator != "" || app.CustomEncoder != "") {
 		app.PayloadFormat = application.PayloadFormatCustom
 	}
