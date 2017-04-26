@@ -11,6 +11,7 @@ import (
 	"github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/api/gateway"
+	"github.com/TheThingsNetwork/ttn/api/handler"
 	"github.com/TheThingsNetwork/ttn/api/pool"
 	"github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/htdvisser/grpc-testing/test"
@@ -79,6 +80,7 @@ func TestMonitor(t *testing.T) {
 	brk.Send(&broker.DeduplicatedUplinkMessage{})
 	brk.Send(&broker.DeduplicatedDeviceActivationRequest{})
 	brk.Send(&broker.DownlinkMessage{})
+	brk.Send(&broker.Status{})
 	time.Sleep(waitTime)
 	brk.Close()
 	time.Sleep(waitTime)
@@ -93,6 +95,7 @@ func TestMonitor(t *testing.T) {
 	hdl.Send(&broker.DeduplicatedUplinkMessage{})
 	hdl.Send(&broker.DeduplicatedDeviceActivationRequest{})
 	hdl.Send(&broker.DownlinkMessage{})
+	hdl.Send(&handler.Status{})
 	time.Sleep(waitTime)
 	hdl.Close()
 	time.Sleep(waitTime)
@@ -114,5 +117,4 @@ func TestMonitor(t *testing.T) {
 	a.So(server.metrics.brokerUplinkMessages, ShouldEqual, 2)
 
 	testLogger.Print(t)
-
 }
