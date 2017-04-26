@@ -4,11 +4,14 @@
 package handler
 
 import (
+	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/go-utils/random"
+	"github.com/TheThingsNetwork/ttn/api"
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/api/fields"
 	pb "github.com/TheThingsNetwork/ttn/api/handler"
@@ -35,7 +38,6 @@ func (h *handler) getActivationMetadata(ctx ttnlog.Interface, activation *pb_bro
 }
 
 func (h *handler) HandleActivationChallenge(challenge *pb_broker.ActivationChallengeRequest) (*pb_broker.ActivationChallengeResponse, error) {
-
 	// Find Device
 	dev, err := h.devices.Get(challenge.AppId, challenge.DevId)
 	if err != nil {
@@ -55,8 +57,7 @@ func (h *handler) HandleActivationChallenge(challenge *pb_broker.ActivationChall
 
 	// Set MIC
 	if err := reqPHY.SetMIC(lorawan.AES128Key(dev.AppKey)); err != nil {
-		err = errors.NewErrNotFound("Could not set MIC")
-		return nil, err
+		return nil, errors.NewErrNotFound("Could not set MIC")
 	}
 
 	// Marshal
@@ -99,27 +100,30 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 
 	activation.Trace = activation.Trace.WithEvent(trace.ReceiveEvent)
 
-	if activation.ResponseTemplate == nil {
-		err = errors.NewErrInvalidArgument("Activation", "No gateways available for downlink")
-		return nil, err
+	if activation.ResponseTemplate == nil || activation.ResponseTemplate.DownlinkOption == nil {
+		return nil, errors.NewErrInvalidArgument("Activation", "No gateways available for downlink")
 	}
 
 	// Find Device
-	var dev *device.Device
-	dev, err = h.devices.Get(appID, devID)
+	dev, err := h.devices.Get(appID, devID)
 	if err != nil {
 		return nil, err
 	}
 
 	if dev.AppKey.IsEmpty() {
-		err = errors.NewErrNotFound(fmt.Sprintf("AppKey for device %s", devID))
-		return nil, err
+		return nil, errors.NewErrNotFound(fmt.Sprintf("AppKey for device %s", devID))
 	}
 
 	// Check for LoRaWAN
-	if lorawan := activation.ActivationMetadata.GetLorawan(); lorawan == nil {
-		err = errors.NewErrInvalidArgument("Activation", "does not contain LoRaWAN metadata")
-		return nil, err
+	metadata := activation.ActivationMetadata.GetLorawan()
+	if metadata == nil {
+		return nil, errors.NewErrInvalidArgument("Activation", "does not contain LoRaWAN metadata")
+	}
+	if metadata.AppEui == nil || metadata.DevEui == nil || metadata.DevAddr == nil {
+		return nil, errors.NewErrInvalidArgument("Activation Metadata", "incomplete")
+	}
+	if *metadata.AppEui != *activation.AppEui || *metadata.DevEui != *activation.DevEui {
+		return nil, errors.NewErrInvalidArgument("Activation Metadata", "inconsistent")
 	}
 
 	// Unmarshal LoRaWAN
@@ -129,15 +133,24 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 	}
 	reqMAC, ok := reqPHY.MACPayload.(*lorawan.JoinRequestPayload)
 	if !ok {
-		err = errors.NewErrInvalidArgument("Activation", "does not contain a JoinRequestPayload")
-		return nil, err
+		return nil, errors.NewErrInvalidArgument("Activation", "does not contain a JoinRequestPayload")
+	}
+	if types.AppEUI(reqMAC.AppEUI) != *activation.AppEui || types.DevEUI(reqMAC.DevEUI) != *activation.DevEui {
+		return nil, errors.NewErrInvalidArgument("Activation Payload", "inconsistent")
 	}
 
 	// Validate MIC
 	activation.Trace = activation.Trace.WithEvent(trace.CheckMICEvent)
 	if ok, err = reqPHY.ValidateMIC(lorawan.AES128Key(dev.AppKey)); err != nil || !ok {
-		err = errors.NewErrNotFound("MIC does not match device")
-		return nil, err
+		return nil, errors.NewErrNotFound("device that validates MIC")
+	}
+
+	if dev.DevEUI.IsEmpty() {
+		activation.Trace = activation.Trace.WithEvent("registering on join")
+		dev, err = h.registerDeviceOnJoin(dev, activation)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Validate DevNonce
@@ -236,15 +249,54 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 		return nil, err
 	}
 
-	metadata := activation.ActivationMetadata
-	metadata.GetLorawan().NwkSKey = &dev.NwkSKey
-	metadata.GetLorawan().DevAddr = &dev.DevAddr
+	metadata.NwkSKey = &dev.NwkSKey
+	metadata.DevAddr = &dev.DevAddr
 	res = &pb.DeviceActivationResponse{
 		Payload:            resBytes,
 		DownlinkOption:     activation.ResponseTemplate.DownlinkOption,
-		ActivationMetadata: metadata,
+		ActivationMetadata: activation.ActivationMetadata,
 		Trace:              activation.Trace,
 	}
 
 	return res, nil
+}
+
+func (h *handler) registerDeviceOnJoin(base *device.Device, activation *pb_broker.DeduplicatedDeviceActivationRequest) (*device.Device, error) {
+	clone := base.Clone()
+	clone.DevID = strings.ToLower(fmt.Sprintf("%s-%s", base.DevID, activation.DevEui.String()))
+	clone.DevEUI = *activation.DevEui
+	clone.Description = fmt.Sprintf("On-Join device registered on %s", time.Now().UTC().Format(time.RFC3339))
+
+	app, err := h.applications.Get(base.AppID)
+	if err != nil {
+		return nil, errors.Wrap(err, "Application not registered to this Handler")
+	}
+
+	if app.RegisterOnJoinAccessKey == "" {
+		return nil, errors.NewErrInvalidArgument("Application", "Does not have RegisterOnJoinAccessKey")
+	}
+
+	token, err := h.ExchangeAppKeyForToken(app.AppID, app.RegisterOnJoinAccessKey)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = h.ttnDeviceManager.SetDevice(api.ContextWithToken(context.Background(), token), clone.GetLoRaWAN())
+	if err != nil {
+		return nil, errors.Wrap(errors.FromGRPCError(err), "Broker did not set device")
+	}
+
+	err = h.devices.Set(clone)
+	if err != nil {
+		return nil, err
+	}
+
+	h.qEvent <- &types.DeviceEvent{
+		AppID: clone.AppID,
+		DevID: clone.DevID,
+		Event: types.CreateEvent,
+		Data:  nil, // Don't send potentially sensitive details over MQTT
+	}
+
+	return clone, nil
 }

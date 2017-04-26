@@ -58,6 +58,7 @@ protodoc: $(PROTO_FILES)
 # Mocks
 
 mocks:
+	mockgen -source=./api/protocol/lorawan/device.pb.go -package lorawan DeviceManagerClient > api/protocol/lorawan/device_mock.go
 	mockgen -source=./api/networkserver/networkserver.pb.go -package networkserver NetworkServerClient > api/networkserver/networkserver_mock.go
 	mockgen -source=./api/discovery/client.go -package discovery Client > api/discovery/client_mock.go
 
