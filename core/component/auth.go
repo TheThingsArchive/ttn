@@ -214,7 +214,7 @@ func (c *Component) ExchangeAppKeyForToken(appID, key string) (string, error) {
 	}
 	issuer, ok := c.Config.AuthServers[issuerID]
 	if !ok {
-		return "", fmt.Errorf("Auth server %s not registered", issuer)
+		return "", fmt.Errorf("Auth server \"%s\" not registered", issuerID)
 	}
 
 	token, err := getTokenFromCache(oauthCache, appID, key)
