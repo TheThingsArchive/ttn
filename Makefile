@@ -124,7 +124,9 @@ DIST_FLAGS ?= -a -installsuffix cgo
 splitfilename = $(subst ., ,$(subst -, ,$(subst $(RELEASE_DIR)/,,$1)))
 GOOSfromfilename = $(word 2, $(call splitfilename, $1))
 GOARCHfromfilename = $(word 3, $(call splitfilename, $1))
-LDFLAGS = -ldflags "-w -X main.version=${TTN_VERSION} -X main.gitBranch=${GIT_BRANCH} -X main.gitCommit=${GIT_COMMIT} -X main.buildDate=${BUILD_DATE}"
+
+GOVARS += -X main.version=${TTN_VERSION} -X main.gitBranch=${GIT_BRANCH} -X main.gitCommit=${GIT_COMMIT} -X main.buildDate=${BUILD_DATE}
+LDFLAGS = -ldflags "-w $(GOVARS)"
 GOBUILD = CGO_ENABLED=$(CGO_ENABLED) GOOS=$(call GOOSfromfilename, $@) GOARCH=$(call GOARCHfromfilename, $@) go build $(DIST_FLAGS) ${LDFLAGS} -tags "${TAGS}" -o "$@"
 
 ttn: $(RELEASE_DIR)/ttn-$(GOOS)-$(GOARCH)$(GOEXE)
