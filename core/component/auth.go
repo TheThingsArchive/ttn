@@ -20,6 +20,7 @@ import (
 	"github.com/TheThingsNetwork/go-account-lib/keys"
 	"github.com/TheThingsNetwork/go-account-lib/tokenkey"
 	"github.com/TheThingsNetwork/ttn/api"
+	api_auth "github.com/TheThingsNetwork/ttn/api/auth"
 	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/api/pool"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
@@ -129,6 +130,13 @@ func (c *Component) initKeyPair() error {
 	pubPEM, _ := security.PublicPEM(priv)
 	c.Identity.PublicKey = string(pubPEM)
 
+	if c.Pool != nil {
+		c.Pool.AddDialOption(api_auth.WithTokenFunc(func(_ string) string {
+			token, _ := c.BuildJWT()
+			return token
+		}).DialOption())
+	}
+
 	return nil
 }
 
@@ -168,6 +176,9 @@ func (c *Component) initBgCtx() error {
 		ctx = api.ContextWithServiceInfo(ctx, c.Identity.ServiceName, c.Identity.ServiceVersion, c.Identity.NetAddress)
 	}
 	c.Context = ctx
+	if c.Pool != nil {
+		c.Pool.SetContext(c.Context)
+	}
 	return nil
 }
 
