@@ -5,8 +5,9 @@ package types
 
 import (
 	"encoding/hex"
-	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"strings"
+
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 )
 
 // AES128Key is an 128 bit AES key.
@@ -100,6 +101,11 @@ func (key *AES128Key) Unmarshal(data []byte) error {
 	return key.UnmarshalBinary(data)
 }
 
+// Equal returns whether key is equal to other
+func (key AES128Key) Equal(other AES128Key) bool {
+	return key == other
+}
+
 // ParseAppKey parses a 64-bit hex-encoded string to an AppKey
 func ParseAppKey(input string) (key AppKey, err error) {
 	aes128key, err := ParseAES128Key(input)
@@ -176,6 +182,11 @@ func (key AppKey) Marshal() ([]byte, error) {
 func (key *AppKey) Unmarshal(data []byte) error {
 	*key = [16]byte{} // Reset the receiver
 	return key.UnmarshalBinary(data)
+}
+
+// Equal returns whether key is equal to other
+func (key AppKey) Equal(other AppKey) bool {
+	return key == other
 }
 
 // ParseAppSKey parses a 64-bit hex-encoded string to an AppSKey
@@ -256,6 +267,11 @@ func (key *AppSKey) Unmarshal(data []byte) error {
 	return key.UnmarshalBinary(data)
 }
 
+// Equal returns whether key is equal to other
+func (key AppSKey) Equal(other AppSKey) bool {
+	return key == other
+}
+
 // ParseNwkSKey parses a 64-bit hex-encoded string to an NwkSKey
 func ParseNwkSKey(input string) (key NwkSKey, err error) {
 	aes128key, err := ParseAES128Key(input)
@@ -333,6 +349,11 @@ func (key NwkSKey) Marshal() ([]byte, error) {
 func (key *NwkSKey) Unmarshal(data []byte) error {
 	*key = [16]byte{} // Reset the receiver
 	return key.UnmarshalBinary(data)
+}
+
+// Equal returns whether key is equal to other
+func (key NwkSKey) Equal(other NwkSKey) bool {
+	return key == other
 }
 
 var emptyAES AES128Key

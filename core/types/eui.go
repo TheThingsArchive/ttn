@@ -97,6 +97,11 @@ func (eui *EUI64) Unmarshal(data []byte) error {
 	return eui.UnmarshalBinary(data)
 }
 
+// Equal returns whether eui is equal to other
+func (eui EUI64) Equal(other EUI64) bool {
+	return eui == other
+}
+
 // ParseAppEUI parses a 64-bit hex-encoded string to an AppEUI
 func ParseAppEUI(input string) (eui AppEUI, err error) {
 	eui64, err := ParseEUI64(input)
@@ -176,6 +181,11 @@ func (eui *AppEUI) Unmarshal(data []byte) error {
 	return eui.UnmarshalBinary(data)
 }
 
+// Equal returns whether eui is equal to other
+func (eui AppEUI) Equal(other AppEUI) bool {
+	return eui == other
+}
+
 // ParseDevEUI parses a 64-bit hex-encoded string to an DevEUI
 func ParseDevEUI(input string) (eui DevEUI, err error) {
 	eui64, err := ParseEUI64(input)
@@ -253,6 +263,11 @@ func (eui DevEUI) Marshal() ([]byte, error) {
 func (eui *DevEUI) Unmarshal(data []byte) error {
 	*eui = [8]byte{} // Reset the receiver
 	return eui.UnmarshalBinary(data)
+}
+
+// Equal returns whether eui is equal to other
+func (eui DevEUI) Equal(other DevEUI) bool {
+	return eui == other
 }
 
 var emptyEUI64 EUI64
