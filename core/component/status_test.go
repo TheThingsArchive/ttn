@@ -8,6 +8,8 @@ import (
 
 	"io/ioutil"
 
+	"time"
+
 	"github.com/TheThingsNetwork/ttn/api/pool"
 	assertions "github.com/smartystreets/assertions"
 	"github.com/spf13/viper"
@@ -37,7 +39,11 @@ func TestStatus(t *testing.T) {
 	}
 	s := grpc.NewServer()
 	c.RegisterHealthServer(s)
-	go s.Serve(lis)
+	go func() {
+		if err := s.Serve(lis); err != nil {
+			t.Logf("test HealthServer exited with error: %s", err)
+		}
+	}()
 
 	conn, err := pool.Global.DialInsecure(lis.Addr().String())
 	if err != nil {
@@ -46,8 +52,10 @@ func TestStatus(t *testing.T) {
 	pb := healthpb.NewHealthClient(conn)
 
 	viper.Set("health-port", 10700)
-
 	initStatus(c)
+	viper.Set("health-port", "")
+
+	time.Sleep(100 * time.Millisecond)
 
 	checkStatus := func(expectedString string, expectedPb healthpb.HealthCheckResponse_ServingStatus) {
 		res, err := http.Get("http://localhost:10700/healthz")

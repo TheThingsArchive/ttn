@@ -90,7 +90,11 @@ func initStatus(c *Component) error {
 	if healthPort := viper.GetInt("health-port"); healthPort > 0 {
 		mux := http.NewServeMux()
 		mux.HandleFunc("/healthz", getStatusPage(c))
-		go http.ListenAndServe(fmt.Sprintf(":%d", healthPort), mux)
+		go func() {
+			if err := http.ListenAndServe(fmt.Sprintf(":%d", healthPort), mux); err != nil {
+				c.Ctx.WithError(err).Error("Status server exited")
+			}
+		}()
 	}
 	return nil
 }
