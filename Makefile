@@ -28,6 +28,7 @@ dev-deps: deps
 	@command -v protoc-gen-gogofast > /dev/null || go get github.com/gogo/protobuf/protoc-gen-gogofast
 	@command -v protoc-gen-grpc-gateway > /dev/null || go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway
 	@command -v protoc-gen-ttndoc > /dev/null || go install github.com/TheThingsNetwork/ttn/utils/protoc-gen-ttndoc
+	@command -v protoc-gen-gogottn > /dev/null || go install github.com/TheThingsNetwork/ttn/utils/protoc-gen-gogottn
 	@command -v mockgen > /dev/null || go get github.com/golang/mock/mockgen
 	@command -v golint > /dev/null || go get github.com/golang/lint/golint
 	@command -v forego > /dev/null || go get github.com/ddollar/forego
@@ -39,7 +40,7 @@ COMPILED_PROTO_FILES = $(patsubst api%.proto, api%.pb.go, $(PROTO_FILES))
 PROTOC_IMPORTS= -I/usr/local/include -I$(GO_PATH)/src -I$(PARENT_DIRECTORY) \
 -I$(GO_PATH)/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis
 PROTOC = protoc $(PROTOC_IMPORTS) \
---gogofast_out=plugins=grpc:$(GO_SRC) \
+--gogottn_out=plugins=grpc:$(GO_SRC) \
 --grpc-gateway_out=:$(GO_SRC) `pwd`/
 
 protos-clean:
