@@ -73,6 +73,10 @@ func New(ctx ttnlog.Interface, serviceName string, announcedAddress string) (*Co
 		AccessToken: viper.GetString("auth-token"),
 	}
 
+	if err := component.initialize(); err != nil {
+		return nil, err
+	}
+
 	trace.SetComponent(component.Identity.ServiceName, component.Identity.Id)
 
 	if err := component.InitAuth(); err != nil {
