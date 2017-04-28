@@ -63,7 +63,7 @@ func RandomStatus() *Status {
 		ContactEmail:   fmt.Sprintf("%s@%s.%s", random.String(rand.Intn(10)), random.String(rand.Intn(10)), random.String(rand.Intn(3))),
 		Description:    random.String(rand.Intn(10)),
 		FrequencyPlan:  lorawan.FrequencyPlan(rand.Intn(4)).String(),
-		Bridge:         random.String(rand.Intn(10)),
+		Bridge:         random.ID(),
 		Router:         random.ID(),
 		Rtt:            rand.Uint32(),
 		RxIn:           rand.Uint32(),
