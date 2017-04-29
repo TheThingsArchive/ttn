@@ -44,10 +44,24 @@ func (n *networkServer) HandlePrepareActivation(activation *pb_broker.Deduplicat
 	}
 	dev, err := n.devices.Get(*activation.AppEui, *activation.DevEui)
 	if err != nil {
-		return nil, err
+		if !errors.IsNotFound(err) {
+			return nil, err
+		}
+
+		// If we get a NotFound error, we want to check first if it isn't possible to do an on-join registration
+		dev, err = n.devices.Get(*activation.AppEui, emptyDevEUI)
+		if err != nil {
+			return nil, err
+		}
+
+		// If a device with an empty EUI has been found, we want to send that device, with the app it's associated with
+		activation.AppId = dev.AppID
+		activation.DevId = ""
+		activation.Trace = activation.Trace.WithEvent(trace.DeviceNotRegisteredEvent)
+	} else {
+		activation.AppId = dev.AppID
+		activation.DevId = dev.DevID
 	}
-	activation.AppId = dev.AppID
-	activation.DevId = dev.DevID
 
 	// Don't take any action if there is no response possible
 	if pld := activation.GetResponseTemplate(); pld == nil {

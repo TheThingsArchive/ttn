@@ -61,6 +61,17 @@ func (b *brokerManager) SetDevice(ctx context.Context, in *lorawan.Device) (*emp
 	return res, nil
 }
 
+func (b *brokerManager) SetRegisterOnJoin(ctx context.Context, in *pb_lorawan.SetRegisterOnJoinMessage) (*empty.Empty, error) {
+	if _, err := b.validateClient(ctx); err != nil {
+		return nil, err
+	}
+	res, err := b.deviceManager.SetRegisterOnJoin(ctx, in)
+	if err != nil {
+		return nil, errors.Wrap(errors.FromGRPCError(err), "NetworkServer did not set On-Join Registration setting")
+	}
+	return res, err
+}
+
 func (b *brokerManager) DeleteDevice(ctx context.Context, in *lorawan.DeviceIdentifier) (*empty.Empty, error) {
 	if _, err := b.validateClient(ctx); err != nil {
 		return nil, err

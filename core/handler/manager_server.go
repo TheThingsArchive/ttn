@@ -73,6 +73,64 @@ func (h *handlerManager) validateTTNAuthAppContext(ctx context.Context, appID st
 	return ctx, claims, nil
 }
 
+func (h *handlerManager) SetRegisterOnJoin(ctx context.Context, in *pb_lorawan.SetRegisterOnJoinMessage) (*empty.Empty, error) {
+	if err := in.Validate(); err != nil && !errors.IsNotFound(err) {
+		return nil, errors.Wrap(err, "Invalid SetRegisterOnJoin message request")
+	}
+	ctx, claims, err := h.validateTTNAuthAppContext(ctx, in.AppId)
+	if err != nil {
+		return nil, err
+	}
+	err = checkAppRights(claims, in.AppId, rights.Devices)
+	if err != nil {
+		return nil, err
+	}
+
+	var app *application.Application
+	if app, err = h.handler.applications.Get(in.AppId); err != nil {
+		return nil, errors.Wrap(err, "Application not registered to this Handler")
+	}
+
+	app.StartUpdate()
+
+	app.OnJoinRegistration = in.Enabled
+	if in.Enabled {
+		app.OnJoinRegistrationAppEui = *in.AppEui
+		app.OnJoinRegistrationAppKey = *in.AppKey
+		app.OnJoinRegistrationAccessKey = in.AccessKey
+		app.OnJoinRegistrationAccessKeyName = in.AccessKeyName
+	} else {
+		in.AppEui = &app.OnJoinRegistrationAppEui
+	}
+
+	// Removing keys before sending the message to other components
+	brokerMessage := *in
+	brokerMessage.AccessKey = ""
+	brokerMessage.AppKey = &types.AppKey{}
+
+	h.handler.Ctx.WithFields(ttnlog.Fields{
+		"AppEui":        app.OnJoinRegistrationAppEui,
+		"AccessKeyName": app.OnJoinRegistrationAccessKeyName,
+	}).Debug("Registering on-join parameters")
+
+	_, err = h.deviceManager.SetRegisterOnJoin(ctx, &brokerMessage)
+	if err != nil {
+		return nil, errors.New("Broker did not set on-join registration setting")
+	}
+
+	err = h.handler.applications.Set(app)
+	if err != nil {
+		// Try to revert the changes
+		brokerMessage.Enabled = !brokerMessage.Enabled
+		if _, err := h.deviceManager.SetRegisterOnJoin(ctx, &brokerMessage); err != nil {
+			h.handler.Ctx.WithField("AppID", app.AppID).WithError(err).Error("Failed to revert SetRegisterOnJoin operation when storage failed")
+		}
+		return nil, err
+	}
+
+	return &empty.Empty{}, nil
+}
+
 func (h *handlerManager) GetDevice(ctx context.Context, in *pb.DeviceIdentifier) (*pb.Device, error) {
 	if err := in.Validate(); err != nil {
 		return nil, errors.Wrap(err, "Invalid Device Identifier")
@@ -382,12 +440,13 @@ func (h *handlerManager) GetApplication(ctx context.Context, in *pb.ApplicationI
 	}
 
 	return &pb.Application{
-		AppId:         app.AppID,
-		PayloadFormat: string(app.PayloadFormat),
-		Decoder:       app.CustomDecoder,
-		Converter:     app.CustomConverter,
-		Validator:     app.CustomValidator,
-		Encoder:       app.CustomEncoder,
+		AppId:                     app.AppID,
+		PayloadFormat:             string(app.PayloadFormat),
+		Decoder:                   app.CustomDecoder,
+		Converter:                 app.CustomConverter,
+		Validator:                 app.CustomValidator,
+		Encoder:                   app.CustomEncoder,
+		OnJoinRegistrationEnabled: app.OnJoinRegistration,
 	}, nil
 }
 

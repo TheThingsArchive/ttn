@@ -4,14 +4,19 @@
 package handler
 
 import (
+	"context"
 	"fmt"
 	"time"
 
+	"strings"
+
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/go-utils/random"
+	"github.com/TheThingsNetwork/ttn/api"
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/api/fields"
 	pb "github.com/TheThingsNetwork/ttn/api/handler"
+	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/api/trace"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
@@ -34,7 +39,72 @@ func (h *handler) getActivationMetadata(ctx ttnlog.Interface, activation *pb_bro
 	return appUp.Metadata, nil
 }
 
+// registerDeviceAtActivation serves the purpose of registering a new device that isn't registered yet,
+// but that has the right IDs to be registered
+func (h *handler) registerDeviceOnJoin(challenge *pb_broker.ActivationChallengeRequest) (*pb_broker.ActivationChallengeRequest, error) {
+	app, err := h.applications.Get(challenge.AppId)
+	if err != nil {
+		return nil, errors.Wrap(err, "Application not registered to this Handler")
+	}
+
+	if !app.OnJoinRegistration {
+		return nil, errors.New("Application not set to accept on-join registration")
+	}
+	if app.OnJoinRegistrationAppEui != *challenge.AppEui {
+		return nil, errors.New("AppEui not set to accept on-join registration")
+	}
+
+	device := &device.Device{
+		AppID:  challenge.AppId,
+		AppEUI: *challenge.AppEui,
+		DevEUI: *challenge.DevEui,
+		DevID:  fmt.Sprintf("%s-%s", strings.ToLower(challenge.AppEui.String()), strings.ToLower(challenge.DevEui.String())),
+
+		Description: fmt.Sprintf("Device registered onjoin on %s", time.Now().UTC().Format(time.UnixDate)),
+
+		AppKey:        app.OnJoinRegistrationAppKey,
+		UsedAppNonces: []device.AppNonce{},
+		UsedDevNonces: []device.DevNonce{},
+	}
+
+	// Getting token
+	token, err := h.ExchangeAppKeyForToken(app.AppID, app.OnJoinRegistrationAccessKey)
+	if err != nil {
+		return nil, errors.Wrap(err, "Couldn't obtain access token")
+	}
+
+	_, err = pb_lorawan.NewDeviceManagerClient(h.ttnBrokerConn).SetDevice(api.ContextWithToken(context.Background(), token), device.GetLoRaWAN())
+	if err != nil {
+		return nil, errors.Wrap(errors.FromGRPCError(err), "Broker did not set device")
+	}
+
+	err = h.devices.Set(device)
+	if err != nil {
+		return nil, err
+	}
+
+	h.mqttEvent <- &types.DeviceEvent{
+		AppID: device.AppID,
+		DevID: device.DevID,
+		Event: types.OnJoinRegistrationEvent,
+		Data:  nil, // Don't send sensitive details over MQTT
+	}
+
+	challenge.DevId = device.DevID
+
+	return challenge, nil
+}
+
 func (h *handler) HandleActivationChallenge(challenge *pb_broker.ActivationChallengeRequest) (*pb_broker.ActivationChallengeResponse, error) {
+	// Check if the device is yet to be registered
+	if challenge.DevId == "" {
+		h.Ctx.WithFields(ttnlog.Fields{
+			"AppID":  challenge.AppId,
+			"AppEUI": challenge.AppEui.String(),
+			"DevEUI": challenge.DevEui.String(),
+		}).Debug("Device not registered requested for activation")
+		h.registerDeviceOnJoin(challenge)
+	}
 
 	// Find Device
 	dev, err := h.devices.Get(challenge.AppId, challenge.DevId)

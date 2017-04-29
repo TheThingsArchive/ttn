@@ -71,6 +71,9 @@ message Application {
   // The encoder is a JavaScript function that encodes an object to a byte array.
   // This function is used when the payload format is set to custom.
   string encoder        = 5;
+
+  // Flag that is set if on-join registration is activated on that application.
+  bool   on_join_registration_enabled = 7;
 }
 
 message DeviceIdentifier {
@@ -200,6 +203,9 @@ service ApplicationManager {
       delete: "/applications/{app_id}"
     };
   }
+
+  // SetRegisterOnJoin activates or deactivates on-join registration for an app
+  rpc SetRegisterOnJoin(lorawan.SetRegisterOnJoinMessage) returns (google.protobuf.Empty);
 
   // GetDevice returns the device with the given identifier (app_id and dev_id)
   rpc GetDevice(DeviceIdentifier) returns (Device) {

@@ -169,3 +169,14 @@ func (m *MACPayload) Validate() error {
 	}
 	return nil
 }
+
+// Validate implements the api.Validator interface
+func (m *SetRegisterOnJoinMessage) Validate() error {
+	if err := api.NotEmptyAndValidID(m.AppId, "AppId"); err != nil {
+		return err
+	}
+	if m.AppEui == nil || m.AppEui.IsEmpty() {
+		return errors.NewErrNotFound("Missing AppEUI")
+	}
+	return nil
+}

@@ -21,6 +21,8 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
+var emptyDevEUI = types.DevEUI{}
+
 type networkServerManager struct {
 	networkServer *networkServer
 	clientRate    *ratelimit.Registry
@@ -31,6 +33,31 @@ func checkAppRights(claims *claims.Claims, appID string, right types.Right) erro
 		return errors.NewErrPermissionDenied(fmt.Sprintf(`No "%s" rights to Application "%s"`, right, appID))
 	}
 	return nil
+}
+
+func (n *networkServerManager) getEmptyDevice(ctx context.Context, in *types.AppEUI) (*device.Device, error) {
+	if in.IsEmpty() {
+		return nil, errors.New("AppEUI cannot be empty")
+	}
+	claims, err := n.networkServer.Component.ValidateTTNAuthContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if n.clientRate.Limit(claims.Subject) {
+		return nil, grpc.Errorf(codes.ResourceExhausted, "Rate limit for client reached")
+	}
+	dev, err := n.networkServer.devices.Get(*in, emptyDevEUI)
+	if err != nil {
+		return nil, err
+	}
+	if dev == nil {
+		return nil, errors.NewErrNotFound("Empty device")
+	}
+	err = checkAppRights(claims, dev.AppID, rights.Devices)
+	if err != nil {
+		return nil, err
+	}
+	return dev, nil
 }
 
 func (n *networkServerManager) getDevice(ctx context.Context, in *pb_lorawan.DeviceIdentifier) (*device.Device, error) {
@@ -47,6 +74,16 @@ func (n *networkServerManager) getDevice(ctx context.Context, in *pb_lorawan.Dev
 	dev, err := n.networkServer.devices.Get(*in.AppEui, *in.DevEui)
 	if err != nil {
 		return nil, err
+	}
+	if dev == nil {
+		// If no device is found: NS tries to find a device with an empty DevEUI
+		dev, err = n.networkServer.devices.Get(*in.AppEui, emptyDevEUI)
+		if err != nil {
+			return nil, err
+		}
+		if dev == nil {
+			return nil, errors.New("Storage did not return a Device")
+		}
 	}
 	err = checkAppRights(claims, dev.AppID, rights.Devices)
 	if err != nil {
@@ -135,6 +172,60 @@ func (n *networkServerManager) SetDevice(ctx context.Context, in *pb_lorawan.Dev
 		return nil, err
 	}
 	err = frames.Clear()
+	if err != nil {
+		return nil, err
+	}
+
+	return &empty.Empty{}, nil
+}
+
+func (n *networkServerManager) SetRegisterOnJoin(ctx context.Context, in *pb_lorawan.SetRegisterOnJoinMessage) (*empty.Empty, error) {
+	if err := in.Validate(); err != nil {
+		return nil, errors.Wrap(err, "Invalid settings")
+	}
+
+	claims, err := n.networkServer.Component.ValidateTTNAuthContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	err = checkAppRights(claims, in.AppId, rights.Devices)
+	if err != nil {
+		return nil, err
+	}
+
+	dev, err := n.getEmptyDevice(ctx, in.AppEui)
+	if err != nil && errors.GetErrType(err) != errors.NotFound {
+		return nil, err
+	}
+
+	var settingSet bool
+	if err == nil {
+		settingSet = true
+	}
+
+	if settingSet == in.Enabled {
+		// Setting is already set
+		return &empty.Empty{}, nil
+	}
+
+	if !in.Enabled {
+		// User asking for on-join registration deactivation
+		err := n.networkServer.devices.Delete(*in.AppEui, emptyDevEUI)
+		if err != nil {
+			return nil, err
+		}
+		return &empty.Empty{}, nil
+	}
+
+	// User asking for on-join registration
+	dev = new(device.Device)
+
+	dev.AppID = in.AppId
+	dev.AppEUI = *in.AppEui
+	dev.DevID = ""
+	dev.DevEUI = types.DevEUI{}
+
+	err = n.networkServer.devices.Set(dev)
 	if err != nil {
 		return nil, err
 	}

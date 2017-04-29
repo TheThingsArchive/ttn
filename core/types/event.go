@@ -18,9 +18,10 @@ const (
 	ActivationEvent      EventType = "activations"
 	ActivationErrorEvent EventType = "activations/errors"
 
-	CreateEvent EventType = "create"
-	UpdateEvent EventType = "update"
-	DeleteEvent EventType = "delete"
+	CreateEvent             EventType = "create"
+	UpdateEvent             EventType = "update"
+	DeleteEvent             EventType = "delete"
+	OnJoinRegistrationEvent EventType = "onjoinregistration"
 )
 
 // DeviceEvent represents an application-layer event message for a device event

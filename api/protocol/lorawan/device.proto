@@ -53,8 +53,25 @@ message Device {
   int64  last_seen = 21;
 }
 
+// SetRegisterOnJoinMessage signals whether we expect on-join registration for an app
+message SetRegisterOnJoinMessage {
+  // App identifier
+  string app_id  = 1;
+  // Toggle on-join registration
+  bool   enabled     = 2;
+  // AppEui sets the AppEUI non-registered devices have to join with
+  bytes app_eui = 3 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.AppEUI"];
+  // AppKey sets the AppKey that the new devices will register with 
+  bytes app_key = 4 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.AppKey"];
+  // AccessKey to the account server
+  string access_key = 5;
+  // AccessKeyName for the account server key
+  string access_key_name = 6;
+}
+
 service DeviceManager {
   rpc GetDevice(DeviceIdentifier) returns (Device);
   rpc SetDevice(Device) returns (google.protobuf.Empty);
   rpc DeleteDevice(DeviceIdentifier) returns (google.protobuf.Empty);
+  rpc SetRegisterOnJoin(SetRegisterOnJoinMessage) returns (google.protobuf.Empty);
 }
