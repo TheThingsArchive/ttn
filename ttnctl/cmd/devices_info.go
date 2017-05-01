@@ -107,6 +107,7 @@ var devicesInfoCmd = &cobra.Command{
 			fmt.Printf("    Options: %s\n", strings.Join(options, ", "))
 		}
 
+		fmt.Printf("	CustomKeys: %v\n", dev.CustomKeys)
 	},
 }
 
