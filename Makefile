@@ -39,7 +39,7 @@ COMPILED_PROTO_FILES = $(patsubst api%.proto, api%.pb.go, $(PROTO_FILES))
 PROTOC_IMPORTS= -I/usr/local/include -I$(GO_PATH)/src -I$(PWD)/vendor -I$(PARENT_DIRECTORY) \
 -I$(GO_PATH)/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis
 PROTOC = protoc $(PROTOC_IMPORTS) \
---gogottn_out=plugins=grpc:$(GO_SRC) \
+--gogottn_out=Mgoogle/api/annotations.proto=google.golang.org/genproto/googleapis/api/annotations,plugins=grpc:$(GO_SRC) \
 --grpc-gateway_out=:$(GO_SRC) `pwd`/
 
 protos-clean:

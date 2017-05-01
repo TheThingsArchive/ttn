@@ -94,6 +94,7 @@ message Device {
   float latitude  = 10;
   float longitude = 11;
   int32 altitude  = 12;
+  map<string, string> attributes = 13;
 
   string description = 20;
 }

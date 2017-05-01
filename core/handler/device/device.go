@@ -54,6 +54,8 @@ type Device struct {
 
 	CreatedAt time.Time `redis:"created_at"`
 	UpdatedAt time.Time `redis:"updated_at"`
+
+	Attributes map[string]string `redis:"attributes"`
 }
 
 // StartUpdate stores the state of the device
