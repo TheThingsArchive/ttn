@@ -54,12 +54,16 @@ func (msg *Message_MacPayload) Payload() lorawan.Payload {
 	for _, cmd := range m.FOpts {
 		mac.FHDR.FOpts = append(mac.FHDR.FOpts, cmd.MACCommand())
 	}
-	if m.FPort >= 0 {
+	if m.FPort > 0 {
 		fPort := uint8(m.FPort)
 		mac.FPort = &fPort
 	}
-	mac.FRMPayload = []lorawan.Payload{
-		&lorawan.DataPayload{Bytes: m.FrmPayload},
+	if len(m.FrmPayload) != 0 {
+		mac.FRMPayload = []lorawan.Payload{&lorawan.DataPayload{Bytes: m.FrmPayload}}
+		if mac.FPort == nil {
+			fPort := uint8(0)
+			mac.FPort = &fPort
+		}
 	}
 	return &mac
 }
