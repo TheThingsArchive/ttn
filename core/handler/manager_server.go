@@ -113,9 +113,10 @@ func (h *handlerManager) GetDevice(ctx context.Context, in *pb.DeviceIdentifier)
 			Uses32BitFCnt:         dev.Options.Uses32BitFCnt,
 			ActivationConstraints: dev.Options.ActivationConstraints,
 		}},
-		Latitude:  dev.Latitude,
-		Longitude: dev.Longitude,
-		Altitude:  dev.Altitude,
+		Latitude:   dev.Latitude,
+		Longitude:  dev.Longitude,
+		Altitude:   dev.Altitude,
+		CustomKeys: dev.CustomKeys,
 	}
 
 	nsDev, err := h.deviceManager.GetDevice(ctx, &pb_lorawan.DeviceIdentifier{

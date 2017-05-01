@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"time"
 
+	"strings"
+
 	"github.com/TheThingsNetwork/ttn/core/handler/device/migrate"
 	"github.com/TheThingsNetwork/ttn/core/storage"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
@@ -39,18 +41,28 @@ func NewRedisDeviceStore(client *redis.Client, prefix string) *RedisDeviceStore 
 	for v, f := range migrate.DeviceMigrations(prefix) {
 		store.AddMigration(v, f)
 	}
+	l, err := client.Get(prefix + ":" + redisDevicePrefix + ":whitelist").Result()
+	if err != nil {
+		//TODO
+	}
+	m := map[string]bool{}
+	for _, key := range strings.Split(l, ":") {
+		m[key] = true
+	}
 	queues := storage.NewRedisQueueStore(client, prefix+":"+redisDownlinkQueuePrefix)
 	return &RedisDeviceStore{
-		store:  store,
-		queues: queues,
+		store:     store,
+		queues:    queues,
+		whiteList: m,
 	}
 }
 
 // RedisDeviceStore stores Devices in Redis.
 // - Devices are stored as a Hash
 type RedisDeviceStore struct {
-	store  *storage.RedisMapStore
-	queues *storage.RedisQueueStore
+	store     *storage.RedisMapStore
+	queues    *storage.RedisQueueStore
+	whiteList map[string]bool
 }
 
 // Count all devices in the store
