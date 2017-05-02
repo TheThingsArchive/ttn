@@ -96,28 +96,7 @@ func (h *handlerManager) GetDevice(ctx context.Context, in *pb.DeviceIdentifier)
 		return nil, err
 	}
 
-	pbDev := &pb.Device{
-		AppId:       dev.AppID,
-		DevId:       dev.DevID,
-		Description: dev.Description,
-		Device: &pb.Device_LorawanDevice{LorawanDevice: &pb_lorawan.Device{
-			AppId:                 dev.AppID,
-			AppEui:                &dev.AppEUI,
-			DevId:                 dev.DevID,
-			DevEui:                &dev.DevEUI,
-			DevAddr:               &dev.DevAddr,
-			NwkSKey:               &dev.NwkSKey,
-			AppSKey:               &dev.AppSKey,
-			AppKey:                &dev.AppKey,
-			DisableFCntCheck:      dev.Options.DisableFCntCheck,
-			Uses32BitFCnt:         dev.Options.Uses32BitFCnt,
-			ActivationConstraints: dev.Options.ActivationConstraints,
-		}},
-		Latitude:   dev.Latitude,
-		Longitude:  dev.Longitude,
-		Altitude:   dev.Altitude,
-		CustomKeys: dev.CustomKeys,
-	}
+	pbDev := pb.DevFromHdl(dev)
 
 	nsDev, err := h.deviceManager.GetDevice(ctx, &pb_lorawan.DeviceIdentifier{
 		AppEui: &dev.AppEUI,
@@ -175,78 +154,18 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*empty.E
 		return nil, errors.NewErrInvalidArgument("Device", "No LoRaWAN Device")
 	}
 
-	var eventType types.EventType
-	if dev != nil {
-		eventType = types.UpdateEvent
-		if dev.AppEUI != *lorawan.AppEui || dev.DevEUI != *lorawan.DevEui {
-			// If the AppEUI or DevEUI is changed, we should remove the device from the NetworkServer and re-add it later
-			_, err = h.deviceManager.DeleteDevice(ctx, &pb_lorawan.DeviceIdentifier{
-				AppEui: &dev.AppEUI,
-				DevEui: &dev.DevEUI,
-			})
-			if err != nil {
-				return nil, errors.Wrap(errors.FromGRPCError(err), "Broker did not delete device")
-			}
-		}
+	eventType, err := h.eventSelect(ctx, dev, lorawan, in.AppId)
+	if err != nil {
+		return nil, err
+	}
+	if eventType == types.UpdateEvent {
 		dev.StartUpdate()
 	} else {
-		eventType = types.CreateEvent
-		existingDevices, err := h.handler.devices.ListForApp(in.AppId, nil)
-		if err != nil {
-			return nil, err
-		}
-		for _, existingDevice := range existingDevices {
-			if existingDevice.AppEUI == *lorawan.AppEui && existingDevice.DevEUI == *lorawan.DevEui {
-				return nil, errors.NewErrAlreadyExists("Device with AppEUI and DevEUI")
-			}
-		}
 		dev = new(device.Device)
 	}
-
-	dev.AppID = in.AppId
-	dev.AppEUI = *lorawan.AppEui
-	dev.DevID = in.DevId
-	dev.DevEUI = *lorawan.DevEui
-
-	dev.Description = in.Description
-
-	dev.Options = device.Options{
-		DisableFCntCheck:      lorawan.DisableFCntCheck,
-		Uses32BitFCnt:         lorawan.Uses32BitFCnt,
-		ActivationConstraints: lorawan.ActivationConstraints,
-	}
-	if dev.Options.ActivationConstraints == "" {
-		dev.Options.ActivationConstraints = "local"
-	}
-
-	if lorawan.DevAddr != nil {
-		dev.DevAddr = *lorawan.DevAddr
-	}
-	if lorawan.NwkSKey != nil {
-		dev.NwkSKey = *lorawan.NwkSKey
-	}
-	if lorawan.AppSKey != nil {
-		dev.AppSKey = *lorawan.AppSKey
-	}
-
-	if lorawan.AppKey != nil {
-		if dev.AppKey != *lorawan.AppKey { // When the AppKey of an existing device is changed
-			dev.UsedAppNonces = []device.AppNonce{}
-			dev.UsedDevNonces = []device.DevNonce{}
-		}
-		dev.AppKey = *lorawan.AppKey
-	}
-
-	dev.Latitude = in.Latitude
-	dev.Longitude = in.Longitude
-	dev.Altitude = in.Altitude
-
+	pb.DevToHdl(dev, in, lorawan)
 	// Update the device in the Broker (NetworkServer)
-	nsUpdated := dev.GetLoRaWAN()
-	nsUpdated.FCntUp = lorawan.FCntUp
-	nsUpdated.FCntDown = lorawan.FCntDown
-
-	_, err = h.deviceManager.SetDevice(ctx, nsUpdated)
+	err = h.updateDevBrk(ctx, dev, lorawan)
 	if err != nil {
 		return nil, errors.Wrap(errors.FromGRPCError(err), "Broker did not set device")
 	}
@@ -335,24 +254,7 @@ func (h *handlerManager) GetDevicesForApplication(ctx context.Context, in *pb.Ap
 		if dev == nil {
 			continue
 		}
-		res.Devices = append(res.Devices, &pb.Device{
-			AppId:       dev.AppID,
-			DevId:       dev.DevID,
-			Description: dev.Description,
-			Device: &pb.Device_LorawanDevice{LorawanDevice: &pb_lorawan.Device{
-				AppId:   dev.AppID,
-				AppEui:  &dev.AppEUI,
-				DevId:   dev.DevID,
-				DevEui:  &dev.DevEUI,
-				DevAddr: &dev.DevAddr,
-				NwkSKey: &dev.NwkSKey,
-				AppSKey: &dev.AppSKey,
-				AppKey:  &dev.AppKey,
-			}},
-			Latitude:  dev.Latitude,
-			Longitude: dev.Longitude,
-			Altitude:  dev.Altitude,
-		})
+		res.Devices = append(res.Devices, pb.DevFromHdl(dev))
 	}
 
 	total, selected := opts.GetTotalAndSelected()

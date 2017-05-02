@@ -109,3 +109,4 @@ func (d Device) GetLoRaWAN() *pb_lorawan.Device {
 	}
 	return dev
 }
+
