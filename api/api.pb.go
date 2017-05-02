@@ -20,6 +20,9 @@ import proto "github.com/gogo/protobuf/proto"
 import fmt "fmt"
 import math "math"
 
+import strings "strings"
+import reflect "reflect"
+
 import io "io"
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -46,7 +49,6 @@ type Percentiles struct {
 }
 
 func (m *Percentiles) Reset()                    { *m = Percentiles{} }
-func (m *Percentiles) String() string            { return proto.CompactTextString(m) }
 func (*Percentiles) ProtoMessage()               {}
 func (*Percentiles) Descriptor() ([]byte, []int) { return fileDescriptorApi, []int{0} }
 
@@ -120,7 +122,6 @@ type Rates struct {
 }
 
 func (m *Rates) Reset()                    { *m = Rates{} }
-func (m *Rates) String() string            { return proto.CompactTextString(m) }
 func (*Rates) ProtoMessage()               {}
 func (*Rates) Descriptor() ([]byte, []int) { return fileDescriptorApi, []int{1} }
 
@@ -152,7 +153,6 @@ type SystemStats struct {
 }
 
 func (m *SystemStats) Reset()                    { *m = SystemStats{} }
-func (m *SystemStats) String() string            { return proto.CompactTextString(m) }
 func (*SystemStats) ProtoMessage()               {}
 func (*SystemStats) Descriptor() ([]byte, []int) { return fileDescriptorApi, []int{2} }
 
@@ -184,7 +184,6 @@ type SystemStats_Loadstats struct {
 }
 
 func (m *SystemStats_Loadstats) Reset()                    { *m = SystemStats_Loadstats{} }
-func (m *SystemStats_Loadstats) String() string            { return proto.CompactTextString(m) }
 func (*SystemStats_Loadstats) ProtoMessage()               {}
 func (*SystemStats_Loadstats) Descriptor() ([]byte, []int) { return fileDescriptorApi, []int{2, 0} }
 
@@ -217,7 +216,6 @@ type SystemStats_CPUStats struct {
 }
 
 func (m *SystemStats_CPUStats) Reset()                    { *m = SystemStats_CPUStats{} }
-func (m *SystemStats_CPUStats) String() string            { return proto.CompactTextString(m) }
 func (*SystemStats_CPUStats) ProtoMessage()               {}
 func (*SystemStats_CPUStats) Descriptor() ([]byte, []int) { return fileDescriptorApi, []int{2, 1} }
 
@@ -256,7 +254,6 @@ type SystemStats_MemoryStats struct {
 }
 
 func (m *SystemStats_MemoryStats) Reset()                    { *m = SystemStats_MemoryStats{} }
-func (m *SystemStats_MemoryStats) String() string            { return proto.CompactTextString(m) }
 func (*SystemStats_MemoryStats) ProtoMessage()               {}
 func (*SystemStats_MemoryStats) Descriptor() ([]byte, []int) { return fileDescriptorApi, []int{2, 2} }
 
@@ -290,7 +287,6 @@ type ComponentStats struct {
 }
 
 func (m *ComponentStats) Reset()                    { *m = ComponentStats{} }
-func (m *ComponentStats) String() string            { return proto.CompactTextString(m) }
 func (*ComponentStats) ProtoMessage()               {}
 func (*ComponentStats) Descriptor() ([]byte, []int) { return fileDescriptorApi, []int{3} }
 
@@ -337,7 +333,6 @@ type ComponentStats_CPUStats struct {
 }
 
 func (m *ComponentStats_CPUStats) Reset()                    { *m = ComponentStats_CPUStats{} }
-func (m *ComponentStats_CPUStats) String() string            { return proto.CompactTextString(m) }
 func (*ComponentStats_CPUStats) ProtoMessage()               {}
 func (*ComponentStats_CPUStats) Descriptor() ([]byte, []int) { return fileDescriptorApi, []int{3, 0} }
 
@@ -377,7 +372,6 @@ type ComponentStats_MemoryStats struct {
 }
 
 func (m *ComponentStats_MemoryStats) Reset()                    { *m = ComponentStats_MemoryStats{} }
-func (m *ComponentStats_MemoryStats) String() string            { return proto.CompactTextString(m) }
 func (*ComponentStats_MemoryStats) ProtoMessage()               {}
 func (*ComponentStats_MemoryStats) Descriptor() ([]byte, []int) { return fileDescriptorApi, []int{3, 1} }
 
@@ -419,6 +413,720 @@ func init() {
 	proto.RegisterType((*ComponentStats)(nil), "api.ComponentStats")
 	proto.RegisterType((*ComponentStats_CPUStats)(nil), "api.ComponentStats.CPUStats")
 	proto.RegisterType((*ComponentStats_MemoryStats)(nil), "api.ComponentStats.MemoryStats")
+}
+func (this *Percentiles) VerboseEqual(that interface{}) error {
+	if that == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that == nil && this != nil")
+	}
+
+	that1, ok := that.(*Percentiles)
+	if !ok {
+		that2, ok := that.(Percentiles)
+		if ok {
+			that1 = &that2
+		} else {
+			return fmt.Errorf("that is not of type *Percentiles")
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that is type *Percentiles but is nil && this != nil")
+	} else if this == nil {
+		return fmt.Errorf("that is type *Percentiles but is not nil && this == nil")
+	}
+	if this.Percentile1 != that1.Percentile1 {
+		return fmt.Errorf("Percentile1 this(%v) Not Equal that(%v)", this.Percentile1, that1.Percentile1)
+	}
+	if this.Percentile5 != that1.Percentile5 {
+		return fmt.Errorf("Percentile5 this(%v) Not Equal that(%v)", this.Percentile5, that1.Percentile5)
+	}
+	if this.Percentile10 != that1.Percentile10 {
+		return fmt.Errorf("Percentile10 this(%v) Not Equal that(%v)", this.Percentile10, that1.Percentile10)
+	}
+	if this.Percentile25 != that1.Percentile25 {
+		return fmt.Errorf("Percentile25 this(%v) Not Equal that(%v)", this.Percentile25, that1.Percentile25)
+	}
+	if this.Percentile50 != that1.Percentile50 {
+		return fmt.Errorf("Percentile50 this(%v) Not Equal that(%v)", this.Percentile50, that1.Percentile50)
+	}
+	if this.Percentile75 != that1.Percentile75 {
+		return fmt.Errorf("Percentile75 this(%v) Not Equal that(%v)", this.Percentile75, that1.Percentile75)
+	}
+	if this.Percentile90 != that1.Percentile90 {
+		return fmt.Errorf("Percentile90 this(%v) Not Equal that(%v)", this.Percentile90, that1.Percentile90)
+	}
+	if this.Percentile95 != that1.Percentile95 {
+		return fmt.Errorf("Percentile95 this(%v) Not Equal that(%v)", this.Percentile95, that1.Percentile95)
+	}
+	if this.Percentile99 != that1.Percentile99 {
+		return fmt.Errorf("Percentile99 this(%v) Not Equal that(%v)", this.Percentile99, that1.Percentile99)
+	}
+	return nil
+}
+func (this *Percentiles) Equal(that interface{}) bool {
+	if that == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	}
+
+	that1, ok := that.(*Percentiles)
+	if !ok {
+		that2, ok := that.(Percentiles)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	} else if this == nil {
+		return false
+	}
+	if this.Percentile1 != that1.Percentile1 {
+		return false
+	}
+	if this.Percentile5 != that1.Percentile5 {
+		return false
+	}
+	if this.Percentile10 != that1.Percentile10 {
+		return false
+	}
+	if this.Percentile25 != that1.Percentile25 {
+		return false
+	}
+	if this.Percentile50 != that1.Percentile50 {
+		return false
+	}
+	if this.Percentile75 != that1.Percentile75 {
+		return false
+	}
+	if this.Percentile90 != that1.Percentile90 {
+		return false
+	}
+	if this.Percentile95 != that1.Percentile95 {
+		return false
+	}
+	if this.Percentile99 != that1.Percentile99 {
+		return false
+	}
+	return true
+}
+func (this *Rates) VerboseEqual(that interface{}) error {
+	if that == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that == nil && this != nil")
+	}
+
+	that1, ok := that.(*Rates)
+	if !ok {
+		that2, ok := that.(Rates)
+		if ok {
+			that1 = &that2
+		} else {
+			return fmt.Errorf("that is not of type *Rates")
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that is type *Rates but is nil && this != nil")
+	} else if this == nil {
+		return fmt.Errorf("that is type *Rates but is not nil && this == nil")
+	}
+	if this.Rate1 != that1.Rate1 {
+		return fmt.Errorf("Rate1 this(%v) Not Equal that(%v)", this.Rate1, that1.Rate1)
+	}
+	if this.Rate5 != that1.Rate5 {
+		return fmt.Errorf("Rate5 this(%v) Not Equal that(%v)", this.Rate5, that1.Rate5)
+	}
+	if this.Rate15 != that1.Rate15 {
+		return fmt.Errorf("Rate15 this(%v) Not Equal that(%v)", this.Rate15, that1.Rate15)
+	}
+	return nil
+}
+func (this *Rates) Equal(that interface{}) bool {
+	if that == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	}
+
+	that1, ok := that.(*Rates)
+	if !ok {
+		that2, ok := that.(Rates)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	} else if this == nil {
+		return false
+	}
+	if this.Rate1 != that1.Rate1 {
+		return false
+	}
+	if this.Rate5 != that1.Rate5 {
+		return false
+	}
+	if this.Rate15 != that1.Rate15 {
+		return false
+	}
+	return true
+}
+func (this *SystemStats) VerboseEqual(that interface{}) error {
+	if that == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that == nil && this != nil")
+	}
+
+	that1, ok := that.(*SystemStats)
+	if !ok {
+		that2, ok := that.(SystemStats)
+		if ok {
+			that1 = &that2
+		} else {
+			return fmt.Errorf("that is not of type *SystemStats")
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that is type *SystemStats but is nil && this != nil")
+	} else if this == nil {
+		return fmt.Errorf("that is type *SystemStats but is not nil && this == nil")
+	}
+	if !this.Load.Equal(that1.Load) {
+		return fmt.Errorf("Load this(%v) Not Equal that(%v)", this.Load, that1.Load)
+	}
+	if !this.Cpu.Equal(that1.Cpu) {
+		return fmt.Errorf("Cpu this(%v) Not Equal that(%v)", this.Cpu, that1.Cpu)
+	}
+	if !this.Memory.Equal(that1.Memory) {
+		return fmt.Errorf("Memory this(%v) Not Equal that(%v)", this.Memory, that1.Memory)
+	}
+	return nil
+}
+func (this *SystemStats) Equal(that interface{}) bool {
+	if that == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	}
+
+	that1, ok := that.(*SystemStats)
+	if !ok {
+		that2, ok := that.(SystemStats)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	} else if this == nil {
+		return false
+	}
+	if !this.Load.Equal(that1.Load) {
+		return false
+	}
+	if !this.Cpu.Equal(that1.Cpu) {
+		return false
+	}
+	if !this.Memory.Equal(that1.Memory) {
+		return false
+	}
+	return true
+}
+func (this *SystemStats_Loadstats) VerboseEqual(that interface{}) error {
+	if that == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that == nil && this != nil")
+	}
+
+	that1, ok := that.(*SystemStats_Loadstats)
+	if !ok {
+		that2, ok := that.(SystemStats_Loadstats)
+		if ok {
+			that1 = &that2
+		} else {
+			return fmt.Errorf("that is not of type *SystemStats_Loadstats")
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that is type *SystemStats_Loadstats but is nil && this != nil")
+	} else if this == nil {
+		return fmt.Errorf("that is type *SystemStats_Loadstats but is not nil && this == nil")
+	}
+	if this.Load1 != that1.Load1 {
+		return fmt.Errorf("Load1 this(%v) Not Equal that(%v)", this.Load1, that1.Load1)
+	}
+	if this.Load5 != that1.Load5 {
+		return fmt.Errorf("Load5 this(%v) Not Equal that(%v)", this.Load5, that1.Load5)
+	}
+	if this.Load15 != that1.Load15 {
+		return fmt.Errorf("Load15 this(%v) Not Equal that(%v)", this.Load15, that1.Load15)
+	}
+	return nil
+}
+func (this *SystemStats_Loadstats) Equal(that interface{}) bool {
+	if that == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	}
+
+	that1, ok := that.(*SystemStats_Loadstats)
+	if !ok {
+		that2, ok := that.(SystemStats_Loadstats)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	} else if this == nil {
+		return false
+	}
+	if this.Load1 != that1.Load1 {
+		return false
+	}
+	if this.Load5 != that1.Load5 {
+		return false
+	}
+	if this.Load15 != that1.Load15 {
+		return false
+	}
+	return true
+}
+func (this *SystemStats_CPUStats) VerboseEqual(that interface{}) error {
+	if that == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that == nil && this != nil")
+	}
+
+	that1, ok := that.(*SystemStats_CPUStats)
+	if !ok {
+		that2, ok := that.(SystemStats_CPUStats)
+		if ok {
+			that1 = &that2
+		} else {
+			return fmt.Errorf("that is not of type *SystemStats_CPUStats")
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that is type *SystemStats_CPUStats but is nil && this != nil")
+	} else if this == nil {
+		return fmt.Errorf("that is type *SystemStats_CPUStats but is not nil && this == nil")
+	}
+	if this.User != that1.User {
+		return fmt.Errorf("User this(%v) Not Equal that(%v)", this.User, that1.User)
+	}
+	if this.System != that1.System {
+		return fmt.Errorf("System this(%v) Not Equal that(%v)", this.System, that1.System)
+	}
+	if this.Idle != that1.Idle {
+		return fmt.Errorf("Idle this(%v) Not Equal that(%v)", this.Idle, that1.Idle)
+	}
+	if this.Percentage != that1.Percentage {
+		return fmt.Errorf("Percentage this(%v) Not Equal that(%v)", this.Percentage, that1.Percentage)
+	}
+	return nil
+}
+func (this *SystemStats_CPUStats) Equal(that interface{}) bool {
+	if that == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	}
+
+	that1, ok := that.(*SystemStats_CPUStats)
+	if !ok {
+		that2, ok := that.(SystemStats_CPUStats)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	} else if this == nil {
+		return false
+	}
+	if this.User != that1.User {
+		return false
+	}
+	if this.System != that1.System {
+		return false
+	}
+	if this.Idle != that1.Idle {
+		return false
+	}
+	if this.Percentage != that1.Percentage {
+		return false
+	}
+	return true
+}
+func (this *SystemStats_MemoryStats) VerboseEqual(that interface{}) error {
+	if that == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that == nil && this != nil")
+	}
+
+	that1, ok := that.(*SystemStats_MemoryStats)
+	if !ok {
+		that2, ok := that.(SystemStats_MemoryStats)
+		if ok {
+			that1 = &that2
+		} else {
+			return fmt.Errorf("that is not of type *SystemStats_MemoryStats")
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that is type *SystemStats_MemoryStats but is nil && this != nil")
+	} else if this == nil {
+		return fmt.Errorf("that is type *SystemStats_MemoryStats but is not nil && this == nil")
+	}
+	if this.Total != that1.Total {
+		return fmt.Errorf("Total this(%v) Not Equal that(%v)", this.Total, that1.Total)
+	}
+	if this.Available != that1.Available {
+		return fmt.Errorf("Available this(%v) Not Equal that(%v)", this.Available, that1.Available)
+	}
+	if this.Used != that1.Used {
+		return fmt.Errorf("Used this(%v) Not Equal that(%v)", this.Used, that1.Used)
+	}
+	return nil
+}
+func (this *SystemStats_MemoryStats) Equal(that interface{}) bool {
+	if that == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	}
+
+	that1, ok := that.(*SystemStats_MemoryStats)
+	if !ok {
+		that2, ok := that.(SystemStats_MemoryStats)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	} else if this == nil {
+		return false
+	}
+	if this.Total != that1.Total {
+		return false
+	}
+	if this.Available != that1.Available {
+		return false
+	}
+	if this.Used != that1.Used {
+		return false
+	}
+	return true
+}
+func (this *ComponentStats) VerboseEqual(that interface{}) error {
+	if that == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that == nil && this != nil")
+	}
+
+	that1, ok := that.(*ComponentStats)
+	if !ok {
+		that2, ok := that.(ComponentStats)
+		if ok {
+			that1 = &that2
+		} else {
+			return fmt.Errorf("that is not of type *ComponentStats")
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that is type *ComponentStats but is nil && this != nil")
+	} else if this == nil {
+		return fmt.Errorf("that is type *ComponentStats but is not nil && this == nil")
+	}
+	if this.Uptime != that1.Uptime {
+		return fmt.Errorf("Uptime this(%v) Not Equal that(%v)", this.Uptime, that1.Uptime)
+	}
+	if !this.Cpu.Equal(that1.Cpu) {
+		return fmt.Errorf("Cpu this(%v) Not Equal that(%v)", this.Cpu, that1.Cpu)
+	}
+	if !this.Memory.Equal(that1.Memory) {
+		return fmt.Errorf("Memory this(%v) Not Equal that(%v)", this.Memory, that1.Memory)
+	}
+	if this.Goroutines != that1.Goroutines {
+		return fmt.Errorf("Goroutines this(%v) Not Equal that(%v)", this.Goroutines, that1.Goroutines)
+	}
+	if this.GcCpuFraction != that1.GcCpuFraction {
+		return fmt.Errorf("GcCpuFraction this(%v) Not Equal that(%v)", this.GcCpuFraction, that1.GcCpuFraction)
+	}
+	return nil
+}
+func (this *ComponentStats) Equal(that interface{}) bool {
+	if that == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	}
+
+	that1, ok := that.(*ComponentStats)
+	if !ok {
+		that2, ok := that.(ComponentStats)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	} else if this == nil {
+		return false
+	}
+	if this.Uptime != that1.Uptime {
+		return false
+	}
+	if !this.Cpu.Equal(that1.Cpu) {
+		return false
+	}
+	if !this.Memory.Equal(that1.Memory) {
+		return false
+	}
+	if this.Goroutines != that1.Goroutines {
+		return false
+	}
+	if this.GcCpuFraction != that1.GcCpuFraction {
+		return false
+	}
+	return true
+}
+func (this *ComponentStats_CPUStats) VerboseEqual(that interface{}) error {
+	if that == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that == nil && this != nil")
+	}
+
+	that1, ok := that.(*ComponentStats_CPUStats)
+	if !ok {
+		that2, ok := that.(ComponentStats_CPUStats)
+		if ok {
+			that1 = &that2
+		} else {
+			return fmt.Errorf("that is not of type *ComponentStats_CPUStats")
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that is type *ComponentStats_CPUStats but is nil && this != nil")
+	} else if this == nil {
+		return fmt.Errorf("that is type *ComponentStats_CPUStats but is not nil && this == nil")
+	}
+	if this.User != that1.User {
+		return fmt.Errorf("User this(%v) Not Equal that(%v)", this.User, that1.User)
+	}
+	if this.System != that1.System {
+		return fmt.Errorf("System this(%v) Not Equal that(%v)", this.System, that1.System)
+	}
+	if this.Idle != that1.Idle {
+		return fmt.Errorf("Idle this(%v) Not Equal that(%v)", this.Idle, that1.Idle)
+	}
+	if this.Percentage != that1.Percentage {
+		return fmt.Errorf("Percentage this(%v) Not Equal that(%v)", this.Percentage, that1.Percentage)
+	}
+	return nil
+}
+func (this *ComponentStats_CPUStats) Equal(that interface{}) bool {
+	if that == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	}
+
+	that1, ok := that.(*ComponentStats_CPUStats)
+	if !ok {
+		that2, ok := that.(ComponentStats_CPUStats)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	} else if this == nil {
+		return false
+	}
+	if this.User != that1.User {
+		return false
+	}
+	if this.System != that1.System {
+		return false
+	}
+	if this.Idle != that1.Idle {
+		return false
+	}
+	if this.Percentage != that1.Percentage {
+		return false
+	}
+	return true
+}
+func (this *ComponentStats_MemoryStats) VerboseEqual(that interface{}) error {
+	if that == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that == nil && this != nil")
+	}
+
+	that1, ok := that.(*ComponentStats_MemoryStats)
+	if !ok {
+		that2, ok := that.(ComponentStats_MemoryStats)
+		if ok {
+			that1 = &that2
+		} else {
+			return fmt.Errorf("that is not of type *ComponentStats_MemoryStats")
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that is type *ComponentStats_MemoryStats but is nil && this != nil")
+	} else if this == nil {
+		return fmt.Errorf("that is type *ComponentStats_MemoryStats but is not nil && this == nil")
+	}
+	if this.Memory != that1.Memory {
+		return fmt.Errorf("Memory this(%v) Not Equal that(%v)", this.Memory, that1.Memory)
+	}
+	if this.Swap != that1.Swap {
+		return fmt.Errorf("Swap this(%v) Not Equal that(%v)", this.Swap, that1.Swap)
+	}
+	if this.Heap != that1.Heap {
+		return fmt.Errorf("Heap this(%v) Not Equal that(%v)", this.Heap, that1.Heap)
+	}
+	if this.Stack != that1.Stack {
+		return fmt.Errorf("Stack this(%v) Not Equal that(%v)", this.Stack, that1.Stack)
+	}
+	return nil
+}
+func (this *ComponentStats_MemoryStats) Equal(that interface{}) bool {
+	if that == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	}
+
+	that1, ok := that.(*ComponentStats_MemoryStats)
+	if !ok {
+		that2, ok := that.(ComponentStats_MemoryStats)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	} else if this == nil {
+		return false
+	}
+	if this.Memory != that1.Memory {
+		return false
+	}
+	if this.Swap != that1.Swap {
+		return false
+	}
+	if this.Heap != that1.Heap {
+		return false
+	}
+	if this.Stack != that1.Stack {
+		return false
+	}
+	return true
 }
 func (m *Percentiles) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
@@ -1009,6 +1717,133 @@ func sovApi(x uint64) (n int) {
 }
 func sozApi(x uint64) (n int) {
 	return sovApi(uint64((x << 1) ^ uint64((int64(x) >> 63))))
+}
+func (this *Percentiles) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&Percentiles{`,
+		`Percentile1:` + fmt.Sprintf("%v", this.Percentile1) + `,`,
+		`Percentile5:` + fmt.Sprintf("%v", this.Percentile5) + `,`,
+		`Percentile10:` + fmt.Sprintf("%v", this.Percentile10) + `,`,
+		`Percentile25:` + fmt.Sprintf("%v", this.Percentile25) + `,`,
+		`Percentile50:` + fmt.Sprintf("%v", this.Percentile50) + `,`,
+		`Percentile75:` + fmt.Sprintf("%v", this.Percentile75) + `,`,
+		`Percentile90:` + fmt.Sprintf("%v", this.Percentile90) + `,`,
+		`Percentile95:` + fmt.Sprintf("%v", this.Percentile95) + `,`,
+		`Percentile99:` + fmt.Sprintf("%v", this.Percentile99) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *Rates) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&Rates{`,
+		`Rate1:` + fmt.Sprintf("%v", this.Rate1) + `,`,
+		`Rate5:` + fmt.Sprintf("%v", this.Rate5) + `,`,
+		`Rate15:` + fmt.Sprintf("%v", this.Rate15) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *SystemStats) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&SystemStats{`,
+		`Load:` + strings.Replace(fmt.Sprintf("%v", this.Load), "SystemStats_Loadstats", "SystemStats_Loadstats", 1) + `,`,
+		`Cpu:` + strings.Replace(fmt.Sprintf("%v", this.Cpu), "SystemStats_CPUStats", "SystemStats_CPUStats", 1) + `,`,
+		`Memory:` + strings.Replace(fmt.Sprintf("%v", this.Memory), "SystemStats_MemoryStats", "SystemStats_MemoryStats", 1) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *SystemStats_Loadstats) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&SystemStats_Loadstats{`,
+		`Load1:` + fmt.Sprintf("%v", this.Load1) + `,`,
+		`Load5:` + fmt.Sprintf("%v", this.Load5) + `,`,
+		`Load15:` + fmt.Sprintf("%v", this.Load15) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *SystemStats_CPUStats) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&SystemStats_CPUStats{`,
+		`User:` + fmt.Sprintf("%v", this.User) + `,`,
+		`System:` + fmt.Sprintf("%v", this.System) + `,`,
+		`Idle:` + fmt.Sprintf("%v", this.Idle) + `,`,
+		`Percentage:` + fmt.Sprintf("%v", this.Percentage) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *SystemStats_MemoryStats) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&SystemStats_MemoryStats{`,
+		`Total:` + fmt.Sprintf("%v", this.Total) + `,`,
+		`Available:` + fmt.Sprintf("%v", this.Available) + `,`,
+		`Used:` + fmt.Sprintf("%v", this.Used) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *ComponentStats) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&ComponentStats{`,
+		`Uptime:` + fmt.Sprintf("%v", this.Uptime) + `,`,
+		`Cpu:` + strings.Replace(fmt.Sprintf("%v", this.Cpu), "ComponentStats_CPUStats", "ComponentStats_CPUStats", 1) + `,`,
+		`Memory:` + strings.Replace(fmt.Sprintf("%v", this.Memory), "ComponentStats_MemoryStats", "ComponentStats_MemoryStats", 1) + `,`,
+		`Goroutines:` + fmt.Sprintf("%v", this.Goroutines) + `,`,
+		`GcCpuFraction:` + fmt.Sprintf("%v", this.GcCpuFraction) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *ComponentStats_CPUStats) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&ComponentStats_CPUStats{`,
+		`User:` + fmt.Sprintf("%v", this.User) + `,`,
+		`System:` + fmt.Sprintf("%v", this.System) + `,`,
+		`Idle:` + fmt.Sprintf("%v", this.Idle) + `,`,
+		`Percentage:` + fmt.Sprintf("%v", this.Percentage) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *ComponentStats_MemoryStats) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&ComponentStats_MemoryStats{`,
+		`Memory:` + fmt.Sprintf("%v", this.Memory) + `,`,
+		`Swap:` + fmt.Sprintf("%v", this.Swap) + `,`,
+		`Heap:` + fmt.Sprintf("%v", this.Heap) + `,`,
+		`Stack:` + fmt.Sprintf("%v", this.Stack) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func valueToStringApi(v interface{}) string {
+	rv := reflect.ValueOf(v)
+	if rv.IsNil() {
+		return "nil"
+	}
+	pv := reflect.Indirect(rv).Interface()
+	return fmt.Sprintf("*%v", pv)
 }
 func (m *Percentiles) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
@@ -2240,41 +3075,43 @@ var (
 func init() { proto.RegisterFile("github.com/TheThingsNetwork/ttn/api/api.proto", fileDescriptorApi) }
 
 var fileDescriptorApi = []byte{
-	// 568 bytes of a gzipped FileDescriptorProto
+	// 593 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xbc, 0x54, 0xcb, 0x6e, 0xd3, 0x40,
-	0x14, 0x55, 0x1a, 0x27, 0x34, 0xd7, 0x3c, 0xa4, 0x11, 0x8a, 0x4c, 0x54, 0x85, 0x2a, 0x48, 0x08,
-	0x09, 0xe1, 0xa4, 0x01, 0x2b, 0xca, 0x96, 0x48, 0x6c, 0x78, 0x55, 0x6e, 0xbb, 0x61, 0x53, 0x4d,
-	0x9c, 0xc1, 0x31, 0xb5, 0x3d, 0x23, 0xcf, 0x98, 0xaa, 0xbf, 0xc4, 0x9a, 0x8f, 0x60, 0x83, 0xc4,
-	0x27, 0xa0, 0x7c, 0x09, 0x9a, 0xeb, 0x89, 0x71, 0x26, 0x5d, 0xb0, 0x62, 0x51, 0xe9, 0x9e, 0x3b,
-	0xe7, 0x9e, 0xfb, 0x38, 0x8d, 0xe1, 0x45, 0x9c, 0xa8, 0x75, 0xb9, 0xf4, 0x23, 0x9e, 0x8d, 0xcf,
-	0xd7, 0xec, 0x7c, 0x9d, 0xe4, 0xb1, 0xfc, 0xc0, 0xd4, 0x35, 0x2f, 0xae, 0xc6, 0x4a, 0xe5, 0x63,
-	0x2a, 0x12, 0xfd, 0xe7, 0x8b, 0x82, 0x2b, 0x4e, 0xda, 0x54, 0x24, 0xa3, 0x9f, 0x07, 0xe0, 0x9e,
-	0xb2, 0x22, 0x62, 0xb9, 0x4a, 0x52, 0x26, 0xc9, 0x31, 0xb8, 0xa2, 0x86, 0x27, 0x5e, 0xeb, 0xb8,
-	0xf5, 0xec, 0x20, 0x6c, 0xa6, 0x76, 0x19, 0x81, 0x77, 0x60, 0x33, 0x02, 0x32, 0x82, 0xbb, 0x8d,
-	0x82, 0x89, 0xd7, 0x46, 0xca, 0x4e, 0x6e, 0x97, 0x33, 0x0d, 0x3c, 0xc7, 0xe6, 0x4c, 0x2d, 0x9d,
-	0x60, 0xe2, 0x75, 0x6c, 0x4e, 0x60, 0xe9, 0xcc, 0x02, 0xaf, 0x6b, 0x73, 0x66, 0x96, 0xce, 0x7c,
-	0xe2, 0xdd, 0xb1, 0x39, 0x73, 0x4b, 0x67, 0x1e, 0x78, 0x87, 0x7b, 0x1c, 0x5b, 0x67, 0xee, 0xf5,
-	0xf6, 0x38, 0xf3, 0xd1, 0x5b, 0xe8, 0x84, 0x54, 0x31, 0x49, 0x1e, 0x42, 0xa7, 0xa0, 0xaa, 0x3e,
-	0x61, 0x05, 0xb6, 0xd9, 0xed, 0xd9, 0x2a, 0x40, 0xfa, 0xd0, 0xc5, 0xe7, 0xc0, 0x9c, 0xca, 0xa0,
-	0xd1, 0xf7, 0x36, 0xb8, 0x67, 0x37, 0x52, 0xb1, 0xec, 0x4c, 0x51, 0x25, 0x89, 0x0f, 0x4e, 0xca,
-	0xe9, 0x0a, 0x25, 0xdd, 0xe9, 0xc0, 0xd7, 0x5e, 0x36, 0xde, 0xfd, 0x77, 0x9c, 0xae, 0xa4, 0x8e,
-	0x42, 0xe4, 0x91, 0xe7, 0xd0, 0x8e, 0x44, 0x89, 0xbd, 0xdc, 0xe9, 0xa3, 0x3d, 0xfa, 0xe2, 0xf4,
-	0x02, 0x83, 0x50, 0xb3, 0xc8, 0x2b, 0xe8, 0x66, 0x2c, 0xe3, 0xc5, 0x0d, 0x0e, 0xe1, 0x4e, 0x8f,
-	0xf6, 0xf8, 0xef, 0xf1, 0xb9, 0x2a, 0x31, 0xdc, 0xc1, 0x47, 0xe8, 0xd5, 0x5d, 0xf5, 0x76, 0xba,
-	0x6f, 0xbd, 0x33, 0x82, 0x6d, 0xb6, 0xde, 0x19, 0x81, 0xde, 0x19, 0x9f, 0xeb, 0x9d, 0x2b, 0x34,
-	0xf8, 0x02, 0x87, 0xdb, 0xb9, 0x08, 0x01, 0xa7, 0x94, 0xac, 0x30, 0x72, 0x18, 0xeb, 0x3a, 0x89,
-	0x33, 0x19, 0x39, 0x83, 0x34, 0x37, 0x59, 0xa5, 0xcc, 0xa8, 0x61, 0x4c, 0x86, 0x00, 0xc6, 0x1c,
-	0x1a, 0x33, 0xf3, 0x2f, 0xd6, 0xc8, 0x0c, 0x2e, 0xc0, 0x6d, 0xec, 0xa4, 0x07, 0x55, 0x5c, 0xd1,
-	0x14, 0xfb, 0x39, 0x61, 0x05, 0xc8, 0x11, 0xf4, 0xe8, 0x57, 0x9a, 0xa4, 0x74, 0x99, 0x32, 0xec,
-	0xe9, 0x84, 0x7f, 0x13, 0x66, 0xc4, 0x15, 0xb6, 0x75, 0x70, 0xc4, 0xd5, 0xe8, 0x5b, 0x1b, 0xee,
-	0x2f, 0x78, 0x26, 0x78, 0xce, 0x72, 0x55, 0x49, 0xf7, 0xa1, 0x5b, 0x0a, 0x95, 0x64, 0xcc, 0x68,
-	0x1b, 0x44, 0xfc, 0xa6, 0x43, 0xd5, 0xc5, 0x77, 0x2b, 0x2d, 0x93, 0x66, 0x96, 0x49, 0x8f, 0x6f,
-	0x2b, 0xb9, 0xc5, 0x27, 0x7d, 0x8a, 0x98, 0x17, 0xbc, 0x54, 0x49, 0xce, 0x24, 0x9e, 0xc2, 0x09,
-	0x1b, 0x19, 0xf2, 0x14, 0x1e, 0xc4, 0xd1, 0x65, 0x24, 0xca, 0xcb, 0xcf, 0x05, 0x8d, 0x54, 0xc2,
-	0x73, 0xf3, 0x73, 0xbb, 0x17, 0x47, 0x0b, 0x51, 0xbe, 0x31, 0xc9, 0xff, 0x6a, 0x4f, 0xb4, 0x6b,
-	0x4f, 0xbf, 0xde, 0xdd, 0xdc, 0xd0, 0xac, 0x46, 0xc0, 0x91, 0xd7, 0x54, 0x18, 0x6f, 0x30, 0xd6,
-	0xb9, 0x35, 0xa3, 0xc2, 0x83, 0x2a, 0xa7, 0x63, 0x6d, 0xaf, 0x54, 0x34, 0xba, 0xf2, 0xdc, 0xca,
-	0x5e, 0x04, 0xaf, 0x4f, 0x7e, 0x6c, 0x86, 0xad, 0x5f, 0x9b, 0x61, 0xeb, 0xf7, 0x66, 0xd8, 0xfa,
-	0xf4, 0xe4, 0x1f, 0x3e, 0xa1, 0xcb, 0x2e, 0x7e, 0x3f, 0x5f, 0xfe, 0x09, 0x00, 0x00, 0xff, 0xff,
-	0x27, 0x44, 0xfd, 0x15, 0x70, 0x05, 0x00, 0x00,
+	0x14, 0xad, 0x1b, 0x37, 0x34, 0xd7, 0x3c, 0xa4, 0x11, 0x8a, 0x4c, 0x54, 0x99, 0x2a, 0x48, 0x08,
+	0x09, 0xe1, 0x84, 0x80, 0x15, 0x65, 0x4b, 0x04, 0x1b, 0x5e, 0x95, 0xdb, 0x6e, 0xd8, 0x54, 0x13,
+	0x67, 0x70, 0x4c, 0x6d, 0x8f, 0x65, 0x8f, 0xa9, 0xba, 0xe3, 0x13, 0xf8, 0x0c, 0xc4, 0x9a, 0x8f,
+	0x60, 0x83, 0xc4, 0x92, 0x65, 0x1b, 0x7e, 0x04, 0xcd, 0xf5, 0xc4, 0x38, 0x93, 0x2e, 0x58, 0xb1,
+	0xa8, 0x74, 0xcf, 0x9d, 0x73, 0xcf, 0x7d, 0x9c, 0xc6, 0xf0, 0x28, 0x8c, 0xc4, 0xa2, 0x9c, 0xb9,
+	0x01, 0x4f, 0x06, 0x47, 0x0b, 0x76, 0xb4, 0x88, 0xd2, 0xb0, 0x78, 0xc3, 0xc4, 0x19, 0xcf, 0x4f,
+	0x07, 0x42, 0xa4, 0x03, 0x9a, 0x45, 0xf2, 0xcf, 0xcd, 0x72, 0x2e, 0x38, 0x69, 0xd1, 0x2c, 0xea,
+	0xff, 0xd8, 0x06, 0xeb, 0x80, 0xe5, 0x01, 0x4b, 0x45, 0x14, 0xb3, 0x82, 0xec, 0x83, 0x95, 0xd5,
+	0xf0, 0xb1, 0x6d, 0xec, 0x1b, 0x0f, 0xb6, 0xfd, 0x66, 0x6a, 0x9d, 0xe1, 0xd9, 0xdb, 0x3a, 0xc3,
+	0x23, 0x7d, 0xb8, 0xde, 0x28, 0x18, 0xda, 0x2d, 0xa4, 0xac, 0xe5, 0xd6, 0x39, 0x23, 0xcf, 0x36,
+	0x75, 0xce, 0x48, 0xd3, 0xf1, 0x86, 0xf6, 0x8e, 0xce, 0xf1, 0x34, 0x9d, 0xb1, 0x67, 0xb7, 0x75,
+	0xce, 0x58, 0xd3, 0x99, 0x0c, 0xed, 0x6b, 0x3a, 0x67, 0xa2, 0xe9, 0x4c, 0x3c, 0x7b, 0x77, 0x83,
+	0xa3, 0xeb, 0x4c, 0xec, 0xce, 0x06, 0x67, 0xd2, 0x7f, 0x09, 0x3b, 0x3e, 0x15, 0xac, 0x20, 0xb7,
+	0x61, 0x27, 0xa7, 0xa2, 0x3e, 0x61, 0x05, 0x56, 0xd9, 0xd5, 0xd9, 0x2a, 0x40, 0xba, 0xd0, 0xc6,
+	0x67, 0x4f, 0x9d, 0x4a, 0xa1, 0xfe, 0xb7, 0x16, 0x58, 0x87, 0xe7, 0x85, 0x60, 0xc9, 0xa1, 0xa0,
+	0xa2, 0x20, 0x2e, 0x98, 0x31, 0xa7, 0x73, 0x94, 0xb4, 0x46, 0x3d, 0x57, 0x7a, 0xd9, 0x78, 0x77,
+	0x5f, 0x71, 0x3a, 0x2f, 0x64, 0xe4, 0x23, 0x8f, 0x3c, 0x84, 0x56, 0x90, 0x95, 0xd8, 0xcb, 0x1a,
+	0xdd, 0xd9, 0xa0, 0x4f, 0x0f, 0x8e, 0x31, 0xf0, 0x25, 0x8b, 0x3c, 0x85, 0x76, 0xc2, 0x12, 0x9e,
+	0x9f, 0xe3, 0x10, 0xd6, 0x68, 0x6f, 0x83, 0xff, 0x1a, 0x9f, 0xab, 0x12, 0xc5, 0xed, 0xbd, 0x85,
+	0x4e, 0xdd, 0x55, 0x6e, 0x27, 0xfb, 0xd6, 0x3b, 0x23, 0x58, 0x65, 0xeb, 0x9d, 0x11, 0xc8, 0x9d,
+	0xf1, 0xb9, 0xde, 0xb9, 0x42, 0xbd, 0x0f, 0xb0, 0xbb, 0x9a, 0x8b, 0x10, 0x30, 0xcb, 0x82, 0xe5,
+	0x4a, 0x0e, 0x63, 0x59, 0x57, 0xe0, 0x4c, 0x4a, 0x4e, 0x21, 0xc9, 0x8d, 0xe6, 0x31, 0x53, 0x6a,
+	0x18, 0x13, 0x07, 0x40, 0x99, 0x43, 0x43, 0xa6, 0xfe, 0xc5, 0x1a, 0x99, 0xde, 0x31, 0x58, 0x8d,
+	0x9d, 0xe4, 0xa0, 0x82, 0x0b, 0x1a, 0x63, 0x3f, 0xd3, 0xaf, 0x00, 0xd9, 0x83, 0x0e, 0xfd, 0x48,
+	0xa3, 0x98, 0xce, 0x62, 0x86, 0x3d, 0x4d, 0xff, 0x6f, 0x42, 0x8d, 0x38, 0xc7, 0xb6, 0x26, 0x8e,
+	0x38, 0xef, 0x7f, 0x6d, 0xc1, 0xcd, 0x29, 0x4f, 0x32, 0x9e, 0xb2, 0x54, 0x54, 0xd2, 0x5d, 0x68,
+	0x97, 0x99, 0x88, 0x12, 0xa6, 0xb4, 0x15, 0x22, 0x6e, 0xd3, 0xa1, 0xea, 0xe2, 0xeb, 0x95, 0x9a,
+	0x49, 0x63, 0xcd, 0xa4, 0xbb, 0x57, 0x95, 0x5c, 0xe1, 0x93, 0x3c, 0x45, 0xc8, 0x73, 0x5e, 0x8a,
+	0x28, 0x65, 0x05, 0x9e, 0xc2, 0xf4, 0x1b, 0x19, 0x72, 0x1f, 0x6e, 0x85, 0xc1, 0x49, 0x90, 0x95,
+	0x27, 0xef, 0x73, 0x1a, 0x88, 0x88, 0xa7, 0xea, 0xe7, 0x76, 0x23, 0x0c, 0xa6, 0x59, 0xf9, 0x42,
+	0x25, 0xff, 0xab, 0x3d, 0xc1, 0xba, 0x3d, 0xdd, 0x7a, 0x77, 0x75, 0x43, 0xb5, 0x1a, 0x01, 0xb3,
+	0x38, 0xa3, 0x99, 0xf2, 0x06, 0x63, 0x99, 0x5b, 0x30, 0x9a, 0xd9, 0x50, 0xe5, 0x64, 0x2c, 0xed,
+	0x2d, 0x04, 0x0d, 0x4e, 0x6d, 0xab, 0xb2, 0x17, 0xc1, 0xb3, 0xe7, 0xbf, 0x2e, 0x9d, 0xad, 0x8b,
+	0x4b, 0xc7, 0xf8, 0xb4, 0x74, 0x8c, 0x2f, 0x4b, 0xc7, 0xf8, 0xbe, 0x74, 0x8c, 0x9f, 0x4b, 0xc7,
+	0xb8, 0x58, 0x3a, 0xc6, 0xe7, 0xdf, 0xce, 0xd6, 0xbb, 0x7b, 0xff, 0xf0, 0x59, 0x9d, 0xb5, 0xf1,
+	0x9b, 0xfa, 0xe4, 0x4f, 0x00, 0x00, 0x00, 0xff, 0xff, 0x3f, 0xde, 0xf8, 0x24, 0x84, 0x05, 0x00,
+	0x00,
 }

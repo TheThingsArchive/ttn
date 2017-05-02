@@ -32,6 +32,11 @@ import _ "github.com/gogo/protobuf/gogoproto"
 
 import github_com_TheThingsNetwork_ttn_core_types "github.com/TheThingsNetwork/ttn/core/types"
 
+import bytes "bytes"
+
+import strings "strings"
+import reflect "reflect"
+
 import io "io"
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -176,7 +181,6 @@ type Metadata struct {
 }
 
 func (m *Metadata) Reset()                    { *m = Metadata{} }
-func (m *Metadata) String() string            { return proto.CompactTextString(m) }
 func (*Metadata) ProtoMessage()               {}
 func (*Metadata) Descriptor() ([]byte, []int) { return fileDescriptorLorawan, []int{0} }
 
@@ -235,7 +239,6 @@ type TxConfiguration struct {
 }
 
 func (m *TxConfiguration) Reset()                    { *m = TxConfiguration{} }
-func (m *TxConfiguration) String() string            { return proto.CompactTextString(m) }
 func (*TxConfiguration) ProtoMessage()               {}
 func (*TxConfiguration) Descriptor() ([]byte, []int) { return fileDescriptorLorawan, []int{1} }
 
@@ -287,7 +290,6 @@ type ActivationMetadata struct {
 }
 
 func (m *ActivationMetadata) Reset()                    { *m = ActivationMetadata{} }
-func (m *ActivationMetadata) String() string            { return proto.CompactTextString(m) }
 func (*ActivationMetadata) ProtoMessage()               {}
 func (*ActivationMetadata) Descriptor() ([]byte, []int) { return fileDescriptorLorawan, []int{2} }
 
@@ -337,12 +339,13 @@ type Message struct {
 }
 
 func (m *Message) Reset()                    { *m = Message{} }
-func (m *Message) String() string            { return proto.CompactTextString(m) }
 func (*Message) ProtoMessage()               {}
 func (*Message) Descriptor() ([]byte, []int) { return fileDescriptorLorawan, []int{3} }
 
 type isMessage_Payload interface {
 	isMessage_Payload()
+	Equal(interface{}) bool
+	VerboseEqual(interface{}) error
 	MarshalTo([]byte) (int, error)
 	Size() int
 }
@@ -495,7 +498,6 @@ type MHDR struct {
 }
 
 func (m *MHDR) Reset()                    { *m = MHDR{} }
-func (m *MHDR) String() string            { return proto.CompactTextString(m) }
 func (*MHDR) ProtoMessage()               {}
 func (*MHDR) Descriptor() ([]byte, []int) { return fileDescriptorLorawan, []int{4} }
 
@@ -520,7 +522,6 @@ type MACPayload struct {
 }
 
 func (m *MACPayload) Reset()                    { *m = MACPayload{} }
-func (m *MACPayload) String() string            { return proto.CompactTextString(m) }
 func (*MACPayload) ProtoMessage()               {}
 func (*MACPayload) Descriptor() ([]byte, []int) { return fileDescriptorLorawan, []int{5} }
 
@@ -546,7 +547,6 @@ type FHDR struct {
 }
 
 func (m *FHDR) Reset()                    { *m = FHDR{} }
-func (m *FHDR) String() string            { return proto.CompactTextString(m) }
 func (*FHDR) ProtoMessage()               {}
 func (*FHDR) Descriptor() ([]byte, []int) { return fileDescriptorLorawan, []int{6} }
 
@@ -572,7 +572,6 @@ type FCtrl struct {
 }
 
 func (m *FCtrl) Reset()                    { *m = FCtrl{} }
-func (m *FCtrl) String() string            { return proto.CompactTextString(m) }
 func (*FCtrl) ProtoMessage()               {}
 func (*FCtrl) Descriptor() ([]byte, []int) { return fileDescriptorLorawan, []int{7} }
 
@@ -610,7 +609,6 @@ type MACCommand struct {
 }
 
 func (m *MACCommand) Reset()                    { *m = MACCommand{} }
-func (m *MACCommand) String() string            { return proto.CompactTextString(m) }
 func (*MACCommand) ProtoMessage()               {}
 func (*MACCommand) Descriptor() ([]byte, []int) { return fileDescriptorLorawan, []int{8} }
 
@@ -635,7 +633,6 @@ type JoinRequestPayload struct {
 }
 
 func (m *JoinRequestPayload) Reset()                    { *m = JoinRequestPayload{} }
-func (m *JoinRequestPayload) String() string            { return proto.CompactTextString(m) }
 func (*JoinRequestPayload) ProtoMessage()               {}
 func (*JoinRequestPayload) Descriptor() ([]byte, []int) { return fileDescriptorLorawan, []int{9} }
 
@@ -650,7 +647,6 @@ type JoinAcceptPayload struct {
 }
 
 func (m *JoinAcceptPayload) Reset()                    { *m = JoinAcceptPayload{} }
-func (m *JoinAcceptPayload) String() string            { return proto.CompactTextString(m) }
 func (*JoinAcceptPayload) ProtoMessage()               {}
 func (*JoinAcceptPayload) Descriptor() ([]byte, []int) { return fileDescriptorLorawan, []int{10} }
 
@@ -681,7 +677,6 @@ type DLSettings struct {
 }
 
 func (m *DLSettings) Reset()                    { *m = DLSettings{} }
-func (m *DLSettings) String() string            { return proto.CompactTextString(m) }
 func (*DLSettings) ProtoMessage()               {}
 func (*DLSettings) Descriptor() ([]byte, []int) { return fileDescriptorLorawan, []int{11} }
 
@@ -704,7 +699,6 @@ type CFList struct {
 }
 
 func (m *CFList) Reset()                    { *m = CFList{} }
-func (m *CFList) String() string            { return proto.CompactTextString(m) }
 func (*CFList) ProtoMessage()               {}
 func (*CFList) Descriptor() ([]byte, []int) { return fileDescriptorLorawan, []int{12} }
 
@@ -733,6 +727,1258 @@ func init() {
 	proto.RegisterEnum("lorawan.FrequencyPlan", FrequencyPlan_name, FrequencyPlan_value)
 	proto.RegisterEnum("lorawan.Major", Major_name, Major_value)
 	proto.RegisterEnum("lorawan.MType", MType_name, MType_value)
+}
+func (this *Metadata) VerboseEqual(that interface{}) error {
+	if that == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that == nil && this != nil")
+	}
+
+	that1, ok := that.(*Metadata)
+	if !ok {
+		that2, ok := that.(Metadata)
+		if ok {
+			that1 = &that2
+		} else {
+			return fmt.Errorf("that is not of type *Metadata")
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that is type *Metadata but is nil && this != nil")
+	} else if this == nil {
+		return fmt.Errorf("that is type *Metadata but is not nil && this == nil")
+	}
+	if this.Modulation != that1.Modulation {
+		return fmt.Errorf("Modulation this(%v) Not Equal that(%v)", this.Modulation, that1.Modulation)
+	}
+	if this.DataRate != that1.DataRate {
+		return fmt.Errorf("DataRate this(%v) Not Equal that(%v)", this.DataRate, that1.DataRate)
+	}
+	if this.BitRate != that1.BitRate {
+		return fmt.Errorf("BitRate this(%v) Not Equal that(%v)", this.BitRate, that1.BitRate)
+	}
+	if this.CodingRate != that1.CodingRate {
+		return fmt.Errorf("CodingRate this(%v) Not Equal that(%v)", this.CodingRate, that1.CodingRate)
+	}
+	if this.FCnt != that1.FCnt {
+		return fmt.Errorf("FCnt this(%v) Not Equal that(%v)", this.FCnt, that1.FCnt)
+	}
+	if this.FrequencyPlan != that1.FrequencyPlan {
+		return fmt.Errorf("FrequencyPlan this(%v) Not Equal that(%v)", this.FrequencyPlan, that1.FrequencyPlan)
+	}
+	return nil
+}
+func (this *Metadata) Equal(that interface{}) bool {
+	if that == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	}
+
+	that1, ok := that.(*Metadata)
+	if !ok {
+		that2, ok := that.(Metadata)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	} else if this == nil {
+		return false
+	}
+	if this.Modulation != that1.Modulation {
+		return false
+	}
+	if this.DataRate != that1.DataRate {
+		return false
+	}
+	if this.BitRate != that1.BitRate {
+		return false
+	}
+	if this.CodingRate != that1.CodingRate {
+		return false
+	}
+	if this.FCnt != that1.FCnt {
+		return false
+	}
+	if this.FrequencyPlan != that1.FrequencyPlan {
+		return false
+	}
+	return true
+}
+func (this *TxConfiguration) VerboseEqual(that interface{}) error {
+	if that == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that == nil && this != nil")
+	}
+
+	that1, ok := that.(*TxConfiguration)
+	if !ok {
+		that2, ok := that.(TxConfiguration)
+		if ok {
+			that1 = &that2
+		} else {
+			return fmt.Errorf("that is not of type *TxConfiguration")
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that is type *TxConfiguration but is nil && this != nil")
+	} else if this == nil {
+		return fmt.Errorf("that is type *TxConfiguration but is not nil && this == nil")
+	}
+	if this.Modulation != that1.Modulation {
+		return fmt.Errorf("Modulation this(%v) Not Equal that(%v)", this.Modulation, that1.Modulation)
+	}
+	if this.DataRate != that1.DataRate {
+		return fmt.Errorf("DataRate this(%v) Not Equal that(%v)", this.DataRate, that1.DataRate)
+	}
+	if this.BitRate != that1.BitRate {
+		return fmt.Errorf("BitRate this(%v) Not Equal that(%v)", this.BitRate, that1.BitRate)
+	}
+	if this.CodingRate != that1.CodingRate {
+		return fmt.Errorf("CodingRate this(%v) Not Equal that(%v)", this.CodingRate, that1.CodingRate)
+	}
+	if this.FCnt != that1.FCnt {
+		return fmt.Errorf("FCnt this(%v) Not Equal that(%v)", this.FCnt, that1.FCnt)
+	}
+	return nil
+}
+func (this *TxConfiguration) Equal(that interface{}) bool {
+	if that == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	}
+
+	that1, ok := that.(*TxConfiguration)
+	if !ok {
+		that2, ok := that.(TxConfiguration)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	} else if this == nil {
+		return false
+	}
+	if this.Modulation != that1.Modulation {
+		return false
+	}
+	if this.DataRate != that1.DataRate {
+		return false
+	}
+	if this.BitRate != that1.BitRate {
+		return false
+	}
+	if this.CodingRate != that1.CodingRate {
+		return false
+	}
+	if this.FCnt != that1.FCnt {
+		return false
+	}
+	return true
+}
+func (this *ActivationMetadata) VerboseEqual(that interface{}) error {
+	if that == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that == nil && this != nil")
+	}
+
+	that1, ok := that.(*ActivationMetadata)
+	if !ok {
+		that2, ok := that.(ActivationMetadata)
+		if ok {
+			that1 = &that2
+		} else {
+			return fmt.Errorf("that is not of type *ActivationMetadata")
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that is type *ActivationMetadata but is nil && this != nil")
+	} else if this == nil {
+		return fmt.Errorf("that is type *ActivationMetadata but is not nil && this == nil")
+	}
+	if that1.AppEui == nil {
+		if this.AppEui != nil {
+			return fmt.Errorf("this.AppEui != nil && that1.AppEui == nil")
+		}
+	} else if !this.AppEui.Equal(*that1.AppEui) {
+		return fmt.Errorf("AppEui this(%v) Not Equal that(%v)", this.AppEui, that1.AppEui)
+	}
+	if that1.DevEui == nil {
+		if this.DevEui != nil {
+			return fmt.Errorf("this.DevEui != nil && that1.DevEui == nil")
+		}
+	} else if !this.DevEui.Equal(*that1.DevEui) {
+		return fmt.Errorf("DevEui this(%v) Not Equal that(%v)", this.DevEui, that1.DevEui)
+	}
+	if that1.DevAddr == nil {
+		if this.DevAddr != nil {
+			return fmt.Errorf("this.DevAddr != nil && that1.DevAddr == nil")
+		}
+	} else if !this.DevAddr.Equal(*that1.DevAddr) {
+		return fmt.Errorf("DevAddr this(%v) Not Equal that(%v)", this.DevAddr, that1.DevAddr)
+	}
+	if that1.NwkSKey == nil {
+		if this.NwkSKey != nil {
+			return fmt.Errorf("this.NwkSKey != nil && that1.NwkSKey == nil")
+		}
+	} else if !this.NwkSKey.Equal(*that1.NwkSKey) {
+		return fmt.Errorf("NwkSKey this(%v) Not Equal that(%v)", this.NwkSKey, that1.NwkSKey)
+	}
+	if this.Rx1DrOffset != that1.Rx1DrOffset {
+		return fmt.Errorf("Rx1DrOffset this(%v) Not Equal that(%v)", this.Rx1DrOffset, that1.Rx1DrOffset)
+	}
+	if this.Rx2Dr != that1.Rx2Dr {
+		return fmt.Errorf("Rx2Dr this(%v) Not Equal that(%v)", this.Rx2Dr, that1.Rx2Dr)
+	}
+	if this.RxDelay != that1.RxDelay {
+		return fmt.Errorf("RxDelay this(%v) Not Equal that(%v)", this.RxDelay, that1.RxDelay)
+	}
+	if !this.CfList.Equal(that1.CfList) {
+		return fmt.Errorf("CfList this(%v) Not Equal that(%v)", this.CfList, that1.CfList)
+	}
+	if this.FrequencyPlan != that1.FrequencyPlan {
+		return fmt.Errorf("FrequencyPlan this(%v) Not Equal that(%v)", this.FrequencyPlan, that1.FrequencyPlan)
+	}
+	return nil
+}
+func (this *ActivationMetadata) Equal(that interface{}) bool {
+	if that == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	}
+
+	that1, ok := that.(*ActivationMetadata)
+	if !ok {
+		that2, ok := that.(ActivationMetadata)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	} else if this == nil {
+		return false
+	}
+	if that1.AppEui == nil {
+		if this.AppEui != nil {
+			return false
+		}
+	} else if !this.AppEui.Equal(*that1.AppEui) {
+		return false
+	}
+	if that1.DevEui == nil {
+		if this.DevEui != nil {
+			return false
+		}
+	} else if !this.DevEui.Equal(*that1.DevEui) {
+		return false
+	}
+	if that1.DevAddr == nil {
+		if this.DevAddr != nil {
+			return false
+		}
+	} else if !this.DevAddr.Equal(*that1.DevAddr) {
+		return false
+	}
+	if that1.NwkSKey == nil {
+		if this.NwkSKey != nil {
+			return false
+		}
+	} else if !this.NwkSKey.Equal(*that1.NwkSKey) {
+		return false
+	}
+	if this.Rx1DrOffset != that1.Rx1DrOffset {
+		return false
+	}
+	if this.Rx2Dr != that1.Rx2Dr {
+		return false
+	}
+	if this.RxDelay != that1.RxDelay {
+		return false
+	}
+	if !this.CfList.Equal(that1.CfList) {
+		return false
+	}
+	if this.FrequencyPlan != that1.FrequencyPlan {
+		return false
+	}
+	return true
+}
+func (this *Message) VerboseEqual(that interface{}) error {
+	if that == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that == nil && this != nil")
+	}
+
+	that1, ok := that.(*Message)
+	if !ok {
+		that2, ok := that.(Message)
+		if ok {
+			that1 = &that2
+		} else {
+			return fmt.Errorf("that is not of type *Message")
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that is type *Message but is nil && this != nil")
+	} else if this == nil {
+		return fmt.Errorf("that is type *Message but is not nil && this == nil")
+	}
+	if !this.MHDR.Equal(&that1.MHDR) {
+		return fmt.Errorf("MHDR this(%v) Not Equal that(%v)", this.MHDR, that1.MHDR)
+	}
+	if !bytes.Equal(this.Mic, that1.Mic) {
+		return fmt.Errorf("Mic this(%v) Not Equal that(%v)", this.Mic, that1.Mic)
+	}
+	if that1.Payload == nil {
+		if this.Payload != nil {
+			return fmt.Errorf("this.Payload != nil && that1.Payload == nil")
+		}
+	} else if this.Payload == nil {
+		return fmt.Errorf("this.Payload == nil && that1.Payload != nil")
+	} else if err := this.Payload.VerboseEqual(that1.Payload); err != nil {
+		return err
+	}
+	return nil
+}
+func (this *Message_MacPayload) VerboseEqual(that interface{}) error {
+	if that == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that == nil && this != nil")
+	}
+
+	that1, ok := that.(*Message_MacPayload)
+	if !ok {
+		that2, ok := that.(Message_MacPayload)
+		if ok {
+			that1 = &that2
+		} else {
+			return fmt.Errorf("that is not of type *Message_MacPayload")
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that is type *Message_MacPayload but is nil && this != nil")
+	} else if this == nil {
+		return fmt.Errorf("that is type *Message_MacPayload but is not nil && this == nil")
+	}
+	if !this.MacPayload.Equal(that1.MacPayload) {
+		return fmt.Errorf("MacPayload this(%v) Not Equal that(%v)", this.MacPayload, that1.MacPayload)
+	}
+	return nil
+}
+func (this *Message_JoinRequestPayload) VerboseEqual(that interface{}) error {
+	if that == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that == nil && this != nil")
+	}
+
+	that1, ok := that.(*Message_JoinRequestPayload)
+	if !ok {
+		that2, ok := that.(Message_JoinRequestPayload)
+		if ok {
+			that1 = &that2
+		} else {
+			return fmt.Errorf("that is not of type *Message_JoinRequestPayload")
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that is type *Message_JoinRequestPayload but is nil && this != nil")
+	} else if this == nil {
+		return fmt.Errorf("that is type *Message_JoinRequestPayload but is not nil && this == nil")
+	}
+	if !this.JoinRequestPayload.Equal(that1.JoinRequestPayload) {
+		return fmt.Errorf("JoinRequestPayload this(%v) Not Equal that(%v)", this.JoinRequestPayload, that1.JoinRequestPayload)
+	}
+	return nil
+}
+func (this *Message_JoinAcceptPayload) VerboseEqual(that interface{}) error {
+	if that == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that == nil && this != nil")
+	}
+
+	that1, ok := that.(*Message_JoinAcceptPayload)
+	if !ok {
+		that2, ok := that.(Message_JoinAcceptPayload)
+		if ok {
+			that1 = &that2
+		} else {
+			return fmt.Errorf("that is not of type *Message_JoinAcceptPayload")
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that is type *Message_JoinAcceptPayload but is nil && this != nil")
+	} else if this == nil {
+		return fmt.Errorf("that is type *Message_JoinAcceptPayload but is not nil && this == nil")
+	}
+	if !this.JoinAcceptPayload.Equal(that1.JoinAcceptPayload) {
+		return fmt.Errorf("JoinAcceptPayload this(%v) Not Equal that(%v)", this.JoinAcceptPayload, that1.JoinAcceptPayload)
+	}
+	return nil
+}
+func (this *Message) Equal(that interface{}) bool {
+	if that == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	}
+
+	that1, ok := that.(*Message)
+	if !ok {
+		that2, ok := that.(Message)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	} else if this == nil {
+		return false
+	}
+	if !this.MHDR.Equal(&that1.MHDR) {
+		return false
+	}
+	if !bytes.Equal(this.Mic, that1.Mic) {
+		return false
+	}
+	if that1.Payload == nil {
+		if this.Payload != nil {
+			return false
+		}
+	} else if this.Payload == nil {
+		return false
+	} else if !this.Payload.Equal(that1.Payload) {
+		return false
+	}
+	return true
+}
+func (this *Message_MacPayload) Equal(that interface{}) bool {
+	if that == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	}
+
+	that1, ok := that.(*Message_MacPayload)
+	if !ok {
+		that2, ok := that.(Message_MacPayload)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	} else if this == nil {
+		return false
+	}
+	if !this.MacPayload.Equal(that1.MacPayload) {
+		return false
+	}
+	return true
+}
+func (this *Message_JoinRequestPayload) Equal(that interface{}) bool {
+	if that == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	}
+
+	that1, ok := that.(*Message_JoinRequestPayload)
+	if !ok {
+		that2, ok := that.(Message_JoinRequestPayload)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	} else if this == nil {
+		return false
+	}
+	if !this.JoinRequestPayload.Equal(that1.JoinRequestPayload) {
+		return false
+	}
+	return true
+}
+func (this *Message_JoinAcceptPayload) Equal(that interface{}) bool {
+	if that == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	}
+
+	that1, ok := that.(*Message_JoinAcceptPayload)
+	if !ok {
+		that2, ok := that.(Message_JoinAcceptPayload)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	} else if this == nil {
+		return false
+	}
+	if !this.JoinAcceptPayload.Equal(that1.JoinAcceptPayload) {
+		return false
+	}
+	return true
+}
+func (this *MHDR) VerboseEqual(that interface{}) error {
+	if that == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that == nil && this != nil")
+	}
+
+	that1, ok := that.(*MHDR)
+	if !ok {
+		that2, ok := that.(MHDR)
+		if ok {
+			that1 = &that2
+		} else {
+			return fmt.Errorf("that is not of type *MHDR")
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that is type *MHDR but is nil && this != nil")
+	} else if this == nil {
+		return fmt.Errorf("that is type *MHDR but is not nil && this == nil")
+	}
+	if this.MType != that1.MType {
+		return fmt.Errorf("MType this(%v) Not Equal that(%v)", this.MType, that1.MType)
+	}
+	if this.Major != that1.Major {
+		return fmt.Errorf("Major this(%v) Not Equal that(%v)", this.Major, that1.Major)
+	}
+	return nil
+}
+func (this *MHDR) Equal(that interface{}) bool {
+	if that == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	}
+
+	that1, ok := that.(*MHDR)
+	if !ok {
+		that2, ok := that.(MHDR)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	} else if this == nil {
+		return false
+	}
+	if this.MType != that1.MType {
+		return false
+	}
+	if this.Major != that1.Major {
+		return false
+	}
+	return true
+}
+func (this *MACPayload) VerboseEqual(that interface{}) error {
+	if that == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that == nil && this != nil")
+	}
+
+	that1, ok := that.(*MACPayload)
+	if !ok {
+		that2, ok := that.(MACPayload)
+		if ok {
+			that1 = &that2
+		} else {
+			return fmt.Errorf("that is not of type *MACPayload")
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that is type *MACPayload but is nil && this != nil")
+	} else if this == nil {
+		return fmt.Errorf("that is type *MACPayload but is not nil && this == nil")
+	}
+	if !this.FHDR.Equal(&that1.FHDR) {
+		return fmt.Errorf("FHDR this(%v) Not Equal that(%v)", this.FHDR, that1.FHDR)
+	}
+	if this.FPort != that1.FPort {
+		return fmt.Errorf("FPort this(%v) Not Equal that(%v)", this.FPort, that1.FPort)
+	}
+	if !bytes.Equal(this.FrmPayload, that1.FrmPayload) {
+		return fmt.Errorf("FrmPayload this(%v) Not Equal that(%v)", this.FrmPayload, that1.FrmPayload)
+	}
+	return nil
+}
+func (this *MACPayload) Equal(that interface{}) bool {
+	if that == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	}
+
+	that1, ok := that.(*MACPayload)
+	if !ok {
+		that2, ok := that.(MACPayload)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	} else if this == nil {
+		return false
+	}
+	if !this.FHDR.Equal(&that1.FHDR) {
+		return false
+	}
+	if this.FPort != that1.FPort {
+		return false
+	}
+	if !bytes.Equal(this.FrmPayload, that1.FrmPayload) {
+		return false
+	}
+	return true
+}
+func (this *FHDR) VerboseEqual(that interface{}) error {
+	if that == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that == nil && this != nil")
+	}
+
+	that1, ok := that.(*FHDR)
+	if !ok {
+		that2, ok := that.(FHDR)
+		if ok {
+			that1 = &that2
+		} else {
+			return fmt.Errorf("that is not of type *FHDR")
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that is type *FHDR but is nil && this != nil")
+	} else if this == nil {
+		return fmt.Errorf("that is type *FHDR but is not nil && this == nil")
+	}
+	if !this.DevAddr.Equal(that1.DevAddr) {
+		return fmt.Errorf("DevAddr this(%v) Not Equal that(%v)", this.DevAddr, that1.DevAddr)
+	}
+	if !this.FCtrl.Equal(&that1.FCtrl) {
+		return fmt.Errorf("FCtrl this(%v) Not Equal that(%v)", this.FCtrl, that1.FCtrl)
+	}
+	if this.FCnt != that1.FCnt {
+		return fmt.Errorf("FCnt this(%v) Not Equal that(%v)", this.FCnt, that1.FCnt)
+	}
+	if len(this.FOpts) != len(that1.FOpts) {
+		return fmt.Errorf("FOpts this(%v) Not Equal that(%v)", len(this.FOpts), len(that1.FOpts))
+	}
+	for i := range this.FOpts {
+		if !this.FOpts[i].Equal(&that1.FOpts[i]) {
+			return fmt.Errorf("FOpts this[%v](%v) Not Equal that[%v](%v)", i, this.FOpts[i], i, that1.FOpts[i])
+		}
+	}
+	return nil
+}
+func (this *FHDR) Equal(that interface{}) bool {
+	if that == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	}
+
+	that1, ok := that.(*FHDR)
+	if !ok {
+		that2, ok := that.(FHDR)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	} else if this == nil {
+		return false
+	}
+	if !this.DevAddr.Equal(that1.DevAddr) {
+		return false
+	}
+	if !this.FCtrl.Equal(&that1.FCtrl) {
+		return false
+	}
+	if this.FCnt != that1.FCnt {
+		return false
+	}
+	if len(this.FOpts) != len(that1.FOpts) {
+		return false
+	}
+	for i := range this.FOpts {
+		if !this.FOpts[i].Equal(&that1.FOpts[i]) {
+			return false
+		}
+	}
+	return true
+}
+func (this *FCtrl) VerboseEqual(that interface{}) error {
+	if that == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that == nil && this != nil")
+	}
+
+	that1, ok := that.(*FCtrl)
+	if !ok {
+		that2, ok := that.(FCtrl)
+		if ok {
+			that1 = &that2
+		} else {
+			return fmt.Errorf("that is not of type *FCtrl")
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that is type *FCtrl but is nil && this != nil")
+	} else if this == nil {
+		return fmt.Errorf("that is type *FCtrl but is not nil && this == nil")
+	}
+	if this.Adr != that1.Adr {
+		return fmt.Errorf("Adr this(%v) Not Equal that(%v)", this.Adr, that1.Adr)
+	}
+	if this.AdrAckReq != that1.AdrAckReq {
+		return fmt.Errorf("AdrAckReq this(%v) Not Equal that(%v)", this.AdrAckReq, that1.AdrAckReq)
+	}
+	if this.Ack != that1.Ack {
+		return fmt.Errorf("Ack this(%v) Not Equal that(%v)", this.Ack, that1.Ack)
+	}
+	if this.FPending != that1.FPending {
+		return fmt.Errorf("FPending this(%v) Not Equal that(%v)", this.FPending, that1.FPending)
+	}
+	return nil
+}
+func (this *FCtrl) Equal(that interface{}) bool {
+	if that == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	}
+
+	that1, ok := that.(*FCtrl)
+	if !ok {
+		that2, ok := that.(FCtrl)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	} else if this == nil {
+		return false
+	}
+	if this.Adr != that1.Adr {
+		return false
+	}
+	if this.AdrAckReq != that1.AdrAckReq {
+		return false
+	}
+	if this.Ack != that1.Ack {
+		return false
+	}
+	if this.FPending != that1.FPending {
+		return false
+	}
+	return true
+}
+func (this *MACCommand) VerboseEqual(that interface{}) error {
+	if that == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that == nil && this != nil")
+	}
+
+	that1, ok := that.(*MACCommand)
+	if !ok {
+		that2, ok := that.(MACCommand)
+		if ok {
+			that1 = &that2
+		} else {
+			return fmt.Errorf("that is not of type *MACCommand")
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that is type *MACCommand but is nil && this != nil")
+	} else if this == nil {
+		return fmt.Errorf("that is type *MACCommand but is not nil && this == nil")
+	}
+	if this.Cid != that1.Cid {
+		return fmt.Errorf("Cid this(%v) Not Equal that(%v)", this.Cid, that1.Cid)
+	}
+	if !bytes.Equal(this.Payload, that1.Payload) {
+		return fmt.Errorf("Payload this(%v) Not Equal that(%v)", this.Payload, that1.Payload)
+	}
+	return nil
+}
+func (this *MACCommand) Equal(that interface{}) bool {
+	if that == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	}
+
+	that1, ok := that.(*MACCommand)
+	if !ok {
+		that2, ok := that.(MACCommand)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	} else if this == nil {
+		return false
+	}
+	if this.Cid != that1.Cid {
+		return false
+	}
+	if !bytes.Equal(this.Payload, that1.Payload) {
+		return false
+	}
+	return true
+}
+func (this *JoinRequestPayload) VerboseEqual(that interface{}) error {
+	if that == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that == nil && this != nil")
+	}
+
+	that1, ok := that.(*JoinRequestPayload)
+	if !ok {
+		that2, ok := that.(JoinRequestPayload)
+		if ok {
+			that1 = &that2
+		} else {
+			return fmt.Errorf("that is not of type *JoinRequestPayload")
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that is type *JoinRequestPayload but is nil && this != nil")
+	} else if this == nil {
+		return fmt.Errorf("that is type *JoinRequestPayload but is not nil && this == nil")
+	}
+	if !this.AppEui.Equal(that1.AppEui) {
+		return fmt.Errorf("AppEui this(%v) Not Equal that(%v)", this.AppEui, that1.AppEui)
+	}
+	if !this.DevEui.Equal(that1.DevEui) {
+		return fmt.Errorf("DevEui this(%v) Not Equal that(%v)", this.DevEui, that1.DevEui)
+	}
+	if !this.DevNonce.Equal(that1.DevNonce) {
+		return fmt.Errorf("DevNonce this(%v) Not Equal that(%v)", this.DevNonce, that1.DevNonce)
+	}
+	return nil
+}
+func (this *JoinRequestPayload) Equal(that interface{}) bool {
+	if that == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	}
+
+	that1, ok := that.(*JoinRequestPayload)
+	if !ok {
+		that2, ok := that.(JoinRequestPayload)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	} else if this == nil {
+		return false
+	}
+	if !this.AppEui.Equal(that1.AppEui) {
+		return false
+	}
+	if !this.DevEui.Equal(that1.DevEui) {
+		return false
+	}
+	if !this.DevNonce.Equal(that1.DevNonce) {
+		return false
+	}
+	return true
+}
+func (this *JoinAcceptPayload) VerboseEqual(that interface{}) error {
+	if that == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that == nil && this != nil")
+	}
+
+	that1, ok := that.(*JoinAcceptPayload)
+	if !ok {
+		that2, ok := that.(JoinAcceptPayload)
+		if ok {
+			that1 = &that2
+		} else {
+			return fmt.Errorf("that is not of type *JoinAcceptPayload")
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that is type *JoinAcceptPayload but is nil && this != nil")
+	} else if this == nil {
+		return fmt.Errorf("that is type *JoinAcceptPayload but is not nil && this == nil")
+	}
+	if !bytes.Equal(this.Encrypted, that1.Encrypted) {
+		return fmt.Errorf("Encrypted this(%v) Not Equal that(%v)", this.Encrypted, that1.Encrypted)
+	}
+	if !this.AppNonce.Equal(that1.AppNonce) {
+		return fmt.Errorf("AppNonce this(%v) Not Equal that(%v)", this.AppNonce, that1.AppNonce)
+	}
+	if !this.NetId.Equal(that1.NetId) {
+		return fmt.Errorf("NetId this(%v) Not Equal that(%v)", this.NetId, that1.NetId)
+	}
+	if !this.DevAddr.Equal(that1.DevAddr) {
+		return fmt.Errorf("DevAddr this(%v) Not Equal that(%v)", this.DevAddr, that1.DevAddr)
+	}
+	if !this.DLSettings.Equal(&that1.DLSettings) {
+		return fmt.Errorf("DLSettings this(%v) Not Equal that(%v)", this.DLSettings, that1.DLSettings)
+	}
+	if this.RxDelay != that1.RxDelay {
+		return fmt.Errorf("RxDelay this(%v) Not Equal that(%v)", this.RxDelay, that1.RxDelay)
+	}
+	if !this.CfList.Equal(that1.CfList) {
+		return fmt.Errorf("CfList this(%v) Not Equal that(%v)", this.CfList, that1.CfList)
+	}
+	return nil
+}
+func (this *JoinAcceptPayload) Equal(that interface{}) bool {
+	if that == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	}
+
+	that1, ok := that.(*JoinAcceptPayload)
+	if !ok {
+		that2, ok := that.(JoinAcceptPayload)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	} else if this == nil {
+		return false
+	}
+	if !bytes.Equal(this.Encrypted, that1.Encrypted) {
+		return false
+	}
+	if !this.AppNonce.Equal(that1.AppNonce) {
+		return false
+	}
+	if !this.NetId.Equal(that1.NetId) {
+		return false
+	}
+	if !this.DevAddr.Equal(that1.DevAddr) {
+		return false
+	}
+	if !this.DLSettings.Equal(&that1.DLSettings) {
+		return false
+	}
+	if this.RxDelay != that1.RxDelay {
+		return false
+	}
+	if !this.CfList.Equal(that1.CfList) {
+		return false
+	}
+	return true
+}
+func (this *DLSettings) VerboseEqual(that interface{}) error {
+	if that == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that == nil && this != nil")
+	}
+
+	that1, ok := that.(*DLSettings)
+	if !ok {
+		that2, ok := that.(DLSettings)
+		if ok {
+			that1 = &that2
+		} else {
+			return fmt.Errorf("that is not of type *DLSettings")
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that is type *DLSettings but is nil && this != nil")
+	} else if this == nil {
+		return fmt.Errorf("that is type *DLSettings but is not nil && this == nil")
+	}
+	if this.Rx1DrOffset != that1.Rx1DrOffset {
+		return fmt.Errorf("Rx1DrOffset this(%v) Not Equal that(%v)", this.Rx1DrOffset, that1.Rx1DrOffset)
+	}
+	if this.Rx2Dr != that1.Rx2Dr {
+		return fmt.Errorf("Rx2Dr this(%v) Not Equal that(%v)", this.Rx2Dr, that1.Rx2Dr)
+	}
+	return nil
+}
+func (this *DLSettings) Equal(that interface{}) bool {
+	if that == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	}
+
+	that1, ok := that.(*DLSettings)
+	if !ok {
+		that2, ok := that.(DLSettings)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	} else if this == nil {
+		return false
+	}
+	if this.Rx1DrOffset != that1.Rx1DrOffset {
+		return false
+	}
+	if this.Rx2Dr != that1.Rx2Dr {
+		return false
+	}
+	return true
+}
+func (this *CFList) VerboseEqual(that interface{}) error {
+	if that == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that == nil && this != nil")
+	}
+
+	that1, ok := that.(*CFList)
+	if !ok {
+		that2, ok := that.(CFList)
+		if ok {
+			that1 = &that2
+		} else {
+			return fmt.Errorf("that is not of type *CFList")
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that is type *CFList but is nil && this != nil")
+	} else if this == nil {
+		return fmt.Errorf("that is type *CFList but is not nil && this == nil")
+	}
+	if len(this.Freq) != len(that1.Freq) {
+		return fmt.Errorf("Freq this(%v) Not Equal that(%v)", len(this.Freq), len(that1.Freq))
+	}
+	for i := range this.Freq {
+		if this.Freq[i] != that1.Freq[i] {
+			return fmt.Errorf("Freq this[%v](%v) Not Equal that[%v](%v)", i, this.Freq[i], i, that1.Freq[i])
+		}
+	}
+	return nil
+}
+func (this *CFList) Equal(that interface{}) bool {
+	if that == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	}
+
+	that1, ok := that.(*CFList)
+	if !ok {
+		that2, ok := that.(CFList)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	} else if this == nil {
+		return false
+	}
+	if len(this.Freq) != len(that1.Freq) {
+		return false
+	}
+	for i := range this.Freq {
+		if this.Freq[i] != that1.Freq[i] {
+			return false
+		}
+	}
+	return true
 }
 func (m *Metadata) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
@@ -1686,6 +2932,212 @@ func sovLorawan(x uint64) (n int) {
 }
 func sozLorawan(x uint64) (n int) {
 	return sovLorawan(uint64((x << 1) ^ uint64((int64(x) >> 63))))
+}
+func (this *Metadata) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&Metadata{`,
+		`Modulation:` + fmt.Sprintf("%v", this.Modulation) + `,`,
+		`DataRate:` + fmt.Sprintf("%v", this.DataRate) + `,`,
+		`BitRate:` + fmt.Sprintf("%v", this.BitRate) + `,`,
+		`CodingRate:` + fmt.Sprintf("%v", this.CodingRate) + `,`,
+		`FCnt:` + fmt.Sprintf("%v", this.FCnt) + `,`,
+		`FrequencyPlan:` + fmt.Sprintf("%v", this.FrequencyPlan) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *TxConfiguration) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&TxConfiguration{`,
+		`Modulation:` + fmt.Sprintf("%v", this.Modulation) + `,`,
+		`DataRate:` + fmt.Sprintf("%v", this.DataRate) + `,`,
+		`BitRate:` + fmt.Sprintf("%v", this.BitRate) + `,`,
+		`CodingRate:` + fmt.Sprintf("%v", this.CodingRate) + `,`,
+		`FCnt:` + fmt.Sprintf("%v", this.FCnt) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *ActivationMetadata) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&ActivationMetadata{`,
+		`AppEui:` + fmt.Sprintf("%v", this.AppEui) + `,`,
+		`DevEui:` + fmt.Sprintf("%v", this.DevEui) + `,`,
+		`DevAddr:` + fmt.Sprintf("%v", this.DevAddr) + `,`,
+		`NwkSKey:` + fmt.Sprintf("%v", this.NwkSKey) + `,`,
+		`Rx1DrOffset:` + fmt.Sprintf("%v", this.Rx1DrOffset) + `,`,
+		`Rx2Dr:` + fmt.Sprintf("%v", this.Rx2Dr) + `,`,
+		`RxDelay:` + fmt.Sprintf("%v", this.RxDelay) + `,`,
+		`CfList:` + strings.Replace(fmt.Sprintf("%v", this.CfList), "CFList", "CFList", 1) + `,`,
+		`FrequencyPlan:` + fmt.Sprintf("%v", this.FrequencyPlan) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *Message) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&Message{`,
+		`MHDR:` + strings.Replace(strings.Replace(this.MHDR.String(), "MHDR", "MHDR", 1), `&`, ``, 1) + `,`,
+		`Mic:` + fmt.Sprintf("%v", this.Mic) + `,`,
+		`Payload:` + fmt.Sprintf("%v", this.Payload) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *Message_MacPayload) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&Message_MacPayload{`,
+		`MacPayload:` + strings.Replace(fmt.Sprintf("%v", this.MacPayload), "MACPayload", "MACPayload", 1) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *Message_JoinRequestPayload) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&Message_JoinRequestPayload{`,
+		`JoinRequestPayload:` + strings.Replace(fmt.Sprintf("%v", this.JoinRequestPayload), "JoinRequestPayload", "JoinRequestPayload", 1) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *Message_JoinAcceptPayload) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&Message_JoinAcceptPayload{`,
+		`JoinAcceptPayload:` + strings.Replace(fmt.Sprintf("%v", this.JoinAcceptPayload), "JoinAcceptPayload", "JoinAcceptPayload", 1) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *MHDR) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&MHDR{`,
+		`MType:` + fmt.Sprintf("%v", this.MType) + `,`,
+		`Major:` + fmt.Sprintf("%v", this.Major) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *MACPayload) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&MACPayload{`,
+		`FHDR:` + strings.Replace(strings.Replace(this.FHDR.String(), "FHDR", "FHDR", 1), `&`, ``, 1) + `,`,
+		`FPort:` + fmt.Sprintf("%v", this.FPort) + `,`,
+		`FrmPayload:` + fmt.Sprintf("%v", this.FrmPayload) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *FHDR) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&FHDR{`,
+		`DevAddr:` + fmt.Sprintf("%v", this.DevAddr) + `,`,
+		`FCtrl:` + strings.Replace(strings.Replace(this.FCtrl.String(), "FCtrl", "FCtrl", 1), `&`, ``, 1) + `,`,
+		`FCnt:` + fmt.Sprintf("%v", this.FCnt) + `,`,
+		`FOpts:` + strings.Replace(strings.Replace(fmt.Sprintf("%v", this.FOpts), "MACCommand", "MACCommand", 1), `&`, ``, 1) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *FCtrl) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&FCtrl{`,
+		`Adr:` + fmt.Sprintf("%v", this.Adr) + `,`,
+		`AdrAckReq:` + fmt.Sprintf("%v", this.AdrAckReq) + `,`,
+		`Ack:` + fmt.Sprintf("%v", this.Ack) + `,`,
+		`FPending:` + fmt.Sprintf("%v", this.FPending) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *MACCommand) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&MACCommand{`,
+		`Cid:` + fmt.Sprintf("%v", this.Cid) + `,`,
+		`Payload:` + fmt.Sprintf("%v", this.Payload) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *JoinRequestPayload) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&JoinRequestPayload{`,
+		`AppEui:` + fmt.Sprintf("%v", this.AppEui) + `,`,
+		`DevEui:` + fmt.Sprintf("%v", this.DevEui) + `,`,
+		`DevNonce:` + fmt.Sprintf("%v", this.DevNonce) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *JoinAcceptPayload) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&JoinAcceptPayload{`,
+		`Encrypted:` + fmt.Sprintf("%v", this.Encrypted) + `,`,
+		`AppNonce:` + fmt.Sprintf("%v", this.AppNonce) + `,`,
+		`NetId:` + fmt.Sprintf("%v", this.NetId) + `,`,
+		`DevAddr:` + fmt.Sprintf("%v", this.DevAddr) + `,`,
+		`DLSettings:` + strings.Replace(strings.Replace(this.DLSettings.String(), "DLSettings", "DLSettings", 1), `&`, ``, 1) + `,`,
+		`RxDelay:` + fmt.Sprintf("%v", this.RxDelay) + `,`,
+		`CfList:` + strings.Replace(fmt.Sprintf("%v", this.CfList), "CFList", "CFList", 1) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *DLSettings) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&DLSettings{`,
+		`Rx1DrOffset:` + fmt.Sprintf("%v", this.Rx1DrOffset) + `,`,
+		`Rx2Dr:` + fmt.Sprintf("%v", this.Rx2Dr) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *CFList) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&CFList{`,
+		`Freq:` + fmt.Sprintf("%v", this.Freq) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func valueToStringLorawan(v interface{}) string {
+	rv := reflect.ValueOf(v)
+	if rv.IsNil() {
+		return "nil"
+	}
+	pv := reflect.Indirect(rv).Interface()
+	return fmt.Sprintf("*%v", pv)
 }
 func (m *Metadata) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
@@ -3841,88 +5293,90 @@ func init() {
 }
 
 var fileDescriptorLorawan = []byte{
-	// 1327 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xcc, 0x57, 0xcb, 0x52, 0x1b, 0xc7,
-	0x1a, 0x66, 0xd0, 0x8c, 0x24, 0x7e, 0x21, 0x18, 0xb7, 0xed, 0x73, 0x74, 0x6c, 0x17, 0x50, 0xaa,
-	0x73, 0xaa, 0x28, 0xea, 0x84, 0x8b, 0x64, 0x0c, 0x24, 0x65, 0x57, 0xe9, 0x46, 0x8c, 0x0d, 0x12,
-	0x6e, 0x50, 0x39, 0x95, 0x4d, 0x57, 0x33, 0xd3, 0x03, 0x83, 0x34, 0x17, 0xb7, 0x9a, 0x8b, 0xf2,
-	0x20, 0x59, 0xe4, 0x05, 0xb2, 0xc8, 0x36, 0x8b, 0x3c, 0x82, 0x97, 0xde, 0x64, 0xe3, 0x05, 0x95,
-	0xf2, 0x3a, 0x0f, 0x91, 0xea, 0x9e, 0xd1, 0x15, 0xc7, 0x29, 0x70, 0x16, 0x59, 0xcd, 0x7f, 0xfd,
-	0xfa, 0xef, 0xfe, 0x6f, 0x12, 0x94, 0x8f, 0x5d, 0x71, 0x72, 0x76, 0xb4, 0x6c, 0x05, 0xde, 0xca,
-	0xe1, 0x09, 0x3b, 0x3c, 0x71, 0xfd, 0xe3, 0x4e, 0x9d, 0x89, 0x8b, 0x80, 0xb7, 0x56, 0x84, 0xf0,
-	0x57, 0x68, 0xe8, 0xae, 0x84, 0x3c, 0x10, 0x81, 0x15, 0xb4, 0x57, 0xda, 0x01, 0xa7, 0x17, 0xd4,
-	0xef, 0x7d, 0x97, 0x95, 0x02, 0xa5, 0x62, 0xf6, 0xc1, 0x17, 0x43, 0x60, 0xc7, 0xc1, 0x71, 0x10,
-	0x39, 0x1e, 0x9d, 0x39, 0x8a, 0x53, 0x8c, 0xa2, 0x22, 0xbf, 0xfc, 0xef, 0x1a, 0xa4, 0xf7, 0x98,
-	0xa0, 0x36, 0x15, 0x14, 0x15, 0x01, 0xbc, 0xc0, 0x3e, 0x6b, 0x53, 0xe1, 0x06, 0x7e, 0x2e, 0xb3,
-	0xa0, 0x2d, 0xce, 0x14, 0xee, 0x2e, 0xf7, 0x0e, 0xda, 0xeb, 0xab, 0xf0, 0x90, 0x19, 0x7a, 0x08,
-	0x53, 0xd2, 0x99, 0x70, 0x2a, 0x58, 0x6e, 0x7a, 0x41, 0x5b, 0x9c, 0xc2, 0x69, 0x29, 0xc0, 0x54,
-	0x30, 0xf4, 0x1f, 0x48, 0x1f, 0xb9, 0x22, 0xd2, 0x65, 0x17, 0xb4, 0xc5, 0x2c, 0x4e, 0x1d, 0xb9,
-	0x42, 0xa9, 0xe6, 0x21, 0x63, 0x05, 0xb6, 0xeb, 0x1f, 0x47, 0xda, 0x19, 0xe5, 0x09, 0x91, 0x48,
-	0x19, 0xdc, 0x05, 0xc3, 0x21, 0x96, 0x2f, 0x72, 0xb3, 0xca, 0x51, 0x77, 0x2a, 0xbe, 0x40, 0x4f,
-	0x61, 0xc6, 0xe1, 0xec, 0xcd, 0x19, 0xf3, 0xad, 0x2e, 0x09, 0xdb, 0xd4, 0xcf, 0x99, 0x2a, 0xcc,
-	0x7f, 0xf5, 0xc3, 0xdc, 0xee, 0xa9, 0xf7, 0xdb, 0xd4, 0xc7, 0x59, 0x67, 0x98, 0xcd, 0xff, 0xac,
-	0xc1, 0xec, 0xe1, 0x65, 0x25, 0xf0, 0x1d, 0xf7, 0xf8, 0x8c, 0x47, 0x17, 0xf8, 0xe7, 0xdf, 0x3a,
-	0xff, 0x83, 0x0e, 0xa8, 0x64, 0x09, 0xf7, 0x5c, 0x1d, 0xde, 0xcf, 0x57, 0x1d, 0x52, 0x34, 0x0c,
-	0x09, 0x3b, 0x73, 0x73, 0xda, 0x82, 0xb6, 0x38, 0x5d, 0x5e, 0x7f, 0x7f, 0x35, 0xbf, 0xf6, 0x57,
-	0xd5, 0x64, 0x05, 0x9c, 0xad, 0x88, 0x6e, 0xc8, 0x3a, 0xcb, 0xa5, 0x30, 0xac, 0x35, 0x77, 0x70,
-	0x92, 0x86, 0x61, 0xed, 0xcc, 0x95, 0x78, 0x36, 0x3b, 0x57, 0x78, 0x93, 0xb7, 0xc2, 0xab, 0xb2,
-	0x73, 0x85, 0x67, 0xb3, 0x73, 0x89, 0xf7, 0x0a, 0xd2, 0x12, 0x8f, 0xda, 0x36, 0xcf, 0x25, 0x14,
-	0xe0, 0x93, 0xf7, 0x57, 0xf3, 0x85, 0x9b, 0x01, 0x96, 0x6c, 0x9b, 0x63, 0x19, 0x97, 0x24, 0x10,
-	0x86, 0x29, 0xff, 0xa2, 0x45, 0x3a, 0xa4, 0xc5, 0xba, 0x39, 0xfd, 0x56, 0x98, 0xf5, 0x8b, 0xd6,
-	0xc1, 0x4b, 0xd6, 0xc5, 0x29, 0x3f, 0x22, 0x50, 0x1e, 0xb2, 0xfc, 0x72, 0x8d, 0xd8, 0x9c, 0x04,
-	0x8e, 0xd3, 0x61, 0x42, 0xd5, 0x40, 0x16, 0x67, 0xf8, 0xe5, 0x5a, 0x95, 0x37, 0x94, 0x08, 0xdd,
-	0x87, 0x24, 0xbf, 0x2c, 0x10, 0x9b, 0xab, 0x64, 0x67, 0xb1, 0xc1, 0x2f, 0x0b, 0x55, 0x2e, 0x33,
-	0xcd, 0x2f, 0x89, 0xcd, 0xda, 0xb4, 0xdb, 0xcb, 0x34, 0xbf, 0xac, 0x4a, 0x16, 0x2d, 0x42, 0xca,
-	0x72, 0x48, 0xdb, 0xed, 0x08, 0x95, 0xe5, 0x4c, 0x61, 0xb6, 0x5f, 0x53, 0x95, 0xed, 0x5d, 0xb7,
-	0x23, 0x70, 0xd2, 0x72, 0xe4, 0xf7, 0x23, 0x35, 0x3d, 0x7b, 0x93, 0x9a, 0xfe, 0x69, 0x12, 0x52,
-	0x7b, 0xac, 0xd3, 0xa1, 0xc7, 0x0c, 0xfd, 0x1f, 0x0c, 0x8f, 0x9c, 0xd8, 0x5c, 0xd5, 0x43, 0xa6,
-	0x90, 0x1d, 0x94, 0xf1, 0xf3, 0x2a, 0x2e, 0xa7, 0xdf, 0x5e, 0xcd, 0x4f, 0xbc, 0xbb, 0x9a, 0xd7,
-	0xb0, 0xee, 0x3d, 0xb7, 0x39, 0x32, 0x21, 0xe1, 0xb9, 0x56, 0x94, 0x6b, 0x2c, 0x49, 0xf4, 0x04,
-	0x32, 0x1e, 0xb5, 0x48, 0x48, 0xbb, 0xed, 0x80, 0xda, 0x2a, 0x69, 0x99, 0xe1, 0x66, 0x28, 0x55,
-	0xf6, 0x23, 0xd5, 0xf3, 0x09, 0x0c, 0x1e, 0xb5, 0x62, 0x0e, 0x35, 0xe0, 0xde, 0x69, 0xe0, 0xfa,
-	0x44, 0x05, 0xd6, 0x11, 0x7d, 0x00, 0x5d, 0x01, 0x3c, 0xec, 0x03, 0xbc, 0x08, 0x5c, 0x1f, 0x47,
-	0x36, 0x03, 0x20, 0x74, 0x7a, 0x4d, 0x8a, 0x76, 0xe1, 0xae, 0x02, 0xa4, 0x96, 0xc5, 0xc2, 0x01,
-	0x9e, 0xa1, 0xf0, 0x1e, 0x8c, 0xe0, 0x95, 0x94, 0xc9, 0x00, 0xee, 0xce, 0xe9, 0xb8, 0xb0, 0x3c,
-	0x05, 0xa9, 0x98, 0xcc, 0x1f, 0x80, 0x2e, 0xdf, 0x02, 0xfd, 0x0f, 0x92, 0x1e, 0x91, 0x05, 0xa1,
-	0x9e, 0x6a, 0xa6, 0x30, 0x33, 0xb8, 0xe4, 0x61, 0x37, 0x64, 0xd8, 0xf0, 0xe4, 0x07, 0xfd, 0x17,
-	0x0c, 0x8f, 0x9e, 0x06, 0x5c, 0x3d, 0xd2, 0x88, 0x95, 0x94, 0xe2, 0x48, 0x99, 0xe7, 0x00, 0x83,
-	0xa7, 0x91, 0x49, 0x70, 0x3e, 0x9a, 0x84, 0xed, 0xb1, 0x24, 0x38, 0x32, 0x09, 0xf7, 0x21, 0xe9,
-	0x90, 0x30, 0xe0, 0x42, 0x1d, 0x61, 0x60, 0xc3, 0xd9, 0x0f, 0xb8, 0x90, 0x83, 0xc2, 0xe1, 0xde,
-	0x48, 0x26, 0xa6, 0x31, 0x38, 0xdc, 0xeb, 0x5d, 0xe4, 0x57, 0x0d, 0x74, 0x09, 0x88, 0x9a, 0x43,
-	0x5d, 0x16, 0x8d, 0x81, 0x2f, 0xe5, 0x11, 0x9f, 0xdb, 0x69, 0x2b, 0x32, 0x2e, 0x4b, 0xf0, 0xb6,
-	0x8a, 0x2b, 0x33, 0x74, 0xf5, 0xed, 0x8a, 0xe0, 0xed, 0xa1, 0x7b, 0x18, 0x8e, 0x14, 0x0c, 0x26,
-	0x57, 0x62, 0x68, 0x5e, 0xaf, 0x4a, 0x94, 0x20, 0x14, 0x9d, 0x9c, 0xbe, 0x90, 0x18, 0xaf, 0xa5,
-	0x4a, 0xe0, 0x79, 0xd4, 0xb7, 0xcb, 0xba, 0x84, 0xc2, 0x86, 0xd3, 0x08, 0x45, 0x27, 0x7f, 0x02,
-	0x86, 0x3a, 0x40, 0x56, 0x27, 0x8d, 0xaf, 0x94, 0xc6, 0x92, 0x44, 0x73, 0x90, 0xa1, 0x36, 0x27,
-	0xd4, 0x6a, 0xc9, 0x42, 0x53, 0x71, 0xa5, 0xf1, 0x14, 0xb5, 0x79, 0xc9, 0x6a, 0x61, 0xf6, 0x46,
-	0x79, 0x58, 0x2d, 0x75, 0xbe, 0xf4, 0xb0, 0x5a, 0x72, 0x4c, 0x3b, 0x24, 0x64, 0xbe, 0x1c, 0xaf,
-	0xaa, 0x18, 0xd3, 0x38, 0xed, 0xec, 0x47, 0x7c, 0x7e, 0x53, 0x65, 0x2d, 0x0e, 0x42, 0x3a, 0x5b,
-	0xae, 0xad, 0x8e, 0xcb, 0x62, 0x49, 0xa2, 0x1c, 0xa4, 0x7a, 0xcf, 0x1f, 0xb5, 0x48, 0x8f, 0xcd,
-	0x7f, 0x3f, 0x09, 0xe8, 0x7a, 0x29, 0x23, 0x3c, 0x3e, 0x8f, 0xb7, 0xe2, 0x44, 0x7c, 0xc6, 0x4c,
-	0xc6, 0xe3, 0x33, 0xf9, 0x36, 0x98, 0x63, 0x73, 0xf9, 0x1b, 0x98, 0x92, 0x98, 0x7e, 0xe0, 0x5b,
-	0x2c, 0x1e, 0xcc, 0x5f, 0xc5, 0xa8, 0xc5, 0x9b, 0xa1, 0xd6, 0x25, 0x04, 0x96, 0xf5, 0xa7, 0xa8,
-	0xfc, 0x2f, 0x09, 0xb8, 0x73, 0xad, 0x27, 0xd1, 0x23, 0x98, 0x62, 0xbe, 0xc5, 0xbb, 0xa1, 0x60,
-	0xd1, 0x03, 0x4f, 0xe3, 0x81, 0x40, 0x46, 0x23, 0x5f, 0x2d, 0x8a, 0x66, 0xf2, 0xd6, 0xd1, 0x94,
-	0xc2, 0x30, 0x8e, 0x86, 0xc6, 0x14, 0x6a, 0x40, 0xd2, 0x67, 0x82, 0xb8, 0x71, 0xfb, 0x94, 0x37,
-	0x63, 0xd8, 0xd5, 0x9b, 0x6c, 0x0b, 0x26, 0x76, 0xaa, 0xd8, 0xf0, 0x99, 0xd8, 0xb1, 0x47, 0x5a,
-	0x4d, 0xff, 0xfb, 0x5a, 0xed, 0x19, 0x64, 0xec, 0x36, 0xe9, 0x30, 0x21, 0xa4, 0x57, 0x3c, 0xe4,
-	0x06, 0x9d, 0x52, 0xdd, 0x3d, 0x88, 0x55, 0x43, 0x4d, 0x07, 0x76, 0xbb, 0x27, 0x1d, 0xd9, 0x42,
-	0xc9, 0x3f, 0xdd, 0x42, 0xa9, 0x4f, 0x6e, 0xa1, 0xfc, 0xd7, 0x00, 0x83, 0x83, 0xae, 0xef, 0x44,
-	0xed, 0x53, 0x3b, 0x71, 0x72, 0x68, 0x27, 0xe6, 0x1f, 0x41, 0x32, 0x82, 0x46, 0x08, 0x74, 0xb9,
-	0xaa, 0x72, 0xda, 0x42, 0x42, 0x0d, 0x04, 0xce, 0xde, 0x2c, 0xcd, 0x03, 0x0c, 0x7e, 0x52, 0xa1,
-	0x34, 0xe8, 0xbb, 0x0d, 0x5c, 0x32, 0x27, 0x50, 0x0a, 0x12, 0xdb, 0x07, 0x2f, 0x4d, 0x6d, 0xe9,
-	0x47, 0x0d, 0xb2, 0x23, 0xfb, 0x0e, 0xcd, 0x00, 0xd4, 0x9a, 0x64, 0xf3, 0x49, 0x91, 0x6c, 0x6e,
-	0xac, 0x9a, 0x13, 0x92, 0x6f, 0x1e, 0x90, 0xad, 0xd5, 0x02, 0xd9, 0x2a, 0x6c, 0x9a, 0x9a, 0xe4,
-	0x2b, 0x75, 0xb2, 0xb1, 0xb1, 0x45, 0x36, 0x36, 0x37, 0xcc, 0x49, 0x04, 0x90, 0xac, 0x35, 0xc9,
-	0xe3, 0x62, 0xd1, 0x4c, 0x48, 0x5d, 0xa9, 0x49, 0xb6, 0xd6, 0xd6, 0x95, 0xad, 0x1e, 0xdb, 0x3e,
-	0xde, 0x58, 0x25, 0xeb, 0x6b, 0xab, 0xa6, 0x21, 0x6d, 0x4b, 0x07, 0x64, 0xab, 0x50, 0x34, 0x93,
-	0xca, 0x56, 0xd2, 0xab, 0x8a, 0x7f, 0xda, 0xe7, 0x8b, 0x64, 0xab, 0xb0, 0x6e, 0x3e, 0x93, 0xfc,
-	0x4b, 0xdc, 0xd7, 0xa7, 0x96, 0xfe, 0x0d, 0x86, 0xda, 0x02, 0x52, 0x21, 0x6f, 0xf1, 0xba, 0x54,
-	0x27, 0x78, 0xcd, 0x9c, 0x58, 0xfa, 0x0e, 0x0c, 0xb5, 0x44, 0x90, 0x09, 0xd3, 0x2f, 0x1a, 0x3b,
-	0x75, 0x82, 0x6b, 0xaf, 0x9a, 0xb5, 0x83, 0x43, 0x73, 0x02, 0xcd, 0x42, 0x46, 0x49, 0x4a, 0x95,
-	0x4a, 0x6d, 0xff, 0xd0, 0xd4, 0x10, 0x82, 0x99, 0x66, 0xbd, 0xd2, 0xa8, 0x6f, 0xef, 0xe0, 0xbd,
-	0x5a, 0x95, 0x34, 0xf7, 0xcd, 0x49, 0x74, 0x0f, 0xcc, 0x61, 0x59, 0xb5, 0xf1, 0xba, 0x6e, 0x26,
-	0x24, 0xd8, 0x88, 0x9d, 0x2e, 0x7d, 0xc7, 0xac, 0x8c, 0x72, 0xf9, 0xed, 0x87, 0x39, 0xed, 0xdd,
-	0x87, 0x39, 0xed, 0xb7, 0x0f, 0x73, 0xda, 0xb7, 0x8f, 0x6f, 0xf3, 0xd7, 0xe2, 0x28, 0xa9, 0x24,
-	0xc5, 0x3f, 0x02, 0x00, 0x00, 0xff, 0xff, 0x5c, 0xfb, 0x13, 0x90, 0x99, 0x0c, 0x00, 0x00,
+	// 1354 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xcc, 0x57, 0x4d, 0x4f, 0x1b, 0x47,
+	0x1f, 0xf7, 0x62, 0xaf, 0x6d, 0xfe, 0xc6, 0xb0, 0x99, 0x24, 0xcf, 0xe3, 0x27, 0x89, 0x0c, 0xb2,
+	0x9e, 0x4a, 0x08, 0xb5, 0xbc, 0xd8, 0x21, 0x40, 0xab, 0x44, 0x32, 0xb6, 0x69, 0x48, 0xc0, 0x26,
+	0x03, 0x6e, 0xaa, 0x5e, 0x46, 0xc3, 0xee, 0x2c, 0x2c, 0xf6, 0xbe, 0x64, 0x3c, 0xbc, 0xb8, 0xa7,
+	0x7e, 0x84, 0x9e, 0x7a, 0xe8, 0x17, 0x68, 0xa5, 0x5e, 0x7b, 0xe8, 0x47, 0xc8, 0x31, 0x97, 0x4a,
+	0x55, 0x0e, 0x28, 0xa1, 0xd7, 0x7e, 0x88, 0x6a, 0x66, 0xd7, 0x2f, 0x40, 0x9a, 0x0a, 0xd2, 0x43,
+	0x4f, 0xfb, 0x7f, 0xfd, 0xcd, 0x7f, 0xe6, 0xff, 0x66, 0xc3, 0xea, 0x9e, 0x23, 0xf6, 0x0f, 0x77,
+	0x67, 0x4d, 0xdf, 0x9d, 0xdb, 0xd9, 0x67, 0x3b, 0xfb, 0x8e, 0xb7, 0xd7, 0xa9, 0x33, 0x71, 0xec,
+	0xf3, 0xd6, 0x9c, 0x10, 0xde, 0x1c, 0x0d, 0x9c, 0xb9, 0x80, 0xfb, 0xc2, 0x37, 0xfd, 0xf6, 0x5c,
+	0xdb, 0xe7, 0xf4, 0x98, 0x7a, 0xbd, 0xef, 0xac, 0x52, 0xa0, 0x54, 0xc4, 0xde, 0xf9, 0x64, 0x08,
+	0x6c, 0xcf, 0xdf, 0xf3, 0x43, 0xc7, 0xdd, 0x43, 0x5b, 0x71, 0x8a, 0x51, 0x54, 0xe8, 0x57, 0xf8,
+	0x43, 0x83, 0xf4, 0x26, 0x13, 0xd4, 0xa2, 0x82, 0xa2, 0x12, 0x80, 0xeb, 0x5b, 0x87, 0x6d, 0x2a,
+	0x1c, 0xdf, 0xcb, 0x65, 0xa6, 0xb4, 0xe9, 0xf1, 0xe2, 0xcd, 0xd9, 0xde, 0x41, 0x9b, 0x7d, 0x15,
+	0x1e, 0x32, 0x43, 0x77, 0x61, 0x54, 0x3a, 0x13, 0x4e, 0x05, 0xcb, 0x8d, 0x4d, 0x69, 0xd3, 0xa3,
+	0x38, 0x2d, 0x05, 0x98, 0x0a, 0x86, 0xfe, 0x07, 0xe9, 0x5d, 0x47, 0x84, 0xba, 0xec, 0x94, 0x36,
+	0x9d, 0xc5, 0xa9, 0x5d, 0x47, 0x28, 0xd5, 0x24, 0x64, 0x4c, 0xdf, 0x72, 0xbc, 0xbd, 0x50, 0x3b,
+	0xae, 0x3c, 0x21, 0x14, 0x29, 0x83, 0x9b, 0xa0, 0xdb, 0xc4, 0xf4, 0x44, 0x6e, 0x42, 0x39, 0x26,
+	0xec, 0x8a, 0x27, 0xd0, 0x43, 0x18, 0xb7, 0x39, 0x7b, 0x71, 0xc8, 0x3c, 0xb3, 0x4b, 0x82, 0x36,
+	0xf5, 0x72, 0x86, 0x0a, 0xf3, 0x3f, 0xfd, 0x30, 0xd7, 0x7a, 0xea, 0xad, 0x36, 0xf5, 0x70, 0xd6,
+	0x1e, 0x66, 0x0b, 0x3f, 0x6b, 0x30, 0xb1, 0x73, 0x52, 0xf1, 0x3d, 0xdb, 0xd9, 0x3b, 0xe4, 0xe1,
+	0x05, 0xfe, 0xfd, 0xb7, 0x2e, 0x7c, 0x9f, 0x00, 0x54, 0x36, 0x85, 0x73, 0xa4, 0x0e, 0xef, 0xe7,
+	0xab, 0x0e, 0x29, 0x1a, 0x04, 0x84, 0x1d, 0x3a, 0x39, 0x6d, 0x4a, 0x9b, 0x1e, 0x5b, 0x5d, 0x7c,
+	0x7d, 0x3a, 0xb9, 0xf0, 0x77, 0xd5, 0x64, 0xfa, 0x9c, 0xcd, 0x89, 0x6e, 0xc0, 0x3a, 0xb3, 0xe5,
+	0x20, 0xa8, 0x35, 0xd7, 0x71, 0x92, 0x06, 0x41, 0xed, 0xd0, 0x91, 0x78, 0x16, 0x3b, 0x52, 0x78,
+	0x23, 0xd7, 0xc2, 0xab, 0xb2, 0x23, 0x85, 0x67, 0xb1, 0x23, 0x89, 0xf7, 0x0c, 0xd2, 0x12, 0x8f,
+	0x5a, 0x16, 0xcf, 0xc5, 0x15, 0xe0, 0x83, 0xd7, 0xa7, 0x93, 0xc5, 0xab, 0x01, 0x96, 0x2d, 0x8b,
+	0x63, 0x19, 0x97, 0x24, 0x10, 0x86, 0x51, 0xef, 0xb8, 0x45, 0x3a, 0xa4, 0xc5, 0xba, 0xb9, 0xc4,
+	0xb5, 0x30, 0xeb, 0xc7, 0xad, 0xed, 0xa7, 0xac, 0x8b, 0x53, 0x5e, 0x48, 0xa0, 0x02, 0x64, 0xf9,
+	0xc9, 0x02, 0xb1, 0x38, 0xf1, 0x6d, 0xbb, 0xc3, 0x84, 0xaa, 0x81, 0x2c, 0xce, 0xf0, 0x93, 0x85,
+	0x2a, 0x6f, 0x28, 0x11, 0xba, 0x0d, 0x49, 0x7e, 0x52, 0x24, 0x16, 0x57, 0xc9, 0xce, 0x62, 0x9d,
+	0x9f, 0x14, 0xab, 0x5c, 0x66, 0x9a, 0x9f, 0x10, 0x8b, 0xb5, 0x69, 0xb7, 0x97, 0x69, 0x7e, 0x52,
+	0x95, 0x2c, 0x9a, 0x86, 0x94, 0x69, 0x93, 0xb6, 0xd3, 0x11, 0x2a, 0xcb, 0x99, 0xe2, 0x44, 0xbf,
+	0xa6, 0x2a, 0x6b, 0x1b, 0x4e, 0x47, 0xe0, 0xa4, 0x69, 0xcb, 0xef, 0x3b, 0x6a, 0x7a, 0xe2, 0x2a,
+	0x35, 0xfd, 0xd3, 0x08, 0xa4, 0x36, 0x59, 0xa7, 0x43, 0xf7, 0x18, 0xfa, 0x18, 0x74, 0x97, 0xec,
+	0x5b, 0x5c, 0xd5, 0x43, 0xa6, 0x98, 0x1d, 0x94, 0xf1, 0xe3, 0x2a, 0x5e, 0x4d, 0xbf, 0x3c, 0x9d,
+	0x8c, 0xbd, 0x3a, 0x9d, 0xd4, 0x70, 0xc2, 0x7d, 0x6c, 0x71, 0x64, 0x40, 0xdc, 0x75, 0xcc, 0x30,
+	0xd7, 0x58, 0x92, 0xe8, 0x01, 0x64, 0x5c, 0x6a, 0x92, 0x80, 0x76, 0xdb, 0x3e, 0xb5, 0x54, 0xd2,
+	0x32, 0xc3, 0xcd, 0x50, 0xae, 0x6c, 0x85, 0xaa, 0xc7, 0x31, 0x0c, 0x2e, 0x35, 0x23, 0x0e, 0x35,
+	0xe0, 0xd6, 0x81, 0xef, 0x78, 0x44, 0x05, 0xd6, 0x11, 0x7d, 0x80, 0x84, 0x02, 0xb8, 0xdb, 0x07,
+	0x78, 0xe2, 0x3b, 0x1e, 0x0e, 0x6d, 0x06, 0x40, 0xe8, 0xe0, 0x92, 0x14, 0x6d, 0xc0, 0x4d, 0x05,
+	0x48, 0x4d, 0x93, 0x05, 0x03, 0x3c, 0x5d, 0xe1, 0xdd, 0x39, 0x87, 0x57, 0x56, 0x26, 0x03, 0xb8,
+	0x1b, 0x07, 0x17, 0x85, 0xab, 0xa3, 0x90, 0x8a, 0xc8, 0xc2, 0x36, 0x24, 0xe4, 0x5b, 0xa0, 0x8f,
+	0x20, 0xe9, 0x12, 0x59, 0x10, 0xea, 0xa9, 0xc6, 0x8b, 0xe3, 0x83, 0x4b, 0xee, 0x74, 0x03, 0x86,
+	0x75, 0x57, 0x7e, 0xd0, 0xff, 0x41, 0x77, 0xe9, 0x81, 0xcf, 0xd5, 0x23, 0x9d, 0xb3, 0x92, 0x52,
+	0x1c, 0x2a, 0x0b, 0x1c, 0x60, 0xf0, 0x34, 0x32, 0x09, 0xf6, 0x3b, 0x93, 0xb0, 0x76, 0x21, 0x09,
+	0xb6, 0x4c, 0xc2, 0x6d, 0x48, 0xda, 0x24, 0xf0, 0xb9, 0x50, 0x47, 0xe8, 0x58, 0xb7, 0xb7, 0x7c,
+	0x2e, 0xe4, 0xa0, 0xb0, 0xb9, 0x7b, 0x2e, 0x13, 0x63, 0x18, 0x6c, 0xee, 0xf6, 0x2e, 0xf2, 0xab,
+	0x06, 0x09, 0x09, 0x88, 0x9a, 0x43, 0x5d, 0x16, 0x8e, 0x81, 0x4f, 0xe5, 0x11, 0x1f, 0xda, 0x69,
+	0x73, 0x32, 0x2e, 0x53, 0xf0, 0xb6, 0x8a, 0x2b, 0x33, 0x74, 0xf5, 0xb5, 0x8a, 0xe0, 0xed, 0xa1,
+	0x7b, 0xe8, 0xb6, 0x14, 0x0c, 0x26, 0x57, 0x7c, 0x68, 0x5e, 0xcf, 0x4b, 0x14, 0x3f, 0x10, 0x9d,
+	0x5c, 0x62, 0x2a, 0x7e, 0xb1, 0x96, 0x2a, 0xbe, 0xeb, 0x52, 0xcf, 0x5a, 0x4d, 0x48, 0x28, 0xac,
+	0xdb, 0x8d, 0x40, 0x74, 0x0a, 0xfb, 0xa0, 0xab, 0x03, 0x64, 0x75, 0xd2, 0xe8, 0x4a, 0x69, 0x2c,
+	0x49, 0x94, 0x87, 0x0c, 0xb5, 0x38, 0xa1, 0x66, 0x4b, 0x16, 0x9a, 0x8a, 0x2b, 0x8d, 0x47, 0xa9,
+	0xc5, 0xcb, 0x66, 0x0b, 0xb3, 0x17, 0xca, 0xc3, 0x6c, 0xa9, 0xf3, 0xa5, 0x87, 0xd9, 0x92, 0x63,
+	0xda, 0x26, 0x01, 0xf3, 0xe4, 0x78, 0x55, 0xc5, 0x98, 0xc6, 0x69, 0x7b, 0x2b, 0xe4, 0x0b, 0xcb,
+	0x2a, 0x6b, 0x51, 0x10, 0xd2, 0xd9, 0x74, 0x2c, 0x75, 0x5c, 0x16, 0x4b, 0x12, 0xe5, 0x20, 0xd5,
+	0x7b, 0xfe, 0xb0, 0x45, 0x7a, 0x6c, 0xe1, 0xbb, 0x11, 0x40, 0x97, 0x4b, 0x19, 0xe1, 0x8b, 0xf3,
+	0x78, 0x25, 0x4a, 0xc4, 0x07, 0xcc, 0x64, 0x7c, 0x71, 0x26, 0x5f, 0x07, 0xf3, 0xc2, 0x5c, 0xfe,
+	0x12, 0x46, 0x25, 0xa6, 0xe7, 0x7b, 0x26, 0x8b, 0x06, 0xf3, 0x67, 0x11, 0x6a, 0xe9, 0x6a, 0xa8,
+	0x75, 0x09, 0x81, 0x65, 0xfd, 0x29, 0xaa, 0xf0, 0x4b, 0x1c, 0x6e, 0x5c, 0xea, 0x49, 0x74, 0x0f,
+	0x46, 0x99, 0x67, 0xf2, 0x6e, 0x20, 0x58, 0xf8, 0xc0, 0x63, 0x78, 0x20, 0x90, 0xd1, 0xc8, 0x57,
+	0x0b, 0xa3, 0x19, 0xb9, 0x76, 0x34, 0xe5, 0x20, 0x88, 0xa2, 0xa1, 0x11, 0x85, 0x1a, 0x90, 0xf4,
+	0x98, 0x20, 0x4e, 0xd4, 0x3e, 0xab, 0xcb, 0x11, 0xec, 0xfc, 0x55, 0xb6, 0x05, 0x13, 0xeb, 0x55,
+	0xac, 0x7b, 0x4c, 0xac, 0x5b, 0xe7, 0x5a, 0x2d, 0xf1, 0xcf, 0xb5, 0xda, 0x23, 0xc8, 0x58, 0x6d,
+	0xd2, 0x61, 0x42, 0x48, 0xaf, 0x68, 0xc8, 0x0d, 0x3a, 0xa5, 0xba, 0xb1, 0x1d, 0xa9, 0x86, 0x9a,
+	0x0e, 0xac, 0x76, 0x4f, 0x7a, 0x6e, 0x0b, 0x25, 0xff, 0x72, 0x0b, 0xa5, 0xde, 0xbb, 0x85, 0x0a,
+	0x9f, 0x03, 0x0c, 0x0e, 0xba, 0xbc, 0x13, 0xb5, 0xf7, 0xed, 0xc4, 0x91, 0xa1, 0x9d, 0x58, 0xb8,
+	0x07, 0xc9, 0x10, 0x1a, 0x21, 0x48, 0xc8, 0x55, 0x95, 0xd3, 0xa6, 0xe2, 0x6a, 0x20, 0x70, 0xf6,
+	0x62, 0x66, 0x12, 0x60, 0xf0, 0x93, 0x0a, 0xa5, 0x21, 0xb1, 0xd1, 0xc0, 0x65, 0x23, 0x86, 0x52,
+	0x10, 0x5f, 0xdb, 0x7e, 0x6a, 0x68, 0x33, 0x3f, 0x68, 0x90, 0x3d, 0xb7, 0xef, 0xd0, 0x38, 0x40,
+	0xad, 0x49, 0x96, 0x1f, 0x94, 0xc8, 0xf2, 0xd2, 0xbc, 0x11, 0x93, 0x7c, 0x73, 0x9b, 0xac, 0xcc,
+	0x17, 0xc9, 0x4a, 0x71, 0xd9, 0xd0, 0x24, 0x5f, 0xa9, 0x93, 0xa5, 0xa5, 0x15, 0xb2, 0xb4, 0xbc,
+	0x64, 0x8c, 0x20, 0x80, 0x64, 0xad, 0x49, 0xee, 0x97, 0x4a, 0x46, 0x5c, 0xea, 0xca, 0x4d, 0xb2,
+	0xb2, 0xb0, 0xa8, 0x6c, 0x13, 0x91, 0xed, 0xfd, 0xa5, 0x79, 0xb2, 0xb8, 0x30, 0x6f, 0xe8, 0xd2,
+	0xb6, 0xbc, 0x4d, 0x56, 0x8a, 0x25, 0x23, 0xa9, 0x6c, 0x25, 0x3d, 0xaf, 0xf8, 0x87, 0x7d, 0xbe,
+	0x44, 0x56, 0x8a, 0x8b, 0xc6, 0x23, 0xc9, 0x3f, 0xc5, 0x7d, 0x7d, 0x6a, 0xe6, 0xbf, 0xa0, 0xab,
+	0x2d, 0x20, 0x15, 0xf2, 0x16, 0xcf, 0xcb, 0x75, 0x82, 0x17, 0x8c, 0xd8, 0xcc, 0xd7, 0xa0, 0xab,
+	0x25, 0x82, 0x0c, 0x18, 0x7b, 0xd2, 0x58, 0xaf, 0x13, 0x5c, 0x7b, 0xd6, 0xac, 0x6d, 0xef, 0x18,
+	0x31, 0x34, 0x01, 0x19, 0x25, 0x29, 0x57, 0x2a, 0xb5, 0xad, 0x1d, 0x43, 0x43, 0x08, 0xc6, 0x9b,
+	0xf5, 0x4a, 0xa3, 0xbe, 0xb6, 0x8e, 0x37, 0x6b, 0x55, 0xd2, 0xdc, 0x32, 0x46, 0xd0, 0x2d, 0x30,
+	0x86, 0x65, 0xd5, 0xc6, 0xf3, 0xba, 0x11, 0x97, 0x60, 0xe7, 0xec, 0x12, 0xd2, 0xf7, 0x82, 0x95,
+	0xbe, 0xfa, 0xc5, 0x6f, 0x6f, 0xf3, 0xb1, 0x37, 0x6f, 0xf3, 0xda, 0x37, 0x67, 0x79, 0xed, 0xc7,
+	0xb3, 0xbc, 0xf6, 0xf2, 0x2c, 0xaf, 0xbd, 0x3a, 0xcb, 0x6b, 0x6f, 0xce, 0xf2, 0xda, 0xb7, 0xbf,
+	0xe7, 0x63, 0x5f, 0xdd, 0xbf, 0xce, 0xdf, 0x8d, 0xdd, 0xa4, 0x92, 0x94, 0xfe, 0x0c, 0x00, 0x00,
+	0xff, 0xff, 0x8a, 0x79, 0xae, 0xfe, 0xad, 0x0c, 0x00, 0x00,
 }
