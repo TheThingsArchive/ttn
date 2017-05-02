@@ -1,51 +1,41 @@
-AMQP 0.9.1 API Reference
-========================
+# API Reference
 
-If you don't know what AMQP is you can read [this](https://blogs.vmware.com/vfabric/2013/02/choosing-your-messaging-protocol-amqp-mqtt-or-stomp.html)
-and [this](https://www.rabbitmq.com/tutorials/amqp-concepts.html).
+TTN makes use of an AMQP Topic exchange (`amq.topic`). See [this](https://www.rabbitmq.com/tutorials/amqp-concepts.html) for details.
 
-TTN use the Topic AMQP exchange. The default exchange name is `amq.topic`
+AMQP is not yet available in the public network. The main reasons for this are: 
+_security_, _scalability_ and the AMQP protocol not being _standardised_ yet.
 
-__Public Network__
 
-*Building*
+* Host: The address of the handler on which your application is registered.
+* Port: `5672`
+* Exchange: `ttn.handler`
 
-## Routing keys behavior
-
-Routing keys act like filters. When a message arrive on the AMQP exchange
-the key is read and the message forwarded to all matching queue with the
-a matching routing queue.
-
-Routing keys make use of the wildcard `*` to match multiple queues.
-
-Example:
-* Match a device uplink: `<App_ID>.devices.<Dev_ID>.up`
-* Match all App devices uplink: `<App_ID>.devices.*.up`
-
-## Uplink
-
+## Uplink Messages
 
 **Routing key:** `<App_ID>.devices.<Dev_ID>.up`
 
+Wildcards are allowed. For example `<App_ID>.devices.*.up` to get uplink messages for all devices.
+
 **Message**
-```json
+
+```js
 {
-  "app_id": "fiware-dev",              // Same as in the topic
-  "dev_id": "f1",              // Same as in the topic
+  "app_id": "my-app-id",                 // Same as in the topic
+  "dev_id": "my-dev-id",                 // Same as in the topic
   "hardware_serial": "0102030405060708", // In case of LoRaWAN: the DevEUI
-  "port": 1,                          // LoRaWAN FPort
-  "counter": 2,                       // LoRaWAN frame counter
-  "is_retry": false,                  // Is set to true if this message is a retry (you could also detect this from the counter)
-  "confirmed": false,                 // Is set to true if this message was a confirmed message
-  "payload_raw": "AQIDBA==",          // Base64 encoded payload: [0x01, 0x02, 0x03, 0x04]
-  "payload_fields": {},               // Object containing the results from the payload functions - left out when empty
+  "port": 1,                             // LoRaWAN FPort
+  "counter": 2,                          // LoRaWAN frame counter
+  "is_retry": false,                     // Is set to true if this message is a retry (you could also detect this from the counter)
+  "confirmed": false,                    // Is set to true if this message was a confirmed message
+  "payload_raw": "AQIDBA==",             // Base64 encoded payload: [0x01, 0x02, 0x03, 0x04]
+  "payload_fields": {},                  // Object containing the results from the payload functions - left out when empty
   "metadata": {
-    "time": "1970-01-01T00:00:00Z",   // Time when the server received the message
-    "frequency": 868.1,               // Frequency at which the message was sent
-    "modulation": "LORA",             // Modulation that was used - LORA or FSK
-    "data_rate": "SF7BW125",          // Data rate that was used - if LORA modulation
-    "bit_rate": 50000,                // Bit rate that was used - if FSK modulation
-    "coding_rate": "4/5",             // Coding rate that was used
+    "time": "1970-01-01T00:00:00Z",      // Time when the server received the message
+    "frequency": 868.1,                  // Frequency at which the message was sent
+    "modulation": "LORA",                // Modulation that was used - LORA or FSK
+    "data_rate": "SF7BW125",             // Data rate that was used - if LORA modulation
+    "bit_rate": 50000,                   // Bit rate that was used - if FSK modulation
+    "coding_rate": "4/5",                // Coding rate that was used
     "gateways": [
       {
         "gtw_id": "ttn-herengracht-ams", // EUI of the gateway
@@ -61,27 +51,17 @@ Example:
       },
       //...more if received by more gateways...
     ],
-    "latitude": 52.2345,              // Latitude of the device
-    "longitude": 6.2345,              // Longitude of the device
-    "altitude": 2                     // Altitude of the device
+    "latitude": 52.2345,                 // Latitude of the device
+    "longitude": 6.2345,                 // Longitude of the device
+    "altitude": 2                        // Altitude of the device
   }
 }
 ```
-Note: Some values may be omitted if they are null, false, "" or 0.
 
-#### **Usages**
+Note: Some values may be omitted if they are `null`, `false`, `""` or `0`.
 
-* **Publish**
-  * **ttn:** `ttn devices simulate <dev_id> '{"app_id":"<App_ID>",...}'`  
-  _Note_: You will have to register your application in the handler first and
-create the device.
 
-  * **RabbitMQ:** `rabbitmqadmin publish exchange=ttn.handler routing_key=<app-id>.devices.<dev-id>.up payload='{"app_id":"<App_iD"",...}'`  
- *Only work if your are running rabbitmq on your host*
- 
-* **Subscribe**
-
-  * **go:**
+**Usage (Go client):**
 
 ```go
 package main
@@ -94,7 +74,7 @@ import (
 
 func main() {
 
-	ctx := apex.Stdout().WithField("test", "test")
+	ctx := apex.Stdout().WithField("Example", "Go AMQP client")
 	c := amqp.NewClient(ctx, "guest", "guest", "localhost:5672")
 	c.Connect()
 	s := c.NewSubscriber("amq.topic", "", false, true)
@@ -108,7 +88,45 @@ func main() {
 }
 ```
 
-## Downlink
+**Usage (Python):**
+```python
+#!/usr/bin/env python
+import pika
+import sys
+
+connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost', port=5672))
+channel = connection.channel()
+
+channel.exchange_declare(exchange='ttn.handler',
+                         type='topic')
+
+result = channel.queue_declare(exclusive=True)
+queue_name = result.method.queue
+
+binding_keys = sys.argv[1:]
+if not binding_keys:
+    sys.stderr.write("Usage: %s [binding_key]...\n" % sys.argv[0])
+    sys.exit(1)
+
+for binding_key in binding_keys:
+    channel.queue_bind(exchange='ttn.handler',
+                       queue=queue_name,
+                       routing_key=binding_key)
+
+print(' [*] Waiting for logs. To exit press CTRL+C')
+
+def callback(ch, method, properties, body):
+    print(" [x] %r:%r" % (method.routing_key, body))
+
+channel.basic_consume(callback,
+                      queue=queue_name,
+                      no_ack=True)
+
+channel.start_consuming()
+```
+
+
+## Downlink Messages
 
 **Routing key:** `<App_ID>.devices.<Dev_ID>.down`
 
@@ -121,11 +139,10 @@ func main() {
 }
 ```
 
-**Usages**
+**Usage (RabbitMQ):**
+`rabbitmqadmin publish exchange='ttn.handler' routing_key='app-id.devices.dev-id.down' payload='{"port":1,"payload_raw":"AQIDBA=="}'`
 
-* **rabbitMQ:** `'rabbitmqadmin publish exchange=ttn.handler routing_key=app-id.devices.dev-id.down payload={"port":1,"payload_raw":"AQIDBA=="}'`
-
-* **go:**
+**Usage (Go client):**
 ```go
 package main
 
@@ -155,9 +172,35 @@ func main() {
 }
 ```
 
-## Events
+** Usage (Python) **
+```python
+#!/usr/bin/env python
+import pika
+import sys
 
-**Routing key:** `<App_ID>.devices.<Dev_ID>.<event>`
+connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost', port=5672))
+channel = connection.channel()
+
+channel.exchange_declare(exchange='ttn.handler',
+                         type='topic')
+
+routing_key = 'my-app-id.devices.my-dev-id.down'
+message = '{"port": 1, "confirmed": false, "payload_raw": "AQIDBA=="}'
+
+channel.basic_publish(exchange='ttn.handler',
+                      routing_key=routing_key,
+                      body=message)
+print(" [x] Sent %r:%r" % (routing_key, message))
+connection.close()
+```
+
+## Device Events
+
+**Routing key:** 
+
+* `<App_ID>.devices.<Dev_ID>.events.<event>`
+* `0102030405060708.devices.abcdabcd12345678.events.activations`
+* `*.devices.*.events.*`
 
 **Message:**
 ```json
