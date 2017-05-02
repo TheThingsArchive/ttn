@@ -54,14 +54,20 @@ func NewReferenceMonitorServer(bufferSize int) *ReferenceMonitorServer {
 					atomic.AddUint64(&s.metrics.uplinkMessages, 1)
 				case <-s.downlinkMessages:
 					atomic.AddUint64(&s.metrics.downlinkMessages, 1)
+				case <-s.routerStatuses:
+					atomic.AddUint64(&s.metrics.routerStatuses, 1)
 				case <-s.brokerUplinkMessages:
 					atomic.AddUint64(&s.metrics.brokerUplinkMessages, 1)
 				case <-s.brokerDownlinkMessages:
 					atomic.AddUint64(&s.metrics.brokerDownlinkMessages, 1)
+				case <-s.brokerStatuses:
+					atomic.AddUint64(&s.metrics.brokerStatuses, 1)
 				case <-s.handlerUplinkMessages:
 					atomic.AddUint64(&s.metrics.handlerUplinkMessages, 1)
 				case <-s.handlerDownlinkMessages:
 					atomic.AddUint64(&s.metrics.handlerDownlinkMessages, 1)
+				case <-s.handlerStatuses:
+					atomic.AddUint64(&s.metrics.handlerStatuses, 1)
 				}
 			}
 		}()

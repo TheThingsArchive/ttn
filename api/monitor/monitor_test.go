@@ -12,6 +12,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/api/gateway"
 	"github.com/TheThingsNetwork/ttn/api/handler"
+	"github.com/TheThingsNetwork/ttn/api/networkserver"
 	"github.com/TheThingsNetwork/ttn/api/pool"
 	"github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/htdvisser/grpc-testing/test"
@@ -75,6 +76,20 @@ func TestMonitor(t *testing.T) {
 
 	testLogger.Print(t)
 
+	rtr := cli.NewRouterStreams("test", "token")
+	time.Sleep(waitTime)
+	for i := 0; i < 20; i++ {
+		rtr.Send(&router.Status{})
+		time.Sleep(time.Millisecond)
+	}
+	time.Sleep(waitTime)
+	rtr.Close()
+	time.Sleep(waitTime)
+
+	a.So(server.metrics.routerStatuses, ShouldEqual, 20)
+
+	testLogger.Print(t)
+
 	brk := cli.NewBrokerStreams("test", "token")
 	time.Sleep(waitTime)
 	brk.Send(&broker.DeduplicatedUplinkMessage{})
@@ -87,6 +102,20 @@ func TestMonitor(t *testing.T) {
 
 	a.So(server.metrics.brokerUplinkMessages, ShouldEqual, 2)
 	a.So(server.metrics.brokerDownlinkMessages, ShouldEqual, 1)
+
+	testLogger.Print(t)
+
+	ns := cli.NewNetworkServerStreams("test", "token")
+	time.Sleep(waitTime)
+	for i := 0; i < 20; i++ {
+		ns.Send(&networkserver.Status{})
+		time.Sleep(time.Millisecond)
+	}
+	time.Sleep(waitTime)
+	ns.Close()
+	time.Sleep(waitTime)
+
+	a.So(server.metrics.routerStatuses, ShouldEqual, 20)
 
 	testLogger.Print(t)
 
