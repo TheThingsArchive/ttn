@@ -1,0 +1,30 @@
+// Copyright © 2017 The Things Network
+// Use of this source code is governed by the MIT license that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package ttndoc;
+
+import "google/protobuf/descriptor.proto";
+
+option go_package = "github.com/TheThingsNetwork/ttn/utils/ttndoc";
+
+extend google.protobuf.FileOptions {
+  bool document_file = 64101;
+}
+
+extend google.protobuf.MessageOptions {
+  bool document_message = 64101;
+}
+
+extend google.protobuf.EnumOptions {
+  bool document_enum = 64101;
+}
+
+extend google.protobuf.ServiceOptions {
+  bool document_service = 64101;
+}
+
+extend google.protobuf.MethodOptions {
+  bool document_method = 64101;
+}

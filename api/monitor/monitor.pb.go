@@ -15,10 +15,11 @@ package monitor
 import proto "github.com/gogo/protobuf/proto"
 import fmt "fmt"
 import math "math"
+import google_protobuf "github.com/golang/protobuf/ptypes/empty"
 import gateway "github.com/TheThingsNetwork/ttn/api/gateway"
 import router "github.com/TheThingsNetwork/ttn/api/router"
 import broker "github.com/TheThingsNetwork/ttn/api/broker"
-import google_protobuf1 "github.com/golang/protobuf/ptypes/empty"
+import _ "github.com/TheThingsNetwork/ttn/utils/ttndoc"
 
 import (
 	context "golang.org/x/net/context"
@@ -75,7 +76,7 @@ func (c *monitorClient) GatewayStatus(ctx context.Context, opts ...grpc.CallOpti
 
 type Monitor_GatewayStatusClient interface {
 	Send(*gateway.Status) error
-	CloseAndRecv() (*google_protobuf1.Empty, error)
+	CloseAndRecv() (*google_protobuf.Empty, error)
 	grpc.ClientStream
 }
 
@@ -87,11 +88,11 @@ func (x *monitorGatewayStatusClient) Send(m *gateway.Status) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *monitorGatewayStatusClient) CloseAndRecv() (*google_protobuf1.Empty, error) {
+func (x *monitorGatewayStatusClient) CloseAndRecv() (*google_protobuf.Empty, error) {
 	if err := x.ClientStream.CloseSend(); err != nil {
 		return nil, err
 	}
-	m := new(google_protobuf1.Empty)
+	m := new(google_protobuf.Empty)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -109,7 +110,7 @@ func (c *monitorClient) GatewayUplink(ctx context.Context, opts ...grpc.CallOpti
 
 type Monitor_GatewayUplinkClient interface {
 	Send(*router.UplinkMessage) error
-	CloseAndRecv() (*google_protobuf1.Empty, error)
+	CloseAndRecv() (*google_protobuf.Empty, error)
 	grpc.ClientStream
 }
 
@@ -121,11 +122,11 @@ func (x *monitorGatewayUplinkClient) Send(m *router.UplinkMessage) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *monitorGatewayUplinkClient) CloseAndRecv() (*google_protobuf1.Empty, error) {
+func (x *monitorGatewayUplinkClient) CloseAndRecv() (*google_protobuf.Empty, error) {
 	if err := x.ClientStream.CloseSend(); err != nil {
 		return nil, err
 	}
-	m := new(google_protobuf1.Empty)
+	m := new(google_protobuf.Empty)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -143,7 +144,7 @@ func (c *monitorClient) GatewayDownlink(ctx context.Context, opts ...grpc.CallOp
 
 type Monitor_GatewayDownlinkClient interface {
 	Send(*router.DownlinkMessage) error
-	CloseAndRecv() (*google_protobuf1.Empty, error)
+	CloseAndRecv() (*google_protobuf.Empty, error)
 	grpc.ClientStream
 }
 
@@ -155,11 +156,11 @@ func (x *monitorGatewayDownlinkClient) Send(m *router.DownlinkMessage) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *monitorGatewayDownlinkClient) CloseAndRecv() (*google_protobuf1.Empty, error) {
+func (x *monitorGatewayDownlinkClient) CloseAndRecv() (*google_protobuf.Empty, error) {
 	if err := x.ClientStream.CloseSend(); err != nil {
 		return nil, err
 	}
-	m := new(google_protobuf1.Empty)
+	m := new(google_protobuf.Empty)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -177,7 +178,7 @@ func (c *monitorClient) BrokerUplink(ctx context.Context, opts ...grpc.CallOptio
 
 type Monitor_BrokerUplinkClient interface {
 	Send(*broker.DeduplicatedUplinkMessage) error
-	CloseAndRecv() (*google_protobuf1.Empty, error)
+	CloseAndRecv() (*google_protobuf.Empty, error)
 	grpc.ClientStream
 }
 
@@ -189,11 +190,11 @@ func (x *monitorBrokerUplinkClient) Send(m *broker.DeduplicatedUplinkMessage) er
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *monitorBrokerUplinkClient) CloseAndRecv() (*google_protobuf1.Empty, error) {
+func (x *monitorBrokerUplinkClient) CloseAndRecv() (*google_protobuf.Empty, error) {
 	if err := x.ClientStream.CloseSend(); err != nil {
 		return nil, err
 	}
-	m := new(google_protobuf1.Empty)
+	m := new(google_protobuf.Empty)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -211,7 +212,7 @@ func (c *monitorClient) BrokerDownlink(ctx context.Context, opts ...grpc.CallOpt
 
 type Monitor_BrokerDownlinkClient interface {
 	Send(*broker.DownlinkMessage) error
-	CloseAndRecv() (*google_protobuf1.Empty, error)
+	CloseAndRecv() (*google_protobuf.Empty, error)
 	grpc.ClientStream
 }
 
@@ -223,11 +224,11 @@ func (x *monitorBrokerDownlinkClient) Send(m *broker.DownlinkMessage) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *monitorBrokerDownlinkClient) CloseAndRecv() (*google_protobuf1.Empty, error) {
+func (x *monitorBrokerDownlinkClient) CloseAndRecv() (*google_protobuf.Empty, error) {
 	if err := x.ClientStream.CloseSend(); err != nil {
 		return nil, err
 	}
-	m := new(google_protobuf1.Empty)
+	m := new(google_protobuf.Empty)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -245,7 +246,7 @@ func (c *monitorClient) HandlerUplink(ctx context.Context, opts ...grpc.CallOpti
 
 type Monitor_HandlerUplinkClient interface {
 	Send(*broker.DeduplicatedUplinkMessage) error
-	CloseAndRecv() (*google_protobuf1.Empty, error)
+	CloseAndRecv() (*google_protobuf.Empty, error)
 	grpc.ClientStream
 }
 
@@ -257,11 +258,11 @@ func (x *monitorHandlerUplinkClient) Send(m *broker.DeduplicatedUplinkMessage) e
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *monitorHandlerUplinkClient) CloseAndRecv() (*google_protobuf1.Empty, error) {
+func (x *monitorHandlerUplinkClient) CloseAndRecv() (*google_protobuf.Empty, error) {
 	if err := x.ClientStream.CloseSend(); err != nil {
 		return nil, err
 	}
-	m := new(google_protobuf1.Empty)
+	m := new(google_protobuf.Empty)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -279,7 +280,7 @@ func (c *monitorClient) HandlerDownlink(ctx context.Context, opts ...grpc.CallOp
 
 type Monitor_HandlerDownlinkClient interface {
 	Send(*broker.DownlinkMessage) error
-	CloseAndRecv() (*google_protobuf1.Empty, error)
+	CloseAndRecv() (*google_protobuf.Empty, error)
 	grpc.ClientStream
 }
 
@@ -291,11 +292,11 @@ func (x *monitorHandlerDownlinkClient) Send(m *broker.DownlinkMessage) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *monitorHandlerDownlinkClient) CloseAndRecv() (*google_protobuf1.Empty, error) {
+func (x *monitorHandlerDownlinkClient) CloseAndRecv() (*google_protobuf.Empty, error) {
 	if err := x.ClientStream.CloseSend(); err != nil {
 		return nil, err
 	}
-	m := new(google_protobuf1.Empty)
+	m := new(google_protobuf.Empty)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -323,7 +324,7 @@ func _Monitor_GatewayStatus_Handler(srv interface{}, stream grpc.ServerStream) e
 }
 
 type Monitor_GatewayStatusServer interface {
-	SendAndClose(*google_protobuf1.Empty) error
+	SendAndClose(*google_protobuf.Empty) error
 	Recv() (*gateway.Status, error)
 	grpc.ServerStream
 }
@@ -332,7 +333,7 @@ type monitorGatewayStatusServer struct {
 	grpc.ServerStream
 }
 
-func (x *monitorGatewayStatusServer) SendAndClose(m *google_protobuf1.Empty) error {
+func (x *monitorGatewayStatusServer) SendAndClose(m *google_protobuf.Empty) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -349,7 +350,7 @@ func _Monitor_GatewayUplink_Handler(srv interface{}, stream grpc.ServerStream) e
 }
 
 type Monitor_GatewayUplinkServer interface {
-	SendAndClose(*google_protobuf1.Empty) error
+	SendAndClose(*google_protobuf.Empty) error
 	Recv() (*router.UplinkMessage, error)
 	grpc.ServerStream
 }
@@ -358,7 +359,7 @@ type monitorGatewayUplinkServer struct {
 	grpc.ServerStream
 }
 
-func (x *monitorGatewayUplinkServer) SendAndClose(m *google_protobuf1.Empty) error {
+func (x *monitorGatewayUplinkServer) SendAndClose(m *google_protobuf.Empty) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -375,7 +376,7 @@ func _Monitor_GatewayDownlink_Handler(srv interface{}, stream grpc.ServerStream)
 }
 
 type Monitor_GatewayDownlinkServer interface {
-	SendAndClose(*google_protobuf1.Empty) error
+	SendAndClose(*google_protobuf.Empty) error
 	Recv() (*router.DownlinkMessage, error)
 	grpc.ServerStream
 }
@@ -384,7 +385,7 @@ type monitorGatewayDownlinkServer struct {
 	grpc.ServerStream
 }
 
-func (x *monitorGatewayDownlinkServer) SendAndClose(m *google_protobuf1.Empty) error {
+func (x *monitorGatewayDownlinkServer) SendAndClose(m *google_protobuf.Empty) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -401,7 +402,7 @@ func _Monitor_BrokerUplink_Handler(srv interface{}, stream grpc.ServerStream) er
 }
 
 type Monitor_BrokerUplinkServer interface {
-	SendAndClose(*google_protobuf1.Empty) error
+	SendAndClose(*google_protobuf.Empty) error
 	Recv() (*broker.DeduplicatedUplinkMessage, error)
 	grpc.ServerStream
 }
@@ -410,7 +411,7 @@ type monitorBrokerUplinkServer struct {
 	grpc.ServerStream
 }
 
-func (x *monitorBrokerUplinkServer) SendAndClose(m *google_protobuf1.Empty) error {
+func (x *monitorBrokerUplinkServer) SendAndClose(m *google_protobuf.Empty) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -427,7 +428,7 @@ func _Monitor_BrokerDownlink_Handler(srv interface{}, stream grpc.ServerStream) 
 }
 
 type Monitor_BrokerDownlinkServer interface {
-	SendAndClose(*google_protobuf1.Empty) error
+	SendAndClose(*google_protobuf.Empty) error
 	Recv() (*broker.DownlinkMessage, error)
 	grpc.ServerStream
 }
@@ -436,7 +437,7 @@ type monitorBrokerDownlinkServer struct {
 	grpc.ServerStream
 }
 
-func (x *monitorBrokerDownlinkServer) SendAndClose(m *google_protobuf1.Empty) error {
+func (x *monitorBrokerDownlinkServer) SendAndClose(m *google_protobuf.Empty) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -453,7 +454,7 @@ func _Monitor_HandlerUplink_Handler(srv interface{}, stream grpc.ServerStream) e
 }
 
 type Monitor_HandlerUplinkServer interface {
-	SendAndClose(*google_protobuf1.Empty) error
+	SendAndClose(*google_protobuf.Empty) error
 	Recv() (*broker.DeduplicatedUplinkMessage, error)
 	grpc.ServerStream
 }
@@ -462,7 +463,7 @@ type monitorHandlerUplinkServer struct {
 	grpc.ServerStream
 }
 
-func (x *monitorHandlerUplinkServer) SendAndClose(m *google_protobuf1.Empty) error {
+func (x *monitorHandlerUplinkServer) SendAndClose(m *google_protobuf.Empty) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -479,7 +480,7 @@ func _Monitor_HandlerDownlink_Handler(srv interface{}, stream grpc.ServerStream)
 }
 
 type Monitor_HandlerDownlinkServer interface {
-	SendAndClose(*google_protobuf1.Empty) error
+	SendAndClose(*google_protobuf.Empty) error
 	Recv() (*broker.DownlinkMessage, error)
 	grpc.ServerStream
 }
@@ -488,7 +489,7 @@ type monitorHandlerDownlinkServer struct {
 	grpc.ServerStream
 }
 
-func (x *monitorHandlerDownlinkServer) SendAndClose(m *google_protobuf1.Empty) error {
+func (x *monitorHandlerDownlinkServer) SendAndClose(m *google_protobuf.Empty) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -549,26 +550,27 @@ func init() {
 }
 
 var fileDescriptorMonitor = []byte{
-	// 328 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x92, 0x4f, 0x4b, 0xfb, 0x30,
-	0x18, 0xc7, 0x17, 0x7e, 0xf0, 0x1b, 0x04, 0xe7, 0xa0, 0xa0, 0xc2, 0xc4, 0x80, 0x37, 0x41, 0x48,
-	0x40, 0x4f, 0x7a, 0x92, 0x59, 0x51, 0xd0, 0x79, 0x71, 0x5e, 0xbc, 0xa5, 0x5b, 0xcc, 0xc2, 0xda,
-	0xa4, 0xa4, 0x4f, 0x29, 0xde, 0x7c, 0x09, 0xbe, 0x0c, 0x5f, 0x8a, 0x47, 0x8f, 0x1e, 0xb7, 0xfa,
-	0x12, 0x7c, 0x03, 0x62, 0x93, 0x88, 0x78, 0xd0, 0x89, 0x9e, 0xbe, 0x3c, 0x7f, 0xfa, 0x79, 0x3e,
-	0x2d, 0xc5, 0x7b, 0x52, 0xc1, 0xa4, 0x4c, 0xe8, 0xc8, 0x64, 0x6c, 0x38, 0x11, 0xc3, 0x89, 0xd2,
-	0xb2, 0x38, 0x17, 0x50, 0x19, 0x3b, 0x65, 0x00, 0x9a, 0xf1, 0x5c, 0xb1, 0xcc, 0x68, 0x05, 0xc6,
-	0x86, 0xa4, 0xb9, 0x35, 0x60, 0xa2, 0xb6, 0x2f, 0x7b, 0x1b, 0x61, 0x4f, 0x72, 0x10, 0x15, 0xbf,
-	0x09, 0xe9, 0xf6, 0x7a, 0xeb, 0x61, 0x6c, 0x4d, 0x09, 0xc2, 0xfa, 0xf8, 0x3c, 0x4c, 0xac, 0x99,
-	0x0a, 0xeb, 0x23, 0x0c, 0xa5, 0x31, 0x32, 0x15, 0xac, 0xa9, 0x92, 0xf2, 0x9a, 0x89, 0x2c, 0x07,
-	0x8f, 0xdd, 0x79, 0xf9, 0x87, 0xdb, 0x03, 0x67, 0x10, 0xed, 0xe3, 0xce, 0xb1, 0xbb, 0x79, 0x01,
-	0x1c, 0xca, 0x22, 0xea, 0xd2, 0xe0, 0xe0, 0x1a, 0xbd, 0x55, 0xea, 0x58, 0x34, 0xb0, 0xe8, 0xd1,
-	0x1b, 0x6b, 0x0b, 0x45, 0x07, 0xef, 0xcf, 0x5e, 0xe6, 0xa9, 0xd2, 0xd3, 0x68, 0x85, 0x7a, 0x43,
-	0x57, 0x0f, 0x44, 0x51, 0x70, 0x29, 0xbe, 0x20, 0xc4, 0xb8, 0xeb, 0x09, 0xb1, 0xa9, 0x74, 0xc3,
-	0x58, 0x0b, 0x8c, 0xd0, 0xf9, 0x9e, 0x72, 0x8a, 0x97, 0xfa, 0xcd, 0xcb, 0x7b, 0x8d, 0x4d, 0xea,
-	0xbf, 0x45, 0x2c, 0xc6, 0x65, 0x9e, 0xaa, 0x11, 0x07, 0x31, 0x5e, 0x54, 0xe9, 0x10, 0x2f, 0x3b,
-	0xd8, 0x07, 0xa3, 0x80, 0x5b, 0xd8, 0xe8, 0x0c, 0x77, 0x4e, 0xb8, 0x1e, 0xa7, 0x7f, 0xa3, 0x14,
-	0xe3, 0xae, 0xa7, 0xfd, 0xc2, 0xa9, 0x3f, 0x78, 0x9a, 0x93, 0xd6, 0x6c, 0x4e, 0xd0, 0x6d, 0x4d,
-	0xd0, 0x7d, 0x4d, 0xd0, 0x43, 0x4d, 0xd0, 0x63, 0x4d, 0xd0, 0xac, 0x26, 0xe8, 0xee, 0x99, 0xb4,
-	0xae, 0xb6, 0x7f, 0xf0, 0x47, 0x27, 0xff, 0x9b, 0x03, 0xbb, 0xaf, 0x01, 0x00, 0x00, 0xff, 0xff,
-	0xb2, 0xdf, 0x91, 0xcd, 0x07, 0x03, 0x00, 0x00,
+	// 348 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x92, 0x41, 0x4b, 0xf3, 0x30,
+	0x18, 0xc7, 0x17, 0xde, 0x17, 0x07, 0xc1, 0x39, 0x28, 0xa8, 0xd0, 0x61, 0xc4, 0x9b, 0x20, 0xa4,
+	0xa0, 0x27, 0x3d, 0xc9, 0xac, 0x28, 0xe8, 0xbc, 0x38, 0x2f, 0xde, 0xd2, 0x35, 0x76, 0x61, 0x5d,
+	0x53, 0xd2, 0x27, 0x8c, 0xdd, 0xfc, 0x08, 0x7e, 0x0a, 0xd9, 0x47, 0xf1, 0xe8, 0xd1, 0xe3, 0x56,
+	0x3f, 0x85, 0x37, 0x59, 0x93, 0xc8, 0xf0, 0xa0, 0x13, 0x3d, 0xfd, 0xc9, 0xf3, 0xb4, 0xbf, 0xfc,
+	0xfe, 0xa5, 0xf8, 0x30, 0x11, 0xd0, 0xd7, 0x11, 0xed, 0xc9, 0x61, 0xd0, 0xed, 0xf3, 0x6e, 0x5f,
+	0x64, 0x49, 0x71, 0xc5, 0x61, 0x24, 0xd5, 0x20, 0x00, 0xc8, 0x02, 0x96, 0x8b, 0x60, 0x28, 0x33,
+	0x01, 0x52, 0xb9, 0xa4, 0xb9, 0x92, 0x20, 0xbd, 0xba, 0x3d, 0xfa, 0xad, 0x44, 0xca, 0x24, 0xe5,
+	0x41, 0x35, 0x8e, 0xf4, 0x5d, 0xc0, 0x87, 0x39, 0x8c, 0xcd, 0x53, 0xfe, 0x96, 0x83, 0x24, 0x0c,
+	0xf8, 0x88, 0x8d, 0x5d, 0xda, 0x75, 0xcb, 0xad, 0x95, 0xd4, 0xc0, 0x95, 0x8d, 0xcf, 0xcb, 0x48,
+	0xc9, 0x01, 0x57, 0x36, 0x16, 0xc1, 0x1a, 0x44, 0x5a, 0xcc, 0x3d, 0x63, 0xd9, 0xb3, 0x61, 0xd6,
+	0xfb, 0x6f, 0xff, 0x70, 0xbd, 0x63, 0x04, 0xbd, 0x23, 0xdc, 0x38, 0x33, 0xb7, 0x5e, 0x03, 0x03,
+	0x5d, 0x78, 0x4d, 0xea, 0x2c, 0xcc, 0xc0, 0xdf, 0xa0, 0xa6, 0x03, 0x75, 0x1d, 0xe8, 0xe9, 0xbc,
+	0xc3, 0x2e, 0xf2, 0x8e, 0x3f, 0xde, 0xbd, 0xc9, 0x53, 0x91, 0x0d, 0xbc, 0x75, 0x6a, 0x1d, 0xcd,
+	0xb9, 0xc3, 0x8b, 0x82, 0x25, 0xfc, 0x0b, 0x42, 0x88, 0x9b, 0x96, 0x10, 0xca, 0x51, 0x56, 0x31,
+	0x36, 0x1d, 0xc3, 0x4d, 0xbe, 0xa7, 0x5c, 0xe0, 0xd5, 0x76, 0x55, 0xdf, 0x6a, 0xec, 0x50, 0xfb,
+	0x35, 0x42, 0x1e, 0xeb, 0x3c, 0x15, 0x3d, 0x06, 0x3c, 0x5e, 0x56, 0xe9, 0x04, 0xaf, 0x19, 0xd8,
+	0x82, 0x91, 0xc3, 0x2d, 0x6d, 0x74, 0x89, 0x1b, 0xe7, 0x2c, 0x8b, 0xd3, 0xbf, 0x51, 0x0a, 0x71,
+	0xd3, 0xd2, 0x7e, 0xe1, 0xe4, 0xff, 0x9f, 0x3c, 0x6e, 0xa3, 0x76, 0xe7, 0x65, 0x46, 0x6a, 0xd3,
+	0x19, 0x41, 0xf7, 0x25, 0x41, 0x93, 0x92, 0xa0, 0xa7, 0x92, 0xa0, 0xe7, 0x92, 0xa0, 0x69, 0x49,
+	0xd0, 0xc3, 0x2b, 0xa9, 0xdd, 0xee, 0xfd, 0xe0, 0xb7, 0x8f, 0x56, 0xaa, 0x6b, 0x0e, 0xde, 0x03,
+	0x00, 0x00, 0xff, 0xff, 0x18, 0x28, 0x2f, 0xbe, 0x2c, 0x03, 0x00, 0x00,
 }

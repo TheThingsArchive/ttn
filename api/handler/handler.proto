@@ -10,6 +10,7 @@ import "ttn/api/broker/broker.proto";
 import "ttn/api/protocol/protocol.proto";
 import "ttn/api/protocol/lorawan/device.proto";
 import "ttn/api/trace/trace.proto";
+import "ttn/utils/ttndoc/ttndoc.proto";
 
 package handler;
 
@@ -166,6 +167,7 @@ message DryDownlinkResult {
 // ApplicationManager API per hour. Once you go over the rate limit, you will
 // receive an error response.
 service ApplicationManager {
+  option (ttndoc.document_service) = true;
 
   // Applications should first be registered to the Handler with the `RegisterApplication` method
   rpc RegisterApplication(ApplicationIdentifier) returns (google.protobuf.Empty) {
