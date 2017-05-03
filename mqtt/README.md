@@ -10,8 +10,6 @@
 
 **Topic:** `<AppID>/devices/<DevID>/up`
 
-Wildcards are allowed. For example `<AppID>/devices/+/up` to get uplink messages for all devices.
-
 **Message:**
 
 ```js
@@ -127,8 +125,7 @@ you will see this on MQTT:
 }
 ```
 
-**Usage (Mosquitto):**
-`mosquitto_pub -h <Region>.thethings.network:1883 -d -t 'my-app-id/devices/my-dev-id/down' -m '{"port":1,"payload_raw":"AQIDBA=="}'`
+**Usage (Mosquitto):** `mosquitto_pub -h <Region>.thethings.network:1883 -d -t 'my-app-id/devices/my-dev-id/down' -m '{"port":1,"payload_raw":"AQIDBA=="}'`
 
 **Usage (Go client):**
 
