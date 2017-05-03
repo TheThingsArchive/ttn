@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_protocol "github.com/TheThingsNetwork/ttn/api/protocol"
@@ -88,8 +89,6 @@ func TestHandleActivation(t *testing.T) {
 		}
 	}()
 	h.InitStatus()
-
-	// var wg WaitGroup
 
 	devAddr := types.DevAddr{1, 2, 3, 4}
 	appEUI, devEUI := types.AppEUI{1, 2, 3, 4, 5, 6, 7, 8}, types.DevEUI{1, 2, 3, 4, 5, 6, 7, 8}
@@ -228,6 +227,9 @@ func TestHandleActivation(t *testing.T) {
 	// Can't get access key
 	_, err = h.HandleActivation(req)
 	a.So(err, ShouldNotBeNil)
+
+	time.Sleep(200 * time.Millisecond)
+	a.So(eventsReceived, ShouldEqual, 10) // 10 activation error events. One for each HandleActivation
 
 	for _, env := range strings.Split("ACCOUNT_SERVER_PROTO ACCOUNT_SERVER_USERNAME ACCOUNT_SERVER_PASSWORD ACCOUNT_SERVER_URL APP_ID APP_TOKEN", " ") {
 		if os.Getenv(env) == "" {

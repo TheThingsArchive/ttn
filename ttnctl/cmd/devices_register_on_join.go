@@ -20,7 +20,7 @@ import (
 const registerOnJoinAccessKeyName = "register-on-join"
 
 var devicesRegisterOnJoinCmd = &cobra.Command{
-	Use:   "on-join [Device ID] [AppKey]",
+	Use:   "on-join [Device ID Prefix] [AppKey]",
 	Short: "Register a new device on join",
 	Long:  `ttnctl devices register on-join can be used to register a device template for on-join registrations.`,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -29,11 +29,11 @@ var devicesRegisterOnJoinCmd = &cobra.Command{
 		var err error
 
 		devID := strings.ToLower(args[0])
-		if err := api.NotEmptyAndValidID(devID, "Device ID"); err != nil {
+		if err := api.NotEmptyAndValidID(devID, "Device ID Prefix"); err != nil {
 			ctx.Fatal(err.Error())
 		}
 		if len(devID) > 19 { // IDs will be (devID-eui) -> 36 - 16 - 1
-			ctx.Fatal("Device ID is too long for on-join registration. The maximum length is 19.")
+			ctx.Fatal("Device ID Prefix is too long for on-join registration. The maximum length is 19.")
 		}
 
 		appID := util.GetAppID(ctx)

@@ -265,7 +265,7 @@ func (h *handler) registerDeviceOnJoin(base *device.Device, activation *pb_broke
 	clone := base.Clone()
 	clone.DevID = strings.ToLower(fmt.Sprintf("%s-%s", base.DevID, activation.DevEui.String()))
 	clone.DevEUI = *activation.DevEui
-	clone.Description = fmt.Sprintf("On-Join device registered on %s", time.Now().UTC().Format(time.RFC3339))
+	clone.Description = fmt.Sprintf("Registered on join on %s", time.Now().UTC().Format("02 Jan 06 15:04"))
 
 	app, err := h.applications.Get(base.AppID)
 	if err != nil {
@@ -273,7 +273,7 @@ func (h *handler) registerDeviceOnJoin(base *device.Device, activation *pb_broke
 	}
 
 	if app.RegisterOnJoinAccessKey == "" {
-		return nil, errors.NewErrInvalidArgument("Application", "Does not have RegisterOnJoinAccessKey")
+		return nil, errors.NewErrInvalidArgument("Application", "Does not have Access Key configured for device registration on join")
 	}
 
 	token, err := h.ExchangeAppKeyForToken(app.AppID, app.RegisterOnJoinAccessKey)
