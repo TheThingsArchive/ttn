@@ -1,6 +1,6 @@
 # API Reference
 
-TTN makes use of an AMQP Topic exchange (`amq.topic`). See [this](https://www.rabbitmq.com/tutorials/amqp-concepts.html) for details.
+TTN makes use of an AMQP Topic exchange. See [this](https://www.rabbitmq.com/tutorials/amqp-concepts.html) for details.
 
 AMQP is not yet available in the public network.
 
@@ -75,7 +75,7 @@ func main() {
 	ctx := apex.Stdout().WithField("Example", "Go AMQP client")
 	c := amqp.NewClient(ctx, "guest", "guest", "localhost:5672")
 	c.Connect()
-	s := c.NewSubscriber("amq.topic", "", false, true)
+	s := c.NewSubscriber("ttn.handler", "", false, true)
 	s.Open()
 	s.SubscribeDeviceUplink("my-app-id", "my-dev-id",
 		func(_ amqp.Subscriber, appID string, devID string, req types.UplinkMessage) {
@@ -129,7 +129,7 @@ channel.start_consuming()
 **Routing key:** `<AppID>.devices.<DevID>.down`
 
 **Message:**
-```json
+```js
 {
   "port": 1,                 // LoRaWAN FPort
   "confirmed": false,        // Whether the downlink should be confirmed by the device
@@ -155,7 +155,7 @@ func main() {
 	ctx := apex.Stdout().WithField("test", "test")
 	c := amqp.NewClient(ctx, "guest", "guest", "localhost:5672")
 	c.Connect()
-	p := c.NewPublisher("amq.topic")
+	p := c.NewPublisher("ttn.handler")
   if err := p.Open(); err != nil {
     ctx.WithError(err).Error("Could not open publishing channel")
   }
@@ -201,7 +201,7 @@ connection.close()
 * `*.devices.*.events.*`
 
 **Message:**
-```json
+```js
 {
   "payload": "Base64 encoded LoRaWAN packet",
   "gateway_id": "some-gateway",
@@ -215,9 +215,8 @@ connection.close()
 }
 ```
 
-**Usages (GO)**
+**Usages (Go client):**
 
-*Subscription:*
 ```go
 package main
 
@@ -234,7 +233,7 @@ func main() {
   if err := c.Connect(); err != nil {
     ctx.WithError(err).Error("Could not connect")
   }
-  s := c.NewSubscriber("amq.topic", "", true, false)
+  s := c.NewSubscriber("ttn.handler", "", true, false)
   if err := s.Open(); err != nil {
     ctx.WithError(err).Error("Could not open subcription channel")
   }
@@ -242,33 +241,6 @@ func main() {
 			func(_ Subscriber, appID string, eventType types.EventType, payload []byte) {
 			  // Do your stuff
 			})
-	//...
-}
-```
-
-*Publish:*
-```go
-package main
-
-import (
-	"github.com/TheThingsNetwork/go-utils/log/apex"
-	"github.com/TheThingsNetwork/ttn/amqp"
-	"github.com/TheThingsNetwork/ttn/core/types"
-)
-
-func main() {
-
-  ctx := apex.Stdout().WithField("test", "test")
-  c := amqp.NewClient(ctx, "guest", "guest", "localhost:5672")
-  if err := c.Connect(); err != nil {
-    ctx.WithError(err).Error("Could not connect")
-  }
-  p := c.NewPublisher("amq.topic")
-  if err := p.Open(); err != nil {
-    ctx.WithError(err).Error("Could not open publishing channel")
-  }
-  defer p.Close()
-  p.PublishAppEvent("my-app-id", "some-event", "payload")
 	//...
 }
 ```
