@@ -5,6 +5,7 @@ syntax = "proto3";
 
 import "google/protobuf/empty.proto";
 import "google/api/annotations.proto";
+import "ttn/utils/ttndoc/ttndoc.proto";
 
 package discovery;
 
@@ -130,6 +131,8 @@ message AnnouncementsResponse {
 
 // The Discovery service is used to discover services within The Things Network.
 service Discovery {
+  option (ttndoc.document_service) = true;
+
   // Announce a component to the Discovery server.
   // A call to `Announce` does not processes the `metadata` field, so you can safely leave this field empty.
   // Adding or removing Metadata should be done with the `AddMetadata` and `DeleteMetadata` methods.

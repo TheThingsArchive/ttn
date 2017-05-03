@@ -12,7 +12,7 @@ GO_SRC = $(shell pwd | xargs dirname | xargs dirname | xargs dirname)
 
 # All
 
-.PHONY: all build-deps deps dev-deps protos-clean protos protodoc mocks test cover-clean cover-deps cover coveralls fmt vet ttn ttnctl build link docs clean docker
+.PHONY: all build-deps deps dev-deps protos-clean protos mocks test cover-clean cover-deps cover coveralls fmt vet ttn ttnctl build link docs clean docker
 
 all: deps build
 
@@ -27,7 +27,6 @@ deps: build-deps
 dev-deps: deps
 	@command -v protoc-gen-grpc-gateway > /dev/null || go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway
 	@command -v protoc-gen-gogottn > /dev/null || go install github.com/TheThingsNetwork/ttn/utils/protoc-gen-gogottn
-	@command -v protoc-gen-ttndoc > /dev/null || go install github.com/TheThingsNetwork/ttn/utils/protoc-gen-ttndoc
 	@command -v mockgen > /dev/null || go get github.com/golang/mock/mockgen
 	@command -v golint > /dev/null || go get github.com/golang/lint/golint
 	@command -v forego > /dev/null || go get github.com/ddollar/forego
@@ -49,11 +48,6 @@ protos: $(COMPILED_PROTO_FILES)
 
 api/%.pb.go: api/%.proto
 	$(PROTOC)$<
-
-protodoc: $(PROTO_FILES)
-	protoc $(PROTOC_IMPORTS) --ttndoc_out=logtostderr=true,.lorawan.DevAddrManager=all:$(GO_SRC) `pwd`/api/protocol/lorawan/device_address.proto
-	protoc $(PROTOC_IMPORTS) --ttndoc_out=logtostderr=true,.handler.ApplicationManager=all:$(GO_SRC) `pwd`/api/handler/handler.proto
-	protoc $(PROTOC_IMPORTS) --ttndoc_out=logtostderr=true,.discovery.Discovery=all:$(GO_SRC) `pwd`/api/discovery/discovery.proto
 
 # Mocks
 
