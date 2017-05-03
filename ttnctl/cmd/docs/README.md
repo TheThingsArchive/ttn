@@ -358,23 +358,24 @@ ttnctl devices set can be used to set properties of a device.
 **Options**
 
 ```
-      --16-bit-fcnt          Use 16 bit FCnt
-      --32-bit-fcnt          Use 32 bit FCnt (default)
-      --altitude int32       Set altitude
-      --app-eui string       Set AppEUI
-      --app-key string       Set AppKey
-      --app-s-key string     Set AppSKey
-      --description string   Set Description
-      --dev-addr string      Set DevAddr
-      --dev-eui string       Set DevEUI
-      --disable-fcnt-check   Disable FCnt check
-      --enable-fcnt-check    Enable FCnt check (default)
-      --fcnt-down int        Set FCnt Down (default -1)
-      --fcnt-up int          Set FCnt Up (default -1)
-      --latitude float32     Set latitude
-      --longitude float32    Set longitude
-      --nwk-s-key string     Set NwkSKey
-      --override             Override protection against breaking changes
+      --16-bit-fcnt                Use 16 bit FCnt
+      --32-bit-fcnt                Use 32 bit FCnt (default)
+      --altitude int32             Set altitude
+      --app-eui string             Set AppEUI
+      --app-key string             Set AppKey
+      --app-s-key string           Set AppSKey
+      --customs-keys stringArray   Set customs keys
+      --description string         Set Description
+      --dev-addr string            Set DevAddr
+      --dev-eui string             Set DevEUI
+      --disable-fcnt-check         Disable FCnt check
+      --enable-fcnt-check          Enable FCnt check (default)
+      --fcnt-down int              Set FCnt Down (default -1)
+      --fcnt-up int                Set FCnt Up (default -1)
+      --latitude float32           Set latitude
+      --longitude float32          Set longitude
+      --nwk-s-key string           Set NwkSKey
+      --override                   Override protection against breaking changes
 ```
 
 **Example**

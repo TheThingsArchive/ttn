@@ -156,6 +156,9 @@ var devicesSetCmd = &cobra.Command{
 		if in, err := cmd.Flags().GetStringArray("customs-keys"); err == nil && len(in) > 0 {
 			for _, v := range in {
 				s := strings.SplitN(v, ":", 2)
+				if dev.CustomKeys == nil {
+					dev.CustomKeys = make(map[string]string, len(in))
+				}
 				dev.CustomKeys[s[0]] = s[1]
 			}
 		}

@@ -25,6 +25,7 @@ type Store interface {
 	DownlinkQueue(appID, devID string) (DownlinkQueue, error)
 	Set(new *Device, properties ...string) (err error)
 	Delete(appID, devID string) error
+	KeysWhitelist() []string
 }
 
 const defaultRedisPrefix = "handler"
@@ -41,28 +42,25 @@ func NewRedisDeviceStore(client *redis.Client, prefix string) *RedisDeviceStore 
 	for v, f := range migrate.DeviceMigrations(prefix) {
 		store.AddMigration(v, f)
 	}
-	l, err := client.Get(prefix + ":" + redisDevicePrefix + ":whitelist").Result()
+	s, err := client.Get(prefix + ":" + redisDevicePrefix + ":whitelist").Result()
 	if err != nil {
 		//TODO
 	}
-	m := map[string]bool{}
-	for _, key := range strings.Split(l, ":") {
-		m[key] = true
-	}
+	l := strings.Split(s, ":")
 	queues := storage.NewRedisQueueStore(client, prefix+":"+redisDownlinkQueuePrefix)
 	return &RedisDeviceStore{
-		store:     store,
-		queues:    queues,
-		whiteList: m,
+		store:         store,
+		queues:        queues,
+		keysWhitelist: l,
 	}
 }
 
 // RedisDeviceStore stores Devices in Redis.
 // - Devices are stored as a Hash
 type RedisDeviceStore struct {
-	store     *storage.RedisMapStore
-	queues    *storage.RedisQueueStore
-	whiteList map[string]bool
+	store         *storage.RedisMapStore
+	queues        *storage.RedisQueueStore
+	keysWhitelist []string
 }
 
 // Count all devices in the store
@@ -148,4 +146,9 @@ func (s *RedisDeviceStore) Delete(appID, devID string) error {
 		return err
 	}
 	return s.store.Delete(key)
+}
+
+// KeysWhitelist return a map of the whitelisted
+func (s *RedisDeviceStore) KeysWhitelist() []string {
+	return s.keysWhitelist
 }

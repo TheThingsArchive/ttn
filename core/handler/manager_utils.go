@@ -5,6 +5,7 @@ package handler
 import (
 	"context"
 
+	pb "github.com/TheThingsNetwork/ttn/api/handler"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
@@ -43,7 +44,20 @@ func (h *handlerManager) updateDevBrk(ctx context.Context, dev *device.Device, l
 	nsUpdated := dev.GetLoRaWAN()
 	nsUpdated.FCntUp = lorawan.FCntUp
 	nsUpdated.FCntDown = lorawan.FCntDown
-
 	_, err := h.deviceManager.SetDevice(ctx, nsUpdated)
 	return err
+}
+
+//ctlCustomsKeys remove all the non-whitelisted customsKeys for device by creating a new key map
+func (h *handlerManager) checkCustomsKeys(in *pb.Device) {
+
+	l := h.handler.devices.KeysWhitelist()
+	m := make(map[string]string, len(l))
+	for _, s := range l {
+		v, ok := in.CustomKeys[s]
+		if ok {
+			m[s] = v
+		}
+	}
+	in.CustomKeys = m
 }
