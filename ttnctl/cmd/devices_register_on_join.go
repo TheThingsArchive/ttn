@@ -4,6 +4,7 @@
 package cmd
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/TheThingsNetwork/go-account-lib/rights"
@@ -53,8 +54,9 @@ var devicesRegisterOnJoinCmd = &cobra.Command{
 		}
 
 		device := &handler.Device{
-			AppId: appID,
-			DevId: devID,
+			AppId:       appID,
+			DevId:       devID,
+			Description: fmt.Sprintf("Device template for on-join registrations for %s", appEUI),
 			Device: &handler.Device_LorawanDevice{LorawanDevice: &lorawan.Device{
 				AppId:         appID,
 				DevId:         devID,
