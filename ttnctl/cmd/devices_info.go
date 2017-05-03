@@ -104,10 +104,10 @@ var devicesInfoCmd = &cobra.Command{
 			} else {
 				options = append(options, "16BitFCnt")
 			}
-			fmt.Printf("    Options: %s\n", strings.Join(options, ", "))
+			fmt.Printf("Options: %s\n", strings.Join(options, ", "))
 		}
 
-		fmt.Printf("	CustomKeys: %v\n", dev.CustomKeys)
+		fmt.Printf("CustomKeys: %v\n", dev.CustomKeys)
 	},
 }
 

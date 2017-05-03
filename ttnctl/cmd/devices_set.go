@@ -153,6 +153,13 @@ var devicesSetCmd = &cobra.Command{
 			dev.Description = in
 		}
 
+		if in, err := cmd.Flags().GetStringArray("customs-keys"); err == nil && len(in) > 0 {
+			for _, v := range in {
+				s := strings.SplitN(v, ":", 2)
+				dev.CustomKeys[s[0]] = s[1]
+			}
+		}
+
 		err = manager.SetDevice(dev)
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not update Device")
@@ -190,4 +197,5 @@ func init() {
 	devicesSetCmd.Flags().Int32("altitude", 0, "Set altitude")
 
 	devicesSetCmd.Flags().String("description", "", "Set Description")
+	devicesSetCmd.Flags().StringArray("customs-keys", []string{}, "Set customs keys")
 }
