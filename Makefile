@@ -25,7 +25,6 @@ deps: build-deps
 	govendor sync -v
 
 dev-deps: deps
-	@command -v protoc-gen-gogofast > /dev/null || go get github.com/gogo/protobuf/protoc-gen-gogofast
 	@command -v protoc-gen-grpc-gateway > /dev/null || go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway
 	@command -v protoc-gen-gogottn > /dev/null || go install github.com/TheThingsNetwork/ttn/utils/protoc-gen-gogottn
 	@command -v protoc-gen-ttndoc > /dev/null || go install github.com/TheThingsNetwork/ttn/utils/protoc-gen-ttndoc
