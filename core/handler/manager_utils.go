@@ -12,6 +12,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 )
 
+//eventSelect select the appropriate event for device is updated/created and check if the event is possible
 func (h *handlerManager) eventSelect(ctx context.Context, dev *device.Device, lorawan *pb_lorawan.Device, appId string) (evt types.EventType, err error) {
 	if dev != nil {
 		evt = types.UpdateEvent
@@ -40,6 +41,7 @@ func (h *handlerManager) eventSelect(ctx context.Context, dev *device.Device, lo
 	return evt, nil
 }
 
+//updateDevBrk Update the device in the Broker (NetworkServer)
 func (h *handlerManager) updateDevBrk(ctx context.Context, dev *device.Device, lorawan *pb_lorawan.Device) error {
 	nsUpdated := dev.GetLoRaWAN()
 	nsUpdated.FCntUp = lorawan.FCntUp

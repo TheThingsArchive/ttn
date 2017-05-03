@@ -165,7 +165,6 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*empty.E
 	}
 	h.checkCustomsKeys(in)
 	pb.DevToHdl(dev, in, lorawan)
-	// Update the device in the Broker (NetworkServer)
 	err = h.updateDevBrk(ctx, dev, lorawan)
 	if err != nil {
 		return nil, errors.Wrap(errors.FromGRPCError(err), "Broker did not set device")
