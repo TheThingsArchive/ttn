@@ -86,44 +86,6 @@ func main() {
 }
 ```
 
-**Usage (Python):**
-```python
-#!/usr/bin/env python
-import pika
-import sys
-
-connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost', port=5672))
-channel = connection.channel()
-
-channel.exchange_declare(exchange='ttn.handler',
-                         type='topic')
-
-result = channel.queue_declare(exclusive=True)
-queue_name = result.method.queue
-
-binding_keys = sys.argv[1:]
-if not binding_keys:
-    sys.stderr.write("Usage: %s [binding_key]...\n" % sys.argv[0])
-    sys.exit(1)
-
-for binding_key in binding_keys:
-    channel.queue_bind(exchange='ttn.handler',
-                       queue=queue_name,
-                       routing_key=binding_key)
-
-print(' [*] Waiting for logs. To exit press CTRL+C')
-
-def callback(ch, method, properties, body):
-    print(" [x] %r:%r" % (method.routing_key, body))
-
-channel.basic_consume(callback,
-                      queue=queue_name,
-                      no_ack=True)
-
-channel.start_consuming()
-```
-
-
 ## Downlink Messages
 
 **Routing key:** `<AppID>.devices.<DevID>.down`
@@ -168,28 +130,6 @@ func main() {
   p.PublishDownlink(d)
 	//...
 }
-```
-
-** Usage (Python) **
-```python
-#!/usr/bin/env python
-import pika
-import sys
-
-connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost', port=5672))
-channel = connection.channel()
-
-channel.exchange_declare(exchange='ttn.handler',
-                         type='topic')
-
-routing_key = 'my-app-id.devices.my-dev-id.down'
-message = '{"port": 1, "confirmed": false, "payload_raw": "AQIDBA=="}'
-
-channel.basic_publish(exchange='ttn.handler',
-                      routing_key=routing_key,
-                      body=message)
-print(" [x] Sent %r:%r" % (routing_key, message))
-connection.close()
 ```
 
 ## Device Events
