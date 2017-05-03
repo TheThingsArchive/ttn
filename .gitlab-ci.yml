@@ -6,6 +6,7 @@ stages:
 
 variables:
   CONTAINER_NAME: thethingsnetwork/ttn
+  PLATFORMS: linux-386 linux-amd64 linux-arm darwin-amd64 windows-386 windows-amd64
 
 cache:
   key: "$CI_PROJECT_PATH"
@@ -44,12 +45,7 @@ binaries:
     - echo "commit $CI_BUILD_REF" >> release/info
     - pushd $GOPATH/src/github.com/TheThingsNetwork/ttn
     - make deps
-    - GOOS=linux GOARCH=386 make build
-    - GOOS=linux GOARCH=amd64 make build
-    - GOOS=linux GOARCH=arm make build
-    - GOOS=darwin GOARCH=amd64 make build
-    - GOOS=windows GOARCH=386 make build
-    - GOOS=windows GOARCH=amd64 make build
+    - for platform in $PLATFORMS; do $(echo $platform | awk -F '-' '{print "export GOOS=" $1 " GOARCH=" $2}') && make build; done
     - popd
   artifacts:
     paths:
@@ -57,8 +53,7 @@ binaries:
 
 sign:
   only:
-    - tags
-    - v1-staging@thethingsnetwork/ttn
+    - tags@thethingsnetwork/ttn
     - master@thethingsnetwork/ttn
     - develop@thethingsnetwork/ttn
   stage: sign
@@ -87,8 +82,7 @@ gitlab-image:
 
 dockerhub-image:
   only:
-    - tags
-    - v1-staging@thethingsnetwork/ttn
+    - tags@thethingsnetwork/ttn
     - master@thethingsnetwork/ttn
     - develop@thethingsnetwork/ttn
   stage: package
@@ -104,8 +98,7 @@ dockerhub-image:
 
 azure-binaries:
   only:
-    - tags
-    - v1-staging@thethingsnetwork/ttn
+    - tags@thethingsnetwork/ttn
     - master@thethingsnetwork/ttn
     - develop@thethingsnetwork/ttn
   stage: package
