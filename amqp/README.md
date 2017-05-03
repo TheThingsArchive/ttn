@@ -12,9 +12,9 @@ _security_, _scalability_ and the AMQP protocol not being _standardised_ yet.
 
 ## Uplink Messages
 
-**Routing key:** `<App_ID>.devices.<Dev_ID>.up`
+**Routing key:** `<AppID>.devices.<DevID>.up`
 
-Wildcards are allowed. For example `<App_ID>.devices.*.up` to get uplink messages for all devices.
+Wildcards are allowed. For example `<AppID>.devices.*.up` to get uplink messages for all devices.
 
 **Message**
 
@@ -79,7 +79,7 @@ func main() {
 	c.Connect()
 	s := c.NewSubscriber("amq.topic", "", false, true)
 	s.Open()
-	s.SubscribeDeviceUplink("app-id", "dev-id",
+	s.SubscribeDeviceUplink("my-app-id", "my-dev-id",
 		func(_ amqp.Subscriber, appID string, devID string, req types.UplinkMessage) {
 			ctx.Info("Uplink received")
 			//...
@@ -128,7 +128,7 @@ channel.start_consuming()
 
 ## Downlink Messages
 
-**Routing key:** `<App_ID>.devices.<Dev_ID>.down`
+**Routing key:** `<AppID>.devices.<DevID>.down`
 
 **Message:**
 ```json
@@ -140,7 +140,7 @@ channel.start_consuming()
 ```
 
 **Usage (RabbitMQ):**
-`rabbitmqadmin publish exchange='ttn.handler' routing_key='app-id.devices.dev-id.down' payload='{"port":1,"payload_raw":"AQIDBA=="}'`
+`rabbitmqadmin publish exchange='ttn.handler' routing_key='my-app-id.devices.my-dev-id.down' payload='{"port":1,"payload_raw":"AQIDBA=="}'`
 
 **Usage (Go client):**
 ```go
@@ -163,8 +163,8 @@ func main() {
   }
   defer p.Close()
 	d := types.DownlinkMessage{
-    AppID:      "app-id",
-    DevID:      "dev-id",
+    AppID:      "my-app-id",
+    DevID:      "my-dev-id",
     FPort:      1,
     PayloadRaw: []byte{0x01, 0x02, 0x03, 0x04}}
   p.PublishDownlink(d)
@@ -198,7 +198,7 @@ connection.close()
 
 **Routing key:** 
 
-* `<App_ID>.devices.<Dev_ID>.events.<event>`
+* `<AppID>.devices.<DevID>.events.<event>`
 * `0102030405060708.devices.abcdabcd12345678.events.activations`
 * `*.devices.*.events.*`
 
@@ -240,7 +240,7 @@ func main() {
   if err := s.Open(); err != nil {
     ctx.WithError(err).Error("Could not open subcription channel")
   }
-	err = s.SubscribeAppEvents("app-id", "some-event",
+	err = s.SubscribeAppEvents("my-app-id", "some-event",
 			func(_ Subscriber, appID string, eventType types.EventType, payload []byte) {
 			  // Do your stuff
 			})
@@ -270,7 +270,7 @@ func main() {
     ctx.WithError(err).Error("Could not open publishing channel")
   }
   defer p.Close()
-  p.PublishAppEvent("app-id", "some-event", "payload")
+  p.PublishAppEvent("my-app-id", "some-event", "payload")
 	//...
 }
 ```
