@@ -2,9 +2,7 @@
 
 TTN makes use of an AMQP Topic exchange (`amq.topic`). See [this](https://www.rabbitmq.com/tutorials/amqp-concepts.html) for details.
 
-AMQP is not yet available in the public network. The main reasons for this are: 
-_security_, _scalability_ and the AMQP protocol not being _standardised_ yet.
-
+AMQP is not yet available in the public network.
 
 * Host: The address of the handler on which your application is registered.
 * Port: `5672`
