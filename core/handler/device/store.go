@@ -5,9 +5,8 @@ package device
 
 import (
 	"fmt"
-	"time"
-
 	"strings"
+	"time"
 
 	"github.com/TheThingsNetwork/ttn/core/handler/device/migrate"
 	"github.com/TheThingsNetwork/ttn/core/storage"
@@ -42,10 +41,7 @@ func NewRedisDeviceStore(client *redis.Client, prefix string) *RedisDeviceStore 
 	for v, f := range migrate.DeviceMigrations(prefix) {
 		store.AddMigration(v, f)
 	}
-	s, err := client.Get(prefix + ":" + redisDevicePrefix + ":whitelist").Result()
-	if err != nil {
-		//TODO
-	}
+	s, _ := client.Get(prefix + ":" + redisDevicePrefix + ":whitelist").Result()
 	l := strings.Split(s, ":")
 	queues := storage.NewRedisQueueStore(client, prefix+":"+redisDownlinkQueuePrefix)
 	return &RedisDeviceStore{

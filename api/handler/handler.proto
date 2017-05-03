@@ -94,7 +94,6 @@ message Device {
   map<string, string> custom_keys = 13;
 
   string description = 20;
-
 }
 
 message DeviceList {
