@@ -35,6 +35,8 @@ func TestHandlePrepareActivation(t *testing.T) {
 
 	// Device not registered
 	resp, err := ns.HandlePrepareActivation(&pb_broker.DeduplicatedDeviceActivationRequest{
+		DevEui: &devEUI,
+		AppEui: &appEUI,
 		ActivationMetadata: &pb_protocol.ActivationMetadata{Protocol: &pb_protocol.ActivationMetadata_Lorawan{
 			Lorawan: &pb_lorawan.ActivationMetadata{
 				CfList: &pb_lorawan.CFList{Freq: []uint32{867100000, 867300000, 867500000, 867700000, 867900000}},
@@ -44,16 +46,33 @@ func TestHandlePrepareActivation(t *testing.T) {
 	})
 	a.So(err, ShouldNotBeNil)
 
-	dev := &device.Device{AppEUI: appEUI, DevEUI: devEUI, Options: device.Options{
+	// On-Join registered Device
+	dev := &device.Device{AppEUI: appEUI, AppID: "test"}
+	a.So(ns.devices.Set(dev), ShouldBeNil)
+	defer func() {
+		ns.devices.Delete(appEUI, emptyDevEUI)
+	}()
+	resp, err = ns.HandlePrepareActivation(&pb_broker.DeduplicatedDeviceActivationRequest{
+		DevEui: &devEUI,
+		AppEui: &appEUI,
+		ActivationMetadata: &pb_protocol.ActivationMetadata{Protocol: &pb_protocol.ActivationMetadata_Lorawan{
+			Lorawan: &pb_lorawan.ActivationMetadata{
+				CfList: &pb_lorawan.CFList{Freq: []uint32{867100000, 867300000, 867500000, 867700000, 867900000}},
+			},
+		}},
+		ResponseTemplate: &pb_broker.DeviceActivationResponse{},
+	})
+	a.So(err, ShouldBeNil)
+	a.So(resp.AppId, ShouldEqual, "test")
+
+	// Constrained Device
+	dev = &device.Device{AppEUI: appEUI, DevEUI: devEUI, Options: device.Options{
 		ActivationConstraints: "private",
 	}}
 	a.So(ns.devices.Set(dev), ShouldBeNil)
-
 	defer func() {
 		ns.devices.Delete(appEUI, devEUI)
 	}()
-
-	// Constrained Device
 	resp, err = ns.HandlePrepareActivation(&pb_broker.DeduplicatedDeviceActivationRequest{
 		DevEui: &devEUI,
 		AppEui: &appEUI,

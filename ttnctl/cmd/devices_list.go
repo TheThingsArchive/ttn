@@ -49,7 +49,11 @@ test 	70B3D57EF0000024	0001D544B2936FCE	26001ADA
 				if devAddr.IsEmpty() {
 					devAddr = nil
 				}
-				table.AddRow(dev.DevId, lorawan.AppEui, lorawan.DevEui, devAddr, crop(dev.Description, 20))
+				var devEUI interface{} = lorawan.DevEui
+				if lorawan.DevEui.IsEmpty() {
+					devEUI = "register on join"
+				}
+				table.AddRow(dev.DevId, lorawan.AppEui, devEUI, devAddr, crop(dev.Description, 40))
 			} else {
 				table.AddRow(dev.DevId)
 			}

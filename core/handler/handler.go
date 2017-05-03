@@ -10,6 +10,7 @@ import (
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb "github.com/TheThingsNetwork/ttn/api/handler"
 	pb_monitor "github.com/TheThingsNetwork/ttn/api/monitor"
+	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/handler/application"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
@@ -54,6 +55,7 @@ type handler struct {
 	ttnBrokerConn    *grpc.ClientConn
 	ttnBroker        pb_broker.BrokerClient
 	ttnBrokerManager pb_broker.BrokerManagerClient
+	ttnDeviceManager pb_lorawan.DeviceManagerClient
 
 	downlink chan *pb_broker.DownlinkMessage
 
@@ -189,6 +191,7 @@ func (h *handler) associateBroker() error {
 	h.ttnBrokerConn = conn
 	h.ttnBroker = pb_broker.NewBrokerClient(conn)
 	h.ttnBrokerManager = pb_broker.NewBrokerManagerClient(conn)
+	h.ttnDeviceManager = pb_lorawan.NewDeviceManagerClient(conn)
 
 	h.downlink = make(chan *pb_broker.DownlinkMessage)
 
