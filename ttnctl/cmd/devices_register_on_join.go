@@ -53,6 +53,9 @@ var devicesRegisterOnJoinCmd = &cobra.Command{
 			random.FillBytes(appKey[:])
 		}
 
+		ctx.Warn("On-join registration does not follow LoRaWAN best practices. Unless you implement additional security")
+		ctx.Warn("measures, it may corrupt your entire application if even one of your devices gets compromised.")
+
 		device := &handler.Device{
 			AppId:       appID,
 			DevId:       devID,
