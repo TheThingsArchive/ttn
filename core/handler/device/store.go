@@ -30,7 +30,7 @@ type Store interface {
 const defaultRedisPrefix = "handler"
 const redisDevicePrefix = "device"
 const redisDownlinkQueuePrefix = "downlink"
-const redisUpStreamMetadataKeyWhitelist = ":up-key-whitelist"
+const redisUpStreamMetadataKeyWhitelist = ":attr-whitelist"
 
 // NewRedisDeviceStore creates a new Redis-based Device store
 func NewRedisDeviceStore(client *redis.Client, prefix string) *RedisDeviceStore {

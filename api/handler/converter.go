@@ -29,7 +29,7 @@ func DevFromHdl(dev *hdl.Device) *Device {
 		Latitude:   dev.Latitude,
 		Longitude:  dev.Longitude,
 		Altitude:   dev.Altitude,
-		CustomKeys: dev.CustomKeys,
+		Attributes: dev.CustomKeys,
 	}
 }
 
@@ -44,7 +44,7 @@ func DevToHdl(dev *hdl.Device, in *Device, lorawan *pb_lorawan.Device) {
 	dev.Longitude = in.Longitude
 	dev.Altitude = in.Altitude
 	fromLorawan(dev, lorawan)
-	dev.CustomKeys = in.CustomKeys
+	dev.CustomKeys = in.Attributes
 }
 
 func fromLorawan(dev *hdl.Device, lorawan *pb_lorawan.Device) {

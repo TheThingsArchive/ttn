@@ -12,7 +12,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 )
 
-const maxCustomAttr = 5
+const maxCustomAttr uint8 = 5
 
 //eventSelect select the appropriate event for device is updated/created and check if the event is possible
 func (h *handlerManager) eventSelect(ctx context.Context, dev *device.Device, lorawan *pb_lorawan.Device, appId string) (evt types.EventType, err error) {
@@ -52,20 +52,20 @@ func (h *handlerManager) updateDevBrk(ctx context.Context, dev *device.Device, l
 	return err
 }
 
-//ctlCustomsKeys remove all the non-whitelisted customsKeys for device by creating a new key map
+//ctlCustomsKeys take all the whitelisted Attribute plus a maximum of customs one
 func (h *handlerManager) ctlCustomsKeys(in *pb.Device) {
 	l := h.handler.devices.AttrWhitelist()
 	m := make(map[string]string, len(l))
 	i := maxCustomAttr
-	for key, val := range in.CustomKeys {
+	for key, val := range in.Attributes {
+		if i == 0 {
+			break
+		}
 		m[key] = val
 		_, ok := l[key]
 		if !ok {
 			i--
 		}
-		if i == 0 {
-			break
-		}
 	}
-	in.CustomKeys = m
+	in.Attributes = m
 }

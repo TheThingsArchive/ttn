@@ -153,13 +153,17 @@ var devicesSetCmd = &cobra.Command{
 			dev.Description = in
 		}
 
-		if in, err := cmd.Flags().GetStringArray("customs-keys"); err == nil && len(in) > 0 {
+		if in, err := cmd.Flags().GetStringArray("custom-attr"); err == nil && len(in) > 0 {
 			for _, v := range in {
 				s := strings.SplitN(v, ":", 2)
-				if dev.CustomKeys == nil {
-					dev.CustomKeys = make(map[string]string, len(in))
+				if dev.Attributes == nil {
+					dev.Attributes = make(map[string]string, len(in))
 				}
-				dev.CustomKeys[s[0]] = s[1]
+				if len(s) == 2 {
+					dev.Attributes[s[0]] = s[1]
+				} else {
+					dev.Attributes[s[0]] = ""
+				}
 			}
 		}
 
@@ -200,5 +204,5 @@ func init() {
 	devicesSetCmd.Flags().Int32("altitude", 0, "Set altitude")
 
 	devicesSetCmd.Flags().String("description", "", "Set Description")
-	devicesSetCmd.Flags().StringArray("customs-keys", []string{}, "Set customs keys")
+	devicesSetCmd.Flags().StringArray("custom-attr", []string{}, "Set a custom attribute")
 }
