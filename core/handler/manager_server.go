@@ -163,7 +163,7 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*empty.E
 	} else {
 		dev = new(device.Device)
 	}
-	h.checkCustomsKeys(in)
+	h.ctlCustomsKeys(in)
 	pb.DevToHdl(dev, in, lorawan)
 	err = h.updateDevBrk(ctx, dev, lorawan)
 	if err != nil {
