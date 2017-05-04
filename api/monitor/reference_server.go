@@ -13,6 +13,8 @@ import (
 	"github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/api/fields"
 	"github.com/TheThingsNetwork/ttn/api/gateway"
+	"github.com/TheThingsNetwork/ttn/api/handler"
+	"github.com/TheThingsNetwork/ttn/api/networkserver"
 	"github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/golang/protobuf/ptypes/empty"
@@ -28,11 +30,17 @@ func NewReferenceMonitorServer(bufferSize int) *ReferenceMonitorServer {
 		uplinkMessages:   make(chan *router.UplinkMessage, bufferSize),
 		downlinkMessages: make(chan *router.DownlinkMessage, bufferSize),
 
+		brokerStatuses:         make(chan *broker.Status, bufferSize),
 		brokerUplinkMessages:   make(chan *broker.DeduplicatedUplinkMessage, bufferSize),
 		brokerDownlinkMessages: make(chan *broker.DownlinkMessage, bufferSize),
 
+		handlerStatuses:         make(chan *handler.Status, bufferSize),
 		handlerUplinkMessages:   make(chan *broker.DeduplicatedUplinkMessage, bufferSize),
 		handlerDownlinkMessages: make(chan *broker.DownlinkMessage, bufferSize),
+
+		routerStatuses: make(chan *router.Status, bufferSize),
+
+		networkServerStatuses: make(chan *networkserver.Status, bufferSize),
 
 		metrics: new(metrics),
 	}
@@ -46,14 +54,20 @@ func NewReferenceMonitorServer(bufferSize int) *ReferenceMonitorServer {
 					atomic.AddUint64(&s.metrics.uplinkMessages, 1)
 				case <-s.downlinkMessages:
 					atomic.AddUint64(&s.metrics.downlinkMessages, 1)
+				case <-s.routerStatuses:
+					atomic.AddUint64(&s.metrics.routerStatuses, 1)
 				case <-s.brokerUplinkMessages:
 					atomic.AddUint64(&s.metrics.brokerUplinkMessages, 1)
 				case <-s.brokerDownlinkMessages:
 					atomic.AddUint64(&s.metrics.brokerDownlinkMessages, 1)
+				case <-s.brokerStatuses:
+					atomic.AddUint64(&s.metrics.brokerStatuses, 1)
 				case <-s.handlerUplinkMessages:
 					atomic.AddUint64(&s.metrics.handlerUplinkMessages, 1)
 				case <-s.handlerDownlinkMessages:
 					atomic.AddUint64(&s.metrics.handlerDownlinkMessages, 1)
+				case <-s.handlerStatuses:
+					atomic.AddUint64(&s.metrics.handlerStatuses, 1)
 				}
 			}
 		}()
@@ -65,10 +79,14 @@ type metrics struct {
 	gatewayStatuses         uint64
 	uplinkMessages          uint64
 	downlinkMessages        uint64
+	brokerStatuses          uint64
 	brokerUplinkMessages    uint64
 	brokerDownlinkMessages  uint64
+	handlerStatuses         uint64
 	handlerUplinkMessages   uint64
 	handlerDownlinkMessages uint64
+	routerStatuses          uint64
+	networkServerStatuses   uint64
 }
 
 // ReferenceMonitorServer is a new reference monitor server
@@ -79,11 +97,17 @@ type ReferenceMonitorServer struct {
 	uplinkMessages   chan *router.UplinkMessage
 	downlinkMessages chan *router.DownlinkMessage
 
+	brokerStatuses         chan *broker.Status
 	brokerUplinkMessages   chan *broker.DeduplicatedUplinkMessage
 	brokerDownlinkMessages chan *broker.DownlinkMessage
 
+	handlerStatuses         chan *handler.Status
 	handlerUplinkMessages   chan *broker.DeduplicatedUplinkMessage
 	handlerDownlinkMessages chan *broker.DownlinkMessage
+
+	routerStatuses chan *router.Status
+
+	networkServerStatuses chan *networkserver.Status
 
 	metrics *metrics
 }
@@ -249,6 +273,47 @@ func (s *ReferenceMonitorServer) getAndAuthBroker(ctx context.Context) (string, 
 	return id, nil
 }
 
+// BrokerStatus RPC
+func (s *ReferenceMonitorServer) BrokerStatus(stream Monitor_BrokerStatusServer) (err error) {
+	brokerID, err := s.getAndAuthBroker(stream.Context())
+	if err != nil {
+		return errors.NewErrPermissionDenied(err.Error())
+	}
+	ctx := s.ctx.WithField("BrokerID", brokerID)
+	ctx.Info("BrokerStatus stream started")
+	defer func() {
+		if err != nil {
+			ctx.WithError(err).Info("BrokerStatus stream ended")
+		} else {
+			ctx.Info("BrokerStatus stream ended")
+		}
+	}()
+	var streamErr atomic.Value
+	go func() {
+		<-stream.Context().Done()
+		streamErr.Store(stream.Context().Err())
+	}()
+	for {
+		streamErr := streamErr.Load()
+		if streamErr != nil {
+			return streamErr.(error)
+		}
+		msg, err := stream.Recv()
+		if err == io.EOF {
+			return stream.SendAndClose(&empty.Empty{})
+		}
+		if err != nil {
+			return err
+		}
+		ctx.WithFields(fields.Get(msg)).Info("Received BrokerStatus")
+		select {
+		case s.brokerStatuses <- msg:
+		default:
+			ctx.Warn("Dropping Status")
+		}
+	}
+}
+
 // BrokerUplink RPC
 func (s *ReferenceMonitorServer) BrokerUplink(stream Monitor_BrokerUplinkServer) error {
 	brokerID, err := s.getAndAuthBroker(stream.Context())
@@ -355,6 +420,47 @@ func (s *ReferenceMonitorServer) getAndAuthHandler(ctx context.Context) (string,
 	return id, nil
 }
 
+// HandlerStatus RPC
+func (s *ReferenceMonitorServer) HandlerStatus(stream Monitor_HandlerStatusServer) (err error) {
+	handlerID, err := s.getAndAuthHandler(stream.Context())
+	if err != nil {
+		return errors.NewErrPermissionDenied(err.Error())
+	}
+	ctx := s.ctx.WithField("HandlerID", handlerID)
+	ctx.Info("HandlerStatus stream started")
+	defer func() {
+		if err != nil {
+			ctx.WithError(err).Info("HandlerStatus stream ended")
+		} else {
+			ctx.Info("HandlerStatus stream ended")
+		}
+	}()
+	var streamErr atomic.Value
+	go func() {
+		<-stream.Context().Done()
+		streamErr.Store(stream.Context().Err())
+	}()
+	for {
+		streamErr := streamErr.Load()
+		if streamErr != nil {
+			return streamErr.(error)
+		}
+		msg, err := stream.Recv()
+		if err == io.EOF {
+			return stream.SendAndClose(&empty.Empty{})
+		}
+		if err != nil {
+			return err
+		}
+		ctx.WithFields(fields.Get(msg)).Info("Received HandlerStatus")
+		select {
+		case s.handlerStatuses <- msg:
+		default:
+			ctx.Warn("Dropping Status")
+		}
+	}
+}
+
 // HandlerUplink RPC
 func (s *ReferenceMonitorServer) HandlerUplink(stream Monitor_HandlerUplinkServer) error {
 	handlerID, err := s.getAndAuthHandler(stream.Context())
@@ -443,6 +549,116 @@ func (s *ReferenceMonitorServer) HandlerDownlink(stream Monitor_HandlerDownlinkS
 		case s.handlerDownlinkMessages <- msg:
 		default:
 			ctx.Warn("Dropping DownlinkMessage")
+		}
+	}
+}
+
+func (s *ReferenceMonitorServer) getAndAuthRouter(ctx context.Context) (string, error) {
+	id, err := api.IDFromContext(ctx)
+	if err != nil {
+		return "", err
+	}
+	token, err := api.TokenFromContext(ctx)
+	if err != nil {
+		return "", err
+	}
+	// Actually validate token here, if failed: return nil, grpc.Errorf(codes.Unauthenticated, "Router Authentication Failed")
+	s.ctx.WithFields(log.Fields{"ID": id, "Token": token}).Info("Router Authenticated")
+	return id, nil
+}
+
+// RouterStatus RPC
+func (s *ReferenceMonitorServer) RouterStatus(stream Monitor_RouterStatusServer) (err error) {
+	routerID, err := s.getAndAuthRouter(stream.Context())
+	if err != nil {
+		return errors.NewErrPermissionDenied(err.Error())
+	}
+	ctx := s.ctx.WithField("RouterID", routerID)
+	ctx.Info("RouterStatus stream started")
+	defer func() {
+		if err != nil {
+			ctx.WithError(err).Info("RouterStatus stream ended")
+		} else {
+			ctx.Info("RouterStatus stream ended")
+		}
+	}()
+	var streamErr atomic.Value
+	go func() {
+		<-stream.Context().Done()
+		streamErr.Store(stream.Context().Err())
+	}()
+	for {
+		streamErr := streamErr.Load()
+		if streamErr != nil {
+			return streamErr.(error)
+		}
+		msg, err := stream.Recv()
+		if err == io.EOF {
+			return stream.SendAndClose(&empty.Empty{})
+		}
+		if err != nil {
+			return err
+		}
+		ctx.WithFields(fields.Get(msg)).Info("Received RouterStatus")
+		select {
+		case s.routerStatuses <- msg:
+		default:
+			ctx.Warn("Dropping Status")
+		}
+	}
+}
+
+func (s *ReferenceMonitorServer) getAndAuthNetworkServer(ctx context.Context) (string, error) {
+	id, err := api.IDFromContext(ctx)
+	if err != nil {
+		return "", err
+	}
+	token, err := api.TokenFromContext(ctx)
+	if err != nil {
+		return "", err
+	}
+	// Actually validate token here, if failed: return nil, grpc.Errorf(codes.Unauthenticated, "NetworkServer Authentication Failed")
+	s.ctx.WithFields(log.Fields{"ID": id, "Token": token}).Info("NetworkServer Authenticated")
+	return id, nil
+}
+
+// NetworkServerStatus RPC
+func (s *ReferenceMonitorServer) NetworkServerStatus(stream Monitor_NetworkServerStatusServer) (err error) {
+	networkServerID, err := s.getAndAuthNetworkServer(stream.Context())
+	if err != nil {
+		return errors.NewErrPermissionDenied(err.Error())
+	}
+	ctx := s.ctx.WithField("NetworkServerID", networkServerID)
+	ctx.Info("NetworkServerStatus stream started")
+	defer func() {
+		if err != nil {
+			ctx.WithError(err).Info("NetworkServerStatus stream ended")
+		} else {
+			ctx.Info("NetworkServerStatus stream ended")
+		}
+	}()
+	var streamErr atomic.Value
+	go func() {
+		<-stream.Context().Done()
+		streamErr.Store(stream.Context().Err())
+	}()
+	for {
+		streamErr := streamErr.Load()
+		if streamErr != nil {
+			return streamErr.(error)
+		}
+		msg, err := stream.Recv()
+		if err == io.EOF {
+			return stream.SendAndClose(&empty.Empty{})
+		}
+		if err != nil {
+			return err
+		}
+		ctx.WithFields(fields.Get(msg)).Info("Received NetworkServerStatus")
+		select {
+		case s.networkServerStatuses <- msg:
+		default:
+			ctx.Warn("Dropping Status")
 		}
 	}
 }
