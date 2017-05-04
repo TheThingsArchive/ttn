@@ -7,7 +7,13 @@ There are many ways you can contribute to The Things Network.
 - Talk with others on our [Slack](https://thethingsnetwork.slack.com/) ([_request invite_](https://account.thethingsnetwork.org))
 - Contribute to our [open source projects on github](https://github.com/TheThingsNetwork)
 
-## Contributing to The Things Network Stack
+## Submitting issues
+
+If something is wrong or missing, we want to know about it. Please submit an issue on Github explaining what exactly is the problem. **Give as many details as possible**. If you can (and want to) fix the issue, please tell us in the issue.
+
+We tried to help you structure your issues by supplying an issue template. Please follow it.
+
+## Contributing pull requests
 
 We warmly welcome your pull requests. Be sure to follow some simple guidelines so that we can quickly accept your contributions.
 
