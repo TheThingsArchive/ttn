@@ -48,6 +48,15 @@ var gatewaysInfoCmd = &cobra.Command{
 		printBool("Location Public", gateway.LocationPublic, "yes", "no")
 		printBool("Status Public", gateway.StatusPublic, "yes", "no")
 
+		fmt.Println()
+
+		printKV("Brand", gateway.Attributes.Brand)
+		printKV("Model", gateway.Attributes.Model)
+		printKV("Placement", gateway.Attributes.Placement)
+		printKV("AntennaType", gateway.Attributes.AntennaType)
+		printKV("AntennaModel", gateway.Attributes.AntennaModel)
+		printKV("Description", gateway.Attributes.Description)
+
 		if gateway.Key != "" {
 			printKV("Access Key", gateway.Key)
 		}
