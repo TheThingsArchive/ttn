@@ -21,7 +21,7 @@ func (c *DefaultPublisher) PublishUplink(dataUp types.UplinkMessage) error {
 	key := DeviceKey{dataUp.AppID, dataUp.DevID, DeviceUplink, ""}
 	msg, err := json.Marshal(dataUp)
 	if err != nil {
-		return fmt.Errorf("Unable to marshal the message payload")
+		return fmt.Errorf("Unable to marshal the message payload: %s", err)
 	}
 	return c.publish(key.String(), msg, time.Time(dataUp.Metadata.Time))
 }
