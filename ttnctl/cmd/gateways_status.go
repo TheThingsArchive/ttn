@@ -16,23 +16,10 @@ import (
 )
 
 var gatewaysStatusCmd = &cobra.Command{
-	Use:   "status [gatewayID]",
-	Short: "Get status of a gateway",
-	Long:  `ttnctl gateways status can be used to get status of gateways.`,
-	Example: `$ ttnctl gateways status test
-  INFO Discovering Router...
-  INFO Connecting with Router...
-  INFO Connected to Router
-  INFO Received status
-
-           Last seen: 2016-09-20 08:25:27.94138808 +0200 CEST
-           Timestamp: 0
-       Reported time: 2016-09-20 08:25:26 +0200 CEST
-     GPS coordinates: (52.372791 4.900300)
-                 Rtt: not available
-                  Rx: (in: 0; ok: 0)
-                  Tx: (in: 0; ok: 0)
-`,
+	Use:    "status [gatewayID]",
+	Short:  "Get status of a gateway",
+	Long:   `ttnctl gateways status can be used to get status of gateways.`,
+	Hidden: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		assertArgsLength(cmd, args, 1, 1)
 

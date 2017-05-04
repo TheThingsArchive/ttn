@@ -108,6 +108,14 @@ func printKV(key, t interface{}) {
 	}
 }
 
+func printBool(key string, value bool, truthy, falsey string) {
+	if value {
+		printKV(key, truthy)
+	} else {
+		printKV(key, falsey)
+	}
+}
+
 func crop(in string, length int) string {
 	if len(in) > length {
 		return in[:length-3] + "..."
