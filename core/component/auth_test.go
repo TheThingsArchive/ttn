@@ -258,7 +258,7 @@ func TestInitTLS(t *testing.T) {
 	a.So(c.tlsConfig, assertions.ShouldNotBeNil)
 }
 
-func TestInit(t *testing.T) {
+func TestInitAuth(t *testing.T) {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	tmpDir := fmt.Sprintf("%s/%d", os.TempDir(), r.Int63())
 	os.Mkdir(tmpDir, 755)

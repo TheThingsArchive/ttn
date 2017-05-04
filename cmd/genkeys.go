@@ -4,10 +4,32 @@
 package cmd
 
 import (
+	"sort"
+
 	"github.com/TheThingsNetwork/ttn/utils/security"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
+
+// based on github.com/xtgo/set
+func uniq(s []string) []string {
+	data := sort.StringSlice(s)
+	sort.Sort(data)
+	p, l := 0, data.Len()
+	if l <= 1 {
+		return data
+	}
+	for i := 1; i < l; i++ {
+		if !data.Less(p, i) {
+			continue
+		}
+		p++
+		if p < i {
+			data.Swap(p, i)
+		}
+	}
+	return data[:p+1]
+}
 
 func genKeypairCmd(component string) *cobra.Command {
 	return &cobra.Command{
@@ -34,6 +56,7 @@ func genCertCmd(component string) *cobra.Command {
 				names = append(names, announcedName)
 			}
 			names = append(names, args...)
+			names = uniq(names)
 			if err := security.GenerateCert(viper.GetString("key-dir"), names...); err != nil {
 				ctx.WithError(err).Fatal("Could not generate certificate")
 			}

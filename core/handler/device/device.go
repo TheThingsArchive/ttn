@@ -62,6 +62,18 @@ func (d *Device) StartUpdate() {
 	d.old = &old
 }
 
+// Clone the device
+func (d *Device) Clone() *Device {
+	n := new(Device)
+	*n = *d
+	n.old = nil
+	if d.CurrentDownlink != nil {
+		n.CurrentDownlink = new(types.DownlinkMessage)
+		*n.CurrentDownlink = *d.CurrentDownlink
+	}
+	return n
+}
+
 // DBVersion of the model
 func (d *Device) DBVersion() string {
 	return currentDBVersion

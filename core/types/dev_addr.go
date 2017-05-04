@@ -95,6 +95,11 @@ func (addr *DevAddr) Unmarshal(data []byte) error {
 	return addr.UnmarshalBinary(data)
 }
 
+// Equal returns whether addr is equal to other
+func (addr DevAddr) Equal(other DevAddr) bool {
+	return addr == other
+}
+
 var empty DevAddr
 
 func (addr DevAddr) IsEmpty() bool {

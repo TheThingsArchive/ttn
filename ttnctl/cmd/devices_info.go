@@ -85,7 +85,11 @@ var devicesInfoCmd = &cobra.Command{
 			fmt.Println("    LoRaWAN Info:")
 			fmt.Println()
 			fmt.Printf("     AppEUI: %s\n", formatBytes(lorawan.AppEui, byteFormat))
-			fmt.Printf("     DevEUI: %s\n", formatBytes(lorawan.DevEui, byteFormat))
+			devEUI := formatBytes(lorawan.DevEui, byteFormat)
+			if lorawan.DevEui.IsEmpty() {
+				devEUI = "register on join"
+			}
+			fmt.Printf("     DevEUI: %s\n", devEUI)
 			fmt.Printf("    DevAddr: %s\n", formatBytes(lorawan.DevAddr, byteFormat))
 			fmt.Printf("     AppKey: %s\n", formatBytes(lorawan.AppKey, byteFormat))
 			fmt.Printf("    AppSKey: %s\n", formatBytes(lorawan.AppSKey, byteFormat))

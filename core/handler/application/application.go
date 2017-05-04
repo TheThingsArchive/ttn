@@ -46,6 +46,8 @@ type Application struct {
 	// set to PayloadFormatCustom
 	CustomEncoder string `redis:"custom_encoder"`
 
+	RegisterOnJoinAccessKey string `redis:"register_on_join_access_key"`
+
 	CreatedAt time.Time `redis:"created_at"`
 	UpdatedAt time.Time `redis:"updated_at"`
 }

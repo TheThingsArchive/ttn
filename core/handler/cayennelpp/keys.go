@@ -11,6 +11,7 @@ import (
 )
 
 const (
+	valueKey              = "value"
 	digitalInputKey       = "digital_in"
 	digitalOutputKey      = "digital_out"
 	analogInputKey        = "analog_in"

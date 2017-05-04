@@ -136,4 +136,16 @@ func TestDeviceStore(t *testing.T) {
 	res, err = s.ListForAddress(types.DevAddr{0, 0, 0, 3})
 	a.So(err, ShouldBeNil)
 	a.So(res, ShouldHaveLength, 1)
+
+	// Empty DevEUI
+	defer func() {
+		s.Delete(types.AppEUI{0, 0, 0, 0, 0, 0, 0, 3}, types.DevEUI{})
+	}()
+	err = s.Set(&Device{
+		AppID:  "test-app",
+		DevID:  "_empty_",
+		AppEUI: types.AppEUI{0, 0, 0, 0, 0, 0, 0, 3},
+		DevEUI: types.DevEUI{},
+	})
+	a.So(err, ShouldBeNil)
 }

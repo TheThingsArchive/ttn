@@ -4,11 +4,13 @@
 package handler
 
 import (
+	"fmt"
+	"os"
+	"strings"
 	"testing"
 	"time"
 
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
-	pb "github.com/TheThingsNetwork/ttn/api/handler"
 	pb_protocol "github.com/TheThingsNetwork/ttn/api/protocol"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core/component"
@@ -17,49 +19,57 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"github.com/brocaar/lorawan"
+	"github.com/golang/mock/gomock"
+	"github.com/golang/protobuf/ptypes/empty"
 	. "github.com/smartystreets/assertions"
 )
 
-func doTestHandleActivation(h *handler, appEUI types.AppEUI, devEUI types.DevEUI, devNonce [2]byte, appKey types.AppKey) (*pb.DeviceActivationResponse, error) {
-	devAddr := types.DevAddr{1, 2, 3, 4}
+func TestHandleActivationChallenge(t *testing.T) {
+	a := New(t)
 
-	requestPHY := lorawan.PHYPayload{
-		MHDR: lorawan.MHDR{
-			MType: lorawan.JoinRequest,
-			Major: lorawan.LoRaWANR1,
-		},
-		MACPayload: &lorawan.JoinRequestPayload{
-			AppEUI:   lorawan.EUI64(appEUI),
-			DevEUI:   lorawan.EUI64(devEUI),
-			DevNonce: devNonce,
-		},
+	h := &handler{
+		Component:    &component.Component{Ctx: GetLogger(t, "TestHandleActivationChallenge")},
+		applications: application.NewRedisApplicationStore(GetRedisClient(), "handler-test-activation-challenge"),
+		devices:      device.NewRedisDeviceStore(GetRedisClient(), "handler-test-activation-challenge"),
+		qEvent:       make(chan *types.DeviceEvent, 10),
 	}
-	requestPHY.SetMIC(lorawan.AES128Key(appKey))
-	requestBytes, _ := requestPHY.MarshalBinary()
+	h.InitStatus()
 
-	responsePHY := lorawan.PHYPayload{
-		MHDR: lorawan.MHDR{
-			MType: lorawan.JoinAccept,
-			Major: lorawan.LoRaWANR1,
-		},
-		MACPayload: &lorawan.JoinAcceptPayload{},
-	}
-	templateBytes, _ := responsePHY.MarshalBinary()
-	return h.HandleActivation(&pb_broker.DeduplicatedDeviceActivationRequest{
-		Payload: requestBytes,
-		AppEui:  &appEUI,
-		AppId:   appEUI.String(),
-		DevEui:  &devEUI,
-		DevId:   devEUI.String(),
-		ActivationMetadata: &pb_protocol.ActivationMetadata{Protocol: &pb_protocol.ActivationMetadata_Lorawan{
-			Lorawan: &pb_lorawan.ActivationMetadata{
-				DevAddr: &devAddr,
-			},
-		}},
-		ResponseTemplate: &pb_broker.DeviceActivationResponse{
-			Payload: templateBytes,
-		},
-	})
+	appEUI, devEUI := types.AppEUI{1, 2, 3, 4, 5, 6, 7, 8}, types.DevEUI{1, 2, 3, 4, 5, 6, 7, 8}
+	appID, devID := appEUI.String(), devEUI.String()
+	appKey := types.AppKey{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8}
+	dev := &device.Device{AppID: appID, DevID: devID}
+	req := &pb_broker.ActivationChallengeRequest{AppId: appID, DevId: devID}
+
+	// Device does not exist
+	_, err := h.HandleActivationChallenge(req)
+	a.So(err, ShouldNotBeNil)
+
+	h.devices.Set(dev)
+	defer func() { h.devices.Delete(appID, devID) }()
+
+	// Device does not have AppKey
+	_, err = h.HandleActivationChallenge(req)
+	a.So(err, ShouldNotBeNil)
+
+	dev.AppKey = appKey
+	h.devices.Set(dev)
+
+	// No LoRaWAN payload
+	_, err = h.HandleActivationChallenge(req)
+	a.So(err, ShouldNotBeNil)
+
+	pld := lorawan.PHYPayload{MHDR: lorawan.MHDR{MType: lorawan.JoinRequest}}
+	pld.MACPayload = &lorawan.JoinRequestPayload{AppEUI: lorawan.EUI64(appEUI), DevEUI: lorawan.EUI64(devEUI), DevNonce: [2]byte{1, 2}}
+	req.Payload, _ = pld.MarshalBinary()
+
+	pld.SetMIC(lorawan.AES128Key(appKey))
+
+	res, err := h.HandleActivationChallenge(req)
+	a.So(err, ShouldBeNil)
+
+	res.UnmarshalPayload()
+	a.So(res.GetMessage().GetLorawan().Mic, ShouldResemble, pld.MIC[:])
 }
 
 func TestHandleActivation(t *testing.T) {
@@ -69,105 +79,183 @@ func TestHandleActivation(t *testing.T) {
 		Component:    &component.Component{Ctx: GetLogger(t, "TestHandleActivation")},
 		applications: application.NewRedisApplicationStore(GetRedisClient(), "handler-test-activation"),
 		devices:      device.NewRedisDeviceStore(GetRedisClient(), "handler-test-activation"),
+		qEvent:       make(chan *types.DeviceEvent, 10),
 	}
-	h.InitStatus()
-	h.qEvent = make(chan *types.DeviceEvent, 10)
-	var wg WaitGroup
-
-	appEUI := types.AppEUI{1, 2, 3, 4, 5, 6, 7, 8}
-	appID := appEUI.String()
-	devEUI := types.DevEUI{1, 2, 3, 4, 5, 6, 7, 8}
-	devID := devEUI.String()
-	unknownDevEUI := types.DevEUI{8, 7, 6, 5, 4, 3, 2, 1}
-
-	appKey := [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
-
-	h.applications.Set(&application.Application{
-		AppID: appID,
-	})
-	defer func() {
-		h.applications.Delete(appID)
+	var eventsReceived uint
+	go func() {
+		for ev := range h.qEvent {
+			h.Ctx.Infof("EVENT: %v", ev)
+			eventsReceived++
+		}
 	}()
+	h.InitStatus()
 
-	h.devices.Set(&device.Device{
+	devAddr := types.DevAddr{1, 2, 3, 4}
+	appEUI, devEUI := types.AppEUI{1, 2, 3, 4, 5, 6, 7, 8}, types.DevEUI{1, 2, 3, 4, 5, 6, 7, 8}
+	appID, devID := appEUI.String(), devEUI.String()
+	if os.Getenv("APP_ID") != "" {
+		appID = os.Getenv("APP_ID")
+	}
+	appKey := types.AppKey{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8}
+	dev := &device.Device{
 		AppID:  appID,
 		DevID:  devID,
 		AppEUI: appEUI,
 		DevEUI: devEUI,
-		AppKey: appKey,
-	})
-	defer func() {
-		h.devices.Delete(appID, devID)
-	}()
+	}
+	app := &application.Application{
+		AppID: appID,
+	}
+	req := &pb_broker.DeduplicatedDeviceActivationRequest{
+		AppId:  appID,
+		DevId:  devID,
+		AppEui: &appEUI,
+		DevEui: &devEUI,
+	}
 
-	// Unknown
-	res, err := doTestHandleActivation(h,
-		appEUI,
-		unknownDevEUI,
-		[2]byte{1, 2},
-		appKey,
-	)
+	// No ResponseTemplate
+	_, err := h.HandleActivation(req)
 	a.So(err, ShouldNotBeNil)
-	a.So(res, ShouldBeNil)
+
+	{
+		req.ResponseTemplate = new(pb_broker.DeviceActivationResponse)
+		req.ResponseTemplate.Message = new(pb_protocol.Message)
+		msg := req.ResponseTemplate.Message.InitLoRaWAN()
+		msg.MType = pb_lorawan.MType_JOIN_ACCEPT
+		msg.Payload = &pb_lorawan.Message_JoinAcceptPayload{JoinAcceptPayload: &pb_lorawan.JoinAcceptPayload{}}
+		req.ResponseTemplate.Payload = msg.PHYPayloadBytes()
+		req.ResponseTemplate.DownlinkOption = new(pb_broker.DownlinkOption)
+	}
+
+	// Device does not exist
+	_, err = h.HandleActivation(req)
+	a.So(err, ShouldNotBeNil)
+
+	h.applications.Set(app)
+	defer func() { h.applications.Delete(appID) }()
+
+	h.devices.Set(dev)
+	defer func() { h.devices.Delete(appID, devID) }()
+
+	// Device does not have AppKey
+	_, err = h.HandleActivation(req)
+	a.So(err, ShouldNotBeNil)
+
+	dev.AppKey = appKey
+	dev.AppKey[1] = 0xff
+	h.devices.Set(dev)
+
+	// No LoRaWAN activation metadata
+	_, err = h.HandleActivation(req)
+	a.So(err, ShouldNotBeNil)
+
+	req.ActivationMetadata = &pb_protocol.ActivationMetadata{Protocol: &pb_protocol.ActivationMetadata_Lorawan{Lorawan: &pb_lorawan.ActivationMetadata{
+		AppEui:  &appEUI,
+		DevEui:  &devEUI,
+		DevAddr: &devAddr,
+	}}}
+
+	// Invalid payload
+	_, err = h.HandleActivation(req)
+	a.So(err, ShouldNotBeNil)
+
+	{
+		req.Message = new(pb_protocol.Message)
+		msg := req.Message.InitLoRaWAN()
+		msg.MType = pb_lorawan.MType_JOIN_REQUEST
+		msg.Payload = &pb_lorawan.Message_JoinRequestPayload{JoinRequestPayload: &pb_lorawan.JoinRequestPayload{
+			AppEui: appEUI,
+			DevEui: devEUI,
+		}}
+		phy := msg.PHYPayload()
+		phy.SetMIC(lorawan.AES128Key(appKey))
+		req.Payload, _ = phy.MarshalBinary()
+	}
 
 	// Wrong AppKey
-	res, err = doTestHandleActivation(h,
-		appEUI,
-		devEUI,
-		[2]byte{1, 2},
-		[16]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-	)
+	_, err = h.HandleActivation(req)
 	a.So(err, ShouldNotBeNil)
-	a.So(res, ShouldBeNil)
 
-	wg.Add(1)
-	go func() {
-		<-h.qEvent
-		wg.Done()
-	}()
+	dev.AppKey = appKey
+	h.devices.Set(dev)
 
-	// Known
-	res, err = doTestHandleActivation(h,
-		appEUI,
-		devEUI,
-		[2]byte{1, 2},
-		appKey,
-	)
+	// Valid join
+	res, err := h.HandleActivation(req)
 	a.So(err, ShouldBeNil)
-	a.So(res, ShouldNotBeNil)
+	a.So(res.ActivationMetadata.GetLorawan().DevEui, ShouldResemble, &devEUI)
 
-	wg.WaitFor(50 * time.Millisecond)
+	// TODO: Check response
+	// TODO: Check DB contents
 
-	// Same DevNonce used twice
-	res, err = doTestHandleActivation(h,
-		appEUI,
-		devEUI,
-		[2]byte{1, 2},
-		appKey,
-	)
+	// DevNonce Re-use
+	_, err = h.HandleActivation(req)
 	a.So(err, ShouldNotBeNil)
-	a.So(res, ShouldBeNil)
 
-	wg.Add(1)
-	go func() {
-		<-h.qEvent
-		wg.Done()
-	}()
+	// Now we create a "default" device
+	otherDevEUI := types.DevEUI{1, 1, 1, 1, 1, 1, 1, 1}
+	dev = &device.Device{
+		AppID:  appID,
+		DevID:  "default",
+		AppEUI: appEUI,
+		AppKey: appKey,
+	}
 
-	// Other DevNonce
-	res, err = doTestHandleActivation(h,
-		appEUI,
-		devEUI,
-		[2]byte{2, 1},
-		appKey,
-	)
+	h.devices.Set(dev)
+	defer func() { h.devices.Delete(appID, "default") }()
+
+	{
+		req.DevEui = &otherDevEUI
+		req.ActivationMetadata.GetLorawan().DevEui = &otherDevEUI
+		req.Message.GetLorawan().GetJoinRequestPayload().DevEui = otherDevEUI
+		phy := req.Message.GetLorawan().PHYPayload()
+		phy.SetMIC(lorawan.AES128Key(appKey))
+		req.Payload, _ = phy.MarshalBinary()
+		req.DevId = "default"
+	}
+
+	// No access key set
+	_, err = h.HandleActivation(req)
+	a.So(err, ShouldNotBeNil)
+
+	if token := os.Getenv("APP_TOKEN"); token != "" {
+		app.RegisterOnJoinAccessKey = token
+	} else {
+		app.RegisterOnJoinAccessKey = "test.key"
+	}
+	h.applications.Set(app)
+
+	// Can't get access key
+	_, err = h.HandleActivation(req)
+	a.So(err, ShouldNotBeNil)
+
+	time.Sleep(200 * time.Millisecond)
+	a.So(eventsReceived, ShouldEqual, 10) // 10 activation error events. One for each HandleActivation
+
+	for _, env := range strings.Split("ACCOUNT_SERVER_PROTO ACCOUNT_SERVER_USERNAME ACCOUNT_SERVER_PASSWORD ACCOUNT_SERVER_URL APP_ID APP_TOKEN", " ") {
+		if os.Getenv(env) == "" {
+			t.Skipf("Skipping test that needs auth server: %s not configured", env)
+		}
+	}
+	h.Config.AuthServers = map[string]string{
+		"ttn-account-v2": fmt.Sprintf("%s://%s:%s@%s",
+			os.Getenv("ACCOUNT_SERVER_PROTO"),
+			os.Getenv("ACCOUNT_SERVER_USERNAME"),
+			os.Getenv("ACCOUNT_SERVER_PASSWORD"),
+			os.Getenv("ACCOUNT_SERVER_URL"),
+		),
+	}
+	h.InitAuth()
+
+	ctrl := gomock.NewController(t)
+	ttnDeviceManager := pb_lorawan.NewMockDeviceManagerClient(ctrl)
+	h.ttnDeviceManager = ttnDeviceManager
+	ttnDeviceManager.EXPECT().SetDevice(gomock.Any(), gomock.Any()).Return(new(empty.Empty), nil)
+
+	res, err = h.HandleActivation(req)
 	a.So(err, ShouldBeNil)
-	a.So(res, ShouldNotBeNil)
+	a.So(res.ActivationMetadata.GetLorawan().DevEui, ShouldResemble, &otherDevEUI)
 
-	wg.WaitFor(50 * time.Millisecond)
-
-	// TODO: Validate response
-
-	// TODO: Check DB
+	// TODO: Check response
+	// TODO: Check DB contents
 
 }

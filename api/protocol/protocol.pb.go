@@ -21,6 +21,9 @@ import fmt "fmt"
 import math "math"
 import lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 
+import strings "strings"
+import reflect "reflect"
+
 import io "io"
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -41,12 +44,13 @@ type Message struct {
 }
 
 func (m *Message) Reset()                    { *m = Message{} }
-func (m *Message) String() string            { return proto.CompactTextString(m) }
 func (*Message) ProtoMessage()               {}
 func (*Message) Descriptor() ([]byte, []int) { return fileDescriptorProtocol, []int{0} }
 
 type isMessage_Protocol interface {
 	isMessage_Protocol()
+	Equal(interface{}) bool
+	VerboseEqual(interface{}) error
 	MarshalTo([]byte) (int, error)
 	Size() int
 }
@@ -133,12 +137,13 @@ type RxMetadata struct {
 }
 
 func (m *RxMetadata) Reset()                    { *m = RxMetadata{} }
-func (m *RxMetadata) String() string            { return proto.CompactTextString(m) }
 func (*RxMetadata) ProtoMessage()               {}
 func (*RxMetadata) Descriptor() ([]byte, []int) { return fileDescriptorProtocol, []int{1} }
 
 type isRxMetadata_Protocol interface {
 	isRxMetadata_Protocol()
+	Equal(interface{}) bool
+	VerboseEqual(interface{}) error
 	MarshalTo([]byte) (int, error)
 	Size() int
 }
@@ -225,12 +230,13 @@ type TxConfiguration struct {
 }
 
 func (m *TxConfiguration) Reset()                    { *m = TxConfiguration{} }
-func (m *TxConfiguration) String() string            { return proto.CompactTextString(m) }
 func (*TxConfiguration) ProtoMessage()               {}
 func (*TxConfiguration) Descriptor() ([]byte, []int) { return fileDescriptorProtocol, []int{2} }
 
 type isTxConfiguration_Protocol interface {
 	isTxConfiguration_Protocol()
+	Equal(interface{}) bool
+	VerboseEqual(interface{}) error
 	MarshalTo([]byte) (int, error)
 	Size() int
 }
@@ -317,12 +323,13 @@ type ActivationMetadata struct {
 }
 
 func (m *ActivationMetadata) Reset()                    { *m = ActivationMetadata{} }
-func (m *ActivationMetadata) String() string            { return proto.CompactTextString(m) }
 func (*ActivationMetadata) ProtoMessage()               {}
 func (*ActivationMetadata) Descriptor() ([]byte, []int) { return fileDescriptorProtocol, []int{3} }
 
 type isActivationMetadata_Protocol interface {
 	isActivationMetadata_Protocol()
+	Equal(interface{}) bool
+	VerboseEqual(interface{}) error
 	MarshalTo([]byte) (int, error)
 	Size() int
 }
@@ -407,6 +414,534 @@ func init() {
 	proto.RegisterType((*RxMetadata)(nil), "protocol.RxMetadata")
 	proto.RegisterType((*TxConfiguration)(nil), "protocol.TxConfiguration")
 	proto.RegisterType((*ActivationMetadata)(nil), "protocol.ActivationMetadata")
+}
+func (this *Message) VerboseEqual(that interface{}) error {
+	if that == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that == nil && this != nil")
+	}
+
+	that1, ok := that.(*Message)
+	if !ok {
+		that2, ok := that.(Message)
+		if ok {
+			that1 = &that2
+		} else {
+			return fmt.Errorf("that is not of type *Message")
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that is type *Message but is nil && this != nil")
+	} else if this == nil {
+		return fmt.Errorf("that is type *Message but is not nil && this == nil")
+	}
+	if that1.Protocol == nil {
+		if this.Protocol != nil {
+			return fmt.Errorf("this.Protocol != nil && that1.Protocol == nil")
+		}
+	} else if this.Protocol == nil {
+		return fmt.Errorf("this.Protocol == nil && that1.Protocol != nil")
+	} else if err := this.Protocol.VerboseEqual(that1.Protocol); err != nil {
+		return err
+	}
+	return nil
+}
+func (this *Message_Lorawan) VerboseEqual(that interface{}) error {
+	if that == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that == nil && this != nil")
+	}
+
+	that1, ok := that.(*Message_Lorawan)
+	if !ok {
+		that2, ok := that.(Message_Lorawan)
+		if ok {
+			that1 = &that2
+		} else {
+			return fmt.Errorf("that is not of type *Message_Lorawan")
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that is type *Message_Lorawan but is nil && this != nil")
+	} else if this == nil {
+		return fmt.Errorf("that is type *Message_Lorawan but is not nil && this == nil")
+	}
+	if !this.Lorawan.Equal(that1.Lorawan) {
+		return fmt.Errorf("Lorawan this(%v) Not Equal that(%v)", this.Lorawan, that1.Lorawan)
+	}
+	return nil
+}
+func (this *Message) Equal(that interface{}) bool {
+	if that == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	}
+
+	that1, ok := that.(*Message)
+	if !ok {
+		that2, ok := that.(Message)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	} else if this == nil {
+		return false
+	}
+	if that1.Protocol == nil {
+		if this.Protocol != nil {
+			return false
+		}
+	} else if this.Protocol == nil {
+		return false
+	} else if !this.Protocol.Equal(that1.Protocol) {
+		return false
+	}
+	return true
+}
+func (this *Message_Lorawan) Equal(that interface{}) bool {
+	if that == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	}
+
+	that1, ok := that.(*Message_Lorawan)
+	if !ok {
+		that2, ok := that.(Message_Lorawan)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	} else if this == nil {
+		return false
+	}
+	if !this.Lorawan.Equal(that1.Lorawan) {
+		return false
+	}
+	return true
+}
+func (this *RxMetadata) VerboseEqual(that interface{}) error {
+	if that == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that == nil && this != nil")
+	}
+
+	that1, ok := that.(*RxMetadata)
+	if !ok {
+		that2, ok := that.(RxMetadata)
+		if ok {
+			that1 = &that2
+		} else {
+			return fmt.Errorf("that is not of type *RxMetadata")
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that is type *RxMetadata but is nil && this != nil")
+	} else if this == nil {
+		return fmt.Errorf("that is type *RxMetadata but is not nil && this == nil")
+	}
+	if that1.Protocol == nil {
+		if this.Protocol != nil {
+			return fmt.Errorf("this.Protocol != nil && that1.Protocol == nil")
+		}
+	} else if this.Protocol == nil {
+		return fmt.Errorf("this.Protocol == nil && that1.Protocol != nil")
+	} else if err := this.Protocol.VerboseEqual(that1.Protocol); err != nil {
+		return err
+	}
+	return nil
+}
+func (this *RxMetadata_Lorawan) VerboseEqual(that interface{}) error {
+	if that == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that == nil && this != nil")
+	}
+
+	that1, ok := that.(*RxMetadata_Lorawan)
+	if !ok {
+		that2, ok := that.(RxMetadata_Lorawan)
+		if ok {
+			that1 = &that2
+		} else {
+			return fmt.Errorf("that is not of type *RxMetadata_Lorawan")
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that is type *RxMetadata_Lorawan but is nil && this != nil")
+	} else if this == nil {
+		return fmt.Errorf("that is type *RxMetadata_Lorawan but is not nil && this == nil")
+	}
+	if !this.Lorawan.Equal(that1.Lorawan) {
+		return fmt.Errorf("Lorawan this(%v) Not Equal that(%v)", this.Lorawan, that1.Lorawan)
+	}
+	return nil
+}
+func (this *RxMetadata) Equal(that interface{}) bool {
+	if that == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	}
+
+	that1, ok := that.(*RxMetadata)
+	if !ok {
+		that2, ok := that.(RxMetadata)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	} else if this == nil {
+		return false
+	}
+	if that1.Protocol == nil {
+		if this.Protocol != nil {
+			return false
+		}
+	} else if this.Protocol == nil {
+		return false
+	} else if !this.Protocol.Equal(that1.Protocol) {
+		return false
+	}
+	return true
+}
+func (this *RxMetadata_Lorawan) Equal(that interface{}) bool {
+	if that == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	}
+
+	that1, ok := that.(*RxMetadata_Lorawan)
+	if !ok {
+		that2, ok := that.(RxMetadata_Lorawan)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	} else if this == nil {
+		return false
+	}
+	if !this.Lorawan.Equal(that1.Lorawan) {
+		return false
+	}
+	return true
+}
+func (this *TxConfiguration) VerboseEqual(that interface{}) error {
+	if that == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that == nil && this != nil")
+	}
+
+	that1, ok := that.(*TxConfiguration)
+	if !ok {
+		that2, ok := that.(TxConfiguration)
+		if ok {
+			that1 = &that2
+		} else {
+			return fmt.Errorf("that is not of type *TxConfiguration")
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that is type *TxConfiguration but is nil && this != nil")
+	} else if this == nil {
+		return fmt.Errorf("that is type *TxConfiguration but is not nil && this == nil")
+	}
+	if that1.Protocol == nil {
+		if this.Protocol != nil {
+			return fmt.Errorf("this.Protocol != nil && that1.Protocol == nil")
+		}
+	} else if this.Protocol == nil {
+		return fmt.Errorf("this.Protocol == nil && that1.Protocol != nil")
+	} else if err := this.Protocol.VerboseEqual(that1.Protocol); err != nil {
+		return err
+	}
+	return nil
+}
+func (this *TxConfiguration_Lorawan) VerboseEqual(that interface{}) error {
+	if that == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that == nil && this != nil")
+	}
+
+	that1, ok := that.(*TxConfiguration_Lorawan)
+	if !ok {
+		that2, ok := that.(TxConfiguration_Lorawan)
+		if ok {
+			that1 = &that2
+		} else {
+			return fmt.Errorf("that is not of type *TxConfiguration_Lorawan")
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that is type *TxConfiguration_Lorawan but is nil && this != nil")
+	} else if this == nil {
+		return fmt.Errorf("that is type *TxConfiguration_Lorawan but is not nil && this == nil")
+	}
+	if !this.Lorawan.Equal(that1.Lorawan) {
+		return fmt.Errorf("Lorawan this(%v) Not Equal that(%v)", this.Lorawan, that1.Lorawan)
+	}
+	return nil
+}
+func (this *TxConfiguration) Equal(that interface{}) bool {
+	if that == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	}
+
+	that1, ok := that.(*TxConfiguration)
+	if !ok {
+		that2, ok := that.(TxConfiguration)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	} else if this == nil {
+		return false
+	}
+	if that1.Protocol == nil {
+		if this.Protocol != nil {
+			return false
+		}
+	} else if this.Protocol == nil {
+		return false
+	} else if !this.Protocol.Equal(that1.Protocol) {
+		return false
+	}
+	return true
+}
+func (this *TxConfiguration_Lorawan) Equal(that interface{}) bool {
+	if that == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	}
+
+	that1, ok := that.(*TxConfiguration_Lorawan)
+	if !ok {
+		that2, ok := that.(TxConfiguration_Lorawan)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	} else if this == nil {
+		return false
+	}
+	if !this.Lorawan.Equal(that1.Lorawan) {
+		return false
+	}
+	return true
+}
+func (this *ActivationMetadata) VerboseEqual(that interface{}) error {
+	if that == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that == nil && this != nil")
+	}
+
+	that1, ok := that.(*ActivationMetadata)
+	if !ok {
+		that2, ok := that.(ActivationMetadata)
+		if ok {
+			that1 = &that2
+		} else {
+			return fmt.Errorf("that is not of type *ActivationMetadata")
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that is type *ActivationMetadata but is nil && this != nil")
+	} else if this == nil {
+		return fmt.Errorf("that is type *ActivationMetadata but is not nil && this == nil")
+	}
+	if that1.Protocol == nil {
+		if this.Protocol != nil {
+			return fmt.Errorf("this.Protocol != nil && that1.Protocol == nil")
+		}
+	} else if this.Protocol == nil {
+		return fmt.Errorf("this.Protocol == nil && that1.Protocol != nil")
+	} else if err := this.Protocol.VerboseEqual(that1.Protocol); err != nil {
+		return err
+	}
+	return nil
+}
+func (this *ActivationMetadata_Lorawan) VerboseEqual(that interface{}) error {
+	if that == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that == nil && this != nil")
+	}
+
+	that1, ok := that.(*ActivationMetadata_Lorawan)
+	if !ok {
+		that2, ok := that.(ActivationMetadata_Lorawan)
+		if ok {
+			that1 = &that2
+		} else {
+			return fmt.Errorf("that is not of type *ActivationMetadata_Lorawan")
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that is type *ActivationMetadata_Lorawan but is nil && this != nil")
+	} else if this == nil {
+		return fmt.Errorf("that is type *ActivationMetadata_Lorawan but is not nil && this == nil")
+	}
+	if !this.Lorawan.Equal(that1.Lorawan) {
+		return fmt.Errorf("Lorawan this(%v) Not Equal that(%v)", this.Lorawan, that1.Lorawan)
+	}
+	return nil
+}
+func (this *ActivationMetadata) Equal(that interface{}) bool {
+	if that == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	}
+
+	that1, ok := that.(*ActivationMetadata)
+	if !ok {
+		that2, ok := that.(ActivationMetadata)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	} else if this == nil {
+		return false
+	}
+	if that1.Protocol == nil {
+		if this.Protocol != nil {
+			return false
+		}
+	} else if this.Protocol == nil {
+		return false
+	} else if !this.Protocol.Equal(that1.Protocol) {
+		return false
+	}
+	return true
+}
+func (this *ActivationMetadata_Lorawan) Equal(that interface{}) bool {
+	if that == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	}
+
+	that1, ok := that.(*ActivationMetadata_Lorawan)
+	if !ok {
+		that2, ok := that.(ActivationMetadata_Lorawan)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	} else if this == nil {
+		return false
+	}
+	if !this.Lorawan.Equal(that1.Lorawan) {
+		return false
+	}
+	return true
 }
 func (m *Message) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
@@ -676,6 +1211,94 @@ func sovProtocol(x uint64) (n int) {
 }
 func sozProtocol(x uint64) (n int) {
 	return sovProtocol(uint64((x << 1) ^ uint64((int64(x) >> 63))))
+}
+func (this *Message) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&Message{`,
+		`Protocol:` + fmt.Sprintf("%v", this.Protocol) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *Message_Lorawan) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&Message_Lorawan{`,
+		`Lorawan:` + strings.Replace(fmt.Sprintf("%v", this.Lorawan), "Message", "lorawan.Message", 1) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *RxMetadata) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&RxMetadata{`,
+		`Protocol:` + fmt.Sprintf("%v", this.Protocol) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *RxMetadata_Lorawan) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&RxMetadata_Lorawan{`,
+		`Lorawan:` + strings.Replace(fmt.Sprintf("%v", this.Lorawan), "Metadata", "lorawan.Metadata", 1) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *TxConfiguration) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&TxConfiguration{`,
+		`Protocol:` + fmt.Sprintf("%v", this.Protocol) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *TxConfiguration_Lorawan) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&TxConfiguration_Lorawan{`,
+		`Lorawan:` + strings.Replace(fmt.Sprintf("%v", this.Lorawan), "TxConfiguration", "lorawan.TxConfiguration", 1) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *ActivationMetadata) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&ActivationMetadata{`,
+		`Protocol:` + fmt.Sprintf("%v", this.Protocol) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *ActivationMetadata_Lorawan) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&ActivationMetadata_Lorawan{`,
+		`Lorawan:` + strings.Replace(fmt.Sprintf("%v", this.Lorawan), "ActivationMetadata", "lorawan.ActivationMetadata", 1) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func valueToStringProtocol(v interface{}) string {
+	rv := reflect.ValueOf(v)
+	if rv.IsNil() {
+		return "nil"
+	}
+	pv := reflect.Indirect(rv).Interface()
+	return fmt.Sprintf("*%v", pv)
 }
 func (m *Message) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
@@ -1115,7 +1738,7 @@ func init() {
 }
 
 var fileDescriptorProtocol = []byte{
-	// 236 bytes of a gzipped FileDescriptorProto
+	// 257 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xb2, 0x4e, 0xcf, 0x2c, 0xc9,
 	0x28, 0x4d, 0xd2, 0x4b, 0xce, 0xcf, 0xd5, 0x0f, 0xc9, 0x48, 0x0d, 0xc9, 0xc8, 0xcc, 0x4b, 0x2f,
 	0xf6, 0x4b, 0x2d, 0x29, 0xcf, 0x2f, 0xca, 0xd6, 0x2f, 0x29, 0xc9, 0xd3, 0x4f, 0x2c, 0xc8, 0xd4,
@@ -1128,7 +1751,9 @@ var fileDescriptorProtocol = []byte{
 	0x06, 0x05, 0x73, 0xf1, 0x87, 0x54, 0x38, 0xe7, 0xe7, 0xa5, 0x65, 0xa6, 0x97, 0x16, 0x25, 0x96,
 	0x64, 0xe6, 0xe7, 0x09, 0x99, 0xa0, 0x9b, 0x26, 0x01, 0x37, 0x0d, 0x4d, 0x29, 0x2e, 0x43, 0x23,
 	0xb9, 0x84, 0x1c, 0x93, 0x4b, 0x32, 0xcb, 0xc0, 0x8a, 0xe0, 0xae, 0x34, 0x47, 0x37, 0x57, 0x1a,
-	0x6e, 0x2e, 0xa6, 0x6a, 0x1c, 0x46, 0x3b, 0x59, 0x9d, 0x78, 0x24, 0xc7, 0x78, 0xe1, 0x91, 0x1c,
-	0xe3, 0x83, 0x47, 0x72, 0x8c, 0x51, 0x3a, 0xa4, 0x44, 0x5d, 0x12, 0x1b, 0x98, 0x65, 0x0c, 0x08,
-	0x00, 0x00, 0xff, 0xff, 0x2a, 0xe7, 0x81, 0x77, 0xf1, 0x01, 0x00, 0x00,
+	0x6e, 0x2e, 0xa6, 0x6a, 0x1c, 0x46, 0x3b, 0xf9, 0xdd, 0x78, 0x28, 0xc7, 0xf0, 0xe0, 0xa1, 0x1c,
+	0x63, 0xc3, 0x23, 0x39, 0xc6, 0x15, 0x8f, 0xe4, 0x18, 0x4f, 0x3c, 0x92, 0x63, 0xbc, 0xf0, 0x48,
+	0x8e, 0xf1, 0xc1, 0x23, 0x39, 0xc6, 0x09, 0x8f, 0xe5, 0x18, 0xa2, 0x74, 0x48, 0x89, 0xce, 0x24,
+	0x36, 0x30, 0xcb, 0x18, 0x10, 0x00, 0x00, 0xff, 0xff, 0xb8, 0xf3, 0x5e, 0xee, 0x05, 0x02, 0x00,
+	0x00,
 }

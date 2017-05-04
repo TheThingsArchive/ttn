@@ -21,6 +21,11 @@ import fmt "fmt"
 import math "math"
 import _ "github.com/gogo/protobuf/gogoproto"
 
+import bytes "bytes"
+
+import strings "strings"
+import reflect "reflect"
+
 import io "io"
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -43,7 +48,6 @@ type GPSMetadata struct {
 }
 
 func (m *GPSMetadata) Reset()                    { *m = GPSMetadata{} }
-func (m *GPSMetadata) String() string            { return proto.CompactTextString(m) }
 func (*GPSMetadata) ProtoMessage()               {}
 func (*GPSMetadata) Descriptor() ([]byte, []int) { return fileDescriptorGateway, []int{0} }
 
@@ -98,7 +102,6 @@ type RxMetadata struct {
 }
 
 func (m *RxMetadata) Reset()                    { *m = RxMetadata{} }
-func (m *RxMetadata) String() string            { return proto.CompactTextString(m) }
 func (*RxMetadata) ProtoMessage()               {}
 func (*RxMetadata) Descriptor() ([]byte, []int) { return fileDescriptorGateway, []int{1} }
 
@@ -198,7 +201,6 @@ type RxMetadata_Antenna struct {
 }
 
 func (m *RxMetadata_Antenna) Reset()                    { *m = RxMetadata_Antenna{} }
-func (m *RxMetadata_Antenna) String() string            { return proto.CompactTextString(m) }
 func (*RxMetadata_Antenna) ProtoMessage()               {}
 func (*RxMetadata_Antenna) Descriptor() ([]byte, []int) { return fileDescriptorGateway, []int{1, 0} }
 
@@ -252,7 +254,6 @@ type TxConfiguration struct {
 }
 
 func (m *TxConfiguration) Reset()                    { *m = TxConfiguration{} }
-func (m *TxConfiguration) String() string            { return proto.CompactTextString(m) }
 func (*TxConfiguration) ProtoMessage()               {}
 func (*TxConfiguration) Descriptor() ([]byte, []int) { return fileDescriptorGateway, []int{2} }
 
@@ -347,7 +348,6 @@ type Status struct {
 }
 
 func (m *Status) Reset()                    { *m = Status{} }
-func (m *Status) String() string            { return proto.CompactTextString(m) }
 func (*Status) ProtoMessage()               {}
 func (*Status) Descriptor() ([]byte, []int) { return fileDescriptorGateway, []int{3} }
 
@@ -537,7 +537,6 @@ type Status_OSMetrics struct {
 }
 
 func (m *Status_OSMetrics) Reset()                    { *m = Status_OSMetrics{} }
-func (m *Status_OSMetrics) String() string            { return proto.CompactTextString(m) }
 func (*Status_OSMetrics) ProtoMessage()               {}
 func (*Status_OSMetrics) Descriptor() ([]byte, []int) { return fileDescriptorGateway, []int{3, 0} }
 
@@ -590,6 +589,698 @@ func init() {
 	proto.RegisterType((*TxConfiguration)(nil), "gateway.TxConfiguration")
 	proto.RegisterType((*Status)(nil), "gateway.Status")
 	proto.RegisterType((*Status_OSMetrics)(nil), "gateway.Status.OSMetrics")
+}
+func (this *GPSMetadata) VerboseEqual(that interface{}) error {
+	if that == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that == nil && this != nil")
+	}
+
+	that1, ok := that.(*GPSMetadata)
+	if !ok {
+		that2, ok := that.(GPSMetadata)
+		if ok {
+			that1 = &that2
+		} else {
+			return fmt.Errorf("that is not of type *GPSMetadata")
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that is type *GPSMetadata but is nil && this != nil")
+	} else if this == nil {
+		return fmt.Errorf("that is type *GPSMetadata but is not nil && this == nil")
+	}
+	if this.Time != that1.Time {
+		return fmt.Errorf("Time this(%v) Not Equal that(%v)", this.Time, that1.Time)
+	}
+	if this.Latitude != that1.Latitude {
+		return fmt.Errorf("Latitude this(%v) Not Equal that(%v)", this.Latitude, that1.Latitude)
+	}
+	if this.Longitude != that1.Longitude {
+		return fmt.Errorf("Longitude this(%v) Not Equal that(%v)", this.Longitude, that1.Longitude)
+	}
+	if this.Altitude != that1.Altitude {
+		return fmt.Errorf("Altitude this(%v) Not Equal that(%v)", this.Altitude, that1.Altitude)
+	}
+	return nil
+}
+func (this *GPSMetadata) Equal(that interface{}) bool {
+	if that == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	}
+
+	that1, ok := that.(*GPSMetadata)
+	if !ok {
+		that2, ok := that.(GPSMetadata)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	} else if this == nil {
+		return false
+	}
+	if this.Time != that1.Time {
+		return false
+	}
+	if this.Latitude != that1.Latitude {
+		return false
+	}
+	if this.Longitude != that1.Longitude {
+		return false
+	}
+	if this.Altitude != that1.Altitude {
+		return false
+	}
+	return true
+}
+func (this *RxMetadata) VerboseEqual(that interface{}) error {
+	if that == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that == nil && this != nil")
+	}
+
+	that1, ok := that.(*RxMetadata)
+	if !ok {
+		that2, ok := that.(RxMetadata)
+		if ok {
+			that1 = &that2
+		} else {
+			return fmt.Errorf("that is not of type *RxMetadata")
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that is type *RxMetadata but is nil && this != nil")
+	} else if this == nil {
+		return fmt.Errorf("that is type *RxMetadata but is not nil && this == nil")
+	}
+	if this.GatewayId != that1.GatewayId {
+		return fmt.Errorf("GatewayId this(%v) Not Equal that(%v)", this.GatewayId, that1.GatewayId)
+	}
+	if this.GatewayTrusted != that1.GatewayTrusted {
+		return fmt.Errorf("GatewayTrusted this(%v) Not Equal that(%v)", this.GatewayTrusted, that1.GatewayTrusted)
+	}
+	if this.Timestamp != that1.Timestamp {
+		return fmt.Errorf("Timestamp this(%v) Not Equal that(%v)", this.Timestamp, that1.Timestamp)
+	}
+	if this.Time != that1.Time {
+		return fmt.Errorf("Time this(%v) Not Equal that(%v)", this.Time, that1.Time)
+	}
+	if !bytes.Equal(this.EncryptedTime, that1.EncryptedTime) {
+		return fmt.Errorf("EncryptedTime this(%v) Not Equal that(%v)", this.EncryptedTime, that1.EncryptedTime)
+	}
+	if this.RfChain != that1.RfChain {
+		return fmt.Errorf("RfChain this(%v) Not Equal that(%v)", this.RfChain, that1.RfChain)
+	}
+	if this.Channel != that1.Channel {
+		return fmt.Errorf("Channel this(%v) Not Equal that(%v)", this.Channel, that1.Channel)
+	}
+	if len(this.Antennas) != len(that1.Antennas) {
+		return fmt.Errorf("Antennas this(%v) Not Equal that(%v)", len(this.Antennas), len(that1.Antennas))
+	}
+	for i := range this.Antennas {
+		if !this.Antennas[i].Equal(that1.Antennas[i]) {
+			return fmt.Errorf("Antennas this[%v](%v) Not Equal that[%v](%v)", i, this.Antennas[i], i, that1.Antennas[i])
+		}
+	}
+	if this.Frequency != that1.Frequency {
+		return fmt.Errorf("Frequency this(%v) Not Equal that(%v)", this.Frequency, that1.Frequency)
+	}
+	if this.Rssi != that1.Rssi {
+		return fmt.Errorf("Rssi this(%v) Not Equal that(%v)", this.Rssi, that1.Rssi)
+	}
+	if this.Snr != that1.Snr {
+		return fmt.Errorf("Snr this(%v) Not Equal that(%v)", this.Snr, that1.Snr)
+	}
+	if !this.Gps.Equal(that1.Gps) {
+		return fmt.Errorf("Gps this(%v) Not Equal that(%v)", this.Gps, that1.Gps)
+	}
+	return nil
+}
+func (this *RxMetadata) Equal(that interface{}) bool {
+	if that == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	}
+
+	that1, ok := that.(*RxMetadata)
+	if !ok {
+		that2, ok := that.(RxMetadata)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	} else if this == nil {
+		return false
+	}
+	if this.GatewayId != that1.GatewayId {
+		return false
+	}
+	if this.GatewayTrusted != that1.GatewayTrusted {
+		return false
+	}
+	if this.Timestamp != that1.Timestamp {
+		return false
+	}
+	if this.Time != that1.Time {
+		return false
+	}
+	if !bytes.Equal(this.EncryptedTime, that1.EncryptedTime) {
+		return false
+	}
+	if this.RfChain != that1.RfChain {
+		return false
+	}
+	if this.Channel != that1.Channel {
+		return false
+	}
+	if len(this.Antennas) != len(that1.Antennas) {
+		return false
+	}
+	for i := range this.Antennas {
+		if !this.Antennas[i].Equal(that1.Antennas[i]) {
+			return false
+		}
+	}
+	if this.Frequency != that1.Frequency {
+		return false
+	}
+	if this.Rssi != that1.Rssi {
+		return false
+	}
+	if this.Snr != that1.Snr {
+		return false
+	}
+	if !this.Gps.Equal(that1.Gps) {
+		return false
+	}
+	return true
+}
+func (this *RxMetadata_Antenna) VerboseEqual(that interface{}) error {
+	if that == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that == nil && this != nil")
+	}
+
+	that1, ok := that.(*RxMetadata_Antenna)
+	if !ok {
+		that2, ok := that.(RxMetadata_Antenna)
+		if ok {
+			that1 = &that2
+		} else {
+			return fmt.Errorf("that is not of type *RxMetadata_Antenna")
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that is type *RxMetadata_Antenna but is nil && this != nil")
+	} else if this == nil {
+		return fmt.Errorf("that is type *RxMetadata_Antenna but is not nil && this == nil")
+	}
+	if this.Antenna != that1.Antenna {
+		return fmt.Errorf("Antenna this(%v) Not Equal that(%v)", this.Antenna, that1.Antenna)
+	}
+	if this.Channel != that1.Channel {
+		return fmt.Errorf("Channel this(%v) Not Equal that(%v)", this.Channel, that1.Channel)
+	}
+	if this.Rssi != that1.Rssi {
+		return fmt.Errorf("Rssi this(%v) Not Equal that(%v)", this.Rssi, that1.Rssi)
+	}
+	if this.Snr != that1.Snr {
+		return fmt.Errorf("Snr this(%v) Not Equal that(%v)", this.Snr, that1.Snr)
+	}
+	if !bytes.Equal(this.EncryptedTime, that1.EncryptedTime) {
+		return fmt.Errorf("EncryptedTime this(%v) Not Equal that(%v)", this.EncryptedTime, that1.EncryptedTime)
+	}
+	return nil
+}
+func (this *RxMetadata_Antenna) Equal(that interface{}) bool {
+	if that == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	}
+
+	that1, ok := that.(*RxMetadata_Antenna)
+	if !ok {
+		that2, ok := that.(RxMetadata_Antenna)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	} else if this == nil {
+		return false
+	}
+	if this.Antenna != that1.Antenna {
+		return false
+	}
+	if this.Channel != that1.Channel {
+		return false
+	}
+	if this.Rssi != that1.Rssi {
+		return false
+	}
+	if this.Snr != that1.Snr {
+		return false
+	}
+	if !bytes.Equal(this.EncryptedTime, that1.EncryptedTime) {
+		return false
+	}
+	return true
+}
+func (this *TxConfiguration) VerboseEqual(that interface{}) error {
+	if that == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that == nil && this != nil")
+	}
+
+	that1, ok := that.(*TxConfiguration)
+	if !ok {
+		that2, ok := that.(TxConfiguration)
+		if ok {
+			that1 = &that2
+		} else {
+			return fmt.Errorf("that is not of type *TxConfiguration")
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that is type *TxConfiguration but is nil && this != nil")
+	} else if this == nil {
+		return fmt.Errorf("that is type *TxConfiguration but is not nil && this == nil")
+	}
+	if this.Timestamp != that1.Timestamp {
+		return fmt.Errorf("Timestamp this(%v) Not Equal that(%v)", this.Timestamp, that1.Timestamp)
+	}
+	if this.RfChain != that1.RfChain {
+		return fmt.Errorf("RfChain this(%v) Not Equal that(%v)", this.RfChain, that1.RfChain)
+	}
+	if this.Frequency != that1.Frequency {
+		return fmt.Errorf("Frequency this(%v) Not Equal that(%v)", this.Frequency, that1.Frequency)
+	}
+	if this.Power != that1.Power {
+		return fmt.Errorf("Power this(%v) Not Equal that(%v)", this.Power, that1.Power)
+	}
+	if this.PolarizationInversion != that1.PolarizationInversion {
+		return fmt.Errorf("PolarizationInversion this(%v) Not Equal that(%v)", this.PolarizationInversion, that1.PolarizationInversion)
+	}
+	if this.FrequencyDeviation != that1.FrequencyDeviation {
+		return fmt.Errorf("FrequencyDeviation this(%v) Not Equal that(%v)", this.FrequencyDeviation, that1.FrequencyDeviation)
+	}
+	return nil
+}
+func (this *TxConfiguration) Equal(that interface{}) bool {
+	if that == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	}
+
+	that1, ok := that.(*TxConfiguration)
+	if !ok {
+		that2, ok := that.(TxConfiguration)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	} else if this == nil {
+		return false
+	}
+	if this.Timestamp != that1.Timestamp {
+		return false
+	}
+	if this.RfChain != that1.RfChain {
+		return false
+	}
+	if this.Frequency != that1.Frequency {
+		return false
+	}
+	if this.Power != that1.Power {
+		return false
+	}
+	if this.PolarizationInversion != that1.PolarizationInversion {
+		return false
+	}
+	if this.FrequencyDeviation != that1.FrequencyDeviation {
+		return false
+	}
+	return true
+}
+func (this *Status) VerboseEqual(that interface{}) error {
+	if that == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that == nil && this != nil")
+	}
+
+	that1, ok := that.(*Status)
+	if !ok {
+		that2, ok := that.(Status)
+		if ok {
+			that1 = &that2
+		} else {
+			return fmt.Errorf("that is not of type *Status")
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that is type *Status but is nil && this != nil")
+	} else if this == nil {
+		return fmt.Errorf("that is type *Status but is not nil && this == nil")
+	}
+	if this.Timestamp != that1.Timestamp {
+		return fmt.Errorf("Timestamp this(%v) Not Equal that(%v)", this.Timestamp, that1.Timestamp)
+	}
+	if this.Time != that1.Time {
+		return fmt.Errorf("Time this(%v) Not Equal that(%v)", this.Time, that1.Time)
+	}
+	if this.GatewayTrusted != that1.GatewayTrusted {
+		return fmt.Errorf("GatewayTrusted this(%v) Not Equal that(%v)", this.GatewayTrusted, that1.GatewayTrusted)
+	}
+	if this.BootTime != that1.BootTime {
+		return fmt.Errorf("BootTime this(%v) Not Equal that(%v)", this.BootTime, that1.BootTime)
+	}
+	if len(this.Ip) != len(that1.Ip) {
+		return fmt.Errorf("Ip this(%v) Not Equal that(%v)", len(this.Ip), len(that1.Ip))
+	}
+	for i := range this.Ip {
+		if this.Ip[i] != that1.Ip[i] {
+			return fmt.Errorf("Ip this[%v](%v) Not Equal that[%v](%v)", i, this.Ip[i], i, that1.Ip[i])
+		}
+	}
+	if this.Platform != that1.Platform {
+		return fmt.Errorf("Platform this(%v) Not Equal that(%v)", this.Platform, that1.Platform)
+	}
+	if this.ContactEmail != that1.ContactEmail {
+		return fmt.Errorf("ContactEmail this(%v) Not Equal that(%v)", this.ContactEmail, that1.ContactEmail)
+	}
+	if this.Description != that1.Description {
+		return fmt.Errorf("Description this(%v) Not Equal that(%v)", this.Description, that1.Description)
+	}
+	if this.FrequencyPlan != that1.FrequencyPlan {
+		return fmt.Errorf("FrequencyPlan this(%v) Not Equal that(%v)", this.FrequencyPlan, that1.FrequencyPlan)
+	}
+	if this.Bridge != that1.Bridge {
+		return fmt.Errorf("Bridge this(%v) Not Equal that(%v)", this.Bridge, that1.Bridge)
+	}
+	if this.Router != that1.Router {
+		return fmt.Errorf("Router this(%v) Not Equal that(%v)", this.Router, that1.Router)
+	}
+	if this.Fpga != that1.Fpga {
+		return fmt.Errorf("Fpga this(%v) Not Equal that(%v)", this.Fpga, that1.Fpga)
+	}
+	if this.Dsp != that1.Dsp {
+		return fmt.Errorf("Dsp this(%v) Not Equal that(%v)", this.Dsp, that1.Dsp)
+	}
+	if this.Hal != that1.Hal {
+		return fmt.Errorf("Hal this(%v) Not Equal that(%v)", this.Hal, that1.Hal)
+	}
+	if !this.Gps.Equal(that1.Gps) {
+		return fmt.Errorf("Gps this(%v) Not Equal that(%v)", this.Gps, that1.Gps)
+	}
+	if this.Rtt != that1.Rtt {
+		return fmt.Errorf("Rtt this(%v) Not Equal that(%v)", this.Rtt, that1.Rtt)
+	}
+	if this.RxIn != that1.RxIn {
+		return fmt.Errorf("RxIn this(%v) Not Equal that(%v)", this.RxIn, that1.RxIn)
+	}
+	if this.RxOk != that1.RxOk {
+		return fmt.Errorf("RxOk this(%v) Not Equal that(%v)", this.RxOk, that1.RxOk)
+	}
+	if this.TxIn != that1.TxIn {
+		return fmt.Errorf("TxIn this(%v) Not Equal that(%v)", this.TxIn, that1.TxIn)
+	}
+	if this.TxOk != that1.TxOk {
+		return fmt.Errorf("TxOk this(%v) Not Equal that(%v)", this.TxOk, that1.TxOk)
+	}
+	if this.LmOk != that1.LmOk {
+		return fmt.Errorf("LmOk this(%v) Not Equal that(%v)", this.LmOk, that1.LmOk)
+	}
+	if this.LmSt != that1.LmSt {
+		return fmt.Errorf("LmSt this(%v) Not Equal that(%v)", this.LmSt, that1.LmSt)
+	}
+	if this.LmNw != that1.LmNw {
+		return fmt.Errorf("LmNw this(%v) Not Equal that(%v)", this.LmNw, that1.LmNw)
+	}
+	if this.LPps != that1.LPps {
+		return fmt.Errorf("LPps this(%v) Not Equal that(%v)", this.LPps, that1.LPps)
+	}
+	if !this.Os.Equal(that1.Os) {
+		return fmt.Errorf("Os this(%v) Not Equal that(%v)", this.Os, that1.Os)
+	}
+	return nil
+}
+func (this *Status) Equal(that interface{}) bool {
+	if that == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	}
+
+	that1, ok := that.(*Status)
+	if !ok {
+		that2, ok := that.(Status)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	} else if this == nil {
+		return false
+	}
+	if this.Timestamp != that1.Timestamp {
+		return false
+	}
+	if this.Time != that1.Time {
+		return false
+	}
+	if this.GatewayTrusted != that1.GatewayTrusted {
+		return false
+	}
+	if this.BootTime != that1.BootTime {
+		return false
+	}
+	if len(this.Ip) != len(that1.Ip) {
+		return false
+	}
+	for i := range this.Ip {
+		if this.Ip[i] != that1.Ip[i] {
+			return false
+		}
+	}
+	if this.Platform != that1.Platform {
+		return false
+	}
+	if this.ContactEmail != that1.ContactEmail {
+		return false
+	}
+	if this.Description != that1.Description {
+		return false
+	}
+	if this.FrequencyPlan != that1.FrequencyPlan {
+		return false
+	}
+	if this.Bridge != that1.Bridge {
+		return false
+	}
+	if this.Router != that1.Router {
+		return false
+	}
+	if this.Fpga != that1.Fpga {
+		return false
+	}
+	if this.Dsp != that1.Dsp {
+		return false
+	}
+	if this.Hal != that1.Hal {
+		return false
+	}
+	if !this.Gps.Equal(that1.Gps) {
+		return false
+	}
+	if this.Rtt != that1.Rtt {
+		return false
+	}
+	if this.RxIn != that1.RxIn {
+		return false
+	}
+	if this.RxOk != that1.RxOk {
+		return false
+	}
+	if this.TxIn != that1.TxIn {
+		return false
+	}
+	if this.TxOk != that1.TxOk {
+		return false
+	}
+	if this.LmOk != that1.LmOk {
+		return false
+	}
+	if this.LmSt != that1.LmSt {
+		return false
+	}
+	if this.LmNw != that1.LmNw {
+		return false
+	}
+	if this.LPps != that1.LPps {
+		return false
+	}
+	if !this.Os.Equal(that1.Os) {
+		return false
+	}
+	return true
+}
+func (this *Status_OSMetrics) VerboseEqual(that interface{}) error {
+	if that == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that == nil && this != nil")
+	}
+
+	that1, ok := that.(*Status_OSMetrics)
+	if !ok {
+		that2, ok := that.(Status_OSMetrics)
+		if ok {
+			that1 = &that2
+		} else {
+			return fmt.Errorf("that is not of type *Status_OSMetrics")
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that is type *Status_OSMetrics but is nil && this != nil")
+	} else if this == nil {
+		return fmt.Errorf("that is type *Status_OSMetrics but is not nil && this == nil")
+	}
+	if this.Load_1 != that1.Load_1 {
+		return fmt.Errorf("Load_1 this(%v) Not Equal that(%v)", this.Load_1, that1.Load_1)
+	}
+	if this.Load_5 != that1.Load_5 {
+		return fmt.Errorf("Load_5 this(%v) Not Equal that(%v)", this.Load_5, that1.Load_5)
+	}
+	if this.Load_15 != that1.Load_15 {
+		return fmt.Errorf("Load_15 this(%v) Not Equal that(%v)", this.Load_15, that1.Load_15)
+	}
+	if this.CpuPercentage != that1.CpuPercentage {
+		return fmt.Errorf("CpuPercentage this(%v) Not Equal that(%v)", this.CpuPercentage, that1.CpuPercentage)
+	}
+	if this.MemoryPercentage != that1.MemoryPercentage {
+		return fmt.Errorf("MemoryPercentage this(%v) Not Equal that(%v)", this.MemoryPercentage, that1.MemoryPercentage)
+	}
+	if this.Temperature != that1.Temperature {
+		return fmt.Errorf("Temperature this(%v) Not Equal that(%v)", this.Temperature, that1.Temperature)
+	}
+	return nil
+}
+func (this *Status_OSMetrics) Equal(that interface{}) bool {
+	if that == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	}
+
+	that1, ok := that.(*Status_OSMetrics)
+	if !ok {
+		that2, ok := that.(Status_OSMetrics)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	} else if this == nil {
+		return false
+	}
+	if this.Load_1 != that1.Load_1 {
+		return false
+	}
+	if this.Load_5 != that1.Load_5 {
+		return false
+	}
+	if this.Load_15 != that1.Load_15 {
+		return false
+	}
+	if this.CpuPercentage != that1.CpuPercentage {
+		return false
+	}
+	if this.MemoryPercentage != that1.MemoryPercentage {
+		return false
+	}
+	if this.Temperature != that1.Temperature {
+		return false
+	}
+	return true
 }
 func (m *GPSMetadata) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
@@ -1374,6 +2065,126 @@ func sovGateway(x uint64) (n int) {
 }
 func sozGateway(x uint64) (n int) {
 	return sovGateway(uint64((x << 1) ^ uint64((int64(x) >> 63))))
+}
+func (this *GPSMetadata) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&GPSMetadata{`,
+		`Time:` + fmt.Sprintf("%v", this.Time) + `,`,
+		`Latitude:` + fmt.Sprintf("%v", this.Latitude) + `,`,
+		`Longitude:` + fmt.Sprintf("%v", this.Longitude) + `,`,
+		`Altitude:` + fmt.Sprintf("%v", this.Altitude) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *RxMetadata) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&RxMetadata{`,
+		`GatewayId:` + fmt.Sprintf("%v", this.GatewayId) + `,`,
+		`GatewayTrusted:` + fmt.Sprintf("%v", this.GatewayTrusted) + `,`,
+		`Timestamp:` + fmt.Sprintf("%v", this.Timestamp) + `,`,
+		`Time:` + fmt.Sprintf("%v", this.Time) + `,`,
+		`EncryptedTime:` + fmt.Sprintf("%v", this.EncryptedTime) + `,`,
+		`RfChain:` + fmt.Sprintf("%v", this.RfChain) + `,`,
+		`Channel:` + fmt.Sprintf("%v", this.Channel) + `,`,
+		`Antennas:` + strings.Replace(fmt.Sprintf("%v", this.Antennas), "RxMetadata_Antenna", "RxMetadata_Antenna", 1) + `,`,
+		`Frequency:` + fmt.Sprintf("%v", this.Frequency) + `,`,
+		`Rssi:` + fmt.Sprintf("%v", this.Rssi) + `,`,
+		`Snr:` + fmt.Sprintf("%v", this.Snr) + `,`,
+		`Gps:` + strings.Replace(fmt.Sprintf("%v", this.Gps), "GPSMetadata", "GPSMetadata", 1) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *RxMetadata_Antenna) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&RxMetadata_Antenna{`,
+		`Antenna:` + fmt.Sprintf("%v", this.Antenna) + `,`,
+		`Channel:` + fmt.Sprintf("%v", this.Channel) + `,`,
+		`Rssi:` + fmt.Sprintf("%v", this.Rssi) + `,`,
+		`Snr:` + fmt.Sprintf("%v", this.Snr) + `,`,
+		`EncryptedTime:` + fmt.Sprintf("%v", this.EncryptedTime) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *TxConfiguration) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&TxConfiguration{`,
+		`Timestamp:` + fmt.Sprintf("%v", this.Timestamp) + `,`,
+		`RfChain:` + fmt.Sprintf("%v", this.RfChain) + `,`,
+		`Frequency:` + fmt.Sprintf("%v", this.Frequency) + `,`,
+		`Power:` + fmt.Sprintf("%v", this.Power) + `,`,
+		`PolarizationInversion:` + fmt.Sprintf("%v", this.PolarizationInversion) + `,`,
+		`FrequencyDeviation:` + fmt.Sprintf("%v", this.FrequencyDeviation) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *Status) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&Status{`,
+		`Timestamp:` + fmt.Sprintf("%v", this.Timestamp) + `,`,
+		`Time:` + fmt.Sprintf("%v", this.Time) + `,`,
+		`GatewayTrusted:` + fmt.Sprintf("%v", this.GatewayTrusted) + `,`,
+		`BootTime:` + fmt.Sprintf("%v", this.BootTime) + `,`,
+		`Ip:` + fmt.Sprintf("%v", this.Ip) + `,`,
+		`Platform:` + fmt.Sprintf("%v", this.Platform) + `,`,
+		`ContactEmail:` + fmt.Sprintf("%v", this.ContactEmail) + `,`,
+		`Description:` + fmt.Sprintf("%v", this.Description) + `,`,
+		`FrequencyPlan:` + fmt.Sprintf("%v", this.FrequencyPlan) + `,`,
+		`Bridge:` + fmt.Sprintf("%v", this.Bridge) + `,`,
+		`Router:` + fmt.Sprintf("%v", this.Router) + `,`,
+		`Fpga:` + fmt.Sprintf("%v", this.Fpga) + `,`,
+		`Dsp:` + fmt.Sprintf("%v", this.Dsp) + `,`,
+		`Hal:` + fmt.Sprintf("%v", this.Hal) + `,`,
+		`Gps:` + strings.Replace(fmt.Sprintf("%v", this.Gps), "GPSMetadata", "GPSMetadata", 1) + `,`,
+		`Rtt:` + fmt.Sprintf("%v", this.Rtt) + `,`,
+		`RxIn:` + fmt.Sprintf("%v", this.RxIn) + `,`,
+		`RxOk:` + fmt.Sprintf("%v", this.RxOk) + `,`,
+		`TxIn:` + fmt.Sprintf("%v", this.TxIn) + `,`,
+		`TxOk:` + fmt.Sprintf("%v", this.TxOk) + `,`,
+		`LmOk:` + fmt.Sprintf("%v", this.LmOk) + `,`,
+		`LmSt:` + fmt.Sprintf("%v", this.LmSt) + `,`,
+		`LmNw:` + fmt.Sprintf("%v", this.LmNw) + `,`,
+		`LPps:` + fmt.Sprintf("%v", this.LPps) + `,`,
+		`Os:` + strings.Replace(fmt.Sprintf("%v", this.Os), "Status_OSMetrics", "Status_OSMetrics", 1) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *Status_OSMetrics) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&Status_OSMetrics{`,
+		`Load_1:` + fmt.Sprintf("%v", this.Load_1) + `,`,
+		`Load_5:` + fmt.Sprintf("%v", this.Load_5) + `,`,
+		`Load_15:` + fmt.Sprintf("%v", this.Load_15) + `,`,
+		`CpuPercentage:` + fmt.Sprintf("%v", this.CpuPercentage) + `,`,
+		`MemoryPercentage:` + fmt.Sprintf("%v", this.MemoryPercentage) + `,`,
+		`Temperature:` + fmt.Sprintf("%v", this.Temperature) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func valueToStringGateway(v interface{}) string {
+	rv := reflect.ValueOf(v)
+	if rv.IsNil() {
+		return "nil"
+	}
+	pv := reflect.Indirect(rv).Interface()
+	return fmt.Sprintf("*%v", pv)
 }
 func (m *GPSMetadata) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
@@ -2998,63 +3809,64 @@ func init() {
 }
 
 var fileDescriptorGateway = []byte{
-	// 914 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x95, 0x4f, 0x73, 0xdc, 0x34,
-	0x14, 0xc0, 0xc7, 0xde, 0x4d, 0xb2, 0xab, 0x8d, 0x93, 0x54, 0xf9, 0x53, 0x35, 0x85, 0x60, 0xc2,
-	0x00, 0x5b, 0x42, 0x77, 0x49, 0x3b, 0x19, 0xa6, 0x47, 0x28, 0x0c, 0x93, 0x03, 0x6d, 0x46, 0xc9,
-	0x89, 0x8b, 0x47, 0xb1, 0xb5, 0x5e, 0x4d, 0x6c, 0x49, 0xc8, 0x72, 0x37, 0xe1, 0x23, 0x70, 0xe6,
-	0x43, 0xf5, 0xc8, 0x99, 0x13, 0x93, 0x03, 0x9f, 0x83, 0xd1, 0xf3, 0x9f, 0x75, 0x68, 0xa0, 0xc3,
-	0x69, 0xdf, 0xfb, 0xbd, 0x27, 0xe9, 0xfd, 0x5d, 0xa3, 0x17, 0xa9, 0xb0, 0xf3, 0xf2, 0x72, 0x12,
-	0xab, 0x7c, 0x7a, 0x31, 0xe7, 0x17, 0x73, 0x21, 0xd3, 0xe2, 0x15, 0xb7, 0x0b, 0x65, 0xae, 0xa6,
-	0xd6, 0xca, 0x29, 0xd3, 0x62, 0x9a, 0x32, 0xcb, 0x17, 0xec, 0xa6, 0xf9, 0x9d, 0x68, 0xa3, 0xac,
-	0xc2, 0x6b, 0xb5, 0xba, 0xff, 0xb4, 0x73, 0x47, 0xaa, 0x52, 0x35, 0x05, 0xfb, 0x65, 0x39, 0x03,
-	0x0d, 0x14, 0x90, 0xaa, 0x73, 0x87, 0x0b, 0x34, 0xfa, 0xe1, 0xec, 0xfc, 0x47, 0x6e, 0x59, 0xc2,
-	0x2c, 0xc3, 0x18, 0xf5, 0xad, 0xc8, 0x39, 0xf1, 0x42, 0x6f, 0xdc, 0xa3, 0x20, 0xe3, 0x7d, 0x34,
-	0xc8, 0x98, 0x15, 0xb6, 0x4c, 0x38, 0xf1, 0x43, 0x6f, 0xec, 0xd3, 0x56, 0xc7, 0x1f, 0xa0, 0x61,
-	0xa6, 0x64, 0x5a, 0x19, 0x7b, 0x60, 0x5c, 0x02, 0x77, 0x92, 0x65, 0xf5, 0xc9, 0x7e, 0xe8, 0x8d,
-	0x57, 0x68, 0xab, 0x1f, 0xfe, 0xd6, 0x47, 0x88, 0x5e, 0xb7, 0x0f, 0x7f, 0x88, 0x50, 0x9d, 0x41,
-	0x24, 0x12, 0x78, 0x7e, 0x48, 0x87, 0x35, 0x39, 0x4d, 0xf0, 0xe7, 0x68, 0xb3, 0x31, 0x5b, 0x53,
-	0x16, 0x96, 0x27, 0x10, 0xca, 0x80, 0x6e, 0xd4, 0xf8, 0xa2, 0xa2, 0x2e, 0x20, 0x17, 0x74, 0x61,
-	0x59, 0xae, 0xc9, 0x28, 0xf4, 0xc6, 0x01, 0x5d, 0x82, 0x36, 0xbd, 0xf5, 0x4e, 0x7a, 0x9f, 0xa2,
-	0x0d, 0x2e, 0x63, 0x73, 0xa3, 0x2d, 0x4f, 0x22, 0xb0, 0x06, 0xa1, 0x37, 0x5e, 0xa7, 0x41, 0x4b,
-	0x2f, 0x9c, 0xdb, 0x23, 0x34, 0x30, 0xb3, 0x28, 0x9e, 0x33, 0x21, 0xc9, 0x2e, 0xdc, 0xbb, 0x66,
-	0x66, 0x2f, 0x9d, 0x8a, 0x09, 0x5a, 0x8b, 0xe7, 0x4c, 0x4a, 0x9e, 0x91, 0xbd, 0xca, 0x52, 0xab,
-	0xf8, 0x6b, 0x34, 0x60, 0xd2, 0x72, 0x29, 0x59, 0x41, 0x0e, 0xc2, 0xde, 0x78, 0xf4, 0xec, 0xf1,
-	0xa4, 0xe9, 0xdb, 0x32, 0xf9, 0xc9, 0x37, 0x95, 0x0f, 0x6d, 0x9d, 0x5d, 0x1a, 0x33, 0xc3, 0x7f,
-	0x2e, 0xb9, 0x8c, 0x6f, 0xc8, 0x47, 0xa1, 0x37, 0xee, 0xd3, 0x25, 0x70, 0x69, 0x98, 0xa2, 0x10,
-	0x24, 0x84, 0x82, 0x83, 0x8c, 0xb7, 0x50, 0xaf, 0x90, 0x86, 0x7c, 0x0c, 0xc8, 0x89, 0xf8, 0x33,
-	0xd4, 0x4b, 0x75, 0x41, 0x9e, 0x84, 0xde, 0x78, 0xf4, 0x6c, 0xa7, 0x7d, 0xb7, 0xd3, 0x6e, 0xea,
-	0x1c, 0xf6, 0x7f, 0xf5, 0xd0, 0x5a, 0x1d, 0x81, 0x4b, 0xa5, 0x8e, 0x01, 0x7a, 0x10, 0xd0, 0x46,
-	0xed, 0x26, 0xe9, 0xdf, 0x4d, 0xb2, 0x89, 0xa6, 0xf7, 0x6e, 0x34, 0xfd, 0x65, 0x34, 0xef, 0x96,
-	0x19, 0xdd, 0x53, 0xe6, 0xc3, 0xbf, 0x3c, 0xb4, 0x79, 0x71, 0xfd, 0x52, 0xc9, 0x99, 0x48, 0x4b,
-	0xc3, 0xac, 0x50, 0xf2, 0x3d, 0x3d, 0xfd, 0x8f, 0xc6, 0xdc, 0xa9, 0xe2, 0xde, 0x3f, 0xab, 0xb8,
-	0x83, 0x56, 0xb4, 0x5a, 0x70, 0x43, 0x1e, 0xc2, 0x68, 0x56, 0x0a, 0x3e, 0x41, 0x7b, 0x5a, 0x65,
-	0xcc, 0x88, 0x5f, 0xe0, 0xf1, 0x48, 0xc8, 0x37, 0xdc, 0x14, 0x42, 0x49, 0x68, 0xc3, 0x80, 0xee,
-	0x76, 0xad, 0xa7, 0x8d, 0x11, 0x4f, 0xd1, 0x76, 0x7b, 0x73, 0x94, 0xf0, 0x37, 0x02, 0xec, 0xd0,
-	0xa1, 0x80, 0xe2, 0xd6, 0xf4, 0x5d, 0x63, 0x39, 0xfc, 0x63, 0x15, 0xad, 0x9e, 0x5b, 0x66, 0xcb,
-	0xe2, 0x6e, 0x7e, 0xde, 0xbf, 0xcd, 0xac, 0xdf, 0x99, 0xd9, 0x7b, 0xd6, 0xa1, 0x77, 0xef, 0x3a,
-	0x3c, 0x46, 0xc3, 0x4b, 0xa5, 0x6c, 0x55, 0xf0, 0x3e, 0xdc, 0x30, 0x70, 0x00, 0x46, 0x7a, 0x03,
-	0xf9, 0xc2, 0x15, 0xb4, 0x37, 0x1e, 0x52, 0x5f, 0x68, 0xb7, 0xae, 0x3a, 0x63, 0x76, 0xa6, 0x4c,
-	0x0e, 0x1b, 0x32, 0xa4, 0xad, 0x8e, 0x3f, 0x41, 0x41, 0xac, 0xa4, 0x65, 0xb1, 0x8d, 0x78, 0xce,
-	0x44, 0x06, 0x4b, 0x32, 0xa4, 0xeb, 0x35, 0xfc, 0xde, 0x31, 0x1c, 0xa2, 0x51, 0xc2, 0x8b, 0xd8,
-	0x08, 0x0d, 0xc9, 0x6f, 0x80, 0x4b, 0x17, 0xb9, 0x29, 0x58, 0x96, 0x49, 0x67, 0x4c, 0x92, 0x4d,
-	0x70, 0x0a, 0x5a, 0x7a, 0x96, 0x31, 0x89, 0xf7, 0xd0, 0xea, 0xa5, 0x11, 0x49, 0xca, 0xc9, 0x16,
-	0x98, 0x6b, 0xcd, 0x71, 0xa3, 0x4a, 0xcb, 0x0d, 0x79, 0x50, 0xf1, 0x4a, 0x73, 0x35, 0x9a, 0xe9,
-	0x94, 0x11, 0x0c, 0xc5, 0x03, 0xd9, 0x8d, 0x60, 0x52, 0x68, 0xb2, 0x0d, 0xc8, 0x89, 0x8e, 0xcc,
-	0x59, 0x46, 0x76, 0xe0, 0xa8, 0x13, 0x9b, 0x15, 0xd9, 0x7d, 0xcf, 0x8a, 0xb8, 0x93, 0xc6, 0x5a,
-	0x98, 0x80, 0x80, 0x3a, 0x11, 0x6f, 0xa3, 0x15, 0x73, 0x1d, 0x09, 0x09, 0xeb, 0x15, 0xd0, 0xbe,
-	0xb9, 0x3e, 0x95, 0x35, 0x54, 0x57, 0xe4, 0x8b, 0x06, 0xbe, 0xbe, 0x72, 0xd0, 0x82, 0xe7, 0x51,
-	0x05, 0x6d, 0xed, 0x69, 0xc1, 0xf3, 0xcb, 0x06, 0x56, 0x9e, 0x59, 0xee, 0xe0, 0xd3, 0x0a, 0x66,
-	0x79, 0x0b, 0x0b, 0x4b, 0x26, 0x0d, 0x3c, 0xb7, 0x35, 0x94, 0x0b, 0x32, 0x6d, 0xe0, 0xab, 0x05,
-	0xc0, 0x48, 0xeb, 0x82, 0x7c, 0x55, 0xc3, 0x33, 0x5d, 0xe0, 0x27, 0xc8, 0x57, 0x05, 0x79, 0x0e,
-	0x09, 0x3e, 0x6a, 0x13, 0xac, 0x06, 0x6f, 0xf2, 0xda, 0xa5, 0x69, 0x44, 0x5c, 0x50, 0x5f, 0x15,
-	0xfb, 0x6f, 0x3d, 0x34, 0x6c, 0x09, 0xde, 0x45, 0xab, 0x99, 0x62, 0x49, 0x74, 0x0c, 0x13, 0xe9,
-	0xd3, 0x15, 0xa7, 0x1d, 0xb7, 0xf8, 0xa4, 0xfe, 0x14, 0x00, 0x3e, 0xc1, 0x0f, 0xd1, 0x5a, 0xe5,
-	0x7d, 0x52, 0xff, 0x0d, 0x80, 0xd7, 0xf1, 0x89, 0x6b, 0x78, 0xac, 0xcb, 0x48, 0x73, 0x13, 0x73,
-	0x69, 0x59, 0xca, 0x61, 0x81, 0x7d, 0x1a, 0xc4, 0xba, 0x3c, 0x6b, 0x21, 0x3e, 0x42, 0x0f, 0x72,
-	0x9e, 0x2b, 0x73, 0xd3, 0xf5, 0xdc, 0x05, 0xcf, 0xad, 0xca, 0xd0, 0x71, 0x0e, 0xd1, 0xc8, 0xf2,
-	0x5c, 0x73, 0xc3, 0x6c, 0x69, 0x38, 0x74, 0xc5, 0xa7, 0x5d, 0xf4, 0xed, 0x8b, 0xb7, 0xb7, 0x07,
-	0xde, 0xef, 0xb7, 0x07, 0xde, 0x9f, 0xb7, 0x07, 0xde, 0x4f, 0x47, 0xff, 0xe3, 0xb3, 0x7a, 0xb9,
-	0x0a, 0xdf, 0xc5, 0xe7, 0x7f, 0x07, 0x00, 0x00, 0xff, 0xff, 0x1d, 0x0a, 0x52, 0xe3, 0x8c, 0x07,
-	0x00, 0x00,
+	// 940 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x95, 0x4f, 0x73, 0x1b, 0x35,
+	0x14, 0xc0, 0xbb, 0x6b, 0x27, 0xb1, 0xe5, 0x3a, 0x49, 0x95, 0x3f, 0x55, 0x53, 0x30, 0x4b, 0x18,
+	0xc0, 0x25, 0xd4, 0x26, 0xed, 0x64, 0x18, 0x8e, 0x50, 0x18, 0x26, 0x87, 0xb6, 0x19, 0x25, 0x27,
+	0x2e, 0x1e, 0x65, 0x57, 0x5e, 0x6b, 0xb2, 0x2b, 0x09, 0xad, 0xb6, 0x4e, 0x38, 0x71, 0xe6, 0xc4,
+	0x81, 0x0f, 0xc1, 0x47, 0xe9, 0x91, 0x23, 0xc3, 0xa9, 0x35, 0x33, 0x7c, 0x0e, 0x46, 0x6f, 0xff,
+	0x78, 0x43, 0x03, 0x1d, 0x4e, 0x7e, 0xef, 0xf7, 0x9e, 0xa4, 0xf7, 0xd7, 0x8b, 0xbe, 0x88, 0x85,
+	0x9d, 0xe5, 0xe7, 0xa3, 0x50, 0xa5, 0xe3, 0xb3, 0x19, 0x3f, 0x9b, 0x09, 0x19, 0x67, 0xcf, 0xb8,
+	0x9d, 0x2b, 0x73, 0x31, 0xb6, 0x56, 0x8e, 0x99, 0x16, 0xe3, 0x98, 0x59, 0x3e, 0x67, 0x57, 0xd5,
+	0xef, 0x48, 0x1b, 0x65, 0x15, 0x5e, 0x2b, 0xd5, 0xbd, 0x87, 0x8d, 0x3b, 0x62, 0x15, 0xab, 0x31,
+	0xd8, 0xcf, 0xf3, 0x29, 0x68, 0xa0, 0x80, 0x54, 0x9c, 0xdb, 0x9f, 0xa3, 0xde, 0xb7, 0x27, 0xa7,
+	0x4f, 0xb9, 0x65, 0x11, 0xb3, 0x0c, 0x63, 0xd4, 0xb6, 0x22, 0xe5, 0xc4, 0x0b, 0xbc, 0x61, 0x8b,
+	0x82, 0x8c, 0xf7, 0x50, 0x27, 0x61, 0x56, 0xd8, 0x3c, 0xe2, 0xc4, 0x0f, 0xbc, 0xa1, 0x4f, 0x6b,
+	0x1d, 0xbf, 0x83, 0xba, 0x89, 0x92, 0x71, 0x61, 0x6c, 0x81, 0x71, 0x09, 0xdc, 0x49, 0x96, 0x94,
+	0x27, 0xdb, 0x81, 0x37, 0x5c, 0xa1, 0xb5, 0xbe, 0xff, 0x4b, 0x1b, 0x21, 0x7a, 0x59, 0x3f, 0xfc,
+	0x2e, 0x42, 0x65, 0x06, 0x13, 0x11, 0xc1, 0xf3, 0x5d, 0xda, 0x2d, 0xc9, 0x71, 0x84, 0x3f, 0x46,
+	0x1b, 0x95, 0xd9, 0x9a, 0x3c, 0xb3, 0x3c, 0x82, 0x50, 0x3a, 0x74, 0xbd, 0xc4, 0x67, 0x05, 0x75,
+	0x01, 0xb9, 0xa0, 0x33, 0xcb, 0x52, 0x4d, 0x7a, 0x81, 0x37, 0xec, 0xd3, 0x25, 0xa8, 0xd3, 0xbb,
+	0xdd, 0x48, 0xef, 0x43, 0xb4, 0xce, 0x65, 0x68, 0xae, 0xb4, 0xe5, 0xd1, 0x04, 0xac, 0xfd, 0xc0,
+	0x1b, 0xde, 0xa6, 0xfd, 0x9a, 0x9e, 0x39, 0xb7, 0x7b, 0xa8, 0x63, 0xa6, 0x93, 0x70, 0xc6, 0x84,
+	0x24, 0x3b, 0x70, 0xef, 0x9a, 0x99, 0x3e, 0x71, 0x2a, 0x26, 0x68, 0x2d, 0x9c, 0x31, 0x29, 0x79,
+	0x42, 0x76, 0x0b, 0x4b, 0xa9, 0xe2, 0xcf, 0x51, 0x87, 0x49, 0xcb, 0xa5, 0x64, 0x19, 0x19, 0x04,
+	0xad, 0x61, 0xef, 0xd1, 0xfd, 0x51, 0xd5, 0xb7, 0x65, 0xf2, 0xa3, 0x2f, 0x0b, 0x1f, 0x5a, 0x3b,
+	0xbb, 0x34, 0xa6, 0x86, 0x7f, 0x9f, 0x73, 0x19, 0x5e, 0x91, 0xf7, 0x02, 0x6f, 0xd8, 0xa6, 0x4b,
+	0xe0, 0xd2, 0x30, 0x59, 0x26, 0x48, 0x00, 0x05, 0x07, 0x19, 0x6f, 0xa2, 0x56, 0x26, 0x0d, 0x79,
+	0x1f, 0x90, 0x13, 0xf1, 0x47, 0xa8, 0x15, 0xeb, 0x8c, 0x3c, 0x08, 0xbc, 0x61, 0xef, 0xd1, 0x76,
+	0xfd, 0x6e, 0xa3, 0xdd, 0xd4, 0x39, 0xec, 0xfd, 0xe4, 0xa1, 0xb5, 0x32, 0x02, 0x97, 0x4a, 0x19,
+	0x03, 0xf4, 0xa0, 0x4f, 0x2b, 0xb5, 0x99, 0xa4, 0x7f, 0x3d, 0xc9, 0x2a, 0x9a, 0xd6, 0x9b, 0xd1,
+	0xb4, 0x97, 0xd1, 0xbc, 0x59, 0x66, 0x74, 0x43, 0x99, 0xf7, 0xff, 0xf2, 0xd0, 0xc6, 0xd9, 0xe5,
+	0x13, 0x25, 0xa7, 0x22, 0xce, 0x0d, 0xb3, 0x42, 0xc9, 0xb7, 0xf4, 0xf4, 0x3f, 0x1a, 0x73, 0xad,
+	0x8a, 0xbb, 0xff, 0xac, 0xe2, 0x36, 0x5a, 0xd1, 0x6a, 0xce, 0x0d, 0xb9, 0x0b, 0xa3, 0x59, 0x28,
+	0xf8, 0x08, 0xed, 0x6a, 0x95, 0x30, 0x23, 0x7e, 0x80, 0xc7, 0x27, 0x42, 0xbe, 0xe0, 0x26, 0x13,
+	0x4a, 0x42, 0x1b, 0x3a, 0x74, 0xa7, 0x69, 0x3d, 0xae, 0x8c, 0x78, 0x8c, 0xb6, 0xea, 0x9b, 0x27,
+	0x11, 0x7f, 0x21, 0xc0, 0x0e, 0x1d, 0xea, 0x53, 0x5c, 0x9b, 0xbe, 0xae, 0x2c, 0xfb, 0x7f, 0xac,
+	0xa2, 0xd5, 0x53, 0xcb, 0x6c, 0x9e, 0x5d, 0xcf, 0xcf, 0xfb, 0xb7, 0x99, 0xf5, 0x1b, 0x33, 0x7b,
+	0xc3, 0x3a, 0xb4, 0x6e, 0x5c, 0x87, 0xfb, 0xa8, 0x7b, 0xae, 0x94, 0x2d, 0x0a, 0xde, 0x86, 0x1b,
+	0x3a, 0x0e, 0xc0, 0x48, 0xaf, 0x23, 0x5f, 0xb8, 0x82, 0xb6, 0x86, 0x5d, 0xea, 0x0b, 0xed, 0xd6,
+	0x55, 0x27, 0xcc, 0x4e, 0x95, 0x49, 0x61, 0x43, 0xba, 0xb4, 0xd6, 0xf1, 0x07, 0xa8, 0x1f, 0x2a,
+	0x69, 0x59, 0x68, 0x27, 0x3c, 0x65, 0x22, 0x81, 0x25, 0xe9, 0xd2, 0xdb, 0x25, 0xfc, 0xc6, 0x31,
+	0x1c, 0xa0, 0x5e, 0xc4, 0xb3, 0xd0, 0x08, 0x0d, 0xc9, 0xaf, 0x83, 0x4b, 0x13, 0xb9, 0x29, 0x58,
+	0x96, 0x49, 0x27, 0x4c, 0x92, 0x0d, 0x70, 0xea, 0xd7, 0xf4, 0x24, 0x61, 0x12, 0xef, 0xa2, 0xd5,
+	0x73, 0x23, 0xa2, 0x98, 0x93, 0x4d, 0x30, 0x97, 0x9a, 0xe3, 0x46, 0xe5, 0x96, 0x1b, 0x72, 0xa7,
+	0xe0, 0x85, 0xe6, 0x6a, 0x34, 0xd5, 0x31, 0x23, 0x18, 0x8a, 0x07, 0xb2, 0x1b, 0xc1, 0x28, 0xd3,
+	0x64, 0x0b, 0x90, 0x13, 0x1d, 0x99, 0xb1, 0x84, 0x6c, 0xc3, 0x51, 0x27, 0x56, 0x2b, 0xb2, 0xf3,
+	0x96, 0x15, 0x71, 0x27, 0x8d, 0xb5, 0x30, 0x01, 0x7d, 0xea, 0x44, 0xbc, 0x85, 0x56, 0xcc, 0xe5,
+	0x44, 0x48, 0x58, 0xaf, 0x3e, 0x6d, 0x9b, 0xcb, 0x63, 0x59, 0x42, 0x75, 0x41, 0x3e, 0xa9, 0xe0,
+	0xf3, 0x0b, 0x07, 0x2d, 0x78, 0x1e, 0x14, 0xd0, 0x96, 0x9e, 0x16, 0x3c, 0x3f, 0xad, 0x60, 0xe1,
+	0x99, 0xa4, 0x0e, 0x3e, 0x2c, 0x60, 0x92, 0xd6, 0x30, 0xb3, 0x64, 0x54, 0xc1, 0x53, 0x5b, 0x42,
+	0x39, 0x27, 0xe3, 0x0a, 0x3e, 0x9b, 0x03, 0x9c, 0x68, 0x9d, 0x91, 0xcf, 0x4a, 0x78, 0xa2, 0x33,
+	0xfc, 0x00, 0xf9, 0x2a, 0x23, 0x8f, 0x21, 0xc1, 0x7b, 0x75, 0x82, 0xc5, 0xe0, 0x8d, 0x9e, 0xbb,
+	0x34, 0x8d, 0x08, 0x33, 0xea, 0xab, 0x6c, 0xef, 0xa5, 0x87, 0xba, 0x35, 0xc1, 0x3b, 0x68, 0x35,
+	0x51, 0x2c, 0x9a, 0x1c, 0xc2, 0x44, 0xfa, 0x74, 0xc5, 0x69, 0x87, 0x35, 0x3e, 0x2a, 0x3f, 0x05,
+	0x80, 0x8f, 0xf0, 0x5d, 0xb4, 0x56, 0x78, 0x1f, 0x95, 0x7f, 0x03, 0xe0, 0x75, 0x78, 0xe4, 0x1a,
+	0x1e, 0xea, 0x7c, 0xa2, 0xb9, 0x09, 0xb9, 0xb4, 0x2c, 0xe6, 0xb0, 0xc0, 0x3e, 0xed, 0x87, 0x3a,
+	0x3f, 0xa9, 0x21, 0x3e, 0x40, 0x77, 0x52, 0x9e, 0x2a, 0x73, 0xd5, 0xf4, 0xdc, 0x01, 0xcf, 0xcd,
+	0xc2, 0xd0, 0x70, 0x0e, 0x50, 0xcf, 0xf2, 0x54, 0x73, 0xc3, 0x6c, 0x6e, 0x38, 0x74, 0xc5, 0xa7,
+	0x4d, 0xf4, 0xd5, 0xd3, 0xdf, 0x5f, 0x0f, 0x6e, 0xbd, 0x7a, 0x3d, 0xf0, 0x7e, 0x5c, 0x0c, 0xbc,
+	0x5f, 0x17, 0x03, 0xef, 0xe5, 0x62, 0xe0, 0xfd, 0xb6, 0x18, 0x78, 0xaf, 0x16, 0x03, 0xef, 0xe7,
+	0x3f, 0x07, 0xb7, 0xbe, 0x3b, 0xf8, 0x1f, 0x9f, 0xda, 0xf3, 0x55, 0xf8, 0x56, 0x3e, 0xfe, 0x3b,
+	0x00, 0x00, 0xff, 0xff, 0xc3, 0x46, 0xec, 0x09, 0xa0, 0x07, 0x00, 0x00,
 }
