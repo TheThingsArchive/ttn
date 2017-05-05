@@ -20,7 +20,7 @@ func (h *handlerManager) eventSelect(ctx context.Context, dev *device.Device, lo
 		evt = types.UpdateEvent
 		if dev.AppEUI != *lorawan.AppEui || dev.DevEUI != *lorawan.DevEui {
 			// If the AppEUI or DevEUI is changed, we should remove the device from the NetworkServer and re-add it later
-			_, err = h.deviceManager.DeleteDevice(ctx, &pb_lorawan.DeviceIdentifier{
+			_, err = h.handler.ttnDeviceManager.DeleteDevice(ctx, &pb_lorawan.DeviceIdentifier{
 				AppEui: &dev.AppEUI,
 				DevEui: &dev.DevEUI,
 			})
@@ -48,7 +48,7 @@ func (h *handlerManager) updateDevBrk(ctx context.Context, dev *device.Device, l
 	nsUpdated := dev.GetLoRaWAN()
 	nsUpdated.FCntUp = lorawan.FCntUp
 	nsUpdated.FCntDown = lorawan.FCntDown
-	_, err := h.deviceManager.SetDevice(ctx, nsUpdated)
+	_, err := h.handler.ttnDeviceManager.SetDevice(ctx, nsUpdated)
 	return err
 }
 
@@ -61,10 +61,12 @@ func (h *handlerManager) ctlCustomsKeys(in *pb.Device) {
 		if i == 0 {
 			break
 		}
-		m[key] = val
-		_, ok := l[key]
-		if !ok {
-			i--
+		if val != "" {
+			m[key] = val
+			_, ok := l[key]
+			if !ok {
+				i--
+			}
 		}
 	}
 	in.Attributes = m

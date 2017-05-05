@@ -153,7 +153,7 @@ var devicesSetCmd = &cobra.Command{
 			dev.Description = in
 		}
 
-		if in, err := cmd.Flags().GetStringArray("custom-attr"); err == nil && len(in) > 0 {
+		if in, err := cmd.Flags().GetStringArray("attr-add"); err == nil && len(in) > 0 {
 			for _, v := range in {
 				s := strings.SplitN(v, ":", 2)
 				if dev.Attributes == nil {
@@ -164,6 +164,15 @@ var devicesSetCmd = &cobra.Command{
 				} else {
 					dev.Attributes[s[0]] = ""
 				}
+			}
+		}
+
+		if in, err := cmd.Flags().GetStringArray("attr-rm"); err == nil && len(in) > 0 {
+			if dev.Attributes == nil {
+				dev.Attributes = make(map[string]string, len(in))
+			}
+			for _, v := range in {
+				dev.Attributes[v] = ""
 			}
 		}
 
@@ -204,5 +213,6 @@ func init() {
 	devicesSetCmd.Flags().Int32("altitude", 0, "Set altitude")
 
 	devicesSetCmd.Flags().String("description", "", "Set Description")
-	devicesSetCmd.Flags().StringArray("custom-attr", []string{}, "Set a custom attribute")
+	devicesSetCmd.Flags().StringArray("attr-add", []string{}, "Add an additional attribute (ex:--attr-add <name>:<value>)")
+	devicesSetCmd.Flags().StringArray("attr-rm", []string{}, "Remove an additional attribute")
 }
