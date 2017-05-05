@@ -36,16 +36,22 @@ func (r *TTNRandom) randomCharString() string {
 }
 
 func (r *TTNRandom) formatID(s string) string {
-	switch {
-	case strings.HasPrefix(s, "-"):
-		s = strings.TrimPrefix(s, "-") + r.randomCharString()
-	case strings.HasPrefix(s, "_"):
-		s = strings.TrimPrefix(s, "_") + r.randomCharString()
-	case strings.HasSuffix(s, "-"):
-		s = strings.TrimSuffix(s, "-") + r.randomCharString()
-	case strings.HasSuffix(s, "_"):
-		s = strings.TrimSuffix(s, "_") + r.randomCharString()
+outer:
+	for {
+		switch {
+		case strings.HasPrefix(s, "-"):
+			s = strings.TrimPrefix(s, "-") + r.randomCharString()
+		case strings.HasPrefix(s, "_"):
+			s = strings.TrimPrefix(s, "_") + r.randomCharString()
+		case strings.HasSuffix(s, "-"):
+			s = strings.TrimSuffix(s, "-") + r.randomCharString()
+		case strings.HasSuffix(s, "_"):
+			s = strings.TrimSuffix(s, "_") + r.randomCharString()
+		default:
+			break outer
+		}
 	}
+
 	return strings.ToLower(strings.NewReplacer(
 		"_-", r.randomCharString()+r.randomCharString(),
 		"-_", r.randomCharString()+r.randomCharString(),
