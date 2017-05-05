@@ -130,7 +130,7 @@ message Status {
   uint32  tx_in          = 43;
   // Total number of successfully sent downlink packets since boot
   uint32  tx_ok          = 44;
-  // Total number of packets received from link testing mote, with CRC OK 
+  // Total number of packets received from link testing mote, with CRC OK
   uint32  lm_ok          = 45;
   // Sequence number of the first packet received from the link testing mote
   uint32  lm_st          = 46;
@@ -153,4 +153,7 @@ message Status {
   }
 
   OSMetrics os = 51;
+
+  // debug or warning messages from the gateway
+  repeated string messages = 52;
 }

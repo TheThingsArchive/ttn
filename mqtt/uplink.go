@@ -19,7 +19,7 @@ func (c *DefaultClient) PublishUplink(dataUp types.UplinkMessage) Token {
 	topic := DeviceTopic{dataUp.AppID, dataUp.DevID, DeviceUplink, ""}
 	msg, err := json.Marshal(dataUp)
 	if err != nil {
-		return &simpleToken{fmt.Errorf("Unable to marshal the message payload")}
+		return &simpleToken{fmt.Errorf("Unable to marshal the message payload: %s", err)}
 	}
 	return c.publish(topic.String(), msg)
 }

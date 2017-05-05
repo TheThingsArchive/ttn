@@ -1,9 +1,8 @@
-The Things Network
-==================
+# The Things Network Stack
 
-[![Build Status](https://travis-ci.org/TheThingsNetwork/ttn.svg?branch=master)](https://travis-ci.org/TheThingsNetwork/ttn) [![Slack Status](https://slack.thethingsnetwork.org/badge.svg)](https://slack.thethingsnetwork.org/) [![Coverage Status](https://coveralls.io/repos/github/TheThingsNetwork/ttn/badge.svg?branch=master)](https://coveralls.io/github/TheThingsNetwork/ttn?branch=master)
+[![Build Status](https://travis-ci.org/TheThingsNetwork/ttn.svg?branch=master)](https://travis-ci.org/TheThingsNetwork/ttn) [![Coverage Status](https://coveralls.io/repos/github/TheThingsNetwork/ttn/badge.svg?branch=master)](https://coveralls.io/github/TheThingsNetwork/ttn?branch=master) [![GoDoc](https://godoc.org/github.com/TheThingsNetwork/ttn?status.svg)](https://godoc.org/github.com/TheThingsNetwork/ttn)
 
-![The Things Network](http://thethingsnetwork.org/static/ttn/media/The%20Things%20Uitlijning.svg)
+![The Things Network](https://thethings.blob.core.windows.net/ttn/logo.svg)
 
 The Things Network is a global open crowdsourced Internet of Things data network.
 
@@ -17,9 +16,15 @@ When you get started with The Things Network, you'll probably have some question
 - Join [Slack](https://slack.thethingsnetwork.org) and ask us what you want to know
 - Read background information on the [wiki](https://www.thethingsnetwork.org/wiki/)
 
-## Prepare your Development Environment
+## Installing and Running The Things Network Stack
 
-1. Make sure you have [Go](https://golang.org) installed (version 1.7 or later).
+Although we're all about building an open, public network, we understand that some people rather have everything privately on their own servers. On our website, you'll find some articles describing how you can [set up a private routing environment](https://www.thethingsnetwork.org/article/setting-up-a-private-routing-environment) and how you can [deploy this environment using Docker](https://www.thethingsnetwork.org/article/deploying-a-private-routing-environment-with-docker-compose).
+
+## Development
+
+First, you'll have to prepare your development environment. Follow the steps below to set up your development machine.
+
+1. Make sure you have [Go](https://golang.org) installed (version 1.8 or later).
 2. Set up your [Go environment](https://golang.org/doc/code.html#GOPATH)
 3. Install the [protobuf compiler (`protoc`)](https://github.com/google/protobuf/releases)
 4. Install `make`. On Linux install `build-essential`. On macOS, `make` comes with XCode or the developer tools. On Windows you can get `make` from [https://gnuarmeclipse.github.io/windows-build-tools/](https://gnuarmeclipse.github.io/windows-build-tools/)
@@ -28,7 +33,7 @@ When you get started with The Things Network, you'll probably have some question
   If you're on Linux, you probably know how to do that. On a Mac, just run `brew bundle`. The Windows installer will setup and start RabbitMQ as a service. Use the `RabbitMQ Command Prompt (sbin dir)` to run commands, i.e. to enable plugins.
 6. Declare a RabbitMQ exchange `ttn.handler` of type `topic`. Using [the management plugin](http://www.rabbitmq.com/management.html), declare the exchange in the web interface `http://server-name:15672` or using the management cli, run `rabbitmqadmin declare exchange name=ttn.handler type=topic auto_delete=false durable=true`. If your handler's user has sufficient permissions on RabbitMQ, it will attempt to create the exchange if not present.
 
-## Set up The Things Network's backend for Development
+Next, you can clone this repository and set up the TTN part:
 
 1. Fork this repository
 2. Clone your fork: `git clone --branch develop https://github.com/YOURUSERNAME/ttn.git $GOPATH/src/github.com/TheThingsNetwork/ttn`
@@ -57,35 +62,6 @@ You can check your `ttnctl` configuration by running `ttnctl config`. It should 
 ```
 
 **NOTE:** From now on you should run all commands from the `$GOPATH/src/github.com/TheThingsNetwork/ttn` directory.
-
-## Run The Things Network's backend locally
-
-- Set up the backend as described [above](#set-up-the-things-networks-backend-for-development).
-- Run `forego start` to start all backend services at the same time. Make sure that Redis and RabbitMQ **are running** on your machine.
-- First time only (or when Redis is flushed):
-  * Run `ttn broker register-prefix 00000000/0 --config ./.env/broker/dev.yml`
-  * Restart the backend services
-
-## Build and run The Things Network's backend in Docker
-
-- Set up the backend as described [above](#set-up-the-things-networks-backend-for-development).
-- Add the following line to your `/etc/hosts` file:
-    `127.0.0.1 router handler`
-- Run `make docker` to build the docker image
-- Run `docker-compose up` to start all backend services in Docker. Make sure that Redis and RabbitMQ **are not running** on your local machine, because they will be started by `docker-compose`.
-- First time only (or when Redis is flushed):
-  * Run `docker-compose run broker broker register-prefix 00000000/0 --config ./.env/broker/dev.yml`
-  * Restart the backend services
-
-## Contributing
-
-Source code for The Things Network is MIT licensed. We encourage users to make contributions on [Github](https://github.com/TheThingsNetwork/ttn) and to participate in discussions on [Slack](https://slack.thethingsnetwork.org).
-
-If you encounter any problems, please check [open issues](https://github.com/TheThingsNetwork/ttn/issues) before [creating a new issue](https://github.com/TheThingsNetwork/ttn/issues/new). Please be specific and give a detailed description of the issue. Explain the steps to reproduce the problem. If you're able to fix the issue yourself, please help the community by forking the repository and submitting a pull request with your fix.
-
-For contributing a feature, please open an issue that explains what you're working on. Work in your own fork of the repository and submit a pull request when you're done.
-
-If you want to contribute, but don't know where to start, you could have a look at issues with the label [*help wanted*](https://github.com/TheThingsNetwork/ttn/labels/help%20wanted) or [*difficulty/easy*](https://github.com/TheThingsNetwork/ttn/labels/difficulty%2Feasy).
 
 ## License
 

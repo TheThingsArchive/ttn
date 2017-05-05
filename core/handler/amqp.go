@@ -93,12 +93,12 @@ func (h *handler) HandleAMQP(username, password, host, exchange, downlinkQueue s
 	go func() {
 		defer pubWait.Done()
 		for up := range h.amqpUp {
-			ctx.WithFields(ttnlog.Fields{
+			ctx := ctx.WithFields(ttnlog.Fields{
 				"DevID": up.DevID,
 				"AppID": up.AppID,
-			}).Debug("Publish Uplink")
-			err := publisher.PublishUplink(*up)
-			if err != nil {
+			})
+			ctx.Debug("Publish Uplink")
+			if err := publisher.PublishUplink(*up); err != nil {
 				ctx.WithError(err).Warn("Could not publish Uplink")
 			}
 		}
@@ -107,15 +107,20 @@ func (h *handler) HandleAMQP(username, password, host, exchange, downlinkQueue s
 	go func() {
 		defer pubWait.Done()
 		for event := range h.amqpEvent {
-			ctx.WithFields(ttnlog.Fields{
+			ctx := ctx.WithFields(ttnlog.Fields{
 				"DevID": event.DevID,
 				"AppID": event.AppID,
 				"Event": event.Event,
-			}).Debug("Publish Event")
+			})
+			ctx.Debug("Publish Event")
 			if event.DevID == "" {
-				publisher.PublishAppEvent(event.AppID, event.Event, event.Data)
+				if err := publisher.PublishAppEvent(event.AppID, event.Event, event.Data); err != nil {
+					ctx.WithError(err).Warn("Could not publish App Event")
+				}
 			} else {
-				publisher.PublishDeviceEvent(event.AppID, event.DevID, event.Event, event.Data)
+				if err := publisher.PublishDeviceEvent(event.AppID, event.DevID, event.Event, event.Data); err != nil {
+					ctx.WithError(err).Warn("Could not publish Device Event")
+				}
 			}
 		}
 	}()

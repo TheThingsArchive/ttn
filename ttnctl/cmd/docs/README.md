@@ -349,6 +349,12 @@ $ ttnctl devices register test
   INFO Registered device                        AppEUI=70B3D57EF0000024 AppID=test AppKey=EBD2E2810A4307263FE5EF78E2EF589D DevEUI=0001D544B2936FCE DevID=test
 ```
 
+#### ttnctl devices register on-join
+
+ttnctl devices register on-join can be used to register a device template for on-join registrations.
+
+**Usage:** `ttnctl devices register on-join [Device ID Prefix] [AppKey]`
+
 ### ttnctl devices set
 
 ttnctl devices set can be used to set properties of a device.

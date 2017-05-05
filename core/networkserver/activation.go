@@ -18,6 +18,8 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
+var emptyDevEUI = types.DevEUI{}
+
 func (n *networkServer) getDevAddr(constraints ...string) (types.DevAddr, error) {
 	// Generate random DevAddr bytes
 	var devAddr types.DevAddr
@@ -43,6 +45,12 @@ func (n *networkServer) HandlePrepareActivation(activation *pb_broker.Deduplicat
 		return nil, errors.NewErrInvalidArgument("Activation", "missing AppEUI or DevEUI")
 	}
 	dev, err := n.devices.Get(*activation.AppEui, *activation.DevEui)
+	if errors.IsNotFound(err) {
+		dev, err = n.devices.Get(*activation.AppEui, emptyDevEUI)
+		if err == nil {
+			activation.Trace = activation.Trace.WithEvent("device not yet registered")
+		}
+	}
 	if err != nil {
 		return nil, err
 	}

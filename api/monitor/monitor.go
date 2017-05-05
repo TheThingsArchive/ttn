@@ -14,6 +14,8 @@ import (
 	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/api/gateway"
+	"github.com/TheThingsNetwork/ttn/api/handler"
+	"github.com/TheThingsNetwork/ttn/api/networkserver"
 	"github.com/TheThingsNetwork/ttn/api/pool"
 	"github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/utils"
@@ -240,24 +242,6 @@ func (c *Client) NewGatewayStreams(id string, token string) GenericStream {
 			log := log.WithField("Monitor", server.name)
 			cli := NewMonitorClient(server.conn)
 
-			monitor := func(streamName string, stream grpc.ClientStream) {
-				err := stream.RecvMsg(new(empty.Empty))
-				switch {
-				case err == nil:
-					log.Debugf("%s stream closed", streamName)
-				case err == io.EOF:
-					log.WithError(err).Debugf("%s stream ended", streamName)
-				case err == context.Canceled || grpc.Code(err) == codes.Canceled:
-					log.WithError(err).Debugf("%s stream canceled", streamName)
-				case err == context.DeadlineExceeded || grpc.Code(err) == codes.DeadlineExceeded:
-					log.WithError(err).Debugf("%s stream deadline exceeded", streamName)
-				case grpc.ErrorDesc(err) == grpc.ErrClientConnClosing.Error():
-					log.WithError(err).Debugf("%s stream connection closed", streamName)
-				default:
-					log.WithError(err).Warnf("%s stream closed unexpectedly", streamName)
-				}
-			}
-
 			chUplink := make(chan *router.UplinkMessage, c.config.BufferSize)
 			chDownlink := make(chan *router.DownlinkMessage, c.config.BufferSize)
 			chStatus := make(chan *gateway.Status, c.config.BufferSize)
@@ -282,7 +266,7 @@ func (c *Client) NewGatewayStreams(id string, token string) GenericStream {
 				s.uplink[server.name] = chUplink
 				s.mu.Unlock()
 				go func() {
-					monitor("GatewayUplink", uplink)
+					monitorStream(log, "GatewayUplink", uplink)
 					s.mu.Lock()
 					defer s.mu.Unlock()
 					delete(s.uplink, server.name)
@@ -298,7 +282,7 @@ func (c *Client) NewGatewayStreams(id string, token string) GenericStream {
 				s.downlink[server.name] = chDownlink
 				s.mu.Unlock()
 				go func() {
-					monitor("GatewayDownlink", downlink)
+					monitorStream(log, "GatewayDownlink", downlink)
 					s.mu.Lock()
 					defer s.mu.Unlock()
 					delete(s.downlink, server.name)
@@ -314,7 +298,7 @@ func (c *Client) NewGatewayStreams(id string, token string) GenericStream {
 				s.status[server.name] = chStatus
 				s.mu.Unlock()
 				go func() {
-					monitor("GatewayStatus", status)
+					monitorStream(log, "GatewayStatus", status)
 					s.mu.Lock()
 					defer s.mu.Unlock()
 					delete(s.status, server.name)
@@ -361,6 +345,116 @@ func (c *Client) NewGatewayStreams(id string, token string) GenericStream {
 	return s
 }
 
+type routerStreams struct {
+	log    log.Interface
+	ctx    context.Context
+	cancel context.CancelFunc
+
+	mu     sync.RWMutex
+	status map[string]chan *router.Status
+}
+
+func (s *routerStreams) Send(msg interface{}) {
+	if msg == nil {
+		return
+	}
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	switch msg := msg.(type) {
+	case *router.Status:
+		s.log.WithField("Monitors", len(s.status)).Debug("Sending Status to monitor")
+		for serverName, ch := range s.status {
+			select {
+			case ch <- msg:
+			default:
+				s.log.WithField("Monitor", serverName).Warn("Status buffer full")
+			}
+		}
+	}
+}
+
+func (s *routerStreams) Close() {
+	s.cancel()
+}
+
+// NewRouterStreams returns new streams using the given router ID and token
+func (c *Client) NewRouterStreams(id string, token string) GenericStream {
+	log := c.log
+	ctx, cancel := context.WithCancel(c.ctx)
+	ctx = api.ContextWithID(ctx, id)
+	ctx = api.ContextWithToken(ctx, token)
+	s := &routerStreams{
+		log:    log,
+		ctx:    ctx,
+		cancel: cancel,
+
+		status: make(map[string]chan *router.Status),
+	}
+
+	// Hook up the monitor servers
+	for _, server := range c.serverConns {
+		go func(server *serverConn) {
+			if server.ready != nil {
+				select {
+				case <-ctx.Done():
+					return
+				case <-server.ready:
+				}
+			}
+			if server.conn == nil {
+				return
+			}
+
+			log := log.WithField("Monitor", server.name)
+			cli := NewMonitorClient(server.conn)
+
+			chStatus := make(chan *router.Status, c.config.BufferSize)
+
+			defer func() {
+				s.mu.Lock()
+				defer s.mu.Unlock()
+				delete(s.status, server.name)
+				close(chStatus)
+			}()
+
+			// Status stream
+			status, err := cli.RouterStatus(ctx)
+			if err != nil {
+				log.WithError(err).Warn("Could not set up RouterStatus stream")
+			} else {
+				s.mu.Lock()
+				s.status[server.name] = chStatus
+				s.mu.Unlock()
+				go func() {
+					monitorStream(log, "RouterStatus", status)
+					s.mu.Lock()
+					defer s.mu.Unlock()
+					delete(s.status, server.name)
+				}()
+			}
+
+			log.Debug("Start handling Router streams")
+			defer log.Debug("Done handling Router streams")
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case msg := <-chStatus:
+					if err := status.Send(msg); err != nil {
+						log.WithError(err).Warn("Could not send Status to monitor")
+						if err == restartstream.ErrStreamClosed {
+							return
+						}
+					}
+				}
+			}
+
+		}(server)
+	}
+
+	return s
+}
+
 type brokerStreams struct {
 	log    log.Interface
 	ctx    context.Context
@@ -369,6 +463,7 @@ type brokerStreams struct {
 	mu       sync.RWMutex
 	uplink   map[string]chan *broker.DeduplicatedUplinkMessage
 	downlink map[string]chan *broker.DownlinkMessage
+	status   map[string]chan *broker.Status
 }
 
 func (s *brokerStreams) Send(msg interface{}) {
@@ -416,6 +511,15 @@ func (s *brokerStreams) Send(msg interface{}) {
 				s.log.WithField("Monitor", serverName).Warn("DownlinkMessage buffer full")
 			}
 		}
+	case *broker.Status:
+		s.log.WithField("Monitors", len(s.status)).Debug("Sending Status to monitor")
+		for serverName, ch := range s.status {
+			select {
+			case ch <- msg:
+			default:
+				s.log.WithField("Monitor", serverName).Warn("Status buffer full")
+			}
+		}
 	}
 }
 
@@ -436,6 +540,7 @@ func (c *Client) NewBrokerStreams(id string, token string) GenericStream {
 
 		uplink:   make(map[string]chan *broker.DeduplicatedUplinkMessage),
 		downlink: make(map[string]chan *broker.DownlinkMessage),
+		status:   make(map[string]chan *broker.Status),
 	}
 
 	// Hook up the monitor servers
@@ -455,34 +560,19 @@ func (c *Client) NewBrokerStreams(id string, token string) GenericStream {
 			log := log.WithField("Monitor", server.name)
 			cli := NewMonitorClient(server.conn)
 
-			monitor := func(streamName string, stream grpc.ClientStream) {
-				err := stream.RecvMsg(new(empty.Empty))
-				switch {
-				case err == nil:
-					log.Debugf("%s stream closed", streamName)
-				case err == io.EOF:
-					log.WithError(err).Debugf("%s stream ended", streamName)
-				case err == context.Canceled || grpc.Code(err) == codes.Canceled:
-					log.WithError(err).Debugf("%s stream canceled", streamName)
-				case err == context.DeadlineExceeded || grpc.Code(err) == codes.DeadlineExceeded:
-					log.WithError(err).Debugf("%s stream deadline exceeded", streamName)
-				case grpc.ErrorDesc(err) == grpc.ErrClientConnClosing.Error():
-					log.WithError(err).Debugf("%s stream connection closed", streamName)
-				default:
-					log.WithError(err).Warnf("%s stream closed unexpectedly", streamName)
-				}
-			}
-
 			chUplink := make(chan *broker.DeduplicatedUplinkMessage, c.config.BufferSize)
 			chDownlink := make(chan *broker.DownlinkMessage, c.config.BufferSize)
+			chStatus := make(chan *broker.Status, c.config.BufferSize)
 
 			defer func() {
 				s.mu.Lock()
 				defer s.mu.Unlock()
 				delete(s.uplink, server.name)
 				delete(s.downlink, server.name)
+				delete(s.status, server.name)
 				close(chUplink)
 				close(chDownlink)
+				close(chStatus)
 			}()
 
 			// Uplink stream
@@ -494,7 +584,7 @@ func (c *Client) NewBrokerStreams(id string, token string) GenericStream {
 				s.uplink[server.name] = chUplink
 				s.mu.Unlock()
 				go func() {
-					monitor("BrokerUplink", uplink)
+					monitorStream(log, "BrokerUplink", uplink)
 					s.mu.Lock()
 					defer s.mu.Unlock()
 					delete(s.uplink, server.name)
@@ -510,10 +600,26 @@ func (c *Client) NewBrokerStreams(id string, token string) GenericStream {
 				s.downlink[server.name] = chDownlink
 				s.mu.Unlock()
 				go func() {
-					monitor("BrokerDownlink", downlink)
+					monitorStream(log, "BrokerDownlink", downlink)
 					s.mu.Lock()
 					defer s.mu.Unlock()
 					delete(s.downlink, server.name)
+				}()
+			}
+
+			// Status stream
+			status, err := cli.BrokerStatus(ctx)
+			if err != nil {
+				log.WithError(err).Warn("Could not set up BrokerStatus stream")
+			} else {
+				s.mu.Lock()
+				s.status[server.name] = chStatus
+				s.mu.Unlock()
+				go func() {
+					monitorStream(log, "BrokerStatus", status)
+					s.mu.Lock()
+					defer s.mu.Unlock()
+					delete(s.status, server.name)
 				}()
 			}
 
@@ -537,6 +643,123 @@ func (c *Client) NewBrokerStreams(id string, token string) GenericStream {
 							return
 						}
 					}
+				case msg := <-chStatus:
+					if err := status.Send(msg); err != nil {
+						log.WithError(err).Warn("Could not send Status to monitor")
+						if err == restartstream.ErrStreamClosed {
+							return
+						}
+					}
+				}
+			}
+
+		}(server)
+	}
+
+	return s
+}
+
+type networkServerStreams struct {
+	log    log.Interface
+	ctx    context.Context
+	cancel context.CancelFunc
+
+	mu     sync.RWMutex
+	status map[string]chan *networkserver.Status
+}
+
+func (s *networkServerStreams) Send(msg interface{}) {
+	if msg == nil {
+		return
+	}
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	switch msg := msg.(type) {
+	case *networkserver.Status:
+		s.log.WithField("Monitors", len(s.status)).Debug("Sending Status to monitor")
+		for serverName, ch := range s.status {
+			select {
+			case ch <- msg:
+			default:
+				s.log.WithField("Monitor", serverName).Warn("Status buffer full")
+			}
+		}
+	}
+}
+
+func (s *networkServerStreams) Close() {
+	s.cancel()
+}
+
+// NewNetworkServerStreams returns new streams using the given networkServer ID and token
+func (c *Client) NewNetworkServerStreams(id string, token string) GenericStream {
+	log := c.log
+	ctx, cancel := context.WithCancel(c.ctx)
+	ctx = api.ContextWithID(ctx, id)
+	ctx = api.ContextWithToken(ctx, token)
+	s := &networkServerStreams{
+		log:    log,
+		ctx:    ctx,
+		cancel: cancel,
+
+		status: make(map[string]chan *networkserver.Status),
+	}
+
+	// Hook up the monitor servers
+	for _, server := range c.serverConns {
+		go func(server *serverConn) {
+			if server.ready != nil {
+				select {
+				case <-ctx.Done():
+					return
+				case <-server.ready:
+				}
+			}
+			if server.conn == nil {
+				return
+			}
+
+			log := log.WithField("Monitor", server.name)
+			cli := NewMonitorClient(server.conn)
+
+			chStatus := make(chan *networkserver.Status, c.config.BufferSize)
+
+			defer func() {
+				s.mu.Lock()
+				defer s.mu.Unlock()
+				delete(s.status, server.name)
+				close(chStatus)
+			}()
+
+			// Status stream
+			status, err := cli.NetworkServerStatus(ctx)
+			if err != nil {
+				log.WithError(err).Warn("Could not set up NetworkServerStatus stream")
+			} else {
+				s.mu.Lock()
+				s.status[server.name] = chStatus
+				s.mu.Unlock()
+				go func() {
+					monitorStream(log, "NetworkServerStatus", status)
+					s.mu.Lock()
+					defer s.mu.Unlock()
+					delete(s.status, server.name)
+				}()
+			}
+
+			log.Debug("Start handling NetworkServer streams")
+			defer log.Debug("Done handling NetworkServer streams")
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case msg := <-chStatus:
+					if err := status.Send(msg); err != nil {
+						log.WithError(err).Warn("Could not send Status to monitor")
+						if err == restartstream.ErrStreamClosed {
+							return
+						}
+					}
 				}
 			}
 
@@ -554,6 +777,7 @@ type handlerStreams struct {
 	mu       sync.RWMutex
 	uplink   map[string]chan *broker.DeduplicatedUplinkMessage
 	downlink map[string]chan *broker.DownlinkMessage
+	status   map[string]chan *handler.Status
 }
 
 func (s *handlerStreams) Send(msg interface{}) {
@@ -601,6 +825,15 @@ func (s *handlerStreams) Send(msg interface{}) {
 				s.log.WithField("Monitor", serverName).Warn("DownlinkMessage buffer full")
 			}
 		}
+	case *handler.Status:
+		s.log.Debug("Sending Status to monitor")
+		for serverName, ch := range s.status {
+			select {
+			case ch <- msg:
+			default:
+				s.log.WithField("Monitor", serverName).Warn("Status buffer full")
+			}
+		}
 	}
 }
 
@@ -621,6 +854,7 @@ func (c *Client) NewHandlerStreams(id string, token string) GenericStream {
 
 		uplink:   make(map[string]chan *broker.DeduplicatedUplinkMessage),
 		downlink: make(map[string]chan *broker.DownlinkMessage),
+		status:   make(map[string]chan *handler.Status),
 	}
 
 	// Hook up the monitor servers
@@ -640,34 +874,19 @@ func (c *Client) NewHandlerStreams(id string, token string) GenericStream {
 			log := log.WithField("Monitor", server.name)
 			cli := NewMonitorClient(server.conn)
 
-			monitor := func(streamName string, stream grpc.ClientStream) {
-				err := stream.RecvMsg(new(empty.Empty))
-				switch {
-				case err == nil:
-					log.Debugf("%s stream closed", streamName)
-				case err == io.EOF:
-					log.WithError(err).Debugf("%s stream ended", streamName)
-				case err == context.Canceled || grpc.Code(err) == codes.Canceled:
-					log.WithError(err).Debugf("%s stream canceled", streamName)
-				case err == context.DeadlineExceeded || grpc.Code(err) == codes.DeadlineExceeded:
-					log.WithError(err).Debugf("%s stream deadline exceeded", streamName)
-				case grpc.ErrorDesc(err) == grpc.ErrClientConnClosing.Error():
-					log.WithError(err).Debugf("%s stream connection closed", streamName)
-				default:
-					log.WithError(err).Warnf("%s stream closed unexpectedly", streamName)
-				}
-			}
-
 			chUplink := make(chan *broker.DeduplicatedUplinkMessage, c.config.BufferSize)
 			chDownlink := make(chan *broker.DownlinkMessage, c.config.BufferSize)
+			chStatus := make(chan *handler.Status, c.config.BufferSize)
 
 			defer func() {
 				s.mu.Lock()
 				defer s.mu.Unlock()
 				delete(s.uplink, server.name)
 				delete(s.downlink, server.name)
+				delete(s.status, server.name)
 				close(chUplink)
 				close(chDownlink)
+				close(chStatus)
 			}()
 
 			// Uplink stream
@@ -679,7 +898,7 @@ func (c *Client) NewHandlerStreams(id string, token string) GenericStream {
 				s.uplink[server.name] = chUplink
 				s.mu.Unlock()
 				go func() {
-					monitor("HandlerUplink", uplink)
+					monitorStream(log, "HandlerUplink", uplink)
 					s.mu.Lock()
 					defer s.mu.Unlock()
 					delete(s.uplink, server.name)
@@ -695,10 +914,26 @@ func (c *Client) NewHandlerStreams(id string, token string) GenericStream {
 				s.downlink[server.name] = chDownlink
 				s.mu.Unlock()
 				go func() {
-					monitor("HandlerDownlink", downlink)
+					monitorStream(log, "HandlerDownlink", downlink)
 					s.mu.Lock()
 					defer s.mu.Unlock()
 					delete(s.downlink, server.name)
+				}()
+			}
+
+			// Status stream
+			status, err := cli.HandlerStatus(ctx)
+			if err != nil {
+				log.WithError(err).Warn("Could not set up HandlerStatus stream")
+			} else {
+				s.mu.Lock()
+				s.status[server.name] = chStatus
+				s.mu.Unlock()
+				go func() {
+					monitorStream(log, "HandlerStatus", status)
+					s.mu.Lock()
+					defer s.mu.Unlock()
+					delete(s.status, server.name)
 				}()
 			}
 
@@ -722,6 +957,13 @@ func (c *Client) NewHandlerStreams(id string, token string) GenericStream {
 							return
 						}
 					}
+				case msg := <-chStatus:
+					if err := status.Send(msg); err != nil {
+						log.WithError(err).Warn("Could not send Status to monitor")
+						if err == restartstream.ErrStreamClosed {
+							return
+						}
+					}
 				}
 			}
 
@@ -729,4 +971,22 @@ func (c *Client) NewHandlerStreams(id string, token string) GenericStream {
 	}
 
 	return s
+}
+
+func monitorStream(log log.Interface, streamName string, stream grpc.ClientStream) {
+	err := stream.RecvMsg(new(empty.Empty))
+	switch {
+	case err == nil:
+		log.Debugf("%s stream closed", streamName)
+	case err == io.EOF:
+		log.WithError(err).Debugf("%s stream ended", streamName)
+	case err == context.Canceled || grpc.Code(err) == codes.Canceled:
+		log.WithError(err).Debugf("%s stream canceled", streamName)
+	case err == context.DeadlineExceeded || grpc.Code(err) == codes.DeadlineExceeded:
+		log.WithError(err).Debugf("%s stream deadline exceeded", streamName)
+	case grpc.ErrorDesc(err) == grpc.ErrClientConnClosing.Error():
+		log.WithError(err).Debugf("%s stream connection closed", streamName)
+	default:
+		log.WithError(err).Warnf("%s stream closed unexpectedly", streamName)
+	}
 }

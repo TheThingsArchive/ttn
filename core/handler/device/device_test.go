@@ -6,6 +6,7 @@ package device
 import (
 	"testing"
 
+	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/smartystreets/assertions"
 )
 
@@ -16,6 +17,21 @@ func TestDeviceUpdate(t *testing.T) {
 	}
 	device.StartUpdate()
 	a.So(device.old.DevID, ShouldEqual, device.DevID)
+}
+
+func TestDeviceClone(t *testing.T) {
+	a := New(t)
+	device := &Device{
+		DevID: "Device",
+		CurrentDownlink: &types.DownlinkMessage{
+			PayloadRaw: []byte{1, 2, 3, 4},
+		},
+	}
+	new := device.Clone()
+	a.So(new.old, ShouldBeNil)
+	a.So(new.DevID, ShouldEqual, device.DevID)
+	a.So(new.CurrentDownlink, ShouldNotEqual, device.CurrentDownlink)
+	a.So(new.CurrentDownlink.PayloadRaw, ShouldResemble, device.CurrentDownlink.PayloadRaw)
 }
 
 func TestDeviceChangedFields(t *testing.T) {

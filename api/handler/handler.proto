@@ -71,6 +71,9 @@ message Application {
   // The encoder is a JavaScript function that encodes an object to a byte array.
   // This function is used when the payload format is set to custom.
   string encoder        = 5;
+
+  // The "register on join" access key should only be set if devices need to be registered on join
+  string register_on_join_access_key = 7;
 }
 
 message DeviceIdentifier {
