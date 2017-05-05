@@ -1,4 +1,5 @@
-// Copyright © 2017 The Things Industries B.V.
+// Copyright © 2017 The Things Network
+// Use of this source code is governed by the MIT license that can be found in the LICENSE file.
 
 package handler
 
@@ -52,8 +53,8 @@ func (h *handlerManager) updateDevBrk(ctx context.Context, dev *device.Device, l
 	return err
 }
 
-//ctlCustomsKeys take all the whitelisted Attribute plus a maximum of customs one
-func (h *handlerManager) ctlCustomsKeys(in *pb.Device) {
+//attrControl take all the whitelisted Attribute plus a maximum of customs one
+func (h *handlerManager) attrControl(in *pb.Device) {
 	l := h.handler.devices.AttrWhitelist()
 	m := make(map[string]string, len(l))
 	i := maxAttr
