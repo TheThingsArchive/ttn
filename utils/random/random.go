@@ -56,7 +56,7 @@ func (r *TTNRandom) formatID(s string) string {
 
 // ID returns randomly generated ID
 func (r *TTNRandom) ID() string {
-	return r.formatID(r.Interface.String(2 + r.Interface.Intn(61)))
+	return r.formatID(r.Interface.String(2 + r.Interface.Intn(34)))
 }
 
 // AppID returns randomly generated AppID
