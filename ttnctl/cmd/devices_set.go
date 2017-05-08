@@ -213,6 +213,6 @@ func init() {
 	devicesSetCmd.Flags().Int32("altitude", 0, "Set altitude")
 
 	devicesSetCmd.Flags().String("description", "", "Set Description")
-	devicesSetCmd.Flags().StringArray("attr-add", []string{}, "Add an additional attribute")
-	devicesSetCmd.Flags().StringArray("attr-rm", []string{}, "Remove an additional attribute")
+	devicesSetCmd.Flags().StringArray("attr-add", []string{}, "Add an attribute")
+	devicesSetCmd.Flags().StringArray("attr-rm", []string{}, "Remove an attribute")
 }
