@@ -13,8 +13,9 @@ import (
 
 var errTimeOutExceeded = errors.NewErrInternal("Code has been running to long")
 
-func RunCode(name, code string, env map[string]interface{}, timeout time.Duration, logger Logger) (val otto.Value, err error) {
+func RunCode(name, code string, env map[string]interface{}, timeout time.Duration, logger Logger) (val interface{}, err error) {
 	vm := otto.New()
+	vm.SetStackDepthLimit(32)
 
 	// load the environment
 	for key, val := range env {
@@ -37,13 +38,14 @@ func RunCode(name, code string, env map[string]interface{}, timeout time.Duratio
 	defer func() {
 		duration := time.Since(start)
 		if caught := recover(); caught != nil {
-			val = otto.Value{}
-			if caught == errTimeOutExceeded {
+			val = nil
+			switch {
+			case caught == errTimeOutExceeded:
 				err = errors.NewErrInternal(fmt.Sprintf("Interrupted javascript execution for %s after %v", name, duration))
-				return
-			} else {
+			default:
 				err = errors.NewErrInternal(fmt.Sprintf("Fatal error in %s: %s", name, caught))
 			}
+			return
 		}
 	}()
 
@@ -56,10 +58,27 @@ func RunCode(name, code string, env map[string]interface{}, timeout time.Duratio
 		}
 	}()
 
-	val, err = vm.Run(code)
+	oVal, err := vm.Run(code)
 	if err != nil {
-		return val, errors.NewErrInternal(fmt.Sprintf("%s threw error: %s", name, err))
+		return nil, errors.NewErrInternal(fmt.Sprintf("%s threw error: %s", name, err))
 	}
 
-	return val, nil
+	switch {
+	case oVal.IsBoolean():
+		return oVal.ToBoolean()
+	case oVal.IsNull(), oVal.IsUndefined():
+		return nil, nil
+	case oVal.IsNumber():
+		f, _ := oVal.ToFloat()
+		if float64(int64(f)) == f {
+			return oVal.ToInteger()
+		}
+		return f, nil
+	case oVal.IsObject():
+		return oVal.Export()
+	case oVal.IsString():
+		return oVal.ToString()
+	}
+
+	return nil, errors.NewErrInternal(fmt.Sprintf("%s return value invalid", name))
 }

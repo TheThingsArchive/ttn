@@ -52,12 +52,7 @@ func (f *CustomUplinkFunctions) decode(payload []byte, port uint8) (map[string]i
 		return nil, err
 	}
 
-	if !value.IsObject() {
-		return nil, errors.NewErrInvalidArgument("Decoder", "does not return an object")
-	}
-
-	v, _ := value.Export()
-	m, ok := v.(map[string]interface{})
+	m, ok := value.(map[string]interface{})
 	if !ok {
 		return nil, errors.NewErrInvalidArgument("Decoder", "does not return an object")
 	}
@@ -87,12 +82,7 @@ func (f *CustomUplinkFunctions) convert(fields map[string]interface{}, port uint
 		return nil, err
 	}
 
-	if !value.IsObject() {
-		return nil, errors.NewErrInvalidArgument("Converter", "does not return an object")
-	}
-
-	v, _ := value.Export()
-	m, ok := v.(map[string]interface{})
+	m, ok := value.(map[string]interface{})
 	if !ok {
 		return nil, errors.NewErrInvalidArgument("Converter", "does not return an object")
 	}
@@ -121,11 +111,11 @@ func (f *CustomUplinkFunctions) validate(fields map[string]interface{}, port uin
 		return false, err
 	}
 
-	if !value.IsBoolean() {
-		return false, errors.NewErrInvalidArgument("Validator", "does not return a boolean")
+	if value, ok := value.(bool); ok {
+		return value, nil
 	}
 
-	return value.ToBoolean()
+	return false, errors.NewErrInvalidArgument("Validator", "does not return a boolean")
 }
 
 // Decode decodes the specified payload, converts it and tests the validity
@@ -180,20 +170,11 @@ func (f *CustomDownlinkFunctions) encode(payload map[string]interface{}, port ui
 		return nil, err
 	}
 
-	if !value.IsObject() {
-		return nil, errors.NewErrInvalidArgument("Encoder", "does not return an object")
-	}
-
-	v, err := value.Export()
-	if err != nil {
-		return nil, err
-	}
-
-	if reflect.TypeOf(v).Kind() != reflect.Slice {
+	if reflect.TypeOf(value).Kind() != reflect.Slice {
 		return nil, errors.NewErrInvalidArgument("Encoder", "does not return an Array")
 	}
 
-	s := reflect.ValueOf(v)
+	s := reflect.ValueOf(value)
 	l := s.Len()
 
 	res := make([]byte, l)
