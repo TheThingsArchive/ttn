@@ -214,5 +214,5 @@ func init() {
 
 	devicesSetCmd.Flags().String("description", "", "Set Description")
 	devicesSetCmd.Flags().StringArray("attr-add", []string{}, "Add an attribute")
-	devicesSetCmd.Flags().StringArray("attr-rm", []string{}, "Remove an attribute")
+	devicesSetCmd.Flags().StringArray("attr-remove", []string{}, "Remove an attribute")
 }

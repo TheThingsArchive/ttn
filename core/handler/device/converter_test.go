@@ -59,9 +59,14 @@ func TestDevice_FromPb(t *testing.T) {
 	a := New(t)
 
 	p := test_dev.ToPb()
-	dev := Device{}
+	dev := &Device{}
 	l := p.Device.(*pb.Device_LorawanDevice)
 	lora := l.LorawanDevice
 	dev.FromPb(p, lora)
-	a.So(dev, ShouldEqual, test_dev)
+	a.So(dev.AppID, ShouldEqual, test_dev.AppID)
+	a.So(dev.DevID, ShouldEqual, test_dev.DevID)
+	a.So(dev.Latitude, ShouldEqual, test_dev.Latitude)
+	a.So(dev.Longitude, ShouldEqual, test_dev.Longitude)
+	a.So(dev.Altitude, ShouldEqual, test_dev.Altitude)
+	a.So(dev.Attributes, ShouldEqual, test_dev.Attributes)
 }
