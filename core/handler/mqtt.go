@@ -43,10 +43,11 @@ func (h *handler) HandleMQTT(username, password string, mqttBrokers ...string) e
 
 	go func() {
 		for up := range h.mqttUp {
-			ctx.WithFields(ttnlog.Fields{
+			ctx := ctx.WithFields(ttnlog.Fields{
 				"DevID": up.DevID,
 				"AppID": up.AppID,
-			}).Debug("Publish Uplink")
+			})
+			ctx.Debug("Publish Uplink")
 			upToken := h.mqttClient.PublishUplink(*up)
 			go func(ctx ttnlog.Interface) {
 				if upToken.WaitTimeout(MQTTTimeout) {
@@ -74,11 +75,12 @@ func (h *handler) HandleMQTT(username, password string, mqttBrokers ...string) e
 
 	go func() {
 		for event := range h.mqttEvent {
-			ctx.WithFields(ttnlog.Fields{
+			ctx := ctx.WithFields(ttnlog.Fields{
 				"DevID": event.DevID,
 				"AppID": event.AppID,
 				"Event": event.Event,
-			}).Debug("Publish Event")
+			})
+			ctx.Debug("Publish Event")
 			var token mqtt.Token
 			if event.DevID == "" {
 				token = h.mqttClient.PublishAppEvent(event.AppID, event.Event, event.Data)
@@ -88,10 +90,10 @@ func (h *handler) HandleMQTT(username, password string, mqttBrokers ...string) e
 			go func() {
 				if token.WaitTimeout(MQTTTimeout) {
 					if token.Error() != nil {
-						h.Ctx.WithError(token.Error()).Warn("Could not publish Event")
+						ctx.WithError(token.Error()).Warn("Could not publish Event")
 					}
 				} else {
-					h.Ctx.Warn("Event publish timeout")
+					ctx.Warn("Event publish timeout")
 				}
 			}()
 		}

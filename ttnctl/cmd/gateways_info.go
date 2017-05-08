@@ -34,26 +34,31 @@ var gatewaysInfoCmd = &cobra.Command{
 		ctx.Info("Found gateway")
 
 		fmt.Println()
-		fmt.Printf("Gateway ID:     %s\n", gateway.ID)
-		fmt.Printf("Activated:      %v\n", gateway.Activated)
-		fmt.Printf("Frequency Plan: %s\n", gateway.FrequencyPlan)
-
-		locationAccess := "private"
-		if gateway.LocationPublic {
-			locationAccess = "public"
+		printKV("Gateway ID", gateway.ID)
+		printKV("Frequency Plan", gateway.FrequencyPlan)
+		if gateway.Router != nil {
+			printKV("Router", gateway.Router.ID)
 		}
-
+		printBool("Auto Update", gateway.AutoUpdate, "on", "off")
+		printKV("Owner", gateway.Owner.Username)
+		printBool("Owner Public", gateway.OwnerPublic, "yes", "no")
 		if gateway.AntennaLocation != nil {
-			fmt.Printf("Location Info  : (%f, %f, %f) (%s) \n", gateway.AntennaLocation.Latitude, gateway.AntennaLocation.Longitude, gateway.AntennaLocation.Altitude, locationAccess)
+			printKV("Location", fmt.Sprintf("(%f, %f, %d)", gateway.AntennaLocation.Latitude, gateway.AntennaLocation.Longitude, gateway.AntennaLocation.Altitude))
 		}
+		printBool("Location Public", gateway.LocationPublic, "yes", "no")
+		printBool("Status Public", gateway.StatusPublic, "yes", "no")
 
-		if gateway.StatusPublic {
-			fmt.Printf("Status Info:    public (see ttnctl gateways status %s)\n", gatewayID)
-		} else {
-			fmt.Print("Status Info:    private\n")
-		}
+		fmt.Println()
+
+		printKV("Brand", gateway.Attributes.Brand)
+		printKV("Model", gateway.Attributes.Model)
+		printKV("Placement", gateway.Attributes.Placement)
+		printKV("AntennaType", gateway.Attributes.AntennaType)
+		printKV("AntennaModel", gateway.Attributes.AntennaModel)
+		printKV("Description", gateway.Attributes.Description)
+
 		if gateway.Key != "" {
-			fmt.Printf("Access Key    : %s\n", gateway.Key)
+			printKV("Access Key", gateway.Key)
 		}
 
 		fmt.Println()

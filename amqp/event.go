@@ -6,8 +6,9 @@ package amqp
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/TheThingsNetwork/ttn/core/types"
 	"time"
+
+	"github.com/TheThingsNetwork/ttn/core/types"
 )
 
 // AppEventHandler is called for events
@@ -22,7 +23,7 @@ func (c *DefaultPublisher) PublishAppEvent(appID string, eventType types.EventTy
 	key := ApplicationKey{appID, AppEvents, string(eventType)}
 	msg, err := json.Marshal(payload)
 	if err != nil {
-		return fmt.Errorf("Unable to marshal the message payload")
+		return fmt.Errorf("Unable to marshal the message payload: %s", err)
 	}
 	c.publish(key.String(), msg, time.Now())
 	return nil
@@ -34,7 +35,7 @@ func (c *DefaultPublisher) PublishDeviceEvent(appID string, devID string, eventT
 	key := DeviceKey{appID, devID, DeviceEvents, string(eventType)}
 	msg, err := json.Marshal(payload)
 	if err != nil {
-		return fmt.Errorf("Unable to marshal the message payload")
+		return fmt.Errorf("Unable to marshal the message payload: %s", err)
 	}
 	c.publish(key.String(), msg, time.Now())
 	return nil

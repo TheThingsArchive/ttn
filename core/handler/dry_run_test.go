@@ -215,7 +215,7 @@ func TestDryDownlinkFieldsCayenneLPP(t *testing.T) {
 	m := &handlerManager{handler: h}
 
 	msg := &pb.DryDownlinkMessage{
-		Fields: `{ "accelerometer_1": { "x": -0.5, "y": 0.2, "z": 0 } }`,
+		Fields: `{ "value_5": -15.6, "custom": { "x": 42 } }`,
 		App: &pb.Application{
 			PayloadFormat: "cayennelpp",
 		},
@@ -224,7 +224,7 @@ func TestDryDownlinkFieldsCayenneLPP(t *testing.T) {
 	res, err := m.DryDownlink(context.TODO(), msg)
 	a.So(err, ShouldBeNil)
 
-	a.So(res.Payload, ShouldResemble, []byte{1, 113, 254, 12, 0, 200, 0, 0})
+	a.So(res.Payload, ShouldResemble, []byte{5, 249, 232})
 }
 
 func TestDryDownlinkPayload(t *testing.T) {

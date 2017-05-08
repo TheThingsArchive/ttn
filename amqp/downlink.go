@@ -19,7 +19,7 @@ func (c *DefaultPublisher) PublishDownlink(dataDown types.DownlinkMessage) error
 	key := DeviceKey{dataDown.AppID, dataDown.DevID, DeviceDownlink, ""}
 	msg, err := json.Marshal(dataDown)
 	if err != nil {
-		return fmt.Errorf("Unable to marshal the message payload")
+		return fmt.Errorf("Unable to marshal the message payload: %s", err)
 	}
 	return c.publish(key.String(), msg, time.Now())
 }

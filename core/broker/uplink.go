@@ -127,10 +127,10 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) (err error) {
 			break
 		}
 
-		if candidate.Uses32BitFCnt {
-			macPayload.FHDR.FCnt = fcnt.GetFull(candidate.FCntUp, uint16(originalFCnt))
+		if fullFCnt := fcnt.GetFull(candidate.FCntUp, uint16(originalFCnt)); fullFCnt != originalFCnt && candidate.Uses32BitFCnt {
+			macPayload.FHDR.FCnt = fullFCnt
 
-			// If 32 bit counter has different value, perform another MIC check
+			// Then check again with the 32 bit counter
 			if macPayload.FHDR.FCnt != originalFCnt {
 				micChecks++
 				ok, err = phyPayload.ValidateMIC(nwkSKey)
@@ -142,6 +142,8 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) (err error) {
 					break
 				}
 			}
+
+			macPayload.FHDR.FCnt = originalFCnt
 		}
 	}
 	if device == nil {

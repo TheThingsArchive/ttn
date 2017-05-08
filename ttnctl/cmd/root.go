@@ -6,6 +6,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"reflect"
 	"strings"
 
 	cliHandler "github.com/TheThingsNetwork/go-utils/handlers/cli"
@@ -95,6 +96,12 @@ func assertArgsLength(cmd *cobra.Command, args []string, min, max int) {
 }
 
 func printKV(key, t interface{}) {
+	if reflect.TypeOf(t).Kind() == reflect.Ptr {
+		if reflect.ValueOf(t).IsNil() {
+			return
+		}
+		t = reflect.Indirect(reflect.ValueOf(t)).Interface()
+	}
 	var val string
 	switch t := t.(type) {
 	case []byte:
@@ -108,9 +115,17 @@ func printKV(key, t interface{}) {
 	}
 }
 
+func printBool(key string, value bool, truthy, falsey string) {
+	if value {
+		printKV(key, truthy)
+	} else {
+		printKV(key, falsey)
+	}
+}
+
 func crop(in string, length int) string {
 	if len(in) > length {
-		return in[:length]
+		return in[:length-3] + "..."
 	}
 	return in
 }

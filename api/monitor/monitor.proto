@@ -6,6 +6,8 @@ syntax = "proto3";
 import "ttn/api/gateway/gateway.proto";
 import "ttn/api/router/router.proto";
 import "ttn/api/broker/broker.proto";
+import "ttn/api/handler/handler.proto";
+import "ttn/api/networkserver/networkserver.proto";
 
 import "google/protobuf/empty.proto";
 
@@ -14,13 +16,19 @@ package monitor;
 option go_package = "github.com/TheThingsNetwork/ttn/api/monitor";
 
 service Monitor {
+  rpc RouterStatus(stream router.Status) returns (google.protobuf.Empty);
+
   rpc GatewayStatus(stream gateway.Status) returns (google.protobuf.Empty);
   rpc GatewayUplink(stream router.UplinkMessage) returns (google.protobuf.Empty);
   rpc GatewayDownlink(stream router.DownlinkMessage) returns (google.protobuf.Empty);
 
+  rpc BrokerStatus(stream broker.Status) returns (google.protobuf.Empty);
   rpc BrokerUplink(stream broker.DeduplicatedUplinkMessage) returns (google.protobuf.Empty);
   rpc BrokerDownlink(stream broker.DownlinkMessage) returns (google.protobuf.Empty);
 
+  rpc HandlerStatus(stream handler.Status) returns (google.protobuf.Empty);
   rpc HandlerUplink(stream broker.DeduplicatedUplinkMessage) returns (google.protobuf.Empty);
   rpc HandlerDownlink(stream broker.DownlinkMessage) returns (google.protobuf.Empty);
+
+  rpc NetworkServerStatus(stream networkserver.Status) returns (google.protobuf.Empty);
 }

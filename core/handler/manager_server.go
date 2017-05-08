@@ -6,6 +6,7 @@ package handler
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/TheThingsNetwork/go-account-lib/claims"
@@ -30,7 +31,6 @@ import (
 
 type handlerManager struct {
 	handler         *handler
-	deviceManager   pb_lorawan.DeviceManagerClient
 	devAddrManager  pb_lorawan.DevAddrManagerClient
 	applicationRate *ratelimit.Registry
 	clientRate      *ratelimit.Registry
@@ -118,7 +118,7 @@ func (h *handlerManager) GetDevice(ctx context.Context, in *pb.DeviceIdentifier)
 		Altitude:  dev.Altitude,
 	}
 
-	nsDev, err := h.deviceManager.GetDevice(ctx, &pb_lorawan.DeviceIdentifier{
+	nsDev, err := h.handler.ttnDeviceManager.GetDevice(ctx, &pb_lorawan.DeviceIdentifier{
 		AppEui: &dev.AppEUI,
 		DevEui: &dev.DevEUI,
 	})
@@ -131,7 +131,7 @@ func (h *handlerManager) GetDevice(ctx context.Context, in *pb.DeviceIdentifier)
 			"DevEUI": dev.DevEUI,
 		}).Warn("Re-registering missing device to Broker")
 		nsDev = dev.GetLoRaWAN()
-		_, err = h.deviceManager.SetDevice(ctx, nsDev)
+		_, err = h.handler.ttnDeviceManager.SetDevice(ctx, nsDev)
 		if err != nil {
 			return nil, errors.Wrap(errors.FromGRPCError(err), "Could not re-register missing device to Broker")
 		}
@@ -179,7 +179,7 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*empty.E
 		eventType = types.UpdateEvent
 		if dev.AppEUI != *lorawan.AppEui || dev.DevEUI != *lorawan.DevEui {
 			// If the AppEUI or DevEUI is changed, we should remove the device from the NetworkServer and re-add it later
-			_, err = h.deviceManager.DeleteDevice(ctx, &pb_lorawan.DeviceIdentifier{
+			_, err = h.handler.ttnDeviceManager.DeleteDevice(ctx, &pb_lorawan.DeviceIdentifier{
 				AppEui: &dev.AppEUI,
 				DevEui: &dev.DevEUI,
 			})
@@ -245,7 +245,7 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*empty.E
 	nsUpdated.FCntUp = lorawan.FCntUp
 	nsUpdated.FCntDown = lorawan.FCntDown
 
-	_, err = h.deviceManager.SetDevice(ctx, nsUpdated)
+	_, err = h.handler.ttnDeviceManager.SetDevice(ctx, nsUpdated)
 	if err != nil {
 		return nil, errors.Wrap(errors.FromGRPCError(err), "Broker did not set device")
 	}
@@ -286,7 +286,7 @@ func (h *handlerManager) DeleteDevice(ctx context.Context, in *pb.DeviceIdentifi
 	if err != nil {
 		return nil, err
 	}
-	_, err = h.deviceManager.DeleteDevice(ctx, &pb_lorawan.DeviceIdentifier{AppEui: &dev.AppEUI, DevEui: &dev.DevEUI})
+	_, err = h.handler.ttnDeviceManager.DeleteDevice(ctx, &pb_lorawan.DeviceIdentifier{AppEui: &dev.AppEUI, DevEui: &dev.DevEUI})
 	if err != nil && errors.GetErrType(errors.FromGRPCError(err)) != errors.NotFound {
 		return nil, errors.Wrap(errors.FromGRPCError(err), "Broker did not delete device")
 	}
@@ -381,14 +381,25 @@ func (h *handlerManager) GetApplication(ctx context.Context, in *pb.ApplicationI
 		return nil, err
 	}
 
-	return &pb.Application{
+	res := &pb.Application{
 		AppId:         app.AppID,
 		PayloadFormat: string(app.PayloadFormat),
 		Decoder:       app.CustomDecoder,
 		Converter:     app.CustomConverter,
 		Validator:     app.CustomValidator,
 		Encoder:       app.CustomEncoder,
-	}, nil
+	}
+	if err := checkAppRights(claims, in.AppId, rights.Devices); err == nil {
+		res.RegisterOnJoinAccessKey = app.RegisterOnJoinAccessKey
+	} else if app.RegisterOnJoinAccessKey != "" {
+		parts := strings.Split(app.RegisterOnJoinAccessKey, ".")
+		if len(parts) == 2 {
+			res.RegisterOnJoinAccessKey = parts[1] + "." + "<...>"
+		} else {
+			res.RegisterOnJoinAccessKey = "..."
+		}
+	}
+	return res, nil
 }
 
 func (h *handlerManager) RegisterApplication(ctx context.Context, in *pb.ApplicationIdentifier) (*empty.Empty, error) {
@@ -460,6 +471,9 @@ func (h *handlerManager) SetApplication(ctx context.Context, in *pb.Application)
 	app.CustomConverter = in.Converter
 	app.CustomValidator = in.Validator
 	app.CustomEncoder = in.Encoder
+	if in.RegisterOnJoinAccessKey != "" && !strings.HasSuffix(in.RegisterOnJoinAccessKey, "...") {
+		app.RegisterOnJoinAccessKey = in.RegisterOnJoinAccessKey
+	}
 	if app.PayloadFormat == "" && (app.CustomDecoder != "" || app.CustomConverter != "" || app.CustomValidator != "" || app.CustomEncoder != "") {
 		app.PayloadFormat = application.PayloadFormatCustom
 	}
@@ -496,7 +510,7 @@ func (h *handlerManager) DeleteApplication(ctx context.Context, in *pb.Applicati
 		return nil, err
 	}
 	for _, dev := range devices {
-		_, err = h.deviceManager.DeleteDevice(ctx, &pb_lorawan.DeviceIdentifier{AppEui: &dev.AppEUI, DevEui: &dev.DevEUI})
+		_, err = h.handler.ttnDeviceManager.DeleteDevice(ctx, &pb_lorawan.DeviceIdentifier{AppEui: &dev.AppEUI, DevEui: &dev.DevEUI})
 		if err != nil {
 			return nil, errors.Wrap(errors.FromGRPCError(err), "Broker did not delete device")
 		}
@@ -557,7 +571,6 @@ func (h *handlerManager) GetStatus(ctx context.Context, in *pb.StatusRequest) (*
 func (h *handler) RegisterManager(s *grpc.Server) {
 	server := &handlerManager{
 		handler:        h,
-		deviceManager:  pb_lorawan.NewDeviceManagerClient(h.ttnBrokerConn),
 		devAddrManager: pb_lorawan.NewDevAddrManagerClient(h.ttnBrokerConn),
 	}
 

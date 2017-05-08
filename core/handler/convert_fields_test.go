@@ -90,6 +90,23 @@ func TestConvertFieldsUpCustom(t *testing.T) {
 		_, ok := evt.Data.(types.ErrorEventData)
 		a.So(ok, ShouldBeTrue)
 	}
+
+	// Invalid output error
+	{
+		app.StartUpdate()
+		app.CustomValidator = ""
+		app.CustomDecoder = `function Decoder (data) { return { infinite: 10/0 }; }`
+		h.applications.Set(app)
+		ttnUp, appUp := buildCustomUplink(appID)
+		err := h.ConvertFieldsUp(GetLogger(t, "TestConvertFieldsUpCustom"), ttnUp, appUp, nil)
+		a.So(err, ShouldBeNil)
+		a.So(appUp.PayloadFields, ShouldBeEmpty)
+		a.So(len(h.qEvent), ShouldEqual, 1)
+		evt := <-h.qEvent
+		errEvt, ok := evt.Data.(types.ErrorEventData)
+		a.So(ok, ShouldBeTrue)
+		a.So(errEvt.Error, ShouldContainSubstring, "cannot be marshaled")
+	}
 }
 
 func buildCayenneLPPUplink(appID string) (*pb_broker.DeduplicatedUplinkMessage, *types.UplinkMessage) {
@@ -240,7 +257,7 @@ func buildCayenneLPPDownlink() (*pb_broker.DownlinkMessage, *types.DownlinkMessa
 		FPort:         1,
 		AppID:         "AppID-1",
 		DevID:         "DevID-1",
-		PayloadFields: map[string]interface{}{"temperature_7": -15.6},
+		PayloadFields: map[string]interface{}{"value_7": -15.6},
 	}
 	return ttnDown, appDown
 }
@@ -274,6 +291,6 @@ func TestConvertFieldsDownCayenneLPP(t *testing.T) {
 		ttnDown, appDown := buildCayenneLPPDownlink()
 		err := h.ConvertFieldsDown(ctx, appDown, ttnDown, nil)
 		a.So(err, ShouldBeNil)
-		a.So(appDown.PayloadRaw, ShouldResemble, []byte{7, 103, 255, 100})
+		a.So(appDown.PayloadRaw, ShouldResemble, []byte{7, 249, 232})
 	}
 }

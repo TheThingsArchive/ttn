@@ -23,7 +23,7 @@ func (c *DefaultClient) PublishAppEvent(appID string, eventType types.EventType,
 	topic := ApplicationTopic{appID, AppEvents, string(eventType)}
 	msg, err := json.Marshal(payload)
 	if err != nil {
-		return &simpleToken{fmt.Errorf("Unable to marshal the message payload")}
+		return &simpleToken{fmt.Errorf("Unable to marshal the message payload: %s", err)}
 	}
 	return c.publish(topic.String(), msg)
 }
@@ -34,7 +34,7 @@ func (c *DefaultClient) PublishDeviceEvent(appID string, devID string, eventType
 	topic := DeviceTopic{appID, devID, DeviceEvents, string(eventType)}
 	msg, err := json.Marshal(payload)
 	if err != nil {
-		return &simpleToken{fmt.Errorf("Unable to marshal the message payload")}
+		return &simpleToken{fmt.Errorf("Unable to marshal the message payload: %s", err)}
 	}
 	return c.publish(topic.String(), msg)
 }

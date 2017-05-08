@@ -32,8 +32,7 @@ func TestRunCode(t *testing.T) {
 
 	val, err := RunCode("test", code, env, time.Second, logger)
 	a.So(err, ShouldBeNil)
-	e, _ := val.Export()
-	a.So(e, ShouldEqual, foo)
+	a.So(val, ShouldEqual, foo)
 	a.So(logger.Entries(), ShouldResemble, []*pb_handler.LogEntry{
 		&pb_handler.LogEntry{
 			Function: "test",
@@ -88,4 +87,23 @@ func TestRunInvalidCode(t *testing.T) {
 
 	_, err := RunCode("test", code, env, time.Second, logger)
 	a.So(err, ShouldNotBeNil)
+}
+
+func TestRunDangerousCode(t *testing.T) {
+	a := New(t)
+
+	logger := NewEntryLogger()
+	env := map[string]interface{}{}
+
+	code := `
+		(function () {
+			var obj = {foo: "bar"};
+			obj.ob = obj;
+			return obj;
+		})()
+	`
+
+	out, err := RunCode("test", code, env, time.Second, logger)
+	a.So(err, ShouldNotBeNil)
+	a.So(out, ShouldBeNil)
 }

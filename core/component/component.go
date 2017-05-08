@@ -8,16 +8,13 @@ import (
 	"crypto/ecdsa"
 	"crypto/tls"
 	"fmt"
-	"net/http"
 
 	"github.com/TheThingsNetwork/go-account-lib/claims"
 	"github.com/TheThingsNetwork/go-account-lib/tokenkey"
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
-	"github.com/TheThingsNetwork/ttn/api/auth"
 	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	pb_monitor "github.com/TheThingsNetwork/ttn/api/monitor"
 	"github.com/TheThingsNetwork/ttn/api/pool"
-	"github.com/TheThingsNetwork/ttn/api/trace"
 	"github.com/spf13/viper"
 	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
 	"google.golang.org/grpc"
@@ -55,10 +52,6 @@ type ManagementInterface interface {
 
 // New creates a new Component
 func New(ctx ttnlog.Interface, serviceName string, announcedAddress string) (*Component, error) {
-	// Disable gRPC tracing
-	// SEE: https://github.com/grpc/grpc-go/issues/695
-	grpc.EnableTracing = false
-
 	component := &Component{
 		Config: ConfigFromViper(),
 		Ctx:    ctx,
@@ -71,19 +64,16 @@ func New(ctx ttnlog.Interface, serviceName string, announcedAddress string) (*Co
 			Public:         viper.GetBool("public"),
 		},
 		AccessToken: viper.GetString("auth-token"),
+		Pool:        pool.NewPool(context.Background(), pool.DefaultDialOptions...),
 	}
 
-	trace.SetComponent(component.Identity.ServiceName, component.Identity.Id)
+	if err := component.initialize(); err != nil {
+		return nil, err
+	}
 
 	if err := component.InitAuth(); err != nil {
 		return nil, err
 	}
-
-	auth := auth.WithTokenFunc(func(_ string) string {
-		token, _ := component.BuildJWT()
-		return token
-	})
-	component.Pool = pool.NewPool(component.Context, append(pool.DefaultDialOptions, auth.DialOption())...)
 
 	if serviceName != "discovery" && serviceName != "networkserver" {
 		var err error
@@ -98,22 +88,6 @@ func New(ctx ttnlog.Interface, serviceName string, announcedAddress string) (*Co
 		if err != nil {
 			return nil, err
 		}
-	}
-
-	if healthPort := viper.GetInt("health-port"); healthPort > 0 {
-		http.HandleFunc("/healthz", func(w http.ResponseWriter, req *http.Request) {
-			switch component.GetStatus() {
-			case StatusHealthy:
-				w.WriteHeader(200)
-				w.Write([]byte("Status is HEALTHY"))
-				return
-			case StatusUnhealthy:
-				w.WriteHeader(503)
-				w.Write([]byte("Status is UNHEALTHY"))
-				return
-			}
-		})
-		go http.ListenAndServe(fmt.Sprintf(":%d", healthPort), nil)
 	}
 
 	component.Monitor = pb_monitor.NewClient(pb_monitor.DefaultClientConfig)

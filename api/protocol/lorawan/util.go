@@ -68,7 +68,10 @@ func (m *Message) cryptFRMPayload(appSKey types.AppSKey) error {
 	if err := phy.DecryptFRMPayload(lorawan.AES128Key(appSKey)); err != nil {
 		return err
 	}
-	*m = MessageFromPHYPayload(phy)
+	crypted := MessageFromPHYPayload(phy)
+	if m.GetMacPayload() != nil && crypted.GetMacPayload() != nil {
+		m.GetMacPayload().FrmPayload = crypted.GetMacPayload().FrmPayload
+	}
 	return nil
 }
 

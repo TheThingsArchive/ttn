@@ -52,8 +52,6 @@ func TestHandleUplink(t *testing.T) {
 	h.qEvent = make(chan *types.DeviceEvent, 10)
 	h.downlink = make(chan *pb_broker.DownlinkMessage)
 
-	uplink, _ := buildLorawanUplink([]byte{0x40, 0x04, 0x03, 0x02, 0x01, 0x00, 0x01, 0x00, 0x0A, 0x4D, 0xDA, 0x23, 0x99, 0x61, 0xD4})
-
 	downlinkEmpty := []byte{0x60, 0x04, 0x03, 0x02, 0x01, 0x00, 0x00, 0x00, 0x0A, 0x21, 0xEA, 0x8B, 0x0E}
 	downlinkACK := []byte{0x60, 0x04, 0x03, 0x02, 0x01, 0x20, 0x00, 0x00, 0x0A, 0x3B, 0x3F, 0x77, 0x0B}
 	downlinkMAC := []byte{0x60, 0x04, 0x03, 0x02, 0x01, 0x05, 0x00, 0x00, 0x03, 0x30, 0x00, 0x00, 0x00, 0x0A, 0x4D, 0x11, 0x55, 0x01}
@@ -67,78 +65,94 @@ func TestHandleUplink(t *testing.T) {
 		},
 	}
 
-	// Test Uplink, no downlink option available
-	wg.Add(1)
-	go func() {
-		<-h.qUp
-		wg.Done()
-	}()
-	err = h.HandleUplink(uplink)
-	a.So(err, ShouldBeNil)
-	wg.WaitFor(50 * time.Millisecond)
+	getUplink := func() *pb_broker.DeduplicatedUplinkMessage {
+		uplink, _ := buildLorawanUplink([]byte{0x40, 0x04, 0x03, 0x02, 0x01, 0x00, 0x01, 0x00, 0x0A, 0x4D, 0xDA, 0x23, 0x99, 0x61, 0xD4})
+		uplink.ResponseTemplate = downlink
+		return uplink
+	}
 
-	uplink.ResponseTemplate = downlink
+	// Test Uplink, no downlink option available
+	{
+		wg.Add(1)
+		go func() {
+			<-h.qUp
+			wg.Done()
+		}()
+		uplink := getUplink()
+		uplink.ResponseTemplate = nil
+		err = h.HandleUplink(uplink)
+		a.So(err, ShouldBeNil)
+		wg.WaitFor(50 * time.Millisecond)
+	}
 
 	// Test Uplink, no downlink needed
-	wg.Add(1)
-	go func() {
-		<-h.qUp
-		wg.Done()
-	}()
-	downlink.Payload = downlinkEmpty
-	err = h.HandleUplink(uplink)
-	a.So(err, ShouldBeNil)
-	wg.WaitFor(50 * time.Millisecond)
+	{
+		wg.Add(1)
+		go func() {
+			<-h.qUp
+			wg.Done()
+		}()
+		downlink.Payload = downlinkEmpty
+		err = h.HandleUplink(getUplink())
+		a.So(err, ShouldBeNil)
+		wg.WaitFor(50 * time.Millisecond)
+	}
 
 	// Test Uplink, ACK downlink needed
-	wg.Add(2)
-	go func() {
-		<-h.qUp
-		wg.Done()
-	}()
-	go func() {
-		<-h.downlink
-		wg.Done()
-	}()
-	downlink.Payload = downlinkACK
-	err = h.HandleUplink(uplink)
-	a.So(err, ShouldBeNil)
-	wg.WaitFor(50 * time.Millisecond)
+	{
+		wg.Add(2)
+		go func() {
+			<-h.qUp
+			wg.Done()
+		}()
+		go func() {
+			<-h.downlink
+			wg.Done()
+		}()
+		downlink.Payload = downlinkACK
+		err = h.HandleUplink(getUplink())
+		a.So(err, ShouldBeNil)
+		wg.WaitFor(50 * time.Millisecond)
+	}
 
 	// Test Uplink, MAC downlink needed
-	wg.Add(2)
-	go func() {
-		<-h.qUp
-		wg.Done()
-	}()
-	go func() {
-		<-h.downlink
-		wg.Done()
-	}()
-	downlink.Payload = downlinkMAC
-	err = h.HandleUplink(uplink)
-	a.So(err, ShouldBeNil)
-	wg.WaitFor(50 * time.Millisecond)
+	{
+		wg.Add(2)
+		go func() {
+			<-h.qUp
+			wg.Done()
+		}()
+		go func() {
+			<-h.downlink
+			wg.Done()
+		}()
+		downlink.Payload = downlinkMAC
+		err = h.HandleUplink(getUplink())
+		a.So(err, ShouldBeNil)
+		wg.WaitFor(50 * time.Millisecond)
+	}
 
 	queue, _ := h.devices.DownlinkQueue(appID, devID)
 	queue.PushFirst(&types.DownlinkMessage{PayloadRaw: []byte{0xaa, 0xbc}})
 
 	// Test Uplink, Data downlink needed
-	h.devices.Set(dev)
-	wg.Add(2)
-	go func() {
-		<-h.qUp
-		wg.Done()
-	}()
-	go func() {
-		dl := <-h.downlink
-		a.So(dl.Payload, ShouldResemble, expected)
-		wg.Done()
-	}()
-	downlink.Payload = downlinkEmpty
-	err = h.HandleUplink(uplink)
-	a.So(err, ShouldBeNil)
-	wg.WaitFor(50 * time.Millisecond)
+	{
+		h.devices.Set(dev)
+		wg.Add(2)
+		go func() {
+			<-h.qUp
+			wg.Done()
+		}()
+		go func() {
+			dl := <-h.downlink
+			a.So(dl.Payload, ShouldResemble, expected)
+			wg.Done()
+		}()
+		downlink.Payload = downlinkEmpty
+		err = h.HandleUplink(getUplink())
+		a.So(err, ShouldBeNil)
+		wg.WaitFor(50 * time.Millisecond)
+	}
 
 	dev, _ = h.devices.Get(appID, devID)
 	qLen, _ := queue.Length()
@@ -151,21 +165,23 @@ func TestHandleUplink(t *testing.T) {
 	queue.PushFirst(&types.DownlinkMessage{PayloadRaw: []byte{0x12, 0x34}})
 
 	// Test Uplink, Data downlink needed
-	h.devices.Set(dev)
-	wg.Add(2)
-	go func() {
-		<-h.qUp
-		wg.Done()
-	}()
-	go func() {
-		dl := <-h.downlink
-		a.So(dl.Payload, ShouldResemble, []byte{160, 4, 3, 2, 1, 16, 0, 0, 10, 102, 230, 154, 218, 17, 187}) // The confirmed downlink with FPending on
-		wg.Done()
-	}()
-	downlink.Payload = downlinkEmpty
-	err = h.HandleUplink(uplink)
-	a.So(err, ShouldBeNil)
-	wg.WaitFor(50 * time.Millisecond)
+	{
+		h.devices.Set(dev)
+		wg.Add(2)
+		go func() {
+			<-h.qUp
+			wg.Done()
+		}()
+		go func() {
+			dl := <-h.downlink
+			a.So(dl.Payload, ShouldResemble, []byte{160, 4, 3, 2, 1, 16, 0, 0, 10, 102, 230, 154, 218, 17, 187}) // The confirmed downlink with FPending on
+			wg.Done()
+		}()
+		downlink.Payload = downlinkEmpty
+		err = h.HandleUplink(getUplink())
+		a.So(err, ShouldBeNil)
+		wg.WaitFor(50 * time.Millisecond)
+	}
 
 	dev, _ = h.devices.Get(appID, devID)
 	next, _ := queue.Next()

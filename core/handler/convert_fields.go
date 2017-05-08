@@ -4,6 +4,9 @@
 package handler
 
 import (
+	"encoding/json"
+	"fmt"
+
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_handler "github.com/TheThingsNetwork/ttn/api/handler"
@@ -57,7 +60,7 @@ func (h *handler) ConvertFieldsUp(ctx ttnlog.Interface, _ *pb_broker.Deduplicate
 			AppID: appUp.AppID,
 			DevID: appUp.DevID,
 			Event: types.UplinkErrorEvent,
-			Data:  types.ErrorEventData{Error: err.Error()},
+			Data:  types.ErrorEventData{Error: fmt.Sprintf("Unable to decode payload fields: %s", err)},
 		}
 
 		// Do not set fields if processing failed, but allow the handler to continue processing
@@ -67,6 +70,22 @@ func (h *handler) ConvertFieldsUp(ctx ttnlog.Interface, _ *pb_broker.Deduplicate
 
 	if !valid {
 		return errors.NewErrInvalidArgument("Payload", "payload validator function returned false")
+	}
+
+	// Check if the functions return valid JSON
+	_, err = json.Marshal(fields)
+	if err != nil {
+		// Emit the error
+		h.qEvent <- &types.DeviceEvent{
+			AppID: appUp.AppID,
+			DevID: appUp.DevID,
+			Event: types.UplinkErrorEvent,
+			Data:  types.ErrorEventData{Error: fmt.Sprintf("Payload Function output cannot be marshaled to JSON: %s", err.Error())},
+		}
+
+		// Do not set fields if processing failed, but allow the handler to continue processing
+		// without payload formatting
+		return nil
 	}
 
 	appUp.PayloadFields = fields

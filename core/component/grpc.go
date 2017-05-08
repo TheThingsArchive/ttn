@@ -9,6 +9,7 @@ import (
 	"github.com/TheThingsNetwork/go-utils/grpc/interceptor"
 	"github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/api/fields"
+	"github.com/TheThingsNetwork/ttn/api/trace"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/mwitkow/go-grpc-middleware"
 	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
@@ -49,4 +50,16 @@ func (c *Component) ServerOptions() []grpc.ServerOption {
 	}
 
 	return opts
+}
+
+func init() {
+	// Disable gRPC tracing
+	// SEE: https://github.com/grpc/grpc-go/issues/695
+	grpc.EnableTracing = false
+
+	// Initialize TTN tracing
+	OnInitialize(func(c *Component) error {
+		trace.SetComponent(c.Identity.ServiceName, c.Identity.Id)
+		return nil
+	})
 }
