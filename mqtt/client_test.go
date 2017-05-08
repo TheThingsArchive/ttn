@@ -94,6 +94,10 @@ func TestConnect(t *testing.T) {
 }
 
 func TestConnectWithTLS(t *testing.T) {
+	if sslHost == "SKIP" {
+		t.Skip("Skipping MQTT/TLS test")
+	}
+
 	a := New(t)
 
 	cert, err := ioutil.ReadFile("../.env/mqtt/ca.cert")
