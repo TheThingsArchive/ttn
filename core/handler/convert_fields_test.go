@@ -90,6 +90,23 @@ func TestConvertFieldsUpCustom(t *testing.T) {
 		_, ok := evt.Data.(types.ErrorEventData)
 		a.So(ok, ShouldBeTrue)
 	}
+
+	// Invalid output error
+	{
+		app.StartUpdate()
+		app.CustomValidator = ""
+		app.CustomDecoder = `function Decoder (data) { return { infinite: 10/0 }; }`
+		h.applications.Set(app)
+		ttnUp, appUp := buildCustomUplink(appID)
+		err := h.ConvertFieldsUp(GetLogger(t, "TestConvertFieldsUpCustom"), ttnUp, appUp, nil)
+		a.So(err, ShouldBeNil)
+		a.So(appUp.PayloadFields, ShouldBeEmpty)
+		a.So(len(h.qEvent), ShouldEqual, 1)
+		evt := <-h.qEvent
+		errEvt, ok := evt.Data.(types.ErrorEventData)
+		a.So(ok, ShouldBeTrue)
+		a.So(errEvt.Error, ShouldContainSubstring, "cannot be marshaled")
+	}
 }
 
 func buildCayenneLPPUplink(appID string) (*pb_broker.DeduplicatedUplinkMessage, *types.UplinkMessage) {
