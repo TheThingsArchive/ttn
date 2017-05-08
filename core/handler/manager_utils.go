@@ -55,19 +55,25 @@ func (h *handlerManager) updateDevBrk(ctx context.Context, dev *device.Device, l
 
 //attrControl take all the whitelisted Attribute plus a maximum of customs one
 func (h *handlerManager) attrControl(in *pb.Device) {
-	l := h.handler.devices.AttrWhitelist()
+	l := h.handler.devices.GetAttrWhitelist()
 	m := make(map[string]string, len(l))
 	i := maxAttr
+	for key := range l {
+		val, ok := in.Attributes[key]
+		if ok {
+			if val != "" {
+				m[key] = val
+			}
+			delete(in.Attributes, key)
+		}
+	}
 	for key, val := range in.Attributes {
-		if i == 0 {
+		if i <= 0 {
 			break
 		}
 		if val != "" {
 			m[key] = val
-			_, ok := l[key]
-			if !ok {
-				i--
-			}
+			i--
 		}
 	}
 	in.Attributes = m

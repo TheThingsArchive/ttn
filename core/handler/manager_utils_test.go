@@ -6,6 +6,7 @@ import (
 	"context"
 	"testing"
 
+	pb "github.com/TheThingsNetwork/ttn/api/handler"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/handler/application"
@@ -49,4 +50,58 @@ func TestHandlerManager_EventSelectUpdate(t *testing.T) {
 	evt, err := hm.eventSelect(context.TODO(), &device.Device{AppEUI: [8]byte{0x10}, DevEUI: [8]byte{0x10}}, l, "")
 	a.So(err, ShouldBeNil)
 	a.So(evt, ShouldEqual, types.UpdateEvent)
+}
+
+func TestHandlerManager_attrControl(t *testing.T) {
+	a := New(t)
+
+	h := &handler{
+		devices: device.NewRedisDeviceStore(GetRedisClient(), "handler-test-builtin-attribute"),
+	}
+	hm := handlerManager{handler: h}
+
+	//Basic
+	testMap1 := map[string]string{
+		"hello": "bonjour",
+		"test":  "TeSt",
+	}
+	in := &pb.Device{Attributes: testMap1}
+	hm.attrControl(in)
+	a.So(in.Attributes, ShouldNotBeNil)
+	a.So(in.Attributes["hello"], ShouldEqual, testMap1["hello"])
+	a.So(in.Attributes["test"], ShouldEqual, testMap1["test"])
+
+	//Past limit of 5
+	testMap2 := map[string]string{
+		"hello":   "bonjour",
+		"test":    "TeSt",
+		"beer":    "cold",
+		"weather": "hot",
+		"heart":   "pique",
+		"square":  "trefle",
+	}
+	in.Attributes = testMap2
+	hm.attrControl(in)
+	a.So(len(in.Attributes), ShouldEqual, 5)
+
+	//Past limit of 5 and builtin attributes
+	builtinAttr := "ttn-Battery:ttn-Model"
+	h.WithBuiltinAttr(builtinAttr)
+	testMap3 := map[string]string{
+		"hello":       "bonjour",
+		"test":        "TeSt",
+		"beer":        "cold",
+		"weather":     "hot",
+		"heart":       "pique",
+		"square":      "trefle",
+		"ttn-Battery": "quatre-ving-dix pourcent",
+	}
+	m := make(map[string]string, len(testMap3))
+	for key, val := range testMap3 {
+		m[key] = val
+	}
+	in.Attributes = m
+	hm.attrControl(in)
+	a.So(len(in.Attributes), ShouldEqual, 6)
+	a.So(in.Attributes["ttn-Battery"], ShouldEqual, testMap3["ttn-Battery"])
 }
