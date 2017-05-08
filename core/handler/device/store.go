@@ -24,13 +24,13 @@ type Store interface {
 	DownlinkQueue(appID, devID string) (DownlinkQueue, error)
 	Set(new *Device, properties ...string) (err error)
 	Delete(appID, devID string) error
-	AttrWhitelist() map[string]bool
+	SetBuiltinAttr(string)
+	GetBuiltinAttrList() map[string]bool
 }
 
 const defaultRedisPrefix = "handler"
 const redisDevicePrefix = "device"
 const redisDownlinkQueuePrefix = "downlink"
-const redisUpStreamMetadataKeyWhitelist = ":attr-whitelist"
 
 // NewRedisDeviceStore creates a new Redis-based Device store
 func NewRedisDeviceStore(client *redis.Client, prefix string) *RedisDeviceStore {
@@ -42,25 +42,19 @@ func NewRedisDeviceStore(client *redis.Client, prefix string) *RedisDeviceStore 
 	for v, f := range migrate.DeviceMigrations(prefix) {
 		store.AddMigration(v, f)
 	}
-	s, _ := client.Get(prefix + ":" + redisDevicePrefix + redisUpStreamMetadataKeyWhitelist).Result()
-	m := map[string]bool{}
-	for _, v := range strings.Split(s, ":") {
-		m[v] = true
-	}
 	queues := storage.NewRedisQueueStore(client, prefix+":"+redisDownlinkQueuePrefix)
 	return &RedisDeviceStore{
-		store:         store,
-		queues:        queues,
-		attrWhitelist: m,
+		store:  store,
+		queues: queues,
 	}
 }
 
 // RedisDeviceStore stores Devices in Redis.
 // - Devices are stored as a Hash
 type RedisDeviceStore struct {
-	store         *storage.RedisMapStore
-	queues        *storage.RedisQueueStore
-	attrWhitelist map[string]bool
+	store       *storage.RedisMapStore
+	queues      *storage.RedisQueueStore
+	builtinAttr map[string]bool
 }
 
 // Count all devices in the store
@@ -148,7 +142,16 @@ func (s *RedisDeviceStore) Delete(appID, devID string) error {
 	return s.store.Delete(key)
 }
 
-// attrWhitelist return a map of the whitelisted
-func (s *RedisDeviceStore) AttrWhitelist() map[string]bool {
-	return s.attrWhitelist
+// SetBuiltinAttr set the key that will always be added to the Attribute map.
+func (s *RedisDeviceStore) SetBuiltinAttr(a string) {
+	m := map[string]bool{}
+	for _, v := range strings.Split(a, ":") {
+		m[v] = true
+	}
+	s.builtinAttr = m
+}
+
+// getAttrWhitelist return a map of the builtin attributes
+func (s *RedisDeviceStore) GetBuiltinAttrList() map[string]bool {
+	return s.builtinAttr
 }

@@ -16,11 +16,11 @@ import (
 const maxAttr uint8 = 5
 
 //eventSelect select the appropriate event for device is updated/created and check if the event is possible
+// * If the event is an update and the AppEUI or DevEUI is changed, we should remove the device from the NetworkServer and re-add it later
 func (h *handlerManager) eventSelect(ctx context.Context, dev *device.Device, lorawan *pb_lorawan.Device, appId string) (evt types.EventType, err error) {
 	if dev != nil {
 		evt = types.UpdateEvent
 		if dev.AppEUI != *lorawan.AppEui || dev.DevEUI != *lorawan.DevEui {
-			// If the AppEUI or DevEUI is changed, we should remove the device from the NetworkServer and re-add it later
 			_, err = h.handler.ttnDeviceManager.DeleteDevice(ctx, &pb_lorawan.DeviceIdentifier{
 				AppEui: &dev.AppEUI,
 				DevEui: &dev.DevEUI,
@@ -55,19 +55,25 @@ func (h *handlerManager) updateDevBrk(ctx context.Context, dev *device.Device, l
 
 //attrControl take all the whitelisted Attribute plus a maximum of customs one
 func (h *handlerManager) attrControl(in *pb.Device) {
-	l := h.handler.devices.AttrWhitelist()
+	l := h.handler.devices.GetAttrWhitelist()
 	m := make(map[string]string, len(l))
 	i := maxAttr
+	for key := range l {
+		val, ok := in.Attributes[key]
+		if ok {
+			if val != "" {
+				m[key] = val
+			}
+			delete(in.Attributes, key)
+		}
+	}
 	for key, val := range in.Attributes {
-		if i == 0 {
+		if i <= 0 {
 			break
 		}
 		if val != "" {
 			m[key] = val
-			_, ok := l[key]
-			if !ok {
-				i--
-			}
+			i--
 		}
 	}
 	in.Attributes = m
