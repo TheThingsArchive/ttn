@@ -30,7 +30,7 @@ type Store interface {
 const defaultRedisPrefix = "handler"
 const redisDevicePrefix = "device"
 const redisDownlinkQueuePrefix = "downlink"
-const redisUpStreamMetadataKeyWhitelist = ":attr-whitelist"
+const redisUpStreamMetadataKeyWhitelist = "attr-whitelist"
 
 // NewRedisDeviceStore creates a new Redis-based Device store
 func NewRedisDeviceStore(client *redis.Client, prefix string) *RedisDeviceStore {
@@ -42,7 +42,7 @@ func NewRedisDeviceStore(client *redis.Client, prefix string) *RedisDeviceStore 
 	for v, f := range migrate.DeviceMigrations(prefix) {
 		store.AddMigration(v, f)
 	}
-	s, _ := client.Get(prefix + ":" + redisDevicePrefix + redisUpStreamMetadataKeyWhitelist).Result()
+	s, _ := client.Get(prefix + ":" + redisDevicePrefix + ":" + redisUpStreamMetadataKeyWhitelist).Result()
 	m := map[string]bool{}
 	for _, v := range strings.Split(s, ":") {
 		m[v] = true

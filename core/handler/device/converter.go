@@ -1,19 +1,20 @@
-// Copyright © 2017 The Things Industries B.V.
+// Copyright © 2017 The Things Network
+// Use of this source code is governed by the MIT license that can be found in the LICENSE file.
 
-package handler
+package device
 
 import (
+	pb "github.com/TheThingsNetwork/ttn/api/handler"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
-	hdl "github.com/TheThingsNetwork/ttn/core/handler/device"
 )
 
-//Discard old device and change it with a device fetch from the handler/device.go#Device
-func DevFromHdl(dev *hdl.Device) *Device {
-	return &Device{
+//Convert a device representation to a protoBuffer device struct
+func (dev *Device) ToPb() *pb.Device {
+	return &pb.Device{
 		AppId:       dev.AppID,
 		DevId:       dev.DevID,
 		Description: dev.Description,
-		Device: &Device_LorawanDevice{LorawanDevice: &pb_lorawan.Device{
+		Device: &pb.Device_LorawanDevice{LorawanDevice: &pb_lorawan.Device{
 			AppId:                 dev.AppID,
 			AppEui:                &dev.AppEUI,
 			DevId:                 dev.DevID,
@@ -33,8 +34,8 @@ func DevFromHdl(dev *hdl.Device) *Device {
 	}
 }
 
-func DevToHdl(dev *hdl.Device, in *Device, lorawan *pb_lorawan.Device) {
-
+//FromPb create a new Device from a protoBuffer Device
+func (dev *Device) FromPb(in *pb.Device, lorawan *pb_lorawan.Device) *Device {
 	dev.AppID = in.AppId
 	dev.AppEUI = *lorawan.AppEui
 	dev.DevID = in.DevId
@@ -45,9 +46,11 @@ func DevToHdl(dev *hdl.Device, in *Device, lorawan *pb_lorawan.Device) {
 	dev.Altitude = in.Altitude
 	fromLorawan(dev, lorawan)
 	dev.Attributes = in.Attributes
+	return dev
 }
 
-func fromLorawan(dev *hdl.Device, lorawan *pb_lorawan.Device) {
+//fromLorawan fill a device with lorawan device infos
+func fromLorawan(dev *Device, lorawan *pb_lorawan.Device) {
 	if lorawan.DevAddr != nil {
 		dev.DevAddr = *lorawan.DevAddr
 	}
@@ -59,12 +62,12 @@ func fromLorawan(dev *hdl.Device, lorawan *pb_lorawan.Device) {
 	}
 	if lorawan.AppKey != nil {
 		if dev.AppKey != *lorawan.AppKey { // When the AppKey of an existing device is changed
-			dev.UsedAppNonces = []hdl.AppNonce{}
-			dev.UsedDevNonces = []hdl.DevNonce{}
+			dev.UsedAppNonces = []AppNonce{}
+			dev.UsedDevNonces = []DevNonce{}
 		}
 		dev.AppKey = *lorawan.AppKey
 	}
-	dev.Options = hdl.Options{
+	dev.Options = Options{
 		DisableFCntCheck:      lorawan.DisableFCntCheck,
 		Uses32BitFCnt:         lorawan.Uses32BitFCnt,
 		ActivationConstraints: lorawan.ActivationConstraints,

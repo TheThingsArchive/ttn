@@ -96,7 +96,7 @@ func (h *handlerManager) GetDevice(ctx context.Context, in *pb.DeviceIdentifier)
 		return nil, err
 	}
 
-	pbDev := pb.DevFromHdl(dev)
+	pbDev := dev.ToPb()
 
 	nsDev, err := h.handler.ttnDeviceManager.GetDevice(ctx, &pb_lorawan.DeviceIdentifier{
 		AppEui: &dev.AppEUI,
@@ -165,7 +165,7 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*empty.E
 	}
 
 	h.attrControl(in)
-	pb.DevToHdl(dev, in, lorawan)
+	dev.FromPb(in, lorawan)
 	err = h.updateDevBrk(ctx, dev, lorawan)
 
 	if err != nil {
@@ -256,7 +256,7 @@ func (h *handlerManager) GetDevicesForApplication(ctx context.Context, in *pb.Ap
 		if dev == nil {
 			continue
 		}
-		res.Devices = append(res.Devices, pb.DevFromHdl(dev))
+		res.Devices = append(res.Devices, dev.ToPb())
 	}
 
 	total, selected := opts.GetTotalAndSelected()
