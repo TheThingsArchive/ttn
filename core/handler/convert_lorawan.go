@@ -45,6 +45,7 @@ func (h *handler) ConvertFromLoRaWAN(ctx ttnlog.Interface, ttnUp *pb_broker.Dedu
 		appUp.Confirmed = true
 	}
 
+	appUp.FPort = uint8(macPayload.FPort)
 	if macPayload.FPort > 0 {
 		if err := phyPayload.DecryptFRMPayload(dev.AppSKey); err != nil {
 			return errors.NewErrInternal("Could not decrypt payload")
