@@ -112,6 +112,13 @@ var handlerCmd = &cobra.Command{
 		} else {
 			ctx.Warn("AMQP is not enabled in your configuration")
 		}
+
+		if viper.GetString("handler.builtin-attr") != "" {
+			handler = handler.WithBuiltinAttr(viper.GetString("handler.builtin-attr"))
+		} else {
+			ctx.Warn("No builtin attribute set in your configuration")
+		}
+
 		err = handler.Init(component)
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not initialize handler")
@@ -210,4 +217,7 @@ func init() {
 	handlerCmd.Flags().Int("http-port", 8084, "The port where the gRPC proxy should listen")
 	viper.BindPFlag("handler.http-address", handlerCmd.Flags().Lookup("http-address"))
 	viper.BindPFlag("handler.http-port", handlerCmd.Flags().Lookup("http-port"))
+
+	handlerCmd.Flags().String("builtin-attr", "", "BuiltIn attributes list for a device")
+	viper.BindPFlag("handler.builtin-attr", handlerCmd.Flags().Lookup("builtin-attr"))
 }

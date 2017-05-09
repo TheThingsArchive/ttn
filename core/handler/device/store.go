@@ -5,6 +5,7 @@ package device
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/core/handler/device/migrate"
@@ -23,6 +24,8 @@ type Store interface {
 	DownlinkQueue(appID, devID string) (DownlinkQueue, error)
 	Set(new *Device, properties ...string) (err error)
 	Delete(appID, devID string) error
+	SetBuiltinAttr(string)
+	GetAttrWhitelist() map[string]bool
 }
 
 const defaultRedisPrefix = "handler"
@@ -49,8 +52,9 @@ func NewRedisDeviceStore(client *redis.Client, prefix string) *RedisDeviceStore 
 // RedisDeviceStore stores Devices in Redis.
 // - Devices are stored as a Hash
 type RedisDeviceStore struct {
-	store  *storage.RedisMapStore
-	queues *storage.RedisQueueStore
+	store         *storage.RedisMapStore
+	queues        *storage.RedisQueueStore
+	attrWhitelist map[string]bool
 }
 
 // Count all devices in the store
@@ -136,4 +140,18 @@ func (s *RedisDeviceStore) Delete(appID, devID string) error {
 		return err
 	}
 	return s.store.Delete(key)
+}
+
+// SetBuiltinAttr set the key that will always be added to the Attribute map.
+func (s *RedisDeviceStore) SetBuiltinAttr(a string) {
+	m := map[string]bool{}
+	for _, v := range strings.Split(a, ":") {
+		m[v] = true
+	}
+	s.attrWhitelist = m
+}
+
+// getAttrWhitelist return a map of the builtin attributes
+func (s *RedisDeviceStore) GetAttrWhitelist() map[string]bool {
+	return s.attrWhitelist
 }
