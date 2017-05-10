@@ -90,7 +90,7 @@ dockerhub-image:
   services:
     - "docker:dind"
   script:
-    - docker build -t ttn .
+    - docker build --squash -t ttn .
     - docker login -u "$DOCKERHUB_USER" -p "$DOCKERHUB_PASSWORD"
     - docker tag ttn $CONTAINER_NAME:$CI_BUILD_REF_NAME
     - docker push $CONTAINER_NAME:$CI_BUILD_REF_NAME
