@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/TheThingsNetwork/go-account-lib/claims"
-	"github.com/TheThingsNetwork/ttn/api"
+	"github.com/TheThingsNetwork/go-utils/grpc/ttnctx"
 	pb_gateway "github.com/TheThingsNetwork/ttn/api/gateway"
 	"github.com/TheThingsNetwork/ttn/api/ratelimit"
 	pb "github.com/TheThingsNetwork/ttn/api/router"
@@ -31,14 +31,14 @@ type routerRPC struct {
 }
 
 func (r *routerRPC) gatewayFromMetadata(md metadata.MD) (gtw *gateway.Gateway, err error) {
-	gatewayID, err := api.IDFromMetadata(md)
+	gatewayID, err := ttnctx.IDFromMetadata(md)
 	if err != nil {
 		return nil, err
 	}
 
 	authErr := errors.NewErrPermissionDenied("Gateway not authenticated")
 	authenticated := false
-	token, _ := api.TokenFromMetadata(md)
+	token, _ := ttnctx.TokenFromMetadata(md)
 
 	if token != "" {
 		if r.router.TokenKeyProvider == nil {
@@ -68,7 +68,7 @@ func (r *routerRPC) gatewayFromMetadata(md metadata.MD) (gtw *gateway.Gateway, e
 }
 
 func (r *routerRPC) gatewayFromContext(ctx context.Context) (gtw *gateway.Gateway, err error) {
-	md := api.MetadataFromContext(ctx)
+	md := ttnctx.MetadataFromIncomingContext(ctx)
 	return r.gatewayFromMetadata(md)
 }
 

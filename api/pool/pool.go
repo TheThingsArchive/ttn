@@ -12,7 +12,9 @@ import (
 	"time"
 
 	"github.com/TheThingsNetwork/go-utils/grpc/restartstream"
+	"github.com/TheThingsNetwork/go-utils/grpc/rpclog"
 	"github.com/TheThingsNetwork/go-utils/roots"
+	"github.com/mwitkow/go-grpc-middleware"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
@@ -67,7 +69,13 @@ func KeepAliveDialer(addr string, timeout time.Duration) (net.Conn, error) {
 
 // DefaultDialOptions for connecting with servers
 var DefaultDialOptions = []grpc.DialOption{
-	grpc.WithStreamInterceptor(restartstream.Interceptor(restartstream.DefaultSettings)),
+	grpc.WithUnaryInterceptor(grpc_middleware.ChainUnaryClient(
+		rpclog.UnaryClientInterceptor(nil),
+	)),
+	grpc.WithStreamInterceptor(grpc_middleware.ChainStreamClient(
+		restartstream.Interceptor(restartstream.DefaultSettings),
+		rpclog.StreamClientInterceptor(nil),
+	)),
 	grpc.WithDialer(KeepAliveDialer),
 	grpc.WithBlock(),
 }

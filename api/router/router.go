@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	"github.com/TheThingsNetwork/go-utils/grpc/restartstream"
+	"github.com/TheThingsNetwork/go-utils/grpc/ttnctx"
 	"github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/api/gateway"
@@ -157,8 +158,8 @@ func (s *gatewayStreams) Close() {
 func (c *Client) NewGatewayStreams(id string, token string, downlinkActive bool) GenericStream {
 	log := c.log.WithField("GatewayID", id)
 	ctx, cancel := context.WithCancel(c.ctx)
-	ctx = api.ContextWithID(ctx, id)
-	ctx = api.ContextWithToken(ctx, token)
+	ctx = ttnctx.OutgoingContextWithID(ctx, id)
+	ctx = ttnctx.OutgoingContextWithToken(ctx, token)
 	s := &gatewayStreams{
 		log:    log,
 		ctx:    ctx,

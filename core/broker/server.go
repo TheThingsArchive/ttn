@@ -24,7 +24,7 @@ type brokerRPC struct {
 }
 
 func (b *brokerRPC) associateRouter(md metadata.MD) (chan *pb.UplinkMessage, <-chan *pb.DownlinkMessage, func(), error) {
-	ctx := metadata.NewContext(context.Background(), md)
+	ctx := metadata.NewIncomingContext(context.Background(), md)
 	router, err := b.broker.ValidateNetworkContext(ctx)
 	if err != nil {
 		return nil, nil, nil, err
@@ -54,7 +54,7 @@ func (b *brokerRPC) associateRouter(md metadata.MD) (chan *pb.UplinkMessage, <-c
 }
 
 func (b *brokerRPC) getHandlerSubscribe(md metadata.MD) (<-chan *pb.DeduplicatedUplinkMessage, func(), error) {
-	ctx := metadata.NewContext(context.Background(), md)
+	ctx := metadata.NewIncomingContext(context.Background(), md)
 	handler, err := b.broker.ValidateNetworkContext(ctx)
 	if err != nil {
 		return nil, nil, err
@@ -73,7 +73,7 @@ func (b *brokerRPC) getHandlerSubscribe(md metadata.MD) (<-chan *pb.Deduplicated
 }
 
 func (b *brokerRPC) getHandlerPublish(md metadata.MD) (chan *pb.DownlinkMessage, error) {
-	ctx := metadata.NewContext(context.Background(), md)
+	ctx := metadata.NewIncomingContext(context.Background(), md)
 	handler, err := b.broker.ValidateNetworkContext(ctx)
 	if err != nil {
 		return nil, err

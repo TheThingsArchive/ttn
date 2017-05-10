@@ -6,8 +6,8 @@ package router
 import (
 	"io"
 
+	"github.com/TheThingsNetwork/go-utils/grpc/ttnctx"
 	"github.com/TheThingsNetwork/go-utils/log"
-	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/api/gateway"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/golang/protobuf/ptypes/empty"
@@ -36,7 +36,7 @@ func (s *RouterStreamServer) SetLogger(logger log.Interface) {
 
 // Uplink handles uplink streams
 func (s *RouterStreamServer) Uplink(stream Router_UplinkServer) (err error) {
-	md := api.MetadataFromContext(stream.Context())
+	md := ttnctx.MetadataFromIncomingContext(stream.Context())
 	ch, err := s.UplinkChanFunc(md)
 	if err != nil {
 		return err
@@ -70,7 +70,7 @@ func (s *RouterStreamServer) Uplink(stream Router_UplinkServer) (err error) {
 
 // Subscribe handles downlink streams
 func (s *RouterStreamServer) Subscribe(req *SubscribeRequest, stream Router_SubscribeServer) (err error) {
-	md := api.MetadataFromContext(stream.Context())
+	md := ttnctx.MetadataFromIncomingContext(stream.Context())
 	ch, cancel, err := s.DownlinkChanFunc(md)
 	if err != nil {
 		return err
@@ -90,7 +90,7 @@ func (s *RouterStreamServer) Subscribe(req *SubscribeRequest, stream Router_Subs
 
 // GatewayStatus handles gateway status streams
 func (s *RouterStreamServer) GatewayStatus(stream Router_GatewayStatusServer) error {
-	md := api.MetadataFromContext(stream.Context())
+	md := ttnctx.MetadataFromIncomingContext(stream.Context())
 	ch, err := s.GatewayStatusChanFunc(md)
 	if err != nil {
 		return err

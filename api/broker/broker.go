@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	"github.com/TheThingsNetwork/go-utils/grpc/restartstream"
+	"github.com/TheThingsNetwork/go-utils/grpc/ttnctx"
 	"github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/utils"
@@ -157,8 +158,8 @@ func (s *routerStreams) Close() {
 func (c *Client) NewRouterStreams(id string, token string) RouterStream {
 	log := c.log
 	ctx, cancel := context.WithCancel(c.ctx)
-	ctx = api.ContextWithID(ctx, id)
-	ctx = api.ContextWithToken(ctx, token)
+	ctx = ttnctx.OutgoingContextWithID(ctx, id)
+	ctx = ttnctx.OutgoingContextWithToken(ctx, token)
 	s := &routerStreams{
 		log:    log,
 		ctx:    ctx,
@@ -300,8 +301,8 @@ func (s *handlerStreams) Close() {
 func (c *Client) NewHandlerStreams(id string, token string) HandlerStream {
 	log := c.log
 	ctx, cancel := context.WithCancel(c.ctx)
-	ctx = api.ContextWithID(ctx, id)
-	ctx = api.ContextWithToken(ctx, token)
+	ctx = ttnctx.OutgoingContextWithID(ctx, id)
+	ctx = ttnctx.OutgoingContextWithToken(ctx, token)
 	s := &handlerStreams{
 		log:    log,
 		ctx:    ctx,

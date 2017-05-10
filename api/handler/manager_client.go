@@ -9,7 +9,7 @@ import (
 	"os/user"
 	"sync"
 
-	"github.com/TheThingsNetwork/ttn/api"
+	"github.com/TheThingsNetwork/go-utils/grpc/ttnctx"
 	"github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
@@ -65,17 +65,17 @@ func (h *ManagerClient) GetContext() context.Context {
 	h.RLock()
 	defer h.RUnlock()
 	ctx := context.Background()
-	ctx = api.ContextWithID(ctx, h.id)
-	ctx = api.ContextWithToken(ctx, h.accessToken)
+	ctx = ttnctx.OutgoingContextWithID(ctx, h.id)
+	ctx = ttnctx.OutgoingContextWithToken(ctx, h.accessToken)
 	return ctx
 }
 
-// GetContext returns a new context with authentication, plus limit and offset for pagination
+// GetContextWithLimitAndOffset returns a new context with authentication, plus limit and offset for pagination
 func (h *ManagerClient) GetContextWithLimitAndOffset(limit, offset int) context.Context {
 	h.RLock()
 	defer h.RUnlock()
 	ctx := h.GetContext()
-	ctx = api.ContextWithLimitAndOffset(ctx, uint64(limit), uint64(offset))
+	ctx = ttnctx.OutgoingContextWithLimitAndOffset(ctx, uint64(limit), uint64(offset))
 	return ctx
 }
 
