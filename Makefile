@@ -175,4 +175,4 @@ clean:
 docker: GOOS=linux
 docker: GOARCH=amd64
 docker: $(RELEASE_DIR)/ttn-linux-amd64
-	docker build --squash -t thethingsnetwork/ttn -f Dockerfile .
+	docker build -t thethingsnetwork/ttn -f Dockerfile .
