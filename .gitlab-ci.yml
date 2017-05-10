@@ -75,7 +75,7 @@ gitlab-image:
   services:
     - "docker:dind"
   script:
-    - docker build -t ttn .
+    - docker build --squash -t ttn .
     - docker login -u "gitlab-ci-token" -p "$CI_BUILD_TOKEN" registry.gitlab.com
     - docker tag ttn registry.gitlab.com/$CONTAINER_NAME:$CI_BUILD_REF_NAME
     - docker push registry.gitlab.com/$CONTAINER_NAME:$CI_BUILD_REF_NAME
