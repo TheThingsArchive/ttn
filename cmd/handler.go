@@ -114,7 +114,7 @@ var handlerCmd = &cobra.Command{
 		}
 
 		if viper.GetString("handler.builtin-attr") != "" {
-			handler = handler.WithBuiltinAttr(viper.GetString("handler.builtin-attr"))
+			handler = handler.WithBuiltinAttrList(viper.GetString("handler.builtin-attr"))
 		} else {
 			ctx.Warn("No builtin attribute set in your configuration")
 		}

@@ -198,6 +198,8 @@ type Application struct {
 	// The encoder is a JavaScript function that encodes an object to a byte array.
 	// This function is used when the payload format is set to custom.
 	Encoder string `protobuf:"bytes,5,opt,name=encoder,proto3" json:"encoder,omitempty"`
+	// The "register on join" access key should only be set if devices need to be registered on join
+	RegisterOnJoinAccessKey string `protobuf:"bytes,7,opt,name=register_on_join_access_key,json=registerOnJoinAccessKey,proto3" json:"register_on_join_access_key,omitempty"`
 }
 
 func (m *Application) Reset()                    { *m = Application{} }
@@ -242,6 +244,13 @@ func (m *Application) GetValidator() string {
 func (m *Application) GetEncoder() string {
 	if m != nil {
 		return m.Encoder
+	}
+	return ""
+}
+
+func (m *Application) GetRegisterOnJoinAccessKey() string {
+	if m != nil {
+		return m.RegisterOnJoinAccessKey
 	}
 	return ""
 }
@@ -993,6 +1002,9 @@ func (this *Application) VerboseEqual(that interface{}) error {
 	if this.Encoder != that1.Encoder {
 		return fmt.Errorf("Encoder this(%v) Not Equal that(%v)", this.Encoder, that1.Encoder)
 	}
+	if this.RegisterOnJoinAccessKey != that1.RegisterOnJoinAccessKey {
+		return fmt.Errorf("RegisterOnJoinAccessKey this(%v) Not Equal that(%v)", this.RegisterOnJoinAccessKey, that1.RegisterOnJoinAccessKey)
+	}
 	return nil
 }
 func (this *Application) Equal(that interface{}) bool {
@@ -1036,6 +1048,9 @@ func (this *Application) Equal(that interface{}) bool {
 		return false
 	}
 	if this.Encoder != that1.Encoder {
+		return false
+	}
+	if this.RegisterOnJoinAccessKey != that1.RegisterOnJoinAccessKey {
 		return false
 	}
 	return true
@@ -2643,6 +2658,12 @@ func (m *Application) MarshalTo(dAtA []byte) (int, error) {
 		i = encodeVarintHandler(dAtA, i, uint64(len(m.PayloadFormat)))
 		i += copy(dAtA[i:], m.PayloadFormat)
 	}
+	if len(m.RegisterOnJoinAccessKey) > 0 {
+		dAtA[i] = 0x3a
+		i++
+		i = encodeVarintHandler(dAtA, i, uint64(len(m.RegisterOnJoinAccessKey)))
+		i += copy(dAtA[i:], m.RegisterOnJoinAccessKey)
+	}
 	return i, nil
 }
 
@@ -3171,6 +3192,10 @@ func (m *Application) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovHandler(uint64(l))
 	}
+	l = len(m.RegisterOnJoinAccessKey)
+	if l > 0 {
+		n += 1 + l + sovHandler(uint64(l))
+	}
 	return n
 }
 
@@ -3432,6 +3457,7 @@ func (this *Application) String() string {
 		`Validator:` + fmt.Sprintf("%v", this.Validator) + `,`,
 		`Encoder:` + fmt.Sprintf("%v", this.Encoder) + `,`,
 		`PayloadFormat:` + fmt.Sprintf("%v", this.PayloadFormat) + `,`,
+		`RegisterOnJoinAccessKey:` + fmt.Sprintf("%v", this.RegisterOnJoinAccessKey) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -4334,6 +4360,35 @@ func (m *Application) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.PayloadFormat = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RegisterOnJoinAccessKey", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowHandler
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthHandler
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.RegisterOnJoinAccessKey = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

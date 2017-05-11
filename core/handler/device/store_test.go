@@ -119,3 +119,74 @@ func TestDeviceStore(t *testing.T) {
 	a.So(count, ShouldEqual, 1)
 
 }
+
+func TestRedisDeviceStore_attrControl(t *testing.T) {
+	a := New(t)
+
+	store := NewRedisDeviceStore(GetRedisClient(), "handler-test-builtin-attribute")
+
+	testMap1 := map[string]string{
+		"hello": "bonjour",
+		"test":  "TeSt",
+	}
+	in := &Device{Attributes: testMap1}
+	store.attrFilter(in)
+	a.So(in.Attributes, ShouldNotBeNil)
+	a.So(in.Attributes["hello"], ShouldEqual, testMap1["hello"])
+	a.So(in.Attributes["test"], ShouldEqual, testMap1["test"])
+
+	//Past limit of 5
+	testMap2 := map[string]string{
+		"hello":   "bonjour",
+		"test":    "TeSt",
+		"beer":    "cold",
+		"weather": "hot",
+		"heart":   "pique",
+		"square":  "trefle",
+	}
+	in.Attributes = testMap2
+	store.attrFilter(in)
+	a.So(len(in.Attributes), ShouldEqual, 5)
+
+	//Past limit of 5 and builtin attributes
+	store.SetBuiltinAttrList("ttn-battery:ttn-Model")
+	testMap3 := map[string]string{
+		"hello":       "bonjour",
+		"test":        "TeSt",
+		"beer":        "cold",
+		"weather":     "hot",
+		"heart":       "pique",
+		"square":      "trefle",
+		"ttn-battery": "quatre-ving-dix pourcent",
+	}
+	m := make(map[string]string, len(testMap3))
+	for key, val := range testMap3 {
+		m[key] = val
+	}
+	in.Attributes = m
+	store.attrFilter(in)
+	a.So(len(in.Attributes), ShouldEqual, 6)
+	a.So(in.Attributes["ttn-Battery"], ShouldEqual, testMap3["ttn-Battery"])
+}
+
+func TestHandlerManager_attrControlKeyValidation(t *testing.T) {
+	a := New(t)
+
+	store := NewRedisDeviceStore(GetRedisClient(), "handler-test-builtin-attribute")
+	testMap1 := map[string]string{
+		"Hello": "bonjour",
+		"test":  "TeSt",
+		"youknowsometimesyoujustwanttoputareallylongnametobesurepeoplewillknowwhatallthislittlebytemean": "1",
+		"": "too short!",
+	}
+
+	in := &Device{Attributes: testMap1}
+	store.attrFilter(in)
+	a.So(in.Attributes, ShouldNotBeNil)
+	a.So(in.Attributes["Hello"], ShouldBeEmpty)
+	a.So(in.Attributes[""], ShouldBeEmpty)
+	a.So(
+		in.Attributes["youknowsometimesyoujustwanttoputareallylongnametobesurepeoplewillknowallthislittlebytemean"],
+		ShouldBeEmpty)
+	a.So(in.Attributes["test"], ShouldEqual, testMap1["test"])
+}

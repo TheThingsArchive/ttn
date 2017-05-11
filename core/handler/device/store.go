@@ -8,11 +8,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/core/handler/device/migrate"
 	"github.com/TheThingsNetwork/ttn/core/storage"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"gopkg.in/redis.v5"
 )
+
+const maxAttr uint8 = 5
 
 // Store interface for Devices
 type Store interface {
@@ -24,8 +27,7 @@ type Store interface {
 	DownlinkQueue(appID, devID string) (DownlinkQueue, error)
 	Set(new *Device, properties ...string) (err error)
 	Delete(appID, devID string) error
-	SetBuiltinAttr(string)
-	GetBuiltinAttrList() map[string]bool
+	SetBuiltinAttrList(string)
 }
 
 const defaultRedisPrefix = "handler"
@@ -54,7 +56,7 @@ func NewRedisDeviceStore(client *redis.Client, prefix string) *RedisDeviceStore 
 type RedisDeviceStore struct {
 	store       *storage.RedisMapStore
 	queues      *storage.RedisQueueStore
-	builtinAttr map[string]bool
+	builtinAttr []string
 }
 
 // Count all devices in the store
@@ -126,6 +128,7 @@ func (s *RedisDeviceStore) Set(new *Device, properties ...string) (err error) {
 	if new.old == nil {
 		new.CreatedAt = now
 	}
+	s.attrFilter(new)
 	err = s.store.Set(key, *new, properties...)
 	if err != nil {
 		return
@@ -142,16 +145,36 @@ func (s *RedisDeviceStore) Delete(appID, devID string) error {
 	return s.store.Delete(key)
 }
 
-// SetBuiltinAttr set the key that will always be added to the Attribute map.
-func (s *RedisDeviceStore) SetBuiltinAttr(a string) {
-	m := map[string]bool{}
-	for _, v := range strings.Split(a, ":") {
-		m[v] = true
-	}
-	s.builtinAttr = m
+// SetBuiltinAttrList set the key that will always be added to the Attribute map.
+func (s *RedisDeviceStore) SetBuiltinAttrList(a string) {
+	s.builtinAttr = strings.Split(a, ":")
 }
 
-// getAttrWhitelist return a map of the builtin attributes
-func (s *RedisDeviceStore) GetBuiltinAttrList() map[string]bool {
-	return s.builtinAttr
+//attrFilter take all the whitelisted Attribute plus a maximum of customs one
+func (s *RedisDeviceStore) attrFilter(new *Device) {
+
+	m := make(map[string]string, len(s.builtinAttr))
+	i := maxAttr
+	for _, key := range s.builtinAttr {
+		val, ok := new.Attributes[key]
+		if ok {
+			if val != "" {
+				m[key] = val
+			}
+			delete(new.Attributes, key)
+		}
+	}
+	for key, val := range new.Attributes {
+		if !api.ValidID(key) {
+			continue
+		}
+		if i <= 0 {
+			break
+		}
+		if val != "" {
+			m[key] = val
+			i--
+		}
+	}
+	new.Attributes = m
 }
