@@ -129,11 +129,11 @@ func TestRedisDeviceStore_attrControl(t *testing.T) {
 		"hello": "bonjour",
 		"test":  "TeSt",
 	}
-	in := &Device{Attributes: testMap1}
-	store.attrFilter(in)
-	a.So(in.Attributes, ShouldNotBeNil)
-	a.So(in.Attributes["hello"], ShouldEqual, testMap1["hello"])
-	a.So(in.Attributes["test"], ShouldEqual, testMap1["test"])
+	in := &Device{Builtin: testMap1}
+	store.builtinFilter(in)
+	a.So(in.Builtin, ShouldNotBeNil)
+	a.So(in.Builtin["hello"], ShouldEqual, testMap1["hello"])
+	a.So(in.Builtin["test"], ShouldEqual, testMap1["test"])
 
 	//Past limit of 5
 	testMap2 := map[string]string{
@@ -144,12 +144,12 @@ func TestRedisDeviceStore_attrControl(t *testing.T) {
 		"heart":   "pique",
 		"square":  "trefle",
 	}
-	in.Attributes = testMap2
-	store.attrFilter(in)
-	a.So(len(in.Attributes), ShouldEqual, 5)
+	in.Builtin = testMap2
+	store.builtinFilter(in)
+	a.So(len(in.Builtin), ShouldEqual, 5)
 
 	//Past limit of 5 and builtin attributes
-	store.SetBuiltinAttrList("ttn-battery:ttn-Model")
+	store.SetBuiltinList("ttn-battery:ttn-Model")
 	testMap3 := map[string]string{
 		"hello":       "bonjour",
 		"test":        "TeSt",
@@ -163,10 +163,10 @@ func TestRedisDeviceStore_attrControl(t *testing.T) {
 	for key, val := range testMap3 {
 		m[key] = val
 	}
-	in.Attributes = m
-	store.attrFilter(in)
-	a.So(len(in.Attributes), ShouldEqual, 6)
-	a.So(in.Attributes["ttn-Battery"], ShouldEqual, testMap3["ttn-Battery"])
+	in.Builtin = m
+	store.builtinFilter(in)
+	a.So(len(in.Builtin), ShouldEqual, 6)
+	a.So(in.Builtin["ttn-Battery"], ShouldEqual, testMap3["ttn-Battery"])
 }
 
 func TestHandlerManager_attrControlKeyValidation(t *testing.T) {
@@ -180,13 +180,13 @@ func TestHandlerManager_attrControlKeyValidation(t *testing.T) {
 		"": "too short!",
 	}
 
-	in := &Device{Attributes: testMap1}
-	store.attrFilter(in)
-	a.So(in.Attributes, ShouldNotBeNil)
-	a.So(in.Attributes["Hello"], ShouldBeEmpty)
-	a.So(in.Attributes[""], ShouldBeEmpty)
+	in := &Device{Builtin: testMap1}
+	store.builtinFilter(in)
+	a.So(in.Builtin, ShouldNotBeNil)
+	a.So(in.Builtin["Hello"], ShouldBeEmpty)
+	a.So(in.Builtin[""], ShouldBeEmpty)
 	a.So(
-		in.Attributes["youknowsometimesyoujustwanttoputareallylongnametobesurepeoplewillknowallthislittlebytemean"],
+		in.Builtin["youknowsometimesyoujustwanttoputareallylongnametobesurepeoplewillknowallthislittlebytemean"],
 		ShouldBeEmpty)
-	a.So(in.Attributes["test"], ShouldEqual, testMap1["test"])
+	a.So(in.Builtin["test"], ShouldEqual, testMap1["test"])
 }

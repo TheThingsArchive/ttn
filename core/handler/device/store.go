@@ -27,7 +27,7 @@ type Store interface {
 	DownlinkQueue(appID, devID string) (DownlinkQueue, error)
 	Set(new *Device, properties ...string) (err error)
 	Delete(appID, devID string) error
-	SetBuiltinAttrList(string)
+	SetBuiltinList(string)
 }
 
 const defaultRedisPrefix = "handler"
@@ -56,7 +56,7 @@ func NewRedisDeviceStore(client *redis.Client, prefix string) *RedisDeviceStore 
 type RedisDeviceStore struct {
 	store       *storage.RedisMapStore
 	queues      *storage.RedisQueueStore
-	builtinAttr []string
+	builtinList map[string]bool
 }
 
 // Count all devices in the store
@@ -128,7 +128,7 @@ func (s *RedisDeviceStore) Set(new *Device, properties ...string) (err error) {
 	if new.old == nil {
 		new.CreatedAt = now
 	}
-	s.attrFilter(new)
+	s.builtinFilter(new)
 	err = s.store.Set(key, *new, properties...)
 	if err != nil {
 		return
@@ -145,36 +145,64 @@ func (s *RedisDeviceStore) Delete(appID, devID string) error {
 	return s.store.Delete(key)
 }
 
-// SetBuiltinAttrList set the key that will always be added to the Attribute map.
-func (s *RedisDeviceStore) SetBuiltinAttrList(a string) {
-	s.builtinAttr = strings.Split(a, ":")
+// SetBuiltinList set the key that will always be added to the Attribute map.
+func (s *RedisDeviceStore) SetBuiltinList(a string) {
+	l := strings.Split(a, ":")
+	m := make(map[string]bool, len(l))
+	for _, key := range l {
+		if api.ValidID(key) {
+			m[key] = true
+		}
+	}
+	s.builtinList = m
 }
 
-//attrFilter take all the whitelisted Attribute plus a maximum of customs one
-func (s *RedisDeviceStore) attrFilter(new *Device) {
+//builtinFilter allow restriction on the builtin attributes.
+//The builtin in the builtin list will always be allowed.
+//The builtin already present will not be replaced/deleted unless stated otherwise.
+//Then the new builtin wil be added if they key is valid and if there is enough key slot available
+func (s *RedisDeviceStore) builtinFilter(new *Device) {
 
-	m := make(map[string]string, len(s.builtinAttr))
+	m := make(map[string]string, len(s.builtinList))
 	i := maxAttr
-	for _, key := range s.builtinAttr {
-		val, ok := new.Attributes[key]
+	for key := range s.builtinList {
+		val, ok := new.Builtin[key]
 		if ok {
 			if val != "" {
 				m[key] = val
 			}
-			delete(new.Attributes, key)
+			delete(new.Builtin, key)
 		}
 	}
-	for key, val := range new.Attributes {
-		if !api.ValidID(key) {
-			continue
+	for val, key := range new.old.Builtin {
+		if _, ok := s.builtinList[key]; !ok {
+			if v, ok := new.Builtin[key]; ok {
+				if v != "" {
+					m[key] = v
+				} else {
+					i++
+				}
+				delete(new.Builtin, key)
+			} else {
+				m[key] = val
+			}
+			i--
 		}
+	}
+	if i <= 0 {
+		return
+	}
+	for key, val := range new.Builtin {
 		if i <= 0 {
 			break
+		}
+		if !api.ValidID(key) {
+			continue
 		}
 		if val != "" {
 			m[key] = val
 			i--
 		}
 	}
-	new.Attributes = m
+	new.Builtin = m
 }

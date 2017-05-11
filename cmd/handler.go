@@ -113,8 +113,8 @@ var handlerCmd = &cobra.Command{
 			ctx.Warn("AMQP is not enabled in your configuration")
 		}
 
-		if viper.GetString("handler.builtin-attr") != "" {
-			handler = handler.WithBuiltinAttrList(viper.GetString("handler.builtin-attr"))
+		if viper.GetString("handler.device-builtin") != "" {
+			handler = handler.SetDeviceBuiltinList(viper.GetString("handler.device-builtin"))
 		} else {
 			ctx.Warn("No builtin attribute set in your configuration")
 		}
