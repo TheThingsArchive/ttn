@@ -6,6 +6,7 @@ package device
 import (
 	"testing"
 
+	pb "github.com/TheThingsNetwork/ttn/api/handler"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/assertions"
@@ -120,29 +121,39 @@ func TestDeviceStore(t *testing.T) {
 
 }
 
-func TestRedisDeviceStore_attrControl(t *testing.T) {
+func TestRedisDeviceStore_SetBuiltinList(t *testing.T) {
+	a := New(t)
+
+	store := NewRedisDeviceStore(GetRedisClient(), "handler-test-builtin-attribute")
+	store.SetBuiltinList("ttn-battery:ttn-Model")
+	a.So(store.builtinList["ttn-battery"], ShouldBeTrue)
+	a.So(store.builtinList["ttn-Model"], ShouldBeFalse)
+}
+
+func TestRedisDeviceStore_builtinFilter_Add(t *testing.T) {
 	a := New(t)
 
 	store := NewRedisDeviceStore(GetRedisClient(), "handler-test-builtin-attribute")
 
-	testMap1 := map[string]string{
-		"hello": "bonjour",
-		"test":  "TeSt",
+	testMap1 := []*pb.Attribute{
+		{"hello", "bonjour"},
+		{"test", "TeSt"},
 	}
 	in := &Device{Builtin: testMap1}
 	store.builtinFilter(in)
 	a.So(in.Builtin, ShouldNotBeNil)
-	a.So(in.Builtin["hello"], ShouldEqual, testMap1["hello"])
-	a.So(in.Builtin["test"], ShouldEqual, testMap1["test"])
+	a.So(in.Builtin[0].Key, ShouldEqual, testMap1[0].Key)
+	a.So(in.Builtin[0].Val, ShouldEqual, testMap1[0].Val)
+	a.So(in.Builtin[1].Key, ShouldEqual, testMap1[1].Key)
 
 	//Past limit of 5
-	testMap2 := map[string]string{
-		"hello":   "bonjour",
-		"test":    "TeSt",
-		"beer":    "cold",
-		"weather": "hot",
-		"heart":   "pique",
-		"square":  "trefle",
+	testMap2 := []*pb.Attribute{
+		{"hello", "bonjour"},
+		{"test", "TeSt"},
+		{"beer", "cold"},
+		{"weather", "hot"},
+		{"heart", "pique"},
+		{"square", "trefle"},
 	}
 	in.Builtin = testMap2
 	store.builtinFilter(in)
@@ -150,43 +161,73 @@ func TestRedisDeviceStore_attrControl(t *testing.T) {
 
 	//Past limit of 5 and builtin attributes
 	store.SetBuiltinList("ttn-battery:ttn-Model")
-	testMap3 := map[string]string{
-		"hello":       "bonjour",
-		"test":        "TeSt",
-		"beer":        "cold",
-		"weather":     "hot",
-		"heart":       "pique",
-		"square":      "trefle",
-		"ttn-battery": "quatre-ving-dix pourcent",
+	testMap3 := []*pb.Attribute{
+		{"hello", "bonjour"},
+		{"test", "TeSt"},
+		{"beer", "cold"},
+		{"weather", "hot"},
+		{"heart", "pique"},
+		{"square", "trefle"},
+		{"ttn-battery", "quatre-ving-dix pourcent"},
 	}
-	m := make(map[string]string, len(testMap3))
-	for key, val := range testMap3 {
-		m[key] = val
-	}
-	in.Builtin = m
+	in.Builtin = testMap3
 	store.builtinFilter(in)
 	a.So(len(in.Builtin), ShouldEqual, 6)
-	a.So(in.Builtin["ttn-Battery"], ShouldEqual, testMap3["ttn-Battery"])
+	attr := &pb.Attribute{}
+	for _, v := range in.Builtin {
+		if v.Key == "ttn-battery" {
+			attr = v
+		}
+	}
+	a.So(attr.Key, ShouldEqual, testMap3[6].Key)
+	a.So(attr.Val, ShouldEqual, testMap3[6].Val)
 }
 
-func TestHandlerManager_attrControlKeyValidation(t *testing.T) {
+func TestRedisDeviceStore_builtinFilter_KeyValidation(t *testing.T) {
 	a := New(t)
 
 	store := NewRedisDeviceStore(GetRedisClient(), "handler-test-builtin-attribute")
-	testMap1 := map[string]string{
-		"Hello": "bonjour",
-		"test":  "TeSt",
-		"youknowsometimesyoujustwanttoputareallylongnametobesurepeoplewillknowwhatallthislittlebytemean": "1",
-		"": "too short!",
+	testMap1 := []*pb.Attribute{
+		{"Hello", "bonjour"},
+		{"test", "TeSt"},
+		{"youknowsometimesyoujustwanttoputareallylongnametobesurepeoplewillknowwhatallthislittlebytemean", "1"},
+		{"", "too short!"},
 	}
 
 	in := &Device{Builtin: testMap1}
 	store.builtinFilter(in)
 	a.So(in.Builtin, ShouldNotBeNil)
-	a.So(in.Builtin["Hello"], ShouldBeEmpty)
-	a.So(in.Builtin[""], ShouldBeEmpty)
-	a.So(
-		in.Builtin["youknowsometimesyoujustwanttoputareallylongnametobesurepeoplewillknowallthislittlebytemean"],
-		ShouldBeEmpty)
-	a.So(in.Builtin["test"], ShouldEqual, testMap1["test"])
+	a.So(len(in.Builtin), ShouldEqual, 1)
+}
+
+func TestRedisDeviceStore_builtinFilter_Remove(t *testing.T) {
+	a := New(t)
+
+	store := NewRedisDeviceStore(GetRedisClient(), "handler-test-builtin-attribute")
+
+	testMap1 := []*pb.Attribute{
+		{"hello", "bonjour"},
+		{"test", "TeSt"},
+	}
+	testMapRm := []*pb.Attribute{
+		{"hello", ""},
+		{"test", ""},
+	}
+	in := &Device{Builtin: testMapRm, old: &Device{Builtin: testMap1}}
+	store.builtinFilter(in)
+	a.So(in.Builtin, ShouldBeEmpty)
+
+	testMap2 := []*pb.Attribute{
+		{"hello", "bonjour"},
+		{"test", "TeSt"},
+	}
+	testMapRm2 := []*pb.Attribute{
+		{"hello", ""},
+		{"hello", "coucou"},
+		{"test", ""},
+	}
+	in.Builtin = testMapRm2
+	in.old.Builtin = testMap2
+	store.builtinFilter(in)
+	a.So(len(in.Builtin), ShouldEqual, 1)
 }

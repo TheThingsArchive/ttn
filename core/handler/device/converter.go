@@ -27,10 +27,10 @@ func (dev *Device) ToPb() *pb.Device {
 			Uses32BitFCnt:         dev.Options.Uses32BitFCnt,
 			ActivationConstraints: dev.Options.ActivationConstraints,
 		}},
-		Latitude:   dev.Latitude,
-		Longitude:  dev.Longitude,
-		Altitude:   dev.Altitude,
-		Attributes: dev.Builtin,
+		Latitude:  dev.Latitude,
+		Longitude: dev.Longitude,
+		Altitude:  dev.Altitude,
+		Builtin:   dev.Builtin,
 	}
 }
 
@@ -45,7 +45,7 @@ func (dev *Device) FromPb(in *pb.Device, lorawan *pb_lorawan.Device) *Device {
 	dev.Longitude = in.Longitude
 	dev.Altitude = in.Altitude
 	fromLorawan(dev, lorawan)
-	dev.Builtin = in.Attributes
+	dev.Builtin = in.Builtin
 	return dev
 }
 

@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"time"
 
+	pb "github.com/TheThingsNetwork/ttn/api/handler"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/fatih/structs"
@@ -55,7 +56,7 @@ type Device struct {
 	CreatedAt time.Time `redis:"created_at"`
 	UpdatedAt time.Time `redis:"updated_at"`
 
-	Builtin map[string]string `redis:"builtin"`
+	Builtin []*pb.Attribute `redis:"builtin"`
 }
 
 // StartUpdate stores the state of the device

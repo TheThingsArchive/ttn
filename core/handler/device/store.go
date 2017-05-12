@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/api"
+
+	pb "github.com/TheThingsNetwork/ttn/api/handler"
 	"github.com/TheThingsNetwork/ttn/core/handler/device/migrate"
 	"github.com/TheThingsNetwork/ttn/core/storage"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
@@ -16,6 +18,7 @@ import (
 )
 
 const maxAttr uint8 = 5
+const maxAttrLength = 200
 
 // Store interface for Devices
 type Store interface {
@@ -163,46 +166,42 @@ func (s *RedisDeviceStore) SetBuiltinList(a string) {
 //Then the new builtin wil be added if they key is valid and if there is enough key slot available
 func (s *RedisDeviceStore) builtinFilter(new *Device) {
 
-	m := make(map[string]string, len(s.builtinList))
-	i := maxAttr
-	for key := range s.builtinList {
-		val, ok := new.Builtin[key]
-		if ok {
-			if val != "" {
-				m[key] = val
+	var m = map[string]string{}
+	var i = maxAttr
+	var deleted = 0
+
+	if new.old != nil {
+		m = make(map[string]string, len(new.old.Builtin))
+		for _, v := range new.old.Builtin {
+			if _, ok := s.builtinList[v.Key]; !ok {
+				i--
 			}
-			delete(new.Builtin, key)
+			m[v.Key] = v.Val
 		}
 	}
-	for val, key := range new.old.Builtin {
-		if _, ok := s.builtinList[key]; !ok {
-			if v, ok := new.Builtin[key]; ok {
-				if v != "" {
-					m[key] = v
-				} else {
-					i++
-				}
-				delete(new.Builtin, key)
-			} else {
-				m[key] = val
+	for i := range new.Builtin {
+		j := i - deleted
+		if new.Builtin[j].Val == "" {
+			if _, ok := m[new.Builtin[j].Key]; ok {
+				delete(m, new.Builtin[j].Key)
+				i++
 			}
+			new.Builtin = new.Builtin[:j+copy(new.Builtin[j:], new.Builtin[j+1:])]
+			deleted++
+		}
+	}
+	for _, v := range new.Builtin {
+		_, ok := m[v.Key]
+		_, ok_l := s.builtinList[v.Key]
+		if (ok || ok_l || (i > 0 && api.ValidID(v.Key))) &&
+			len(v.Val) < maxAttrLength {
+			m[v.Key] = v.Val
 			i--
 		}
 	}
-	if i <= 0 {
-		return
+	l := make([]*pb.Attribute, 0, len(m))
+	for key, val := range m {
+		l = append(l, &pb.Attribute{key, val})
 	}
-	for key, val := range new.Builtin {
-		if i <= 0 {
-			break
-		}
-		if !api.ValidID(key) {
-			continue
-		}
-		if val != "" {
-			m[key] = val
-			i--
-		}
-	}
-	new.Builtin = m
+	new.Builtin = l
 }

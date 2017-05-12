@@ -41,7 +41,7 @@ var test_dev = &Device{
 	CreatedAt: time.Now(),
 	UpdatedAt: time.Now(),
 
-	Builtin: map[string]string{"test": "test"},
+	Builtin: []*pb.Attribute{{"test", "test"}},
 }
 
 func TestDevice_ToPb(t *testing.T) {
@@ -53,7 +53,8 @@ func TestDevice_ToPb(t *testing.T) {
 	a.So(p.Latitude, ShouldEqual, test_dev.Latitude)
 	a.So(p.Longitude, ShouldEqual, test_dev.Longitude)
 	a.So(p.Altitude, ShouldEqual, test_dev.Altitude)
-	a.So(p.Attributes, ShouldEqual, test_dev.Builtin)
+	a.So(p.Builtin[0].Val, ShouldEqual, test_dev.Builtin[0].Val)
+	a.So(p.Builtin[0].Key, ShouldEqual, test_dev.Builtin[0].Key)
 }
 
 func TestDevice_FromPb(t *testing.T) {
@@ -69,5 +70,6 @@ func TestDevice_FromPb(t *testing.T) {
 	a.So(dev.Latitude, ShouldEqual, test_dev.Latitude)
 	a.So(dev.Longitude, ShouldEqual, test_dev.Longitude)
 	a.So(dev.Altitude, ShouldEqual, test_dev.Altitude)
-	a.So(dev.Builtin, ShouldEqual, test_dev.Builtin)
+	a.So(dev.Builtin[0].Val, ShouldEqual, test_dev.Builtin[0].Val)
+	a.So(dev.Builtin[0].Key, ShouldEqual, test_dev.Builtin[0].Key)
 }

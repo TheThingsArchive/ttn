@@ -9,6 +9,7 @@ import (
 
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/api"
+	pb "github.com/TheThingsNetwork/ttn/api/handler"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/spf13/cobra"
@@ -156,23 +157,17 @@ var devicesSetCmd = &cobra.Command{
 		if in, err := cmd.Flags().GetStringArray("add-builtin"); err == nil && len(in) > 0 {
 			for _, v := range in {
 				s := strings.SplitN(v, ":", 2)
-				if dev.Attributes == nil {
-					dev.Attributes = make(map[string]string, len(in))
-				}
 				if len(s) == 2 {
-					dev.Attributes[s[0]] = s[1]
+					dev.Builtin = append(dev.Builtin, &pb.Attribute{Key: s[0], Val: s[1]})
 				} else {
-					dev.Attributes[s[0]] = ""
+					ctx.Error("add-builtin: cannot parse key:value %s")
 				}
 			}
 		}
 
 		if in, err := cmd.Flags().GetStringArray("remove-builtin"); err == nil && len(in) > 0 {
-			if dev.Attributes == nil {
-				dev.Attributes = make(map[string]string, len(in))
-			}
 			for _, v := range in {
-				dev.Attributes[v] = ""
+				dev.Builtin = append(dev.Builtin, &pb.Attribute{Key: v, Val: ""})
 			}
 		}
 
