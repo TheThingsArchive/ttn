@@ -136,6 +136,7 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*empty.E
 	if err != nil {
 		return nil, err
 	}
+	token, _ := ttnctx.TokenFromIncomingContext(ctx)
 	err = checkAppRights(claims, in.AppId, rights.Devices)
 	if err != nil {
 		return nil, err
@@ -166,7 +167,7 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*empty.E
 	}
 
 	dev.FromPb(in, lorawan)
-	err = h.updateDevBrk(ctx, dev, lorawan)
+	err = h.updateDevBrk(ctx, token, dev, lorawan)
 	if err != nil {
 		return nil, errors.Wrap(errors.FromGRPCError(err), "Broker did not set device")
 	}

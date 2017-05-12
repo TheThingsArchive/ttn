@@ -6,6 +6,7 @@ package handler
 import (
 	"context"
 
+	"github.com/TheThingsNetwork/go-utils/grpc/ttnctx"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
@@ -42,10 +43,10 @@ func (h *handlerManager) eventSelect(ctx context.Context, dev *device.Device, lo
 }
 
 //updateDevBrk Update the device in the Broker (NetworkServer)
-func (h *handlerManager) updateDevBrk(ctx context.Context, dev *device.Device, lorawan *pb_lorawan.Device) error {
+func (h *handlerManager) updateDevBrk(ctx context.Context, token string, dev *device.Device, lorawan *pb_lorawan.Device) error {
 	nsUpdated := dev.GetLoRaWAN()
 	nsUpdated.FCntUp = lorawan.FCntUp
 	nsUpdated.FCntDown = lorawan.FCntDown
-	_, err := h.handler.ttnDeviceManager.SetDevice(ctx, nsUpdated)
+	_, err := h.handler.ttnDeviceManager.SetDevice(ttnctx.OutgoingContextWithToken(ctx, token), nsUpdated)
 	return err
 }

@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"encoding/json"
+
 	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/spf13/cobra"
@@ -112,7 +114,8 @@ var devicesInfoCmd = &cobra.Command{
 		}
 
 		if len(dev.Builtin) != 0 {
-			fmt.Printf("   Builtin: %v\n", dev.Builtin)
+			builtin, _ := json.MarshalIndent(dev.Builtin, "             ", " ")
+			fmt.Printf("  Builtin: %v\n", string(builtin))
 		}
 	},
 }
