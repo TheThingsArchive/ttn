@@ -123,6 +123,23 @@ func (p *Pool) Close(target ...string) {
 	}
 }
 
+// CloseConn closes a connection.
+func (p *Pool) CloseConn(conn *grpc.ClientConn) {
+	var target string
+	p.mu.Lock()
+	for t, c := range p.conns {
+		if c.conn == conn {
+			target = t
+			break
+		}
+	}
+	p.mu.Unlock()
+	if target != "" {
+		p.Close(target)
+	}
+	return
+}
+
 func (p *Pool) dial(target string, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
 	p.mu.Lock()
 	if _, ok := p.conns[target]; !ok {
