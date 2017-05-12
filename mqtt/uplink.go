@@ -40,7 +40,7 @@ func (c *DefaultClient) PublishUplinkFields(appID string, devID string, fields m
 		for _, token := range tokens {
 			token.Wait()
 			if token.Error() != nil {
-				c.ctx.Warnf("Error publishing uplink fields: %s", token.Error().Error())
+				c.ctx.Warnf("mqtt: error publishing uplink fields: %s", token.Error())
 				t.err = token.Error()
 			}
 		}
@@ -69,7 +69,7 @@ func (c *DefaultClient) SubscribeDeviceUplink(appID string, devID string, handle
 		// Determine the actual topic
 		topic, err := ParseDeviceTopic(msg.Topic())
 		if err != nil {
-			c.ctx.Warnf("Received message on invalid uplink topic: %s", msg.Topic())
+			c.ctx.Warnf("mqtt: received message on invalid uplink topic: %s", msg.Topic())
 			return
 		}
 
@@ -80,7 +80,7 @@ func (c *DefaultClient) SubscribeDeviceUplink(appID string, devID string, handle
 		dataUp.DevID = topic.DevID
 
 		if err != nil {
-			c.ctx.Warnf("Could not unmarshal uplink (%s).", err.Error())
+			c.ctx.Warnf("mqtt: could not unmarshal uplink: %s", err)
 			return
 		}
 

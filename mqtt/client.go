@@ -177,21 +177,21 @@ func NewClient(ctx log.Interface, id, username, password string, brokers ...stri
 	ttnClient.opts.SetCleanSession(true)
 
 	ttnClient.opts.SetDefaultPublishHandler(func(client MQTT.Client, msg MQTT.Message) {
-		ctx.Warnf("Received unhandled message: %v", msg)
+		ctx.Warnf("mqtt: received unhandled message: %v", msg)
 	})
 
 	var reconnecting bool
 
 	ttnClient.opts.SetConnectionLostHandler(func(client MQTT.Client, err error) {
-		ctx.Warnf("Disconnected (%s). Reconnecting...", err.Error())
+		ctx.Warnf("mqtt: disconnected (%s), reconnecting...", err)
 		reconnecting = true
 	})
 
 	ttnClient.opts.SetOnConnectHandler(func(client MQTT.Client) {
-		ctx.Info("Connected to MQTT")
+		ctx.Info("mqtt: connected")
 		if reconnecting {
 			for topic, handler := range ttnClient.subscriptions {
-				ctx.Infof("Re-subscribing to topic: %s", topic)
+				ctx.Infof("mqtt: re-subscribing to topic: %s", topic)
 				ttnClient.subscribe(topic, handler)
 			}
 			reconnecting = false
@@ -220,14 +220,14 @@ func (c *DefaultClient) Connect() error {
 		token := c.mqtt.Connect()
 		finished := token.WaitTimeout(1 * time.Second)
 		if !finished {
-			c.ctx.Warn("MQTT connection took longer than expected...")
+			c.ctx.Warn("mqtt: connection took longer than expected...")
 			token.Wait()
 		}
 		err = token.Error()
 		if err == nil {
 			break
 		}
-		c.ctx.Warnf("Could not connect to MQTT Broker (%s). Retrying...", err.Error())
+		c.ctx.Warnf("mqtt: could not connect (%s), retrying...", err)
 		<-time.After(ConnectRetryDelay)
 	}
 	if err != nil {
@@ -255,7 +255,7 @@ func (c *DefaultClient) Disconnect() {
 	if !c.mqtt.IsConnected() {
 		return
 	}
-	c.ctx.Debug("Disconnecting from MQTT")
+	c.ctx.Debug("mqtt: disconnecting")
 	c.mqtt.Disconnect(25)
 }
 
