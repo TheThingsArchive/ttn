@@ -10,6 +10,8 @@ import (
 
 	"github.com/TheThingsNetwork/ttn/api"
 
+	"sort"
+
 	pb "github.com/TheThingsNetwork/ttn/api/handler"
 	"github.com/TheThingsNetwork/ttn/core/handler/device/migrate"
 	"github.com/TheThingsNetwork/ttn/core/storage"
@@ -199,9 +201,16 @@ func (s *RedisDeviceStore) builtinFilter(new *Device) {
 			i--
 		}
 	}
-	l := make([]*pb.Attribute, 0, len(m))
-	for key, val := range m {
-		l = append(l, &pb.Attribute{key, val})
+	l := make([]*pb.Attribute, len(m))
+	ks := make([]string, len(m))
+	i = 0
+	for key := range m {
+		ks[i] = key
+		i++
+	}
+	sort.Strings(ks)
+	for i, key := range ks {
+		l[i] = &pb.Attribute{key, m[key]}
 	}
 	new.Builtin = l
 }
