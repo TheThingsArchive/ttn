@@ -158,17 +158,16 @@ func TestRedisDeviceStore_builtinFilter_Add(t *testing.T) {
 	in.Builtin = testMap2
 	store.builtinFilter(in)
 	a.So(len(in.Builtin), ShouldEqual, 5)
-
 	//Past limit of 5 and builtin attributes
 	store.SetBuiltinList("ttn-battery:ttn-Model")
 	testMap3 := []*pb.Attribute{
+		{"ttn-battery", "quatre-ving-dix pourcent"},
 		{"hello", "bonjour"},
 		{"test", "TeSt"},
 		{"beer", "cold"},
 		{"weather", "hot"},
 		{"heart", "pique"},
 		{"square", "trefle"},
-		{"ttn-battery", "quatre-ving-dix pourcent"},
 	}
 	in.Builtin = testMap3
 	store.builtinFilter(in)
@@ -179,8 +178,8 @@ func TestRedisDeviceStore_builtinFilter_Add(t *testing.T) {
 			attr = v
 		}
 	}
-	a.So(attr.Key, ShouldEqual, testMap3[6].Key)
-	a.So(attr.Val, ShouldEqual, testMap3[6].Val)
+	a.So(attr.Key, ShouldEqual, testMap3[0].Key)
+	a.So(attr.Val, ShouldEqual, testMap3[0].Val)
 }
 
 func TestRedisDeviceStore_builtinFilter_KeyValidation(t *testing.T) {
@@ -230,4 +229,23 @@ func TestRedisDeviceStore_builtinFilter_Remove(t *testing.T) {
 	in.old.Builtin = testMap2
 	store.builtinFilter(in)
 	a.So(len(in.Builtin), ShouldEqual, 1)
+}
+
+func TestRedisDeviceStore_builtinAdd(t *testing.T) {
+	a := New(t)
+
+	store := NewRedisDeviceStore(GetRedisClient(), "handler-test-builtin-attribute")
+
+	add := []*pb.Attribute{
+		{"Hello", "Bonjour"},
+		{"adios", "goodbye"},
+		{"youknowsometimesyoujustwanttoputareallylongnametobesurepeoplewillknowwhatallthislittlebytemean", "longKey"},
+		{"longval", "youknowsometimesyoujustwanttoputareallylongnametobesurepeoplewillknowwhatallthislittlebytemean" +
+			"youknowsometimesyoujustwanttoputareallylongnametobesurepeoplewillknowwhatallthislittlebytemean" +
+			"youknowsometimesyoujustwanttoputareallylongnametobesurepeoplewillknowwhatallthislittlebytemean"},
+	}
+	m := store.builtinAdd(10, add, nil)
+	a.So(m, ShouldNotBeNil)
+	a.So(len(m), ShouldEqual, 1)
+	a.So(m["adios"], ShouldEqual, "goodbye")
 }

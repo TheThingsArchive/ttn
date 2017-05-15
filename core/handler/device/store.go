@@ -9,9 +9,6 @@ import (
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/api"
-
-	"sort"
-
 	pb "github.com/TheThingsNetwork/ttn/api/handler"
 	"github.com/TheThingsNetwork/ttn/core/handler/device/migrate"
 	"github.com/TheThingsNetwork/ttn/core/storage"
@@ -168,49 +165,35 @@ func (s *RedisDeviceStore) SetBuiltinList(a string) {
 //Then the new builtin wil be added if they key is valid and if there is enough key slot available
 func (s *RedisDeviceStore) builtinFilter(new *Device) {
 
-	var m = map[string]string{}
-	var i = maxAttr
-	var deleted = 0
+	m, i := new.MapOldBuiltin(s.builtinList)
+	i = maxAttr - i
+	if m == nil {
+		m = make(map[string]string, i)
+	}
+	m, deleted := new.DeleteEmptyBuiltin(s.builtinList, m)
+	i += deleted
+	m = s.builtinAdd(i, new.Builtin, m)
+	new.BuiltinFromMap(m)
+}
 
-	if new.old != nil {
-		m = make(map[string]string, len(new.old.Builtin))
-		for _, v := range new.old.Builtin {
-			if _, ok := s.builtinList[v.Key]; !ok {
-				i--
-			}
-			m[v.Key] = v.Val
-		}
+//builtinAdd add the slice of attribute to a map according to following criteria
+// - the key is valid id (check with api.ValidId)
+// - The value does not exceed 200 characters
+func (s *RedisDeviceStore) builtinAdd(limit uint8, add []*pb.Attribute, new map[string]string) (m map[string]string) {
+
+	if new == nil {
+		new = make(map[string]string, len(add))
 	}
-	for i := range new.Builtin {
-		j := i - deleted
-		if new.Builtin[j].Val == "" {
-			if _, ok := m[new.Builtin[j].Key]; ok {
-				delete(m, new.Builtin[j].Key)
-				i++
-			}
-			new.Builtin = new.Builtin[:j+copy(new.Builtin[j:], new.Builtin[j+1:])]
-			deleted++
-		}
-	}
-	for _, v := range new.Builtin {
-		_, ok := m[v.Key]
+	for _, v := range add {
+		_, ok := new[v.Key]
 		_, ok_l := s.builtinList[v.Key]
-		if (ok || ok_l || (i > 0 && api.ValidID(v.Key))) &&
+		if (ok || ok_l || (limit > 0 && api.ValidID(v.Key))) &&
 			len(v.Val) < maxAttrLength {
-			m[v.Key] = v.Val
-			i--
+			new[v.Key] = v.Val
+			if !ok && !ok_l {
+				limit--
+			}
 		}
 	}
-	l := make([]*pb.Attribute, len(m))
-	ks := make([]string, len(m))
-	i = 0
-	for key := range m {
-		ks[i] = key
-		i++
-	}
-	sort.Strings(ks)
-	for i, key := range ks {
-		l[i] = &pb.Attribute{key, m[key]}
-	}
-	new.Builtin = l
+	return new
 }

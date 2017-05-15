@@ -7,6 +7,8 @@ import (
 	"reflect"
 	"time"
 
+	"sort"
+
 	pb "github.com/TheThingsNetwork/ttn/api/handler"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core/types"
@@ -121,4 +123,65 @@ func (d Device) GetLoRaWAN() *pb_lorawan.Device {
 		ActivationConstraints: d.Options.ActivationConstraints,
 	}
 	return dev
+}
+
+//MapOldBuiltin transform the outdated slice to a map and return it, also return the number of free builtin
+//present in the map
+func (d *Device) MapOldBuiltin(builtinList map[string]bool) (m map[string]string, i uint8) {
+
+	i = 0
+	m = nil
+	if d.old != nil {
+		m = make(map[string]string, len(d.old.Builtin))
+		for _, v := range d.old.Builtin {
+			if _, ok := builtinList[v.Key]; !ok {
+				i++
+			}
+			m[v.Key] = v.Val
+		}
+	}
+	return m, i
+}
+
+//DeleteEmptyBuiltin remove the builtin with no value from the builtin slice. If a map is provided it will delete it from
+//if they are present inside.
+//return the map with deleted builtin and the number of free builtin deleted from the map
+func (d *Device) DeleteEmptyBuiltin(builtinList map[string]bool, m map[string]string) (r map[string]string, del uint8) {
+
+	deleted := 0
+	del = 0
+	for i := range d.Builtin {
+		j := i - deleted
+		if d.Builtin[j].Val == "" {
+			if _, ok := m[d.Builtin[j].Key]; ok {
+				delete(m, d.Builtin[j].Key)
+				i++
+				if _, ok := builtinList[d.Builtin[j].Key]; !ok {
+					del++
+				}
+			}
+			d.Builtin = d.Builtin[:j+copy(d.Builtin[j:], d.Builtin[j+1:])]
+			deleted++
+		}
+	}
+	r = m
+	return r, del
+}
+
+//BuiltinFromMap take a map[string]string into an Attribute slice and replace the current attribute slice with it.
+// The element in the slice are ordered alphabetically in function of the map key
+func (d *Device) BuiltinFromMap(builtin map[string]string) {
+
+	l := make([]*pb.Attribute, len(builtin))
+	ks := make([]string, len(builtin))
+	i := 0
+	for key := range builtin {
+		ks[i] = key
+		i++
+	}
+	sort.Strings(ks)
+	for i, key := range ks {
+		l[i] = &pb.Attribute{key, builtin[key]}
+	}
+	d.Builtin = l
 }
