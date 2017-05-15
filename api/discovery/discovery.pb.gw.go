@@ -20,10 +20,12 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/grpclog"
+	"google.golang.org/grpc/status"
 )
 
 var _ codes.Code
 var _ io.Reader
+var _ status.Status
 var _ = runtime.String
 var _ = utilities.NewDoubleArray
 
@@ -40,7 +42,7 @@ func request_Discovery_GetAll_0(ctx context.Context, marshaler runtime.Marshaler
 
 	val, ok = pathParams["service_name"]
 	if !ok {
-		return nil, metadata, grpc.Errorf(codes.InvalidArgument, "missing parameter %s", "service_name")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "service_name")
 	}
 
 	protoReq.ServiceName, err = runtime.String(val)
@@ -67,7 +69,7 @@ func request_Discovery_Get_0(ctx context.Context, marshaler runtime.Marshaler, c
 
 	val, ok = pathParams["service_name"]
 	if !ok {
-		return nil, metadata, grpc.Errorf(codes.InvalidArgument, "missing parameter %s", "service_name")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "service_name")
 	}
 
 	protoReq.ServiceName, err = runtime.String(val)
@@ -78,7 +80,7 @@ func request_Discovery_Get_0(ctx context.Context, marshaler runtime.Marshaler, c
 
 	val, ok = pathParams["id"]
 	if !ok {
-		return nil, metadata, grpc.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
 
 	protoReq.Id, err = runtime.String(val)

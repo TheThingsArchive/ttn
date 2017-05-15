@@ -345,7 +345,7 @@ type Status struct {
 	// Number of lost PPS pulses
 	LPps uint32            `protobuf:"varint,48,opt,name=l_pps,json=lPps,proto3" json:"l_pps,omitempty"`
 	Os   *Status_OSMetrics `protobuf:"bytes,51,opt,name=os" json:"os,omitempty"`
-	// messages for debugging
+	// debug or warning messages from the gateway
 	Messages []string `protobuf:"bytes,52,rep,name=messages" json:"messages,omitempty"`
 }
 
