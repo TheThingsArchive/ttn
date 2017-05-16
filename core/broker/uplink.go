@@ -192,10 +192,18 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) (err error) {
 	deduplicatedUplink.ProtocolMetadata.GetLorawan().FCnt = macPayload.FHDR.FCnt
 
 	// Collect GatewayMetadata and DownlinkOptions
-	var downlinkOptions []*pb.DownlinkOption
+	var downlinkOptions []downlinkOption
 	for _, duplicate := range duplicates {
 		deduplicatedUplink.GatewayMetadata = append(deduplicatedUplink.GatewayMetadata, duplicate.GatewayMetadata)
-		downlinkOptions = append(downlinkOptions, duplicate.DownlinkOptions...)
+		for _, option := range duplicate.DownlinkOptions {
+			if option.RxDelay != 1 {
+				continue // The Downlink needs to have an RX delay of 1 seconds
+			}
+			downlinkOptions = append(downlinkOptions, downlinkOption{
+				uplinkMetadata: duplicate.GatewayMetadata,
+				option:         option,
+			})
+		}
 	}
 
 	// Select best DownlinkOption
@@ -253,11 +261,6 @@ func (b *broker) deduplicateUplink(duplicate *pb.UplinkMessage) (uplinks []*pb.U
 		uplinks = append(uplinks, duplicate.(*pb.UplinkMessage))
 	}
 	return
-}
-
-func selectBestDownlink(options []*pb.DownlinkOption) *pb.DownlinkOption {
-	sort.Sort(ByScore(options))
-	return options[0]
 }
 
 // ByFCntUp implements sort.Interface for []*pb_lorawan.Device based on FCnt

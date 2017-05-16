@@ -19,13 +19,27 @@ message DownlinkOption {
   string  identifier  = 1;
   // ID of the gateway where this downlink should be sent
   string  gateway_id  = 2;
-  // Score of this downlink option. Lower is better.
-  uint32  score       = 3;
-  // deadline time at server represented as Unix nanoseconds
-  int64   deadline    = 4;
+  // Score of this downlink option. Deprecated
+  uint32  score       = 3 [deprecated=true];
+  // deadline time at server represented as Unix nanoseconds. Deprecated
+  int64   deadline    = 4 [deprecated=true];
 
   protocol.TxConfiguration protocol_config = 5;
   gateway.TxConfiguration  gateway_config = 6;
+
+  // RX Window Information
+
+  bool    is_rx2    = 10;
+  uint32  rx_delay  = 11;
+
+  // Scheduling considerations
+
+  // number of possible conflicts with other Tx
+  uint32  possible_conflicts = 12;
+  // progress towards the maximum Tx utilization
+  float   duty_cycle         = 13;
+  // total Rx utilization fraction over the last 10 minutes
+  float   utilization        = 14;
 }
 
 // received from the Router
