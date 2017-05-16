@@ -97,3 +97,7 @@ func (b BandLimits) New() BandLimits {
 	}
 	return newLimits
 }
+
+func (b BandLimits) TimeOffAir(tx time.Duration) time.Duration {
+	return 0
+}
