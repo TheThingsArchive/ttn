@@ -159,6 +159,12 @@
 			"revisionTime": "2017-05-22T09:01:51Z"
 		},
 		{
+			"checksumSHA1": "5R6P7aSu8E0Hd1mFfSYOrlnXF80=",
+			"path": "github.com/TheThingsNetwork/go-utils/rate",
+			"revision": "8622223277037145f4ed2beda936a39e6382a14d",
+			"revisionTime": "2017-05-10T17:17:25Z"
+		},
+		{
 			"checksumSHA1": "kLFTtAVcjZbHXybodGAqJ8wxflY=",
 			"path": "github.com/TheThingsNetwork/go-utils/roots",
 			"revision": "7f35a9fdb4de6692822ef259a23d4964483f3a8c",
