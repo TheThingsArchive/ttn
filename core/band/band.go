@@ -4,6 +4,9 @@
 package band
 
 import (
+	"fmt"
+	"time"
+
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
@@ -14,9 +17,11 @@ import (
 // FrequencyPlan includes band configuration and CFList
 type FrequencyPlan struct {
 	lora.Band
-	ADR    *ADRConfig
-	Limits BandLimits
-	CFList *lorawan.CFList
+	Plan      pb_lorawan.FrequencyPlan
+	RX1Delays []time.Duration
+	ADR       *ADRConfig
+	Limits    BandLimits
+	CFList    *lorawan.CFList
 }
 
 func (f *FrequencyPlan) GetDataRateStringForIndex(drIdx int) (string, error) {
@@ -154,10 +159,15 @@ func Get(region string) (frequencyPlan FrequencyPlan, err error) {
 		frequencyPlan.DownlinkChannels = frequencyPlan.UplinkChannels
 		frequencyPlan.CFList = &lorawan.CFList{922700000, 922900000, 923100000, 923300000, 0}
 	default:
-		err = errors.NewErrInvalidArgument("Frequency Band", "unknown")
+		err = errors.NewErrInvalidArgument("Frequency Band", fmt.Sprintf("\"%s\" unknown", region))
+		return
 	}
+	frequencyPlan.Plan = pb_lorawan.FrequencyPlan(pb_lorawan.FrequencyPlan_value[region])
 	if frequencyPlan.Limits == nil {
 		frequencyPlan.Limits = BandLimits_TTN
+	}
+	if len(frequencyPlan.RX1Delays) == 0 {
+		frequencyPlan.RX1Delays = []time.Duration{frequencyPlan.ReceiveDelay1, frequencyPlan.JoinAcceptDelay1}
 	}
 	return
 }
