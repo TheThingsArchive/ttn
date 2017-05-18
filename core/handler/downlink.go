@@ -50,6 +50,10 @@ func (h *handler) EnqueueDownlink(appDownlink *types.DownlinkMessage) (err error
 		}
 	}()
 
+	if len(appDownlink.PayloadRaw) == 0 && len(appDownlink.PayloadFields) == 0 {
+		return errors.NewErrInvalidArgument("Downlink Payload", "empty")
+	}
+
 	// Clear redundant fields
 	appDownlink.AppID = ""
 	appDownlink.DevID = ""
