@@ -4,41 +4,24 @@
 package gateway
 
 import (
-	"sync"
+	"time"
 
 	pb_gateway "github.com/TheThingsNetwork/ttn/api/gateway"
 )
 
-// StatusStore is a database for setting and retrieving the latest gateway status
-type StatusStore interface {
-	// Insert or Update the status
-	Update(status *pb_gateway.Status) error
-	// Get the last status
-	Get() (*pb_gateway.Status, error)
-}
-
-// NewStatusStore creates a new in-memory status store
-func NewStatusStore() StatusStore {
-	return &statusStore{}
-}
-
-type statusStore struct {
-	sync.RWMutex
-	lastStatus *pb_gateway.Status
-}
-
-func (s *statusStore) Update(status *pb_gateway.Status) error {
-	s.Lock()
-	defer s.Unlock()
-	s.lastStatus = status
-	return nil
-}
-
-func (s *statusStore) Get() (*pb_gateway.Status, error) {
-	s.RLock()
-	defer s.RUnlock()
-	if s.lastStatus != nil {
-		return s.lastStatus, nil
+func (g *Gateway) HandleStatus(status *pb_gateway.Status) (err error) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	status.GatewayTrusted = g.status.GatewayTrusted // we take this from the existing status
+	status.Messages = append(g.status.Messages, status.Messages...)
+	if len(status.Messages) > 10 {
+		status.Messages = status.Messages[len(status.Messages)-10:] // we keep the last 10 messages
 	}
-	return &pb_gateway.Status{}, nil
+	g.status = *status
+	g.lastSeen = time.Now()
+	if g.frequencyPlan == nil && status.FrequencyPlan != "" {
+		g.setFrequencyPlan(status.FrequencyPlan)
+	}
+	g.sendToMonitor(status)
+	return nil
 }

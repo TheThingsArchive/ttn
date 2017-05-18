@@ -18,13 +18,14 @@ func TestHandleActivation(t *testing.T) {
 	a := New(t)
 
 	gtwID := "eui-0102030405060708"
+	gtw := newReferenceGateway(t, "EU_863_870")
 
 	r := &router{
 		Component: &component.Component{
 			Ctx: GetLogger(t, "TestHandleActivation"),
 		},
 		gateways: map[string]*gateway.Gateway{
-			gtwID: newReferenceGateway(t, "EU_863_870"),
+			gtwID: gtw,
 		},
 	}
 	r.InitStatus()
@@ -44,11 +45,6 @@ func TestHandleActivation(t *testing.T) {
 	res, err := r.HandleActivation(gtwID, activation)
 	a.So(res, ShouldBeNil)
 	a.So(err, ShouldNotBeNil)
-
-	utilization := r.getGateway(gtwID).Utilization
-	utilization.Tick()
-	rx, _ := utilization.Get()
-	a.So(rx, ShouldBeGreaterThan, 0)
 
 	// TODO: Integration test that checks broker forward
 }

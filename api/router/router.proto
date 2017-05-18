@@ -63,8 +63,6 @@ service Router {
   rpc Uplink(stream UplinkMessage) returns (google.protobuf.Empty);
 
   // Gateway subscribes to downlink messages from Router
-  // It is possible to open multiple subscriptions (but not recommended).
-  // If you do this, you are responsible for de-duplication of downlink messages.
   rpc Subscribe(SubscribeRequest) returns (stream DownlinkMessage);
 
   // Gateway requests device activation

@@ -5,9 +5,6 @@ package router
 
 import (
 	"sync"
-	"time"
-
-	"google.golang.org/grpc"
 
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
@@ -15,6 +12,7 @@ import (
 	pb "github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/router/gateway"
+	"google.golang.org/grpc"
 )
 
 // Router component
@@ -29,9 +27,9 @@ type Router interface {
 	// Handle a downlink message
 	HandleDownlink(message *pb_broker.DownlinkMessage) error
 	// Subscribe to downlink messages
-	SubscribeDownlink(gatewayID string, subscriptionID string) (<-chan *pb.DownlinkMessage, error)
+	SubscribeDownlink(gatewayID string) (<-chan *pb.DownlinkMessage, error)
 	// Unsubscribe from downlink messages
-	UnsubscribeDownlink(gatewayID string, subscriptionID string) error
+	UnsubscribeDownlink(gatewayID string) error
 	// Handle a device activation
 	HandleActivation(gatewayID string, activation *pb.DeviceActivationRequest) (*pb.DeviceActivationResponse, error)
 
@@ -63,14 +61,6 @@ type router struct {
 	status       *status
 }
 
-func (r *router) tickGateways() {
-	r.gatewaysLock.RLock()
-	defer r.gatewaysLock.RUnlock()
-	for _, gtw := range r.gateways {
-		gtw.Utilization.Tick()
-	}
-}
-
 func (r *router) Init(c *component.Component) error {
 	r.Component = c
 	r.InitStatus()
@@ -83,12 +73,6 @@ func (r *router) Init(c *component.Component) error {
 		return err
 	}
 	r.Discovery.GetAll("broker") // Update cache
-
-	go func() {
-		for range time.Tick(5 * time.Second) {
-			r.tickGateways()
-		}
-	}()
 	r.Component.SetStatus(component.StatusHealthy)
 	return nil
 }
@@ -117,9 +101,7 @@ func (r *router) getGateway(id string) *gateway.Gateway {
 
 	gtw, ok = r.gateways[id]
 	if !ok {
-		gtw = gateway.NewGateway(r.Ctx, id)
-		gtw.Monitor = r.Component.Monitor
-
+		gtw = gateway.NewGateway(r.Ctx, id, r.Component.Monitor)
 		r.gateways[id] = gtw
 	}
 

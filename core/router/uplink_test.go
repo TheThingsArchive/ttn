@@ -20,10 +20,11 @@ import (
 
 // newReferenceGateway returns a default gateway
 func newReferenceGateway(t *testing.T, frequencyPlan string) *gateway.Gateway {
-	gtw := gateway.NewGateway(GetLogger(t, "ReferenceGateway"), "eui-0102030405060708")
-	gtw.Status.Update(&pb_gateway.Status{
+	gtw := gateway.NewGateway(GetLogger(t, "ReferenceGateway"), "eui-0102030405060708", nil)
+	gtw.HandleStatus(&pb_gateway.Status{
 		FrequencyPlan: frequencyPlan,
 	})
+	gtw.SubscribeDownlink()
 	return gtw
 }
 
@@ -73,10 +74,6 @@ func TestHandleUplink(t *testing.T) {
 
 	err := r.HandleUplink(gtwID, uplink)
 	a.So(err, ShouldBeNil)
-	utilization := r.getGateway(gtwID).Utilization
-	utilization.Tick()
-	rx, _ := utilization.Get()
-	a.So(rx, ShouldBeGreaterThan, 0)
 
 	// TODO: Integration test that checks broker forward
 }
