@@ -30,14 +30,13 @@ func (r *routerManager) GatewayStatus(ctx context.Context, in *pb.GatewayStatusR
 	if !ok {
 		return nil, errors.NewErrNotFound(fmt.Sprintf("Gateway %s", in.GatewayId))
 	}
-	status, err := gtw.Status.Get()
-	if err != nil {
-		return nil, err
+	status := gtw.Status()
+	res := &pb.GatewayStatusResponse{
+		LastSeen: gtw.LastSeen().UnixNano(),
+		Status:   &status,
 	}
-	return &pb.GatewayStatusResponse{
-		LastSeen: gtw.LastSeen.UnixNano(),
-		Status:   status,
-	}, nil
+	res.Uplink, res.Downlink = gtw.Rates()
+	return res, nil
 }
 
 func (r *routerManager) GetStatus(ctx context.Context, in *pb.StatusRequest) (*pb.Status, error) {

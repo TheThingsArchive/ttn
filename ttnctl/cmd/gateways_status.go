@@ -66,7 +66,13 @@ var gatewaysStatusCmd = &cobra.Command{
 			return "not available"
 		}())
 		printKV("Rx", fmt.Sprintf("(in: %d; ok: %d)", resp.Status.RxIn, resp.Status.RxOk))
+		if resp.Uplink != nil {
+			printKV("RxRate", fmt.Sprintf("%.4f, %.4f, %.4f", resp.Uplink.Rate1, resp.Uplink.Rate5, resp.Uplink.Rate15))
+		}
 		printKV("Tx", fmt.Sprintf("(in: %d; ok: %d)", resp.Status.TxIn, resp.Status.TxOk))
+		if resp.Downlink != nil {
+			printKV("TxRate", fmt.Sprintf("%.4f, %.4f, %.4f", resp.Downlink.Rate1, resp.Downlink.Rate5, resp.Downlink.Rate15))
+		}
 		fmt.Println()
 	},
 }

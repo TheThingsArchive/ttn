@@ -78,6 +78,8 @@ message GatewayStatusRequest {
 message GatewayStatusResponse {
   int64           last_seen  = 1;
   gateway.Status  status     = 2;
+  api.Rates       uplink     = 11;
+  api.Rates       downlink   = 12;
 }
 
 // message StatusRequest is used to request the status of this Router
