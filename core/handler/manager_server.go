@@ -113,6 +113,7 @@ func (h *handlerManager) GetDevice(ctx context.Context, in *pb.DeviceIdentifier)
 			DisableFCntCheck:      dev.Options.DisableFCntCheck,
 			Uses32BitFCnt:         dev.Options.Uses32BitFCnt,
 			ActivationConstraints: dev.Options.ActivationConstraints,
+			PreferredGateways:     dev.Options.PreferredGateways,
 		}},
 		Latitude:  dev.Latitude,
 		Longitude: dev.Longitude,
@@ -215,6 +216,7 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*empty.E
 		DisableFCntCheck:      lorawan.DisableFCntCheck,
 		Uses32BitFCnt:         lorawan.Uses32BitFCnt,
 		ActivationConstraints: lorawan.ActivationConstraints,
+		PreferredGateways:     lorawan.PreferredGateways,
 	}
 	if dev.Options.ActivationConstraints == "" {
 		dev.Options.ActivationConstraints = "local"

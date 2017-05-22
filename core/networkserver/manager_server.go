@@ -67,17 +67,19 @@ func (n *networkServerManager) GetDevice(ctx context.Context, in *pb_lorawan.Dev
 	}
 
 	return &pb_lorawan.Device{
-		AppId:            dev.AppID,
-		AppEui:           &dev.AppEUI,
-		DevId:            dev.DevID,
-		DevEui:           &dev.DevEUI,
-		DevAddr:          &dev.DevAddr,
-		NwkSKey:          &dev.NwkSKey,
-		FCntUp:           dev.FCntUp,
-		FCntDown:         dev.FCntDown,
-		DisableFCntCheck: dev.Options.DisableFCntCheck,
-		Uses32BitFCnt:    dev.Options.Uses32BitFCnt,
-		LastSeen:         lastSeen.UnixNano(),
+		AppId:                 dev.AppID,
+		AppEui:                &dev.AppEUI,
+		DevId:                 dev.DevID,
+		DevEui:                &dev.DevEUI,
+		DevAddr:               &dev.DevAddr,
+		NwkSKey:               &dev.NwkSKey,
+		FCntUp:                dev.FCntUp,
+		FCntDown:              dev.FCntDown,
+		DisableFCntCheck:      dev.Options.DisableFCntCheck,
+		Uses32BitFCnt:         dev.Options.Uses32BitFCnt,
+		ActivationConstraints: dev.Options.ActivationConstraints,
+		PreferredGateways:     dev.Options.PreferredGateways,
+		LastSeen:              lastSeen.UnixNano(),
 	}, nil
 }
 
@@ -118,6 +120,7 @@ func (n *networkServerManager) SetDevice(ctx context.Context, in *pb_lorawan.Dev
 		DisableFCntCheck:      in.DisableFCntCheck,
 		Uses32BitFCnt:         in.Uses32BitFCnt,
 		ActivationConstraints: in.ActivationConstraints,
+		PreferredGateways:     in.PreferredGateways,
 	}
 
 	if in.NwkSKey != nil && in.DevAddr != nil {

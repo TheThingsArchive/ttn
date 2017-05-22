@@ -19,9 +19,10 @@ type AppNonce [3]byte
 
 // Options for the device
 type Options struct {
-	ActivationConstraints string `json:"activation_constraints,omitempty"` // Activation Constraints (public/local/private)
-	DisableFCntCheck      bool   `json:"disable_fcnt_check,omitemtpy"`     // Disable Frame counter check (insecure)
-	Uses32BitFCnt         bool   `json:"uses_32_bit_fcnt,omitemtpy"`       // Use 32-bit Frame counters
+	ActivationConstraints string   `json:"activation_constraints,omitempty"` // Activation Constraints (public/local/private)
+	DisableFCntCheck      bool     `json:"disable_fcnt_check,omitemtpy"`     // Disable Frame counter check (insecure)
+	Uses32BitFCnt         bool     `json:"uses_32_bit_fcnt,omitemtpy"`       // Use 32-bit Frame counters
+	PreferredGateways     []string `json:"preferred_gateways,omitempty"`     // Preferred gateways for downlink
 }
 
 // Device contains the state of a device
@@ -116,6 +117,7 @@ func (d Device) GetLoRaWAN() *pb_lorawan.Device {
 		DisableFCntCheck:      d.Options.DisableFCntCheck,
 		Uses32BitFCnt:         d.Options.Uses32BitFCnt,
 		ActivationConstraints: d.Options.ActivationConstraints,
+		PreferredGateways:     d.Options.PreferredGateways,
 	}
 	return dev
 }

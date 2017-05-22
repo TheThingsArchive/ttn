@@ -137,6 +137,10 @@ var devicesSetCmd = &cobra.Command{
 			dev.GetLorawanDevice().Uses32BitFCnt = false
 		}
 
+		if in, err := cmd.Flags().GetStringSlice("preferred-gateways"); err == nil {
+			dev.GetLorawanDevice().PreferredGateways = in
+		}
+
 		if in, err := cmd.Flags().GetFloat32("latitude"); err == nil && in != 0 {
 			dev.Latitude = in
 		}
@@ -184,6 +188,8 @@ func init() {
 	devicesSetCmd.Flags().Bool("enable-fcnt-check", false, "Enable FCnt check (default)")
 	devicesSetCmd.Flags().Bool("32-bit-fcnt", false, "Use 32 bit FCnt (default)")
 	devicesSetCmd.Flags().Bool("16-bit-fcnt", false, "Use 16 bit FCnt")
+
+	devicesSetCmd.Flags().StringSlice("preferred-gateways", []string{}, "Set device preferred gateways")
 
 	devicesSetCmd.Flags().Float32("latitude", 0, "Set latitude")
 	devicesSetCmd.Flags().Float32("longitude", 0, "Set longitude")

@@ -27,14 +27,16 @@ func (n *networkServer) HandleGetDevices(req *pb.DevicesRequest) (*pb.DevicesRes
 		}
 		fullFCnt := fcnt.GetFull(device.FCntUp, uint16(req.FCnt))
 		dev := &pb_lorawan.Device{
-			AppEui:           &device.AppEUI,
-			AppId:            device.AppID,
-			DevEui:           &device.DevEUI,
-			DevId:            device.DevID,
-			NwkSKey:          &device.NwkSKey,
-			FCntUp:           device.FCntUp,
-			Uses32BitFCnt:    device.Options.Uses32BitFCnt,
-			DisableFCntCheck: device.Options.DisableFCntCheck,
+			AppEui:                &device.AppEUI,
+			AppId:                 device.AppID,
+			DevEui:                &device.DevEUI,
+			DevId:                 device.DevID,
+			NwkSKey:               &device.NwkSKey,
+			FCntUp:                device.FCntUp,
+			Uses32BitFCnt:         device.Options.Uses32BitFCnt,
+			DisableFCntCheck:      device.Options.DisableFCntCheck,
+			ActivationConstraints: device.Options.ActivationConstraints,
+			PreferredGateways:     device.Options.PreferredGateways,
 		}
 		if device.Options.DisableFCntCheck {
 			res.Results = append(res.Results, dev)

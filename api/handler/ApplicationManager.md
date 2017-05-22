@@ -163,6 +163,9 @@ GetDevice returns the device with the given identifier (app_id and dev_id)
     "f_cnt_up": 0,
     "last_seen": 0,
     "nwk_s_key": "01020304050607080102030405060708",
+    "preferred_gateways": [
+      ""
+    ],
     "uses32_bit_f_cnt": true
   }
 }
@@ -206,6 +209,9 @@ SetDevice creates or updates a device. All fields must be supplied.
     "f_cnt_up": 0,
     "last_seen": 0,
     "nwk_s_key": "01020304050607080102030405060708",
+    "preferred_gateways": [
+      ""
+    ],
     "uses32_bit_f_cnt": true
   }
 }
@@ -288,6 +294,9 @@ GetDevicesForApplication returns all devices that belong to the application with
         "f_cnt_up": 0,
         "last_seen": 0,
         "nwk_s_key": "01020304050607080102030405060708",
+        "preferred_gateways": [
+          ""
+        ],
         "uses32_bit_f_cnt": true
       }
     }
@@ -444,5 +453,6 @@ SimulatedUplinkMessage is a simulated uplink message
 | `disable_f_cnt_check` | `bool` | The DisableFCntCheck option disables the frame counter check. Disabling this makes the device vulnerable to replay attacks, but makes ABP slightly easier. |
 | `uses32_bit_f_cnt` | `bool` | The Uses32BitFCnt option indicates that the device keeps track of full 32 bit frame counters. As only the 16 lsb are actually transmitted, the 16 msb will have to be inferred. |
 | `activation_constraints` | `string` | The ActivationContstraints are used to allocate a device address for a device (comma-separated). There are different prefixes for `otaa`, `abp`, `world`, `local`, `private`, `testing`. |
+| `preferred_gateways` | _repeated_ `string` | The PreferredGateways option configures which gateways should be preferred for downlink to this device. If the list is empty, or none of the gateways is available for downlink, the Broker will determine the downlink gateway. This option is not used for join-accept messages. |
 | `last_seen` | `int64` | When the device was last seen (Unix nanoseconds) |
 

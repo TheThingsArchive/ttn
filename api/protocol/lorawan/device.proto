@@ -48,6 +48,10 @@ message Device {
   // The ActivationContstraints are used to allocate a device address for a device (comma-separated).
   // There are different prefixes for `otaa`, `abp`, `world`, `local`, `private`, `testing`.
   string activation_constraints = 13;
+  // The PreferredGateways option configures which gateways should be preferred for downlink to this device. If the list
+  // is empty, or none of the gateways is available for downlink, the Broker will determine the downlink gateway. This
+  // option is not used for join-accept messages.
+  repeated string preferred_gateways = 14;
 
   // When the device was last seen (Unix nanoseconds)
   int64  last_seen = 21;
