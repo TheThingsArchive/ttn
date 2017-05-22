@@ -24,7 +24,7 @@ func (c *DefaultClient) SubscribeDeviceActivations(appID string, devID string, h
 	return c.SubscribeDeviceEvents(appID, devID, types.ActivationEvent, func(_ Client, appID string, devID string, _ types.EventType, payload []byte) {
 		activation := types.Activation{}
 		if err := json.Unmarshal(payload, &activation); err != nil {
-			c.ctx.Warnf("Could not unmarshal activation (%s).", err.Error())
+			c.ctx.Warnf("mqtt: could not unmarshal activation: %s", err)
 			return
 		}
 		activation.AppID = appID

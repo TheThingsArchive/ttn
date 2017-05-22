@@ -8,8 +8,8 @@ import (
 	"os"
 	"os/user"
 
+	"github.com/TheThingsNetwork/go-utils/grpc/ttnctx"
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
-	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/spf13/viper"
 	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
 )
@@ -33,8 +33,8 @@ func GetContext(log ttnlog.Interface, extraPairs ...string) context.Context {
 		log.WithError(err).Fatal("Could not get token")
 	}
 	ctx := context.Background()
-	ctx = api.ContextWithID(ctx, GetID())
-	ctx = api.ContextWithServiceInfo(ctx, "ttnctl", fmt.Sprintf("%s-%s (%s)", viper.GetString("version"), viper.GetString("gitCommit"), viper.GetString("buildDate")), "")
-	ctx = api.ContextWithToken(ctx, token.AccessToken)
+	ctx = ttnctx.OutgoingContextWithID(ctx, GetID())
+	ctx = ttnctx.OutgoingContextWithServiceInfo(ctx, "ttnctl", fmt.Sprintf("%s-%s (%s)", viper.GetString("version"), viper.GetString("gitCommit"), viper.GetString("buildDate")), "")
+	ctx = ttnctx.OutgoingContextWithToken(ctx, token.AccessToken)
 	return ctx
 }

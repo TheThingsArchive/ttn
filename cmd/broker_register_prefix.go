@@ -48,7 +48,7 @@ var brokerRegisterPrefixCmd = &cobra.Command{
 			"id", viper.GetString("id"),
 			"token", viper.GetString("auth-token"),
 		)
-		dscContext := metadata.NewContext(context.Background(), md)
+		dscContext := metadata.NewOutgoingContext(context.Background(), md)
 
 		success := true
 		for _, prefixString := range args {

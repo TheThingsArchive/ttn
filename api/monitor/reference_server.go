@@ -8,8 +8,8 @@ import (
 	"io"
 	"sync/atomic"
 
+	"github.com/TheThingsNetwork/go-utils/grpc/ttnctx"
 	"github.com/TheThingsNetwork/go-utils/log"
-	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/api/fields"
 	"github.com/TheThingsNetwork/ttn/api/gateway"
@@ -113,11 +113,11 @@ type ReferenceMonitorServer struct {
 }
 
 func (s *ReferenceMonitorServer) getAndAuthGateway(ctx context.Context) (string, error) {
-	id, err := api.IDFromContext(ctx)
+	id, err := ttnctx.IDFromIncomingContext(ctx)
 	if err != nil {
 		return "", err
 	}
-	token, err := api.TokenFromContext(ctx)
+	token, err := ttnctx.TokenFromIncomingContext(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -260,11 +260,11 @@ func (s *ReferenceMonitorServer) GatewayDownlink(stream Monitor_GatewayDownlinkS
 }
 
 func (s *ReferenceMonitorServer) getAndAuthBroker(ctx context.Context) (string, error) {
-	id, err := api.IDFromContext(ctx)
+	id, err := ttnctx.IDFromIncomingContext(ctx)
 	if err != nil {
 		return "", err
 	}
-	token, err := api.TokenFromContext(ctx)
+	token, err := ttnctx.TokenFromIncomingContext(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -407,11 +407,11 @@ func (s *ReferenceMonitorServer) BrokerDownlink(stream Monitor_BrokerDownlinkSer
 }
 
 func (s *ReferenceMonitorServer) getAndAuthHandler(ctx context.Context) (string, error) {
-	id, err := api.IDFromContext(ctx)
+	id, err := ttnctx.IDFromIncomingContext(ctx)
 	if err != nil {
 		return "", err
 	}
-	token, err := api.TokenFromContext(ctx)
+	token, err := ttnctx.TokenFromIncomingContext(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -554,11 +554,11 @@ func (s *ReferenceMonitorServer) HandlerDownlink(stream Monitor_HandlerDownlinkS
 }
 
 func (s *ReferenceMonitorServer) getAndAuthRouter(ctx context.Context) (string, error) {
-	id, err := api.IDFromContext(ctx)
+	id, err := ttnctx.IDFromIncomingContext(ctx)
 	if err != nil {
 		return "", err
 	}
-	token, err := api.TokenFromContext(ctx)
+	token, err := ttnctx.TokenFromIncomingContext(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -609,11 +609,11 @@ func (s *ReferenceMonitorServer) RouterStatus(stream Monitor_RouterStatusServer)
 }
 
 func (s *ReferenceMonitorServer) getAndAuthNetworkServer(ctx context.Context) (string, error) {
-	id, err := api.IDFromContext(ctx)
+	id, err := ttnctx.IDFromIncomingContext(ctx)
 	if err != nil {
 		return "", err
 	}
-	token, err := api.TokenFromContext(ctx)
+	token, err := ttnctx.TokenFromIncomingContext(ctx)
 	if err != nil {
 		return "", err
 	}

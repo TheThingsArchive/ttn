@@ -23,6 +23,21 @@ const (
 	DeleteEvent EventType = "delete"
 )
 
+// Data type of the event payload, returns nil if no payload
+func (e EventType) Data() interface{} {
+	switch e {
+	case UplinkErrorEvent:
+		return new(ErrorEventData)
+	case DownlinkScheduledEvent, DownlinkSentEvent, DownlinkErrorEvent, DownlinkAckEvent:
+		return new(DownlinkEventData)
+	case ActivationEvent, ActivationErrorEvent:
+		return new(ActivationEventData)
+	case CreateEvent, UpdateEvent, DeleteEvent:
+		return nil
+	}
+	return nil
+}
+
 // DeviceEvent represents an application-layer event message for a device event
 type DeviceEvent struct {
 	AppID string

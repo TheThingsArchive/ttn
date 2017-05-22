@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/TheThingsNetwork/go-utils/grpc/ttnctx"
 	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/bluele/gcache"
@@ -86,9 +87,9 @@ func (c *DefaultClient) getContext(token string) context.Context {
 		token = c.tokenFunc()
 	}
 	ctx := context.Background()
-	ctx = api.ContextWithID(ctx, c.self.Id)
-	ctx = api.ContextWithServiceInfo(ctx, c.self.ServiceName, c.self.ServiceVersion, c.self.NetAddress)
-	ctx = api.ContextWithToken(ctx, token)
+	ctx = ttnctx.OutgoingContextWithID(ctx, c.self.Id)
+	ctx = ttnctx.OutgoingContextWithServiceInfo(ctx, c.self.ServiceName, c.self.ServiceVersion, c.self.NetAddress)
+	ctx = ttnctx.OutgoingContextWithToken(ctx, token)
 	return ctx
 }
 

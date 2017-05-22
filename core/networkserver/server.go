@@ -20,7 +20,7 @@ type networkServerRPC struct {
 }
 
 func (s *networkServerRPC) ValidateContext(ctx context.Context) error {
-	md, ok := metadata.FromContext(ctx)
+	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return errors.NewErrInternal("Could not get metadata from context")
 	}

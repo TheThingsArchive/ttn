@@ -19,7 +19,7 @@ You can authenticate to the gRPC endpoint by supplying a `token` field in the Me
 md := metadata.Pairs(
   "token", "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhcHBzIjp7InRlc3QiOlsic2V0dGluZ3MiXX19.VGhpcyBpcyB0aGUgc2lnbmF0dXJl",
 )
-ctx := metadata.NewContext(context.Background(), md)
+ctx := metadata.NewOutgoingContext(context.Background(), md)
 ```
 
 ### HTTP
@@ -46,7 +46,7 @@ You can authenticate to the gRPC endpoint by supplying a `key` field in the Meta
 md := metadata.Pairs(
   "key", "ttn-account-v2.n4BAoKOGuK2hj7MXg_OVtpLO0BTJI8lLzt66UsvTlUvZPsi6FADOptnmSH3e3PuQzbLLEUhXxYhkxr34xyUqBQ",
 )
-ctx := metadata.NewContext(context.Background(), md)
+ctx := metadata.NewOutgoingContext(context.Background(), md)
 ```
 
 ### HTTP

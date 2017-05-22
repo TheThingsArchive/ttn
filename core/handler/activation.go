@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/TheThingsNetwork/go-utils/grpc/ttnctx"
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/go-utils/random"
-	"github.com/TheThingsNetwork/ttn/api"
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/api/fields"
 	pb "github.com/TheThingsNetwork/ttn/api/handler"
@@ -281,7 +281,7 @@ func (h *handler) registerDeviceOnJoin(base *device.Device, activation *pb_broke
 		return nil, err
 	}
 
-	_, err = h.ttnDeviceManager.SetDevice(api.ContextWithToken(context.Background(), token), clone.GetLoRaWAN())
+	_, err = h.ttnDeviceManager.SetDevice(ttnctx.OutgoingContextWithToken(context.Background(), token), clone.GetLoRaWAN())
 	if err != nil {
 		return nil, errors.Wrap(errors.FromGRPCError(err), "Broker did not set device")
 	}

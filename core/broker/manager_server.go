@@ -9,6 +9,7 @@ import (
 
 	"github.com/TheThingsNetwork/go-account-lib/claims"
 	"github.com/TheThingsNetwork/go-account-lib/rights"
+	"github.com/TheThingsNetwork/go-utils/grpc/ttnctx"
 	pb "github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
@@ -43,7 +44,8 @@ func (b *brokerManager) GetDevice(ctx context.Context, in *lorawan.DeviceIdentif
 	if _, err := b.validateClient(ctx); err != nil {
 		return nil, err
 	}
-	res, err := b.deviceManager.GetDevice(ctx, in)
+	token, _ := ttnctx.TokenFromIncomingContext(ctx)
+	res, err := b.deviceManager.GetDevice(ttnctx.OutgoingContextWithToken(ctx, token), in)
 	if err != nil {
 		return nil, errors.Wrap(errors.FromGRPCError(err), "NetworkServer did not return device")
 	}
@@ -54,7 +56,8 @@ func (b *brokerManager) SetDevice(ctx context.Context, in *lorawan.Device) (*emp
 	if _, err := b.validateClient(ctx); err != nil {
 		return nil, err
 	}
-	res, err := b.deviceManager.SetDevice(ctx, in)
+	token, _ := ttnctx.TokenFromIncomingContext(ctx)
+	res, err := b.deviceManager.SetDevice(ttnctx.OutgoingContextWithToken(ctx, token), in)
 	if err != nil {
 		return nil, errors.Wrap(errors.FromGRPCError(err), "NetworkServer did not set device")
 	}
@@ -65,7 +68,8 @@ func (b *brokerManager) DeleteDevice(ctx context.Context, in *lorawan.DeviceIden
 	if _, err := b.validateClient(ctx); err != nil {
 		return nil, err
 	}
-	res, err := b.deviceManager.DeleteDevice(ctx, in)
+	token, _ := ttnctx.TokenFromIncomingContext(ctx)
+	res, err := b.deviceManager.DeleteDevice(ttnctx.OutgoingContextWithToken(ctx, token), in)
 	if err != nil {
 		return nil, errors.Wrap(errors.FromGRPCError(err), "NetworkServer did not delete device")
 	}

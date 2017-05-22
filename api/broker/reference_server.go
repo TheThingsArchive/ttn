@@ -8,8 +8,8 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/TheThingsNetwork/go-utils/grpc/ttnctx"
 	"github.com/TheThingsNetwork/go-utils/log"
-	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/golang/protobuf/ptypes/empty"
 	"golang.org/x/net/context"
@@ -125,11 +125,11 @@ func (s *ReferenceBrokerServer) removeUplinkSubscriber(handlerID string) {
 }
 
 func (s *ReferenceBrokerServer) getAndAuthRouter(ctx context.Context) (string, error) {
-	id, err := api.IDFromContext(ctx)
+	id, err := ttnctx.IDFromIncomingContext(ctx)
 	if err != nil {
 		return "", err
 	}
-	token, err := api.TokenFromContext(ctx)
+	token, err := ttnctx.TokenFromIncomingContext(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -199,11 +199,11 @@ func (s *ReferenceBrokerServer) Associate(stream Broker_AssociateServer) error {
 }
 
 func (s *ReferenceBrokerServer) getAndAuthHandler(ctx context.Context) (string, error) {
-	id, err := api.IDFromContext(ctx)
+	id, err := ttnctx.IDFromIncomingContext(ctx)
 	if err != nil {
 		return "", err
 	}
-	token, err := api.TokenFromContext(ctx)
+	token, err := ttnctx.TokenFromIncomingContext(ctx)
 	if err != nil {
 		return "", err
 	}

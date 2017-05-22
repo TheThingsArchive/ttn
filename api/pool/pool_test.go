@@ -101,4 +101,7 @@ func TestPool(t *testing.T) {
 		a.So(err, ShouldBeNil)
 		a.So(ok, ShouldBeTrue)
 	}
+
+	pool.CloseConn(conn4)
+	a.So(pool.conns, ShouldBeEmpty)
 }

@@ -8,8 +8,8 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/TheThingsNetwork/go-utils/grpc/ttnctx"
 	"github.com/TheThingsNetwork/go-utils/log"
-	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/api/gateway"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/golang/protobuf/ptypes/empty"
@@ -95,11 +95,11 @@ func (s *ReferenceRouterServer) removeDownlinkSubscriber(gatewayID string) {
 }
 
 func (s *ReferenceRouterServer) getAndAuthGateway(ctx context.Context) (string, error) {
-	id, err := api.IDFromContext(ctx)
+	id, err := ttnctx.IDFromIncomingContext(ctx)
 	if err != nil {
 		return "", err
 	}
-	token, err := api.TokenFromContext(ctx)
+	token, err := ttnctx.TokenFromIncomingContext(ctx)
 	if err != nil {
 		return "", err
 	}
