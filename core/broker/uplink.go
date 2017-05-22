@@ -195,13 +195,21 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) (err error) {
 	var downlinkOptions []downlinkOption
 	for _, duplicate := range duplicates {
 		deduplicatedUplink.GatewayMetadata = append(deduplicatedUplink.GatewayMetadata, duplicate.GatewayMetadata)
+		var gatewayPreference bool
+		for _, gatewayID := range device.PreferredGateways {
+			if duplicate.GatewayMetadata.GetGatewayId() == gatewayID {
+				gatewayPreference = true
+				break
+			}
+		}
 		for _, option := range duplicate.DownlinkOptions {
 			if option.RxDelay != 1 {
 				continue // The Downlink needs to have an RX delay of 1 seconds
 			}
 			downlinkOptions = append(downlinkOptions, downlinkOption{
-				uplinkMetadata: duplicate.GatewayMetadata,
-				option:         option,
+				uplinkMetadata:    duplicate.GatewayMetadata,
+				option:            option,
+				gatewayPreference: gatewayPreference,
 			})
 		}
 	}

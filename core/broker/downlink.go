@@ -17,8 +17,9 @@ import (
 )
 
 type downlinkOption struct {
-	uplinkMetadata *pb_gateway.RxMetadata
-	option         *pb.DownlinkOption
+	gatewayPreference bool
+	uplinkMetadata    *pb_gateway.RxMetadata
+	option            *pb.DownlinkOption
 }
 
 // ByScore is used to sort a list of DownlinkOptions based on Score
@@ -28,6 +29,15 @@ func (a ByScore) Len() int      { return len(a) }
 func (a ByScore) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
 func (a ByScore) Less(i, j int) bool {
 	var pointsI, pointsJ int
+
+	gradeBool := func(i, j bool, weight int) {
+		if i {
+			pointsI += weight
+		}
+		if j {
+			pointsJ += weight
+		}
+	}
 
 	gradeHighest := func(i, j float32, weight int) {
 		if i > j {
@@ -53,6 +63,7 @@ func (a ByScore) Less(i, j int) bool {
 		return pointsI > pointsJ
 	}
 
+	gradeBool(a[i].gatewayPreference, a[j].gatewayPreference, 10)
 	gradeHighest(a[i].uplinkMetadata.Snr, a[j].uplinkMetadata.Snr, 1)
 	gradeHighest(a[i].uplinkMetadata.Rssi, a[j].uplinkMetadata.Rssi, 1)
 	gradeLowest(float32(a[i].option.PossibleConflicts), float32(a[j].option.PossibleConflicts), 1)

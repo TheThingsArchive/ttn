@@ -25,7 +25,7 @@ func TestDownlinkScoring(t *testing.T) {
 	sort := func(md pb_gateway.RxMetadata, option pb.DownlinkOption) {
 		options = ByScore{
 			downlinkOption{uplinkMetadata: &refMD, option: &refOption},
-			downlinkOption{uplinkMetadata: &md, option: &option},
+			downlinkOption{uplinkMetadata: &md, option: &option, gatewayPreference: md.GatewayId == "preferred"},
 		}
 		sort.Sort(options)
 	}
@@ -70,6 +70,13 @@ func TestDownlinkScoring(t *testing.T) {
 		option.Utilization += 0.05
 		sort(md, option)
 		a.So(*options[0].option, ShouldResemble, refOption)
+	}
+
+	{
+		md, option := refMD, refOption
+		md.GatewayId = "preferred"
+		sort(md, option)
+		a.So(*options[0].uplinkMetadata, ShouldResemble, md)
 	}
 
 }
