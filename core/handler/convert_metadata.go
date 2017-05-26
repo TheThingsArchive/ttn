@@ -49,7 +49,17 @@ func (h *handler) ConvertMetadata(ctx ttnlog.Interface, ttnUp *pb_broker.Dedupli
 			gatewayMetadata.Latitude = gps.Latitude
 		}
 
-		appUp.Metadata.Gateways = append(appUp.Metadata.Gateways, gatewayMetadata)
+		if antennas := in.GetAntennas(); len(antennas) > 0 {
+			for _, antenna := range antennas {
+				gatewayMetadata.Antenna = uint8(antenna.Antenna)
+				gatewayMetadata.Channel = antenna.Channel
+				gatewayMetadata.RSSI = antenna.Rssi
+				gatewayMetadata.SNR = antenna.Snr
+				appUp.Metadata.Gateways = append(appUp.Metadata.Gateways, gatewayMetadata)
+			}
+		} else {
+			appUp.Metadata.Gateways = append(appUp.Metadata.Gateways, gatewayMetadata)
+		}
 	}
 
 	// Inject Device Metadata

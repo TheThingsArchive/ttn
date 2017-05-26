@@ -41,12 +41,16 @@ func TestConvertMetadata(t *testing.T) {
 		},
 		&pb_gateway.RxMetadata{
 			GatewayId: gtwID,
+			Antennas: []*pb_gateway.RxMetadata_Antenna{
+				&pb_gateway.RxMetadata_Antenna{},
+				&pb_gateway.RxMetadata_Antenna{},
+			},
 		},
 	}
 
 	err = h.ConvertMetadata(h.Ctx, ttnUp, appUp, device)
 	a.So(err, ShouldBeNil)
-	a.So(appUp.Metadata.Gateways, ShouldHaveLength, 2)
+	a.So(appUp.Metadata.Gateways, ShouldHaveLength, 3)
 
 	ttnUp.ProtocolMetadata = &pb_protocol.RxMetadata{Protocol: &pb_protocol.RxMetadata_Lorawan{
 		Lorawan: &pb_lorawan.Metadata{
