@@ -55,6 +55,10 @@ func (s *mockNetworkServer) GetDevices(ctx context.Context, req *pb_networkserve
 	}, nil
 }
 
+func (s *mockNetworkServer) GetDevice(ctx context.Context, req *pb_lorawan.DeviceIdentifier, options ...grpc.CallOption) (*pb_lorawan.Device, error) {
+	return s.devices[0], nil
+}
+
 func (s *mockNetworkServer) PrepareActivation(ctx context.Context, activation *pb.DeduplicatedDeviceActivationRequest, options ...grpc.CallOption) (*pb.DeduplicatedDeviceActivationRequest, error) {
 	return activation, nil
 }

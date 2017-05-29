@@ -4,9 +4,12 @@
 package networkserver
 
 import (
+	"time"
+
 	"github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/api/handler"
 	pb "github.com/TheThingsNetwork/ttn/api/networkserver"
+	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/security"
 	"github.com/dgrijalva/jwt-go"
@@ -16,7 +19,7 @@ import (
 )
 
 type networkServerRPC struct {
-	networkServer NetworkServer
+	networkServer *networkServer
 }
 
 func (s *networkServerRPC) ValidateContext(ctx context.Context) error {
@@ -38,7 +41,7 @@ func (s *networkServerRPC) ValidateContext(ctx context.Context) error {
 		return errors.NewErrInvalidArgument("Metadata", "token missing")
 	}
 	var claims *jwt.StandardClaims
-	claims, err := security.ValidateJWT(token, []byte(s.networkServer.(*networkServer).Identity.PublicKey))
+	claims, err := security.ValidateJWT(token, []byte(s.networkServer.Identity.PublicKey))
 	if err != nil {
 		return err
 	}
@@ -116,6 +119,42 @@ func (s *networkServerRPC) Downlink(ctx context.Context, message *broker.Downlin
 		return nil, err
 	}
 	return res, nil
+}
+
+func (s *networkServerRPC) GetDevice(ctx context.Context, in *pb_lorawan.DeviceIdentifier) (*pb_lorawan.Device, error) {
+	if err := in.Validate(); err != nil {
+		return nil, errors.Wrap(err, "Invalid Device Identifier")
+	}
+	if err := s.ValidateContext(ctx); err != nil {
+		return nil, err
+	}
+	dev, err := s.networkServer.devices.Get(*in.AppEui, *in.DevEui)
+	if err != nil {
+		return nil, err
+	}
+
+	lastSeen := time.Unix(0, 0)
+	if !dev.LastSeen.IsZero() {
+		lastSeen = dev.LastSeen
+	}
+
+	return &pb_lorawan.Device{
+		AppId:                 dev.AppID,
+		AppEui:                &dev.AppEUI,
+		DevId:                 dev.DevID,
+		DevEui:                &dev.DevEUI,
+		DevAddr:               &dev.DevAddr,
+		NwkSKey:               &dev.NwkSKey,
+		FCntUp:                dev.FCntUp,
+		FCntDown:              dev.FCntDown,
+		DisableFCntCheck:      dev.Options.DisableFCntCheck,
+		Uses32BitFCnt:         dev.Options.Uses32BitFCnt,
+		ActivationConstraints: dev.Options.ActivationConstraints,
+		PreferredGateways:     dev.Options.PreferredGateways,
+		Rx2DataRate:           dev.Options.RX2DataRate,
+		Rx2Frequency:          dev.Options.RX2Frequency,
+		LastSeen:              lastSeen.UnixNano(),
+	}, nil
 }
 
 // RegisterRPC registers this networkserver as a NetworkServerServer (github.com/TheThingsNetwork/ttn/api/networkserver)

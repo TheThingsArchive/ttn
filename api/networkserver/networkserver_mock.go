@@ -6,6 +6,7 @@ package networkserver
 import (
 	broker "github.com/TheThingsNetwork/ttn/api/broker"
 	handler "github.com/TheThingsNetwork/ttn/api/handler"
+	lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	gomock "github.com/golang/mock/gomock"
 	context "golang.org/x/net/context"
 	grpc "google.golang.org/grpc"
@@ -46,6 +47,22 @@ func (_m *MockNetworkServerClient) GetDevices(ctx context.Context, in *DevicesRe
 func (_mr *_MockNetworkServerClientRecorder) GetDevices(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
 	_s := append([]interface{}{arg0, arg1}, arg2...)
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "GetDevices", _s...)
+}
+
+func (_m *MockNetworkServerClient) GetDevice(ctx context.Context, in *lorawan.DeviceIdentifier, opts ...grpc.CallOption) (*lorawan.Device, error) {
+	_s := []interface{}{ctx, in}
+	for _, _x := range opts {
+		_s = append(_s, _x)
+	}
+	ret := _m.ctrl.Call(_m, "GetDevice", _s...)
+	ret0, _ := ret[0].(*lorawan.Device)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+func (_mr *_MockNetworkServerClientRecorder) GetDevice(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	_s := append([]interface{}{arg0, arg1}, arg2...)
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "GetDevice", _s...)
 }
 
 func (_m *MockNetworkServerClient) PrepareActivation(ctx context.Context, in *broker.DeduplicatedDeviceActivationRequest, opts ...grpc.CallOption) (*broker.DeduplicatedDeviceActivationRequest, error) {
@@ -142,6 +159,17 @@ func (_m *MockNetworkServerServer) GetDevices(_param0 context.Context, _param1 *
 
 func (_mr *_MockNetworkServerServerRecorder) GetDevices(arg0, arg1 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "GetDevices", arg0, arg1)
+}
+
+func (_m *MockNetworkServerServer) GetDevice(_param0 context.Context, _param1 *lorawan.DeviceIdentifier) (*lorawan.Device, error) {
+	ret := _m.ctrl.Call(_m, "GetDevice", _param0, _param1)
+	ret0, _ := ret[0].(*lorawan.Device)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+func (_mr *_MockNetworkServerServerRecorder) GetDevice(arg0, arg1 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "GetDevice", arg0, arg1)
 }
 
 func (_m *MockNetworkServerServer) PrepareActivation(_param0 context.Context, _param1 *broker.DeduplicatedDeviceActivationRequest) (*broker.DeduplicatedDeviceActivationRequest, error) {

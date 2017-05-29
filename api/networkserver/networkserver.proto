@@ -29,6 +29,8 @@ service NetworkServer {
   // Broker requests devices with DevAddr and matching FCnt (or disabled FCnt check)
   rpc GetDevices(DevicesRequest) returns (DevicesResponse);
 
+  rpc GetDevice(lorawan.DeviceIdentifier) returns (lorawan.Device);
+
   // Broker requests device activation "template" from Network Server
   rpc PrepareActivation(broker.DeduplicatedDeviceActivationRequest) returns (broker.DeduplicatedDeviceActivationRequest);
 
