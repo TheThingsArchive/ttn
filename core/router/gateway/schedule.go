@@ -149,6 +149,10 @@ func (s *Schedule) getRealtime(fullTimestamp uint64) time.Time {
 	return time.Unix(0, int64(s.offset)+int64(fullTimestamp)*1000)
 }
 
+func (s *Schedule) getTimestamp(t time.Time) uint64 {
+	return uint64(t.Add(-1*time.Duration(s.offset)).UnixNano() / 1000)
+}
+
 // DefaultGatewayRTT is the default gateway round-trip-time if none is reported by the gateway itself
 var DefaultGatewayRTT = 300 * time.Millisecond
 

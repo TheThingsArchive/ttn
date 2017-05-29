@@ -19,7 +19,10 @@ const almostEqual = time.Millisecond
 func TestScheduleSync(t *testing.T) {
 	a := New(t)
 	s := &Schedule{}
+
 	s.Sync(0)
+	now := time.Now()
+	a.So(s.getTimestamp(now), ShouldBeBetweenOrEqual, 0, 1050)
 	a.So(s.getRealtime(0), ShouldHappenWithin, time.Millisecond, time.Now())
 	a.So(s.timestamp, ShouldEqual, 0)
 	a.So(s.offset, ShouldAlmostEqual, time.Now().UnixNano(), almostEqual)
@@ -27,6 +30,10 @@ func TestScheduleSync(t *testing.T) {
 	a.So(s.getRealtime(10000), ShouldHappenWithin, time.Millisecond, time.Now().Add(10*time.Millisecond))
 
 	s.Sync(20000)
+	now = time.Now()
+	a.So(s.getTimestamp(now), ShouldBeBetweenOrEqual, 20000, 20050)
+	a.So(s.getTimestamp(now.Add(5000)), ShouldBeBetweenOrEqual, 20005, 20055)
+
 	a.So(s.getRealtime(20000), ShouldHappenWithin, time.Millisecond, time.Now())
 	a.So(s.timestamp, ShouldEqual, 20000)
 	a.So(s.offset, ShouldAlmostEqual, time.Now().UnixNano()-20000*1000, almostEqual)
