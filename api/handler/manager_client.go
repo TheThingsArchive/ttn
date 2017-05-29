@@ -17,19 +17,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-// ManagerClient is used to manage applications and devices on a handler
-type ManagerClient struct {
-	sync.RWMutex
-	id                       string
-	accessToken              string
-	conn                     *grpc.ClientConn
-	applicationManagerClient ApplicationManagerClient
-}
-
-// NewManagerClient returns a new ManagerClient for a handler on the given conn that accepts the given access token
-func NewManagerClient(conn *grpc.ClientConn, accessToken string) (*ManagerClient, error) {
-	applicationManagerClient := NewApplicationManagerClient(conn)
-
+func makeID() string {
 	id := "client"
 	if user, err := user.Current(); err == nil {
 		id += "-" + user.Username
@@ -37,12 +25,43 @@ func NewManagerClient(conn *grpc.ClientConn, accessToken string) (*ManagerClient
 	if hostname, err := os.Hostname(); err == nil {
 		id += "@" + hostname
 	}
+	return id
+}
+
+// ManagerClient is used to manage applications and devices on a handler
+type ManagerClient struct {
+	sync.RWMutex
+	id                       string
+	authorize                func(context.Context) context.Context
+	conn                     *grpc.ClientConn
+	applicationManagerClient ApplicationManagerClient
+}
+
+// NewManagerClientWithToken returns a new ManagerClient for a handler on the given conn that accepts the given access token
+func NewManagerClientWithToken(conn *grpc.ClientConn, accessToken string) (*ManagerClient, error) {
+	applicationManagerClient := NewApplicationManagerClient(conn)
 
 	return &ManagerClient{
-		id:          id,
-		accessToken: accessToken,
-		conn:        conn,
+		id:   makeID(),
+		conn: conn,
 		applicationManagerClient: applicationManagerClient,
+		authorize: func(ctx context.Context) context.Context {
+			return ttnctx.OutgoingContextWithToken(ctx, accessToken)
+		},
+	}, nil
+}
+
+// NewManagerClientWithKey returns a new ManagerClient for a handler on the given conn that accepts the given key
+func NewManagerClientWithKey(conn *grpc.ClientConn, key string) (*ManagerClient, error) {
+	applicationManagerClient := NewApplicationManagerClient(conn)
+
+	return &ManagerClient{
+		id:   makeID(),
+		conn: conn,
+		applicationManagerClient: applicationManagerClient,
+		authorize: func(ctx context.Context) context.Context {
+			return ttnctx.OutgoingContextWithKey(ctx, key)
+		},
 	}, nil
 }
 
@@ -57,7 +76,9 @@ func (h *ManagerClient) SetID(id string) {
 func (h *ManagerClient) UpdateAccessToken(accessToken string) {
 	h.Lock()
 	defer h.Unlock()
-	h.accessToken = accessToken
+	h.authorize = func(ctx context.Context) context.Context {
+		return ttnctx.OutgoingContextWithToken(ctx, accessToken)
+	}
 }
 
 // GetContext returns a new context with authentication
@@ -66,7 +87,7 @@ func (h *ManagerClient) GetContext() context.Context {
 	defer h.RUnlock()
 	ctx := context.Background()
 	ctx = ttnctx.OutgoingContextWithID(ctx, h.id)
-	ctx = ttnctx.OutgoingContextWithToken(ctx, h.accessToken)
+	ctx = h.authorize(ctx)
 	return ctx
 }
 

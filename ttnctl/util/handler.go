@@ -33,7 +33,7 @@ func GetHandlerManager(ctx ttnlog.Interface, appID string) (*grpc.ClientConn, *h
 	if err != nil {
 		ctx.WithError(err).Fatal("Could not connect to Handler")
 	}
-	managerClient, err := handler.NewManagerClient(hdlConn, token)
+	managerClient, err := handler.NewManagerClientWithToken(hdlConn, token)
 	if err != nil {
 		ctx.WithError(err).Fatal("Could not create Handler Manager")
 	}
