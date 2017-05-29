@@ -483,6 +483,12 @@
 			"revisionTime": "2017-05-12T17:16:34Z"
 		},
 		{
+			"checksumSHA1": "Lx2JRhnmO66Lhj6p7UXnsPb+IQs=",
+			"path": "github.com/golang/protobuf/ptypes/duration",
+			"revision": "fec3b39b059c0f88fa6b20f5ed012b1aa203a8b4",
+			"revisionTime": "2017-05-12T17:16:34Z"
+		},
+		{
 			"checksumSHA1": "kGENkjYJ18VCC+pILfHdT/twU60=",
 			"path": "github.com/golang/protobuf/ptypes/empty",
 			"revision": "fec3b39b059c0f88fa6b20f5ed012b1aa203a8b4",

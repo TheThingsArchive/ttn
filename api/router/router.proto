@@ -3,6 +3,7 @@
 
 syntax = "proto3";
 
+import "google/protobuf/duration.proto";
 import "google/protobuf/empty.proto";
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 import "ttn/api/api.proto";
@@ -54,6 +55,22 @@ message DeviceActivationResponse {
   // trace.Trace               trace                   = 21;
 }
 
+message DownlinkOptionRequest {
+  string                   gateway_id = 1;
+  uint64                   frequency  = 2;
+  google.protobuf.Duration duration   = 3 [(gogoproto.nullable) = false, (gogoproto.stdduration) = true];
+}
+
+message DownlinkOptionResponse {
+  string  identifier  = 1;
+
+  uint32  possible_conflicts = 12;
+  float   duty_cycle         = 13;
+  float   utilization        = 14;
+
+  // Please keep this message compatible with broker.DownlinkOption so that they can be merged
+}
+
 // The Router service provides pure network functionality
 service Router {
   // Gateway streams status messages to Router
@@ -67,6 +84,9 @@ service Router {
 
   // Gateway requests device activation
   rpc Activate(DeviceActivationRequest) returns (DeviceActivationResponse);
+
+  // Broker requests downlink option on gateway
+  rpc GetDownlinkOption(DownlinkOptionRequest) returns (DownlinkOptionResponse);
 }
 
 // message GatewayStatusRequest is used to request the status of a gateway from

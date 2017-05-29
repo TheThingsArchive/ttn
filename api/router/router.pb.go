@@ -14,6 +14,8 @@
 		DownlinkMessage
 		DeviceActivationRequest
 		DeviceActivationResponse
+		DownlinkOptionRequest
+		DownlinkOptionResponse
 		GatewayStatusRequest
 		GatewayStatusResponse
 		StatusRequest
@@ -24,7 +26,8 @@ package router
 import proto "github.com/gogo/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import google_protobuf "github.com/golang/protobuf/ptypes/empty"
+import _ "github.com/golang/protobuf/ptypes/duration"
+import google_protobuf1 "github.com/golang/protobuf/ptypes/empty"
 import _ "github.com/gogo/protobuf/gogoproto"
 import api "github.com/TheThingsNetwork/ttn/api"
 import protocol "github.com/TheThingsNetwork/ttn/api/protocol"
@@ -32,6 +35,7 @@ import gateway "github.com/TheThingsNetwork/ttn/api/gateway"
 import trace "github.com/TheThingsNetwork/ttn/api/trace"
 
 import github_com_TheThingsNetwork_ttn_core_types "github.com/TheThingsNetwork/ttn/core/types"
+import time "time"
 
 import bytes "bytes"
 
@@ -39,6 +43,8 @@ import (
 	context "golang.org/x/net/context"
 	grpc "google.golang.org/grpc"
 )
+
+import github_com_gogo_protobuf_types "github.com/gogo/protobuf/types"
 
 import strings "strings"
 import reflect "reflect"
@@ -49,6 +55,7 @@ import io "io"
 var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
+var _ = time.Kitchen
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the proto package it is being compiled against.
@@ -221,6 +228,76 @@ func (m *DeviceActivationResponse) Reset()                    { *m = DeviceActiv
 func (*DeviceActivationResponse) ProtoMessage()               {}
 func (*DeviceActivationResponse) Descriptor() ([]byte, []int) { return fileDescriptorRouter, []int{4} }
 
+type DownlinkOptionRequest struct {
+	GatewayId string        `protobuf:"bytes,1,opt,name=gateway_id,json=gatewayId,proto3" json:"gateway_id,omitempty"`
+	Frequency uint64        `protobuf:"varint,2,opt,name=frequency,proto3" json:"frequency,omitempty"`
+	Duration  time.Duration `protobuf:"bytes,3,opt,name=duration,stdduration" json:"duration"`
+}
+
+func (m *DownlinkOptionRequest) Reset()                    { *m = DownlinkOptionRequest{} }
+func (*DownlinkOptionRequest) ProtoMessage()               {}
+func (*DownlinkOptionRequest) Descriptor() ([]byte, []int) { return fileDescriptorRouter, []int{5} }
+
+func (m *DownlinkOptionRequest) GetGatewayId() string {
+	if m != nil {
+		return m.GatewayId
+	}
+	return ""
+}
+
+func (m *DownlinkOptionRequest) GetFrequency() uint64 {
+	if m != nil {
+		return m.Frequency
+	}
+	return 0
+}
+
+func (m *DownlinkOptionRequest) GetDuration() time.Duration {
+	if m != nil {
+		return m.Duration
+	}
+	return 0
+}
+
+type DownlinkOptionResponse struct {
+	Identifier        string  `protobuf:"bytes,1,opt,name=identifier,proto3" json:"identifier,omitempty"`
+	PossibleConflicts uint32  `protobuf:"varint,12,opt,name=possible_conflicts,json=possibleConflicts,proto3" json:"possible_conflicts,omitempty"`
+	DutyCycle         float32 `protobuf:"fixed32,13,opt,name=duty_cycle,json=dutyCycle,proto3" json:"duty_cycle,omitempty"`
+	Utilization       float32 `protobuf:"fixed32,14,opt,name=utilization,proto3" json:"utilization,omitempty"`
+}
+
+func (m *DownlinkOptionResponse) Reset()                    { *m = DownlinkOptionResponse{} }
+func (*DownlinkOptionResponse) ProtoMessage()               {}
+func (*DownlinkOptionResponse) Descriptor() ([]byte, []int) { return fileDescriptorRouter, []int{6} }
+
+func (m *DownlinkOptionResponse) GetIdentifier() string {
+	if m != nil {
+		return m.Identifier
+	}
+	return ""
+}
+
+func (m *DownlinkOptionResponse) GetPossibleConflicts() uint32 {
+	if m != nil {
+		return m.PossibleConflicts
+	}
+	return 0
+}
+
+func (m *DownlinkOptionResponse) GetDutyCycle() float32 {
+	if m != nil {
+		return m.DutyCycle
+	}
+	return 0
+}
+
+func (m *DownlinkOptionResponse) GetUtilization() float32 {
+	if m != nil {
+		return m.Utilization
+	}
+	return 0
+}
+
 // message GatewayStatusRequest is used to request the status of a gateway from
 // this Router
 type GatewayStatusRequest struct {
@@ -229,7 +306,7 @@ type GatewayStatusRequest struct {
 
 func (m *GatewayStatusRequest) Reset()                    { *m = GatewayStatusRequest{} }
 func (*GatewayStatusRequest) ProtoMessage()               {}
-func (*GatewayStatusRequest) Descriptor() ([]byte, []int) { return fileDescriptorRouter, []int{5} }
+func (*GatewayStatusRequest) Descriptor() ([]byte, []int) { return fileDescriptorRouter, []int{7} }
 
 func (m *GatewayStatusRequest) GetGatewayId() string {
 	if m != nil {
@@ -247,7 +324,7 @@ type GatewayStatusResponse struct {
 
 func (m *GatewayStatusResponse) Reset()                    { *m = GatewayStatusResponse{} }
 func (*GatewayStatusResponse) ProtoMessage()               {}
-func (*GatewayStatusResponse) Descriptor() ([]byte, []int) { return fileDescriptorRouter, []int{6} }
+func (*GatewayStatusResponse) Descriptor() ([]byte, []int) { return fileDescriptorRouter, []int{8} }
 
 func (m *GatewayStatusResponse) GetLastSeen() int64 {
 	if m != nil {
@@ -283,7 +360,7 @@ type StatusRequest struct {
 
 func (m *StatusRequest) Reset()                    { *m = StatusRequest{} }
 func (*StatusRequest) ProtoMessage()               {}
-func (*StatusRequest) Descriptor() ([]byte, []int) { return fileDescriptorRouter, []int{7} }
+func (*StatusRequest) Descriptor() ([]byte, []int) { return fileDescriptorRouter, []int{9} }
 
 // message Status is the response to the StatusRequest
 type Status struct {
@@ -300,7 +377,7 @@ type Status struct {
 
 func (m *Status) Reset()                    { *m = Status{} }
 func (*Status) ProtoMessage()               {}
-func (*Status) Descriptor() ([]byte, []int) { return fileDescriptorRouter, []int{8} }
+func (*Status) Descriptor() ([]byte, []int) { return fileDescriptorRouter, []int{10} }
 
 func (m *Status) GetSystem() *api.SystemStats {
 	if m != nil {
@@ -364,6 +441,8 @@ func init() {
 	proto.RegisterType((*DownlinkMessage)(nil), "router.DownlinkMessage")
 	proto.RegisterType((*DeviceActivationRequest)(nil), "router.DeviceActivationRequest")
 	proto.RegisterType((*DeviceActivationResponse)(nil), "router.DeviceActivationResponse")
+	proto.RegisterType((*DownlinkOptionRequest)(nil), "router.DownlinkOptionRequest")
+	proto.RegisterType((*DownlinkOptionResponse)(nil), "router.DownlinkOptionResponse")
 	proto.RegisterType((*GatewayStatusRequest)(nil), "router.GatewayStatusRequest")
 	proto.RegisterType((*GatewayStatusResponse)(nil), "router.GatewayStatusResponse")
 	proto.RegisterType((*StatusRequest)(nil), "router.StatusRequest")
@@ -763,6 +842,156 @@ func (this *DeviceActivationResponse) Equal(that interface{}) bool {
 	}
 	return true
 }
+func (this *DownlinkOptionRequest) VerboseEqual(that interface{}) error {
+	if that == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that == nil && this != nil")
+	}
+
+	that1, ok := that.(*DownlinkOptionRequest)
+	if !ok {
+		that2, ok := that.(DownlinkOptionRequest)
+		if ok {
+			that1 = &that2
+		} else {
+			return fmt.Errorf("that is not of type *DownlinkOptionRequest")
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that is type *DownlinkOptionRequest but is nil && this != nil")
+	} else if this == nil {
+		return fmt.Errorf("that is type *DownlinkOptionRequest but is not nil && this == nil")
+	}
+	if this.GatewayId != that1.GatewayId {
+		return fmt.Errorf("GatewayId this(%v) Not Equal that(%v)", this.GatewayId, that1.GatewayId)
+	}
+	if this.Frequency != that1.Frequency {
+		return fmt.Errorf("Frequency this(%v) Not Equal that(%v)", this.Frequency, that1.Frequency)
+	}
+	if this.Duration != that1.Duration {
+		return fmt.Errorf("Duration this(%v) Not Equal that(%v)", this.Duration, that1.Duration)
+	}
+	return nil
+}
+func (this *DownlinkOptionRequest) Equal(that interface{}) bool {
+	if that == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	}
+
+	that1, ok := that.(*DownlinkOptionRequest)
+	if !ok {
+		that2, ok := that.(DownlinkOptionRequest)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	} else if this == nil {
+		return false
+	}
+	if this.GatewayId != that1.GatewayId {
+		return false
+	}
+	if this.Frequency != that1.Frequency {
+		return false
+	}
+	if this.Duration != that1.Duration {
+		return false
+	}
+	return true
+}
+func (this *DownlinkOptionResponse) VerboseEqual(that interface{}) error {
+	if that == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that == nil && this != nil")
+	}
+
+	that1, ok := that.(*DownlinkOptionResponse)
+	if !ok {
+		that2, ok := that.(DownlinkOptionResponse)
+		if ok {
+			that1 = &that2
+		} else {
+			return fmt.Errorf("that is not of type *DownlinkOptionResponse")
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return nil
+		}
+		return fmt.Errorf("that is type *DownlinkOptionResponse but is nil && this != nil")
+	} else if this == nil {
+		return fmt.Errorf("that is type *DownlinkOptionResponse but is not nil && this == nil")
+	}
+	if this.Identifier != that1.Identifier {
+		return fmt.Errorf("Identifier this(%v) Not Equal that(%v)", this.Identifier, that1.Identifier)
+	}
+	if this.PossibleConflicts != that1.PossibleConflicts {
+		return fmt.Errorf("PossibleConflicts this(%v) Not Equal that(%v)", this.PossibleConflicts, that1.PossibleConflicts)
+	}
+	if this.DutyCycle != that1.DutyCycle {
+		return fmt.Errorf("DutyCycle this(%v) Not Equal that(%v)", this.DutyCycle, that1.DutyCycle)
+	}
+	if this.Utilization != that1.Utilization {
+		return fmt.Errorf("Utilization this(%v) Not Equal that(%v)", this.Utilization, that1.Utilization)
+	}
+	return nil
+}
+func (this *DownlinkOptionResponse) Equal(that interface{}) bool {
+	if that == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	}
+
+	that1, ok := that.(*DownlinkOptionResponse)
+	if !ok {
+		that2, ok := that.(DownlinkOptionResponse)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	} else if this == nil {
+		return false
+	}
+	if this.Identifier != that1.Identifier {
+		return false
+	}
+	if this.PossibleConflicts != that1.PossibleConflicts {
+		return false
+	}
+	if this.DutyCycle != that1.DutyCycle {
+		return false
+	}
+	if this.Utilization != that1.Utilization {
+		return false
+	}
+	return true
+}
 func (this *GatewayStatusRequest) VerboseEqual(that interface{}) error {
 	if that == nil {
 		if this == nil {
@@ -1077,6 +1306,8 @@ type RouterClient interface {
 	Subscribe(ctx context.Context, in *SubscribeRequest, opts ...grpc.CallOption) (Router_SubscribeClient, error)
 	// Gateway requests device activation
 	Activate(ctx context.Context, in *DeviceActivationRequest, opts ...grpc.CallOption) (*DeviceActivationResponse, error)
+	// Broker requests downlink option on gateway
+	GetDownlinkOption(ctx context.Context, in *DownlinkOptionRequest, opts ...grpc.CallOption) (*DownlinkOptionResponse, error)
 }
 
 type routerClient struct {
@@ -1098,7 +1329,7 @@ func (c *routerClient) GatewayStatus(ctx context.Context, opts ...grpc.CallOptio
 
 type Router_GatewayStatusClient interface {
 	Send(*gateway.Status) error
-	CloseAndRecv() (*google_protobuf.Empty, error)
+	CloseAndRecv() (*google_protobuf1.Empty, error)
 	grpc.ClientStream
 }
 
@@ -1110,11 +1341,11 @@ func (x *routerGatewayStatusClient) Send(m *gateway.Status) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *routerGatewayStatusClient) CloseAndRecv() (*google_protobuf.Empty, error) {
+func (x *routerGatewayStatusClient) CloseAndRecv() (*google_protobuf1.Empty, error) {
 	if err := x.ClientStream.CloseSend(); err != nil {
 		return nil, err
 	}
-	m := new(google_protobuf.Empty)
+	m := new(google_protobuf1.Empty)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -1132,7 +1363,7 @@ func (c *routerClient) Uplink(ctx context.Context, opts ...grpc.CallOption) (Rou
 
 type Router_UplinkClient interface {
 	Send(*UplinkMessage) error
-	CloseAndRecv() (*google_protobuf.Empty, error)
+	CloseAndRecv() (*google_protobuf1.Empty, error)
 	grpc.ClientStream
 }
 
@@ -1144,11 +1375,11 @@ func (x *routerUplinkClient) Send(m *UplinkMessage) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *routerUplinkClient) CloseAndRecv() (*google_protobuf.Empty, error) {
+func (x *routerUplinkClient) CloseAndRecv() (*google_protobuf1.Empty, error) {
 	if err := x.ClientStream.CloseSend(); err != nil {
 		return nil, err
 	}
-	m := new(google_protobuf.Empty)
+	m := new(google_protobuf1.Empty)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -1196,6 +1427,15 @@ func (c *routerClient) Activate(ctx context.Context, in *DeviceActivationRequest
 	return out, nil
 }
 
+func (c *routerClient) GetDownlinkOption(ctx context.Context, in *DownlinkOptionRequest, opts ...grpc.CallOption) (*DownlinkOptionResponse, error) {
+	out := new(DownlinkOptionResponse)
+	err := grpc.Invoke(ctx, "/router.Router/GetDownlinkOption", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // Server API for Router service
 
 type RouterServer interface {
@@ -1207,6 +1447,8 @@ type RouterServer interface {
 	Subscribe(*SubscribeRequest, Router_SubscribeServer) error
 	// Gateway requests device activation
 	Activate(context.Context, *DeviceActivationRequest) (*DeviceActivationResponse, error)
+	// Broker requests downlink option on gateway
+	GetDownlinkOption(context.Context, *DownlinkOptionRequest) (*DownlinkOptionResponse, error)
 }
 
 func RegisterRouterServer(s *grpc.Server, srv RouterServer) {
@@ -1218,7 +1460,7 @@ func _Router_GatewayStatus_Handler(srv interface{}, stream grpc.ServerStream) er
 }
 
 type Router_GatewayStatusServer interface {
-	SendAndClose(*google_protobuf.Empty) error
+	SendAndClose(*google_protobuf1.Empty) error
 	Recv() (*gateway.Status, error)
 	grpc.ServerStream
 }
@@ -1227,7 +1469,7 @@ type routerGatewayStatusServer struct {
 	grpc.ServerStream
 }
 
-func (x *routerGatewayStatusServer) SendAndClose(m *google_protobuf.Empty) error {
+func (x *routerGatewayStatusServer) SendAndClose(m *google_protobuf1.Empty) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -1244,7 +1486,7 @@ func _Router_Uplink_Handler(srv interface{}, stream grpc.ServerStream) error {
 }
 
 type Router_UplinkServer interface {
-	SendAndClose(*google_protobuf.Empty) error
+	SendAndClose(*google_protobuf1.Empty) error
 	Recv() (*UplinkMessage, error)
 	grpc.ServerStream
 }
@@ -1253,7 +1495,7 @@ type routerUplinkServer struct {
 	grpc.ServerStream
 }
 
-func (x *routerUplinkServer) SendAndClose(m *google_protobuf.Empty) error {
+func (x *routerUplinkServer) SendAndClose(m *google_protobuf1.Empty) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -1304,6 +1546,24 @@ func _Router_Activate_Handler(srv interface{}, ctx context.Context, dec func(int
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Router_GetDownlinkOption_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DownlinkOptionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RouterServer).GetDownlinkOption(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/router.Router/GetDownlinkOption",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RouterServer).GetDownlinkOption(ctx, req.(*DownlinkOptionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _Router_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "router.Router",
 	HandlerType: (*RouterServer)(nil),
@@ -1311,6 +1571,10 @@ var _Router_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Activate",
 			Handler:    _Router_Activate_Handler,
+		},
+		{
+			MethodName: "GetDownlinkOption",
+			Handler:    _Router_GetDownlinkOption_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
@@ -1706,6 +1970,82 @@ func (m *DeviceActivationResponse) MarshalTo(dAtA []byte) (int, error) {
 	return i, nil
 }
 
+func (m *DownlinkOptionRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalTo(dAtA)
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *DownlinkOptionRequest) MarshalTo(dAtA []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if len(m.GatewayId) > 0 {
+		dAtA[i] = 0xa
+		i++
+		i = encodeVarintRouter(dAtA, i, uint64(len(m.GatewayId)))
+		i += copy(dAtA[i:], m.GatewayId)
+	}
+	if m.Frequency != 0 {
+		dAtA[i] = 0x10
+		i++
+		i = encodeVarintRouter(dAtA, i, uint64(m.Frequency))
+	}
+	dAtA[i] = 0x1a
+	i++
+	i = encodeVarintRouter(dAtA, i, uint64(github_com_gogo_protobuf_types.SizeOfStdDuration(m.Duration)))
+	n16, err := github_com_gogo_protobuf_types.StdDurationMarshalTo(m.Duration, dAtA[i:])
+	if err != nil {
+		return 0, err
+	}
+	i += n16
+	return i, nil
+}
+
+func (m *DownlinkOptionResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalTo(dAtA)
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *DownlinkOptionResponse) MarshalTo(dAtA []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if len(m.Identifier) > 0 {
+		dAtA[i] = 0xa
+		i++
+		i = encodeVarintRouter(dAtA, i, uint64(len(m.Identifier)))
+		i += copy(dAtA[i:], m.Identifier)
+	}
+	if m.PossibleConflicts != 0 {
+		dAtA[i] = 0x60
+		i++
+		i = encodeVarintRouter(dAtA, i, uint64(m.PossibleConflicts))
+	}
+	if m.DutyCycle != 0 {
+		dAtA[i] = 0x6d
+		i++
+		i = encodeFixed32Router(dAtA, i, uint32(math.Float32bits(float32(m.DutyCycle))))
+	}
+	if m.Utilization != 0 {
+		dAtA[i] = 0x75
+		i++
+		i = encodeFixed32Router(dAtA, i, uint32(math.Float32bits(float32(m.Utilization))))
+	}
+	return i, nil
+}
+
 func (m *GatewayStatusRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -1754,31 +2094,31 @@ func (m *GatewayStatusResponse) MarshalTo(dAtA []byte) (int, error) {
 		dAtA[i] = 0x12
 		i++
 		i = encodeVarintRouter(dAtA, i, uint64(m.Status.Size()))
-		n16, err := m.Status.MarshalTo(dAtA[i:])
-		if err != nil {
-			return 0, err
-		}
-		i += n16
-	}
-	if m.Uplink != nil {
-		dAtA[i] = 0x5a
-		i++
-		i = encodeVarintRouter(dAtA, i, uint64(m.Uplink.Size()))
-		n17, err := m.Uplink.MarshalTo(dAtA[i:])
+		n17, err := m.Status.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += n17
 	}
-	if m.Downlink != nil {
-		dAtA[i] = 0x62
+	if m.Uplink != nil {
+		dAtA[i] = 0x5a
 		i++
-		i = encodeVarintRouter(dAtA, i, uint64(m.Downlink.Size()))
-		n18, err := m.Downlink.MarshalTo(dAtA[i:])
+		i = encodeVarintRouter(dAtA, i, uint64(m.Uplink.Size()))
+		n18, err := m.Uplink.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += n18
+	}
+	if m.Downlink != nil {
+		dAtA[i] = 0x62
+		i++
+		i = encodeVarintRouter(dAtA, i, uint64(m.Downlink.Size()))
+		n19, err := m.Downlink.MarshalTo(dAtA[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n19
 	}
 	return i, nil
 }
@@ -1820,61 +2160,61 @@ func (m *Status) MarshalTo(dAtA []byte) (int, error) {
 		dAtA[i] = 0xa
 		i++
 		i = encodeVarintRouter(dAtA, i, uint64(m.System.Size()))
-		n19, err := m.System.MarshalTo(dAtA[i:])
-		if err != nil {
-			return 0, err
-		}
-		i += n19
-	}
-	if m.Component != nil {
-		dAtA[i] = 0x12
-		i++
-		i = encodeVarintRouter(dAtA, i, uint64(m.Component.Size()))
-		n20, err := m.Component.MarshalTo(dAtA[i:])
+		n20, err := m.System.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += n20
 	}
-	if m.GatewayStatus != nil {
-		dAtA[i] = 0x5a
+	if m.Component != nil {
+		dAtA[i] = 0x12
 		i++
-		i = encodeVarintRouter(dAtA, i, uint64(m.GatewayStatus.Size()))
-		n21, err := m.GatewayStatus.MarshalTo(dAtA[i:])
+		i = encodeVarintRouter(dAtA, i, uint64(m.Component.Size()))
+		n21, err := m.Component.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += n21
 	}
-	if m.Uplink != nil {
-		dAtA[i] = 0x62
+	if m.GatewayStatus != nil {
+		dAtA[i] = 0x5a
 		i++
-		i = encodeVarintRouter(dAtA, i, uint64(m.Uplink.Size()))
-		n22, err := m.Uplink.MarshalTo(dAtA[i:])
+		i = encodeVarintRouter(dAtA, i, uint64(m.GatewayStatus.Size()))
+		n22, err := m.GatewayStatus.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += n22
 	}
-	if m.Downlink != nil {
-		dAtA[i] = 0x6a
+	if m.Uplink != nil {
+		dAtA[i] = 0x62
 		i++
-		i = encodeVarintRouter(dAtA, i, uint64(m.Downlink.Size()))
-		n23, err := m.Downlink.MarshalTo(dAtA[i:])
+		i = encodeVarintRouter(dAtA, i, uint64(m.Uplink.Size()))
+		n23, err := m.Uplink.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += n23
 	}
-	if m.Activations != nil {
-		dAtA[i] = 0x72
+	if m.Downlink != nil {
+		dAtA[i] = 0x6a
 		i++
-		i = encodeVarintRouter(dAtA, i, uint64(m.Activations.Size()))
-		n24, err := m.Activations.MarshalTo(dAtA[i:])
+		i = encodeVarintRouter(dAtA, i, uint64(m.Downlink.Size()))
+		n24, err := m.Downlink.MarshalTo(dAtA[i:])
 		if err != nil {
 			return 0, err
 		}
 		i += n24
+	}
+	if m.Activations != nil {
+		dAtA[i] = 0x72
+		i++
+		i = encodeVarintRouter(dAtA, i, uint64(m.Activations.Size()))
+		n25, err := m.Activations.MarshalTo(dAtA[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n25
 	}
 	if m.ConnectedGateways != 0 {
 		dAtA[i] = 0xa8
@@ -2019,6 +2359,40 @@ func (m *DeviceActivationRequest) Size() (n int) {
 func (m *DeviceActivationResponse) Size() (n int) {
 	var l int
 	_ = l
+	return n
+}
+
+func (m *DownlinkOptionRequest) Size() (n int) {
+	var l int
+	_ = l
+	l = len(m.GatewayId)
+	if l > 0 {
+		n += 1 + l + sovRouter(uint64(l))
+	}
+	if m.Frequency != 0 {
+		n += 1 + sovRouter(uint64(m.Frequency))
+	}
+	l = github_com_gogo_protobuf_types.SizeOfStdDuration(m.Duration)
+	n += 1 + l + sovRouter(uint64(l))
+	return n
+}
+
+func (m *DownlinkOptionResponse) Size() (n int) {
+	var l int
+	_ = l
+	l = len(m.Identifier)
+	if l > 0 {
+		n += 1 + l + sovRouter(uint64(l))
+	}
+	if m.PossibleConflicts != 0 {
+		n += 1 + sovRouter(uint64(m.PossibleConflicts))
+	}
+	if m.DutyCycle != 0 {
+		n += 5
+	}
+	if m.Utilization != 0 {
+		n += 5
+	}
 	return n
 }
 
@@ -2167,6 +2541,31 @@ func (this *DeviceActivationResponse) String() string {
 		return "nil"
 	}
 	s := strings.Join([]string{`&DeviceActivationResponse{`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *DownlinkOptionRequest) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&DownlinkOptionRequest{`,
+		`GatewayId:` + fmt.Sprintf("%v", this.GatewayId) + `,`,
+		`Frequency:` + fmt.Sprintf("%v", this.Frequency) + `,`,
+		`Duration:` + strings.Replace(strings.Replace(this.Duration.String(), "Duration", "google_protobuf.Duration", 1), `&`, ``, 1) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *DownlinkOptionResponse) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&DownlinkOptionResponse{`,
+		`Identifier:` + fmt.Sprintf("%v", this.Identifier) + `,`,
+		`PossibleConflicts:` + fmt.Sprintf("%v", this.PossibleConflicts) + `,`,
+		`DutyCycle:` + fmt.Sprintf("%v", this.DutyCycle) + `,`,
+		`Utilization:` + fmt.Sprintf("%v", this.Utilization) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -3064,6 +3463,260 @@ func (m *DeviceActivationResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+func (m *DownlinkOptionRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowRouter
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DownlinkOptionRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DownlinkOptionRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field GatewayId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRouter
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthRouter
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.GatewayId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Frequency", wireType)
+			}
+			m.Frequency = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRouter
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Frequency |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Duration", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRouter
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthRouter
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := github_com_gogo_protobuf_types.StdDurationUnmarshal(&m.Duration, dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipRouter(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthRouter
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *DownlinkOptionResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowRouter
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DownlinkOptionResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DownlinkOptionResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Identifier", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRouter
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthRouter
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Identifier = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 12:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PossibleConflicts", wireType)
+			}
+			m.PossibleConflicts = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRouter
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.PossibleConflicts |= (uint32(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 13:
+			if wireType != 5 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DutyCycle", wireType)
+			}
+			var v uint32
+			if (iNdEx + 4) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += 4
+			v = uint32(dAtA[iNdEx-4])
+			v |= uint32(dAtA[iNdEx-3]) << 8
+			v |= uint32(dAtA[iNdEx-2]) << 16
+			v |= uint32(dAtA[iNdEx-1]) << 24
+			m.DutyCycle = float32(math.Float32frombits(v))
+		case 14:
+			if wireType != 5 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Utilization", wireType)
+			}
+			var v uint32
+			if (iNdEx + 4) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += 4
+			v = uint32(dAtA[iNdEx-4])
+			v |= uint32(dAtA[iNdEx-3]) << 8
+			v |= uint32(dAtA[iNdEx-2]) << 16
+			v |= uint32(dAtA[iNdEx-1]) << 24
+			m.Utilization = float32(math.Float32frombits(v))
+		default:
+			iNdEx = preIndex
+			skippy, err := skipRouter(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
+				return ErrInvalidLengthRouter
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func (m *GatewayStatusRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -3757,63 +4410,73 @@ func init() {
 }
 
 var fileDescriptorRouter = []byte{
-	// 918 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x56, 0xcd, 0x6e, 0xdb, 0x46,
-	0x10, 0x0e, 0x1d, 0x54, 0xb6, 0xc6, 0x92, 0x2d, 0xaf, 0x2d, 0x9b, 0x51, 0x62, 0xd9, 0xe0, 0xa1,
-	0x35, 0x9a, 0x86, 0xaa, 0x55, 0x04, 0x45, 0x7b, 0x28, 0x6a, 0xc7, 0x46, 0x10, 0x20, 0x0a, 0x0a,
-	0xda, 0xb9, 0xf4, 0x22, 0xac, 0xa8, 0x09, 0x4d, 0x58, 0xe2, 0xb2, 0xdc, 0xa5, 0x1c, 0xdd, 0xfa,
-	0x08, 0xe9, 0x03, 0xf4, 0xde, 0xbe, 0x49, 0x8f, 0x3d, 0x16, 0x3d, 0x14, 0x89, 0x7a, 0xef, 0xb1,
-	0xb7, 0x02, 0x05, 0xf7, 0x87, 0x94, 0x64, 0xbb, 0x75, 0x7f, 0x72, 0x11, 0xb9, 0x33, 0xdf, 0x7c,
-	0x9e, 0xf9, 0x76, 0x86, 0x63, 0xf8, 0x38, 0x08, 0xc5, 0x59, 0xda, 0x73, 0x7d, 0x36, 0x6c, 0x9d,
-	0x9e, 0xe1, 0xe9, 0x59, 0x18, 0x05, 0xfc, 0x19, 0x8a, 0x0b, 0x96, 0x9c, 0xb7, 0x84, 0x88, 0x5a,
-	0x34, 0x0e, 0x5b, 0x09, 0x4b, 0x05, 0x26, 0xfa, 0xe1, 0xc6, 0x09, 0x13, 0x8c, 0x94, 0xd4, 0xa9,
-	0x71, 0x37, 0x60, 0x2c, 0x18, 0x60, 0x4b, 0x5a, 0x7b, 0xe9, 0x8b, 0x16, 0x0e, 0x63, 0x31, 0x56,
-	0xa0, 0xc6, 0x83, 0x29, 0xf6, 0x80, 0x05, 0xac, 0x40, 0x65, 0x27, 0x79, 0x90, 0x6f, 0x1a, 0xbe,
-	0x66, 0xfe, 0x20, 0x8d, 0x43, 0x6d, 0xda, 0x31, 0x26, 0x79, 0xf4, 0xd9, 0x20, 0x7f, 0xd1, 0x80,
-	0x6d, 0x03, 0x08, 0xa8, 0xc0, 0x0b, 0x3a, 0x36, 0x4f, 0xed, 0xbe, 0x63, 0xdc, 0x22, 0xa1, 0x3e,
-	0xaa, 0x5f, 0xe5, 0x72, 0x08, 0xd4, 0x4e, 0xd2, 0x1e, 0xf7, 0x93, 0xb0, 0x87, 0x1e, 0x7e, 0x95,
-	0x22, 0x17, 0xce, 0x1f, 0x16, 0x54, 0x9f, 0xc7, 0x83, 0x30, 0x3a, 0xef, 0x20, 0xe7, 0x34, 0x40,
-	0x62, 0xc3, 0x62, 0x4c, 0xc7, 0x03, 0x46, 0xfb, 0xb6, 0xb5, 0x6b, 0xed, 0x55, 0x3c, 0x73, 0x24,
-	0xf7, 0x61, 0x71, 0xa8, 0x40, 0xf6, 0xc2, 0xae, 0xb5, 0xb7, 0xdc, 0x5e, 0x73, 0xf3, 0xdc, 0x74,
-	0xb4, 0x67, 0x10, 0xe4, 0x00, 0xd6, 0x8c, 0xb3, 0x3b, 0x44, 0x41, 0xfb, 0x54, 0x50, 0x7b, 0x59,
-	0x86, 0x6d, 0x14, 0x61, 0xde, 0xcb, 0x8e, 0xf6, 0x79, 0x35, 0x63, 0x34, 0x16, 0xf2, 0x19, 0xd4,
-	0x74, 0x6d, 0x05, 0x43, 0x45, 0x32, 0xac, 0xbb, 0xa6, 0xe8, 0x29, 0x82, 0x55, 0x6d, 0xcb, 0xe3,
-	0x1d, 0x78, 0x47, 0x96, 0x6f, 0xd7, 0x65, 0x50, 0xc5, 0x55, 0x62, 0x9c, 0x66, 0xbf, 0x9e, 0x72,
-	0x39, 0xdf, 0x2e, 0xc0, 0xea, 0x11, 0xbb, 0x88, 0xde, 0x82, 0x02, 0x5f, 0xc0, 0x66, 0xae, 0x80,
-	0xcf, 0xa2, 0x17, 0x61, 0x90, 0x26, 0x54, 0x84, 0x2c, 0xd2, 0x32, 0xdc, 0x29, 0x62, 0x4f, 0x5f,
-	0x3e, 0x9a, 0x06, 0x78, 0x75, 0xe3, 0x99, 0x31, 0x93, 0x0e, 0xd4, 0x8d, 0x20, 0xb3, 0x84, 0x4a,
-	0x15, 0x3b, 0x57, 0x65, 0x9e, 0x6f, 0x43, 0x3b, 0x66, 0xe9, 0x6e, 0xa2, 0xcf, 0xef, 0xb7, 0x61,
-	0xeb, 0x08, 0x47, 0xa1, 0x8f, 0x07, 0xbe, 0x08, 0x47, 0x8a, 0x4e, 0xf5, 0xce, 0xff, 0xa5, 0xd3,
-	0x33, 0x58, 0xec, 0xe3, 0xa8, 0x8b, 0x69, 0x28, 0x85, 0xa9, 0x1c, 0x3e, 0xfc, 0xf9, 0x97, 0x9d,
-	0xfd, 0xbf, 0x1b, 0x53, 0x9f, 0x25, 0xd8, 0x12, 0xe3, 0x18, 0xb9, 0x7b, 0x84, 0xa3, 0xe3, 0xe7,
-	0x4f, 0xbc, 0x52, 0x1f, 0x47, 0xc7, 0x69, 0x98, 0xf1, 0xd1, 0x38, 0x96, 0x7c, 0x95, 0x7f, 0xc5,
-	0x77, 0x10, 0xc7, 0x92, 0x8f, 0xc6, 0x71, 0xc6, 0x77, 0x65, 0x27, 0xd7, 0xff, 0x73, 0x27, 0x6f,
-	0xfe, 0x83, 0x4e, 0xee, 0xc0, 0x3a, 0xcd, 0xe5, 0x2f, 0x28, 0xb6, 0x24, 0xc5, 0xbd, 0x22, 0x89,
-	0xe2, 0x8e, 0x72, 0x2e, 0x42, 0x2f, 0xd9, 0x8a, 0x8b, 0xdf, 0xb9, 0xfe, 0xe2, 0x1b, 0x60, 0x5f,
-	0xbe, 0x77, 0x1e, 0xb3, 0x88, 0xa3, 0xf3, 0x10, 0x36, 0x1e, 0xab, 0x0c, 0x4f, 0x04, 0x15, 0x29,
-	0x37, 0x0d, 0xb1, 0x0d, 0x60, 0xca, 0x0c, 0x55, 0x4f, 0x94, 0xbd, 0xb2, 0xb6, 0x3c, 0xe9, 0x3b,
-	0xdf, 0x5b, 0x50, 0x9f, 0x8b, 0x53, 0x84, 0xe4, 0x2e, 0x94, 0x07, 0x94, 0x8b, 0x2e, 0x47, 0x8c,
-	0x64, 0xdc, 0x6d, 0x6f, 0x29, 0x33, 0x9c, 0x20, 0x46, 0xe4, 0x3d, 0x28, 0x71, 0x09, 0xd7, 0xbd,
-	0xb4, 0x9a, 0x4b, 0xa6, 0x59, 0xb4, 0x9b, 0x38, 0x50, 0x4a, 0xe5, 0xa7, 0x4c, 0x0f, 0x18, 0xb8,
-	0xd9, 0x67, 0xd5, 0xa3, 0x02, 0xb9, 0xa7, 0x3d, 0xe4, 0x5d, 0x58, 0xea, 0xeb, 0x71, 0xd7, 0x53,
-	0x33, 0x8d, 0xca, 0x7d, 0xce, 0x2a, 0x54, 0x67, 0x6a, 0x73, 0x7e, 0x5b, 0x80, 0x92, 0xb2, 0x90,
-	0x3d, 0x28, 0xf1, 0x31, 0x17, 0x38, 0x94, 0xa9, 0x2e, 0xb7, 0x6b, 0x92, 0xe1, 0x44, 0x9a, 0x32,
-	0x48, 0x96, 0x91, 0x3c, 0x90, 0x7d, 0x28, 0xfb, 0x6c, 0x18, 0xb3, 0x08, 0x23, 0xa1, 0xb3, 0x5f,
-	0x97, 0xe0, 0x47, 0xc6, 0xaa, 0xf0, 0x05, 0x8a, 0xec, 0xc3, 0x8a, 0xd1, 0x50, 0x57, 0x7d, 0xb9,
-	0x98, 0x6a, 0x30, 0xad, 0xe2, 0x54, 0xdd, 0x95, 0x1b, 0xd5, 0x5d, 0xbd, 0xbe, 0x6e, 0xf2, 0x01,
-	0x2c, 0x17, 0x0d, 0xc3, 0xed, 0x95, 0x4b, 0xd0, 0x69, 0x37, 0x79, 0x00, 0xc4, 0x67, 0x51, 0x84,
-	0xbe, 0xc0, 0x7e, 0x57, 0x27, 0xc5, 0xe5, 0x6c, 0x54, 0xbd, 0xb5, 0xdc, 0xa3, 0xef, 0x9c, 0x93,
-	0xfb, 0x50, 0x18, 0xbb, 0xbd, 0x84, 0x9d, 0x63, 0xc2, 0xe5, 0x1c, 0x54, 0xbd, 0x5a, 0xee, 0x38,
-	0x54, 0xf6, 0xf6, 0xab, 0x05, 0x28, 0x79, 0x72, 0xe5, 0x92, 0x4f, 0xa1, 0x3a, 0xd3, 0x37, 0x64,
-	0xbe, 0x05, 0x1a, 0x9b, 0xae, 0xda, 0xca, 0xae, 0xd9, 0xb7, 0xee, 0x71, 0xb6, 0x95, 0xf7, 0x2c,
-	0xf2, 0x09, 0x94, 0xd4, 0x7e, 0x23, 0x75, 0x57, 0xef, 0xf3, 0x99, 0x7d, 0xf7, 0x17, 0xa1, 0x9f,
-	0x43, 0x39, 0xdf, 0x97, 0xc4, 0x36, 0xd1, 0xf3, 0x2b, 0xb4, 0xb1, 0x65, 0x3c, 0x73, 0x7b, 0xe4,
-	0x43, 0x8b, 0x74, 0x60, 0x49, 0x8f, 0x0f, 0x92, 0x9d, 0x1c, 0x76, 0xf5, 0xe7, 0xb4, 0xb1, 0x7b,
-	0x3d, 0x40, 0x8d, 0x49, 0xfb, 0x1b, 0x0b, 0xaa, 0x4a, 0x92, 0x0e, 0x8d, 0x68, 0x80, 0x09, 0x79,
-	0x3a, 0xaf, 0xcc, 0x3d, 0x43, 0x72, 0xd5, 0x80, 0x36, 0xb6, 0xaf, 0xf1, 0xea, 0x31, 0x6c, 0x43,
-	0xf9, 0x31, 0x0a, 0xcd, 0x94, 0xcb, 0x35, 0x4b, 0xb1, 0x32, 0x6b, 0x3e, 0x7c, 0xfa, 0xd3, 0x9b,
-	0xe6, 0xad, 0xd7, 0x6f, 0x9a, 0xd6, 0xd7, 0x93, 0xa6, 0xf5, 0xdd, 0xa4, 0x69, 0xfd, 0x30, 0x69,
-	0x5a, 0x3f, 0x4e, 0x9a, 0xd6, 0xeb, 0x49, 0xd3, 0x7a, 0xf5, 0x6b, 0xf3, 0xd6, 0x97, 0xef, 0xdf,
-	0xfc, 0x3f, 0xae, 0x5e, 0x49, 0x5e, 0xc2, 0x47, 0x7f, 0x06, 0x00, 0x00, 0xff, 0xff, 0x38, 0x75,
-	0x61, 0xf1, 0xa6, 0x09, 0x00, 0x00,
+	// 1083 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x56, 0x4d, 0x6f, 0x23, 0x45,
+	0x13, 0xce, 0x24, 0xef, 0xeb, 0xc4, 0x15, 0x3b, 0x89, 0x3b, 0x71, 0xe2, 0xf5, 0x26, 0xe3, 0x68,
+	0x0e, 0x10, 0xb1, 0xac, 0x4d, 0x82, 0x56, 0x08, 0x0e, 0x40, 0xbe, 0x14, 0xad, 0xb4, 0x5e, 0xd0,
+	0x24, 0x7b, 0xe1, 0x62, 0xb5, 0xc7, 0x9d, 0x49, 0x2b, 0xf6, 0xf4, 0x30, 0xdd, 0x93, 0xac, 0x39,
+	0xf1, 0x13, 0xe0, 0x80, 0xc4, 0x85, 0xfb, 0xf2, 0x4f, 0xf6, 0xc8, 0x11, 0x71, 0x58, 0x76, 0x03,
+	0x67, 0x8e, 0xdc, 0x90, 0xd0, 0xf4, 0xc7, 0x8c, 0xc7, 0x89, 0x21, 0x7c, 0x5d, 0x6c, 0xf7, 0xf3,
+	0x54, 0x3d, 0xae, 0xaa, 0xae, 0xae, 0x6e, 0x78, 0xc7, 0xa7, 0xe2, 0x2c, 0xee, 0x36, 0x3d, 0x36,
+	0x68, 0x9d, 0x9c, 0x91, 0x93, 0x33, 0x1a, 0xf8, 0xfc, 0x31, 0x11, 0x97, 0x2c, 0x3a, 0x6f, 0x09,
+	0x11, 0xb4, 0x70, 0x48, 0x5b, 0x11, 0x8b, 0x05, 0x89, 0xf4, 0x57, 0x33, 0x8c, 0x98, 0x60, 0xa8,
+	0xa0, 0x56, 0x75, 0xdb, 0x67, 0xcc, 0xef, 0x93, 0x96, 0x44, 0xbb, 0xf1, 0x69, 0xab, 0x17, 0x47,
+	0x58, 0x50, 0x16, 0x28, 0xbb, 0xfa, 0xdd, 0x71, 0x9e, 0x0c, 0x42, 0x31, 0xd4, 0xe4, 0xfd, 0x91,
+	0x7f, 0xf7, 0x99, 0xcf, 0x32, 0xab, 0x64, 0x25, 0x17, 0xf2, 0x97, 0x36, 0xaf, 0x98, 0x80, 0x70,
+	0x48, 0x35, 0xd4, 0x30, 0x90, 0x5c, 0x7a, 0xac, 0x9f, 0xfe, 0xd0, 0x06, 0x1b, 0xc6, 0xc0, 0xc7,
+	0x82, 0x5c, 0xe2, 0xa1, 0xf9, 0xd6, 0xf4, 0x1d, 0x43, 0x8b, 0x08, 0x7b, 0x44, 0x7d, 0x2a, 0xca,
+	0x41, 0xb0, 0x74, 0x1c, 0x77, 0xb9, 0x17, 0xd1, 0x2e, 0x71, 0xc9, 0xa7, 0x31, 0xe1, 0xc2, 0xf9,
+	0xcd, 0x82, 0xf2, 0x93, 0xb0, 0x4f, 0x83, 0xf3, 0x36, 0xe1, 0x1c, 0xfb, 0x04, 0xd5, 0x60, 0x36,
+	0xc4, 0xc3, 0x3e, 0xc3, 0xbd, 0x9a, 0xb5, 0x69, 0x6d, 0x95, 0x5c, 0xb3, 0x44, 0xf7, 0x60, 0x76,
+	0xa0, 0x8c, 0x6a, 0xd3, 0x9b, 0xd6, 0xd6, 0xfc, 0x4e, 0xa5, 0x99, 0xc6, 0xa6, 0xbd, 0x5d, 0x63,
+	0x81, 0x76, 0xa1, 0x62, 0xc8, 0xce, 0x80, 0x08, 0xdc, 0xc3, 0x02, 0xd7, 0xe6, 0xa5, 0xdb, 0x4a,
+	0xe6, 0xe6, 0x3e, 0x6d, 0x6b, 0xce, 0x5d, 0x32, 0xa0, 0x41, 0xd0, 0xfb, 0xb0, 0xa4, 0x73, 0xcb,
+	0x14, 0x4a, 0x52, 0x61, 0xb9, 0x69, 0x92, 0x1e, 0x11, 0x58, 0xd4, 0x58, 0xea, 0xef, 0xc0, 0xff,
+	0x65, 0xfa, 0xb5, 0xaa, 0x74, 0x2a, 0x35, 0x55, 0x31, 0x4e, 0x92, 0x4f, 0x57, 0x51, 0xce, 0x37,
+	0xd3, 0xb0, 0x78, 0xc0, 0x2e, 0x83, 0xff, 0xa0, 0x02, 0x1f, 0xc3, 0x6a, 0x5a, 0x01, 0x8f, 0x05,
+	0xa7, 0xd4, 0xd7, 0x8d, 0xa4, 0xcb, 0x70, 0x27, 0xf3, 0x3d, 0x79, 0xba, 0x3f, 0x6a, 0xe0, 0x56,
+	0x0d, 0x93, 0x83, 0x51, 0x1b, 0xaa, 0xa6, 0x20, 0x79, 0x41, 0x55, 0x95, 0x5a, 0x5a, 0x95, 0x71,
+	0xbd, 0x15, 0x4d, 0xe4, 0xe5, 0x6e, 0x53, 0x9f, 0x5f, 0x67, 0x60, 0xed, 0x80, 0x5c, 0x50, 0x8f,
+	0xec, 0x7a, 0x82, 0x5e, 0x28, 0x39, 0xd5, 0x3b, 0xff, 0x56, 0x9d, 0x1e, 0xc3, 0x6c, 0x8f, 0x5c,
+	0x74, 0x48, 0x4c, 0x65, 0x61, 0x4a, 0x7b, 0x0f, 0x7e, 0x78, 0xd1, 0xd8, 0xfe, 0xb3, 0x63, 0xec,
+	0xb1, 0x88, 0xb4, 0xc4, 0x30, 0x24, 0xbc, 0x79, 0x40, 0x2e, 0x0e, 0x9f, 0x3c, 0x74, 0x0b, 0x3d,
+	0x72, 0x71, 0x18, 0xd3, 0x44, 0x0f, 0x87, 0xa1, 0xd4, 0x2b, 0xfd, 0x2d, 0xbd, 0xdd, 0x30, 0x94,
+	0x7a, 0x38, 0x0c, 0x13, 0xbd, 0x1b, 0x3b, 0xb9, 0xfa, 0x8f, 0x3b, 0x79, 0xf5, 0x2f, 0x74, 0x72,
+	0x1b, 0x96, 0x71, 0x5a, 0xfe, 0x4c, 0x62, 0x4d, 0x4a, 0xac, 0x67, 0x41, 0x64, 0x7b, 0x94, 0x6a,
+	0x21, 0x7c, 0x0d, 0xcb, 0x36, 0xbe, 0x31, 0x79, 0xe3, 0xeb, 0x50, 0xbb, 0xbe, 0xef, 0x3c, 0x64,
+	0x01, 0x27, 0xce, 0x57, 0x16, 0x54, 0xcd, 0xa1, 0xf9, 0x28, 0x1c, 0x6d, 0x89, 0x0d, 0x00, 0x93,
+	0x28, 0x55, 0x5d, 0x51, 0x74, 0x8b, 0x1a, 0x79, 0xd8, 0x43, 0xeb, 0x50, 0x3c, 0x8d, 0x12, 0xd3,
+	0xc0, 0x1b, 0xca, 0xce, 0xf8, 0x9f, 0x9b, 0x01, 0xe8, 0x03, 0x98, 0x33, 0xb3, 0xb6, 0x36, 0xa3,
+	0x8f, 0x88, 0x1a, 0xb6, 0x4d, 0x33, 0x46, 0x9b, 0x07, 0xda, 0x60, 0x6f, 0xee, 0xf9, 0x8b, 0xc6,
+	0xd4, 0xd7, 0x3f, 0x36, 0x2c, 0x37, 0x75, 0x72, 0x9e, 0x59, 0xb0, 0x3a, 0x1e, 0x97, 0x0a, 0x19,
+	0xd9, 0x00, 0xb4, 0x47, 0x02, 0x41, 0x4f, 0x29, 0x89, 0x74, 0x60, 0x23, 0x08, 0xba, 0x0f, 0x28,
+	0x64, 0x9c, 0xd3, 0x6e, 0x9f, 0xc8, 0xb3, 0xd5, 0xa7, 0x9e, 0xe0, 0xb2, 0x7f, 0xca, 0x6e, 0xc5,
+	0x30, 0xfb, 0x86, 0x48, 0xf2, 0xec, 0xc5, 0x62, 0xd8, 0xf1, 0x86, 0x5e, 0x9f, 0xd4, 0xca, 0x9b,
+	0xd6, 0xd6, 0xb4, 0x5b, 0x4c, 0x90, 0xfd, 0x04, 0x40, 0x9b, 0x30, 0x1f, 0x0b, 0xda, 0xa7, 0x9f,
+	0xa9, 0x64, 0x16, 0x24, 0x3f, 0x0a, 0x39, 0x0f, 0x60, 0xe5, 0x48, 0x95, 0xe5, 0x58, 0x60, 0x11,
+	0xf3, 0xdb, 0x15, 0xd0, 0xf9, 0xd6, 0x82, 0xea, 0x98, 0x9f, 0x4e, 0xf0, 0x2e, 0x14, 0xfb, 0x98,
+	0x8b, 0x0e, 0x27, 0x24, 0x90, 0x7e, 0x33, 0xee, 0x5c, 0x02, 0x1c, 0x13, 0x12, 0xa0, 0xd7, 0xa1,
+	0xc0, 0xa5, 0xb9, 0x3e, 0x8e, 0x8b, 0x69, 0xd7, 0x69, 0x15, 0x4d, 0x23, 0x07, 0x0a, 0xb1, 0xbc,
+	0x0d, 0xf4, 0x8c, 0x82, 0x66, 0x72, 0x33, 0xb9, 0x58, 0x10, 0xee, 0x6a, 0x06, 0xbd, 0x06, 0x73,
+	0x3d, 0x5d, 0x64, 0x3d, 0x78, 0x46, 0xad, 0x52, 0xce, 0x59, 0x84, 0x72, 0x2e, 0x37, 0xe7, 0x97,
+	0x69, 0x28, 0x28, 0x04, 0x6d, 0x41, 0x81, 0x0f, 0xb9, 0x20, 0x03, 0x19, 0xea, 0xfc, 0xce, 0x92,
+	0x54, 0x38, 0x96, 0x50, 0x62, 0x92, 0x44, 0x24, 0x17, 0x68, 0x1b, 0x8a, 0x1e, 0x1b, 0x84, 0x2c,
+	0x20, 0x81, 0xd0, 0xd1, 0x2f, 0x4b, 0xe3, 0x7d, 0x83, 0x2a, 0xfb, 0xcc, 0x0a, 0x6d, 0xc3, 0x82,
+	0xa9, 0xa1, 0xce, 0xfa, 0x7a, 0x32, 0x65, 0x7f, 0xb4, 0x8a, 0x23, 0x79, 0x97, 0x6e, 0x95, 0x77,
+	0x79, 0x72, 0xde, 0xe8, 0x4d, 0x98, 0xcf, 0xce, 0x1c, 0x97, 0x9b, 0x9f, 0x37, 0x1d, 0xa5, 0x93,
+	0xc6, 0xf3, 0x58, 0x10, 0x10, 0x4f, 0x90, 0x5e, 0x47, 0x07, 0xc5, 0xe5, 0x78, 0x29, 0xbb, 0x95,
+	0x94, 0xd1, 0x7b, 0xce, 0xd1, 0x3d, 0xc8, 0xc0, 0x4e, 0x37, 0x62, 0xe7, 0x24, 0xe2, 0x72, 0x94,
+	0x94, 0xdd, 0xa5, 0x94, 0xd8, 0x53, 0xf8, 0xce, 0xcf, 0xd3, 0x50, 0x70, 0xe5, 0xab, 0x06, 0xbd,
+	0x07, 0xe5, 0x5c, 0xdf, 0xa0, 0xf1, 0x16, 0xa8, 0xaf, 0x5e, 0x3b, 0x6b, 0x87, 0xc9, 0xc3, 0x66,
+	0xcb, 0x42, 0xef, 0x42, 0x41, 0x3d, 0x11, 0x50, 0xb5, 0xa9, 0x9f, 0x4c, 0xb9, 0x27, 0xc3, 0x1f,
+	0xb8, 0x7e, 0x08, 0xc5, 0xf4, 0xc9, 0x81, 0x6a, 0xc6, 0x7b, 0xfc, 0x15, 0x52, 0x5f, 0x33, 0xcc,
+	0xd8, 0x55, 0xfc, 0x96, 0x85, 0xda, 0x30, 0xa7, 0x27, 0x10, 0x41, 0x8d, 0xd4, 0xec, 0xe6, 0x1b,
+	0xa9, 0xbe, 0x39, 0xd9, 0x40, 0x1f, 0x13, 0x17, 0x2a, 0x47, 0x44, 0xe4, 0x87, 0x04, 0xda, 0x18,
+	0xff, 0xfb, 0xdc, 0x50, 0xab, 0xdb, 0x93, 0x68, 0xa5, 0xb9, 0xf3, 0xa5, 0x05, 0x65, 0x55, 0xe6,
+	0x36, 0x0e, 0xb0, 0x4f, 0x22, 0xf4, 0x68, 0xbc, 0xda, 0xeb, 0x46, 0xe2, 0xa6, 0x43, 0x5f, 0xdf,
+	0x98, 0xc0, 0xea, 0x98, 0x77, 0xa0, 0x78, 0x44, 0x84, 0x56, 0x4a, 0xb7, 0x20, 0x2f, 0xb1, 0x90,
+	0x87, 0xf7, 0x1e, 0x7d, 0xff, 0xca, 0x9e, 0x7a, 0xf9, 0xca, 0xb6, 0x3e, 0xbf, 0xb2, 0xad, 0x67,
+	0x57, 0xb6, 0xf5, 0xfc, 0xca, 0xb6, 0xbe, 0xbb, 0xb2, 0xad, 0x97, 0x57, 0xb6, 0xf5, 0xc5, 0x4f,
+	0xf6, 0xd4, 0x27, 0x6f, 0xdc, 0xfe, 0xa1, 0xdc, 0x2d, 0xc8, 0x8d, 0x7d, 0xfb, 0xf7, 0x00, 0x00,
+	0x00, 0xff, 0xff, 0x9a, 0x3d, 0x9b, 0xd5, 0x5d, 0x0b, 0x00, 0x00,
 }

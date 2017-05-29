@@ -55,3 +55,11 @@ func (m *DeviceActivationRequest) Validate() error {
 	}
 	return nil
 }
+
+// Validate implements the api.Validator interface
+func (m *DownlinkOptionRequest) Validate() error {
+	if err := api.NotEmptyAndValidID(m.GatewayId, "GatewayId"); err != nil {
+		return err
+	}
+	return nil
+}

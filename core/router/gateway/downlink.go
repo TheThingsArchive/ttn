@@ -88,6 +88,39 @@ func (g *Gateway) GetDownlinkOptions(uplink *pb_router.UplinkMessage) ([]*pb_bro
 	return options, err
 }
 
+// GetDownlinkOption gets a new downlink option
+func (g *Gateway) GetDownlinkOption(frequency uint64, duration time.Duration) (*pb_router.DownlinkOptionResponse, error) {
+	g.mu.RLock()
+	if g.frequencyPlan == nil {
+		g.mu.RUnlock()
+		return nil, errors.New("gateway: frequency plan unknown")
+	}
+	if g.schedule == nil || !g.schedule.IsActive() {
+		g.mu.RUnlock()
+		return nil, errors.New("gateway: schedule inactive")
+	}
+	g.mu.RUnlock()
+
+	optionID, conflicts, err := g.schedule.GetOption(uint32(g.schedule.getTimestamp(time.Now().Add(time.Second))), uint32(duration/1000))
+	if err != nil {
+		return nil, err
+	}
+	utilizationNS, _ := g.uplink.Get(time.Now(), 10*time.Minute)
+
+	option := &pb_router.DownlinkOptionResponse{
+		Identifier:        optionID,
+		PossibleConflicts: uint32(conflicts),
+		DutyCycle:         float32(g.frequencyPlan.Limits.Progress(frequency)),
+		Utilization:       float32(utilizationNS) / float32(10*time.Minute),
+	}
+
+	if option.DutyCycle > 1.0 {
+		return nil, errors.New("gateway: over duty cycle")
+	}
+
+	return option, nil
+}
+
 func (g *Gateway) buildDownlinkOptions(uplink *pb_router.UplinkMessage) ([]*pb_broker.DownlinkOption, error) {
 	lorawan := uplink.GetProtocolMetadata().GetLorawan()
 	if lorawan == nil {

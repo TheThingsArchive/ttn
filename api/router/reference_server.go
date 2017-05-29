@@ -230,3 +230,8 @@ func (s *ReferenceRouterServer) Subscribe(req *SubscribeRequest, stream Router_S
 func (s *ReferenceRouterServer) Activate(ctx context.Context, req *DeviceActivationRequest) (*DeviceActivationResponse, error) {
 	return nil, grpc.Errorf(codes.Unimplemented, "Not implemented")
 }
+
+// GetDownlinkOption RPC
+func (s *ReferenceRouterServer) GetDownlinkOption(context.Context, *DownlinkOptionRequest) (*DownlinkOptionResponse, error) {
+	return nil, grpc.Errorf(codes.Unimplemented, "Not implemented")
+}

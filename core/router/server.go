@@ -139,6 +139,17 @@ func (r *routerRPC) Activate(ctx context.Context, req *pb.DeviceActivationReques
 	return r.router.HandleActivation(gateway.ID, req)
 }
 
+func (r *routerRPC) GetDownlinkOption(ctx context.Context, req *pb.DownlinkOptionRequest) (*pb.DownlinkOptionResponse, error) {
+	_, err := r.router.ValidateNetworkContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errors.Wrap(err, "Invalid Request")
+	}
+	return r.router.getGateway(req.GatewayId).GetDownlinkOption(req.Frequency, req.Duration)
+}
+
 // RegisterRPC registers this router as a RouterServer (github.com/TheThingsNetwork/ttn/api/router)
 func (r *router) RegisterRPC(s *grpc.Server) {
 	server := &routerRPC{router: r}

@@ -19,6 +19,7 @@ func TestDownlink(t *testing.T) {
 	a := New(t)
 
 	gtw := NewGateway(GetLogger(t, "TestDownlink"), "test", nil)
+	gtw.schedule.Sync(0)
 
 	now := time.Now()
 	newUplink := func() *pb_router.UplinkMessage {
@@ -37,6 +38,11 @@ func TestDownlink(t *testing.T) {
 		a.So(options, ShouldBeEmpty)
 	}
 
+	{
+		_, err := gtw.GetDownlinkOption(869525000, time.Second)
+		a.So(err, ShouldNotBeNil)
+	}
+
 	gtw.setFrequencyPlan("EU_863_870")
 	gtw.frequencyPlan.RX1Delays = []time.Duration{
 		time.Second,
@@ -50,6 +56,11 @@ func TestDownlink(t *testing.T) {
 		a.So(options, ShouldBeEmpty)
 	}
 
+	{
+		_, err := gtw.GetDownlinkOption(869525000, time.Second)
+		a.So(err, ShouldNotBeNil)
+	}
+
 	gtw.schedule.Subscribe()
 	defer gtw.schedule.Stop()
 
@@ -58,6 +69,8 @@ func TestDownlink(t *testing.T) {
 		options, err := gtw.GetDownlinkOptions(uplink)
 		a.So(err, ShouldBeNil)
 		a.So(options, ShouldHaveLength, 2)
+		a.So(options[0].GetGatewayConfig().Timestamp, ShouldEqual, 2000000) // RX2
+		a.So(options[1].GetGatewayConfig().Timestamp, ShouldEqual, 6000000) // RX2
 		a.So(uplink.Trace, ShouldNotBeNil)
 	}
 
@@ -71,8 +84,14 @@ func TestDownlink(t *testing.T) {
 		a.So(options, ShouldHaveLength, 4)
 		a.So(options[0].GetGatewayConfig().Timestamp, ShouldEqual, 2000000) // RX2
 		a.So(options[1].GetGatewayConfig().Timestamp, ShouldEqual, 6000000) // RX2
-		a.So(options[2].GetGatewayConfig().Timestamp, ShouldEqual, 1000000) // RX2
-		a.So(options[3].GetGatewayConfig().Timestamp, ShouldEqual, 5000000) // RX2
+		a.So(options[2].GetGatewayConfig().Timestamp, ShouldEqual, 1000000) // RX1
+		a.So(options[3].GetGatewayConfig().Timestamp, ShouldEqual, 5000000) // RX1
+	}
+
+	{
+		option, err := gtw.GetDownlinkOption(869525000, 500*time.Millisecond)
+		a.So(err, ShouldBeNil)
+		a.So(option.PossibleConflicts, ShouldEqual, 1)
 	}
 }
 
