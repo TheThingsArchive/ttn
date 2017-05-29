@@ -72,9 +72,8 @@ func selectBestDownlink(options []downlinkOption) *pb.DownlinkOption {
 	return scored[0].option
 }
 
-func (b *broker) HandleDownlink(downlink *pb.DownlinkMessage) error {
+func (b *broker) HandleDownlink(downlink *pb.DownlinkMessage) (err error) {
 	ctx := b.Ctx.WithFields(fields.Get(downlink))
-	var err error
 	start := time.Now()
 	defer func() {
 		if err != nil {

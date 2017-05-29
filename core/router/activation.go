@@ -60,6 +60,11 @@ func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivat
 		uplink.Trace = uplink.Trace.WithEvent(trace.BuildDownlinkEvent, "options", len(downlinkOptions))
 		ctx = ctx.WithField("DownlinkOptions", len(downlinkOptions))
 	}
+	if r.Component != nil && r.Component.Identity != nil {
+		for _, opt := range downlinkOptions {
+			opt.Identifier = fmt.Sprintf("%s:%s", r.Component.Identity.Id, opt.Identifier)
+		}
+	}
 
 	activation.Trace = uplink.Trace
 
