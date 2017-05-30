@@ -13,7 +13,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 )
 
-//eventSelect select the appropriate event for device is updated/created and check if the event is possible
+// eventSelect select the appropriate event for device is updated/created and check if the event is possible
 // * If the event is an update and the AppEUI or DevEUI is changed, we should remove the device from the NetworkServer and re-add it later
 func (h *handlerManager) eventSelect(ctx context.Context, dev *device.Device, lorawan *pb_lorawan.Device, appId string) (evt types.EventType, err error) {
 	if dev != nil {
@@ -42,7 +42,7 @@ func (h *handlerManager) eventSelect(ctx context.Context, dev *device.Device, lo
 	return evt, nil
 }
 
-//updateDevBrk Update the device in the Broker (NetworkServer)
+// updateDevBrk Update the device in the Broker (NetworkServer)
 func (h *handlerManager) updateDevBrk(ctx context.Context, token string, dev *device.Device, lorawan *pb_lorawan.Device) error {
 	nsUpdated := dev.GetLoRaWAN()
 	nsUpdated.FCntUp = lorawan.FCntUp

@@ -5,11 +5,10 @@ package device
 
 import (
 	"reflect"
+	"sort"
 	"time"
 
-	"sort"
-
-	pb "github.com/TheThingsNetwork/ttn/api/handler"
+	pb_handler "github.com/TheThingsNetwork/ttn/api/handler"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/fatih/structs"
@@ -58,7 +57,7 @@ type Device struct {
 	CreatedAt time.Time `redis:"created_at"`
 	UpdatedAt time.Time `redis:"updated_at"`
 
-	Builtin []*pb.Attribute `redis:"builtin"`
+	Attributes []*pb_handler.Attribute `redis:"attributesKeys"`
 }
 
 // StartUpdate stores the state of the device
@@ -86,14 +85,14 @@ func (d *Device) DBVersion() string {
 
 // ChangedFields returns the names of the changed fields since the last call to StartUpdate
 func (d Device) ChangedFields() (changed []string) {
-	new := structs.New(d)
-	fields := new.Names()
+	n := structs.New(d)
+	fields := n.Names()
 	if d.old == nil {
 		return fields
 	}
 	old := structs.New(*d.old)
 
-	for _, field := range new.Fields() {
+	for _, field := range n.Fields() {
 		if !field.IsExported() || field.Name() == "old" {
 			continue
 		}
@@ -125,16 +124,16 @@ func (d Device) GetLoRaWAN() *pb_lorawan.Device {
 	return dev
 }
 
-//MapOldBuiltin transform the outdated slice to a map and return it, also return the number of free builtin
-//present in the map
-func (d *Device) MapOldBuiltin(builtinList map[string]bool) (m map[string]string, i uint8) {
+// MapOldAttributes transform the outdated slice to a map and return it, also return the number of free builtin
+// present in the map
+func (d *Device) MapOldAttributes(attributesKeys map[string]bool) (m map[string]string, i uint8) {
 
 	i = 0
 	m = nil
 	if d.old != nil {
-		m = make(map[string]string, len(d.old.Builtin))
-		for _, v := range d.old.Builtin {
-			if _, ok := builtinList[v.Key]; !ok {
+		m = make(map[string]string, len(d.old.Attributes))
+		for _, v := range d.old.Attributes {
+			if _, ok := attributesKeys[v.Key]; !ok {
 				i++
 			}
 			m[v.Key] = v.Val
@@ -143,45 +142,20 @@ func (d *Device) MapOldBuiltin(builtinList map[string]bool) (m map[string]string
 	return m, i
 }
 
-//DeleteEmptyBuiltin remove the builtin with no value from the builtin slice. If a map is provided it will delete it from
-//if they are present inside.
-//return the map with deleted builtin and the number of free builtin deleted from the map
-func (d *Device) DeleteEmptyBuiltin(builtinList map[string]bool, m map[string]string) (r map[string]string, del uint8) {
-
-	deleted := 0
-	del = 0
-	for i := range d.Builtin {
-		j := i - deleted
-		if d.Builtin[j].Val == "" {
-			if _, ok := m[d.Builtin[j].Key]; ok {
-				delete(m, d.Builtin[j].Key)
-				i++
-				if _, ok := builtinList[d.Builtin[j].Key]; !ok {
-					del++
-				}
-			}
-			d.Builtin = d.Builtin[:j+copy(d.Builtin[j:], d.Builtin[j+1:])]
-			deleted++
-		}
-	}
-	r = m
-	return r, del
-}
-
-//BuiltinFromMap take a map[string]string into an Attribute slice and replace the current attribute slice with it.
+// AttributesFromMap take a map[string]string into an Attribute slice and replace the current attribute slice with it.
 // The element in the slice are ordered alphabetically in function of the map key
-func (d *Device) BuiltinFromMap(builtin map[string]string) {
+func (d *Device) AttributesFromMap(attributeMap map[string]string) {
 
-	l := make([]*pb.Attribute, len(builtin))
-	ks := make([]string, len(builtin))
+	l := make([]*pb_handler.Attribute, len(attributeMap))
+	ks := make([]string, len(attributeMap))
 	i := 0
-	for key := range builtin {
+	for key := range attributeMap {
 		ks[i] = key
 		i++
 	}
 	sort.Strings(ks)
 	for i, key := range ks {
-		l[i] = &pb.Attribute{key, builtin[key]}
+		l[i] = &pb_handler.Attribute{key, attributeMap[key]}
 	}
-	d.Builtin = l
+	d.Attributes = l
 }

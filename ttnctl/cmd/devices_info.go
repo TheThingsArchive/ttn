@@ -4,11 +4,10 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
-
-	"encoding/json"
 
 	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
@@ -113,9 +112,9 @@ var devicesInfoCmd = &cobra.Command{
 			fmt.Printf("    Options: %s\n", strings.Join(options, ", "))
 		}
 
-		if len(dev.Builtin) != 0 {
-			builtin, _ := json.MarshalIndent(dev.Builtin, "             ", " ")
-			fmt.Printf("  Builtin: %v\n", string(builtin))
+		if len(dev.Attributes) != 0 {
+			attrs, _ := json.MarshalIndent(dev.Attributes, "             ", " ")
+			fmt.Printf("  Attributes: %v\n", string(attrs))
 		}
 	},
 }

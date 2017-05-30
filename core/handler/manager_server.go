@@ -14,7 +14,7 @@ import (
 	"github.com/TheThingsNetwork/go-utils/grpc/ttnctx"
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
-	pb "github.com/TheThingsNetwork/ttn/api/handler"
+	pb_handler "github.com/TheThingsNetwork/ttn/api/handler"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/api/ratelimit"
 	"github.com/TheThingsNetwork/ttn/core/handler/application"
@@ -73,7 +73,7 @@ func (h *handlerManager) validateTTNAuthAppContext(ctx context.Context, appID st
 	return ctx, claims, nil
 }
 
-func (h *handlerManager) GetDevice(ctx context.Context, in *pb.DeviceIdentifier) (*pb.Device, error) {
+func (h *handlerManager) GetDevice(ctx context.Context, in *pb_handler.DeviceIdentifier) (*pb_handler.Device, error) {
 	if err := in.Validate(); err != nil {
 		return nil, errors.Wrap(err, "Invalid Device Identifier")
 	}
@@ -127,7 +127,7 @@ func (h *handlerManager) GetDevice(ctx context.Context, in *pb.DeviceIdentifier)
 	return pbDev, nil
 }
 
-func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*empty.Empty, error) {
+func (h *handlerManager) SetDevice(ctx context.Context, in *pb_handler.Device) (*empty.Empty, error) {
 	if err := in.Validate(); err != nil {
 		return nil, errors.Wrap(err, "Invalid Device")
 	}
@@ -167,6 +167,13 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*empty.E
 	}
 
 	dev.FromPb(in, lorawan)
+	if lorawan.AppKey != nil {
+		if dev.AppKey != *lorawan.AppKey { // When the AppKey of an existing device is changed
+			dev.UsedAppNonces = []device.AppNonce{}
+			dev.UsedDevNonces = []device.DevNonce{}
+		}
+		dev.AppKey = *lorawan.AppKey
+	}
 	err = h.updateDevBrk(ctx, token, dev, lorawan)
 	if err != nil {
 		return nil, errors.Wrap(errors.FromGRPCError(err), "Broker did not set device")
@@ -187,7 +194,7 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*empty.E
 	return &empty.Empty{}, nil
 }
 
-func (h *handlerManager) DeleteDevice(ctx context.Context, in *pb.DeviceIdentifier) (*empty.Empty, error) {
+func (h *handlerManager) DeleteDevice(ctx context.Context, in *pb_handler.DeviceIdentifier) (*empty.Empty, error) {
 	if err := in.Validate(); err != nil {
 		return nil, errors.Wrap(err, "Invalid Device Identifier")
 	}
@@ -225,7 +232,7 @@ func (h *handlerManager) DeleteDevice(ctx context.Context, in *pb.DeviceIdentifi
 	return &empty.Empty{}, nil
 }
 
-func (h *handlerManager) GetDevicesForApplication(ctx context.Context, in *pb.ApplicationIdentifier) (*pb.DeviceList, error) {
+func (h *handlerManager) GetDevicesForApplication(ctx context.Context, in *pb_handler.ApplicationIdentifier) (*pb_handler.DeviceList, error) {
 	if err := in.Validate(); err != nil {
 		return nil, errors.Wrap(err, "Invalid Application Identifier")
 	}
@@ -252,7 +259,7 @@ func (h *handlerManager) GetDevicesForApplication(ctx context.Context, in *pb.Ap
 	if err != nil {
 		return nil, err
 	}
-	res := &pb.DeviceList{Devices: []*pb.Device{}}
+	res := &pb_handler.DeviceList{Devices: []*pb_handler.Device{}}
 	for _, dev := range devices {
 		if dev == nil {
 			continue
@@ -270,7 +277,7 @@ func (h *handlerManager) GetDevicesForApplication(ctx context.Context, in *pb.Ap
 	return res, nil
 }
 
-func (h *handlerManager) GetApplication(ctx context.Context, in *pb.ApplicationIdentifier) (*pb.Application, error) {
+func (h *handlerManager) GetApplication(ctx context.Context, in *pb_handler.ApplicationIdentifier) (*pb_handler.Application, error) {
 	if err := in.Validate(); err != nil {
 		return nil, errors.NewErrInvalidArgument("Application Identifier", err.Error())
 	}
@@ -287,7 +294,7 @@ func (h *handlerManager) GetApplication(ctx context.Context, in *pb.ApplicationI
 		return nil, err
 	}
 
-	res := &pb.Application{
+	res := &pb_handler.Application{
 		AppId:         app.AppID,
 		PayloadFormat: string(app.PayloadFormat),
 		Decoder:       app.CustomDecoder,
@@ -308,7 +315,7 @@ func (h *handlerManager) GetApplication(ctx context.Context, in *pb.ApplicationI
 	return res, nil
 }
 
-func (h *handlerManager) RegisterApplication(ctx context.Context, in *pb.ApplicationIdentifier) (*empty.Empty, error) {
+func (h *handlerManager) RegisterApplication(ctx context.Context, in *pb_handler.ApplicationIdentifier) (*empty.Empty, error) {
 	if err := in.Validate(); err != nil {
 		return nil, errors.Wrap(err, "Invalid Application Identifier")
 	}
@@ -353,7 +360,7 @@ func (h *handlerManager) RegisterApplication(ctx context.Context, in *pb.Applica
 
 }
 
-func (h *handlerManager) SetApplication(ctx context.Context, in *pb.Application) (*empty.Empty, error) {
+func (h *handlerManager) SetApplication(ctx context.Context, in *pb_handler.Application) (*empty.Empty, error) {
 	if err := in.Validate(); err != nil {
 		return nil, errors.Wrap(err, "Invalid Application")
 	}
@@ -392,7 +399,7 @@ func (h *handlerManager) SetApplication(ctx context.Context, in *pb.Application)
 	return &empty.Empty{}, nil
 }
 
-func (h *handlerManager) DeleteApplication(ctx context.Context, in *pb.ApplicationIdentifier) (*empty.Empty, error) {
+func (h *handlerManager) DeleteApplication(ctx context.Context, in *pb_handler.ApplicationIdentifier) (*empty.Empty, error) {
 	if err := in.Validate(); err != nil {
 		return nil, errors.Wrap(err, "Invalid Application Identifier")
 	}
@@ -457,7 +464,7 @@ func (h *handlerManager) GetDevAddr(ctx context.Context, in *pb_lorawan.DevAddrR
 	return res, nil
 }
 
-func (h *handlerManager) GetStatus(ctx context.Context, in *pb.StatusRequest) (*pb.Status, error) {
+func (h *handlerManager) GetStatus(ctx context.Context, in *pb_handler.StatusRequest) (*pb_handler.Status, error) {
 	if h.handler.Identity.Id != "dev" {
 		claims, err := h.handler.ValidateTTNAuthContext(ctx)
 		if err != nil {
@@ -469,7 +476,7 @@ func (h *handlerManager) GetStatus(ctx context.Context, in *pb.StatusRequest) (*
 	}
 	status := h.handler.GetStatus()
 	if status == nil {
-		return new(pb.Status), nil
+		return new(pb_handler.Status), nil
 	}
 	return status, nil
 }
@@ -483,7 +490,7 @@ func (h *handler) RegisterManager(s *grpc.Server) {
 	server.applicationRate = ratelimit.NewRegistry(5000, time.Hour)
 	server.clientRate = ratelimit.NewRegistry(5000, time.Hour)
 
-	pb.RegisterHandlerManagerServer(s, server)
-	pb.RegisterApplicationManagerServer(s, server)
+	pb_handler.RegisterHandlerManagerServer(s, server)
+	pb_handler.RegisterApplicationManagerServer(s, server)
 	pb_lorawan.RegisterDevAddrManagerServer(s, server)
 }

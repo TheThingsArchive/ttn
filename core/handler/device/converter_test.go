@@ -8,7 +8,7 @@ import (
 
 	"time"
 
-	pb "github.com/TheThingsNetwork/ttn/api/handler"
+	pb_handler "github.com/TheThingsNetwork/ttn/api/handler"
 	"github.com/TheThingsNetwork/ttn/core/types"
 
 	. "github.com/smartystreets/assertions"
@@ -21,17 +21,17 @@ var test_dev = &Device{
 	DevID:  "test-dev",
 
 	Description: "testing",
-	Latitude:    255,
-	Longitude:   255,
+	Latitude:    52.3746961,
+	Longitude:   4.8285748,
 	Altitude:    255,
 
-	Options: Options{ActivationConstraints: "activate"},
+	Options: Options{ActivationConstraints: "local"},
 
 	AppKey:        [16]byte{0x10},
 	UsedDevNonces: []DevNonce{},
 	UsedAppNonces: []AppNonce{},
 
-	DevAddr: types.DevAddr{byte('E')},
+	DevAddr: types.DevAddr{byte(0x10)},
 	NwkSKey: [16]byte{0x10},
 	AppSKey: [16]byte{0x10},
 	FCntUp:  255,
@@ -41,7 +41,7 @@ var test_dev = &Device{
 	CreatedAt: time.Now(),
 	UpdatedAt: time.Now(),
 
-	Builtin: []*pb.Attribute{{"test", "test"}},
+	Attributes: []*pb_handler.Attribute{{"test", "test"}},
 }
 
 func TestDevice_ToPb(t *testing.T) {
@@ -53,8 +53,8 @@ func TestDevice_ToPb(t *testing.T) {
 	a.So(p.Latitude, ShouldEqual, test_dev.Latitude)
 	a.So(p.Longitude, ShouldEqual, test_dev.Longitude)
 	a.So(p.Altitude, ShouldEqual, test_dev.Altitude)
-	a.So(p.Builtin[0].Val, ShouldEqual, test_dev.Builtin[0].Val)
-	a.So(p.Builtin[0].Key, ShouldEqual, test_dev.Builtin[0].Key)
+	a.So(p.Attributes[0].Val, ShouldEqual, test_dev.Attributes[0].Val)
+	a.So(p.Attributes[0].Key, ShouldEqual, test_dev.Attributes[0].Key)
 }
 
 func TestDevice_FromPb(t *testing.T) {
@@ -62,7 +62,7 @@ func TestDevice_FromPb(t *testing.T) {
 
 	p := test_dev.ToPb()
 	dev := &Device{}
-	l := p.Device.(*pb.Device_LorawanDevice)
+	l := p.Device.(*pb_handler.Device_LorawanDevice)
 	lora := l.LorawanDevice
 	dev.FromPb(p, lora)
 	a.So(dev.AppID, ShouldEqual, test_dev.AppID)
@@ -70,6 +70,6 @@ func TestDevice_FromPb(t *testing.T) {
 	a.So(dev.Latitude, ShouldEqual, test_dev.Latitude)
 	a.So(dev.Longitude, ShouldEqual, test_dev.Longitude)
 	a.So(dev.Altitude, ShouldEqual, test_dev.Altitude)
-	a.So(dev.Builtin[0].Val, ShouldEqual, test_dev.Builtin[0].Val)
-	a.So(dev.Builtin[0].Key, ShouldEqual, test_dev.Builtin[0].Key)
+	a.So(dev.Attributes[0].Val, ShouldEqual, test_dev.Attributes[0].Val)
+	a.So(dev.Attributes[0].Key, ShouldEqual, test_dev.Attributes[0].Key)
 }

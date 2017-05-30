@@ -4,17 +4,17 @@
 package device
 
 import (
-	pb "github.com/TheThingsNetwork/ttn/api/handler"
+	pb_handler "github.com/TheThingsNetwork/ttn/api/handler"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 )
 
-//Convert a device representation to a protoBuffer device struct
-func (dev *Device) ToPb() *pb.Device {
-	return &pb.Device{
+// Convert a device representation to a protoBuffer device struct
+func (dev *Device) ToPb() *pb_handler.Device {
+	return &pb_handler.Device{
 		AppId:       dev.AppID,
 		DevId:       dev.DevID,
 		Description: dev.Description,
-		Device: &pb.Device_LorawanDevice{LorawanDevice: &pb_lorawan.Device{
+		Device: &pb_handler.Device_LorawanDevice{LorawanDevice: &pb_lorawan.Device{
 			AppId:                 dev.AppID,
 			AppEui:                &dev.AppEUI,
 			DevId:                 dev.DevID,
@@ -27,15 +27,15 @@ func (dev *Device) ToPb() *pb.Device {
 			Uses32BitFCnt:         dev.Options.Uses32BitFCnt,
 			ActivationConstraints: dev.Options.ActivationConstraints,
 		}},
-		Latitude:  dev.Latitude,
-		Longitude: dev.Longitude,
-		Altitude:  dev.Altitude,
-		Builtin:   dev.Builtin,
+		Latitude:   dev.Latitude,
+		Longitude:  dev.Longitude,
+		Altitude:   dev.Altitude,
+		Attributes: dev.Attributes,
 	}
 }
 
-//FromPb create a new Device from a protoBuffer Device
-func (dev *Device) FromPb(in *pb.Device, lorawan *pb_lorawan.Device) *Device {
+// FromPb creates a new Device from a protoBuffer Device
+func (dev *Device) FromPb(in *pb_handler.Device, lorawan *pb_lorawan.Device) *Device {
 	dev.AppID = in.AppId
 	dev.AppEUI = *lorawan.AppEui
 	dev.DevID = in.DevId
@@ -44,13 +44,13 @@ func (dev *Device) FromPb(in *pb.Device, lorawan *pb_lorawan.Device) *Device {
 	dev.Latitude = in.Latitude
 	dev.Longitude = in.Longitude
 	dev.Altitude = in.Altitude
-	fromLorawan(dev, lorawan)
-	dev.Builtin = in.Builtin
+	dev.fromLorawan(lorawan)
+	dev.Attributes = in.Attributes
 	return dev
 }
 
-//fromLorawan fill a device with lorawan device infos
-func fromLorawan(dev *Device, lorawan *pb_lorawan.Device) {
+// fromLorawan fill a device with lorawan device infos
+func (dev *Device) fromLorawan(lorawan *pb_lorawan.Device) {
 	if lorawan.DevAddr != nil {
 		dev.DevAddr = *lorawan.DevAddr
 	}
@@ -59,13 +59,6 @@ func fromLorawan(dev *Device, lorawan *pb_lorawan.Device) {
 	}
 	if lorawan.AppSKey != nil {
 		dev.AppSKey = *lorawan.AppSKey
-	}
-	if lorawan.AppKey != nil {
-		if dev.AppKey != *lorawan.AppKey { // When the AppKey of an existing device is changed
-			dev.UsedAppNonces = []AppNonce{}
-			dev.UsedDevNonces = []DevNonce{}
-		}
-		dev.AppKey = *lorawan.AppKey
 	}
 	dev.Options = Options{
 		DisableFCntCheck:      lorawan.DisableFCntCheck,

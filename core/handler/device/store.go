@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/api"
-	pb "github.com/TheThingsNetwork/ttn/api/handler"
 	"github.com/TheThingsNetwork/ttn/core/handler/device/migrate"
 	"github.com/TheThingsNetwork/ttn/core/storage"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
@@ -29,12 +28,18 @@ type Store interface {
 	DownlinkQueue(appID, devID string) (DownlinkQueue, error)
 	Set(new *Device, properties ...string) (err error)
 	Delete(appID, devID string) error
-	SetBuiltinList(string)
+	SetAttributesList(string)
 }
 
 const defaultRedisPrefix = "handler"
 const redisDevicePrefix = "device"
 const redisDownlinkQueuePrefix = "downlink"
+
+var defaultDeviceAttributeList = map[string]bool{
+	"ttn-model":   true,
+	"ttn-type":    true,
+	"ttn-version": true,
+}
 
 // NewRedisDeviceStore creates a new Redis-based Device store
 func NewRedisDeviceStore(client *redis.Client, prefix string) *RedisDeviceStore {
@@ -48,17 +53,18 @@ func NewRedisDeviceStore(client *redis.Client, prefix string) *RedisDeviceStore 
 	}
 	queues := storage.NewRedisQueueStore(client, prefix+":"+redisDownlinkQueuePrefix)
 	return &RedisDeviceStore{
-		store:  store,
-		queues: queues,
+		store:          store,
+		queues:         queues,
+		attributesKeys: defaultDeviceAttributeList,
 	}
 }
 
 // RedisDeviceStore stores Devices in Redis.
 // - Devices are stored as a Hash
 type RedisDeviceStore struct {
-	store       *storage.RedisMapStore
-	queues      *storage.RedisQueueStore
-	builtinList map[string]bool
+	store          *storage.RedisMapStore
+	queues         *storage.RedisQueueStore
+	attributesKeys map[string]bool
 }
 
 // Count all devices in the store
@@ -130,7 +136,7 @@ func (s *RedisDeviceStore) Set(new *Device, properties ...string) (err error) {
 	if new.old == nil {
 		new.CreatedAt = now
 	}
-	s.builtinFilter(new)
+	s.sortAttributes(new)
 	err = s.store.Set(key, *new, properties...)
 	if err != nil {
 		return
@@ -147,53 +153,41 @@ func (s *RedisDeviceStore) Delete(appID, devID string) error {
 	return s.store.Delete(key)
 }
 
-// SetBuiltinList set the key that will always be added to the Attribute map.
-func (s *RedisDeviceStore) SetBuiltinList(a string) {
+// SetAttributesList set the key that will always be added to the Attribute map.
+func (s *RedisDeviceStore) SetAttributesList(a string) {
 	l := strings.Split(a, ":")
-	m := make(map[string]bool, len(l))
 	for _, key := range l {
 		if api.ValidID(key) {
-			m[key] = true
+			s.attributesKeys[key] = true
 		}
 	}
-	s.builtinList = m
 }
 
-//builtinFilter allow restriction on the builtin attributes.
-//The builtin in the builtin list will always be allowed.
-//The builtin already present will not be replaced/deleted unless stated otherwise.
-//Then the new builtin wil be added if they key is valid and if there is enough key slot available
-func (s *RedisDeviceStore) builtinFilter(new *Device) {
-
-	m, i := new.MapOldBuiltin(s.builtinList)
-	i = maxAttr - i
+// sortAttributes allow restriction on the builtin attributesKeys.
+// The attribute in list will always be allowed.
+// The attributesKeys already present will not be replaced/deleted unless stated otherwise.
+// Then the new attributesKeys wil be added if they key is valid and if there is enough key slot available
+func (s *RedisDeviceStore) sortAttributes(new *Device) {
+	m, max := new.MapOldAttributes(s.attributesKeys)
+	max = maxAttr - max
 	if m == nil {
-		m = make(map[string]string, i)
+		m = make(map[string]string, max)
 	}
-	m, deleted := new.DeleteEmptyBuiltin(s.builtinList, m)
-	i += deleted
-	m = s.builtinAdd(i, new.Builtin, m)
-	new.BuiltinFromMap(m)
-}
-
-//builtinAdd add the slice of attribute to a map according to following criteria
-// - the key is valid id (check with api.ValidId)
-// - The value does not exceed 200 characters
-func (s *RedisDeviceStore) builtinAdd(limit uint8, add []*pb.Attribute, new map[string]string) (m map[string]string) {
-
-	if new == nil {
-		new = make(map[string]string, len(add))
-	}
-	for _, v := range add {
-		_, ok := new[v.Key]
-		_, ok_l := s.builtinList[v.Key]
-		if (ok || ok_l || (limit > 0 && api.ValidID(v.Key))) &&
+	for _, v := range new.Attributes {
+		_, ok := m[v.Key]
+		_, okw := s.attributesKeys[v.Key]
+		if v.Val == "" {
+			if ok {
+				delete(m, v.Key)
+				max++
+			}
+		} else if (ok || okw || (max > 0 && api.ValidID(v.Key))) &&
 			len(v.Val) < maxAttrLength {
-			new[v.Key] = v.Val
-			if !ok && !ok_l {
-				limit--
+			m[v.Key] = v.Val
+			if !ok && !okw {
+				max--
 			}
 		}
 	}
-	return new
+	new.AttributesFromMap(m)
 }

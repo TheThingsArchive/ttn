@@ -121,32 +121,32 @@ func TestDeviceStore(t *testing.T) {
 
 }
 
-func TestRedisDeviceStore_SetBuiltinList(t *testing.T) {
+func TestRedisDeviceStore_SetAttributesList(t *testing.T) {
 	a := New(t)
 
-	store := NewRedisDeviceStore(GetRedisClient(), "handler-test-builtin-attribute")
-	store.SetBuiltinList("ttn-battery:ttn-Model")
-	a.So(store.builtinList["ttn-battery"], ShouldBeTrue)
-	a.So(store.builtinList["ttn-Model"], ShouldBeFalse)
+	store := NewRedisDeviceStore(GetRedisClient(), "handler-test-attribute")
+	store.SetAttributesList("ttn-light:ttn-Humidity")
+	a.So(store.attributesKeys["ttn-light"], ShouldBeTrue)
+	a.So(store.attributesKeys["ttn-humidity"], ShouldBeFalse)
 }
 
-func TestRedisDeviceStore_builtinFilter_Add(t *testing.T) {
+func TestRedisDeviceStore_sortAttributes_Add(t *testing.T) {
 	a := New(t)
 
-	store := NewRedisDeviceStore(GetRedisClient(), "handler-test-builtin-attribute")
+	store := NewRedisDeviceStore(GetRedisClient(), "handler-test-attribute")
 
 	testMap1 := []*pb.Attribute{
 		{"hello", "bonjour"},
 		{"test", "TeSt"},
 	}
-	in := &Device{Builtin: testMap1}
-	store.builtinFilter(in)
-	a.So(in.Builtin, ShouldNotBeNil)
-	a.So(in.Builtin[0].Key, ShouldEqual, testMap1[0].Key)
-	a.So(in.Builtin[0].Val, ShouldEqual, testMap1[0].Val)
-	a.So(in.Builtin[1].Key, ShouldEqual, testMap1[1].Key)
+	in := &Device{Attributes: testMap1}
+	store.sortAttributes(in)
+	a.So(in.Attributes, ShouldNotBeNil)
+	a.So(in.Attributes[0].Key, ShouldEqual, testMap1[0].Key)
+	a.So(in.Attributes[0].Val, ShouldEqual, testMap1[0].Val)
+	a.So(in.Attributes[1].Key, ShouldEqual, testMap1[1].Key)
 
-	//Past limit of 5
+	// Past limit of 5
 	testMap2 := []*pb.Attribute{
 		{"hello", "bonjour"},
 		{"test", "TeSt"},
@@ -155,13 +155,16 @@ func TestRedisDeviceStore_builtinFilter_Add(t *testing.T) {
 		{"heart", "pique"},
 		{"square", "trefle"},
 	}
-	in.Builtin = testMap2
-	store.builtinFilter(in)
-	a.So(len(in.Builtin), ShouldEqual, 5)
-	//Past limit of 5 and builtin attributes
-	store.SetBuiltinList("ttn-battery:ttn-Model")
+	in.Attributes = testMap2
+	store.sortAttributes(in)
+	a.So(len(in.Attributes), ShouldEqual, 5)
+	a.So(in.Attributes[0].Key, ShouldEqual, testMap2[2].Key)
+	a.So(in.Attributes[4].Key, ShouldEqual, testMap2[3].Key)
+
+	// Past limit of 5 attributesKeys
+	store.SetAttributesList("ttn-light:ttn-humidity")
 	testMap3 := []*pb.Attribute{
-		{"ttn-battery", "quatre-ving-dix pourcent"},
+		{"ttn-light", "quatre-ving-dix pourcent"},
 		{"hello", "bonjour"},
 		{"test", "TeSt"},
 		{"beer", "cold"},
@@ -169,12 +172,12 @@ func TestRedisDeviceStore_builtinFilter_Add(t *testing.T) {
 		{"heart", "pique"},
 		{"square", "trefle"},
 	}
-	in.Builtin = testMap3
-	store.builtinFilter(in)
-	a.So(len(in.Builtin), ShouldEqual, 6)
+	in.Attributes = testMap3
+	store.sortAttributes(in)
+	a.So(len(in.Attributes), ShouldEqual, 6)
 	attr := &pb.Attribute{}
-	for _, v := range in.Builtin {
-		if v.Key == "ttn-battery" {
+	for _, v := range in.Attributes {
+		if v.Key == "ttn-light" {
 			attr = v
 		}
 	}
@@ -182,10 +185,10 @@ func TestRedisDeviceStore_builtinFilter_Add(t *testing.T) {
 	a.So(attr.Val, ShouldEqual, testMap3[0].Val)
 }
 
-func TestRedisDeviceStore_builtinFilter_KeyValidation(t *testing.T) {
+func TestRedisDeviceStore_sortAttributes_KeyValidation(t *testing.T) {
 	a := New(t)
 
-	store := NewRedisDeviceStore(GetRedisClient(), "handler-test-builtin-attribute")
+	store := NewRedisDeviceStore(GetRedisClient(), "handler-test-attribute")
 	testMap1 := []*pb.Attribute{
 		{"Hello", "bonjour"},
 		{"test", "TeSt"},
@@ -193,16 +196,16 @@ func TestRedisDeviceStore_builtinFilter_KeyValidation(t *testing.T) {
 		{"", "too short!"},
 	}
 
-	in := &Device{Builtin: testMap1}
-	store.builtinFilter(in)
-	a.So(in.Builtin, ShouldNotBeNil)
-	a.So(len(in.Builtin), ShouldEqual, 1)
+	in := &Device{Attributes: testMap1}
+	store.sortAttributes(in)
+	a.So(in.Attributes, ShouldNotBeNil)
+	a.So(len(in.Attributes), ShouldEqual, 1)
 }
 
-func TestRedisDeviceStore_builtinFilter_Remove(t *testing.T) {
+func TestRedisDeviceStore_sortAttributes_Remove(t *testing.T) {
 	a := New(t)
 
-	store := NewRedisDeviceStore(GetRedisClient(), "handler-test-builtin-attribute")
+	store := NewRedisDeviceStore(GetRedisClient(), "handler-test-attribute")
 
 	testMap1 := []*pb.Attribute{
 		{"hello", "bonjour"},
@@ -212,9 +215,9 @@ func TestRedisDeviceStore_builtinFilter_Remove(t *testing.T) {
 		{"hello", ""},
 		{"test", ""},
 	}
-	in := &Device{Builtin: testMapRm, old: &Device{Builtin: testMap1}}
-	store.builtinFilter(in)
-	a.So(in.Builtin, ShouldBeEmpty)
+	in := &Device{Attributes: testMapRm, old: &Device{Attributes: testMap1}}
+	store.sortAttributes(in)
+	a.So(in.Attributes, ShouldBeEmpty)
 
 	testMap2 := []*pb.Attribute{
 		{"hello", "bonjour"},
@@ -225,27 +228,29 @@ func TestRedisDeviceStore_builtinFilter_Remove(t *testing.T) {
 		{"hello", "coucou"},
 		{"test", ""},
 	}
-	in.Builtin = testMapRm2
-	in.old.Builtin = testMap2
-	store.builtinFilter(in)
-	a.So(len(in.Builtin), ShouldEqual, 1)
+	in.Attributes = testMapRm2
+	in.old.Attributes = testMap2
+	store.sortAttributes(in)
+	a.So(len(in.Attributes), ShouldEqual, 1)
 }
 
-func TestRedisDeviceStore_builtinAdd(t *testing.T) {
+func TestRedisDeviceStore_attributesAdd(t *testing.T) {
 	a := New(t)
 
-	store := NewRedisDeviceStore(GetRedisClient(), "handler-test-builtin-attribute")
+	store := NewRedisDeviceStore(GetRedisClient(), "handler-test-attribute")
 
-	add := []*pb.Attribute{
-		{"Hello", "Bonjour"},
-		{"adios", "goodbye"},
-		{"youknowsometimesyoujustwanttoputareallylongnametobesurepeoplewillknowwhatallthislittlebytemean", "longKey"},
-		{"longval", "youknowsometimesyoujustwanttoputareallylongnametobesurepeoplewillknowwhatallthislittlebytemean" +
-			"youknowsometimesyoujustwanttoputareallylongnametobesurepeoplewillknowwhatallthislittlebytemean" +
-			"youknowsometimesyoujustwanttoputareallylongnametobesurepeoplewillknowwhatallthislittlebytemean"},
+	dev := &Device{
+		Attributes: []*pb.Attribute{
+			{"Hello", "Bonjour"},
+			{"adios", "goodbye"},
+			{"youknowsometimesyoujustwanttoputareallylongnametobesurepeoplewillknowwhatallthislittlebytemean", "longKey"},
+			{"longval", "youknowsometimesyoujustwanttoputareallylongnametobesurepeoplewillknowwhatallthislittlebytemean" +
+				"youknowsometimesyoujustwanttoputareallylongnametobesurepeoplewillknowwhatallthislittlebytemean" +
+				"youknowsometimesyoujustwanttoputareallylongnametobesurepeoplewillknowwhatallthislittlebytemean"},
+		},
 	}
-	m := store.builtinAdd(10, add, nil)
-	a.So(m, ShouldNotBeNil)
-	a.So(len(m), ShouldEqual, 1)
-	a.So(m["adios"], ShouldEqual, "goodbye")
+	store.sortAttributes(dev)
+	a.So(dev.Attributes, ShouldNotBeNil)
+	a.So(len(dev.Attributes), ShouldEqual, 1)
+	a.So(dev.Attributes[0].Val, ShouldEqual, "goodbye")
 }

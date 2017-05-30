@@ -82,7 +82,7 @@ message DeviceIdentifier {
   string dev_id      = 2;
 }
 
-//Device Attribute
+// Device Attribute
 message Attribute {
   string key         = 1;
   string val         = 2;
@@ -101,7 +101,7 @@ message Device {
   float latitude  = 10;
   float longitude = 11;
   int32 altitude  = 12;
-  repeated Attribute builtin = 13;
+  repeated Attribute attributes = 13;
 
   string description = 20;
 }

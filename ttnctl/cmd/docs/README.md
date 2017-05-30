@@ -370,8 +370,8 @@ Flags:
       --altitude int32            Set altitude
       --app-key string            Set AppKey
       --app-s-key string          Set AppSKey
-      --attr-add stringArray      Add a builtin attribute
-      --attr-remove stringArray   Remove builtin attribute
+      --attr-add stringArray      Add a device attribute
+      --attr-remove stringArray   Remove device attribute
       --description string        Set Description
       --dev-addr string           Set DevAddr
       --dev-eui string            Set DevEUI
