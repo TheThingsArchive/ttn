@@ -11,14 +11,14 @@ import (
 	"github.com/fatih/structs"
 )
 
-const currentDBVersion = "2.4.1"
+const currentDBVersion = "2.8.0"
 
 // Options for the specified device
 type Options struct {
-	ActivationConstraints string   `json:"activation_constraints,omitempty"` // Activation Constraints (public/local/private)
-	DisableFCntCheck      bool     `json:"disable_fcnt_check,omitemtpy"`     // Disable Frame counter check (insecure)
-	Uses32BitFCnt         bool     `json:"uses_32_bit_fcnt,omitemtpy"`       // Use 32-bit Frame counters
-	PreferredGateways     []string `json:"preferred_gateways,omitempty"`     // Preferred gateways for downlink
+	ActivationConstraints string   `redis:"activation_constraints"` // Activation Constraints (public/local/private)
+	DisableFCntCheck      bool     `redis:"disable_fcnt_check"`     // Disable Frame counter check (insecure)
+	Uses32BitFCnt         bool     `redis:"uses_32_bit_fcnt"`       // Use 32-bit Frame counters
+	PreferredGateways     []string `redis:"preferred_gateways"`     // Preferred gateways for downlink
 }
 
 // Device contains the state of a device
@@ -34,7 +34,7 @@ type Device struct {
 	FCntUp   uint32        `redis:"f_cnt_up"`
 	FCntDown uint32        `redis:"f_cnt_down"`
 	LastSeen time.Time     `redis:"last_seen"`
-	Options  Options       `redis:"options"`
+	Options  Options       `redis:"options,include"`
 	ADR      ADRSettings   `redis:"adr,include"`
 
 	CreatedAt time.Time `redis:"created_at"`
