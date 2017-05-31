@@ -41,9 +41,12 @@ func TestDeviceChangedFields(t *testing.T) {
 	}
 	device.StartUpdate()
 	device.DevID = "NewDevID"
+	device.Options.DisableFCntCheck = true
 
-	a.So(device.ChangedFields(), ShouldHaveLength, 1)
+	a.So(device.ChangedFields(), ShouldHaveLength, 3)
 	a.So(device.ChangedFields(), ShouldContain, "DevID")
+	a.So(device.ChangedFields(), ShouldContain, "Options")
+	a.So(device.ChangedFields(), ShouldContain, "Options.DisableFCntCheck")
 }
 
 func TestDeviceGetLoRaWAN(t *testing.T) {
