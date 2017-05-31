@@ -293,3 +293,8 @@ func (s *ReferenceBrokerServer) Publish(stream Broker_PublishServer) error {
 func (s *ReferenceBrokerServer) Activate(ctx context.Context, req *DeviceActivationRequest) (*DeviceActivationResponse, error) {
 	return nil, grpc.Errorf(codes.Unimplemented, "Not implemented")
 }
+
+// PrepareDownlink RPC
+func (s *ReferenceBrokerServer) PrepareDownlink(context.Context, *PrepareDownlinkRequest) (*DownlinkMessage, error) {
+	return nil, grpc.Errorf(codes.Unimplemented, "Not implemented")
+}

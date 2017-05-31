@@ -40,6 +40,8 @@ message DownlinkOption {
   float   duty_cycle         = 13;
   // total Rx utilization fraction over the last 10 minutes
   float   utilization        = 14;
+
+  // Please keep this message compatible with router.DownlinkOptionResponse
 }
 
 // received from the Router
@@ -161,6 +163,13 @@ message ActivationChallengeResponse {
 // message SubscribeRequest is used by a Handler to subscribe to uplink messages
 message SubscribeRequest {}
 
+message PrepareDownlinkRequest {
+  bytes   dev_eui  = 1 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.DevEUI"];
+  bytes   app_eui  = 2 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.AppEUI"];
+  string  app_id   = 3;
+  string  dev_id   = 4;
+}
+
 // The Broker service provides pure network functionality
 service Broker {
   // Router initiates an Association with the Broker.
@@ -171,6 +180,9 @@ service Broker {
 
   // Handler initiates downlink stream.
   rpc Publish(stream DownlinkMessage) returns (google.protobuf.Empty);
+
+  // Handler prepares a downlink message (class C)
+  rpc PrepareDownlink(PrepareDownlinkRequest) returns (DownlinkMessage);
 
   // Router requests device activation
   rpc Activate(DeviceActivationRequest) returns (DeviceActivationResponse);

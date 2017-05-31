@@ -104,6 +104,22 @@ func (b *brokerRPC) getHandlerPublish(md metadata.MD) (chan *pb.DownlinkMessage,
 	return ch, nil
 }
 
+func (b *brokerRPC) PrepareDownlink(ctx context.Context, req *pb.PrepareDownlinkRequest) (*pb.DownlinkMessage, error) {
+	handler, err := b.broker.ValidateNetworkContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errors.Wrap(err, "Invalid Request")
+	}
+	for _, announcedID := range handler.AppIDs() {
+		if announcedID == req.AppId {
+			return b.broker.PrepareDownlink(req)
+		}
+	}
+	return nil, errors.NewErrPermissionDenied("AppID not registered on your Handler")
+}
+
 func (b *brokerRPC) Activate(ctx context.Context, req *pb.DeviceActivationRequest) (res *pb.DeviceActivationResponse, err error) {
 	_, err = b.broker.ValidateNetworkContext(ctx)
 	if err != nil {
