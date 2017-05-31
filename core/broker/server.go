@@ -46,6 +46,7 @@ func (b *brokerRPC) associateRouter(md metadata.MD) (chan *pb.UplinkMessage, <-c
 				b.broker.Ctx.WithField("RouterID", router.Id).WithField("Wait", waitTime).Warn("Router reached uplink rate limit")
 				time.Sleep(waitTime)
 			}
+			b.broker.setRouterForGateway(message.GetGatewayMetadata().GetGatewayId(), router.Id) // TODO: Move to Discovery (#615)
 			go b.broker.HandleUplink(message)
 		}
 	}()
@@ -121,10 +122,11 @@ func (b *brokerRPC) PrepareDownlink(ctx context.Context, req *pb.PrepareDownlink
 }
 
 func (b *brokerRPC) Activate(ctx context.Context, req *pb.DeviceActivationRequest) (res *pb.DeviceActivationResponse, err error) {
-	_, err = b.broker.ValidateNetworkContext(ctx)
+	router, err := b.broker.ValidateNetworkContext(ctx)
 	if err != nil {
 		return nil, err
 	}
+	b.broker.setRouterForGateway(req.GetGatewayMetadata().GetGatewayId(), router.Id) // TODO: Move to Discovery (#615)
 	if err := req.Validate(); err != nil {
 		return nil, errors.Wrap(err, "Invalid Activation Request")
 	}

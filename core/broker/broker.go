@@ -38,6 +38,7 @@ type Broker interface {
 
 func NewBroker(timeout time.Duration) Broker {
 	return &broker{
+		gateways:               make(map[string]string), // TODO: Move to Discovery
 		routers:                make(map[string]chan *pb.DownlinkMessage),
 		handlers:               make(map[string]*handler),
 		uplinkDeduplicator:     NewDeduplicator(timeout),
@@ -57,6 +58,8 @@ type broker struct {
 	routersLock            sync.RWMutex
 	handlers               map[string]*handler
 	handlersLock           sync.RWMutex
+	gateways               map[string]string // TODO: Move to Discovery (#615)
+	gatewaysLock           sync.RWMutex      // TODO: Move to Discovery (#615)
 	nsAddr                 string
 	nsCert                 string
 	nsToken                string
@@ -237,4 +240,19 @@ func (b *broker) getHandlerConn(id string) (*grpc.ClientConn, error) {
 	}
 	hdl.conn = conn
 	return hdl.conn, nil
+}
+
+// TODO: Move to Discovery (#615)
+func (b *broker) setRouterForGateway(gatewayID, routerID string) {
+	b.gatewaysLock.Lock()
+	defer b.gatewaysLock.Unlock()
+	b.gateways[gatewayID] = routerID
+}
+
+// TODO: Move to Discovery (#615)
+func (b *broker) getRouterForGateway(gatewayID string) string {
+	b.gatewaysLock.RLock()
+	defer b.gatewaysLock.RUnlock()
+	routerID, _ := b.gateways[gatewayID]
+	return routerID
 }
