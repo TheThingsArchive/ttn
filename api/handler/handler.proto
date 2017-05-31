@@ -5,7 +5,6 @@ syntax = "proto3";
 
 import "google/protobuf/empty.proto";
 import "google/api/annotations.proto";
-import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 import "ttn/api/api.proto";
 import "ttn/api/broker/broker.proto";
 import "ttn/api/protocol/protocol.proto";

@@ -5,12 +5,10 @@ package device
 
 import (
 	"testing"
-
 	"time"
 
 	pb_handler "github.com/TheThingsNetwork/ttn/api/handler"
 	"github.com/TheThingsNetwork/ttn/core/types"
-
 	. "github.com/smartystreets/assertions"
 )
 
