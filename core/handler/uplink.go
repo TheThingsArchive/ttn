@@ -77,68 +77,10 @@ func (h *handler) HandleUplink(uplink *pb_broker.DeduplicatedUplinkMessage) (err
 	if err != nil {
 		return err
 	}
-	dev.StartUpdate()
 
 	// Publish Uplink
 	h.qUp <- appUplink
 
-	noDownlinkErrEvent := &types.DeviceEvent{
-		AppID: appID,
-		DevID: devID,
-		Event: types.DownlinkErrorEvent,
-		Data:  types.ErrorEventData{Error: "No gateways available for downlink"},
-	}
-
-	if dev.CurrentDownlink == nil {
-		<-time.After(ResponseDeadline)
-
-		queue, err := h.devices.DownlinkQueue(appID, devID)
-		if err != nil {
-			return err
-		}
-
-		if len, _ := queue.Length(); len > 0 {
-			if uplink.ResponseTemplate != nil {
-				next, err := queue.Next()
-				if err != nil {
-					return err
-				}
-				dev.CurrentDownlink = next
-			} else {
-				h.qEvent <- noDownlinkErrEvent
-				return nil
-			}
-		}
-	}
-
-	if uplink.ResponseTemplate == nil {
-		if dev.CurrentDownlink != nil {
-			h.qEvent <- noDownlinkErrEvent
-		}
-		return nil
-	}
-
-	// Save changes (if any)
-	err = h.devices.Set(dev)
-	if err != nil {
-		return err
-	}
-
-	// Prepare Downlink
-	var appDownlink types.DownlinkMessage
-	if dev.CurrentDownlink != nil {
-		appDownlink = *dev.CurrentDownlink
-	}
-	appDownlink.AppID = uplink.AppId
-	appDownlink.DevID = uplink.DevId
-	downlink := uplink.ResponseTemplate
-	downlink.Trace = uplink.Trace.WithEvent("prepare downlink")
-
-	// Handle Downlink
-	err = h.HandleDownlink(&appDownlink, downlink)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	<-time.After(ResponseDeadline)
+	return h.tryDownlink(dev.AppID, dev.DevID, uplink.ResponseTemplate)
 }

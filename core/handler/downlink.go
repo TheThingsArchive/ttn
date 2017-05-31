@@ -198,3 +198,68 @@ func (h *handler) HandleDownlink(appDownlink *types.DownlinkMessage, downlink *p
 	}
 	return nil
 }
+
+func (h *handler) tryDownlink(appID, devID string, downlink *pb_broker.DownlinkMessage) (err error) {
+	dev, err := h.devices.Get(appID, devID)
+	if err != nil {
+		return err
+	}
+	dev.StartUpdate()
+
+	noDownlinkErrEvent := &types.DeviceEvent{
+		AppID: appID,
+		DevID: devID,
+		Event: types.DownlinkErrorEvent,
+		Data:  types.ErrorEventData{Error: "No gateways available for downlink"},
+	}
+
+	if dev.CurrentDownlink == nil {
+		queue, err := h.devices.DownlinkQueue(appID, devID)
+		if err != nil {
+			return err
+		}
+
+		if len, _ := queue.Length(); len > 0 {
+			if downlink != nil {
+				next, err := queue.Next()
+				if err != nil {
+					return err
+				}
+				dev.CurrentDownlink = next
+			} else {
+				h.qEvent <- noDownlinkErrEvent
+				return nil
+			}
+		}
+	}
+
+	if downlink == nil {
+		if dev.CurrentDownlink != nil {
+			h.qEvent <- noDownlinkErrEvent
+		}
+		return nil
+	}
+
+	// Save changes (if any)
+	err = h.devices.Set(dev)
+	if err != nil {
+		return err
+	}
+
+	// Prepare Downlink
+	var appDownlink types.DownlinkMessage
+	if dev.CurrentDownlink != nil {
+		appDownlink = *dev.CurrentDownlink
+	}
+	appDownlink.AppID = appID
+	appDownlink.DevID = devID
+	downlink.Trace = downlink.Trace.WithEvent("prepare downlink")
+
+	// Handle Downlink
+	err = h.HandleDownlink(&appDownlink, downlink)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
