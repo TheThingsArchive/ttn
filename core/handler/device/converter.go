@@ -8,64 +8,83 @@ import (
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 )
 
-// Convert a device representation to a protoBuffer device struct
-func (dev *Device) ToPb() *pb_handler.Device {
+// ToPb converts a device struct to its protocol buffer
+func (d Device) ToPb() *pb_handler.Device {
 	return &pb_handler.Device{
-		AppId:       dev.AppID,
-		DevId:       dev.DevID,
-		Description: dev.Description,
-		Device: &pb_handler.Device_LorawanDevice{LorawanDevice: &pb_lorawan.Device{
-			AppId:                 dev.AppID,
-			AppEui:                &dev.AppEUI,
-			DevId:                 dev.DevID,
-			DevEui:                &dev.DevEUI,
-			DevAddr:               &dev.DevAddr,
-			NwkSKey:               &dev.NwkSKey,
-			AppSKey:               &dev.AppSKey,
-			AppKey:                &dev.AppKey,
-			DisableFCntCheck:      dev.Options.DisableFCntCheck,
-			Uses32BitFCnt:         dev.Options.Uses32BitFCnt,
-			ActivationConstraints: dev.Options.ActivationConstraints,
-		}},
-		Latitude:   dev.Latitude,
-		Longitude:  dev.Longitude,
-		Altitude:   dev.Altitude,
-		Attributes: dev.Attributes,
+		AppId:       d.AppID,
+		DevId:       d.DevID,
+		Description: d.Description,
+		Device:      &pb_handler.Device_LorawanDevice{LorawanDevice: d.ToLorawanPb()},
+		Latitude:    d.Latitude,
+		Longitude:   d.Longitude,
+		Altitude:    d.Altitude,
+		Attributes:  d.Attributes,
 	}
 }
 
-// FromPb creates a new Device from a protoBuffer Device
-func (dev *Device) FromPb(in *pb_handler.Device, lorawan *pb_lorawan.Device) *Device {
-	dev.AppID = in.AppId
-	dev.AppEUI = *lorawan.AppEui
-	dev.DevID = in.DevId
-	dev.DevEUI = *lorawan.DevEui
-	dev.Description = in.Description
-	dev.Latitude = in.Latitude
-	dev.Longitude = in.Longitude
-	dev.Altitude = in.Altitude
-	dev.fromLorawan(lorawan)
-	dev.Attributes = in.Attributes
-	return dev
+// ToLorawanPb converts a device struct to a LoRaWAN protocol buffer
+func (d Device) ToLorawanPb() *pb_lorawan.Device {
+	return &pb_lorawan.Device{
+		AppId:                 d.AppID,
+		AppEui:                &d.AppEUI,
+		DevId:                 d.DevID,
+		DevEui:                &d.DevEUI,
+		DevAddr:               &d.DevAddr,
+		NwkSKey:               &d.NwkSKey,
+		AppSKey:               &d.AppSKey,
+		AppKey:                &d.AppKey,
+		DisableFCntCheck:      d.Options.DisableFCntCheck,
+		Uses32BitFCnt:         d.Options.Uses32BitFCnt,
+		ActivationConstraints: d.Options.ActivationConstraints,
+	}
 }
 
-// fromLorawan fill a device with lorawan device infos
-func (dev *Device) fromLorawan(lorawan *pb_lorawan.Device) {
+// FromPb returns a new device from the given proto
+func FromPb(in *pb_handler.Device) *Device {
+	d := new(Device)
+	d.FromPb(in)
+	return d
+}
+
+// FromPb fills Device fields from a device proto
+func (d *Device) FromPb(in *pb_handler.Device) {
+	d.AppID = in.AppId
+	d.DevID = in.DevId
+	d.Description = in.Description
+	d.Latitude = in.Latitude
+	d.Longitude = in.Longitude
+	d.Altitude = in.Altitude
+	d.Attributes = in.Attributes
+	d.FromLorawanPb(in.GetLorawanDevice())
+}
+
+// FromLorawanPb fills Device fields from a lorawan device proto
+func (d *Device) FromLorawanPb(lorawan *pb_lorawan.Device) {
+	if lorawan == nil {
+		return
+	}
+	if lorawan.AppEui != nil {
+		d.AppEUI = *lorawan.AppEui
+	}
+	if lorawan.DevEui != nil {
+		d.DevEUI = *lorawan.DevEui
+	}
 	if lorawan.DevAddr != nil {
-		dev.DevAddr = *lorawan.DevAddr
+		d.DevAddr = *lorawan.DevAddr
 	}
-	if lorawan.NwkSKey != nil {
-		dev.NwkSKey = *lorawan.NwkSKey
+	if lorawan.AppKey != nil {
+		d.AppKey = *lorawan.AppKey
 	}
 	if lorawan.AppSKey != nil {
-		dev.AppSKey = *lorawan.AppSKey
+		d.AppSKey = *lorawan.AppSKey
 	}
-	dev.Options = Options{
+	if lorawan.NwkSKey != nil {
+		d.NwkSKey = *lorawan.NwkSKey
+	}
+	d.FCntUp = lorawan.FCntUp
+	d.Options = Options{
 		DisableFCntCheck:      lorawan.DisableFCntCheck,
 		Uses32BitFCnt:         lorawan.Uses32BitFCnt,
 		ActivationConstraints: lorawan.ActivationConstraints,
-	}
-	if dev.Options.ActivationConstraints == "" {
-		dev.Options.ActivationConstraints = "local"
 	}
 }

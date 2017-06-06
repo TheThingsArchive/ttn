@@ -281,7 +281,10 @@ func (h *handler) registerDeviceOnJoin(base *device.Device, activation *pb_broke
 		return nil, err
 	}
 
-	_, err = h.ttnDeviceManager.SetDevice(ttnctx.OutgoingContextWithToken(context.Background(), token), clone.GetLoRaWAN())
+	lorawanPb := clone.ToLorawanPb()
+	lorawanPb.AppKey = nil
+	lorawanPb.AppSKey = nil
+	_, err = h.ttnDeviceManager.SetDevice(ttnctx.OutgoingContextWithToken(context.Background(), token), lorawanPb)
 	if err != nil {
 		return nil, errors.Wrap(errors.FromGRPCError(err), "Broker did not set device")
 	}

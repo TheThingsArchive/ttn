@@ -111,8 +111,10 @@ func (h *handlerManager) GetDevice(ctx context.Context, in *pb_handler.DeviceIde
 			"AppEUI": dev.AppEUI,
 			"DevEUI": dev.DevEUI,
 		}).Warn("Re-registering missing device to Broker")
-		nsDev = dev.GetLoRaWAN()
-		_, err = h.handler.ttnDeviceManager.SetDevice(ttnctx.OutgoingContextWithToken(ctx, token), nsDev)
+		lorawanPb := dev.ToLorawanPb()
+		lorawanPb.AppKey = nil
+		lorawanPb.AppSKey = nil
+		_, err = h.handler.ttnDeviceManager.SetDevice(ttnctx.OutgoingContextWithToken(ctx, token), lorawanPb)
 		if err != nil {
 			return nil, errors.Wrap(errors.FromGRPCError(err), "Could not re-register missing device to Broker")
 		}
@@ -195,11 +197,13 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb_handler.Device) (
 	}
 
 	// Update the device in the Broker (NetworkServer)
-	nsUpdated := dev.GetLoRaWAN()
-	nsUpdated.FCntUp = lorawan.FCntUp
-	nsUpdated.FCntDown = lorawan.FCntDown
+	lorawanPb := dev.ToLorawanPb()
+	lorawanPb.AppKey = nil
+	lorawanPb.AppSKey = nil
+	lorawanPb.FCntUp = lorawan.FCntUp
+	lorawanPb.FCntDown = lorawan.FCntDown
 
-	_, err = h.handler.ttnDeviceManager.SetDevice(ttnctx.OutgoingContextWithToken(ctx, token), nsUpdated)
+	_, err = h.handler.ttnDeviceManager.SetDevice(ttnctx.OutgoingContextWithToken(ctx, token), lorawanPb)
 
 	err = h.handler.devices.Set(dev)
 	if err != nil {
