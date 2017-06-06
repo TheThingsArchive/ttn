@@ -9,6 +9,7 @@ import (
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 
 	"github.com/TheThingsNetwork/ttn/core/handler/application"
+	"github.com/TheThingsNetwork/ttn/core/handler/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/assertions"
@@ -37,10 +38,12 @@ func TestConvertFieldsUpCustom(t *testing.T) {
 		qEvent:       make(chan *types.DeviceEvent, 1),
 	}
 
+	dev := new(device.Device)
+
 	// No functions
 	{
 		ttnUp, appUp := buildCustomUplink(appID)
-		err := h.ConvertFieldsUp(GetLogger(t, "TestConvertFieldsUpCustom"), ttnUp, appUp, nil)
+		err := h.ConvertFieldsUp(GetLogger(t, "TestConvertFieldsUpCustom"), ttnUp, appUp, dev)
 		a.So(err, ShouldBeNil)
 		a.So(appUp.PayloadFields, ShouldBeEmpty)
 	}
@@ -58,7 +61,7 @@ func TestConvertFieldsUpCustom(t *testing.T) {
 			h.applications.Delete(appID)
 		}()
 		ttnUp, appUp := buildCustomUplink(appID)
-		err := h.ConvertFieldsUp(GetLogger(t, "TestConvertFieldsUpCustom"), ttnUp, appUp, nil)
+		err := h.ConvertFieldsUp(GetLogger(t, "TestConvertFieldsUpCustom"), ttnUp, appUp, dev)
 		a.So(err, ShouldBeNil)
 		a.So(appUp.PayloadFields, ShouldResemble, map[string]interface{}{
 			"temperature": 21.6,
@@ -71,7 +74,7 @@ func TestConvertFieldsUpCustom(t *testing.T) {
 		app.CustomValidator = `function Validator (data) { return false; }`
 		h.applications.Set(app)
 		ttnUp, appUp := buildCustomUplink(appID)
-		err := h.ConvertFieldsUp(GetLogger(t, "TestConvertFieldsUpCustom"), ttnUp, appUp, nil)
+		err := h.ConvertFieldsUp(GetLogger(t, "TestConvertFieldsUpCustom"), ttnUp, appUp, dev)
 		a.So(err, ShouldNotBeNil)
 		a.So(appUp.PayloadFields, ShouldBeEmpty)
 	}
@@ -82,7 +85,7 @@ func TestConvertFieldsUpCustom(t *testing.T) {
 		app.CustomValidator = `function Validator (data) { throw new Error("expected"); }`
 		h.applications.Set(app)
 		ttnUp, appUp := buildCustomUplink(appID)
-		err := h.ConvertFieldsUp(GetLogger(t, "TestConvertFieldsUpCustom"), ttnUp, appUp, nil)
+		err := h.ConvertFieldsUp(GetLogger(t, "TestConvertFieldsUpCustom"), ttnUp, appUp, dev)
 		a.So(err, ShouldBeNil)
 		a.So(appUp.PayloadFields, ShouldBeEmpty)
 		a.So(len(h.qEvent), ShouldEqual, 1)
@@ -98,7 +101,7 @@ func TestConvertFieldsUpCustom(t *testing.T) {
 		app.CustomDecoder = `function Decoder (data) { return { infinite: 10/0 }; }`
 		h.applications.Set(app)
 		ttnUp, appUp := buildCustomUplink(appID)
-		err := h.ConvertFieldsUp(GetLogger(t, "TestConvertFieldsUpCustom"), ttnUp, appUp, nil)
+		err := h.ConvertFieldsUp(GetLogger(t, "TestConvertFieldsUpCustom"), ttnUp, appUp, dev)
 		a.So(err, ShouldBeNil)
 		a.So(appUp.PayloadFields, ShouldBeEmpty)
 		a.So(len(h.qEvent), ShouldEqual, 1)
@@ -133,10 +136,12 @@ func TestConvertFieldsUpCayenneLPP(t *testing.T) {
 		qEvent:       make(chan *types.DeviceEvent, 1),
 	}
 
+	dev := new(device.Device)
+
 	// No application
 	{
 		ttnUp, appUp := buildCayenneLPPUplink(appID)
-		err := h.ConvertFieldsUp(ctx, ttnUp, appUp, nil)
+		err := h.ConvertFieldsUp(ctx, ttnUp, appUp, dev)
 		a.So(err, ShouldBeNil)
 		a.So(appUp.PayloadFields, ShouldBeEmpty)
 	}
@@ -152,7 +157,7 @@ func TestConvertFieldsUpCayenneLPP(t *testing.T) {
 			h.applications.Delete(appID)
 		}()
 		ttnUp, appUp := buildCayenneLPPUplink(appID)
-		err := h.ConvertFieldsUp(ctx, ttnUp, appUp, nil)
+		err := h.ConvertFieldsUp(ctx, ttnUp, appUp, dev)
 		a.So(err, ShouldBeNil)
 		a.So(appUp.PayloadFields, ShouldResemble, map[string]interface{}{
 			"barometric_pressure_10": float32(1073.5),
