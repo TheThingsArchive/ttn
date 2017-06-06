@@ -156,28 +156,50 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb_handler.Device) (
 		return nil, errors.NewErrInvalidArgument("Device", "No LoRaWAN Device")
 	}
 
-	eventType, err := h.eventSelect(ctx, dev, lorawan, in.AppId)
-	if err != nil {
-		return nil, err
-	}
-	if eventType == types.UpdateEvent {
+	var eventType types.EventType
+	if dev != nil {
+		eventType = types.UpdateEvent
+		if dev.AppEUI != *lorawan.AppEui || dev.DevEUI != *lorawan.DevEui {
+			// If the AppEUI or DevEUI is changed, we should remove the device from the NetworkServer and re-add it later
+			_, err = h.handler.ttnDeviceManager.DeleteDevice(ttnctx.OutgoingContextWithToken(ctx, token), &pb_lorawan.DeviceIdentifier{
+				AppEui: &dev.AppEUI,
+				DevEui: &dev.DevEUI,
+			})
+			if err != nil {
+				return nil, errors.Wrap(errors.FromGRPCError(err), "Broker did not delete device")
+			}
+		}
 		dev.StartUpdate()
 	} else {
+		eventType = types.CreateEvent
+		existingDevices, err := h.handler.devices.ListForApp(in.AppId, nil)
+		if err != nil {
+			return nil, err
+		}
+		for _, existingDevice := range existingDevices {
+			if existingDevice.AppEUI == *lorawan.AppEui && existingDevice.DevEUI == *lorawan.DevEui {
+				return nil, errors.NewErrAlreadyExists("Device with AppEUI and DevEUI")
+			}
+		}
 		dev = new(device.Device)
 	}
 
-	dev.FromPb(in, lorawan)
-	if lorawan.AppKey != nil {
-		if dev.AppKey != *lorawan.AppKey { // When the AppKey of an existing device is changed
-			dev.UsedAppNonces = []device.AppNonce{}
-			dev.UsedDevNonces = []device.DevNonce{}
-		}
-		dev.AppKey = *lorawan.AppKey
+	// Reset join nonces when AppKey changes
+	if lorawan.AppKey != nil && dev.AppKey != *lorawan.AppKey { // do this BEFORE dev.FromPb(in)
+		dev.UsedAppNonces = []device.AppNonce{}
+		dev.UsedDevNonces = []device.DevNonce{}
 	}
-	err = h.updateDevBrk(ctx, token, dev, lorawan)
-	if err != nil {
-		return nil, errors.Wrap(errors.FromGRPCError(err), "Broker did not set device")
+	dev.FromPb(in)
+	if dev.Options.ActivationConstraints == "" {
+		dev.Options.ActivationConstraints = "local"
 	}
+
+	// Update the device in the Broker (NetworkServer)
+	nsUpdated := dev.GetLoRaWAN()
+	nsUpdated.FCntUp = lorawan.FCntUp
+	nsUpdated.FCntDown = lorawan.FCntDown
+
+	_, err = h.handler.ttnDeviceManager.SetDevice(ttnctx.OutgoingContextWithToken(ctx, token), nsUpdated)
 
 	err = h.handler.devices.Set(dev)
 	if err != nil {
