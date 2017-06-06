@@ -204,6 +204,9 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb_handler.Device) (
 	lorawanPb.FCntDown = lorawan.FCntDown
 
 	_, err = h.handler.ttnDeviceManager.SetDevice(ttnctx.OutgoingContextWithToken(ctx, token), lorawanPb)
+	if err != nil {
+		return nil, errors.Wrap(errors.FromGRPCError(err), "Broker did not set device")
+	}
 
 	err = h.handler.devices.Set(dev)
 	if err != nil {
