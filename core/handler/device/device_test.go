@@ -27,11 +27,11 @@ func TestDeviceClone(t *testing.T) {
 			PayloadRaw: []byte{1, 2, 3, 4},
 		},
 	}
-	n := device.Clone()
-	a.So(n.old, ShouldBeNil)
-	a.So(n.DevID, ShouldEqual, device.DevID)
-	a.So(n.CurrentDownlink, ShouldNotEqual, device.CurrentDownlink)
-	a.So(n.CurrentDownlink.PayloadRaw, ShouldResemble, device.CurrentDownlink.PayloadRaw)
+	new := device.Clone()
+	a.So(new.old, ShouldBeNil)
+	a.So(new.DevID, ShouldEqual, device.DevID)
+	a.So(new.CurrentDownlink, ShouldNotEqual, device.CurrentDownlink)
+	a.So(new.CurrentDownlink.PayloadRaw, ShouldResemble, device.CurrentDownlink.PayloadRaw)
 }
 
 func TestDeviceChangedFields(t *testing.T) {
