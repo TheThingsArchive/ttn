@@ -104,6 +104,7 @@ ttn gen-keypair generates a public/private keypair
       --amqp-password string             AMQP password (default "guest")
       --amqp-username string             AMQP username (default "guest")
       --broker-id string                 The ID of the TTN Broker as announced in the Discovery server (default "dev")
+      --extra-device-attributes string   Extra device attributes to be whitelisted
       --http-address string              The IP address where the gRPC proxy should listen (default "0.0.0.0")
       --http-port int                    The port where the gRPC proxy should listen (default 8084)
       --mqtt-address string              MQTT host and port. Leave empty to disable MQTT

@@ -218,6 +218,6 @@ func init() {
 	viper.BindPFlag("handler.http-address", handlerCmd.Flags().Lookup("http-address"))
 	viper.BindPFlag("handler.http-port", handlerCmd.Flags().Lookup("http-port"))
 
-	handlerCmd.Flags().String("extra-device-attr", "", "Extra device attributes to be whitelisted")
-	viper.BindPFlag("handler.extra-device-attr", handlerCmd.Flags().Lookup("extra-device-attr"))
+	handlerCmd.Flags().String("extra-device-attributes", "", "Extra device attributes to be whitelisted")
+	viper.BindPFlag("handler.extra-device-attributes", handlerCmd.Flags().Lookup("extra-device-attributes"))
 }
