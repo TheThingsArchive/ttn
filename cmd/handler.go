@@ -113,8 +113,8 @@ var handlerCmd = &cobra.Command{
 			ctx.Warn("AMQP is not enabled in your configuration")
 		}
 
-		if viper.GetString("handler.extra-device-attributes") != "" {
-			handler = handler.SetDeviceAttributesList(viper.GetString("handler.extra-device-attributes"))
+		if extraDeviceAttributes := viper.GetStringSlice("handler.extra-device-attributes"); len(extraDeviceAttributes) != 0 {
+			handler = handler.WithDeviceAttributes(extraDeviceAttributes...)
 		} else {
 			ctx.Debug("No extra device attribute set in your configuration")
 		}
@@ -218,6 +218,6 @@ func init() {
 	viper.BindPFlag("handler.http-address", handlerCmd.Flags().Lookup("http-address"))
 	viper.BindPFlag("handler.http-port", handlerCmd.Flags().Lookup("http-port"))
 
-	handlerCmd.Flags().String("extra-device-attributes", "", "Extra device attributes to be whitelisted")
+	handlerCmd.Flags().StringSlice("extra-device-attributes", nil, "Extra device attributes to be whitelisted")
 	viper.BindPFlag("handler.extra-device-attributes", handlerCmd.Flags().Lookup("extra-device-attributes"))
 }

@@ -10,7 +10,6 @@ import (
 
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/api"
-	pb_handler "github.com/TheThingsNetwork/ttn/api/handler"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/spf13/cobra"
@@ -155,20 +154,23 @@ var devicesSetCmd = &cobra.Command{
 			dev.Description = in
 		}
 
-		if in, err := cmd.Flags().GetStringArray("attr-add"); err == nil && len(in) > 0 {
+		if in, err := cmd.Flags().GetStringSlice("attr-set"); err == nil && len(in) > 0 {
+			if dev.Attributes == nil {
+				dev.Attributes = make(map[string]string, len(in))
+			}
 			for _, v := range in {
 				s := strings.SplitN(v, ":", 2)
 				if len(s) == 2 {
-					dev.Attributes = append(dev.Attributes, &pb_handler.Attribute{Key: s[0], Val: s[1]})
+					dev.Attributes[s[0]] = s[1]
 				} else {
-					ctx.Error(fmt.Sprintf("attr-add: cannot parse key:value %s", s))
+					ctx.Error(fmt.Sprintf("attr-set: cannot parse key:value %s", s))
 				}
 			}
 		}
 
-		if in, err := cmd.Flags().GetStringArray("attr-remove"); err == nil && len(in) > 0 {
+		if in, err := cmd.Flags().GetStringSlice("attr-remove"); err == nil && len(in) > 0 {
 			for _, v := range in {
-				dev.Attributes = append(dev.Attributes, &pb_handler.Attribute{Key: v, Val: ""})
+				delete(dev.Attributes, v)
 			}
 		}
 
@@ -209,6 +211,7 @@ func init() {
 	devicesSetCmd.Flags().Int32("altitude", 0, "Set altitude")
 
 	devicesSetCmd.Flags().String("description", "", "Set Description")
-	devicesSetCmd.Flags().StringArray("attr-add", []string{}, "Add a device attribute (key:value)")
-	devicesSetCmd.Flags().StringArray("attr-remove", []string{}, "Remove device attribute")
+
+	devicesSetCmd.Flags().StringSlice("attr-set", nil, "Add a device attribute (key:value)")
+	devicesSetCmd.Flags().StringSlice("attr-remove", nil, "Remove device attribute")
 }

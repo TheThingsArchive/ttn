@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	pb_handler "github.com/TheThingsNetwork/ttn/api/handler"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/smartystreets/assertions"
 )
@@ -39,7 +38,7 @@ var testDev = &Device{
 	CreatedAt: time.Now(),
 	UpdatedAt: time.Now(),
 
-	Attributes: []*pb_handler.Attribute{{"test", "test"}},
+	Attributes: map[string]string{"test": "test"},
 }
 
 func TestDevice_ToPb(t *testing.T) {
@@ -51,8 +50,7 @@ func TestDevice_ToPb(t *testing.T) {
 	a.So(p.Latitude, ShouldEqual, testDev.Latitude)
 	a.So(p.Longitude, ShouldEqual, testDev.Longitude)
 	a.So(p.Altitude, ShouldEqual, testDev.Altitude)
-	a.So(p.Attributes[0].Val, ShouldEqual, testDev.Attributes[0].Val)
-	a.So(p.Attributes[0].Key, ShouldEqual, testDev.Attributes[0].Key)
+	a.So(p.Attributes, ShouldResemble, testDev.Attributes)
 }
 
 func TestDevice_FromPb(t *testing.T) {
@@ -65,6 +63,5 @@ func TestDevice_FromPb(t *testing.T) {
 	a.So(dev.Latitude, ShouldEqual, testDev.Latitude)
 	a.So(dev.Longitude, ShouldEqual, testDev.Longitude)
 	a.So(dev.Altitude, ShouldEqual, testDev.Altitude)
-	a.So(dev.Attributes[0].Val, ShouldEqual, testDev.Attributes[0].Val)
-	a.So(dev.Attributes[0].Key, ShouldEqual, testDev.Attributes[0].Key)
+	a.So(p.Attributes, ShouldResemble, testDev.Attributes)
 }

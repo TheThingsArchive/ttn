@@ -5,18 +5,14 @@ package device
 
 import (
 	"fmt"
-	"strings"
+	"sort"
 	"time"
 
-	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/core/handler/device/migrate"
 	"github.com/TheThingsNetwork/ttn/core/storage"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"gopkg.in/redis.v5"
 )
-
-const maxAttr uint8 = 5
-const maxAttrLength = 200
 
 // Store interface for Devices
 type Store interface {
@@ -28,18 +24,24 @@ type Store interface {
 	DownlinkQueue(appID, devID string) (DownlinkQueue, error)
 	Set(new *Device, properties ...string) (err error)
 	Delete(appID, devID string) error
-	SetAttributesList(string)
+	AddAllowedAttribute(attr ...string)
 }
 
 const defaultRedisPrefix = "handler"
 const redisDevicePrefix = "device"
 const redisDownlinkQueuePrefix = "downlink"
 
-var defaultDeviceAttributeList = map[string]bool{
-	"ttn-model":   true,
-	"ttn-type":    true,
-	"ttn-version": true,
+var defaultDeviceAttributes = []string{
+	"ttn-model",
+	"ttn-type",
+	"ttn-version",
 }
+
+const (
+	maxDeviceAttributeKeyLength   = 64
+	maxDeviceAttributeValueLength = 64
+	maxDeviceAttributes           = 5
+)
 
 // NewRedisDeviceStore creates a new Redis-based Device store
 func NewRedisDeviceStore(client *redis.Client, prefix string) *RedisDeviceStore {
@@ -52,19 +54,20 @@ func NewRedisDeviceStore(client *redis.Client, prefix string) *RedisDeviceStore 
 		store.AddMigration(v, f)
 	}
 	queues := storage.NewRedisQueueStore(client, prefix+":"+redisDownlinkQueuePrefix)
-	return &RedisDeviceStore{
-		store:          store,
-		queues:         queues,
-		attributesKeys: defaultDeviceAttributeList,
+	s := &RedisDeviceStore{
+		store:  store,
+		queues: queues,
 	}
+	s.AddAllowedAttribute(defaultDeviceAttributes...)
+	return s
 }
 
 // RedisDeviceStore stores Devices in Redis.
 // - Devices are stored as a Hash
 type RedisDeviceStore struct {
-	store          *storage.RedisMapStore
-	queues         *storage.RedisQueueStore
-	attributesKeys map[string]bool
+	store             *storage.RedisMapStore
+	queues            *storage.RedisQueueStore
+	allowedAttributes []string // sorted
 }
 
 // Count all devices in the store
@@ -136,7 +139,24 @@ func (s *RedisDeviceStore) Set(new *Device, properties ...string) (err error) {
 	if new.old == nil {
 		new.CreatedAt = now
 	}
-	s.sortAttributes(new)
+	customAttributeSlots := maxDeviceAttributes
+	for k, v := range new.Attributes {
+		if idx := sort.SearchStrings(s.allowedAttributes, k); idx < len(s.allowedAttributes) && s.allowedAttributes[idx] == k {
+			fmt.Println("Setting attribute", k, v)
+			continue
+		}
+		if len(k) > maxDeviceAttributeKeyLength {
+			return fmt.Errorf(`Attribute key "%s" exceeds maximum length (%d)`, k, maxDeviceAttributeKeyLength)
+		}
+		if len(v) > maxDeviceAttributeValueLength {
+			return fmt.Errorf(`Attribute value for key "%s" exceeds maximum length (%d)`, k, maxDeviceAttributeValueLength)
+		}
+		if customAttributeSlots < 1 {
+			return fmt.Errorf(`Maximum number of custom attributes (%d) exceeded`, maxDeviceAttributes)
+		}
+		fmt.Println("Setting attribute", k, v)
+		customAttributeSlots--
+	}
 	err = s.store.Set(key, *new, properties...)
 	if err != nil {
 		return
@@ -153,41 +173,8 @@ func (s *RedisDeviceStore) Delete(appID, devID string) error {
 	return s.store.Delete(key)
 }
 
-// SetAttributesList set the key that will always be added to the Attribute map.
-func (s *RedisDeviceStore) SetAttributesList(a string) {
-	l := strings.Split(a, ":")
-	for _, key := range l {
-		if api.ValidID(key) {
-			s.attributesKeys[key] = true
-		}
-	}
-}
-
-// sortAttributes allow restriction on the builtin attributesKeys.
-// The attribute in list will always be allowed.
-// The attributesKeys already present will not be replaced/deleted unless stated otherwise.
-// Then the new attributesKeys wil be added if they key is valid and if there is enough key slot available
-func (s *RedisDeviceStore) sortAttributes(new *Device) {
-	m, max := new.MapOldAttributes(s.attributesKeys)
-	max = maxAttr - max
-	if m == nil {
-		m = make(map[string]string, max)
-	}
-	for _, v := range new.Attributes {
-		_, ok := m[v.Key]
-		_, okw := s.attributesKeys[v.Key]
-		if v.Val == "" {
-			if ok {
-				delete(m, v.Key)
-				max++
-			}
-		} else if (ok || okw || (max > 0 && api.ValidID(v.Key))) &&
-			len(v.Val) < maxAttrLength {
-			m[v.Key] = v.Val
-			if !ok && !okw {
-				max--
-			}
-		}
-	}
-	new.AttributesFromMap(m)
+// AddAllowedAttribute adds allowed device attributes to the list.
+func (s *RedisDeviceStore) AddAllowedAttribute(attr ...string) {
+	s.allowedAttributes = append(s.allowedAttributes, attr...)
+	sort.Strings(s.allowedAttributes)
 }

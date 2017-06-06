@@ -27,7 +27,7 @@ type Handler interface {
 
 	WithMQTT(username, password string, brokers ...string) Handler
 	WithAMQP(username, password, host, exchange string) Handler
-	SetDeviceAttributesList(list string) Handler
+	WithDeviceAttributes(attribute ...string) Handler
 
 	HandleUplink(uplink *pb_broker.DeduplicatedUplinkMessage) error
 	HandleActivationChallenge(challenge *pb_broker.ActivationChallengeRequest) (*pb_broker.ActivationChallengeResponse, error)
@@ -106,8 +106,8 @@ func (h *handler) WithAMQP(username, password, host, exchange string) Handler {
 	return h
 }
 
-func (h *handler) SetDeviceAttributesList(list string) Handler {
-	h.devices.SetAttributesList(list)
+func (h *handler) WithDeviceAttributes(a ...string) Handler {
+	h.devices.AddAllowedAttribute(a...)
 	return h
 }
 

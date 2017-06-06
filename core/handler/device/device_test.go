@@ -6,7 +6,6 @@ package device
 import (
 	"testing"
 
-	pb_handler "github.com/TheThingsNetwork/ttn/api/handler"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/smartystreets/assertions"
 )
@@ -45,56 +44,4 @@ func TestDeviceChangedFields(t *testing.T) {
 
 	a.So(device.ChangedFields(), ShouldHaveLength, 1)
 	a.So(device.ChangedFields(), ShouldContain, "DevID")
-}
-
-func TestDeviceGetLoRaWAN(t *testing.T) {
-	device := &Device{
-		DevID: "Device",
-	}
-	device.GetLoRaWAN()
-}
-
-func TestDevice_MapOldAttributes(t *testing.T) {
-	a := New(t)
-
-	device := &Device{}
-	m, _ := device.MapOldAttributes(nil)
-	a.So(m, ShouldBeNil)
-
-	device.old = &Device{
-		Attributes: nil,
-	}
-	m, _ = device.MapOldAttributes(nil)
-	a.So(m, ShouldBeEmpty)
-
-	device = &Device{
-		old: &Device{
-			Attributes: []*pb_handler.Attribute{
-				{"Hello", "Bonjour"},
-			},
-		},
-	}
-	m, i := device.MapOldAttributes(nil)
-	if !a.So(m, ShouldNotBeNil) {
-		return
-	}
-	a.So(m["Hello"], ShouldEqual, "Bonjour")
-	a.So(i, ShouldEqual, 1)
-
-	m, i = device.MapOldAttributes(map[string]bool{"Hello": true})
-	if !a.So(m, ShouldNotBeNil) {
-		return
-	}
-	a.So(m["Hello"], ShouldEqual, "Bonjour")
-	a.So(i, ShouldBeZeroValue)
-}
-
-func TestDevice_AttributesFromMap(t *testing.T) {
-	a := New(t)
-
-	device := &Device{}
-
-	testMap := map[string]string{"Hello": "Bonjour", "Adios": "Goodbye"}
-	device.AttributesFromMap(testMap)
-	a.So(device.Attributes[0].Key, ShouldEqual, "Adios")
 }

@@ -4,9 +4,9 @@
 package device
 
 import (
+	"strings"
 	"testing"
 
-	pb "github.com/TheThingsNetwork/ttn/api/handler"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/assertions"
@@ -121,136 +121,69 @@ func TestDeviceStore(t *testing.T) {
 
 }
 
-func TestRedisDeviceStore_SetAttributesList(t *testing.T) {
+func TestRedisDeviceStoreAttributes(t *testing.T) {
 	a := New(t)
 
-	store := NewRedisDeviceStore(GetRedisClient(), "handler-test-attribute")
-	store.SetAttributesList("ttn-light:ttn-Humidity")
-	a.So(store.attributesKeys["ttn-light"], ShouldBeTrue)
-	a.So(store.attributesKeys["ttn-humidity"], ShouldBeFalse)
-}
+	store := NewRedisDeviceStore(GetRedisClient(), "handler-test-attributes")
+	store.AddAllowedAttribute("ttn-device-model")
+	a.So(store.allowedAttributes, ShouldContain, "ttn-device-model")
 
-func TestRedisDeviceStore_sortAttributes_Add(t *testing.T) {
-	a := New(t)
-
-	store := NewRedisDeviceStore(GetRedisClient(), "handler-test-attribute")
-
-	testMap1 := []*pb.Attribute{
-		{"hello", "bonjour"},
-		{"test", "TeSt"},
-	}
-	in := &Device{Attributes: testMap1}
-	store.sortAttributes(in)
-	a.So(in.Attributes, ShouldNotBeNil)
-	a.So(in.Attributes[0].Key, ShouldEqual, testMap1[0].Key)
-	a.So(in.Attributes[0].Val, ShouldEqual, testMap1[0].Val)
-	a.So(in.Attributes[1].Key, ShouldEqual, testMap1[1].Key)
-
-	// Past limit of 5
-	testMap2 := []*pb.Attribute{
-		{"hello", "bonjour"},
-		{"test", "TeSt"},
-		{"beer", "cold"},
-		{"weather", "hot"},
-		{"heart", "pique"},
-		{"square", "trefle"},
-	}
-	in.Attributes = testMap2
-	store.sortAttributes(in)
-	a.So(len(in.Attributes), ShouldEqual, 5)
-	a.So(in.Attributes[0].Key, ShouldEqual, testMap2[2].Key)
-	a.So(in.Attributes[4].Key, ShouldEqual, testMap2[3].Key)
-
-	// Past limit of 5 attributesKeys
-	store.SetAttributesList("ttn-light:ttn-humidity")
-	testMap3 := []*pb.Attribute{
-		{"ttn-light", "quatre-ving-dix pourcent"},
-		{"hello", "bonjour"},
-		{"test", "TeSt"},
-		{"beer", "cold"},
-		{"weather", "hot"},
-		{"heart", "pique"},
-		{"square", "trefle"},
-	}
-	in.Attributes = testMap3
-	store.sortAttributes(in)
-	a.So(len(in.Attributes), ShouldEqual, 6)
-	attr := &pb.Attribute{}
-	for _, v := range in.Attributes {
-		if v.Key == "ttn-light" {
-			attr = v
-		}
-	}
-	a.So(attr.Key, ShouldEqual, testMap3[0].Key)
-	a.So(attr.Val, ShouldEqual, testMap3[0].Val)
-}
-
-func TestRedisDeviceStore_sortAttributes_KeyValidation(t *testing.T) {
-	a := New(t)
-
-	store := NewRedisDeviceStore(GetRedisClient(), "handler-test-attribute")
-	testMap1 := []*pb.Attribute{
-		{"Hello", "bonjour"},
-		{"test", "TeSt"},
-		{"youknowsometimesyoujustwanttoputareallylongnametobesurepeoplewillknowwhatallthislittlebytemean", "1"},
-		{"", "too short!"},
+	testMap1 := map[string]string{
+		"ttn-device-model": "test-device",
+		"hello":            "bonjour",
+		"test":             "TeSt",
 	}
 
-	in := &Device{Attributes: testMap1}
-	store.sortAttributes(in)
-	a.So(in.Attributes, ShouldNotBeNil)
-	a.So(len(in.Attributes), ShouldEqual, 1)
-}
+	err := store.Set(&Device{
+		AppID:      "appID",
+		DevID:      "devID",
+		Attributes: testMap1,
+	})
+	a.So(err, ShouldBeNil)
 
-func TestRedisDeviceStore_sortAttributes_Remove(t *testing.T) {
-	a := New(t)
+	dev, err := store.Get("appID", "devID")
+	a.So(err, ShouldBeNil)
+	a.So(dev.Attributes, ShouldResemble, testMap1)
 
-	store := NewRedisDeviceStore(GetRedisClient(), "handler-test-attribute")
+	dev.StartUpdate()
 
-	testMap1 := []*pb.Attribute{
-		{"hello", "bonjour"},
-		{"test", "TeSt"},
+	// Exceed limit of 5
+	testMap2 := map[string]string{
+		"hello":   "bonjour",
+		"test":    "TeSt",
+		"beer":    "cold",
+		"weather": "hot",
+		"heart":   "pique",
+		"square":  "trefle",
 	}
-	testMapRm := []*pb.Attribute{
-		{"hello", ""},
-		{"test", ""},
-	}
-	in := &Device{Attributes: testMapRm, old: &Device{Attributes: testMap1}}
-	store.sortAttributes(in)
-	a.So(in.Attributes, ShouldBeEmpty)
+	dev.Attributes = testMap2
 
-	testMap2 := []*pb.Attribute{
-		{"hello", "bonjour"},
-		{"test", "TeSt"},
-	}
-	testMapRm2 := []*pb.Attribute{
-		{"hello", ""},
-		{"hello", "coucou"},
-		{"test", ""},
-	}
-	in.Attributes = testMapRm2
-	in.old.Attributes = testMap2
-	store.sortAttributes(in)
-	a.So(len(in.Attributes), ShouldEqual, 1)
-}
+	err = store.Set(dev)
+	a.So(err, ShouldNotBeNil)
 
-func TestRedisDeviceStore_attributesAdd(t *testing.T) {
-	a := New(t)
-
-	store := NewRedisDeviceStore(GetRedisClient(), "handler-test-attribute")
-
-	dev := &Device{
-		Attributes: []*pb.Attribute{
-			{"Hello", "Bonjour"},
-			{"adios", "goodbye"},
-			{"youknowsometimesyoujustwanttoputareallylongnametobesurepeoplewillknowwhatallthislittlebytemean", "longKey"},
-			{"longval", "youknowsometimesyoujustwanttoputareallylongnametobesurepeoplewillknowwhatallthislittlebytemean" +
-				"youknowsometimesyoujustwanttoputareallylongnametobesurepeoplewillknowwhatallthislittlebytemean" +
-				"youknowsometimesyoujustwanttoputareallylongnametobesurepeoplewillknowwhatallthislittlebytemean"},
-		},
+	// Does not exceed limit because of allowed attr
+	testMap3 := map[string]string{
+		"ttn-device-model": "test-device",
+		"hello":            "bonjour",
+		"test":             "TeSt",
+		"beer":             "cold",
+		"weather":          "hot",
+		"heart":            "pique",
 	}
-	store.sortAttributes(dev)
-	a.So(dev.Attributes, ShouldNotBeNil)
-	a.So(len(dev.Attributes), ShouldEqual, 1)
-	a.So(dev.Attributes[0].Val, ShouldEqual, "goodbye")
+	dev.Attributes = testMap3
+
+	err = store.Set(dev)
+	a.So(err, ShouldBeNil)
+
+	dev, err = store.Get("appID", "devID")
+	a.So(err, ShouldBeNil)
+	a.So(dev.Attributes, ShouldResemble, testMap3)
+
+	dev.Attributes = map[string]string{strings.Repeat("foo", 30): "invalid"}
+	err = store.Set(dev)
+	a.So(err, ShouldNotBeNil)
+
+	dev.Attributes = map[string]string{"invalid": strings.Repeat("foo", 30)}
+	err = store.Set(dev)
+	a.So(err, ShouldNotBeNil)
 }

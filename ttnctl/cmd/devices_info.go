@@ -4,7 +4,6 @@
 package cmd
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -113,8 +112,11 @@ var devicesInfoCmd = &cobra.Command{
 		}
 
 		if len(dev.Attributes) != 0 {
-			attrs, _ := json.MarshalIndent(dev.Attributes, "             ", " ")
-			fmt.Printf("  Attributes: %v\n", string(attrs))
+			fmt.Println()
+			fmt.Println(" Attributes:")
+			for k, v := range dev.Attributes {
+				printKV(k, v)
+			}
 		}
 	},
 }

@@ -5,11 +5,8 @@ package device
 
 import (
 	"reflect"
-	"sort"
 	"time"
 
-	pb_handler "github.com/TheThingsNetwork/ttn/api/handler"
-	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/fatih/structs"
 )
@@ -57,7 +54,7 @@ type Device struct {
 	CreatedAt time.Time `redis:"created_at"`
 	UpdatedAt time.Time `redis:"updated_at"`
 
-	Attributes []*pb_handler.Attribute `redis:"attributesKeys"`
+	Attributes map[string]string `redis:"attributes"`
 }
 
 // StartUpdate stores the state of the device
@@ -85,14 +82,14 @@ func (d *Device) DBVersion() string {
 
 // ChangedFields returns the names of the changed fields since the last call to StartUpdate
 func (d Device) ChangedFields() (changed []string) {
-	n := structs.New(d)
-	fields := n.Names()
+	new := structs.New(d)
+	fields := new.Names()
 	if d.old == nil {
 		return fields
 	}
 	old := structs.New(*d.old)
 
-	for _, field := range n.Fields() {
+	for _, field := range new.Fields() {
 		if !field.IsExported() || field.Name() == "old" {
 			continue
 		}
@@ -106,56 +103,4 @@ func (d Device) ChangedFields() (changed []string) {
 	}
 
 	return
-}
-
-// GetLoRaWAN returns a LoRaWAN Device proto
-func (d Device) GetLoRaWAN() *pb_lorawan.Device {
-	dev := &pb_lorawan.Device{
-		AppId:                 d.AppID,
-		DevId:                 d.DevID,
-		AppEui:                &d.AppEUI,
-		DevEui:                &d.DevEUI,
-		DevAddr:               &d.DevAddr,
-		NwkSKey:               &d.NwkSKey,
-		DisableFCntCheck:      d.Options.DisableFCntCheck,
-		Uses32BitFCnt:         d.Options.Uses32BitFCnt,
-		ActivationConstraints: d.Options.ActivationConstraints,
-	}
-	return dev
-}
-
-// MapOldAttributes transform the outdated slice to a map and return it, also return the number of free builtin
-// present in the map
-func (d *Device) MapOldAttributes(attributesKeys map[string]bool) (m map[string]string, i uint8) {
-
-	i = 0
-	m = nil
-	if d.old != nil {
-		m = make(map[string]string, len(d.old.Attributes))
-		for _, v := range d.old.Attributes {
-			if _, ok := attributesKeys[v.Key]; !ok {
-				i++
-			}
-			m[v.Key] = v.Val
-		}
-	}
-	return m, i
-}
-
-// AttributesFromMap take a map[string]string into an Attribute slice and replace the current attribute slice with it.
-// The element in the slice are ordered alphabetically in function of the map key
-func (d *Device) AttributesFromMap(attributeMap map[string]string) {
-
-	l := make([]*pb_handler.Attribute, len(attributeMap))
-	ks := make([]string, len(attributeMap))
-	i := 0
-	for key := range attributeMap {
-		ks[i] = key
-		i++
-	}
-	sort.Strings(ks)
-	for i, key := range ks {
-		l[i] = &pb_handler.Attribute{key, attributeMap[key]}
-	}
-	d.Attributes = l
 }
