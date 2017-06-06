@@ -8,6 +8,5 @@ key-dir: "./.env/handler/"
 handler:
   amqp-address: localhost:5672
   mqtt-address: localhost:1883
-  extra-device-attributes: ttn-model:ttn-battery
 
 auth-token: eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE0ODE4ODMwNjksImlzcyI6ImxvY2FsIiwibmJmIjoxNDgxODgzMDY5LCJzdWIiOiJkZXYiLCJ0eXBlIjoiaGFuZGxlciJ9.ZXUIb2hpaMK9p_F92KtRuCf77w4fuf4w9wrd0ym4WpEq0y2WPIOPBCLX_a_Iu33pr2GwXwlJcg6Ig9J29hnysg
