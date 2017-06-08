@@ -136,6 +136,8 @@ func init() {
 		"ttn-account-v2": "https://account.thethingsnetwork.org",
 	})
 
+	viper.SetDefault("monitor-interval", "6")
+
 	dir, err := homedir.Dir()
 	if err == nil {
 		dir, _ = homedir.Expand(dir)

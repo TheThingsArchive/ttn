@@ -6,11 +6,13 @@ package networkserver
 import (
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_handler "github.com/TheThingsNetwork/ttn/api/handler"
+	pb_monitor "github.com/TheThingsNetwork/ttn/api/monitor"
 	pb "github.com/TheThingsNetwork/ttn/api/networkserver"
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/networkserver/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
+	"github.com/spf13/viper"
 	"gopkg.in/redis.v5"
 )
 
@@ -41,10 +43,11 @@ func NewRedisNetworkServer(client *redis.Client, netID int) NetworkServer {
 
 type networkServer struct {
 	*component.Component
-	devices  device.Store
-	netID    [3]byte
-	prefixes map[types.DevAddrPrefix][]string
-	status   *status
+	devices       device.Store
+	netID         [3]byte
+	prefixes      map[types.DevAddrPrefix][]string
+	status        *status
+	monitorStream pb_monitor.GenericStream
 }
 
 func (n *networkServer) UsePrefix(prefix types.DevAddrPrefix, usage []string) error {
@@ -84,6 +87,13 @@ func (n *networkServer) Init(c *component.Component) error {
 		return err
 	}
 	n.Component.SetStatus(component.StatusHealthy)
+	if n.Component.Monitor != nil {
+		n.monitorStream = n.Component.Monitor.NewNetworkServerStreams(n.Identity.Id, n.AccessToken)
+
+		if len(viper.GetStringMapString("monitor-servers")) > 0 {
+			go n.monitorNetworkServerStatus()
+		}
+	}
 	return nil
 }
 

@@ -12,9 +12,11 @@ import (
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	pb_gateway "github.com/TheThingsNetwork/ttn/api/gateway"
+	pb_monitor "github.com/TheThingsNetwork/ttn/api/monitor"
 	pb "github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/router/gateway"
+	"github.com/spf13/viper"
 )
 
 // Router component
@@ -56,11 +58,12 @@ func NewRouter() Router {
 
 type router struct {
 	*component.Component
-	gateways     map[string]*gateway.Gateway
-	gatewaysLock sync.RWMutex
-	brokers      map[string]*broker
-	brokersLock  sync.RWMutex
-	status       *status
+	gateways      map[string]*gateway.Gateway
+	gatewaysLock  sync.RWMutex
+	brokers       map[string]*broker
+	brokersLock   sync.RWMutex
+	status        *status
+	monitorStream pb_monitor.GenericStream
 }
 
 func (r *router) tickGateways() {
@@ -90,6 +93,13 @@ func (r *router) Init(c *component.Component) error {
 		}
 	}()
 	r.Component.SetStatus(component.StatusHealthy)
+	if r.Component.Monitor != nil {
+		r.monitorStream = r.Component.Monitor.NewRouterStreams(r.Identity.Id, r.AccessToken)
+
+		if len(viper.GetStringMapString("monitor-servers")) > 0 {
+			go r.monitorRouterStatus()
+		}
+	}
 	return nil
 }
 
