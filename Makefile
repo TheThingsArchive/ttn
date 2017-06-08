@@ -22,7 +22,7 @@ build-deps:
 	@command -v govendor > /dev/null || go get "github.com/kardianos/govendor"
 
 deps: build-deps
-	govendor sync -v
+	govendor sync
 
 dev-deps: deps
 	@command -v protoc-gen-grpc-gateway > /dev/null || go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway
