@@ -26,7 +26,9 @@ func Dial(target string) (*grpc.ClientConn, error) {
 		pool.Global.Close(target)
 		log.Get().Warn("Could not connect to gRPC server with TLS, will reconnect without TLS")
 		log.Get().Warnf("This is a security risk, you should enable TLS on %s", target)
+		pool.Global.Close(target)
 		conn, err = pool.Global.DialInsecure(target)
+
 	}
 	return conn, err
 }
