@@ -196,13 +196,13 @@ func TestHandleDownlinkADR(t *testing.T) {
 	dev.ADR.DataRate = "SF8BW125"
 	nothingShouldHappen()
 
-	dev.ADR.Band = "INVALID"
+	dev.Options.FrequencyPlan = "INVALID"
 	shouldReturnError()
 
-	dev.ADR.Band = "US_902_928"
+	dev.Options.FrequencyPlan = "US_902_928"
 	nothingShouldHappen()
 
-	dev.ADR.Band = "EU_863_870"
+	dev.Options.FrequencyPlan = "EU_863_870"
 
 	err := ns.handleDownlinkADR(message, dev)
 	a.So(err, ShouldBeNil)

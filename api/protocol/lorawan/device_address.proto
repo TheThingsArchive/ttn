@@ -15,7 +15,7 @@ message PrefixesResponse {
   message PrefixMapping {
     // The prefix that can be used
     string          prefix = 1;
-    // Usage constraints of this prefix (see activation_constraints in device.proto)
+    // Usage constraints of this prefix (see activation_constraints in lorawan.proto)
     repeated string usage  = 2;
   }
   // The prefixes that are in use or available
@@ -23,7 +23,7 @@ message PrefixesResponse {
 }
 
 message DevAddrRequest {
-  // The usage constraints (see activation_constraints in device.proto)
+  // The usage constraints (see activation_constraints in lorawan.proto)
   repeated string usage = 1;
 }
 

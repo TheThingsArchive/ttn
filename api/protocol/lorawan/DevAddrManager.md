@@ -24,7 +24,7 @@ Request a device address
 
 | Field Name | Type | Description |
 | ---------- | ---- | ----------- |
-| `usage` | _repeated_ `string` | The usage constraints (see activation_constraints in device.proto) |
+| `usage` | _repeated_ `string` | The usage constraints (see activation_constraints in lorawan.proto) |
 
 ### `.lorawan.DevAddrResponse`
 
@@ -45,5 +45,5 @@ Request a device address
 | Field Name | Type | Description |
 | ---------- | ---- | ----------- |
 | `prefix` | `string` | The prefix that can be used |
-| `usage` | _repeated_ `string` | Usage constraints of this prefix (see activation_constraints in device.proto) |
+| `usage` | _repeated_ `string` | Usage constraints of this prefix (see activation_constraints in lorawan.proto) |
 

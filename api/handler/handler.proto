@@ -8,7 +8,7 @@ import "google/api/annotations.proto";
 import "ttn/api/api.proto";
 import "ttn/api/broker/broker.proto";
 import "ttn/api/protocol/protocol.proto";
-import "ttn/api/protocol/lorawan/device.proto";
+import "ttn/api/protocol/lorawan/lorawan.proto";
 import "ttn/api/trace/trace.proto";
 
 package handler;

@@ -44,6 +44,9 @@ func (n *networkServer) HandleUplink(message *pb_broker.DeduplicatedUplinkMessag
 
 	dev.FCntUp = lorawanUplinkMac.FCnt
 	dev.LastSeen = time.Now()
+	if dev.Options.FrequencyPlan == "" {
+		dev.Options.FrequencyPlan = message.GetProtocolMetadata().GetLorawan().GetFrequencyPlan().String()
+	}
 
 	// Prepare Downlink
 	message.InitResponseTemplate()

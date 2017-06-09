@@ -94,6 +94,7 @@ func (h *handler) EnqueueDownlink(appDownlink *types.DownlinkMessage) (err error
 			Message: appDownlink,
 		},
 	}
+
 	return nil
 }
 

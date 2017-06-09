@@ -66,7 +66,7 @@ func (n *networkServerManager) GetDevice(ctx context.Context, in *pb_lorawan.Dev
 		lastSeen = dev.LastSeen
 	}
 
-	return &pb_lorawan.Device{
+	pbDev := &pb_lorawan.Device{
 		AppId:                 dev.AppID,
 		AppEui:                &dev.AppEUI,
 		DevId:                 dev.DevID,
@@ -82,7 +82,15 @@ func (n *networkServerManager) GetDevice(ctx context.Context, in *pb_lorawan.Dev
 		Rx2DataRate:           dev.Options.RX2DataRate,
 		Rx2Frequency:          dev.Options.RX2Frequency,
 		LastSeen:              lastSeen.UnixNano(),
-	}, nil
+	}
+	if class, ok := pb_lorawan.Class_value[dev.Options.LoRaWANClass]; ok {
+		pbDev.Class = pb_lorawan.Class(class)
+	}
+	if fp, ok := pb_lorawan.FrequencyPlan_value[dev.Options.FrequencyPlan]; ok {
+		pbDev.FrequencyPlan = pb_lorawan.FrequencyPlan(fp)
+	}
+
+	return pbDev, nil
 }
 
 func (n *networkServerManager) SetDevice(ctx context.Context, in *pb_lorawan.Device) (*empty.Empty, error) {
@@ -116,7 +124,7 @@ func (n *networkServerManager) SetDevice(ctx context.Context, in *pb_lorawan.Dev
 	dev.DevEUI = *in.DevEui
 	dev.FCntUp = in.FCntUp
 	dev.FCntDown = in.FCntDown
-	dev.ADR = device.ADRSettings{Band: dev.ADR.Band, Margin: dev.ADR.Margin}
+	dev.ADR = device.ADRSettings{Margin: dev.ADR.Margin}
 
 	dev.Options = device.Options{
 		DisableFCntCheck:      in.DisableFCntCheck,
@@ -125,6 +133,8 @@ func (n *networkServerManager) SetDevice(ctx context.Context, in *pb_lorawan.Dev
 		PreferredGateways:     in.PreferredGateways,
 		RX2DataRate:           in.Rx2DataRate,
 		RX2Frequency:          in.Rx2Frequency,
+		FrequencyPlan:         in.FrequencyPlan.String(),
+		LoRaWANClass:          in.Class.String(),
 	}
 
 	if in.NwkSKey != nil && in.DevAddr != nil {

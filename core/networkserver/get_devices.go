@@ -40,6 +40,12 @@ func (n *networkServer) HandleGetDevices(req *pb.DevicesRequest) (*pb.DevicesRes
 			Rx2DataRate:           device.Options.RX2DataRate,
 			Rx2Frequency:          device.Options.RX2Frequency,
 		}
+		if class, ok := pb_lorawan.Class_value[device.Options.LoRaWANClass]; ok {
+			dev.Class = pb_lorawan.Class(class)
+		}
+		if fp, ok := pb_lorawan.FrequencyPlan_value[device.Options.FrequencyPlan]; ok {
+			dev.FrequencyPlan = pb_lorawan.FrequencyPlan(fp)
+		}
 		if device.Options.DisableFCntCheck {
 			res.Results = append(res.Results, dev)
 			continue

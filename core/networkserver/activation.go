@@ -141,10 +141,10 @@ func (n *networkServer) HandleActivate(activation *pb_handler.DeviceActivationRe
 	dev.NwkSKey = *lorawan.NwkSKey
 	dev.FCntUp = 0
 	dev.FCntDown = 0
-	dev.ADR = device.ADRSettings{Band: dev.ADR.Band, Margin: dev.ADR.Margin}
+	dev.ADR = device.ADRSettings{Margin: dev.ADR.Margin}
 
-	if band := meta.GetLorawan().GetFrequencyPlan().String(); band != "" {
-		dev.ADR.Band = band
+	if fp := meta.GetLorawan().GetFrequencyPlan().String(); fp != "" {
+		dev.Options.FrequencyPlan = fp
 	}
 
 	err = n.devices.Set(dev)

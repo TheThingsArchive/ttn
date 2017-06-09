@@ -121,6 +121,12 @@ func (h *handlerManager) GetDevice(ctx context.Context, in *pb.DeviceIdentifier)
 		Longitude: dev.Longitude,
 		Altitude:  dev.Altitude,
 	}
+	if class, ok := pb_lorawan.Class_value[dev.Options.LoRaWANClass]; ok {
+		pbDev.GetLorawanDevice().Class = pb_lorawan.Class(class)
+	}
+	if fp, ok := pb_lorawan.FrequencyPlan_value[dev.Options.FrequencyPlan]; ok {
+		pbDev.GetLorawanDevice().FrequencyPlan = pb_lorawan.FrequencyPlan(fp)
+	}
 
 	nsDev, err := h.handler.ttnDeviceManager.GetDevice(ttnctx.OutgoingContextWithToken(ctx, token), &pb_lorawan.DeviceIdentifier{
 		AppEui: &dev.AppEUI,
@@ -221,6 +227,8 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb.Device) (*empty.E
 		PreferredGateways:     lorawan.PreferredGateways,
 		RX2DataRate:           lorawan.Rx2DataRate,
 		RX2Frequency:          lorawan.Rx2Frequency,
+		FrequencyPlan:         lorawan.FrequencyPlan.String(),
+		LoRaWANClass:          lorawan.Class.String(),
 	}
 	if dev.Options.ActivationConstraints == "" {
 		dev.Options.ActivationConstraints = "local"

@@ -15,12 +15,14 @@ const currentDBVersion = "2.8.0"
 
 // Options for the specified device
 type Options struct {
-	ActivationConstraints string   `redis:"activation_constraints"` // Activation Constraints (public/local/private)
-	DisableFCntCheck      bool     `redis:"disable_fcnt_check"`     // Disable Frame counter check (insecure)
-	Uses32BitFCnt         bool     `redis:"uses_32_bit_fcnt"`       // Use 32-bit Frame counters
-	PreferredGateways     []string `redis:"preferred_gateways"`     // Preferred gateways for downlink
-	RX2DataRate           string   `redis:"rx2_data_rate"`          // RX2 Data Rate
-	RX2Frequency          uint64   `redis:"rx2_frequency"`          // RX2 Frequency in Hz
+	ActivationConstraints string   `redis:"activation_constraints"`  // Activation Constraints (public/local/private)
+	DisableFCntCheck      bool     `redis:"disable_fcnt_check"`      // Disable Frame counter check (insecure)
+	Uses32BitFCnt         bool     `redis:"uses_32_bit_fcnt"`        // Use 32-bit Frame counters
+	PreferredGateways     []string `redis:"preferred_gateways"`      // Preferred gateways for downlink
+	RX2DataRate           string   `redis:"rx2_data_rate"`           // RX2 Data Rate
+	RX2Frequency          uint64   `redis:"rx2_frequency"`           // RX2 Frequency in Hz
+	FrequencyPlan         string   `redis:"frequency_plan"`          // Frequency plan of the device
+	LoRaWANClass          string   `redis:"lorawan_class,omitemtpy"` // LoRaWAN Device class
 }
 
 // Device contains the state of a device
@@ -45,8 +47,7 @@ type Device struct {
 
 // ADRSettings contains the (desired) settings for a device that uses ADR
 type ADRSettings struct {
-	Band   string `redis:"band"`
-	Margin int    `redis:"margin"`
+	Margin int `redis:"margin"`
 
 	// Indicates whether the NetworkServer should send a LinkADRReq when possible
 	SendReq bool `redis:"send_req,omitempty"`

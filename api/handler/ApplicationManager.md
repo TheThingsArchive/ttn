@@ -155,12 +155,14 @@ GetDevice returns the device with the given identifier (app_id and dev_id)
     "app_id": "some-app-id",
     "app_key": "01020304050607080102030405060708",
     "app_s_key": "01020304050607080102030405060708",
+    "class": "C",
     "dev_addr": "01020304",
     "dev_eui": "0102030405060708",
     "dev_id": "some-dev-id",
     "disable_f_cnt_check": false,
     "f_cnt_down": 0,
     "f_cnt_up": 0,
+    "frequency_plan": "KR_920_923",
     "last_seen": 0,
     "nwk_s_key": "01020304050607080102030405060708",
     "preferred_gateways": [
@@ -203,12 +205,14 @@ SetDevice creates or updates a device. All fields must be supplied.
     "app_id": "some-app-id",
     "app_key": "01020304050607080102030405060708",
     "app_s_key": "01020304050607080102030405060708",
+    "class": "C",
     "dev_addr": "01020304",
     "dev_eui": "0102030405060708",
     "dev_id": "some-dev-id",
     "disable_f_cnt_check": false,
     "f_cnt_down": 0,
     "f_cnt_up": 0,
+    "frequency_plan": "KR_920_923",
     "last_seen": 0,
     "nwk_s_key": "01020304050607080102030405060708",
     "preferred_gateways": [
@@ -290,12 +294,14 @@ GetDevicesForApplication returns all devices that belong to the application with
         "app_id": "some-app-id",
         "app_key": "01020304050607080102030405060708",
         "app_s_key": "01020304050607080102030405060708",
+        "class": "C",
         "dev_addr": "01020304",
         "dev_eui": "0102030405060708",
         "dev_id": "some-dev-id",
         "disable_f_cnt_check": false,
         "f_cnt_down": 0,
         "f_cnt_up": 0,
+        "frequency_plan": "KR_920_923",
         "last_seen": 0,
         "nwk_s_key": "01020304050607080102030405060708",
         "preferred_gateways": [
@@ -460,7 +466,34 @@ SimulatedUplinkMessage is a simulated uplink message
 | `uses32_bit_f_cnt` | `bool` | The Uses32BitFCnt option indicates that the device keeps track of full 32 bit frame counters. As only the 16 lsb are actually transmitted, the 16 msb will have to be inferred. |
 | `activation_constraints` | `string` | The ActivationContstraints are used to allocate a device address for a device (comma-separated). There are different prefixes for `otaa`, `abp`, `world`, `local`, `private`, `testing`. |
 | `preferred_gateways` | _repeated_ `string` | The PreferredGateways option configures which gateways should be preferred for downlink to this device. If the list is empty, or none of the gateways is available for downlink, the Broker will determine the downlink gateway. This option is not used for join-accept messages. |
+| `frequency_plan` | [`FrequencyPlan`](#lorawanfrequencyplan) |  |
 | `rx2_data_rate` | `string` | RX2 Data Rate (if not using the default value defined in the frequency plan) |
 | `rx2_frequency` | `uint64` | RX2 Frequency in Hz (if not using the default value defined in the frequency plan; currently not used) |
+| `class` | [`Class`](#lorawanclass) | Device Class |
 | `last_seen` | `int64` | When the device was last seen (Unix nanoseconds) |
+
+## Used Enums
+
+### `.lorawan.Class`
+
+| Value | Description |
+| ----- | ----------- |
+| `A` |  |
+| `B` |  |
+| `C` |  |
+
+### `.lorawan.FrequencyPlan`
+
+| Value | Description |
+| ----- | ----------- |
+| `EU_863_870` |  |
+| `US_902_928` |  |
+| `CN_779_787` |  |
+| `EU_433` |  |
+| `AU_915_928` |  |
+| `CN_470_510` |  |
+| `AS_923` |  |
+| `AS_920_923` |  |
+| `AS_923_925` |  |
+| `KR_920_923` |  |
 

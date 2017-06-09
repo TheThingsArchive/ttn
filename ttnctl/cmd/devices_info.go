@@ -114,6 +114,8 @@ var devicesInfoCmd = &cobra.Command{
 			if lorawan.Rx2Frequency != 0 {
 				options = append(options, fmt.Sprintf("RX2Frequency=%d", lorawan.Rx2Frequency))
 			}
+			options = append(options, fmt.Sprintf("Class=%s", lorawan.Class))
+
 			fmt.Printf("    Options: %s\n", strings.Join(options, ", "))
 
 			if len(lorawan.PreferredGateways) > 0 {

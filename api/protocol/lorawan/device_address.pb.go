@@ -70,7 +70,7 @@ func (m *PrefixesResponse) GetPrefixes() []*PrefixesResponse_PrefixMapping {
 type PrefixesResponse_PrefixMapping struct {
 	// The prefix that can be used
 	Prefix string `protobuf:"bytes,1,opt,name=prefix,proto3" json:"prefix,omitempty"`
-	// Usage constraints of this prefix (see activation_constraints in device.proto)
+	// Usage constraints of this prefix (see activation_constraints in lorawan.proto)
 	Usage []string `protobuf:"bytes,2,rep,name=usage" json:"usage,omitempty"`
 }
 
@@ -95,7 +95,7 @@ func (m *PrefixesResponse_PrefixMapping) GetUsage() []string {
 }
 
 type DevAddrRequest struct {
-	// The usage constraints (see activation_constraints in device.proto)
+	// The usage constraints (see activation_constraints in lorawan.proto)
 	Usage []string `protobuf:"bytes,1,rep,name=usage" json:"usage,omitempty"`
 }
 

@@ -138,7 +138,7 @@ func (s *networkServerRPC) GetDevice(ctx context.Context, in *pb_lorawan.DeviceI
 		lastSeen = dev.LastSeen
 	}
 
-	return &pb_lorawan.Device{
+	pbDev := &pb_lorawan.Device{
 		AppId:                 dev.AppID,
 		AppEui:                &dev.AppEUI,
 		DevId:                 dev.DevID,
@@ -154,7 +154,15 @@ func (s *networkServerRPC) GetDevice(ctx context.Context, in *pb_lorawan.DeviceI
 		Rx2DataRate:           dev.Options.RX2DataRate,
 		Rx2Frequency:          dev.Options.RX2Frequency,
 		LastSeen:              lastSeen.UnixNano(),
-	}, nil
+	}
+	if class, ok := pb_lorawan.Class_value[dev.Options.LoRaWANClass]; ok {
+		pbDev.Class = pb_lorawan.Class(class)
+	}
+	if fp, ok := pb_lorawan.FrequencyPlan_value[dev.Options.FrequencyPlan]; ok {
+		pbDev.FrequencyPlan = pb_lorawan.FrequencyPlan(fp)
+	}
+
+	return pbDev, nil
 }
 
 // RegisterRPC registers this networkserver as a NetworkServerServer (github.com/TheThingsNetwork/ttn/api/networkserver)

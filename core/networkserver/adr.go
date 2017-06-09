@@ -55,8 +55,8 @@ func (n *networkServer) handleUplinkADR(message *pb_broker.DeduplicatedUplinkMes
 		}); err != nil {
 			n.Ctx.WithError(err).Error("Could not push frame for device")
 		}
-		if dev.ADR.Band == "" {
-			dev.ADR.Band = message.GetProtocolMetadata().GetLorawan().GetFrequencyPlan().String()
+		if dev.Options.FrequencyPlan == "" {
+			dev.Options.FrequencyPlan = message.GetProtocolMetadata().GetLorawan().GetFrequencyPlan().String()
 		}
 
 		dataRate := message.GetProtocolMetadata().GetLorawan().GetDataRate()
@@ -109,10 +109,10 @@ func (n *networkServer) handleDownlinkADR(message *pb_broker.DownlinkMessage, de
 	if dev.ADR.Margin == 0 {
 		dev.ADR.Margin = DefaultADRMargin
 	}
-	if dev.ADR.Band == "" {
+	if dev.Options.FrequencyPlan == "" {
 		return nil
 	}
-	fp, err := band.Get(dev.ADR.Band)
+	fp, err := band.Get(dev.Options.FrequencyPlan)
 	if err != nil {
 		return err
 	}

@@ -19,12 +19,14 @@ type AppNonce [3]byte
 
 // Options for the device
 type Options struct {
-	ActivationConstraints string   `redis:"activation_constraints"` // Activation Constraints (public/local/private)
-	DisableFCntCheck      bool     `redis:"disable_fcnt_check"`     // Disable Frame counter check (insecure)
-	Uses32BitFCnt         bool     `redis:"uses_32_bit_fcnt"`       // Use 32-bit Frame counters
-	PreferredGateways     []string `redis:"preferred_gateways"`     // Preferred gateways for downlink
-	RX2DataRate           string   `redis:"rx2_data_rate"`          // RX2 Data Rate
-	RX2Frequency          uint64   `redis:"rx2_frequency"`          // RX2 Frequency in Hz
+	ActivationConstraints string   `redis:"activation_constraints"`  // Activation Constraints (public/local/private)
+	DisableFCntCheck      bool     `redis:"disable_fcnt_check"`      // Disable Frame counter check (insecure)
+	Uses32BitFCnt         bool     `redis:"uses_32_bit_fcnt"`        // Use 32-bit Frame counters
+	PreferredGateways     []string `redis:"preferred_gateways"`      // Preferred gateways for downlink
+	RX2DataRate           string   `redis:"rx2_data_rate"`           // RX2 Data Rate
+	RX2Frequency          uint64   `redis:"rx2_frequency"`           // RX2 Frequency in Hz
+	FrequencyPlan         string   `redis:"frequency_plan"`          // Frequency plan of the device
+	LoRaWANClass          string   `redis:"lorawan_class,omitemtpy"` // LoRaWAN Device class
 }
 
 // Device contains the state of a device
@@ -133,6 +135,12 @@ func (d Device) GetLoRaWAN() *pb_lorawan.Device {
 		PreferredGateways:     d.Options.PreferredGateways,
 		Rx2DataRate:           d.Options.RX2DataRate,
 		Rx2Frequency:          d.Options.RX2Frequency,
+	}
+	if class, ok := pb_lorawan.Class_value[d.Options.LoRaWANClass]; ok {
+		dev.Class = pb_lorawan.Class(class)
+	}
+	if fp, ok := pb_lorawan.FrequencyPlan_value[d.Options.FrequencyPlan]; ok {
+		dev.FrequencyPlan = pb_lorawan.FrequencyPlan(fp)
 	}
 	return dev
 }

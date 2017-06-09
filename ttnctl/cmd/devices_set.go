@@ -9,6 +9,7 @@ import (
 
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/api"
+	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/spf13/cobra"
@@ -157,6 +158,31 @@ var devicesSetCmd = &cobra.Command{
 			dev.GetLorawanDevice().Rx2Frequency = uint64(in)
 		}
 
+		if in, err := cmd.Flags().GetString("frequency-plan"); err == nil && in != "" {
+			if fp, ok := pb_lorawan.FrequencyPlan_value[in]; ok {
+				dev.GetLorawanDevice().FrequencyPlan = pb_lorawan.FrequencyPlan(fp)
+			} else {
+				var allowedValues []string
+				for v := range pb_lorawan.FrequencyPlan_value {
+					allowedValues = append(allowedValues, v)
+				}
+				ctx.Fatalf("Invalid Frequency Plan Name, allowed values are: %s", strings.Join(allowedValues, ", "))
+			}
+		}
+
+		if in, err := cmd.Flags().GetString("class"); err == nil && in != "" {
+			switch strings.ToLower(in) {
+			case "a":
+				dev.GetLorawanDevice().Class = pb_lorawan.Class_A
+			case "b":
+				dev.GetLorawanDevice().Class = pb_lorawan.Class_B
+			case "c":
+				dev.GetLorawanDevice().Class = pb_lorawan.Class_C
+			default:
+				ctx.Fatalf("Invalid Device Class")
+			}
+		}
+
 		if in, err := cmd.Flags().GetFloat32("latitude"); err == nil && in != 0 {
 			dev.Latitude = in
 		}
@@ -205,9 +231,11 @@ func init() {
 	devicesSetCmd.Flags().Bool("32-bit-fcnt", false, "Use 32 bit FCnt (default)")
 	devicesSetCmd.Flags().Bool("16-bit-fcnt", false, "Use 16 bit FCnt")
 
-	devicesSetCmd.Flags().StringSlice("preferred-gateways", []string{}, "Set device preferred gateways (reset with \"-\")")
+	devicesSetCmd.Flags().StringSlice("preferred-gateways", []string{}, "Set device preferred gateways")
 	devicesSetCmd.Flags().String("rx2-data-rate", "", "Custom Data Rate to be used in RX2 (reset with \"-\")")
 	devicesSetCmd.Flags().Int64("rx2-frequency", -1, "Custom Frequency to be used in RX2 (reset with \"0\")")
+	devicesSetCmd.Flags().String("frequency-plan", "", "Set device frequency plan")
+	devicesSetCmd.Flags().String("class", "", "Set device class (a/b/c)")
 
 	devicesSetCmd.Flags().Float32("latitude", 0, "Set latitude")
 	devicesSetCmd.Flags().Float32("longitude", 0, "Set longitude")
