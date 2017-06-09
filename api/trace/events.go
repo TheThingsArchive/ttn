@@ -15,4 +15,10 @@ const (
 	ReceiveEvent       = "receive"
 	SendEvent          = "send"
 	UpdateStateEvent   = "update state"
+	WarnEvent          = "warn"
+)
+
+// Field types
+const (
+	ErrorField = "error"
 )

@@ -64,6 +64,8 @@ message RxMetadata {
 message TxConfiguration {
   // Timestamp (uptime of LoRa module) in microseconds with rollover
   uint32 timestamp   = 11;
+  // Time in Unix nanoseconds
+  int64   time       = 12;
 
   uint32  rf_chain   = 21;
 

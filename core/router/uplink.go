@@ -4,6 +4,7 @@
 package router
 
 import (
+	"fmt"
 	"time"
 
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
@@ -12,51 +13,40 @@ import (
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	pb "github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/api/trace"
-	"github.com/TheThingsNetwork/ttn/core/router/gateway"
-	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
-	"github.com/brocaar/lorawan"
 )
 
 func (r *router) HandleUplink(gatewayID string, uplink *pb.UplinkMessage) (err error) {
 	ctx := r.Ctx.WithField("GatewayID", gatewayID).WithFields(fields.Get(uplink))
 	start := time.Now()
-	var gateway *gateway.Gateway
+	gateway := r.getGateway(gatewayID)
 	defer func() {
 		if err != nil {
 			uplink.Trace = uplink.Trace.WithEvent(trace.DropEvent, "reason", err)
 			ctx.WithError(err).Warn("Could not handle uplink")
 		}
-		if gateway != nil && gateway.MonitorStream != nil {
-			gateway.MonitorStream.Send(uplink)
-		}
+		gateway.SendToMonitor(uplink)
 	}()
 	r.status.uplink.Mark(1)
-
 	uplink.Trace = uplink.Trace.WithEvent(trace.ReceiveEvent, "gateway", gatewayID)
 
-	// LoRaWAN: Unmarshal
-	var phyPayload lorawan.PHYPayload
-	err = phyPayload.UnmarshalBinary(uplink.Payload)
-	if err != nil {
+	if err := uplink.UnmarshalPayload(); err != nil {
 		return err
 	}
 
-	if phyPayload.MHDR.MType == lorawan.JoinRequest {
-		joinRequestPayload, ok := phyPayload.MACPayload.(*lorawan.JoinRequestPayload)
-		if !ok {
+	if uplink.GetMessage().GetLorawan().GetMType() == pb_lorawan.MType_JOIN_REQUEST {
+		req := uplink.GetMessage().GetLorawan().GetJoinRequestPayload()
+		if req == nil {
 			return errors.NewErrInvalidArgument("Join Request", "does not contain a JoinRequest payload")
 		}
-		devEUI := types.DevEUI(joinRequestPayload.DevEUI)
-		appEUI := types.AppEUI(joinRequestPayload.AppEUI)
 		ctx.WithFields(ttnlog.Fields{
-			"DevEUI": devEUI,
-			"AppEUI": appEUI,
+			"DevEUI": req.DevEui,
+			"AppEUI": req.AppEui,
 		}).Debug("Handle Uplink as Activation")
 		r.HandleActivation(gatewayID, &pb.DeviceActivationRequest{
 			Payload:          uplink.Payload,
-			DevEui:           &devEUI,
-			AppEui:           &appEUI,
+			DevEui:           &req.DevEui,
+			AppEui:           &req.AppEui,
 			ProtocolMetadata: uplink.ProtocolMetadata,
 			GatewayMetadata:  uplink.GatewayMetadata,
 			Trace:            uplink.Trace.WithEvent("handle uplink as activation"),
@@ -64,57 +54,35 @@ func (r *router) HandleUplink(gatewayID string, uplink *pb.UplinkMessage) (err e
 		return nil
 	}
 
-	if phyPayload.MHDR.MType != lorawan.UnconfirmedDataUp && phyPayload.MHDR.MType != lorawan.ConfirmedDataUp {
-		ctx.Warn("Accidentally received non-uplink message")
-		return nil
-	}
-
-	if lorawan := uplink.ProtocolMetadata.GetLorawan(); lorawan != nil {
-		ctx = ctx.WithField("Modulation", lorawan.Modulation.String())
-		if lorawan.Modulation == pb_lorawan.Modulation_LORA {
-			ctx = ctx.WithField("DataRate", lorawan.DataRate)
-		} else {
-			ctx = ctx.WithField("BitRate", lorawan.BitRate)
-		}
-	}
-
-	if gateway := uplink.GatewayMetadata; gateway != nil {
-		ctx = ctx.WithFields(ttnlog.Fields{
-			"Frequency": gateway.Frequency,
-			"RSSI":      gateway.Rssi,
-			"SNR":       gateway.Snr,
-		})
-	}
-
-	macPayload, ok := phyPayload.MACPayload.(*lorawan.MACPayload)
-	if !ok {
-		return errors.NewErrInvalidArgument("Uplink", "does not contain a MAC payload")
-	}
-	devAddr := types.DevAddr(macPayload.FHDR.DevAddr)
-
-	ctx = ctx.WithFields(ttnlog.Fields{
-		"DevAddr": devAddr,
-		"FCnt":    macPayload.FHDR.FCnt,
-	})
-
-	gateway = r.getGateway(gatewayID)
-
-	if err = gateway.HandleUplink(uplink); err != nil {
+	if err := gateway.HandleUplink(uplink); err != nil {
 		return err
 	}
 
-	var downlinkOptions []*pb_broker.DownlinkOption
-	if gateway.Schedule.IsActive() {
-		downlinkOptions = r.buildDownlinkOptions(uplink, false, gateway)
-		uplink.Trace = uplink.Trace.WithEvent(trace.BuildDownlinkEvent,
-			"options", len(downlinkOptions),
-		)
+	if mType := uplink.GetMessage().GetLorawan().GetMType(); mType != pb_lorawan.MType_UNCONFIRMED_UP && mType != pb_lorawan.MType_CONFIRMED_UP {
+		ctx.Info("Accidentally received non-uplink message")
+		return nil
 	}
 
-	ctx = ctx.WithField("DownlinkOptions", len(downlinkOptions))
+	mac := uplink.GetMessage().GetLorawan().GetMacPayload()
+	if mac == nil {
+		return errors.NewErrInvalidArgument("Uplink", "does not contain a MAC payload")
+	}
+
+	downlinkOptions, err := gateway.GetDownlinkOptions(uplink)
+	if err != nil {
+		uplink.Trace = uplink.Trace.WithEvent(trace.WarnEvent, trace.ErrorField, fmt.Sprintf("could not build downlink options: %s", err))
+	} else {
+		uplink.Trace = uplink.Trace.WithEvent(trace.BuildDownlinkEvent, "options", len(downlinkOptions))
+		ctx = ctx.WithField("DownlinkOptions", len(downlinkOptions))
+	}
+	if r.Component != nil && r.Component.Identity != nil {
+		for _, opt := range downlinkOptions {
+			opt.Identifier = fmt.Sprintf("%s:%s", r.Component.Identity.Id, opt.Identifier)
+		}
+	}
 
 	// Find Broker
-	brokers, err := r.Discovery.GetAllBrokersForDevAddr(devAddr)
+	brokers, err := r.Discovery.GetAllBrokersForDevAddr(mac.DevAddr)
 	if err != nil {
 		return err
 	}
@@ -124,12 +92,8 @@ func (r *router) HandleUplink(gatewayID string, uplink *pb.UplinkMessage) (err e
 		uplink.Trace = uplink.Trace.WithEvent(trace.DropEvent, "reason", "no brokers")
 		return nil
 	}
-
 	ctx = ctx.WithField("NumBrokers", len(brokers))
-
-	uplink.Trace = uplink.Trace.WithEvent(trace.ForwardEvent,
-		"brokers", len(brokers),
-	)
+	uplink.Trace = uplink.Trace.WithEvent(trace.ForwardEvent, "brokers", len(brokers))
 
 	// Forward to all brokers
 	for _, broker := range brokers {

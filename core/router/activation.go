@@ -15,35 +15,33 @@ import (
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	pb "github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/api/trace"
-	"github.com/TheThingsNetwork/ttn/core/band"
-	"github.com/TheThingsNetwork/ttn/core/router/gateway"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 )
 
 func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivationRequest) (res *pb.DeviceActivationResponse, err error) {
 	ctx := r.Ctx.WithField("GatewayID", gatewayID).WithFields(fields.Get(activation))
 	start := time.Now()
-	var gateway *gateway.Gateway
+	gateway := r.getGateway(gatewayID)
 	var forwarded bool
 	defer func() {
 		if err != nil {
 			activation.Trace = activation.Trace.WithEvent(trace.DropEvent, "reason", err)
 			if forwarded {
 				ctx.WithError(err).Debug("Did not handle activation")
-			} else if gateway != nil && gateway.MonitorStream != nil {
+			} else {
 				ctx.WithError(err).Warn("Could not handle activation")
-				gateway.MonitorStream.Send(activation)
+				gateway.SendToMonitor(activation)
 			}
 		} else {
 			ctx.WithField("Duration", time.Now().Sub(start)).Info("Handled activation")
 		}
 	}()
 	r.status.activations.Mark(1)
-
 	activation.Trace = activation.Trace.WithEvent(trace.ReceiveEvent, "gateway", gatewayID)
 
-	gateway = r.getGateway(gatewayID)
-	gateway.LastSeen = time.Now()
+	if err := activation.UnmarshalPayload(); err != nil {
+		return nil, err
+	}
 
 	uplink := &pb.UplinkMessage{
 		Payload:          activation.Payload,
@@ -51,25 +49,24 @@ func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivat
 		GatewayMetadata:  activation.GatewayMetadata,
 		Trace:            activation.Trace,
 	}
-
 	if err = gateway.HandleUplink(uplink); err != nil {
 		return nil, err
 	}
 
-	if !gateway.Schedule.IsActive() {
-		return nil, errors.NewErrInternal(fmt.Sprintf("Gateway %s not available for downlink", gatewayID))
-	}
-
-	downlinkOptions := r.buildDownlinkOptions(uplink, true, gateway)
-	activation.Trace = uplink.Trace.WithEvent(trace.BuildDownlinkEvent,
-		"options", len(downlinkOptions),
-	)
-
-	// Find Broker
-	brokers, err := r.Discovery.GetAll("broker")
+	downlinkOptions, err := gateway.GetDownlinkOptions(uplink)
 	if err != nil {
-		return nil, err
+		uplink.Trace = uplink.Trace.WithEvent(trace.WarnEvent, trace.ErrorField, fmt.Sprintf("could not build downlink options: %s", err))
+	} else {
+		uplink.Trace = uplink.Trace.WithEvent(trace.BuildDownlinkEvent, "options", len(downlinkOptions))
+		ctx = ctx.WithField("DownlinkOptions", len(downlinkOptions))
 	}
+	if r.Component != nil && r.Component.Identity != nil {
+		for _, opt := range downlinkOptions {
+			opt.Identifier = fmt.Sprintf("%s:%s", r.Component.Identity.Id, opt.Identifier)
+		}
+	}
+
+	activation.Trace = uplink.Trace
 
 	// Prepare request
 	request := &pb_broker.DeviceActivationRequest{
@@ -81,8 +78,9 @@ func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivat
 		ActivationMetadata: &pb_protocol.ActivationMetadata{
 			Protocol: &pb_protocol.ActivationMetadata_Lorawan{
 				Lorawan: &pb_lorawan.ActivationMetadata{
-					AppEui: activation.AppEui,
-					DevEui: activation.DevEui,
+					AppEui:        activation.AppEui,
+					DevEui:        activation.DevEui,
+					FrequencyPlan: activation.ProtocolMetadata.GetLorawan().GetFrequencyPlan(),
 				},
 			},
 		},
@@ -91,39 +89,33 @@ func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivat
 	}
 
 	// Prepare LoRaWAN activation
-	status, err := gateway.Status.Get()
-	if err != nil {
-		return nil, err
+	frequencyPlan := gateway.FrequencyPlan()
+	if frequencyPlan == nil {
+		return nil, errors.New("gateway: frequency plan unknown")
 	}
-	region := status.FrequencyPlan
-	if region == "" {
-		region = band.Guess(uplink.GatewayMetadata.Frequency)
-	}
-	band, err := band.Get(region)
-	if err != nil {
-		return nil, err
-	}
+
 	lorawan := request.ActivationMetadata.GetLorawan()
-	lorawan.FrequencyPlan = pb_lorawan.FrequencyPlan(pb_lorawan.FrequencyPlan_value[region])
 	lorawan.Rx1DrOffset = 0
-	lorawan.Rx2Dr = uint32(band.RX2DataRate)
-	lorawan.RxDelay = uint32(band.ReceiveDelay1.Seconds())
-	if band.CFList != nil {
+	lorawan.Rx2Dr = uint32(frequencyPlan.RX2DataRate)
+	if len(frequencyPlan.RX1Delays) > 0 {
+		lorawan.RxDelay = uint32(frequencyPlan.RX1Delays[0].Seconds())
+	} else {
+		lorawan.RxDelay = uint32(frequencyPlan.ReceiveDelay1.Seconds())
+	}
+	if frequencyPlan.CFList != nil {
 		lorawan.CfList = new(pb_lorawan.CFList)
-		for _, freq := range band.CFList {
+		for _, freq := range frequencyPlan.CFList {
 			lorawan.CfList.Freq = append(lorawan.CfList.Freq, freq)
 		}
 	}
 
-	ctx = ctx.WithField("NumBrokers", len(brokers))
-	request.Trace = request.Trace.WithEvent(trace.ForwardEvent,
-		"brokers", len(brokers),
-	)
-
-	if gateway != nil && gateway.MonitorStream != nil {
-		forwarded = true
-		gateway.MonitorStream.Send(activation)
+	// Find Brokers
+	brokers, err := r.Discovery.GetAll("broker")
+	if err != nil {
+		return nil, err
 	}
+	ctx = ctx.WithField("NumBrokers", len(brokers))
+	request.Trace = request.Trace.WithEvent(trace.ForwardEvent, "brokers", len(brokers))
 
 	// Forward to all brokers and collect responses
 	var wg sync.WaitGroup

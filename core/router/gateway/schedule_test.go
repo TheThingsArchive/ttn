@@ -5,6 +5,7 @@ package gateway
 
 import (
 	"fmt"
+	"sync"
 	"testing"
 	"time"
 
@@ -17,144 +18,128 @@ const almostEqual = time.Millisecond
 
 func TestScheduleSync(t *testing.T) {
 	a := New(t)
-	s := &schedule{}
+	s := &Schedule{}
 	s.Sync(0)
+	a.So(s.getRealtime(0), ShouldHappenWithin, time.Millisecond, time.Now())
+	a.So(s.timestamp, ShouldEqual, 0)
 	a.So(s.offset, ShouldAlmostEqual, time.Now().UnixNano(), almostEqual)
+	a.So(s.getFullTimestamp(10), ShouldEqual, 10)
+	a.So(s.getRealtime(10000), ShouldHappenWithin, time.Millisecond, time.Now().Add(10*time.Millisecond))
+
+	s.Sync(20000)
+	a.So(s.getRealtime(20000), ShouldHappenWithin, time.Millisecond, time.Now())
+	a.So(s.timestamp, ShouldEqual, 20000)
+	a.So(s.offset, ShouldAlmostEqual, time.Now().UnixNano()-20000*1000, almostEqual)
+	a.So(s.getRealtime(30000), ShouldHappenWithin, time.Millisecond, time.Now().Add(10*time.Millisecond))
+
+	s.Sync(1<<32 - 10)
+	a.So(s.timestamp, ShouldEqual, uint64(1<<32-10))
+	a.So(s.getFullTimestamp(10), ShouldEqual, uint64(1<<32+10))
 
 	s.Sync(1000)
-	a.So(s.offset, ShouldAlmostEqual, time.Now().UnixNano()-1000*1000, almostEqual)
-}
-
-func TestScheduleRealtime(t *testing.T) {
-	a := New(t)
-	s := &schedule{}
-	s.Sync(0)
-	tm := s.realtime(10)
-	a.So(tm.UnixNano(), ShouldAlmostEqual, time.Now().UnixNano()+10*1000, almostEqual)
-
-	s.Sync(1000)
-	tm = s.realtime(1010)
-	a.So(tm.UnixNano(), ShouldAlmostEqual, time.Now().UnixNano()+10*1000, almostEqual)
-
-	// Don't go back in time when uint32 overflows
-	s.Sync(uintmax - 1)
-	tm = s.realtime(10)
-	a.So(tm.UnixNano(), ShouldAlmostEqual, time.Now().UnixNano()+9*1000, almostEqual)
-}
-
-func buildItems(items ...*scheduledItem) map[string]*scheduledItem {
-	m := make(map[string]*scheduledItem)
-	for idx, item := range items {
-		m[fmt.Sprintf("%d", idx)] = item
-	}
-	return m
-}
-
-func TestScheduleGetConflicts(t *testing.T) {
-	a := New(t)
-
-	// Test without overflow
-	s := &schedule{
-		items: buildItems(
-			&scheduledItem{timestamp: 5, length: 15},
-			&scheduledItem{timestamp: 25, length: 10},
-			&scheduledItem{timestamp: 55, length: 5},
-			&scheduledItem{timestamp: 70, length: 20},
-			&scheduledItem{timestamp: 95, length: 5},
-			&scheduledItem{timestamp: 105, length: 10},
-		),
-	}
-	a.So(s.getConflicts(0, 10), ShouldEqual, 1)
-	a.So(s.getConflicts(15, 15), ShouldEqual, 2)
-	a.So(s.getConflicts(40, 5), ShouldEqual, 0)
-	a.So(s.getConflicts(50, 15), ShouldEqual, 1)
-	a.So(s.getConflicts(75, 5), ShouldEqual, 1)
-	a.So(s.getConflicts(85, 25), ShouldEqual, 3)
-
-	// Test with overflow (already scheduled)
-	s = &schedule{
-		items: buildItems(
-			&scheduledItem{timestamp: 1<<32 - 1, length: 20},
-		),
-	}
-	a.So(s.getConflicts(0, 20), ShouldEqual, 1)
-	a.So(s.getConflicts(25, 5), ShouldEqual, 0)
-
-	// Test with overflow (to schedule)
-	s = &schedule{
-		items: buildItems(
-			&scheduledItem{timestamp: 10, length: 20},
-		),
-	}
-	a.So(s.getConflicts(1<<32-1, 5), ShouldEqual, 0)
-	a.So(s.getConflicts(1<<32-1, 20), ShouldEqual, 1)
+	a.So(s.timestamp, ShouldEqual, uint64(1<<32+1000))
 }
 
 func TestScheduleGetOption(t *testing.T) {
 	a := New(t)
-	s := NewSchedule(nil).(*schedule)
+
+	// Test without overflow
+	s := NewSchedule(GetLogger(t, "TestScheduleGetOption"), nil)
+
+	id, conflicts, err := s.GetOption(1, 10)
+	a.So(err, ShouldNotBeNil)
+
+	subCh := s.Subscribe()
+	go func() {
+		for down := range subCh {
+			fmt.Println("Down:", down)
+		}
+	}()
 
 	s.Sync(0)
-	_, conflicts := s.GetOption(100, 100)
+	const base = 1000000 // one second from now
+
+	id, conflicts, err = s.GetOption(base+5000, 15000)
+	a.So(id, ShouldNotBeEmpty)
 	a.So(conflicts, ShouldEqual, 0)
-	_, conflicts = s.GetOption(50, 100)
+	a.So(err, ShouldBeNil)
+	a.So(s.items[id].time, ShouldHappenWithin, time.Millisecond, time.Now().Add(1005*time.Millisecond))
+
+	id, conflicts, err = s.GetOption(base+25000, 10000)
+	a.So(conflicts, ShouldEqual, 0)
+
+	id, conflicts, err = s.GetOption(base+55000, 5000)
+	a.So(conflicts, ShouldEqual, 0)
+
+	id, conflicts, err = s.GetOption(base+70000, 20000)
+	a.So(conflicts, ShouldEqual, 0)
+
+	id, conflicts, err = s.GetOption(base+95000, 5000)
+	a.So(conflicts, ShouldEqual, 0)
+
+	id, conflicts, err = s.GetOption(base+105000, 10000)
+	a.So(conflicts, ShouldEqual, 0)
+
+	id, conflicts, err = s.GetOption(base, 10000)
 	a.So(conflicts, ShouldEqual, 1)
+
+	id, conflicts, err = s.GetOption(base+15000, 15000)
+	a.So(conflicts, ShouldEqual, 2)
+
+	id, conflicts, err = s.GetOption(base+85000, 25000)
+	a.So(conflicts, ShouldEqual, 3)
+
+	// Test with overflow
+	s.Sync(maxUint32 - 1000000) // 1 second before maxUint32
+
+	s.GetOption(maxUint32-10000, 20000)
+
+	id, conflicts, err = s.GetOption(0, 20000)
+	a.So(conflicts, ShouldEqual, 1)
+
+	id, conflicts, err = s.GetOption(25000, 4000)
+	a.So(conflicts, ShouldEqual, 0)
+
+	id, conflicts, err = s.GetOption(maxUint32-20000, 10000)
+	a.So(conflicts, ShouldEqual, 1)
+
+	id, conflicts, err = s.GetOption(maxUint32-20000, 30000)
+	a.So(conflicts, ShouldEqual, 3)
+
+	s.Stop()
 }
 
 func TestScheduleSchedule(t *testing.T) {
 	a := New(t)
-	s := NewSchedule(GetLogger(t, "TestScheduleSchedule")).(*schedule)
+	s := NewSchedule(GetLogger(t, "TestScheduleSchedule"), nil)
 
 	s.Sync(0)
+	DefaultGatewayRTT = 20 * time.Millisecond
+	DefaultGatewayBufferTime = 10 * time.Millisecond
 
-	err := s.Schedule("random", &router_pb.DownlinkMessage{})
+	var wg sync.WaitGroup
+
+	downlink := &router_pb.DownlinkMessage{Payload: []byte{1, 2, 3, 4}}
+
+	var now time.Time
+	subCh := s.Subscribe()
+	wg.Add(1)
+	go func() {
+		a.So(<-subCh, ShouldEqual, downlink)
+		a.So(time.Now(), ShouldHappenWithin, 10*time.Millisecond, now.Add(70*time.Millisecond))
+		wg.Done()
+	}()
+
+	err := s.Schedule("random", downlink)
 	a.So(err, ShouldNotBeNil)
 
-	id, conflicts := s.GetOption(100, 100)
-	err = s.Schedule(id, &router_pb.DownlinkMessage{})
+	now = time.Now()
+	id, _, _ := s.GetOption(100000, 100000)
+	err = s.Schedule(id, downlink)
 	a.So(err, ShouldBeNil)
 
-	_, conflicts = s.GetOption(50, 100)
-	a.So(conflicts, ShouldEqual, 100)
-}
+	_, _, err = s.GetOption(50000, 100000)
+	a.So(err, ShouldNotBeNil)
 
-func TestScheduleSubscribe(t *testing.T) {
-	a := New(t)
-	s := NewSchedule(GetLogger(t, "TestScheduleSubscribe")).(*schedule)
-	s.Sync(0)
-	Deadline = 1 * time.Millisecond // Very short deadline
-
-	downlink1 := &router_pb.DownlinkMessage{Payload: []byte{1}}
-	downlink2 := &router_pb.DownlinkMessage{Payload: []byte{2}}
-	downlink3 := &router_pb.DownlinkMessage{Payload: []byte{3}}
-
-	go func() {
-		var i int
-		for out := range s.Subscribe("") {
-			switch i {
-			case 0:
-				a.So(out, ShouldEqual, downlink2)
-			case 1:
-				a.So(out, ShouldEqual, downlink1)
-			case 3:
-				a.So(out, ShouldEqual, downlink3)
-			}
-			i++
-		}
-	}()
-
-	id, _ := s.GetOption(30000, 50)
-	s.Schedule(id, downlink1)
-	id, _ = s.GetOption(20000, 50)
-	s.Schedule(id, downlink2)
-	id, _ = s.GetOption(40000, 50)
-	s.Schedule(id, downlink3)
-
-	go func() {
-		<-time.After(400 * time.Millisecond)
-		s.Stop("")
-	}()
-
-	<-time.After(500 * time.Millisecond)
-
+	wg.Wait()
 }

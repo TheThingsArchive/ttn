@@ -147,16 +147,34 @@
 			"revisionTime": "2017-05-22T09:01:51Z"
 		},
 		{
+			"checksumSHA1": "Gd343BQtqgz1Kt16TFbSXG/FqR0=",
+			"path": "github.com/TheThingsNetwork/go-utils/log/test",
+			"revision": "8622223277037145f4ed2beda936a39e6382a14d",
+			"revisionTime": "2017-05-10T17:17:25Z"
+		},
+		{
 			"checksumSHA1": "2/v0SMyHM5vgImOb1BEEDWeXZEY=",
 			"path": "github.com/TheThingsNetwork/go-utils/pseudorandom",
 			"revision": "7f35a9fdb4de6692822ef259a23d4964483f3a8c",
 			"revisionTime": "2017-05-22T09:01:51Z"
 		},
 		{
+			"checksumSHA1": "aW+EoKKmJasOwy4//7JgaaMDYJI=",
+			"path": "github.com/TheThingsNetwork/go-utils/queue",
+			"revision": "8622223277037145f4ed2beda936a39e6382a14d",
+			"revisionTime": "2017-05-10T17:17:25Z"
+		},
+		{
 			"checksumSHA1": "iYa+qSqzqZwpmoibM8/1X+aC3sI=",
 			"path": "github.com/TheThingsNetwork/go-utils/random",
 			"revision": "7f35a9fdb4de6692822ef259a23d4964483f3a8c",
 			"revisionTime": "2017-05-22T09:01:51Z"
+		},
+		{
+			"checksumSHA1": "5R6P7aSu8E0Hd1mFfSYOrlnXF80=",
+			"path": "github.com/TheThingsNetwork/go-utils/rate",
+			"revision": "8622223277037145f4ed2beda936a39e6382a14d",
+			"revisionTime": "2017-05-10T17:17:25Z"
 		},
 		{
 			"checksumSHA1": "kLFTtAVcjZbHXybodGAqJ8wxflY=",

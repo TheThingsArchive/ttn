@@ -36,8 +36,8 @@ func TestHandleGatewayStatus(t *testing.T) {
 	a.So(err, ShouldBeNil)
 
 	// Check storage
-	status, err := router.getGateway(gtwID).Status.Get()
+	status := router.getGateway(gtwID).Status()
 	a.So(err, ShouldBeNil)
 	a.So(status, ShouldNotBeNil)
-	a.So(*status, ShouldResemble, *statusMessage)
+	a.So(status, ShouldResemble, *statusMessage)
 }

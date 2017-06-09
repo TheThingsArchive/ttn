@@ -4,279 +4,270 @@
 package gateway
 
 import (
-	"fmt"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
-	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
+	"github.com/TheThingsNetwork/go-utils/queue"
+	"github.com/TheThingsNetwork/ttn/api/fields"
 	router_pb "github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/random"
 	"github.com/TheThingsNetwork/ttn/utils/toa"
 )
 
-// Schedule is used to schedule downlink transmissions
-type Schedule interface {
-	fmt.GoStringer
-	// Synchronize the schedule with the gateway timestamp (in microseconds)
-	Sync(timestamp uint32)
-	// Get an "option" on a transmission slot at timestamp for the maximum duration of length (both in microseconds)
-	GetOption(timestamp uint32, length uint32) (id string, score uint)
-	// Schedule a transmission on a slot
-	Schedule(id string, downlink *router_pb.DownlinkMessage) error
-	// Subscribe to downlink messages
-	Subscribe(subscriptionID string) <-chan *router_pb.DownlinkMessage
-	// Whether the gateway has active downlink
-	IsActive() bool
-	// Stop the subscription
-	Stop(subscriptionID string)
+type scheduledItem struct {
+	mu             sync.RWMutex
+	id             string
+	time           time.Time
+	timestamp      uint64 // microseconds - fullTimestamp
+	duration       uint32 // microseconds
+	durationOffAir uint32 // microseconds
+	payload        *router_pb.DownlinkMessage
 }
+
+func (i *scheduledItem) Time() time.Time {
+	i.mu.RLock()
+	defer i.mu.RUnlock()
+	return i.time
+}
+func (i *scheduledItem) Timestamp() int64 {
+	i.mu.RLock()
+	defer i.mu.RUnlock()
+	return int64(i.timestamp) * int64(time.Microsecond)
+}
+func (i *scheduledItem) Duration() time.Duration {
+	i.mu.RLock()
+	defer i.mu.RUnlock()
+	return time.Duration(i.duration+i.durationOffAir) * time.Microsecond
+}
+
+const maxUint32 = 1 << 32
+
+func getFullTimestamp(full uint64, lsb uint32) uint64 {
+	if int64(lsb)-int64(full) > 0 {
+		return uint64(lsb)
+	}
+	if uint32(full%maxUint32) <= lsb {
+		return uint64(lsb) + (full/maxUint32)*maxUint32
+	}
+	return uint64(lsb) + ((full/maxUint32)+1)*maxUint32
+}
+
+// Schedule for a gateway
+type Schedule struct {
+	sync.RWMutex
+	ctx      ttnlog.Interface
+	items    map[string]*scheduledItem
+	schedule queue.Schedule
+	queue    queue.JIT
+
+	gateway   *Gateway
+	timestamp uint64
+	offset    int64
+
+	durationOffAirFunc func(*router_pb.DownlinkMessage) time.Duration
+
+	downlink            chan *router_pb.DownlinkMessage
+	downlinkSubscribers int
+}
+
+// ErrScheduleInactive is returned when attempting an operation on an inactive schedule
+var ErrScheduleInactive = errors.New("gateway: schedule not active")
+
+// ErrScheduleConflict is returned when an item can not be scheduled due to a conflicting item
+var ErrScheduleConflict = errors.New("gateway: conflict in schedule")
 
 // NewSchedule creates a new Schedule
-func NewSchedule(ctx ttnlog.Interface) Schedule {
-	s := &schedule{
-		ctx:   ctx,
-		items: make(map[string]*scheduledItem),
-		downlinkSubscriptions: make(map[string]chan *router_pb.DownlinkMessage),
-	}
+func NewSchedule(ctx ttnlog.Interface, durationOffAirFunc func(*router_pb.DownlinkMessage) time.Duration) *Schedule {
+	return &Schedule{ctx: ctx, durationOffAirFunc: durationOffAirFunc}
+}
+
+func (s *Schedule) init() {
+	schedule := queue.NewSchedule()
+	queue := queue.NewJIT()
+	items := make(map[string]*scheduledItem)
+	downlink := make(chan *router_pb.DownlinkMessage, 1)
+
+	s.schedule = schedule
+	s.queue = queue
+	s.items = items
+	s.downlink = downlink
+
+	// Send downlink to downlink channel
 	go func() {
 		for {
-			<-time.After(10 * time.Second)
-			s.RLock()
-			numItems := len(s.items)
-			s.RUnlock()
-			if numItems > 0 {
-				s.Lock()
-				for id, item := range s.items {
-					// Delete the item if we are more than 2 seconds after the deadline
-					if time.Now().After(item.deadlineAt.Add(2 * time.Second)) {
-						delete(s.items, id)
-					}
-				}
-				s.Unlock()
+			nextI := queue.Next()
+			if nextI == nil {
+				break
+			}
+			next := nextI.(*scheduledItem)
+			select {
+			case downlink <- next.payload:
+			default:
 			}
 		}
+		close(downlink)
+		s.Lock()
+		s.queue = nil
+		s.items = nil
+		s.Unlock()
 	}()
-	return s
-}
 
-type scheduledItem struct {
-	id         string
-	deadlineAt time.Time
-	timestamp  uint32
-	length     uint32
-	score      uint
-	payload    *router_pb.DownlinkMessage
-}
-
-type schedule struct {
-	offset int64 // should be on top to ensure memory alignment needed for sync/atomic
-
-	sync.RWMutex
-	ctx                       ttnlog.Interface
-	items                     map[string]*scheduledItem
-	downlink                  chan *router_pb.DownlinkMessage
-	downlinkSubscriptionsLock sync.RWMutex
-	downlinkSubscriptions     map[string]chan *router_pb.DownlinkMessage
-	gateway                   *Gateway
-}
-
-func (s *schedule) GoString() (str string) {
-	s.RLock()
-	defer s.RUnlock()
-	for _, item := range s.items {
-		str += fmt.Sprintf("%s at %s\n", item.id, item.deadlineAt)
-	}
-	return
-}
-
-// Deadline for sending a downlink back to the gateway
-// TODO: Make configurable
-var Deadline = 800 * time.Millisecond
-
-const uintmax = 1 << 32
-
-// getConflicts walks over the schedule and returns the number of conflicts.
-// Both timestamp and length are in microseconds
-func (s *schedule) getConflicts(timestamp uint32, length uint32) (conflicts uint) {
-	s.RLock()
-	defer s.RUnlock()
-	for _, item := range s.items {
-		scheduledFrom := uint64(item.timestamp) % uintmax
-		scheduledTo := scheduledFrom + uint64(item.length)
-		from := uint64(timestamp)
-		to := from + uint64(length)
-
-		if scheduledTo > uintmax || to > uintmax {
-			if scheduledTo-uintmax <= from || scheduledFrom >= to-uintmax {
-				continue
+	// Clean up expired items
+	go func() {
+		for {
+			expiredI := schedule.Next()
+			if expiredI == nil {
+				break
 			}
-		} else if scheduledTo <= from || scheduledFrom >= to {
-			continue
 		}
+		queue.Destroy()
+		s.Lock()
+		s.schedule = nil
+		s.Unlock()
+	}()
+}
 
-		if item.payload == nil {
-			conflicts++
-		} else {
-			conflicts += 100
-		}
+// Sync the gateway schedule
+func (s *Schedule) Sync(timestamp uint32) {
+	s.Lock()
+	defer s.Unlock()
+	if s.timestamp == 0 {
+		s.timestamp = uint64(timestamp)
+	} else {
+		s.timestamp = getFullTimestamp(s.timestamp, timestamp)
+	}
+	s.offset = time.Duration(time.Now().UnixNano() - int64(s.timestamp*1000)).Nanoseconds()
+}
+
+func (s *Schedule) getFullTimestamp(lsb uint32) uint64 {
+	return getFullTimestamp(s.timestamp, lsb)
+}
+
+func (s *Schedule) getRealtime(fullTimestamp uint64) time.Time {
+	return time.Unix(0, int64(s.offset)+int64(fullTimestamp)*1000)
+}
+
+// DefaultGatewayRTT is the default gateway round-trip-time if none is reported by the gateway itself
+var DefaultGatewayRTT = 300 * time.Millisecond
+
+// DefaultGatewayBufferTime is the default time the gateway buffers downlink messages
+var DefaultGatewayBufferTime = 500 * time.Millisecond // TODO: add this to gateway status message
+
+func (s *Schedule) getGatewayRTT() (rtt time.Duration) {
+	if s.gateway != nil {
+		rtt = time.Duration(s.gateway.Status().Rtt) * time.Millisecond
+	}
+	if rtt == 0 {
+		rtt = DefaultGatewayRTT
 	}
 	return
 }
 
-// realtime gets the synchronized time for a timestamp (in microseconds). Time
-// should first be syncronized using func Sync()
-func (s *schedule) realtime(timestamp uint32) (t time.Time) {
-	offset := atomic.LoadInt64(&s.offset)
-	t = time.Unix(0, 0)
-	t = t.Add(time.Duration(int64(timestamp)*1000 + offset))
-	if t.Before(time.Now()) {
-		t = t.Add(time.Duration(int64(1<<32) * 1000))
-	}
-	return
-}
-
-// see interface
-func (s *schedule) Sync(timestamp uint32) {
-	atomic.StoreInt64(&s.offset, time.Now().UnixNano()-int64(timestamp)*1000)
-}
-
-// see interface
-func (s *schedule) GetOption(timestamp uint32, length uint32) (id string, score uint) {
+// GetOption returns a new schedule option
+func (s *Schedule) GetOption(timestamp uint32, length uint32) (id string, numConflicts uint, err error) {
 	id = random.String(32)
-	score = s.getConflicts(timestamp, length)
-	item := &scheduledItem{
-		id:         id,
-		deadlineAt: s.realtime(timestamp).Add(-1 * Deadline),
-		timestamp:  timestamp,
-		length:     length,
-		score:      score,
-	}
 	s.Lock()
 	defer s.Unlock()
+	if !s.isActive() {
+		return id, numConflicts, ErrScheduleInactive
+	}
+	item := &scheduledItem{
+		id:        id,
+		timestamp: s.getFullTimestamp(timestamp),
+		duration:  length,
+	}
+	item.time = s.getRealtime(item.timestamp)
 	s.items[id] = item
-	return id, score
+	conflicts := s.schedule.Add(item)
+	for _, conflict := range conflicts {
+		if i, ok := conflict.(*scheduledItem); ok {
+			i.mu.RLock()
+			isScheduled := i.payload != nil
+			i.mu.RUnlock()
+			if isScheduled {
+				return id, numConflicts, ErrScheduleConflict
+			}
+			numConflicts++
+		}
+	}
+	return
 }
 
-// see interface
-func (s *schedule) Schedule(id string, downlink *router_pb.DownlinkMessage) error {
-	ctx := s.ctx.WithField("Identifier", id)
-
+func (s *Schedule) ScheduleASAP(downlink *router_pb.DownlinkMessage) error {
 	s.Lock()
 	defer s.Unlock()
+	if !s.isActive() {
+		return ErrScheduleInactive
+	}
+	toa, _ := toa.Compute(downlink)
+	time := s.schedule.ScheduleASAP(downlink, toa)
+	copy := &scheduledItem{
+		time:    time.Add(-1 * (s.getGatewayRTT() + DefaultGatewayBufferTime)),
+		payload: downlink,
+	}
+	s.queue.Add(copy)
+	return nil
+}
+
+// Schedule an option
+func (s *Schedule) Schedule(id string, downlink *router_pb.DownlinkMessage) error {
+	s.Lock()
+	defer s.Unlock()
+	if !s.isActive() {
+		return ErrScheduleInactive
+	}
 	if item, ok := s.items[id]; ok {
+		item.mu.Lock()
 		item.payload = downlink
-
-		if lorawan := downlink.GetProtocolConfiguration().GetLorawan(); lorawan != nil {
-			var time time.Duration
-			if lorawan.Modulation == pb_lorawan.Modulation_LORA {
-				// Calculate max ToA
-				time, _ = toa.ComputeLoRa(
-					uint(len(downlink.Payload)),
-					lorawan.DataRate,
-					lorawan.CodingRate,
-				)
-			}
-			if lorawan.Modulation == pb_lorawan.Modulation_FSK {
-				// Calculate max ToA
-				time, _ = toa.ComputeFSK(
-					uint(len(downlink.Payload)),
-					int(lorawan.BitRate),
-				)
-			}
-			item.length = uint32(time / 1000)
+		toa, _ := toa.Compute(downlink)
+		item.duration = uint32(toa / 1000)
+		if s.durationOffAirFunc != nil {
+			item.duration += uint32(s.durationOffAirFunc(downlink) / 1000)
 		}
-
-		if time.Now().Before(item.deadlineAt) {
-			// Schedule transmission before the Deadline
-			go func() {
-				waitTime := item.deadlineAt.Sub(time.Now())
-				ctx.WithField("Remaining", waitTime).Info("Scheduled downlink")
-				downlink.Trace = downlink.Trace.WithEvent("schedule", "duration", waitTime)
-				<-time.After(waitTime)
-				s.RLock()
-				defer s.RUnlock()
-				if s.downlink != nil {
-					ctx.Debug("Send Downlink")
-					s.downlink <- item.payload
-				}
-			}()
-		} else {
-			go func() {
-				s.RLock()
-				defer s.RUnlock()
-				if s.downlink != nil {
-					overdue := time.Now().Sub(item.deadlineAt)
-					if overdue < Deadline {
-						ctx.WithField("Overdue", overdue).Debug("Send Downlink")
-						s.downlink <- item.payload
-					} else {
-						ctx.WithField("Overdue", overdue).Warn("Discard Late Downlink")
-					}
-				} else {
-					ctx.Warn("Unable to send Downlink")
-				}
-			}()
+		copy := &scheduledItem{
+			id:      item.id,
+			time:    item.time.Add(-1 * (s.getGatewayRTT() + DefaultGatewayBufferTime)),
+			payload: item.payload,
 		}
-
+		s.ctx.WithField("Identifier", item.id).WithFields(fields.Get(item.payload)).WithField("Remaining", time.Until(copy.time)).Debug("Scheduled Downlink")
+		item.mu.Unlock()
+		delete(s.items, id)
+		s.queue.Add(copy)
 		return nil
 	}
 	return errors.NewErrNotFound(id)
 }
 
-func (s *schedule) Stop(subscriptionID string) {
-	s.downlinkSubscriptionsLock.Lock()
-	defer s.downlinkSubscriptionsLock.Unlock()
-	if sub, ok := s.downlinkSubscriptions[subscriptionID]; ok {
-		close(sub)
-		delete(s.downlinkSubscriptions, subscriptionID)
-	}
-	if len(s.downlinkSubscriptions) == 0 {
-		s.Lock()
-		defer s.Unlock()
-		close(s.downlink)
-		s.downlink = nil
-	}
-}
-
-func (s *schedule) Subscribe(subscriptionID string) <-chan *router_pb.DownlinkMessage {
+// Subscribe to the downlink schedule
+func (s *Schedule) Subscribe() <-chan *router_pb.DownlinkMessage {
 	s.Lock()
-	if s.downlink == nil {
-		s.downlink = make(chan *router_pb.DownlinkMessage)
-		go func() {
-			for downlink := range s.downlink {
-				if s.gateway != nil && s.gateway.Utilization != nil {
-					s.gateway.Utilization.AddTx(downlink) // FIXME: Issue #420
-				}
-				s.downlinkSubscriptionsLock.RLock()
-				for _, ch := range s.downlinkSubscriptions {
-					select {
-					case ch <- downlink:
-					default:
-						s.ctx.WithField("SubscriptionID", subscriptionID).Warn("Could not send downlink message")
-					}
-				}
-				s.downlinkSubscriptionsLock.RUnlock()
-			}
-		}()
+	defer s.Unlock()
+	if !s.isActive() {
+		s.init()
+		s.downlinkSubscribers++
 	}
-	s.Unlock()
-
-	s.downlinkSubscriptionsLock.Lock()
-	if _, ok := s.downlinkSubscriptions[subscriptionID]; ok {
-		return nil
-	}
-	sub := make(chan *router_pb.DownlinkMessage)
-	s.downlinkSubscriptions[subscriptionID] = sub
-	s.downlinkSubscriptionsLock.Unlock()
-
-	return sub
+	return s.downlink
 }
 
-func (s *schedule) IsActive() bool {
+// Stop the downlink schedule
+func (s *Schedule) Stop() {
+	s.Lock()
+	defer s.Unlock()
+	s.downlinkSubscribers--
+	if s.downlinkSubscribers < 1 {
+		s.schedule.Destroy()
+	}
+}
+
+// IsActive returns whether the schedule is active
+func (s *Schedule) IsActive() bool {
 	s.RLock()
 	defer s.RUnlock()
-	return s.downlink != nil
+	return s.isActive()
+}
+
+func (s *Schedule) isActive() bool {
+	return s.downlinkSubscribers > 0
 }

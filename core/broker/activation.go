@@ -76,10 +76,18 @@ func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (res *
 	}
 
 	// Collect GatewayMetadata and DownlinkOptions
-	var downlinkOptions []*pb.DownlinkOption
+	var downlinkOptions []downlinkOption
 	for _, duplicate := range duplicates {
 		deduplicatedActivationRequest.GatewayMetadata = append(deduplicatedActivationRequest.GatewayMetadata, duplicate.GatewayMetadata)
-		downlinkOptions = append(downlinkOptions, duplicate.DownlinkOptions...)
+		for _, option := range duplicate.DownlinkOptions {
+			if option.RxDelay != 5 {
+				continue // The Join Accept needs to have an RX delay of 5 seconds
+			}
+			downlinkOptions = append(downlinkOptions, downlinkOption{
+				uplinkMetadata: duplicate.GatewayMetadata,
+				option:         option,
+			})
+		}
 	}
 
 	// Select best DownlinkOption

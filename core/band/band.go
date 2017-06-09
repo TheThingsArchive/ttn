@@ -4,6 +4,9 @@
 package band
 
 import (
+	"fmt"
+	"time"
+
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
@@ -14,8 +17,11 @@ import (
 // FrequencyPlan includes band configuration and CFList
 type FrequencyPlan struct {
 	lora.Band
-	ADR    *ADRConfig
-	CFList *lorawan.CFList
+	Plan      pb_lorawan.FrequencyPlan
+	RX1Delays []time.Duration
+	ADR       *ADRConfig
+	Limits    BandLimits
+	CFList    *lorawan.CFList
 }
 
 func (f *FrequencyPlan) GetDataRateStringForIndex(drIdx int) (string, error) {
@@ -87,19 +93,23 @@ func Get(region string) (frequencyPlan FrequencyPlan, err error) {
 		}
 		frequencyPlan.DownlinkChannels = frequencyPlan.UplinkChannels
 		frequencyPlan.CFList = &lorawan.CFList{867100000, 867300000, 867500000, 867700000, 867900000}
+		frequencyPlan.Limits = BandLimits_EU_863_870
 		frequencyPlan.ADR = &ADRConfig{MinDataRate: 0, MaxDataRate: 5, MinTXPower: 2, MaxTXPower: 14}
 	case pb_lorawan.FrequencyPlan_US_902_928.String():
 		frequencyPlan.Band, err = lora.GetConfig(lora.US_902_928, false, lorawan.DwellTime400ms)
 	case pb_lorawan.FrequencyPlan_CN_779_787.String():
 		frequencyPlan.Band, err = lora.GetConfig(lora.CN_779_787, false, lorawan.DwellTimeNoLimit)
+		frequencyPlan.Limits = BandLimits_CN_779_787
 	case pb_lorawan.FrequencyPlan_EU_433.String():
 		frequencyPlan.Band, err = lora.GetConfig(lora.EU_433, false, lorawan.DwellTimeNoLimit)
+		frequencyPlan.Limits = BandLimits_EU_433
 	case pb_lorawan.FrequencyPlan_AU_915_928.String():
 		frequencyPlan.Band, err = lora.GetConfig(lora.AU_915_928, false, lorawan.DwellTime400ms)
 	case pb_lorawan.FrequencyPlan_CN_470_510.String():
 		frequencyPlan.Band, err = lora.GetConfig(lora.CN_470_510, false, lorawan.DwellTimeNoLimit)
 	case pb_lorawan.FrequencyPlan_AS_923.String():
 		frequencyPlan.Band, err = lora.GetConfig(lora.AS_923, false, lorawan.DwellTime400ms)
+		frequencyPlan.Limits = BandLimits_AS_923
 	case pb_lorawan.FrequencyPlan_AS_920_923.String():
 		frequencyPlan.Band, err = lora.GetConfig(lora.AS_923, false, lorawan.DwellTime400ms)
 		frequencyPlan.UplinkChannels = []lora.Channel{
@@ -116,6 +126,7 @@ func Get(region string) (frequencyPlan FrequencyPlan, err error) {
 		}
 		frequencyPlan.DownlinkChannels = frequencyPlan.UplinkChannels
 		frequencyPlan.CFList = &lorawan.CFList{922200000, 922400000, 922600000, 922800000, 923000000}
+		frequencyPlan.Limits = BandLimits_AS_923
 	case pb_lorawan.FrequencyPlan_AS_923_925.String():
 		frequencyPlan.Band, err = lora.GetConfig(lora.AS_923, false, lorawan.DwellTime400ms)
 		frequencyPlan.UplinkChannels = []lora.Channel{
@@ -132,6 +143,7 @@ func Get(region string) (frequencyPlan FrequencyPlan, err error) {
 		}
 		frequencyPlan.DownlinkChannels = frequencyPlan.UplinkChannels
 		frequencyPlan.CFList = &lorawan.CFList{923600000, 923800000, 924000000, 924200000, 924400000}
+		frequencyPlan.Limits = BandLimits_AS_923
 	case pb_lorawan.FrequencyPlan_KR_920_923.String():
 		frequencyPlan.Band, err = lora.GetConfig(lora.KR_920_923, false, lorawan.DwellTimeNoLimit)
 		// TTN frequency plan includes extra channels next to the default channels:
@@ -147,7 +159,15 @@ func Get(region string) (frequencyPlan FrequencyPlan, err error) {
 		frequencyPlan.DownlinkChannels = frequencyPlan.UplinkChannels
 		frequencyPlan.CFList = &lorawan.CFList{922700000, 922900000, 923100000, 923300000, 0}
 	default:
-		err = errors.NewErrInvalidArgument("Frequency Band", "unknown")
+		err = errors.NewErrInvalidArgument("Frequency Band", fmt.Sprintf("\"%s\" unknown", region))
+		return
+	}
+	frequencyPlan.Plan = pb_lorawan.FrequencyPlan(pb_lorawan.FrequencyPlan_value[region])
+	if frequencyPlan.Limits == nil {
+		frequencyPlan.Limits = BandLimits_TTN
+	}
+	if len(frequencyPlan.RX1Delays) == 0 {
+		frequencyPlan.RX1Delays = []time.Duration{frequencyPlan.ReceiveDelay1, frequencyPlan.JoinAcceptDelay1}
 	}
 	return
 }
