@@ -24,7 +24,7 @@ type Store interface {
 	DownlinkQueue(appID, devID string) (DownlinkQueue, error)
 	Set(new *Device, properties ...string) (err error)
 	Delete(appID, devID string) error
-	AddAllowedAttribute(attr ...string)
+	AddBuiltinAttribute(attr ...string)
 }
 
 const defaultRedisPrefix = "handler"
@@ -58,16 +58,16 @@ func NewRedisDeviceStore(client *redis.Client, prefix string) *RedisDeviceStore 
 		store:  store,
 		queues: queues,
 	}
-	s.AddAllowedAttribute(defaultDeviceAttributes...)
+	s.AddBuiltinAttribute(defaultDeviceAttributes...)
 	return s
 }
 
 // RedisDeviceStore stores Devices in Redis.
 // - Devices are stored as a Hash
 type RedisDeviceStore struct {
-	store             *storage.RedisMapStore
-	queues            *storage.RedisQueueStore
-	allowedAttributes []string // sorted
+	store            *storage.RedisMapStore
+	queues           *storage.RedisQueueStore
+	builtinAttibutes []string // sorted
 }
 
 // Count all devices in the store
@@ -141,8 +141,7 @@ func (s *RedisDeviceStore) Set(new *Device, properties ...string) (err error) {
 	}
 	customAttributeSlots := maxDeviceAttributes
 	for k, v := range new.Attributes {
-		if idx := sort.SearchStrings(s.allowedAttributes, k); idx < len(s.allowedAttributes) && s.allowedAttributes[idx] == k {
-			fmt.Println("Setting attribute", k, v)
+		if idx := sort.SearchStrings(s.builtinAttibutes, k); idx < len(s.builtinAttibutes) && s.builtinAttibutes[idx] == k {
 			continue
 		}
 		if len(k) > maxDeviceAttributeKeyLength {
@@ -154,7 +153,6 @@ func (s *RedisDeviceStore) Set(new *Device, properties ...string) (err error) {
 		if customAttributeSlots < 1 {
 			return fmt.Errorf(`Maximum number of custom attributes (%d) exceeded`, maxDeviceAttributes)
 		}
-		fmt.Println("Setting attribute", k, v)
 		customAttributeSlots--
 	}
 	err = s.store.Set(key, *new, properties...)
@@ -173,8 +171,8 @@ func (s *RedisDeviceStore) Delete(appID, devID string) error {
 	return s.store.Delete(key)
 }
 
-// AddAllowedAttribute adds allowed device attributes to the list.
-func (s *RedisDeviceStore) AddAllowedAttribute(attr ...string) {
-	s.allowedAttributes = append(s.allowedAttributes, attr...)
-	sort.Strings(s.allowedAttributes)
+// AddBuiltinAttribute adds allowed device attributes to the list.
+func (s *RedisDeviceStore) AddBuiltinAttribute(attr ...string) {
+	s.builtinAttibutes = append(s.builtinAttibutes, attr...)
+	sort.Strings(s.builtinAttibutes)
 }

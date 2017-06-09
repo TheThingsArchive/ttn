@@ -125,8 +125,8 @@ func TestRedisDeviceStoreAttributes(t *testing.T) {
 	a := New(t)
 
 	store := NewRedisDeviceStore(GetRedisClient(), "handler-test-attributes")
-	store.AddAllowedAttribute("ttn-device-model")
-	a.So(store.allowedAttributes, ShouldContain, "ttn-device-model")
+	store.AddBuiltinAttribute("ttn-device-model")
+	a.So(store.builtinAttibutes, ShouldContain, "ttn-device-model")
 
 	testMap1 := map[string]string{
 		"ttn-device-model": "test-device",

@@ -107,7 +107,7 @@ func (h *handler) WithAMQP(username, password, host, exchange string) Handler {
 }
 
 func (h *handler) WithDeviceAttributes(a ...string) Handler {
-	h.devices.AddAllowedAttribute(a...)
+	h.devices.AddBuiltinAttribute(a...)
 	return h
 }
 
