@@ -171,7 +171,7 @@ func (s *RedisDeviceStore) Delete(appID, devID string) error {
 	return s.store.Delete(key)
 }
 
-// AddBuiltinAttribute adds allowed device attributes to the list.
+// AddBuiltinAttribute adds builtin device attributes to the list.
 func (s *RedisDeviceStore) AddBuiltinAttribute(attr ...string) {
 	s.builtinAttibutes = append(s.builtinAttibutes, attr...)
 	sort.Strings(s.builtinAttibutes)

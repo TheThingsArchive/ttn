@@ -161,7 +161,7 @@ func TestRedisDeviceStoreAttributes(t *testing.T) {
 	err = store.Set(dev)
 	a.So(err, ShouldNotBeNil)
 
-	// Does not exceed limit because of allowed attr
+	// Does not exceed limit because of builtin attr
 	testMap3 := map[string]string{
 		"ttn-device-model": "test-device",
 		"hello":            "bonjour",
