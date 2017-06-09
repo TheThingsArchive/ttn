@@ -37,6 +37,8 @@ func (n *networkServer) HandleGetDevices(req *pb.DevicesRequest) (*pb.DevicesRes
 			DisableFCntCheck:      device.Options.DisableFCntCheck,
 			ActivationConstraints: device.Options.ActivationConstraints,
 			PreferredGateways:     device.Options.PreferredGateways,
+			Rx2DataRate:           device.Options.RX2DataRate,
+			Rx2Frequency:          device.Options.RX2Frequency,
 		}
 		if device.Options.DisableFCntCheck {
 			res.Results = append(res.Results, dev)

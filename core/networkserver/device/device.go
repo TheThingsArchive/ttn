@@ -19,6 +19,8 @@ type Options struct {
 	DisableFCntCheck      bool     `redis:"disable_fcnt_check"`     // Disable Frame counter check (insecure)
 	Uses32BitFCnt         bool     `redis:"uses_32_bit_fcnt"`       // Use 32-bit Frame counters
 	PreferredGateways     []string `redis:"preferred_gateways"`     // Preferred gateways for downlink
+	RX2DataRate           string   `redis:"rx2_data_rate"`          // RX2 Data Rate
+	RX2Frequency          uint64   `redis:"rx2_frequency"`          // RX2 Frequency in Hz
 }
 
 // Device contains the state of a device

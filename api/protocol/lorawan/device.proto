@@ -52,6 +52,10 @@ message Device {
   // is empty, or none of the gateways is available for downlink, the Broker will determine the downlink gateway. This
   // option is not used for join-accept messages.
   repeated string preferred_gateways = 14;
+  // RX2 Data Rate (if not using the default value defined in the frequency plan)
+  string rx2_data_rate = 17;
+  // RX2 Frequency in Hz (if not using the default value defined in the frequency plan; currently not used)
+	uint64 rx2_frequency = 18;
 
   // When the device was last seen (Unix nanoseconds)
   int64  last_seen = 21;

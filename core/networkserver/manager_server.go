@@ -79,6 +79,8 @@ func (n *networkServerManager) GetDevice(ctx context.Context, in *pb_lorawan.Dev
 		Uses32BitFCnt:         dev.Options.Uses32BitFCnt,
 		ActivationConstraints: dev.Options.ActivationConstraints,
 		PreferredGateways:     dev.Options.PreferredGateways,
+		Rx2DataRate:           dev.Options.RX2DataRate,
+		Rx2Frequency:          dev.Options.RX2Frequency,
 		LastSeen:              lastSeen.UnixNano(),
 	}, nil
 }
@@ -121,6 +123,8 @@ func (n *networkServerManager) SetDevice(ctx context.Context, in *pb_lorawan.Dev
 		Uses32BitFCnt:         in.Uses32BitFCnt,
 		ActivationConstraints: in.ActivationConstraints,
 		PreferredGateways:     in.PreferredGateways,
+		RX2DataRate:           in.Rx2DataRate,
+		RX2Frequency:          in.Rx2Frequency,
 	}
 
 	if in.NwkSKey != nil && in.DevAddr != nil {

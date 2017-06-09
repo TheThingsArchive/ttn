@@ -166,6 +166,8 @@ GetDevice returns the device with the given identifier (app_id and dev_id)
     "preferred_gateways": [
       ""
     ],
+    "rx2_data_rate": "",
+    "rx2_frequency": 0,
     "uses32_bit_f_cnt": true
   }
 }
@@ -212,6 +214,8 @@ SetDevice creates or updates a device. All fields must be supplied.
     "preferred_gateways": [
       ""
     ],
+    "rx2_data_rate": "",
+    "rx2_frequency": 0,
     "uses32_bit_f_cnt": true
   }
 }
@@ -297,6 +301,8 @@ GetDevicesForApplication returns all devices that belong to the application with
         "preferred_gateways": [
           ""
         ],
+        "rx2_data_rate": "",
+        "rx2_frequency": 0,
         "uses32_bit_f_cnt": true
       }
     }
@@ -454,5 +460,7 @@ SimulatedUplinkMessage is a simulated uplink message
 | `uses32_bit_f_cnt` | `bool` | The Uses32BitFCnt option indicates that the device keeps track of full 32 bit frame counters. As only the 16 lsb are actually transmitted, the 16 msb will have to be inferred. |
 | `activation_constraints` | `string` | The ActivationContstraints are used to allocate a device address for a device (comma-separated). There are different prefixes for `otaa`, `abp`, `world`, `local`, `private`, `testing`. |
 | `preferred_gateways` | _repeated_ `string` | The PreferredGateways option configures which gateways should be preferred for downlink to this device. If the list is empty, or none of the gateways is available for downlink, the Broker will determine the downlink gateway. This option is not used for join-accept messages. |
+| `rx2_data_rate` | `string` | RX2 Data Rate (if not using the default value defined in the frequency plan) |
+| `rx2_frequency` | `uint64` | RX2 Frequency in Hz (if not using the default value defined in the frequency plan; currently not used) |
 | `last_seen` | `int64` | When the device was last seen (Unix nanoseconds) |
 
