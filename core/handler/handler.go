@@ -36,13 +36,15 @@ type Handler interface {
 
 // NewRedisHandler creates a new Redis-backed Handler
 func NewRedisHandler(client *redis.Client, ttnBrokerID string) Handler {
-	return &handler{
+	h := &handler{
 		devices:      device.NewRedisDeviceStore(client, "handler"),
 		applications: application.NewRedisApplicationStore(client, "handler"),
 		ttnBrokerID:  ttnBrokerID,
 		qUp:          make(chan *types.UplinkMessage),
 		qEvent:       make(chan *types.DeviceEvent),
 	}
+	h.activeDownlinks.devices = make(map[deviceIdentifier]int)
+	return h
 }
 
 type handler struct {
@@ -58,6 +60,8 @@ type handler struct {
 	ttnDeviceManager pb_lorawan.DeviceManagerClient
 
 	downlink chan *pb_broker.DownlinkMessage
+
+	activeDownlinks activeDownlinks
 
 	mqttClient   mqtt.Client
 	mqttUsername string

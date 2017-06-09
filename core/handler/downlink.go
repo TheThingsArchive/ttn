@@ -8,6 +8,7 @@ import (
 
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
+	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/api/trace"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
@@ -93,6 +94,11 @@ func (h *handler) EnqueueDownlink(appDownlink *types.DownlinkMessage) (err error
 		Data: types.DownlinkEventData{
 			Message: appDownlink,
 		},
+	}
+
+	switch dev.Options.LoRaWANClass {
+	case pb_lorawan.Class_C.String():
+		h.activateDownlink(dev)
 	}
 
 	return nil
