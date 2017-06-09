@@ -120,8 +120,21 @@ func (b *broker) PrepareDownlink(req *pb.PrepareDownlinkRequest) (downlink *pb.D
 	if err != nil {
 		return nil, err
 	}
-	dr, _ := types.ConvertDataRate(fp.DataRates[fp.RX2DataRate])
-	duration, _ := toa.ComputeLoRa(uint(fp.MaxPayloadSize[fp.RX2DataRate].M), dr.String(), "4/5")
+	drIdx := fp.RX2DataRate
+	dr, _ := types.ConvertDataRate(fp.DataRates[drIdx])
+	dataRate := dr.String()
+	frequency := uint64(fp.RX2Frequency)
+	if dev.Rx2DataRate != "" {
+		dataRate = dev.Rx2DataRate
+		drIdx, err = fp.GetDataRateIndexFor(dataRate)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if dev.Rx2Frequency != 0 {
+		frequency = dev.Rx2Frequency
+	}
+	duration, _ := toa.ComputeLoRa(uint(fp.MaxPayloadSize[drIdx].M), dataRate, "4/5")
 
 	downlink = &pb.DownlinkMessage{
 		AppEui:  req.AppEui,
@@ -132,12 +145,12 @@ func (b *broker) PrepareDownlink(req *pb.PrepareDownlinkRequest) (downlink *pb.D
 		DownlinkOption: &pb.DownlinkOption{
 			ProtocolConfig: &pb_protocol.TxConfiguration{Protocol: &pb_protocol.TxConfiguration_Lorawan{Lorawan: &pb_lorawan.TxConfiguration{
 				Modulation: pb_lorawan.Modulation_LORA,
-				DataRate:   dr.String(),
+				DataRate:   dataRate,
 				CodingRate: "4/5",
 				FCnt:       dev.FCntDown,
 			}}},
 			GatewayConfig: &pb_gateway.TxConfiguration{
-				Frequency: uint64(fp.RX2Frequency),
+				Frequency: frequency,
 				Power:     int32(fp.DefaultTXPower),
 				PolarizationInversion: true,
 			},
