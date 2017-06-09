@@ -113,11 +113,11 @@ var devicesSetCmd = &cobra.Command{
 			dev.GetLorawanDevice().AppKey = &key
 		}
 
-		if in, err := cmd.Flags().GetInt("fcnt-up"); err == nil && in != -1 {
+		if in, err := cmd.Flags().GetInt("fcnt-up"); err == nil && in > -1 {
 			dev.GetLorawanDevice().FCntUp = uint32(in)
 		}
 
-		if in, err := cmd.Flags().GetInt("fcnt-down"); err == nil && in != -1 {
+		if in, err := cmd.Flags().GetInt("fcnt-down"); err == nil && in > -1 {
 			dev.GetLorawanDevice().FCntDown = uint32(in)
 		}
 
@@ -138,7 +138,23 @@ var devicesSetCmd = &cobra.Command{
 		}
 
 		if in, err := cmd.Flags().GetStringSlice("preferred-gateways"); err == nil {
-			dev.GetLorawanDevice().PreferredGateways = in
+			if len(in) == 1 && in[0] == "-" {
+				dev.GetLorawanDevice().PreferredGateways = []string{}
+			} else {
+				dev.GetLorawanDevice().PreferredGateways = in
+			}
+		}
+
+		if in, err := cmd.Flags().GetString("rx2-data-rate"); err == nil && in != "" {
+			if in == "-" {
+				dev.GetLorawanDevice().Rx2DataRate = ""
+			} else {
+				dev.GetLorawanDevice().Rx2DataRate = in
+			}
+		}
+
+		if in, err := cmd.Flags().GetInt64("rx2-frequency"); err == nil && in > -1 {
+			dev.GetLorawanDevice().Rx2Frequency = uint64(in)
 		}
 
 		if in, err := cmd.Flags().GetFloat32("latitude"); err == nil && in != 0 {
@@ -189,7 +205,9 @@ func init() {
 	devicesSetCmd.Flags().Bool("32-bit-fcnt", false, "Use 32 bit FCnt (default)")
 	devicesSetCmd.Flags().Bool("16-bit-fcnt", false, "Use 16 bit FCnt")
 
-	devicesSetCmd.Flags().StringSlice("preferred-gateways", []string{}, "Set device preferred gateways")
+	devicesSetCmd.Flags().StringSlice("preferred-gateways", []string{}, "Set device preferred gateways (reset with \"-\")")
+	devicesSetCmd.Flags().String("rx2-data-rate", "", "Custom Data Rate to be used in RX2 (reset with \"-\")")
+	devicesSetCmd.Flags().Int64("rx2-frequency", -1, "Custom Frequency to be used in RX2 (reset with \"0\")")
 
 	devicesSetCmd.Flags().Float32("latitude", 0, "Set latitude")
 	devicesSetCmd.Flags().Float32("longitude", 0, "Set longitude")

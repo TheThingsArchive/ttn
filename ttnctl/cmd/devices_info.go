@@ -108,7 +108,17 @@ var devicesInfoCmd = &cobra.Command{
 			} else {
 				options = append(options, "16BitFCnt")
 			}
+			if lorawan.Rx2DataRate != "" {
+				options = append(options, fmt.Sprintf("RX2DataRate=%s", lorawan.Rx2DataRate))
+			}
+			if lorawan.Rx2Frequency != 0 {
+				options = append(options, fmt.Sprintf("RX2Frequency=%d", lorawan.Rx2Frequency))
+			}
 			fmt.Printf("    Options: %s\n", strings.Join(options, ", "))
+
+			if len(lorawan.PreferredGateways) > 0 {
+				fmt.Printf("Preferred Gateways: %s\n", strings.Join(lorawan.PreferredGateways, ", "))
+			}
 		}
 
 	},
