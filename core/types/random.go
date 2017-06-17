@@ -5,24 +5,27 @@ package types
 
 import (
 	"fmt"
-	"math/rand"
 )
 
-func NewPopulatedDevAddr(r *rand.Rand) (devAddr DevAddr) {
+type Rand interface {
+	Read(b []byte) (n int, err error)
+}
+
+func NewPopulatedDevAddr(r Rand) (devAddr DevAddr) {
 	if _, err := r.Read(devAddr[:]); err != nil {
 		panic(fmt.Errorf("types.NewPopulatedAppEUI: %s", err))
 	}
 	return
 }
 
-func NewPopulatedAppEUI(r *rand.Rand) (appEUI AppEUI) {
+func NewPopulatedAppEUI(r Rand) (appEUI AppEUI) {
 	if _, err := r.Read(appEUI[:]); err != nil {
 		panic(fmt.Errorf("types.NewPopulatedAppEUI: %s", err))
 	}
 	return
 }
 
-func NewPopulatedDevEUI(r *rand.Rand) (devEUI DevEUI) {
+func NewPopulatedDevEUI(r Rand) (devEUI DevEUI) {
 	if _, err := r.Read(devEUI[:]); err != nil {
 		panic(fmt.Errorf("types.NewPopulatedDevEUI: %s", err))
 	}

@@ -12,7 +12,7 @@ import (
 	. "github.com/smartystreets/assertions"
 )
 
-var random = rand.New(rand.NewSource(time.Now().UnixNano()))
+var random Rand = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 func TestNewPopulatedDevAddr(t *testing.T) {
 	a := New(t)
