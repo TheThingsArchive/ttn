@@ -29,7 +29,8 @@ func randRead(r Rand, b []byte) (n int, err error) {
 }
 
 // NewPopulatedDevAddr returns random DevAddr
-func NewPopulatedDevAddr(r Rand) (devAddr DevAddr) {
+func NewPopulatedDevAddr(r Rand) (devAddr *DevAddr) {
+	devAddr = &DevAddr{}
 	if _, err := randRead(r, devAddr[:]); err != nil {
 		panic(fmt.Errorf("types.NewPopulatedAppEUI: %s", err))
 	}
@@ -37,7 +38,8 @@ func NewPopulatedDevAddr(r Rand) (devAddr DevAddr) {
 }
 
 // NewPopulatedAppEUI returns random AppEUI
-func NewPopulatedAppEUI(r Rand) (appEUI AppEUI) {
+func NewPopulatedAppEUI(r Rand) (appEUI *AppEUI) {
+	appEUI = &AppEUI{}
 	if _, err := randRead(r, appEUI[:]); err != nil {
 		panic(fmt.Errorf("types.NewPopulatedAppEUI: %s", err))
 	}
@@ -45,7 +47,8 @@ func NewPopulatedAppEUI(r Rand) (appEUI AppEUI) {
 }
 
 // NewPopulatedDevEUI returns random DevEUI
-func NewPopulatedDevEUI(r Rand) (devEUI DevEUI) {
+func NewPopulatedDevEUI(r Rand) (devEUI *DevEUI) {
+	devEUI = &DevEUI{}
 	if _, err := randRead(r, devEUI[:]); err != nil {
 		panic(fmt.Errorf("types.NewPopulatedDevEUI: %s", err))
 	}
