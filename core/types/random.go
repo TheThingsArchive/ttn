@@ -32,7 +32,7 @@ func randRead(r Rand, b []byte) (n int, err error) {
 func NewPopulatedDevAddr(r Rand) (devAddr *DevAddr) {
 	devAddr = &DevAddr{}
 	if _, err := randRead(r, devAddr[:]); err != nil {
-		panic(fmt.Errorf("types.NewPopulatedAppEUI: %s", err))
+		panic(fmt.Errorf("types.NewPopulatedDevAddr: %s", err))
 	}
 	return
 }
