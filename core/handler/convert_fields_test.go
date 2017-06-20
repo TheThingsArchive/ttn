@@ -29,6 +29,10 @@ func buildCustomUplink(appID string) (*pb_broker.DeduplicatedUplinkMessage, *typ
 	return ttnUp, appUp
 }
 
+var attributes = map[string]string{
+	"ttn-model": "The Things Uno",
+}
+
 func TestConvertFieldsUpCustom(t *testing.T) {
 	a := New(t)
 	appID := "AppID-1"
@@ -39,6 +43,7 @@ func TestConvertFieldsUpCustom(t *testing.T) {
 	}
 
 	dev := new(device.Device)
+	dev.Attributes = attributes
 
 	// No functions
 	{
@@ -66,6 +71,7 @@ func TestConvertFieldsUpCustom(t *testing.T) {
 		a.So(appUp.PayloadFields, ShouldResemble, map[string]interface{}{
 			"temperature": 21.6,
 		})
+		a.So(appUp.Attributes, ShouldResemble, attributes)
 	}
 
 	// Invalidate data
@@ -137,6 +143,7 @@ func TestConvertFieldsUpCayenneLPP(t *testing.T) {
 	}
 
 	dev := new(device.Device)
+	dev.Attributes = attributes
 
 	// No application
 	{
@@ -162,6 +169,7 @@ func TestConvertFieldsUpCayenneLPP(t *testing.T) {
 		a.So(appUp.PayloadFields, ShouldResemble, map[string]interface{}{
 			"barometric_pressure_10": float32(1073.5),
 		})
+		a.So(appUp.Attributes, ShouldResemble, attributes)
 	}
 }
 
