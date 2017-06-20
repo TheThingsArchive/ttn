@@ -5,6 +5,7 @@ package device
 
 import (
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/core/handler/device/migrate"
@@ -23,11 +24,26 @@ type Store interface {
 	DownlinkQueue(appID, devID string) (DownlinkQueue, error)
 	Set(new *Device, properties ...string) (err error)
 	Delete(appID, devID string) error
+	AddBuiltinAttribute(attr ...string)
 }
 
 const defaultRedisPrefix = "handler"
 const redisDevicePrefix = "device"
 const redisDownlinkQueuePrefix = "downlink"
+
+var defaultDeviceAttributes = []string{
+	"ttn-brand",
+	"ttn-model",
+	"ttn-version",
+	"ttn-antenna",
+	"ttn-module-type",
+}
+
+const (
+	maxDeviceAttributeKeyLength   = 64
+	maxDeviceAttributeValueLength = 64
+	maxDeviceAttributes           = 5
+)
 
 // NewRedisDeviceStore creates a new Redis-based Device store
 func NewRedisDeviceStore(client *redis.Client, prefix string) *RedisDeviceStore {
@@ -40,17 +56,20 @@ func NewRedisDeviceStore(client *redis.Client, prefix string) *RedisDeviceStore 
 		store.AddMigration(v, f)
 	}
 	queues := storage.NewRedisQueueStore(client, prefix+":"+redisDownlinkQueuePrefix)
-	return &RedisDeviceStore{
+	s := &RedisDeviceStore{
 		store:  store,
 		queues: queues,
 	}
+	s.AddBuiltinAttribute(defaultDeviceAttributes...)
+	return s
 }
 
 // RedisDeviceStore stores Devices in Redis.
 // - Devices are stored as a Hash
 type RedisDeviceStore struct {
-	store  *storage.RedisMapStore
-	queues *storage.RedisQueueStore
+	store            *storage.RedisMapStore
+	queues           *storage.RedisQueueStore
+	builtinAttibutes []string // sorted
 }
 
 // Count all devices in the store
@@ -122,6 +141,22 @@ func (s *RedisDeviceStore) Set(new *Device, properties ...string) (err error) {
 	if new.old == nil {
 		new.CreatedAt = now
 	}
+	customAttributeSlots := maxDeviceAttributes
+	for k, v := range new.Attributes {
+		if idx := sort.SearchStrings(s.builtinAttibutes, k); idx < len(s.builtinAttibutes) && s.builtinAttibutes[idx] == k {
+			continue
+		}
+		if len(k) > maxDeviceAttributeKeyLength {
+			return fmt.Errorf(`Attribute key "%s" exceeds maximum length (%d)`, k, maxDeviceAttributeKeyLength)
+		}
+		if len(v) > maxDeviceAttributeValueLength {
+			return fmt.Errorf(`Attribute value for key "%s" exceeds maximum length (%d)`, k, maxDeviceAttributeValueLength)
+		}
+		if customAttributeSlots < 1 {
+			return fmt.Errorf(`Maximum number of custom attributes (%d) exceeded`, maxDeviceAttributes)
+		}
+		customAttributeSlots--
+	}
 	err = s.store.Set(key, *new, properties...)
 	if err != nil {
 		return
@@ -136,4 +171,10 @@ func (s *RedisDeviceStore) Delete(appID, devID string) error {
 		return err
 	}
 	return s.store.Delete(key)
+}
+
+// AddBuiltinAttribute adds builtin device attributes to the list.
+func (s *RedisDeviceStore) AddBuiltinAttribute(attr ...string) {
+	s.builtinAttibutes = append(s.builtinAttibutes, attr...)
+	sort.Strings(s.builtinAttibutes)
 }

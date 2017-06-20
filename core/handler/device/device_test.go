@@ -45,10 +45,3 @@ func TestDeviceChangedFields(t *testing.T) {
 	a.So(device.ChangedFields(), ShouldHaveLength, 1)
 	a.So(device.ChangedFields(), ShouldContain, "DevID")
 }
-
-func TestDeviceGetLoRaWAN(t *testing.T) {
-	device := &Device{
-		DevID: "Device",
-	}
-	device.GetLoRaWAN()
-}

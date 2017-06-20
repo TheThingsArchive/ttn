@@ -31,7 +31,7 @@ type PayloadEncoder interface {
 }
 
 // ConvertFieldsUp converts the payload to fields using the application's payload formatter
-func (h *handler) ConvertFieldsUp(ctx ttnlog.Interface, _ *pb_broker.DeduplicatedUplinkMessage, appUp *types.UplinkMessage, _ *device.Device) error {
+func (h *handler) ConvertFieldsUp(ctx ttnlog.Interface, _ *pb_broker.DeduplicatedUplinkMessage, appUp *types.UplinkMessage, dev *device.Device) error {
 	// Find Application
 	app, err := h.applications.Get(appUp.AppID)
 	if err != nil {
@@ -89,6 +89,7 @@ func (h *handler) ConvertFieldsUp(ctx ttnlog.Interface, _ *pb_broker.Deduplicate
 	}
 
 	appUp.PayloadFields = fields
+	appUp.Attributes = dev.Attributes
 
 	return nil
 }

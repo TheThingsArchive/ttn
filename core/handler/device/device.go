@@ -7,7 +7,6 @@ import (
 	"reflect"
 	"time"
 
-	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/fatih/structs"
 )
@@ -54,6 +53,8 @@ type Device struct {
 
 	CreatedAt time.Time `redis:"created_at"`
 	UpdatedAt time.Time `redis:"updated_at"`
+
+	Attributes map[string]string `redis:"attributes"`
 }
 
 // StartUpdate stores the state of the device
@@ -102,20 +103,4 @@ func (d Device) ChangedFields() (changed []string) {
 	}
 
 	return
-}
-
-// GetLoRaWAN returns a LoRaWAN Device proto
-func (d Device) GetLoRaWAN() *pb_lorawan.Device {
-	dev := &pb_lorawan.Device{
-		AppId:                 d.AppID,
-		DevId:                 d.DevID,
-		AppEui:                &d.AppEUI,
-		DevEui:                &d.DevEUI,
-		DevAddr:               &d.DevAddr,
-		NwkSKey:               &d.NwkSKey,
-		DisableFCntCheck:      d.Options.DisableFCntCheck,
-		Uses32BitFCnt:         d.Options.Uses32BitFCnt,
-		ActivationConstraints: d.Options.ActivationConstraints,
-	}
-	return dev
 }
