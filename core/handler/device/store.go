@@ -32,9 +32,11 @@ const redisDevicePrefix = "device"
 const redisDownlinkQueuePrefix = "downlink"
 
 var defaultDeviceAttributes = []string{
+	"ttn-brand",
 	"ttn-model",
-	"ttn-type",
 	"ttn-version",
+	"ttn-antenna",
+	"ttn-module-type",
 }
 
 const (
