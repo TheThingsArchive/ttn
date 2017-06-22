@@ -146,6 +146,8 @@ func Get(region string) (frequencyPlan FrequencyPlan, err error) {
 		}
 		frequencyPlan.DownlinkChannels = frequencyPlan.UplinkChannels
 		frequencyPlan.CFList = &lorawan.CFList{922700000, 922900000, 923100000, 923300000, 0}
+	case pb_lorawan.FrequencyPlan_IN_865_867.String():
+		frequencyPlan.Band, err = lora.GetConfig(lora.IN_865_867, false, lorawan.DwellTimeNoLimit)
 	default:
 		err = errors.NewErrInvalidArgument("Frequency Band", "unknown")
 	}
@@ -160,6 +162,7 @@ func init() {
 	channels = make(map[int]string)
 	for _, r := range []pb_lorawan.FrequencyPlan{ // ordering is important here
 		pb_lorawan.FrequencyPlan_EU_863_870,
+		pb_lorawan.FrequencyPlan_IN_865_867,
 		pb_lorawan.FrequencyPlan_US_902_928,
 		pb_lorawan.FrequencyPlan_CN_779_787,
 		pb_lorawan.FrequencyPlan_EU_433,
