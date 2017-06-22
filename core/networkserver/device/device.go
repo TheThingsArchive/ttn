@@ -81,6 +81,17 @@ func (d Device) ChangedFields() (changed []string) {
 		}
 		if !reflect.DeepEqual(field.Value(), old.Field(field.Name()).Value()) {
 			changed = append(changed, field.Name())
+			if field.Kind() == reflect.Struct {
+				oldSubField := structs.New(old.Field(field.Name()).Value())
+				for _, subField := range field.Fields() {
+					if !subField.IsExported() {
+						continue
+					}
+					if !reflect.DeepEqual(subField.Value(), oldSubField.Field(subField.Name()).Value()) {
+						changed = append(changed, field.Name()+"."+subField.Name())
+					}
+				}
+			}
 		}
 	}
 
