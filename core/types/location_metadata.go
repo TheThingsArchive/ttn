@@ -8,4 +8,5 @@ type LocationMetadata struct {
 	Latitude  float32 `json:"latitude,omitempty"`
 	Longitude float32 `json:"longitude,omitempty"`
 	Altitude  int32   `json:"altitude,omitempty"`
+	Source    string  `json:"location_source,omitempty"` // can be: gps, config, registry, estimate or unknown (unknown may be left out)
 }

@@ -4,6 +4,8 @@
 package handler
 
 import (
+	"strings"
+
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
@@ -43,10 +45,11 @@ func (h *handler) ConvertMetadata(ctx ttnlog.Interface, ttnUp *pb_broker.Dedupli
 			SNR:        in.Snr,
 		}
 
-		if gps := in.GetGps(); gps != nil {
-			gatewayMetadata.Altitude = gps.Altitude
-			gatewayMetadata.Longitude = gps.Longitude
-			gatewayMetadata.Latitude = gps.Latitude
+		if location := in.GetLocation(); location != nil {
+			gatewayMetadata.Altitude = location.Altitude
+			gatewayMetadata.Longitude = location.Longitude
+			gatewayMetadata.Latitude = location.Latitude
+			gatewayMetadata.Source = strings.ToLower(location.Source.String())
 		}
 
 		if antennas := in.GetAntennas(); len(antennas) > 0 {
@@ -66,6 +69,7 @@ func (h *handler) ConvertMetadata(ctx ttnlog.Interface, ttnUp *pb_broker.Dedupli
 	appUp.Metadata.LocationMetadata.Latitude = dev.Latitude
 	appUp.Metadata.LocationMetadata.Longitude = dev.Longitude
 	appUp.Metadata.LocationMetadata.Altitude = dev.Altitude
+	appUp.Metadata.LocationMetadata.Source = "registry"
 
 	return nil
 }
