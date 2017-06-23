@@ -38,6 +38,19 @@ Created:        2016-10-06 09:52:28.766 +0000 UTC
 		fmt.Printf("Type:           %s\n", component.Type)
 		fmt.Printf("Created:        %s\n", component.Created)
 		fmt.Println()
+		fmt.Println("Collaborators:")
+		for _, collaborator := range component.Collaborators {
+			fmt.Printf("       - Name: %s\n", collaborator.Username)
+			fmt.Print("         Rights: ")
+			for i, right := range collaborator.Rights {
+				if i != 0 {
+					fmt.Print(", ")
+				}
+				fmt.Print(right)
+			}
+			fmt.Println()
+		}
+		fmt.Println()
 	},
 }
 
