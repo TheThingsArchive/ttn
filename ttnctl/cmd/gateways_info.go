@@ -62,6 +62,11 @@ var gatewaysInfoCmd = &cobra.Command{
 		}
 
 		fmt.Println()
+		if len(gateway.Collaborators) > 0 {
+			fmt.Println("Collaborators:")
+			printCollaborators(gateway.Collaborators)
+			fmt.Println()
+		}
 	},
 }
 

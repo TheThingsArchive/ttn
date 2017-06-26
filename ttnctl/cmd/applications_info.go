@@ -74,20 +74,11 @@ Collaborators:
 			fmt.Println()
 		}
 		fmt.Println()
-		fmt.Println("Collaborators:")
-		for _, collaborator := range app.Collaborators {
-			fmt.Printf("       - Name: %s\n", collaborator.Username)
-			fmt.Print("         Rights: ")
-			for i, right := range collaborator.Rights {
-				if i != 0 {
-					fmt.Print(", ")
-				}
-				fmt.Print(right)
-			}
+		if len(app.Collaborators) > 0 {
+			fmt.Println("Collaborators:")
+			printCollaborators(app.Collaborators)
 			fmt.Println()
 		}
-		fmt.Println()
-
 	},
 }
 
