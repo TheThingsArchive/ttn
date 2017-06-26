@@ -29,6 +29,9 @@ func init() {
 				percentMu.Lock()
 				cpuPercentage = cpu[0]
 				percentMu.Unlock()
+			} else if err != nil {
+				// Cannot get cpu percentage on all platforms with cgo disabled so break spinning loop
+				break
 			}
 		}
 	}()
