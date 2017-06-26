@@ -28,8 +28,9 @@ message LocationMetadata {
     CONFIG   = 2;
     // The location is set in and updated from a registry
     REGISTRY = 3;
-    // The location is estimated
-    ESTIMATE = 4;
+    // The location is estimated with IP Geolocation
+    IP_GEOLOCATION = 4;
+    // More estimation methods can be added
   }
 }
 
