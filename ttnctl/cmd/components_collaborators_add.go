@@ -11,7 +11,7 @@ import (
 
 var componentsCollaboratorsAddCmd = &cobra.Command{
 	Use:   "add [Type] [ComponentID] [Username] [Rights...]",
-	Short: "Add collaborators to a component.",
+	Short: "Add a collaborator to a component.",
 	Long: `components collaborators add can be used to add a collaborator to a component.
 Available rights are: ` + joinRights(componentsRights, ", "),
 	Run: func(cmd *cobra.Command, args []string) {

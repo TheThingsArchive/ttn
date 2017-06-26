@@ -11,7 +11,7 @@ import (
 
 var applicationsCollaboratorsAddCmd = &cobra.Command{
 	Use:   "add [AppID] [Username] [Rights...]",
-	Short: "Add collaborators to an application.",
+	Short: "Add a collaborator to an application.",
 	Long: `applications collaborators add can be used to add a collaborator to an application.
 Available rights are: ` + joinRights(applicationRights, ", "),
 	Run: func(cmd *cobra.Command, args []string) {

@@ -11,7 +11,7 @@ import (
 var applicationsCollaboratorsDeleteCmd = &cobra.Command{
 	Use:     "delete [AppID] [Username]",
 	Aliases: []string{"remove"},
-	Short:   "Delete collaborators from an application.",
+	Short:   "Delete a collaborator from an application.",
 	Long:    `applications collaborators delete can be used to delete a collaborator from an application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		assertArgsLength(cmd, args, 2, 2)

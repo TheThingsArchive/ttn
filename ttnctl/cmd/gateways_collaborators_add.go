@@ -11,8 +11,8 @@ import (
 
 var gatewaysCollaboratorsAddCmd = &cobra.Command{
 	Use:   "add [AppID] [Username] [Rights...]",
-	Short: "Add collaborators to an gateway.",
-	Long: `gateways collaborators add can be used to add a collaborator to an gateway.
+	Short: "Add a collaborator to a gateway.",
+	Long: `gateways collaborators add can be used to add a collaborator to a gateway.
 Available rights are: ` + joinRights(gatewayRights, ", "),
 	Run: func(cmd *cobra.Command, args []string) {
 		assertArgsLength(cmd, args, 2, 0)

@@ -11,7 +11,7 @@ import (
 var componentsCollaboratorsDeleteCmd = &cobra.Command{
 	Use:     "delete [Type] [ComponentID] [Username]",
 	Aliases: []string{"remove"},
-	Short:   "Delete collaborators from a component.",
+	Short:   "Delete a collaborator from a component.",
 	Long:    `components collaborators delete can be used to delete a collaborator from a component.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		assertArgsLength(cmd, args, 3, 3)

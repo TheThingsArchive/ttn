@@ -11,7 +11,7 @@ import (
 var gatewaysCollaboratorsDeleteCmd = &cobra.Command{
 	Use:     "delete [AppID] [Username]",
 	Aliases: []string{"remove"},
-	Short:   "Delete collaborators from a gateway.",
+	Short:   "Delete a collaborator from a gateway.",
 	Long:    `gateways collaborators delete can be used to delete a collaborator from a gateway.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		assertArgsLength(cmd, args, 2, 2)
