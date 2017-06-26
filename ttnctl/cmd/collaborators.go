@@ -29,9 +29,6 @@ var applicationRights = []types.Right{
 	rights.AppSettings,
 	rights.AppCollaborators,
 	rights.AppDelete,
-	rights.ReadUplink,
-	rights.WriteUplink,
-	rights.WriteDownlink,
 	rights.Devices,
 }
 var gatewayRights = []types.Right{
