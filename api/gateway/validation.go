@@ -31,11 +31,11 @@ var (
 )
 
 // Validate implements the api.Validator interface
-func (m *LocationMetadata) Validate() error {
+func (m LocationMetadata) Validate() error {
 	if m.IsZero() {
 		return ErrLocationZero
 	}
-	if m.Latitude > 90 || m.Latitude < -90 {
+	if m.Latitude >= 90-delta || m.Latitude <= -90+delta {
 		return ErrInvalidLatitude
 	}
 	if m.Longitude > 180 || m.Longitude < -180 {
@@ -48,5 +48,5 @@ const delta = 0.01
 
 // IsZero returns whether the location is close enough to zero (and should be nil)
 func (m LocationMetadata) IsZero() bool {
-	return (m.Latitude > -delta && m.Latitude < delta) && (m.Longitude > -delta && m.Longitude < delta) && m.Altitude == 0
+	return (m.Latitude > -delta && m.Latitude < delta) && (m.Longitude > -delta && m.Longitude < delta)
 }
