@@ -10,14 +10,22 @@ package gateway;
 option go_package = "github.com/TheThingsNetwork/ttn/api/gateway";
 
 message LocationMetadata {
-  // Time in Unix nanoseconds
+  // Time (unix nanoseconds)
   int64   time       = 1;
 
+  // the north–south position (degrees; -90 to +90), where 0 is the equator, north pole is positive, south pole is negative
   float   latitude   = 2;
+
+  // the east-west position (degrees; -180 to +180), where 0 is the Prime Meridian (Greenwich), east is positive , west is negative
   float   longitude  = 3;
+
+  // the altitude (meters), where 0 is the mean sea level
   int32   altitude   = 4;
 
-  LocationSource source = 5;
+  // the accuracy of the location (meters)
+  int32   accuracy   = 5;
+
+  LocationSource source = 6;
 
   enum LocationSource {
     // The source of the location is not known or not set

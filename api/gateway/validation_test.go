@@ -10,18 +10,26 @@ import (
 	s "github.com/smartystreets/assertions"
 )
 
+func buildLocation(latitude, longitude float32, altitude int32) *LocationMetadata {
+	return &LocationMetadata{
+		Latitude:  latitude,
+		Longitude: longitude,
+		Altitude:  altitude,
+	}
+}
+
 func TestValidation(t *testing.T) {
 	table := []struct {
 		subject  *LocationMetadata
 		expected error
 	}{
-		{&LocationMetadata{0, 0, 0, 0, 0}, ErrLocationZero},
-		{&LocationMetadata{0, -0.001, 0.001, 0, 0}, ErrLocationZero},
-		{&LocationMetadata{0, 300, 0, 0, 0}, ErrInvalidLatitude},
-		{&LocationMetadata{0, -300, 0, 0, 0}, ErrInvalidLatitude},
-		{&LocationMetadata{0, 0, 300, 0, 0}, ErrInvalidLongitude},
-		{&LocationMetadata{0, 0, -300, 0, 0}, ErrInvalidLongitude},
-		{&LocationMetadata{0, 12, 34, 10, 0}, nil},
+		{buildLocation(0, 0, 0), ErrLocationZero},
+		{buildLocation(-0.001, 0.001, 0), ErrLocationZero},
+		{buildLocation(300, 0, 0), ErrInvalidLatitude},
+		{buildLocation(-300, 0, 0), ErrInvalidLatitude},
+		{buildLocation(0, 300, 0), ErrInvalidLongitude},
+		{buildLocation(0, -300, 0), ErrInvalidLongitude},
+		{buildLocation(12, 34, 10), nil},
 	}
 	for i, tt := range table {
 		t.Run(fmt.Sprintf("Table %d", i), func(t *testing.T) {

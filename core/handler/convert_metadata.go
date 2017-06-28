@@ -49,6 +49,7 @@ func (h *handler) ConvertMetadata(ctx ttnlog.Interface, ttnUp *pb_broker.Dedupli
 			gatewayMetadata.Altitude = location.Altitude
 			gatewayMetadata.Longitude = location.Longitude
 			gatewayMetadata.Latitude = location.Latitude
+			gatewayMetadata.Accuracy = location.Accuracy
 			gatewayMetadata.Source = strings.ToLower(location.Source.String())
 		}
 
