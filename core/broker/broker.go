@@ -135,6 +135,9 @@ func (b *broker) Init(c *component.Component) error {
 	b.Component.SetStatus(component.StatusHealthy)
 	if b.Component.Monitor != nil {
 		b.monitorStream = b.Component.Monitor.NewBrokerStreams(b.Identity.Id, b.AccessToken)
+		go b.Component.Monitor.TickStatus(func() {
+			b.monitorStream.Send(b.GetStatus())
+		})
 	}
 	return nil
 }

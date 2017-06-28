@@ -171,6 +171,9 @@ func (h *handler) Init(c *component.Component) error {
 	h.Component.SetStatus(component.StatusHealthy)
 	if h.Component.Monitor != nil {
 		h.monitorStream = h.Component.Monitor.NewHandlerStreams(h.Identity.Id, h.AccessToken)
+		go h.Component.Monitor.TickStatus(func() {
+			h.monitorStream.Send(h.GetStatus())
+		})
 	}
 
 	return nil

@@ -8,6 +8,7 @@ import (
 	"io"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/TheThingsNetwork/go-utils/grpc/restartstream"
 	"github.com/TheThingsNetwork/go-utils/grpc/ttnctx"
@@ -72,6 +73,8 @@ type Client struct {
 	ctx    context.Context
 	cancel context.CancelFunc
 
+	statusTicker *time.Ticker
+
 	config      ClientConfig
 	serverConns []*serverConn
 }
@@ -102,6 +105,21 @@ func (c *Client) AddServer(name, address string) {
 		}
 		close(s.ready)
 	}()
+}
+
+// SetStatusInterval creates a status ticker
+func (c *Client) SetStatusInterval(interval time.Duration) {
+	c.statusTicker = time.NewTicker(interval)
+}
+
+// TickStatus calls f when a status needs to be sent
+func (c *Client) TickStatus(f func()) {
+	if c.statusTicker == nil {
+		return
+	}
+	for range c.statusTicker.C {
+		f()
+	}
 }
 
 // AddConn adds a new monitor server on an existing connection
@@ -160,6 +178,9 @@ func (s *gatewayStreams) Send(msg interface{}) {
 	defer s.mu.RUnlock()
 	switch msg := msg.(type) {
 	case *router.UplinkMessage:
+		if len(s.uplink) == 0 {
+			return
+		}
 		s.log.WithField("Monitors", len(s.uplink)).Debug("Sending UplinkMessage to monitor")
 		for serverName, ch := range s.uplink {
 			select {
@@ -169,6 +190,9 @@ func (s *gatewayStreams) Send(msg interface{}) {
 			}
 		}
 	case *router.DeviceActivationRequest:
+		if len(s.uplink) == 0 {
+			return
+		}
 		s.log.WithField("Monitors", len(s.uplink)).Debug("Sending DeviceActivationRequest->UplinkMessage to monitor")
 		for serverName, ch := range s.uplink {
 			select {
@@ -184,6 +208,9 @@ func (s *gatewayStreams) Send(msg interface{}) {
 			}
 		}
 	case *router.DownlinkMessage:
+		if len(s.downlink) == 0 {
+			return
+		}
 		s.log.WithField("Monitors", len(s.downlink)).Debug("Sending DownlinkMessage to monitor")
 		for serverName, ch := range s.downlink {
 			select {
@@ -193,6 +220,9 @@ func (s *gatewayStreams) Send(msg interface{}) {
 			}
 		}
 	case *gateway.Status:
+		if len(s.status) == 0 {
+			return
+		}
 		s.log.WithField("Monitors", len(s.status)).Debug("Sending Status to monitor")
 		for serverName, ch := range s.status {
 			select {
@@ -363,6 +393,9 @@ func (s *routerStreams) Send(msg interface{}) {
 	defer s.mu.RUnlock()
 	switch msg := msg.(type) {
 	case *router.Status:
+		if len(s.status) == 0 {
+			return
+		}
 		s.log.WithField("Monitors", len(s.status)).Debug("Sending Status to monitor")
 		for serverName, ch := range s.status {
 			select {
@@ -475,6 +508,9 @@ func (s *brokerStreams) Send(msg interface{}) {
 	defer s.mu.RUnlock()
 	switch msg := msg.(type) {
 	case *broker.DeduplicatedUplinkMessage:
+		if len(s.uplink) == 0 {
+			return
+		}
 		s.log.WithField("Monitors", len(s.uplink)).Debug("Sending DeduplicatedUplinkMessage to monitor")
 		for serverName, ch := range s.uplink {
 			select {
@@ -484,6 +520,9 @@ func (s *brokerStreams) Send(msg interface{}) {
 			}
 		}
 	case *broker.DeduplicatedDeviceActivationRequest:
+		if len(s.uplink) == 0 {
+			return
+		}
 		s.log.WithField("Monitors", len(s.uplink)).Debug("Sending DeduplicatedDeviceActivationRequest->DeduplicatedUplinkMessage to monitor")
 		for serverName, ch := range s.uplink {
 			select {
@@ -504,6 +543,9 @@ func (s *brokerStreams) Send(msg interface{}) {
 			}
 		}
 	case *broker.DownlinkMessage:
+		if len(s.downlink) == 0 {
+			return
+		}
 		s.log.WithField("Monitors", len(s.downlink)).Debug("Sending DownlinkMessage to monitor")
 		for serverName, ch := range s.downlink {
 			select {
@@ -513,6 +555,9 @@ func (s *brokerStreams) Send(msg interface{}) {
 			}
 		}
 	case *broker.Status:
+		if len(s.status) == 0 {
+			return
+		}
 		s.log.WithField("Monitors", len(s.status)).Debug("Sending Status to monitor")
 		for serverName, ch := range s.status {
 			select {
@@ -677,6 +722,9 @@ func (s *networkServerStreams) Send(msg interface{}) {
 	defer s.mu.RUnlock()
 	switch msg := msg.(type) {
 	case *networkserver.Status:
+		if len(s.status) == 0 {
+			return
+		}
 		s.log.WithField("Monitors", len(s.status)).Debug("Sending Status to monitor")
 		for serverName, ch := range s.status {
 			select {
@@ -789,7 +837,10 @@ func (s *handlerStreams) Send(msg interface{}) {
 	defer s.mu.RUnlock()
 	switch msg := msg.(type) {
 	case *broker.DeduplicatedUplinkMessage:
-		s.log.Debug("Sending DeduplicatedUplinkMessage to monitor")
+		if len(s.uplink) == 0 {
+			return
+		}
+		s.log.WithField("Monitors", len(s.uplink)).Debug("Sending DeduplicatedUplinkMessage to monitor")
 		for serverName, ch := range s.uplink {
 			select {
 			case ch <- msg:
@@ -798,6 +849,9 @@ func (s *handlerStreams) Send(msg interface{}) {
 			}
 		}
 	case *broker.DeduplicatedDeviceActivationRequest:
+		if len(s.uplink) == 0 {
+			return
+		}
 		s.log.WithField("Monitors", len(s.uplink)).Debug("Sending DeduplicatedDeviceActivationRequest->DeduplicatedUplinkMessage to monitor")
 		for serverName, ch := range s.uplink {
 			select {
@@ -818,7 +872,10 @@ func (s *handlerStreams) Send(msg interface{}) {
 			}
 		}
 	case *broker.DownlinkMessage:
-		s.log.Debug("Sending DownlinkMessage to monitor")
+		if len(s.downlink) == 0 {
+			return
+		}
+		s.log.WithField("Monitors", len(s.downlink)).Debug("Sending DownlinkMessage to monitor")
 		for serverName, ch := range s.downlink {
 			select {
 			case ch <- msg:
@@ -827,7 +884,10 @@ func (s *handlerStreams) Send(msg interface{}) {
 			}
 		}
 	case *handler.Status:
-		s.log.Debug("Sending Status to monitor")
+		if len(s.status) == 0 {
+			return
+		}
+		s.log.WithField("Monitors", len(s.status)).Debug("Sending Status to monitor")
 		for serverName, ch := range s.status {
 			select {
 			case ch <- msg:
