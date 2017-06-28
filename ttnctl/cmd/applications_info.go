@@ -55,10 +55,12 @@ Collaborators:
 		fmt.Printf("AppID:   %s\n", app.ID)
 		fmt.Printf("Name:    %s\n", app.Name)
 
+		fmt.Println()
 		fmt.Println("EUIs:")
 		for _, eui := range app.EUIs {
 			fmt.Printf("       - %s\n", eui)
 		}
+
 		fmt.Println()
 		fmt.Println("Access Keys:")
 		for _, key := range app.AccessKeys {
@@ -73,21 +75,12 @@ Collaborators:
 			}
 			fmt.Println()
 		}
-		fmt.Println()
-		fmt.Println("Collaborators:")
-		for _, collaborator := range app.Collaborators {
-			fmt.Printf("       - Name: %s\n", collaborator.Username)
-			fmt.Print("         Rights: ")
-			for i, right := range collaborator.Rights {
-				if i != 0 {
-					fmt.Print(", ")
-				}
-				fmt.Print(right)
-			}
-			fmt.Println()
-		}
-		fmt.Println()
 
+		if len(app.Collaborators) > 0 {
+			fmt.Println()
+			fmt.Println("Collaborators:")
+			printCollaborators(app.Collaborators)
+		}
 	},
 }
 

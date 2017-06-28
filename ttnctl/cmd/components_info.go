@@ -37,7 +37,12 @@ Created:        2016-10-06 09:52:28.766 +0000 UTC
 		fmt.Printf("Component ID:   %s\n", component.ID)
 		fmt.Printf("Type:           %s\n", component.Type)
 		fmt.Printf("Created:        %s\n", component.Created)
-		fmt.Println()
+
+		if len(component.Collaborators) > 0 {
+			fmt.Println()
+			fmt.Println("Collaborators:")
+			printCollaborators(component.Collaborators)
+		}
 	},
 }
 

@@ -61,7 +61,11 @@ var gatewaysInfoCmd = &cobra.Command{
 			printKV("Access Key", gateway.Key)
 		}
 
-		fmt.Println()
+		if len(gateway.Collaborators) > 0 {
+			fmt.Println()
+			fmt.Println("Collaborators:")
+			printCollaborators(gateway.Collaborators)
+		}
 	},
 }
 
