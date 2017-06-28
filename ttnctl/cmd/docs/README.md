@@ -26,7 +26,7 @@ ttnctl applications can be used to manage applications.
 
 ttnctl applications add can be used to add a new application to your account.
 
-**Usage:** `ttnctl applications add [AppID] [Description]`
+**Usage:** `ttnctl applications add [AppID] [Description] [flags]`
 
 **Options**
 
@@ -43,6 +43,23 @@ $ ttnctl applications add test "Test application"
   INFO Added Application
   INFO Selected Current Application
 ```
+
+### ttnctl applications collaborators
+
+applications collaborators can be used to manage the collaborators of an application.
+
+#### ttnctl applications collaborators add
+
+applications collaborators add can be used to add a collaborator to an application.
+Available rights are: settings, collaborators, delete, devices
+
+**Usage:** `ttnctl applications collaborators add [AppID] [Username] [Rights...]`
+
+#### ttnctl applications collaborators delete
+
+applications collaborators delete can be used to delete a collaborator from an application.
+
+**Usage:** `ttnctl applications collaborators delete [AppID] [Username]`
 
 ### ttnctl applications delete
 
@@ -95,8 +112,8 @@ $ ttnctl applications list
 
 ### ttnctl applications pf
 
-ttnctl applications pf shows the payload functions for decoding,
-converting and validating binary payload.
+ttnctl applications pf shows the payload format to handle
+binary payload.
 
 **Usage:** `ttnctl applications pf`
 
@@ -106,8 +123,8 @@ converting and validating binary payload.
 $ ttnctl applications pf
   INFO Discovering Handler...
   INFO Connecting with Handler...
-  INFO Found Application
-  INFO Decoder function
+  INFO Found application
+  INFO Custom decoder function
 function Decoder(bytes, port) {
   var decoded = {};
   if (port === 1) {
@@ -115,22 +132,22 @@ function Decoder(bytes, port) {
   }
   return decoded;
 }
-  INFO No converter function
-  INFO No validator function
-  INFO No encoder function
+  INFO No custom converter function
+  INFO No custom validator function
+  INFO No custom encoder function
 ```
 
 #### ttnctl applications pf set
 
-ttnctl pf set can be used to get or set payload functions of an application.
-The functions are read from the supplied file or from STDIN.
+ttnctl pf set can be used to get or set the payload format and functions of an application.
+When using payload functions, you can load a file or provide them through stdin.
 
-**Usage:** `ttnctl applications pf set [decoder/converter/validator/encoder] [file.js]`
+**Usage:** `ttnctl applications pf set [decoder/converter/validator/encoder/cayennelpp] [file.js] [flags]`
 
 **Options**
 
 ```
-      --skip-test   skip payload function test
+      --skip-test   skip payload format test
 ```
 
 **Example**
@@ -258,7 +275,7 @@ Are you sure you want to delete device test from application test?
 
 ttnctl devices info can be used to get information about a device.
 
-**Usage:** `ttnctl devices info [Device ID]`
+**Usage:** `ttnctl devices info [Device ID] [flags]`
 
 **Options**
 
@@ -359,19 +376,18 @@ ttnctl devices register on-join can be used to register a device template for on
 
 ttnctl devices set can be used to set properties of a device.
 
-**Usage:** `ttnctl devices set [Device ID]`
+**Usage:** `ttnctl devices set [Device ID] [flags]`
 
 **Options**
 
 ```
-Flags:
       --16-bit-fcnt               Use 16 bit FCnt
       --32-bit-fcnt               Use 32 bit FCnt (default)
       --altitude int32            Set altitude
       --app-key string            Set AppKey
       --app-s-key string          Set AppSKey
-      --attr-add stringArray      Add a device attribute
-      --attr-remove stringArray   Remove device attribute
+      --attr-remove stringSlice   Remove device attribute
+      --attr-set stringSlice      Add a device attribute (key:value)
       --description string        Set Description
       --dev-addr string           Set DevAddr
       --dev-eui string            Set DevEUI
@@ -379,7 +395,6 @@ Flags:
       --enable-fcnt-check         Enable FCnt check (default)
       --fcnt-down int             Set FCnt Down (default -1)
       --fcnt-up int               Set FCnt Up (default -1)
-  -h, --help                      help for set
       --latitude float32          Set latitude
       --longitude float32         Set longitude
       --nwk-s-key string          Set NwkSKey
@@ -400,7 +415,7 @@ $ ttnctl devices set test --fcnt-up 0 --fcnt-down 0
 
 ttnctl devices simulate can be used to simulate an uplink message for a device.
 
-**Usage:** `ttnctl devices simulate [Device ID] [Payload]`
+**Usage:** `ttnctl devices simulate [Device ID] [Payload] [flags]`
 
 **Options**
 
@@ -412,7 +427,7 @@ ttnctl devices simulate can be used to simulate an uplink message for a device.
 
 ttnctl downlink can be used to send a downlink message to a device.
 
-**Usage:** `ttnctl downlink [DevID] [Payload]`
+**Usage:** `ttnctl downlink [DevID] [Payload] [flags]`
 
 **Options**
 
@@ -441,6 +456,23 @@ $ ttnctl downlink test --json '{"led":"on"}'
 
 ttnctl gateways can be used to manage gateways.
 
+### ttnctl gateways collaborators
+
+gateways collaborators can be used to manage the collaborators of a gateway.
+
+#### ttnctl gateways collaborators add
+
+gateways collaborators add can be used to add a collaborator to a gateway.
+Available rights are: gateway:settings, gateway:collaborators, gateway:delete, gateway:location, gateway:status, gateway:owner, gateway:messages
+
+**Usage:** `ttnctl gateways collaborators add [AppID] [Username] [Rights...]`
+
+#### ttnctl gateways collaborators delete
+
+gateways collaborators delete can be used to delete a collaborator from a gateway.
+
+**Usage:** `ttnctl gateways collaborators delete [AppID] [Username]`
+
 ### ttnctl gateways delete
 
 ttnctl gateways delete can be used to delete a gateway
@@ -458,7 +490,7 @@ $ ttnctl gateways delete test
 
 ttnctl gateways edit can be used to edit settings of a gateway
 
-**Usage:** `ttnctl gateways edit [GatewayID]`
+**Usage:** `ttnctl gateways edit [GatewayID] [flags]`
 
 **Options**
 
@@ -507,30 +539,6 @@ $ ttnctl gateways register test US 52.37403,4.88968
   INFO Registered gateway                          Gateway ID=test
 ```
 
-### ttnctl gateways status
-
-ttnctl gateways status can be used to get status of gateways.
-
-**Usage:** `ttnctl gateways status [gatewayID]`
-
-**Example**
-
-```
-$ ttnctl gateways status test
-  INFO Discovering Router...
-  INFO Connecting with Router...
-  INFO Connected to Router
-  INFO Received status
-
-           Last seen: 2016-09-20 08:25:27.94138808 +0200 CEST
-           Timestamp: 0
-       Reported time: 2016-09-20 08:25:26 +0200 CEST
-     GPS coordinates: (52.372791 4.900300)
-                 Rtt: not available
-                  Rx: (in: 0; ok: 0)
-                  Tx: (in: 0; ok: 0)
-```
-
 ## ttnctl selfupdate
 
 ttnctl selfupdate updates the current ttnctl to the latest version
@@ -541,7 +549,7 @@ ttnctl selfupdate updates the current ttnctl to the latest version
 
 ttnctl subscribe can be used to subscribe to events for this application.
 
-**Usage:** `ttnctl subscribe`
+**Usage:** `ttnctl subscribe [flags]`
 
 **Options**
 
