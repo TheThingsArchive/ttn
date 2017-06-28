@@ -28,7 +28,21 @@ Available rights are: ` + joinRights(gatewayRights, ", "),
 				}
 			}
 		} else {
-			rights = gatewayRights
+			ctx.Info("No rights supplied, will grant same rights as current user")
+			user, err := account.Profile()
+			if err != nil {
+				ctx.WithError(err).Fatal("Could not get current user")
+			}
+			gtw, err := account.FindGateway(args[0])
+			if err != nil {
+				ctx.WithError(err).Fatal("Could not get gateway")
+			}
+			for _, collaborator := range gtw.Collaborators {
+				if collaborator.Username == user.Username {
+					rights = collaborator.Rights
+					break
+				}
+			}
 		}
 		if len(rights) == 0 {
 			ctx.Fatal("No list of rights supplied. Available rights are: " + joinRights(gatewayRights, ", "))

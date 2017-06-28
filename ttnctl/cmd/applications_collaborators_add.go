@@ -28,7 +28,21 @@ Available rights are: ` + joinRights(applicationRights, ", "),
 				}
 			}
 		} else {
-			rights = applicationRights
+			ctx.Info("No rights supplied, will grant same rights as current user")
+			user, err := account.Profile()
+			if err != nil {
+				ctx.WithError(err).Fatal("Could not get current user")
+			}
+			app, err := account.FindApplication(args[0])
+			if err != nil {
+				ctx.WithError(err).Fatal("Could not get application")
+			}
+			for _, collaborator := range app.Collaborators {
+				if collaborator.Username == user.Username {
+					rights = collaborator.Rights
+					break
+				}
+			}
 		}
 		if len(rights) == 0 {
 			ctx.Fatal("No list of rights supplied. Available rights are: " + joinRights(applicationRights, ", "))

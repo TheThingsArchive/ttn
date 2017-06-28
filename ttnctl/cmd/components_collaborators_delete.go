@@ -16,6 +16,7 @@ var componentsCollaboratorsDeleteCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		assertArgsLength(cmd, args, 3, 3)
 		account := util.GetAccount(ctx)
+		ctx.Infof("Removing %s's rights on %s %s...", args[2], args[0], args[1])
 		if err := account.RetractComponentRights(args[0], args[1], args[2]); err != nil {
 			ctx.WithError(err).Fatal("Could not delete user's component rights")
 		}

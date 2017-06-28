@@ -28,6 +28,21 @@ Available rights are: ` + joinRights(componentsRights, ", "),
 				}
 			}
 		} else {
+			ctx.Info("No rights supplied, will grant same rights as current user")
+			user, err := account.Profile()
+			if err != nil {
+				ctx.WithError(err).Fatal("Could not get current user")
+			}
+			component, err := account.FindComponent(args[0], args[1])
+			if err != nil {
+				ctx.WithError(err).Fatal("Could not get component")
+			}
+			for _, collaborator := range component.Collaborators {
+				if collaborator.Username == user.Username {
+					rights = collaborator.Rights
+					break
+				}
+			}
 			rights = componentsRights
 		}
 		if len(rights) == 0 {

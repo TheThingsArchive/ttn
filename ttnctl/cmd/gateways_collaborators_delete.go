@@ -16,6 +16,7 @@ var gatewaysCollaboratorsDeleteCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		assertArgsLength(cmd, args, 2, 2)
 		account := util.GetAccount(ctx)
+		ctx.Infof("Removing %s's rights on gateway %s...", args[1], args[0])
 		if err := account.RetractGatewayRights(args[0], args[1]); err != nil {
 			ctx.WithError(err).Fatal("Could not delete user's gateway rights")
 		}
