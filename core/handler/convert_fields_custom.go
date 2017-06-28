@@ -170,7 +170,7 @@ func (f *CustomDownlinkFunctions) encode(payload map[string]interface{}, port ui
 		return nil, err
 	}
 
-	if reflect.TypeOf(value).Kind() != reflect.Slice {
+	if value == nil || reflect.TypeOf(value).Kind() != reflect.Slice {
 		return nil, errors.NewErrInvalidArgument("Encoder", "does not return an Array")
 	}
 
