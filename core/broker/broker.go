@@ -17,7 +17,6 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
-	"github.com/spf13/viper"
 	"google.golang.org/grpc"
 )
 
@@ -136,10 +135,9 @@ func (b *broker) Init(c *component.Component) error {
 	b.Component.SetStatus(component.StatusHealthy)
 	if b.Component.Monitor != nil {
 		b.monitorStream = b.Component.Monitor.NewBrokerStreams(b.Identity.Id, b.AccessToken)
-
-		if len(viper.GetStringMapString("monitor-servers")) > 0 {
-			go b.monitorBrokerStatus()
-		}
+		go b.Component.Monitor.TickStatus(func() {
+			b.monitorStream.Send(b.GetStatus())
+		})
 	}
 	return nil
 }

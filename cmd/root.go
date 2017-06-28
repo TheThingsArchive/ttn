@@ -132,7 +132,7 @@ func init() {
 
 	RootCmd.PersistentFlags().Int("health-port", 0, "The port number where the health server should be started")
 
-	RootCmd.PersistentFlags().Int("monitor-interval", 6, "The interval of time (in seconds) between sending component statuses to the monitor servers")
+	RootCmd.PersistentFlags().Duration("monitor-interval", 6*time.Second, "The interval between sending component statuses to the monitor servers")
 
 	viper.SetDefault("auth-servers", map[string]string{
 		"ttn-account-v2": "https://account.thethingsnetwork.org",

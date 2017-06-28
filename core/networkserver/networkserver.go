@@ -12,7 +12,6 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/networkserver/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
-	"github.com/spf13/viper"
 	"gopkg.in/redis.v5"
 )
 
@@ -89,10 +88,9 @@ func (n *networkServer) Init(c *component.Component) error {
 	n.Component.SetStatus(component.StatusHealthy)
 	if n.Component.Monitor != nil {
 		n.monitorStream = n.Component.Monitor.NewNetworkServerStreams(n.Identity.Id, n.AccessToken)
-
-		if len(viper.GetStringMapString("monitor-servers")) > 0 {
-			go n.monitorNetworkServerStatus()
-		}
+		go n.Component.Monitor.TickStatus(func() {
+			n.monitorStream.Send(n.GetStatus())
+		})
 	}
 	return nil
 }

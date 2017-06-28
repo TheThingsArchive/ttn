@@ -16,7 +16,6 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/mqtt"
-	"github.com/spf13/viper"
 	"google.golang.org/grpc"
 	"gopkg.in/redis.v5"
 )
@@ -166,10 +165,9 @@ func (h *handler) Init(c *component.Component) error {
 	h.Component.SetStatus(component.StatusHealthy)
 	if h.Component.Monitor != nil {
 		h.monitorStream = h.Component.Monitor.NewHandlerStreams(h.Identity.Id, h.AccessToken)
-
-		if len(viper.GetStringMapString("monitor-servers")) > 0 {
-			go h.monitorHandlerStatus()
-		}
+		go h.Component.Monitor.TickStatus(func() {
+			h.monitorStream.Send(h.GetStatus())
+		})
 	}
 
 	return nil

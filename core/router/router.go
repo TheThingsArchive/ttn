@@ -16,7 +16,6 @@ import (
 	pb "github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/router/gateway"
-	"github.com/spf13/viper"
 )
 
 // Router component
@@ -95,10 +94,9 @@ func (r *router) Init(c *component.Component) error {
 	r.Component.SetStatus(component.StatusHealthy)
 	if r.Component.Monitor != nil {
 		r.monitorStream = r.Component.Monitor.NewRouterStreams(r.Identity.Id, r.AccessToken)
-
-		if len(viper.GetStringMapString("monitor-servers")) > 0 {
-			go r.monitorRouterStatus()
-		}
+		go r.Component.Monitor.TickStatus(func() {
+			r.monitorStream.Send(r.GetStatus())
+		})
 	}
 	return nil
 }

@@ -8,6 +8,7 @@ import (
 	"io"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/TheThingsNetwork/go-utils/grpc/restartstream"
 	"github.com/TheThingsNetwork/go-utils/grpc/ttnctx"
@@ -72,6 +73,8 @@ type Client struct {
 	ctx    context.Context
 	cancel context.CancelFunc
 
+	statusTicker *time.Ticker
+
 	config      ClientConfig
 	serverConns []*serverConn
 }
@@ -102,6 +105,21 @@ func (c *Client) AddServer(name, address string) {
 		}
 		close(s.ready)
 	}()
+}
+
+// SetStatusInterval creates a status ticker
+func (c *Client) SetStatusInterval(interval time.Duration) {
+	c.statusTicker = time.NewTicker(interval)
+}
+
+// TickStatus calls f when a status needs to be sent
+func (c *Client) TickStatus(f func()) {
+	if c.statusTicker == nil {
+		return
+	}
+	for range c.statusTicker.C {
+		f()
+	}
 }
 
 // AddConn adds a new monitor server on an existing connection
