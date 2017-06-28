@@ -25,24 +25,31 @@ var processPercentage float64
 func init() {
 	go func() {
 		for {
-			if cpu, err := cpu.Percent(10*time.Second, false); err == nil && len(cpu) == 1 {
-				percentMu.Lock()
-				cpuPercentage = cpu[0]
-				percentMu.Unlock()
+			cpu, err := cpu.Percent(10*time.Second, false) // Percent sleeps for this duration
+			if err != nil {
+				return // CPU profiling not supported on this platform
 			}
+			if len(cpu) != 1 {
+				return // gopsutil no ignores the "false" above
+			}
+			percentMu.Lock()
+			cpuPercentage = cpu[0]
+			percentMu.Unlock()
 		}
 	}()
 	go func() {
 		process, err := process.NewProcess(int32(os.Getpid()))
 		if err != nil {
-			return
+			return // Process info not supported on this platform
 		}
 		for {
-			if cpu, err := process.Percent(10 * time.Second); err == nil {
-				percentMu.Lock()
-				processPercentage = cpu
-				percentMu.Unlock()
+			cpu, err := process.Percent(10 * time.Second) // Percent sleeps for this duration
+			if err != nil {
+				break // Process CPU profiling not supported on this platform
 			}
+			percentMu.Lock()
+			processPercentage = cpu
+			percentMu.Unlock()
 		}
 	}()
 }
