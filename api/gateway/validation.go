@@ -23,14 +23,30 @@ func (m *Status) Validate() error {
 	return nil
 }
 
+// Location metadata errors
+var (
+	ErrInvalidLatitude  = errors.NewErrInvalidArgument("LocationMetadata", "invalid latitude")
+	ErrInvalidLongitude = errors.NewErrInvalidArgument("LocationMetadata", "invalid longitude")
+	ErrLocationZero     = errors.NewErrInvalidArgument("LocationMetadata", "is zero, so should be nil")
+)
+
 // Validate implements the api.Validator interface
-func (m *GPSMetadata) Validate() error {
-	if m == nil || m.IsZero() {
-		return errors.NewErrInvalidArgument("GPSMetadata", "can not be empty")
+func (m LocationMetadata) Validate() error {
+	if m.IsZero() {
+		return ErrLocationZero
+	}
+	if m.Latitude >= 90-delta || m.Latitude <= -90+delta {
+		return ErrInvalidLatitude
+	}
+	if m.Longitude > 180 || m.Longitude < -180 {
+		return ErrInvalidLongitude
 	}
 	return nil
 }
 
-func (m GPSMetadata) IsZero() bool {
-	return m.Latitude == 0 && m.Longitude == 0
+const delta = 0.01
+
+// IsZero returns whether the location is close enough to zero (and should be nil)
+func (m LocationMetadata) IsZero() bool {
+	return (m.Latitude > -delta && m.Latitude < delta) && (m.Longitude > -delta && m.Longitude < delta)
 }

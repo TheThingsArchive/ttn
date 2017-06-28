@@ -63,7 +63,7 @@ func TestConvertMetadata(t *testing.T) {
 	a.So(appUp.Metadata.DataRate, ShouldEqual, "SF7BW125")
 
 	ttnUp.GatewayMetadata[0].Time = 1465831736000000000
-	ttnUp.GatewayMetadata[0].Gps = &pb_gateway.GPSMetadata{
+	ttnUp.GatewayMetadata[0].Location = &pb_gateway.LocationMetadata{
 		Latitude: 42,
 	}
 
