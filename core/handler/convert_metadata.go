@@ -58,7 +58,11 @@ func (h *handler) ConvertMetadata(ctx ttnlog.Interface, ttnUp *pb_broker.Dedupli
 				gatewayMetadata.Antenna = uint8(antenna.Antenna)
 				gatewayMetadata.Channel = antenna.Channel
 				gatewayMetadata.RSSI = antenna.Rssi
+				gatewayMetadata.RSSISD = antenna.Rssisd
+				gatewayMetadata.RSSIS = antenna.Rssis
 				gatewayMetadata.SNR = antenna.Snr
+				gatewayMetadata.FTime = antenna.Ftime
+				gatewayMetadata.FrequencyOffset = antenna.FrequencyOffset
 				appUp.Metadata.Gateways = append(appUp.Metadata.Gateways, gatewayMetadata)
 			}
 		} else {

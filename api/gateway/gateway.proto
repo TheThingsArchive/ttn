@@ -78,6 +78,18 @@ message RxMetadata {
     // Signal-to-noise-ratio in dB
     float  snr     = 4;
 
+    // Standard deviation of rssi
+    float  rssisd  = 5;
+
+    // Wanted rssi signal
+    float rssis    = 6;
+
+    // ns-level Rx fine timestamp
+    uint64 ftime   = 7;
+
+    // Frequency offset
+    uint64 frequency_offset = 8;
+
     // Encrypted time from the Gateway FPGA
     bytes encrypted_time = 10;
   }
