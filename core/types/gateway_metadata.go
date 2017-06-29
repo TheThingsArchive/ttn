@@ -17,6 +17,7 @@ type GatewayMetadata struct {
 	FTime           uint64   `json:"ftime,omitempty"`
 	FrequencyOffset uint64   `json:"frequency_offset,omitempty"`
 	SNR             float32  `json:"snr,omitempty"`
+	EncryptedTime   string   `json:"encrypted_time,omitempty"`
 	RFChain         uint32   `json:"rf_chain,omitempty"`
 	LocationMetadata
 }

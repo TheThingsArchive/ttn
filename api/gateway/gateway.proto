@@ -90,8 +90,8 @@ message RxMetadata {
     // Frequency offset
     uint64 frequency_offset = 8;
 
-    // Encrypted time from the Gateway FPGA
-    bytes encrypted_time = 10;
+    // Encrypted time from the Gateway FPGA in base64
+    string encrypted_time = 10;
   }
 
   LocationMetadata location = 41;
