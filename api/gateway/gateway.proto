@@ -63,8 +63,8 @@ message RxMetadata {
 
   // Frequency in Hz
   uint64  frequency  = 31;
-  // Received signal strength in dBm
-  float   rssi       = 32;
+  // RSSI of the (LoRa) Signal in dBm
+  float   rssi_signal       = 32;
   // Signal-to-noise-ratio in dB
   float   snr        = 33;
 
@@ -72,11 +72,20 @@ message RxMetadata {
     uint32 antenna = 1;
     uint32 channel = 2;
 
-    // Received signal strength in dBm
-    float  rssi    = 3;
+    // RSSI of the (LoRa) Signal in dBm
+    float rssi_signal = 3;
 
     // Signal-to-noise-ratio in dB
-    float  snr     = 4;
+    float  snr = 4;
+
+    // Standard deviation of the RSSI
+    float  rssi_standard_deviation  = 5;
+
+    // Average RSSI of the channel in dBm
+    float  rssi_channel = 6;
+
+    // Frequency offset (Hz)
+    uint64 frequency_offset = 7;
 
     // Encrypted time from the Gateway FPGA
     bytes encrypted_time = 10;

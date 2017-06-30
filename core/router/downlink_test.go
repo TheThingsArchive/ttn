@@ -400,7 +400,7 @@ func TestComputeDownlinkScores(t *testing.T) {
 
 	// Lower RSSI -> worse score
 	testSubject := newReferenceUplink()
-	testSubject.GatewayMetadata.Rssi = -80.0
+	testSubject.GatewayMetadata.RssiSignal = -80.0
 	testSubjectgtw := newReferenceGateway(t, "EU_863_870")
 	testSubjectScore := r.buildDownlinkOptions(testSubject, false, testSubjectgtw)[1].Score
 	a.So(testSubjectScore, ShouldBeGreaterThan, refScore)

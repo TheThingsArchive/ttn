@@ -41,7 +41,7 @@ func (h *handler) ConvertMetadata(ctx ttnlog.Interface, ttnUp *pb_broker.Dedupli
 			Time:       types.BuildTime(in.Time),
 			Channel:    in.Channel,
 			RFChain:    in.RfChain,
-			RSSI:       in.Rssi,
+			RSSISignal: in.RssiSignal,
 			SNR:        in.Snr,
 		}
 
@@ -57,8 +57,12 @@ func (h *handler) ConvertMetadata(ctx ttnlog.Interface, ttnUp *pb_broker.Dedupli
 			for _, antenna := range antennas {
 				gatewayMetadata.Antenna = uint8(antenna.Antenna)
 				gatewayMetadata.Channel = antenna.Channel
-				gatewayMetadata.RSSI = antenna.Rssi
+				gatewayMetadata.RSSIChannel = antenna.RssiChannel
+				gatewayMetadata.RSSIStandardDeviation = antenna.RssiStandardDeviation
+				gatewayMetadata.RSSISignal = antenna.RssiSignal
 				gatewayMetadata.SNR = antenna.Snr
+				gatewayMetadata.FrequencyOffset = antenna.FrequencyOffset
+				gatewayMetadata.EncryptedTime = antenna.EncryptedTime
 				appUp.Metadata.Gateways = append(appUp.Metadata.Gateways, gatewayMetadata)
 			}
 		} else {

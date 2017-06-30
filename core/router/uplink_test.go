@@ -52,11 +52,11 @@ func newReferenceUplink() *pb.UplinkMessage {
 			Modulation: pb_lorawan.Modulation_LORA,
 		}}},
 		GatewayMetadata: &pb_gateway.RxMetadata{
-			GatewayId: gtwID,
-			Timestamp: 100,
-			Frequency: 868100000,
-			Rssi:      -25.0,
-			Snr:       5.0,
+			GatewayId:  gtwID,
+			Timestamp:  100,
+			Frequency:  868100000,
+			RssiSignal: -25.0,
+			Snr:        5.0,
 		},
 	}
 	return up

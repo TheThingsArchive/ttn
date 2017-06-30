@@ -81,7 +81,7 @@ func (r *router) HandleUplink(gatewayID string, uplink *pb.UplinkMessage) (err e
 	if gateway := uplink.GatewayMetadata; gateway != nil {
 		ctx = ctx.WithFields(ttnlog.Fields{
 			"Frequency": gateway.Frequency,
-			"RSSI":      gateway.Rssi,
+			"RSSI":      gateway.RssiSignal,
 			"SNR":       gateway.Snr,
 		})
 	}
