@@ -31,7 +31,7 @@ func RandomRxMetadata() *RxMetadata {
 		RfChain:        rand.Uint32(),
 		Channel:        rand.Uint32(),
 		Frequency:      uint64(random.Freq() * 1000000),
-		Rssi:           float32(random.Rssi()),
+		RssiChannel:    float32(random.Rssi()),
 		Snr:            random.Lsnr(),
 		Location:       RandomLocation(),
 		GatewayTrusted: random.Bool(),

@@ -263,7 +263,7 @@ func computeDownlinkScores(gateway *gateway.Gateway, uplink *pb.UplinkMessage, o
 				signalScore += 10
 			}
 			// Prefer good RSSI
-			signalScore += math.Min(float64(uplink.GatewayMetadata.Rssi*-0.1), 10)
+			signalScore += math.Min(float64(uplink.GatewayMetadata.RssiChannel*-0.1), 10)
 		}
 
 		utilizationScore := 0.0 // Between 0 and 40 (lower is better) will be over 100 if forbidden

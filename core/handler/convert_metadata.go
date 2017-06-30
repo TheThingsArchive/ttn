@@ -35,14 +35,14 @@ func (h *handler) ConvertMetadata(ctx ttnlog.Interface, ttnUp *pb_broker.Dedupli
 		}
 
 		gatewayMetadata := types.GatewayMetadata{
-			GtwID:      in.GatewayId,
-			GtwTrusted: in.GatewayTrusted,
-			Timestamp:  in.Timestamp,
-			Time:       types.BuildTime(in.Time),
-			Channel:    in.Channel,
-			RFChain:    in.RfChain,
-			RSSI:       in.Rssi,
-			SNR:        in.Snr,
+			GtwID:       in.GatewayId,
+			GtwTrusted:  in.GatewayTrusted,
+			Timestamp:   in.Timestamp,
+			Time:        types.BuildTime(in.Time),
+			Channel:     in.Channel,
+			RFChain:     in.RfChain,
+			RSSIChannel: in.RssiChannel,
+			SNR:         in.Snr,
 		}
 
 		if location := in.GetLocation(); location != nil {
@@ -57,11 +57,10 @@ func (h *handler) ConvertMetadata(ctx ttnlog.Interface, ttnUp *pb_broker.Dedupli
 			for _, antenna := range antennas {
 				gatewayMetadata.Antenna = uint8(antenna.Antenna)
 				gatewayMetadata.Channel = antenna.Channel
-				gatewayMetadata.RSSI = antenna.Rssi
-				gatewayMetadata.RSSISD = antenna.Rssisd
-				gatewayMetadata.RSSIS = antenna.Rssis
+				gatewayMetadata.RSSIChannel = antenna.RssiChannel
+				gatewayMetadata.RSSIStandardDeviation = antenna.RssiStandardDeviation
+				gatewayMetadata.RSSISignal = antenna.RssiSignal
 				gatewayMetadata.SNR = antenna.Snr
-				gatewayMetadata.FTime = antenna.Ftime
 				gatewayMetadata.FrequencyOffset = antenna.FrequencyOffset
 				gatewayMetadata.EncryptedTime = antenna.EncryptedTime
 				appUp.Metadata.Gateways = append(appUp.Metadata.Gateways, gatewayMetadata)
