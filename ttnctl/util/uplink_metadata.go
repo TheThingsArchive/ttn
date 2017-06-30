@@ -21,10 +21,10 @@ func GetProtocolMetadata(dataRate string) *protocol.RxMetadata {
 // GetGatewayMetadata returns gateway metadata for the given gateway ID and frequency
 func GetGatewayMetadata(id string, freq uint64) *gateway.RxMetadata {
 	return &gateway.RxMetadata{
-		GatewayId:   id,
-		Timestamp:   0,
-		Frequency:   freq,
-		RssiChannel: -25.0,
-		Snr:         5.0,
+		GatewayId:  id,
+		Timestamp:  0,
+		Frequency:  freq,
+		RssiSignal: -25.0,
+		Snr:        5.0,
 	}
 }

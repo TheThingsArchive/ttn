@@ -35,14 +35,14 @@ func (h *handler) ConvertMetadata(ctx ttnlog.Interface, ttnUp *pb_broker.Dedupli
 		}
 
 		gatewayMetadata := types.GatewayMetadata{
-			GtwID:       in.GatewayId,
-			GtwTrusted:  in.GatewayTrusted,
-			Timestamp:   in.Timestamp,
-			Time:        types.BuildTime(in.Time),
-			Channel:     in.Channel,
-			RFChain:     in.RfChain,
-			RSSIChannel: in.RssiChannel,
-			SNR:         in.Snr,
+			GtwID:      in.GatewayId,
+			GtwTrusted: in.GatewayTrusted,
+			Timestamp:  in.Timestamp,
+			Time:       types.BuildTime(in.Time),
+			Channel:    in.Channel,
+			RFChain:    in.RfChain,
+			RSSISignal: in.RssiSignal,
+			SNR:        in.Snr,
 		}
 
 		if location := in.GetLocation(); location != nil {

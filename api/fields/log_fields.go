@@ -179,8 +179,8 @@ func fillGateway(m interface{}, f log.Fields) {
 			if v := meta.Frequency; v != 0 {
 				f["Frequency"] = v
 			}
-			if v := meta.RssiChannel; v != 0 {
-				f["RSSIChannel"] = v
+			if v := meta.RssiSignal; v != 0 {
+				f["RSSI"] = v
 			}
 			if v := meta.Snr; v != 0 {
 				f["SNR"] = v
