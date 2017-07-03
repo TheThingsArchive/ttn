@@ -67,10 +67,12 @@ func (h *handler) ConvertMetadata(ctx ttnlog.Interface, ttnUp *pb_broker.Dedupli
 	}
 
 	// Inject Device Metadata
-	appUp.Metadata.LocationMetadata.Latitude = dev.Latitude
-	appUp.Metadata.LocationMetadata.Longitude = dev.Longitude
-	appUp.Metadata.LocationMetadata.Altitude = dev.Altitude
-	appUp.Metadata.LocationMetadata.Source = "registry"
+	if dev.Latitude != 0 || dev.Longitude != 0 {
+		appUp.Metadata.LocationMetadata.Latitude = dev.Latitude
+		appUp.Metadata.LocationMetadata.Longitude = dev.Longitude
+		appUp.Metadata.LocationMetadata.Altitude = dev.Altitude
+		appUp.Metadata.LocationMetadata.Source = "registry"
+	}
 
 	return nil
 }
