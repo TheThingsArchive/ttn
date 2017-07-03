@@ -72,8 +72,17 @@ message RxMetadata {
     uint32 antenna = 1;
     uint32 channel = 2;
 
-    // Received signal strength in dBm
-    float  rssi    = 3;
+    // Received signal power in dBm
+    float  rssi         = 3;
+
+    // Received channel power in dBm
+    float  channel_rssi = 5;
+
+    // Standard deviation of the RSSI
+    float  rssi_standard_deviation = 6;
+
+    // Frequency offset (Hz)
+    int64 frequency_offset = 7;
 
     // Signal-to-noise-ratio in dB
     float  snr     = 4;
