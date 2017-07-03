@@ -8,6 +8,7 @@ import (
 
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
+	pb_gateway "github.com/TheThingsNetwork/ttn/api/gateway"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
 )
@@ -50,7 +51,9 @@ func (h *handler) ConvertMetadata(ctx ttnlog.Interface, ttnUp *pb_broker.Dedupli
 			gatewayMetadata.Longitude = location.Longitude
 			gatewayMetadata.Latitude = location.Latitude
 			gatewayMetadata.Accuracy = location.Accuracy
-			gatewayMetadata.Source = strings.ToLower(location.Source.String())
+			if location.Source != pb_gateway.LocationMetadata_UNKNOWN {
+				gatewayMetadata.Source = strings.ToLower(location.Source.String())
+			}
 		}
 
 		if antennas := in.GetAntennas(); len(antennas) > 0 {
