@@ -98,14 +98,28 @@ func (s *cachedAnnouncementStore) GetMetadata(serviceName, serviceID string) ([]
 	return a.(*Announcement).Metadata, nil
 }
 
+func (s *cachedAnnouncementStore) getForAppID(appID string) (string, string, error) {
+	return s.backingStore.getForAppID(appID)
+}
+
 func (s *cachedAnnouncementStore) GetForAppID(appID string) (*Announcement, error) {
-	// TODO: We're not using this function. Implement cache when we start using it.
-	return s.backingStore.GetForAppID(appID)
+	serviceName, serviceID, err := s.getForAppID(appID)
+	if err != nil {
+		return nil, err
+	}
+	return s.Get(serviceName, serviceID)
+}
+
+func (s *cachedAnnouncementStore) getForAppEUI(appEUI types.AppEUI) (string, string, error) {
+	return s.backingStore.getForAppEUI(appEUI)
 }
 
 func (s *cachedAnnouncementStore) GetForAppEUI(appEUI types.AppEUI) (*Announcement, error) {
-	// TODO: We're not using this function. Implement cache when we start using it.
-	return s.backingStore.GetForAppEUI(appEUI)
+	serviceName, serviceID, err := s.getForAppEUI(appEUI)
+	if err != nil {
+		return nil, err
+	}
+	return s.Get(serviceName, serviceID)
 }
 
 func (s *cachedAnnouncementStore) Set(new *Announcement) error {
