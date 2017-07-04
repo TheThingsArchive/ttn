@@ -163,6 +163,25 @@ func (d *discoveryServer) Get(ctx context.Context, req *pb.GetRequest) (*pb.Anno
 	return service, nil
 }
 
+func (d *discoveryServer) GetByAppID(ctx context.Context, req *pb.GetByAppIDRequest) (*pb.Announcement, error) {
+	service, err := d.discovery.GetByAppID(req.AppId)
+	if err != nil {
+		return nil, err
+	}
+	return service, nil
+}
+
+func (d *discoveryServer) GetByAppEUI(ctx context.Context, req *pb.GetByAppEUIRequest) (*pb.Announcement, error) {
+	if req.AppEui == nil {
+		return nil, errors.NewErrInvalidArgument("AppEUI", "empty")
+	}
+	service, err := d.discovery.GetByAppEUI(*req.AppEui)
+	if err != nil {
+		return nil, err
+	}
+	return service, nil
+}
+
 // RegisterRPC registers the local discovery with a gRPC server
 func (d *discovery) RegisterRPC(s *grpc.Server) {
 	server := &discoveryServer{d}
