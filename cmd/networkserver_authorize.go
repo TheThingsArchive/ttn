@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/TheThingsNetwork/ttn/utils/security"
@@ -49,6 +50,22 @@ var networkserverAuthorizeCmd = &cobra.Command{
 		}
 
 		ctx.WithField("ID", args[0]).Info("Generated NS token")
+
+		if filepath := viper.GetString("save"); filepath != "" {
+			ctx := ctx.WithField("Filepath", filepath)
+			f, err := os.Create(filepath)
+			if err != nil {
+				ctx.WithError(err).Error("Could not save token in specified file")
+			} else {
+				defer f.Close()
+				if _, err = f.Write([]byte(token)); err != nil {
+					ctx.WithError(err).Error("Could not write token in specified file")
+				} else {
+					ctx.Info("Token saved in specified file")
+				}
+			}
+		}
+
 		fmt.Println()
 		fmt.Println(token)
 		fmt.Println()
@@ -58,4 +75,5 @@ var networkserverAuthorizeCmd = &cobra.Command{
 func init() {
 	networkserverCmd.AddCommand(networkserverAuthorizeCmd)
 	networkserverAuthorizeCmd.Flags().Int("valid", 0, "The number of days the token is valid")
+	networkserverAuthorizeCmd.Flags().String("save", "", "If you wish to store the token in a file, path to the file where the token will be saved")
 }
