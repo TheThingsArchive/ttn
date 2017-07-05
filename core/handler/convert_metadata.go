@@ -4,8 +4,11 @@
 package handler
 
 import (
+	"strings"
+
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
+	pb_gateway "github.com/TheThingsNetwork/ttn/api/gateway"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
 )
@@ -43,19 +46,36 @@ func (h *handler) ConvertMetadata(ctx ttnlog.Interface, ttnUp *pb_broker.Dedupli
 			SNR:        in.Snr,
 		}
 
-		if gps := in.GetGps(); gps != nil {
-			gatewayMetadata.Altitude = gps.Altitude
-			gatewayMetadata.Longitude = gps.Longitude
-			gatewayMetadata.Latitude = gps.Latitude
+		if location := in.GetLocation(); location != nil {
+			gatewayMetadata.Altitude = location.Altitude
+			gatewayMetadata.Longitude = location.Longitude
+			gatewayMetadata.Latitude = location.Latitude
+			gatewayMetadata.Accuracy = location.Accuracy
+			if location.Source != pb_gateway.LocationMetadata_UNKNOWN {
+				gatewayMetadata.Source = strings.ToLower(location.Source.String())
+			}
 		}
 
-		appUp.Metadata.Gateways = append(appUp.Metadata.Gateways, gatewayMetadata)
+		if antennas := in.GetAntennas(); len(antennas) > 0 {
+			for _, antenna := range antennas {
+				gatewayMetadata.Antenna = uint8(antenna.Antenna)
+				gatewayMetadata.Channel = antenna.Channel
+				gatewayMetadata.RSSI = antenna.Rssi
+				gatewayMetadata.SNR = antenna.Snr
+				appUp.Metadata.Gateways = append(appUp.Metadata.Gateways, gatewayMetadata)
+			}
+		} else {
+			appUp.Metadata.Gateways = append(appUp.Metadata.Gateways, gatewayMetadata)
+		}
 	}
 
 	// Inject Device Metadata
-	appUp.Metadata.LocationMetadata.Latitude = dev.Latitude
-	appUp.Metadata.LocationMetadata.Longitude = dev.Longitude
-	appUp.Metadata.LocationMetadata.Altitude = dev.Altitude
+	if dev.Latitude != 0 || dev.Longitude != 0 {
+		appUp.Metadata.LocationMetadata.Latitude = dev.Latitude
+		appUp.Metadata.LocationMetadata.Longitude = dev.Longitude
+		appUp.Metadata.LocationMetadata.Altitude = dev.Altitude
+		appUp.Metadata.LocationMetadata.Source = "registry"
+	}
 
 	return nil
 }

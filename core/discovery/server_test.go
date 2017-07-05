@@ -77,3 +77,11 @@ func (d *mockDiscoveryServer) DeleteMetadata(ctx context.Context, in *pb.Metadat
 	<-time.After(5 * time.Millisecond)
 	return &empty.Empty{}, nil
 }
+func (d *mockDiscoveryServer) GetByAppID(ctx context.Context, req *pb.GetByAppIDRequest) (*pb.Announcement, error) {
+	<-time.After(5 * time.Millisecond)
+	return &pb.Announcement{}, nil
+}
+func (d *mockDiscoveryServer) GetByAppEUI(ctx context.Context, req *pb.GetByAppEUIRequest) (*pb.Announcement, error) {
+	<-time.After(5 * time.Millisecond)
+	return &pb.Announcement{}, nil
+}

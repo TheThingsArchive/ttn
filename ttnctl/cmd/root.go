@@ -86,7 +86,7 @@ func init() {
 }
 
 func assertArgsLength(cmd *cobra.Command, args []string, min, max int) {
-	if len(args) < min || len(args) > max {
+	if len(args) < min || (max != 0 && len(args) > max) {
 		ctx.Errorf(`Invalid number of arguments to command "%s"`, cmd.CommandPath())
 		fmt.Println()
 		cmd.Example = ""

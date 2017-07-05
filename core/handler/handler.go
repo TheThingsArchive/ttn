@@ -27,6 +27,7 @@ type Handler interface {
 
 	WithMQTT(username, password string, brokers ...string) Handler
 	WithAMQP(username, password, host, exchange string) Handler
+	WithDeviceAttributes(attribute ...string) Handler
 
 	HandleUplink(uplink *pb_broker.DeduplicatedUplinkMessage) error
 	HandleActivationChallenge(challenge *pb_broker.ActivationChallengeRequest) (*pb_broker.ActivationChallengeResponse, error)
@@ -105,6 +106,11 @@ func (h *handler) WithAMQP(username, password, host, exchange string) Handler {
 	return h
 }
 
+func (h *handler) WithDeviceAttributes(a ...string) Handler {
+	h.devices.AddBuiltinAttribute(a...)
+	return h
+}
+
 func (h *handler) Init(c *component.Component) error {
 	h.Component = c
 	h.InitStatus()
@@ -165,6 +171,9 @@ func (h *handler) Init(c *component.Component) error {
 	h.Component.SetStatus(component.StatusHealthy)
 	if h.Component.Monitor != nil {
 		h.monitorStream = h.Component.Monitor.NewHandlerStreams(h.Identity.Id, h.AccessToken)
+		go h.Component.Monitor.TickStatus(func() {
+			h.monitorStream.Send(h.GetStatus())
+		})
 	}
 
 	return nil

@@ -53,9 +53,9 @@ var gatewaysStatusCmd = &cobra.Command{
 		printKV("Frequency Plan", resp.Status.FrequencyPlan)
 		printKV("Bridge", resp.Status.Bridge)
 		printKV("IP Address", strings.Join(resp.Status.Ip, ", "))
-		printKV("GPS coordinates", func() interface{} {
-			if gps := resp.Status.Gps; gps != nil && !(gps.Latitude == 0 && gps.Longitude == 0) {
-				return fmt.Sprintf("(%.6f %.6f)", gps.Latitude, gps.Longitude)
+		printKV("Location", func() interface{} {
+			if location := resp.Status.Location; location != nil && !(location.Latitude == 0 && location.Longitude == 0) {
+				return fmt.Sprintf("(%.6f, %.6f; source %s)", location.Latitude, location.Longitude, strings.ToLower(location.Source.String()))
 			}
 			return "not available"
 		}())

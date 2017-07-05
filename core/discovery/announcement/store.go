@@ -21,7 +21,9 @@ type Store interface {
 	ListService(serviceName string, opts *storage.ListOptions) ([]*Announcement, error)
 	Get(serviceName, serviceID string) (*Announcement, error)
 	GetMetadata(serviceName, serviceID string) ([]Metadata, error)
+	getForAppID(appID string) (serviceName, serviceID string, err error)
 	GetForAppID(appID string) (*Announcement, error)
+	getForAppEUI(appEUI types.AppEUI) (serviceName, serviceID string, err error)
 	GetForAppEUI(appEUI types.AppEUI) (*Announcement, error)
 	Set(new *Announcement) error
 	AddMetadata(serviceName, serviceID string, metadata ...Metadata) error
@@ -137,24 +139,40 @@ func (s *RedisAnnouncementStore) GetMetadata(serviceName, serviceID string) ([]M
 	return out, nil
 }
 
+func (s *RedisAnnouncementStore) getForAppID(appID string) (string, string, error) {
+	key, err := s.byAppID.Get(appID)
+	if err != nil {
+		return "", "", err
+	}
+	service := strings.Split(key, ":")
+	return service[0], service[1], nil
+}
+
 // GetForAppID returns the last Announcement that contains metadata for the given AppID
 func (s *RedisAnnouncementStore) GetForAppID(appID string) (*Announcement, error) {
-	key, err := s.byAppID.Get(appID)
+	serviceName, serviceID, err := s.getForAppID(appID)
 	if err != nil {
 		return nil, err
 	}
+	return s.Get(serviceName, serviceID)
+}
+
+func (s *RedisAnnouncementStore) getForAppEUI(appEUI types.AppEUI) (string, string, error) {
+	key, err := s.byAppEUI.Get(appEUI.String())
+	if err != nil {
+		return "", "", err
+	}
 	service := strings.Split(key, ":")
-	return s.Get(service[0], service[1])
+	return service[0], service[1], nil
 }
 
 // GetForAppEUI returns the last Announcement that contains metadata for the given AppEUI
 func (s *RedisAnnouncementStore) GetForAppEUI(appEUI types.AppEUI) (*Announcement, error) {
-	key, err := s.byAppEUI.Get(appEUI.String())
+	serviceName, serviceID, err := s.getForAppEUI(appEUI)
 	if err != nil {
 		return nil, err
 	}
-	service := strings.Split(key, ":")
-	return s.Get(service[0], service[1])
+	return s.Get(serviceName, serviceID)
 }
 
 // Set a new Announcement or update an existing one

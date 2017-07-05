@@ -9,6 +9,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/discovery/announcement"
 	"github.com/TheThingsNetwork/ttn/core/storage"
+	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"gopkg.in/redis.v5"
 )
@@ -120,6 +121,22 @@ func (d *discovery) AddMetadata(serviceName string, id string, in *pb.Metadata) 
 func (d *discovery) DeleteMetadata(serviceName string, id string, in *pb.Metadata) error {
 	meta := announcement.MetadataFromProto(in)
 	return d.services.RemoveMetadata(serviceName, id, meta)
+}
+
+func (d *discovery) GetByAppID(appID string) (*pb.Announcement, error) {
+	service, err := d.services.GetForAppID(appID)
+	if err != nil {
+		return nil, err
+	}
+	return service.ToProto(), nil
+}
+
+func (d *discovery) GetByAppEUI(appEUI types.AppEUI) (*pb.Announcement, error) {
+	service, err := d.services.GetForAppEUI(appEUI)
+	if err != nil {
+		return nil, err
+	}
+	return service.ToProto(), nil
 }
 
 // NewRedisDiscovery creates a new Redis-based discovery service

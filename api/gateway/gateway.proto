@@ -9,13 +9,37 @@ package gateway;
 
 option go_package = "github.com/TheThingsNetwork/ttn/api/gateway";
 
-message GPSMetadata {
-  // Time in Unix nanoseconds
+message LocationMetadata {
+  // Time (unix nanoseconds)
   int64   time       = 1;
 
+  // the north–south position (degrees; -90 to +90), where 0 is the equator, north pole is positive, south pole is negative
   float   latitude   = 2;
+
+  // the east-west position (degrees; -180 to +180), where 0 is the Prime Meridian (Greenwich), east is positive , west is negative
   float   longitude  = 3;
+
+  // the altitude (meters), where 0 is the mean sea level
   int32   altitude   = 4;
+
+  // the accuracy of the location (meters)
+  int32   accuracy   = 5;
+
+  LocationSource source = 6;
+
+  enum LocationSource {
+    // The source of the location is not known or not set
+    UNKNOWN  = 0;
+    // The location is determined by GPS
+    GPS      = 1;
+    // The location is fixed by configuration
+    CONFIG   = 2;
+    // The location is set in and updated from a registry
+    REGISTRY = 3;
+    // The location is estimated with IP Geolocation
+    IP_GEOLOCATION = 4;
+    // More estimation methods can be added
+  }
 }
 
 message RxMetadata {
@@ -48,8 +72,17 @@ message RxMetadata {
     uint32 antenna = 1;
     uint32 channel = 2;
 
-    // Received signal strength in dBm
-    float  rssi    = 3;
+    // Received signal power in dBm
+    float  rssi         = 3;
+
+    // Received channel power in dBm
+    float  channel_rssi = 5;
+
+    // Standard deviation of the RSSI
+    float  rssi_standard_deviation = 6;
+
+    // Frequency offset (Hz)
+    int64 frequency_offset = 7;
 
     // Signal-to-noise-ratio in dB
     float  snr     = 4;
@@ -58,7 +91,7 @@ message RxMetadata {
     bytes encrypted_time = 10;
   }
 
-  GPSMetadata  gps   = 41;
+  LocationMetadata location = 41;
 }
 
 message TxConfiguration {
@@ -113,7 +146,7 @@ message Status {
   // Version of gateway driver (in X.X.X format)
   string  hal            = 20;
 
-  GPSMetadata  gps       = 21;
+  LocationMetadata location = 21;
 
   // Network (internet) stuff
 

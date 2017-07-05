@@ -13,8 +13,8 @@ import (
 
 // RandomLocation returns randomly generated gateway location.
 // Used for testing.
-func RandomLocation() (gps *GPSMetadata) {
-	return &GPSMetadata{
+func RandomLocation() (gps *LocationMetadata) {
+	return &LocationMetadata{
 		Longitude: rand.Float32(),
 		Latitude:  rand.Float32(),
 		Altitude:  rand.Int31(),
@@ -33,7 +33,7 @@ func RandomRxMetadata() *RxMetadata {
 		Frequency:      uint64(random.Freq() * 1000000),
 		Rssi:           float32(random.Rssi()),
 		Snr:            random.Lsnr(),
-		Gps:            RandomLocation(),
+		Location:       RandomLocation(),
 		GatewayTrusted: random.Bool(),
 	}
 }
@@ -55,7 +55,7 @@ func RandomTxConfiguration() *TxConfiguration {
 // Used for testing.
 func RandomStatus() *Status {
 	return &Status{
-		Gps:            RandomLocation(),
+		Location:       RandomLocation(),
 		Timestamp:      rand.Uint32(),
 		Time:           rand.Int63(),
 		Ip:             []string{"42.42.42.42"},

@@ -5,6 +5,7 @@ syntax = "proto3";
 
 import "google/protobuf/empty.proto";
 import "google/api/annotations.proto";
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 
 package discovery;
 
@@ -128,6 +129,14 @@ message AnnouncementsResponse {
   repeated Announcement services = 1;
 }
 
+message GetByAppIDRequest {
+  string app_id = 30; // compatible with Metadata message
+}
+
+message GetByAppEUIRequest {
+  bytes app_eui = 31 [(gogoproto.customtype) = "github.com/TheThingsNetwork/ttn/core/types.AppEUI"]; // compatible with Metadata message
+}
+
 // The Discovery service is used to discover services within The Things Network.
 service Discovery {
   // Announce a component to the Discovery server.
@@ -154,6 +163,10 @@ service Discovery {
 
   // Delete metadata from an announcement
   rpc DeleteMetadata(MetadataRequest) returns (google.protobuf.Empty);
+
+  rpc GetByAppID(GetByAppIDRequest) returns (Announcement);
+
+  rpc GetByAppEUI(GetByAppEUIRequest) returns (Announcement);
 }
 
 // The DiscoveryManager service provides configuration and monitoring functionality

@@ -60,6 +60,8 @@ GetApplication returns the application with the given identifier (app_id)
   "converter": "function Converter(decoded, port) {...",
   "decoder": "function Decoder(bytes, port) {...",
   "encoder": "Encoder(object, port) {...",
+  "payload_format": "",
+  "register_on_join_access_key": "",
   "validator": "Validator(converted, port) {..."
 }
 ```
@@ -84,6 +86,8 @@ SetApplication updates the settings for the application. All fields must be supp
   "converter": "function Converter(decoded, port) {...",
   "decoder": "function Decoder(bytes, port) {...",
   "encoder": "Encoder(object, port) {...",
+  "payload_format": "",
+  "register_on_join_access_key": "",
   "validator": "Validator(converted, port) {..."
 }
 ```
@@ -145,6 +149,12 @@ GetDevice returns the device with the given identifier (app_id and dev_id)
 {
   "altitude": 0,
   "app_id": "some-app-id",
+  "attributes": [
+    {
+      "key": "",
+      "value": ""
+    }
+  ],
   "description": "Some description of the device",
   "dev_id": "some-dev-id",
   "latitude": 52.375,
@@ -188,6 +198,12 @@ SetDevice creates or updates a device. All fields must be supplied.
 {
   "altitude": 0,
   "app_id": "some-app-id",
+  "attributes": [
+    {
+      "key": "",
+      "value": ""
+    }
+  ],
   "description": "Some description of the device",
   "dev_id": "some-dev-id",
   "latitude": 52.375,
@@ -270,6 +286,12 @@ GetDevicesForApplication returns all devices that belong to the application with
     {
       "altitude": 0,
       "app_id": "some-app-id",
+      "attributes": [
+        {
+          "key": "",
+          "value": ""
+        }
+      ],
       "description": "Some description of the device",
       "dev_id": "some-dev-id",
       "latitude": 52.375,
@@ -330,10 +352,12 @@ The Application settings
 | Field Name | Type | Description |
 | ---------- | ---- | ----------- |
 | `app_id` | `string` |  |
-| `decoder` | `string` | The decoder is a JavaScript function that decodes a byte array to an object. |
-| `converter` | `string` | The converter is a JavaScript function that can be used to convert values in the object returned from the decoder. This can for example be useful to convert a voltage to a temperature. |
-| `validator` | `string` | The validator is a JavaScript function that checks the validity of the object returned by the decoder or converter. If validation fails, the message is dropped. |
-| `encoder` | `string` | The encoder is a JavaScript function that encodes an object to a byte array. |
+| `payload_format` | `string` | The payload format indicates how payload is formatted. |
+| `decoder` | `string` | The decoder is a JavaScript function that decodes a byte array to an object. This function is used when the payload format is set to custom. |
+| `converter` | `string` | The converter is a JavaScript function that can be used to convert values in the object returned from the decoder. This can for example be useful to convert a voltage to a temperature. This function is used when the payload format is set to custom. |
+| `validator` | `string` | The validator is a JavaScript function that checks the validity of the object returned by the decoder or converter. If validation fails, the message is dropped. This function is used when the payload format is set to custom. |
+| `encoder` | `string` | The encoder is a JavaScript function that encodes an object to a byte array. This function is used when the payload format is set to custom. |
+| `register_on_join_access_key` | `string` | The "register on join" access key should only be set if devices need to be registered on join |
 
 ### `.handler.ApplicationIdentifier`
 
@@ -353,7 +377,15 @@ The Device settings
 | `latitude` | `float` |  |
 | `longitude` | `float` |  |
 | `altitude` | `int32` |  |
+| `attributes` | _repeated_ [`AttributesEntry`](#handlerdeviceattributesentry) |  |
 | `description` | `string` |  |
+
+### `.handler.Device.AttributesEntry`
+
+| Field Name | Type | Description |
+| ---------- | ---- | ----------- |
+| `key` | `string` |  |
+| `value` | `string` |  |
 
 ### `.handler.DeviceIdentifier`
 

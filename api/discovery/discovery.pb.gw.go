@@ -140,6 +140,7 @@ func RegisterDiscoveryHandler(ctx context.Context, mux *runtime.ServeMux, conn *
 		rctx, err := runtime.AnnotateContext(ctx, mux, req)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
 		}
 		resp, md, err := request_Discovery_GetAll_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
@@ -168,6 +169,7 @@ func RegisterDiscoveryHandler(ctx context.Context, mux *runtime.ServeMux, conn *
 		rctx, err := runtime.AnnotateContext(ctx, mux, req)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
 		}
 		resp, md, err := request_Discovery_Get_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)

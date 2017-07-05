@@ -122,6 +122,16 @@ Delete metadata from an announcement
 - Request: [`MetadataRequest`](#discoverymetadatarequest)
 - Response: [`Empty`](#discoverymetadatarequest)
 
+### `GetByAppID`
+
+- Request: [`GetByAppIDRequest`](#discoverygetbyappidrequest)
+- Response: [`Announcement`](#discoverygetbyappidrequest)
+
+### `GetByAppEUI`
+
+- Request: [`GetByAppEUIRequest`](#discoverygetbyappeuirequest)
+- Response: [`Announcement`](#discoverygetbyappeuirequest)
+
 ## Messages
 
 ### `.discovery.Announcement`
@@ -151,6 +161,18 @@ A list of announcements
 | Field Name | Type | Description |
 | ---------- | ---- | ----------- |
 | `services` | _repeated_ [`Announcement`](#discoveryannouncement) |  |
+
+### `.discovery.GetByAppEUIRequest`
+
+| Field Name | Type | Description |
+| ---------- | ---- | ----------- |
+| `app_eui` | `bytes` |  |
+
+### `.discovery.GetByAppIDRequest`
+
+| Field Name | Type | Description |
+| ---------- | ---- | ----------- |
+| `app_id` | `string` |  |
 
 ### `.discovery.GetRequest`
 

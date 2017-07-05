@@ -111,6 +111,13 @@ var devicesInfoCmd = &cobra.Command{
 			fmt.Printf("    Options: %s\n", strings.Join(options, ", "))
 		}
 
+		if len(dev.Attributes) != 0 {
+			fmt.Println()
+			fmt.Println(" Attributes:")
+			for k, v := range dev.Attributes {
+				printKV(k, v)
+			}
+		}
 	},
 }
 

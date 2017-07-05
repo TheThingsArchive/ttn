@@ -90,8 +90,8 @@ func (g *Gateway) HandleUplink(uplink *pb_router.UplinkMessage) (err error) {
 	status, err := g.Status.Get()
 	if err == nil {
 		// Inject Gateway location
-		if uplink.GatewayMetadata.Gps == nil {
-			uplink.GatewayMetadata.Gps = status.GetGps()
+		if uplink.GatewayMetadata.Location == nil {
+			uplink.GatewayMetadata.Location = status.GetLocation()
 		}
 		// Inject Gateway frequency plan
 		if frequencyPlan, ok := pb_lorawan.FrequencyPlan_value[status.FrequencyPlan]; ok {

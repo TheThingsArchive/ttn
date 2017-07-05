@@ -8,4 +8,9 @@ type LocationMetadata struct {
 	Latitude  float32 `json:"latitude,omitempty"`
 	Longitude float32 `json:"longitude,omitempty"`
 	Altitude  int32   `json:"altitude,omitempty"`
+	Accuracy  int32   `json:"location_accuracy,omitempty"`
+
+	// The source can be: gps, config, registry, ip_geolocation or unknown (unknown may be left out)
+	// See proto definition for more info
+	Source string `json:"location_source,omitempty"`
 }
