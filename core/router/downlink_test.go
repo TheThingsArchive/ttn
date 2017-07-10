@@ -10,7 +10,7 @@ import (
 
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_gateway "github.com/TheThingsNetwork/ttn/api/gateway"
-	"github.com/TheThingsNetwork/ttn/api/monitor"
+	"github.com/TheThingsNetwork/ttn/api/monitor/monitorclient"
 	pb_protocol "github.com/TheThingsNetwork/ttn/api/protocol"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	pb "github.com/TheThingsNetwork/ttn/api/router"
@@ -18,6 +18,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/router/gateway"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/assertions"
+	"golang.org/x/net/context"
 )
 
 // newReferenceDownlink returns a default uplink message
@@ -43,8 +44,9 @@ func TestHandleDownlink(t *testing.T) {
 	logger := GetLogger(t, "TestHandleDownlink")
 	r := &router{
 		Component: &component.Component{
+			Context: context.Background(),
 			Ctx:     logger,
-			Monitor: monitor.NewClient(monitor.DefaultClientConfig),
+			Monitor: monitorclient.NewMonitorClient(),
 		},
 		gateways: map[string]*gateway.Gateway{},
 	}
@@ -71,8 +73,9 @@ func TestSubscribeUnsubscribeDownlink(t *testing.T) {
 	logger := GetLogger(t, "TestSubscribeUnsubscribeDownlink")
 	r := &router{
 		Component: &component.Component{
+			Context: context.Background(),
 			Ctx:     logger,
-			Monitor: monitor.NewClient(monitor.DefaultClientConfig),
+			Monitor: monitorclient.NewMonitorClient(),
 		},
 		gateways: map[string]*gateway.Gateway{},
 	}

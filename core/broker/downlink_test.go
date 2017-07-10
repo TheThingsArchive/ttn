@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	pb "github.com/TheThingsNetwork/ttn/api/broker"
-	pb_monitor "github.com/TheThingsNetwork/ttn/api/monitor"
+	"github.com/TheThingsNetwork/ttn/api/monitor/monitorclient"
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
@@ -25,7 +25,7 @@ func TestDownlink(t *testing.T) {
 	b := &broker{
 		Component: &component.Component{
 			Ctx:     logger,
-			Monitor: pb_monitor.NewClient(pb_monitor.DefaultClientConfig),
+			Monitor: monitorclient.NewMonitorClient(),
 		},
 		ns: &mockNetworkServer{},
 		routers: map[string]chan *pb.DownlinkMessage{

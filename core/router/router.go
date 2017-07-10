@@ -7,15 +7,16 @@ import (
 	"sync"
 	"time"
 
-	"google.golang.org/grpc"
-
+	"github.com/TheThingsNetwork/go-utils/grpc/auth"
+	"github.com/TheThingsNetwork/go-utils/grpc/ttnctx"
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	pb_gateway "github.com/TheThingsNetwork/ttn/api/gateway"
-	pb_monitor "github.com/TheThingsNetwork/ttn/api/monitor"
+	"github.com/TheThingsNetwork/ttn/api/monitor/monitorclient"
 	pb "github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/router/gateway"
+	"google.golang.org/grpc"
 )
 
 // Router component
@@ -62,7 +63,7 @@ type router struct {
 	brokers       map[string]*broker
 	brokersLock   sync.RWMutex
 	status        *status
-	monitorStream pb_monitor.GenericStream
+	monitorStream monitorclient.Stream
 }
 
 func (r *router) tickGateways() {
@@ -93,10 +94,8 @@ func (r *router) Init(c *component.Component) error {
 	}()
 	r.Component.SetStatus(component.StatusHealthy)
 	if r.Component.Monitor != nil {
-		r.monitorStream = r.Component.Monitor.NewRouterStreams(r.Identity.Id, r.AccessToken)
-		go r.Component.Monitor.TickStatus(func() {
-			r.monitorStream.Send(r.GetStatus())
-		})
+		r.monitorStream = r.Component.Monitor.RouterClient(r.Context, grpc.PerRPCCredentials(auth.WithStaticToken(r.AccessToken)))
+		go r.Component.Monitor.TickStatus(func() { r.monitorStream.Send(r.GetStatus()) })
 	}
 	return nil
 }
@@ -126,8 +125,15 @@ func (r *router) getGateway(id string) *gateway.Gateway {
 	gtw, ok = r.gateways[id]
 	if !ok {
 		gtw = gateway.NewGateway(r.Ctx, id)
-		gtw.Monitor = r.Component.Monitor
-
+		gtw.MonitorStream = r.Component.Monitor.GatewayClient(
+			ttnctx.OutgoingContextWithID(r.Context, id),
+			grpc.PerRPCCredentials(auth.WithTokenFunc("id", func(ctxID string) string {
+				if ctxID != id {
+					return ""
+				}
+				return gtw.GetToken()
+			})),
+		)
 		r.gateways[id] = gtw
 	}
 

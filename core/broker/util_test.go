@@ -8,7 +8,7 @@ import (
 	"time"
 
 	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
-	"github.com/TheThingsNetwork/ttn/api/monitor"
+	"github.com/TheThingsNetwork/ttn/api/monitor/monitorclient"
 	pb_networkserver "github.com/TheThingsNetwork/ttn/api/networkserver"
 	"github.com/TheThingsNetwork/ttn/core/component"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
@@ -32,7 +32,7 @@ func getTestBroker(t *testing.T) *testBroker {
 			Component: &component.Component{
 				Discovery: discovery,
 				Ctx:       logger,
-				Monitor:   monitor.NewClient(monitor.DefaultClientConfig),
+				Monitor:   monitorclient.NewMonitorClient(),
 			},
 			handlers:               make(map[string]*handler),
 			activationDeduplicator: NewDeduplicator(10 * time.Millisecond),

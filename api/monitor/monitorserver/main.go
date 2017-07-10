@@ -1,6 +1,8 @@
 // Copyright © 2017 The Things Network
 // Use of this source code is governed by the MIT license that can be found in the LICENSE file.
 
+//+build ignore
+
 package main
 
 import (
@@ -10,11 +12,11 @@ import (
 	"os/signal"
 	"syscall"
 
-	"google.golang.org/grpc"
-
 	"github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/go-utils/log/apex"
 	"github.com/TheThingsNetwork/ttn/api/monitor"
+	"github.com/TheThingsNetwork/ttn/api/monitor/monitorserver"
+	"google.golang.org/grpc"
 )
 
 func main() {
@@ -30,7 +32,7 @@ func main() {
 		ctx.WithError(err).Fatal("Failed to listen")
 	}
 	s := grpc.NewServer(grpc.MaxConcurrentStreams(math.MaxUint16))
-	server := monitor.NewReferenceMonitorServer(10)
+	server := monitorserver.NewReferenceMonitorServer(10)
 	monitor.RegisterMonitorServer(s, server)
 	go s.Serve(lis)
 	ctx.Infof("Listening on %s", lis.Addr().String())
