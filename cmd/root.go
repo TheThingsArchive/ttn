@@ -73,20 +73,20 @@ var RootCmd = &cobra.Command{
 				Timeout: 5 * time.Second,
 			}
 
-			username := viper.GetString("elasticsearch-username")
-			password := viper.GetString("elasticsearch-password")
-			if username != "" {
-				esClient.SetAuthCredentials(username, password)
+			esUsername := viper.GetString("elasticsearch-username")
+			esPassword := viper.GetString("elasticsearch-password")
+			if esUsername != "" {
+				esClient.SetAuthCredentials(esUsername, esPassword)
 			}
 
-			indexPrefix := cmd.Name()
+			esPrefix := cmd.Name()
 			if prefix := viper.GetString("elasticsearch-prefix"); prefix != "" {
-				indexPrefix = fmt.Sprintf("%s-%s", prefix, indexPrefix)
+				esPrefix = fmt.Sprintf("%s-%s", prefix, esPrefix)
 			}
 
 			logHandlers = append(logHandlers, levelHandler.New(esHandler.New(&esHandler.Config{
 				Client:     esClient,
-				Prefix:     indexPrefix,
+				Prefix:     esPrefix,
 				BufferSize: 10,
 			}), logLevel))
 		}
