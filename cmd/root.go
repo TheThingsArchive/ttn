@@ -22,10 +22,10 @@ import (
 	jsonHandler "github.com/apex/log/handlers/json"
 	levelHandler "github.com/apex/log/handlers/level"
 	multiHandler "github.com/apex/log/handlers/multi"
+	"github.com/dotpy3/go-elastic"
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/tj/go-elastic"
 	"google.golang.org/grpc/grpclog"
 	"gopkg.in/redis.v5"
 )
@@ -72,9 +72,21 @@ var RootCmd = &cobra.Command{
 			esClient.HTTPClient = &http.Client{
 				Timeout: 5 * time.Second,
 			}
+
+			username := viper.GetString("elasticsearch-username")
+			password := viper.GetString("elasticsearch-password")
+			if username != "" {
+				esClient.SetAuthCredentials(username, password)
+			}
+
+			indexPrefix := cmd.Name()
+			if prefix := viper.GetString("elasticsearch-prefix"); prefix != "" {
+				indexPrefix = fmt.Sprintf("%s-%s", prefix, indexPrefix)
+			}
+
 			logHandlers = append(logHandlers, levelHandler.New(esHandler.New(&esHandler.Config{
 				Client:     esClient,
-				Prefix:     cmd.Name(),
+				Prefix:     indexPrefix,
 				BufferSize: 10,
 			}), logLevel))
 		}
@@ -122,6 +134,9 @@ func init() {
 	RootCmd.PersistentFlags().Bool("no-cli-logs", false, "Disable CLI logs")
 	RootCmd.PersistentFlags().String("log-file", "", "Location of the log file")
 	RootCmd.PersistentFlags().String("elasticsearch", "", "Location of Elasticsearch server for logging")
+	RootCmd.PersistentFlags().String("elasticsearch-prefix", "", "Prefix of the ES index for logging - changes the index from \"<component>-<date>\" to \"<prefix>-<component>-<date>\"")
+	RootCmd.PersistentFlags().String("elasticsearch-username", "", "Username used to connect to the Elasticsearch server")
+	RootCmd.PersistentFlags().String("elasticsearch-password", "", "Password used to connect to the Elasticsearch server")
 
 	RootCmd.PersistentFlags().String("id", "", "The id of this component")
 	RootCmd.PersistentFlags().String("description", "", "The description of this component")

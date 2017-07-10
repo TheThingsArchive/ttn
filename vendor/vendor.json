@@ -219,6 +219,12 @@
 			"revisionTime": "2017-05-08T16:54:58Z"
 		},
 		{
+			"checksumSHA1": "9lCdZBSbRHCj2JFVthzWt6Ni6wA=",
+			"path": "github.com/dotpy3/go-elastic",
+			"revision": "74cd588a32d33d6323e4fe18b23b120886057f34",
+			"revisionTime": "2017-07-10T12:50:02Z"
+		},
+		{
 			"checksumSHA1": "PzqUa3HAaeyzDw87wACb15/tMkI=",
 			"path": "github.com/eclipse/paho.mqtt.golang",
 			"revision": "c37a0a275c2de30bf1c7eb072dd6bef09a93c666",
@@ -824,12 +830,6 @@
 			"path": "github.com/streadway/amqp",
 			"revision": "6063341da5df18c5abcb1f62373016ab9858b7b0",
 			"revisionTime": "2017-05-13T11:23:37Z"
-		},
-		{
-			"checksumSHA1": "F9X1T07FTXRxBrskitXNtlxZJ6w=",
-			"path": "github.com/tj/go-elastic",
-			"revision": "9a9a2a21e071e6e38f236740c3b650e7316ae67e",
-			"revisionTime": "2016-06-07T20:24:39Z"
 		},
 		{
 			"checksumSHA1": "nL4enNHknemOmxcaPTIJCrJc0/I=",
