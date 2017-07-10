@@ -105,6 +105,12 @@
 			"revisionTime": "2017-07-10T10:56:33Z"
 		},
 		{
+			"checksumSHA1": "4iLODl3lRxNw3gtzpjldw3Lk8Ig=",
+			"path": "github.com/TheThingsNetwork/go-utils/grpc/rpcerror",
+			"revision": "0f518664fefe7cea048173fe5700619a5eec432b",
+			"revisionTime": "2017-07-10T10:56:33Z"
+		},
+		{
 			"checksumSHA1": "o0BMgxUyXPTu7S96RpNI/tPNkAw=",
 			"path": "github.com/TheThingsNetwork/go-utils/grpc/rpclog",
 			"revision": "0f518664fefe7cea048173fe5700619a5eec432b",
