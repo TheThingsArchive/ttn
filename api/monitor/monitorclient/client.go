@@ -140,26 +140,55 @@ func (c *componentClient) Reset() {
 	c.setup()
 }
 
+func (c *componentClient) disable(s *streambuffer.Stream) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	curStatus := c.status
+	c.status = curStatus[:0]
+	for _, status := range curStatus {
+		if status != s {
+			c.status = append(c.status, status)
+		}
+	}
+	curUplink := c.uplink
+	c.uplink = curUplink[:0]
+	for _, uplink := range curUplink {
+		if uplink != s {
+			c.uplink = append(c.uplink, uplink)
+		}
+	}
+	curDownlink := c.downlink
+	c.downlink = curDownlink[:0]
+	for _, downlink := range curDownlink {
+		if downlink != s {
+			c.downlink = append(c.downlink, downlink)
+		}
+	}
+}
+
 func (c *componentClient) Send(msg interface{}) {
+	c.mu.RLock()
+	status, uplink, downlink := c.status, c.uplink, c.downlink
+	c.mu.RUnlock()
 	switch msg := msg.(type) {
 	case *gateway.Status, *router.Status, *broker.Status, *networkserver.Status, *handler.Status:
-		if len(c.status) == 0 {
+		if len(status) == 0 {
 			return
 		}
-		for _, cli := range c.status {
+		for _, cli := range status {
 			cli.SendMsg(msg)
 		}
 		c.log.Debug("Forwarded status to monitor")
 	case *router.UplinkMessage, *broker.DeduplicatedUplinkMessage:
-		if len(c.uplink) == 0 {
+		if len(uplink) == 0 {
 			return
 		}
-		for _, cli := range c.uplink {
+		for _, cli := range uplink {
 			cli.SendMsg(msg)
 		}
 		c.log.Debug("Forwarded uplink to monitor")
 	case *router.DeviceActivationRequest:
-		if len(c.uplink) == 0 {
+		if len(uplink) == 0 {
 			return
 		}
 		asUplink := &router.UplinkMessage{
@@ -169,12 +198,12 @@ func (c *componentClient) Send(msg interface{}) {
 			GatewayMetadata:  msg.GatewayMetadata,
 			Trace:            msg.Trace,
 		}
-		for _, cli := range c.uplink {
+		for _, cli := range uplink {
 			cli.SendMsg(asUplink)
 		}
 		c.log.Debug("Forwarded activation as uplink to monitor")
 	case *broker.DeduplicatedDeviceActivationRequest:
-		if len(c.uplink) == 0 {
+		if len(uplink) == 0 {
 			return
 		}
 		asUplink := &broker.DeduplicatedUplinkMessage{
@@ -189,15 +218,15 @@ func (c *componentClient) Send(msg interface{}) {
 			ServerTime:       msg.ServerTime,
 			Trace:            msg.Trace,
 		}
-		for _, cli := range c.uplink {
+		for _, cli := range uplink {
 			cli.SendMsg(asUplink)
 		}
 		c.log.Debug("Forwarded activation as uplink to monitor")
 	case *router.DownlinkMessage, *broker.DownlinkMessage:
-		if len(c.uplink) == 0 {
+		if len(uplink) == 0 {
 			return
 		}
-		for _, cli := range c.downlink {
+		for _, cli := range downlink {
 			cli.SendMsg(msg)
 		}
 		c.log.Debug("Forwarded downlink to monitor")
@@ -225,6 +254,7 @@ func (c *componentClient) run(monitor, stream string, buf *streambuffer.Stream) 
 			time.Sleep(backoff.Backoff(int(new - 1)))
 		default:
 			c.log.WithField("Monitor", monitor).WithError(err).Warnf("%s stream failed permanently", stream)
+			c.disable(buf)
 			return
 		}
 	}
