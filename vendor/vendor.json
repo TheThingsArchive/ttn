@@ -107,8 +107,8 @@
 		{
 			"checksumSHA1": "4iLODl3lRxNw3gtzpjldw3Lk8Ig=",
 			"path": "github.com/TheThingsNetwork/go-utils/grpc/rpcerror",
-			"revision": "0f518664fefe7cea048173fe5700619a5eec432b",
-			"revisionTime": "2017-07-10T10:56:33Z"
+			"revision": "71a2b8515838ba2b6cd039a501bc988612ff8535",
+			"revisionTime": "2017-07-11T12:19:04Z"
 		},
 		{
 			"checksumSHA1": "o0BMgxUyXPTu7S96RpNI/tPNkAw=",

@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/TheThingsNetwork/go-utils/backoff"
+	"github.com/TheThingsNetwork/go-utils/grpc/rpclog"
 	"github.com/TheThingsNetwork/go-utils/grpc/streambuffer"
 	"github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/api/broker"
@@ -22,6 +23,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/api/networkserver"
 	"github.com/TheThingsNetwork/ttn/api/pool"
 	"github.com/TheThingsNetwork/ttn/api/router"
+	"github.com/mwitkow/go-grpc-middleware"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
@@ -45,6 +47,14 @@ func WithConn(name string, conn *grpc.ClientConn) MonitorOption {
 // WithConn to add it to the MonitorClient.
 func WithServer(name, addr string, opts ...grpc.DialOption) MonitorOption {
 	if len(opts) == 0 {
+		opts = append(opts,
+			grpc.WithUnaryInterceptor(grpc_middleware.ChainUnaryClient(
+				rpclog.UnaryClientInterceptor(nil),
+			)),
+			grpc.WithStreamInterceptor(grpc_middleware.ChainStreamClient(
+				rpclog.StreamClientInterceptor(nil),
+			)),
+		)
 		if strings.HasSuffix(name, "-tls") {
 			netHost, _, _ := net.SplitHostPort(addr)
 			creds := credentials.NewTLS(pool.TLSConfig(netHost))
