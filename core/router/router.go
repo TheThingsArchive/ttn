@@ -16,6 +16,7 @@ import (
 	pb "github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/router/gateway"
+	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )
 
@@ -129,8 +130,13 @@ func (r *router) getGateway(id string) *gateway.Gateway {
 	gtw, ok = r.gateways[id]
 	if !ok {
 		gtw = gateway.NewGateway(r.Ctx, id)
+		ctx := context.Background()
+		ctx = ttnctx.OutgoingContextWithID(ctx, id)
+		if r.Identity != nil {
+			ctx = ttnctx.OutgoingContextWithServiceInfo(ctx, r.Identity.ServiceName, r.Identity.ServiceVersion, r.Identity.NetAddress)
+		}
 		gtw.MonitorStream = r.Component.Monitor.GatewayClient(
-			ttnctx.OutgoingContextWithID(r.Context, id),
+			ctx,
 			grpc.PerRPCCredentials(auth.WithTokenFunc("id", func(ctxID string) string {
 				if ctxID != id {
 					return ""
