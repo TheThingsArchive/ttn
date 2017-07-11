@@ -6,7 +6,7 @@ package monitorclient
 import (
 	"context"
 
-	"github.com/TheThingsNetwork/go-utils/grpc/sendbuffer"
+	"github.com/TheThingsNetwork/go-utils/grpc/streambuffer"
 	"github.com/TheThingsNetwork/go-utils/grpc/ttnctx"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -24,19 +24,19 @@ func (m *MonitorClient) HandlerClient(ctx context.Context, opts ...grpc.CallOpti
 	c.setup = func() {
 		ctx, c.cancel = context.WithCancel(ctx)
 		for name, cli := range m.clients {
-			uplink := sendbuffer.New(m.bufferSize, func() (grpc.ClientStream, error) {
+			uplink := streambuffer.New(m.bufferSize, func() (grpc.ClientStream, error) {
 				return cli.HandlerUplink(ctx, opts...)
 			})
 			c.uplink = append(c.uplink, uplink)
 			go c.run(name, "Uplink", uplink)
 
-			downlink := sendbuffer.New(m.bufferSize, func() (grpc.ClientStream, error) {
+			downlink := streambuffer.New(m.bufferSize, func() (grpc.ClientStream, error) {
 				return cli.HandlerDownlink(ctx, opts...)
 			})
 			c.downlink = append(c.downlink, downlink)
 			go c.run(name, "Downlink", downlink)
 
-			status := sendbuffer.New(m.bufferSize, func() (grpc.ClientStream, error) {
+			status := streambuffer.New(m.bufferSize, func() (grpc.ClientStream, error) {
 				return cli.HandlerStatus(ctx, opts...)
 			})
 			c.status = append(c.status, status)

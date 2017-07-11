@@ -9,7 +9,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/TheThingsNetwork/go-utils/grpc/sendbuffer"
+	"github.com/TheThingsNetwork/go-utils/grpc/streambuffer"
 	"github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/api/broker"
 	"github.com/TheThingsNetwork/ttn/api/gateway"
@@ -89,9 +89,9 @@ type componentClient struct {
 	log log.Interface
 	mu  sync.RWMutex
 
-	status   []*sendbuffer.Stream
-	uplink   []*sendbuffer.Stream
-	downlink []*sendbuffer.Stream
+	status   []*streambuffer.Stream
+	uplink   []*streambuffer.Stream
+	downlink []*streambuffer.Stream
 
 	setup  func()
 	cancel context.CancelFunc
@@ -191,7 +191,7 @@ func (c *componentClient) Send(msg interface{}) {
 	}
 }
 
-func (c *componentClient) run(monitor, stream string, buf *sendbuffer.Stream) {
+func (c *componentClient) run(monitor, stream string, buf *streambuffer.Stream) {
 	if err := buf.Run(); err != nil && err != context.Canceled {
 		c.log.WithField("Monitor", monitor).WithError(err).Warnf("%s stream failed", buf)
 	}

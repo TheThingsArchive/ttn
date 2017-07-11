@@ -6,7 +6,7 @@ package monitorclient
 import (
 	"context"
 
-	"github.com/TheThingsNetwork/go-utils/grpc/sendbuffer"
+	"github.com/TheThingsNetwork/go-utils/grpc/streambuffer"
 	"github.com/TheThingsNetwork/go-utils/grpc/ttnctx"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -24,7 +24,7 @@ func (m *MonitorClient) NetworkServerClient(ctx context.Context, opts ...grpc.Ca
 	c.setup = func() {
 		ctx, c.cancel = context.WithCancel(ctx)
 		for name, cli := range m.clients {
-			status := sendbuffer.New(m.bufferSize, func() (grpc.ClientStream, error) {
+			status := streambuffer.New(m.bufferSize, func() (grpc.ClientStream, error) {
 				return cli.NetworkServerStatus(ctx, opts...)
 			})
 			c.status = append(c.status, status)
