@@ -6,8 +6,8 @@
 package main
 
 import (
+	"crypto/tls"
 	"math"
-	"net"
 	"os"
 	"os/signal"
 	"syscall"
@@ -27,7 +27,13 @@ func main() {
 		ctx.Fatal("Usage: ttn-monitor-server-example [listen]")
 	}
 
-	lis, err := net.Listen("tcp", os.Args[1])
+	var tlsConfig tls.Config
+	certificate, err := tls.LoadX509KeyPair("cert.pem", "key.pem")
+	if err != nil {
+		ctx.WithError(err).Fatal("Could not load tls certificate and key")
+	}
+	tlsConfig.Certificates = append(tlsConfig.Certificates, certificate)
+	lis, err := tls.Listen("tcp", os.Args[1], &tlsConfig)
 	if err != nil {
 		ctx.WithError(err).Fatal("Failed to listen")
 	}
