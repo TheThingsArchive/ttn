@@ -5,10 +5,14 @@ package monitorclient
 
 import (
 	"context"
+	"io"
 	"net"
 	"strings"
 	"sync"
+	"sync/atomic"
+	"time"
 
+	"github.com/TheThingsNetwork/go-utils/backoff"
 	"github.com/TheThingsNetwork/go-utils/grpc/streambuffer"
 	"github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/api/broker"
@@ -19,6 +23,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/api/pool"
 	"github.com/TheThingsNetwork/ttn/api/router"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 )
 
@@ -191,8 +196,26 @@ func (c *componentClient) Send(msg interface{}) {
 	}
 }
 
+var stableTimeout = 10 * time.Second
+
 func (c *componentClient) run(monitor, stream string, buf *streambuffer.Stream) {
-	if err := buf.Run(); err != nil && err != context.Canceled {
-		c.log.WithField("Monitor", monitor).WithError(err).Warnf("%s stream failed", buf)
+	var t *time.Timer
+	var streamErrors int32
+	for {
+		t = time.AfterFunc(stableTimeout, func() { atomic.SwapInt32(&streamErrors, 0) })
+		err := buf.Run()
+		t.Stop()
+		if err == nil || err == context.Canceled || err == io.EOF {
+			return
+		}
+		switch grpc.Code(err) {
+		case codes.Unknown, codes.Aborted, codes.Unavailable:
+			c.log.WithField("Monitor", monitor).WithError(err).Debugf("%s stream failed temporarily", buf)
+			new := atomic.AddInt32(&streamErrors, 1)
+			time.Sleep(backoff.Backoff(int(new - 1)))
+		default:
+			c.log.WithField("Monitor", monitor).WithError(err).Warnf("%s stream failed permanently", buf)
+			return
+		}
 	}
 }
