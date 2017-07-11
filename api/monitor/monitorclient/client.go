@@ -118,6 +118,7 @@ func (c *componentClient) Open() {
 	if c.cancel != nil {
 		return
 	}
+	c.log.Debug("monitor: Starting stream")
 	c.setup()
 }
 
@@ -127,6 +128,7 @@ func (c *componentClient) Close() {
 	if c.cancel == nil {
 		return
 	}
+	c.log.Debug("monitor: Closing stream")
 	c.cancel()
 }
 
@@ -136,6 +138,7 @@ func (c *componentClient) Reset() {
 	if c.cancel == nil {
 		return
 	}
+	c.log.Debug("monitor: Resetting stream")
 	c.cancel()
 	c.setup()
 }
@@ -178,7 +181,7 @@ func (c *componentClient) Send(msg interface{}) {
 		for _, cli := range status {
 			cli.SendMsg(msg)
 		}
-		c.log.Debug("Forwarded status to monitor")
+		c.log.Debug("monitor: Forwarded status")
 	case *router.UplinkMessage, *broker.DeduplicatedUplinkMessage:
 		if len(uplink) == 0 {
 			return
@@ -186,7 +189,7 @@ func (c *componentClient) Send(msg interface{}) {
 		for _, cli := range uplink {
 			cli.SendMsg(msg)
 		}
-		c.log.Debug("Forwarded uplink to monitor")
+		c.log.Debug("monitor: Forwarded uplink")
 	case *router.DeviceActivationRequest:
 		if len(uplink) == 0 {
 			return
@@ -201,7 +204,7 @@ func (c *componentClient) Send(msg interface{}) {
 		for _, cli := range uplink {
 			cli.SendMsg(asUplink)
 		}
-		c.log.Debug("Forwarded activation as uplink to monitor")
+		c.log.Debug("monitor: Forwarded activation")
 	case *broker.DeduplicatedDeviceActivationRequest:
 		if len(uplink) == 0 {
 			return
@@ -221,7 +224,7 @@ func (c *componentClient) Send(msg interface{}) {
 		for _, cli := range uplink {
 			cli.SendMsg(asUplink)
 		}
-		c.log.Debug("Forwarded activation as uplink to monitor")
+		c.log.Debug("monitor: Forwarded activation as uplink")
 	case *router.DownlinkMessage, *broker.DownlinkMessage:
 		if len(uplink) == 0 {
 			return
@@ -229,9 +232,9 @@ func (c *componentClient) Send(msg interface{}) {
 		for _, cli := range downlink {
 			cli.SendMsg(msg)
 		}
-		c.log.Debug("Forwarded downlink to monitor")
+		c.log.Debug("monitor: Forwarded downlink")
 	default:
-		c.log.Warnf("Unknown message type: %T", msg)
+		c.log.Warnf("monitor: Unknown message type: %T", msg)
 	}
 }
 
@@ -249,11 +252,11 @@ func (c *componentClient) run(monitor, stream string, buf *streambuffer.Stream) 
 		}
 		switch grpc.Code(err) {
 		case codes.Unknown, codes.Aborted, codes.Unavailable:
-			c.log.WithField("Monitor", monitor).WithError(err).Debugf("%s stream failed temporarily", stream)
+			c.log.WithField("Monitor", monitor).WithError(err).Debugf("monitor: %s stream failed temporarily", stream)
 			new := atomic.AddInt32(&streamErrors, 1)
 			time.Sleep(backoff.Backoff(int(new - 1)))
 		default:
-			c.log.WithField("Monitor", monitor).WithError(err).Warnf("%s stream failed permanently", stream)
+			c.log.WithField("Monitor", monitor).WithError(err).Warnf("monitor: %s stream failed permanently", stream)
 			c.disable(buf)
 			return
 		}
