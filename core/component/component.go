@@ -94,7 +94,7 @@ func New(ctx ttnlog.Interface, serviceName string, announcedAddress string) (*Co
 	for name, addr := range viper.GetStringMapString("monitor-servers") {
 		monitorOpts = append(monitorOpts, monitorclient.WithServer(name, addr))
 	}
-	component.Monitor = monitorclient.NewMonitorClient()
+	component.Monitor = monitorclient.NewMonitorClient(monitorOpts...)
 
 	return component, nil
 }
