@@ -7,6 +7,7 @@ import (
 	"context"
 
 	"github.com/TheThingsNetwork/go-utils/grpc/sendbuffer"
+	"github.com/TheThingsNetwork/go-utils/grpc/ttnctx"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
@@ -16,15 +17,13 @@ func (m *MonitorClient) BrokerClient(ctx context.Context, opts ...grpc.CallOptio
 	c := new(componentClient)
 	c.log = m.log.WithField("Component", "Broker")
 	if md, ok := metadata.FromOutgoingContext(ctx); ok {
-		if id, ok := md["id"]; ok && len(id) > 0 {
-			c.log = c.log.WithField("ID", id[0])
+		if id, err := ttnctx.IDFromMetadata(md); err == nil {
+			c.log = c.log.WithField("ID", id)
 		}
 	}
 	c.setup = func() {
 		ctx, c.cancel = context.WithCancel(ctx)
 		for name, cli := range m.clients {
-			name, cli := name, cli // shadow vars
-
 			uplink := sendbuffer.New(m.bufferSize, func() (grpc.ClientStream, error) {
 				return cli.BrokerUplink(ctx, opts...)
 			})

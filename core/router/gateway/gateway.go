@@ -57,10 +57,11 @@ func (g *Gateway) SetAuth(token string, authenticated bool) {
 	g.MonitorStream.Reset()
 }
 
-func (g *Gateway) GetToken() string {
+func (g *Gateway) Token() string {
 	g.mu.RLock()
-	defer g.mu.RUnlock()
-	return g.token
+	token := g.token
+	g.mu.RUnlock()
+	return token
 }
 
 func (g *Gateway) updateLastSeen() {

@@ -136,7 +136,11 @@ func (b *broker) Init(c *component.Component) error {
 	b.Component.SetStatus(component.StatusHealthy)
 	if b.Component.Monitor != nil {
 		b.monitorStream = b.Component.Monitor.BrokerClient(b.Context, grpc.PerRPCCredentials(auth.WithStaticToken(b.AccessToken)))
-		go b.Component.Monitor.TickStatus(func() { b.monitorStream.Send(b.GetStatus()) })
+		go func() {
+			for range time.Tick(b.Component.Config.StatusInterval) {
+				b.monitorStream.Send(b.GetStatus())
+			}
+		}()
 	}
 	return nil
 }

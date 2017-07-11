@@ -4,6 +4,8 @@
 package networkserver
 
 import (
+	"time"
+
 	"github.com/TheThingsNetwork/go-utils/grpc/auth"
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb_handler "github.com/TheThingsNetwork/ttn/api/handler"
@@ -90,7 +92,11 @@ func (n *networkServer) Init(c *component.Component) error {
 	n.Component.SetStatus(component.StatusHealthy)
 	if n.Component.Monitor != nil {
 		n.monitorStream = n.Component.Monitor.NetworkServerClient(n.Context, grpc.PerRPCCredentials(auth.WithStaticToken(n.AccessToken)))
-		go n.Component.Monitor.TickStatus(func() { n.monitorStream.Send(n.GetStatus()) })
+		go func() {
+			for range time.Tick(n.Component.Config.StatusInterval) {
+				n.monitorStream.Send(n.GetStatus())
+			}
+		}()
 	}
 	return nil
 }

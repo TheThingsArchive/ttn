@@ -94,9 +94,6 @@ func New(ctx ttnlog.Interface, serviceName string, announcedAddress string) (*Co
 	for name, addr := range viper.GetStringMapString("monitor-servers") {
 		monitorOpts = append(monitorOpts, monitorclient.WithServer(name, addr))
 	}
-	if statusInterval := viper.GetDuration("monitor-interval"); statusInterval.Seconds() > 1 {
-		monitorOpts = append(monitorOpts, monitorclient.WithStatusTicker(statusInterval))
-	}
 	component.Monitor = monitorclient.NewMonitorClient()
 
 	return component, nil

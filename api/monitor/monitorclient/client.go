@@ -8,7 +8,6 @@ import (
 	"net"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/TheThingsNetwork/go-utils/grpc/sendbuffer"
 	"github.com/TheThingsNetwork/go-utils/log"
@@ -58,13 +57,6 @@ func WithServer(name, addr string, opts ...grpc.DialOption) MonitorOption {
 	}
 }
 
-// WithStatusTicker returns a MonitorOption that sets a status ticker
-func WithStatusTicker(interval time.Duration) MonitorOption {
-	return func(m *MonitorClient) {
-		m.statusTicker = time.NewTicker(interval)
-	}
-}
-
 // NewMonitorClient returns a new MonitorClient
 func NewMonitorClient(opts ...MonitorOption) *MonitorClient {
 	m := &MonitorClient{
@@ -80,20 +72,9 @@ func NewMonitorClient(opts ...MonitorOption) *MonitorClient {
 
 // MonitorClient is an overlay on top of the gRPC client
 type MonitorClient struct {
-	log          log.Interface
-	bufferSize   int
-	clients      map[string]monitor.MonitorClient
-	statusTicker *time.Ticker
-}
-
-// TickStatus calls f periodically if the StatusTicker has been set
-func (m *MonitorClient) TickStatus(f func()) {
-	if m.statusTicker == nil {
-		return
-	}
-	for range m.statusTicker.C {
-		f()
-	}
+	log        log.Interface
+	bufferSize int
+	clients    map[string]monitor.MonitorClient
 }
 
 // Stream interface allows sending anything with Send()

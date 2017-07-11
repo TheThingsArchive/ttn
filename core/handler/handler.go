@@ -5,6 +5,7 @@ package handler
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/TheThingsNetwork/go-utils/grpc/auth"
 	"github.com/TheThingsNetwork/ttn/amqp"
@@ -172,7 +173,11 @@ func (h *handler) Init(c *component.Component) error {
 	h.Component.SetStatus(component.StatusHealthy)
 	if h.Component.Monitor != nil {
 		h.monitorStream = h.Component.Monitor.BrokerClient(h.Context, grpc.PerRPCCredentials(auth.WithStaticToken(h.AccessToken)))
-		go h.Component.Monitor.TickStatus(func() { h.monitorStream.Send(h.GetStatus()) })
+		go func() {
+			for range time.Tick(h.Component.Config.StatusInterval) {
+				h.monitorStream.Send(h.GetStatus())
+			}
+		}()
 	}
 
 	return nil
