@@ -220,11 +220,11 @@ func (c *componentClient) run(monitor, stream string, buf *streambuffer.Stream) 
 		}
 		switch grpc.Code(err) {
 		case codes.Unknown, codes.Aborted, codes.Unavailable:
-			c.log.WithField("Monitor", monitor).WithError(err).Debugf("%s stream failed temporarily", buf)
+			c.log.WithField("Monitor", monitor).WithError(err).Debugf("%s stream failed temporarily", stream)
 			new := atomic.AddInt32(&streamErrors, 1)
 			time.Sleep(backoff.Backoff(int(new - 1)))
 		default:
-			c.log.WithField("Monitor", monitor).WithError(err).Warnf("%s stream failed permanently", buf)
+			c.log.WithField("Monitor", monitor).WithError(err).Warnf("%s stream failed permanently", stream)
 			return
 		}
 	}
