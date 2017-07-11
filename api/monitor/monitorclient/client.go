@@ -55,12 +55,12 @@ func WithServer(name, addr string, opts ...grpc.DialOption) MonitorOption {
 				rpclog.StreamClientInterceptor(nil),
 			)),
 		)
-		if strings.HasSuffix(name, "-tls") {
+		if strings.HasSuffix(name, "-insecure") {
+			opts = append(opts, grpc.WithInsecure())
+		} else {
 			netHost, _, _ := net.SplitHostPort(addr)
 			creds := credentials.NewTLS(pool.TLSConfig(netHost))
 			opts = append(opts, grpc.WithTransportCredentials(creds))
-		} else {
-			opts = append(opts, grpc.WithInsecure())
 		}
 	}
 	return func(m *MonitorClient) {
