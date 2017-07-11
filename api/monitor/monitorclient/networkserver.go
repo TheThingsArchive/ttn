@@ -22,10 +22,11 @@ func (m *MonitorClient) NetworkServerClient(ctx context.Context, opts ...grpc.Ca
 		}
 	}
 	c.setup = func() {
-		ctx, c.cancel = context.WithCancel(ctx)
+		var sessionCtx context.Context
+		sessionCtx, c.cancel = context.WithCancel(ctx)
 		for name, cli := range m.clients {
 			status := streambuffer.New(m.bufferSize, func() (grpc.ClientStream, error) {
-				return cli.NetworkServerStatus(ctx, opts...)
+				return cli.NetworkServerStatus(sessionCtx, opts...)
 			})
 			c.status = append(c.status, status)
 			go c.run(name, "Status", status)

@@ -22,22 +22,23 @@ func (m *MonitorClient) BrokerClient(ctx context.Context, opts ...grpc.CallOptio
 		}
 	}
 	c.setup = func() {
-		ctx, c.cancel = context.WithCancel(ctx)
+		var sessionCtx context.Context
+		sessionCtx, c.cancel = context.WithCancel(ctx)
 		for name, cli := range m.clients {
 			uplink := streambuffer.New(m.bufferSize, func() (grpc.ClientStream, error) {
-				return cli.BrokerUplink(ctx, opts...)
+				return cli.BrokerUplink(sessionCtx, opts...)
 			})
 			c.uplink = append(c.uplink, uplink)
 			go c.run(name, "Uplink", uplink)
 
 			downlink := streambuffer.New(m.bufferSize, func() (grpc.ClientStream, error) {
-				return cli.BrokerDownlink(ctx, opts...)
+				return cli.BrokerDownlink(sessionCtx, opts...)
 			})
 			c.downlink = append(c.downlink, downlink)
 			go c.run(name, "Downlink", downlink)
 
 			status := streambuffer.New(m.bufferSize, func() (grpc.ClientStream, error) {
-				return cli.BrokerStatus(ctx, opts...)
+				return cli.BrokerStatus(sessionCtx, opts...)
 			})
 			c.status = append(c.status, status)
 			go c.run(name, "Status", status)

@@ -22,22 +22,23 @@ func (m *MonitorClient) GatewayClient(ctx context.Context, opts ...grpc.CallOpti
 		}
 	}
 	c.setup = func() {
-		ctx, c.cancel = context.WithCancel(ctx)
+		var sessionCtx context.Context
+		sessionCtx, c.cancel = context.WithCancel(ctx)
 		for name, cli := range m.clients {
 			uplink := streambuffer.New(m.bufferSize, func() (grpc.ClientStream, error) {
-				return cli.GatewayUplink(ctx, opts...)
+				return cli.GatewayUplink(sessionCtx, opts...)
 			})
 			c.uplink = append(c.uplink, uplink)
 			go c.run(name, "Uplink", uplink)
 
 			downlink := streambuffer.New(m.bufferSize, func() (grpc.ClientStream, error) {
-				return cli.GatewayDownlink(ctx, opts...)
+				return cli.GatewayDownlink(sessionCtx, opts...)
 			})
 			c.downlink = append(c.downlink, downlink)
 			go c.run(name, "Downlink", downlink)
 
 			status := streambuffer.New(m.bufferSize, func() (grpc.ClientStream, error) {
-				return cli.GatewayStatus(ctx, opts...)
+				return cli.GatewayStatus(sessionCtx, opts...)
 			})
 			c.status = append(c.status, status)
 			go c.run(name, "Status", status)
