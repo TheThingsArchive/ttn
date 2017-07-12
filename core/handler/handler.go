@@ -172,7 +172,7 @@ func (h *handler) Init(c *component.Component) error {
 
 	h.Component.SetStatus(component.StatusHealthy)
 	if h.Component.Monitor != nil {
-		h.monitorStream = h.Component.Monitor.BrokerClient(h.Context, grpc.PerRPCCredentials(auth.WithStaticToken(h.AccessToken)))
+		h.monitorStream = h.Component.Monitor.HandlerClient(h.Context, grpc.PerRPCCredentials(auth.WithStaticToken(h.AccessToken)))
 		go func() {
 			for range time.Tick(h.Component.Config.StatusInterval) {
 				h.monitorStream.Send(h.GetStatus())
