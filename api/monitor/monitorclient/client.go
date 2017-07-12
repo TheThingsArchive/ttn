@@ -241,6 +241,7 @@ func (c *componentClient) Send(msg interface{}) {
 var stableTimeout = 10 * time.Second
 
 func (c *componentClient) run(monitor, stream string, buf *streambuffer.Stream) {
+	buf.SetLogger(c.log.WithField("Monitor", monitor).WithField("Stream", stream))
 	var t *time.Timer
 	var streamErrors int32
 	for {
