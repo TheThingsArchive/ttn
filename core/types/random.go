@@ -54,3 +54,57 @@ func NewPopulatedDevEUI(r Rand) (devEUI *DevEUI) {
 	}
 	return
 }
+
+// NewPopulatedAppKey returns random AppKey
+func NewPopulatedAppKey(r Rand) (key *AppKey) {
+	key = &AppKey{}
+	if _, err := randRead(r, key[:]); err != nil {
+		panic(fmt.Errorf("types.NewPopulatedAppKey: %s", err))
+	}
+	return
+}
+
+// NewPopulatedAppSKey returns random AppSKey
+func NewPopulatedAppSKey(r Rand) (key *AppSKey) {
+	key = &AppSKey{}
+	if _, err := randRead(r, key[:]); err != nil {
+		panic(fmt.Errorf("types.NewPopulatedAppSKey: %s", err))
+	}
+	return
+}
+
+// NewPopulatedNwkSKey returns random NwkSKey
+func NewPopulatedNwkSKey(r Rand) (key *NwkSKey) {
+	key = &NwkSKey{}
+	if _, err := randRead(r, key[:]); err != nil {
+		panic(fmt.Errorf("types.NewPopulatedNwkSKey: %s", err))
+	}
+	return
+}
+
+// NewPopulatedDevNonce returns random DevNonce
+func NewPopulatedDevNonce(r Rand) (nonce *DevNonce) {
+	nonce = &DevNonce{}
+	if _, err := randRead(r, nonce[:]); err != nil {
+		panic(fmt.Errorf("types.NewPopulatedDevNonce: %s", err))
+	}
+	return
+}
+
+// NewPopulatedAppNonce returns random AppNonce
+func NewPopulatedAppNonce(r Rand) (nonce *AppNonce) {
+	nonce = &AppNonce{}
+	if _, err := randRead(r, nonce[:]); err != nil {
+		panic(fmt.Errorf("types.NewPopulatedAppNonce: %s", err))
+	}
+	return
+}
+
+// NewPopulatedNetID returns random NetID
+func NewPopulatedNetID(r Rand) (id *NetID) {
+	id = &NetID{}
+	if _, err := randRead(r, id[:]); err != nil {
+		panic(fmt.Errorf("types.NewPopulatedNetID: %s", err))
+	}
+	return
+}
