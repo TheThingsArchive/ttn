@@ -216,7 +216,7 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 			break
 		}
 	}
-	joinAccept.AppNonce = appNonce
+	joinAccept.AppNonce = lorawan.AppNonce(appNonce)
 
 	// Calculate session keys
 	appSKey, nwkSKey, err := otaa.CalculateSessionKeys(dev.AppKey, joinAccept.AppNonce, joinAccept.NetID, reqMAC.DevNonce)
@@ -230,7 +230,7 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 	dev.AppSKey = appSKey
 	dev.NwkSKey = nwkSKey
 	dev.UsedAppNonces = append(dev.UsedAppNonces, appNonce)
-	dev.UsedDevNonces = append(dev.UsedDevNonces, reqMAC.DevNonce)
+	dev.UsedDevNonces = append(dev.UsedDevNonces, device.DevNonce(reqMAC.DevNonce))
 	err = h.devices.Set(dev)
 	if err != nil {
 		return nil, err

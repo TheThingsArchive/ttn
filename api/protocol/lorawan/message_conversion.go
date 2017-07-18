@@ -98,7 +98,7 @@ func (msg *Message_JoinRequestPayload) Payload() lorawan.Payload {
 	var mac lorawan.JoinRequestPayload
 	mac.AppEUI = lorawan.EUI64(m.AppEui)
 	mac.DevEUI = lorawan.EUI64(m.DevEui)
-	mac.DevNonce = m.DevNonce
+	mac.DevNonce = lorawan.DevNonce(m.DevNonce)
 	return &mac
 }
 
@@ -119,8 +119,8 @@ func (msg *Message_JoinAcceptPayload) Payload() lorawan.Payload {
 		return &lorawan.DataPayload{Bytes: m.Encrypted}
 	}
 	var mac lorawan.JoinAcceptPayload
-	mac.AppNonce = m.AppNonce
-	mac.NetID = m.NetId
+	mac.AppNonce = lorawan.AppNonce(m.AppNonce)
+	mac.NetID = lorawan.NetID(m.NetId)
 	mac.DevAddr = lorawan.DevAddr(m.DevAddr)
 	mac.DLSettings.RX1DROffset = uint8(m.Rx1DrOffset)
 	mac.DLSettings.RX2DataRate = uint8(m.Rx2Dr)
