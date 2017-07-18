@@ -111,10 +111,10 @@ func (h *handlerManager) GetDevice(ctx context.Context, in *pb_handler.DeviceIde
 			"AppEUI": dev.AppEUI,
 			"DevEUI": dev.DevEUI,
 		}).Warn("Re-registering missing device to Broker")
-		lorawanPb := dev.ToLorawanPb()
-		lorawanPb.AppKey = nil
-		lorawanPb.AppSKey = nil
-		_, err = h.handler.ttnDeviceManager.SetDevice(ttnctx.OutgoingContextWithToken(ctx, token), lorawanPb)
+		nsDev = dev.ToLorawanPb()
+		nsDev.AppKey = nil
+		nsDev.AppSKey = nil
+		_, err = h.handler.ttnDeviceManager.SetDevice(ttnctx.OutgoingContextWithToken(ctx, token), nsDev)
 		if err != nil {
 			return nil, errors.Wrap(errors.FromGRPCError(err), "Could not re-register missing device to Broker")
 		}
