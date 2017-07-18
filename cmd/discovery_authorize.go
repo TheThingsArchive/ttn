@@ -5,7 +5,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/TheThingsNetwork/go-account-lib/claims"
@@ -56,26 +55,15 @@ var discoveryAuthorizeCmd = &cobra.Command{
 			ctx.WithError(err).Fatal("Could not sign JWT")
 		}
 
-		ctx.WithField("ID", args[0]).Info("Generated token")
+		if trim, err := cmd.Flags().GetBool("trim"); err != nil && !trim {
+			ctx.WithField("ID", args[0]).Info("Generated token")
 
-		if filepath := viper.GetString("save"); filepath != "" {
-			ctx := ctx.WithField("Filepath", filepath)
-			f, err := os.Create(filepath)
-			if err != nil {
-				ctx.WithError(err).Error("Could not save token in specified file")
-			} else {
-				defer f.Close()
-				if _, err = f.Write([]byte(token)); err != nil {
-					ctx.WithError(err).Error("Could not write token in specified file")
-				} else {
-					ctx.Info("Token saved in specified file")
-				}
-			}
+			fmt.Println()
 		}
-
-		fmt.Println()
 		fmt.Println(token)
-		fmt.Println()
+		if trim, err := cmd.Flags().GetBool("trim"); err != nil && !trim {
+			fmt.Println()
+		}
 	},
 }
 
@@ -83,5 +71,5 @@ func init() {
 	discoveryCmd.AddCommand(discoveryAuthorizeCmd)
 	discoveryAuthorizeCmd.Flags().Int("valid", 0, "The number of days the token is valid")
 	discoveryAuthorizeCmd.Flags().String("issuer", "local", "The issuer ID to use")
-	discoveryAuthorizeCmd.Flags().String("save", "", "If you wish to store the token in a file, path to the file where the token will be saved")
+	discoveryAuthorizeCmd.Flags().Bool("trim", false, "If authorization is successful, trim the output to only show the token")
 }
