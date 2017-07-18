@@ -48,14 +48,20 @@ var networkserverAuthorizeCmd = &cobra.Command{
 			ctx.WithError(err).Fatal("Could not sign JWT")
 		}
 
-		ctx.WithField("ID", args[0]).Info("Generated NS token")
-		fmt.Println()
+		if trim, err := cmd.Flags().GetBool("trim"); err != nil && !trim {
+			ctx.WithField("ID", args[0]).Info("Generated NS token")
+
+			fmt.Println()
+		}
 		fmt.Println(token)
-		fmt.Println()
+		if trim, err := cmd.Flags().GetBool("trim"); err != nil && !trim {
+			fmt.Println()
+		}
 	},
 }
 
 func init() {
 	networkserverCmd.AddCommand(networkserverAuthorizeCmd)
 	networkserverAuthorizeCmd.Flags().Int("valid", 0, "The number of days the token is valid")
+	networkserverAuthorizeCmd.Flags().Bool("trim", false, "If authorization is successful, trim the output to only show the token")
 }
