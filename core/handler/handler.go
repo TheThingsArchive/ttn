@@ -5,11 +5,13 @@ package handler
 
 import (
 	"fmt"
+	"time"
 
+	"github.com/TheThingsNetwork/go-utils/grpc/auth"
 	"github.com/TheThingsNetwork/ttn/amqp"
 	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
 	pb "github.com/TheThingsNetwork/ttn/api/handler"
-	pb_monitor "github.com/TheThingsNetwork/ttn/api/monitor"
+	"github.com/TheThingsNetwork/ttn/api/monitor/monitorclient"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/handler/application"
@@ -81,7 +83,7 @@ type handler struct {
 	qEvent chan *types.DeviceEvent
 
 	status        *status
-	monitorStream pb_monitor.GenericStream
+	monitorStream monitorclient.Stream
 }
 
 var (
@@ -170,10 +172,12 @@ func (h *handler) Init(c *component.Component) error {
 
 	h.Component.SetStatus(component.StatusHealthy)
 	if h.Component.Monitor != nil {
-		h.monitorStream = h.Component.Monitor.NewHandlerStreams(h.Identity.Id, h.AccessToken)
-		go h.Component.Monitor.TickStatus(func() {
-			h.monitorStream.Send(h.GetStatus())
-		})
+		h.monitorStream = h.Component.Monitor.HandlerClient(h.Context, grpc.PerRPCCredentials(auth.WithStaticToken(h.AccessToken)))
+		go func() {
+			for range time.Tick(h.Component.Config.StatusInterval) {
+				h.monitorStream.Send(h.GetStatus())
+			}
+		}()
 	}
 
 	return nil

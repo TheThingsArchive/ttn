@@ -1,7 +1,7 @@
 // Copyright © 2017 The Things Network
 // Use of this source code is governed by the MIT license that can be found in the LICENSE file.
 
-package monitor
+package monitorserver
 
 import (
 	"context"
@@ -14,6 +14,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/api/fields"
 	"github.com/TheThingsNetwork/ttn/api/gateway"
 	"github.com/TheThingsNetwork/ttn/api/handler"
+	"github.com/TheThingsNetwork/ttn/api/monitor"
 	"github.com/TheThingsNetwork/ttn/api/networkserver"
 	"github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
@@ -42,32 +43,34 @@ func NewReferenceMonitorServer(bufferSize int) *ReferenceMonitorServer {
 
 		networkServerStatuses: make(chan *networkserver.Status, bufferSize),
 
-		metrics: new(metrics),
+		Metrics: new(Metrics),
 	}
 	for i := 0; i < bufferSize; i++ {
 		go func() {
 			for {
 				select {
 				case <-s.gatewayStatuses:
-					atomic.AddUint64(&s.metrics.gatewayStatuses, 1)
+					atomic.AddUint64(&s.Metrics.GatewayStatuses, 1)
 				case <-s.uplinkMessages:
-					atomic.AddUint64(&s.metrics.uplinkMessages, 1)
+					atomic.AddUint64(&s.Metrics.UplinkMessages, 1)
 				case <-s.downlinkMessages:
-					atomic.AddUint64(&s.metrics.downlinkMessages, 1)
+					atomic.AddUint64(&s.Metrics.DownlinkMessages, 1)
 				case <-s.routerStatuses:
-					atomic.AddUint64(&s.metrics.routerStatuses, 1)
+					atomic.AddUint64(&s.Metrics.RouterStatuses, 1)
 				case <-s.brokerUplinkMessages:
-					atomic.AddUint64(&s.metrics.brokerUplinkMessages, 1)
+					atomic.AddUint64(&s.Metrics.BrokerUplinkMessages, 1)
 				case <-s.brokerDownlinkMessages:
-					atomic.AddUint64(&s.metrics.brokerDownlinkMessages, 1)
+					atomic.AddUint64(&s.Metrics.BrokerDownlinkMessages, 1)
 				case <-s.brokerStatuses:
-					atomic.AddUint64(&s.metrics.brokerStatuses, 1)
+					atomic.AddUint64(&s.Metrics.BrokerStatuses, 1)
+				case <-s.networkServerStatuses:
+					atomic.AddUint64(&s.Metrics.NetworkServerStatuses, 1)
 				case <-s.handlerUplinkMessages:
-					atomic.AddUint64(&s.metrics.handlerUplinkMessages, 1)
+					atomic.AddUint64(&s.Metrics.HandlerUplinkMessages, 1)
 				case <-s.handlerDownlinkMessages:
-					atomic.AddUint64(&s.metrics.handlerDownlinkMessages, 1)
+					atomic.AddUint64(&s.Metrics.HandlerDownlinkMessages, 1)
 				case <-s.handlerStatuses:
-					atomic.AddUint64(&s.metrics.handlerStatuses, 1)
+					atomic.AddUint64(&s.Metrics.HandlerStatuses, 1)
 				}
 			}
 		}()
@@ -75,18 +78,18 @@ func NewReferenceMonitorServer(bufferSize int) *ReferenceMonitorServer {
 	return s
 }
 
-type metrics struct {
-	gatewayStatuses         uint64
-	uplinkMessages          uint64
-	downlinkMessages        uint64
-	brokerStatuses          uint64
-	brokerUplinkMessages    uint64
-	brokerDownlinkMessages  uint64
-	handlerStatuses         uint64
-	handlerUplinkMessages   uint64
-	handlerDownlinkMessages uint64
-	routerStatuses          uint64
-	networkServerStatuses   uint64
+type Metrics struct {
+	GatewayStatuses         uint64
+	UplinkMessages          uint64
+	DownlinkMessages        uint64
+	BrokerStatuses          uint64
+	BrokerUplinkMessages    uint64
+	BrokerDownlinkMessages  uint64
+	HandlerStatuses         uint64
+	HandlerUplinkMessages   uint64
+	HandlerDownlinkMessages uint64
+	RouterStatuses          uint64
+	NetworkServerStatuses   uint64
 }
 
 // ReferenceMonitorServer is a new reference monitor server
@@ -109,7 +112,7 @@ type ReferenceMonitorServer struct {
 
 	networkServerStatuses chan *networkserver.Status
 
-	metrics *metrics
+	Metrics *Metrics
 }
 
 func (s *ReferenceMonitorServer) getAndAuthGateway(ctx context.Context) (string, error) {
@@ -127,7 +130,7 @@ func (s *ReferenceMonitorServer) getAndAuthGateway(ctx context.Context) (string,
 }
 
 // GatewayStatus RPC
-func (s *ReferenceMonitorServer) GatewayStatus(stream Monitor_GatewayStatusServer) (err error) {
+func (s *ReferenceMonitorServer) GatewayStatus(stream monitor.Monitor_GatewayStatusServer) (err error) {
 	gatewayID, err := s.getAndAuthGateway(stream.Context())
 	if err != nil {
 		return errors.NewErrPermissionDenied(err.Error())
@@ -168,7 +171,7 @@ func (s *ReferenceMonitorServer) GatewayStatus(stream Monitor_GatewayStatusServe
 }
 
 // GatewayUplink RPC
-func (s *ReferenceMonitorServer) GatewayUplink(stream Monitor_GatewayUplinkServer) error {
+func (s *ReferenceMonitorServer) GatewayUplink(stream monitor.Monitor_GatewayUplinkServer) error {
 	gatewayID, err := s.getAndAuthGateway(stream.Context())
 	if err != nil {
 		return errors.NewErrPermissionDenied(err.Error())
@@ -214,7 +217,7 @@ func (s *ReferenceMonitorServer) GatewayUplink(stream Monitor_GatewayUplinkServe
 }
 
 // GatewayDownlink RPC
-func (s *ReferenceMonitorServer) GatewayDownlink(stream Monitor_GatewayDownlinkServer) error {
+func (s *ReferenceMonitorServer) GatewayDownlink(stream monitor.Monitor_GatewayDownlinkServer) error {
 	gatewayID, err := s.getAndAuthGateway(stream.Context())
 	if err != nil {
 		return errors.NewErrPermissionDenied(err.Error())
@@ -274,7 +277,7 @@ func (s *ReferenceMonitorServer) getAndAuthBroker(ctx context.Context) (string, 
 }
 
 // BrokerStatus RPC
-func (s *ReferenceMonitorServer) BrokerStatus(stream Monitor_BrokerStatusServer) (err error) {
+func (s *ReferenceMonitorServer) BrokerStatus(stream monitor.Monitor_BrokerStatusServer) (err error) {
 	brokerID, err := s.getAndAuthBroker(stream.Context())
 	if err != nil {
 		return errors.NewErrPermissionDenied(err.Error())
@@ -315,7 +318,7 @@ func (s *ReferenceMonitorServer) BrokerStatus(stream Monitor_BrokerStatusServer)
 }
 
 // BrokerUplink RPC
-func (s *ReferenceMonitorServer) BrokerUplink(stream Monitor_BrokerUplinkServer) error {
+func (s *ReferenceMonitorServer) BrokerUplink(stream monitor.Monitor_BrokerUplinkServer) error {
 	brokerID, err := s.getAndAuthBroker(stream.Context())
 	if err != nil {
 		return errors.NewErrPermissionDenied(err.Error())
@@ -361,7 +364,7 @@ func (s *ReferenceMonitorServer) BrokerUplink(stream Monitor_BrokerUplinkServer)
 }
 
 // BrokerDownlink RPC
-func (s *ReferenceMonitorServer) BrokerDownlink(stream Monitor_BrokerDownlinkServer) error {
+func (s *ReferenceMonitorServer) BrokerDownlink(stream monitor.Monitor_BrokerDownlinkServer) error {
 	brokerID, err := s.getAndAuthBroker(stream.Context())
 	if err != nil {
 		return errors.NewErrPermissionDenied(err.Error())
@@ -421,7 +424,7 @@ func (s *ReferenceMonitorServer) getAndAuthHandler(ctx context.Context) (string,
 }
 
 // HandlerStatus RPC
-func (s *ReferenceMonitorServer) HandlerStatus(stream Monitor_HandlerStatusServer) (err error) {
+func (s *ReferenceMonitorServer) HandlerStatus(stream monitor.Monitor_HandlerStatusServer) (err error) {
 	handlerID, err := s.getAndAuthHandler(stream.Context())
 	if err != nil {
 		return errors.NewErrPermissionDenied(err.Error())
@@ -462,7 +465,7 @@ func (s *ReferenceMonitorServer) HandlerStatus(stream Monitor_HandlerStatusServe
 }
 
 // HandlerUplink RPC
-func (s *ReferenceMonitorServer) HandlerUplink(stream Monitor_HandlerUplinkServer) error {
+func (s *ReferenceMonitorServer) HandlerUplink(stream monitor.Monitor_HandlerUplinkServer) error {
 	handlerID, err := s.getAndAuthHandler(stream.Context())
 	if err != nil {
 		return errors.NewErrPermissionDenied(err.Error())
@@ -508,7 +511,7 @@ func (s *ReferenceMonitorServer) HandlerUplink(stream Monitor_HandlerUplinkServe
 }
 
 // HandlerDownlink RPC
-func (s *ReferenceMonitorServer) HandlerDownlink(stream Monitor_HandlerDownlinkServer) error {
+func (s *ReferenceMonitorServer) HandlerDownlink(stream monitor.Monitor_HandlerDownlinkServer) error {
 	handlerID, err := s.getAndAuthHandler(stream.Context())
 	if err != nil {
 		return errors.NewErrPermissionDenied(err.Error())
@@ -568,7 +571,7 @@ func (s *ReferenceMonitorServer) getAndAuthRouter(ctx context.Context) (string, 
 }
 
 // RouterStatus RPC
-func (s *ReferenceMonitorServer) RouterStatus(stream Monitor_RouterStatusServer) (err error) {
+func (s *ReferenceMonitorServer) RouterStatus(stream monitor.Monitor_RouterStatusServer) (err error) {
 	routerID, err := s.getAndAuthRouter(stream.Context())
 	if err != nil {
 		return errors.NewErrPermissionDenied(err.Error())
@@ -623,7 +626,7 @@ func (s *ReferenceMonitorServer) getAndAuthNetworkServer(ctx context.Context) (s
 }
 
 // NetworkServerStatus RPC
-func (s *ReferenceMonitorServer) NetworkServerStatus(stream Monitor_NetworkServerStatusServer) (err error) {
+func (s *ReferenceMonitorServer) NetworkServerStatus(stream monitor.Monitor_NetworkServerStatusServer) (err error) {
 	networkServerID, err := s.getAndAuthNetworkServer(stream.Context())
 	if err != nil {
 		return errors.NewErrPermissionDenied(err.Error())

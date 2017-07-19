@@ -10,7 +10,7 @@ import (
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/api/fields"
 	pb "github.com/TheThingsNetwork/ttn/api/gateway"
-	pb_monitor "github.com/TheThingsNetwork/ttn/api/monitor"
+	"github.com/TheThingsNetwork/ttn/api/monitor/monitorclient"
 	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	pb_router "github.com/TheThingsNetwork/ttn/api/router"
 )
@@ -41,8 +41,7 @@ type Gateway struct {
 	token         string
 	authenticated bool
 
-	Monitor       *pb_monitor.Client
-	MonitorStream pb_monitor.GenericStream
+	MonitorStream monitorclient.Stream
 
 	Ctx ttnlog.Interface
 }
@@ -51,18 +50,18 @@ func (g *Gateway) SetAuth(token string, authenticated bool) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	g.authenticated = authenticated
-	if g.MonitorStream != nil {
-		if token == g.token {
-			return
-		}
-		g.Ctx.Debug("Stopping Monitor stream (token changed)")
-		g.MonitorStream.Close()
+	if token == g.token {
+		return
 	}
 	g.token = token
-	if g.Monitor != nil {
-		g.Ctx.Debug("Starting Gateway Monitor Stream")
-		g.MonitorStream = g.Monitor.NewGatewayStreams(g.ID, g.token)
-	}
+	g.MonitorStream.Reset()
+}
+
+func (g *Gateway) Token() string {
+	g.mu.RLock()
+	token := g.token
+	g.mu.RUnlock()
+	return token
 }
 
 func (g *Gateway) updateLastSeen() {

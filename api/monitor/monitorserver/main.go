@@ -1,20 +1,22 @@
 // Copyright © 2017 The Things Network
 // Use of this source code is governed by the MIT license that can be found in the LICENSE file.
 
+//+build ignore
+
 package main
 
 import (
+	"crypto/tls"
 	"math"
-	"net"
 	"os"
 	"os/signal"
 	"syscall"
 
-	"google.golang.org/grpc"
-
 	"github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/go-utils/log/apex"
 	"github.com/TheThingsNetwork/ttn/api/monitor"
+	"github.com/TheThingsNetwork/ttn/api/monitor/monitorserver"
+	"google.golang.org/grpc"
 )
 
 func main() {
@@ -25,12 +27,18 @@ func main() {
 		ctx.Fatal("Usage: ttn-monitor-server-example [listen]")
 	}
 
-	lis, err := net.Listen("tcp", os.Args[1])
+	var tlsConfig tls.Config
+	certificate, err := tls.LoadX509KeyPair("cert.pem", "key.pem")
+	if err != nil {
+		ctx.WithError(err).Fatal("Could not load tls certificate and key")
+	}
+	tlsConfig.Certificates = append(tlsConfig.Certificates, certificate)
+	lis, err := tls.Listen("tcp", os.Args[1], &tlsConfig)
 	if err != nil {
 		ctx.WithError(err).Fatal("Failed to listen")
 	}
 	s := grpc.NewServer(grpc.MaxConcurrentStreams(math.MaxUint16))
-	server := monitor.NewReferenceMonitorServer(10)
+	server := monitorserver.NewReferenceMonitorServer(10)
 	monitor.RegisterMonitorServer(s, server)
 	go s.Serve(lis)
 	ctx.Infof("Listening on %s", lis.Addr().String())

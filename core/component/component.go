@@ -13,7 +13,7 @@ import (
 	"github.com/TheThingsNetwork/go-account-lib/tokenkey"
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
-	pb_monitor "github.com/TheThingsNetwork/ttn/api/monitor"
+	"github.com/TheThingsNetwork/ttn/api/monitor/monitorclient"
 	"github.com/TheThingsNetwork/ttn/api/pool"
 	"github.com/spf13/viper"
 	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
@@ -27,7 +27,7 @@ type Component struct {
 	Pool             *pool.Pool
 	Identity         *pb_discovery.Announcement
 	Discovery        pb_discovery.Client
-	Monitor          *pb_monitor.Client
+	Monitor          *monitorclient.MonitorClient
 	Ctx              ttnlog.Interface
 	Context          context.Context
 	AccessToken      string
@@ -90,13 +90,11 @@ func New(ctx ttnlog.Interface, serviceName string, announcedAddress string) (*Co
 		}
 	}
 
-	component.Monitor = pb_monitor.NewClient(pb_monitor.DefaultClientConfig)
+	var monitorOpts []monitorclient.MonitorOption
 	for name, addr := range viper.GetStringMapString("monitor-servers") {
-		component.Monitor.AddServer(name, addr)
+		monitorOpts = append(monitorOpts, monitorclient.WithServer(name, addr))
 	}
-	if statusInterval := viper.GetDuration("monitor-interval"); statusInterval.Seconds() > 1 {
-		component.Monitor.SetStatusInterval(statusInterval)
-	}
+	component.Monitor = monitorclient.NewMonitorClient(monitorOpts...)
 
 	return component, nil
 }
