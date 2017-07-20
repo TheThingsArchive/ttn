@@ -10,17 +10,17 @@ import (
 	"testing"
 	"time"
 
-	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
-	pb_protocol "github.com/TheThingsNetwork/ttn/api/protocol"
-	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
+	pb_broker "github.com/TheThingsNetwork/api/broker"
+	pb_protocol "github.com/TheThingsNetwork/api/protocol"
+	pb_lorawan "github.com/TheThingsNetwork/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/handler/application"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"github.com/brocaar/lorawan"
+	gogo "github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
-	"github.com/golang/protobuf/ptypes/empty"
 	. "github.com/smartystreets/assertions"
 )
 
@@ -39,7 +39,7 @@ func TestHandleActivationChallenge(t *testing.T) {
 	appID, devID := appEUI.String(), devEUI.String()
 	appKey := types.AppKey{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8}
 	dev := &device.Device{AppID: appID, DevID: devID}
-	req := &pb_broker.ActivationChallengeRequest{AppId: appID, DevId: devID}
+	req := &pb_broker.ActivationChallengeRequest{AppID: appID, DevID: devID}
 
 	// Device does not exist
 	_, err := h.HandleActivationChallenge(req)
@@ -69,7 +69,7 @@ func TestHandleActivationChallenge(t *testing.T) {
 	a.So(err, ShouldBeNil)
 
 	res.UnmarshalPayload()
-	a.So(res.GetMessage().GetLorawan().Mic, ShouldResemble, pld.MIC[:])
+	a.So(res.GetMessage().GetLoRaWAN().MIC, ShouldResemble, pld.MIC[:])
 }
 
 func TestHandleActivation(t *testing.T) {
@@ -107,10 +107,10 @@ func TestHandleActivation(t *testing.T) {
 		AppID: appID,
 	}
 	req := &pb_broker.DeduplicatedDeviceActivationRequest{
-		AppId:  appID,
-		DevId:  devID,
-		AppEui: &appEUI,
-		DevEui: &devEUI,
+		AppID:  appID,
+		DevID:  devID,
+		AppEUI: &appEUI,
+		DevEUI: &devEUI,
 	}
 
 	// No ResponseTemplate
@@ -149,9 +149,9 @@ func TestHandleActivation(t *testing.T) {
 	_, err = h.HandleActivation(req)
 	a.So(err, ShouldNotBeNil)
 
-	req.ActivationMetadata = &pb_protocol.ActivationMetadata{Protocol: &pb_protocol.ActivationMetadata_Lorawan{Lorawan: &pb_lorawan.ActivationMetadata{
-		AppEui:  &appEUI,
-		DevEui:  &devEUI,
+	req.ActivationMetadata = &pb_protocol.ActivationMetadata{Protocol: &pb_protocol.ActivationMetadata_LoRaWAN{LoRaWAN: &pb_lorawan.ActivationMetadata{
+		AppEUI:  &appEUI,
+		DevEUI:  &devEUI,
 		DevAddr: &devAddr,
 	}}}
 
@@ -164,8 +164,8 @@ func TestHandleActivation(t *testing.T) {
 		msg := req.Message.InitLoRaWAN()
 		msg.MType = pb_lorawan.MType_JOIN_REQUEST
 		msg.Payload = &pb_lorawan.Message_JoinRequestPayload{JoinRequestPayload: &pb_lorawan.JoinRequestPayload{
-			AppEui: appEUI,
-			DevEui: devEUI,
+			AppEUI: appEUI,
+			DevEUI: devEUI,
 		}}
 		phy := msg.PHYPayload()
 		phy.SetMIC(lorawan.AES128Key(appKey))
@@ -182,7 +182,7 @@ func TestHandleActivation(t *testing.T) {
 	// Valid join
 	res, err := h.HandleActivation(req)
 	a.So(err, ShouldBeNil)
-	a.So(res.ActivationMetadata.GetLorawan().DevEui, ShouldResemble, &devEUI)
+	a.So(res.ActivationMetadata.GetLoRaWAN().DevEUI, ShouldResemble, &devEUI)
 
 	// TODO: Check response
 	// TODO: Check DB contents
@@ -204,13 +204,13 @@ func TestHandleActivation(t *testing.T) {
 	defer func() { h.devices.Delete(appID, "default") }()
 
 	{
-		req.DevEui = &otherDevEUI
-		req.ActivationMetadata.GetLorawan().DevEui = &otherDevEUI
-		req.Message.GetLorawan().GetJoinRequestPayload().DevEui = otherDevEUI
-		phy := req.Message.GetLorawan().PHYPayload()
+		req.DevEUI = &otherDevEUI
+		req.ActivationMetadata.GetLoRaWAN().DevEUI = &otherDevEUI
+		req.Message.GetLoRaWAN().GetJoinRequestPayload().DevEUI = otherDevEUI
+		phy := req.Message.GetLoRaWAN().PHYPayload()
 		phy.SetMIC(lorawan.AES128Key(appKey))
 		req.Payload, _ = phy.MarshalBinary()
-		req.DevId = "default"
+		req.DevID = "default"
 	}
 
 	// No access key set
@@ -249,11 +249,11 @@ func TestHandleActivation(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ttnDeviceManager := pb_lorawan.NewMockDeviceManagerClient(ctrl)
 	h.ttnDeviceManager = ttnDeviceManager
-	ttnDeviceManager.EXPECT().SetDevice(gomock.Any(), gomock.Any()).Return(new(empty.Empty), nil)
+	ttnDeviceManager.EXPECT().SetDevice(gomock.Any(), gomock.Any()).Return(new(gogo.Empty), nil)
 
 	res, err = h.HandleActivation(req)
 	a.So(err, ShouldBeNil)
-	a.So(res.ActivationMetadata.GetLorawan().DevEui, ShouldResemble, &otherDevEUI)
+	a.So(res.ActivationMetadata.GetLoRaWAN().DevEUI, ShouldResemble, &otherDevEUI)
 
 	// TODO: Check response
 	// TODO: Check DB contents

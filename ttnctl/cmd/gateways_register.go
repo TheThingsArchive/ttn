@@ -6,8 +6,8 @@ package cmd
 import (
 	"strings"
 
+	"github.com/TheThingsNetwork/api"
 	"github.com/TheThingsNetwork/go-account-lib/account"
-	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/spf13/cobra"
 )

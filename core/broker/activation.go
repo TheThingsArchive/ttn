@@ -10,12 +10,12 @@ import (
 	"sync"
 	"time"
 
+	pb "github.com/TheThingsNetwork/api/broker"
+	pb_discovery "github.com/TheThingsNetwork/api/discovery"
+	pb_handler "github.com/TheThingsNetwork/api/handler"
+	"github.com/TheThingsNetwork/api/logfields"
+	"github.com/TheThingsNetwork/api/trace"
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
-	pb "github.com/TheThingsNetwork/ttn/api/broker"
-	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
-	"github.com/TheThingsNetwork/ttn/api/fields"
-	pb_handler "github.com/TheThingsNetwork/ttn/api/handler"
-	"github.com/TheThingsNetwork/ttn/api/trace"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/brocaar/lorawan"
 )
@@ -29,7 +29,7 @@ type challengeResponseWithHandler struct {
 var errDuplicateActivation = errors.New("Not handling duplicate activation on this gateway")
 
 func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (res *pb.DeviceActivationResponse, err error) {
-	ctx := b.Ctx.WithFields(fields.Get(activation))
+	ctx := b.Ctx.WithFields(logfields.ForMessage(activation))
 	start := time.Now()
 	deduplicatedActivationRequest := new(pb.DeduplicatedDeviceActivationRequest)
 	deduplicatedActivationRequest.ServerTime = start.UnixNano()
@@ -62,8 +62,8 @@ func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (res *
 	b.status.activationsUnique.Mark(1)
 
 	deduplicatedActivationRequest.Payload = duplicates[0].Payload
-	deduplicatedActivationRequest.DevEui = duplicates[0].DevEui
-	deduplicatedActivationRequest.AppEui = duplicates[0].AppEui
+	deduplicatedActivationRequest.DevEUI = duplicates[0].DevEUI
+	deduplicatedActivationRequest.AppEUI = duplicates[0].AppEUI
 	deduplicatedActivationRequest.ProtocolMetadata = duplicates[0].ProtocolMetadata
 	deduplicatedActivationRequest.ActivationMetadata = duplicates[0].ActivationMetadata
 	deduplicatedActivationRequest.Trace = deduplicatedActivationRequest.Trace.WithEvent(trace.DeduplicateEvent,
@@ -96,18 +96,18 @@ func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (res *
 	}
 
 	ctx = ctx.WithFields(ttnlog.Fields{
-		"AppID": deduplicatedActivationRequest.AppId,
-		"DevID": deduplicatedActivationRequest.DevId,
+		"AppID": deduplicatedActivationRequest.AppID,
+		"DevID": deduplicatedActivationRequest.DevID,
 	})
 
 	// Find Handler (based on AppEUI)
 	var announcements []*pb_discovery.Announcement
-	announcements, err = b.Discovery.GetAllHandlersForAppID(deduplicatedActivationRequest.AppId)
+	announcements, err = b.Discovery.GetAllHandlersForAppID(deduplicatedActivationRequest.AppID)
 	if err != nil {
 		return nil, err
 	}
 	if len(announcements) == 0 {
-		return nil, errors.NewErrNotFound(fmt.Sprintf("Handler for AppID %s", deduplicatedActivationRequest.AppId))
+		return nil, errors.NewErrNotFound(fmt.Sprintf("Handler for AppID %s", deduplicatedActivationRequest.AppID))
 	}
 
 	ctx = ctx.WithField("NumHandlers", len(announcements))
@@ -128,17 +128,17 @@ func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (res *
 	// Build Challenge
 	challenge := &pb.ActivationChallengeRequest{
 		Payload: phyPayloadWithoutMIC,
-		AppId:   deduplicatedActivationRequest.AppId,
-		DevId:   deduplicatedActivationRequest.DevId,
-		AppEui:  deduplicatedActivationRequest.AppEui,
-		DevEui:  deduplicatedActivationRequest.DevEui,
+		AppID:   deduplicatedActivationRequest.AppID,
+		DevID:   deduplicatedActivationRequest.DevID,
+		AppEUI:  deduplicatedActivationRequest.AppEUI,
+		DevEUI:  deduplicatedActivationRequest.DevEUI,
 	}
 
 	// Send Challenge to all handlers and collect responses
 	var wg sync.WaitGroup
 	responses := make(chan *challengeResponseWithHandler, len(announcements))
 	for _, announcement := range announcements {
-		conn, err := b.getHandlerConn(announcement.Id)
+		conn, err := b.getHandlerConn(announcement.ID)
 		if err != nil {
 			ctx.WithError(err).Warn("Could not dial handler for Activation")
 			continue
@@ -194,9 +194,9 @@ func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (res *
 		return nil, errors.New("Activation not accepted by any Handler")
 	}
 
-	ctx.WithField("HandlerID", joinHandler.Id).Debug("Forward Activation")
+	ctx.WithField("HandlerID", joinHandler.ID).Debug("Forward Activation")
 	deduplicatedActivationRequest.Trace = deduplicatedActivationRequest.Trace.WithEvent(trace.ForwardEvent,
-		"handler", joinHandler.Id,
+		"handler", joinHandler.ID,
 	)
 
 	handlerResponse, err := joinHandlerClient.Activate(b.Component.GetContext(""), deduplicatedActivationRequest)

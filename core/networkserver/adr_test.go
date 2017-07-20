@@ -9,10 +9,10 @@ import (
 	"sort"
 	"testing"
 
-	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
-	pb_gateway "github.com/TheThingsNetwork/ttn/api/gateway"
-	pb_protocol "github.com/TheThingsNetwork/ttn/api/protocol"
-	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
+	pb_broker "github.com/TheThingsNetwork/api/broker"
+	pb_gateway "github.com/TheThingsNetwork/api/gateway"
+	pb_protocol "github.com/TheThingsNetwork/api/protocol"
+	pb_lorawan "github.com/TheThingsNetwork/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core/networkserver/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
@@ -28,14 +28,14 @@ func adrInitUplinkMessage() *pb_broker.DeduplicatedUplinkMessage {
 	downlink := message.InitResponseTemplate()
 	downlink.Message = new(pb_protocol.Message)
 	downlink.Message.InitLoRaWAN().InitDownlink()
-	message.ProtocolMetadata = &pb_protocol.RxMetadata{Protocol: &pb_protocol.RxMetadata_Lorawan{
-		Lorawan: &pb_lorawan.Metadata{
+	message.ProtocolMetadata = &pb_protocol.RxMetadata{Protocol: &pb_protocol.RxMetadata_LoRaWAN{
+		LoRaWAN: &pb_lorawan.Metadata{
 			DataRate: "SF8BW125",
 		},
 	}}
 	message.GatewayMetadata = []*pb_gateway.RxMetadata{
 		&pb_gateway.RxMetadata{
-			Snr: 10,
+			SNR: 10,
 		},
 	}
 	return message
@@ -47,7 +47,7 @@ func adrInitDownlinkMessage() *pb_broker.DownlinkMessage {
 	}
 	dl := message.Message.InitLoRaWAN().InitDownlink()
 	dl.FOpts = []pb_lorawan.MACCommand{
-		pb_lorawan.MACCommand{Cid: uint32(lorawan.LinkCheckAns)},
+		pb_lorawan.MACCommand{CID: uint32(lorawan.LinkCheckAns)},
 	}
 	return message
 }
@@ -101,7 +101,7 @@ func TestHandleUplinkADR(t *testing.T) {
 	{
 		dev := &device.Device{AppEUI: appEUI, DevEUI: devEUI}
 		message := adrInitUplinkMessage()
-		message.Message.GetLorawan().GetMacPayload().Adr = true
+		message.Message.GetLoRaWAN().GetMACPayload().ADR = true
 		err := ns.handleUplinkADR(message, dev)
 		a.So(err, ShouldBeNil)
 		frames, _ := history.Get()
@@ -123,12 +123,12 @@ func TestHandleUplinkADR(t *testing.T) {
 	{
 		dev := &device.Device{AppEUI: appEUI, DevEUI: devEUI}
 		message := adrInitUplinkMessage()
-		message.Message.GetLorawan().GetMacPayload().Adr = true
-		message.Message.GetLorawan().GetMacPayload().AdrAckReq = true
+		message.Message.GetLoRaWAN().GetMACPayload().ADR = true
+		message.Message.GetLoRaWAN().GetMACPayload().ADRAckReq = true
 		err := ns.handleUplinkADR(message, dev)
 		a.So(err, ShouldBeNil)
-		resMac := message.ResponseTemplate.Message.GetLorawan().GetMacPayload()
-		a.So(resMac.Ack, ShouldBeTrue)
+		resMAC := message.ResponseTemplate.Message.GetLoRaWAN().GetMACPayload()
+		a.So(resMAC.Ack, ShouldBeTrue)
 		a.So(dev.ADR.SendReq, ShouldBeTrue)
 	}
 }
@@ -159,7 +159,7 @@ func TestHandleDownlinkADR(t *testing.T) {
 		message = adrInitDownlinkMessage()
 		err := ns.handleDownlinkADR(message, dev)
 		a.So(err, ShouldNotBeNil)
-		a.So(message.Message.GetLorawan().GetMacPayload().FOpts, ShouldHaveLength, 1)
+		a.So(message.Message.GetLoRaWAN().GetMACPayload().FOpts, ShouldHaveLength, 1)
 		if a.Failed() {
 			_, file, line, _ := runtime.Caller(1)
 			t.Errorf("\n%s:%d", file, line)
@@ -170,7 +170,7 @@ func TestHandleDownlinkADR(t *testing.T) {
 		message = adrInitDownlinkMessage()
 		err := ns.handleDownlinkADR(message, dev)
 		a.So(err, ShouldBeNil)
-		a.So(message.Message.GetLorawan().GetMacPayload().FOpts, ShouldHaveLength, 1)
+		a.So(message.Message.GetLoRaWAN().GetMACPayload().FOpts, ShouldHaveLength, 1)
 		if a.Failed() {
 			_, file, line, _ := runtime.Caller(1)
 			t.Errorf("\n%s:%d", file, line)
@@ -206,9 +206,9 @@ func TestHandleDownlinkADR(t *testing.T) {
 
 	err := ns.handleDownlinkADR(message, dev)
 	a.So(err, ShouldBeNil)
-	fOpts := message.Message.GetLorawan().GetMacPayload().FOpts
+	fOpts := message.Message.GetLoRaWAN().GetMACPayload().FOpts
 	a.So(fOpts, ShouldHaveLength, 2)
-	a.So(fOpts[1].Cid, ShouldEqual, lorawan.LinkADRReq)
+	a.So(fOpts[1].CID, ShouldEqual, lorawan.LinkADRReq)
 	payload := new(lorawan.LinkADRReqPayload)
 	payload.UnmarshalBinary(fOpts[1].Payload)
 	a.So(payload.DataRate, ShouldEqual, 5) // SF7BW125
@@ -223,9 +223,9 @@ func TestHandleDownlinkADR(t *testing.T) {
 		message := adrInitDownlinkMessage()
 		err := ns.handleDownlinkADR(message, dev)
 		a.So(err, ShouldBeNil)
-		fOpts := message.Message.GetLorawan().GetMacPayload().FOpts
+		fOpts := message.Message.GetLoRaWAN().GetMACPayload().FOpts
 		a.So(fOpts, ShouldHaveLength, 2)
-		a.So(fOpts[1].Cid, ShouldEqual, lorawan.LinkADRReq)
+		a.So(fOpts[1].CID, ShouldEqual, lorawan.LinkADRReq)
 		payload := new(lorawan.LinkADRReqPayload)
 		payload.UnmarshalBinary(fOpts[1].Payload)
 		a.So(payload.DataRate, ShouldEqual, 5) // SF7BW125

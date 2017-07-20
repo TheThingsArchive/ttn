@@ -6,7 +6,7 @@ package random
 import (
 	"testing"
 
-	"github.com/TheThingsNetwork/ttn/api"
+	"github.com/TheThingsNetwork/api"
 	s "github.com/smartystreets/assertions"
 )
 

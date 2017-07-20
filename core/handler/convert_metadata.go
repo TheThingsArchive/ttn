@@ -6,9 +6,9 @@ package handler
 import (
 	"strings"
 
+	pb_broker "github.com/TheThingsNetwork/api/broker"
+	pb_gateway "github.com/TheThingsNetwork/api/gateway"
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
-	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
-	pb_gateway "github.com/TheThingsNetwork/ttn/api/gateway"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
 )
@@ -19,7 +19,7 @@ func (h *handler) ConvertMetadata(ctx ttnlog.Interface, ttnUp *pb_broker.Dedupli
 
 	// Transform Metadata
 	appUp.Metadata.Time = types.BuildTime(ttnUp.ServerTime)
-	if lorawan := ttnUp.ProtocolMetadata.GetLorawan(); lorawan != nil {
+	if lorawan := ttnUp.ProtocolMetadata.GetLoRaWAN(); lorawan != nil {
 		appUp.Metadata.Modulation = lorawan.Modulation.String()
 		appUp.Metadata.DataRate = lorawan.DataRate
 		appUp.Metadata.Bitrate = lorawan.BitRate
@@ -36,14 +36,14 @@ func (h *handler) ConvertMetadata(ctx ttnlog.Interface, ttnUp *pb_broker.Dedupli
 		}
 
 		gatewayMetadata := types.GatewayMetadata{
-			GtwID:      in.GatewayId,
+			GtwID:      in.GatewayID,
 			GtwTrusted: in.GatewayTrusted,
 			Timestamp:  in.Timestamp,
 			Time:       types.BuildTime(in.Time),
 			Channel:    in.Channel,
 			RFChain:    in.RfChain,
-			RSSI:       in.Rssi,
-			SNR:        in.Snr,
+			RSSI:       in.RSSI,
+			SNR:        in.SNR,
 		}
 
 		if location := in.GetLocation(); location != nil {
@@ -60,8 +60,8 @@ func (h *handler) ConvertMetadata(ctx ttnlog.Interface, ttnUp *pb_broker.Dedupli
 			for _, antenna := range antennas {
 				gatewayMetadata.Antenna = uint8(antenna.Antenna)
 				gatewayMetadata.Channel = antenna.Channel
-				gatewayMetadata.RSSI = antenna.Rssi
-				gatewayMetadata.SNR = antenna.Snr
+				gatewayMetadata.RSSI = antenna.RSSI
+				gatewayMetadata.SNR = antenna.SNR
 				appUp.Metadata.Gateways = append(appUp.Metadata.Gateways, gatewayMetadata)
 			}
 		} else {

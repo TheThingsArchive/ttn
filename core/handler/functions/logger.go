@@ -4,7 +4,7 @@
 package functions
 
 import (
-	pb_handler "github.com/TheThingsNetwork/ttn/api/handler"
+	pb_handler "github.com/TheThingsNetwork/api/handler"
 	"github.com/robertkrimen/otto"
 )
 

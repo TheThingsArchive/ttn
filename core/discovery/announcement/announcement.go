@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	pb "github.com/TheThingsNetwork/ttn/api/discovery"
+	pb "github.com/TheThingsNetwork/api/discovery"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/fatih/structs"
 )
@@ -31,8 +31,8 @@ type AppEUIMetadata struct {
 // ToProto implements the Metadata interface
 func (m AppEUIMetadata) ToProto() *pb.Metadata {
 	return &pb.Metadata{
-		Metadata: &pb.Metadata_AppEui{
-			AppEui: m.AppEUI.Bytes(),
+		Metadata: &pb.Metadata_AppEUI{
+			AppEUI: m.AppEUI.Bytes(),
 		},
 	}
 }
@@ -50,8 +50,8 @@ type AppIDMetadata struct {
 // ToProto implements the Metadata interface
 func (m AppIDMetadata) ToProto() *pb.Metadata {
 	return &pb.Metadata{
-		Metadata: &pb.Metadata_AppId{
-			AppId: m.AppID,
+		Metadata: &pb.Metadata_AppID{
+			AppID: m.AppID,
 		},
 	}
 }
@@ -82,14 +82,14 @@ func (m PrefixMetadata) MarshalText() ([]byte, error) {
 
 // MetadataFromProto converts a protocol buffer metadata to a Metadata
 func MetadataFromProto(proto *pb.Metadata) Metadata {
-	if euiBytes := proto.GetAppEui(); euiBytes != nil {
+	if euiBytes := proto.GetAppEUI(); euiBytes != nil {
 		eui := new(types.AppEUI)
 		if err := eui.Unmarshal(euiBytes); err != nil {
 			return nil
 		}
 		return AppEUIMetadata{*eui}
 	}
-	if id := proto.GetAppId(); id != "" {
+	if id := proto.GetAppID(); id != "" {
 		return AppIDMetadata{id}
 	}
 	if prefixBytes := proto.GetDevAddrPrefix(); prefixBytes != nil {
@@ -189,7 +189,7 @@ func (a Announcement) ToProto() *pb.Announcement {
 		metadata = append(metadata, meta.ToProto())
 	}
 	return &pb.Announcement{
-		Id:             a.ID,
+		ID:             a.ID,
 		ServiceName:    a.ServiceName,
 		ServiceVersion: a.ServiceVersion,
 		Description:    a.Description,
@@ -212,7 +212,7 @@ func FromProto(a *pb.Announcement) Announcement {
 		metadata = append(metadata, MetadataFromProto(meta))
 	}
 	return Announcement{
-		ID:             a.Id,
+		ID:             a.ID,
 		ServiceName:    a.ServiceName,
 		ServiceVersion: a.ServiceVersion,
 		Description:    a.Description,

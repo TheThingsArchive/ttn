@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/TheThingsNetwork/ttn/api"
-	"github.com/TheThingsNetwork/ttn/api/router"
+	"github.com/TheThingsNetwork/api"
+	"github.com/TheThingsNetwork/api/router"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/spf13/cobra"
@@ -34,7 +34,7 @@ var gatewaysStatusCmd = &cobra.Command{
 		ctx = ctx.WithField("GatewayID", gatewayID)
 
 		resp, err := manager.GatewayStatus(util.GetContext(ctx), &router.GatewayStatusRequest{
-			GatewayId: gatewayID,
+			GatewayID: gatewayID,
 		})
 		if err != nil {
 			ctx.WithError(errors.FromGRPCError(err)).Fatal("Could not get status of gateway.")
@@ -52,7 +52,7 @@ var gatewaysStatusCmd = &cobra.Command{
 		printKV("Contact email", resp.Status.ContactEmail)
 		printKV("Frequency Plan", resp.Status.FrequencyPlan)
 		printKV("Bridge", resp.Status.Bridge)
-		printKV("IP Address", strings.Join(resp.Status.Ip, ", "))
+		printKV("IP Address", strings.Join(resp.Status.IP, ", "))
 		printKV("Location", func() interface{} {
 			if location := resp.Status.Location; location != nil && !(location.Latitude == 0 && location.Longitude == 0) {
 				return fmt.Sprintf("(%.6f, %.6f; source %s)", location.Latitude, location.Longitude, strings.ToLower(location.Source.String()))
@@ -60,7 +60,7 @@ var gatewaysStatusCmd = &cobra.Command{
 			return "not available"
 		}())
 		printKV("Rtt", func() interface{} {
-			if t := resp.Status.Rtt; t != 0 {
+			if t := resp.Status.RTT; t != 0 {
 				return time.Duration(t)
 			}
 			return "not available"

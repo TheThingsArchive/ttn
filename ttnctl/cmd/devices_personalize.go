@@ -6,9 +6,9 @@ package cmd
 import (
 	"strings"
 
+	"github.com/TheThingsNetwork/api"
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/go-utils/random"
-	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/spf13/cobra"
@@ -72,7 +72,7 @@ var devicesPersonalizeCmd = &cobra.Command{
 		ctx.Info("Requesting DevAddr for device...")
 
 		var constraints []string
-		if lorawan := dev.GetLorawanDevice(); lorawan != nil && lorawan.ActivationConstraints != "" {
+		if lorawan := dev.GetLoRaWANDevice(); lorawan != nil && lorawan.ActivationConstraints != "" {
 			constraints = strings.Split(lorawan.ActivationConstraints, ",")
 		}
 		constraints = append(constraints, "abp")
@@ -83,12 +83,12 @@ var devicesPersonalizeCmd = &cobra.Command{
 		}
 
 		var emptyAppKey types.AppKey
-		dev.GetLorawanDevice().AppKey = &emptyAppKey
-		dev.GetLorawanDevice().DevAddr = &devAddr
-		dev.GetLorawanDevice().NwkSKey = &nwkSKey
-		dev.GetLorawanDevice().AppSKey = &appSKey
-		dev.GetLorawanDevice().FCntUp = 0
-		dev.GetLorawanDevice().FCntDown = 0
+		dev.GetLoRaWANDevice().AppKey = &emptyAppKey
+		dev.GetLoRaWANDevice().DevAddr = &devAddr
+		dev.GetLoRaWANDevice().NwkSKey = &nwkSKey
+		dev.GetLoRaWANDevice().AppSKey = &appSKey
+		dev.GetLoRaWANDevice().FCntUp = 0
+		dev.GetLoRaWANDevice().FCntDown = 0
 
 		err = manager.SetDevice(dev)
 		if err != nil {

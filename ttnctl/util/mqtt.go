@@ -75,7 +75,7 @@ func getAppMQTTCredentials(ctx ttnlog.Interface, accessKey string) (string, stri
 		return "", "", fmt.Errorf("Access key with name %s does not exist", accessKey)
 	}
 
-	var keyIdx int
+	var keyIDx int
 	switch len(app.AccessKeys) {
 	case 0:
 		return "", "", errors.New("Can not connect to MQTT. Your application does not have any access keys.")
@@ -100,12 +100,12 @@ func getAppMQTTCredentials(ctx ttnlog.Interface, accessKey string) (string, stri
 
 		fmt.Println("Which one do you want to use?")
 		fmt.Printf("Enter the number (1 - %d) > ", len(app.AccessKeys))
-		fmt.Scanf("%d", &keyIdx)
-		keyIdx--
+		fmt.Scanf("%d", &keyIDx)
+		keyIDx--
 	}
 
-	if keyIdx < 0 || keyIdx >= len(app.AccessKeys) {
+	if keyIDx < 0 || keyIDx >= len(app.AccessKeys) {
 		return "", "", errors.New("Invalid choice for access key")
 	}
-	return appID, app.AccessKeys[keyIdx].Key, nil
+	return appID, app.AccessKeys[keyIDx].Key, nil
 }

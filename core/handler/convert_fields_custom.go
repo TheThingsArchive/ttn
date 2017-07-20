@@ -8,7 +8,7 @@ import (
 	"reflect"
 	"time"
 
-	pb_handler "github.com/TheThingsNetwork/ttn/api/handler"
+	pb_handler "github.com/TheThingsNetwork/api/handler"
 	"github.com/TheThingsNetwork/ttn/core/handler/functions"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 )

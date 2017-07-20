@@ -6,7 +6,7 @@ package networkserver
 import (
 	"testing"
 
-	pb "github.com/TheThingsNetwork/ttn/api/networkserver"
+	pb "github.com/TheThingsNetwork/api/networkserver"
 	. "github.com/smartystreets/assertions"
 )
 

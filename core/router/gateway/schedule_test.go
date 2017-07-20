@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	router_pb "github.com/TheThingsNetwork/ttn/api/router"
+	router_pb "github.com/TheThingsNetwork/api/router"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/assertions"
 )

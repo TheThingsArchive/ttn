@@ -7,12 +7,12 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/TheThingsNetwork/api"
+	"github.com/TheThingsNetwork/api/handler"
+	"github.com/TheThingsNetwork/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/go-account-lib/rights"
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/go-utils/random"
-	"github.com/TheThingsNetwork/ttn/api"
-	"github.com/TheThingsNetwork/ttn/api/handler"
-	"github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/spf13/cobra"
@@ -57,14 +57,14 @@ var devicesRegisterOnJoinCmd = &cobra.Command{
 		ctx.Warn("measures, it may corrupt your entire application if even one of your devices gets compromised.")
 
 		device := &handler.Device{
-			AppId:       appID,
-			DevId:       devID,
+			AppID:       appID,
+			DevID:       devID,
 			Description: fmt.Sprintf("Device template for on-join registrations for %s", appEUI),
-			Device: &handler.Device_LorawanDevice{LorawanDevice: &lorawan.Device{
-				AppId:         appID,
-				DevId:         devID,
-				AppEui:        &appEUI,
-				DevEui:        &devEUI,
+			Device: &handler.Device_LoRaWANDevice{LoRaWANDevice: &lorawan.Device{
+				AppID:         appID,
+				DevID:         devID,
+				AppEUI:        &appEUI,
+				DevEUI:        &devEUI,
 				AppKey:        &appKey,
 				Uses32BitFCnt: true,
 			}},

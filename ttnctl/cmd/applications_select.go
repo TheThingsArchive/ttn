@@ -42,8 +42,8 @@ var applicationsSelectCmd = &cobra.Command{
 			appEUIArg, _ = types.ParseAppEUI(args[1])
 		}
 
-		var appIdx int
-		var euiIdx int
+		var appIDx int
+		var euiIDx int
 
 	selectAppID:
 		switch len(apps) {
@@ -59,7 +59,7 @@ var applicationsSelectCmd = &cobra.Command{
 			for i, app := range apps {
 				table.AddRow(i+1, app.ID, app.Name)
 				if appIDArg == app.ID {
-					appIdx = i
+					appIDx = i
 					break selectAppID
 				}
 			}
@@ -72,14 +72,14 @@ var applicationsSelectCmd = &cobra.Command{
 
 			fmt.Println("Which one do you want to use?")
 			fmt.Printf("Enter the number (1 - %d) > ", len(apps))
-			fmt.Scanf("%d", &appIdx)
-			appIdx--
+			fmt.Scanf("%d", &appIDx)
+			appIDx--
 		}
 
-		if appIdx < 0 || appIdx >= len(apps) {
+		if appIDx < 0 || appIDx >= len(apps) {
 			ctx.Fatal("Invalid choice for application")
 		}
-		app := apps[appIdx]
+		app := apps[appIDx]
 
 	selectAppEUI:
 		switch len(app.EUIs) {
@@ -94,7 +94,7 @@ var applicationsSelectCmd = &cobra.Command{
 			for i, eui := range app.EUIs {
 				table.AddRow(i+1, eui)
 				if appEUIArg == eui {
-					appIdx = i
+					appIDx = i
 					break selectAppEUI
 				}
 			}
@@ -107,14 +107,14 @@ var applicationsSelectCmd = &cobra.Command{
 
 			fmt.Println("Which one do you want to use?")
 			fmt.Printf("Enter the number (1 - %d) > ", len(app.EUIs))
-			fmt.Scanf("%d", &euiIdx)
-			euiIdx--
+			fmt.Scanf("%d", &euiIDx)
+			euiIDx--
 		}
 
-		if euiIdx < 0 || euiIdx >= len(apps) {
+		if euiIDx < 0 || euiIDx >= len(apps) {
 			ctx.Fatal("Invalid choice for EUI")
 		}
-		eui := app.EUIs[euiIdx]
+		eui := app.EUIs[euiIDx]
 
 		util.SetApp(ctx, app.ID, eui)
 

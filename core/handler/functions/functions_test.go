@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	pb_handler "github.com/TheThingsNetwork/ttn/api/handler"
+	pb_handler "github.com/TheThingsNetwork/api/handler"
 	"github.com/robertkrimen/otto"
 
 	. "github.com/smartystreets/assertions"

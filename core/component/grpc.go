@@ -6,9 +6,9 @@ package component
 import (
 	"math"
 
+	"github.com/TheThingsNetwork/api/trace"
 	"github.com/TheThingsNetwork/go-utils/grpc/rpcerror"
 	"github.com/TheThingsNetwork/go-utils/grpc/rpclog"
-	"github.com/TheThingsNetwork/ttn/api/trace"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/mwitkow/go-grpc-middleware" // See https://github.com/grpc/grpc-go/issues/711"
 	"google.golang.org/grpc"
@@ -40,7 +40,7 @@ func init() {
 
 	// Initialize TTN tracing
 	OnInitialize(func(c *Component) error {
-		trace.SetComponent(c.Identity.ServiceName, c.Identity.Id)
+		trace.SetComponent(c.Identity.ServiceName, c.Identity.ID)
 		return nil
 	})
 }

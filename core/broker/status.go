@@ -4,8 +4,8 @@
 package broker
 
 import (
-	"github.com/TheThingsNetwork/ttn/api"
-	pb "github.com/TheThingsNetwork/ttn/api/broker"
+	"github.com/TheThingsNetwork/api"
+	pb "github.com/TheThingsNetwork/api/broker"
 	"github.com/TheThingsNetwork/ttn/api/stats"
 	"github.com/rcrowley/go-metrics"
 )

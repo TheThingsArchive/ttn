@@ -4,7 +4,7 @@
 package band
 
 import (
-	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
+	pb_lorawan "github.com/TheThingsNetwork/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/brocaar/lorawan"
@@ -18,8 +18,8 @@ type FrequencyPlan struct {
 	CFList *lorawan.CFList
 }
 
-func (f *FrequencyPlan) GetDataRateStringForIndex(drIdx int) (string, error) {
-	dr, err := types.ConvertDataRate(f.DataRates[drIdx])
+func (f *FrequencyPlan) GetDataRateStringForIndex(drIDx int) (string, error) {
+	dr, err := types.ConvertDataRate(f.DataRates[drIDx])
 	if err != nil {
 		return "", err
 	}

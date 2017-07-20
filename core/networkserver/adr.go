@@ -6,8 +6,8 @@ package networkserver
 import (
 	"math"
 
-	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
-	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
+	pb_broker "github.com/TheThingsNetwork/api/broker"
+	pb_lorawan "github.com/TheThingsNetwork/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core/band"
 	"github.com/TheThingsNetwork/ttn/core/networkserver/device"
 	"github.com/brocaar/lorawan"
@@ -39,34 +39,34 @@ func lossPercentage(frames []*device.Frame) int {
 }
 
 func (n *networkServer) handleUplinkADR(message *pb_broker.DeduplicatedUplinkMessage, dev *device.Device) error {
-	lorawanUplinkMac := message.GetMessage().GetLorawan().GetMacPayload()
-	lorawanDownlinkMac := message.GetResponseTemplate().GetMessage().GetLorawan().GetMacPayload()
+	lorawanUplinkMAC := message.GetMessage().GetLoRaWAN().GetMACPayload()
+	lorawanDownlinkMAC := message.GetResponseTemplate().GetMessage().GetLoRaWAN().GetMACPayload()
 
 	history, err := n.devices.Frames(dev.AppEUI, dev.DevEUI)
 	if err != nil {
 		return err
 	}
 
-	if lorawanUplinkMac.Adr {
+	if lorawanUplinkMAC.ADR {
 		if err := history.Push(&device.Frame{
-			FCnt:         lorawanUplinkMac.FCnt,
+			FCnt:         lorawanUplinkMAC.FCnt,
 			SNR:          bestSNR(message.GetGatewayMetadata()),
 			GatewayCount: uint32(len(message.GatewayMetadata)),
 		}); err != nil {
 			n.Ctx.WithError(err).Error("Could not push frame for device")
 		}
 		if dev.ADR.Band == "" {
-			dev.ADR.Band = message.GetProtocolMetadata().GetLorawan().GetFrequencyPlan().String()
+			dev.ADR.Band = message.GetProtocolMetadata().GetLoRaWAN().GetFrequencyPlan().String()
 		}
 
-		dataRate := message.GetProtocolMetadata().GetLorawan().GetDataRate()
+		dataRate := message.GetProtocolMetadata().GetLoRaWAN().GetDataRate()
 		if dev.ADR.DataRate != dataRate {
 			dev.ADR.DataRate = dataRate
 			dev.ADR.SendReq = true // schedule a LinkADRReq
 		}
-		if lorawanUplinkMac.AdrAckReq {
+		if lorawanUplinkMAC.ADRAckReq {
 			dev.ADR.SendReq = true        // schedule a LinkADRReq
-			lorawanDownlinkMac.Ack = true // force a downlink
+			lorawanDownlinkMAC.Ack = true // force a downlink
 		}
 	} else {
 		// Clear history and reset settings
@@ -131,13 +131,13 @@ func (n *networkServer) handleDownlinkADR(message *pb_broker.DownlinkMessage, de
 	if err != nil {
 		return err
 	}
-	drIdx, err := fp.GetDataRateIndexFor(dataRate)
+	drIDx, err := fp.GetDataRateIndexFor(dataRate)
 	if err != nil {
 		return err
 	}
-	powerIdx, err := fp.GetTxPowerIndexFor(txPower)
+	powerIDx, err := fp.GetTxPowerIndexFor(txPower)
 	if err != nil {
-		powerIdx, _ = fp.GetTxPowerIndexFor(fp.DefaultTXPower)
+		powerIDx, _ = fp.GetTxPowerIndexFor(fp.DefaultTXPower)
 	}
 
 	var nbTrans = dev.ADR.NbTrans
@@ -167,10 +167,10 @@ func (n *networkServer) handleDownlinkADR(message *pb_broker.DownlinkMessage, de
 	dev.ADR.DataRate, dev.ADR.TxPower, dev.ADR.NbTrans = dataRate, txPower, nbTrans
 
 	// Set MAC command
-	lorawanDownlinkMac := message.GetMessage().GetLorawan().GetMacPayload()
+	lorawanDownlinkMAC := message.GetMessage().GetLoRaWAN().GetMACPayload()
 	response := &lorawan.LinkADRReqPayload{
-		DataRate: uint8(drIdx),
-		TXPower:  uint8(powerIdx),
+		DataRate: uint8(drIDx),
+		TXPower:  uint8(powerIDx),
 		Redundancy: lorawan.Redundancy{
 			ChMaskCntl: 0, // Different for US/AU
 			NbRep:      uint8(dev.ADR.NbTrans),
@@ -178,7 +178,7 @@ func (n *networkServer) handleDownlinkADR(message *pb_broker.DownlinkMessage, de
 	}
 	for i, ch := range fp.UplinkChannels { // Different for US/AU
 		for _, dr := range ch.DataRates {
-			if dr == drIdx {
+			if dr == drIDx {
 				response.ChMask[i] = true
 			}
 		}
@@ -186,18 +186,18 @@ func (n *networkServer) handleDownlinkADR(message *pb_broker.DownlinkMessage, de
 	responsePayload, _ := response.MarshalBinary()
 
 	// Remove LinkADRReq if already added
-	fOpts := make([]pb_lorawan.MACCommand, 0, len(lorawanDownlinkMac.FOpts)+1)
-	for _, existing := range lorawanDownlinkMac.FOpts {
-		if existing.Cid != uint32(lorawan.LinkADRReq) {
+	fOpts := make([]pb_lorawan.MACCommand, 0, len(lorawanDownlinkMAC.FOpts)+1)
+	for _, existing := range lorawanDownlinkMAC.FOpts {
+		if existing.CID != uint32(lorawan.LinkADRReq) {
 			fOpts = append(fOpts, existing)
 		}
 	}
 	fOpts = append(fOpts, pb_lorawan.MACCommand{
-		Cid:     uint32(lorawan.LinkADRReq),
+		CID:     uint32(lorawan.LinkADRReq),
 		Payload: responsePayload,
 	})
 
-	lorawanDownlinkMac.FOpts = fOpts
+	lorawanDownlinkMAC.FOpts = fOpts
 
 	return nil
 }

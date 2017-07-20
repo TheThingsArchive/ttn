@@ -12,8 +12,8 @@ import (
 	"os/signal"
 	"syscall"
 
+	pb "github.com/TheThingsNetwork/api/discovery"
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
-	pb "github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/api/pool"
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/discovery"

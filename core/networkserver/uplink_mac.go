@@ -6,19 +6,19 @@ package networkserver
 import (
 	"fmt"
 
+	pb_broker "github.com/TheThingsNetwork/api/broker"
+	pb_lorawan "github.com/TheThingsNetwork/api/protocol/lorawan"
+	"github.com/TheThingsNetwork/api/trace"
 	"github.com/TheThingsNetwork/go-utils/log"
-	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
-	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
-	"github.com/TheThingsNetwork/ttn/api/trace"
 	"github.com/TheThingsNetwork/ttn/core/networkserver/device"
 	"github.com/brocaar/lorawan"
 )
 
 func (n *networkServer) handleUplinkMAC(message *pb_broker.DeduplicatedUplinkMessage, dev *device.Device) error {
-	lorawanUplinkMsg := message.GetMessage().GetLorawan()
-	lorawanUplinkMac := lorawanUplinkMsg.GetMacPayload()
-	lorawanDownlinkMsg := message.GetResponseTemplate().GetMessage().GetLorawan()
-	lorawanDownlinkMac := lorawanDownlinkMsg.GetMacPayload()
+	lorawanUplinkMsg := message.GetMessage().GetLoRaWAN()
+	lorawanUplinkMAC := lorawanUplinkMsg.GetMACPayload()
+	lorawanDownlinkMsg := message.GetResponseTemplate().GetMessage().GetLoRaWAN()
+	lorawanDownlinkMAC := lorawanDownlinkMsg.GetMACPayload()
 
 	ctx := n.Ctx.WithFields(log.Fields{
 		"AppEUI": dev.AppEUI,
@@ -30,7 +30,7 @@ func (n *networkServer) handleUplinkMAC(message *pb_broker.DeduplicatedUplinkMes
 	// Confirmed Uplink
 	if lorawanUplinkMsg.IsConfirmed() {
 		message.Trace = message.Trace.WithEvent("set ack")
-		lorawanDownlinkMac.Ack = true
+		lorawanDownlinkMAC.Ack = true
 	}
 
 	// Adaptive DataRate
@@ -39,16 +39,16 @@ func (n *networkServer) handleUplinkMAC(message *pb_broker.DeduplicatedUplinkMes
 	}
 
 	// MAC Commands
-	for _, cmd := range lorawanUplinkMac.FOpts {
-		switch cmd.Cid {
+	for _, cmd := range lorawanUplinkMAC.FOpts {
+		switch cmd.CID {
 		case uint32(lorawan.LinkCheckReq):
 			response := &lorawan.LinkCheckAnsPayload{
-				Margin: uint8(linkMargin(message.GetProtocolMetadata().GetLorawan().DataRate, bestSNR(message.GetGatewayMetadata()))),
+				Margin: uint8(linkMargin(message.GetProtocolMetadata().GetLoRaWAN().DataRate, bestSNR(message.GetGatewayMetadata()))),
 				GwCnt:  uint8(len(message.GatewayMetadata)),
 			}
 			responsePayload, _ := response.MarshalBinary()
-			lorawanDownlinkMac.FOpts = append(lorawanDownlinkMac.FOpts, pb_lorawan.MACCommand{
-				Cid:     uint32(lorawan.LinkCheckAns),
+			lorawanDownlinkMAC.FOpts = append(lorawanDownlinkMAC.FOpts, pb_lorawan.MACCommand{
+				CID:     uint32(lorawan.LinkCheckAns),
 				Payload: responsePayload,
 			})
 			message.Trace = message.Trace.WithEvent(trace.HandleMACEvent, macCMD, "link-check")
@@ -76,8 +76,8 @@ func (n *networkServer) handleUplinkMAC(message *pb_broker.DeduplicatedUplinkMes
 	}
 
 	// We can't send MAC on port 0; send them on port 1
-	if len(lorawanDownlinkMac.FOpts) != 0 && lorawanDownlinkMac.FPort == 0 {
-		lorawanDownlinkMac.FPort = 1
+	if len(lorawanDownlinkMAC.FOpts) != 0 && lorawanDownlinkMAC.FPort == 0 {
+		lorawanDownlinkMAC.FPort = 1
 	}
 
 	return nil

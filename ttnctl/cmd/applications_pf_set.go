@@ -9,8 +9,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/TheThingsNetwork/api/handler"
 	"github.com/TheThingsNetwork/go-utils/log"
-	"github.com/TheThingsNetwork/ttn/api/handler"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/spf13/cobra"
 )
@@ -65,7 +65,7 @@ Port: 1
 
 		app, err := manager.GetApplication(appID)
 		if err != nil && strings.Contains(err.Error(), "not found") {
-			app = &handler.Application{AppId: appID}
+			app = &handler.Application{AppID: appID}
 		} else if err != nil {
 			ctx.WithError(err).Fatal("Could not get existing application.")
 		}

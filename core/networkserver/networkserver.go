@@ -6,11 +6,11 @@ package networkserver
 import (
 	"time"
 
+	pb_broker "github.com/TheThingsNetwork/api/broker"
+	pb_handler "github.com/TheThingsNetwork/api/handler"
+	"github.com/TheThingsNetwork/api/monitor/monitorclient"
+	pb "github.com/TheThingsNetwork/api/networkserver"
 	"github.com/TheThingsNetwork/go-utils/grpc/auth"
-	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
-	pb_handler "github.com/TheThingsNetwork/ttn/api/handler"
-	"github.com/TheThingsNetwork/ttn/api/monitor/monitorclient"
-	pb "github.com/TheThingsNetwork/ttn/api/networkserver"
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/networkserver/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
