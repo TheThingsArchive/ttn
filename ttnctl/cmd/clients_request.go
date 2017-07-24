@@ -12,18 +12,15 @@ import (
 var clientRequestCmd = &cobra.Command{
 	Use:   "request [Name] [Description]",
 	Short: "Request a client",
-	Long:  "ttnctl clients request can be used to request an OAuth client",
-	Example: `$ ttnctl clients request oauthClient "Client used to consult and edit gateway information" --uri "https://gateways.thethings.network/oauth/callback" --scope "profile,gateways" --grants "authorization_code,refresh_token"
-  INFO OAuth client requested OAuthClientName=oauthClient
+	Long:  "ttnctl clients request can be used to request an OAuth client from the network staff.",
+	Example: `$ ttnctl clients request my-gateway-editor "Client used to consult and edit gateway information" --uri "https://mygatewayclient.org/oauth/callback" --scope "profile,gateways" --grants "authorization_code,refresh_token"
+  INFO OAuth client requested OAuthClientName=my-gateway-editor
 `,
 	Run: func(cmd *cobra.Command, args []string) {
-		assertArgsLength(cmd, args, 1, 2)
+		assertArgsLength(cmd, args, 2, 2)
 
 		var name = args[0]
-		var description string
-		if len(args) >= 2 {
-			description = args[1]
-		}
+		var description = args[1]
 
 		ctx = ctx.WithField("OAuthClientName", name)
 

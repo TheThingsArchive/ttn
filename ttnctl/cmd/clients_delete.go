@@ -12,8 +12,8 @@ var clientDeleteCmd = &cobra.Command{
 	Use:   "delete",
 	Short: "Delete an OAuth client",
 	Long:  "ttnctl clients delete removes an OAuth client.",
-	Example: `$ ttnctl clients delete oauthclient1
-  INFO OAuth client removed successfully OAuthClientName=oauthclient1
+	Example: `$ ttnctl clients delete my-gateway-client
+  INFO OAuth client deleted successfully OAuthClientName=my-gateway-client
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		assertArgsLength(cmd, args, 1, 1)
@@ -27,7 +27,7 @@ var clientDeleteCmd = &cobra.Command{
 			ctx.WithError(err).Fatal("Failed to delete OAuth client")
 		}
 
-		ctx.Info("OAuth client removed successfully")
+		ctx.Info("OAuth client deleted successfully")
 	},
 }
 

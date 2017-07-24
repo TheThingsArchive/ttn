@@ -6,17 +6,16 @@ package cmd
 import (
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 )
 
 var clientEditCmd = &cobra.Command{
 	Use:   "edit [Name]",
-	Short: "Edit the general information of an existing client",
-	Long:  "ttnctl clients edit can be used to edit the general information of an existing OAuth client",
-	Example: `$ ttnctl clients edit oauthClient1 --name oauthclient-new-name --description "OAuth client used by the console"
-  INFO Retrieving OAuth client...               OAuthClientID=oauthClient1
-  INFO Retrieved OAuth client                   OAuthClientID=oauthClient1
-  INFO OAuth client updated                     OAuthClientID=oauthclient-new-name
+	Short: "Edit the OAuth client",
+	Long:  "ttnctl clients edit can be used to edit the information of an OAuth client.",
+	Example: `$ ttnctl clients edit my-gateway-client --description "OAuth client for my personal gateway client"
+  INFO Retrieving OAuth client...               OAuthClientName=my-gateway-client
+  INFO Retrieved OAuth client                   OAuthClientName=my-gateway-client
+  INFO OAuth client edited                      OAuthClientName=my-gateway-client
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		assertArgsLength(cmd, args, 1, 1)
