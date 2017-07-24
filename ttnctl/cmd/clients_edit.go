@@ -24,56 +24,48 @@ var clientEditCmd = &cobra.Command{
 
 		account := util.GetAccount(ctx)
 
-		clientCtx := ctx.WithField("OAuthClientID", name)
+		ctx = ctx.WithField("OAuthClientName", name)
 
-		// Verifying that there is information to edit
-		var flagsSet bool
-		cmd.Flags().Visit(func(*pflag.Flag) { flagsSet = true })
-		if !flagsSet {
-			clientCtx.Fatal("No information to edit")
-		}
-
-		clientCtx.Info("Retrieving OAuth client...")
+		ctx.Info("Retrieving OAuth client...")
 		client, err := account.FindOAuthClient(name)
 		if err != nil {
-			clientCtx.WithError(err).Fatal("Could not find OAuth client")
+			ctx.WithError(err).Fatal("Could not retrieve OAuth client")
 		}
 		if client == nil {
-			clientCtx.Fatal("No OAuth client returned by the server")
+			ctx.Fatal("No OAuth client returned by the server")
 		}
-		clientCtx.Info("Retrieved OAuth client")
+		ctx.Debug("Retrieved OAuth client")
 
-		if newName, err := cmd.Flags().GetString("name"); err != nil {
-			clientCtx.WithError(err).Fatal("Couldn't parse new name")
-		} else if newName != "" {
-			client.Name = newName
-			clientCtx = ctx.WithField("OAuthClientID", newName)
-		}
-
+		var edited bool
 		if newDescription, err := cmd.Flags().GetString("description"); err != nil {
-			clientCtx.WithError(err).Fatal("Couldn't parse description")
+			ctx.WithError(err).Fatal("Nothing to parse")
 		} else if newDescription != "" {
+			edited = true
 			client.Description = newDescription
 		}
 
 		if newURI, err := cmd.Flags().GetString("uri"); err != nil {
-			clientCtx.WithError(err).Fatal("Couldn't parse URI")
+			ctx.WithError(err).Fatal("Nothing to parse")
 		} else if newURI != "" {
+			edited = true
 			client.URI = newURI
+		}
+
+		if !edited {
+			ctx.Fatal("No property to edit")
 		}
 
 		err = account.EditOAuthClient(name, client)
 		if err != nil {
-			ctx.WithField("OAuthClientID", name).WithError(err).Fatal("Couldn't update OAuth client")
+			ctx.WithError(err).Fatal("Couldn't edit OAuth client")
 		}
 
-		clientCtx.Info("OAuth client information updated")
+		ctx.Info("OAuth client edited")
 	},
 }
 
 func init() {
 	clientsCmd.AddCommand(clientEditCmd)
-	clientEditCmd.Flags().String("name", "", "Edit the name of the OAuth client")
 	clientEditCmd.Flags().String("description", "", "Edit the description of the OAuth client")
 	clientEditCmd.Flags().String("uri", "", "Edit the URI of the OAuth client")
 }

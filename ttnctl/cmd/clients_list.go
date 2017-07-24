@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/gosuri/uitable"

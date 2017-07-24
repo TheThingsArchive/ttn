@@ -29,9 +29,13 @@ var clientRequestCmd = &cobra.Command{
 			ctx.WithError(err).Fatal("Error with URI")
 		}
 
-		scope, err := cmd.Flags().GetStringSlice("scope")
+		scopes := make([]string, 0)
+		strScopes, err := cmd.Flags().GetStringSlice("scope")
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not parse scope")
+		}
+		for _, strScope := range strScopes {
+			scopes = append(scopes, strScope)
 		}
 
 		strGrants, err := cmd.Flags().GetStringSlice("grants")
@@ -45,13 +49,15 @@ var clientRequestCmd = &cobra.Command{
 
 		account := util.GetAccount(ctx)
 
-		_, err = account.CreateOAuthClient(&accountlib.OAuthClient{
+		request := accountlib.OAuthClient{
 			Name:        name,
 			Description: description,
 			URI:         uri,
 			Grants:      grants,
-			Scope:       scope,
-		})
+			Scope:       scopes,
+		}
+
+		_, err = account.CreateOAuthClient(&request)
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not request OAuth Client")
 		}
