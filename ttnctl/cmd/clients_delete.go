@@ -9,7 +9,7 @@ import (
 )
 
 var clientDeleteCmd = &cobra.Command{
-	Use:   "delete",
+	Use:   "delete [OAuth client name]",
 	Short: "Delete an OAuth client",
 	Long:  "ttnctl clients delete removes an OAuth client.",
 	Example: `$ ttnctl clients delete my-gateway-client
