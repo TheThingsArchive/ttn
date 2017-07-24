@@ -39,15 +39,15 @@ func (f *FrequencyPlan) ADRSettings(dataRate string, txPower int, snr float32, d
 		return dataRate, txPower, ErrADRUnavailable
 	}
 	margin := linkMargin(dataRate, snr) - deviceMargin
-	drIDx, err := f.GetDataRateIndexFor(dataRate)
+	drIdx, err := f.GetDataRateIndexFor(dataRate)
 	if err != nil {
 		return dataRate, txPower, err
 	}
 	nStep := int(margin / 3)
 
 	// Increase the data rate with each step
-	for nStep > 0 && drIDx < f.ADR.MaxDataRate {
-		drIDx++
+	for nStep > 0 && drIdx < f.ADR.MaxDataRate {
+		drIdx++
 		nStep--
 	}
 
@@ -69,7 +69,7 @@ func (f *FrequencyPlan) ADRSettings(dataRate string, txPower int, snr float32, d
 		txPower = f.ADR.MaxTXPower
 	}
 
-	desiredDataRate, err = f.GetDataRateStringForIndex(drIDx)
+	desiredDataRate, err = f.GetDataRateStringForIndex(drIdx)
 	if err != nil {
 		return dataRate, txPower, err // This should maybe panic; it means that f.ADR is incosistent with f.DataRates
 	}

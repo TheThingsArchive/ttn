@@ -18,8 +18,8 @@ type FrequencyPlan struct {
 	CFList *lorawan.CFList
 }
 
-func (f *FrequencyPlan) GetDataRateStringForIndex(drIDx int) (string, error) {
-	dr, err := types.ConvertDataRate(f.DataRates[drIDx])
+func (f *FrequencyPlan) GetDataRateStringForIndex(drIdx int) (string, error) {
+	dr, err := types.ConvertDataRate(f.DataRates[drIdx])
 	if err != nil {
 		return "", err
 	}

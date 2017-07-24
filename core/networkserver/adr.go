@@ -131,13 +131,13 @@ func (n *networkServer) handleDownlinkADR(message *pb_broker.DownlinkMessage, de
 	if err != nil {
 		return err
 	}
-	drIDx, err := fp.GetDataRateIndexFor(dataRate)
+	drIdx, err := fp.GetDataRateIndexFor(dataRate)
 	if err != nil {
 		return err
 	}
-	powerIDx, err := fp.GetTxPowerIndexFor(txPower)
+	powerIdx, err := fp.GetTxPowerIndexFor(txPower)
 	if err != nil {
-		powerIDx, _ = fp.GetTxPowerIndexFor(fp.DefaultTXPower)
+		powerIdx, _ = fp.GetTxPowerIndexFor(fp.DefaultTXPower)
 	}
 
 	var nbTrans = dev.ADR.NbTrans
@@ -169,8 +169,8 @@ func (n *networkServer) handleDownlinkADR(message *pb_broker.DownlinkMessage, de
 	// Set MAC command
 	lorawanDownlinkMAC := message.GetMessage().GetLoRaWAN().GetMACPayload()
 	response := &lorawan.LinkADRReqPayload{
-		DataRate: uint8(drIDx),
-		TXPower:  uint8(powerIDx),
+		DataRate: uint8(drIdx),
+		TXPower:  uint8(powerIdx),
 		Redundancy: lorawan.Redundancy{
 			ChMaskCntl: 0, // Different for US/AU
 			NbRep:      uint8(dev.ADR.NbTrans),
@@ -178,7 +178,7 @@ func (n *networkServer) handleDownlinkADR(message *pb_broker.DownlinkMessage, de
 	}
 	for i, ch := range fp.UplinkChannels { // Different for US/AU
 		for _, dr := range ch.DataRates {
-			if dr == drIDx {
+			if dr == drIdx {
 				response.ChMask[i] = true
 			}
 		}
