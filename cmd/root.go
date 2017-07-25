@@ -22,10 +22,10 @@ import (
 	jsonHandler "github.com/apex/log/handlers/json"
 	levelHandler "github.com/apex/log/handlers/level"
 	multiHandler "github.com/apex/log/handlers/multi"
-	"github.com/dotpy3/go-elastic"
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/tj/go-elastic"
 	"google.golang.org/grpc/grpclog"
 	"gopkg.in/redis.v5"
 )
