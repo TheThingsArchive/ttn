@@ -6,7 +6,7 @@ package networkserver
 import (
 	"testing"
 
-	pb "github.com/TheThingsNetwork/ttn/api/networkserver"
+	pb "github.com/TheThingsNetwork/api/networkserver"
 	"github.com/TheThingsNetwork/ttn/core/networkserver/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"

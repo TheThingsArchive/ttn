@@ -8,8 +8,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/TheThingsNetwork/api/discovery"
 	"github.com/TheThingsNetwork/ttn/api"
-	"github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/api/pool"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/spf13/cobra"
@@ -61,7 +61,7 @@ var brokerRegisterPrefixCmd = &cobra.Command{
 			}
 			_, err = client.AddMetadata(dscContext, &discovery.MetadataRequest{
 				ServiceName: "broker",
-				Id:          viper.GetString("id"),
+				ID:          viper.GetString("id"),
 				Metadata: &discovery.Metadata{Metadata: &discovery.Metadata_DevAddrPrefix{
 					DevAddrPrefix: prefix.Bytes(),
 				}},

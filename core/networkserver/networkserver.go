@@ -4,14 +4,18 @@
 package networkserver
 
 import (
-	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
-	pb_handler "github.com/TheThingsNetwork/ttn/api/handler"
-	pb_monitor "github.com/TheThingsNetwork/ttn/api/monitor"
-	pb "github.com/TheThingsNetwork/ttn/api/networkserver"
+	"time"
+
+	pb_broker "github.com/TheThingsNetwork/api/broker"
+	pb_handler "github.com/TheThingsNetwork/api/handler"
+	"github.com/TheThingsNetwork/api/monitor/monitorclient"
+	pb "github.com/TheThingsNetwork/api/networkserver"
+	"github.com/TheThingsNetwork/go-utils/grpc/auth"
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/networkserver/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
+	"google.golang.org/grpc"
 	"gopkg.in/redis.v5"
 )
 
@@ -46,7 +50,7 @@ type networkServer struct {
 	netID         [3]byte
 	prefixes      map[types.DevAddrPrefix][]string
 	status        *status
-	monitorStream pb_monitor.GenericStream
+	monitorStream monitorclient.Stream
 }
 
 func (n *networkServer) UsePrefix(prefix types.DevAddrPrefix, usage []string) error {
@@ -87,10 +91,12 @@ func (n *networkServer) Init(c *component.Component) error {
 	}
 	n.Component.SetStatus(component.StatusHealthy)
 	if n.Component.Monitor != nil {
-		n.monitorStream = n.Component.Monitor.NewNetworkServerStreams(n.Identity.Id, n.AccessToken)
-		go n.Component.Monitor.TickStatus(func() {
-			n.monitorStream.Send(n.GetStatus())
-		})
+		n.monitorStream = n.Component.Monitor.NetworkServerClient(n.Context, grpc.PerRPCCredentials(auth.WithStaticToken(n.AccessToken)))
+		go func() {
+			for range time.Tick(n.Component.Config.StatusInterval) {
+				n.monitorStream.Send(n.GetStatus())
+			}
+		}()
 	}
 	return nil
 }

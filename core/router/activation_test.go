@@ -6,7 +6,7 @@ package router
 import (
 	"testing"
 
-	pb "github.com/TheThingsNetwork/ttn/api/router"
+	pb "github.com/TheThingsNetwork/api/router"
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/router/gateway"
 	"github.com/TheThingsNetwork/ttn/core/types"
@@ -37,8 +37,8 @@ func TestHandleActivation(t *testing.T) {
 		Payload:          []byte{},
 		ProtocolMetadata: uplink.ProtocolMetadata,
 		GatewayMetadata:  uplink.GatewayMetadata,
-		AppEui:           &appEUI,
-		DevEui:           &devEUI,
+		AppEUI:           &appEUI,
+		DevEUI:           &devEUI,
 	}
 
 	res, err := r.HandleActivation(gtwID, activation)

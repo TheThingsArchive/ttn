@@ -5,12 +5,15 @@ package handler
 
 import (
 	"fmt"
+	"time"
 
+	pb_broker "github.com/TheThingsNetwork/api/broker"
+	"github.com/TheThingsNetwork/api/broker/brokerclient"
+	pb "github.com/TheThingsNetwork/api/handler"
+	"github.com/TheThingsNetwork/api/monitor/monitorclient"
+	pb_lorawan "github.com/TheThingsNetwork/api/protocol/lorawan"
+	"github.com/TheThingsNetwork/go-utils/grpc/auth"
 	"github.com/TheThingsNetwork/ttn/amqp"
-	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
-	pb "github.com/TheThingsNetwork/ttn/api/handler"
-	pb_monitor "github.com/TheThingsNetwork/ttn/api/monitor"
-	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/handler/application"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
@@ -81,7 +84,7 @@ type handler struct {
 	qEvent chan *types.DeviceEvent
 
 	status        *status
-	monitorStream pb_monitor.GenericStream
+	monitorStream monitorclient.Stream
 }
 
 var (
@@ -170,10 +173,12 @@ func (h *handler) Init(c *component.Component) error {
 
 	h.Component.SetStatus(component.StatusHealthy)
 	if h.Component.Monitor != nil {
-		h.monitorStream = h.Component.Monitor.NewHandlerStreams(h.Identity.Id, h.AccessToken)
-		go h.Component.Monitor.TickStatus(func() {
-			h.monitorStream.Send(h.GetStatus())
-		})
+		h.monitorStream = h.Component.Monitor.HandlerClient(h.Context, grpc.PerRPCCredentials(auth.WithStaticToken(h.AccessToken)))
+		go func() {
+			for range time.Tick(h.Component.Config.StatusInterval) {
+				h.monitorStream.Send(h.GetStatus())
+			}
+		}()
 	}
 
 	return nil
@@ -204,11 +209,11 @@ func (h *handler) associateBroker() error {
 
 	h.downlink = make(chan *pb_broker.DownlinkMessage)
 
-	config := pb_broker.DefaultClientConfig
+	config := brokerclient.DefaultClientConfig
 	config.BackgroundContext = h.Component.Context
-	cli := pb_broker.NewClient(config)
+	cli := brokerclient.NewClient(config)
 	cli.AddServer(h.ttnBrokerID, h.ttnBrokerConn)
-	association := cli.NewHandlerStreams(h.Identity.Id, "")
+	association := cli.NewHandlerStreams(h.Identity.ID, "")
 
 	go func() {
 		for {

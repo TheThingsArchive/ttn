@@ -6,7 +6,7 @@ package broker
 import (
 	"testing"
 
-	pb "github.com/TheThingsNetwork/ttn/api/broker"
+	pb "github.com/TheThingsNetwork/api/broker"
 	. "github.com/smartystreets/assertions"
 )
 

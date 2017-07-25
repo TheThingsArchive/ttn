@@ -12,8 +12,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/TheThingsNetwork/api/discovery"
+	"github.com/TheThingsNetwork/api/discovery/discoveryclient"
 	"github.com/TheThingsNetwork/go-utils/grpc/ttnctx"
-	"github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/utils/security"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"github.com/golang/mock/gomock"
@@ -297,7 +298,7 @@ func TestGetAndVerifyContext(t *testing.T) {
 		a.So(err, assertions.ShouldNotBeNil)
 	}
 
-	c.Identity.Id = "test-context"
+	c.Identity.ID = "test-context"
 	{
 		ctx := c.GetContext("")
 		ctx = metadata.NewIncomingContext(ctx, ttnctx.MetadataFromOutgoingContext(ctx)) // Transform outgoing ctx into incoming ctx
@@ -310,7 +311,7 @@ func TestGetAndVerifyContext(t *testing.T) {
 	c.initBgCtx()
 
 	ctrl := gomock.NewController(t)
-	discoveryClient := discovery.NewMockClient(ctrl)
+	discoveryClient := discoveryclient.NewMockClient(ctrl)
 	c.Discovery = discoveryClient
 
 	discoveryClient.EXPECT().Get("test-service", "test-context").Return(c.Identity, nil)

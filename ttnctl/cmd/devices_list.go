@@ -44,18 +44,18 @@ test 	70B3D57EF0000024	0001D544B2936FCE	26001ADA
 		table.MaxColWidth = 70
 		table.AddRow("DevID", "AppEUI", "DevEUI", "DevAddr", "Description")
 		for _, dev := range devices {
-			if lorawan := dev.GetLorawanDevice(); lorawan != nil {
+			if lorawan := dev.GetLoRaWANDevice(); lorawan != nil {
 				devAddr := lorawan.DevAddr
 				if devAddr.IsEmpty() {
 					devAddr = nil
 				}
-				var devEUI interface{} = lorawan.DevEui
-				if lorawan.DevEui.IsEmpty() {
+				var devEUI interface{} = lorawan.DevEUI
+				if lorawan.DevEUI.IsEmpty() {
 					devEUI = "register on join"
 				}
-				table.AddRow(dev.DevId, lorawan.AppEui, devEUI, devAddr, crop(dev.Description, 40))
+				table.AddRow(dev.DevID, lorawan.AppEUI, devEUI, devAddr, crop(dev.Description, 40))
 			} else {
-				table.AddRow(dev.DevId)
+				table.AddRow(dev.DevID)
 			}
 		}
 

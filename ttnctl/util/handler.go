@@ -4,23 +4,23 @@
 package util
 
 import (
+	"github.com/TheThingsNetwork/api/discovery"
+	"github.com/TheThingsNetwork/api/handler/handlerclient"
 	"github.com/TheThingsNetwork/go-account-lib/scope"
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
-	"github.com/TheThingsNetwork/ttn/api/discovery"
-	"github.com/TheThingsNetwork/ttn/api/handler"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
 )
 
 // GetHandlerManager gets a new HandlerManager for ttnctl
-func GetHandlerManager(ctx ttnlog.Interface, appID string) (*grpc.ClientConn, *handler.ManagerClient) {
+func GetHandlerManager(ctx ttnlog.Interface, appID string) (*grpc.ClientConn, *handlerclient.ManagerClient) {
 	ctx.WithField("Handler", viper.GetString("handler-id")).Info("Discovering Handler...")
 	dscConn, client := GetDiscovery(ctx)
 	defer dscConn.Close()
 	handlerAnnouncement, err := client.Get(GetContext(ctx), &discovery.GetRequest{
 		ServiceName: "handler",
-		Id:          viper.GetString("handler-id"),
+		ID:          viper.GetString("handler-id"),
 	})
 	if err != nil {
 		ctx.WithError(errors.FromGRPCError(err)).Fatal("Could not find Handler")
@@ -33,7 +33,7 @@ func GetHandlerManager(ctx ttnlog.Interface, appID string) (*grpc.ClientConn, *h
 	if err != nil {
 		ctx.WithError(err).Fatal("Could not connect to Handler")
 	}
-	managerClient, err := handler.NewManagerClient(hdlConn, token)
+	managerClient, err := handlerclient.NewManagerClient(hdlConn, token)
 	if err != nil {
 		ctx.WithError(err).Fatal("Could not create Handler Manager")
 	}

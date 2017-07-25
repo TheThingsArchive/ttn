@@ -6,7 +6,7 @@ package handler
 import (
 	"testing"
 
-	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
+	pb_broker "github.com/TheThingsNetwork/api/broker"
 
 	"github.com/TheThingsNetwork/ttn/core/handler/application"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
@@ -17,8 +17,8 @@ import (
 
 func buildCustomUplink(appID string) (*pb_broker.DeduplicatedUplinkMessage, *types.UplinkMessage) {
 	ttnUp := &pb_broker.DeduplicatedUplinkMessage{
-		AppId: appID,
-		DevId: "DevID-1",
+		AppID: appID,
+		DevID: "DevID-1",
 	}
 	appUp := &types.UplinkMessage{
 		FPort:      1,
@@ -120,8 +120,8 @@ func TestConvertFieldsUpCustom(t *testing.T) {
 
 func buildCayenneLPPUplink(appID string) (*pb_broker.DeduplicatedUplinkMessage, *types.UplinkMessage) {
 	ttnUp := &pb_broker.DeduplicatedUplinkMessage{
-		AppId: appID,
-		DevId: "DevID-1",
+		AppID: appID,
+		DevID: "DevID-1",
 	}
 	appUp := &types.UplinkMessage{
 		FPort:      1,
@@ -177,8 +177,8 @@ func buildCustomDownlink() (*pb_broker.DownlinkMessage, *types.DownlinkMessage) 
 	appEUI := types.AppEUI([8]byte{1, 2, 3, 4, 5, 6, 7, 8})
 	devEUI := types.DevEUI([8]byte{1, 2, 3, 4, 5, 6, 7, 8})
 	ttnDown := &pb_broker.DownlinkMessage{
-		AppEui: &appEUI,
-		DevEui: &devEUI,
+		AppEUI: &appEUI,
+		DevEUI: &devEUI,
 	}
 	appDown := &types.DownlinkMessage{
 		FPort:         1,
@@ -263,8 +263,8 @@ func buildCayenneLPPDownlink() (*pb_broker.DownlinkMessage, *types.DownlinkMessa
 	appEUI := types.AppEUI([8]byte{1, 2, 3, 4, 5, 6, 7, 8})
 	devEUI := types.DevEUI([8]byte{1, 2, 3, 4, 5, 6, 7, 8})
 	ttnDown := &pb_broker.DownlinkMessage{
-		AppEui: &appEUI,
-		DevEui: &devEUI,
+		AppEUI: &appEUI,
+		DevEUI: &devEUI,
 	}
 	appDown := &types.DownlinkMessage{
 		FPort:         1,

@@ -7,15 +7,15 @@ import (
 	"fmt"
 	"time"
 
+	pb "github.com/TheThingsNetwork/api/networkserver"
+	pb_lorawan "github.com/TheThingsNetwork/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/go-account-lib/claims"
 	"github.com/TheThingsNetwork/go-account-lib/rights"
-	pb "github.com/TheThingsNetwork/ttn/api/networkserver"
-	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/api/ratelimit"
 	"github.com/TheThingsNetwork/ttn/core/networkserver/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
-	"github.com/golang/protobuf/ptypes/empty"
+	gogo "github.com/gogo/protobuf/types"
 	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -44,7 +44,7 @@ func (n *networkServerManager) getDevice(ctx context.Context, in *pb_lorawan.Dev
 	if n.clientRate.Limit(claims.Subject) {
 		return nil, grpc.Errorf(codes.ResourceExhausted, "Rate limit for client reached")
 	}
-	dev, err := n.networkServer.devices.Get(*in.AppEui, *in.DevEui)
+	dev, err := n.networkServer.devices.Get(*in.AppEUI, *in.DevEUI)
 	if err != nil {
 		return nil, err
 	}
@@ -67,10 +67,10 @@ func (n *networkServerManager) GetDevice(ctx context.Context, in *pb_lorawan.Dev
 	}
 
 	return &pb_lorawan.Device{
-		AppId:            dev.AppID,
-		AppEui:           &dev.AppEUI,
-		DevId:            dev.DevID,
-		DevEui:           &dev.DevEUI,
+		AppID:            dev.AppID,
+		AppEUI:           &dev.AppEUI,
+		DevID:            dev.DevID,
+		DevEUI:           &dev.DevEUI,
 		DevAddr:          &dev.DevAddr,
 		NwkSKey:          &dev.NwkSKey,
 		FCntUp:           dev.FCntUp,
@@ -81,7 +81,7 @@ func (n *networkServerManager) GetDevice(ctx context.Context, in *pb_lorawan.Dev
 	}, nil
 }
 
-func (n *networkServerManager) SetDevice(ctx context.Context, in *pb_lorawan.Device) (*empty.Empty, error) {
+func (n *networkServerManager) SetDevice(ctx context.Context, in *pb_lorawan.Device) (*gogo.Empty, error) {
 	if err := in.Validate(); err != nil {
 		return nil, errors.Wrap(err, "Invalid Device")
 	}
@@ -90,12 +90,12 @@ func (n *networkServerManager) SetDevice(ctx context.Context, in *pb_lorawan.Dev
 	if err != nil {
 		return nil, err
 	}
-	err = checkAppRights(claims, in.AppId, rights.Devices)
+	err = checkAppRights(claims, in.AppID, rights.Devices)
 	if err != nil {
 		return nil, err
 	}
 
-	dev, err := n.getDevice(ctx, &pb_lorawan.DeviceIdentifier{AppEui: in.AppEui, DevEui: in.DevEui})
+	dev, err := n.getDevice(ctx, &pb_lorawan.DeviceIdentifier{AppEUI: in.AppEUI, DevEUI: in.DevEUI})
 	if err != nil && errors.GetErrType(err) != errors.NotFound {
 		return nil, err
 	}
@@ -106,10 +106,10 @@ func (n *networkServerManager) SetDevice(ctx context.Context, in *pb_lorawan.Dev
 		dev.StartUpdate()
 	}
 
-	dev.AppID = in.AppId
-	dev.AppEUI = *in.AppEui
-	dev.DevID = in.DevId
-	dev.DevEUI = *in.DevEui
+	dev.AppID = in.AppID
+	dev.AppEUI = *in.AppEUI
+	dev.DevID = in.DevID
+	dev.DevEUI = *in.DevEUI
 	dev.FCntUp = in.FCntUp
 	dev.FCntDown = in.FCntDown
 	dev.ADR = device.ADRSettings{Band: dev.ADR.Band, Margin: dev.ADR.Margin}
@@ -139,19 +139,19 @@ func (n *networkServerManager) SetDevice(ctx context.Context, in *pb_lorawan.Dev
 		return nil, err
 	}
 
-	return &empty.Empty{}, nil
+	return &gogo.Empty{}, nil
 }
 
-func (n *networkServerManager) DeleteDevice(ctx context.Context, in *pb_lorawan.DeviceIdentifier) (*empty.Empty, error) {
+func (n *networkServerManager) DeleteDevice(ctx context.Context, in *pb_lorawan.DeviceIdentifier) (*gogo.Empty, error) {
 	_, err := n.getDevice(ctx, in)
 	if err != nil {
 		return nil, err
 	}
-	err = n.networkServer.devices.Delete(*in.AppEui, *in.DevEui)
+	err = n.networkServer.devices.Delete(*in.AppEUI, *in.DevEUI)
 	if err != nil {
 		return nil, err
 	}
-	return &empty.Empty{}, nil
+	return &gogo.Empty{}, nil
 }
 
 func (n *networkServerManager) GetPrefixes(ctx context.Context, in *pb_lorawan.PrefixesRequest) (*pb_lorawan.PrefixesResponse, error) {
@@ -178,7 +178,7 @@ func (n *networkServerManager) GetDevAddr(ctx context.Context, in *pb_lorawan.De
 }
 
 func (n *networkServerManager) GetStatus(ctx context.Context, in *pb.StatusRequest) (*pb.Status, error) {
-	if n.networkServer.Identity.Id != "dev" {
+	if n.networkServer.Identity.ID != "dev" {
 		_, err := n.networkServer.ValidateTTNAuthContext(ctx)
 		if err != nil {
 			return nil, errors.Wrap(err, "No access")
@@ -191,7 +191,7 @@ func (n *networkServerManager) GetStatus(ctx context.Context, in *pb.StatusReque
 	return status, nil
 }
 
-// RegisterManager registers this networkserver as a NetworkServerManagerServer (github.com/TheThingsNetwork/ttn/api/networkserver)
+// RegisterManager registers this networkserver as a NetworkServerManagerServer (github.com/TheThingsNetwork/api/networkserver)
 func (n *networkServer) RegisterManager(s *grpc.Server) {
 	server := &networkServerManager{networkServer: n}
 

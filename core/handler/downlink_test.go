@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
+	pb_broker "github.com/TheThingsNetwork/api/broker"
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/handler/application"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
@@ -111,8 +111,8 @@ func TestHandleDownlink(t *testing.T) {
 	h.InitStatus()
 
 	downlink := pb_broker.RandomDownlinkMessage()
-	downlink.AppEui = &appEUI
-	downlink.DevEui = &devEUI
+	downlink.AppEUI = &appEUI
+	downlink.DevEUI = &devEUI
 
 	// Neither payload nor Fields provided : ERROR
 	err = h.HandleDownlink(&types.DownlinkMessage{

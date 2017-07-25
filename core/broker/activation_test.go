@@ -8,10 +8,10 @@ import (
 	"testing"
 	"time"
 
-	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
-	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
-	"github.com/TheThingsNetwork/ttn/api/gateway"
-	"github.com/TheThingsNetwork/ttn/api/protocol"
+	pb_broker "github.com/TheThingsNetwork/api/broker"
+	pb_discovery "github.com/TheThingsNetwork/api/discovery"
+	"github.com/TheThingsNetwork/api/gateway"
+	"github.com/TheThingsNetwork/api/protocol"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/golang/mock/gomock"
 	. "github.com/smartystreets/assertions"
@@ -27,12 +27,12 @@ func TestHandleActivation(t *testing.T) {
 	b := getTestBroker(t)
 	b.ns.EXPECT().PrepareActivation(gomock.Any(), gomock.Any()).Return(&pb_broker.DeduplicatedDeviceActivationRequest{
 		Payload: []byte{},
-		DevEui:  &devEUI,
-		AppEui:  &appEUI,
-		AppId:   "appid",
-		DevId:   "devid",
+		DevEUI:  &devEUI,
+		AppEUI:  &appEUI,
+		AppID:   "appid",
+		DevID:   "devid",
 		GatewayMetadata: []*gateway.RxMetadata{
-			&gateway.RxMetadata{Snr: 1.2, GatewayId: gtwID},
+			&gateway.RxMetadata{SNR: 1.2, GatewayID: gtwID},
 		},
 		ProtocolMetadata: &protocol.RxMetadata{},
 	}, nil)
@@ -40,9 +40,9 @@ func TestHandleActivation(t *testing.T) {
 
 	res, err := b.HandleActivation(&pb_broker.DeviceActivationRequest{
 		Payload:          []byte{},
-		DevEui:           &devEUI,
-		AppEui:           &appEUI,
-		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2, GatewayId: gtwID},
+		DevEUI:           &devEUI,
+		AppEUI:           &appEUI,
+		GatewayMetadata:  &gateway.RxMetadata{SNR: 1.2, GatewayID: gtwID},
 		ProtocolMetadata: &protocol.RxMetadata{},
 	})
 	a.So(err, ShouldNotBeNil)
@@ -58,10 +58,10 @@ func TestDeduplicateActivation(t *testing.T) {
 
 	payload := []byte{0x01, 0x02, 0x03}
 	protocolMetadata := &protocol.RxMetadata{}
-	activation1 := &pb_broker.DeviceActivationRequest{Payload: payload, GatewayMetadata: &gateway.RxMetadata{Snr: 1.2}, ProtocolMetadata: protocolMetadata}
-	activation2 := &pb_broker.DeviceActivationRequest{Payload: payload, GatewayMetadata: &gateway.RxMetadata{Snr: 3.4}, ProtocolMetadata: protocolMetadata}
-	activation3 := &pb_broker.DeviceActivationRequest{Payload: payload, GatewayMetadata: &gateway.RxMetadata{Snr: 5.6}, ProtocolMetadata: protocolMetadata}
-	activation4 := &pb_broker.DeviceActivationRequest{Payload: payload, GatewayMetadata: &gateway.RxMetadata{Snr: 7.8}, ProtocolMetadata: protocolMetadata}
+	activation1 := &pb_broker.DeviceActivationRequest{Payload: payload, GatewayMetadata: &gateway.RxMetadata{SNR: 1.2}, ProtocolMetadata: protocolMetadata}
+	activation2 := &pb_broker.DeviceActivationRequest{Payload: payload, GatewayMetadata: &gateway.RxMetadata{SNR: 3.4}, ProtocolMetadata: protocolMetadata}
+	activation3 := &pb_broker.DeviceActivationRequest{Payload: payload, GatewayMetadata: &gateway.RxMetadata{SNR: 5.6}, ProtocolMetadata: protocolMetadata}
+	activation4 := &pb_broker.DeviceActivationRequest{Payload: payload, GatewayMetadata: &gateway.RxMetadata{SNR: 7.8}, ProtocolMetadata: protocolMetadata}
 
 	b := getTestBroker(t)
 	b.activationDeduplicator = NewDeduplicator(20 * time.Millisecond).(*deduplicator)

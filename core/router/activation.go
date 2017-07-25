@@ -9,19 +9,19 @@ import (
 	"sync"
 	"time"
 
-	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
-	"github.com/TheThingsNetwork/ttn/api/fields"
-	pb_protocol "github.com/TheThingsNetwork/ttn/api/protocol"
-	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
-	pb "github.com/TheThingsNetwork/ttn/api/router"
-	"github.com/TheThingsNetwork/ttn/api/trace"
+	pb_broker "github.com/TheThingsNetwork/api/broker"
+	"github.com/TheThingsNetwork/api/logfields"
+	pb_protocol "github.com/TheThingsNetwork/api/protocol"
+	pb_lorawan "github.com/TheThingsNetwork/api/protocol/lorawan"
+	pb "github.com/TheThingsNetwork/api/router"
+	"github.com/TheThingsNetwork/api/trace"
 	"github.com/TheThingsNetwork/ttn/core/band"
 	"github.com/TheThingsNetwork/ttn/core/router/gateway"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 )
 
 func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivationRequest) (res *pb.DeviceActivationResponse, err error) {
-	ctx := r.Ctx.WithField("GatewayID", gatewayID).WithFields(fields.Get(activation))
+	ctx := r.Ctx.WithField("GatewayID", gatewayID).WithFields(logfields.ForMessage(activation))
 	start := time.Now()
 	var gateway *gateway.Gateway
 	var forwarded bool
@@ -74,15 +74,15 @@ func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivat
 	// Prepare request
 	request := &pb_broker.DeviceActivationRequest{
 		Payload:          activation.Payload,
-		DevEui:           activation.DevEui,
-		AppEui:           activation.AppEui,
+		DevEUI:           activation.DevEUI,
+		AppEUI:           activation.AppEUI,
 		ProtocolMetadata: activation.ProtocolMetadata,
 		GatewayMetadata:  activation.GatewayMetadata,
 		ActivationMetadata: &pb_protocol.ActivationMetadata{
-			Protocol: &pb_protocol.ActivationMetadata_Lorawan{
-				Lorawan: &pb_lorawan.ActivationMetadata{
-					AppEui: activation.AppEui,
-					DevEui: activation.DevEui,
+			Protocol: &pb_protocol.ActivationMetadata_LoRaWAN{
+				LoRaWAN: &pb_lorawan.ActivationMetadata{
+					AppEUI: activation.AppEUI,
+					DevEUI: activation.DevEUI,
 				},
 			},
 		},
@@ -103,15 +103,15 @@ func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivat
 	if err != nil {
 		return nil, err
 	}
-	lorawan := request.ActivationMetadata.GetLorawan()
+	lorawan := request.ActivationMetadata.GetLoRaWAN()
 	lorawan.FrequencyPlan = pb_lorawan.FrequencyPlan(pb_lorawan.FrequencyPlan_value[region])
-	lorawan.Rx1DrOffset = 0
-	lorawan.Rx2Dr = uint32(band.RX2DataRate)
+	lorawan.Rx1DROffset = 0
+	lorawan.Rx2DR = uint32(band.RX2DataRate)
 	lorawan.RxDelay = uint32(band.ReceiveDelay1.Seconds())
 	if band.CFList != nil {
-		lorawan.CfList = new(pb_lorawan.CFList)
+		lorawan.CFList = new(pb_lorawan.CFList)
 		for _, freq := range band.CFList {
-			lorawan.CfList.Freq = append(lorawan.CfList.Freq, freq)
+			lorawan.CFList.Freq = append(lorawan.CFList.Freq, freq)
 		}
 	}
 

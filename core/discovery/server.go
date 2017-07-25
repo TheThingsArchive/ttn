@@ -6,11 +6,11 @@ package discovery
 import (
 	"fmt"
 
+	pb "github.com/TheThingsNetwork/api/discovery"
 	"github.com/TheThingsNetwork/go-account-lib/rights"
 	"github.com/TheThingsNetwork/go-utils/grpc/ttnctx"
-	pb "github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
-	"github.com/golang/protobuf/ptypes/empty"
+	"github.com/gogo/protobuf/types"
 	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
 	"google.golang.org/grpc"
 )
@@ -29,8 +29,8 @@ func (d *discoveryServer) checkMetadataEditRights(ctx context.Context, in *pb.Me
 		return err
 	}
 
-	appEUI := in.Metadata.GetAppEui()
-	appID := in.Metadata.GetAppId()
+	appEUI := in.Metadata.GetAppEUI()
+	appID := in.Metadata.GetAppID()
 	prefix := in.Metadata.GetDevAddrPrefix()
 
 	if appEUI == nil && appID == "" && prefix == nil {
@@ -51,7 +51,7 @@ func (d *discoveryServer) checkMetadataEditRights(ctx context.Context, in *pb.Me
 	if prefix != nil || appEUI != nil {
 
 		// If not in develop mode
-		if d.discovery.Component.Identity.Id != "dev" {
+		if d.discovery.Component.Identity.ID != "dev" {
 
 			// We require a signature from a master auth server
 			if !d.discovery.IsMasterAuthServer(claims.Issuer) {
@@ -70,8 +70,8 @@ func (d *discoveryServer) checkMetadataEditRights(ctx context.Context, in *pb.Me
 		if claims.Type != in.ServiceName {
 			return errPermissionDeniedf("Token type %s does not correspond with announcement service type %s", claims.Type, in.ServiceName)
 		}
-		if claims.Subject != in.Id {
-			return errPermissionDeniedf("Token subject %s does not correspond with announcement id %s", claims.Subject, in.Id)
+		if claims.Subject != in.ID {
+			return errPermissionDeniedf("Token subject %s does not correspond with announcement id %s", claims.Subject, in.ID)
 		}
 	}
 
@@ -84,14 +84,14 @@ func (d *discoveryServer) checkMetadataEditRights(ctx context.Context, in *pb.Me
 	return nil
 }
 
-func (d *discoveryServer) Announce(ctx context.Context, announcement *pb.Announcement) (*empty.Empty, error) {
+func (d *discoveryServer) Announce(ctx context.Context, announcement *pb.Announcement) (*types.Empty, error) {
 	claims, err := d.discovery.ValidateTTNAuthContext(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	// If not in development mode
-	if d.discovery.Component.Identity.Id != "dev" {
+	if d.discovery.Component.Identity.ID != "dev" {
 		if !d.discovery.IsMasterAuthServer(claims.Issuer) {
 			return nil, errPermissionDeniedf("Token issuer %s is not allowed to make changes to the network settings", claims.Issuer)
 		}
@@ -102,8 +102,8 @@ func (d *discoveryServer) Announce(ctx context.Context, announcement *pb.Announc
 		}
 	}
 
-	if claims.Subject != announcement.Id {
-		return nil, errPermissionDeniedf("Token subject %s does not correspond with announcement ID %s", claims.Subject, announcement.Id)
+	if claims.Subject != announcement.ID {
+		return nil, errPermissionDeniedf("Token subject %s does not correspond with announcement ID %s", claims.Subject, announcement.ID)
 	}
 	if claims.Type != announcement.ServiceName {
 		return nil, errPermissionDeniedf("Token type %s does not correspond with announcement service type %s", claims.Type, announcement.ServiceName)
@@ -114,31 +114,31 @@ func (d *discoveryServer) Announce(ctx context.Context, announcement *pb.Announc
 	if err != nil {
 		return nil, err
 	}
-	return &empty.Empty{}, nil
+	return &types.Empty{}, nil
 }
 
-func (d *discoveryServer) AddMetadata(ctx context.Context, in *pb.MetadataRequest) (*empty.Empty, error) {
+func (d *discoveryServer) AddMetadata(ctx context.Context, in *pb.MetadataRequest) (*types.Empty, error) {
 	err := d.checkMetadataEditRights(ctx, in)
 	if err != nil {
 		return nil, err
 	}
-	err = d.discovery.AddMetadata(in.ServiceName, in.Id, in.Metadata)
+	err = d.discovery.AddMetadata(in.ServiceName, in.ID, in.Metadata)
 	if err != nil {
 		return nil, err
 	}
-	return &empty.Empty{}, nil
+	return &types.Empty{}, nil
 }
 
-func (d *discoveryServer) DeleteMetadata(ctx context.Context, in *pb.MetadataRequest) (*empty.Empty, error) {
+func (d *discoveryServer) DeleteMetadata(ctx context.Context, in *pb.MetadataRequest) (*types.Empty, error) {
 	err := d.checkMetadataEditRights(ctx, in)
 	if err != nil {
 		return nil, err
 	}
-	err = d.discovery.DeleteMetadata(in.ServiceName, in.Id, in.Metadata)
+	err = d.discovery.DeleteMetadata(in.ServiceName, in.ID, in.Metadata)
 	if err != nil {
 		return nil, err
 	}
-	return &empty.Empty{}, nil
+	return &types.Empty{}, nil
 }
 
 func (d *discoveryServer) GetAll(ctx context.Context, req *pb.GetServiceRequest) (*pb.AnnouncementsResponse, error) {
@@ -156,7 +156,7 @@ func (d *discoveryServer) GetAll(ctx context.Context, req *pb.GetServiceRequest)
 }
 
 func (d *discoveryServer) Get(ctx context.Context, req *pb.GetRequest) (*pb.Announcement, error) {
-	service, err := d.discovery.Get(req.ServiceName, req.Id)
+	service, err := d.discovery.Get(req.ServiceName, req.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -164,7 +164,7 @@ func (d *discoveryServer) Get(ctx context.Context, req *pb.GetRequest) (*pb.Anno
 }
 
 func (d *discoveryServer) GetByAppID(ctx context.Context, req *pb.GetByAppIDRequest) (*pb.Announcement, error) {
-	service, err := d.discovery.GetByAppID(req.AppId)
+	service, err := d.discovery.GetByAppID(req.AppID)
 	if err != nil {
 		return nil, err
 	}
@@ -172,10 +172,10 @@ func (d *discoveryServer) GetByAppID(ctx context.Context, req *pb.GetByAppIDRequ
 }
 
 func (d *discoveryServer) GetByAppEUI(ctx context.Context, req *pb.GetByAppEUIRequest) (*pb.Announcement, error) {
-	if req.AppEui == nil {
+	if req.AppEUI == nil {
 		return nil, errors.NewErrInvalidArgument("AppEUI", "empty")
 	}
-	service, err := d.discovery.GetByAppEUI(*req.AppEui)
+	service, err := d.discovery.GetByAppEUI(*req.AppEUI)
 	if err != nil {
 		return nil, err
 	}

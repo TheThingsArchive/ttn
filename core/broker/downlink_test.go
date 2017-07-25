@@ -6,8 +6,8 @@ package broker
 import (
 	"testing"
 
-	pb "github.com/TheThingsNetwork/ttn/api/broker"
-	pb_monitor "github.com/TheThingsNetwork/ttn/api/monitor"
+	pb "github.com/TheThingsNetwork/api/broker"
+	"github.com/TheThingsNetwork/api/monitor/monitorclient"
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
@@ -25,7 +25,7 @@ func TestDownlink(t *testing.T) {
 	b := &broker{
 		Component: &component.Component{
 			Ctx:     logger,
-			Monitor: pb_monitor.NewClient(pb_monitor.DefaultClientConfig),
+			Monitor: monitorclient.NewMonitorClient(),
 		},
 		ns: &mockNetworkServer{},
 		routers: map[string]chan *pb.DownlinkMessage{
@@ -35,8 +35,8 @@ func TestDownlink(t *testing.T) {
 	b.InitStatus()
 
 	err := b.HandleDownlink(&pb.DownlinkMessage{
-		DevEui: &devEUI,
-		AppEui: &appEUI,
+		DevEUI: &devEUI,
+		AppEUI: &appEUI,
 		DownlinkOption: &pb.DownlinkOption{
 			Identifier: "fakeID",
 		},
@@ -44,8 +44,8 @@ func TestDownlink(t *testing.T) {
 	a.So(err, ShouldNotBeNil)
 
 	err = b.HandleDownlink(&pb.DownlinkMessage{
-		DevEui: &devEUI,
-		AppEui: &appEUI,
+		DevEUI: &devEUI,
+		AppEUI: &appEUI,
 		DownlinkOption: &pb.DownlinkOption{
 			Identifier: "nonExistentRouterID:scheduleID",
 		},
@@ -53,8 +53,8 @@ func TestDownlink(t *testing.T) {
 	a.So(err, ShouldNotBeNil)
 
 	err = b.HandleDownlink(&pb.DownlinkMessage{
-		DevEui: &devEUI,
-		AppEui: &appEUI,
+		DevEUI: &devEUI,
+		AppEUI: &appEUI,
 		DownlinkOption: &pb.DownlinkOption{
 			Identifier: "routerID:scheduleID",
 		},

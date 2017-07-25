@@ -6,9 +6,9 @@ package cmd
 import (
 	"time"
 
+	pb_lorawan "github.com/TheThingsNetwork/api/protocol/lorawan"
+	"github.com/TheThingsNetwork/api/router"
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
-	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
-	"github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/TheThingsNetwork/ttn/utils/otaa"
@@ -73,8 +73,8 @@ var joinCmd = &cobra.Command{
 		joinReq := &pb_lorawan.Message{
 			MHDR: pb_lorawan.MHDR{MType: pb_lorawan.MType_JOIN_REQUEST, Major: pb_lorawan.Major_LORAWAN_R1},
 			Payload: &pb_lorawan.Message_JoinRequestPayload{JoinRequestPayload: &pb_lorawan.JoinRequestPayload{
-				AppEui:   appEUI,
-				DevEui:   devEUI,
+				AppEUI:   appEUI,
+				DevEUI:   devEUI,
 				DevNonce: types.DevNonce(devNonce),
 			}}}
 		joinPhy := joinReq.PHYPayload()
@@ -102,12 +102,12 @@ var joinCmd = &cobra.Command{
 				break
 			}
 			downlinkMessage.UnmarshalPayload()
-			resPhy := downlinkMessage.Message.GetLorawan().PHYPayload()
+			resPhy := downlinkMessage.Message.GetLoRaWAN().PHYPayload()
 			resPhy.DecryptJoinAcceptPayload(lorawan.AES128Key(appKey))
 			res := pb_lorawan.MessageFromPHYPayload(resPhy)
 			accept := res.GetJoinAcceptPayload()
 
-			appSKey, nwkSKey, _ := otaa.CalculateSessionKeys(appKey, accept.AppNonce, accept.NetId, devNonce)
+			appSKey, nwkSKey, _ := otaa.CalculateSessionKeys(appKey, accept.AppNonce, accept.NetID, devNonce)
 
 			ctx.WithFields(ttnlog.Fields{
 				"DevAddr": accept.DevAddr,

@@ -4,14 +4,14 @@
 package util
 
 import (
-	"github.com/TheThingsNetwork/ttn/api/gateway"
-	"github.com/TheThingsNetwork/ttn/api/protocol"
-	"github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
+	"github.com/TheThingsNetwork/api/gateway"
+	"github.com/TheThingsNetwork/api/protocol"
+	"github.com/TheThingsNetwork/api/protocol/lorawan"
 )
 
 // GetProtocolMetadata returns protocol metadata for the given datarate
 func GetProtocolMetadata(dataRate string) *protocol.RxMetadata {
-	return &protocol.RxMetadata{Protocol: &protocol.RxMetadata_Lorawan{Lorawan: &lorawan.Metadata{
+	return &protocol.RxMetadata{Protocol: &protocol.RxMetadata_LoRaWAN{LoRaWAN: &lorawan.Metadata{
 		CodingRate: "4/5",
 		DataRate:   dataRate,
 		Modulation: lorawan.Modulation_LORA,
@@ -21,10 +21,10 @@ func GetProtocolMetadata(dataRate string) *protocol.RxMetadata {
 // GetGatewayMetadata returns gateway metadata for the given gateway ID and frequency
 func GetGatewayMetadata(id string, freq uint64) *gateway.RxMetadata {
 	return &gateway.RxMetadata{
-		GatewayId: id,
+		GatewayID: id,
 		Timestamp: 0,
 		Frequency: freq,
-		Rssi:      -25.0,
-		Snr:       5.0,
+		RSSI:      -25.0,
+		SNR:       5.0,
 	}
 }

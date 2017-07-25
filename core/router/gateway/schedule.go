@@ -9,9 +9,9 @@ import (
 	"sync/atomic"
 	"time"
 
+	pb_lorawan "github.com/TheThingsNetwork/api/protocol/lorawan"
+	router_pb "github.com/TheThingsNetwork/api/router"
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
-	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
-	router_pb "github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/random"
 	"github.com/TheThingsNetwork/ttn/utils/toa"
@@ -169,7 +169,7 @@ func (s *schedule) Schedule(id string, downlink *router_pb.DownlinkMessage) erro
 	if item, ok := s.items[id]; ok {
 		item.payload = downlink
 
-		if lorawan := downlink.GetProtocolConfiguration().GetLorawan(); lorawan != nil {
+		if lorawan := downlink.GetProtocolConfiguration().GetLoRaWAN(); lorawan != nil {
 			var time time.Duration
 			if lorawan.Modulation == pb_lorawan.Modulation_LORA {
 				// Calculate max ToA

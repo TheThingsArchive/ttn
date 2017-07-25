@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/TheThingsNetwork/api"
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
-	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/spf13/cobra"
 )

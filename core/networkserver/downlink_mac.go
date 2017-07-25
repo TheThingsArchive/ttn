@@ -4,7 +4,7 @@
 package networkserver
 
 import (
-	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
+	pb_broker "github.com/TheThingsNetwork/api/broker"
 	"github.com/TheThingsNetwork/ttn/core/networkserver/device"
 )
 

@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
-	"github.com/TheThingsNetwork/ttn/api/monitor"
-	pb_networkserver "github.com/TheThingsNetwork/ttn/api/networkserver"
+	"github.com/TheThingsNetwork/api/discovery/discoveryclient"
+	"github.com/TheThingsNetwork/api/monitor/monitorclient"
+	pb_networkserver "github.com/TheThingsNetwork/api/networkserver"
 	"github.com/TheThingsNetwork/ttn/core/component"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"github.com/golang/mock/gomock"
@@ -18,13 +18,13 @@ import (
 type testBroker struct {
 	*broker
 	ctrl      *gomock.Controller
-	discovery *pb_discovery.MockClient
+	discovery *discoveryclient.MockClient
 	ns        *pb_networkserver.MockNetworkServerClient
 }
 
 func getTestBroker(t *testing.T) *testBroker {
 	ctrl := gomock.NewController(t)
-	discovery := pb_discovery.NewMockClient(ctrl)
+	discovery := discoveryclient.NewMockClient(ctrl)
 	ns := pb_networkserver.NewMockNetworkServerClient(ctrl)
 	logger := GetLogger(t, "TestBroker")
 	b := &testBroker{
@@ -32,7 +32,7 @@ func getTestBroker(t *testing.T) *testBroker {
 			Component: &component.Component{
 				Discovery: discovery,
 				Ctx:       logger,
-				Monitor:   monitor.NewClient(monitor.DefaultClientConfig),
+				Monitor:   monitorclient.NewMonitorClient(),
 			},
 			handlers:               make(map[string]*handler),
 			activationDeduplicator: NewDeduplicator(10 * time.Millisecond),

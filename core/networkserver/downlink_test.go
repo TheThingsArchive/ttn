@@ -6,9 +6,9 @@ package networkserver
 import (
 	"testing"
 
-	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
-	pb_protocol "github.com/TheThingsNetwork/ttn/api/protocol"
-	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
+	pb_broker "github.com/TheThingsNetwork/api/broker"
+	pb_protocol "github.com/TheThingsNetwork/api/protocol"
+	pb_lorawan "github.com/TheThingsNetwork/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core/networkserver/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
@@ -28,15 +28,15 @@ func TestHandleDownlink(t *testing.T) {
 	devAddr := getDevAddr(1, 2, 3, 4)
 
 	downlinkOption := &pb_broker.DownlinkOption{
-		ProtocolConfig: &pb_protocol.TxConfiguration{Protocol: &pb_protocol.TxConfiguration_Lorawan{
-			Lorawan: &pb_lorawan.TxConfiguration{},
+		ProtocolConfiguration: &pb_protocol.TxConfiguration{Protocol: &pb_protocol.TxConfiguration_LoRaWAN{
+			LoRaWAN: &pb_lorawan.TxConfiguration{},
 		}},
 	}
 
 	// Device Not Found
 	message := &pb_broker.DownlinkMessage{
-		AppEui:         &appEUI,
-		DevEui:         &devEUI,
+		AppEUI:         &appEUI,
+		DevEUI:         &devEUI,
 		Payload:        []byte{},
 		DownlinkOption: downlinkOption,
 	}
@@ -54,8 +54,8 @@ func TestHandleDownlink(t *testing.T) {
 
 	// Invalid Payload
 	message = &pb_broker.DownlinkMessage{
-		AppEui:         &appEUI,
-		DevEui:         &devEUI,
+		AppEUI:         &appEUI,
+		DevEUI:         &devEUI,
 		Payload:        []byte{},
 		DownlinkOption: downlinkOption,
 	}
@@ -81,8 +81,8 @@ func TestHandleDownlink(t *testing.T) {
 	bytes, _ := phy.MarshalBinary()
 
 	message = &pb_broker.DownlinkMessage{
-		AppEui:         &appEUI,
-		DevEui:         &devEUI,
+		AppEUI:         &appEUI,
+		DevEUI:         &devEUI,
 		Payload:        bytes,
 		DownlinkOption: downlinkOption,
 	}

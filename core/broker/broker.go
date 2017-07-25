@@ -9,11 +9,12 @@ import (
 	"sync"
 	"time"
 
+	pb "github.com/TheThingsNetwork/api/broker"
+	"github.com/TheThingsNetwork/api/monitor/monitorclient"
+	"github.com/TheThingsNetwork/api/networkserver"
+	pb_lorawan "github.com/TheThingsNetwork/api/protocol/lorawan"
+	"github.com/TheThingsNetwork/go-utils/grpc/auth"
 	"github.com/TheThingsNetwork/ttn/api"
-	pb "github.com/TheThingsNetwork/ttn/api/broker"
-	pb_monitor "github.com/TheThingsNetwork/ttn/api/monitor"
-	"github.com/TheThingsNetwork/ttn/api/networkserver"
-	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
@@ -65,7 +66,7 @@ type broker struct {
 	uplinkDeduplicator     Deduplicator
 	activationDeduplicator Deduplicator
 	status                 *status
-	monitorStream          pb_monitor.GenericStream
+	monitorStream          monitorclient.Stream
 }
 
 func (b *broker) checkPrefixAnnouncements() error {
@@ -85,7 +86,7 @@ func (b *broker) checkPrefixAnnouncements() error {
 	}
 
 	// Get self from Discovery
-	self, err := b.Component.Discover("broker", b.Component.Identity.Id)
+	self, err := b.Component.Discover("broker", b.Component.Identity.ID)
 	if err != nil {
 		return err
 	}
@@ -134,10 +135,12 @@ func (b *broker) Init(c *component.Component) error {
 	b.checkPrefixAnnouncements()
 	b.Component.SetStatus(component.StatusHealthy)
 	if b.Component.Monitor != nil {
-		b.monitorStream = b.Component.Monitor.NewBrokerStreams(b.Identity.Id, b.AccessToken)
-		go b.Component.Monitor.TickStatus(func() {
-			b.monitorStream.Send(b.GetStatus())
-		})
+		b.monitorStream = b.Component.Monitor.BrokerClient(b.Context, grpc.PerRPCCredentials(auth.WithStaticToken(b.AccessToken)))
+		go func() {
+			for range time.Tick(b.Component.Config.StatusInterval) {
+				b.monitorStream.Send(b.GetStatus())
+			}
+		}()
 	}
 	return nil
 }

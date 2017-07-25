@@ -4,9 +4,9 @@
 package networkserver
 
 import (
-	"github.com/TheThingsNetwork/ttn/api/broker"
-	"github.com/TheThingsNetwork/ttn/api/handler"
-	pb "github.com/TheThingsNetwork/ttn/api/networkserver"
+	"github.com/TheThingsNetwork/api/broker"
+	"github.com/TheThingsNetwork/api/handler"
+	pb "github.com/TheThingsNetwork/api/networkserver"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/security"
 	"github.com/dgrijalva/jwt-go"
@@ -118,7 +118,7 @@ func (s *networkServerRPC) Downlink(ctx context.Context, message *broker.Downlin
 	return res, nil
 }
 
-// RegisterRPC registers this networkserver as a NetworkServerServer (github.com/TheThingsNetwork/ttn/api/networkserver)
+// RegisterRPC registers this networkserver as a NetworkServerServer (github.com/TheThingsNetwork/api/networkserver)
 func (n *networkServer) RegisterRPC(s *grpc.Server) {
 	server := &networkServerRPC{n}
 	pb.RegisterNetworkServerServer(s, server)

@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
-	pb_protocol "github.com/TheThingsNetwork/ttn/api/protocol"
-	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
+	pb_broker "github.com/TheThingsNetwork/api/broker"
+	pb_protocol "github.com/TheThingsNetwork/api/protocol"
+	pb_lorawan "github.com/TheThingsNetwork/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/handler/application"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
@@ -59,14 +59,14 @@ func TestHandleUplink(t *testing.T) {
 
 	downlink := &pb_broker.DownlinkMessage{
 		DownlinkOption: &pb_broker.DownlinkOption{
-			ProtocolConfig: &pb_protocol.TxConfiguration{Protocol: &pb_protocol.TxConfiguration_Lorawan{Lorawan: &pb_lorawan.TxConfiguration{
+			ProtocolConfiguration: &pb_protocol.TxConfiguration{Protocol: &pb_protocol.TxConfiguration_LoRaWAN{LoRaWAN: &pb_lorawan.TxConfiguration{
 				FCnt: 0,
 			}}},
 		},
 	}
 
 	getUplink := func() *pb_broker.DeduplicatedUplinkMessage {
-		uplink, _ := buildLorawanUplink([]byte{0x40, 0x04, 0x03, 0x02, 0x01, 0x00, 0x01, 0x00, 0x0A, 0x4D, 0xDA, 0x23, 0x99, 0x61, 0xD4})
+		uplink, _ := buildLoRaWANUplink([]byte{0x40, 0x04, 0x03, 0x02, 0x01, 0x00, 0x01, 0x00, 0x0A, 0x4D, 0xDA, 0x23, 0x99, 0x61, 0xD4})
 		uplink.ResponseTemplate = downlink
 		return uplink
 	}

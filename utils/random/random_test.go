@@ -6,12 +6,12 @@ package random
 import (
 	"testing"
 
-	"github.com/TheThingsNetwork/ttn/api"
+	"github.com/TheThingsNetwork/api"
 	s "github.com/smartystreets/assertions"
 )
 
-func TestRssi(t *testing.T) {
-	s.New(t).So(Rssi(), s.ShouldBeBetween, -120, 0)
+func TestRSSI(t *testing.T) {
+	s.New(t).So(RSSI(), s.ShouldBeBetween, -120, 0)
 }
 
 func TestValidID(t *testing.T) {

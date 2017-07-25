@@ -6,7 +6,7 @@ package handler
 import (
 	"testing"
 
-	pb "github.com/TheThingsNetwork/ttn/api/handler"
+	pb "github.com/TheThingsNetwork/api/handler"
 	. "github.com/smartystreets/assertions"
 )
 

@@ -4,8 +4,8 @@
 package networkserver
 
 import (
-	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
-	"github.com/TheThingsNetwork/ttn/api/trace"
+	pb_broker "github.com/TheThingsNetwork/api/broker"
+	"github.com/TheThingsNetwork/api/trace"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/brocaar/lorawan"
 )
@@ -15,20 +15,20 @@ func (n *networkServer) HandleDownlink(message *pb_broker.DownlinkMessage) (*pb_
 	if err != nil {
 		return nil, err
 	}
-	lorawanDownlinkMac := message.Message.GetLorawan().GetMacPayload()
-	if lorawanDownlinkMac == nil {
+	lorawanDownlinkMAC := message.Message.GetLoRaWAN().GetMACPayload()
+	if lorawanDownlinkMAC == nil {
 		return nil, errors.NewErrInvalidArgument("Downlink", "does not contain a MAC payload")
 	}
 
 	n.status.downlink.Mark(1)
 
 	// Get Device
-	dev, err := n.devices.Get(*message.AppEui, *message.DevEui)
+	dev, err := n.devices.Get(*message.AppEUI, *message.DevEUI)
 	if err != nil {
 		return nil, err
 	}
 
-	if dev.AppID != message.AppId || dev.DevID != message.DevId {
+	if dev.AppID != message.AppID || dev.DevID != message.DevID {
 		return nil, errors.NewErrInvalidArgument("Downlink", "AppID and DevID do not match AppEUI and DevEUI")
 	}
 
@@ -45,7 +45,7 @@ func (n *networkServer) HandleDownlink(message *pb_broker.DownlinkMessage) (*pb_
 		}
 	}()
 
-	if lorawanDownlinkMac.DevAddr != dev.DevAddr {
+	if lorawanDownlinkMAC.DevAddr != dev.DevAddr {
 		return nil, errors.NewErrInvalidArgument("Downlink", "DevAddr does not match device")
 	}
 
@@ -54,10 +54,10 @@ func (n *networkServer) HandleDownlink(message *pb_broker.DownlinkMessage) (*pb_
 		return nil, err
 	}
 
-	lorawanDownlinkMac.FCnt = dev.FCntDown // Use full 32-bit FCnt for setting MIC
+	lorawanDownlinkMAC.FCnt = dev.FCntDown // Use full 32-bit FCnt for setting MIC
 	dev.FCntDown++                         // TODO: For confirmed downlink, FCntDown should be incremented AFTER ACK
 
-	phyPayload := message.Message.GetLorawan().PHYPayload()
+	phyPayload := message.Message.GetLoRaWAN().PHYPayload()
 	phyPayload.SetMIC(lorawan.AES128Key(dev.NwkSKey))
 	bytes, err := phyPayload.MarshalBinary()
 	if err != nil {

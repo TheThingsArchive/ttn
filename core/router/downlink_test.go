@@ -8,23 +8,24 @@ import (
 	"testing"
 	"time"
 
-	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
-	pb_gateway "github.com/TheThingsNetwork/ttn/api/gateway"
-	"github.com/TheThingsNetwork/ttn/api/monitor"
-	pb_protocol "github.com/TheThingsNetwork/ttn/api/protocol"
-	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
-	pb "github.com/TheThingsNetwork/ttn/api/router"
+	pb_broker "github.com/TheThingsNetwork/api/broker"
+	pb_gateway "github.com/TheThingsNetwork/api/gateway"
+	"github.com/TheThingsNetwork/api/monitor/monitorclient"
+	pb_protocol "github.com/TheThingsNetwork/api/protocol"
+	pb_lorawan "github.com/TheThingsNetwork/api/protocol/lorawan"
+	pb "github.com/TheThingsNetwork/api/router"
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/router/gateway"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/assertions"
+	"golang.org/x/net/context"
 )
 
 // newReferenceDownlink returns a default uplink message
 func newReferenceDownlink() *pb.DownlinkMessage {
 	up := &pb.DownlinkMessage{
 		Payload: make([]byte, 20),
-		ProtocolConfiguration: &pb_protocol.TxConfiguration{Protocol: &pb_protocol.TxConfiguration_Lorawan{Lorawan: &pb_lorawan.TxConfiguration{
+		ProtocolConfiguration: &pb_protocol.TxConfiguration{Protocol: &pb_protocol.TxConfiguration_LoRaWAN{LoRaWAN: &pb_lorawan.TxConfiguration{
 			CodingRate: "4/5",
 			DataRate:   "SF7BW125",
 			Modulation: pb_lorawan.Modulation_LORA,
@@ -43,8 +44,9 @@ func TestHandleDownlink(t *testing.T) {
 	logger := GetLogger(t, "TestHandleDownlink")
 	r := &router{
 		Component: &component.Component{
+			Context: context.Background(),
 			Ctx:     logger,
-			Monitor: monitor.NewClient(monitor.DefaultClientConfig),
+			Monitor: monitorclient.NewMonitorClient(),
 		},
 		gateways: map[string]*gateway.Gateway{},
 	}
@@ -55,10 +57,10 @@ func TestHandleDownlink(t *testing.T) {
 	err := r.HandleDownlink(&pb_broker.DownlinkMessage{
 		Payload: []byte{},
 		DownlinkOption: &pb_broker.DownlinkOption{
-			GatewayId:      gtwID,
-			Identifier:     id,
-			ProtocolConfig: &pb_protocol.TxConfiguration{},
-			GatewayConfig:  &pb_gateway.TxConfiguration{},
+			GatewayID:             gtwID,
+			Identifier:            id,
+			ProtocolConfiguration: &pb_protocol.TxConfiguration{},
+			GatewayConfiguration:  &pb_gateway.TxConfiguration{},
 		},
 	})
 
@@ -71,8 +73,9 @@ func TestSubscribeUnsubscribeDownlink(t *testing.T) {
 	logger := GetLogger(t, "TestSubscribeUnsubscribeDownlink")
 	r := &router{
 		Component: &component.Component{
+			Context: context.Background(),
 			Ctx:     logger,
-			Monitor: monitor.NewClient(monitor.DefaultClientConfig),
+			Monitor: monitorclient.NewMonitorClient(),
 		},
 		gateways: map[string]*gateway.Gateway{},
 	}
@@ -102,10 +105,10 @@ func TestSubscribeUnsubscribeDownlink(t *testing.T) {
 	r.HandleDownlink(&pb_broker.DownlinkMessage{
 		Payload: []byte{0x02},
 		DownlinkOption: &pb_broker.DownlinkOption{
-			GatewayId:      gtwID,
-			Identifier:     id,
-			ProtocolConfig: &pb_protocol.TxConfiguration{},
-			GatewayConfig:  &pb_gateway.TxConfiguration{},
+			GatewayID:             gtwID,
+			Identifier:            id,
+			ProtocolConfiguration: &pb_protocol.TxConfiguration{},
+			GatewayConfiguration:  &pb_gateway.TxConfiguration{},
 		},
 	})
 
@@ -136,31 +139,31 @@ func TestUplinkBuildDownlinkOptions(t *testing.T) {
 	a.So(options[1].Score, ShouldBeLessThan, options[0].Score)
 
 	// Check Delay
-	a.So(options[1].GatewayConfig.Timestamp, ShouldEqual, 1000100)
-	a.So(options[0].GatewayConfig.Timestamp, ShouldEqual, 2000100)
+	a.So(options[1].GatewayConfiguration.Timestamp, ShouldEqual, 1000100)
+	a.So(options[0].GatewayConfiguration.Timestamp, ShouldEqual, 2000100)
 
 	// Check Frequency
-	a.So(options[1].GatewayConfig.Frequency, ShouldEqual, 868100000)
-	a.So(options[0].GatewayConfig.Frequency, ShouldEqual, 869525000)
+	a.So(options[1].GatewayConfiguration.Frequency, ShouldEqual, 868100000)
+	a.So(options[0].GatewayConfiguration.Frequency, ShouldEqual, 869525000)
 
 	// Check Power
-	a.So(options[1].GatewayConfig.Power, ShouldEqual, 14)
-	a.So(options[0].GatewayConfig.Power, ShouldEqual, 27)
+	a.So(options[1].GatewayConfiguration.Power, ShouldEqual, 14)
+	a.So(options[0].GatewayConfiguration.Power, ShouldEqual, 27)
 
 	// Check Data Rate
-	a.So(options[1].ProtocolConfig.GetLorawan().DataRate, ShouldEqual, "SF7BW125")
-	a.So(options[0].ProtocolConfig.GetLorawan().DataRate, ShouldEqual, "SF9BW125")
+	a.So(options[1].ProtocolConfiguration.GetLoRaWAN().DataRate, ShouldEqual, "SF7BW125")
+	a.So(options[0].ProtocolConfiguration.GetLoRaWAN().DataRate, ShouldEqual, "SF9BW125")
 
 	// Check Coding Rate
-	a.So(options[1].ProtocolConfig.GetLorawan().CodingRate, ShouldEqual, "4/5")
-	a.So(options[0].ProtocolConfig.GetLorawan().CodingRate, ShouldEqual, "4/5")
+	a.So(options[1].ProtocolConfiguration.GetLoRaWAN().CodingRate, ShouldEqual, "4/5")
+	a.So(options[0].ProtocolConfiguration.GetLoRaWAN().CodingRate, ShouldEqual, "4/5")
 
 	// And for joins we want a different delay (both RX1 and RX2) and DataRate (RX2)
 	gtw, up = newReferenceGateway(t, "EU_863_870"), newReferenceUplink()
 	options = r.buildDownlinkOptions(up, true, gtw)
-	a.So(options[1].GatewayConfig.Timestamp, ShouldEqual, 5000100)
-	a.So(options[0].GatewayConfig.Timestamp, ShouldEqual, 6000100)
-	a.So(options[0].ProtocolConfig.GetLorawan().DataRate, ShouldEqual, "SF12BW125")
+	a.So(options[1].GatewayConfiguration.Timestamp, ShouldEqual, 5000100)
+	a.So(options[0].GatewayConfiguration.Timestamp, ShouldEqual, 6000100)
+	a.So(options[0].ProtocolConfiguration.GetLoRaWAN().DataRate, ShouldEqual, "SF12BW125")
 }
 
 func TestUplinkBuildDownlinkOptionsFrequencies(t *testing.T) {
@@ -190,7 +193,7 @@ func TestUplinkBuildDownlinkOptionsFrequencies(t *testing.T) {
 		up.GatewayMetadata.Frequency = freq
 		options := r.buildDownlinkOptions(up, false, gtw)
 		a.So(options, ShouldHaveLength, 2)
-		a.So(options[1].GatewayConfig.Frequency, ShouldEqual, freq)
+		a.So(options[1].GatewayConfiguration.Frequency, ShouldEqual, freq)
 	}
 
 	// Unsupported frequencies use only RX2 for downlink
@@ -215,7 +218,7 @@ func TestUplinkBuildDownlinkOptionsFrequencies(t *testing.T) {
 		up.GatewayMetadata.Frequency = upFreq
 		options := r.buildDownlinkOptions(up, false, gtw)
 		a.So(options, ShouldHaveLength, 2)
-		a.So(options[1].GatewayConfig.Frequency, ShouldEqual, downFreq)
+		a.So(options[1].GatewayConfiguration.Frequency, ShouldEqual, downFreq)
 	}
 
 	// Unsupported frequencies use only RX2 for downlink
@@ -240,7 +243,7 @@ func TestUplinkBuildDownlinkOptionsFrequencies(t *testing.T) {
 		up.GatewayMetadata.Frequency = upFreq
 		options := r.buildDownlinkOptions(up, false, gtw)
 		a.So(options, ShouldHaveLength, 2)
-		a.So(options[1].GatewayConfig.Frequency, ShouldEqual, downFreq)
+		a.So(options[1].GatewayConfiguration.Frequency, ShouldEqual, downFreq)
 	}
 }
 
@@ -262,10 +265,10 @@ func TestUplinkBuildDownlinkOptionsDataRate(t *testing.T) {
 	}
 	for _, dr := range ttnEUDataRates {
 		up := newReferenceUplink()
-		up.ProtocolMetadata.GetLorawan().DataRate = dr
+		up.ProtocolMetadata.GetLoRaWAN().DataRate = dr
 		options := r.buildDownlinkOptions(up, false, gtw)
 		a.So(options, ShouldHaveLength, 2)
-		a.So(options[1].ProtocolConfig.GetLorawan().DataRate, ShouldEqual, dr)
+		a.So(options[1].ProtocolConfiguration.GetLoRaWAN().DataRate, ShouldEqual, dr)
 	}
 
 	gtw = newReferenceGateway(t, "US_902_928")
@@ -273,10 +276,10 @@ func TestUplinkBuildDownlinkOptionsDataRate(t *testing.T) {
 	// Test 500kHz channel
 	up := newReferenceUplink()
 	up.GatewayMetadata.Frequency = 904600000
-	up.ProtocolMetadata.GetLorawan().DataRate = "SF8BW500"
+	up.ProtocolMetadata.GetLoRaWAN().DataRate = "SF8BW500"
 	options := r.buildDownlinkOptions(up, false, gtw)
 	a.So(options, ShouldHaveLength, 2)
-	a.So(options[1].ProtocolConfig.GetLorawan().DataRate, ShouldEqual, "SF7BW500")
+	a.So(options[1].ProtocolConfiguration.GetLoRaWAN().DataRate, ShouldEqual, "SF7BW500")
 
 	// Supported datarates use RX1 (on the same datarate) for downlink
 	ttnUSDataRates := map[string]string{
@@ -288,10 +291,10 @@ func TestUplinkBuildDownlinkOptionsDataRate(t *testing.T) {
 	for drUp, drDown := range ttnUSDataRates {
 		up := newReferenceUplink()
 		up.GatewayMetadata.Frequency = 903900000
-		up.ProtocolMetadata.GetLorawan().DataRate = drUp
+		up.ProtocolMetadata.GetLoRaWAN().DataRate = drUp
 		options := r.buildDownlinkOptions(up, false, gtw)
 		a.So(options, ShouldHaveLength, 2)
-		a.So(options[1].ProtocolConfig.GetLorawan().DataRate, ShouldEqual, drDown)
+		a.So(options[1].ProtocolConfiguration.GetLoRaWAN().DataRate, ShouldEqual, drDown)
 	}
 
 	gtw = newReferenceGateway(t, "AU_915_928")
@@ -299,10 +302,10 @@ func TestUplinkBuildDownlinkOptionsDataRate(t *testing.T) {
 	// Test 500kHz channel
 	up = newReferenceUplink()
 	up.GatewayMetadata.Frequency = 917500000
-	up.ProtocolMetadata.GetLorawan().DataRate = "SF8BW500"
+	up.ProtocolMetadata.GetLoRaWAN().DataRate = "SF8BW500"
 	options = r.buildDownlinkOptions(up, false, gtw)
 	a.So(options, ShouldHaveLength, 2)
-	a.So(options[1].ProtocolConfig.GetLorawan().DataRate, ShouldEqual, "SF7BW500")
+	a.So(options[1].ProtocolConfiguration.GetLoRaWAN().DataRate, ShouldEqual, "SF7BW500")
 
 	// Supported datarates use RX1 (on the same datarate) for downlink
 	ttnAUDataRates := map[string]string{
@@ -314,10 +317,10 @@ func TestUplinkBuildDownlinkOptionsDataRate(t *testing.T) {
 	for drUp, drDown := range ttnAUDataRates {
 		up := newReferenceUplink()
 		up.GatewayMetadata.Frequency = 916800000
-		up.ProtocolMetadata.GetLorawan().DataRate = drUp
+		up.ProtocolMetadata.GetLoRaWAN().DataRate = drUp
 		options := r.buildDownlinkOptions(up, false, gtw)
 		a.So(options, ShouldHaveLength, 2)
-		a.So(options[1].ProtocolConfig.GetLorawan().DataRate, ShouldEqual, drDown)
+		a.So(options[1].ProtocolConfiguration.GetLoRaWAN().DataRate, ShouldEqual, drDown)
 	}
 
 	gtw = newReferenceGateway(t, "CN_470_510")
@@ -334,13 +337,13 @@ func TestUplinkBuildDownlinkOptionsDataRate(t *testing.T) {
 	for _, dr := range ttnCNDataRates {
 		up := newReferenceUplink()
 		up.GatewayMetadata.Frequency = 470300000
-		up.ProtocolMetadata.GetLorawan().DataRate = dr
+		up.ProtocolMetadata.GetLoRaWAN().DataRate = dr
 		options := r.buildDownlinkOptions(up, false, gtw)
 		a.So(options, ShouldHaveLength, 2)
-		a.So(options[1].ProtocolConfig.GetLorawan().DataRate, ShouldEqual, dr)
-		a.So(options[1].GatewayConfig.Frequency, ShouldEqual, 500300000)
-		a.So(options[0].ProtocolConfig.GetLorawan().DataRate, ShouldEqual, "SF12BW125")
-		a.So(options[0].GatewayConfig.Frequency, ShouldEqual, 505300000)
+		a.So(options[1].ProtocolConfiguration.GetLoRaWAN().DataRate, ShouldEqual, dr)
+		a.So(options[1].GatewayConfiguration.Frequency, ShouldEqual, 500300000)
+		a.So(options[0].ProtocolConfiguration.GetLoRaWAN().DataRate, ShouldEqual, "SF12BW125")
+		a.So(options[0].GatewayConfiguration.Frequency, ShouldEqual, 505300000)
 	}
 
 	gtw = newReferenceGateway(t, "AS_923")
@@ -357,13 +360,13 @@ func TestUplinkBuildDownlinkOptionsDataRate(t *testing.T) {
 	for drUp, drDown := range ttnASDataRates {
 		up := newReferenceUplink()
 		up.GatewayMetadata.Frequency = 923200000
-		up.ProtocolMetadata.GetLorawan().DataRate = drUp
+		up.ProtocolMetadata.GetLoRaWAN().DataRate = drUp
 		options := r.buildDownlinkOptions(up, false, gtw)
 		a.So(options, ShouldHaveLength, 2)
-		a.So(options[1].ProtocolConfig.GetLorawan().DataRate, ShouldEqual, drDown)
-		a.So(options[1].GatewayConfig.Frequency, ShouldEqual, 923200000)
-		a.So(options[0].ProtocolConfig.GetLorawan().DataRate, ShouldEqual, "SF10BW125")
-		a.So(options[0].GatewayConfig.Frequency, ShouldEqual, 923200000)
+		a.So(options[1].ProtocolConfiguration.GetLoRaWAN().DataRate, ShouldEqual, drDown)
+		a.So(options[1].GatewayConfiguration.Frequency, ShouldEqual, 923200000)
+		a.So(options[0].ProtocolConfiguration.GetLoRaWAN().DataRate, ShouldEqual, "SF10BW125")
+		a.So(options[0].GatewayConfiguration.Frequency, ShouldEqual, 923200000)
 	}
 
 	gtw = newReferenceGateway(t, "KR_920_923")
@@ -380,13 +383,13 @@ func TestUplinkBuildDownlinkOptionsDataRate(t *testing.T) {
 	for _, dr := range ttnKRDataRates {
 		up := newReferenceUplink()
 		up.GatewayMetadata.Frequency = 922100000
-		up.ProtocolMetadata.GetLorawan().DataRate = dr
+		up.ProtocolMetadata.GetLoRaWAN().DataRate = dr
 		options := r.buildDownlinkOptions(up, false, gtw)
 		a.So(options, ShouldHaveLength, 2)
-		a.So(options[1].ProtocolConfig.GetLorawan().DataRate, ShouldEqual, dr)
-		a.So(options[1].GatewayConfig.Frequency, ShouldEqual, 922100000)
-		a.So(options[0].ProtocolConfig.GetLorawan().DataRate, ShouldEqual, "SF12BW125")
-		a.So(options[0].GatewayConfig.Frequency, ShouldEqual, 921900000)
+		a.So(options[1].ProtocolConfiguration.GetLoRaWAN().DataRate, ShouldEqual, dr)
+		a.So(options[1].GatewayConfiguration.Frequency, ShouldEqual, 922100000)
+		a.So(options[0].ProtocolConfiguration.GetLoRaWAN().DataRate, ShouldEqual, "SF12BW125")
+		a.So(options[0].GatewayConfiguration.Frequency, ShouldEqual, 921900000)
 	}
 
 }
@@ -400,21 +403,21 @@ func TestComputeDownlinkScores(t *testing.T) {
 
 	// Lower RSSI -> worse score
 	testSubject := newReferenceUplink()
-	testSubject.GatewayMetadata.Rssi = -80.0
+	testSubject.GatewayMetadata.RSSI = -80.0
 	testSubjectgtw := newReferenceGateway(t, "EU_863_870")
 	testSubjectScore := r.buildDownlinkOptions(testSubject, false, testSubjectgtw)[1].Score
 	a.So(testSubjectScore, ShouldBeGreaterThan, refScore)
 
 	// Lower SNR -> worse score
 	testSubject = newReferenceUplink()
-	testSubject.GatewayMetadata.Snr = 2.0
+	testSubject.GatewayMetadata.SNR = 2.0
 	testSubjectgtw = newReferenceGateway(t, "EU_863_870")
 	testSubjectScore = r.buildDownlinkOptions(testSubject, false, testSubjectgtw)[1].Score
 	a.So(testSubjectScore, ShouldBeGreaterThan, refScore)
 
 	// Slower DataRate -> worse score
 	testSubject = newReferenceUplink()
-	testSubject.ProtocolMetadata.GetLorawan().DataRate = "SF8BW125"
+	testSubject.ProtocolMetadata.GetLoRaWAN().DataRate = "SF8BW125"
 	testSubjectgtw = newReferenceGateway(t, "EU_863_870")
 	testSubjectScore = r.buildDownlinkOptions(testSubject, false, testSubjectgtw)[1].Score
 	a.So(testSubjectScore, ShouldBeGreaterThan, refScore)
@@ -442,7 +445,7 @@ func TestComputeDownlinkScores(t *testing.T) {
 	testSubjectgtw = newReferenceGateway(t, "EU_863_870")
 	options := r.buildDownlinkOptions(testSubject, false, testSubjectgtw)
 	a.So(options, ShouldHaveLength, 1) // RX1 Removed
-	a.So(options[0].GatewayConfig.Frequency, ShouldNotEqual, 869300000)
+	a.So(options[0].GatewayConfiguration.Frequency, ShouldNotEqual, 869300000)
 
 	// European Duty-cycle Enforcement
 	testSubject = newReferenceUplink()
@@ -453,28 +456,28 @@ func TestComputeDownlinkScores(t *testing.T) {
 	testSubjectgtw.Utilization.Tick()
 	options = r.buildDownlinkOptions(testSubject, false, testSubjectgtw)
 	a.So(options, ShouldHaveLength, 1) // RX1 Removed
-	a.So(options[0].GatewayConfig.Frequency, ShouldNotEqual, 868100000)
+	a.So(options[0].GatewayConfiguration.Frequency, ShouldNotEqual, 868100000)
 
 	// European Duty-cycle Preferences - Prefer RX1 for low SF
 	testSubject = newReferenceUplink()
-	testSubject.ProtocolMetadata.GetLorawan().DataRate = "SF7BW125"
+	testSubject.ProtocolMetadata.GetLoRaWAN().DataRate = "SF7BW125"
 	options = r.buildDownlinkOptions(testSubject, false, newReferenceGateway(t, "EU_863_870"))
 	a.So(options[1].Score, ShouldBeLessThan, options[0].Score)
-	testSubject.ProtocolMetadata.GetLorawan().DataRate = "SF8BW125"
+	testSubject.ProtocolMetadata.GetLoRaWAN().DataRate = "SF8BW125"
 	options = r.buildDownlinkOptions(testSubject, false, newReferenceGateway(t, "EU_863_870"))
 	a.So(options[1].Score, ShouldBeLessThan, options[0].Score)
 
 	// European Duty-cycle Preferences - Prefer RX2 for high SF
-	testSubject.ProtocolMetadata.GetLorawan().DataRate = "SF9BW125"
+	testSubject.ProtocolMetadata.GetLoRaWAN().DataRate = "SF9BW125"
 	options = r.buildDownlinkOptions(testSubject, false, newReferenceGateway(t, "EU_863_870"))
 	a.So(options[1].Score, ShouldBeGreaterThan, options[0].Score)
-	testSubject.ProtocolMetadata.GetLorawan().DataRate = "SF10BW125"
+	testSubject.ProtocolMetadata.GetLoRaWAN().DataRate = "SF10BW125"
 	options = r.buildDownlinkOptions(testSubject, false, newReferenceGateway(t, "EU_863_870"))
 	a.So(options[1].Score, ShouldBeGreaterThan, options[0].Score)
-	testSubject.ProtocolMetadata.GetLorawan().DataRate = "SF11BW125"
+	testSubject.ProtocolMetadata.GetLoRaWAN().DataRate = "SF11BW125"
 	options = r.buildDownlinkOptions(testSubject, false, newReferenceGateway(t, "EU_863_870"))
 	a.So(options[1].Score, ShouldBeGreaterThan, options[0].Score)
-	testSubject.ProtocolMetadata.GetLorawan().DataRate = "SF12BW125"
+	testSubject.ProtocolMetadata.GetLoRaWAN().DataRate = "SF12BW125"
 	options = r.buildDownlinkOptions(testSubject, false, newReferenceGateway(t, "EU_863_870"))
 	a.So(options[1].Score, ShouldBeGreaterThan, options[0].Score)
 
