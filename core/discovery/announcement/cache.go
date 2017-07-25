@@ -110,6 +110,18 @@ func (s *cachedAnnouncementStore) GetForAppID(appID string) (*Announcement, erro
 	return s.Get(serviceName, serviceID)
 }
 
+func (s *cachedAnnouncementStore) getForGatewayID(gatewayID string) (string, string, error) {
+	return s.backingStore.getForGatewayID(gatewayID)
+}
+
+func (s *cachedAnnouncementStore) GetForGatewayID(gatewayID string) (*Announcement, error) {
+	serviceName, serviceID, err := s.getForGatewayID(gatewayID)
+	if err != nil {
+		return nil, err
+	}
+	return s.Get(serviceName, serviceID)
+}
+
 func (s *cachedAnnouncementStore) getForAppEUI(appEUI types.AppEUI) (string, string, error) {
 	return s.backingStore.getForAppEUI(appEUI)
 }

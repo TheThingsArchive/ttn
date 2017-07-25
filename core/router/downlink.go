@@ -31,6 +31,7 @@ func (r *router) SubscribeDownlink(gatewayID string, subscriptionID string) (<-c
 
 	gateway := r.getGateway(gatewayID)
 	if fromSchedule := gateway.Schedule.Subscribe(subscriptionID); fromSchedule != nil {
+		r.Discovery.AddGatewayID(gatewayID, gateway.Token())
 		toGateway := make(chan *pb.DownlinkMessage)
 		go func() {
 			ctx.Debug("Activate downlink")
@@ -52,7 +53,9 @@ func (r *router) SubscribeDownlink(gatewayID string, subscriptionID string) (<-c
 }
 
 func (r *router) UnsubscribeDownlink(gatewayID string, subscriptionID string) error {
-	r.getGateway(gatewayID).Schedule.Stop(subscriptionID)
+	gateway := r.getGateway(gatewayID)
+	r.Discovery.RemoveGatewayID(gatewayID, gateway.Token())
+	gateway.Schedule.Stop(subscriptionID)
 	return nil
 }
 

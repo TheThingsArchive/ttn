@@ -81,6 +81,10 @@ func (d *mockDiscoveryServer) GetByAppID(ctx context.Context, req *pb.GetByAppID
 	<-time.After(5 * time.Millisecond)
 	return &pb.Announcement{}, nil
 }
+func (d *mockDiscoveryServer) GetByGatewayID(ctx context.Context, req *pb.GetByGatewayIDRequest) (*pb.Announcement, error) {
+	<-time.After(5 * time.Millisecond)
+	return &pb.Announcement{}, nil
+}
 func (d *mockDiscoveryServer) GetByAppEUI(ctx context.Context, req *pb.GetByAppEUIRequest) (*pb.Announcement, error) {
 	<-time.After(5 * time.Millisecond)
 	return &pb.Announcement{}, nil
