@@ -9,7 +9,7 @@ import (
 	"time"
 
 	pb_broker "github.com/TheThingsNetwork/api/broker"
-	"github.com/TheThingsNetwork/api/discovery"
+	"github.com/TheThingsNetwork/api/discovery/discoveryclient"
 	pb_gateway "github.com/TheThingsNetwork/api/gateway"
 	"github.com/TheThingsNetwork/api/monitor/monitorclient"
 	pb_protocol "github.com/TheThingsNetwork/api/protocol"
@@ -72,7 +72,7 @@ func TestHandleDownlink(t *testing.T) {
 func TestSubscribeUnsubscribeDownlink(t *testing.T) {
 	a := New(t)
 	ctrl := gomock.NewController(t)
-	discoveryClient := discovery.NewMockClient(ctrl)
+	discoveryClient := discoveryclient.NewMockClient(ctrl)
 	logger := GetLogger(t, "TestSubscribeUnsubscribeDownlink")
 	r := &router{
 		Component: &component.Component{
