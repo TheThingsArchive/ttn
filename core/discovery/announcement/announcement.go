@@ -69,8 +69,8 @@ type GatewayIDMetadata struct {
 // ToProto implements the Metadata interface
 func (m GatewayIDMetadata) ToProto() *pb.Metadata {
 	return &pb.Metadata{
-		Metadata: &pb.Metadata_GatewayId{
-			GatewayId: m.GatewayID,
+		Metadata: &pb.Metadata_GatewayID{
+			GatewayID: m.GatewayID,
 		},
 	}
 }
@@ -118,7 +118,7 @@ func MetadataFromProto(proto *pb.Metadata) Metadata {
 		}
 		return PrefixMetadata{*prefix}
 	}
-	if gatewayID := proto.GetGatewayId(); gatewayID != "" {
+	if gatewayID := proto.GetGatewayID(); gatewayID != "" {
 		return GatewayIDMetadata{gatewayID}
 	}
 	return nil
