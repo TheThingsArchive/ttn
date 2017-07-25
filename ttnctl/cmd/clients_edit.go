@@ -38,14 +38,14 @@ var clientEditCmd = &cobra.Command{
 
 		var edited bool
 		if newDescription, err := cmd.Flags().GetString("description"); err != nil {
-			ctx.WithError(err).Fatal("Nothing to parse")
+			ctx.WithError(err).Fatal("Flag error")
 		} else if newDescription != "" {
 			edited = true
 			client.Description = newDescription
 		}
 
 		if newURI, err := cmd.Flags().GetString("uri"); err != nil {
-			ctx.WithError(err).Fatal("Nothing to parse")
+			ctx.WithError(err).Fatal("Flag error")
 		} else if newURI != "" {
 			edited = true
 			client.URI = newURI
@@ -57,7 +57,7 @@ var clientEditCmd = &cobra.Command{
 
 		err = account.EditOAuthClient(name, client)
 		if err != nil {
-			ctx.WithError(err).Fatal("Couldn't edit OAuth client")
+			ctx.WithError(err).Fatal("Could not edit OAuth client")
 		}
 
 		ctx.Info("OAuth client edited")
