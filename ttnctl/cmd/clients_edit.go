@@ -11,7 +11,7 @@ import (
 var clientEditCmd = &cobra.Command{
 	Use:   "edit [Name]",
 	Short: "Edit the OAuth client",
-	Long:  "ttnctl clients edit can be used to edit the information of an OAuth client.",
+	Long:  "ttnctl clients edit can be used to edit the OAuth client.",
 	Example: `$ ttnctl clients edit my-gateway-client --description "OAuth client for my personal gateway client"
   INFO Retrieving OAuth client...               OAuthClientName=my-gateway-client
   INFO Retrieved OAuth client                   OAuthClientName=my-gateway-client
