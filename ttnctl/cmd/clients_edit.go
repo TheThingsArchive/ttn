@@ -52,7 +52,8 @@ var clientEditCmd = &cobra.Command{
 		}
 
 		if !edited {
-			ctx.Fatal("No property to edit")
+			ctx.Info("No property to edit")
+			return
 		}
 
 		err = account.EditOAuthClient(name, client)
