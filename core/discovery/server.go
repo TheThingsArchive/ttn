@@ -32,7 +32,7 @@ func (d *discoveryServer) checkMetadataEditRights(ctx context.Context, in *pb.Me
 	appEUI := in.Metadata.GetAppEUI()
 	appID := in.Metadata.GetAppID()
 	prefix := in.Metadata.GetDevAddrPrefix()
-	gatewayID := in.Metadata.GetGatewayId()
+	gatewayID := in.Metadata.GetGatewayID()
 
 	if appEUI == nil && appID == "" && prefix == nil && gatewayID == "" {
 		return errPermissionDeniedf("Unknown Metadata type")
@@ -185,7 +185,7 @@ func (d *discoveryServer) GetByAppID(ctx context.Context, req *pb.GetByAppIDRequ
 }
 
 func (d *discoveryServer) GetByGatewayID(ctx context.Context, req *pb.GetByGatewayIDRequest) (*pb.Announcement, error) {
-	service, err := d.discovery.GetByGatewayID(req.GatewayId)
+	service, err := d.discovery.GetByGatewayID(req.GatewayID)
 	if err != nil {
 		return nil, err
 	}
