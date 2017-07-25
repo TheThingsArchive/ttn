@@ -4,8 +4,8 @@
 package networkserver
 
 import (
-	pb "github.com/TheThingsNetwork/ttn/api/networkserver"
-	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
+	pb "github.com/TheThingsNetwork/api/networkserver"
+	pb_lorawan "github.com/TheThingsNetwork/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/utils/fcnt"
 )
 
@@ -27,10 +27,10 @@ func (n *networkServer) HandleGetDevices(req *pb.DevicesRequest) (*pb.DevicesRes
 		}
 		fullFCnt := fcnt.GetFull(device.FCntUp, uint16(req.FCnt))
 		dev := &pb_lorawan.Device{
-			AppEui:           &device.AppEUI,
-			AppId:            device.AppID,
-			DevEui:           &device.DevEUI,
-			DevId:            device.DevID,
+			AppEUI:           &device.AppEUI,
+			AppID:            device.AppID,
+			DevEUI:           &device.DevEUI,
+			DevID:            device.DevID,
 			NwkSKey:          &device.NwkSKey,
 			FCntUp:           device.FCntUp,
 			Uses32BitFCnt:    device.Options.Uses32BitFCnt,

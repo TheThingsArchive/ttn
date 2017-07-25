@@ -9,14 +9,14 @@ import (
 	"strings"
 	"time"
 
+	pb_broker "github.com/TheThingsNetwork/api/broker"
+	pb_gateway "github.com/TheThingsNetwork/api/gateway"
+	"github.com/TheThingsNetwork/api/logfields"
+	pb_protocol "github.com/TheThingsNetwork/api/protocol"
+	pb_lorawan "github.com/TheThingsNetwork/api/protocol/lorawan"
+	pb "github.com/TheThingsNetwork/api/router"
+	"github.com/TheThingsNetwork/api/trace"
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
-	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
-	"github.com/TheThingsNetwork/ttn/api/fields"
-	pb_gateway "github.com/TheThingsNetwork/ttn/api/gateway"
-	pb_protocol "github.com/TheThingsNetwork/ttn/api/protocol"
-	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
-	pb "github.com/TheThingsNetwork/ttn/api/router"
-	"github.com/TheThingsNetwork/ttn/api/trace"
 	"github.com/TheThingsNetwork/ttn/core/band"
 	"github.com/TheThingsNetwork/ttn/core/router/gateway"
 	"github.com/TheThingsNetwork/ttn/core/types"
@@ -35,7 +35,7 @@ func (r *router) SubscribeDownlink(gatewayID string, subscriptionID string) (<-c
 		go func() {
 			ctx.Debug("Activate downlink")
 			for message := range fromSchedule {
-				ctx.WithFields(fields.Get(message)).Debug("Send downlink")
+				ctx.WithFields(logfields.ForMessage(message)).Debug("Send downlink")
 				toGateway <- message
 				if gateway.MonitorStream != nil {
 					clone := *message // There can be multiple subscribers
@@ -74,17 +74,17 @@ func (r *router) HandleDownlink(downlink *pb_broker.DownlinkMessage) (err error)
 
 	downlinkMessage := &pb.DownlinkMessage{
 		Payload:               downlink.Payload,
-		ProtocolConfiguration: option.ProtocolConfig,
-		GatewayConfiguration:  option.GatewayConfig,
+		ProtocolConfiguration: option.ProtocolConfiguration,
+		GatewayConfiguration:  option.GatewayConfiguration,
 		Trace:                 downlink.Trace,
 	}
 
 	identifier := option.Identifier
 	if r.Component != nil && r.Component.Identity != nil {
-		identifier = strings.TrimPrefix(option.Identifier, fmt.Sprintf("%s:", r.Component.Identity.Id))
+		identifier = strings.TrimPrefix(option.Identifier, fmt.Sprintf("%s:", r.Component.Identity.ID))
 	}
 
-	gateway = r.getGateway(downlink.DownlinkOption.GatewayId)
+	gateway = r.getGateway(downlink.DownlinkOption.GatewayID)
 	return gateway.HandleDownlink(identifier, downlinkMessage)
 }
 
@@ -92,13 +92,13 @@ func (r *router) HandleDownlink(downlink *pb_broker.DownlinkMessage) (err error)
 func (r *router) buildDownlinkOption(gatewayID string, band band.FrequencyPlan) *pb_broker.DownlinkOption {
 	dataRate, _ := types.ConvertDataRate(band.DataRates[band.RX2DataRate])
 	return &pb_broker.DownlinkOption{
-		GatewayId: gatewayID,
-		ProtocolConfig: &pb_protocol.TxConfiguration{Protocol: &pb_protocol.TxConfiguration_Lorawan{Lorawan: &pb_lorawan.TxConfiguration{
+		GatewayID: gatewayID,
+		ProtocolConfiguration: &pb_protocol.TxConfiguration{Protocol: &pb_protocol.TxConfiguration_LoRaWAN{LoRaWAN: &pb_lorawan.TxConfiguration{
 			Modulation: pb_lorawan.Modulation_LORA,
 			DataRate:   dataRate.String(),
 			CodingRate: "4/5",
 		}}},
-		GatewayConfig: &pb_gateway.TxConfiguration{
+		GatewayConfiguration: &pb_gateway.TxConfiguration{
 			RfChain:               0,
 			PolarizationInversion: true,
 			Frequency:             uint64(band.RX2Frequency),
@@ -112,7 +112,7 @@ func (r *router) buildDownlinkOptions(uplink *pb.UplinkMessage, isActivation boo
 
 	gatewayStatus, _ := gateway.Status.Get() // This just returns empty if non-existing
 
-	lorawanMetadata := uplink.ProtocolMetadata.GetLorawan()
+	lorawanMetadata := uplink.ProtocolMetadata.GetLoRaWAN()
 	if lorawanMetadata == nil {
 		return // We can't handle any other protocols than LoRaWAN yet
 	}
@@ -138,14 +138,14 @@ func (r *router) buildDownlinkOptions(uplink *pb.UplinkMessage, isActivation boo
 	buildRX2 := func() (*pb_broker.DownlinkOption, error) {
 		option := r.buildDownlinkOption(gateway.ID, band)
 		if frequencyPlan == "EU_863_870" {
-			option.GatewayConfig.Power = 27 // The EU RX2 frequency allows up to 27dBm
+			option.GatewayConfiguration.Power = 27 // The EU RX2 frequency allows up to 27dBm
 		}
 		if isActivation {
-			option.GatewayConfig.Timestamp = uplink.GatewayMetadata.Timestamp + uint32(band.JoinAcceptDelay2/1000)
+			option.GatewayConfiguration.Timestamp = uplink.GatewayMetadata.Timestamp + uint32(band.JoinAcceptDelay2/1000)
 		} else {
-			option.GatewayConfig.Timestamp = uplink.GatewayMetadata.Timestamp + uint32(band.ReceiveDelay2/1000)
+			option.GatewayConfiguration.Timestamp = uplink.GatewayMetadata.Timestamp + uint32(band.ReceiveDelay2/1000)
 		}
-		option.ProtocolConfig.GetLorawan().CodingRate = lorawanMetadata.CodingRate
+		option.ProtocolConfiguration.GetLoRaWAN().CodingRate = lorawanMetadata.CodingRate
 		return option, nil
 	}
 
@@ -157,17 +157,17 @@ func (r *router) buildDownlinkOptions(uplink *pb.UplinkMessage, isActivation boo
 	buildRX1 := func() (*pb_broker.DownlinkOption, error) {
 		option := r.buildDownlinkOption(gateway.ID, band)
 		if isActivation {
-			option.GatewayConfig.Timestamp = uplink.GatewayMetadata.Timestamp + uint32(band.JoinAcceptDelay1/1000)
+			option.GatewayConfiguration.Timestamp = uplink.GatewayMetadata.Timestamp + uint32(band.JoinAcceptDelay1/1000)
 		} else {
-			option.GatewayConfig.Timestamp = uplink.GatewayMetadata.Timestamp + uint32(band.ReceiveDelay1/1000)
+			option.GatewayConfiguration.Timestamp = uplink.GatewayMetadata.Timestamp + uint32(band.ReceiveDelay1/1000)
 		}
-		option.ProtocolConfig.GetLorawan().CodingRate = lorawanMetadata.CodingRate
+		option.ProtocolConfiguration.GetLoRaWAN().CodingRate = lorawanMetadata.CodingRate
 
 		freq, err := band.GetRX1Frequency(int(uplink.GatewayMetadata.Frequency))
 		if err != nil {
 			return nil, err
 		}
-		option.GatewayConfig.Frequency = uint64(freq)
+		option.GatewayConfiguration.Frequency = uint64(freq)
 
 		upDR, err := band.GetDataRate(dataRate)
 		if err != nil {
@@ -178,10 +178,10 @@ func (r *router) buildDownlinkOptions(uplink *pb.UplinkMessage, isActivation boo
 			return nil, err
 		}
 
-		if err := option.ProtocolConfig.GetLorawan().SetDataRate(band.DataRates[downDR]); err != nil {
+		if err := option.ProtocolConfiguration.GetLoRaWAN().SetDataRate(band.DataRates[downDR]); err != nil {
 			return nil, err
 		}
-		option.GatewayConfig.FrequencyDeviation = uint32(option.ProtocolConfig.GetLorawan().BitRate / 2)
+		option.GatewayConfiguration.FrequencyDeviation = uint32(option.ProtocolConfiguration.GetLoRaWAN().BitRate / 2)
 
 		return option, nil
 	}
@@ -195,7 +195,7 @@ func (r *router) buildDownlinkOptions(uplink *pb.UplinkMessage, isActivation boo
 	for _, option := range options {
 		// Add router ID to downlink option
 		if r.Component != nil && r.Component.Identity != nil {
-			option.Identifier = fmt.Sprintf("%s:%s", r.Component.Identity.Id, option.Identifier)
+			option.Identifier = fmt.Sprintf("%s:%s", r.Component.Identity.ID, option.Identifier)
 		}
 
 		// Filter all illegal options
@@ -223,7 +223,7 @@ func computeDownlinkScores(gateway *gateway.Gateway, uplink *pb.UplinkMessage, o
 	for _, option := range options {
 
 		// Invalid if no LoRaWAN
-		lorawan := option.GetProtocolConfig().GetLorawan()
+		lorawan := option.GetProtocolConfiguration().GetLoRaWAN()
 		if lorawan == nil {
 			option.Score = 1000
 			continue
@@ -259,11 +259,11 @@ func computeDownlinkScores(gateway *gateway.Gateway, uplink *pb.UplinkMessage, o
 		signalScore := 0.0 // Between 0 and 20 (lower is better)
 		{
 			// Prefer high SNR
-			if uplink.GatewayMetadata.Snr < 5 {
+			if uplink.GatewayMetadata.SNR < 5 {
 				signalScore += 10
 			}
 			// Prefer good RSSI
-			signalScore += math.Min(float64(uplink.GatewayMetadata.Rssi*-0.1), 10)
+			signalScore += math.Min(float64(uplink.GatewayMetadata.RSSI*-0.1), 10)
 		}
 
 		utilizationScore := 0.0 // Between 0 and 40 (lower is better) will be over 100 if forbidden
@@ -272,7 +272,7 @@ func computeDownlinkScores(gateway *gateway.Gateway, uplink *pb.UplinkMessage, o
 			utilizationScore += math.Min(gatewayRx*50, 20) / 2 // 40% utilization = 10 (max)
 
 			// Avoid busy channels
-			freq := option.GatewayConfig.Frequency
+			freq := option.GatewayConfiguration.Frequency
 			channelRx, channelTx := gateway.Utilization.GetChannel(freq)
 			utilizationScore += math.Min((channelTx+channelRx)*200, 20) / 2 // 10% utilization = 10 (max)
 
@@ -304,7 +304,7 @@ func computeDownlinkScores(gateway *gateway.Gateway, uplink *pb.UplinkMessage, o
 
 		scheduleScore := 0.0 // Between 0 and 30 (lower is better) will be over 100 if forbidden
 		{
-			id, conflicts := gateway.Schedule.GetOption(option.GatewayConfig.Timestamp, uint32(time/1000))
+			id, conflicts := gateway.Schedule.GetOption(option.GatewayConfiguration.Timestamp, uint32(time/1000))
 			option.Identifier = id
 			if conflicts >= 100 {
 				scheduleScore += 100

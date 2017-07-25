@@ -6,7 +6,7 @@ package gateway
 import (
 	"sync"
 
-	pb_gateway "github.com/TheThingsNetwork/ttn/api/gateway"
+	pb_gateway "github.com/TheThingsNetwork/api/gateway"
 )
 
 // StatusStore is a database for setting and retrieving the latest gateway status

@@ -6,8 +6,8 @@ package router
 import (
 	"testing"
 
-	"github.com/TheThingsNetwork/ttn/api/discovery"
-	"github.com/TheThingsNetwork/ttn/api/monitor/monitorclient"
+	"github.com/TheThingsNetwork/api/discovery/discoveryclient"
+	"github.com/TheThingsNetwork/api/monitor/monitorclient"
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/router/gateway"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
@@ -18,12 +18,12 @@ import (
 type testRouter struct {
 	*router
 	ctrl      *gomock.Controller
-	discovery *discovery.MockClient
+	discovery *discoveryclient.MockClient
 }
 
 func getTestRouter(t *testing.T) *testRouter {
 	ctrl := gomock.NewController(t)
-	discovery := discovery.NewMockClient(ctrl)
+	discovery := discoveryclient.NewMockClient(ctrl)
 	logger := GetLogger(t, "TestRouter")
 	r := &testRouter{
 		router: &router{

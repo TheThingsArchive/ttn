@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	pb "github.com/TheThingsNetwork/ttn/api/broker"
-	"github.com/TheThingsNetwork/ttn/api/fields"
-	"github.com/TheThingsNetwork/ttn/api/trace"
+	pb "github.com/TheThingsNetwork/api/broker"
+	"github.com/TheThingsNetwork/api/logfields"
+	"github.com/TheThingsNetwork/api/trace"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 )
 
@@ -21,7 +21,7 @@ func (a ByScore) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a ByScore) Less(i, j int) bool { return a[i].Score < a[j].Score }
 
 func (b *broker) HandleDownlink(downlink *pb.DownlinkMessage) error {
-	ctx := b.Ctx.WithFields(fields.Get(downlink))
+	ctx := b.Ctx.WithFields(logfields.ForMessage(downlink))
 	var err error
 	start := time.Now()
 	defer func() {

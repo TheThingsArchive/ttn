@@ -9,11 +9,11 @@ import (
 
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 
-	pb "github.com/TheThingsNetwork/ttn/api/broker"
-	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
-	pb_handler "github.com/TheThingsNetwork/ttn/api/handler"
-	pb_networkserver "github.com/TheThingsNetwork/ttn/api/networkserver"
-	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
+	pb "github.com/TheThingsNetwork/api/broker"
+	pb_discovery "github.com/TheThingsNetwork/api/discovery"
+	pb_handler "github.com/TheThingsNetwork/api/handler"
+	pb_networkserver "github.com/TheThingsNetwork/api/networkserver"
+	pb_lorawan "github.com/TheThingsNetwork/api/protocol/lorawan"
 	. "github.com/smartystreets/assertions"
 	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
 	"google.golang.org/grpc"

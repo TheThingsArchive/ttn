@@ -9,8 +9,8 @@ import (
 	"net"
 	"time"
 
-	pb "github.com/TheThingsNetwork/ttn/api/discovery"
-	"github.com/golang/protobuf/ptypes/empty"
+	pb "github.com/TheThingsNetwork/api/discovery"
+	"github.com/gogo/protobuf/types"
 	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
 	"google.golang.org/grpc"
 )
@@ -52,10 +52,10 @@ type mockDiscoveryServer struct {
 	get      uint
 }
 
-func (d *mockDiscoveryServer) Announce(ctx context.Context, announcement *pb.Announcement) (*empty.Empty, error) {
+func (d *mockDiscoveryServer) Announce(ctx context.Context, announcement *pb.Announcement) (*types.Empty, error) {
 	d.announce++
 	<-time.After(5 * time.Millisecond)
-	return &empty.Empty{}, nil
+	return &types.Empty{}, nil
 }
 func (d *mockDiscoveryServer) GetAll(ctx context.Context, req *pb.GetServiceRequest) (*pb.AnnouncementsResponse, error) {
 	d.discover++
@@ -69,13 +69,13 @@ func (d *mockDiscoveryServer) Get(ctx context.Context, req *pb.GetRequest) (*pb.
 	<-time.After(5 * time.Millisecond)
 	return &pb.Announcement{}, nil
 }
-func (d *mockDiscoveryServer) AddMetadata(ctx context.Context, in *pb.MetadataRequest) (*empty.Empty, error) {
+func (d *mockDiscoveryServer) AddMetadata(ctx context.Context, in *pb.MetadataRequest) (*types.Empty, error) {
 	<-time.After(5 * time.Millisecond)
-	return &empty.Empty{}, nil
+	return &types.Empty{}, nil
 }
-func (d *mockDiscoveryServer) DeleteMetadata(ctx context.Context, in *pb.MetadataRequest) (*empty.Empty, error) {
+func (d *mockDiscoveryServer) DeleteMetadata(ctx context.Context, in *pb.MetadataRequest) (*types.Empty, error) {
 	<-time.After(5 * time.Millisecond)
-	return &empty.Empty{}, nil
+	return &types.Empty{}, nil
 }
 func (d *mockDiscoveryServer) GetByAppID(ctx context.Context, req *pb.GetByAppIDRequest) (*pb.Announcement, error) {
 	<-time.After(5 * time.Millisecond)

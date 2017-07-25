@@ -9,11 +9,12 @@ import (
 	"crypto/tls"
 	"fmt"
 
+	pb_discovery "github.com/TheThingsNetwork/api/discovery"
+	"github.com/TheThingsNetwork/api/discovery/discoveryclient"
+	"github.com/TheThingsNetwork/api/monitor/monitorclient"
 	"github.com/TheThingsNetwork/go-account-lib/claims"
 	"github.com/TheThingsNetwork/go-account-lib/tokenkey"
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
-	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
-	"github.com/TheThingsNetwork/ttn/api/monitor/monitorclient"
 	"github.com/TheThingsNetwork/ttn/api/pool"
 	"github.com/spf13/viper"
 	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
@@ -26,7 +27,7 @@ type Component struct {
 	Config           Config
 	Pool             *pool.Pool
 	Identity         *pb_discovery.Announcement
-	Discovery        pb_discovery.Client
+	Discovery        discoveryclient.Client
 	Monitor          *monitorclient.MonitorClient
 	Ctx              ttnlog.Interface
 	Context          context.Context
@@ -56,7 +57,7 @@ func New(ctx ttnlog.Interface, serviceName string, announcedAddress string) (*Co
 		Config: ConfigFromViper(),
 		Ctx:    ctx,
 		Identity: &pb_discovery.Announcement{
-			Id:             viper.GetString("id"),
+			ID:             viper.GetString("id"),
 			Description:    viper.GetString("description"),
 			ServiceName:    serviceName,
 			ServiceVersion: fmt.Sprintf("%s-%s (%s)", viper.GetString("version"), viper.GetString("gitCommit"), viper.GetString("buildDate")),
@@ -77,7 +78,7 @@ func New(ctx ttnlog.Interface, serviceName string, announcedAddress string) (*Co
 
 	if serviceName != "discovery" && serviceName != "networkserver" {
 		var err error
-		component.Discovery, err = pb_discovery.NewClient(
+		component.Discovery, err = discoveryclient.NewClient(
 			viper.GetString("discovery-address"),
 			component.Identity,
 			func() string {

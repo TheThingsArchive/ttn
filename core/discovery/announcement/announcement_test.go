@@ -6,7 +6,7 @@ package announcement
 import (
 	"testing"
 
-	pb "github.com/TheThingsNetwork/ttn/api/discovery"
+	pb "github.com/TheThingsNetwork/api/discovery"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/smartystreets/assertions"
 )
@@ -60,24 +60,24 @@ func TestAnnouncementToProto(t *testing.T) {
 		},
 	}
 	proto := announcement.ToProto()
-	a.So(proto.Id, ShouldEqual, announcement.ID)
+	a.So(proto.ID, ShouldEqual, announcement.ID)
 	a.So(proto.Metadata, ShouldHaveLength, 3)
-	a.So(proto.Metadata[0].GetAppEui(), ShouldResemble, []byte{1, 2, 3, 4, 5, 6, 7, 8})
-	a.So(proto.Metadata[1].GetAppId(), ShouldEqual, "AppID")
+	a.So(proto.Metadata[0].GetAppEUI(), ShouldResemble, []byte{1, 2, 3, 4, 5, 6, 7, 8})
+	a.So(proto.Metadata[1].GetAppID(), ShouldEqual, "AppID")
 	a.So(proto.Metadata[2].GetDevAddrPrefix(), ShouldResemble, []byte{0, 0, 0, 0, 0})
 }
 
 func TestAnnouncementFromProto(t *testing.T) {
 	a := New(t)
 	proto := &pb.Announcement{
-		Id: "ID",
+		ID: "ID",
 		Metadata: []*pb.Metadata{
-			&pb.Metadata{Metadata: &pb.Metadata_AppEui{AppEui: []byte{1, 2, 3, 4, 5, 6, 7, 8}}},
-			&pb.Metadata{Metadata: &pb.Metadata_AppId{AppId: "AppID"}},
+			&pb.Metadata{Metadata: &pb.Metadata_AppEUI{AppEUI: []byte{1, 2, 3, 4, 5, 6, 7, 8}}},
+			&pb.Metadata{Metadata: &pb.Metadata_AppID{AppID: "AppID"}},
 			&pb.Metadata{Metadata: &pb.Metadata_DevAddrPrefix{DevAddrPrefix: []byte{0, 0, 0, 0, 0}}},
 		},
 	}
 	announcement := FromProto(proto)
-	a.So(announcement.ID, ShouldEqual, proto.Id)
+	a.So(announcement.ID, ShouldEqual, proto.ID)
 	a.So(announcement.Metadata, ShouldHaveLength, 3)
 }

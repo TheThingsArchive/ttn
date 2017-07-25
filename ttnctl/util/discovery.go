@@ -7,9 +7,9 @@ import (
 	"io/ioutil"
 	"path"
 
+	"github.com/TheThingsNetwork/api/discovery"
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/api"
-	"github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/api/pool"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"

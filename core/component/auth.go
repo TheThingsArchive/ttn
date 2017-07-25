@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	pb_discovery "github.com/TheThingsNetwork/api/discovery"
 	"github.com/TheThingsNetwork/go-account-lib/account"
 	"github.com/TheThingsNetwork/go-account-lib/auth"
 	"github.com/TheThingsNetwork/go-account-lib/cache"
@@ -21,7 +22,6 @@ import (
 	"github.com/TheThingsNetwork/go-account-lib/tokenkey"
 	api_auth "github.com/TheThingsNetwork/go-utils/grpc/auth"
 	"github.com/TheThingsNetwork/go-utils/grpc/ttnctx"
-	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
 	"github.com/TheThingsNetwork/ttn/api/pool"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/security"
@@ -172,7 +172,7 @@ func (c *Component) initRoots() error {
 func (c *Component) initBgCtx() error {
 	ctx := context.Background()
 	if c.Identity != nil {
-		ctx = ttnctx.OutgoingContextWithID(ctx, c.Identity.Id)
+		ctx = ttnctx.OutgoingContextWithID(ctx, c.Identity.ID)
 		ctx = ttnctx.OutgoingContextWithServiceInfo(ctx, c.Identity.ServiceName, c.Identity.ServiceVersion, c.Identity.NetAddress)
 	}
 	c.Context = ctx
@@ -194,7 +194,7 @@ func (c *Component) BuildJWT() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return security.BuildJWT(c.Identity.Id, 20*time.Second, privPEM)
+	return security.BuildJWT(c.Identity.ID, 20*time.Second, privPEM)
 }
 
 // GetContext returns a context for outgoing RPC request. If token is "", this function will generate a short lived token from the component
@@ -297,8 +297,8 @@ func (c *Component) ValidateNetworkContext(ctx context.Context) (component *pb_d
 		err = errors.NewErrPermissionDenied(fmt.Sprintf("Token was issued by %s, not by %s", claims.Issuer, id))
 		return
 	}
-	if claims.Subject != "" && claims.Subject != claims.Issuer && claims.Subject != c.Identity.Id {
-		err = errors.NewErrPermissionDenied(fmt.Sprintf("Token was issued to connect with %s, not with %s", claims.Subject, c.Identity.Id))
+	if claims.Subject != "" && claims.Subject != claims.Issuer && claims.Subject != c.Identity.ID {
+		err = errors.NewErrPermissionDenied(fmt.Sprintf("Token was issued to connect with %s, not with %s", claims.Subject, c.Identity.ID))
 		return
 	}
 

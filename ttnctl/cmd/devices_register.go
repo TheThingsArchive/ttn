@@ -6,12 +6,12 @@ package cmd
 import (
 	"strings"
 
+	"github.com/TheThingsNetwork/api"
+	"github.com/TheThingsNetwork/api/handler"
+	"github.com/TheThingsNetwork/api/protocol/lorawan"
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/go-utils/pseudorandom"
 	"github.com/TheThingsNetwork/go-utils/random"
-	"github.com/TheThingsNetwork/ttn/api"
-	"github.com/TheThingsNetwork/ttn/api/handler"
-	"github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/spf13/cobra"
@@ -65,13 +65,13 @@ var devicesRegisterCmd = &cobra.Command{
 		}
 
 		device := &handler.Device{
-			AppId: appID,
-			DevId: devID,
-			Device: &handler.Device_LorawanDevice{LorawanDevice: &lorawan.Device{
-				AppId:         appID,
-				DevId:         devID,
-				AppEui:        &appEUI,
-				DevEui:        &devEUI,
+			AppID: appID,
+			DevID: devID,
+			Device: &handler.Device_LoRaWANDevice{LoRaWANDevice: &lorawan.Device{
+				AppID:         appID,
+				DevID:         devID,
+				AppEUI:        &appEUI,
+				DevEUI:        &devEUI,
 				AppKey:        &appKey,
 				Uses32BitFCnt: true,
 			}},

@@ -45,8 +45,8 @@ func TestDevice_ToPb(t *testing.T) {
 	a := New(t)
 
 	p := testDev.ToPb()
-	a.So(p.AppId, ShouldEqual, testDev.AppID)
-	a.So(p.DevId, ShouldEqual, testDev.DevID)
+	a.So(p.AppID, ShouldEqual, testDev.AppID)
+	a.So(p.DevID, ShouldEqual, testDev.DevID)
 	a.So(p.Latitude, ShouldEqual, testDev.Latitude)
 	a.So(p.Longitude, ShouldEqual, testDev.Longitude)
 	a.So(p.Altitude, ShouldEqual, testDev.Altitude)

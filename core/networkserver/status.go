@@ -4,8 +4,8 @@
 package networkserver
 
 import (
-	"github.com/TheThingsNetwork/ttn/api"
-	pb "github.com/TheThingsNetwork/ttn/api/networkserver"
+	"github.com/TheThingsNetwork/api"
+	pb "github.com/TheThingsNetwork/api/networkserver"
 	"github.com/TheThingsNetwork/ttn/api/stats"
 	"github.com/rcrowley/go-metrics"
 )

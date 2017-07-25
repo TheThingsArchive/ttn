@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/TheThingsNetwork/ttn/api/discovery"
+	"github.com/TheThingsNetwork/api/discovery"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
@@ -53,7 +53,7 @@ var discoverCmd = &cobra.Command{
 		fmt.Printf(serviceFmt, "==", "=======", "=======", "======")
 		fmt.Println()
 		for _, service := range res.Services {
-			fmt.Printf(serviceFmt, service.Id, crop(service.NetAddress, 36), crop(service.ServiceVersion, 20), fmt.Sprintf("%v", service.Public))
+			fmt.Printf(serviceFmt, service.ID, crop(service.NetAddress, 36), crop(service.ServiceVersion, 20), fmt.Sprintf("%v", service.Public))
 			if showMetadata, _ := cmd.Flags().GetBool("metadata"); showMetadata {
 				switch serviceType {
 				case "broker":

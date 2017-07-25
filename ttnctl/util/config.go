@@ -9,8 +9,8 @@ import (
 	"os"
 	"path"
 
+	"github.com/TheThingsNetwork/api"
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
-	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/spf13/viper"
 	yaml "gopkg.in/yaml.v2"

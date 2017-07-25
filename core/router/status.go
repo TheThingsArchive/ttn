@@ -4,8 +4,8 @@
 package router
 
 import (
-	"github.com/TheThingsNetwork/ttn/api"
-	pb "github.com/TheThingsNetwork/ttn/api/router"
+	"github.com/TheThingsNetwork/api"
+	pb "github.com/TheThingsNetwork/api/router"
 	"github.com/TheThingsNetwork/ttn/api/stats"
 	"github.com/rcrowley/go-metrics"
 )

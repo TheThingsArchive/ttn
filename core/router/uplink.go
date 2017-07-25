@@ -6,12 +6,12 @@ package router
 import (
 	"time"
 
+	pb_broker "github.com/TheThingsNetwork/api/broker"
+	"github.com/TheThingsNetwork/api/logfields"
+	pb_lorawan "github.com/TheThingsNetwork/api/protocol/lorawan"
+	pb "github.com/TheThingsNetwork/api/router"
+	"github.com/TheThingsNetwork/api/trace"
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
-	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
-	"github.com/TheThingsNetwork/ttn/api/fields"
-	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
-	pb "github.com/TheThingsNetwork/ttn/api/router"
-	"github.com/TheThingsNetwork/ttn/api/trace"
 	"github.com/TheThingsNetwork/ttn/core/router/gateway"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
@@ -19,7 +19,7 @@ import (
 )
 
 func (r *router) HandleUplink(gatewayID string, uplink *pb.UplinkMessage) (err error) {
-	ctx := r.Ctx.WithField("GatewayID", gatewayID).WithFields(fields.Get(uplink))
+	ctx := r.Ctx.WithField("GatewayID", gatewayID).WithFields(logfields.ForMessage(uplink))
 	start := time.Now()
 	var gateway *gateway.Gateway
 	defer func() {
@@ -55,8 +55,8 @@ func (r *router) HandleUplink(gatewayID string, uplink *pb.UplinkMessage) (err e
 		}).Debug("Handle Uplink as Activation")
 		r.HandleActivation(gatewayID, &pb.DeviceActivationRequest{
 			Payload:          uplink.Payload,
-			DevEui:           &devEUI,
-			AppEui:           &appEUI,
+			DevEUI:           &devEUI,
+			AppEUI:           &appEUI,
 			ProtocolMetadata: uplink.ProtocolMetadata,
 			GatewayMetadata:  uplink.GatewayMetadata,
 			Trace:            uplink.Trace.WithEvent("handle uplink as activation"),
@@ -69,7 +69,7 @@ func (r *router) HandleUplink(gatewayID string, uplink *pb.UplinkMessage) (err e
 		return nil
 	}
 
-	if lorawan := uplink.ProtocolMetadata.GetLorawan(); lorawan != nil {
+	if lorawan := uplink.ProtocolMetadata.GetLoRaWAN(); lorawan != nil {
 		ctx = ctx.WithField("Modulation", lorawan.Modulation.String())
 		if lorawan.Modulation == pb_lorawan.Modulation_LORA {
 			ctx = ctx.WithField("DataRate", lorawan.DataRate)
@@ -81,8 +81,8 @@ func (r *router) HandleUplink(gatewayID string, uplink *pb.UplinkMessage) (err e
 	if gateway := uplink.GatewayMetadata; gateway != nil {
 		ctx = ctx.WithFields(ttnlog.Fields{
 			"Frequency": gateway.Frequency,
-			"RSSI":      gateway.Rssi,
-			"SNR":       gateway.Snr,
+			"RSSI":      gateway.RSSI,
+			"SNR":       gateway.SNR,
 		})
 	}
 

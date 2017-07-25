@@ -6,7 +6,7 @@ package gateway
 import (
 	"testing"
 
-	pb_gateway "github.com/TheThingsNetwork/ttn/api/gateway"
+	pb_gateway "github.com/TheThingsNetwork/api/gateway"
 	. "github.com/smartystreets/assertions"
 )
 

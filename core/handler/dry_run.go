@@ -6,7 +6,7 @@ package handler
 import (
 	"encoding/json"
 
-	pb "github.com/TheThingsNetwork/ttn/api/handler"
+	pb "github.com/TheThingsNetwork/api/handler"
 	"github.com/TheThingsNetwork/ttn/core/handler/application"
 	"github.com/TheThingsNetwork/ttn/core/handler/cayennelpp"
 	"github.com/TheThingsNetwork/ttn/core/handler/functions"

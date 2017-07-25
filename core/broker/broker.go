@@ -9,12 +9,12 @@ import (
 	"sync"
 	"time"
 
+	pb "github.com/TheThingsNetwork/api/broker"
+	"github.com/TheThingsNetwork/api/monitor/monitorclient"
+	"github.com/TheThingsNetwork/api/networkserver"
+	pb_lorawan "github.com/TheThingsNetwork/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/go-utils/grpc/auth"
 	"github.com/TheThingsNetwork/ttn/api"
-	pb "github.com/TheThingsNetwork/ttn/api/broker"
-	"github.com/TheThingsNetwork/ttn/api/monitor/monitorclient"
-	"github.com/TheThingsNetwork/ttn/api/networkserver"
-	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
@@ -86,7 +86,7 @@ func (b *broker) checkPrefixAnnouncements() error {
 	}
 
 	// Get self from Discovery
-	self, err := b.Component.Discover("broker", b.Component.Identity.Id)
+	self, err := b.Component.Discover("broker", b.Component.Identity.ID)
 	if err != nil {
 		return err
 	}

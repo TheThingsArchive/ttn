@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
+	pb_broker "github.com/TheThingsNetwork/api/broker"
+	pb_handler "github.com/TheThingsNetwork/api/handler"
+	"github.com/TheThingsNetwork/api/trace"
 	"github.com/TheThingsNetwork/go-utils/pseudorandom"
-	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
-	pb_handler "github.com/TheThingsNetwork/ttn/api/handler"
-	"github.com/TheThingsNetwork/ttn/api/trace"
 	"github.com/TheThingsNetwork/ttn/core/networkserver/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
@@ -41,12 +41,12 @@ func (n *networkServer) getDevAddr(constraints ...string) (types.DevAddr, error)
 }
 
 func (n *networkServer) HandlePrepareActivation(activation *pb_broker.DeduplicatedDeviceActivationRequest) (*pb_broker.DeduplicatedDeviceActivationRequest, error) {
-	if activation.AppEui == nil || activation.DevEui == nil {
+	if activation.AppEUI == nil || activation.DevEUI == nil {
 		return nil, errors.NewErrInvalidArgument("Activation", "missing AppEUI or DevEUI")
 	}
-	dev, err := n.devices.Get(*activation.AppEui, *activation.DevEui)
+	dev, err := n.devices.Get(*activation.AppEUI, *activation.DevEUI)
 	if errors.IsNotFound(err) {
-		dev, err = n.devices.Get(*activation.AppEui, emptyDevEUI)
+		dev, err = n.devices.Get(*activation.AppEUI, emptyDevEUI)
 		if err == nil {
 			activation.Trace = activation.Trace.WithEvent("device not yet registered")
 		}
@@ -54,8 +54,8 @@ func (n *networkServer) HandlePrepareActivation(activation *pb_broker.Deduplicat
 	if err != nil {
 		return nil, err
 	}
-	activation.AppId = dev.AppID
-	activation.DevId = dev.DevID
+	activation.AppID = dev.AppID
+	activation.DevID = dev.DevID
 
 	// Don't take any action if there is no response possible
 	if pld := activation.GetResponseTemplate(); pld == nil {
@@ -70,7 +70,7 @@ func (n *networkServer) HandlePrepareActivation(activation *pb_broker.Deduplicat
 	activationConstraints = append(activationConstraints, "otaa")
 
 	// We can only activate LoRaWAN devices
-	lorawanMeta := activation.GetActivationMetadata().GetLorawan()
+	lorawanMeta := activation.GetActivationMetadata().GetLoRaWAN()
 	if lorawanMeta == nil {
 		return nil, errors.NewErrInvalidArgument("Activation", "missing LoRaWAN metadata")
 	}
@@ -93,14 +93,14 @@ func (n *networkServer) HandlePrepareActivation(activation *pb_broker.Deduplicat
 		},
 		MACPayload: &lorawan.JoinAcceptPayload{
 			NetID:      n.netID,
-			DLSettings: lorawan.DLSettings{RX2DataRate: uint8(lorawanMeta.Rx2Dr), RX1DROffset: uint8(lorawanMeta.Rx1DrOffset)},
+			DLSettings: lorawan.DLSettings{RX2DataRate: uint8(lorawanMeta.Rx2DR), RX1DROffset: uint8(lorawanMeta.Rx1DROffset)},
 			RXDelay:    uint8(lorawanMeta.RxDelay),
 			DevAddr:    lorawan.DevAddr(devAddr),
 		},
 	}
-	if lorawanMeta.CfList != nil {
+	if lorawanMeta.CFList != nil {
 		var cfList lorawan.CFList
-		for i, cfListItem := range lorawanMeta.CfList.Freq {
+		for i, cfListItem := range lorawanMeta.CFList.Freq {
 			cfList[i] = cfListItem
 		}
 		phy.MACPayload.(*lorawan.JoinAcceptPayload).CFList = &cfList
@@ -121,13 +121,13 @@ func (n *networkServer) HandleActivate(activation *pb_handler.DeviceActivationRe
 	if meta == nil {
 		return nil, errors.NewErrInvalidArgument("Activation", "missing ActivationMetadata")
 	}
-	lorawan := meta.GetLorawan()
+	lorawan := meta.GetLoRaWAN()
 	if lorawan == nil {
 		return nil, errors.NewErrInvalidArgument("Activation", "missing LoRaWAN ActivationMetadata")
 	}
 	n.status.activations.Mark(1)
 
-	dev, err := n.devices.Get(*lorawan.AppEui, *lorawan.DevEui)
+	dev, err := n.devices.Get(*lorawan.AppEUI, *lorawan.DevEUI)
 	if err != nil {
 		return nil, err
 	}
@@ -143,7 +143,7 @@ func (n *networkServer) HandleActivate(activation *pb_handler.DeviceActivationRe
 	dev.FCntDown = 0
 	dev.ADR = device.ADRSettings{Band: dev.ADR.Band, Margin: dev.ADR.Margin}
 
-	if band := meta.GetLorawan().GetFrequencyPlan().String(); band != "" {
+	if band := meta.GetLoRaWAN().GetFrequencyPlan().String(); band != "" {
 		dev.ADR.Band = band
 	}
 

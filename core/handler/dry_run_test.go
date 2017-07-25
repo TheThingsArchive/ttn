@@ -6,7 +6,7 @@ package handler
 import (
 	"testing"
 
-	pb "github.com/TheThingsNetwork/ttn/api/handler"
+	pb "github.com/TheThingsNetwork/api/handler"
 	"github.com/TheThingsNetwork/ttn/core/handler/application"
 	"github.com/TheThingsNetwork/ttn/core/storage"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
@@ -77,7 +77,7 @@ func TestDryUplinkFieldsCustom(t *testing.T) {
 	dryUplinkMessage := &pb.DryUplinkMessage{
 		Payload: []byte{11, 22, 33},
 		App: &pb.Application{
-			AppId:         "DryUplinkFields",
+			AppID:         "DryUplinkFields",
 			PayloadFormat: "custom",
 			Decoder: `function Decoder (bytes) {
 				console.log("hi", 11)
@@ -126,7 +126,7 @@ func TestDryUplinkFieldsCayenneLPP(t *testing.T) {
 	dryUplinkMessage := &pb.DryUplinkMessage{
 		Payload: []byte{7, 103, 0, 245},
 		App: &pb.Application{
-			AppId:         "DryUplinkFields",
+			AppID:         "DryUplinkFields",
 			PayloadFormat: "cayennelpp",
 		},
 	}

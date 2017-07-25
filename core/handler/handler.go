@@ -7,12 +7,13 @@ import (
 	"fmt"
 	"time"
 
+	pb_broker "github.com/TheThingsNetwork/api/broker"
+	"github.com/TheThingsNetwork/api/broker/brokerclient"
+	pb "github.com/TheThingsNetwork/api/handler"
+	"github.com/TheThingsNetwork/api/monitor/monitorclient"
+	pb_lorawan "github.com/TheThingsNetwork/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/go-utils/grpc/auth"
 	"github.com/TheThingsNetwork/ttn/amqp"
-	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
-	pb "github.com/TheThingsNetwork/ttn/api/handler"
-	"github.com/TheThingsNetwork/ttn/api/monitor/monitorclient"
-	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/handler/application"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
@@ -208,11 +209,11 @@ func (h *handler) associateBroker() error {
 
 	h.downlink = make(chan *pb_broker.DownlinkMessage)
 
-	config := pb_broker.DefaultClientConfig
+	config := brokerclient.DefaultClientConfig
 	config.BackgroundContext = h.Component.Context
-	cli := pb_broker.NewClient(config)
+	cli := brokerclient.NewClient(config)
 	cli.AddServer(h.ttnBrokerID, h.ttnBrokerConn)
-	association := cli.NewHandlerStreams(h.Identity.Id, "")
+	association := cli.NewHandlerStreams(h.Identity.ID, "")
 
 	go func() {
 		for {

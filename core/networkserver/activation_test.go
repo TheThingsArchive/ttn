@@ -6,10 +6,10 @@ package networkserver
 import (
 	"testing"
 
-	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
-	pb_handler "github.com/TheThingsNetwork/ttn/api/handler"
-	pb_protocol "github.com/TheThingsNetwork/ttn/api/protocol"
-	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
+	pb_broker "github.com/TheThingsNetwork/api/broker"
+	pb_handler "github.com/TheThingsNetwork/api/handler"
+	pb_protocol "github.com/TheThingsNetwork/api/protocol"
+	pb_lorawan "github.com/TheThingsNetwork/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core/networkserver/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
@@ -35,11 +35,11 @@ func TestHandlePrepareActivation(t *testing.T) {
 
 	// Device not registered
 	resp, err := ns.HandlePrepareActivation(&pb_broker.DeduplicatedDeviceActivationRequest{
-		DevEui: &devEUI,
-		AppEui: &appEUI,
-		ActivationMetadata: &pb_protocol.ActivationMetadata{Protocol: &pb_protocol.ActivationMetadata_Lorawan{
-			Lorawan: &pb_lorawan.ActivationMetadata{
-				CfList: &pb_lorawan.CFList{Freq: []uint32{867100000, 867300000, 867500000, 867700000, 867900000}},
+		DevEUI: &devEUI,
+		AppEUI: &appEUI,
+		ActivationMetadata: &pb_protocol.ActivationMetadata{Protocol: &pb_protocol.ActivationMetadata_LoRaWAN{
+			LoRaWAN: &pb_lorawan.ActivationMetadata{
+				CFList: &pb_lorawan.CFList{Freq: []uint32{867100000, 867300000, 867500000, 867700000, 867900000}},
 			},
 		}},
 		ResponseTemplate: &pb_broker.DeviceActivationResponse{},
@@ -53,17 +53,17 @@ func TestHandlePrepareActivation(t *testing.T) {
 		ns.devices.Delete(appEUI, emptyDevEUI)
 	}()
 	resp, err = ns.HandlePrepareActivation(&pb_broker.DeduplicatedDeviceActivationRequest{
-		DevEui: &devEUI,
-		AppEui: &appEUI,
-		ActivationMetadata: &pb_protocol.ActivationMetadata{Protocol: &pb_protocol.ActivationMetadata_Lorawan{
-			Lorawan: &pb_lorawan.ActivationMetadata{
-				CfList: &pb_lorawan.CFList{Freq: []uint32{867100000, 867300000, 867500000, 867700000, 867900000}},
+		DevEUI: &devEUI,
+		AppEUI: &appEUI,
+		ActivationMetadata: &pb_protocol.ActivationMetadata{Protocol: &pb_protocol.ActivationMetadata_LoRaWAN{
+			LoRaWAN: &pb_lorawan.ActivationMetadata{
+				CFList: &pb_lorawan.CFList{Freq: []uint32{867100000, 867300000, 867500000, 867700000, 867900000}},
 			},
 		}},
 		ResponseTemplate: &pb_broker.DeviceActivationResponse{},
 	})
 	a.So(err, ShouldBeNil)
-	a.So(resp.AppId, ShouldEqual, "test")
+	a.So(resp.AppID, ShouldEqual, "test")
 
 	// Constrained Device
 	dev = &device.Device{AppEUI: appEUI, DevEUI: devEUI, Options: device.Options{
@@ -74,11 +74,11 @@ func TestHandlePrepareActivation(t *testing.T) {
 		ns.devices.Delete(appEUI, devEUI)
 	}()
 	resp, err = ns.HandlePrepareActivation(&pb_broker.DeduplicatedDeviceActivationRequest{
-		DevEui: &devEUI,
-		AppEui: &appEUI,
-		ActivationMetadata: &pb_protocol.ActivationMetadata{Protocol: &pb_protocol.ActivationMetadata_Lorawan{
-			Lorawan: &pb_lorawan.ActivationMetadata{
-				CfList: &pb_lorawan.CFList{Freq: []uint32{867100000, 867300000, 867500000, 867700000, 867900000}},
+		DevEUI: &devEUI,
+		AppEUI: &appEUI,
+		ActivationMetadata: &pb_protocol.ActivationMetadata{Protocol: &pb_protocol.ActivationMetadata_LoRaWAN{
+			LoRaWAN: &pb_lorawan.ActivationMetadata{
+				CFList: &pb_lorawan.CFList{Freq: []uint32{867100000, 867300000, 867500000, 867700000, 867900000}},
 			},
 		}},
 		ResponseTemplate: &pb_broker.DeviceActivationResponse{},
@@ -91,17 +91,17 @@ func TestHandlePrepareActivation(t *testing.T) {
 
 	// Device registered
 	resp, err = ns.HandlePrepareActivation(&pb_broker.DeduplicatedDeviceActivationRequest{
-		DevEui: &devEUI,
-		AppEui: &appEUI,
-		ActivationMetadata: &pb_protocol.ActivationMetadata{Protocol: &pb_protocol.ActivationMetadata_Lorawan{
-			Lorawan: &pb_lorawan.ActivationMetadata{
-				CfList: &pb_lorawan.CFList{Freq: []uint32{867100000, 867300000, 867500000, 867700000, 867900000}},
+		DevEUI: &devEUI,
+		AppEUI: &appEUI,
+		ActivationMetadata: &pb_protocol.ActivationMetadata{Protocol: &pb_protocol.ActivationMetadata_LoRaWAN{
+			LoRaWAN: &pb_lorawan.ActivationMetadata{
+				CFList: &pb_lorawan.CFList{Freq: []uint32{867100000, 867300000, 867500000, 867700000, 867900000}},
 			},
 		}},
 		ResponseTemplate: &pb_broker.DeviceActivationResponse{},
 	})
 	a.So(err, ShouldBeNil)
-	devAddr := resp.ActivationMetadata.GetLorawan().DevAddr
+	devAddr := resp.ActivationMetadata.GetLoRaWAN().DevAddr
 	a.So(devAddr.IsEmpty(), ShouldBeFalse)
 	a.So(devAddr[0]&254, ShouldEqual, 19<<1) // 7 MSB should be NetID
 
@@ -145,10 +145,10 @@ func TestHandleActivate(t *testing.T) {
 	appEUI := types.AppEUI(getEUI(0, 0, 0, 0, 0, 0, 3, 1))
 	devEUI := types.DevEUI(getEUI(0, 0, 0, 0, 0, 0, 3, 1))
 	_, err = ns.HandleActivate(&pb_handler.DeviceActivationResponse{
-		ActivationMetadata: &pb_protocol.ActivationMetadata{Protocol: &pb_protocol.ActivationMetadata_Lorawan{
-			Lorawan: &pb_lorawan.ActivationMetadata{
-				AppEui:  &appEUI,
-				DevEui:  &devEUI,
+		ActivationMetadata: &pb_protocol.ActivationMetadata{Protocol: &pb_protocol.ActivationMetadata_LoRaWAN{
+			LoRaWAN: &pb_lorawan.ActivationMetadata{
+				AppEUI:  &appEUI,
+				DevEUI:  &devEUI,
 				DevAddr: &devAddr,
 				NwkSKey: &nwkSKey,
 			},
