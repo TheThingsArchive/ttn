@@ -63,7 +63,9 @@ func (r *routerRPC) gatewayFromMetadata(md metadata.MD) (gtw *gateway.Gateway, e
 	}
 
 	gtw = r.router.getGateway(gatewayID)
-	gtw.SetAuth(token, authenticated)
+	if authenticated {
+		gtw.SetAuth(token, authenticated)
+	}
 
 	return gtw, nil
 }
