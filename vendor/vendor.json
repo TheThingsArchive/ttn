@@ -9,10 +9,10 @@
 			"revisionTime": "2017-04-10T19:29:09Z"
 		},
 		{
-			"checksumSHA1": "+/an8GeFMUwMQ7Ik3RmXOpyf5lk=",
+			"checksumSHA1": "XAMbw4O4bcDKEEQiC3ZRldHY/dg=",
 			"path": "github.com/TheThingsNetwork/api",
-			"revision": "560be39d3424ca851779df1a8c9329976b74a540",
-			"revisionTime": "2017-07-21T07:02:16Z"
+			"revision": "56d230882a3b4c4ac85ad882ec902c790f1c1a2a",
+			"revisionTime": "2017-07-26T15:04:12Z"
 		},
 		{
 			"checksumSHA1": "Rw+hj+XOq4Q56t5lLnMA5Bgjo18=",
@@ -27,16 +27,16 @@
 			"revisionTime": "2017-07-21T07:02:16Z"
 		},
 		{
-			"checksumSHA1": "6Ggao/KY9AIc8LdEviIeAwvrq6E=",
+			"checksumSHA1": "Aly2VuBqd8enG/9cUCqWKP219c8=",
 			"path": "github.com/TheThingsNetwork/api/discovery",
-			"revision": "560be39d3424ca851779df1a8c9329976b74a540",
-			"revisionTime": "2017-07-21T07:02:16Z"
+			"revision": "56d230882a3b4c4ac85ad882ec902c790f1c1a2a",
+			"revisionTime": "2017-07-26T15:04:12Z"
 		},
 		{
-			"checksumSHA1": "Bl0OHc+NIiYUfnt3kUm6WD1Iim8=",
+			"checksumSHA1": "zXx+EmyutkG/vJhaG6lzD1obrNM=",
 			"path": "github.com/TheThingsNetwork/api/discovery/discoveryclient",
-			"revision": "560be39d3424ca851779df1a8c9329976b74a540",
-			"revisionTime": "2017-07-21T07:02:16Z"
+			"revision": "56d230882a3b4c4ac85ad882ec902c790f1c1a2a",
+			"revisionTime": "2017-07-26T15:04:12Z"
 		},
 		{
 			"checksumSHA1": "eNHiocytCDERZCIwwXhjfH0Uyqc=",
