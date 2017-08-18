@@ -4,11 +4,12 @@
 package amqp
 
 import (
+	"testing"
+	"time"
+
 	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/assertions"
-	"testing"
-	"time"
 )
 
 func TestPublishSubscribeAppEvents(t *testing.T) {
@@ -71,7 +72,12 @@ func TestPublishSubscribeDeviceEvents(t *testing.T) {
 			wg.Done()
 		})
 	a.So(err, ShouldBeNil)
-	p.PublishDeviceEvent("app-id", "dev-id", "some-event", "payload")
+	p.PublishDeviceEvent(types.DeviceEvent{
+		AppID: "app-id",
+		DevID: "dev-id",
+		Event: "some-event",
+		Data:  "payload",
+	})
 	err = wg.WaitFor(time.Millisecond * 200)
 	a.So(err, ShouldBeNil)
 }

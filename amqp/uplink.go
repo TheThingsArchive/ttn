@@ -52,17 +52,6 @@ func (s *DefaultSubscriber) SubscribeDeviceUplink(appID, devID string, handler U
 	return nil
 }
 
-// ConsumeUplink consumes uplink messages in a specific queue
-func (s *DefaultSubscriber) ConsumeUplink(queue string, handler UplinkHandler) error {
-	messages, err := s.consume(s.name)
-	if err != nil {
-		return err
-	}
-
-	go s.handleUplink(messages, handler)
-	return nil
-}
-
 // SubscribeAppUplink subscribes to all uplink messages for the given application
 func (s *DefaultSubscriber) SubscribeAppUplink(appID string, handler UplinkHandler) error {
 	return s.SubscribeDeviceUplink(appID, "", handler)

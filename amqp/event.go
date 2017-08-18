@@ -17,6 +17,9 @@ type AppEventHandler func(sub Subscriber, appID string, eventType types.EventTyp
 // DeviceEventHandler is called for events
 type DeviceEventHandler func(sub Subscriber, appID string, devID string, eventType types.EventType, payload []byte)
 
+// EventHandler is called to handle events
+type EventHandler func(subscriber Subscriber, appID string, devID string, req types.DeviceEvent)
+
 // PublishAppEvent publishes an event to the topic for application events of the given type
 // it will marshal the payload to json
 func (c *DefaultPublisher) PublishAppEvent(appID string, eventType types.EventType, payload interface{}) error {
@@ -31,9 +34,9 @@ func (c *DefaultPublisher) PublishAppEvent(appID string, eventType types.EventTy
 
 // PublishDeviceEvent publishes an event to the topic for device events of the given type
 // it will marshal the payload to json
-func (c *DefaultPublisher) PublishDeviceEvent(appID string, devID string, eventType types.EventType, payload interface{}) error {
-	key := DeviceKey{appID, devID, DeviceEvents, string(eventType)}
-	msg, err := json.Marshal(payload)
+func (c *DefaultPublisher) PublishDeviceEvent(event types.DeviceEvent) error {
+	key := DeviceKey{event.AppID, event.DevID, DeviceEvents, string(event.Event)}
+	msg, err := json.Marshal(event)
 	if err != nil {
 		return fmt.Errorf("Unable to marshal the message payload: %s", err)
 	}
