@@ -99,7 +99,7 @@ func TestConnectWithTLS(t *testing.T) {
 
 	a := New(t)
 
-	cert, err := ioutil.ReadFile("../.env/mqtt/ca.cert")
+	cert, err := ioutil.ReadFile("../.env/mqtt/ca.pem")
 	if err != nil {
 		t.Errorf("MQTT CA Cert could not be loaded")
 	}
