@@ -8,9 +8,8 @@ import (
 	"fmt"
 	"time"
 
-	AMQP "github.com/streadway/amqp"
-
 	"github.com/TheThingsNetwork/ttn/core/types"
+	AMQP "github.com/streadway/amqp"
 )
 
 // UplinkHandler is called for uplink messages

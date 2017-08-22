@@ -92,13 +92,13 @@ func TestHandleAMQP(t *testing.T) {
 		err = s.Open()
 		a.So(err, ShouldBeNil)
 		defer s.Close()
-		err = s.SubscribeDeviceEvents(appID, devID, "", func(_ amqp.Subscriber, r_appID string, r_devID string, r_event types.EventType, evt []byte) {
-			a.So(r_appID, ShouldEqual, appID)
-			a.So(r_devID, ShouldEqual, devID)
-			wg.Done()
-		})
+		err = s.SubscribeDeviceEvents(appID, devID, "",
+			func(subscriber amqp.Subscriber, r_appID string, r_devID string, event types.DeviceEvent) {
+				a.So(r_appID, ShouldEqual, appID)
+				a.So(r_devID, ShouldEqual, devID)
+				wg.Done()
+			})
 		a.So(err, ShouldBeNil)
-
 		h.amqpEvent <- &types.DeviceEvent{
 			DevID: devID,
 			AppID: appID,

@@ -64,11 +64,11 @@ func TestPublishSubscribeDeviceEvents(t *testing.T) {
 	var wg WaitGroup
 	wg.Add(1)
 	err = s.SubscribeDeviceEvents("app-id", "dev-id", "some-event",
-		func(_ Subscriber, appID string, devID string, eventType types.EventType, payload []byte) {
+		func(subscriber Subscriber, appID string, devID string, event types.DeviceEvent) {
 			a.So(appID, ShouldEqual, "app-id")
 			a.So(devID, ShouldEqual, "dev-id")
-			a.So(eventType, ShouldEqual, "some-event")
-			a.So(string(payload), ShouldEqual, `"payload"`)
+			a.So(event.Event, ShouldEqual, "some-event")
+			a.So(event.Data.(string), ShouldEqual, "payload")
 			wg.Done()
 		})
 	a.So(err, ShouldBeNil)

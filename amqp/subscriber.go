@@ -30,7 +30,7 @@ type Subscriber interface {
 	SubscribeDeviceUplink(appID, devID string, handler UplinkHandler) error
 	SubscribeAppUplink(appID string, handler UplinkHandler) error
 	SubscribeUplink(handler UplinkHandler) error
-	ConsumeMessages(queue string, uplinkHandler UplinkHandler, eventHandler EventHandler) error
+	ConsumeMessages(queue string, uplinkHandler UplinkHandler, eventHandler DeviceEventHandler) error
 
 	SubscribeDeviceDownlink(appID, devID string, handler DownlinkHandler) error
 	SubscribeAppDownlink(appID string, handler DownlinkHandler) error
@@ -147,7 +147,7 @@ func (s *DefaultSubscriber) subscribe(key string) (<-chan AMQP.Delivery, error) 
 
 // ConsumeMessages consumes all messages in a specific queue and try to handle them as uplinks or events depending on the
 // routing key.
-func (s *DefaultSubscriber) ConsumeMessages(queue string, uplinkHandler UplinkHandler, eventHandler EventHandler) error {
+func (s *DefaultSubscriber) ConsumeMessages(queue string, uplinkHandler UplinkHandler, eventHandler DeviceEventHandler) error {
 	messages, err := s.consume(s.name)
 	if err != nil {
 		return err
@@ -157,9 +157,9 @@ func (s *DefaultSubscriber) ConsumeMessages(queue string, uplinkHandler UplinkHa
 }
 
 // handleMessages consume AMQP.Delivery on a channel and call the uplinkHandler and eventHandler respectively for
-// device uplinks and device events. Deliveries won't be acknowledged is the routing key contain unknown fields or their
+// device uplinks and device events. Deliveries won't be acknowledged if the routing key contain unknown fields or their
 // body cannot be parsed.
-func (s *DefaultSubscriber) handleMessages(messages <-chan AMQP.Delivery, uplinkHandler UplinkHandler, eventHandler EventHandler) {
+func (s *DefaultSubscriber) handleMessages(messages <-chan AMQP.Delivery, uplinkHandler UplinkHandler, eventHandler DeviceEventHandler) {
 	for delivery := range messages {
 		pins := strings.Split(delivery.RoutingKey, ".")
 		if pins[3] == string(DeviceEvents) {
