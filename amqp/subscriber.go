@@ -162,6 +162,10 @@ func (s *DefaultSubscriber) ConsumeMessages(queue string, uplinkHandler UplinkHa
 func (s *DefaultSubscriber) handleMessages(messages <-chan AMQP.Delivery, uplinkHandler UplinkHandler, eventHandler DeviceEventHandler) {
 	for delivery := range messages {
 		pins := strings.Split(delivery.RoutingKey, ".")
+		if len(pins) < 4 {
+			s.ctx.Warnf("Routing key is missing fields, cannot handle delivery (%s)", delivery.RoutingKey)
+			continue
+		}
 		if pins[3] == string(DeviceEvents) {
 			event := &types.DeviceEvent{}
 			if err := json.Unmarshal(delivery.Body, event); err != nil {
@@ -177,7 +181,7 @@ func (s *DefaultSubscriber) handleMessages(messages <-chan AMQP.Delivery, uplink
 			}
 			uplinkHandler(s, dataUp.AppID, dataUp.DevID, *dataUp)
 		} else {
-			s.ctx.Warnf("Unknown routing key (%s)", delivery.RoutingKey)
+			s.ctx.Warnf("Unknown routing key field, cannot handle delivery (%s)", delivery.RoutingKey)
 			continue
 		}
 		if err := delivery.Ack(false); err != nil {
