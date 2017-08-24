@@ -90,7 +90,7 @@ func (d *discoveryServer) checkMetadataEditRights(ctx context.Context, in *pb.Me
 
 	// Check claims for GatewayID
 	if gatewayID != "" {
-		if !claims.GatewayRight(gatewayID, rights.GatewayDelete) || (claims.Type == "gateway" && claims.Subject == gatewayID) {
+		if !claims.GatewayRight(gatewayID, rights.GatewayDelete) && !(claims.Type == "gateway" && claims.Subject == gatewayID) {
 			return errPermissionDeniedf(`No "%s" rights to Gateway "%s"`, rights.GatewayDelete, gatewayID)
 		}
 	}
