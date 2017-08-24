@@ -61,6 +61,25 @@ func (m AppIDMetadata) MarshalText() ([]byte, error) {
 	return []byte(fmt.Sprintf("AppID %s", m.AppID)), nil
 }
 
+// GatewayIDMetadata is used to store a GatewayID
+type GatewayIDMetadata struct {
+	GatewayID string
+}
+
+// ToProto implements the Metadata interface
+func (m GatewayIDMetadata) ToProto() *pb.Metadata {
+	return &pb.Metadata{
+		Metadata: &pb.Metadata_GatewayID{
+			GatewayID: m.GatewayID,
+		},
+	}
+}
+
+// MarshalText implements the encoding.TextMarshaler interface
+func (m GatewayIDMetadata) MarshalText() ([]byte, error) {
+	return []byte(fmt.Sprintf("GatewayID %s", m.GatewayID)), nil
+}
+
 // PrefixMetadata is used to store a DevAddr prefix
 type PrefixMetadata struct {
 	Prefix types.DevAddrPrefix
@@ -89,8 +108,8 @@ func MetadataFromProto(proto *pb.Metadata) Metadata {
 		}
 		return AppEUIMetadata{*eui}
 	}
-	if id := proto.GetAppID(); id != "" {
-		return AppIDMetadata{id}
+	if appID := proto.GetAppID(); appID != "" {
+		return AppIDMetadata{appID}
 	}
 	if prefixBytes := proto.GetDevAddrPrefix(); prefixBytes != nil {
 		prefix := new(types.DevAddrPrefix)
@@ -98,6 +117,9 @@ func MetadataFromProto(proto *pb.Metadata) Metadata {
 			return nil
 		}
 		return PrefixMetadata{*prefix}
+	}
+	if gatewayID := proto.GetGatewayID(); gatewayID != "" {
+		return GatewayIDMetadata{gatewayID}
 	}
 	return nil
 }
@@ -114,6 +136,8 @@ func MetadataFromString(str string) Metadata {
 		return AppEUIMetadata{appEUI}
 	case "AppID":
 		return AppIDMetadata{value}
+	case "GatewayID":
+		return GatewayIDMetadata{value}
 	case "Prefix":
 		prefix := &types.DevAddrPrefix{
 			Length: 32,

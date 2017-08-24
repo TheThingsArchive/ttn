@@ -131,6 +131,14 @@ func (d *discovery) GetByAppID(appID string) (*pb.Announcement, error) {
 	return service.ToProto(), nil
 }
 
+func (d *discovery) GetByGatewayID(gatewayID string) (*pb.Announcement, error) {
+	service, err := d.services.GetForGatewayID(gatewayID)
+	if err != nil {
+		return nil, err
+	}
+	return service.ToProto(), nil
+}
+
 func (d *discovery) GetByAppEUI(appEUI types.AppEUI) (*pb.Announcement, error) {
 	service, err := d.services.GetForAppEUI(appEUI)
 	if err != nil {

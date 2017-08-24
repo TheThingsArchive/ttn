@@ -9,6 +9,7 @@ import (
 	"time"
 
 	pb_broker "github.com/TheThingsNetwork/api/broker"
+	"github.com/TheThingsNetwork/api/discovery/discoveryclient"
 	pb_gateway "github.com/TheThingsNetwork/api/gateway"
 	"github.com/TheThingsNetwork/api/monitor/monitorclient"
 	pb_protocol "github.com/TheThingsNetwork/api/protocol"
@@ -17,6 +18,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/router/gateway"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
+	"github.com/golang/mock/gomock"
 	. "github.com/smartystreets/assertions"
 	"golang.org/x/net/context"
 )
@@ -69,19 +71,25 @@ func TestHandleDownlink(t *testing.T) {
 
 func TestSubscribeUnsubscribeDownlink(t *testing.T) {
 	a := New(t)
-
+	ctrl := gomock.NewController(t)
+	discoveryClient := discoveryclient.NewMockClient(ctrl)
 	logger := GetLogger(t, "TestSubscribeUnsubscribeDownlink")
 	r := &router{
 		Component: &component.Component{
-			Context: context.Background(),
-			Ctx:     logger,
-			Monitor: monitorclient.NewMonitorClient(),
+			Context:   context.Background(),
+			Ctx:       logger,
+			Monitor:   monitorclient.NewMonitorClient(),
+			Discovery: discoveryClient,
 		},
 		gateways: map[string]*gateway.Gateway{},
 	}
 	r.InitStatus()
 
 	gtwID := "eui-0102030405060708"
+
+	discoveryClient.EXPECT().AddGatewayID(gtwID, "").Return(nil)
+	discoveryClient.EXPECT().RemoveGatewayID(gtwID, "").Return(nil)
+
 	gateway.Deadline = 1 * time.Millisecond
 	gtw := r.getGateway(gtwID)
 	gtw.Schedule.Sync(0)

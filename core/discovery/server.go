@@ -32,8 +32,9 @@ func (d *discoveryServer) checkMetadataEditRights(ctx context.Context, in *pb.Me
 	appEUI := in.Metadata.GetAppEUI()
 	appID := in.Metadata.GetAppID()
 	prefix := in.Metadata.GetDevAddrPrefix()
+	gatewayID := in.Metadata.GetGatewayID()
 
-	if appEUI == nil && appID == "" && prefix == nil {
+	if appEUI == nil && appID == "" && prefix == nil && gatewayID == "" {
 		return errPermissionDeniedf("Unknown Metadata type")
 	}
 
@@ -45,6 +46,11 @@ func (d *discoveryServer) checkMetadataEditRights(ctx context.Context, in *pb.Me
 	// DevAddrPrefix can only be added to Brokers
 	if prefix != nil && in.ServiceName != "broker" {
 		return errPermissionDeniedf("Announcement service type should be \"broker\"")
+	}
+
+	// GatewayID can only be added to Routers
+	if gatewayID != "" && in.ServiceName != "router" {
+		return errPermissionDeniedf("Announcement service type should be \"router\"")
 	}
 
 	// DevAddrPrefix and AppEUI are network level changes
@@ -79,6 +85,13 @@ func (d *discoveryServer) checkMetadataEditRights(ctx context.Context, in *pb.Me
 	if appID != "" {
 		if !claims.AppRight(appID, rights.AppDelete) {
 			return errPermissionDeniedf(`No "%s" rights to Application "%s"`, rights.AppDelete, appID)
+		}
+	}
+
+	// Check claims for GatewayID
+	if gatewayID != "" {
+		if !claims.GatewayRight(gatewayID, rights.GatewayDelete) && !(claims.Type == "gateway" && claims.Subject == gatewayID) {
+			return errPermissionDeniedf(`No "%s" rights to Gateway "%s"`, rights.GatewayDelete, gatewayID)
 		}
 	}
 	return nil
@@ -165,6 +178,14 @@ func (d *discoveryServer) Get(ctx context.Context, req *pb.GetRequest) (*pb.Anno
 
 func (d *discoveryServer) GetByAppID(ctx context.Context, req *pb.GetByAppIDRequest) (*pb.Announcement, error) {
 	service, err := d.discovery.GetByAppID(req.AppID)
+	if err != nil {
+		return nil, err
+	}
+	return service, nil
+}
+
+func (d *discoveryServer) GetByGatewayID(ctx context.Context, req *pb.GetByGatewayIDRequest) (*pb.Announcement, error) {
+	service, err := d.discovery.GetByGatewayID(req.GatewayID)
 	if err != nil {
 		return nil, err
 	}
