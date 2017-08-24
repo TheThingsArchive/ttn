@@ -413,9 +413,11 @@ func (h *handlerManager) SetApplication(ctx context.Context, in *pb_handler.Appl
 	app.CustomConverter = in.Converter
 	app.CustomValidator = in.Validator
 	app.CustomEncoder = in.Encoder
-	if in.RegisterOnJoinAccessKey != "" && !strings.HasSuffix(in.RegisterOnJoinAccessKey, "...") {
+
+	if err := checkAppRights(claims, in.AppID, rights.Devices); err == nil {
 		app.RegisterOnJoinAccessKey = in.RegisterOnJoinAccessKey
 	}
+
 	if app.PayloadFormat == "" && (app.CustomDecoder != "" || app.CustomConverter != "" || app.CustomValidator != "" || app.CustomEncoder != "") {
 		app.PayloadFormat = application.PayloadFormatCustom
 	}
