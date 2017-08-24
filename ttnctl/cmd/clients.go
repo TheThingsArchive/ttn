@@ -9,6 +9,7 @@ import (
 )
 
 var clientsCmd = &cobra.Command{
+	Hidden:  true,
 	Use:     "clients",
 	Aliases: []string{"client"},
 	Short:   "Manage OAuth clients",
