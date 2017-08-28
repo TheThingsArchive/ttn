@@ -13,6 +13,7 @@ var demodulationFloor = map[string]float32{
 	"SF11BW125": -17.5,
 	"SF12BW125": -20,
 	"SF7BW250":  -4.5,
+	"SF8BW500":  -4,
 }
 
 func linkMargin(dataRate string, snr float32) float32 {
