@@ -93,7 +93,7 @@ func Get(region string) (frequencyPlan FrequencyPlan, err error) {
 		channelGroups := [](int){1} // Enable 903.9-905.3/200 kHz, 904.6 mHz channels
 		for channel := 0; channel < 72; channel++ {
 			for _, channelGroup := range channelGroups {
-				if (channel < channelGroup * 8 || channel >= (channelGroup + 1) * 8) && channel != channelGroup + 64 {
+				if (channel < channelGroup*8 || channel >= (channelGroup+1)*8) && channel != channelGroup+64 {
 					frequencyPlan.DisableUplinkChannel(channel)
 				}
 			}
