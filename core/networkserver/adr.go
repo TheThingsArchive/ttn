@@ -224,7 +224,7 @@ func getAdrReqPayloads(dev *device.Device, frequencyPlan *band.FrequencyPlan, dr
 					TXPower:  uint8(powerIdx),
 					Redundancy: lorawan.Redundancy{
 						ChMaskCntl: 7,
-						NbRep: uint8(dev.ADR.NbTrans),
+						NbRep:      uint8(dev.ADR.NbTrans),
 					},
 				}, // All 125 kHz OFF ChMask applies to channels 64 to 71
 			}
@@ -249,7 +249,7 @@ func getAdrReqPayloads(dev *device.Device, frequencyPlan *band.FrequencyPlan, dr
 						TXPower:  uint8(powerIdx),
 						Redundancy: lorawan.Redundancy{
 							ChMaskCntl: uint8(chMaskCntl),
-							NbRep: uint8(dev.ADR.NbTrans),
+							NbRep:      uint8(dev.ADR.NbTrans),
 						},
 					}
 

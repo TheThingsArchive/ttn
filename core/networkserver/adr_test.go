@@ -214,7 +214,7 @@ func TestHandleDownlinkADR(t *testing.T) {
 		// Ch 64-71, All 125 kHz channels off
 		a.So(payload.ChMask[0], ShouldBeFalse) // Channel 64 disabled
 		a.So(payload.ChMask[1], ShouldBeTrue)  // Channel 65 enabled
-		for i := 2; i < 8; i++ { // Channels 66-71 disabled
+		for i := 2; i < 8; i++ {               // Channels 66-71 disabled
 			a.So(payload.ChMask[i], ShouldBeFalse)
 		}
 		payload = new(lorawan.LinkADRReqPayload)
@@ -222,7 +222,7 @@ func TestHandleDownlinkADR(t *testing.T) {
 		a.So(payload.DataRate, ShouldEqual, 3)              // SF7BW125
 		a.So(payload.TXPower, ShouldEqual, 5)               // 20
 		a.So(payload.Redundancy.ChMaskCntl, ShouldEqual, 0) // Channels 0..15
-		for i := 0; i < 8; i++ { // First 8 channels disabled
+		for i := 0; i < 8; i++ {                            // First 8 channels disabled
 			a.So(payload.ChMask[i], ShouldBeFalse)
 		}
 		for i := 8; i < 16; i++ { // Second 8 channels enabled
@@ -241,7 +241,7 @@ func TestHandleDownlinkADR(t *testing.T) {
 		payload.UnmarshalBinary(fOpts[1].Payload)
 		a.So(payload.DataRate, ShouldEqual, 5) // SF7BW125
 		a.So(payload.TXPower, ShouldEqual, 1)  // 14
-		for i := 0; i < 8; i++ { // First 8 channels enabled
+		for i := 0; i < 8; i++ {               // First 8 channels enabled
 			a.So(payload.ChMask[i], ShouldBeTrue)
 		}
 		a.So(payload.ChMask[8], ShouldBeFalse) // 9th channel (FSK) disabled

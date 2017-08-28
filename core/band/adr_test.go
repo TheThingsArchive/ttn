@@ -50,8 +50,8 @@ func TestADRSettings(t *testing.T) {
 	{
 		dr, tx, err := us.ADRSettings("SF10BW125", 18, 30, defaultMargin)
 		a.So(err, ShouldBeNil)
-		a.So(dr, ShouldEqual,"SF8BW500")
-		a.So(tx, ShouldEqual,20)
+		a.So(dr, ShouldEqual, "SF8BW500")
+		a.So(tx, ShouldEqual, 20)
 	}
 
 	cn, _ := Get("CN_470_510")
