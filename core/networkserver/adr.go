@@ -196,73 +196,66 @@ func getAdrReqPayloads(dev *device.Device, frequencyPlan *band.FrequencyPlan, dr
 	payloads := []lorawan.LinkADRReqPayload{}
 	switch dev.ADR.Band {
 	case pb_lorawan.FrequencyPlan_EU_863_870.String():
-		{
-			payloads = []lorawan.LinkADRReqPayload{
-				{
-					DataRate: uint8(drIdx),
-					TXPower:  uint8(powerIdx),
-					Redundancy: lorawan.Redundancy{
-						ChMaskCntl: 0,
-						NbRep:      uint8(dev.ADR.NbTrans),
-					},
+		payloads = []lorawan.LinkADRReqPayload{
+			{
+				DataRate: uint8(drIdx),
+				TXPower:  uint8(powerIdx),
+				Redundancy: lorawan.Redundancy{
+					ChMaskCntl: 0,
+					NbRep:      uint8(dev.ADR.NbTrans),
 				},
-			}
-			for i, ch := range frequencyPlan.UplinkChannels {
-				for _, dr := range ch.DataRates {
-					if dr == drIdx {
-						payloads[0].ChMask[i] = true
-					}
+			},
+		}
+		for i, ch := range frequencyPlan.UplinkChannels {
+			for _, dr := range ch.DataRates {
+				if dr == drIdx {
+					payloads[0].ChMask[i] = true
 				}
 			}
 		}
 	case pb_lorawan.FrequencyPlan_US_902_928.String():
-		{
-			// Adapted from https://github.com/brocaar/lorawan/blob/master/band/band_us902_928.go
-			payloads = []lorawan.LinkADRReqPayload{
-				{
+		// Adapted from https://github.com/brocaar/lorawan/blob/master/band/band_us902_928.go
+		payloads = []lorawan.LinkADRReqPayload{
+			{
+				DataRate: uint8(drIdx),
+				TXPower:  uint8(powerIdx),
+				Redundancy: lorawan.Redundancy{
+					ChMaskCntl: 7,
+					NbRep:      uint8(dev.ADR.NbTrans),
+				},
+			}, // All 125 kHz OFF ChMask applies to channels 64 to 71
+		}
+		channels := frequencyPlan.GetEnabledUplinkChannels()
+		sort.Ints(channels)
+
+		chMaskCntl := -1
+		for _, c := range channels {
+			// use the ChMask of the first LinkADRReqPayload, besides
+			// turning off all 125 kHz this payload contains the ChMask
+			// for the last block of channels.
+			if c >= 64 {
+				payloads[0].ChMask[c%16] = true
+				continue
+			}
+
+			if c/16 != chMaskCntl {
+				chMaskCntl = c / 16
+				pl := lorawan.LinkADRReqPayload{
 					DataRate: uint8(drIdx),
 					TXPower:  uint8(powerIdx),
 					Redundancy: lorawan.Redundancy{
-						ChMaskCntl: 7,
+						ChMaskCntl: uint8(chMaskCntl),
 						NbRep:      uint8(dev.ADR.NbTrans),
 					},
-				}, // All 125 kHz OFF ChMask applies to channels 64 to 71
-			}
-			channels := frequencyPlan.GetEnabledUplinkChannels()
-			sort.Ints(channels)
-
-			chMaskCntl := -1
-			for _, c := range channels {
-				// use the ChMask of the first LinkADRReqPayload, besides
-				// turning off all 125 kHz this payload contains the ChMask
-				// for the last block of channels.
-				if c >= 64 {
-					payloads[0].ChMask[c%16] = true
-					println("Ch", c, true)
-					continue
 				}
 
-				if c/16 != chMaskCntl {
-					chMaskCntl = c / 16
-					pl := lorawan.LinkADRReqPayload{
-						DataRate: uint8(drIdx),
-						TXPower:  uint8(powerIdx),
-						Redundancy: lorawan.Redundancy{
-							ChMaskCntl: uint8(chMaskCntl),
-							NbRep:      uint8(dev.ADR.NbTrans),
-						},
+				// set the channel mask for this block
+				for _, ec := range channels {
+					if ec >= chMaskCntl*16 && ec < (chMaskCntl+1)*16 {
+						pl.ChMask[ec%16] = true
 					}
-
-					// set the channel mask for this block
-					for _, ec := range channels {
-						if ec >= chMaskCntl*16 && ec < (chMaskCntl+1)*16 {
-							pl.ChMask[ec%16] = true
-							println("Ch", c, true)
-
-						}
-					}
-					payloads = append(payloads, pl)
 				}
+				payloads = append(payloads, pl)
 			}
 		}
 	}
