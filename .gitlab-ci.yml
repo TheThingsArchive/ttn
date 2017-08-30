@@ -61,8 +61,11 @@ sign:
   script:
     - pushd release
     - shasum -a 256 $(ls) > checksums
+    - mkdir ~/.gnupg && chmod 700 ~/.gnupg
+    - echo -e "use-agent\npinentry-mode loopback" > ~/.gnupg/gpg.conf
+    - echo "allow-loopback-pinentry" > ~/.gnupg/gpg-agent.conf
     - gpg --no-tty --batch --import /gpg/signing.ci.gpg-key
-    - gpg --no-tty --batch --no-use-agent --passphrase $GPG_PASSPHRASE --detach-sign checksums
+    - echo $GPG_PASSPHRASE | gpg --batch --no-tty --yes --passphrase-fd 0 --detach-sign checksums
     - popd
   artifacts:
     paths:
