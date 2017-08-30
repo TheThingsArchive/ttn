@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/TheThingsNetwork/ttn/api"
-	"github.com/TheThingsNetwork/ttn/api/discovery"
+	"github.com/TheThingsNetwork/api"
+	"github.com/TheThingsNetwork/api/discovery"
 	"github.com/TheThingsNetwork/ttn/api/health"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
@@ -39,7 +39,7 @@ var checkCmd = &cobra.Command{
 
 		res, err := client.Get(util.GetContext(ctx), &discovery.GetRequest{
 			ServiceName: serviceType,
-			Id:          serviceID,
+			ID:          serviceID,
 		})
 		if err != nil {
 			ctx.WithError(errors.FromGRPCError(err)).Fatalf("Could not get %s %s", serviceType, serviceID)

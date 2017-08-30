@@ -8,8 +8,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/TheThingsNetwork/api"
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
-	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/spf13/cobra"
@@ -57,7 +57,7 @@ var devicesSetCmd = &cobra.Command{
 			if err != nil {
 				ctx.Fatalf("Invalid AppEUI: %s", err)
 			}
-			dev.GetLorawanDevice().AppEui = &appEUI
+			dev.GetLoRaWANDevice().AppEUI = &appEUI
 		}
 
 		if in, err := cmd.Flags().GetString("dev-eui"); err == nil && in != "" {
@@ -72,7 +72,7 @@ var devicesSetCmd = &cobra.Command{
 			if err != nil {
 				ctx.Fatalf("Invalid DevEUI: %s", err)
 			}
-			dev.GetLorawanDevice().DevEui = &devEUI
+			dev.GetLoRaWANDevice().DevEUI = &devEUI
 		}
 
 		if in, err := cmd.Flags().GetString("dev-addr"); err == nil && in != "" {
@@ -87,7 +87,7 @@ var devicesSetCmd = &cobra.Command{
 			if err != nil {
 				ctx.Fatalf("Invalid DevAddr: %s", err)
 			}
-			dev.GetLorawanDevice().DevAddr = &devAddr
+			dev.GetLoRaWANDevice().DevAddr = &devAddr
 		}
 
 		if in, err := cmd.Flags().GetString("nwk-s-key"); err == nil && in != "" {
@@ -95,7 +95,7 @@ var devicesSetCmd = &cobra.Command{
 			if err != nil {
 				ctx.Fatalf("Invalid NwkSKey: %s", err)
 			}
-			dev.GetLorawanDevice().NwkSKey = &key
+			dev.GetLoRaWANDevice().NwkSKey = &key
 		}
 
 		if in, err := cmd.Flags().GetString("app-s-key"); err == nil && in != "" {
@@ -103,7 +103,7 @@ var devicesSetCmd = &cobra.Command{
 			if err != nil {
 				ctx.Fatalf("Invalid AppSKey: %s", err)
 			}
-			dev.GetLorawanDevice().AppSKey = &key
+			dev.GetLoRaWANDevice().AppSKey = &key
 		}
 
 		if in, err := cmd.Flags().GetString("app-key"); err == nil && in != "" {
@@ -111,31 +111,31 @@ var devicesSetCmd = &cobra.Command{
 			if err != nil {
 				ctx.Fatalf("Invalid AppKey: %s", err)
 			}
-			dev.GetLorawanDevice().AppKey = &key
+			dev.GetLoRaWANDevice().AppKey = &key
 		}
 
 		if in, err := cmd.Flags().GetInt("fcnt-up"); err == nil && in != -1 {
-			dev.GetLorawanDevice().FCntUp = uint32(in)
+			dev.GetLoRaWANDevice().FCntUp = uint32(in)
 		}
 
 		if in, err := cmd.Flags().GetInt("fcnt-down"); err == nil && in != -1 {
-			dev.GetLorawanDevice().FCntDown = uint32(in)
+			dev.GetLoRaWANDevice().FCntDown = uint32(in)
 		}
 
 		if in, err := cmd.Flags().GetBool("enable-fcnt-check"); err == nil && in {
-			dev.GetLorawanDevice().DisableFCntCheck = false
+			dev.GetLoRaWANDevice().DisableFCntCheck = false
 		}
 
 		if in, err := cmd.Flags().GetBool("disable-fcnt-check"); err == nil && in {
-			dev.GetLorawanDevice().DisableFCntCheck = true
+			dev.GetLoRaWANDevice().DisableFCntCheck = true
 		}
 
 		if in, err := cmd.Flags().GetBool("32-bit-fcnt"); err == nil && in {
-			dev.GetLorawanDevice().Uses32BitFCnt = true
+			dev.GetLoRaWANDevice().Uses32BitFCnt = true
 		}
 
 		if in, err := cmd.Flags().GetBool("16-bit-fcnt"); err == nil && in {
-			dev.GetLorawanDevice().Uses32BitFCnt = false
+			dev.GetLoRaWANDevice().Uses32BitFCnt = false
 		}
 
 		if in, err := cmd.Flags().GetFloat32("latitude"); err == nil && in != 0 {

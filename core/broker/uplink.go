@@ -10,13 +10,13 @@ import (
 	"sort"
 	"time"
 
+	pb "github.com/TheThingsNetwork/api/broker"
+	pb_discovery "github.com/TheThingsNetwork/api/discovery"
+	"github.com/TheThingsNetwork/api/logfields"
+	"github.com/TheThingsNetwork/api/networkserver"
+	pb_lorawan "github.com/TheThingsNetwork/api/protocol/lorawan"
+	"github.com/TheThingsNetwork/api/trace"
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
-	pb "github.com/TheThingsNetwork/ttn/api/broker"
-	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
-	"github.com/TheThingsNetwork/ttn/api/fields"
-	"github.com/TheThingsNetwork/ttn/api/networkserver"
-	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
-	"github.com/TheThingsNetwork/ttn/api/trace"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/fcnt"
@@ -26,7 +26,7 @@ import (
 const maxFCntGap = 16384
 
 func (b *broker) HandleUplink(uplink *pb.UplinkMessage) (err error) {
-	ctx := b.Ctx.WithFields(fields.Get(uplink))
+	ctx := b.Ctx.WithFields(logfields.ForMessage(uplink))
 	start := time.Now()
 	deduplicatedUplink := new(pb.DeduplicatedUplinkMessage)
 	deduplicatedUplink.ServerTime = start.UnixNano()
@@ -68,7 +68,7 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) (err error) {
 		}
 	}
 
-	if deduplicatedUplink.ProtocolMetadata.GetLorawan() == nil {
+	if deduplicatedUplink.ProtocolMetadata.GetLoRaWAN() == nil {
 		return errors.NewErrInvalidArgument("Uplink", "does not contain LoRaWAN metadata")
 	}
 
@@ -152,16 +152,16 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) (err error) {
 
 	ctx = ctx.WithFields(ttnlog.Fields{
 		"MICChecks": micChecks,
-		"DevEUI":    device.DevEui,
-		"AppEUI":    device.AppEui,
-		"AppID":     device.AppId,
-		"DevID":     device.DevId,
+		"DevEUI":    device.DevEUI,
+		"AppEUI":    device.AppEUI,
+		"AppID":     device.AppID,
+		"DevID":     device.DevID,
 		"FCnt":      originalFCnt,
 	})
-	deduplicatedUplink.DevEui = device.DevEui
-	deduplicatedUplink.AppEui = device.AppEui
-	deduplicatedUplink.AppId = device.AppId
-	deduplicatedUplink.DevId = device.DevId
+	deduplicatedUplink.DevEUI = device.DevEUI
+	deduplicatedUplink.AppEUI = device.AppEUI
+	deduplicatedUplink.AppID = device.AppID
+	deduplicatedUplink.DevID = device.DevID
 	deduplicatedUplink.Trace = deduplicatedUplink.Trace.WithEvent(trace.CheckMICEvent, "mic checks", micChecks)
 	if macPayload.FHDR.FCnt != originalFCnt {
 		ctx = ctx.WithField("RealFCnt", macPayload.FHDR.FCnt)
@@ -189,7 +189,7 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) (err error) {
 	}
 
 	// Add FCnt to Metadata (because it's not marshaled in lorawan payload)
-	deduplicatedUplink.ProtocolMetadata.GetLorawan().FCnt = macPayload.FHDR.FCnt
+	deduplicatedUplink.ProtocolMetadata.GetLoRaWAN().FCnt = macPayload.FHDR.FCnt
 
 	// Collect GatewayMetadata and DownlinkOptions
 	var downlinkOptions []*pb.DownlinkOption
@@ -201,10 +201,10 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) (err error) {
 	// Select best DownlinkOption
 	if len(downlinkOptions) > 0 {
 		deduplicatedUplink.ResponseTemplate = &pb.DownlinkMessage{
-			DevEui:         device.DevEui,
-			AppEui:         device.AppEui,
-			AppId:          device.AppId,
-			DevId:          device.DevId,
+			DevEUI:         device.DevEUI,
+			AppEUI:         device.AppEUI,
+			AppID:          device.AppID,
+			DevID:          device.DevID,
 			DownlinkOption: selectBestDownlink(downlinkOptions),
 		}
 	}
@@ -216,25 +216,25 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) (err error) {
 	}
 
 	var announcements []*pb_discovery.Announcement
-	announcements, err = b.Discovery.GetAllHandlersForAppID(device.AppId)
+	announcements, err = b.Discovery.GetAllHandlersForAppID(device.AppID)
 	if err != nil {
 		return err
 	}
 	if len(announcements) == 0 {
-		return errors.NewErrNotFound(fmt.Sprintf("Handler for AppID %s", device.AppId))
+		return errors.NewErrNotFound(fmt.Sprintf("Handler for AppID %s", device.AppID))
 	}
 	if len(announcements) > 1 {
-		return errors.NewErrInternal(fmt.Sprintf("Multiple Handlers for AppID %s", device.AppId))
+		return errors.NewErrInternal(fmt.Sprintf("Multiple Handlers for AppID %s", device.AppID))
 	}
 
 	var handler chan<- *pb.DeduplicatedUplinkMessage
-	handler, err = b.getHandlerUplink(announcements[0].Id)
+	handler, err = b.getHandlerUplink(announcements[0].ID)
 	if err != nil {
 		return err
 	}
 
 	deduplicatedUplink.Trace = deduplicatedUplink.Trace.WithEvent(trace.ForwardEvent,
-		"handler", announcements[0].Id,
+		"handler", announcements[0].ID,
 	)
 
 	handler <- deduplicatedUplink

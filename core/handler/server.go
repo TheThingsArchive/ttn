@@ -4,8 +4,8 @@
 package handler
 
 import (
-	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
-	pb "github.com/TheThingsNetwork/ttn/api/handler"
+	pb_broker "github.com/TheThingsNetwork/api/broker"
+	pb "github.com/TheThingsNetwork/api/handler"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
 	"google.golang.org/grpc"
@@ -45,7 +45,7 @@ func (h *handlerRPC) Activate(ctx context.Context, activation *pb_broker.Dedupli
 	return res, nil
 }
 
-// RegisterRPC registers this handler as a HandlerServer (github.com/TheThingsNetwork/ttn/api/handler)
+// RegisterRPC registers this handler as a HandlerServer (github.com/TheThingsNetwork/api/handler)
 func (h *handler) RegisterRPC(s *grpc.Server) {
 	server := &handlerRPC{h}
 	pb.RegisterHandlerServer(s, server)

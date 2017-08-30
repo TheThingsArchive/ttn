@@ -21,8 +21,7 @@ func GetLogger(t *testing.T, tag string) ttnlog.Interface {
 		Handler: NewLogHandler(t),
 		Level:   apexlog.DebugLevel,
 	}
-	ctx := logger.WithField("tag", tag)
-	return ttnapex.Wrap(ctx)
+	return ttnapex.Wrap(logger).WithField("tag", tag)
 }
 
 // WaitGroup is an extension of sync.WaitGroup with a WaitFor function for testing

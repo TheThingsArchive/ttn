@@ -6,13 +6,14 @@ package router
 import (
 	"testing"
 
-	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
-	pb_gateway "github.com/TheThingsNetwork/ttn/api/gateway"
-	"github.com/TheThingsNetwork/ttn/api/monitor"
+	pb_discovery "github.com/TheThingsNetwork/api/discovery"
+	pb_gateway "github.com/TheThingsNetwork/api/gateway"
+	"github.com/TheThingsNetwork/api/monitor/monitorclient"
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/router/gateway"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/assertions"
+	"golang.org/x/net/context"
 )
 
 func TestHandleGatewayStatus(t *testing.T) {
@@ -22,9 +23,10 @@ func TestHandleGatewayStatus(t *testing.T) {
 	logger := GetLogger(t, "TestHandleGatewayStatus")
 	router := &router{
 		Component: &component.Component{
+			Context:  context.Background(),
 			Ctx:      logger,
 			Identity: &pb_discovery.Announcement{},
-			Monitor:  monitor.NewClient(monitor.DefaultClientConfig),
+			Monitor:  monitorclient.NewMonitorClient(),
 		},
 		gateways: map[string]*gateway.Gateway{},
 	}

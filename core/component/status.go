@@ -6,10 +6,10 @@ package component
 import (
 	"fmt"
 	"net/http"
+	_ "net/http/pprof"
 	"sync"
 
 	"github.com/spf13/viper"
-
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
@@ -88,10 +88,9 @@ func (c *Component) RegisterHealthServer(srv *grpc.Server) {
 func initStatus(c *Component) error {
 	setStatus(c, StatusUnhealthy)
 	if healthPort := viper.GetInt("health-port"); healthPort > 0 {
-		mux := http.NewServeMux()
-		mux.HandleFunc("/healthz", getStatusPage(c))
+		http.HandleFunc("/healthz", getStatusPage(c))
 		go func() {
-			if err := http.ListenAndServe(fmt.Sprintf(":%d", healthPort), mux); err != nil {
+			if err := http.ListenAndServe(fmt.Sprintf(":%d", healthPort), nil); err != nil {
 				c.Ctx.WithError(err).Error("Status server exited")
 			}
 		}()

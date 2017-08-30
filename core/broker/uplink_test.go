@@ -8,12 +8,12 @@ import (
 	"testing"
 	"time"
 
-	pb "github.com/TheThingsNetwork/ttn/api/broker"
-	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
-	"github.com/TheThingsNetwork/ttn/api/gateway"
-	pb_networkserver "github.com/TheThingsNetwork/ttn/api/networkserver"
-	"github.com/TheThingsNetwork/ttn/api/protocol"
-	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
+	pb "github.com/TheThingsNetwork/api/broker"
+	pb_discovery "github.com/TheThingsNetwork/api/discovery"
+	"github.com/TheThingsNetwork/api/gateway"
+	pb_networkserver "github.com/TheThingsNetwork/api/networkserver"
+	"github.com/TheThingsNetwork/api/protocol"
+	pb_lorawan "github.com/TheThingsNetwork/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/brocaar/lorawan"
@@ -31,7 +31,7 @@ func TestHandleUplink(t *testing.T) {
 	// Invalid Payload
 	err := b.HandleUplink(&pb.UplinkMessage{
 		Payload:          []byte{0x01, 0x02, 0x03},
-		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2, GatewayId: gtwID},
+		GatewayMetadata:  &gateway.RxMetadata{SNR: 1.2, GatewayID: gtwID},
 		ProtocolMetadata: &protocol.RxMetadata{},
 	})
 	a.So(err, ShouldNotBeNil)
@@ -58,8 +58,8 @@ func TestHandleUplink(t *testing.T) {
 	}, nil)
 	err = b.HandleUplink(&pb.UplinkMessage{
 		Payload:          bytes,
-		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2, GatewayId: gtwID},
-		ProtocolMetadata: &protocol.RxMetadata{Protocol: &protocol.RxMetadata_Lorawan{Lorawan: &pb_lorawan.Metadata{}}},
+		GatewayMetadata:  &gateway.RxMetadata{SNR: 1.2, GatewayID: gtwID},
+		ProtocolMetadata: &protocol.RxMetadata{Protocol: &protocol.RxMetadata_LoRaWAN{LoRaWAN: &pb_lorawan.Metadata{}}},
 	})
 	a.So(err, ShouldHaveSameTypeAs, &errors.ErrNotFound{})
 
@@ -74,16 +74,16 @@ func TestHandleUplink(t *testing.T) {
 	nsResponse := &pb_networkserver.DevicesResponse{
 		Results: []*pb_lorawan.Device{
 			&pb_lorawan.Device{
-				DevEui:  &wrongDevEUI,
-				AppEui:  &appEUI,
-				AppId:   appID,
+				DevEUI:  &wrongDevEUI,
+				AppEUI:  &appEUI,
+				AppID:   appID,
 				NwkSKey: &nwkSKey,
 				FCntUp:  4,
 			},
 			&pb_lorawan.Device{
-				DevEui:  &devEUI,
-				AppEui:  &appEUI,
-				AppId:   appID,
+				DevEUI:  &devEUI,
+				AppEUI:  &appEUI,
+				AppID:   appID,
 				NwkSKey: &nwkSKey,
 				FCntUp:  3,
 			},
@@ -96,8 +96,8 @@ func TestHandleUplink(t *testing.T) {
 	b.ns.EXPECT().GetDevices(gomock.Any(), gomock.Any()).Return(nsResponse, nil)
 	err = b.HandleUplink(&pb.UplinkMessage{
 		Payload:          bytes,
-		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2, GatewayId: gtwID},
-		ProtocolMetadata: &protocol.RxMetadata{Protocol: &protocol.RxMetadata_Lorawan{Lorawan: &pb_lorawan.Metadata{}}},
+		GatewayMetadata:  &gateway.RxMetadata{SNR: 1.2, GatewayID: gtwID},
+		ProtocolMetadata: &protocol.RxMetadata{Protocol: &protocol.RxMetadata_LoRaWAN{LoRaWAN: &pb_lorawan.Metadata{}}},
 	})
 	a.So(err, ShouldHaveSameTypeAs, &errors.ErrNotFound{})
 
@@ -109,8 +109,8 @@ func TestHandleUplink(t *testing.T) {
 	b.ns.EXPECT().GetDevices(gomock.Any(), gomock.Any()).Return(nsResponse, nil)
 	err = b.HandleUplink(&pb.UplinkMessage{
 		Payload:          bytes,
-		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2, GatewayId: gtwID},
-		ProtocolMetadata: &protocol.RxMetadata{Protocol: &protocol.RxMetadata_Lorawan{Lorawan: &pb_lorawan.Metadata{}}},
+		GatewayMetadata:  &gateway.RxMetadata{SNR: 1.2, GatewayID: gtwID},
+		ProtocolMetadata: &protocol.RxMetadata{Protocol: &protocol.RxMetadata_LoRaWAN{LoRaWAN: &pb_lorawan.Metadata{}}},
 	})
 	a.So(err, ShouldHaveSameTypeAs, &errors.ErrInvalidArgument{})
 
@@ -121,13 +121,13 @@ func TestHandleUplink(t *testing.T) {
 	b.ns.EXPECT().Uplink(gomock.Any(), gomock.Any()).Return(&pb.DeduplicatedUplinkMessage{}, nil)
 	b.discovery.EXPECT().GetAllHandlersForAppID("appid-1").Return([]*pb_discovery.Announcement{
 		&pb_discovery.Announcement{
-			Id: "handlerID",
+			ID: "handlerID",
 		},
 	}, nil)
 	err = b.HandleUplink(&pb.UplinkMessage{
 		Payload:          bytes,
-		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2, GatewayId: gtwID},
-		ProtocolMetadata: &protocol.RxMetadata{Protocol: &protocol.RxMetadata_Lorawan{Lorawan: &pb_lorawan.Metadata{}}},
+		GatewayMetadata:  &gateway.RxMetadata{SNR: 1.2, GatewayID: gtwID},
+		ProtocolMetadata: &protocol.RxMetadata{Protocol: &protocol.RxMetadata_LoRaWAN{LoRaWAN: &pb_lorawan.Metadata{}}},
 	})
 	a.So(err, ShouldBeNil)
 
@@ -139,13 +139,13 @@ func TestHandleUplink(t *testing.T) {
 	b.ns.EXPECT().Uplink(gomock.Any(), gomock.Any()).Return(&pb.DeduplicatedUplinkMessage{}, nil)
 	b.discovery.EXPECT().GetAllHandlersForAppID("appid-1").Return([]*pb_discovery.Announcement{
 		&pb_discovery.Announcement{
-			Id: "handlerID",
+			ID: "handlerID",
 		},
 	}, nil)
 	err = b.HandleUplink(&pb.UplinkMessage{
 		Payload:          bytes,
-		GatewayMetadata:  &gateway.RxMetadata{Snr: 1.2, GatewayId: gtwID},
-		ProtocolMetadata: &protocol.RxMetadata{Protocol: &protocol.RxMetadata_Lorawan{Lorawan: &pb_lorawan.Metadata{}}},
+		GatewayMetadata:  &gateway.RxMetadata{SNR: 1.2, GatewayID: gtwID},
+		ProtocolMetadata: &protocol.RxMetadata{Protocol: &protocol.RxMetadata_LoRaWAN{LoRaWAN: &pb_lorawan.Metadata{}}},
 	})
 	a.So(err, ShouldBeNil)
 }
@@ -155,10 +155,10 @@ func TestDeduplicateUplink(t *testing.T) {
 
 	payload := []byte{0x01, 0x02, 0x03}
 	protocolMetadata := &protocol.RxMetadata{}
-	uplink1 := &pb.UplinkMessage{Payload: payload, GatewayMetadata: &gateway.RxMetadata{Snr: 1.2}, ProtocolMetadata: protocolMetadata}
-	uplink2 := &pb.UplinkMessage{Payload: payload, GatewayMetadata: &gateway.RxMetadata{Snr: 3.4}, ProtocolMetadata: protocolMetadata}
-	uplink3 := &pb.UplinkMessage{Payload: payload, GatewayMetadata: &gateway.RxMetadata{Snr: 5.6}, ProtocolMetadata: protocolMetadata}
-	uplink4 := &pb.UplinkMessage{Payload: payload, GatewayMetadata: &gateway.RxMetadata{Snr: 7.8}, ProtocolMetadata: protocolMetadata}
+	uplink1 := &pb.UplinkMessage{Payload: payload, GatewayMetadata: &gateway.RxMetadata{SNR: 1.2}, ProtocolMetadata: protocolMetadata}
+	uplink2 := &pb.UplinkMessage{Payload: payload, GatewayMetadata: &gateway.RxMetadata{SNR: 3.4}, ProtocolMetadata: protocolMetadata}
+	uplink3 := &pb.UplinkMessage{Payload: payload, GatewayMetadata: &gateway.RxMetadata{SNR: 5.6}, ProtocolMetadata: protocolMetadata}
+	uplink4 := &pb.UplinkMessage{Payload: payload, GatewayMetadata: &gateway.RxMetadata{SNR: 7.8}, ProtocolMetadata: protocolMetadata}
 
 	b := getTestBroker(t)
 	b.uplinkDeduplicator = NewDeduplicator(20 * time.Millisecond).(*deduplicator)

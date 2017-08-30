@@ -13,7 +13,7 @@ import (
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/go-utils/log/apex"
 	"github.com/TheThingsNetwork/go-utils/log/grpc"
-	"github.com/TheThingsNetwork/ttn/api"
+	ttnapi "github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/apex/log"
 	"github.com/spf13/cobra"
@@ -51,7 +51,7 @@ var RootCmd = &cobra.Command{
 		grpclog.SetLogger(grpc.Wrap(ttnlog.Get()))
 
 		if viper.GetBool("allow-insecure") {
-			api.AllowInsecureFallback = true
+			ttnapi.AllowInsecureFallback = true
 		}
 	},
 }

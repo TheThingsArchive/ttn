@@ -7,12 +7,12 @@ import (
 	"sync"
 	"time"
 
+	pb "github.com/TheThingsNetwork/api/gateway"
+	"github.com/TheThingsNetwork/api/logfields"
+	"github.com/TheThingsNetwork/api/monitor/monitorclient"
+	pb_lorawan "github.com/TheThingsNetwork/api/protocol/lorawan"
+	pb_router "github.com/TheThingsNetwork/api/router"
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
-	"github.com/TheThingsNetwork/ttn/api/fields"
-	pb "github.com/TheThingsNetwork/ttn/api/gateway"
-	pb_monitor "github.com/TheThingsNetwork/ttn/api/monitor"
-	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
-	pb_router "github.com/TheThingsNetwork/ttn/api/router"
 )
 
 // NewGateway creates a new in-memory Gateway structure
@@ -41,8 +41,7 @@ type Gateway struct {
 	token         string
 	authenticated bool
 
-	Monitor       *pb_monitor.Client
-	MonitorStream pb_monitor.GenericStream
+	MonitorStream monitorclient.Stream
 
 	Ctx ttnlog.Interface
 }
@@ -51,18 +50,18 @@ func (g *Gateway) SetAuth(token string, authenticated bool) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	g.authenticated = authenticated
-	if g.MonitorStream != nil {
-		if token == g.token {
-			return
-		}
-		g.Ctx.Debug("Stopping Monitor stream (token changed)")
-		g.MonitorStream.Close()
+	if token == g.token {
+		return
 	}
 	g.token = token
-	if g.Monitor != nil {
-		g.Ctx.Debug("Starting Gateway Monitor Stream")
-		g.MonitorStream = g.Monitor.NewGatewayStreams(g.ID, g.token)
-	}
+	g.MonitorStream.Reset()
+}
+
+func (g *Gateway) Token() string {
+	g.mu.RLock()
+	token := g.token
+	g.mu.RUnlock()
+	return token
 }
 
 func (g *Gateway) updateLastSeen() {
@@ -95,7 +94,7 @@ func (g *Gateway) HandleUplink(uplink *pb_router.UplinkMessage) (err error) {
 		}
 		// Inject Gateway frequency plan
 		if frequencyPlan, ok := pb_lorawan.FrequencyPlan_value[status.FrequencyPlan]; ok {
-			if lorawan := uplink.GetProtocolMetadata().GetLorawan(); lorawan != nil {
+			if lorawan := uplink.GetProtocolMetadata().GetLoRaWAN(); lorawan != nil {
 				lorawan.FrequencyPlan = pb_lorawan.FrequencyPlan(frequencyPlan)
 			}
 		}
@@ -105,12 +104,12 @@ func (g *Gateway) HandleUplink(uplink *pb_router.UplinkMessage) (err error) {
 	g.mu.RLock()
 	defer g.mu.RUnlock()
 	uplink.GatewayMetadata.GatewayTrusted = g.authenticated
-	uplink.GatewayMetadata.GatewayId = g.ID
+	uplink.GatewayMetadata.GatewayID = g.ID
 	return nil
 }
 
 func (g *Gateway) HandleDownlink(identifier string, downlink *pb_router.DownlinkMessage) (err error) {
-	ctx := g.Ctx.WithField("Identifier", identifier).WithFields(fields.Get(downlink))
+	ctx := g.Ctx.WithField("Identifier", identifier).WithFields(logfields.ForMessage(downlink))
 	if err = g.Schedule.Schedule(identifier, downlink); err != nil {
 		ctx.WithError(err).Warn("Could not schedule downlink")
 		return err

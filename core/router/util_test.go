@@ -6,30 +6,32 @@ package router
 import (
 	"testing"
 
-	"github.com/TheThingsNetwork/ttn/api/discovery"
-	"github.com/TheThingsNetwork/ttn/api/monitor"
+	"github.com/TheThingsNetwork/api/discovery/discoveryclient"
+	"github.com/TheThingsNetwork/api/monitor/monitorclient"
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/router/gateway"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"github.com/golang/mock/gomock"
+	"golang.org/x/net/context"
 )
 
 type testRouter struct {
 	*router
 	ctrl      *gomock.Controller
-	discovery *discovery.MockClient
+	discovery *discoveryclient.MockClient
 }
 
 func getTestRouter(t *testing.T) *testRouter {
 	ctrl := gomock.NewController(t)
-	discovery := discovery.NewMockClient(ctrl)
+	discovery := discoveryclient.NewMockClient(ctrl)
 	logger := GetLogger(t, "TestRouter")
 	r := &testRouter{
 		router: &router{
 			Component: &component.Component{
+				Context:   context.Background(),
 				Discovery: discovery,
 				Ctx:       logger,
-				Monitor:   monitor.NewClient(monitor.DefaultClientConfig),
+				Monitor:   monitorclient.NewMonitorClient(),
 			},
 			gateways: map[string]*gateway.Gateway{},
 		},

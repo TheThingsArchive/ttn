@@ -4,22 +4,23 @@
 package util
 
 import (
+	"github.com/TheThingsNetwork/api/discovery"
+	"github.com/TheThingsNetwork/api/router"
+	"github.com/TheThingsNetwork/api/router/routerclient"
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
-	"github.com/TheThingsNetwork/ttn/api/discovery"
-	"github.com/TheThingsNetwork/ttn/api/router"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
 )
 
 // GetRouter starts a connection with the router
-func GetRouter(ctx ttnlog.Interface) (*grpc.ClientConn, *router.Client) {
+func GetRouter(ctx ttnlog.Interface) (*grpc.ClientConn, *routerclient.Client) {
 	ctx.Info("Discovering Router...")
 	dscConn, client := GetDiscovery(ctx)
 	defer dscConn.Close()
 	routerAnnouncement, err := client.Get(GetContext(ctx), &discovery.GetRequest{
 		ServiceName: "router",
-		Id:          viper.GetString("router-id"),
+		ID:          viper.GetString("router-id"),
 	})
 	if err != nil {
 		ctx.WithError(errors.FromGRPCError(err)).Fatal("Could not get Router from Discovery")
@@ -27,7 +28,7 @@ func GetRouter(ctx ttnlog.Interface) (*grpc.ClientConn, *router.Client) {
 	ctx.Info("Connecting with Router...")
 	rtrConn, err := routerAnnouncement.Dial(nil)
 	ctx.Info("Connected to Router")
-	rtrClient := router.NewClient(router.DefaultClientConfig)
+	rtrClient := routerclient.NewClient(routerclient.DefaultClientConfig)
 	rtrClient.AddServer(viper.GetString("router-id"), rtrConn)
 	return rtrConn, rtrClient
 }
@@ -39,7 +40,7 @@ func GetRouterManager(ctx ttnlog.Interface) (*grpc.ClientConn, router.RouterMana
 	defer dscConn.Close()
 	routerAnnouncement, err := client.Get(GetContext(ctx), &discovery.GetRequest{
 		ServiceName: "router",
-		Id:          viper.GetString("router-id"),
+		ID:          viper.GetString("router-id"),
 	})
 	if err != nil {
 		ctx.WithError(errors.FromGRPCError(err)).Fatal("Could not get Router from Discovery")

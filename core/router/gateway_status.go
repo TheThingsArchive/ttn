@@ -6,7 +6,7 @@ package router
 import (
 	"time"
 
-	pb_gateway "github.com/TheThingsNetwork/ttn/api/gateway"
+	pb_gateway "github.com/TheThingsNetwork/api/gateway"
 	"github.com/TheThingsNetwork/ttn/core/router/gateway"
 )
 
@@ -25,7 +25,7 @@ func (r *router) HandleGatewayStatus(gatewayID string, status *pb_gateway.Status
 		}
 	}()
 	r.status.gatewayStatus.Mark(1)
-	status.Router = r.Identity.Id
+	status.Router = r.Identity.ID
 	gateway = r.getGateway(gatewayID)
 	return gateway.HandleStatus(status)
 }

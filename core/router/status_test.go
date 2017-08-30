@@ -6,7 +6,7 @@ package router
 import (
 	"testing"
 
-	pb "github.com/TheThingsNetwork/ttn/api/router"
+	pb "github.com/TheThingsNetwork/api/router"
 	. "github.com/smartystreets/assertions"
 )
 

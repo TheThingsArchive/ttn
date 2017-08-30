@@ -6,9 +6,9 @@ package handler
 import (
 	"time"
 
-	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
-	"github.com/TheThingsNetwork/ttn/api/fields"
-	"github.com/TheThingsNetwork/ttn/api/trace"
+	pb_broker "github.com/TheThingsNetwork/api/broker"
+	"github.com/TheThingsNetwork/api/logfields"
+	"github.com/TheThingsNetwork/api/trace"
 	"github.com/TheThingsNetwork/ttn/core/types"
 )
 
@@ -16,8 +16,8 @@ import (
 var ResponseDeadline = 100 * time.Millisecond
 
 func (h *handler) HandleUplink(uplink *pb_broker.DeduplicatedUplinkMessage) (err error) {
-	appID, devID := uplink.AppId, uplink.DevId
-	ctx := h.Ctx.WithFields(fields.Get(uplink))
+	appID, devID := uplink.AppID, uplink.DevID
+	ctx := h.Ctx.WithFields(logfields.ForMessage(uplink))
 	start := time.Now()
 	defer func() {
 		if err != nil {
@@ -129,8 +129,8 @@ func (h *handler) HandleUplink(uplink *pb_broker.DeduplicatedUplinkMessage) (err
 	if dev.CurrentDownlink != nil {
 		appDownlink = *dev.CurrentDownlink
 	}
-	appDownlink.AppID = uplink.AppId
-	appDownlink.DevID = uplink.DevId
+	appDownlink.AppID = uplink.AppID
+	appDownlink.DevID = uplink.DevID
 	downlink := uplink.ResponseTemplate
 	downlink.Trace = uplink.Trace.WithEvent("prepare downlink")
 

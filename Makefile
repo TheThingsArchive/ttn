@@ -62,6 +62,13 @@ mocks:
 	mockgen -source=./api/networkserver/networkserver.pb.go -package networkserver NetworkServerClient > api/networkserver/networkserver_mock.go
 	mockgen -source=./api/discovery/client.go -package discovery Client > api/discovery/client_mock.go
 
+dev-certs:
+	ttn discovery gen-cert localhost discovery --config ./.env/discovery/dev.yml
+	ttn router gen-cert localhost router --config ./.env/router/dev.yml
+	ttn broker gen-cert localhost broker --config ./.env/broker/dev.yml
+	ttn networkserver gen-cert localhost networkserver --config ./.env/networkserver/dev.yml
+	ttn handler gen-cert localhost handler --config ./.env/handler/dev.yml
+
 # Go Test
 
 GO_FILES = $(shell find . -name "*.go" | grep -vE ".git|.env|vendor|.pb.go|_mock.go")

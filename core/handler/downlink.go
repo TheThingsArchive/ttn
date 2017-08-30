@@ -6,9 +6,9 @@ package handler
 import (
 	"time"
 
+	pb_broker "github.com/TheThingsNetwork/api/broker"
+	"github.com/TheThingsNetwork/api/trace"
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
-	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
-	"github.com/TheThingsNetwork/ttn/api/trace"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 )
@@ -103,8 +103,8 @@ func (h *handler) HandleDownlink(appDownlink *types.DownlinkMessage, downlink *p
 	ctx := h.Ctx.WithFields(ttnlog.Fields{
 		"AppID":  appID,
 		"DevID":  devID,
-		"AppEUI": downlink.AppEui,
-		"DevEUI": downlink.DevEui,
+		"AppEUI": downlink.AppEUI,
+		"DevEUI": downlink.DevEUI,
 	})
 
 	defer func() {
@@ -171,17 +171,17 @@ func (h *handler) HandleDownlink(appDownlink *types.DownlinkMessage, downlink *p
 
 	downlinkConfig := types.DownlinkEventConfigInfo{}
 
-	if downlink.DownlinkOption.ProtocolConfig != nil {
-		if lorawan := downlink.DownlinkOption.ProtocolConfig.GetLorawan(); lorawan != nil {
+	if downlink.DownlinkOption.ProtocolConfiguration != nil {
+		if lorawan := downlink.DownlinkOption.ProtocolConfiguration.GetLoRaWAN(); lorawan != nil {
 			downlinkConfig.Modulation = lorawan.Modulation.String()
 			downlinkConfig.DataRate = lorawan.DataRate
 			downlinkConfig.BitRate = uint(lorawan.BitRate)
 			downlinkConfig.FCnt = uint(lorawan.FCnt)
 		}
 	}
-	if gateway := downlink.DownlinkOption.GatewayConfig; gateway != nil {
-		downlinkConfig.Frequency = uint(downlink.DownlinkOption.GatewayConfig.Frequency)
-		downlinkConfig.Power = int(downlink.DownlinkOption.GatewayConfig.Power)
+	if gateway := downlink.DownlinkOption.GatewayConfiguration; gateway != nil {
+		downlinkConfig.Frequency = uint(downlink.DownlinkOption.GatewayConfiguration.Frequency)
+		downlinkConfig.Power = int(downlink.DownlinkOption.GatewayConfiguration.Power)
 	}
 
 	h.qEvent <- &types.DeviceEvent{
@@ -191,7 +191,7 @@ func (h *handler) HandleDownlink(appDownlink *types.DownlinkMessage, downlink *p
 		Data: types.DownlinkEventData{
 			Payload:   downlink.Payload,
 			Message:   appDownlink,
-			GatewayID: downlink.DownlinkOption.GatewayId,
+			GatewayID: downlink.DownlinkOption.GatewayID,
 			Config:    downlinkConfig,
 		},
 	}

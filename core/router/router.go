@@ -7,15 +7,18 @@ import (
 	"sync"
 	"time"
 
-	"google.golang.org/grpc"
-
-	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
-	pb_discovery "github.com/TheThingsNetwork/ttn/api/discovery"
-	pb_gateway "github.com/TheThingsNetwork/ttn/api/gateway"
-	pb_monitor "github.com/TheThingsNetwork/ttn/api/monitor"
-	pb "github.com/TheThingsNetwork/ttn/api/router"
+	pb_broker "github.com/TheThingsNetwork/api/broker"
+	"github.com/TheThingsNetwork/api/broker/brokerclient"
+	pb_discovery "github.com/TheThingsNetwork/api/discovery"
+	pb_gateway "github.com/TheThingsNetwork/api/gateway"
+	"github.com/TheThingsNetwork/api/monitor/monitorclient"
+	pb "github.com/TheThingsNetwork/api/router"
+	"github.com/TheThingsNetwork/go-utils/grpc/auth"
+	"github.com/TheThingsNetwork/go-utils/grpc/ttnctx"
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/router/gateway"
+	"golang.org/x/net/context"
+	"google.golang.org/grpc"
 )
 
 // Router component
@@ -41,7 +44,7 @@ type Router interface {
 
 type broker struct {
 	conn        *grpc.ClientConn
-	association pb_broker.RouterStream
+	association brokerclient.RouterStream
 	client      pb_broker.BrokerClient
 	uplink      chan *pb_broker.UplinkMessage
 	downlink    chan *pb_broker.DownlinkMessage
@@ -62,7 +65,7 @@ type router struct {
 	brokers       map[string]*broker
 	brokersLock   sync.RWMutex
 	status        *status
-	monitorStream pb_monitor.GenericStream
+	monitorStream monitorclient.Stream
 }
 
 func (r *router) tickGateways() {
@@ -93,10 +96,12 @@ func (r *router) Init(c *component.Component) error {
 	}()
 	r.Component.SetStatus(component.StatusHealthy)
 	if r.Component.Monitor != nil {
-		r.monitorStream = r.Component.Monitor.NewRouterStreams(r.Identity.Id, r.AccessToken)
-		go r.Component.Monitor.TickStatus(func() {
-			r.monitorStream.Send(r.GetStatus())
-		})
+		r.monitorStream = r.Component.Monitor.RouterClient(r.Context, grpc.PerRPCCredentials(auth.WithStaticToken(r.AccessToken)))
+		go func() {
+			for range time.Tick(r.Component.Config.StatusInterval) {
+				r.monitorStream.Send(r.GetStatus())
+			}
+		}()
 	}
 	return nil
 }
@@ -126,8 +131,20 @@ func (r *router) getGateway(id string) *gateway.Gateway {
 	gtw, ok = r.gateways[id]
 	if !ok {
 		gtw = gateway.NewGateway(r.Ctx, id)
-		gtw.Monitor = r.Component.Monitor
-
+		ctx := context.Background()
+		ctx = ttnctx.OutgoingContextWithID(ctx, id)
+		if r.Identity != nil {
+			ctx = ttnctx.OutgoingContextWithServiceInfo(ctx, r.Identity.ServiceName, r.Identity.ServiceVersion, r.Identity.NetAddress)
+		}
+		gtw.MonitorStream = r.Component.Monitor.GatewayClient(
+			ctx,
+			grpc.PerRPCCredentials(auth.WithTokenFunc("id", func(ctxID string) string {
+				if ctxID != id {
+					return ""
+				}
+				return gtw.Token()
+			})),
+		)
 		r.gateways[id] = gtw
 	}
 
@@ -139,7 +156,7 @@ func (r *router) getGateway(id string) *gateway.Gateway {
 func (r *router) getBroker(brokerAnnouncement *pb_discovery.Announcement) (*broker, error) {
 	// We're going to be optimistic and guess that the broker is already active
 	r.brokersLock.RLock()
-	brk, ok := r.brokers[brokerAnnouncement.Id]
+	brk, ok := r.brokers[brokerAnnouncement.ID]
 	r.brokersLock.RUnlock()
 	if ok {
 		return brk, nil
@@ -148,7 +165,7 @@ func (r *router) getBroker(brokerAnnouncement *pb_discovery.Announcement) (*brok
 	// If it doesn't we still have to lock
 	r.brokersLock.Lock()
 	defer r.brokersLock.Unlock()
-	if _, ok := r.brokers[brokerAnnouncement.Id]; !ok {
+	if _, ok := r.brokers[brokerAnnouncement.ID]; !ok {
 		var err error
 
 		brk := &broker{
@@ -165,11 +182,11 @@ func (r *router) getBroker(brokerAnnouncement *pb_discovery.Announcement) (*brok
 		brk.client = pb_broker.NewBrokerClient(brk.conn)
 
 		// Set up the streaming client
-		config := pb_broker.DefaultClientConfig
+		config := brokerclient.DefaultClientConfig
 		config.BackgroundContext = r.Component.Context
-		cli := pb_broker.NewClient(config)
-		cli.AddServer(brokerAnnouncement.Id, brk.conn)
-		brk.association = cli.NewRouterStreams(r.Identity.Id, "")
+		cli := brokerclient.NewClient(config)
+		cli.AddServer(brokerAnnouncement.ID, brk.conn)
+		brk.association = cli.NewRouterStreams(r.Identity.ID, "")
 
 		go func() {
 			for {
@@ -184,7 +201,7 @@ func (r *router) getBroker(brokerAnnouncement *pb_discovery.Announcement) (*brok
 			}
 		}()
 
-		r.brokers[brokerAnnouncement.Id] = brk
+		r.brokers[brokerAnnouncement.ID] = brk
 	}
-	return r.brokers[brokerAnnouncement.Id], nil
+	return r.brokers[brokerAnnouncement.ID], nil
 }

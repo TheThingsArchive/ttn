@@ -104,6 +104,11 @@ func FromGRPCError(err error) error {
 	if err == nil {
 		return nil
 	}
+
+	if GetErrType(err) != Unknown {
+		return err
+	}
+
 	code := grpc.Code(err)
 	desc := grpc.ErrorDesc(err)
 	switch code {

@@ -6,7 +6,8 @@ package broker
 import (
 	"time"
 
-	pb "github.com/TheThingsNetwork/ttn/api/broker"
+	pb "github.com/TheThingsNetwork/api/broker"
+	"github.com/TheThingsNetwork/api/broker/brokerclient"
 	"github.com/TheThingsNetwork/ttn/api/ratelimit"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
@@ -17,7 +18,7 @@ import (
 
 type brokerRPC struct {
 	broker *broker
-	pb.BrokerStreamServer
+	brokerclient.BrokerStreamServer
 
 	routerUpRate    *ratelimit.Registry
 	handlerDownRate *ratelimit.Registry
@@ -29,7 +30,7 @@ func (b *brokerRPC) associateRouter(md metadata.MD) (chan *pb.UplinkMessage, <-c
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	down, err := b.broker.ActivateRouter(router.Id)
+	down, err := b.broker.ActivateRouter(router.ID)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -37,13 +38,13 @@ func (b *brokerRPC) associateRouter(md metadata.MD) (chan *pb.UplinkMessage, <-c
 	up := make(chan *pb.UplinkMessage, 1)
 
 	cancel := func() {
-		b.broker.DeactivateRouter(router.Id)
+		b.broker.DeactivateRouter(router.ID)
 	}
 
 	go func() {
 		for message := range up {
-			if waitTime := b.routerUpRate.Wait(router.Id); waitTime != 0 {
-				b.broker.Ctx.WithField("RouterID", router.Id).WithField("Wait", waitTime).Warn("Router reached uplink rate limit")
+			if waitTime := b.routerUpRate.Wait(router.ID); waitTime != 0 {
+				b.broker.Ctx.WithField("RouterID", router.ID).WithField("Wait", waitTime).Warn("Router reached uplink rate limit")
 				time.Sleep(waitTime)
 			}
 			go b.broker.HandleUplink(message)
@@ -60,13 +61,13 @@ func (b *brokerRPC) getHandlerSubscribe(md metadata.MD) (<-chan *pb.Deduplicated
 		return nil, nil, err
 	}
 
-	ch, err := b.broker.ActivateHandlerUplink(handler.Id)
+	ch, err := b.broker.ActivateHandlerUplink(handler.ID)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	cancel := func() {
-		b.broker.DeactivateHandlerUplink(handler.Id)
+		b.broker.DeactivateHandlerUplink(handler.ID)
 	}
 
 	return ch, cancel, nil
@@ -84,14 +85,14 @@ func (b *brokerRPC) getHandlerPublish(md metadata.MD) (chan *pb.DownlinkMessage,
 		for message := range ch {
 			go func(downlink *pb.DownlinkMessage) {
 				// Get latest Handler metadata
-				handler, err := b.broker.Component.Discover("handler", handler.Id)
+				handler, err := b.broker.Component.Discover("handler", handler.ID)
 				if err != nil {
 					return
 				}
 				for _, announcedID := range handler.AppIDs() {
-					if announcedID == downlink.AppId {
-						if waitTime := b.handlerDownRate.Wait(handler.Id); waitTime != 0 {
-							b.broker.Ctx.WithField("HandlerID", handler.Id).WithField("Wait", waitTime).Warn("Handler reached downlink rate limit")
+					if announcedID == downlink.AppID {
+						if waitTime := b.handlerDownRate.Wait(handler.ID); waitTime != 0 {
+							b.broker.Ctx.WithField("HandlerID", handler.ID).WithField("Wait", waitTime).Warn("Handler reached downlink rate limit")
 							time.Sleep(waitTime)
 						}
 						b.broker.HandleDownlink(downlink)

@@ -4,10 +4,10 @@
 package handler
 
 import (
+	pb_broker "github.com/TheThingsNetwork/api/broker"
+	pb_lorawan "github.com/TheThingsNetwork/api/protocol/lorawan"
+	"github.com/TheThingsNetwork/api/trace"
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
-	pb_broker "github.com/TheThingsNetwork/ttn/api/broker"
-	pb_lorawan "github.com/TheThingsNetwork/ttn/api/protocol/lorawan"
-	"github.com/TheThingsNetwork/ttn/api/trace"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
@@ -17,12 +17,12 @@ func (h *handler) ConvertFromLoRaWAN(ctx ttnlog.Interface, ttnUp *pb_broker.Dedu
 	if err := ttnUp.UnmarshalPayload(); err != nil {
 		return err
 	}
-	if ttnUp.GetMessage().GetLorawan() == nil {
+	if ttnUp.GetMessage().GetLoRaWAN() == nil {
 		return errors.NewErrInvalidArgument("Uplink", "does not contain a LoRaWAN payload")
 	}
 
-	phyPayload := ttnUp.GetMessage().GetLorawan()
-	macPayload := phyPayload.GetMacPayload()
+	phyPayload := ttnUp.GetMessage().GetLoRaWAN()
+	macPayload := phyPayload.GetMACPayload()
 	if macPayload == nil {
 		return errors.NewErrInvalidArgument("Uplink", "does not contain a MAC payload")
 	}
@@ -50,7 +50,7 @@ func (h *handler) ConvertFromLoRaWAN(ctx ttnlog.Interface, ttnUp *pb_broker.Dedu
 		if err := phyPayload.DecryptFRMPayload(dev.AppSKey); err != nil {
 			return errors.NewErrInternal("Could not decrypt payload")
 		}
-		appUp.PayloadRaw = macPayload.FrmPayload
+		appUp.PayloadRaw = macPayload.FRMPayload
 	}
 
 	if dev.CurrentDownlink != nil && !appUp.IsRetry {
@@ -82,12 +82,12 @@ func (h *handler) ConvertToLoRaWAN(ctx ttnlog.Interface, appDown *types.Downlink
 	if err := ttnDown.UnmarshalPayload(); err != nil {
 		return err
 	}
-	if ttnDown.GetMessage().GetLorawan() == nil {
+	if ttnDown.GetMessage().GetLoRaWAN() == nil {
 		return errors.NewErrInvalidArgument("Downlink", "does not contain a LoRaWAN payload")
 	}
 
-	phyPayload := ttnDown.GetMessage().GetLorawan()
-	macPayload := phyPayload.GetMacPayload()
+	phyPayload := ttnDown.GetMessage().GetLoRaWAN()
+	macPayload := phyPayload.GetMACPayload()
 	if macPayload == nil {
 		return errors.NewErrInvalidArgument("Downlink", "does not contain a MAC payload")
 	}
@@ -114,7 +114,7 @@ func (h *handler) ConvertToLoRaWAN(ctx ttnlog.Interface, appDown *types.Downlink
 	// Set Payload
 	if len(appDown.PayloadRaw) > 0 {
 		ttnDown.Trace = ttnDown.Trace.WithEvent("set payload")
-		macPayload.FrmPayload = appDown.PayloadRaw
+		macPayload.FRMPayload = appDown.PayloadRaw
 		if macPayload.FPort <= 0 {
 			macPayload.FPort = 1
 		}
@@ -124,7 +124,7 @@ func (h *handler) ConvertToLoRaWAN(ctx ttnlog.Interface, appDown *types.Downlink
 		}
 	} else {
 		ttnDown.Trace = ttnDown.Trace.WithEvent("set empty payload")
-		macPayload.FrmPayload = []byte{}
+		macPayload.FRMPayload = []byte{}
 		macPayload.FPort = 0
 	}
 

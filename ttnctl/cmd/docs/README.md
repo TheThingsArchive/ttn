@@ -495,8 +495,21 @@ ttnctl gateways edit can be used to edit settings of a gateway
 **Options**
 
 ```
+      --antenna-model string    The antenna model of the gateway
+      --antenna-type string     The antenna type of the gateway
+      --brand string            The brand of the gateway
+      --description string      The description of the gateway
       --frequency-plan string   The frequency plan to use on the gateway
       --location string         The location of the gateway
+      --location-private        Make the location of the gateway private
+      --location-public         Make the location of the gateway public
+      --model string            The model of the gateway
+      --owner string            The owner of the gateway
+      --owner-private           Make the owner of the gateway private
+      --owner-public            Make the owner of the gateway public
+      --router string           The router of the gateway
+      --status-private          Make the status of the gateway private
+      --status-public           Make the status of the gateway public
 ```
 
 **Example**

@@ -5,7 +5,7 @@
 package discovery
 
 import (
-	pb "github.com/TheThingsNetwork/ttn/api/discovery"
+	pb "github.com/TheThingsNetwork/api/discovery"
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/discovery/announcement"
 	"github.com/TheThingsNetwork/ttn/core/storage"
@@ -61,7 +61,7 @@ func (d *discovery) Init(c *component.Component) error {
 func (d *discovery) Shutdown() {}
 
 func (d *discovery) Announce(in *pb.Announcement) error {
-	service, err := d.services.Get(in.ServiceName, in.Id)
+	service, err := d.services.Get(in.ServiceName, in.ID)
 	if err != nil && errors.GetErrType(err) != errors.NotFound {
 		return err
 	}
@@ -71,7 +71,7 @@ func (d *discovery) Announce(in *pb.Announcement) error {
 
 	service.StartUpdate()
 
-	service.ID = in.Id
+	service.ID = in.ID
 	service.ServiceName = in.ServiceName
 	service.ServiceVersion = in.ServiceVersion
 	service.Description = in.Description
@@ -125,6 +125,14 @@ func (d *discovery) DeleteMetadata(serviceName string, id string, in *pb.Metadat
 
 func (d *discovery) GetByAppID(appID string) (*pb.Announcement, error) {
 	service, err := d.services.GetForAppID(appID)
+	if err != nil {
+		return nil, err
+	}
+	return service.ToProto(), nil
+}
+
+func (d *discovery) GetByGatewayID(gatewayID string) (*pb.Announcement, error) {
+	service, err := d.services.GetForGatewayID(gatewayID)
 	if err != nil {
 		return nil, err
 	}
