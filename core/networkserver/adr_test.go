@@ -199,8 +199,12 @@ func TestHandleDownlinkADR(t *testing.T) {
 	dev.ADR.Band = "INVALID"
 	shouldReturnError()
 
+	dev.ADR.DataRate = "SF10BW125"
+	dev.ADR.TxPower = 20
+
 	{
 		dev.ADR.Band = "US_902_928"
+		message := adrInitDownlinkMessage()
 		err := ns.handleDownlinkADR(message, dev)
 		a.So(err, ShouldBeNil)
 		fOpts := message.Message.GetLoRaWAN().GetMACPayload().FOpts
@@ -230,8 +234,47 @@ func TestHandleDownlinkADR(t *testing.T) {
 		}
 	}
 
+	dev.ADR.DataRate = "SF10BW125"
+	dev.ADR.TxPower = 20
+
+	{
+		dev.ADR.Band = "AU_915_928"
+		message := adrInitDownlinkMessage()
+		err := ns.handleDownlinkADR(message, dev)
+		a.So(err, ShouldBeNil)
+		fOpts := message.Message.GetLoRaWAN().GetMACPayload().FOpts
+		a.So(fOpts, ShouldHaveLength, 3)
+		a.So(fOpts[1].CID, ShouldEqual, lorawan.LinkADRReq)
+		payload := new(lorawan.LinkADRReqPayload)
+		payload.UnmarshalBinary(fOpts[1].Payload) // First LinkAdrReq
+		a.So(payload.DataRate, ShouldEqual, 3)    // SF7BW125
+		a.So(payload.TXPower, ShouldEqual, 5)     // 20
+		a.So(payload.Redundancy.ChMaskCntl, ShouldEqual, 7)
+		// Ch 64-71, All 125 kHz channels off
+		a.So(payload.ChMask[0], ShouldBeFalse) // Channel 64 disabled
+		a.So(payload.ChMask[1], ShouldBeTrue)  // Channel 65 enabled
+		for i := 2; i < 8; i++ {               // Channels 66-71 disabled
+			a.So(payload.ChMask[i], ShouldBeFalse)
+		}
+		payload = new(lorawan.LinkADRReqPayload)
+		payload.UnmarshalBinary(fOpts[2].Payload)           // Second LinkAdrReq
+		a.So(payload.DataRate, ShouldEqual, 3)              // SF7BW125
+		a.So(payload.TXPower, ShouldEqual, 5)               // 20
+		a.So(payload.Redundancy.ChMaskCntl, ShouldEqual, 0) // Channels 0..15
+		for i := 0; i < 8; i++ {                            // First 8 channels disabled
+			a.So(payload.ChMask[i], ShouldBeFalse)
+		}
+		for i := 8; i < 16; i++ { // Second 8 channels enabled
+			a.So(payload.ChMask[i], ShouldBeTrue)
+		}
+	}
+
+	dev.ADR.DataRate = "SF10BW125"
+	dev.ADR.TxPower = 20
+
 	{
 		dev.ADR.Band = "EU_863_870"
+		message := adrInitDownlinkMessage()
 		err := ns.handleDownlinkADR(message, dev)
 		a.So(err, ShouldBeNil)
 		fOpts := message.Message.GetLoRaWAN().GetMACPayload().FOpts

@@ -226,7 +226,7 @@ func getAdrReqPayloads(dev *device.Device, frequencyPlan *band.FrequencyPlan, dr
 				}
 			}
 		}
-	case pb_lorawan.FrequencyPlan_US_902_928.String():
+	case pb_lorawan.FrequencyPlan_US_902_928.String(), pb_lorawan.FrequencyPlan_AU_915_928.String():
 		// Adapted from https://github.com/brocaar/lorawan/blob/master/band/band_us902_928.go
 		payloads = []lorawan.LinkADRReqPayload{
 			{
