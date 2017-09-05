@@ -5,13 +5,13 @@ package networkserver
 
 import (
 	"math"
+	"sort"
 
 	pb_broker "github.com/TheThingsNetwork/api/broker"
 	pb_lorawan "github.com/TheThingsNetwork/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core/band"
 	"github.com/TheThingsNetwork/ttn/core/networkserver/device"
 	"github.com/brocaar/lorawan"
-	"sort"
 )
 
 // DefaultADRMargin is the default SNR margin for ADR
@@ -69,6 +69,19 @@ func (n *networkServer) handleUplinkADR(message *pb_broker.DeduplicatedUplinkMes
 			dev.ADR.SendReq = true        // schedule a LinkADRReq
 			lorawanDownlinkMAC.Ack = true // force a downlink
 		}
+
+		if dev.ADR.SendReq {
+			if fp, err := band.Get(dev.ADR.Band); err == nil {
+				if drIdx, err := fp.GetDataRateIndexFor(dataRate); err == nil && drIdx == 0 {
+					history, _ := n.devices.Frames(dev.AppEUI, dev.DevEUI)
+					frames, _ := history.Get()
+					if len(frames) >= device.FramesHistorySize {
+						lorawanDownlinkMAC.Ack = true // force a downlink
+					}
+				}
+			}
+		}
+
 	} else {
 		// Clear history and reset settings
 		if err := history.Clear(); err != nil {
