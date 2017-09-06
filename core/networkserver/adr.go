@@ -60,6 +60,10 @@ func (n *networkServer) handleUplinkADR(message *pb_broker.DeduplicatedUplinkMes
 			dev.ADR.Band = message.GetProtocolMetadata().GetLoRaWAN().GetFrequencyPlan().String()
 		}
 
+		if !dev.ADR.SentInitial {
+			dev.ADR.SendReq = true        // schedule a LinkADRReq
+			lorawanDownlinkMAC.Ack = true // force a downlink
+		}
 		dataRate := message.GetProtocolMetadata().GetLoRaWAN().GetDataRate()
 		if dev.ADR.DataRate != dataRate {
 			dev.ADR.DataRate = dataRate
@@ -106,16 +110,22 @@ func (n *networkServer) handleDownlinkADR(message *pb_broker.DownlinkMessage, de
 	}
 
 	history, err := n.devices.Frames(dev.AppEUI, dev.DevEUI)
+	if err != nil {
+		return err
+	}
 
 	frames, err := history.Get()
 	if err != nil {
 		return err
 	}
-	if len(frames) < device.FramesHistorySize {
+
+	switch {
+	case len(frames) == 0:
 		return nil
+	case len(frames) >= device.FramesHistorySize:
+		frames = frames[:device.FramesHistorySize]
 	}
 
-	frames = frames[:device.FramesHistorySize]
 	// Check settings
 	if dev.ADR.DataRate == "" {
 		return nil
@@ -137,8 +147,13 @@ func (n *networkServer) handleDownlinkADR(message *pb_broker.DownlinkMessage, de
 		dev.ADR.NbTrans = 1
 	}
 
+	adrMargin := float32(dev.ADR.Margin)
+	if !dev.ADR.SentInitial {
+		adrMargin += 2.5 // Take an extra margin if we don't have enough data yet
+	}
+
 	// Calculate ADR settings
-	dataRate, txPower, err := fp.ADRSettings(dev.ADR.DataRate, dev.ADR.TxPower, maxSNR(frames), float32(dev.ADR.Margin))
+	dataRate, txPower, err := fp.ADRSettings(dev.ADR.DataRate, dev.ADR.TxPower, maxSNR(frames), adrMargin)
 	if err == band.ErrADRUnavailable {
 		return nil
 	}
@@ -184,6 +199,14 @@ func (n *networkServer) handleDownlinkADR(message *pb_broker.DownlinkMessage, de
 	lorawanDownlinkMAC := message.GetMessage().GetLoRaWAN().GetMACPayload()
 
 	payloads := getAdrReqPayloads(dev, &fp, drIdx, powerIdx)
+
+	if len(payloads) == 0 {
+		return nil
+	}
+
+	if !dev.ADR.SentInitial {
+		dev.ADR.SentInitial = true
+	}
 
 	// Remove LinkADRReq if already added
 	fOpts := make([]pb_lorawan.MACCommand, 0, len(lorawanDownlinkMAC.FOpts)+len(payloads))

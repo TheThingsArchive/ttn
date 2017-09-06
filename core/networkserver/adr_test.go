@@ -151,6 +151,7 @@ func TestHandleDownlinkADR(t *testing.T) {
 	devEUI := types.DevEUI([8]byte{1})
 	history, _ := ns.devices.Frames(appEUI, devEUI)
 	dev := &device.Device{AppEUI: appEUI, DevEUI: devEUI}
+	dev.ADR.SentInitial = true
 
 	message := adrInitDownlinkMessage()
 
