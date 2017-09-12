@@ -57,7 +57,7 @@ func genCertCmd(component string) *cobra.Command {
 			}
 			names = append(names, args...)
 			names = uniq(names)
-			if err := security.GenerateCert(viper.GetString("key-dir"), names...); err != nil {
+			if err := security.GenerateCert(viper.GetString("key-dir"), viper.GetString("id")+" "+component, names...); err != nil {
 				ctx.WithError(err).Fatal("Could not generate certificate")
 			}
 			ctx.WithField("TLSDir", viper.GetString("key-dir")).Info("Done")

@@ -39,7 +39,7 @@ func TestCertFuncs(t *testing.T) {
 
 	GenerateKeypair(location)
 
-	err := GenerateCert(location, "localhost")
+	err := GenerateCert(location, "test cert", "localhost")
 	a.So(err, ShouldBeNil)
 
 	_, err = LoadCert(location + "/derp")

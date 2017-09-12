@@ -252,7 +252,7 @@ func TestInitTLS(t *testing.T) {
 
 	a.So(c.initTLS(), assertions.ShouldNotBeNil)
 
-	security.GenerateCert(tmpDir)
+	security.GenerateCert(tmpDir, "test cert")
 
 	a.So(c.initTLS(), assertions.ShouldBeNil)
 

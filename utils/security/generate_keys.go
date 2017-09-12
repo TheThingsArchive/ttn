@@ -51,7 +51,7 @@ func GenerateKeypair(location string) error {
 }
 
 // GenerateCert generates a certificate for the given hostnames in the given location
-func GenerateCert(location string, hostnames ...string) error {
+func GenerateCert(location string, commonName string, hostnames ...string) error {
 	privKey, err := LoadKeypair(location)
 	if err != nil {
 		return err
@@ -68,6 +68,7 @@ func GenerateCert(location string, hostnames ...string) error {
 	template := x509.Certificate{
 		SerialNumber: serialNumber,
 		Subject: pkix.Name{
+			CommonName:   commonName,
 			Organization: []string{"The Things Network"},
 		},
 		IsCA:                  true,
