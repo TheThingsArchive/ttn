@@ -12,6 +12,7 @@ import (
 	"github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/core/band"
 	"github.com/TheThingsNetwork/ttn/core/networkserver/device"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/brocaar/lorawan"
 )
 
@@ -116,7 +117,8 @@ func (n *networkServer) handleUplinkADR(message *pb_broker.DeduplicatedUplinkMes
 	if forceADR {
 		err := n.setADR(lorawanDownlinkMAC, dev)
 		if err != nil {
-			return err
+			message.Trace = message.Trace.WithEvent("mac error", macCMD, "link-adr", "error", err.Error())
+			err = nil
 		}
 	}
 
@@ -126,6 +128,9 @@ func (n *networkServer) handleUplinkADR(message *pb_broker.DeduplicatedUplinkMes
 func (n *networkServer) setADR(mac *pb_lorawan.MACPayload, dev *device.Device) error {
 	if !dev.ADR.SendReq {
 		return nil
+	}
+	if dev.ADR.Failed > 3 {
+		return errors.New("too many failed ADR requests")
 	}
 
 	// Check settings
@@ -249,7 +254,8 @@ func (n *networkServer) setADR(mac *pb_lorawan.MACPayload, dev *device.Device) e
 func (n *networkServer) handleDownlinkADR(message *pb_broker.DownlinkMessage, dev *device.Device) error {
 	err := n.setADR(message.GetMessage().GetLoRaWAN().GetMACPayload(), dev)
 	if err != nil {
-		return err
+		message.Trace = message.Trace.WithEvent("mac error", macCMD, "link-adr", "error", err.Error())
+		err = nil
 	}
 
 	return nil
@@ -259,6 +265,10 @@ func getAdrReqPayloads(dev *device.Device, frequencyPlan *band.FrequencyPlan, dr
 	payloads := []lorawan.LinkADRReqPayload{}
 	switch dev.ADR.Band {
 	case pb_lorawan.FrequencyPlan_EU_863_870.String():
+		if dev.ADR.Failed > 0 && powerIdx > 5 {
+			// fall back to txPower 5 for LoRaWAN 1.0
+			powerIdx = 5
+		}
 		payloads = []lorawan.LinkADRReqPayload{
 			{
 				DataRate: uint8(drIdx),
@@ -269,10 +279,17 @@ func getAdrReqPayloads(dev *device.Device, frequencyPlan *band.FrequencyPlan, dr
 				},
 			},
 		}
-		for i, ch := range frequencyPlan.UplinkChannels {
-			for _, dr := range ch.DataRates {
-				if dr == drIdx {
-					payloads[0].ChMask[i] = true
+		if dev.ADR.Failed > 0 {
+			// Fall back to the mandatory LoRaWAN channels
+			payloads[0].ChMask[0] = true
+			payloads[0].ChMask[1] = true
+			payloads[0].ChMask[2] = true
+		} else {
+			for i, ch := range frequencyPlan.UplinkChannels {
+				for _, dr := range ch.DataRates {
+					if dr == drIdx {
+						payloads[0].ChMask[i] = true
+					}
 				}
 			}
 		}

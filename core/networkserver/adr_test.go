@@ -166,7 +166,7 @@ func TestHandleDownlinkADR(t *testing.T) {
 		a := New(t)
 		message = adrInitDownlinkMessage()
 		err := ns.handleDownlinkADR(message, dev)
-		a.So(err, ShouldNotBeNil)
+		a.So(err, ShouldBeNil)
 		a.So(message.Message.GetLoRaWAN().GetMACPayload().FOpts, ShouldHaveLength, 1)
 		if a.Failed() {
 			_, file, line, _ := runtime.Caller(1)
