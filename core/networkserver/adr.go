@@ -110,10 +110,6 @@ func (n *networkServer) handleDownlinkADR(message *pb_broker.DownlinkMessage, de
 		return nil
 	}
 
-	if dev.ADR.Failed > 0 {
-		return nil
-	}
-
 	history, err := n.devices.Frames(dev.AppEUI, dev.DevEUI)
 	if err != nil {
 		return err
