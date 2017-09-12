@@ -39,6 +39,8 @@ func lossPercentage(frames []*device.Frame) int {
 	return int(math.Floor((float64(loss) / float64(sentPackets) * 100) + .5))
 }
 
+const ScheduleMACEvent = "schedule mac command"
+
 func (n *networkServer) handleUplinkADR(message *pb_broker.DeduplicatedUplinkMessage, dev *device.Device) error {
 	lorawanUplinkMAC := message.GetMessage().GetLoRaWAN().GetMACPayload()
 	lorawanDownlinkMAC := message.GetResponseTemplate().GetMessage().GetLoRaWAN().GetMACPayload()
@@ -63,6 +65,7 @@ func (n *networkServer) handleUplinkADR(message *pb_broker.DeduplicatedUplinkMes
 		if !dev.ADR.SentInitial {
 			dev.ADR.SendReq = true        // schedule a LinkADRReq
 			lorawanDownlinkMAC.Ack = true // force a downlink
+			message.Trace = message.Trace.WithEvent(ScheduleMACEvent, macCMD, "link-adr", "reason", "initial")
 		}
 		dataRate := message.GetProtocolMetadata().GetLoRaWAN().GetDataRate()
 		if dev.ADR.DataRate != dataRate {
@@ -72,6 +75,7 @@ func (n *networkServer) handleUplinkADR(message *pb_broker.DeduplicatedUplinkMes
 		if lorawanUplinkMAC.ADRAckReq {
 			dev.ADR.SendReq = true        // schedule a LinkADRReq
 			lorawanDownlinkMAC.Ack = true // force a downlink
+			message.Trace = message.Trace.WithEvent(ScheduleMACEvent, macCMD, "link-adr", "reason", "adr-ack-req")
 		}
 
 		if dev.ADR.SendReq {
@@ -81,6 +85,7 @@ func (n *networkServer) handleUplinkADR(message *pb_broker.DeduplicatedUplinkMes
 					frames, _ := history.Get()
 					if len(frames) >= device.FramesHistorySize {
 						lorawanDownlinkMAC.Ack = true // force a downlink
+						message.Trace = message.Trace.WithEvent(ScheduleMACEvent, macCMD, "link-adr", "reason", "avoid high sf")
 					}
 				}
 			}
