@@ -13,6 +13,7 @@ import (
 	pb_gateway "github.com/TheThingsNetwork/api/gateway"
 	pb_protocol "github.com/TheThingsNetwork/api/protocol"
 	pb_lorawan "github.com/TheThingsNetwork/api/protocol/lorawan"
+	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/networkserver/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
@@ -82,6 +83,9 @@ func TestLossPercentage(t *testing.T) {
 func TestHandleUplinkADR(t *testing.T) {
 	a := New(t)
 	ns := &networkServer{
+		Component: &component.Component{
+			Ctx: GetLogger(t, "TestHandleUplink"),
+		},
 		devices: device.NewRedisDeviceStore(GetRedisClient(), "ns-test-handle-uplink-adr"),
 	}
 	ns.InitStatus()
@@ -136,6 +140,9 @@ func TestHandleUplinkADR(t *testing.T) {
 func TestHandleDownlinkADR(t *testing.T) {
 	a := New(t)
 	ns := &networkServer{
+		Component: &component.Component{
+			Ctx: GetLogger(t, "TestHandleUplink"),
+		},
 		devices: device.NewRedisDeviceStore(GetRedisClient(), "ns-test-handle-downlink-adr"),
 	}
 	ns.InitStatus()
