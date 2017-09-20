@@ -297,8 +297,8 @@ func getAdrReqPayloads(dev *device.Device, frequencyPlan *band.FrequencyPlan, dr
 		// Adapted from https://github.com/brocaar/lorawan/blob/master/band/band_us902_928.go
 		payloads = []lorawan.LinkADRReqPayload{
 			{
-				DataRate: uint8(drIdx),
-				TXPower:  uint8(powerIdx),
+				DataRate: 4, // fixed settings for 500kHz channel
+				TXPower:  0, // fixed settings for 500kHz channel
 				Redundancy: lorawan.Redundancy{
 					ChMaskCntl: 7,
 					NbRep:      uint8(dev.ADR.NbTrans),
