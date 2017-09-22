@@ -16,6 +16,7 @@ import (
 	"github.com/TheThingsNetwork/go-utils/grpc/rpclog"
 	"github.com/TheThingsNetwork/go-utils/roots"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
+	"github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/mwitkow/go-grpc-middleware"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -72,10 +73,12 @@ func KeepAliveDialer(addr string, timeout time.Duration) (net.Conn, error) {
 // DefaultDialOptions for connecting with servers
 var DefaultDialOptions = []grpc.DialOption{
 	grpc.WithUnaryInterceptor(grpc_middleware.ChainUnaryClient(
+		grpc_prometheus.UnaryClientInterceptor,
 		rpcerror.UnaryClientInterceptor(errors.FromGRPCError),
 		rpclog.UnaryClientInterceptor(nil),
 	)),
 	grpc.WithStreamInterceptor(grpc_middleware.ChainStreamClient(
+		grpc_prometheus.StreamClientInterceptor,
 		rpcerror.StreamClientInterceptor(errors.FromGRPCError),
 		restartstream.Interceptor(restartstream.DefaultSettings),
 		rpclog.StreamClientInterceptor(nil),
