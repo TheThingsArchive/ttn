@@ -61,12 +61,16 @@ func (r *router) UnsubscribeDownlink(gatewayID string, subscriptionID string) er
 
 func (r *router) HandleDownlink(downlink *pb_broker.DownlinkMessage) (err error) {
 	var gateway *gateway.Gateway
+
+	r.RegisterReceived(downlink)
 	defer func() {
 		if err != nil {
 			downlink.Trace = downlink.Trace.WithEvent(trace.DropEvent, "reason", err)
 			if gateway != nil && gateway.MonitorStream != nil {
 				gateway.MonitorStream.Send(downlink)
 			}
+		} else {
+			r.RegisterHandled(downlink)
 		}
 	}()
 	r.status.downlink.Mark(1)

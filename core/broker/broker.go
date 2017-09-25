@@ -111,6 +111,7 @@ nextPrefix:
 
 func (b *broker) Init(c *component.Component) error {
 	b.Component = c
+	initMetrics()
 	b.InitStatus()
 	err := b.Component.UpdateTokenKey()
 	if err != nil {
@@ -154,6 +155,7 @@ func (b *broker) ActivateRouter(id string) (<-chan *pb.DownlinkMessage, error) {
 		return existing, errors.NewErrInternal(fmt.Sprintf("Router %s already active", id))
 	}
 	b.routers[id] = make(chan *pb.DownlinkMessage)
+	connectedRouters.Inc()
 	return b.routers[id], nil
 }
 
@@ -163,6 +165,7 @@ func (b *broker) DeactivateRouter(id string) error {
 	if channel, ok := b.routers[id]; ok {
 		close(channel)
 		delete(b.routers, id)
+		connectedRouters.Dec()
 		return nil
 	}
 	return errors.NewErrInternal(fmt.Sprintf("Router %s not active", id))
@@ -201,6 +204,7 @@ func (b *broker) ActivateHandlerUplink(id string) (<-chan *pb.DeduplicatedUplink
 		return hdl.uplink, errors.NewErrInternal(fmt.Sprintf("Handler %s already active", id))
 	}
 	hdl.uplink = make(chan *pb.DeduplicatedUplinkMessage)
+	connectedHandlers.Inc()
 	return hdl.uplink, nil
 }
 
@@ -213,6 +217,7 @@ func (b *broker) DeactivateHandlerUplink(id string) error {
 	}
 	close(hdl.uplink)
 	hdl.uplink = nil
+	connectedHandlers.Dec()
 	return nil
 }
 

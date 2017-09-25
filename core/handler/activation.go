@@ -75,6 +75,8 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 	appID, devID := activation.AppID, activation.DevID
 	ctx := h.Ctx.WithFields(logfields.ForMessage(activation))
 	start := time.Now()
+
+	h.RegisterReceived(activation)
 	defer func() {
 		if err != nil {
 			h.qEvent <- &types.DeviceEvent{
@@ -90,6 +92,7 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 			activation.Trace = activation.Trace.WithEvent(trace.DropEvent, "reason", err)
 			ctx.WithError(err).Warn("Could not handle activation")
 		} else {
+			h.RegisterHandled(activation)
 			ctx.WithField("Duration", time.Now().Sub(start)).Info("Handled activation")
 		}
 		if activation != nil && h.monitorStream != nil {

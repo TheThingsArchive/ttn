@@ -34,6 +34,7 @@ func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (res *
 	deduplicatedActivationRequest := new(pb.DeduplicatedDeviceActivationRequest)
 	deduplicatedActivationRequest.ServerTime = start.UnixNano()
 
+	b.RegisterReceived(activation)
 	defer func() {
 		if err != nil {
 			if deduplicatedActivationRequest != nil {
@@ -41,6 +42,7 @@ func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (res *
 			}
 			ctx.WithError(err).Warn("Could not handle activation")
 		} else {
+			b.RegisterHandled(activation)
 			ctx.WithField("Duration", time.Now().Sub(start)).Info("Handled activation")
 		}
 		if deduplicatedActivationRequest != nil && b.monitorStream != nil {
