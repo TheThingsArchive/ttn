@@ -10,6 +10,7 @@ import (
 	"github.com/TheThingsNetwork/go-utils/grpc/rpcerror"
 	"github.com/TheThingsNetwork/go-utils/grpc/rpclog"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
+	"github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/mwitkow/go-grpc-middleware" // See https://github.com/grpc/grpc-go/issues/711"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -19,10 +20,12 @@ func (c *Component) ServerOptions() []grpc.ServerOption {
 	opts := []grpc.ServerOption{
 		grpc.MaxConcurrentStreams(math.MaxUint16),
 		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
+			grpc_prometheus.UnaryServerInterceptor,
 			rpcerror.UnaryServerInterceptor(errors.BuildGRPCError),
 			rpclog.UnaryServerInterceptor(c.Ctx),
 		)),
 		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
+			grpc_prometheus.StreamServerInterceptor,
 			rpcerror.StreamServerInterceptor(errors.BuildGRPCError),
 			rpclog.StreamServerInterceptor(c.Ctx),
 		)),

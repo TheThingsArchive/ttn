@@ -30,6 +30,8 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) (err error) {
 	start := time.Now()
 	deduplicatedUplink := new(pb.DeduplicatedUplinkMessage)
 	deduplicatedUplink.ServerTime = start.UnixNano()
+
+	b.RegisterReceived(uplink)
 	defer func() {
 		if err != nil {
 			if deduplicatedUplink != nil {
@@ -37,6 +39,7 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) (err error) {
 			}
 			ctx.WithError(err).Warn("Could not handle uplink")
 		} else {
+			b.RegisterHandled(uplink)
 			ctx.WithField("Duration", time.Now().Sub(start)).Info("Handled uplink")
 		}
 		if deduplicatedUplink != nil && b.monitorStream != nil {
@@ -98,6 +101,7 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) (err error) {
 		return errors.Wrap(errors.FromGRPCError(err), "NetworkServer did not return devices")
 	}
 	b.status.deduplication.Update(int64(len(getDevicesResp.Results)))
+	duplicatesHistogram.Observe(float64(len(getDevicesResp.Results)))
 	if len(getDevicesResp.Results) == 0 {
 		return errors.NewErrNotFound(fmt.Sprintf("Device with DevAddr %s and FCnt <= %d", devAddr, macPayload.FHDR.FCnt))
 	}
@@ -149,6 +153,8 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) (err error) {
 	if device == nil {
 		return errors.NewErrNotFound("device that validates MIC")
 	}
+
+	micChecksHistogram.Observe(float64(micChecks))
 
 	ctx = ctx.WithFields(ttnlog.Fields{
 		"MICChecks": micChecks,

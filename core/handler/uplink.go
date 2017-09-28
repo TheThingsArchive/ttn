@@ -19,6 +19,8 @@ func (h *handler) HandleUplink(uplink *pb_broker.DeduplicatedUplinkMessage) (err
 	appID, devID := uplink.AppID, uplink.DevID
 	ctx := h.Ctx.WithFields(logfields.ForMessage(uplink))
 	start := time.Now()
+
+	h.RegisterReceived(uplink)
 	defer func() {
 		if err != nil {
 			h.qEvent <- &types.DeviceEvent{
@@ -30,6 +32,7 @@ func (h *handler) HandleUplink(uplink *pb_broker.DeduplicatedUplinkMessage) (err
 			ctx.WithError(err).Warn("Could not handle uplink")
 			uplink.Trace = uplink.Trace.WithEvent(trace.DropEvent, "reason", err)
 		} else {
+			h.RegisterHandled(uplink)
 			ctx.WithField("Duration", time.Now().Sub(start)).Info("Handled uplink")
 		}
 		if uplink != nil && h.monitorStream != nil {

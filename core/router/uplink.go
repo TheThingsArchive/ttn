@@ -22,10 +22,14 @@ func (r *router) HandleUplink(gatewayID string, uplink *pb.UplinkMessage) (err e
 	ctx := r.Ctx.WithField("GatewayID", gatewayID).WithFields(logfields.ForMessage(uplink))
 	start := time.Now()
 	var gateway *gateway.Gateway
+
+	r.RegisterReceived(uplink)
 	defer func() {
 		if err != nil {
 			uplink.Trace = uplink.Trace.WithEvent(trace.DropEvent, "reason", err)
 			ctx.WithError(err).Warn("Could not handle uplink")
+		} else {
+			r.RegisterHandled(uplink)
 		}
 		if gateway != nil && gateway.MonitorStream != nil {
 			gateway.MonitorStream.Send(uplink)

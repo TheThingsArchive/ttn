@@ -9,6 +9,8 @@ import (
 	_ "net/http/pprof"
 	"sync"
 
+	"github.com/grpc-ecosystem/go-grpc-prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
@@ -83,11 +85,13 @@ func (c *Component) SetStatus(s Status) {
 func (c *Component) RegisterHealthServer(srv *grpc.Server) {
 	c.healthServer = health.NewServer()
 	healthpb.RegisterHealthServer(srv, c.healthServer)
+	grpc_prometheus.Register(srv)
 }
 
 func initStatus(c *Component) error {
 	setStatus(c, StatusUnhealthy)
 	if healthPort := viper.GetInt("health-port"); healthPort > 0 {
+		http.Handle("/metrics", promhttp.Handler())
 		http.HandleFunc("/healthz", getStatusPage(c))
 		go func() {
 			if err := http.ListenAndServe(fmt.Sprintf(":%d", healthPort), nil); err != nil {

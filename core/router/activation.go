@@ -25,6 +25,8 @@ func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivat
 	start := time.Now()
 	var gateway *gateway.Gateway
 	var forwarded bool
+
+	r.RegisterReceived(activation)
 	defer func() {
 		if err != nil {
 			activation.Trace = activation.Trace.WithEvent(trace.DropEvent, "reason", err)
@@ -35,6 +37,7 @@ func (r *router) HandleActivation(gatewayID string, activation *pb.DeviceActivat
 				gateway.MonitorStream.Send(activation)
 			}
 		} else {
+			r.RegisterHandled(activation)
 			ctx.WithField("Duration", time.Now().Sub(start)).Info("Handled activation")
 		}
 	}()
