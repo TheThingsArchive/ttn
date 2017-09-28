@@ -16,7 +16,7 @@ type Publisher interface {
 
 	PublishUplink(dataUp types.UplinkMessage) error
 	PublishDownlink(dataDown types.DownlinkMessage) error
-	PublishDeviceEvent(appID string, devID string, eventType types.EventType, payload interface{}) error
+	PublishDeviceEvent(event types.DeviceEvent) error
 	PublishAppEvent(appID string, eventType types.EventType, payload interface{}) error
 }
 

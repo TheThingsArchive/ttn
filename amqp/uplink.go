@@ -8,9 +8,8 @@ import (
 	"fmt"
 	"time"
 
-	AMQP "github.com/streadway/amqp"
-
 	"github.com/TheThingsNetwork/ttn/core/types"
+	AMQP "github.com/streadway/amqp"
 )
 
 // UplinkHandler is called for uplink messages
@@ -44,17 +43,6 @@ func (s *DefaultSubscriber) handleUplink(messages <-chan AMQP.Delivery, handler 
 func (s *DefaultSubscriber) SubscribeDeviceUplink(appID, devID string, handler UplinkHandler) error {
 	key := DeviceKey{appID, devID, DeviceUplink, ""}
 	messages, err := s.subscribe(key.String())
-	if err != nil {
-		return err
-	}
-
-	go s.handleUplink(messages, handler)
-	return nil
-}
-
-// ConsumeUplink consumes uplink messages in a specific queue
-func (s *DefaultSubscriber) ConsumeUplink(queue string, handler UplinkHandler) error {
-	messages, err := s.consume(s.name)
 	if err != nil {
 		return err
 	}

@@ -9,8 +9,8 @@ import (
 	"strings"
 )
 
-const simpleWildcard = "*"
-const wildcard = "#"
+const SimpleWildcard = "*"
+const Wildcard = "#"
 
 // DeviceKeyType represents the type of a device topic
 type DeviceKeyType string
@@ -38,11 +38,11 @@ func ParseDeviceKey(key string) (*DeviceKey, error) {
 		return nil, fmt.Errorf("Invalid key format")
 	}
 	var appID string
-	if matches[1] != simpleWildcard {
+	if matches[1] != SimpleWildcard {
 		appID = matches[1]
 	}
 	var devID string
-	if matches[3] != simpleWildcard {
+	if matches[3] != SimpleWildcard {
 		devID = matches[3]
 	}
 	keyType := DeviceKeyType(matches[4])
@@ -55,16 +55,16 @@ func ParseDeviceKey(key string) (*DeviceKey, error) {
 
 // String implements the Stringer interface
 func (t DeviceKey) String() string {
-	appID := simpleWildcard
+	appID := SimpleWildcard
 	if t.AppID != "" {
 		appID = t.AppID
 	}
-	devID := simpleWildcard
+	devID := SimpleWildcard
 	if t.DevID != "" {
 		devID = t.DevID
 	}
 	if t.Type == DeviceEvents && t.Field == "" {
-		t.Field = wildcard
+		t.Field = Wildcard
 	}
 	key := fmt.Sprintf("%s.%s.%s.%s", appID, "devices", devID, t.Type)
 	if t.Type == DeviceEvents && t.Field != "" {
@@ -96,7 +96,7 @@ func ParseApplicationKey(key string) (*ApplicationKey, error) {
 		return nil, fmt.Errorf("Invalid key format")
 	}
 	var appID string
-	if matches[1] != simpleWildcard {
+	if matches[1] != SimpleWildcard {
 		appID = matches[1]
 	}
 	keyType := ApplicationKeyType(matches[2])
@@ -109,12 +109,12 @@ func ParseApplicationKey(key string) (*ApplicationKey, error) {
 
 // String implements the Stringer interface
 func (t ApplicationKey) String() string {
-	appID := simpleWildcard
+	appID := SimpleWildcard
 	if t.AppID != "" {
 		appID = t.AppID
 	}
 	if t.Type == AppEvents && t.Field == "" {
-		t.Field = wildcard
+		t.Field = Wildcard
 	}
 	key := fmt.Sprintf("%s.%s", appID, t.Type)
 	if t.Type == AppEvents && t.Field != "" {

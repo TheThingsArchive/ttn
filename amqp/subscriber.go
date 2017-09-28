@@ -4,7 +4,9 @@
 package amqp
 
 import (
+	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/TheThingsNetwork/ttn/core/types"
 	AMQP "github.com/streadway/amqp"
@@ -28,7 +30,7 @@ type Subscriber interface {
 	SubscribeDeviceUplink(appID, devID string, handler UplinkHandler) error
 	SubscribeAppUplink(appID string, handler UplinkHandler) error
 	SubscribeUplink(handler UplinkHandler) error
-	ConsumeUplink(queue string, handler UplinkHandler) error
+	ConsumeMessages(queue string, uplinkHandler UplinkHandler, eventHandler DeviceEventHandler) error
 
 	SubscribeDeviceDownlink(appID, devID string, handler DownlinkHandler) error
 	SubscribeAppDownlink(appID string, handler DownlinkHandler) error
@@ -141,4 +143,49 @@ func (s *DefaultSubscriber) subscribe(key string) (<-chan AMQP.Delivery, error) 
 		return nil, err
 	}
 	return s.consume(queue)
+}
+
+// ConsumeMessages consumes all messages in a specific queue and try to handle them as uplinks or events depending on the
+// routing key.
+func (s *DefaultSubscriber) ConsumeMessages(queue string, uplinkHandler UplinkHandler, eventHandler DeviceEventHandler) error {
+	messages, err := s.consume(s.name)
+	if err != nil {
+		return err
+	}
+	go s.handleMessages(messages, uplinkHandler, eventHandler)
+	return nil
+}
+
+// handleMessages consume AMQP.Delivery on a channel and call the uplinkHandler and eventHandler respectively for
+// device uplinks and device events. Deliveries won't be acknowledged if the routing key contain unknown fields or their
+// body cannot be parsed.
+func (s *DefaultSubscriber) handleMessages(messages <-chan AMQP.Delivery, uplinkHandler UplinkHandler, eventHandler DeviceEventHandler) {
+	for delivery := range messages {
+		pins := strings.Split(delivery.RoutingKey, ".")
+		if len(pins) < 4 {
+			s.ctx.Warnf("Routing key is missing fields, cannot handle delivery (%s)", delivery.RoutingKey)
+			continue
+		}
+		if pins[3] == string(DeviceEvents) {
+			event := &types.DeviceEvent{}
+			if err := json.Unmarshal(delivery.Body, event); err != nil {
+				s.ctx.Warnf("Could not unmarshal device event (%s)", err)
+				continue
+			}
+			eventHandler(s, event.AppID, event.DevID, *event)
+		} else if pins[3] == string(DeviceUplink) {
+			dataUp := &types.UplinkMessage{}
+			if err := json.Unmarshal(delivery.Body, dataUp); err != nil {
+				s.ctx.Warnf("Could not unmarshal device uplink (%s)", err)
+				continue
+			}
+			uplinkHandler(s, dataUp.AppID, dataUp.DevID, *dataUp)
+		} else {
+			s.ctx.Warnf("Unknown routing key field, cannot handle delivery (%s)", delivery.RoutingKey)
+			continue
+		}
+		if err := delivery.Ack(false); err != nil {
+			s.ctx.Warnf("Could not acknowledge message (%s)", err)
+		}
+	}
 }

@@ -118,7 +118,7 @@ func (h *handler) HandleAMQP(username, password, host, exchange, downlinkQueue s
 					ctx.WithError(err).Warn("Could not publish App Event")
 				}
 			} else {
-				if err := publisher.PublishDeviceEvent(event.AppID, event.DevID, event.Event, event.Data); err != nil {
+				if err := publisher.PublishDeviceEvent(*event); err != nil {
 					ctx.WithError(err).Warn("Could not publish Device Event")
 				}
 			}

@@ -40,10 +40,10 @@ func (e EventType) Data() interface{} {
 
 // DeviceEvent represents an application-layer event message for a device event
 type DeviceEvent struct {
-	AppID string
-	DevID string
-	Event EventType
-	Data  interface{}
+	AppID string      `json:"app_id"`
+	DevID string      `json:"dev_id"`
+	Event EventType   `json:"event"`
+	Data  interface{} `json:"data"`
 }
 
 // ErrorEventData is added to error events
