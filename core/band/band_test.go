@@ -41,7 +41,7 @@ func TestGet(t *testing.T) {
 		fp, err := Get("US_902_928")
 		a.So(err, ShouldBeNil)
 		a.So(fp.CFList, ShouldBeNil)
-		a.So(fp.ADR, ShouldBeNil)
+		a.So(fp.ADR, ShouldNotBeNil)
 	}
 
 	{
@@ -62,7 +62,7 @@ func TestGet(t *testing.T) {
 		fp, err := Get("AU_915_928")
 		a.So(err, ShouldBeNil)
 		a.So(fp.CFList, ShouldBeNil)
-		a.So(fp.ADR, ShouldBeNil)
+		a.So(fp.ADR, ShouldNotBeNil)
 	}
 
 	{

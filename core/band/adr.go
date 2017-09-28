@@ -13,6 +13,7 @@ var demodulationFloor = map[string]float32{
 	"SF11BW125": -17.5,
 	"SF12BW125": -20,
 	"SF7BW250":  -4.5,
+	"SF8BW500":  -4,
 }
 
 func linkMargin(dataRate string, snr float32) float32 {
@@ -28,6 +29,7 @@ type ADRConfig struct {
 	MaxDataRate int
 	MinTXPower  int
 	MaxTXPower  int
+	StepTXPower int
 }
 
 // ErrADRUnavailable is returned when ADR is not available
@@ -51,9 +53,10 @@ func (f *FrequencyPlan) ADRSettings(dataRate string, txPower int, snr float32, d
 		nStep--
 	}
 
-	// Decrease the Tx power by 3 for each step, until min reached
+	nStep = int(float32(nStep*3) / float32(f.ADR.StepTXPower))
+	// Decrease the Tx power by f.ADR.StepTXPower for each step, until min reached
 	for nStep > 0 && txPower > f.ADR.MinTXPower {
-		txPower -= 3
+		txPower -= f.ADR.StepTXPower
 		nStep--
 	}
 	if txPower < f.ADR.MinTXPower {
@@ -62,7 +65,7 @@ func (f *FrequencyPlan) ADRSettings(dataRate string, txPower int, snr float32, d
 
 	// Increase the Tx power by 3 for each step, until max reached
 	for nStep < 0 && txPower < f.ADR.MaxTXPower {
-		txPower += 3
+		txPower += f.ADR.StepTXPower
 		nStep++
 	}
 	if txPower > f.ADR.MaxTXPower {

@@ -13,6 +13,7 @@ import (
 	pb_gateway "github.com/TheThingsNetwork/api/gateway"
 	pb_protocol "github.com/TheThingsNetwork/api/protocol"
 	pb_lorawan "github.com/TheThingsNetwork/api/protocol/lorawan"
+	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/networkserver/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
@@ -82,6 +83,9 @@ func TestLossPercentage(t *testing.T) {
 func TestHandleUplinkADR(t *testing.T) {
 	a := New(t)
 	ns := &networkServer{
+		Component: &component.Component{
+			Ctx: GetLogger(t, "TestHandleUplink"),
+		},
 		devices: device.NewRedisDeviceStore(GetRedisClient(), "ns-test-handle-uplink-adr"),
 	}
 	ns.InitStatus()
@@ -136,6 +140,9 @@ func TestHandleUplinkADR(t *testing.T) {
 func TestHandleDownlinkADR(t *testing.T) {
 	a := New(t)
 	ns := &networkServer{
+		Component: &component.Component{
+			Ctx: GetLogger(t, "TestHandleUplink"),
+		},
 		devices: device.NewRedisDeviceStore(GetRedisClient(), "ns-test-handle-downlink-adr"),
 	}
 	ns.InitStatus()
@@ -151,6 +158,7 @@ func TestHandleDownlinkADR(t *testing.T) {
 	devEUI := types.DevEUI([8]byte{1})
 	history, _ := ns.devices.Frames(appEUI, devEUI)
 	dev := &device.Device{AppEUI: appEUI, DevEUI: devEUI}
+	dev.ADR.SentInitial = true
 
 	message := adrInitDownlinkMessage()
 
@@ -158,7 +166,7 @@ func TestHandleDownlinkADR(t *testing.T) {
 		a := New(t)
 		message = adrInitDownlinkMessage()
 		err := ns.handleDownlinkADR(message, dev)
-		a.So(err, ShouldNotBeNil)
+		a.So(err, ShouldBeNil)
 		a.So(message.Message.GetLoRaWAN().GetMACPayload().FOpts, ShouldHaveLength, 1)
 		if a.Failed() {
 			_, file, line, _ := runtime.Caller(1)
@@ -199,24 +207,96 @@ func TestHandleDownlinkADR(t *testing.T) {
 	dev.ADR.Band = "INVALID"
 	shouldReturnError()
 
-	dev.ADR.Band = "US_902_928"
-	nothingShouldHappen()
+	dev.ADR.DataRate = "SF10BW125"
+	dev.ADR.TxPower = 20
 
-	dev.ADR.Band = "EU_863_870"
-
-	err := ns.handleDownlinkADR(message, dev)
-	a.So(err, ShouldBeNil)
-	fOpts := message.Message.GetLoRaWAN().GetMACPayload().FOpts
-	a.So(fOpts, ShouldHaveLength, 2)
-	a.So(fOpts[1].CID, ShouldEqual, lorawan.LinkADRReq)
-	payload := new(lorawan.LinkADRReqPayload)
-	payload.UnmarshalBinary(fOpts[1].Payload)
-	a.So(payload.DataRate, ShouldEqual, 5) // SF7BW125
-	a.So(payload.TXPower, ShouldEqual, 1)  // 14
-	for i := 0; i < 8; i++ {               // First 8 channels enabled
-		a.So(payload.ChMask[i], ShouldBeTrue)
+	{
+		dev.ADR.Band = "US_902_928"
+		message := adrInitDownlinkMessage()
+		err := ns.handleDownlinkADR(message, dev)
+		a.So(err, ShouldBeNil)
+		fOpts := message.Message.GetLoRaWAN().GetMACPayload().FOpts
+		a.So(fOpts, ShouldHaveLength, 3)
+		a.So(fOpts[1].CID, ShouldEqual, lorawan.LinkADRReq)
+		payload := new(lorawan.LinkADRReqPayload)
+		payload.UnmarshalBinary(fOpts[1].Payload) // First LinkAdrReq
+		a.So(payload.DataRate, ShouldEqual, 4)    // 500kHz channel, so DR4
+		a.So(payload.TXPower, ShouldEqual, 0)     // Max tx power
+		a.So(payload.Redundancy.ChMaskCntl, ShouldEqual, 7)
+		// Ch 64-71, All 125 kHz channels off
+		a.So(payload.ChMask[0], ShouldBeFalse) // Channel 64 disabled
+		a.So(payload.ChMask[1], ShouldBeTrue)  // Channel 65 enabled
+		for i := 2; i < 8; i++ {               // Channels 66-71 disabled
+			a.So(payload.ChMask[i], ShouldBeFalse)
+		}
+		payload = new(lorawan.LinkADRReqPayload)
+		payload.UnmarshalBinary(fOpts[2].Payload)           // Second LinkAdrReq
+		a.So(payload.DataRate, ShouldEqual, 3)              // SF7BW125
+		a.So(payload.TXPower, ShouldEqual, 5)               // 20
+		a.So(payload.Redundancy.ChMaskCntl, ShouldEqual, 0) // Channels 0..15
+		for i := 0; i < 8; i++ {                            // First 8 channels disabled
+			a.So(payload.ChMask[i], ShouldBeFalse)
+		}
+		for i := 8; i < 16; i++ { // Second 8 channels enabled
+			a.So(payload.ChMask[i], ShouldBeTrue)
+		}
 	}
-	a.So(payload.ChMask[8], ShouldBeFalse) // 9th channel (FSK) disabled
+
+	dev.ADR.DataRate = "SF10BW125"
+	dev.ADR.TxPower = 20
+
+	{
+		dev.ADR.Band = "AU_915_928"
+		message := adrInitDownlinkMessage()
+		err := ns.handleDownlinkADR(message, dev)
+		a.So(err, ShouldBeNil)
+		fOpts := message.Message.GetLoRaWAN().GetMACPayload().FOpts
+		a.So(fOpts, ShouldHaveLength, 3)
+		a.So(fOpts[1].CID, ShouldEqual, lorawan.LinkADRReq)
+		payload := new(lorawan.LinkADRReqPayload)
+		payload.UnmarshalBinary(fOpts[1].Payload) // First LinkAdrReq
+		a.So(payload.DataRate, ShouldEqual, 4)    // 500kHz channel, so DR4
+		a.So(payload.TXPower, ShouldEqual, 0)     // Max tx power
+		a.So(payload.Redundancy.ChMaskCntl, ShouldEqual, 7)
+		// Ch 64-71, All 125 kHz channels off
+		a.So(payload.ChMask[0], ShouldBeFalse) // Channel 64 disabled
+		a.So(payload.ChMask[1], ShouldBeTrue)  // Channel 65 enabled
+		for i := 2; i < 8; i++ {               // Channels 66-71 disabled
+			a.So(payload.ChMask[i], ShouldBeFalse)
+		}
+		payload = new(lorawan.LinkADRReqPayload)
+		payload.UnmarshalBinary(fOpts[2].Payload)           // Second LinkAdrReq
+		a.So(payload.DataRate, ShouldEqual, 3)              // SF7BW125
+		a.So(payload.TXPower, ShouldEqual, 5)               // 20
+		a.So(payload.Redundancy.ChMaskCntl, ShouldEqual, 0) // Channels 0..15
+		for i := 0; i < 8; i++ {                            // First 8 channels disabled
+			a.So(payload.ChMask[i], ShouldBeFalse)
+		}
+		for i := 8; i < 16; i++ { // Second 8 channels enabled
+			a.So(payload.ChMask[i], ShouldBeTrue)
+		}
+	}
+
+	dev.ADR.DataRate = "SF10BW125"
+	dev.ADR.TxPower = 20
+
+	{
+		dev.ADR.Band = "EU_863_870"
+		message := adrInitDownlinkMessage()
+		err := ns.handleDownlinkADR(message, dev)
+		a.So(err, ShouldBeNil)
+		fOpts := message.Message.GetLoRaWAN().GetMACPayload().FOpts
+		a.So(fOpts, ShouldHaveLength, 2)
+		a.So(fOpts[1].CID, ShouldEqual, lorawan.LinkADRReq)
+		payload := new(lorawan.LinkADRReqPayload)
+		payload.UnmarshalBinary(fOpts[1].Payload)
+		a.So(payload.DataRate, ShouldEqual, 5) // SF7BW125
+		a.So(payload.TXPower, ShouldEqual, 1)  // 14
+		for i := 0; i < 8; i++ {               // First 8 channels enabled
+			a.So(payload.ChMask[i], ShouldBeTrue)
+		}
+		a.So(payload.ChMask[8], ShouldBeFalse) // 9th channel (FSK) disabled
+	}
 
 	shouldHaveNbTrans := func(nbTrans int) {
 		a := New(t)
@@ -260,5 +340,4 @@ func TestHandleDownlinkADR(t *testing.T) {
 	message = adrInitDownlinkMessage()
 	dev.ADR.DataRate = "INVALID"
 	shouldReturnError()
-
 }

@@ -5,11 +5,14 @@ package networkserver
 
 import (
 	"math"
+	"sort"
 
 	pb_broker "github.com/TheThingsNetwork/api/broker"
 	pb_lorawan "github.com/TheThingsNetwork/api/protocol/lorawan"
+	"github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/core/band"
 	"github.com/TheThingsNetwork/ttn/core/networkserver/device"
+	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/brocaar/lorawan"
 )
 
@@ -38,6 +41,8 @@ func lossPercentage(frames []*device.Frame) int {
 	return int(math.Floor((float64(loss) / float64(sentPackets) * 100) + .5))
 }
 
+const ScheduleMACEvent = "schedule mac command"
+
 func (n *networkServer) handleUplinkADR(message *pb_broker.DeduplicatedUplinkMessage, dev *device.Device) error {
 	lorawanUplinkMAC := message.GetMessage().GetLoRaWAN().GetMACPayload()
 	lorawanDownlinkMAC := message.GetResponseTemplate().GetMessage().GetLoRaWAN().GetMACPayload()
@@ -47,61 +52,87 @@ func (n *networkServer) handleUplinkADR(message *pb_broker.DeduplicatedUplinkMes
 		return err
 	}
 
-	if lorawanUplinkMAC.ADR {
-		if err := history.Push(&device.Frame{
-			FCnt:         lorawanUplinkMAC.FCnt,
-			SNR:          bestSNR(message.GetGatewayMetadata()),
-			GatewayCount: uint32(len(message.GatewayMetadata)),
-		}); err != nil {
-			n.Ctx.WithError(err).Error("Could not push frame for device")
-		}
-		if dev.ADR.Band == "" {
-			dev.ADR.Band = message.GetProtocolMetadata().GetLoRaWAN().GetFrequencyPlan().String()
-		}
-
-		dataRate := message.GetProtocolMetadata().GetLoRaWAN().GetDataRate()
-		if dev.ADR.DataRate != dataRate {
-			dev.ADR.DataRate = dataRate
-			dev.ADR.SendReq = true // schedule a LinkADRReq
-		}
-		if lorawanUplinkMAC.ADRAckReq {
-			dev.ADR.SendReq = true        // schedule a LinkADRReq
-			lorawanDownlinkMAC.Ack = true // force a downlink
-		}
-	} else {
+	if !lorawanUplinkMAC.ADR {
 		// Clear history and reset settings
 		if err := history.Clear(); err != nil {
 			return err
 		}
+		dev.ADR.SentInitial = false
 		dev.ADR.SendReq = false
 		dev.ADR.DataRate = ""
 		dev.ADR.TxPower = 0
 		dev.ADR.NbTrans = 0
+		return nil
+	}
+
+	if err := history.Push(&device.Frame{
+		FCnt:         lorawanUplinkMAC.FCnt,
+		SNR:          bestSNR(message.GetGatewayMetadata()),
+		GatewayCount: uint32(len(message.GatewayMetadata)),
+	}); err != nil {
+		n.Ctx.WithError(err).Error("Could not push frame for device")
+	}
+	if dev.ADR.Band == "" {
+		dev.ADR.Band = message.GetProtocolMetadata().GetLoRaWAN().GetFrequencyPlan().String()
+	}
+
+	var scheduleADR, forceADR bool
+
+	switch dev.ADR.Band {
+	case pb_lorawan.FrequencyPlan_US_902_928.String(), pb_lorawan.FrequencyPlan_AU_915_928.String():
+		if !dev.ADR.SentInitial {
+			scheduleADR = true
+			forceADR = true
+			message.Trace = message.Trace.WithEvent(ScheduleMACEvent, macCMD, "link-adr", "reason", "initial")
+		}
+	}
+
+	dataRate := message.GetProtocolMetadata().GetLoRaWAN().GetDataRate()
+	if dev.ADR.DataRate != dataRate {
+		dev.ADR.DataRate = dataRate
+		scheduleADR = true
+		message.Trace = message.Trace.WithEvent(ScheduleMACEvent, macCMD, "link-adr", "reason", "optimize")
+	}
+
+	if lorawanUplinkMAC.ADRAckReq {
+		scheduleADR = true
+		lorawanDownlinkMAC.Ack = true
+		message.Trace = message.Trace.WithEvent("set ack", "reason", "adr-ack-req")
+	}
+
+	if scheduleADR {
+		if fp, err := band.Get(dev.ADR.Band); err == nil {
+			if drIdx, err := fp.GetDataRateIndexFor(dataRate); err == nil && drIdx == 0 {
+				history, _ := n.devices.Frames(dev.AppEUI, dev.DevEUI)
+				frames, _ := history.Get()
+				if len(frames) >= device.FramesHistorySize {
+					forceADR = true
+					message.Trace = message.Trace.WithEvent(ScheduleMACEvent, macCMD, "link-adr", "reason", "avoid high sf")
+				}
+			}
+		}
+	}
+
+	dev.ADR.SendReq = scheduleADR
+	if forceADR {
+		err := n.setADR(lorawanDownlinkMAC, dev)
+		if err != nil {
+			message.Trace = message.Trace.WithEvent("mac error", macCMD, "link-adr", "error", err.Error())
+			err = nil
+		}
 	}
 
 	return nil
 }
 
-func (n *networkServer) handleDownlinkADR(message *pb_broker.DownlinkMessage, dev *device.Device) error {
+func (n *networkServer) setADR(mac *pb_lorawan.MACPayload, dev *device.Device) error {
 	if !dev.ADR.SendReq {
 		return nil
 	}
-
-	if dev.ADR.Failed > 0 {
-		return nil
+	if dev.ADR.Failed > 3 {
+		return errors.New("too many failed ADR requests")
 	}
 
-	history, err := n.devices.Frames(dev.AppEUI, dev.DevEUI)
-
-	frames, err := history.Get()
-	if err != nil {
-		return err
-	}
-	if len(frames) < device.FramesHistorySize {
-		return nil
-	}
-
-	frames = frames[:device.FramesHistorySize]
 	// Check settings
 	if dev.ADR.DataRate == "" {
 		return nil
@@ -123,8 +154,30 @@ func (n *networkServer) handleDownlinkADR(message *pb_broker.DownlinkMessage, de
 		dev.ADR.NbTrans = 1
 	}
 
-	// Calculate ADR settings
-	dataRate, txPower, err := fp.ADRSettings(dev.ADR.DataRate, dev.ADR.TxPower, maxSNR(frames), float32(dev.ADR.Margin))
+	// Get history
+	history, err := n.devices.Frames(dev.AppEUI, dev.DevEUI)
+	if err != nil {
+		return err
+	}
+	frames, err := history.Get()
+	if err != nil {
+		return err
+	}
+	switch {
+	case len(frames) == 0:
+		return nil
+	case len(frames) >= device.FramesHistorySize:
+		frames = frames[:device.FramesHistorySize]
+	}
+
+	// Add extra margin if we don't have enough data yet
+	adrMargin := float32(dev.ADR.Margin)
+	if len(frames) < device.FramesHistorySize {
+		adrMargin += 2.5
+	}
+
+	// Calculate desired ADR settings
+	dataRate, txPower, err := fp.ADRSettings(dev.ADR.DataRate, dev.ADR.TxPower, maxSNR(frames), adrMargin)
 	if err == band.ErrADRUnavailable {
 		return nil
 	}
@@ -139,7 +192,6 @@ func (n *networkServer) handleDownlinkADR(message *pb_broker.DownlinkMessage, de
 	if err != nil {
 		powerIdx, _ = fp.GetTxPowerIndexFor(fp.DefaultTXPower)
 	}
-
 	var nbTrans = dev.ADR.NbTrans
 	if dev.ADR.DataRate == dataRate && dev.ADR.TxPower == txPower && !dev.Options.DisableFCntCheck {
 		lossPercentage := lossPercentage(frames)
@@ -161,43 +213,131 @@ func (n *networkServer) handleDownlinkADR(message *pb_broker.DownlinkMessage, de
 		}
 	}
 
-	if dev.ADR.DataRate == dataRate && dev.ADR.TxPower == txPower && dev.ADR.NbTrans == nbTrans {
-		return nil
+	if dev.ADR.SentInitial && dev.ADR.DataRate == dataRate && dev.ADR.TxPower == txPower && dev.ADR.NbTrans == nbTrans {
+		return nil // Nothing to do
 	}
 	dev.ADR.DataRate, dev.ADR.TxPower, dev.ADR.NbTrans = dataRate, txPower, nbTrans
 
-	// Set MAC command
-	lorawanDownlinkMAC := message.GetMessage().GetLoRaWAN().GetMACPayload()
-	response := &lorawan.LinkADRReqPayload{
-		DataRate: uint8(drIdx),
-		TXPower:  uint8(powerIdx),
-		Redundancy: lorawan.Redundancy{
-			ChMaskCntl: 0, // Different for US/AU
-			NbRep:      uint8(dev.ADR.NbTrans),
-		},
+	payloads := getAdrReqPayloads(dev, &fp, drIdx, powerIdx)
+	if len(payloads) == 0 {
+		return nil
 	}
-	for i, ch := range fp.UplinkChannels { // Different for US/AU
-		for _, dr := range ch.DataRates {
-			if dr == drIdx {
-				response.ChMask[i] = true
-			}
-		}
-	}
-	responsePayload, _ := response.MarshalBinary()
 
-	// Remove LinkADRReq if already added
-	fOpts := make([]pb_lorawan.MACCommand, 0, len(lorawanDownlinkMAC.FOpts)+1)
-	for _, existing := range lorawanDownlinkMAC.FOpts {
+	n.Ctx.WithFields(log.Fields{
+		"AppEUI":  dev.AppEUI,
+		"DevEUI":  dev.DevEUI,
+		"DevAddr": dev.DevAddr,
+		"AppID":   dev.AppID,
+		"DevID":   dev.DevID,
+	}).Debug("Sending ADR")
+
+	dev.ADR.SentInitial = true
+
+	fOpts := make([]pb_lorawan.MACCommand, 0, len(mac.FOpts)+len(payloads))
+	for _, existing := range mac.FOpts {
 		if existing.CID != uint32(lorawan.LinkADRReq) {
 			fOpts = append(fOpts, existing)
 		}
 	}
-	fOpts = append(fOpts, pb_lorawan.MACCommand{
-		CID:     uint32(lorawan.LinkADRReq),
-		Payload: responsePayload,
-	})
-
-	lorawanDownlinkMAC.FOpts = fOpts
+	for _, payload := range payloads {
+		responsePayload, _ := payload.MarshalBinary()
+		fOpts = append(fOpts, pb_lorawan.MACCommand{
+			CID:     uint32(lorawan.LinkADRReq),
+			Payload: responsePayload,
+		})
+	}
+	mac.FOpts = fOpts
 
 	return nil
+}
+
+func (n *networkServer) handleDownlinkADR(message *pb_broker.DownlinkMessage, dev *device.Device) error {
+	err := n.setADR(message.GetMessage().GetLoRaWAN().GetMACPayload(), dev)
+	if err != nil {
+		message.Trace = message.Trace.WithEvent("mac error", macCMD, "link-adr", "error", err.Error())
+		err = nil
+	}
+
+	return nil
+}
+
+func getAdrReqPayloads(dev *device.Device, frequencyPlan *band.FrequencyPlan, drIdx int, powerIdx int) []lorawan.LinkADRReqPayload {
+	payloads := []lorawan.LinkADRReqPayload{}
+	switch dev.ADR.Band {
+	case pb_lorawan.FrequencyPlan_EU_863_870.String():
+		if dev.ADR.Failed > 0 && powerIdx > 5 {
+			// fall back to txPower 5 for LoRaWAN 1.0
+			powerIdx = 5
+		}
+		payloads = []lorawan.LinkADRReqPayload{
+			{
+				DataRate: uint8(drIdx),
+				TXPower:  uint8(powerIdx),
+				Redundancy: lorawan.Redundancy{
+					ChMaskCntl: 0,
+					NbRep:      uint8(dev.ADR.NbTrans),
+				},
+			},
+		}
+		if dev.ADR.Failed > 0 {
+			// Fall back to the mandatory LoRaWAN channels
+			payloads[0].ChMask[0] = true
+			payloads[0].ChMask[1] = true
+			payloads[0].ChMask[2] = true
+		} else {
+			for i, ch := range frequencyPlan.UplinkChannels {
+				for _, dr := range ch.DataRates {
+					if dr == drIdx {
+						payloads[0].ChMask[i] = true
+					}
+				}
+			}
+		}
+	case pb_lorawan.FrequencyPlan_US_902_928.String(), pb_lorawan.FrequencyPlan_AU_915_928.String():
+		// Adapted from https://github.com/brocaar/lorawan/blob/master/band/band_us902_928.go
+		payloads = []lorawan.LinkADRReqPayload{
+			{
+				DataRate: 4, // fixed settings for 500kHz channel
+				TXPower:  0, // fixed settings for 500kHz channel
+				Redundancy: lorawan.Redundancy{
+					ChMaskCntl: 7,
+					NbRep:      uint8(dev.ADR.NbTrans),
+				},
+			}, // All 125 kHz OFF ChMask applies to channels 64 to 71
+		}
+		channels := frequencyPlan.GetEnabledUplinkChannels()
+		sort.Ints(channels)
+
+		chMaskCntl := -1
+		for _, c := range channels {
+			// use the ChMask of the first LinkADRReqPayload, besides
+			// turning off all 125 kHz this payload contains the ChMask
+			// for the last block of channels.
+			if c >= 64 {
+				payloads[0].ChMask[c%16] = true
+				continue
+			}
+
+			if c/16 != chMaskCntl {
+				chMaskCntl = c / 16
+				pl := lorawan.LinkADRReqPayload{
+					DataRate: uint8(drIdx),
+					TXPower:  uint8(powerIdx),
+					Redundancy: lorawan.Redundancy{
+						ChMaskCntl: uint8(chMaskCntl),
+						NbRep:      uint8(dev.ADR.NbTrans),
+					},
+				}
+
+				// set the channel mask for this block
+				for _, ec := range channels {
+					if ec >= chMaskCntl*16 && ec < (chMaskCntl+1)*16 {
+						pl.ChMask[ec%16] = true
+					}
+				}
+				payloads = append(payloads, pl)
+			}
+		}
+	}
+	return payloads
 }
