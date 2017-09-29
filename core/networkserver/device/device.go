@@ -48,6 +48,7 @@ type ADRSettings struct {
 	// Indicates whether the NetworkServer should send a LinkADRReq when possible
 	SentInitial bool `redis:"sent_initial,omitempty"`
 	SendReq     bool `redis:"send_req,omitempty"`
+	ExpectRes   bool `redis:"expect_res,omitempty"`
 	Failed      int  `redis:"failed,omitempty"` // number of failed ADR attempts
 
 	// Desired Settings:
