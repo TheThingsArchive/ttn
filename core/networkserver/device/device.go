@@ -46,15 +46,15 @@ type ADRSettings struct {
 	Margin int    `redis:"margin"`
 
 	// Indicates whether the NetworkServer should send a LinkADRReq when possible
-	SentInitial bool `redis:"sent_initial,omitempty"`
-	SendReq     bool `redis:"send_req,omitempty"`
-	ExpectRes   bool `redis:"expect_res,omitempty"`
-	Failed      int  `redis:"failed,omitempty"` // number of failed ADR attempts
+	SentInitial bool `redis:"sent_initial"`
+	SendReq     bool `redis:"send_req"`
+	ExpectRes   bool `redis:"expect_res"`
+	Failed      int  `redis:"failed"` // number of failed ADR attempts
 
 	// Desired Settings:
-	DataRate string `redis:"data_rate,omitempty"`
-	TxPower  int    `redis:"tx_power,omitempty"`
-	NbTrans  int    `redis:"nb_trans,omitempty"`
+	DataRate string `redis:"data_rate"`
+	TxPower  int    `redis:"tx_power"`
+	NbTrans  int    `redis:"nb_trans"`
 }
 
 // StartUpdate stores the state of the device

@@ -125,12 +125,15 @@ func (n *networkServer) handleUplinkADR(message *pb_broker.DeduplicatedUplinkMes
 	return nil
 }
 
+const maxADRFails = 3
+
 func (n *networkServer) setADR(mac *pb_lorawan.MACPayload, dev *device.Device) error {
 	if !dev.ADR.SendReq {
 		return nil
 	}
-	if dev.ADR.Failed > 3 {
+	if dev.ADR.Failed > maxADRFails {
 		dev.ADR.ExpectRes = false // stop trying
+		dev.ADR.SendReq = false
 		return errors.New("too many failed ADR requests")
 	}
 
