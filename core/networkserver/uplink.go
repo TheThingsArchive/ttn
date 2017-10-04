@@ -52,7 +52,8 @@ func (n *networkServer) HandleUplink(message *pb_broker.DeduplicatedUplinkMessag
 	lorawanDownlinkMAC.FPort = lorawanUplinkMAC.FPort
 	lorawanDownlinkMAC.DevAddr = lorawanUplinkMAC.DevAddr
 	lorawanDownlinkMAC.FCnt = dev.FCntDown
-	if lorawan := message.ResponseTemplate.GetDownlinkOption().GetProtocolConfiguration().GetLoRaWAN(); lorawan != nil {
+	conf := message.ResponseTemplate.GetDownlinkOption().GetProtocolConfiguration()
+	if lorawan := conf.GetLoRaWAN(); lorawan != nil {
 		lorawan.FCnt = dev.FCntDown
 	}
 

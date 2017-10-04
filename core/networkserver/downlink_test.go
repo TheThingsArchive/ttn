@@ -28,15 +28,15 @@ func TestHandleDownlink(t *testing.T) {
 	devAddr := getDevAddr(1, 2, 3, 4)
 
 	downlinkOption := &pb_broker.DownlinkOption{
-		ProtocolConfiguration: &pb_protocol.TxConfiguration{Protocol: &pb_protocol.TxConfiguration_LoRaWAN{
+		ProtocolConfiguration: pb_protocol.TxConfiguration{Protocol: &pb_protocol.TxConfiguration_LoRaWAN{
 			LoRaWAN: &pb_lorawan.TxConfiguration{},
 		}},
 	}
 
 	// Device Not Found
 	message := &pb_broker.DownlinkMessage{
-		AppEUI:         &appEUI,
-		DevEUI:         &devEUI,
+		AppEUI:         appEUI,
+		DevEUI:         devEUI,
 		Payload:        []byte{},
 		DownlinkOption: downlinkOption,
 	}
@@ -54,8 +54,8 @@ func TestHandleDownlink(t *testing.T) {
 
 	// Invalid Payload
 	message = &pb_broker.DownlinkMessage{
-		AppEUI:         &appEUI,
-		DevEUI:         &devEUI,
+		AppEUI:         appEUI,
+		DevEUI:         devEUI,
 		Payload:        []byte{},
 		DownlinkOption: downlinkOption,
 	}
@@ -81,8 +81,8 @@ func TestHandleDownlink(t *testing.T) {
 	bytes, _ := phy.MarshalBinary()
 
 	message = &pb_broker.DownlinkMessage{
-		AppEUI:         &appEUI,
-		DevEUI:         &devEUI,
+		AppEUI:         appEUI,
+		DevEUI:         devEUI,
 		Payload:        bytes,
 		DownlinkOption: downlinkOption,
 	}

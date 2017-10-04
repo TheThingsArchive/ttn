@@ -59,7 +59,7 @@ func TestHandleUplink(t *testing.T) {
 
 	downlink := &pb_broker.DownlinkMessage{
 		DownlinkOption: &pb_broker.DownlinkOption{
-			ProtocolConfiguration: &pb_protocol.TxConfiguration{Protocol: &pb_protocol.TxConfiguration_LoRaWAN{LoRaWAN: &pb_lorawan.TxConfiguration{
+			ProtocolConfiguration: pb_protocol.TxConfiguration{Protocol: &pb_protocol.TxConfiguration_LoRaWAN{LoRaWAN: &pb_lorawan.TxConfiguration{
 				FCnt: 0,
 			}}},
 		},

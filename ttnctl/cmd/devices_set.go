@@ -57,7 +57,7 @@ var devicesSetCmd = &cobra.Command{
 			if err != nil {
 				ctx.Fatalf("Invalid AppEUI: %s", err)
 			}
-			dev.GetLoRaWANDevice().AppEUI = &appEUI
+			dev.GetLoRaWANDevice().AppEUI = appEUI
 		}
 
 		if in, err := cmd.Flags().GetString("dev-eui"); err == nil && in != "" {
@@ -72,7 +72,7 @@ var devicesSetCmd = &cobra.Command{
 			if err != nil {
 				ctx.Fatalf("Invalid DevEUI: %s", err)
 			}
-			dev.GetLoRaWANDevice().DevEUI = &devEUI
+			dev.GetLoRaWANDevice().DevEUI = devEUI
 		}
 
 		if in, err := cmd.Flags().GetString("dev-addr"); err == nil && in != "" {

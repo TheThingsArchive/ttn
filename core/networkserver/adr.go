@@ -72,8 +72,10 @@ func (n *networkServer) handleUplinkADR(message *pb_broker.DeduplicatedUplinkMes
 	}); err != nil {
 		n.Ctx.WithError(err).Error("Could not push frame for device")
 	}
+
+	md := message.GetProtocolMetadata()
 	if dev.ADR.Band == "" {
-		dev.ADR.Band = message.GetProtocolMetadata().GetLoRaWAN().GetFrequencyPlan().String()
+		dev.ADR.Band = md.GetLoRaWAN().GetFrequencyPlan().String()
 	}
 
 	var scheduleADR, forceADR bool
@@ -87,7 +89,7 @@ func (n *networkServer) handleUplinkADR(message *pb_broker.DeduplicatedUplinkMes
 		}
 	}
 
-	dataRate := message.GetProtocolMetadata().GetLoRaWAN().GetDataRate()
+	dataRate := md.GetLoRaWAN().GetDataRate()
 	if dev.ADR.DataRate != dataRate {
 		dev.ADR.DataRate = dataRate
 		scheduleADR = true

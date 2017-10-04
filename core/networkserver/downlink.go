@@ -23,7 +23,7 @@ func (n *networkServer) HandleDownlink(message *pb_broker.DownlinkMessage) (*pb_
 	n.status.downlink.Mark(1)
 
 	// Get Device
-	dev, err := n.devices.Get(*message.AppEUI, *message.DevEUI)
+	dev, err := n.devices.Get(message.AppEUI, message.DevEUI)
 	if err != nil {
 		return nil, err
 	}

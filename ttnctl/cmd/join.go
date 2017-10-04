@@ -83,8 +83,8 @@ var joinCmd = &cobra.Command{
 
 		uplink := &router.UplinkMessage{
 			Payload:          bytes,
-			GatewayMetadata:  util.GetGatewayMetadata(gatewayID, 868100000),
-			ProtocolMetadata: util.GetProtocolMetadata("SF7BW125"),
+			GatewayMetadata:  *util.GetGatewayMetadata(gatewayID, 868100000),
+			ProtocolMetadata: *util.GetProtocolMetadata("SF7BW125"),
 		}
 		uplink.UnmarshalPayload()
 

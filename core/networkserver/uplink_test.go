@@ -92,7 +92,7 @@ func TestHandleUplink(t *testing.T) {
 		GatewayMetadata: []*pb_gateway.RxMetadata{
 			&pb_gateway.RxMetadata{},
 		},
-		ProtocolMetadata: &pb_protocol.RxMetadata{Protocol: &pb_protocol.RxMetadata_LoRaWAN{
+		ProtocolMetadata: pb_protocol.RxMetadata{Protocol: &pb_protocol.RxMetadata_LoRaWAN{
 			LoRaWAN: &pb_lorawan.Metadata{
 				DataRate: "SF7BW125",
 			},

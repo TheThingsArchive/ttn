@@ -10,7 +10,7 @@ import (
 )
 
 func (n *networkServer) HandleGetDevices(req *pb.DevicesRequest) (*pb.DevicesResponse, error) {
-	devices, err := n.devices.ListForAddress(*req.DevAddr)
+	devices, err := n.devices.ListForAddress(req.DevAddr)
 	if err != nil {
 		return nil, err
 	}
@@ -27,9 +27,9 @@ func (n *networkServer) HandleGetDevices(req *pb.DevicesRequest) (*pb.DevicesRes
 		}
 		fullFCnt := fcnt.GetFull(device.FCntUp, uint16(req.FCnt))
 		dev := &pb_lorawan.Device{
-			AppEUI:           &device.AppEUI,
+			AppEUI:           device.AppEUI,
 			AppID:            device.AppID,
-			DevEUI:           &device.DevEUI,
+			DevEUI:           device.DevEUI,
 			DevID:            device.DevID,
 			NwkSKey:          &device.NwkSKey,
 			FCntUp:           device.FCntUp,

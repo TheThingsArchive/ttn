@@ -111,8 +111,8 @@ func TestHandleDownlink(t *testing.T) {
 	h.InitStatus()
 
 	downlink := pb_broker.RandomDownlinkMessage()
-	downlink.AppEUI = &appEUI
-	downlink.DevEUI = &devEUI
+	downlink.AppEUI = appEUI
+	downlink.DevEUI = devEUI
 
 	// Neither payload nor Fields provided : ERROR
 	err = h.HandleDownlink(&types.DownlinkMessage{

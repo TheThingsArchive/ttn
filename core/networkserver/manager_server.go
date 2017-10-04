@@ -44,7 +44,7 @@ func (n *networkServerManager) getDevice(ctx context.Context, in *pb_lorawan.Dev
 	if n.clientRate.Limit(claims.Subject) {
 		return nil, grpc.Errorf(codes.ResourceExhausted, "Rate limit for client reached")
 	}
-	dev, err := n.networkServer.devices.Get(*in.AppEUI, *in.DevEUI)
+	dev, err := n.networkServer.devices.Get(in.AppEUI, in.DevEUI)
 	if err != nil {
 		return nil, err
 	}
@@ -68,9 +68,9 @@ func (n *networkServerManager) GetDevice(ctx context.Context, in *pb_lorawan.Dev
 
 	return &pb_lorawan.Device{
 		AppID:            dev.AppID,
-		AppEUI:           &dev.AppEUI,
+		AppEUI:           dev.AppEUI,
 		DevID:            dev.DevID,
-		DevEUI:           &dev.DevEUI,
+		DevEUI:           dev.DevEUI,
 		DevAddr:          &dev.DevAddr,
 		NwkSKey:          &dev.NwkSKey,
 		FCntUp:           dev.FCntUp,
@@ -107,9 +107,9 @@ func (n *networkServerManager) SetDevice(ctx context.Context, in *pb_lorawan.Dev
 	}
 
 	dev.AppID = in.AppID
-	dev.AppEUI = *in.AppEUI
+	dev.AppEUI = in.AppEUI
 	dev.DevID = in.DevID
-	dev.DevEUI = *in.DevEUI
+	dev.DevEUI = in.DevEUI
 	dev.FCntUp = in.FCntUp
 	dev.FCntDown = in.FCntDown
 	dev.ADR = device.ADRSettings{Band: dev.ADR.Band, Margin: dev.ADR.Margin}
@@ -147,7 +147,7 @@ func (n *networkServerManager) DeleteDevice(ctx context.Context, in *pb_lorawan.
 	if err != nil {
 		return nil, err
 	}
-	err = n.networkServer.devices.Delete(*in.AppEUI, *in.DevEUI)
+	err = n.networkServer.devices.Delete(in.AppEUI, in.DevEUI)
 	if err != nil {
 		return nil, err
 	}
@@ -173,7 +173,7 @@ func (n *networkServerManager) GetDevAddr(ctx context.Context, in *pb_lorawan.De
 		return nil, err
 	}
 	return &pb_lorawan.DevAddrResponse{
-		DevAddr: &devAddr,
+		DevAddr: devAddr,
 	}, nil
 }
 

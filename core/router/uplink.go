@@ -59,8 +59,8 @@ func (r *router) HandleUplink(gatewayID string, uplink *pb.UplinkMessage) (err e
 		}).Debug("Handle Uplink as Activation")
 		r.HandleActivation(gatewayID, &pb.DeviceActivationRequest{
 			Payload:          uplink.Payload,
-			DevEUI:           &devEUI,
-			AppEUI:           &appEUI,
+			DevEUI:           devEUI,
+			AppEUI:           appEUI,
 			ProtocolMetadata: uplink.ProtocolMetadata,
 			GatewayMetadata:  uplink.GatewayMetadata,
 			Trace:            uplink.Trace.WithEvent("handle uplink as activation"),
@@ -82,13 +82,11 @@ func (r *router) HandleUplink(gatewayID string, uplink *pb.UplinkMessage) (err e
 		}
 	}
 
-	if gateway := uplink.GatewayMetadata; gateway != nil {
-		ctx = ctx.WithFields(ttnlog.Fields{
-			"Frequency": gateway.Frequency,
-			"RSSI":      gateway.RSSI,
-			"SNR":       gateway.SNR,
-		})
-	}
+	ctx = ctx.WithFields(ttnlog.Fields{
+		"Frequency": uplink.GatewayMetadata.Frequency,
+		"RSSI":      uplink.GatewayMetadata.RSSI,
+		"SNR":       uplink.GatewayMetadata.SNR,
+	})
 
 	macPayload, ok := phyPayload.MACPayload.(*lorawan.MACPayload)
 	if !ok {

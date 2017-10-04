@@ -109,8 +109,8 @@ func TestHandleActivation(t *testing.T) {
 	req := &pb_broker.DeduplicatedDeviceActivationRequest{
 		AppID:  appID,
 		DevID:  devID,
-		AppEUI: &appEUI,
-		DevEUI: &devEUI,
+		AppEUI: appEUI,
+		DevEUI: devEUI,
 	}
 
 	// No ResponseTemplate
@@ -150,8 +150,8 @@ func TestHandleActivation(t *testing.T) {
 	a.So(err, ShouldNotBeNil)
 
 	req.ActivationMetadata = &pb_protocol.ActivationMetadata{Protocol: &pb_protocol.ActivationMetadata_LoRaWAN{LoRaWAN: &pb_lorawan.ActivationMetadata{
-		AppEUI:  &appEUI,
-		DevEUI:  &devEUI,
+		AppEUI:  appEUI,
+		DevEUI:  devEUI,
 		DevAddr: &devAddr,
 	}}}
 
@@ -182,7 +182,7 @@ func TestHandleActivation(t *testing.T) {
 	// Valid join
 	res, err := h.HandleActivation(req)
 	a.So(err, ShouldBeNil)
-	a.So(res.ActivationMetadata.GetLoRaWAN().DevEUI, ShouldResemble, &devEUI)
+	a.So(res.ActivationMetadata.GetLoRaWAN().DevEUI, ShouldResemble, devEUI)
 
 	// TODO: Check response
 	// TODO: Check DB contents
@@ -204,8 +204,8 @@ func TestHandleActivation(t *testing.T) {
 	defer func() { h.devices.Delete(appID, "default") }()
 
 	{
-		req.DevEUI = &otherDevEUI
-		req.ActivationMetadata.GetLoRaWAN().DevEUI = &otherDevEUI
+		req.DevEUI = otherDevEUI
+		req.ActivationMetadata.GetLoRaWAN().DevEUI = otherDevEUI
 		req.Message.GetLoRaWAN().GetJoinRequestPayload().DevEUI = otherDevEUI
 		phy := req.Message.GetLoRaWAN().PHYPayload()
 		phy.SetMIC(lorawan.AES128Key(appKey))
@@ -253,7 +253,7 @@ func TestHandleActivation(t *testing.T) {
 
 	res, err = h.HandleActivation(req)
 	a.So(err, ShouldBeNil)
-	a.So(res.ActivationMetadata.GetLoRaWAN().DevEUI, ShouldResemble, &otherDevEUI)
+	a.So(res.ActivationMetadata.GetLoRaWAN().DevEUI, ShouldResemble, otherDevEUI)
 
 	// TODO: Check response
 	// TODO: Check DB contents

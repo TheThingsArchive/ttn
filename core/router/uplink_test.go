@@ -46,12 +46,12 @@ func newReferenceUplink() *pb.UplinkMessage {
 
 	up := &pb.UplinkMessage{
 		Payload: bytes,
-		ProtocolMetadata: &pb_protocol.RxMetadata{Protocol: &pb_protocol.RxMetadata_LoRaWAN{LoRaWAN: &pb_lorawan.Metadata{
+		ProtocolMetadata: pb_protocol.RxMetadata{Protocol: &pb_protocol.RxMetadata_LoRaWAN{LoRaWAN: &pb_lorawan.Metadata{
 			CodingRate: "4/5",
 			DataRate:   "SF7BW125",
 			Modulation: pb_lorawan.Modulation_LORA,
 		}}},
-		GatewayMetadata: &pb_gateway.RxMetadata{
+		GatewayMetadata: pb_gateway.RxMetadata{
 			GatewayID: gtwID,
 			Timestamp: 100,
 			Frequency: 868100000,

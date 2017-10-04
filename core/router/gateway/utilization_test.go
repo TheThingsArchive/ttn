@@ -14,23 +14,23 @@ import (
 )
 
 func buildUplink(freq uint64) *pb.UplinkMessage {
-	return &pb.UplinkMessage{Payload: make([]byte, 10), ProtocolMetadata: &pb_protocol.RxMetadata{
+	return &pb.UplinkMessage{Payload: make([]byte, 10), ProtocolMetadata: pb_protocol.RxMetadata{
 		Protocol: &pb_protocol.RxMetadata_LoRaWAN{LoRaWAN: &pb_lorawan.Metadata{
 			DataRate:   "SF7BW125",
 			CodingRate: "4/5",
 		}},
-	}, GatewayMetadata: &gateway.RxMetadata{
+	}, GatewayMetadata: gateway.RxMetadata{
 		Frequency: freq,
 	}}
 }
 
 func buildDownlink(freq uint64) *pb.DownlinkMessage {
-	return &pb.DownlinkMessage{Payload: make([]byte, 10), ProtocolConfiguration: &pb_protocol.TxConfiguration{
+	return &pb.DownlinkMessage{Payload: make([]byte, 10), ProtocolConfiguration: pb_protocol.TxConfiguration{
 		Protocol: &pb_protocol.TxConfiguration_LoRaWAN{LoRaWAN: &pb_lorawan.TxConfiguration{
 			DataRate:   "SF7BW125",
 			CodingRate: "4/5",
 		}},
-	}, GatewayConfiguration: &gateway.TxConfiguration{
+	}, GatewayConfiguration: gateway.TxConfiguration{
 		Frequency: freq,
 	}}
 }

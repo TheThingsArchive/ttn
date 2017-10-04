@@ -25,7 +25,7 @@ func TestHandleGetDevices(t *testing.T) {
 	// No Devices
 	devAddr1 := getDevAddr(1, 2, 3, 4)
 	res, err := ns.HandleGetDevices(&pb.DevicesRequest{
-		DevAddr: &devAddr1,
+		DevAddr: devAddr1,
 		FCnt:    5,
 	})
 	a.So(err, ShouldBeNil)
@@ -44,7 +44,7 @@ func TestHandleGetDevices(t *testing.T) {
 	}()
 
 	res, err = ns.HandleGetDevices(&pb.DevicesRequest{
-		DevAddr: &devAddr1,
+		DevAddr: devAddr1,
 		FCnt:    5,
 	})
 	a.So(err, ShouldBeNil)
@@ -53,7 +53,7 @@ func TestHandleGetDevices(t *testing.T) {
 	// Non-Matching DevAddr
 	devAddr2 := getDevAddr(5, 6, 7, 8)
 	res, err = ns.HandleGetDevices(&pb.DevicesRequest{
-		DevAddr: &devAddr2,
+		DevAddr: devAddr2,
 		FCnt:    5,
 	})
 	a.So(err, ShouldBeNil)
@@ -61,7 +61,7 @@ func TestHandleGetDevices(t *testing.T) {
 
 	// Non-Matching FCnt
 	res, err = ns.HandleGetDevices(&pb.DevicesRequest{
-		DevAddr: &devAddr1,
+		DevAddr: devAddr1,
 		FCnt:    4,
 	})
 	a.So(err, ShouldBeNil)
@@ -82,7 +82,7 @@ func TestHandleGetDevices(t *testing.T) {
 		ns.devices.Delete(types.AppEUI(getEUI(5, 6, 7, 8, 1, 2, 3, 4)), types.DevEUI(getEUI(5, 6, 7, 8, 1, 2, 3, 4)))
 	}()
 	res, err = ns.HandleGetDevices(&pb.DevicesRequest{
-		DevAddr: &devAddr2,
+		DevAddr: devAddr2,
 		FCnt:    4,
 	})
 	a.So(err, ShouldBeNil)
@@ -104,7 +104,7 @@ func TestHandleGetDevices(t *testing.T) {
 	}()
 	devAddr3 := getDevAddr(2, 2, 3, 4)
 	res, err = ns.HandleGetDevices(&pb.DevicesRequest{
-		DevAddr: &devAddr3,
+		DevAddr: devAddr3,
 		FCnt:    5,
 	})
 	a.So(err, ShouldBeNil)
@@ -126,7 +126,7 @@ func TestHandleGetDevices(t *testing.T) {
 	}()
 	devAddr4 := getDevAddr(2, 2, 3, 5)
 	res, err = ns.HandleGetDevices(&pb.DevicesRequest{
-		DevAddr: &devAddr4,
+		DevAddr: devAddr4,
 		FCnt:    5,
 	})
 	a.So(err, ShouldBeNil)

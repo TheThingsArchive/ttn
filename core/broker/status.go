@@ -47,8 +47,8 @@ func (b *broker) GetStatus() *pb.Status {
 	if b.status == nil {
 		return status
 	}
-	status.System = stats.GetSystem()
-	status.Component = stats.GetComponent()
+	status.System = *stats.GetSystem()
+	status.Component = *stats.GetComponent()
 	uplink := b.status.uplink.Snapshot()
 	status.Uplink = &api.Rates{
 		Rate1:  float32(uplink.Rate1()),

@@ -21,7 +21,7 @@ func buildLoRaWANUplink(payload []byte) (*pb_broker.DeduplicatedUplinkMessage, *
 		DevID:   "devid",
 		AppID:   "appid",
 		Payload: payload,
-		ProtocolMetadata: &pb_protocol.RxMetadata{Protocol: &pb_protocol.RxMetadata_LoRaWAN{
+		ProtocolMetadata: pb_protocol.RxMetadata{Protocol: &pb_protocol.RxMetadata_LoRaWAN{
 			LoRaWAN: &pb_lorawan.Metadata{
 				FCnt: 1,
 			},
@@ -56,7 +56,8 @@ func TestConvertFromLoRaWAN(t *testing.T) {
 	ttnUp.UnmarshalPayload()
 	ttnUp.Message.GetLoRaWAN().MType = pb_lorawan.MType_CONFIRMED_UP
 	ttnUp.Message.GetLoRaWAN().GetMACPayload().FCnt++
-	ttnUp.GetProtocolMetadata().GetLoRaWAN().FCnt = ttnUp.Message.GetLoRaWAN().GetMACPayload().FCnt
+	md := ttnUp.GetProtocolMetadata()
+	md.GetLoRaWAN().FCnt = ttnUp.Message.GetLoRaWAN().GetMACPayload().FCnt
 	ttnUp.Message.GetLoRaWAN().GetMACPayload().Ack = false
 	ttnUp.Message.GetLoRaWAN().SetMIC(device.NwkSKey)
 	ttnUp.Payload = ttnUp.Message.GetLoRaWAN().PHYPayloadBytes()
@@ -77,7 +78,8 @@ func TestConvertFromLoRaWAN(t *testing.T) {
 	ttnUp.UnmarshalPayload()
 	ttnUp.Message.GetLoRaWAN().MType = pb_lorawan.MType_CONFIRMED_UP
 	ttnUp.Message.GetLoRaWAN().GetMACPayload().FCnt++
-	ttnUp.GetProtocolMetadata().GetLoRaWAN().FCnt = ttnUp.Message.GetLoRaWAN().GetMACPayload().FCnt
+	md = ttnUp.GetProtocolMetadata()
+	md.GetLoRaWAN().FCnt = ttnUp.Message.GetLoRaWAN().GetMACPayload().FCnt
 	ttnUp.Message.GetLoRaWAN().GetMACPayload().Ack = true
 	ttnUp.Message.GetLoRaWAN().SetMIC(device.NwkSKey)
 	ttnUp.Payload = ttnUp.Message.GetLoRaWAN().PHYPayloadBytes()
@@ -98,7 +100,7 @@ func buildLoRaWANDownlink(payload []byte) (*types.DownlinkMessage, *pb_broker.Do
 	ttnDown := &pb_broker.DownlinkMessage{
 		Payload: []byte{96, 4, 3, 2, 1, 0, 1, 0, 1, 0, 0, 0, 0},
 		DownlinkOption: &pb_broker.DownlinkOption{
-			ProtocolConfiguration: &pb_protocol.TxConfiguration{Protocol: &pb_protocol.TxConfiguration_LoRaWAN{
+			ProtocolConfiguration: pb_protocol.TxConfiguration{Protocol: &pb_protocol.TxConfiguration_LoRaWAN{
 				LoRaWAN: &pb_lorawan.TxConfiguration{
 					FCnt: 1,
 				},

@@ -94,7 +94,8 @@ func (g *Gateway) HandleUplink(uplink *pb_router.UplinkMessage) (err error) {
 		}
 		// Inject Gateway frequency plan
 		if frequencyPlan, ok := pb_lorawan.FrequencyPlan_value[status.FrequencyPlan]; ok {
-			if lorawan := uplink.GetProtocolMetadata().GetLoRaWAN(); lorawan != nil {
+			md := uplink.GetProtocolMetadata()
+			if lorawan := md.GetLoRaWAN(); lorawan != nil {
 				lorawan.FrequencyPlan = pb_lorawan.FrequencyPlan(frequencyPlan)
 			}
 		}

@@ -40,10 +40,11 @@ func (n *networkServer) handleUplinkMAC(message *pb_broker.DeduplicatedUplinkMes
 
 	// MAC Commands
 	for _, cmd := range lorawanUplinkMAC.FOpts {
+		md := message.GetProtocolMetadata()
 		switch cmd.CID {
 		case uint32(lorawan.LinkCheckReq):
 			response := &lorawan.LinkCheckAnsPayload{
-				Margin: uint8(linkMargin(message.GetProtocolMetadata().GetLoRaWAN().DataRate, bestSNR(message.GetGatewayMetadata()))),
+				Margin: uint8(linkMargin(md.GetLoRaWAN().DataRate, bestSNR(message.GetGatewayMetadata()))),
 				GwCnt:  uint8(len(message.GatewayMetadata)),
 			}
 			responsePayload, _ := response.MarshalBinary()

@@ -84,8 +84,8 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 				DevID: devID,
 				Event: types.ActivationErrorEvent,
 				Data: types.ActivationEventData{
-					AppEUI:         *activation.AppEUI,
-					DevEUI:         *activation.DevEUI,
+					AppEUI:         activation.AppEUI,
+					DevEUI:         activation.DevEUI,
 					ErrorEventData: types.ErrorEventData{Error: err.Error()},
 				},
 			}
@@ -122,10 +122,10 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 	if metadata == nil {
 		return nil, errors.NewErrInvalidArgument("Activation", "does not contain LoRaWAN metadata")
 	}
-	if metadata.AppEUI == nil || metadata.DevEUI == nil || metadata.DevAddr == nil {
+	if metadata.AppEUI.IsEmpty() || metadata.DevEUI.IsEmpty() || metadata.DevAddr == nil {
 		return nil, errors.NewErrInvalidArgument("Activation Metadata", "incomplete")
 	}
-	if *metadata.AppEUI != *activation.AppEUI || *metadata.DevEUI != *activation.DevEUI {
+	if metadata.AppEUI != activation.AppEUI || metadata.DevEUI != activation.DevEUI {
 		return nil, errors.NewErrInvalidArgument("Activation Metadata", "inconsistent")
 	}
 
@@ -138,7 +138,7 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 	if !ok {
 		return nil, errors.NewErrInvalidArgument("Activation", "does not contain a JoinRequestPayload")
 	}
-	if types.AppEUI(reqMAC.AppEUI) != *activation.AppEUI || types.DevEUI(reqMAC.DevEUI) != *activation.DevEUI {
+	if types.AppEUI(reqMAC.AppEUI) != activation.AppEUI || types.DevEUI(reqMAC.DevEUI) != activation.DevEUI {
 		return nil, errors.NewErrInvalidArgument("Activation Payload", "inconsistent")
 	}
 
@@ -195,8 +195,8 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 		DevID: devID,
 		Event: types.ActivationEvent,
 		Data: types.ActivationEventData{
-			AppEUI:   *activation.AppEUI,
-			DevEUI:   *activation.DevEUI,
+			AppEUI:   activation.AppEUI,
+			DevEUI:   activation.DevEUI,
 			DevAddr:  types.DevAddr(joinAccept.DevAddr),
 			Metadata: mqttMetadata,
 		},
@@ -256,8 +256,8 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 	metadata.DevAddr = &dev.DevAddr
 	res = &pb.DeviceActivationResponse{
 		Payload:            resBytes,
-		DownlinkOption:     activation.ResponseTemplate.DownlinkOption,
-		ActivationMetadata: activation.ActivationMetadata,
+		DownlinkOption:     *activation.ResponseTemplate.DownlinkOption,
+		ActivationMetadata: *activation.ActivationMetadata,
 		Trace:              activation.Trace,
 	}
 
@@ -267,7 +267,7 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 func (h *handler) registerDeviceOnJoin(base *device.Device, activation *pb_broker.DeduplicatedDeviceActivationRequest) (*device.Device, error) {
 	clone := base.Clone()
 	clone.DevID = strings.ToLower(fmt.Sprintf("%s-%s", base.DevID, activation.DevEUI.String()))
-	clone.DevEUI = *activation.DevEUI
+	clone.DevEUI = activation.DevEUI
 	clone.Description = fmt.Sprintf("Registered on join on %s", time.Now().UTC().Format("02 Jan 06 15:04"))
 
 	app, err := h.applications.Get(base.AppID)

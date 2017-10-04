@@ -169,7 +169,8 @@ func (s *schedule) Schedule(id string, downlink *router_pb.DownlinkMessage) erro
 	if item, ok := s.items[id]; ok {
 		item.payload = downlink
 
-		if lorawan := downlink.GetProtocolConfiguration().GetLoRaWAN(); lorawan != nil {
+		conf := downlink.GetProtocolConfiguration()
+		if lorawan := conf.GetLoRaWAN(); lorawan != nil {
 			var time time.Duration
 			if lorawan.Modulation == pb_lorawan.Modulation_LORA {
 				// Calculate max ToA
