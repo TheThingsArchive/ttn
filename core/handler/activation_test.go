@@ -253,7 +253,7 @@ func TestHandleActivation(t *testing.T) {
 
 	res, err = h.HandleActivation(req)
 	a.So(err, ShouldBeNil)
-	a.So(res.ActivationMetadata.GetLoRaWAN().DevEUI, ShouldResemble, &otherDevEUI)
+	a.So(res.ActivationMetadata.GetLoRaWAN().DevEUI, ShouldResemble, otherDevEUI)
 
 	// TODO: Check response
 	// TODO: Check DB contents
