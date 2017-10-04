@@ -174,18 +174,14 @@ func (h *handler) HandleDownlink(appDownlink *types.DownlinkMessage, downlink *p
 
 	downlinkConfig := types.DownlinkEventConfigInfo{}
 
-	if downlink.DownlinkOption.ProtocolConfiguration != nil {
-		if lorawan := downlink.DownlinkOption.ProtocolConfiguration.GetLoRaWAN(); lorawan != nil {
-			downlinkConfig.Modulation = lorawan.Modulation.String()
-			downlinkConfig.DataRate = lorawan.DataRate
-			downlinkConfig.BitRate = uint(lorawan.BitRate)
-			downlinkConfig.FCnt = uint(lorawan.FCnt)
-		}
+	if lorawan := downlink.DownlinkOption.ProtocolConfiguration.GetLoRaWAN(); lorawan != nil {
+		downlinkConfig.Modulation = lorawan.Modulation.String()
+		downlinkConfig.DataRate = lorawan.DataRate
+		downlinkConfig.BitRate = uint(lorawan.BitRate)
+		downlinkConfig.FCnt = uint(lorawan.FCnt)
 	}
-	if gateway := downlink.DownlinkOption.GatewayConfiguration; gateway != nil {
-		downlinkConfig.Frequency = uint(downlink.DownlinkOption.GatewayConfiguration.Frequency)
-		downlinkConfig.Power = int(downlink.DownlinkOption.GatewayConfiguration.Power)
-	}
+	downlinkConfig.Frequency = uint(downlink.DownlinkOption.GatewayConfiguration.Frequency)
+	downlinkConfig.Power = int(downlink.DownlinkOption.GatewayConfiguration.Power)
 
 	h.qEvent <- &types.DeviceEvent{
 		AppID: appDownlink.AppID,

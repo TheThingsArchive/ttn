@@ -26,9 +26,9 @@ func (d Device) ToPb() *pb_handler.Device {
 func (d Device) ToLoRaWANPb() *pb_lorawan.Device {
 	return &pb_lorawan.Device{
 		AppID:                 d.AppID,
-		AppEUI:                &d.AppEUI,
+		AppEUI:                d.AppEUI,
 		DevID:                 d.DevID,
-		DevEUI:                &d.DevEUI,
+		DevEUI:                d.DevEUI,
 		DevAddr:               &d.DevAddr,
 		NwkSKey:               &d.NwkSKey,
 		AppSKey:               &d.AppSKey,
@@ -63,12 +63,8 @@ func (d *Device) FromLoRaWANPb(lorawan *pb_lorawan.Device) {
 	if lorawan == nil {
 		return
 	}
-	if lorawan.AppEUI != nil {
-		d.AppEUI = *lorawan.AppEUI
-	}
-	if lorawan.DevEUI != nil {
-		d.DevEUI = *lorawan.DevEUI
-	}
+	d.AppEUI = lorawan.AppEUI
+	d.DevEUI = lorawan.DevEUI
 	if lorawan.DevAddr != nil {
 		d.DevAddr = *lorawan.DevAddr
 	}

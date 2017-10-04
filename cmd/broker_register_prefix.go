@@ -62,7 +62,7 @@ var brokerRegisterPrefixCmd = &cobra.Command{
 			_, err = client.AddMetadata(dscContext, &discovery.MetadataRequest{
 				ServiceName: "broker",
 				ID:          viper.GetString("id"),
-				Metadata: &discovery.Metadata{Metadata: &discovery.Metadata_DevAddrPrefix{
+				Metadata: discovery.Metadata{Metadata: &discovery.Metadata_DevAddrPrefix{
 					DevAddrPrefix: prefix.Bytes(),
 				}},
 			})

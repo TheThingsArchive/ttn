@@ -36,7 +36,7 @@ func (r *routerManager) GatewayStatus(ctx context.Context, in *pb.GatewayStatusR
 	}
 	return &pb.GatewayStatusResponse{
 		LastSeen: gtw.LastSeen.UnixNano(),
-		Status:   status,
+		Status:   *status,
 	}, nil
 }
 

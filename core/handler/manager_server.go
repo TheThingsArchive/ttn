@@ -100,8 +100,8 @@ func (h *handlerManager) GetDevice(ctx context.Context, in *pb_handler.DeviceIde
 	pbDev := dev.ToPb()
 
 	nsDev, err := h.handler.ttnDeviceManager.GetDevice(ttnctx.OutgoingContextWithToken(ctx, token), &pb_lorawan.DeviceIdentifier{
-		AppEUI: &dev.AppEUI,
-		DevEUI: &dev.DevEUI,
+		AppEUI: dev.AppEUI,
+		DevEUI: dev.DevEUI,
 	})
 	if errors.GetErrType(errors.FromGRPCError(err)) == errors.NotFound {
 		// Re-register the device in the Broker (NetworkServer)
@@ -161,11 +161,11 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb_handler.Device) (
 	var eventType types.EventType
 	if dev != nil {
 		eventType = types.UpdateEvent
-		if dev.AppEUI != *lorawan.AppEUI || dev.DevEUI != *lorawan.DevEUI {
+		if dev.AppEUI != lorawan.AppEUI || dev.DevEUI != lorawan.DevEUI {
 			// If the AppEUI or DevEUI is changed, we should remove the device from the NetworkServer and re-add it later
 			_, err = h.handler.ttnDeviceManager.DeleteDevice(ttnctx.OutgoingContextWithToken(ctx, token), &pb_lorawan.DeviceIdentifier{
-				AppEUI: &dev.AppEUI,
-				DevEUI: &dev.DevEUI,
+				AppEUI: dev.AppEUI,
+				DevEUI: dev.DevEUI,
 			})
 			if err != nil {
 				return nil, errors.Wrap(errors.FromGRPCError(err), "Broker did not delete device")
@@ -179,7 +179,7 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb_handler.Device) (
 			return nil, err
 		}
 		for _, existingDevice := range existingDevices {
-			if existingDevice.AppEUI == *lorawan.AppEUI && existingDevice.DevEUI == *lorawan.DevEUI {
+			if existingDevice.AppEUI == lorawan.AppEUI && existingDevice.DevEUI == lorawan.DevEUI {
 				return nil, errors.NewErrAlreadyExists("Device with AppEUI and DevEUI")
 			}
 		}
@@ -245,7 +245,7 @@ func (h *handlerManager) DeleteDevice(ctx context.Context, in *pb_handler.Device
 	if err != nil {
 		return nil, err
 	}
-	_, err = h.handler.ttnDeviceManager.DeleteDevice(ttnctx.OutgoingContextWithToken(ctx, token), &pb_lorawan.DeviceIdentifier{AppEUI: &dev.AppEUI, DevEUI: &dev.DevEUI})
+	_, err = h.handler.ttnDeviceManager.DeleteDevice(ttnctx.OutgoingContextWithToken(ctx, token), &pb_lorawan.DeviceIdentifier{AppEUI: dev.AppEUI, DevEUI: dev.DevEUI})
 	if err != nil && errors.GetErrType(errors.FromGRPCError(err)) != errors.NotFound {
 		return nil, errors.Wrap(errors.FromGRPCError(err), "Broker did not delete device")
 	}
@@ -455,7 +455,7 @@ func (h *handlerManager) DeleteApplication(ctx context.Context, in *pb_handler.A
 		return nil, err
 	}
 	for _, dev := range devices {
-		_, err = h.handler.ttnDeviceManager.DeleteDevice(ttnctx.OutgoingContextWithToken(ctx, token), &pb_lorawan.DeviceIdentifier{AppEUI: &dev.AppEUI, DevEUI: &dev.DevEUI})
+		_, err = h.handler.ttnDeviceManager.DeleteDevice(ttnctx.OutgoingContextWithToken(ctx, token), &pb_lorawan.DeviceIdentifier{AppEUI: dev.AppEUI, DevEUI: dev.DevEUI})
 		if err != nil {
 			return nil, errors.Wrap(errors.FromGRPCError(err), "Broker did not delete device")
 		}

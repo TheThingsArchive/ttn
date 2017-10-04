@@ -11,7 +11,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/storage"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	. "github.com/smartystreets/assertions"
-	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
+	"golang.org/x/net/context"
 )
 
 type countingStore struct {
@@ -76,7 +76,7 @@ func TestDryUplinkFieldsCustom(t *testing.T) {
 
 	dryUplinkMessage := &pb.DryUplinkMessage{
 		Payload: []byte{11, 22, 33},
-		App: &pb.Application{
+		App: pb.Application{
 			AppID:         "DryUplinkFields",
 			PayloadFormat: "custom",
 			Decoder: `function Decoder (bytes) {
@@ -125,7 +125,7 @@ func TestDryUplinkFieldsCayenneLPP(t *testing.T) {
 
 	dryUplinkMessage := &pb.DryUplinkMessage{
 		Payload: []byte{7, 103, 0, 245},
-		App: &pb.Application{
+		App: pb.Application{
 			AppID:         "DryUplinkFields",
 			PayloadFormat: "cayennelpp",
 		},
@@ -156,7 +156,7 @@ func TestDryUplinkEmptyApp(t *testing.T) {
 	a.So(err, ShouldBeNil)
 
 	a.So(res.Payload, ShouldResemble, dryUplinkMessage.Payload)
-	a.So(res.Fields, ShouldEqual, "")
+	a.So(res.Fields, ShouldEqual, "null")
 	a.So(res.Valid, ShouldBeTrue)
 
 	// make sure no calls to app store were made
@@ -177,7 +177,7 @@ func TestDryDownlinkFieldsCustom(t *testing.T) {
 
 	msg := &pb.DryDownlinkMessage{
 		Fields: `{ "foo": [ 1, 2, 3 ] }`,
-		App: &pb.Application{
+		App: pb.Application{
 			PayloadFormat: "custom",
 			Encoder: `
 				function Encoder (fields) {
@@ -216,7 +216,7 @@ func TestDryDownlinkFieldsCayenneLPP(t *testing.T) {
 
 	msg := &pb.DryDownlinkMessage{
 		Fields: `{ "value_5": -15.6, "custom": { "x": 42 } }`,
-		App: &pb.Application{
+		App: pb.Application{
 			PayloadFormat: "cayennelpp",
 		},
 	}
@@ -238,7 +238,7 @@ func TestDryDownlinkPayload(t *testing.T) {
 
 	msg := &pb.DryDownlinkMessage{
 		Payload: []byte{0x1, 0x2, 0x3},
-		App: &pb.Application{
+		App: pb.Application{
 			Encoder: `function (fields) { return fields.foo }`,
 		},
 	}
@@ -290,7 +290,7 @@ func TestLogs(t *testing.T) {
 
 	msg := &pb.DryDownlinkMessage{
 		Fields: `{ "foo": [ 1, 2, 3 ] }`,
-		App: &pb.Application{
+		App: pb.Application{
 			PayloadFormat: "custom",
 			Encoder: `
 				function Encoder (fields) {

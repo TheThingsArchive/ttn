@@ -29,8 +29,8 @@ func (n *networkServer) GetStatus() *pb.Status {
 	if n.status == nil {
 		return status
 	}
-	status.System = stats.GetSystem()
-	status.Component = stats.GetComponent()
+	status.System = *stats.GetSystem()
+	status.Component = *stats.GetComponent()
 	uplink := n.status.uplink.Snapshot()
 	status.Uplink = &api.Rates{
 		Rate1:  float32(uplink.Rate1()),

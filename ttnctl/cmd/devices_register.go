@@ -70,8 +70,8 @@ var devicesRegisterCmd = &cobra.Command{
 			Device: &handler.Device_LoRaWANDevice{LoRaWANDevice: &lorawan.Device{
 				AppID:         appID,
 				DevID:         devID,
-				AppEUI:        &appEUI,
-				DevEUI:        &devEUI,
+				AppEUI:        appEUI,
+				DevEUI:        devEUI,
 				AppKey:        &appKey,
 				Uses32BitFCnt: true,
 			}},

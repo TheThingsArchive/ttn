@@ -35,8 +35,8 @@ func TestDownlink(t *testing.T) {
 	b.InitStatus()
 
 	err := b.HandleDownlink(&pb.DownlinkMessage{
-		DevEUI: &devEUI,
-		AppEUI: &appEUI,
+		DevEUI: devEUI,
+		AppEUI: appEUI,
 		DownlinkOption: &pb.DownlinkOption{
 			Identifier: "fakeID",
 		},
@@ -44,8 +44,8 @@ func TestDownlink(t *testing.T) {
 	a.So(err, ShouldNotBeNil)
 
 	err = b.HandleDownlink(&pb.DownlinkMessage{
-		DevEUI: &devEUI,
-		AppEUI: &appEUI,
+		DevEUI: devEUI,
+		AppEUI: appEUI,
 		DownlinkOption: &pb.DownlinkOption{
 			Identifier: "nonExistentRouterID:scheduleID",
 		},
@@ -53,8 +53,8 @@ func TestDownlink(t *testing.T) {
 	a.So(err, ShouldNotBeNil)
 
 	err = b.HandleDownlink(&pb.DownlinkMessage{
-		DevEUI: &devEUI,
-		AppEUI: &appEUI,
+		DevEUI: devEUI,
+		AppEUI: appEUI,
 		DownlinkOption: &pb.DownlinkOption{
 			Identifier: "routerID:scheduleID",
 		},

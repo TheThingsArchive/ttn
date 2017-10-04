@@ -35,8 +35,8 @@ func TestHandlePrepareActivation(t *testing.T) {
 
 	// Device not registered
 	resp, err := ns.HandlePrepareActivation(&pb_broker.DeduplicatedDeviceActivationRequest{
-		DevEUI: &devEUI,
-		AppEUI: &appEUI,
+		DevEUI: devEUI,
+		AppEUI: appEUI,
 		ActivationMetadata: &pb_protocol.ActivationMetadata{Protocol: &pb_protocol.ActivationMetadata_LoRaWAN{
 			LoRaWAN: &pb_lorawan.ActivationMetadata{
 				CFList: &pb_lorawan.CFList{Freq: []uint32{867100000, 867300000, 867500000, 867700000, 867900000}},
@@ -53,8 +53,8 @@ func TestHandlePrepareActivation(t *testing.T) {
 		ns.devices.Delete(appEUI, emptyDevEUI)
 	}()
 	resp, err = ns.HandlePrepareActivation(&pb_broker.DeduplicatedDeviceActivationRequest{
-		DevEUI: &devEUI,
-		AppEUI: &appEUI,
+		DevEUI: devEUI,
+		AppEUI: appEUI,
 		ActivationMetadata: &pb_protocol.ActivationMetadata{Protocol: &pb_protocol.ActivationMetadata_LoRaWAN{
 			LoRaWAN: &pb_lorawan.ActivationMetadata{
 				CFList: &pb_lorawan.CFList{Freq: []uint32{867100000, 867300000, 867500000, 867700000, 867900000}},
@@ -74,8 +74,8 @@ func TestHandlePrepareActivation(t *testing.T) {
 		ns.devices.Delete(appEUI, devEUI)
 	}()
 	resp, err = ns.HandlePrepareActivation(&pb_broker.DeduplicatedDeviceActivationRequest{
-		DevEUI: &devEUI,
-		AppEUI: &appEUI,
+		DevEUI: devEUI,
+		AppEUI: appEUI,
 		ActivationMetadata: &pb_protocol.ActivationMetadata{Protocol: &pb_protocol.ActivationMetadata_LoRaWAN{
 			LoRaWAN: &pb_lorawan.ActivationMetadata{
 				CFList: &pb_lorawan.CFList{Freq: []uint32{867100000, 867300000, 867500000, 867700000, 867900000}},
@@ -91,8 +91,8 @@ func TestHandlePrepareActivation(t *testing.T) {
 
 	// Device registered
 	resp, err = ns.HandlePrepareActivation(&pb_broker.DeduplicatedDeviceActivationRequest{
-		DevEUI: &devEUI,
-		AppEUI: &appEUI,
+		DevEUI: devEUI,
+		AppEUI: appEUI,
 		ActivationMetadata: &pb_protocol.ActivationMetadata{Protocol: &pb_protocol.ActivationMetadata_LoRaWAN{
 			LoRaWAN: &pb_lorawan.ActivationMetadata{
 				CFList: &pb_lorawan.CFList{Freq: []uint32{867100000, 867300000, 867500000, 867700000, 867900000}},
@@ -135,7 +135,7 @@ func TestHandleActivate(t *testing.T) {
 	a.So(err, ShouldNotBeNil)
 
 	_, err = ns.HandleActivate(&pb_handler.DeviceActivationResponse{
-		ActivationMetadata: &pb_protocol.ActivationMetadata{},
+		ActivationMetadata: pb_protocol.ActivationMetadata{},
 	})
 	a.So(err, ShouldNotBeNil)
 
@@ -145,10 +145,10 @@ func TestHandleActivate(t *testing.T) {
 	appEUI := types.AppEUI(getEUI(0, 0, 0, 0, 0, 0, 3, 1))
 	devEUI := types.DevEUI(getEUI(0, 0, 0, 0, 0, 0, 3, 1))
 	_, err = ns.HandleActivate(&pb_handler.DeviceActivationResponse{
-		ActivationMetadata: &pb_protocol.ActivationMetadata{Protocol: &pb_protocol.ActivationMetadata_LoRaWAN{
+		ActivationMetadata: pb_protocol.ActivationMetadata{Protocol: &pb_protocol.ActivationMetadata_LoRaWAN{
 			LoRaWAN: &pb_lorawan.ActivationMetadata{
-				AppEUI:  &appEUI,
-				DevEUI:  &devEUI,
+				AppEUI:  appEUI,
+				DevEUI:  devEUI,
 				DevAddr: &devAddr,
 				NwkSKey: &nwkSKey,
 			},

@@ -41,12 +41,12 @@ func (n *networkServer) getDevAddr(constraints ...string) (types.DevAddr, error)
 }
 
 func (n *networkServer) HandlePrepareActivation(activation *pb_broker.DeduplicatedDeviceActivationRequest) (*pb_broker.DeduplicatedDeviceActivationRequest, error) {
-	if activation.AppEUI == nil || activation.DevEUI == nil {
+	if activation.AppEUI.IsEmpty() || activation.DevEUI.IsEmpty() {
 		return nil, errors.NewErrInvalidArgument("Activation", "missing AppEUI or DevEUI")
 	}
-	dev, err := n.devices.Get(*activation.AppEUI, *activation.DevEUI)
+	dev, err := n.devices.Get(activation.AppEUI, activation.DevEUI)
 	if errors.IsNotFound(err) {
-		dev, err = n.devices.Get(*activation.AppEUI, emptyDevEUI)
+		dev, err = n.devices.Get(activation.AppEUI, emptyDevEUI)
 		if err == nil {
 			activation.Trace = activation.Trace.WithEvent("device not yet registered")
 		}
@@ -117,17 +117,14 @@ func (n *networkServer) HandlePrepareActivation(activation *pb_broker.Deduplicat
 }
 
 func (n *networkServer) HandleActivate(activation *pb_handler.DeviceActivationResponse) (*pb_handler.DeviceActivationResponse, error) {
-	meta := activation.GetActivationMetadata()
-	if meta == nil {
-		return nil, errors.NewErrInvalidArgument("Activation", "missing ActivationMetadata")
-	}
-	lorawan := meta.GetLoRaWAN()
+	md := activation.GetActivationMetadata()
+	lorawan := md.GetLoRaWAN()
 	if lorawan == nil {
 		return nil, errors.NewErrInvalidArgument("Activation", "missing LoRaWAN ActivationMetadata")
 	}
 	n.status.activations.Mark(1)
 
-	dev, err := n.devices.Get(*lorawan.AppEUI, *lorawan.DevEUI)
+	dev, err := n.devices.Get(lorawan.AppEUI, lorawan.DevEUI)
 	if err != nil {
 		return nil, err
 	}
@@ -143,7 +140,7 @@ func (n *networkServer) HandleActivate(activation *pb_handler.DeviceActivationRe
 	dev.FCntDown = 0
 	dev.ADR = device.ADRSettings{Band: dev.ADR.Band, Margin: dev.ADR.Margin}
 
-	if band := meta.GetLoRaWAN().GetFrequencyPlan().String(); band != "" {
+	if band := md.GetLoRaWAN().GetFrequencyPlan().String(); band != "" {
 		dev.ADR.Band = band
 	}
 

@@ -37,8 +37,8 @@ func TestHandleActivation(t *testing.T) {
 		Payload:          []byte{},
 		ProtocolMetadata: uplink.ProtocolMetadata,
 		GatewayMetadata:  uplink.GatewayMetadata,
-		AppEUI:           &appEUI,
-		DevEUI:           &devEUI,
+		AppEUI:           appEUI,
+		DevEUI:           devEUI,
 	}
 
 	res, err := r.HandleActivation(gtwID, activation)

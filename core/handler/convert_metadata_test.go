@@ -52,7 +52,7 @@ func TestConvertMetadata(t *testing.T) {
 	a.So(err, ShouldBeNil)
 	a.So(appUp.Metadata.Gateways, ShouldHaveLength, 3)
 
-	ttnUp.ProtocolMetadata = &pb_protocol.RxMetadata{Protocol: &pb_protocol.RxMetadata_LoRaWAN{
+	ttnUp.ProtocolMetadata = pb_protocol.RxMetadata{Protocol: &pb_protocol.RxMetadata_LoRaWAN{
 		LoRaWAN: &pb_lorawan.Metadata{
 			DataRate: "SF7BW125",
 		},

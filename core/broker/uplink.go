@@ -94,7 +94,7 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) (err error) {
 	})
 	var getDevicesResp *networkserver.DevicesResponse
 	getDevicesResp, err = b.ns.GetDevices(b.Component.GetContext(b.nsToken), &networkserver.DevicesRequest{
-		DevAddr: &devAddr,
+		DevAddr: devAddr,
 		FCnt:    macPayload.FHDR.FCnt,
 	})
 	if err != nil {
@@ -164,8 +164,8 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) (err error) {
 		"DevID":     device.DevID,
 		"FCnt":      originalFCnt,
 	})
-	deduplicatedUplink.DevEUI = device.DevEUI
-	deduplicatedUplink.AppEUI = device.AppEUI
+	deduplicatedUplink.DevEUI = &device.DevEUI
+	deduplicatedUplink.AppEUI = &device.AppEUI
 	deduplicatedUplink.AppID = device.AppID
 	deduplicatedUplink.DevID = device.DevID
 	deduplicatedUplink.Trace = deduplicatedUplink.Trace.WithEvent(trace.CheckMICEvent, "mic checks", micChecks)
@@ -200,7 +200,7 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) (err error) {
 	// Collect GatewayMetadata and DownlinkOptions
 	var downlinkOptions []*pb.DownlinkOption
 	for _, duplicate := range duplicates {
-		deduplicatedUplink.GatewayMetadata = append(deduplicatedUplink.GatewayMetadata, duplicate.GatewayMetadata)
+		deduplicatedUplink.GatewayMetadata = append(deduplicatedUplink.GatewayMetadata, &duplicate.GatewayMetadata)
 		downlinkOptions = append(downlinkOptions, duplicate.DownlinkOptions...)
 	}
 

@@ -29,7 +29,7 @@ func adrInitUplinkMessage() *pb_broker.DeduplicatedUplinkMessage {
 	downlink := message.InitResponseTemplate()
 	downlink.Message = new(pb_protocol.Message)
 	downlink.Message.InitLoRaWAN().InitDownlink()
-	message.ProtocolMetadata = &pb_protocol.RxMetadata{Protocol: &pb_protocol.RxMetadata_LoRaWAN{
+	message.ProtocolMetadata = pb_protocol.RxMetadata{Protocol: &pb_protocol.RxMetadata_LoRaWAN{
 		LoRaWAN: &pb_lorawan.Metadata{
 			DataRate: "SF8BW125",
 		},

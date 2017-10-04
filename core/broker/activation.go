@@ -80,7 +80,7 @@ func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (res *
 	// Collect GatewayMetadata and DownlinkOptions
 	var downlinkOptions []*pb.DownlinkOption
 	for _, duplicate := range duplicates {
-		deduplicatedActivationRequest.GatewayMetadata = append(deduplicatedActivationRequest.GatewayMetadata, duplicate.GatewayMetadata)
+		deduplicatedActivationRequest.GatewayMetadata = append(deduplicatedActivationRequest.GatewayMetadata, &duplicate.GatewayMetadata)
 		downlinkOptions = append(downlinkOptions, duplicate.DownlinkOptions...)
 	}
 
@@ -218,7 +218,7 @@ func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (res *
 	res = &pb.DeviceActivationResponse{
 		Payload:        handlerResponse.Payload,
 		Message:        handlerResponse.Message,
-		DownlinkOption: handlerResponse.DownlinkOption,
+		DownlinkOption: &handlerResponse.DownlinkOption,
 		Trace:          handlerResponse.Trace,
 	}
 

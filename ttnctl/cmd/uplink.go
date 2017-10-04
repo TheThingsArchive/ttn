@@ -86,8 +86,8 @@ var uplinkCmd = &cobra.Command{
 
 		gtwClient.Uplink(&router.UplinkMessage{
 			Payload:          bytes,
-			GatewayMetadata:  util.GetGatewayMetadata(gatewayID, 868100000),
-			ProtocolMetadata: util.GetProtocolMetadata("SF7BW125"),
+			GatewayMetadata:  *util.GetGatewayMetadata(gatewayID, 868100000),
+			ProtocolMetadata: *util.GetProtocolMetadata("SF7BW125"),
 		})
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not send uplink to Router")

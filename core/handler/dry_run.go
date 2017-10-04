@@ -11,7 +11,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/handler/cayennelpp"
 	"github.com/TheThingsNetwork/ttn/core/handler/functions"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
-	"golang.org/x/net/context" // See https://github.com/grpc/grpc-go/issues/711"
+	"golang.org/x/net/context"
 )
 
 // DryUplink converts the uplink message payload by running the payload
@@ -23,37 +23,35 @@ func (h *handlerManager) DryUplink(ctx context.Context, in *pb.DryUplinkMessage)
 	flds := ""
 	valid := true
 	var logs []*pb.LogEntry
-	if app != nil {
-		var decoder PayloadDecoder
-		switch application.PayloadFormat(in.App.PayloadFormat) {
-		case "", application.PayloadFormatCustom:
-			decoder = &CustomUplinkFunctions{
-				Decoder:   app.Decoder,
-				Converter: app.Converter,
-				Validator: app.Validator,
-				Logger:    functions.NewEntryLogger(),
-			}
-		case application.PayloadFormatCayenneLPP:
-			decoder = &cayennelpp.Decoder{}
-		default:
-			return nil, errors.NewErrInvalidArgument("App", "unknown payload format")
+	var decoder PayloadDecoder
+	switch application.PayloadFormat(app.PayloadFormat) {
+	case "", application.PayloadFormatCustom:
+		decoder = &CustomUplinkFunctions{
+			Decoder:   app.Decoder,
+			Converter: app.Converter,
+			Validator: app.Validator,
+			Logger:    functions.NewEntryLogger(),
 		}
-
-		fields, val, err := decoder.Decode(in.Payload, uint8(in.Port))
-		if err != nil {
-			return nil, err
-		}
-
-		valid = val
-		logs = decoder.Log()
-
-		marshalled, err := json.Marshal(fields)
-		if err != nil {
-			return nil, err
-		}
-
-		flds = string(marshalled)
+	case application.PayloadFormatCayenneLPP:
+		decoder = &cayennelpp.Decoder{}
+	default:
+		return nil, errors.NewErrInvalidArgument("App", "unknown payload format")
 	}
+
+	fields, val, err := decoder.Decode(in.Payload, uint8(in.Port))
+	if err != nil {
+		return nil, err
+	}
+
+	valid = val
+	logs = decoder.Log()
+
+	marshalled, err := json.Marshal(fields)
+	if err != nil {
+		return nil, err
+	}
+
+	flds = string(marshalled)
 
 	return &pb.DryUplinkResult{
 		Payload: in.Payload,
@@ -80,10 +78,6 @@ func (h *handlerManager) DryDownlink(ctx context.Context, in *pb.DryDownlinkMess
 
 	if in.Fields == "" {
 		return nil, errors.NewErrInvalidArgument("Downlink", "Neither Fields nor Payload provided")
-	}
-
-	if app == nil {
-		return nil, errors.NewErrInvalidArgument("App", "Not specified")
 	}
 
 	var encoder PayloadEncoder
