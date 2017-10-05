@@ -161,8 +161,12 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb_handler.Device) (
 	var eventType types.EventType
 	if dev != nil {
 		eventType = types.UpdateEvent
+
+		// Not allowed to update join nonces after device is created
+		lorawan.UsedDevNonces, lorawan.UsedAppNonces = nil, nil
+
+		// If the AppEUI or DevEUI is changed, we should remove the device from the NetworkServer and re-add it later
 		if dev.AppEUI != lorawan.AppEUI || dev.DevEUI != lorawan.DevEUI {
-			// If the AppEUI or DevEUI is changed, we should remove the device from the NetworkServer and re-add it later
 			_, err = h.handler.ttnDeviceManager.DeleteDevice(ttnctx.OutgoingContextWithToken(ctx, token), &pb_lorawan.DeviceIdentifier{
 				AppEUI: dev.AppEUI,
 				DevEUI: dev.DevEUI,
@@ -171,6 +175,7 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb_handler.Device) (
 				return nil, errors.Wrap(errors.FromGRPCError(err), "Broker did not delete device")
 			}
 		}
+
 		dev.StartUpdate()
 	} else {
 		eventType = types.CreateEvent
@@ -186,12 +191,13 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb_handler.Device) (
 		dev = new(device.Device)
 	}
 
-	// Reset join nonces when AppKey changes
-	if lorawan.AppKey != nil && dev.AppKey != *lorawan.AppKey { // do this BEFORE dev.FromPb(in)
-		dev.UsedAppNonces = []device.AppNonce{}
-		dev.UsedDevNonces = []device.DevNonce{}
+	if lorawan.AppKey != nil && dev.AppKey != *lorawan.AppKey {
+		// Reset join nonces when AppKey changes
+		dev.UsedDevNonces, dev.UsedAppNonces = []device.DevNonce{}, []device.AppNonce{}
 	}
+
 	dev.FromPb(in)
+
 	if dev.Options.ActivationConstraints == "" {
 		dev.Options.ActivationConstraints = "local"
 	}
@@ -200,6 +206,8 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb_handler.Device) (
 	lorawanPb := dev.ToLoRaWANPb()
 	lorawanPb.AppKey = nil
 	lorawanPb.AppSKey = nil
+	lorawanPb.UsedDevNonces = nil
+	lorawanPb.UsedAppNonces = nil
 	lorawanPb.FCntUp = lorawan.FCntUp
 	lorawanPb.FCntDown = lorawan.FCntDown
 
