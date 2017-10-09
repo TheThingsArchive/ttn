@@ -14,7 +14,7 @@ var receivedCounter = prometheus.NewCounterVec(
 	prometheus.CounterOpts{
 		Namespace: "ttn",
 		Name:      "messages_received_total",
-		Help:      "Total number of uplink messages received.",
+		Help:      "Total number of messages received.",
 	}, []string{"message_type"},
 )
 
@@ -22,7 +22,7 @@ var handledCounter = prometheus.NewCounterVec(
 	prometheus.CounterOpts{
 		Namespace: "ttn",
 		Name:      "messages_handled_total",
-		Help:      "Total number of uplink messages handled.",
+		Help:      "Total number of messages handled.",
 	}, []string{"message_type"},
 )
 
