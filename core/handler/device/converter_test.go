@@ -25,8 +25,8 @@ var testDev = &Device{
 	Options: Options{ActivationConstraints: "local"},
 
 	AppKey:        [16]byte{0x10},
-	UsedDevNonces: []DevNonce{},
-	UsedAppNonces: []AppNonce{},
+	UsedDevNonces: []DevNonce{DevNonce{1, 2}},
+	UsedAppNonces: []AppNonce{AppNonce{1, 2, 3}},
 
 	DevAddr: types.DevAddr{byte(0x10)},
 	NwkSKey: [16]byte{0x10},

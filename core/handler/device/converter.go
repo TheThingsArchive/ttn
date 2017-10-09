@@ -6,6 +6,7 @@ package device
 import (
 	pb_handler "github.com/TheThingsNetwork/api/handler"
 	pb_lorawan "github.com/TheThingsNetwork/api/protocol/lorawan"
+	"github.com/TheThingsNetwork/ttn/core/types"
 )
 
 // ToPb converts a device struct to its protocol buffer
@@ -24,7 +25,7 @@ func (d Device) ToPb() *pb_handler.Device {
 
 // ToLoRaWANPb converts a device struct to a LoRaWAN protocol buffer
 func (d Device) ToLoRaWANPb() *pb_lorawan.Device {
-	return &pb_lorawan.Device{
+	pbDev := &pb_lorawan.Device{
 		AppID:                 d.AppID,
 		AppEUI:                d.AppEUI,
 		DevID:                 d.DevID,
@@ -37,6 +38,13 @@ func (d Device) ToLoRaWANPb() *pb_lorawan.Device {
 		Uses32BitFCnt:         d.Options.Uses32BitFCnt,
 		ActivationConstraints: d.Options.ActivationConstraints,
 	}
+	for _, nonce := range d.UsedDevNonces {
+		pbDev.UsedDevNonces = append(pbDev.UsedDevNonces, types.DevNonce(nonce))
+	}
+	for _, nonce := range d.UsedAppNonces {
+		pbDev.UsedAppNonces = append(pbDev.UsedAppNonces, types.AppNonce(nonce))
+	}
+	return pbDev
 }
 
 // FromPb returns a new device from the given proto
@@ -76,6 +84,18 @@ func (d *Device) FromLoRaWANPb(lorawan *pb_lorawan.Device) {
 	}
 	if lorawan.NwkSKey != nil {
 		d.NwkSKey = *lorawan.NwkSKey
+	}
+	if len(lorawan.UsedDevNonces) > 0 {
+		d.UsedDevNonces = make([]DevNonce, len(lorawan.UsedDevNonces))
+		for i, nonce := range lorawan.UsedDevNonces {
+			d.UsedDevNonces[i] = DevNonce(nonce)
+		}
+	}
+	if len(lorawan.UsedAppNonces) > 0 {
+		d.UsedAppNonces = make([]AppNonce, len(lorawan.UsedAppNonces))
+		for i, nonce := range lorawan.UsedAppNonces {
+			d.UsedAppNonces[i] = AppNonce(nonce)
+		}
 	}
 	d.FCntUp = lorawan.FCntUp
 	d.Options = Options{
