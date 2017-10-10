@@ -59,6 +59,8 @@ func (h *handler) ConvertMetadata(ctx ttnlog.Interface, ttnUp *pb_broker.Dedupli
 		if antennas := in.GetAntennas(); len(antennas) > 0 {
 			for _, antenna := range antennas {
 				gatewayMetadata.Antenna = uint8(antenna.Antenna)
+				gatewayMetadata.FineTimestamp = uint64(antenna.FineTime)
+				gatewayMetadata.FineTimestampEncrypted = antenna.EncryptedTime
 				gatewayMetadata.Channel = antenna.Channel
 				gatewayMetadata.RSSI = antenna.RSSI
 				gatewayMetadata.SNR = antenna.SNR
