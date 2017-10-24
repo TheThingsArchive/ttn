@@ -107,7 +107,6 @@ func (h *handler) HandleDownlink(appDownlink *types.DownlinkMessage, downlink *p
 		"DevEUI": downlink.DevEUI,
 	})
 
-	h.RegisterReceived(downlink)
 	defer func() {
 		if err != nil {
 			h.qEvent <- &types.DeviceEvent{
@@ -121,8 +120,6 @@ func (h *handler) HandleDownlink(appDownlink *types.DownlinkMessage, downlink *p
 			}
 			ctx.WithError(err).Warn("Could not handle downlink")
 			downlink.Trace = downlink.Trace.WithEvent(trace.DropEvent, "reason", err)
-		} else {
-			h.RegisterHandled(downlink)
 		}
 		if downlink != nil && h.monitorStream != nil {
 			h.monitorStream.Send(downlink)
@@ -164,6 +161,7 @@ func (h *handler) HandleDownlink(appDownlink *types.DownlinkMessage, downlink *p
 	downlink.Message = nil
 	downlink.UnmarshalPayload()
 
+	h.RegisterHandled(downlink)
 	h.status.downlink.Mark(1)
 
 	ctx.Debug("Send Downlink")
