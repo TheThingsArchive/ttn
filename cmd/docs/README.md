@@ -15,7 +15,6 @@ The Things Network's backend servers.
       --id string                   The id of this component
       --key-dir string              The directory where public/private keys are stored (default "$HOME/.ttn")
       --log-file string             Location of the log file
-      --monitor-interval duration   The interval between sending component statuses to the monitor servers (default 6s)
       --no-cli-logs                 Disable CLI logs
       --public                      Announce this component as part of The Things Network (public community network)
       --tls                         Use TLS (default true)

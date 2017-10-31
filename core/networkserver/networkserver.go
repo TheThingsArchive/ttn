@@ -4,8 +4,6 @@
 package networkserver
 
 import (
-	"time"
-
 	pb_broker "github.com/TheThingsNetwork/api/broker"
 	pb_handler "github.com/TheThingsNetwork/api/handler"
 	"github.com/TheThingsNetwork/api/monitor/monitorclient"
@@ -92,11 +90,6 @@ func (n *networkServer) Init(c *component.Component) error {
 	n.Component.SetStatus(component.StatusHealthy)
 	if n.Component.Monitor != nil {
 		n.monitorStream = n.Component.Monitor.NetworkServerClient(n.Context, grpc.PerRPCCredentials(auth.WithStaticToken(n.AccessToken)))
-		go func() {
-			for range time.Tick(n.Component.Config.StatusInterval) {
-				n.monitorStream.Send(n.GetStatus())
-			}
-		}()
 	}
 	return nil
 }

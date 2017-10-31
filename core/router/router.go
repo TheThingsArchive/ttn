@@ -97,11 +97,6 @@ func (r *router) Init(c *component.Component) error {
 	r.Component.SetStatus(component.StatusHealthy)
 	if r.Component.Monitor != nil {
 		r.monitorStream = r.Component.Monitor.RouterClient(r.Context, grpc.PerRPCCredentials(auth.WithStaticToken(r.AccessToken)))
-		go func() {
-			for range time.Tick(r.Component.Config.StatusInterval) {
-				r.monitorStream.Send(r.GetStatus())
-			}
-		}()
 	}
 	return nil
 }
