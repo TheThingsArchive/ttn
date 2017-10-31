@@ -73,6 +73,12 @@ func (n *networkServer) handleUplinkADR(message *pb_broker.DeduplicatedUplinkMes
 		n.Ctx.WithError(err).Error("Could not push frame for device")
 	}
 
+	frames, _ := history.Get()
+
+	if dev.ADR.Failed <= maxADRFails && len(frames) >= device.FramesHistorySize {
+		lorawanDownlinkMAC.ADR = true
+	}
+
 	md := message.GetProtocolMetadata()
 	if dev.ADR.Band == "" {
 		dev.ADR.Band = md.GetLoRaWAN().GetFrequencyPlan().String()
@@ -105,8 +111,6 @@ func (n *networkServer) handleUplinkADR(message *pb_broker.DeduplicatedUplinkMes
 	if scheduleADR {
 		if fp, err := band.Get(dev.ADR.Band); err == nil {
 			if drIdx, err := fp.GetDataRateIndexFor(dataRate); err == nil && drIdx == 0 {
-				history, _ := n.devices.Frames(dev.AppEUI, dev.DevEUI)
-				frames, _ := history.Get()
 				if len(frames) >= device.FramesHistorySize {
 					forceADR = true
 					message.Trace = message.Trace.WithEvent(ScheduleMACEvent, macCMD, "link-adr", "reason", "avoid high sf")
