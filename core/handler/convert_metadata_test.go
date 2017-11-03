@@ -24,7 +24,9 @@ func TestConvertMetadata(t *testing.T) {
 		Component: &component.Component{Ctx: GetLogger(t, "TestConvertMetadata")},
 	}
 
-	ttnUp := &pb_broker.DeduplicatedUplinkMessage{}
+	ttnUp := &pb_broker.DeduplicatedUplinkMessage{
+		Payload: []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13},
+	}
 	appUp := &types.UplinkMessage{}
 	device := &device.Device{
 		Latitude: 12.34,
@@ -54,7 +56,8 @@ func TestConvertMetadata(t *testing.T) {
 
 	ttnUp.ProtocolMetadata = pb_protocol.RxMetadata{Protocol: &pb_protocol.RxMetadata_LoRaWAN{
 		LoRaWAN: &pb_lorawan.Metadata{
-			DataRate: "SF7BW125",
+			DataRate:   "SF7BW125",
+			CodingRate: "4/5",
 		},
 	}}
 
@@ -71,5 +74,5 @@ func TestConvertMetadata(t *testing.T) {
 	a.So(err, ShouldBeNil)
 	a.So(appUp.Metadata.Gateways[0].Latitude, ShouldEqual, 42)
 	a.So(time.Time(appUp.Metadata.Gateways[0].Time).UTC(), ShouldResemble, time.Date(2016, 06, 13, 15, 28, 56, 0, time.UTC))
-
+	a.So(appUp.Metadata.Airtime, ShouldEqual, time.Duration(46336)*time.Microsecond)
 }

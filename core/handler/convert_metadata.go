@@ -8,9 +8,11 @@ import (
 
 	pb_broker "github.com/TheThingsNetwork/api/broker"
 	pb_gateway "github.com/TheThingsNetwork/api/gateway"
+	pb_lorawan "github.com/TheThingsNetwork/api/protocol/lorawan"
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/core/handler/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
+	"github.com/TheThingsNetwork/ttn/utils/toa"
 )
 
 // ConvertMetadata converts the protobuf matadata to application metadata
@@ -24,6 +26,13 @@ func (h *handler) ConvertMetadata(ctx ttnlog.Interface, ttnUp *pb_broker.Dedupli
 		appUp.Metadata.DataRate = lorawan.DataRate
 		appUp.Metadata.Bitrate = lorawan.BitRate
 		appUp.Metadata.CodingRate = lorawan.CodingRate
+
+		switch lorawan.Modulation {
+		case pb_lorawan.Modulation_LORA:
+			appUp.Metadata.Airtime, _ = toa.ComputeLoRa(uint(len(ttnUp.Payload)), lorawan.DataRate, lorawan.CodingRate)
+		case pb_lorawan.Modulation_FSK:
+			appUp.Metadata.Airtime, _ = toa.ComputeFSK(uint(len(ttnUp.Payload)), int(lorawan.BitRate))
+		}
 	}
 
 	// Transform Gateway Metadata

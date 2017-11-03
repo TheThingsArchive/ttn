@@ -7,10 +7,12 @@ import (
 	"time"
 
 	pb_broker "github.com/TheThingsNetwork/api/broker"
+	pb_lorawan "github.com/TheThingsNetwork/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/api/trace"
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
+	"github.com/TheThingsNetwork/ttn/utils/toa"
 )
 
 func (h *handler) EnqueueDownlink(appDownlink *types.DownlinkMessage) (err error) {
@@ -177,6 +179,12 @@ func (h *handler) HandleDownlink(appDownlink *types.DownlinkMessage, downlink *p
 		downlinkConfig.DataRate = lorawan.DataRate
 		downlinkConfig.BitRate = uint(lorawan.BitRate)
 		downlinkConfig.FCnt = uint(lorawan.FCnt)
+		switch lorawan.Modulation {
+		case pb_lorawan.Modulation_LORA:
+			downlinkConfig.Airtime, _ = toa.ComputeLoRa(uint(len(downlink.Payload)), lorawan.DataRate, lorawan.CodingRate)
+		case pb_lorawan.Modulation_FSK:
+			downlinkConfig.Airtime, _ = toa.ComputeFSK(uint(len(downlink.Payload)), int(lorawan.BitRate))
+		}
 	}
 	downlinkConfig.Frequency = uint(downlink.DownlinkOption.GatewayConfiguration.Frequency)
 	downlinkConfig.Power = int(downlink.DownlinkOption.GatewayConfiguration.Power)
@@ -189,7 +197,7 @@ func (h *handler) HandleDownlink(appDownlink *types.DownlinkMessage, downlink *p
 			Payload:   downlink.Payload,
 			Message:   appDownlink,
 			GatewayID: downlink.DownlinkOption.GatewayID,
-			Config:    downlinkConfig,
+			Config:    &downlinkConfig,
 		},
 	}
 	return nil

@@ -25,6 +25,7 @@
   "payload_raw": "AQIDBA==",          // Base64 encoded payload: [0x01, 0x02, 0x03, 0x04]
   "payload_fields": {},               // Object containing the results from the payload functions - left out when empty
   "metadata": {
+    "airtime": 46336000,              // Airtime in nanoseconds
     "time": "1970-01-01T00:00:00Z",   // Time when the server received the message
     "frequency": 868.1,               // Frequency at which the message was sent
     "modulation": "LORA",             // Modulation that was used - LORA or FSK
@@ -251,6 +252,7 @@ payload: _null_
   "config": {
     "modulation": "LORA",
     "data_rate": "SF7BW125",
+    "airtime": 46336000,
     "counter": 123,
     "frequency": 868300000,
     "power": 14
