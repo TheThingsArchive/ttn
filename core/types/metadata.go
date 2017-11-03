@@ -3,6 +3,8 @@
 
 package types
 
+import "time"
+
 // Metadata contains metadata of a message
 type Metadata struct {
 	Time       JSONTime          `json:"time,omitempty,omitempty"`
@@ -10,6 +12,7 @@ type Metadata struct {
 	Modulation string            `json:"modulation,omitempty"`
 	DataRate   string            `json:"data_rate,omitempty"`
 	Bitrate    uint32            `json:"bit_rate,omitempty"`
+	Airtime    time.Duration     `json:"airtime,omitempty"`
 	CodingRate string            `json:"coding_rate,omitempty"`
 	Gateways   []GatewayMetadata `json:"gateways,omitempty"`
 	LocationMetadata

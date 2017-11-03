@@ -3,6 +3,8 @@
 
 package types
 
+import "time"
+
 // EventType represents the type of event
 type EventType string
 
@@ -62,19 +64,20 @@ type ActivationEventData struct {
 
 // DownlinkEventConfigInfo contains configuration information for a downlink message, all fields are optional
 type DownlinkEventConfigInfo struct {
-	Modulation string `json:"modulation,omitempty"`
-	DataRate   string `json:"data_rate,omitempty"`
-	BitRate    uint   `json:"bit_rate,omitempty"`
-	FCnt       uint   `json:"counter,omitempty"`
-	Frequency  uint   `json:"frequency,omitempty"`
-	Power      int    `json:"power,omitempty"`
+	Modulation string        `json:"modulation,omitempty"`
+	DataRate   string        `json:"data_rate,omitempty"`
+	BitRate    uint          `json:"bit_rate,omitempty"`
+	Airtime    time.Duration `json:"airtime,omitempty"`
+	FCnt       uint          `json:"counter,omitempty"`
+	Frequency  uint          `json:"frequency,omitempty"`
+	Power      int           `json:"power,omitempty"`
 }
 
 // DownlinkEventData is added to downlink events
 type DownlinkEventData struct {
 	ErrorEventData
-	Payload   []byte                  `json:"payload,omitempty"`
-	Message   *DownlinkMessage        `json:"message,omitempty"`
-	GatewayID string                  `json:"gateway_id,omitempty"`
-	Config    DownlinkEventConfigInfo `json:"config,omitempty"`
+	Payload   []byte                   `json:"payload,omitempty"`
+	Message   *DownlinkMessage         `json:"message,omitempty"`
+	GatewayID string                   `json:"gateway_id,omitempty"`
+	Config    *DownlinkEventConfigInfo `json:"config,omitempty"`
 }
