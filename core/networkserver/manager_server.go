@@ -27,6 +27,9 @@ type networkServerManager struct {
 }
 
 func checkAppRights(claims *claims.Claims, appID string, right types.Right) error {
+	if !claims.AppAccess(appID) {
+		return errors.NewErrPermissionDenied("No access to Application")
+	}
 	if !claims.AppRight(appID, right) {
 		return errors.NewErrPermissionDenied(fmt.Sprintf(`No "%s" rights to Application "%s"`, right, appID))
 	}
