@@ -109,40 +109,40 @@ func (p *Pool) AddDialOption(opts ...grpc.DialOption) {
 	p.dialOptions = append(p.dialOptions, opts...)
 }
 
-// Close connections. If no target names supplied. just closes all.
+// Close connections. If no target names supplied, just closes all.
 func (p *Pool) Close(target ...string) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if len(target) == 0 {
-		// Select all
-		for name := range p.conns {
-			target = append(target, name)
+		for target := range p.conns {
+			p.closeTarget(target)
+		}
+	} else {
+		for _, target := range target {
+			p.closeTarget(target)
 		}
 	}
-	for _, target := range target {
-		if c, ok := p.conns[target]; ok {
-			c.cancel()
-			if c.conn != nil {
-				c.conn.Close()
-			}
-			delete(p.conns, target)
+}
+
+func (p *Pool) closeTarget(target string) {
+	if c, ok := p.conns[target]; ok {
+		c.cancel()
+		if c.conn != nil {
+			c.conn.Close()
 		}
+		delete(p.conns, target)
 	}
 }
 
 // CloseConn closes a connection.
 func (p *Pool) CloseConn(conn *grpc.ClientConn) {
-	var target string
 	p.mu.Lock()
-	for t, c := range p.conns {
+	defer p.mu.Unlock()
+	for target, c := range p.conns {
 		if c.conn == conn {
-			target = t
+			p.closeTarget(target)
 			break
 		}
-	}
-	p.mu.Unlock()
-	if target != "" {
-		p.Close(target)
 	}
 	return
 }
