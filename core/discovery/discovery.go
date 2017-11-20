@@ -5,6 +5,8 @@
 package discovery
 
 import (
+	"sync"
+
 	pb "github.com/TheThingsNetwork/api/discovery"
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/discovery/announcement"
@@ -18,6 +20,7 @@ import (
 type Discovery interface {
 	component.Interface
 	WithCache(options announcement.CacheOptions)
+	MonitorServiceConnectivity()
 	WithMasterAuthServers(serverID ...string)
 	Announce(announcement *pb.Announcement) error
 	GetAll(serviceName string, limit, offset uint64) ([]*pb.Announcement, error)
@@ -31,10 +34,17 @@ type discovery struct {
 	*component.Component
 	services          announcement.Store
 	masterAuthServers map[string]struct{}
+
+	statusMu      sync.RWMutex
+	serviceStatus map[serviceID]*serviceStatus
 }
 
 func (d *discovery) WithCache(options announcement.CacheOptions) {
 	d.services = announcement.NewCachedAnnouncementStore(d.services, options)
+}
+
+func (d *discovery) MonitorServiceConnectivity() {
+	d.startConnectivityMonitor()
 }
 
 func (d *discovery) WithMasterAuthServers(serverID ...string) {
@@ -103,6 +113,7 @@ func (d *discovery) GetAll(serviceName string, limit, offset uint64) ([]*pb.Anno
 	if err != nil {
 		return nil, err
 	}
+	services = d.filterAvailable(services)
 	serviceCopies := make([]*pb.Announcement, 0, len(services))
 	for _, service := range services {
 		if service == nil {

@@ -64,6 +64,7 @@ var discoveryCmd = &cobra.Command{
 		if viper.GetBool("discovery.cache") {
 			discovery.WithCache(announcement.DefaultCacheOptions)
 		}
+		discovery.MonitorServiceConnectivity()
 		discovery.WithMasterAuthServers(viper.GetStringSlice("discovery.master-auth-servers")...)
 		err = discovery.Init(component)
 		if err != nil {
