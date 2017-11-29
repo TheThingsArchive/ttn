@@ -62,10 +62,10 @@ type handler struct {
 
 	downlink chan *pb_broker.DownlinkMessage
 
-	mqttClient   mqtt.Client
+	mqttBrokers  []string
+	mqttClients  []mqtt.Client
 	mqttUsername string
 	mqttPassword string
-	mqttBrokers  []string
 	mqttEnabled  bool
 	mqttUp       chan *types.UplinkMessage
 	mqttEvent    chan *types.DeviceEvent
@@ -180,7 +180,9 @@ func (h *handler) Init(c *component.Component) error {
 
 func (h *handler) Shutdown() {
 	if h.mqttEnabled {
-		h.mqttClient.Disconnect()
+		for _, client := range h.mqttClients {
+			client.Disconnect()
+		}
 	}
 	if h.amqpEnabled {
 		h.amqpClient.Disconnect()

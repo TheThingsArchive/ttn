@@ -73,14 +73,14 @@ var handlerCmd = &cobra.Command{
 			client,
 			viper.GetString("handler.broker-id"),
 		)
-		if viper.GetString("handler.mqtt-address") != "" {
+		if mqttBrokers := viper.GetStringSlice("handler.mqtt-address"); len(mqttBrokers) > 0 {
 			handler = handler.WithMQTT(
 				viper.GetString("handler.mqtt-username"),
 				viper.GetString("handler.mqtt-password"),
-				viper.GetString("handler.mqtt-address"),
+				mqttBrokers...,
 			)
 
-			mqttPort, err := parse.Port(viper.GetString("handler.mqtt-address"))
+			mqttPort, err := parse.Port(mqttBrokers[0])
 			if err != nil {
 				ctx.WithError(err).Error("Could not announce the handler")
 			}
@@ -187,7 +187,7 @@ func init() {
 	handlerCmd.Flags().String("broker-id", "dev", "The ID of the TTN Broker as announced in the Discovery server")
 	viper.BindPFlag("handler.broker-id", handlerCmd.Flags().Lookup("broker-id"))
 
-	handlerCmd.Flags().String("mqtt-address", "", "MQTT host and port. Leave empty to disable MQTT")
+	handlerCmd.Flags().StringSlice("mqtt-address", nil, "MQTT host and port. Leave empty to disable MQTT")
 	handlerCmd.Flags().String("mqtt-address-announce", "", "MQTT address to announce (takes value of server-address-announce if empty while enabled)")
 	handlerCmd.Flags().String("mqtt-username", "", "MQTT username")
 	handlerCmd.Flags().String("mqtt-password", "", "MQTT password")
