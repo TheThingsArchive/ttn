@@ -63,11 +63,11 @@ mocks:
 	mockgen -source=./api/discovery/client.go -package discovery Client > api/discovery/client_mock.go
 
 dev-certs:
-	ttn discovery gen-cert localhost discovery --config ./.env/discovery/dev.yml
-	ttn router gen-cert localhost router --config ./.env/router/dev.yml
-	ttn broker gen-cert localhost broker --config ./.env/broker/dev.yml
-	ttn networkserver gen-cert localhost networkserver --config ./.env/networkserver/dev.yml
-	ttn handler gen-cert localhost handler --config ./.env/handler/dev.yml
+	ttn discovery gen-cert localhost 127.0.0.1 ::1 discovery --config ./.env/discovery/dev.yml
+	ttn router gen-cert localhost 127.0.0.1 ::1 router --config ./.env/router/dev.yml
+	ttn broker gen-cert localhost 127.0.0.1 ::1 broker --config ./.env/broker/dev.yml
+	ttn networkserver gen-cert localhost 127.0.0.1 ::1 networkserver --config ./.env/networkserver/dev.yml
+	ttn handler gen-cert localhost 127.0.0.1 ::1 handler --config ./.env/handler/dev.yml
 
 # Go Test
 
