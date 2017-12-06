@@ -34,10 +34,24 @@ var handledBytes = prometheus.NewCounterVec(
 	}, []string{"message_type"},
 )
 
+var tokenExpiry = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+	Namespace: "ttn",
+	Name:      "token_expiry_seconds",
+	Help:      "Expiry date of the component access token.",
+}, []string{"service_name", "service_id"})
+
+var certificateExpiry = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+	Namespace: "ttn",
+	Name:      "certificate_expiry_seconds",
+	Help:      "Expiry date of the component certificate.",
+}, []string{"service_name", "service_id"})
+
 func init() {
 	prometheus.MustRegister(receivedCounter)
 	prometheus.MustRegister(handledCounter)
 	prometheus.MustRegister(handledBytes)
+	prometheus.MustRegister(tokenExpiry)
+	prometheus.MustRegister(certificateExpiry)
 }
 
 type message interface {
