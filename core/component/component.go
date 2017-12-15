@@ -6,8 +6,10 @@ package component
 
 import (
 	"crypto/ecdsa"
+	"crypto/sha1"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/hex"
 	"encoding/pem"
 	"fmt"
 
@@ -84,7 +86,8 @@ func New(ctx ttnlog.Interface, serviceName string, announcedAddress string) (*Co
 
 	if p, _ := pem.Decode([]byte(component.Identity.Certificate)); p != nil && p.Type == "CERTIFICATE" {
 		if cert, err := x509.ParseCertificate(p.Bytes); err == nil {
-			certificateExpiry.WithLabelValues(component.Identity.ServiceName, component.Identity.ID).Set(float64(cert.NotAfter.Unix()))
+			sum := sha1.Sum(cert.Raw)
+			certificateExpiry.WithLabelValues(hex.EncodeToString(sum[:])).Set(float64(cert.NotAfter.Unix()))
 		}
 	}
 

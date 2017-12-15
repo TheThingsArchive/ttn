@@ -41,10 +41,10 @@ var tokenExpiry = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 }, []string{"service_name", "service_id"})
 
 var certificateExpiry = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-	Namespace: "ttn",
+	Namespace: "tls",
 	Name:      "certificate_expiry_seconds",
 	Help:      "Expiry date of the component certificate.",
-}, []string{"service_name", "service_id"})
+}, []string{"fingerprint"})
 
 func init() {
 	prometheus.MustRegister(receivedCounter)
