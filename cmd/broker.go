@@ -17,6 +17,7 @@ import (
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/core/broker"
 	"github.com/TheThingsNetwork/ttn/core/component"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -56,7 +57,11 @@ var brokerCmd = &cobra.Command{
 		broker := broker.NewBroker(
 			time.Duration(viper.GetInt("broker.deduplication-delay")) * time.Millisecond,
 		)
-		broker.SetNetworkServer(viper.GetString("broker.networkserver-address"), nsCert, viper.GetString("broker.networkserver-token"))
+		nsToken := viper.GetString("broker.networkserver-token")
+		if _, err := jwt.Parse(nsToken, func(*jwt.Token) (interface{}, error) { return nil, nil }); nsToken != "" && err != nil {
+			ctx.WithError(err).Fatal("Could not read networkserver token")
+		}
+		broker.SetNetworkServer(viper.GetString("broker.networkserver-address"), nsCert, nsToken)
 		err = broker.Init(component)
 		if err != nil {
 			ctx.WithError(err).Fatal("Could not initialize broker")
