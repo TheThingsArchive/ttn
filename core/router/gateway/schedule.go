@@ -94,7 +94,7 @@ func (s *schedule) GoString() (str string) {
 
 // Deadline for sending a downlink back to the gateway
 // TODO: Make configurable
-var Deadline = 800 * time.Millisecond
+var Deadline = 1000 * time.Millisecond
 
 const uintmax = 1 << 32
 
@@ -194,13 +194,13 @@ func (s *schedule) Schedule(id string, downlink *router_pb.DownlinkMessage) erro
 			// Schedule transmission before the Deadline
 			go func() {
 				waitTime := item.deadlineAt.Sub(time.Now())
-				ctx.WithField("Remaining", waitTime).Info("Scheduled downlink")
+				ctx.WithField("Remaining", waitTime).Debug("Scheduled downlink")
 				downlink.Trace = downlink.Trace.WithEvent("schedule", "duration", waitTime)
 				<-time.After(waitTime)
 				s.RLock()
 				defer s.RUnlock()
 				if s.downlink != nil {
-					ctx.Debug("Send Downlink")
+					ctx.Info("Send Downlink")
 					s.downlink <- item.payload
 				}
 			}()
@@ -211,7 +211,7 @@ func (s *schedule) Schedule(id string, downlink *router_pb.DownlinkMessage) erro
 				if s.downlink != nil {
 					overdue := time.Now().Sub(item.deadlineAt)
 					if overdue < Deadline {
-						ctx.WithField("Overdue", overdue).Debug("Send Downlink")
+						ctx.Info("Send Downlink")
 						s.downlink <- item.payload
 					} else {
 						ctx.WithField("Overdue", overdue).Warn("Discard Late Downlink")
