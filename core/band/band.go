@@ -9,6 +9,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/brocaar/lorawan"
 	lora "github.com/brocaar/lorawan/band"
+	"github.com/spf13/viper"
 )
 
 // FrequencyPlan includes band configuration and CFList
@@ -65,14 +66,17 @@ func Guess(frequency uint64) string {
 
 // Get the frequency plan for the given region
 func Get(region string) (frequencyPlan FrequencyPlan, err error) {
+	defer func() {
+		if err == nil && region == pb_lorawan.FrequencyPlan_EU_863_870.String() {
+			frequencyPlan.RX2DataRate = viper.GetInt("eu-rx2-dr")
+		}
+	}()
 	if fp, ok := frequencyPlans[region]; ok {
 		return fp, nil
 	}
 	switch region {
 	case pb_lorawan.FrequencyPlan_EU_863_870.String():
 		frequencyPlan.Band, err = lora.GetConfig(lora.EU_863_870, false, lorawan.DwellTimeNoLimit)
-		// TTN uses SF9BW125 in RX2
-		frequencyPlan.RX2DataRate = 3
 		// TTN frequency plan includes extra channels next to the default channels:
 		frequencyPlan.UplinkChannels = []lora.Channel{
 			lora.Channel{Frequency: 868100000, DataRates: []int{0, 1, 2, 3, 4, 5}},
