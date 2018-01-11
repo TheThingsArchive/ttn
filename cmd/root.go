@@ -166,6 +166,8 @@ func init() {
 	RootCmd.PersistentFlags().Bool("allow-insecure", false, "Allow insecure fallback if TLS unavailable")
 	RootCmd.PersistentFlags().String("key-dir", path.Clean(dir+"/.ttn/"), "The directory where public/private keys are stored")
 
+	RootCmd.PersistentFlags().Int("eu-rx2-dr", 3, "RX2 data rate for the EU band (SF12=0,SF9=3)")
+
 	viper.BindPFlags(RootCmd.PersistentFlags())
 }
 
