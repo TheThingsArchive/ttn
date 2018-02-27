@@ -118,6 +118,7 @@ func Get(region string) (frequencyPlan FrequencyPlan, err error) {
 		frequencyPlan.Band, err = lora.GetConfig(lora.CN_470_510, false, lorawan.DwellTimeNoLimit)
 	case pb_lorawan.FrequencyPlan_AS_923.String():
 		frequencyPlan.Band, err = lora.GetConfig(lora.AS_923, false, lorawan.DwellTime400ms)
+		frequencyPlan.ADR = &ADRConfig{MinDataRate: 0, MaxDataRate: 5, MinTXPower: 2, MaxTXPower: 14, StepTXPower: 2}
 	case pb_lorawan.FrequencyPlan_AS_920_923.String():
 		frequencyPlan.Band, err = lora.GetConfig(lora.AS_923, false, lorawan.DwellTime400ms)
 		frequencyPlan.UplinkChannels = []lora.Channel{
@@ -134,6 +135,7 @@ func Get(region string) (frequencyPlan FrequencyPlan, err error) {
 		}
 		frequencyPlan.DownlinkChannels = frequencyPlan.UplinkChannels
 		frequencyPlan.CFList = &lorawan.CFList{922200000, 922400000, 922600000, 922800000, 923000000}
+		frequencyPlan.ADR = &ADRConfig{MinDataRate: 0, MaxDataRate: 5, MinTXPower: 2, MaxTXPower: 14, StepTXPower: 2}
 	case pb_lorawan.FrequencyPlan_AS_923_925.String():
 		frequencyPlan.Band, err = lora.GetConfig(lora.AS_923, false, lorawan.DwellTime400ms)
 		frequencyPlan.UplinkChannels = []lora.Channel{
@@ -150,6 +152,7 @@ func Get(region string) (frequencyPlan FrequencyPlan, err error) {
 		}
 		frequencyPlan.DownlinkChannels = frequencyPlan.UplinkChannels
 		frequencyPlan.CFList = &lorawan.CFList{923600000, 923800000, 924000000, 924200000, 924400000}
+		frequencyPlan.ADR = &ADRConfig{MinDataRate: 0, MaxDataRate: 5, MinTXPower: 2, MaxTXPower: 14, StepTXPower: 2}
 	case pb_lorawan.FrequencyPlan_KR_920_923.String():
 		frequencyPlan.Band, err = lora.GetConfig(lora.KR_920_923, false, lorawan.DwellTimeNoLimit)
 		// TTN frequency plan includes extra channels next to the default channels:
