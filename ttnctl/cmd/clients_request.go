@@ -4,6 +4,8 @@
 package cmd
 
 import (
+	"net/http"
+
 	accountlib "github.com/TheThingsNetwork/go-account-lib/account"
 	"github.com/TheThingsNetwork/ttn/ttnctl/util"
 	"github.com/spf13/cobra"
@@ -22,11 +24,28 @@ var clientRequestCmd = &cobra.Command{
 		var name = args[0]
 		var description = args[1]
 
-		ctx = ctx.WithField("OAuthClientName", name)
-
 		uri, err := cmd.Flags().GetString("uri")
 		if err != nil {
 			ctx.WithError(err).Fatal("Error with URI")
+		}
+
+		var uriOK bool
+		ctx.Info("Testing Callback URI: " + uri + "?code=test&state=test")
+		res, err := http.Get(uri + "?code=test&state=test")
+		switch {
+		case err != nil:
+			ctx.WithError(err).Error("Callback URI test failed.")
+		case res.StatusCode == 404:
+			ctx.Error("Callback URI was not found (404)")
+		case res.StatusCode >= 500:
+			ctx.Errorf("Callback URI errored (%d)", res.StatusCode)
+		default:
+			ctx.Infof("Callback URI seems to be reachable (returned %d)", res.StatusCode)
+			uriOK = true
+		}
+		if !uriOK && !confirm("Are you sure the URI is correct? (y/N)") {
+			ctx.Info("Aborting")
+			return
 		}
 
 		scopes := make([]string, 0)
