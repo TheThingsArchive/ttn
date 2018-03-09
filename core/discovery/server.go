@@ -181,6 +181,7 @@ func (d *discoveryServer) GetByAppID(ctx context.Context, req *pb.GetByAppIDRequ
 	if err != nil {
 		return nil, err
 	}
+	service.Metadata = nil
 	return service, nil
 }
 
@@ -189,6 +190,7 @@ func (d *discoveryServer) GetByGatewayID(ctx context.Context, req *pb.GetByGatew
 	if err != nil {
 		return nil, err
 	}
+	service.Metadata = nil
 	return service, nil
 }
 
@@ -200,6 +202,7 @@ func (d *discoveryServer) GetByAppEUI(ctx context.Context, req *pb.GetByAppEUIRe
 	if err != nil {
 		return nil, err
 	}
+	service.Metadata = nil
 	return service, nil
 }
 

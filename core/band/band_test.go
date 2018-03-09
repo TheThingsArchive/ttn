@@ -76,21 +76,21 @@ func TestGet(t *testing.T) {
 		fp, err := Get("AS_923")
 		a.So(err, ShouldBeNil)
 		a.So(fp.CFList, ShouldBeNil)
-		a.So(fp.ADR, ShouldBeNil)
+		a.So(fp.ADR, ShouldNotBeNil)
 	}
 
 	{
 		fp, err := Get("AS_920_923")
 		a.So(err, ShouldBeNil)
 		a.So(fp.CFList, ShouldNotBeNil)
-		a.So(fp.ADR, ShouldBeNil)
+		a.So(fp.ADR, ShouldNotBeNil)
 	}
 
 	{
 		fp, err := Get("AS_923_925")
 		a.So(err, ShouldBeNil)
 		a.So(fp.CFList, ShouldNotBeNil)
-		a.So(fp.ADR, ShouldBeNil)
+		a.So(fp.ADR, ShouldNotBeNil)
 	}
 
 	{

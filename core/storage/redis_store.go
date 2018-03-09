@@ -37,7 +37,7 @@ func (s *RedisStore) Keys(selector string) ([]string, error) {
 	var allKeys []string
 	var cursor uint64
 	for {
-		keys, next, err := s.client.Scan(cursor, selector, 0).Result()
+		keys, next, err := s.client.Scan(cursor, selector, 10000).Result()
 		if err != nil {
 			return nil, err
 		}

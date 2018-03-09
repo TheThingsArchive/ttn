@@ -1,9 +1,8 @@
 # API Reference
 
 * Host: `<Region>.thethings.network`, where `<Region>` is last part of the handler you registered your application to, e.g. `eu`.
-* Port: `1883` or `8883` for TLS
-* PEM encoded CA certificate for TLS: [mqtt-ca.pem](https://console.thethingsnetwork.org/mqtt-ca.pem)
-  - Note: When this certificate expires, we will migrate to Let's Encrypt certificates. Therefore you might want to include the [Let's Encrypt Roots](https://letsencrypt.org/certificates/) in your certificate chain.
+* Port: `1883`, or `8883` for TLS
+* For TLS, the server uses a Let's Encrypt certificate. If your server does not trust that yet, you might want to include the [Let's Encrypt Roots](https://letsencrypt.org/certificates/) in your certificate chain. Alternatively you can use our PEM-encoded CA certificate, which includes those roots as well: [mqtt-ca.pem](https://console.thethingsnetwork.org/mqtt-ca.pem)
 * Username: Application ID
 * Password: Application Access Key
 
