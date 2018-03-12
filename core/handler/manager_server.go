@@ -37,6 +37,9 @@ type handlerManager struct {
 }
 
 func checkAppRights(claims *claims.Claims, appID string, right types.Right) error {
+	if !claims.AppAccess(appID) {
+		return errors.NewErrPermissionDenied("No access to Application")
+	}
 	if !claims.AppRight(appID, right) {
 		return errors.NewErrPermissionDenied(fmt.Sprintf(`No "%s" rights to Application "%s"`, right, appID))
 	}
@@ -55,7 +58,8 @@ func (h *handlerManager) validateTTNAuthAppContext(ctx context.Context, appID st
 		}
 		token, err := h.handler.Component.ExchangeAppKeyForToken(appID, key)
 		if err != nil {
-			return ctx, nil, err
+			h.handler.Ctx.WithError(err).Warn("Could not exchange key for token")
+			return ctx, nil, errors.NewErrPermissionDenied("Could not exchange key for token")
 		}
 		md = metadata.Join(md, metadata.Pairs("token", token))
 		ctx = metadata.NewIncomingContext(ctx, md)
