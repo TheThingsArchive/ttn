@@ -55,7 +55,7 @@
 
 Note: Some values may be omitted if they are `null`, `false`, `""` or `0`.
 
-**Usage (Mosquitto):** `mosquitto_sub -h <Region>.thethings.network:1883 -d -t 'my-app-id/devices/my-dev-id/up'`
+**Usage (Mosquitto):** `mosquitto_sub -h <Region>.thethings.network -d -t 'my-app-id/devices/my-dev-id/up'`
 
 **Usage (Go client):**
 
@@ -126,7 +126,7 @@ you will see this on MQTT:
 }
 ```
 
-**Usage (Mosquitto):** `mosquitto_pub -h <Region>.thethings.network:1883 -d -t 'my-app-id/devices/my-dev-id/down' -m '{"port":1,"payload_raw":"AQIDBA=="}'`
+**Usage (Mosquitto):** `mosquitto_pub -h <Region>.thethings.network -d -t 'my-app-id/devices/my-dev-id/down' -m '{"port":1,"payload_raw":"AQIDBA=="}'`
 
 **Usage (Go client):**
 
@@ -161,7 +161,7 @@ Instead of `payload_raw` you can also use `payload_fields` with an object of fie
 }
 ```
 
-**Usage (Mosquitto):** `mosquitto_pub -h <Region>.thethings.network:1883 -d -t 'my-app-id/devices/my-dev-id/down' -m '{"port":1,"payload_fields":{"led":true}}'`
+**Usage (Mosquitto):** `mosquitto_pub -h <Region>.thethings.network -d -t 'my-app-id/devices/my-dev-id/down' -m '{"port":1,"payload_fields":{"led":true}}'`
 
 **Usage (Go client):**
 
@@ -213,7 +213,7 @@ downlink as the _first_ or _last_ item in a the downlink queue.
 }
 ```
 
-**Usage (Mosquitto):** `mosquitto_sub -h <Region>.thethings.network:1883 -d -t 'my-app-id/devices/my-dev-id/events/activations'`
+**Usage (Mosquitto):** `mosquitto_sub -h <Region>.thethings.network -d -t 'my-app-id/devices/my-dev-id/events/activations'`
 
 **Usage (Go client):**
 
