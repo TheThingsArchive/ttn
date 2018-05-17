@@ -255,7 +255,7 @@ func TestHandleDownlinkADR(t *testing.T) {
 		a.So(fOpts[1].CID, ShouldEqual, lorawan.LinkADRReq)
 		payload := new(lorawan.LinkADRReqPayload)
 		payload.UnmarshalBinary(fOpts[1].Payload) // First LinkAdrReq
-		a.So(payload.DataRate, ShouldEqual, 4)    // 500kHz channel, so DR4
+		a.So(payload.DataRate, ShouldEqual, 6)    // 500kHz channel, so DR6
 		a.So(payload.TXPower, ShouldEqual, 0)     // Max tx power
 		a.So(payload.Redundancy.ChMaskCntl, ShouldEqual, 7)
 		// Ch 64-71, All 125 kHz channels off
