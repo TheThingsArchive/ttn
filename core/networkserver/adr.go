@@ -307,11 +307,21 @@ func getAdrReqPayloads(dev *device.Device, frequencyPlan *band.FrequencyPlan, dr
 			}
 		}
 	case pb_lorawan.FrequencyPlan_US_902_928.String(), pb_lorawan.FrequencyPlan_AU_915_928.String():
+		var dr500 uint8
+		switch dev.ADR.Band {
+		case pb_lorawan.FrequencyPlan_US_902_928.String():
+			dr500 = 4
+		case pb_lorawan.FrequencyPlan_AU_915_928.String():
+			dr500 = 6
+		default:
+			panic("could not determine 500kHz channel data rate index")
+		}
+
 		// Adapted from https://github.com/brocaar/lorawan/blob/master/band/band_us902_928.go
 		payloads = []lorawan.LinkADRReqPayload{
 			{
-				DataRate: 4, // fixed settings for 500kHz channel
-				TXPower:  0, // fixed settings for 500kHz channel
+				DataRate: dr500, // fixed settings for 500kHz channel
+				TXPower:  0,     // fixed settings for 500kHz channel
 				Redundancy: lorawan.Redundancy{
 					ChMaskCntl: 7,
 					NbRep:      uint8(dev.ADR.NbTrans),

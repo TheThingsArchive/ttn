@@ -107,7 +107,7 @@ services:
     volumes:
       - "./.env/:/root/.env/"
   bridge:
-    image: thethingsnetwork/lora-gateway-bridge
+    image: thethingsnetwork/gateway-connector-bridge
     hostname: bridge
     ports:
       - "1700:1700/udp"

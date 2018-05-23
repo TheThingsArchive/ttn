@@ -61,6 +61,7 @@ func NewRedisDeviceStore(client *redis.Client, prefix string) *RedisDeviceStore 
 		queues: queues,
 	}
 	s.AddBuiltinAttribute(defaultDeviceAttributes...)
+	countStore(s)
 	return s
 }
 
