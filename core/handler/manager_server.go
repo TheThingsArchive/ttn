@@ -225,10 +225,29 @@ func (h *handlerManager) SetDevice(ctx context.Context, in *pb_handler.Device) (
 		AppID: dev.AppID,
 		DevID: dev.DevID,
 		Event: eventType,
-		Data:  nil, // Don't send potentially sensitive details over MQTT
+		Data:  eventUpdatedFields(dev),
 	}
 
 	return &gogo.Empty{}, nil
+}
+
+// eventUpdatedFields create DeviceEvent based of on the changelist of a device
+func eventUpdatedFields(dev *device.Device) types.DeviceEventData {
+	changeList := dev.ChangedFields()
+	e := types.DeviceEventData{}
+	for _, key := range changeList {
+		switch key {
+		case "Latitude":
+			e.Latitude = dev.Latitude
+		case "Longitude":
+			e.Longitude = dev.Longitude
+		case "Altitude":
+			e.Altitude = dev.Altitude
+		case "UpdatedAt":
+			e.UpdatedAt = dev.UpdatedAt
+		}
+	}
+	return e
 }
 
 func (h *handlerManager) DeleteDevice(ctx context.Context, in *pb_handler.DeviceIdentifier) (*gogo.Empty, error) {
