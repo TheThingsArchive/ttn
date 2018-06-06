@@ -84,9 +84,8 @@ type DownlinkEventData struct {
 
 // DeviceEventData contains the updated of a set/updated device
 type DeviceEventData struct {
-	Latitude   float32           `json:"latitude,omitempty"`
-	Longitude  float32           `json:"longitude,omitempty"`
-	Altitude   int32             `json:"altitude,omitempty"`
-	Attributes map[string]string `json:"attributes,omitempty"`
-	UpdatedAt  time.Time         `json:"update_at,omitempty"`
+	Latitude  float32   `json:"latitude,omitempty"`
+	Longitude float32   `json:"longitude,omitempty"`
+	Altitude  int32     `json:"altitude,omitempty"`
+	UpdatedAt time.Time `json:"update_at,omitempty"`
 }
