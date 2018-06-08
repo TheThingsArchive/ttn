@@ -266,7 +266,7 @@ func TestHandleDownlinkADR(t *testing.T) {
 		}
 		payload = new(lorawan.LinkADRReqPayload)
 		payload.UnmarshalBinary(fOpts[2].Payload)           // Second LinkAdrReq
-		a.So(payload.DataRate, ShouldEqual, 3)              // SF7BW125
+		a.So(payload.DataRate, ShouldEqual, 5)              // SF7BW125
 		a.So(payload.TXPower, ShouldEqual, 5)               // 20
 		a.So(payload.Redundancy.ChMaskCntl, ShouldEqual, 0) // Channels 0..15
 		for i := 0; i < 8; i++ {                            // First 8 channels disabled
