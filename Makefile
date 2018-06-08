@@ -23,6 +23,7 @@ build-deps:
 
 deps: build-deps
 	govendor sync -v
+	git checkout vendor/github.com/brocaar/lorawan/band/band_au915_928.go
 
 dev-deps: deps
 	@command -v protoc-gen-grpc-gateway > /dev/null || go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway
