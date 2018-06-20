@@ -321,18 +321,6 @@
 			"revisionTime": "2017-04-13T07:40:36Z"
 		},
 		{
-			"checksumSHA1": "u52BzfoKG0x7CgBgg/PB1AEVSag=",
-			"path": "github.com/brocaar/lorawan",
-			"revision": "aa09ef2fd7be6786b853675bb208c26ceeaf9bfd",
-			"revisionTime": "2017-06-27T06:31:26Z"
-		},
-		{
-			"checksumSHA1": "YA+7KDpuddpz3XkOEFAWMxM4bYU=",
-			"path": "github.com/brocaar/lorawan/band",
-			"revision": "a64aca28516d1024d898a412b2657b35b3539329",
-			"revisionTime": "2017-06-26T12:36:36Z"
-		},
-		{
 			"checksumSHA1": "FwjxyOGlOWp5TqkqLSYfrdxC1E4=",
 			"path": "github.com/dgrijalva/jwt-go",
 			"revision": "6c8dedd55f8a2e41f605de6d5d66e51ed1f299fc",
