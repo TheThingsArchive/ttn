@@ -57,6 +57,7 @@ func NewRedisDeviceStore(client *redis.Client, prefix string) *RedisDeviceStore 
 	}
 	queues := storage.NewRedisQueueStore(client, prefix+":"+redisDownlinkQueuePrefix)
 	s := &RedisDeviceStore{
+		prefix: prefix,
 		store:  store,
 		queues: queues,
 	}
@@ -68,23 +69,38 @@ func NewRedisDeviceStore(client *redis.Client, prefix string) *RedisDeviceStore 
 // RedisDeviceStore stores Devices in Redis.
 // - Devices are stored as a Hash
 type RedisDeviceStore struct {
+	prefix           string
 	store            *storage.RedisMapStore
 	queues           *storage.RedisQueueStore
 	builtinAttibutes []string // sorted
 }
 
+var listCacheTTL = 5 * time.Minute
+
+func (s *RedisDeviceStore) listResultCacheKey(appID string) string {
+	return fmt.Sprintf("%s:_index_:%s", s.prefix, appID)
+}
+
 // Count all devices in the store
 func (s *RedisDeviceStore) Count() (int, error) {
-	return s.store.Count("")
+	opts := new(storage.ListOptions)
+	opts.UseCache(s.listResultCacheKey("_all_"), listCacheTTL)
+	return s.store.Count("", opts)
 }
 
 // CountForApp counts all devices for an Application
 func (s *RedisDeviceStore) CountForApp(appID string) (int, error) {
-	return s.store.Count(fmt.Sprintf("%s:*", appID))
+	opts := new(storage.ListOptions)
+	opts.UseCache(s.listResultCacheKey(appID), listCacheTTL)
+	return s.store.Count(fmt.Sprintf("%s:*", appID), opts)
 }
 
 // List all Devices
 func (s *RedisDeviceStore) List(opts *storage.ListOptions) ([]*Device, error) {
+	if opts == nil {
+		opts = new(storage.ListOptions)
+	}
+	opts.UseCache(s.listResultCacheKey("_all_"), listCacheTTL)
 	devicesI, err := s.store.List("", opts)
 	if err != nil {
 		return nil, err
@@ -100,6 +116,10 @@ func (s *RedisDeviceStore) List(opts *storage.ListOptions) ([]*Device, error) {
 
 // ListForApp lists all devices for a specific Application
 func (s *RedisDeviceStore) ListForApp(appID string, opts *storage.ListOptions) ([]*Device, error) {
+	if opts == nil {
+		opts = new(storage.ListOptions)
+	}
+	opts.UseCache(s.listResultCacheKey(appID), listCacheTTL)
 	devicesI, err := s.store.List(fmt.Sprintf("%s:*", appID), opts)
 	if err != nil {
 		return nil, err
@@ -162,6 +182,10 @@ func (s *RedisDeviceStore) Set(new *Device, properties ...string) (err error) {
 	if err != nil {
 		return
 	}
+	if new.old == nil {
+		s.store.Delete(s.listResultCacheKey(new.AppID))
+		s.store.Delete(s.listResultCacheKey("_all_"))
+	}
 	return nil
 }
 
@@ -171,7 +195,13 @@ func (s *RedisDeviceStore) Delete(appID, devID string) error {
 	if err := s.queues.Delete(key); err != nil {
 		return err
 	}
-	return s.store.Delete(key)
+	err := s.store.Delete(key)
+	if err != nil {
+		return err
+	}
+	s.store.Delete(s.listResultCacheKey(appID))
+	s.store.Delete(s.listResultCacheKey("_all_"))
+	return nil
 }
 
 // AddBuiltinAttribute adds builtin device attributes to the list.

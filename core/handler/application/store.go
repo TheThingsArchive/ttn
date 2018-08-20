@@ -50,7 +50,7 @@ type RedisApplicationStore struct {
 
 // Count all applications in the store
 func (s *RedisApplicationStore) Count() (int, error) {
-	return s.store.Count("")
+	return s.store.Count("", nil)
 }
 
 // List all Applications

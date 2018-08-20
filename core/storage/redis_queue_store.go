@@ -73,7 +73,7 @@ func (s *RedisQueueStore) GetAll(keys []string, options *ListOptions) (map[strin
 
 // List all results matching the selector, prepending the prefix to the selector if necessary
 func (s *RedisQueueStore) List(selector string, options *ListOptions) (map[string][]string, error) {
-	allKeys, err := s.Keys(selector)
+	allKeys, err := s.Keys(selector, options)
 	if err != nil {
 		return nil, err
 	}
