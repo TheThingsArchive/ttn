@@ -162,7 +162,12 @@ func (s *schedule) GetOption(timestamp uint32, length uint32) (id string, score 
 
 // see interface
 func (s *schedule) Schedule(id string, downlink *router_pb.DownlinkMessage) error {
-	ctx := s.ctx.WithField("Identifier", id)
+	ctx := s.ctx.WithFields(ttnlog.Fields{
+		"Identifier": id,
+		"DataRate":   downlink.ProtocolConfiguration.GetLoRaWAN().GetDataRate(),
+		"Frequency":  downlink.GatewayConfiguration.Frequency,
+		"TxPower":    downlink.GatewayConfiguration.Power,
+	})
 
 	s.Lock()
 	defer s.Unlock()
