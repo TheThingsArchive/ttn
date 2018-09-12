@@ -4,22 +4,53 @@
 package pool
 
 import (
+	"bytes"
 	"context"
+	"fmt"
 	"net"
+	"runtime"
 	"testing"
 	"time"
 
 	"github.com/TheThingsNetwork/go-utils/log"
+	wrap "github.com/TheThingsNetwork/go-utils/log/apex"
 	"github.com/TheThingsNetwork/ttn/api/health"
-	"github.com/htdvisser/grpc-testing/test"
+	apex "github.com/apex/log"
+	"github.com/apex/log/handlers/text"
 	. "github.com/smartystreets/assertions"
 	"google.golang.org/grpc"
 )
 
+type Logger struct {
+	logs bytes.Buffer
+	log.Interface
+}
+
+func (l *Logger) Print(t *testing.T) {
+	var loc string
+	if _, file, line, ok := runtime.Caller(1); ok {
+		loc = fmt.Sprintf("%s:%d", file, line)
+	}
+
+	if l.logs.Len() > 0 {
+		t.Log("Logs " + loc + ": \n" + l.logs.String())
+		l.logs.Reset()
+	}
+}
+
+func NewLogger() *Logger {
+	l := new(Logger)
+	l.Interface = wrap.Wrap(&apex.Logger{
+		Handler: text.New(&l.logs),
+		Level:   apex.DebugLevel,
+	})
+	return l
+}
+
 func TestPool(t *testing.T) {
 	a := New(t)
 
-	testLogger := test.NewLogger()
+	testLogger := NewLogger()
 	log.Set(testLogger)
 	defer testLogger.Print(t)
 
