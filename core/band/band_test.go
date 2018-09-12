@@ -23,6 +23,7 @@ func TestGuess(t *testing.T) {
 	a.So(Guess(923600000), ShouldEqual, "AS_923_925")
 	a.So(Guess(922100000), ShouldEqual, "KR_920_923")
 	a.So(Guess(865062500), ShouldEqual, "IN_865_867")
+	a.So(Guess(868900000), ShouldEqual, "RU_864_870")
 
 	a.So(Guess(922100001), ShouldEqual, "") // Not allowed
 }
@@ -105,6 +106,13 @@ func TestGet(t *testing.T) {
 		a.So(err, ShouldBeNil)
 		a.So(fp.CFList, ShouldBeNil)
 		a.So(fp.ADR, ShouldBeNil)
+	}
+
+	{
+		fp, err := Get("RU_864_870")
+		a.So(err, ShouldBeNil)
+		a.So(fp.CFList, ShouldNotBeNil)
+		a.So(fp.ADR, ShouldNotBeNil)
 	}
 
 }
