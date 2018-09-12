@@ -63,15 +63,19 @@ func (s *RedisStore) Keys(selector string, opts *ListOptions) ([]string, error) 
 
 	if opts != nil && opts.cacheKey != "" {
 		pipe := s.client.Pipeline()
+		defer pipe.Close()
 		pipe.Del(opts.cacheKey)
-		var allKeysAsInterface = make([]interface{}, len(allKeys))
-		for i, key := range allKeys {
-			allKeysAsInterface[i] = key
+		if len(allKeys) > 0 {
+			var allKeysAsInterface = make([]interface{}, len(allKeys))
+			for i, key := range allKeys {
+				allKeysAsInterface[i] = key
+			}
+			pipe.SAdd(opts.cacheKey, allKeysAsInterface...)
+			if opts.cacheTTL > 0 {
+				pipe.Expire(opts.cacheKey, opts.cacheTTL)
+			}
 		}
-		pipe.SAdd(opts.cacheKey, allKeysAsInterface...)
-		if opts.cacheTTL > 0 {
-			pipe.Expire(opts.cacheKey, opts.cacheTTL)
-		}
+		pipe.Exec()
 	}
 
 	return allKeys, nil

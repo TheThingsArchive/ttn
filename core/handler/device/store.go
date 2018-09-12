@@ -57,6 +57,7 @@ func NewRedisDeviceStore(client *redis.Client, prefix string) *RedisDeviceStore 
 	}
 	queues := storage.NewRedisQueueStore(client, prefix+":"+redisDownlinkQueuePrefix)
 	s := &RedisDeviceStore{
+		client: client,
 		prefix: prefix,
 		store:  store,
 		queues: queues,
@@ -70,6 +71,7 @@ func NewRedisDeviceStore(client *redis.Client, prefix string) *RedisDeviceStore 
 // - Devices are stored as a Hash
 type RedisDeviceStore struct {
 	prefix           string
+	client           *redis.Client
 	store            *storage.RedisMapStore
 	queues           *storage.RedisQueueStore
 	builtinAttibutes []string // sorted
@@ -183,8 +185,7 @@ func (s *RedisDeviceStore) Set(new *Device, properties ...string) (err error) {
 		return
 	}
 	if new.old == nil {
-		s.store.Delete(s.listResultCacheKey(new.AppID))
-		s.store.Delete(s.listResultCacheKey("_all_"))
+		s.client.Del(s.listResultCacheKey(new.AppID), s.listResultCacheKey("_all_")).Err()
 	}
 	return nil
 }
@@ -199,8 +200,7 @@ func (s *RedisDeviceStore) Delete(appID, devID string) error {
 	if err != nil {
 		return err
 	}
-	s.store.Delete(s.listResultCacheKey(appID))
-	s.store.Delete(s.listResultCacheKey("_all_"))
+	s.client.Del(s.listResultCacheKey(appID), s.listResultCacheKey("_all_")).Err()
 	return nil
 }
 
