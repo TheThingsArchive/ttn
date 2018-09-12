@@ -24,7 +24,7 @@ const (
 	EU_863_870 Name = "EU_863_870"
 	IN_865_867 Name = "IN_865_867"
 	KR_920_923 Name = "KR_920_923"
-	RU_864_869 Name = "RU_864_869"
+	RU_864_870 Name = "RU_864_870"
 	US_902_928 Name = "US_902_928"
 )
 
@@ -468,7 +468,7 @@ func GetConfig(name Name, repeaterCompatible bool, dt lorawan.DwellTime) (Band, 
 		return newIN865Band(repeaterCompatible)
 	case KR_920_923:
 		return newKR920Band()
-	case RU_864_869:
+	case RU_864_870:
 		return newRU864Band(repeaterCompatible)
 	case US_902_928:
 		return newUS902Band(repeaterCompatible)
