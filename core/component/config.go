@@ -9,16 +9,18 @@ import (
 
 // Config is the configuration for this component
 type Config struct {
-	AuthServers map[string]string
-	KeyDir      string
-	UseTLS      bool
+	AuthServers   map[string]string
+	KeyDir        string
+	UseTLS        bool
+	MinTLSVersion string
 }
 
 // ConfigFromViper imports configuration from Viper
 func ConfigFromViper() Config {
 	return Config{
-		AuthServers: viper.GetStringMapString("auth-servers"),
-		KeyDir:      viper.GetString("key-dir"),
-		UseTLS:      viper.GetBool("tls"),
+		AuthServers:   viper.GetStringMapString("auth-servers"),
+		KeyDir:        viper.GetString("key-dir"),
+		UseTLS:        viper.GetBool("tls"),
+		MinTLSVersion: viper.GetString("min-tls-version"),
 	}
 }
