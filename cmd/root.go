@@ -163,6 +163,7 @@ func init() {
 	}
 
 	RootCmd.PersistentFlags().Bool("tls", true, "Use TLS")
+	RootCmd.PersistentFlags().String("min-tls-version", "", "Minimum TLS version")
 	RootCmd.PersistentFlags().Bool("allow-insecure", false, "Allow insecure fallback if TLS unavailable")
 	RootCmd.PersistentFlags().String("key-dir", path.Clean(dir+"/.ttn/"), "The directory where public/private keys are stored")
 
