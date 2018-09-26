@@ -37,8 +37,8 @@ type Schedule interface {
 // NewSchedule creates a new Schedule
 func NewSchedule(ctx ttnlog.Interface) Schedule {
 	s := &schedule{
-		ctx:   ctx,
-		items: make(map[string]*scheduledItem),
+		ctx:                   ctx,
+		items:                 make(map[string]*scheduledItem),
 		downlinkSubscriptions: make(map[string]chan *router_pb.DownlinkMessage),
 	}
 	go func() {
