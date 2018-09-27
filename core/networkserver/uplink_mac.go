@@ -4,8 +4,6 @@
 package networkserver
 
 import (
-	"fmt"
-
 	pb_broker "github.com/TheThingsNetwork/api/broker"
 	pb_lorawan "github.com/TheThingsNetwork/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/api/trace"
@@ -65,12 +63,19 @@ func (n *networkServer) handleUplinkMAC(message *pb_broker.DeduplicatedUplinkMes
 				dev.ADR.SendReq = false
 			} else {
 				dev.ADR.Failed++
-				ctx.
-					WithField("Answer", fmt.Sprintf("%v/%v/%v", answer.DataRateACK, answer.PowerACK, answer.ChannelMaskACK)).
-					Warn("Negative LinkADRAns")
+				ctx.WithFields(log.Fields{
+					"DataRate":    answer.DataRateACK,
+					"Power":       answer.PowerACK,
+					"ChannelMask": answer.ChannelMaskACK,
+					"FailedReqs":  dev.ADR.Failed,
+				}).Warn("Negative LinkADRAns")
 			}
 		default:
 		}
+	}
+
+	if dev.ADR.ExpectRes {
+		ctx.Warn("Expected LinkADRAns but did not receive any")
 	}
 
 	// We did not receive an ADR response, the device may have the wrong RX2 settings

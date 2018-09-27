@@ -233,24 +233,19 @@ func (n *networkServer) setADR(mac *pb_lorawan.MACPayload, dev *device.Device) e
 		return nil
 	}
 
-	n.Ctx.WithFields(log.Fields{
-		"AppEUI":  dev.AppEUI,
-		"DevEUI":  dev.DevEUI,
-		"DevAddr": dev.DevAddr,
-		"AppID":   dev.AppID,
-		"DevID":   dev.DevID,
-	}).Debug("Sending ADR")
-
 	dev.ADR.SentInitial = true
 	dev.ADR.ExpectRes = true
 
 	mac.ADR = true
 
+	var hadADR bool
 	fOpts := make([]pb_lorawan.MACCommand, 0, len(mac.FOpts)+len(payloads))
 	for _, existing := range mac.FOpts {
-		if existing.CID != uint32(lorawan.LinkADRReq) {
-			fOpts = append(fOpts, existing)
+		if existing.CID == uint32(lorawan.LinkADRReq) {
+			hadADR = true
+			continue
 		}
+		fOpts = append(fOpts, existing)
 	}
 	for _, payload := range payloads {
 		responsePayload, _ := payload.MarshalBinary()
@@ -260,6 +255,19 @@ func (n *networkServer) setADR(mac *pb_lorawan.MACPayload, dev *device.Device) e
 		})
 	}
 	mac.FOpts = fOpts
+
+	if !hadADR {
+		n.Ctx.WithFields(log.Fields{
+			"AppEUI":   dev.AppEUI,
+			"DevEUI":   dev.DevEUI,
+			"DevAddr":  dev.DevAddr,
+			"AppID":    dev.AppID,
+			"DevID":    dev.DevID,
+			"DataRate": dev.ADR.DataRate,
+			"TxPower":  dev.ADR.TxPower,
+			"NbTrans":  dev.ADR.NbTrans,
+		}).Info("Sending ADR Request in Downlink")
+	}
 
 	return nil
 }
