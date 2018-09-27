@@ -34,9 +34,10 @@ func (n *networkServer) handleUplinkMAC(message *pb_broker.DeduplicatedUplinkMes
 		lorawanDownlinkMAC.Ack = true
 	}
 
+	md := message.GetProtocolMetadata()
+
 	// MAC Commands
 	for _, cmd := range lorawanUplinkMAC.FOpts {
-		md := message.GetProtocolMetadata()
 		switch cmd.CID {
 		case uint32(lorawan.LinkCheckReq):
 			response := &lorawan.LinkCheckAnsPayload{
@@ -86,6 +87,12 @@ func (n *networkServer) handleUplinkMAC(message *pb_broker.DeduplicatedUplinkMes
 
 	if dev.ADR.ExpectRes {
 		ctx.Warn("Expected LinkADRAns but did not receive any")
+		if md.GetLoRaWAN().DataRate == dev.ADR.DataRate {
+			dev.ADR.ExpectRes = false
+			ctx.WithFields(log.Fields{
+				"DataRate": dev.ADR.DataRate,
+			}).Debug("DataRate is as expected, assuming LinkADRReq succeeded")
+		}
 	}
 
 	// We did not receive an ADR response, the device may have the wrong RX2 settings
