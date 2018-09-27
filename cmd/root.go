@@ -16,6 +16,7 @@ import (
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/go-utils/log/apex"
 	"github.com/TheThingsNetwork/go-utils/log/grpc"
+	promlog "github.com/TheThingsNetwork/go-utils/log/prometheus"
 	"github.com/TheThingsNetwork/ttn/api"
 	esHandler "github.com/TheThingsNetwork/ttn/utils/elasticsearch/handler"
 	"github.com/apex/log"
@@ -92,9 +93,9 @@ var RootCmd = &cobra.Command{
 		}
 
 		// Set the API/gRPC logger
-		ctx = apex.Wrap(&log.Logger{
+		ctx = promlog.Wrap(apex.Wrap(&log.Logger{
 			Handler: multiHandler.New(logHandlers...),
-		})
+		}))
 		ttnlog.Set(ctx)
 		grpclog.SetLogger(grpc.Wrap(ttnlog.Get()))
 

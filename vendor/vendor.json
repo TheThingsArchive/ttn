@@ -255,6 +255,12 @@
 			"revisionTime": "2018-09-12T07:29:26Z"
 		},
 		{
+			"checksumSHA1": "35KLWRFrraz1ZsE2K2kAfDZT0bw=",
+			"path": "github.com/TheThingsNetwork/go-utils/log/prometheus",
+			"revision": "8b4e2f02426ee7bd5ebacc97b6d840632d0f7e60",
+			"revisionTime": "2018-09-12T07:29:26Z"
+		},
+		{
 			"checksumSHA1": "2/v0SMyHM5vgImOb1BEEDWeXZEY=",
 			"path": "github.com/TheThingsNetwork/go-utils/pseudorandom",
 			"revision": "8b4e2f02426ee7bd5ebacc97b6d840632d0f7e60",
