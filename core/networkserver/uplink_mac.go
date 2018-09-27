@@ -20,10 +20,11 @@ func (n *networkServer) handleUplinkMAC(message *pb_broker.DeduplicatedUplinkMes
 	lorawanDownlinkMAC := lorawanDownlinkMsg.GetMACPayload()
 
 	ctx := n.Ctx.WithFields(log.Fields{
-		"AppEUI": dev.AppEUI,
-		"DevEUI": dev.DevEUI,
-		"AppID":  dev.AppID,
-		"DevID":  dev.DevID,
+		"AppEUI":  dev.AppEUI,
+		"DevEUI":  dev.DevEUI,
+		"AppID":   dev.AppID,
+		"DevID":   dev.DevID,
+		"DevAddr": dev.DevAddr,
 	})
 
 	// Confirmed Uplink
@@ -61,13 +62,21 @@ func (n *networkServer) handleUplinkMAC(message *pb_broker.DeduplicatedUplinkMes
 			if answer.DataRateACK && answer.PowerACK && answer.ChannelMaskACK {
 				dev.ADR.Failed = 0
 				dev.ADR.SendReq = false
+				ctx.WithFields(log.Fields{
+					"DataRate": dev.ADR.DataRate,
+					"TxPower":  dev.ADR.TxPower,
+					"NbTrans":  dev.ADR.NbTrans,
+				}).Debug("Positive LinkADRAns")
 			} else {
 				dev.ADR.Failed++
 				ctx.WithFields(log.Fields{
-					"DataRate":    answer.DataRateACK,
-					"Power":       answer.PowerACK,
-					"ChannelMask": answer.ChannelMaskACK,
-					"FailedReqs":  dev.ADR.Failed,
+					"DataRate":       dev.ADR.DataRate,
+					"TxPower":        dev.ADR.TxPower,
+					"NbTrans":        dev.ADR.NbTrans,
+					"DataRateACK":    answer.DataRateACK,
+					"PowerACK":       answer.PowerACK,
+					"ChannelMaskACK": answer.ChannelMaskACK,
+					"FailedReqs":     dev.ADR.Failed,
 				}).Warn("Negative LinkADRAns")
 			}
 		default:
