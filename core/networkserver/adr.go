@@ -8,6 +8,7 @@ import (
 	"sort"
 
 	pb_broker "github.com/TheThingsNetwork/api/broker"
+	"github.com/TheThingsNetwork/api/logfields"
 	pb_lorawan "github.com/TheThingsNetwork/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/go-utils/log"
 	"github.com/TheThingsNetwork/ttn/core/band"
@@ -44,6 +45,7 @@ func lossPercentage(frames []*device.Frame) int {
 const ScheduleMACEvent = "schedule mac command"
 
 func (n *networkServer) handleUplinkADR(message *pb_broker.DeduplicatedUplinkMessage, dev *device.Device) error {
+	ctx := n.Ctx.WithFields(logfields.ForMessage(message))
 	lorawanUplinkMAC := message.GetMessage().GetLoRaWAN().GetMACPayload()
 	lorawanDownlinkMAC := message.GetResponseTemplate().GetMessage().GetLoRaWAN().GetMACPayload()
 
@@ -70,7 +72,7 @@ func (n *networkServer) handleUplinkADR(message *pb_broker.DeduplicatedUplinkMes
 		SNR:          bestSNR(message.GetGatewayMetadata()),
 		GatewayCount: uint32(len(message.GatewayMetadata)),
 	}); err != nil {
-		n.Ctx.WithError(err).Error("Could not push frame for device")
+		ctx.WithError(err).Error("Could not push frame for device")
 	}
 
 	frames, _ := history.Get()
@@ -92,6 +94,7 @@ func (n *networkServer) handleUplinkADR(message *pb_broker.DeduplicatedUplinkMes
 			scheduleADR = true
 			forceADR = true
 			message.Trace = message.Trace.WithEvent(ScheduleMACEvent, macCMD, "link-adr", "reason", "initial")
+			ctx.Debug("Schedule ADR [initial]")
 		}
 	}
 
@@ -100,12 +103,14 @@ func (n *networkServer) handleUplinkADR(message *pb_broker.DeduplicatedUplinkMes
 		dev.ADR.DataRate = dataRate
 		scheduleADR = true
 		message.Trace = message.Trace.WithEvent(ScheduleMACEvent, macCMD, "link-adr", "reason", "optimize")
+		ctx.Debug("Schedule ADR [optimize]")
 	}
 
 	if lorawanUplinkMAC.ADRAckReq {
 		scheduleADR = true
 		lorawanDownlinkMAC.Ack = true
 		message.Trace = message.Trace.WithEvent("set ack", "reason", "adr-ack-req")
+		ctx.Debug("Schedule ADR [adr-ack-req]")
 	}
 
 	if scheduleADR {
@@ -114,6 +119,7 @@ func (n *networkServer) handleUplinkADR(message *pb_broker.DeduplicatedUplinkMes
 				if len(frames) >= device.FramesHistorySize {
 					forceADR = true
 					message.Trace = message.Trace.WithEvent(ScheduleMACEvent, macCMD, "link-adr", "reason", "avoid high sf")
+					ctx.Debug("Schedule ADR [avoid high sf]")
 				}
 			}
 		}
@@ -124,6 +130,7 @@ func (n *networkServer) handleUplinkADR(message *pb_broker.DeduplicatedUplinkMes
 		err := n.setADR(lorawanDownlinkMAC, dev)
 		if err != nil {
 			message.Trace = message.Trace.WithEvent("mac error", macCMD, "link-adr", "error", err.Error())
+			ctx.WithError(err).Warn("Could not set ADR")
 			err = nil
 		}
 	}
@@ -143,14 +150,27 @@ func (n *networkServer) setADR(mac *pb_lorawan.MACPayload, dev *device.Device) e
 		return errors.New("too many failed ADR requests")
 	}
 
+	ctx := n.Ctx.WithFields(log.Fields{
+		"AppEUI":   dev.AppEUI,
+		"DevEUI":   dev.DevEUI,
+		"DevAddr":  dev.DevAddr,
+		"AppID":    dev.AppID,
+		"DevID":    dev.DevID,
+		"DataRate": dev.ADR.DataRate,
+		"TxPower":  dev.ADR.TxPower,
+		"NbTrans":  dev.ADR.NbTrans,
+	})
+
 	// Check settings
 	if dev.ADR.DataRate == "" {
+		ctx.Debug("Empty ADR DataRate")
 		return nil
 	}
 	if dev.ADR.Margin == 0 {
 		dev.ADR.Margin = DefaultADRMargin
 	}
 	if dev.ADR.Band == "" {
+		ctx.Debug("Empty ADR Band")
 		return nil
 	}
 	fp, err := band.Get(dev.ADR.Band)
@@ -175,6 +195,7 @@ func (n *networkServer) setADR(mac *pb_lorawan.MACPayload, dev *device.Device) e
 	}
 	switch {
 	case len(frames) == 0:
+		ctx.Debug("No historical data for ADR")
 		return nil
 	case len(frames) >= device.FramesHistorySize:
 		frames = frames[:device.FramesHistorySize]
@@ -189,6 +210,7 @@ func (n *networkServer) setADR(mac *pb_lorawan.MACPayload, dev *device.Device) e
 	// Calculate desired ADR settings
 	dataRate, txPower, err := fp.ADRSettings(dev.ADR.DataRate, dev.ADR.TxPower, maxSNR(frames), adrMargin)
 	if err == band.ErrADRUnavailable {
+		ctx.Debugf("ADR not available in %s", dev.ADR.Band)
 		return nil
 	}
 	if err != nil {
@@ -224,12 +246,14 @@ func (n *networkServer) setADR(mac *pb_lorawan.MACPayload, dev *device.Device) e
 	}
 
 	if dev.ADR.SentInitial && dev.ADR.DataRate == dataRate && dev.ADR.TxPower == txPower && dev.ADR.NbTrans == nbTrans {
+		ctx.Debug("No ADR needed")
 		return nil // Nothing to do
 	}
 	dev.ADR.DataRate, dev.ADR.TxPower, dev.ADR.NbTrans = dataRate, txPower, nbTrans
 
 	payloads := getAdrReqPayloads(dev, &fp, drIdx, powerIdx)
 	if len(payloads) == 0 {
+		ctx.Debug("No ADR payloads")
 		return nil
 	}
 
@@ -257,16 +281,9 @@ func (n *networkServer) setADR(mac *pb_lorawan.MACPayload, dev *device.Device) e
 	mac.FOpts = fOpts
 
 	if !hadADR {
-		n.Ctx.WithFields(log.Fields{
-			"AppEUI":   dev.AppEUI,
-			"DevEUI":   dev.DevEUI,
-			"DevAddr":  dev.DevAddr,
-			"AppID":    dev.AppID,
-			"DevID":    dev.DevID,
-			"DataRate": dev.ADR.DataRate,
-			"TxPower":  dev.ADR.TxPower,
-			"NbTrans":  dev.ADR.NbTrans,
-		}).Info("Sending ADR Request in Downlink")
+		ctx.Info("Sending ADR Request in Downlink")
+	} else {
+		ctx.Debug("Updating ADR Request in Downlink")
 	}
 
 	return nil
@@ -276,6 +293,7 @@ func (n *networkServer) handleDownlinkADR(message *pb_broker.DownlinkMessage, de
 	err := n.setADR(message.GetMessage().GetLoRaWAN().GetMACPayload(), dev)
 	if err != nil {
 		message.Trace = message.Trace.WithEvent("mac error", macCMD, "link-adr", "error", err.Error())
+		n.Ctx.WithFields(logfields.ForMessage(message)).WithError(err).Warn("Could not set ADR")
 		err = nil
 	}
 

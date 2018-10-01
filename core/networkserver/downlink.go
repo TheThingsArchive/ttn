@@ -4,14 +4,20 @@
 package networkserver
 
 import (
+	"time"
+
 	pb_broker "github.com/TheThingsNetwork/api/broker"
+	"github.com/TheThingsNetwork/api/logfields"
 	"github.com/TheThingsNetwork/api/trace"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/brocaar/lorawan"
 )
 
 func (n *networkServer) HandleDownlink(message *pb_broker.DownlinkMessage) (*pb_broker.DownlinkMessage, error) {
-	err := message.UnmarshalPayload()
+	var err error
+	start := time.Now()
+
+	err = message.UnmarshalPayload()
 	if err != nil {
 		return nil, err
 	}
@@ -21,6 +27,15 @@ func (n *networkServer) HandleDownlink(message *pb_broker.DownlinkMessage) (*pb_
 	}
 
 	n.status.downlink.Mark(1)
+
+	ctx := n.Ctx.WithFields(logfields.ForMessage(message))
+	defer func() {
+		if err != nil {
+			ctx.WithError(err).Warn("Could not handle downlink")
+		} else {
+			ctx.WithField("Duration", time.Now().Sub(start)).Info("Handled downlink")
+		}
+	}()
 
 	// Get Device
 	dev, err := n.devices.Get(message.AppEUI, message.DevEUI)
