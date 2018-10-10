@@ -11,9 +11,9 @@ import (
 )
 
 func main() {
-	fmt.Println(`# API Reference
-
-The Things Network's backend servers.
-`)
+	fmt.Println("# API Reference")
+	fmt.Println()
+	fmt.Println("The Things Network's backend servers.")
+	fmt.Println()
 	fmt.Print(docs.Generate(cmd.RootCmd))
 }

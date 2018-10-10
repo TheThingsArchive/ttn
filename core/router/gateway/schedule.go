@@ -9,6 +9,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/TheThingsNetwork/api/logfields"
 	pb_lorawan "github.com/TheThingsNetwork/api/protocol/lorawan"
 	router_pb "github.com/TheThingsNetwork/api/router"
 	ttnlog "github.com/TheThingsNetwork/go-utils/log"
@@ -37,8 +38,8 @@ type Schedule interface {
 // NewSchedule creates a new Schedule
 func NewSchedule(ctx ttnlog.Interface) Schedule {
 	s := &schedule{
-		ctx:   ctx,
-		items: make(map[string]*scheduledItem),
+		ctx:                   ctx,
+		items:                 make(map[string]*scheduledItem),
 		downlinkSubscriptions: make(map[string]chan *router_pb.DownlinkMessage),
 	}
 	go func() {
@@ -162,7 +163,10 @@ func (s *schedule) GetOption(timestamp uint32, length uint32) (id string, score 
 
 // see interface
 func (s *schedule) Schedule(id string, downlink *router_pb.DownlinkMessage) error {
-	ctx := s.ctx.WithField("Identifier", id)
+	ctx := s.ctx.WithFields(logfields.ForMessage(downlink)).WithFields(ttnlog.Fields{
+		"Identifier": id,
+		"TxPower":    downlink.GatewayConfiguration.Power,
+	})
 
 	s.Lock()
 	defer s.Unlock()

@@ -10,6 +10,16 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+var info = prometheus.NewGaugeVec(
+	prometheus.GaugeOpts{
+		Namespace: "ttn",
+		Name:      "info",
+		Help:      "Information about the TTN environment.",
+	}, []string{
+		"build_date", "git_commit", "id", "version",
+	},
+)
+
 var receivedCounter = prometheus.NewCounterVec(
 	prometheus.CounterOpts{
 		Namespace: "ttn",
@@ -47,6 +57,7 @@ var certificateExpiry = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 }, []string{"fingerprint"})
 
 func init() {
+	prometheus.MustRegister(info)
 	prometheus.MustRegister(receivedCounter)
 	prometheus.MustRegister(handledCounter)
 	prometheus.MustRegister(handledBytes)

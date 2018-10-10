@@ -4,8 +4,6 @@
 package networkserver
 
 import (
-	"fmt"
-
 	pb_broker "github.com/TheThingsNetwork/api/broker"
 	pb_lorawan "github.com/TheThingsNetwork/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/api/trace"
@@ -13,6 +11,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/band"
 	"github.com/TheThingsNetwork/ttn/core/networkserver/device"
 	"github.com/brocaar/lorawan"
+	"github.com/spf13/viper"
 )
 
 func (n *networkServer) handleUplinkMAC(message *pb_broker.DeduplicatedUplinkMessage, dev *device.Device) error {
@@ -22,10 +21,11 @@ func (n *networkServer) handleUplinkMAC(message *pb_broker.DeduplicatedUplinkMes
 	lorawanDownlinkMAC := lorawanDownlinkMsg.GetMACPayload()
 
 	ctx := n.Ctx.WithFields(log.Fields{
-		"AppEUI": dev.AppEUI,
-		"DevEUI": dev.DevEUI,
-		"AppID":  dev.AppID,
-		"DevID":  dev.DevID,
+		"AppEUI":  dev.AppEUI,
+		"DevEUI":  dev.DevEUI,
+		"AppID":   dev.AppID,
+		"DevID":   dev.DevID,
+		"DevAddr": dev.DevAddr,
 	})
 
 	// Confirmed Uplink
@@ -34,9 +34,10 @@ func (n *networkServer) handleUplinkMAC(message *pb_broker.DeduplicatedUplinkMes
 		lorawanDownlinkMAC.Ack = true
 	}
 
+	md := message.GetProtocolMetadata()
+
 	// MAC Commands
 	for _, cmd := range lorawanUplinkMAC.FOpts {
-		md := message.GetProtocolMetadata()
 		switch cmd.CID {
 		case uint32(lorawan.LinkCheckReq):
 			response := &lorawan.LinkCheckAnsPayload{
@@ -63,42 +64,56 @@ func (n *networkServer) handleUplinkMAC(message *pb_broker.DeduplicatedUplinkMes
 			if answer.DataRateACK && answer.PowerACK && answer.ChannelMaskACK {
 				dev.ADR.Failed = 0
 				dev.ADR.SendReq = false
+				ctx.WithFields(log.Fields{
+					"DataRate": dev.ADR.DataRate,
+					"TxPower":  dev.ADR.TxPower,
+					"NbTrans":  dev.ADR.NbTrans,
+				}).Debug("Positive LinkADRAns")
 			} else {
 				dev.ADR.Failed++
-				ctx.
-					WithField("Answer", fmt.Sprintf("%v/%v/%v", answer.DataRateACK, answer.PowerACK, answer.ChannelMaskACK)).
-					Warn("Negative LinkADRAns")
+				ctx.WithFields(log.Fields{
+					"DataRate":       dev.ADR.DataRate,
+					"TxPower":        dev.ADR.TxPower,
+					"NbTrans":        dev.ADR.NbTrans,
+					"DataRateACK":    answer.DataRateACK,
+					"PowerACK":       answer.PowerACK,
+					"ChannelMaskACK": answer.ChannelMaskACK,
+					"FailedReqs":     dev.ADR.Failed,
+				}).Warn("Negative LinkADRAns")
 			}
 		default:
 		}
 	}
 
-	// We did not receive an ADR response, the device may have the wrong RX2 settings
-	if dev.ADR.ExpectRes && dev.ADR.Band == "EU_863_870" {
-		ctx.Warn("No LinkADRAns received")
-		dev.ADR.Failed++
-		if dev.ADR.Failed > maxADRFails {
+	if dev.ADR.ExpectRes {
+		ctx.Warn("Expected LinkADRAns but did not receive any")
+		if md.GetLoRaWAN().DataRate == dev.ADR.DataRate {
 			dev.ADR.ExpectRes = false
-			dev.ADR.SendReq = false
-		} else {
-			settings := message.GetResponseTemplate().GetDownlinkOption()
-			if settings.GetGatewayConfiguration().Frequency == 869525000 {
-				if loraSettings := settings.ProtocolConfiguration.GetLoRaWAN(); loraSettings != nil {
-					loraSettings.DataRate = "SF12BW125"
+			ctx.WithFields(log.Fields{
+				"DataRate": dev.ADR.DataRate,
+			}).Debug("DataRate is as expected, assuming LinkADRReq succeeded")
+		}
+	}
 
-					band, _ := band.Get("EU_863_870")
-					payload := lorawan.RX2SetupReqPayload{
-						Frequency: uint32(band.RX2Frequency),
-						DLSettings: lorawan.DLSettings{
-							RX2DataRate: uint8(band.RX2DataRate),
-						},
-					}
-					responsePayload, _ := payload.MarshalBinary()
-					lorawanDownlinkMAC.FOpts = append(lorawanDownlinkMAC.FOpts, pb_lorawan.MACCommand{
-						CID:     uint32(lorawan.RXParamSetupReq),
-						Payload: responsePayload,
-					})
+	// We did not receive an ADR response, the device may have the wrong RX2 settings
+	if dev.ADR.ExpectRes && dev.ADR.Band == "EU_863_870" && viper.GetInt("eu-rx2-dr") != 0 {
+		settings := message.GetResponseTemplate().GetDownlinkOption()
+		if settings.GetGatewayConfiguration().Frequency == 869525000 {
+			if loraSettings := settings.ProtocolConfiguration.GetLoRaWAN(); loraSettings != nil {
+				loraSettings.DataRate = "SF12BW125"
+
+				band, _ := band.Get("EU_863_870")
+				payload := lorawan.RX2SetupReqPayload{
+					Frequency: uint32(band.RX2Frequency),
+					DLSettings: lorawan.DLSettings{
+						RX2DataRate: uint8(band.RX2DataRate),
+					},
 				}
+				responsePayload, _ := payload.MarshalBinary()
+				lorawanDownlinkMAC.FOpts = append(lorawanDownlinkMAC.FOpts, pb_lorawan.MACCommand{
+					CID:     uint32(lorawan.RXParamSetupReq),
+					Payload: responsePayload,
+				})
 			}
 		}
 	}

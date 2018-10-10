@@ -9,6 +9,7 @@ import (
 	pb_broker "github.com/TheThingsNetwork/api/broker"
 	pb_protocol "github.com/TheThingsNetwork/api/protocol"
 	pb_lorawan "github.com/TheThingsNetwork/api/protocol/lorawan"
+	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/networkserver/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
@@ -19,7 +20,8 @@ import (
 func TestHandleDownlink(t *testing.T) {
 	a := New(t)
 	ns := &networkServer{
-		devices: device.NewRedisDeviceStore(GetRedisClient(), "test-handle-downlink"),
+		Component: &component.Component{Ctx: GetLogger(t, "TestHandleDownlink")},
+		devices:   device.NewRedisDeviceStore(GetRedisClient(), "test-handle-downlink"),
 	}
 	ns.InitStatus()
 

@@ -153,7 +153,22 @@ func (c *Component) initTLS() error {
 		return err
 	}
 
-	c.tlsConfig = &tls.Config{Certificates: []tls.Certificate{cer}}
+	c.tlsConfig = &tls.Config{
+		Certificates: []tls.Certificate{cer},
+	}
+	switch c.Config.MinTLSVersion {
+	case "":
+		// use Go default
+	case "1.0":
+		c.tlsConfig.MinVersion = tls.VersionTLS10
+	case "1.1":
+		c.tlsConfig.MinVersion = tls.VersionTLS11
+	case "1.2":
+		c.tlsConfig.MinVersion = tls.VersionTLS12
+	default:
+		c.Ctx.Warnf("Could not recognize TLS version %s", c.Config.MinTLSVersion)
+	}
+
 	return nil
 }
 

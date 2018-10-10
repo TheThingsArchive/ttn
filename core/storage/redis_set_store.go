@@ -85,7 +85,7 @@ func (s *RedisSetStore) Count(key string) (int, error) {
 
 // List all results matching the selector, prepending the prefix to the selector if necessary
 func (s *RedisSetStore) List(selector string, options *ListOptions) (map[string][]string, error) {
-	allKeys, err := s.Keys(selector)
+	allKeys, err := s.Keys(selector, options)
 	if err != nil {
 		return nil, err
 	}

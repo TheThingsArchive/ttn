@@ -72,6 +72,8 @@ func New(ctx ttnlog.Interface, serviceName string, announcedAddress string) (*Co
 		Pool:        pool.NewPool(context.Background(), pool.DefaultDialOptions...),
 	}
 
+	info.WithLabelValues(viper.GetString("buildDate"), viper.GetString("gitCommit"), viper.GetString("id"), viper.GetString("version")).Set(1)
+
 	if err := component.initialize(); err != nil {
 		return nil, err
 	}

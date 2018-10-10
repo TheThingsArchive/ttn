@@ -22,6 +22,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/TheThingsNetwork/ttn/utils/toa"
+	"github.com/spf13/viper"
 )
 
 func (r *router) SubscribeDownlink(gatewayID string, subscriptionID string) (<-chan *pb.DownlinkMessage, error) {
@@ -82,6 +83,12 @@ func (r *router) HandleDownlink(downlink *pb_broker.DownlinkMessage) (err error)
 	downlink.Trace = downlink.Trace.WithEvent(trace.ReceiveEvent)
 
 	option := downlink.DownlinkOption
+
+	// NOTE: This option is intentionally undocumented.
+	if maxTxPower := int32(viper.GetInt("lorawan.max-tx-power")); maxTxPower != 0 &&
+		option.GatewayConfiguration.Power > maxTxPower {
+		option.GatewayConfiguration.Power = maxTxPower
+	}
 
 	downlinkMessage := &pb.DownlinkMessage{
 		Payload:               downlink.Payload,

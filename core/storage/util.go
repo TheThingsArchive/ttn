@@ -3,10 +3,15 @@
 
 package storage
 
+import "time"
+
 // ListOptions are options for all list commands
 type ListOptions struct {
 	Limit  uint64
 	Offset uint64
+
+	cacheKey string
+	cacheTTL time.Duration
 
 	total    uint64
 	selected uint64
@@ -15,6 +20,11 @@ type ListOptions struct {
 // GetTotalAndSelected returns the total number of items, along with the number of selected items
 func (o ListOptions) GetTotalAndSelected() (total, selected uint64) {
 	return o.total, o.selected
+}
+
+// UseCache instructs the list operation to use a result cache.
+func (o *ListOptions) UseCache(key string, ttl time.Duration) {
+	o.cacheKey, o.cacheTTL = key, ttl
 }
 
 func selectKeys(keys []string, options *ListOptions) []string {

@@ -169,6 +169,22 @@ func Get(region string) (frequencyPlan FrequencyPlan, err error) {
 		frequencyPlan.CFList = &lorawan.CFList{922700000, 922900000, 923100000, 923300000, 0}
 	case pb_lorawan.FrequencyPlan_IN_865_867.String():
 		frequencyPlan.Band, err = lora.GetConfig(lora.IN_865_867, false, lorawan.DwellTimeNoLimit)
+	case pb_lorawan.FrequencyPlan_RU_864_870.String():
+		frequencyPlan.Band, err = lora.GetConfig(lora.RU_864_870, false, lorawan.DwellTimeNoLimit)
+		// Here channels from recommended list for Russia are set which are used by LoRaWAN networks in Russia
+		// Recommended frequency plan includes extra channels next to the default channels:
+		frequencyPlan.UplinkChannels = []lora.Channel{
+			lora.Channel{Frequency: 868900000, DataRates: []int{0, 1, 2, 3, 4, 5}},
+			lora.Channel{Frequency: 869100000, DataRates: []int{0, 1, 2, 3, 4, 5}},
+			lora.Channel{Frequency: 864100000, DataRates: []int{0, 1, 2, 3, 4, 5}},
+			lora.Channel{Frequency: 864300000, DataRates: []int{0, 1, 2, 3, 4, 5}},
+			lora.Channel{Frequency: 864500000, DataRates: []int{0, 1, 2, 3, 4, 5}},
+			lora.Channel{Frequency: 864700000, DataRates: []int{0, 1, 2, 3, 4, 5}},
+			lora.Channel{Frequency: 864900000, DataRates: []int{0, 1, 2, 3, 4, 5}},
+		}
+		frequencyPlan.DownlinkChannels = frequencyPlan.UplinkChannels
+		frequencyPlan.CFList = &lorawan.CFList{864100000, 864300000, 864500000, 864700000, 864900000}
+		frequencyPlan.ADR = &ADRConfig{MinDataRate: 0, MaxDataRate: 5, MinTXPower: 2, MaxTXPower: 14, StepTXPower: 3}
 	default:
 		err = errors.NewErrInvalidArgument("Frequency Band", "unknown")
 	}
@@ -193,6 +209,7 @@ func init() {
 		pb_lorawan.FrequencyPlan_KR_920_923,
 		pb_lorawan.FrequencyPlan_AU_915_928,
 		pb_lorawan.FrequencyPlan_CN_470_510,
+		pb_lorawan.FrequencyPlan_RU_864_870,
 	} {
 		region := r.String()
 		frequencyPlans[region], _ = Get(region)

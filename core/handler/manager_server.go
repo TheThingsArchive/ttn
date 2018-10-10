@@ -126,6 +126,11 @@ func (h *handlerManager) GetDevice(ctx context.Context, in *pb_handler.DeviceIde
 	pbDev.GetLoRaWANDevice().FCntDown = nsDev.FCntDown
 	pbDev.GetLoRaWANDevice().LastSeen = nsDev.LastSeen
 
+	if dev := pbDev.GetLoRaWANDevice(); dev != nil {
+		dev.UsedAppNonces = nil
+		dev.UsedDevNonces = nil
+	}
+
 	return pbDev, nil
 }
 
@@ -321,6 +326,13 @@ func (h *handlerManager) GetDevicesForApplication(ctx context.Context, in *pb_ha
 			continue
 		}
 		res.Devices = append(res.Devices, dev.ToPb())
+	}
+
+	for _, dev := range res.Devices {
+		if dev := dev.GetLoRaWANDevice(); dev != nil {
+			dev.UsedAppNonces = nil
+			dev.UsedDevNonces = nil
+		}
 	}
 
 	total, selected := opts.GetTotalAndSelected()

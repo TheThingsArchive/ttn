@@ -21,7 +21,7 @@ before_script:
 
 tests:
   stage: test
-  image: golang:latest
+  image: golang:1.11
   services:
     - thethingsnetwork/rabbitmq
     - redis
@@ -37,7 +37,7 @@ tests:
 
 binaries:
   stage: build
-  image: golang:latest
+  image: golang:1.11
   script:
     - mkdir release
     - export CI_BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
@@ -57,7 +57,7 @@ sign:
     - master@thethingsnetwork/ttn
     - develop@thethingsnetwork/ttn
   stage: sign
-  image: golang:latest
+  image: golang:1.11
   script:
     - pushd release
     - shasum -a 256 $(ls) > checksums

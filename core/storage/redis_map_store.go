@@ -105,7 +105,7 @@ func (s *RedisMapStore) GetAll(keys []string, options *ListOptions) ([]interface
 
 // List all results matching the selector, prepending the prefix to the selector if necessary
 func (s *RedisMapStore) List(selector string, options *ListOptions) ([]interface{}, error) {
-	allKeys, err := s.Keys(selector)
+	allKeys, err := s.Keys(selector, options)
 	if err != nil {
 		return nil, err
 	}

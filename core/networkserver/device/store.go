@@ -74,7 +74,7 @@ func (s *RedisDeviceStore) key(appEUI types.AppEUI, devEUI types.DevEUI) string 
 
 // Count all Devices
 func (s *RedisDeviceStore) Count() (int, error) {
-	return s.store.Count("")
+	return s.store.Count("", nil)
 }
 
 // List all Devices
