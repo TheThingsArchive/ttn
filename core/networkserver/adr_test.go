@@ -298,6 +298,27 @@ func TestHandleDownlinkADR(t *testing.T) {
 		a.So(payload.ChMask[8], ShouldBeFalse) // 9th channel (FSK) disabled
 	}
 
+	dev.ADR.DataRate = "SF10BW125"
+	dev.ADR.TxPower = 20
+
+	{
+		dev.ADR.Band = "RU_864_870"
+		message := adrInitDownlinkMessage()
+		err := ns.handleDownlinkADR(message, dev)
+		a.So(err, ShouldBeNil)
+		fOpts := message.Message.GetLoRaWAN().GetMACPayload().FOpts
+		a.So(fOpts, ShouldHaveLength, 2)
+		a.So(fOpts[1].CID, ShouldEqual, lorawan.LinkADRReq)
+		payload := new(lorawan.LinkADRReqPayload)
+		payload.UnmarshalBinary(fOpts[1].Payload)
+		a.So(payload.DataRate, ShouldEqual, 5) // SF7BW125
+		a.So(payload.TXPower, ShouldEqual, 1)  // 14
+		for i := 0; i < 7; i++ {               // First 7 channels enabled
+			a.So(payload.ChMask[i], ShouldBeTrue)
+		}
+		a.So(payload.ChMask[7], ShouldBeFalse) // 8th channel disabled
+	}
+
 	shouldHaveNbTrans := func(nbTrans int) {
 		a := New(t)
 		message := adrInitDownlinkMessage()

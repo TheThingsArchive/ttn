@@ -333,10 +333,6 @@ func getAdrReqPayloads(dev *device.Device, frequencyPlan *band.FrequencyPlan, dr
 			}
 		}
 	case pb_lorawan.FrequencyPlan_RU_864_870.String():
-		if dev.ADR.Failed > 0 && powerIdx > 5 {
-			// fall back to txPower 5 for LoRaWAN 1.0
-			powerIdx = 5
-		}
 		payloads = []lorawan.LinkADRReqPayload{
 			{
 				DataRate: uint8(drIdx),
