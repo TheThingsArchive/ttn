@@ -332,6 +332,34 @@ func getAdrReqPayloads(dev *device.Device, frequencyPlan *band.FrequencyPlan, dr
 				}
 			}
 		}
+	case pb_lorawan.FrequencyPlan_RU_864_870.String():
+		if dev.ADR.Failed > 0 && powerIdx > 5 {
+			// fall back to txPower 5 for LoRaWAN 1.0
+			powerIdx = 5
+		}
+		payloads = []lorawan.LinkADRReqPayload{
+			{
+				DataRate: uint8(drIdx),
+				TXPower:  uint8(powerIdx),
+				Redundancy: lorawan.Redundancy{
+					ChMaskCntl: 0,
+					NbRep:      uint8(dev.ADR.NbTrans),
+				},
+			},
+		}
+		if dev.ADR.Failed > 0 {
+			// Fall back to the mandatory RU_864_870 LoRaWAN channels
+			payloads[0].ChMask[0] = true
+			payloads[0].ChMask[1] = true
+		} else {
+			for i, ch := range frequencyPlan.UplinkChannels {
+				for _, dr := range ch.DataRates {
+					if dr == drIdx {
+						payloads[0].ChMask[i] = true
+					}
+				}
+			}
+		}
 	case pb_lorawan.FrequencyPlan_US_902_928.String(), pb_lorawan.FrequencyPlan_AU_915_928.String():
 		var dr500 uint8
 		switch dev.ADR.Band {
