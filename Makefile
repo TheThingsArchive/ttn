@@ -29,7 +29,7 @@ dev-deps: deps
 	@command -v protoc-gen-gogottn > /dev/null || go install github.com/TheThingsNetwork/ttn/utils/protoc-gen-gogottn
 	@command -v protoc-gen-ttndoc > /dev/null || go install github.com/TheThingsNetwork/ttn/utils/protoc-gen-ttndoc
 	@command -v mockgen > /dev/null || go get github.com/golang/mock/mockgen
-	@command -v golint > /dev/null || go get github.com/golang/lint/golint
+	@command -v golint > /dev/null || go get golang.org/x/lint/golint
 	@command -v forego > /dev/null || go get github.com/ddollar/forego
 
 # Protobuf
