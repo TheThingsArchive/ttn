@@ -968,50 +968,50 @@
 			"checksumSHA1": "o0+FxYUsE4W0478XA9AnSIB5wfs=",
 			"origin": "github.com/TheThingsIndustries/otto",
 			"path": "github.com/robertkrimen/otto",
-			"revision": "571d0fa31a277d8a63de1fd0afee431d627fbbaf",
-			"revisionTime": "2017-11-07T14:36:49Z"
+			"revision": "6ddbbb60554aaa88b1c38a9f5518165bc1160bd7",
+			"revisionTime": "2017-11-07T15:36:49+01:00"
 		},
 		{
 			"checksumSHA1": "q1HKpLIWi3tTT5W5LqMlwPcGmyQ=",
 			"origin": "github.com/TheThingsIndustries/otto/ast",
 			"path": "github.com/robertkrimen/otto/ast",
-			"revision": "571d0fa31a277d8a63de1fd0afee431d627fbbaf",
-			"revisionTime": "2017-11-07T14:36:49Z"
+			"revision": "6ddbbb60554aaa88b1c38a9f5518165bc1160bd7",
+			"revisionTime": "2017-11-07T15:36:49+01:00"
 		},
 		{
 			"checksumSHA1": "L0KsB2EzTlPgv0iae3q3SukNW7U=",
 			"origin": "github.com/TheThingsIndustries/otto/dbg",
 			"path": "github.com/robertkrimen/otto/dbg",
-			"revision": "571d0fa31a277d8a63de1fd0afee431d627fbbaf",
-			"revisionTime": "2017-11-07T14:36:49Z"
+			"revision": "6ddbbb60554aaa88b1c38a9f5518165bc1160bd7",
+			"revisionTime": "2017-11-07T15:36:49+01:00"
 		},
 		{
 			"checksumSHA1": "euDLJKhw4doeTSxjEoezjxYXLzs=",
 			"origin": "github.com/TheThingsIndustries/otto/file",
 			"path": "github.com/robertkrimen/otto/file",
-			"revision": "571d0fa31a277d8a63de1fd0afee431d627fbbaf",
-			"revisionTime": "2017-11-07T14:36:49Z"
+			"revision": "6ddbbb60554aaa88b1c38a9f5518165bc1160bd7",
+			"revisionTime": "2017-11-07T15:36:49+01:00"
 		},
 		{
 			"checksumSHA1": "w5wu2avr5PWCJy5dlEhlY3rwb+w=",
 			"origin": "github.com/TheThingsIndustries/otto/parser",
 			"path": "github.com/robertkrimen/otto/parser",
-			"revision": "571d0fa31a277d8a63de1fd0afee431d627fbbaf",
-			"revisionTime": "2017-11-07T14:36:49Z"
+			"revision": "6ddbbb60554aaa88b1c38a9f5518165bc1160bd7",
+			"revisionTime": "2017-11-07T15:36:49+01:00"
 		},
 		{
 			"checksumSHA1": "7J/7NaYRqKhBvZ+dTIutsEoEgFw=",
 			"origin": "github.com/TheThingsIndustries/otto/registry",
 			"path": "github.com/robertkrimen/otto/registry",
-			"revision": "571d0fa31a277d8a63de1fd0afee431d627fbbaf",
-			"revisionTime": "2017-11-07T14:36:49Z"
+			"revision": "6ddbbb60554aaa88b1c38a9f5518165bc1160bd7",
+			"revisionTime": "2017-11-07T15:36:49+01:00"
 		},
 		{
 			"checksumSHA1": "/jMXYuXycBpTqWhRyJ2xsqvHvQI=",
 			"origin": "github.com/TheThingsIndustries/otto/token",
 			"path": "github.com/robertkrimen/otto/token",
-			"revision": "571d0fa31a277d8a63de1fd0afee431d627fbbaf",
-			"revisionTime": "2017-11-07T14:36:49Z"
+			"revision": "6ddbbb60554aaa88b1c38a9f5518165bc1160bd7",
+			"revisionTime": "2017-11-07T15:36:49+01:00"
 		},
 		{
 			"checksumSHA1": "q14d3C3xvWevU3dSv4P5K0+OSD0=",
