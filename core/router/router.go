@@ -184,13 +184,20 @@ func (r *router) getBroker(brokerAnnouncement *pb_discovery.Announcement) (*brok
 		brk.association = cli.NewRouterStreams(r.Identity.ID, "")
 
 		go func() {
+			downlinkStream := brk.association.Downlink()
+			refreshDownlinkStream := time.NewTicker(time.Second)
 			for {
 				select {
 				case message := <-brk.uplink:
 					brk.association.Uplink(message)
-				case message, ok := <-brk.association.Downlink():
+				case <-refreshDownlinkStream.C:
+					downlinkStream = brk.association.Downlink()
+				case message, ok := <-downlinkStream:
 					if ok {
 						go r.HandleDownlink(message)
+					} else {
+						r.Ctx.WithField("broker", brokerAnnouncement.ID).Error("Downlink Stream errored")
+						downlinkStream = nil
 					}
 				}
 			}
