@@ -48,7 +48,7 @@ func (f *FrequencyPlan) GetTxPowerIndexFor(txPower int) (int, error) {
 func Guess(frequency uint64) string {
 	// Join frequencies
 	switch {
-	case frequency == 923200000 && frequency <= 923400000:
+	case frequency == 923200000 || frequency == 923400000:
 		// not considering AS_920_923 and AS_923_925 because we're not sure
 		return pb_lorawan.FrequencyPlan_AS_923.String()
 	case frequency == 922100000 || frequency == 922300000 || frequency == 922500000:
