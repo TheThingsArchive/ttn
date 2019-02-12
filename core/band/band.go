@@ -4,6 +4,8 @@
 package band
 
 import (
+	"sync"
+
 	pb_lorawan "github.com/TheThingsNetwork/api/protocol/lorawan"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
@@ -72,11 +74,6 @@ func init() {
 
 // Get the frequency plan for the given region
 func Get(region string) (frequencyPlan FrequencyPlan, err error) {
-	defer func() {
-		if err == nil && region == pb_lorawan.FrequencyPlan_EU_863_870.String() {
-			frequencyPlan.RX2DataRate = viper.GetInt("eu-rx2-dr")
-		}
-	}()
 	if fp, ok := frequencyPlans[region]; ok {
 		return fp, nil
 	}
@@ -98,6 +95,7 @@ func Get(region string) (frequencyPlan FrequencyPlan, err error) {
 		frequencyPlan.DownlinkChannels = frequencyPlan.UplinkChannels
 		frequencyPlan.CFList = &lorawan.CFList{867100000, 867300000, 867500000, 867700000, 867900000}
 		frequencyPlan.ADR = &ADRConfig{MinDataRate: 0, MaxDataRate: 5, MinTXPower: 2, MaxTXPower: 14, StepTXPower: 3}
+		frequencyPlan.RX2DataRate = viper.GetInt("eu-rx2-dr")
 	case pb_lorawan.FrequencyPlan_US_902_928.String():
 		frequencyPlan.Band, err = lora.GetConfig(lora.US_902_928, false, lorawan.DwellTime400ms)
 		fsb := viper.GetInt("us-fsb") // If this is 1, enables 903.9-905.3/200 kHz, 904.6/500kHz channels, etc.
@@ -200,31 +198,36 @@ func Get(region string) (frequencyPlan FrequencyPlan, err error) {
 var frequencyPlans map[string]FrequencyPlan
 var channels map[int]string
 
-func init() {
-	frequencyPlans = make(map[string]FrequencyPlan)
-	channels = make(map[int]string)
-	for _, r := range []pb_lorawan.FrequencyPlan{ // ordering is important here
-		pb_lorawan.FrequencyPlan_EU_863_870,
-		pb_lorawan.FrequencyPlan_IN_865_867,
-		pb_lorawan.FrequencyPlan_US_902_928,
-		pb_lorawan.FrequencyPlan_CN_779_787,
-		pb_lorawan.FrequencyPlan_EU_433,
-		pb_lorawan.FrequencyPlan_AS_923,
-		pb_lorawan.FrequencyPlan_AS_920_923,
-		pb_lorawan.FrequencyPlan_AS_923_925,
-		pb_lorawan.FrequencyPlan_KR_920_923,
-		pb_lorawan.FrequencyPlan_AU_915_928,
-		pb_lorawan.FrequencyPlan_CN_470_510,
-		pb_lorawan.FrequencyPlan_RU_864_870,
-	} {
-		region := r.String()
-		frequencyPlans[region], _ = Get(region)
-		for _, ch := range frequencyPlans[region].UplinkChannels {
-			if len(ch.DataRates) > 1 { // ignore FSK channels
-				if _, ok := channels[ch.Frequency]; !ok { // ordering indicates priority
-					channels[ch.Frequency] = region
+var initializeOnce sync.Once
+
+// InitializeTables initializes the frequency plan and channel tables.
+func InitializeTables() {
+	initializeOnce.Do(func() {
+		frequencyPlans = make(map[string]FrequencyPlan)
+		channels = make(map[int]string)
+		for _, r := range []pb_lorawan.FrequencyPlan{ // ordering is important here
+			pb_lorawan.FrequencyPlan_EU_863_870,
+			pb_lorawan.FrequencyPlan_IN_865_867,
+			pb_lorawan.FrequencyPlan_US_902_928,
+			pb_lorawan.FrequencyPlan_CN_779_787,
+			pb_lorawan.FrequencyPlan_EU_433,
+			pb_lorawan.FrequencyPlan_AS_923,
+			pb_lorawan.FrequencyPlan_AS_920_923,
+			pb_lorawan.FrequencyPlan_AS_923_925,
+			pb_lorawan.FrequencyPlan_KR_920_923,
+			pb_lorawan.FrequencyPlan_AU_915_928,
+			pb_lorawan.FrequencyPlan_CN_470_510,
+			pb_lorawan.FrequencyPlan_RU_864_870,
+		} {
+			region := r.String()
+			frequencyPlans[region], _ = Get(region)
+			for _, ch := range frequencyPlans[region].UplinkChannels {
+				if len(ch.DataRates) > 1 { // ignore FSK channels
+					if _, ok := channels[ch.Frequency]; !ok { // ordering indicates priority
+						channels[ch.Frequency] = region
+					}
 				}
 			}
 		}
-	}
+	})
 }

@@ -12,6 +12,8 @@ import (
 func TestGuess(t *testing.T) {
 	a := New(t)
 
+	InitializeTables()
+
 	a.So(Guess(868100000), ShouldEqual, "EU_863_870")
 	a.So(Guess(903900000), ShouldEqual, "US_902_928")
 	a.So(Guess(779500000), ShouldEqual, "CN_779_787")

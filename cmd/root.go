@@ -18,6 +18,7 @@ import (
 	"github.com/TheThingsNetwork/go-utils/log/grpc"
 	promlog "github.com/TheThingsNetwork/go-utils/log/prometheus"
 	"github.com/TheThingsNetwork/ttn/api"
+	"github.com/TheThingsNetwork/ttn/core/band"
 	esHandler "github.com/TheThingsNetwork/ttn/utils/elasticsearch/handler"
 	"github.com/apex/log"
 	jsonHandler "github.com/apex/log/handlers/json"
@@ -110,6 +111,8 @@ var RootCmd = &cobra.Command{
 			"Auth Servers":             viper.GetStringMapString("auth-servers"),
 			"Monitors":                 viper.GetStringMapString("monitor-servers"),
 		}).Info("Initializing The Things Network")
+
+		band.InitializeTables()
 	},
 	PersistentPostRun: func(cmd *cobra.Command, args []string) {
 		if logFile != nil {
