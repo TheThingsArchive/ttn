@@ -169,6 +169,8 @@ func init() {
 	RootCmd.PersistentFlags().String("key-dir", path.Clean(dir+"/.ttn/"), "The directory where public/private keys are stored")
 
 	RootCmd.PersistentFlags().Int("eu-rx2-dr", 3, "RX2 data rate for the EU band (SF12=0,SF9=3)")
+	RootCmd.PersistentFlags().Int("us-fsb", 1, "Frequency sub-band for the US band (0-indexed)")
+	RootCmd.PersistentFlags().Int("au-fsb", 1, "Frequency sub-band for the AU band (0-indexed)")
 
 	viper.BindPFlags(RootCmd.PersistentFlags())
 }

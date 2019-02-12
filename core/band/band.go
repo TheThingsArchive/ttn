@@ -64,6 +64,12 @@ func Guess(frequency uint64) string {
 	return ""
 }
 
+func init() {
+	viper.SetDefault("eu-rx2-dr", "3")
+	viper.SetDefault("us-fsb", "1")
+	viper.SetDefault("au-fsb", "1")
+}
+
 // Get the frequency plan for the given region
 func Get(region string) (frequencyPlan FrequencyPlan, err error) {
 	defer func() {
@@ -94,7 +100,7 @@ func Get(region string) (frequencyPlan FrequencyPlan, err error) {
 		frequencyPlan.ADR = &ADRConfig{MinDataRate: 0, MaxDataRate: 5, MinTXPower: 2, MaxTXPower: 14, StepTXPower: 3}
 	case pb_lorawan.FrequencyPlan_US_902_928.String():
 		frequencyPlan.Band, err = lora.GetConfig(lora.US_902_928, false, lorawan.DwellTime400ms)
-		fsb := 1 // Enable 903.9-905.3/200 kHz, 904.6/500kHz channels
+		fsb := viper.GetInt("us-fsb") // If this is 1, enables 903.9-905.3/200 kHz, 904.6/500kHz channels, etc.
 		for channel := 0; channel < 72; channel++ {
 			if (channel < fsb*8 || channel >= (fsb+1)*8) && channel != fsb+64 {
 				frequencyPlan.DisableUplinkChannel(channel)
@@ -107,7 +113,7 @@ func Get(region string) (frequencyPlan FrequencyPlan, err error) {
 		frequencyPlan.Band, err = lora.GetConfig(lora.EU_433, false, lorawan.DwellTimeNoLimit)
 	case pb_lorawan.FrequencyPlan_AU_915_928.String():
 		frequencyPlan.Band, err = lora.GetConfig(lora.AU_915_928, false, lorawan.DwellTime400ms)
-		fsb := 1 // Enable 916.8-918.2/200 kHz, 917.5/500kHz channels
+		fsb := viper.GetInt("au-fsb") // If this is 1, enables 916.8-918.2/200 kHz, 917.5/500kHz channels, etc.
 		for channel := 0; channel < 72; channel++ {
 			if (channel < fsb*8 || channel >= (fsb+1)*8) && channel != fsb+64 {
 				frequencyPlan.DisableUplinkChannel(channel)
