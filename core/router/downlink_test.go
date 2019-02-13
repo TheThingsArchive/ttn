@@ -20,13 +20,8 @@ import (
 	. "github.com/TheThingsNetwork/ttn/utils/testing"
 	"github.com/golang/mock/gomock"
 	. "github.com/smartystreets/assertions"
-	"github.com/spf13/viper"
 	"golang.org/x/net/context"
 )
-
-func init() {
-	viper.Set("eu-rx2-dr", "3")
-}
 
 // newReferenceDownlink returns a default uplink message
 func newReferenceDownlink() *pb.DownlinkMessage {
