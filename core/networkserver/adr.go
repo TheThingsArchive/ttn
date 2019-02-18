@@ -303,11 +303,18 @@ func (n *networkServer) handleDownlinkADR(message *pb_broker.DownlinkMessage, de
 func getAdrReqPayloads(dev *device.Device, frequencyPlan *band.FrequencyPlan, drIdx int, powerIdx int) []lorawan.LinkADRReqPayload {
 	payloads := []lorawan.LinkADRReqPayload{}
 	switch dev.ADR.Band {
-	case pb_lorawan.FrequencyPlan_EU_863_870.String():
-		if dev.ADR.Failed > 0 && powerIdx > 5 {
+
+	// Frequency plans with three mandatory channels:
+	case pb_lorawan.FrequencyPlan_EU_863_870.String(),
+		pb_lorawan.FrequencyPlan_EU_433.String(),
+		pb_lorawan.FrequencyPlan_KR_920_923.String(),
+		pb_lorawan.FrequencyPlan_IN_865_867.String():
+
+		if dev.ADR.Band == pb_lorawan.FrequencyPlan_EU_863_870.String() && dev.ADR.Failed > 0 && powerIdx > 5 {
 			// fall back to txPower 5 for LoRaWAN 1.0
 			powerIdx = 5
 		}
+
 		payloads = []lorawan.LinkADRReqPayload{
 			{
 				DataRate: uint8(drIdx),
@@ -332,7 +339,12 @@ func getAdrReqPayloads(dev *device.Device, frequencyPlan *band.FrequencyPlan, dr
 				}
 			}
 		}
-	case pb_lorawan.FrequencyPlan_RU_864_870.String():
+
+	// Frequency plans with two default channels:
+	case pb_lorawan.FrequencyPlan_AS_923.String(),
+		pb_lorawan.FrequencyPlan_AS_920_923.String(),
+		pb_lorawan.FrequencyPlan_AS_923_925.String(),
+		pb_lorawan.FrequencyPlan_RU_864_870.String():
 		payloads = []lorawan.LinkADRReqPayload{
 			{
 				DataRate: uint8(drIdx),
@@ -344,7 +356,7 @@ func getAdrReqPayloads(dev *device.Device, frequencyPlan *band.FrequencyPlan, dr
 			},
 		}
 		if dev.ADR.Failed > 0 {
-			// Fall back to the mandatory RU_864_870 LoRaWAN channels
+			// Fall back to the mandatory LoRaWAN channels
 			payloads[0].ChMask[0] = true
 			payloads[0].ChMask[1] = true
 		} else {
@@ -356,6 +368,8 @@ func getAdrReqPayloads(dev *device.Device, frequencyPlan *band.FrequencyPlan, dr
 				}
 			}
 		}
+
+	// Frequency plans with 8 FSBs:
 	case pb_lorawan.FrequencyPlan_US_902_928.String(), pb_lorawan.FrequencyPlan_AU_915_928.String():
 		var dr500 uint8
 		switch dev.ADR.Band {
