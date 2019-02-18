@@ -100,7 +100,7 @@ func TestGet(t *testing.T) {
 		fp, err := Get("KR_920_923")
 		a.So(err, ShouldBeNil)
 		a.So(fp.CFList, ShouldNotBeNil)
-		a.So(fp.ADR, ShouldBeNil)
+		a.So(fp.ADR, ShouldNotBeNil)
 	}
 
 	{

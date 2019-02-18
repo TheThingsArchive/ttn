@@ -171,6 +171,7 @@ func Get(region string) (frequencyPlan FrequencyPlan, err error) {
 		}
 		frequencyPlan.DownlinkChannels = frequencyPlan.UplinkChannels
 		frequencyPlan.CFList = &lorawan.CFList{922700000, 922900000, 923100000, 923300000, 0}
+		frequencyPlan.ADR = &ADRConfig{MinDataRate: 0, MaxDataRate: 5, MinTXPower: 2, MaxTXPower: 14, StepTXPower: 2}
 	case pb_lorawan.FrequencyPlan_IN_865_867.String():
 		frequencyPlan.Band, err = lora.GetConfig(lora.IN_865_867, false, lorawan.DwellTimeNoLimit)
 	case pb_lorawan.FrequencyPlan_RU_864_870.String():
