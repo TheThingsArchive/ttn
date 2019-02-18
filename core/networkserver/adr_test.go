@@ -298,6 +298,92 @@ func TestHandleDownlinkADR(t *testing.T) {
 		a.So(payload.ChMask[8], ShouldBeFalse) // 9th channel (FSK) disabled
 	}
 
+	ns.Component.Ctx.Info("Start AS ADR Test")
+
+	dev.ADR.DataRate = "SF10BW125"
+	dev.ADR.TxPower = 10
+
+	{
+		dev.ADR.Band = "AS_923"
+		message := adrInitDownlinkMessage()
+		err := ns.handleDownlinkADR(message, dev)
+		a.So(err, ShouldBeNil)
+		fOpts := message.Message.GetLoRaWAN().GetMACPayload().FOpts
+		a.So(fOpts, ShouldHaveLength, 2)
+		a.So(fOpts[1].CID, ShouldEqual, lorawan.LinkADRReq)
+		payload := new(lorawan.LinkADRReqPayload)
+		payload.UnmarshalBinary(fOpts[1].Payload)
+		a.So(payload.DataRate, ShouldEqual, 5) // SF7BW125
+		a.So(payload.TXPower, ShouldEqual, 2)  // 10
+		for i := 0; i < 1; i++ {               // First 2 channels enabled
+			a.So(payload.ChMask[i], ShouldBeTrue)
+		}
+		for i := 2; i < 8; i++ { // Next 6 channels disabled
+			a.So(payload.ChMask[i], ShouldBeFalse)
+		}
+	}
+
+	dev.ADR.DataRate = "SF10BW125"
+	dev.ADR.TxPower = 10
+
+	{
+		dev.ADR.Band = "AS_920_923"
+		message := adrInitDownlinkMessage()
+		err := ns.handleDownlinkADR(message, dev)
+		a.So(err, ShouldBeNil)
+		fOpts := message.Message.GetLoRaWAN().GetMACPayload().FOpts
+		a.So(fOpts, ShouldHaveLength, 2)
+		a.So(fOpts[1].CID, ShouldEqual, lorawan.LinkADRReq)
+		payload := new(lorawan.LinkADRReqPayload)
+		payload.UnmarshalBinary(fOpts[1].Payload)
+		a.So(payload.DataRate, ShouldEqual, 5) // SF7BW125
+		a.So(payload.TXPower, ShouldEqual, 2)  // 10
+		for i := 0; i < 8; i++ {               // First 8 channels enabled
+			a.So(payload.ChMask[i], ShouldBeTrue)
+		}
+	}
+
+	dev.ADR.DataRate = "SF10BW125"
+	dev.ADR.TxPower = 10
+
+	{
+		dev.ADR.Band = "AS_923_925"
+		message := adrInitDownlinkMessage()
+		err := ns.handleDownlinkADR(message, dev)
+		a.So(err, ShouldBeNil)
+		fOpts := message.Message.GetLoRaWAN().GetMACPayload().FOpts
+		a.So(fOpts, ShouldHaveLength, 2)
+		a.So(fOpts[1].CID, ShouldEqual, lorawan.LinkADRReq)
+		payload := new(lorawan.LinkADRReqPayload)
+		payload.UnmarshalBinary(fOpts[1].Payload)
+		a.So(payload.DataRate, ShouldEqual, 5) // SF7BW125
+		a.So(payload.TXPower, ShouldEqual, 2)  // 10
+		for i := 0; i < 8; i++ {               // First 8 channels enabled
+			a.So(payload.ChMask[i], ShouldBeTrue)
+		}
+	}
+
+	dev.ADR.DataRate = "SF10BW125"
+	dev.ADR.TxPower = 10
+
+	{
+		dev.ADR.Band = "KR_920_923"
+		message := adrInitDownlinkMessage()
+		err := ns.handleDownlinkADR(message, dev)
+		a.So(err, ShouldBeNil)
+		fOpts := message.Message.GetLoRaWAN().GetMACPayload().FOpts
+		a.So(fOpts, ShouldHaveLength, 2)
+		a.So(fOpts[1].CID, ShouldEqual, lorawan.LinkADRReq)
+		payload := new(lorawan.LinkADRReqPayload)
+		payload.UnmarshalBinary(fOpts[1].Payload)
+		a.So(payload.DataRate, ShouldEqual, 5) // SF7BW125
+		a.So(payload.TXPower, ShouldEqual, 2)  // 10
+		for i := 0; i < 7; i++ {               // First 7 channels enabled
+			a.So(payload.ChMask[i], ShouldBeTrue)
+		}
+		a.So(payload.ChMask[7], ShouldBeFalse) // 8th channel disabled
+	}
+
 	dev.ADR.DataRate = "SF10BW125"
 	dev.ADR.TxPower = 20
 
