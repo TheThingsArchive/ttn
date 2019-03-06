@@ -112,8 +112,14 @@ func TestHandleUplink(t *testing.T) {
 
 	// ResponseTemplate should ACK the ADRACKReq
 	a.So(macPayload.FHDR.FCtrl.ACK, ShouldBeTrue)
-	a.So(macPayload.FHDR.FOpts, ShouldHaveLength, 1)
+	a.So(macPayload.FHDR.FOpts, ShouldHaveLength, 2)
 	a.So(macPayload.FHDR.FOpts[0].Payload, ShouldResemble, &lorawan.LinkCheckAnsPayload{GwCnt: 1, Margin: 7})
+	a.So(macPayload.FHDR.FOpts[1].Payload, ShouldResemble, &lorawan.LinkADRReqPayload{
+		DataRate:   5,
+		TXPower:    1,
+		ChMask:     [16]bool{true, true, true, true, true, true, true, true},
+		Redundancy: lorawan.Redundancy{NbRep: 1},
+	})
 
 	// Frame Counter should have been updated
 	dev, _ := ns.devices.Get(appEUI, devEUI)
