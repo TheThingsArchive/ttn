@@ -71,15 +71,6 @@ func TestMaxSNR(t *testing.T) {
 	a.So(maxSNR(buildFrames(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)), ShouldEqual, 9.8)
 }
 
-func TestLossPercentage(t *testing.T) {
-	a := New(t)
-	a.So(lossPercentage(buildFrames()), ShouldEqual, 0)
-	a.So(lossPercentage(buildFrames(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)), ShouldEqual, 0)
-	a.So(lossPercentage(buildFrames(1, 2, 3, 4, 5, 6, 7, 8, 9, 11)), ShouldEqual, 9)    // 1/11 missing
-	a.So(lossPercentage(buildFrames(1, 2, 3, 4, 5, 6, 7, 8, 9, 12)), ShouldEqual, 17)   // 2/12 missing
-	a.So(lossPercentage(buildFrames(1, 2, 3, 6, 7, 8, 9, 12, 13, 14)), ShouldEqual, 29) // 4/14 missing
-}
-
 func TestHandleUplinkADR(t *testing.T) {
 	a := New(t)
 	ns := &networkServer{
@@ -403,44 +394,6 @@ func TestHandleDownlinkADR(t *testing.T) {
 			a.So(payload.ChMask[i], ShouldBeTrue)
 		}
 		a.So(payload.ChMask[7], ShouldBeFalse) // 8th channel disabled
-	}
-
-	shouldHaveNbTrans := func(nbTrans int) {
-		a := New(t)
-		message := adrInitDownlinkMessage()
-		err := ns.handleDownlinkADR(message, dev)
-		a.So(err, ShouldBeNil)
-		fOpts := message.Message.GetLoRaWAN().GetMACPayload().FOpts
-		a.So(fOpts, ShouldHaveLength, 2)
-		a.So(fOpts[1].CID, ShouldEqual, lorawan.LinkADRReq)
-		payload := new(lorawan.LinkADRReqPayload)
-		payload.UnmarshalBinary(fOpts[1].Payload)
-		a.So(payload.DataRate, ShouldEqual, 5) // SF7BW125
-		a.So(payload.TXPower, ShouldEqual, 1)  // 14
-		a.So(payload.Redundancy.NbRep, ShouldEqual, nbTrans)
-		if a.Failed() {
-			_, file, line, _ := runtime.Caller(1)
-			t.Errorf("\n%s:%d", file, line)
-		}
-	}
-
-	tests := map[int]map[int]int{
-		1: map[int]int{0: 1, 1: 1, 2: 1, 4: 2, 10: 3},
-		2: map[int]int{0: 1, 1: 1, 2: 2, 4: 3, 10: 3},
-		3: map[int]int{0: 2, 1: 2, 2: 3, 4: 3, 10: 3},
-	}
-
-	for nbTrans, test := range tests {
-		for loss, exp := range test {
-			dev.ADR.NbTrans = nbTrans
-			resetFrames(dev.AppEUI, dev.DevEUI)
-			history.Push(&device.Frame{SNR: 10, GatewayCount: 3, FCnt: uint32(20 + loss)})
-			if nbTrans == exp {
-				nothingShouldHappen()
-			} else {
-				shouldHaveNbTrans(exp)
-			}
-		}
 	}
 
 	// Invalid case

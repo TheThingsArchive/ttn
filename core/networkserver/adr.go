@@ -4,7 +4,6 @@
 package networkserver
 
 import (
-	"math"
 	"sort"
 
 	pb_broker "github.com/TheThingsNetwork/api/broker"
@@ -31,15 +30,6 @@ func maxSNR(frames []*device.Frame) float32 {
 		}
 	}
 	return max
-}
-
-func lossPercentage(frames []*device.Frame) int {
-	if len(frames) == 0 {
-		return 0
-	}
-	sentPackets := frames[0].FCnt - frames[len(frames)-1].FCnt + 1
-	loss := sentPackets - uint32(len(frames))
-	return int(math.Floor((float64(loss) / float64(sentPackets) * 100) + .5))
 }
 
 const ScheduleMACEvent = "schedule mac command"
@@ -224,32 +214,12 @@ func (n *networkServer) setADR(mac *pb_lorawan.MACPayload, dev *device.Device) e
 	if err != nil {
 		powerIdx, _ = fp.GetTxPowerIndexFor(fp.DefaultTXPower)
 	}
-	var nbTrans = dev.ADR.NbTrans
-	if dev.ADR.DataRate == dataRate && dev.ADR.TxPower == txPower && !dev.Options.DisableFCntCheck {
-		lossPercentage := lossPercentage(frames)
-		switch {
-		case lossPercentage <= 5:
-			nbTrans--
-		case lossPercentage <= 10:
-			// don't change
-		case lossPercentage <= 30:
-			nbTrans++
-		default:
-			nbTrans += 2
-		}
-		if nbTrans < 1 {
-			nbTrans = 1
-		}
-		if nbTrans > 3 {
-			nbTrans = 3
-		}
-	}
 
-	if dev.ADR.SentInitial && dev.ADR.DataRate == dataRate && dev.ADR.TxPower == txPower && dev.ADR.NbTrans == nbTrans {
+	if dev.ADR.SentInitial && dev.ADR.DataRate == dataRate && dev.ADR.TxPower == txPower && dev.ADR.NbTrans == 1 {
 		ctx.Debug("No ADR needed")
 		return nil // Nothing to do
 	}
-	dev.ADR.DataRate, dev.ADR.TxPower, dev.ADR.NbTrans = dataRate, txPower, nbTrans
+	dev.ADR.DataRate, dev.ADR.TxPower, dev.ADR.NbTrans = dataRate, txPower, 1
 
 	payloads := getAdrReqPayloads(dev, &fp, drIdx, powerIdx)
 	if len(payloads) == 0 {
