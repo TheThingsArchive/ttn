@@ -14,6 +14,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/networkserver/device"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/brocaar/lorawan"
+	"github.com/spf13/viper"
 )
 
 // DefaultADRMargin is the default SNR margin for ADR
@@ -120,6 +121,8 @@ func (n *networkServer) handleUplinkADR(message *pb_broker.DeduplicatedUplinkMes
 		dev.ADR.SendReq = true
 		if drIdx, err := fp.GetDataRateIndexFor(dev.ADR.DataRate); err == nil && drIdx == 0 {
 			forceADR = true
+		} else {
+			forceADR = viper.GetBool("networkserver.force-adr-optimize")
 		}
 		message.Trace = message.Trace.WithEvent(ScheduleMACEvent, macCMD, "link-adr", "reason", "optimize")
 		ctx.Debugf("Schedule ADR [optimize] %s->%s", dev.ADR.DataRate, desiredDataRate)

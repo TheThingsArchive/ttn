@@ -147,6 +147,7 @@ ttn gen-keypair generates a public/private keypair
 **Options**
 
 ```
+      --force-adr-optimize               Force ADR optimization
       --net-id int                       LoRaWAN NetID (default 19)
       --redis-address string             Redis server and port (default "localhost:6379")
       --redis-db int                     Redis database

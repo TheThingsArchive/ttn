@@ -116,6 +116,9 @@ func init() {
 		"26000000/20": "otaa,abp,world,local,private,testing",
 	})
 
+	networkserverCmd.Flags().Bool("force-adr-optimize", false, "Force ADR optimization")
+	viper.BindPFlag("networkserver.force-adr-optimize", networkserverCmd.Flags().Lookup("force-adr-optimize"))
+
 	networkserverCmd.Flags().String("server-address", "0.0.0.0", "The IP address to listen for communication")
 	networkserverCmd.Flags().String("server-address-announce", "localhost", "The public IP address to announce")
 	networkserverCmd.Flags().Int("server-port", 1903, "The port for communication")
