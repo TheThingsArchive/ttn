@@ -5,7 +5,6 @@ package networkserver
 
 import (
 	"math"
-	"runtime"
 	"sort"
 	"testing"
 
@@ -31,7 +30,7 @@ func adrInitUplinkMessage() *pb_broker.DeduplicatedUplinkMessage {
 	downlink.Message.InitLoRaWAN().InitDownlink()
 	message.ProtocolMetadata = pb_protocol.RxMetadata{Protocol: &pb_protocol.RxMetadata_LoRaWAN{
 		LoRaWAN: &pb_lorawan.Metadata{
-			DataRate: "SF8BW125",
+			DataRate: "SF10BW125",
 		},
 	}}
 	message.GatewayMetadata = []*pb_gateway.RxMetadata{
@@ -71,380 +70,200 @@ func TestMaxSNR(t *testing.T) {
 	a.So(maxSNR(buildFrames(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)), ShouldEqual, 9.8)
 }
 
-func TestLossPercentage(t *testing.T) {
-	a := New(t)
-	a.So(lossPercentage(buildFrames()), ShouldEqual, 0)
-	a.So(lossPercentage(buildFrames(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)), ShouldEqual, 0)
-	a.So(lossPercentage(buildFrames(1, 2, 3, 4, 5, 6, 7, 8, 9, 11)), ShouldEqual, 9)    // 1/11 missing
-	a.So(lossPercentage(buildFrames(1, 2, 3, 4, 5, 6, 7, 8, 9, 12)), ShouldEqual, 17)   // 2/12 missing
-	a.So(lossPercentage(buildFrames(1, 2, 3, 6, 7, 8, 9, 12, 13, 14)), ShouldEqual, 29) // 4/14 missing
-}
-
-func TestHandleUplinkADR(t *testing.T) {
-	a := New(t)
+func TestADR(t *testing.T) {
 	ns := &networkServer{
 		Component: &component.Component{
-			Ctx: GetLogger(t, "TestHandleUplink"),
+			Ctx: GetLogger(t, "TestADR"),
 		},
-		devices: device.NewRedisDeviceStore(GetRedisClient(), "ns-test-handle-uplink-adr"),
+		devices: device.NewRedisDeviceStore(GetRedisClient(), "ns-test-adr"),
 	}
 	ns.InitStatus()
 
 	defer func() {
-		keys, _ := GetRedisClient().Keys("*ns-test-handle-uplink-adr*").Result()
+		keys, _ := GetRedisClient().Keys("*ns-test-adr*").Result()
 		for _, key := range keys {
 			GetRedisClient().Del(key).Result()
 		}
 	}()
 
-	appEUI := types.AppEUI([8]byte{1})
-	devEUI := types.DevEUI([8]byte{1})
-	history, _ := ns.devices.Frames(appEUI, devEUI)
-
-	// Setting ADR to true should start collecting frames
-	{
-		dev := &device.Device{AppEUI: appEUI, DevEUI: devEUI}
-		message := adrInitUplinkMessage()
-		message.Message.GetLoRaWAN().GetMACPayload().ADR = true
-		err := ns.handleUplinkADR(message, dev)
-		a.So(err, ShouldBeNil)
-		frames, _ := history.Get()
-		a.So(frames, ShouldHaveLength, 1)
-		a.So(dev.ADR.DataRate, ShouldEqual, "SF8BW125")
-	}
-
-	// Resetting ADR to false should empty the frames
-	{
-		dev := &device.Device{AppEUI: appEUI, DevEUI: devEUI}
-		message := adrInitUplinkMessage()
-		err := ns.handleUplinkADR(message, dev)
-		a.So(err, ShouldBeNil)
-		frames, _ := history.Get()
-		a.So(frames, ShouldBeEmpty)
-	}
-
-	// Setting ADRAckReq to true should set the ACK and schedule a LinkADRReq
-	{
-		dev := &device.Device{AppEUI: appEUI, DevEUI: devEUI}
-		message := adrInitUplinkMessage()
-		message.Message.GetLoRaWAN().GetMACPayload().ADR = true
-		message.Message.GetLoRaWAN().GetMACPayload().ADRAckReq = true
-		err := ns.handleUplinkADR(message, dev)
-		a.So(err, ShouldBeNil)
-		resMAC := message.ResponseTemplate.Message.GetLoRaWAN().GetMACPayload()
-		a.So(resMAC.Ack, ShouldBeTrue)
-		a.So(dev.ADR.SendReq, ShouldBeTrue)
-	}
-}
-
-func TestHandleDownlinkADR(t *testing.T) {
-	a := New(t)
-	ns := &networkServer{
-		Component: &component.Component{
-			Ctx: GetLogger(t, "TestHandleUplink"),
+	for i, tt := range []struct {
+		Name                        string
+		Band                        string
+		DesiredInitialDataRate      string
+		DesiredInitialDataRateIndex int
+		DesiredInitialTxPower       int
+		DesiredInitialTxPowerIndex  int
+		DesiredDataRate             string
+		DesiredDataRateIndex        int
+		DesiredTxPower              int
+		DesiredTxPowerIndex         int
+	}{
+		{
+			Name: "EU Device", Band: "EU_863_870",
+			DesiredInitialDataRate: "SF8BW125", DesiredInitialDataRateIndex: 4,
+			DesiredInitialTxPower: 14, DesiredInitialTxPowerIndex: 1,
+			DesiredDataRate: "SF7BW125", DesiredDataRateIndex: 5,
+			DesiredTxPower: 14, DesiredTxPowerIndex: 1,
 		},
-		devices: device.NewRedisDeviceStore(GetRedisClient(), "ns-test-handle-downlink-adr"),
-	}
-	ns.InitStatus()
+		{
+			Name: "AS Device", Band: "AS_923",
+			DesiredInitialDataRate: "SF8BW125", DesiredInitialDataRateIndex: 4,
+			DesiredInitialTxPower: 14, DesiredInitialTxPowerIndex: 0,
+			DesiredDataRate: "SF7BW125", DesiredDataRateIndex: 5,
+			DesiredTxPower: 14, DesiredTxPowerIndex: 0,
+		},
+		{
+			Name: "AS1 Device", Band: "AS_920_923",
+			DesiredInitialDataRate: "SF8BW125", DesiredInitialDataRateIndex: 4,
+			DesiredInitialTxPower: 14, DesiredInitialTxPowerIndex: 0,
+			DesiredDataRate: "SF7BW125", DesiredDataRateIndex: 5,
+			DesiredTxPower: 14, DesiredTxPowerIndex: 0,
+		},
+		{
+			Name: "AS2 Device", Band: "AS_923_925",
+			DesiredInitialDataRate: "SF8BW125", DesiredInitialDataRateIndex: 4,
+			DesiredInitialTxPower: 14, DesiredInitialTxPowerIndex: 0,
+			DesiredDataRate: "SF7BW125", DesiredDataRateIndex: 5,
+			DesiredTxPower: 14, DesiredTxPowerIndex: 0,
+		},
+		{
+			Name: "KR Device", Band: "KR_920_923",
+			DesiredInitialDataRate: "SF8BW125", DesiredInitialDataRateIndex: 4,
+			DesiredInitialTxPower: 14, DesiredInitialTxPowerIndex: 1,
+			DesiredDataRate: "SF7BW125", DesiredDataRateIndex: 5,
+			DesiredTxPower: 14, DesiredTxPowerIndex: 1,
+		},
+		{
+			Name: "RU Device", Band: "RU_864_870",
+			DesiredInitialDataRate: "SF8BW125", DesiredInitialDataRateIndex: 4,
+			DesiredInitialTxPower: 14, DesiredInitialTxPowerIndex: 1,
+			DesiredDataRate: "SF7BW125", DesiredDataRateIndex: 5,
+			DesiredTxPower: 14, DesiredTxPowerIndex: 1,
+		},
+		{
+			Name: "US Device", Band: "US_902_928",
+			DesiredInitialDataRate: "SF8BW125", DesiredInitialDataRateIndex: 2,
+			DesiredInitialTxPower: 20, DesiredInitialTxPowerIndex: 5,
+			DesiredDataRate: "SF7BW125", DesiredDataRateIndex: 3,
+			DesiredTxPower: 20, DesiredTxPowerIndex: 5,
+		},
+		{
+			Name: "AU Device", Band: "AU_915_928",
+			DesiredInitialDataRate: "SF8BW125", DesiredInitialDataRateIndex: 4,
+			DesiredInitialTxPower: 20, DesiredInitialTxPowerIndex: 5,
+			DesiredDataRate: "SF7BW125", DesiredDataRateIndex: 5,
+			DesiredTxPower: 20, DesiredTxPowerIndex: 5,
+		},
+	} {
+		t.Run(tt.Name, func(t *testing.T) {
+			a := New(t)
 
-	defer func() {
-		keys, _ := GetRedisClient().Keys("*ns-test-handle-downlink-adr*").Result()
-		for _, key := range keys {
-			GetRedisClient().Del(key).Result()
-		}
-	}()
+			appEUI := types.AppEUI([8]byte{1})
+			devEUI := types.DevEUI([8]byte{1, uint8(i)})
+			dev := &device.Device{AppEUI: appEUI, DevEUI: devEUI}
 
-	appEUI := types.AppEUI([8]byte{1})
-	devEUI := types.DevEUI([8]byte{1})
-	history, _ := ns.devices.Frames(appEUI, devEUI)
-	dev := &device.Device{AppEUI: appEUI, DevEUI: devEUI}
-	dev.ADR.SentInitial = true
+			history, _ := ns.devices.Frames(appEUI, devEUI)
 
-	message := adrInitDownlinkMessage()
+			uplink, downlink := adrInitUplinkMessage(), adrInitDownlinkMessage()
+			uplink.ProtocolMetadata.GetLoRaWAN().FrequencyPlan = pb_lorawan.FrequencyPlan(pb_lorawan.FrequencyPlan_value[tt.Band])
 
-	var shouldReturnError = func() {
-		a := New(t)
-		message = adrInitDownlinkMessage()
-		err := ns.handleDownlinkADR(message, dev)
-		a.So(err, ShouldBeNil)
-		a.So(message.Message.GetLoRaWAN().GetMACPayload().FOpts, ShouldHaveLength, 1)
-		if a.Failed() {
-			_, file, line, _ := runtime.Caller(1)
-			t.Errorf("\n%s:%d", file, line)
-		}
-	}
-	var nothingShouldHappen = func() {
-		a := New(t)
-		message = adrInitDownlinkMessage()
-		err := ns.handleDownlinkADR(message, dev)
-		a.So(err, ShouldBeNil)
-		a.So(message.Message.GetLoRaWAN().GetMACPayload().FOpts, ShouldHaveLength, 1)
-		if a.Failed() {
-			_, file, line, _ := runtime.Caller(1)
-			t.Errorf("\n%s:%d", file, line)
-		}
-	}
+			err := ns.handleUplinkADR(uplink, dev)
+			a.So(err, ShouldBeNil)
+			a.So(dev.ADR.SendReq, ShouldBeFalse)
 
-	// initially
-	nothingShouldHappen()
+			uplink.Message.GetLoRaWAN().GetMACPayload().ADR = true
 
-	dev.ADR.SendReq = true
-	nothingShouldHappen()
+			err = ns.handleUplinkADR(uplink, dev)
+			a.So(err, ShouldBeNil)
+			a.So(dev.ADR.SendReq, ShouldBeTrue)
+			a.So(dev.ADR.DataRate, ShouldEqual, tt.DesiredInitialDataRate)
+			a.So(dev.ADR.TxPower, ShouldEqual, tt.DesiredInitialTxPower)
 
-	var resetFrames = func(appEUI types.AppEUI, devEUI types.DevEUI) {
-		history.Clear()
-		for i := 0; i < 20; i++ {
-			history.Push(&device.Frame{SNR: 10, GatewayCount: 3, FCnt: uint32(i)})
-		}
-	}
-	resetFrames(dev.AppEUI, dev.DevEUI)
+			frames, err := history.Get()
+			a.So(err, ShouldBeNil)
+			a.So(frames, ShouldHaveLength, 1)
 
-	nothingShouldHappen()
+			err = ns.handleDownlinkADR(downlink, dev)
+			a.So(err, ShouldBeNil)
 
-	dev.ADR.DataRate = "SF8BW125"
-	nothingShouldHappen()
+			a.So(dev.ADR.SentInitial, ShouldBeTrue)
 
-	dev.ADR.Band = "INVALID"
-	shouldReturnError()
+			fOpts := downlink.Message.GetLoRaWAN().GetMACPayload().FOpts
+			fOpt := fOpts[1]
+			if tt.Band == "US_902_928" || tt.Band == "AU_915_928" {
+				fOpt = fOpts[2]
 
-	dev.ADR.DataRate = "SF10BW125"
-	dev.ADR.TxPower = 20
+				var req lorawan.LinkADRReqPayload
+				req.UnmarshalBinary(fOpts[1].Payload)
 
-	{
-		dev.ADR.Band = "US_902_928"
-		message := adrInitDownlinkMessage()
-		err := ns.handleDownlinkADR(message, dev)
-		a.So(err, ShouldBeNil)
-		fOpts := message.Message.GetLoRaWAN().GetMACPayload().FOpts
-		a.So(fOpts, ShouldHaveLength, 3)
-		a.So(fOpts[1].CID, ShouldEqual, lorawan.LinkADRReq)
-		payload := new(lorawan.LinkADRReqPayload)
-		payload.UnmarshalBinary(fOpts[1].Payload) // First LinkAdrReq
-		a.So(payload.DataRate, ShouldEqual, 4)    // 500kHz channel, so DR4
-		a.So(payload.TXPower, ShouldEqual, 0)     // Max tx power
-		a.So(payload.Redundancy.ChMaskCntl, ShouldEqual, 7)
-		// Ch 64-71, All 125 kHz channels off
-		a.So(payload.ChMask[0], ShouldBeFalse) // Channel 64 disabled
-		a.So(payload.ChMask[1], ShouldBeTrue)  // Channel 65 enabled
-		for i := 2; i < 8; i++ {               // Channels 66-71 disabled
-			a.So(payload.ChMask[i], ShouldBeFalse)
-		}
-		payload = new(lorawan.LinkADRReqPayload)
-		payload.UnmarshalBinary(fOpts[2].Payload)           // Second LinkAdrReq
-		a.So(payload.DataRate, ShouldEqual, 3)              // SF7BW125
-		a.So(payload.TXPower, ShouldEqual, 5)               // 20
-		a.So(payload.Redundancy.ChMaskCntl, ShouldEqual, 0) // Channels 0..15
-		for i := 0; i < 8; i++ {                            // First 8 channels disabled
-			a.So(payload.ChMask[i], ShouldBeFalse)
-		}
-		for i := 8; i < 16; i++ { // Second 8 channels enabled
-			a.So(payload.ChMask[i], ShouldBeTrue)
-		}
-	}
+				switch tt.Band {
+				case "US_902_928":
+					a.So(req.DataRate, ShouldEqual, 4) // 500kHz channel, so DR4
+				case "AU_915_928":
+					a.So(req.DataRate, ShouldEqual, 6) // 500kHz channel, so DR6
+				}
 
-	dev.ADR.DataRate = "SF10BW125"
-	dev.ADR.TxPower = 20
-
-	{
-		dev.ADR.Band = "AU_915_928"
-		message := adrInitDownlinkMessage()
-		err := ns.handleDownlinkADR(message, dev)
-		a.So(err, ShouldBeNil)
-		fOpts := message.Message.GetLoRaWAN().GetMACPayload().FOpts
-		a.So(fOpts, ShouldHaveLength, 3)
-		a.So(fOpts[1].CID, ShouldEqual, lorawan.LinkADRReq)
-		payload := new(lorawan.LinkADRReqPayload)
-		payload.UnmarshalBinary(fOpts[1].Payload) // First LinkAdrReq
-		a.So(payload.DataRate, ShouldEqual, 6)    // 500kHz channel, so DR6
-		a.So(payload.TXPower, ShouldEqual, 0)     // Max tx power
-		a.So(payload.Redundancy.ChMaskCntl, ShouldEqual, 7)
-		// Ch 64-71, All 125 kHz channels off
-		a.So(payload.ChMask[0], ShouldBeFalse) // Channel 64 disabled
-		a.So(payload.ChMask[1], ShouldBeTrue)  // Channel 65 enabled
-		for i := 2; i < 8; i++ {               // Channels 66-71 disabled
-			a.So(payload.ChMask[i], ShouldBeFalse)
-		}
-		payload = new(lorawan.LinkADRReqPayload)
-		payload.UnmarshalBinary(fOpts[2].Payload)           // Second LinkAdrReq
-		a.So(payload.DataRate, ShouldEqual, 5)              // SF7BW125
-		a.So(payload.TXPower, ShouldEqual, 5)               // 20
-		a.So(payload.Redundancy.ChMaskCntl, ShouldEqual, 0) // Channels 0..15
-		for i := 0; i < 8; i++ {                            // First 8 channels disabled
-			a.So(payload.ChMask[i], ShouldBeFalse)
-		}
-		for i := 8; i < 16; i++ { // Second 8 channels enabled
-			a.So(payload.ChMask[i], ShouldBeTrue)
-		}
-	}
-
-	dev.ADR.DataRate = "SF10BW125"
-	dev.ADR.TxPower = 20
-
-	{
-		dev.ADR.Band = "EU_863_870"
-		message := adrInitDownlinkMessage()
-		err := ns.handleDownlinkADR(message, dev)
-		a.So(err, ShouldBeNil)
-		fOpts := message.Message.GetLoRaWAN().GetMACPayload().FOpts
-		a.So(fOpts, ShouldHaveLength, 2)
-		a.So(fOpts[1].CID, ShouldEqual, lorawan.LinkADRReq)
-		payload := new(lorawan.LinkADRReqPayload)
-		payload.UnmarshalBinary(fOpts[1].Payload)
-		a.So(payload.DataRate, ShouldEqual, 5) // SF7BW125
-		a.So(payload.TXPower, ShouldEqual, 1)  // 14
-		for i := 0; i < 8; i++ {               // First 8 channels enabled
-			a.So(payload.ChMask[i], ShouldBeTrue)
-		}
-		a.So(payload.ChMask[8], ShouldBeFalse) // 9th channel (FSK) disabled
-	}
-
-	ns.Component.Ctx.Info("Start AS ADR Test")
-
-	dev.ADR.DataRate = "SF10BW125"
-	dev.ADR.TxPower = 10
-
-	{
-		dev.ADR.Band = "AS_923"
-		message := adrInitDownlinkMessage()
-		err := ns.handleDownlinkADR(message, dev)
-		a.So(err, ShouldBeNil)
-		fOpts := message.Message.GetLoRaWAN().GetMACPayload().FOpts
-		a.So(fOpts, ShouldHaveLength, 2)
-		a.So(fOpts[1].CID, ShouldEqual, lorawan.LinkADRReq)
-		payload := new(lorawan.LinkADRReqPayload)
-		payload.UnmarshalBinary(fOpts[1].Payload)
-		a.So(payload.DataRate, ShouldEqual, 5) // SF7BW125
-		a.So(payload.TXPower, ShouldEqual, 2)  // 10
-		for i := 0; i < 1; i++ {               // First 2 channels enabled
-			a.So(payload.ChMask[i], ShouldBeTrue)
-		}
-		for i := 2; i < 8; i++ { // Next 6 channels disabled
-			a.So(payload.ChMask[i], ShouldBeFalse)
-		}
-	}
-
-	dev.ADR.DataRate = "SF10BW125"
-	dev.ADR.TxPower = 10
-
-	{
-		dev.ADR.Band = "AS_920_923"
-		message := adrInitDownlinkMessage()
-		err := ns.handleDownlinkADR(message, dev)
-		a.So(err, ShouldBeNil)
-		fOpts := message.Message.GetLoRaWAN().GetMACPayload().FOpts
-		a.So(fOpts, ShouldHaveLength, 2)
-		a.So(fOpts[1].CID, ShouldEqual, lorawan.LinkADRReq)
-		payload := new(lorawan.LinkADRReqPayload)
-		payload.UnmarshalBinary(fOpts[1].Payload)
-		a.So(payload.DataRate, ShouldEqual, 5) // SF7BW125
-		a.So(payload.TXPower, ShouldEqual, 2)  // 10
-		for i := 0; i < 8; i++ {               // First 8 channels enabled
-			a.So(payload.ChMask[i], ShouldBeTrue)
-		}
-	}
-
-	dev.ADR.DataRate = "SF10BW125"
-	dev.ADR.TxPower = 10
-
-	{
-		dev.ADR.Band = "AS_923_925"
-		message := adrInitDownlinkMessage()
-		err := ns.handleDownlinkADR(message, dev)
-		a.So(err, ShouldBeNil)
-		fOpts := message.Message.GetLoRaWAN().GetMACPayload().FOpts
-		a.So(fOpts, ShouldHaveLength, 2)
-		a.So(fOpts[1].CID, ShouldEqual, lorawan.LinkADRReq)
-		payload := new(lorawan.LinkADRReqPayload)
-		payload.UnmarshalBinary(fOpts[1].Payload)
-		a.So(payload.DataRate, ShouldEqual, 5) // SF7BW125
-		a.So(payload.TXPower, ShouldEqual, 2)  // 10
-		for i := 0; i < 8; i++ {               // First 8 channels enabled
-			a.So(payload.ChMask[i], ShouldBeTrue)
-		}
-	}
-
-	dev.ADR.DataRate = "SF10BW125"
-	dev.ADR.TxPower = 10
-
-	{
-		dev.ADR.Band = "KR_920_923"
-		message := adrInitDownlinkMessage()
-		err := ns.handleDownlinkADR(message, dev)
-		a.So(err, ShouldBeNil)
-		fOpts := message.Message.GetLoRaWAN().GetMACPayload().FOpts
-		a.So(fOpts, ShouldHaveLength, 2)
-		a.So(fOpts[1].CID, ShouldEqual, lorawan.LinkADRReq)
-		payload := new(lorawan.LinkADRReqPayload)
-		payload.UnmarshalBinary(fOpts[1].Payload)
-		a.So(payload.DataRate, ShouldEqual, 5) // SF7BW125
-		a.So(payload.TXPower, ShouldEqual, 2)  // 10
-		for i := 0; i < 7; i++ {               // First 7 channels enabled
-			a.So(payload.ChMask[i], ShouldBeTrue)
-		}
-		a.So(payload.ChMask[7], ShouldBeFalse) // 8th channel disabled
-	}
-
-	dev.ADR.DataRate = "SF10BW125"
-	dev.ADR.TxPower = 20
-
-	{
-		dev.ADR.Band = "RU_864_870"
-		message := adrInitDownlinkMessage()
-		err := ns.handleDownlinkADR(message, dev)
-		a.So(err, ShouldBeNil)
-		fOpts := message.Message.GetLoRaWAN().GetMACPayload().FOpts
-		a.So(fOpts, ShouldHaveLength, 2)
-		a.So(fOpts[1].CID, ShouldEqual, lorawan.LinkADRReq)
-		payload := new(lorawan.LinkADRReqPayload)
-		payload.UnmarshalBinary(fOpts[1].Payload)
-		a.So(payload.DataRate, ShouldEqual, 5) // SF7BW125
-		a.So(payload.TXPower, ShouldEqual, 1)  // 14
-		for i := 0; i < 7; i++ {               // First 7 channels enabled
-			a.So(payload.ChMask[i], ShouldBeTrue)
-		}
-		a.So(payload.ChMask[7], ShouldBeFalse) // 8th channel disabled
-	}
-
-	shouldHaveNbTrans := func(nbTrans int) {
-		a := New(t)
-		message := adrInitDownlinkMessage()
-		err := ns.handleDownlinkADR(message, dev)
-		a.So(err, ShouldBeNil)
-		fOpts := message.Message.GetLoRaWAN().GetMACPayload().FOpts
-		a.So(fOpts, ShouldHaveLength, 2)
-		a.So(fOpts[1].CID, ShouldEqual, lorawan.LinkADRReq)
-		payload := new(lorawan.LinkADRReqPayload)
-		payload.UnmarshalBinary(fOpts[1].Payload)
-		a.So(payload.DataRate, ShouldEqual, 5) // SF7BW125
-		a.So(payload.TXPower, ShouldEqual, 1)  // 14
-		a.So(payload.Redundancy.NbRep, ShouldEqual, nbTrans)
-		if a.Failed() {
-			_, file, line, _ := runtime.Caller(1)
-			t.Errorf("\n%s:%d", file, line)
-		}
-	}
-
-	tests := map[int]map[int]int{
-		1: map[int]int{0: 1, 1: 1, 2: 1, 4: 2, 10: 3},
-		2: map[int]int{0: 1, 1: 1, 2: 2, 4: 3, 10: 3},
-		3: map[int]int{0: 2, 1: 2, 2: 3, 4: 3, 10: 3},
-	}
-
-	for nbTrans, test := range tests {
-		for loss, exp := range test {
-			dev.ADR.NbTrans = nbTrans
-			resetFrames(dev.AppEUI, dev.DevEUI)
-			history.Push(&device.Frame{SNR: 10, GatewayCount: 3, FCnt: uint32(20 + loss)})
-			if nbTrans == exp {
-				nothingShouldHappen()
-			} else {
-				shouldHaveNbTrans(exp)
+				a.So(req.TXPower, ShouldEqual, 0)               // Max tx power
+				a.So(req.Redundancy.ChMaskCntl, ShouldEqual, 7) // Ch 64-71, All 125 kHz channels off
+				a.So(req.ChMask[0], ShouldBeFalse)              // Channel 64 disabled
+				a.So(req.ChMask[1], ShouldBeTrue)               // Channel 65 enabled
+				for i := 2; i < 8; i++ {                        // Channels 66-71 disabled
+					a.So(req.ChMask[i], ShouldBeFalse)
+				}
 			}
-		}
-	}
 
-	// Invalid case
-	message = adrInitDownlinkMessage()
-	dev.ADR.DataRate = "INVALID"
-	shouldReturnError()
+			a.So(fOpt.CID, ShouldEqual, lorawan.LinkADRReq)
+			var req lorawan.LinkADRReqPayload
+			req.UnmarshalBinary(fOpt.Payload)
+
+			a.So(req.DataRate, ShouldEqual, tt.DesiredInitialDataRateIndex)
+			a.So(req.TXPower, ShouldEqual, tt.DesiredInitialTxPowerIndex)
+
+			if tt.Band == "US_902_928" || tt.Band == "AU_915_928" {
+				a.So(req.Redundancy.ChMaskCntl, ShouldEqual, 0) // Channels 0..15
+				for i := 0; i < 8; i++ {                        // First 8 channels disabled
+					a.So(req.ChMask[i], ShouldBeFalse)
+				}
+				for i := 8; i < 16; i++ { // Second 8 channels enabled
+					a.So(req.ChMask[i], ShouldBeTrue)
+				}
+			}
+
+			for i := 0; i < 20; i++ {
+				uplink.Message.GetLoRaWAN().GetMACPayload().FCnt++
+				ns.handleUplinkADR(uplink, dev)
+			}
+
+			frames, err = history.Get()
+			a.So(err, ShouldBeNil)
+			a.So(frames, ShouldHaveLength, 20)
+
+			a.So(dev.ADR.SendReq, ShouldBeTrue)
+			a.So(dev.ADR.DataRate, ShouldEqual, tt.DesiredDataRate)
+			a.So(dev.ADR.TxPower, ShouldEqual, tt.DesiredTxPower)
+
+			err = ns.handleDownlinkADR(downlink, dev)
+			a.So(err, ShouldBeNil)
+
+			fOpts = downlink.Message.GetLoRaWAN().GetMACPayload().FOpts
+			fOpt = fOpts[1]
+			if tt.Band == "US_902_928" || tt.Band == "AU_915_928" {
+				fOpt = fOpts[2]
+			}
+
+			a.So(fOpt.CID, ShouldEqual, lorawan.LinkADRReq)
+			req.UnmarshalBinary(fOpt.Payload)
+
+			a.So(req.DataRate, ShouldEqual, tt.DesiredDataRateIndex)
+			a.So(req.TXPower, ShouldEqual, tt.DesiredTxPowerIndex)
+
+			uplink.ProtocolMetadata.GetLoRaWAN().DataRate = tt.DesiredDataRate
+			uplink.GatewayMetadata[0].SNR = 7.5
+
+			err = ns.handleUplinkADR(uplink, dev)
+			a.So(err, ShouldBeNil)
+
+			a.So(dev.ADR.SendReq, ShouldBeFalse)
+		})
+	}
 }
