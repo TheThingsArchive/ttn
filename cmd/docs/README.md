@@ -6,6 +6,7 @@ The Things Network's backend servers.
 
 ```
       --allow-insecure                  Allow insecure fallback if TLS unavailable
+      --au-fsb int                      Frequency sub-band for the AU band (0-indexed) (default 1)
       --auth-token string               The JWT token to be used for the discovery server
       --config string                   config file (default "$HOME/.ttn.yml")
       --description string              The description of this component
@@ -23,6 +24,7 @@ The Things Network's backend servers.
       --no-cli-logs                     Disable CLI logs
       --public                          Announce this component as part of The Things Network (public community network)
       --tls                             Use TLS (default true)
+      --us-fsb int                      Frequency sub-band for the US band (0-indexed) (default 1)
 ```
 
 
@@ -145,6 +147,7 @@ ttn gen-keypair generates a public/private keypair
 **Options**
 
 ```
+      --force-adr-optimize               Force ADR optimization
       --net-id int                       LoRaWAN NetID (default 19)
       --redis-address string             Redis server and port (default "localhost:6379")
       --redis-db int                     Redis database

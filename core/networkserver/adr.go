@@ -4,7 +4,6 @@
 package networkserver
 
 import (
-	"math"
 	"sort"
 
 	pb_broker "github.com/TheThingsNetwork/api/broker"
@@ -15,6 +14,7 @@ import (
 	"github.com/TheThingsNetwork/ttn/core/networkserver/device"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
 	"github.com/brocaar/lorawan"
+	"github.com/spf13/viper"
 )
 
 // DefaultADRMargin is the default SNR margin for ADR
@@ -31,15 +31,6 @@ func maxSNR(frames []*device.Frame) float32 {
 		}
 	}
 	return max
-}
-
-func lossPercentage(frames []*device.Frame) int {
-	if len(frames) == 0 {
-		return 0
-	}
-	sentPackets := frames[0].FCnt - frames[len(frames)-1].FCnt + 1
-	loss := sentPackets - uint32(len(frames))
-	return int(math.Floor((float64(loss) / float64(sentPackets) * 100) + .5))
 }
 
 const ScheduleMACEvent = "schedule mac command"
@@ -75,57 +66,74 @@ func (n *networkServer) handleUplinkADR(message *pb_broker.DeduplicatedUplinkMes
 		ctx.WithError(err).Error("Could not push frame for device")
 	}
 
-	frames, _ := history.Get()
-
-	if dev.ADR.Failed <= maxADRFails && len(frames) >= device.FramesHistorySize {
-		lorawanDownlinkMAC.ADR = true
-	}
-
 	md := message.GetProtocolMetadata()
 	if dev.ADR.Band == "" {
 		dev.ADR.Band = md.GetLoRaWAN().GetFrequencyPlan().String()
 	}
-
-	var scheduleADR, forceADR bool
-
-	switch dev.ADR.Band {
-	case pb_lorawan.FrequencyPlan_US_902_928.String(), pb_lorawan.FrequencyPlan_AU_915_928.String():
-		if !dev.ADR.SentInitial {
-			scheduleADR = true
-			forceADR = true
-			message.Trace = message.Trace.WithEvent(ScheduleMACEvent, macCMD, "link-adr", "reason", "initial")
-			ctx.Debug("Schedule ADR [initial]")
-		}
+	if dev.ADR.Margin == 0 {
+		dev.ADR.Margin = DefaultADRMargin
 	}
 
-	dataRate := md.GetLoRaWAN().GetDataRate()
-	if dev.ADR.DataRate != dataRate {
-		dev.ADR.DataRate = dataRate
-		scheduleADR = true
-		message.Trace = message.Trace.WithEvent(ScheduleMACEvent, macCMD, "link-adr", "reason", "optimize")
-		ctx.Debug("Schedule ADR [optimize]")
+	fp, err := band.Get(dev.ADR.Band)
+	if err != nil {
+		return err
+	}
+	dev.ADR.DataRate = md.GetLoRaWAN().GetDataRate()
+	if dev.ADR.TxPower == 0 {
+		dev.ADR.TxPower = fp.DefaultTXPower
+	}
+	if dev.ADR.NbTrans == 0 {
+		dev.ADR.NbTrans = 1
+	}
+	dev.ADR.SendReq = false
+
+	adrMargin := float32(dev.ADR.Margin)
+	frames, _ := history.Get()
+	if len(frames) >= device.FramesHistorySize {
+		frames = frames[:device.FramesHistorySize]
+	} else {
+		adrMargin += 2.5
 	}
 
-	if lorawanUplinkMAC.ADRAckReq {
-		scheduleADR = true
+	desiredDataRate, desiredTxPower, err := fp.ADRSettings(dev.ADR.DataRate, dev.ADR.TxPower, maxSNR(frames), adrMargin)
+	if err == band.ErrADRUnavailable {
+		ctx.Debugf("ADR not available in %s", dev.ADR.Band)
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+
+	var forceADR bool
+
+	if !dev.ADR.SentInitial && (dev.ADR.Band == pb_lorawan.FrequencyPlan_US_902_928.String() || dev.ADR.Band == pb_lorawan.FrequencyPlan_AU_915_928.String()) {
+		dev.ADR.SendReq = true
+		forceADR = true
+		message.Trace = message.Trace.WithEvent(ScheduleMACEvent, macCMD, "link-adr", "reason", "initial")
+		ctx.Debug("Schedule ADR [initial]")
+	} else if lorawanUplinkMAC.ADRAckReq {
+		dev.ADR.SendReq = true
+		forceADR = true
+		message.Trace = message.Trace.WithEvent(ScheduleMACEvent, macCMD, "link-adr", "reason", "adr-ack-req")
 		lorawanDownlinkMAC.Ack = true
-		message.Trace = message.Trace.WithEvent("set ack", "reason", "adr-ack-req")
 		ctx.Debug("Schedule ADR [adr-ack-req]")
-	}
-
-	if scheduleADR {
-		if fp, err := band.Get(dev.ADR.Band); err == nil {
-			if drIdx, err := fp.GetDataRateIndexFor(dataRate); err == nil && drIdx == 0 {
-				if len(frames) >= device.FramesHistorySize {
-					forceADR = true
-					message.Trace = message.Trace.WithEvent(ScheduleMACEvent, macCMD, "link-adr", "reason", "avoid high sf")
-					ctx.Debug("Schedule ADR [avoid high sf]")
-				}
-			}
+	} else if dev.ADR.DataRate != desiredDataRate || dev.ADR.TxPower != desiredTxPower {
+		dev.ADR.SendReq = true
+		if drIdx, err := fp.GetDataRateIndexFor(dev.ADR.DataRate); err == nil && drIdx == 0 {
+			forceADR = true
+		} else {
+			forceADR = viper.GetBool("networkserver.force-adr-optimize")
 		}
+		message.Trace = message.Trace.WithEvent(ScheduleMACEvent, macCMD, "link-adr", "reason", "optimize")
+		ctx.Debugf("Schedule ADR [optimize] %s->%s", dev.ADR.DataRate, desiredDataRate)
 	}
 
-	dev.ADR.SendReq = scheduleADR
+	if !dev.ADR.SendReq {
+		return nil
+	}
+
+	dev.ADR.DataRate, dev.ADR.TxPower, dev.ADR.NbTrans = desiredDataRate, desiredTxPower, 1
+
 	if forceADR {
 		err := n.setADR(lorawanDownlinkMAC, dev)
 		if err != nil {
@@ -138,7 +146,7 @@ func (n *networkServer) handleUplinkADR(message *pb_broker.DeduplicatedUplinkMes
 	return nil
 }
 
-const maxADRFails = 3
+const maxADRFails = 10
 
 func (n *networkServer) setADR(mac *pb_lorawan.MACPayload, dev *device.Device) error {
 	if !dev.ADR.SendReq {
@@ -166,90 +174,19 @@ func (n *networkServer) setADR(mac *pb_lorawan.MACPayload, dev *device.Device) e
 		ctx.Debug("Empty ADR DataRate")
 		return nil
 	}
-	if dev.ADR.Margin == 0 {
-		dev.ADR.Margin = DefaultADRMargin
-	}
-	if dev.ADR.Band == "" {
-		ctx.Debug("Empty ADR Band")
-		return nil
-	}
+
 	fp, err := band.Get(dev.ADR.Band)
 	if err != nil {
 		return err
 	}
-	if dev.ADR.TxPower == 0 {
-		dev.ADR.TxPower = fp.DefaultTXPower
-	}
-	if dev.ADR.NbTrans == 0 {
-		dev.ADR.NbTrans = 1
-	}
-
-	// Get history
-	history, err := n.devices.Frames(dev.AppEUI, dev.DevEUI)
+	drIdx, err := fp.GetDataRateIndexFor(dev.ADR.DataRate)
 	if err != nil {
 		return err
 	}
-	frames, err := history.Get()
-	if err != nil {
-		return err
-	}
-	switch {
-	case len(frames) == 0:
-		ctx.Debug("No historical data for ADR")
-		return nil
-	case len(frames) >= device.FramesHistorySize:
-		frames = frames[:device.FramesHistorySize]
-	}
-
-	// Add extra margin if we don't have enough data yet
-	adrMargin := float32(dev.ADR.Margin)
-	if len(frames) < device.FramesHistorySize {
-		adrMargin += 2.5
-	}
-
-	// Calculate desired ADR settings
-	dataRate, txPower, err := fp.ADRSettings(dev.ADR.DataRate, dev.ADR.TxPower, maxSNR(frames), adrMargin)
-	if err == band.ErrADRUnavailable {
-		ctx.Debugf("ADR not available in %s", dev.ADR.Band)
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-	drIdx, err := fp.GetDataRateIndexFor(dataRate)
-	if err != nil {
-		return err
-	}
-	powerIdx, err := fp.GetTxPowerIndexFor(txPower)
+	powerIdx, err := fp.GetTxPowerIndexFor(dev.ADR.TxPower)
 	if err != nil {
 		powerIdx, _ = fp.GetTxPowerIndexFor(fp.DefaultTXPower)
 	}
-	var nbTrans = dev.ADR.NbTrans
-	if dev.ADR.DataRate == dataRate && dev.ADR.TxPower == txPower && !dev.Options.DisableFCntCheck {
-		lossPercentage := lossPercentage(frames)
-		switch {
-		case lossPercentage <= 5:
-			nbTrans--
-		case lossPercentage <= 10:
-			// don't change
-		case lossPercentage <= 30:
-			nbTrans++
-		default:
-			nbTrans += 2
-		}
-		if nbTrans < 1 {
-			nbTrans = 1
-		}
-		if nbTrans > 3 {
-			nbTrans = 3
-		}
-	}
-
-	if dev.ADR.SentInitial && dev.ADR.DataRate == dataRate && dev.ADR.TxPower == txPower && dev.ADR.NbTrans == nbTrans {
-		ctx.Debug("No ADR needed")
-		return nil // Nothing to do
-	}
-	dev.ADR.DataRate, dev.ADR.TxPower, dev.ADR.NbTrans = dataRate, txPower, nbTrans
 
 	payloads := getAdrReqPayloads(dev, &fp, drIdx, powerIdx)
 	if len(payloads) == 0 {
@@ -303,11 +240,18 @@ func (n *networkServer) handleDownlinkADR(message *pb_broker.DownlinkMessage, de
 func getAdrReqPayloads(dev *device.Device, frequencyPlan *band.FrequencyPlan, drIdx int, powerIdx int) []lorawan.LinkADRReqPayload {
 	payloads := []lorawan.LinkADRReqPayload{}
 	switch dev.ADR.Band {
-	case pb_lorawan.FrequencyPlan_EU_863_870.String():
-		if dev.ADR.Failed > 0 && powerIdx > 5 {
+
+	// Frequency plans with three mandatory channels:
+	case pb_lorawan.FrequencyPlan_EU_863_870.String(),
+		pb_lorawan.FrequencyPlan_EU_433.String(),
+		pb_lorawan.FrequencyPlan_KR_920_923.String(),
+		pb_lorawan.FrequencyPlan_IN_865_867.String():
+
+		if dev.ADR.Band == pb_lorawan.FrequencyPlan_EU_863_870.String() && dev.ADR.Failed > 0 && powerIdx > 5 {
 			// fall back to txPower 5 for LoRaWAN 1.0
 			powerIdx = 5
 		}
+
 		payloads = []lorawan.LinkADRReqPayload{
 			{
 				DataRate: uint8(drIdx),
@@ -332,6 +276,37 @@ func getAdrReqPayloads(dev *device.Device, frequencyPlan *band.FrequencyPlan, dr
 				}
 			}
 		}
+
+	// Frequency plans with two default channels:
+	case pb_lorawan.FrequencyPlan_AS_923.String(),
+		pb_lorawan.FrequencyPlan_AS_920_923.String(),
+		pb_lorawan.FrequencyPlan_AS_923_925.String(),
+		pb_lorawan.FrequencyPlan_RU_864_870.String():
+		payloads = []lorawan.LinkADRReqPayload{
+			{
+				DataRate: uint8(drIdx),
+				TXPower:  uint8(powerIdx),
+				Redundancy: lorawan.Redundancy{
+					ChMaskCntl: 0,
+					NbRep:      uint8(dev.ADR.NbTrans),
+				},
+			},
+		}
+		if dev.ADR.Failed > 0 {
+			// Fall back to the mandatory LoRaWAN channels
+			payloads[0].ChMask[0] = true
+			payloads[0].ChMask[1] = true
+		} else {
+			for i, ch := range frequencyPlan.UplinkChannels {
+				for _, dr := range ch.DataRates {
+					if dr == drIdx {
+						payloads[0].ChMask[i] = true
+					}
+				}
+			}
+		}
+
+	// Frequency plans with 8 FSBs:
 	case pb_lorawan.FrequencyPlan_US_902_928.String(), pb_lorawan.FrequencyPlan_AU_915_928.String():
 		var dr500 uint8
 		switch dev.ADR.Band {
