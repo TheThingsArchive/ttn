@@ -11,6 +11,8 @@ variables:
 
 cache:
   key: "$CI_PROJECT_PATH"
+  paths:
+    - /go/pkg/mod
 
 tests:
   stage: test
