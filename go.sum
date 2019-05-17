@@ -7,8 +7,8 @@ github.com/StackExchange/wmi v0.0.0-20181212234831-e0a55b97c705/go.mod h1:3eOhrU
 github.com/TheThingsNetwork/api v0.0.0-20190330165854-3fb363b63d07/go.mod h1:iGcCXFi0My4IJbLSWWlRONaYiMtSjLbdkfFE5xBrgRc=
 github.com/TheThingsNetwork/api v0.0.0-20190516085542-c732802571cf h1:1LvY2VUOy+/Sb5O8eE2HIecvUZupe7kLoquUpeajuPs=
 github.com/TheThingsNetwork/api v0.0.0-20190516085542-c732802571cf/go.mod h1:XO2/81Njy3JefUFXtTg63YGJJ2wUyMRyYm6LaYfu8jE=
-github.com/TheThingsNetwork/api v0.0.0-20190516111443-a3523f89e84f h1:socqGNa6e5LZ4mQFZmwKHrejRHX3geh6kZzHUhVCSqI=
-github.com/TheThingsNetwork/api v0.0.0-20190516111443-a3523f89e84f/go.mod h1:MYWz0xDXK+4LWQMnAcm//UPhLoamf67LgFjMwUdhKbE=
+github.com/TheThingsNetwork/api v0.0.0-20190516145942-631860935c2b h1:freUS8NvlSFKjjetQlMbfztZ+Vq7Dku5cn1o0Nfn4HI=
+github.com/TheThingsNetwork/api v0.0.0-20190516145942-631860935c2b/go.mod h1:MYWz0xDXK+4LWQMnAcm//UPhLoamf67LgFjMwUdhKbE=
 github.com/TheThingsNetwork/go-account-lib v0.0.0-20190516094738-77d15a3f8875 h1:Q6gqExgAk2mQlZPur7dwbGsy9Uxs9Hs2kurMTd+o2Rc=
 github.com/TheThingsNetwork/go-account-lib v0.0.0-20190516094738-77d15a3f8875/go.mod h1:VZeXL6kkGnZouPnLESpVSGSRQNlz8zAOKHzr0P6m4pc=
 github.com/TheThingsNetwork/go-cayenne-lib v1.0.0 h1:be7h6E/69+qaYs1iwQ2xjGjSFPXzvU3q6AWBCWayG2Y=
