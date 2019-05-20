@@ -8,7 +8,6 @@ import (
 	"sort"
 	"sync"
 	"testing"
-
 	"fmt"
 
 	"github.com/apex/log"
