@@ -7,17 +7,19 @@ replace github.com/brocaar/lorawan => github.com/ThethingsIndustries/legacy-lora
 replace github.com/robertkrimen/otto => github.com/ThethingsIndustries/otto v0.0.0-20181129100957-6ddbbb60554a
 
 require (
-	github.com/TheThingsNetwork/api v0.0.0-20190516145942-631860935c2b
+	github.com/TheThingsNetwork/api v0.0.0-20190517100736-d4d18a220bfe
 	github.com/TheThingsNetwork/go-account-lib v0.0.0-20190516094738-77d15a3f8875
 	github.com/TheThingsNetwork/go-cayenne-lib v1.0.0
 	github.com/TheThingsNetwork/go-utils v0.0.0-20190516083235-bdd4967fab4e
 	github.com/TheThingsNetwork/ttn/api v0.0.0-20190516093004-b66899428ed5
-	github.com/TheThingsNetwork/ttn/core/types v0.0.0-20190516093004-b66899428ed5
+	github.com/TheThingsNetwork/ttn/core/proxy v0.0.0-20190520085727-78600a8e394e
+	github.com/TheThingsNetwork/ttn/core/types v0.0.0-20190517101034-52d38c791f1e
 	github.com/TheThingsNetwork/ttn/mqtt v0.0.0-20190516093004-b66899428ed5
 	github.com/TheThingsNetwork/ttn/utils/errors v0.0.0-20190516093004-b66899428ed5
 	github.com/TheThingsNetwork/ttn/utils/random v0.0.0-20190516093004-b66899428ed5
 	github.com/TheThingsNetwork/ttn/utils/security v0.0.0-20190516093004-b66899428ed5
-	github.com/TheThingsNetwork/ttn/utils/testing v0.0.0-20190516093004-b66899428ed5
+	github.com/TheThingsNetwork/ttn/utils/testing v0.0.0-20190520084050-7adf4a69a7c3
+	github.com/TheThingsNetwork/ttn/utils/toa v0.0.0-20190520085727-78600a8e394e
 	github.com/apex/log v1.1.0
 	github.com/bluele/gcache v0.0.0-20190301044115-79ae3b2d8680
 	github.com/brocaar/lorawan v0.0.0-20170626123636-a64aca28516d
