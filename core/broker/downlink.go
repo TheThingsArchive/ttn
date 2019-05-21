@@ -33,9 +33,9 @@ func (b *broker) HandleDownlink(downlink *pb.DownlinkMessage) error {
 			b.RegisterHandled(downlink)
 			ctx.WithField("Duration", time.Now().Sub(start)).Info("Handled downlink")
 		}
-		if downlink != nil && b.monitorStream != nil {
-			b.monitorStream.Send(downlink)
-		}
+		// if downlink != nil && b.monitorStream != nil {
+		// 	b.monitorStream.Send(downlink)
+		// }
 	}()
 
 	b.status.downlink.Mark(1)

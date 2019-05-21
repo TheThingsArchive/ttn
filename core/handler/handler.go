@@ -9,9 +9,7 @@ import (
 	pb_broker "github.com/TheThingsNetwork/api/broker"
 	"github.com/TheThingsNetwork/api/broker/brokerclient"
 	pb "github.com/TheThingsNetwork/api/handler"
-	"github.com/TheThingsNetwork/api/monitor/monitorclient"
 	pb_lorawan "github.com/TheThingsNetwork/api/protocol/lorawan"
-	"github.com/TheThingsNetwork/go-utils/grpc/auth"
 	"github.com/TheThingsNetwork/ttn/amqp"
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/handler/application"
@@ -82,8 +80,8 @@ type handler struct {
 	qUp    chan *types.UplinkMessage
 	qEvent chan *types.DeviceEvent
 
-	status        *status
-	monitorStream monitorclient.Stream
+	status *status
+	// monitorStream monitorclient.Stream
 }
 
 var (
@@ -171,9 +169,9 @@ func (h *handler) Init(c *component.Component) error {
 	}
 
 	h.Component.SetStatus(component.StatusHealthy)
-	if h.Component.Monitor != nil {
-		h.monitorStream = h.Component.Monitor.HandlerClient(h.Context, grpc.PerRPCCredentials(auth.WithStaticToken(h.AccessToken)))
-	}
+	// if h.Component.Monitor != nil {
+	// 	h.monitorStream = h.Component.Monitor.HandlerClient(h.Context, grpc.PerRPCCredentials(auth.WithStaticToken(h.AccessToken)))
+	// }
 
 	return nil
 }

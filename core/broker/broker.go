@@ -10,10 +10,8 @@ import (
 	"time"
 
 	pb "github.com/TheThingsNetwork/api/broker"
-	"github.com/TheThingsNetwork/api/monitor/monitorclient"
 	"github.com/TheThingsNetwork/api/networkserver"
 	pb_lorawan "github.com/TheThingsNetwork/api/protocol/lorawan"
-	"github.com/TheThingsNetwork/go-utils/grpc/auth"
 	"github.com/TheThingsNetwork/ttn/api"
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/types"
@@ -66,7 +64,7 @@ type broker struct {
 	uplinkDeduplicator     Deduplicator
 	activationDeduplicator Deduplicator
 	status                 *status
-	monitorStream          monitorclient.Stream
+	// monitorStream          monitorclient.Stream
 }
 
 func (b *broker) checkPrefixAnnouncements() error {
@@ -135,9 +133,9 @@ func (b *broker) Init(c *component.Component) error {
 	b.ns = networkserver.NewNetworkServerClient(conn)
 	b.checkPrefixAnnouncements()
 	b.Component.SetStatus(component.StatusHealthy)
-	if b.Component.Monitor != nil {
-		b.monitorStream = b.Component.Monitor.BrokerClient(b.Context, grpc.PerRPCCredentials(auth.WithStaticToken(b.AccessToken)))
-	}
+	// if b.Component.Monitor != nil {
+	// 	b.monitorStream = b.Component.Monitor.BrokerClient(b.Context, grpc.PerRPCCredentials(auth.WithStaticToken(b.AccessToken)))
+	// }
 	return nil
 }
 

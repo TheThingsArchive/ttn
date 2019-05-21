@@ -42,9 +42,9 @@ func (b *broker) HandleUplink(uplink *pb.UplinkMessage) (err error) {
 			b.RegisterHandled(uplink)
 			ctx.WithField("Duration", time.Now().Sub(start)).Info("Handled uplink")
 		}
-		if deduplicatedUplink != nil && b.monitorStream != nil {
-			b.monitorStream.Send(deduplicatedUplink)
-		}
+		// if deduplicatedUplink != nil && b.monitorStream != nil {
+		// 	b.monitorStream.Send(deduplicatedUplink)
+		// }
 	}()
 
 	b.status.uplink.Mark(1)

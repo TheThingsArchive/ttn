@@ -6,14 +6,11 @@ package networkserver
 import (
 	pb_broker "github.com/TheThingsNetwork/api/broker"
 	pb_handler "github.com/TheThingsNetwork/api/handler"
-	"github.com/TheThingsNetwork/api/monitor/monitorclient"
 	pb "github.com/TheThingsNetwork/api/networkserver"
-	"github.com/TheThingsNetwork/go-utils/grpc/auth"
 	"github.com/TheThingsNetwork/ttn/core/component"
 	"github.com/TheThingsNetwork/ttn/core/networkserver/device"
 	"github.com/TheThingsNetwork/ttn/core/types"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
-	"google.golang.org/grpc"
 	"gopkg.in/redis.v5"
 )
 
@@ -44,11 +41,11 @@ func NewRedisNetworkServer(client *redis.Client, netID int) NetworkServer {
 
 type networkServer struct {
 	*component.Component
-	devices       device.Store
-	netID         [3]byte
-	prefixes      map[types.DevAddrPrefix][]string
-	status        *status
-	monitorStream monitorclient.Stream
+	devices  device.Store
+	netID    [3]byte
+	prefixes map[types.DevAddrPrefix][]string
+	status   *status
+	// monitorStream monitorclient.Stream
 }
 
 func (n *networkServer) UsePrefix(prefix types.DevAddrPrefix, usage []string) error {
@@ -88,9 +85,9 @@ func (n *networkServer) Init(c *component.Component) error {
 		return err
 	}
 	n.Component.SetStatus(component.StatusHealthy)
-	if n.Component.Monitor != nil {
-		n.monitorStream = n.Component.Monitor.NetworkServerClient(n.Context, grpc.PerRPCCredentials(auth.WithStaticToken(n.AccessToken)))
-	}
+	// if n.Component.Monitor != nil {
+	// 	n.monitorStream = n.Component.Monitor.NetworkServerClient(n.Context, grpc.PerRPCCredentials(auth.WithStaticToken(n.AccessToken)))
+	// }
 	return nil
 }
 
