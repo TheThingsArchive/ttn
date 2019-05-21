@@ -19,10 +19,9 @@ all: deps build
 # Deps
 
 build-deps:
-	@command -v govendor > /dev/null || go get "github.com/kardianos/govendor"
 
-deps: build-deps
-	govendor sync -v
+deps:
+	go mod download
 
 dev-deps: deps
 	@command -v protoc-gen-grpc-gateway > /dev/null || go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway
@@ -31,36 +30,6 @@ dev-deps: deps
 	@command -v mockgen > /dev/null || go get github.com/golang/mock/mockgen
 	@command -v golint > /dev/null || go get golang.org/x/lint/golint
 	@command -v forego > /dev/null || go get github.com/ddollar/forego
-
-# Protobuf
-
-PROTO_FILES = $(shell find api -name "*.proto" -and -not -name ".git")
-COMPILED_PROTO_FILES = $(patsubst api%.proto, api%.pb.go, $(PROTO_FILES))
-PROTOC_IMPORTS= -I/usr/local/include -I$(GO_PATH)/src -I$(PWD)/vendor -I$(PARENT_DIRECTORY) \
--I$(GO_PATH)/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis
-PROTOC = protoc $(PROTOC_IMPORTS) \
---gogottn_out=plugins=grpc:$(GO_SRC) \
---grpc-gateway_out=:$(GO_SRC) `pwd`/
-
-protos-clean:
-	rm -f $(COMPILED_PROTO_FILES)
-
-protos: $(COMPILED_PROTO_FILES)
-
-api/%.pb.go: api/%.proto
-	$(PROTOC)$<
-
-protodoc: $(PROTO_FILES)
-	protoc $(PROTOC_IMPORTS) --ttndoc_out=logtostderr=true,.lorawan.DevAddrManager=all:$(GO_SRC) `pwd`/api/protocol/lorawan/device_address.proto
-	protoc $(PROTOC_IMPORTS) --ttndoc_out=logtostderr=true,.handler.ApplicationManager=all:$(GO_SRC) `pwd`/api/handler/handler.proto
-	protoc $(PROTOC_IMPORTS) --ttndoc_out=logtostderr=true,.discovery.Discovery=all:$(GO_SRC) `pwd`/api/discovery/discovery.proto
-
-# Mocks
-
-mocks:
-	mockgen -source=./api/protocol/lorawan/device.pb.go -package lorawan DeviceManagerClient > api/protocol/lorawan/device_mock.go
-	mockgen -source=./api/networkserver/networkserver.pb.go -package networkserver NetworkServerClient > api/networkserver/networkserver_mock.go
-	mockgen -source=./api/discovery/client.go -package discovery Client > api/discovery/client_mock.go
 
 dev-certs:
 	ttn discovery gen-cert localhost 127.0.0.1 ::1 discovery --config ./.env/discovery/dev.yml
@@ -72,44 +41,39 @@ dev-certs:
 # Go Test
 
 GO_FILES = $(shell find . -name "*.go" | grep -vE ".git|.env|vendor|.pb.go|_mock.go")
-GO_PACKAGES = $(shell find . -name "*.go" | grep -vE ".git|.env|vendor" | sed 's:/[^/]*$$::' | sort | uniq)
-GO_TEST_PACKAGES = $(shell find . -name "*_test.go" | grep -vE ".git|.env|vendor" | sed 's:/[^/]*$$::' | sort | uniq)
-GO_COVER_PACKAGES = $(shell find . -name "*_test.go" | grep -vE ".git|.env|vendor|ttnctl|cmd|api" | sed 's:/[^/]*$$::' | sort | uniq)
 
-GO_COVER_FILE ?= coverage.out
-GO_COVER_DIR ?= .cover
-GO_COVER_FILES = $(patsubst ./%, $(GO_COVER_DIR)/%.out, $(shell echo "$(GO_COVER_PACKAGES)"))
+GO_COVER_FILES = `find . -name "coverage.out"`
 
 test: $(GO_FILES)
-	go test $(GO_TEST_PACKAGES)
+	go test ./...
+	pushd api > /dev/null; go test ./...; popd > /dev/null
+	pushd core/types > /dev/null; go test ./...; popd > /dev/null
+	pushd mqtt > /dev/null; go test ./...; popd > /dev/null
+	pushd utils/errors > /dev/null; go test ./...; popd > /dev/null
+	pushd utils/random > /dev/null; go test ./...; popd > /dev/null
+	pushd utils/security > /dev/null; go test ./...; popd > /dev/null
+	pushd utils/testing > /dev/null; go test ./...; popd > /dev/null
 
 cover-clean:
-	rm -rf $(GO_COVER_DIR) $(GO_COVER_FILE)
+	rm -f $(GO_COVER_FILES) coverage.out.merged
 
 cover-deps:
 	@command -v goveralls > /dev/null || go get github.com/mattn/goveralls
 
-cover: $(GO_COVER_FILE)
+cover: cover-clean $(GO_FILES)
+	go test -coverprofile=coverage.out ./...
+	pushd api > /dev/null; go test -coverprofile=coverage.out ./...; popd > /dev/null
+	pushd core/types > /dev/null; go test -coverprofile=coverage.out ./...; popd > /dev/null
+	pushd mqtt > /dev/null; go test -coverprofile=coverage.out ./...; popd > /dev/null
+	pushd utils/errors > /dev/null; go test -coverprofile=coverage.out ./...; popd > /dev/null
+	pushd utils/random > /dev/null; go test -coverprofile=coverage.out ./...; popd > /dev/null
+	pushd utils/security > /dev/null; go test -coverprofile=coverage.out ./...; popd > /dev/null
+	pushd utils/testing > /dev/null; go test -coverprofile=coverage.out ./...; popd > /dev/null
+	echo "mode: set" > coverage.out.merged
+	cat $(GO_COVER_FILES) | grep -vE "mode: set|/server.go|/manager_server.go" | sort > coverage.out.merged
 
-$(GO_COVER_FILE): cover-clean $(GO_COVER_FILES)
-	echo "mode: set" > $(GO_COVER_FILE)
-	cat $(GO_COVER_FILES) | grep -vE "mode: set|/server.go|/manager_server.go" | sort >> $(GO_COVER_FILE)
-
-$(GO_COVER_DIR)/%.out: %
-	@mkdir -p "$(GO_COVER_DIR)/$<"
-	go test -cover -coverprofile="$@" "./$<"
-
-coveralls: cover-deps $(GO_COVER_FILE)
-	goveralls -coverprofile=$(GO_COVER_FILE) -service=travis-ci -repotoken $$COVERALLS_TOKEN
-
-fmt:
-	[[ -z "`echo "$(GO_PACKAGES)" | xargs go fmt | tee -a /dev/stderr`" ]]
-
-vet:
-	echo $(GO_PACKAGES) | xargs go vet
-
-lint:
-	for pkg in `echo $(GO_PACKAGES)`; do golint $$pkg | grep -vE 'mock|.pb.go'; done
+coveralls: cover-deps cover
+	goveralls -coverprofile=coverage.out.merged -service=travis-ci -repotoken $$COVERALLS_TOKEN
 
 # Go Build
 
