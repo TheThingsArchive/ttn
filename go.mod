@@ -7,7 +7,7 @@ replace github.com/brocaar/lorawan => github.com/ThethingsIndustries/legacy-lora
 replace github.com/robertkrimen/otto => github.com/ThethingsIndustries/otto v0.0.0-20181129100957-6ddbbb60554a
 
 require (
-	github.com/TheThingsNetwork/api v0.0.0-20190517100736-d4d18a220bfe
+	github.com/TheThingsNetwork/api v0.0.0-20190522113053-d844e8c040fc
 	github.com/TheThingsNetwork/go-account-lib v0.0.0-20190516094738-77d15a3f8875
 	github.com/TheThingsNetwork/go-cayenne-lib v1.0.0
 	github.com/TheThingsNetwork/go-utils v0.0.0-20190516083235-bdd4967fab4e
