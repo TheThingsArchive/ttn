@@ -46,10 +46,11 @@ type ADRSettings struct {
 	Margin int    `redis:"margin"`
 
 	// Indicates whether the NetworkServer should send a LinkADRReq when possible
-	SentInitial bool `redis:"sent_initial"`
-	SendReq     bool `redis:"send_req"`
-	ExpectRes   bool `redis:"expect_res"`
-	Failed      int  `redis:"failed"` // number of failed ADR attempts
+	SentInitial      bool `redis:"sent_initial"`
+	ConfirmedInitial bool `redis:"confirmed_initial"`
+	SendReq          bool `redis:"send_req"`
+	ExpectRes        bool `redis:"expect_res"`
+	Failed           int  `redis:"failed"` // number of failed ADR attempts
 
 	// Desired Settings:
 	DataRate string `redis:"data_rate"`

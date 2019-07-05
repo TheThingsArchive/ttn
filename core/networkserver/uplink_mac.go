@@ -64,6 +64,7 @@ func (n *networkServer) handleUplinkMAC(message *pb_broker.DeduplicatedUplinkMes
 			if answer.DataRateACK && answer.PowerACK && answer.ChannelMaskACK {
 				dev.ADR.Failed = 0
 				dev.ADR.SendReq = false
+				dev.ADR.ConfirmedInitial = true
 				ctx.WithFields(log.Fields{
 					"DataRate": dev.ADR.DataRate,
 					"TxPower":  dev.ADR.TxPower,
