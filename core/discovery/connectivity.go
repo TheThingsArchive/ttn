@@ -35,9 +35,11 @@ type serviceStatus struct {
 	lastAvailable   time.Time
 }
 
+const maxUnavailable = 10 * time.Minute
+
 func (s *serviceStatus) Available() (available bool) {
 	s.mu.RLock()
-	available = !s.lastAvailable.Before(s.lastStateChange)
+	available = s.lastStateChange.Sub(s.lastAvailable) <= maxUnavailable
 	s.mu.RUnlock()
 	return
 }
@@ -110,12 +112,16 @@ func (d *discovery) updateStatus() error {
 								status.lastStateChange = time.Now()
 								switch state {
 								case connectivity.Idle:
+									d.Ctx.Infof("%s %s connection idle", id.serviceName, id.id)
 								case connectivity.Connecting:
+									d.Ctx.Infof("%s %s connecting", id.serviceName, id.id)
 								case connectivity.Ready:
-									d.Ctx.Infof("%s %s is available", id.serviceName, id.id)
+									d.Ctx.Infof("%s %s connection ready", id.serviceName, id.id)
 									status.lastAvailable = status.lastStateChange
 								case connectivity.TransientFailure:
+									d.Ctx.Warnf("%s %s connection failure", id.serviceName, id.id)
 								case connectivity.Shutdown:
+									d.Ctx.Infof("%s %s connection shutdown", id.serviceName, id.id)
 								}
 								status.mu.Unlock()
 							} else { // context canceled
