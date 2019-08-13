@@ -10,7 +10,7 @@ require (
 	github.com/TheThingsNetwork/api v0.0.0-20190522113053-d844e8c040fc
 	github.com/TheThingsNetwork/go-account-lib v0.0.0-20190516094738-77d15a3f8875
 	github.com/TheThingsNetwork/go-cayenne-lib v1.0.0
-	github.com/TheThingsNetwork/go-utils v0.0.0-20190516083235-bdd4967fab4e
+	github.com/TheThingsNetwork/go-utils v0.0.0-20190813113035-8715cf82e887
 	github.com/TheThingsNetwork/ttn/api v0.0.0-20190516093004-b66899428ed5
 	github.com/TheThingsNetwork/ttn/core/proxy v0.0.0-20190520085727-78600a8e394e
 	github.com/TheThingsNetwork/ttn/core/types v0.0.0-20190517101034-52d38c791f1e

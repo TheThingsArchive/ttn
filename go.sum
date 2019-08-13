@@ -16,6 +16,8 @@ github.com/TheThingsNetwork/go-cayenne-lib v1.0.0/go.mod h1:Lkg0oDuFTF6WlZvyPV35
 github.com/TheThingsNetwork/go-utils v0.0.0-20190331064810-aa2a11bd5910/go.mod h1:ux1QZ2JrltnJxuZ0VoNbJP1k8Eb5jiMkR3RGDXyBS+o=
 github.com/TheThingsNetwork/go-utils v0.0.0-20190516083235-bdd4967fab4e h1:JEt3G2ONKGfW1YDp2A8Q/+kZIuIB117nkit0+GDJN04=
 github.com/TheThingsNetwork/go-utils v0.0.0-20190516083235-bdd4967fab4e/go.mod h1:9uzg7Jk8ywYqL+xUEhTNrJcs68Nafj4qTaz/zB+STwg=
+github.com/TheThingsNetwork/go-utils v0.0.0-20190813113035-8715cf82e887 h1:DF/1gkOPk3jtwWa9dFd5tUtwb6z3bLw9tZ/UALbS5Ck=
+github.com/TheThingsNetwork/go-utils v0.0.0-20190813113035-8715cf82e887/go.mod h1:9uzg7Jk8ywYqL+xUEhTNrJcs68Nafj4qTaz/zB+STwg=
 github.com/TheThingsNetwork/ttn/api v0.0.0-20190516081709-034d40b328bd/go.mod h1:UCRXmEaShvS/wHOf2RcoY2vKUGJnrYrotBA6LZzYdFM=
 github.com/TheThingsNetwork/ttn/api v0.0.0-20190516093004-b66899428ed5 h1:CWZxNG3BP+51XnsImFuBxWABdU+y2GVPzF4daWu3Sp4=
 github.com/TheThingsNetwork/ttn/api v0.0.0-20190516093004-b66899428ed5/go.mod h1:UCz6JjSI/HZZjHu/TcfbI0p+76D7IUUtyX9nd3Byq1Y=
