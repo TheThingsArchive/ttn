@@ -134,6 +134,7 @@ func (n *networkServer) HandleActivate(activation *pb_handler.DeviceActivationRe
 
 	dev.LastSeen = time.Now()
 	dev.UpdatedAt = time.Now()
+	dev.ActivatedAt = time.Now()
 	dev.DevAddr = *lorawan.DevAddr
 	dev.NwkSKey = *lorawan.NwkSKey
 	dev.FCntUp = 0
