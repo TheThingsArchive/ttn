@@ -36,9 +36,9 @@ type Device struct {
 	Options  Options       `redis:"options"`
 	ADR      ADRSettings   `redis:"adr,include"`
 
-	CreatedAt time.Time    `redis:"created_at"`
-	UpdatedAt time.Time    `redis:"updated_at"`
-	ActivatedAt time.Time  `redis:"activated_at"` // Indicates whether the device was activated via OTAA method
+	CreatedAt   time.Time `redis:"created_at"`
+	UpdatedAt   time.Time `redis:"updated_at"`
+	ActivatedAt time.Time `redis:"activated_at"` // Indicates whether the device was activated via OTAA method
 }
 
 // ADRSettings contains the (desired) settings for a device that uses ADR
