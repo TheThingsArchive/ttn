@@ -45,9 +45,9 @@ func (b *broker) HandleActivation(activation *pb.DeviceActivationRequest) (res *
 			b.RegisterHandled(activation)
 			ctx.WithField("Duration", time.Now().Sub(start)).Info("Handled activation")
 		}
-		if deduplicatedActivationRequest != nil && b.monitorStream != nil {
-			b.monitorStream.Send(deduplicatedActivationRequest)
-		}
+		// if deduplicatedActivationRequest != nil && b.monitorStream != nil {
+		// 	b.monitorStream.Send(deduplicatedActivationRequest)
+		// }
 	}()
 
 	b.status.activations.Mark(1)

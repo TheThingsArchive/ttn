@@ -64,6 +64,7 @@ func (n *networkServer) handleUplinkMAC(message *pb_broker.DeduplicatedUplinkMes
 			if answer.DataRateACK && answer.PowerACK && answer.ChannelMaskACK {
 				dev.ADR.Failed = 0
 				dev.ADR.SendReq = false
+				dev.ADR.ConfirmedInitial = true
 				ctx.WithFields(log.Fields{
 					"DataRate": dev.ADR.DataRate,
 					"TxPower":  dev.ADR.TxPower,
@@ -96,7 +97,7 @@ func (n *networkServer) handleUplinkMAC(message *pb_broker.DeduplicatedUplinkMes
 	}
 
 	// We did not receive an ADR response, the device may have the wrong RX2 settings
-	if dev.ADR.ExpectRes && dev.ADR.Band == "EU_863_870" && viper.GetInt("eu-rx2-dr") != 0 {
+	if dev.ADR.ExpectRes && dev.ADR.Band == "EU_863_870" && viper.GetInt("eu-rx2-dr") != 0 && dev.ActivatedAt.IsZero() {
 		settings := message.GetResponseTemplate().GetDownlinkOption()
 		if settings.GetGatewayConfiguration().Frequency == 869525000 {
 			if loraSettings := settings.ProtocolConfiguration.GetLoRaWAN(); loraSettings != nil {

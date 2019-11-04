@@ -95,9 +95,9 @@ func (h *handler) HandleActivation(activation *pb_broker.DeduplicatedDeviceActiv
 			h.RegisterHandled(activation)
 			ctx.WithField("Duration", time.Now().Sub(start)).Info("Handled activation")
 		}
-		if activation != nil && h.monitorStream != nil {
-			h.monitorStream.Send(activation)
-		}
+		// if activation != nil && h.monitorStream != nil {
+		// 	h.monitorStream.Send(activation)
+		// }
 	}()
 	h.status.activations.Mark(1)
 

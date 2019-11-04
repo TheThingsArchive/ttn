@@ -51,6 +51,7 @@ func (n *networkServer) handleUplinkADR(message *pb_broker.DeduplicatedUplinkMes
 			return err
 		}
 		dev.ADR.SentInitial = false
+		dev.ADR.ConfirmedInitial = false
 		dev.ADR.SendReq = false
 		dev.ADR.DataRate = ""
 		dev.ADR.TxPower = 0
@@ -106,7 +107,7 @@ func (n *networkServer) handleUplinkADR(message *pb_broker.DeduplicatedUplinkMes
 
 	var forceADR bool
 
-	if !dev.ADR.SentInitial && (dev.ADR.Band == pb_lorawan.FrequencyPlan_US_902_928.String() || dev.ADR.Band == pb_lorawan.FrequencyPlan_AU_915_928.String()) {
+	if !dev.ADR.ConfirmedInitial && (dev.ADR.Band == pb_lorawan.FrequencyPlan_US_902_928.String() || dev.ADR.Band == pb_lorawan.FrequencyPlan_AU_915_928.String()) {
 		dev.ADR.SendReq = true
 		forceADR = true
 		message.Trace = message.Trace.WithEvent(ScheduleMACEvent, macCMD, "link-adr", "reason", "initial")

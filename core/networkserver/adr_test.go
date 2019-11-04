@@ -167,13 +167,13 @@ func TestADR(t *testing.T) {
 			uplink, downlink := adrInitUplinkMessage(), adrInitDownlinkMessage()
 			uplink.ProtocolMetadata.GetLoRaWAN().FrequencyPlan = pb_lorawan.FrequencyPlan(pb_lorawan.FrequencyPlan_value[tt.Band])
 
-			err := ns.handleUplinkADR(uplink, dev)
+			err := ns.handleUplinkMAC(uplink, dev)
 			a.So(err, ShouldBeNil)
 			a.So(dev.ADR.SendReq, ShouldBeFalse)
 
 			uplink.Message.GetLoRaWAN().GetMACPayload().ADR = true
 
-			err = ns.handleUplinkADR(uplink, dev)
+			err = ns.handleUplinkMAC(uplink, dev)
 			a.So(err, ShouldBeNil)
 			a.So(dev.ADR.SendReq, ShouldBeTrue)
 			a.So(dev.ADR.DataRate, ShouldEqual, tt.DesiredInitialDataRate)
@@ -183,7 +183,7 @@ func TestADR(t *testing.T) {
 			a.So(err, ShouldBeNil)
 			a.So(frames, ShouldHaveLength, 1)
 
-			err = ns.handleDownlinkADR(downlink, dev)
+			err = ns.handleDownlinkMAC(downlink, dev)
 			a.So(err, ShouldBeNil)
 
 			a.So(dev.ADR.SentInitial, ShouldBeTrue)
@@ -230,9 +230,23 @@ func TestADR(t *testing.T) {
 			}
 
 			for i := 0; i < 20; i++ {
+				if i == 0 {
+					ans, _ := lorawan.LinkADRAnsPayload{
+						ChannelMaskACK: true,
+						DataRateACK:    true,
+						PowerACK:       true,
+					}.MarshalBinary()
+					uplink.Message.GetLoRaWAN().GetMACPayload().FOpts = []pb_lorawan.MACCommand{
+						{CID: uint32(lorawan.LinkADRAns), Payload: ans},
+					}
+				} else {
+					uplink.Message.GetLoRaWAN().GetMACPayload().FOpts = []pb_lorawan.MACCommand{}
+				}
 				uplink.Message.GetLoRaWAN().GetMACPayload().FCnt++
-				ns.handleUplinkADR(uplink, dev)
+				ns.handleUplinkMAC(uplink, dev)
 			}
+
+			a.So(dev.ADR.ConfirmedInitial, ShouldBeTrue)
 
 			frames, err = history.Get()
 			a.So(err, ShouldBeNil)
@@ -242,7 +256,7 @@ func TestADR(t *testing.T) {
 			a.So(dev.ADR.DataRate, ShouldEqual, tt.DesiredDataRate)
 			a.So(dev.ADR.TxPower, ShouldEqual, tt.DesiredTxPower)
 
-			err = ns.handleDownlinkADR(downlink, dev)
+			err = ns.handleDownlinkMAC(downlink, dev)
 			a.So(err, ShouldBeNil)
 
 			fOpts = downlink.Message.GetLoRaWAN().GetMACPayload().FOpts
@@ -260,7 +274,7 @@ func TestADR(t *testing.T) {
 			uplink.ProtocolMetadata.GetLoRaWAN().DataRate = tt.DesiredDataRate
 			uplink.GatewayMetadata[0].SNR = 7.5
 
-			err = ns.handleUplinkADR(uplink, dev)
+			err = ns.handleUplinkMAC(uplink, dev)
 			a.So(err, ShouldBeNil)
 
 			a.So(dev.ADR.SendReq, ShouldBeFalse)

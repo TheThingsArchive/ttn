@@ -68,6 +68,9 @@ gitlab-image:
   image: docker:git
   services:
     - "docker:dind"
+  variables:
+    DOCKER_DRIVER: overlay2
+    DOCKER_TLS_CERTDIR: /certs
   script:
     - docker build -t ttn .
     - docker login -u "gitlab-ci-token" -p "$CI_BUILD_TOKEN" registry.gitlab.com
@@ -83,6 +86,9 @@ dockerhub-image:
   image: docker:git
   services:
     - "docker:dind"
+  variables:
+    DOCKER_DRIVER: overlay2
+    DOCKER_TLS_CERTDIR: /certs
   script:
     - docker build -t ttn .
     - docker login -u "$DOCKERHUB_USER" -p "$DOCKERHUB_PASSWORD"
