@@ -2,6 +2,8 @@ module github.com/TheThingsNetwork/ttn/api
 
 go 1.11
 
+replace github.com/TheThingsNetwork/ttn/utils/errors => ../utils/errors
+
 require (
 	github.com/StackExchange/wmi v0.0.0-20181212234831-e0a55b97c705 // indirect
 	github.com/TheThingsNetwork/api v0.0.0-20190516085542-c732802571cf

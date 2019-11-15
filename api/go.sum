@@ -4,12 +4,11 @@ github.com/StackExchange/wmi v0.0.0-20181212234831-e0a55b97c705 h1:UUppSQnhf4Yc6
 github.com/StackExchange/wmi v0.0.0-20181212234831-e0a55b97c705/go.mod h1:3eOhrUMpNV+6aFIbp5/iudMxNCF27Vw2OZgy4xEx0Fg=
 github.com/TheThingsNetwork/api v0.0.0-20190516085542-c732802571cf h1:1LvY2VUOy+/Sb5O8eE2HIecvUZupe7kLoquUpeajuPs=
 github.com/TheThingsNetwork/api v0.0.0-20190516085542-c732802571cf/go.mod h1:XO2/81Njy3JefUFXtTg63YGJJ2wUyMRyYm6LaYfu8jE=
+github.com/TheThingsNetwork/go-utils v0.0.0-20190331064810-aa2a11bd5910/go.mod h1:ux1QZ2JrltnJxuZ0VoNbJP1k8Eb5jiMkR3RGDXyBS+o=
 github.com/TheThingsNetwork/go-utils v0.0.0-20190516083235-bdd4967fab4e h1:JEt3G2ONKGfW1YDp2A8Q/+kZIuIB117nkit0+GDJN04=
 github.com/TheThingsNetwork/go-utils v0.0.0-20190516083235-bdd4967fab4e/go.mod h1:9uzg7Jk8ywYqL+xUEhTNrJcs68Nafj4qTaz/zB+STwg=
 github.com/TheThingsNetwork/ttn/api v0.0.0-20190516081709-034d40b328bd/go.mod h1:UCRXmEaShvS/wHOf2RcoY2vKUGJnrYrotBA6LZzYdFM=
 github.com/TheThingsNetwork/ttn/core/types v0.0.0-20190516081709-034d40b328bd/go.mod h1:VVWTaeAJHezuE+c0Vk0AJ4R6KSLg50H1y3RB7vGhGOA=
-github.com/TheThingsNetwork/ttn/utils/errors v0.0.0-20190516081709-034d40b328bd h1:ITXOJpmUR4Jhp3Xb/xNUIJH4WR0h2/NsxZkSDzFIFiU=
-github.com/TheThingsNetwork/ttn/utils/errors v0.0.0-20190516081709-034d40b328bd/go.mod h1:e8FjzgvhAVx9+iqPloB4v7QM0rmv+r5ysRn9kWFamG4=
 github.com/TheThingsNetwork/ttn/utils/random v0.0.0-20190516081709-034d40b328bd/go.mod h1:ktVq1/rYkTlgilBixqCtltTh29rOUnZET4g50xoKlpE=
 github.com/TheThingsNetwork/ttn/utils/security v0.0.0-20190516081709-034d40b328bd/go.mod h1:aaYF12LufW5Xs4Z2C6UOrCzpkyoBjw+rmHCcNYgb1JU=
 github.com/apex/log v1.1.0 h1:J5rld6WVFi6NxA6m8GJ1LJqu3+GiTFIt3mYv27gdQWI=
