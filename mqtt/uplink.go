@@ -39,16 +39,20 @@ func (c *DefaultClient) PublishUplinkFields(appID string, devID string, fields m
 		tokens = append(tokens, token)
 	}
 	t := newToken()
-	go func() {
-		for _, token := range tokens {
-			token.Wait()
-			if token.Error() != nil {
-				c.ctx.Warnf("mqtt: error publishing uplink fields: %s", token.Error())
-				t.err = token.Error()
+	if len(tokens) > 0 {
+		go func() {
+			for _, token := range tokens {
+				token.Wait()
+				if token.Error() != nil {
+					c.ctx.Warnf("mqtt: error publishing uplink fields: %s", token.Error())
+					t.err = token.Error()
+				}
 			}
-		}
+			t.flowComplete()
+		}()
+	} else {
 		t.flowComplete()
-	}()
+	}
 	return t
 }
 
