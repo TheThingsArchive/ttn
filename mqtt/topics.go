@@ -53,6 +53,11 @@ func ParseDeviceTopic(topic string) (*DeviceTopic, error) {
 	return deviceTopic, nil
 }
 
+// ValidField indicates whether the field of the device topic is valid.
+func (t DeviceTopic) ValidField() bool {
+	return !strings.ContainsAny(t.Field, "*+\u0000")
+}
+
 // String implements the Stringer interface
 func (t DeviceTopic) String() string {
 	appID := simpleWildcard

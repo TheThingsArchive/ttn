@@ -31,6 +31,9 @@ func (c *DefaultClient) PublishUplinkFields(appID string, devID string, fields m
 	tokens := make([]Token, 0, len(flattenedFields))
 	for field, value := range flattenedFields {
 		topic := DeviceTopic{appID, devID, DeviceUplink, field}
+		if !topic.ValidField() {
+			continue
+		}
 		pld, _ := json.Marshal(value)
 		token := c.publish(topic.String(), pld)
 		tokens = append(tokens, token)
