@@ -26,6 +26,7 @@ type Handler interface {
 	component.ManagementInterface
 
 	WithMQTT(username, password string, brokers ...string) Handler
+	WithMQTTFields(enabled bool) Handler
 	WithAMQP(username, password, host, exchange string) Handler
 	WithDeviceAttributes(attribute ...string) Handler
 
@@ -60,13 +61,14 @@ type handler struct {
 
 	downlink chan *pb_broker.DownlinkMessage
 
-	mqttClient   mqtt.Client
-	mqttUsername string
-	mqttPassword string
-	mqttBrokers  []string
-	mqttEnabled  bool
-	mqttUp       chan *types.UplinkMessage
-	mqttEvent    chan *types.DeviceEvent
+	mqttClient        mqtt.Client
+	mqttUsername      string
+	mqttPassword      string
+	mqttBrokers       []string
+	mqttEnabled       bool
+	mqttFieldsEnabled bool
+	mqttUp            chan *types.UplinkMessage
+	mqttEvent         chan *types.DeviceEvent
 
 	amqpClient   amqp.Client
 	amqpUsername string
@@ -94,6 +96,11 @@ func (h *handler) WithMQTT(username, password string, brokers ...string) Handler
 	h.mqttPassword = password
 	h.mqttBrokers = brokers
 	h.mqttEnabled = true
+	return h
+}
+
+func (h *handler) WithMQTTFields(enabled bool) Handler {
+	h.mqttFieldsEnabled = enabled
 	return h
 }
 

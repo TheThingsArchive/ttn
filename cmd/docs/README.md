@@ -116,6 +116,7 @@ ttn gen-keypair generates a public/private keypair
       --http-port int                     The port where the gRPC proxy should listen (default 8084)
       --mqtt-address string               MQTT host and port. Leave empty to disable MQTT
       --mqtt-address-announce string      MQTT address to announce (takes value of server-address-announce if empty while enabled)
+      --mqtt-fields                       Enable MQTT Fields
       --mqtt-password string              MQTT password
       --mqtt-username string              MQTT username
       --redis-address string              Redis host and port (default "localhost:6379")
