@@ -54,3 +54,8 @@ func (r *Registry) Limit(id string) bool {
 func (r *Registry) Wait(id string) time.Duration {
 	return r.getOrCreate(id, r.newFunc).Take(1)
 }
+
+// WaitMaxDuration returns the time to wait until available, but with a max
+func (r *Registry) WaitMaxDuration(id string, max time.Duration) (time.Duration, bool) {
+	return r.getOrCreate(id, r.newFunc).TakeMaxDuration(1, max)
+}
