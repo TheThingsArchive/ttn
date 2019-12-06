@@ -140,7 +140,7 @@ func (b *broker) RegisterManager(s *grpc.Server) {
 		devAddrManager: pb_lorawan.NewDevAddrManagerClient(b.nsConn),
 	}
 
-	server.clientRate = ratelimit.NewRegistry(5000, time.Hour)
+	server.clientRate = ratelimit.NewRegistry(5, time.Second)
 
 	pb.RegisterBrokerManagerServer(s, server)
 	lorawan.RegisterDeviceManagerServer(s, server)

@@ -561,8 +561,8 @@ func (h *handler) RegisterManager(s *grpc.Server) {
 		devAddrManager: pb_lorawan.NewDevAddrManagerClient(h.ttnBrokerConn),
 	}
 
-	server.applicationRate = ratelimit.NewRegistry(5000, time.Hour)
-	server.clientRate = ratelimit.NewRegistry(5000, time.Hour)
+	server.applicationRate = ratelimit.NewRegistry(5, time.Second)
+	server.clientRate = ratelimit.NewRegistry(5, time.Second)
 
 	pb_handler.RegisterHandlerManagerServer(s, server)
 	pb_handler.RegisterApplicationManagerServer(s, server)

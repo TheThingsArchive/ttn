@@ -197,7 +197,7 @@ func (n *networkServerManager) GetStatus(ctx context.Context, in *pb.StatusReque
 func (n *networkServer) RegisterManager(s *grpc.Server) {
 	server := &networkServerManager{networkServer: n}
 
-	server.clientRate = ratelimit.NewRegistry(5000, time.Hour)
+	server.clientRate = ratelimit.NewRegistry(5, time.Second)
 
 	pb.RegisterNetworkServerManagerServer(s, server)
 	pb_lorawan.RegisterDeviceManagerServer(s, server)
