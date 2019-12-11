@@ -8,6 +8,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"runtime"
 	"strings"
 	"syscall"
 
@@ -41,6 +42,7 @@ var networkserverCmd = &cobra.Command{
 			Addr:     viper.GetString("networkserver.redis-address"),
 			Password: viper.GetString("networkserver.redis-password"),
 			DB:       viper.GetInt("networkserver.redis-db"),
+			PoolSize: 10 * runtime.NumCPU(),
 		})
 
 		if err := connectRedis(client); err != nil {

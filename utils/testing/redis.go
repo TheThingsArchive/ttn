@@ -6,6 +6,7 @@ package testing
 import (
 	"fmt"
 	"os"
+	"runtime"
 
 	redis "gopkg.in/redis.v5"
 )
@@ -20,5 +21,6 @@ func GetRedisClient() *redis.Client {
 		Addr:     fmt.Sprintf("%s:6379", host),
 		Password: "", // no password set
 		DB:       1,  // use default DB
+		PoolSize: 10 * runtime.NumCPU(),
 	})
 }

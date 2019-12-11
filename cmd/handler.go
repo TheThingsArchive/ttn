@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	goruntime "runtime"
 	"syscall"
 
 	pb "github.com/TheThingsNetwork/api/handler"
@@ -51,6 +52,7 @@ var handlerCmd = &cobra.Command{
 			Addr:     viper.GetString("handler.redis-address"),
 			Password: viper.GetString("handler.redis-password"),
 			DB:       viper.GetInt("handler.redis-db"),
+			PoolSize: 10 * goruntime.NumCPU(),
 		})
 
 		if err := connectRedis(client); err != nil {

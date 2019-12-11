@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	goruntime "runtime"
 	"syscall"
 
 	pb "github.com/TheThingsNetwork/api/discovery"
@@ -47,6 +48,7 @@ var discoveryCmd = &cobra.Command{
 			Addr:     viper.GetString("discovery.redis-address"),
 			Password: viper.GetString("discovery.redis-password"),
 			DB:       viper.GetInt("discovery.redis-db"),
+			PoolSize: 10 * goruntime.NumCPU(),
 		})
 
 		if err := connectRedis(client); err != nil {
