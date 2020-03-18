@@ -31,21 +31,28 @@ func (c *DefaultClient) PublishUplinkFields(appID string, devID string, fields m
 	tokens := make([]Token, 0, len(flattenedFields))
 	for field, value := range flattenedFields {
 		topic := DeviceTopic{appID, devID, DeviceUplink, field}
+		if !topic.ValidField() {
+			continue
+		}
 		pld, _ := json.Marshal(value)
 		token := c.publish(topic.String(), pld)
 		tokens = append(tokens, token)
 	}
 	t := newToken()
-	go func() {
-		for _, token := range tokens {
-			token.Wait()
-			if token.Error() != nil {
-				c.ctx.Warnf("mqtt: error publishing uplink fields: %s", token.Error())
-				t.err = token.Error()
+	if len(tokens) > 0 {
+		go func() {
+			for _, token := range tokens {
+				token.Wait()
+				if token.Error() != nil {
+					c.ctx.Warnf("mqtt: error publishing uplink fields: %s", token.Error())
+					t.err = token.Error()
+				}
 			}
-		}
+			t.flowComplete()
+		}()
+	} else {
 		t.flowComplete()
-	}()
+	}
 	return t
 }
 

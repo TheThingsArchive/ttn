@@ -76,12 +76,11 @@ type schedule struct {
 	offset int64 // should be on top to ensure memory alignment needed for sync/atomic
 
 	sync.RWMutex
-	ctx                       ttnlog.Interface
-	items                     map[string]*scheduledItem
-	downlink                  chan *router_pb.DownlinkMessage
-	downlinkSubscriptionsLock sync.RWMutex
-	downlinkSubscriptions     map[string]chan *router_pb.DownlinkMessage
-	gateway                   *Gateway
+	ctx                   ttnlog.Interface
+	items                 map[string]*scheduledItem
+	downlink              chan *router_pb.DownlinkMessage
+	downlinkSubscriptions map[string]chan *router_pb.DownlinkMessage
+	gateway               *Gateway
 }
 
 func (s *schedule) GoString() (str string) {
@@ -232,22 +231,23 @@ func (s *schedule) Schedule(id string, downlink *router_pb.DownlinkMessage) erro
 }
 
 func (s *schedule) Stop(subscriptionID string) {
-	s.downlinkSubscriptionsLock.Lock()
-	defer s.downlinkSubscriptionsLock.Unlock()
+	s.Lock()
+	defer s.Unlock()
 	if sub, ok := s.downlinkSubscriptions[subscriptionID]; ok {
 		close(sub)
 		delete(s.downlinkSubscriptions, subscriptionID)
 	}
 	if len(s.downlinkSubscriptions) == 0 {
-		s.Lock()
-		defer s.Unlock()
-		close(s.downlink)
-		s.downlink = nil
+		if s.downlink != nil {
+			close(s.downlink)
+			s.downlink = nil
+		}
 	}
 }
 
 func (s *schedule) Subscribe(subscriptionID string) <-chan *router_pb.DownlinkMessage {
 	s.Lock()
+	defer s.Unlock()
 	if s.downlink == nil {
 		s.downlink = make(chan *router_pb.DownlinkMessage)
 		go func() {
@@ -255,7 +255,7 @@ func (s *schedule) Subscribe(subscriptionID string) <-chan *router_pb.DownlinkMe
 				if s.gateway != nil && s.gateway.Utilization != nil {
 					s.gateway.Utilization.AddTx(downlink) // FIXME: Issue #420
 				}
-				s.downlinkSubscriptionsLock.RLock()
+				s.RLock()
 				for _, ch := range s.downlinkSubscriptions {
 					select {
 					case ch <- downlink:
@@ -263,19 +263,16 @@ func (s *schedule) Subscribe(subscriptionID string) <-chan *router_pb.DownlinkMe
 						s.ctx.WithField("SubscriptionID", subscriptionID).Warn("Could not send downlink message")
 					}
 				}
-				s.downlinkSubscriptionsLock.RUnlock()
+				s.RUnlock()
 			}
 		}()
 	}
-	s.Unlock()
 
-	s.downlinkSubscriptionsLock.Lock()
 	if _, ok := s.downlinkSubscriptions[subscriptionID]; ok {
 		return nil
 	}
 	sub := make(chan *router_pb.DownlinkMessage)
 	s.downlinkSubscriptions[subscriptionID] = sub
-	s.downlinkSubscriptionsLock.Unlock()
 
 	return sub
 }

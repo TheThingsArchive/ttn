@@ -2,6 +2,24 @@ module github.com/TheThingsNetwork/ttn
 
 go 1.11
 
+replace github.com/TheThingsNetwork/ttn/api => ./api
+
+replace github.com/TheThingsNetwork/ttn/core/proxy => ./core/proxy
+
+replace github.com/TheThingsNetwork/ttn/core/types => ./core/types
+
+replace github.com/TheThingsNetwork/ttn/mqtt => ./mqtt
+
+replace github.com/TheThingsNetwork/ttn/utils/errors => ./utils/errors
+
+replace github.com/TheThingsNetwork/ttn/utils/random => ./utils/random
+
+replace github.com/TheThingsNetwork/ttn/utils/security => ./utils/security
+
+replace github.com/TheThingsNetwork/ttn/utils/testing => ./utils/testing
+
+replace github.com/TheThingsNetwork/ttn/utils/toa => ./utils/toa
+
 replace github.com/brocaar/lorawan => github.com/ThethingsIndustries/legacy-lorawan-lib v0.0.0-20190212122748-b905ab327304
 
 replace github.com/robertkrimen/otto => github.com/ThethingsIndustries/otto v0.0.0-20181129100957-6ddbbb60554a
@@ -50,7 +68,7 @@ require (
 	github.com/streadway/amqp v0.0.0-20190404075320-75d898a42a94
 	github.com/tj/go-elastic v0.0.0-20171221160941-36157cbbebc2
 	golang.org/x/crypto v0.0.0-20190513172903-22d7a77e9e5f // indirect
-	golang.org/x/net v0.0.0-20190514140710-3ec191127204
+	golang.org/x/net v0.0.0-20191002035440-2ec189313ef0
 	golang.org/x/oauth2 v0.0.0-20190402181905-9f3314589c9a
 	google.golang.org/appengine v1.6.0 // indirect
 	google.golang.org/genproto v0.0.0-20190515210553-995ef27e003f

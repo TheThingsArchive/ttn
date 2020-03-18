@@ -41,8 +41,10 @@ func (n *networkServerManager) getDevice(ctx context.Context, in *pb_lorawan.Dev
 	if err != nil {
 		return nil, err
 	}
-	if n.clientRate.Limit(claims.Subject) {
-		return nil, grpc.Errorf(codes.ResourceExhausted, "Rate limit for client reached")
+	if wait, ok := n.clientRate.WaitMaxDuration(claims.Subject, 500*time.Millisecond); ok {
+		time.Sleep(wait)
+	} else {
+		return nil, grpc.Errorf(codes.ResourceExhausted, "Rate limit for client %q reached", claims.Subject)
 	}
 	dev, err := n.networkServer.devices.Get(in.AppEUI, in.DevEUI)
 	if err != nil {
@@ -195,7 +197,7 @@ func (n *networkServerManager) GetStatus(ctx context.Context, in *pb.StatusReque
 func (n *networkServer) RegisterManager(s *grpc.Server) {
 	server := &networkServerManager{networkServer: n}
 
-	server.clientRate = ratelimit.NewRegistry(5000, time.Hour)
+	server.clientRate = ratelimit.NewRegistry(5, time.Second)
 
 	pb.RegisterNetworkServerManagerServer(s, server)
 	pb_lorawan.RegisterDeviceManagerServer(s, server)

@@ -64,11 +64,15 @@ func (h *handlerManager) validateTTNAuthAppContext(ctx context.Context, appID st
 	if err != nil {
 		return ctx, nil, err
 	}
-	if h.clientRate.Limit(claims.Subject) {
-		return ctx, claims, grpc.Errorf(codes.ResourceExhausted, "Rate limit for client reached")
+	if wait, ok := h.clientRate.WaitMaxDuration(claims.Subject, 500*time.Millisecond); ok {
+		time.Sleep(wait)
+	} else {
+		return ctx, claims, grpc.Errorf(codes.ResourceExhausted, "Rate limit for client %q reached", claims.Subject)
 	}
-	if h.applicationRate.Limit(appID) {
-		return ctx, claims, grpc.Errorf(codes.ResourceExhausted, "Rate limit for application reached")
+	if wait, ok := h.applicationRate.WaitMaxDuration(appID, 500*time.Millisecond); ok {
+		time.Sleep(wait)
+	} else {
+		return ctx, claims, grpc.Errorf(codes.ResourceExhausted, "Rate limit for application %q reached", appID)
 	}
 	return ctx, claims, nil
 }
@@ -557,8 +561,8 @@ func (h *handler) RegisterManager(s *grpc.Server) {
 		devAddrManager: pb_lorawan.NewDevAddrManagerClient(h.ttnBrokerConn),
 	}
 
-	server.applicationRate = ratelimit.NewRegistry(5000, time.Hour)
-	server.clientRate = ratelimit.NewRegistry(5000, time.Hour)
+	server.applicationRate = ratelimit.NewRegistry(5, time.Second)
+	server.clientRate = ratelimit.NewRegistry(5, time.Second)
 
 	pb_handler.RegisterHandlerManagerServer(s, server)
 	pb_handler.RegisterApplicationManagerServer(s, server)

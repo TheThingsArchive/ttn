@@ -2,6 +2,8 @@ module github.com/TheThingsNetwork/ttn/utils/random
 
 go 1.11
 
+replace github.com/TheThingsNetwork/ttn/core/types => ../../core/types
+
 require (
 	github.com/TheThingsNetwork/api v0.0.0-20190516085542-c732802571cf
 	github.com/TheThingsNetwork/go-utils v0.0.0-20190516083235-bdd4967fab4e

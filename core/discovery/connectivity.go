@@ -108,20 +108,17 @@ func (d *discovery) updateStatus() error {
 						for {
 							if status.ClientConn.WaitForStateChange(status.ctx, state) { // blocking
 								status.mu.Lock()
+								previousState := state
 								state = status.ClientConn.GetState()
 								status.lastStateChange = time.Now()
-								switch state {
-								case connectivity.Idle:
-									d.Ctx.Infof("%s %s connection idle", id.serviceName, id.id)
-								case connectivity.Connecting:
-									d.Ctx.Infof("%s %s connecting", id.serviceName, id.id)
-								case connectivity.Ready:
-									d.Ctx.Infof("%s %s connection ready", id.serviceName, id.id)
+								if state == connectivity.Ready || previousState == connectivity.Ready {
 									status.lastAvailable = status.lastStateChange
+								}
+								switch state {
+								case connectivity.Idle, connectivity.Connecting, connectivity.Ready, connectivity.Shutdown:
+									d.Ctx.Infof("Connection to %s %s went from %s to %s", id.serviceName, id.id, previousState, state)
 								case connectivity.TransientFailure:
-									d.Ctx.Warnf("%s %s connection failure", id.serviceName, id.id)
-								case connectivity.Shutdown:
-									d.Ctx.Infof("%s %s connection shutdown", id.serviceName, id.id)
+									d.Ctx.Warnf("Connection to %s %s went from %s to %s", id.serviceName, id.id, previousState, state)
 								}
 								status.mu.Unlock()
 							} else { // context canceled

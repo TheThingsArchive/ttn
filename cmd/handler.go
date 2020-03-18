@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	goruntime "runtime"
 	"syscall"
 
 	pb "github.com/TheThingsNetwork/api/handler"
@@ -51,6 +52,7 @@ var handlerCmd = &cobra.Command{
 			Addr:     viper.GetString("handler.redis-address"),
 			Password: viper.GetString("handler.redis-password"),
 			DB:       viper.GetInt("handler.redis-db"),
+			PoolSize: 10 * goruntime.NumCPU(),
 		})
 
 		if err := connectRedis(client); err != nil {
@@ -78,7 +80,7 @@ var handlerCmd = &cobra.Command{
 				viper.GetString("handler.mqtt-username"),
 				viper.GetString("handler.mqtt-password"),
 				viper.GetString("handler.mqtt-address"),
-			)
+			).WithMQTTFields(viper.GetBool("handler.mqtt-fields"))
 
 			mqttPort, err := parse.Port(viper.GetString("handler.mqtt-address"))
 			if err != nil {
@@ -191,10 +193,12 @@ func init() {
 	handlerCmd.Flags().String("mqtt-address-announce", "", "MQTT address to announce (takes value of server-address-announce if empty while enabled)")
 	handlerCmd.Flags().String("mqtt-username", "", "MQTT username")
 	handlerCmd.Flags().String("mqtt-password", "", "MQTT password")
+	handlerCmd.Flags().Bool("mqtt-fields", true, "Enable MQTT Fields")
 	viper.BindPFlag("handler.mqtt-address", handlerCmd.Flags().Lookup("mqtt-address"))
 	viper.BindPFlag("handler.mqtt-address-announce", handlerCmd.Flags().Lookup("mqtt-address-announce"))
 	viper.BindPFlag("handler.mqtt-username", handlerCmd.Flags().Lookup("mqtt-username"))
 	viper.BindPFlag("handler.mqtt-password", handlerCmd.Flags().Lookup("mqtt-password"))
+	viper.BindPFlag("handler.mqtt-fields", handlerCmd.Flags().Lookup("mqtt-fields"))
 
 	handlerCmd.Flags().String("amqp-address", "", "AMQP host and port. Leave empty to disable AMQP")
 	handlerCmd.Flags().String("amqp-address-announce", "", "AMQP address to announce (takes value of server-address-announce if empty while enabled)")

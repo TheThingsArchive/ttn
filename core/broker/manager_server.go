@@ -34,8 +34,10 @@ func (b *brokerManager) validateClient(ctx context.Context) (*claims.Claims, err
 	if err != nil {
 		return nil, err
 	}
-	if b.clientRate.Limit(claims.Subject) {
-		return claims, grpc.Errorf(codes.ResourceExhausted, "Rate limit for client reached")
+	if wait, ok := b.clientRate.WaitMaxDuration(claims.Subject, 500*time.Millisecond); ok {
+		time.Sleep(wait)
+	} else {
+		return claims, grpc.Errorf(codes.ResourceExhausted, "Rate limit for client %q reached", claims.Subject)
 	}
 	return claims, nil
 }
@@ -138,7 +140,7 @@ func (b *broker) RegisterManager(s *grpc.Server) {
 		devAddrManager: pb_lorawan.NewDevAddrManagerClient(b.nsConn),
 	}
 
-	server.clientRate = ratelimit.NewRegistry(5000, time.Hour)
+	server.clientRate = ratelimit.NewRegistry(5, time.Second)
 
 	pb.RegisterBrokerManagerServer(s, server)
 	lorawan.RegisterDeviceManagerServer(s, server)

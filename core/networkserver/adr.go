@@ -271,7 +271,7 @@ func getAdrReqPayloads(dev *device.Device, frequencyPlan *band.FrequencyPlan, dr
 		} else {
 			for i, ch := range frequencyPlan.UplinkChannels {
 				for _, dr := range ch.DataRates {
-					if dr == drIdx {
+					if dr == drIdx && i < 8 { // We can enable up to 8 channels.
 						payloads[0].ChMask[i] = true
 					}
 				}
@@ -300,7 +300,7 @@ func getAdrReqPayloads(dev *device.Device, frequencyPlan *band.FrequencyPlan, dr
 		} else {
 			for i, ch := range frequencyPlan.UplinkChannels {
 				for _, dr := range ch.DataRates {
-					if dr == drIdx {
+					if dr == drIdx && i < 7 { // We can enable up to 7 channels.
 						payloads[0].ChMask[i] = true
 					}
 				}

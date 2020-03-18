@@ -1,7 +1,5 @@
 cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
-github.com/TheThingsNetwork/ttn/core/types v0.0.0-20190517101034-52d38c791f1e h1:+En3gSQgpfHQ3mpXhqHlyAryyvvmBX0Uy+k/5TgcbCM=
-github.com/TheThingsNetwork/ttn/core/types v0.0.0-20190517101034-52d38c791f1e/go.mod h1:q3r/3g5fixboWUOCounAWo+Y8OlkKdhVnGosLMEQ09Q=
 github.com/TheThingsNetwork/ttn/utils/errors v0.0.0-20190516081709-034d40b328bd h1:ITXOJpmUR4Jhp3Xb/xNUIJH4WR0h2/NsxZkSDzFIFiU=
 github.com/TheThingsNetwork/ttn/utils/errors v0.0.0-20190516081709-034d40b328bd/go.mod h1:e8FjzgvhAVx9+iqPloB4v7QM0rmv+r5ysRn9kWFamG4=
 github.com/brocaar/lorawan v0.0.0-20170626123636-a64aca28516d h1:yIe4YHMG4WUoBCWlcDsfFD1IgnysKNLDKCe+yY0sknc=
@@ -35,9 +33,8 @@ github.com/smartystreets/goconvey v0.0.0-20190330032615-68dc04aab96a h1:pa8hGb/2
 github.com/smartystreets/goconvey v0.0.0-20190330032615-68dc04aab96a/go.mod h1:syvi0/a8iFYH4r/RixwvyeAJjdLS9QV7WQ/tjFTllLA=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
 golang.org/x/lint v0.0.0-20190313153728-d0100b6bd8b3/go.mod h1:6SW0HCj/g11FgYtHlgUYUwCkIfeOF89ocIRzGO/8vkc=
+golang.org/x/net v0.0.0-20190311183353-d8887717615a h1:oWX7TPOiFAMXLq8o0ikBYfCJVlRHBcsciT5bXOrH628=
 golang.org/x/net v0.0.0-20190311183353-d8887717615a/go.mod h1:t9HGtf8HONx5eT2rtn7q6eTqICYqUVnKs3thJo3Qplg=
-golang.org/x/net v0.0.0-20190514140710-3ec191127204 h1:4yG6GqBtw9C+UrLp6s2wtSniayy/Vd/3F7ffLE427XI=
-golang.org/x/net v0.0.0-20190514140710-3ec191127204/go.mod h1:t9HGtf8HONx5eT2rtn7q6eTqICYqUVnKs3thJo3Qplg=
 golang.org/x/oauth2 v0.0.0-20180821212333-d2e6202438be/go.mod h1:N/0e6XlmueqKjAGxoOufVs8QHGRruUQn6yWY3a++T0U=
 golang.org/x/sync v0.0.0-20180314180146-1d60e4601c6f h1:wMNYb4v58l5UBM7MYRLPG6ZhfOqbKu7X5eyFl8ZhKvA=
 golang.org/x/sync v0.0.0-20180314180146-1d60e4601c6f/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
