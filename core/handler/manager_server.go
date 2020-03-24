@@ -46,6 +46,10 @@ func checkAppRights(claims *claims.Claims, appID string, right types.Right) erro
 func (h *handlerManager) validateTTNAuthAppContext(ctx context.Context, appID string) (context.Context, *claims.Claims, error) {
 	md := ttnctx.MetadataFromIncomingContext(ctx)
 
+	if strings.Contains(strings.Join(md.Get("service-name"), " "), "integration-aws") {
+		time.Sleep(500 * time.Millisecond)
+	}
+
 	// If token is empty, try to get the access key and convert it into a token
 	token, err := ttnctx.TokenFromMetadata(md)
 	if err != nil || token == "" {
