@@ -16,8 +16,8 @@ import (
 	"github.com/TheThingsNetwork/go-utils/grpc/rpclog"
 	"github.com/TheThingsNetwork/go-utils/roots"
 	"github.com/TheThingsNetwork/ttn/utils/errors"
-	"github.com/grpc-ecosystem/go-grpc-prometheus"
-	"github.com/mwitkow/go-grpc-middleware"
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
