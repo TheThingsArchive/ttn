@@ -24,6 +24,7 @@ const (
 	NotFound         ErrType = "not found"
 	OutOfRange       ErrType = "out of range"
 	PermissionDenied ErrType = "permission denied"
+	Unavailable      ErrType = "unavailable"
 	Unknown          ErrType = "unknown"
 )
 
@@ -40,6 +41,8 @@ func GetErrType(err error) ErrType {
 		return NotFound
 	case *ErrPermissionDenied:
 		return PermissionDenied
+	case *ErrUnavailable:
+		return Unavailable
 	}
 	return Unknown
 }
@@ -69,6 +72,11 @@ func IsAlreadyExists(err error) bool {
 	return GetErrType(err) == AlreadyExists
 }
 
+// IsUnavailable returns whether error type is Unavailable
+func IsUnavailable(err error) bool {
+	return GetErrType(err) == Unavailable
+}
+
 // BuildGRPCError returns the error with a GRPC code
 func BuildGRPCError(err error) error {
 	if err == nil {
@@ -89,6 +97,8 @@ func BuildGRPCError(err error) error {
 		code = codes.NotFound
 	case *ErrPermissionDenied:
 		code = codes.PermissionDenied
+	case *ErrUnavailable:
+		code = codes.Unavailable
 	}
 	switch err {
 	case context.Canceled:
@@ -125,6 +135,8 @@ func FromGRPCError(err error) error {
 		return NewErrNotFound(strings.TrimSuffix(desc, " not found"))
 	case codes.PermissionDenied:
 		return NewErrPermissionDenied(strings.TrimPrefix(desc, "permission denied: "))
+	case codes.Unavailable:
+		return NewErrUnavailable(strings.TrimPrefix(desc, "unavailable: "))
 	case codes.Unknown: // This also includes all non-gRPC errors
 		if desc == "EOF" {
 			return io.EOF
@@ -208,6 +220,21 @@ type ErrPermissionDenied struct {
 // Error implements the error interface
 func (err ErrPermissionDenied) Error() string {
 	return fmt.Sprintf("permission denied: %s", err.reason)
+}
+
+// NewErrUnavailable returns a new ErrUnavailable with the given reason
+func NewErrUnavailable(reason string) error {
+	return &ErrUnavailable{reason: reason}
+}
+
+// ErrUnavailable indicates that permissions were not sufficient
+type ErrUnavailable struct {
+	reason string
+}
+
+// Error implements the error interface
+func (err ErrUnavailable) Error() string {
+	return fmt.Sprintf("unavailable: %s", err.reason)
 }
 
 // Wrapf returns an error annotating err with the format specifier.

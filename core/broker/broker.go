@@ -145,7 +145,7 @@ func (b *broker) ActivateRouter(id string) (<-chan *pb.DownlinkMessage, error) {
 	b.routersLock.Lock()
 	defer b.routersLock.Unlock()
 	if existing, ok := b.routers[id]; ok {
-		return existing, errors.NewErrInternal(fmt.Sprintf("Router %s already active", id))
+		return existing, errors.NewErrUnavailable(fmt.Sprintf("Router %s already active", id))
 	}
 	b.routers[id] = make(chan *pb.DownlinkMessage)
 	connectedRouters.Inc()
@@ -194,7 +194,7 @@ func (b *broker) ActivateHandlerUplink(id string) (<-chan *pb.DeduplicatedUplink
 	hdl.Lock()
 	defer hdl.Unlock()
 	if hdl.uplink != nil {
-		return hdl.uplink, errors.NewErrInternal(fmt.Sprintf("Handler %s already active", id))
+		return hdl.uplink, errors.NewErrUnavailable(fmt.Sprintf("Handler %s already active", id))
 	}
 	hdl.uplink = make(chan *pb.DeduplicatedUplinkMessage)
 	connectedHandlers.Inc()
