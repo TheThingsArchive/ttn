@@ -26,21 +26,21 @@ replace github.com/robertkrimen/otto => github.com/ThethingsIndustries/otto v0.0
 
 require (
 	github.com/TheThingsNetwork/api v0.0.0-20200324103623-039923721bb6
-	github.com/TheThingsNetwork/go-account-lib v0.0.0-20190516094738-77d15a3f8875
+	github.com/TheThingsNetwork/go-account-lib v0.0.0-20200324111756-39cfe6d39482
 	github.com/TheThingsNetwork/go-cayenne-lib v1.0.0
-	github.com/TheThingsNetwork/go-utils v0.0.0-20190813113035-8715cf82e887
+	github.com/TheThingsNetwork/go-utils v0.0.0-20200324111456-dfe813d791ea
 	github.com/TheThingsNetwork/ttn/api v0.0.0-20190516093004-b66899428ed5
 	github.com/TheThingsNetwork/ttn/core/proxy v0.0.0-20190520085727-78600a8e394e
-	github.com/TheThingsNetwork/ttn/core/types v0.0.0-20190517101034-52d38c791f1e
+	github.com/TheThingsNetwork/ttn/core/types v0.0.0-20200318120938-1b1c68b270af
 	github.com/TheThingsNetwork/ttn/mqtt v0.0.0-20190516093004-b66899428ed5
-	github.com/TheThingsNetwork/ttn/utils/errors v0.0.0-20190516093004-b66899428ed5
+	github.com/TheThingsNetwork/ttn/utils/errors v0.0.0-20200318120938-1b1c68b270af
 	github.com/TheThingsNetwork/ttn/utils/random v0.0.0-20190516093004-b66899428ed5
 	github.com/TheThingsNetwork/ttn/utils/security v0.0.0-20190516093004-b66899428ed5
 	github.com/TheThingsNetwork/ttn/utils/testing v0.0.0-20190520084050-7adf4a69a7c3
 	github.com/TheThingsNetwork/ttn/utils/toa v0.0.0-20190520085727-78600a8e394e
 	github.com/apex/log v1.1.2
 	github.com/bluele/gcache v0.0.0-20190518031135-bc40bd653833
-	github.com/brocaar/lorawan v0.0.0-20170626123636-a64aca28516d
+	github.com/brocaar/lorawan v0.0.0-20191115102621-6095d473cf60
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/fatih/color v1.9.0 // indirect
 	github.com/fatih/structs v1.1.0
@@ -75,7 +75,6 @@ require (
 	golang.org/x/crypto v0.0.0-20200323165209-0ec3e9974c59 // indirect
 	golang.org/x/net v0.0.0-20200320220750-118fecf932d8
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
-	google.golang.org/appengine v1.6.5 // indirect
 	google.golang.org/genproto v0.0.0-20200323114720-3f67cca34472
 	google.golang.org/grpc v1.28.0
 	gopkg.in/ini.v1 v1.55.0 // indirect
