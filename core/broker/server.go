@@ -30,7 +30,7 @@ func (b *brokerRPC) associateRouter(md metadata.MD) (chan *pb.UplinkMessage, <-c
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	down, err := b.broker.ActivateRouter(router.ID)
+	down, err := b.broker.ActivateRouterDownlink(router.ID)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -38,7 +38,7 @@ func (b *brokerRPC) associateRouter(md metadata.MD) (chan *pb.UplinkMessage, <-c
 	up := make(chan *pb.UplinkMessage, 1)
 
 	cancel := func() {
-		b.broker.DeactivateRouter(router.ID)
+		b.broker.DeactivateRouterDownlink(router.ID)
 	}
 
 	go func() {

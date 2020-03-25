@@ -75,18 +75,19 @@ func TestActivateDeactivateRouter(t *testing.T) {
 	a := New(t)
 
 	b := &broker{
-		routers: make(map[string]chan *pb.DownlinkMessage),
+		routers: make(map[string]*router),
 	}
 
-	err := b.DeactivateRouter("RouterID")
+	err := b.DeactivateRouterDownlink("RouterID")
 	a.So(err, ShouldNotBeNil)
 
-	ch, err := b.ActivateRouter("RouterID")
+	ch, err := b.ActivateRouterDownlink("RouterID")
 	a.So(err, ShouldBeNil)
 	a.So(ch, ShouldNotBeNil)
 
-	_, err = b.ActivateRouter("RouterID")
-	a.So(err, ShouldNotBeNil)
+	otherCH, err := b.ActivateRouterDownlink("RouterID")
+	a.So(err, ShouldBeNil)
+	a.So(otherCH, ShouldEqual, ch)
 
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -96,7 +97,10 @@ func TestActivateDeactivateRouter(t *testing.T) {
 		wg.Done()
 	}()
 
-	err = b.DeactivateRouter("RouterID")
+	err = b.DeactivateRouterDownlink("RouterID")
+	a.So(err, ShouldBeNil)
+
+	err = b.DeactivateRouterDownlink("RouterID")
 	a.So(err, ShouldBeNil)
 
 	wg.Wait()
@@ -116,8 +120,9 @@ func TestActivateDeactivateHandler(t *testing.T) {
 	a.So(err, ShouldBeNil)
 	a.So(ch, ShouldNotBeNil)
 
-	_, err = b.ActivateHandlerUplink("HandlerID")
-	a.So(err, ShouldNotBeNil)
+	otherCH, err := b.ActivateHandlerUplink("HandlerID")
+	a.So(err, ShouldBeNil)
+	a.So(otherCH, ShouldEqual, ch)
 
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -126,6 +131,9 @@ func TestActivateDeactivateHandler(t *testing.T) {
 		}
 		wg.Done()
 	}()
+
+	err = b.DeactivateHandlerUplink("HandlerID")
+	a.So(err, ShouldBeNil)
 
 	err = b.DeactivateHandlerUplink("HandlerID")
 	a.So(err, ShouldBeNil)

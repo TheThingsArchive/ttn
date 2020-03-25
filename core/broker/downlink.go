@@ -55,7 +55,7 @@ func (b *broker) HandleDownlink(downlink *pb.DownlinkMessage) error {
 	}
 	ctx = ctx.WithField("RouterID", routerID)
 
-	router, err := b.getRouter(routerID)
+	router, err := b.getRouterDownlink(routerID)
 	if err != nil {
 		return err
 	}
