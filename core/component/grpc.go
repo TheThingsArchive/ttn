@@ -5,6 +5,7 @@ package component
 
 import (
 	"math"
+	"time"
 
 	"github.com/TheThingsNetwork/api/trace"
 	"github.com/TheThingsNetwork/go-utils/grpc/rpcerror"
@@ -14,6 +15,7 @@ import (
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/keepalive"
 )
 
 func (c *Component) ServerOptions() []grpc.ServerOption {
@@ -29,6 +31,15 @@ func (c *Component) ServerOptions() []grpc.ServerOption {
 			rpcerror.StreamServerInterceptor(errors.BuildGRPCError),
 			rpclog.StreamServerInterceptor(c.Ctx),
 		)),
+		grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{
+			MinTime:             30 * time.Second,
+			PermitWithoutStream: true,
+		}),
+		grpc.KeepaliveParams(keepalive.ServerParameters{
+			MaxConnectionIdle: 5 * time.Minute,
+			Time:              30 * time.Second,
+			Timeout:           10 * time.Second,
+		}),
 	}
 	if c.tlsConfig != nil {
 		opts = append(opts, grpc.Creds(credentials.NewTLS(c.tlsConfig)))

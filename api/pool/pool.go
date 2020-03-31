@@ -20,6 +20,7 @@ import (
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/keepalive"
 )
 
 // RootCAs to use in API connections
@@ -65,11 +66,6 @@ func (c *conn) dial(ctx context.Context, opts ...grpc.DialOption) {
 	}()
 }
 
-// KeepAliveDialer is a dialer that adds a 10 second TCP KeepAlive
-func KeepAliveDialer(addr string, timeout time.Duration) (net.Conn, error) {
-	return (&net.Dialer{Timeout: timeout, KeepAlive: 10 * time.Second}).Dial("tcp", addr)
-}
-
 // DefaultDialOptions for connecting with servers
 var DefaultDialOptions = []grpc.DialOption{
 	grpc.WithUnaryInterceptor(grpc_middleware.ChainUnaryClient(
@@ -83,8 +79,11 @@ var DefaultDialOptions = []grpc.DialOption{
 		restartstream.Interceptor(restartstream.DefaultSettings),
 		rpclog.StreamClientInterceptor(nil),
 	)),
-	grpc.WithDialer(KeepAliveDialer),
-	grpc.WithBlock(),
+	grpc.WithKeepaliveParams(keepalive.ClientParameters{
+		Time:                5 * time.Minute,
+		Timeout:             10 * time.Second,
+		PermitWithoutStream: false,
+	}),
 }
 
 // Global pool with connections
