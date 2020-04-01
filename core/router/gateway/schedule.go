@@ -256,7 +256,7 @@ func (s *schedule) Subscribe(subscriptionID string) <-chan *router_pb.DownlinkMe
 					s.gateway.Utilization.AddTx(downlink) // FIXME: Issue #420
 				}
 				s.RLock()
-				for _, ch := range s.downlinkSubscriptions {
+				for subscriptionID, ch := range s.downlinkSubscriptions {
 					select {
 					case ch <- downlink:
 					default:
