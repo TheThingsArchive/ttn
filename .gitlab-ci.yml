@@ -27,6 +27,7 @@ tests:
   script:
     - make deps
     - make test
+  retry: 2
 
 binaries:
   stage: build
