@@ -121,7 +121,7 @@ func TestSubscribeUnsubscribeDownlink(t *testing.T) {
 	})
 
 	// Wait for the downlink to arrive
-	<-time.After(10 * time.Millisecond)
+	<-time.After(100 * time.Millisecond)
 
 	err = r.UnsubscribeDownlink(gtwID, "")
 	a.So(err, ShouldBeNil)

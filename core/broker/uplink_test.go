@@ -161,7 +161,7 @@ func TestDeduplicateUplink(t *testing.T) {
 	uplink4 := &pb.UplinkMessage{Payload: payload, GatewayMetadata: gateway.RxMetadata{SNR: 7.8}, ProtocolMetadata: protocolMetadata}
 
 	b := getTestBroker(t)
-	b.uplinkDeduplicator = NewDeduplicator(20 * time.Millisecond).(*deduplicator)
+	b.uplinkDeduplicator = NewDeduplicator(200 * time.Millisecond).(*deduplicator)
 
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -172,12 +172,12 @@ func TestDeduplicateUplink(t *testing.T) {
 		wg.Done()
 	}()
 
-	<-time.After(10 * time.Millisecond)
+	<-time.After(100 * time.Millisecond)
 
 	a.So(b.deduplicateUplink(uplink2), ShouldBeNil)
 	a.So(b.deduplicateUplink(uplink3), ShouldBeNil)
 
-	<-time.After(50 * time.Millisecond)
+	<-time.After(500 * time.Millisecond)
 
 	a.So(b.deduplicateUplink(uplink4), ShouldNotBeNil)
 
