@@ -38,9 +38,14 @@ var RootCmd = &cobra.Command{
 			logLevel = log.DebugLevel
 		}
 
+		logWriter := os.Stdout
+		if cmd == devicesExportCmd || cmd == devicesExportAllCmd {
+			logWriter = os.Stderr
+		}
+
 		ctx = apex.Wrap(&log.Logger{
 			Level:   logLevel,
-			Handler: cliHandler.New(os.Stdout),
+			Handler: cliHandler.New(logWriter),
 		})
 
 		if viper.GetBool("debug") {
