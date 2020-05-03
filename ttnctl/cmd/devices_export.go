@@ -100,11 +100,10 @@ var devicesExportCmd = &cobra.Command{
 			ctx.WithError(err).Fatal("Could not get existing device.")
 		}
 
-		v3dev := exportV3Device(dev, cmd.Flags())
-
 		format, _ := cmd.Flags().GetString("format")
 		switch format {
 		case "v3":
+			v3dev := exportV3Device(dev, cmd.Flags())
 			if err := json.NewEncoder(os.Stdout).Encode(v3dev); err != nil {
 				conn.Close()
 				ctx.WithError(err).Fatal("Could not export device in v3 format")
@@ -133,11 +132,10 @@ var devicesExportAllCmd = &cobra.Command{
 		}
 
 		for _, dev := range devs {
-			v3dev := exportV3Device(dev, cmd.Flags())
-
 			format, _ := cmd.Flags().GetString("format")
 			switch format {
 			case "v3":
+				v3dev := exportV3Device(dev, cmd.Flags())
 				if err := json.NewEncoder(os.Stdout).Encode(v3dev); err != nil {
 					conn.Close()
 					ctx.WithError(err).Fatal("Could not export device in v3 format")
